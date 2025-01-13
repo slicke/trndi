@@ -15,6 +15,7 @@ uses
 
 type
 
+  // Procedures which are applied to the trend drawing
   TTrendProc = procedure(l: TLabel; c, ix: integer) of object;
   TTrendProcLoop = procedure(l: TLabel; c, ix: integer; ls: array of TLabel) of object;
 
@@ -57,8 +58,9 @@ type
   end;
 
 const
-  bgmin = 2;
-  bgmax = 22;
+  bgmin = 2; // NS cant read lower
+  bgmax = 22; // NS can't read higher
+  // Colors (b)lood(g)lucose (c)olor XX
   bgcok = $0000DC84;
   bgcoktxt = $00F2FFF2;
   bgchi = $0007DAFF;
@@ -80,26 +82,28 @@ implementation
 {$I tfuncs.inc}
 
 
+// Load extension files
 procedure TfBG.LoadExtensions;
 var
  exts : TStringList;
  s, extdir: string;
 begin
- TTrndiExtEngine.Instance;
+ TTrndiExtEngine.Instance; // Creates the class, if it's not already
  jsFuncs := TJSfuncs.Create(api); // This is an Object, not a class!
  extdir := GetAppConfigDirUTF8(false, true) + 'extensions' + DirectorySeparator; // Find extensions folder
 
- ForceDirectoriesUTF8(extdir);
+ ForceDirectoriesUTF8(extdir); // We create the dir if it doesn't exist
  exts := FindAllFiles(extdir, '*.js', false); // Find .js
 
  with TTrndiExtEngine.Instance do begin
-  addFunction('uxProp', ExtFunction(@JSUX), 3); // 3 args
-   for s in exts do
+  addFunction('uxProp', ExtFunction(@JSUX), 3); // Add the UX modification function, as we declre it in this file
+   for s in exts do // Run all found files
      ExecuteFile(s);
    exts.Free;
  end;
 end;
 
+// Apply a function to all trend points; also provides an index
 procedure TfBG.actOnTrend(proc: TTrendProcLoop);
 var
   ix, lx: integer;
@@ -111,6 +115,7 @@ begin
       proc(ls[ix], lx, ix, ls); // Run the method on the given label
 end;
 
+// Apply a function to all trend points
 procedure TfBG.actOnTrend(proc: TTrendProc);
 var
   ix, lx: integer;
@@ -148,6 +153,7 @@ begin
   {$else}
   begin
   {$endif}
+  // @todo add the other backends
   api := NightScout.create('https://***REMOVED***','***REMOVED***', '');
   if not api.connect then begin
     ShowMessage(api.errormsg);
@@ -157,7 +163,7 @@ begin
   update;
 end;
 
-
+// Changes a trend dot from a dot to the actual bg value
 procedure TfBG.ExpandDot(l: TLabel; c, ix: integer);
 begin
   if l.Caption = '•' then
@@ -166,11 +172,13 @@ begin
     l.Caption := '•';
 end;
 
+// Hides a dot
 procedure TfBG.HideDot(l: TLabel; c, ix: integer);
 begin
   l.Visible:=false;
 end;
 
+// Scales a dot's font size
 procedure TfBG.ResizeDot(l: TLabel; c, ix: integer);
 begin
   l.AutoSize := true;
@@ -178,6 +186,7 @@ begin
 
 end;
 
+// Sets the width (NOT the font) of a dot
 procedure TfBG.SetDotWidth(l: TLabel; c, ix: integer; ls: array of TLabel);
 var
   i: integer;
@@ -197,21 +206,21 @@ procedure TfBG.FormResize(Sender: TObject);
   TestSize, MaxFontSize: Integer;
   TextWidth, TextHeight: Integer;
 begin
-  // Maximal fontstorlek att testa
+  // Set the maximum fesible font size
   MaxFontSize := 150;
 
-  // Hämta etikettens maximala storlek
+  // Set the maximum fesible width
   MaxWidth := ALabel.Width;
   MaxHeight := ALabel.Height;
 
-  // Kontrollera om texten passar redan från början
+  // Check if the font will fit
   for TestSize := 1 to MaxFontSize do
   begin
     ALabel.Font.Size := TestSize;
     TextWidth := ALabel.Canvas.TextWidth(ALabel.Caption);
     TextHeight := ALabel.Canvas.TextHeight(ALabel.Caption);
 
-    // Bryt om texten inte längre får plats
+    // Exit if the font won't fit
     if (TextWidth > MaxWidth) or (TextHeight > MaxHeight) then
     begin
       ALabel.Font.Size := TestSize - 1;
@@ -219,7 +228,7 @@ begin
     end;
   end;
 
-  // Sätt max fontstorlek om loopen aldrig bryts
+  // If we never existed, set the max fesible size
   ALabel.Font.Size := MaxFontSize;
 end;
 
@@ -232,13 +241,13 @@ end;
       Padding := Round(fBG.ClientHeight * 0.1);   // 10% padding
       UsableHeight := fBG.ClientHeight - 2 * Padding;
 
-      // Beräkna placering inom det användbara området
+      // Calculate placement, respecting padding
       Position := Padding + Round((Value - 2) / 20 * UsableHeight);
 
       L.Top := fBG.ClientHeight - Position;
     end
     else
-      ShowMessage('Värdet måste vara mellan 2 och 22');
+      ShowMessage('Cannot draw graph points outside 2 and 22');
   end;
 
 
@@ -249,17 +258,21 @@ var
  r: single;
 begin
 
+ // Update the dot space and hide them during update
  actOnTrend(@SetDotWidth);
  actOnTrend(@HideDot);
 
+ // Calculate the area we can use
   pos := (bgmax - bgmin) * lDot1.Parent.ClientHeight;
 
-  for i:= Low(bgs) to min(9, high(bgs)) do begin
+  // Positin the dots, the amount of dots is hard coded
+  for i:= Low(bgs) to min(9, high(bgs)) do begin // bgs = readings we have
      b := bgs[i];
      l := fBG.FindChildControl('lDot'+(10-i).ToString) as TLabel;
 
      r := b.convert(mmol);
 
+     // Hide the dot if it's out of range
      if r > bgmax then
        l.Visible := false
      else if r < bgmin then
@@ -269,8 +282,10 @@ begin
        setHeight(l, r);
      end;
 
+     // Set the hint of the dot to the reading
      l.Hint := b.format(un, BG_MSG_SHORT , BGPrimary);;
 
+     // Set colors
      case b.level of
        BGValLevel.BGRange: l.Font.color := bgcoktxt;
        BGValLevel.BGRangeLO: l.Font.color := bgclotxt;
@@ -283,6 +298,7 @@ begin
 
   end;
 
+  // Adjust the arrow and label sizes
   lArrow.Height := lVal.Height div 5;
   scaleLbl(lVal);
   scaleLbl(lArrow);
@@ -290,10 +306,11 @@ begin
   lDiff.Height := lval.Height div 7;
   scaleLbl(lDiff);
 
+  // Resize the dots
   actOnTrend(@ResizeDot);
-
 end;
 
+// Handle full screen
 procedure TfBG.lDiffDblClick(Sender: TObject);
 begin
   if fBG.WindowState = wsMaximized then begin
@@ -319,40 +336,49 @@ begin
 end;
 
 
-
+// Swap dots with their readings
 procedure TfBG.onTrendClick(Sender: TObject);
 begin
   actOnTrend(@ExpandDot);
 end;
 
+// Update remote on timer
 procedure TfBG.tMainTimer(Sender: TObject);
 begin
   update;
+  // @todo call JS
 end;
 
+// Request data from the backend and update gui
 procedure TfBG.update;
 var
   i: integer;
   l: TLabel;
   b: BGReading;
 begin
+  // get 10 - 25 readings (depends on the backend if the max is used)
   bgs := api.getReadings(10,25);
   if length(bgs) < 1 then begin
-    Showmessage('Ingen kontakt');
+    Showmessage('Cannot contact backend server');
     Exit;
   end;
+  // Get the most recent reading
   b := bgs[low(bgs)];
+  // Format the labels
   lVal.Caption := b.format(un, BG_MSG_SHORT , BGPrimary);
   lDiff.Caption := b.format(un, BG_MSG_SIG_SHORT, BGDelta);
   lArrow.Caption := b.trend.Img;
   lVal.Font.Style:= [];
 
+  // Determine if the reading if fresh
   if MinutesBetween(Now, b.date) > 7 then begin
      lDiff.Caption := TimeToStr(b.date);
      lVal.Font.Style:= [fsStrikeOut];
      fBG.Color := clBlack;
      Exit;
   end;
+
+  // Determine the color based on if the reading is high/low/ok
   case b.level of
     BGValLevel.BGRange: fBG.Color := bgcok;
     BGValLevel.BGRangeLO: fBG.Color := bgclo;

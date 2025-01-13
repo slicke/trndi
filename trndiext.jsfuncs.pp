@@ -69,8 +69,8 @@ var
   s,r: string;
   v: JSValueVal;
 begin
-v := params[1];
-if not v.mustbe(JD_STR, func, 1) then begin
+v := params[0];
+if not v.mustbe(JD_STR, func, 0) then begin
   result := false;
   r := 'Wrong data type for URL';
   v := StringToValueVal(r);

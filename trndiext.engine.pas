@@ -1,7 +1,5 @@
 (*
-(c) 2024 github.com/slicke - Written with GPT4 and reworked by slicke to work dynamically
-
-Install duktape via your package manager, brew on macOS or https://github.com/mengmo/Duktape-Windows/releases/tag/v2.7.0 on Windows
+(c) 2024-2025 github.com/slicke - Written with the aid of GPT
 *)
 unit trndiext.engine;
 {$mode objfpc}{$H+}
@@ -51,13 +49,14 @@ resourcestring
     sExtWarn = 'Extension Warning';
     sExtFile = 'File "%s" not found';
 type
-
+   // Callback for JS engine out data
    TOutputCallback = procedure(const Msg: RawUtf8) of object;
-   ExtFunction = JSFunction;
+
+   ExtFunction = JSFunction; // Alias @fixme
    ExtArgv = array of ExtFunction;
    JSArray = array of RawUtf8;
 
-   QWordArray = array of qword;
+   QWordArray = array of qword; // 64 bit value array
 
    TTrndiExtFunc = record
      private
@@ -71,30 +70,29 @@ type
         class operator =(const a, b: TTrndiExtFunc): Boolean; overload;
      end;
 
+   // List for known functions
    TExtFuncList = specialize TFPGList<TTrndiExtFunc>;
 
-//  TPromises = specialize TFPGList<TJSCallback>;
+  // List of callbacks registered (eg for promises)
   TCallbacks = specialize TFPGList<PJSCallback>;
-  TPromises = TCallbacks;
+  TPromises = TCallbacks;  // Promises no longer have a separate definition
    TTrndiExtEngine = class
   private
-    class var FInstance: TTrndiExtEngine;
-    TrndiClass: JSClassDef;
+    class var FInstance: TTrndiExtEngine; // Singleton
+    TrndiClass: JSClassDef;   // THe TrndiClass in JS
     knownfunc: TExtFuncList;
-    eventTimer: TFPTimer;
+    eventTimer: TFPTimer;  // We need a timer to execute queued stuff in QuickJS
     FRuntime: JSRuntime;
     FContext: JSContext;
     FOutput: RawUtf8;
     OutCallback: TOutputCallback;
     native: TrndiNative;
     promises: TPromises;
-    function getoutput: RawUtf8;
+    function getoutput: RawUtf8;   // This is string data really
     procedure SetOutput(const val: RawUtf8);
     function uxResponse(const dialogType: TMsgDlgType; const msg: string; const titleadd: string): integer;
     function findCallback(const func: string): TJSCallback;
     function findPromise(const func: string): PJSCallback;
-//    function callbackIndex(const func: string): integer;
-//    function RunCallbackFunction(const name: string; params: JSArray): RawUtf8;
 
   public
     callbacks: TCallbacks;
@@ -117,8 +115,6 @@ type
     procedure excepion(const message, fn: string);
     class function ParseArgv(ctx: PJSContext; const vals: PJSValues; const pos: integer): PChar;
     procedure alert(const msg: string);
-//    procedure error(const msg: string);
-//    procedure errorRaise(const msg, err: string);
     property callback [f: string]: TJSCallback read findCallback;
     property promise [f: string]: PJSCallback read findPromise;
     procedure OnJSTimer(Sender: TObject);
@@ -141,6 +137,7 @@ implementation
 {$I trndi.ext.jsbase.inc }
 
 { TTrndiExtEngine }
+// We cant do standard comparisons, as we work with the name
 class operator TTrndiExtFunc.= (const a, b: TTrndiExtFunc): Boolean; overload;
 begin
   result := a.name = b.name
@@ -151,6 +148,7 @@ begin
   uxResponse(mtInformation, msg, 'User Information');
 end;
 
+// Shows a message box, and returns the answer
 function TTrndiExtEngine.uxResponse(const dialogType: TMsgDlgType; const msg: string; const titleadd: string): integer;
 var
   btns: TMsgDlgButtons;
@@ -184,6 +182,7 @@ title := titleadd;
   result := MessageDlg(title, msg, dialogType, btns,'');
 end;
 
+// Our custom exception handler, wants the filename too
 constructor EJSException.CreateWithName(const msg: string;
   const AFileName: String);
 begin
@@ -201,13 +200,16 @@ begin
   raise EJSException.CreateWithName(message,fn);
 end;
 
+{
+// Dummy function to test promises
 function JSNOPromise(name: string; out res: string): boolean;
 begin
    res := name;
    result := true;
 end;
+         }
 
-
+// Lookup a callback, eg from a Promise
 function TTrndiExtEngine.findCallback(const func: string): TJSCallback;
 var
  i: Integer;
@@ -226,7 +228,7 @@ begin
 
 end;
 
-
+// Find a queued/registered promise
 function TTrndiExtEngine.findPromise(const func: string): PJSCallback;
 var
  i: Integer;
@@ -240,12 +242,14 @@ begin
    TTrndiExtEngine.instance.alert('Required function not found: ' +promises[i]^.func);
 end;
 
-
+// @see next comment
 procedure TTrndiExtEngine.AddPromise(const funcName: string; cbfunc: JSCallbackFunction; params: integer = 1);
 begin
    AddPromise(funcName, cbfunc, params, params);
 end;
 
+// Adds a new promise to QuickJS, adding the asyncTask function
+// which in turn runs the correct callback when ran though "funcname"
 procedure TTrndiExtEngine.AddPromise(const funcName: string; cbfunc: JSCallbackFunction; minParams, maxParams: integer);
 var
   data: JSValueConst;
@@ -276,11 +280,13 @@ begin
   result := length(args);
 end;
 
+// Returns a char pointer to a parameter position in JS, note the hack of result + to force convert the rawutf8.
 class function TTrndiExtEngine.ParseArgv(ctx: PJSContext; const vals: PJSValues; const pos: integer): PChar;
 begin
     result := PChar(result + ctx^^.ToUtf8(vals^[pos]));
 end;
 
+// Assigns output data by looping the vals provided
 procedure TTrndiExtEngine.SetOutput(ctx: PJSContext; const vals: PJSValues; const len: integer);
 var
 i: integer;
@@ -291,7 +297,7 @@ begin
   end;
 end;
 
-
+// Assigns output data from a JS string and runs the "outCallback"
 procedure TTrndiExtEngine.SetOutput(const val: RawUtf8);
 begin
   FOutput := val;
@@ -299,51 +305,70 @@ begin
     OutCallback(val);
 end;
 
+// Returns stored outout
 function TTrndiExtEngine.GetOutput: RawUtf8;
 begin
   result := FOutput;
 end;
 
+// Constructor
 constructor TTrndiExtEngine.Create;
 begin
   inherited Create;
+
+  // Create the QuickJS runtime
   FRuntime := JS_NewRuntime;
   if FRuntime = nil then
     raise Exception.Create('Failed to create JS runtime');
+  // Store the context in this class
   FContext := JS_NewContext(FRuntime);
   if FContext = nil then
     raise Exception.Create('Failed to create JS context');
-  JS_SetContextOpaque(FContext, Self);
 
+  // Point back to this class via the context
+    JS_SetContextOpaque(FContext, Self);
+
+  // Create the JS TrndiClass
   TrndiClass := Default(JSClassDef);
   TrndiClass.class_name := 'Trndi';
+
+  // Create a unique ID for the class
   JS_NewClassID(@TrndiClassId);
+
+  // Add to JS runtime
   if JS_NewClass(FRuntime, TrndiClassID, @TrndiClass) < 0 then
       raise Exception.Create('Failed to create JS class');
 
+  // Point bacj to the class id
   JS_SetOpaque(TrndiClassId, Pointer(self));
+  // Add support for promises, regex and dates in JS
   JS_AddIntrinsicPromise(FContext);
   JS_AddIntrinsicRegExp(FContext);
   JS_AddIntrinsicDate(FContext);
 
+  // Add a tracker for unhandled promise rejections
   JS_SetHostPromiseRejectionTracker(FRuntime, PJSHostPromiseRejectionTracker(@PromiseRejectionTracker), nil);
 
+  // Initialize a timer, to be used with the JS engine. This will execute promises in queue
   eventTimer := TFPTimer.Create(nil);
-  eventTimer.Interval := 50; // Kör jobbkön var 50 ms
-  eventTimer.OnTimer := @self.OnJSTimer;
+  eventTimer.Interval := 50; // Run every 50ms
+  eventTimer.OnTimer := @self.OnJSTimer; // Assign the callback
   eventTimer.Enabled := True;
 
 //  JS_AddIntrinsicJSON(FContext);
+  // Create lists for promises, funcitons, callbacks etc
   promises := TPromises.Create;
   knownfunc := TExtFuncList.Create;
   native := TrndiNative.create;
   callbacks := TCallbacks.Create;
 
+  // Add our base functions
   addFunction('log', ExtFunction(@JSDoLog), 1);
   addFunction('alert', ExtFunction(@JSDoAlert), 1);
   RegisterConsoleLog(@FContext);         // We register a "neutral" console.log outside of this object s to avoid errors here
 end;
 
+// Adds a global JS function
 procedure TTrndiExtEngine.addFunction(const id: string; const func: JSFunction; const argc: integer = 0);
 begin
 (*  JS_SetPropertyStr(FContext, JS_GetGlobalObject(FContext), PChar(id),
@@ -373,6 +398,7 @@ begin
   inherited Destroy;
 end;
 
+// Load a JS file from disk, and run the code inside it
 function TTrndiExtEngine.ExecuteFile(const FileName: string): RawUtf8;
 var
   Script: RawUtf8;
@@ -383,7 +409,7 @@ begin
   if not FileExists(FileName) then
     raise Exception.CreateFmt(sExtFile, [sExtFile, FileName]);
 
-  // Läsa in filens innehåll till en RawUtf8-sträng
+  // Get file contetns as a RawUtf8 string
   FileStream := TFileStream.Create(FileName, fmOpenRead or fmShareDenyWrite);
   StringStream := TStringStream.Create;
   try
@@ -394,10 +420,11 @@ begin
     FileStream.Free;
   end;
 
-  // Exekvera skriptet från filen
+  // Runs the script
   Result := Execute(Script, ExtractFileName(filename));
 end;
 
+// Execute a JS string
 function TTrndiExtEngine.Execute(const Script: RawUtf8; name: string = '<script>'): RawUtf8;
 var
   EvalResult: JSValue;
@@ -412,7 +439,7 @@ begin
   begin
     try
     //  TTrndiExtEngine.Instance.alert('An error occured while running extension ' + name + #13#10+err);
-      ExtError('Fel vid laddning', err);
+      ExtError('Error loading', err);
       ResultStr := JS_ToCString(FContext, JS_GetException(FContext));
       Result := 'Error: ' + ResultStr + err;
       JS_FreeCString(FContext, ResultStr);
@@ -424,6 +451,7 @@ begin
   else
   begin
 
+    // Convert errors to string
     ResultStr := JS_ToCString(FContext, EvalResult.Raw);
     Result := ResultStr;
     JS_FreeCString(FContext, ResultStr);
@@ -432,41 +460,46 @@ begin
   FContext^.Free(EvalResult);
 end;
 
+// Create a global JS object
 procedure TTrndiExtEngine.CreateNewObject(const name: string);
 var
   GlobalObj, JSObject, JSValue: JSValueRaw;
 begin
+  // Get the global object to add to
   GlobalObj := JS_GetGlobalObject(FContext);
-  // Skapa ett nytt objekt
+  // Create new object
   JSObject := JS_NewObject(FContext);
 
-  // Registrera objektet som en global variabel
+  // Add object as a global property
   JS_SetPropertyStr(FContext, GlobalObj, PAnsiChar(name), JSObject);
 
 //  js_free(FContext, JSValue(GlobalObj)):
 end;
 
-
+// Add a method, to an existing object in JS
 procedure TTrndiExtEngine.AddMethod(const objectname, name: string; const func: PJSCFunction; const argc: integer = 0);
 var
   GlobalObj, JSObject: JSValueRaw;
 begin
-
+  // Get the global object (where our object is regged...)
   GlobalObj := JS_GetGlobalObject(FContext);
-  // Hämta objektet
+  // Find the object
   JSObject := JS_GetPropertyStr(FContext, GlobalObj, PAnsiChar(objectname));
 
-  // Lägg till en metod
+  // Add the new method
   JS_DefinePropertyValueStr(FContext, JSObject, PAnsiChar(name), JS_NewCFunction(FContext, @func, PAnsiChar(name), argc), JS_PROP_CONFIGURABLE or JS_PROP_ENUMERABLE);
 end;
 
-
+// Sets a JS global variable
 procedure TTrndiExtEngine.SetGlobalVariable(const VarName: RawUtf8; const Value: RawUtf8; const obj: string = '');
 var
   JSValue, GlobalObj: JSValueRaw;
 begin
+  // Global object to add to
   GlobalObj := JS_GetGlobalObject(FContext);
+  // Create the string
   JSValue := JS_NewString(FContext, PAnsiChar(Value));
+  // Set it
   JS_SetPropertyStr(FContext, GlobalObj, PAnsiChar(VarName), JSValue);
 end;
 
@@ -474,12 +507,129 @@ procedure TTrndiExtEngine.SetGlobalVariable(const VarName: RawUtf8; const Value:
 var
   GlobalObj, JSValue: JSValueRaw;
 begin
+  // Global object to add to
   GlobalObj := JS_GetGlobalObject(FContext);
+  // Create the int
   JSValue := JS_NewBigInt64(FContext, Value);
+  // Set it
   JS_SetPropertyStr(FContext, GlobalObj, PAnsiChar(VarName), JSValue);
 end;
 
 
+function TTrndiExtEngine.CallFunction(const FuncName: RawUtf8; const Args: JSArray): RawUtf8;
+var
+  GlobalObj, FuncObj, RetVal: JSValueRaw;
+  ArgArray: array of JSValueRaw;
+  i: Integer;
+  StrResult: PAnsiChar;
+begin
+  Result := '';
+  GlobalObj := JS_GetGlobalObject(FContext);
+
+  // Get the function/property
+  FuncObj := JS_GetPropertyStr(FContext, GlobalObj, PChar(FuncName));
+
+  // Check that we found a JS function
+  if not JS_IsFunction(FContext, FuncObj) then
+  begin
+    // If it's not a function, free references and exit
+    JS_Free(FContext, @GlobalObj);
+    JS_Free(FContext, @FuncObj);
+    ShowMessage('No such function or it is not callable: ' + FuncName);
+    Exit('');
+  end;
+
+  // Prepare the parameters
+  SetLength(ArgArray, Length(Args));
+  for i := 0 to High(Args) do
+    ArgArray[i] := JS_NewString(FContext, PChar(Args[i]));
+
+
+  // Call the JS function
+  RetVal := JS_Call(FContext, FuncObj, GlobalObj, Length(ArgArray), @ArgArray[0]);
+
+  // Look for errors
+  if JS_IsError(FContext, RetVal) then
+  begin
+    // Dump or retrieve the error
+    ExtError('Cannot call Extension function ' + funcname);
+    js_std_dump_error(FContext);
+    Result := '';
+  end
+  else
+  begin
+    // Get a string
+    StrResult := JS_ToCString(FContext, RetVal);
+    if StrResult <> nil then
+    begin
+      Result := StrResult; // copy into our Pascal string
+      JS_FreeCString(FContext, StrResult);
+    end
+    else
+      Result := ''; // possibly the result wasn't convertible to string
+  end;
+
+  // Free stuff that wont get cleared automatically
+//  js_freevalue(FContext, RetVal );
+  for i := 0 to High(ArgArray) do
+   // JS_FreeCString(FContext, @ArgArray[i]);
+//  JS_Freevalue(FContext, @FuncObj);
+end;
+
+{
+function TTrndiExtEngine.CallFunction(const FuncName: RawUtf8; const Args: JSArray): RawUtf8;
+type
+  // Helper array type for building a "dynamic" array of TVarRec, as const of array is a pain
+  TVarRecArray = array of TVarRec;
+var
+  ArgValues: array of JSValueRaw;  // Will hold the JS string values
+  AOC: TVarRecArray;               // Will try to pass this as "array of const"
+  FuncResult: JSValue;
+  i: Integer;
+begin
+  // Build a JSValueRaw array from the incoming string arguments
+  SetLength(ArgValues, Length(Args));
+  for i := 0 to High(Args) do
+    ArgValues[i] := JS_NewString(FContext, PChar(Args[i]));
+
+  // Build a dynamic array of TVarRec, one for each JSValueRaw
+  SetLength(AOC, Length(ArgValues));
+  for i := 0 to High(ArgValues) do
+  begin
+    AOC[i].VType    := vtPointer;            // We want to store it as a pointer
+    AOC[i].VPointer := Pointer(ArgValues[i]);
+  end;
+
+  // Attempt to call FContext^.Call using the TVarRec array.
+  // The hope is that FPC will accept our AOC as "array of const".
+//  FuncResult := FContext^.Call('', FuncName, AOC);
+  FuncResult := JS_Call(FContext, JS_GetGlobalObject(FContext); func_obj: JSValueConst; this_obj: JSValueConst;
+  argc: integer; argv: PJSValueConstArr): JSValueRaw;
+
+  // Check if the JS call resulted in an exception
+  if FuncResult.IsException then
+  begin
+    // If so, retrieve an error message and maybe display it to the user
+    FContext^.ErrorMessage(True, Result, FuncResult.Ptr);
+    MessageDlg('[JS Function: ' + FuncName + '] Calling Error',
+               Result, mtError, [TMsgDlgBtn.mbOK], '');
+    Result := '';
+  end
+  else
+  begin
+    // If no error, convert the result to a string
+    Result := FContext^.ToUtf8(FuncResult);
+  end;
+
+  // Free the function result
+  FContext^.Free(FuncResult);
+
+  // Free all JSValueRaw references that we created
+  for i := 0 to High(ArgValues) do
+    FContext^.Free(JSValue(ArgValues[i]));
+end;
+      }
+  {
 function TTrndiExtEngine.CallFunction(const FuncName: RawUtf8; const Args: JSArray): RawUtf8;
 var
   ArgValues: array of JSValueRaw;
@@ -526,26 +676,29 @@ begin
     Exit;
   end;
 
-  // Konvertera resultatet till en sträng om inget fel inträffade
+  // If no error, result to string
   Result := FContext^.ToUtf8(FuncResult);
 
 //  ShowMessage(PChar(result));
 
-  // Frigör argument och funktionsresultat
+  // Free stuff
   for i := 0 to High(ArgValues) do
     FContext^.Free(JSValue(ArgValues[i]));
   FContext^.Free(FuncResult);
 end;
+}
 
+// Callback for timer, for running JS runtime jobs in queue (like promises !)
 procedure TTrndiExtEngine.OnJSTimer(Sender: TObject);
 begin
   while JS_IsJobPending(FRuntime) do
   begin
     if JS_ExecutePendingJob(FRuntime, @FContext) <= 0 then
-      Break; // Avsluta om inga fler jobb kan köras
+      Break; // Exit whe the queue is empty
   end;
 end;
 
+// Check if a funciton is known to JS (global)
 function TTrndiExtEngine.FunctionExists(const FuncName: string): boolean;
 var
   Func: JSValue;
@@ -558,8 +711,7 @@ begin
      result := func.IsObject;
 end;
 
-
-
+// Return this class/object - singleton
 class function TTrndiExtEngine.Instance: TTrndiExtEngine;
 begin
   if FInstance = nil then
@@ -567,6 +719,7 @@ begin
   Result := FInstance;
 end;
 
+// Free this singleton
 class procedure TTrndiExtEngine.ReleaseInstance;
 begin
   FreeAndNil(FInstance);

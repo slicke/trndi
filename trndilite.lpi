@@ -63,6 +63,7 @@
         <Filename Value="uconf.pp"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="fConf"/>
+        <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
       </Unit>
     </Units>

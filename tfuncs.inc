@@ -1,7 +1,8 @@
+// Include file with JS functions
 uses
   mormot.lib.quickjs;
 
-
+// Convert a color, eg for a ux call in JS, to TColor
 function HTMLColorToTColor(const HTMLColor: string): TColor;
 var
   R, G, B: Integer;
@@ -26,6 +27,7 @@ function JSUX(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: PJSVal
 var
   comp, what, val: string;
 begin
+  // Parse the parameters
   comp := ctx^^.ToUtf8(argv^[0]);
   what :=  ctx^^.ToUtf8(argv^[1]);
   val :=  ctx^^.ToUtf8(argv^[2]);

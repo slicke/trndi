@@ -1,3 +1,4 @@
+// JS promise handler
 unit trndiext.promise;
 
 {$mode ObjFPC}{$H+}
@@ -8,7 +9,7 @@ uses
   Classes, SysUtils, mORMot.lib.quickjs, mormot.core.base, dialogs, trndiext.functions, slicke.ux.alert, fgl;
 
   type
-  JSDoubleVal = array[0..1] of JSValueRaw;
+  JSDoubleVal = array[0..1] of JSValueRaw; // Responses to JS (ok or err)
   PJSDoubleVal = ^JSValueRaw;
 
   TJSAsyncTask = class(TThread)
@@ -26,8 +27,8 @@ uses
   end;
 
   const
-  JprResolve = 0;
-  JprReject = 1;
+  JprResolve = 0; // const for "async function worked"
+  JprReject = 1; // for "didnt work"
 
 implementation
 resourcestring
@@ -43,7 +44,7 @@ begin
   FPromise := func;
   funcs := cbfunc;
   FreeOnTerminate := True;
-  inherited Create(False);  // Starta tråden direkt
+  inherited Create(False);  // This will start the thread
 end;
 
 procedure TJSAsyncTask.Execute;
@@ -51,33 +52,33 @@ var
     xres: JSValue;
 begin
 
-  if Assigned(FPromise^.callback) then
+  if Assigned(FPromise^.callback) then // Run the main function, if it's actually set
     Synchronize(@ProcessResult)
-  else begin
+  else begin // Complain that it wasn't set
     ExtError('Error: Missing Function');
     FSuccess := false;
     Exit;
   end;
 
-    xres := JSValueValToValue(FContext, FResult);
+  xres := JSValueValToValue(FContext, FResult); // Convert our result to something we can retur to JS
 
   if FSuccess then
     JS_Call(FContext, funcs[JprResolve], JS_UNDEFINED, 1, @xres)
   else
     JS_Call(FContext, funcs[JprReject], JS_UNDEFINED, 1, @xres);
 
-//    FContext^.Free(JSValue(Promise));
+//    FContext^.Free(JSValue(Promise)); -- should free automatically
 //    JS_Free(FContext, @Promise);
      FPromise^.params.values.data.Free;
-
 end;
 
+// Run the set function for the JS func
 procedure TJSAsyncTask.ProcessResult;
 begin
  with FPromise^ do begin
-  if Assigned(Callback) then begin
+  if Assigned(Callback) then begin // This should already be checked, but let's be safe
   try
-      FSuccess := FPromise^.Callback(@FContext, func, params.values.data, FResult);
+      FSuccess := FPromise^.Callback(@FContext, func, params.values.data, FResult); // Run the callback that was set when the function was defined
   except on E: EInvalidCast do begin
       FSuccess := false;
       ExtError(sTypeErrMsg, e.message);
@@ -89,8 +90,6 @@ begin
   end;
   end else fsuccess := false;
  end;
-
-
 end;
 
 end.
