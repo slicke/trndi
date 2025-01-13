@@ -5,15 +5,20 @@
     <PathDelim Value="\"/>
     <General>
       <SessionStorage Value="InProjectDir"/>
-      <Title Value="trndilite"/>
+      <Title Value="Trndi"/>
       <Scaled Value="True"/>
       <ResourceType Value="res"/>
       <UseXPManifest Value="True"/>
       <XPManifest>
         <DpiAware Value="True"/>
+        <TextName Value="slicke.trndi.app"/>
+        <TextDesc Value="Trndi CGM Viewer"/>
       </XPManifest>
       <Icon Value="0"/>
     </General>
+    <VersionInfo>
+      <MajorVersionNr Value="2"/>
+    </VersionInfo>
     <BuildModes>
       <Item Name="Default" Default="True"/>
     </BuildModes>
@@ -53,6 +58,12 @@
       <Unit>
         <Filename Value="tfuncs.inc"/>
         <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="uconf.pp"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="fConf"/>
+        <ResourceBaseClass Value="Form"/>
       </Unit>
     </Units>
   </ProjectOptions>

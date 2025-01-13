@@ -17,7 +17,8 @@ resourcestring
    sLogRecevive = 'Output through console.log has been received';
    sLogDesc = 'Trndi has captured data sent to console.log in a JavaScript extension';
    sStackFailed = 'An error occured, and the stacktrace could not be loaded. Showing backtrace.';
-   sDataTypeErr = 'Datatype %s was not expected, expected. Expected %s';
+   sDataTypeErr = 'Datatype %s was not expected, expected in function %s';
+   sDataTypeErrPos = 'Datatype %s was not expected, expected in function %s, parameter %d';
    sDataTypeErrFunc = 'Datatype "%s" was not expected, in function "%s". Expected "%s"';
 
 type
@@ -50,7 +51,7 @@ type
       function _a(i: integer): JSValueVal;
       function acttype(const val: JSValueVal; want: JDValue): JSValueVal;
       function match(a: JDValue): boolean;
-      function mustbe(a: JDValue; func: string = ''): boolean;
+      function mustbe(a: JDValue; func: string = ''; ppos: integer = -1):boolean;
       property arrval[i: integer]: JSValueVal read _a; default;
 
       class operator =(const a, b: JSValueVal): Boolean; overload;
@@ -107,7 +108,7 @@ type
                     true: (data: JSParameters);
                     false: ();
       end;
-      expected: integer;
+      min, max: integer;
     end;
     func: string;
     callback: JSCallbackFunction;
@@ -203,7 +204,7 @@ begin
 end;
 
 
-function JSValueVal.mustbe(a: JDValue; func: string = ''):boolean; // do error - return function name if available
+function JSValueVal.mustbe(a: JDValue; func: string = ''; ppos: integer = -1):boolean; // do error - return function name if available
 var
   extra: string;
 begin
@@ -211,6 +212,8 @@ begin
   if not match(a) then
     if  func = '' then
       raise EInvalidCast.Create(Format(sDataTypeErr, [valtype, valTypeToStr(a)]) + extra)
+    else if ppos > -1 then
+      raise EInvalidCast.Create(Format(sDataTypeErrPos, [valtype, valTypeToStr(a), func, ppos]) + extra)
     else
       raise EInvalidCast.Create(Format(sDataTypeErrFunc, [valtype, valTypeToStr(a), func]) + extra);
 

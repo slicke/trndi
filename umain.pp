@@ -88,12 +88,12 @@ begin
  TTrndiExtEngine.Instance;
  jsFuncs := TJSfuncs.Create(api); // This is an Object, not a class!
  extdir := GetAppConfigDirUTF8(false, true) + 'extensions' + DirectorySeparator; // Find extensions folder
- ShowMessage(extdir);
+
  ForceDirectoriesUTF8(extdir);
  exts := FindAllFiles(extdir, '*.js', false); // Find .js
 
  with TTrndiExtEngine.Instance do begin
-  addFunction('tProp', ExtFunction(@JSUX), 3); // 2 args
+  addFunction('uxProp', ExtFunction(@JSUX), 3); // 3 args
    for s in exts do
      ExecuteFile(s);
    exts.Free;

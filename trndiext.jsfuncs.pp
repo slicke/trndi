@@ -1,3 +1,4 @@
+// Handle JS functions
 unit trndiext.jsfuncs;
 
 {$mode ObjFPC}{$H+}
@@ -24,11 +25,12 @@ end;
 
 implementation
 
+// Create this function JS handler
 constructor TJSFuncs.Create(cgm: TrndiAPI);
 begin
   tapi := cgm;
 
-  with TTrndiExtEngine.Instance do begin
+  with TTrndiExtEngine.Instance do begin // Register the functions in JS
     AddPromise('bgDump', JSCallbackFunction(@bgDump));
     AddPromise('asyncGet', JSCallbackFunction(@asyncGet));
     AddPromise('querySvc', JSCallbackFunction(@querySvc));
@@ -40,37 +42,41 @@ begin
    ExtLog('Message from Extension','An extension triggered a message', str, WideChar($274F));
 end;
 
+// Blood Glucose dump, from JS
 function TJSFuncs.bgDump(ctx: pointer; const func: string; constref params: JSParameters; out res: JSValueVal): boolean;
 var
 i: integer;
 r: BGResults;
 begin
 
-{  if params[0].data.match <> JD_INT then begin
+if params[1].data.match <> JD_INT then begin
       ShowMsg('Unknown paramter #1');
       Exit(false);
   end;
-  if params[1].data.match <> JD_INT then begin
+  if params[2].data.match <> JD_INT then begin
       ShowMsg('Unknown paramter #2');
       Exit(false);
   end;
     tapi.getReadings(params[0].data.Int32Val, params[1].data.Int32Val);
- }
+       //@fixme not done
   result := true;
 end;
 
+// backend for asyncGet in JS
+// Fetches a file from the web
 function TJSFuncs.asyncget(ctx: pointer; const func: string; constref params: JSParameters; out res: JSValueVal): boolean;
 var
   s,r: string;
   v: JSValueVal;
 begin
-v := params[0];
-if not v.mustbe(JD_STR, func) then begin
+v := params[1];
+if not v.mustbe(JD_STR, func, 1) then begin
   result := false;
   r := 'Wrong data type for URL';
   v := StringToValueVal(r);
   Exit(false);
 end;
+
 if not TrndiNative.getURL(v.data.StrVal, s) then begin
   result := false;
   r := 'Cannot fetch URL ' + v.data.strval;
@@ -82,6 +88,7 @@ end;
   res := v;
 end;
 
+// Query the backend via JS
 function TJSFuncs.querySvc(ctx: pointer; const func: string; constref params: JSParameters; out res: JSValueVal): boolean;
 const
  QUERY = 0;

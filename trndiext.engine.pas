@@ -113,6 +113,7 @@ type
     procedure CreateNewObject(const name: string);
     procedure AddMethod(const objectname, name: string; const func: PJSCFunction; const argc: integer = 0);
     procedure AddPromise(const funcName: string; cbfunc: JSCallbackFunction; params: integer = 1);
+    procedure AddPromise(const funcName: string; cbfunc: JSCallbackFunction; minParams, maxParams: integer);
     procedure excepion(const message, fn: string);
     class function ParseArgv(ctx: PJSContext; const vals: PJSValues; const pos: integer): PChar;
     procedure alert(const msg: string);
@@ -241,6 +242,11 @@ end;
 
 
 procedure TTrndiExtEngine.AddPromise(const funcName: string; cbfunc: JSCallbackFunction; params: integer = 1);
+begin
+   AddPromise(funcName, cbfunc, params, params);
+end;
+
+procedure TTrndiExtEngine.AddPromise(const funcName: string; cbfunc: JSCallbackFunction; minParams, maxParams: integer);
 var
   data: JSValueConst;
   cb: PJSCallback;
@@ -258,7 +264,8 @@ begin
     New(cb);
     cb^.func := funcname;
     cb^.callback := cbfunc;
-    cb^.params.expected := params;
+    cb^.params.min := minParams;
+    cb^.params.max := maxParams;
 
      promises.Add(cb);
 //   promises.Add(TJSCallback(callback: @cbfunc; func: funcName; params.expected: params));

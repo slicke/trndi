@@ -120,7 +120,7 @@ function AsyncTask(ctx: JSContext; this_val: JSValueConst; argc: integer; argv: 
 var
   func: string;
   cb: PJSCallback;
-  params, exp: integer;
+  params: integer;
   funcs: JSDoubleVal;
   promise: JSValueRaw;
   res: array[0..0] of JSValue;
@@ -141,12 +141,14 @@ begin
     cb^.params.values.data := JSParseParameters(ctx, argc, argv); // Free senare
 
     params := cb^.params.values.data.Count;
-    exp := cb^.params.expected;
+
 (*   if (params > 0) and (cb^.params.values.data[0].data.match = JD_UNKNOWN) then
      ShowMessage('Inga parametrar'); *)
-   if (params <> exp) and (exp > 0) then //Use minus for varying
-     ShowMessage(Format('[%s] Needs %d pameters, but we got %d', [func, exp, params]));
-
+   if (not ((params >= cb^.params.min) and (params <= cb^.params.max))) and (cb^.params.min > -1) then //Use minus for feely varying
+     if cb^.params.min = cb^.params.max then
+       ShowMessage(Format('[%s] Needs %d pameters, but we got %d', [func, cb^.params.min, params]))
+     else
+       ShowMessage(Format('[%s] Needs %d - %d pameters, but we got %d', [func, cb^.params.min, cb^.params.max, params]));
 
      // Setup promise
   try
