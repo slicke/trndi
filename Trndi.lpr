@@ -1,7 +1,7 @@
 (*
 (c) 2024-2025 github.com/slicke - See LICENSE file, GPLv3, Written with the aid of GPT
 *)
-program trndilite;
+program trndi;
 
 {$mode objfpc}{$H+}
 
