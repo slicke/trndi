@@ -428,7 +428,7 @@ end;
 
             eAddr.text := GetSetting('remote.target');
             ePass.Text := GetSetting('remote.creds');
-
+            eExt.Text := GetAppConfigDirUTF8(false, true) + 'extensions' + DirectorySeparator;
             ShowModal;
             SetSetting('remote.type', cbSys.Text);
             SetSetting('remote.target', eAddr.text);

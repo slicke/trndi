@@ -7,6 +7,7 @@ program trndi;
 
 uses
   {$IFDEF UNIX}
+  {$linklib gcc}  // We cant link with the QUickJS lib on Linux otherwise
   cthreads,
   {$ENDIF}
   {$IFDEF HASAMIGA}
@@ -20,7 +21,6 @@ uses
 
 begin
   RequireDerivedFormResource:=True;
-  Application.Title:='Trndi';
   Application.Scaled:=True;
   Application.{%H-}MainFormOnTaskbar:=True;
   Application.Initialize;

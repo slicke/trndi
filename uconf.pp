@@ -11,8 +11,12 @@ uses
   Classes, ExtCtrls,StdCtrls,SysUtils, Forms, Controls, Graphics, Dialogs;
 
 type
+
+  { TfConf }
+
   TfConf = class(TForm)
     Bevel1:TBevel;
+    eExt: TLabeledEdit;
     lLicense:TButton;
     cbSys:TComboBox;
     Image1:TImage;

@@ -665,8 +665,8 @@ begin
   end;
 
   // Frigör C-strängarna och JSValues efter användning
-  JS_FreeCString(ctx, messageStr);
-  JS_FreeCString(ctx, stackStr);
+//  JS_FreeCString(ctx, messageStr);
+  //JS_FreeCString(ctx, stackStr);
   // JS_Free(ctx, @stackVal); // JS_Free används inte på detta sätt
   // JS_Free(ctx, EvalResult); // JS_Free används inte på detta sätt
 end;

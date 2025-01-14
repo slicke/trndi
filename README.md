@@ -46,6 +46,10 @@ Build release:
 Build to a release folder
 ```lazbuild -B output_directory Trndi.lpi``` 
 
+
+## Dependancies
+The JS engine, QuickJS, needs to be linked into Trndi. This is done though the mormot2 library, but you need the relevant library files. Place them in ../static, they can be downloaded at https://synopse.info/files/mormot2static.7z - you may remove libraries you don't need!
+
 ## Style
 ### Linter
 Trndi uses __ptop__ to format code, the binary is located in the FPC bin folder.

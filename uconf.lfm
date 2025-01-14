@@ -1,14 +1,13 @@
 object fConf: TfConf
   Left = 748
-  Height = 275
+  Height = 317
   Top = 250
   Width = 415
   BorderStyle = bsToolWindow
   Caption = 'Settings'
-  ClientHeight = 275
+  ClientHeight = 317
   ClientWidth = 415
   Position = poDesktopCenter
-  LCLVersion = '4.0.0.2'
   object Image1: TImage
     Left = 16
     Height = 104
@@ -10247,7 +10246,7 @@ object fConf: TfConf
     Left = 136
     Height = 45
     Top = 16
-    Width = 79
+    Width = 86
     Caption = 'Trndi'
     Font.Height = -33
     Font.Style = [fsBold]
@@ -10255,24 +10254,24 @@ object fConf: TfConf
   end
   object lVer: TLabel
     Left = 168
-    Height = 15
+    Height = 17
     Top = 56
-    Width = 47
+    Width = 53
     Caption = 'Version 2'
   end
   object Label1: TLabel
     Left = 136
-    Height = 30
+    Height = 34
     Top = 80
-    Width = 193
+    Width = 202
     Caption = 'Copyright (c) 2017-2025 Björn Lindh '#13#10'<github.com/slicke>'
   end
   object cbSys: TComboBox
     Left = 15
-    Height = 23
+    Height = 25
     Top = 136
     Width = 385
-    ItemHeight = 15
+    ItemHeight = 17
     ItemIndex = 0
     Items.Strings = (
       'NightScout'
@@ -10287,10 +10286,10 @@ object fConf: TfConf
   end
   object eAddr: TLabeledEdit
     Left = 16
-    Height = 23
+    Height = 25
     Top = 184
     Width = 384
-    EditLabel.Height = 15
+    EditLabel.Height = 17
     EditLabel.Width = 384
     EditLabel.Caption = 'Server Address / Dexcom Username'
     TabOrder = 1
@@ -10298,10 +10297,10 @@ object fConf: TfConf
   end
   object ePass: TLabeledEdit
     Left = 15
-    Height = 23
+    Height = 25
     Top = 231
     Width = 385
-    EditLabel.Height = 15
+    EditLabel.Height = 17
     EditLabel.Width = 385
     EditLabel.Caption = 'API Secret / Dexcom Password'
     TabOrder = 2
@@ -10329,5 +10328,15 @@ object fConf: TfConf
     Caption = 'Libraries'
     TabOrder = 4
     OnClick = lAckClick
+  end
+  object eExt: TLabeledEdit
+    Left = 16
+    Height = 25
+    Top = 280
+    Width = 385
+    EditLabel.Height = 17
+    EditLabel.Width = 385
+    EditLabel.Caption = 'Plugin Folder'
+    TabOrder = 5
   end
 end
