@@ -5,13 +5,9 @@ unit umain;
 interface
 
 uses
-  Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, ExtCtrls,
-  dexapi, nsapi,
-  trndi.types, math, DateUtils, FileUtil,
-  TrndiExt.Engine,
-  TrndiExt.Ext,
-  trndiExt.jsfuncs,
-  LazFileUtils;
+  Classes,Menus,SysUtils,Forms,Controls,Graphics,Dialogs,StdCtrls,ExtCtrls,
+  dexapi,nsapi,trndi.types,math,DateUtils,FileUtil,TrndiExt.Engine,TrndiExt.Ext,
+  trndiExt.jsfuncs,LazFileUtils;
 
 type
 
@@ -36,14 +32,22 @@ type
     lDot8: TLabel;
     lDot9: TLabel;
     lVal: TLabel;
+    miSettings:TMenuItem;
+    pmSettings:TPopupMenu;
+    tTouch:TTimer;
     tMain: TTimer;
     procedure FormCreate(Sender:TObject);
     procedure FormResize(Sender: TObject);
     procedure lDiffDblClick(Sender: TObject);
     procedure lgMainClick(Sender: TObject);
+    procedure lValMouseDown(Sender:TObject;Button:TMouseButton;Shift:TShiftState
+      ;X,Y:Integer);
+    procedure lValMouseUp(Sender:TObject;Button:TMouseButton;Shift:TShiftState;X
+      ,Y:Integer);
     procedure lValStartDrag(Sender: TObject; var DragObject: TDragObject);
     procedure onTrendClick(Sender: TObject);
     procedure tMainTimer(Sender: TObject);
+    procedure tTouchTimer(Sender:TObject);
   private
     procedure update;
     procedure actOnTrend(proc: TTrendProc);
@@ -68,13 +72,16 @@ const
   bgclo = $00FFBE0B;
   bgclotxt = $00FFFEE9;
 
-
 var
   fBG: TfBG;
   api: nsapi.NightScout;
   un: BGUnit = BGUnit.mmol;
   bgs: BGResults;
   jsFuncs:  TJSfuncs;
+
+  // Touch screen
+  StartTouch: TDateTime;
+  IsTouched: Boolean;
 
 implementation
 
@@ -330,6 +337,22 @@ begin
 
 end;
 
+procedure TfBG.lValMouseDown(Sender:TObject;Button:TMouseButton;Shift:
+  TShiftState;X,Y:Integer);
+begin
+// Handle touch screens
+  StartTouch := Now;
+  IsTouched := True;
+  tTouch.Enabled := True;
+end;
+
+procedure TfBG.lValMouseUp(Sender:TObject;Button:TMouseButton;Shift:TShiftState;
+  X,Y:Integer);
+begin
+  IsTouched := False;
+  tTouch.Enabled := False;
+end;
+
 procedure TfBG.lValStartDrag(Sender: TObject; var DragObject: TDragObject);
 begin
 
@@ -347,6 +370,19 @@ procedure TfBG.tMainTimer(Sender: TObject);
 begin
   update;
   // @todo call JS
+end;
+
+// Handle a touch screen's long touch
+procedure TfBG.tTouchTimer(Sender:TObject);
+var
+  p: TPoint;
+begin
+  tTouch.Enabled := False;
+  if IsTouched then
+  begin
+    p := Mouse.CursorPos;
+    pmSettings.PopUp(p.X, p.Y);
+  end;
 end;
 
 // Request data from the backend and update gui

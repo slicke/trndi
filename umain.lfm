@@ -8,7 +8,6 @@ object fBG: TfBG
   ClientWidth = 320
   Color = clBlack
   Font.Color = clWhite
-  LCLVersion = '4.0.0.2'
   OnCreate = FormCreate
   OnResize = FormResize
   object lArrow: TLabel
@@ -23,6 +22,7 @@ object fBG: TfBG
     Color = clWhite
     OptimalFill = True
     ParentColor = False
+    PopupMenu = pmSettings
   end
   object lVal: TLabel
     Left = 0
@@ -36,6 +36,9 @@ object fBG: TfBG
     Color = 16760331
     OptimalFill = True
     ParentColor = False
+    PopupMenu = pmSettings
+    OnMouseDown = lValMouseDown
+    OnMouseUp = lValMouseUp
     OnStartDrag = lValStartDrag
   end
   object lDiff: TLabel
@@ -53,6 +56,7 @@ object fBG: TfBG
     OptimalFill = True
     ParentColor = False
     ParentFont = False
+    PopupMenu = pmSettings
     OnDblClick = lDiffDblClick
   end
   object lDot6: TLabel
@@ -64,6 +68,7 @@ object fBG: TfBG
     AutoSize = False
     Caption = '•'
     OptimalFill = True
+    PopupMenu = pmSettings
     OnClick = onTrendClick
   end
   object lDot7: TLabel
@@ -75,6 +80,7 @@ object fBG: TfBG
     AutoSize = False
     Caption = '•'
     OptimalFill = True
+    PopupMenu = pmSettings
     OnClick = onTrendClick
   end
   object lDot8: TLabel
@@ -86,6 +92,7 @@ object fBG: TfBG
     AutoSize = False
     Caption = '•'
     OptimalFill = True
+    PopupMenu = pmSettings
     OnClick = onTrendClick
   end
   object lDot9: TLabel
@@ -97,6 +104,7 @@ object fBG: TfBG
     AutoSize = False
     Caption = '•'
     OptimalFill = True
+    PopupMenu = pmSettings
     OnClick = onTrendClick
   end
   object lDot10: TLabel
@@ -108,6 +116,7 @@ object fBG: TfBG
     AutoSize = False
     Caption = '•'
     OptimalFill = True
+    PopupMenu = pmSettings
     OnClick = onTrendClick
   end
   object lDot5: TLabel
@@ -119,6 +128,7 @@ object fBG: TfBG
     AutoSize = False
     Caption = '•'
     OptimalFill = True
+    PopupMenu = pmSettings
     OnClick = onTrendClick
   end
   object lDot4: TLabel
@@ -130,6 +140,7 @@ object fBG: TfBG
     AutoSize = False
     Caption = '•'
     OptimalFill = True
+    PopupMenu = pmSettings
     OnClick = onTrendClick
   end
   object lDot3: TLabel
@@ -141,6 +152,7 @@ object fBG: TfBG
     AutoSize = False
     Caption = '•'
     OptimalFill = True
+    PopupMenu = pmSettings
     OnClick = onTrendClick
   end
   object lDot2: TLabel
@@ -152,6 +164,7 @@ object fBG: TfBG
     AutoSize = False
     Caption = '•'
     OptimalFill = True
+    PopupMenu = pmSettings
     OnClick = onTrendClick
   end
   object lDot1: TLabel
@@ -163,6 +176,7 @@ object fBG: TfBG
     AutoSize = False
     Caption = '•'
     OptimalFill = True
+    PopupMenu = pmSettings
     OnClick = onTrendClick
   end
   object tMain: TTimer
@@ -170,5 +184,19 @@ object fBG: TfBG
     OnTimer = tMainTimer
     Left = 202
     Top = 129
+  end
+  object pmSettings: TPopupMenu
+    Left = 155
+    Top = 66
+    object miSettings: TMenuItem
+      Caption = '&Settings'
+    end
+  end
+  object tTouch: TTimer
+    Enabled = False
+    Interval = 500
+    OnTimer = tTouchTimer
+    Left = 253
+    Top = 70
   end
 end
