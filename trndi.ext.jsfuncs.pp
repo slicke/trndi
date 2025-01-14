@@ -61,17 +61,17 @@ var
   r: BGResults;
 begin
 
-  if params[1].data.match <> JD_INT then
+  if params[1]^.data.match <> JD_INT then
     begin
       ShowMsg('Unknown paramter #1');
       Exit(false);
     end;
-  if params[2].data.match <> JD_INT then
+  if params[2]^.data.match <> JD_INT then
     begin
       ShowMsg('Unknown paramter #2');
       Exit(false);
     end;
-  tapi.getReadings(params[0].data.Int32Val, params[1].data.Int32Val);
+  tapi.getReadings(params[0]^.data.Int32Val, params[1]^.data.Int32Val);
   //@fixme not done
   result := true;
 end;
@@ -85,7 +85,7 @@ var
   s,r: string;
   v: JSValueVal;
 begin
-  v := params[0];
+  v := params[0]^;
   if not v.mustbe(JD_STR, func, 0) then
     begin
       result := false;

@@ -44,6 +44,7 @@ type
     procedure FormResize(Sender: TObject);
     procedure lDiffDblClick(Sender: TObject);
     procedure lgMainClick(Sender: TObject);
+    procedure lValClick(Sender:TObject);
     procedure lValMouseDown(Sender:TObject;Button:TMouseButton;Shift:TShiftState
                             ;X,Y:Integer);
     procedure lValMouseUp(Sender:TObject;Button:TMouseButton;Shift:TShiftState;X
@@ -381,6 +382,12 @@ begin
   begin
 
   end;
+
+procedure TfBG.lValClick(Sender:TObject);
+begin
+    if lVal.Caption = 'Setup' then
+      miSettings.Click;
+end;
 
   procedure TfBG.lValMouseDown(Sender:TObject;Button:TMouseButton;Shift:
                                TShiftState;X,Y:Integer);

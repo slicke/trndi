@@ -8,7 +8,6 @@ object fBG: TfBG
   ClientWidth = 320
   Color = clBlack
   Font.Color = clWhite
-  LCLVersion = '4.0.0.2'
   OnCreate = FormCreate
   OnResize = FormResize
   object lArrow: TLabel
@@ -41,6 +40,7 @@ object fBG: TfBG
     ParentColor = False
     ParentFont = False
     PopupMenu = pmSettings
+    OnClick = lValClick
     OnMouseDown = lValMouseDown
     OnMouseUp = lValMouseUp
     OnStartDrag = lValStartDrag
