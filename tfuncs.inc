@@ -2,7 +2,7 @@
 (c) 2024-2025 github.com/slicke - See LICENSE file, GPLv3, Written with the aid of GPT
 *)
 // Include file with JS functions
-
+{$ifdef TrndiExt}
 uses 
 mormot.lib.quickjs;
 
@@ -69,3 +69,6 @@ begin
   if TTrndiExtEngine.Instance.FunctionExists('uxCallback') then
     TTrndiExtEngine.Instance.CallFunction('uxCallback', [comp, val]);
 end;
+
+{$endif}
+

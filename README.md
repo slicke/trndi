@@ -48,7 +48,10 @@ Build to a release folder
 
 
 ## Dependancies
-The JS engine, QuickJS, needs to be linked into Trndi. This is done though the mormot2 library, but you need the relevant library files. Place them in ../static, they can be downloaded at https://synopse.info/files/mormot2static.7z - you may remove libraries you don't need!
+The JS engine, _QuickJS_, is linked into Trndi.
+
+You need the relevant library files, placed in ../static.
+> You can get the recommended libraries from https://synopse.info/files/mormot2static.7z - you may remove libraries you don't need!
 
 ## Style
 ### Linter

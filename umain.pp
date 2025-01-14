@@ -10,8 +10,9 @@ interface
 
 uses 
 Classes,Menus,SysUtils,Forms,Controls,Graphics,Dialogs,StdCtrls,ExtCtrls,
-dexapi, nsapi, trndi.types,math,DateUtils,FileUtil,Trndi.Ext.Engine,Trndi.Ext.Ext,
-trndi.Ext.jsfuncs,LazFileUtils, uconf, trndi.native, Trndi.API, trndi.api.xDrip;
+dexapi, nsapi, trndi.types,math,DateUtils,FileUtil,
+  {$ifdef TrndiExt}Trndi.Ext.Engine,Trndi.Ext.Ext, trndi.Ext.jsfuncs,{$endif}
+LazFileUtils, uconf, trndi.native, Trndi.API, trndi.api.xDrip;
 
 type 
 
@@ -62,7 +63,7 @@ type
       procedure HideDot(l: TLabel; c, ix: integer);
       procedure ResizeDot(l: TLabel; c, ix: integer);
       procedure ExpandDot(l: TLabel; c, ix: integer);
-      procedure LoadExtensions;
+      {$ifdef TrndiExt}      procedure LoadExtensions; {$endif}
     public 
 
   end;
@@ -85,7 +86,9 @@ var
   api: TrndiAPI;
   un: BGUnit = BGUnit.mmol;
   bgs: BGResults;
-  jsFuncs:  TJSfuncs;
+  {$ifdef TrndiExt}
+    jsFuncs:  TJSfuncs;
+  {$endif}
 
   // Touch screen
   StartTouch: TDateTime;
@@ -97,6 +100,7 @@ implementation
 {$I tfuncs.inc}
 
 
+{$ifdef TrndiExt}
 // Load extension files
 procedure TfBG.LoadExtensions;
 
@@ -126,6 +130,8 @@ begin
       exts.Free;
     end;
 end;
+
+{$endif}
 
 // Apply a function to all trend points; also provides an index
 procedure TfBG.actOnTrend(proc: TTrendProcLoop);
@@ -202,7 +208,9 @@ begin
         ShowMessage(api.errormsg);
         exit;
       end;
+    {$ifdef TrndiExt}
     LoadExtensions;
+    {$endif}
     update;
   end;
 
@@ -428,7 +436,12 @@ end;
 
             eAddr.text := GetSetting('remote.target');
             ePass.Text := GetSetting('remote.creds');
-            eExt.Text := GetAppConfigDirUTF8(false, true) + 'extensions' + DirectorySeparator;
+            {$ifdef TrndiExt}
+              eExt.Text := GetAppConfigDirUTF8(false, true) + 'extensions' + DirectorySeparator;
+            {$else}
+              eExt.Text := '- Built Wihout Support -';
+              eExt.Enabled := false;
+            {$endif}
             ShowModal;
             SetSetting('remote.type', cbSys.Text);
             SetSetting('remote.target', eAddr.text);
