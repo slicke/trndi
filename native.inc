@@ -1,3 +1,4 @@
+
 (*
  * This file is part of Trndi (https://github.com/xxxx or http://xxx.github.io).
  * Copyright (c) 2021 Björn Lindh.
@@ -28,20 +29,23 @@
   {$IFDEF CPU32}{$DEFINE X_WIN32}{$ENDIF}
   {$IFDEF CPU64}{$DEFINE X_WIN64}{$ENDIF}
 {$ELSEIF DEFINED(UNIX)}
-  {$DEFINE X_POSIX}// All Unix
+  {$DEFINE X_POSIX}
+// All Unix
 
   {$IFDEF DARWIN}
-    {$DEFINE X_MAC}// macOS
+    {$DEFINE X_MAC}
+// macOS
     {$IFDEF CPU32}{$DEFINE X_MAC32}{$ENDIF}
     {$IFDEF CPU64}{$DEFINE X_MAC64}{$ENDIF}
-    // Not tested on ARM!
+// Not tested on ARM!
     {$IFDEF CPUX86_64}{$DEFINE X_MACX64}{$ENDIF}
     {$IFDEF CPUARM}{$DEFINE X_MACAPPLE}{$ENDIF}
   {$ELSE}
-    {$DEFINE X_PC}// Linux and BSD
+    {$DEFINE X_PC}
+// Linux and BSD
     {$IFDEF CPU32}{$DEFINE X_PC32}{$ENDIF}
     {$IFDEF CPU64}{$DEFINE X_PC64}{$ENDIF}
-    // Not tested on ARM!
+// Not tested on ARM!
     {$IFDEF CPU386}{$DEFINE X_PCX32}{$ENDIF}
     {$IFDEF CPUX86_64}{$DEFINE X_PCX64}{$ENDIF}
     {$IFDEF CPUARM}{$DEFINE X_PCARM}{$ENDIF}

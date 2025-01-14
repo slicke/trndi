@@ -1,12 +1,15 @@
+(*
+(c) 2024-2025 github.com/slicke - See LICENSE file, GPLv3, Written with the aid of GPT
+*)
 // JS promise handler
-unit trndiext.promise;
+unit trndi.ext.promise;
 
 {$mode ObjFPC}{$H+}
 
 interface
 
 uses
-  Classes, SysUtils, mORMot.lib.quickjs, mormot.core.base, dialogs, trndiext.functions, slicke.ux.alert, fgl;
+  Classes, SysUtils, mORMot.lib.quickjs, mormot.core.base, dialogs, trndi.ext.functions, slicke.ux.alert, fgl;
 
   type
   JSDoubleVal = array[0..1] of JSValueRaw; // Responses to JS (ok or err)

@@ -1,7 +1,7 @@
 (*
-(c) 2024-2025 github.com/slicke - Written with the aid of GPT
+(c) 2024-2025 github.com/slicke - See LICENSE file, GPLv3, Written with the aid of GPT
 *)
-unit trndiext.engine;
+unit trndi.ext.engine;
 {$mode objfpc}{$H+}
 {$modeswitch advancedrecords}
 
@@ -26,8 +26,8 @@ uses
   dialogs,
   classes,
   trndi.native,
-  trndiext.promise,
-  trndiext.functions,
+  trndi.ext.promise,
+  trndi.ext.functions,
   fgl,
   ExtCtrls,
   fpTimer,

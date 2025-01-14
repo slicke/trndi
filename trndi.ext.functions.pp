@@ -1,4 +1,7 @@
-unit trndiext.functions;
+(*
+(c) 2024-2025 github.com/slicke - See LICENSE file, GPLv3, Written with the aid of GPT
+*)
+unit trndi.ext.functions;
 
 {$mode ObjFPC}{$H+}
 {$modeswitch advancedrecords}

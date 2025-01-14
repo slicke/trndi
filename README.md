@@ -51,7 +51,7 @@ Build to a release folder
 Trndi uses __ptop__ to format code, the binary is located in the FPC bin folder.
 
 In lazarus, calling ptp is formatted as:
-```-c $ProjPath()\style.cfg $EdFile() $EdFile()```
+```-c $ProjPath()\style.ptop.cfg $EdFile() $EdFile()```
 
 From command line, ran in the project folder:
 ```ptop -c style.cfg file.pp file.pp```
@@ -72,3 +72,6 @@ VS Marketplace Link: https://marketplace.visualstudio.com/items?itemName=alefrag
 > * Engine path: *path*\fpc\3.2.2\bin\x86_64-win64\ptop-exe
 
 * Debugging: https://marketplace.visualstudio.com/items?itemName=CNOC.fpdebug
+
+### History
+Trndi2 is a strip-down of Trndi 1, which was never released publically. Trndi 1 was originally called Dexmon (and only did Dexcom). The original idea spawns from an old app called TrayTrend which I made with a similar purpose.

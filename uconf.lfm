@@ -8,6 +8,7 @@ object fConf: TfConf
   ClientHeight = 275
   ClientWidth = 415
   Position = poDesktopCenter
+  LCLVersion = '4.0.0.2'
   object Image1: TImage
     Left = 16
     Height = 104
@@ -10274,13 +10275,15 @@ object fConf: TfConf
     ItemHeight = 15
     ItemIndex = 0
     Items.Strings = (
-      'NIghtScout'
-      'Dexcom (Europe)'
-      'Dexcom (Outside Europe)'
+      'NightScout'
+      'Dexcom (USA)'
+      'Dexcom (Outside USA)'
       'xDrip'
     )
+    ReadOnly = True
     TabOrder = 0
-    Text = 'NIghtScout'
+    Text = 'NightScout'
+    OnChange = cbSysChange
   end
   object eAddr: TLabeledEdit
     Left = 16

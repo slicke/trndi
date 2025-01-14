@@ -1,3 +1,6 @@
+(*
+(c) 2024-2025 github.com/slicke - See LICENSE file, GPLv3, Written with the aid of GPT
+*)
 unit uconf;
 
 {$mode ObjFPC}{$H+}
@@ -19,6 +22,7 @@ type
     lAck:TButton;
     lTitle:TLabel;
     lVer:TLabel;
+    procedure cbSysChange(Sender:TObject);
     procedure lAckClick(Sender:TObject);
     procedure lLicenseClick(Sender:TObject);
   private
@@ -42,6 +46,11 @@ ShowMessage('Trndi makes use of the following 3rd party libraries:'#10+
             'Extensions use JavaScript engine QuickJS by Fabrice Bellard and Charlie Gordo'#10+
             'integration of said engine is made possible with mORMot2 by Synopse Informatique - Arnaud Bouchez'#10#10+
             'Built in Object Pascal, using the Lazarus component library (LCL) and FreePascal.');
+end;
+
+procedure TfConf.cbSysChange(Sender:TObject);
+begin
+
 end;
 
 procedure TfConf.lLicenseClick(Sender:TObject);

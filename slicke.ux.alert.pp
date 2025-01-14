@@ -1,3 +1,6 @@
+(*
+(c) 2024-2025 github.com/slicke - See LICENSE file, GPLv3, Written with the aid of GPT
+*)
 unit slicke.ux.alert;
 
 {$mode ObjFPC}{$H+}

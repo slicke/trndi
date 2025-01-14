@@ -1,3 +1,4 @@
+
 (*
  * This file is part of Trndi (https://github.com/xxxx or http://xxx.github.io).
  * Copyright (c) 2021 Björn Lindh.
@@ -25,51 +26,61 @@ unit trndi.api;
 interface
 
 
-uses
-  Classes, SysUtils, trndi.types, dateutils, trndi.native, dialogs;
+uses 
+Classes, SysUtils, trndi.types, dateutils, trndi.native, dialogs;
 
-type
+type 
   CGMCore = record
     hi, lo: integer;
   end;
 
   // Main class
   TrndiAPI = class
-  protected
-    timeDiff: integer;
-    // The time adjustment
-    tz:      integer;
-    // Native functions
-    native: TrndiNative;
-    // HTTP address to API
-    ua: string;
-    baseUrl: string;
-    lastErr: string;
-    core: CGMCore;
+    protected 
+      timeDiff: integer;
+      // The time adjustment
+      tz:      integer;
+      // Native functions
+      native: TrndiNative;
+      // HTTP address to API
+      ua: string;
+      baseUrl: string;
+      lastErr: string;
+      core: CGMCore;
 
-    procedure setTZ(secs: integer);
-    function encodeStr(src: string): string; virtual; final;
-    function getLevel(v: BGValLevel): single; virtual;
-    function getCGMCore: CGMCore;
-    procedure initCGMCore;
-  public
-    function getReadings(min, maxNum: integer; extras: string = ''): BGResults; virtual; abstract;
-    constructor create(user, pass, extra: string); virtual;
-    function connect: boolean; virtual; abstract;
-    function getLevel(v: single): BGValLevel; virtual;
+      procedure setTZ(secs: integer);
+      function encodeStr(src: string): string;
+      virtual;
+      final;
+      function getLevel(v: BGValLevel): single;
+      virtual;
+      function getCGMCore: CGMCore;
+      procedure initCGMCore;
+    public 
+      function getReadings(min, maxNum: integer; extras: string = ''): BGResults;
+      virtual;
+      abstract;
+      constructor create(user, pass, extra: string);
+      virtual;
+      function connect: boolean;
+      virtual;
+      abstract;
+      function getLevel(v: single): BGValLevel;
+      virtual;
 
-    function getLast(var res: BGReading): boolean;
-    function getCurrent(var res: BGReading): boolean;
-    function getBasetime: int64;
+      function getLast(var res: BGReading): boolean;
+      function getCurrent(var res: BGReading): boolean;
+      function getBasetime: int64;
 
-    function JSToDateTime(ts: int64; correct: boolean = true): TDateTime; virtual;
-    property threshold[lvl: BGValLevel]: single read getLevel;
-    property cgm: CGMCore read getCGMCore;
+      function JSToDateTime(ts: int64; correct: boolean = true): TDateTime;
+      virtual;
+      property threshold[lvl: BGValLevel]: single read getLevel;
+      property cgm: CGMCore read getCGMCore;
 
-  published
-    property offset: integer read timeDiff;
-    property timezone: integer write setTZ;
-    property errormsg: string read lastErr;
+    published 
+      property offset: integer read timeDiff;
+      property timezone: integer write setTZ;
+      property errormsg: string read lastErr;
   end;
 
 
@@ -85,18 +96,18 @@ end;
 
 function TrndiAPI.getLevel(v: BGValLevel): single;
 begin
-  case v of
+  case v of 
     BGRangeHI: result := core.hi;
     BGRangeLO: result := core.lo;
   end;
 end;
 
-function TrndiAPI.getLevel(v: single):BGValLevel;
+function TrndiAPI.getLevel(v: single): BGValLevel;
 begin
   if v > core.hi then
     result := BGRangeHI
   else if v < core.lo then
-    result := BGRangeLO
+         result := BGRangeLO
   else
     result := BGRange;
 end;
@@ -113,7 +124,8 @@ begin
 end;
 
 function TrndiAPI.encodeStr(src: string): string;
-var
+
+var 
   i: integer;
 begin
   result := '';
@@ -137,37 +149,41 @@ begin
 end;
 
 function TrndiAPI.getLast(var res: BGReading): boolean;
-var
+
+var 
   r: BGResults;
 begin
   result := false;
   r      := getReadings(1440, 1);
-  if length(r) > 0 then begin
-    res    := r[0];
-    result := true;
-  end;
+  if length(r) > 0 then
+    begin
+      res    := r[0];
+      result := true;
+    end;
 end;
 
 function TrndiAPI.getCurrent(var res: BGReading): boolean;
-var
+
+var 
   r: BGResults;
 begin
   result := false;
   r      := getReadings(10, 1);
 
-  if length(r) > 0 then begin
-    res    := r[0];
-    result := true;
-  end;
+  if length(r) > 0 then
+    begin
+      res    := r[0];
+      result := true;
+    end;
 end;
 
 
 function TrndiAPI.JSToDateTime(ts: int64; correct: boolean = true): TDateTime;
 begin
-     if correct then
-        result := UnixToDateTime((ts div 1000) - tz)
-     else
-        result := UnixToDateTime((ts div 1000));
+  if correct then
+    result := UnixToDateTime((ts div 1000) - tz)
+  else
+    result := UnixToDateTime((ts div 1000));
 end;
 
 

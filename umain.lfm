@@ -8,6 +8,7 @@ object fBG: TfBG
   ClientWidth = 320
   Color = clBlack
   Font.Color = clWhite
+  LCLVersion = '4.0.0.2'
   OnCreate = FormCreate
   OnResize = FormResize
   object lArrow: TLabel
@@ -32,10 +33,13 @@ object fBG: TfBG
     Align = alClient
     Alignment = taCenter
     AutoSize = False
-    Caption = 'lVal'
+    Caption = 'Setup'
     Color = 16760331
+    Font.Color = clWhite
+    Font.Height = 160
     OptimalFill = True
     ParentColor = False
+    ParentFont = False
     PopupMenu = pmSettings
     OnMouseDown = lValMouseDown
     OnMouseUp = lValMouseUp
@@ -190,6 +194,7 @@ object fBG: TfBG
     Top = 66
     object miSettings: TMenuItem
       Caption = '&Settings'
+      OnClick = miSettingsClick
     end
   end
   object tTouch: TTimer

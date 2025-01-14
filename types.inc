@@ -1,3 +1,6 @@
+(*
+(c) 2024-2025 github.com/slicke - See LICENSE file, GPLv3, Written with the aid of GPT
+*)
 type
   BGTrend = (TdDoubleUp = 0, TdSingleUp = 1, TdFortyFiveUp = 2, TdFlat = 3, TdFortyFiveDown = 4,
     TdSingleDown = 5, TdDoubleDown = 6, TdNotComputable = 7, TdPlaceholder);  //< Trends for delta
