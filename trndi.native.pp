@@ -87,7 +87,7 @@ type
       begin
         Result := GetSystemMetrics(SM_MAXIMUMTOUCHES) > 0;
       end;
-{$ELSEIF DEFINED(X_MAC}
+{$ELSEIF DEFINED(X_MAC)}
       function TrndiNative.HasTouchScreen: Boolean;
       begin
         result := false;
