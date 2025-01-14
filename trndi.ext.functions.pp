@@ -26,8 +26,26 @@ resourcestring
 
 type
 
-  JDValue = (   JD_UNINITIALIZED = JS_TAG_UNINITIALIZED,  JD_NULL = JS_TAG_NULL,  JD_BINT = JS_TAG_BIG_INT,  JD_BFLOAT = JS_TAG_BIG_FLOAT,  JD_BDECIMAL = JS_TAG_BIG_DECIMAL,  JD_INT = JS_TAG_INT,  JD_F64 = JS_TAG_FLOAT64,  JD_STR = JS_TAG_STRING,  JD_BOOL = JS_TAG_BOOL,  JD_OBJ = JS_TAG_OBJECT,
-  JD_ARRAY = 150,   JD_UNSET = 151,   JD_NAN = 152,   JD_UNASSIGNED = 153,   JD_UNKNOWN = 154,  JD_UNDEFINED = 155,  JD_FUNC = 156);
+
+  JDValue = (
+    JD_UNINITIALIZED = JS_TAG_UNINITIALIZED, // 0
+    JD_INT          = JS_TAG_INT,           // 1
+    JD_BOOL         = JS_TAG_BOOL,          // 2
+    JD_NULL         = JS_TAG_NULL,          // 3
+    JD_F64          = JS_TAG_FLOAT64,       // 7
+    JD_OBJ          = JS_TAG_OBJECT,        // 8
+    JD_STR          = JS_TAG_STRING,        // 11
+    JD_BFLOAT       = JS_TAG_BIG_FLOAT,     // 13
+    JD_BINT         = JS_TAG_BIG_INT,       // 14
+    JD_BDECIMAL     = JS_TAG_BIG_DECIMAL,    // 15
+    JD_ARRAY        = 150,
+    JD_UNSET        = 151,
+    JD_NAN          = 152,
+    JD_UNASSIGNED   = 153,
+    JD_UNKNOWN      = 154,
+    JD_UNDEFINED    = 155,
+    JD_FUNC = 156
+  );
 
   JDValues = set of JDValue;
 
