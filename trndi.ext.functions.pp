@@ -102,7 +102,7 @@ type
 
   JSParameters = specialize TJSValList<JSValueVal>;
   PJSParameters = ^JSParameters;
-  JSCallbackFunction = function(const ctx: PJSContext; const func: string; constref params: JSParameters; out res: JSValueVal): boolean of object;
+  JSCallbackFunction = function(const ctx: PJSContext; const func: string; const params: JSParameters; out res: JSValueVal): boolean of object;
   PJSCallbackFunction = ^JSCallbackFunction;
 
   TJSCallback = record
@@ -495,7 +495,7 @@ result := s;
 end;
 
 
-function JSValueValArrayToArray(ctx: JSContext; val: JSValueVal): JSValueValArray;
+function JSValueValArrayToArray(ctx: JSContext; val: JSValueVal): JSValueValArray; inline;
 var
 i: integer;
 begin

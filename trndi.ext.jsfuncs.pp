@@ -17,11 +17,11 @@ dialogs;
 type 
   TJSFuncs = class(TObject)
     public 
-      function asyncget(ctx: pointer; const func: string; constref params: JSParameters; out res:
+      function asyncget(ctx: pointer; const func: string; const params: JSParameters; out res:
                         JSValueVal): boolean;
-      function bgDump(ctx: pointer; const func: string; constref params: JSParameters; out res:
+      function bgDump(ctx: pointer; const func: string; const params: JSParameters; out res:
                       JSValueVal): boolean;
-      function querySvc(ctx: pointer; const func: string; constref params: JSParameters; out res:
+      function querySvc(ctx: pointer; const func: string; const params: JSParameters; out res:
                         JSValueVal): boolean;
 
       constructor Create(cgm: TrndiAPI);
@@ -53,7 +53,7 @@ begin
 end;
 
 // Blood Glucose dump, from JS
-function TJSFuncs.bgDump(ctx: pointer; const func: string; constref params: JSParameters; out res:
+function TJSFuncs.bgDump(ctx: pointer; const func: string; const params: JSParameters; out res:
                          JSValueVal): boolean;
 
 var 
@@ -78,7 +78,7 @@ end;
 
 // backend for asyncGet in JS
 // Fetches a file from the web
-function TJSFuncs.asyncget(ctx: pointer; const func: string; constref params: JSParameters; out res:
+function TJSFuncs.asyncget(ctx: pointer; const func: string; const params: JSParameters; out res:
                            JSValueVal): boolean;
 
 var 
@@ -109,7 +109,7 @@ begin
 end;
 
 // Query the backend via JS
-function TJSFuncs.querySvc(ctx: pointer; const func: string; constref params: JSParameters; out res:
+function TJSFuncs.querySvc(ctx: pointer; const func: string; const params: JSParameters; out res:
                            JSValueVal): boolean;
 const 
   QUERY = 0;
