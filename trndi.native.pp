@@ -263,7 +263,7 @@ function TrndiNative.request(const post: boolean; const endpoint: string; const 
 var 
   client:  TFPHttpClient;
   res:     TStringStream;
-  sparams, sx, address: string;
+  sx, address: string;
   headers: array of string;
 begin
 

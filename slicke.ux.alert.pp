@@ -4,6 +4,7 @@
 unit slicke.ux.alert;
 
 {$mode ObjFPC}{$H+}
+{$modeswitch advancedrecords}
 
 interface
 
@@ -48,8 +49,6 @@ TUXMsgDlgBtn     = (mbYes, mbNo, mbOK, mbCancel, mbAbort, mbRetry, mbIgnore,
 
 TUXMsgDlgBtns = set of TUXMsgDlgBtn;
 
-
-  {$modeswitch advancedrecords}
   UXMessageBox = record
     title: string;
     message: string;
