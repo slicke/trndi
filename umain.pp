@@ -12,7 +12,7 @@ uses
 Classes,Menus,SysUtils,Forms,Controls,Graphics,Dialogs,StdCtrls,ExtCtrls,
 dexapi, nsapi, trndi.types,math,DateUtils,FileUtil,
   {$ifdef TrndiExt}Trndi.Ext.Engine,Trndi.Ext.Ext, trndi.Ext.jsfuncs,{$endif}
-LazFileUtils, uconf, trndi.native, Trndi.API, trndi.api.xDrip;
+LazFileUtils, uconf, trndi.native, Trndi.API, trndi.api.xDrip, StrUtils;
 
 type 
 
@@ -37,7 +37,6 @@ type
     lDot8: TLabel;
     lDot9: TLabel;
     lVal: TLabel;
-    miMMol:TMenuItem;
     miSettings: TMenuItem;
     pmSettings: TPopupMenu;
     tTouch: TTimer;
@@ -192,8 +191,11 @@ begin
   {$else}
   begin
   {$endif}
-    with TrndiNative.create do
-      begin
+  with TrndiNative.create do begin
+    if GetSetting('unit', 'mmol') = 'mmol' then
+      un := BGUnit.mmol
+    else
+      un := BGUnit.mgdl;
         apiTarget := GetSetting('remote.target');
         apiCreds := GetSetting('remote.creds');
 
@@ -460,6 +462,7 @@ end;
 
             eAddr.text := GetSetting('remote.target');
             ePass.Text := GetSetting('remote.creds');
+            rbUnit.ItemIndex := IfThen(GetSetting('unit', 'mmol') = 'mmol', 0, 1);
             {$ifdef TrndiExt}
             eExt.Text := GetAppConfigDirUTF8(false, true) + 'extensions' + DirectorySeparator;
             {$else}
@@ -470,6 +473,7 @@ end;
             SetSetting('remote.type', cbSys.Text);
             SetSetting('remote.target', eAddr.text);
             SetSetting('remote.creds', ePass.Text);
+            SetSetting('unit', IfThen(rbUnit.ItemIndex = 0, 'mmol', 'mgdl'));
           end;
       end;
   end;

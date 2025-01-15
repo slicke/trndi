@@ -26,6 +26,7 @@ type
     lAck:TButton;
     lTitle:TLabel;
     lVer:TLabel;
+    rbUnit:TRadioGroup;
     procedure cbSysChange(Sender:TObject);
     procedure lAckClick(Sender:TObject);
     procedure lLicenseClick(Sender:TObject);
