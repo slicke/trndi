@@ -37,6 +37,7 @@ type
     lDot8: TLabel;
     lDot9: TLabel;
     lVal: TLabel;
+    miMMol:TMenuItem;
     miSettings: TMenuItem;
     pmSettings: TPopupMenu;
     tTouch: TTimer;
@@ -52,6 +53,7 @@ type
     procedure lValMouseUp(Sender:TObject;Button:TMouseButton;Shift:TShiftState;X
                           ,Y:Integer);
     procedure lValStartDrag(Sender: TObject; var DragObject: TDragObject);
+    procedure miMMolClick(Sender:TObject);
     procedure miSettingsClick(Sender:TObject);
     procedure onTrendClick(Sender: TObject);
     procedure tMainTimer(Sender: TObject);
@@ -64,7 +66,8 @@ type
       procedure HideDot(l: TLabel; c, ix: integer);
       procedure ResizeDot(l: TLabel; c, ix: integer);
       procedure ExpandDot(l: TLabel; c, ix: integer);
-      {$ifdef TrndiExt}      procedure LoadExtensions; {$endif}
+      {$ifdef TrndiExt}
+      procedure LoadExtensions; {$endif}
     public 
 
   end;
@@ -88,7 +91,7 @@ var
   un: BGUnit = BGUnit.mmol;
   bgs: BGResults;
   {$ifdef TrndiExt}
-    jsFuncs:  TJSfuncs;
+  jsFuncs:  TJSfuncs;
   {$endif}
 
   // Touch screen
@@ -215,12 +218,12 @@ begin
     update;
   end;
 
-procedure TfBG.FormClose(Sender: TObject; var CloseAction: TCloseAction);
-begin
+  procedure TfBG.FormClose(Sender: TObject; var CloseAction: TCloseAction);
+  begin
      {$ifdef TrndiExt}
     TTrndiExtEngine.ReleaseInstance;
     {$endif}
-end;
+  end;
 
   // Changes a trend dot from a dot to the actual bg value
   procedure TfBG.ExpandDot(l: TLabel; c, ix: integer);
@@ -341,7 +344,7 @@ end;
         if r > bgmax then
           l.Visible := false
         else if r < bgmin then
-               l.Visible := false
+          l.Visible := false
         else
           begin
             l.visible := true;
@@ -399,11 +402,11 @@ end;
 
   end;
 
-procedure TfBG.lValClick(Sender:TObject);
-begin
+  procedure TfBG.lValClick(Sender:TObject);
+  begin
     if lVal.Caption = 'Setup' then
       miSettings.Click;
-end;
+  end;
 
   procedure TfBG.lValMouseDown(Sender:TObject;Button:TMouseButton;Shift:
                                TShiftState;X,Y:Integer);
@@ -426,6 +429,19 @@ end;
 
   end;
 
+procedure TfBG.miMMolClick(Sender:TObject);
+begin
+miMMol.Checked := not miMMol.Checked;
+  if miMMol.Checked then
+    un := BGUnit.mmol
+  else
+    un := BGUnit.mgdl;
+
+
+
+  update;
+end;
+
   procedure TfBG.miSettingsClick(Sender:TObject);
 
   var 
@@ -445,10 +461,10 @@ end;
             eAddr.text := GetSetting('remote.target');
             ePass.Text := GetSetting('remote.creds');
             {$ifdef TrndiExt}
-              eExt.Text := GetAppConfigDirUTF8(false, true) + 'extensions' + DirectorySeparator;
+            eExt.Text := GetAppConfigDirUTF8(false, true) + 'extensions' + DirectorySeparator;
             {$else}
-              eExt.Text := '- Built Wihout Support -';
-              eExt.Enabled := false;
+            eExt.Text := '- Built Wihout Support -';
+            eExt.Enabled := false;
             {$endif}
             ShowModal;
             SetSetting('remote.type', cbSys.Text);

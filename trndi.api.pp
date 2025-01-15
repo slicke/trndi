@@ -31,7 +31,7 @@ Classes, SysUtils, trndi.types, dateutils, trndi.native, dialogs;
 
 type 
   CGMCore = record
-    hi, lo: integer;
+    hi, lo, top, bottom: integer;
   end;
 
   // Main class
@@ -76,6 +76,10 @@ type
       virtual;
       property threshold[lvl: BGValLevel]: single read getLevel;
       property cgm: CGMCore read getCGMCore;
+      property cgmHi: integer read core.hi write core.hi;
+      property cgmLo: integer read core.lo write core.lo;
+      property cgmRangeHi: integer read core.top write core.top;
+      property cgmRangeLo: integer read core.bottom write core.bottom;
 
     published 
       property offset: integer read timeDiff;
@@ -116,6 +120,8 @@ procedure TrndiAPI.initCGMCore;
 begin
   core.hi := 401;
   core.lo := 40;
+  core.top := 401;
+  core.bottom := 40;
 end;
 
 function TrndiAPI.getCGMCore: CGMCore;

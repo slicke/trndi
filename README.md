@@ -27,6 +27,10 @@ If you use _xDrip_ and need a non-internet source, Trndi supports that too.
       * _Windows embedded_
 * Trndi supports modern ___JavaScript__ in it's extensions_, via the _QuickJS_ runtime.
 
+# Setup
+> Currently Trndi defaults to _mmol/L_. If you are in the US you need to right-click (or touch hold) the reading and click the "Unit: mmol/L" option to switch to mg/dL!
+Hold the reading (or "Setup" text) and choose settings to access settings.
+
 # Development
 Development tools can be obtained via most distros package managers:
 - Fedora/RHEL: ```dnf install lazarus```

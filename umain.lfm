@@ -197,6 +197,11 @@ object fBG: TfBG
       Caption = '&Settings'
       OnClick = miSettingsClick
     end
+    object miMMol: TMenuItem
+      Caption = 'Unit: mmol/L'
+      Checked = True
+      OnClick = miMMolClick
+    end
   end
   object tTouch: TTimer
     Enabled = False

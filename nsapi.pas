@@ -65,7 +65,7 @@ end;
 
 function NightScout.connect: boolean;
 var
-  y:  string;
+  y, r:  string;
   td: tdatetime;
   i: int64;
 begin
@@ -83,11 +83,29 @@ begin
   Exit;
   end;
 
+
+
   if y[1] = '+' then begin
     result  := false;
     lastErr := TrimLeftSet(y, ['+']);
     exit;
  end;
+  r := TrimRightSet(copy(y, pos('bgHigh":', y)+8, 3), [',']);
+  if TryStrToInt64(r,i) then
+    cgmHi := i;
+
+  r := TrimRightSet(copy(y, pos('bgLow":', y)+7, 3), [',']);
+  if TryStrToInt64(r,i) then
+    cgmLo := i;
+
+  r := TrimRightSet(copy(y, pos('bgTargetTop":', y)+13, 3), [',']);
+  if TryStrToInt64(r,i) then
+    cgmRangeHi := i;
+
+  r := TrimRightSet(copy(y, pos('bgTargetBottom":', y)+16, 3), [',']);
+  if TryStrToInt64(r,i) then
+    cgmRangeLo := i;
+
   y := copy(y, pos('serverTimeEpoch":', y) + 17, 13);
 
   if Pos('Unau', y) > 0 then begin
@@ -106,6 +124,8 @@ begin
     timeDiff := 0;
 
   timeDiff := -1 * timeDiff;
+
+
   result   := true;
 end;
 
@@ -149,6 +169,8 @@ begin
       result[i].date := JSToDateTime(FindPath('date').AsInt64);
       result[i].level := getLevel(result[i].val);
    end;
+
+
 end;
 
 end.
