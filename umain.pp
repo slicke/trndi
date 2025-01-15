@@ -52,7 +52,6 @@ type
     procedure lValMouseUp(Sender:TObject;Button:TMouseButton;Shift:TShiftState;X
                           ,Y:Integer);
     procedure lValStartDrag(Sender: TObject; var DragObject: TDragObject);
-    procedure miMMolClick(Sender:TObject);
     procedure miSettingsClick(Sender:TObject);
     procedure onTrendClick(Sender: TObject);
     procedure tMainTimer(Sender: TObject);
@@ -430,19 +429,6 @@ begin
   begin
 
   end;
-
-procedure TfBG.miMMolClick(Sender:TObject);
-begin
-miMMol.Checked := not miMMol.Checked;
-  if miMMol.Checked then
-    un := BGUnit.mmol
-  else
-    un := BGUnit.mgdl;
-
-
-
-  update;
-end;
 
   procedure TfBG.miSettingsClick(Sender:TObject);
 
