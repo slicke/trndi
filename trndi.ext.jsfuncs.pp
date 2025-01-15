@@ -63,7 +63,7 @@ begin
       AddPromise('bgDump', JSCallbackFunction(@bgDump));
       AddPromise('asyncGet', JSCallbackFunction(@asyncGet));
       AddPromise('querySvc', JSCallbackFunction(@querySvc));
-      AddPromise('setLimits', JSCallbackFunction(@setLimits), 2);
+      AddPromise('setLimits', JSCallbackFunction(@setLimits), 2, 3);
     end;
 end;
 
