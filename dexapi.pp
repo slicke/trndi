@@ -1,4 +1,5 @@
 
+
 (*
  * This file is part of Trndi (https://github.com/slicke/trndi).
  * Copyright (c) 2021-2025 Björn Lindh.
@@ -303,6 +304,7 @@ begin
           end;
       result[i].date := UnixToDateTime(
                         (getNumeric(res.items[i].FindPath('ST').AsString) div 1000) - tz);
+
 
 //  result[i].reading.setDiff(BG_NO_VAL, mgdl); // Not supported by Dexcom, I set -1000 to have the GUI calculate this itself
       result[i].level := getLevel(result[i].val);

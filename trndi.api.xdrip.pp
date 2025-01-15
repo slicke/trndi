@@ -1,3 +1,4 @@
+
 (*
  * This file is part of Trndi (https://github.com/slicke/trndi).
  * Copyright (c) 2021-2025 Björn Lindh.
@@ -17,26 +18,31 @@
  *
  * GitHub: https://github.com/slicke/trndi
  *)
+
 unit trndi.api.xdrip;
 
 {$mode ObjFPC}{$H+}
 
 interface
 
-uses
-  Classes, SysUtils, strutils, sha1, nsapi, trndi.native, trndi.types, dateutils,
-  dialogs;
+uses 
+Classes, SysUtils, strutils, sha1, nsapi, trndi.native, trndi.types, dateutils,
+dialogs;
 
-const
+const 
   XDRIP_READINGS = 'sgv.json';
-  XDRIP_STATUS = 'pebble'; // This contains the current timestamp of the server
+  XDRIP_STATUS = 'pebble';
+  // This contains the current timestamp of the server
 
-type
+type 
   xDrip = class(NightScout)
-    public
-      constructor create(user, pass, extra: string); override;
-      function getReadings(min, maxNum: integer; path: string = ''): BGResults; override;
-      function connect: boolean; override;
+    public 
+      constructor create(user, pass, extra: string);
+      override;
+      function getReadings(min, maxNum: integer; path: string = ''): BGResults;
+      override;
+      function connect: boolean;
+      override;
   end;
 
 implementation
@@ -60,30 +66,34 @@ begin
 end;
 
 function xDrip.connect: boolean;
-var
+
+var 
   y:  string;
   td: tdatetime;
   t: int64;
 begin
-  if Copy(baseUrl, 1, 4) <> 'http' then begin
-     result := false;
-     lasterr := 'Invalid address. It must start with http:// or https://!';
-     Exit;
-  end;
+  if Copy(baseUrl, 1, 4) <> 'http' then
+    begin
+      result := false;
+      lasterr := 'Invalid address. It must start with http:// or https://!';
+      Exit;
+    end;
   y := native.request(false, XDRIP_STATUS, [], '', key);
 
-  if pos('uthentication failed', y) > 0 then begin
-     lasterr := 'Acess token rejected by xDrip, is it correct?';
-     Result := false;
-     Exit;
-  end;
+  if pos('uthentication failed', y) > 0 then
+    begin
+      lasterr := 'Acess token rejected by xDrip, is it correct?';
+      Result := false;
+      Exit;
+    end;
 
   y := copy(y, pos('"now":', y) + 6, 13);
-  if not TryStrToInt64(y,t) then begin
-     lasterr := 'xDrip could not initialize was the clocks were not able tp sync!';
-     Result := false;
-     Exit;
-  end;
+  if not TryStrToInt64(y,t) then
+    begin
+      lasterr := 'xDrip could not initialize was the clocks were not able tp sync!';
+      Result := false;
+      Exit;
+    end;
 
   td := UnixToDateTime(t div 1000);
   timeDiff := SecondsBetween(td, LocalTimeToUniversal(now));
@@ -95,4 +105,3 @@ begin
 end;
 
 end.
-

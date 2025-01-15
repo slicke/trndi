@@ -1,3 +1,4 @@
+
 unit trndi.ext.types;
 
 {$mode ObjFPC}{$H+}
@@ -6,15 +7,15 @@ unit trndi.ext.types;
 
 interface
 
-uses
-  fgl, trndi.ext.shared;
+uses 
+fgl, trndi.ext.shared;
 
-type
+type 
   // Specialisering för JSValueVal
   generic TJSValList<T> = class(specialize TFPGList<T>)
-  public
-    // Metod för att hitta en post baserat på en specifik funktion
-    function FindByFunc(FuncPtr: Pointer): T;
+    public 
+      // Metod för att hitta en post baserat på en specifik funktion
+      function FindByFunc(FuncPtr: Pointer): T;
   end;
 
   // Specialisering för JSValueVal
@@ -25,20 +26,21 @@ implementation
 { TJSValList<T> }
 
 function TJSValList<T>.FindByFunc(FuncPtr: Pointer): T;
-var
+
+var 
   i: Integer;
 begin
-  Result := Default(T); // Eller ett annat lämpligt defaultvärde beroende på T
+  Result := Default(T);
+  // Eller ett annat lämpligt defaultvärde beroende på T
   for i := 0 to Self.Count - 1 do
-  begin
-    // Antag att T är JSValueVal
-    if (Self[i].data.match = JD_FUNC) and (Self[i].data.Func = FuncPtr) then
     begin
-      Result := Self[i];
-      Exit;
+      // Antag att T är JSValueVal
+      if (Self[i].data.match = JD_FUNC) and (Self[i].data.Func = FuncPtr) then
+        begin
+          Result := Self[i];
+          Exit;
+        end;
     end;
-  end;
 end;
 
 end.
-

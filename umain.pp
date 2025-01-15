@@ -1,3 +1,4 @@
+
 (*
  * This file is part of Trndi (https://github.com/slicke/trndi).
  * Copyright (c) 2021-2025 Björn Lindh.
@@ -206,11 +207,12 @@ begin
   {$else}
   begin
   {$endif}
-  with TrndiNative.create do begin
-    if GetSetting('unit', 'mmol') = 'mmol' then
-      un := BGUnit.mmol
-    else
-      un := BGUnit.mgdl;
+    with TrndiNative.create do
+      begin
+        if GetSetting('unit', 'mmol') = 'mmol' then
+          un := BGUnit.mmol
+        else
+          un := BGUnit.mgdl;
         apiTarget := GetSetting('remote.target');
         apiCreds := GetSetting('remote.creds');
 
@@ -361,7 +363,7 @@ begin
         if r > bgmax then
           l.Visible := false
         else if r < bgmin then
-          l.Visible := false
+               l.Visible := false
         else
           begin
             l.visible := true;

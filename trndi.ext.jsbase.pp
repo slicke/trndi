@@ -1,3 +1,4 @@
+
 (*
  * This file is part of Trndi (https://github.com/slicke/trndi).
  * Copyright (c) 2021-2025 Björn Lindh.
@@ -17,8 +18,12 @@
  *
  * GitHub: https://github.com/slicke/trndi
  *)
-function JSDoLog(ctx: PJSContext; this_val: JSValueRaw; argc: Integer; argv: PJSValueRaw): JSValueRaw; cdecl;
-var
+function JSDoLog(ctx: PJSContext; this_val: JSValueRaw; argc: Integer; argv: PJSValueRaw):
+                                                                                          JSValueRaw
+;
+cdecl;
+
+var 
   i: Integer;
   LogMessage: RawUtf8;
 begin
@@ -28,5 +33,3 @@ begin
   FOutput := Trim(LogMessage);
   Result := JS_UNDEFINED;
 end;
-
-

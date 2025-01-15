@@ -1,4 +1,5 @@
 
+
 (*
  * This file is part of Trndi (https://github.com/xxxx or http://xxx.github.io).
  * Copyright (c) 2021-24 Björn Lindh.
@@ -18,6 +19,7 @@
  *
  * GitHub: https://github.com/slicke/trndi
  *)
+
 
 {
  This file contains platform-native code, written to make Trndi faster, smoother
@@ -163,6 +165,7 @@ begin
       if jsondata <> '' then
         begin
           Headers.Add('Content-Type=application/json');
+
 
 // Not strictly required, but if the API changes it might be a good idea to pass a version we know works
           if useragent <> '' then

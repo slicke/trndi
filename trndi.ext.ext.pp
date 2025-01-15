@@ -1,3 +1,4 @@
+
 (*
  * This file is part of Trndi (https://github.com/slicke/trndi).
  * Copyright (c) 2021-2025 Björn Lindh.
@@ -17,6 +18,7 @@
  *
  * GitHub: https://github.com/slicke/trndi
  *)
+
 unit trndi.ext.ext;
 
 interface
@@ -27,37 +29,41 @@ implementation
 
 interface
 
-uses
-  Classes, SysUtils, StrUtils, dynlibs;
-type
+uses 
+Classes, SysUtils, StrUtils, dynlibs;
+
+type 
 
 
 
- TrndiExt = class
-   private
-     slug: ShortString;
-     lib: TLibHandle;
-     obj: pointer; //< The object in the library
-     prio: SmallInt;
-     apilvl: integer;
-     author: string;
+  TrndiExt = class
+    private 
+      slug: ShortString;
+      lib: TLibHandle;
+      obj: pointer;
+      //< The object in the library
+      prio: SmallInt;
+      apilvl: integer;
+      author: string;
 
-     function hasLib: boolean;
-   public
-     property loaded: boolean read hasLib;
-     constructor Create(fn: string; _slug: string; _prio: smallint);
-     destructor Destroy;
-     function Init(const bg: integer): boolean; //< Run the constructor in the lib
-     procedure done; //< Destructor
-     function config: string;
- end;
+      function hasLib: boolean;
+    public 
+      property loaded: boolean read hasLib;
+      constructor Create(fn: string; _slug: string; _prio: smallint);
+      destructor Destroy;
+      function Init(const bg: integer): boolean;
+      //< Run the constructor in the lib
+      procedure done;
+      //< Destructor
+      function config: string;
+  end;
 
- TrndiExtList = record
-   items: array of TrndiExt;
-   function Add(fn: string; slug: string; prio: smallint): boolean;
-   function Delete(id: integer): boolean;
-   function IndexOf(slug: string): integer;
- end;
+  TrndiExtList = record
+    items: array of TrndiExt;
+    function Add(fn: string; slug: string; prio: smallint): boolean;
+    function Delete(id: integer): boolean;
+    function IndexOf(slug: string): integer;
+  end;
 
 implementation
 
@@ -74,21 +80,24 @@ end;
 
 function TrndiExtList.Delete(id: integer): boolean;
 begin
-   items[id].Destroy;
-   System.Delete(items, id, 1);
+  items[id].Destroy;
+  System.Delete(items, id, 1);
 end;
 
 function TrndiExtList.IndexOf(slug: string): integer;
-var
-    i: integer;
+
+var 
+  i: integer;
 begin
   result := -1;
-  for i := low(items) to high(items) do begin
-    if items[i].slug = slug then begin
-      result := i;
-      Exit;
+  for i := low(items) to high(items) do
+    begin
+      if items[i].slug = slug then
+        begin
+          result := i;
+          Exit;
+        end;
     end;
-  end;
 end;
 
 destructor TrndiExt.Destroy;
@@ -99,14 +108,16 @@ begin
 end;
 
 function TrndiExt.config: string;
-var
-   _config: procedure (obj: Pointer; var author: PAnsiChar; var apilvl: integer); cdecl;
-   auth: PAnsiChar;
-   lvl: integer;
+
+var 
+  _config: procedure (obj: Pointer; var author: PAnsiChar; var apilvl: integer);
+  cdecl;
+  auth: PAnsiChar;
+  lvl: integer;
 begin
-      // Second, use the instance
-    Pointer(_config) := GetProcAddress(lib, 'config');
-    if @_config <> nil then
+  // Second, use the instance
+  Pointer(_config) := GetProcAddress(lib, 'config');
+  if @_config <> nil then
     begin
       GetMem(auth, 255);
       _config(obj, auth, lvl);
@@ -117,11 +128,13 @@ begin
 end;
 
 procedure TrndiExt.done;
-var
-    _done: procedure (obj: Pointer); cdecl;
+
+var 
+  _done: procedure (obj: Pointer);
+  cdecl;
 begin
-    pointer(_done) := GetProcAddress(lib, 'done');
-    if @_done <> nil then
+  pointer(_done) := GetProcAddress(lib, 'done');
+  if @_done <> nil then
     begin
       _done(obj);
       UnloadLibrary(lib);
@@ -129,8 +142,10 @@ begin
 end;
 
 function TrndiExt.init(const bg: integer): boolean;
-var
-    _init: procedure (obj: Pointer; bg: integer); cdecl;
+
+var 
+  _init: procedure (obj: Pointer; bg: integer);
+  cdecl;
 begin
   result := false;
   Pointer(_init) := GetProcAddress(lib, 'init');
@@ -147,10 +162,11 @@ end;
 
 constructor TrndiExt.Create(fn: string; _slug: string; _prio: smallint);
 begin
-   lib := LoadLibrary(fn);
-   if lib <> NilHandle then
-     Exit;
+  lib := LoadLibrary(fn);
+  if lib <> NilHandle then
+    Exit;
 end;
+
 
 (*function TrndiExtList.AddExt(const fn, id: string): boolean;
 begin
@@ -164,6 +180,5 @@ begin
   end;
 end;
   *)
-  *}
+*}
 end.
-

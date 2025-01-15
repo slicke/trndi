@@ -1,3 +1,4 @@
+
 (*
  * This file is part of Trndi (https://github.com/slicke/trndi).
  * Copyright (c) 2021-2025 Björn Lindh.
@@ -38,7 +39,7 @@ type
       function bgDump(ctx: pointer; const func: string; const params: JSParameters; out res:
                       JSValueVal): boolean;
       function setLimits(ctx: pointer; const func: string; const params: JSParameters; out res:
-                      JSValueVal): boolean;
+                         JSValueVal): boolean;
       function querySvc(ctx: pointer; const func: string; const params: JSParameters; out res:
                         JSValueVal): boolean;
 
@@ -129,25 +130,27 @@ end;
 
 // Set high/low values
 function TJSFuncs.setLimits(ctx: pointer; const func: string; const params: JSParameters; out res:
-                           JSValueVal): boolean;
+                            JSValueVal): boolean;
 
-                           var
-                           r: string;
-                           v: JSValueVal;
-                           times: integer;
+var 
+  r: string;
+  v: JSValueVal;
+  times: integer;
 begin
 
-// mmol or mgdl
-if (params.Count = 3) and  (params[2]^.mustbe(JD_BOOL, func)) and (params[2]^.data.BoolVal) then
-  times := 18
-else
-  times := 1;
+  // mmol or mgdl
+  if (params.Count = 3) and  (params[2]^.mustbe(JD_BOOL, func)) and (params[2]^.data.BoolVal) then
+    times := 18
+  else
+    times := 1;
 
-// Values has to be int
-    if (params[0]^.mustbe(JD_INT, func)) and (params[1]^.mustbe(JD_INT, func)) then begin
-    tapi.cgmLo := round(params[0]^.data.Int32Val * times);
-    tapi.cgmHi := round(params[1]^.data.Int32Val * times);
-  end else
+  // Values has to be int
+  if (params[0]^.mustbe(JD_INT, func)) and (params[1]^.mustbe(JD_INT, func)) then
+    begin
+      tapi.cgmLo := round(params[0]^.data.Int32Val * times);
+      tapi.cgmHi := round(params[1]^.data.Int32Val * times);
+    end
+  else
     begin
       result := false;
       r := 'NOT_INT';

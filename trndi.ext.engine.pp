@@ -1,3 +1,4 @@
+
 (*
  * This file is part of Trndi (https://github.com/slicke/trndi).
  * Copyright (c) 2021-2025 Björn Lindh.
@@ -248,6 +249,7 @@ type
                     end;
 
 
+
 {
 // Dummy function to test promises
 function JSNOPromise(name: string; out res: string): boolean;
@@ -331,6 +333,7 @@ end;
 
                       promises.Add(cb);
 
+
          //   promises.Add(TJSCallback(callback: @cbfunc; func: funcName; params.expected: params));
                     end;
 
@@ -338,6 +341,7 @@ end;
                     begin
                       result := length(args);
                     end;
+
 
 
 // Returns a char pointer to a parameter position in JS, note the hack of result + to force convert the rawutf8.
@@ -414,6 +418,7 @@ end;
                                                           PromiseRejectionTracker), nil);
 
 
+
            // Initialize a timer, to be used with the JS engine. This will execute promises in queue
                         eventTimer := TFPTimer.Create(nil);
                         eventTimer.Interval := 50;
@@ -434,6 +439,7 @@ end;
                         addFunction('alert', ExtFunction(@JSDoAlert), 1);
                         RegisterConsoleLog(@FContext);
 
+
                 // We register a "neutral" console.log outside of this object s to avoid errors here
                       end;
 
@@ -441,6 +447,7 @@ end;
                       procedure TTrndiExtEngine.addFunction(const id: string; const func: JSFunction
                                                             ; const argc: integer = 0);
                       begin
+
 
 (*  JS_SetPropertyStr(FContext, JS_GetGlobalObject(FContext), PChar(id),
   JS_NewCFunction(FContext, func, PChar(id), argc));*)
@@ -511,6 +518,7 @@ end;
 
                 // Execute a JS string
                 function TTrndiExtEngine.Execute(const Script: RawUtf8; name: string = '<script>'):
+
                                                                                              RawUtf8
                 ;
 
@@ -526,6 +534,7 @@ end;
                   if EvalResult.IsException then
                     begin
                       try
+
 
 //  TTrndiExtEngine.Instance.alert('An error occured while running extension ' + name + #13#10+err);
                         ExtError('Error loading', err);
@@ -581,9 +590,11 @@ end;
 
                 // Add the new method
                 JS_DefinePropertyValueStr(FContext, JSObject, PAnsiChar(name), JS_NewCFunction(
+
                                                                                             FContext
                                                                                                , @
                                                                                                func,
+
                                                                                            PAnsiChar
                                                                                                (name
                 ), argc), JS_PROP_CONFIGURABLE or JS_PROP_ENUMERABLE);
@@ -620,6 +631,7 @@ end;
 
 
               function TTrndiExtEngine.CallFunction(const FuncName: RawUtf8; const Args: JSArray):
+
                                                                                              RawUtf8
               ;
 
@@ -685,6 +697,7 @@ end;
               end;
 
 
+
 {
 function TTrndiExtEngine.CallFunction(const FuncName: RawUtf8; const Args: JSArray): RawUtf8;
 type
@@ -738,6 +751,7 @@ begin
     FContext^.Free(JSValue(ArgValues[i]));
 end;
       }
+
 
 {
 function TTrndiExtEngine.CallFunction(const FuncName: RawUtf8; const Args: JSArray): RawUtf8;
