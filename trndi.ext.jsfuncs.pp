@@ -46,7 +46,7 @@ begin
       AddPromise('bgDump', JSCallbackFunction(@bgDump));
       AddPromise('asyncGet', JSCallbackFunction(@asyncGet));
       AddPromise('querySvc', JSCallbackFunction(@querySvc));
-      AddPromise('setLimits', JSCallbackFunction(@setLimits));
+      AddPromise('setLimits', JSCallbackFunction(@setLimits), 2);
     end;
 end;
 
@@ -111,16 +111,27 @@ begin
   res := v;
 end;
 
+// Set high/low values
 function TJSFuncs.setLimits(ctx: pointer; const func: string; const params: JSParameters; out res:
                            JSValueVal): boolean;
 
-var
-  s,r: string;
-  v,v2: JSValueVal;
+                           var
+                           r: string;
+                           v: JSValueVal;
+                           times: integer;
 begin
-  v := params[0]^;
-  v2 := params[1]^;
-  if not (v.mustbe(JD_INT, func, 0) and v2.mustbe(JD_INT, func, 0) )then
+
+// mmol or mgdl
+if (params.Count = 3) and  (params[2]^.mustbe(JD_BOOL, func)) and (params[2]^.data.BoolVal) then
+  times := 18
+else
+  times := 1;
+
+// Values has to be int
+    if (params[0]^.mustbe(JD_INT, func)) and (params[1]^.mustbe(JD_INT, func)) then begin
+    tapi.cgmLo := round(params[0]^.data.Int32Val * times);
+    tapi.cgmHi := round(params[1]^.data.Int32Val * times);
+  end else
     begin
       result := false;
       r := 'NOT_INT';
@@ -128,8 +139,6 @@ begin
       Exit(false);
     end;
 
-  tapi.cgmHi := params[0]^.data.Int32Val;
-  tapi.cgmLo := params[1]^.data.Int32Val;
   r := 'OK';
   v := StringToValueVal(r);
   res := v;

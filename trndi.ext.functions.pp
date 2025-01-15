@@ -70,6 +70,7 @@ type
         JD_BOOL: (BoolVal: Boolean);
         JD_FUNC: (Func: Pointer);
         JD_OBJ: (ObjectVal: Pointer);
+        JD_UNKNOWN: (Parsed: string[255]);
         JD_ARRAY: (ArrayVal: TJSValList); // Använd TJSValList som TFPGList<PJSValueVal>
     end;
     function valtype: string;
@@ -234,7 +235,7 @@ begin
     JD_BOOL:           Result := BoolToStr(self.data.BoolVal, 'true', 'false');
     JD_OBJ:            Result := '<object>';
   else
-    Result := 'unknown';
+    Result := 'unknown ' + self.data.Parsed;
   end;
 end;
 
@@ -433,8 +434,12 @@ begin
     Exit;
   end;
 
+
   // Hantera andra typer...
-  if val.IsBigDecimal then
+  if val.NormTag = JS_TAG_BOOL then begin
+    result.data.match := JD_BOOL;
+    result.data.BoolVal := val.Bool;
+  end else if val.IsBigDecimal then
   begin
     result.data.match := JD_BDECIMAL;
     result.data.BigDecimal := val.F64;
@@ -449,15 +454,15 @@ begin
     result.data.match := JD_INT;
     result.data.BigInt := val.Int64;
   end
-  else if val.IsFloat then
-  begin
-    result.data.match := JD_F64;
-    result.data.FloatVal := val.F64;
-  end
   else if val.IsInt32 then
   begin
     result.data.match := JD_INT;
     result.data.Int32Val := val.Int32;
+  end
+  else if (val.IsFloat) or (val.NormTag = JS_TAG_FLOAT64) then
+  begin
+    result.data.match := JD_F64;
+    result.data.FloatVal := val.F64;
   end
   else if val.IsString then
   begin
@@ -486,6 +491,7 @@ begin
   else if not val.IsUninitialized then
     result.data.match := JD_UNINITIALIZED
   else begin
+    result.data.Parsed := JSValueToString(ctx, val);
     result.data.match := JD_UNKNOWN;
   end;
 end;
@@ -506,6 +512,8 @@ begin
       s := IntToStr(val.data.Int32Val);
     JD_STR:
       s := val.data.StrVal;
+    JD_BOOL:
+      s := BoolToStr(val.data.BoolVal)
     else
       s := 'Unknown';
   end;
