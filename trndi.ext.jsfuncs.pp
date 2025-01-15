@@ -21,6 +21,8 @@ type
                         JSValueVal): boolean;
       function bgDump(ctx: pointer; const func: string; const params: JSParameters; out res:
                       JSValueVal): boolean;
+      function setLimits(ctx: pointer; const func: string; const params: JSParameters; out res:
+                      JSValueVal): boolean;
       function querySvc(ctx: pointer; const func: string; const params: JSParameters; out res:
                         JSValueVal): boolean;
 
@@ -44,6 +46,7 @@ begin
       AddPromise('bgDump', JSCallbackFunction(@bgDump));
       AddPromise('asyncGet', JSCallbackFunction(@asyncGet));
       AddPromise('querySvc', JSCallbackFunction(@querySvc));
+      AddPromise('setLimits', JSCallbackFunction(@setLimits));
     end;
 end;
 
@@ -104,6 +107,30 @@ begin
       r := s;
       result := true;
     end;
+  v := StringToValueVal(r);
+  res := v;
+end;
+
+function TJSFuncs.setLimits(ctx: pointer; const func: string; const params: JSParameters; out res:
+                           JSValueVal): boolean;
+
+var
+  s,r: string;
+  v,v2: JSValueVal;
+begin
+  v := params[0]^;
+  v2 := params[1]^;
+  if not (v.mustbe(JD_INT, func, 0) and v2.mustbe(JD_INT, func, 0) )then
+    begin
+      result := false;
+      r := 'NOT_INT';
+      v := StringToValueVal(r);
+      Exit(false);
+    end;
+
+  tapi.cgmHi := params[0]^.data.Int32Val;
+  tapi.cgmLo := params[1]^.data.Int32Val;
+  r := 'OK';
   v := StringToValueVal(r);
   res := v;
 end;
