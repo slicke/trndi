@@ -1,7 +1,7 @@
 
 (*
- * This file is part of Trndi (https://github.com/xxxx or http://xxx.github.io).
- * Copyright (c) 2021 Björn Lindh.
+ * This file is part of Trndi (https://github.com/slicke/trndi).
+ * Copyright (c) 2021-2025 Björn Lindh.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
