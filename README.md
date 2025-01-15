@@ -1,4 +1,6 @@
 ![Trndi](/trndi-logo.png)
+![Window](/doc/ux.png)
+![Window](/doc/js.png)
 
 # _<small>Nightscout / Dexcom / Local </small>_ CGM data viewer
 Trndi is an app that shows the current blood sugar from _Night Scout_ or _Dexcom Share_.
