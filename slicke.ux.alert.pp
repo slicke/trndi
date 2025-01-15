@@ -324,7 +324,9 @@ begin
     IconBox.Height := 50;
     IconBox.Left := Padding;
     IconBox.Top := Padding;
+    {$ifdef Windows}
     IconBox.Font.Name := 'Segoe UI Emoji';
+    {$endif}
 //    IconBox.Align := alleft;
 
     Dialog.HandleNeeded;
@@ -339,6 +341,7 @@ begin
     TitleLabel.AutoSize := True;
     TitleLabel.Left := IconBox.Left + IconBox.Width + Padding;
     TitleLabel.Top := Padding;
+    TitleLabel.Font.Color := clBlack;
 
     // Meddelandetext
     MessageLabel := TLabel.Create(p2);
@@ -347,6 +350,7 @@ begin
     MessageLabel.AutoSize := True;
     MessageLabel.Left := TitleLabel.Left;
     MessageLabel.Top := TitleLabel.Top + TitleLabel.Height + Padding div 2;
+    MessageLabel.Font.Color := clBlack;
   //  MessageLabel.Font.Size := 8;
 
 
