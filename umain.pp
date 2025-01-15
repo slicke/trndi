@@ -41,6 +41,7 @@ type
     pmSettings: TPopupMenu;
     tTouch: TTimer;
     tMain: TTimer;
+    procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
     procedure FormCreate(Sender:TObject);
     procedure FormResize(Sender: TObject);
     procedure lDiffDblClick(Sender: TObject);
@@ -213,6 +214,13 @@ begin
     {$endif}
     update;
   end;
+
+procedure TfBG.FormClose(Sender: TObject; var CloseAction: TCloseAction);
+begin
+     {$ifdef TrndiExt}
+    TTrndiExtEngine.ReleaseInstance;
+    {$endif}
+end;
 
   // Changes a trend dot from a dot to the actual bg value
   procedure TfBG.ExpandDot(l: TLabel; c, ix: integer);

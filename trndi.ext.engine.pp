@@ -380,11 +380,18 @@ destructor TTrndiExtEngine.Destroy;
 var
   cb: PJSCallback;
 begin
-  if FContext <> nil then
-    JS_FreeContext(FContext);
+  try
+    if FContext <> nil then
+      FContext^.Done;
+    except on E: Exception do
+     ShowMessage('An error occured while shutting down extensions: ' + E.Message);
+    end;
   if FRuntime <> nil then
-    JS_FreeRuntime(FRuntime);
-
+    try
+    FRuntime^.DoneSafe; // Running under a debugger on Linux can false-positive trigger this
+    except on E: Exception do
+       ShowMessage('An error occured while shutting down extensions: ' + E.Message);
+    end;
   eventTimer.free;
 
   for cb in promises do
