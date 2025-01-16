@@ -216,6 +216,37 @@ object fBG: TfBG
       Caption = 'Force Update'
       OnClick = miForceClick
     end
+    object miSplit1: TMenuItem
+      Caption = '-'
+    end
+    object miInfo: TMenuItem
+      Caption = 'Limits'
+      object miHi: TMenuItem
+        Caption = 'miHi'
+        Enabled = False
+      end
+      object miLO: TMenuItem
+        Caption = 'miLO'
+        Enabled = False
+      end
+      object miSplit2: TMenuItem
+        Caption = '-'
+      end
+      object miRangeHi: TMenuItem
+        Enabled = False
+      end
+      object miRangeLo: TMenuItem
+        Caption = 'miRangeLo'
+        Enabled = False
+      end
+      object miSplit3: TMenuItem
+        Caption = '-'
+      end
+      object miLimitExplain: TMenuItem
+        Caption = 'Explain'
+        OnClick = miLimitExplainClick
+      end
+    end
   end
   object tTouch: TTimer
     Enabled = False

@@ -41,6 +41,15 @@ type
   { TfBG }
 
   TfBG = class(TForm)
+      miLimitExplain:TMenuItem;
+      miSplit3:TMenuItem;
+      miRangeLo:TMenuItem;
+      miRangeHi:TMenuItem;
+      miSplit2:TMenuItem;
+      miLO:TMenuItem;
+      miHi:TMenuItem;
+      miInfo:TMenuItem;
+      miSplit1:TMenuItem;
       miForce:TMenuItem;
       pnOffRange:TPanel;
     lArrow: TLabel;
@@ -72,6 +81,7 @@ type
                           ,Y:Integer);
     procedure lValStartDrag(Sender: TObject; var DragObject: TDragObject);
     procedure miForceClick(Sender:TObject);
+    procedure miLimitExplainClick(Sender:TObject);
     procedure miSettingsClick(Sender:TObject);
     procedure onTrendClick(Sender: TObject);
     procedure pnOffRangeClick(Sender:TObject);
@@ -415,6 +425,12 @@ begin
 
     // Resize the dots
     actOnTrend(@ResizeDot);
+
+    // Set info
+    miHi.Caption := Format('Hi > %.1f', [api.cgmHi * BG_CONVERTIONS[un][mgdl]]);
+    miLo.Caption := Format('Lo < %.1f', [api.cgmLo * BG_CONVERTIONS[un][mgdl]]);
+    miRangeHi.Caption := Format('Range Hi > %.1f', [api.cgmRangeHi * BG_CONVERTIONS[un][mgdl]]);
+    miRangeLo.Caption := Format('Range Lo < %.1f', [api.cgmRangeLo * BG_CONVERTIONS[un][mgdl]]);
   end;
 
   // Handle full screen
@@ -470,6 +486,11 @@ begin
 procedure TfBG.miForceClick(Sender:TObject);
 begin
   update;
+end;
+
+procedure TfBG.miLimitExplainClick(Sender:TObject);
+begin
+ShowMessage('Hi = when BG is considered high'#10'Lo: when considered low'#10'Ranges: NightScout setting, defines "desirable" levels within normal')
 end;
 
   procedure TfBG.miSettingsClick(Sender:TObject);

@@ -27,7 +27,7 @@ interface
 
 uses 
 Classes, SysUtils, Dialogs, trndi.types, trndi.api, trndi.native,
-fpjson, jsonparser, dateutils, StrUtils, sha1, math;
+fpjson, jsonparser, dateutils, StrUtils, sha1, math, jsonscanner;
 
 const 
   NS_STATUS = 'status.json';
@@ -67,76 +67,125 @@ begin
   inherited;
 end;
 
-function NightScout.connect: boolean;
-
-var 
-  y, r:  string;
-  td: tdatetime;
-  i: int64;
+function NightScout.Connect: Boolean;
+var
+  ResponseStr   : string;            // Holds JSON response from Nightscout
+  JSONParser    : TJSONParser;       // Parser to convert string to JSON
+  JSONData      : TJSONData;         // Base class for JSON data
+  RootObject    : TJSONObject;       // The root JSON object
+  SettingsObj   : TJSONObject;       // The "settings" object
+  ThresholdsObj : TJSONObject;       // The "thresholds" object
+  ServerEpoch   : Int64;             // Will hold the serverTimeEpoch value
+  UTCDateTime   : TDateTime;         // Server time converted to TDateTime
 begin
-  // Check that username / pass is OK!
+  // 1. Validate BaseURL (example check, adjust to your needs)
+  if (Copy(BaseUrl, 1, 4) <> 'http') then
+  begin
+    Result  := False;
+    LastErr := 'Invalid address. Must start with http:// or https://!';
+    Exit;
+  end;
 
-  if Copy(baseUrl, 1, 4) <> 'http' then
+  // 2. Call your method to get the JSON data from Nightscout
+  //    Adjust the parameters to your actual function signature
+  ResponseStr := Native.Request(False, NS_STATUS, [], '', Key);
+
+  // 3. Check for empty response
+  if Trim(ResponseStr) = '' then
+  begin
+    Result  := False;
+    LastErr := 'Did not receive any data from the server!';
+    Exit;
+  end;
+
+  // 4. If the response starts with '+', treat it as an error (from your original code)
+  if (ResponseStr[1] = '+') then
+  begin
+    Result  := False;
+    LastErr := TrimLeftSet(ResponseStr, ['+']);
+    Exit;
+  end;
+
+  // 5. Check if response contains something like 'Unauthorized'
+  //    (in your original code, you looked for 'Unau')
+  if Pos('Unau', ResponseStr) > 0 then
+  begin
+    Result  := False;
+    LastErr := 'Incorrect access code for NightScout';
+    Exit;
+  end;
+
+  // 6. Parse the JSON into objects
+  try
+    JSONParser := TJSONParser.Create(ResponseStr, [joUTF8, joIgnoreTrailingComma]);
+    try
+      JSONData := JSONParser.Parse;
+    finally
+      JSONParser.Free;
+    end;
+
+    // Ensure top-level is a JSON object
+    if not (JSONData is TJSONObject) then
     begin
-      result := false;
-      lasterr := 'Invalid address. It must start with http:// or https://!';
+      Result  := False;
+      LastErr := 'Unexpected JSON structure (not a JSON object).';
+      JSONData.Free;
       Exit;
     end;
-  y := native.request(false, NS_STATUS, [], '', key);
-  if Trim(y) = '' then
+    RootObject := TJSONObject(JSONData);
+
+    // 7. Extract "serverTimeEpoch" from the root
+    //    If it doesn't exist, default to 0
+    ServerEpoch := RootObject.Get('serverTimeEpoch', Int64(0));
+
+    // 8. Navigate to settings.thresholds (nested object)
+    SettingsObj := RootObject.FindPath('settings') as TJSONObject;
+    if Assigned(SettingsObj) then
     begin
-      lasterr := 'Did not recieve any data from the server!';
-      result := false;
+      ThresholdsObj := SettingsObj.FindPath('thresholds') as TJSONObject;
+      if Assigned(ThresholdsObj) then
+      begin
+        // Example variables you want to fill, adjust to your code
+        cgmHi      := ThresholdsObj.Get('bgHigh', 0);
+        cgmLo      := ThresholdsObj.Get('bgLow', 0);
+        cgmRangeHi := ThresholdsObj.Get('bgTargetTop', 0);
+        cgmRangeLo := ThresholdsObj.Get('bgTargetBottom', 0);
+      end;
+    end;
+
+    // Always free JSONData when done parsing
+    JSONData.Free;
+  except
+    on E: Exception do
+    begin
+      Result  := False;
+      LastErr := 'JSON parse error: ' + E.Message;
       Exit;
     end;
+  end;
 
+  // 9. Validate serverTimeEpoch
+  if ServerEpoch <= 0 then
+  begin
+    Result  := False;
+    LastErr := 'Invalid or missing serverTimeEpoch in JSON.';
+    Exit;
+  end;
 
+  // 10. Convert ms-based Unix epoch to TDateTime
+  //     (UnixToDateTime expects seconds, so we do "div 1000")
+  UTCDateTime := UnixToDateTime(ServerEpoch div 1000);
 
-  if y[1] = '+' then
-    begin
-      result  := false;
-      lastErr := TrimLeftSet(y, ['+']);
-      exit;
-    end;
-  r := TrimRightSet(copy(y, pos('bgHigh":', y)+8, 3), [',']);
-  if TryStrToInt64(r,i) then
-    cgmHi := i;
+  // 11. Calculate time difference
+  //     - This is an example only; adjust to match your needs.
+  //       If you want Nightscout time minus local time, for instance:
+  TimeDiff := SecondsBetween(UTCDateTime, LocalTimeToUniversal(Now));
+  if TimeDiff < 0 then
+    TimeDiff := 0;
+  TimeDiff := -TimeDiff;  // or however you interpret it in your environment
 
-  r := TrimRightSet(copy(y, pos('bgLow":', y)+7, 3), [',']);
-  if TryStrToInt64(r,i) then
-    cgmLo := i;
-
-  r := TrimRightSet(copy(y, pos('bgTargetTop":', y)+13, 3), [',']);
-  if TryStrToInt64(r,i) then
-    cgmRangeHi := i;
-
-  r := TrimRightSet(copy(y, pos('bgTargetBottom":', y)+16, 3), [',']);
-  if TryStrToInt64(r,i) then
-    cgmRangeLo := i;
-
-  y := copy(y, pos('serverTimeEpoch":', y) + 17, 13);
-
-  if Pos('Unau', y) > 0 then
-    begin
-      result  := false;
-      lastErr := 'Incorrect access code for NightScout';
-      Exit;
-    end;
-
-  if not TryStrToInt64(y, i) then
-    begin
-      result := false;
-      abort;
-    end;
-  td := UnixToDateTime(i div 1000);
-  timeDiff := SecondsBetween(td, LocalTimeToUniversal(now));
-  if timeDiff < 0 then
-    timeDiff := 0;
-
-  timeDiff := -1 * timeDiff;
-
-
-  result   := true;
+  // If we get here, everything succeeded
+  Result := True;
 end;
 
 
