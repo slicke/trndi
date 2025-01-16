@@ -102,27 +102,34 @@ end;
 function TrndiAPI.getLevel(v: BGValLevel): single;
 begin
   case v of 
-    BGRangeHI: result := core.hi;
-    BGRangeLO: result := core.lo;
+    BGHIGH: result := core.hi;
+    BGLOW: result := core.lo;
+    BGRangeHI: result := core.top;
+    BGRangeLO: result := core.bottom;
   end;
 end;
 
 function TrndiAPI.getLevel(v: single): BGValLevel;
 begin
-  if v > core.hi then
-    result := BGRangeHI
-  else if v < core.lo then
-         result := BGRangeLO
-  else
+  if v >= core.hi then
+    result := BGHIGH
+  else if v <= core.lo then
+         result := BGLOW
+  else begin
     result := BGRange;
+    if (core.top <> 500) and (v >= core.top) then
+       result := BGRangeHI
+    else if (core.bottom <> 0) and (v <= core.bottom) then
+       result := BGRangeLO;
+  end;
 end;
 
 procedure TrndiAPI.initCGMCore;
 begin
   core.hi := 401;
   core.lo := 40;
-  core.top := 401;
-  core.bottom := 40;
+  core.top := 500;
+  core.bottom := 0;
 end;
 
 function TrndiAPI.getCGMCore: CGMCore;

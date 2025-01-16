@@ -53,6 +53,8 @@ type
 
   JDValues = set of JDValue;
 
+  JDTypes = array of JDValue;
+
   // Typhelper för JDValue (en enum, ordinal typ)
   JDValueHelper = 
 
@@ -190,11 +192,41 @@ type
                                   function JSValueParamCheck(const params: PJSParameters; const fmts
                                   : array of JDValue): boolean;
                                   function valTypeToStr(val: JDValue): string;
-
+                                  function checkJSParams(params: JSParameters; expect: JDTypes): boolean;
+                                  function checkJSParams(params: JSParameters; expect, expect2: JDTypes): boolean;
                                   const
                                   JS_TAG_UNKNOWN = -10;
 
                                   implementation
+
+                                  function checkJSParams(params: JSParameters; expect: JDTypes): boolean;
+                                  var
+                                    i: integer;
+                                  begin
+                                    if params.Count <> length(expect) then
+                                      exit(false);
+                                    for i := 0 to params.Count-1 do
+                                      if params[i]^.data.match <> expect[i] then
+                                        Exit(false);
+
+                                      result := true;
+                                  end;
+
+                                  function checkJSParams(params: JSParameters; expect, expect2: JDTypes): boolean;
+                                  var
+                                    i: integer;
+                                  begin
+                                    if params.Count <> length(expect) then
+                                      if params.Count <> length(expect2) then
+                                        exit(false);
+
+                                       for i := 0 to params.Count-1 do
+                                       if params[i]^.data.match <> expect[i] then
+                                         if params[i]^.data.match <> expect2[i] then
+                                           Exit(false);
+
+                                      result := true;
+                                  end;
 
 { JDValueHelper }
 

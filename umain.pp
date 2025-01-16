@@ -116,9 +116,14 @@ const
   // Low
   bgclo = $00FFBE0B;
   bgclotxt = $00FFFEE9;
-  // Personal hi
 
+
+  // Personal hi
+  bgcrlo = $00A859EE;
+  bgcrlotxt = $002D074E;
   // Personal low
+  bgcrhi = $0072C9DE;
+  bgcrhitxt = $001C6577;
 var 
   fBG: TfBG;
   api: TrndiAPI;
@@ -392,7 +397,7 @@ begin
         // Set the hint of the dot to the reading
         l.Hint := b.format(un, BG_MSG_SHORT , BGPrimary);;
 
-        pnOffRange.Visible := false;
+pnOffRange.Height := ClientHeight div 25;
         if b.val >= api.cgmHi then
           l.Font.color := bgchitxt
         else if b.val <= api.cgmLo then
@@ -400,20 +405,13 @@ begin
         else begin
            l.Font.color := bgcoktxt;
 
-          pnOffRange.Visible := true;
-          pnOffRange.Color := clBlue;
-          pnOffRange.Height := ClientHeight div 25;
-          // Set range bar
-          case b.level of
-            //BGValLevel.BGRange: pnOffRange.Color := bgcok;
-            BGValLevel.BGRangeLO: pnOffRange.Color := bgclo;
-            BGValLevel.BGRangeHI: pnOffRange.Color := bgchi;
-          else
-            pnOffRange.Visible := false;
+          if b.val <= api.cgmRangeLo then
+             l.font.Color := bgcrlotxt
+          else if b.val >= api.cgmRangeHi then
+             l.font.Color := bgcrhi;
           end;
         end;
 
-      end;
 
     // Adjust the arrow and label sizes
     lArrow.Height := lVal.Height div 5;
@@ -603,9 +601,20 @@ end;
           fBG.color := bgchi
         else if b.val <= api.cgmLo then
           fBG.color := bgclo
-        else
+        else begin
            fBG.color := bgcok;
+           // Check the levelbar
+          pnOffRange.Visible := true;
+          pnOffRange.Color := clBlue;
+          pnOffRange.Height := ClientHeight div 25;
 
+          if b.val <= api.cgmRangeLo then
+             begin pnOffRange.Color := bgcrlo; pnOffRange.font.color := bgcrlotxt; end
+          else if b.val >= api.cgmRangeHi then
+             begin pnOffRange.Color := bgcrhi; pnOffRange.font.color := bgcrhitxt; end
+          else
+            pnOffRange.Visible := false;
+        end;
 
 
   end;

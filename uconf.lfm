@@ -8,7 +8,6 @@ object fConf: TfConf
   ClientHeight = 376
   ClientWidth = 415
   Position = poDesktopCenter
-  LCLVersion = '4.0.0.2'
   object Image1: TImage
     Left = 16
     Height = 104
@@ -10362,6 +10361,7 @@ object fConf: TfConf
       'mmol/L'
       'mg/dL'
     )
+    ParentBackground = False
     TabOrder = 6
   end
 end

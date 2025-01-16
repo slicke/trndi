@@ -63,7 +63,7 @@ begin
       AddPromise('bgDump', JSCallbackFunction(@bgDump));
       AddPromise('asyncGet', JSCallbackFunction(@asyncGet));
       AddPromise('querySvc', JSCallbackFunction(@querySvc));
-      AddPromise('setLimits', JSCallbackFunction(@setLimits), 2, 3);
+      AddPromise('setLimits', JSCallbackFunction(@setLimits), 2, 5);
     end;
 end;
 
@@ -136,6 +136,7 @@ var
   r: string;
   v: JSValueVal;
   times: integer;
+  typeerr: boolean;
 begin
 
   // mmol or mgdl
@@ -145,7 +146,10 @@ begin
     times := 1;
 
   // Values has to be int
-  if (params[0]^.mustbe(JD_INT, func)) and (params[1]^.mustbe(JD_INT, func)) then
+  typeerr := not checkJSParams(params, [JD_INT, JD_INT]);
+//  typeerr := not (params[0]^.mustbe(JD_INT, func)) and (params[1]^.mustbe(JD_INT, func));
+
+if not typeerr then
     begin
       tapi.cgmLo := round(params[0]^.data.Int32Val * times);
       tapi.cgmHi := round(params[1]^.data.Int32Val * times);

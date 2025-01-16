@@ -92,7 +92,7 @@ begin
   y := copy(y, pos('"now":', y) + 6, 13);
   if not TryStrToInt64(y,t) then
     begin
-      lasterr := 'xDrip could not initialize was the clocks were not able tp sync!';
+      lasterr := 'xDrip could not initialize. Unable to synx clocks, xDrip may be offline.';
       Result := false;
       Exit;
     end;

@@ -29,7 +29,7 @@ type
 
   BGVal = single;                              //< Glucose unit storage (signed, as its used for delta)
 //  BGValLevel  = (BGHIGH, BGLOW, BGNORMAL, BGLOST);
-  BGValLevel = (BGRangeHI, BGRangeLO, BGRange, BGNormal, BGHigh, BGLOW);    // Range = depending on API
+  BGValLevel = (BGRangeHI, BGRangeLO, BGRange, BGHigh, BGLOW);    // Range = depending on API
 
   BGUnitArray = array[BGUnit, BGUnit] of single;
 

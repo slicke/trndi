@@ -314,6 +314,9 @@ begin
               result[i].clear;
             end;
 end;
+// This can be set via a JS extension
+cgmHi := 160;
+cgmLo :=  60;
 end;
 
 end.
