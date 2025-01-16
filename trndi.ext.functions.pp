@@ -185,6 +185,7 @@ type
                                   function JSValueValArrayToArray(ctx: JSContext; val: JSValueVal):
                                   JSValueValArray; inline;
                                   function StringToValueVal(const s: string): JSValueVal;
+                                  function IntToValueVal(const i: integer): JSValueVal;
 
                                   function JSValueParamCheck(const params: PJSParameters; const fmts
                                   : array of JDValue): boolean;
@@ -835,6 +836,13 @@ begin
     end;
 
   result := true;
+end;
+
+
+function IntToValueVal(const i: integer): JSValueVal;
+begin
+  result.data.match := JD_INT;
+  result.data.Int32Val := i;
 end;
 
 function StringToValueVal(const s: string): JSValueVal;

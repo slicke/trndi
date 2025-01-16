@@ -158,8 +158,9 @@ begin
       Exit(false);
     end;
 
-  r := 'OK';
-  v := StringToValueVal(r);
+
+  v := IntToValueVal(tapi.cgmHi);
+//  v := StringToValueVal(r);
   res := v;
 end;
 

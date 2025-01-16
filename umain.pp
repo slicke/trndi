@@ -41,6 +41,8 @@ type
   { TfBG }
 
   TfBG = class(TForm)
+      miForce:TMenuItem;
+      pnOffRange:TPanel;
     lArrow: TLabel;
     lDiff: TLabel;
     lDot1: TLabel;
@@ -69,8 +71,10 @@ type
     procedure lValMouseUp(Sender:TObject;Button:TMouseButton;Shift:TShiftState;X
                           ,Y:Integer);
     procedure lValStartDrag(Sender: TObject; var DragObject: TDragObject);
+    procedure miForceClick(Sender:TObject);
     procedure miSettingsClick(Sender:TObject);
     procedure onTrendClick(Sender: TObject);
+    procedure pnOffRangeClick(Sender:TObject);
     procedure tMainTimer(Sender: TObject);
     procedure tTouchTimer(Sender:TObject);
     private 
@@ -93,13 +97,18 @@ const
   bgmax = 22;
   // NS can't read higher
   // Colors (b)lood(g)lucose (c)olor XX
+  // In range
   bgcok = $0000DC84;
   bgcoktxt = $00F2FFF2;
+  // Hi
   bgchi = $0007DAFF;
   bgchitxt = $00F3FEFF;
+  // Low
   bgclo = $00FFBE0B;
   bgclotxt = $00FFFEE9;
+  // Personal hi
 
+  // Personal low
 var 
   fBG: TfBG;
   api: TrndiAPI;
@@ -373,15 +382,25 @@ begin
         // Set the hint of the dot to the reading
         l.Hint := b.format(un, BG_MSG_SHORT , BGPrimary);;
 
-        // Set colors
-        case b.level of 
-          BGValLevel.BGRange: l.Font.color := bgcoktxt;
-          BGValLevel.BGRangeLO: l.Font.color := bgclotxt;
-          BGValLevel.BGRangeHI: l.Font.color := bgchitxt;
+        pnOffRange.Visible := false;
+        if b.val >= api.cgmHi then
+          l.Font.color := bgchitxt
+        else if b.val <= api.cgmLo then
+          l.Font.color := bgclotxt
+        else begin
+           l.Font.color := bgcoktxt;
 
-          BGValLevel.BGHigh: l.Font.color := bgchitxt;
-          BGValLevel.BGLOW: l.Font.color := bgclotxt;
-          BGValLevel.BGNormal: l.Font.color := bgcoktxt;
+          pnOffRange.Visible := true;
+          pnOffRange.Color := clBlue;
+          pnOffRange.Height := ClientHeight div 25;
+          // Set range bar
+          case b.level of
+            //BGValLevel.BGRange: pnOffRange.Color := bgcok;
+            BGValLevel.BGRangeLO: pnOffRange.Color := bgclo;
+            BGValLevel.BGRangeHI: pnOffRange.Color := bgchi;
+          else
+            pnOffRange.Visible := false;
+          end;
         end;
 
       end;
@@ -448,6 +467,11 @@ begin
 
   end;
 
+procedure TfBG.miForceClick(Sender:TObject);
+begin
+  update;
+end;
+
   procedure TfBG.miSettingsClick(Sender:TObject);
 
   var 
@@ -488,6 +512,11 @@ begin
   begin
     actOnTrend(@ExpandDot);
   end;
+
+procedure TfBG.pnOffRangeClick(Sender:TObject);
+begin
+ShowMessage('In addition to high and low levels, you have set a personal range within "OK". You are now ' + IfThen((sender as TPanel).Color = bgchi, 'over', 'under') + ' that range');
+end;
 
   // Update remote on timer
   procedure TfBG.tMainTimer(Sender: TObject);
@@ -536,22 +565,19 @@ begin
     // Determine if the reading if fresh
     if MinutesBetween(Now, b.date) > 7 then
       begin
-        lDiff.Caption := TimeToStr(b.date);
+        lDiff.Caption := TimeToStr(b.date) + ' (' + MinutesBetween(Now, b.date).ToString + ' min)';
         lVal.Font.Style := [fsStrikeOut];
         fBG.Color := clBlack;
         Exit;
       end;
 
-    // Determine the color based on if the reading is high/low/ok
-    case b.level of 
-      BGValLevel.BGRange: fBG.Color := bgcok;
-      BGValLevel.BGRangeLO: fBG.Color := bgclo;
-      BGValLevel.BGRangeHI: fBG.Color := bgchi;
+        if b.val >= api.cgmHi then
+          fBG.color := bgchi
+        else if b.val <= api.cgmLo then
+          fBG.color := bgclo
+        else
+           fBG.color := bgcok;
 
-      BGValLevel.BGHigh: fBG.Color := bgchi;
-      BGValLevel.BGLOW: fBG.Color := bgclo;
-      BGValLevel.BGNormal: fBG.Color := bgcok;
-    end;
 
 
   end;
