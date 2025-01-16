@@ -32,6 +32,7 @@ dialogs;
 const 
   XDRIP_READINGS = 'sgv.json';
   XDRIP_STATUS = 'pebble';
+  XDRIP_RANGES = 'status.json';
   // This contains the current timestamp of the server
 
 type 
@@ -71,6 +72,7 @@ var
   y:  string;
   td: tdatetime;
   t: int64;
+  i: integer;
 begin
   if Copy(baseUrl, 1, 4) <> 'http' then
     begin
@@ -101,6 +103,20 @@ begin
     timeDiff := 0;
 
   timeDiff := -1 * timeDiff;
+
+  y := native.request(false, XDRIP_RANGES, [], '', key);
+  if TryStrToInt(TrimSet(copy(y, pos('bgHigh', y) + 8, 4), [' ',',']), i) then
+    cgmHi := i
+  else
+    cgmHi := 160;
+
+  if TryStrToInt(TrimSet(copy(y, pos('bgLow', y) + 7, 4), [' ',',', '}']), i) then
+    cgmLo := i
+  else
+    cgmLo := 60;
+
+  cgmRangeHi := 500;
+  cgmRangeLo := 0;
   result   := true;
 end;
 

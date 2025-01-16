@@ -429,8 +429,15 @@ begin
     // Set info
     miHi.Caption := Format('Hi > %.1f', [api.cgmHi * BG_CONVERTIONS[un][mgdl]]);
     miLo.Caption := Format('Lo < %.1f', [api.cgmLo * BG_CONVERTIONS[un][mgdl]]);
-    miRangeHi.Caption := Format('Range Hi > %.1f', [api.cgmRangeHi * BG_CONVERTIONS[un][mgdl]]);
-    miRangeLo.Caption := Format('Range Lo < %.1f', [api.cgmRangeLo * BG_CONVERTIONS[un][mgdl]]);
+    if api.cgmRangeHi <> 500 then
+      miRangeHi.Caption := Format('Range Hi > %.1f', [api.cgmRangeHi * BG_CONVERTIONS[un][mgdl]])
+    else
+      miRangeHi.Caption := 'Hi range not supported by API';
+
+    if api.cgmRangeLo  <> 0 then
+      miRangeLo.Caption := Format('Range Lo < %.1f', [api.cgmRangeLo * BG_CONVERTIONS[un][mgdl]])
+    else
+      miRangeLo.Caption := 'LO range not supported by API';
   end;
 
   // Handle full screen
@@ -490,7 +497,7 @@ end;
 
 procedure TfBG.miLimitExplainClick(Sender:TObject);
 begin
-ShowMessage('Hi = when BG is considered high'#10'Lo: when considered low'#10'Ranges: NightScout setting, defines "desirable" levels within normal')
+ShowMessage('Hi = When BG is considered high'#10'Lo = When BG is considered low'#10#10'Ranges: Defines "desirable" levels within normal. Not supported by all backends')
 end;
 
   procedure TfBG.miSettingsClick(Sender:TObject);
