@@ -29,7 +29,7 @@ interface
 uses 
 Classes, SysUtils, trndi.ext.functions, trndi.types, slicke.ux.alert, trndi.api, trndi.ext.engine,
 Trndi.Native,
-dialogs;
+dialogs, math;
 
 type 
   TJSFuncs = class(TObject)
@@ -137,25 +137,25 @@ var
   v: JSValueVal;
   times: integer;
   typeerr: boolean;
+  mmol: boolean;
 begin
 
-  // mmol or mgdl
-  if (params.Count = 3) and  (params[2]^.mustbe(JD_BOOL, func)) and (params[2]^.data.BoolVal) then
-    times := 18
-  else
-    times := 1;
+  // Values has to be int and might have a bool
+  if checkJSParams(params, [JD_INT, JD_INT, JD_BOOL], [JD_INT, JD_INT]) then begin
+       mmol := (params.count = 3) and (params[2]^.data.BoolVal);
+      times := IfThen(mmol, 18, 1);
 
-  // Values has to be int
-  typeerr := not checkJSParams(params, [JD_INT, JD_INT]);
-//  typeerr := not (params[0]^.mustbe(JD_INT, func)) and (params[1]^.mustbe(JD_INT, func));
-
-if not typeerr then
-    begin
       tapi.cgmLo := round(params[0]^.data.Int32Val * times);
       tapi.cgmHi := round(params[1]^.data.Int32Val * times);
-    end
-  else
-    begin
+  end else if checkJSParams(params, [JD_INT, JD_INT, JD_INT, JD_INT, JD_BOOL], [JD_INT, JD_INT, JD_INT, JD_INT]) then begin
+      mmol := (params.count = 5) and (params[4]^.data.BoolVal);
+      times := IfThen(mmol, 18, 1);
+
+      tapi.cgmLo := round(params[0]^.data.Int32Val * times);
+      tapi.cgmHi := round(params[1]^.data.Int32Val * times);
+      tapi.cgmRangeLo := round(params[2]^.data.Int32Val * times);
+      tapi.cgmRangeHi := round(params[3]^.data.Int32Val * times);
+  end else begin
       result := false;
       r := 'NOT_INT';
       v := StringToValueVal(r);
@@ -164,7 +164,6 @@ if not typeerr then
 
 
   v := IntToValueVal(tapi.cgmHi);
-//  v := StringToValueVal(r);
   res := v;
 end;
 

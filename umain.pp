@@ -377,6 +377,7 @@ begin
     // Positin the dots, the amount of dots is hard coded
     for i:= Low(bgs) to min(9, high(bgs)) do
       begin
+
         // bgs = readings we have
         b := bgs[i];
         l := fBG.FindChildControl('lDot'+(10-i).ToString) as TLabel;
