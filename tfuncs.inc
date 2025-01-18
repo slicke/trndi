@@ -22,7 +22,6 @@
 uses 
 mormot.lib.quickjs;
 
-
 // Convert a color, eg for a ux call in JS, to TColor
 function HTMLColorToTColor(const HTMLColor: string): TColor;
 

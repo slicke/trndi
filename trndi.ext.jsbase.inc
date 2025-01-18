@@ -23,9 +23,6 @@ function TrndiConstructor(ctx: JSContext; this_val: JSValueRaw; argc: Integer; a
 begin
   // Create a new object of the Trndi class
   Result := JS_NewObjectClass(ctx, TrndiClassID);
-
-  // Initialize any native data here if necessary
-  // For example, associate native pointers with the JS object
 end;
 
 function JSDoLog(ctx: JSContext; this_val: JSValueRaw; argc: Integer; argv: PJSValues): JSValueRaw; cdecl;
@@ -40,14 +37,16 @@ begin
 end;
 
 function JSDoAlert(ctx: JSContext; this_val: JSValueRaw; argc: Integer; argv: PJSValues): JSValueRaw; cdecl;
+var
+ i : integer;
+ output: rawutf8;
 begin
-  with TTrndiExtEngine.Instance do
-    begin
-      SetOutput(ctx, argv, argc-1);
-      alert(Output);
+  for i := 0 to argc-1 do
+    output := output + ctx^.ToUtf8(argv^[i]);
+
+  TTrndiExtEngine.Instance.alert(Output);
 
   Result := JS_UNDEFINED;
-  end;
 end;
 
 

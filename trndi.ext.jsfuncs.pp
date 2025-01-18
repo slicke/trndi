@@ -137,34 +137,30 @@ var
   v: JSValueVal;
   times: integer;
   typeerr: boolean;
-  mmol: boolean;
 begin
-
   // Values has to be int and might have a bool
-  if checkJSParams(params, [JD_INT, JD_INT, JD_BOOL], [JD_INT, JD_INT]) then begin
-       mmol := (params.count = 3) and (params[2]^.data.BoolVal);
-      times := IfThen(mmol, 18, 1);
+  if checkJSParams(params, [JD_INT, JD_INT, JD_INT, JD_INT], [JD_INT, JD_INT]) then begin
+      tapi.cgmLo := params[0]^.data.Int32Val;
+      tapi.cgmHi := params[1]^.data.Int32Val;
+      if params.Count = 4 then
+        tapi.cgmRangeLo := params[2]^.data.Int32Val;
+        tapi.cgmRangeHi := params[3]^.data.Int32Val;
+  end else if checkJSParams(params, [JD_F64, JD_F64, JD_F64, JD_F64], [JD_F64, JD_F64, JD_F64, JD_F64]) then begin
+      times := 18;
 
-      tapi.cgmLo := round(params[0]^.data.Int32Val * times);
-      tapi.cgmHi := round(params[1]^.data.Int32Val * times);
-  end else if checkJSParams(params, [JD_INT, JD_INT, JD_INT, JD_INT, JD_BOOL], [JD_INT, JD_INT, JD_INT, JD_INT]) then begin
-      mmol := (params.count = 5) and (params[4]^.data.BoolVal);
-      times := IfThen(mmol, 18, 1);
-
-      tapi.cgmLo := round(params[0]^.data.Int32Val * times);
-      tapi.cgmHi := round(params[1]^.data.Int32Val * times);
-      tapi.cgmRangeLo := round(params[2]^.data.Int32Val * times);
-      tapi.cgmRangeHi := round(params[3]^.data.Int32Val * times);
+      tapi.cgmLo := round(params[0]^.data.FloatVal * times);
+      tapi.cgmHi := round(params[1]^.data.FloatVal * times);
+      tapi.cgmRangeLo := round(params[2]^.data.FloatVal * times);
+      tapi.cgmRangeHi := round(params[3]^.data.FloatVal * times);
   end else begin
       result := false;
-      r := 'NOT_INT';
-      v := StringToValueVal(r);
+      res.data.Int32Val := -1;
       Exit(false);
     end;
 
-
   v := IntToValueVal(tapi.cgmHi);
   res := v;
+  result := true;
 end;
 
 // Query the backend via JS

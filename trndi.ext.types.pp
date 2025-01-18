@@ -1,4 +1,4 @@
-
+                       {
 unit trndi.ext.types;
 
 {$mode ObjFPC}{$H+}
@@ -43,4 +43,4 @@ begin
     end;
 end;
 
-end.
+end.                  }

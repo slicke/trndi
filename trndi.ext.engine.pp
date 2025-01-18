@@ -114,7 +114,7 @@ class
   FRuntime: JSRuntime;
   FContext: JSContext;
   FOutput: RawUtf8;
-  FProto: JSValueRaw;
+//  FProto: JSValueRaw;
   OutCallback: TOutputCallback;
   native: TrndiNative;
   promises: TPromises;
@@ -136,17 +136,20 @@ public
   class function Instance: TTrndiExtEngine;
   class procedure ReleaseInstance;
   procedure SetOutput(ctx: JSContext; const vals: PJSValues; const len: integer);
+  procedure ClearOutput();
   property Output: RawUtf8 read GetOutput write SetOutput;
   procedure addFunction(const id: string; const func: JSFunction; const argc:
     integer = 0);
+  procedure addClassFunction(const id: string; const func: JSFunction; const argc:
+    integer = 0);
+(*      procedure AddMethod(const name: string; const func: PJSCFunction;
+    const argc: integer = 0);                                      *)
   function CallFunction(const FuncName: RawUtf8; const Args: JSArray): RawUtf8;
   procedure SetGlobalVariable(const VarName: RawUtf8; const Value: RawUtf8; const
     obj: string = '');
   procedure SetGlobalVariable(const VarName: RawUtf8; const Value: int64; const obj:
     string = '');
   procedure CreateNewObject(const name: string);
-  procedure AddMethod(const name: string; const func: PJSCFunction;
-    const argc: integer = 0);
   procedure AddPromise(const funcName: string; cbfunc: JSCallbackFunction; params:
     integer = 1);
   procedure AddPromise(const funcName: string; cbfunc: JSCallbackFunction; minParams
@@ -351,12 +354,16 @@ end;
 // Assigns output data by looping the vals provided
 procedure TTrndiExtEngine.SetOutput(ctx: JSContext; const vals: PJSValues;
 const len: integer);
-
 var
   i: integer;
 begin
   for i := 0 to len do
     output := output + ctx^.ToUtf8(vals^[i]);
+end;
+
+procedure TTrndiExtEngine.ClearOutput();
+begin
+  output := '';
 end;
 
 // Assigns output data from a JS string and runs the "outCallback"
@@ -375,6 +382,8 @@ end;
 
 // Constructor
 constructor TTrndiExtEngine.Create;
+var
+  proto: JSValueRaw;
 begin
   inherited Create;
 
@@ -402,7 +411,7 @@ begin
   if JS_NewClass(FRuntime, TrndiClassID, @TrndiClass) < 0 then
     raise Exception.Create('Failed to create JS class');
 
-  FProto := JS_GetClassProto(FContext, TrndiClassID);
+  Proto := JS_GetClassProto(FContext, TrndiClassID);
 
 // Point bacj to the class id
   JS_SetOpaque(TrndiClassId, Pointer(self));
@@ -437,9 +446,9 @@ begin
   callbacks := TCallbacks.Create;
 
 // Add our base functions
+  addClassFunction('alert', @JSDoAlert, 1);
   addFunction('log', ExtFunction(@JSDoLog), 1);
   addFunction('alert', ExtFunction(@JSDoAlert), 1);
-  addMethod('alert', PJSCFunction(@JSDoAlert), 1);
   RegisterConsoleLog(@FContext);
 
 
@@ -451,11 +460,9 @@ procedure TTrndiExtEngine.addFunction(const id: string; const func: JSFunction
 ; const argc: integer = 0);
 begin
 
-
-(*  JS_SetPropertyStr(FContext, JS_GetGlobalObject(FContext), PChar(id),
-  JS_NewCFunction(FContext, func, PChar(id), argc));*)
   FContext^.SetFunction([], pchar(id), func,argc);
 end;
+
 
 destructor TTrndiExtEngine.Destroy;
 
@@ -565,7 +572,7 @@ end;
 procedure TTrndiExtEngine.CreateNewObject(const name: string);
 
 var
-  GlobalObj, JSObject, JSValue: JSValueRaw;
+  GlobalObj, JSObject: JSValueRaw;
 begin
 // Get the global object to add to
   GlobalObj := JS_GetGlobalObject(FContext);
@@ -578,21 +585,19 @@ begin
 //  js_free(FContext, JSValue(GlobalObj)):
 end;
 
-// Add a method, to an existing object in JS
-procedure TTrndiExtEngine.AddMethod(const name: string; const func: PJSCFunction; const argc: integer = 0);
+
+// Adds a global JS function
+procedure TTrndiExtEngine.addClassFunction(const id: string; const func: JSFunction
+; const argc: integer = 0);
 var
-prop: jsvalueraw;
+  this: JSValue;
 begin
-  // Lägg till metoden till prototypen med korrekt argc
-  JS_SetPropertyStr(FContext, FProto, PChar(name),
-    JS_NewCFunction(FContext, func, PChar(name), argc)
-  );
+if not FContext^.GetValue('Trndi', this) then begin
+  Showmessage('Cannot locate the Trndi class while initializing extensions');
+  Exit;
+  end;
 
-  // Valfritt: Logga eller hantera eventuella fel efter att ha lagt till metoden
-  prop := JS_GetPropertyStr(FContext, FProto, PChar(name));
-  if JS_IsError(fcontext, prop) then
-      raise Exception.CreateFmt('Failed to add method %s to Trndi prototype', [name]);
-
+  FContext^.SetFunction(this, pchar(id), func, argc);
 end;
 
 // Sets a JS global variable
@@ -600,28 +605,28 @@ procedure TTrndiExtEngine.SetGlobalVariable(const VarName: RawUtf8; const Value:
 RawUtf8; const obj: string = '');
 
 var
-  JSValue, GlobalObj: JSValueRaw;
+  JValue, GlobalObj: JSValueRaw;
 begin
 // Global object to add to
   GlobalObj := JS_GetGlobalObject(FContext);
 // Create the string
-  JSValue := JS_NewString(FContext, pansichar(Value));
+  JValue := JS_NewString(FContext, pansichar(Value));
 // Set it
-  JS_SetPropertyStr(FContext, GlobalObj, pansichar(VarName), JSValue);
+  JS_SetPropertyStr(FContext, GlobalObj, pansichar(VarName), JValue);
 end;
 
 procedure TTrndiExtEngine.SetGlobalVariable(const VarName: RawUtf8; const Value: int64
 ; const obj: string = '');
 
 var
-  GlobalObj, JSValue: JSValueRaw;
+  GlobalObj, JValue: JSValueRaw;
 begin
 // Global object to add to
   GlobalObj := JS_GetGlobalObject(FContext);
 // Create the int
-  JSValue := JS_NewBigInt64(FContext, Value);
+  JValue := JS_NewBigInt64(FContext, Value);
 // Set it
-  JS_SetPropertyStr(FContext, GlobalObj, pansichar(VarName), JSValue);
+  JS_SetPropertyStr(FContext, GlobalObj, pansichar(VarName), JValue);
 end;
 
 
