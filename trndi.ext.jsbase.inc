@@ -17,53 +17,51 @@
  *
  * GitHub: https://github.com/slicke/trndi
  *)
-function JSDoLog(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw;
-cdecl;
 
+
+function TrndiConstructor(ctx: JSContext; this_val: JSValueRaw; argc: Integer; argv: PJSValues): JSValueRaw; cdecl;
+begin
+  // Create a new object of the Trndi class
+  Result := JS_NewObjectClass(ctx, TrndiClassID);
+
+  // Initialize any native data here if necessary
+  // For example, associate native pointers with the JS object
+end;
+
+function JSDoLog(ctx: JSContext; this_val: JSValueRaw; argc: Integer; argv: PJSValues): JSValueRaw; cdecl;
 var 
   i: Integer;
   buffer: TSynTempBuffer;
   res: RawUtf8;
 begin
-  TTrndiExtEngine.Instance.SetOutput(ctx, argv, argc-1);
+  TTrndiExtEngine.Instance.SetOutput(@ctx, argv, argc-1);
 
   Result := JS_UNDEFINED;
 end;
 
-function JSDoAlert(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues):
-
-                                                                                          JSValueRaw
-;
-cdecl;
-
-var 
-  i: Integer;
-  buffer: TSynTempBuffer;
-  res: RawUtf8;
+function JSDoAlert(ctx: JSContext; this_val: JSValueRaw; argc: Integer; argv: PJSValues): JSValueRaw; cdecl;
 begin
   with TTrndiExtEngine.Instance do
     begin
       SetOutput(ctx, argv, argc-1);
       alert(Output);
-    end;
 
   Result := JS_UNDEFINED;
+  end;
 end;
 
 
 // fetch()
-function JSFetch(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw;
-cdecl;
-
-var 
+function JSFetch(ctx: JSContext; this_val: JSValueRaw; argc: Integer; argv: PJSValues): JSValueRaw; cdecl;
+var
   URL: string;
   response : RawUtf8;
 begin
   if argc > 0 then
     begin
-      url := TTrndiExtEngine.Instance.ParseArgv(ctx, argv, 0);
+      url := TTrndiExtEngine.Instance.ParseArgv(@ctx, argv, 0);
       TTrndiExtEngine.native.request(false,url,[]);
-      Result := JS_NewString(ctx^, PAnsiChar(Response));
+      Result := JS_NewString(ctx, PAnsiChar(Response));
     end
   else
     Result := JS_UNDEFINED;
@@ -77,18 +75,13 @@ end;
 } catch (error) {
   handleError(error.message);
 }  *)
-function JSHandleError(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues):
-
-                                                                                          JSValueRaw
-;
-cdecl;
-
+function JSHandleError(ctx: JSContext; this_val: JSValueRaw; argc: Integer; argv: PJSValues): JSValueRaw; cdecl;
 var 
   err: string;
 begin
   if argc > 0 then
     begin
-      err := TTrndiExtEngine.Instance.ParseArgv(ctx, argv, 0);
+      err := TTrndiExtEngine.Instance.ParseArgv(@ctx, argv, 0);
       //    ;                                     ctx^^.ErrorDump(true, nil)IsException
       //  TTrndiExtEngine.Instance.excepion(err,);
     end;

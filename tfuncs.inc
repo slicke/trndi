@@ -22,6 +22,7 @@
 uses 
 mormot.lib.quickjs;
 
+
 // Convert a color, eg for a ux call in JS, to TColor
 function HTMLColorToTColor(const HTMLColor: string): TColor;
 
@@ -42,6 +43,21 @@ begin
     end
   else
     raise Exception.Create('Unsupported color');
+end;
+
+
+
+// Handle the active bg unit
+function JSUnit(ctx: JSContext; this_val: JSValueRaw; argc: Integer; argv: PJSValues): JSValueRaw; cdecl;
+cdecl;
+
+var
+curr: RawByteString;
+res: JSValue;
+begin
+curr := UTF8Encode(BG_UNIT_NAMES[un]);
+res := ctx^.From(curr);
+result := res.raw;
 end;
 
 // UX modifications from JS ("uxProp()")

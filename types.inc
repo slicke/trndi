@@ -50,6 +50,8 @@ const
     ( '^^', '^', '/´', '->', '\_', '\/', '\\//',
     '?', 'X');
 
+  BG_UNIT_NAMES: array[BGUnit] of string = ('mmol/L', 'mg/dL');
+
   BG_MSG_DEF: BGUnitMeta = ('%.1f mmol/L', '%0.f mg/dL'); // Text format for units
   BG_MSG_SHORT: BGUnitMeta = ('%.1f', '%0.f');
   BG_MSG_SIGNED: BGUnitMeta = ('%+%.1f mmol/L', '%+%0.f mg/dL'); // Text format for units

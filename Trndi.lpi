@@ -40,6 +40,9 @@
               <StackChecks Value="True"/>
             </Checks>
             <VerifyObjMethodCallValidity Value="True"/>
+            <Optimizations>
+              <OptimizationLevel Value="0"/>
+            </Optimizations>
           </CodeGeneration>
           <Linking>
             <Debugging>
@@ -167,6 +170,10 @@
       </Unit>
       <Unit>
         <Filename Value="trndi.api.xdrip.pp"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="trndi.tjsclass.pp"/>
         <IsPartOfProject Value="True"/>
       </Unit>
     </Units>

@@ -166,6 +166,7 @@ begin
   with TTrndiExtEngine.Instance do
     begin
       addFunction('uxProp', ExtFunction(@JSUX), 3);
+      addFunction('getUnit', ExtFunction(@JSUnit), 0);
       // Add the UX modification function, as we declre it in this file
       for s in exts do
         // Run all found files
@@ -398,7 +399,7 @@ begin
         // Set the hint of the dot to the reading
         l.Hint := b.format(un, BG_MSG_SHORT , BGPrimary);;
 
-pnOffRange.Height := ClientHeight div 25;
+pnOffRange.Height := ClientHeight div 15;
         if b.val >= api.cgmHi then
           l.Font.color := bgchitxt
         else if b.val <= api.cgmLo then
@@ -607,7 +608,7 @@ end;
            // Check the levelbar
           pnOffRange.Visible := true;
           pnOffRange.Color := clBlue;
-          pnOffRange.Height := ClientHeight div 25;
+          pnOffRange.Height := ClientHeight div 15;
 
           if b.val <= api.cgmRangeLo then
              begin pnOffRange.Color := bgcrlo; pnOffRange.font.color := bgcrlotxt; end

@@ -1,432 +1,844 @@
-unit umain;
 
+(*
+ * This file is part of Trndi (https://github.com/slicke/trndi).
+ * Copyright (c) 2021-2025 Björn Lindh.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ * ---------
+ *
+ * GitHub: https://github.com/slicke/trndi
+ *)
+
+unit trndi.ext.engine;
 {$mode objfpc}{$H+}
+{$modeswitch advancedrecords}
 
 interface
 
-uses
-  Classes,Menus,SysUtils,Forms,Controls,Graphics,Dialogs,StdCtrls,ExtCtrls,
-  dexapi,nsapi,trndi.types,math,DateUtils,FileUtil,TrndiExt.Engine,TrndiExt.Ext,
-  trndiExt.jsfuncs,LazFileUtils;
+uses 
+sysutils,
+mormot.core.base,
+mormot.core.os,
+mormot.core.text,
+mormot.core.buffers,
+mormot.core.unicode,
+mormot.core.datetime,
+mormot.core.rtti,
+mormot.crypt.core,
+mormot.core.data,
+mormot.core.variants,
+mormot.core.json,
+mormot.core.log,
+mormot.core.perf,
+mormot.core.test,
+mormot.lib.quickjs,
+dialogs,
+classes,
+trndi.native,
+trndi.ext.promise,
+trndi.ext.functions,
+fgl,
+ExtCtrls,
+fpTimer,
+forms,
+controls,
+Graphics,
+math,
+StdCtrls,
+slicke.ux.alert,
 
-type
 
-  // Procedures which are applied to the trend drawing
-  TTrendProc = procedure(l: TLabel; c, ix: integer) of object;
-  TTrendProcLoop = procedure(l: TLabel; c, ix: integer; ls: array of TLabel) of object;
+fpimage, IntfGraphics, GraphType, EasyLazFreeType, LazFreeTypeIntfDrawer;
 
+resourcestring
+sExtErr = 'Extension Error';
+sExtMsg = 'Extension Message';
+sExtConfirm = 'Extension Confirmation';
+sExtEvent = 'Extension Event';
+sExtWarn = 'Extension Warning';
+sExtFile = 'File "%s" not found';
 
-  { TfBG }
+type 
+  // Callback for JS engine out data
+TOutputCallback = procedure (const Msg: RawUtf8) of object;
 
-  TfBG = class(TForm)
-    lArrow: TLabel;
-    lDiff: TLabel;
-    lDot1: TLabel;
-    lDot10: TLabel;
-    lDot2: TLabel;
-    lDot3: TLabel;
-    lDot4: TLabel;
-    lDot5: TLabel;
-    lDot6: TLabel;
-    lDot7: TLabel;
-    lDot8: TLabel;
-    lDot9: TLabel;
-    lVal: TLabel;
-    miSettings:TMenuItem;
-    pmSettings:TPopupMenu;
-    tTouch:TTimer;
-    tMain: TTimer;
-    procedure FormCreate(Sender:TObject);
-    procedure FormResize(Sender: TObject);
-    procedure lDiffDblClick(Sender: TObject);
-    procedure lgMainClick(Sender: TObject);
-    procedure lValMouseDown(Sender:TObject;Button:TMouseButton;Shift:TShiftState
-      ;X,Y:Integer);
-    procedure lValMouseUp(Sender:TObject;Button:TMouseButton;Shift:TShiftState;X
-      ,Y:Integer);
-    procedure lValStartDrag(Sender: TObject; var DragObject: TDragObject);
-    procedure onTrendClick(Sender: TObject);
-    procedure tMainTimer(Sender: TObject);
-    procedure tTouchTimer(Sender:TObject);
-  private
-    procedure update;
-    procedure actOnTrend(proc: TTrendProc);
-    procedure actOnTrend(proc: TTrendProcLoop);
-    procedure setDotWidth(l: TLabel; c, ix: integer; ls: array of TLabel);
-    procedure HideDot(l: TLabel; c, ix: integer);
-    procedure ResizeDot(l: TLabel; c, ix: integer);
-    procedure ExpandDot(l: TLabel; c, ix: integer);
-    procedure LoadExtensions;
-  public
+ExtFunction = JSFunction;
+  // Alias @fixme
+ExtArgv = array of ExtFunction;
+JSArray = array of RawUtf8;
 
-  end;
+QWordArray = array of qword;
+  // 64 bit value array
+
+TTrndiExtFunc = record
+private
+  args: ExtArgv;
+  function getArgCount: integer;
+public
+  name: RawUtf8;
+  property argc: integer read getArgCount;
+  property count: integer read getArgCount;
+
+  class operator = (const a, b: TTrndiExtFunc): boolean;
+    overload;
+end;
+
+// List for known functions
+TExtFuncList = specialize TFPGList<TTrndiExtFunc>;
+
+// List of callbacks registered (eg for promises)
+TCallbacks = specialize TFPGList<PJSCallback>;
+TPromises = TCallbacks;
+// Promises no longer have a separate definition
+TTrndiExtEngine = class
+private
+class
+
+  var FInstance: TTrndiExtEngine;
+  // Singleton
+  TrndiClass: JSClassDef;
+  // THe TrndiClass in JS
+  knownfunc: TExtFuncList;
+  eventTimer: TFPTimer;
+  // We need a timer to execute queued stuff in QuickJS
+  FRuntime: JSRuntime;
+  FContext: JSContext;
+  FOutput: RawUtf8;
+  OutCallback: TOutputCallback;
+  native: TrndiNative;
+  promises: TPromises;
+  function getoutput: RawUtf8;
+// This is string data really
+  procedure SetOutput(const val: RawUtf8);
+  function uxResponse(const dialogType: TMsgDlgType; const msg: string; const titleadd:
+    string): integer;
+  function findCallback(const func: string): TJSCallback;
+  function findPromise(const func: string): PJSCallback;
+
+public
+  callbacks: TCallbacks;
+  constructor Create;
+  destructor Destroy;
+    override;
+  function Execute(const Script: RawUtf8; name: string = '<script>'): RawUtf8;
+  function ExecuteFile(const FileName: string): RawUtf8;
+  class function Instance: TTrndiExtEngine;
+  class procedure ReleaseInstance;
+  procedure SetOutput(ctx: JSContext; const vals: PJSValues; const len: integer);
+  property Output: RawUtf8 read GetOutput write SetOutput;
+  procedure addFunction(const id: string; const func: JSFunction; const argc:
+    integer = 0);
+  function CallFunction(const FuncName: RawUtf8; const Args: JSArray): RawUtf8;
+  procedure SetGlobalVariable(const VarName: RawUtf8; const Value: RawUtf8; const
+    obj: string = '');
+  procedure SetGlobalVariable(const VarName: RawUtf8; const Value: int64; const obj:
+    string = '');
+  procedure CreateNewObject(const name: string);
+  procedure AddMethod(const objectname, name: string; const func: PJSCFunction;
+    const argc: integer = 0);
+  procedure AddPromise(const funcName: string; cbfunc: JSCallbackFunction; params:
+    integer = 1);
+  procedure AddPromise(const funcName: string; cbfunc: JSCallbackFunction; minParams
+    , maxParams: integer);
+  procedure excepion(const message, fn: string);
+  class function ParseArgv(ctx: PJSContext; const vals: PJSValues; const pos:
+    integer): pchar;
+  procedure alert(const msg: string);
+  property callback [f: string]: TJSCallback read findCallback;
+  property promise [f: string]: PJSCallback read findPromise;
+  procedure OnJSTimer(Sender: TObject);
+  function FunctionExists(const FuncName: string): boolean;
+end;
+
+EJSException = class(Exception)
+private
+  FFilename: string;
+public
+  constructor CreateWithName(const msg: string; const AFileName: string);
+  function ToString : string;
+    override;
+  property Filename: string read FFilename write FFilename;
+end;
 
 const
-  bgmin = 2; // NS cant read lower
-  bgmax = 22; // NS can't read higher
-  // Colors (b)lood(g)lucose (c)olor XX
-  bgcok = $0000DC84;
-  bgcoktxt = $00F2FFF2;
-  bgchi = $0007DAFF;
-  bgchitxt = $00F3FEFF;
-  bgclo = $00FFBE0B;
-  bgclotxt = $00FFFEE9;
-
-var
-  fBG: TfBG;
-  api: nsapi.NightScout;
-  un: BGUnit = BGUnit.mmol;
-  bgs: BGResults;
-  jsFuncs:  TJSfuncs;
-
-  // Touch screen
-  StartTouch: TDateTime;
-  IsTouched: Boolean;
+TrndiClassID: JSClassID = 0;
 
 implementation
+{$I trndi.ext.jsbase.inc }
 
-{$R *.lfm}
-{$I tfuncs.inc}
-
-
-// Load extension files
-procedure TfBG.LoadExtensions;
-var
- exts : TStringList;
- s, extdir: string;
+{ TTrndiExtEngine }
+// We cant do standard comparisons, as we work with the name
+class operator TTrndiExtFunc. = (const a, b: TTrndiExtFunc): boolean;
+overload;
 begin
- TTrndiExtEngine.Instance; // Creates the class, if it's not already
- jsFuncs := TJSfuncs.Create(api); // This is an Object, not a class!
- extdir := GetAppConfigDirUTF8(false, true) + 'extensions' + DirectorySeparator; // Find extensions folder
-
- ForceDirectoriesUTF8(extdir); // We create the dir if it doesn't exist
- exts := FindAllFiles(extdir, '*.js', false); // Find .js
-
- with TTrndiExtEngine.Instance do begin
-  addFunction('uxProp', ExtFunction(@JSUX), 3); // Add the UX modification function, as we declre it in this file
-   for s in exts do // Run all found files
-     ExecuteFile(s);
-   exts.Free;
- end;
+  result := a.name = b.name
 end;
 
-// Apply a function to all trend points; also provides an index
-procedure TfBG.actOnTrend(proc: TTrendProcLoop);
-var
-  ix, lx: integer;
-  ls: array of TLabel;
+procedure TTrndiExtEngine.alert(const msg: string);
 begin
-  ls := [lDot1,lDot2,lDot3,lDot4,lDot5,lDot6,lDot7,lDot8,lDot9,lDot10]; // All dots that make up the graph
-  lx := length(ls);
-  for ix:= 0 to length(ls)-1 do
-      proc(ls[ix], lx, ix, ls); // Run the method on the given label
+  uxResponse(mtInformation, msg, 'User Information');
 end;
 
-// Apply a function to all trend points
-procedure TfBG.actOnTrend(proc: TTrendProc);
-var
-  ix, lx: integer;
-  ls: array of TLabel;
-begin
-  ls := [lDot1,lDot2,lDot3,lDot4,lDot5,lDot6,lDot7,lDot8,lDot9,lDot10];
-  lx := length(ls);
-  for ix:= 0 to length(ls)-1 do
-      proc(ls[ix], lx, ix);
-end;
+// Shows a message box, and returns the answer
+function TTrndiExtEngine.uxResponse(const dialogType: TMsgDlgType; const msg:
+string; const titleadd: string): integer;
 
-procedure TfBG.FormCreate(Sender:TObject);
 var
-  s: string;
-{$ifdef Linux}
-  function GetLinuxDistro: String;
-  const
-    Issue = '/etc/os-release';
+  btns: TMsgDlgButtons;
+  title: string;
+begin
+  title := titleadd;
+
+  case dialogType of
+  mtWarning:
   begin
-    case FileExists(Issue) of
-      True:  Result := ReadFileToString(Issue);
-      False: Result := '';
+    btns := [TMsgDlgBtn.mbOK];
+    title := Format('[%s] %s', [sExtWarn,title]);
+  end;
+  mtError:
+  begin
+    btns := [TMsgDlgBtn.mbAbort];
+    title := Format('[%s] %s', [sExtErr, title]);
+  end;
+  mtInformation:
+  begin
+    btns := [TMsgDlgBtn.mbOK];
+    title := Format('[%s] %s', [sExtMsg, title]);
+  end;
+  mtConfirmation:
+  begin
+    btns := mbYesNo;
+    title := Format('[%s] %s', [sextConfirm, title]);
+  end;
+  else
+  begin
+    btns := [TMsgDlgBtn.mbOK];
+    title := Format('[%s] %s', [sExtEvent, title]);
+  end;
+  end;
+
+  result := MessageDlg(title, msg, dialogType, btns,'');
+end;
+
+// Our custom exception handler, wants the filename too
+constructor EJSException.CreateWithName(const msg: string;
+const AFileName: string);
+begin
+  inherited Create(msg);
+  FFilename := AFilename;
+end;
+
+function EJSException.ToString: string;
+begin
+  Result := ClassName + ': ' + FFilename + LineEnding + Message;
+end;
+
+procedure TTrndiExtEngine.excepion(const message, fn: string);
+begin
+  raise EJSException.CreateWithName(message,fn);
+end;
+
+
+
+{
+// Dummy function to test promises
+function JSNOPromise(name: string; out res: string): boolean;
+begin
+   res := name;
+   result := true;
+end;
+         }
+
+// Lookup a callback, eg from a Promise
+function TTrndiExtEngine.findCallback(const func: string): TJSCallback;
+
+var
+  i: integer;
+  ok: boolean;
+begin
+  ok := false;
+  for i := 0 to callbacks.Count-1 do
+    if callbacks[i]^.func = func then
+    begin
+      ok := true;
+      break;
     end;
-  end;
 
-begin
-  s := GetLinuxDistro;
-  if (Pos('ID=fedora', s) > -1) then
-    s := 'Poppins'
-  else if (Pos('ID=ubuntu', s) > -1) then
-    s := 'Ubuntu'
-  else
-    s := 'default';
-  fBG.Font.Name := s;
-  {$else}
-  begin
-  {$endif}
-  // @todo add the other backends
-  api := NightScout.create('https://***REMOVED***','***REMOVED***', '');
-  if not api.connect then begin
-    ShowMessage(api.errormsg);
-    exit;
-  end;
-  LoadExtensions;
-  update;
-end;
-
-// Changes a trend dot from a dot to the actual bg value
-procedure TfBG.ExpandDot(l: TLabel; c, ix: integer);
-begin
-  if l.Caption = '•' then
-    l.Caption := l.Hint
-  else
-    l.Caption := '•';
-end;
-
-// Hides a dot
-procedure TfBG.HideDot(l: TLabel; c, ix: integer);
-begin
-  l.Visible:=false;
-end;
-
-// Scales a dot's font size
-procedure TfBG.ResizeDot(l: TLabel; c, ix: integer);
-begin
-  l.AutoSize := true;
-  l.font.Size := lVal.Font.Size div 8;
+  if ok then
+    result := callbacks[i]^;
 
 end;
 
-// Sets the width (NOT the font) of a dot
-procedure TfBG.SetDotWidth(l: TLabel; c, ix: integer; ls: array of TLabel);
+// Find a queued/registered promise
+function TTrndiExtEngine.findPromise(const func: string): PJSCallback;
+
 var
   i: integer;
 begin
-  i := fBG.Width div c;
+  for i := 0 to promises.Count-1 do
+    if promises[i]^.func = func then
+      Exit(promises[i]);
 
-    if ix > 0 then
-      l.left := ls[ix-1].left + i
-    else
-      l.left := i div 2;
+
+  TTrndiExtEngine.instance.alert('Required function not found: ' +promises[i]^.
+    func);
 end;
 
-procedure TfBG.FormResize(Sender: TObject);
-  procedure scaleLbl(ALabel: TLabel);
-  var
-  MaxWidth, MaxHeight: Integer;
-  TestSize, MaxFontSize: Integer;
-  TextWidth, TextHeight: Integer;
+// @see next comment
+procedure TTrndiExtEngine.AddPromise(const funcName: string; cbfunc:
+JSCallbackFunction; params: integer = 1);
 begin
-  // Set the maximum fesible font size
-  MaxFontSize := 150;
+  AddPromise(funcName, cbfunc, params, params);
+end;
 
-  // Set the maximum fesible width
-  MaxWidth := ALabel.Width;
-  MaxHeight := ALabel.Height;
+// Adds a new promise to QuickJS, adding the asyncTask function
+// which in turn runs the correct callback when ran though "funcname"
+procedure TTrndiExtEngine.AddPromise(const funcName: string; cbfunc:
+JSCallbackFunction; minParams, maxParams:
+integer);
 
-  // Check if the font will fit
-  for TestSize := 1 to MaxFontSize do
-  begin
-    ALabel.Font.Size := TestSize;
-    TextWidth := ALabel.Canvas.TextWidth(ALabel.Caption);
-    TextHeight := ALabel.Canvas.TextHeight(ALabel.Caption);
+var
+  data: JSValueConst;
+  cb: PJSCallback;
+begin
+  data := JS_NewString(FContext, pansichar(funcname));
 
-    // Exit if the font won't fit
-    if (TextWidth > MaxWidth) or (TextHeight > MaxHeight) then
-    begin
-      ALabel.Font.Size := TestSize - 1;
-      Exit;
-    end;
+  JS_SetPropertyStr(
+    FContext,
+    JS_GetGlobalObject(FContext),
+    pchar(funcname),
+    JS_NewCFunctionData(FContext, PJSCFunctionData(@AsyncTask), 1, 0, 1, @data)
+
+    );
+
+  New(cb);
+  cb^.func := funcname;
+  cb^.callback := cbfunc;
+  cb^.params.min := minParams;
+  cb^.params.max := maxParams;
+
+  promises.Add(cb);
+
+
+//   promises.Add(TJSCallback(callback: @cbfunc; func: funcName; params.expected: params));
+end;
+
+function TTrndiExtFunc.getArgCount: integer;
+begin
+  result := length(args);
+end;
+
+
+
+// Returns a char pointer to a parameter position in JS, note the hack of result + to force convert the rawutf8.
+class function TTrndiExtEngine.ParseArgv(ctx: PJSContext; const vals: PJSValues;
+const pos: integer): pchar;
+begin
+  result := pchar(result + ctx^^.ToUtf8(vals^[pos]));
+end;
+
+// Assigns output data by looping the vals provided
+procedure TTrndiExtEngine.SetOutput(ctx: JSContext; const vals: PJSValues;
+const len: integer);
+
+var
+  i: integer;
+begin
+  for i := 0 to len do
+    output := output + ctx^.ToUtf8(vals^[i]);
+end;
+
+// Assigns output data from a JS string and runs the "outCallback"
+procedure TTrndiExtEngine.SetOutput(const val: RawUtf8);
+begin
+  FOutput := val;
+  if assigned(OutCallback) then
+    OutCallback(val);
+end;
+
+// Returns stored outout
+function TTrndiExtEngine.GetOutput: RawUtf8;
+begin
+  result := FOutput;
+end;
+
+// Constructor
+constructor TTrndiExtEngine.Create;
+begin
+  inherited Create;
+
+// Create the QuickJS runtime
+  FRuntime := JS_NewRuntime;
+  if FRuntime = nil then
+    raise Exception.Create('Failed to create JS runtime');
+// Store the context in this class
+  FContext := JS_NewContext(FRuntime);
+  if FContext = nil then
+    raise Exception.Create('Failed to create JS context');
+
+// Point back to this class via the context
+  JS_SetContextOpaque(FContext, Self);
+
+// Create the JS TrndiClass
+  TrndiClass := Default(JSClassDef);
+  TrndiClass.class_name := 'Trndi';
+
+// Create a unique ID for the class
+  JS_NewClassID(@TrndiClassId);
+
+// Add to JS runtime
+  if JS_NewClass(FRuntime, TrndiClassID, @TrndiClass) < 0 then
+    raise Exception.Create('Failed to create JS class');
+
+// Point bacj to the class id
+  JS_SetOpaque(TrndiClassId, Pointer(self));
+// Add support for promises, regex and dates in JS
+  JS_AddIntrinsicPromise(FContext);
+  JS_AddIntrinsicRegExp(FContext);
+  JS_AddIntrinsicDate(FContext);
+
+// Add a tracker for unhandled promise rejections
+  JS_SetHostPromiseRejectionTracker(FRuntime, PJSHostPromiseRejectionTracker(@
+    PromiseRejectionTracker), nil);
+
+
+
+// Initialize a timer, to be used with the JS engine. This will execute promises in queue
+  eventTimer := TFPTimer.Create(nil);
+  eventTimer.Interval := 50;
+// Run every 50ms
+  eventTimer.OnTimer := @self.OnJSTimer;
+// Assign the callback
+  eventTimer.Enabled := true;
+
+//  JS_AddIntrinsicJSON(FContext);
+// Create lists for promises, funcitons, callbacks etc
+  promises := TPromises.Create;
+  knownfunc := TExtFuncList.Create;
+  native := TrndiNative.create;
+  callbacks := TCallbacks.Create;
+
+// Add our base functions
+  addFunction('log', ExtFunction(@JSDoLog), 1);
+  addFunction('alert', ExtFunction(@JSDoAlert), 1);
+  RegisterConsoleLog(@FContext);
+
+
+// We register a "neutral" console.log outside of this object s to avoid errors here
+end;
+
+// Adds a global JS function
+procedure TTrndiExtEngine.addFunction(const id: string; const func: JSFunction
+; const argc: integer = 0);
+begin
+
+
+(*  JS_SetPropertyStr(FContext, JS_GetGlobalObject(FContext), PChar(id),
+  JS_NewCFunction(FContext, func, PChar(id), argc));*)
+  FContext^.SetFunction([], pchar(id), func,argc);
+end;
+
+destructor TTrndiExtEngine.Destroy;
+
+var
+  cb: PJSCallback;
+begin
+  try
+    if FContext <> nil then
+      FContext^.Done;
+  except
+    on E: Exception do
+      ShowMessage('An error occured while shutting down extensions: ' + E.
+        Message);
+  end;
+  if FRuntime <> nil then
+  try
+    FRuntime^.DoneSafe;
+// Running under a debugger on Linux can false-positive trigger this
+  except
+    on E: Exception do
+      ShowMessage('An error occured while shutting down extensions: ' + E.
+        Message);
+  end;
+  eventTimer.free;
+
+  for cb in promises do
+    Dispose(cb);
+  promises.Free;
+
+  for cb in callbacks do
+    Dispose(cb);
+  callbacks.Free;
+
+  inherited Destroy;
+end;
+
+// Load a JS file from disk, and run the code inside it
+function TTrndiExtEngine.ExecuteFile(const FileName: string): RawUtf8;
+
+var
+  Script: RawUtf8;
+  FileStream: TFileStream;
+  StringStream: TStringStream;
+begin
+  Result := '';
+  if not FileExists(FileName) then
+    raise Exception.CreateFmt(sExtFile, [sExtFile, FileName]);
+
+// Get file contetns as a RawUtf8 string
+  FileStream := TFileStream.Create(FileName, fmOpenRead or fmShareDenyWrite);
+  StringStream := TStringStream.Create;
+  try
+    StringStream.CopyFrom(FileStream, FileStream.Size);
+    Script := StringStream.DataString;
+  finally
+    StringStream.Free;
+    FileStream.Free;
   end;
 
-  // If we never existed, set the max fesible size
-  ALabel.Font.Size := MaxFontSize;
+// Runs the script
+  Result := Execute(Script, ExtractFileName(filename));
 end;
 
-  procedure SetHeight(L: TLabel; value: single);
-  var
-    Padding, UsableHeight, Position: Integer;
+// Execute a JS string
+function TTrndiExtEngine.Execute(const Script: RawUtf8; name: string = '<script>'):
+
+RawUtf8
+;
+
+var
+  EvalResult: JSValue;
+  ResultStr: pansichar;
+  err: RawUtf8;
+begin
+  FOutput := '';
+
+  EvalResult := FContext^.Eval(Script, name, JS_EVAL_TYPE_GLOBAL,err);
+
+  if EvalResult.IsException then
+  try
+
+
+//  TTrndiExtEngine.Instance.alert('An error occured while running extension ' + name + #13#10+err);
+    ExtError('Error loading', err);
+    ResultStr := JS_ToCString(FContext, JS_GetException(FContext));
+    Result := 'Error: ' + ResultStr + err;
+    JS_FreeCString(FContext, ResultStr);
+    Showmessage(analyze(FContext, @evalresult));;
+  except
+    on E: Exception do
+      SHowmessage('An extension''s code rasulted in an error: '
+        + e.message);
+  end
+  else
   begin
-    if (Value >= 2) and (Value <= 22) then
+
+// Convert errors to string
+    ResultStr := JS_ToCString(FContext, EvalResult.Raw);
+    Result := ResultStr;
+    JS_FreeCString(FContext, ResultStr);
+  end;
+
+  FContext^.Free(EvalResult);
+end;
+
+// Create a global JS object
+procedure TTrndiExtEngine.CreateNewObject(const name: string);
+
+var
+  GlobalObj, JSObject, JSValue: JSValueRaw;
+begin
+// Get the global object to add to
+  GlobalObj := JS_GetGlobalObject(FContext);
+// Create new object
+  JSObject := JS_NewObject(FContext);
+
+// Add object as a global property
+  JS_SetPropertyStr(FContext, GlobalObj, pansichar(name), JSObject);
+
+//  js_free(FContext, JSValue(GlobalObj)):
+end;
+
+// Add a method, to an existing object in JS
+procedure TTrndiExtEngine.AddMethod(const objectname, name: string; const func:
+PJSCFunction; const argc: integer = 0);
+
+var
+  GlobalObj, JSObject: JSValueRaw;
+begin
+// Get the global object (where our object is regged...)
+  GlobalObj := JS_GetGlobalObject(FContext);
+// Find the object
+  JSObject := JS_GetPropertyStr(FContext, GlobalObj, pansichar(objectname));
+
+// Add the new method
+  JS_DefinePropertyValueStr(FContext, JSObject, pansichar(name), JS_NewCFunction(
+
+    FContext
+    , @
+    func,
+
+    pansichar
+    (name
+    ), argc), JS_PROP_CONFIGURABLE or JS_PROP_ENUMERABLE);
+end;
+
+// Sets a JS global variable
+procedure TTrndiExtEngine.SetGlobalVariable(const VarName: RawUtf8; const Value:
+RawUtf8; const obj: string = '');
+
+var
+  JSValue, GlobalObj: JSValueRaw;
+begin
+// Global object to add to
+  GlobalObj := JS_GetGlobalObject(FContext);
+// Create the string
+  JSValue := JS_NewString(FContext, pansichar(Value));
+// Set it
+  JS_SetPropertyStr(FContext, GlobalObj, pansichar(VarName), JSValue);
+end;
+
+procedure TTrndiExtEngine.SetGlobalVariable(const VarName: RawUtf8; const Value: int64
+; const obj: string = '');
+
+var
+  GlobalObj, JSValue: JSValueRaw;
+begin
+// Global object to add to
+  GlobalObj := JS_GetGlobalObject(FContext);
+// Create the int
+  JSValue := JS_NewBigInt64(FContext, Value);
+// Set it
+  JS_SetPropertyStr(FContext, GlobalObj, pansichar(VarName), JSValue);
+end;
+
+
+function TTrndiExtEngine.CallFunction(const FuncName: RawUtf8; const Args: JSArray):
+
+RawUtf8
+;
+
+var
+  GlobalObj, FuncObj, RetVal: JSValueRaw;
+  ArgArray: array of JSValueRaw;
+  i: integer;
+  StrResult: pansichar;
+begin
+  Result := '';
+  GlobalObj := JS_GetGlobalObject(FContext);
+
+// Get the function/property
+  FuncObj := JS_GetPropertyStr(FContext, GlobalObj, pchar(FuncName));
+
+// Check that we found a JS function
+  if not JS_IsFunction(FContext, FuncObj) then
+  begin
+// If it's not a function, free references and exit
+    JS_Free(FContext, @GlobalObj);
+    JS_Free(FContext, @FuncObj);
+    ShowMessage('No such function or it is not callable: ' + FuncName);
+    Exit('');
+  end;
+
+// Prepare the parameters
+  SetLength(ArgArray, Length(Args));
+  for i := 0 to High(Args) do
+    ArgArray[i] := JS_NewString(FContext, pchar(Args[i]));
+
+
+// Call the JS function
+  RetVal := JS_Call(FContext, FuncObj, GlobalObj, Length(ArgArray), @ArgArray[0]);
+
+// Look for errors
+  if JS_IsError(FContext, RetVal) then
+  begin
+// Dump or retrieve the error
+    ExtError('Cannot call Extension function ' + funcname);
+    js_std_dump_error(FContext);
+    Result := '';
+  end
+  else
+  begin
+// Get a string
+    StrResult := JS_ToCString(FContext, RetVal);
+    if StrResult <> nil then
     begin
-      Padding := Round(fBG.ClientHeight * 0.1);   // 10% padding
-      UsableHeight := fBG.ClientHeight - 2 * Padding;
-
-      // Calculate placement, respecting padding
-      Position := Padding + Round((Value - 2) / 20 * UsableHeight);
-
-      L.Top := fBG.ClientHeight - Position;
+      Result := StrResult;
+// copy into our Pascal string
+      JS_FreeCString(FContext, StrResult);
     end
     else
-      ShowMessage('Cannot draw graph points outside 2 and 22');
+      Result := '';
+// possibly the result wasn't convertible to string
   end;
 
+// Free stuff that wont get cleared automatically
+//  js_freevalue(FContext, RetVal );
+  for i := 0 to High(ArgArray) do
+// JS_FreeCString(FContext, @ArgArray[i]);
+//  JS_Freevalue(FContext, @FuncObj);
+end;
 
+
+
+{
+function TTrndiExtEngine.CallFunction(const FuncName: RawUtf8; const Args: JSArray): RawUtf8;
+type
+  // Helper array type for building a "dynamic" array of TVarRec, as const of array is a pain
+  TVarRecArray = array of TVarRec;
 var
-  l: TLabel;
-  pos, i, x: integer;
-  b: BGReading;
- r: single;
+  ArgValues: array of JSValueRaw;  // Will hold the JS string values
+  AOC: TVarRecArray;// Will try to pass this as "array of const"
+  FuncResult: JSValue;
+  i: Integer;
 begin
+  // Build a JSValueRaw array from the incoming string arguments
+  SetLength(ArgValues, Length(Args));
+  for i := 0 to High(Args) do
+    ArgValues[i] := JS_NewString(FContext, PChar(Args[i]));
 
- // Update the dot space and hide them during update
- actOnTrend(@SetDotWidth);
- actOnTrend(@HideDot);
-
- // Calculate the area we can use
-  pos := (bgmax - bgmin) * lDot1.Parent.ClientHeight;
-
-  // Positin the dots, the amount of dots is hard coded
-  for i:= Low(bgs) to min(9, high(bgs)) do begin // bgs = readings we have
-     b := bgs[i];
-     l := fBG.FindChildControl('lDot'+(10-i).ToString) as TLabel;
-
-     r := b.convert(mmol);
-
-     // Hide the dot if it's out of range
-     if r > bgmax then
-       l.Visible := false
-     else if r < bgmin then
-       l.Visible := false
-     else begin
-       l.visible := true;
-       setHeight(l, r);
-     end;
-
-     // Set the hint of the dot to the reading
-     l.Hint := b.format(un, BG_MSG_SHORT , BGPrimary);;
-
-     // Set colors
-     case b.level of
-       BGValLevel.BGRange: l.Font.color := bgcoktxt;
-       BGValLevel.BGRangeLO: l.Font.color := bgclotxt;
-       BGValLevel.BGRangeHI: l.Font.color := bgchitxt;
-
-       BGValLevel.BGHigh: l.Font.color := bgchitxt;
-       BGValLevel.BGLOW: l.Font.color := bgclotxt;
-       BGValLevel.BGNormal: l.Font.color := bgcoktxt;
-     end;
-
-  end;
-
-  // Adjust the arrow and label sizes
-  lArrow.Height := lVal.Height div 5;
-  scaleLbl(lVal);
-  scaleLbl(lArrow);
-  lDiff.Width := ClientWidth;;
-  lDiff.Height := lval.Height div 7;
-  scaleLbl(lDiff);
-
-  // Resize the dots
-  actOnTrend(@ResizeDot);
-end;
-
-// Handle full screen
-procedure TfBG.lDiffDblClick(Sender: TObject);
-begin
-  if fBG.WindowState = wsMaximized then begin
-     fBG.WindowState := wsNormal;
-     fBG.FormStyle   := fsNormal;
-     fBG.BorderStyle := bsSizeable;
-  end else begin
-     fBG.WindowState := wsMaximized;
-     fBG.FormStyle   := fsStayOnTop;
-     fBG.BorderStyle := bsNone;
-end;
-
-end;
-
-procedure TfBG.lgMainClick(Sender: TObject);
-begin
-
-end;
-
-procedure TfBG.lValMouseDown(Sender:TObject;Button:TMouseButton;Shift:
-  TShiftState;X,Y:Integer);
-begin
-// Handle touch screens
-  StartTouch := Now;
-  IsTouched := True;
-  tTouch.Enabled := True;
-end;
-
-procedure TfBG.lValMouseUp(Sender:TObject;Button:TMouseButton;Shift:TShiftState;
-  X,Y:Integer);
-begin
-  IsTouched := False;
-  tTouch.Enabled := False;
-end;
-
-procedure TfBG.lValStartDrag(Sender: TObject; var DragObject: TDragObject);
-begin
-
-end;
-
-
-// Swap dots with their readings
-procedure TfBG.onTrendClick(Sender: TObject);
-begin
-  actOnTrend(@ExpandDot);
-end;
-
-// Update remote on timer
-procedure TfBG.tMainTimer(Sender: TObject);
-begin
-  update;
-  // @todo call JS
-end;
-
-// Handle a touch screen's long touch
-procedure TfBG.tTouchTimer(Sender:TObject);
-var
-  p: TPoint;
-begin
-  tTouch.Enabled := False;
-  if IsTouched then
+  // Build a dynamic array of TVarRec, one for each JSValueRaw
+  SetLength(AOC, Length(ArgValues));
+  for i := 0 to High(ArgValues) do
   begin
-    p := Mouse.CursorPos;
-    pmSettings.PopUp(p.X, p.Y);
+    AOC[i].VType    := vtPointer;// We want to store it as a pointer
+    AOC[i].VPointer := Pointer(ArgValues[i]);
   end;
-end;
 
-// Request data from the backend and update gui
-procedure TfBG.update;
+  // Attempt to call FContext^.Call using the TVarRec array.
+  // The hope is that FPC will accept our AOC as "array of const".
+//  FuncResult := FContext^.Call('', FuncName, AOC);
+  FuncResult := JS_Call(FContext, JS_GetGlobalObject(FContext); func_obj: JSValueConst; this_obj: JSValueConst;
+  argc: integer; argv: PJSValueConstArr): JSValueRaw;
+
+  // Check if the JS call resulted in an exception
+  if FuncResult.IsException then
+  begin
+// If so, retrieve an error message and maybe display it to the user
+    FContext^.ErrorMessage(True, Result, FuncResult.Ptr);
+    MessageDlg('[JS Function: ' + FuncName + '] Calling Error',
+               Result, mtError, [TMsgDlgBtn.mbOK], '');
+    Result := '';
+  end
+  else
+  begin
+// If no error, convert the result to a string
+    Result := FContext^.ToUtf8(FuncResult);
+  end;
+
+  // Free the function result
+  FContext^.Free(FuncResult);
+
+  // Free all JSValueRaw references that we created
+  for i := 0 to High(ArgValues) do
+    FContext^.Free(JSValue(ArgValues[i]));
+end;
+      }
+
+
+{
+function TTrndiExtEngine.CallFunction(const FuncName: RawUtf8; const Args: JSArray): RawUtf8;
 var
-  i: integer;
-  l: TLabel;
-  b: BGReading;
+  ArgValues: array of JSValueRaw;
+  FuncResult: JSValue;
+  i: Integer;
 begin
-  // get 10 - 25 readings (depends on the backend if the max is used)
-  bgs := api.getReadings(10,25);
-  if length(bgs) < 1 then begin
-    Showmessage('Cannot contact backend server');
+
+    case length(args) of// Im really tired with passing the const array and at the same time freeing up memory, so I just gave in and made it like this
+      0: begin
+               ArgValues := [];
+               FuncResult := FContext^.Call('', FuncName, []);
+         end;
+      1: begin
+              ArgValues := [JS_NewString(FContext, PChar(Args[0]))];
+              FuncResult := FContext^.Call('', FuncName, [ArgValues[0]]);
+         end;
+      2: begin
+              ArgValues := [JS_NewString(FContext, PChar(Args[0])), JS_NewString(FContext, PChar(Args[1]))];
+              FuncResult := FContext^.Call('', FuncName, [ArgValues[0],ArgValues[1]]);
+         end;
+      3: begin
+              ArgValues := [JS_NewString(FContext, PChar(Args[0])), JS_NewString(FContext, PChar(Args[1])), JS_NewString(FContext, PChar(Args[2])), JS_NewString(FContext, PChar(Args[3]))];
+              FuncResult := FContext^.Call('', FuncName, [ArgValues[0],ArgValues[1],ArgValues[2]]);
+         end;
+      4: begin
+              ArgValues := [JS_NewString(FContext, PChar(Args[0])), JS_NewString(FContext, PChar(Args[1])), JS_NewString(FContext, PChar(Args[2])), JS_NewString(FContext, PChar(Args[3])), JS_NewString(FContext, PChar(Args[4]))];
+              FuncResult := FContext^.Call('', FuncName, [ArgValues[0],ArgValues[1],ArgValues[2],ArgValues[3],ArgValues[3]]);
+         end;
+     5: begin
+              ArgValues := [JS_NewString(FContext, PChar(Args[0])), JS_NewString(FContext, PChar(Args[1])), JS_NewString(FContext, PChar(Args[2])), JS_NewString(FContext, PChar(Args[3])), JS_NewString(FContext, PChar(Args[4]))];
+              FuncResult := FContext^.Call('', FuncName, [ArgValues[0],ArgValues[1],ArgValues[2],ArgValues[3],ArgValues[4]]);
+        end
+      else
+        ShowMessage('Trndi does not suppport more than 5 arguments at this time, you can create a pull request however in "RegisterJSArray"');
+    end;
+
+
+    if FuncResult.IsException then
+  begin
+    FContext^.ErrorMessage(true,result,FuncResult.Ptr);
+    MessageDlg('[JS Function: '+funcname+'] Calling Error', result, mtError, [TMsgDlgBtn.mbOK], ''); //FContext^.ErrorDump(true, FuncResult.Ptr); //FContext^.ToUtf8(JSValue(FuncResult));
+    result := '';
+    FContext^.Free(FuncResult);
     Exit;
   end;
-  // Get the most recent reading
-  b := bgs[low(bgs)];
-  // Format the labels
-  lVal.Caption := b.format(un, BG_MSG_SHORT , BGPrimary);
-  lDiff.Caption := b.format(un, BG_MSG_SIG_SHORT, BGDelta);
-  lArrow.Caption := b.trend.Img;
-  lVal.Font.Style:= [];
 
-  // Determine if the reading if fresh
-  if MinutesBetween(Now, b.date) > 7 then begin
-     lDiff.Caption := TimeToStr(b.date);
-     lVal.Font.Style:= [fsStrikeOut];
-     fBG.Color := clBlack;
-     Exit;
-  end;
+  // If no error, result to string
+  Result := FContext^.ToUtf8(FuncResult);
 
-  // Determine the color based on if the reading is high/low/ok
-  case b.level of
-    BGValLevel.BGRange: fBG.Color := bgcok;
-    BGValLevel.BGRangeLO: fBG.Color := bgclo;
-    BGValLevel.BGRangeHI: fBG.Color := bgchi;
+//  ShowMessage(PChar(result));
 
-    BGValLevel.BGHigh: fBG.Color := bgchi;
-    BGValLevel.BGLOW: fBG.Color := bgclo;
-    BGValLevel.BGNormal: fBG.Color := bgcok;
-  end;
+  // Free stuff
+  for i := 0 to High(ArgValues) do
+    FContext^.Free(JSValue(ArgValues[i]));
+  FContext^.Free(FuncResult);
+end;
+}
 
-
+// Callback for timer, for running JS runtime jobs in queue (like promises !)
+procedure TTrndiExtEngine.OnJSTimer(Sender: TObject);
+begin
+  while JS_IsJobPending(FRuntime) do
+    if JS_ExecutePendingJob(FRuntime, @FContext) <= 0 then
+      Break// Exit whe the queue is empty
+  ;
 end;
 
-end.
+// Check if a funciton is known to JS (global)
+function TTrndiExtEngine.FunctionExists(const FuncName: string): boolean;
 
+var
+  Func: JSValue;
+  res: boolean;
+begin
+  res := FContext^.GetValue(pchar(FuncName), func);
+  if res = false then
+    result := res
+  else
+    result := func.IsObject;
+end;
+
+// Return this class/object - singleton
+class function TTrndiExtEngine.Instance: TTrndiExtEngine;
+begin
+  if FInstance = nil then
+    FInstance := TTrndiExtEngine.Create;
+  Result := FInstance;
+end;
+
+// Free this singleton
+class procedure TTrndiExtEngine.ReleaseInstance;
+begin
+  FreeAndNil(FInstance);
+end;
+end.

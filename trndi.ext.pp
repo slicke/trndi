@@ -1,5 +1,5 @@
 // Extension manager
-
+      -- should not be in use
 unit trndiext;
 
 {$mode delphi}{$H+}{$M+}
