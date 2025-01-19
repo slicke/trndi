@@ -22,6 +22,8 @@
 uses 
 mormot.lib.quickjs;
 
+
+
 // Convert a color, eg for a ux call in JS, to TColor
 function HTMLColorToTColor(const HTMLColor: string): TColor;
 
@@ -97,9 +99,35 @@ begin
       end;
 
   Result := JS_UNDEFINED;
-  if TTrndiExtEngine.Instance.FunctionExists('uxCallback') then
     TTrndiExtEngine.Instance.CallFunction('uxCallback', [comp, val]);
 end;
+
+function JSLevelColor(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw;
+begin
+
+if not (argc in [3,6,10]) then begin
+  Result := JS_FALSE;
+   Exit;
+end;
+
+if argc >= 3 then begin
+  bg_color_ok := HTMLColorToTColor(ctx^^.ToUtf8(argv^[0]));
+  bg_color_hi := HTMLColorToTColor(ctx^^.ToUtf8(argv^[1]));
+  bg_color_lo := HTMLColorToTColor(ctx^^.ToUtf8(argv^[2]));
+end;
+if argc >= 6 then begin
+  bg_color_ok_txt := HTMLColorToTColor(ctx^^.ToUtf8(argv^[3]));
+  bg_color_hi_txt := HTMLColorToTColor(ctx^^.ToUtf8(argv^[4]));
+  bg_color_lo_txt := HTMLColorToTColor(ctx^^.ToUtf8(argv^[5]));
+end;
+if argc = 10 then begin
+  bg_rel_color_hi := HTMLColorToTColor(ctx^^.ToUtf8(argv^[5]));
+  bg_rel_color_lo := HTMLColorToTColor(ctx^^.ToUtf8(argv^[6]));
+  bg_rel_color_hi_txt := HTMLColorToTColor(ctx^^.ToUtf8(argv^[7]));
+  bg_rel_color_lo_txt := HTMLColorToTColor(ctx^^.ToUtf8(argv^[8]));
+end;
+
+ end;
 
 {$endif}
 

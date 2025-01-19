@@ -80,7 +80,11 @@ JSValueVal = record
                                   // Använd TJSValList som TFPGList<PJSValueVal>
     end;
   function valtype: string;
+  // Convert different values
   function stringify: string;
+  function floatify: double;
+  function intify: int64;
+
   function _a(i: integer): JSValueVal;
   function acttype(const val: JSValueVal; want: JDValue): JSValueVal
   ;
@@ -192,40 +196,43 @@ function IntToValueVal(const i: integer): JSValueVal;
 function JSValueParamCheck(const params: PJSParameters; const fmts
 : array of JDValue): boolean;
 function valTypeToStr(val: JDValue): string;
-function checkJSParams(params: JSParameters; expect: JDTypes): boolean;
-function checkJSParams(params: JSParameters; expect, expect2: JDTypes): boolean;
+function checkJSParams(params: JSParameters; expect: JDTypes): integer;
+function checkJSParams(params: JSParameters; expect, expect2: JDTypes): integer;
+
 const
 JS_TAG_UNKNOWN = -10;
+JS_PARAM_MISSMATCH = 150;
+JS_PARAM_OK = -1;
 
 implementation
 
-function checkJSParams(params: JSParameters; expect: JDTypes): boolean;
+function checkJSParams(params: JSParameters; expect: JDTypes): integer;
 var
   i: integer;
 begin
   if params.Count <> length(expect) then
-    exit(false);
+    exit(JS_PARAM_MISSMATCH);
   for i := 0 to params.Count-1 do
     if params[i]^.data.match <> expect[i] then
-      Exit(false);
+      Exit(i);
 
-  result := true;
+  result := JS_PARAM_OK;
 end;
 
-function checkJSParams(params: JSParameters; expect, expect2: JDTypes): boolean;
+function checkJSParams(params: JSParameters; expect, expect2: JDTypes): integer;
 var
   i: integer;
 begin
   if params.Count <> length(expect) then
     if params.Count <> length(expect2) then
-      exit(false);
+      exit(JS_PARAM_MISSMATCH);
 
   for i := 0 to params.Count-1 do
     if params[i]^.data.match <> expect[i] then
       if params[i]^.data.match <> expect2[i] then
-        Exit(false);
+        Exit(i);
 
-  result := true;
+  result := JS_PARAM_OK;
 end;
 
 { JDValueHelper }
@@ -248,6 +255,40 @@ end;
 function JSValueVal.valtype: string;
 begin
   result := valTypeToStr(self.data.match);
+end;
+
+function JSValueVal.intify: int64;
+begin
+case self.data.match of
+  JD_BINT:
+    Result := self.data.BigInt;
+  JD_INT:
+    Result := self.data.Int32Val;
+  JD_STR:
+    if not TryStrToInt64(self.data.StrVal, result) then
+       raise Exception.Create('Could not interpret string as int');
+end;
+end;
+
+function JSValueVal.floatify: double;
+begin
+
+case self.data.match of
+  JD_BINT:
+    Result := self.data.BigInt;
+  JD_BFLOAT:
+    Result := self.data.BigFloat;
+  JD_BDECIMAL:
+    Result := self.data.BigDecimal;
+  JD_INT:
+    Result := self.data.Int32Val;
+  JD_F64:
+    Result := self.data.FloatVal;
+  JD_STR:
+    if not TryStrToFloat(self.data.StrVal, result) then
+       raise Exception.Create('Could not interpret string as float');
+end;
+
 end;
 
 function JSValueVal.stringify: string;

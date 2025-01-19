@@ -57,6 +57,7 @@ type
       virtual;
       function getCGMCore: CGMCore;
       procedure initCGMCore;
+      function checkActive: boolean;
     public 
       function getReadings(min, maxNum: integer; extras: string = ''): BGResults;
       virtual;
@@ -86,10 +87,21 @@ type
       property offset: integer read timeDiff;
       property timezone: integer write setTZ;
       property errormsg: string read lastErr;
+      property active: boolean read checkActive;
   end;
 
 
 implementation
+
+function TrndiAPI.checkActive: boolean;
+var
+bgr: BGReading;
+begin
+    if not getCurrent(bgr) then
+       result := false
+    else
+       result := bgr.date > 1000;
+end;
 
 constructor TrndiAPI.create(user, pass, extra: string);
 begin

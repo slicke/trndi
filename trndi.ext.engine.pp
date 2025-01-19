@@ -445,14 +445,13 @@ begin
   native := TrndiNative.create;
   callbacks := TCallbacks.Create;
 
-// Add our base functions
+  // Add our base functions
   addClassFunction('alert', @JSDoAlert, 1);
-  addFunction('log', ExtFunction(@JSDoLog), 1);
+  addClassFunction('log', ExtFunction(@JSDoLog), 1);
   addFunction('alert', ExtFunction(@JSDoAlert), 1);
+
+  // We register a "neutral" console.log outside of this object s to avoid errors here
   RegisterConsoleLog(@FContext);
-
-
-// We register a "neutral" console.log outside of this object s to avoid errors here
 end;
 
 // Adds a global JS function
@@ -592,9 +591,10 @@ procedure TTrndiExtEngine.addClassFunction(const id: string; const func: JSFunct
 var
   this: JSValue;
 begin
-if not FContext^.GetValue('Trndi', this) then begin
-  Showmessage('Cannot locate the Trndi class while initializing extensions');
-  Exit;
+  if not FContext^.GetValue('Trndi', this) then
+  begin
+    Showmessage('Cannot locate the Trndi class while initializing extensions');
+    Exit;
   end;
 
   FContext^.SetFunction(this, pchar(id), func, argc);
@@ -629,7 +629,6 @@ begin
   JS_SetPropertyStr(FContext, GlobalObj, pansichar(VarName), JValue);
 end;
 
-
 function TTrndiExtEngine.CallFunction(const FuncName: RawUtf8; const Args: JSArray):
 
 RawUtf8
@@ -641,6 +640,9 @@ var
   i: integer;
   StrResult: pansichar;
 begin
+  if not TTrndiExtEngine.Instance.FunctionExists(funcName) then
+    Exit('');
+
   Result := '';
   GlobalObj := JS_GetGlobalObject(FContext);
 

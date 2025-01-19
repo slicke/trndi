@@ -34,6 +34,7 @@ type
 
   TfConf = class(TForm)
     Bevel1: TBevel;
+    cbPrivacy:TCheckBox;
     eExt: TLabeledEdit;
     lLicense: TButton;
     cbSys: TComboBox;

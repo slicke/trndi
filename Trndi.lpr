@@ -22,26 +22,25 @@ program trndi;
 {$mode objfpc}{$H+}
 
 uses
-  {$IFDEF UNIX}
-  {$linklib gcc}  // We cant link with the QUickJS lib on Linux otherwise
-  cthreads,
-  {$ENDIF}
-  {$IFDEF HASAMIGA}
-  athreads,
-  {$ENDIF}
-  Interfaces, // this includes the LCL widgetset
-  Forms, lazcontrols, umain, uconf
+{$IFDEF UNIX}
+{$linklib gcc}  // We cant link with the QUickJS lib on Linux otherwise
+cthreads,
+{$ENDIF}
+{$IFDEF HASAMIGA}
+athreads,
+{$ENDIF}
+Interfaces, // this includes the LCL widgetset
+Forms, lazcontrols, umain, uconf
   { you can add units after this };
 
 {$R *.res}
 
 begin
-  RequireDerivedFormResource:=True;
-  Application.Scaled:=True;
-  Application.{%H-}MainFormOnTaskbar:=True;
-  Application.Initialize;
-  Application.CreateForm(TfBG, fBG);
-  Application.CreateForm(TfConf,fConf);
-  Application.Run;
+RequireDerivedFormResource:=true;
+Application.Scaled:=true;
+Application.{%H-}MainFormOnTaskbar:=true;
+Application.Initialize;
+Application.CreateForm(TfBG, fBG);
+Application.CreateForm(TfConf,fConf);
+Application.Run;
 end.
-

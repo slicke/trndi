@@ -1,11 +1,11 @@
 object fConf: TfConf
   Left = 748
-  Height = 376
+  Height = 414
   Top = 250
   Width = 415
   BorderStyle = bsToolWindow
   Caption = 'Settings'
-  ClientHeight = 376
+  ClientHeight = 414
   ClientWidth = 415
   Position = poDesktopCenter
   object Image1: TImage
@@ -10363,5 +10363,13 @@ object fConf: TfConf
     )
     ParentBackground = False
     TabOrder = 6
+  end
+  object cbPrivacy: TCheckBox
+    Left = 16
+    Height = 19
+    Top = 384
+    Width = 171
+    Caption = 'Privacy Mode (Hide number)'
+    TabOrder = 7
   end
 end

@@ -27,8 +27,8 @@ object fBG: TfBG
   end
   object lVal: TLabel
     Left = 0
-    Height = 142
-    Top = 18
+    Height = 160
+    Top = 0
     Width = 320
     Align = alClient
     Alignment = taCenter
@@ -189,7 +189,6 @@ object fBG: TfBG
     Height = 18
     Top = 0
     Width = 320
-    Align = alTop
     BevelOuter = bvNone
     Caption = '- Off Range -'
     Color = clBlack
@@ -200,7 +199,7 @@ object fBG: TfBG
     OnClick = pnOffRangeClick
   end
   object tMain: TTimer
-    Interval = 700000
+    Interval = 100000
     OnTimer = tMainTimer
     Left = 202
     Top = 129
@@ -246,6 +245,14 @@ object fBG: TfBG
         Caption = 'Explain'
         OnClick = miLimitExplainClick
       end
+    end
+    object miSplit4: TMenuItem
+      Caption = '-'
+    end
+    object miRefresh: TMenuItem
+      Caption = 'Refresh in:'
+      Enabled = False
+      RightJustify = True
     end
   end
   object tTouch: TTimer
