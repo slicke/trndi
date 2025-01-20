@@ -34,7 +34,7 @@ object fBG: TfBG
     Alignment = taCenter
     AutoSize = False
     Caption = 'Setup'
-    Color = 16760331
+    Color = 21243
     Font.Color = clWhite
     Font.Height = 160
     OptimalFill = True

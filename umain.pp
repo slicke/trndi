@@ -125,7 +125,7 @@ bg_color_ok: TColor = $0000DC84;
 bg_color_ok_txt: TColor = $00F2FFF2;
   // Hi
 bg_color_hi: TColor = $0007DAFF;
-bg_color_hi_txt: TColor = $00F3FEFF;
+bg_color_hi_txt: TColor = $000052FB;
   // Low
 bg_color_lo: TColor = $00FFBE0B;
 bg_color_lo_txt: TColor = $00FFFEE9;
@@ -336,7 +336,7 @@ begin
   begin
     if l.Caption = '•' then
     begin
-      l.Caption := '▲'; // Use a triangle or another distinct symbol
+      l.Caption := '☉'; // Use a triangle or another distinct symbol
       l.Font.Style := [fsBold];
       l.Font.Size := l.Font.Size + 2; // Increase font size for emphasis
     end
@@ -349,7 +349,7 @@ begin
   end
   else
   if l.Caption = '•' then
-    l.Caption := l.Hint
+    l.Caption := '•'#10+l.Hint
   else
     l.Caption := '•';
 end;
@@ -579,7 +579,7 @@ var
 begin
   update;
   {$ifdef TrndiExt}
-  ShowMessage(TTrndiExtEngine.Instance.CallFunction('updateCallback', [bgs[Low(bgs)].val.ToString, DateTimeToStr(Now)]));
+  TTrndiExtEngine.Instance.CallFunction('updateCallback', [bgs[Low(bgs)].val.ToString, DateTimeToStr(Now)]);
   {$endif}
 end;
 
@@ -688,7 +688,6 @@ var
   l: TLabel;
   slotStart, slotEnd: TDateTime;
   reading: BGReading;
-  bgValue: single;
   found: boolean;
   labelNumber: integer;
 begin
@@ -749,23 +748,22 @@ begin
           setPointHeight(l, reading.convert(mmol));
 
           // Set colors based on the value
-          bgValue := reading.convert(mmol);
-          if bgValue >= api.cgmHi then
+          if reading.val >= api.cgmHi then
             l.Font.Color := bg_color_hi_txt
           else
-          if bgValue <= api.cgmLo then
+          if reading.val <= api.cgmLo then
             l.Font.Color := bg_color_lo_txt
           else
           begin
             l.Font.Color := bg_color_ok_txt;
-            if bgValue <= api.cgmRangeLo then
+            if reading.val <= api.cgmRangeLo then
               l.Font.Color := bg_rel_color_lo_txt
             else
-            if bgValue >= api.cgmRangeHi then
+            if reading.val >= api.cgmRangeHi then
               l.Font.Color := bg_rel_color_hi_txt;
           end;
 
-          LogMessage(Format('TrendDots[%d] updated with reading at %s (Value: %.2f).', [labelNumber, DateTimeToStr(reading.date), bgValue]));
+          LogMessage(Format('TrendDots[%d] updated with reading at %s (Value: %.2f).', [labelNumber, DateTimeToStr(reading.date), reading.val]));
         end;
 
         found := true;
