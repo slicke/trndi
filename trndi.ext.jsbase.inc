@@ -19,15 +19,15 @@
  *)
 
 
-function TrndiConstructor(ctx: JSContext; this_val: JSValueRaw; argc: Integer; argv: PJSValues): JSValueRaw; cdecl;
+function TrndiConstructor(ctx: JSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw; cdecl;
 begin
   // Create a new object of the Trndi class
   Result := JS_NewObjectClass(ctx, TrndiClassID);
 end;
 
-function JSDoLog(ctx: JSContext; this_val: JSValueRaw; argc: Integer; argv: PJSValues): JSValueRaw; cdecl;
+function JSDoLog(ctx: JSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw; cdecl;
 var 
-  i: Integer;
+  i: integer;
   buffer: TSynTempBuffer;
   res: RawUtf8;
 begin
@@ -36,10 +36,10 @@ begin
   Result := JS_UNDEFINED;
 end;
 
-function JSDoAlert(ctx: JSContext; this_val: JSValueRaw; argc: Integer; argv: PJSValues): JSValueRaw; cdecl;
+function JSDoAlert(ctx: JSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw; cdecl;
 var
- i : integer;
- output: rawutf8;
+  i : integer;
+  output: rawutf8;
 begin
   for i := 0 to argc-1 do
     output := output + ctx^.ToUtf8(argv^[i]);
@@ -51,17 +51,17 @@ end;
 
 
 // fetch()
-function JSFetch(ctx: JSContext; this_val: JSValueRaw; argc: Integer; argv: PJSValues): JSValueRaw; cdecl;
+function JSFetch(ctx: JSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw; cdecl;
 var
   URL: string;
   response : RawUtf8;
 begin
   if argc > 0 then
-    begin
-      url := TTrndiExtEngine.Instance.ParseArgv(@ctx, argv, 0);
-      TTrndiExtEngine.native.request(false,url,[]);
-      Result := JS_NewString(ctx, PAnsiChar(Response));
-    end
+  begin
+    url := TTrndiExtEngine.Instance.ParseArgv(@ctx, argv, 0);
+    TTrndiExtEngine.native.request(false,url,[]);
+    Result := JS_NewString(ctx, pansichar(Response));
+  end
   else
     Result := JS_UNDEFINED;
 end;
@@ -74,23 +74,21 @@ end;
 } catch (error) {
   handleError(error.message);
 }  *)
-function JSHandleError(ctx: JSContext; this_val: JSValueRaw; argc: Integer; argv: PJSValues): JSValueRaw; cdecl;
+function JSHandleError(ctx: JSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw; cdecl;
 var 
   err: string;
 begin
   if argc > 0 then
-    begin
-      err := TTrndiExtEngine.Instance.ParseArgv(@ctx, argv, 0);
-      //    ;                                     ctx^^.ErrorDump(true, nil)IsException
-      //  TTrndiExtEngine.Instance.excepion(err,);
-    end;
+    err := TTrndiExtEngine.Instance.ParseArgv(@ctx, argv, 0)//    ;                                     ctx^^.ErrorDump(true, nil)IsException
+//  TTrndiExtEngine.Instance.excepion(err,);
+  ;
   Result := JS_UNDEFINED;
 end;
 
 // const data = readFile('test.txt');
 function JSReadFile(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues):
 
-                                                                                          JSValueRaw
+JSValueRaw
 ;
 cdecl;
 
@@ -98,11 +96,11 @@ var
   FileName, FileContent: RawUtf8;
 begin
   if argc > 0 then
-    begin
-      FileName := TTrndiExtEngine.Instance.ParseArgv(ctx, argv, 0);
-      FileContent := StringFromFile(UTF8ToString(FileName));
-      Result := JS_NewString(ctx^, PAnsiChar(FileContent));
-    end
+  begin
+    FileName := TTrndiExtEngine.Instance.ParseArgv(ctx, argv, 0);
+    FileContent := StringFromFile(UTF8ToString(FileName));
+    Result := JS_NewString(ctx^, pansichar(FileContent));
+  end
   else
     Result := JS_UNDEFINED;
 end;
@@ -111,7 +109,7 @@ end;
 // writeFile('test.txt', 'Hello from JavaScript!');
 function JSWriteFile(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues):
 
-                                                                                          JSValueRaw
+JSValueRaw
 ;
 cdecl;
 
@@ -119,48 +117,48 @@ var
   FileName, FileContent: RawUtf8;
 begin
   if argc > 1 then
-    begin
-      FileName := TTrndiExtEngine.Instance.ParseArgv(ctx, argv, 0);
-      FileContent := TTrndiExtEngine.Instance.ParseArgv(ctx, argv, 1);
+  begin
+    FileName := TTrndiExtEngine.Instance.ParseArgv(ctx, argv, 0);
+    FileContent := TTrndiExtEngine.Instance.ParseArgv(ctx, argv, 1);
 
-      if FileFromString(FileContent, UTF8ToString(FileName)) then
-        Result := JS_ToBool(ctx^, JS_TRUE)
-      else
-        Result := JS_ToBool(ctx^, JS_FALSE);
-    end
+    if FileFromString(FileContent, UTF8ToString(FileName)) then
+      Result := JS_ToBool(ctx^, JS_TRUE)
+    else
+      Result := JS_ToBool(ctx^, JS_FALSE);
+  end
   else
     Result := JS_UNDEFINED;
 end;
 
 procedure PromiseRejectionTracker(ctx: PJSContext; promise, reason: JSValueConst; is_handled:
-                                  LongBool; opaque: Pointer);
+longbool; opaque: Pointer);
 cdecl;
 
 var 
-  error_msg: PChar;
+  error_msg: pchar;
 begin
   if not is_handled then
-    begin
+  begin
       // Hämta felmeddelandet från reason (anledningen till avvisningen)
-      error_msg := JS_ToCString(ctx^, reason);
-      try
+    error_msg := JS_ToCString(ctx^, reason);
+    try
         // Logga meddelandet om det finns
-        if error_msg <> nil then
-          TTrndiExtEngine.Instance.alert('Unhandled Promise rejection: ' + error_msg)
-        else
-          TTrndiExtEngine.Instance.alert('Unhandled Promise rejection: [no error message]');
-      finally
+      if error_msg <> nil then
+        TTrndiExtEngine.Instance.alert('Unhandled Promise rejection: ' + error_msg)
+      else
+        TTrndiExtEngine.Instance.alert('Unhandled Promise rejection: [no error message]');
+    finally
         // Frigör C-strängen efter användning
-        JS_FreeCString(ctx^, error_msg);
+      JS_FreeCString(ctx^, error_msg);
     end;
-end;
+  end;
 end;
 
 
 
 //function AsyncTask(ctx: JSContext; this_val: JSValueConst; argc: integer; argv: PJSValueConstArr): JSValueRaw; cdecl;
 function AsyncTask(ctx: JSContext; this_val: JSValueConst; argc: integer; argv: PJSValueConst; magic
-                   : integer; func_data: PJSValueRaw): JSValueRaw;
+: integer; func_data: PJSValueRaw): JSValueRaw;
 cdecl;
 
 var 
@@ -181,46 +179,45 @@ begin
       raise Exception.Create('Missing function definition!');
   except
     raise Exception.Create('Missing function definition!');
-end;
+  end;
 
 
-cb^.params.values.data := JSParseParameters(ctx, argc, argv);
+  cb^.params.values.data := JSParseParameters(ctx, argc, argv);
 // Free senare
 
-params := cb^.params.values.data.Count;
+  params := cb^.params.values.data.Count;
 
 
 
 (*   if (params > 0) and (cb^.params.values.data[0].data.match = JD_UNKNOWN) then
      ShowMessage('Inga parametrar'); *)
-if (not ((params >= cb^.params.min) and (params <= cb^.params.max))) and (cb^.params.min > -1) then
+  if (not ((params >= cb^.params.min) and (params <= cb^.params.max))) and (cb^.params.min > -1) then
   //Use minus for feely varying
-  if cb^.params.min = cb^.params.max then
-    ShowMessage(Format('[%s] Needs %d pameters, but we got %d', [func, cb^.params.min, params]))
-else
-  ShowMessage(Format('[%s] Needs %d - %d pameters, but we got %d', [func, cb^.params.min, cb^.params
-              .max, params]));
+    if cb^.params.min = cb^.params.max then
+      ShowMessage(Format('[%s] Needs %d pameters, but we got %d', [func, cb^.params.min, params]))
+    else
+      ShowMessage(Format('[%s] Needs %d - %d pameters, but we got %d', [func, cb^.params.min, cb^.params
+        .max, params]));
 
 // Setup promise
-try
-  Promise := JS_NewPromiseCapability(ctx, @funcs[0]);
-except
-  on E: Exception do
-        begin
-          ShowMessage('Init failed');
-          Exit;
-        end;
-end;
-
-if JS_IsError(ctx, promise) then
-  begin
-    //    JS_Free(ctx, @taskinfo.funcs[0]);
-    // Hantera fel
+  try
+    Promise := JS_NewPromiseCapability(ctx, @funcs[0]);
+  except
+    on E: Exception do
+    begin
+      ShowMessage('Init failed');
+      Exit;
+    end;
   end;
 
+  if JS_IsError(ctx, promise) then
+  //    JS_Free(ctx, @taskinfo.funcs[0]);
+// Hantera fel
+  ;
 
-TJSAsyncTask.Create(ctx, cb, funcs);
 
-result := promise;
+  TJSAsyncTask.Create(ctx, cb, funcs);
+
+  result := promise;
 
 end;

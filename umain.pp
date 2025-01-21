@@ -293,24 +293,26 @@ begin
   with TrndiNative.Create do
   begin
   // Idea for using multiple person/account support
-  username := GetSetting('users.names','');
-  if username <> '' then begin
-  // Load possible other users
-    with TStringList.Create do begin
-      AddCommaText(username);
+    username := GetSetting('users.names','');
+    if username <> '' then
+      with TStringList.Create do
+      begin
+        AddCommaText(username);
 
-      i := InputCombo('User', 'Trndi found multiple accounts. Please choose one for this instance', ToStringArray);
-      if i > -1 then begin
-        username := strings[i];
-       fbg.Caption := Format('[%s] %s', [username, fBG.Caption]);
-           username := username+'_';
-      end else
-       username := '';
-      Free;
-    end;
-   end;
+        i := InputCombo('User', 'Trndi found multiple accounts. Please choose one for this instance', ToStringArray);
+        if i > -1 then
+        begin
+          username := strings[i];
+          fbg.Caption := Format('[%s] %s', [username, fBG.Caption]);
+          username := username+'_';
+        end
+        else
+          username := '';
+        Free;
+      end// Load possible other users
+    ;
 
-  //
+
     privacyMode := GetSetting(username +'ext.privacy', '0') = '1';
     if GetSetting(username +'unit', 'mmol') = 'mmol' then
       un := BGUnit.mmol
@@ -357,19 +359,19 @@ end;
 // Changes a trend dot from a dot to the actual bg value with highlighting for the latest reading
 procedure TfBG.ExpandDot(l: TLabel; c, ix: integer);
 var
- gnow: boolean;
+  gnow: boolean;
 begin
-gnow := l.Caption = DOT_GRAPH; // Graph now
+  gnow := l.Caption = DOT_GRAPH; // Graph now
 
   if ix = NUM_DOTS then // Latest reading at lDot10
     l.Caption := IfThen(gnow, DOT_FRESH, DOT_GRAPH)
   else
     l.Caption := IfThen(gnow, l.Hint, DOT_GRAPH);
 
-   if not gnow then
-     ResizeDot(l, c, ix)
-   else
-     l.font.Size := lVal.Font.Size div c;
+  if not gnow then
+    ResizeDot(l, c, ix)
+  else
+    l.font.Size := lVal.Font.Size div c;
 end;
 
 // Hides a dot
@@ -609,14 +611,14 @@ var
   d, diff: TDateTime;
   min, sec: int64;
 begin
-    d := bgs[Low(bgs)].date; // Last reading time
-    diff := Now-d;
+  d := bgs[Low(bgs)].date; // Last reading time
+  diff := Now-d;
 
 
-    min := MilliSecondsBetween(Now, d) div 60000;
-    sec := (MilliSecondsBetween(Now, d) mod 60000) div 1000;
+  min := MilliSecondsBetween(Now, d) div 60000;
+  sec := (MilliSecondsBetween(Now, d) mod 60000) div 1000;
 
-    lDiff.Caption := Format('%s (%d.%.2d ago)', [FormatDateTime('H:mm', d), min, sec]);
+  lDiff.Caption := Format('%s (%d.%.2d ago)', [FormatDateTime('H:mm', d), min, sec]);
 end;
 
 // Handle a touch screen's long touch
@@ -717,15 +719,15 @@ begin
     end
   end;
   lastup := Now;
-if privacyMode then begin
-  if fBG.Color = bg_color_hi then
-       lVal.Caption := '⭱'
-  else if fBG.Color =  bg_color_lo then
-       lVal.Caption := '⭳'
+  if privacyMode then
+    if fBG.Color = bg_color_hi then
+      lVal.Caption := '⭱'
     else
-       lVal.Caption := '✓';
-end;
- Self.OnResize(self);
+    if fBG.Color =  bg_color_lo then
+      lVal.Caption := '⭳'
+    else
+      lVal.Caption := '✓';
+  Self.OnResize(self);
 end;
 
 // PlaceTrendDots method to map readings to TrendDots

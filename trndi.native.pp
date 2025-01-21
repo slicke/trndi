@@ -35,95 +35,93 @@ interface
 
 uses 
 Classes, SysUtils, graphics
-  {$IF DEFINED(X_MAC)},
+{$IF DEFINED(X_MAC)},
 NSMisc,
 ns_url_request
-  {$ELSEIF DEFINED(X_WIN)},
+{$ELSEIF DEFINED(X_WIN)},
 Windows, registry, dialogs, StrUtils, winhttpclient
-  {$ELSEIF DEFINED(X_PC)},
+{$ELSEIF DEFINED(X_PC)},
 fphttpclient, openssl, opensslsockets, IniFiles, dialogs
-  {$ENDIF};
+{$ENDIF};
 
 
 type 
-  TrndiNative = class
-    public 
-      dark: boolean;
-      function request(const post: boolean; const endpoint: string; const params: array of string;
-                       const jsondata: string = ''; const header: string = ''): string;
-      procedure SetSetting(const key: string; const val: string);
-      function GetSetting(const key: string; def: string = ''): string;
-      function GetIntSetting(const key: string; def: integer = -1): integer;
-      function isDarkMode: boolean;
-      function HasTouchScreen: boolean;
-      class function getURL(const url: string; out res: string): boolean;
-        static;
+TrndiNative = class
+public
+  dark: boolean;
+  function request(const post: boolean; const endpoint: string; const params: array of string;
+    const jsondata: string = ''; const header: string = ''): string;
+  procedure SetSetting(const key: string; const val: string);
+  function GetSetting(const key: string; def: string = ''): string;
+  function GetIntSetting(const key: string; def: integer = -1): integer;
+  function isDarkMode: boolean;
+  function HasTouchScreen: boolean;
+  class function getURL(const url: string; out res: string): boolean;
+    static;
 
-        destructor  Destroy;
-        override;
-        constructor create(ua, base: string);
-        constructor create;
-        protected 
-          useragent, baseurl: string;
-    {$IF DEFINED(X_WIN)}
+  destructor  Destroy;
+    override;
+  constructor create(ua, base: string);
+  constructor create;
+protected
+  useragent, baseurl: string;
+  {$IF DEFINED(X_WIN)}
           //     usessl: boolean;
-     {$ELSEIF DEFINED(X_PC)}
-          inistore: TINIFile;
-    {$ENDIF}
+  {$ELSEIF DEFINED(X_PC)}
+  inistore: TINIFile;
+  {$ENDIF}
 
-      end;
+end;
 
 
-      implementation
-      destructor TrndiNative.destroy;
-      begin
- {$IF DEFINED(X_PC)}
-        inistore.free;
- {$ENDIF}
-      end;
+implementation
+destructor TrndiNative.destroy;
+begin
+  {$IF DEFINED(X_PC)}
+  inistore.free;
+  {$ENDIF}
+end;
 
 {$IF DEFINED(X_WIN)}
-      function TrndiNative.HasTouchScreen: Boolean;
-      const 
-        SM_MAXIMUMTOUCHES = 95;
-      begin
-        Result := GetSystemMetrics(SM_MAXIMUMTOUCHES) > 0;
-      end;
+function TrndiNative.HasTouchScreen: boolean;
+const
+  SM_MAXIMUMTOUCHES = 95;
+begin
+  Result := GetSystemMetrics(SM_MAXIMUMTOUCHES) > 0;
+end;
 {$ELSEIF DEFINED(X_MAC)}
-      function TrndiNative.HasTouchScreen: Boolean;
-      begin
-        result := false;
+function TrndiNative.HasTouchScreen: boolean;
+begin
+  result := false;
         // iOS only
-      end;
+end;
 {$ELSE}
-      function TrndiNative.HasTouchScreen: Boolean;
+function TrndiNative.HasTouchScreen: boolean;
 
-      var 
-        SL: TStringList;
-        i: Integer;
-      begin
-        Result := False;
-        SL := TStringList.Create;
-        try
-          if FileExists('/proc/bus/input/devices') then
-            begin
-              SL.LoadFromFile('/proc/bus/input/devices');
-              for i := 0 to SL.Count - 1 do
-                begin
-                  if Pos('Touchscreen', SL[i]) > 0 then
-                    begin
-                      Result := True;
-                      Break;
-                    end;
-                end;
-            end;
-        finally
-          SL.Free;
-      end;
+var
+  SL: TStringList;
+  i: integer;
+begin
+  Result := false;
+  SL := TStringList.Create;
+  try
+    if FileExists('/proc/bus/input/devices') then
+    begin
+      SL.LoadFromFile('/proc/bus/input/devices');
+      for i := 0 to SL.Count - 1 do
+        if Pos('Touchscreen', SL[i]) > 0 then
+        begin
+          Result := true;
+          Break;
+        end;
+    end;
+  finally
+    SL.Free;
   end;
+end;
 {$ENDif}
 
-  constructor TrndiNative.create;
+constructor TrndiNative.create;
 begin
   create('Mozilla/5.0 (compatible; trndi) TrndiAPI', '');
 end;
@@ -139,7 +137,7 @@ end;
 {$IFDEF X_MAC}
 // Each ifdef needs a function header or the code formatter goes bananas
 function TrndiNative.request(const post: boolean; const endpoint: string; const params: array of
-                             string; const jsondata: string = ''; const header: string = ''): string
+string; const jsondata: string = ''; const header: string = ''): string
 ;
 
 var 
@@ -153,53 +151,54 @@ begin
   headers := TStringList.create();
 
   with TNSHTTPSendAndReceive.create do
-    try
-      address := Format('%s/%s', [baseUrl, endpoint]);
-      if post then
-        method := 'POST'
-      else
-        method := 'GET';
+  try
+    address := Format('%s/%s', [baseUrl, endpoint]);
+    if post then
+      method := 'POST'
+    else
+      method := 'GET';
 
-      if header <> '' then
-        Headers.Add(header);
-      if jsondata <> '' then
-        begin
-          Headers.Add('Content-Type=application/json');
+    if header <> '' then
+      Headers.Add(header);
+    if jsondata <> '' then
+    begin
+      Headers.Add('Content-Type=application/json');
 
 
 // Not strictly required, but if the API changes it might be a good idea to pass a version we know works
-          if useragent <> '' then
-            Headers.Add('User-Agent=' + useragent);
+      if useragent <> '' then
+        Headers.Add('User-Agent=' + useragent);
 
-          send.Write(jsondata[1], length(jsondata));
-          Headers.Add('Content-Length=' + IntToStr(send.Size));
-        end
-      else if length(params) > 0 then
-             begin
-               address := address + '?';
-               for sx in params do
-                 address := address + '&' + sx;
-             end;
+      send.Write(jsondata[1], length(jsondata));
+      Headers.Add('Content-Length=' + IntToStr(send.Size));
+    end
+    else
+    if length(params) > 0 then
+    begin
+      address := address + '?';
+      for sx in params do
+        address := address + '&' + sx;
+    end;
 
 
-      if SendAndReceive(send, res, headers) then
-        result := trim(res.DataString)
-      else
-        result := '+' + LastErrMsg;
+    if SendAndReceive(send, res, headers) then
+      result := trim(res.DataString)
+    else
+      result := '+' + LastErrMsg;
 
       // showmessage(send.DataString+' -> ' + res.DataString);
-    finally
-      free;
-      res.free;
-      send.free;
-      headers.free;
-end;
+  finally
+    free;
+    res.free;
+    send.free;
+    headers.free;
+  end;
 end;
 
 {$ENDIF}
 {$IFDEF WINDOWS}
 function TrndiNative.request(const post: boolean; const endpoint: string; const params: array of
-                             string; const jsondata: string = ''; const header: string = ''): string
+string; const jsondata: string = ''; const header: string = ''): string
 ;
 
 var 
@@ -220,25 +219,26 @@ begin
 
     // Om specifika headers anges, lägg till dem
     if header <> '' then
-      begin
-        headers := header.Split(['=']);
-        if Length(headers) = 2 then
-          client.AddHeader(headers[0], headers[1]);
-      end;
+    begin
+      headers := header.Split(['=']);
+      if Length(headers) = 2 then
+        client.AddHeader(headers[0], headers[1]);
+    end;
 
     // Hantera JSON-data eller parametrar
     if jsondata <> '' then
-      begin
-        client.AddHeader('Content-Type', 'application/json; charset=UTF-8');
-        client.AddHeader('Accept', 'application/json');
-        client.SetRequestBody(jsondata);
-      end
-    else if hasParams then
-           begin
-             address := address + '?';
-             for sx in params do
-               address := address + '&' + sx;
-           end;
+    begin
+      client.AddHeader('Content-Type', 'application/json; charset=UTF-8');
+      client.AddHeader('Accept', 'application/json');
+      client.SetRequestBody(jsondata);
+    end
+    else
+    if hasParams then
+    begin
+      address := address + '?';
+      for sx in params do
+        address := address + '&' + sx;
+    end;
 
     // Skicka GET eller POST-begäran
     try
@@ -248,19 +248,19 @@ begin
         Res := client.Get(address, params);
     except
       on E: Exception do
-            result := E.Message;
-end;
+        result := E.Message;
+    end;
 
-result := res;
-finally
-  client.Free;
-end;
+    result := res;
+  finally
+    client.Free;
+  end;
 end;
 
 {$ELSE}
 {$IFNDEF DARWIN}
 function TrndiNative.request(const post: boolean; const endpoint: string; const params: array of
-                             string; const jsondata: string = ''; const header: string = ''): string
+string; const jsondata: string = ''; const header: string = ''): string
 ;
 
 var 
@@ -274,24 +274,25 @@ begin
   Client.AddHeader('User-Agent', useragent);
   address := Format('%s/%s', [baseUrl, endpoint]);
   if header <> '' then
-    begin
-      headers := header.split('=');
-      client.AddHeader(headers[0], headers[1]);
-    end;
+  begin
+    headers := header.split('=');
+    client.AddHeader(headers[0], headers[1]);
+  end;
 
   if jsondata <> '' then
-    begin
-      Client.AddHeader('Content-Type', 'application/json; charset=UTF-8');
-      Client.AddHeader('Accept', 'application/json');
+  begin
+    Client.AddHeader('Content-Type', 'application/json; charset=UTF-8');
+    Client.AddHeader('Accept', 'application/json');
 
-      client.RequestBody := TRawByteStringStream.create(jsondata);
-    end
-  else if length(params) > 0 then
-         begin
-           address := address + '?';
-           for sx in params do
-             address := address + '&' + sx;
-         end;
+    client.RequestBody := TRawByteStringStream.create(jsondata);
+  end
+  else
+  if length(params) > 0 then
+  begin
+    address := address + '?';
+    for sx in params do
+      address := address + '&' + sx;
+  end;
 
 
   res := TStringStream.create('');
@@ -308,13 +309,13 @@ begin
 
     except
       on E: EHttpClient do
-            result := E.Message;
-end;
-finally
-  Client.RequestBody.free;
-  Client.free;
-  Res.free;
-end;
+        result := E.Message;
+    end;
+  finally
+    Client.RequestBody.free;
+    Client.free;
+    Res.free;
+  end;
 end;
 
 {$endif}
@@ -335,7 +336,7 @@ begin
     //read the value of the default name
   finally
     reg.free;
-end;
+  end;
 end;
 
 {$elseif defined(X_PC)}
@@ -388,7 +389,7 @@ begin
       ShowMessage('Error saving!');
   finally
     reg.free;
-end;
+  end;
 end;
 
 {$elseif defined(X_PC)}
@@ -401,92 +402,97 @@ end;
 
 {$endif}
 
-function TrndiNative.isDarkMode: boolean;
 {$if defined(X_MAC)}
+function TrndiNative.isDarkMode: boolean;
 begin
   // NSStringToString(NSUserDefaults.standardUserDefaults.stringForKey(NSStr(@KeyName[1])));
   result := pos('DARK',UpperCase(GetPrefString('AppleInterfaceStyle')))>0;
+end;
 {$elseif defined(X_WIN)}
-  const 
-    regtheme: string = 'Software\Microsoft\Windows\CurrentVersion\Themes\Personalize\';
-    reglight: string = 'AppsUseLightTheme';
+function TrndiNative.isDarkMode: boolean;
+const
+  regtheme: string = 'Software\Microsoft\Windows\CurrentVersion\Themes\Personalize\';
+  reglight: string = 'AppsUseLightTheme';
 
-  var 
-    reg: TRegistry;
-  begin
-    reg    := TRegistry.Create(KEY_READ);
-    try
-      result := false;
-      reg.RootKey := HKEY_CURRENT_USER;
-      if reg.KeyExists(regtheme) then
-        if Reg.OpenKey(regtheme, False) then
-          try
-            if Reg.ValueExists(reglight) then
-              result := Reg.ReadInteger(reglight) = 0;
-          finally
-            reg.CloseKey;
-  end;
-finally
-  reg.Free;
-end;
-  {$else}
-function _Level(C: TColor): double;
+var
+  reg: TRegistry;
 begin
-  Result := Red(C)*0.3 + Green(C)*0.59 + Blue(C)*0.11;
+  reg    := TRegistry.Create(KEY_READ);
+  try
+    result := false;
+    reg.RootKey := HKEY_CURRENT_USER;
+    if reg.KeyExists(regtheme) then
+      if Reg.OpenKey(regtheme, false) then
+      try
+        if Reg.ValueExists(reglight) then
+          result := Reg.ReadInteger(reglight) = 0;
+      finally
+        reg.CloseKey;
+      end;
+  finally
+    reg.Free;
+  end;
 end;
+{$else}
+function TrndiNative.isDarkMode: boolean;
+function _Level(C: TColor): double;
+  begin
+    Result := Red(C)*0.3 + Green(C)*0.59 + Blue(C)*0.11;
+  end;
 begin
   Result := _Level(ColorToRGB(clWindow)) < _Level(ColorToRGB(clWindowText));
+end;
 {$endif}
-end;
 
-class function TrndiNative.getURL(const url: string; out res: string): boolean;
-  const 
-    DEFAULT_USER_AGENT = 'Mozilla/5.0 (compatible; trndi) TrndiAPI';
 {$IF DEFINED(X_MAC)}
-
-  var 
-    send, response: TStringStream;
-    headers: TStringList;
-    httpClient: TNSHTTPSendAndReceive;
-  begin
-    res := '';
-    send := TStringStream.Create('');
-    response := TStringStream.Create('');
-    headers := TStringList.Create();
-    httpClient := TNSHTTPSendAndReceive.Create;
+class function TrndiNative.getURL(const url: string; out res: string): boolean;
+const
+  DEFAULT_USER_AGENT = 'Mozilla/5.0 (compatible; trndi) TrndiAPI';
+var
+  send, response: TStringStream;
+  headers: TStringList;
+  httpClient: TNSHTTPSendAndReceive;
+begin
+  res := '';
+  send := TStringStream.Create('');
+  response := TStringStream.Create('');
+  headers := TStringList.Create();
+  httpClient := TNSHTTPSendAndReceive.Create;
+  try
     try
-      try
-        httpClient.address := url;
-        httpClient.method := 'GET';
-        headers.Add('User-Agent=' + DEFAULT_USER_AGENT);
-        httpClient.Headers := headers;
+      httpClient.address := url;
+      httpClient.method := 'GET';
+      headers.Add('User-Agent=' + DEFAULT_USER_AGENT);
+      httpClient.Headers := headers;
 
-        if httpClient.SendAndReceive(send, response, headers) then
-          begin
-            res := Trim(response.DataString);
-            Result := True;
-          end
-        else
-          begin
-            res := Trim(httpClient.LastErrMsg);
-            Result := False;
-          end;
-      except
-        on E: Exception do
-              begin
-                res := E.Message;
-                Result := False;
-              end;
+      if httpClient.SendAndReceive(send, response, headers) then
+      begin
+        res := Trim(response.DataString);
+        Result := true;
+      end
+      else
+      begin
+        res := Trim(httpClient.LastErrMsg);
+        Result := false;
+      end;
+    except
+      on E: Exception do
+      begin
+        res := E.Message;
+        Result := false;
+      end;
+    end;
+  finally
+    httpClient.Free;
+    send.Free;
+    response.Free;
+    headers.Free;
   end;
-finally
-  httpClient.Free;
-  send.Free;
-  response.Free;
-  headers.Free;
-end;
 end;
 {$ELSEIF DEFINED(X_WIN)}
-
+class function TrndiNative.getURL(const url: string; out res: string): boolean;
+const
+  DEFAULT_USER_AGENT = 'Mozilla/5.0 (compatible; trndi) TrndiAPI';
 var 
   client: TWinHTTPClient;
   responseStr: string;
@@ -497,20 +503,23 @@ begin
     try
       responseStr := client.Get(url, []);
       res := responseStr;
-      Result := True;
+      Result := true;
     except
       on E: Exception do
-            begin
-              res := E.Message;
-              Result := False;
-            end;
-end;
-finally
-  client.Free;
-end;
+      begin
+        res := E.Message;
+        Result := false;
+      end;
+    end;
+  finally
+    client.Free;
+  end;
 end;
 {$ELSE}
 // Linux/PC
+class function TrndiNative.getURL(const url: string; out res: string): boolean;
+const
+  DEFAULT_USER_AGENT = 'Mozilla/5.0 (compatible; trndi) TrndiAPI';
 
 var 
   client: TFPHttpClient;
@@ -524,18 +533,18 @@ begin
       client.AddHeader('User-Agent', DEFAULT_USER_AGENT);
       client.Get(url, responseStream);
       res := Trim(responseStream.DataString);
-      Result := True;
+      Result := true;
     except
       on E: Exception do
-            begin
-              res := E.Message;
-              Result := False;
-            end;
-end;
-finally
-  client.Free;
-  responseStream.Free;
-end;
+      begin
+        res := E.Message;
+        Result := false;
+      end;
+    end;
+  finally
+    client.Free;
+    responseStream.Free;
+  end;
 end;
 {$ENDIF}
 

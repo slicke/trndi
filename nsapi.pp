@@ -30,32 +30,32 @@ Classes, SysUtils, Dialogs, trndi.types, trndi.api, trndi.native,
 fpjson, jsonparser, dateutils, StrUtils, sha1, math, jsonscanner;
 
 const 
-  NS_STATUS = 'status.json';
+NS_STATUS = 'status.json';
 
 const 
-  NS_URL_BASE = '/api/v1/';
+NS_URL_BASE = '/api/v1/';
 
 const 
-  NS_READINGS = 'entries/sgv.json';
+NS_READINGS = 'entries/sgv.json';
 
 type 
   // Main class
-  NightScout = class(TrndiAPI)
-    protected 
+NightScout = class(TrndiAPI)
+protected
       // NS API key
-      key: string;
-    public 
-      constructor create(user, pass, extra: string);
-      override;
-      function connect: boolean;
-      override;
-      function getReadings(min, maxNum: integer; extras: string = ''): BGResults;
-      override;
-    private 
+  key: string;
+public
+  constructor create(user, pass, extra: string);
+    override;
+  function connect: boolean;
+    override;
+  function getReadings(min, maxNum: integer; extras: string = ''): BGResults;
+    override;
+private
 
-    published 
-      property remote: string read baseUrl;
-  end;
+published
+  property remote: string read baseUrl;
+end;
 
 implementation
 
@@ -67,7 +67,7 @@ begin
   inherited;
 end;
 
-function NightScout.Connect: Boolean;
+function NightScout.Connect: boolean;
 var
   ResponseStr   : string;            // Holds JSON response from Nightscout
   JSONParser    : TJSONParser;       // Parser to convert string to JSON
@@ -75,25 +75,25 @@ var
   RootObject    : TJSONObject;       // The root JSON object
   SettingsObj   : TJSONObject;       // The "settings" object
   ThresholdsObj : TJSONObject;       // The "thresholds" object
-  ServerEpoch   : Int64;             // Will hold the serverTimeEpoch value
+  ServerEpoch   : int64;             // Will hold the serverTimeEpoch value
   UTCDateTime   : TDateTime;         // Server time converted to TDateTime
 begin
   // 1. Validate BaseURL (example check, adjust to your needs)
   if (Copy(BaseUrl, 1, 4) <> 'http') then
   begin
-    Result  := False;
+    Result  := false;
     LastErr := 'Invalid address. Must start with http:// or https://!';
     Exit;
   end;
 
   // 2. Call your method to get the JSON data from Nightscout
   //    Adjust the parameters to your actual function signature
-  ResponseStr := Native.Request(False, NS_STATUS, [], '', Key);
+  ResponseStr := Native.Request(false, NS_STATUS, [], '', Key);
 
   // 3. Check for empty response
   if Trim(ResponseStr) = '' then
   begin
-    Result  := False;
+    Result  := false;
     LastErr := 'Did not receive any data from the server!';
     Exit;
   end;
@@ -101,7 +101,7 @@ begin
   // 4. If the response starts with '+', treat it as an error (from your original code)
   if (ResponseStr[1] = '+') then
   begin
-    Result  := False;
+    Result  := false;
     LastErr := TrimLeftSet(ResponseStr, ['+']);
     Exit;
   end;
@@ -110,7 +110,7 @@ begin
   //    (in your original code, you looked for 'Unau')
   if Pos('Unau', ResponseStr) > 0 then
   begin
-    Result  := False;
+    Result  := false;
     LastErr := 'Incorrect access code for NightScout';
     Exit;
   end;
@@ -127,7 +127,7 @@ begin
     // Ensure top-level is a JSON object
     if not (JSONData is TJSONObject) then
     begin
-      Result  := False;
+      Result  := false;
       LastErr := 'Unexpected JSON structure (not a JSON object).';
       JSONData.Free;
       Exit;
@@ -136,7 +136,7 @@ begin
 
     // 7. Extract "serverTimeEpoch" from the root
     //    If it doesn't exist, default to 0
-    ServerEpoch := RootObject.Get('serverTimeEpoch', Int64(0));
+    ServerEpoch := RootObject.Get('serverTimeEpoch', int64(0));
 
     // 8. Navigate to settings.thresholds (nested object)
     SettingsObj := RootObject.FindPath('settings') as TJSONObject;
@@ -158,7 +158,7 @@ begin
   except
     on E: Exception do
     begin
-      Result  := False;
+      Result  := false;
       LastErr := 'JSON parse error: ' + E.Message;
       Exit;
     end;
@@ -167,7 +167,7 @@ begin
   // 9. Validate serverTimeEpoch
   if ServerEpoch <= 0 then
   begin
-    Result  := False;
+    Result  := false;
     LastErr := 'Invalid or missing serverTimeEpoch in JSON.';
     Exit;
   end;
@@ -185,7 +185,7 @@ begin
   TimeDiff := -TimeDiff;  // or however you interpret it in your environment
 
   // If we get here, everything succeeded
-  Result := True;
+  Result := true;
 end;
 
 
@@ -199,7 +199,8 @@ var
   s: string;
   params: array[1..1] of string;
 begin
-  if extras = '' then extras := NS_READINGS;
+  if extras = '' then
+    extras := NS_READINGS;
 
   params[1] := 'count=' + IntToStr(maxNum);
 
@@ -207,12 +208,12 @@ begin
     js := GetJSON(native.request(false, extras, params, '', key));
   except
     Exit;
-end;
+  end;
 
-SetLength(result, js.count);
+  SetLength(result, js.count);
 
-for i := 0 to js.count - 1 do
-  with js.FindPath(Format('[%d]', [i])) do
+  for i := 0 to js.count - 1 do
+    with js.FindPath(Format('[%d]', [i])) do
     begin
       result[i].Init(mgdl, self.ToString);
       result[i].update(FindPath('sgv').AsInteger, single(FindPath('delta').AsFloat));
@@ -220,14 +221,14 @@ for i := 0 to js.count - 1 do
       s := FindPath('direction').AsString;
 
       for t in BGTrend do
+      begin
+        if BG_TRENDS_STRING[t] = s then
         begin
-          if BG_TRENDS_STRING[t] = s then
-            begin
-              result[i].trend := t;
-              break;
-            end;
-          result[i].trend := TdNotComputable;
+          result[i].trend := t;
+          break;
         end;
+        result[i].trend := TdNotComputable;
+      end;
 
       result[i].date := JSToDateTime(FindPath('date').AsInt64);
       result[i].level := getLevel(result[i].val);

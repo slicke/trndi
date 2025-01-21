@@ -31,78 +31,78 @@ Classes, SysUtils, Dialogs, trndi.types, trndi.api, trndi.native,
 fpjson, jsonparser, dateutils, StrUtils;
 
 const 
-  DEXCOM_LOGIN_ENDPOINT = 'General/LoginPublisherAccountByName';
+DEXCOM_LOGIN_ENDPOINT = 'General/LoginPublisherAccountByName';
 
 const 
-  DEXCOM_AUTHENTICATE_ENDPOINT = 'General/AuthenticatePublisherAccount';
+DEXCOM_AUTHENTICATE_ENDPOINT = 'General/AuthenticatePublisherAccount';
 
 const 
-  DEXCOM_VERIFY_SERIAL_NUMBER_ENDPOINT = 
-                                         'Publisher/CheckMonitoredReceiverAssignmentStatus';
+DEXCOM_VERIFY_SERIAL_NUMBER_ENDPOINT =
+  'Publisher/CheckMonitoredReceiverAssignmentStatus';
 
 const 
-  DEXCOM_TIME_ENDPOINT = 'General/SystemUtcTime';
+DEXCOM_TIME_ENDPOINT = 'General/SystemUtcTime';
 
 const 
-  DEXCOM_GLUCOSE_READINGS_ENDPOINT = 'Publisher/ReadPublisherLatestGlucoseValues';
+DEXCOM_GLUCOSE_READINGS_ENDPOINT = 'Publisher/ReadPublisherLatestGlucoseValues';
 
 const 
-  DEXCOM_APPLICATION_ID = 'd89443d2-327c-4a6f-89e5-496bbb0317db';
+DEXCOM_APPLICATION_ID = 'd89443d2-327c-4a6f-89e5-496bbb0317db';
 
 const 
-  DEXCOM_BASE_URL_US = 'https://share2.dexcom.com/ShareWebServices/Services';
+DEXCOM_BASE_URL_US = 'https://share2.dexcom.com/ShareWebServices/Services';
 
 const 
-  DEXCOM_BASE_URL_WORLD = 'https://shareous1.dexcom.com/ShareWebServices/Services';
+DEXCOM_BASE_URL_WORLD = 'https://shareous1.dexcom.com/ShareWebServices/Services';
 
 const 
-  DEXCOM_HOST_US = 'share2.dexcom.com';
+DEXCOM_HOST_US = 'share2.dexcom.com';
 
 const 
-  DEXCOM_URL_BASE = '/ShareWebServices/Services/';
+DEXCOM_URL_BASE = '/ShareWebServices/Services/';
 
 const 
-  DEXCOM_HOST_WORLD = 'shareous1.dexcom.com';
+DEXCOM_HOST_WORLD = 'shareous1.dexcom.com';
 
 const 
-  DEXCOM_BASE_URLS: array [false..true] of string = 
-                                                    (DEXCOM_BASE_URL_WORLD, DEXCOM_BASE_URL_US);
+DEXCOM_BASE_URLS: array [false..true] of string =
+  (DEXCOM_BASE_URL_WORLD, DEXCOM_BASE_URL_US);
 
 const 
-  DEXCOM_BASE_HOSTS: array [false..true] of string = 
-                                                     (DEXCOM_HOST_WORLD, DEXCOM_HOST_US);
+DEXCOM_BASE_HOSTS: array [false..true] of string =
+  (DEXCOM_HOST_WORLD, DEXCOM_HOST_US);
 
 type 
   // Main class
-  Dexcom = class(TrndiAPI)
-    private 
+Dexcom = class(TrndiAPI)
+private
       // API Host
-      baseHost:  string;
+  baseHost:  string;
       // Username for authentication
-      username:  string;
+  username:  string;
       // Password
-      password:  string;
+  password:  string;
       // Session ID provided by API
-      sessionID: string;
+  sessionID: string;
       // Dex doesn't do diff so we can calc it...
-      doDiff: boolean;
-    public 
-      constructor create(user, pass, extra: string);
-      override;
-      constructor create(user, pass, extra: string; diff: boolean);
-      function connect: boolean;
-      override;
-      function getReadings(min, maxNum: integer; extras: string = ''): BGResults;
-      override;
-    private 
-      function checkSession: boolean;
-      function checkSN(src: string): boolean;
-    published 
-      property remote: string read baseUrl;
-      property user: string read username;
-      property session: string read sessionID;
-      property calcDiff: boolean read doDiff;
-  end;
+  doDiff: boolean;
+public
+  constructor create(user, pass, extra: string);
+    override;
+  constructor create(user, pass, extra: string; diff: boolean);
+  function connect: boolean;
+    override;
+  function getReadings(min, maxNum: integer; extras: string = ''): BGResults;
+    override;
+private
+  function checkSession: boolean;
+  function checkSN(src: string): boolean;
+published
+  property remote: string read baseUrl;
+  property user: string read username;
+  property session: string read sessionID;
+  property calcDiff: boolean read doDiff;
+end;
 
 
 implementation
@@ -141,57 +141,57 @@ var
 begin
   // Check that username / pass is OK!
   json := Format('{ "accountName": "%s", "password": "%s", "applicationId": "%s" }',
-          [username, password, DEXCOM_APPLICATION_ID]);
+    [username, password, DEXCOM_APPLICATION_ID]);
 
   sessionID := StringReplace(native.request(true, DEXCOM_AUTHENTICATE_ENDPOINT,
-               [], json), '"', '', [rfReplaceAll]);
+    [], json), '"', '', [rfReplaceAll]);
 
   if Pos('AccountPassword', sessionID) > 0 then
-    begin
-      result  := false;
-      lastErr := sErrDexPass + ' (Dex1)';
-      exit;
-    end;
+  begin
+    result  := false;
+    lastErr := sErrDexPass + ' (Dex1)';
+    exit;
+  end;
 
   if not checkSession then
-    begin
-      result  := false;
-      lastErr := sErrDexLogin  + ' (Dex2)';
-      Exit;
-    end;
+  begin
+    result  := false;
+    lastErr := sErrDexLogin  + ' (Dex2)';
+    Exit;
+  end;
 
   sessionID := StringReplace(native.request(true, DEXCOM_LOGIN_ENDPOINT, [], json),
-               '"', '', [rfReplaceAll]);
+    '"', '', [rfReplaceAll]);
   if not checkSession then
-    begin
-      result  := false;
-      lastErr := sErrDexPostLogin  + ' (Dex3)';
-      Exit;
-    end;
+  begin
+    result  := false;
+    lastErr := sErrDexPostLogin  + ' (Dex3)';
+    Exit;
+  end;
 
   y := native.request(false, DEXCOM_TIME_ENDPOINT, [], '');
 
   // Check XML return
   if Pos('>', y) > 0 then
-    begin
-      yt := ExtractDelimited(5, y, ['>', '<']);
-      if yt <> '' then
-        td := ScanDateTime('YYYY-MM-DD"T"hh:nn:ss', Copy(yt, 1, 19));
-    end
+  begin
+    yt := ExtractDelimited(5, y, ['>', '<']);
+    if yt <> '' then
+      td := ScanDateTime('YYYY-MM-DD"T"hh:nn:ss', Copy(yt, 1, 19));
+  end
   else
-    begin
+  begin
       // With WinInet and possibly other system backends json is returned?
-      yt := ExtractDelimited(2, y, ['(', ')']);
-      if yt <> '' then
-        td := JSToDateTime(strtoint64(yt), false);
-    end;
+    yt := ExtractDelimited(2, y, ['(', ')']);
+    if yt <> '' then
+      td := JSToDateTime(strtoint64(yt), false);
+  end;
 
   if yt = '' then
-    begin
-      lastErr := 'Cannot parse Dexcom time zone data';
-      result  := false;
-      Exit;
-    end;
+  begin
+    lastErr := 'Cannot parse Dexcom time zone data';
+    result  := false;
+    Exit;
+  end;
 
   timeDiff := SecondsBetween(td, LocalTimeToUniversal(now));
   if timeDiff < 0 then
@@ -205,7 +205,7 @@ function Dexcom.checkSession: boolean;
 begin
   showmessage(sessionid);
   result := (sessionID <> '') and
-            (sessionID <> '00000000-0000-0000-0000-000000000000');
+    (sessionID <> '00000000-0000-0000-0000-000000000000');
 
   if (not result) and (sessionID[1] = '+') then;
 
@@ -232,20 +232,20 @@ function Dexcom.getReadings(min, maxNum: integer; extras: string = ''): BGResult
 
 function getNumeric(num: string): uint64;
 
-var 
-  c:   char;
-  str: string;
-begin
-  str := '';
-  for c in num do
-    if CharInSet(c, ['0'..'9']) then
-      str := str + c;
+  var
+    c:   char;
+    str: string;
+  begin
+    str := '';
+    for c in num do
+      if CharInSet(c, ['0'..'9']) then
+        str := str + c;
 
-  if length(str) > 0 then
-    result := strToUInt64(str)
-  else
-    result := 0;
-end;
+    if length(str) > 0 then
+      result := strToUInt64(str)
+    else
+      result := 0;
+  end;
 
 var 
   params: array[1..3] of string;
@@ -267,56 +267,57 @@ begin
   vals := native.request(true, DEXCOM_GLUCOSE_READINGS_ENDPOINT, params, '');
 
   if vals = '' then
-    begin
-      SetLength(result, 0);
-      exit;
-    end;
+  begin
+    SetLength(result, 0);
+    exit;
+  end;
 
   res := GetJSON(vals);
   SetLength(result, res.count);
 
   for i := 0 to res.count - 1 do
-    try
-      result[i].Init(mgdl);
+  try
+    result[i].Init(mgdl);
 
-      if (calcDiff) and (i > 0) then
-        result[i].update(res.items[i].FindPath('Value').AsFloat, res.items[i].FindPath('Value').
+    if (calcDiff) and (i > 0) then
+      result[i].update(res.items[i].FindPath('Value').AsFloat, res.items[i].FindPath('Value').
         AsFloat-res.items[i-1].FindPath('Value').AsFloat)
-      else if calcDiff then
-             result[i].update(res.items[i].FindPath('Value').AsFloat, 0)
-      else
-        result[i].update(res.items[i].FindPath('Value').AsFloat, BG_NO_VAL);
+    else
+    if calcDiff then
+      result[i].update(res.items[i].FindPath('Value').AsFloat, 0)
+    else
+      result[i].update(res.items[i].FindPath('Value').AsFloat, BG_NO_VAL);
       // No val as dex doesnt provide delta
 
-      trends := res.items[i].FindPath('Trend').AsString;
+    trends := res.items[i].FindPath('Trend').AsString;
 
-      if not TryStrToInt(trends, trendtry) then
-        for trendi := low(ord(BGTrend)) to High(ord(BGTrend)) do
-          begin
+    if not TryStrToInt(trends, trendtry) then
+      for trendi := low(ord(BGTrend)) to High(ord(BGTrend)) do
+      begin
             // := low(BG_TRENDS_STRING) to High(BG_TRENDS_STRING) do begin
-            if BG_TRENDS_STRING[BGTrend(trendi)] = trends then
-              begin
-                result[i].trend := BGTrend(trendi);
-                break;
-              end;
-            result[i].trend := TdPlaceholder;
+        if BG_TRENDS_STRING[BGTrend(trendi)] = trends then
+        begin
+          result[i].trend := BGTrend(trendi);
+          break;
+        end;
+        result[i].trend := TdPlaceholder;
             // High(BG_TRENDS_STRING) + 1;
-          end;
-      result[i].date := UnixToDateTime(
-                        (getNumeric(res.items[i].FindPath('ST').AsString) div 1000) - tz);
+      end;
+    result[i].date := UnixToDateTime(
+      (getNumeric(res.items[i].FindPath('ST').AsString) div 1000) - tz);
 
 
 //  result[i].reading.setDiff(BG_NO_VAL, mgdl); // Not supported by Dexcom, I set -1000 to have the GUI calculate this itself
-      result[i].level := getLevel(result[i].val);
-    except
-      on E: exception do
-            begin
-              result[i].clear;
-            end;
-end;
+    result[i].level := getLevel(result[i].val);
+  except
+    on E: exception do
+    begin
+      result[i].clear;
+    end;
+  end;
 // This can be set via a JS extension
-cgmHi := 160;
-cgmLo :=  60;
+  cgmHi := 160;
+  cgmLo :=  60;
 end;
 
 end.

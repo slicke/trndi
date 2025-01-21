@@ -259,21 +259,21 @@ end;
 
 function JSValueVal.intify: int64;
 begin
-case self.data.match of
+  case self.data.match of
   JD_BINT:
     Result := self.data.BigInt;
   JD_INT:
     Result := self.data.Int32Val;
   JD_STR:
     if not TryStrToInt64(self.data.StrVal, result) then
-       raise Exception.Create('Could not interpret string as int');
-end;
+      raise Exception.Create('Could not interpret string as int');
+  end;
 end;
 
 function JSValueVal.floatify: double;
 begin
 
-case self.data.match of
+  case self.data.match of
   JD_BINT:
     Result := self.data.BigInt;
   JD_BFLOAT:
@@ -286,8 +286,8 @@ case self.data.match of
     Result := self.data.FloatVal;
   JD_STR:
     if not TryStrToFloat(self.data.StrVal, result) then
-       raise Exception.Create('Could not interpret string as float');
-end;
+      raise Exception.Create('Could not interpret string as float');
+  end;
 
 end;
 

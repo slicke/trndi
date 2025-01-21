@@ -31,76 +31,76 @@ uses
 Classes, SysUtils, trndi.types, dateutils, trndi.native, dialogs;
 
 type 
-  CGMCore = record
-    hi, lo, top, bottom: integer;
-  end;
+CGMCore = record
+  hi, lo, top, bottom: integer;
+end;
 
   // Main class
-  TrndiAPI = class
-    protected 
-      timeDiff: integer;
+TrndiAPI = class
+protected
+  timeDiff: integer;
       // The time adjustment
-      tz:      integer;
+  tz:      integer;
       // Native functions
-      native: TrndiNative;
+  native: TrndiNative;
       // HTTP address to API
-      ua: string;
-      baseUrl: string;
-      lastErr: string;
-      core: CGMCore;
+  ua: string;
+  baseUrl: string;
+  lastErr: string;
+  core: CGMCore;
 
-      procedure setTZ(secs: integer);
-      function encodeStr(src: string): string;
-      virtual;
-      final;
-      function getLevel(v: BGValLevel): single;
-      virtual;
-      function getCGMCore: CGMCore;
-      procedure initCGMCore;
-      function checkActive: boolean;
-    public 
-      function getReadings(min, maxNum: integer; extras: string = ''): BGResults;
-      virtual;
-      abstract;
-      constructor create(user, pass, extra: string);
-      virtual;
-      function connect: boolean;
-      virtual;
-      abstract;
-      function getLevel(v: single): BGValLevel;
-      virtual;
+  procedure setTZ(secs: integer);
+  function encodeStr(src: string): string;
+    virtual;
+    final;
+  function getLevel(v: BGValLevel): single;
+    virtual;
+  function getCGMCore: CGMCore;
+  procedure initCGMCore;
+  function checkActive: boolean;
+public
+  function getReadings(min, maxNum: integer; extras: string = ''): BGResults;
+    virtual;
+    abstract;
+  constructor create(user, pass, extra: string);
+    virtual;
+  function connect: boolean;
+    virtual;
+    abstract;
+  function getLevel(v: single): BGValLevel;
+    virtual;
 
-      function getLast(var res: BGReading): boolean;
-      function getCurrent(var res: BGReading): boolean;
-      function getBasetime: int64;
+  function getLast(var res: BGReading): boolean;
+  function getCurrent(var res: BGReading): boolean;
+  function getBasetime: int64;
 
-      function JSToDateTime(ts: int64; correct: boolean = true): TDateTime;
-      virtual;
-      property threshold[lvl: BGValLevel]: single read getLevel;
-      property cgm: CGMCore read getCGMCore;
-      property cgmHi: integer read core.hi write core.hi;
-      property cgmLo: integer read core.lo write core.lo;
-      property cgmRangeHi: integer read core.top write core.top;
-      property cgmRangeLo: integer read core.bottom write core.bottom;
+  function JSToDateTime(ts: int64; correct: boolean = true): TDateTime;
+    virtual;
+  property threshold[lvl: BGValLevel]: single read getLevel;
+  property cgm: CGMCore read getCGMCore;
+  property cgmHi: integer read core.hi write core.hi;
+  property cgmLo: integer read core.lo write core.lo;
+  property cgmRangeHi: integer read core.top write core.top;
+  property cgmRangeLo: integer read core.bottom write core.bottom;
 
-    published 
-      property offset: integer read timeDiff;
-      property timezone: integer write setTZ;
-      property errormsg: string read lastErr;
-      property active: boolean read checkActive;
-  end;
+published
+  property offset: integer read timeDiff;
+  property timezone: integer write setTZ;
+  property errormsg: string read lastErr;
+  property active: boolean read checkActive;
+end;
 
 
 implementation
 
 function TrndiAPI.checkActive: boolean;
 var
-bgr: BGReading;
+  bgr: BGReading;
 begin
-    if not getCurrent(bgr) then
-       result := false
-    else
-       result := bgr.date > 1000;
+  if not getCurrent(bgr) then
+    result := false
+  else
+    result := bgr.date > 1000;
 end;
 
 constructor TrndiAPI.create(user, pass, extra: string);
@@ -114,10 +114,14 @@ end;
 function TrndiAPI.getLevel(v: BGValLevel): single;
 begin
   case v of 
-    BGHIGH: result := core.hi;
-    BGLOW: result := core.lo;
-    BGRangeHI: result := core.top;
-    BGRangeLO: result := core.bottom;
+  BGHIGH:
+    result := core.hi;
+  BGLOW:
+    result := core.lo;
+  BGRangeHI:
+    result := core.top;
+  BGRangeLO:
+    result := core.bottom;
   end;
 end;
 
@@ -125,14 +129,17 @@ function TrndiAPI.getLevel(v: single): BGValLevel;
 begin
   if v >= core.hi then
     result := BGHIGH
-  else if v <= core.lo then
-         result := BGLOW
-  else begin
+  else
+  if v <= core.lo then
+    result := BGLOW
+  else
+  begin
     result := BGRange;
     if (core.top <> 500) and (v >= core.top) then
-       result := BGRangeHI
-    else if (core.bottom <> 0) and (v <= core.bottom) then
-       result := BGRangeLO;
+      result := BGRangeHI
+    else
+    if (core.bottom <> 0) and (v <= core.bottom) then
+      result := BGRangeLO;
   end;
 end;
 
@@ -182,10 +189,10 @@ begin
   result := false;
   r      := getReadings(1440, 1);
   if length(r) > 0 then
-    begin
-      res    := r[0];
-      result := true;
-    end;
+  begin
+    res    := r[0];
+    result := true;
+  end;
 end;
 
 function TrndiAPI.getCurrent(var res: BGReading): boolean;
@@ -197,10 +204,10 @@ begin
   r      := getReadings(10, 1);
 
   if length(r) > 0 then
-    begin
-      res    := r[0];
-      result := true;
-    end;
+  begin
+    res    := r[0];
+    result := true;
+  end;
 end;
 
 

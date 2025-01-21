@@ -28,20 +28,20 @@ mormot.lib.quickjs;
 function HTMLColorToTColor(const HTMLColor: string): TColor;
 
 var 
-  R, G, B: Integer;
+  R, G, B: integer;
   ColorStr: string;
 begin
   if (Length(HTMLColor) = 7) and (HTMLColor[1] = '#') then
-    begin
-      ColorStr := Copy(HTMLColor, 2, 6);
+  begin
+    ColorStr := Copy(HTMLColor, 2, 6);
       // Ta bort '#'
 
-      R := StrToInt('$' + Copy(ColorStr, 1, 2));
-      G := StrToInt('$' + Copy(ColorStr, 3, 2));
-      B := StrToInt('$' + Copy(ColorStr, 5, 2));
+    R := StrToInt('$' + Copy(ColorStr, 1, 2));
+    G := StrToInt('$' + Copy(ColorStr, 3, 2));
+    B := StrToInt('$' + Copy(ColorStr, 5, 2));
 
-      Result := (B shl 16) or (G shl 8) or R;
-    end
+    Result := (B shl 16) or (G shl 8) or R;
+  end
   else
     raise Exception.Create('Unsupported color');
 end;
@@ -49,16 +49,16 @@ end;
 
 
 // Handle the active bg unit
-function JSUnit(ctx: JSContext; this_val: JSValueRaw; argc: Integer; argv: PJSValues): JSValueRaw; cdecl;
+function JSUnit(ctx: JSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw; cdecl;
 cdecl;
 
 var
-curr: RawByteString;
-res: JSValue;
+  curr: rawbytestring;
+  res: JSValue;
 begin
-curr := UTF8Encode(BG_UNIT_NAMES[un]);
-res := ctx^.From(curr);
-result := res.raw;
+  curr := UTF8Encode(BG_UNIT_NAMES[un]);
+  res := ctx^.From(curr);
+  result := res.raw;
 end;
 
 // UX modifications from JS ("uxProp()")
@@ -75,59 +75,59 @@ begin
 
   if fBG.FindSubComponent(comp) <> nil then // Look for the control
     with fBG.FindSubComponent(comp) as TGraphicControl do
-      begin
-        // Cast it as a graphic control
-        with fBG.FindSubComponent(comp) as TGraphicControl do
-          begin
-            // Use the control
-            if Pos(what, 'color') > 0 then
-              begin
-                // Match the action
-                case what of 
-                  'color': Color := HTMLColorToTColor(val);
-                  'font-color': font.Color := HTMLColorToTColor(val);
-                  else
-                    ShowMessage(Format(
-                           'An extension tried to access %s on %s. But the property does not exist.'
-                                , [what, comp]));
-                end;
-              end
-            else if Pos(what, 'font') > -1 then
-                   font.Name := val;
-          end;
-        // Component
-      end;
+      with fBG.FindSubComponent(comp) as TGraphicControl do
+        if Pos(what, 'color') > 0 then
+          case what of
+          'color':
+            Color := HTMLColorToTColor(val);
+          'font-color':
+            font.Color := HTMLColorToTColor(val);
+          else
+            ShowMessage(Format(
+              'An extension tried to access %s on %s. But the property does not exist.'
+              , [what, comp]));
+          end// Match the action
+
+        else
+        if Pos(what, 'font') > -1 then
+          font.Name := val// Use the control
+// Cast it as a graphic control
+// Component
+  ;
 
   Result := JS_UNDEFINED;
-    TTrndiExtEngine.Instance.CallFunction('uxCallback', [comp, val]);
+  TTrndiExtEngine.Instance.CallFunction('uxCallback', [comp, val]);
 end;
 
 function JSLevelColor(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw;
 begin
 
-if not (argc in [3,6,10]) then begin
-  Result := JS_FALSE;
-   Exit;
-end;
+  if not (argc in [3,6,10]) then
+  begin
+    Result := JS_FALSE;
+    Exit;
+  end;
 
-if argc >= 3 then begin
-  bg_color_ok := HTMLColorToTColor(ctx^^.ToUtf8(argv^[0]));
-  bg_color_hi := HTMLColorToTColor(ctx^^.ToUtf8(argv^[1]));
-  bg_color_lo := HTMLColorToTColor(ctx^^.ToUtf8(argv^[2]));
-end;
-if argc >= 6 then begin
-  bg_color_ok_txt := HTMLColorToTColor(ctx^^.ToUtf8(argv^[3]));
-  bg_color_hi_txt := HTMLColorToTColor(ctx^^.ToUtf8(argv^[4]));
-  bg_color_lo_txt := HTMLColorToTColor(ctx^^.ToUtf8(argv^[5]));
-end;
-if argc = 10 then begin
-  bg_rel_color_hi := HTMLColorToTColor(ctx^^.ToUtf8(argv^[5]));
-  bg_rel_color_lo := HTMLColorToTColor(ctx^^.ToUtf8(argv^[6]));
-  bg_rel_color_hi_txt := HTMLColorToTColor(ctx^^.ToUtf8(argv^[7]));
-  bg_rel_color_lo_txt := HTMLColorToTColor(ctx^^.ToUtf8(argv^[8]));
-end;
+  if argc >= 3 then
+  begin
+    bg_color_ok := HTMLColorToTColor(ctx^^.ToUtf8(argv^[0]));
+    bg_color_hi := HTMLColorToTColor(ctx^^.ToUtf8(argv^[1]));
+    bg_color_lo := HTMLColorToTColor(ctx^^.ToUtf8(argv^[2]));
+  end;
+  if argc >= 6 then
+  begin
+    bg_color_ok_txt := HTMLColorToTColor(ctx^^.ToUtf8(argv^[3]));
+    bg_color_hi_txt := HTMLColorToTColor(ctx^^.ToUtf8(argv^[4]));
+    bg_color_lo_txt := HTMLColorToTColor(ctx^^.ToUtf8(argv^[5]));
+  end;
+  if argc = 10 then
+  begin
+    bg_rel_color_hi := HTMLColorToTColor(ctx^^.ToUtf8(argv^[5]));
+    bg_rel_color_lo := HTMLColorToTColor(ctx^^.ToUtf8(argv^[6]));
+    bg_rel_color_hi_txt := HTMLColorToTColor(ctx^^.ToUtf8(argv^[7]));
+    bg_rel_color_lo_txt := HTMLColorToTColor(ctx^^.ToUtf8(argv^[8]));
+  end;
 
- end;
+end;
 
 {$endif}
-
