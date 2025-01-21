@@ -68,6 +68,7 @@ TfBG = class(TForm)
   lVal: TLabel;
   miSettings: TMenuItem;
   pmSettings: TPopupMenu;
+  tMissed:TTimer;
   tTouch: TTimer;
   tMain: TTimer;
   procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
@@ -85,6 +86,7 @@ TfBG = class(TForm)
   procedure onTrendClick(Sender: TObject);
   procedure pnOffRangeClick(Sender: TObject);
   procedure tMainTimer(Sender: TObject);
+  procedure tMissedTimer(Sender:TObject);
   procedure tTouchTimer(Sender: TObject);
 private
     // Array to hold references to lDot1 - lDot10
@@ -348,7 +350,7 @@ begin
     end;
   end
   else
-  if l.Caption = '•' then
+  if (l.Caption = '•') and (not privacyMode) then
     l.Caption := '•'#10+l.Hint
   else
     l.Caption := '•';
@@ -425,7 +427,7 @@ begin
   // actOnTrend(@HideDot);
 
   // Adjust label sizes
-  lArrow.Height := lVal.Height div 5;
+//  lArrow.Height := fBG.clientHeight div 3;
   scaleLbl(lVal);
   scaleLbl(lArrow);
   lDiff.Width := ClientWidth;
@@ -455,8 +457,8 @@ begin
   pnOffRange.top := 0;
   pnOffRange.Font.Size := 7 + pnOffRange.Height div 5;
 
-//  if lastup <> 0 then
-//    PlaceTrendDots(bgs); // Crashes
+
+  PlaceTrendDots(bgs); // Crashes
 end;
 
 // Handle full screen toggle on double-click
@@ -583,6 +585,21 @@ begin
   {$endif}
 end;
 
+procedure TfBG.tMissedTimer(Sender:TObject);
+var
+  d, diff: TDateTime;
+  min, sec: int64;
+begin
+    d := bgs[Low(bgs)].date; // Last reading time
+    diff := Now-d;
+
+
+    min := MilliSecondsBetween(Now, d) div 60000;
+    sec := (MilliSecondsBetween(Now, d) mod 60000) div 1000;
+
+    lDiff.Caption := Format('%s (%d.%.2d ago)', [FormatDateTime('H:mm', d), min, sec]);
+end;
+
 // Handle a touch screen's long touch
 procedure TfBG.tTouchTimer(Sender: TObject);
 var
@@ -616,7 +633,10 @@ begin
 
   // Update other GUI elements based on the latest reading
   b := bgs[Low(bgs)];
-  lVal.Caption := b.format(un, BG_MSG_SHORT, BGPrimary);
+  if not privacyMode then
+    lVal.Caption := b.format(un, BG_MSG_SHORT, BGPrimary)
+  else
+    lVal.Caption := '';
   lDiff.Caption := b.format(un, BG_MSG_SIG_SHORT, BGDelta);
   lArrow.Caption := b.trend.Img;
   lVal.Font.Style := [];
@@ -640,11 +660,14 @@ begin
   // Check if the latest reading is fresh
   if MinutesBetween(Now, b.date) > DATA_FRESHNESS_THRESHOLD_MINUTES then
   begin
-    lDiff.Caption := TimeToStr(b.date) + ' (' + MinutesBetween(Now, b.date).ToString + ' min)';
+//    lDiff.Caption := TimeToStr(b.date) + ' (' + MinutesBetween(Now, b.date).ToString + ' min)';
+    tMissed.OnTimer(tMissed);
     lVal.Font.Style := [fsStrikeOut];
     fBG.Color := clBlack;
+    tMissed.Enabled := true;
     Exit;
   end;
+  tMissed.Enabled := false;
 
   // Set background color based on the latest reading
   if b.val >= api.cgmHi then
@@ -675,7 +698,15 @@ begin
     end
   end;
   lastup := Now;
-
+if privacyMode then begin
+  if fBG.Color = bg_color_hi then
+       lVal.Caption := '⭱'
+  else if fBG.Color =  bg_color_lo then
+       lVal.Caption := '⭳'
+    else
+       lVal.Caption := '✓';
+end;
+ Self.OnResize(self);
 end;
 
 // PlaceTrendDots method to map readings to TrendDots
@@ -785,7 +816,7 @@ begin
   end;
 
   // Adjust the layout after updating the labels
-  FormResize(Self);
+  // FormResize(Self); <-- we need to call this manually, or we get an infinite loop
 end;
 
 // SetPointHeight procedure

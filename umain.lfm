@@ -8,26 +8,31 @@ object fBG: TfBG
   ClientWidth = 320
   Color = clBlack
   Font.Color = clWhite
+  LCLVersion = '4.0.0.2'
   OnClose = FormClose
   OnCreate = FormCreate
   OnResize = FormResize
   object lArrow: TLabel
     Left = 0
-    Height = 80
-    Top = 160
+    Height = 78
+    Top = 162
     Width = 320
     Align = alBottom
     Alignment = taCenter
     AutoSize = False
     Caption = 'lArrow'
     Color = clWhite
+    Font.Color = clWhite
+    Font.Height = 80
+    Layout = tlBottom
     OptimalFill = True
     ParentColor = False
+    ParentFont = False
     PopupMenu = pmSettings
   end
   object lVal: TLabel
     Left = 0
-    Height = 160
+    Height = 162
     Top = 0
     Width = 320
     Align = alClient
@@ -188,7 +193,7 @@ object fBG: TfBG
     Left = 0
     Height = 18
     Top = 0
-    Width = 320
+    Width = 100
     BevelOuter = bvNone
     Caption = '- Off Range -'
     Color = clBlack
@@ -261,5 +266,12 @@ object fBG: TfBG
     OnTimer = tTouchTimer
     Left = 253
     Top = 70
+  end
+  object tMissed: TTimer
+    Enabled = False
+    Interval = 10000
+    OnTimer = tMissedTimer
+    Left = 89
+    Top = 148
   end
 end
