@@ -7,25 +7,28 @@ Trndi is an app that shows the current blood sugar from _Night Scout_ or _Dexcom
 If you use _xDrip_ and need a non-internet source, Trndi supports that too.
 
 # What differs Trndi from apps?
-* Trndi runs natively on your computer, without needing any dependencies on __Windows__ and __macOS*__. __Depending on distro, __Linux__ might need packages to be installed.
-> _* Pre-built macOS binaries are not provided right now, as I lack a Mac_.
-* Trndi runs on your __Raspberry Pi__
+### Fully native
+* Trndi runs natively on your computer, without needing any dependencies on __Windows__ and __macOS__. (__Linux__ might need packages OpenSSL to be installed). BSD and othre systems too.
+### Devices
+* Trndi runs on your __Raspberry Pi__ and other arm computers
 * Trndi works on touch-screen devices
-* Trndi runs on most processors
-  * Intel/AMD 32 and 64 bit
-  * Apple Sillicon
-  * ARM
-  * _Unoficcialy:_
-    * _Sparc_
-    * _PowerPC_
-* Trndi supports, among others:
-    * Windows
-    * macOS
-    * GNU/Linux
-    * FreeBSD
-    * _Unoficcialy:_
-      * _Windows embedded_
-* Trndi supports modern ___JavaScript__ in it's extensions_, via the _QuickJS_ runtime.
+* * Trndi runs on most processors (x86, x64, Apple Sillicon, ARM, _Unoficcialy: Sparc, PowerPC, 
+### Extensions
+* Trndi supports modern ___JavaScript__ extensions_, built-in on most platforms.
+### Multi-user support
+* Got more than one diabetic? Trndi supports parallel users. 
+
+
+## Note on parallel users
+ Trndi has no GUI at this time to add users.
+ * To add users, open Trndis config file and add
+```
+[users]
+names=one,two
+```
+* On Windows, open the registry and find the ```HKEY_CURRENT_USER\Software\Trndi``` key. There, add a string value called ```users.names```.
+
+The value has to be comma separated. Start multiple Trndis and select which user to use during start-up.
 
 # Setup
 Hold the reading (or "Setup" text) and choose settings to access settings.
@@ -57,16 +60,11 @@ The JS engine, _QuickJS_, is linked into Trndi.
 
 You need the relevant library files, placed in ../static.
 > You can get the recommended libraries from https://synopse.info/files/mormot2static.7z - you may remove libraries you don't need!
+Due to mormot2, the support library Trndi uses, it may currently not be possible to run extensions under ARM64 computers.
 
 ## Style
 ### Linter
-Trndi uses __ptop__ to format code, the binary is located in the FPC bin folder.
-
-In lazarus, calling ptp is formatted as:
-```-c $ProjPath()\style.ptop.cfg $EdFile() $EdFile()```
-
-From command line, ran in the project folder:
-```ptop -c style.cfg file.pp file.pp```
+Trndi uses __JEDI__ to format code, the binary is located in the FPC bin folder.
 
 ### Naming
 Units should end with ```.pp```, 
@@ -77,13 +75,12 @@ Should you choose not to use Lazarus IDE, these are the recommendations for Visu
 
 * Formatting: Name: Pascal Formatter
 VS Marketplace Link: https://marketplace.visualstudio.com/items?itemName=alefragnani.pascal-formatter
-> * Indent: 2
-> * Wrap: 80
-> * Engine: ptop
-> * Engine parameters: *project*\style.ptop.cfg
-> * Engine path: *path*\fpc\3.2.2\bin\x86_64-win64\ptop-exe
 
 * Debugging: https://marketplace.visualstudio.com/items?itemName=CNOC.fpdebug
 
 ### History
-Trndi2 is a strip-down of Trndi 1, which was never released publically. Trndi 1 was originally called Dexmon (and only did Dexcom). The original idea spawns from an old app called TrayTrend which I made with a similar purpose.
+Trndi2 is a rewrite, less bloated, version of Trndi 1, which was never released publically. Trndi 1 was originally called Dexmon (and only did Dexcom). The original idea spawns from an old app called TrayTrend which I made with a similar purpose.
+
+
+### Testing
+Trndi is actively tested on Windows (amd64), Fedora Linux(amd64), Debian Linux(arm64 / Raspberry pi).

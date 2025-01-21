@@ -122,6 +122,7 @@ BG_API_MAX = 22;
 DOT_GRAPH =  '•';
 DOT_FRESH = '☉';
 var
+username: string = '';
 lastup: tdatetime;
   // Colors (b)lood(g)lucose (c)olor XX
   // In range
@@ -277,6 +278,7 @@ begin
     s := 'default';
   fBG.Font.Name := s;
   {$endif}
+
   // Assign labels to the TrendDots array
   for i := 1 to NUM_DOTS do
   begin
@@ -290,15 +292,34 @@ begin
 
   with TrndiNative.Create do
   begin
-    privacyMode := GetSetting('ext.privacy', '0') = '1';
-    if GetSetting('unit', 'mmol') = 'mmol' then
+  // Idea for using multiple person/account support
+  username := GetSetting('users.names','');
+  if username <> '' then begin
+  // Load possible other users
+    with TStringList.Create do begin
+      AddCommaText(username);
+
+      i := InputCombo('User', 'Trndi found multiple accounts. Please choose one for this instance', ToStringArray);
+      if i > -1 then begin
+        username := strings[i];
+       fbg.Caption := Format('[%s] %s', [username, fBG.Caption]);
+           username := username+'_';
+      end else
+       username := '';
+      Free;
+    end;
+   end;
+
+  //
+    privacyMode := GetSetting(username +'ext.privacy', '0') = '1';
+    if GetSetting(username +'unit', 'mmol') = 'mmol' then
       un := BGUnit.mmol
     else
       un := BGUnit.mgdl;
-    apiTarget := GetSetting('remote.target');
-    apiCreds := GetSetting('remote.creds');
+    apiTarget := GetSetting(username +'remote.target');
+    apiCreds := GetSetting(username +'remote.creds');
 
-    case GetSetting('remote.type') of
+    case GetSetting(username +'remote.type') of
     'NightScout':
       api := NightScout.Create(apiTarget, apiCreds, '');
     'Dexcom (USA)':
@@ -531,27 +552,27 @@ begin
   with TfConf.Create(self) do
     with TrndiNative.Create do
     begin
-      s := GetSetting('remote.type');
+      s := GetSetting(username +'remote.type');
       for i := 0 to cbSys.Items.Count - 1 do
         if cbSys.Items[i] = s then
           cbSys.ItemIndex := i;
 
-      eAddr.Text := GetSetting('remote.target');
-      ePass.Text := GetSetting('remote.creds');
-      rbUnit.ItemIndex := IfThen(GetSetting('unit', 'mmol') = 'mmol', 0, 1);
+      eAddr.Text := GetSetting(username +'remote.target');
+      ePass.Text := GetSetting(username +'remote.creds');
+      rbUnit.ItemIndex := IfThen(GetSetting(username +'unit', 'mmol') = 'mmol', 0, 1);
       {$ifdef TrndiExt}
       eExt.Text := GetAppConfigDirUTF8(false, true) + 'extensions' + DirectorySeparator;
       {$else}
       eExt.Text := '- Built Without Support -';
       eExt.Enabled := false;
       {$endif}
-      cbPrivacy.Checked := GetSetting('ext.privacy', '0') = '1';
+      cbPrivacy.Checked := GetSetting(username +'ext.privacy', '0') = '1';
       ShowModal;
-      SetSetting('remote.type', cbSys.Text);
-      SetSetting('remote.target', eAddr.Text);
-      SetSetting('remote.creds', ePass.Text);
-      SetSetting('unit', IfThen(rbUnit.ItemIndex = 0, 'mmol', 'mgdl'));
-      SetSetting('ext.privacy', IfThen(cbPrivacy.Checked, '1', '0'));
+      SetSetting(username +'remote.type', cbSys.Text);
+      SetSetting(username +'remote.target', eAddr.Text);
+      SetSetting(username +'remote.creds', ePass.Text);
+      SetSetting(username +'unit', IfThen(rbUnit.ItemIndex = 0, 'mmol', 'mgdl'));
+      SetSetting(username +'ext.privacy', IfThen(cbPrivacy.Checked, '1', '0'));
     end;
 end;
 
