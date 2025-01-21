@@ -453,6 +453,9 @@ begin
   // Resize the dots
   actOnTrend(@ResizeDot);
 
+  if not (assigned(api) and api.active) then
+    Exit;
+
   // Set info
   miHi.Caption := Format('Hi > %.1f', [api.cgmHi * BG_CONVERTIONS[un][mgdl]]);
   miLo.Caption := Format('Lo < %.1f', [api.cgmLo * BG_CONVERTIONS[un][mgdl]]);
