@@ -119,6 +119,8 @@ BG_API_MIN = 2;
 BG_API_MAX = 22;
   // NS can't read higher
 
+DOT_GRAPH =  '•';
+DOT_FRESH = '☉';
 var
 lastup: tdatetime;
   // Colors (b)lood(g)lucose (c)olor XX
@@ -333,27 +335,20 @@ end;
 
 // Changes a trend dot from a dot to the actual bg value with highlighting for the latest reading
 procedure TfBG.ExpandDot(l: TLabel; c, ix: integer);
+var
+ gnow: boolean;
 begin
+gnow := l.Caption = DOT_GRAPH; // Graph now
+
   if ix = NUM_DOTS then // Latest reading at lDot10
-  begin
-    if l.Caption = '•' then
-    begin
-      l.Caption := '☉'; // Use a triangle or another distinct symbol
-      l.Font.Style := [fsBold];
-      l.Font.Size := l.Font.Size + 2; // Increase font size for emphasis
-    end
-    else
-    begin
-      l.Caption := '•';
-      l.Font.Style := [];
-      l.Font.Size := Max(lVal.Font.Size div 8, 28);
-    end;
-  end
+    l.Caption := IfThen(gnow, DOT_FRESH, DOT_GRAPH)
   else
-  if (l.Caption = '•') and (not privacyMode) then
-    l.Caption := '•'#10+l.Hint
-  else
-    l.Caption := '•';
+    l.Caption := IfThen(gnow, l.Hint, DOT_GRAPH);
+
+   if not gnow then
+     ResizeDot(l, c, ix)
+   else
+     l.font.Size := lVal.Font.Size div c;
 end;
 
 // Hides a dot
@@ -775,7 +770,7 @@ begin
           // Update label properties based on the reading
           l.Visible := true;
           l.Hint := reading.format(un, BG_MSG_SHORT, BGPrimary);
-          l.Caption := '•'; // Or another symbol
+          l.Caption := DOT_GRAPH; // Or another symbol
           setPointHeight(l, reading.convert(mmol));
 
           // Set colors based on the value
