@@ -1,4 +1,5 @@
 # Monitoring multiple persons
+!#[User chooser](../doc/users.png)
 
 ## Important notes
  Users has to be _manually_ defined, it can't be done through the user interface at this time

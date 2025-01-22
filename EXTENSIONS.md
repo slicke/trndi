@@ -1,5 +1,5 @@
 # Trndi Extensions
-> This list is currently incomplete!
+> This list is currently __incomplete__!
 Trndi supports extensions, written in JavaScript.
 
 You can declare functions inside Trndi and expose them to JS, or "listen" for functions in Trndi.
