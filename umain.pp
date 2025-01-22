@@ -26,7 +26,7 @@ interface
 
 uses
 trndi.strings, LCLTranslator, Classes, Menus, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, ExtCtrls,
-dexapi, nsapi, trndi.types, math, DateUtils, FileUtil,
+trndi.api.dexcom, trndi.api.nightscout, trndi.types, math, DateUtils, FileUtil,
 {$ifdef TrndiExt}
 Trndi.Ext.Engine, Trndi.Ext.Ext, trndi.Ext.jsfuncs,
 {$endif}
@@ -484,7 +484,7 @@ begin
   // Resize the dots
   actOnTrend(@ResizeDot);
 
-  if not (assigned(api) and api.active) then
+  if not assigned(api) then
     Exit;
 
   // Set info
@@ -501,6 +501,8 @@ begin
   else
     miRangeLo.Caption := RS_RANGE_LO_UNSUPPORTED;
 
+  if not api.active then
+    Exit;
 
   pnOffRange.width := clientwidth div 4;
   pnOffRange.height := clientheight div 10;

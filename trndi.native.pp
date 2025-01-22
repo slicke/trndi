@@ -1,5 +1,3 @@
-
-
 (*
  * This file is part of Trndi (https://github.com/xxxx or http://xxx.github.io).
  * Copyright (c) 2021-24 Björn Lindh.
@@ -10,8 +8,8 @@
  *
  * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
@@ -20,89 +18,168 @@
  * GitHub: https://github.com/slicke/trndi
  *)
 
-
 {
- This file contains platform-native code, written to make Trndi faster, smoother
- and to minimize the need of 3rd party libraries.
- It also provides natibe features such as Windows registry and openssl for linux
+  This file contains platform-native code, written to make Trndi faster and smoother,
+  and to minimize the need for 3rd-party libraries. It also provides native features
+  such as Windows registry access and OpenSSL on Linux.
 }
 
 unit trndi.native;
 
-{$I native.inc}
+{$I native.inc} // Depending on your project setup, this may define X_WIN, X_PC, X_MAC, etc.
 
 interface
 
-uses 
-Classes, SysUtils, graphics
-{$IF DEFINED(X_MAC)},
-NSMisc,
-ns_url_request
-{$ELSEIF DEFINED(X_WIN)},
-Windows, registry, dialogs, StrUtils, winhttpclient
-{$ELSEIF DEFINED(X_PC)},
-fphttpclient, openssl, opensslsockets, IniFiles, dialogs
-{$ENDIF};
+uses
+  Classes, SysUtils, Graphics
+  {$IF DEFINED(X_MAC)},
+  NSMisc,
+  ns_url_request
+  {$ELSEIF DEFINED(X_WIN)},
+  Windows, Registry, Dialogs, StrUtils, winhttpclient
+  {$ELSEIF DEFINED(X_PC)},
+  fphttpclient, openssl, opensslsockets, IniFiles, Dialogs
+  {$ENDIF};
 
+type
+  { TrndiNative
+    -----------
+    Provides platform-native methods for:
+    - Sending HTTP(S) requests (GET/POST)
+    - Storing and retrieving settings (Windows Registry, .ini on Linux, etc.)
+    - Checking for dark mode
+    - Detecting touchscreen availability
+    - Additional platform-specific utilities
+  }
+  TrndiNative = class
+  public
+    // Indicates if the user system is in a "dark mode" theme
+    dark: boolean;
 
-type 
-TrndiNative = class
-public
-  dark: boolean;
-  function request(const post: boolean; const endpoint: string; const params: array of string;
-    const jsondata: string = ''; const header: string = ''): string;
-  procedure SetSetting(const key: string; const val: string);
-  function GetSetting(const key: string; def: string = ''): string;
-  function GetIntSetting(const key: string; def: integer = -1): integer;
-  function isDarkMode: boolean;
-  function HasTouchScreen: boolean;
-  class function getURL(const url: string; out res: string): boolean;
-    static;
+    { request
+      -------
+      Sends an HTTP request (either GET or POST) to the given endpoint.
+      - post: True for POST, False for GET
+      - endpoint: the relative or full endpoint
+      - params: array of key-value pairs (e.g. 'name=value')
+      - jsondata: string with JSON payload (only if POSTing JSON)
+      - header: optional custom header, e.g. 'Content-Type=xxx'
+      Returns the server response as a string.
+    }
+    function request(const post: boolean; const endpoint: string;
+      const params: array of string; const jsondata: string = '';
+      const header: string = ''): string;
 
-  destructor  Destroy;
-    override;
-  constructor create(ua, base: string);
-  constructor create;
-protected
-  useragent, baseurl: string;
-  {$IF DEFINED(X_WIN)}
-          //     usessl: boolean;
-  {$ELSEIF DEFINED(X_PC)}
-  inistore: TINIFile;
-  {$ENDIF}
+    { SetSetting
+      ----------
+      Stores a string setting, depending on the platform:
+       - Windows: registry
+       - Linux: INI file
+       - macOS: NSUserDefaults (if implemented in your code)
+    }
+    procedure SetSetting(const key: string; const val: string);
+
+    { GetSetting
+      ----------
+      Retrieves a string setting from the local store. If the key is not found,
+      returns `def` by default.
+    }
+    function GetSetting(const key: string; def: string = ''): string;
+
+    { GetIntSetting
+      -------------
+      Same as GetSetting, but returns an integer. Returns `def` if parse fails.
+    }
+    function GetIntSetting(const key: string; def: integer = -1): integer;
+
+    { isDarkMode
+      ----------
+      Returns True if the system theme is "dark mode", else False. Implementation
+      depends on the platform (Windows registry, macOS defaults, Linux color checks, etc.).
+    }
+    function isDarkMode: boolean;
+
+    { HasTouchScreen
+      --------------
+      Returns True if the current machine supports a touch screen. This logic
+      is platform-specific:
+       - Windows uses `GetSystemMetrics(SM_MAXIMUMTOUCHES)`
+       - macOS always returns False
+       - Linux checks `/proc/bus/input/devices`
+    }
+    function HasTouchScreen: boolean;
+
+    { getURL (class function)
+      -----------------------
+      A simple helper that performs a GET request for `url` and returns
+      the response in `res`. Returns True on success, False on error.
+      This is a static method, so it can be called without an instance.
+    }
+    class function getURL(const url: string; out res: string): boolean; static;
+
+    // Constructor/Destructor
+    destructor Destroy; override;
+
+    { create
+      ------
+      1) Constructor with custom user-agent and base URL.
+      2) A default parameterless constructor also exists.
+    }
+    constructor create(ua, base: string); overload;
+    constructor create; overload;
+  protected
+    useragent: string;  // HTTP User-Agent string
+    baseurl:   string;  // Base URL for requests
+
+    {$IF DEFINED(X_PC)}
+    inistore: TINIFile; // Linux/PC settings store
+    {$ENDIF}
 
 end;
-
 
 implementation
-destructor TrndiNative.destroy;
+
+{------------------------------------------------------------------------------
+  TrndiNative.Destroy
+  -------------------
+  Cleans up any allocated resources. On Linux/PC, frees the INI file handle.
+ ------------------------------------------------------------------------------}
+destructor TrndiNative.Destroy;
 begin
   {$IF DEFINED(X_PC)}
-  inistore.free;
+  if Assigned(inistore) then
+    inistore.Free;
   {$ENDIF}
+  inherited Destroy;
 end;
 
+{------------------------------------------------------------------------------
+  TrndiNative.HasTouchScreen
+  --------------------------
+  Platform-specific detection of touch hardware.
+ ------------------------------------------------------------------------------}
 {$IF DEFINED(X_WIN)}
 function TrndiNative.HasTouchScreen: boolean;
 const
   SM_MAXIMUMTOUCHES = 95;
 begin
+  // Windows: If SM_MAXIMUMTOUCHES > 0, touchscreen is available
   Result := GetSystemMetrics(SM_MAXIMUMTOUCHES) > 0;
 end;
 {$ELSEIF DEFINED(X_MAC)}
 function TrndiNative.HasTouchScreen: boolean;
 begin
-  result := false;
-        // iOS only
+  // macOS: Typically no standard touchscreen (unless iOS)
+  Result := False;
 end;
 {$ELSE}
 function TrndiNative.HasTouchScreen: boolean;
-
 var
   SL: TStringList;
   i: integer;
 begin
-  Result := false;
+  // Linux: Check /proc/bus/input/devices for "Touchscreen"
+  Result := False;
   SL := TStringList.Create;
   try
     if FileExists('/proc/bus/input/devices') then
@@ -111,7 +188,7 @@ begin
       for i := 0 to SL.Count - 1 do
         if Pos('Touchscreen', SL[i]) > 0 then
         begin
-          Result := true;
+          Result := True;
           Break;
         end;
     end;
@@ -119,105 +196,122 @@ begin
     SL.Free;
   end;
 end;
-{$ENDif}
+{$ENDIF}
 
+{------------------------------------------------------------------------------
+  TrndiNative.create (default)
+  ----------------------------
+  An empty constructor that defaults useragent/baseurl to minimal placeholders.
+ ------------------------------------------------------------------------------}
 constructor TrndiNative.create;
 begin
+  // Provide a default user-agent and empty base URL
   create('Mozilla/5.0 (compatible; trndi) TrndiAPI', '');
 end;
 
+{------------------------------------------------------------------------------
+  TrndiNative.create (overload)
+  -----------------------------
+  Allows specifying a custom user-agent and a base URL.
+ ------------------------------------------------------------------------------}
 constructor TrndiNative.create(ua, base: string);
 begin
   useragent := ua;
-  baseUrl   := base;
+  baseurl   := base;
+  // Check if we're in dark mode on creation
   dark := isDarkMode;
-
 end;
 
-{$IFDEF X_MAC}
-// Each ifdef needs a function header or the code formatter goes bananas
-function TrndiNative.request(const post: boolean; const endpoint: string; const params: array of
-string; const jsondata: string = ''; const header: string = ''): string
-;
-
-var 
+{------------------------------------------------------------------------------
+  TrndiNative.request
+  -------------------
+  Sends a GET or POST request, depending on the "post" parameter.
+  Behavior differs by platform. Each platform has its own implementation block:
+    - X_MAC uses TNSHTTPSendAndReceive
+    - X_WIN uses TWinHTTPClient
+    - X_PC (Linux) uses TFPHttpClient with OpenSSL
+ ------------------------------------------------------------------------------}
+{$IF DEFINED(X_MAC)}
+function TrndiNative.request(const post: boolean; const endpoint: string;
+  const params: array of string; const jsondata: string = '';
+  const header: string = ''): string;
+var
   res, send: TStringStream;
-  headers:   TStringList;
-  sparams:   string;
+  headers: TStringList;
   sx: string;
 begin
-  res     := TStringStream.create(nil);
-  send    := TStringStream.create(nil);
-  headers := TStringList.create();
-
-  with TNSHTTPSendAndReceive.create do
+  res := TStringStream.Create('');
+  send := TStringStream.Create('');
+  headers := TStringList.Create;
   try
-    address := Format('%s/%s', [baseUrl, endpoint]);
-    if post then
-      method := 'POST'
-    else
-      method := 'GET';
+    // We use a custom TNSHTTPSendAndReceive
+    with TNSHTTPSendAndReceive.Create do
+    try
+      address := Format('%s/%s', [baseurl, endpoint]);
+      if post then
+        method := 'POST'
+      else
+        method := 'GET';
 
-    if header <> '' then
-      Headers.Add(header);
-    if jsondata <> '' then
-    begin
-      Headers.Add('Content-Type=application/json');
+      // If a custom header is provided
+      if header <> '' then
+        Headers.Add(header);
 
+      // If we have JSON data, we assume it's for POST
+      if jsondata <> '' then
+      begin
+        Headers.Add('Content-Type=application/json');
+        if useragent <> '' then
+          Headers.Add('User-Agent=' + useragent);
 
-// Not strictly required, but if the API changes it might be a good idea to pass a version we know works
-      if useragent <> '' then
-        Headers.Add('User-Agent=' + useragent);
+        // Write JSON to send stream
+        send.Write(jsondata[1], Length(jsondata));
+        Headers.Add('Content-Length=' + IntToStr(send.Size));
+      end
+      else if Length(params) > 0 then
+      begin
+        // If we have query params, append them
+        address := address + '?';
+        for sx in params do
+          address := address + '&' + sx;
+      end;
 
-      send.Write(jsondata[1], length(jsondata));
-      Headers.Add('Content-Length=' + IntToStr(send.Size));
-    end
-    else
-    if length(params) > 0 then
-    begin
-      address := address + '?';
-      for sx in params do
-        address := address + '&' + sx;
+      // Perform the request
+      if SendAndReceive(send, res, headers) then
+        Result := Trim(res.DataString)
+      else
+        Result := '+' + LastErrMsg;
+    finally
+      Free; // free the TNSHTTPSendAndReceive
     end;
-
-
-    if SendAndReceive(send, res, headers) then
-      result := trim(res.DataString)
-    else
-      result := '+' + LastErrMsg;
-
-      // showmessage(send.DataString+' -> ' + res.DataString);
   finally
-    free;
-    res.free;
-    send.free;
-    headers.free;
+    res.Free;
+    send.Free;
+    headers.Free;
   end;
 end;
 
-{$ENDIF}
-{$IFDEF WINDOWS}
-function TrndiNative.request(const post: boolean; const endpoint: string; const params: array of
-string; const jsondata: string = ''; const header: string = ''): string
-;
-
-var 
+{$ELSEIF DEFINED(X_WIN)}
+function TrndiNative.request(const post: boolean; const endpoint: string;
+  const params: array of string; const jsondata: string = '';
+  const header: string = ''): string;
+var
   client: TWinHTTPClient;
   sx, address: string;
   headers: array of string;
   hasParams: boolean;
-  res: string;
+  ResStr: string;
 begin
-  hasParams := Length(params) > 0;
-  // Skapa klient och ställ in användaragent
+  hasParams := (Length(params) > 0);
   client := TWinHTTPClient.Create(useragent);
   try
-    // Ange URL och headers
-    address := Format('%s/%s', [TrimRightSet(baseUrl, ['/']), TrimLeftSet(endpoint, ['/'])]);
+    // Construct the full URL
+    address := Format('%s/%s', [TrimRightSet(baseurl, ['/']), TrimLeftSet(endpoint, ['/'])]);
 
+    // Add default required headers
     client.AddHeader('User-Agent', useragent);
 
-    // Om specifika headers anges, lägg till dem
+    // Add optional custom header
     if header <> '' then
     begin
       headers := header.Split(['=']);
@@ -225,33 +319,35 @@ begin
         client.AddHeader(headers[0], headers[1]);
     end;
 
-    // Hantera JSON-data eller parametrar
+    // Handle JSON data or query params
     if jsondata <> '' then
     begin
       client.AddHeader('Content-Type', 'application/json; charset=UTF-8');
       client.AddHeader('Accept', 'application/json');
       client.SetRequestBody(jsondata);
     end
-    else
-    if hasParams then
+    else if hasParams then
     begin
       address := address + '?';
       for sx in params do
         address := address + '&' + sx;
     end;
 
-    // Skicka GET eller POST-begäran
+    // Perform the request (GET or POST)
     try
       if post then
-        Res := client.Post(address)
+        ResStr := client.Post(address)
       else
-        Res := client.Get(address, params);
+        ResStr := client.Get(address, params); // TWinHTTPClient supports passing params to Get
     except
       on E: Exception do
-        result := E.Message;
+      begin
+        Result := E.Message;
+        Exit;
+      end;
     end;
 
-    result := res;
+    Result := ResStr;
   finally
     client.Free;
   end;
@@ -259,191 +355,216 @@ end;
 
 {$ELSE}
 {$IFNDEF DARWIN}
-function TrndiNative.request(const post: boolean; const endpoint: string; const params: array of
-string; const jsondata: string = ''; const header: string = ''): string
-;
-
-var 
+function TrndiNative.request(const post: boolean; const endpoint: string;
+  const params: array of string; const jsondata: string = '';
+  const header: string = ''): string;
+var
   client:  TFPHttpClient;
   res:     TStringStream;
   sx, address: string;
   headers: array of string;
 begin
-
-  Client := TFPHttpClient.create(nil);
-  Client.AddHeader('User-Agent', useragent);
-  address := Format('%s/%s', [baseUrl, endpoint]);
-  if header <> '' then
-  begin
-    headers := header.split('=');
-    client.AddHeader(headers[0], headers[1]);
-  end;
-
-  if jsondata <> '' then
-  begin
-    Client.AddHeader('Content-Type', 'application/json; charset=UTF-8');
-    Client.AddHeader('Accept', 'application/json');
-
-    client.RequestBody := TRawByteStringStream.create(jsondata);
-  end
-  else
-  if length(params) > 0 then
-  begin
-    address := address + '?';
-    for sx in params do
-      address := address + '&' + sx;
-  end;
-
-
-  res := TStringStream.create('');
-
+  client := TFPHttpClient.Create(nil);
   try
+    // Set user-agent
+    client.AddHeader('User-Agent', useragent);
+    address := Format('%s/%s', [baseurl, endpoint]);
+
+    // Add optional custom header
+    if header <> '' then
+    begin
+      headers := header.Split(['=']);
+      if Length(headers) = 2 then
+        client.AddHeader(headers[0], headers[1]);
+    end;
+
+    // If we have JSON data
+    if jsondata <> '' then
+    begin
+      client.AddHeader('Content-Type', 'application/json; charset=UTF-8');
+      client.AddHeader('Accept', 'application/json');
+      client.RequestBody := TRawByteStringStream.Create(jsondata);
+    end
+    else if Length(params) > 0 then
+    begin
+      // Build URL with query parameters
+      address := address + '?';
+      for sx in params do
+        address := address + '&' + sx;
+    end;
+
+    // Prepare a response stream
+    res := TStringStream.Create('');
     try
+      // Send GET or POST
       if post then
         client.Post(address, res)
       else
-        client.get(address,res);
+        client.Get(address, res);
 
-      result := res.DataString;
-      // writeln('Response Code is ' + inttostr(Client.ResponseStatusCode));   // better be 200
-
+      // Return the server response as a string
+      Result := res.DataString;
     except
       on E: EHttpClient do
-        result := E.Message;
+        Result := E.Message;
     end;
   finally
-    Client.RequestBody.free;
-    Client.free;
-    Res.free;
+    // Cleanup
+    if Assigned(client.RequestBody) then
+      client.RequestBody.Free;
+    client.Free;
+    res.Free;
   end;
 end;
+{$ENDIF}
+{$ENDIF}
 
-{$endif}
-{$endif}
-
-{$if defined(X_WIN)}
+{------------------------------------------------------------------------------
+  TrndiNative.GetSetting
+  ----------------------
+  Platform-specific string retrieval. Returns the default if the key isn’t found.
+ ------------------------------------------------------------------------------}
+{$IF DEFINED(X_WIN)}
 function TrndiNative.GetSetting(const key: string; def: string = ''): string;
-
-var 
-  reg: TRegistry;
-begin
-  result := def;
-  reg    := TRegistry.create;
-  try
-    reg.RootKey := HKEY_CURRENT_USER;
-    if reg.OpenKeyReadOnly('\SOFTWARE\Trndi\') then
-      result := reg.ReadString(key);
-    //read the value of the default name
-  finally
-    reg.free;
-  end;
-end;
-
-{$elseif defined(X_PC)}
-function TrndiNative.GetSetting(const key: string; def: string = ''): string;
-begin
-  if not assigned(inistore) then
-    inistore := TINIFile.create(GetAppConfigFile(false));
-  result     := inistore.ReadString('trndi', key, def);
-end;
-
-{$elseif defined(X_MAC)}
-function TrndiNative.GetSetting(const key: string; def: string = ''): string;
-begin
-  result := GetPrefString(key);
-  if result = '' then
-    result := def;
-end;
-
-{$endif}
-
-function TrndiNative.GetIntSetting(const key: string; def: integer = -1): integer;
-
-var 
-  r: string;
-begin
-  r := GetSetting(key, 'fail');
-  if not TryStrToint(r, result) then
-    result := def;
-end;
-
-
-{$if defined(X_MAC)}
-procedure TrndiNative.SetSetting(const key: string; const val: string);
-begin
-  SetPrefString(key, val);
-end;
-
-{$elseif defined(X_WIN)}
-procedure TrndiNative.SetSetting(const key: string; const val: string);
-
-var 
-  reg: TRegistry;
-begin
-  reg := TRegistry.create;
-  try
-    reg.RootKey := HKEY_CURRENT_USER;
-    if reg.OpenKey('\SOFTWARE\Trndi\', true) then
-      reg.WriteString(key, val) //read the value of the default name
-    else
-      ShowMessage('Error saving!');
-  finally
-    reg.free;
-  end;
-end;
-
-{$elseif defined(X_PC)}
-procedure TrndiNative.SetSetting(const key: string; const val: string);
-begin
-  if not assigned(inistore) then
-    inistore := TINIFile.create(GetAppConfigFile(false));
-  inistore.WriteString('trndi', key, val);
-end;
-
-{$endif}
-
-{$if defined(X_MAC)}
-function TrndiNative.isDarkMode: boolean;
-begin
-  // NSStringToString(NSUserDefaults.standardUserDefaults.stringForKey(NSStr(@KeyName[1])));
-  result := pos('DARK',UpperCase(GetPrefString('AppleInterfaceStyle')))>0;
-end;
-{$elseif defined(X_WIN)}
-function TrndiNative.isDarkMode: boolean;
-const
-  regtheme: string = 'Software\Microsoft\Windows\CurrentVersion\Themes\Personalize\';
-  reglight: string = 'AppsUseLightTheme';
-
 var
   reg: TRegistry;
 begin
-  reg    := TRegistry.Create(KEY_READ);
+  Result := def;
+  reg := TRegistry.Create;
   try
-    result := false;
     reg.RootKey := HKEY_CURRENT_USER;
-    if reg.KeyExists(regtheme) then
-      if Reg.OpenKey(regtheme, false) then
-      try
-        if Reg.ValueExists(reglight) then
-          result := Reg.ReadInteger(reglight) = 0;
-      finally
-        reg.CloseKey;
-      end;
+    if reg.OpenKeyReadOnly('\SOFTWARE\Trndi\') then
+      Result := reg.ReadString(key);
   finally
     reg.Free;
   end;
 end;
-{$else}
+
+{$ELSEIF DEFINED(X_PC)}
+function TrndiNative.GetSetting(const key: string; def: string = ''): string;
+begin
+  if not Assigned(inistore) then
+    inistore := TINIFile.Create(GetAppConfigFile(False));
+  Result := inistore.ReadString('trndi', key, def);
+end;
+
+{$ELSEIF DEFINED(X_MAC)}
+function TrndiNative.GetSetting(const key: string; def: string = ''): string;
+begin
+  Result := GetPrefString(key); // macOS-based method
+  if Result = '' then
+    Result := def;
+end;
+{$ENDIF}
+
+{------------------------------------------------------------------------------
+  TrndiNative.GetIntSetting
+  -------------------------
+  Returns an integer from settings if parseable, else returns `def`.
+ ------------------------------------------------------------------------------}
+function TrndiNative.GetIntSetting(const key: string; def: integer = -1): integer;
+var
+  r: string;
+begin
+  r := GetSetting(key, 'fail');
+  if not TryStrToInt(r, Result) then
+    Result := def;
+end;
+
+{------------------------------------------------------------------------------
+  TrndiNative.SetSetting
+  ----------------------
+  Stores a string value to platform-specific storage.
+ ------------------------------------------------------------------------------}
+{$IF DEFINED(X_MAC)}
+procedure TrndiNative.SetSetting(const key: string; const val: string);
+begin
+  SetPrefString(key, val); // macOS-based method
+end;
+
+{$ELSEIF DEFINED(X_WIN)}
+procedure TrndiNative.SetSetting(const key: string; const val: string);
+var
+  reg: TRegistry;
+begin
+  reg := TRegistry.Create;
+  try
+    reg.RootKey := HKEY_CURRENT_USER;
+    if reg.OpenKey('\SOFTWARE\Trndi\', True) then
+      reg.WriteString(key, val)
+    else
+      ShowMessage('Error saving to registry!');
+  finally
+    reg.Free;
+  end;
+end;
+
+{$ELSEIF DEFINED(X_PC)}
+procedure TrndiNative.SetSetting(const key: string; const val: string);
+begin
+  if not Assigned(inistore) then
+    inistore := TINIFile.Create(GetAppConfigFile(False));
+  inistore.WriteString('trndi', key, val);
+end;
+{$ENDIF}
+
+{------------------------------------------------------------------------------
+  TrndiNative.isDarkMode
+  ----------------------
+  Determines if the user’s system is in "dark mode," per platform.
+ ------------------------------------------------------------------------------}
+{$IF DEFINED(X_MAC)}
 function TrndiNative.isDarkMode: boolean;
-function _Level(C: TColor): double;
+begin
+  // Typically, AppleInterfaceStyle = 'Dark' if dark mode is active
+  Result := Pos('DARK', UpperCase(GetPrefString('AppleInterfaceStyle'))) > 0;
+end;
+
+{$ELSEIF DEFINED(X_WIN)}
+function TrndiNative.isDarkMode: boolean;
+const
+  regtheme = 'Software\Microsoft\Windows\CurrentVersion\Themes\Personalize\';
+  reglight = 'AppsUseLightTheme';
+var
+  reg: TRegistry;
+begin
+  Result := False;
+  reg := TRegistry.Create(KEY_READ);
+  try
+    reg.RootKey := HKEY_CURRENT_USER;
+    if reg.KeyExists(regtheme) and reg.OpenKey(regtheme, False) then
+    try
+      if reg.ValueExists(reglight) then
+        // If AppsUseLightTheme = 0 => dark mode
+        Result := (reg.ReadInteger(reglight) = 0);
+    finally
+      reg.CloseKey;
+    end;
+  finally
+    reg.Free;
+  end;
+end;
+
+{$ELSE}
+function TrndiNative.isDarkMode: boolean;
+  // A simplistic Linux approach:
+  // Compare luminance of clWindow and clWindowText to guess if it's "dark".
+  function Brightness(C: TColor): Double;
   begin
-    Result := Red(C)*0.3 + Green(C)*0.59 + Blue(C)*0.11;
+    // Simple formula for perceived luminance
+    Result := (Red(C) * 0.3) + (Green(C) * 0.59) + (Blue(C) * 0.11);
   end;
 begin
-  Result := _Level(ColorToRGB(clWindow)) < _Level(ColorToRGB(clWindowText));
+  // If the background (clWindow) is darker than the text (clWindowText), assume dark mode
+  Result := (Brightness(ColorToRGB(clWindow)) < Brightness(ColorToRGB(clWindowText)));
 end;
-{$endif}
+{$ENDIF}
 
+{------------------------------------------------------------------------------
+  TrndiNative.getURL (class function)
+  -----------------------------------
+  A static method for a quick GET request. Returns True if successful, False on error.
+ ------------------------------------------------------------------------------}
 {$IF DEFINED(X_MAC)}
 class function TrndiNative.getURL(const url: string; out res: string): boolean;
 const
@@ -456,7 +577,7 @@ begin
   res := '';
   send := TStringStream.Create('');
   response := TStringStream.Create('');
-  headers := TStringList.Create();
+  headers := TStringList.Create;
   httpClient := TNSHTTPSendAndReceive.Create;
   try
     try
@@ -468,18 +589,18 @@ begin
       if httpClient.SendAndReceive(send, response, headers) then
       begin
         res := Trim(response.DataString);
-        Result := true;
+        Result := True;
       end
       else
       begin
         res := Trim(httpClient.LastErrMsg);
-        Result := false;
+        Result := False;
       end;
     except
       on E: Exception do
       begin
         res := E.Message;
-        Result := false;
+        Result := False;
       end;
     end;
   finally
@@ -489,11 +610,12 @@ begin
     headers.Free;
   end;
 end;
+
 {$ELSEIF DEFINED(X_WIN)}
 class function TrndiNative.getURL(const url: string; out res: string): boolean;
 const
   DEFAULT_USER_AGENT = 'Mozilla/5.0 (compatible; trndi) TrndiAPI';
-var 
+var
   client: TWinHTTPClient;
   responseStr: string;
 begin
@@ -503,25 +625,25 @@ begin
     try
       responseStr := client.Get(url, []);
       res := responseStr;
-      Result := true;
+      Result := True;
     except
       on E: Exception do
       begin
         res := E.Message;
-        Result := false;
+        Result := False;
       end;
     end;
   finally
     client.Free;
   end;
 end;
+
 {$ELSE}
-// Linux/PC
+// Linux/PC or other
 class function TrndiNative.getURL(const url: string; out res: string): boolean;
 const
   DEFAULT_USER_AGENT = 'Mozilla/5.0 (compatible; trndi) TrndiAPI';
-
-var 
+var
   client: TFPHttpClient;
   responseStream: TStringStream;
 begin
@@ -533,12 +655,12 @@ begin
       client.AddHeader('User-Agent', DEFAULT_USER_AGENT);
       client.Get(url, responseStream);
       res := Trim(responseStream.DataString);
-      Result := true;
+      Result := True;
     except
       on E: Exception do
       begin
         res := E.Message;
-        Result := false;
+        Result := False;
       end;
     end;
   finally
@@ -549,3 +671,4 @@ end;
 {$ENDIF}
 
 end.
+
