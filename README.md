@@ -1,9 +1,9 @@
-# ![Trndi](/trndi-logo.png) CGM data viewer for <small>Nightscout / Dexcom / Local </small> 
+# ![Trndi](/trndi-logo.png) CGM data viewer <sup>Nightscout / Dexcom / Local </sup> 
 ![Window](/doc/ux.png)
 
 ### Introduction
-Trndi is a desktop app that shows the your blood sugar, from _Night Scout_ or _Dexcom Share_.
-It also supports the _xDrip_ app, over the local network.
+Trndi is a _desktop app_ that shows the your blood sugar. It works with  _Night Scout_ and _Dexcom Share_.
+It also supports the _xDrip_ app, connecting over the local network/WiFi.
 
 # What differs Trndi from apps?
 ### Fully native
@@ -20,6 +20,10 @@ It also supports the _xDrip_ app, over the local network.
 
 # Setup
 Hold the reading (or "Setup" text) and choose settings to access settings.
+* For NightScout, settings will be fetched from your server and auto-applied
+* For Dexcom, see the __[Dexcom setup guide](guides/Dexcom.md)__. The backend does not support all features, but this can be fixed with some manual work.
+* For xDrip, you need to turn on the local web server and use that IP/password
+* For other backends, feel free to contribute a api driver. See [API Drivers](guides/API.md)
 
 # Development
 Development tools can be obtained via most distros package managers:
