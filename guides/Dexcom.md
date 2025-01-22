@@ -1,6 +1,7 @@
 # Set up Dexcom
 
 ## Preparations
+> NOTE: You don't need to create a user if you're already using Follow!
 ### Create a user
 Firstly, you need to create a __Follow user__, the name and password doesn't matter. Creating a user enables the data-sharing.
 ### Enable Follow
