@@ -320,7 +320,7 @@ begin
   begin
     lang := GetSetting('locale', '');
 
-   SetDefaultLang(lang,'lang');
+//   SetDefaultLang(lang,'lang');
   // Idea for using multiple person/account support
     username := GetSetting('users.names','');
     if username <> '' then

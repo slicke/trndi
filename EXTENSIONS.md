@@ -1,9 +1,10 @@
 # Trndi Extensions
+> This list is currently incomplete!
 Trndi supports extensions, written in JavaScript.
 
 You can declare functions inside Trndi and expose them to JS, or "listen" for functions in Trndi.
 
-Trndi supports promises and async code!
+Trndi supports promises and async code! See [the guide](guides/Extensions.md) for information on how to install them.
 
 ## Basics
 #### alert("Alert-test!");

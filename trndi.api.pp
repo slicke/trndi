@@ -202,7 +202,7 @@ var
 begin
   result := false;
   r      := getReadings(10, 1);
-      showmessage(length(r).tostring);
+
   if length(r) > 0 then
   begin
     res    := r[0];
