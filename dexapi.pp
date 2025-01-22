@@ -203,7 +203,6 @@ end;
 
 function Dexcom.checkSession: boolean;
 begin
-  showmessage(sessionid);
   result := (sessionID <> '') and
     (sessionID <> '00000000-0000-0000-0000-000000000000');
 
@@ -230,7 +229,7 @@ end;
 
 function Dexcom.getReadings(min, maxNum: integer; extras: string = ''): BGResults;
 
-function getNumeric(num: string): uint64;
+(*function getNumeric(num: string): uint64;
 
   var
     c:   char;
@@ -245,14 +244,34 @@ function getNumeric(num: string): uint64;
       result := strToUInt64(str)
     else
       result := 0;
-  end;
+  end; *)
+
+function DexTimeToTDateTime(const S: string): TDateTime;
+var
+  // miliseconds in str
+  msString: string;
+  ms: Int64;
+begin
+  // Remove strings
+  msString := Copy(S, 6, Length(S) - 6); // gives numbers with )
+  msString := StringReplace(msString, ')', '', []); // removed )
+
+  // Get msec since epoch
+  ms := StrToInt64(msString);
+
+  // Convert to seconds and then datetime
+  Result := UnixToDateTime(ms div 1000, False);
+//  result := IncSecond(result, -1*tz); // Adjust timezone
+end;
 
 var 
   params: array[1..3] of string;
   vals, trends: string;
   res:    tjsondata;
-  i, trendi, trendtry: integer;
+  i, trendtry: integer;
+  tmp: BGTrend;
 begin
+
   if (min < 1) or (min > 1440) then
     abort;
 
@@ -279,6 +298,7 @@ begin
   try
     result[i].Init(mgdl);
 
+
     if (calcDiff) and (i > 0) then
       result[i].update(res.items[i].FindPath('Value').AsFloat, res.items[i].FindPath('Value').
         AsFloat-res.items[i-1].FindPath('Value').AsFloat)
@@ -292,19 +312,18 @@ begin
     trends := res.items[i].FindPath('Trend').AsString;
 
     if not TryStrToInt(trends, trendtry) then
-      for trendi := low(ord(BGTrend)) to High(ord(BGTrend)) do
+      for tmp in BGTrend do// := low(ord(BGTrend)) to High(ord(BGTrend)) do
       begin
             // := low(BG_TRENDS_STRING) to High(BG_TRENDS_STRING) do begin
-        if BG_TRENDS_STRING[BGTrend(trendi)] = trends then
+        if BG_TRENDS_STRING[tmp] = trends then
         begin
-          result[i].trend := BGTrend(trendi);
+          result[i].trend := tmp;
           break;
         end;
         result[i].trend := TdPlaceholder;
             // High(BG_TRENDS_STRING) + 1;
       end;
-    result[i].date := UnixToDateTime(
-      (getNumeric(res.items[i].FindPath('ST').AsString) div 1000) - tz);
+      result[i].date := DexTimeToTDateTime(res.items[i].FindPath('ST').AsString);
 
 
 //  result[i].reading.setDiff(BG_NO_VAL, mgdl); // Not supported by Dexcom, I set -1000 to have the GUI calculate this itself

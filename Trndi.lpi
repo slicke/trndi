@@ -16,6 +16,23 @@
       </XPManifest>
       <Icon Value="0"/>
     </General>
+    <i18n>
+      <EnableI18N Value="True"/>
+      <OutDir Value="lang"/>
+      <ExcludedIdentifiers Count="2">
+        <Item1 Value="tfconf.lcopyright.caption"/>
+        <Item2 Value="tfconf.lversion.caption"/>
+      </ExcludedIdentifiers>
+      <ExcludedOriginals Count="7">
+        <Item1 Value="Trndi"/>
+        <Item2 Value="•"/>
+        <Item3 Value="lArrow"/>
+        <Item4 Value="lDiff"/>
+        <Item5 Value="miHi"/>
+        <Item6 Value="miLO"/>
+        <Item7 Value="miRangeLo"/>
+      </ExcludedOriginals>
+    </i18n>
     <VersionInfo>
       <MajorVersionNr Value="2"/>
     </VersionInfo>
@@ -174,6 +191,10 @@
       </Unit>
       <Unit>
         <Filename Value="trndi.tjsclass.pp"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="trndi.strings.pp"/>
         <IsPartOfProject Value="True"/>
       </Unit>
     </Units>

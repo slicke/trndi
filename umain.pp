@@ -25,7 +25,7 @@ unit umain;
 interface
 
 uses
-Classes, Menus, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, ExtCtrls,
+trndi.strings, LCLTranslator, Classes, Menus, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, ExtCtrls,
 dexapi, nsapi, trndi.types, math, DateUtils, FileUtil,
 {$ifdef TrndiExt}
 Trndi.Ext.Engine, Trndi.Ext.Ext, trndi.Ext.jsfuncs,
@@ -110,6 +110,7 @@ end;
 procedure SetPointHeight(L: TLabel; value: single);
 
 const
+MAX_MIN = 1440; // Max time to request
 INTERVAL_MINUTES = 5; // Each time interval is 5 minutes
 NUM_DOTS = 10;        // Total number of labels (lDot1 - lDot10)
 DATA_FRESHNESS_THRESHOLD_MINUTES = 7; // Max minutes before data is considered outdated
@@ -168,15 +169,13 @@ const
 var
   LogFile: TextFile;
   LogLines: TStringList;
-  LineCount: Integer;
+  LineCount: integer;
 begin
   LogLines := TStringList.Create;
   try
     // Load log if exists
     if FileExists('trndi.log') then
-    begin
       LogLines.LoadFromFile('trndi.log');
-    end;
 
     // Delete overflowing lines
     while LogLines.Count >= MaxLines do
@@ -279,7 +278,7 @@ end;
 procedure TfBG.FormCreate(Sender: TObject);
 var
   i: integer;
-  s, apiTarget, apiCreds: string;
+  s, apiTarget, apiCreds, lang: string;
 {$ifdef Linux}
 function GetLinuxDistro: string;
   const
@@ -290,6 +289,7 @@ function GetLinuxDistro: string;
     else
       Result := '';
   end;
+
   {$endif}
 begin
   {$ifdef Linux}
@@ -315,8 +315,12 @@ begin
       LogMessage(Format('Label %s assigned to TrendDots[%d].', [s, i]));
   end;
 
+
   with TrndiNative.Create do
   begin
+    lang := GetSetting('locale', '');
+
+   SetDefaultLang(lang,'lang');
   // Idea for using multiple person/account support
     username := GetSetting('users.names','');
     if username <> '' then
@@ -328,7 +332,7 @@ begin
         if i > -1 then
         begin
           username := strings[i];
-          fbg.Caption := Format('[%s] %s', [username, fBG.Caption]);
+          fbg.Caption := Format(RS_USER_CAPTION, [username, fBG.Caption]);
           username := username+'_';
         end
         else
@@ -484,17 +488,18 @@ begin
     Exit;
 
   // Set info
-  miHi.Caption := Format('Hi > %.1f', [api.cgmHi * BG_CONVERTIONS[un][mgdl]]);
-  miLo.Caption := Format('Lo < %.1f', [api.cgmLo * BG_CONVERTIONS[un][mgdl]]);
+  miHi.Caption := Format(RS_HI_LEVEL, [api.cgmHi * BG_CONVERTIONS[un][mgdl]]);
+  miLo.Caption := Format(RS_LO_LEVEL, [api.cgmLo * BG_CONVERTIONS[un][mgdl]]);
+
   if api.cgmRangeHi <> 500 then
-    miRangeHi.Caption := Format('Range Hi > %.1f', [api.cgmRangeHi * BG_CONVERTIONS[un][mgdl]])
+    miRangeHi.Caption := Format(RS_RANGE_HI, [api.cgmRangeHi * BG_CONVERTIONS[un][mgdl]])
   else
-    miRangeHi.Caption := 'Hi range not supported by API';
+    miRangeHi.Caption := RS_RANGE_HI_UNSUPPORTED;
 
   if api.cgmRangeLo <> 0 then
-    miRangeLo.Caption := Format('Range Lo < %.1f', [api.cgmRangeLo * BG_CONVERTIONS[un][mgdl]])
+    miRangeLo.Caption := Format(RS_RANGE_LO, [api.cgmRangeLo * BG_CONVERTIONS[un][mgdl]])
   else
-    miRangeLo.Caption := 'LO range not supported by API';
+    miRangeLo.Caption := RS_RANGE_LO_UNSUPPORTED;
 
 
   pnOffRange.width := clientwidth div 4;
@@ -533,7 +538,7 @@ end;
 // Handle lVal click
 procedure TfBG.lValClick(Sender: TObject);
 begin
-  if lVal.Caption = 'Setup' then
+  if lVal.Caption = RS_SETUP then
     miSettings.Click;
 end;
 
@@ -568,9 +573,7 @@ end;
 // Explain limit menu click
 procedure TfBG.miLimitExplainClick(Sender: TObject);
 begin
-  ShowMessage('Hi = When BG is considered high'#10 +
-    'Lo = When BG is considered low'#10#10 +
-    'Ranges: Defines "desirable" levels within normal. Not supported by all backends');
+  ShowMessage(RS_LIMIT_EXPLAIN_TEXT);
 end;
 
 // Handle settings menu click
@@ -615,9 +618,8 @@ end;
 // Handle off range panel click
 procedure TfBG.pnOffRangeClick(Sender: TObject);
 begin
-  ShowMessage('In addition to high and low levels, you have set a personal range within "OK". You are now ' +
-    IfThen((Sender as TPanel).Color = bg_rel_color_hi, 'over', 'under') +
-    ' that range');
+  ShowMessage(Format(RS_RANGE_EXPLANATION,
+    [IfThen((Sender as TPanel).Color = bg_rel_color_hi, RS_OVER, RS_UNDER)]));
 end;
 
 // Update remote on timer
@@ -667,10 +669,10 @@ var
 begin
   lastup := 0;
   // Fetch current readings
-  bgs := api.getReadings(10, 25);
+  bgs := api.getReadings(MAX_MIN, 25);
   if Length(bgs) < 1 then
   begin
-    ShowMessage('Cannot contact backend server');
+    ShowMessage(RS_NO_BACKEND);
     Exit;
   end;
 
@@ -701,7 +703,7 @@ begin
 
   tMain.Interval := i;
   tMain.Enabled := true;
-  miRefresh.Caption := Format('Refreshing at %s', [TimeToStr(IncMilliSecond(Now, i))]);
+    miRefresh.Caption := Format(RS_REFRESH, [TimeToStr(IncMilliSecond(Now, i))]);
 
   // Check if the latest reading is fresh
   if MinutesBetween(Now, b.date) > DATA_FRESHNESS_THRESHOLD_MINUTES then

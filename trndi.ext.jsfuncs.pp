@@ -42,6 +42,8 @@ public
     JSValueVal): boolean;
   function querySvc(ctx: pointer; const func: string; const params: JSParameters; out res:
     JSValueVal): boolean;
+  function runCMD(ctx: pointer; const func: string; const params: JSParameters; out res:
+    JSValueVal): boolean;
 
   constructor Create(cgm: TrndiAPI);
 
@@ -62,6 +64,7 @@ begin
       // Register the functions in JS
     AddPromise('bgDump', JSCallbackFunction(@bgDump));
     AddPromise('asyncGet', JSCallbackFunction(@asyncGet));
+    AddPromise('runCMD', JSCallbackFunction(@asyncGet));
     AddPromise('querySvc', JSCallbackFunction(@querySvc));
     AddPromise('setLimits', JSCallbackFunction(@setLimits), 2, 5);
     AddPromise('setLevelColor', JSCallbackFunction(@setLimits), 3, 6);
@@ -188,6 +191,25 @@ begin
 
   //res := params[1][2][0];
 
+end;
+
+// Query the backend via JS
+function TJSFuncs.runCMD(ctx: pointer; const func: string; const params: JSParameters; out res:
+JSValueVal): boolean;
+begin
+  if not checkJSParams(params, [JD_STR], [JD_STR, JD_STR, JD_STR]) = JS_PARAM_OK then
+  begin
+    result := false;
+    res.data.Int32Val := -1;
+    Exit(false);
+  end;
+
+  if params.count = 2 then
+    res.data.Int32Val := ExecuteProcess(params[0]^.stringify, [])
+  else
+    res.data.Int32Val := ExecuteProcess(params[0]^.stringify, params[1]^.stringify.Split(params[2]^.stringify));
+
+  result := true;
 end;
 
 end.

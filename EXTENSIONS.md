@@ -61,3 +61,11 @@ function color(){
 
 color();
 ```
+
+### Run something
+This is a theoretical command, I havent tested it:
+```
+runCMD("app", `-v;--url;"smtps://smtp.gmail.com:465";--mail-from;you@gmail.com";--mail-rcpt;"another@stuff.com";--mail-data;"Email";--user;"you@gmail.com:APP-PASSWORD"`, ";").then(result => console.log(result))
+  .catch(error => console.log(`Error: ${error}`));
+  ```
+  As you see spaces are replaced with ";" to allow spaces inside params. The last parameter actually defines where to split the paraneters. you can use `${X}" to pass data, if calling from a callback eg

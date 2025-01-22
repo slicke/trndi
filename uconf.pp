@@ -26,7 +26,7 @@ unit uconf;
 interface
 
 uses 
-Classes, ExtCtrls,StdCtrls,SysUtils, Forms, Controls, Graphics, Dialogs;
+Classes, ExtCtrls,StdCtrls,SysUtils, Forms, Controls, Graphics, Dialogs, LCLTranslator;
 
 type 
 
@@ -39,14 +39,15 @@ TfConf = class(TForm)
   lLicense: TButton;
   cbSys: TComboBox;
   Image1: TImage;
-  Label1: TLabel;
+  lCopyright: TLabel;
   eAddr: TLabeledEdit;
   ePass: TLabeledEdit;
   lAck: TButton;
   lTitle: TLabel;
-  lVer: TLabel;
+  lVersion: TLabel;
   rbUnit: TRadioGroup;
   procedure cbSysChange(Sender:TObject);
+  procedure FormCreate(Sender:TObject);
   procedure lAckClick(Sender:TObject);
   procedure lLicenseClick(Sender:TObject);
 private
@@ -77,6 +78,12 @@ end;
 procedure TfConf.cbSysChange(Sender:TObject);
 begin
 
+end;
+
+procedure TfConf.FormCreate(Sender:TObject);
+begin
+  lVersion.Caption := lVersion.Caption + ' | Test Build '+{$I %DATE%};
+  lversion.left := lversion.left - 20;
 end;
 
 procedure TfConf.lLicenseClick(Sender:TObject);

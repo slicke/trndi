@@ -1,0 +1,173 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: sv\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.5\n"
+
+#: tfbg.caption
+msgid "BG"
+msgstr "BS"
+
+#: tfbg.lval.caption
+msgctxt "tfbg.lval.caption"
+msgid "Setup"
+msgstr "Konfig"
+
+#: tfbg.miforce.caption
+msgid "Force Update"
+msgstr "Tvinga uppdatering"
+
+#: tfbg.miinfo.caption
+msgid "Limits"
+msgstr "Gränser"
+
+#: tfbg.milimitexplain.caption
+msgid "Explain"
+msgstr "Förklara"
+
+#: tfbg.mirefresh.caption
+msgid "Refresh in:"
+msgstr "Uppdaterar om:"
+
+#: tfbg.misettings.caption
+msgid "&Settings"
+msgstr "&Inställningar"
+
+#: tfbg.pnoffrange.caption
+msgid "- Off Range -"
+msgstr "- Utanför område -"
+
+#: tfconf.caption
+msgid "Settings"
+msgstr "Inställningar"
+
+#: tfconf.cbprivacy.caption
+msgid "Privacy Mode (Hide number)"
+msgstr "Privat läget (dölj nummer)"
+
+#: tfconf.cbsys.text
+msgid "NightScout"
+msgstr "NightScout"
+
+#: tfconf.eaddr.editlabel.caption
+msgid "Server Address / Dexcom Username"
+msgstr "Serveradress / Användare Dexcom"
+
+#: tfconf.eaddr.text
+msgid "eAddr"
+msgstr ""
+
+#: tfconf.eext.editlabel.caption
+msgid "Plugin Folder"
+msgstr "Pluginmapp"
+
+#: tfconf.epass.editlabel.caption
+msgid "API Secret / Dexcom Password"
+msgstr "API-nyckel / Lösenord Dexcom"
+
+#: tfconf.lack.caption
+msgid "Libraries"
+msgstr "Bibliotek"
+
+#: tfconf.llicense.caption
+msgid "License"
+msgstr "Licens"
+
+#: tfconf.rbunit.caption
+msgid "Display Unit"
+msgstr "Enhetstyp"
+
+#: trndi.strings.rs_hi_level
+#, object-pascal-format
+msgid "Hi > %.1f"
+msgstr "Hög > %.1f"
+
+#: trndi.strings.rs_limit_explain_text
+msgid ""
+"Hi = When BG is considered high\n"
+"Lo = When BG is considered low\n"
+"\n"
+"Ranges: Defines \"desirable\" levels within normal. Not supported by all backends"
+msgstr ""
+"Hög = När BS anses högt\n"
+"Lo = När BS anses lågt\n"
+"\n"
+"Områden: Satta \"önskvärda\" nivåer, inom normalområdet. Stöds inte av alla system"
+
+#: trndi.strings.rs_limit_explain_title
+msgid "Limit Explanation"
+msgstr "Begränsa förklaring"
+
+#: trndi.strings.rs_lo_level
+#, object-pascal-format
+msgid "Lo < %.1f"
+msgstr "Låg < %.1f"
+
+#: trndi.strings.rs_missing_label
+#, object-pascal-format
+msgid "Label %s is missing!"
+msgstr "Etikett %s saknas!"
+
+#: trndi.strings.rs_multiple_accounts
+msgid "Trndi found multiple accounts. Please choose one for this instance"
+msgstr "Trndi hittade fler konton. Vänligen välj ett för denna instans"
+
+#: trndi.strings.rs_no_backend
+#, fuzzy
+#| msgid "Cannot contact backend server"
+msgid "No readings recieved. There might be a problem with the backend, or you might not have any recent readings"
+msgstr "Kunde inte kontakta källan"
+
+#: trndi.strings.rs_over
+msgid "over"
+msgstr "över"
+
+#: trndi.strings.rs_range_explanation
+#, object-pascal-format
+msgid "In addition to high and low levels, you have set a personal range within \"OK\". You are now %s that range"
+msgstr "Utöver höga och låga nivåer, har ett personligt område inom \"Okej\" satts. Du är nu %s det området"
+
+#: trndi.strings.rs_range_hi
+#, object-pascal-format
+msgid "Range Hi > %.1f"
+msgstr "Område Högt > %.1f"
+
+#: trndi.strings.rs_range_hi_unsupported
+msgid "Hi range not supported by API"
+msgstr "Högt område stöds inte av källans gränssnitt"
+
+#: trndi.strings.rs_range_lo
+#, object-pascal-format
+msgid "Range Lo < %.1f"
+msgstr "Lmråde lågt < %.1f"
+
+#: trndi.strings.rs_range_lo_unsupported
+msgid "Lo range not supported by API"
+msgstr "Lågt område stöds inte av källans gränssnitt"
+
+#: trndi.strings.rs_refresh
+#, object-pascal-format
+msgid "Refreshing at %s"
+msgstr "Hämtar %s"
+
+#: trndi.strings.rs_setup
+msgctxt "trndi.strings.rs_setup"
+msgid "Setup"
+msgstr "Konfig"
+
+#: trndi.strings.rs_under
+msgid "under"
+msgstr "under"
+
+#: trndi.strings.rs_user_caption
+#, object-pascal-format
+msgid "[%s] %s"
+msgstr "[%s] %s"
+

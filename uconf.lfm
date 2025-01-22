@@ -8,7 +8,7 @@ object fConf: TfConf
   ClientHeight = 414
   ClientWidth = 415
   Position = poDesktopCenter
-  LCLVersion = '4.0.0.2'
+  OnCreate = FormCreate
   object Image1: TImage
     Left = 16
     Height = 104
@@ -10253,14 +10253,14 @@ object fConf: TfConf
     Font.Style = [fsBold]
     ParentFont = False
   end
-  object lVer: TLabel
+  object lVersion: TLabel
     Left = 168
     Height = 15
     Top = 56
     Width = 47
     Caption = 'Version 2'
   end
-  object Label1: TLabel
+  object lCopyright: TLabel
     Left = 136
     Height = 30
     Top = 80

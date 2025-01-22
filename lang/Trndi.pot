@@ -1,0 +1,157 @@
+msgid ""
+msgstr "Content-Type: text/plain; charset=UTF-8"
+
+#: tfbg.caption
+msgid "BG"
+msgstr ""
+
+#: tfbg.lval.caption
+msgctxt "tfbg.lval.caption"
+msgid "Setup"
+msgstr ""
+
+#: tfbg.miforce.caption
+msgid "Force Update"
+msgstr ""
+
+#: tfbg.miinfo.caption
+msgid "Limits"
+msgstr ""
+
+#: tfbg.milimitexplain.caption
+msgid "Explain"
+msgstr ""
+
+#: tfbg.mirefresh.caption
+msgid "Refresh in:"
+msgstr ""
+
+#: tfbg.misettings.caption
+msgid "&Settings"
+msgstr ""
+
+#: tfbg.pnoffrange.caption
+msgid "- Off Range -"
+msgstr ""
+
+#: tfconf.caption
+msgid "Settings"
+msgstr ""
+
+#: tfconf.cbprivacy.caption
+msgid "Privacy Mode (Hide number)"
+msgstr ""
+
+#: tfconf.cbsys.text
+msgid "NightScout"
+msgstr ""
+
+#: tfconf.eaddr.editlabel.caption
+msgid "Server Address / Dexcom Username"
+msgstr ""
+
+#: tfconf.eaddr.text
+msgid "eAddr"
+msgstr ""
+
+#: tfconf.eext.editlabel.caption
+msgid "Plugin Folder"
+msgstr ""
+
+#: tfconf.epass.editlabel.caption
+msgid "API Secret / Dexcom Password"
+msgstr ""
+
+#: tfconf.lack.caption
+msgid "Libraries"
+msgstr ""
+
+#: tfconf.llicense.caption
+msgid "License"
+msgstr ""
+
+#: tfconf.rbunit.caption
+msgid "Display Unit"
+msgstr ""
+
+#: trndi.strings.rs_hi_level
+#, object-pascal-format
+msgid "Hi > %.1f"
+msgstr ""
+
+#: trndi.strings.rs_limit_explain_text
+msgid ""
+"Hi = When BG is considered high\n"
+"Lo = When BG is considered low\n"
+"\n"
+"Ranges: Defines \"desirable\" levels within normal. Not supported by all backends"
+msgstr ""
+
+#: trndi.strings.rs_limit_explain_title
+msgid "Limit Explanation"
+msgstr ""
+
+#: trndi.strings.rs_lo_level
+#, object-pascal-format
+msgid "Lo < %.1f"
+msgstr ""
+
+#: trndi.strings.rs_missing_label
+#, object-pascal-format
+msgid "Label %s is missing!"
+msgstr ""
+
+#: trndi.strings.rs_multiple_accounts
+msgid "Trndi found multiple accounts. Please choose one for this instance"
+msgstr ""
+
+#: trndi.strings.rs_no_backend
+msgid "No readings recieved. There might be a problem with the backend, or you might not have any recent readings"
+msgstr ""
+
+#: trndi.strings.rs_over
+msgid "over"
+msgstr ""
+
+#: trndi.strings.rs_range_explanation
+#, object-pascal-format
+msgid "In addition to high and low levels, you have set a personal range within \"OK\". You are now %s that range"
+msgstr ""
+
+#: trndi.strings.rs_range_hi
+#, object-pascal-format
+msgid "Range Hi > %.1f"
+msgstr ""
+
+#: trndi.strings.rs_range_hi_unsupported
+msgid "Hi range not supported by API"
+msgstr ""
+
+#: trndi.strings.rs_range_lo
+#, object-pascal-format
+msgid "Range Lo < %.1f"
+msgstr ""
+
+#: trndi.strings.rs_range_lo_unsupported
+msgid "Lo range not supported by API"
+msgstr ""
+
+#: trndi.strings.rs_refresh
+#, object-pascal-format
+msgid "Refreshing at %s"
+msgstr ""
+
+#: trndi.strings.rs_setup
+msgctxt "trndi.strings.rs_setup"
+msgid "Setup"
+msgstr ""
+
+#: trndi.strings.rs_under
+msgid "under"
+msgstr ""
+
+#: trndi.strings.rs_user_caption
+#, object-pascal-format
+msgid "[%s] %s"
+msgstr ""
+
