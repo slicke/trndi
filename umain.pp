@@ -161,18 +161,43 @@ implementation
 {$R *.lfm}
 {$I tfuncs.inc}
 
+{$ifdef DEBUG}
 procedure LogMessage(const Msg: string);
+const
+  MaxLines = 200; // Max lines in file
 var
   LogFile: TextFile;
+  LogLines: TStringList;
+  LineCount: Integer;
 begin
-  AssignFile(LogFile, 'trndi.log');
-  if FileExists('trndi.log') then
-    Append(LogFile)
-  else
-    Rewrite(LogFile);
-  Writeln(LogFile, DateTimeToStr(Now) + ': ' + Msg);
-  CloseFile(LogFile);
+  LogLines := TStringList.Create;
+  try
+    // Load log if exists
+    if FileExists('trndi.log') then
+    begin
+      LogLines.LoadFromFile('trndi.log');
+    end;
+
+    // Delete overflowing lines
+    while LogLines.Count >= MaxLines do
+      LogLines.Delete(0);
+
+    // Add new message
+    LogLines.Add(DateTimeToStr(Now) + ': ' + Msg);
+
+    // Save
+    LogLines.SaveToFile('trndi.log');
+  finally
+    LogLines.Free;
+  end;
 end;
+{$else}
+// Remove when launching
+procedure LogMessage(const Msg: string);
+begin
+
+end;
+{$endif}
 
 {$ifdef TrndiExt}
 // Load extension files
@@ -479,7 +504,7 @@ begin
   pnOffRange.Font.Size := 7 + pnOffRange.Height div 5;
 
 
-  PlaceTrendDots(bgs); // Crashes
+  PlaceTrendDots(bgs);
 end;
 
 // Handle full screen toggle on double-click
@@ -493,7 +518,7 @@ begin
   end
   else
   begin
-    fBG.WindowState := wsMaximized;
+    fBG.WindowState := wsFullScreen;
     fBG.FormStyle := fsStayOnTop;
     fBG.BorderStyle := bsNone;
   end;
