@@ -595,11 +595,11 @@ function JSTryToString(ctx: JSContext; data: JSValue; out str: string): boolean;
 begin
   // Attempt to parse the JSValue as a string
   with JSParseValue(ctx, data) do
-    if self.data.match <> JD_STR then
+    if data.match <> JD_STR then
       Result := false
     else
     begin
-      str := self.data.StrVal;
+      str := data.StrVal;
       Result := true;
     end;
 end;

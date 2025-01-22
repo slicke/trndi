@@ -28,7 +28,7 @@ uses
 trndi.strings, LCLTranslator, Classes, Menus, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, ExtCtrls,
 trndi.api.dexcom, trndi.api.nightscout, trndi.types, math, DateUtils, FileUtil,
 {$ifdef TrndiExt}
-Trndi.Ext.Engine, Trndi.Ext.Ext, trndi.Ext.jsfuncs,
+trndi.Ext.Engine, trndi.Ext.Ext, trndi.Ext.jsfuncs,
 {$endif}
 LazFileUtils, uconf, trndi.native, Trndi.API, trndi.api.xDrip, StrUtils;
 

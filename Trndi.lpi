@@ -23,7 +23,7 @@
         <Item1 Value="tfconf.lcopyright.caption"/>
         <Item2 Value="tfconf.lversion.caption"/>
       </ExcludedIdentifiers>
-      <ExcludedOriginals Count="7">
+      <ExcludedOriginals Count="8">
         <Item1 Value="Trndi"/>
         <Item2 Value="•"/>
         <Item3 Value="lArrow"/>
@@ -31,6 +31,7 @@
         <Item5 Value="miHi"/>
         <Item6 Value="miLO"/>
         <Item7 Value="miRangeLo"/>
+        <Item8 Value="eAddr"/>
       </ExcludedOriginals>
     </i18n>
     <VersionInfo>
@@ -190,11 +191,44 @@
         <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
-        <Filename Value="trndi.tjsclass.pp"/>
+        <Filename Value="trndi.strings.pp"/>
         <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
-        <Filename Value="trndi.strings.pp"/>
+        <Filename Value="trndi.types.pp"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="trndi.ext.promise.pp"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="trndi.ext.functions.pp"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="trndi.ext.ext.pp"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="trndi.native.pp"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="trndi.ext.pp"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="trndiext"/>
+      </Unit>
+      <Unit>
+        <Filename Value="trndi.api.pp"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="trndi.api.dexcom.pp"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="trndi.api.nightscout.pp"/>
         <IsPartOfProject Value="True"/>
       </Unit>
     </Units>
