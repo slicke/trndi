@@ -1,34 +1,22 @@
-![Trndi](/trndi-logo.png)
+# ![Trndi](/trndi-logo.png) CGM data viewer for <small>Nightscout / Dexcom / Local </small> 
 ![Window](/doc/ux.png)
-![Window](/doc/js.png)
 
-# _<small>Nightscout / Dexcom / Local </small>_ CGM data viewer
-Trndi is an app that shows the current blood sugar from _Night Scout_ or _Dexcom Share_.
-If you use _xDrip_ and need a non-internet source, Trndi supports that too.
+### Introduction
+Trndi is a desktop app that shows the your blood sugar, from _Night Scout_ or _Dexcom Share_.
+It also supports the _xDrip_ app, over the local network.
 
 # What differs Trndi from apps?
 ### Fully native
-* Trndi runs natively on your computer, without needing any dependencies on __Windows__ and __macOS__. (__Linux__ might need packages OpenSSL to be installed). BSD and othre systems too.
+* Trndi runs natively on your computer, without needing any dependencies on __Windows__ and __macOS__. (__Linux__ might need packages OpenSSL to be installed). BSD and other systems too.
+* Trndi supports multiple languages
 ### Devices
 * Trndi runs on your __Raspberry Pi__ and other arm computers
 * Trndi works on touch-screen devices
-* * Trndi runs on most processors (x86, x64, Apple Sillicon, ARM, _Unoficcialy: Sparc, PowerPC, 
+> Trndi runs on most processors: x86, x64, Apple Sillicon, ARM, _Unoficcialy: Sparc, PowerPC._
 ### Extensions
-* Trndi supports modern ___JavaScript__ extensions_, built-in on most platforms.
+* Trndi supports modern ___JavaScript__ extensions_, built-in on most processors.
 ### Multi-user support
-* Got more than one diabetic? Trndi supports parallel users. 
-
-
-## Note on parallel users
- Trndi has no GUI at this time to add users.
- * To add users, open Trndis config file and add
-```
-[users]
-names=one,two
-```
-* On Windows, open the registry and find the ```HKEY_CURRENT_USER\Software\Trndi``` key. There, add a string value called ```users.names```.
-
-The value has to be comma separated. Start multiple Trndis and select which user to use during start-up.
+* Got more than one diabetic? Trndi supports parallel users.  See [this guide](/guides/Multiuser.md)
 
 # Setup
 Hold the reading (or "Setup" text) and choose settings to access settings.
