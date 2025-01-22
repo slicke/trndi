@@ -36,18 +36,18 @@ this adds that:
 ### Color example
 We can also change the high/low colors displayed:
 ```javascript
-Trndi.setLevelColor('#7cd55d','#d55d5d', '#5dc6d5');// Set colors for okay readings, high readings and low readings vid HTML colors
+setLevelColor('#7cd55d','#d55d5d', '#5dc6d5');// Set colors for okay readings, high readings and low readings vid HTML colors
 ```
 
 You can also set colors for the dots in the graph, by adding three more colors:
 ```javascript
-Trndi.setLevelColor('#7cd55d','#d55d5d', '#5dc6d5',// Set colors for okay readings, high readings and low readings vid HTML colors
+setLevelColor('#7cd55d','#d55d5d', '#5dc6d5',// Set colors for okay readings, high readings and low readings vid HTML colors
               '#7cd55d','#612828', '#5d75d5'); // Colors for the dots (ok, hi, lo)
 ```
 
 Lastly, you can set the warning colors for when the blood sugar exceeds or goes under the "preffered" level:
 ```javascript
-Trndi.setLevelColor('#7cd55d','#d55d5d', '#5dc6d5',// Set colors for okay readings, high readings and low readings vid HTML colors
+setLevelColor('#7cd55d','#d55d5d', '#5dc6d5',// Set colors for okay readings, high readings and low readings vid HTML colors
               '#7cd55d','#612828', '#5d75d5', // Colors for the dots (ok, hi, lo)
               '#ffbfbf', '#bffff9'); // Color for the custom levels set in NightScout (or via JS) (hi, lo)
 ```
