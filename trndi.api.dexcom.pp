@@ -25,40 +25,40 @@ unit trndi.api.dexcom;
 interface
 
 uses
-  Classes, SysUtils, Dialogs,
+Classes, SysUtils, Dialogs,
   // Trndi units
-  trndi.types, trndi.api, trndi.native,
+trndi.types, trndi.api, trndi.native,
   // FPC units
-  fpjson, jsonparser, dateutils, StrUtils;
+fpjson, jsonparser, dateutils, StrUtils;
 
 (*******************************************************************************
   Dexcom Share API endpoint definitions
  ******************************************************************************)
 const
   // Common Dexcom endpoints
-  DEXCOM_LOGIN_ENDPOINT                = 'General/LoginPublisherAccountByName';
-  DEXCOM_AUTHENTICATE_ENDPOINT         = 'General/AuthenticatePublisherAccount';
-  DEXCOM_VERIFY_SERIAL_NUMBER_ENDPOINT = 'Publisher/CheckMonitoredReceiverAssignmentStatus';
-  DEXCOM_TIME_ENDPOINT                 = 'General/SystemUtcTime';
-  DEXCOM_GLUCOSE_READINGS_ENDPOINT     = 'Publisher/ReadPublisherLatestGlucoseValues';
-  DEXCOM_ALERT_ENDPOINT                = 'Publisher/ReadSubscriberAlertSettings';
+DEXCOM_LOGIN_ENDPOINT                = 'General/LoginPublisherAccountByName';
+DEXCOM_AUTHENTICATE_ENDPOINT         = 'General/AuthenticatePublisherAccount';
+DEXCOM_VERIFY_SERIAL_NUMBER_ENDPOINT = 'Publisher/CheckMonitoredReceiverAssignmentStatus';
+DEXCOM_TIME_ENDPOINT                 = 'General/SystemUtcTime';
+DEXCOM_GLUCOSE_READINGS_ENDPOINT     = 'Publisher/ReadPublisherLatestGlucoseValues';
+DEXCOM_ALERT_ENDPOINT                = 'Publisher/ReadSubscriberAlertSettings';
 
   // Dexcom application ID (commonly used in Share)
-  DEXCOM_APPLICATION_ID = 'd89443d2-327c-4a6f-89e5-496bbb0317db';
+DEXCOM_APPLICATION_ID = 'd89443d2-327c-4a6f-89e5-496bbb0317db';
 
   // Base URLs for Dexcom Share
-  DEXCOM_BASE_URL_US    = 'https://share2.dexcom.com/ShareWebServices/Services';
-  DEXCOM_BASE_URL_WORLD = 'https://shareous1.dexcom.com/ShareWebServices/Services';
+DEXCOM_BASE_URL_US    = 'https://share2.dexcom.com/ShareWebServices/Services';
+DEXCOM_BASE_URL_WORLD = 'https://shareous1.dexcom.com/ShareWebServices/Services';
 
   // Host names for Dexcom Share
-  DEXCOM_HOST_US    = 'share2.dexcom.com';
-  DEXCOM_HOST_WORLD = 'shareous1.dexcom.com';
+DEXCOM_HOST_US    = 'share2.dexcom.com';
+DEXCOM_HOST_WORLD = 'shareous1.dexcom.com';
 
   // Helper arrays to choose region
-  DEXCOM_BASE_URLS: array[false..true] of string =
-    (DEXCOM_BASE_URL_WORLD, DEXCOM_BASE_URL_US);
-  DEXCOM_BASE_HOSTS: array[false..true] of string =
-    (DEXCOM_HOST_WORLD, DEXCOM_HOST_US);
+DEXCOM_BASE_URLS: array[false..true] of string =
+  (DEXCOM_BASE_URL_WORLD, DEXCOM_BASE_URL_US);
+DEXCOM_BASE_HOSTS: array[false..true] of string =
+  (DEXCOM_HOST_WORLD, DEXCOM_HOST_US);
 
 type
   (*******************************************************************************
@@ -68,43 +68,43 @@ type
     for Dexcom Share. It handles session creation, endpoint calls, and glucose
     reading retrieval.
    ******************************************************************************)
-  Dexcom = class(TrndiAPI)
-  private
-    FBaseHost:  string;  // The chosen Dexcom host (USA or Worldwide)
-    FUserName:  string;  // Dexcom Share account username
-    FPassword:  string;  // Dexcom Share account password
-    FSessionID: string;  // Session ID returned by Dexcom on successful login
-    FCalcDiff:  boolean; // If True, calculates the delta (difference) between consecutive readings
+Dexcom = class(TrndiAPI)
+private
+  FBaseHost:  string;  // The chosen Dexcom host (USA or Worldwide)
+  FUserName:  string;  // Dexcom Share account username
+  FPassword:  string;  // Dexcom Share account password
+  FSessionID: string;  // Session ID returned by Dexcom on successful login
+  FCalcDiff:  boolean; // If True, calculates the delta (difference) between consecutive readings
 
     // Internal helpers
-    function CheckSession: boolean;
-    function CheckSerialNumber(const ASerial: string): boolean;
-  public
+  function CheckSession: boolean;
+  function CheckSerialNumber(const ASerial: string): boolean;
+public
     // Override must match the parent's signature exactly
-    constructor Create(user, pass, extra: string); override;
+  constructor Create(user, pass, extra: string); override;
 
     // Overloaded constructor for additional parameter
-    constructor Create(user, pass, extra: string; ACalcDiff: boolean); overload;
+  constructor Create(user, pass, extra: string; ACalcDiff: boolean); overload;
 
     // Required overrides from TrndiAPI
-    function Connect: boolean; override;
-    function GetReadings(AMinutes, AMaxCount: integer; extras: string = ''): BGResults; override;
+  function Connect: boolean; override;
+  function GetReadings(AMinutes, AMaxCount: integer; extras: string = ''): BGResults; override;
 
-  published
+published
     // Expose some properties
-    property Remote       : string  read baseUrl;      // Full base URL
-    property User         : string  read FUserName;    // Dexcom username
-    property Session      : string  read FSessionID;   // Current Dexcom session ID
-    property CalculateDiff: boolean read FCalcDiff;    // Whether differences are calculated
-  end;
+  property Remote       : string  read baseUrl;      // Full base URL
+  property User         : string  read FUserName;    // Dexcom username
+  property Session      : string  read FSessionID;   // Current Dexcom session ID
+  property CalculateDiff: boolean read FCalcDiff;    // Whether differences are calculated
+end;
 
 
 implementation
 
 resourcestring
-  sErrDexPostLogin = 'Login error during post-authentication steps';
-  sErrDexPass      = 'Invalid Dexcom password or account credentials';
-  sErrDexLogin     = 'Login error: Could not establish a valid session';
+sErrDexPostLogin = 'Login error during post-authentication steps';
+sErrDexPass      = 'Invalid Dexcom password or account credentials';
+sErrDexLogin     = 'Login error: Could not establish a valid session';
 
 {-------------------------------------------------------------------------------
   Dexcom.Create (Override)
@@ -115,7 +115,7 @@ resourcestring
 constructor Dexcom.Create(user, pass, extra: string);
 begin
   // Call overloaded constructor with ACalcDiff = True
-  Create(user, pass, extra, True);
+  Create(user, pass, extra, true);
 end;
 
 {-------------------------------------------------------------------------------
@@ -159,18 +159,18 @@ begin
   LBody := Format(
     '{ "accountName": "%s", "password": "%s", "applicationId": "%s" }',
     [FUserName, FPassword, DEXCOM_APPLICATION_ID]
-  );
+    );
 
   // 1) First step: authenticate to get a preliminary session ID
   FSessionID := StringReplace(
-    native.Request(True, DEXCOM_AUTHENTICATE_ENDPOINT, [], LBody),
+    native.Request(true, DEXCOM_AUTHENTICATE_ENDPOINT, [], LBody),
     '"', '', [rfReplaceAll]
-  );
+    );
 
   // Check if the response indicates a password/credential error
   if Pos('AccountPassword', FSessionID) > 0 then
   begin
-    Result  := False;
+    Result  := false;
     lastErr := sErrDexPass + ' (Dex1)';
     Exit;
   end;
@@ -178,27 +178,27 @@ begin
   // 2) Validate the session ID so far
   if not CheckSession then
   begin
-    Result  := False;
+    Result  := false;
     lastErr := sErrDexLogin + ' (Dex2)';
     Exit;
   end;
 
   // 3) Call LoginPublisherAccountByName to finalize the session
   FSessionID := StringReplace(
-    native.Request(True, DEXCOM_LOGIN_ENDPOINT, [], LBody),
+    native.Request(true, DEXCOM_LOGIN_ENDPOINT, [], LBody),
     '"', '', [rfReplaceAll]
-  );
+    );
 
   // Validate once again
   if not CheckSession then
   begin
-    Result  := False;
+    Result  := false;
     lastErr := sErrDexPostLogin + ' (Dex3)';
     Exit;
   end;
 
   // 4) Retrieve system UTC time from Dexcom to sync offset
-  LTimeResponse := native.Request(False, DEXCOM_TIME_ENDPOINT, [], '');
+  LTimeResponse := native.Request(false, DEXCOM_TIME_ENDPOINT, [], '');
 
   // Dexcom may return XML-style or JSON-style date/time
   if Pos('>', LTimeResponse) > 0 then
@@ -213,14 +213,14 @@ begin
     // Possibly JSON with /Date(1234567890123)/ format
     LTimeString := ExtractDelimited(2, LTimeResponse, ['(', ')']);
     if LTimeString <> '' then
-      LServerDateTime := JSToDateTime(StrToInt64(LTimeString), False);
+      LServerDateTime := JSToDateTime(StrToInt64(LTimeString), false);
   end;
 
   // If no valid time data is found, store an error
   if LTimeString = '' then
   begin
     lastErr := 'Cannot parse Dexcom time/zone data';
-    Result  := False;
+    Result  := false;
     Exit;
   end;
 
@@ -233,7 +233,7 @@ begin
   timeDiff := -1 * timeDiff;
 
   // If we reach here, we have a valid session
-  Result := True;
+  Result := true;
 end;
 
 {-------------------------------------------------------------------------------
@@ -259,15 +259,15 @@ var
   LParams: array[1..2] of string;
   LResponse: string;
 begin
-  Result := False;
+  Result := false;
 
   LParams[1] := 'sessionId='   + encodeStr(FSessionID);
   LParams[2] := 'serialNumber=' + encodeStr(ASerial);
 
   // Dexcom returns 'AssignedToYou' if valid
-  LResponse := native.Request(True, DEXCOM_VERIFY_SERIAL_NUMBER_ENDPOINT, LParams, '');
+  LResponse := native.Request(true, DEXCOM_VERIFY_SERIAL_NUMBER_ENDPOINT, LParams, '');
   if LResponse = 'AssignedToYou' then
-    Result := True;
+    Result := true;
 end;
 
 {-------------------------------------------------------------------------------
@@ -280,17 +280,17 @@ end;
 function Dexcom.GetReadings(AMinutes, AMaxCount: integer; extras: string = ''): BGResults;
 
   // Helper to convert Dexcom /Date(ms)/ timestamps to TDateTime
-  function DexTimeToTDateTime(const S: string): TDateTime;
+function DexTimeToTDateTime(const S: string): TDateTime;
   var
     LMsString: string;
-    LMs: Int64;
+    LMs: int64;
   begin
     // Example format: /Date(1610464324000)/
     LMsString := Copy(S, 6, Length(S) - 6);   // Removes '/Date('
     LMsString := StringReplace(LMsString, ')', '', []); // Removes trailing ')'
     LMs       := StrToInt64(LMsString);
     // Convert from epoch-based milliseconds to TDateTime
-    Result := UnixToDateTime(LMs div 1000, False);
+    Result := UnixToDateTime(LMs div 1000, false);
   end;
 
 var
@@ -313,9 +313,9 @@ begin
   LParams[3] := 'maxCount='  + IntToStr(AMaxCount);
 
   // Fetch latest glucose values
-  LGlucoseJSON := native.Request(True, DEXCOM_GLUCOSE_READINGS_ENDPOINT, LParams, '');
+  LGlucoseJSON := native.Request(true, DEXCOM_GLUCOSE_READINGS_ENDPOINT, LParams, '');
   // (Optional) fetch alert settings, though often not used or returned
-  LAlertJSON   := native.Request(True, DEXCOM_ALERT_ENDPOINT, LParams, '');
+  LAlertJSON   := native.Request(true, DEXCOM_ALERT_ENDPOINT, LParams, '');
 
   // If no readings, return empty
   if LGlucoseJSON = '' then
@@ -330,65 +330,58 @@ begin
 
   // Iterate through each reading item
   for i := 0 to LData.Count - 1 do
-  begin
-    try
+  try
       // Initialize reading record with mg/dL
-      Result[i].Init(mgdl);
+    Result[i].Init(mgdl);
 
       // If the user wants differences (delta) and we have a previous reading
-      if (FCalcDiff) and (i > 0) then
-      begin
-        Result[i].Update(
-          LData.Items[i].FindPath('Value').AsFloat,
-          LData.Items[i].FindPath('Value').AsFloat -
-            LData.Items[i - 1].FindPath('Value').AsFloat
-        );
-      end
-      else if FCalcDiff then
-      begin
-        // First item: no previous => delta = 0
-        Result[i].Update(LData.Items[i].FindPath('Value').AsFloat, 0);
-      end
-      else
-      begin
-        // Delta not requested => store only BG value
-        Result[i].Update(LData.Items[i].FindPath('Value').AsFloat, BG_NO_VAL);
-      end;
+    if (FCalcDiff) and (i > 0) then
+      Result[i].Update(
+        LData.Items[i].FindPath('Value').AsFloat,
+        LData.Items[i].FindPath('Value').AsFloat -
+        LData.Items[i - 1].FindPath('Value').AsFloat
+        )
+    else
+    if FCalcDiff then
+      Result[i].Update(LData.Items[i].FindPath('Value').AsFloat, 0)// First item: no previous => delta = 0
+
+    else
+      Result[i].Update(LData.Items[i].FindPath('Value').AsFloat, BG_NO_VAL)// Delta not requested => store only BG value
+    ;
 
       // Interpret "Trend" field (could be numeric or string)
-      LTrendStr := LData.Items[i].FindPath('Trend').AsString;
+    LTrendStr := LData.Items[i].FindPath('Trend').AsString;
 
       // If Trend is an integer code, you could interpret that here
-      if not TryStrToInt(LTrendStr, LTrendCode) then
-      begin
+    if not TryStrToInt(LTrendStr, LTrendCode) then
+    begin
         // If Trend is textual, match it to the BGTrend enum
-        for LTrendEnum in BGTrend do
+      for LTrendEnum in BGTrend do
+      begin
+        if BG_TRENDS_STRING[LTrendEnum] = LTrendStr then
         begin
-          if BG_TRENDS_STRING[LTrendEnum] = LTrendStr then
-          begin
-            Result[i].trend := LTrendEnum;
-            Break;
-          end;
-          // If no match was found, default to a placeholder
-          Result[i].trend := TdPlaceholder;
+          Result[i].trend := LTrendEnum;
+          Break;
         end;
-      end
-      else
-        // If numeric, you might want to map LTrendCode -> BGTrend.
+          // If no match was found, default to a placeholder
         Result[i].trend := TdPlaceholder;
+      end;
+    end
+    else
+        // If numeric, you might want to map LTrendCode -> BGTrend.
+      Result[i].trend := TdPlaceholder;
 
       // Convert the Dexcom server time
-      Result[i].date := DexTimeToTDateTime(LData.Items[i].FindPath('ST').AsString);
+    Result[i].date := DexTimeToTDateTime(LData.Items[i].FindPath('ST').AsString);
 
       // Determine the level classification (Normal, High, Low, etc.)
-      Result[i].level := getLevel(Result[i].val);
+    Result[i].level := getLevel(Result[i].val);
 
-    except
-      on E: Exception do
-      begin
+  except
+    on E: Exception do
+    begin
         // If a JSON field is missing or invalid, clear that reading
-        Result[i].Clear;
-      end;
+      Result[i].Clear;
     end;
   end;
 
@@ -400,4 +393,3 @@ begin
 end;
 
 end.
-

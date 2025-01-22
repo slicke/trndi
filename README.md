@@ -56,7 +56,7 @@ Due to mormot2, the support library Trndi uses, it may currently not be possible
 
 ## Style
 ### Linter
-Trndi uses __JEDI__ to format code, the binary is located in the FPC bin folder.
+Trndi uses __JEDI__ to format code, in Lazarus: Source > JEDI Code Format > Global Settings. Choose _JCFSettings.xml_
 
 ### Naming
 Units should end with ```.pp```, 
