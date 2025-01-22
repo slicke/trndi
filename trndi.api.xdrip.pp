@@ -25,19 +25,19 @@ unit trndi.api.xdrip;
 interface
 
 uses
-  Classes, SysUtils, StrUtils, sha1,
+Classes, SysUtils, StrUtils, sha1,
   // Parent classes and modules
-  trndi.api.nightscout, trndi.native, trndi.types,
+trndi.api.nightscout, trndi.native, trndi.types,
   // FPC/Lazarus units
-  DateUtils, Dialogs;
+DateUtils, Dialogs;
 
 (*******************************************************************************
   Constants for xDrip endpoints
  ******************************************************************************)
 const
-  XDRIP_READINGS = 'sgv.json';
-  XDRIP_STATUS   = 'pebble';
-  XDRIP_RANGES   = 'status.json';
+XDRIP_READINGS = 'sgv.json';
+XDRIP_STATUS   = 'pebble';
+XDRIP_RANGES   = 'status.json';
   // XDRIP_RANGES can include the current BG range settings
 
 type
@@ -50,12 +50,12 @@ type
       - Sync local time offsets
       - Fetch BG threshold (hi/lo)
   }
-  xDrip = class(NightScout)
-  public
-    constructor Create(user, pass, extra: string); override;
-    function GetReadings(min, maxNum: integer; path: string = ''): BGResults; override;
-    function Connect: boolean; override;
-  end;
+xDrip = class(NightScout)
+public
+  constructor Create(user, pass, extra: string); override;
+  function GetReadings(min, maxNum: integer; path: string = ''): BGResults; override;
+  function Connect: boolean; override;
+end;
 
 implementation
 
@@ -78,8 +78,8 @@ begin
   // xDrip expects the API secret in a "sha1" format, often appended as ?api-secret=<hash>
   // If pass is empty, no secret is used
   key := IfThen(pass <> '',
-                'api-secret=' + SHA1Print(SHA1String(pass)),
-                '');
+    'api-secret=' + SHA1Print(SHA1String(pass)),
+    '');
 
   // Initialize timezone offset and create the native HTTP client
   timezone := GetLocalTimeOffset;
@@ -121,18 +121,18 @@ begin
   // Basic check for protocol correctness
   if Copy(baseUrl, 1, 4) <> 'http' then
   begin
-    Result := False;
+    Result := false;
     lastErr := 'Invalid address. Must begin with http:// or https://!';
     Exit;
   end;
 
   // Fetch xDrip "pebble" info. If the secret fails, we get "uthentication failed"
-  LResponse := native.Request(False, XDRIP_STATUS, [], '', key);
+  LResponse := native.Request(false, XDRIP_STATUS, [], '', key);
 
   if Pos('uthentication failed', LResponse) > 0 then
   begin
     lastErr := 'Access token rejected by xDrip. Is it correct?';
-    Result := False;
+    Result := false;
     Exit;
   end;
 
@@ -144,7 +144,7 @@ begin
   if not TryStrToInt64(LResponse, LTimeStamp) then
   begin
     lastErr := 'xDrip could not initialize. Cannot sync clocks; xDrip may be offline.';
-    Result := False;
+    Result := false;
     Exit;
   end;
 
@@ -156,7 +156,7 @@ begin
   timeDiff := -1 * timeDiff;
 
   // Retrieve hi/lo ranges from xDrip
-  LResponse := native.Request(False, XDRIP_RANGES, [], '', key);
+  LResponse := native.Request(false, XDRIP_RANGES, [], '', key);
 
   // If the JSON contains "bgHigh":160, parse out 160
   if TryStrToInt(TrimSet(Copy(LResponse, Pos('bgHigh', LResponse) + 8, 4), [' ', ',', '}']), i) then
@@ -174,8 +174,7 @@ begin
   cgmRangeHi := 500;
   cgmRangeLo := 0;
 
-  Result := True;
+  Result := true;
 end;
 
 end.
-

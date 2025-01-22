@@ -37,7 +37,7 @@ Forms, lazcontrols, umain, uconf
 
 begin
 RequireDerivedFormResource:=true;
-  Application.Scaled:=True;
+Application.Scaled:=true;
 Application.{%H-}MainFormOnTaskbar:=true;
 Application.Initialize;
 Application.CreateForm(TfBG,fBG);

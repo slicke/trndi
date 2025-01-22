@@ -705,7 +705,7 @@ begin
 
   tMain.Interval := i;
   tMain.Enabled := true;
-    miRefresh.Caption := Format(RS_REFRESH, [TimeToStr(IncMilliSecond(Now, i))]);
+  miRefresh.Caption := Format(RS_REFRESH, [TimeToStr(IncMilliSecond(Now, i))]);
 
   // Check if the latest reading is fresh
   if MinutesBetween(Now, b.date) > DATA_FRESHNESS_THRESHOLD_MINUTES then
