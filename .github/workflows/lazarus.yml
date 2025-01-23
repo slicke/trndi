@@ -86,7 +86,7 @@ jobs:
       # 7c. Verify Static Libraries
       - name: Verify Static Libraries
         run: |
-          dir '..\static\x86_64-win64' /s
+          Get-ChildItem -Path "${{ github.workspace }}\..\static\x86_64-win64" -Recurse
         shell: pwsh
 
       # 8. Copy Static Libraries to Program Folder
