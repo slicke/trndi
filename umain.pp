@@ -119,6 +119,7 @@ BG_API_MIN = 2;
   // NS can't read lower
 BG_API_MAX = 22;
   // NS can't read higher
+BG_REFRESH = 300000; // 5 min refresh
 
 DOT_GRAPH =  '•';
 DOT_FRESH = '☉';
@@ -320,7 +321,7 @@ begin
   begin
     lang := GetSetting('locale', '');
 
-//   SetDefaultLang(lang,'lang');
+   SetDefaultLang(lang,'lang');
   // Idea for using multiple person/account support
     username := GetSetting('users.names','');
     if username <> '' then
@@ -575,7 +576,7 @@ end;
 // Explain limit menu click
 procedure TfBG.miLimitExplainClick(Sender: TObject);
 begin
-  ShowMessage(RS_LIMIT_EXPLAIN_TEXT);
+  MessageDlg('Trndi', RS_LIMIT_EXPLAIN_TEXT, mtInformation, [mbOK], '');
 end;
 
 // Handle settings menu click
@@ -644,10 +645,10 @@ begin
   diff := Now-d;
 
 
-  min := MilliSecondsBetween(Now, d) div 60000;
-  sec := (MilliSecondsBetween(Now, d) mod 60000) div 1000;
+  min := MilliSecondsBetween(Now, d) div 60000;  // Minutes since last
+  sec := (MilliSecondsBetween(Now, d) mod 60000) div 1000; // Seconds since last
 
-  lDiff.Caption := Format('%s (%d.%.2d ago)', [FormatDateTime('H:mm', d), min, sec]);
+  lDiff.Caption := Format(RS_OUTDATED_TIME, [FormatDateTime('H:mm', d), min, sec]);
 end;
 
 // Handle a touch screen's long touch
@@ -692,13 +693,13 @@ begin
   lVal.Font.Style := [];
 
   // Log latest reading
-  LogMessage(Format('Latest Reading: Value = %.2f, Date = %s', [b.val, DateTimeToStr(b.date)]));
+  LogMessage(Format(RS_LATEST_READING, [b.val, DateTimeToStr(b.date)]));
 
   // Set next update time
   tMain.Enabled := false;
   i := SecondsBetween(b.date, now); // Seconds from last
-  i := min(300000,  // 5 min
-    300000-(i*1000) // 5 minutes minus time from last check
+  i := min(BG_REFRESH,  // 5 min
+    BG_REFRESH-(i*1000) // 5 minutes minus time from last check
     ); // Minimal 5 min to next check
 
   i := max(120000, i); // Don't allow too small refresh time. Now we have a time between 2-5 mins

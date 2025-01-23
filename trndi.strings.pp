@@ -28,6 +28,10 @@ RS_RANGE_EXPLANATION = 'In addition to high and low levels, you have set a perso
 RS_OVER = 'over';
 RS_UNDER = 'under';
 
+// Time messages
+RS_OUTDATED_TIME = '%s (%d.%.2d ago)';
+RS_LATEST_READING = 'Latest Reading: Value = %.2f, Date = %s';
+
 implementation
 
 end.

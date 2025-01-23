@@ -146,6 +146,11 @@ msgstr ""
 msgid "Hi > %.1f"
 msgstr ""
 
+#: trndi.strings.rs_latest_reading
+#, object-pascal-format
+msgid "Latest Reading: Value = %.2f, Date = %s"
+msgstr ""
+
 #: trndi.strings.rs_limit_explain_text
 msgid ""
 "Hi = When BG is considered high\n"
@@ -174,6 +179,11 @@ msgstr ""
 
 #: trndi.strings.rs_no_backend
 msgid "No readings recieved. There might be a problem with the backend, or you might not have any recent readings"
+msgstr ""
+
+#: trndi.strings.rs_outdated_time
+#, object-pascal-format
+msgid "%s (%d.%.2d ago)"
 msgstr ""
 
 #: trndi.strings.rs_over
