@@ -1,4 +1,4 @@
-name: Build and Run Trndi.lpr
+name: Build and Run Trndi.lpr with Lazarus 4.0 RC2 and Cache
 
 on:
   push:
@@ -47,17 +47,17 @@ jobs:
       # 6. Build mORMot2 Package
       - name: Build mORMot2 Package
         run: |
-          "C:\Lazarus\lazbuild.exe" externals\mORMot2\packages\lazarus\mormot2.lpk
+          & "C:\Lazarus\lazbuild.exe" "externals\mORMot2\packages\lazarus\mormot2.lpk"
 
       # 7. Build Trndi.lpr
       - name: Build Trndi.lpr
         run: |
-          "C:\Lazarus\lazbuild.exe" Trndi.lpr
+          & "C:\Lazarus\lazbuild.exe" "Trndi.lpr"
 
       # 8. Run Trndi.exe and capture the output
       - name: Run Trndi.exe
         run: |
-          Trndi.exe > output.txt
+          & ".\Trndi.exe" > output.txt
           type output.txt
 
       # 9. Upload the output as an artifact
