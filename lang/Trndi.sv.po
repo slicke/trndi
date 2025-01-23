@@ -158,6 +158,11 @@ msgstr "En datatyo förväntades, men en annan påträffades"
 msgid "Hi > %.1f"
 msgstr "Hög > %.1f"
 
+#: trndi.strings.rs_latest_reading
+#, object-pascal-format
+msgid "Latest Reading: Value = %.2f, Date = %s"
+msgstr "Senaste avläsning: Värde = %.2f, tidpunkt = %s"
+
 #: trndi.strings.rs_limit_explain_text
 msgid ""
 "Hi = When BG is considered high\n"
@@ -191,6 +196,11 @@ msgstr "Trndi hittade fler konton. Vänligen välj ett för denna instans"
 #: trndi.strings.rs_no_backend
 msgid "No readings recieved. There might be a problem with the backend, or you might not have any recent readings"
 msgstr "Inga avläsningar togs emot. Antingen är det fel hos källan, eller så saknas aktuella avläsningar"
+
+#: trndi.strings.rs_outdated_time
+#, object-pascal-format
+msgid "%s (%d.%.2d ago)"
+msgstr "%s (%d.%.2d sedan)"
 
 #: trndi.strings.rs_over
 msgid "over"
@@ -237,4 +247,3 @@ msgstr "under"
 #, object-pascal-format
 msgid "[%s] %s"
 msgstr "[%s] %s"
-
