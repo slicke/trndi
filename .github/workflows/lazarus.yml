@@ -50,7 +50,6 @@ jobs:
       # 6. Copy Static Libraries to Program Folder
       - name: Copy Static Libraries
         run: |
-          mkdir x86_64-win64
           xcopy ..\static\x86_64-win64\*.* . /Y /E /I
 
       # 7. Build Trndi.lpr
