@@ -71,16 +71,28 @@ jobs:
           & 'C:\Program Files\7-Zip\7z.exe' x 'mormot2static.7z' -o'../static' -y
         shell: pwsh
 
-      # 7. Verify Static Libraries
+      # 7a. Log Current Directory
+      - name: Log Current Directory
+        run: |
+          Write-Host "Current Directory: $(Get-Location)"
+        shell: pwsh
+
+      # 7b. List Parent Static Directory
+      - name: List Parent Static Directory
+        run: |
+          Get-ChildItem '..\static' -Recurse
+        shell: pwsh
+
+      # 7c. Verify Static Libraries
       - name: Verify Static Libraries
         run: |
-          dir ../static\x86_64-win64 /s
+          dir '..\static\x86_64-win64' /s
         shell: pwsh
 
       # 8. Copy Static Libraries to Program Folder
       - name: Copy Static Libraries
         run: |
-          xcopy ../static\x86_64-win64\*.* . /Y /E /I
+          xcopy ..\static\x86_64-win64\*.* . /Y /E /I
         shell: cmd
 
       # 9. Restore mORMot2 Cache
