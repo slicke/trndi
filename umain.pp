@@ -76,6 +76,7 @@ TfBG = class(TForm)
   procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
   procedure FormCreate(Sender: TObject);
   procedure FormResize(Sender: TObject);
+  procedure lArrowClick(Sender:TObject);
   procedure lDiffDblClick(Sender: TObject);
   procedure lgMainClick(Sender: TObject);
   procedure lValClick(Sender: TObject);
@@ -127,6 +128,8 @@ BG_REFRESH = 300000; // 5 min refresh
 DOT_GRAPH =  '•';
 DOT_FRESH = '☉';
 var
+bg_alert: boolean = false; // If the BG is high/low since before, so we don't spam notifications
+
 username: string = '';
 lastup: tdatetime;
   // Colors (b)lood(g)lucose (c)olor XX
@@ -518,6 +521,11 @@ begin
   PlaceTrendDots(bgs);
 end;
 
+procedure TfBG.lArrowClick(Sender:TObject);
+begin
+
+end;
+
 // Handle full screen toggle on double-click
 procedure TfBG.lDiffDblClick(Sender: TObject);
 begin
@@ -732,14 +740,24 @@ begin
   end;
   tMissed.Enabled := false;
 
+  bg_alert := true;
   // Set background color based on the latest reading
-  if b.val >= api.cgmHi then
-    fBG.Color := bg_color_hi
+  if b.val >= api.cgmHi then begin
+    fBG.Color := bg_color_hi;
+    with TrndiNative.create  do
+      if not bg_alert then
+      attention('High BG');
+  end
   else
-  if b.val <= api.cgmLo then
-    fBG.Color := bg_color_lo
+  if b.val <= api.cgmLo then begin
+    fBG.Color := bg_color_lo;
+    with TrndiNative.create  do
+      if not bg_alert then
+        attention('LOW BG');
+  end
   else
   begin
+    bg_alert := false;
     fBG.Color := bg_color_ok;
     // Check personalized limit
 

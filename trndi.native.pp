@@ -36,10 +36,13 @@ Classes, SysUtils, Graphics
 NSMisc,
 ns_url_request
 {$ELSEIF DEFINED(X_WIN)},
-Windows, Registry, Dialogs, StrUtils, winhttpclient
+Windows, Registry, Dialogs, StrUtils, winhttpclient, InterfaceBase
 {$ELSEIF DEFINED(X_PC)},
 fphttpclient, openssl, opensslsockets, IniFiles, Dialogs
-{$ENDIF};
+{$ENDIF}
+{$ifdef X_LINUX}
+, process
+{$endif};
 
 type
   { TrndiNative
@@ -56,6 +59,11 @@ public
     // Indicates if the user system is in a "dark mode" theme
   dark: boolean;
 
+
+  { attention
+    Flash the menu bar
+  }
+   procedure attention(message: string);
     { request
       -------
       Sends an HTTP request (either GET or POST) to the given endpoint.
@@ -220,6 +228,93 @@ begin
   baseurl   := base;
   // Check if we're in dark mode on creation
   dark := isDarkMode;
+end;
+
+{------------------------------------------------------------------------------
+  TrndiNative.attention
+  -------------------
+  Flashes something depending on the system
+ ------------------------------------------------------------------------------}
+procedure TrndiNative.attention(message: string);
+{$if  DEFINED(X_LINUX)}
+function IsNotifySendAvailable: Boolean;
+var
+  AProcess: TProcess;
+  OutputString: string;
+  OutputLines: TStringList;
+begin
+  Result := False;
+
+  // Försök att hitta sökvägen till notify-send
+  AProcess := TProcess.Create(nil);
+  OutputLines := TStringList.Create;
+  try
+    AProcess.Executable := '/usr/bin/which';
+    AProcess.Parameters.Add('notify-send');
+    AProcess.Options := AProcess.Options + [poWaitOnExit, poUsePipes];
+    AProcess.Execute;
+
+    // Läs utdata från processen
+    OutputString := '';
+    while AProcess.Output.NumBytesAvailable > 0 do
+    begin
+      SetLength(OutputString, Length(OutputString) + 1024);
+      AProcess.Output.ReadBuffer(Pointer(OutputString)^, 1024);
+    end;
+    AProcess.WaitOnExit;
+
+    // Rensa onödiga tecken
+    OutputString := Trim(OutputString);
+
+    // Kontrollera om sökvägen är returnerad
+    if (Length(OutputString) > 0) and FileExists(OutputString) then
+      Result := True;
+  except
+    on E: Exception do
+    begin
+      // Hantera eventuella fel, t.ex. logga eller ignorera
+      Result := False;
+    end;
+  end;
+
+  OutputLines.Free;
+  AProcess.Free;
+end;
+
+procedure SendNotification(Title, Message: string);
+var
+  AProcess: TProcess;
+begin
+  if IsNotifySendAvailable then
+  begin
+    AProcess := TProcess.Create(nil);
+    try
+      AProcess.Executable := '/usr/bin/notify-send';
+      AProcess.Parameters.Add(Title);
+      AProcess.Parameters.Add(Message);
+      AProcess.Options := AProcess.Options + [poNoConsole];
+      AProcess.Execute;
+    finally
+      AProcess.Free;
+    end;
+  end
+  else
+  begin
+    // Hantera fallet där notify-send inte är installerat
+    ShowMessage('Notifieringsfunktionen är inte tillgänglig eftersom "notify-send" inte är installerat.');
+    // Alternativt kan du välja att använda en annan notifieringsmetod eller inaktivera notifieringsfunktionen
+  end;
+end;
+{$endif}
+{$if defined(X_WIN)}
+procedure SendNotification(const title, msg: string);
+begin
+   FlashWindow(WidgetSet.AppHandle, True);
+end;
+
+{$endif}
+begin
+  SendNotification('Trndi', message);
 end;
 
 {------------------------------------------------------------------------------
