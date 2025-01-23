@@ -15,7 +15,7 @@ jobs:
     steps:
       # 1. Check out repository
       - name: Check out repository
-        uses: slicke/checkout@v3
+        uses: actions/checkout@v3z
 
       # 2. Cache Lazarus Installation
       - name: Restore Lazarus Cache
@@ -62,7 +62,7 @@ jobs:
 
       # 9. Upload the output as an artifact
       - name: Upload Output
-        uses: slicke/upload-artifact@v3
+        uses: actions/upload-artifact@v3
         with:
           name: Trndi-output
           path: output.txt
