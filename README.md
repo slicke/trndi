@@ -1,5 +1,4 @@
-# ![Trndi](/trndi-logo.png) CGM data viewer <sup>Nightscout / Dexcom / Local </sup> 
-![Window](/doc/ux.png)
+# ![Trndi](/trndi-logo.png)<br> CGM Data Viewer<br><sup>_Nightscout - Dexcom - xDrip WiFi_</sup> 
 
 ### Introduction
 Trndi is a _desktop app_ that shows the your blood sugar. It works with  _Night Scout_ and _Dexcom Share_.
