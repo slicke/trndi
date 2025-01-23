@@ -1,4 +1,4 @@
-name: Build and Run Trndi.lpr with Lazarus 4.0 RC2
+name: Build and Run Trndi.lpr with Lazarus 4.0 RC2 and Static Libraries in Program Folder
 
 on:
   push:
@@ -47,37 +47,26 @@ jobs:
           mkdir ..\static
           & "C:\Program Files\7-Zip\7z.exe" x "mormot2static.7z" -o"..\static" -y
 
-      # 6. Cache mORMot2 Repository
-      - name: Restore mORMot2 Cache
-        uses: actions/cache@v3
-        with:
-          path: externals/mORMot2
-          key: mormot2-latest
-
-      # 7. Clone mORMot2
-      - name: Clone mORMot2
-        if: steps.cache.outputs.cache-hit != 'true'
-        run: git clone https://github.com/synopse/mORMot2.git externals/mORMot2
-
-      # 8. Build mORMot2 Package
-      - name: Build mORMot2 Package
+      # 6. Copy Static Libraries to Program Folder
+      - name: Copy Static Libraries
         run: |
-          & "C:\Lazarus\lazbuild.exe" "externals\mORMot2\packages\lazarus\mormot2.lpk"
+          mkdir x86_64-win64
+          xcopy ..\static\x86_64-win64\*.* . /Y /E /I
 
-      # 9. Build Trndi.lpr
+      # 7. Build Trndi.lpr
       - name: Build Trndi.lpr
         run: |
-          & "C:\Lazarus\lazbuild.exe" --lazarusdir="C:\Lazarus" --build-mode="Extensions (Release)" --compiler-options="-Fu../static/x86_64-win64" "Trndi.lpr"
+          & "C:\Lazarus\lazbuild.exe" --lazarusdir="C:\Lazarus" --build-mode="Extensions (Release)" "Trndi.lpr"
 
-      # 10. Run Trndi.exe and capture the output
-      - name: Run Trndi.exe
-        run: |
-          & ".\Trndi.exe" > output.txt
-          type output.txt
+      # 8. Run Trndi.exe and capture the output
+        - name: Run Trndi.exe
+          run: |
+            & ".\Trndi.exe" > output.txt
+            type output.txt
 
-      # 11. Upload the output as an artifact
-      - name: Upload Output
-        uses: actions/upload-artifact@v3
-        with:
-          name: Trndi-output
-          path: output.txt
+        # 9. Upload the output as an artifact
+        - name: Upload Output
+          uses: actions/upload-artifact@v3
+          with:
+            name: Trndi-output
+            path: output.txt
