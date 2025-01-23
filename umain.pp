@@ -30,7 +30,8 @@ trndi.api.dexcom, trndi.api.nightscout, trndi.types, math, DateUtils, FileUtil,
 {$ifdef TrndiExt}
 trndi.Ext.Engine, trndi.Ext.Ext, trndi.Ext.jsfuncs,
 {$endif}
-LazFileUtils, uconf, trndi.native, Trndi.API, trndi.api.xDrip, StrUtils;
+LazFileUtils, uconf, trndi.native, Trndi.API, trndi.api.xDrip, {$ifdef DEBUG} trndi.api.debug, {$endif}
+StrUtils;
 
 type
   // Procedures which are applied to the trend drawing
@@ -366,6 +367,10 @@ begin
       api := Dexcom.Create(apiTarget, apiCreds, 'world');
     'xDrip':
       api := xDrip.Create(apiTarget, apiCreds, '');
+      {$ifdef DEBUG}
+     '* Debug Backend *':
+      api := DebugAPI.Create(apiTarget, apiCreds, '');
+      {$endif}
     else
       Exit;
     end;
@@ -608,6 +613,9 @@ begin
   with TfConf.Create(self) do
     with TrndiNative.Create do
     begin
+       {$ifdef DEBUG}
+       cbSys.Items.Add('* Debug Backend *');
+       {$endif}
       s := GetSetting(username +'remote.type');
       for i := 0 to cbSys.Items.Count - 1 do
         if cbSys.Items[i] = s then

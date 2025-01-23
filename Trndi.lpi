@@ -74,7 +74,7 @@
             </Options>
           </Linking>
           <Other>
-            <CustomOptions Value="-dTrndiExt"/>
+            <CustomOptions Value="-dTrndiExt -dDEBUG"/>
           </Other>
         </CompilerOptions>
       </Item>
@@ -141,6 +141,9 @@
               </Win32>
             </Options>
           </Linking>
+          <Other>
+            <CustomOptions Value="-dDEBUG"/>
+          </Other>
         </CompilerOptions>
       </Item>
     </BuildModes>
@@ -232,6 +235,10 @@
       </Unit>
       <Unit>
         <Filename Value="trndi.api.nightscout.pp"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="trndi.api.debug.pp"/>
         <IsPartOfProject Value="True"/>
       </Unit>
     </Units>
