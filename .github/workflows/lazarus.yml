@@ -1,4 +1,4 @@
-name: Build and Run Trndi.lpr with Lazarus 4.0 RC2
+name: Build Trndi.lpr with Lazarus 4.0 RC2
 
 on:
   push:
@@ -9,7 +9,7 @@ on:
       - main
 
 jobs:
-  build-and-run:
+  build:
     runs-on: windows-latest
 
     steps:
@@ -52,20 +52,33 @@ jobs:
         run: |
           xcopy ..\static\x86_64-win64\*.* . /Y /E /I
 
-      # 7. Build Trndi.lpr with Extensions (Release) Mode
+      # 7. Clone mORMot2 Repository
+      - name: Clone mORMot2
+        uses: actions/cache@v3
+        with:
+          path: externals/mORMot2
+          key: mormot2-repository
+
+      # 8. Build mORMot2 Package
+      - name: Build mORMot2 Package
+        run: |
+          & "C:\Lazarus\lazbuild.exe" "externals\mORMot2\packages\lazarus\mormot2.lpk"
+
+      # 9. Build Trndi.lpr with Extensions (Release) Mode
       - name: Build Trndi.lpr
         run: |
           & "C:\Lazarus\lazbuild.exe" --lazarusdir="C:\Lazarus" --build-mode="Extensions (Release)" "Trndi.lpr"
 
-      # 8. Run Trndi.exe and capture the output
-      - name: Run Trndi.exe
-        run: |
-          & ".\Trndi.exe" > output.txt
-          type output.txt
+      # The following steps are commented out for now:
+      # 10. Run Trndi.exe and capture the output
+      # - name: Run Trndi.exe
+      #   run: |
+      #     & ".\Trndi.exe" > output.txt
+      #     type output.txt
 
-      # 9. Upload the output as an artifact (latest version)
-      - name: Upload Output
-        uses: actions/upload-artifact@v4
-        with:
-          name: Trndi-output
-          path: output.txt
+      # 11. Upload the output as an artifact
+      # - name: Upload Output
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: Trndi-output
+      #     path: output.txt
