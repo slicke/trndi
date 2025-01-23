@@ -15,7 +15,7 @@ jobs:
     steps:
       # 1. Check out repository
       - name: Check out repository
-        uses: actions/checkout@v3
+        uses: slicke/checkout@v3
 
       # 2. Cache Lazarus Installation
       - name: Restore Lazarus Cache
@@ -24,13 +24,13 @@ jobs:
           path: C:\Lazarus
           key: lazarus-4.0rc2-installation
 
-      # 3. Download and Install Lazarus (if not cached)
+      # 3. Install Lazarus 4.0 RC2
       - name: Install Lazarus 4.0 RC2
         run: |
-          if not exist "C:\Lazarus\lazbuild.exe" (
-            curl -L -o lazarus-4.0RC2.exe https://download.lazarus-ide.org/Lazarus%20Windows%2064%20bits/Lazarus%204.0RC2/lazarus-4.0RC2-fpc-3.2.2-win64.exe
-            start /wait lazarus-4.0RC2.exe /VERYSILENT /DIR="C:\Lazarus"
-          )
+          if (!(Test-Path "C:\Lazarus\lazbuild.exe")) {
+            Invoke-WebRequest -Uri "https://download.lazarus-ide.org/Lazarus%20Windows%2064%20bits/Lazarus%204.0RC2/lazarus-4.0RC2-fpc-3.2.2-win64.exe" -OutFile "lazarus-4.0RC2.exe"
+            Start-Process -FilePath "lazarus-4.0RC2.exe" -ArgumentList "/VERYSILENT", "/DIR=C:\Lazarus" -Wait
+          }
 
       # 4. Cache mORMot2 Repository
       - name: Restore mORMot2 Cache
@@ -39,9 +39,9 @@ jobs:
           path: externals/mORMot2
           key: mormot2-latest
 
-      # 5. Clone mORMot2 (if not cached)
+      # 5. Clone mORMot2
       - name: Clone mORMot2
-        if: steps.cache-mORMot2.outputs.cache-hit != 'true'
+        if: steps.cache.outputs.cache-hit != 'true'
         run: git clone https://github.com/synopse/mORMot2.git externals/mORMot2
 
       # 6. Build mORMot2 Package
@@ -62,7 +62,7 @@ jobs:
 
       # 9. Upload the output as an artifact
       - name: Upload Output
-        uses: actions/upload-artifact@v3
+        uses: slicke/upload-artifact@v3
         with:
           name: Trndi-output
           path: output.txt
