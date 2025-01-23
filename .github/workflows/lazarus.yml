@@ -1,4 +1,4 @@
-name: Build and Run Trndi.lpr with Lazarus 4.0 RC2 and Cache
+name: Build and Run Trndi.lpr with Lazarus 4.0 RC2
 
 on:
   push:
@@ -32,35 +32,50 @@ jobs:
             Start-Process -FilePath "lazarus-4.0RC2.exe" -ArgumentList "/VERYSILENT", "/DIR=C:\Lazarus" -Wait
           }
 
-      # 4. Cache mORMot2 Repository
+      # 4. Cache Static Libraries
+      - name: Restore Static Cache
+        uses: actions/cache@v3
+        with:
+          path: ../static
+          key: static-libraries
+
+      # 5. Download and Extract Static Libraries if not cached
+      - name: Download and Extract Static Libraries
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          Invoke-WebRequest -Uri "https://github.com/synopse/mORMot2/releases/download/2.3.stable/mormot2static.7z" -OutFile "mormot2static.7z"
+          mkdir ..\static
+          & "C:\Program Files\7-Zip\7z.exe" x "mormot2static.7z" -o"..\static" -y
+
+      # 6. Cache mORMot2 Repository
       - name: Restore mORMot2 Cache
         uses: actions/cache@v3
         with:
           path: externals/mORMot2
           key: mormot2-latest
 
-      # 5. Clone mORMot2
+      # 7. Clone mORMot2
       - name: Clone mORMot2
         if: steps.cache.outputs.cache-hit != 'true'
         run: git clone https://github.com/synopse/mORMot2.git externals/mORMot2
 
-      # 6. Build mORMot2 Package
+      # 8. Build mORMot2 Package
       - name: Build mORMot2 Package
         run: |
           & "C:\Lazarus\lazbuild.exe" "externals\mORMot2\packages\lazarus\mormot2.lpk"
 
-      # 7. Build Trndi.lpr
+      # 9. Build Trndi.lpr
       - name: Build Trndi.lpr
         run: |
           & "C:\Lazarus\lazbuild.exe" "Trndi.lpr"
 
-      # 8. Run Trndi.exe and capture the output
+      # 10. Run Trndi.exe and capture the output
       - name: Run Trndi.exe
         run: |
           & ".\Trndi.exe" > output.txt
           type output.txt
 
-      # 9. Upload the output as an artifact
+      # 11. Upload the output as an artifact
       - name: Upload Output
         uses: actions/upload-artifact@v3
         with:
