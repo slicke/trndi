@@ -40,6 +40,8 @@ TTrendProcLoop = procedure(l: TLabel; c, ix: integer; ls: array of TLabel) of ob
   { TfBG }
 
 TfBG = class(TForm)
+  miFullScreen:TMenuItem;
+  miOnTop:TMenuItem;
   miRefresh:TMenuItem;
   miSplit4:TMenuItem;
   miLimitExplain: TMenuItem;
@@ -82,6 +84,7 @@ TfBG = class(TForm)
   procedure lValStartDrag(Sender: TObject; var DragObject: TDragObject);
   procedure miForceClick(Sender: TObject);
   procedure miLimitExplainClick(Sender: TObject);
+  procedure miOnTopClick(Sender:TObject);
   procedure miSettingsClick(Sender: TObject);
   procedure onTrendClick(Sender: TObject);
   procedure pnOffRangeClick(Sender: TObject);
@@ -577,6 +580,15 @@ end;
 procedure TfBG.miLimitExplainClick(Sender: TObject);
 begin
   MessageDlg('Trndi', RS_LIMIT_EXPLAIN_TEXT, mtInformation, [mbOK], '');
+end;
+
+procedure TfBG.miOnTopClick(Sender:TObject);
+begin
+  miOnTop.Checked := not miOnTop.Checked;
+  if miOnTop.Checked then
+    self.FormStyle := fsSystemStayOnTop
+  else
+    self.FormStyle := fsNormal;
 end;
 
 // Handle settings menu click

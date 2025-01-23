@@ -8,7 +8,6 @@ object fBG: TfBG
   ClientWidth = 320
   Color = clBlack
   Font.Color = clWhite
-  LCLVersion = '4.0.0.2'
   OnClose = FormClose
   OnCreate = FormCreate
   OnResize = FormResize
@@ -253,6 +252,14 @@ object fBG: TfBG
     end
     object miSplit4: TMenuItem
       Caption = '-'
+    end
+    object miOnTop: TMenuItem
+      Caption = 'On top'
+      OnClick = miOnTopClick
+    end
+    object miFullScreen: TMenuItem
+      Caption = 'Toggle Fullscreen'
+      OnClick = lDiffDblClick
     end
     object miRefresh: TMenuItem
       Caption = 'Refresh in:'

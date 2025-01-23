@@ -24,6 +24,10 @@ msgstr "Konfig"
 msgid "Force Update"
 msgstr "Tvinga uppdatering"
 
+#: tfbg.mifullscreen.caption
+msgid "Toggle Fullscreen"
+msgstr ""
+
 #: tfbg.miinfo.caption
 msgid "Limits"
 msgstr "Gränser"
@@ -31,6 +35,10 @@ msgstr "Gränser"
 #: tfbg.milimitexplain.caption
 msgid "Explain"
 msgstr "Förklara"
+
+#: tfbg.miontop.caption
+msgid "On top"
+msgstr ""
 
 #: tfbg.mirefresh.caption
 msgid "Refresh in:"
@@ -247,3 +255,4 @@ msgstr "under"
 #, object-pascal-format
 msgid "[%s] %s"
 msgstr "[%s] %s"
+

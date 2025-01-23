@@ -14,12 +14,20 @@ msgstr ""
 msgid "Force Update"
 msgstr ""
 
+#: tfbg.mifullscreen.caption
+msgid "Toggle Fullscreen"
+msgstr ""
+
 #: tfbg.miinfo.caption
 msgid "Limits"
 msgstr ""
 
 #: tfbg.milimitexplain.caption
 msgid "Explain"
+msgstr ""
+
+#: tfbg.miontop.caption
+msgid "On top"
 msgstr ""
 
 #: tfbg.mirefresh.caption
