@@ -1,7 +1,7 @@
 <?xml version="1.0" ?>
 <JediCodeFormatSettings>
     <WriteVersion> 2.44 </WriteVersion>
-    <WriteDateTime> 45675.5585489236 </WriteDateTime>
+    <WriteDateTime> 45680.5830513773 </WriteDateTime>
     <Description>  </Description>
     <ConfirmFormat> False </ConfirmFormat>
   <Obfuscate>
@@ -17,7 +17,7 @@
       <Warnings> False </Warnings>
       <WarnUnusedParams> False </WarnUnusedParams>
       <IgnoreUnusedParams>  </IgnoreUnusedParams>
-      <FileExtensions>  </FileExtensions>
+      <FileExtensions> dpr,pas,pp </FileExtensions>
   </Clarify>
   <Indent>
       <IndentationSpaces> 2 </IndentationSpaces>
