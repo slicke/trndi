@@ -63,9 +63,9 @@ jobs:
           & ".\Trndi.exe" > output.txt
           type output.txt
 
-      # 9. Upload the output as an artifact
+      # 9. Upload the output as an artifact (latest version)
       - name: Upload Output
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Trndi-output
           path: output.txt
