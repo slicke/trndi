@@ -67,7 +67,7 @@ jobs:
       # 9. Build Trndi.lpr
       - name: Build Trndi.lpr
         run: |
-          & "C:\Lazarus\lazbuild.exe" "Trndi.lpr"
+          & "C:\Lazarus\lazbuild.exe" --lazarusdir="C:\Lazarus" --build-mode=Release "Trndi.lpr" -Fu"../static/x86_64-win64"
 
       # 10. Run Trndi.exe and capture the output
       - name: Run Trndi.exe
