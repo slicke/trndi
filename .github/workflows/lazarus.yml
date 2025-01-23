@@ -1,4 +1,4 @@
-name: Build Trndi.lpr with Lazarus 4.0 RC2
+name: Build and Test Trndi.lpr with Lazarus 4.0 RC2
 
 on:
   push:
@@ -9,7 +9,7 @@ on:
       - main
 
 jobs:
-  build:
+  build-and-test:
     runs-on: windows-latest
 
     steps:
@@ -32,14 +32,19 @@ jobs:
             Start-Process -FilePath "lazarus-4.0RC2.exe" -ArgumentList "/VERYSILENT", "/DIR=C:\Lazarus" -Wait
           }
 
-      # 4. Cache Static Libraries
+      # 4. Verify Lazarus Installation
+      - name: Verify Lazarus Installation
+        run: |
+          dir C:\Lazarus /s
+
+      # 5. Cache Static Libraries
       - name: Restore Static Cache
         uses: actions/cache@v3
         with:
           path: ../static
           key: static-libraries
 
-      # 5. Download and Extract Static Libraries if not cached
+      # 6. Download and Extract Static Libraries if not cached
       - name: Download and Extract Static Libraries
         if: steps.cache.outputs.cache-hit != 'true'
         run: |
@@ -47,38 +52,40 @@ jobs:
           mkdir ..\static
           & "C:\Program Files\7-Zip\7z.exe" x "mormot2static.7z" -o"..\static" -y
 
-      # 6. Copy Static Libraries to Program Folder
+      # 7. Verify Static Libraries
+      - name: Verify Static Libraries
+        run: |
+          dir ..\static\x86_64-win64 /s
+
+      # 8. Copy Static Libraries to Program Folder
       - name: Copy Static Libraries
         run: |
           xcopy ..\static\x86_64-win64\*.* . /Y /E /I
 
-      # 7. Clone mORMot2 Repository
-      - name: Clone mORMot2
+      # 9. Restore mORMot2 Cache
+      - name: Restore mORMot2 Cache
         uses: actions/cache@v3
         with:
           path: externals/mORMot2
           key: mormot2-repository
 
-      # 8. Build mORMot2 Package
+      # 10. Clone mORMot2 Repository if cache is missing
+      - name: Clone mORMot2 Repository
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          git clone https://github.com/synopse/mORMot2.git externals/mORMot2
+
+      # 11. Verify mORMot2 Clone
+      - name: Verify mORMot2 Clone
+        run: |
+          dir externals\mORMot2 /s
+
+      # 12. Build mORMot2 Package
       - name: Build mORMot2 Package
         run: |
           & "C:\Lazarus\lazbuild.exe" "externals\mORMot2\packages\lazarus\mormot2.lpk"
 
-      # 9. Build Trndi.lpr with Extensions (Release) Mode
+      # 13. Build Trndi.lpr
       - name: Build Trndi.lpr
         run: |
           & "C:\Lazarus\lazbuild.exe" --lazarusdir="C:\Lazarus" --build-mode="Extensions (Release)" "Trndi.lpr"
-
-      # The following steps are commented out for now:
-      # 10. Run Trndi.exe and capture the output
-      # - name: Run Trndi.exe
-      #   run: |
-      #     & ".\Trndi.exe" > output.txt
-      #     type output.txt
-
-      # 11. Upload the output as an artifact
-      # - name: Upload Output
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: Trndi-output
-      #     path: output.txt
