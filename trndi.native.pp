@@ -63,7 +63,7 @@ public
   { attention
     Flash the menu bar
   }
-   procedure attention(message: string);
+  procedure attention(message: string);
     { request
       -------
       Sends an HTTP request (either GET or POST) to the given endpoint.
@@ -237,82 +237,80 @@ end;
  ------------------------------------------------------------------------------}
 procedure TrndiNative.attention(message: string);
 {$if  DEFINED(X_LINUX)}
-function IsNotifySendAvailable: Boolean;
-var
-  AProcess: TProcess;
-  OutputString: string;
-  OutputLines: TStringList;
-begin
-  Result := False;
+function IsNotifySendAvailable: boolean;
+  var
+    AProcess: TProcess;
+    OutputString: string;
+    OutputLines: TStringList;
+  begin
+    Result := false;
 
   // Försök att hitta sökvägen till notify-send
-  AProcess := TProcess.Create(nil);
-  OutputLines := TStringList.Create;
-  try
-    AProcess.Executable := '/usr/bin/which';
-    AProcess.Parameters.Add('notify-send');
-    AProcess.Options := AProcess.Options + [poWaitOnExit, poUsePipes];
-    AProcess.Execute;
+    AProcess := TProcess.Create(nil);
+    OutputLines := TStringList.Create;
+    try
+      AProcess.Executable := '/usr/bin/which';
+      AProcess.Parameters.Add('notify-send');
+      AProcess.Options := AProcess.Options + [poWaitOnExit, poUsePipes];
+      AProcess.Execute;
 
     // Läs utdata från processen
-    OutputString := '';
-    while AProcess.Output.NumBytesAvailable > 0 do
-    begin
-      SetLength(OutputString, Length(OutputString) + 1024);
-      AProcess.Output.ReadBuffer(Pointer(OutputString)^, 1024);
-    end;
-    AProcess.WaitOnExit;
+      OutputString := '';
+      while AProcess.Output.NumBytesAvailable > 0 do
+      begin
+        SetLength(OutputString, Length(OutputString) + 1024);
+        AProcess.Output.ReadBuffer(Pointer(OutputString)^, 1024);
+      end;
+      AProcess.WaitOnExit;
 
     // Rensa onödiga tecken
-    OutputString := Trim(OutputString);
+      OutputString := Trim(OutputString);
 
     // Kontrollera om sökvägen är returnerad
-    if (Length(OutputString) > 0) and FileExists(OutputString) then
-      Result := True;
-  except
-    on E: Exception do
-    begin
+      if (Length(OutputString) > 0) and FileExists(OutputString) then
+        Result := true;
+    except
+      on E: Exception do
+      begin
       // Hantera eventuella fel, t.ex. logga eller ignorera
-      Result := False;
+        Result := false;
+      end;
     end;
-  end;
 
-  OutputLines.Free;
-  AProcess.Free;
-end;
+    OutputLines.Free;
+    AProcess.Free;
+  end;
 
 procedure SendNotification(Title, Message: string);
-var
-  AProcess: TProcess;
-begin
-  if IsNotifySendAvailable then
+  var
+    AProcess: TProcess;
   begin
-    AProcess := TProcess.Create(nil);
-    try
-      AProcess.Executable := '/usr/bin/notify-send';
-      AProcess.Parameters.Add(Title);
-      AProcess.Parameters.Add(Message);
-      AProcess.Options := AProcess.Options + [poNoConsole];
-      AProcess.Execute;
-    finally
-      AProcess.Free;
-    end;
-  end
-  else
-  begin
-    // Hantera fallet där notify-send inte är installerat
-    ShowMessage('Notifieringsfunktionen är inte tillgänglig eftersom "notify-send" inte är installerat.');
-    // Alternativt kan du välja att använda en annan notifieringsmetod eller inaktivera notifieringsfunktionen
+    if IsNotifySendAvailable then
+    begin
+      AProcess := TProcess.Create(nil);
+      try
+        AProcess.Executable := '/usr/bin/notify-send';
+        AProcess.Parameters.Add(Title);
+        AProcess.Parameters.Add(Message);
+        AProcess.Options := AProcess.Options + [poNoConsole];
+        AProcess.Execute;
+      finally
+        AProcess.Free;
+      end;
+    end
+    else
+      ShowMessage('Notifieringsfunktionen är inte tillgänglig eftersom "notify-send" inte är installerat.')// Hantera fallet där notify-send inte är installerat
+// Alternativt kan du välja att använda en annan notifieringsmetod eller inaktivera notifieringsfunktionen
+    ;
   end;
-end;
-{$endif}
-{$if defined(X_WIN)}
+  {$endif}
+  {$if defined(X_WIN)}
 procedure SendNotification(const title, msg: string);
-begin
-   FlashWindow(WidgetSet.AppHandle, True);
-end;
+  begin
+    FlashWindow(WidgetSet.AppHandle, true);
+  end;
 
-{$endif}
+  {$endif}
 begin
   SendNotification('Trndi', message);
 end;

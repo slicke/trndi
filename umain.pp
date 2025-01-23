@@ -327,7 +327,7 @@ begin
   begin
     lang := GetSetting('locale', '');
 
-   SetDefaultLang(lang,'lang');
+    SetDefaultLang(lang,'lang');
   // Idea for using multiple person/account support
     username := GetSetting('users.names','');
     if username <> '' then
@@ -742,14 +742,16 @@ begin
 
   bg_alert := true;
   // Set background color based on the latest reading
-  if b.val >= api.cgmHi then begin
+  if b.val >= api.cgmHi then
+  begin
     fBG.Color := bg_color_hi;
     with TrndiNative.create  do
       if not bg_alert then
-      attention('High BG');
+        attention('High BG');
   end
   else
-  if b.val <= api.cgmLo then begin
+  if b.val <= api.cgmLo then
+  begin
     fBG.Color := bg_color_lo;
     with TrndiNative.create  do
       if not bg_alert then
