@@ -1,4 +1,4 @@
-name: Build and Run Trndi.lpr with Lazarus 4.0 RC2
+name: Build and Run Trndi.lpr
 
 on:
   push:
@@ -17,30 +17,50 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v3
 
-      # 2. Clone mORMot2 repository
+      # 2. Cache Lazarus Installation
+      - name: Restore Lazarus Cache
+        uses: actions/cache@v3
+        with:
+          path: C:\Lazarus
+          key: lazarus-4.0rc2-installation
+
+      # 3. Download and Install Lazarus (if not cached)
+      - name: Install Lazarus 4.0 RC2
+        run: |
+          if not exist "C:\Lazarus\lazbuild.exe" (
+            curl -L -o lazarus-4.0RC2.exe https://download.lazarus-ide.org/Lazarus%20Windows%2064%20bits/Lazarus%204.0RC2/lazarus-4.0RC2-fpc-3.2.2-win64.exe
+            start /wait lazarus-4.0RC2.exe /VERYSILENT /DIR="C:\Lazarus"
+          )
+
+      # 4. Cache mORMot2 Repository
+      - name: Restore mORMot2 Cache
+        uses: actions/cache@v3
+        with:
+          path: externals/mORMot2
+          key: mormot2-latest
+
+      # 5. Clone mORMot2 (if not cached)
       - name: Clone mORMot2
+        if: steps.cache-mORMot2.outputs.cache-hit != 'true'
         run: git clone https://github.com/synopse/mORMot2.git externals/mORMot2
 
-      # 3. Download and Install Lazarus 4.0 RC2
-      - name: Download Lazarus 4.0 RC2
-        run: curl -L -o lazarus-4.0RC2.exe https://download.lazarus-ide.org/Lazarus%20Windows%2064%20bits/Lazarus%204.0RC2/lazarus-4.0RC2-fpc-3.2.2-win64.exe
-
-      - name: Install Lazarus 4.0 RC2
-        run: start /wait lazarus-4.0RC2.exe /VERYSILENT /DIR="C:\Lazarus"
-
-      # 4. Build Trndi.lpr
-      - name: Build Trndi.lpr
+      # 6. Build mORMot2 Package
+      - name: Build mORMot2 Package
         run: |
           "C:\Lazarus\lazbuild.exe" externals\mORMot2\packages\lazarus\mormot2.lpk
+
+      # 7. Build Trndi.lpr
+      - name: Build Trndi.lpr
+        run: |
           "C:\Lazarus\lazbuild.exe" Trndi.lpr
 
-      # 5. Run Trndi.exe and capture the output
+      # 8. Run Trndi.exe and capture the output
       - name: Run Trndi.exe
         run: |
           Trndi.exe > output.txt
           type output.txt
 
-      # 6. Upload the output as an artifact
+      # 9. Upload the output as an artifact
       - name: Upload Output
         uses: actions/upload-artifact@v3
         with:
