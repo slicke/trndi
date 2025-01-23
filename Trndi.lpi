@@ -107,6 +107,9 @@
               </Win32>
             </Options>
           </Linking>
+          <Other>
+            <CustomOptions Value="-dTrndiExt"/>
+          </Other>
         </CompilerOptions>
       </Item>
       <Item Name="No Ext (Debug)">
