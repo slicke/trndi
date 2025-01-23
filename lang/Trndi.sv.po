@@ -26,7 +26,7 @@ msgstr "Tvinga uppdatering"
 
 #: tfbg.mifullscreen.caption
 msgid "Toggle Fullscreen"
-msgstr ""
+msgstr "Växla fullskärm"
 
 #: tfbg.miinfo.caption
 msgid "Limits"
@@ -38,7 +38,7 @@ msgstr "Förklara"
 
 #: tfbg.miontop.caption
 msgid "On top"
-msgstr ""
+msgstr "Överst"
 
 #: tfbg.mirefresh.caption
 msgid "Refresh in:"
@@ -255,4 +255,3 @@ msgstr "under"
 #, object-pascal-format
 msgid "[%s] %s"
 msgstr "[%s] %s"
-
