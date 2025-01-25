@@ -396,12 +396,13 @@ begin
     LoadExtensions;
     {$endif}
 
-    if GetIntSetting('override.enabled', 0) = 1 then begin
-      api.cgmLo      := GetIntSetting('override.lo', api.cgmLo);
-      api.cgmHi      := GetIntSetting('override.hi', api.cgmHi);
+    if GetIntSetting(username+'override.enabled', 0) = 1 then begin
+      api.cgmLo      := GetIntSetting(username+'override.lo', api.cgmLo);
+      api.cgmHi      := GetIntSetting(username+'override.hi', api.cgmHi);
+
+      api.cgmRangeLo := GetIntSetting(username+'override.rangelo', api.cgmRangeLo);
+      api.cgmRangeHi := GetIntSetting(username+'override.rangehi', api.cgmRangeHi);
     end;
-//    api.cgmRangeLo := GetIntSetting('override.rangelo', api.cgmRangeLo);
-//    api.cgmRangeHi := GetIntSetting('override.rangehi', api.cgmRangeHi);
   end;
 
   update;
@@ -660,8 +661,8 @@ begin
       eAddr.Text := GetSetting(username +'remote.target');
       ePass.Text := GetSetting(username +'remote.creds');
       rbUnit.ItemIndex := IfThen(GetSetting(username +'unit', 'mmol') = 'mmol', 0, 1);
-      fsLo.Value := GetIntSetting('override.lo', api.cgmLo);
-      fsHi.Value      := GetIntSetting('override.hi', api.cgmHi);
+      fsLo.Value := GetIntSetting(username+'override.lo', api.cgmLo);
+      fsHi.Value      := GetIntSetting(username+'override.hi', api.cgmHi);
       if GetSetting(username +'unit', 'mmol') = 'mmol' then begin
         fshi.DecimalPlaces := 1;
         fslo.DecimalPlaces := 1;
@@ -669,7 +670,7 @@ begin
         fsLo.Value := fsLo.Value / 18;
       end;
 
-      cbCust.Checked := GetIntSetting('override.enabled', 0) = 1;
+      cbCust.Checked := GetIntSetting(username+'override.enabled', 0) = 1;
 
       {$ifdef TrndiExt}
       eExt.Text := GetAppConfigDirUTF8(false, true) + 'extensions' + DirectorySeparator;
@@ -687,14 +688,14 @@ begin
 
 
       if rbUnit.ItemIndex = 0 then begin//mmol
-        SetSetting('override.lo', round(fsLo.Value * 18).ToString);
-        SetSetting('override.hi', round(fsHi.value *18).tostring);
+        SetSetting(username+'override.lo', round(fsLo.Value * 18).ToString);
+        SetSetting(username+'override.hi', round(fsHi.value *18).tostring);
       end else begin
-        SetSetting('override.lo', round(fsLo.Value).tostring);
-        SetSetting('override.hi', round(fsHi.value).tostring);
+        SetSetting(username+'override.lo', round(fsLo.Value).tostring);
+        SetSetting(username+'override.hi', round(fsHi.value).tostring);
       end;
 
-      SetSetting('override.enabled', IfThen(cbCust.Checked, '1', '0'));
+      SetSetting(username+'override.enabled', IfThen(cbCust.Checked, '1', '0'));
 
       ShowMessage(RS_RESTART_APPLY);
     end;
