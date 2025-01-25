@@ -3,6 +3,7 @@ object fBG: TfBG
   Height = 360
   Top = 250
   Width = 480
+  BorderStyle = bsSizeToolWin
   Caption = 'BG'
   ClientHeight = 360
   ClientWidth = 480
