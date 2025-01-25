@@ -20,6 +20,10 @@ msgctxt "tfbg.lval.caption"
 msgid "Setup"
 msgstr "Konfig"
 
+#: tfbg.miborders.caption
+msgid "No borders"
+msgstr ""
+
 #: tfbg.miforce.caption
 msgid "Force Update"
 msgstr "Tvinga uppdatering"
