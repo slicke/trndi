@@ -361,6 +361,10 @@ begin
     else
       un := BGUnit.mgdl;
     apiTarget := GetSetting(username +'remote.target');
+    if apiTarget = '' then begin
+        tMain.Enabled := false;
+        Exit;
+    end;
     apiCreds := GetSetting(username +'remote.creds');
 
     case GetSetting(username +'remote.type') of
@@ -384,6 +388,7 @@ begin
     if not api.Connect then
     begin
       ShowMessage(api.ErrorMsg);
+      tMain.Enabled := false;
       Exit;
     end;
 
@@ -666,6 +671,8 @@ begin
       SetSetting(username +'remote.creds', ePass.Text);
       SetSetting(username +'unit', IfThen(rbUnit.ItemIndex = 0, 'mmol', 'mgdl'));
       SetSetting(username +'ext.privacy', IfThen(cbPrivacy.Checked, '1', '0'));
+
+      ShowMessage(RS_RESTART_APPLY);
     end;
 end;
 

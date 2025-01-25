@@ -32,6 +32,8 @@ RS_UNDER = 'under';
 RS_OUTDATED_TIME = '%s (%d.%.2d ago)';
 RS_LATEST_READING = 'Latest Reading: Value = %.2f, Date = %s';
 
+RS_RESTART_APPLY = 'Trndi must be restarted for settings to take effect';
+
 implementation
 
 end.

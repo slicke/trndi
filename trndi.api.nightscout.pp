@@ -210,6 +210,8 @@ begin
     Exit;
   end;
 
+  ShowMessage(native.request(false, extras, params, '', key));
+
   SetLength(result, js.count);
 
   for i := 0 to js.count - 1 do
