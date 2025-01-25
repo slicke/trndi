@@ -30,7 +30,7 @@ trndi.api.dexcom, trndi.api.nightscout, trndi.types, math, DateUtils, FileUtil,
 {$ifdef TrndiExt}
 trndi.Ext.Engine, trndi.Ext.Ext, trndi.Ext.jsfuncs,
 {$endif}
-LazFileUtils, uconf, trndi.native, Trndi.API, trndi.api.xDrip, {$ifdef DEBUG} trndi.api.debug, {$endif}
+LazFileUtils, uconf, trndi.native, Trndi.API, trndi.api.xDrip,{$ifdef DEBUG} trndi.api.debug,{$endif}
 StrUtils;
 
 type
@@ -78,7 +78,7 @@ TfBG = class(TForm)
   procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
   procedure FormCreate(Sender: TObject);
   procedure FormMouseLeave(Sender:TObject);
-  procedure FormMouseMove(Sender:TObject;Shift:TShiftState;X,Y:Integer);
+  procedure FormMouseMove(Sender:TObject;Shift:TShiftState;X,Y:integer);
   procedure FormResize(Sender: TObject);
   procedure lArrowClick(Sender:TObject);
   procedure lDiffDblClick(Sender: TObject);
@@ -371,24 +371,30 @@ begin
       api := Dexcom.Create(apiTarget, apiCreds, 'world');
     'xDrip':
       api := xDrip.Create(apiTarget, apiCreds, '');
-      {$ifdef DEBUG}
-     '* Debug Backend *':
+    {$ifdef DEBUG}
+    '* Debug Backend *':
       api := DebugAPI.Create(apiTarget, apiCreds, '');
       {$endif}
     else
       Exit;
     end;
-  end;
 
-  if not api.Connect then
-  begin
-    ShowMessage(api.ErrorMsg);
-    Exit;
-  end;
 
-  {$ifdef TrndiExt}
-  LoadExtensions;
-  {$endif}
+    if not api.Connect then
+    begin
+      ShowMessage(api.ErrorMsg);
+      Exit;
+    end;
+
+    {$ifdef TrndiExt}
+    LoadExtensions;
+    {$endif}
+
+    api.cgmLo      := GetIntSetting('override.lo', api.cgmLo);
+    api.cgmHi      := GetIntSetting('override.hi', api.cgmHi);
+    api.cgmRangeLo := GetIntSetting('override.rangelo', api.cgmRangeLo);
+    api.cgmRangeHi := GetIntSetting('override.rangehi', api.cgmRangeHi);
+  end;
 
   update;
 end;
@@ -398,11 +404,11 @@ begin
 
 end;
 
-procedure TfBG.FormMouseMove(Sender:TObject;Shift:TShiftState;X,Y:Integer);
+procedure TfBG.FormMouseMove(Sender:TObject;Shift:TShiftState;X,Y:integer);
 begin
-BorderStyle := bsSizeToolWin;
-tEdges.Enabled := false;
-tEdges.Enabled := true;
+  BorderStyle := bsSizeToolWin;
+  tEdges.Enabled := false;
+  tEdges.Enabled := true;
 end;
 
 // FormClose event handler
@@ -629,9 +635,9 @@ begin
   with TfConf.Create(self) do
     with TrndiNative.Create do
     begin
-       {$ifdef DEBUG}
-       cbSys.Items.Add('* Debug Backend *');
-       {$endif}
+      {$ifdef DEBUG}
+      cbSys.Items.Add('* Debug Backend *');
+      {$endif}
       s := GetSetting(username +'remote.type');
       for i := 0 to cbSys.Items.Count - 1 do
         if cbSys.Items[i] = s then
@@ -671,7 +677,7 @@ end;
 
 procedure TfBG.tEdgesTimer(Sender:TObject);
 begin
-self.BorderStyle := bsNone;
+  self.BorderStyle := bsNone;
 end;
 
 // Update remote on timer

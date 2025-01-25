@@ -46,6 +46,7 @@ TfConf = class(TForm)
   lTitle: TLabel;
   lVersion: TLabel;
   rbUnit: TRadioGroup;
+  procedure bLimitsClick(Sender:TObject);
   procedure cbSysChange(Sender:TObject);
   procedure FormCreate(Sender:TObject);
   procedure lAckClick(Sender:TObject);
@@ -78,6 +79,10 @@ end;
 procedure TfConf.cbSysChange(Sender:TObject);
 begin
 
+end;
+
+procedure TfConf.bLimitsClick(Sender:TObject);
+begin
 end;
 
 procedure TfConf.FormCreate(Sender:TObject);
