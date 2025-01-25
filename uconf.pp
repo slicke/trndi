@@ -26,7 +26,8 @@ unit uconf;
 interface
 
 uses 
-Classes, ExtCtrls,StdCtrls,SysUtils, Forms, Controls, Graphics, Dialogs, LCLTranslator;
+Classes,ExtCtrls,Spin,StdCtrls,SysUtils,Forms,Controls,Graphics,Dialogs,
+LCLTranslator;
 
 type 
 
@@ -34,8 +35,15 @@ type
 
 TfConf = class(TForm)
   Bevel1: TBevel;
+  cbCust:TCheckBox;
   cbPrivacy:TCheckBox;
   eExt: TLabeledEdit;
+  fsHi:TFloatSpinEdit;
+  fsLo:TFloatSpinEdit;
+  gbAdvanced:TGroupBox;
+  lBGWarn:TLabel;
+  lHiOver:TLabel;
+  lLounder:TLabel;
   lLicense: TButton;
   cbSys: TComboBox;
   Image1: TImage;
@@ -46,11 +54,14 @@ TfConf = class(TForm)
   lTitle: TLabel;
   lVersion: TLabel;
   rbUnit: TRadioGroup;
+  tbAdvanced:TToggleBox;
   procedure bLimitsClick(Sender:TObject);
   procedure cbSysChange(Sender:TObject);
   procedure FormCreate(Sender:TObject);
   procedure lAckClick(Sender:TObject);
   procedure lLicenseClick(Sender:TObject);
+  procedure rbUnitClick(Sender:TObject);
+  procedure tbAdvancedChange(Sender:TObject);
 private
 
 public
@@ -104,6 +115,24 @@ begin
     'https://www.gnu.org/licenses/gpl-3.0'#10#10+
     'Trndi is hobby project, pleae verify all data with an officially apprived'#10+
     'medical app before acting on any shown data!');
+end;
+
+procedure TfConf.rbUnitClick(Sender:TObject);
+begin
+  if rbUnit.ItemIndex = 0 then
+    fsHi.DecimalPlaces := 1
+  else
+    fsHi.DecimalPlaces := 0;
+
+  fsLo.DecimalPlaces := fsHi.DecimalPlaces;
+end;
+
+procedure TfConf.tbAdvancedChange(Sender:TObject);
+begin
+  if tbAdvanced.Checked then
+    ClientHeight := gbAdvanced.top+gbAdvanced.height+7
+  else
+    ClientHeight := tbAdvanced.top+tbAdvanced.Height+7
 end;
 
 end.

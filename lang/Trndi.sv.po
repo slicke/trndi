@@ -22,7 +22,7 @@ msgstr "Konfig"
 
 #: tfbg.miborders.caption
 msgid "No borders"
-msgstr ""
+msgstr "Inga kanter"
 
 #: tfbg.miforce.caption
 msgid "Force Update"
@@ -60,6 +60,10 @@ msgstr "- Utanför område -"
 msgid "Settings"
 msgstr "Inställningar"
 
+#: tfconf.cbcust.caption
+msgid "Use custom range"
+msgstr ""
+
 #: tfconf.cbprivacy.caption
 msgid "Privacy Mode (Hide number)"
 msgstr "Privat läget (dölj nummer)"
@@ -80,17 +84,39 @@ msgstr "Pluginmapp"
 msgid "API Secret / Dexcom Password"
 msgstr "API-nyckel / Lösenord Dexcom"
 
+#: tfconf.gbadvanced.caption
+msgid "Advanced Settings"
+msgstr ""
+
 #: tfconf.lack.caption
 msgid "Libraries"
 msgstr "Bibliotek"
+
+#: tfconf.lbgwarn.caption
+msgid ""
+"NightScout: This overrides the values set on your server\n"
+"Dexcom: These values lets you set your own high/low range"
+msgstr ""
+
+#: tfconf.lhiover.caption
+msgid "High over"
+msgstr ""
 
 #: tfconf.llicense.caption
 msgid "License"
 msgstr "Licens"
 
+#: tfconf.llounder.caption
+msgid "Low under"
+msgstr ""
+
 #: tfconf.rbunit.caption
 msgid "Display Unit"
 msgstr "Enhetstyp"
+
+#: tfconf.tbadvanced.caption
+msgid "More settings..."
+msgstr ""
 
 #: trndi.api.dexcom.serrdexlogin
 msgid "Login error: Could not establish a valid session"
@@ -248,7 +274,7 @@ msgstr "Hämtar %s"
 
 #: trndi.strings.rs_restart_apply
 msgid "Trndi must be restarted for settings to take effect"
-msgstr ""
+msgstr "Trndi måste startas om innan ändringarna aktiveras"
 
 #: trndi.strings.rs_setup
 msgctxt "trndi.strings.rs_setup"

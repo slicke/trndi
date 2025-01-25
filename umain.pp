@@ -396,10 +396,12 @@ begin
     LoadExtensions;
     {$endif}
 
-    api.cgmLo      := GetIntSetting('override.lo', api.cgmLo);
-    api.cgmHi      := GetIntSetting('override.hi', api.cgmHi);
-    api.cgmRangeLo := GetIntSetting('override.rangelo', api.cgmRangeLo);
-    api.cgmRangeHi := GetIntSetting('override.rangehi', api.cgmRangeHi);
+    if GetIntSetting('override.enabled', 0) = 1 then begin
+      api.cgmLo      := GetIntSetting('override.lo', api.cgmLo);
+      api.cgmHi      := GetIntSetting('override.hi', api.cgmHi);
+    end;
+//    api.cgmRangeLo := GetIntSetting('override.rangelo', api.cgmRangeLo);
+//    api.cgmRangeHi := GetIntSetting('override.rangehi', api.cgmRangeHi);
   end;
 
   update;
@@ -658,6 +660,17 @@ begin
       eAddr.Text := GetSetting(username +'remote.target');
       ePass.Text := GetSetting(username +'remote.creds');
       rbUnit.ItemIndex := IfThen(GetSetting(username +'unit', 'mmol') = 'mmol', 0, 1);
+      fsLo.Value := GetIntSetting('override.lo', api.cgmLo);
+      fsHi.Value      := GetIntSetting('override.hi', api.cgmHi);
+      if GetSetting(username +'unit', 'mmol') = 'mmol' then begin
+        fshi.DecimalPlaces := 1;
+        fslo.DecimalPlaces := 1;
+        fsHi.Value := fsHi.Value / 18;
+        fsLo.Value := fsLo.Value / 18;
+      end;
+
+      cbCust.Checked := GetIntSetting('override.enabled', 0) = 1;
+
       {$ifdef TrndiExt}
       eExt.Text := GetAppConfigDirUTF8(false, true) + 'extensions' + DirectorySeparator;
       {$else}
@@ -671,6 +684,17 @@ begin
       SetSetting(username +'remote.creds', ePass.Text);
       SetSetting(username +'unit', IfThen(rbUnit.ItemIndex = 0, 'mmol', 'mgdl'));
       SetSetting(username +'ext.privacy', IfThen(cbPrivacy.Checked, '1', '0'));
+
+
+      if rbUnit.ItemIndex = 0 then begin//mmol
+        SetSetting('override.lo', round(fsLo.Value * 18).ToString);
+        SetSetting('override.hi', round(fsHi.value *18).tostring);
+      end else begin
+        SetSetting('override.lo', round(fsLo.Value).tostring);
+        SetSetting('override.hi', round(fsHi.value).tostring);
+      end;
+
+      SetSetting('override.enabled', IfThen(cbCust.Checked, '1', '0'));
 
       ShowMessage(RS_RESTART_APPLY);
     end;

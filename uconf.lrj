@@ -11,5 +11,11 @@
 {"hash":159964467,"name":"tfconf.lack.caption","sourcebytes":[76,105,98,114,97,114,105,101,115],"value":"Libraries"},
 {"hash":68143762,"name":"tfconf.eext.editlabel.caption","sourcebytes":[80,108,117,103,105,110,32,70,111,108,100,101,114],"value":"Plugin Folder"},
 {"hash":201663524,"name":"tfconf.rbunit.caption","sourcebytes":[68,105,115,112,108,97,121,32,85,110,105,116],"value":"Display Unit"},
+{"hash":154332718,"name":"tfconf.tbadvanced.caption","sourcebytes":[77,111,114,101,32,115,101,116,116,105,110,103,115,46,46,46],"value":"More settings..."},
+{"hash":140918259,"name":"tfconf.gbadvanced.caption","sourcebytes":[65,100,118,97,110,99,101,100,32,83,101,116,116,105,110,103,115],"value":"Advanced Settings"},
+{"hash":229057074,"name":"tfconf.lhiover.caption","sourcebytes":[72,105,103,104,32,111,118,101,114],"value":"High over"},
+{"hash":159127970,"name":"tfconf.llounder.caption","sourcebytes":[76,111,119,32,117,110,100,101,114],"value":"Low under"},
+{"hash":135564165,"name":"tfconf.lbgwarn.caption","sourcebytes":[78,105,103,104,116,83,99,111,117,116,58,32,84,104,105,115,32,111,118,101,114,114,105,100,101,115,32,116,104,101,32,118,97,108,117,101,115,32,115,101,116,32,111,110,32,121,111,117,114,32,115,101,114,118,101,114,13,10,68,101,120,99,111,109,58,32,84,104,101,115,101,32,118,97,108,117,101,115,32,108,101,116,115,32,121,111,117,32,115,101,116,32,121,111,117,114,32,111,119,110,32,104,105,103,104,47,108,111,119,32,114,97,110,103,101],"value":"NightScout: This overrides the values set on your server\r\nDexcom: These values lets you set your own high/low range"},
+{"hash":164700405,"name":"tfconf.cbcust.caption","sourcebytes":[85,115,101,32,99,117,115,116,111,109,32,114,97,110,103,101],"value":"Use custom range"},
 {"hash":119927769,"name":"tfconf.cbprivacy.caption","sourcebytes":[80,114,105,118,97,99,121,32,77,111,100,101,32,40,72,105,100,101,32,110,117,109,98,101,114,41],"value":"Privacy Mode (Hide number)"}
 ]}
