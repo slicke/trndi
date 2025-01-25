@@ -41,6 +41,7 @@ TTrendProcLoop = procedure(l: TLabel; c, ix: integer; ls: array of TLabel) of ob
   { TfBG }
 
 TfBG = class(TForm)
+  miBorders:TMenuItem;
   miFullScreen:TMenuItem;
   miOnTop:TMenuItem;
   miRefresh:TMenuItem;
@@ -71,7 +72,6 @@ TfBG = class(TForm)
   lVal: TLabel;
   miSettings: TMenuItem;
   pmSettings: TPopupMenu;
-  tEdges:TTimer;
   tMissed:TTimer;
   tTouch: TTimer;
   tMain: TTimer;
@@ -87,6 +87,7 @@ TfBG = class(TForm)
   procedure lValMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: integer);
   procedure lValMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: integer);
   procedure lValStartDrag(Sender: TObject; var DragObject: TDragObject);
+  procedure miBordersClick(Sender:TObject);
   procedure miForceClick(Sender: TObject);
   procedure miLimitExplainClick(Sender: TObject);
   procedure miOnTopClick(Sender:TObject);
@@ -406,9 +407,6 @@ end;
 
 procedure TfBG.FormMouseMove(Sender:TObject;Shift:TShiftState;X,Y:integer);
 begin
-  BorderStyle := bsSizeToolWin;
-  tEdges.Enabled := false;
-  tEdges.Enabled := true;
 end;
 
 // FormClose event handler
@@ -605,6 +603,15 @@ begin
   // Event handler can be left empty if not used
 end;
 
+procedure TfBG.miBordersClick(Sender:TObject);
+begin
+  miBorders.Checked := not miBorders.Checked;
+  if miBorders.checked then
+    self.BorderStyle := bsNone
+  else
+    BorderStyle := bsSizeToolWin;
+end;
+
 // Force update on menu click
 procedure TfBG.miForceClick(Sender: TObject);
 begin
@@ -677,7 +684,7 @@ end;
 
 procedure TfBG.tEdgesTimer(Sender:TObject);
 begin
-  self.BorderStyle := bsNone;
+
 end;
 
 // Update remote on timer

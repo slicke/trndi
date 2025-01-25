@@ -270,6 +270,10 @@ object fBG: TfBG
       Caption = 'Toggle Fullscreen'
       OnClick = lDiffDblClick
     end
+    object miBorders: TMenuItem
+      Caption = 'No borders'
+      OnClick = miBordersClick
+    end
     object miRefresh: TMenuItem
       Caption = 'Refresh in:'
       Enabled = False
@@ -289,12 +293,5 @@ object fBG: TfBG
     OnTimer = tMissedTimer
     Left = 134
     Top = 222
-  end
-  object tEdges: TTimer
-    Enabled = False
-    Interval = 10000
-    OnTimer = tEdgesTimer
-    Left = 292
-    Top = 50
   end
 end
