@@ -71,11 +71,14 @@ TfBG = class(TForm)
   lVal: TLabel;
   miSettings: TMenuItem;
   pmSettings: TPopupMenu;
+  tEdges:TTimer;
   tMissed:TTimer;
   tTouch: TTimer;
   tMain: TTimer;
   procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
   procedure FormCreate(Sender: TObject);
+  procedure FormMouseLeave(Sender:TObject);
+  procedure FormMouseMove(Sender:TObject;Shift:TShiftState;X,Y:Integer);
   procedure FormResize(Sender: TObject);
   procedure lArrowClick(Sender:TObject);
   procedure lDiffDblClick(Sender: TObject);
@@ -90,6 +93,7 @@ TfBG = class(TForm)
   procedure miSettingsClick(Sender: TObject);
   procedure onTrendClick(Sender: TObject);
   procedure pnOffRangeClick(Sender: TObject);
+  procedure tEdgesTimer(Sender:TObject);
   procedure tMainTimer(Sender: TObject);
   procedure tMissedTimer(Sender:TObject);
   procedure tTouchTimer(Sender: TObject);
@@ -389,6 +393,18 @@ begin
   update;
 end;
 
+procedure TfBG.FormMouseLeave(Sender:TObject);
+begin
+
+end;
+
+procedure TfBG.FormMouseMove(Sender:TObject;Shift:TShiftState;X,Y:Integer);
+begin
+BorderStyle := bsSingle;
+tEdges.Enabled := false;
+tEdges.Enabled := true;
+end;
+
 // FormClose event handler
 procedure TfBG.FormClose(Sender: TObject; var CloseAction: TCloseAction);
 begin
@@ -651,6 +667,11 @@ procedure TfBG.pnOffRangeClick(Sender: TObject);
 begin
   ShowMessage(Format(RS_RANGE_EXPLANATION,
     [IfThen((Sender as TPanel).Color = bg_rel_color_hi, RS_OVER, RS_UNDER)]));
+end;
+
+procedure TfBG.tEdgesTimer(Sender:TObject);
+begin
+self.BorderStyle := bsNone;
 end;
 
 // Update remote on timer
