@@ -196,7 +196,7 @@ var
   js:     TJSONData;
   i:   integer;
   t: BGTrend;
-  s: string;
+  s, resp: string;
   params: array[1..1] of string;
 begin
   if extras = '' then
@@ -205,12 +205,14 @@ begin
   params[1] := 'count=' + IntToStr(maxNum);
 
   try
-    js := GetJSON(native.request(false, extras, params, '', key));
+    resp := native.request(false, extras, params, '', key);
+    js := GETJSON(resp);
   except
     Exit;
   end;
 
-  ShowMessage(native.request(false, extras, params, '', key));
+  if Pos('Unauthorized', resp) > 0 then
+    Exit;
 
   SetLength(result, js.count);
 
