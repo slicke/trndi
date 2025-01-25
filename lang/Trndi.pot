@@ -230,6 +230,10 @@ msgstr ""
 msgid "Refreshing at %s"
 msgstr ""
 
+#: trndi.strings.rs_restart_apply
+msgid "Trndi must be restarted for settings to take effect"
+msgstr ""
+
 #: trndi.strings.rs_setup
 msgctxt "trndi.strings.rs_setup"
 msgid "Setup"
