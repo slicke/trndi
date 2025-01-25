@@ -400,7 +400,7 @@ end;
 
 procedure TfBG.FormMouseMove(Sender:TObject;Shift:TShiftState;X,Y:Integer);
 begin
-BorderStyle := bsSingle;
+BorderStyle := bsSizeToolWin;
 tEdges.Enabled := false;
 tEdges.Enabled := true;
 end;
