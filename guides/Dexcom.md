@@ -29,3 +29,4 @@ In addition to "High over" and "Low under" alarms, Trndi can also use a "persona
 
 ### Defining the levels
 To set these levels, you need to create a simple plugin as explained in the [Extension guide](Extensions.md), search for Dexcom.
+> NOTE You can also use [the script for Windows](https://raw.githubusercontent.com/slicke/trndi/refs/heads/develop/doc/setlimit.ps1) to create a file automatically. For Linux, you will need to  [the Linux script](https://raw.githubusercontent.com/slicke/trndi/refs/heads/develop/doc/setlimit.sh).
