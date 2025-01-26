@@ -278,6 +278,13 @@ object fBG: TfBG
       Enabled = False
       RightJustify = True
     end
+    object mSplit5: TMenuItem
+      Caption = '-'
+    end
+    object miExit: TMenuItem
+      Caption = 'Exit Trndi'
+      OnClick = miExitClick
+    end
   end
   object tTouch: TTimer
     Enabled = False

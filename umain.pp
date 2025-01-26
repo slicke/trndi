@@ -41,6 +41,7 @@ TTrendProcLoop = procedure(l: TLabel; c, ix: integer; ls: array of TLabel) of ob
   { TfBG }
 
 TfBG = class(TForm)
+  miExit:TMenuItem;
   miBorders:TMenuItem;
   miFullScreen:TMenuItem;
   miOnTop:TMenuItem;
@@ -72,6 +73,7 @@ TfBG = class(TForm)
   lVal: TLabel;
   miSettings: TMenuItem;
   pmSettings: TPopupMenu;
+  mSplit5:TMenuItem;
   tMissed:TTimer;
   tTouch: TTimer;
   tMain: TTimer;
@@ -88,6 +90,7 @@ TfBG = class(TForm)
   procedure lValMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: integer);
   procedure lValStartDrag(Sender: TObject; var DragObject: TDragObject);
   procedure miBordersClick(Sender:TObject);
+  procedure miExitClick(Sender:TObject);
   procedure miForceClick(Sender: TObject);
   procedure miLimitExplainClick(Sender: TObject);
   procedure miOnTopClick(Sender:TObject);
@@ -176,6 +179,10 @@ privacyMode: boolean = false;
 // Handle dragging on window
 DraggingWin: boolean;
 PX, PY: integer;
+
+{$ifdef LINUX}
+  IsRaspberry: boolean;
+{$endif}
 
 implementation
 
@@ -322,7 +329,14 @@ begin
   else
     s := 'default';
   fBG.Font.Name := s;
+
+  IsRaspberry := false;
+  if (Pos('ID=debian', s) > -1) then begin
+    IsRaspberry := FileExists('/etc/rpi-issue');
+  end;
   {$endif}
+
+
 
   // Assign labels to the TrendDots array
   for i := 1 to NUM_DOTS do
@@ -652,6 +666,12 @@ begin
     self.BorderStyle := bsNone
   else
     BorderStyle := bsSizeToolWin;
+end;
+
+procedure TfBG.miExitClick(Sender:TObject);
+begin
+if MessageDlg('Exit Trndi?', 'Quit the app?',mtWarning, [mbYes, mbNo], '') = mrYes then
+    Application.Terminate;
 end;
 
 // Force update on menu click
