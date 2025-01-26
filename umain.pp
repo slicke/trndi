@@ -443,6 +443,7 @@ procedure TfBG.FormMouseMove(Sender:TObject;Shift:TShiftState;X,Y:integer);
 begin
   if DraggingWin then begin
     SetBounds(Left + (X - PX), Top + (Y - PY), Width, Height);
+   tTouch.Enabled := false; // Dont popup stuff while moving
   end;
 end;
 
@@ -621,21 +622,10 @@ end;
 // Handle mouse down on lVal
 procedure TfBG.lValMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: integer);
 begin
-  if hastouch then  // We have touch
-    if (not HasMultiTouch) or (touchHelper.GetActiveTouchCount = 1) then begin
   // Handle touch screens
   StartTouch := Now;
   IsTouched := true;
   tTouch.Enabled := true;
-
-  Exit;
-  end;
-
-
-
-  if HasMultiTouch then // Check fingers here
-    if touchHelper.GetActiveTouchCount = 1 then // Just act if more than 1 finger (we should have failed already though...)
-      Exit;
 
   if (Button = mbLeft) and (self.BorderStyle = bsNone) then begin   // Handle window moving
     DraggingWin := true;
@@ -670,7 +660,7 @@ end;
 
 procedure TfBG.miExitClick(Sender:TObject);
 begin
-if MessageDlg('Exit Trndi?', 'Quit the app?',mtWarning, [mbYes, mbNo], '') = mrYes then
+if MessageDlg(RS_QUIT_CAPTION, RS_QUIT_MSG, mtWarning, [mbYes, mbNo], '') = mrYes then
     Application.Terminate;
 end;
 

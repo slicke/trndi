@@ -241,6 +241,14 @@ msgstr ""
 msgid "over"
 msgstr ""
 
+#: trndi.strings.rs_quit_caption
+msgid "Exit Trndi?"
+msgstr ""
+
+#: trndi.strings.rs_quit_msg
+msgid "Quit the app?"
+msgstr ""
+
 #: trndi.strings.rs_range_explanation
 #, object-pascal-format
 msgid "In addition to high and low levels, you have set a personal range within \"OK\". You are now %s that range"
