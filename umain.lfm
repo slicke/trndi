@@ -302,4 +302,11 @@ object fBG: TfBG
     Left = 160
     Top = 129
   end
+  object tResize: TTimer
+    Enabled = False
+    Interval = 500
+    OnTimer = tResizeTimer
+    Left = 215
+    Top = 39
+  end
 end
