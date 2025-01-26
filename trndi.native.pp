@@ -115,7 +115,7 @@ public
        - macOS always returns False
        - Linux checks `/proc/bus/input/devices`
     }
-  function HasTouchScreen: boolean;
+  function HasTouchScreen(out multi: boolean): boolean;
 
     { getURL (class function)
       -----------------------
@@ -167,12 +167,45 @@ end;
   Platform-specific detection of touch hardware.
  ------------------------------------------------------------------------------}
 {$IF DEFINED(X_WIN)}
-function TrndiNative.HasTouchScreen: boolean;
+function TrndiNative.HasTouchScreen(out multi: boolean): boolean;
+const
+  TABLET_CONFIG_NONE = $00000000;
+  NID_INTEGRATED_TOUCH = $00000001;
+  NID_EXTERNAL_TOUCH = $00000002;
+  NID_INTEGRATED_PEN = $00000004;
+  NID_EXTERNAL_PEN = $00000008;
+  NID_MULTI_INPUT = $00000040;
+  NID_READY = $00000080;
+  function IsTouchReady: Boolean;
+  var
+    value: Integer;
+  begin
+    value := GetSystemMetrics(SM_DIGITIZER);
+    Result := value and NID_READY <> 0;
+  end;
+
+  function IsMultiTouch: Boolean;
+  var
+    value: Integer;
+  begin
+    value := GetSystemMetrics(SM_DIGITIZER);
+    Result := value and NID_MULTI_INPUT <> 0;
+  end;
+
+  function HasIntegratedTouch: Boolean;
+  var
+    value: Integer;
+  begin
+    value := GetSystemMetrics(SM_DIGITIZER);
+    Result := value and NID_INTEGRATED_TOUCH <> 0;
+  end;
+var
+ val: integer;
 const
   SM_MAXIMUMTOUCHES = 95;
 begin
-  // Windows: If SM_MAXIMUMTOUCHES > 0, touchscreen is available
-  Result := GetSystemMetrics(SM_MAXIMUMTOUCHES) > 0;
+  result := (HasIntegratedTouch) and (IsTouchReady);
+  multi := IsMultiTouch;
 end;
 {$ELSEIF DEFINED(X_MAC)}
 function TrndiNative.HasTouchScreen: boolean;

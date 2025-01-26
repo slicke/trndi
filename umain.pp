@@ -167,8 +167,14 @@ jsFuncs: TJSfuncs;
   // Touch screen
 StartTouch: TDateTime;
 IsTouched: boolean;
+HasTouch: boolean;
+HasMultiTouch: boolean;
 
 privacyMode: boolean = false;
+
+// Handle dragging on window
+DraggingWin: boolean;
+PX, PY: integer;
 
 implementation
 
@@ -331,6 +337,7 @@ begin
 
   with TrndiNative.Create do
   begin
+  HasTouch :=  HasTouchScreen(HasMultiTouch);
     lang := GetSetting('locale', '');
 
     SetDefaultLang(lang,'lang');
@@ -417,6 +424,9 @@ end;
 
 procedure TfBG.FormMouseMove(Sender:TObject;Shift:TShiftState;X,Y:integer);
 begin
+  if DraggingWin then begin
+    SetBounds(Left + (X - PX), Top + (Y - PY), Width, Height);
+  end;
 end;
 
 // FormClose event handler
@@ -594,10 +604,16 @@ end;
 // Handle mouse down on lVal
 procedure TfBG.lValMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: integer);
 begin
+  if hastouch then begin
   // Handle touch screens
   StartTouch := Now;
   IsTouched := true;
   tTouch.Enabled := true;
+end else if (Button = mbLeft) and (self.BorderStyle = bsNone) then begin   // Handle window moving
+    DraggingWin := true;
+    PX := X;
+    PY := Y;
+  end;
 end;
 
 // Handle mouse up on lVal
@@ -605,6 +621,8 @@ procedure TfBG.lValMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftS
 begin
   IsTouched := false;
   tTouch.Enabled := false;
+
+  DraggingWin := false;
 end;
 
 // Empty drag event handler

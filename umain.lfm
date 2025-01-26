@@ -9,7 +9,6 @@ object fBG: TfBG
   ClientWidth = 320
   Color = clBlack
   Font.Color = clWhite
-  LCLVersion = '4.0.0.2'
   OnClose = FormClose
   OnCreate = FormCreate
   OnMouseLeave = FormMouseLeave
@@ -18,8 +17,8 @@ object fBG: TfBG
   object lArrow: TLabel
     Left = 0
     Height = 78
-    Top = 282
-    Width = 480
+    Top = 162
+    Width = 320
     Align = alBottom
     Alignment = taCenter
     AutoSize = False
@@ -37,9 +36,9 @@ object fBG: TfBG
   end
   object lVal: TLabel
     Left = 0
-    Height = 243
+    Height = 162
     Top = 0
-    Width = 480
+    Width = 320
     Align = alClient
     Alignment = taCenter
     AutoSize = False
