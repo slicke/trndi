@@ -177,6 +177,10 @@ privacyMode: boolean = false;
 DraggingWin: boolean;
 PX, PY: integer;
 
+{$ifdef LINUX}
+  IsRaspberry: boolean;
+{$endif}
+
 implementation
 
 {$R *.lfm}
@@ -322,7 +326,14 @@ begin
   else
     s := 'default';
   fBG.Font.Name := s;
+
+  IsRaspberry := false;
+  if (Pos('ID=debian', s) > -1) then begin
+    IsRaspberry := FileExists('/etc/rpi-issue');
+  end;
   {$endif}
+
+
 
   // Assign labels to the TrendDots array
   for i := 1 to NUM_DOTS do
