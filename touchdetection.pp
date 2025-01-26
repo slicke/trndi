@@ -76,6 +76,7 @@ type
 function GetTouchInputInfo(hTouchInput: THandle; cInputs: UINT;
   pInputs: PTouchInput; cbSize: Integer): BOOL; stdcall; external 'user32.dll';
 function RegisterTouchWindow(hwnd: HWND; ulFlags: ULONG): BOOL; stdcall; external 'user32.dll';
+function CloseTouchInputHandle(hTouchInput: THandle): BOOL; stdcall; external 'user32.dll';
 {$ENDIF}
 
 { TTouchDetector }
@@ -118,12 +119,11 @@ end;
 function TTouchDetector.GetWindowsTouchInfo: TTouchInfo;
 var
   TouchInput: array[0..63] of TTouchInput;
-  InputCount: Integer;
   TouchHandle: THandle;
   i: Integer;
 begin
   Result.Count := 0;
-  SetLength(Result.Points, 64);  // Maximum supported touch points
+  SetLength(Result.Points, 64);
 
   TouchHandle := GetMessageExtraInfo;
   if TouchHandle = 0 then
@@ -132,20 +132,26 @@ begin
     Exit;
   end;
 
-  InputCount := GetTouchInputInfo(TouchHandle, Length(TouchInput), @TouchInput[0], SizeOf(TTouchInput));
-
-  if InputCount > 0 then
+  // Get the touch input information - this fills the TouchInput array
+  if GetTouchInputInfo(TouchHandle, Length(TouchInput), @TouchInput[0], SizeOf(TTouchInput)) then
   begin
-    Result.Count := InputCount;
-    for i := 0 to InputCount - 1 do
+    // Process the touch inputs that were written to the TouchInput array
+    for i := 0 to High(TouchInput) do
     begin
-      Result.Points[i].X := TouchInput[i].x;
-      Result.Points[i].Y := TouchInput[i].y;
-      Result.Points[i].ID := TouchInput[i].dwID;
-      Result.Points[i].Pressure := 1.0;  // Windows doesn't provide pressure by default
-      Result.Points[i].IsValid := True;
+      if (TouchInput[i].dwFlags and $0001) > 0 then  // TOUCHEVENTF_DOWN
+      begin
+        Result.Points[Result.Count].X := TouchInput[i].x;
+        Result.Points[Result.Count].Y := TouchInput[i].y;
+        Result.Points[Result.Count].ID := TouchInput[i].dwID;
+        Result.Points[Result.Count].Pressure := 1.0;
+        Result.Points[Result.Count].IsValid := True;
+        Inc(Result.Count);
+      end;
     end;
   end;
+
+  // Always close the touch input handle
+//  CloseTouchInputHandle(TouchHandle); No such function
 end;
 {$ENDIF}
 
