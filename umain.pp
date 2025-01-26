@@ -361,9 +361,10 @@ begin
     else
       un := BGUnit.mgdl;
     apiTarget := GetSetting(username +'remote.target');
-    if apiTarget = '' then begin
-        tMain.Enabled := false;
-        Exit;
+    if apiTarget = '' then
+    begin
+      tMain.Enabled := false;
+      Exit;
     end;
     apiCreds := GetSetting(username +'remote.creds');
 
@@ -396,7 +397,8 @@ begin
     LoadExtensions;
     {$endif}
 
-    if GetIntSetting(username+'override.enabled', 0) = 1 then begin
+    if GetIntSetting(username+'override.enabled', 0) = 1 then
+    begin
       api.cgmLo      := GetIntSetting(username+'override.lo', api.cgmLo);
       api.cgmHi      := GetIntSetting(username+'override.hi', api.cgmHi);
 
@@ -663,7 +665,9 @@ begin
       rbUnit.ItemIndex := IfThen(GetSetting(username +'unit', 'mmol') = 'mmol', 0, 1);
       fsLo.Value := GetIntSetting(username+'override.lo', api.cgmLo);
       fsHi.Value      := GetIntSetting(username+'override.hi', api.cgmHi);
-      if GetSetting(username +'unit', 'mmol') = 'mmol' then begin
+
+      if GetSetting(username +'unit', 'mmol') = 'mmol' then
+      begin
         fshi.DecimalPlaces := 1;
         fslo.DecimalPlaces := 1;
         fsHi.Value := fsHi.Value / 18;
@@ -671,6 +675,10 @@ begin
       end;
 
       cbCust.Checked := GetIntSetting(username+'override.enabled', 0) = 1;
+      fsHi.Enabled :=  cbCust.Checked;
+      fsLo.Enabled :=  cbCust.Checked;
+      if cbCust.Checked then
+        tbAdvanced.Checked := true;
 
       {$ifdef TrndiExt}
       eExt.Text := GetAppConfigDirUTF8(false, true) + 'extensions' + DirectorySeparator;
@@ -687,10 +695,13 @@ begin
       SetSetting(username +'ext.privacy', IfThen(cbPrivacy.Checked, '1', '0'));
 
 
-      if rbUnit.ItemIndex = 0 then begin//mmol
+      if rbUnit.ItemIndex = 0 then
+      begin//mmol
         SetSetting(username+'override.lo', round(fsLo.Value * 18).ToString);
         SetSetting(username+'override.hi', round(fsHi.value *18).tostring);
-      end else begin
+      end
+      else
+      begin
         SetSetting(username+'override.lo', round(fsLo.Value).tostring);
         SetSetting(username+'override.hi', round(fsHi.value).tostring);
       end;
