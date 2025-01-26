@@ -96,6 +96,9 @@ TfBG = class(TForm)
   procedure miOnTopClick(Sender:TObject);
   procedure miSettingsClick(Sender: TObject);
   procedure onTrendClick(Sender: TObject);
+  procedure pmSettingsMeasureItem(Sender:TObject;ACanvas:TCanvas;var AWidth,
+    AHeight:Integer);
+  procedure pmSettingsPopup(Sender:TObject);
   procedure pnOffRangeClick(Sender: TObject);
   procedure tEdgesTimer(Sender:TObject);
   procedure tMainTimer(Sender: TObject);
@@ -764,6 +767,42 @@ end;
 procedure TfBG.onTrendClick(Sender: TObject);
 begin
   actOnTrend(@ExpandDot);
+end;
+
+procedure TfBG.pmSettingsMeasureItem(Sender:TObject;ACanvas:TCanvas;var AWidth,
+  AHeight:Integer);
+var
+  MenuItem: TMenuItem;
+  TextX, TextY: integer;
+begin
+  MenuItem := TMenuItem(Sender);
+
+  if menuitem.Caption = '-' then exit;
+  // Set desired font
+  ACanvas.Font.Name := 'Arial';
+  ACanvas.Font.Size := 16;
+  ACanvas.Font.Style := [fsBold];
+
+  // Calculate text dimensions
+  Textx := ACanvas.TextWidth(MenuItem.Caption);
+  Texty := ACanvas.TextHeight(MenuItem.Caption);
+
+  // Set item dimensions with padding
+  AWidth := Textx + 40;  // Add 40 pixels for padding and icons
+  AHeight := Texty + 8;  // Add 8 pixels for vertical padding
+
+  // Ensure minimum width
+  if AWidth < 100 then
+    AWidth := 100;
+
+  // Ensure minimum height
+  if AHeight < 25 then
+    AHeight := 25;
+end;
+
+procedure TfBG.pmSettingsPopup(Sender:TObject);
+begin
+
 end;
 
 // Handle off range panel click
