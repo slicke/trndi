@@ -208,30 +208,55 @@ begin
   multi := IsMultiTouch;
 end;
 {$ELSEIF DEFINED(X_MAC)}
-function TrndiNative.HasTouchScreen: boolean;
+function TrndiNative.HasTouchScreen(out multi: boolean): boolean;
 begin
   // macOS: Typically no standard touchscreen (unless iOS)
   Result := false;
+  multi := false;
 end;
 {$ELSE}
-function TrndiNative.HasTouchScreen: boolean;
+function TrndiNative.HasTouchScreen(out multi: boolean): boolean;
 var
   SL: TStringList;
   i: integer;
+  currentDevice: string;
+  foundTouch: boolean;
 begin
-  // Linux: Check /proc/bus/input/devices for "Touchscreen"
   Result := false;
+  multi := false;
+  foundTouch := false;
+
   SL := TStringList.Create;
   try
     if FileExists('/proc/bus/input/devices') then
     begin
       SL.LoadFromFile('/proc/bus/input/devices');
+      currentDevice := '';
+
       for i := 0 to SL.Count - 1 do
-        if Pos('Touchscreen', SL[i]) > 0 then
+      begin
+        // Store current line for analysis
+        currentDevice := SL[i];
+
+        // Check for touchscreen presence
+        if Pos('Touchscreen', currentDevice) > 0 then
         begin
           Result := true;
-          Break;
+          foundTouch := true;
         end;
+
+        // Check for multi-touch indicators
+        // Common indicators in the device file
+        if foundTouch and (
+           (Pos('ABS_MT_POSITION', currentDevice) > 0) or
+           (Pos('ABS_MT_SLOT', currentDevice) > 0) or
+           (Pos('ABS_MT_TRACKING_ID', currentDevice) > 0))
+        then
+        begin
+          multi := true;
+          Break; // We found both touch and multi-touch
+        end;
+      end;
     end;
   finally
     SL.Free;
