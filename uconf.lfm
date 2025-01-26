@@ -1,20 +1,19 @@
 object fConf: TfConf
   Left = 748
-  Height = 588
+  Height = 395
   Top = 250
-  Width = 622
+  Width = 415
   BorderStyle = bsToolWindow
   Caption = 'Settings'
-  ClientHeight = 588
-  ClientWidth = 622
-  DesignTimePPI = 144
+  ClientHeight = 395
+  ClientWidth = 415
   Position = poDesktopCenter
   OnCreate = FormCreate
   object Image1: TImage
-    Left = 24
-    Height = 156
-    Top = 24
-    Width = 148
+    Left = 16
+    Height = 104
+    Top = 16
+    Width = 99
     Picture.Data = {
       055449636F6E11FE04000000010001000000000001002000FBFD040016000000
       89504E470D0A1A0A0000000D49484452000002CA0000030508060000006D5FD0
@@ -10245,35 +10244,35 @@ object fConf: TfConf
     Proportional = True
   end
   object lTitle: TLabel
-    Left = 204
-    Height = 67
-    Top = 24
-    Width = 120
+    Left = 136
+    Height = 45
+    Top = 16
+    Width = 79
     Caption = 'Trndi'
-    Font.Height = -50
+    Font.Height = -33
     Font.Style = [fsBold]
     ParentFont = False
   end
   object lVersion: TLabel
-    Left = 252
-    Height = 25
-    Top = 84
-    Width = 73
+    Left = 168
+    Height = 15
+    Top = 56
+    Width = 47
     Caption = 'Version 2'
   end
   object lCopyright: TLabel
-    Left = 204
-    Height = 50
-    Top = 120
-    Width = 293
+    Left = 136
+    Height = 30
+    Top = 80
+    Width = 193
     Caption = 'Copyright (c) 2017-2025 Björn Lindh '#13#10'<github.com/slicke>'
   end
   object cbSys: TComboBox
-    Left = 22
-    Height = 33
-    Top = 204
-    Width = 580
-    ItemHeight = 25
+    Left = 15
+    Height = 23
+    Top = 136
+    Width = 387
+    ItemHeight = 15
     ItemIndex = 0
     Items.Strings = (
       'NightScout'
@@ -10287,65 +10286,65 @@ object fConf: TfConf
     OnChange = cbSysChange
   end
   object eAddr: TLabeledEdit
-    Left = 24
-    Height = 33
-    Top = 276
-    Width = 580
-    EditLabel.Height = 25
-    EditLabel.Width = 580
+    Left = 16
+    Height = 23
+    Top = 184
+    Width = 387
+    EditLabel.Height = 15
+    EditLabel.Width = 387
     EditLabel.Caption = 'Server Address / Dexcom Username'
     TabOrder = 1
     Text = 'eAddr'
   end
   object ePass: TLabeledEdit
-    Left = 22
-    Height = 33
-    Top = 346
-    Width = 580
-    EditLabel.Height = 25
-    EditLabel.Width = 580
+    Left = 15
+    Height = 23
+    Top = 231
+    Width = 387
+    EditLabel.Height = 15
+    EditLabel.Width = 387
     EditLabel.Caption = 'API Secret / Dexcom Password'
     TabOrder = 2
   end
   object Bevel1: TBevel
-    Left = 22
-    Height = 2
-    Top = 405
-    Width = 578
+    Left = 15
+    Height = 1
+    Top = 270
+    Width = 385
   end
   object lLicense: TButton
-    Left = 496
-    Height = 38
-    Top = 24
-    Width = 108
+    Left = 331
+    Height = 25
+    Top = 16
+    Width = 72
     Caption = 'License'
     TabOrder = 3
     OnClick = lLicenseClick
   end
   object lAck: TButton
-    Left = 496
-    Height = 38
-    Top = 71
-    Width = 108
+    Left = 331
+    Height = 25
+    Top = 47
+    Width = 72
     Caption = 'Libraries'
     TabOrder = 4
     OnClick = lAckClick
   end
   object eExt: TLabeledEdit
-    Left = 24
-    Height = 33
-    Top = 420
-    Width = 580
-    EditLabel.Height = 25
-    EditLabel.Width = 580
+    Left = 16
+    Height = 23
+    Top = 280
+    Width = 387
+    EditLabel.Height = 15
+    EditLabel.Width = 387
     EditLabel.Caption = 'Plugin Folder'
     TabOrder = 5
   end
   object rbUnit: TRadioGroup
-    Left = 22
-    Height = 68
-    Top = 468
-    Width = 580
+    Left = 15
+    Height = 45
+    Top = 312
+    Width = 387
     AutoFill = True
     Caption = 'Display Unit'
     ChildSizing.LeftRightSpacing = 6
@@ -10355,8 +10354,8 @@ object fConf: TfConf
     ChildSizing.ShrinkVertical = crsScaleChilds
     ChildSizing.Layout = cclLeftToRightThenTopToBottom
     ChildSizing.ControlsPerLine = 2
-    ClientHeight = 38
-    ClientWidth = 576
+    ClientHeight = 25
+    ClientWidth = 383
     Columns = 2
     ItemIndex = 0
     Items.Strings = (
@@ -10368,78 +10367,99 @@ object fConf: TfConf
     OnClick = rbUnitClick
   end
   object tbAdvanced: TToggleBox
-    Left = 427
-    Height = 38
-    Top = 543
-    Width = 177
+    Left = 285
+    Height = 25
+    Top = 362
+    Width = 118
     Caption = 'More settings...'
     TabOrder = 7
     OnChange = tbAdvancedChange
   end
   object gbAdvanced: TGroupBox
-    Left = 24
-    Height = 238
-    Top = 608
-    Width = 580
+    Left = 16
+    Height = 159
+    Top = 405
+    Width = 387
     Caption = 'Advanced Settings'
-    ClientHeight = 208
-    ClientWidth = 576
+    ClientHeight = 139
+    ClientWidth = 383
+    ParentBackground = False
     TabOrder = 8
-    object fsHi: TFloatSpinEdit
-      Left = 136
-      Height = 33
-      Top = 14
-      Width = 115
-      DecimalPlaces = 0
+    object cbPrivacy: TCheckBox
+      Left = 24
+      Height = 19
+      Top = 112
+      Width = 171
+      Caption = 'Privacy Mode (Hide number)'
       TabOrder = 0
     end
-    object fsLo: TFloatSpinEdit
-      Left = 385
-      Height = 33
-      Top = 14
-      Width = 117
-      DecimalPlaces = 0
+    object gbOverride: TGroupBox
+      Left = 16
+      Height = 88
+      Top = 8
+      Width = 353
+      Caption = 'Override High / Low limits'
+      ClientHeight = 68
+      ClientWidth = 349
+      ParentBackground = False
       TabOrder = 1
+      object lHiOver: TLabel
+        Left = 16
+        Height = 15
+        Top = 32
+        Width = 52
+        Caption = 'High over'
+      end
+      object fsHi: TFloatSpinEdit
+        Left = 91
+        Height = 23
+        Top = 33
+        Width = 77
+        DecimalPlaces = 0
+        TabOrder = 0
+      end
+      object fsLo: TFloatSpinEdit
+        Left = 257
+        Height = 23
+        Top = 33
+        Width = 78
+        DecimalPlaces = 0
+        TabOrder = 1
+      end
+      object lLounder: TLabel
+        Left = 181
+        Height = 15
+        Top = 33
+        Width = 56
+        Caption = 'Low under'
+      end
+      object cbCust: TCheckBox
+        Left = 16
+        Height = 19
+        Top = 0
+        Width = 116
+        Caption = 'Use custom values'
+        TabOrder = 2
+        OnChange = cbCustChange
+      end
+      object bOverrideHelp: TButton
+        Left = 308
+        Height = 25
+        Top = 0
+        Width = 27
+        Caption = '?'
+        TabOrder = 3
+        OnClick = bOverrideHelpClick
+      end
     end
-    object lHiOver: TLabel
-      Left = 24
+    object bPrivacyHelp: TButton
+      Left = 328
       Height = 25
-      Top = 14
-      Width = 78
-      Caption = 'High over'
-    end
-    object lLounder: TLabel
-      Left = 272
-      Height = 25
-      Top = 14
-      Width = 83
-      Caption = 'Low under'
-    end
-    object lBGWarn: TLabel
-      Left = 8
-      Height = 42
-      Top = 80
-      Width = 413
-      Caption = 'NightScout: This overrides the values set on your server'#13#10'Dexcom: These values lets you set your own high/low range'
-      Enabled = False
-      Font.Height = -16
-      ParentFont = False
-    end
-    object cbCust: TCheckBox
-      Left = 385
-      Height = 29
-      Top = 56
-      Width = 168
-      Caption = 'Use custom range'
+      Top = 106
+      Width = 27
+      Caption = '?'
       TabOrder = 2
-    end
-    object cbPrivacy: TCheckBox
-      Left = 302
-      Height = 29
-      Top = 176
-      Width = 251
-      Caption = 'Privacy Mode (Hide number)'
-      TabOrder = 3
+      OnClick = bPrivacyHelpClick
     end
   end
 end

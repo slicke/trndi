@@ -30,16 +30,19 @@ cthreads,
 athreads,
 {$ENDIF}
 Interfaces, // this includes the LCL widgetset
-Forms,lazcontrols,trndi.types,trndi.native,trndi.ext.promise,
-trndi.ext.functions,trndi.ext.ext,trndi.api,trndi.api.nightscout,
+Forms,lazcontrols,trndi.types,trndi.native,
+{$IFDEF TrndiExt}
+trndi.ext.promise, trndi.ext.functions,trndi.ext.ext,
+{$ENDIF}
+trndi.api,trndi.api.nightscout,
 trndi.api.dexcom,umain,uconf
-  { you can add units after this };
+{ you can add units after this };
 
 {$R *.res}
 
 begin
 RequireDerivedFormResource:=true;
-  Application.Scaled:=True;
+Application.Scaled:=true;
 Application.{%H-}MainFormOnTaskbar:=true;
 Application.Initialize;
 Application.CreateForm(TfBG,fBG);

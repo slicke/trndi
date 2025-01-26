@@ -54,15 +54,25 @@ msgstr "&Inställningar"
 
 #: tfbg.pnoffrange.caption
 msgid "- Off Range -"
-msgstr "- Utanför område -"
+msgstr "- Ur område -"
+
+#: tfconf.boverridehelp.caption
+msgctxt "tfconf.boverridehelp.caption"
+msgid "?"
+msgstr "?"
+
+#: tfconf.bprivacyhelp.caption
+msgctxt "tfconf.bprivacyhelp.caption"
+msgid "?"
+msgstr "?"
 
 #: tfconf.caption
 msgid "Settings"
 msgstr "Inställningar"
 
 #: tfconf.cbcust.caption
-msgid "Use custom range"
-msgstr ""
+msgid "Use custom values"
+msgstr "Använd egna värden"
 
 #: tfconf.cbprivacy.caption
 msgid "Privacy Mode (Hide number)"
@@ -86,21 +96,20 @@ msgstr "API-nyckel / Lösenord Dexcom"
 
 #: tfconf.gbadvanced.caption
 msgid "Advanced Settings"
-msgstr ""
+msgstr "Avancerade inställningar"
+
+#: tfconf.gboverride.caption
+msgctxt "tfconf.gboverride.caption"
+msgid "Override High / Low limits"
+msgstr "Åsidosätt höga / låga gränser"
 
 #: tfconf.lack.caption
 msgid "Libraries"
 msgstr "Bibliotek"
 
-#: tfconf.lbgwarn.caption
-msgid ""
-"NightScout: This overrides the values set on your server\n"
-"Dexcom: These values lets you set your own high/low range"
-msgstr ""
-
 #: tfconf.lhiover.caption
 msgid "High over"
-msgstr ""
+msgstr "Högt över"
 
 #: tfconf.llicense.caption
 msgid "License"
@@ -108,7 +117,7 @@ msgstr "Licens"
 
 #: tfconf.llounder.caption
 msgid "Low under"
-msgstr ""
+msgstr "Lågt under"
 
 #: tfconf.rbunit.caption
 msgid "Display Unit"
@@ -116,7 +125,7 @@ msgstr "Enhetstyp"
 
 #: tfconf.tbadvanced.caption
 msgid "More settings..."
-msgstr ""
+msgstr "Fler inställningar..."
 
 #: trndi.api.dexcom.serrdexlogin
 msgid "Login error: Could not establish a valid session"
@@ -290,3 +299,28 @@ msgstr "under"
 msgid "[%s] %s"
 msgstr "[%s] %s"
 
+#: uconf.rs_dex
+msgid "Dexcom servers do not provide custom high and low blood sugar values. Please set your own thresholds at the bottom of this window."
+msgstr "Dexcom:s servrar tillhandahåller inte värden för vad som är högt och lågt. Vänligen ställ in dina egna gränser i slutet av fönstret."
+
+#: uconf.rs_override_help
+msgid ""
+"Setting values here allows you to define your own high and low blood sugar limits in Trndi.\n"
+"\n"
+"NightScout:\n"
+"Trndi automatically retrieves your custom high and low settings from NightScout, so manually setting them here is usually unnecessary.\n"
+"\n"
+"Dexcom:\n"
+"Dexcom servers do not provide custom high and low values. By setting them here, you can establish your own thresholds for Dexcom data."
+msgstr ""
+"Om du ställer in dessa värden, kan du ställa in egna gränser för höga och låga blodsockernivåer i Trndi.\n"
+"\n"
+"NightScout:\n"
+"Trndi hämtar automatiskt dina satta höga och låga nivåer från NightScout, att manuellt ställa in dem här är normalt sätt inte nödvändigt.\n"
+"\n"
+"Dexcom:\n"
+"Dexcoms servrar tillhandahåller inte egna höga och låga gränsvärden. Genom att skriva in värdena här, ställer du in gränserna direkt i Trndi."
+
+#: uconf.rs_privacy_help
+msgid "When in Privacy Mode, the actual blood glucose value is hidden. Trndi will only tell the user if it's good, high or low."
+msgstr "När privat läge är aktiverat, visas inte avläsningar. Trndi visar istället bara om sockret är bra, högt eller lågt."

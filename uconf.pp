@@ -35,15 +35,16 @@ type
 
 TfConf = class(TForm)
   Bevel1: TBevel;
+  bOverrideHelp:TButton;
+  bPrivacyHelp:TButton;
   cbCust:TCheckBox;
   cbPrivacy:TCheckBox;
   eExt: TLabeledEdit;
   fsHi:TFloatSpinEdit;
   fsLo:TFloatSpinEdit;
   gbAdvanced:TGroupBox;
-  lBGWarn:TLabel;
+  gbOverride:TGroupBox;
   lHiOver:TLabel;
-  lLounder:TLabel;
   lLicense: TButton;
   cbSys: TComboBox;
   Image1: TImage;
@@ -51,11 +52,15 @@ TfConf = class(TForm)
   eAddr: TLabeledEdit;
   ePass: TLabeledEdit;
   lAck: TButton;
+  lLounder:TLabel;
   lTitle: TLabel;
   lVersion: TLabel;
   rbUnit: TRadioGroup;
   tbAdvanced:TToggleBox;
   procedure bLimitsClick(Sender:TObject);
+  procedure bOverrideHelpClick(Sender:TObject);
+  procedure bPrivacyHelpClick(Sender:TObject);
+  procedure cbCustChange(Sender:TObject);
   procedure cbSysChange(Sender:TObject);
   procedure FormCreate(Sender:TObject);
   procedure lAckClick(Sender:TObject);
@@ -67,6 +72,22 @@ private
 public
 
 end;
+
+resourcestring
+RS_OVERRIDE_HELP =
+  'Setting values here allows you to define your own high and low blood sugar limits in Trndi.'
+  +#10+#10+
+  'NightScout:'#10+
+  'Trndi automatically retrieves your custom high and low settings from NightScout, so manually setting them here is usually unnecessary.'
+  +#10+#10+
+  'Dexcom:'+#10+
+  'Dexcom servers do not provide custom high and low values. By setting them here, you can establish your own thresholds for Dexcom data.';
+
+RS_PRIVACY_HELP =
+  'When in Privacy Mode, the actual blood glucose value is hidden. Trndi will only tell the user if it''s good, high or low.';
+
+RS_DEX =
+  'Dexcom servers do not provide custom high and low blood sugar values. Please set your own thresholds at the bottom of this window.';
 
 var 
 fConf: TfConf;
@@ -89,11 +110,37 @@ end;
 
 procedure TfConf.cbSysChange(Sender:TObject);
 begin
-
+  gbOverride.Color := clDefault;
+  if Pos('Dexcom', cbSys.Text) > 0 then
+  begin
+    if not tbAdvanced.Checked then
+      tbAdvanced.Checked := true;
+    gbOverride.Color := $00D3D2EE;
+    ShowMessage(RS_DEX);
+  end
+  else
+  if tbAdvanced.Checked and (not cbCust.Checked) then
+    tbAdvanced.Checked := false;
 end;
 
 procedure TfConf.bLimitsClick(Sender:TObject);
 begin
+end;
+
+procedure TfConf.bOverrideHelpClick(Sender:TObject);
+begin
+  ShowMessage(RS_OVERRIDE_HELP);
+end;
+
+procedure TfConf.bPrivacyHelpClick(Sender:TObject);
+begin
+  ShowMessage(RS_PRIVACY_HELP);
+end;
+
+procedure TfConf.cbCustChange(Sender:TObject);
+begin
+  fsHi.Enabled :=  cbCust.Checked;
+  fsLo.Enabled :=  cbCust.Checked;
 end;
 
 procedure TfConf.FormCreate(Sender:TObject);

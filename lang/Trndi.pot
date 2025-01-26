@@ -46,12 +46,22 @@ msgstr ""
 msgid "- Off Range -"
 msgstr ""
 
+#: tfconf.boverridehelp.caption
+msgctxt "tfconf.boverridehelp.caption"
+msgid "?"
+msgstr ""
+
+#: tfconf.bprivacyhelp.caption
+msgctxt "tfconf.bprivacyhelp.caption"
+msgid "?"
+msgstr ""
+
 #: tfconf.caption
 msgid "Settings"
 msgstr ""
 
 #: tfconf.cbcust.caption
-msgid "Use custom range"
+msgid "Use custom values"
 msgstr ""
 
 #: tfconf.cbprivacy.caption
@@ -78,14 +88,13 @@ msgstr ""
 msgid "Advanced Settings"
 msgstr ""
 
-#: tfconf.lack.caption
-msgid "Libraries"
+#: tfconf.gboverride.caption
+msgctxt "tfconf.gboverride.caption"
+msgid "Override High / Low limits"
 msgstr ""
 
-#: tfconf.lbgwarn.caption
-msgid ""
-"NightScout: This overrides the values set on your server\n"
-"Dexcom: These values lets you set your own high/low range"
+#: tfconf.lack.caption
+msgid "Libraries"
 msgstr ""
 
 #: tfconf.lhiover.caption
@@ -272,5 +281,24 @@ msgstr ""
 #: trndi.strings.rs_user_caption
 #, object-pascal-format
 msgid "[%s] %s"
+msgstr ""
+
+#: uconf.rs_dex
+msgid "Dexcom servers do not provide custom high and low blood sugar values. Please set your own thresholds at the bottom of this window."
+msgstr ""
+
+#: uconf.rs_override_help
+msgid ""
+"Setting values here allows you to define your own high and low blood sugar limits in Trndi.\n"
+"\n"
+"NightScout:\n"
+"Trndi automatically retrieves your custom high and low settings from NightScout, so manually setting them here is usually unnecessary.\n"
+"\n"
+"Dexcom:\n"
+"Dexcom servers do not provide custom high and low values. By setting them here, you can establish your own thresholds for Dexcom data."
+msgstr ""
+
+#: uconf.rs_privacy_help
+msgid "When in Privacy Mode, the actual blood glucose value is hidden. Trndi will only tell the user if it's good, high or low."
 msgstr ""
 
