@@ -9,7 +9,6 @@ object fBG: TfBG
   ClientWidth = 320
   Color = clBlack
   Font.Color = clWhite
-  LCLVersion = '4.0.0.2'
   OnClose = FormClose
   OnCreate = FormCreate
   OnMouseLeave = FormMouseLeave
@@ -218,6 +217,8 @@ object fBG: TfBG
     Top = 129
   end
   object pmSettings: TPopupMenu
+    OnMeasureItem = pmSettingsMeasureItem
+    OnPopup = pmSettingsPopup
     Left = 155
     Top = 66
     object miSettings: TMenuItem
@@ -298,7 +299,7 @@ object fBG: TfBG
     Enabled = False
     Interval = 10000
     OnTimer = tMissedTimer
-    Left = 89
-    Top = 148
+    Left = 160
+    Top = 129
   end
 end

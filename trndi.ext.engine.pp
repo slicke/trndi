@@ -478,8 +478,8 @@ begin
   end;
   if FRuntime <> nil then
   try
-    FRuntime^.DoneSafe;
-// Running under a debugger on Linux can false-positive trigger this
+    JS_FreeRuntime(@FRuntime);
+//    FRuntime^.DoneSafe;
   except
     on E: Exception do
       ShowMessage('An error occured while shutting down extensions: ' + E.
