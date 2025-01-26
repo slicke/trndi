@@ -31,7 +31,7 @@ trndi.api.dexcom, trndi.api.nightscout, trndi.types, math, DateUtils, FileUtil,
 trndi.Ext.Engine, trndi.Ext.Ext, trndi.Ext.jsfuncs,
 {$endif}
 LazFileUtils, uconf, trndi.native, Trndi.API, trndi.api.xDrip,{$ifdef DEBUG} trndi.api.debug,{$endif}
-StrUtils;
+StrUtils, TouchDetection;
 
 type
   // Procedures which are applied to the trend drawing
@@ -169,6 +169,7 @@ StartTouch: TDateTime;
 IsTouched: boolean;
 HasTouch: boolean;
 HasMultiTouch: boolean;
+touchHelper: TTouchDetector;
 
 privacyMode: boolean = false;
 
@@ -338,6 +339,8 @@ begin
   with TrndiNative.Create do
   begin
   HasTouch :=  HasTouchScreen(HasMultiTouch);
+  if HasMultiTouch then
+    touchHelper := TTouchDetector.Create;
     lang := GetSetting('locale', '');
 
     SetDefaultLang(lang,'lang');
@@ -604,12 +607,23 @@ end;
 // Handle mouse down on lVal
 procedure TfBG.lValMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: integer);
 begin
-  if hastouch then begin
+  if hastouch then  // We have touch
+    if (not HasMultiTouch) or (touchHelper.GetActiveTouchCount = 1) then begin
   // Handle touch screens
   StartTouch := Now;
   IsTouched := true;
   tTouch.Enabled := true;
-end else if (Button = mbLeft) and (self.BorderStyle = bsNone) then begin   // Handle window moving
+
+  Exit;
+  end;
+
+
+
+  if HasMultiTouch then // Check fingers here
+    if touchHelper.GetActiveTouchCount = 1 then // Just act if more than 1 finger (we should have failed already though...)
+      Exit;
+
+  if (Button = mbLeft) and (self.BorderStyle = bsNone) then begin   // Handle window moving
     DraggingWin := true;
     PX := X;
     PY := Y;
