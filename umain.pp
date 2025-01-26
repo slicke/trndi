@@ -705,8 +705,8 @@ begin
       eAddr.Text := GetSetting(username +'remote.target');
       ePass.Text := GetSetting(username +'remote.creds');
       rbUnit.ItemIndex := IfThen(GetSetting(username +'unit', 'mmol') = 'mmol', 0, 1);
-      fsLo.Value := GetIntSetting(username+'override.lo', api.cgmLo);
-      fsHi.Value      := GetIntSetting(username+'override.hi', api.cgmHi);
+      fsLo.Value := GetIntSetting(username+'override.lo', 60);
+      fsHi.Value      := GetIntSetting(username+'override.hi', 160);
 
       if GetSetting(username +'unit', 'mmol') = 'mmol' then
       begin
