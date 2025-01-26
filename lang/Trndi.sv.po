@@ -324,3 +324,4 @@ msgstr ""
 #: uconf.rs_privacy_help
 msgid "When in Privacy Mode, the actual blood glucose value is hidden. Trndi will only tell the user if it's good, high or low."
 msgstr "När privat läge är aktiverat, visas inte avläsningar. Trndi visar istället bara om sockret är bra, högt eller lågt."
+
