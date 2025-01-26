@@ -241,6 +241,11 @@
         <Filename Value="trndi.api.debug.pp"/>
         <IsPartOfProject Value="True"/>
       </Unit>
+      <Unit>
+        <Filename Value="touchdetection.pp"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="TouchDetection"/>
+      </Unit>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
