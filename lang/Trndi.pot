@@ -274,7 +274,7 @@ msgstr ""
 
 #: trndi.strings.rs_refresh
 #, object-pascal-format
-msgid "Refreshing at %s"
+msgid "Updated: %s | Refreshing: %s"
 msgstr ""
 
 #: trndi.strings.rs_restart_apply
