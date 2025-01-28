@@ -5,10 +5,6 @@ msgstr "Content-Type: text/plain; charset=UTF-8"
 msgid "BG"
 msgstr ""
 
-#: tfbg.lago.caption
-msgid "lAgo"
-msgstr ""
-
 #: tfbg.lval.caption
 msgctxt "tfbg.lval.caption"
 msgid "Setup"
@@ -52,16 +48,6 @@ msgstr ""
 
 #: tfbg.pnoffrange.caption
 msgid "- Off Range -"
-msgstr ""
-
-#: tfconf.boverridehelp.caption
-msgctxt "tfconf.boverridehelp.caption"
-msgid "?"
-msgstr ""
-
-#: tfconf.bprivacyhelp.caption
-msgctxt "tfconf.bprivacyhelp.caption"
-msgid "?"
 msgstr ""
 
 #: tfconf.caption
@@ -194,6 +180,10 @@ msgstr ""
 
 #: trndi.ext.promise.stypeerrmsg
 msgid "A data type was expected, but another was found"
+msgstr ""
+
+#: trndi.strings.rs_force_quit_setup
+msgid "Trndi will now shut down to apply settings, please re-start it manually!"
 msgstr ""
 
 #: trndi.strings.rs_hi_level

@@ -395,6 +395,12 @@ begin
     if apiTarget = '' then
     begin
       tMain.Enabled := false;
+      for i := 0 to fBG.ComponentCount-1 do // Clear default texts, I want them in the designer window so I won't clear there
+       if (fbg.Components[i] is TLabel) and (fbg.Components[i] <> lval) then
+    (fbg.Components[i] as TLabel).Caption := '';
+      miSettings.Click;
+      ShowMessage(RS_FORCE_QUIT_SETUP);
+      Application.Terminate;
       Exit;
     end;
     apiCreds := GetSetting(username +'remote.creds');
@@ -760,7 +766,7 @@ begin
 
   min := MilliSecondsBetween(Now, d) div 60000;  // Minutes since last
 
-  lAgo.Caption := Format(RS_LAST_UPDATE, [min]);
+  lAgo.Caption := '🕑 ' + Format(RS_LAST_UPDATE, [min]);
 end;
 
 procedure TfBG.tEdgesTimer(Sender:TObject);
@@ -905,6 +911,9 @@ var
 begin
   lastup := 0;
   // Fetch current readings
+  if api = nil then
+    Exit;
+
   bgs := api.getReadings(MAX_MIN, 25);
   if Length(bgs) < 1 then
   begin
