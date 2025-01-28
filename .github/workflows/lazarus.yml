@@ -163,7 +163,7 @@ jobs:
         with:
           files: Trndi-developer-build.zip
           tag_name: v${{ github.run_number }}-test
-          name: Automatic Test build ${{ github.run_number }}
+          name: Automatic Developer build ${{ github.run_number }}
           body: |
             ## Get the latest release: <a href="https://github.com/slicke/trndi/releases?q=prerelease%3Afalse&expanded=true">here</a>!
             ### Not for end-users!
