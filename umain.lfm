@@ -211,6 +211,24 @@ object fBG: TfBG
     OnDblClick = lDiffDblClick
     OnMouseMove = FormMouseMove
   end
+  object lAgo: TLabel
+    Left = 5
+    Height = 13
+    Top = 18
+    Width = 200
+    AutoSize = False
+    BorderSpacing.Bottom = 5
+    Caption = 'lAgo'
+    Color = clWhite
+    Font.Color = clWhite
+    Font.Height = 14
+    OptimalFill = True
+    ParentColor = False
+    ParentFont = False
+    PopupMenu = pmSettings
+    OnDblClick = lDiffDblClick
+    OnMouseMove = FormMouseMove
+  end
   object tMain: TTimer
     Interval = 100000
     OnTimer = tMainTimer
@@ -309,5 +327,12 @@ object fBG: TfBG
     OnTimer = tResizeTimer
     Left = 215
     Top = 39
+  end
+  object tAgo: TTimer
+    Enabled = False
+    Interval = 30000
+    OnTimer = tAgoTimer
+    Left = 94
+    Top = 157
   end
 end

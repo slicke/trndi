@@ -15,6 +15,10 @@ msgstr ""
 msgid "BG"
 msgstr "BS"
 
+#: tfbg.lago.caption
+msgid "lAgo"
+msgstr ""
+
 #: tfbg.lval.caption
 msgctxt "tfbg.lval.caption"
 msgid "Setup"
@@ -208,6 +212,11 @@ msgstr "En datatyo förväntades, men en annan påträffades"
 #, object-pascal-format
 msgid "Hi > %.1f"
 msgstr "Hög > %.1f"
+
+#: trndi.strings.rs_last_update
+#, object-pascal-format
+msgid "%d min"
+msgstr "%d min"
 
 #: trndi.strings.rs_latest_reading
 #, object-pascal-format
