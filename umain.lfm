@@ -9,7 +9,6 @@ object fBG: TfBG
   ClientWidth = 320
   Color = clBlack
   Font.Color = clWhite
-  LCLVersion = '4.0.0.1'
   OnClose = FormClose
   OnCreate = FormCreate
   OnMouseLeave = FormMouseLeave
