@@ -37,8 +37,8 @@ object fBG: TfBG
   end
   object lVal: TLabel
     Left = 0
-    Height = 162
-    Top = 0
+    Height = 144
+    Top = 18
     Width = 320
     Align = alClient
     Alignment = taCenter
@@ -56,25 +56,6 @@ object fBG: TfBG
     OnMouseMove = FormMouseMove
     OnMouseUp = lValMouseUp
     OnStartDrag = lValStartDrag
-  end
-  object lDiff: TLabel
-    Left = 0
-    Height = 14
-    Top = 0
-    Width = 320
-    Alignment = taCenter
-    AutoSize = False
-    BorderSpacing.Bottom = 5
-    Caption = 'lDiff'
-    Color = clWhite
-    Font.Color = clWhite
-    Font.Height = 10
-    OptimalFill = True
-    ParentColor = False
-    ParentFont = False
-    PopupMenu = pmSettings
-    OnDblClick = lDiffDblClick
-    OnMouseMove = FormMouseMove
   end
   object lDot6: TLabel
     Left = 215
@@ -200,7 +181,8 @@ object fBG: TfBG
     Left = 0
     Height = 18
     Top = 0
-    Width = 100
+    Width = 320
+    Align = alTop
     BevelOuter = bvNone
     Caption = '- Off Range -'
     Color = clBlack
@@ -211,6 +193,43 @@ object fBG: TfBG
     OnClick = pnOffRangeClick
     OnMouseMove = FormMouseMove
   end
+  object lDiff: TLabel
+    Left = 0
+    Height = 14
+    Top = 17
+    Width = 320
+    Alignment = taCenter
+    AutoSize = False
+    BorderSpacing.Bottom = 5
+    Caption = 'lDiff'
+    Color = clWhite
+    Font.Color = clWhite
+    Font.Height = 14
+    OptimalFill = True
+    ParentColor = False
+    ParentFont = False
+    PopupMenu = pmSettings
+    OnDblClick = lDiffDblClick
+    OnMouseMove = FormMouseMove
+  end
+  object lAgo: TLabel
+    Left = 5
+    Height = 13
+    Top = 18
+    Width = 200
+    AutoSize = False
+    BorderSpacing.Bottom = 5
+    Caption = 'lAgo'
+    Color = clWhite
+    Font.Color = clWhite
+    Font.Height = 14
+    OptimalFill = True
+    ParentColor = False
+    ParentFont = False
+    PopupMenu = pmSettings
+    OnDblClick = lDiffDblClick
+    OnMouseMove = FormMouseMove
+  end
   object tMain: TTimer
     Interval = 100000
     OnTimer = tMainTimer
@@ -218,6 +237,8 @@ object fBG: TfBG
     Top = 129
   end
   object pmSettings: TPopupMenu
+    OnMeasureItem = pmSettingsMeasureItem
+    OnPopup = pmSettingsPopup
     Left = 155
     Top = 66
     object miSettings: TMenuItem
@@ -279,6 +300,13 @@ object fBG: TfBG
       Enabled = False
       RightJustify = True
     end
+    object mSplit5: TMenuItem
+      Caption = '-'
+    end
+    object miExit: TMenuItem
+      Caption = 'Exit Trndi'
+      OnClick = miExitClick
+    end
   end
   object tTouch: TTimer
     Enabled = False
@@ -291,7 +319,21 @@ object fBG: TfBG
     Enabled = False
     Interval = 10000
     OnTimer = tMissedTimer
-    Left = 89
-    Top = 148
+    Left = 160
+    Top = 129
+  end
+  object tResize: TTimer
+    Enabled = False
+    Interval = 500
+    OnTimer = tResizeTimer
+    Left = 215
+    Top = 39
+  end
+  object tAgo: TTimer
+    Enabled = False
+    Interval = 30000
+    OnTimer = tAgoTimer
+    Left = 94
+    Top = 157
   end
 end

@@ -5,6 +5,10 @@ msgstr "Content-Type: text/plain; charset=UTF-8"
 msgid "BG"
 msgstr ""
 
+#: tfbg.lago.caption
+msgid "lAgo"
+msgstr ""
+
 #: tfbg.lval.caption
 msgctxt "tfbg.lval.caption"
 msgid "Setup"
@@ -12,6 +16,10 @@ msgstr ""
 
 #: tfbg.miborders.caption
 msgid "No borders"
+msgstr ""
+
+#: tfbg.miexit.caption
+msgid "Exit Trndi"
 msgstr ""
 
 #: tfbg.miforce.caption
@@ -193,6 +201,11 @@ msgstr ""
 msgid "Hi > %.1f"
 msgstr ""
 
+#: trndi.strings.rs_last_update
+#, object-pascal-format
+msgid "%d min"
+msgstr ""
+
 #: trndi.strings.rs_latest_reading
 #, object-pascal-format
 msgid "Latest Reading: Value = %.2f, Date = %s"
@@ -237,6 +250,14 @@ msgstr ""
 msgid "over"
 msgstr ""
 
+#: trndi.strings.rs_quit_caption
+msgid "Exit Trndi?"
+msgstr ""
+
+#: trndi.strings.rs_quit_msg
+msgid "Quit the app?"
+msgstr ""
+
 #: trndi.strings.rs_range_explanation
 #, object-pascal-format
 msgid "In addition to high and low levels, you have set a personal range within \"OK\". You are now %s that range"
@@ -262,7 +283,7 @@ msgstr ""
 
 #: trndi.strings.rs_refresh
 #, object-pascal-format
-msgid "Refreshing at %s"
+msgid "Updated: %s | Refreshing: %s"
 msgstr ""
 
 #: trndi.strings.rs_restart_apply

@@ -15,6 +15,10 @@ msgstr ""
 msgid "BG"
 msgstr "BS"
 
+#: tfbg.lago.caption
+msgid "lAgo"
+msgstr ""
+
 #: tfbg.lval.caption
 msgctxt "tfbg.lval.caption"
 msgid "Setup"
@@ -23,6 +27,10 @@ msgstr "Konfig"
 #: tfbg.miborders.caption
 msgid "No borders"
 msgstr "Inga kanter"
+
+#: tfbg.miexit.caption
+msgid "Exit Trndi"
+msgstr "Avsluta Trndi"
 
 #: tfbg.miforce.caption
 msgid "Force Update"
@@ -54,7 +62,7 @@ msgstr "&Inställningar"
 
 #: tfbg.pnoffrange.caption
 msgid "- Off Range -"
-msgstr "- Ur område -"
+msgstr "- Utanför område -"
 
 #: tfconf.boverridehelp.caption
 msgctxt "tfconf.boverridehelp.caption"
@@ -205,6 +213,11 @@ msgstr "En datatyo förväntades, men en annan påträffades"
 msgid "Hi > %.1f"
 msgstr "Hög > %.1f"
 
+#: trndi.strings.rs_last_update
+#, object-pascal-format
+msgid "%d min"
+msgstr "%d min"
+
 #: trndi.strings.rs_latest_reading
 #, object-pascal-format
 msgid "Latest Reading: Value = %.2f, Date = %s"
@@ -253,6 +266,14 @@ msgstr "%s (%d.%.2d sedan)"
 msgid "over"
 msgstr "över"
 
+#: trndi.strings.rs_quit_caption
+msgid "Exit Trndi?"
+msgstr "Avsluta Trndi?"
+
+#: trndi.strings.rs_quit_msg
+msgid "Quit the app?"
+msgstr "Avsluta appen?"
+
 #: trndi.strings.rs_range_explanation
 #, object-pascal-format
 msgid "In addition to high and low levels, you have set a personal range within \"OK\". You are now %s that range"
@@ -278,8 +299,8 @@ msgstr "Lågt område stöds inte av källans gränssnitt"
 
 #: trndi.strings.rs_refresh
 #, object-pascal-format
-msgid "Refreshing at %s"
-msgstr "Hämtar %s"
+msgid "Updated: %s | Refreshing: %s"
+msgstr "Uppdaterad: %s | Uppdaterar: %s"
 
 #: trndi.strings.rs_restart_apply
 msgid "Trndi must be restarted for settings to take effect"
@@ -324,4 +345,3 @@ msgstr ""
 #: uconf.rs_privacy_help
 msgid "When in Privacy Mode, the actual blood glucose value is hidden. Trndi will only tell the user if it's good, high or low."
 msgstr "När privat läge är aktiverat, visas inte avläsningar. Trndi visar istället bara om sockret är bra, högt eller lågt."
-

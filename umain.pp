@@ -41,6 +41,8 @@ TTrendProcLoop = procedure(l: TLabel; c, ix: integer; ls: array of TLabel) of ob
   { TfBG }
 
 TfBG = class(TForm)
+  lAgo:TLabel;
+  miExit:TMenuItem;
   miBorders:TMenuItem;
   miFullScreen:TMenuItem;
   miOnTop:TMenuItem;
@@ -72,6 +74,9 @@ TfBG = class(TForm)
   lVal: TLabel;
   miSettings: TMenuItem;
   pmSettings: TPopupMenu;
+  mSplit5:TMenuItem;
+  tAgo:TTimer;
+  tResize:TTimer;
   tMissed:TTimer;
   tTouch: TTimer;
   tMain: TTimer;
@@ -88,13 +93,19 @@ TfBG = class(TForm)
   procedure lValMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: integer);
   procedure lValStartDrag(Sender: TObject; var DragObject: TDragObject);
   procedure miBordersClick(Sender:TObject);
+  procedure miExitClick(Sender:TObject);
   procedure miForceClick(Sender: TObject);
   procedure miLimitExplainClick(Sender: TObject);
   procedure miOnTopClick(Sender:TObject);
   procedure miSettingsClick(Sender: TObject);
   procedure onTrendClick(Sender: TObject);
+  procedure pmSettingsMeasureItem(Sender:TObject;ACanvas:TCanvas;var AWidth,
+    AHeight:integer);
+  procedure pmSettingsPopup(Sender:TObject);
   procedure pnOffRangeClick(Sender: TObject);
+  procedure tAgoTimer(Sender:TObject);
   procedure tEdgesTimer(Sender:TObject);
+  procedure tResizeTimer(Sender:TObject);
   procedure tMainTimer(Sender: TObject);
   procedure tMissedTimer(Sender:TObject);
   procedure tTouchTimer(Sender: TObject);
@@ -178,7 +189,7 @@ DraggingWin: boolean;
 PX, PY: integer;
 
 {$ifdef LINUX}
-  IsRaspberry: boolean;
+IsRaspberry: boolean;
 {$endif}
 
 implementation
@@ -328,9 +339,8 @@ begin
   fBG.Font.Name := s;
 
   IsRaspberry := false;
-  if (Pos('ID=debian', s) > -1) then begin
+  if (Pos('ID=debian', s) > -1) then
     IsRaspberry := FileExists('/etc/rpi-issue');
-  end;
   {$endif}
 
 
@@ -349,9 +359,9 @@ begin
 
   with TrndiNative.Create do
   begin
-  HasTouch :=  HasTouchScreen(HasMultiTouch);
-  if HasMultiTouch then
-    touchHelper := TTouchDetector.Create;
+    HasTouch :=  HasTouchScreen(HasMultiTouch);
+    if HasMultiTouch then
+      touchHelper := TTouchDetector.Create;
     lang := GetSetting('locale', '');
 
     SetDefaultLang(lang,'lang');
@@ -438,8 +448,10 @@ end;
 
 procedure TfBG.FormMouseMove(Sender:TObject;Shift:TShiftState;X,Y:integer);
 begin
-  if DraggingWin then begin
+  if DraggingWin then
+  begin
     SetBounds(Left + (X - PX), Top + (Y - PY), Width, Height);
+    tTouch.Enabled := false; // Dont popup stuff while moving
   end;
 end;
 
@@ -498,86 +510,14 @@ end;
 
 // FormResize event handler
 procedure TfBG.FormResize(Sender: TObject);
-procedure scaleLbl(ALabel: TLabel);
-  var
-    MaxWidth, MaxHeight: integer;
-    TestSize, MaxFontSize: integer;
-    TextWidth, TextHeight: integer;
-  begin
-    // Set the maximum feasible font size
-    MaxFontSize := 150;
-
-    // Set the maximum feasible width and height
-    MaxWidth := ALabel.Width;
-    MaxHeight := ALabel.Height;
-
-    // Check if the font will fit
-    for TestSize := 1 to MaxFontSize do
-    begin
-      ALabel.Font.Size := TestSize;
-      TextWidth := ALabel.Canvas.TextWidth(ALabel.Caption);
-      TextHeight := ALabel.Canvas.TextHeight(ALabel.Caption);
-
-      // Exit if the font won't fit
-      if (TextWidth > MaxWidth) or (TextHeight > MaxHeight) then
-      begin
-        ALabel.Font.Size := TestSize - 1;
-        Exit;
-      end;
-    end;
-
-    // If we never exited, set the max feasible size
-    ALabel.Font.Size := MaxFontSize;
-  end;
-
-var
-  i: integer;
 begin
-  // Update dot placement
-  actOnTrend(@SetDotWidth);
-
-  // Remove or comment out the following line to prevent labels from being hidden:
-  // actOnTrend(@HideDot);
-
-  // Adjust label sizes
-//  lArrow.Height := fBG.clientHeight div 3;
-  scaleLbl(lVal);
-  scaleLbl(lArrow);
-  lDiff.Width := ClientWidth;
-  lDiff.Height := lVal.Height div 7;
-  scaleLbl(lDiff);
-
-  // Resize the dots
-  actOnTrend(@ResizeDot);
-
-  if not assigned(api) then
-    Exit;
-
-  // Set info
-  miHi.Caption := Format(RS_HI_LEVEL, [api.cgmHi * BG_CONVERTIONS[un][mgdl]]);
-  miLo.Caption := Format(RS_LO_LEVEL, [api.cgmLo * BG_CONVERTIONS[un][mgdl]]);
-
-  if api.cgmRangeHi <> 500 then
-    miRangeHi.Caption := Format(RS_RANGE_HI, [api.cgmRangeHi * BG_CONVERTIONS[un][mgdl]])
+  if sender = lval then
+    tResize.OnTimer(self)
   else
-    miRangeHi.Caption := RS_RANGE_HI_UNSUPPORTED;
-
-  if api.cgmRangeLo <> 0 then
-    miRangeLo.Caption := Format(RS_RANGE_LO, [api.cgmRangeLo * BG_CONVERTIONS[un][mgdl]])
-  else
-    miRangeLo.Caption := RS_RANGE_LO_UNSUPPORTED;
-
-  if not api.active then
-    Exit;
-
-  pnOffRange.width := clientwidth div 4;
-  pnOffRange.height := clientheight div 10;
-  pnOffRange.left := 0;
-  pnOffRange.top := 0;
-  pnOffRange.Font.Size := 7 + pnOffRange.Height div 5;
-
-
-  PlaceTrendDots(bgs);
+  begin
+    tResize.Enabled := false;
+    tResize.Enabled := true;
+  end;
 end;
 
 procedure TfBG.lArrowClick(Sender:TObject);
@@ -618,23 +558,13 @@ end;
 // Handle mouse down on lVal
 procedure TfBG.lValMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: integer);
 begin
-  if hastouch then  // We have touch
-    if (not HasMultiTouch) or (touchHelper.GetActiveTouchCount = 1) then begin
   // Handle touch screens
   StartTouch := Now;
   IsTouched := true;
   tTouch.Enabled := true;
 
-  Exit;
-  end;
-
-
-
-  if HasMultiTouch then // Check fingers here
-    if touchHelper.GetActiveTouchCount = 1 then // Just act if more than 1 finger (we should have failed already though...)
-      Exit;
-
-  if (Button = mbLeft) and (self.BorderStyle = bsNone) then begin   // Handle window moving
+  if (Button = mbLeft) and (self.BorderStyle = bsNone) then
+  begin   // Handle window moving
     DraggingWin := true;
     PX := X;
     PY := Y;
@@ -663,6 +593,12 @@ begin
     self.BorderStyle := bsNone
   else
     BorderStyle := bsSizeToolWin;
+end;
+
+procedure TfBG.miExitClick(Sender:TObject);
+begin
+  if MessageDlg(RS_QUIT_CAPTION, RS_QUIT_MSG, mtWarning, [mbYes, mbNo], '') = mrYes then
+    Application.Terminate;
 end;
 
 // Force update on menu click
@@ -706,8 +642,17 @@ begin
       eAddr.Text := GetSetting(username +'remote.target');
       ePass.Text := GetSetting(username +'remote.creds');
       rbUnit.ItemIndex := IfThen(GetSetting(username +'unit', 'mmol') = 'mmol', 0, 1);
-      fsLo.Value := GetIntSetting(username+'override.lo', api.cgmLo);
-      fsHi.Value      := GetIntSetting(username+'override.hi', api.cgmHi);
+
+      if api = nil then
+      begin
+        fsLo.Value := GetIntSetting(username+'override.lo', 60);
+        fsHi.Value := GetIntSetting(username+'override.hi', 160);
+      end
+      else
+      begin
+        fsLo.Value := GetIntSetting(username+'override.lo', api.cgmLo);
+        fsHi.Value := GetIntSetting(username+'override.hi', api.cgmhi)
+      end;
 
       if GetSetting(username +'unit', 'mmol') = 'mmol' then
       begin
@@ -761,6 +706,43 @@ begin
   actOnTrend(@ExpandDot);
 end;
 
+procedure TfBG.pmSettingsMeasureItem(Sender:TObject;ACanvas:TCanvas;var AWidth,
+AHeight:integer);
+var
+  MenuItem: TMenuItem;
+  TextX, TextY: integer;
+begin
+  MenuItem := TMenuItem(Sender);
+
+  if menuitem.Caption = '-' then
+    exit;
+  // Set desired font
+  ACanvas.Font.Name := 'Arial';
+  ACanvas.Font.Size := 16;
+  ACanvas.Font.Style := [fsBold];
+
+  // Calculate text dimensions
+  Textx := ACanvas.TextWidth(MenuItem.Caption);
+  Texty := ACanvas.TextHeight(MenuItem.Caption);
+
+  // Set item dimensions with padding
+  AWidth := Textx + 40;  // Add 40 pixels for padding and icons
+  AHeight := Texty + 8;  // Add 8 pixels for vertical padding
+
+  // Ensure minimum width
+  if AWidth < 100 then
+    AWidth := 100;
+
+  // Ensure minimum height
+  if AHeight < 25 then
+    AHeight := 25;
+end;
+
+procedure TfBG.pmSettingsPopup(Sender:TObject);
+begin
+
+end;
+
 // Handle off range panel click
 procedure TfBG.pnOffRangeClick(Sender: TObject);
 begin
@@ -768,9 +750,112 @@ begin
     [IfThen((Sender as TPanel).Color = bg_rel_color_hi, RS_OVER, RS_UNDER)]));
 end;
 
+procedure TfBG.tAgoTimer(Sender:TObject);
+var
+  d, diff: TDateTime;
+  min: int64;
+begin
+  d := bgs[Low(bgs)].date; // Last reading time
+  diff := Now-d;
+
+  min := MilliSecondsBetween(Now, d) div 60000;  // Minutes since last
+
+  lAgo.Caption := Format(RS_LAST_UPDATE, [min]);
+end;
+
 procedure TfBG.tEdgesTimer(Sender:TObject);
 begin
 
+end;
+
+procedure TfBG.tResizeTimer(Sender:TObject);
+procedure scaleLbl(ALabel: TLabel);
+  var
+    MaxWidth, MaxHeight: integer;
+    TestSize, MaxFontSize: integer;
+    TextWidth, TextHeight: integer;
+  begin
+    // Set the maximum feasible font size
+    MaxFontSize := 150;
+
+    // Set the maximum feasible width and height
+    MaxWidth := ALabel.Width;
+    MaxHeight := ALabel.Height;
+
+    // Check if the font will fit
+    for TestSize := 1 to MaxFontSize do
+    begin
+      ALabel.Font.Size := TestSize;
+      TextWidth := ALabel.Canvas.TextWidth(ALabel.Caption);
+      TextHeight := ALabel.Canvas.TextHeight(ALabel.Caption);
+
+      // Exit if the font won't fit
+      if (TextWidth > MaxWidth) or (TextHeight > MaxHeight) then
+      begin
+        ALabel.Font.Size := TestSize - 1;
+        Exit;
+      end;
+    end;
+
+    // If we never exited, set the max feasible size
+    ALabel.Font.Size := MaxFontSize;
+  end;
+
+var
+  i: integer;
+begin
+  tResize.Enabled := false;
+  // Update dot placement
+  actOnTrend(@SetDotWidth);
+
+  // Remove or comment out the following line to prevent labels from being hidden:
+  // actOnTrend(@HideDot);
+
+  // Adjust label sizes
+//  lArrow.Height := fBG.clientHeight div 3;
+
+
+  // Resize the dots
+  actOnTrend(@ResizeDot);
+
+  if not assigned(api) then
+    Exit;
+
+  // Set info
+  miHi.Caption := Format(RS_HI_LEVEL, [api.cgmHi * BG_CONVERTIONS[un][mgdl]]);
+  miLo.Caption := Format(RS_LO_LEVEL, [api.cgmLo * BG_CONVERTIONS[un][mgdl]]);
+
+  if api.cgmRangeHi <> 500 then
+    miRangeHi.Caption := Format(RS_RANGE_HI, [api.cgmRangeHi * BG_CONVERTIONS[un][mgdl]])
+  else
+    miRangeHi.Caption := RS_RANGE_HI_UNSUPPORTED;
+
+  if api.cgmRangeLo <> 0 then
+    miRangeLo.Caption := Format(RS_RANGE_LO, [api.cgmRangeLo * BG_CONVERTIONS[un][mgdl]])
+  else
+    miRangeLo.Caption := RS_RANGE_LO_UNSUPPORTED;
+
+  if not api.active then
+    Exit;
+
+//  pnOffRange.width := clientwidth div 4;
+  pnOffRange.height := clientheight div 10;
+ // pnOffRange.left := 0;
+ // pnOffRange.top := 0;
+  pnOffRange.Font.Size := 7 + pnOffRange.Height div 5;
+
+  scaleLbl(lVal);
+  scaleLbl(lArrow);
+  lDiff.Width := ClientWidth;
+  lDiff.Height := lVal.Height div 7;
+  lDiff.top := 1 + IfThen(pnOffRange.Visible, pnOffRange.height, 3); // Move the icon
+
+  lAgo.height := max(10, round(lDiff.height / 1.7));
+  lAgo.top := ldiff.top;
+  scaleLbl(lDiff);
+
+
+  PlaceTrendDots(bgs);
 end;
 
 // Update remote on timer
@@ -854,7 +939,7 @@ begin
 
   tMain.Interval := i;
   tMain.Enabled := true;
-  miRefresh.Caption := Format(RS_REFRESH, [TimeToStr(IncMilliSecond(Now, i))]);
+  miRefresh.Caption := Format(RS_REFRESH, [TimeToStr (b.date), TimeToStr(IncMilliSecond(Now, i))]);
 
   // Check if the latest reading is fresh
   if MinutesBetween(Now, b.date) > DATA_FRESHNESS_THRESHOLD_MINUTES then
@@ -917,7 +1002,10 @@ begin
       lVal.Caption := '⭳'
     else
       lVal.Caption := '✓';
-  Self.OnResize(self);
+
+  tAgo.Enabled := true;
+  tAgo.OnTimer(self);
+  Self.OnResize(lVal);
 end;
 
 // PlaceTrendDots method to map readings to TrendDots
