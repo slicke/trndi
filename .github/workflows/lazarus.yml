@@ -127,3 +127,29 @@ jobs:
         run: |
           & 'C:\Lazarus\lazbuild.exe' --lazarusdir='C:\Lazarus' --build-mode='Extensions (Release)' 'Trndi.lpr'
         shell: pwsh
+
+      # 14. Create artifact directory
+      - name: Create artifacts directory
+        run: |
+          New-Item -ItemType Directory -Path artifacts -Force
+          Copy-Item Trndi.exe artifacts/
+        shell: pwsh
+
+      # 15. Package artifacts
+      - name: Package artifacts
+        run: |
+          7z a -tzip Trndi-test-build.zip ./artifacts/*
+        shell: pwsh
+
+      # 16. Create GitHub Release
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: Trndi-test-build.zip
+          tag_name: v${{ github.run_number }}-test
+          name: Test Build ${{ github.run_number }}
+          body: |
+            Automated test build from commit ${{ github.sha }}
+          prerelease: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
