@@ -35,6 +35,7 @@ RS_LATEST_READING = 'Latest Reading: Value = %.2f, Date = %s';
 RS_RESTART_APPLY = 'Trndi must be restarted for settings to take effect';
 RS_QUIT_CAPTION =  'Exit Trndi?';
 RS_QUIT_MSG = 'Quit the app?';
+RS_LAST_UPDATE = '%d min';
 
 implementation
 

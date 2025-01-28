@@ -41,6 +41,7 @@ TTrendProcLoop = procedure(l: TLabel; c, ix: integer; ls: array of TLabel) of ob
   { TfBG }
 
 TfBG = class(TForm)
+  lAgo:TLabel;
   miExit:TMenuItem;
   miBorders:TMenuItem;
   miFullScreen:TMenuItem;
@@ -74,6 +75,7 @@ TfBG = class(TForm)
   miSettings: TMenuItem;
   pmSettings: TPopupMenu;
   mSplit5:TMenuItem;
+  tAgo:TTimer;
   tResize:TTimer;
   tMissed:TTimer;
   tTouch: TTimer;
@@ -101,6 +103,7 @@ TfBG = class(TForm)
     AHeight:integer);
   procedure pmSettingsPopup(Sender:TObject);
   procedure pnOffRangeClick(Sender: TObject);
+  procedure tAgoTimer(Sender:TObject);
   procedure tEdgesTimer(Sender:TObject);
   procedure tResizeTimer(Sender:TObject);
   procedure tMainTimer(Sender: TObject);
@@ -747,6 +750,19 @@ begin
     [IfThen((Sender as TPanel).Color = bg_rel_color_hi, RS_OVER, RS_UNDER)]));
 end;
 
+procedure TfBG.tAgoTimer(Sender:TObject);
+var
+  d, diff: TDateTime;
+  min: int64;
+begin
+  d := bgs[Low(bgs)].date; // Last reading time
+  diff := Now-d;
+
+  min := MilliSecondsBetween(Now, d) div 60000;  // Minutes since last
+
+  lAgo.Caption := Format(RS_LAST_UPDATE, [min]);
+end;
+
 procedure TfBG.tEdgesTimer(Sender:TObject);
 begin
 
@@ -833,6 +849,9 @@ begin
   lDiff.Width := ClientWidth;
   lDiff.Height := lVal.Height div 7;
   lDiff.top := 1 + IfThen(pnOffRange.Visible, pnOffRange.height, 3); // Move the icon
+
+  lAgo.height := max(10, round(lDiff.height / 1.7));
+  lAgo.top := ldiff.top;
   scaleLbl(lDiff);
 
 
@@ -983,6 +1002,9 @@ begin
       lVal.Caption := '⭳'
     else
       lVal.Caption := '✓';
+
+  tAgo.Enabled := true;
+  tAgo.OnTimer(self);
   Self.OnResize(lVal);
 end;
 

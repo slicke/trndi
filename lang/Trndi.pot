@@ -5,6 +5,10 @@ msgstr "Content-Type: text/plain; charset=UTF-8"
 msgid "BG"
 msgstr ""
 
+#: tfbg.lago.caption
+msgid "lAgo"
+msgstr ""
+
 #: tfbg.lval.caption
 msgctxt "tfbg.lval.caption"
 msgid "Setup"
@@ -195,6 +199,11 @@ msgstr ""
 #: trndi.strings.rs_hi_level
 #, object-pascal-format
 msgid "Hi > %.1f"
+msgstr ""
+
+#: trndi.strings.rs_last_update
+#, object-pascal-format
+msgid "%d min"
 msgstr ""
 
 #: trndi.strings.rs_latest_reading
