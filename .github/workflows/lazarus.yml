@@ -154,7 +154,7 @@ jobs:
       # 15. Package artifacts
       - name: Package artifacts
         run: |
-          7z a -tzip Trndi-test-build.zip ./artifacts/*
+          7z a -tzip Trndi-developer-build.zip ./artifacts/*
         shell: pwsh
 
       # 16. Create GitHub Release
