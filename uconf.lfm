@@ -10338,6 +10338,8 @@ object fConf: TfConf
     EditLabel.Height = 15
     EditLabel.Width = 387
     EditLabel.Caption = 'Plugin Folder'
+    Enabled = False
+    ReadOnly = True
     TabOrder = 5
   end
   object rbUnit: TRadioGroup

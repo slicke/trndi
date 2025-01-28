@@ -166,10 +166,16 @@ end;
 
 procedure TfConf.rbUnitClick(Sender:TObject);
 begin
-  if rbUnit.ItemIndex = 0 then
-    fsHi.DecimalPlaces := 1
-  else
+  if rbUnit.ItemIndex = 0 then begin
+    fsHi.DecimalPlaces := 1;
+    fsHi.Value := fsHi.Value / 18;
+    fsLo.Value := fsLo.Value / 18;
+  end
+  else begin
     fsHi.DecimalPlaces := 0;
+    fsHi.Value := fsHi.Value * 18;
+    fsLo.Value := fsLo.Value * 18;
+  end;
 
   fsLo.DecimalPlaces := fsHi.DecimalPlaces;
 end;

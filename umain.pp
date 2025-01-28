@@ -343,8 +343,6 @@ begin
     IsRaspberry := FileExists('/etc/rpi-issue');
   {$endif}
 
-
-
   // Assign labels to the TrendDots array
   for i := 1 to NUM_DOTS do
   begin
@@ -355,7 +353,6 @@ begin
     else
       LogMessage(Format('Label %s assigned to TrendDots[%d].', [s, i]));
   end;
-
 
   with TrndiNative.Create do
   begin
@@ -692,7 +689,7 @@ begin
       if rbUnit.ItemIndex = 0 then
       begin//mmol
         SetSetting(username+'override.lo', round(fsLo.Value * 18).ToString);
-        SetSetting(username+'override.hi', round(fsHi.value *18).tostring);
+        SetSetting(username+'override.hi', round(fsHi.value * 18).tostring);
       end
       else
       begin
