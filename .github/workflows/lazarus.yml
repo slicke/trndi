@@ -12,6 +12,9 @@ jobs:
   build-and-test:
     runs-on: windows-latest
 
+    permissions:
+      contents: write
+
     steps:
       # 1. Check out repository
       - name: Check out repository
@@ -40,13 +43,20 @@ jobs:
           Get-ChildItem -Path C:\Lazarus -Recurse
         shell: pwsh
 
-      # Installera 7-Zip
+      # 4b. Save Lazarus Cache
+      - name: Save Lazarus Cache
+        uses: actions/cache/save@v3
+        with:
+          path: C:\Lazarus
+          key: lazarus-4.0rc2-installation        
+
+      # 4c. Install 7-Zip
       - name: Install 7-Zip
         run: |
           choco install 7zip -y
         shell: pwsh
 
-      # Skapa ../static om den inte finns
+      # 4d. Create ../static - if not exists
       - name: Create static directory
         run: |
           if (!(Test-Path "../static")) {
@@ -70,6 +80,12 @@ jobs:
           mkdir ../static -Force
           & 'C:\Program Files\7-Zip\7z.exe' x 'mormot2static.7z' -o'../static' -y
         shell: pwsh
+
+      - name: Save Static Libraries Cache
+        uses: actions/cache/save@v3
+        with:
+          path: ../static
+          key: static-libraries        
 
       # 7a. Log Current Directory
       - name: Log Current Directory
