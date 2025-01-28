@@ -5,76 +5,76 @@ unit TouchDetection;
 interface
 
 uses
-  {$IFDEF WINDOWS}
-    Windows, Messages,
-  {$ENDIF}
-  {$IFDEF LINUX}
-    BaseUnix, Linux, Unix,
-  {$ENDIF}
-  Classes, SysUtils;
+{$IFDEF WINDOWS}
+Windows, Messages,
+{$ENDIF}
+{$IFDEF LINUX}
+BaseUnix, Linux, Unix,
+{$ENDIF}
+Classes, SysUtils;
 
 type
-  TTouchPoint = record
-    X, Y: Integer;
-    Pressure: Single;
-    ID: Integer;
-    IsValid: Boolean;
-  end;
+TTouchPoint = record
+  X, Y: integer;
+  Pressure: single;
+  ID: integer;
+  IsValid: boolean;
+end;
 
-  TTouchInfo = record
-    Count: Integer;
-    Points: array of TTouchPoint;
-  end;
+TTouchInfo = record
+  Count: integer;
+  Points: array of TTouchPoint;
+end;
 
   { TTouchDetector }
 
-  TTouchDetector = class
-  private
-    FLastError: string;
-    {$IFDEF WINDOWS}
-    function InitializeWindowsTouch: Boolean;
-    function GetWindowsTouchInfo: TTouchInfo;
-    {$ENDIF}
-    {$IFDEF LINUX}
-    function FindTouchDevice: string;
-    function GetLinuxTouchInfo: TTouchInfo;
-    {$ENDIF}
-  public
-    constructor Create;
-    destructor Destroy; override;
+TTouchDetector = class
+private
+  FLastError: string;
+  {$IFDEF WINDOWS}
+  function InitializeWindowsTouch: boolean;
+  function GetWindowsTouchInfo: TTouchInfo;
+  {$ENDIF}
+  {$IFDEF LINUX}
+  function FindTouchDevice: string;
+  function GetLinuxTouchInfo: TTouchInfo;
+  {$ENDIF}
+public
+  constructor Create;
+  destructor Destroy; override;
 
-    function GetTouchInfo: TTouchInfo;
-    function GetActiveTouchCount: Integer;
+  function GetTouchInfo: TTouchInfo;
+  function GetActiveTouchCount: integer;
 
-    property LastError: string read FLastError;
-  end;
+  property LastError: string read FLastError;
+end;
 
 implementation
 
 {$IFDEF WINDOWS}
 const
   // Windows touch API constants
-  TOUCH_MASK_CONTACTAREA = $0004;
-  TOUCH_MASK_PRESSURE    = $0002;
-  TWF_WANTPALM          = $00000002;
+TOUCH_MASK_CONTACTAREA = $0004;
+TOUCH_MASK_PRESSURE    = $0002;
+TWF_WANTPALM          = $00000002;
 
 type
-  TTouchInput = record
-    x: Integer;
-    y: Integer;
-    hSource: THandle;
-    dwID: DWORD;
-    dwFlags: DWORD;
-    dwMask: DWORD;
-    dwTime: DWORD;
-    dwExtraInfo: ULONG_PTR;
-    cxContact: DWORD;
-    cyContact: DWORD;
-  end;
-  PTouchInput = ^TTouchInput;
+TTouchInput = record
+  x: integer;
+  y: integer;
+  hSource: THandle;
+  dwID: DWORD;
+  dwFlags: DWORD;
+  dwMask: DWORD;
+  dwTime: DWORD;
+  dwExtraInfo: ULONG_PTR;
+  cxContact: DWORD;
+  cyContact: DWORD;
+end;
+PTouchInput = ^TTouchInput;
 
 function GetTouchInputInfo(hTouchInput: THandle; cInputs: UINT;
-  pInputs: PTouchInput; cbSize: Integer): BOOL; stdcall; external 'user32.dll';
+pInputs: PTouchInput; cbSize: integer): BOOL; stdcall; external 'user32.dll';
 function RegisterTouchWindow(hwnd: HWND; ulFlags: ULONG): BOOL; stdcall; external 'user32.dll';
 function CloseTouchInputHandle(hTouchInput: THandle): BOOL; stdcall; external 'user32.dll';
 {$ENDIF}
@@ -97,7 +97,7 @@ begin
   inherited Destroy;
 end;
 
-function TTouchDetector.GetActiveTouchCount: Integer;
+function TTouchDetector.GetActiveTouchCount: integer;
 var
   Info: TTouchInfo;
 begin
@@ -106,11 +106,11 @@ begin
 end;
 
 {$IFDEF WINDOWS}
-function TTouchDetector.InitializeWindowsTouch: Boolean;
+function TTouchDetector.InitializeWindowsTouch: boolean;
 var
   Wnd: HWND;
 begin
-  Result := False;
+  Result := false;
   Wnd := GetActiveWindow;
   if Wnd <> 0 then
     Result := RegisterTouchWindow(Wnd, TWF_WANTPALM);
@@ -120,7 +120,7 @@ function TTouchDetector.GetWindowsTouchInfo: TTouchInfo;
 var
   TouchInput: array[0..63] of TTouchInput;
   TouchHandle: THandle;
-  i: Integer;
+  i: integer;
 begin
   Result.Count := 0;
   SetLength(Result.Points, 64);
@@ -134,21 +134,17 @@ begin
 
   // Get the touch input information - this fills the TouchInput array
   if GetTouchInputInfo(TouchHandle, Length(TouchInput), @TouchInput[0], SizeOf(TTouchInput)) then
-  begin
-    // Process the touch inputs that were written to the TouchInput array
     for i := 0 to High(TouchInput) do
-    begin
       if (TouchInput[i].dwFlags and $0001) > 0 then  // TOUCHEVENTF_DOWN
       begin
         Result.Points[Result.Count].X := TouchInput[i].x;
         Result.Points[Result.Count].Y := TouchInput[i].y;
         Result.Points[Result.Count].ID := TouchInput[i].dwID;
         Result.Points[Result.Count].Pressure := 1.0;
-        Result.Points[Result.Count].IsValid := True;
+        Result.Points[Result.Count].IsValid := true;
         Inc(Result.Count);
-      end;
-    end;
-  end;
+      end// Process the touch inputs that were written to the TouchInput array
+  ;
 
   // Always close the touch input handle
 //  CloseTouchInputHandle(TouchHandle); No such function
@@ -160,10 +156,10 @@ function TTouchDetector.FindTouchDevice: string;
 var
   F: Text;
   Line, EventNum: string;
-  Found: Boolean;
+  Found: boolean;
 begin
   Result := '';
-  Found := False;
+  Found := false;
 
   if not FileExists('/proc/bus/input/devices') then
   begin
@@ -179,7 +175,7 @@ begin
       ReadLn(F, Line);
       if Pos('Touchscreen', Line) > 0 then
       begin
-        Found := True;
+        Found := true;
         Continue;
       end;
 
@@ -203,7 +199,7 @@ var
   DevicePath: string;
   SlotPath: string;
   F: Text;
-  i: Integer;
+  i: integer;
   Line: string;
 begin
   Result.Count := 0;
@@ -217,7 +213,6 @@ begin
   SlotPath := '/sys/class/input/event0/device/mt/slots';
 
   if DirectoryExists(SlotPath) then
-  begin
     for i := 0 to 63 do
     begin
       if not FileExists(SlotPath + '/slot' + IntToStr(i) + '/tracking_id') then
@@ -230,7 +225,7 @@ begin
         if StrToIntDef(Line, -1) >= 0 then
         begin
           Result.Points[Result.Count].ID := i;
-          Result.Points[Result.Count].IsValid := True;
+          Result.Points[Result.Count].IsValid := true;
 
           // Try to read position if available
           if FileExists(SlotPath + '/slot' + IntToStr(i) + '/position_x') then
@@ -269,7 +264,6 @@ begin
         CloseFile(F);
       end;
     end;
-  end;
 end;
 {$ENDIF}
 

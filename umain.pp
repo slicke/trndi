@@ -396,8 +396,8 @@ begin
     begin
       tMain.Enabled := false;
       for i := 0 to fBG.ComponentCount-1 do // Clear default texts, I want them in the designer window so I won't clear there
-       if (fbg.Components[i] is TLabel) and (fbg.Components[i] <> lval) then
-    (fbg.Components[i] as TLabel).Caption := '';
+        if (fbg.Components[i] is TLabel) and (fbg.Components[i] <> lval) then
+          (fbg.Components[i] as TLabel).Caption := '';
       miSettings.Click;
       ShowMessage(RS_FORCE_QUIT_SETUP);
       Application.Terminate;

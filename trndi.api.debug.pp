@@ -72,48 +72,50 @@ end;
 
 function DebugAPI.getReadings(min, maxNum: integer; extras: string = ''): BGResults;
 function getFakeVals(const min: integer; out reading, delta: integer): TDateTime;
-var
-  currentTime: TDateTime;
-  minutesToSubtract: Integer;
-begin
+  var
+    currentTime: TDateTime;
+    minutesToSubtract: integer;
+  begin
   // Hämta den aktuella tiden
-  currentTime := Now;
+    currentTime := Now;
 
   // Beräkna hur många minuter vi ska subtrahera
-  minutesToSubtract := (MinuteOf(currentTime) mod 5) + (min * 5);
+    minutesToSubtract := (MinuteOf(currentTime) mod 5) + (min * 5);
 
   // Fake mgdl val (reproducable)
-  reading := 39+ round(minutesToSubtract*6.8);
+    reading := 39+ round(minutesToSubtract*6.8);
 
-  if (minutesToSubtract mod 3) <> 0 then
-     reading := reading + (min*4);
+    if (minutesToSubtract mod 3) <> 0 then
+      reading := reading + (min*4);
 
 
-  delta := math.min(minutesToSubtract, minutesToSubtract div 3);
+    delta := math.min(minutesToSubtract, minutesToSubtract div 3);
 
   // Justera tiden genom att subtrahera minuter
-  Result := IncMinute(currentTime, -minutesToSubtract);
-end;
+    Result := IncMinute(currentTime, -minutesToSubtract);
+  end;
 
 var
   i: integer;
   val, diff: integer;
 begin
   SetLength(result, 11);
-  for i := 0 to 10 do begin
-      result[i].Init(mgdl);
-      result[i].date := getFakeVals(i,val,diff);
-      result[i].update(val, diff);
+  for i := 0 to 10 do
+  begin
+    result[i].Init(mgdl);
+    result[i].date := getFakeVals(i,val,diff);
+    result[i].update(val, diff);
 
-      if diff > 1 then
-         result[i].trend := BGTrend.TdFortyFiveUp
-      else if diff < 0 then
-         result[i].trend := BGTrend.TdFortyFiveDown
-      else
-         result[i].trend := BGTrend.TdFlat;
+    if diff > 1 then
+      result[i].trend := BGTrend.TdFortyFiveUp
+    else
+    if diff < 0 then
+      result[i].trend := BGTrend.TdFortyFiveDown
+    else
+      result[i].trend := BGTrend.TdFlat;
 
-      result[i].level := getLevel(result[i].val);
-    end;
+    result[i].level := getLevel(result[i].val);
+  end;
 
 
 end;
