@@ -172,9 +172,9 @@ begin
     fsLo.Value := fsLo.Value / 18;
   end
   else begin
-    fsHi.DecimalPlaces := 0;
     fsHi.Value := fsHi.Value * 18;
     fsLo.Value := fsLo.Value * 18;
+    fsHi.DecimalPlaces := 0;
   end;
 
   fsLo.DecimalPlaces := fsHi.DecimalPlaces;
