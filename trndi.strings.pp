@@ -4,7 +4,7 @@ interface
 
 resourcestring
   // Menu items
-RS_REFRESH = 'Refreshing at %s';
+RS_REFRESH = 'Updated: %s | Refreshing: %s';
 RS_LIMIT_EXPLAIN_TITLE = 'Limit Explanation';
 RS_LIMIT_EXPLAIN_TEXT = 'Hi = When BG is considered high'#10 +
   'Lo = When BG is considered low'#10#10 +

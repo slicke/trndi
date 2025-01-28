@@ -797,11 +797,7 @@ begin
 
   // Adjust label sizes
 //  lArrow.Height := fBG.clientHeight div 3;
-  scaleLbl(lVal);
-  scaleLbl(lArrow);
-  lDiff.Width := ClientWidth;
-  lDiff.Height := lVal.Height div 7;
-  scaleLbl(lDiff);
+
 
   // Resize the dots
   actOnTrend(@ResizeDot);
@@ -826,11 +822,18 @@ begin
   if not api.active then
     Exit;
 
-  pnOffRange.width := clientwidth div 4;
+//  pnOffRange.width := clientwidth div 4;
   pnOffRange.height := clientheight div 10;
-  pnOffRange.left := 0;
-  pnOffRange.top := 0;
+ // pnOffRange.left := 0;
+ // pnOffRange.top := 0;
   pnOffRange.Font.Size := 7 + pnOffRange.Height div 5;
+
+  scaleLbl(lVal);
+  scaleLbl(lArrow);
+  lDiff.Width := ClientWidth;
+  lDiff.Height := lVal.Height div 7;
+  lDiff.top := 1 + IfThen(pnOffRange.Visible, pnOffRange.height, 3); // Move the icon
+  scaleLbl(lDiff);
 
 
   PlaceTrendDots(bgs);
@@ -917,7 +920,7 @@ begin
 
   tMain.Interval := i;
   tMain.Enabled := true;
-  miRefresh.Caption := Format(RS_REFRESH, [TimeToStr(IncMilliSecond(Now, i))]);
+  miRefresh.Caption := Format(RS_REFRESH, [TimeToStr (b.date), TimeToStr(IncMilliSecond(Now, i))]);
 
   // Check if the latest reading is fresh
   if MinutesBetween(Now, b.date) > DATA_FRESHNESS_THRESHOLD_MINUTES then

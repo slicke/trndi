@@ -58,7 +58,7 @@ msgstr "&Inställningar"
 
 #: tfbg.pnoffrange.caption
 msgid "- Off Range -"
-msgstr "- Ur område -"
+msgstr "- Utanför område -"
 
 #: tfconf.boverridehelp.caption
 msgctxt "tfconf.boverridehelp.caption"
@@ -151,8 +151,7 @@ msgstr "Datatypen %s förväntades inte, förväntad i funktionen %s"
 #: trndi.ext.functions.sdatatypeerrfunc
 #, object-pascal-format
 msgid "Datatype \"%s\" was not expected, in function \"%s\". Expected \"%s\""
-msgstr ""
-"Datatypen \"%s\" förväntades inte i funktionen \"%s\". Förväntade \"%s\""
+msgstr "Datatypen \"%s\" förväntades inte i funktionen \"%s\". Förväntade \"%s\""
 
 #: trndi.ext.functions.sdatatypeerrpos
 #, object-pascal-format
@@ -161,8 +160,7 @@ msgstr "Datatypen %s förväntades inte, förväntades i funktion %s, parameter 
 
 #: trndi.ext.functions.slogdesc
 msgid "Trndi has captured data sent to console.log in a JavaScript extension"
-msgstr ""
-"Trndi har fångat upp data skickat till console.log i en JavaScript-plugin"
+msgstr "Trndi har fångat upp data skickat till console.log i en JavaScript-plugin"
 
 #: trndi.ext.functions.slogrecevive
 msgid "Output through console.log has been received"
@@ -182,10 +180,8 @@ msgstr ""
 "Stack: %s %s"
 
 #: trndi.ext.functions.sstackfailed
-msgid ""
-"An error occurred, and the stacktrace could not be loaded. Showing backtrace."
-msgstr ""
-"Ett fel uppstod och stackspårning kunde inte laddas. Visar bakåtspårning."
+msgid "An error occurred, and the stacktrace could not be loaded. Showing backtrace."
+msgstr "Ett fel uppstod och stackspårning kunde inte laddas. Visar bakåtspårning."
 
 #: trndi.ext.functions.sunknownerr
 msgid "Unknown error"
@@ -223,14 +219,12 @@ msgid ""
 "Hi = When BG is considered high\n"
 "Lo = When BG is considered low\n"
 "\n"
-"Ranges: Defines \"desirable\" levels within normal. Not supported by all "
-"backends"
+"Ranges: Defines \"desirable\" levels within normal. Not supported by all backends"
 msgstr ""
 "Hög = När BS anses högt\n"
 "Lo = När BS anses lågt\n"
 "\n"
-"Områden: Satta \"önskvärda\" nivåer, inom normalområdet. Stöds inte av alla "
-"system"
+"Områden: Satta \"önskvärda\" nivåer, inom normalområdet. Stöds inte av alla system"
 
 #: trndi.strings.rs_limit_explain_title
 msgid "Limit Explanation"
@@ -251,12 +245,8 @@ msgid "Trndi found multiple accounts. Please choose one for this instance"
 msgstr "Trndi hittade fler konton. Vänligen välj ett för denna instans"
 
 #: trndi.strings.rs_no_backend
-msgid ""
-"No readings recieved. There might be a problem with the backend, or you "
-"might not have any recent readings"
-msgstr ""
-"Inga avläsningar togs emot. Antingen är det fel hos källan, eller så saknas "
-"aktuella avläsningar"
+msgid "No readings recieved. There might be a problem with the backend, or you might not have any recent readings"
+msgstr "Inga avläsningar togs emot. Antingen är det fel hos källan, eller så saknas aktuella avläsningar"
 
 #: trndi.strings.rs_outdated_time
 #, object-pascal-format
@@ -277,12 +267,8 @@ msgstr "Avsluta appen?"
 
 #: trndi.strings.rs_range_explanation
 #, object-pascal-format
-msgid ""
-"In addition to high and low levels, you have set a personal range within "
-"\"OK\". You are now %s that range"
-msgstr ""
-"Utöver höga och låga nivåer, har ett personligt område inom \"Okej\" satts. "
-"Du är nu %s det området"
+msgid "In addition to high and low levels, you have set a personal range within \"OK\". You are now %s that range"
+msgstr "Utöver höga och låga nivåer, har ett personligt område inom \"Okej\" satts. Du är nu %s det området"
 
 #: trndi.strings.rs_range_hi
 #, object-pascal-format
@@ -304,8 +290,8 @@ msgstr "Lågt område stöds inte av källans gränssnitt"
 
 #: trndi.strings.rs_refresh
 #, object-pascal-format
-msgid "Refreshing at %s"
-msgstr "Hämtar %s"
+msgid "Updated: %s | Refreshing: %s"
+msgstr "Uppdaterad: %s | Uppdaterar: %s"
 
 #: trndi.strings.rs_restart_apply
 msgid "Trndi must be restarted for settings to take effect"
@@ -326,41 +312,27 @@ msgid "[%s] %s"
 msgstr "[%s] %s"
 
 #: uconf.rs_dex
-msgid ""
-"Dexcom servers do not provide custom high and low blood sugar values. Please "
-"set your own thresholds at the bottom of this window."
-msgstr ""
-"Dexcom:s servrar tillhandahåller inte värden för vad som är högt och lågt. "
-"Vänligen ställ in dina egna gränser i slutet av fönstret."
+msgid "Dexcom servers do not provide custom high and low blood sugar values. Please set your own thresholds at the bottom of this window."
+msgstr "Dexcom:s servrar tillhandahåller inte värden för vad som är högt och lågt. Vänligen ställ in dina egna gränser i slutet av fönstret."
 
 #: uconf.rs_override_help
 msgid ""
-"Setting values here allows you to define your own high and low blood sugar "
-"limits in Trndi.\n"
+"Setting values here allows you to define your own high and low blood sugar limits in Trndi.\n"
 "\n"
 "NightScout:\n"
-"Trndi automatically retrieves your custom high and low settings from "
-"NightScout, so manually setting them here is usually unnecessary.\n"
+"Trndi automatically retrieves your custom high and low settings from NightScout, so manually setting them here is usually unnecessary.\n"
 "\n"
 "Dexcom:\n"
-"Dexcom servers do not provide custom high and low values. By setting them "
-"here, you can establish your own thresholds for Dexcom data."
+"Dexcom servers do not provide custom high and low values. By setting them here, you can establish your own thresholds for Dexcom data."
 msgstr ""
-"Om du ställer in dessa värden, kan du ställa in egna gränser för höga och "
-"låga blodsockernivåer i Trndi.\n"
+"Om du ställer in dessa värden, kan du ställa in egna gränser för höga och låga blodsockernivåer i Trndi.\n"
 "\n"
 "NightScout:\n"
-"Trndi hämtar automatiskt dina satta höga och låga nivåer från NightScout, "
-"att manuellt ställa in dem här är normalt sätt inte nödvändigt.\n"
+"Trndi hämtar automatiskt dina satta höga och låga nivåer från NightScout, att manuellt ställa in dem här är normalt sätt inte nödvändigt.\n"
 "\n"
 "Dexcom:\n"
-"Dexcoms servrar tillhandahåller inte egna höga och låga gränsvärden. Genom "
-"att skriva in värdena här, ställer du in gränserna direkt i Trndi."
+"Dexcoms servrar tillhandahåller inte egna höga och låga gränsvärden. Genom att skriva in värdena här, ställer du in gränserna direkt i Trndi."
 
 #: uconf.rs_privacy_help
-msgid ""
-"When in Privacy Mode, the actual blood glucose value is hidden. Trndi will "
-"only tell the user if it's good, high or low."
-msgstr ""
-"När privat läge är aktiverat, visas inte avläsningar. Trndi visar istället "
-"bara om sockret är bra, högt eller lågt."
+msgid "When in Privacy Mode, the actual blood glucose value is hidden. Trndi will only tell the user if it's good, high or low."
+msgstr "När privat läge är aktiverat, visas inte avläsningar. Trndi visar istället bara om sockret är bra, högt eller lågt."

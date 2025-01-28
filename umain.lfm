@@ -36,8 +36,8 @@ object fBG: TfBG
   end
   object lVal: TLabel
     Left = 0
-    Height = 162
-    Top = 0
+    Height = 144
+    Top = 18
     Width = 320
     Align = alClient
     Alignment = taCenter
@@ -55,25 +55,6 @@ object fBG: TfBG
     OnMouseMove = FormMouseMove
     OnMouseUp = lValMouseUp
     OnStartDrag = lValStartDrag
-  end
-  object lDiff: TLabel
-    Left = 0
-    Height = 14
-    Top = 0
-    Width = 320
-    Alignment = taCenter
-    AutoSize = False
-    BorderSpacing.Bottom = 5
-    Caption = 'lDiff'
-    Color = clWhite
-    Font.Color = clWhite
-    Font.Height = 10
-    OptimalFill = True
-    ParentColor = False
-    ParentFont = False
-    PopupMenu = pmSettings
-    OnDblClick = lDiffDblClick
-    OnMouseMove = FormMouseMove
   end
   object lDot6: TLabel
     Left = 215
@@ -199,7 +180,8 @@ object fBG: TfBG
     Left = 0
     Height = 18
     Top = 0
-    Width = 100
+    Width = 320
+    Align = alTop
     BevelOuter = bvNone
     Caption = '- Off Range -'
     Color = clBlack
@@ -208,6 +190,25 @@ object fBG: TfBG
     TabOrder = 0
     Visible = False
     OnClick = pnOffRangeClick
+    OnMouseMove = FormMouseMove
+  end
+  object lDiff: TLabel
+    Left = 0
+    Height = 14
+    Top = 17
+    Width = 320
+    Alignment = taCenter
+    AutoSize = False
+    BorderSpacing.Bottom = 5
+    Caption = 'lDiff'
+    Color = clWhite
+    Font.Color = clWhite
+    Font.Height = 14
+    OptimalFill = True
+    ParentColor = False
+    ParentFont = False
+    PopupMenu = pmSettings
+    OnDblClick = lDiffDblClick
     OnMouseMove = FormMouseMove
   end
   object tMain: TTimer
