@@ -659,10 +659,11 @@ begin
 
       if GetSetting(username +'unit', 'mmol') = 'mmol' then
       begin
-        fshi.DecimalPlaces := 1;
-        fslo.DecimalPlaces := 1;
-        fsHi.Value := fsHi.Value / 18;
-        fsLo.Value := fsLo.Value / 18;
+    //    fshi.DecimalPlaces := 1;
+     //   fslo.DecimalPlaces := 1;
+//        fsHi.Value := fsHi.Value / 18;
+  //      fsLo.Value := fsLo.Value / 18;
+        rbUnitClick(self);
       end;
 
       cbCust.Checked := GetIntSetting(username+'override.enabled', 0) = 1;
@@ -688,8 +689,8 @@ begin
 
       if rbUnit.ItemIndex = 0 then
       begin//mmol
-        SetSetting(username+'override.lo', round(fsLo.Value * 18).ToString);
-        SetSetting(username+'override.hi', round(fsHi.value * 18).tostring);
+        SetSetting(username+'override.lo', round(fsLo.Value * 18.0182).ToString);
+        SetSetting(username+'override.hi', round(fsHi.value * 18.0182).tostring);
       end
       else
       begin
