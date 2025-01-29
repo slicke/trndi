@@ -28,7 +28,7 @@ uses
 trndi.strings, LCLTranslator, Classes, Menus, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, ExtCtrls,
 trndi.api.dexcom, trndi.api.nightscout, trndi.types, math, DateUtils, FileUtil,
 {$ifdef TrndiExt}
-trndi.Ext.Engine, trndi.Ext.Ext, trndi.Ext.jsfuncs,
+trndi.Ext.Engine, trndi.Ext.jsfuncs,
 {$endif}
 LazFileUtils, uconf, trndi.native, Trndi.API, trndi.api.xDrip,{$ifdef DEBUG} trndi.api.debug,{$endif}
 StrUtils, TouchDetection;
@@ -756,11 +756,10 @@ end;
 
 procedure TfBG.tAgoTimer(Sender:TObject);
 var
-  d, diff: TDateTime;
+  d: TDateTime;
   min: int64;
 begin
   d := bgs[Low(bgs)].date; // Last reading time
-  diff := Now-d;
 
   min := MilliSecondsBetween(Now, d) div 60000;  // Minutes since last
 
@@ -805,8 +804,6 @@ procedure scaleLbl(ALabel: TLabel);
     ALabel.Font.Size := MaxFontSize;
   end;
 
-var
-  i: integer;
 begin
   tResize.Enabled := false;
   // Update dot placement
@@ -864,8 +861,6 @@ end;
 
 // Update remote on timer
 procedure TfBG.tMainTimer(Sender: TObject);
-var
-  r: BGReading;
 begin
   update;
   {$ifdef TrndiExt}
@@ -875,12 +870,10 @@ end;
 
 procedure TfBG.tMissedTimer(Sender:TObject);
 var
-  d, diff: TDateTime;
+  d: TDateTime;
   min, sec: int64;
 begin
   d := bgs[Low(bgs)].date; // Last reading time
-  diff := Now-d;
-
 
   min := MilliSecondsBetween(Now, d) div 60000;  // Minutes since last
   sec := (MilliSecondsBetween(Now, d) mod 60000) div 1000; // Seconds since last
@@ -1019,8 +1012,7 @@ end;
 procedure TfBG.PlaceTrendDots(const Readings: array of BGReading);
 var
   SortedReadings: array of BGReading;
-  i, j: integer;
-  temp: BGReading;
+  i: integer;
   slotIndex: integer;
   l: TLabel;
   slotStart, slotEnd: TDateTime;

@@ -50,7 +50,6 @@ end;
 
 // Handle the active bg unit
 function JSUnit(ctx: JSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw; cdecl;
-cdecl;
 
 var
   curr: rawbytestring;
