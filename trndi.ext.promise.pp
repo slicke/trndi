@@ -101,6 +101,7 @@ begin
   //    FContext^.Free(JSValue(Promise)); -- should free automatically
   //    JS_Free(FContext, @Promise);
   FPromise^.params.values.data.Free;
+  self.Terminate;
 end;
 
 // Run the set function for the JS func

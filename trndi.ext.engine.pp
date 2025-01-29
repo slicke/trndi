@@ -290,7 +290,7 @@ var
   i: integer;
 begin
   for i := 0 to promises.Count-1 do
-    if promises[i]^.func = func then
+    if (promises[i] <> nil) and (promises[i]^.func = func) then
       Exit(promises[i]);
 
 
@@ -478,7 +478,7 @@ begin
   end;
   if FRuntime <> nil then
   try
-    JS_FreeRuntime(@FRuntime);
+//    JS_FreeRuntime(@FRuntime); // Theres a garbage collector in mormot for this
 //    FRuntime^.DoneSafe;
   except
     on E: Exception do

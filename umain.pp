@@ -458,12 +458,18 @@ end;
 
 // FormClose event handler
 procedure TfBG.FormClose(Sender: TObject; var CloseAction: TCloseAction);
+var
+i: integer;
 begin
   {$ifdef TrndiExt}
   TTrndiExtEngine.ReleaseInstance;
   {$endif}
+  for i := 0 to fbg.ComponentCount-1 do
+    if fbg.Components[i] is TTimer then
+      (fbg.Components[i] as TTimer).Enabled := false; // Shutting down stuff will cause pointer exceptions if we dont stop these first
+
   api.Free;
-  LogMessage('Trend closed.');
+//  LogMessage('Trend closed.');
 end;
 
 // Changes a trend dot from a dot to the actual bg value with highlighting for the latest reading
