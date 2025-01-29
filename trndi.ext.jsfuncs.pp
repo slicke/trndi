@@ -138,7 +138,7 @@ JSValueVal): boolean;
 
 var
   v: JSValueVal; // Return data
-  times: integer; // Unit multiplier
+  times: single; // Unit multiplier
   f: boolean;
 begin
   // Values has to be int and might have a bool
@@ -150,7 +150,7 @@ begin
   else
   if checkJSParams(params, [JD_F64, JD_F64, JD_F64, JD_F64], [JD_F64, JD_F64]) = JS_PARAM_OK then
   begin
-    times := 18;
+    times := 18.0182;
     f := true;
   end
   else
