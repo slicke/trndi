@@ -166,12 +166,14 @@ end;
 
 procedure TfConf.rbUnitClick(Sender:TObject);
 begin
-  if (sender is TForm) or (rbUnit.ItemIndex = 0) then begin
+  if (sender is TForm) or (rbUnit.ItemIndex = 0) then
+  begin
     fsHi.DecimalPlaces := 1;
     fsHi.Value := round(fsHi.Value * 0.0555 * 10) / 10; // Do the / 10 thing to keep the decimal
     fsLo.Value := round(fsLo.Value * 0.0555 * 10) / 10;
   end
-  else begin
+  else
+  begin
     fsHi.Value := round(fsHi.Value * 18.0182);
     fsLo.Value := round(fsLo.Value * 18.0182);
     fsHi.DecimalPlaces := 0;

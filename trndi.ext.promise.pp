@@ -50,7 +50,7 @@ type
       constructor Create(Context: JSContext; func: PJSCallback; cbfunc: PJSDoubleVal);
   end;
 
-const 
+const
   JprResolve = 0;
   // const for "async function worked"
   JprReject = 1;
