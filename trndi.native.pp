@@ -36,13 +36,11 @@ Classes, SysUtils, Graphics
 NSMisc,
 ns_url_request
 {$ELSEIF DEFINED(X_WIN)},
-Windows, Registry, Dialogs, StrUtils, winhttpclient, InterfaceBase
+Windows, Registry, Dialogs, StrUtils, winhttpclient, shellapi
 {$ELSEIF DEFINED(X_PC)},
 fphttpclient, openssl, opensslsockets, IniFiles, Dialogs
 {$ENDIF}
-{$ifdef X_LINUX}
-, process
-{$endif};
+, process;
 
 type
   { TrndiNative
@@ -176,31 +174,31 @@ const
   NID_EXTERNAL_PEN = $00000008;
   NID_MULTI_INPUT = $00000040;
   NID_READY = $00000080;
-  function IsTouchReady: Boolean;
+function IsTouchReady: boolean;
   var
-    value: Integer;
+    value: integer;
   begin
     value := GetSystemMetrics(SM_DIGITIZER);
     Result := value and NID_READY <> 0;
   end;
 
-  function IsMultiTouch: Boolean;
+function IsMultiTouch: boolean;
   var
-    value: Integer;
+    value: integer;
   begin
     value := GetSystemMetrics(SM_DIGITIZER);
     Result := value and NID_MULTI_INPUT <> 0;
   end;
 
-  function HasIntegratedTouch: Boolean;
+function HasIntegratedTouch: boolean;
   var
-    value: Integer;
+    value: integer;
   begin
     value := GetSystemMetrics(SM_DIGITIZER);
     Result := value and NID_INTEGRATED_TOUCH <> 0;
   end;
 var
- val: integer;
+  val: integer;
 const
   SM_MAXIMUMTOUCHES = 95;
 begin
@@ -248,9 +246,9 @@ begin
         // Check for multi-touch indicators
         // Common indicators in the device file
         if foundTouch and (
-           (Pos('ABS_MT_POSITION', currentDevice) > 0) or
-           (Pos('ABS_MT_SLOT', currentDevice) > 0) or
-           (Pos('ABS_MT_TRACKING_ID', currentDevice) > 0))
+          (Pos('ABS_MT_POSITION', currentDevice) > 0) or
+          (Pos('ABS_MT_SLOT', currentDevice) > 0) or
+          (Pos('ABS_MT_TRACKING_ID', currentDevice) > 0))
         then
         begin
           multi := true;
@@ -363,10 +361,50 @@ procedure SendNotification(Title, Message: string);
   end;
   {$endif}
   {$if defined(X_WIN)}
-procedure SendNotification(const title, msg: string);
+
+procedure SendNotification(const title, msg: string); // Do this with create process as it seems to work best for PS
+var
+  Command: string;
+  StartupInfo: TStartupInfo;
+  ProcessInfo: TProcessInformation;
+  CommandLine: string;
+begin
+
+  Command := Format(
+    'New-BurntToastNotification ' +
+    '-AppLogo ' + ParamStr(0) +' '+  // This will just show up black
+    '-Text ''%s'', ' +
+    '''%s'' ',
+    [title, msg]
+  );
+
+
+  CommandLine := 'powershell.exe -NoProfile -ExecutionPolicy Bypass -Command Import-Module BurntToast; ' + Command;
+                 Showmessage(commandline);
+  FillChar(StartupInfo, SizeOf(TStartupInfo), 0);
+  StartupInfo.cb := SizeOf(TStartupInfo);
+  StartupInfo.dwFlags := STARTF_USESHOWWINDOW;
+  StartupInfo.wShowWindow := SW_HIDE;
+
+  if not CreateProcess(
+    nil,
+    PChar(CommandLine),
+    nil,
+    nil,
+    False,
+    CREATE_NO_WINDOW,
+    nil,
+    nil,
+    StartupInfo,
+    ProcessInfo
+  ) then
+    RaiseLastOSError
+  else
   begin
-    FlashWindow(WidgetSet.AppHandle, true);
+    CloseHandle(ProcessInfo.hThread);
+    CloseHandle(ProcessInfo.hProcess);
   end;
+end;
 
   {$endif}
 begin
