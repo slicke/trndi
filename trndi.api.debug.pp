@@ -72,32 +72,30 @@ end;
 
 function DebugAPI.getReadings(min, maxNum: integer; extras: string = ''): BGResults;
 function getFakeVals(const min: integer; out reading, delta: integer): TDateTime;
-var
-  currentTime: TDateTime;
-  baseTime: TDateTime;
-  minutesFromBase: integer;
-begin
-  // Få aktuell tid
-  currentTime := Now;
+  var
+    currentTime: TDateTime;
+    baseTime: TDateTime;
+    minutesFromBase: integer;
+    previousReading: integer;  // We're generating a delta
+  begin
+  // Get the current time and the 5 minutes to act on
+    currentTime := Now;
+    baseTime := IncMinute(currentTime, -min);
+    minutesFromBase := (MinuteOf(baseTime) div 5) * 5;
 
-  // Räkna ut närmaste tidigare 5-minuterstidpunkt från nu minus önskade minuter
-  baseTime := IncMinute(currentTime, -min);
-  minutesFromBase := MinuteOf(baseTime);
-  minutesFromBase := (minutesFromBase div 5) * 5;  // Trunkera till närmaste 5
+    Result := RecodeMinute(baseTime, minutesFromBase);
+    Result := RecodeSecond(Result, 0);
+    Result := RecodeMilliSecond(Result, 0);
 
-  // Sätt tiden till exakt 5-minutersintervall
-  Result := RecodeMinute(baseTime, minutesFromBase);
-  Result := RecodeSecond(Result, 0);
-  Result := RecodeMilliSecond(Result, 0);
+  // Generate a fake reading
+    reading := 100 + ((DateTimeToUnix(Result) div 300) mod 150);
 
-  // Beräkna ett konsistent värde baserat på tidpunkten
-  // Använd TimestampToMsecs eller DateTimeToUnix för att få ett unikt tal per tidpunkt
-  minutesFromBase := Round((DateTimeToUnix(currentTime) - DateTimeToUnix(Result)) / 60);
+  // Generate the previous 5 min reading
+    previousReading := 100 + ((DateTimeToUnix(IncMinute(Result, -5)) div 300) mod 150);
 
-  // Generera konsistenta värden baserat på tiden
-  reading := 100 + ((DateTimeToUnix(Result) div 300) mod 150);  // Värde mellan 100-250
-  delta := (reading mod 10) - 5;  // Delta mellan -5 och +4
-end;
+  // Set the delta
+    delta := reading - previousReading;
+  end;
 
 var
   i: integer;
