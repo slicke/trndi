@@ -294,6 +294,16 @@ msgstr ""
 msgid "[%s] %s"
 msgstr ""
 
+#: trndi.strings.rs_warn_bg_hi
+#, object-pascal-format
+msgid "High blood sugar! Currently: %s"
+msgstr ""
+
+#: trndi.strings.rs_warn_bg_lo
+#, object-pascal-format
+msgid "Low blood sugar! Currently: %s"
+msgstr ""
+
 #: uconf.rs_dex
 msgid "Dexcom servers do not provide custom high and low blood sugar values. Please set your own thresholds at the bottom of this window."
 msgstr ""

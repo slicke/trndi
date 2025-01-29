@@ -248,6 +248,11 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="TouchDetection"/>
       </Unit>
+      <Unit>
+        <Filename Value="wintoast.pp"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="winToast"/>
+      </Unit>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

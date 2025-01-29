@@ -200,11 +200,9 @@ implementation
 {$ifdef DEBUG}
 procedure LogMessage(const Msg: string);
 const
-  MaxLines = 200; // Max lines in file
+  MaxLines = 500; // Max lines in file
 var
-  LogFile: TextFile;
   LogLines: TStringList;
-  LineCount: integer;
 begin
   LogLines := TStringList.Create;
   try
@@ -217,7 +215,7 @@ begin
       LogLines.Delete(0);
 
     // Add new message
-    LogLines.Add(DateTimeToStr(Now) + ': ' + Msg);
+    LogLines.Add('['+DateTimeToStr(Now) + '] ' + Msg);
 
     // Save
     LogLines.SaveToFile('trndi.log');
@@ -464,6 +462,8 @@ begin
   {$ifdef TrndiExt}
   TTrndiExtEngine.ReleaseInstance;
   {$endif}
+  api.Free;
+  LogMessage('Trend closed.');
 end;
 
 // Changes a trend dot from a dot to the actual bg value with highlighting for the latest reading
@@ -960,7 +960,7 @@ begin
     fBG.Color := bg_color_hi;
     with TrndiNative.create  do
       if not bg_alert then
-        attention('High BG');
+        attention(Format(RS_WARN_BG_HI, [lVal.Caption]));
   end
   else
   if b.val <= api.cgmLo then
@@ -968,7 +968,7 @@ begin
     fBG.Color := bg_color_lo;
     with TrndiNative.create  do
       if not bg_alert then
-        attention('LOW BG');
+        attention(Format(RS_WARN_BG_LO, [lVal.Caption]));
   end
   else
   begin
@@ -991,7 +991,7 @@ begin
       pnOffRange.Color := bg_rel_color_hi;
       pnOffRange.Font.Color := bg_rel_color_hi_txt;
       pnOffRange.Visible := true;
-    end
+    end;
   end;
   lastup := Now;
   if privacyMode then
@@ -1006,6 +1006,9 @@ begin
   tAgo.Enabled := true;
   tAgo.OnTimer(self);
   Self.OnResize(lVal);
+
+  with TrndiNative.Create do         attention(Format(RS_WARN_BG_LO, [lVal.Caption]));
+
 end;
 
 // PlaceTrendDots method to map readings to TrendDots
@@ -1141,8 +1144,11 @@ begin
     L.Top := fBG.ClientHeight - Position;
     // Optional: Log the vertical position if label index is available
   end
+  else if Value < 2 then
+    l.top := UsableHeight+2
   else
-    ShowMessage('Cannot draw graph points outside 2 and 22');
+    l.top := padding-2;
+//    ShowMessage('Cannot draw graph points outside 2 and 22');
 end;
 
 
