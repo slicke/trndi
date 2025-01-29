@@ -72,28 +72,32 @@ end;
 
 function DebugAPI.getReadings(min, maxNum: integer; extras: string = ''): BGResults;
 function getFakeVals(const min: integer; out reading, delta: integer): TDateTime;
-  var
-    currentTime: TDateTime;
-    minutesToSubtract: integer;
-  begin
-  // Hämta den aktuella tiden
-    currentTime := Now;
+var
+  currentTime: TDateTime;
+  baseTime: TDateTime;
+  minutesFromBase: integer;
+begin
+  // Få aktuell tid
+  currentTime := Now;
 
-  // Beräkna hur många minuter vi ska subtrahera
-    minutesToSubtract := (MinuteOf(currentTime) mod 5) + (min * 5);
+  // Räkna ut närmaste tidigare 5-minuterstidpunkt från nu minus önskade minuter
+  baseTime := IncMinute(currentTime, -min);
+  minutesFromBase := MinuteOf(baseTime);
+  minutesFromBase := (minutesFromBase div 5) * 5;  // Trunkera till närmaste 5
 
-  // Fake mgdl val (reproducable)
-    reading := 39+ round(minutesToSubtract*6.8);
+  // Sätt tiden till exakt 5-minutersintervall
+  Result := RecodeMinute(baseTime, minutesFromBase);
+  Result := RecodeSecond(Result, 0);
+  Result := RecodeMilliSecond(Result, 0);
 
-    if (minutesToSubtract mod 3) <> 0 then
-      reading := reading + (min*4);
+  // Beräkna ett konsistent värde baserat på tidpunkten
+  // Använd TimestampToMsecs eller DateTimeToUnix för att få ett unikt tal per tidpunkt
+  minutesFromBase := Round((DateTimeToUnix(currentTime) - DateTimeToUnix(Result)) / 60);
 
-
-    delta := math.min(minutesToSubtract, minutesToSubtract div 3);
-
-  // Justera tiden genom att subtrahera minuter
-    Result := IncMinute(currentTime, -minutesToSubtract);
-  end;
+  // Generera konsistenta värden baserat på tiden
+  reading := 100 + ((DateTimeToUnix(Result) div 300) mod 150);  // Värde mellan 100-250
+  delta := (reading mod 10) - 5;  // Delta mellan -5 och +4
+end;
 
 var
   i: integer;
@@ -103,7 +107,7 @@ begin
   for i := 0 to 10 do
   begin
     result[i].Init(mgdl);
-    result[i].date := getFakeVals(i,val,diff);
+    result[i].date := getFakeVals(i*5,val,diff);
     result[i].update(val, diff);
 
     if diff > 1 then
