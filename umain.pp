@@ -459,14 +459,11 @@ end;
 // FormClose event handler
 procedure TfBG.FormClose(Sender: TObject; var CloseAction: TCloseAction);
 var
-i: integer;
+  i: integer;
 begin
   {$ifdef TrndiExt}
   TTrndiExtEngine.ReleaseInstance;
   {$endif}
-  for i := 0 to fbg.ComponentCount-1 do
-    if fbg.Components[i] is TTimer then
-      (fbg.Components[i] as TTimer).Enabled := false; // Shutting down stuff will cause pointer exceptions if we dont stop these first
 
   api.Free;
 //  LogMessage('Trend closed.');
@@ -664,13 +661,11 @@ begin
       end;
 
       if GetSetting(username +'unit', 'mmol') = 'mmol' then
-      begin
-    //    fshi.DecimalPlaces := 1;
-     //   fslo.DecimalPlaces := 1;
+        rbUnitClick(self)//    fshi.DecimalPlaces := 1;
+//   fslo.DecimalPlaces := 1;
 //        fsHi.Value := fsHi.Value / 18;
-  //      fsLo.Value := fsLo.Value / 18;
-        rbUnitClick(self);
-      end;
+//      fsLo.Value := fsLo.Value / 18;
+      ;
 
       cbCust.Checked := GetIntSetting(username+'override.enabled', 0) = 1;
       fsHi.Enabled :=  cbCust.Checked;
@@ -924,15 +919,16 @@ begin
   // Update other GUI elements based on the latest reading
   b := bgs[Low(bgs)];
   if not privacyMode then
-    begin
-      if b.val > 400 then
-         lVal.Caption := RS_HIGH
-      else if b.val < 40 then
-         lVal.Caption := RS_LOW
-      else
-         lVal.Caption := b.format(un, BG_MSG_SHORT, BGPrimary)
+  begin
+    if b.val > 400 then
+      lVal.Caption := RS_HIGH
+    else
+    if b.val < 40 then
+      lVal.Caption := RS_LOW
+    else
+      lVal.Caption := b.format(un, BG_MSG_SHORT, BGPrimary)
 
-    end
+  end
   else
     lVal.Caption := '';
   lDiff.Caption := b.format(un, BG_MSG_SIG_SHORT, BGDelta);
@@ -1155,7 +1151,8 @@ begin
     L.Top := fBG.ClientHeight - Position;
     // Optional: Log the vertical position if label index is available
   end
-  else if Value < 2 then
+  else
+  if Value < 2 then
     l.top := UsableHeight+2
   else
     l.top := padding-2;
