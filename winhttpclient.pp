@@ -221,7 +221,7 @@ var
   Flags, i: DWORD;
   Port: HTTPPort;
   dwSize, dwDownloaded: DWORD;
-  Buffer: array[0..4095] of Byte;
+  Buffer: array[0..8192] of Byte;
   ResponseStream: TStringStream;
   Headers: WideString;
   FullURL: string;
