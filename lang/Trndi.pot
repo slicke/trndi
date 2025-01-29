@@ -186,6 +186,10 @@ msgstr ""
 msgid "Trndi will now shut down to apply settings, please re-start it manually!"
 msgstr ""
 
+#: trndi.strings.rs_high
+msgid "HIGH"
+msgstr ""
+
 #: trndi.strings.rs_hi_level
 #, object-pascal-format
 msgid "Hi > %.1f"
@@ -211,6 +215,10 @@ msgstr ""
 
 #: trndi.strings.rs_limit_explain_title
 msgid "Limit Explanation"
+msgstr ""
+
+#: trndi.strings.rs_low
+msgid "LOW"
 msgstr ""
 
 #: trndi.strings.rs_lo_level

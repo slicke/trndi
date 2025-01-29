@@ -27,6 +27,8 @@ RS_USER_CAPTION = '[%s] %s';
 RS_RANGE_EXPLANATION = 'In addition to high and low levels, you have set a personal range within "OK". You are now %s that range';
 RS_OVER = 'over';
 RS_UNDER = 'under';
+RS_HIGH = 'HIGH';
+RS_LOW = 'LOW';
 
 // Time messages
 RS_OUTDATED_TIME = '%s (%d.%.2d ago)';
@@ -40,6 +42,8 @@ RS_FORCE_QUIT_SETUP = 'Trndi will now shut down to apply settings, please re-sta
 
 RS_WARN_BG_HI = 'High blood sugar! Currently: %s';
 RS_WARN_BG_LO = 'Low blood sugar! Currently: %s';
+
+
 
 implementation
 

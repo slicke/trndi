@@ -918,7 +918,15 @@ begin
   // Update other GUI elements based on the latest reading
   b := bgs[Low(bgs)];
   if not privacyMode then
-    lVal.Caption := b.format(un, BG_MSG_SHORT, BGPrimary)
+    begin
+      if b.val > 400 then
+         lVal.Caption := RS_HIGH
+      else if b.val < 40 then
+         lVal.Caption := RS_LOW
+      else
+         lVal.Caption := b.format(un, BG_MSG_SHORT, BGPrimary)
+
+    end
   else
     lVal.Caption := '';
   lDiff.Caption := b.format(un, BG_MSG_SIG_SHORT, BGDelta);
@@ -1006,9 +1014,6 @@ begin
   tAgo.Enabled := true;
   tAgo.OnTimer(self);
   Self.OnResize(lVal);
-
-  with TrndiNative.Create do         attention(Format(RS_WARN_BG_LO, [lVal.Caption]));
-
 end;
 
 // PlaceTrendDots method to map readings to TrendDots

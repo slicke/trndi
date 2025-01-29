@@ -198,6 +198,10 @@ msgstr "En datatyo förväntades, men en annan påträffades"
 msgid "Trndi will now shut down to apply settings, please re-start it manually!"
 msgstr "Trndi stängs nu ned för att aktivera inställningarna, vänligen starta om appen manuellt!"
 
+#: trndi.strings.rs_high
+msgid "HIGH"
+msgstr "HÖGT"
+
 #: trndi.strings.rs_hi_level
 #, object-pascal-format
 msgid "Hi > %.1f"
@@ -228,6 +232,10 @@ msgstr ""
 #: trndi.strings.rs_limit_explain_title
 msgid "Limit Explanation"
 msgstr "Begränsa förklaring"
+
+#: trndi.strings.rs_low
+msgid "LOW"
+msgstr "LÅGT"
 
 #: trndi.strings.rs_lo_level
 #, object-pascal-format
@@ -313,12 +321,12 @@ msgstr "[%s] %s"
 #: trndi.strings.rs_warn_bg_hi
 #, object-pascal-format
 msgid "High blood sugar! Currently: %s"
-msgstr ""
+msgstr "Högt blodsocker! Nuvarande: %s"
 
 #: trndi.strings.rs_warn_bg_lo
 #, object-pascal-format
 msgid "Low blood sugar! Currently: %s"
-msgstr ""
+msgstr "Lågt blodsocker! Nuvarande: %s"
 
 #: uconf.rs_dex
 msgid "Dexcom servers do not provide custom high and low blood sugar values. Please set your own thresholds at the bottom of this window."
@@ -345,4 +353,3 @@ msgstr ""
 #: uconf.rs_privacy_help
 msgid "When in Privacy Mode, the actual blood glucose value is hidden. Trndi will only tell the user if it's good, high or low."
 msgstr "När privat läge är aktiverat, visas inte avläsningar. Trndi visar istället bara om sockret är bra, högt eller lågt."
-

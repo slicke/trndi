@@ -372,6 +372,7 @@ begin
 
   Command := Format(
     'New-BurntToastNotification ' +
+    //'-AppId Trndi ' +
     '-AppLogo ' + ParamStr(0) +' '+  // This will just show up black
     '-Text ''%s'', ' +
     '''%s'' ',
