@@ -29,9 +29,9 @@ interface
 uses 
 Classes, SysUtils, Dialogs, Forms, ExtCtrls, StdCtrls, Controls, Graphics, Math,
 IntfGraphics, FPImage, graphtype, lcltype,
-  {$ifdef Windows}
+{$ifdef Windows}
 DX12.D2D1, DX12.DXGI, DX12.DWrite, DX12.DCommon, DX12.WinCodec, Windows,
-  {$endif}StrUtils;
+{$endif}StrUtils;
 
 resourcestring
 dlgErr = 'An error occured while creating a message dalog';
@@ -42,64 +42,64 @@ sExtErr = 'Error occured in extension';
 sErr = 'Script execution failed';
 
 const 
-  muiStop = $26D4;
-  muiStar = $2B50;
-  muiCog = $2699;
+muiStop = $26D4;
+muiStar = $2B50;
+muiCog = $2699;
 
-  mbUXYes = mbYes;
-  mbUXNo = mbNo;
-  mbUXOK = mbOK;
-  mbUXCancel = mbCancel;
-  mbUXAbort = mbAbort;
-  mbUXRetry = mbRetry;
-  mbUXIgnore = mbIgnore;
-  mbUXAll = mbAll;
-  mbUXNoToAll = mbNoToAll;
-  mbUXYesToAll = mbYesToAll;
-  mbUXHelp = mbHelp;
-  mbUXClose = mbClose;
-  mbUXUXOpenFile = 110;
+mbUXYes = mbYes;
+mbUXNo = mbNo;
+mbUXOK = mbOK;
+mbUXCancel = mbCancel;
+mbUXAbort = mbAbort;
+mbUXRetry = mbRetry;
+mbUXIgnore = mbIgnore;
+mbUXAll = mbAll;
+mbUXNoToAll = mbNoToAll;
+mbUXYesToAll = mbYesToAll;
+mbUXHelp = mbHelp;
+mbUXClose = mbClose;
+mbUXUXOpenFile = 110;
 
 type 
 
 
-  TUXMsgDlgBtn     = (mbYes, mbNo, mbOK, mbCancel, mbAbort, mbRetry, mbIgnore,
-                      mbAll, mbNoToAll, mbYesToAll, mbHelp, mbClose, mbUXOpenFile);
+TUXMsgDlgBtn     = (mbYes, mbNo, mbOK, mbCancel, mbAbort, mbRetry, mbIgnore,
+  mbAll, mbNoToAll, mbYesToAll, mbHelp, mbClose, mbUXOpenFile);
 
-  TUXMsgDlgBtns = set of TUXMsgDlgBtn;
+TUXMsgDlgBtns = set of TUXMsgDlgBtn;
 
-  UXMessageBox = record
-    title: string;
-    message: string;
-    buttons: TMsgDlgButtons;
-    icon: widechar;
+UXMessageBox = record
+  title: string;
+  message: string;
+  buttons: TMsgDlgButtons;
+  icon: widechar;
     //function Execute: ModalResult;
-  end;
+end;
 
 
 //function UXShowMessage(const message: string; buttons: TMsgDlgButtons; const icon: Widechar): TModalResult;
 
 //function UXShowMessage(const caption, title, desc, message: string; buttons: TMsgDlgButtons; const icon: WideChar): TModalResult;
 function ExtMsg(const  caption, title, desc, logmsg: string; dumpbg: TColor = $00F5F2FD; dumptext:
-                TColor = $003411A9; buttons: TUXMsgDlgBtns = [mbAbort]; const icon: WideChar =
-                WideChar($2699)): TModalResult;
-function ExtLog(const caption, msg, log: string; const icon: WideChar = WideChar($2699)):
-                                                                                        TModalResult
+TColor = $003411A9; buttons: TUXMsgDlgBtns = [mbAbort]; const icon: widechar =
+widechar($2699)): TModalResult;
+function ExtLog(const caption, msg, log: string; const icon: widechar = widechar($2699)):
+TModalResult
 ;
-function ExtError(const msg, error: string; const icon: WideChar = WideChar($2699)): TModalResult;
-function ExtError(const error: string; const icon: WideChar = WideChar($2699)): TModalResult;
-function ExtSucc(const msg, desc, output: string; dumpbg: TColor = $0095EEC4; dumptext: TColor = $00147C4A; const icon: WideChar = WideChar($2705)): TModalResult;
+function ExtError(const msg, error: string; const icon: widechar = widechar($2699)): TModalResult;
+function ExtError(const error: string; const icon: widechar = widechar($2699)): TModalResult;
+function ExtSucc(const msg, desc, output: string; dumpbg: TColor = $0095EEC4; dumptext: TColor = $00147C4A; const icon: widechar = widechar($2705)): TModalResult;
 {$ifdef Windows}
-function CoCreateInstance(const clsid: TGUID; unkOuter: IUnknown; dwClsContext: Longint;
-                          const iid: TGUID; out pv): HResult;
+function CoCreateInstance(const clsid: TGUID; unkOuter: IUnknown; dwClsContext: longint;
+const iid: TGUID; out pv): HResult;
 stdcall;
 external 'ole32.dll';
-  {$endif}
+{$endif}
 
 implementation
 
 {$ifdef Windows}
-procedure AssignEmoji(Image: TImage; const Emoji: WideString);
+procedure AssignEmoji(Image: TImage; const Emoji: widestring);
 
 var 
   D2DFactory: ID2D1Factory;
@@ -120,70 +120,70 @@ var
   logheight: integer;
 
 procedure wicToBitmap;
-const 
-  WICBitmapLockRead = $1;
+  const
+    WICBitmapLockRead = $1;
   // Flagga för läsning
-  WICBitmapLockWrite = $2;
+    WICBitmapLockWrite = $2;
   // Flagga för skrivning (om du vill skriva till bitmapen)
 
-var 
-  WICLock: IWICBitmapLock;
-  BitmapData: Pointer;
-  BitmapStride, BitmapSize: UINT;
-  x, y: Integer;
-  PixelPtr: PByte;
-  PixelColor: TColor;
-  Rect: TWICRect;
-begin
+  var
+    WICLock: IWICBitmapLock;
+    BitmapData: Pointer;
+    BitmapStride, BitmapSize: UINT;
+    x, y: integer;
+    PixelPtr: pbyte;
+    PixelColor: TColor;
+    Rect: TWICRect;
+  begin
   // Definiera en rektangel som täcker hela IWICBitmap för att låsa hela bilden
-  Rect.X := 0;
-  Rect.Y := 0;
-  Rect.Width := Image.Width;
-  Rect.Height := Image.Height;
+    Rect.X := 0;
+    Rect.Y := 0;
+    Rect.Width := Image.Width;
+    Rect.Height := Image.Height;
 
-  Bitmap.SetSize(rect.width, rect.height);
-  Bitmap.PixelFormat := pf32bit;
+    Bitmap.SetSize(rect.width, rect.height);
+    Bitmap.PixelFormat := pf32bit;
 
   // Lås bitmapen för läsning och få tillgång till dess data
-  if Failed(WICBitmap.Lock(@Rect, WICBitmapLockRead, WICLock)) then
+    if Failed(WICBitmap.Lock(@Rect, WICBitmapLockRead, WICLock)) then
     begin
       ShowMessage(dlgErr);
       Exit;
     end;
 
-  try
+    try
     // Hämta pekare till bitmapens data och dess stride (antal bytes per rad)
-    if Failed(WICLock.GetDataPointer(BitmapSize, BitmapData)) or
-       Failed(WICLock.GetStride(BitmapStride)) then
+      if Failed(WICLock.GetDataPointer(BitmapSize, BitmapData)) or
+        Failed(WICLock.GetStride(BitmapStride)) then
       begin
         ShowMessage(dlgErr);
         Exit;
       end;
 
     // Konfigurera TBitmap för att matcha IWICBitmap:ens storlek och format
-    Bitmap.PixelFormat := pf32bit;
-    Bitmap.SetSize(Rect.Width, Rect.Height);
+      Bitmap.PixelFormat := pf32bit;
+      Bitmap.SetSize(Rect.Width, Rect.Height);
 
     // Kopiera pixeldata rad för rad från IWICBitmap till TBitmap
-    for y := 0 to Bitmap.Height - 1 do
+      for y := 0 to Bitmap.Height - 1 do
       begin
         PixelPtr := BitmapData;
         for x := 0 to Bitmap.Width - 1 do
-          begin
+        begin
             // Läs RGB-komponenterna från IWICBitmap och kopiera till TBitmap
-            PixelColor := RGB(PixelPtr^, (PixelPtr + 1)^, (PixelPtr + 2)^);
-            Bitmap.Canvas.Pixels[x, y] := PixelColor;
-            Inc(PixelPtr, 4);
+          PixelColor := RGB(PixelPtr^, (PixelPtr + 1)^, (PixelPtr + 2)^);
+          Bitmap.Canvas.Pixels[x, y] := PixelColor;
+          Inc(PixelPtr, 4);
             // Hoppa över RGBA (4 bytes per pixel)
-          end;
-        Inc(PByte(BitmapData), BitmapStride);
+        end;
+        Inc(pbyte(BitmapData), BitmapStride);
         // Nästa rad i WIC-bitmapen
       end;
-  finally
-    WICLock := nil;
+    finally
+      WICLock := nil;
     // Släpp låset på IWICBitmap
-end;
-end;
+    end;
+  end;
 begin
   // Skapa en TBitmap som ska visa resultatet senare
   Bitmap := Graphics.TBitmap.Create;
@@ -194,35 +194,35 @@ begin
     // Skapa en WIC-fabrik
     hr := CoCreateInstance(CLSID_WICImagingFactory, nil, 1, IID_IWICImagingFactory, WICFactory);
     if Failed(hr) then
-      begin
-        ShowMessage(dlgErr+ '  ('+ IntToStr(hr) + ')');
-        Exit;
-      end;
+    begin
+      ShowMessage(dlgErr+ '  ('+ IntToStr(hr) + ')');
+      Exit;
+    end;
 
     // Skapa en IWICBitmap som vi kommer att använda som render-target
     hr := WICFactory.CreateBitmap(Image.Width, Image.Height, GUID_WICPixelFormat32bppPBGRA,
-          WICBitmapCacheOnLoad, WICBitmap);
+      WICBitmapCacheOnLoad, WICBitmap);
     if Failed(hr) then
-      begin
-        ShowMessage(dlgErr+ '  ('+ IntToStr(hr) + ')');
-        Exit;
-      end;
+    begin
+      ShowMessage(dlgErr+ '  ('+ IntToStr(hr) + ')');
+      Exit;
+    end;
 
     // Skapa en Direct2D-fabrik
     if Failed(D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, ID2D1Factory, nil, D2DFactory))
-      then
-      begin
-        ShowMessage(dlgErr);
-        Exit;
-      end;
+    then
+    begin
+      ShowMessage(dlgErr);
+      Exit;
+    end;
 
     // Skapa en DirectWrite-fabrik
     if Failed(DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, IDWriteFactory, IUnknown(DWFactory)))
-      then
-      begin
-        ShowMessage(dlgErr);
-        Exit;
-      end;
+    then
+    begin
+      ShowMessage(dlgErr);
+      Exit;
+    end;
 
     // Ställ in render target-egenskaper
     RenderProps.pixelFormat.format := DXGI_FORMAT_B8G8R8A8_UNORM;
@@ -236,29 +236,29 @@ begin
     // Skapa render target för att rita på IWICBitmap
     hr := D2DFactory.CreateWicBitmapRenderTarget(WICBitmap, RenderProps, RenderTarget);
     if Failed(hr) then
-      begin
-        ShowMessage(dlgErr + ' (' + IntToStr(hr) + ')');
-        Exit;
-      end;
+    begin
+      ShowMessage(dlgErr + ' (' + IntToStr(hr) + ')');
+      Exit;
+    end;
 
     // Skapa en solid färgborste för bakgrunden
     BackgroundColor := ColorF(1.0, 1.0, 1.0, 1.0);
     // Vit bakgrund
     if Failed(RenderTarget.CreateSolidColorBrush(@BackgroundColor, nil, BackgroundBrush)) then
-      begin
-        ShowMessage(dlgErr);
-        Exit;
-      end;
+    begin
+      ShowMessage(dlgErr);
+      Exit;
+    end;
 
     // Skapa textformat för emoji
-    if Failed(DWFactory.CreateTextFormat(PWideChar('Segoe UI Emoji'), nil, DWRITE_FONT_WEIGHT_NORMAL
-       ,
-       DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL,
-       48, 'en-us', TextFormat)) then
-      begin
-        ShowMessage(dlgErr);
-        Exit;
-      end;
+    if Failed(DWFactory.CreateTextFormat(pwidechar('Segoe UI Emoji'), nil, DWRITE_FONT_WEIGHT_NORMAL
+      ,
+      DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL,
+      48, 'en-us', TextFormat)) then
+    begin
+      ShowMessage(dlgErr);
+      Exit;
+    end;
 
     // Definiera rektangeln för texten
     TextRect := RectF(0, 0, Image.Width, Image.Height);
@@ -270,8 +270,8 @@ begin
       RenderTarget.Clear(BackgroundColor);
 
       // Rita emoji-texten i färg
-      RenderTarget.DrawText(PWideChar(Emoji), Length(Emoji), TextFormat, @TextRect, BackgroundBrush,
-      D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT, DWRITE_MEASURING_MODE_NATURAL);
+      RenderTarget.DrawText(pwidechar(Emoji), Length(Emoji), TextFormat, @TextRect, BackgroundBrush,
+        D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT, DWRITE_MEASURING_MODE_NATURAL);
       hr := RenderTarget.EndDraw;
 
       wicToBitmap;
@@ -279,15 +279,15 @@ begin
         ShowMessage(Format( '%s (%d)', [dlgErr, hr]));
     except
       ShowMessage(dlgErr);
-end;
+    end;
 
-Image.Picture.Bitmap.Assign(Bitmap);
-finally
-  Bitmap.Free;
-end;
+    Image.Picture.Bitmap.Assign(Bitmap);
+  finally
+    Bitmap.Free;
+  end;
 end;
 {$else}
-procedure AssignEmoji(Image: TImage; const Emoji: WideString);
+procedure AssignEmoji(Image: TImage; const Emoji: widestring);
 begin
   // Ställ in storleken på Canvas och bakgrundsfärgen
   Image.Picture.Bitmap.SetSize(Image.Width, Image.Height);
@@ -303,40 +303,40 @@ begin
 
   // Rita emojin/texten centrerat på Canvas
   Image.Picture.Bitmap.Canvas.TextOut(
-                                      (Image.Width - Image.Picture.Bitmap.Canvas.TextWidth(Emoji))
-  div 2,
-  (Image.Height - Image.Picture.Bitmap.Canvas.TextHeight(Emoji)) div 2,
-  Emoji
-  );
+    (Image.Width - Image.Picture.Bitmap.Canvas.TextWidth(Emoji))
+    div 2,
+    (Image.Height - Image.Picture.Bitmap.Canvas.TextHeight(Emoji)) div 2,
+    Emoji
+    );
 end;
 {$endif}
 
-function ExtSucc(const msg, desc, output: string; dumpbg: TColor = $0095EEC4; dumptext: TColor = $00147C4A; const icon: WideChar = WideChar($2705)): TModalResult;
+function ExtSucc(const msg, desc, output: string; dumpbg: TColor = $0095EEC4; dumptext: TColor = $00147C4A; const icon: widechar = widechar($2705)): TModalResult;
 begin
-  result := ExtMsg(sSuccTitle, msg,  desc, output, $00AA6004, $00FDD8AA, [mbOK], WideChar(icon));
+  result := ExtMsg(sSuccTitle, msg,  desc, output, $00AA6004, $00FDD8AA, [mbOK], widechar(icon));
 end;
 
 
-function ExtLog(const caption, msg, log: string; const icon: WideChar = WideChar($2699)):
-                                                                                        TModalResult
+function ExtLog(const caption, msg, log: string; const icon: widechar = widechar($2699)):
+TModalResult
 ;
 begin
-  result := ExtMsg(sMsgTitle, caption, msg, log, $00AA6004, $00FDD8AA, [mbOK], WideChar(icon));
+  result := ExtMsg(sMsgTitle, caption, msg, log, $00AA6004, $00FDD8AA, [mbOK], widechar(icon));
 end;
 
-function ExtError(const error: string; const icon: WideChar = WideChar($2699)): TModalResult;
+function ExtError(const error: string; const icon: widechar = widechar($2699)): TModalResult;
 begin
   result := ExtMsg(sExtErr, sExtTitle, sErr, error, $00F5F2FD, $003411A9, [mbAbort], icon);
 end;
 
-function ExtError(const msg, error: string; const icon: WideChar = WideChar($2699)): TModalResult;
+function ExtError(const msg, error: string; const icon: widechar = widechar($2699)): TModalResult;
 begin
   result := ExtMsg(sExtErr, sErr, msg, error, $00F5F2FD, $003411A9, [mbAbort], icon);
 end;
 
 function ExtMsg(const caption, title, desc, logmsg: string; dumpbg: TColor = $00F5F2FD; dumptext:
-                TColor = $003411A9; buttons: TUXMsgDlgBtns = [mbAbort]; const icon: WideChar =
-                WideChar($2699)): TModalResult;
+TColor = $003411A9; buttons: TUXMsgDlgBtns = [mbAbort]; const icon: widechar =
+widechar($2699)): TModalResult;
 
 var 
   Dialog: TForm;
@@ -346,7 +346,7 @@ var
   log: TMemo;
   logPanel: TPanel;
   OkButton: TButton;
-  Padding, ContentWidth: Integer;
+  Padding, ContentWidth: integer;
   p2, p3: TPanel;
 begin
   Dialog := TForm.CreateNew(nil);
@@ -385,7 +385,7 @@ begin
     TitleLabel.Parent := p2;
     TitleLabel.Caption := Title;
     TitleLabel.Font.Style := [fsBold];
-    TitleLabel.AutoSize := True;
+    TitleLabel.AutoSize := true;
     TitleLabel.Left := IconBox.Left + IconBox.Width + Padding;
     TitleLabel.Top := Padding;
     TitleLabel.Font.Color := clBlack;
@@ -394,7 +394,7 @@ begin
     MessageLabel := TLabel.Create(p2);
     MessageLabel.Parent := p2;
     MessageLabel.Caption := desc;
-    MessageLabel.AutoSize := True;
+    MessageLabel.AutoSize := true;
     MessageLabel.Left := TitleLabel.Left;
     MessageLabel.Top := TitleLabel.Top + TitleLabel.Height + Padding div 2;
     MessageLabel.Font.Color := clBlack;
@@ -404,15 +404,15 @@ begin
     logPanel := TPanel.Create(p2);
 
     with logPanel do
-      begin
-        Width := ClientWidth;
-        left := 0;
-        Height := 50;
-        Parent := p2;
-        align := alBottom;
-        Color := dumpbg;
-        top := Dialog.ClientHeight-height;
-      end;
+    begin
+      Width := ClientWidth;
+      left := 0;
+      Height := 50;
+      Parent := p2;
+      align := alBottom;
+      Color := dumpbg;
+      top := Dialog.ClientHeight-height;
+    end;
 
     //logPanel.top := p2.ClientHeight-50;
 
@@ -421,20 +421,20 @@ begin
     p2.height := p2.height+logPanel.height;
 
     with log do
-      begin
-        Text := TrimSet(logmsg, [#10,#13]);
-        parent := logpanel;
-        ReadOnly := true;
-        Color := dumpbg;
-        font.color := dumptext;
-        ScrollBars := ssNone;
-        BorderStyle := bsNone;
-        ControlStyle := [csNoFocus];
-        left := IconBox.Left;
-        width := logpanel.ClientWidth - 20;
-        top := 10;
-        left := 10;
-      end;
+    begin
+      Text := TrimSet(logmsg, [#10,#13]);
+      parent := logpanel;
+      ReadOnly := true;
+      Color := dumpbg;
+      font.color := dumptext;
+      ScrollBars := ssNone;
+      BorderStyle := bsNone;
+      ControlStyle := [csNoFocus];
+      left := IconBox.Left;
+      width := logpanel.ClientWidth - 20;
+      top := 10;
+      left := 10;
+    end;
 
 
 
@@ -460,7 +460,7 @@ begin
 
     // Beräkna dialogens bredd och höjd baserat på innehållet
     ContentWidth := Max(Max(Dialog.Canvas.TextWidth(TitleLabel.Caption), Dialog.Canvas.TextWidth(
-                    MessageLabel.Caption)), 300 (* Log size *)) + IconBox.Width + Padding * 5;
+      MessageLabel.Caption)), 300 (* Log size *)) + IconBox.Width + Padding * 5;
     log.Width := ContentWidth;
     Dialog.Width := ContentWidth;
     Dialog.Height := Padding * 2 + MessageLabel.Top + MessageLabel.Height + p3.Height;
@@ -479,7 +479,7 @@ begin
     p2.Free;
     p3.Free;
     Dialog.Free;
-end;
+  end;
 end;
 
 end.

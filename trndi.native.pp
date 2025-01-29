@@ -363,49 +363,49 @@ procedure SendNotification(Title, Message: string);
   {$if defined(X_WIN)}
 
 procedure SendNotification(const title, msg: string); // Do this with create process as it seems to work best for PS
-var
-  Command: string;
-  StartupInfo: TStartupInfo;
-  ProcessInfo: TProcessInformation;
-  CommandLine: string;
-begin
-
-  Command := Format(
-    'New-BurntToastNotification ' +
-    //'-AppId Trndi ' +
-    '-AppLogo ' + ParamStr(0) +' '+  // This will just show up black
-    '-Text ''%s'', ' +
-    '''%s'' ',
-    [title, msg]
-  );
-
-
-  CommandLine := 'powershell.exe -NoProfile -ExecutionPolicy Bypass -Command Import-Module BurntToast; ' + Command;
-
-  FillChar(StartupInfo, SizeOf(TStartupInfo), 0);
-  StartupInfo.cb := SizeOf(TStartupInfo);
-  StartupInfo.dwFlags := STARTF_USESHOWWINDOW;
-  StartupInfo.wShowWindow := SW_HIDE;
-
-  if not CreateProcess(
-    nil,
-    PChar(CommandLine),
-    nil,
-    nil,
-    False,
-    CREATE_NO_WINDOW,
-    nil,
-    nil,
-    StartupInfo,
-    ProcessInfo
-  ) then
-    RaiseLastOSError
-  else
+  var
+    Command: string;
+    StartupInfo: TStartupInfo;
+    ProcessInfo: TProcessInformation;
+    CommandLine: string;
   begin
-    CloseHandle(ProcessInfo.hThread);
-    CloseHandle(ProcessInfo.hProcess);
+
+    Command := Format(
+      'New-BurntToastNotification ' +
+    //'-AppId Trndi ' +
+      '-AppLogo ' + ParamStr(0) +' '+  // This will just show up black
+      '-Text ''%s'', ' +
+    '''%s'' ',
+      [title, msg]
+      );
+
+
+    CommandLine := 'powershell.exe -NoProfile -ExecutionPolicy Bypass -Command Import-Module BurntToast; ' + Command;
+
+    FillChar(StartupInfo, SizeOf(TStartupInfo), 0);
+    StartupInfo.cb := SizeOf(TStartupInfo);
+    StartupInfo.dwFlags := STARTF_USESHOWWINDOW;
+    StartupInfo.wShowWindow := SW_HIDE;
+
+    if not CreateProcess(
+      nil,
+      pchar(CommandLine),
+      nil,
+      nil,
+      false,
+      CREATE_NO_WINDOW,
+      nil,
+      nil,
+      StartupInfo,
+      ProcessInfo
+      ) then
+      RaiseLastOSError
+    else
+    begin
+      CloseHandle(ProcessInfo.hThread);
+      CloseHandle(ProcessInfo.hProcess);
+    end;
   end;
-end;
 
   {$endif}
 begin
