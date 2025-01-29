@@ -87,14 +87,38 @@ function getFakeVals(const min: integer; out reading, delta: integer): TDateTime
     Result := RecodeSecond(Result, 0);
     Result := RecodeMilliSecond(Result, 0);
 
+
   // Generate a fake reading
-    reading := 100 + ((DateTimeToUnix(Result) div 300) mod 150);
+    reading := 40 + ((DateTimeToUnix(Result) div 300) mod 360);
 
   // Generate the previous 5 min reading
-    previousReading := 100 + ((DateTimeToUnix(IncMinute(Result, -5)) div 300) mod 150);
+    previousReading := 40 + ((DateTimeToUnix(IncMinute(Result, -5)) div 300) mod 360);
 
   // Set the delta
     delta := reading - previousReading;
+  end;
+
+function guessTrend(diff: integer): BGTrend;
+  begin
+    if diff < -20 then
+      result := TdDoubleDown
+    else
+    if diff < -15 then
+      result := TdSingleDown
+    else
+    if diff < -10 then
+      result := TdFortyFiveDown
+    else
+    if diff < 5 then
+      result := TdFlat
+    else
+    if diff < 10 then
+      result := TdFortyFiveUp
+    else
+    if diff < 15 then
+      result := TdSingleUp
+    else
+      result := TdDoubleUp
   end;
 
 var
@@ -107,15 +131,7 @@ begin
     result[i].Init(mgdl);
     result[i].date := getFakeVals(i*5,val,diff);
     result[i].update(val, diff);
-
-    if diff > 1 then
-      result[i].trend := BGTrend.TdFortyFiveUp
-    else
-    if diff < 0 then
-      result[i].trend := BGTrend.TdFortyFiveDown
-    else
-      result[i].trend := BGTrend.TdFlat;
-
+    result[i].trend := guessTrend(diff);
     result[i].level := getLevel(result[i].val);
   end;
 
