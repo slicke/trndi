@@ -29,6 +29,8 @@ RS_OVER = 'over';
 RS_UNDER = 'under';
 RS_HIGH = 'HIGH';
 RS_LOW = 'LOW';
+RS_OFF_HI = 'Over range';
+RS_OFF_LO = 'Under range';
 
 // Time messages
 RS_OUTDATED_TIME = '%s (%d.%.2d ago)';

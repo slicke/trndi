@@ -27,7 +27,7 @@ interface
 
 uses
 Classes, SysUtils, Dialogs, trndi.types, trndi.api, trndi.native,
-fpjson, jsonparser, dateutils, StrUtils, sha1, math, jsonscanner;
+fpjson, jsonparser, dateutils;
 
 
 type

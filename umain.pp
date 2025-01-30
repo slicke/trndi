@@ -144,6 +144,7 @@ BG_REFRESH = 300000; // 5 min refresh
 
 DOT_GRAPH =  '•';
 DOT_FRESH = '☉';
+
 var
 bg_alert: boolean = false; // If the BG is high/low since before, so we don't spam notifications
 
@@ -994,6 +995,7 @@ begin
       pnOffRange.Color := bg_rel_color_lo;
       pnOffRange.Font.Color := bg_rel_color_lo_txt;
       pnOffRange.Visible := true;
+      pnOffRange.Caption := Format('↧ %s ↧', [RS_OFF_LO]);
     end
     else
     if b.val >= api.cgmRangeHi then
@@ -1001,6 +1003,7 @@ begin
       pnOffRange.Color := bg_rel_color_hi;
       pnOffRange.Font.Color := bg_rel_color_hi_txt;
       pnOffRange.Visible := true;
+      pnOffRange.Caption := Format('↥ %s ↥', [RS_OFF_HI]);
     end;
   end;
   lastup := Now;

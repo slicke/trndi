@@ -255,6 +255,14 @@ msgstr "Trndi hittade fler konton. Vänligen välj ett för denna instans"
 msgid "No readings recieved. There might be a problem with the backend, or you might not have any recent readings"
 msgstr "Inga avläsningar togs emot. Antingen är det fel hos källan, eller så saknas aktuella avläsningar"
 
+#: trndi.strings.rs_off_hi
+msgid "Over range"
+msgstr "Över område"
+
+#: trndi.strings.rs_off_lo
+msgid "Under range"
+msgstr "Under område"
+
 #: trndi.strings.rs_outdated_time
 #, object-pascal-format
 msgid "%s (%d.%.2d ago)"
@@ -353,4 +361,3 @@ msgstr ""
 #: uconf.rs_privacy_help
 msgid "When in Privacy Mode, the actual blood glucose value is hidden. Trndi will only tell the user if it's good, high or low."
 msgstr "När privat läge är aktiverat, visas inte avläsningar. Trndi visar istället bara om sockret är bra, högt eller lågt."
-
