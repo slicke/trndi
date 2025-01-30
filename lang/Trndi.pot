@@ -239,6 +239,14 @@ msgstr ""
 msgid "No readings recieved. There might be a problem with the backend, or you might not have any recent readings"
 msgstr ""
 
+#: trndi.strings.rs_off_hi
+msgid "Over range"
+msgstr ""
+
+#: trndi.strings.rs_off_lo
+msgid "Under range"
+msgstr ""
+
 #: trndi.strings.rs_outdated_time
 #, object-pascal-format
 msgid "%s (%d.%.2d ago)"
