@@ -9,6 +9,7 @@ object fBG: TfBG
   ClientWidth = 320
   Color = clBlack
   Font.Color = clWhite
+  Position = poDesktopCenter
   OnClose = FormClose
   OnCreate = FormCreate
   OnMouseLeave = FormMouseLeave
