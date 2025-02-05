@@ -542,7 +542,7 @@ begin
   begin
     fBG.WindowState := wsNormal;
     fBG.FormStyle := fsNormal;
-    fBG.BorderStyle := bsSizeable;
+    fBG.BorderStyle := bsSizeToolWin;
   end
   else
   begin
