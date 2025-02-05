@@ -42,6 +42,8 @@ TTrendProcLoop = procedure(l: TLabel; c, ix: integer; ls: array of TLabel) of ob
 
 TfBG = class(TForm)
   lAgo:TLabel;
+  miRangeColor:TMenuItem;
+  Separator1:TMenuItem;
   miExit:TMenuItem;
   miBorders:TMenuItem;
   miFullScreen:TMenuItem;
@@ -92,6 +94,7 @@ TfBG = class(TForm)
   procedure lValMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: integer);
   procedure lValMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: integer);
   procedure lValStartDrag(Sender: TObject; var DragObject: TDragObject);
+  procedure miRangeColorClick(Sender:TObject);
   procedure miBordersClick(Sender:TObject);
   procedure miExitClick(Sender:TObject);
   procedure miForceClick(Sender: TObject);
@@ -593,6 +596,13 @@ begin
   // Event handler can be left empty if not used
 end;
 
+procedure TfBG.miRangeColorClick(Sender:TObject);
+begin
+  miRangeColor.Checked := not miRangeColor.Checked;
+  if miRangeColor.Checked then
+    ShowMessage(RS_RANGE_COLOR);
+end;
+
 procedure TfBG.miBordersClick(Sender:TObject);
 begin
   miBorders.Checked := not miBorders.Checked;
@@ -836,7 +846,10 @@ begin
   if api.cgmRangeLo <> 0 then
     miRangeLo.Caption := Format(RS_RANGE_LO, [api.cgmRangeLo * BG_CONVERTIONS[un][mgdl]])
   else
+  begin
     miRangeLo.Caption := RS_RANGE_LO_UNSUPPORTED;
+    miRangeColor.Enabled := false;
+  end;
 
   if not api.active then
     Exit;
@@ -1019,6 +1032,9 @@ begin
   tAgo.Enabled := true;
   tAgo.OnTimer(self);
   Self.OnResize(lVal);
+
+  if pnOffRange.Visible and miRangeColor.Checked then
+    fBG.Color := pnOffRange.Color;
 end;
 
 // PlaceTrendDots method to map readings to TrendDots

@@ -21,6 +21,7 @@
 {"hash":474601,"name":"tfbg.mihi.caption","sourcebytes":[109,105,72,105],"value":"miHi"},
 {"hash":474639,"name":"tfbg.milo.caption","sourcebytes":[109,105,76,79],"value":"miLO"},
 {"hash":142912463,"name":"tfbg.mirangelo.caption","sourcebytes":[109,105,82,97,110,103,101,76,111],"value":"miRangeLo"},
+{"hash":1211170,"name":"tfbg.mirangecolor.caption","sourcebytes":[85,115,101,32,114,97,110,103,101,32,99,111,108,111,114],"value":"Use range color"},
 {"hash":217524158,"name":"tfbg.milimitexplain.caption","sourcebytes":[69,120,112,108,97,105,110],"value":"Explain"},
 {"hash":90209120,"name":"tfbg.miontop.caption","sourcebytes":[79,110,32,116,111,112],"value":"On top"},
 {"hash":28642414,"name":"tfbg.mifullscreen.caption","sourcebytes":[84,111,103,103,108,101,32,70,117,108,108,115,99,114,101,101,110],"value":"Toggle Fullscreen"},
