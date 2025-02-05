@@ -48,6 +48,10 @@ msgstr "Förklara"
 msgid "On top"
 msgstr "Överst"
 
+#: tfbg.mirangecolor.caption
+msgid "Use range color"
+msgstr "Använd områdesfärg"
+
 #: tfbg.mirefresh.caption
 msgid "Refresh in:"
 msgstr "Uppdaterar om:"
@@ -279,6 +283,10 @@ msgstr "Avsluta Trndi?"
 #: trndi.strings.rs_quit_msg
 msgid "Quit the app?"
 msgstr "Avsluta appen?"
+
+#: trndi.strings.rs_range_color
+msgid "The entire window will now change color when out of range, instead of just displaying a colored notification in the top. Applies after the next sync."
+msgstr "Hela fönstret kommer hädanefter att färgas när blodsockret är utanför området, istället för att endast meddelandet högst upp färgas. Verkställs efter nästa synkronosering."
 
 #: trndi.strings.rs_range_explanation
 #, object-pascal-format

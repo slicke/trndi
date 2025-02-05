@@ -274,6 +274,14 @@ object fBG: TfBG
       object miSplit3: TMenuItem
         Caption = '-'
       end
+      object miRangeColor: TMenuItem
+        Caption = 'Use range color'
+        ShowAlwaysCheckable = True
+        OnClick = miRangeColorClick
+      end
+      object Separator1: TMenuItem
+        Caption = '-'
+      end
       object miLimitExplain: TMenuItem
         Caption = 'Explain'
         OnClick = miLimitExplainClick

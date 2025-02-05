@@ -38,6 +38,10 @@ msgstr ""
 msgid "On top"
 msgstr ""
 
+#: tfbg.mirangecolor.caption
+msgid "Use range color"
+msgstr ""
+
 #: tfbg.mirefresh.caption
 msgid "Refresh in:"
 msgstr ""
@@ -262,6 +266,10 @@ msgstr ""
 
 #: trndi.strings.rs_quit_msg
 msgid "Quit the app?"
+msgstr ""
+
+#: trndi.strings.rs_range_color
+msgid "The entire window will now change color when out of range, instead of just displaying a colored notification in the top. Applies after the next sync."
 msgstr ""
 
 #: trndi.strings.rs_range_explanation
