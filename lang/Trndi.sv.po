@@ -329,6 +329,10 @@ msgstr "Konfig"
 msgid "under"
 msgstr "under"
 
+#: trndi.strings.rs_unknown_time
+msgid "Loading"
+msgstr "Laddar"
+
 #: trndi.strings.rs_user_caption
 #, object-pascal-format
 msgid "[%s] %s"

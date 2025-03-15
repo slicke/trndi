@@ -22,6 +22,7 @@ RS_NO_BACKEND = 'No readings recieved. There might be a problem with the backend
 RS_MISSING_LABEL = 'Label %s is missing!';
 RS_MULTIPLE_ACCOUNTS = 'Trndi found multiple accounts. Please choose one for this instance';
 RS_USER_CAPTION = '[%s] %s';
+RS_UNKNOWN_TIME = 'Loading';
 
   // Range messages
 RS_RANGE_EXPLANATION = 'In addition to high and low levels, you have set a personal range within "OK". You are now %s that range';
