@@ -84,6 +84,7 @@ TfBG = class(TForm)
   tMain: TTimer;
   procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
   procedure FormCreate(Sender: TObject);
+  procedure FormKeyPress(Sender:TObject;var Key:char);
   procedure FormMouseLeave(Sender:TObject);
   procedure FormMouseMove(Sender:TObject;Shift:TShiftState;X,Y:integer);
   procedure FormResize(Sender: TObject);
@@ -446,6 +447,15 @@ begin
   update;
 end;
 
+procedure TfBG.FormKeyPress(Sender:TObject;var Key:char);
+begin
+  if key = #27 then begin // esc
+    lDiffDblClick(self);
+
+    key := #0;  // Prevent other handlers of esc
+  end;
+end;
+
 procedure TfBG.FormMouseLeave(Sender:TObject);
 begin
 
@@ -543,6 +553,10 @@ begin
     fBG.WindowState := wsNormal;
     fBG.FormStyle := fsNormal;
     fBG.BorderStyle := bsSizeToolWin;
+    fBG.Width := Max(Screen.Width div 5, 200);
+    fBG.height := Max(Screen.Height div 5, 300);
+    fBG.Top := (screen.Height div 2) - (fbg.Height div 2);
+    fBG.left := (screen.width div 2) - (fbg.width div 2)
   end
   else
   begin
