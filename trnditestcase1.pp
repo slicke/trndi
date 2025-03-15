@@ -43,7 +43,7 @@ begin
   // Start PHP server
   PHPProcess := TProcess.Create(nil);
   try
-    PHPProcess.Executable :={$ifdef Windows}'c:\tools\php84\'{$endif} +'php'; // Choco path for win
+    PHPProcess.Executable :={$ifdef Windows}'c:\tools\php84\'+{$endif}'php'; // Choco path for win
     PHPProcess.Parameters.Add('-S');
     PHPProcess.Parameters.Add('localhost:8080');
     PHPProcess.Parameters.Add('-t');
