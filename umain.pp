@@ -930,6 +930,10 @@ var
   i: int64;
 begin
   lastup := 0;
+  // If not looking for new values, the last reading is unknown
+  if not tAgo.Enabled then
+    lAgo.Caption :=  '🕑 ' + RS_UNKNOWN_TIME;
+
   // Fetch current readings
   if api = nil then
     Exit;
