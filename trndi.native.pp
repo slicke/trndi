@@ -34,7 +34,8 @@ uses
 Classes, SysUtils, Graphics
 {$IF DEFINED(X_MAC)},
 NSMisc,
-ns_url_request
+ns_url_request,
+CocoaAll
 {$ELSEIF DEFINED(X_WIN)},
 Windows, Registry, Dialogs, StrUtils, winhttpclient, shellapi
 {$ELSEIF DEFINED(X_PC)},
@@ -408,6 +409,18 @@ procedure SendNotification(const title, msg: string); // Do this with create pro
   end;
 
   {$endif}
+  {$IF DEFINED(X_MAC)}
+  procedure SendNotification(const title, msg: string);
+  var
+  Notification: NSUserNotification;
+begin
+  Notification := NSUserNotification.alloc.init;
+  Notification.setTitle(NSSTR(Title));
+  Notification.setInformativeText(NSSTR(Message));
+  NSUserNotificationCenter.defaultUserNotificationCenter.deliverNotification(Notification);
+  Notification.release;
+end;
+  {$endif}
 begin
   SendNotification('Trndi', message);
 end;
@@ -777,7 +790,7 @@ begin
       httpClient.address := url;
       httpClient.method := 'GET';
       headers.Add('User-Agent=' + DEFAULT_USER_AGENT);
-      httpClient.Headers := headers;
+      //httpClient. Headers := headers;
 
       if httpClient.SendAndReceive(send, response, headers) then
       begin
@@ -864,3 +877,4 @@ end;
 {$ENDIF}
 
 end.
+
