@@ -267,6 +267,7 @@
         <Filename Value="ufloat.pp"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="fFloat"/>
+        <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
       </Unit>
     </Units>
