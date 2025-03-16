@@ -8,6 +8,8 @@ object fFloat: TfFloat
   ClientWidth = 207
   FormStyle = fsSystemStayOnTop
   PopupMenu = pMain
+  Position = poDesktopCenter
+  SnapOptions.SnapToMonitor = True
   LCLVersion = '4.0.0.1'
   OnKeyDown = FormKeyDown
   OnKeyPress = FormKeyPress
