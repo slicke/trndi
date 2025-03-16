@@ -37,16 +37,17 @@ Forms,lazcontrols,trndi.types,trndi.native,
 trndi.ext.promise, trndi.ext.functions,trndi.ext.ext,
 {$ENDIF}
 trndi.api,trndi.api.nightscout,
-trndi.api.dexcom,umain,uconf
+trndi.api.dexcom,umain,uconf, ufloat
 { you can add units after this };
 
 {$R *.res}
 
 begin
 RequireDerivedFormResource:=true;
-Application.Scaled:=true;
+  Application.Scaled:=True;
 Application.{%H-}MainFormOnTaskbar:=true;
 Application.Initialize;
 Application.CreateForm(TfBG,fBG);
+  Application.CreateForm(TfFloat,fFloat);
 Application.Run;
 end.

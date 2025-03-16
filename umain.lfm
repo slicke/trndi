@@ -304,6 +304,10 @@ object fBG: TfBG
       Caption = 'No borders'
       OnClick = miBordersClick
     end
+    object miFloatOn: TMenuItem
+      Caption = 'Show Floating Window'
+      OnClick = miFloatOnClick
+    end
     object miRefresh: TMenuItem
       Caption = 'Refresh in:'
       Enabled = False
