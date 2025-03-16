@@ -400,3 +400,4 @@ msgstr "När privat läge är aktiverat, visas inte avläsningar. Trndi visar is
 #: ufloat.rscustomop
 msgid "You can use shift+<number> to manually set visibility (0 = 100% visible)"
 msgstr "Du kan använda skift+<nummerr> för att manuellt sätta synligheten (0 = 100% synlig)"
+
