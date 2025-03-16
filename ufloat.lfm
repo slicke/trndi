@@ -1,0 +1,98 @@
+object fFloat: TfFloat
+  Left = 358
+  Height = 164
+  Top = 250
+  Width = 207
+  Caption = 'Floating Display'
+  ClientHeight = 164
+  ClientWidth = 207
+  FormStyle = fsSystemStayOnTop
+  PopupMenu = pMain
+  OnKeyDown = FormKeyDown
+  OnKeyPress = FormKeyPress
+  OnMouseDown = FormMouseDown
+  OnMouseMove = FormMouseMove
+  OnMouseUp = FormMouseUp
+  OnShow = FormShow
+  object lVal: TLabel
+    Left = 0
+    Height = 86
+    Top = 0
+    Width = 207
+    Align = alClient
+    Alignment = taCenter
+    AutoSize = False
+    Caption = 'Setup'
+    Color = 21243
+    Font.Color = clBlack
+    Font.Height = 86
+    OptimalFill = True
+    ParentColor = False
+    ParentFont = False
+    PopupMenu = pMain
+    OnMouseDown = FormMouseDown
+    OnMouseMove = FormMouseMove
+    OnMouseUp = FormMouseUp
+  end
+  object lArrow: TLabel
+    Left = 0
+    Height = 78
+    Top = 86
+    Width = 207
+    Align = alBottom
+    Alignment = taCenter
+    AutoSize = False
+    Caption = 'lArrow'
+    Color = clWhite
+    Font.Color = clBlack
+    Font.Height = 80
+    Layout = tlBottom
+    OptimalFill = True
+    ParentColor = False
+    ParentFont = False
+    PopupMenu = pMain
+    OnMouseDown = FormMouseDown
+    OnMouseMove = FormMouseMove
+    OnMouseUp = FormMouseUp
+  end
+  object pMain: TPopupMenu
+    Left = 67
+    Top = 42
+    object miVisible: TMenuItem
+      Caption = 'Visibility'
+      object miOp25: TMenuItem
+        Caption = '25%'
+        Hint = '25'
+        RadioItem = True
+        OnClick = miOp100Click
+      end
+      object miOp50: TMenuItem
+        Caption = '50%'
+        Checked = True
+        Hint = '50'
+        RadioItem = True
+        OnClick = miOp100Click
+      end
+      object miOp75: TMenuItem
+        Caption = '75%'
+        Hint = '75'
+        RadioItem = True
+        OnClick = miOp100Click
+      end
+      object miOp100: TMenuItem
+        Caption = '100%'
+        Hint = '100'
+        RadioItem = True
+        OnClick = miOp100Click
+      end
+      object miSplit1: TMenuItem
+        Caption = '-'
+      end
+      object miCustomVisible: TMenuItem
+        Caption = 'Custom'
+        RadioItem = True
+        OnClick = miCustomVisibleClick
+      end
+    end
+  end
+end

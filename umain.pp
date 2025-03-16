@@ -31,7 +31,7 @@ trndi.api.dexcom, trndi.api.nightscout, trndi.types, math, DateUtils, FileUtil,
 trndi.Ext.Engine, trndi.Ext.jsfuncs,
 {$endif}
 LazFileUtils, uconf, trndi.native, Trndi.API, trndi.api.xDrip,{$ifdef DEBUG} trndi.api.debug,{$endif}
-StrUtils, TouchDetection;
+StrUtils, TouchDetection, ufloat;
 
 type
   // Procedures which are applied to the trend drawing
@@ -42,6 +42,7 @@ TTrendProcLoop = procedure(l: TLabel; c, ix: integer; ls: array of TLabel) of ob
 
 TfBG = class(TForm)
   lAgo:TLabel;
+  miFloatOn:TMenuItem;
   miRangeColor:TMenuItem;
   Separator1:TMenuItem;
   miExit:TMenuItem;
@@ -95,6 +96,7 @@ TfBG = class(TForm)
   procedure lValMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: integer);
   procedure lValMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: integer);
   procedure lValStartDrag(Sender: TObject; var DragObject: TDragObject);
+  procedure miFloatOnClick(Sender:TObject);
   procedure miRangeColorClick(Sender:TObject);
   procedure miBordersClick(Sender:TObject);
   procedure miExitClick(Sender:TObject);
@@ -610,6 +612,19 @@ begin
   // Event handler can be left empty if not used
 end;
 
+procedure TfBG.miFloatOnClick(Sender:TObject);
+begin
+  if fFloat.Showing then begin
+    fFloat.Hide;
+  end else begin
+    fFloat.Show;
+    fFloat.Color := fBg.Color;
+    fFloat.lVal.Caption := lval.Caption;
+    fFloat.lArrow.Caption := lArrow.Caption;
+  end;
+  miFloatOn.Checked := fFloat.Showing;
+end;
+
 procedure TfBG.miRangeColorClick(Sender:TObject);
 begin
   miRangeColor.Checked := not miRangeColor.Checked;
@@ -1053,6 +1068,12 @@ begin
 
   if pnOffRange.Visible and miRangeColor.Checked then
     fBG.Color := pnOffRange.Color;
+
+  if Assigned(fFloat) then begin
+    fFloat.Color := fBg.Color;
+    fFloat.lVal.Caption := lval.Caption;
+    fFloat.lArrow.Caption := lArrow.Caption;
+  end;
 end;
 
 // PlaceTrendDots method to map readings to TrendDots

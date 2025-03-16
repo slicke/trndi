@@ -1,0 +1,15 @@
+{"version":1,"strings":[
+{"hash":61278361,"name":"tffloat.caption","sourcebytes":[70,108,111,97,116,105,110,103,32,68,105,115,112,108,97,121],"value":"Floating Display"},
+{"hash":5884864,"name":"tffloat.lval.caption","sourcebytes":[83,101,116,117,112],"value":"Setup"},
+{"hash":118004071,"name":"tffloat.larrow.caption","sourcebytes":[108,65,114,114,111,119],"value":"lArrow"},
+{"hash":260833321,"name":"tffloat.mivisible.caption","sourcebytes":[86,105,115,105,98,105,108,105,116,121],"value":"Visibility"},
+{"hash":13685,"name":"tffloat.miop25.caption","sourcebytes":[50,53,37],"value":"25%"},
+{"hash":853,"name":"tffloat.miop25.hint","sourcebytes":[50,53],"value":"25"},
+{"hash":14373,"name":"tffloat.miop50.caption","sourcebytes":[53,48,37],"value":"50%"},
+{"hash":896,"name":"tffloat.miop50.hint","sourcebytes":[53,48],"value":"50"},
+{"hash":14965,"name":"tffloat.miop75.caption","sourcebytes":[55,53,37],"value":"75%"},
+{"hash":933,"name":"tffloat.miop75.hint","sourcebytes":[55,53],"value":"75"},
+{"hash":213797,"name":"tffloat.miop100.caption","sourcebytes":[49,48,48,37],"value":"100%"},
+{"hash":13360,"name":"tffloat.miop100.hint","sourcebytes":[49,48,48],"value":"100"},
+{"hash":78424925,"name":"tffloat.micustomvisible.caption","sourcebytes":[67,117,115,116,111,109],"value":"Custom"}
+]}

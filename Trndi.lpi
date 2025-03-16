@@ -23,7 +23,7 @@
         <Item1 Value="tfconf.lcopyright.caption"/>
         <Item2 Value="tfconf.lversion.caption"/>
       </ExcludedIdentifiers>
-      <ExcludedOriginals Count="10">
+      <ExcludedOriginals Count="18">
         <Item1 Value="Trndi"/>
         <Item2 Value="•"/>
         <Item3 Value="lArrow"/>
@@ -34,6 +34,14 @@
         <Item8 Value="eAddr"/>
         <Item9 Value="lAgo"/>
         <Item10 Value="?"/>
+        <Item11 Value="100%"/>
+        <Item12 Value="75%"/>
+        <Item13 Value="50%"/>
+        <Item14 Value="25%"/>
+        <Item15 Value="100"/>
+        <Item16 Value="75"/>
+        <Item17 Value="50"/>
+        <Item18 Value="25"/>
       </ExcludedOriginals>
     </i18n>
     <VersionInfo>
@@ -254,6 +262,12 @@
         <Filename Value="wintoast.pp"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="winToast"/>
+      </Unit>
+      <Unit>
+        <Filename Value="ufloat.pp"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="fFloat"/>
+        <ResourceBaseClass Value="Form"/>
       </Unit>
     </Units>
   </ProjectOptions>
