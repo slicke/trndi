@@ -1013,6 +1013,10 @@ begin
     tMissed.OnTimer(tMissed);
     lVal.Font.Style := [fsStrikeOut];
     fBG.Color := clBlack;
+    {$ifdef lclqt6}
+      if assigned(ffloat) then
+        fFloat.lvl := bgoff;
+    {$endif}
     tMissed.Enabled := true;
     Exit;
   end;
@@ -1023,6 +1027,10 @@ begin
   if b.val >= api.cgmHi then
   begin
     fBG.Color := bg_color_hi;
+    {$ifdef LCLQt6}
+      if assigned(fFloat) then
+        ffloat.lvl := BGHigh;
+    {$endif}
     with TrndiNative.create  do
       if not bg_alert then
         attention(Format(RS_WARN_BG_HI, [lVal.Caption]));
@@ -1031,6 +1039,10 @@ begin
   if b.val <= api.cgmLo then
   begin
     fBG.Color := bg_color_lo;
+        {$ifdef LCLQt6}
+      if assigned(fFloat) then
+        ffloat.lvl := BGLOW;
+    {$endif}
     with TrndiNative.create  do
       if not bg_alert then
         attention(Format(RS_WARN_BG_LO, [lVal.Caption]));

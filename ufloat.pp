@@ -6,6 +6,8 @@ unit ufloat;
    {$modeswitch objectivec1}
 {$ENDIF}
 
+
+
 interface
 
 uses
@@ -18,6 +20,10 @@ uses
    qt6, qtwidgets, qtobjects, qtint
   {$ENDIF};
 
+type
+{$ifdef LCLQt6}
+    BGValLevel = (BGHigh, BGLOW, BGOFF);    // Range = depending on API
+{$endif}
 type
 
   { TfFloat }
@@ -56,7 +62,9 @@ type
     procedure ApplyRoundedCorners;
     procedure CreateRoundedCorners;
   public
-
+      {$ifdef LCLQt6}
+    lvl: BGValLevel;
+  {$endif}
   end;
 
 resourcestring
@@ -66,6 +74,7 @@ var
   fFloat: TfFloat;
   PX, PY: integer;
   DraggingWin: boolean;
+
 
 implementation
 
@@ -149,7 +158,7 @@ begin
 if HandleAllocated then
 QWidget_setStyleSheet(TQtWidget(Handle).Widget,
   @stylestr);
-                                            CreateRoundedCorners;
+  CreateRoundedCorners;
   {$ELSE}
   Self.BorderStyle := bsNone; // Remove border
   // Use LCL stuff when Windows (or not Qt really)
@@ -283,7 +292,13 @@ var
   bgcol: QtGlobalColor;
 begin
 
-  bgcol := QtGlobalColor.Qtgreen;
+  case lvl of
+    BGHigh: bgcol := QtYellow;
+    BGLOW: bgcol := Qtblue;
+    BGOff: bgcol := Qtblack;
+    else
+      bgcol := QtGreen;
+  end;
   // Konvertera LCL handle till Qt widget
   QtWidget := TQtWidget(Handle);
   WidgetHandle := QtWidget.GetContainerWidget;
@@ -336,8 +351,10 @@ begin
   QPen_destroy(Pen);
   QColor_destroy(BlackColor);
   QPainter_destroy(Painter);
-  {$ENDIF}
+  {$else}
   begin
+      {$ENDIF}
+
 end;
 
 
@@ -345,7 +362,6 @@ end;
 procedure TfFloat.FormPaint(Sender: TObject);
 begin
   CreateRoundedCorners;
-
 end;
 
 procedure TfFloat.FormMouseDown(Sender: TObject; Button: TMouseButton; Shift:
