@@ -488,6 +488,7 @@ begin
   {$endif}
 
   api.Free;
+  Application.Terminate;
 //  LogMessage('Trend closed.');
 end;
 
@@ -1039,8 +1040,13 @@ begin
     fBG.Color := bg_color_ok;
     // Check personalized limit
 
-    if (b.val >= api.cgmHi) or (b.val <= api.cgmLo) then
-      pnOffRange.Visible := false // block off elses
+    if (b.val >= api.cgmHi) or (b.val <= api.cgmLo) then begin
+      pnOffRange.Visible := false; // block off elses
+      if Assigned(fFloat) then begin
+          ffloat.lRangeDown.Visible := false;
+          ffloat.lRangeUp.Visible := false;
+          end;
+          end
     else
     if b.val <= api.cgmRangeLo then
     begin
@@ -1048,6 +1054,8 @@ begin
       pnOffRange.Font.Color := bg_rel_color_lo_txt;
       pnOffRange.Visible := true;
       pnOffRange.Caption := Format('↧ %s ↧', [RS_OFF_LO]);
+        if Assigned(fFloat) then
+          ffloat.lRangeDown.Visible := true;
     end
     else
     if b.val >= api.cgmRangeHi then
@@ -1056,6 +1064,8 @@ begin
       pnOffRange.Font.Color := bg_rel_color_hi_txt;
       pnOffRange.Visible := true;
       pnOffRange.Caption := Format('↥ %s ↥', [RS_OFF_HI]);
+              if Assigned(fFloat) then
+          ffloat.lRangeUp.Visible := true;
     end;
   end;
   lastup := Now;

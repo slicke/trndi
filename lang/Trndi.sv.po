@@ -133,6 +133,14 @@ msgstr "Fler inställningar..."
 msgid "Floating Display"
 msgstr "Flytande visning"
 
+#: tffloat.lrangedown.caption
+msgid "▼"
+msgstr ""
+
+#: tffloat.lrangeup.caption
+msgid "▲"
+msgstr ""
+
 #: tffloat.lval.caption
 msgctxt "tffloat.lval.caption"
 msgid "Setup"

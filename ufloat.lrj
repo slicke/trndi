@@ -2,6 +2,8 @@
 {"hash":61278361,"name":"tffloat.caption","sourcebytes":[70,108,111,97,116,105,110,103,32,68,105,115,112,108,97,121],"value":"Floating Display"},
 {"hash":5884864,"name":"tffloat.lval.caption","sourcebytes":[83,101,116,117,112],"value":"Setup"},
 {"hash":118004071,"name":"tffloat.larrow.caption","sourcebytes":[108,65,114,114,111,119],"value":"lArrow"},
+{"hash":60444,"name":"tffloat.lrangedown.caption","sourcebytes":[226,150,188],"value":"\u25BC"},
+{"hash":60434,"name":"tffloat.lrangeup.caption","sourcebytes":[226,150,178],"value":"\u25B2"},
 {"hash":260833321,"name":"tffloat.mivisible.caption","sourcebytes":[86,105,115,105,98,105,108,105,116,121],"value":"Visibility"},
 {"hash":13685,"name":"tffloat.miop25.caption","sourcebytes":[50,53,37],"value":"25%"},
 {"hash":853,"name":"tffloat.miop25.hint","sourcebytes":[50,53],"value":"25"},

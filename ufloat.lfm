@@ -10,7 +10,6 @@ object fFloat: TfFloat
   PopupMenu = pMain
   Position = poDesktopCenter
   SnapOptions.SnapToMonitor = True
-  LCLVersion = '4.0.0.3'
   OnKeyDown = FormKeyDown
   OnKeyPress = FormKeyPress
   OnMouseDown = FormMouseDown
@@ -31,7 +30,7 @@ object fFloat: TfFloat
     Caption = 'Setup'
     Color = 21243
     Font.Color = clBlack
-    Font.Height = 86
+    Font.Height = 95
     OptimalFill = True
     ParentColor = False
     ParentFont = False
@@ -60,6 +59,22 @@ object fFloat: TfFloat
     OnMouseDown = FormMouseDown
     OnMouseMove = FormMouseMove
     OnMouseUp = FormMouseUp
+  end
+  object lRangeDown: TLabel
+    Left = 0
+    Height = 15
+    Top = 0
+    Width = 10
+    Caption = '▼'
+    Visible = False
+  end
+  object lRangeUp: TLabel
+    Left = 0
+    Height = 15
+    Top = 0
+    Width = 10
+    Caption = '▲'
+    Visible = False
   end
   object pMain: TPopupMenu
     Left = 67
