@@ -457,7 +457,8 @@ end;
 
 procedure TfBG.FormKeyPress(Sender:TObject;var Key:char);
 begin
-  if key = #27 then begin // esc
+  if key = #27 then
+  begin // esc
     lDiffDblClick(self);
 
     key := #0;  // Prevent other handlers of esc
@@ -621,9 +622,9 @@ end;
 
 procedure TfBG.miFloatOnClick(Sender:TObject);
 begin
-  if fFloat.Showing then begin
-    fFloat.Hide;
-  end else begin
+  if fFloat.Showing then
+    fFloat.Hide else
+  begin
     fFloat.Show;
     fFloat.Color := fBg.Color;
     fFloat.lVal.Caption := lval.Caption;
@@ -1040,13 +1041,15 @@ begin
     fBG.Color := bg_color_ok;
     // Check personalized limit
 
-    if (b.val >= api.cgmHi) or (b.val <= api.cgmLo) then begin
+    if (b.val >= api.cgmHi) or (b.val <= api.cgmLo) then
+    begin
       pnOffRange.Visible := false; // block off elses
-      if Assigned(fFloat) then begin
-          ffloat.lRangeDown.Visible := false;
-          ffloat.lRangeUp.Visible := false;
-          end;
-          end
+      if Assigned(fFloat) then
+      begin
+        ffloat.lRangeDown.Visible := false;
+        ffloat.lRangeUp.Visible := false;
+      end;
+    end
     else
     if b.val <= api.cgmRangeLo then
     begin
@@ -1054,8 +1057,11 @@ begin
       pnOffRange.Font.Color := bg_rel_color_lo_txt;
       pnOffRange.Visible := true;
       pnOffRange.Caption := Format('↧ %s ↧', [RS_OFF_LO]);
-        if Assigned(fFloat) then
-          ffloat.lRangeDown.Visible := true;
+      if Assigned(fFloat) then
+      begin
+        ffloat.lRangeDown.Visible := true;
+        ffloat.Font.color := bg_rel_color_lo_txt;
+      end;
     end
     else
     if b.val >= api.cgmRangeHi then
@@ -1064,8 +1070,11 @@ begin
       pnOffRange.Font.Color := bg_rel_color_hi_txt;
       pnOffRange.Visible := true;
       pnOffRange.Caption := Format('↥ %s ↥', [RS_OFF_HI]);
-              if Assigned(fFloat) then
-          ffloat.lRangeUp.Visible := true;
+      if Assigned(fFloat) then
+      begin
+        ffloat.lRangeUp.Visible := true;
+        ffloat.Font.color := bg_rel_color_hi_txt;
+      end;
     end;
   end;
   lastup := Now;
@@ -1085,7 +1094,8 @@ begin
   if pnOffRange.Visible and miRangeColor.Checked then
     fBG.Color := pnOffRange.Color;
 
-  if Assigned(fFloat) then begin
+  if Assigned(fFloat) then
+  begin
     fFloat.Color := fBg.Color;
     fFloat.lVal.Caption := lval.Caption;
     fFloat.lArrow.Caption := lArrow.Caption;
