@@ -23,7 +23,9 @@ type
   { TfFloat }
 
   TfFloat = class(TForm)
+    lRangeDown:TLabel;
     lArrow: TLabel;
+    lRangeUp:TLabel;
     lVal: TLabel;
     miVisible: TMenuItem;
     miOp100: TMenuItem;

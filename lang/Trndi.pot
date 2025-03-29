@@ -123,6 +123,14 @@ msgstr ""
 msgid "Floating Display"
 msgstr ""
 
+#: tffloat.lrangedown.caption
+msgid "▼"
+msgstr ""
+
+#: tffloat.lrangeup.caption
+msgid "▲"
+msgstr ""
+
 #: tffloat.lval.caption
 msgctxt "tffloat.lval.caption"
 msgid "Setup"

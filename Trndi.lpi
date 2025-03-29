@@ -19,9 +19,11 @@
     <i18n>
       <EnableI18N Value="True"/>
       <OutDir Value="lang"/>
-      <ExcludedIdentifiers Count="2">
+      <ExcludedIdentifiers Count="4">
         <Item1 Value="tfconf.lcopyright.caption"/>
         <Item2 Value="tfconf.lversion.caption"/>
+        <Item3 Value="tffloat.lRangeDown"/>
+        <Item4 Value="tffloat.lRangeUp"/>
       </ExcludedIdentifiers>
       <ExcludedOriginals Count="18">
         <Item1 Value="Trndi"/>
