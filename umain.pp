@@ -85,6 +85,7 @@ TfBG = class(TForm)
   tMain: TTimer;
   procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
   procedure FormCreate(Sender: TObject);
+  procedure FormDestroy(Sender:TObject);
   procedure FormKeyPress(Sender:TObject;var Key:char);
   procedure FormMouseLeave(Sender:TObject);
   procedure FormMouseMove(Sender:TObject;Shift:TShiftState;X,Y:integer);
@@ -449,6 +450,11 @@ begin
   update;
 end;
 
+procedure TfBG.FormDestroy(Sender:TObject);
+begin
+
+end;
+
 procedure TfBG.FormKeyPress(Sender:TObject;var Key:char);
 begin
   if key = #27 then begin // esc
@@ -495,7 +501,7 @@ begin
   if ix = NUM_DOTS then // Latest reading at lDot10
     l.Caption := IfThen(gnow, DOT_FRESH, DOT_GRAPH)
   else
-    l.Caption := IfThen(gnow, l.Hint, DOT_GRAPH);
+    l.Caption := IfThen(gnow, #13#10 + l.Hint, DOT_GRAPH);
 
   if not gnow then
     ResizeDot(l, c, ix)
@@ -1216,6 +1222,8 @@ begin
     l.top := padding-2;
 //    ShowMessage('Cannot draw graph points outside 2 and 22');
 end;
+
+
 
 
 end.
