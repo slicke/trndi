@@ -335,6 +335,7 @@ begin
   QColor_destroy(BlackColor);
   QPainter_destroy(Painter);
   {$ENDIF}
+  begin
 end;
 
 

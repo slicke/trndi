@@ -270,6 +270,11 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
       </Unit>
+      <Unit>
+        <Filename Value="jumplistmanager.pp"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="JumpListManager"/>
+      </Unit>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

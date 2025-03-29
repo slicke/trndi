@@ -12,6 +12,7 @@ object fBG: TfBG
   Position = poDesktopCenter
   OnClose = FormClose
   OnCreate = FormCreate
+  OnDestroy = FormDestroy
   OnKeyPress = FormKeyPress
   OnMouseLeave = FormMouseLeave
   OnMouseMove = FormMouseMove
