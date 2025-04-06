@@ -20,8 +20,8 @@ uses
    qt6, qtwidgets, qtobjects, qtint
   {$ENDIF};
 
-type
 {$ifdef LCLQt6}
+type
     BGValLevel = (BGHigh, BGLOW, BGOFF);    // Range = depending on API
 {$endif}
 type
@@ -258,23 +258,19 @@ end;
 
 procedure TfFloat.FormMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
 begin
-  {$ifndef LCLQt6}
   if DraggingWin then
   begin
     SetBounds(Left + (X - PX), Top + (Y - PY), Width, Height);
   end;
-  {$endif}
 end;
 
 procedure TfFloat.FormMouseUp(Sender: TObject; Button: TMouseButton; Shift:
   TShiftState; X, Y: Integer);
 begin
-  {$ifndef LCLQt6}
-    DraggingWin := false;
-    {$ifdef DARWIN}
-       BorderStyle:= bsNone;
-    {$endif}
-  {$endif}
+DraggingWin := false;
+{$ifdef DARWIN}
+   BorderStyle:= bsNone;
+{$endif}
 end;
 
 
@@ -374,16 +370,12 @@ end;
 
 procedure TfFloat.FormMouseEnter(Sender: TObject);
 begin
- {$ifdef LCLQt6}
-   BorderStyle := bsToolWindow;
- {$endif}
+
 end;
 
 procedure TfFloat.FormMouseLeave(Sender: TObject);
 begin
-   {$ifdef LCLQt6}
-   BorderStyle := bsNone;
- {$endif}
+
 end;
 
 procedure TfFloat.FormKeyPress(Sender: TObject; var Key: char);

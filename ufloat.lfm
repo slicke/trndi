@@ -10,7 +10,6 @@ object fFloat: TfFloat
   PopupMenu = pMain
   Position = poDesktopCenter
   SnapOptions.SnapToMonitor = True
-  LCLVersion = '4.0.0.3'
   OnKeyDown = FormKeyDown
   OnKeyPress = FormKeyPress
   OnMouseDown = FormMouseDown

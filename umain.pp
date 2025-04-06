@@ -26,7 +26,7 @@ interface
 
 uses
 trndi.strings, LCLTranslator, Classes, Menus, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, ExtCtrls,
-trndi.api.dexcom, trndi.api.nightscout, trndi.types, math, DateUtils, FileUtil,
+trndi.api.dexcom, trndi.api.nightscout, trndi.types, math, DateUtils, FileUtil, LclIntf,
 {$ifdef TrndiExt}
 trndi.Ext.Engine, trndi.Ext.jsfuncs,
 {$endif}
@@ -90,6 +90,7 @@ TfBG = class(TForm)
   procedure FormMouseLeave(Sender:TObject);
   procedure FormMouseMove(Sender:TObject;Shift:TShiftState;X,Y:integer);
   procedure FormResize(Sender: TObject);
+  procedure lAgoClick(Sender:TObject);
   procedure lArrowClick(Sender:TObject);
   procedure lDiffDblClick(Sender: TObject);
   procedure lgMainClick(Sender: TObject);
@@ -134,6 +135,8 @@ private
 public
 
 end;
+
+
 
 procedure SetPointHeight(L: TLabel; value: single);
 
@@ -204,6 +207,121 @@ implementation
 
 {$R *.lfm}
 {$I tfuncs.inc}
+
+// For darkening (multiply each component by 0.8)
+function DarkenColor(originalColor: TColor; factor: Double = 0.8): TColor;
+var
+  r, g, b: Byte;
+begin
+  // Extract RGB components
+  r := GetRValue(originalColor);
+  g := GetGValue(originalColor);
+  b := GetBValue(originalColor);
+
+  // Multiply by factor
+  r := Round(r * factor);
+  g := Round(g * factor);
+  b := Round(b * factor);
+
+  // Create new color
+  Result := RGB(r, g, b);
+end;
+
+// For lightening (increase each component towards 255)
+function LightenColor(originalColor: TColor; factor: Double = 0.8): TColor;
+var
+  r, g, b: Byte;
+begin
+  // Extract RGB components
+  r := GetRValue(originalColor);
+  g := GetGValue(originalColor);
+  b := GetBValue(originalColor);
+
+  // Add factor * (255 - component) to each component
+  r := Round(r + (factor * (255 - r)));
+  g := Round(g + (factor * (255 - g)));
+  b := Round(b + (factor * (255 - b)));
+
+  // Create new color
+  Result := RGB(r, g, b);
+end;
+
+
+function IsLightColor(bgColor: TColor): Boolean;
+var
+  R, G, B: Byte;
+  r2, g2, b2: Double;
+  L: Double;
+begin
+  // Get RBG
+  R := GetRValue(bgColor);
+  G := GetGValue(bgColor);
+  B := GetBValue(bgColor);
+
+  // Convert to 0-1
+  r2 := R / 255.0;
+  g2 := G / 255.0;
+  b2 := B / 255.0;
+
+  // Correct gamma
+  if r2 <= 0.04045 then r2 := r2 / 12.92 else r2 := Power((r2 + 0.055) / 1.055, 2.4);
+  if g2 <= 0.04045 then g2 := g2 / 12.92 else g2 := Power((g2 + 0.055) / 1.055, 2.4);
+  if b2 <= 0.04045 then b2 := b2 / 12.92 else b2 := Power((b2 + 0.055) / 1.055, 2.4);
+
+  // Calculate luminance
+  L := 0.2126 * r2 + 0.7152 * g2 + 0.0722 * b2;
+
+  // If L > 0.179 black is more suitable than white
+  Result := (L > 0.179);
+end;
+
+procedure PaintLbl(Sender: TLabel; OutlineWidth: integer = 1; OutlineColor: TColor = clBlack);
+var
+  X, Y: Integer;
+  OriginalColor: TColor;
+  TextRect: TRect;
+  TextStyle: TTextStyle;
+begin
+  with Sender as TLabel do
+  begin
+    // Create draw area
+    TextRect := ClientRect;
+
+    // Set the text
+    TextStyle := Canvas.TextStyle;
+    TextStyle.Alignment := Alignment;
+    TextStyle.Layout := Layout;
+    TextStyle.Wordbreak := WordWrap;
+    TextStyle.SingleLine := not WordWrap;
+    TextStyle.Clipping := True;
+
+    // Remember original color
+    OriginalColor := Font.Color;
+
+    // Set canvas font
+    Canvas.Font := Font;
+
+    // Paint contour ("outline color")
+    Canvas.Font.Color := outlinecolor;
+
+    for X := -OutlineWidth to OutlineWidth do
+      for Y := -OutlineWidth to OutlineWidth do
+        if (X <> 0) or (Y <> 0) then
+        begin
+          // Make a copy
+          Canvas.TextRect(
+            Rect(TextRect.Left + X, TextRect.Top + Y,
+                 TextRect.Right + X, TextRect.Bottom + Y),
+            0, 0, // Not used with text style
+            Caption,
+            TextStyle);
+        end;
+
+    // Re-draw original color
+    Canvas.Font.Color := OriginalColor;
+    Canvas.TextRect(TextRect, 0, 0, Caption, TextStyle);
+  end;
+end;
 
 {$ifdef DEBUG}
 procedure LogMessage(const Msg: string);
@@ -550,6 +668,11 @@ begin
   end;
 end;
 
+procedure TfBG.lAgoClick(Sender:TObject);
+begin
+
+end;
+
 procedure TfBG.lArrowClick(Sender:TObject);
 begin
 
@@ -582,11 +705,13 @@ begin
   // Event handler can be left empty if not used
 end;
 
+
 // Handle lVal click
 procedure TfBG.lValClick(Sender: TObject);
 begin
   if lVal.Caption = RS_SETUP then
     miSettings.Click;
+
 end;
 
 // Handle mouse down on lVal
@@ -1013,6 +1138,7 @@ begin
     tMissed.OnTimer(tMissed);
     lVal.Font.Style := [fsStrikeOut];
     fBG.Color := clBlack;
+    lVal.Font.Color := clWhite;
     {$ifdef lclqt6}
       if assigned(ffloat) then
         fFloat.lvl := bgoff;
@@ -1112,6 +1238,11 @@ begin
     fFloat.lVal.Caption := lval.Caption;
     fFloat.lArrow.Caption := lArrow.Caption;
   end;
+  lVal.Font.Color := ifThen(IsLightColor(fBG.color), DarkenColor(fbg.Color, 0.5), LightenColor(fBG.Color, 0.3));
+  lArrow.Font.Color := ifThen(IsLightColor(fBG.color), DarkenColor(fbg.Color, 0.5), LightenColor(fBG.Color, 0.3));
+  lDiff.Font.Color := ifThen(IsLightColor(fBG.color), DarkenColor(fbg.Color, 0.6), LightenColor(fBG.Color, 0.4));
+  lAgo.Font.Color := ifThen(IsLightColor(fBG.color), DarkenColor(fbg.Color, 0.6), LightenColor(fBG.Color, 0.4));
+
 end;
 
 // PlaceTrendDots method to map readings to TrendDots

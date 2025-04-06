@@ -48,7 +48,7 @@ object fBG: TfBG
     Caption = 'Setup'
     Color = 21243
     Font.Color = clWhite
-    Font.Height = 160
+    Font.Height = 144
     OptimalFill = True
     ParentColor = False
     ParentFont = False
@@ -215,27 +215,28 @@ object fBG: TfBG
     OnMouseMove = FormMouseMove
   end
   object lAgo: TLabel
-    Left = 5
-    Height = 13
-    Top = 18
+    Left = 16
+    Height = 40
+    Top = 24
     Width = 200
     AutoSize = False
     BorderSpacing.Bottom = 5
     Caption = 'lAgo'
     Color = clWhite
     Font.Color = clWhite
-    Font.Height = 14
+    Font.Height = 40
     OptimalFill = True
     ParentColor = False
     ParentFont = False
     PopupMenu = pmSettings
+    OnClick = lAgoClick
     OnDblClick = lDiffDblClick
     OnMouseMove = FormMouseMove
   end
   object tMain: TTimer
     Interval = 100000
     OnTimer = tMainTimer
-    Left = 202
+    Left = 200
     Top = 129
   end
   object pmSettings: TPopupMenu
