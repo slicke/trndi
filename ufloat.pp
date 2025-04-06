@@ -120,6 +120,9 @@ var
 {$IFDEF LCLQT6}
   StyleStr: WideString;
 {$ENDIF}
+{$IFDEF LCLGTK2}
+ ABitmap: TBitmap;
+{$ENDIF}
 begin
   {$IFDEF DARWIN}
   try
