@@ -37,7 +37,8 @@ NSMisc,
 ns_url_request,
 CocoaAll
 {$ELSEIF DEFINED(X_WIN)},
-Windows, Registry, Dialogs, StrUtils, winhttpclient, shellapi
+Windows, Registry, Dialogs, StrUtils, winhttpclient, shellapi,
+Forms
 {$ELSEIF DEFINED(X_PC)},
 fphttpclient, openssl, opensslsockets, IniFiles, Dialogs
 {$ENDIF}
@@ -132,6 +133,8 @@ public
       1) Constructor with custom user-agent and base URL.
       2) A default parameterless constructor also exists.
     }
+
+  procedure setBadge(const Value: string);
   constructor create(ua, base: string); overload;
   constructor create; overload;
 protected
@@ -145,6 +148,36 @@ protected
 end;
 
 implementation
+
+
+{$IFDEF Windows}
+procedure TrndiNative.SetBadge(const Value: string);
+begin
+  TaskBarList3.SetOverlayIcon(Application.MainForm.Handle, IconHandle, PWideChar(Description));
+end;
+{$ENDIF}
+
+{$ifdef LCLQt6}
+procedure TrndiNative.SetBadge(const Value: string);
+var
+  Window: QWindowH;
+begin
+  Window := QWidget_windowHandle(Application.MainForm.Handle);
+  if Window <> nil then
+    QWindow_setWindowBadge(Window, PChar(Value));
+end;
+{$endif}
+
+{$IFDEF DARWIN}
+procedure TrndiNative.SetBadge(const Value: string);
+var
+  NSS: NSString;
+begin
+  NSS := NSSTR(Value);
+  NSApp.dockTile.setBadgeLabel(NSS);
+  NSS.release;
+end;
+{$ENDIF}
 
 {------------------------------------------------------------------------------
   TrndiNative.Destroy
