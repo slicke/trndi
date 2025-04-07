@@ -153,7 +153,7 @@ BG_API_MAX = 22;
 BG_REFRESH = 300000; // 5 min refresh
 
 DOT_GRAPH =  '•';
-DOT_FRESH = '☉';
+DOT_FRESH = LineEnding +'☉';
 
 var
 bg_alert: boolean = false; // If the BG is high/low since before, so we don't spam notifications
@@ -628,7 +628,7 @@ begin
   if ix = NUM_DOTS then // Latest reading at lDot10
     l.Caption := IfThen(gnow, DOT_FRESH, DOT_GRAPH)
   else
-    l.Caption := IfThen(gnow, #13#10 + l.Hint, DOT_GRAPH);
+    l.Caption := IfThen(gnow, LineEnding + l.Hint, DOT_GRAPH);
 
   if not gnow then
     ResizeDot(l, c, ix)
