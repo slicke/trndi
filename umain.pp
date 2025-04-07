@@ -467,6 +467,13 @@ begin
     IsRaspberry := FileExists('/etc/rpi-issue');
   {$endif}
 
+          {$ifdef DARWIN}
+        BorderStyle := bsSizeable;
+    {$else}
+    BorderStyle := bsSizeToolWin;
+    {$endif}
+
+
   // Assign labels to the TrendDots array
   for i := 1 to NUM_DOTS do
   begin
@@ -685,7 +692,11 @@ begin
   begin
     fBG.WindowState := wsNormal;
     fBG.FormStyle := fsNormal;
-    fBG.BorderStyle := bsSizeToolWin;
+        {$ifdef DARWIN}
+        BorderStyle := bsSizeable;
+    {$else}
+    BorderStyle := bsSizeToolWin;
+    {$endif}
     fBG.Width := Max(Screen.Width div 5, 200);
     fBG.height := Max(Screen.Height div 5, 300);
     fBG.Top := (screen.Height div 2) - (fbg.Height div 2);
@@ -747,9 +758,9 @@ end;
 
 procedure TfBG.miFloatOnClick(Sender:TObject);
 begin
-  if fFloat.Showing then
-    fFloat.Hide else
-  begin
+  if fFloat.Showing then begin
+    fFloat.Hide;
+  end else begin
     fFloat.Show;
     fFloat.Color := fBg.Color;
     fFloat.lVal.Caption := lval.Caption;
@@ -771,7 +782,11 @@ begin
   if miBorders.checked then
     self.BorderStyle := bsNone
   else
+    {$ifdef DARWIN}
+        BorderStyle := bsSizeable;
+    {$else}
     BorderStyle := bsSizeToolWin;
+    {$endif}
 end;
 
 procedure TfBG.miExitClick(Sender:TObject);
@@ -1243,6 +1258,10 @@ begin
   lDiff.Font.Color := ifThen(IsLightColor(fBG.color), DarkenColor(fbg.Color, 0.6), LightenColor(fBG.Color, 0.4));
   lAgo.Font.Color := ifThen(IsLightColor(fBG.color), DarkenColor(fbg.Color, 0.6), LightenColor(fBG.Color, 0.4));
 
+  with TrndiNative.Create do begin
+    setBadge(lVal.Caption);
+    Free;
+  end;
 end;
 
 // PlaceTrendDots method to map readings to TrendDots
