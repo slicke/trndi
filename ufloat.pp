@@ -90,6 +90,8 @@ begin
   BorderStyle := bsNone;
   {$IFNDEF DARWIN}
   Color := clWhite; //Set the background color
+  {$else}
+  lVal.font.size := lVal.font.size - (lVal.font.size div 10);
    {$endif}
    {$IFDEF LCLQt6}
   if HandleAllocated then

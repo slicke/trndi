@@ -21,6 +21,9 @@
 unit umain;
 
 {$mode objfpc}{$H+}
+{$ifdef Darwin}
+  {$modeswitch objectivec1}
+{$endif}
 
 interface
 
@@ -29,6 +32,9 @@ trndi.strings, LCLTranslator, Classes, Menus, SysUtils, Forms, Controls, Graphic
 trndi.api.dexcom, trndi.api.nightscout, trndi.types, math, DateUtils, FileUtil, LclIntf,
 {$ifdef TrndiExt}
 trndi.Ext.Engine, trndi.Ext.jsfuncs,
+{$endif}
+{$ifdef Darwin}
+CocoaAll,
 {$endif}
 LazFileUtils, uconf, trndi.native, Trndi.API, trndi.api.xDrip,{$ifdef DEBUG} trndi.api.debug,{$endif}
 StrUtils, TouchDetection, ufloat;
@@ -687,15 +693,32 @@ end;
 
 // Handle full screen toggle on double-click
 procedure TfBG.lDiffDblClick(Sender: TObject);
+function IsMaximized(Form: TForm): Boolean;
 begin
-  if fBG.WindowState = wsMaximized then
+  {$IFDEF DARWIN}
+  // Jämför med skärmstorlek minus menubar/dock
+  Result := (Form.BoundsRect.Width >= Screen.WorkAreaWidth) and
+            (Form.BoundsRect.Height >= Screen.WorkAreaHeight);
+  {$ELSE}
+  Result := Form.WindowState = wsMaximized;
+  {$ENDIF}
+end;
+
+
+begin
+ if IsMaximized(self) then
   begin
+    {$ifdef DARWIN}
+    Showmessage('macOS cant restore the main window, please restart!');
+//  Application.Terminate;
+    borderstyle := bsSizeable;
     fBG.WindowState := wsNormal;
     fBG.FormStyle := fsNormal;
-        {$ifdef DARWIN}
-        BorderStyle := bsSizeable;
+    Exit;
     {$else}
     BorderStyle := bsSizeToolWin;
+    fBG.WindowState := wsNormal;
+    fBG.FormStyle := fsNormal;
     {$endif}
     fBG.Width := Max(Screen.Width div 5, 200);
     fBG.height := Max(Screen.Height div 5, 300);
