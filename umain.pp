@@ -142,6 +142,9 @@ public
 
 end;
 
+var
+native: TrndiNative;
+
 
 
 procedure SetPointHeight(L: TLabel; value: single);
@@ -457,6 +460,7 @@ function GetLinuxDistro: string;
 
   {$endif}
 begin
+native := TrndiNative.Create;
   {$ifdef Linux}
   s := GetLinuxDistro;
   if (Pos('ID=fedora', s) > -1) then
@@ -491,7 +495,7 @@ begin
       LogMessage(Format('Label %s assigned to TrendDots[%d].', [s, i]));
   end;
 
-  with TrndiNative.Create do
+  with native do
   begin
     HasTouch :=  HasTouchScreen(HasMultiTouch);
     if HasMultiTouch then
@@ -515,7 +519,6 @@ begin
         end
         else
           username := '';
-        Free;
       end// Load possible other users
     ;
 
@@ -583,7 +586,7 @@ end;
 
 procedure TfBG.FormDestroy(Sender:TObject);
 begin
-
+ native.free;
 end;
 
 procedure TfBG.FormKeyPress(Sender:TObject;var Key:char);
@@ -846,7 +849,7 @@ var
   s: string;
 begin
   with TfConf.Create(self) do
-    with TrndiNative.Create do
+    with native do
     begin
       {$ifdef DEBUG}
       cbSys.Items.Add('* Debug Backend *');
@@ -1115,6 +1118,7 @@ var
   b: BGReading;
   i: int64;
 begin
+native.start;
   lastup := 0;
   // If not looking for new values, the last reading is unknown
   if not tAgo.Enabled then
@@ -1281,10 +1285,11 @@ begin
   lDiff.Font.Color := ifThen(IsLightColor(fBG.color), DarkenColor(fbg.Color, 0.6), LightenColor(fBG.Color, 0.4));
   lAgo.Font.Color := ifThen(IsLightColor(fBG.color), DarkenColor(fbg.Color, 0.6), LightenColor(fBG.Color, 0.4));
 
-  with TrndiNative.Create do begin
+  with native do begin
     setBadge(lVal.Caption);
-    Free;
+    done;
   end;
+
 end;
 
 // PlaceTrendDots method to map readings to TrendDots
