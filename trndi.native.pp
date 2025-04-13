@@ -137,6 +137,8 @@ public
       2) A default parameterless constructor also exists.
     }
 
+  procedure start;
+  procedure done;
   procedure setBadge(const Value: string);
   constructor create(ua, base: string); overload;
   constructor create; overload;
@@ -154,6 +156,32 @@ end;
 
 implementation
 
+
+{$IFDEF Windows}
+procedure TrndiNative.start;
+begin
+
+end;
+{$ENDIF}
+
+{$IFDEF Windows}
+procedure TrndiNative.done;
+begin
+
+end;
+{$ENDIF}
+
+{$IFNDEF Windows}
+procedure TrndiNative.start;
+begin
+
+end;
+
+procedure TrndiNative.done;
+begin
+
+end;
+{$ENDIF}
 
 {$IFDEF LCLGTK3}
 procedure TrndiNative.SetBadge(const Value: string);
@@ -176,7 +204,7 @@ end;
 {$IFDEF Windows}
 procedure TrndiNative.SetBadge(const Value: string);
 begin
-  TaskBarList3.SetOverlayIcon(Application.MainForm.Handle, IconHandle, PWideChar(Description));
+
 end;
 {$ENDIF}
 

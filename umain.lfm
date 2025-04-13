@@ -10,7 +10,6 @@ object fBG: TfBG
   Color = clBlack
   Font.Color = clWhite
   Position = poDesktopCenter
-  LCLVersion = '4.0.0.3'
   OnClose = FormClose
   OnCreate = FormCreate
   OnDestroy = FormDestroy
@@ -238,7 +237,7 @@ object fBG: TfBG
     Interval = 100000
     OnTimer = tMainTimer
     Left = 200
-    Top = 129
+    Top = 128
   end
   object pmSettings: TPopupMenu
     OnMeasureItem = pmSettingsMeasureItem
