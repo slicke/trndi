@@ -42,6 +42,9 @@ Forms
 {$ELSEIF DEFINED(X_PC)},
 fphttpclient, openssl, opensslsockets, IniFiles, Dialogs
 {$ENDIF}
+{$IFDEF LCLQt6}//,
+//qt6, qtwidgets, forms, QtWSForms, QtWSComCtrls
+{$endif}
 , process;
 
 type
@@ -147,8 +150,28 @@ protected
 
 end;
 
+//procedure QWindow_setWindowBadge(window: QWindowH; badge: PChar); cdecl; external 'libQt6Gui.so.6';
+
 implementation
 
+
+{$IFDEF LCLGTK3}
+procedure TrndiNative.SetBadge(const Value: string);
+begin
+end;
+{$ENDIF}
+
+{$IFDEF LCLGTK2}
+procedure TrndiNative.SetBadge(const Value: string);
+begin
+end;
+{$ENDIF}
+
+{$IFDEF LCLFPGUI}
+procedure TrndiNative.SetBadge(const Value: string);
+begin
+end;
+{$ENDIF}
 
 {$IFDEF Windows}
 procedure TrndiNative.SetBadge(const Value: string);
@@ -159,12 +182,16 @@ end;
 
 {$ifdef LCLQt6}
 procedure TrndiNative.SetBadge(const Value: string);
-var
-  Window: QWindowH;
+//var
+//  Win: QWindowH;
 begin
-  Window := QWidget_windowHandle(Application.MainForm.Handle);
-  if Window <> nil then
-    QWindow_setWindowBadge(Window, PChar(Value));
+  // Hämta QWindow via QWidget_windowHandle
+  //Win := QWidget_windowHandle(QWidgetH(Application.MainForm.Handle));
+
+ // if Win <> nil then
+ // begin
+//    QWindow_setWindowBadge(Win, PChar(Value));
+ // end;
 end;
 {$endif}
 

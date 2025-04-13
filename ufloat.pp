@@ -125,6 +125,10 @@ var
 {$IFDEF LCLGTK2}
  ABitmap: TBitmap;
 {$ENDIF}
+{$IFDEF LCLGTK3}
+ ABitmap: TBitmap;
+{$ENDIF}
+
 begin
   {$IFDEF DARWIN}
   try
@@ -164,7 +168,7 @@ if HandleAllocated then
 QWidget_setStyleSheet(TQtWidget(Handle).Widget,
   @stylestr);
   CreateRoundedCorners;
-  {$ELSif false}
+  {$ELSE}
   Self.BorderStyle := bsNone; // Remove border
   // Use LCL stuff when Windows (or not Qt really)
   try

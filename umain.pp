@@ -1178,8 +1178,8 @@ begin
     fBG.Color := clBlack;
     lVal.Font.Color := clWhite;
     {$ifdef lclqt6}
-      if assigned(ffloat) then
-        fFloat.lvl := bgoff;
+  //    if assigned(ffloat) then
+//        fFloat.lvl := bgoff;
     {$endif}
     tMissed.Enabled := true;
     Exit;
@@ -1192,8 +1192,8 @@ begin
   begin
     fBG.Color := bg_color_hi;
     {$ifdef LCLQt6}
-      if assigned(fFloat) then
-        ffloat.lvl := BGHigh;
+  //    if assigned(fFloat) then
+//        ffloat.lvl := BGHigh;
     {$endif}
     with TrndiNative.create  do
       if not bg_alert then
@@ -1204,8 +1204,8 @@ begin
   begin
     fBG.Color := bg_color_lo;
         {$ifdef LCLQt6}
-      if assigned(fFloat) then
-        ffloat.lvl := BGLOW;
+  //    if assigned(fFloat) then
+//        ffloat.lvl := BGLOW;
     {$endif}
     with TrndiNative.create  do
       if not bg_alert then
