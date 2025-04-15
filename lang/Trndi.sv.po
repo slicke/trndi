@@ -146,10 +146,30 @@ msgctxt "tffloat.lval.caption"
 msgid "Setup"
 msgstr "Konfig"
 
+#: tffloat.menuitem1.caption
+msgid "&Hide"
+msgstr ""
+
+#: tffloat.mibig.caption
+msgid "Big"
+msgstr ""
+
 #: tffloat.micustomvisible.caption
 msgctxt "tffloat.micustomvisible.caption"
 msgid "Custom"
 msgstr "Egen"
+
+#: tffloat.minormal.caption
+msgid "Normal"
+msgstr ""
+
+#: tffloat.misize.caption
+msgid "Size"
+msgstr ""
+
+#: tffloat.mismall.caption
+msgid "Small"
+msgstr ""
 
 #: tffloat.mivisible.caption
 msgctxt "tffloat.mivisible.caption"
