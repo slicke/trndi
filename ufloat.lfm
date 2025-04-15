@@ -1,16 +1,15 @@
 object fFloat: TfFloat
   Left = 358
-  Height = 164
+  Height = 160
   Top = 250
-  Width = 207
+  Width = 200
   Caption = 'Floating Display'
-  ClientHeight = 164
-  ClientWidth = 207
+  ClientHeight = 160
+  ClientWidth = 200
   FormStyle = fsSystemStayOnTop
   PopupMenu = pMain
   Position = poDesktopCenter
   SnapOptions.SnapToMonitor = True
-  LCLVersion = '4.0.0.3'
   OnKeyDown = FormKeyDown
   OnKeyPress = FormKeyPress
   OnMouseDown = FormMouseDown
@@ -22,9 +21,9 @@ object fFloat: TfFloat
   OnShow = FormShow
   object lVal: TLabel
     Left = 0
-    Height = 86
+    Height = 82
     Top = 0
-    Width = 207
+    Width = 200
     Align = alClient
     Alignment = taCenter
     AutoSize = False
@@ -43,8 +42,8 @@ object fFloat: TfFloat
   object lArrow: TLabel
     Left = 0
     Height = 78
-    Top = 86
-    Width = 207
+    Top = 82
+    Width = 200
     Align = alBottom
     Alignment = taCenter
     AutoSize = False
@@ -63,7 +62,7 @@ object fFloat: TfFloat
   end
   object lRangeDown: TLabel
     Left = 0
-    Height = 16
+    Height = 15
     Top = 0
     Width = 10
     Caption = '▼'
@@ -71,7 +70,7 @@ object fFloat: TfFloat
   end
   object lRangeUp: TLabel
     Left = 0
-    Height = 16
+    Height = 15
     Top = 0
     Width = 10
     Caption = '▲'
@@ -115,6 +114,32 @@ object fFloat: TfFloat
         RadioItem = True
         OnClick = miCustomVisibleClick
       end
+    end
+    object miSplit: TMenuItem
+      Caption = '-'
+    end
+    object miSIze: TMenuItem
+      Caption = 'Size'
+      object miBig: TMenuItem
+        Caption = 'Big'
+        RadioItem = True
+        OnClick = miNormalClick
+      end
+      object miNormal: TMenuItem
+        Caption = 'Normal'
+        Checked = True
+        RadioItem = True
+        OnClick = miNormalClick
+      end
+      object miSmall: TMenuItem
+        Caption = 'Small'
+        RadioItem = True
+        OnClick = miNormalClick
+      end
+    end
+    object MenuItem1: TMenuItem
+      Caption = '&Hide'
+      OnClick = MenuItem1Click
     end
   end
 end

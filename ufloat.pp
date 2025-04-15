@@ -33,6 +33,12 @@ type
     lArrow: TLabel;
     lRangeUp:TLabel;
     lVal: TLabel;
+    MenuItem1:TMenuItem;
+    miSmall:TMenuItem;
+    miNormal:TMenuItem;
+    miBig:TMenuItem;
+    miSIze:TMenuItem;
+    miSplit:TMenuItem;
     miVisible: TMenuItem;
     miOp100: TMenuItem;
     miOp25: TMenuItem;
@@ -55,7 +61,10 @@ type
     procedure FormShow(Sender: TObject);
     procedure lValMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X,
       Y: Integer);
+    procedure MenuItem1Click(Sender:TObject);
+    procedure miBigClick(Sender:TObject);
     procedure miCustomVisibleClick(Sender: TObject);
+    procedure miNormalClick(Sender:TObject);
     procedure miOp100Click(Sender: TObject);
   private
     procedure SetFormOpacity(Opacity: Double);
@@ -247,9 +256,47 @@ procedure TfFloat.lValMouseUp(Sender: TObject; Button: TMouseButton; Shift:
 begin
 end;
 
+procedure TfFloat.MenuItem1Click(Sender:TObject);
+begin
+  Hide;
+end;
+
+procedure TfFloat.miBigClick(Sender:TObject);
+begin
+
+end;
+
 procedure TfFloat.miCustomVisibleClick(Sender: TObject);
 begin
   ShowMessage(rsCustomOp);
+end;
+
+procedure TfFloat.miNormalClick(Sender:TObject);
+const
+ h = 200;
+ w = 160;
+ // Fonts
+ b = 95;
+ s = 80;
+begin
+  if (sender as TMenuItem).Name = 'miBig' then begin
+    Width := w * 2;
+    height := h * 2;
+    lVal.Font.Size := b * 2;
+    lArrow.Font.Size := s * 2;
+  end else
+    if (sender as TMenuItem).Name = 'miSmall' then begin
+    Width := w div 2;
+    height := h  div 2;
+        lVal.Font.Size := b div 2;
+    lArrow.Font.Size := s div 2;
+  end else begin
+    Width := w;
+    height := h;
+        lVal.Font.Size := b;
+    lArrow.Font.Size := s;
+  end;
+  ApplyRoundedCorners;
 end;
 
 procedure TfFloat.miOp100Click(Sender: TObject);
