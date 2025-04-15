@@ -123,6 +123,7 @@ TfBG = class(TForm)
   procedure tMainTimer(Sender: TObject);
   procedure tMissedTimer(Sender:TObject);
   procedure tTouchTimer(Sender: TObject);
+  procedure TfFloatOnHide(Sender:TObject);
 private
     // Array to hold references to lDot1 - lDot10
   TrendDots: array[1..10] of TLabel;
@@ -782,12 +783,19 @@ begin
   // Event handler can be left empty if not used
 end;
 
+procedure TfBG.TfFloatOnHide(Sender:TObject);
+begin
+   miFloatOn.Checked := fFloat.Showing;
+end;
+
 procedure TfBG.miFloatOnClick(Sender:TObject);
 begin
   if fFloat.Showing then begin
     fFloat.Hide;
   end else begin
     fFloat.Show;
+    if not assigned(fFloat.onhide) then
+      ffloat.OnHide := @TfFloatOnHide;
     fFloat.Color := fBg.Color;
     fFloat.lVal.Caption := lval.Caption;
     fFloat.lArrow.Caption := lArrow.Caption;
