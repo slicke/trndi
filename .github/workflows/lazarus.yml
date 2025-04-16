@@ -1,4 +1,4 @@
-name: Build and Test Trndi.lpr with Lazarus 4.0 RC3
+name: Build for Windows
 
 on:
   push:
@@ -141,7 +141,7 @@ jobs:
       # 13. Build Trndi.lpr
       - name: Build Trndi.lpr
         run: |
-          & 'C:\Lazarus\lazbuild.exe' --lazarusdir='C:\Lazarus' --build-mode='Extensions (Release)' 'Trndi.lpr'
+          & 'C:\Lazarus\lazbuild.exe' --lazarusdir='C:\Lazarus' --add-package=mormot2 --build-mode='Extensions (Release)' 'Trndi.lpr'
         shell: pwsh
 
       # 14. Create artifact directory
@@ -161,13 +161,11 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          files: Trndi-developer-build.zip
-          tag_name: v${{ github.run_number }}-test
-          name: Automatic Developer build ${{ github.run_number }}
+          files: Trndi-developer-build-windows.zip
+          tag_name: v${{ github.run_number }}-win
+          name: Windows Build ${{ github.run_number }}
           body: |
-            ## Get the latest release: <a href="https://github.com/slicke/trndi/releases?q=prerelease%3Afalse&expanded=true">here</a>!
-            ### Not for end-users!
-            Developer build, from commit ${{ github.sha }}. Not tested and (probably) not stable!
+            Windows developer build from commit ${{ github.sha }}.
           prerelease: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
