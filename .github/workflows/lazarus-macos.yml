@@ -19,6 +19,15 @@ jobs:
         run: |
           sudo xcode-select --install || true
           sudo xcodebuild -license accept || true
+      
+      - name: Create profile directory if needed
+        run: mkdir -p /Users/runner
+        
+      - name: Set up MacPorts environment
+        run: |
+            echo 'export PATH=/opt/local/bin:/opt/local/sbin:$PATH' > /Users/runner/.profile
+            source /Users/runner/.profile
+            echo "PATH=$PATH" >> $GITHUB_ENV
 
       - name: Install MacPorts
         run: |
