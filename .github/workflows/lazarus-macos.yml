@@ -191,7 +191,7 @@ jobs:
           
           # Build the project
           echo "Building with command: $BUILD_CMD"
-          "$BUILD_CMD" --build-mode="Release" --cpu=aarch64 --os=darwin --widgetset=cocoa "$MAIN_PROJECT" || echo "Build failed"
+          "$BUILD_CMD" --build-mode="No Ext (Release)" --cpu=aarch64 --os=darwin --widgetset=cocoa "$MAIN_PROJECT" || echo "Build failed"
           
           # Remove quarantine attribute
           find . -name "*.app" -exec xattr -drv com.apple.quarantine {} \; || echo "No .app files found"
