@@ -1,4 +1,4 @@
-name: Build and Test Trndi.lpr with Lazarus 4.0 RC2
+name: Build and Test Trndi.lpr with Lazarus 4.0 RC3
 
 on:
   push:
@@ -26,14 +26,14 @@ jobs:
         uses: actions/cache@v3
         with:
           path: C:\Lazarus
-          key: lazarus-4.0rc2-installation
+          key: lazarus-4.0rc3-installation
 
-      # 3. Install Lazarus 4.0 RC2
-      - name: Install Lazarus 4.0 RC2
+      # 3. Install Lazarus 4.0 RC3
+      - name: Install Lazarus 4.0 RC3
         run: |
           if (!(Test-Path "C:\Lazarus\lazbuild.exe")) {
-            Invoke-WebRequest -Uri 'https://download.lazarus-ide.org/Lazarus%20Windows%2064%20bits/Lazarus%204.0RC2/lazarus-4.0RC2-fpc-3.2.2-win64.exe' -OutFile 'lazarus-4.0RC2.exe' -ErrorAction Stop
-            Start-Process -FilePath 'lazarus-4.0RC2.exe' -ArgumentList '/VERYSILENT', '/DIR=C:\Lazarus' -Wait -ErrorAction Stop
+            Invoke-WebRequest -Uri 'https://download.lazarus-ide.org/Lazarus%20Windows%2064%20bits/Lazarus%204.0RC3/lazarus-4.0RC3-fpc-3.2.2-win64.exe' -OutFile 'lazarus-4.0RC3.exe' -ErrorAction Stop
+            Start-Process -FilePath 'lazarus-4.0RC3.exe' -ArgumentList '/VERYSILENT', '/DIR=C:\Lazarus' -Wait -ErrorAction Stop
           }
         shell: pwsh
 
@@ -48,7 +48,7 @@ jobs:
         uses: actions/cache/save@v3
         with:
           path: C:\Lazarus
-          key: lazarus-4.0rc2-installation        
+          key: lazarus-4.0rc3-installation        
 
       # 4c. Install 7-Zip
       - name: Install 7-Zip
