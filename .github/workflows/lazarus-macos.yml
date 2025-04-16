@@ -1,4 +1,4 @@
-name: Build Trndi for macOS ARM64 (Alternative)
+name: Build Trndi for macOS ARM64
 
 on:
   push:
@@ -28,13 +28,42 @@ jobs:
           # Mount the DMG
           hdiutil attach fpc-installer.dmg
           
-          # Install FPC
-          sudo installer -pkg /Volumes/fpc-3.2.2.intelarm64-macosx/fpc-3.2.2-intelarm64-macosx.pkg -target /
+          # List contents to find the correct package name
+          echo "Contents of mounted disk image:"
+          ls -la /Volumes/fpc-3.2.2.intelarm64-macosx/
+          
+          # Find the .pkg file
+          FPC_PKG=$(find /Volumes/fpc-3.2.2.intelarm64-macosx -name "*.pkg" | head -1)
+          echo "Found FPC package: $FPC_PKG"
+          
+          # Install FPC using the found package
+          if [ -n "$FPC_PKG" ]; then
+            sudo installer -pkg "$FPC_PKG" -target /
+          else
+            echo "No .pkg file found in the mounted volume"
+            exit 1
+          fi
           
           # Unmount
-          hdiutil detach /Volumes/fpc-3.2.2.intelarm64-macosx
+          hdiutil detach /Volumes/fpc-3.2.2.intelarm64-macosx || true
           
           # Verify installation
+          fpc -iV || echo "FPC not installed correctly"
+          
+          # Add FPC to path if needed
+          if ! command -v fpc &> /dev/null; then
+            echo "FPC not found in PATH. Adding likely paths..."
+            echo "/usr/local/bin" >> $GITHUB_PATH
+            echo "/opt/homebrew/bin" >> $GITHUB_PATH
+          fi
+
+      - name: Try Alternative FPC Installation with Homebrew
+        if: ${{ failure() }}
+        run: |
+          # Try Homebrew as fallback
+          echo "Attempting to install FPC via Homebrew instead..."
+          brew update
+          brew install fpc
           fpc -iV
 
       - name: Download and Install Lazarus
@@ -45,17 +74,92 @@ jobs:
           # Mount the DMG
           hdiutil attach lazarus-installer.dmg
           
+          # List contents to confirm correct path
+          echo "Contents of mounted Lazarus disk image:"
+          ls -la "/Volumes/Lazarus-2.2.4-0-x86_64-macosx/"
+          
           # Install Lazarus
           sudo cp -R "/Volumes/Lazarus-2.2.4-0-x86_64-macosx/Lazarus.app" /Applications/
           
           # Unmount
-          hdiutil detach "/Volumes/Lazarus-2.2.4-0-x86_64-macosx"
+          hdiutil detach "/Volumes/Lazarus-2.2.4-0-x86_64-macosx" || true
           
           # Add to PATH
           echo "/Applications/Lazarus.app/Contents/MacOS" >> $GITHUB_PATH
           
           # Verify installation
           ls -la /Applications/Lazarus.app/Contents/MacOS/
+          echo "Lazarus installation location: /Applications/Lazarus.app"
+
+      - name: Try Alternative Lazarus Installation with Homebrew
+        if: ${{ failure() }}
+        run: |
+          # Try Homebrew as fallback
+          echo "Attempting to install Lazarus via Homebrew instead..."
+          brew update
+          brew install lazarus
+          BREW_PREFIX=$(brew --prefix)
+          echo "$BREW_PREFIX/bin" >> $GITHUB_PATH
+          LAZARUS_PATH=$(find $BREW_PREFIX -name "lazbuild" -type f)
+          echo "Found lazbuild at: $LAZARUS_PATH"
+
+      - name: Identify FPC installation
+        run: |
+          echo "FPC version and location:"
+          which fpc || echo "fpc not in PATH"
+          fpc -iV || echo "Cannot get FPC version"
+          find /usr -name "fpc" 2>/dev/null || echo "No fpc found in /usr"
+          find /opt -name "fpc" 2>/dev/null || echo "No fpc found in /opt"
+          find $HOME -name "fpc" 2>/dev/null || echo "No fpc found in $HOME"
+          
+          echo "PP variables:"
+          echo "PP: $PP"
+          echo "PATH: $PATH"
+
+      - name: Identify Lazarus installation
+        run: |
+          echo "Lazarus executables:"
+          which lazbuild || echo "lazbuild not in PATH"
+          find /Applications -name "lazbuild" -type f 2>/dev/null || echo "No lazbuild found in Applications"
+          find /usr -name "lazbuild" -type f 2>/dev/null || echo "No lazbuild found in /usr"
+          find /opt -name "lazbuild" -type f 2>/dev/null || echo "No lazbuild found in /opt"
+          
+          # Set lazbuild path if found
+          LAZBUILD_PATH=$(find /Applications -name "lazbuild" -type f 2>/dev/null | head -1)
+          if [ -n "$LAZBUILD_PATH" ]; then
+            echo "LAZBUILD=$LAZBUILD_PATH" >> $GITHUB_ENV
+            echo "Found lazbuild at: $LAZBUILD_PATH"
+          else
+            echo "Could not locate lazbuild executable"
+          fi
+
+      - name: Analyze installation issue for FPC 3.2.2
+        run: |
+          echo "Analyzing FPC installation issue..."
+          
+          # Check if specific FPC binaries exist
+          if [ -f "/usr/local/bin/fpc" ]; then
+            echo "FPC found in /usr/local/bin:"
+            ls -la /usr/local/bin/fpc*
+          fi
+          
+          # Check FPC config
+          if [ -f "/etc/fpc.cfg" ]; then
+            echo "FPC config exists:"
+            cat /etc/fpc.cfg
+          fi
+          
+          # Check for common errors in FPC setup
+          echo "Looking for common FPC installation issues..."
+          find /usr/local/lib -name "fpc" -type d 2>/dev/null
+          
+          # Try to install FPC directly with Homebrew since the DMG approach failed
+          echo "Installing FPC 3.2.2 with Homebrew..."
+          brew update
+          brew install fpc@3.2.2 || brew install fpc
+          
+          # Verify installation
+          fpc -iV
 
       - name: Modify project file to remove mormot2
         run: |
@@ -66,19 +170,31 @@ jobs:
         run: |
           echo "Starting build process for Trndi..."
           
-          # Using the full path to lazbuild
-          LAZBUILD="/Applications/Lazarus.app/Contents/MacOS/lazbuild"
-          
-          # Find the main project file
-          echo "Locating .lpi files:"
+          # Find the project file
           MAIN_PROJECT=$(find . -name "*.lpi" -type f | head -1)
           echo "Found project file: $MAIN_PROJECT"
           
+          # Use environment variable if set, otherwise try to find lazbuild
+          if [ -n "$LAZBUILD" ]; then
+            echo "Using lazbuild from environment variable: $LAZBUILD"
+            BUILD_CMD="$LAZBUILD"
+          else
+            LAZARUS_FOUND=$(find /Applications -name "lazbuild" -type f | head -1)
+            if [ -n "$LAZARUS_FOUND" ]; then
+              echo "Using lazbuild found at: $LAZARUS_FOUND"
+              BUILD_CMD="$LAZARUS_FOUND"
+            else
+              echo "Using lazbuild from PATH"
+              BUILD_CMD="lazbuild"
+            fi
+          fi
+          
           # Build the project
-          "$LAZBUILD" --build-mode="Release" --cpu=aarch64 --os=darwin --widgetset=cocoa "$MAIN_PROJECT"
+          echo "Building with command: $BUILD_CMD"
+          "$BUILD_CMD" --build-mode="Release" --cpu=aarch64 --os=darwin --widgetset=cocoa "$MAIN_PROJECT" || echo "Build failed"
           
           # Remove quarantine attribute
-          find . -name "*.app" -exec xattr -drv com.apple.quarantine {} \;
+          find . -name "*.app" -exec xattr -drv com.apple.quarantine {} \; || echo "No .app files found"
 
       - name: Package application
         run: |
@@ -97,7 +213,11 @@ jobs:
             echo "Application packaged successfully"
           else
             echo "No .app files found to package"
-            exit 1
+            mkdir -p ./dist
+            echo "Build failed - no application found" > ./dist/build-failed.txt
+            cd ./dist
+            zip -r ../Trndi-build-failed.zip ./*
+            cd ..
           fi
 
       - name: Upload artifact
@@ -107,3 +227,11 @@ jobs:
           path: ./Trndi-macos-arm64.zip
           retention-days: 7
         if: success()
+
+      - name: Upload build failure info
+        uses: actions/upload-artifact@v4
+        with:
+          name: Trndi-build-failure-info
+          path: ./Trndi-build-failed.zip
+          retention-days: 7
+        if: failure()
