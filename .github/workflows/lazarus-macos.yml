@@ -40,7 +40,7 @@ jobs:
           # Update MacPorts
           sudo port selfupdate || echo "Failed to update MacPorts"
 
-      - name: Install FPC and Lazarus with full diagnostic 
+      - name: Install FPC and Lazarus with extensive diagnostic 
         run: |
           echo "Installing FPC and Lazarus..."
           sudo port install fpc +universal || echo "FPC installation failed"
@@ -49,59 +49,110 @@ jobs:
           echo "FPC version:"
           fpc -iV || echo "FPC command failed"
           
-          echo "Lazarus directories:"
-          find /opt/local -name "lazarus*" -type d || echo "No Lazarus directories found"
+          echo "Extensive MacPorts directory search for Lazarus components:"
+          echo "All lazarus-related directories:"
+          find /opt/local -name "*lazarus*" -type d | sort
           
-          echo "LCL path check:"
-          LAZARUS_DIR=$(find /opt/local -name "lazarus" -type d | head -1)
-          echo "Lazarus directory: $LAZARUS_DIR"
+          echo "All LCL-related directories:"
+          find /opt/local -name "*lcl*" -type d | sort
           
-          if [ -d "$LAZARUS_DIR" ]; then
-            echo "LCL subdirectories:"
-            find "$LAZARUS_DIR/lcl" -type d | sort
-            echo "LCL interfaces:"
-            find "$LAZARUS_DIR/lcl/interfaces" -type d | sort
-          else
-            echo "Lazarus directory not found!"
-          fi
+          echo "MacPorts package listing for lazarus:"
+          port contents lazarus | grep -i lcl
+          
+          echo "Searching for LCL components in standard locations:"
+          find /Applications -name "*lcl*" -type d | sort
+          find /opt -name "*lcl*" -type d | sort
+          find /usr/local -name "*lcl*" -type d | sort
           
           echo "Locating lazbuild:"
           find /opt/local -name "lazbuild" -type f || echo "lazbuild not found"
+          which lazbuild || echo "lazbuild not in PATH"
           
           echo "Checking config directory:"
           mkdir -p $HOME/.lazarus
           mkdir -p $HOME/.config/lazarus
 
-      - name: Locate and configure LCL paths
+      - name: Locate Lazarus components with diagnostic output
         run: |
-          echo "Configuring LCL paths..."
+          echo "Searching for Lazarus components..."
           
-          # Find Lazarus directory
-          LAZARUS_DIR=$(find /opt/local -name "lazarus" -type d | head -1)
+          # Find all lazarus-related directories
+          echo "All lazarus directories in /opt/local:"
+          find /opt/local -name "*lazarus*" -type d | sort
           
-          if [ -z "$LAZARUS_DIR" ]; then
-            echo "Lazarus directory not found!"
+          echo "Looking for LCL directories:"
+          find /opt/local -name "lcl" -type d | sort
+          
+          # Check port contents for lazarus
+          echo "MacPorts package contents for lazarus:"
+          port contents lazarus | grep -i "lazarus" | head -20
+          
+          # Search for specific components
+          echo "Finding key Lazarus components:"
+          LCL_DIR=$(find /opt/local -name "lcl" -type d | head -1)
+          LAZARUS_DIR=$(dirname "$LCL_DIR" 2>/dev/null)
+          INTERFACES_DIR="$LCL_DIR/interfaces" 
+          COCOA_DIR="$INTERFACES_DIR/cocoa"
+          
+          echo "LCL directory: $LCL_DIR"
+          echo "Derived Lazarus directory: $LAZARUS_DIR"
+          echo "Interfaces directory: $INTERFACES_DIR"
+          echo "Cocoa interface directory: $COCOA_DIR"
+          
+          # If we didn't find LCL, try alternative approach
+          if [ -z "$LCL_DIR" ] || [ ! -d "$LCL_DIR" ]; then
+            echo "Looking for Lazarus directory first..."
+            LAZARUS_DIR=$(find /opt/local -path "*/share/lazarus" -type d | head -1)
+            if [ -n "$LAZARUS_DIR" ]; then
+              echo "Found Lazarus in share directory: $LAZARUS_DIR"
+              LCL_DIR="$LAZARUS_DIR/lcl"
+              INTERFACES_DIR="$LCL_DIR/interfaces"
+              COCOA_DIR="$INTERFACES_DIR/cocoa"
+            fi
+          fi
+          
+          # If still not found, search for the lazbuild executable and use it to find the path
+          if [ -z "$LCL_DIR" ] || [ ! -d "$LCL_DIR" ]; then
+            echo "Trying to locate Lazarus using lazbuild..."
+            LAZBUILD_PATH=$(find /opt/local -name "lazbuild" -type f | head -1)
+            if [ -n "$LAZBUILD_PATH" ]; then
+              echo "Found lazbuild at: $LAZBUILD_PATH"
+              LAZBUILD_DIR=$(dirname "$LAZBUILD_PATH")
+              echo "lazbuild directory: $LAZBUILD_DIR"
+              # Try to find Lazarus directory from lazbuild location
+              POSSIBLE_LAZARUS=$(dirname "$(dirname "$LAZBUILD_DIR")")
+              echo "Possible Lazarus directory from lazbuild: $POSSIBLE_LAZARUS"
+              if [ -d "$POSSIBLE_LAZARUS/share/lazarus" ]; then
+                LAZARUS_DIR="$POSSIBLE_LAZARUS/share/lazarus"
+                echo "Found Lazarus directory: $LAZARUS_DIR"
+                LCL_DIR="$LAZARUS_DIR/lcl"
+                INTERFACES_DIR="$LCL_DIR/interfaces"
+                COCOA_DIR="$INTERFACES_DIR/cocoa"
+              fi
+            fi
+          fi
+          
+          # Check if we found the required directories
+          if [ -z "$LCL_DIR" ] || [ ! -d "$LCL_DIR" ]; then
+            echo "ERROR: Could not find LCL directory!"
+            echo "Manually listing key directories in /opt/local:"
+            ls -la /opt/local/etc/lazarus || echo "No /opt/local/etc/lazarus"
+            ls -la /opt/local/share || echo "No /opt/local/share"
+            ls -la /opt/local/lib || echo "No /opt/local/lib"
+            ls -la /opt/local/bin || echo "No /opt/local/bin"
             exit 1
           fi
           
-          echo "Found Lazarus at: $LAZARUS_DIR"
+          echo "Found all required directories:"
           echo "LAZARUS_DIR=$LAZARUS_DIR" >> $GITHUB_ENV
+          echo "LCL_DIR=$LCL_DIR" >> $GITHUB_ENV
+          echo "INTERFACES_DIR=$INTERFACES_DIR" >> $GITHUB_ENV
+          echo "COCOA_DIR=$COCOA_DIR" >> $GITHUB_ENV
           
-          # Check for LCL directory
-          if [ ! -d "$LAZARUS_DIR/lcl" ]; then
-            echo "LCL directory not found!"
-            find "$LAZARUS_DIR" -type d | sort
-            exit 1
-          fi
+          # Create comprehensive paths for FPC
+          echo "LCL_PATHS=-Fu$LCL_DIR -Fu$COCOA_DIR -Fu$COCOA_DIR/cocoa -Fu$LCL_DIR/widgetset -Fu$LAZARUS_DIR/components/lazutils" >> $GITHUB_ENV
           
-          # Find all LCL paths that need to be added
-          echo "LCL=$LAZARUS_DIR/lcl" >> $GITHUB_ENV
-          echo "LCL_PLATFORM=$LAZARUS_DIR/lcl/interfaces/cocoa" >> $GITHUB_ENV
-          
-          # Store these paths for compilation
-          echo "LCL_PATHS=-Fu$LAZARUS_DIR/lcl -Fu$LAZARUS_DIR/lcl/interfaces/cocoa -Fu$LAZARUS_DIR/lcl/interfaces/cocoa/cocoa -Fu$LAZARUS_DIR/lcl/widgetset -Fu$LAZARUS_DIR/components/lazutils -Fu$LAZARUS_DIR/packager/units/aarch64-darwin" >> $GITHUB_ENV
-          
-          # Create basic Lazarus configuration file - simplified approach
+          # Create simplified Lazarus configuration
           mkdir -p $HOME/.config/lazarus
           echo '<?xml version="1.0" encoding="UTF-8"?>' > $HOME/.config/lazarus/environmentoptions.xml
           echo '<CONFIG>' >> $HOME/.config/lazarus/environmentoptions.xml
@@ -111,182 +162,176 @@ jobs:
           echo '  </EnvironmentOptions>' >> $HOME/.config/lazarus/environmentoptions.xml
           echo '</CONFIG>' >> $HOME/.config/lazarus/environmentoptions.xml
           
-          # Verify configuration file
-          echo "Created Lazarus configuration file:"
+          echo "Created Lazarus configuration pointing to: $LAZARUS_DIR"
           cat $HOME/.config/lazarus/environmentoptions.xml
 
-      - name: List project files and structure
+      - name: Remove mormot2 dependency if present
         run: |
-          echo "Current directory structure:"
-          ls -la
+          echo "Checking for mormot2 dependency..."
           
-          echo "Looking for .lpr or .lpi files:"
-          find . -name "*.lpr" -o -name "*.lpi"
+          # Find project files
+          MAIN_LPI=$(find . -name "*.lpi" | head -1)
+          MAIN_LPR=$(find . -name "*.lpr" | head -1)
+          
+          if [ -n "$MAIN_LPI" ]; then
+            echo "Found LPI file: $MAIN_LPI"
+            
+            # Check if it contains mormot2 reference
+            if grep -q "mormot2" "$MAIN_LPI"; then
+              echo "Found mormot2 reference in $MAIN_LPI, removing..."
+              cp "$MAIN_LPI" "${MAIN_LPI}.bak"
+              sed -i '' 's/<Filename Value=".*mormot2.*"\/>//g' "$MAIN_LPI"
+              sed -i '' 's/<Unit.*>.*mormot2.*<\/Unit>//g' "$MAIN_LPI"
+              echo "Modified LPI file to remove mormot2 references"
+            else
+              echo "No mormot2 references found in LPI file"
+            fi
+          fi
+          
+          if [ -n "$MAIN_LPR" ]; then
+            echo "Found LPR file: $MAIN_LPR"
+            
+            # Check if it contains mormot2 uses
+            if grep -q "mormot2" "$MAIN_LPR"; then
+              echo "Found mormot2 reference in $MAIN_LPR, commenting out..."
+              cp "$MAIN_LPR" "${MAIN_LPR}.bak"
+              sed -i '' 's/mormot2/\/\/mormot2/g' "$MAIN_LPR"
+              echo "Modified LPR file to comment out mormot2 references"
+            else
+              echo "No mormot2 references found in LPR file"
+            fi
+          fi
+
+      - name: Try to compile with lazbuild using explicit directory
+        run: |
+          echo "Attempting to compile with lazbuild using explicit directory..."
+          
+          # Find lazbuild
+          LAZBUILD_PATH=$(find /opt/local -name "lazbuild" -type f | head -1)
+          
+          if [ -z "$LAZBUILD_PATH" ]; then
+            echo "lazbuild not found"
+            exit 1
+          fi
+          
+          echo "Found lazbuild at: $LAZBUILD_PATH"
+          
+          # Try to find the actual Lazarus program files directory
+          # For MacPorts, this is often in /opt/local/share/lazarus
+          POTENTIAL_LAZARUS_DIRS=(
+            "/opt/local/share/lazarus"
+            "/opt/local/lib/lazarus"
+            "$(port contents lazarus | grep -i "/share/lazarus$" | head -1)"
+            "$(port contents lazarus | grep -i "/lib/lazarus$" | head -1)"
+          )
+          
+          LAZARUS_PROGRAM_DIR=""
+          for DIR in "${POTENTIAL_LAZARUS_DIRS[@]}"; do
+            if [ -d "$DIR" ] && [ -d "$DIR/lcl" ]; then
+              LAZARUS_PROGRAM_DIR="$DIR"
+              echo "Found Lazarus program directory with LCL: $LAZARUS_PROGRAM_DIR"
+              break
+            elif [ -d "$DIR" ]; then
+              echo "Found Lazarus directory (but no LCL): $DIR"
+              # Keep this as fallback if no better option is found
+              if [ -z "$LAZARUS_PROGRAM_DIR" ]; then
+                LAZARUS_PROGRAM_DIR="$DIR"
+              fi
+            fi
+          done
+          
+          # If still not found, try direct search
+          if [ -z "$LAZARUS_PROGRAM_DIR" ] || [ ! -d "$LAZARUS_PROGRAM_DIR/lcl" ]; then
+            FOUND_DIR=$(find /opt/local -path "*/lazarus*/lcl" -type d | head -1)
+            if [ -n "$FOUND_DIR" ]; then
+              LAZARUS_PROGRAM_DIR=$(dirname "$FOUND_DIR")
+              echo "Found Lazarus program directory via LCL search: $LAZARUS_PROGRAM_DIR"
+            fi
+          fi
+          
+          if [ -z "$LAZARUS_PROGRAM_DIR" ]; then
+            echo "Could not find Lazarus program directory with LCL"
+            exit 1
+          fi
           
           # Find the main project file
+          MAIN_LPI=$(find . -name "*.lpi" | head -1)
+          
+          if [ -z "$MAIN_LPI" ]; then
+            echo "No .lpi files found"
+            # Try to create a basic .lpi file from the .lpr
+            if [ -n "$MAIN_PROJECT" ]; then
+              echo "Creating basic .lpi file from $MAIN_PROJECT"
+              PROJECT_NAME=$(basename "$MAIN_PROJECT" .lpr)
+              mkdir -p "$(dirname "$MAIN_PROJECT")/backup"
+              "$LAZBUILD_PATH" --lazarusdir="$LAZARUS_PROGRAM_DIR" --create-lpi="$PROJECT_NAME" "$MAIN_PROJECT" || echo "Failed to create LPI file"
+              MAIN_LPI=$(find . -name "*.lpi" | head -1)
+            fi
+          fi
+          
+          if [ -n "$MAIN_LPI" ]; then
+            echo "Using LPI file: $MAIN_LPI"
+            
+            # Try to build with lazbuild and explicit Lazarus directory
+            echo "Building with: $LAZBUILD_PATH --lazarusdir=$LAZARUS_PROGRAM_DIR --ws=cocoa --cpu=aarch64 --os=darwin $MAIN_LPI"
+            "$LAZBUILD_PATH" --lazarusdir="$LAZARUS_PROGRAM_DIR" --ws=cocoa --cpu=aarch64 --os=darwin "$MAIN_LPI" || echo "lazbuild compilation failed"
+            
+            # Check if app was created
+            find . -name "*.app" -type d || echo "No .app bundle created"
+          else
+            echo "No LPI file available for lazbuild"
+          fi
+
+      - name: Try direct FPC compilation if lazbuild fails
+        run: |
+          echo "Attempting direct FPC compilation..."
+          
+          # Find main project file
           MAIN_PROJECT=$(find . -name "*.lpr" | head -1)
           
-          if [ -n "$MAIN_PROJECT" ]; then
-            echo "Main project file: $MAIN_PROJECT"
-            echo "MAIN_PROJECT=$MAIN_PROJECT" >> $GITHUB_ENV
-            
-            # Examine project content
-            echo "Project file content:"
-            cat "$MAIN_PROJECT"
-            
-            # Look for dependencies
-            echo "Project dependencies:"
-            grep -E "^\s*uses\s+" "$MAIN_PROJECT"
-          else
+          if [ -z "$MAIN_PROJECT" ]; then
             echo "No .lpr files found"
             exit 1
           fi
-
-          - name: Try to compile with lazbuild using explicit directory
-          run: |
-            echo "Attempting to compile with lazbuild using explicit directory..."
-            
-            # Find lazbuild
-            LAZBUILD_PATH=$(find /opt/local -name "lazbuild" -type f | head -1)
-            
-            if [ -z "$LAZBUILD_PATH" ]; then
-              echo "lazbuild not found"
-              exit 1
-            fi
-            
-            echo "Found lazbuild at: $LAZBUILD_PATH"
-            
-            # Try to find the actual Lazarus program files directory
-            # For MacPorts, this is often in /opt/local/share/lazarus
-            POTENTIAL_LAZARUS_DIRS=(
-              "/opt/local/share/lazarus"
-              "/opt/local/lib/lazarus"
-              "$(port contents lazarus | grep -i "/share/lazarus$" | head -1)"
-              "$(port contents lazarus | grep -i "/lib/lazarus$" | head -1)"
-            )
-            
-            LAZARUS_PROGRAM_DIR=""
-            for DIR in "${POTENTIAL_LAZARUS_DIRS[@]}"; do
-              if [ -d "$DIR" ] && [ -d "$DIR/lcl" ]; then
-                LAZARUS_PROGRAM_DIR="$DIR"
-                echo "Found Lazarus program directory with LCL: $LAZARUS_PROGRAM_DIR"
-                break
-              elif [ -d "$DIR" ]; then
-                echo "Found Lazarus directory (but no LCL): $DIR"
-                # Keep this as fallback if no better option is found
-                if [ -z "$LAZARUS_PROGRAM_DIR" ]; then
-                  LAZARUS_PROGRAM_DIR="$DIR"
-                fi
-              fi
-            done
-            
-            # If still not found, try direct search
-            if [ -z "$LAZARUS_PROGRAM_DIR" ] || [ ! -d "$LAZARUS_PROGRAM_DIR/lcl" ]; then
-              FOUND_DIR=$(find /opt/local -path "*/lazarus*/lcl" -type d | head -1)
-              if [ -n "$FOUND_DIR" ]; then
-                LAZARUS_PROGRAM_DIR=$(dirname "$FOUND_DIR")
-                echo "Found Lazarus program directory via LCL search: $LAZARUS_PROGRAM_DIR"
-              fi
-            fi
-            
-            if [ -z "$LAZARUS_PROGRAM_DIR" ]; then
-              echo "Could not find Lazarus program directory with LCL"
-              exit 1
-            fi
-            
-            # Find the main project file
-            MAIN_LPI=$(find . -name "*.lpi" | head -1)
-            
-            if [ -z "$MAIN_LPI" ]; then
-              echo "No .lpi files found"
-              # Try to create a basic .lpi file from the .lpr
-              if [ -n "$MAIN_PROJECT" ]; then
-                echo "Creating basic .lpi file from $MAIN_PROJECT"
-                PROJECT_NAME=$(basename "$MAIN_PROJECT" .lpr)
-                mkdir -p "$(dirname "$MAIN_PROJECT")/backup"
-                "$LAZBUILD_PATH" --lazarusdir="$LAZARUS_PROGRAM_DIR" --create-lpi="$PROJECT_NAME" "$MAIN_PROJECT" || echo "Failed to create LPI file"
-                MAIN_LPI=$(find . -name "*.lpi" | head -1)
-              fi
-            fi
-            
-            if [ -n "$MAIN_LPI" ]; then
-              echo "Using LPI file: $MAIN_LPI"
-              
-              # Try to build with lazbuild and explicit Lazarus directory
-              echo "Building with: $LAZBUILD_PATH --lazarusdir=$LAZARUS_PROGRAM_DIR --ws=cocoa --cpu=aarch64 --os=darwin $MAIN_LPI"
-              "$LAZBUILD_PATH" --lazarusdir="$LAZARUS_PROGRAM_DIR" --ws=cocoa --cpu=aarch64 --os=darwin "$MAIN_LPI" || echo "lazbuild compilation failed"
-              
-              # Check if app was created
-              find . -name "*.app" -type d || echo "No .app bundle created"
-            else
-              echo "No LPI file available for lazbuild"
-            fi
-        
           
-      - name: Compile with FPC including LCL
-        run: |
-          echo "Compiling with FPC including LCL paths..."
+          echo "Found main project: $MAIN_PROJECT"
           
-          # Using the main project file and LCL paths from environment
-          if [ -z "$MAIN_PROJECT" ]; then
-            echo "No main project file defined"
-            exit 1
-          fi
+          # Derive project name from filename
+          PROJECT_NAME=$(basename "$MAIN_PROJECT" .lpr)
+          echo "Project name: $PROJECT_NAME"
           
-          echo "Using project: $MAIN_PROJECT"
-          echo "Using LCL paths: $LCL_PATHS"
+          # Set up build directory and outputs
+          BUILD_DIR="build"
+          BIN_NAME="$PROJECT_NAME"
+          BIN_PATH="$BUILD_DIR/$BIN_NAME"
           
-          # Create a compilation directory
-          COMPILE_DIR="$(dirname "$MAIN_PROJECT")/compile"
-          mkdir -p "$COMPILE_DIR"
+          mkdir -p "$BUILD_DIR"
           
-          # Copy project files to compilation directory
-          cp -R "$(dirname "$MAIN_PROJECT")"/* "$COMPILE_DIR/"
+          # Attempt compilation with FPC directly
+          echo "Compiling with FPC..."
+          fpc -Tdarwin -Paarch64 -MObjFPC -Scghi -O1 -g -gl -l -vewnhibq \
+            -Fi"$(dirname "$MAIN_PROJECT")" \
+            -Fu"$(dirname "$MAIN_PROJECT")" \
+            -Fu"$LCL_DIR" \
+            -Fu"$COCOA_DIR" \
+            -Fu"$LCL_DIR/widgetset" \
+            -Fu"$LAZARUS_DIR/components/lazutils" \
+            -Fu"$INTERFACES_DIR" \
+            -FU"$BUILD_DIR" \
+            -FE"$BUILD_DIR" \
+            -o"$BIN_PATH" \
+            "$MAIN_PROJECT"
           
-          # Change to compilation directory
-          cd "$COMPILE_DIR"
-          
-          # Get relative path to main project in the compilation directory
-          REL_PROJECT=$(basename "$MAIN_PROJECT")
-          
-          echo "Compiling $REL_PROJECT in $COMPILE_DIR"
-          
-          # Compile with FPC including all necessary paths
-          fpc -Tdarwin -Paarch64 -O2 -XR/opt/local -FD/opt/local/bin $LCL_PATHS -dCOCOA -dLCL -dLCLcocoa -Fu. "$REL_PROJECT" || echo "FPC compilation failed"
-          
-          # Check compilation result
-          ls -la
-          
-          # Find binary
-          BIN_NAME=$(basename "$REL_PROJECT" .lpr)
-          if [ -f "$BIN_NAME" ]; then
-            echo "Binary created: $BIN_NAME"
-            # Copy binary back to main directory
-            cp "$BIN_NAME" "$(dirname "$MAIN_PROJECT")/"
+          if [ -f "$BIN_PATH" ]; then
+            echo "Compilation successful. Binary created at: $BIN_PATH"
+            ls -la "$BIN_PATH"
           else
-            echo "Binary not found"
-          fi
-
-      - name: Try to build app bundle manually
-        run: |
-          echo "Trying to build app bundle manually..."
-          
-          # Find binary
-          MAIN_PROJECT=${MAIN_PROJECT:-$(find . -name "*.lpr" | head -1)}
-          if [ -z "$MAIN_PROJECT" ]; then
-            echo "No main project file found"
+            echo "Compilation failed. No binary created."
             exit 1
           fi
           
-          BIN_NAME=$(basename "$MAIN_PROJECT" .lpr)
-          BIN_PATH=$(find . -name "$BIN_NAME" -type f -perm +111 | head -1)
-          
-          if [ -z "$BIN_PATH" ]; then
-            echo "Executable not found"
-            exit 1
-          fi
-          
-          echo "Found executable: $BIN_PATH"
+          # Create macOS application bundle
+          echo "Creating macOS application bundle..."
           
           # Create app bundle structure
           APP_NAME="${BIN_NAME}.app"
@@ -337,7 +382,7 @@ jobs:
         run: |
           # Look for any built app bundles or executables
           APP_BUNDLE=$(find . -name "*.app" -type d | head -1)
-          EXECUTABLE=$(find . -name "$(basename "$MAIN_PROJECT" .lpr)" -type f -perm +111 | head -1)
+          EXECUTABLE=$(find . -name "trndi" -type f -perm +111 | head -1)
           
           # Create output directory
           mkdir -p ./dist
