@@ -101,20 +101,15 @@ jobs:
           # Store these paths for compilation
           echo "LCL_PATHS=-Fu$LAZARUS_DIR/lcl -Fu$LAZARUS_DIR/lcl/interfaces/cocoa -Fu$LAZARUS_DIR/lcl/interfaces/cocoa/cocoa -Fu$LAZARUS_DIR/lcl/widgetset -Fu$LAZARUS_DIR/components/lazutils -Fu$LAZARUS_DIR/packager/units/aarch64-darwin" >> $GITHUB_ENV
           
-          # Create basic Lazarus configuration file - corrected formatting
+          # Create basic Lazarus configuration file - simplified approach
           mkdir -p $HOME/.config/lazarus
-          cat > $HOME/.config/lazarus/environmentoptions.xml << 'EOT'
-<?xml version="1.0" encoding="UTF-8"?>
-<CONFIG>
-  <EnvironmentOptions>
-    <Version Value="110"/>
-    <LazarusDirectory Value="LAZARUS_DIR_PLACEHOLDER"/>
-  </EnvironmentOptions>
-</CONFIG>
-EOT
-          
-          # Replace placeholder with actual Lazarus directory
-          sed -i "" "s|LAZARUS_DIR_PLACEHOLDER|$LAZARUS_DIR|g" $HOME/.config/lazarus/environmentoptions.xml
+          echo '<?xml version="1.0" encoding="UTF-8"?>' > $HOME/.config/lazarus/environmentoptions.xml
+          echo '<CONFIG>' >> $HOME/.config/lazarus/environmentoptions.xml
+          echo '  <EnvironmentOptions>' >> $HOME/.config/lazarus/environmentoptions.xml
+          echo '    <Version Value="110"/>' >> $HOME/.config/lazarus/environmentoptions.xml
+          echo "    <LazarusDirectory Value=\"$LAZARUS_DIR\"/>" >> $HOME/.config/lazarus/environmentoptions.xml
+          echo '  </EnvironmentOptions>' >> $HOME/.config/lazarus/environmentoptions.xml
+          echo '</CONFIG>' >> $HOME/.config/lazarus/environmentoptions.xml
           
           # Verify configuration file
           echo "Created Lazarus configuration file:"
@@ -261,38 +256,33 @@ EOT
           # Copy executable
           cp "$BIN_PATH" "$APP_NAME/Contents/MacOS/"
           
-          # Create Info.plist - corrected formatting
-          cat > "$APP_NAME/Contents/Info.plist" << 'EOT'
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-  <key>CFBundleExecutable</key>
-  <string>BIN_NAME_PLACEHOLDER</string>
-  <key>CFBundleInfoDictionaryVersion</key>
-  <string>6.0</string>
-  <key>CFBundlePackageType</key>
-  <string>APPL</string>
-  <key>CFBundleSignature</key>
-  <string>????</string>
-  <key>CFBundleVersion</key>
-  <string>1.0</string>
-  <key>CFBundleIdentifier</key>
-  <string>com.example.BIN_NAME_PLACEHOLDER</string>
-  <key>CFBundleName</key>
-  <string>BIN_NAME_PLACEHOLDER</string>
-  <key>LSMinimumSystemVersion</key>
-  <string>10.12</string>
-  <key>NSHighResolutionCapable</key>
-  <true/>
-  <key>LSRequiresNativeExecution</key>
-  <true/>
-</dict>
-</plist>
-EOT
-          
-          # Replace placeholders with actual values
-          sed -i "" "s/BIN_NAME_PLACEHOLDER/$BIN_NAME/g" "$APP_NAME/Contents/Info.plist"
+          # Create Info.plist - simplified approach
+          echo '<?xml version="1.0" encoding="UTF-8"?>' > "$APP_NAME/Contents/Info.plist"
+          echo '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">' >> "$APP_NAME/Contents/Info.plist"
+          echo '<plist version="1.0">' >> "$APP_NAME/Contents/Info.plist"
+          echo '<dict>' >> "$APP_NAME/Contents/Info.plist"
+          echo '  <key>CFBundleExecutable</key>' >> "$APP_NAME/Contents/Info.plist"
+          echo "  <string>$BIN_NAME</string>" >> "$APP_NAME/Contents/Info.plist"
+          echo '  <key>CFBundleInfoDictionaryVersion</key>' >> "$APP_NAME/Contents/Info.plist"
+          echo '  <string>6.0</string>' >> "$APP_NAME/Contents/Info.plist"
+          echo '  <key>CFBundlePackageType</key>' >> "$APP_NAME/Contents/Info.plist"
+          echo '  <string>APPL</string>' >> "$APP_NAME/Contents/Info.plist"
+          echo '  <key>CFBundleSignature</key>' >> "$APP_NAME/Contents/Info.plist"
+          echo '  <string>????</string>' >> "$APP_NAME/Contents/Info.plist"
+          echo '  <key>CFBundleVersion</key>' >> "$APP_NAME/Contents/Info.plist"
+          echo '  <string>1.0</string>' >> "$APP_NAME/Contents/Info.plist"
+          echo '  <key>CFBundleIdentifier</key>' >> "$APP_NAME/Contents/Info.plist"
+          echo "  <string>com.example.$BIN_NAME</string>" >> "$APP_NAME/Contents/Info.plist"
+          echo '  <key>CFBundleName</key>' >> "$APP_NAME/Contents/Info.plist"
+          echo "  <string>$BIN_NAME</string>" >> "$APP_NAME/Contents/Info.plist"
+          echo '  <key>LSMinimumSystemVersion</key>' >> "$APP_NAME/Contents/Info.plist"
+          echo '  <string>10.12</string>' >> "$APP_NAME/Contents/Info.plist"
+          echo '  <key>NSHighResolutionCapable</key>' >> "$APP_NAME/Contents/Info.plist"
+          echo '  <true/>' >> "$APP_NAME/Contents/Info.plist"
+          echo '  <key>LSRequiresNativeExecution</key>' >> "$APP_NAME/Contents/Info.plist"
+          echo '  <true/>' >> "$APP_NAME/Contents/Info.plist"
+          echo '</dict>' >> "$APP_NAME/Contents/Info.plist"
+          echo '</plist>' >> "$APP_NAME/Contents/Info.plist"
           
           # Create PkgInfo
           echo "APPL????" > "$APP_NAME/Contents/PkgInfo"
