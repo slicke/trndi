@@ -142,46 +142,86 @@ jobs:
             exit 1
           fi
 
-      - name: Try to compile with lazbuild
-        run: |
-          echo "Attempting to compile with lazbuild..."
-          
-          # Find lazbuild
-          LAZBUILD_PATH=$(find /opt/local -name "lazbuild" -type f | head -1)
-          
-          if [ -z "$LAZBUILD_PATH" ]; then
-            echo "lazbuild not found"
-            exit 1
-          fi
-          
-          echo "Found lazbuild at: $LAZBUILD_PATH"
-          
-          # Find the main project file
-          MAIN_LPI=$(find . -name "*.lpi" | head -1)
-          
-          if [ -z "$MAIN_LPI" ]; then
-            echo "No .lpi files found"
-            # Try to create a basic .lpi file from the .lpr
-            if [ -n "$MAIN_PROJECT" ]; then
-              echo "Creating basic .lpi file from $MAIN_PROJECT"
-              PROJECT_NAME=$(basename "$MAIN_PROJECT" .lpr)
-              mkdir -p "$(dirname "$MAIN_PROJECT")/backup"
-              "$LAZBUILD_PATH" --create-lpi="$PROJECT_NAME" "$MAIN_PROJECT" || echo "Failed to create LPI file"
-              MAIN_LPI=$(find . -name "*.lpi" | head -1)
+          - name: Try to compile with lazbuild using explicit directory
+          run: |
+            echo "Attempting to compile with lazbuild using explicit directory..."
+            
+            # Find lazbuild
+            LAZBUILD_PATH=$(find /opt/local -name "lazbuild" -type f | head -1)
+            
+            if [ -z "$LAZBUILD_PATH" ]; then
+              echo "lazbuild not found"
+              exit 1
             fi
-          fi
-          
-          if [ -n "$MAIN_LPI" ]; then
-            echo "Using LPI file: $MAIN_LPI"
             
-            # Try to build with lazbuild
-            "$LAZBUILD_PATH" --ws=cocoa --cpu=aarch64 --os=darwin "$MAIN_LPI" || echo "lazbuild compilation failed"
+            echo "Found lazbuild at: $LAZBUILD_PATH"
             
-            # Check if app was created
-            find . -name "*.app" -type d || echo "No .app bundle created"
-          else
-            echo "No LPI file available for lazbuild"
-          fi
+            # Try to find the actual Lazarus program files directory
+            # For MacPorts, this is often in /opt/local/share/lazarus
+            POTENTIAL_LAZARUS_DIRS=(
+              "/opt/local/share/lazarus"
+              "/opt/local/lib/lazarus"
+              "$(port contents lazarus | grep -i "/share/lazarus$" | head -1)"
+              "$(port contents lazarus | grep -i "/lib/lazarus$" | head -1)"
+            )
+            
+            LAZARUS_PROGRAM_DIR=""
+            for DIR in "${POTENTIAL_LAZARUS_DIRS[@]}"; do
+              if [ -d "$DIR" ] && [ -d "$DIR/lcl" ]; then
+                LAZARUS_PROGRAM_DIR="$DIR"
+                echo "Found Lazarus program directory with LCL: $LAZARUS_PROGRAM_DIR"
+                break
+              elif [ -d "$DIR" ]; then
+                echo "Found Lazarus directory (but no LCL): $DIR"
+                # Keep this as fallback if no better option is found
+                if [ -z "$LAZARUS_PROGRAM_DIR" ]; then
+                  LAZARUS_PROGRAM_DIR="$DIR"
+                fi
+              fi
+            done
+            
+            # If still not found, try direct search
+            if [ -z "$LAZARUS_PROGRAM_DIR" ] || [ ! -d "$LAZARUS_PROGRAM_DIR/lcl" ]; then
+              FOUND_DIR=$(find /opt/local -path "*/lazarus*/lcl" -type d | head -1)
+              if [ -n "$FOUND_DIR" ]; then
+                LAZARUS_PROGRAM_DIR=$(dirname "$FOUND_DIR")
+                echo "Found Lazarus program directory via LCL search: $LAZARUS_PROGRAM_DIR"
+              fi
+            fi
+            
+            if [ -z "$LAZARUS_PROGRAM_DIR" ]; then
+              echo "Could not find Lazarus program directory with LCL"
+              exit 1
+            fi
+            
+            # Find the main project file
+            MAIN_LPI=$(find . -name "*.lpi" | head -1)
+            
+            if [ -z "$MAIN_LPI" ]; then
+              echo "No .lpi files found"
+              # Try to create a basic .lpi file from the .lpr
+              if [ -n "$MAIN_PROJECT" ]; then
+                echo "Creating basic .lpi file from $MAIN_PROJECT"
+                PROJECT_NAME=$(basename "$MAIN_PROJECT" .lpr)
+                mkdir -p "$(dirname "$MAIN_PROJECT")/backup"
+                "$LAZBUILD_PATH" --lazarusdir="$LAZARUS_PROGRAM_DIR" --create-lpi="$PROJECT_NAME" "$MAIN_PROJECT" || echo "Failed to create LPI file"
+                MAIN_LPI=$(find . -name "*.lpi" | head -1)
+              fi
+            fi
+            
+            if [ -n "$MAIN_LPI" ]; then
+              echo "Using LPI file: $MAIN_LPI"
+              
+              # Try to build with lazbuild and explicit Lazarus directory
+              echo "Building with: $LAZBUILD_PATH --lazarusdir=$LAZARUS_PROGRAM_DIR --ws=cocoa --cpu=aarch64 --os=darwin $MAIN_LPI"
+              "$LAZBUILD_PATH" --lazarusdir="$LAZARUS_PROGRAM_DIR" --ws=cocoa --cpu=aarch64 --os=darwin "$MAIN_LPI" || echo "lazbuild compilation failed"
+              
+              # Check if app was created
+              find . -name "*.app" -type d || echo "No .app bundle created"
+            else
+              echo "No LPI file available for lazbuild"
+            fi
+        
           
       - name: Compile with FPC including LCL
         run: |
