@@ -40,163 +40,303 @@ jobs:
           # Update MacPorts
           sudo port selfupdate || echo "Failed to update MacPorts"
 
-      - name: Detailed FPC Installation Diagnostics
+      - name: Install FPC and Lazarus with full diagnostic 
         run: |
-          echo "System architecture:"
-          uname -a
-          
-          echo "MacPorts package search:"
-          port list fpc || echo "No FPC packages found in MacPorts"
-          port list lazarus || echo "No Lazarus packages found in MacPorts"
-          
-          echo "Install FPC with details:"
-          sudo port install fpc +universal
-          
-          echo "FPC installation details (post-install):"
-          port installed fpc || echo "FPC not installed"
-          
-          echo "FPC binary path:"
-          which fpc || echo "FPC not found in PATH"
+          echo "Installing FPC and Lazarus..."
+          sudo port install fpc +universal || echo "FPC installation failed"
+          sudo port install lazarus +universal || echo "Lazarus installation failed"
           
           echo "FPC version:"
           fpc -iV || echo "FPC command failed"
           
-          echo "FPC details:"
-          fpc -i || echo "Failed to get FPC details"
-          
-          echo "FPC installation directories:"
-          find /opt/local -name "fpc*" -type d || echo "No fpc directories found"
-          find /opt/local -name "fpc.cfg" || echo "No fpc.cfg found"
-          
-          echo "Compiler units location:"
-          ls -la /opt/local/lib || echo "No /opt/local/lib directory"
-          # Create FPC lib directory if missing
-          sudo mkdir -p /opt/local/lib/fpc
-          
-          echo "Create symbolic links if needed:"
-          if [ ! -d "/opt/local/lib/fpc" ]; then
-            FPC_DIR=$(find /opt/local -name "fpc" -type d | grep -v "bin" | head -1)
-            if [ -n "$FPC_DIR" ]; then
-              echo "Found FPC dir: $FPC_DIR"
-              sudo ln -sf "$FPC_DIR" /opt/local/lib/fpc
-            fi
-          fi
-
-      - name: Install and diagnose Lazarus
-        run: |
-          echo "Install Lazarus:"
-          sudo port install lazarus +universal
-          
-          echo "Lazarus installation details:"
-          port installed lazarus || echo "Lazarus not installed"
-          
           echo "Lazarus directories:"
           find /opt/local -name "lazarus*" -type d || echo "No Lazarus directories found"
           
-          echo "Lazarus binaries:"
-          find /opt/local -name "lazbuild" -type f || echo "No lazbuild binary found"
+          echo "LCL path check:"
+          LAZARUS_DIR=$(find /opt/local -name "lazarus" -type d | head -1)
+          echo "Lazarus directory: $LAZARUS_DIR"
           
-          # Create symlink for lazbuild
-          LAZBUILD_PATH=$(find /opt/local -name "lazbuild" -type f | head -1)
-          if [ -n "$LAZBUILD_PATH" ]; then
-            echo "Found lazbuild: $LAZBUILD_PATH"
-            sudo ln -sf "$LAZBUILD_PATH" /usr/local/bin/lazbuild
+          if [ -d "$LAZARUS_DIR" ]; then
+            echo "LCL subdirectories:"
+            find "$LAZARUS_DIR/lcl" -type d | sort
+            echo "LCL interfaces:"
+            find "$LAZARUS_DIR/lcl/interfaces" -type d | sort
           else
-            echo "lazbuild not found, cannot create symlink"
+            echo "Lazarus directory not found!"
           fi
           
-          # Check lazbuild
-          which lazbuild || echo "lazbuild not found in PATH"
-          lazbuild --version || echo "lazbuild command failed"
-
-      - name: Setup FPC configuration
-        run: |
-          echo "Setting up FPC configuration..."
-          # Get FPC version
-          FPC_VERSION=$(fpc -iV | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' || echo "3.2.2")
-          echo "Detected FPC version: $FPC_VERSION"
+          echo "Locating lazbuild:"
+          find /opt/local -name "lazbuild" -type f || echo "lazbuild not found"
           
-          # Create directories
-          sudo mkdir -p /opt/local/lib/fpc/$FPC_VERSION
-          sudo mkdir -p /opt/local/etc/fpc.cfg.d
-          
-          # Create basic fpc.cfg if it doesn't exist
-          if [ ! -f "/opt/local/etc/fpc.cfg" ]; then
-            echo "Creating basic fpc.cfg..."
-            echo "-Fu/opt/local/lib/fpc/$FPC_VERSION/units/*" | sudo tee /opt/local/etc/fpc.cfg
-            echo "-Fl/opt/local/lib" | sudo tee -a /opt/local/etc/fpc.cfg
-            echo "-Fl/usr/lib" | sudo tee -a /opt/local/etc/fpc.cfg
-            echo "-FD/opt/local/bin" | sudo tee -a /opt/local/etc/fpc.cfg
-          fi
-          
-          # Check if fpc.cfg is properly set up
-          echo "FPC configuration file contents:"
-          cat /opt/local/etc/fpc.cfg || echo "No fpc.cfg found"
-          
-          # Create FPC environment variables for the build
-          echo "FPC_UNITS_PATH=/opt/local/lib/fpc/$FPC_VERSION/units" >> $GITHUB_ENV
-
-      - name: List project files
-        run: |
-          echo "Current directory structure:"
-          ls -la
-          echo "Looking for .lpr or .lpi files:"
-          find . -name "*.lpr" -o -name "*.lpi"
-          
-          # Create output directory for Lazarus
+          echo "Checking config directory:"
           mkdir -p $HOME/.lazarus
           mkdir -p $HOME/.config/lazarus
 
-      - name: Build project using FPC directly
+      - name: Locate and configure LCL paths
         run: |
-          # Find the main .lpr file
-          MAIN_PROJECT=$(find . -name "*.lpr" | head -1)
+          echo "Configuring LCL paths..."
           
-          if [ -z "$MAIN_PROJECT" ]; then
-            echo "No Pascal source files found!"
+          # Find Lazarus directory
+          LAZARUS_DIR=$(find /opt/local -name "lazarus" -type d | head -1)
+          
+          if [ -z "$LAZARUS_DIR" ]; then
+            echo "Lazarus directory not found!"
             exit 1
           fi
           
-          echo "Building project using FPC directly: $MAIN_PROJECT"
+          echo "Found Lazarus at: $LAZARUS_DIR"
+          echo "LAZARUS_DIR=$LAZARUS_DIR" >> $GITHUB_ENV
           
-          # Build with FPC directly
-          fpc -Tdarwin -Paarch64 -O2 "$MAIN_PROJECT"
+          # Check for LCL directory
+          if [ ! -d "$LAZARUS_DIR/lcl" ]; then
+            echo "LCL directory not found!"
+            find "$LAZARUS_DIR" -type d | sort
+            exit 1
+          fi
+          
+          # Find all LCL paths that need to be added
+          echo "LCL=$LAZARUS_DIR/lcl" >> $GITHUB_ENV
+          echo "LCL_PLATFORM=$LAZARUS_DIR/lcl/interfaces/cocoa" >> $GITHUB_ENV
+          
+          # Store these paths for compilation
+          echo "LCL_PATHS=-Fu$LAZARUS_DIR/lcl -Fu$LAZARUS_DIR/lcl/interfaces/cocoa -Fu$LAZARUS_DIR/lcl/interfaces/cocoa/cocoa -Fu$LAZARUS_DIR/lcl/widgetset -Fu$LAZARUS_DIR/components/lazutils -Fu$LAZARUS_DIR/packager/units/aarch64-darwin" >> $GITHUB_ENV
+          
+          # Create basic Lazarus configuration file - corrected formatting
+          mkdir -p $HOME/.config/lazarus
+          cat > $HOME/.config/lazarus/environmentoptions.xml << 'EOT'
+<?xml version="1.0" encoding="UTF-8"?>
+<CONFIG>
+  <EnvironmentOptions>
+    <Version Value="110"/>
+    <LazarusDirectory Value="LAZARUS_DIR_PLACEHOLDER"/>
+  </EnvironmentOptions>
+</CONFIG>
+EOT
+          
+          # Replace placeholder with actual Lazarus directory
+          sed -i "" "s|LAZARUS_DIR_PLACEHOLDER|$LAZARUS_DIR|g" $HOME/.config/lazarus/environmentoptions.xml
+          
+          # Verify configuration file
+          echo "Created Lazarus configuration file:"
+          cat $HOME/.config/lazarus/environmentoptions.xml
+
+      - name: List project files and structure
+        run: |
+          echo "Current directory structure:"
+          ls -la
+          
+          echo "Looking for .lpr or .lpi files:"
+          find . -name "*.lpr" -o -name "*.lpi"
+          
+          # Find the main project file
+          MAIN_PROJECT=$(find . -name "*.lpr" | head -1)
+          
+          if [ -n "$MAIN_PROJECT" ]; then
+            echo "Main project file: $MAIN_PROJECT"
+            echo "MAIN_PROJECT=$MAIN_PROJECT" >> $GITHUB_ENV
+            
+            # Examine project content
+            echo "Project file content:"
+            cat "$MAIN_PROJECT"
+            
+            # Look for dependencies
+            echo "Project dependencies:"
+            grep -E "^\s*uses\s+" "$MAIN_PROJECT"
+          else
+            echo "No .lpr files found"
+            exit 1
+          fi
+
+      - name: Try to compile with lazbuild
+        run: |
+          echo "Attempting to compile with lazbuild..."
+          
+          # Find lazbuild
+          LAZBUILD_PATH=$(find /opt/local -name "lazbuild" -type f | head -1)
+          
+          if [ -z "$LAZBUILD_PATH" ]; then
+            echo "lazbuild not found"
+            exit 1
+          fi
+          
+          echo "Found lazbuild at: $LAZBUILD_PATH"
+          
+          # Find the main project file
+          MAIN_LPI=$(find . -name "*.lpi" | head -1)
+          
+          if [ -z "$MAIN_LPI" ]; then
+            echo "No .lpi files found"
+            # Try to create a basic .lpi file from the .lpr
+            if [ -n "$MAIN_PROJECT" ]; then
+              echo "Creating basic .lpi file from $MAIN_PROJECT"
+              PROJECT_NAME=$(basename "$MAIN_PROJECT" .lpr)
+              mkdir -p "$(dirname "$MAIN_PROJECT")/backup"
+              "$LAZBUILD_PATH" --create-lpi="$PROJECT_NAME" "$MAIN_PROJECT" || echo "Failed to create LPI file"
+              MAIN_LPI=$(find . -name "*.lpi" | head -1)
+            fi
+          fi
+          
+          if [ -n "$MAIN_LPI" ]; then
+            echo "Using LPI file: $MAIN_LPI"
+            
+            # Try to build with lazbuild
+            "$LAZBUILD_PATH" --ws=cocoa --cpu=aarch64 --os=darwin "$MAIN_LPI" || echo "lazbuild compilation failed"
+            
+            # Check if app was created
+            find . -name "*.app" -type d || echo "No .app bundle created"
+          else
+            echo "No LPI file available for lazbuild"
+          fi
+          
+      - name: Compile with FPC including LCL
+        run: |
+          echo "Compiling with FPC including LCL paths..."
+          
+          # Using the main project file and LCL paths from environment
+          if [ -z "$MAIN_PROJECT" ]; then
+            echo "No main project file defined"
+            exit 1
+          fi
+          
+          echo "Using project: $MAIN_PROJECT"
+          echo "Using LCL paths: $LCL_PATHS"
+          
+          # Create a compilation directory
+          COMPILE_DIR="$(dirname "$MAIN_PROJECT")/compile"
+          mkdir -p "$COMPILE_DIR"
+          
+          # Copy project files to compilation directory
+          cp -R "$(dirname "$MAIN_PROJECT")"/* "$COMPILE_DIR/"
+          
+          # Change to compilation directory
+          cd "$COMPILE_DIR"
+          
+          # Get relative path to main project in the compilation directory
+          REL_PROJECT=$(basename "$MAIN_PROJECT")
+          
+          echo "Compiling $REL_PROJECT in $COMPILE_DIR"
+          
+          # Compile with FPC including all necessary paths
+          fpc -Tdarwin -Paarch64 -O2 -XR/opt/local -FD/opt/local/bin $LCL_PATHS -dCOCOA -dLCL -dLCLcocoa -Fu. "$REL_PROJECT" || echo "FPC compilation failed"
           
           # Check compilation result
-          ls -la $(dirname "$MAIN_PROJECT")
+          ls -la
           
-          # Find built binary
-          BINARY_NAME=$(basename "$MAIN_PROJECT" .lpr)
-          echo "Looking for binary: $BINARY_NAME"
-          find . -name "$BINARY_NAME" -type f -perm +111
-
-      - name: Package compiled binary
-        run: |
-          # Find the compiled binary
-          MAIN_PROJECT=$(find . -name "*.lpr" | head -1)
-          BINARY_NAME=$(basename "$MAIN_PROJECT" .lpr)
-          BINARY_PATH=$(find . -name "$BINARY_NAME" -type f -perm +111 | head -1)
-          
-          if [ -n "$BINARY_PATH" ]; then
-            # Create output directory
-            mkdir -p ./dist
-            cp "$BINARY_PATH" ./dist/
-            
-            # Create zip archive
-            cd ./dist
-            zip -r ../Trndi-macos-arm64.zip ./*
-            cd ..
-            echo "Binary packaged successfully"
+          # Find binary
+          BIN_NAME=$(basename "$REL_PROJECT" .lpr)
+          if [ -f "$BIN_NAME" ]; then
+            echo "Binary created: $BIN_NAME"
+            # Copy binary back to main directory
+            cp "$BIN_NAME" "$(dirname "$MAIN_PROJECT")/"
           else
-            echo "No compiled binary found to package"
-            mkdir -p ./dist
-            echo "Build failed - no binary found" > ./dist/build-failed.txt
+            echo "Binary not found"
+          fi
+
+      - name: Try to build app bundle manually
+        run: |
+          echo "Trying to build app bundle manually..."
+          
+          # Find binary
+          MAIN_PROJECT=${MAIN_PROJECT:-$(find . -name "*.lpr" | head -1)}
+          if [ -z "$MAIN_PROJECT" ]; then
+            echo "No main project file found"
+            exit 1
+          fi
+          
+          BIN_NAME=$(basename "$MAIN_PROJECT" .lpr)
+          BIN_PATH=$(find . -name "$BIN_NAME" -type f -perm +111 | head -1)
+          
+          if [ -z "$BIN_PATH" ]; then
+            echo "Executable not found"
+            exit 1
+          fi
+          
+          echo "Found executable: $BIN_PATH"
+          
+          # Create app bundle structure
+          APP_NAME="${BIN_NAME}.app"
+          mkdir -p "$APP_NAME/Contents/MacOS"
+          mkdir -p "$APP_NAME/Contents/Resources"
+          
+          # Copy executable
+          cp "$BIN_PATH" "$APP_NAME/Contents/MacOS/"
+          
+          # Create Info.plist - corrected formatting
+          cat > "$APP_NAME/Contents/Info.plist" << 'EOT'
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleExecutable</key>
+  <string>BIN_NAME_PLACEHOLDER</string>
+  <key>CFBundleInfoDictionaryVersion</key>
+  <string>6.0</string>
+  <key>CFBundlePackageType</key>
+  <string>APPL</string>
+  <key>CFBundleSignature</key>
+  <string>????</string>
+  <key>CFBundleVersion</key>
+  <string>1.0</string>
+  <key>CFBundleIdentifier</key>
+  <string>com.example.BIN_NAME_PLACEHOLDER</string>
+  <key>CFBundleName</key>
+  <string>BIN_NAME_PLACEHOLDER</string>
+  <key>LSMinimumSystemVersion</key>
+  <string>10.12</string>
+  <key>NSHighResolutionCapable</key>
+  <true/>
+  <key>LSRequiresNativeExecution</key>
+  <true/>
+</dict>
+</plist>
+EOT
+          
+          # Replace placeholders with actual values
+          sed -i "" "s/BIN_NAME_PLACEHOLDER/$BIN_NAME/g" "$APP_NAME/Contents/Info.plist"
+          
+          # Create PkgInfo
+          echo "APPL????" > "$APP_NAME/Contents/PkgInfo"
+          
+          echo "App bundle created: $APP_NAME"
+          ls -la "$APP_NAME/Contents/MacOS"
+          
+          # Make executable
+          chmod +x "$APP_NAME/Contents/MacOS/$BIN_NAME"
+
+      - name: Package application
+        run: |
+          # Look for any built app bundles or executables
+          APP_BUNDLE=$(find . -name "*.app" -type d | head -1)
+          EXECUTABLE=$(find . -name "$(basename "$MAIN_PROJECT" .lpr)" -type f -perm +111 | head -1)
+          
+          # Create output directory
+          mkdir -p ./dist
+          
+          if [ -n "$APP_BUNDLE" ]; then
+            echo "Found app bundle: $APP_BUNDLE"
+            cp -R "$APP_BUNDLE" ./dist/
+          elif [ -n "$EXECUTABLE" ]; then
+            echo "Found executable: $EXECUTABLE"
+            cp "$EXECUTABLE" ./dist/
+          else
+            echo "No built application found"
+            echo "Build failed - no application found" > ./dist/build-failed.txt
             find . -name "*.o" -o -name "*.ppu" > ./dist/compiled-files.txt
+            
+            echo "Compilation diagnostic information:"
+            find . -name "*.compiled" | xargs cat || echo "No compilation logs found"
+            
             cd ./dist
             zip -r ../Trndi-build-failed.zip ./*
             cd ..
             exit 1
           fi
+          
+          # Create zip archive
+          cd ./dist
+          zip -r ../Trndi-macos-arm64.zip ./*
+          cd ..
+          echo "Application packaged successfully"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
