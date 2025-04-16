@@ -282,101 +282,149 @@ jobs:
             echo "No LPI file available for lazbuild"
           fi
 
-      - name: Try direct FPC compilation if lazbuild fails
-        run: |
-          echo "Attempting direct FPC compilation..."
-          
-          # Find main project file
-          MAIN_PROJECT=$(find . -name "*.lpr" | head -1)
-          
-          if [ -z "$MAIN_PROJECT" ]; then
-            echo "No .lpr files found"
-            exit 1
-          fi
-          
-          echo "Found main project: $MAIN_PROJECT"
-          
-          # Derive project name from filename
-          PROJECT_NAME=$(basename "$MAIN_PROJECT" .lpr)
-          echo "Project name: $PROJECT_NAME"
-          
-          # Set up build directory and outputs
-          BUILD_DIR="build"
-          BIN_NAME="$PROJECT_NAME"
-          BIN_PATH="$BUILD_DIR/$BIN_NAME"
-          
-          mkdir -p "$BUILD_DIR"
-          
-          # Attempt compilation with FPC directly
-          echo "Compiling with FPC..."
-          fpc -Tdarwin -Paarch64 -MObjFPC -Scghi -O1 -g -gl -l -vewnhibq \
-            -Fi"$(dirname "$MAIN_PROJECT")" \
-            -Fu"$(dirname "$MAIN_PROJECT")" \
-            -Fu"$LCL_DIR" \
-            -Fu"$COCOA_DIR" \
-            -Fu"$LCL_DIR/widgetset" \
-            -Fu"$LAZARUS_DIR/components/lazutils" \
-            -Fu"$INTERFACES_DIR" \
-            -FU"$BUILD_DIR" \
-            -FE"$BUILD_DIR" \
-            -o"$BIN_PATH" \
-            "$MAIN_PROJECT"
-          
-          if [ -f "$BIN_PATH" ]; then
-            echo "Compilation successful. Binary created at: $BIN_PATH"
-            ls -la "$BIN_PATH"
-          else
-            echo "Compilation failed. No binary created."
-            exit 1
-          fi
-          
-          # Create macOS application bundle
-          echo "Creating macOS application bundle..."
-          
-          # Create app bundle structure
-          APP_NAME="${BIN_NAME}.app"
-          mkdir -p "$APP_NAME/Contents/MacOS"
-          mkdir -p "$APP_NAME/Contents/Resources"
-          
-          # Copy executable
-          cp "$BIN_PATH" "$APP_NAME/Contents/MacOS/"
-          
-          # Create Info.plist - simplified approach
-          echo '<?xml version="1.0" encoding="UTF-8"?>' > "$APP_NAME/Contents/Info.plist"
-          echo '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">' >> "$APP_NAME/Contents/Info.plist"
-          echo '<plist version="1.0">' >> "$APP_NAME/Contents/Info.plist"
-          echo '<dict>' >> "$APP_NAME/Contents/Info.plist"
-          echo '  <key>CFBundleExecutable</key>' >> "$APP_NAME/Contents/Info.plist"
-          echo "  <string>$BIN_NAME</string>" >> "$APP_NAME/Contents/Info.plist"
-          echo '  <key>CFBundleInfoDictionaryVersion</key>' >> "$APP_NAME/Contents/Info.plist"
-          echo '  <string>6.0</string>' >> "$APP_NAME/Contents/Info.plist"
-          echo '  <key>CFBundlePackageType</key>' >> "$APP_NAME/Contents/Info.plist"
-          echo '  <string>APPL</string>' >> "$APP_NAME/Contents/Info.plist"
-          echo '  <key>CFBundleSignature</key>' >> "$APP_NAME/Contents/Info.plist"
-          echo '  <string>????</string>' >> "$APP_NAME/Contents/Info.plist"
-          echo '  <key>CFBundleVersion</key>' >> "$APP_NAME/Contents/Info.plist"
-          echo '  <string>1.0</string>' >> "$APP_NAME/Contents/Info.plist"
-          echo '  <key>CFBundleIdentifier</key>' >> "$APP_NAME/Contents/Info.plist"
-          echo "  <string>com.example.$BIN_NAME</string>" >> "$APP_NAME/Contents/Info.plist"
-          echo '  <key>CFBundleName</key>' >> "$APP_NAME/Contents/Info.plist"
-          echo "  <string>$BIN_NAME</string>" >> "$APP_NAME/Contents/Info.plist"
-          echo '  <key>LSMinimumSystemVersion</key>' >> "$APP_NAME/Contents/Info.plist"
-          echo '  <string>10.12</string>' >> "$APP_NAME/Contents/Info.plist"
-          echo '  <key>NSHighResolutionCapable</key>' >> "$APP_NAME/Contents/Info.plist"
-          echo '  <true/>' >> "$APP_NAME/Contents/Info.plist"
-          echo '  <key>LSRequiresNativeExecution</key>' >> "$APP_NAME/Contents/Info.plist"
-          echo '  <true/>' >> "$APP_NAME/Contents/Info.plist"
-          echo '</dict>' >> "$APP_NAME/Contents/Info.plist"
-          echo '</plist>' >> "$APP_NAME/Contents/Info.plist"
-          
-          # Create PkgInfo
-          echo "APPL????" > "$APP_NAME/Contents/PkgInfo"
-          
-          echo "App bundle created: $APP_NAME"
-          ls -la "$APP_NAME/Contents/MacOS"
-          
-          # Make executable
-          chmod +x "$APP_NAME/Contents/MacOS/$BIN_NAME"
+          - name: Try direct FPC compilation if lazbuild fails
+          run: |
+            echo "Attempting direct FPC compilation..."
+            
+            # Find main project file
+            MAIN_PROJECT=$(find . -name "*.lpr" | head -1)
+            
+            if [ -z "$MAIN_PROJECT" ]; then
+              echo "No .lpr files found"
+              exit 1
+            fi
+            
+            echo "Found main project: $MAIN_PROJECT"
+            
+            # Derive project name from filename
+            PROJECT_NAME=$(basename "$MAIN_PROJECT" .lpr)
+            echo "Project name: $PROJECT_NAME"
+            
+            # Set up build directory and outputs
+            BUILD_DIR="build"
+            BIN_NAME="$PROJECT_NAME"
+            BIN_PATH="$BUILD_DIR/$BIN_NAME"
+            
+            mkdir -p "$BUILD_DIR"
+            
+            # Debug the interfaces issue
+            echo "Looking for Interfaces unit..."
+            find "$LCL_DIR" -name "interfaces.pas" -o -name "interfaces.ppu" | sort
+            find "$INTERFACES_DIR" -name "interfaces.pas" -o -name "interfaces.ppu" | sort
+            find "$LAZARUS_DIR" -name "interfaces.pas" -o -name "interfaces.ppu" | sort
+            
+            # Also check if the file exists in a standard location
+            if [ -f "$LCL_DIR/interfaces.pas" ]; then
+              echo "Found interfaces.pas in $LCL_DIR"
+            elif [ -f "$LCL_DIR/interfaces.ppu" ]; then
+              echo "Found interfaces.ppu in $LCL_DIR"
+            else
+              echo "WARNING: interfaces unit not found in standard location"
+            fi
+            
+            # Attempt compilation with FPC directly with more comprehensive paths
+            echo "Compiling with FPC (expanded paths)..."
+            FPC_PATHS=(
+              "-Fi$(dirname "$MAIN_PROJECT")"                # Include paths
+              "-Fu$(dirname "$MAIN_PROJECT")"                # Unit paths
+              "-Fu$LCL_DIR"                                  # LCL main units
+              "-Fu$LCL_DIR/interfaces"                       # LCL interfaces
+              "-Fu$LCL_DIR/widgetset"                        # LCL widgetset
+              "-Fu$COCOA_DIR"                                # Cocoa interface
+              "-Fu$COCOA_DIR/wsdialogs"                      # Cocoa dialogs
+              "-Fu$LAZARUS_DIR/components/lazutils"          # Lazarus utilities
+              "-Fu$LAZARUS_DIR/packager/units/$(fpc -iTP)"   # Packager units
+            )
+            
+            # Check if there are any additional interface paths we should add
+            for DIR in $(find "$INTERFACES_DIR" -type d); do
+              if [ -d "$DIR" ]; then
+                FPC_PATHS+=("-Fu$DIR")
+              fi
+            done
+            
+            # Join all paths with space
+            FPC_PATH_STR="${FPC_PATHS[*]}"
+            
+            # Print compilation command
+            echo "fpc -Tdarwin -Paarch64 -MObjFPC -Scghi -O1 -g -gl -l -vewnhibq $FPC_PATH_STR -FU$BUILD_DIR -FE$BUILD_DIR -o$BIN_PATH $MAIN_PROJECT"
+            
+            # Execute compilation command
+            fpc -Tdarwin -Paarch64 -MObjFPC -Scghi -O1 -g -gl -l -vewnhibq \
+              $FPC_PATH_STR \
+              -FU"$BUILD_DIR" \
+              -FE"$BUILD_DIR" \
+              -o"$BIN_PATH" \
+              "$MAIN_PROJECT"
+            
+            if [ -f "$BIN_PATH" ]; then
+              echo "Compilation successful. Binary created at: $BIN_PATH"
+              ls -la "$BIN_PATH"
+            else
+              echo "Compilation failed. No binary created."
+              
+              # Extra diagnostics in case of failure
+              echo "Project content:"
+              cat "$MAIN_PROJECT"
+              
+              echo "Searching for Interfaces unit in all possible locations:"
+              find /opt/local -name "interfaces.pas" -o -name "interfaces.ppu" | sort
+              
+              # Try to find LCL's root unit to see if that exists
+              echo "Checking for lcl.pas or lcl.ppu:"
+              find /opt/local -name "lcl.pas" -o -name "lcl.ppu" | sort
+              
+              exit 1
+            fi
+            
+            # Create macOS application bundle
+            echo "Creating macOS application bundle..."
+            
+            # Create app bundle structure
+            APP_NAME="${BIN_NAME}.app"
+            mkdir -p "$APP_NAME/Contents/MacOS"
+            mkdir -p "$APP_NAME/Contents/Resources"
+            
+            # Copy executable
+            cp "$BIN_PATH" "$APP_NAME/Contents/MacOS/"
+            
+            # Create Info.plist - simplified approach
+            echo '<?xml version="1.0" encoding="UTF-8"?>' > "$APP_NAME/Contents/Info.plist"
+            echo '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">' >> "$APP_NAME/Contents/Info.plist"
+            echo '<plist version="1.0">' >> "$APP_NAME/Contents/Info.plist"
+            echo '<dict>' >> "$APP_NAME/Contents/Info.plist"
+            echo '  <key>CFBundleExecutable</key>' >> "$APP_NAME/Contents/Info.plist"
+            echo "  <string>$BIN_NAME</string>" >> "$APP_NAME/Contents/Info.plist"
+            echo '  <key>CFBundleInfoDictionaryVersion</key>' >> "$APP_NAME/Contents/Info.plist"
+            echo '  <string>6.0</string>' >> "$APP_NAME/Contents/Info.plist"
+            echo '  <key>CFBundlePackageType</key>' >> "$APP_NAME/Contents/Info.plist"
+            echo '  <string>APPL</string>' >> "$APP_NAME/Contents/Info.plist"
+            echo '  <key>CFBundleSignature</key>' >> "$APP_NAME/Contents/Info.plist"
+            echo '  <string>????</string>' >> "$APP_NAME/Contents/Info.plist"
+            echo '  <key>CFBundleVersion</key>' >> "$APP_NAME/Contents/Info.plist"
+            echo '  <string>1.0</string>' >> "$APP_NAME/Contents/Info.plist"
+            echo '  <key>CFBundleIdentifier</key>' >> "$APP_NAME/Contents/Info.plist"
+            echo "  <string>com.example.$BIN_NAME</string>" >> "$APP_NAME/Contents/Info.plist"
+            echo '  <key>CFBundleName</key>' >> "$APP_NAME/Contents/Info.plist"
+            echo "  <string>$BIN_NAME</string>" >> "$APP_NAME/Contents/Info.plist"
+            echo '  <key>LSMinimumSystemVersion</key>' >> "$APP_NAME/Contents/Info.plist"
+            echo '  <string>10.12</string>' >> "$APP_NAME/Contents/Info.plist"
+            echo '  <key>NSHighResolutionCapable</key>' >> "$APP_NAME/Contents/Info.plist"
+            echo '  <true/>' >> "$APP_NAME/Contents/Info.plist"
+            echo '  <key>LSRequiresNativeExecution</key>' >> "$APP_NAME/Contents/Info.plist"
+            echo '  <true/>' >> "$APP_NAME/Contents/Info.plist"
+            echo '</dict>' >> "$APP_NAME/Contents/Info.plist"
+            echo '</plist>' >> "$APP_NAME/Contents/Info.plist"
+            
+            # Create PkgInfo
+            echo "APPL????" > "$APP_NAME/Contents/PkgInfo"
+            
+            echo "App bundle created: $APP_NAME"
+            ls -la "$APP_NAME/Contents/MacOS"
+            
+            # Make executable
+            chmod +x "$APP_NAME/Contents/MacOS/$BIN_NAME"
+        
 
       - name: Package application
         run: |
