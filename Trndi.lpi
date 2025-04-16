@@ -243,6 +243,9 @@
     </RunParams>
     <RequiredPackages>
       <Item>
+        <PackageName Value="mormot2"/>
+      </Item>
+      <Item>
         <PackageName Value="LazControls"/>
       </Item>
       <Item>
