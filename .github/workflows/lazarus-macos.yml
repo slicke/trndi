@@ -1,75 +1,104 @@
-name: Build Trndi for macOS ARM64
+name: Build Trndi for macOS ARM64 (Alternative)
 
 on:
   push:
     branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
-  workflow_dispatch:  # Allow manual triggering
+  workflow_dispatch:
 
 jobs:
   build:
-    runs-on: macos-14  # Uses macOS 14 with Apple Silicon
+    runs-on: macos-14
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Lazarus
-        run: |
-          brew update
-          brew install fpc
-          brew install lazarus
-          echo "Installed FPC version:"
-          fpc -iV
-          echo "Installed Lazarus version:"
-          lazbuild --version
-
       - name: Install Command Line Developer Tools
         run: |
-          # Install the command line tools
           sudo xcode-select --install || true
           sudo xcodebuild -license accept || true
+
+      - name: Download and Install FPC
+        run: |
+          # Download FPC for ARM64
+          curl -L -o fpc-installer.dmg "https://sourceforge.net/projects/freepascal/files/Mac%20OS%20X/3.2.2/fpc-3.2.2.intelarm64-macosx.dmg/download"
+          
+          # Mount the DMG
+          hdiutil attach fpc-installer.dmg
+          
+          # Install FPC
+          sudo installer -pkg /Volumes/fpc-3.2.2.intelarm64-macosx/fpc-3.2.2-intelarm64-macosx.pkg -target /
+          
+          # Unmount
+          hdiutil detach /Volumes/fpc-3.2.2.intelarm64-macosx
+          
+          # Verify installation
+          fpc -iV
+
+      - name: Download and Install Lazarus
+        run: |
+          # Download Lazarus
+          curl -L -o lazarus-installer.dmg "https://sourceforge.net/projects/lazarus/files/Lazarus%20macOS%20x86-64/Lazarus%202.2.4/Lazarus-2.2.4-0-x86_64-macosx.dmg/download"
+          
+          # Mount the DMG
+          hdiutil attach lazarus-installer.dmg
+          
+          # Install Lazarus
+          sudo cp -R "/Volumes/Lazarus-2.2.4-0-x86_64-macosx/Lazarus.app" /Applications/
+          
+          # Unmount
+          hdiutil detach "/Volumes/Lazarus-2.2.4-0-x86_64-macosx"
+          
+          # Add to PATH
+          echo "/Applications/Lazarus.app/Contents/MacOS" >> $GITHUB_PATH
+          
+          # Verify installation
+          ls -la /Applications/Lazarus.app/Contents/MacOS/
 
       - name: Modify project file to remove mormot2
         run: |
           find . -name "*.lpi" -type f -exec sed -i '' '/<Item>.*<PackageName Value="mormot2"\/>/,/<\/Item>/d' {} \;
           echo "Removed mormot2 package references from project files"
 
-      - name: Set up build environment
-        run: |
-          # Create directories if they don't exist
-          mkdir -p $HOME/.lazarus/lib/units/aarch64-darwin
-          # Set required environment variables
-          echo "FPC_CPU_TARGET=aarch64" >> $GITHUB_ENV
-          echo "LC_ALL=en_US.UTF-8" >> $GITHUB_ENV
-          echo "LANG=en_US.UTF-8" >> $GITHUB_ENV
-
       - name: Build Trndi
         run: |
           echo "Starting build process for Trndi..."
-          # Using lazbuild with proper parameters for ARM64 architecture
-          lazbuild --build-mode="Release" --cpu=aarch64 --os=darwin --widgetset=cocoa ./path/to/your/project.lpi
           
-          # Remove quarantine attribute that macOS adds to compiled binaries
-          find ./path/to/output -type f -name "*.app" -exec xattr -drv com.apple.quarantine {} \;
+          # Using the full path to lazbuild
+          LAZBUILD="/Applications/Lazarus.app/Contents/MacOS/lazbuild"
           
-          echo "Build completed successfully"
+          # Find the main project file
+          echo "Locating .lpi files:"
+          MAIN_PROJECT=$(find . -name "*.lpi" -type f | head -1)
+          echo "Found project file: $MAIN_PROJECT"
+          
+          # Build the project
+          "$LAZBUILD" --build-mode="Release" --cpu=aarch64 --os=darwin --widgetset=cocoa "$MAIN_PROJECT"
+          
+          # Remove quarantine attribute
+          find . -name "*.app" -exec xattr -drv com.apple.quarantine {} \;
 
       - name: Package application
         run: |
-          # Create output directory
-          mkdir -p ./dist
+          # Find the built app
+          APP_PATH=$(find . -name "*.app" -type d | head -1)
           
-          # Copy built application to dist folder
-          cp -R ./path/to/output/*.app ./dist/
-          
-          # Create zip archive
-          cd ./dist
-          zip -r ../Trndi-macos-arm64.zip ./*
-          cd ..
-          
-          echo "Application packaged successfully"
+          if [ -n "$APP_PATH" ]; then
+            # Create output directory
+            mkdir -p ./dist
+            cp -R "$APP_PATH" ./dist/
+            
+            # Create zip archive
+            cd ./dist
+            zip -r ../Trndi-macos-arm64.zip ./*
+            cd ..
+            echo "Application packaged successfully"
+          else
+            echo "No .app files found to package"
+            exit 1
+          fi
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -77,3 +106,4 @@ jobs:
           name: Trndi-macOS-arm64
           path: ./Trndi-macos-arm64.zip
           retention-days: 7
+        if: success()

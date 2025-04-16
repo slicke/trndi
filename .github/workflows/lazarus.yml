@@ -141,7 +141,7 @@ jobs:
       # 13. Build Trndi.lpr
       - name: Build Trndi.lpr
         run: |
-          & 'C:\Lazarus\lazbuild.exe' --lazarusdir='C:\Lazarus' --add-package=mormot2 --build-mode='Extensions (Release)' 'Trndi.lpr'
+          & 'C:\Lazarus\lazbuild.exe' --lazarusdir='C:\Lazarus' --build-mode='Extensions (Release)' 'Trndi.lpr'
         shell: pwsh
 
       # 14. Create artifact directory
