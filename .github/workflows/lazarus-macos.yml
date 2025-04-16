@@ -19,15 +19,6 @@ jobs:
         run: |
           sudo xcode-select --install || true
           sudo xcodebuild -license accept || true
-      
-      - name: Create profile directory if needed
-        run: mkdir -p /Users/runner
-        
-      - name: Set up MacPorts environment
-        run: |
-            echo 'export PATH=/opt/local/bin:/opt/local/sbin:$PATH' > /Users/runner/.profile
-            source /Users/runner/.profile
-            echo "PATH=$PATH" >> $GITHUB_ENV
 
       - name: Install MacPorts
         run: |
@@ -38,65 +29,112 @@ jobs:
           # Install MacPorts
           sudo installer -pkg macports.pkg -target /
           
-          # Add MacPorts to PATH
+          # Add MacPorts to PATH directly without relying on profile
           echo "/opt/local/bin:/opt/local/sbin" >> $GITHUB_PATH
           
           # Verify installation
-          source ~/.profile || true
+          echo "MacPorts installation check:"
           which port || echo "MacPorts not found in PATH"
+          port version || echo "MacPorts command not working"
           
           # Update MacPorts
-          sudo port selfupdate
+          sudo port selfupdate || echo "Failed to update MacPorts"
 
-      - name: Install FPC and Lazarus via MacPorts
+      - name: Detailed FPC Installation Diagnostics
         run: |
-          echo "Installing FPC and Lazarus via MacPorts..."
-          sudo port install fpc
-          sudo port install lazarus
+          echo "System architecture:"
+          uname -a
           
-          # Verify installations
+          echo "MacPorts package search:"
+          port list fpc || echo "No FPC packages found in MacPorts"
+          port list lazarus || echo "No Lazarus packages found in MacPorts"
+          
+          echo "Install FPC with details:"
+          sudo port install fpc +universal
+          
+          echo "FPC installation details (post-install):"
+          port installed fpc || echo "FPC not installed"
+          
+          echo "FPC binary path:"
+          which fpc || echo "FPC not found in PATH"
+          
           echo "FPC version:"
-          fpc -iV || echo "FPC not found in PATH"
+          fpc -iV || echo "FPC command failed"
           
-          echo "MacPorts install locations:"
-          sudo port installed | grep -E 'fpc|lazarus'
+          echo "FPC details:"
+          fpc -i || echo "Failed to get FPC details"
+          
+          echo "FPC installation directories:"
+          find /opt/local -name "fpc*" -type d || echo "No fpc directories found"
+          find /opt/local -name "fpc.cfg" || echo "No fpc.cfg found"
+          
+          echo "Compiler units location:"
+          ls -la /opt/local/lib || echo "No /opt/local/lib directory"
+          # Create FPC lib directory if missing
+          sudo mkdir -p /opt/local/lib/fpc
+          
+          echo "Create symbolic links if needed:"
+          if [ ! -d "/opt/local/lib/fpc" ]; then
+            FPC_DIR=$(find /opt/local -name "fpc" -type d | grep -v "bin" | head -1)
+            if [ -n "$FPC_DIR" ]; then
+              echo "Found FPC dir: $FPC_DIR"
+              sudo ln -sf "$FPC_DIR" /opt/local/lib/fpc
+            fi
+          fi
+
+      - name: Install and diagnose Lazarus
+        run: |
+          echo "Install Lazarus:"
+          sudo port install lazarus +universal
+          
+          echo "Lazarus installation details:"
+          port installed lazarus || echo "Lazarus not installed"
+          
+          echo "Lazarus directories:"
+          find /opt/local -name "lazarus*" -type d || echo "No Lazarus directories found"
           
           echo "Lazarus binaries:"
-          find /opt/local -name "lazbuild" -type f
+          find /opt/local -name "lazbuild" -type f || echo "No lazbuild binary found"
           
-          # Create symlink to make lazbuild easier to access
-          sudo ln -sf $(find /opt/local -name "lazbuild" -type f | head -1) /usr/local/bin/lazbuild || true
-          
-          # Add to PATH
-          echo "/opt/local/share/lazarus/bin" >> $GITHUB_PATH
-          
-          # Check access
-          which lazbuild || echo "lazbuild not found in PATH"
-
-      - name: Setup build environment
-        run: |
-          # Check for available compilers
-          echo "Available compilers:"
-          ls -la /opt/local/bin/fpc*
-          ls -la /opt/local/lib/fpc/
-          
-          # Check for lazarus version
-          echo "Lazarus installation:"
-          find /opt/local -name "lazarus*" -type d
-          
-          # Get and set actual executable paths
-          FPC_PATH=$(which fpc)
+          # Create symlink for lazbuild
           LAZBUILD_PATH=$(find /opt/local -name "lazbuild" -type f | head -1)
+          if [ -n "$LAZBUILD_PATH" ]; then
+            echo "Found lazbuild: $LAZBUILD_PATH"
+            sudo ln -sf "$LAZBUILD_PATH" /usr/local/bin/lazbuild
+          else
+            echo "lazbuild not found, cannot create symlink"
+          fi
           
-          echo "FPC path: $FPC_PATH"
-          echo "LazbBuild path: $LAZBUILD_PATH"
+          # Check lazbuild
+          which lazbuild || echo "lazbuild not found in PATH"
+          lazbuild --version || echo "lazbuild command failed"
+
+      - name: Setup FPC configuration
+        run: |
+          echo "Setting up FPC configuration..."
+          # Get FPC version
+          FPC_VERSION=$(fpc -iV | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' || echo "3.2.2")
+          echo "Detected FPC version: $FPC_VERSION"
           
-          # Set for use in subsequent steps
-          echo "FPC=$FPC_PATH" >> $GITHUB_ENV
-          echo "LAZBUILD=$LAZBUILD_PATH" >> $GITHUB_ENV
+          # Create directories
+          sudo mkdir -p /opt/local/lib/fpc/$FPC_VERSION
+          sudo mkdir -p /opt/local/etc/fpc.cfg.d
           
-          # Create necessary directories
-          mkdir -p $HOME/.lazarus/lib/units/aarch64-darwin
+          # Create basic fpc.cfg if it doesn't exist
+          if [ ! -f "/opt/local/etc/fpc.cfg" ]; then
+            echo "Creating basic fpc.cfg..."
+            echo "-Fu/opt/local/lib/fpc/$FPC_VERSION/units/*" | sudo tee /opt/local/etc/fpc.cfg
+            echo "-Fl/opt/local/lib" | sudo tee -a /opt/local/etc/fpc.cfg
+            echo "-Fl/usr/lib" | sudo tee -a /opt/local/etc/fpc.cfg
+            echo "-FD/opt/local/bin" | sudo tee -a /opt/local/etc/fpc.cfg
+          fi
+          
+          # Check if fpc.cfg is properly set up
+          echo "FPC configuration file contents:"
+          cat /opt/local/etc/fpc.cfg || echo "No fpc.cfg found"
+          
+          # Create FPC environment variables for the build
+          echo "FPC_UNITS_PATH=/opt/local/lib/fpc/$FPC_VERSION/units" >> $GITHUB_ENV
 
       - name: List project files
         run: |
@@ -104,69 +142,55 @@ jobs:
           ls -la
           echo "Looking for .lpr or .lpi files:"
           find . -name "*.lpr" -o -name "*.lpi"
-
-      - name: Remove mormot2 dependency
-        run: |
-          echo "Removing mormot2 dependency from project file(s)..."
-          find . -name "*.lpi" -type f -exec sed -i '' '/<Item>.*<PackageName Value="mormot2"\/>/,/<\/Item>/d' {} \;
-          echo "Removed mormot2 package references from project files"
           
-          # Check for other mormot2 references
-          echo "Checking for other mormot2 references:"
-          grep -r "mormot2" --include="*.lpi" . || echo "No other mormot2 references found"
+          # Create output directory for Lazarus
+          mkdir -p $HOME/.lazarus
+          mkdir -p $HOME/.config/lazarus
 
-      - name: Build project
+      - name: Build project using FPC directly
         run: |
-          # Determine main project file
-          MAIN_PROJECT=$(find . -name "*.lpi" | head -1)
-          if [ -z "$MAIN_PROJECT" ]; then
-            MAIN_PROJECT=$(find . -name "*.lpr" | head -1)
-          fi
+          # Find the main .lpr file
+          MAIN_PROJECT=$(find . -name "*.lpr" | head -1)
           
           if [ -z "$MAIN_PROJECT" ]; then
-            echo "No Lazarus project files found!"
+            echo "No Pascal source files found!"
             exit 1
           fi
           
-          echo "Building project: $MAIN_PROJECT"
+          echo "Building project using FPC directly: $MAIN_PROJECT"
           
-          # Use LAZBUILD environment variable
-          if [ -n "$LAZBUILD" ]; then
-            echo "Using lazbuild from environment: $LAZBUILD"
-            
-            # Build the project with appropriate flags for ARM64 macOS
-            "$LAZBUILD" --build-mode="Release" --cpu=aarch64 --os=darwin --widgetset=cocoa "$MAIN_PROJECT"
-          else
-            echo "LAZBUILD environment variable not set"
-            exit 1
-          fi
+          # Build with FPC directly
+          fpc -Tdarwin -Paarch64 -O2 "$MAIN_PROJECT"
           
-          # Find built applications
-          echo "Looking for built application(s):"
-          find . -name "*.app" -type d
+          # Check compilation result
+          ls -la $(dirname "$MAIN_PROJECT")
           
-          # Remove quarantine attribute if any app files were created
-          find . -name "*.app" -exec xattr -drv com.apple.quarantine {} \; || echo "No .app files found"
+          # Find built binary
+          BINARY_NAME=$(basename "$MAIN_PROJECT" .lpr)
+          echo "Looking for binary: $BINARY_NAME"
+          find . -name "$BINARY_NAME" -type f -perm +111
 
-      - name: Package application
+      - name: Package compiled binary
         run: |
-          # Find the built app
-          APP_PATH=$(find . -name "*.app" -type d | head -1)
+          # Find the compiled binary
+          MAIN_PROJECT=$(find . -name "*.lpr" | head -1)
+          BINARY_NAME=$(basename "$MAIN_PROJECT" .lpr)
+          BINARY_PATH=$(find . -name "$BINARY_NAME" -type f -perm +111 | head -1)
           
-          if [ -n "$APP_PATH" ]; then
+          if [ -n "$BINARY_PATH" ]; then
             # Create output directory
             mkdir -p ./dist
-            cp -R "$APP_PATH" ./dist/
+            cp "$BINARY_PATH" ./dist/
             
             # Create zip archive
             cd ./dist
             zip -r ../Trndi-macos-arm64.zip ./*
             cd ..
-            echo "Application packaged successfully"
+            echo "Binary packaged successfully"
           else
-            echo "No .app files found to package"
+            echo "No compiled binary found to package"
             mkdir -p ./dist
-            echo "Build failed - no application found" > ./dist/build-failed.txt
+            echo "Build failed - no binary found" > ./dist/build-failed.txt
             find . -name "*.o" -o -name "*.ppu" > ./dist/compiled-files.txt
             cd ./dist
             zip -r ../Trndi-build-failed.zip ./*
