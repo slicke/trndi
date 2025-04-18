@@ -50,6 +50,7 @@ TfBG = class(TForm)
   lAgo:TLabel;
   miFloatOn:TMenuItem;
   miRangeColor:TMenuItem;
+  pnMultiUser:TPanel;
   Separator1:TMenuItem;
   miExit:TMenuItem;
   miBorders:TMenuItem;
@@ -127,6 +128,7 @@ TfBG = class(TForm)
 private
     // Array to hold references to lDot1 - lDot10
   TrendDots: array[1..10] of TLabel;
+  multi: boolean; // Multi user
 
   procedure update;
   procedure PlaceTrendDots(const Readings: array of BGReading);
@@ -506,7 +508,7 @@ native := TrndiNative.Create;
     SetDefaultLang(lang,'lang');
   // Idea for using multiple person/account support
     username := GetSetting('users.names','');
-    if username <> '' then
+    if username <> '' then begin
       with TStringList.Create do
       begin
         AddCommaText(username);
@@ -520,8 +522,13 @@ native := TrndiNative.Create;
         end
         else
           username := '';
-      end// Load possible other users
-    ;
+      end;// Load possible other users
+      multi := true;
+      pnMultiUser.Color := StringToColor(GetSetting(username + 'user.color'));
+      if pnMultiUser.Color <> clBlack then
+        pnMultiUser.Visible := true;
+    end else
+      multi := false;
 
 
     privacyMode := GetSetting(username +'ext.privacy', '0') = '1';
@@ -892,8 +899,6 @@ begin
       cbCust.Checked := GetIntSetting(username+'override.enabled', 0) = 1;
       fsHi.Enabled :=  cbCust.Checked;
       fsLo.Enabled :=  cbCust.Checked;
-      if cbCust.Checked then
-        tbAdvanced.Checked := true;
 
       {$ifdef TrndiExt}
       eExt.Text := GetAppConfigDirUTF8(false, true) + 'extensions' + DirectorySeparator;
@@ -902,7 +907,20 @@ begin
       eExt.Enabled := false;
       {$endif}
       cbPrivacy.Checked := GetSetting(username +'ext.privacy', '0') = '1';
+
+      s := GetSetting('users.names','');
+      lbUsers.Items.AddCommaText(s);
+      gbMulti.Visible := true;
+      cbUser.ButtonColor := StringToColor(GetSetting(username + 'user.color'));
+
       ShowModal;
+
+      SetSetting(username + 'user.color', ColorToString(cbUser.ButtonColor));
+
+      if lbUsers.Count > 0 then
+        SetSetting('users.names',lbUsers.Items.CommaText)
+      else
+        SetSetting('users.names', '');
       SetSetting(username +'remote.type', cbSys.Text);
       SetSetting(username +'remote.target', eAddr.Text);
       SetSetting(username +'remote.creds', ePass.Text);

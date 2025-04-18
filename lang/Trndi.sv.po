@@ -68,6 +68,14 @@ msgstr "&Inställningar"
 msgid "- Off Range -"
 msgstr "- Utanför område -"
 
+#: tfconf.badd.caption
+msgid "+ Add"
+msgstr "+ Ny\\"
+
+#: tfconf.bremove.caption
+msgid "- Remove"
+msgstr "- Radera"
+
 #: tfconf.caption
 msgid "Settings"
 msgstr "Inställningar"
@@ -84,6 +92,10 @@ msgstr "Privat läget (dölj nummer)"
 msgid "NightScout"
 msgstr "NightScout"
 
+#: tfconf.cbuser.caption
+msgid "Account color"
+msgstr "Kontofärg"
+
 #: tfconf.eaddr.editlabel.caption
 msgid "Server Address / Dexcom Username"
 msgstr "Serveradress / Användare Dexcom"
@@ -96,14 +108,30 @@ msgstr "Pluginmapp"
 msgid "API Secret / Dexcom Password"
 msgstr "API-nyckel / Lösenord Dexcom"
 
-#: tfconf.gbadvanced.caption
-msgid "Advanced Settings"
-msgstr "Avancerade inställningar"
+#: tfconf.gbmulti.caption
+msgid "Multi-User Settings"
+msgstr "Flera användare"
 
 #: tfconf.gboverride.caption
 msgctxt "tfconf.gboverride.caption"
 msgid "Override High / Low limits"
 msgstr "Åsidosätt höga / låga gränser"
+
+#: tfconf.label1.caption
+msgid "There's always a defualt user account"
+msgstr "Ett standardkonto finns alltid"
+
+#: tfconf.label2.caption
+msgid ""
+"Add users below, if you wish to track more than one person.\n"
+"You need to start Trndi separately for each user (and select them)"
+msgstr ""
+"Lägg till användare nedan, om du ska spåra fler än en person\n"
+"Du måste starta Trndi separat för varje användare (och välja dem)"
+
+#: tfconf.label3.caption
+msgid "Select a unique color, absolute black will disable"
+msgstr "Välj en unik färg, helt svart blir genomsklinligt"
 
 #: tfconf.lack.caption
 msgid "Libraries"
@@ -125,9 +153,17 @@ msgstr "Lågt under"
 msgid "Display Unit"
 msgstr "Enhetstyp"
 
-#: tfconf.tbadvanced.caption
-msgid "More settings..."
-msgstr "Fler inställningar..."
+#: tfconf.tscustom.caption
+msgid "Customization"
+msgstr "Personalisera"
+
+#: tfconf.tsgeneral.caption
+msgid "General"
+msgstr "Allmänt"
+
+#: tfconf.tsmulti.caption
+msgid "Multi User"
+msgstr "Fler användare"
 
 #: tffloat.caption
 msgid "Floating Display"
@@ -148,11 +184,11 @@ msgstr "Konfig"
 
 #: tffloat.menuitem1.caption
 msgid "&Hide"
-msgstr ""
+msgstr "&Göm"
 
 #: tffloat.mibig.caption
 msgid "Big"
-msgstr ""
+msgstr "Stor"
 
 #: tffloat.micustomvisible.caption
 msgctxt "tffloat.micustomvisible.caption"
@@ -161,15 +197,15 @@ msgstr "Egen"
 
 #: tffloat.minormal.caption
 msgid "Normal"
-msgstr ""
+msgstr "Normal"
 
 #: tffloat.misize.caption
 msgid "Size"
-msgstr ""
+msgstr "Storlek"
 
 #: tffloat.mismall.caption
 msgid "Small"
-msgstr ""
+msgstr "Liten"
 
 #: tffloat.mivisible.caption
 msgctxt "tffloat.mivisible.caption"
@@ -191,7 +227,7 @@ msgstr "Inloggningsfel efter autensieringen"
 #: trndi.ext.functions.sdatatypeerr
 #, object-pascal-format
 msgid "Datatype %s was not expected, expected in function %s"
-msgstr ""
+msgstr "Datatypen %s förväntades inte, förväntades i funktionen %s"
 
 #: trndi.ext.functions.sdatatypeerrfunc
 #, object-pascal-format
@@ -401,6 +437,14 @@ msgstr "Lågt blodsocker! Nuvarande: %s"
 msgid "Dexcom servers do not provide custom high and low blood sugar values. Please set your own thresholds at the bottom of this window."
 msgstr "Dexcom:s servrar tillhandahåller inte värden för vad som är högt och lågt. Vänligen ställ in dina egna gränser i slutet av fönstret."
 
+#: uconf.rs_enter_name
+msgid "Enter the user's name, letters, space and numbers only"
+msgstr "Ange användarens namn med bokstäver, mellanslag och nummer."
+
+#: uconf.rs_enter_user
+msgid "Enter a username"
+msgstr "Ange ett användarnamn"
+
 #: uconf.rs_override_help
 msgid ""
 "Setting values here allows you to define your own high and low blood sugar limits in Trndi.\n"
@@ -426,4 +470,3 @@ msgstr "När privat läge är aktiverat, visas inte avläsningar. Trndi visar is
 #: ufloat.rscustomop
 msgid "You can use shift+<number> to manually set visibility (0 = 100% visible)"
 msgstr "Du kan använda skift+<nummerr> för att manuellt sätta synligheten (0 = 100% synlig)"
-

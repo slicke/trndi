@@ -26,42 +26,55 @@ unit uconf;
 interface
 
 uses 
-Classes,ExtCtrls,Spin,StdCtrls,SysUtils,Forms,Controls,Graphics,Dialogs,
-LCLTranslator;
+Classes,ColorBox,ComCtrls,ExtCtrls,Spin,StdCtrls,SysUtils,Forms,Controls,
+Graphics,Dialogs,LCLTranslator;
 
 type
 
   { TfConf }
 
 TfConf = class(TForm)
-  Bevel1: TBevel;
+  bRemove:TButton;
+  Bevel1:TBevel;
   bOverrideHelp:TButton;
   bPrivacyHelp:TButton;
+  bAdd:TButton;
   cbCust:TCheckBox;
   cbPrivacy:TCheckBox;
-  eExt: TLabeledEdit;
+  cbSys:TComboBox;
+  cbUser:TColorButton;
+  eAddr:TLabeledEdit;
+  eExt:TLabeledEdit;
+  ePass:TLabeledEdit;
   fsHi:TFloatSpinEdit;
   fsLo:TFloatSpinEdit;
-  gbAdvanced:TGroupBox;
   gbOverride:TGroupBox;
+  gbMulti:TGroupBox;
+  Image1:TImage;
+  Label1:TLabel;
+  Label2:TLabel;
+  Label3:TLabel;
+  lAck:TButton;
+  lCopyright:TLabel;
   lHiOver:TLabel;
-  lLicense: TButton;
-  cbSys: TComboBox;
-  Image1: TImage;
-  lCopyright: TLabel;
-  eAddr: TLabeledEdit;
-  ePass: TLabeledEdit;
-  lAck: TButton;
+  lbUsers:TListBox;
+  lLicense:TButton;
   lLounder:TLabel;
-  lTitle: TLabel;
-  lVersion: TLabel;
-  rbUnit: TRadioGroup;
-  tbAdvanced:TToggleBox;
+  lTitle:TLabel;
+  lVersion:TLabel;
+  pcMain:TPageControl;
+  rbUnit:TRadioGroup;
+  tsMulti:TTabSheet;
+  tsGeneral:TTabSheet;
+  tsCustom:TTabSheet;
+  procedure bAddClick(Sender:TObject);
   procedure bLimitsClick(Sender:TObject);
   procedure bOverrideHelpClick(Sender:TObject);
   procedure bPrivacyHelpClick(Sender:TObject);
+  procedure bRemoveClick(Sender:TObject);
   procedure cbCustChange(Sender:TObject);
   procedure cbSysChange(Sender:TObject);
+  procedure cbUserClick(Sender:TObject);
   procedure FormCreate(Sender:TObject);
   procedure lAckClick(Sender:TObject);
   procedure lLicenseClick(Sender:TObject);
@@ -89,6 +102,9 @@ RS_PRIVACY_HELP =
 RS_DEX =
   'Dexcom servers do not provide custom high and low blood sugar values. Please set your own thresholds at the bottom of this window.';
 
+RS_ENTER_USER = 'Enter a username';
+RS_ENTER_NAME = 'Enter the user''s name, letters, space and numbers only';
+
 var 
 fConf: TfConf;
 
@@ -113,18 +129,33 @@ begin
   gbOverride.Color := clDefault;
   if Pos('Dexcom', cbSys.Text) > 0 then
   begin
-    if not tbAdvanced.Checked then
-      tbAdvanced.Checked := true;
     gbOverride.Color := $00D3D2EE;
     ShowMessage(RS_DEX);
   end
-  else
-  if tbAdvanced.Checked and (not cbCust.Checked) then
-    tbAdvanced.Checked := false;
+end;
+
+procedure TfConf.cbUserClick(Sender:TObject);
+begin
+
 end;
 
 procedure TfConf.bLimitsClick(Sender:TObject);
 begin
+end;
+
+procedure TfConf.bAddClick(Sender:TObject);
+var
+ s: string;
+ c: char;
+begin
+  s := InputBox(RS_ENTER_USER,RS_ENTER_NAME,'');
+  for c in s do begin
+    if not (c in ['0'..'9', 'A'..'z',' ']) then begin
+      ShowMEssage(RS_ENTER_NAME);
+      Exit;
+    end;
+  end;
+  lbUsers.AddItem(s, nil);
 end;
 
 procedure TfConf.bOverrideHelpClick(Sender:TObject);
@@ -135,6 +166,12 @@ end;
 procedure TfConf.bPrivacyHelpClick(Sender:TObject);
 begin
   ShowMessage(RS_PRIVACY_HELP);
+end;
+
+procedure TfConf.bRemoveClick(Sender:TObject);
+begin
+if lbUsers.ItemIndex > -1 then
+  lbUsers.DeleteSelected;
 end;
 
 procedure TfConf.cbCustChange(Sender:TObject);
@@ -184,10 +221,7 @@ end;
 
 procedure TfConf.tbAdvancedChange(Sender:TObject);
 begin
-  if tbAdvanced.Checked then
-    ClientHeight := gbAdvanced.top+gbAdvanced.height+7
-  else
-    ClientHeight := tbAdvanced.top+tbAdvanced.Height+7
+
 end;
 
 end.

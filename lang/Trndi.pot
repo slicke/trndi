@@ -58,6 +58,14 @@ msgstr ""
 msgid "- Off Range -"
 msgstr ""
 
+#: tfconf.badd.caption
+msgid "+ Add"
+msgstr ""
+
+#: tfconf.bremove.caption
+msgid "- Remove"
+msgstr ""
+
 #: tfconf.caption
 msgid "Settings"
 msgstr ""
@@ -74,6 +82,10 @@ msgstr ""
 msgid "NightScout"
 msgstr ""
 
+#: tfconf.cbuser.caption
+msgid "Account color"
+msgstr ""
+
 #: tfconf.eaddr.editlabel.caption
 msgid "Server Address / Dexcom Username"
 msgstr ""
@@ -86,13 +98,27 @@ msgstr ""
 msgid "API Secret / Dexcom Password"
 msgstr ""
 
-#: tfconf.gbadvanced.caption
-msgid "Advanced Settings"
+#: tfconf.gbmulti.caption
+msgid "Multi-User Settings"
 msgstr ""
 
 #: tfconf.gboverride.caption
 msgctxt "tfconf.gboverride.caption"
 msgid "Override High / Low limits"
+msgstr ""
+
+#: tfconf.label1.caption
+msgid "There's always a defualt user account"
+msgstr ""
+
+#: tfconf.label2.caption
+msgid ""
+"Add users below, if you wish to track more than one person.\n"
+"You need to start Trndi separately for each user (and select them)"
+msgstr ""
+
+#: tfconf.label3.caption
+msgid "Select a unique color, absolute black will disable"
 msgstr ""
 
 #: tfconf.lack.caption
@@ -115,8 +141,16 @@ msgstr ""
 msgid "Display Unit"
 msgstr ""
 
-#: tfconf.tbadvanced.caption
-msgid "More settings..."
+#: tfconf.tscustom.caption
+msgid "Customization"
+msgstr ""
+
+#: tfconf.tsgeneral.caption
+msgid "General"
+msgstr ""
+
+#: tfconf.tsmulti.caption
+msgid "Multi User"
 msgstr ""
 
 #: tffloat.caption
@@ -385,6 +419,14 @@ msgstr ""
 
 #: uconf.rs_dex
 msgid "Dexcom servers do not provide custom high and low blood sugar values. Please set your own thresholds at the bottom of this window."
+msgstr ""
+
+#: uconf.rs_enter_name
+msgid "Enter the user's name, letters, space and numbers only"
+msgstr ""
+
+#: uconf.rs_enter_user
+msgid "Enter a username"
 msgstr ""
 
 #: uconf.rs_override_help
