@@ -1,5 +1,5 @@
 {"version":1,"strings":[
-{"hash":1127,"name":"tfbg.caption","sourcebytes":[66,71],"value":"BG"},
+{"hash":6001833,"name":"tfbg.caption","sourcebytes":[84,114,110,100,105],"value":"Trndi"},
 {"hash":118004071,"name":"tfbg.larrow.caption","sourcebytes":[108,65,114,114,111,119],"value":"lArrow"},
 {"hash":5884864,"name":"tfbg.lval.caption","sourcebytes":[83,101,116,117,112],"value":"Setup"},
 {"hash":60066,"name":"tfbg.ldot6.caption","sourcebytes":[226,128,162],"value":"\u2022"},

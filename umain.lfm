@@ -4,13 +4,12 @@ object fBG: TfBG
   Top = 250
   Width = 320
   BorderStyle = bsSizeToolWin
-  Caption = 'BG'
+  Caption = 'Trndi'
   ClientHeight = 240
   ClientWidth = 320
   Color = clBlack
   Font.Color = clWhite
   Position = poDesktopCenter
-  LCLVersion = '4.0.0.3'
   OnClose = FormClose
   OnCreate = FormCreate
   OnDestroy = FormDestroy
@@ -21,7 +20,7 @@ object fBG: TfBG
   object lArrow: TLabel
     Left = 0
     Height = 78
-    Top = 162
+    Top = 144
     Width = 320
     Align = alBottom
     Alignment = taCenter
@@ -40,7 +39,7 @@ object fBG: TfBG
   end
   object lVal: TLabel
     Left = 0
-    Height = 144
+    Height = 126
     Top = 18
     Width = 320
     Align = alClient
@@ -233,6 +232,17 @@ object fBG: TfBG
     OnClick = lAgoClick
     OnDblClick = lDiffDblClick
     OnMouseMove = FormMouseMove
+  end
+  object pnMultiUser: TPanel
+    Left = 0
+    Height = 18
+    Top = 222
+    Width = 320
+    Align = alBottom
+    BevelOuter = bvNone
+    ParentBackground = False
+    TabOrder = 1
+    Visible = False
   end
   object tMain: TTimer
     Interval = 100000
