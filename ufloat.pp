@@ -47,6 +47,7 @@ type
     miCustomVisible: TMenuItem;
     miSplit1: TMenuItem;
     pMain: TPopupMenu;
+    pnMultiUser:TPanel;
     procedure FormCreate(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure FormKeyPress(Sender: TObject; var Key: char);

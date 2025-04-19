@@ -21,7 +21,7 @@ object fFloat: TfFloat
   OnShow = FormShow
   object lVal: TLabel
     Left = 0
-    Height = 82
+    Height = 74
     Top = 0
     Width = 200
     Align = alClient
@@ -42,7 +42,7 @@ object fFloat: TfFloat
   object lArrow: TLabel
     Left = 0
     Height = 78
-    Top = 82
+    Top = 74
     Width = 200
     Align = alBottom
     Alignment = taCenter
@@ -74,6 +74,17 @@ object fFloat: TfFloat
     Top = 0
     Width = 10
     Caption = '▲'
+    Visible = False
+  end
+  object pnMultiUser: TPanel
+    Left = 0
+    Height = 8
+    Top = 152
+    Width = 200
+    Align = alBottom
+    BevelOuter = bvNone
+    ParentBackground = False
+    TabOrder = 0
     Visible = False
   end
   object pMain: TPopupMenu

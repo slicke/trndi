@@ -856,6 +856,10 @@ begin
     fFloat.Color := fBg.Color;
     fFloat.lVal.Caption := lval.Caption;
     fFloat.lArrow.Caption := lArrow.Caption;
+    if pnMultiUser.Visible then begin
+      fFloat.pnMultiUser.Visible := true;
+      fFloat.pnMultiUser.Color := pnMultiUser.Color;
+    end;
   end;
   miFloatOn.Checked := fFloat.Showing;
 end;
