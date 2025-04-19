@@ -22,7 +22,7 @@ unit umain;
 
 {$mode objfpc}{$H+}
 {$ifdef Darwin}
-  {$modeswitch objectivec1}
+{$modeswitch objectivec1}
 {$endif}
 
 interface
@@ -40,19 +40,20 @@ LazFileUtils, uconf, trndi.native, Trndi.API, trndi.api.xDrip,{$ifdef DEBUG} trn
 StrUtils, TouchDetection, ufloat;
 
 resourcestring
-  RS_tpoCenter = 'Desktop Center';
-  RS_tpoBottomLeft = 'Bottom Left';
-  RS_tpoBottomRight = 'Bottom Right';
-  RS_tpCustom = 'Last position';
+RS_tpoCenter = 'Desktop Center';
+RS_tpoBottomLeft = 'Bottom Left';
+RS_tpoBottomRight = 'Bottom Right';
+RS_tpoCustom = 'Last position';
+RS_tpoTopRight = 'Top Right';
 
 type
   // Procedures which are applied to the trend drawing
 TTrendProc = procedure(l: TLabel; c, ix: integer) of object;
 TTrendProcLoop = procedure(l: TLabel; c, ix: integer; ls: array of TLabel) of object;
-TrndiPos = (tpoCenter = 0, tpoBottomLeft = 1, tpoBottomRight = 2, tpCustom = 3);
+TrndiPos = (tpoCenter = 0, tpoBottomLeft = 1, tpoBottomRight = 2, tpoCustom = 3, tpoTopRight = 4);
 TPONames = array[TrndiPos] of string;
 var
-TrndiPosNames: TPONames = (  RS_tpoCenter,  RS_tpoBottomLeft , RS_tpoBottomRight,  RS_tpCustom );
+TrndiPosNames: TPONames = (  RS_tpoCenter,  RS_tpoBottomLeft , RS_tpoBottomRight,  RS_tpoCustom, RS_tpoTopRight );
 type
   { TfBG }
 
@@ -237,35 +238,47 @@ implementation
 
 procedure TfBG.placeForm;
 var
-  pos: integer;
+  pos, cust: integer;
 begin
- pos := native.GetIntSetting('position.main', ord(tpoCenter));
- if not ((pos >= Ord(Low(TrndiPos))) and (pos <= Ord(High(TrndiPos)))) then
-   pos := ord(tpoCenter);
+  pos := native.GetIntSetting(username + 'position.main', ord(tpoCenter));
+  if not ((pos >= Ord(Low(TrndiPos))) and (pos <= Ord(High(TrndiPos)))) then
+    pos := ord(tpoCenter);
 
- case TrndiPos(pos) of
+  case TrndiPos(pos) of
   tpoCenter:
-              begin
-              Left := Screen.WorkAreaLeft + (Screen.WorkAreaWidth - Width) div 2;
-              Top := Screen.WorkAreaTop + (Screen.WorkAreaHeight - Height) div 2;
-              end;
+  begin
+    self.Left := Screen.WorkAreaLeft + (Screen.WorkAreaWidth - Width) div 2;
+    self.Top := Screen.WorkAreaTop + (Screen.WorkAreaHeight - Height) div 2;
+  end;
   tpoBottomLeft:
-              begin
-              Left := 20;
-              Top := (Screen.WorkAreaRect.Bottom - Height) - 200;
-              end;
+  begin
+    self.Left := 20;
+    self.Top := (Screen.WorkAreaRect.Bottom - Height) - 200;
+  end;
   tpoBottomRight:
-            begin
-            Left := Screen.WorkAreaRect.Right - 20;
-            Top := (Screen.WorkAreaRect.Bottom - Height) - 200;
-            end;
+  begin
+    self.Left := Screen.WorkAreaRect.Right - 20;
+    self.Top := (Screen.WorkAreaRect.Bottom - Height) - 200;
+  end;
+  tpoTopRight:
+  begin
+    self.Left := Screen.WorkAreaRect.Right - (self.width) - 20;
+    self.Top := 200;
+  end;
+  tpoCustom:
+  begin
+    pos := native.GetIntSetting(username +'position.last.left', 10);
+    self.left := pos;
+    pos := native.GetIntSetting(username +'position.last.top', 10);
+    self.top := pos;
+  end;
   end;
 end;
 
 // For darkening (multiply each component by 0.8)
-function DarkenColor(originalColor: TColor; factor: Double = 0.8): TColor;
+function DarkenColor(originalColor: TColor; factor: double = 0.8): TColor;
 var
-  r, g, b: Byte;
+  r, g, b: byte;
 begin
   // Extract RGB components
   r := GetRValue(originalColor);
@@ -282,9 +295,9 @@ begin
 end;
 
 // For lightening (increase each component towards 255)
-function LightenColor(originalColor: TColor; factor: Double = 0.8): TColor;
+function LightenColor(originalColor: TColor; factor: double = 0.8): TColor;
 var
-  r, g, b: Byte;
+  r, g, b: byte;
 begin
   // Extract RGB components
   r := GetRValue(originalColor);
@@ -301,11 +314,11 @@ begin
 end;
 
 
-function IsLightColor(bgColor: TColor): Boolean;
+function IsLightColor(bgColor: TColor): boolean;
 var
-  R, G, B: Byte;
-  r2, g2, b2: Double;
-  L: Double;
+  R, G, B: byte;
+  r2, g2, b2: double;
+  L: double;
 begin
   // Get RBG
   R := GetRValue(bgColor);
@@ -318,9 +331,12 @@ begin
   b2 := B / 255.0;
 
   // Correct gamma
-  if r2 <= 0.04045 then r2 := r2 / 12.92 else r2 := Power((r2 + 0.055) / 1.055, 2.4);
-  if g2 <= 0.04045 then g2 := g2 / 12.92 else g2 := Power((g2 + 0.055) / 1.055, 2.4);
-  if b2 <= 0.04045 then b2 := b2 / 12.92 else b2 := Power((b2 + 0.055) / 1.055, 2.4);
+  if r2 <= 0.04045 then
+    r2 := r2 / 12.92 else r2 := Power((r2 + 0.055) / 1.055, 2.4);
+  if g2 <= 0.04045 then
+    g2 := g2 / 12.92 else g2 := Power((g2 + 0.055) / 1.055, 2.4);
+  if b2 <= 0.04045 then
+    b2 := b2 / 12.92 else b2 := Power((b2 + 0.055) / 1.055, 2.4);
 
   // Calculate luminance
   L := 0.2126 * r2 + 0.7152 * g2 + 0.0722 * b2;
@@ -331,7 +347,7 @@ end;
 
 procedure PaintLbl(Sender: TLabel; OutlineWidth: integer = 1; OutlineColor: TColor = clBlack);
 var
-  X, Y: Integer;
+  X, Y: integer;
   OriginalColor: TColor;
   TextRect: TRect;
   TextStyle: TTextStyle;
@@ -347,7 +363,7 @@ begin
     TextStyle.Layout := Layout;
     TextStyle.Wordbreak := WordWrap;
     TextStyle.SingleLine := not WordWrap;
-    TextStyle.Clipping := True;
+    TextStyle.Clipping := true;
 
     // Remember original color
     OriginalColor := Font.Color;
@@ -361,15 +377,13 @@ begin
     for X := -OutlineWidth to OutlineWidth do
       for Y := -OutlineWidth to OutlineWidth do
         if (X <> 0) or (Y <> 0) then
-        begin
-          // Make a copy
           Canvas.TextRect(
             Rect(TextRect.Left + X, TextRect.Top + Y,
-                 TextRect.Right + X, TextRect.Bottom + Y),
+            TextRect.Right + X, TextRect.Bottom + Y),
             0, 0, // Not used with text style
             Caption,
-            TextStyle);
-        end;
+            TextStyle)// Make a copy
+    ;
 
     // Re-draw original color
     Canvas.Font.Color := OriginalColor;
@@ -505,7 +519,7 @@ function GetLinuxDistro: string;
 
   {$endif}
 begin
-native := TrndiNative.Create;
+  native := TrndiNative.Create;
   {$ifdef Linux}
   s := GetLinuxDistro;
   if (Pos('ID=fedora', s) > -1) then
@@ -522,11 +536,11 @@ native := TrndiNative.Create;
     IsRaspberry := FileExists('/etc/rpi-issue');
   {$endif}
 
-          {$ifdef DARWIN}
-        BorderStyle := bsSizeable;
-    {$else}
-    BorderStyle := bsSizeToolWin;
-    {$endif}
+  {$ifdef DARWIN}
+  BorderStyle := bsSizeable;
+  {$else}
+  BorderStyle := bsSizeToolWin;
+  {$endif}
 
 
   // Assign labels to the TrendDots array
@@ -545,12 +559,13 @@ native := TrndiNative.Create;
     HasTouch :=  HasTouchScreen(HasMultiTouch);
     if HasMultiTouch then
       touchHelper := TTouchDetector.Create;
-    lang := GetSetting('locale', '');
+    lang := GetSetting(username +'locale', '');
 
     SetDefaultLang(lang,'lang');
   // Idea for using multiple person/account support
     username := GetSetting('users.names','');
-    if username <> '' then begin
+    if username <> '' then
+    begin
       with TStringList.Create do
       begin
         AddCommaText(username);
@@ -571,7 +586,8 @@ native := TrndiNative.Create;
         pnMultiUser.Color := StringToColor(s);
       if pnMultiUser.Color <> clBlack then
         pnMultiUser.Visible := true;
-    end else
+    end
+    else
       multi := false;
 
 
@@ -638,7 +654,7 @@ end;
 
 procedure TfBG.FormDestroy(Sender:TObject);
 begin
- native.free;
+  native.free;
 end;
 
 procedure TfBG.FormKeyPress(Sender:TObject;var Key:char);
@@ -669,13 +685,23 @@ end;
 procedure TfBG.FormClose(Sender: TObject; var CloseAction: TCloseAction);
 var
   i: integer;
+  pos: integer;
 begin
   {$ifdef TrndiExt}
   TTrndiExtEngine.ReleaseInstance;
   {$endif}
 
+  pos := native.GetIntSetting(username +'position.main', ord(tpoCenter));
+  if not ((pos >= Ord(Low(TrndiPos))) and (pos <= Ord(High(TrndiPos)))) then
+    pos := ord(tpoCenter);
+  if TrndiPos(pos) = tpoCustom then
+  begin
+    native.SetSetting(username +'position.last.left', self.left.toString);
+    native.SetSetting(username +'position.last.top', self.top.toString);
+  end;
   api.Free;
   Application.Terminate;
+
 //  LogMessage('Trend closed.');
 end;
 
@@ -754,20 +780,20 @@ end;
 
 // Handle full screen toggle on double-click
 procedure TfBG.lDiffDblClick(Sender: TObject);
-function IsMaximized(Form: TForm): Boolean;
-begin
-  {$IFDEF DARWIN}
+function IsMaximized(Form: TForm): boolean;
+  begin
+    {$IFDEF DARWIN}
   // Jämför med skärmstorlek minus menubar/dock
-  Result := (Form.BoundsRect.Width >= Screen.WorkAreaWidth) and
-            (Form.BoundsRect.Height >= Screen.WorkAreaHeight);
-  {$ELSE}
-  Result := Form.WindowState = wsMaximized;
-  {$ENDIF}
-end;
+    Result := (Form.BoundsRect.Width >= Screen.WorkAreaWidth) and
+      (Form.BoundsRect.Height >= Screen.WorkAreaHeight);
+    {$ELSE}
+    Result := Form.WindowState = wsMaximized;
+    {$ENDIF}
+  end;
 
 
 begin
- if IsMaximized(self) then
+  if IsMaximized(self) then
   begin
     {$ifdef DARWIN}
     Showmessage('macOS cant restore the main window, please restart!');
@@ -842,21 +868,22 @@ end;
 
 procedure TfBG.TfFloatOnHide(Sender:TObject);
 begin
-   miFloatOn.Checked := fFloat.Showing;
+  miFloatOn.Checked := fFloat.Showing;
 end;
 
 procedure TfBG.miFloatOnClick(Sender:TObject);
 begin
-  if fFloat.Showing then begin
-    fFloat.Hide;
-  end else begin
+  if fFloat.Showing then
+    fFloat.Hide else
+  begin
     fFloat.Show;
     if not assigned(fFloat.onhide) then
       ffloat.OnHide := @TfFloatOnHide;
     fFloat.Color := fBg.Color;
     fFloat.lVal.Caption := lval.Caption;
     fFloat.lArrow.Caption := lArrow.Caption;
-    if pnMultiUser.Visible then begin
+    if pnMultiUser.Visible then
+    begin
       fFloat.pnMultiUser.Visible := true;
       fFloat.pnMultiUser.Color := pnMultiUser.Color;
     end;
@@ -878,10 +905,10 @@ begin
     self.BorderStyle := bsNone
   else
     {$ifdef DARWIN}
-        BorderStyle := bsSizeable;
-    {$else}
-    BorderStyle := bsSizeToolWin;
-    {$endif}
+    BorderStyle := bsSizeable;
+  {$else}
+  BorderStyle := bsSizeToolWin;
+  {$endif}
 end;
 
 procedure TfBG.miExitClick(Sender:TObject);
@@ -970,11 +997,12 @@ begin
 
       s := GetSetting(username + 'user.color');
       if s <> '' then
-      cbUser.ButtonColor := StringToColor(s);
+        cbUser.ButtonColor := StringToColor(s);
 
       // Load positions of the form
-      i := native.GetIntSetting('position.main', ord(tpoCenter));
-      for po in TrndiPos do begin
+      i := native.GetIntSetting(username +'position.main', ord(tpoCenter));
+      for po in TrndiPos do
+      begin
         s := TrndiPosNames[po]; // Localized name of the pos
         cbPos.items.Add(s);
         if ord(po) = i then
@@ -985,7 +1013,7 @@ begin
 
       ShowModal;
 
-      native.SetSetting('position.main', IntToStr(cbPos.ItemIndex));
+      native.SetSetting(username +'position.main', IntToStr(cbPos.ItemIndex));
 
       SetSetting(username + 'user.color', ColorToString(cbUser.ButtonColor));
 
@@ -1216,7 +1244,7 @@ var
   b: BGReading;
   i: int64;
 begin
-native.start;
+  native.start;
   lastup := 0;
   // If not looking for new values, the last reading is unknown
   if not tAgo.Enabled then
@@ -1305,7 +1333,7 @@ native.start;
   if b.val <= api.cgmLo then
   begin
     fBG.Color := bg_color_lo;
-        {$ifdef LCLQt6}
+    {$ifdef LCLQt6}
   //    if assigned(fFloat) then
 //        ffloat.lvl := BGLOW;
     {$endif}
@@ -1383,7 +1411,8 @@ native.start;
   lDiff.Font.Color := ifThen(IsLightColor(fBG.color), DarkenColor(fbg.Color, 0.6), LightenColor(fBG.Color, 0.4));
   lAgo.Font.Color := ifThen(IsLightColor(fBG.color), DarkenColor(fbg.Color, 0.6), LightenColor(fBG.Color, 0.4));
 
-  with native do begin
+  with native do
+  begin
     setBadge(lVal.Caption);
     done;
   end;
