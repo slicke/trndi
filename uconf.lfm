@@ -10465,13 +10465,13 @@ object fConf: TfConf
       object gbMulti: TGroupBox
         Left = 16
         Height = 85
-        Top = 187
+        Top = 240
         Width = 377
         Caption = 'Multi-User Settings'
         ClientHeight = 65
         ClientWidth = 373
+        Enabled = False
         TabOrder = 3
-        Visible = False
         object cbUser: TColorButton
           Left = 32
           Height = 25
@@ -10486,9 +10486,26 @@ object fConf: TfConf
           Left = 16
           Height = 15
           Top = 8
-          Width = 253
-          Caption = 'Select a unique color, absolute black will disable'
+          Width = 313
+          Caption = 'If using multiple users, you can choose a color for each one'
         end
+      end
+      object cbPos: TComboBox
+        Left = 40
+        Height = 23
+        Top = 136
+        Width = 353
+        AutoSize = False
+        ItemHeight = 15
+        Style = csDropDownList
+        TabOrder = 4
+      end
+      object Label4: TLabel
+        Left = 16
+        Height = 15
+        Top = 117
+        Width = 135
+        Caption = 'Window start-up position'
       end
     end
     object tsMulti: TTabSheet

@@ -1,10 +1,6 @@
 msgid ""
 msgstr "Content-Type: text/plain; charset=UTF-8"
 
-#: tfbg.caption
-msgid "BG"
-msgstr ""
-
 #: tfbg.lval.caption
 msgctxt "tfbg.lval.caption"
 msgid "Setup"
@@ -118,7 +114,11 @@ msgid ""
 msgstr ""
 
 #: tfconf.label3.caption
-msgid "Select a unique color, absolute black will disable"
+msgid "If using multiple users, you can choose a color for each one"
+msgstr ""
+
+#: tfconf.label4.caption
+msgid "Window start-up position"
 msgstr ""
 
 #: tfconf.lack.caption
@@ -446,5 +446,21 @@ msgstr ""
 
 #: ufloat.rscustomop
 msgid "You can use shift+<number> to manually set visibility (0 = 100% visible)"
+msgstr ""
+
+#: umain.rs_tpcustom
+msgid "Last position"
+msgstr ""
+
+#: umain.rs_tpobottomleft
+msgid "Bottom Left"
+msgstr ""
+
+#: umain.rs_tpobottomright
+msgid "Bottom Right"
+msgstr ""
+
+#: umain.rs_tpocenter
+msgid "Desktop Center"
 msgstr ""
 
