@@ -126,14 +126,12 @@ msgstr ""
 "Du måste starta Trndi separat för varje användare (och välja dem)"
 
 #: tfconf.label3.caption
-#, fuzzy
-#| msgid "Select a unique color, absolute black will disable"
 msgid "If using multiple users, you can choose a color for each one"
-msgstr "Välj en unik färg, helt svart blir genomsklinligt"
+msgstr "Om fler än en användare finns, kan du välja en färg för varje"
 
 #: tfconf.label4.caption
 msgid "Window start-up position"
-msgstr ""
+msgstr "Position av fönster vid start"
 
 #: tfconf.lack.caption
 msgid "Libraries"
@@ -441,7 +439,7 @@ msgstr "Dexcom:s servrar tillhandahåller inte värden för vad som är högt oc
 
 #: uconf.rs_enter_name
 msgid "Enter the user's name, letters, space and numbers only"
-msgstr "Ange användarens namn med bokstäver, mellanslag och nummer."
+msgstr "Ange användarens namn med bokstäver, mellanslag och nummer"
 
 #: uconf.rs_enter_user
 msgid "Enter a username"
@@ -473,19 +471,24 @@ msgstr "När privat läge är aktiverat, visas inte avläsningar. Trndi visar is
 msgid "You can use shift+<number> to manually set visibility (0 = 100% visible)"
 msgstr "Du kan använda skift+<nummerr> för att manuellt sätta synligheten (0 = 100% synlig)"
 
-#: umain.rs_tpcustom
-msgid "Last position"
-msgstr ""
-
 #: umain.rs_tpobottomleft
 msgid "Bottom Left"
-msgstr ""
+msgstr "Nere till vänster"
 
 #: umain.rs_tpobottomright
 msgid "Bottom Right"
-msgstr ""
+msgstr "Nere till höger"
 
 #: umain.rs_tpocenter
 msgid "Desktop Center"
+msgstr "Mitten av skrivbordet"
+
+#: umain.rs_tpocustom
+msgctxt "umain.rs_tpocustom"
+msgid "Last position"
+msgstr "Senaste position"
+
+#: umain.rs_tpotopright
+msgid "Top Right"
 msgstr ""
 

@@ -448,10 +448,6 @@ msgstr ""
 msgid "You can use shift+<number> to manually set visibility (0 = 100% visible)"
 msgstr ""
 
-#: umain.rs_tpcustom
-msgid "Last position"
-msgstr ""
-
 #: umain.rs_tpobottomleft
 msgid "Bottom Left"
 msgstr ""
@@ -462,5 +458,14 @@ msgstr ""
 
 #: umain.rs_tpocenter
 msgid "Desktop Center"
+msgstr ""
+
+#: umain.rs_tpocustom
+msgctxt "umain.rs_tpocustom"
+msgid "Last position"
+msgstr ""
+
+#: umain.rs_tpotopright
+msgid "Top Right"
 msgstr ""
 
