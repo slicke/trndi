@@ -11,10 +11,6 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: Poedit 3.5\n"
 
-#: tfbg.caption
-msgid "BG"
-msgstr "BS"
-
 #: tfbg.lval.caption
 msgctxt "tfbg.lval.caption"
 msgid "Setup"
@@ -130,8 +126,14 @@ msgstr ""
 "Du måste starta Trndi separat för varje användare (och välja dem)"
 
 #: tfconf.label3.caption
-msgid "Select a unique color, absolute black will disable"
+#, fuzzy
+#| msgid "Select a unique color, absolute black will disable"
+msgid "If using multiple users, you can choose a color for each one"
 msgstr "Välj en unik färg, helt svart blir genomsklinligt"
+
+#: tfconf.label4.caption
+msgid "Window start-up position"
+msgstr ""
 
 #: tfconf.lack.caption
 msgid "Libraries"
@@ -470,3 +472,20 @@ msgstr "När privat läge är aktiverat, visas inte avläsningar. Trndi visar is
 #: ufloat.rscustomop
 msgid "You can use shift+<number> to manually set visibility (0 = 100% visible)"
 msgstr "Du kan använda skift+<nummerr> för att manuellt sätta synligheten (0 = 100% synlig)"
+
+#: umain.rs_tpcustom
+msgid "Last position"
+msgstr ""
+
+#: umain.rs_tpobottomleft
+msgid "Bottom Left"
+msgstr ""
+
+#: umain.rs_tpobottomright
+msgid "Bottom Right"
+msgstr ""
+
+#: umain.rs_tpocenter
+msgid "Desktop Center"
+msgstr ""
+

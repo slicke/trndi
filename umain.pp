@@ -29,7 +29,7 @@ interface
 
 uses
 trndi.strings, LCLTranslator, Classes, Menus, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, ExtCtrls,
-trndi.api.dexcom, trndi.api.nightscout, trndi.types, math, DateUtils, FileUtil, LclIntf,
+trndi.api.dexcom, trndi.api.nightscout, trndi.types, math, DateUtils, FileUtil, LclIntf, TypInfo, LResources,
 {$ifdef TrndiExt}
 trndi.Ext.Engine, trndi.Ext.jsfuncs,
 {$endif}
@@ -39,11 +39,21 @@ CocoaAll,
 LazFileUtils, uconf, trndi.native, Trndi.API, trndi.api.xDrip,{$ifdef DEBUG} trndi.api.debug,{$endif}
 StrUtils, TouchDetection, ufloat;
 
+resourcestring
+  RS_tpoCenter = 'Desktop Center';
+  RS_tpoBottomLeft = 'Bottom Left';
+  RS_tpoBottomRight = 'Bottom Right';
+  RS_tpCustom = 'Last position';
+
 type
   // Procedures which are applied to the trend drawing
 TTrendProc = procedure(l: TLabel; c, ix: integer) of object;
 TTrendProcLoop = procedure(l: TLabel; c, ix: integer; ls: array of TLabel) of object;
-
+TrndiPos = (tpoCenter = 0, tpoBottomLeft = 1, tpoBottomRight = 2, tpCustom = 3);
+TPONames = array[TrndiPos] of string;
+var
+TrndiPosNames: TPONames = (  RS_tpoCenter,  RS_tpoBottomLeft , RS_tpoBottomRight,  RS_tpCustom );
+type
   { TfBG }
 
 TfBG = class(TForm)
@@ -97,6 +107,7 @@ TfBG = class(TForm)
   procedure FormMouseLeave(Sender:TObject);
   procedure FormMouseMove(Sender:TObject;Shift:TShiftState;X,Y:integer);
   procedure FormResize(Sender: TObject);
+  procedure FormShow(Sender:TObject);
   procedure lAgoClick(Sender:TObject);
   procedure lArrowClick(Sender:TObject);
   procedure lDiffDblClick(Sender: TObject);
@@ -138,12 +149,15 @@ private
   procedure HideDot(l: TLabel; c, ix: integer);
   procedure ResizeDot(l: TLabel; c, ix: integer);
   procedure ExpandDot(l: TLabel; c, ix: integer);
+  procedure placeForm;
   {$ifdef TrndiExt}
   procedure LoadExtensions;
   {$endif}
 public
 
 end;
+
+
 
 var
 native: TrndiNative;
@@ -169,6 +183,7 @@ DOT_FRESH = LineEnding +'☉';
 
 var
 bg_alert: boolean = false; // If the BG is high/low since before, so we don't spam notifications
+placed: boolean = false; // If the window has been placed at setup
 
 username: string = '';
 lastup: tdatetime;
@@ -219,6 +234,33 @@ implementation
 
 {$R *.lfm}
 {$I tfuncs.inc}
+
+procedure TfBG.placeForm;
+var
+  pos: integer;
+begin
+ pos := native.GetIntSetting('position.main', ord(tpoCenter));
+ if not ((pos >= Ord(Low(TrndiPos))) and (pos <= Ord(High(TrndiPos)))) then
+   pos := ord(tpoCenter);
+
+ case TrndiPos(pos) of
+  tpoCenter:
+              begin
+              Left := Screen.WorkAreaLeft + (Screen.WorkAreaWidth - Width) div 2;
+              Top := Screen.WorkAreaTop + (Screen.WorkAreaHeight - Height) div 2;
+              end;
+  tpoBottomLeft:
+              begin
+              Left := 20;
+              Top := (Screen.WorkAreaRect.Bottom - Height) - 200;
+              end;
+  tpoBottomRight:
+            begin
+            Left := Screen.WorkAreaRect.Right - 20;
+            Top := (Screen.WorkAreaRect.Bottom - Height) - 200;
+            end;
+  end;
+end;
 
 // For darkening (multiply each component by 0.8)
 function DarkenColor(originalColor: TColor; factor: Double = 0.8): TColor;
@@ -524,7 +566,9 @@ native := TrndiNative.Create;
           username := '';
       end;// Load possible other users
       multi := true;
-      pnMultiUser.Color := StringToColor(GetSetting(username + 'user.color'));
+      s := GetSetting(username + 'user.color');
+      if s <> '' then
+        pnMultiUser.Color := StringToColor(s);
       if pnMultiUser.Color <> clBlack then
         pnMultiUser.Visible := true;
     end else
@@ -690,6 +734,12 @@ begin
     tResize.Enabled := false;
     tResize.Enabled := true;
   end;
+end;
+
+procedure TfBG.FormShow(Sender:TObject);
+begin
+  placeForm;
+  placed := true;
 end;
 
 procedure TfBG.lAgoClick(Sender:TObject);
@@ -862,6 +912,7 @@ procedure TfBG.miSettingsClick(Sender: TObject);
 var
   i: integer;
   s: string;
+  po: TrndiPos;
 begin
   with TfConf.Create(self) do
     with native do
@@ -910,10 +961,27 @@ begin
 
       s := GetSetting('users.names','');
       lbUsers.Items.AddCommaText(s);
-      gbMulti.Visible := true;
-      cbUser.ButtonColor := StringToColor(GetSetting(username + 'user.color'));
+      if (s <> '') then
+        gbMulti.Enabled := true;
+
+      s := GetSetting(username + 'user.color');
+      if s <> '' then
+      cbUser.ButtonColor := StringToColor(s);
+
+      // Load positions of the form
+      i := native.GetIntSetting('position.main', ord(tpoCenter));
+      for po in TrndiPos do begin
+        s := TrndiPosNames[po]; // Localized name of the pos
+        cbPos.items.Add(s);
+        if ord(po) = i then
+          cbPos.ItemIndex := i;
+      end;
+      if cbPos.ItemIndex = -1 then
+        cbPos.ItemIndex := 0;
 
       ShowModal;
+
+      native.SetSetting('position.main', IntToStr(cbPos.ItemIndex));
 
       SetSetting(username + 'user.color', ColorToString(cbUser.ButtonColor));
 

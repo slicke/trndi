@@ -43,6 +43,7 @@ TfConf = class(TForm)
   cbPrivacy:TCheckBox;
   cbSys:TComboBox;
   cbUser:TColorButton;
+  cbPos:TComboBox;
   eAddr:TLabeledEdit;
   eExt:TLabeledEdit;
   ePass:TLabeledEdit;
@@ -54,6 +55,7 @@ TfConf = class(TForm)
   Label1:TLabel;
   Label2:TLabel;
   Label3:TLabel;
+  Label4:TLabel;
   lAck:TButton;
   lCopyright:TLabel;
   lHiOver:TLabel;

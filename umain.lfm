@@ -17,6 +17,7 @@ object fBG: TfBG
   OnMouseLeave = FormMouseLeave
   OnMouseMove = FormMouseMove
   OnResize = FormResize
+  OnShow = FormShow
   object lArrow: TLabel
     Left = 0
     Height = 78
