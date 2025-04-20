@@ -216,7 +216,7 @@ begin
   with TrndiNative.create do begin
       if isDarkMode then
        setDarkMode(self.Handle);
-  Free;
+      Free;
   end;
 end;
 

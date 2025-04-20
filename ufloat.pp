@@ -180,6 +180,7 @@ QWidget_setStyleSheet(TQtWidget(Handle).Widget,
   CreateRoundedCorners;
   {$ENDIF}
   {$IFNDEF DARWIN}
+   {$IFNDEF LCLQt6}
   Self.BorderStyle := bsNone; // Remove border
   // Use LCL stuff when Windows (or not Qt really)
   try
@@ -199,6 +200,7 @@ QWidget_setStyleSheet(TQtWidget(Handle).Widget,
   finally
     ABitmap.Free;
   end;
+  {$ENDIF}
   {$ENDIF}
 end;
 

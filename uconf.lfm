@@ -8,6 +8,7 @@ object fConf: TfConf
   ClientHeight = 395
   ClientWidth = 416
   Position = poDesktopCenter
+  LCLVersion = '4.0.0.3'
   OnCreate = FormCreate
   OnResize = FormResize
   object pcMain: TPageControl
@@ -102,8 +103,8 @@ object fConf: TfConf
         ChildSizing.ShrinkVertical = crsScaleChilds
         ChildSizing.Layout = cclLeftToRightThenTopToBottom
         ChildSizing.ControlsPerLine = 2
-        ClientHeight = 25
-        ClientWidth = 384
+        ClientHeight = 27
+        ClientWidth = 370
         Columns = 2
         ItemIndex = 0
         Items.Strings = (
@@ -10427,8 +10428,8 @@ object fConf: TfConf
         Align = alTop
         BorderSpacing.Around = 10
         Caption = 'Override High / Low limits'
-        ClientHeight = 68
-        ClientWidth = 384
+        ClientHeight = 70
+        ClientWidth = 370
         ParentBackground = False
         TabOrder = 0
         object cbCust: TCheckBox
@@ -10579,8 +10580,8 @@ object fConf: TfConf
         Align = alBottom
         BorderSpacing.Around = 10
         Caption = 'Account Settings'
-        ClientHeight = 68
-        ClientWidth = 384
+        ClientHeight = 70
+        ClientWidth = 370
         Enabled = False
         TabOrder = 1
         object cbUser: TColorButton

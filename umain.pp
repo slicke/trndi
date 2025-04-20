@@ -63,7 +63,6 @@ TfBG = class(TForm)
   miRangeColor:TMenuItem;
   pnMultiUser:TPanel;
   Separator1:TMenuItem;
-  miExit:TMenuItem;
   miBorders:TMenuItem;
   miFullScreen:TMenuItem;
   miOnTop:TMenuItem;
@@ -660,7 +659,10 @@ end;
 
 procedure TfBG.FormDestroy(Sender:TObject);
 begin
-  native.free;
+  if assigned(native) then
+    native.free;
+  if assigned(api) then
+    api.Free;
 end;
 
 procedure TfBG.FormKeyPress(Sender:TObject;var Key:char);
@@ -705,9 +707,6 @@ begin
     native.SetSetting(username +'position.last.left', self.left.toString);
     native.SetSetting(username +'position.last.top', self.top.toString);
   end;
-  api.Free;
-  Application.Terminate;
-
 //  LogMessage('Trend closed.');
 end;
 
@@ -920,7 +919,7 @@ end;
 procedure TfBG.miExitClick(Sender:TObject);
 begin
   if MessageDlg(RS_QUIT_CAPTION, RS_QUIT_MSG, mtWarning, [mbYes, mbNo], '') = mrYes then
-    Application.Terminate;
+    Close;
 end;
 
 // Force update on menu click
@@ -951,7 +950,7 @@ var
   s: string;
   po: TrndiPos;
 begin
-  with TfConf.Create(self) do
+  with TfConf.Create(self) do begin
     with native do
     begin
       {$ifdef DEBUG}
@@ -1064,6 +1063,9 @@ begin
 
       ShowMessage(RS_RESTART_APPLY);
     end;
+    Free;
+  end;
+
 end;
 
 // Swap dots with their readings
@@ -1346,9 +1348,9 @@ begin
   //    if assigned(fFloat) then
 //        ffloat.lvl := BGHigh;
     {$endif}
-    with TrndiNative.create  do
+//    with TrndiNative.create  do
       if not bg_alert then
-        attention(Format(RS_WARN_BG_HI, [lVal.Caption]));
+        native.attention(Format(RS_WARN_BG_HI, [lVal.Caption]));
   end
   else
   if b.val <= api.cgmLo then
@@ -1358,9 +1360,9 @@ begin
   //    if assigned(fFloat) then
 //        ffloat.lvl := BGLOW;
     {$endif}
-    with TrndiNative.create  do
+//    with TrndiNative.create  do
       if not bg_alert then
-        attention(Format(RS_WARN_BG_LO, [lVal.Caption]));
+        native.attention(Format(RS_WARN_BG_LO, [lVal.Caption]));
   end
   else
   begin
