@@ -178,7 +178,7 @@ if HandleAllocated then
 QWidget_setStyleSheet(TQtWidget(Handle).Widget,
   @stylestr);
   CreateRoundedCorners;
-  {$ELSE}
+  {$ELSEIF NOT DEFINED(DARWIN)}
   Self.BorderStyle := bsNone; // Remove border
   // Use LCL stuff when Windows (or not Qt really)
   try

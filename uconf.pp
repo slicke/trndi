@@ -202,6 +202,9 @@ begin
   lVersion.Caption := lVersion.Caption + ' | Test Build '+{$I %DATE%};
   lversion.left := lversion.left - 20;
   pcMain.ActivePage := tsGeneral;
+  {$ifdef darwin}
+    self.width := self.width + (self.width div 9);
+  {$endif}
 end;
 
 procedure TfConf.lLicenseClick(Sender:TObject);

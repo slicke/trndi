@@ -8,6 +8,7 @@ object fConf: TfConf
   ClientHeight = 396
   ClientWidth = 420
   Position = poDesktopCenter
+  LCLVersion = '4.99.0.0'
   OnCreate = FormCreate
   object pcMain: TPageControl
     Left = 0
