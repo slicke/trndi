@@ -20,10 +20,6 @@ msgstr "Konfig"
 msgid "No borders"
 msgstr "Inga kanter"
 
-#: tfbg.miexit.caption
-msgid "Exit Trndi"
-msgstr "Avsluta Trndi"
-
 #: tfbg.mifloaton.caption
 msgid "Show Floating Window"
 msgstr "Visa flytande fönster"
@@ -528,3 +524,4 @@ msgstr "Senaste position"
 #: umain.rs_tpotopright
 msgid "Top Right"
 msgstr "Höger topp"
+

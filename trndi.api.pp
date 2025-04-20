@@ -110,6 +110,7 @@ public
     }
   constructor create(user, pass, extra: string); virtual;
 
+  destructor destroy; virtual;
     {
       Connects to the underlying data source. Must be implemented in subclasses.
     }
@@ -192,6 +193,11 @@ begin
   timezone := GetLocalTimeOffset;
   native := TrndiNative.create(ua, baseUrl);
   initCGMCore;
+end;
+
+destructor TrndiAPI.destroy;
+begin
+  native.Free;
 end;
 
 { Returns the threshold as a single-precision float based on BGValLevel. }

@@ -10,10 +10,6 @@ msgstr ""
 msgid "No borders"
 msgstr ""
 
-#: tfbg.miexit.caption
-msgid "Exit Trndi"
-msgstr ""
-
 #: tfbg.mifloaton.caption
 msgid "Show Floating Window"
 msgstr ""

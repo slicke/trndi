@@ -142,7 +142,11 @@ public
   procedure setBadge(const Value: string);
   constructor create(ua, base: string); overload;
   constructor create; overload;
-  class function setDarkMode(win: HWND): boolean;
+  {$ifdef Windows}
+    class function setDarkMode(win: HWND): boolean;
+  {$else}
+    class function setDarkMode(win: THandle): boolean;
+  {$endif}
 protected
   useragent: string;  // HTTP User-Agent string
   baseurl:   string;  // Base URL for requests
@@ -178,7 +182,7 @@ begin
 end;
 {$else}
 
-function EnableDarkModeForWindow(hWnd: HWND): Boolean;
+class function TrndiNative.setDarkMode(win: THandle): Boolean;
 begin
 
 end;
