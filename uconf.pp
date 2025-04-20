@@ -34,13 +34,13 @@ type
   { TfConf }
 
 TfConf = class(TForm)
-  bAdd:TButton;
-  Bevel1:TBevel;
+  bAdd: TButton;
+  bvExt:TBevel;
   bOverrideHelp:TButton;
-  bPrivacyHelp:TButton;
-  bRemove:TButton;
+  bPrivacyHelp: TButton;
+  bRemove: TButton;
   cbCust:TCheckBox;
-  cbPrivacy:TCheckBox;
+  cbPrivacy: TCheckBox;
   cbSys:TComboBox;
   cbPos:TComboBox;
   cbUser:TColorButton;
@@ -48,25 +48,30 @@ TfConf = class(TForm)
   edNick:TEdit;
   eExt:TLabeledEdit;
   ePass:TLabeledEdit;
-  fsHi:TFloatSpinEdit;
-  fsLo:TFloatSpinEdit;
+  fsHi: TFloatSpinEdit;
+  fsLo: TFloatSpinEdit;
   gbMulti:TGroupBox;
   gbOverride:TGroupBox;
-  Image1:TImage;
-  Label1:TLabel;
+  Image1: TImage;
+  Label1: TLabel;
   Label2:TLabel;
   Label3:TLabel;
+  lAck: TButton;
+  lCopyright: TLabel;
   lCurrentAcc:TLabel;
   Label4:TLabel;
   Label5:TLabel;
-  lAck:TButton;
-  lCopyright:TLabel;
-  lHiOver:TLabel;
   lbUsers:TListBox;
-  lLicense:TButton;
-  lLounder:TLabel;
-  lTitle:TLabel;
-  lVersion:TLabel;
+  lHiOver: TLabel;
+  lLicense: TButton;
+  lLounder: TLabel;
+  lTitle: TLabel;
+  lVersion: TLabel;
+  Panel1: TPanel;
+  Panel2: TPanel;
+  Panel3: TPanel;
+  Panel4: TPanel;
+  Panel5: TPanel;
   pcMain:TPageControl;
   rbUnit:TRadioGroup;
   tsMulti:TTabSheet;
@@ -81,6 +86,7 @@ TfConf = class(TForm)
   procedure cbSysChange(Sender:TObject);
   procedure cbUserClick(Sender:TObject);
   procedure FormCreate(Sender:TObject);
+  procedure FormResize(Sender: TObject);
   procedure lAckClick(Sender:TObject);
   procedure lLicenseClick(Sender:TObject);
   procedure rbUnitClick(Sender:TObject);
@@ -205,6 +211,14 @@ begin
   {$ifdef darwin}
     self.width := self.width + (self.width div 9);
   {$endif}
+end;
+
+procedure TfConf.FormResize(Sender: TObject);
+begin
+  eAddr.width := cbSys.Width;
+  ePass.width := cbSys.Width;
+  bvExt.Width := cbSys.Width;
+  eExt.Width := cbSys.Width;
 end;
 
 procedure TfConf.lLicenseClick(Sender:TObject);
