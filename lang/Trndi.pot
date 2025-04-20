@@ -95,7 +95,7 @@ msgid "API Secret / Dexcom Password"
 msgstr ""
 
 #: tfconf.gbmulti.caption
-msgid "Multi-User Settings"
+msgid "Account Settings"
 msgstr ""
 
 #: tfconf.gboverride.caption
@@ -114,15 +114,23 @@ msgid ""
 msgstr ""
 
 #: tfconf.label3.caption
-msgid "If using multiple users, you can choose a color for each one"
+msgid "Nickname:"
 msgstr ""
 
 #: tfconf.label4.caption
 msgid "Window start-up position"
 msgstr ""
 
+#: tfconf.label5.caption
+msgid "Black = transparent"
+msgstr ""
+
 #: tfconf.lack.caption
 msgid "Libraries"
+msgstr ""
+
+#: tfconf.lcurrentacc.caption
+msgid "This only applies for the current loaded account"
 msgstr ""
 
 #: tfconf.lhiover.caption
@@ -324,6 +332,14 @@ msgstr ""
 msgid "Trndi found multiple accounts. Please choose one for this instance"
 msgstr ""
 
+#: trndi.strings.rs_multiuser_box
+msgid "Trndi found multiple accounts. Please choose one for this instance, or leave empty for default"
+msgstr ""
+
+#: trndi.strings.rs_multiuser_box_title
+msgid "User select"
+msgstr ""
+
 #: trndi.strings.rs_no_backend
 msgid "No readings recieved. There might be a problem with the backend, or you might not have any recent readings"
 msgstr ""
@@ -417,8 +433,25 @@ msgstr ""
 msgid "Low blood sugar! Currently: %s"
 msgstr ""
 
+#: uconf.rs_current_acc
+#, object-pascal-format
+msgid "This only applies for the current loaded account:  %s"
+msgstr ""
+
+#: uconf.rs_current_acc_def
+msgid "Settings for \"default\" only apply while multi-user is active"
+msgstr ""
+
+#: uconf.rs_current_acc_no
+msgid "These settings are available when using a multi-account"
+msgstr ""
+
 #: uconf.rs_dex
 msgid "Dexcom servers do not provide custom high and low blood sugar values. Please set your own thresholds at the bottom of this window."
+msgstr ""
+
+#: uconf.rs_dupe_name
+msgid "Names must be unique"
 msgstr ""
 
 #: uconf.rs_enter_name
@@ -442,6 +475,10 @@ msgstr ""
 
 #: uconf.rs_privacy_help
 msgid "When in Privacy Mode, the actual blood glucose value is hidden. Trndi will only tell the user if it's good, high or low."
+msgstr ""
+
+#: uconf.rs_remove_acc
+msgid "Removed accounts are made inactive, and can be restored by adding the same name again"
 msgstr ""
 
 #: ufloat.rscustomop

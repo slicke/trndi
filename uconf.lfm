@@ -14,9 +14,9 @@ object fConf: TfConf
     Height = 396
     Top = 0
     Width = 420
-    ActivePage = tsCustom
+    ActivePage = tsMulti
     Align = alClient
-    TabIndex = 1
+    TabIndex = 2
     TabOrder = 0
     object tsGeneral: TTabSheet
       Caption = 'General'
@@ -10462,34 +10462,6 @@ object fConf: TfConf
         Caption = 'Privacy Mode (Hide number)'
         TabOrder = 2
       end
-      object gbMulti: TGroupBox
-        Left = 16
-        Height = 85
-        Top = 240
-        Width = 377
-        Caption = 'Multi-User Settings'
-        ClientHeight = 65
-        ClientWidth = 373
-        Enabled = False
-        TabOrder = 3
-        object cbUser: TColorButton
-          Left = 32
-          Height = 25
-          Top = 24
-          Width = 152
-          BorderWidth = 2
-          ButtonColorSize = 16
-          ButtonColor = clBlack
-          Caption = 'Account color'
-        end
-        object Label3: TLabel
-          Left = 16
-          Height = 15
-          Top = 8
-          Width = 313
-          Caption = 'If using multiple users, you can choose a color for each one'
-        end
-      end
       object cbPos: TComboBox
         Left = 40
         Height = 23
@@ -10498,7 +10470,7 @@ object fConf: TfConf
         AutoSize = False
         ItemHeight = 15
         Style = csDropDownList
-        TabOrder = 4
+        TabOrder = 3
       end
       object Label4: TLabel
         Left = 16
@@ -10514,34 +10486,16 @@ object fConf: TfConf
       ClientWidth = 412
       object lbUsers: TListBox
         Left = 16
-        Height = 256
+        Height = 160
         Top = 56
-        Width = 372
+        Width = 377
         ItemHeight = 0
         TabOrder = 0
-      end
-      object bAdd: TButton
-        Left = 312
-        Height = 25
-        Top = 328
-        Width = 75
-        Caption = '+ Add'
-        TabOrder = 1
-        OnClick = bAddClick
-      end
-      object bRemove: TButton
-        Left = 232
-        Height = 25
-        Top = 328
-        Width = 75
-        Caption = '- Remove'
-        TabOrder = 2
-        OnClick = bRemoveClick
       end
       object Label1: TLabel
         Left = 16
         Height = 15
-        Top = 336
+        Top = 224
         Width = 198
         Caption = 'There''s always a defualt user account'
         Font.Style = [fsItalic]
@@ -10553,6 +10507,77 @@ object fConf: TfConf
         Top = 14
         Width = 341
         Caption = 'Add users below, if you wish to track more than one person.'#13#10'You need to start Trndi separately for each user (and select them)'
+      end
+      object gbMulti: TGroupBox
+        Left = 16
+        Height = 88
+        Top = 272
+        Width = 377
+        Caption = 'Account Settings'
+        ClientHeight = 68
+        ClientWidth = 373
+        Enabled = False
+        TabOrder = 1
+        object cbUser: TColorButton
+          Left = 16
+          Height = 25
+          Top = 24
+          Width = 136
+          BorderWidth = 2
+          ButtonColorSize = 16
+          ButtonColor = clBlack
+          Caption = 'Account color'
+        end
+        object lCurrentAcc: TLabel
+          Left = 16
+          Height = 15
+          Top = 0
+          Width = 248
+          Caption = 'This only applies for the current loaded account'
+          Font.Style = [fsItalic]
+          ParentFont = False
+        end
+        object Label5: TLabel
+          Left = 16
+          Height = 15
+          Top = 48
+          Width = 105
+          Caption = 'Black = transparent'
+          Font.Style = [fsItalic]
+          ParentFont = False
+        end
+        object Label3: TLabel
+          Left = 160
+          Height = 15
+          Top = 29
+          Width = 57
+          Caption = 'Nickname:'
+        end
+        object edNick: TEdit
+          Left = 232
+          Height = 23
+          Top = 26
+          Width = 128
+          TabOrder = 0
+        end
+      end
+      object bRemove: TButton
+        Left = 238
+        Height = 25
+        Top = 224
+        Width = 75
+        Caption = '- Remove'
+        TabOrder = 2
+        OnClick = bRemoveClick
+      end
+      object bAdd: TButton
+        Left = 318
+        Height = 25
+        Top = 224
+        Width = 75
+        Caption = '+ Add'
+        TabOrder = 3
+        OnClick = bAddClick
       end
     end
   end
