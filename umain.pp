@@ -569,12 +569,16 @@ begin
       with TStringList.Create do
       begin
         AddCommaText(username);
-
-        i := InputCombo('User', 'Trndi found multiple accounts. Please choose one for this instance', ToStringArray);
-        if i > -1 then
+        Add('');
+        i := InputCombo(RS_MULTIUSER_BOX_TITLE, RS_MULTIUSER_BOX, ToStringArray);
+        if (i > -1) and (strings[i] <> '') then
         begin
           username := strings[i];
-          fbg.Caption := Format(RS_USER_CAPTION, [username, fBG.Caption]);
+          s :=  GetSetting(username + '_' + 'user.nick', '');
+          if s = '' then
+            s := username;
+
+          fbg.Caption := Format(RS_USER_CAPTION, [s, fBG.Caption]);
           username := username+'_';
         end
         else
@@ -941,7 +945,7 @@ end;
 // Handle settings menu click
 procedure TfBG.miSettingsClick(Sender: TObject);
 var
-  i: integer;
+  i, lastusers: integer;
   s: string;
   po: TrndiPos;
 begin
@@ -992,8 +996,14 @@ begin
 
       s := GetSetting('users.names','');
       lbUsers.Items.AddCommaText(s);
-      if (s <> '') then
+      if (s <> '') then begin
         gbMulti.Enabled := true;
+        if username = '' then
+          lCurrentAcc.Caption := RS_CURRENT_ACC_DEF
+        else
+          lCurrentAcc.Caption := Format(RS_CURRENT_ACC, [TrimRightSet(username, ['_'])]);
+      end else
+        lCurrentAcc.Caption := RS_CURRENT_ACC_NO;
 
       s := GetSetting(username + 'user.color');
       if s <> '' then
@@ -1011,16 +1021,25 @@ begin
       if cbPos.ItemIndex = -1 then
         cbPos.ItemIndex := 0;
 
-      ShowModal;
+      lastusers := lbusers.count;
+      edNick.Text := GetSetting(username + 'user.nick', '');
 
+      //--
+      ShowModal;
+      //---
       native.SetSetting(username +'position.main', IntToStr(cbPos.ItemIndex));
 
       SetSetting(username + 'user.color', ColorToString(cbUser.ButtonColor));
+      SetSetting(username + 'user.nick', edNick.Text);
 
       if lbUsers.Count > 0 then
         SetSetting('users.names',lbUsers.Items.CommaText)
       else
         SetSetting('users.names', '');
+
+      if lbUsers.Count < lastusers then
+         ShowMessage(RS_REMOVE_ACC);
+
       SetSetting(username +'remote.type', cbSys.Text);
       SetSetting(username +'remote.target', eAddr.Text);
       SetSetting(username +'remote.creds', ePass.Text);

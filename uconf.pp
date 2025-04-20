@@ -34,28 +34,31 @@ type
   { TfConf }
 
 TfConf = class(TForm)
-  bRemove:TButton;
+  bAdd:TButton;
   Bevel1:TBevel;
   bOverrideHelp:TButton;
   bPrivacyHelp:TButton;
-  bAdd:TButton;
+  bRemove:TButton;
   cbCust:TCheckBox;
   cbPrivacy:TCheckBox;
   cbSys:TComboBox;
-  cbUser:TColorButton;
   cbPos:TComboBox;
+  cbUser:TColorButton;
   eAddr:TLabeledEdit;
+  edNick:TEdit;
   eExt:TLabeledEdit;
   ePass:TLabeledEdit;
   fsHi:TFloatSpinEdit;
   fsLo:TFloatSpinEdit;
-  gbOverride:TGroupBox;
   gbMulti:TGroupBox;
+  gbOverride:TGroupBox;
   Image1:TImage;
   Label1:TLabel;
   Label2:TLabel;
   Label3:TLabel;
+  lCurrentAcc:TLabel;
   Label4:TLabel;
+  Label5:TLabel;
   lAck:TButton;
   lCopyright:TLabel;
   lHiOver:TLabel;
@@ -106,6 +109,11 @@ RS_DEX =
 
 RS_ENTER_USER = 'Enter a username';
 RS_ENTER_NAME = 'Enter the user''s name, letters, space and numbers only';
+RS_DUPE_NAME = 'Names must be unique';
+RS_CURRENT_ACC = 'This only applies for the current loaded account:  %s';
+RS_CURRENT_ACC_NO = 'These settings are available when using a multi-account';
+RS_CURRENT_ACC_DEF = 'Settings for "default" only apply while multi-user is active';
+RS_REMOVE_ACC = 'Removed accounts are made inactive, and can be restored by adding the same name again';
 
 var 
 fConf: TfConf;
@@ -147,16 +155,23 @@ end;
 
 procedure TfConf.bAddClick(Sender:TObject);
 var
- s: string;
+ s, x: string;
  c: char;
 begin
   s := InputBox(RS_ENTER_USER,RS_ENTER_NAME,'');
   for c in s do begin
     if not (c in ['0'..'9', 'A'..'z',' ']) then begin
-      ShowMEssage(RS_ENTER_NAME);
+      ShowMessage(RS_ENTER_NAME);
       Exit;
     end;
   end;
+
+  // No duplicates!
+  for x in lbusers.Items do
+    if s = x then begin
+    ShowMessage(RS_DUPE_NAME);
+      Exit;
+    end;
   lbUsers.AddItem(s, nil);
 end;
 
@@ -186,6 +201,7 @@ procedure TfConf.FormCreate(Sender:TObject);
 begin
   lVersion.Caption := lVersion.Caption + ' | Test Build '+{$I %DATE%};
   lversion.left := lversion.left - 20;
+  pcMain.ActivePage := tsGeneral;
 end;
 
 procedure TfConf.lLicenseClick(Sender:TObject);
