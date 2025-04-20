@@ -520,6 +520,8 @@ function GetLinuxDistro: string;
   {$endif}
 begin
   native := TrndiNative.Create;
+  if native.isDarkMode then
+     native.setDarkMode(self.handle);
   {$ifdef Linux}
   s := GetLinuxDistro;
   if (Pos('ID=fedora', s) > -1) then

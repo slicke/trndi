@@ -27,7 +27,7 @@ interface
 
 uses 
 Classes,ColorBox,ComCtrls,ExtCtrls,Spin,StdCtrls,SysUtils,Forms,Controls,
-Graphics,Dialogs,LCLTranslator;
+Graphics,Dialogs,LCLTranslator, trndi.native;
 
 type
 
@@ -204,6 +204,8 @@ begin
 end;
 
 procedure TfConf.FormCreate(Sender:TObject);
+var
+ native: TrndiNative;
 begin
   lVersion.Caption := lVersion.Caption + ' | Test Build '+{$I %DATE%};
   lversion.left := lversion.left - 20;
@@ -211,6 +213,11 @@ begin
   {$ifdef darwin}
     self.width := self.width + (self.width div 9);
   {$endif}
+  with TrndiNative.create do begin
+      if isDarkMode then
+       setDarkMode(self.Handle);
+  Free;
+  end;
 end;
 
 procedure TfConf.FormResize(Sender: TObject);

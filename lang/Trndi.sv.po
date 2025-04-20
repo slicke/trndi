@@ -127,7 +127,7 @@ msgstr ""
 
 #: tfconf.label3.caption
 msgid "Nickname:"
-msgstr ""
+msgstr "Smeknamn:"
 
 #: tfconf.label4.caption
 msgid "Window start-up position"
@@ -231,6 +231,65 @@ msgstr "Felaktigt Dexcom-lösenord eller kontoinformation"
 #: trndi.api.dexcom.serrdexpostlogin
 msgid "Login error during post-authentication steps"
 msgstr "Inloggningsfel efter autensieringen"
+
+#: trndi.ext.functions.sdatatypeerr
+#, object-pascal-format
+msgid "Datatype %s was not expected, expected in function %s"
+msgstr ""
+
+#: trndi.ext.functions.sdatatypeerrfunc
+#, object-pascal-format
+msgid "Datatype \"%s\" was not expected, in function \"%s\". Expected \"%s\""
+msgstr ""
+
+#: trndi.ext.functions.sdatatypeerrpos
+#, object-pascal-format
+msgid "Datatype %s was not expected, expected in function %s, parameter %d"
+msgstr ""
+
+#: trndi.ext.functions.slogdesc
+msgid "Trndi has captured data sent to console.log in a JavaScript extension"
+msgstr ""
+
+#: trndi.ext.functions.slogrecevive
+msgid "Output through console.log has been received"
+msgstr ""
+
+#: trndi.ext.functions.snotrace
+msgid "No stack trace available"
+msgstr ""
+
+#: trndi.ext.functions.sstackerrmsg
+#, object-pascal-format
+msgid ""
+"Error: %s \n"
+"Stack: %s %s"
+msgstr ""
+
+#: trndi.ext.functions.sstackfailed
+msgid "An error occurred, and the stacktrace could not be loaded. Showing backtrace."
+msgstr ""
+
+#: trndi.ext.functions.sunknownerr
+msgid "Unknown error"
+msgstr ""
+
+#: trndi.ext.promise.spromerrcapt
+#, object-pascal-format
+msgid "The asyncronous function %s failed to complete"
+msgstr ""
+
+#: trndi.ext.promise.stypeerrcapt
+msgid "A data type differes from what was expected"
+msgstr ""
+
+#: trndi.ext.promise.stypeerrdesc
+msgid "The extension was stopped"
+msgstr ""
+
+#: trndi.ext.promise.stypeerrmsg
+msgid "A data type was expected, but another was found"
+msgstr ""
 
 #: trndi.strings.rs_force_quit_setup
 msgid "Trndi will now shut down to apply settings, please re-start it manually!"
@@ -409,7 +468,7 @@ msgstr "Dexcom:s servrar tillhandahåller inte värden för vad som är högt oc
 
 #: uconf.rs_dupe_name
 msgid "Names must be unique"
-msgstr ""
+msgstr "Namn måste vara unika"
 
 #: uconf.rs_enter_name
 msgid "Enter the user's name, letters, space and numbers only"
@@ -469,4 +528,3 @@ msgstr "Senaste position"
 #: umain.rs_tpotopright
 msgid "Top Right"
 msgstr "Höger topp"
-
