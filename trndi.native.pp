@@ -108,7 +108,7 @@ public
       Returns True if the system theme is "dark mode", else False. Implementation
       depends on the platform (Windows registry, macOS defaults, Linux color checks, etc.).
     }
-  function isDarkMode: boolean;
+  class function isDarkMode: boolean;
 
     { HasTouchScreen
       --------------
@@ -142,6 +142,7 @@ public
   procedure setBadge(const Value: string);
   constructor create(ua, base: string); overload;
   constructor create; overload;
+  class function setDarkMode(win: HWND): boolean;
 protected
   useragent: string;  // HTTP User-Agent string
   baseurl:   string;  // Base URL for requests
@@ -153,10 +154,35 @@ protected
 end;
 
 //procedure QWindow_setWindowBadge(window: QWindowH; badge: PChar); cdecl; external 'libQt6Gui.so.6';
+{$ifdef Windows}
+function DwmSetWindowAttribute(hwnd: HWND; dwAttribute: DWORD; pvAttribute: Pointer; cbAttribute: DWORD): HRESULT; stdcall; external 'dwmapi.dll';
+{$endif}
 
 implementation
 
 
+{$IFDEF Windows}
+
+class function TrndiNative.setDarkMode(win: HWND): Boolean;
+const
+  DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
+var
+  Value: Integer;
+begin
+  Value := 1;
+  // DwmSetWindowAttribute finns i dwmapi.dll
+  Result :=
+    Succeeded(
+      DwmSetWindowAttribute(win, DWMWA_USE_IMMERSIVE_DARK_MODE, @Value, SizeOf(Value))
+    );
+end;
+{$else}
+
+function EnableDarkModeForWindow(hWnd: HWND): Boolean;
+begin
+
+end;
+{$endif}
 {$IFDEF Windows}
 procedure TrndiNative.start;
 begin
@@ -815,7 +841,7 @@ begin
 end;
 
 {$ELSEIF DEFINED(X_WIN)}
-function TrndiNative.isDarkMode: boolean;
+class function TrndiNative.isDarkMode: boolean;
 const
   regtheme = 'Software\Microsoft\Windows\CurrentVersion\Themes\Personalize\';
   reglight = 'AppsUseLightTheme';
@@ -840,7 +866,7 @@ begin
 end;
 
 {$ELSE}
-function TrndiNative.isDarkMode: boolean;
+class function TrndiNative.isDarkMode: boolean;
   // A simplistic Linux approach:
   // Compare luminance of clWindow and clWindowText to guess if it's "dark".
 function Brightness(C: TColor): double;
