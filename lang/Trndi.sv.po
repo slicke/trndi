@@ -133,6 +133,10 @@ msgstr "Position av fönster vid start"
 msgid "Black = transparent"
 msgstr "Svart = genomskinlig"
 
+#: tfconf.label6.caption
+msgid "Language"
+msgstr ""
+
 #: tfconf.lack.caption
 msgid "Libraries"
 msgstr "Bibliotek"

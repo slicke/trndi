@@ -147,6 +147,7 @@ public
   {$else}
     class function setDarkMode(win: THandle): boolean;
   {$endif}
+  class function GetOSLanguage: string;
 protected
   useragent: string;  // HTTP User-Agent string
   baseurl:   string;  // Base URL for requests
@@ -403,6 +404,34 @@ begin
   baseurl   := base;
   // Check if we're in dark mode on creation
   dark := isDarkMode;
+end;
+
+  {$IFDEF MSWINDOWS}
+function GetLocaleInformation(Flag: integer): string;
+var
+  wbuf: array[0..9] of WideChar;
+begin
+  if GetLocaleInfoW(LOCALE_USER_DEFAULT,
+                    LOCALE_SISO639LANGNAME,
+                    wbuf, Length(wbuf)) > 0 then
+    Result := UTF8Encode(WideString(wbuf))
+  else
+    Result := '';
+end;
+
+{$ENDIF}
+
+class function TrndiNative.GetOSLanguage: string;
+begin
+  {$IFDEF MSWINDOWS}
+   Result := GetLocaleInformation(LOCALE_SENGLANGUAGE);
+  {$ELSE}
+    {$IFDEF DARWIN}
+      result := NSLocale.currentLocale.localeIdentifier.UTF8String;
+    {$ELSE}
+       Result := SysUtils.GetEnvironmentVariable('LANG');
+    {$ENDIF}
+  {$ENDIF}
 end;
 
 {------------------------------------------------------------------------------
