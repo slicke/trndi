@@ -60,6 +60,7 @@ TfConf = class(TForm)
   Label2:TLabel;
   Label3:TLabel;
   Label6:TLabel;
+  Label7:TLabel;
   lAck: TButton;
   lCopyright: TLabel;
   lCurrentAcc:TLabel;

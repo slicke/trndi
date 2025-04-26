@@ -6,8 +6,8 @@ In Github, you can find translations in the _lang/_ folder.
 
 The files are named Trndi.```language code```.po 
 
-> Find out which code to use in the
-[https://en.wikipedia.org/wiki/List_of_ISO_639_language_codes](anguage codes list), Trndi uses _set 1_.
+Find out which code to use in the 
+[https://en.wikipedia.org/wiki/List_of_ISO_639_language_codes](language) code list in Wikipedia, Trndi uses _set 1_.
 
 In order for a language to exists, __someone must translate it first__. I welcome any one to participate in translating! Simply submit a pull request with a translated file.
 
