@@ -10599,6 +10599,13 @@ object fConf: TfConf
           TabOrder = 1
           OnClick = Button1Click
         end
+        object Label7: TLabel
+          Left = 8
+          Height = 30
+          Top = 0
+          Width = 328
+          Caption = 'If your version of Trndi was not shipped with more languages, '#13#10'you can download more below.'
+        end
       end
     end
     object tsMulti: TTabSheet
