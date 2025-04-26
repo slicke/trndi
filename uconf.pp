@@ -27,7 +27,7 @@ interface
 
 uses 
 Classes,ColorBox,ComCtrls,ExtCtrls,Spin,StdCtrls,SysUtils,Forms,Controls,
-Graphics,Dialogs,LCLTranslator, trndi.native;
+Graphics,Dialogs,LCLTranslator, trndi.native, lclintf;
 
 type
 
@@ -35,11 +35,13 @@ type
 
 TfConf = class(TForm)
   bAdd: TButton;
+  Button1:TButton;
   bvExt:TBevel;
   bOverrideHelp:TButton;
   bPrivacyHelp: TButton;
   bRemove: TButton;
   cbCust:TCheckBox;
+  cbLang:TComboBox;
   cbPrivacy: TCheckBox;
   cbSys:TComboBox;
   cbPos:TComboBox;
@@ -52,10 +54,12 @@ TfConf = class(TForm)
   fsLo: TFloatSpinEdit;
   gbMulti:TGroupBox;
   gbOverride:TGroupBox;
+  gbOverride1:TGroupBox;
   Image1: TImage;
   Label1: TLabel;
   Label2:TLabel;
   Label3:TLabel;
+  Label6:TLabel;
   lAck: TButton;
   lCopyright: TLabel;
   lCurrentAcc:TLabel;
@@ -72,6 +76,7 @@ TfConf = class(TForm)
   Panel3: TPanel;
   Panel4: TPanel;
   Panel5: TPanel;
+  Panel6:TPanel;
   pcMain:TPageControl;
   rbUnit:TRadioGroup;
   tsMulti:TTabSheet;
@@ -82,6 +87,7 @@ TfConf = class(TForm)
   procedure bOverrideHelpClick(Sender:TObject);
   procedure bPrivacyHelpClick(Sender:TObject);
   procedure bRemoveClick(Sender:TObject);
+  procedure Button1Click(Sender:TObject);
   procedure cbCustChange(Sender:TObject);
   procedure cbSysChange(Sender:TObject);
   procedure cbUserClick(Sender:TObject);
@@ -124,9 +130,30 @@ RS_REMOVE_ACC = 'Removed accounts are made inactive, and can be restored by addi
 var 
 fConf: TfConf;
 
+procedure ListLanguageFiles(list: TStrings; const Path: string);
+
 implementation
 
 {$R *.lfm}
+
+procedure ListLanguageFiles(list: TStrings; const Path: string);
+var
+  sr: TSearchRec;
+begin
+  list.Clear;
+  // Sök efter alla .po i angiven katalog
+  if FindFirst(IncludeTrailingPathDelimiter(Path) + '*.po',
+               faAnyFile, sr) = 0 then
+  begin
+    repeat
+      // Hoppa över undermappar
+      if (sr.Attr and faDirectory) = 0 then
+        // Extrahera språkkod utan ".po"
+        list.Add(ChangeFileExt(sr.Name, ''));
+    until FindNext(sr) <> 0;
+    FindClose(sr);
+  end;
+end;
 
 procedure TfConf.lAckClick(Sender:TObject);
 begin
@@ -195,6 +222,11 @@ procedure TfConf.bRemoveClick(Sender:TObject);
 begin
 if lbUsers.ItemIndex > -1 then
   lbUsers.DeleteSelected;
+end;
+
+procedure TfConf.Button1Click(Sender:TObject);
+begin
+  Openurl('https://github.com/slicke/trndi/blob/main/LANGUAGES.md');
 end;
 
 procedure TfConf.cbCustChange(Sender:TObject);

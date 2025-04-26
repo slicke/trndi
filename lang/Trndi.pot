@@ -121,6 +121,10 @@ msgstr ""
 msgid "Black = transparent"
 msgstr ""
 
+#: tfconf.label6.caption
+msgid "Language"
+msgstr ""
+
 #: tfconf.lack.caption
 msgid "Libraries"
 msgstr ""

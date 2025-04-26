@@ -1025,9 +1025,25 @@ begin
       lastusers := lbusers.count;
       edNick.Text := GetSetting(username + 'user.nick', '');
 
+      ListLanguageFiles(cbLang.Items, ExtractFileDir(Application.ExeName) + DirectorySeparator + 'lang');
+      cbLang.Items.Add('Trndi.en');
+      cbLang.Items.Add('Trndi.Auto');
+
+      for i := 0 to cbLang.items.Count-1 do begin
+        s := cbLang.Items[i];
+        cbLang.Items[i] := ExtractDelimited(2,s,['.']);
+        s := cbLang.Items[i];
+        if GetSetting(username +'locale', '') = s then
+          cbLang.ItemIndex := i;
+      end;
+      if cbLang.ItemIndex = -1 then
+        cbLang.ItemIndex := cbLang.Items.Count-1;
       //--
       ShowModal;
       //---
+      SetSetting(username +'locale', cblang.Items[cbLang.ItemIndex]);
+      Showmessage(cblang.Items[cbLang.ItemIndex+1]);
+
       native.SetSetting(username +'position.main', IntToStr(cbPos.ItemIndex));
 
       SetSetting(username + 'user.color', ColorToString(cbUser.ButtonColor));

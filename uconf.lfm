@@ -8,7 +8,6 @@ object fConf: TfConf
   ClientHeight = 395
   ClientWidth = 416
   Position = poDesktopCenter
-  LCLVersion = '4.0.0.3'
   OnCreate = FormCreate
   OnResize = FormResize
   object pcMain: TPageControl
@@ -16,9 +15,9 @@ object fConf: TfConf
     Height = 395
     Top = 0
     Width = 416
-    ActivePage = tsGeneral
+    ActivePage = tsCustom
     Align = alClient
-    TabIndex = 0
+    TabIndex = 1
     TabOrder = 0
     object tsGeneral: TTabSheet
       Caption = 'General'
@@ -103,8 +102,8 @@ object fConf: TfConf
         ChildSizing.ShrinkVertical = crsScaleChilds
         ChildSizing.Layout = cclLeftToRightThenTopToBottom
         ChildSizing.ControlsPerLine = 2
-        ClientHeight = 27
-        ClientWidth = 370
+        ClientHeight = 25
+        ClientWidth = 384
         Columns = 2
         ItemIndex = 0
         Items.Strings = (
@@ -10428,8 +10427,8 @@ object fConf: TfConf
         Align = alTop
         BorderSpacing.Around = 10
         Caption = 'Override High / Low limits'
-        ClientHeight = 70
-        ClientWidth = 370
+        ClientHeight = 68
+        ClientWidth = 384
         ParentBackground = False
         TabOrder = 0
         object cbCust: TCheckBox
@@ -10545,6 +10544,62 @@ object fConf: TfConf
           OnClick = bPrivacyHelpClick
         end
       end
+      object Label6: TLabel
+        Left = 10
+        Height = 15
+        Top = 166
+        Width = 388
+        Align = alTop
+        BorderSpacing.Around = 10
+        Caption = 'Language'
+      end
+      object cbLang: TComboBox
+        Left = 10
+        Height = 23
+        Top = 191
+        Width = 388
+        Align = alTop
+        AutoSize = False
+        BorderSpacing.Around = 10
+        ItemHeight = 15
+        Items.Strings = (
+          'AUTO'
+          'en'
+        )
+        Style = csDropDownList
+        TabOrder = 3
+      end
+      object gbOverride1: TGroupBox
+        Left = 10
+        Height = 88
+        Top = 224
+        Width = 388
+        Align = alTop
+        BorderSpacing.Around = 10
+        Caption = 'Get more languages'
+        ClientHeight = 68
+        ClientWidth = 384
+        ParentBackground = False
+        TabOrder = 4
+        object Panel6: TPanel
+          Left = 0
+          Height = 29
+          Top = 39
+          Width = 384
+          Align = alBottom
+          BevelOuter = bvNone
+          TabOrder = 0
+        end
+        object Button1: TButton
+          Left = 8
+          Height = 25
+          Top = 39
+          Width = 75
+          Caption = '&Download'
+          TabOrder = 1
+          OnClick = Button1Click
+        end
+      end
     end
     object tsMulti: TTabSheet
       Caption = 'Multi User'
@@ -10580,8 +10635,8 @@ object fConf: TfConf
         Align = alBottom
         BorderSpacing.Around = 10
         Caption = 'Account Settings'
-        ClientHeight = 70
-        ClientWidth = 370
+        ClientHeight = 68
+        ClientWidth = 384
         Enabled = False
         TabOrder = 1
         object cbUser: TColorButton
