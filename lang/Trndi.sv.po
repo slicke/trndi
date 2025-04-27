@@ -68,6 +68,10 @@ msgstr "+ Ny\\"
 msgid "- Remove"
 msgstr "- Radera"
 
+#: tfconf.button1.caption
+msgid "&Download"
+msgstr "&Hämta"
+
 #: tfconf.caption
 msgid "Settings"
 msgstr "Inställningar"
@@ -109,6 +113,10 @@ msgctxt "tfconf.gboverride.caption"
 msgid "Override High / Low limits"
 msgstr "Åsidosätt höga / låga gränser"
 
+#: tfconf.gboverride1.caption
+msgid "Get more languages"
+msgstr "Hämta fler språk"
+
 #: tfconf.label1.caption
 msgid "There's always a defualt user account"
 msgstr "Ett standardkonto finns alltid"
@@ -135,7 +143,15 @@ msgstr "Svart = genomskinlig"
 
 #: tfconf.label6.caption
 msgid "Language"
+msgstr "Språk"
+
+#: tfconf.label7.caption
+msgid ""
+"If your version of Trndi was not shipped with more languages, \n"
+"you can download more below."
 msgstr ""
+"Om din Trndi-version inte kom med fler språk,\n"
+"kan du ladda hem fler nedan."
 
 #: tfconf.lack.caption
 msgid "Libraries"
@@ -449,6 +465,10 @@ msgstr "Högt blodsocker! Nuvarande: %s"
 msgid "Low blood sugar! Currently: %s"
 msgstr "Lågt blodsocker! Nuvarande: %s"
 
+#: uconf.rs_auto
+msgid "Auto-detect"
+msgstr "Automatisk"
+
 #: uconf.rs_current_acc
 #, object-pascal-format
 msgid "This only applies for the current loaded account:  %s"
@@ -495,6 +515,10 @@ msgstr ""
 "\n"
 "Dexcom:\n"
 "Dexcoms servrar tillhandahåller inte egna höga och låga gränsvärden. Genom att skriva in värdena här, ställer du in gränserna direkt i Trndi."
+
+#: uconf.rs_override_ns
+msgid "You are using the NightScout backend, you should set these values on your server (if possible), as Trndi uses your NightScout preferences by default"
+msgstr ""
 
 #: uconf.rs_privacy_help
 msgid "When in Privacy Mode, the actual blood glucose value is hidden. Trndi will only tell the user if it's good, high or low."

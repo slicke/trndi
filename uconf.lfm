@@ -88,8 +88,8 @@ object fConf: TfConf
       end
       object rbUnit: TRadioGroup
         Left = 10
-        Height = 45
-        Top = 312
+        Height = 37
+        Top = 305
         Width = 388
         Align = alBottom
         AutoFill = True
@@ -102,7 +102,7 @@ object fConf: TfConf
         ChildSizing.ShrinkVertical = crsScaleChilds
         ChildSizing.Layout = cclLeftToRightThenTopToBottom
         ChildSizing.ControlsPerLine = 2
-        ClientHeight = 25
+        ClientHeight = 17
         ClientWidth = 384
         Columns = 2
         ItemIndex = 0
@@ -10368,13 +10368,6 @@ object fConf: TfConf
           Font.Style = [fsBold]
           ParentFont = False
         end
-        object lVersion: TLabel
-          Left = 136
-          Height = 15
-          Top = -1
-          Width = 47
-          Caption = 'Version 2'
-        end
         object lCopyright: TLabel
           Left = 128
           Height = 26
@@ -10413,6 +10406,16 @@ object fConf: TfConf
             OnClick = lLicenseClick
           end
         end
+      end
+      object lVersion: TLabel
+        Left = 0
+        Height = 15
+        Top = 352
+        Width = 408
+        Align = alBottom
+        Alignment = taRightJustify
+        Caption = 'Version 2'
+        Enabled = False
       end
     end
     object tsCustom: TTabSheet
