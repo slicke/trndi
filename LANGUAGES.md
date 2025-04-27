@@ -7,11 +7,12 @@ In Github, you can find translations in the _lang/_ folder.
 The files are named Trndi.```language code```.po 
 
 Find out which code to use in the 
-[https://en.wikipedia.org/wiki/List_of_ISO_639_language_codes](language) code list in Wikipedia, Trndi uses _set 1_.
+[language](https://en.wikipedia.org/wiki/List_of_ISO_639_language_codes) code list in Wikipedia, Trndi uses _set 1_.
 
 In order for a language to exists, __someone must translate it first__. I welcome any one to participate in translating! Simply submit a pull request with a translated file.
 
 ## Translating
-Trndi.mo is the main file, for getting the translations (in the lang/ folder).
+Simply open ```lang/Trndi.pot``` in [PoEdit](https://poedit.net/download), translate it and export a _.po file_!
+The po file is used by Trndi to process the translations.
 
-Simply open that file in [https://poedit.net/download](PoEdit) and export a .po file!
+You will need to pull request BOTH the .mo and .po files, as the mo is required to build the po file.
