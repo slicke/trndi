@@ -15,4 +15,4 @@ In order for a language to exists, __someone must translate it first__. I welcom
 Simply open ```lang/Trndi.pot``` in [PoEdit](https://poedit.net/download), translate it and export a _.po file_!
 The po file is used by Trndi to process the translations.
 
-You will need to pull request BOTH the .mo and .po files, as the mo is required to build the po file.
+You will need to pull request the .po file, the .mo is automatically built during the Trndi build process.
