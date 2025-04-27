@@ -350,6 +350,10 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="JumpListManager"/>
       </Unit>
+      <Unit>
+        <Filename Value="slicke.ux.alert.pp"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

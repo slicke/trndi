@@ -11,6 +11,82 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: Poedit 3.5\n"
 
+#: slicke.ux.alert.dlgerr
+msgid "An error occured while creating a message dalog"
+msgstr "Ett fel uppstod medan en meddelanderuta skulle skapas"
+
+#: slicke.ux.alert.serr
+msgid "Script execution failed"
+msgstr "Skriptkörning misslyckades"
+
+#: slicke.ux.alert.sexterr
+msgid "Error occured in extension"
+msgstr "Fel i ett tillägg"
+
+#: slicke.ux.alert.sexttitle
+msgid "Extension error"
+msgstr "Tilläggsfel"
+
+#: slicke.ux.alert.smbuxabort
+msgid "Abort"
+msgstr "Avsluta"
+
+#: slicke.ux.alert.smbuxall
+msgid "All"
+msgstr "Alla"
+
+#: slicke.ux.alert.smbuxcancel
+msgid "Cancel"
+msgstr "Avbryt"
+
+#: slicke.ux.alert.smbuxclose
+msgid "Close"
+msgstr "Stäng"
+
+#: slicke.ux.alert.smbuxhelp
+msgid "Help"
+msgstr "Hjälp"
+
+#: slicke.ux.alert.smbuxignore
+msgid "Ignore"
+msgstr "Ignorera"
+
+#: slicke.ux.alert.smbuxno
+msgid "No"
+msgstr "Nej"
+
+#: slicke.ux.alert.smbuxnotoall
+msgid "No To All"
+msgstr "Nej till allt"
+
+#: slicke.ux.alert.smbuxok
+msgid "OK"
+msgstr "OK"
+
+#: slicke.ux.alert.smbuxopenfile
+msgid "Open File"
+msgstr "Öppna fil"
+
+#: slicke.ux.alert.smbuxretry
+msgid "Retry"
+msgstr "Försök igen"
+
+#: slicke.ux.alert.smbuxyestoall
+msgid "Yes To All"
+msgstr "Ja till allt"
+
+#: slicke.ux.alert.smbyes
+msgid "Yes"
+msgstr "Ja"
+
+#: slicke.ux.alert.smsgtitle
+msgid "Message"
+msgstr "Meddelande"
+
+#: slicke.ux.alert.ssucctitle
+msgid "Information"
+msgstr "Information"
+
 #: tfbg.lval.caption
 msgctxt "tfbg.lval.caption"
 msgid "Setup"
