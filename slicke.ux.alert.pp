@@ -28,7 +28,7 @@ interface
 
 uses 
 Classes, SysUtils, Dialogs, Forms, ExtCtrls, StdCtrls, Controls, Graphics, Math,
-IntfGraphics, FPImage, graphtype, lcltype,
+IntfGraphics, FPImage, graphtype, lcltype, Trndi.Native,
 {$ifdef Windows}
 DX12.D2D1, DX12.DXGI, DX12.DWrite, DX12.DCommon, DX12.WinCodec, Windows,
 {$endif}StrUtils;
@@ -330,7 +330,7 @@ procedure AssignEmoji(Image: TImage; const Emoji: widestring);
 begin
   // Ställ in storleken på Canvas och bakgrundsfärgen
   Image.Picture.Bitmap.SetSize(Image.Width, Image.Height);
-  Image.Picture.Bitmap.Canvas.Brush.Color := clWhite;
+  Image.Picture.Bitmap.Canvas.Brush.Color := IfThen(TrndiNative.isDarkMode, $00322B27, clWhite);
   Image.Picture.Bitmap.Canvas.FillRect(0, 0, Image.Width, Image.Height);
 
   // Ställ in teckensnittet (här använder vi ett standardteckensnitt)
@@ -338,7 +338,7 @@ begin
   // Ett populärt emoji-teckensnitt för Linux
   Image.Picture.Bitmap.Canvas.Font.Size := 48;
   // Justera storleken efter behov
-  Image.Picture.Bitmap.Canvas.Font.Color := clBlack;
+  Image.Picture.Bitmap.Canvas.Font.Color :=  IfThen(TrndiNative.isDarkMode, clWhite, clBlack);;
 
   // Rita emojin/texten centrerat på Canvas
   Image.Picture.Bitmap.Canvas.TextOut(
@@ -418,7 +418,7 @@ begin
     p2 := TPanel.Create(Dialog);
     p2.Parent := Dialog;
     p2.Align := alClient;
-    p2.Color := clWhite;
+    p2.Color :=  IfThen(TrndiNative.isDarkMode, $00322B27, clWhite);;
     p2.BevelInner := bvNone;
     p2.BevelOuter := bvNone;
 
@@ -446,7 +446,7 @@ begin
     TitleLabel.AutoSize := true;
     TitleLabel.Left := IconBox.Left + IconBox.Width + Padding;
     TitleLabel.Top := Padding;
-    TitleLabel.Font.Color := clBlack;
+    TitleLabel.Font.Color :=  IfThen(TrndiNative.isDarkMode, clWhite, clBlack);
 
     // Meddelandetext
     MessageLabel := TLabel.Create(p2);
@@ -455,7 +455,7 @@ begin
     MessageLabel.AutoSize := true;
     MessageLabel.Left := TitleLabel.Left;
     MessageLabel.Top := TitleLabel.Top + TitleLabel.Height + Padding div 2;
-    MessageLabel.Font.Color := clBlack;
+    MessageLabel.Font.Color :=  IfThen(TrndiNative.isDarkMode, clWhite, clBlack);
     //  MessageLabel.Font.Size := 8;
 
 
