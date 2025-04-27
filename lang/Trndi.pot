@@ -58,6 +58,10 @@ msgstr ""
 msgid "- Remove"
 msgstr ""
 
+#: tfconf.button1.caption
+msgid "&Download"
+msgstr ""
+
 #: tfconf.caption
 msgid "Settings"
 msgstr ""
@@ -99,6 +103,10 @@ msgctxt "tfconf.gboverride.caption"
 msgid "Override High / Low limits"
 msgstr ""
 
+#: tfconf.gboverride1.caption
+msgid "Get more languages"
+msgstr ""
+
 #: tfconf.label1.caption
 msgid "There's always a defualt user account"
 msgstr ""
@@ -123,6 +131,12 @@ msgstr ""
 
 #: tfconf.label6.caption
 msgid "Language"
+msgstr ""
+
+#: tfconf.label7.caption
+msgid ""
+"If your version of Trndi was not shipped with more languages, \n"
+"you can download more below."
 msgstr ""
 
 #: tfconf.lack.caption
@@ -433,6 +447,10 @@ msgstr ""
 msgid "Low blood sugar! Currently: %s"
 msgstr ""
 
+#: uconf.rs_auto
+msgid "Auto-detect"
+msgstr ""
+
 #: uconf.rs_current_acc
 #, object-pascal-format
 msgid "This only applies for the current loaded account:  %s"
@@ -471,6 +489,10 @@ msgid ""
 "\n"
 "Dexcom:\n"
 "Dexcom servers do not provide custom high and low values. By setting them here, you can establish your own thresholds for Dexcom data."
+msgstr ""
+
+#: uconf.rs_override_ns
+msgid "You are using the NightScout backend, you should set these values on your server (if possible), as Trndi uses your NightScout preferences by default"
 msgstr ""
 
 #: uconf.rs_privacy_help

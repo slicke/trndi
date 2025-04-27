@@ -79,6 +79,9 @@ end;
 
 //function UXShowMessage(const message: string; buttons: TMsgDlgButtons; const icon: Widechar): TModalResult;
 
+procedure UXMessage(const title, message: string; const icon: widechar = widechar($2705));
+function UXDialog(const title, message: string; buttons: TUXMsgDlgBtns; const icon: widechar = widechar($2705)): TModalResult;
+
 //function UXShowMessage(const caption, title, desc, message: string; buttons: TMsgDlgButtons; const icon: WideChar): TModalResult;
 function ExtMsg(const  caption, title, desc, logmsg: string; dumpbg: TColor = $00F5F2FD; dumptext:
 TColor = $003411A9; buttons: TUXMsgDlgBtns = [mbAbort]; const icon: widechar =
@@ -334,6 +337,16 @@ begin
   result := ExtMsg(sExtErr, sErr, msg, error, $00F5F2FD, $003411A9, [mbAbort], icon);
 end;
 
+procedure UXMessage(const title, message: string; const icon: widechar = widechar($2705));
+begin
+ ExtMsg(sMsgTitle, title, message, '', $00AA6004, $00FDD8AA, [mbOK], widechar(icon));
+end;
+
+function UXDialog(const title, message: string; buttons: TUXMsgDlgBtns; const icon: widechar = widechar($2705)): TModalResult;
+begin
+ result := ExtMsg(sMsgTitle, title, message, '', $00AA6004, $00FDD8AA, buttons, widechar(icon));
+end;
+
 function ExtMsg(const caption, title, desc, logmsg: string; dumpbg: TColor = $00F5F2FD; dumptext:
 TColor = $003411A9; buttons: TUXMsgDlgBtns = [mbAbort]; const icon: widechar =
 widechar($2699)): TModalResult;
@@ -435,6 +448,15 @@ begin
       top := 10;
       left := 10;
     end;
+
+    ///--
+         //For UX Message
+         if logmsg = '' then begin
+            logpanel.Visible := false;
+            dialog.ClientHeight := dialog.ClientHeight - logpanel.height;
+    ///--
+         end;
+
 
 
 
