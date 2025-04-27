@@ -457,7 +457,7 @@ begin
   {$endif}
   with TrndiNative.create do begin
       if isDarkMode then
-       setDarkMode(self.Handle);
+       setDarkMode{$ifndef darwin}(self.Handle){$endif};
       Free;
   end;
 end;

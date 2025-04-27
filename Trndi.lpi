@@ -243,9 +243,6 @@
     </RunParams>
     <RequiredPackages>
       <Item>
-        <PackageName Value="mormot2"/>
-      </Item>
-      <Item>
         <PackageName Value="LazControls"/>
       </Item>
       <Item>
@@ -353,6 +350,11 @@
       <Unit>
         <Filename Value="slicke.ux.alert.pp"/>
         <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="nsutils\simpledarkmode.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="SimpleDarkMode"/>
       </Unit>
     </Units>
   </ProjectOptions>

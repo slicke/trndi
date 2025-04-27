@@ -35,7 +35,8 @@ Classes, SysUtils, Graphics
 {$IF DEFINED(X_MAC)},
 NSMisc,
 ns_url_request,
-CocoaAll
+CocoaAll,
+SimpleDarkMode
 {$ELSEIF DEFINED(X_WIN)},
 Windows, Registry, Dialogs, StrUtils, winhttpclient, shellapi,
 Forms
@@ -145,7 +146,7 @@ public
   {$ifdef Windows}
     class function setDarkMode(win: HWND): boolean;
   {$else}
-    class function setDarkMode(win: THandle): boolean;
+    class function setDarkMode: boolean;
   {$endif}
   class function GetOSLanguage: string;
 protected
@@ -183,9 +184,9 @@ begin
 end;
 {$else}
 
-class function TrndiNative.setDarkMode(win: THandle): Boolean;
+class function TrndiNative.setDarkMode: Boolean;
 begin
-
+  SimpleDarkMode.EnableAppDarkMode;
 end;
 {$endif}
 {$IFDEF Windows}
@@ -867,7 +868,7 @@ end;
   Determines if the user’s system is in "dark mode," per platform.
  ------------------------------------------------------------------------------}
 {$IF DEFINED(X_MAC)}
-function TrndiNative.isDarkMode: boolean;
+class function TrndiNative.isDarkMode: boolean;
 begin
   // Typically, AppleInterfaceStyle = 'Dark' if dark mode is active
   Result := Pos('DARK', UpperCase(GetPrefString('AppleInterfaceStyle'))) > 0;
