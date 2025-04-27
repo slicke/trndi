@@ -41,6 +41,20 @@ sExtTitle = 'Extension error';
 sExtErr = 'Error occured in extension';
 sErr = 'Script execution failed';
 
+smbYes = 'Yes';
+smbUXNo = 'No';
+smbUXOK = 'OK';
+smbUXCancel = 'Cancel';
+smbUXAbort = 'Abort';
+smbUXRetry = 'Retry';
+smbUXIgnore = 'Ignore';
+smbUXAll = 'All';
+smbUXNoToAll = 'No To All';
+smbUXYesToAll = 'Yes To All';
+smbUXHelp = 'Help';
+smbUXClose = 'Close';
+smbUXOpenFile = 'Open File';
+
 const 
 muiStop = $26D4;
 muiStar = $2B50;
@@ -60,13 +74,11 @@ mbUXHelp = mbHelp;
 mbUXClose = mbClose;
 mbUXUXOpenFile = 110;
 
-type 
+type
+  TUXMsgDlgBtn     = (mbYes, mbNo, mbOK, mbCancel, mbAbort, mbRetry, mbIgnore,
+    mbAll, mbNoToAll, mbYesToAll, mbHelp, mbClose, mbUXOpenFile);
 
-
-TUXMsgDlgBtn     = (mbYes, mbNo, mbOK, mbCancel, mbAbort, mbRetry, mbIgnore,
-  mbAll, mbNoToAll, mbYesToAll, mbHelp, mbClose, mbUXOpenFile);
-
-TUXMsgDlgBtns = set of TUXMsgDlgBtn;
+  TUXMsgDlgBtns = set of TUXMsgDlgBtn;
 
 UXMessageBox = record
   title: string;
@@ -75,6 +87,9 @@ UXMessageBox = record
   icon: widechar;
     //function Execute: ModalResult;
 end;
+    ButtonLangs = array[TUXMsgDlgBtn] of string;
+var
+  langs : ButtonLangs = (smbYes, smbUXNo, smbUXOK, smbUXCancel, smbUXAbort, smbUXRetry, smbUXIgnore, smbUXAll, smbUXNoToAll, smbUXYesToAll, smbUXHelp, smbUXClose, smbUXOpenFile);
 
 
 //function UXShowMessage(const message: string; buttons: TMsgDlgButtons; const icon: Widechar): TModalResult;
@@ -100,6 +115,27 @@ external 'ole32.dll';
 {$endif}
 
 implementation
+
+function UXButtonToModalResult(Btn: TUXMsgDlgBtn): TModalResult;
+begin
+  case Btn of
+    mbYes:       Result := mrYes;
+    mbNo:        Result := mrNo;
+    mbOK:        Result := mrOK;
+    mbCancel:    Result := mrCancel;
+    mbAbort:     Result := mrAbort;
+    mbRetry:     Result := mrRetry;
+    mbIgnore:    Result := mrIgnore;
+    mbAll:       Result := mrAll;
+    mbNoToAll:   Result := mrNoToAll;
+    mbYesToAll:  Result := mrYesToAll;
+//    mbUXHelp:      Result := mrHelp;
+//    mbUXClose:     Result := mrClose;
+  else
+    // t.ex. ditt specialfall för OpenFile
+    Result := TModalResult(110);
+  end;
+end;
 
 {$ifdef Windows}
 procedure AssignEmoji(Image: TImage; const Emoji: widestring);
@@ -347,10 +383,18 @@ begin
  result := ExtMsg(sMsgTitle, title, message, '', $00AA6004, $00FDD8AA, buttons, widechar(icon));
 end;
 
+procedure btnmodal(sender: tbutton);
+begin
+
+end;
+
 function ExtMsg(const caption, title, desc, logmsg: string; dumpbg: TColor = $00F5F2FD; dumptext:
 TColor = $003411A9; buttons: TUXMsgDlgBtns = [mbAbort]; const icon: widechar =
 widechar($2699)): TModalResult;
 
+const
+  btnWidth = 75;
+  padding = 10;
 var 
   Dialog: TForm;
   IconBox: TImage;
@@ -359,15 +403,16 @@ var
   log: TMemo;
   logPanel: TPanel;
   OkButton: TButton;
-  Padding, ContentWidth: integer;
+  ContentWidth: integer;
   p2, p3: TPanel;
+  mr: TUXMsgDlgBtn;
+  last: integer;
 begin
   Dialog := TForm.CreateNew(nil);
   try
     Dialog.Caption := caption;
     Dialog.BorderStyle := bsDialog;
     Dialog.Position := poWorkAreaCenter;
-    Padding := 10;
 
     // Huvudpanelen
     p2 := TPanel.Create(Dialog);
@@ -468,14 +513,20 @@ begin
     p3.BorderStyle := bsNone;
     p3.BevelOuter := bvNone;
 
+    last := p3.ClientWidth - Padding;
     // OK-knapp
-    OkButton := TButton.Create(p3);
-    OkButton.Parent := p3;
-    OkButton.Caption := 'OK';
-    OkButton.ModalResult := mrOk;
-    OkButton.Width := 75;
-    OkButton.Top := (p3.Height div 2) - (OkButton.Height div 2);
-    OkButton.Left := p3.Width - Padding - OkButton.Width;
+    for mr in buttons do begin
+      OkButton := TButton.Create(p3);
+      OkButton.Parent := p3;
+      OkButton.Caption := langs[mr];
+
+      OkButton.ModalResult := UXButtonToModalResult(mr);
+      OkButton.Width := btnwidth;
+      OkButton.Top := (p3.Height div 2) - (OkButton.Height div 2);
+      OkButton.left := last-padding-btnwidth;
+      okbutton.name := 'btn'+IntToStr(ord(mr));
+      last := OkButton.left;
+    end;
 
     // Nu kan vi beräkna p3.Height efter att OkButton har skapats
     p3.Height := Padding * 2 + OkButton.Height;
@@ -486,7 +537,14 @@ begin
     log.Width := ContentWidth;
     Dialog.Width := ContentWidth;
     Dialog.Height := Padding * 2 + MessageLabel.Top + MessageLabel.Height + p3.Height;
-    OkButton.Left := Dialog.Width - Padding - OkButton.Width;
+    // Set first (last?) button pos
+    last := Dialog.Width;
+    for mr in buttons do begin
+       OkButton := p3.FindChildControl('btn'+IntToStr(ord(mr))) as TButton;
+
+       OkButton.Left := last - padding - btnWidth;
+       last := OkButton.left;
+    end;
 
     log.Text := string(log.Text).TrimRight([#13, #10]);
     log.Height := dialog.Canvas.TextHeight(logmsg) * (string(log.Text).CountChar(#10)+1);
@@ -496,7 +554,8 @@ begin
 (*    IconBox.Center := true;
     IconBox.Proportional := True; *)
     // Visa dialogen som en modal dialog
-    Result := Dialog.ShowModal;
+    Dialog.ShowModal;
+    result := dialog.ModalResult;
   finally
     p2.Free;
     p3.Free;

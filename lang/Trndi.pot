@@ -1,6 +1,82 @@
 msgid ""
 msgstr "Content-Type: text/plain; charset=UTF-8"
 
+#: slicke.ux.alert.dlgerr
+msgid "An error occured while creating a message dalog"
+msgstr ""
+
+#: slicke.ux.alert.serr
+msgid "Script execution failed"
+msgstr ""
+
+#: slicke.ux.alert.sexterr
+msgid "Error occured in extension"
+msgstr ""
+
+#: slicke.ux.alert.sexttitle
+msgid "Extension error"
+msgstr ""
+
+#: slicke.ux.alert.smbuxabort
+msgid "Abort"
+msgstr ""
+
+#: slicke.ux.alert.smbuxall
+msgid "All"
+msgstr ""
+
+#: slicke.ux.alert.smbuxcancel
+msgid "Cancel"
+msgstr ""
+
+#: slicke.ux.alert.smbuxclose
+msgid "Close"
+msgstr ""
+
+#: slicke.ux.alert.smbuxhelp
+msgid "Help"
+msgstr ""
+
+#: slicke.ux.alert.smbuxignore
+msgid "Ignore"
+msgstr ""
+
+#: slicke.ux.alert.smbuxno
+msgid "No"
+msgstr ""
+
+#: slicke.ux.alert.smbuxnotoall
+msgid "No To All"
+msgstr ""
+
+#: slicke.ux.alert.smbuxok
+msgid "OK"
+msgstr ""
+
+#: slicke.ux.alert.smbuxopenfile
+msgid "Open File"
+msgstr ""
+
+#: slicke.ux.alert.smbuxretry
+msgid "Retry"
+msgstr ""
+
+#: slicke.ux.alert.smbuxyestoall
+msgid "Yes To All"
+msgstr ""
+
+#: slicke.ux.alert.smbyes
+msgid "Yes"
+msgstr ""
+
+#: slicke.ux.alert.smsgtitle
+msgid "Message"
+msgstr ""
+
+#: slicke.ux.alert.ssucctitle
+msgid "Information"
+msgstr ""
+
 #: tfbg.lval.caption
 msgctxt "tfbg.lval.caption"
 msgid "Setup"

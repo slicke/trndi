@@ -703,7 +703,7 @@ var
   pos: integer;
 begin
     if UXDialog(RS_QUIT_CAPTION, RS_QUIT_MSG, [mbYes, mbNo], widechar($2705)) = mrNo then
-     Exit;
+      Abort;
 
   {$ifdef TrndiExt}
   TTrndiExtEngine.ReleaseInstance;
@@ -1053,7 +1053,7 @@ begin
       ShowModal;
       //---
       s := ExtractLangCode(cblang.Items[cbLang.ItemIndex]);
-      Showmessage(s);
+
       SetSetting(username +'locale', s);
 
       native.SetSetting(username +'position.main', IntToStr(cbPos.ItemIndex));

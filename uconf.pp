@@ -27,7 +27,7 @@ interface
 
 uses 
 Classes,ColorBox,ComCtrls,ExtCtrls,Spin,StdCtrls,SysUtils,Forms,Controls,
-Graphics,Dialogs,LCLTranslator, trndi.native, lclintf;
+Graphics,Dialogs,LCLTranslator, trndi.native, lclintf, slicke.ux.alert;
 
 type
 
@@ -140,6 +140,11 @@ function ExtractLangCode(const AText: string): string;
 implementation
 
 {$R *.lfm}
+
+procedure Showmessage(const str: string);
+begin
+  UXMessage(sSuccTitle, str, widechar($2139));
+end;
 
 function ExtractLangCode(const AText: string): string;
 var
@@ -357,15 +362,17 @@ begin
 end;
 
 procedure TfConf.lAckClick(Sender:TObject);
-begin
-  ShowMessage('Trndi makes use of the following 3rd party libraries:'#10+
+const
+  txt = 'Trndi makes use of the following 3rd party libraries:'#10+
     'macOS native code libraries by Phil Hess'#10+
     'WinStyles library by Espectr0'#10#10+
     'Extensions use JavaScript engine QuickJS by Fabrice Bellard and Charlie Gordo'#10+
 
     'integration of said engine is made possible with mORMot2 by Synopse Informatique - Arnaud Bouchez'
     +#10#10+
-    'Built in Object Pascal, using the Lazarus component library (LCL) and FreePascal.');
+    'Built in Object Pascal, using the Lazarus component library (LCL) and FreePascal.';
+  begin
+  ExtSucc('Trndi', 'Libraries', txt);
 end;
 
 procedure TfConf.cbSysChange(Sender:TObject);
@@ -464,8 +471,8 @@ begin
 end;
 
 procedure TfConf.lLicenseClick(Sender:TObject);
-begin
-  ShowMessage('Trndi - CGM viewer'#10'A re-imagination of TrayTrend by Björn Lindh'#10#10+
+const
+  txt = 'Trndi - CGM viewer'#10'A re-imagination of TrayTrend by Björn Lindh'#10#10+
     'Copyright (C) 2017-2025 Björn Lindh'#10#10+
 
     'This program is free software: you can redistribute it and/or modify it'#10+
@@ -475,7 +482,9 @@ begin
     'For more information, refer to the accompanying license file or visit:'#10+
     'https://www.gnu.org/licenses/gpl-3.0'#10#10+
     'Trndi is hobby project, verify all data with an officially approved'#10+
-    'medical app before acting on any shown data!');
+    'medical app before acting on any shown data!';
+begin
+  ExtSucc('Trndi', 'License', txt);
 end;
 
 procedure TfConf.rbUnitClick(Sender:TObject);
