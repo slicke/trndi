@@ -37,7 +37,7 @@ Forms,lazcontrols,trndi.types,trndi.native,
 trndi.ext.promise, trndi.ext.functions,trndi.ext.ext,
 {$ENDIF}
 trndi.api,trndi.api.nightscout,
-trndi.api.dexcom,umain,uconf, ufloat, slicke.ux.alert
+trndi.api.dexcom,umain,uconf, ufloat, slicke.ux.alert, SimpleDarkMode
 { you can add units after this };
 
 {$R *.res}
