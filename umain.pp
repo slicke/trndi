@@ -833,6 +833,8 @@ begin
     fBG.FormStyle := fsStayOnTop;
     fBG.BorderStyle := bsNone;
   end;
+    if native.isDarkMode then
+     native.setDarkMode{$ifndef darwin}(self.Handle){$endif};
 end;
 
 // Empty event handler
