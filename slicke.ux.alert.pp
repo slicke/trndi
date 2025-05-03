@@ -30,7 +30,7 @@ uses
 Classes, SysUtils, Dialogs, Forms, ExtCtrls, StdCtrls, Controls, Graphics, Math,
 IntfGraphics, FPImage, graphtype, lcltype, Trndi.Native,
 {$ifdef Windows}
-DX12.D2D1, DX12.DXGI, DX12.DWrite, DX12.DCommon, DX12.WinCodec, Windows,
+DX12.D2D1, DX12.DXGI, DX12.DWrite, DX12.DCommon, DX12.WinCodec, Windows, Buttons,
 {$endif}StrUtils;
 
 resourcestring
@@ -74,11 +74,22 @@ mbUXHelp = mbHelp;
 mbUXClose = mbClose;
 mbUXUXOpenFile = 110;
 
-type
-  TUXMsgDlgBtn     = (mbYes, mbNo, mbOK, mbCancel, mbAbort, mbRetry, mbIgnore,
-    mbAll, mbNoToAll, mbYesToAll, mbHelp, mbClose, mbUXOpenFile);
 
-  TUXMsgDlgBtns = set of TUXMsgDlgBtn;
+type
+TDialogForm = class(TForm)
+  {$ifdef windows}
+protected
+  procedure CreateWnd; override;
+public
+ procedure ButtonDrawItem(Sender: TObject;
+  ACanvas: TCanvas; ARect: TRect; State: TButtonState);
+  {$endif}
+end;
+
+TUXMsgDlgBtn     = (mbYes, mbNo, mbOK, mbCancel, mbAbort, mbRetry, mbIgnore,
+  mbAll, mbNoToAll, mbYesToAll, mbHelp, mbClose, mbUXOpenFile);
+
+TUXMsgDlgBtns = set of TUXMsgDlgBtn;
 
 UXMessageBox = record
   title: string;
@@ -87,9 +98,9 @@ UXMessageBox = record
   icon: widechar;
     //function Execute: ModalResult;
 end;
-    ButtonLangs = array[TUXMsgDlgBtn] of string;
+ButtonLangs = array[TUXMsgDlgBtn] of string;
 var
-  langs : ButtonLangs = (smbYes, smbUXNo, smbUXOK, smbUXCancel, smbUXAbort, smbUXRetry, smbUXIgnore, smbUXAll, smbUXNoToAll, smbUXYesToAll, smbUXHelp, smbUXClose, smbUXOpenFile);
+langs : ButtonLangs = (smbYes, smbUXNo, smbUXOK, smbUXCancel, smbUXAbort, smbUXRetry, smbUXIgnore, smbUXAll, smbUXNoToAll, smbUXYesToAll, smbUXHelp, smbUXClose, smbUXOpenFile);
 
 
 //function UXShowMessage(const message: string; buttons: TMsgDlgButtons; const icon: Widechar): TModalResult;
@@ -119,16 +130,26 @@ implementation
 function UXButtonToModalResult(Btn: TUXMsgDlgBtn): TModalResult;
 begin
   case Btn of
-    mbYes:       Result := mrYes;
-    mbNo:        Result := mrNo;
-    mbOK:        Result := mrOK;
-    mbCancel:    Result := mrCancel;
-    mbAbort:     Result := mrAbort;
-    mbRetry:     Result := mrRetry;
-    mbIgnore:    Result := mrIgnore;
-    mbAll:       Result := mrAll;
-    mbNoToAll:   Result := mrNoToAll;
-    mbYesToAll:  Result := mrYesToAll;
+  mbYes:
+    Result := mrYes;
+  mbNo:
+    Result := mrNo;
+  mbOK:
+    Result := mrOK;
+  mbCancel:
+    Result := mrCancel;
+  mbAbort:
+    Result := mrAbort;
+  mbRetry:
+    Result := mrRetry;
+  mbIgnore:
+    Result := mrIgnore;
+  mbAll:
+    Result := mrAll;
+  mbNoToAll:
+    Result := mrNoToAll;
+  mbYesToAll:
+    Result := mrYesToAll;
 //    mbUXHelp:      Result := mrHelp;
 //    mbUXClose:     Result := mrClose;
   else
@@ -138,7 +159,23 @@ begin
 end;
 
 {$ifdef Windows}
-procedure AssignEmoji(Image: TImage; const Emoji: widestring);
+procedure TDialogForm.CreateWnd;
+const
+  DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
+var
+  Value: integer;
+begin
+  inherited CreateWnd;
+  Value := 1;
+  // Nu är Handle giltigt – anropa DWM
+  DwmSetWindowAttribute(Handle,
+    DWMWA_USE_IMMERSIVE_DARK_MODE, @Value, SizeOf(Value));
+  // Tvinga omritning av non-client area
+  SetWindowPos(Handle, 0,0,0,0,0,
+    SWP_FRAMECHANGED or SWP_NOMOVE or SWP_NOSIZE or SWP_NOZORDER);
+end;
+
+procedure AssignEmoji(Image: TImage; const Emoji: widestring; dark: boolean = false);
 
 var 
   D2DFactory: ID2D1Factory;
@@ -281,7 +318,11 @@ begin
     end;
 
     // Skapa en solid färgborste för bakgrunden
-    BackgroundColor := ColorF(1.0, 1.0, 1.0, 1.0);
+    if not dark then
+      BackgroundColor := ColorF(1.0, 1.0, 1.0, 1.0)
+    else
+      BackgroundColor := ColorF(39/255, 43/255, 50/255, 1.0);
+
     // Vit bakgrund
     if Failed(RenderTarget.CreateSolidColorBrush(@BackgroundColor, nil, BackgroundBrush)) then
     begin
@@ -326,7 +367,7 @@ begin
   end;
 end;
 {$else}
-procedure AssignEmoji(Image: TImage; const Emoji: widestring);
+procedure AssignEmoji(Image: TImage; const Emoji: widestring; dark: boolean = false);
 begin
   // Ställ in storleken på Canvas och bakgrundsfärgen
   Image.Picture.Bitmap.SetSize(Image.Width, Image.Height);
@@ -375,18 +416,50 @@ end;
 
 procedure UXMessage(const title, message: string; const icon: widechar = widechar($2705));
 begin
- ExtMsg(sMsgTitle, title, message, '', $00AA6004, $00FDD8AA, [mbOK], widechar(icon));
+  ExtMsg(sMsgTitle, title, message, '', $00AA6004, $00FDD8AA, [mbOK], widechar(icon));
 end;
 
 function UXDialog(const title, message: string; buttons: TUXMsgDlgBtns; const icon: widechar = widechar($2705)): TModalResult;
 begin
- result := ExtMsg(sMsgTitle, title, message, '', $00AA6004, $00FDD8AA, buttons, widechar(icon));
+  result := ExtMsg(sMsgTitle, title, message, '', $00AA6004, $00FDD8AA, buttons, widechar(icon));
 end;
 
 procedure btnmodal(sender: tbutton);
 begin
 
 end;
+
+{$ifdef windows}
+procedure TDialogForm.ButtonDrawItem(Sender: TObject;
+  ACanvas: TCanvas; ARect: TRect; State: TButtonState);
+var
+  Btn: TBitBtn absolute Sender;
+  TxtFlags: Cardinal;
+begin
+  // 1) Bakgrund
+  if bsDown = State then
+    ACanvas.Brush.Color := RGBToColor(30,30,30)
+  else
+    ACanvas.Brush.Color := clBlack;
+  ACanvas.FillRect(ARect);
+
+  // 2) Ram
+  ACanvas.Pen.Color := RGBToColor(80,80,80);
+  ACanvas.Rectangle(ARect.Left, ARect.Top, ARect.Right, ARect.Bottom);
+
+  // 3) Text
+  ACanvas.Font.Assign(Btn.Font);
+  ACanvas.Font.Color := clWhite;
+  TxtFlags := DT_CENTER or DT_VCENTER or DT_SINGLELINE;
+  DrawText(ACanvas.Handle, PChar(Btn.Caption), Length(Btn.Caption),
+    ARect, TxtFlags);
+
+  // 4) Fokusindikator
+  if bsHot = State then
+    ACanvas.DrawFocusRect(ARect);
+end;
+
+{$endif}
 
 function ExtMsg(const caption, title, desc, logmsg: string; dumpbg: TColor = $00F5F2FD; dumptext:
 TColor = $003411A9; buttons: TUXMsgDlgBtns = [mbAbort]; const icon: widechar =
@@ -396,19 +469,21 @@ const
   btnWidth = 75;
   padding = 10;
 var 
-  Dialog: TForm;
+  Dialog: TDialogForm;
   IconBox: TImage;
   TitleLabel: TLabel;
   MessageLabel: TLabel;
   log: TMemo;
   logPanel: TPanel;
-  OkButton: TButton;
+  OkButton: {$ifdef Windows}TBitBtn{$else}TButon{$endif};
   ContentWidth: integer;
   p2, p3: TPanel;
   mr: TUXMsgDlgBtn;
   last: integer;
+  bgcol: TColor;
 begin
-  Dialog := TForm.CreateNew(nil);
+  bgcol :=  IfThen(TrndiNative.isDarkMode, $00322B27, clWhite);
+  Dialog := TDialogForm.CreateNew(nil);
   try
     Dialog.Caption := caption;
     Dialog.BorderStyle := bsDialog;
@@ -418,7 +493,7 @@ begin
     p2 := TPanel.Create(Dialog);
     p2.Parent := Dialog;
     p2.Align := alClient;
-    p2.Color :=  IfThen(TrndiNative.isDarkMode, $00322B27, clWhite);;
+    p2.Color :=  bgcol;
     p2.BevelInner := bvNone;
     p2.BevelOuter := bvNone;
 
@@ -436,7 +511,7 @@ begin
 
     Dialog.HandleNeeded;
     // Rita emoji på IconBox
-    AssignEmoji(IconBox, icon);
+    AssignEmoji(IconBox, icon, TrndiNative.isDarkMode);
 
     // Titel
     TitleLabel := TLabel.Create(p2);
@@ -496,11 +571,12 @@ begin
 
     ///--
          //For UX Message
-         if logmsg = '' then begin
-            logpanel.Visible := false;
-            dialog.ClientHeight := dialog.ClientHeight - logpanel.height;
+    if logmsg = '' then
+    begin
+      logpanel.Visible := false;
+      dialog.ClientHeight := dialog.ClientHeight - logpanel.height;
     ///--
-         end;
+    end;
 
 
 
@@ -512,11 +588,17 @@ begin
     p3.Align := alBottom;
     p3.BorderStyle := bsNone;
     p3.BevelOuter := bvNone;
+    p3.color := bgcol;
 
     last := p3.ClientWidth - Padding;
     // OK-knapp
-    for mr in buttons do begin
-      OkButton := TButton.Create(p3);
+    for mr in buttons do
+    begin
+      {$ifdef Windows}
+        OkButton := TBitBtn.Create(p3);
+      {$else}
+        OkButton := TButton.Create(p3);
+      {$endif}
       OkButton.Parent := p3;
       OkButton.Caption := langs[mr];
 
@@ -539,11 +621,12 @@ begin
     Dialog.Height := Padding * 2 + MessageLabel.Top + MessageLabel.Height + p3.Height;
     // Set first (last?) button pos
     last := Dialog.Width;
-    for mr in buttons do begin
-       OkButton := p3.FindChildControl('btn'+IntToStr(ord(mr))) as TButton;
+    for mr in buttons do
+    begin
+      OkButton := p3.FindChildControl('btn'+IntToStr(ord(mr))) as {$ifdef Windows}TBitBtn{$else}TButton{$endif};
 
-       OkButton.Left := last - padding - btnWidth;
-       last := OkButton.left;
+      OkButton.Left := last - padding - btnWidth;
+      last := OkButton.left;
     end;
 
     log.Text := string(log.Text).TrimRight([#13, #10]);
