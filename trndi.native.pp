@@ -168,7 +168,6 @@ implementation
 
 
 {$IFDEF Windows}
-
 class function TrndiNative.setDarkMode(win: HWND): Boolean;
 const
   DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
