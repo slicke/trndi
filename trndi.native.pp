@@ -148,7 +148,7 @@ public
   {$elseif DEFINED(X_MAC)}
     class function setDarkMode: boolean;
   {$else}
-    class function setDarkMode(win: THandle): boolean;
+    class function setDarkMode: boolean;
   {$endif}
   class function GetOSLanguage: string;
 protected
@@ -189,7 +189,7 @@ begin
   SimpleDarkMode.EnableAppDarkMode;
 end;
 {$else}
-class function TrndiNative.setDarkMode(win: THandle): Boolean;
+class function TrndiNative.setDarkMode: Boolean;
 begin
 
 end;
