@@ -47,7 +47,9 @@
       </ExcludedOriginals>
     </i18n>
     <VersionInfo>
+      <UseVersionInfo Value="True"/>
       <MajorVersionNr Value="2"/>
+      <BuildNr Value="50"/>
     </VersionInfo>
     <BuildModes>
       <Item Name="No Ext (Release)" Default="True"/>
@@ -161,6 +163,9 @@
         </CompilerOptions>
       </Item>
       <Item Name="GTK3">
+        <MacroValues Count="1">
+          <Macro1 Name="LCLWidgetType" Value="gtk3"/>
+        </MacroValues>
         <CompilerOptions>
           <Version Value="11"/>
           <PathDelim Value="\"/>
@@ -194,9 +199,6 @@
         </CompilerOptions>
       </Item>
       <Item Name="Custtom">
-        <MacroValues Count="1">
-          <Macro1 Name="LCLWidgetType" Value="gtk2"/>
-        </MacroValues>
         <CompilerOptions>
           <Version Value="11"/>
           <PathDelim Value="\"/>
@@ -231,7 +233,7 @@
         </CompilerOptions>
       </Item>
       <SharedMatrixOptions Count="1">
-        <Item1 ID="547984355828" Modes="Custtom" Type="IDEMacro" MacroName="LCLWidgetType" Value="gtk2"/>
+        <Item1 ID="755046395446" Modes="GTK3" Type="IDEMacro" MacroName="LCLWidgetType" Value="gtk3"/>
       </SharedMatrixOptions>
     </BuildModes>
     <PublishOptions>

@@ -487,6 +487,9 @@ begin
   try
     Dialog.Caption := caption;
     Dialog.BorderStyle := bsDialog;
+    {$ifdef LCLGTK3}
+       Dialog.BorderStyle := bsSizeable;
+    {$endif}
     Dialog.Position := poWorkAreaCenter;
 
     // Huvudpanelen
