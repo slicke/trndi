@@ -475,7 +475,7 @@ var
   MessageLabel: TLabel;
   log: TMemo;
   logPanel: TPanel;
-  OkButton: {$ifdef Windows}TBitBtn{$else}TButon{$endif};
+  OkButton: {$ifdef Windows}TBitBtn{$else}TButton{$endif};
   ContentWidth: integer;
   p2, p3: TPanel;
   mr: TUXMsgDlgBtn;

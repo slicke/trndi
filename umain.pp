@@ -532,7 +532,7 @@ begin
     s := 'Poppins'
   else
   if (Pos('ID=ubuntu', s) > -1) then
-    s := 'Ubuntu'
+    s := 'Sans'
   else
     s := 'default';
   fBG.Font.Name := s;
