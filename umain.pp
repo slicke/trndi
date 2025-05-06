@@ -921,6 +921,10 @@ end;
 
 procedure TfBG.miBordersClick(Sender:TObject);
 begin
+  {$ifdef LCLGTK3}
+    Dialogs.ShowMessage('Your widgetset does not support this feature, pleae use QT');
+    Exit;
+  {$endif}
   miBorders.Checked := not miBorders.Checked;
   if miBorders.checked then
     self.BorderStyle := bsNone
