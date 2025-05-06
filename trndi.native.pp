@@ -143,10 +143,12 @@ public
   procedure setBadge(const Value: string);
   constructor create(ua, base: string); overload;
   constructor create; overload;
-  {$ifdef Windows}
+  {$if DEFINED(X_WIN)}
     class function setDarkMode(win: HWND): boolean;
-  {$else}
+  {$elseif DEFINED(X_MAC)}
     class function setDarkMode: boolean;
+  {$else}
+    class function setDarkMode(win: THandle): boolean;
   {$endif}
   class function GetOSLanguage: string;
 protected
@@ -167,7 +169,7 @@ function DwmSetWindowAttribute(hwnd: HWND; dwAttribute: DWORD; pvAttribute: Poin
 implementation
 
 
-{$IFDEF Windows}
+{$IF DEFINED(X_WIN)}
 class function TrndiNative.setDarkMode(win: HWND): Boolean;
 const
   DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
@@ -181,11 +183,15 @@ begin
       DwmSetWindowAttribute(win, DWMWA_USE_IMMERSIVE_DARK_MODE, @Value, SizeOf(Value))
     );
 end;
-{$else}
-
+{$elseif DEFINED(X_MAC)}
 class function TrndiNative.setDarkMode: Boolean;
 begin
   SimpleDarkMode.EnableAppDarkMode;
+end;
+{$else}
+class function TrndiNative.setDarkMode(win: THandle): Boolean;
+begin
+
 end;
 {$endif}
 {$IFDEF Windows}
