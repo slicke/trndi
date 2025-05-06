@@ -525,7 +525,7 @@ function GetLinuxDistro: string;
 begin
   native := TrndiNative.Create;
   if native.isDarkMode then
-     native.setDarkMode{$ifndef darwin}(self.Handle){$endif};
+     native.setDarkMode{$ifdef windows}(self.Handle){$endif};
   {$ifdef Linux}
   s := GetLinuxDistro;
   if (Pos('ID=fedora', s) > -1) then
@@ -834,7 +834,7 @@ begin
     fBG.BorderStyle := bsNone;
   end;
     if native.isDarkMode then
-     native.setDarkMode{$ifndef darwin}(self.Handle){$endif};
+     native.setDarkMode{$ifdef windows}(self.Handle){$endif};
 end;
 
 // Empty event handler
@@ -1586,6 +1586,8 @@ procedure SetPointHeight(L: TLabel; value: single);
 var
   Padding, UsableHeight, Position: integer;
 begin
+  padding := 0;
+  UsableHeight := 0;
   if (Value >= 2) and (Value <= 22) then
   begin
     Padding := Round(fBG.ClientHeight * 0.1);

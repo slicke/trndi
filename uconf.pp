@@ -26,7 +26,7 @@ unit uconf;
 interface
 
 uses 
-Classes,ColorBox,ComCtrls,ExtCtrls,Spin,StdCtrls,SysUtils,Forms,Controls,
+Classes,ComCtrls,ExtCtrls,Spin,StdCtrls,SysUtils,Forms,Controls,
 Graphics,Dialogs,LCLTranslator, trndi.native, lclintf, slicke.ux.alert;
 
 type
@@ -446,8 +446,6 @@ begin
 end;
 
 procedure TfConf.FormCreate(Sender:TObject);
-var
- native: TrndiNative;
 begin
   lVersion.Caption := lVersion.Caption + ' | Test Build '+{$I %DATE%};
   lversion.left := lversion.left - 20;
@@ -457,7 +455,7 @@ begin
   {$endif}
   with TrndiNative.create do begin
       if isDarkMode then
-       setDarkMode{$ifndef darwin}(self.Handle){$endif};
+       setDarkMode{$ifdef windows}(self.Handle){$endif};
       Free;
   end;
 end;
@@ -472,7 +470,8 @@ end;
 
 procedure TfConf.lLicenseClick(Sender:TObject);
 const
-  txt = 'Trndi - CGM viewer'#10'A re-imagination of TrayTrend by Björn Lindh'#10#10+
+  txt = 'Trndi - CGM viewer'#10+
+    'A re-imagination of TrayTrend by Björn Lindh'#10#10+
     'Copyright (C) 2017-2025 Björn Lindh'#10#10+
 
     'This program is free software: you can redistribute it and/or modify it'#10+
