@@ -10,7 +10,6 @@ object fBG: TfBG
   Color = clBlack
   Font.Color = clWhite
   Position = poDesktopCenter
-  LCLVersion = '4.0.0.4'
   OnClose = FormClose
   OnCreate = FormCreate
   OnDestroy = FormDestroy
@@ -226,7 +225,7 @@ object fBG: TfBG
     Caption = 'lAgo'
     Color = clWhite
     Font.Color = clWhite
-    Font.Height = 40
+    Font.Height = 33
     OptimalFill = True
     ParentColor = False
     ParentFont = False
