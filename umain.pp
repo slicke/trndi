@@ -548,6 +548,10 @@ begin
   BorderStyle := bsSizeToolWin;
   {$endif}
 
+  lVal.Font.name := native.GetSetting(username + 'font.val', lVal.Font.name);
+  lArrow.Font.name := native.GetSetting(username + 'font.arrow', lArrow.Font.name);
+  lAgo.Font.name := native.GetSetting(username + 'font.ago', lAgo.Font.name);
+
 
   // Assign labels to the TrendDots array
   for i := 1 to NUM_DOTS do
@@ -1059,9 +1063,28 @@ begin
       end;
       if cbLang.ItemIndex = -1 then
         cbLang.ItemIndex := cbLang.Items.Count-1;
+
+      lVal.Font.name := self.lVal.Font.name;
+      lArrow.Font.name := self.lArrow.Font.name;
+      lAgo.Font.name := self.lAgo.Font.name;
+
+      lVal.font.color := self.lVal.font.color;
+      lArrow.font.color := self.lArrow.font.color;
+      lAgo.font.color := self.lAgo.font.color;
+
+      lVal.caption := self.lVal.caption;
+      lArrow.caption := self.lArrow.caption;
+      lAgo.caption := self.lAgo.caption;
+      pnDisplay.Color := self.color;
+      pnDisplay.Font := fBG.font;
       //--
       ShowModal;
       //---
+
+      SetSetting(username + 'font.val', lVal.Font.name);
+      SetSetting(username + 'font.arrow', lArrow.Font.name);
+      SetSetting(username + 'font.ago', lAgo.Font.name);
+
       s := ExtractLangCode(cblang.Items[cbLang.ItemIndex]);
 
       SetSetting(username +'locale', s);
