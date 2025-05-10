@@ -1198,7 +1198,11 @@ begin
 
   min := MilliSecondsBetween(Now, d) div 60000;  // Minutes since last
 
-  lAgo.Caption := '🕑 ' + Format(RS_LAST_UPDATE, [min]);
+  {$ifndef lclgtk2} // UTF support IS LIMITED
+    lAgo.Caption := '🕑 ' + Format(RS_LAST_UPDATE, [min]);
+  {$else}
+    lAgo.Caption := '⌚ ' + Format(RS_LAST_UPDATE, [min]);
+  {$endif}
 end;
 
 procedure TfBG.tEdgesTimer(Sender:TObject);

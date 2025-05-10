@@ -478,6 +478,9 @@ begin
   {$ifdef lclqt6}
     self.font.size := 10;
   {$endif}
+  {$ifdef lclgtk2}
+    self.font.size := 10;
+  {$endif}
   with TrndiNative.create do begin
       if isDarkMode then
        setDarkMode{$ifdef windows}(self.Handle){$endif};

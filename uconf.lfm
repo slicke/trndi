@@ -8,6 +8,7 @@ object fConf: TfConf
   ClientHeight = 395
   ClientWidth = 416
   Position = poDesktopCenter
+  LCLVersion = '4.0.0.4'
   OnCreate = FormCreate
   OnResize = FormResize
   object pcMain: TPageControl
@@ -21,8 +22,8 @@ object fConf: TfConf
     TabOrder = 0
     object tsGeneral: TTabSheet
       Caption = 'General'
-      ClientHeight = 359
-      ClientWidth = 412
+      ClientHeight = 363
+      ClientWidth = 406
       object cbSys: TComboBox
         Left = 15
         Height = 30
@@ -102,8 +103,8 @@ object fConf: TfConf
         ChildSizing.ShrinkVertical = crsScaleChilds
         ChildSizing.Layout = cclLeftToRightThenTopToBottom
         ChildSizing.ControlsPerLine = 2
-        ClientHeight = 15
-        ClientWidth = 386
+        ClientHeight = 27
+        ClientWidth = 390
         Columns = 2
         ItemIndex = 0
         Items.Strings = (
@@ -10422,8 +10423,8 @@ object fConf: TfConf
     end
     object tsDisplay: TTabSheet
       Caption = 'Display'
-      ClientHeight = 359
-      ClientWidth = 412
+      ClientHeight = 363
+      ClientWidth = 406
       object pnDisplay: TPanel
         Left = 0
         Height = 176
@@ -10511,8 +10512,8 @@ object fConf: TfConf
         Align = alBottom
         BorderSpacing.Around = 10
         Caption = 'System Features'
-        ClientHeight = 75
-        ClientWidth = 386
+        ClientHeight = 87
+        ClientWidth = 390
         TabOrder = 2
         object cbTouch: TCheckBox
           Left = 8
@@ -10545,8 +10546,8 @@ object fConf: TfConf
     end
     object tsCustom: TTabSheet
       Caption = 'Customization'
-      ClientHeight = 359
-      ClientWidth = 412
+      ClientHeight = 363
+      ClientWidth = 406
       object gbOverride: TGroupBox
         Left = 10
         Height = 88
@@ -10555,8 +10556,8 @@ object fConf: TfConf
         Align = alTop
         BorderSpacing.Around = 10
         Caption = 'Override High / Low limits'
-        ClientHeight = 58
-        ClientWidth = 386
+        ClientHeight = 70
+        ClientWidth = 390
         ParentBackground = False
         TabOrder = 0
         object cbCust: TCheckBox
@@ -10705,8 +10706,8 @@ object fConf: TfConf
         Align = alTop
         BorderSpacing.Around = 10
         Caption = 'Get more languages'
-        ClientHeight = 70
-        ClientWidth = 386
+        ClientHeight = 82
+        ClientWidth = 390
         ParentBackground = False
         TabOrder = 4
         object Panel6: TPanel
@@ -10740,8 +10741,8 @@ object fConf: TfConf
     end
     object tsMulti: TTabSheet
       Caption = 'Multi User'
-      ClientHeight = 359
-      ClientWidth = 412
+      ClientHeight = 363
+      ClientWidth = 406
       object lbUsers: TListBox
         Left = 10
         Height = 121
@@ -10772,8 +10773,8 @@ object fConf: TfConf
         Align = alBottom
         BorderSpacing.Around = 10
         Caption = 'Account Settings'
-        ClientHeight = 71
-        ClientWidth = 386
+        ClientHeight = 83
+        ClientWidth = 390
         Enabled = False
         TabOrder = 1
         object cbUser: TColorButton
