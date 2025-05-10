@@ -138,6 +138,10 @@ msgstr ""
 msgid "&Download"
 msgstr ""
 
+#: tfconf.button2.caption
+msgid "Reset Defaults"
+msgstr ""
+
 #: tfconf.caption
 msgid "Settings"
 msgstr ""
@@ -215,6 +219,10 @@ msgid ""
 "you can download more below."
 msgstr ""
 
+#: tfconf.label8.caption
+msgid "Click an item to change it's font"
+msgstr ""
+
 #: tfconf.lack.caption
 msgid "Libraries"
 msgstr ""
@@ -235,12 +243,21 @@ msgstr ""
 msgid "Low under"
 msgstr ""
 
+#: tfconf.lval.caption
+msgctxt "tfconf.lval.caption"
+msgid "Setup"
+msgstr ""
+
 #: tfconf.rbunit.caption
 msgid "Display Unit"
 msgstr ""
 
 #: tfconf.tscustom.caption
 msgid "Customization"
+msgstr ""
+
+#: tfconf.tsdisplay.caption
+msgid "Display"
 msgstr ""
 
 #: tfconf.tsgeneral.caption

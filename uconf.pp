@@ -36,6 +36,7 @@ type
 TfConf = class(TForm)
   bAdd: TButton;
   Button1:TButton;
+  Button2:TButton;
   bvExt:TBevel;
   bOverrideHelp:TButton;
   bPrivacyHelp: TButton;
@@ -50,6 +51,7 @@ TfConf = class(TForm)
   edNick:TEdit;
   eExt:TLabeledEdit;
   ePass:TLabeledEdit;
+  fdFont:TFontDialog;
   fsHi: TFloatSpinEdit;
   fsLo: TFloatSpinEdit;
   gbMulti:TGroupBox;
@@ -61,7 +63,10 @@ TfConf = class(TForm)
   Label3:TLabel;
   Label6:TLabel;
   Label7:TLabel;
+  Label8:TLabel;
   lAck: TButton;
+  lAgo:TLabel;
+  lArrow:TLabel;
   lCopyright: TLabel;
   lCurrentAcc:TLabel;
   Label4:TLabel;
@@ -71,6 +76,7 @@ TfConf = class(TForm)
   lLicense: TButton;
   lLounder: TLabel;
   lTitle: TLabel;
+  lVal:TLabel;
   lVersion:TLabel;
   Panel1: TPanel;
   Panel2: TPanel;
@@ -78,8 +84,10 @@ TfConf = class(TForm)
   Panel4: TPanel;
   Panel5: TPanel;
   Panel6:TPanel;
+  pnDisplay:TPanel;
   pcMain:TPageControl;
   rbUnit:TRadioGroup;
+  tsDisplay:TTabSheet;
   tsMulti:TTabSheet;
   tsGeneral:TTabSheet;
   tsCustom:TTabSheet;
@@ -89,6 +97,7 @@ TfConf = class(TForm)
   procedure bPrivacyHelpClick(Sender:TObject);
   procedure bRemoveClick(Sender:TObject);
   procedure Button1Click(Sender:TObject);
+  procedure Button2Click(Sender:TObject);
   procedure cbCustChange(Sender:TObject);
   procedure cbSysChange(Sender:TObject);
   procedure cbUserClick(Sender:TObject);
@@ -96,8 +105,10 @@ TfConf = class(TForm)
   procedure FormResize(Sender: TObject);
   procedure lAckClick(Sender:TObject);
   procedure lLicenseClick(Sender:TObject);
+  procedure lValClick(Sender:TObject);
   procedure rbUnitClick(Sender:TObject);
   procedure tbAdvancedChange(Sender:TObject);
+  procedure ToggleBox1Change(Sender:TObject);
 private
 
 public
@@ -437,6 +448,13 @@ begin
   Openurl('https://github.com/slicke/trndi/blob/main/LANGUAGES.md');
 end;
 
+procedure TfConf.Button2Click(Sender:TObject);
+begin
+lVal.font.name := pnDisplay.font.name;
+lArrow.font.name := pnDisplay.font.name;
+lAgo.font.name := pnDisplay.font.name;
+end;
+
 procedure TfConf.cbCustChange(Sender:TObject);
 begin
   fsHi.Enabled :=  cbCust.Checked;
@@ -489,6 +507,15 @@ begin
   ExtSucc('Trndi', 'License', txt);
 end;
 
+procedure TfConf.lValClick(Sender:TObject);
+begin
+if fdFont.Execute then
+with (sender as TLabel).Font do begin
+    name := fdFont.Font.Name;
+    style := fdFont.Font.style;
+end;
+end;
+
 procedure TfConf.rbUnitClick(Sender:TObject);
 begin
   if (sender is TForm) or (rbUnit.ItemIndex = 0) then
@@ -508,6 +535,11 @@ begin
 end;
 
 procedure TfConf.tbAdvancedChange(Sender:TObject);
+begin
+
+end;
+
+procedure TfConf.ToggleBox1Change(Sender:TObject);
 begin
 
 end;
