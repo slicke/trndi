@@ -661,3 +661,4 @@ msgstr "Senaste position"
 #: umain.rs_tpotopright
 msgid "Top Right"
 msgstr "Höger topp"
+

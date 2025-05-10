@@ -344,49 +344,60 @@ end;
 {$ELSE}
 function TrndiNative.HasTouchScreen(out multi: boolean): boolean;
 var
-  SL: TStringList;
+  SL, Block: TStringList;
   i: integer;
-  currentDevice: string;
-  foundTouch: boolean;
+  inBlock: boolean;
 begin
   Result := false;
   multi := false;
-  foundTouch := false;
-
+  inBlock := false;
+  Block := TStringList.Create;
   SL := TStringList.Create;
   try
     if FileExists('/proc/bus/input/devices') then
     begin
       SL.LoadFromFile('/proc/bus/input/devices');
-      currentDevice := '';
 
+      Block.Clear;
       for i := 0 to SL.Count - 1 do
       begin
-        // Store current line for analysis
-        currentDevice := SL[i];
-
-        // Check for touchscreen presence
-        if Pos('Touchscreen', currentDevice) > 0 then
+        if Trim(SL[i]) = '' then
+        begin
+          // Blocket är slut, analysera det
+          if Block.Count > 0 then
+          begin
+            // Sök touch i blocket
+            if (Block.Text.ToLower.Contains('touch')) then
+            begin
+              Result := true;
+              // Sök multicapabilities i blocket
+              if (Block.Text.Contains('ABS_MT_POSITION')) or
+                 (Block.Text.Contains('ABS_MT_SLOT')) or
+                 (Block.Text.Contains('ABS_MT_TRACKING_ID')) then
+                multi := true;
+            end;
+            Block.Clear;
+          end;
+        end
+        else
+          Block.Add(SL[i]);
+      end;
+      // Kolla sista blocket om filen inte slutar med blankrad
+      if Block.Count > 0 then
+      begin
+        if (Block.Text.ToLower.Contains('touch')) then
         begin
           Result := true;
-          foundTouch := true;
-        end;
-
-        // Check for multi-touch indicators
-        // Common indicators in the device file
-        if foundTouch and (
-          (Pos('ABS_MT_POSITION', currentDevice) > 0) or
-          (Pos('ABS_MT_SLOT', currentDevice) > 0) or
-          (Pos('ABS_MT_TRACKING_ID', currentDevice) > 0))
-        then
-        begin
-          multi := true;
-          Break; // We found both touch and multi-touch
+          if (Block.Text.Contains('ABS_MT_POSITION')) or
+             (Block.Text.Contains('ABS_MT_SLOT')) or
+             (Block.Text.Contains('ABS_MT_TRACKING_ID')) then
+            multi := true;
         end;
       end;
     end;
   finally
     SL.Free;
+    Block.Free;
   end;
 end;
 {$ENDIF}
