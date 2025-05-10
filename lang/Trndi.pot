@@ -150,12 +150,24 @@ msgstr ""
 msgid "Use custom values"
 msgstr ""
 
+#: tfconf.cbmultitouch.caption
+msgid "Multi-touch"
+msgstr ""
+
+#: tfconf.cbnotice.caption
+msgid "System notifications"
+msgstr ""
+
 #: tfconf.cbprivacy.caption
 msgid "Privacy Mode (Hide number)"
 msgstr ""
 
 #: tfconf.cbsys.text
 msgid "NightScout"
+msgstr ""
+
+#: tfconf.cbtouch.caption
+msgid "Touch screen"
 msgstr ""
 
 #: tfconf.cbuser.caption
@@ -185,6 +197,10 @@ msgstr ""
 
 #: tfconf.gboverride1.caption
 msgid "Get more languages"
+msgstr ""
+
+#: tfconf.groupbox1.caption
+msgid "System Features"
 msgstr ""
 
 #: tfconf.label1.caption

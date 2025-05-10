@@ -973,6 +973,7 @@ var
   i, lastusers: integer;
   s: string;
   po: TrndiPos;
+  mTouch: boolean;
 begin
   with TfConf.Create(self) do begin
     with native do
@@ -1077,6 +1078,15 @@ begin
       lAgo.caption := self.lAgo.caption;
       pnDisplay.Color := self.color;
       pnDisplay.Font := fBG.font;
+
+      cbTouch.Checked := native.HasTouchScreen(mTouch);
+      cbMultiTouch.Checked := mTouch;
+      {$if defined(LINUX)}
+        cbNotice.Checked := IsNotifySendAvailable;
+        cbNotice.Caption := cbNotice.Caption + ' (Notify Daemon)';
+      {$else}
+        cbNotice.Checked := true;
+      {$endif}
       //--
       ShowModal;
       //---

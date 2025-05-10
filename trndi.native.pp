@@ -161,6 +161,9 @@ protected
 
 end;
 
+{$ifdef X_LINUX}
+function IsNotifySendAvailable: boolean;
+{$endif}
 //procedure QWindow_setWindowBadge(window: QWindowH; badge: PChar); cdecl; external 'libQt6Gui.so.6';
 {$ifdef Windows}
 function DwmSetWindowAttribute(hwnd: HWND; dwAttribute: DWORD; pvAttribute: Pointer; cbAttribute: DWORD): HRESULT; stdcall; external 'dwmapi.dll';
@@ -440,56 +443,44 @@ begin
   {$ENDIF}
 end;
 
+
+{$ifdef X_LINUX}
+function IsNotifySendAvailable: boolean;
+var
+  AProcess: TProcess;
+  OutputLines: TStringList;
+begin
+  Result := false;
+  AProcess := TProcess.Create(nil);
+  OutputLines := TStringList.Create;
+  try
+    AProcess.Executable := '/usr/bin/which';
+    AProcess.Parameters.Add('notify-send');
+    AProcess.Options := AProcess.Options + [poWaitOnExit, poUsePipes];
+    AProcess.Execute;
+
+    OutputLines.LoadFromStream(AProcess.Output);
+
+    if (OutputLines.Count > 0) and FileExists(Trim(OutputLines[0])) then
+      Result := true;
+
+  except
+    on E: Exception do
+      Result := false;
+  end;
+  OutputLines.Free;
+  AProcess.Free;
+end;
+{$endif}
 {------------------------------------------------------------------------------
   TrndiNative.attention
   -------------------
   Flashes something depending on the system
  ------------------------------------------------------------------------------}
+
 procedure TrndiNative.attention(message: string);
 {$if  DEFINED(X_LINUX)}
-function IsNotifySendAvailable: boolean;
-  var
-    AProcess: TProcess;
-    OutputString: string;
-    OutputLines: TStringList;
-  begin
-    Result := false;
 
-  // Försök att hitta sökvägen till notify-send
-    AProcess := TProcess.Create(nil);
-    OutputLines := TStringList.Create;
-    try
-      AProcess.Executable := '/usr/bin/which';
-      AProcess.Parameters.Add('notify-send');
-      AProcess.Options := AProcess.Options + [poWaitOnExit, poUsePipes];
-      AProcess.Execute;
-
-    // Läs utdata från processen
-      OutputString := '';
-      while AProcess.Output.NumBytesAvailable > 0 do
-      begin
-        SetLength(OutputString, Length(OutputString) + 1024);
-        AProcess.Output.ReadBuffer(Pointer(OutputString)^, 1024);
-      end;
-      AProcess.WaitOnExit;
-
-    // Rensa onödiga tecken
-      OutputString := Trim(OutputString);
-
-    // Kontrollera om sökvägen är returnerad
-      if (Length(OutputString) > 0) and FileExists(OutputString) then
-        Result := true;
-    except
-      on E: Exception do
-      begin
-      // Hantera eventuella fel, t.ex. logga eller ignorera
-        Result := false;
-      end;
-    end;
-
-    OutputLines.Free;
-    AProcess.Free;
-  end;
 
 procedure SendNotification(Title, Message: string);
   var
