@@ -160,6 +160,14 @@ msgstr "Inställningar"
 msgid "Use custom values"
 msgstr "Använd egna värden"
 
+#: tfconf.cbmultitouch.caption
+msgid "Multi-touch"
+msgstr "Multipek"
+
+#: tfconf.cbnotice.caption
+msgid "System notifications"
+msgstr "Systemmeddelanden"
+
 #: tfconf.cbprivacy.caption
 msgid "Privacy Mode (Hide number)"
 msgstr "Privat läget (dölj nummer)"
@@ -167,6 +175,10 @@ msgstr "Privat läget (dölj nummer)"
 #: tfconf.cbsys.text
 msgid "NightScout"
 msgstr "NightScout"
+
+#: tfconf.cbtouch.caption
+msgid "Touch screen"
+msgstr "Pekskärm"
 
 #: tfconf.cbuser.caption
 msgid "Account color"
@@ -196,6 +208,10 @@ msgstr "Åsidosätt höga / låga gränser"
 #: tfconf.gboverride1.caption
 msgid "Get more languages"
 msgstr "Hämta fler språk"
+
+#: tfconf.groupbox1.caption
+msgid "System Features"
+msgstr "Systemfunktioner"
 
 #: tfconf.label1.caption
 msgid "There's always a defualt user account"

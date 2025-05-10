@@ -47,6 +47,9 @@ TfConf = class(TForm)
   cbSys:TComboBox;
   cbPos:TComboBox;
   cbUser:TColorButton;
+  cbTouch: TCheckBox;
+  cbNotice: TCheckBox;
+  cbMultiTouch: TCheckBox;
   eAddr:TLabeledEdit;
   edNick:TEdit;
   eExt:TLabeledEdit;
@@ -57,6 +60,7 @@ TfConf = class(TForm)
   gbMulti:TGroupBox;
   gbOverride:TGroupBox;
   gbOverride1:TGroupBox;
+  GroupBox1: TGroupBox;
   Image1: TImage;
   Label1: TLabel;
   Label2:TLabel;
