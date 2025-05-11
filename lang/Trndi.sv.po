@@ -635,7 +635,9 @@ msgid "Names must be unique"
 msgstr "Namn måste vara unika"
 
 #: uconf.rs_enter_name
-msgid "Enter the user's name, letters, space and numbers only"
+#, fuzzy
+#| msgid "Enter the user's name, letters, space and numbers only"
+msgid "Letters, space and numbers only"
 msgstr "Ange användarens namn med bokstäver, mellanslag och nummer"
 
 #: uconf.rs_enter_user
@@ -675,12 +677,6 @@ msgstr "Borttagna konton blir inaktiva, de kan återställas genom att skapa om 
 #: ufloat.rscustomop
 msgid "You can use shift+<number> to manually set visibility (0 = 100% visible)"
 msgstr "Du kan använda skift+<nummerr> för att manuellt sätta synligheten (0 = 100% synlig)"
-
-#: umain.rs_noplugins
-#, fuzzy
-msgctxt "umain.rs_noplugins"
-msgid "Built Without Support"
-msgstr "Byggd utan stöd"
 
 #: umain.rs_tpobottomleft
 msgctxt "umain.rs_tpobottomleft"

@@ -138,7 +138,7 @@ RS_DEX =
   'Dexcom servers do not provide custom high and low blood sugar values. Please set your own thresholds at the bottom of this window.';
 
 RS_ENTER_USER = 'Enter a username';
-RS_ENTER_NAME = 'Enter the user''s name, letters, space and numbers only';
+RS_ENTER_NAME = 'Letters, space and numbers only';
 RS_DUPE_NAME = 'Names must be unique';
 RS_CURRENT_ACC = 'This only applies for the current loaded account:  %s';
 RS_CURRENT_ACC_NO = 'These settings are available when using a multi-account';
@@ -414,7 +414,7 @@ var
  s, x: string;
  c: char;
 begin
-  s := InputBox(RS_ENTER_USER,RS_ENTER_NAME,'');
+  s := ExtInput(RS_ENTER_USER, RS_ENTER_USER, RS_ENTER_NAME,'');
   for c in s do begin
     if not (c in ['0'..'9', 'A'..'z',' ']) then begin
       ShowMessage(RS_ENTER_NAME);
