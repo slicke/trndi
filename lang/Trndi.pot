@@ -617,7 +617,7 @@ msgid "Names must be unique"
 msgstr ""
 
 #: uconf.rs_enter_name
-msgid "Enter the user's name, letters, space and numbers only"
+msgid "Letters, space and numbers only"
 msgstr ""
 
 #: uconf.rs_enter_user
@@ -649,11 +649,6 @@ msgstr ""
 
 #: ufloat.rscustomop
 msgid "You can use shift+<number> to manually set visibility (0 = 100% visible)"
-msgstr ""
-
-#: umain.rs_noplugins
-msgctxt "umain.rs_noplugins"
-msgid "Built Without Support"
 msgstr ""
 
 #: umain.rs_tpobottomleft

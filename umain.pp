@@ -518,6 +518,8 @@ function GetLinuxDistro: string;
 begin
   if not FontInList(s) then
     ShowMessage(Format(RS_FONT_ERROR, [s]));
+
+
   native := TrndiNative.Create;
   if native.isDarkMode then
      native.setDarkMode{$ifdef windows}(self.Handle){$endif};
@@ -577,7 +579,9 @@ begin
       begin
         AddCommaText(username);
         Add('');
-        i := InputCombo(RS_MULTIUSER_BOX_TITLE, RS_MULTIUSER_BOX, ToStringArray);
+//        i := InputCombo(RS_MULTIUSER_BOX_TITLE, RS_MULTIUSER_BOX, ToStringArray);
+          i := ExtList(RS_MULTIUSER_BOX_TITLE, RS_MULTIUSER_BOX_TITLE, RS_MULTIUSER_BOX, ToStringArray, WideChar($1F464));
+
         if (i > -1) and (strings[i] <> '') then
         begin
           username := strings[i];

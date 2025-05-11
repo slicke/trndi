@@ -77,6 +77,7 @@ mbUXUXOpenFile = 110;
 
 type
 TDialogForm = class(TForm)
+  procedure FormKeyPress(Sender:TObject;var Key:char);
   {$ifdef windows}
 protected
   procedure CreateWnd; override;
@@ -115,6 +116,15 @@ widechar($2699)): TModalResult;
 function ExtLog(const caption, msg, log: string; const icon: widechar = widechar($2699)):
 TModalResult
 ;
+function ExtList(
+  const ACaption, ATitle, ADesc: string;
+  const Choices: array of string;
+  const icon: WideChar = WideChar($2699)
+): Integer;
+function ExtInput(
+  const ACaption, ATitle, ADesc, ADefault: string;
+  const icon: WideChar = WideChar($2699)
+): string;
 function ExtError(const msg, error: string; const icon: widechar = widechar($2699)): TModalResult;
 function ExtError(const error: string; const icon: widechar = widechar($2699)): TModalResult;
 function ExtSucc(const msg, desc, output: string; dumpbg: TColor = $0095EEC4; dumptext: TColor = $00147C4A; const icon: widechar = widechar($2705)): TModalResult;
@@ -195,6 +205,11 @@ begin
     // t.ex. ditt specialfall för OpenFile
     Result := TModalResult(110);
   end;
+end;
+
+procedure TDialogForm.FormKeyPress(Sender:TObject;var Key:char);
+begin
+  ShowMessage('hej');
 end;
 
 {$ifdef Windows}
@@ -502,6 +517,234 @@ begin
 end;
 
 {$endif}
+
+function ExtInput(
+  const ACaption, ATitle, ADesc, ADefault: string;
+  const icon: WideChar = WideChar($2699)
+): string;
+const
+  Padding = 16;
+  IconSize = 48;
+  InputWidth = 260;
+var
+  Dialog: TDialogForm;
+  IconBox: TImage;
+  TitleLabel, DescLabel: TLabel;
+  Edit: TEdit;
+  OkButton, CancelButton: TButton;
+  bgcol: TColor;
+begin
+  Result := '';
+
+  // Bakgrundsfärg beroende på darkmode
+  bgcol := IfThen(TrndiNative.isDarkMode, $00322B27, clWhite);
+
+  Dialog := TDialogForm.CreateNew(nil);
+  try
+    Dialog.Caption := ACaption;
+    Dialog.BorderStyle := bsDialog;
+    Dialog.Position := poScreenCenter;
+    Dialog.ClientWidth := InputWidth + IconSize + 4 * Padding;
+    Dialog.Color := bgcol;
+
+    // Emoji-ikon
+    IconBox := TImage.Create(Dialog);
+    IconBox.Parent := Dialog;
+    IconBox.Width := IconSize;
+    IconBox.Height := IconSize;
+    IconBox.Left := Padding;
+    IconBox.Top := Padding;
+    IconBox.Color := bgcol;
+    {$ifdef Windows}
+    IconBox.Font.Name := 'Segoe UI Emoji';
+    {$endif}
+    Dialog.HandleNeeded;
+    AssignEmoji(IconBox, icon, TrndiNative.isDarkMode);
+
+    // Titel (fetstil)
+    TitleLabel := TLabel.Create(Dialog);
+    TitleLabel.Parent := Dialog;
+    TitleLabel.Caption := ATitle;
+    TitleLabel.AutoSize := True;
+    TitleLabel.Font.Style := [fsBold];
+    TitleLabel.Left := IconBox.Left + IconBox.Width + Padding;
+    TitleLabel.Top := Padding;
+    TitleLabel.Font.Color := IfThen(TrndiNative.isDarkMode, clWhite, clBlack);
+
+    // Förklaring (normal)
+    DescLabel := TLabel.Create(Dialog);
+    DescLabel.Parent := Dialog;
+    DescLabel.Caption := ADesc;
+    DescLabel.AutoSize := True;
+    DescLabel.Font.Style := [];
+    DescLabel.Left := TitleLabel.Left;
+    DescLabel.Top := TitleLabel.Top + TitleLabel.Height + Padding div 10;
+    DescLabel.Font.Color := IfThen(TrndiNative.isDarkMode, clWhite, clBlack);
+
+    // Inmatningsruta (TEdit)
+    Edit := TEdit.Create(Dialog);
+    Edit.Parent := Dialog;
+    Edit.Left := TitleLabel.Left;
+    Edit.Width := Max(InputWidth, DescLabel.Canvas.TextWidth(ADesc));
+
+    Edit.Top := DescLabel.Top + DescLabel.Height + Padding div 2;
+    Edit.Text := ADefault;
+
+    // OK-knapp
+    OkButton := TButton.Create(Dialog);
+    OkButton.Parent := Dialog;
+    OkButton.Caption := 'Välj';
+    OkButton.ModalResult := mrOk;
+    OkButton.Width := 80;
+
+    // Avbryt-knapp
+    CancelButton := TButton.Create(Dialog);
+    CancelButton.Parent := Dialog;
+    CancelButton.Caption := 'Avbryt';
+    CancelButton.ModalResult := mrCancel;
+    CancelButton.Width := 80;
+
+    OkButton.Top := Edit.Top + Edit.Height + Padding * 2;
+    CancelButton.Top := OkButton.Top;
+    OkButton.Left := Edit.Left + (Edit.Width div 2) - OkButton.Width - Padding div 2;
+    CancelButton.Left := Edit.Left + (Edit.Width div 2) + Padding div 2;
+
+    // Dialogstorlek
+    Dialog.ClientHeight := OkButton.Top + OkButton.Height + Padding;
+    Dialog.ClientWidth := Max(
+      Edit.Left + Edit.Width + Padding,
+      IconBox.Left + IconBox.Width + Padding
+    );
+    Dialog.ClientWidth := Max(Dialog.ClientWidth, DescLabel.Width + DescLabel.left + Padding div 2);
+    Dialog.Color := bgcol;
+
+    Dialog.ActiveControl := Edit;
+
+    if Dialog.ShowModal = mrOk then
+      Result := Edit.Text
+    else
+      Result := '';
+  finally
+    Dialog.Free;
+  end;
+end;
+
+
+
+function ExtList(
+  const ACaption, ATitle, ADesc: string;
+  const Choices: array of string;
+  const icon: WideChar = WideChar($2699)
+): Integer;
+const
+  Padding = 16;
+  IconSize = 48;
+  ComboWidth = 500;
+var
+  Dialog: TDialogForm;
+  IconBox: TImage;
+  TitleLabel, DescLabel: TLabel;
+  Combo: TComboBox;
+  OkButton, CancelButton: TButton;
+  bgcol: TColor;
+  i: Integer;
+begin
+  Result := -1;
+
+  // Bakgrundsfärg beroende på darkmode
+  bgcol := IfThen(TrndiNative.isDarkMode, $00322B27, clWhite);
+
+  Dialog := TDialogForm.CreateNew(nil);
+  try
+    Dialog.Caption := ACaption;
+    Dialog.BorderStyle := bsDialog;
+    Dialog.Position := poScreenCenter;
+    Dialog.ClientWidth := ComboWidth + IconSize + 4 * Padding;
+    Dialog.Color := bgcol;
+
+    // Emoji-ikon
+    IconBox := TImage.Create(Dialog);
+    IconBox.Parent := Dialog;
+    IconBox.Width := IconSize;
+    IconBox.Height := IconSize;
+    IconBox.Left := Padding;
+    IconBox.Top := Padding;
+    IconBox.Color := bgcol;
+    {$ifdef Windows}
+    IconBox.Font.Name := 'Segoe UI Emoji';
+    {$endif}
+    Dialog.HandleNeeded;
+    AssignEmoji(IconBox, icon, TrndiNative.isDarkMode);
+
+    // Titel (fet)
+    TitleLabel := TLabel.Create(Dialog);
+    TitleLabel.Parent := Dialog;
+    TitleLabel.Caption := ATitle;
+    TitleLabel.AutoSize := True;
+    TitleLabel.Font.Style := [fsBold];
+    TitleLabel.Left := IconBox.Left + IconBox.Width + Padding;
+    TitleLabel.Top := Padding;
+    TitleLabel.Font.Color := IfThen(TrndiNative.isDarkMode, clWhite, clBlack);
+
+    // Förklaring (normal)
+    DescLabel := TLabel.Create(Dialog);
+    DescLabel.Parent := Dialog;
+    DescLabel.Caption := ADesc;
+    DescLabel.AutoSize := True;
+    DescLabel.Font.Style := [];
+    DescLabel.Left := TitleLabel.Left;
+    DescLabel.Top := TitleLabel.Top + TitleLabel.Height + Padding div 10;
+    DescLabel.Font.Color := IfThen(TrndiNative.isDarkMode, clWhite, clBlack);
+
+    // Dropdown
+    Combo := TComboBox.Create(Dialog);
+    Combo.Parent := Dialog;
+    for i := 0 to High(Choices) do
+      Combo.Items.Add(Choices[i]);
+    combo.ReadOnly := true;
+    Combo.Left := TitleLabel.Left;
+    Combo.Width := Max(ComboWidth, DescLabel.Canvas.TextWidth(ADesc));
+    Combo.Top := DescLabel.Top + DescLabel.Height + Padding div 2;
+    Combo.ItemIndex := 0;
+
+    // OK-knapp
+    OkButton := TButton.Create(Dialog);
+    OkButton.Parent := Dialog;
+    OkButton.Caption := 'Välj';
+    OkButton.ModalResult := mrOk;
+    OkButton.Width := 80;
+
+    // Avbryt-knapp
+    CancelButton := TButton.Create(Dialog);
+    CancelButton.Parent := Dialog;
+    CancelButton.Caption := 'Avbryt';
+    CancelButton.ModalResult := mrCancel;
+    CancelButton.Width := 80;
+
+    // Knapparnas placering
+    OkButton.Top := Combo.Top + Combo.Height + Padding * 2;
+    CancelButton.Top := OkButton.Top;
+    OkButton.Left := Combo.Left + (Combo.Width div 2) - OkButton.Width - Padding div 2;
+    CancelButton.Left := Combo.Left + (Combo.Width div 2) + Padding div 2;
+
+    // Dialogstorlek
+    Dialog.ClientHeight := OkButton.Top + OkButton.Height + Padding;
+    Dialog.ClientWidth := Max(
+      Combo.Left + Combo.Width + Padding,
+      IconBox.Left + IconBox.Width + Padding
+    );
+    Dialog.Color := bgcol;
+
+    Dialog.ActiveControl := Combo;
+
+    if Dialog.ShowModal = mrOk then
+      Result := Combo.ItemIndex
+    else
+      Result := -1;
+  finally
+    Dialog.Free;
+  end;
+end;
 
 function ExtMsg(const caption, title, desc, logmsg: string; dumpbg: TColor = $00F5F2FD; dumptext:
 TColor = $003411A9; buttons: TUXMsgDlgBtns = [mbAbort]; const icon: widechar =
