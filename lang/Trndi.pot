@@ -620,6 +620,10 @@ msgstr ""
 msgid "Names must be unique"
 msgstr ""
 
+#: uconf.rs_enter_any
+msgid "Please enter a name"
+msgstr ""
+
 #: uconf.rs_enter_name
 msgid "Letters, space and numbers only"
 msgstr ""

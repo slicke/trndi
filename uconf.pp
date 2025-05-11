@@ -139,6 +139,7 @@ RS_DEX =
 
 RS_ENTER_USER = 'Enter a username';
 RS_ENTER_NAME = 'Letters, space and numbers only';
+RS_ENTER_ANY = 'Please enter a name';
 RS_DUPE_NAME = 'Names must be unique';
 RS_CURRENT_ACC = 'This only applies for the current loaded account:  %s';
 RS_CURRENT_ACC_NO = 'These settings are available when using a multi-account';
@@ -413,22 +414,29 @@ procedure TfConf.bAddClick(Sender:TObject);
 var
  s, x: string;
  c: char;
+ mr: TModalResult;
 begin
-  s := ExtInput(RS_ENTER_USER, RS_ENTER_USER, RS_ENTER_NAME,'');
-  for c in s do begin
-    if not (c in ['0'..'9', 'A'..'z',' ']) then begin
-      ShowMessage(RS_ENTER_NAME);
+  s := ExtInput(RS_ENTER_USER, RS_ENTER_USER, RS_ENTER_NAME,'',mr);
+  if mr = mrOK then begin
+    if Trim(s) = '' then begin
+      ShowMessage(RS_ENTER_ANY);
       Exit;
     end;
-  end;
+    for c in s do begin
+      if (c in ['0'..'9', 'A'..'z',' ']) then begin
+        ShowMessage(RS_ENTER_NAME);
+        Exit;
+      end;
+    end;
 
-  // No duplicates!
-  for x in lbusers.Items do
-    if s = x then begin
-    ShowMessage(RS_DUPE_NAME);
-      Exit;
-    end;
-  lbUsers.AddItem(s, nil);
+    // No duplicates!
+    for x in lbusers.Items do
+      if s = x then begin
+      ShowMessage(RS_DUPE_NAME);
+        Exit;
+      end;
+    lbUsers.AddItem(s, nil);
+  end;
 end;
 
 procedure TfConf.bOverrideHelpClick(Sender:TObject);
