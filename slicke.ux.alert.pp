@@ -54,6 +54,7 @@ smbUXYesToAll = 'Yes To All';
 smbUXHelp = 'Help';
 smbUXClose = 'Close';
 smbUXOpenFile = 'Open File';
+smbSelect = 'Select';
 
 const 
 muiStop = $26D4;
@@ -209,7 +210,7 @@ end;
 
 procedure TDialogForm.FormKeyPress(Sender:TObject;var Key:char);
 begin
-  ShowMessage('hej');
+
 end;
 
 {$ifdef Windows}
@@ -593,14 +594,15 @@ begin
     // OK-knapp
     OkButton := TButton.Create(Dialog);
     OkButton.Parent := Dialog;
-    OkButton.Caption := 'Välj';
+    OkButton.Caption := smbSelect;
     OkButton.ModalResult := mrOk;
     OkButton.Width := 80;
+    OkButton.SetFocus;
 
     // Avbryt-knapp
     CancelButton := TButton.Create(Dialog);
     CancelButton.Parent := Dialog;
-    CancelButton.Caption := 'Avbryt';
+    CancelButton.Caption := smbUXCancel;
     CancelButton.ModalResult := mrCancel;
     CancelButton.Width := 80;
 
@@ -710,9 +712,10 @@ begin
     // OK-knapp
     OkButton := TButton.Create(Dialog);
     OkButton.Parent := Dialog;
-    OkButton.Caption := 'Välj';
+    OkButton.Caption := smbSelect;
     OkButton.ModalResult := mrOk;
     OkButton.Width := 80;
+    OkButton.SetFocus;
 
     // Avbryt-knapp
     CancelButton := TButton.Create(Dialog);
@@ -891,6 +894,10 @@ begin
       OkButton.Caption := langs[mr];
 
       OkButton.ModalResult := UXButtonToModalResult(mr);
+      if OkButton.ModalResult = mrOK then begin
+        Dialog.OnKeyPress := @Dialog.FormKeyPress;
+        OkButton.SetFocus;
+      end;
       OkButton.Width := btnwidth;
       OkButton.Top := (p3.Height div 2) - (OkButton.Height div 2);
       OkButton.left := last-padding-btnwidth;

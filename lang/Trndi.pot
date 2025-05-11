@@ -17,6 +17,10 @@ msgstr ""
 msgid "Extension error"
 msgstr ""
 
+#: slicke.ux.alert.smbselect
+msgid "Select"
+msgstr ""
+
 #: slicke.ux.alert.smbuxabort
 msgid "Abort"
 msgstr ""
@@ -649,6 +653,11 @@ msgstr ""
 
 #: ufloat.rscustomop
 msgid "You can use shift+<number> to manually set visibility (0 = 100% visible)"
+msgstr ""
+
+#: umain.rs_noplugins
+msgctxt "umain.rs_noplugins"
+msgid "Built Without Support"
 msgstr ""
 
 #: umain.rs_tpobottomleft

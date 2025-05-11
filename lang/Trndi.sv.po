@@ -27,6 +27,10 @@ msgstr "Fel i ett tillägg"
 msgid "Extension error"
 msgstr "Tilläggsfel"
 
+#: slicke.ux.alert.smbselect
+msgid "Select"
+msgstr "Välj"
+
 #: slicke.ux.alert.smbuxabort
 msgid "Abort"
 msgstr "Avsluta"
@@ -138,7 +142,7 @@ msgstr "- Utanför område -"
 
 #: tfconf.badd.caption
 msgid "+ Add"
-msgstr "+ Ny\\"
+msgstr "+ Ny"
 
 #: tfconf.bremove.caption
 msgid "- Remove"
@@ -419,7 +423,7 @@ msgstr ""
 #: trndi.strings.rs_font_error
 #, object-pascal-format
 msgid "You're missing the standard font \"%s\". Trndi will work as intended, but some icons may be missing and/or distorted!"
-msgstr ""
+msgstr "Du saknar standardtypsnittet \"%s\". Trndi kommer fungera som det ska, men vissa ikoner kan saknas och/eller se fel ut!"
 
 #: trndi.strings.rs_force_quit_setup
 msgid "Trndi will now shut down to apply settings, please re-start it manually!"
@@ -635,10 +639,8 @@ msgid "Names must be unique"
 msgstr "Namn måste vara unika"
 
 #: uconf.rs_enter_name
-#, fuzzy
-#| msgid "Enter the user's name, letters, space and numbers only"
 msgid "Letters, space and numbers only"
-msgstr "Ange användarens namn med bokstäver, mellanslag och nummer"
+msgstr "Endast bokstäver, mellanslag och nummer"
 
 #: uconf.rs_enter_user
 msgid "Enter a username"
@@ -678,6 +680,11 @@ msgstr "Borttagna konton blir inaktiva, de kan återställas genom att skapa om 
 msgid "You can use shift+<number> to manually set visibility (0 = 100% visible)"
 msgstr "Du kan använda skift+<nummerr> för att manuellt sätta synligheten (0 = 100% synlig)"
 
+#: umain.rs_noplugins
+msgctxt "umain.rs_noplugins"
+msgid "Built Without Support"
+msgstr "Byggd utan stöd"
+
 #: umain.rs_tpobottomleft
 msgctxt "umain.rs_tpobottomleft"
 msgid "Bottom Left"
@@ -702,4 +709,3 @@ msgstr "Senaste position"
 msgctxt "umain.rs_tpotopright"
 msgid "Top Right"
 msgstr "Höger topp"
-

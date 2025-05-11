@@ -580,7 +580,7 @@ begin
         AddCommaText(username);
         Add('');
 //        i := InputCombo(RS_MULTIUSER_BOX_TITLE, RS_MULTIUSER_BOX, ToStringArray);
-          i := ExtList(RS_MULTIUSER_BOX_TITLE, RS_MULTIUSER_BOX_TITLE, RS_MULTIUSER_BOX, ToStringArray, WideChar($1F464));
+          i := ExtList(RS_MULTIUSER_BOX_TITLE, RS_MULTIUSER_BOX_TITLE, RS_MULTIUSER_BOX, ToStringArray);
 
         if (i > -1) and (strings[i] <> '') then
         begin
