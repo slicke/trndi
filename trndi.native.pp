@@ -241,7 +241,7 @@ begin
 end;
 {$ENDIF}
 
-{$IFDEF Windows}
+{$IFDEF LCLWIN32}
 procedure TrndiNative.SetBadge(const Value: string);
 begin
 
