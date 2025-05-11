@@ -50,6 +50,13 @@ RS_WARN_BG_LO = 'Low blood sugar! Currently: %s';
 RS_MULTIUSER_BOX = 'Trndi found multiple accounts. Please choose one for this instance, or leave empty for default';
 RS_MULTIUSER_BOX_TITLE = 'User select';
 
+// Config box
+RS_tpoCenter = 'Desktop Center';
+RS_tpoBottomLeft = 'Bottom Left';
+RS_tpoBottomRight = 'Bottom Right';
+RS_tpoCustom = 'Last position';
+RS_tpoTopRight = 'Top Right';
+RS_noPlugins = 'Built Without Support';
 
 
 implementation

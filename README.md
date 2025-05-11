@@ -24,6 +24,10 @@ Hold the reading (or "Setup" text) and choose settings to access settings.
 * For xDrip, you need to turn on the local web server and use that IP/password
 * For other backends, feel free to contribute a api driver. See [API Drivers](guides/API.md)
 
+> _NOTE_ To receive notifications see [here](guides/Notifications.md)
+
+> See a box instead of an icon? On Debian systems, you may need to install a graphic font. I recommend fonts-noto-color-emoji.
+
 # Development
 Development tools can be obtained via most distros package managers:
 - Fedora/RHEL: ```dnf install lazarus```
@@ -47,11 +51,15 @@ Build to a release folder
 
 
 ## Dependancies
+### JS
 The JS engine, _QuickJS_, is linked into Trndi.
 
-You need the relevant library files, placed in ../static.
+You need the relevant library files, placed in ../static when compiling.
 > You can get the recommended libraries from https://synopse.info/files/mormot2static.7z - you may remove libraries you don't need!
 Due to mormot2, the support library Trndi uses, it may currently not be possible to run extensions under ARM64 computers.
+
+### Qt6 on Raspberry Pi
+You need the libqt6pas packages from https://github.com/davidbannon/libqt6pas/releases to compile Trndi
 
 ## Style
 ### Linter

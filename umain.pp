@@ -32,20 +32,13 @@ trndi.strings, LCLTranslator, Classes, Menus, SysUtils, Forms, Controls, Graphic
 trndi.api.dexcom, trndi.api.nightscout, trndi.types, math, DateUtils, FileUtil, LclIntf, TypInfo, LResources,
 slicke.ux.alert,
 {$ifdef TrndiExt}
-trndi.Ext.Engine, trndi.Ext.jsfuncs,
+trndi.Ext. Engine, trndi.Ext.jsfuncs,
 {$endif}
 {$ifdef Darwin}
 CocoaAll,
 {$endif}
 LazFileUtils, uconf, trndi.native, Trndi.API, trndi.api.xDrip,{$ifdef DEBUG} trndi.api.debug,{$endif}
 StrUtils, TouchDetection, ufloat;
-
-resourcestring
-RS_tpoCenter = 'Desktop Center';
-RS_tpoBottomLeft = 'Bottom Left';
-RS_tpoBottomRight = 'Bottom Right';
-RS_tpoCustom = 'Last position';
-RS_tpoTopRight = 'Top Right';
 
 type
   // Procedures which are applied to the trend drawing
@@ -1015,7 +1008,7 @@ begin
       {$ifdef TrndiExt}
       eExt.Text := GetAppConfigDirUTF8(false, true) + 'extensions' + DirectorySeparator;
       {$else}
-      eExt.Text := '- Built Without Support -';
+      eExt.Text := '- '+sNoExt+' -';
       eExt.Enabled := false;
       {$endif}
       cbPrivacy.Checked := GetSetting(username +'ext.privacy', '0') = '1';
