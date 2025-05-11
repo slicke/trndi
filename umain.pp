@@ -1013,7 +1013,7 @@ begin
       {$ifdef TrndiExt}
       eExt.Text := GetAppConfigDirUTF8(false, true) + 'extensions' + DirectorySeparator;
       {$else}
-      eExt.Text := '- '+sNoExt+' -';
+      eExt.Text := '- '+RS_noPlugins +' -';
       eExt.Enabled := false;
       {$endif}
       cbPrivacy.Checked := GetSetting(username +'ext.privacy', '0') = '1';

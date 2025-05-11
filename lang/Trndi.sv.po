@@ -638,6 +638,10 @@ msgstr "Dexcom:s servrar tillhandahåller inte värden för vad som är högt oc
 msgid "Names must be unique"
 msgstr "Namn måste vara unika"
 
+#: uconf.rs_enter_any
+msgid "Please enter a name"
+msgstr ""
+
 #: uconf.rs_enter_name
 msgid "Letters, space and numbers only"
 msgstr "Endast bokstäver, mellanslag och nummer"
@@ -709,3 +713,4 @@ msgstr "Senaste position"
 msgctxt "umain.rs_tpotopright"
 msgid "Top Right"
 msgstr "Höger topp"
+

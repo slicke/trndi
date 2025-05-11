@@ -124,6 +124,7 @@ function ExtList(
 ): Integer;
 function ExtInput(
   const ACaption, ATitle, ADesc, ADefault: string;
+  var ModalResult: TModalResult;
   const icon: WideChar = WideChar($2699)
 ): string;
 function ExtError(const msg, error: string; const icon: widechar = widechar($2699)): TModalResult;
@@ -521,6 +522,7 @@ end;
 
 function ExtInput(
   const ACaption, ATitle, ADesc, ADefault: string;
+  var ModalResult: TModalResult;
   const icon: WideChar = WideChar($2699)
 ): string;
 const
@@ -536,6 +538,7 @@ var
   bgcol: TColor;
 begin
   Result := '';
+  ModalResult := mrCancel; // Default
 
   // Bakgrundsfärg beroende på darkmode
   bgcol := IfThen(TrndiNative.isDarkMode, $00322B27, clWhite);
@@ -591,11 +594,14 @@ begin
     Edit.Top := DescLabel.Top + DescLabel.Height + Padding div 2;
     Edit.Text := ADefault;
 
+    Edit.OnKeyPress := @Dialog.FormKeyPress;
+
     // OK-knapp
     OkButton := TButton.Create(Dialog);
     OkButton.Parent := Dialog;
     OkButton.Caption := smbSelect;
     OkButton.ModalResult := mrOk;
+    Dialog.OnKeyPress := @Dialog.FormKeyPress;
     OkButton.Width := 80;
     OkButton.SetFocus;
 
@@ -622,10 +628,9 @@ begin
 
     Dialog.ActiveControl := Edit;
 
-    if Dialog.ShowModal = mrOk then
-      Result := Edit.Text
-    else
-      Result := '';
+    ModalResult := Dialog.ShowModal;
+    if ModalResult = mrOk then
+      Result := Edit.Text;
   finally
     Dialog.Free;
   end;
