@@ -141,6 +141,9 @@ public
   procedure start;
   procedure done;
   procedure setBadge(const Value: string);
+  {$ifdef Windows}
+    procedure UseOverlayIconForBadge(const Value: string);
+  {$endif}
   constructor create(ua, base: string); overload;
   constructor create; overload;
   {$if DEFINED(X_WIN)}
@@ -164,6 +167,11 @@ const
   // Gränssnitt för Windows 7+ Taskbar API
   CLSID_TaskbarList: TGUID = '{56FDF344-FD6D-11D0-958A-006097C9A090}';
   IID_ITaskbarList3: TGUID = '{EA1AFB91-9E28-4B86-90E9-9E9F8A5EEFAF}';
+  TBPF_NOPROGRESS     = $00000000;
+  TBPF_INDETERMINATE  = $00000001;
+  TBPF_NORMAL         = $00000002;
+  TBPF_ERROR          = $00000004;
+  TBPF_PAUSED         = $00000008;
 
 type
   // Definiera Windows Taskbar API gränssnitt
@@ -195,6 +203,24 @@ type
     function SetOverlayIcon(hwnd: HWND; hIcon: HICON; pszDescription: LPCWSTR): HRESULT; stdcall;
     function SetThumbnailTooltip(hwnd: HWND; pszTip: LPCWSTR): HRESULT; stdcall;
     function SetThumbnailClip(hwnd: HWND; var prcClip: TRect): HRESULT; stdcall;
+  end;
+
+    ITaskbarList4 = interface(ITaskbarList3)
+    ['{C43DC798-95D1-4BEA-9030-BB99E2983A1A}']
+    function SetTabProperties(hwndTab: HWND; stpFlags: DWORD): HRESULT; stdcall;
+    function SetTabActive(hwndTab: HWND; hwndMDI: HWND; dwReserved: DWORD): HRESULT; stdcall;
+    function ThumbBarAddButtons(hwnd: HWND; cButtons: UINT; pButton: Pointer): HRESULT; stdcall;
+    function ThumbBarUpdateButtons(hwnd: HWND; cButtons: UINT; pButton: Pointer): HRESULT; stdcall;
+    function ThumbBarSetImageList(hwnd: HWND; himl: HIMAGELIST): HRESULT; stdcall;
+    function SetOverlayIcon(hwnd: HWND; hIcon: HICON; pszDescription: LPCWSTR): HRESULT; stdcall;
+    function SetThumbnailTooltip(hwnd: HWND; pszTip: LPCWSTR): HRESULT; stdcall;
+    function SetThumbnailClip(hwnd: HWND; prcClip: PRect): HRESULT; stdcall;
+    function SetTabOrder(hwndTab: HWND; hwndInsertBefore: HWND): HRESULT; stdcall;
+    function SetProgressValue(hwnd: HWND; ullCompleted: ULONGLONG; ullTotal: ULONGLONG): HRESULT; stdcall;
+    function SetProgressState(hwnd: HWND; tbpFlags: DWORD): HRESULT; stdcall;
+    function RegisterTab(hwndTab: HWND; hwndMDI: HWND): HRESULT; stdcall;
+    function UnregisterTab(hwndTab: HWND): HRESULT; stdcall;
+    function SetTabOrder(hwndTab: HWND): HRESULT; stdcall;
   end;
 {$ENDIF}
 
@@ -281,92 +307,183 @@ end;
 {$ENDIF}
 
 {$IFDEF LCLWIN32}
-procedure TrndiNative.SetBadge(const Value: string);
+// Helper method to use the overlay icon approach for taskbar badges
+// Helper method to create and display an overlay icon badge on the taskbar
+// Helper method to create and display an overlay icon badge on the taskbar
+procedure TrndiNative.UseOverlayIconForBadge(const Value: string);
 var
   TaskbarList: ITaskbarList3;
   Icon: TIcon;
-  Bitmap: Graphics.TBitmap;
-  NumberValue: string;
+  Bitmap, MaskBitmap: Graphics.TBitmap;
+  BadgeText: string;
   TextWidth, TextHeight: Integer;
   MainForm: TForm;
+  BadgeRect: Classes.TRect;
+  IconInfo: TIconInfo;
+  IconSize: Integer;
+  BadgeColor: TColor;
 begin
-  // Om inget värde är angivet, ta bort overlay:
+  // Clear the overlay icon if the value is empty
   if Value = '' then
   begin
-    // Skapa en COM-instans av Taskbar API
     TaskbarList := CreateComObject(CLSID_TaskbarList) as ITaskbarList3;
     TaskbarList.HrInit;
-
-    // Hämta fönsterhandtag för huvudformuläret
     MainForm := Application.MainForm;
-
-    // Ta bort befintlig overlay-ikon
     TaskbarList.SetOverlayIcon(MainForm.Handle, 0, nil);
     Exit;
   end;
 
-  // Konvertera till float och begränsa till en decimal
+  // Try to format numeric values with one decimal place
   try
-    NumberValue := FormatFloat('0.0', StrToFloat(Value));
+    BadgeText := FormatFloat('0.0', StrToFloat(Value));
   except
-    NumberValue := Value; // Använd originalvärdet om konvertering misslyckas
+    BadgeText := Value; // Keep original text if it's not a valid number
   end;
 
-  // Skapa en ikon med numret
+  // Standard size for Windows overlay icons (48x48 is Windows recommended size)
+  IconSize := 48;
+
   Icon := TIcon.Create;
   try
     Bitmap := Graphics.TBitmap.Create;
+    MaskBitmap := Graphics.TBitmap.Create;
     try
-      // Skapa en bitmap för att rita på
-      Bitmap.Width := 16;
-      Bitmap.Height := 16;
-      Bitmap.PixelFormat := pf32bit;
+      // Initialize the color bitmap
+      Bitmap.Width := IconSize;
+      Bitmap.Height := IconSize;
+      Bitmap.PixelFormat := pf32bit; // Use 32-bit format for better transparency
 
-      // Ställ in bakgrundsfärg (genomskinlig)
-      Bitmap.Canvas.Brush.Color := clFuchsia;  // Använd som transparent färg
-      Bitmap.Canvas.FillRect(0, 0, Bitmap.Width, Bitmap.Height);
+      // Initialize the mask bitmap (monochrome)
+      MaskBitmap.Width := IconSize;
+      MaskBitmap.Height := IconSize;
+      MaskBitmap.Monochrome := True;
 
-      // Ställ in textformat
-      Bitmap.Canvas.Font.Name := 'Arial';
-      Bitmap.Canvas.Font.Size := 7;
+      // Fill the color bitmap with black (will be transparent)
+      Bitmap.Canvas.Brush.Color := clBlack;
+      Bitmap.Canvas.FillRect(Classes.Rect(0, 0, Bitmap.Width, Bitmap.Height));
+
+      // Fill the mask with black (transparent areas)
+      MaskBitmap.Canvas.Brush.Color := clBlack;
+      MaskBitmap.Canvas.FillRect(Classes.Rect(0, 0, MaskBitmap.Width, MaskBitmap.Height));
+
+      // Define badge rectangle with minimal inset to reduce black border effect
+      // For a 48x48 icon, use slightly larger margins than before
+      BadgeRect := Classes.Rect(2, 2, IconSize - 2, IconSize - 2);
+
+      // Use Microsoft blue color (RGB: 0, 120, 215)
+      BadgeColor := RGB(0, 120, 215);
+
+      // Draw the badge shape on the mask (white = visible area)
+      MaskBitmap.Canvas.Brush.Color := clWhite;
+      MaskBitmap.Canvas.Pen.Style := psClear; // No border
+      MaskBitmap.Canvas.Rectangle(BadgeRect);
+
+      // Draw the badge color on the color bitmap
+      Bitmap.Canvas.Brush.Color := BadgeColor;
+      Bitmap.Canvas.Pen.Style := psClear; // No border
+      Bitmap.Canvas.Rectangle(BadgeRect);
+
+      // Configure text appearance - adjust font size for 48x48 icon
+      Bitmap.Canvas.Brush.Style := bsClear; // Don't overwrite background when drawing text
+      Bitmap.Canvas.Font.Name := 'Segoe UI';
+      Bitmap.Canvas.Font.Size := 18; // Larger font for larger icon
       Bitmap.Canvas.Font.Color := clWhite;
       Bitmap.Canvas.Font.Style := [fsBold];
 
-      // Beräkna textens dimensioner
-      TextWidth := Bitmap.Canvas.TextWidth(NumberValue);
-      TextHeight := Bitmap.Canvas.TextHeight(NumberValue);
+      // Calculate text dimensions for centering
+      TextWidth := Bitmap.Canvas.TextWidth(BadgeText);
+      TextHeight := Bitmap.Canvas.TextHeight(BadgeText);
 
-      // Rita en röd cirkelformad bakgrund
-      Bitmap.Canvas.Brush.Color := clRed;
-      Bitmap.Canvas.Pen.Style := psClear;
-      Bitmap.Canvas.Ellipse(0, 0, Bitmap.Width, Bitmap.Height);
-
-      // Centrera och rita texten
+      // Draw text centered on the badge
       Bitmap.Canvas.TextOut(
-        (Bitmap.Width - TextWidth) div 2,
-        (Bitmap.Height - TextHeight) div 2,
-        NumberValue
+        BadgeRect.Left + ((BadgeRect.Right - BadgeRect.Left) - TextWidth) div 2,
+        BadgeRect.Top + ((BadgeRect.Bottom - BadgeRect.Top) - TextHeight) div 2,
+        BadgeText
       );
 
-      // Konvertera bitmap till ikon
-      Icon.Assign(Bitmap);
+      // Create icon from bitmaps
+      FillChar(IconInfo, SizeOf(IconInfo), 0);
+      IconInfo.fIcon := True;
+      IconInfo.hbmMask := MaskBitmap.Handle;
+      IconInfo.hbmColor := Bitmap.Handle;
 
-      // Skapa en COM-instans av Taskbar API
+      Icon.Handle := CreateIconIndirect(IconInfo);
+
+      // Set the overlay icon on the taskbar
       TaskbarList := CreateComObject(CLSID_TaskbarList) as ITaskbarList3;
       TaskbarList.HrInit;
-
-      // Hämta fönsterhandtag för huvudformuläret
       MainForm := Application.MainForm;
-
-      // Sätt overlay-ikonen på applikationens taskbar-knapp
-      TaskbarList.SetOverlayIcon(MainForm.Handle, Icon.Handle, PWideChar(WideString(NumberValue)));
+      TaskbarList.SetOverlayIcon(MainForm.Handle, Icon.Handle, PWideChar(WideString(BadgeText)));
     finally
       Bitmap.Free;
+      MaskBitmap.Free;
     end;
   finally
     Icon.Free;
   end;
 end;
+
+procedure TrndiNative.SetBadge(const Value: string);
+var
+  TaskbarList: ITaskbarList4;
+  MainForm: TForm;
+  BadgeValue: Integer;
+begin
+  // Check if we have Windows 7 or newer
+  if CheckWin32Version(6, 1) then // Windows 7 and above
+  begin
+    // Try to create TaskbarList4 interface
+    TaskbarList := CreateComObject(CLSID_TaskbarList) as ITaskbarList4;
+    if Assigned(TaskbarList) then
+    begin
+      TaskbarList.HrInit;
+      MainForm := Application.MainForm;
+
+      // Empty value - remove badge and progress
+      if Value = '' then
+      begin
+        // Clear progress state
+        TaskbarList.SetProgressState(MainForm.Handle, TBPF_NOPROGRESS);
+        // Clear overlay icon
+        TaskbarList.SetOverlayIcon(MainForm.Handle, 0, nil);
+        Exit;
+      end;
+
+      // See if we can convert to a number for progress bar
+      try
+        BadgeValue := StrToInt(Value);
+
+        // Use progress bar for numeric values
+        // Set progress state to normal
+        TaskbarList.SetProgressState(MainForm.Handle, TBPF_NORMAL);
+
+        // Set progress value (100 max)
+        // Clamp value between 0 and 100
+        if BadgeValue > 100 then
+          BadgeValue := 100
+        else if BadgeValue < 0 then
+          BadgeValue := 0;
+
+        TaskbarList.SetProgressValue(MainForm.Handle, BadgeValue, 100);
+      except
+        // If value is not a number, use overlay icon method with the old approach
+        UseOverlayIconForBadge(Value);
+      end;
+    end
+    else
+    begin
+      // Fall back to ITaskbarList3 if ITaskbarList4 is not available
+      UseOverlayIconForBadge(Value);
+    end;
+  end
+  else
+  begin
+    // Old Windows version, use old approach
+    UseOverlayIconForBadge(Value);
+  end;
+end;
+
+
 {$ENDIF}
 
 {$ifdef LCLQt6}
