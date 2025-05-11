@@ -484,7 +484,7 @@ msgstr "Kontoval"
 #: trndi.strings.rs_noplugins
 msgctxt "trndi.strings.rs_noplugins"
 msgid "Built Without Support"
-msgstr ""
+msgstr "Byggd utan stöd"
 
 #: trndi.strings.rs_no_backend
 msgid "No readings recieved. There might be a problem with the backend, or you might not have any recent readings"
@@ -557,31 +557,26 @@ msgid "Setup"
 msgstr "Konfig"
 
 #: trndi.strings.rs_tpobottomleft
-#, fuzzy
 msgctxt "trndi.strings.rs_tpobottomleft"
 msgid "Bottom Left"
 msgstr "Nere till vänster"
 
 #: trndi.strings.rs_tpobottomright
-#, fuzzy
 msgctxt "trndi.strings.rs_tpobottomright"
 msgid "Bottom Right"
 msgstr "Nere till höger"
 
 #: trndi.strings.rs_tpocenter
-#, fuzzy
 msgctxt "trndi.strings.rs_tpocenter"
 msgid "Desktop Center"
 msgstr "Mitten av skrivbordet"
 
 #: trndi.strings.rs_tpocustom
-#, fuzzy
 msgctxt "trndi.strings.rs_tpocustom"
 msgid "Last position"
 msgstr "Senaste position"
 
 #: trndi.strings.rs_tpotopright
-#, fuzzy
 msgctxt "trndi.strings.rs_tpotopright"
 msgid "Top Right"
 msgstr "Höger topp"
@@ -700,4 +695,3 @@ msgstr "Senaste position"
 msgctxt "umain.rs_tpotopright"
 msgid "Top Right"
 msgstr "Höger topp"
-
