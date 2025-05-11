@@ -38,7 +38,7 @@ ns_url_request,
 CocoaAll,
 SimpleDarkMode
 {$ELSEIF DEFINED(X_WIN)},
-Windows, Registry, Dialogs, StrUtils, winhttpclient, shellapi,
+Windows, Registry, Dialogs, StrUtils, winhttpclient, shellapi, comobj,
 Forms
 {$ELSEIF DEFINED(X_PC)},
 fphttpclient, openssl, opensslsockets, IniFiles, Dialogs
@@ -159,6 +159,45 @@ protected
   inistore: TINIFile; // Linux/PC settings store
   {$ENDIF}
 
+  {$ifdef windows}
+const
+  // Gränssnitt för Windows 7+ Taskbar API
+  CLSID_TaskbarList: TGUID = '{56FDF344-FD6D-11D0-958A-006097C9A090}';
+  IID_ITaskbarList3: TGUID = '{EA1AFB91-9E28-4B86-90E9-9E9F8A5EEFAF}';
+
+type
+  // Definiera Windows Taskbar API gränssnitt
+  ITaskbarList = interface(IUnknown)
+    ['{56FDF342-FD6D-11d0-958A-006097C9A090}']
+    function HrInit: HRESULT; stdcall;
+    function AddTab(hwnd: HWND): HRESULT; stdcall;
+    function DeleteTab(hwnd: HWND): HRESULT; stdcall;
+    function ActivateTab(hwnd: HWND): HRESULT; stdcall;
+    function SetActiveAlt(hwnd: HWND): HRESULT; stdcall;
+  end;
+
+  ITaskbarList2 = interface(ITaskbarList)
+    ['{602D4995-B13A-429b-A66E-1935E44F4317}']
+    function MarkFullscreenWindow(hwnd: HWND; fFullscreen: BOOL): HRESULT; stdcall;
+  end;
+
+  ITaskbarList3 = interface(ITaskbarList2)
+    ['{EA1AFB91-9E28-4B86-90E9-9E9F8A5EEFAF}']
+    function SetProgressValue(hwnd: HWND; ullCompleted, ullTotal: ULONGLONG): HRESULT; stdcall;
+    function SetProgressState(hwnd: HWND; tbpFlags: Cardinal): HRESULT; stdcall;
+    function RegisterTab(hwndTab, hwndMDI: HWND): HRESULT; stdcall;
+    function UnregisterTab(hwndTab: HWND): HRESULT; stdcall;
+    function SetTabOrder(hwndTab, hwndInsertBefore: HWND): HRESULT; stdcall;
+    function SetTabActive(hwndTab, hwndMDI: HWND; tbatFlags: Cardinal): HRESULT; stdcall;
+    function ThumbBarAddButtons(hwnd: HWND; cButtons: UINT; pButton: Pointer): HRESULT; stdcall;
+    function ThumbBarUpdateButtons(hwnd: HWND; cButtons: UINT; pButton: Pointer): HRESULT; stdcall;
+    function ThumbBarSetImageList(hwnd: HWND; himl: HIMAGELIST): HRESULT; stdcall;
+    function SetOverlayIcon(hwnd: HWND; hIcon: HICON; pszDescription: LPCWSTR): HRESULT; stdcall;
+    function SetThumbnailTooltip(hwnd: HWND; pszTip: LPCWSTR): HRESULT; stdcall;
+    function SetThumbnailClip(hwnd: HWND; var prcClip: TRect): HRESULT; stdcall;
+  end;
+{$ENDIF}
+
 end;
 
 {$ifdef X_LINUX}
@@ -243,8 +282,90 @@ end;
 
 {$IFDEF LCLWIN32}
 procedure TrndiNative.SetBadge(const Value: string);
+var
+  TaskbarList: ITaskbarList3;
+  Icon: TIcon;
+  Bitmap: Graphics.TBitmap;
+  NumberValue: string;
+  TextWidth, TextHeight: Integer;
+  MainForm: TForm;
 begin
+  // Om inget värde är angivet, ta bort overlay:
+  if Value = '' then
+  begin
+    // Skapa en COM-instans av Taskbar API
+    TaskbarList := CreateComObject(CLSID_TaskbarList) as ITaskbarList3;
+    TaskbarList.HrInit;
 
+    // Hämta fönsterhandtag för huvudformuläret
+    MainForm := Application.MainForm;
+
+    // Ta bort befintlig overlay-ikon
+    TaskbarList.SetOverlayIcon(MainForm.Handle, 0, nil);
+    Exit;
+  end;
+
+  // Konvertera till float och begränsa till en decimal
+  try
+    NumberValue := FormatFloat('0.0', StrToFloat(Value));
+  except
+    NumberValue := Value; // Använd originalvärdet om konvertering misslyckas
+  end;
+
+  // Skapa en ikon med numret
+  Icon := TIcon.Create;
+  try
+    Bitmap := Graphics.TBitmap.Create;
+    try
+      // Skapa en bitmap för att rita på
+      Bitmap.Width := 16;
+      Bitmap.Height := 16;
+      Bitmap.PixelFormat := pf32bit;
+
+      // Ställ in bakgrundsfärg (genomskinlig)
+      Bitmap.Canvas.Brush.Color := clFuchsia;  // Använd som transparent färg
+      Bitmap.Canvas.FillRect(0, 0, Bitmap.Width, Bitmap.Height);
+
+      // Ställ in textformat
+      Bitmap.Canvas.Font.Name := 'Arial';
+      Bitmap.Canvas.Font.Size := 7;
+      Bitmap.Canvas.Font.Color := clWhite;
+      Bitmap.Canvas.Font.Style := [fsBold];
+
+      // Beräkna textens dimensioner
+      TextWidth := Bitmap.Canvas.TextWidth(NumberValue);
+      TextHeight := Bitmap.Canvas.TextHeight(NumberValue);
+
+      // Rita en röd cirkelformad bakgrund
+      Bitmap.Canvas.Brush.Color := clRed;
+      Bitmap.Canvas.Pen.Style := psClear;
+      Bitmap.Canvas.Ellipse(0, 0, Bitmap.Width, Bitmap.Height);
+
+      // Centrera och rita texten
+      Bitmap.Canvas.TextOut(
+        (Bitmap.Width - TextWidth) div 2,
+        (Bitmap.Height - TextHeight) div 2,
+        NumberValue
+      );
+
+      // Konvertera bitmap till ikon
+      Icon.Assign(Bitmap);
+
+      // Skapa en COM-instans av Taskbar API
+      TaskbarList := CreateComObject(CLSID_TaskbarList) as ITaskbarList3;
+      TaskbarList.HrInit;
+
+      // Hämta fönsterhandtag för huvudformuläret
+      MainForm := Application.MainForm;
+
+      // Sätt overlay-ikonen på applikationens taskbar-knapp
+      TaskbarList.SetOverlayIcon(MainForm.Handle, Icon.Handle, PWideChar(WideString(NumberValue)));
+    finally
+      Bitmap.Free;
+    end;
+  finally
+    Icon.Free;
+  end;
 end;
 {$ENDIF}
 
