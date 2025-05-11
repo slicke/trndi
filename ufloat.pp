@@ -68,7 +68,6 @@ type
     miSplit1: TMenuItem;
     pMain: TPopupMenu;
     pnMultiUser:TPanel;
-    tTitlebar: TTimer;
     procedure FormCreate(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure FormKeyPress(Sender: TObject; var Key: char);
@@ -322,10 +321,6 @@ procedure TfFloat.tTitlebarTimer(Sender: TObject);
 var
   x,y: integer;
 begin
-  {$IF DEFINED(LCLQt6)}
-     tTitlebar.Enabled := false;
-     borderstyle := bsNone;
-  {$endif}
 end;
 
 procedure TfFloat.FormMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
@@ -334,10 +329,6 @@ begin
   begin
     SetBounds(Left + (X - PX), Top + (Y - PY), Width, Height);
   end;
-  {$IF DEFINED(LCLQt6)}
-     borderstyle := bsSingle;
-     tTitlebar.Enabled := true;
-  {$endif}
 end;
 
 procedure TfFloat.FormMouseUp(Sender: TObject; Button: TMouseButton; Shift:

@@ -153,11 +153,4 @@ object fFloat: TfFloat
       OnClick = MenuItem1Click
     end
   end
-  object tTitlebar: TTimer
-    Enabled = False
-    Interval = 5000
-    OnTimer = tTitlebarTimer
-    Left = 139
-    Top = 24
-  end
 end
