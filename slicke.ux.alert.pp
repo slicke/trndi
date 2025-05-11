@@ -145,12 +145,12 @@ end;
 {$elseif DEFINED(WINDOWS)}
 function FontInList(out fname: string): Boolean;
 var
-  FontsList: TStringList;
+  FontsList: TStrings;
 begin
-  FontsList := TStringList.Create;
+  FontsList := TStrings.Create;
   fname := 'Segoe UI Emoji';
   try
-    Screen.Fonts(FontsList);
+    FontsList := Screen.Fonts;
     Result := FontsList.IndexOf('Segoe UI Emoji') >= 0;
   finally
     FontsList.Free;
