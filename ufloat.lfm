@@ -10,7 +10,6 @@ object fFloat: TfFloat
   PopupMenu = pMain
   Position = poDesktopCenter
   SnapOptions.SnapToMonitor = True
-  LCLVersion = '4.0.0.4'
   OnKeyDown = FormKeyDown
   OnKeyPress = FormKeyPress
   OnMouseDown = FormMouseDown
@@ -63,17 +62,17 @@ object fFloat: TfFloat
   end
   object lRangeDown: TLabel
     Left = 0
-    Height = 15
+    Height = 22
     Top = 0
-    Width = 10
+    Width = 16
     Caption = '▼'
     Visible = False
   end
   object lRangeUp: TLabel
     Left = 0
-    Height = 15
+    Height = 22
     Top = 0
-    Width = 10
+    Width = 16
     Caption = '▲'
     Visible = False
   end
@@ -153,5 +152,12 @@ object fFloat: TfFloat
       Caption = '&Hide'
       OnClick = MenuItem1Click
     end
+  end
+  object tTitlebar: TTimer
+    Enabled = False
+    Interval = 5000
+    OnTimer = tTitlebarTimer
+    Left = 139
+    Top = 24
   end
 end
