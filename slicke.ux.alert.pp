@@ -118,6 +118,7 @@ TModalResult
 function ExtError(const msg, error: string; const icon: widechar = widechar($2699)): TModalResult;
 function ExtError(const error: string; const icon: widechar = widechar($2699)): TModalResult;
 function ExtSucc(const msg, desc, output: string; dumpbg: TColor = $0095EEC4; dumptext: TColor = $00147C4A; const icon: widechar = widechar($2705)): TModalResult;
+function FontInList(out fname: string): Boolean;
 {$ifdef Windows}
 function CoCreateInstance(const clsid: TGUID; unkOuter: IUnknown; dwClsContext: longint;
 const iid: TGUID; out pv): HResult;
@@ -126,6 +127,44 @@ external 'ole32.dll';
 {$endif}
 
 implementation
+
+{$if DEFINED(LINUX)}
+function FontInList(out fname: string): Boolean;
+var
+  sl: TStrings;
+begin
+  fname := 'Noto Color Emoji';
+  sl := TStringList.Create;
+  try
+    sl := Screen.Fonts; // List fonts
+    Result := (sl.IndexOf('Noto Emoji') >= 0) or (sl.IndexOf('Noto Color Emoji') >= 0);
+  finally
+    sl.Free;
+  end;
+end;
+{$elseif DEFINED(WINDOWS)}
+function FontInList(out fname: string): Boolean;
+var
+  FontsList: TStringList;
+begin
+  FontsList := TStringList.Create;
+  fname := 'Segoe UI Emoji';
+  try
+    Screen.Fonts(FontsList);
+    Result := FontsList.IndexOf('Segoe UI Emoji') >= 0;
+  finally
+    FontsList.Free;
+  end;
+end;
+
+{$else}
+function FontInList(out fname: string): Boolean;
+begin
+  fname := 'font';
+  result := true;
+end;
+
+{$endif}
 
 function UXButtonToModalResult(Btn: TUXMsgDlgBtn): TModalResult;
 begin
@@ -378,7 +417,7 @@ begin
   Image.Picture.Bitmap.Canvas.Font.Name := 'Noto Color Emoji';
   // Ett populärt emoji-teckensnitt för Linux
   Image.Picture.Bitmap.Canvas.Font.Size := 48;
-  {$ifdef LCLQt6}
+  {$if DEFINED(LCLQt6) OR DEFINED(LCLGTK2)}
      Image.Picture.Bitmap.Canvas.Font.Size := 30;
   {$endif}
   // Justera storleken efter behov

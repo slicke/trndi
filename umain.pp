@@ -516,6 +516,8 @@ function GetLinuxDistro: string;
 
   {$endif}
 begin
+  if not FontInList(s) then
+    ShowMessage(Format(RS_FONT_ERROR, [s]));
   native := TrndiNative.Create;
   if native.isDarkMode then
      native.setDarkMode{$ifdef windows}(self.Handle){$endif};
@@ -846,7 +848,6 @@ procedure TfBG.lValClick(Sender: TObject);
 begin
   if lVal.Caption = RS_SETUP then
     miSettings.Click;
-
 end;
 
 // Handle mouse down on lVal

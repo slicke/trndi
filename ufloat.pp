@@ -111,32 +111,24 @@ implementation
 {$R *.lfm}
 
 procedure TfFloat.FormCreate(Sender: TObject);
-{$IF DEFINED(LCLQt6)}
-var
-  QtWidget: TQtWidget;
-{$ENDIF}
+{$IFNDEF LCLQt6}
 begin
-  // We dont want any borders, as its a float
-  BorderStyle := bsNone;
-  {$IFNDEF DARWIN}
-  Color := clWhite; //Set the background color
-  {$else}
-  lVal.font.size := lVal.font.size - (lVal.font.size div 10);
-   {$endif}
-   {$IFDEF LCLQt6}
+{$else}
+  var QtWidget: TQtWidget;
+    style: string;
+begin
   if HandleAllocated then
   begin
     QtWidget := TQtWidget(Handle);
     if Assigned(QtWidget) and Assigned(QtWidget.Widget) then
     begin
-      // Set translucent background
       QtWidget.setAttribute(QtWA_TranslucentBackground, True);
-
-      // Set frameless window hint
       QtWidget.setWindowFlags(QtWidget.windowFlags or QtFramelessWindowHint);
+      style := 'border-radius:15px; background-color:rgba(255,255,255,200);';
+      QWidget_setStyleSheet(QtWidget.Widget, PWideString(style));
     end;
   end;
-  {$ENDIF}
+{$ENDIF}
 end;
 
 procedure TfFloat.ApplyRoundedCorners;
