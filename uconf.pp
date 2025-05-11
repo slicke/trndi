@@ -477,7 +477,21 @@ end;
 
 procedure TfConf.FormCreate(Sender:TObject);
 begin
-  lVersion.Caption := lVersion.Caption + ' | Test Build '+{$I %DATE%};
+  lVersion.Caption := lVersion.Caption + ' | Test Build '+{$I %DATE%} + ' | ' +
+  {$if defined(LCLQt6)}
+    'QT6'
+  {$elseif defined(LCLGTK2)}
+    'GTK2'
+  {$elseif defined(LCLGTK3)}
+    'GTK3'
+  {$elseif defined(LCLWin32)}
+    'Windows'
+  {$elseif defined(LCLCocoa)}
+    'macOS'
+  {$else}
+    'custom'
+  {$endif}
+  + ' | ' + {$I %FPCTARGETCPU%};
   lversion.left := lversion.left - 20;
   pcMain.ActivePage := tsGeneral;
   {$ifdef darwin}
