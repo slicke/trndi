@@ -481,6 +481,11 @@ msgstr "Trndi hittade flera konton. Välj ett för denna session, eller lämna t
 msgid "User select"
 msgstr "Kontoval"
 
+#: trndi.strings.rs_noplugins
+msgctxt "trndi.strings.rs_noplugins"
+msgid "Built Without Support"
+msgstr ""
+
 #: trndi.strings.rs_no_backend
 msgid "No readings recieved. There might be a problem with the backend, or you might not have any recent readings"
 msgstr "Inga avläsningar togs emot. Antingen är det fel hos källan, eller så saknas aktuella avläsningar"
@@ -550,6 +555,36 @@ msgstr "Trndi måste startas om innan ändringarna aktiveras"
 msgctxt "trndi.strings.rs_setup"
 msgid "Setup"
 msgstr "Konfig"
+
+#: trndi.strings.rs_tpobottomleft
+#, fuzzy
+msgctxt "trndi.strings.rs_tpobottomleft"
+msgid "Bottom Left"
+msgstr "Nere till vänster"
+
+#: trndi.strings.rs_tpobottomright
+#, fuzzy
+msgctxt "trndi.strings.rs_tpobottomright"
+msgid "Bottom Right"
+msgstr "Nere till höger"
+
+#: trndi.strings.rs_tpocenter
+#, fuzzy
+msgctxt "trndi.strings.rs_tpocenter"
+msgid "Desktop Center"
+msgstr "Mitten av skrivbordet"
+
+#: trndi.strings.rs_tpocustom
+#, fuzzy
+msgctxt "trndi.strings.rs_tpocustom"
+msgid "Last position"
+msgstr "Senaste position"
+
+#: trndi.strings.rs_tpotopright
+#, fuzzy
+msgctxt "trndi.strings.rs_tpotopright"
+msgid "Top Right"
+msgstr "Höger topp"
 
 #: trndi.strings.rs_under
 msgid "under"
@@ -642,14 +677,17 @@ msgid "You can use shift+<number> to manually set visibility (0 = 100% visible)"
 msgstr "Du kan använda skift+<nummerr> för att manuellt sätta synligheten (0 = 100% synlig)"
 
 #: umain.rs_tpobottomleft
+msgctxt "umain.rs_tpobottomleft"
 msgid "Bottom Left"
 msgstr "Nere till vänster"
 
 #: umain.rs_tpobottomright
+msgctxt "umain.rs_tpobottomright"
 msgid "Bottom Right"
 msgstr "Nere till höger"
 
 #: umain.rs_tpocenter
+msgctxt "umain.rs_tpocenter"
 msgid "Desktop Center"
 msgstr "Mitten av skrivbordet"
 
@@ -659,6 +697,7 @@ msgid "Last position"
 msgstr "Senaste position"
 
 #: umain.rs_tpotopright
+msgctxt "umain.rs_tpotopright"
 msgid "Top Right"
 msgstr "Höger topp"
 

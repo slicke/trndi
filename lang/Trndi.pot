@@ -463,6 +463,11 @@ msgstr ""
 msgid "User select"
 msgstr ""
 
+#: trndi.strings.rs_noplugins
+msgctxt "trndi.strings.rs_noplugins"
+msgid "Built Without Support"
+msgstr ""
+
 #: trndi.strings.rs_no_backend
 msgid "No readings recieved. There might be a problem with the backend, or you might not have any recent readings"
 msgstr ""
@@ -531,6 +536,31 @@ msgstr ""
 #: trndi.strings.rs_setup
 msgctxt "trndi.strings.rs_setup"
 msgid "Setup"
+msgstr ""
+
+#: trndi.strings.rs_tpobottomleft
+msgctxt "trndi.strings.rs_tpobottomleft"
+msgid "Bottom Left"
+msgstr ""
+
+#: trndi.strings.rs_tpobottomright
+msgctxt "trndi.strings.rs_tpobottomright"
+msgid "Bottom Right"
+msgstr ""
+
+#: trndi.strings.rs_tpocenter
+msgctxt "trndi.strings.rs_tpocenter"
+msgid "Desktop Center"
+msgstr ""
+
+#: trndi.strings.rs_tpocustom
+msgctxt "trndi.strings.rs_tpocustom"
+msgid "Last position"
+msgstr ""
+
+#: trndi.strings.rs_tpotopright
+msgctxt "trndi.strings.rs_tpotopright"
+msgid "Top Right"
 msgstr ""
 
 #: trndi.strings.rs_under
@@ -617,14 +647,17 @@ msgid "You can use shift+<number> to manually set visibility (0 = 100% visible)"
 msgstr ""
 
 #: umain.rs_tpobottomleft
+msgctxt "umain.rs_tpobottomleft"
 msgid "Bottom Left"
 msgstr ""
 
 #: umain.rs_tpobottomright
+msgctxt "umain.rs_tpobottomright"
 msgid "Bottom Right"
 msgstr ""
 
 #: umain.rs_tpocenter
+msgctxt "umain.rs_tpocenter"
 msgid "Desktop Center"
 msgstr ""
 
@@ -634,6 +667,7 @@ msgid "Last position"
 msgstr ""
 
 #: umain.rs_tpotopright
+msgctxt "umain.rs_tpotopright"
 msgid "Top Right"
 msgstr ""
 
