@@ -83,3 +83,6 @@ Trndi2 is a rewrite, less bloated, version of Trndi 1, which was never released 
 
 ### Testing
 Trndi is actively tested on Windows (amd64), Fedora Linux(amd64), Debian Linux(arm64 / Raspberry pi).
+
+### IMPORTANT: RaspberryPi / ARM64
+To compile with extension support, you have to add ```{$DEFINE LIBQUICKJSSTATIC}``` in ```mormot.defines.inc``` 

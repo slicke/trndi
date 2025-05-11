@@ -603,7 +603,9 @@ begin
     OkButton.ModalResult := mrOk;
     Dialog.OnKeyPress := @Dialog.FormKeyPress;
     OkButton.Width := 80;
+    {$ifdef Windows}
     OkButton.SetFocus;
+    {$endif}
 
     // Avbryt-knapp
     CancelButton := TButton.Create(Dialog);
@@ -720,7 +722,9 @@ begin
     OkButton.Caption := smbSelect;
     OkButton.ModalResult := mrOk;
     OkButton.Width := 80;
-    OkButton.SetFocus;
+    {$ifdef Windows}
+      OkButton.SetFocus;
+    {$endif}
 
     // Avbryt-knapp
     CancelButton := TButton.Create(Dialog);
@@ -901,7 +905,9 @@ begin
       OkButton.ModalResult := UXButtonToModalResult(mr);
       if OkButton.ModalResult = mrOK then begin
         Dialog.OnKeyPress := @Dialog.FormKeyPress;
-        OkButton.SetFocus;
+        {$ifdef Windows}
+          OkButton.SetFocus;
+        {$endif}
       end;
       OkButton.Width := btnwidth;
       OkButton.Top := (p3.Height div 2) - (OkButton.Height div 2);
