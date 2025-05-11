@@ -484,7 +484,7 @@ begin
     'GTK2'
   {$elseif defined(LCLGTK3)}
     'GTK3'
-  {$elseif defined(LCLWin32)}
+  {$elseif defined(LCLWIN32)}
     'Windows'
   {$elseif defined(LCLCocoa)}
     'macOS'

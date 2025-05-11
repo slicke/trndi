@@ -1,0 +1,34 @@
+object fSplash: TfSplash
+  Left = 664
+  Height = 320
+  Top = 34
+  Width = 320
+  BorderStyle = bsNone
+  Caption = 'Trndi'
+  ClientHeight = 320
+  ClientWidth = 320
+  Color = 2763306
+  FormStyle = fsSystemStayOnTop
+  Position = poDesktopCenter
+  OnCreate = FormCreate
+  object Image1: TImage
+    Left = 0
+    Height = 320
+    Top = 0
+    Width = 320
+    Align = alClient
+    Center = True
+    OnClick = Image1Click
+  end
+  object Label1: TLabel
+    Left = 0
+    Height = 22
+    Top = 292
+    Width = 320
+    Alignment = taCenter
+    AutoSize = False
+    Caption = 'Loading...'
+    Font.Color = clWhite
+    ParentFont = False
+  end
+end

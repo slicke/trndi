@@ -30,7 +30,7 @@ interface
 uses
 trndi.strings, LCLTranslator, Classes, Menus, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, ExtCtrls,
 trndi.api.dexcom, trndi.api.nightscout, trndi.types, math, DateUtils, FileUtil, LclIntf, TypInfo, LResources,
-slicke.ux.alert,
+slicke.ux.alert, usplash,
 {$ifdef TrndiExt}
 trndi.Ext. Engine, trndi.Ext.jsfuncs,
 {$endif}
@@ -503,6 +503,7 @@ procedure TfBG.FormCreate(Sender: TObject);
 var
   i: integer;
   s, apiTarget, apiCreds, lang: string;
+  fs: TfSplash;
 {$ifdef Linux}
 function GetLinuxDistro: string;
   const
@@ -516,6 +517,10 @@ function GetLinuxDistro: string;
 
   {$endif}
 begin
+  fs := TfSplash.Create(nil);
+fs.Show;
+fs.Image1.Picture.Icon := Application.Icon;
+Application.processmessages;
   if not FontInList(s) then
     ShowMessage(Format(RS_FONT_ERROR, [s]));
 
@@ -544,7 +549,7 @@ begin
   {$else}
   BorderStyle := bsSizeToolWin;
   {$endif}
-
+  Application.processmessages;
   lVal.Font.name := native.GetSetting(username + 'font.val', lVal.Font.name);
   lArrow.Font.name := native.GetSetting(username + 'font.arrow', lArrow.Font.name);
   lAgo.Font.name := native.GetSetting(username + 'font.ago', lAgo.Font.name);
@@ -560,7 +565,7 @@ begin
     else
       LogMessage(Format('Label %s assigned to TrendDots[%d].', [s, i]));
   end;
-
+  Application.processmessages;
   with native do
   begin
     HasTouch :=  HasTouchScreen(HasMultiTouch);
@@ -569,7 +574,7 @@ begin
     lang := GetSetting(username +'locale', '');
     if (lang = 'auto') or (lang = '') then
       lang := GetOSLanguage;
-
+    Application.processmessages;
     SetDefaultLang(lang,'lang');
   // Idea for using multiple person/account support
     username := GetSetting('users.names','');
@@ -605,7 +610,7 @@ begin
     else
       multi := false;
 
-
+    Application.processmessages;
     privacyMode := GetSetting(username +'ext.privacy', '0') = '1';
     if GetSetting(username +'unit', 'mmol') = 'mmol' then
       un := BGUnit.mmol
@@ -624,7 +629,7 @@ begin
       Exit;
     end;
     apiCreds := GetSetting(username +'remote.creds');
-
+    Application.processmessages;
     case GetSetting(username +'remote.type') of
     'NightScout':
       api := NightScout.Create(apiTarget, apiCreds, '');
@@ -642,11 +647,13 @@ begin
       Exit;
     end;
 
-
+    Application.processmessages;
     if not api.Connect then
     begin
       ShowMessage(api.ErrorMsg);
       tMain.Enabled := false;
+        fs.Close;
+  fs.Free;
       Exit;
     end;
 
@@ -663,8 +670,10 @@ begin
       api.cgmRangeHi := GetIntSetting(username+'override.rangehi', api.cgmRangeHi);
     end;
   end;
-
+  Application.processmessages;
   update;
+  fs.Close;
+  fs.Free;
 end;
 
 procedure TfBG.FormDestroy(Sender:TObject);

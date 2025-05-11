@@ -347,7 +347,7 @@ object fBG: TfBG
   end
   object tResize: TTimer
     Enabled = False
-    Interval = 500
+    Interval = 100
     OnTimer = tResizeTimer
     Left = 215
     Top = 39

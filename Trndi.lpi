@@ -436,6 +436,13 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="SimpleDarkMode"/>
       </Unit>
+      <Unit>
+        <Filename Value="usplash.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="fSplash"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
