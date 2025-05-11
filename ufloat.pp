@@ -68,6 +68,7 @@ type
     miSplit1: TMenuItem;
     pMain: TPopupMenu;
     pnMultiUser:TPanel;
+    tTitlebar: TTimer;
     procedure FormCreate(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure FormKeyPress(Sender: TObject; var Key: char);
@@ -87,6 +88,7 @@ type
     procedure miCustomVisibleClick(Sender: TObject);
     procedure miNormalClick(Sender:TObject);
     procedure miOp100Click(Sender: TObject);
+    procedure tTitlebarTimer(Sender: TObject);
   private
     procedure SetFormOpacity(Opacity: Double);
     procedure ApplyRoundedCorners;
@@ -133,26 +135,18 @@ end;
 
 procedure TfFloat.ApplyRoundedCorners;
 var
-{$IFDEF DARWIN}
+{$IF DEFINED(DARWIN)}
   NSViewHandle: NSView;
   NSWin: NSWindow;
   Mask: NSBezierPath;
-{$ENDIF}
-{$IFDEF Windows}
- ABitmap: TBitmap;
-{$ENDIF}
-{$IFDEF LCLQT6}
+{$ELSEIF DEFINED(LCLQT6_DISABLED)}
   StyleStr: WideString;
-{$ENDIF}
-{$IFDEF LCLGTK2}
- ABitmap: TBitmap;
-{$ENDIF}
-{$IFDEF LCLGTK3}
+{$ELSE}
  ABitmap: TBitmap;
 {$ENDIF}
 
 begin
-  {$IFDEF DARWIN}
+  {$IF DEFINED(DARWIN)}
   try
     // Get NSView + NSWindow from handle
     if HandleAllocated then
@@ -182,17 +176,14 @@ begin
   except
     // Ignore any errors
   end;
-  {$ENDIF}
-  {$IFDEF LCLQT6}
+  {$ELSEIF DEFINED(LCLQT6_DISABLED)}
     StyleStr := 'border-radius: 10px; background-color: rgba(240, 240, 240, 255);';
   Self.BorderStyle := bsNone; // Remove border
 if HandleAllocated then
 QWidget_setStyleSheet(TQtWidget(Handle).Widget,
   @stylestr);
   CreateRoundedCorners;
-  {$ENDIF}
-  {$IFNDEF DARWIN}
-   {$IFNDEF LCLQt6}
+   {$ELSE}
   Self.BorderStyle := bsNone; // Remove border
   // Use LCL stuff when Windows (or not Qt really)
   try
@@ -212,7 +203,6 @@ QWidget_setStyleSheet(TQtWidget(Handle).Widget,
   finally
     ABitmap.Free;
   end;
-  {$ENDIF}
   {$ENDIF}
 end;
 
@@ -328,26 +318,40 @@ begin
   (sender as TMenuItem).Checked := true;
 end;
 
+procedure TfFloat.tTitlebarTimer(Sender: TObject);
+var
+  x,y: integer;
+begin
+  {$IF DEFINED(LCLQt6)}
+     tTitlebar.Enabled := false;
+     borderstyle := bsNone;
+  {$endif}
+end;
+
 procedure TfFloat.FormMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
 begin
   if DraggingWin then
   begin
     SetBounds(Left + (X - PX), Top + (Y - PY), Width, Height);
   end;
+  {$IF DEFINED(LCLQt6)}
+     borderstyle := bsSingle;
+     tTitlebar.Enabled := true;
+  {$endif}
 end;
 
 procedure TfFloat.FormMouseUp(Sender: TObject; Button: TMouseButton; Shift:
   TShiftState; X, Y: Integer);
 begin
 DraggingWin := false;
-{$ifdef DARWIN}
+{$IF DEFINED(DARWIN) OR DEFINED(LCLQt6)}
    BorderStyle:= bsNone;
 {$endif}
 end;
 
 
 procedure TfFloat.CreateRoundedCorners;
-{$IFDEF LCLQt6}
+{$IFDEF LCLQt6_DISABLED}
 var
   Path: QPainterPathH;
   Painter: QPainterH;
