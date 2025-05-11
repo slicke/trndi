@@ -695,3 +695,4 @@ msgstr "Senaste position"
 msgctxt "umain.rs_tpotopright"
 msgid "Top Right"
 msgstr "Höger topp"
+

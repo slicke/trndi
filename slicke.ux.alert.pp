@@ -378,6 +378,9 @@ begin
   Image.Picture.Bitmap.Canvas.Font.Name := 'Noto Color Emoji';
   // Ett populärt emoji-teckensnitt för Linux
   Image.Picture.Bitmap.Canvas.Font.Size := 48;
+  {$ifdef LCLQt6}
+     Image.Picture.Bitmap.Canvas.Font.Size := 30;
+  {$endif}
   // Justera storleken efter behov
   Image.Picture.Bitmap.Canvas.Font.Color :=  IfThen(TrndiNative.isDarkMode, clWhite, clBlack);;
 
@@ -504,7 +507,7 @@ begin
     IconBox := TImage.Create(p2);
     IconBox.Parent := p2;
     IconBox.Width := 50;
-    IconBox.Height := 50;
+    IconBox.Height := IconBox.Width;
     IconBox.Left := Padding;
     IconBox.Top := Padding;
     {$ifdef Windows}
