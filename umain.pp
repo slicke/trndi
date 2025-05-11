@@ -1186,7 +1186,7 @@ end;
 
 procedure TfBG.pmSettingsPopup(Sender:TObject);
 begin
-
+  miBorders.Checked := self.BorderStyle = bsNone;
 end;
 
 // Handle off range panel click
