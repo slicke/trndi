@@ -416,6 +416,11 @@ msgstr ""
 msgid "A data type was expected, but another was found"
 msgstr ""
 
+#: trndi.strings.rs_font_error
+#, object-pascal-format
+msgid "You're missing the standard font \"%s\". Trndi will work as intended, but some icons may be missing and/or distorted!"
+msgstr ""
+
 #: trndi.strings.rs_force_quit_setup
 msgid "Trndi will now shut down to apply settings, please re-start it manually!"
 msgstr "Trndi stängs nu ned för att aktivera inställningarna, vänligen starta om appen manuellt!"
