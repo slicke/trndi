@@ -10,7 +10,6 @@ object fBG: TfBG
   Color = clBlack
   Font.Color = clWhite
   Position = poDesktopCenter
-  LCLVersion = '4.0.0.4'
   OnClose = FormClose
   OnCreate = FormCreate
   OnDestroy = FormDestroy
@@ -217,16 +216,16 @@ object fBG: TfBG
     OnMouseMove = FormMouseMove
   end
   object lAgo: TLabel
-    Left = 16
-    Height = 40
-    Top = 24
+    Left = 8
+    Height = 20
+    Top = 13
     Width = 200
     AutoSize = False
     BorderSpacing.Bottom = 5
     Caption = 'lAgo'
     Color = clWhite
     Font.Color = clWhite
-    Font.Height = 33
+    Font.Height = 14
     OptimalFill = True
     ParentColor = False
     ParentFont = False
