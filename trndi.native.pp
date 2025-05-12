@@ -141,9 +141,7 @@ public
   procedure start;
   procedure done;
   procedure setBadge(const Value: string);
-  {$ifdef Windows}
-    procedure UseOverlayIconForBadge(const Value: string);
-  {$endif}
+
   constructor create(ua, base: string); overload;
   constructor create; overload;
   {$if DEFINED(X_WIN)}
@@ -308,9 +306,7 @@ end;
 
 {$IFDEF LCLWIN32}
 // Helper method to use the overlay icon approach for taskbar badges
-// Helper method to create and display an overlay icon badge on the taskbar
-// Helper method to create and display an overlay icon badge on the taskbar
-procedure TrndiNative.UseOverlayIconForBadge(const Value: string);
+procedure TrndiNative.setBadge(const Value: string);
 var
   TaskbarList: ITaskbarList3;
   Icon: TIcon;
@@ -420,66 +416,6 @@ begin
     end;
   finally
     Icon.Free;
-  end;
-end;
-
-procedure TrndiNative.SetBadge(const Value: string);
-var
-  TaskbarList: ITaskbarList4;
-  MainForm: TForm;
-  BadgeValue: Integer;
-begin
-  // Check if we have Windows 7 or newer
-  if CheckWin32Version(6, 1) then // Windows 7 and above
-  begin
-    // Try to create TaskbarList4 interface
-    TaskbarList := CreateComObject(CLSID_TaskbarList) as ITaskbarList4;
-    if Assigned(TaskbarList) then
-    begin
-      TaskbarList.HrInit;
-      MainForm := Application.MainForm;
-
-      // Empty value - remove badge and progress
-      if Value = '' then
-      begin
-        // Clear progress state
-        TaskbarList.SetProgressState(MainForm.Handle, TBPF_NOPROGRESS);
-        // Clear overlay icon
-        TaskbarList.SetOverlayIcon(MainForm.Handle, 0, nil);
-        Exit;
-      end;
-
-      // See if we can convert to a number for progress bar
-      try
-        BadgeValue := StrToInt(Value);
-
-        // Use progress bar for numeric values
-        // Set progress state to normal
-        TaskbarList.SetProgressState(MainForm.Handle, TBPF_NORMAL);
-
-        // Set progress value (100 max)
-        // Clamp value between 0 and 100
-        if BadgeValue > 100 then
-          BadgeValue := 100
-        else if BadgeValue < 0 then
-          BadgeValue := 0;
-
-        TaskbarList.SetProgressValue(MainForm.Handle, BadgeValue, 100);
-      except
-        // If value is not a number, use overlay icon method with the old approach
-        UseOverlayIconForBadge(Value);
-      end;
-    end
-    else
-    begin
-      // Fall back to ITaskbarList3 if ITaskbarList4 is not available
-      UseOverlayIconForBadge(Value);
-    end;
-  end
-  else
-  begin
-    // Old Windows version, use old approach
-    UseOverlayIconForBadge(Value);
   end;
 end;
 
