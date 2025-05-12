@@ -423,7 +423,7 @@ begin
       Exit;
     end;
     for c in s do begin
-      if (c in ['0'..'9', 'A'..'z',' ']) then begin
+      if not (c in ['0'..'9', 'A'..'z',' ']) then begin
         ShowMessage(RS_ENTER_NAME);
         Exit;
       end;

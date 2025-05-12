@@ -148,7 +148,7 @@ private
   procedure LoadExtensions;
   {$endif}
 public
-
+   procedure AppExceptionHandler(Sender: TObject; E: Exception);
 end;
 
 
@@ -227,6 +227,12 @@ implementation
 
 {$R *.lfm}
 {$I tfuncs.inc}
+
+
+procedure TfBG.AppExceptionHandler(Sender: TObject; E: Exception);
+begin
+  // Handle exceptions during shutdown gracefully
+end;
 
 procedure Showmessage(const str: string);
 begin
@@ -518,9 +524,11 @@ function GetLinuxDistro: string;
   {$endif}
 begin
   fs := TfSplash.Create(nil);
+  fs.Image1.Picture.Icon := Application.Icon;
 fs.Show;
-fs.Image1.Picture.Icon := Application.Icon;
 Application.processmessages;
+Application.OnException := @AppExceptionHandler;
+
   if not FontInList(s) then
     ShowMessage(Format(RS_FONT_ERROR, [s]));
 
@@ -679,7 +687,7 @@ end;
 procedure TfBG.FormDestroy(Sender:TObject);
 begin
   if assigned(native) then
-    native.free;
+     native.free;
   if assigned(api) then
     api.Free;
 end;
@@ -1303,7 +1311,6 @@ begin
   lAgo.height := max(10, round(lDiff.height / 1.7));
   lAgo.top := ldiff.top;
   scaleLbl(lDiff);
-
 
   PlaceTrendDots(bgs);
 end;
