@@ -794,6 +794,9 @@ begin
   begin
     tResize.Enabled := false;
     tResize.Enabled := true;
+          lVal.Visible := false;
+          lAgo.Visible := false;
+          lArrow.Visible := false;
   end;
 end;
 
@@ -1256,7 +1259,13 @@ procedure scaleLbl(ALabel: TLabel);
 
     // If we never exited, set the max feasible size
     ALabel.Font.Size := MaxFontSize;
+
+          lVal.Visible := true;
+          lAgo.Visible := true;
+          lArrow.Visible := true;
   end;
+
+
 
 begin
   tResize.Enabled := false;
