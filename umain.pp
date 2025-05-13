@@ -51,6 +51,17 @@ TrndiPosNames: TPONames = (  RS_tpoCenter,  RS_tpoBottomLeft , RS_tpoBottomRight
 type
   { TfBG }
 
+{$ifdef Darwin}
+{ Custom NSApplicationDelegate class }
+TMyAppDelegate = objcclass(NSObject, NSApplicationDelegateProtocol)
+public
+  function applicationShouldHandleReopen_hasVisibleWindows(
+    sender: NSApplication; hasVisibleWindows: Boolean): Boolean; message 'applicationShouldHandleReopen:hasVisibleWindows:';
+  function applicationDockMenu(sender: NSApplication): NSMenu; message 'applicationDockMenu:';
+    procedure miSettingsMacClick(sender: id); message 'miSettings:';
+end;
+{$endif}
+
 TfBG = class(TForm)
   lAgo:TLabel;
   miFloatOn:TMenuItem;
@@ -155,6 +166,9 @@ end;
 
 var
 native: TrndiNative;
+{$ifdef darwin}
+MacAppDelegate: TMyAppDelegate;
+{$endif}
 
 
 procedure SetPointHeight(L: TLabel; value: single);
@@ -228,6 +242,61 @@ implementation
 {$R *.lfm}
 {$I tfuncs.inc}
 
+{$IFDEF DARWIN}
+
+procedure TMyAppDelegate.miSettingsMacClick(sender: id);
+begin
+  (Application.MainForm as TfBG).miSettingsClick(nil);
+end;
+function TMyAppDelegate.applicationDockMenu(sender: NSApplication): NSMenu;
+var
+  dockMenu: NSMenu;
+  menuItem: NSMenuItem;
+begin
+
+  // Create a custom dock menu
+
+  dockMenu := NSMenu.alloc.initWithTitle(NSSTR('Trndi'));
+
+
+  // Add items to the menu
+
+  menuItem := NSMenuItem.alloc.initWithTitle_action_keyEquivalent(
+
+    NSSTR(TrimLeftSet(
+    (Application.MainForm as TfBG).miSettings.Caption, ['&', ' '])), sel_registerName('miSettings:'), NSSTR(''));
+
+  dockMenu.addItem(menuItem);
+
+  menuItem.release;
+
+
+
+  // Add a separator
+
+//  dockMenu.addItem(NSMenuItem.separatorItem);
+
+
+  Result := dockMenu;
+
+end;
+
+  function TMyAppDelegate.applicationShouldHandleReopen_hasVisibleWindows(
+
+  sender: NSApplication; hasVisibleWindows: Boolean): Boolean;
+
+begin
+
+  // Show main form when dock icon is clicked
+
+  Application.MainForm.Show;
+
+  Application.MainForm.BringToFront;
+
+  Result := True;
+
+end;
+{$ENDIF}
 
 procedure TfBG.AppExceptionHandler(Sender: TObject; E: Exception);
 begin
@@ -533,6 +602,11 @@ Application.OnException := @AppExceptionHandler;
     ShowMessage(Format(RS_FONT_ERROR, [s]));
 
 
+  {$ifdef darwin}
+       MacAppDelegate := TMyAppDelegate.alloc.init;
+
+  NSApp.setDelegate(NSObject(MacAppDelegate));
+  {$endif}
   native := TrndiNative.Create;
   if native.isDarkMode then
      native.setDarkMode{$ifdef windows}(self.Handle){$endif};
@@ -722,6 +796,12 @@ var
   i: integer;
   pos: integer;
 begin
+  {$ifdef Darwin}
+   if self.Showing then begin
+     CloseAction := caHide;
+     Exit;
+   end;
+  {$endif}
     if UXDialog(RS_QUIT_CAPTION, RS_QUIT_MSG, [mbYes, mbNo], widechar($2705)) = mrNo then
       Abort;
 
@@ -794,9 +874,9 @@ begin
   begin
     tResize.Enabled := false;
     tResize.Enabled := true;
-          lVal.Visible := false;
-          lAgo.Visible := false;
-          lArrow.Visible := false;
+    lVal.Visible := false;
+    lAgo.Visible := false;
+    lArrow.Visible := false;
   end;
 end;
 
@@ -1235,6 +1315,10 @@ procedure scaleLbl(ALabel: TLabel);
     TestSize, MaxFontSize: integer;
     TextWidth, TextHeight: integer;
   begin
+    lVal.Visible := true;
+    lAgo.Visible := true;
+    lArrow.Visible := true;
+
     // Set the maximum feasible font size
     MaxFontSize := 150;
 
@@ -1259,10 +1343,6 @@ procedure scaleLbl(ALabel: TLabel);
 
     // If we never exited, set the max feasible size
     ALabel.Font.Size := MaxFontSize;
-
-          lVal.Visible := true;
-          lAgo.Visible := true;
-          lArrow.Visible := true;
   end;
 
 
