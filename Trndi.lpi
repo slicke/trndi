@@ -48,8 +48,9 @@
     </i18n>
     <VersionInfo>
       <UseVersionInfo Value="True"/>
+      <AutoIncrementBuild Value="True"/>
       <MajorVersionNr Value="2"/>
-      <BuildNr Value="50"/>
+      <BuildNr Value="52"/>
     </VersionInfo>
     <BuildModes>
       <Item Name="No Ext (Release)" Default="True"/>
@@ -442,6 +443,11 @@
         <ComponentName Value="fSplash"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
+      </Unit>
+      <Unit>
+        <Filename Value=".github\workflows\versioninfo.pp"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="VersionInfo"/>
       </Unit>
     </Units>
   </ProjectOptions>
