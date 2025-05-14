@@ -54,6 +54,7 @@ smbUXYesToAll = 'Yes To All';
 smbUXHelp = 'Help';
 smbUXClose = 'Close';
 smbUXOpenFile = 'Open File';
+smbUxMinimize = 'Minimize';
 smbSelect = 'Select';
 
 const 
@@ -89,7 +90,7 @@ public
 end;
 
 TUXMsgDlgBtn     = (mbYes, mbNo, mbOK, mbCancel, mbAbort, mbRetry, mbIgnore,
-  mbAll, mbNoToAll, mbYesToAll, mbHelp, mbClose, mbUXOpenFile);
+  mbAll, mbNoToAll, mbYesToAll, mbHelp, mbClose, mbUXOpenFile, mbUXMinimize);
 
 TUXMsgDlgBtns = set of TUXMsgDlgBtn;
 
@@ -102,7 +103,7 @@ UXMessageBox = record
 end;
 ButtonLangs = array[TUXMsgDlgBtn] of string;
 var
-langs : ButtonLangs = (smbYes, smbUXNo, smbUXOK, smbUXCancel, smbUXAbort, smbUXRetry, smbUXIgnore, smbUXAll, smbUXNoToAll, smbUXYesToAll, smbUXHelp, smbUXClose, smbUXOpenFile);
+langs : ButtonLangs = (smbYes, smbUXNo, smbUXOK, smbUXCancel, smbUXAbort, smbUXRetry, smbUXIgnore, smbUXAll, smbUXNoToAll, smbUXYesToAll, smbUXHelp, smbUXClose, smbUXOpenFile, smbUXMinimize);
 
 
 //function UXShowMessage(const message: string; buttons: TMsgDlgButtons; const icon: Widechar): TModalResult;
@@ -202,7 +203,7 @@ begin
   mbYesToAll:
     Result := mrYesToAll;
 //    mbUXHelp:      Result := mrHelp;
-//    mbUXClose:     Result := mrClose;
+  mbClose:     Result := mrClose;
   else
     // t.ex. ditt specialfall för OpenFile
     Result := TModalResult(110);

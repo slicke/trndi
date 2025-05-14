@@ -591,6 +591,9 @@ function GetLinuxDistro: string;
   end;
 
   {$endif}
+  {$ifdef darwin}
+
+  {$endif}
 begin
   fs := TfSplash.Create(nil);
   fs.Image1.Picture.Icon := Application.Icon;
@@ -603,9 +606,10 @@ Application.OnException := @AppExceptionHandler;
 
 
   {$ifdef darwin}
-       MacAppDelegate := TMyAppDelegate.alloc.init;
+    MacAppDelegate := TMyAppDelegate.alloc.init;
+    NSApp.setDelegate(NSObject(MacAppDelegate));
 
-  NSApp.setDelegate(NSObject(MacAppDelegate));
+
   {$endif}
   native := TrndiNative.Create;
   if native.isDarkMode then
@@ -657,6 +661,7 @@ Application.OnException := @AppExceptionHandler;
     if (lang = 'auto') or (lang = '') then
       lang := GetOSLanguage;
     Application.processmessages;
+
     SetDefaultLang(lang,'lang');
   // Idea for using multiple person/account support
     username := GetSetting('users.names','');
@@ -795,10 +800,20 @@ procedure TfBG.FormClose(Sender: TObject; var CloseAction: TCloseAction);
 var
   i: integer;
   pos: integer;
+  mr : TModalResult;
 begin
   {$ifdef Darwin}
    if self.Showing then begin
-     CloseAction := caHide;
+//     mr := ExtMsg('Minimize to dock?','Close Trndi?','Close or Minimize Trndi?','', $00F5F2FD,$003411A9,[mbClose , mbUXMinimize, mbCancel]);
+     mr := UXDialog('Quit or Minimize?', 'Would you like to minimize to the Dock, or close Trndi?',[mbClose, mbUXMinimize, mbCancel]);
+     case mr of
+       mrClose: CloseAction:= caFree;
+       mrCancel: Abort;
+       else begin
+         CloseAction := caHide;
+         Exit;
+       end;
+     end;
      Exit;
    end;
   {$endif}
