@@ -27,9 +27,9 @@ object fBG: TfBG
     Alignment = taCenter
     AutoSize = False
     Caption = 'lArrow'
-    Color = clWhite
     Font.Color = clWhite
     Font.Height = 80
+    Font.Style = [fsBold]
     Layout = tlBottom
     OptimalFill = True
     ParentColor = False
@@ -199,7 +199,7 @@ object fBG: TfBG
   object lDiff: TLabel
     Left = 0
     Height = 14
-    Top = 17
+    Top = 215
     Width = 320
     Alignment = taCenter
     AutoSize = False

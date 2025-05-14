@@ -1324,43 +1324,75 @@ begin
 end;
 
 procedure TfBG.tResizeTimer(Sender:TObject);
-procedure scaleLbl(ALabel: TLabel);
-  var
-    MaxWidth, MaxHeight: integer;
-    TestSize, MaxFontSize: integer;
-    TextWidth, TextHeight: integer;
+procedure ScaleLbl(ALabel: TLabel);
+var
+  Low, High, Mid: Integer;
+  MaxWidth, MaxHeight: Integer;
+  TextWidth, TextHeight: Integer;
+  OptimalSize: Integer;
+begin
+  // Kontrollera grundläggande synlighetsvillkor
+  if not ALabel.Visible then
+    ALabel.Visible := True;
+
+  if ALabel.Caption = '' then
+    Exit; // Ingen text att visa
+
+  // Kontrollera att etiketten har storlek
+  if (ALabel.Width <= 0) or (ALabel.Height <= 0) then
   begin
-    lVal.Visible := true;
-    lAgo.Visible := true;
-    lArrow.Visible := true;
-
-    // Set the maximum feasible font size
-    MaxFontSize := 150;
-
-    // Set the maximum feasible width and height
-    MaxWidth := ALabel.Width;
-    MaxHeight := ALabel.Height;
-
-    // Check if the font will fit
-    for TestSize := 1 to MaxFontSize do
-    begin
-      ALabel.Font.Size := TestSize;
-      TextWidth := ALabel.Canvas.TextWidth(ALabel.Caption);
-      TextHeight := ALabel.Canvas.TextHeight(ALabel.Caption);
-
-      // Exit if the font won't fit
-      if (TextWidth > MaxWidth) or (TextHeight > MaxHeight) then
-      begin
-        ALabel.Font.Size := TestSize - 1;
-        Exit;
-      end;
-    end;
-
-    // If we never exited, set the max feasible size
-    ALabel.Font.Size := MaxFontSize;
+    ALabel.Width := 100;
+    ALabel.Height := 30;
   end;
 
+  // Sätt korrekt formatering
+  ALabel.AutoSize := False;
+  ALabel.WordWrap := False;
+  ALabel.Alignment := taCenter;
+  ALabel.Layout := tlCenter;
 
+  // Se till att texten är synlig mot bakgrunden
+  if ALabel.Font.Color = ALabel.Color then
+    ALabel.Font.Color := clBlack;
+
+  // Maximal bredd och höjd för texten
+  MaxWidth := ALabel.Width - 4; // Lite padding
+  MaxHeight := ALabel.Height - 4;
+
+  // Utför binärsökning för att hitta optimal fontstorlek
+  Low := 1;
+  High := 150;
+  OptimalSize := 1;
+
+  while Low <= High do
+  begin
+    Mid := (Low + High) div 2;
+    ALabel.Font.Size := Mid;
+
+    TextWidth := ALabel.Canvas.TextWidth(ALabel.Caption);
+    TextHeight := ALabel.Canvas.TextHeight(ALabel.Caption);
+
+    if (TextWidth <= MaxWidth) and (TextHeight <= MaxHeight) then
+    begin
+      OptimalSize := Mid;
+      Low := Mid + 1;
+    end
+    else
+    begin
+      High := Mid - 1;
+    end;
+  end;
+
+  // Sätt den optimala fontstorleken
+  ALabel.Font.Size := OptimalSize;
+
+  // Se till att inställningarna används
+  ALabel.Refresh;
+
+end;
+
+var
+ dot: TLabel;
 
 begin
   tResize.Enabled := false;
@@ -1407,16 +1439,28 @@ begin
   pnOffRange.Font.Size := 7 + pnOffRange.Height div 5;
 
   scaleLbl(lVal);
-  scaleLbl(lArrow);
-  lDiff.Width := ClientWidth;
-  lDiff.Height := lVal.Height div 7;
-  lDiff.top := 1 + IfThen(pnOffRange.Visible, pnOffRange.height, 3); // Move the icon
 
-  lAgo.height := max(10, round(lDiff.height / 1.7));
-  lAgo.top := ldiff.top;
+  lDiff.Width := ClientWidth;
+
+  lAgo.top := 1 + IfThen(pnOffRange.Visible, pnOffRange.height, 3); // Move the icon
+
+  lAgo.Height := ClientHeight div 9;
+  lDiff.Height := lAgo.Height - 10;
+  lArrow.Height := ClientHeight div 4;
+
+  lDiff.top := ClientHeight-lDiff.Height + 1;
+
   scaleLbl(lDiff);
+  scaleLbl(lAgo);
+  scaleLbl(lArrow);
 
   PlaceTrendDots(bgs);
+  for dot in TrendDots do begin
+    dot.AutoSize := false;
+    dot.height := ClientWidth div 7;
+    dot.width := ClientWidth div 7;
+    ScaleLbl(dot);
+  end;
 end;
 
 // Update remote on timer
