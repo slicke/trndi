@@ -141,6 +141,7 @@ TfBG = class(TForm)
   procedure tMissedTimer(Sender:TObject);
   procedure tTouchTimer(Sender: TObject);
   procedure TfFloatOnHide(Sender:TObject);
+  procedure onGH(Sender:TObject);
 private
     // Array to hold references to lDot1 - lDot10
   TrendDots: array[1..10] of TLabel;
@@ -248,6 +249,12 @@ procedure TMyAppDelegate.miSettingsMacClick(sender: id);
 begin
   (Application.MainForm as TfBG).miSettingsClick(nil);
 end;
+
+procedure TfBG.onGH(sender: TObject);
+begin
+OpenURL('https://github.com/slicke/trndi');
+end;
+
 function TMyAppDelegate.applicationDockMenu(sender: NSApplication): NSMenu;
 var
   dockMenu: NSMenu;
@@ -592,7 +599,12 @@ function GetLinuxDistro: string;
 
   {$endif}
   {$ifdef darwin}
-
+     MainMenu: TMainMenu;
+     AppMenu,
+     forceMenu,
+     SettingsMenu,
+     HelpMenu,
+     GithubMenu: TMenuItem;
   {$endif}
 begin
   fs := TfSplash.Create(nil);
@@ -609,6 +621,30 @@ Application.OnException := @AppExceptionHandler;
     MacAppDelegate := TMyAppDelegate.alloc.init;
     NSApp.setDelegate(NSObject(MacAppDelegate));
 
+    Application.Title := 'Trndi';
+    MainMenu := TMainMenu.Create(self);
+    fBg.Menu := MainMenu;
+    AppMenu := TMenuItem.Create(Self); // Application menu
+    AppMenu.Caption := #$EF#$A3#$BF;   // Unicode Apple logo char
+    MainMenu.Items.Insert(0, AppMenu);
+    SettingsMenu := TMenuitem.Create(self);
+    settingsmenu.Caption := miSettings.Caption;
+    settingsmenu.OnClick := misettings.OnClick;
+    AppMenu.Insert(0, SettingsMenu);
+
+    forcemenu := TMenuItem.Create(self);
+    forcemenu.Caption := miForce.caption;
+    forcemenu.onclick := miForce.OnClick;
+    AppMenu.Insert(1, forceMenu);
+
+    helpmenu := TMenuItem.Create(self);
+    helpmenu.Caption := 'Help';
+    MainMenu.Items.Insert(1, helpMenu);
+
+    githubmenu := TMenuItem.Create(self);
+    githubmenu.Caption := 'Trndi on GitHub';
+    githubmenu.onclick := @onGH;
+    helpMenu.Insert(0, githubMenu);
 
   {$endif}
   native := TrndiNative.Create;
