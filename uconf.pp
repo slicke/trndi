@@ -27,7 +27,8 @@ interface
 
 uses 
 Classes,ComCtrls,ExtCtrls,Spin,StdCtrls,SysUtils,Forms,Controls,
-Graphics,Dialogs,LCLTranslator, trndi.native, lclintf, slicke.ux.alert;
+Graphics,Dialogs,LCLTranslator, trndi.native, lclintf, slicke.ux.alert,
+VersionInfo;
 
 type
 
@@ -353,7 +354,7 @@ begin
     'zu': Result := 'Zulu';
     'auto' : Result := RS_AUTO;
   else
-    Result := 'Unknown code';
+    Result := c;
   end;
 end;
 
@@ -477,7 +478,7 @@ end;
 
 procedure TfConf.FormCreate(Sender:TObject);
 begin
-  lVersion.Caption := lVersion.Caption + ' | Test Build '+{$I %DATE%} + ' | ' +
+  lVersion.Caption := GetProductVersion(lVersion.Caption) + ' | Built '+StringReplace({$I %DATE%}, '/', '-', [rfReplaceAll]) + ' | ' +
   {$if defined(LCLQt6)}
     'QT6'
   {$elseif defined(LCLGTK2)}

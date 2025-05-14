@@ -44,7 +44,7 @@ trndi.api.dexcom,umain,uconf, ufloat, slicke.ux.alert
 
 begin
 RequireDerivedFormResource:=true;
-Application.Scaled:=True;
+  Application.Scaled:=True;
 Application.{%H-}MainFormOnTaskbar:=true;
 Application.Initialize;
 Application.CreateForm(TfBG, fBG);
