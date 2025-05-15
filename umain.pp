@@ -209,7 +209,7 @@ const
 MAX_MIN = 1440; // Max time to request
 INTERVAL_MINUTES = 5; // Each time interval is 5 minutes
 NUM_DOTS = 10;        // Total number of labels (lDot1 - lDot10)
-DATA_FRESHNESS_THRESHOLD_MINUTES = 7; // Max minutes before data is considered outdated
+DATA_FRESHNESS_THRESHOLD_MINUTES = 11; // Max minutes before data is considered outdated
 
 BG_API_MIN = 2;
   // NS can't read lower
@@ -1764,7 +1764,7 @@ begin
     fBG.Color := clBlack;
     lVal.Font.Color := clWhite;
     tMissed.Enabled := true;
-    native.setBadge('--', fBG.Color);
+    native.setBadge('--', clBlack);
   end
   else
   begin

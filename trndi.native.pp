@@ -141,7 +141,7 @@ public
 
   procedure start;
   procedure done;
-  procedure setBadge(const Value: string; col: Tcolor);
+  procedure setBadge(const Value: string; badgeColor: Tcolor);
 
   constructor create(ua, base: string); overload;
   constructor create; overload;
@@ -288,135 +288,217 @@ end;
 {$ENDIF}
 
 {$IFDEF LCLGTK3}
-procedure TrndiNative.SetBadge(const Value: string;  col: Tcolor);
+procedure TrndiNative.SetBadge(const Value: string;  badgeColor: Tcolor);
 begin
 end;
 {$ENDIF}
 
 {$IFDEF LCLGTK2}
-procedure TrndiNative.SetBadge(const Value: string;  col: Tcolor);
+procedure TrndiNative.SetBadge(const Value: string;  badgeColor: Tcolor);
 begin
 end;
 {$ENDIF}
 
 {$IFDEF LCLFPGUI}
-procedure TrndiNative.SetBadge(const Value: string;  col: Tcolor);
+procedure TrndiNative.SetBadge(const Value: string;  badgeColor: Tcolor);
 begin
 end;
 {$ENDIF}
 
 {$IFDEF LCLWIN32}
 // Helper method to use the overlay icon approach for taskbar badges
-procedure TrndiNative.setBadge(const Value: string; col: Tcolor);
+
+procedure TrndiNative.SetBadge(const Value: string; BadgeColor: TColor);
+const
+  // Badge sizing constants
+  BADGE_SIZE_RATIO = 0.8;      // Badge size as a ratio of icon size (0.5 = half)
+  MIN_FONT_SIZE = 8;           // Minimum font size for readability
+  INITIAL_FONT_SIZE_RATIO = 0.5; // Initial font size as ratio of badge size
+  TEXT_PADDING = 4;            // Padding inside badge in pixels
+  CORNER_RADIUS = 6;           // Radius for rounded corners (except bottom-right)
 var
-  TaskbarList: ITaskbarList3;
-  Icon: TIcon;
-  Bitmap, MaskBitmap: Graphics.TBitmap;
+  AppIcon, TempIcon: TIcon;
+  Bitmap: Graphics.TBitmap;
   BadgeText: string;
   TextWidth, TextHeight: Integer;
-  MainForm: TForm;
   BadgeRect: Classes.TRect;
-  IconInfo: TIconInfo;
-  IconSize: Integer;
-  BadgeColor: TColor;
+  IconWidth, IconHeight, BadgeSize: Integer;
+  FontSize, Radius: Integer;
+  TextColor: TColor;
+  SavedDC: Integer;
+  Region, SquareRegion: HRGN;
+  RgnRect: Classes.TRect;
 begin
-  // Clear the overlay icon if the value is empty
-  if Value = '' then
-  begin
-    TaskbarList := CreateComObject(CLSID_TaskbarList) as ITaskbarList3;
-    TaskbarList.HrInit;
-    MainForm := Application.MainForm;
-    TaskbarList.SetOverlayIcon(MainForm.Handle, 0, nil);
-    Exit;
-  end;
+  // Create objects
+  AppIcon := TIcon.Create;
+  TempIcon := TIcon.Create;
+  Bitmap := Graphics.TBitmap.Create;
 
-  // Try to format numeric values with one decimal place
   try
-    BadgeText := FormatFloat('0.0', StrToFloat(Value));
-  except
-    BadgeText := Value; // Keep original text if it's not a valid number
-  end;
+    // Clear badge if empty value
+    if Value = '' then
+    begin
+      Application.Icon.Assign(Application.MainForm.Icon);
+      {$IFDEF WINDOWS}
+      SendMessage(Application.MainForm.Handle, WM_SETICON, ICON_BIG, 0);
+      SendMessage(Application.MainForm.Handle, WM_SETICON, ICON_SMALL, 0);
+      {$ENDIF}
+      Exit;
+    end;
 
-  // Standard size for Windows overlay icons (48x48 is Windows recommended size)
-  IconSize := 48;
-
-  Icon := TIcon.Create;
-  try
-    Bitmap := Graphics.TBitmap.Create;
-    MaskBitmap := Graphics.TBitmap.Create;
+    // Format text
     try
-      // Initialize the color bitmap
-      Bitmap.Width := IconSize;
-      Bitmap.Height := IconSize;
-      Bitmap.PixelFormat := pf32bit; // Use 32-bit format for better transparency
+      if Pos('.', Value) > 0 then
+        BadgeText := StringReplace(FormatFloat('0.0', StrToFloat(Value)), '.', ',', [rfReplaceAll])
+      else
+        BadgeText := Value;
+    except
+      BadgeText := Value;
+    end;
 
-      // Initialize the mask bitmap (monochrome)
-      MaskBitmap.Width := IconSize;
-      MaskBitmap.Height := IconSize;
-      MaskBitmap.Monochrome := True;
+    // Get application icon and its dimensions
+    AppIcon.Assign(Application.Icon);
+    IconWidth := AppIcon.Width;
+    IconHeight := AppIcon.Height;
 
-      // Fill the color bitmap with black (will be transparent)
-      Bitmap.Canvas.Brush.Color := clBlack;
-      Bitmap.Canvas.FillRect(Classes.Rect(0, 0, Bitmap.Width, Bitmap.Height));
+    // Set minimum size if icon dimensions are invalid
+    if (IconWidth <= 0) or (IconHeight <= 0) then
+    begin
+      IconWidth := 32;
+      IconHeight := 32;
+    end;
 
-      // Fill the mask with black (transparent areas)
-      MaskBitmap.Canvas.Brush.Color := clBlack;
-      MaskBitmap.Canvas.FillRect(Classes.Rect(0, 0, MaskBitmap.Width, MaskBitmap.Height));
+    // Calculate badge size based on icon size (use the smaller dimension for consistent badges)
+    if IconWidth < IconHeight then
+      BadgeSize := Round(IconWidth * BADGE_SIZE_RATIO)
+    else
+      BadgeSize := Round(IconHeight * BADGE_SIZE_RATIO);
 
-      // Define badge rectangle with minimal inset to reduce black border effect
-      // For a 48x48 icon, use slightly larger margins than before
-      BadgeRect := Classes.Rect(2, 2, IconSize - 2, IconSize - 2);
+    // Create working bitmap at proper icon size
+    Bitmap.SetSize(IconWidth, IconHeight);
+    Bitmap.Canvas.Brush.Color := clNone;
+    Bitmap.Canvas.FillRect(Classes.Rect(0, 0, IconWidth, IconHeight));
 
-      // Use Microsoft blue color (RGB: 0, 120, 215)
-      BadgeColor := RGB(0, 120, 215);
+    // Draw original icon
+    DrawIconEx(Bitmap.Canvas.Handle, 0, 0, AppIcon.Handle, IconWidth, IconHeight, 0, 0, DI_NORMAL);
 
-      // Draw the badge shape on the mask (white = visible area)
-      MaskBitmap.Canvas.Brush.Color := clWhite;
-      MaskBitmap.Canvas.Pen.Style := psClear; // No border
-      MaskBitmap.Canvas.Rectangle(BadgeRect);
+    // Position badge at bottom-right
+    BadgeRect := Classes.Rect(
+      IconWidth - BadgeSize,
+      IconHeight - BadgeSize,
+      IconWidth,
+      IconHeight
+    );
 
-      // Draw the badge color on the color bitmap
-      Bitmap.Canvas.Brush.Color := BadgeColor;
-      Bitmap.Canvas.Pen.Style := psClear; // No border
-      Bitmap.Canvas.Rectangle(BadgeRect);
+    // Setup for drawing the speech bubble shape
+    Bitmap.Canvas.Brush.Color := BadgeColor;
+    Bitmap.Canvas.Pen.Color := BadgeColor;
 
-      // Configure text appearance - adjust font size for 48x48 icon
-      Bitmap.Canvas.Brush.Style := bsClear; // Don't overwrite background when drawing text
-      Bitmap.Canvas.Font.Name := 'Segoe UI';
-      Bitmap.Canvas.Font.Size := 18; // Larger font for larger icon
-      Bitmap.Canvas.Font.Color := clWhite;
-      Bitmap.Canvas.Font.Style := [fsBold];
+    // Draw speech bubble with square bottom-right corner
+    // For smaller icons, use simpler shape to ensure clarity
+    if BadgeSize <= 12 then
+    begin
+      // Simple square badge for very small icons
+      Bitmap.Canvas.FillRect(BadgeRect);
+    end
+    else
+    begin
+      // Get the corner radius (scale with badge size but keep it reasonable)
+      Radius := Round(CORNER_RADIUS * BadgeSize / 32);
+      if Radius < 2 then
+        Radius := 2;
 
-      // Calculate text dimensions for centering
+      // Save the current region to restore later
+      SavedDC := SaveDC(Bitmap.Canvas.Handle);
+
+      // Create region variables
+      Region := 0;
+      SquareRegion := 0;
+
+      try
+        // Create a rounded rectangle region (except bottom-right corner)
+        RgnRect := BadgeRect;
+        Region := CreateRoundRectRgn(
+          RgnRect.Left, RgnRect.Top,
+          RgnRect.Right, RgnRect.Bottom,
+          Radius * 2, Radius * 2
+        );
+
+        // Create a square region for the bottom-right corner
+        SquareRegion := CreateRectRgn(
+          RgnRect.Right - Radius, RgnRect.Bottom - Radius,
+          RgnRect.Right, RgnRect.Bottom
+        );
+
+        // Combine the regions
+        CombineRgn(Region, Region, SquareRegion, RGN_OR);
+
+        // Select the combined region and fill it
+        SelectClipRgn(Bitmap.Canvas.Handle, Region);
+        Bitmap.Canvas.FillRect(BadgeRect);
+      finally
+        // Clean up the regions
+        if SquareRegion <> 0 then
+          DeleteObject(SquareRegion);
+        if Region <> 0 then
+          DeleteObject(Region);
+
+        // Restore the original region
+        RestoreDC(Bitmap.Canvas.Handle, SavedDC);
+      end;
+    end;
+
+    // Determine text color based on background brightness
+    if (0.299 * GetRValue(BadgeColor) + 0.587 * GetGValue(BadgeColor) + 0.114 * GetBValue(BadgeColor)) > 128 then
+      TextColor := clBlack  // Use black text on light backgrounds
+    else
+      TextColor := clWhite; // Use white text on dark backgrounds
+
+    // Configure text settings
+    Bitmap.Canvas.Font.Name := 'Arial';
+    Bitmap.Canvas.Font.Style := [fsBold];
+    Bitmap.Canvas.Font.Color := TextColor;
+
+    // Set font size - scale dynamically based on badge size
+    FontSize := Round(BadgeSize * INITIAL_FONT_SIZE_RATIO);
+    if FontSize < MIN_FONT_SIZE then
+      FontSize := MIN_FONT_SIZE; // Ensure minimum readable size
+    Bitmap.Canvas.Font.Size := FontSize;
+
+    // Get text dimensions
+    TextWidth := Bitmap.Canvas.TextWidth(BadgeText);
+    TextHeight := Bitmap.Canvas.TextHeight(BadgeText);
+
+    // Scale down if necessary
+    while (TextWidth > (BadgeSize - TEXT_PADDING)) and (FontSize > MIN_FONT_SIZE - 2) do
+    begin
+      Dec(FontSize);
+      Bitmap.Canvas.Font.Size := FontSize;
       TextWidth := Bitmap.Canvas.TextWidth(BadgeText);
       TextHeight := Bitmap.Canvas.TextHeight(BadgeText);
-
-      // Draw text centered on the badge
-      Bitmap.Canvas.TextOut(
-        BadgeRect.Left + ((BadgeRect.Right - BadgeRect.Left) - TextWidth) div 2,
-        BadgeRect.Top + ((BadgeRect.Bottom - BadgeRect.Top) - TextHeight) div 2,
-        BadgeText
-      );
-
-      // Create icon from bitmaps
-      FillChar(IconInfo, SizeOf(IconInfo), 0);
-      IconInfo.fIcon := True;
-      IconInfo.hbmMask := MaskBitmap.Handle;
-      IconInfo.hbmColor := Bitmap.Handle;
-
-      Icon.Handle := CreateIconIndirect(IconInfo);
-
-      // Set the overlay icon on the taskbar
-      TaskbarList := CreateComObject(CLSID_TaskbarList) as ITaskbarList3;
-      TaskbarList.HrInit;
-      MainForm := Application.MainForm;
-      TaskbarList.SetOverlayIcon(MainForm.Handle, Icon.Handle, PWideChar(WideString(BadgeText)));
-    finally
-      Bitmap.Free;
-      MaskBitmap.Free;
     end;
+
+    // Center text in badge
+    Bitmap.Canvas.Brush.Style := bsClear;
+    Bitmap.Canvas.TextOut(
+      BadgeRect.Left + ((BadgeRect.Right - BadgeRect.Left) - TextWidth) div 2,
+      BadgeRect.Top + ((BadgeRect.Bottom - BadgeRect.Top) - TextHeight) div 2,
+      BadgeText
+    );
+
+    // Convert to icon and apply
+    TempIcon.Assign(Bitmap);
+    Application.Icon.Assign(TempIcon);
+
+    // Update window icons
+    {$IFDEF WINDOWS}
+    SendMessage(Application.MainForm.Handle, WM_SETICON, ICON_BIG, Application.Icon.Handle);
+    SendMessage(Application.MainForm.Handle, WM_SETICON, ICON_SMALL, Application.Icon.Handle);
+    {$ENDIF}
   finally
-    Icon.Free;
+    Bitmap.Free;
+    AppIcon.Free;
+    TempIcon.Free;
   end;
 end;
 
