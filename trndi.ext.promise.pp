@@ -28,7 +28,7 @@ interface
 
 uses 
 Classes, SysUtils, mORMot.lib.quickjs, mormot.core.base, dialogs, trndi.ext.functions, slicke.ux.
-alert, fgl;
+alert, fgl, trndi.strings;
 
 type 
   JSDoubleVal = array[0..1] of JSValueRaw;
@@ -57,12 +57,6 @@ const
   // for "didnt work"
 
 implementation
-resourcestring
-sTypeErrCapt = 'A data type differes from what was expected';
-sTypeErrDesc = 'The extension was stopped';
-sTypeErrmsg = 'A data type was expected, but another was found';
-sPromErrCapt = 'The asyncronous function %s failed to complete';
-
 
 constructor TJSAsyncTask.Create(Context: JSContext; func: PJSCallback; cbfunc: PJSDoubleVal);
 begin

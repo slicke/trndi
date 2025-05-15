@@ -56,17 +56,10 @@ Graphics,
 math,
 StdCtrls,
 slicke.ux.alert,
+trndi.strings,
 
 
 fpimage, IntfGraphics, GraphType, EasyLazFreeType, LazFreeTypeIntfDrawer;
-
-resourcestring
-sExtErr = 'Extension Error';
-sExtMsg = 'Extension Message';
-sExtConfirm = 'Extension Confirmation';
-sExtEvent = 'Extension Event';
-sExtWarn = 'Extension Warning';
-sExtFile = 'File "%s" not found';
 
 type 
   // Callback for JS engine out data
