@@ -185,7 +185,7 @@ private
   procedure UpdateApiInformation;
   procedure ResizeUIElements;
   procedure UpdateTrendDots;
-  procedure ScaleLbl(ALabel: TLabel);
+  procedure ScaleLbl(ALabel: TLabel; customAl: TAlignment = taCenter; customTl: TTextLayout = tlCenter);
 
   procedure HandleLatestReadingFreshness(const LatestReading: BGReading; CurrentTime: TDateTime);
   procedure ProcessTimeIntervals(const SortedReadings: array of BGReading; CurrentTime: TDateTime);
@@ -197,6 +197,7 @@ private
   {$endif}
 public
    procedure AppExceptionHandler(Sender: TObject; E: Exception);
+   procedure onGH(sender: TObject);
 end;
 
 
@@ -205,6 +206,7 @@ var
 native: TrndiNative;
 {$ifdef darwin}
 MacAppDelegate: TMyAppDelegate;
+upMenu: TMenuItem;
 {$endif}
 
 
@@ -295,15 +297,16 @@ function TMyAppDelegate.applicationDockMenu(sender: NSApplication): NSMenu;
 var
   dockMenu: NSMenu;
   menuItem: NSMenuItem;
+  s: string;
 begin
 
   // Create a custom dock menu
   dockMenu := NSMenu.alloc.initWithTitle(NSSTR('Trndi'));
   // Add items to the menu
 
+  s := TrimLeftSet((Application.MainForm as TfBG).miSettings.Caption, ['&', ' ']);
   menuItem := NSMenuItem.alloc.initWithTitle_action_keyEquivalent(
-    NSSTR(TrimLeftSet(
-    (Application.MainForm as TfBG).miSettings.Caption, ['&', ' '])), sel_registerName('miSettings:'), NSSTR(''));
+    NSSTR(UTF8Encode(s)), sel_registerName('miSettings:'), NSSTR(''));
 
   dockMenu.addItem(menuItem);
   menuItem.release;
@@ -670,6 +673,7 @@ function GetLinuxDistro: string;
      GithubMenu: TMenuItem;
   {$endif}
 begin
+
   fs := TfSplash.Create(nil);
   fs.Image1.Picture.Icon := Application.Icon;
 fs.Show;
@@ -704,10 +708,16 @@ Application.OnException := @AppExceptionHandler;
     helpmenu.Caption := 'Help';
     MainMenu.Items.Insert(1, helpMenu);
 
+    upmenu := TMenuItem.Create(self);
+    upmenu.Caption := mirefresh.Caption;
+    upmenu.Enabled := false;
+
     githubmenu := TMenuItem.Create(self);
-    githubmenu.Caption := 'Trndi on GitHub';
+    githubmenu.Caption := RS_TRNDI_GIHUB;
     githubmenu.onclick := @onGH;
     helpMenu.Insert(0, githubMenu);
+
+    helpMenu.Insert(0, upMenu);
 
   {$endif}
   native := TrndiNative.Create;
@@ -1023,7 +1033,7 @@ end;
 
 procedure TfBG.lAgoClick(Sender:TObject);
 begin
-
+  showmessage(lago.left.tostring);
 end;
 
 procedure TfBG.lArrowClick(Sender:TObject);
@@ -1159,8 +1169,7 @@ end;
 procedure TfBG.miRangeColorClick(Sender:TObject);
 begin
   miRangeColor.Checked := not miRangeColor.Checked;
-  if miRangeColor.Checked then
-    ShowMessage(RS_RANGE_COLOR);
+  miForce.Click;
   native.SetSetting(username + 'ux.range_color', IfThen(miRangeColor.Checked, 'true', 'false'));
 end;
 
@@ -1601,7 +1610,7 @@ begin
   // Konfigurera tidsvisning
   lAgo.Top := 1 + IfThen(pnOffRange.Visible, pnOffRange.Height, 3);
   lAgo.Height := ClientHeight div 9;
-  ScaleLbl(lAgo);
+  ScaleLbl(lAgo, taLeftJustify);
 
   // Konfigurera trendpil
   lArrow.Height := ClientHeight div 4;
@@ -1646,7 +1655,7 @@ begin
   end;
 end;
 
-procedure TfBG.ScaleLbl(ALabel: TLabel);
+procedure TfBG.ScaleLbl(ALabel: TLabel; customAl: TAlignment = taCenter; customTl: TTextLayout = tlCenter);
 var
   Low, High, Mid: Integer;
   MaxWidth, MaxHeight: Integer;
@@ -1670,8 +1679,8 @@ begin
   // Sätt korrekt formatering
   ALabel.AutoSize := False;
   ALabel.WordWrap := False;
-  ALabel.Alignment := taCenter;
-  ALabel.Layout := tlCenter;
+  ALabel.Alignment := customAl;
+  ALabel.Layout := customTl;
 
   // Se till att texten är synlig mot bakgrunden
   if ALabel.Font.Color = ALabel.Color then
@@ -1820,6 +1829,9 @@ begin
 
   miRefresh.Caption := Format(RS_REFRESH, [TimeToStr(LastReadingTime),
                               TimeToStr(IncMilliSecond(Now, i))]);
+  {$ifdef Darwin}
+     upMenu.Caption:= miRefresh.Caption;
+  {$endif}
 end;
 
 procedure TfBG.updateReading;
