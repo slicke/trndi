@@ -22,7 +22,7 @@ unit umain;
 
 {$mode objfpc}{$H+}
 {$ifdef Darwin}
-{$modeswitch objectivec1}
+  {$modeswitch objectivec1}
 {$endif}
 
 interface
@@ -30,7 +30,7 @@ interface
 uses
 trndi.strings, LCLTranslator, Classes, Menus, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, ExtCtrls,
 trndi.api.dexcom, trndi.api.nightscout, trndi.types, math, DateUtils, FileUtil, LclIntf, TypInfo, LResources,
-slicke.ux.alert, usplash,
+slicke.ux.alert, usplash,   Generics.Collections,
 {$ifdef TrndiExt}
 trndi.Ext. Engine, trndi.Ext.jsfuncs,
 {$endif}
@@ -41,6 +41,7 @@ LazFileUtils, uconf, trndi.native, Trndi.API, trndi.api.xDrip,{$ifdef DEBUG} trn
 StrUtils, TouchDetection, ufloat;
 
 type
+TFloatIntDictionary = specialize TDictionary<Single, Integer>; // Specialized TDictionary
   // Procedures which are applied to the trend drawing
 TTrendProc = procedure(l: TLabel; c, ix: integer) of object;
 TTrendProcLoop = procedure(l: TLabel; c, ix: integer; ls: array of TLabel) of object;
@@ -156,6 +157,37 @@ private
   procedure ResizeDot(l: TLabel; c, ix: integer);
   procedure ExpandDot(l: TLabel; c, ix: integer);
   procedure placeForm;
+
+  // Helper methods for update procedure
+  function FetchAndValidateReadings: Boolean;
+  procedure ProcessCurrentReading;
+  function IsDataFresh: Boolean;
+  procedure SetNextUpdateTimer(const LastReadingTime: TDateTime);
+  procedure UpdateUIBasedOnGlucose;
+  procedure HandleHighGlucose(const b: BGReading);
+  procedure HandleLowGlucose(const b: BGReading);
+  procedure HandleNormalGlucose(const b: BGReading);
+  procedure UpdateOffRangePanel(const Value: Single);
+  procedure DisplayLowRange;
+  procedure DisplayHighRange;
+  procedure FinalizeUpdate;
+  procedure UpdateFloatingWindow;
+  procedure UpdateUIColors;
+  function GetTextColorForBackground(const BgColor: TColor;
+    const DarkenFactor: Double = 0.5;
+    const LightenFactor: Double = 0.3): TColor;
+
+  procedure UpdateTrendElements;
+  procedure UpdateApiInformation;
+  procedure ResizeUIElements;
+  procedure UpdateTrendDots;
+  procedure ScaleLbl(ALabel: TLabel);
+
+  procedure HandleLatestReadingFreshness(const LatestReading: BGReading; CurrentTime: TDateTime);
+  procedure ProcessTimeIntervals(const SortedReadings: array of BGReading; CurrentTime: TDateTime);
+  function UpdateLabelForReading(SlotIndex: Integer; const Reading: BGReading): Boolean;
+  function DetermineColorForReading(const Reading: BGReading): TColor;
+
   {$ifdef TrndiExt}
   procedure LoadExtensions;
   {$endif}
@@ -262,48 +294,62 @@ var
 begin
 
   // Create a custom dock menu
-
   dockMenu := NSMenu.alloc.initWithTitle(NSSTR('Trndi'));
-
-
   // Add items to the menu
 
   menuItem := NSMenuItem.alloc.initWithTitle_action_keyEquivalent(
-
     NSSTR(TrimLeftSet(
     (Application.MainForm as TfBG).miSettings.Caption, ['&', ' '])), sel_registerName('miSettings:'), NSSTR(''));
 
   dockMenu.addItem(menuItem);
-
   menuItem.release;
-
-
-
   // Add a separator
-
 //  dockMenu.addItem(NSMenuItem.separatorItem);
-
 
   Result := dockMenu;
 
 end;
 
-  function TMyAppDelegate.applicationShouldHandleReopen_hasVisibleWindows(
-
-  sender: NSApplication; hasVisibleWindows: Boolean): Boolean;
-
+function TMyAppDelegate.applicationShouldHandleReopen_hasVisibleWindows(sender: NSApplication; hasVisibleWindows: Boolean): Boolean;
 begin
-
   // Show main form when dock icon is clicked
-
   Application.MainForm.Show;
-
   Application.MainForm.BringToFront;
-
   Result := True;
 
 end;
 {$ENDIF}
+
+{$ifdef darwin}
+function GetAppPath: string;
+var
+  NSAppBundle: NSBundle;
+begin
+  NSAppBundle := NSBundle.mainBundle;
+  Result := UTF8ToString(NSAppBundle.bundlePath.UTF8String);
+  result := ExtractFilePath(result);
+end;
+function getLangPath: string;
+var
+  bin: string;
+begin
+  bin := ExtractFilePath(Application.ExeName);
+  if DirectoryExists(bin + 'lang') then
+    result := bin + 'lang/'
+  else
+    result := GetAppPath + 'lang/';
+end;
+
+{$else}
+function GetAppPath: string;
+begin
+  result := ExtractFilePath(Application.ExeName);
+end;
+function getLangPath: string;
+begin
+  result := GetAppPath + 'lang/';
+end;
+{$endif}
 
 procedure TfBG.AppExceptionHandler(Sender: TObject; E: Exception);
 begin
@@ -317,40 +363,46 @@ end;
 
 procedure TfBG.placeForm;
 var
-  pos, cust: integer;
+  posValue: integer;
 begin
-  pos := native.GetIntSetting(username + 'position.main', ord(tpoCenter));
-  if not ((pos >= Ord(Low(TrndiPos))) and (pos <= Ord(High(TrndiPos)))) then
-    pos := ord(tpoCenter);
+  // Hämta och validera position
+  posValue := native.GetIntSetting(username + 'position.main', Ord(tpoCenter));
 
-  case TrndiPos(pos) of
-  tpoCenter:
-  begin
-    self.Left := Screen.WorkAreaLeft + (Screen.WorkAreaWidth - Width) div 2;
-    self.Top := Screen.WorkAreaTop + (Screen.WorkAreaHeight - Height) div 2;
-  end;
-  tpoBottomLeft:
-  begin
-    self.Left := 20;
-    self.Top := (Screen.WorkAreaRect.Bottom - Height) - 200;
-  end;
-  tpoBottomRight:
-  begin
-    self.Left := Screen.WorkAreaRect.Right - 20;
-    self.Top := (Screen.WorkAreaRect.Bottom - Height) - 200;
-  end;
-  tpoTopRight:
-  begin
-    self.Left := Screen.WorkAreaRect.Right - (self.width) - 20;
-    self.Top := 200;
-  end;
-  tpoCustom:
-  begin
-    pos := native.GetIntSetting(username +'position.last.left', 10);
-    self.left := pos;
-    pos := native.GetIntSetting(username +'position.last.top', 10);
-    self.top := pos;
-  end;
+  // Validera positionstyp
+  if not ((posValue >= Ord(Low(TrndiPos))) and (posValue <= Ord(High(TrndiPos)))) then
+    posValue := ord(tpoCenter);
+
+  // Hantera positionering
+  case TrndiPos(posValue) of
+    tpoCenter:
+      begin
+        Left := Screen.WorkAreaLeft + (Screen.WorkAreaWidth - Width) div 2;
+        Top := Screen.WorkAreaTop + (Screen.WorkAreaHeight - Height) div 2;
+      end;
+
+    tpoBottomLeft:
+      begin
+        Left := 20;
+        Top := Screen.WorkAreaRect.Bottom - Height - 200;
+      end;
+
+    tpoBottomRight:
+      begin
+        Left := Screen.WorkAreaRect.Right - Width - 20;
+        Top := Screen.WorkAreaRect.Bottom - Height - 200;
+      end;
+
+    tpoTopRight:
+      begin
+        Left := Screen.WorkAreaRect.Right - Width - 20;
+        Top := 200;
+      end;
+
+    tpoCustom:
+      begin
+        Left := native.GetIntSetting(username + 'position.last.left', 10);
+        Top := native.GetIntSetting(username + 'position.last.top', 10);
+      end;
   end;
 end;
 
@@ -698,7 +750,7 @@ Application.OnException := @AppExceptionHandler;
       lang := GetOSLanguage;
     Application.processmessages;
 
-    SetDefaultLang(lang,'lang');
+    SetDefaultLang(lang, getLangPath);
   // Idea for using multiple person/account support
     username := GetSetting('users.names','');
     if username <> '' then
@@ -834,59 +886,71 @@ end;
 // FormClose event handler
 procedure TfBG.FormClose(Sender: TObject; var CloseAction: TCloseAction);
 var
-  i: integer;
-  pos: integer;
-  mr : TModalResult;
+  posValue: integer;
+  mr: TModalResult;
 begin
   {$ifdef Darwin}
-   if self.Showing then begin
-//     mr := ExtMsg('Minimize to dock?','Close Trndi?','Close or Minimize Trndi?','', $00F5F2FD,$003411A9,[mbClose , mbUXMinimize, mbCancel]);
-     mr := UXDialog('Quit or Minimize?', 'Would you like to minimize to the Dock, or close Trndi?',[mbClose, mbUXMinimize, mbCancel]);
-     case mr of
-       mrClose: CloseAction:= caFree;
-       mrCancel: Abort;
-       else begin
-         CloseAction := caHide;
-         Exit;
-       end;
-     end;
-     Exit;
-   end;
-  {$endif}
-    if UXDialog(RS_QUIT_CAPTION, RS_QUIT_MSG, [mbYes, mbNo], widechar($2705)) = mrNo then
-      Abort;
+  if self.Showing then
+  begin
+    mr := UXDialog('Quit or Minimize?', 'Would you like to minimize to the Dock, or close Trndi?',
+                   [mbClose, mbUXMinimize, mbCancel]);
+    case mr of
+      mrClose: CloseAction := caFree;
+      mrCancel: Abort;
+      else
+      begin
+        CloseAction := caHide;
+        Exit;
+      end;
+    end;
 
+  end;
+  {$else}
+
+  if UXDialog(RS_QUIT_CAPTION, RS_QUIT_MSG, [mbYes, mbNo], widechar($2705)) = mrNo then
+    Abort;
+  {$endif}
   {$ifdef TrndiExt}
   TTrndiExtEngine.ReleaseInstance;
   {$endif}
 
-  pos := native.GetIntSetting(username +'position.main', ord(tpoCenter));
-  if not ((pos >= Ord(Low(TrndiPos))) and (pos <= Ord(High(TrndiPos)))) then
-    pos := ord(tpoCenter);
-  if TrndiPos(pos) = tpoCustom then
+  // Hämta och validera position
+  posValue := native.GetIntSetting(username + 'position.main', ord(tpoCenter));
+
+  if not ((posValue >= Ord(Low(TrndiPos))) and (posValue <= Ord(High(TrndiPos)))) then
+    posValue := ord(tpoCenter);
+
+  // Spara positionen om den är custom
+  if TrndiPos(posValue) = tpoCustom then
   begin
-    native.SetSetting(username +'position.last.left', self.left.toString);
-    native.SetSetting(username +'position.last.top', self.top.toString);
+    native.SetSetting(username + 'position.last.left', self.left.toString);
+    native.SetSetting(username + 'position.last.top', self.top.toString);
   end;
-//  LogMessage('Trend closed.');
 end;
 
-// Changes a trend dot from a dot to the actual bg value with highlighting for the latest reading
+// Expands a trend dot to show actual bg value with highlighting for latest reading
 procedure TfBG.ExpandDot(l: TLabel; c, ix: integer);
 var
-  gnow: boolean;
+  isDot: boolean;
 begin
-  gnow := l.Caption = DOT_GRAPH; // Graph now
+  // Check if label currently shows a dot
+  isDot := l.Caption = DOT_GRAPH;
 
-  if ix = NUM_DOTS then // Latest reading at lDot10
-    l.Caption := IfThen(gnow, DOT_FRESH, DOT_GRAPH)
+  // Handle differently based on position in trend sequence
+  if ix = NUM_DOTS then
+    // Latest reading: toggle between fresh indicator and dot
+    l.Caption := IfThen(isDot, DOT_FRESH, DOT_GRAPH)
   else
-    l.Caption := IfThen(gnow, LineEnding + l.Hint, DOT_GRAPH);
+    // Earlier readings: toggle between actual value and dot
+    l.Caption := IfThen(isDot, LineEnding + l.Hint, DOT_GRAPH);
 
-  if not gnow then
+  l.Caption := IfThen(isDot, l.Caption, l.Caption);
+  // Adjust size based on current state
+  if not isDot then
     ResizeDot(l, c, ix)
   else
     l.font.Size := lVal.Font.Size div c;
+
 end;
 
 // Hides a dot
@@ -1119,173 +1183,227 @@ end;
 // Handle settings menu click
 procedure TfBG.miSettingsClick(Sender: TObject);
 var
-  i, lastusers: integer;
-  s: string;
-  po: TrndiPos;
-  mTouch: boolean;
-begin
-  with TfConf.Create(self) do begin
-    with native do
+  fConf: TfConf;
+  lastUsers: Integer;
+  mTouch: Boolean;
+
+  procedure LoadUserSettings(f: TfConf);
+  var
+    s: String;
+    i: Integer;
+    posValue: Integer;
+    po: TrndiPos;
+  begin
+    with f, native do
     begin
-      {$ifdef DEBUG}
-      cbSys.Items.Add('* Debug Backend *');
-      {$endif}
-      s := GetSetting(username +'remote.type');
+      // Remote and user settings
+      s := GetSetting(username + 'remote.type');
       for i := 0 to cbSys.Items.Count - 1 do
         if cbSys.Items[i] = s then
           cbSys.ItemIndex := i;
+      eAddr.Text := GetSetting(username + 'remote.target');
+      ePass.Text := GetSetting(username + 'remote.creds');
+      rbUnit.ItemIndex := IfThen(GetSetting(username + 'unit', 'mmol') = 'mmol', 0, 1);
 
-      eAddr.Text := GetSetting(username +'remote.target');
-      ePass.Text := GetSetting(username +'remote.creds');
-      rbUnit.ItemIndex := IfThen(GetSetting(username +'unit', 'mmol') = 'mmol', 0, 1);
-
+      // Override range settings
       if api = nil then
       begin
-        fsLo.Value := GetIntSetting(username+'override.lo', 60);
-        fsHi.Value := GetIntSetting(username+'override.hi', 160);
+        fsLo.Value := GetIntSetting(username + 'override.lo', 60);
+        fsHi.Value := GetIntSetting(username + 'override.hi', 160);
       end
       else
       begin
-        fsLo.Value := GetIntSetting(username+'override.lo', api.cgmLo);
-        fsHi.Value := GetIntSetting(username+'override.hi', api.cgmhi)
+        fsLo.Value := GetIntSetting(username + 'override.lo', api.cgmLo);
+        fsHi.Value := GetIntSetting(username + 'override.hi', api.cgmHi);
       end;
 
-      if GetSetting(username +'unit', 'mmol') = 'mmol' then
-        rbUnitClick(self)//    fshi.DecimalPlaces := 1;
-//   fslo.DecimalPlaces := 1;
-//        fsHi.Value := fsHi.Value / 18;
-//      fsLo.Value := fsLo.Value / 18;
-      ;
+      if GetSetting(username + 'unit', 'mmol') = 'mmol' then
+        rbUnitClick(Self);
 
-      cbCust.Checked := GetIntSetting(username+'override.enabled', 0) = 1;
-      fsHi.Enabled :=  cbCust.Checked;
-      fsLo.Enabled :=  cbCust.Checked;
+      cbCust.Checked := GetIntSetting(username + 'override.enabled', 0) = 1;
+      fsHi.Enabled := cbCust.Checked;
+      fsLo.Enabled := cbCust.Checked;
 
-      {$ifdef TrndiExt}
-      eExt.Text := GetAppConfigDirUTF8(false, true) + 'extensions' + DirectorySeparator;
-      {$else}
-      eExt.Text := '- '+RS_noPlugins +' -';
-      eExt.Enabled := false;
-      {$endif}
-      cbPrivacy.Checked := GetSetting(username +'ext.privacy', '0') = '1';
+      // User customizations
+      s := GetSetting('users.names', '');
+      lbUsers.Items.CommaText := s;
+      gbMulti.Enabled := s <> '';
+      if s = '' then
+        lCurrentAcc.Caption := RS_CURRENT_ACC_NO
+      else if username = '' then
+        lCurrentAcc.Caption := RS_CURRENT_ACC_DEF
+      else
+        lCurrentAcc.Caption := Format(RS_CURRENT_ACC, [TrimRightSet(username, ['_'])]);
 
-      s := GetSetting('users.names','');
-      lbUsers.Items.AddCommaText(s);
-      if (s <> '') then begin
-        gbMulti.Enabled := true;
-        if username = '' then
-          lCurrentAcc.Caption := RS_CURRENT_ACC_DEF
-        else
-          lCurrentAcc.Caption := Format(RS_CURRENT_ACC, [TrimRightSet(username, ['_'])]);
-      end else
-        lCurrentAcc.Caption := RS_CURRENT_ACC_NO;
-
+      edNick.Text := GetSetting(username + 'user.nick', '');
       s := GetSetting(username + 'user.color');
       if s <> '' then
         cbUser.ButtonColor := StringToColor(s);
 
-      // Load positions of the form
-      i := native.GetIntSetting(username +'position.main', ord(tpoCenter));
+      // Load position settings
+      posValue := native.GetIntSetting(username + 'position.main', Ord(tpoCenter));
       for po in TrndiPos do
       begin
-        s := TrndiPosNames[po]; // Localized name of the pos
-        cbPos.items.Add(s);
-        if ord(po) = i then
+        s := TrndiPosNames[po];
+        cbPos.Items.Add(s);
+        if Ord(po) = i then
           cbPos.ItemIndex := i;
       end;
       if cbPos.ItemIndex = -1 then
         cbPos.ItemIndex := 0;
+    end;
+  end;
 
-      lastusers := lbusers.count;
-      edNick.Text := GetSetting(username + 'user.nick', '');
-
-      ListLanguageFiles(cbLang.Items, ExtractFileDir(Application.ExeName) + DirectorySeparator + 'lang');
+  procedure LoadLanguageSettings(f: TfConf);
+  var
+    i: Integer;
+    s: String;
+  begin
+    with f, native do
+    begin
+      // Load language files
+      ListLanguageFiles(cbLang.Items, GetLangPath);
       cbLang.Items.Add('Trndi.en');
       cbLang.Items.Add('Trndi.auto');
-
-      for i := 0 to cbLang.items.Count-1 do begin
+      for i := 0 to cbLang.Items.Count - 1 do
+      begin
         s := cbLang.Items[i];
-        cbLang.Items[i] := ExtractDelimited(2,s,['.']);
+        cbLang.Items[i] := ExtractDelimited(2, s, ['.']);
         s := cbLang.Items[i];
-        cbLang.Items[i] := Format('%s (%s)', [GetLanguageName(s), s]);;
-        if GetSetting(username +'locale', '') = s then
+        cbLang.Items[i] := Format('%s (%s)', [GetLanguageName(s), s]);
+        if GetSetting(username + 'locale', '') = s then
           cbLang.ItemIndex := i;
       end;
       if cbLang.ItemIndex = -1 then
-        cbLang.ItemIndex := cbLang.Items.Count-1;
+        cbLang.ItemIndex := cbLang.Items.Count - 1;
+    end;
+  end;
 
-      lVal.Font.name := self.lVal.Font.name;
-      lArrow.Font.name := self.lArrow.Font.name;
-      lAgo.Font.name := self.lAgo.Font.name;
+  procedure SetupUIElements(f: TfConf);
+  begin
+    with f do
+    begin
+      // UI updates
+      lVal.Font.Name := Self.lVal.Font.Name;
+      lArrow.Font.Name := Self.lArrow.Font.Name;
+      lAgo.Font.Name := Self.lAgo.Font.Name;
+      lVal.Font.Color := Self.lVal.Font.Color;
+      lArrow.Font.Color := Self.lArrow.Font.Color;
+      lAgo.Font.Color := Self.lAgo.Font.Color;
+      lVal.Caption := Self.lVal.Caption;
+      lArrow.Caption := Self.lArrow.Caption;
+      lAgo.Caption := Self.lAgo.Caption;
+      pnDisplay.Color := Self.Color;
+      pnDisplay.Font := fBG.Font;
+    end;
+  end;
 
-      lVal.font.color := self.lVal.font.color;
-      lArrow.font.color := self.lArrow.font.color;
-      lAgo.font.color := self.lAgo.font.color;
+  procedure SetupExtensions(f: TfConf);
+  begin
+    with f, native do
+    begin
+      {$ifdef TrndiExt}
+      eExt.Text := GetAppConfigDirUTF8(False, True) + 'extensions' + DirectorySeparator;
+      {$else}
+      eExt.Text := '- ' + RS_noPlugins + ' -';
+      eExt.Enabled := False;
+      {$endif}
+      cbPrivacy.Checked := GetSetting(username + 'ext.privacy', '0') = '1';
+    end;
+  end;
 
-      lVal.caption := self.lVal.caption;
-      lArrow.caption := self.lArrow.caption;
-      lAgo.caption := self.lAgo.caption;
-      pnDisplay.Color := self.color;
-      pnDisplay.Font := fBG.font;
-
+  procedure SetupTouchAndNotifications(f: TfConf);
+  begin
+    with f, native do
+    begin
       cbTouch.Checked := native.HasTouchScreen(mTouch);
       cbMultiTouch.Checked := mTouch;
+
       {$if defined(LINUX)}
-        cbNotice.Checked := IsNotifySendAvailable;
-        cbNotice.Caption := cbNotice.Caption + ' (Notify Daemon)';
+      cbNotice.Checked := IsNotifySendAvailable;
+      cbNotice.Caption := cbNotice.Caption + ' (Notify Daemon)';
       {$else}
-        cbNotice.Checked := true;
+      cbNotice.Checked := True;
       {$endif}
-      //--
-      ShowModal;
-      //---
+    end;
+  end;
 
-      SetSetting(username + 'font.val', lVal.Font.name);
-      SetSetting(username + 'font.arrow', lArrow.Font.name);
-      SetSetting(username + 'font.ago', lAgo.Font.name);
-
-      s := ExtractLangCode(cblang.Items[cbLang.ItemIndex]);
-
-      SetSetting(username +'locale', s);
-
-      native.SetSetting(username +'position.main', IntToStr(cbPos.ItemIndex));
-
+  procedure SaveUserSettings(f: TfConf);
+  var
+    s: String;
+  begin
+    with f, native do
+    begin
+      SetSetting(username + 'font.val', lVal.Font.Name);
+      SetSetting(username + 'font.arrow', lArrow.Font.Name);
+      SetSetting(username + 'font.ago', lAgo.Font.Name);
+      s := ExtractLangCode(cbLang.Items[cbLang.ItemIndex]);
+      SetSetting(username + 'locale', s);
+      native.SetSetting(username + 'position.main', IntToStr(cbPos.ItemIndex));
       SetSetting(username + 'user.color', ColorToString(cbUser.ButtonColor));
       SetSetting(username + 'user.nick', edNick.Text);
 
+      // Handle user list changes
       if lbUsers.Count > 0 then
-        SetSetting('users.names',lbUsers.Items.CommaText)
+        SetSetting('users.names', lbUsers.Items.CommaText)
       else
         SetSetting('users.names', '');
+      if lbUsers.Count < lastUsers then
+        ShowMessage(RS_REMOVE_ACC);
 
-      if lbUsers.Count < lastusers then
-         ShowMessage(RS_REMOVE_ACC);
+      // Save remote and override settings
+      SetSetting(username + 'remote.type', cbSys.Text);
+      SetSetting(username + 'remote.target', eAddr.Text);
+      SetSetting(username + 'remote.creds', ePass.Text);
+      SetSetting(username + 'unit', IfThen(rbUnit.ItemIndex = 0, 'mmol', 'mgdl'));
+      SetSetting(username + 'ext.privacy', IfThen(cbPrivacy.Checked, '1', '0'));
 
-      SetSetting(username +'remote.type', cbSys.Text);
-      SetSetting(username +'remote.target', eAddr.Text);
-      SetSetting(username +'remote.creds', ePass.Text);
-      SetSetting(username +'unit', IfThen(rbUnit.ItemIndex = 0, 'mmol', 'mgdl'));
-      SetSetting(username +'ext.privacy', IfThen(cbPrivacy.Checked, '1', '0'));
-
-
+      // Save unit-specific settings
       if rbUnit.ItemIndex = 0 then
-      begin//mmol
-        SetSetting(username+'override.lo', round(fsLo.Value * 18.0182).ToString);
-        SetSetting(username+'override.hi', round(fsHi.value * 18.0182).tostring);
+      begin // mmol
+        SetSetting(username + 'override.lo', Round(fsLo.Value * 18.0182).ToString);
+        SetSetting(username + 'override.hi', Round(fsHi.Value * 18.0182).ToString);
       end
       else
       begin
-        SetSetting(username+'override.lo', round(fsLo.Value).tostring);
-        SetSetting(username+'override.hi', round(fsHi.value).tostring);
+        SetSetting(username + 'override.lo', Round(fsLo.Value).ToString);
+        SetSetting(username + 'override.hi', Round(fsHi.Value).ToString);
       end;
 
-      SetSetting(username+'override.enabled', IfThen(cbCust.Checked, '1', '0'));
-
-      ShowMessage(RS_RESTART_APPLY);
+      SetSetting(username + 'override.enabled', IfThen(cbCust.Checked, '1', '0'));
     end;
-    Free;
   end;
 
+begin
+  fConf := TfConf.Create(Self);
+  try
+    with native do
+    begin
+      {$ifdef DEBUG}
+      fConf.cbSys.Items.Add('* Debug Backend *');
+      {$endif}
+    end;
+
+    // Initialize form with user settings
+    LoadUserSettings(fConf);
+    LoadLanguageSettings(fConf);
+    SetupUIElements(fConf);
+    SetupExtensions(fConf);
+    SetupTouchAndNotifications(fConf);
+
+    // Store current user count for comparison later
+    lastUsers := fConf.lbUsers.Count;
+
+    // Show dialog
+    fConf.ShowModal;
+
+    // Save settings when dialog closes
+    SaveUserSettings(fConf);
+
+    ShowMessage(RS_RESTART_APPLY);
+  finally
+    fConf.Free;
+  end;
 end;
 
 // Swap dots with their readings
@@ -1294,36 +1412,39 @@ begin
   actOnTrend(@ExpandDot);
 end;
 
-procedure TfBG.pmSettingsMeasureItem(Sender:TObject;ACanvas:TCanvas;var AWidth,
-AHeight:integer);
-var
-  MenuItem: TMenuItem;
-  TextX, TextY: integer;
+procedure TfBG.pmSettingsMeasureItem(Sender: TObject; ACanvas: TCanvas; var AWidth, AHeight: Integer);
+const
+  PaddingHorizontal = 40; // Additional width padding for icons or spacing
+  PaddingVertical = 8;    // Vertical padding for spacing
+  MinItemWidth = 100;     // Minimum width for menu items
+  MinItemHeight = 25;     // Minimum height for menu items
 begin
-  MenuItem := TMenuItem(Sender);
+  // Validate the input
+  if not (Sender is TMenuItem) then
+    Exit;
 
-  if menuitem.Caption = '-' then
-    exit;
-  // Set desired font
-  ACanvas.Font.Name := 'Arial';
-  ACanvas.Font.Size := 16;
-  ACanvas.Font.Style := [fsBold];
+  with TMenuItem(Sender) do
+  begin
+    // Skip separators (e.g., "-")
+    if Caption = '-' then
+      Exit;
 
-  // Calculate text dimensions
-  Textx := ACanvas.TextWidth(MenuItem.Caption);
-  Texty := ACanvas.TextHeight(MenuItem.Caption);
+    // Set desired font properties
+    with ACanvas.Font do
+    begin
+      Name := 'Arial';
+      Size := 16;
+      Style := [fsBold];
+    end;
 
-  // Set item dimensions with padding
-  AWidth := Textx + 40;  // Add 40 pixels for padding and icons
-  AHeight := Texty + 8;  // Add 8 pixels for vertical padding
+    // Calculate text dimensions
+    AWidth := ACanvas.TextWidth(Caption) + PaddingHorizontal;
+    AHeight := ACanvas.TextHeight(Caption) + PaddingVertical;
 
-  // Ensure minimum width
-  if AWidth < 100 then
-    AWidth := 100;
-
-  // Ensure minimum height
-  if AHeight < 25 then
-    AHeight := 25;
+    // Enforce minimum dimensions
+    AWidth := Max(AWidth, MinItemWidth);
+    AHeight := Max(AHeight, MinItemHeight);
+  end;
 end;
 
 procedure TfBG.pmSettingsPopup(Sender:TObject);
@@ -1359,8 +1480,123 @@ begin
 
 end;
 
-procedure TfBG.tResizeTimer(Sender:TObject);
-procedure ScaleLbl(ALabel: TLabel);
+procedure TfBG.tResizeTimer(Sender: TObject);
+begin
+  tResize.Enabled := False;
+
+  // Uppdatera Trend-relaterade element
+  UpdateTrendElements;
+
+  if not Assigned(api) then
+    Exit;
+
+  // Uppdatera meny- och intervall-information
+  UpdateApiInformation;
+
+  if not api.active then
+    Exit;
+
+  // Anpassa UI-element baserat på nuvarande storlek
+  ResizeUIElements;
+
+  // Placera om trend dots
+  UpdateTrendDots;
+end;
+
+procedure TfBG.UpdateTrendElements;
+begin
+  // Uppdatera punktplacering
+  actOnTrend(@SetDotWidth);
+
+  // Ändra storlek på punkterna
+  actOnTrend(@ResizeDot);
+end;
+
+procedure TfBG.UpdateApiInformation;
+begin
+  // Uppdatera meny- och inställningsinformation
+  miHi.Caption := Format(RS_HI_LEVEL, [api.cgmHi * BG_CONVERTIONS[un][mgdl]]);
+  miLo.Caption := Format(RS_LO_LEVEL, [api.cgmLo * BG_CONVERTIONS[un][mgdl]]);
+
+  // Hantera övre intervall
+  if api.cgmRangeHi <> 500 then
+    miRangeHi.Caption := Format(RS_RANGE_HI, [api.cgmRangeHi * BG_CONVERTIONS[un][mgdl]])
+  else
+    miRangeHi.Caption := RS_RANGE_HI_UNSUPPORTED;
+
+  // Hantera nedre intervall
+  if api.cgmRangeLo <> 0 then
+    miRangeLo.Caption := Format(RS_RANGE_LO, [api.cgmRangeLo * BG_CONVERTIONS[un][mgdl]])
+  else
+  begin
+    miRangeLo.Caption := RS_RANGE_LO_UNSUPPORTED;
+    miRangeColor.Enabled := False;
+  end;
+end;
+
+procedure TfBG.ResizeUIElements;
+begin
+  // Anpassa storleken på panelen
+  pnOffRange.Height := ClientHeight div 10;
+  pnOffRange.Font.Size := 7 + pnOffRange.Height div 5;
+
+  // Anpassa huvudetiketterna
+  ScaleLbl(lVal);
+
+  // Konfigurera differensvisning
+  lDiff.Width := ClientWidth;
+  lDiff.Height := (ClientHeight div 9) - 10;
+  lDiff.Top := ClientHeight - lDiff.Height + 1;
+  ScaleLbl(lDiff);
+
+  // Konfigurera tidsvisning
+  lAgo.Top := 1 + IfThen(pnOffRange.Visible, pnOffRange.Height, 3);
+  lAgo.Height := ClientHeight div 9;
+  ScaleLbl(lAgo);
+
+  // Konfigurera trendpil
+  lArrow.Height := ClientHeight div 4;
+  ScaleLbl(lArrow);
+end;
+
+procedure TfBG.UpdateTrendDots;
+var
+  UniquePositions: TFloatIntDictionary; // Specialized dictionary
+  Dot: TLabel;
+  Value: Single;
+  DPosition: Integer;
+begin
+  // Initialize dictionary
+  UniquePositions := TFloatIntDictionary.Create;
+  try
+    for Dot in TrendDots do
+    begin
+      if TryStrToFloat(Dot.Hint, Value) then
+      begin
+        // Use stored position if value already mapped
+        if not UniquePositions.TryGetValue(Value, DPosition) then
+        begin
+          DPosition := Round((Value - BG_API_MIN) / (BG_API_MAX - BG_API_MIN) * fBG.ClientHeight);
+          UniquePositions.Add(Value, DPosition);
+        end;
+
+        // Set the label's Top property
+        Dot.Top := fBG.ClientHeight - DPosition;
+        Dot.Visible := True; // Ensure label is visible
+      end
+      else
+      begin
+        // Hide labels without valid Hint values
+        Dot.Visible := False;
+      end;
+    end;
+  finally
+    // Free dictionary
+    UniquePositions.Free;
+  end;
+end;
+
+procedure TfBG.ScaleLbl(ALabel: TLabel);
 var
   Low, High, Mid: Integer;
   MaxWidth, MaxHeight: Integer;
@@ -1424,81 +1660,7 @@ begin
 
   // Se till att inställningarna används
   ALabel.Refresh;
-
 end;
-
-var
- dot: TLabel;
-
-begin
-  tResize.Enabled := false;
-  // Update dot placement
-  actOnTrend(@SetDotWidth);
-
-  // Remove or comment out the following line to prevent labels from being hidden:
-  // actOnTrend(@HideDot);
-
-  // Adjust label sizes
-//  lArrow.Height := fBG.clientHeight div 3;
-
-
-  // Resize the dots
-  actOnTrend(@ResizeDot);
-
-  if not assigned(api) then
-    Exit;
-
-  // Set info
-  miHi.Caption := Format(RS_HI_LEVEL, [api.cgmHi * BG_CONVERTIONS[un][mgdl]]);
-  miLo.Caption := Format(RS_LO_LEVEL, [api.cgmLo * BG_CONVERTIONS[un][mgdl]]);
-
-  if api.cgmRangeHi <> 500 then
-    miRangeHi.Caption := Format(RS_RANGE_HI, [api.cgmRangeHi * BG_CONVERTIONS[un][mgdl]])
-  else
-    miRangeHi.Caption := RS_RANGE_HI_UNSUPPORTED;
-
-  if api.cgmRangeLo <> 0 then
-    miRangeLo.Caption := Format(RS_RANGE_LO, [api.cgmRangeLo * BG_CONVERTIONS[un][mgdl]])
-  else
-  begin
-    miRangeLo.Caption := RS_RANGE_LO_UNSUPPORTED;
-    miRangeColor.Enabled := false;
-  end;
-
-  if not api.active then
-    Exit;
-
-//  pnOffRange.width := clientwidth div 4;
-  pnOffRange.height := clientheight div 10;
- // pnOffRange.left := 0;
- // pnOffRange.top := 0;
-  pnOffRange.Font.Size := 7 + pnOffRange.Height div 5;
-
-  scaleLbl(lVal);
-
-  lDiff.Width := ClientWidth;
-
-  lAgo.top := 1 + IfThen(pnOffRange.Visible, pnOffRange.height, 3); // Move the icon
-
-  lAgo.Height := ClientHeight div 9;
-  lDiff.Height := lAgo.Height - 10;
-  lArrow.Height := ClientHeight div 4;
-
-  lDiff.top := ClientHeight-lDiff.Height + 1;
-
-  scaleLbl(lDiff);
-  scaleLbl(lAgo);
-  scaleLbl(lArrow);
-
-  PlaceTrendDots(bgs);
-  for dot in TrendDots do begin
-    dot.AutoSize := false;
-    dot.height := ClientWidth div 7;
-    dot.width := ClientWidth div 7;
-    ScaleLbl(dot);
-  end;
-end;
-
 // Update remote on timer
 procedure TfBG.tMainTimer(Sender: TObject);
 begin
@@ -1535,46 +1697,26 @@ begin
 end;
 
 // Request data from the backend and update GUI
-procedure TfBG.update;
+procedure TfBG.ProcessCurrentReading;
 var
   b: BGReading;
-  i: int64;
 begin
-  native.start;
-  lastup := 0;
-  // If not looking for new values, the last reading is unknown
-  if not tAgo.Enabled then
-    lAgo.Caption :=  '🕑 ' + RS_UNKNOWN_TIME;
-
-  // Fetch current readings
-  if api = nil then
-    Exit;
-
-  bgs := api.getReadings(MAX_MIN, 25);
-  if Length(bgs) < 1 then
-  begin
-    ShowMessage(RS_NO_BACKEND);
-    Exit;
-  end;
-
-  // Call the new method to place the points
-  PlaceTrendDots(bgs);
-
-  // Update other GUI elements based on the latest reading
   b := bgs[Low(bgs)];
+
+  // Update value label
   if not privacyMode then
   begin
     if b.val > 400 then
       lVal.Caption := RS_HIGH
-    else
-    if b.val < 40 then
+    else if b.val < 40 then
       lVal.Caption := RS_LOW
     else
-      lVal.Caption := b.format(un, BG_MSG_SHORT, BGPrimary)
-
+      lVal.Caption := b.format(un, BG_MSG_SHORT, BGPrimary);
   end
   else
     lVal.Caption := '';
+
+  // Update other UI elements
   lDiff.Caption := b.format(un, BG_MSG_SIG_SHORT, BGDelta);
   lArrow.Caption := b.trend.Img;
   lVal.Font.Style := [];
@@ -1583,235 +1725,333 @@ begin
   LogMessage(Format(RS_LATEST_READING, [b.val, DateTimeToStr(b.date)]));
 
   // Set next update time
-  tMain.Enabled := false;
-  i := SecondsBetween(b.date, now); // Seconds from last
-  i := min(BG_REFRESH,  // 5 min
-    BG_REFRESH-(i*1000) // 5 minutes minus time from last check
-    ); // Minimal 5 min to next check
+  SetNextUpdateTimer(b.date);
+end;
 
-  i := max(120000, i); // Don't allow too small refresh time. Now we have a time between 2-5 mins
-
-  tMain.Interval := i;
-  tMain.Enabled := true;
-  miRefresh.Caption := Format(RS_REFRESH, [TimeToStr (b.date), TimeToStr(IncMilliSecond(Now, i))]);
+function TfBG.IsDataFresh: Boolean;
+var
+  b: BGReading;
+begin
+  b := bgs[Low(bgs)];
 
   // Check if the latest reading is fresh
-  if MinutesBetween(Now, b.date) > DATA_FRESHNESS_THRESHOLD_MINUTES then
+  Result := MinutesBetween(Now, b.date) <= DATA_FRESHNESS_THRESHOLD_MINUTES;
+
+  if not Result then
   begin
-//    lDiff.Caption := TimeToStr(b.date) + ' (' + MinutesBetween(Now, b.date).ToString + ' min)';
     tMissed.OnTimer(tMissed);
     lVal.Font.Style := [fsStrikeOut];
     fBG.Color := clBlack;
     lVal.Font.Color := clWhite;
-    {$ifdef lclqt6}
-  //    if assigned(ffloat) then
-//        fFloat.lvl := bgoff;
-    {$endif}
     tMissed.Enabled := true;
+    native.setBadge('--');
+  end
+  else
+  begin
+    tMissed.Enabled := false;
+    bg_alert := true;
+  end;
+end;
+
+procedure TfBG.SetNextUpdateTimer(const LastReadingTime: TDateTime);
+var
+  i: Int64;
+begin
+  tMain.Enabled := false;
+
+  i := SecondsBetween(LastReadingTime, now); // Seconds from last
+  i := min(BG_REFRESH, BG_REFRESH-(i*1000)); // 5 min or less if there's a recent reading
+  i := max(120000, i); // Don't allow too small refresh time (min 2 minutes)
+
+  tMain.Interval := i;
+  tMain.Enabled := true;
+
+  miRefresh.Caption := Format(RS_REFRESH, [TimeToStr(LastReadingTime),
+                              TimeToStr(IncMilliSecond(Now, i))]);
+end;
+
+procedure TfBG.update;
+begin
+  native.start;
+  lastup := 0;
+
+  if not tAgo.Enabled then
+    lAgo.Caption := '🕑 ' + RS_UNKNOWN_TIME;
+
+  // Fetch readings and exit if no data
+  if not FetchAndValidateReadings then
     Exit;
-  end;
-  tMissed.Enabled := false;
 
-  bg_alert := true;
-  // Set background color based on the latest reading
-  if b.val >= api.cgmHi then
-  begin
-    fBG.Color := bg_color_hi;
-    {$ifdef LCLQt6}
-  //    if assigned(fFloat) then
-//        ffloat.lvl := BGHigh;
-    {$endif}
-//    with TrndiNative.create  do
-      if not bg_alert then
-        native.attention(Format(RS_WARN_BG_HI, [lVal.Caption]));
-  end
-  else
-  if b.val <= api.cgmLo then
-  begin
-    fBG.Color := bg_color_lo;
-    {$ifdef LCLQt6}
-  //    if assigned(fFloat) then
-//        ffloat.lvl := BGLOW;
-    {$endif}
-//    with TrndiNative.create  do
-      if not bg_alert then
-        native.attention(Format(RS_WARN_BG_LO, [lVal.Caption]));
-  end
-  else
-  begin
-    bg_alert := false;
-    fBG.Color := bg_color_ok;
-    // Check personalized limit
+  // Process the newest reading
+  ProcessCurrentReading;
 
-    if (b.val >= api.cgmHi) or (b.val <= api.cgmLo) then
-    begin
-      pnOffRange.Visible := false; // block off elses
-      if Assigned(fFloat) then
-      begin
-        ffloat.lRangeDown.Visible := false;
-        ffloat.lRangeUp.Visible := false;
-      end;
-    end
-    else
-    if b.val <= api.cgmRangeLo then
-    begin
-      pnOffRange.Color := bg_rel_color_lo;
-      pnOffRange.Font.Color := bg_rel_color_lo_txt;
-      pnOffRange.Visible := true;
-      pnOffRange.Caption := Format('↧ %s ↧', [RS_OFF_LO]);
-      if Assigned(fFloat) then
-      begin
-        ffloat.lRangeDown.Visible := true;
-        ffloat.Font.color := bg_rel_color_lo_txt;
-      end;
-    end
-    else
-    if b.val >= api.cgmRangeHi then
-    begin
-      pnOffRange.Color := bg_rel_color_hi;
-      pnOffRange.Font.Color := bg_rel_color_hi_txt;
-      pnOffRange.Visible := true;
-      pnOffRange.Caption := Format('↥ %s ↥', [RS_OFF_HI]);
-      if Assigned(fFloat) then
-      begin
-        ffloat.lRangeUp.Visible := true;
-        ffloat.Font.color := bg_rel_color_hi_txt;
-      end;
-    end;
-  end;
+  // Handle data freshness
+  if not IsDataFresh then
+    Exit;
+
+  // Update UI based on glucose values
+  UpdateUIBasedOnGlucose;
+
+  // Complete update and finalize
+  FinalizeUpdate;
+end;
+
+procedure TfBG.FinalizeUpdate;
+var
+  b: BGReading;
+begin
+  b := bgs[Low(bgs)];
   lastup := Now;
+
+  // Handle privacy mode display
   if privacyMode then
+  begin
     if fBG.Color = bg_color_hi then
       lVal.Caption := '⭱'
-    else
-    if fBG.Color =  bg_color_lo then
+    else if fBG.Color = bg_color_lo then
       lVal.Caption := '⭳'
     else
       lVal.Caption := '✓';
+  end;
 
+  // Update timers and UI
   tAgo.Enabled := true;
   tAgo.OnTimer(self);
   Self.OnResize(lVal);
 
+  // Apply range color if option is enabled
   if pnOffRange.Visible and miRangeColor.Checked then
     fBG.Color := pnOffRange.Color;
 
+  // Update floating window if assigned
+  UpdateFloatingWindow;
+
+  // Update text colors based on background
+  UpdateUIColors;
+
+  // Update system integration
+  with native do
+  begin
+    setBadge(lVal.Caption);
+    done;
+  end;
+end;
+
+procedure TfBG.UpdateFloatingWindow;
+begin
   if Assigned(fFloat) then
   begin
     fFloat.Color := fBg.Color;
     fFloat.lVal.Caption := lval.Caption;
     fFloat.lArrow.Caption := lArrow.Caption;
   end;
-  lVal.Font.Color := ifThen(IsLightColor(fBG.color), DarkenColor(fbg.Color, 0.5), LightenColor(fBG.Color, 0.3));
-  lArrow.Font.Color := ifThen(IsLightColor(fBG.color), DarkenColor(fbg.Color, 0.5), LightenColor(fBG.Color, 0.3));
-  lDiff.Font.Color := ifThen(IsLightColor(fBG.color), DarkenColor(fbg.Color, 0.6), LightenColor(fBG.Color, 0.4));
-  lAgo.Font.Color := ifThen(IsLightColor(fBG.color), DarkenColor(fbg.Color, 0.6), LightenColor(fBG.Color, 0.4));
+end;
 
-  with native do
+procedure TfBG.UpdateUIBasedOnGlucose;
+var
+  b: BGReading;
+begin
+  b := bgs[Low(bgs)];
+
+  if b.val >= api.cgmHi then
+    HandleHighGlucose(b)
+  else if b.val <= api.cgmLo then
+    HandleLowGlucose(b)
+  else
+    HandleNormalGlucose(b);
+end;
+
+procedure TfBG.HandleHighGlucose(const b: BGReading);
+begin
+  fBG.Color := bg_color_hi;
+
+  if not bg_alert then
+    native.attention(Format(RS_WARN_BG_HI, [lVal.Caption]));
+end;
+
+procedure TfBG.HandleLowGlucose(const b: BGReading);
+begin
+  fBG.Color := bg_color_lo;
+
+  if not bg_alert then
+    native.attention(Format(RS_WARN_BG_LO, [lVal.Caption]));
+end;
+
+procedure TfBG.HandleNormalGlucose(const b: BGReading);
+begin
+  bg_alert := false;
+  fBG.Color := bg_color_ok;
+
+  UpdateOffRangePanel(b.val);
+end;
+
+function TfBG.FetchAndValidateReadings: Boolean;
+begin
+  Result := False;
+
+  if api = nil then
+    Exit;
+
+  bgs := api.getReadings(MAX_MIN, 25);
+
+  if Length(bgs) < 1 then
   begin
-    setBadge(lVal.Caption);
-    done;
+    ShowMessage(RS_NO_BACKEND);
+    Exit;
   end;
 
+  // Call the method to place the points
+  PlaceTrendDots(bgs);
+  Result := True;
+end;
+
+procedure TfBG.UpdateOffRangePanel(const Value: Single);
+begin
+  if (Value >= api.cgmHi) or (Value <= api.cgmLo) then
+  begin
+    pnOffRange.Visible := false;
+    if Assigned(fFloat) then
+    begin
+      ffloat.lRangeDown.Visible := false;
+      ffloat.lRangeUp.Visible := false;
+    end;
+  end
+  else if Value <= api.cgmRangeLo then
+    DisplayLowRange
+  else if Value >= api.cgmRangeHi then
+    DisplayHighRange
+  else
+    pnOffRange.Visible := false;
+end;
+
+procedure TfBG.UpdateUIColors;
+begin
+  lVal.Font.Color := GetTextColorForBackground(fBG.color);
+  lArrow.Font.Color := GetTextColorForBackground(fBG.color);
+  lDiff.Font.Color := GetTextColorForBackground(fBG.color, 0.6, 0.4);
+  lAgo.Font.Color := GetTextColorForBackground(fBG.color, 0.6, 0.4);
+end;
+
+function TfBG.GetTextColorForBackground(const BgColor: TColor;
+  const DarkenFactor: Double = 0.5;
+  const LightenFactor: Double = 0.3): TColor;
+begin
+  if IsLightColor(BgColor) then
+    Result := DarkenColor(BgColor, DarkenFactor)
+  else
+    Result := LightenColor(BgColor, LightenFactor);
+end;
+
+procedure TfBG.DisplayLowRange;
+begin
+  pnOffRange.Color := bg_rel_color_lo;
+  pnOffRange.Font.Color := bg_rel_color_lo_txt;
+  pnOffRange.Visible := true;
+  pnOffRange.Caption := Format('↧ %s ↧', [RS_OFF_LO]);
+
+  if Assigned(fFloat) then
+  begin
+    ffloat.lRangeDown.Visible := true;
+    ffloat.Font.color := bg_rel_color_lo_txt;
+  end;
+end;
+
+procedure TfBG.DisplayHighRange;
+begin
+  pnOffRange.Color := bg_rel_color_hi;
+  pnOffRange.Font.Color := bg_rel_color_hi_txt;
+  pnOffRange.Visible := true;
+  pnOffRange.Caption := Format('↥ %s ↥', [RS_OFF_HI]);
+
+  if Assigned(fFloat) then
+  begin
+    ffloat.lRangeUp.Visible := true;
+    ffloat.Font.color := bg_rel_color_hi_txt;
+  end;
 end;
 
 // PlaceTrendDots method to map readings to TrendDots
 procedure TfBG.PlaceTrendDots(const Readings: array of BGReading);
 var
   SortedReadings: array of BGReading;
-  i: integer;
+  i, labelNumber: integer;
   slotIndex: integer;
   l: TLabel;
   slotStart, slotEnd: TDateTime;
   reading: BGReading;
   found: boolean;
-  labelNumber: integer;
+  currentTime: TDateTime;
 begin
+  // Grundläggande validering
   if Length(Readings) = 0 then
     Exit;
 
-  // Copy Readings to SortedReadings
+  // Förberedelser
+  currentTime := Now;
   SetLength(SortedReadings, Length(Readings));
-  for i := 0 to High(Readings) do
-    SortedReadings[i] := Readings[i];
+  Move(Readings[0], SortedReadings[0], Length(Readings) * SizeOf(BGReading));
 
-  // Sort SortedReadings in descending order based on date (latest first)
+  // Sortera läsningarna i fallande ordning (senaste först)
   SortReadingsDescending(SortedReadings);
 
-  // Check if the latest reading is fresh
-  if (MinutesBetween(Now, SortedReadings[0].date) > DATA_FRESHNESS_THRESHOLD_MINUTES) then
-  begin
-    // Hide the last label if the latest reading is outdated
-    if Assigned(TrendDots[10]) then
-    begin
-      TrendDots[10].Visible := false;
-      LogMessage('TrendDots[10] hidden due to outdated reading.');
-    end;
-  end
-  else
+  // Hantera den senaste läsningens färskhet
+  HandleLatestReadingFreshness(SortedReadings[0], currentTime);
+
+  // Bearbeta varje tidsintervall
+  ProcessTimeIntervals(SortedReadings, currentTime);
+end;
+
+procedure TfBG.HandleLatestReadingFreshness(const LatestReading: BGReading; CurrentTime: TDateTime);
+var
+  isFresh: Boolean;
+begin
+  isFresh := MinutesBetween(CurrentTime, LatestReading.date) <= DATA_FRESHNESS_THRESHOLD_MINUTES;
+
   if Assigned(TrendDots[10]) then
   begin
-    TrendDots[10].Visible := true;
-    LogMessage('TrendDots[10] shown as latest reading is fresh.');
-  end// Ensure the last label is visible if the latest reading is fresh
-  ;
+    TrendDots[10].Visible := isFresh;
 
-  // Iterate through each time interval and corresponding label
+    if isFresh then
+      LogMessage('TrendDots[10] shown as latest reading is fresh.')
+    else
+      LogMessage('TrendDots[10] hidden due to outdated reading.');
+  end;
+end;
+
+procedure TfBG.ProcessTimeIntervals(const SortedReadings: array of BGReading; CurrentTime: TDateTime);
+var
+  slotIndex, i, labelNumber: Integer;
+  slotStart, slotEnd: TDateTime;
+  found: Boolean;
+  reading: BGReading;
+  l: TLabel;
+begin
   for slotIndex := 0 to NUM_DOTS - 1 do
   begin
-    // Define the start and end time for the interval
-    slotEnd := IncMinute(Now, -INTERVAL_MINUTES * slotIndex);
+    // Definiera start- och sluttid för intervallet
+    slotEnd := IncMinute(CurrentTime, -INTERVAL_MINUTES * slotIndex);
     slotStart := IncMinute(slotEnd, -INTERVAL_MINUTES);
 
     found := false;
 
-    // Search through the readings to find the latest one that falls within the interval
+    // Sök efter den senaste läsningen inom intervallet
     for i := 0 to High(SortedReadings) do
     begin
       reading := SortedReadings[i];
+
       if (reading.date <= slotEnd) and (reading.date > slotStart) then
       begin
-        // Map slotIndex to label number (0 -> lDot10, 1 -> lDot9, ..., 9 -> lDot1)
-        labelNumber := NUM_DOTS - slotIndex;
-        l := TrendDots[labelNumber];
-
-        if Assigned(l) then
-        begin
-          // Update label properties based on the reading
-          l.Visible := true;
-          l.Hint := reading.format(un, BG_MSG_SHORT, BGPrimary);
-          l.Caption := DOT_GRAPH; // Or another symbol
-          setPointHeight(l, reading.convert(mmol));
-
-          // Set colors based on the value
-          if reading.val >= api.cgmHi then
-            l.Font.Color := bg_color_hi_txt
-          else
-          if reading.val <= api.cgmLo then
-            l.Font.Color := bg_color_lo_txt
-          else
-          begin
-            l.Font.Color := bg_color_ok_txt;
-            if reading.val <= api.cgmRangeLo then
-              l.Font.Color := bg_rel_color_lo_txt
-            else
-            if reading.val >= api.cgmRangeHi then
-              l.Font.Color := bg_rel_color_hi_txt;
-          end;
-
-          LogMessage(Format('TrendDots[%d] updated with reading at %s (Value: %.2f).', [labelNumber, DateTimeToStr(reading.date), reading.val]));
-        end;
-
-        found := true;
-        Break; // Move to the next time interval
+        found := UpdateLabelForReading(slotIndex, reading);
+        Break; // Gå till nästa tidsintervall
       end;
     end;
 
-    // If no reading was found within the interval, hide the label
+    // Om ingen läsning hittades inom intervallet, dölj etiketten
     if not found then
     begin
       labelNumber := NUM_DOTS - slotIndex;
       l := TrendDots[labelNumber];
+
       if Assigned(l) then
       begin
         l.Visible := false;
@@ -1819,45 +2059,82 @@ begin
       end;
     end;
   end;
+end;
 
-  // Adjust the layout after updating the labels
-  // FormResize(Self); <-- we need to call this manually, or we get an infinite loop
+function TfBG.UpdateLabelForReading(SlotIndex: Integer; const Reading: BGReading): Boolean;
+var
+  labelNumber: Integer;
+  l: TLabel;
+begin
+  Result := False;
+
+  // Mappa slotIndex till etikettens nummer (0 -> lDot10, 1 -> lDot9, ..., 9 -> lDot1)
+  labelNumber := NUM_DOTS - SlotIndex;
+  l := TrendDots[labelNumber];
+
+  if Assigned(l) then
+  begin
+    // Uppdatera etikettens egenskaper baserat på läsningen
+    l.Visible := true;
+    l.Hint := Reading.format(un, BG_MSG_SHORT, BGPrimary);
+
+    l.Caption := DOT_GRAPH; // Eller annan symbol
+    setPointHeight(l, Reading.convert(mmol));
+
+    // Sätt färger baserat på värdet
+    l.Font.Color := DetermineColorForReading(Reading);
+
+    LogMessage(Format('TrendDots[%d] updated with reading at %s (Value: %.2f).',
+               [labelNumber, DateTimeToStr(Reading.date), Reading.val]));
+
+    Result := True;
+  end;
+end;
+
+function TfBG.DetermineColorForReading(const Reading: BGReading): TColor;
+begin
+  if Reading.val >= api.cgmHi then
+    Result := bg_color_hi_txt
+  else if Reading.val <= api.cgmLo then
+    Result := bg_color_lo_txt
+  else
+  begin
+    Result := bg_color_ok_txt;
+
+    if Reading.val <= api.cgmRangeLo then
+      Result := bg_rel_color_lo_txt
+    else if Reading.val >= api.cgmRangeHi then
+      Result := bg_rel_color_hi_txt;
+  end;
 end;
 
 // SetPointHeight procedure
-procedure SetPointHeight(L: TLabel; value: single);
+procedure SetPointHeight(L: TLabel; Value: Single);
+const
+  GraphMin = 2;
+  GraphMax = 22;
 var
-  Padding, UsableHeight, Position: integer;
+  Padding, UsableHeight, Position: Integer;
 begin
-  padding := 0;
-  UsableHeight := 0;
-  if (Value >= 2) and (Value <= 22) then
-  begin
-    Padding := Round(fBG.ClientHeight * 0.1);
-    // 10% padding
-    UsableHeight := fBG.ClientHeight - 2 * Padding;
+  // Define padding and usable height for scaling
+  Padding := Round(fBG.ClientHeight * 0.1); // 10% of the client height
+  UsableHeight := fBG.ClientHeight - (Padding * 2);
 
-    // Calculate placement, respecting padding
-    Position := Padding + Round((Value - 2) / 20 * UsableHeight);
+  // Clamp Value within range
+  if Value < GraphMin then
+    Value := GraphMin
+  else if Value > GraphMax then
+    Value := GraphMax;
 
-    // Clamp Position within usable range
-    if Position < Padding then
-      Position := Padding
-    else
-    if Position > (Padding + UsableHeight) then
-      Position := Padding + UsableHeight;
+  // Calculate position as a proportion of the usable height
+  Position := Padding + Round((Value - GraphMin) / (GraphMax - GraphMin) * UsableHeight);
 
-    L.Top := fBG.ClientHeight - Position;
-    // Optional: Log the vertical position if label index is available
-  end
-  else
-  if Value < 2 then
-    l.top := UsableHeight+2
-  else
-    l.top := padding-2;
-//    ShowMessage('Cannot draw graph points outside 2 and 22');
+  // Apply the calculated position to the label's Top property
+  L.Top := fBG.ClientHeight - Position;
+
+  // Optional debug/logging to verify placement
+  LogMessage(Format('Label %s: Value=%.2f, Top=%d', [L.Name, Value, L.Top]));
 end;
-
 
 
 
