@@ -1,11 +1,11 @@
 object fSplash: TfSplash
   Left = 664
-  Height = 320
+  Height = 326
   Top = 34
   Width = 320
   BorderStyle = bsNone
   Caption = 'Trndi'
-  ClientHeight = 320
+  ClientHeight = 326
   ClientWidth = 320
   Color = 2763306
   FormStyle = fsSystemStayOnTop
@@ -13,7 +13,7 @@ object fSplash: TfSplash
   OnCreate = FormCreate
   object Image1: TImage
     Left = 0
-    Height = 320
+    Height = 304
     Top = 0
     Width = 320
     Align = alClient
@@ -23,12 +23,15 @@ object fSplash: TfSplash
   object Label1: TLabel
     Left = 0
     Height = 22
-    Top = 292
+    Top = 304
     Width = 320
+    Align = alBottom
     Alignment = taCenter
     AutoSize = False
     Caption = 'Loading...'
+    Color = 5000268
     Font.Color = clWhite
+    ParentColor = False
     ParentFont = False
   end
 end
