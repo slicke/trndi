@@ -364,8 +364,8 @@ procedure TfBG.placeForm;
 var
   posValue: integer;
 begin
-  Width := native.GetIntSetting(username + 'size.last.width', 10);
-  Height := native.GetIntSetting(username + 'size.last.height', 10);
+  Width := native.GetIntSetting(username + 'size.last.width', width);
+  Height := native.GetIntSetting(username + 'size.last.height', height);
   // Hämta och validera position
   posValue := native.GetIntSetting(username + 'position.main', Ord(tpoCenter));
 

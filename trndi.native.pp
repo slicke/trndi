@@ -506,7 +506,7 @@ end;
 {$ENDIF}
 
 {$ifdef LCLQt6}
-procedure TrndiNative.SetBadge(const Value: string);
+procedure TrndiNative.SetBadge(const Value: string;  badgeColor: Tcolor);
 //var
 //  Win: QWindowH;
 begin
@@ -521,7 +521,7 @@ end;
 {$endif}
 
 {$IFDEF DARWIN}
-procedure TrndiNative.SetBadge(const Value: string);
+procedure TrndiNative.SetBadge(const Value: string;  badgeColor: Tcolor);
 var
   NSS: NSString;
 begin
