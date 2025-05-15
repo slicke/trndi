@@ -27,22 +27,12 @@ interface
 
 uses
 Classes, SysUtils, mormot.lib.quickjs, mormot.core.base, strutils, fgl,
-Dialogs, slicke.ux.alert, Math, types;
+Dialogs, slicke.ux.alert, Math, types, trndi.strings;
 
 (*
   Resource strings in Swedish (can be translated if needed):
     - sNoTrace, sUnknownErr, sStackErrMsg, etc.
 *)
-resourcestring
-sNoTrace      = 'No stack trace available';
-sUnknownErr   = 'Unknown error';
-sStackErrMsg  = 'Error: %s '#13#10'Stack: %s %s';
-sLogRecevive  = 'Output through console.log has been received';
-sLogDesc      = 'Trndi has captured data sent to console.log in a JavaScript extension';
-sStackFailed  = 'An error occurred, and the stacktrace could not be loaded. Showing backtrace.';
-sDataTypeErr  = 'Datatype %s was not expected, expected in function %s';
-sDataTypeErrPos = 'Datatype %s was not expected, expected in function %s, parameter %d';
-sDataTypeErrFunc = 'Datatype "%s" was not expected, in function "%s". Expected "%s"';
 
 type
   {
