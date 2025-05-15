@@ -180,6 +180,10 @@ msgstr "Systemmeddelanden"
 msgid "Privacy Mode (Hide number)"
 msgstr "Privat läget (dölj nummer)"
 
+#: tfconf.cbsize.caption
+msgid "Remember window size"
+msgstr ""
+
 #: tfconf.cbsys.text
 msgid "NightScout"
 msgstr "NightScout"
@@ -265,6 +269,14 @@ msgstr "Klicka på en text för att ändra typsnittet"
 msgid "Libraries"
 msgstr "Bibliotek"
 
+#: tfconf.lago.caption
+msgid "100 min"
+msgstr ""
+
+#: tfconf.larrow.caption
+msgid "->"
+msgstr ""
+
 #: tfconf.lcurrentacc.caption
 msgid "This only applies for the current loaded account"
 msgstr "Gäller endast för närvarande laddat konto"
@@ -282,8 +294,10 @@ msgid "Low under"
 msgstr "Lågt under"
 
 #: tfconf.lval.caption
+#, fuzzy
+#| msgid "Setup"
 msgctxt "tfconf.lval.caption"
-msgid "Setup"
+msgid "0,0"
 msgstr "Konfig"
 
 #: tfconf.rbunit.caption

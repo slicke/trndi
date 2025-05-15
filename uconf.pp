@@ -45,6 +45,7 @@ TfConf = class(TForm)
   cbCust:TCheckBox;
   cbLang:TComboBox;
   cbPrivacy: TCheckBox;
+  cbSize:TCheckBox;
   cbSys:TComboBox;
   cbPos:TComboBox;
   cbUser:TColorButton;
@@ -77,6 +78,9 @@ TfConf = class(TForm)
   Label4:TLabel;
   Label5:TLabel;
   lbUsers:TListBox;
+  lDot1:TLabel;
+  lDot2:TLabel;
+  lDot3:TLabel;
   lHiOver: TLabel;
   lLicense: TButton;
   lLounder: TLabel;

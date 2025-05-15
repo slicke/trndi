@@ -104,6 +104,7 @@ public
     }
   function GetIntSetting(const key: string; def: integer = -1): integer;
 
+  function GetBoolSetting(const key: string; def: boolean = false): boolean;
     { isDarkMode
       ----------
       Returns True if the system theme is "dark mode", else False. Implementation
@@ -140,7 +141,7 @@ public
 
   procedure start;
   procedure done;
-  procedure setBadge(const Value: string);
+  procedure setBadge(const Value: string; col: Tcolor);
 
   constructor create(ua, base: string); overload;
   constructor create; overload;
@@ -287,26 +288,26 @@ end;
 {$ENDIF}
 
 {$IFDEF LCLGTK3}
-procedure TrndiNative.SetBadge(const Value: string);
+procedure TrndiNative.SetBadge(const Value: string;  col: Tcolor);
 begin
 end;
 {$ENDIF}
 
 {$IFDEF LCLGTK2}
-procedure TrndiNative.SetBadge(const Value: string);
+procedure TrndiNative.SetBadge(const Value: string;  col: Tcolor);
 begin
 end;
 {$ENDIF}
 
 {$IFDEF LCLFPGUI}
-procedure TrndiNative.SetBadge(const Value: string);
+procedure TrndiNative.SetBadge(const Value: string;  col: Tcolor);
 begin
 end;
 {$ENDIF}
 
 {$IFDEF LCLWIN32}
 // Helper method to use the overlay icon approach for taskbar badges
-procedure TrndiNative.setBadge(const Value: string);
+procedure TrndiNative.setBadge(const Value: string; col: Tcolor);
 var
   TaskbarList: ITaskbarList3;
   Icon: TIcon;
@@ -1004,6 +1005,24 @@ begin
   r := GetSetting(key, 'fail');
   if not TryStrToInt(r, Result) then
     Result := def;
+end;
+
+{------------------------------------------------------------------------------
+  TrndiNative.GetBoolSetting
+  -------------------------
+  Returns a bool from settings if parseable, else returns `def`.
+ ------------------------------------------------------------------------------}
+function TrndiNative.GetBoolSetting(const key: string; def: boolean = false): boolean;
+var
+  r: string;
+begin
+  r := GetSetting(key, '-');
+  case r of
+    'true': result := true;
+    'false': result := false;
+    else
+      result := def;
+  end;
 end;
 
 {------------------------------------------------------------------------------

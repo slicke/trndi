@@ -170,6 +170,10 @@ msgstr ""
 msgid "Privacy Mode (Hide number)"
 msgstr ""
 
+#: tfconf.cbsize.caption
+msgid "Remember window size"
+msgstr ""
+
 #: tfconf.cbsys.text
 msgid "NightScout"
 msgstr ""
@@ -251,6 +255,14 @@ msgstr ""
 msgid "Libraries"
 msgstr ""
 
+#: tfconf.lago.caption
+msgid "100 min"
+msgstr ""
+
+#: tfconf.larrow.caption
+msgid "->"
+msgstr ""
+
 #: tfconf.lcurrentacc.caption
 msgid "This only applies for the current loaded account"
 msgstr ""
@@ -269,7 +281,7 @@ msgstr ""
 
 #: tfconf.lval.caption
 msgctxt "tfconf.lval.caption"
-msgid "Setup"
+msgid "0,0"
 msgstr ""
 
 #: tfconf.rbunit.caption

@@ -62,17 +62,17 @@ object fFloat: TfFloat
   end
   object lRangeDown: TLabel
     Left = 0
-    Height = 22
+    Height = 15
     Top = 0
-    Width = 16
+    Width = 10
     Caption = '▼'
     Visible = False
   end
   object lRangeUp: TLabel
     Left = 0
-    Height = 22
+    Height = 15
     Top = 0
-    Width = 16
+    Width = 10
     Caption = '▲'
     Visible = False
   end
