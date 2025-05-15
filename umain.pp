@@ -142,13 +142,12 @@ TfBG = class(TForm)
   procedure tMissedTimer(Sender:TObject);
   procedure tTouchTimer(Sender: TObject);
   procedure TfFloatOnHide(Sender:TObject);
-  procedure onGH(Sender:TObject);
 private
     // Array to hold references to lDot1 - lDot10
   TrendDots: array[1..10] of TLabel;
   multi: boolean; // Multi user
 
-  procedure update;
+  procedure updateReading;
   procedure PlaceTrendDots(const Readings: array of BGReading);
   procedure actOnTrend(proc: TTrendProc);
   procedure actOnTrend(proc: TTrendProcLoop);
@@ -846,7 +845,7 @@ Application.OnException := @AppExceptionHandler;
     end;
   end;
   Application.processmessages;
-  update;
+  updateReading;
   fs.Close;
   fs.Free;
 end;
@@ -1161,7 +1160,7 @@ end;
 // Force update on menu click
 procedure TfBG.miForceClick(Sender: TObject);
 begin
-  update;
+  updateReading;
 end;
 
 // Explain limit menu click
@@ -1571,6 +1570,7 @@ begin
   try
     for Dot in TrendDots do
     begin
+      dot.Font.Size := ClientWidth div 24;
       if TryStrToFloat(Dot.Hint, Value) then
       begin
         // Use stored position if value already mapped
@@ -1664,7 +1664,7 @@ end;
 // Update remote on timer
 procedure TfBG.tMainTimer(Sender: TObject);
 begin
-  update;
+  updateReading;
   {$ifdef TrndiExt}
   TTrndiExtEngine.Instance.CallFunction('updateCallback', [bgs[Low(bgs)].val.ToString, DateTimeToStr(Now)]);
   {$endif}
@@ -1770,7 +1770,7 @@ begin
                               TimeToStr(IncMilliSecond(Now, i))]);
 end;
 
-procedure TfBG.update;
+procedure TfBG.updateReading;
 begin
   native.start;
   lastup := 0;
