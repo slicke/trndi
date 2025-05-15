@@ -364,6 +364,8 @@ procedure TfBG.placeForm;
 var
   posValue: integer;
 begin
+  Width := native.GetIntSetting(username + 'size.last.width', 10);
+  Height := native.GetIntSetting(username + 'size.last.height', 10);
   // Hämta och validera position
   posValue := native.GetIntSetting(username + 'position.main', Ord(tpoCenter));
 
@@ -844,6 +846,7 @@ Application.OnException := @AppExceptionHandler;
       api.cgmRangeHi := GetIntSetting(username+'override.rangehi', api.cgmRangeHi);
     end;
   end;
+  miRangeColor.Checked := native.GetSetting(username + 'ux.range_color') = 'true';
   Application.processmessages;
   updateReading;
   fs.Close;
@@ -856,6 +859,8 @@ begin
      native.free;
   if assigned(api) then
     api.Free;
+
+  self.Handle
 end;
 
 procedure TfBG.FormKeyPress(Sender:TObject;var Key:char);
@@ -924,6 +929,12 @@ begin
   begin
     native.SetSetting(username + 'position.last.left', self.left.toString);
     native.SetSetting(username + 'position.last.top', self.top.toString);
+  end;
+
+  if native.GetBoolSetting(username + 'size.main') then
+  begin
+    native.SetSetting(username + 'size.last.width', self.width.tostring);
+    native.SetSetting(username + 'size.last.height', self.height.tostring);
   end;
 end;
 
@@ -1133,6 +1144,7 @@ begin
   miRangeColor.Checked := not miRangeColor.Checked;
   if miRangeColor.Checked then
     ShowMessage(RS_RANGE_COLOR);
+  native.SetSetting(username + 'ux.range_color', IfThen(miRangeColor.Checked, 'true', 'false'));
 end;
 
 procedure TfBG.miBordersClick(Sender:TObject);
@@ -1250,7 +1262,10 @@ var
       end;
       if cbPos.ItemIndex = -1 then
         cbPos.ItemIndex := 0;
+
+      cbSize.Checked := GetBoolSetting(username + 'size.main');
     end;
+
   end;
 
   procedure LoadLanguageSettings(f: TfConf);
@@ -1294,6 +1309,10 @@ var
       lAgo.Caption := Self.lAgo.Caption;
       pnDisplay.Color := Self.Color;
       pnDisplay.Font := fBG.Font;
+
+      lDot1.Font.Color := self.lDot1.Font.Color;
+      lDot2.Font.Color := self.lDot1.Font.Color;
+      lDot3.Font.Color := self.lDot1.Font.Color;
     end;
   end;
 
@@ -1339,6 +1358,7 @@ var
       s := ExtractLangCode(cbLang.Items[cbLang.ItemIndex]);
       SetSetting(username + 'locale', s);
       native.SetSetting(username + 'position.main', IntToStr(cbPos.ItemIndex));
+      native.setSetting(username + 'size.main', IfThen(cbSize.Checked, 'true', 'false'));
       SetSetting(username + 'user.color', ColorToString(cbUser.ButtonColor));
       SetSetting(username + 'user.nick', edNick.Text);
 
@@ -1744,7 +1764,7 @@ begin
     fBG.Color := clBlack;
     lVal.Font.Color := clWhite;
     tMissed.Enabled := true;
-    native.setBadge('--');
+    native.setBadge('--', fBG.Color);
   end
   else
   begin
@@ -1832,7 +1852,7 @@ begin
   // Update system integration
   with native do
   begin
-    setBadge(lVal.Caption);
+    setBadge(lVal.Caption, fBG.Color);
     done;
   end;
 end;
