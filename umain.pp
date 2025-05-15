@@ -65,8 +65,10 @@ end;
 
 TfBG = class(TForm)
   lAgo:TLabel;
-  miFloatOn:TMenuItem;
+  miClock:TMenuItem;
   miRangeColor:TMenuItem;
+  miPref:TMenuItem;
+  miFloatOn:TMenuItem;
   pnMultiUser:TPanel;
   Separator1:TMenuItem;
   miBorders:TMenuItem;
@@ -102,6 +104,7 @@ TfBG = class(TForm)
   pmSettings: TPopupMenu;
   mSplit5:TMenuItem;
   tAgo:TTimer;
+  tClock:TTimer;
   tResize:TTimer;
   tMissed:TTimer;
   tTouch: TTimer;
@@ -122,6 +125,7 @@ TfBG = class(TForm)
   procedure lValMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: integer);
   procedure lValMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: integer);
   procedure lValStartDrag(Sender: TObject; var DragObject: TDragObject);
+  procedure miClockClick(Sender:TObject);
   procedure miFloatOnClick(Sender:TObject);
   procedure miRangeColorClick(Sender:TObject);
   procedure miBordersClick(Sender:TObject);
@@ -136,6 +140,7 @@ TfBG = class(TForm)
   procedure pmSettingsPopup(Sender:TObject);
   procedure pnOffRangeClick(Sender: TObject);
   procedure tAgoTimer(Sender:TObject);
+  procedure tClockTimer(Sender:TObject);
   procedure tEdgesTimer(Sender:TObject);
   procedure tResizeTimer(Sender:TObject);
   procedure tMainTimer(Sender: TObject);
@@ -407,6 +412,9 @@ begin
         Top := native.GetIntSetting(username + 'position.last.top', 10);
       end;
   end;
+
+  if native.GetBoolSetting('main.clock') then
+    miClock.OnClick(self);
 end;
 
 // For darkening (multiply each component by 0.8)
@@ -1112,6 +1120,13 @@ begin
   // Event handler can be left empty if not used
 end;
 
+procedure TfBG.miClockClick(Sender:TObject);
+begin
+  miClock.Checked := not miClock.Checked;
+  tClock.Enabled := miClock.Checked;
+  native.SetSetting('main.clock', IfThen(tClock.Enabled, 'true', 'false'));
+end;
+
 procedure TfBG.TfFloatOnHide(Sender:TObject);
 begin
   miFloatOn.Checked := fFloat.Showing;
@@ -1496,6 +1511,19 @@ begin
   {$endif}
 end;
 
+procedure TfBG.tClockTimer(Sender:TObject);
+begin
+tClock.Enabled := false;
+  if Pos(':', lval.Caption) < 1 then begin
+    lval.caption :=  FormatDateTime('hh:nn', Now);
+    tClock.Interval := 5000;
+  end else begin
+    lval.caption :=  lval.hint;
+    tClock.Interval := 20000;
+  end;
+  tClock.Enabled := true;
+end;
+
 procedure TfBG.tEdgesTimer(Sender:TObject);
 begin
 
@@ -1738,6 +1766,8 @@ begin
   else
     lVal.Caption := '';
 
+  lval.hint := lval.caption;
+
   // Update other UI elements
   lDiff.Caption := b.format(un, BG_MSG_SIG_SHORT, BGDelta);
   lArrow.Caption := b.trend.Img;
@@ -1834,6 +1864,7 @@ begin
       lVal.Caption := '⭳'
     else
       lVal.Caption := '✓';
+    lVal.hint := lval.caption;
   end;
 
   // Update timers and UI

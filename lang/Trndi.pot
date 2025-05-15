@@ -94,6 +94,10 @@ msgstr ""
 msgid "No borders"
 msgstr ""
 
+#: tfbg.miclock.caption
+msgid "Show clock every 20 sec"
+msgstr ""
+
 #: tfbg.mifloaton.caption
 msgid "Show Floating Window"
 msgstr ""
@@ -118,8 +122,12 @@ msgstr ""
 msgid "On top"
 msgstr ""
 
+#: tfbg.mipref.caption
+msgid "Preferences"
+msgstr ""
+
 #: tfbg.mirangecolor.caption
-msgid "Use range color"
+msgid "Use range color for window"
 msgstr ""
 
 #: tfbg.mirefresh.caption
@@ -677,6 +685,11 @@ msgstr ""
 
 #: ufloat.rscustomop
 msgid "You can use shift+<number> to manually set visibility (0 = 100% visible)"
+msgstr ""
+
+#: umain.rs_noplugins
+msgctxt "umain.rs_noplugins"
+msgid "Built Without Support"
 msgstr ""
 
 #: umain.rs_tpobottomleft
