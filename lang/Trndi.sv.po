@@ -104,6 +104,10 @@ msgstr "Konfig"
 msgid "No borders"
 msgstr "Inga kanter"
 
+#: tfbg.miclock.caption
+msgid "Show clock every 20 sec"
+msgstr ""
+
 #: tfbg.mifloaton.caption
 msgid "Show Floating Window"
 msgstr "Visa flytande fönster"
@@ -128,8 +132,14 @@ msgstr "Förklara"
 msgid "On top"
 msgstr "Överst"
 
+#: tfbg.mipref.caption
+msgid "Preferences"
+msgstr ""
+
 #: tfbg.mirangecolor.caption
-msgid "Use range color"
+#, fuzzy
+#| msgid "Use range color"
+msgid "Use range color for window"
 msgstr "Använd områdesfärg"
 
 #: tfbg.mirefresh.caption
@@ -705,6 +715,12 @@ msgstr "Borttagna konton blir inaktiva, de kan återställas genom att skapa om 
 #: ufloat.rscustomop
 msgid "You can use shift+<number> to manually set visibility (0 = 100% visible)"
 msgstr "Du kan använda skift+<nummerr> för att manuellt sätta synligheten (0 = 100% synlig)"
+
+#: umain.rs_noplugins
+#, fuzzy
+msgctxt "umain.rs_noplugins"
+msgid "Built Without Support"
+msgstr "Byggd utan stöd"
 
 #: umain.rs_tpobottomleft
 #, fuzzy

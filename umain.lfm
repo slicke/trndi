@@ -10,7 +10,6 @@ object fBG: TfBG
   Color = clBlack
   Font.Color = clWhite
   Position = poDesktopCenter
-  LCLVersion = '4.0.0.4'
   OnClose = FormClose
   OnCreate = FormCreate
   OnDestroy = FormDestroy
@@ -291,17 +290,23 @@ object fBG: TfBG
       object miSplit3: TMenuItem
         Caption = '-'
       end
-      object miRangeColor: TMenuItem
-        Caption = 'Use range color'
-        ShowAlwaysCheckable = True
-        OnClick = miRangeColorClick
-      end
       object Separator1: TMenuItem
         Caption = '-'
       end
       object miLimitExplain: TMenuItem
         Caption = 'Explain'
         OnClick = miLimitExplainClick
+      end
+    end
+    object miPref: TMenuItem
+      Caption = 'Preferences'
+      object miRangeColor: TMenuItem
+        Caption = 'Use range color for window'
+        OnClick = miRangeColorClick
+      end
+      object miClock: TMenuItem
+        Caption = 'Show clock every 20 sec'
+        OnClick = miClockClick
       end
     end
     object miSplit4: TMenuItem
@@ -359,5 +364,12 @@ object fBG: TfBG
     OnTimer = tAgoTimer
     Left = 94
     Top = 157
+  end
+  object tClock: TTimer
+    Enabled = False
+    Interval = 20000
+    OnTimer = tClockTimer
+    Left = 42
+    Top = 122
   end
 end
