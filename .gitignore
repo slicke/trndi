@@ -34,3 +34,6 @@ Trndi
 GPATH
 GRTAGS
 GTAGS
+*.fpc
+*.dmg
+*.zip
