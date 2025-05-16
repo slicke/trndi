@@ -35,7 +35,7 @@ slicke.ux.alert, usplash,   Generics.Collections,
 trndi.Ext. Engine, trndi.Ext.jsfuncs,
 {$endif}
 {$ifdef Darwin}
-CocoaAll,
+CocoaAll, MacOSAll,
 {$endif}
 LazFileUtils, uconf, trndi.native, Trndi.API, trndi.api.xDrip,{$ifdef DEBUG} trndi.api.debug,{$endif}
 StrUtils, TouchDetection, ufloat;
@@ -201,6 +201,9 @@ public
 end;
 
 
+{$ifdef DARWIN}
+function CFStringCreateWithUTF8String(const utf8Str: PAnsiChar): CFStringRef; external name '_CFStringCreateWithUTF8String';
+{$endif}
 
 var
 native: TrndiNative;
@@ -299,23 +302,28 @@ var
   dockMenu: NSMenu;
   menuItem: NSMenuItem;
   s: string;
+  cfStr: CFStringRef;
 begin
-
   // Create a custom dock menu
   dockMenu := NSMenu.alloc.initWithTitle(NSSTR('Trndi'));
-  // Add items to the menu
 
+  // Add items to the menu
   s := TrimLeftSet((Application.MainForm as TfBG).miSettings.Caption, ['&', ' ']);
+
+  // Create a CFStringRef directly from the UTF-8 string
+  cfStr := CFStringCreateWithCString(nil, PChar(s), kCFStringEncodingUTF8);
+
+  // Initialize the menu item with the CFStringRef
   menuItem := NSMenuItem.alloc.initWithTitle_action_keyEquivalent(
-    NSSTR(UTF8Encode(s)), sel_registerName('miSettings:'), NSSTR(''));
+    NSString(cfStr), sel_registerName('miSettings:'), NSSTR(''));
 
   dockMenu.addItem(menuItem);
   menuItem.release;
-  // Add a separator
-//  dockMenu.addItem(NSMenuItem.separatorItem);
+
+  // Release the CFStringRef
+  CFRelease(cfStr);
 
   Result := dockMenu;
-
 end;
 
 function TMyAppDelegate.applicationShouldHandleReopen_hasVisibleWindows(sender: NSApplication; hasVisibleWindows: Boolean): Boolean;
@@ -366,7 +374,7 @@ end;
 
 procedure Showmessage(const str: string);
 begin
-  UXMessage(sSuccTitle, str, widechar($2139));
+  UXMessage(sSuccTitle, str, system.widechar($2139));
 end;
 
 procedure TfBG.placeForm;
@@ -524,7 +532,7 @@ begin
       for Y := -OutlineWidth to OutlineWidth do
         if (X <> 0) or (Y <> 0) then
           Canvas.TextRect(
-            Rect(TextRect.Left + X, TextRect.Top + Y,
+            Classes.Rect(TextRect.Left + X, TextRect.Top + Y,
             TextRect.Right + X, TextRect.Bottom + Y),
             0, 0, // Not used with text style
             Caption,
@@ -666,7 +674,7 @@ function GetLinuxDistro: string;
 
   {$endif}
   {$ifdef darwin}
-  procedure addJumpList;
+  procedure addTopMenu;
   var
      MainMenu: TMainMenu;
      AppMenu,
@@ -685,7 +693,7 @@ function GetLinuxDistro: string;
        AppMenu.Caption := #$EF#$A3#$BF;   // Unicode Apple logo char
        MainMenu.Items.Insert(0, AppMenu);
        SettingsMenu := TMenuitem.Create(self);
-       settingsmenu.Caption := UTF8Decode(miSettings.Caption);
+       settingsmenu.Caption := miSettings.Caption;
        settingsmenu.OnClick := misettings.OnClick;
        AppMenu.Insert(0, SettingsMenu);
 
@@ -727,7 +735,7 @@ Application.OnException := @AppExceptionHandler;
   if not FontInList(s) then
     ShowMessage(Format(RS_FONT_ERROR, [s]));
 
-  addJumpList;
+  addTopMenu;
   native := TrndiNative.Create;
   if native.isDarkMode then
      native.setDarkMode{$ifdef windows}(self.Handle){$endif};
