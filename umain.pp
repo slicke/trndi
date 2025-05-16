@@ -1230,7 +1230,7 @@ var
   mt, t: boolean;
 begin
   t := native.HasTouchScreen(mt);
-  if (Button = mbLeft) and (self.BorderStyle = bsNone) then
+  if ((Button = mbLeft) and (self.BorderStyle = bsNone)) or (Button = mbMiddle) then
   begin   // Handle window moving
     DraggingWin := true;
     PX := X;
