@@ -406,6 +406,20 @@ begin
 end;
 
 procedure TfBG.placeForm;
+{$ifdef DARWIN}
+function GetActiveScreen: TScreen;
+begin
+  Result := nil;
+  if Assigned(NSApplication.sharedApplication.mainWindow) then
+  begin
+    var ScreenObject := NSApplication.sharedApplication.mainWindow.screen;
+    if Assigned(ScreenObject) then
+    begin
+      Result := Screen.Monitors[ScreenObject.deviceDescription.index];
+    end;
+  end;
+end;
+{$endif}
 var
   posValue: integer;
 begin
@@ -455,6 +469,16 @@ begin
 
   if native.GetBoolSetting('main.clock') then
     miClock.OnClick(self);
+
+  {$ifdef DARWIN}
+  ActiveMonitor := GetActiveScreen;
+  if Assigned(ActiveMonitor) then
+  begin
+    Left := ActiveMonitor.BoundsRect.Left + (ActiveMonitor.WorkAreaWidth - Width) div 2;
+    Top := ActiveMonitor.BoundsRect.Top + (ActiveMonitor.WorkAreaHeight - Height) div 2;
+    Exit;
+  end;
+  {$endif}
 end;
 
 // For darkening (multiply each component by 0.8)
