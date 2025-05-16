@@ -70,6 +70,7 @@ TfBG = class(TForm)
   miPref:TMenuItem;
   miFloatOn:TMenuItem;
   pnMultiUser:TPanel;
+  pnOffRangeBar:TPanel;
   Separator1:TMenuItem;
   miBorders:TMenuItem;
   miFullScreen:TMenuItem;
@@ -280,6 +281,30 @@ implementation
 
 {$R *.lfm}
 {$I tfuncs.inc}
+
+procedure CenterPanelToCaption(Panel: TPanel);
+var
+  TextWidth, PanelWidth, Padding: Integer;
+  ParentWidth: Integer;
+begin
+  // Calculate text width using the panel's font
+  Panel.Canvas.Font := Panel.Font;
+  TextWidth := Panel.Canvas.TextWidth(Panel.Caption);
+
+  Padding := 20; // Add 20 pixels (10 on each side, adjust as needed)
+  PanelWidth := TextWidth + Padding;
+
+  Panel.Width := PanelWidth;
+
+  // Use parent's client width (TPanel may be placed on form or another control)
+  if Assigned(Panel.Parent) then
+    ParentWidth := Panel.Parent.ClientWidth
+  else
+    ParentWidth := Screen.Width; // Fallback
+
+  // Center panel
+  Panel.Left := (ParentWidth - Panel.Width) div 2;
+end;
 
 
 procedure TfBG.onGH(sender: TObject);
@@ -1598,6 +1623,9 @@ begin
   // Anpassa storleken på panelen
   pnOffRange.Height := ClientHeight div 10;
   pnOffRange.Font.Size := 7 + pnOffRange.Height div 5;
+  CenterPanelToCaption(pnOffRange);
+  pnOffRangeBar.Height := pnOffRange.height div 3;
+  pnOffRangeBar.width := ClientWidth+10;
 
   // Anpassa huvudetiketterna
   ScaleLbl(lVal);
@@ -1609,7 +1637,7 @@ begin
   ScaleLbl(lDiff);
 
   // Konfigurera tidsvisning
-  lAgo.Top := 1 + IfThen(pnOffRange.Visible, pnOffRange.Height, 3);
+//  lAgo.Top := 1 + IfThen(pnOffRange.Visible, pnOffRange.Height, 3);
   lAgo.Height := ClientHeight div 9;
   ScaleLbl(lAgo, taLeftJustify);
 
@@ -1976,6 +2004,7 @@ begin
   if (Value >= api.cgmHi) or (Value <= api.cgmLo) then
   begin
     pnOffRange.Visible := false;
+    pnOffRangeBar.Visible := false;
     if Assigned(fFloat) then
     begin
       ffloat.lRangeDown.Visible := false;
@@ -1986,8 +2015,10 @@ begin
     DisplayLowRange
   else if Value >= api.cgmRangeHi then
     DisplayHighRange
-  else
+  else begin
     pnOffRange.Visible := false;
+    pnOffRangeBar.Visible := false;
+  end;
 end;
 
 procedure TfBG.UpdateUIColors;
@@ -2011,8 +2042,10 @@ end;
 procedure TfBG.DisplayLowRange;
 begin
   pnOffRange.Color := bg_rel_color_lo;
+  pnOffRangeBar.Color := bg_rel_color_lo;
   pnOffRange.Font.Color := bg_rel_color_lo_txt;
   pnOffRange.Visible := true;
+  pnOffRangeBar.Visible := true;
   pnOffRange.Caption := Format('↧ %s ↧', [RS_OFF_LO]);
 
   if Assigned(fFloat) then
@@ -2020,13 +2053,16 @@ begin
     ffloat.lRangeDown.Visible := true;
     ffloat.Font.color := bg_rel_color_lo_txt;
   end;
+  CenterPanelToCaption(pnOffRange);
 end;
 
 procedure TfBG.DisplayHighRange;
 begin
   pnOffRange.Color := bg_rel_color_hi;
+  pnOffRangeBar.Color := bg_rel_color_hi;
   pnOffRange.Font.Color := bg_rel_color_hi_txt;
   pnOffRange.Visible := true;
+  pnOffRangeBar.Visible := true;
   pnOffRange.Caption := Format('↥ %s ↥', [RS_OFF_HI]);
 
   if Assigned(fFloat) then
@@ -2034,6 +2070,7 @@ begin
     ffloat.lRangeUp.Visible := true;
     ffloat.Font.color := bg_rel_color_hi_txt;
   end;
+  CenterPanelToCaption(pnOffRange);
 end;
 
 // PlaceTrendDots method to map readings to TrendDots

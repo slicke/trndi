@@ -10,7 +10,6 @@ object fBG: TfBG
   Color = clBlack
   Font.Color = clWhite
   Position = poDesktopCenter
-  LCLVersion = '4.0.0.4'
   OnClose = FormClose
   OnCreate = FormCreate
   OnDestroy = FormDestroy
@@ -41,8 +40,8 @@ object fBG: TfBG
   end
   object lVal: TLabel
     Left = 0
-    Height = 126
-    Top = 18
+    Height = 144
+    Top = 0
     Width = 320
     Align = alClient
     Alignment = taCenter
@@ -186,7 +185,6 @@ object fBG: TfBG
     Height = 18
     Top = 0
     Width = 320
-    Align = alTop
     BevelOuter = bvNone
     Caption = '- Off Range -'
     Color = clBlack
@@ -245,6 +243,21 @@ object fBG: TfBG
     ParentBackground = False
     TabOrder = 1
     Visible = False
+  end
+  object pnOffRangeBar: TPanel
+    Left = 0
+    Height = 18
+    Top = 0
+    Width = 320
+    BevelOuter = bvNone
+    Caption = '- Off Range -'
+    Color = clBlack
+    ParentBackground = False
+    ParentColor = False
+    TabOrder = 2
+    Visible = False
+    OnClick = pnOffRangeClick
+    OnMouseMove = FormMouseMove
   end
   object tMain: TTimer
     Interval = 100000
