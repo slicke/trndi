@@ -139,6 +139,7 @@ TfBG = class(TForm)
   procedure pmSettingsMeasureItem(Sender:TObject;ACanvas:TCanvas;var AWidth,
     AHeight:integer);
   procedure pmSettingsPopup(Sender:TObject);
+  procedure pnMultiUserClick(Sender:TObject);
   procedure pnOffRangeClick(Sender: TObject);
   procedure tAgoTimer(Sender:TObject);
   procedure tClockTimer(Sender:TObject);
@@ -1523,6 +1524,14 @@ begin
   miBorders.Checked := self.BorderStyle = bsNone;
 end;
 
+procedure TfBG.pnMultiUserClick(Sender:TObject);
+begin
+if username <> '' then
+   ShowMessage(Format(RS_MULTINAME, [username]))
+else
+   ShowMessage(RS_MULTINAME_DEF);
+end;
+
 // Handle off range panel click
 procedure TfBG.pnOffRangeClick(Sender: TObject);
 begin
@@ -1624,7 +1633,7 @@ begin
   pnOffRange.Height := ClientHeight div 10;
   pnOffRange.Font.Size := 7 + pnOffRange.Height div 5;
   CenterPanelToCaption(pnOffRange);
-  pnOffRangeBar.Height := pnOffRange.height div 3;
+  pnOffRangeBar.Height := pnOffRange.height div 4;
   pnOffRangeBar.width := ClientWidth+10;
 
   // Anpassa huvudetiketterna
@@ -1644,6 +1653,10 @@ begin
   // Konfigurera trendpil
   lArrow.Height := ClientHeight div 4;
   ScaleLbl(lArrow);
+
+  pnMultiUser.width := clientwidth div 10;
+  pnMultiUser.height := clientheight div 10;
+  pnMultiUser.top := clientheight-pnMultiuser.Height;
 end;
 
 procedure TfBG.UpdateTrendDots;

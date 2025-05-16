@@ -60,6 +60,8 @@ RS_tpoBottomRight = 'Bottom Right';
 RS_tpoCustom = 'Last position';
 RS_tpoTopRight = 'Top Right';
 RS_noPlugins = 'Built Without Support';
+RS_MULTINAME = 'Showing data for: "%s"';
+RS_MULTINAME_DEF = 'Showing the standard user';
 
 // EXT
 sExtErr = 'Extension Error';
