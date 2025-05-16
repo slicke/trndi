@@ -26,7 +26,7 @@ unit slicke.ux.alert;
 
 interface
 
-uses 
+uses
 Classes, SysUtils, Dialogs, Forms, ExtCtrls, StdCtrls, Controls, Graphics, Math,
 IntfGraphics, FPImage, graphtype, lcltype, Trndi.Native,
 {$ifdef Windows}
@@ -57,7 +57,7 @@ smbUXOpenFile = 'Open File';
 smbUxMinimize = 'Minimize';
 smbSelect = 'Select';
 
-const 
+const
 muiStop = $26D4;
 muiStar = $2B50;
 muiCog = $2699;
@@ -223,6 +223,8 @@ var
   Value: integer;
 begin
   inherited CreateWnd;
+  if not TrndiNative.isDarkMode then
+    Exit;
   Value := 1;
   // Nu är Handle giltigt – anropa DWM
   DwmSetWindowAttribute(Handle,
@@ -234,7 +236,7 @@ end;
 
 procedure AssignEmoji(Image: TImage; const Emoji: widestring; dark: boolean = false);
 
-var 
+var
   D2DFactory: ID2D1Factory;
   DWFactory: IDWriteFactory;
   WICFactory: IWICImagingFactory;
@@ -766,7 +768,7 @@ widechar($2699)): TModalResult;
 const
   btnWidth = 75;
   padding = 10;
-var 
+var
   Dialog: TDialogForm;
   IconBox: TImage;
   TitleLabel: TLabel;
