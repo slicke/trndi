@@ -2066,13 +2066,17 @@ end;
 
 procedure TfBG.DisplayLowRange;
 begin
-  if pnOffRange.Visible and miRangeColor.Checked then
-    pnOffRange.Visible := false;
-
   pnOffRange.Color := bg_rel_color_lo;
   pnOffRangeBar.Color := bg_rel_color_lo;
   pnOffRange.Font.Color := bg_rel_color_lo_txt;
-  pnOffRange.Visible := true;
+  if miRangeColor.Checked then begin
+    pnOffRange.Visible := false;
+    pnOffRangeBar.Visible := false;
+  end
+  else begin
+    pnOffRange.Visible := true;
+    pnOffRangeBar.Visible := true;
+  end;
   pnOffRangeBar.Visible := true;
   pnOffRange.Caption := Format('↧ %s ↧', [RS_OFF_LO]);
 
@@ -2086,13 +2090,17 @@ end;
 
 procedure TfBG.DisplayHighRange;
 begin
-  if pnOffRange.Visible and miRangeColor.Checked then
-    pnOffRange.Visible := false;
   pnOffRange.Color := bg_rel_color_hi;
   pnOffRangeBar.Color := bg_rel_color_hi;
   pnOffRange.Font.Color := bg_rel_color_hi_txt;
-  pnOffRange.Visible := true;
-  pnOffRangeBar.Visible := true;
+  if miRangeColor.Checked then begin
+    pnOffRange.Visible := false;
+    pnOffRangeBar.Visible := false;
+  end
+  else begin
+    pnOffRange.Visible := true;
+    pnOffRangeBar.Visible := true;
+  end;
   pnOffRange.Caption := Format('↥ %s ↥', [RS_OFF_HI]);
 
   if Assigned(fFloat) then
