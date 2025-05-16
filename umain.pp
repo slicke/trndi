@@ -281,16 +281,17 @@ implementation
 {$R *.lfm}
 {$I tfuncs.inc}
 
+
+procedure TfBG.onGH(sender: TObject);
+begin
+OpenURL('https://github.com/slicke/trndi');
+end;
+
 {$IFDEF DARWIN}
 
 procedure TMyAppDelegate.miSettingsMacClick(sender: id);
 begin
   (Application.MainForm as TfBG).miSettingsClick(nil);
-end;
-
-procedure TfBG.onGH(sender: TObject);
-begin
-OpenURL('https://github.com/slicke/trndi');
 end;
 
 function TMyAppDelegate.applicationDockMenu(sender: NSApplication): NSMenu;
