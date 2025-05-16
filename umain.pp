@@ -1306,16 +1306,22 @@ var
         cbUser.ButtonColor := StringToColor(s);
 
       // Load position settings
-      posValue := native.GetIntSetting(username + 'position.main', Ord(tpoCenter));
-      for po in TrndiPos do
-      begin
-        s := TrndiPosNames[po];
-        cbPos.Items.Add(s);
-        if Ord(po) = i then
-          cbPos.ItemIndex := i;
-      end;
-      if cbPos.ItemIndex = -1 then
-        cbPos.ItemIndex := 0;
+posValue := native.GetIntSetting(username + 'position.main', Ord(tpoCenter));
+
+cbPos.Items.Clear;
+for po in TrndiPos do
+begin
+  s := TrndiPosNames[po];
+  cbPos.Items.Add(s);
+
+  // Match enum order with saved position
+  if Ord(po) = posValue then
+    cbPos.ItemIndex := Ord(po);
+end;
+
+// Fallback to first item if no valid match
+if cbPos.ItemIndex = -1 then
+  cbPos.ItemIndex := 0;
 
       cbSize.Checked := GetBoolSetting(username + 'size.main');
     end;
