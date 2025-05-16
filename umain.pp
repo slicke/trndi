@@ -666,13 +666,56 @@ function GetLinuxDistro: string;
 
   {$endif}
   {$ifdef darwin}
+  procedure addJumpList;
+  var
      MainMenu: TMainMenu;
      AppMenu,
      forceMenu,
      SettingsMenu,
      HelpMenu,
      GithubMenu: TMenuItem;
+  begin
+       MacAppDelegate := TMyAppDelegate.alloc.init;
+       NSApp.setDelegate(NSObject(MacAppDelegate));
+
+       Application.Title := 'Trndi';
+       MainMenu := TMainMenu.Create(self);
+       fBg.Menu := MainMenu;
+       AppMenu := TMenuItem.Create(Self); // Application menu
+       AppMenu.Caption := #$EF#$A3#$BF;   // Unicode Apple logo char
+       MainMenu.Items.Insert(0, AppMenu);
+       SettingsMenu := TMenuitem.Create(self);
+       settingsmenu.Caption := UTF8Decode(miSettings.Caption);
+       settingsmenu.OnClick := misettings.OnClick;
+       AppMenu.Insert(0, SettingsMenu);
+
+       forcemenu := TMenuItem.Create(self);
+       forcemenu.Caption := miForce.caption;
+       forcemenu.onclick := miForce.OnClick;
+       AppMenu.Insert(1, forceMenu);
+
+       helpmenu := TMenuItem.Create(self);
+       helpmenu.Caption := 'Help';
+       MainMenu.Items.Insert(1, helpMenu);
+
+       upmenu := TMenuItem.Create(self);
+       upmenu.Caption := mirefresh.Caption;
+       upmenu.Enabled := false;
+
+       githubmenu := TMenuItem.Create(self);
+       githubmenu.Caption := RS_TRNDI_GIHUB;
+       githubmenu.onclick := @onGH;
+       helpMenu.Insert(0, githubMenu);
+
+       helpMenu.Insert(0, upMenu);
+  end;
+       {$else}
+  procedure addJumpList;
+  begin
+
+  end;
   {$endif}
+
 begin
 
   fs := TfSplash.Create(nil);
@@ -684,43 +727,7 @@ Application.OnException := @AppExceptionHandler;
   if not FontInList(s) then
     ShowMessage(Format(RS_FONT_ERROR, [s]));
 
-
-  {$ifdef darwin}
-    MacAppDelegate := TMyAppDelegate.alloc.init;
-    NSApp.setDelegate(NSObject(MacAppDelegate));
-
-    Application.Title := 'Trndi';
-    MainMenu := TMainMenu.Create(self);
-    fBg.Menu := MainMenu;
-    AppMenu := TMenuItem.Create(Self); // Application menu
-    AppMenu.Caption := #$EF#$A3#$BF;   // Unicode Apple logo char
-    MainMenu.Items.Insert(0, AppMenu);
-    SettingsMenu := TMenuitem.Create(self);
-    settingsmenu.Caption := miSettings.Caption;
-    settingsmenu.OnClick := misettings.OnClick;
-    AppMenu.Insert(0, SettingsMenu);
-
-    forcemenu := TMenuItem.Create(self);
-    forcemenu.Caption := miForce.caption;
-    forcemenu.onclick := miForce.OnClick;
-    AppMenu.Insert(1, forceMenu);
-
-    helpmenu := TMenuItem.Create(self);
-    helpmenu.Caption := 'Help';
-    MainMenu.Items.Insert(1, helpMenu);
-
-    upmenu := TMenuItem.Create(self);
-    upmenu.Caption := mirefresh.Caption;
-    upmenu.Enabled := false;
-
-    githubmenu := TMenuItem.Create(self);
-    githubmenu.Caption := RS_TRNDI_GIHUB;
-    githubmenu.onclick := @onGH;
-    helpMenu.Insert(0, githubMenu);
-
-    helpMenu.Insert(0, upMenu);
-
-  {$endif}
+  addJumpList;
   native := TrndiNative.Create;
   if native.isDarkMode then
      native.setDarkMode{$ifdef windows}(self.Handle){$endif};
