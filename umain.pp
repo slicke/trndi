@@ -990,6 +990,7 @@ procedure TfBG.ExpandDot(l: TLabel; c, ix: integer);
 var
   isDot: boolean;
 begin
+
   // Check if label currently shows a dot
   isDot := l.Caption = DOT_GRAPH;
 
@@ -1480,8 +1481,15 @@ end;
 
 // Swap dots with their readings
 procedure TfBG.onTrendClick(Sender: TObject);
+var
+  isdot: boolean;
+  l: tlabel;
 begin
+  l := sender as tlabel;
   actOnTrend(@ExpandDot);
+  isDot := l.Caption = DOT_GRAPH;;
+  if isDot then
+    tResize.OnTimer(self);
 end;
 
 procedure TfBG.pmSettingsMeasureItem(Sender: TObject; ACanvas: TCanvas; var AWidth, AHeight: Integer);
