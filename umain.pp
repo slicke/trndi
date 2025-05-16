@@ -200,6 +200,9 @@ private
   procedure ProcessTimeIntervals(const SortedReadings: array of BGReading; CurrentTime: TDateTime);
   function UpdateLabelForReading(SlotIndex: Integer; const Reading: BGReading): Boolean;
   function DetermineColorForReading(const Reading: BGReading): TColor;
+  {$ifdef DARWIN}
+     procedure TfBG.ToggleFullscreenMac;
+  {$endif}
 
   {$ifdef TrndiExt}
   procedure LoadExtensions;
@@ -1078,23 +1081,34 @@ begin
 
 end;
 
+{$ifdef DARWIN}
+procedure TfBG.ToggleFullscreenMac;
+var
+  nsWindow: NSWindow;
+begin
+  nsWindow := NSApplication.sharedApplication.mainWindow; // Get main window
+  if Assigned(nsWindow) then
+  begin
+    if nsWindow.styleMask and NSWindowStyleMaskFullScreen = 0 then
+      nsWindow.toggleFullScreen(nil) // Enter fullscreen
+    else
+      nsWindow.toggleFullScreen(nil); // Exit fullscreen
+  end
+  else
+    ShowMessage('Unable to toggle fullscreen. Main window not found.');
+end;
+{$endif}
+
 // Handle full screen toggle on double-click
 procedure TfBG.lDiffDblClick(Sender: TObject);
-  // Helper function to check if the form is maximized/fullscreen
-  function IsMaximized(Form: TForm): boolean;
-  begin
-    {$IFDEF DARWIN}
-    // On macOS, compare form bounds to screen size minus menubar/dock
-    Result := (Form.BoundsRect.Width >= Screen.WorkAreaWidth) and
-              (Form.BoundsRect.Height >= Screen.WorkAreaHeight);
-    {$ELSE}
-    Result := Form.WindowState = wsFullScreen; // Standard fullscreen check
-    {$ENDIF}
-  end;
 var
   IsCurrentlyFullscreen: Boolean;
   SavedBounds: TRect;
 begin
+  {$ifdef DARWIN}
+  ToggleFullscreenMac
+  exit;
+  {$endif}
   // Store the current form bounds before making any changes
   SavedBounds := BoundsRect;
 
