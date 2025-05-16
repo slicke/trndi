@@ -244,6 +244,7 @@ end;
 {$ifndef Windows}
 procedure TDialogForm.CreateWnd;
 begin
+   inherited CreateWnd;
      KeyPreview := True;
 end;
 {$endif}
@@ -937,6 +938,7 @@ begin
     p3.BevelOuter := bvNone;
     p3.color := bgcol;
     p3.name := 'pnButtons';
+    p3.caption := '';
 
     last := p3.ClientWidth - Padding;
     // OK-knapp
