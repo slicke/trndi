@@ -79,10 +79,10 @@ mbUXUXOpenFile = 110;
 
 type
 TDialogForm = class(TForm)
-  procedure FormKeyPress(Sender:TObject;var Key:char);
-  {$ifdef windows}
+  procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
 protected
   procedure CreateWnd; override;
+ {$ifdef windows}
 public
  procedure ButtonDrawItem(Sender: TObject;
   ACanvas: TCanvas; ARect: TRect; State: TButtonState);
@@ -210,10 +210,43 @@ begin
   end;
 end;
 
-procedure TDialogForm.FormKeyPress(Sender:TObject;var Key:char);
+procedure TDialogForm.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+var
+  o: TCustomButton;
+  i: integer;
+  cancel, no, ok, ct: integer;
+  btns: TComponent;
+  target: TWinControl;
 begin
+cancel := -1;
+no := -1;
+ct := 0;
+btns := self.FindComponent('pnButtons');
+if btns = nil then
+target := self
+else
+target := btns as TPanel;
+ for i := 0 to target.ComponentCount-1 do begin
+   if target.components[i] is TCustomButton then begin
+     o := target.components[i] as TCustomButton;
+     if o.ModalResult = mrCancel then cancel := i;
+     if o.ModalResult = mrNo then no := i;
+     if o.ModalResult = mrOK then ok := i;
+     Inc(ct);
+   end;
 
+ end;
+ if cancel >= 0 then (target.Components[cancel] as TCustomButton).click
+ else if no >= 0 then (target.Components[no] as TCustomButton).click
+ else if ((ct = 1) and (ok >= 0)) then (target.Components[ok] as TCustomButton).click;
 end;
+
+{$ifndef Windows}
+procedure TDialogForm.CreateWnd;
+begin
+     KeyPreview := True;
+end;
+{$endif}
 
 {$ifdef Windows}
 procedure TDialogForm.CreateWnd;
@@ -223,6 +256,12 @@ var
   Value: integer;
 begin
   inherited CreateWnd;
+   if HandleAllocated then
+  begin
+    SetWindowLong(Handle, GWL_STYLE,
+      GetWindowLong(Handle, GWL_STYLE) or WS_SYSMENU);
+  end;
+  KeyPreview := True;
   if not TrndiNative.isDarkMode then
     Exit;
   Value := 1;
@@ -547,6 +586,8 @@ begin
   bgcol := IfThen(TrndiNative.isDarkMode, $00322B27, clWhite);
 
   Dialog := TDialogForm.CreateNew(nil);
+  Dialog.KeyPreview := True;
+  Dialog.OnKeyDown := @Dialog.FormKeyDown;
   try
     Dialog.Caption := ACaption;
     Dialog.BorderStyle := bsDialog;
@@ -597,14 +638,13 @@ begin
     Edit.Top := DescLabel.Top + DescLabel.Height + Padding div 2;
     Edit.Text := ADefault;
 
-    Edit.OnKeyPress := @Dialog.FormKeyPress;
 
     // OK-knapp
     OkButton := TButton.Create(Dialog);
     OkButton.Parent := Dialog;
     OkButton.Caption := smbSelect;
     OkButton.ModalResult := mrOk;
-    Dialog.OnKeyPress := @Dialog.FormKeyPress;
+
     OkButton.Width := 80;
     {$ifdef Windows}
     OkButton.SetFocus;
@@ -667,6 +707,8 @@ begin
   bgcol := IfThen(TrndiNative.isDarkMode, $00322B27, clWhite);
 
   Dialog := TDialogForm.CreateNew(nil);
+  Dialog.KeyPreview := True;
+  Dialog.OnKeyDown := @Dialog.FormKeyDown;
   try
     Dialog.Caption := ACaption;
     Dialog.BorderStyle := bsDialog;
@@ -784,6 +826,8 @@ var
 begin
   bgcol :=  IfThen(TrndiNative.isDarkMode, $00322B27, clWhite);
   Dialog := TDialogForm.CreateNew(nil);
+  Dialog.KeyPreview := True;
+  Dialog.OnKeyDown := @Dialog.FormKeyDown;
   try
     Dialog.Caption := caption;
     Dialog.BorderStyle := bsDialog;
@@ -892,6 +936,7 @@ begin
     p3.BorderStyle := bsNone;
     p3.BevelOuter := bvNone;
     p3.color := bgcol;
+    p3.name := 'pnButtons';
 
     last := p3.ClientWidth - Padding;
     // OK-knapp
@@ -907,7 +952,6 @@ begin
 
       OkButton.ModalResult := UXButtonToModalResult(mr);
       if OkButton.ModalResult = mrOK then begin
-        Dialog.OnKeyPress := @Dialog.FormKeyPress;
         {$ifdef Windows}
           OkButton.SetFocus;
         {$endif}
