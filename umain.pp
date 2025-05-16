@@ -1060,7 +1060,7 @@ end;
 
 procedure TfBG.lAgoClick(Sender:TObject);
 begin
-  showmessage(lago.left.tostring);
+  showmessage(miRefresh.Caption);
 end;
 
 procedure TfBG.lArrowClick(Sender:TObject);
@@ -1878,6 +1878,8 @@ end;
 
 procedure TfBG.updateReading;
 begin
+  lAgo.Caption := '⟳' + lAgo.Caption;
+
   native.start;
   lastup := 0;
 
