@@ -150,6 +150,13 @@ TfBG = class(TForm)
   procedure tTouchTimer(Sender: TObject);
   procedure TfFloatOnHide(Sender:TObject);
 private
+  FStoredWindowInfo: record
+    Left, Top, Width, Height: Integer;
+    WindowState: TWindowState;
+    BorderStyle: TFormBorderStyle;
+    FormStyle: TFormStyle;
+    Initialized: Boolean;
+  end;
     // Array to hold references to lDot1 - lDot10
   TrendDots: array[1..10] of TLabel;
   multi: boolean; // Multi user
@@ -701,7 +708,9 @@ function GetLinuxDistro: string;
   {$endif}
 begin
 
+
   fs := TfSplash.Create(nil);
+    FStoredWindowInfo.Initialized := False;
   fs.Image1.Picture.Icon := Application.Icon;
 fs.Show;
 Application.processmessages;
@@ -1071,46 +1080,96 @@ end;
 
 // Handle full screen toggle on double-click
 procedure TfBG.lDiffDblClick(Sender: TObject);
-function IsMaximized(Form: TForm): boolean;
+  // Helper function to check if the form is maximized/fullscreen
+  function IsMaximized(Form: TForm): boolean;
   begin
     {$IFDEF DARWIN}
-  // Jämför med skärmstorlek minus menubar/dock
+    // On macOS, compare form bounds to screen size minus menubar/dock
     Result := (Form.BoundsRect.Width >= Screen.WorkAreaWidth) and
-      (Form.BoundsRect.Height >= Screen.WorkAreaHeight);
+              (Form.BoundsRect.Height >= Screen.WorkAreaHeight);
     {$ELSE}
-    Result := Form.WindowState = wsMaximized;
+    Result := Form.WindowState = wsFullScreen; // Standard fullscreen check
     {$ENDIF}
   end;
-
-
+var
+  IsCurrentlyFullscreen: Boolean;
+  SavedBounds: TRect;
 begin
-  if IsMaximized(self) then
+  // Store the current form bounds before making any changes
+  SavedBounds := BoundsRect;
+
+  // Determine if form is currently in fullscreen mode
+  // This needs to check multiple conditions as WindowState alone isn't reliable
+  IsCurrentlyFullscreen := (BorderStyle = bsNone) and
+                          ((WindowState = wsFullScreen) or
+                           (BoundsRect.Width >= Screen.Width) and
+                           (BoundsRect.Height >= Screen.Height));
+
+  // Remember the window position for restoration
+  if not FStoredWindowInfo.Initialized and not IsCurrentlyFullscreen then
   begin
-    {$ifdef DARWIN}
-    Showmessage('macOS cant restore the main window, please restart!');
-//  Application.Terminate;
-    borderstyle := bsSizeable;
-    fBG.WindowState := wsNormal;
-    fBG.FormStyle := fsNormal;
-    Exit;
-    {$else}
+    FStoredWindowInfo.Left := Left;
+    FStoredWindowInfo.Top := Top;
+    FStoredWindowInfo.Width := Width;
+    FStoredWindowInfo.Height := Height;
+    FStoredWindowInfo.WindowState := WindowState;
+    FStoredWindowInfo.BorderStyle := BorderStyle;
+    FStoredWindowInfo.FormStyle := FormStyle;
+    FStoredWindowInfo.Initialized := True;
+  end;
+
+  if IsCurrentlyFullscreen then
+  begin
+    // First, change the window state to normal
+    WindowState := wsNormal;
+    Application.ProcessMessages;
+
+    // Then restore border styles
     BorderStyle := bsSizeToolWin;
-    fBG.WindowState := wsNormal;
-    fBG.FormStyle := fsNormal;
-    {$endif}
-    fBG.Width := Max(Screen.Width div 5, 200);
-    fBG.height := Max(Screen.Height div 5, 300);
-    fBG.Top := (screen.Height div 2) - (fbg.Height div 2);
-    fBG.left := (screen.width div 2) - (fbg.width div 2)
+    FormStyle := fsNormal;
+    Application.ProcessMessages;
+
+    // Restore previous window size and position
+    if FStoredWindowInfo.Initialized then
+    begin
+      SetBounds(FStoredWindowInfo.Left, FStoredWindowInfo.Top,
+                FStoredWindowInfo.Width, FStoredWindowInfo.Height);
+      WindowState := FStoredWindowInfo.WindowState;
+      FStoredWindowInfo.Initialized := False;
+    end
+    else
+    begin
+      // Fallback if stored position is not available
+      Width := Max(Screen.Width div 5, 200);
+      Height := Max(Screen.Height div 5, 300);
+      Top := (Screen.Height div 2) - (Height div 2);
+      Left := (Screen.Width div 2) - (Width div 2);
+    end;
   end
   else
   begin
-    fBG.WindowState := wsFullScreen;
-    fBG.FormStyle := fsStayOnTop;
-    fBG.BorderStyle := bsNone;
+    // Enter fullscreen mode
+
+    // First, make sure we're in normal state to avoid issues
+    if WindowState = wsMaximized then
+      WindowState := wsNormal;
+    Application.ProcessMessages;
+
+    // Remove borders first
+    BorderStyle := bsNone;
+    FormStyle := fsStayOnTop;
+    Application.ProcessMessages;
+
+    // Finally set to fullscreen
+    WindowState := wsFullScreen;
+
+    // Force repaint to ensure display updates properly
+    Invalidate;
   end;
-    if native.isDarkMode then
-     native.setDarkMode{$ifdef windows}(self.Handle){$endif};
+
+  // Adjust for dark mode if applicable
+  if native.isDarkMode then
+    native.setDarkMode{$ifdef windows}(self.Handle){$endif};
 end;
 
 // Empty event handler
