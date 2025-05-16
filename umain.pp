@@ -1226,18 +1226,28 @@ end;
 
 // Handle mouse down on lVal
 procedure TfBG.lValMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: integer);
+var
+  mt, t: boolean;
 begin
-  // Handle touch screens
-  StartTouch := Now;
-  IsTouched := true;
-  tTouch.Enabled := true;
-
+  t := native.HasTouchScreen(mt);
   if (Button = mbLeft) and (self.BorderStyle = bsNone) then
   begin   // Handle window moving
     DraggingWin := true;
     PX := X;
     PY := Y;
+    if not t then
+      Exit;
   end;
+
+
+  if not t then
+  Exit;
+
+  // Handle touch screens
+  StartTouch := Now;
+  IsTouched := true;
+  tTouch.Enabled := true;
+
 end;
 
 // Handle mouse up on lVal
