@@ -1631,7 +1631,9 @@ procedure TfBG.ResizeUIElements;
 begin
   // Anpassa storleken på panelen
   pnOffRange.Height := ClientHeight div 10;
+
   pnOffRange.Font.Size := 7 + pnOffRange.Height div 5;
+
   CenterPanelToCaption(pnOffRange);
   pnOffRangeBar.Height := pnOffRange.height div 4;
   pnOffRangeBar.width := ClientWidth+10;
@@ -2056,6 +2058,9 @@ end;
 
 procedure TfBG.DisplayLowRange;
 begin
+  if pnOffRange.Visible and miRangeColor.Checked then
+    pnOffRange.Visible := false;
+
   pnOffRange.Color := bg_rel_color_lo;
   pnOffRangeBar.Color := bg_rel_color_lo;
   pnOffRange.Font.Color := bg_rel_color_lo_txt;
@@ -2073,6 +2078,8 @@ end;
 
 procedure TfBG.DisplayHighRange;
 begin
+  if pnOffRange.Visible and miRangeColor.Checked then
+    pnOffRange.Visible := false;
   pnOffRange.Color := bg_rel_color_hi;
   pnOffRangeBar.Color := bg_rel_color_hi;
   pnOffRange.Font.Color := bg_rel_color_hi_txt;
