@@ -10,7 +10,6 @@ object fBG: TfBG
   Color = clBlack
   Font.Color = clWhite
   Position = poDesktopCenter
-  LCLVersion = '4.0.0.4'
   OnClose = FormClose
   OnCreate = FormCreate
   OnDestroy = FormDestroy
@@ -217,7 +216,7 @@ object fBG: TfBG
   object lAgo: TLabel
     Left = 8
     Height = 20
-    Top = 13
+    Top = 5
     Width = 200
     AutoSize = False
     BorderSpacing.Bottom = 5
