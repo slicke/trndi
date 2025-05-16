@@ -143,11 +143,6 @@ msgctxt "tfbg.pnoffrange.caption"
 msgid "- Off Range -"
 msgstr ""
 
-#: tfbg.pnoffrangebar.caption
-msgctxt "tfbg.pnoffrangebar.caption"
-msgid "- Off Range -"
-msgstr ""
-
 #: tfconf.badd.caption
 msgid "+ Add"
 msgstr ""
@@ -505,6 +500,15 @@ msgstr ""
 #: trndi.strings.rs_missing_label
 #, object-pascal-format
 msgid "Label %s is missing!"
+msgstr ""
+
+#: trndi.strings.rs_multiname
+#, object-pascal-format
+msgid "Showing data for: \"%s\""
+msgstr ""
+
+#: trndi.strings.rs_multiname_def
+msgid "Showing the standard user"
 msgstr ""
 
 #: trndi.strings.rs_multiple_accounts

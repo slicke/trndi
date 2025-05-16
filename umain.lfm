@@ -18,10 +18,24 @@ object fBG: TfBG
   OnMouseMove = FormMouseMove
   OnResize = FormResize
   OnShow = FormShow
+  object pnOffRangeBar: TPanel
+    Left = 0
+    Height = 20
+    Top = 0
+    Width = 100
+    BevelOuter = bvNone
+    Color = clBlack
+    ParentBackground = False
+    ParentColor = False
+    TabOrder = 2
+    Visible = False
+    OnClick = pnOffRangeClick
+    OnMouseMove = FormMouseMove
+  end
   object lArrow: TLabel
     Left = 0
     Height = 78
-    Top = 144
+    Top = 162
     Width = 320
     Align = alBottom
     Alignment = taCenter
@@ -40,7 +54,7 @@ object fBG: TfBG
   end
   object lVal: TLabel
     Left = 0
-    Height = 144
+    Height = 162
     Top = 0
     Width = 320
     Align = alClient
@@ -180,21 +194,6 @@ object fBG: TfBG
     PopupMenu = pmSettings
     OnClick = onTrendClick
   end
-  object pnOffRange: TPanel
-    Left = 0
-    Height = 18
-    Top = 0
-    Width = 320
-    BevelOuter = bvNone
-    Caption = '- Off Range -'
-    Color = clBlack
-    ParentBackground = False
-    ParentColor = False
-    TabOrder = 0
-    Visible = False
-    OnClick = pnOffRangeClick
-    OnMouseMove = FormMouseMove
-  end
   object lDiff: TLabel
     Left = 0
     Height = 14
@@ -238,23 +237,25 @@ object fBG: TfBG
     Height = 18
     Top = 222
     Width = 320
-    Align = alBottom
     BevelOuter = bvNone
+    Color = clWhite
     ParentBackground = False
+    ParentColor = False
     TabOrder = 1
     Visible = False
+    OnClick = pnMultiUserClick
   end
-  object pnOffRangeBar: TPanel
-    Left = 0
+  object pnOffRange: TPanel
+    Left = 200
     Height = 18
     Top = 0
-    Width = 320
+    Width = 100
     BevelOuter = bvNone
     Caption = '- Off Range -'
     Color = clBlack
     ParentBackground = False
     ParentColor = False
-    TabOrder = 2
+    TabOrder = 0
     Visible = False
     OnClick = pnOffRangeClick
     OnMouseMove = FormMouseMove
