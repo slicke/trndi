@@ -149,6 +149,7 @@ msgid "&Settings"
 msgstr "&Inställningar"
 
 #: tfbg.pnoffrange.caption
+msgctxt "tfbg.pnoffrange.caption"
 msgid "- Off Range -"
 msgstr "- Utanför område -"
 
@@ -391,33 +392,40 @@ msgstr "Inloggningsfel efter autensieringen"
 
 #: trndi.ext.functions.sdatatypeerr
 #, object-pascal-format
+msgctxt "trndi.ext.functions.sdatatypeerr"
 msgid "Datatype %s was not expected, expected in function %s"
 msgstr "Datatypen %s förväntades inte, förväntad i funktionen %s"
 
 #: trndi.ext.functions.sdatatypeerrfunc
 #, object-pascal-format
+msgctxt "trndi.ext.functions.sdatatypeerrfunc"
 msgid "Datatype \"%s\" was not expected, in function \"%s\". Expected \"%s\""
 msgstr "Datatypen ”%s” förväntades inte, i funktionen ”%s”. Förväntade ”%s”"
 
 #: trndi.ext.functions.sdatatypeerrpos
 #, object-pascal-format
+msgctxt "trndi.ext.functions.sdatatypeerrpos"
 msgid "Datatype %s was not expected, expected in function %s, parameter %d"
 msgstr "Datatypen ”%s” förväntades inte, förväntad i funktionen %s, parameter %d"
 
 #: trndi.ext.functions.slogdesc
+msgctxt "trndi.ext.functions.slogdesc"
 msgid "Trndi has captured data sent to console.log in a JavaScript extension"
 msgstr "Trndi har fångat utdata från console.log i ett JavaScript-tillägg"
 
 #: trndi.ext.functions.slogrecevive
+msgctxt "trndi.ext.functions.slogrecevive"
 msgid "Output through console.log has been received"
 msgstr "Utmatning genom console.log har mottagits"
 
 #: trndi.ext.functions.snotrace
+msgctxt "trndi.ext.functions.snotrace"
 msgid "No stack trace available"
 msgstr "Ingen stackspårning finns"
 
 #: trndi.ext.functions.sstackerrmsg
 #, object-pascal-format
+msgctxt "trndi.ext.functions.sstackerrmsg"
 msgid ""
 "Error: %s \n"
 "Stack: %s %s"
@@ -426,27 +434,33 @@ msgstr ""
 "Stack: %s %s"
 
 #: trndi.ext.functions.sstackfailed
+msgctxt "trndi.ext.functions.sstackfailed"
 msgid "An error occurred, and the stacktrace could not be loaded. Showing backtrace."
 msgstr "Ett fel uppstod och stackspårningen kunde inte laddas. Visar bakåtspårning."
 
 #: trndi.ext.functions.sunknownerr
+msgctxt "trndi.ext.functions.sunknownerr"
 msgid "Unknown error"
 msgstr "Okänt fel"
 
 #: trndi.ext.promise.spromerrcapt
 #, object-pascal-format
+msgctxt "trndi.ext.promise.spromerrcapt"
 msgid "The asyncronous function %s failed to complete"
 msgstr "Den asynkrona funktionen %s misslyckades"
 
 #: trndi.ext.promise.stypeerrcapt
+msgctxt "trndi.ext.promise.stypeerrcapt"
 msgid "A data type differes from what was expected"
 msgstr "En datatyp skiljer sig från vad som förväntats"
 
 #: trndi.ext.promise.stypeerrdesc
+msgctxt "trndi.ext.promise.stypeerrdesc"
 msgid "The extension was stopped"
 msgstr "Tillägget stoppades"
 
 #: trndi.ext.promise.stypeerrmsg
+msgctxt "trndi.ext.promise.stypeerrmsg"
 msgid "A data type was expected, but another was found"
 msgstr "En datatyp förväntades, men en annan påträffades"
 
@@ -507,6 +521,15 @@ msgstr "Låg < %.1f"
 #, object-pascal-format
 msgid "Label %s is missing!"
 msgstr "Etikett %s saknas!"
+
+#: trndi.strings.rs_multiname
+#, object-pascal-format
+msgid "Showing data for: \"%s\""
+msgstr "Visar data för: \"%s\""
+
+#: trndi.strings.rs_multiname_def
+msgid "Showing the standard user"
+msgstr "Visar standardanvändaren"
 
 #: trndi.strings.rs_multiple_accounts
 msgid "Trndi found multiple accounts. Please choose one for this instance"
@@ -620,6 +643,10 @@ msgctxt "trndi.strings.rs_tpotopright"
 msgid "Top Right"
 msgstr "Höger topp"
 
+#: trndi.strings.rs_trndi_gihub
+msgid "Trndi on GitHub"
+msgstr "Trndi på GitHub"
+
 #: trndi.strings.rs_under
 msgid "under"
 msgstr "under"
@@ -642,6 +669,105 @@ msgstr "Högt blodsocker! Nuvarande: %s"
 #, object-pascal-format
 msgid "Low blood sugar! Currently: %s"
 msgstr "Lågt blodsocker! Nuvarande: %s"
+
+#: trndi.strings.sdatatypeerr
+#, object-pascal-format
+msgctxt "trndi.strings.sdatatypeerr"
+msgid "Datatype %s was not expected, expected in function %s"
+msgstr "Datatypen %s förväntades inte, förväntad i funktionen %s"
+
+#: trndi.strings.sdatatypeerrfunc
+#, object-pascal-format
+msgctxt "trndi.strings.sdatatypeerrfunc"
+msgid "Datatype \"%s\" was not expected, in function \"%s\". Expected \"%s\""
+msgstr "Datatypen ”%s” förväntades inte, i funktionen ”%s”. Förväntade ”%s”"
+
+#: trndi.strings.sdatatypeerrpos
+#, object-pascal-format
+msgctxt "trndi.strings.sdatatypeerrpos"
+msgid "Datatype %s was not expected, expected in function %s, parameter %d"
+msgstr "Datatypen ”%s” förväntades inte, förväntad i funktionen %s, parameter %d"
+
+#: trndi.strings.sextconfirm
+msgid "Extension Confirmation"
+msgstr "Tilläggsbekräftelse"
+
+#: trndi.strings.sexterr
+msgid "Extension Error"
+msgstr ""
+
+#: trndi.strings.sextevent
+msgid "Extension Event"
+msgstr ""
+
+#: trndi.strings.sextfile
+#, object-pascal-format
+msgid "File \"%s\" not found"
+msgstr ""
+
+#: trndi.strings.sextmsg
+msgid "Extension Message"
+msgstr ""
+
+#: trndi.strings.sextwarn
+msgid "Extension Warning"
+msgstr ""
+
+#: trndi.strings.slogdesc
+msgctxt "trndi.strings.slogdesc"
+msgid "Trndi has captured data sent to console.log in a JavaScript extension"
+msgstr "Trndi har fångat utdata från console.log i ett JavaScript-tillägg"
+
+#: trndi.strings.slogrecevive
+msgctxt "trndi.strings.slogrecevive"
+msgid "Output through console.log has been received"
+msgstr "Utmatning genom console.log har mottagits"
+
+#: trndi.strings.snotrace
+msgctxt "trndi.strings.snotrace"
+msgid "No stack trace available"
+msgstr "Ingen stackspårning finns"
+
+#: trndi.strings.spromerrcapt
+#, object-pascal-format
+msgctxt "trndi.strings.spromerrcapt"
+msgid "The asyncronous function %s failed to complete"
+msgstr "Den asynkrona funktionen %s misslyckades"
+
+#: trndi.strings.sstackerrmsg
+#, object-pascal-format
+msgctxt "trndi.strings.sstackerrmsg"
+msgid ""
+"Error: %s \n"
+"Stack: %s %s"
+msgstr ""
+"Fel: %s \n"
+"Stack: %s %s"
+
+#: trndi.strings.sstackfailed
+msgctxt "trndi.strings.sstackfailed"
+msgid "An error occurred, and the stacktrace could not be loaded. Showing backtrace."
+msgstr "Ett fel uppstod och stackspårningen kunde inte laddas. Visar bakåtspårning."
+
+#: trndi.strings.stypeerrcapt
+msgctxt "trndi.strings.stypeerrcapt"
+msgid "A data type differes from what was expected"
+msgstr "En datatyp skiljer sig från vad som förväntats"
+
+#: trndi.strings.stypeerrdesc
+msgctxt "trndi.strings.stypeerrdesc"
+msgid "The extension was stopped"
+msgstr "Tillägget stoppades"
+
+#: trndi.strings.stypeerrmsg
+msgctxt "trndi.strings.stypeerrmsg"
+msgid "A data type was expected, but another was found"
+msgstr "En datatyp förväntades, men en annan påträffades"
+
+#: trndi.strings.sunknownerr
+msgctxt "trndi.strings.sunknownerr"
+msgid "Unknown error"
+msgstr "Okänt fel"
 
 #: uconf.rs_auto
 msgid "Auto-detect"
@@ -714,11 +840,6 @@ msgstr "Borttagna konton blir inaktiva, de kan återställas genom att skapa om 
 msgid "You can use shift+<number> to manually set visibility (0 = 100% visible)"
 msgstr "Du kan använda skift+<nummerr> för att manuellt sätta synligheten (0 = 100% synlig)"
 
-#: umain.rs_noplugins
-msgctxt "umain.rs_noplugins"
-msgid "Built Without Support"
-msgstr "Byggd utan stöd"
-
 #: umain.rs_tpobottomleft
 msgctxt "umain.rs_tpobottomleft"
 msgid "Bottom Left"
@@ -743,3 +864,4 @@ msgstr "Senaste position"
 msgctxt "umain.rs_tpotopright"
 msgid "Top Right"
 msgstr "Höger topp"
+

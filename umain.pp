@@ -70,6 +70,7 @@ TfBG = class(TForm)
   miPref:TMenuItem;
   miFloatOn:TMenuItem;
   pnMultiUser:TPanel;
+  pnOffRangeBar:TPanel;
   Separator1:TMenuItem;
   miBorders:TMenuItem;
   miFullScreen:TMenuItem;
@@ -138,6 +139,7 @@ TfBG = class(TForm)
   procedure pmSettingsMeasureItem(Sender:TObject;ACanvas:TCanvas;var AWidth,
     AHeight:integer);
   procedure pmSettingsPopup(Sender:TObject);
+  procedure pnMultiUserClick(Sender:TObject);
   procedure pnOffRangeClick(Sender: TObject);
   procedure tAgoTimer(Sender:TObject);
   procedure tClockTimer(Sender:TObject);
@@ -148,6 +150,13 @@ TfBG = class(TForm)
   procedure tTouchTimer(Sender: TObject);
   procedure TfFloatOnHide(Sender:TObject);
 private
+  FStoredWindowInfo: record
+    Left, Top, Width, Height: Integer;
+    WindowState: TWindowState;
+    BorderStyle: TFormBorderStyle;
+    FormStyle: TFormStyle;
+    Initialized: Boolean;
+  end;
     // Array to hold references to lDot1 - lDot10
   TrendDots: array[1..10] of TLabel;
   multi: boolean; // Multi user
@@ -191,6 +200,9 @@ private
   procedure ProcessTimeIntervals(const SortedReadings: array of BGReading; CurrentTime: TDateTime);
   function UpdateLabelForReading(SlotIndex: Integer; const Reading: BGReading): Boolean;
   function DetermineColorForReading(const Reading: BGReading): TColor;
+  {$ifdef DARWIN}
+     procedure TfBG.ToggleFullscreenMac;
+  {$endif}
 
   {$ifdef TrndiExt}
   procedure LoadExtensions;
@@ -283,6 +295,30 @@ implementation
 
 {$R *.lfm}
 {$I tfuncs.inc}
+
+procedure CenterPanelToCaption(Panel: TPanel);
+var
+  TextWidth, PanelWidth, Padding: Integer;
+  ParentWidth: Integer;
+begin
+  // Calculate text width using the panel's font
+  Panel.Canvas.Font := Panel.Font;
+  TextWidth := Panel.Canvas.TextWidth(Panel.Caption);
+
+  Padding := 20; // Add 20 pixels (10 on each side, adjust as needed)
+  PanelWidth := TextWidth + Padding;
+
+  Panel.Width := PanelWidth;
+
+  // Use parent's client width (TPanel may be placed on form or another control)
+  if Assigned(Panel.Parent) then
+    ParentWidth := Panel.Parent.ClientWidth
+  else
+    ParentWidth := Screen.Width; // Fallback
+
+  // Center panel
+  Panel.Left := (ParentWidth - Panel.Width) div 2;
+end;
 
 
 procedure TfBG.onGH(sender: TObject);
@@ -378,6 +414,20 @@ begin
 end;
 
 procedure TfBG.placeForm;
+{$ifdef DARWIN}
+function GetActiveScreen: TScreen;
+begin
+  Result := nil;
+  if Assigned(NSApplication.sharedApplication.mainWindow) then
+  begin
+    var ScreenObject := NSApplication.sharedApplication.mainWindow.screen;
+    if Assigned(ScreenObject) then
+    begin
+      Result := Screen.Monitors[ScreenObject.deviceDescription.index];
+    end;
+  end;
+end;
+{$endif}
 var
   posValue: integer;
 begin
@@ -427,6 +477,16 @@ begin
 
   if native.GetBoolSetting('main.clock') then
     miClock.OnClick(self);
+
+  {$ifdef DARWIN}
+  ActiveMonitor := GetActiveScreen;
+  if Assigned(ActiveMonitor) then
+  begin
+    Left := ActiveMonitor.BoundsRect.Left + (ActiveMonitor.WorkAreaWidth - Width) div 2;
+    Top := ActiveMonitor.BoundsRect.Top + (ActiveMonitor.WorkAreaHeight - Height) div 2;
+    Exit;
+  end;
+  {$endif}
 end;
 
 // For darkening (multiply each component by 0.8)
@@ -726,7 +786,9 @@ function GetLinuxDistro: string;
 
 begin
 
+
   fs := TfSplash.Create(nil);
+    FStoredWindowInfo.Initialized := False;
   fs.Image1.Picture.Icon := Application.Icon;
 fs.Show;
 Application.processmessages;
@@ -979,6 +1041,7 @@ procedure TfBG.ExpandDot(l: TLabel; c, ix: integer);
 var
   isDot: boolean;
 begin
+
   // Check if label currently shows a dot
   isDot := l.Caption = DOT_GRAPH;
 
@@ -1049,7 +1112,7 @@ end;
 
 procedure TfBG.lAgoClick(Sender:TObject);
 begin
-  showmessage(lago.left.tostring);
+  showmessage(miRefresh.Caption);
 end;
 
 procedure TfBG.lArrowClick(Sender:TObject);
@@ -1057,48 +1120,109 @@ begin
 
 end;
 
+{$ifdef DARWIN}
+procedure TfBG.ToggleFullscreenMac;
+var
+  nsWindow: NSWindow;
+begin
+  nsWindow := NSApplication.sharedApplication.mainWindow; // Get main window
+  if Assigned(nsWindow) then
+  begin
+    if nsWindow.styleMask and NSWindowStyleMaskFullScreen = 0 then
+      nsWindow.toggleFullScreen(nil) // Enter fullscreen
+    else
+      nsWindow.toggleFullScreen(nil); // Exit fullscreen
+  end
+  else
+    ShowMessage('Unable to toggle fullscreen. Main window not found.');
+end;
+{$endif}
+
 // Handle full screen toggle on double-click
 procedure TfBG.lDiffDblClick(Sender: TObject);
-function IsMaximized(Form: TForm): boolean;
+var
+  IsCurrentlyFullscreen: Boolean;
+  SavedBounds: TRect;
+begin
+  {$ifdef DARWIN}
+  ToggleFullscreenMac
+  exit;
+  {$endif}
+  // Store the current form bounds before making any changes
+  SavedBounds := BoundsRect;
+
+  // Determine if form is currently in fullscreen mode
+  // This needs to check multiple conditions as WindowState alone isn't reliable
+  IsCurrentlyFullscreen := (BorderStyle = bsNone) and
+                          ((WindowState = wsFullScreen) or
+                           (BoundsRect.Width >= Screen.Width) and
+                           (BoundsRect.Height >= Screen.Height));
+
+  // Remember the window position for restoration
+  if not FStoredWindowInfo.Initialized and not IsCurrentlyFullscreen then
   begin
-    {$IFDEF DARWIN}
-  // Jämför med skärmstorlek minus menubar/dock
-    Result := (Form.BoundsRect.Width >= Screen.WorkAreaWidth) and
-      (Form.BoundsRect.Height >= Screen.WorkAreaHeight);
-    {$ELSE}
-    Result := Form.WindowState = wsMaximized;
-    {$ENDIF}
+    FStoredWindowInfo.Left := Left;
+    FStoredWindowInfo.Top := Top;
+    FStoredWindowInfo.Width := Width;
+    FStoredWindowInfo.Height := Height;
+    FStoredWindowInfo.WindowState := WindowState;
+    FStoredWindowInfo.BorderStyle := BorderStyle;
+    FStoredWindowInfo.FormStyle := FormStyle;
+    FStoredWindowInfo.Initialized := True;
   end;
 
-
-begin
-  if IsMaximized(self) then
+  if IsCurrentlyFullscreen then
   begin
-    {$ifdef DARWIN}
-    Showmessage('macOS cant restore the main window, please restart!');
-//  Application.Terminate;
-    borderstyle := bsSizeable;
-    fBG.WindowState := wsNormal;
-    fBG.FormStyle := fsNormal;
-    Exit;
-    {$else}
+    // First, change the window state to normal
+    WindowState := wsNormal;
+    Application.ProcessMessages;
+
+    // Then restore border styles
     BorderStyle := bsSizeToolWin;
-    fBG.WindowState := wsNormal;
-    fBG.FormStyle := fsNormal;
-    {$endif}
-    fBG.Width := Max(Screen.Width div 5, 200);
-    fBG.height := Max(Screen.Height div 5, 300);
-    fBG.Top := (screen.Height div 2) - (fbg.Height div 2);
-    fBG.left := (screen.width div 2) - (fbg.width div 2)
+    FormStyle := fsNormal;
+    Application.ProcessMessages;
+
+    // Restore previous window size and position
+    if FStoredWindowInfo.Initialized then
+    begin
+      SetBounds(FStoredWindowInfo.Left, FStoredWindowInfo.Top,
+                FStoredWindowInfo.Width, FStoredWindowInfo.Height);
+      WindowState := FStoredWindowInfo.WindowState;
+      FStoredWindowInfo.Initialized := False;
+    end
+    else
+    begin
+      // Fallback if stored position is not available
+      Width := Max(Screen.Width div 5, 200);
+      Height := Max(Screen.Height div 5, 300);
+      Top := (Screen.Height div 2) - (Height div 2);
+      Left := (Screen.Width div 2) - (Width div 2);
+    end;
   end
   else
   begin
-    fBG.WindowState := wsFullScreen;
-    fBG.FormStyle := fsStayOnTop;
-    fBG.BorderStyle := bsNone;
+    // Enter fullscreen mode
+
+    // First, make sure we're in normal state to avoid issues
+    if WindowState = wsMaximized then
+      WindowState := wsNormal;
+    Application.ProcessMessages;
+
+    // Remove borders first
+    BorderStyle := bsNone;
+    FormStyle := fsStayOnTop;
+    Application.ProcessMessages;
+
+    // Finally set to fullscreen
+    WindowState := wsFullScreen;
+
+    // Force repaint to ensure display updates properly
+    Invalidate;
   end;
-    if native.isDarkMode then
-     native.setDarkMode{$ifdef windows}(self.Handle){$endif};
+
+  // Adjust for dark mode if applicable
+  if native.isDarkMode then
+    native.setDarkMode{$ifdef windows}(self.Handle){$endif};
 end;
 
 // Empty event handler
@@ -1117,18 +1241,28 @@ end;
 
 // Handle mouse down on lVal
 procedure TfBG.lValMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: integer);
+var
+  mt, t: boolean;
 begin
-  // Handle touch screens
-  StartTouch := Now;
-  IsTouched := true;
-  tTouch.Enabled := true;
-
+  t := native.HasTouchScreen(mt);
   if (Button = mbLeft) and (self.BorderStyle = bsNone) then
   begin   // Handle window moving
     DraggingWin := true;
     PX := X;
     PY := Y;
+    if not t then
+      Exit;
   end;
+
+
+  if not t then
+  Exit;
+
+  // Handle touch screens
+  StartTouch := Now;
+  IsTouched := true;
+  tTouch.Enabled := true;
+
 end;
 
 // Handle mouse up on lVal
@@ -1294,16 +1428,22 @@ var
         cbUser.ButtonColor := StringToColor(s);
 
       // Load position settings
-      posValue := native.GetIntSetting(username + 'position.main', Ord(tpoCenter));
-      for po in TrndiPos do
-      begin
-        s := TrndiPosNames[po];
-        cbPos.Items.Add(s);
-        if Ord(po) = i then
-          cbPos.ItemIndex := i;
-      end;
-      if cbPos.ItemIndex = -1 then
-        cbPos.ItemIndex := 0;
+posValue := native.GetIntSetting(username + 'position.main', Ord(tpoCenter));
+
+cbPos.Items.Clear;
+for po in TrndiPos do
+begin
+  s := TrndiPosNames[po];
+  cbPos.Items.Add(s);
+
+  // Match enum order with saved position
+  if Ord(po) = posValue then
+    cbPos.ItemIndex := Ord(po);
+end;
+
+// Fallback to first item if no valid match
+if cbPos.ItemIndex = -1 then
+  cbPos.ItemIndex := 0;
 
       cbSize.Checked := GetBoolSetting(username + 'size.main');
     end;
@@ -1469,8 +1609,15 @@ end;
 
 // Swap dots with their readings
 procedure TfBG.onTrendClick(Sender: TObject);
+var
+  isdot: boolean;
+  l: tlabel;
 begin
+  l := sender as tlabel;
   actOnTrend(@ExpandDot);
+  isDot := l.Caption = DOT_GRAPH;;
+  if isDot then
+    tResize.OnTimer(self);
 end;
 
 procedure TfBG.pmSettingsMeasureItem(Sender: TObject; ACanvas: TCanvas; var AWidth, AHeight: Integer);
@@ -1511,6 +1658,14 @@ end;
 procedure TfBG.pmSettingsPopup(Sender:TObject);
 begin
   miBorders.Checked := self.BorderStyle = bsNone;
+end;
+
+procedure TfBG.pnMultiUserClick(Sender:TObject);
+begin
+if username <> '' then
+   ShowMessage(Format(RS_MULTINAME, [username]))
+else
+   ShowMessage(RS_MULTINAME_DEF);
 end;
 
 // Handle off range panel click
@@ -1612,7 +1767,12 @@ procedure TfBG.ResizeUIElements;
 begin
   // Anpassa storleken på panelen
   pnOffRange.Height := ClientHeight div 10;
+
   pnOffRange.Font.Size := 7 + pnOffRange.Height div 5;
+
+  CenterPanelToCaption(pnOffRange);
+  pnOffRangeBar.Height := pnOffRange.height div 4;
+  pnOffRangeBar.width := ClientWidth+10;
 
   // Anpassa huvudetiketterna
   ScaleLbl(lVal);
@@ -1624,13 +1784,17 @@ begin
   ScaleLbl(lDiff);
 
   // Konfigurera tidsvisning
-  lAgo.Top := 1 + IfThen(pnOffRange.Visible, pnOffRange.Height, 3);
+//  lAgo.Top := 1 + IfThen(pnOffRange.Visible, pnOffRange.Height, 3);
   lAgo.Height := ClientHeight div 9;
   ScaleLbl(lAgo, taLeftJustify);
 
   // Konfigurera trendpil
   lArrow.Height := ClientHeight div 4;
   ScaleLbl(lArrow);
+
+  pnMultiUser.width := clientwidth div 10;
+  pnMultiUser.height := clientheight div 10;
+  pnMultiUser.top := clientheight-pnMultiuser.Height;
 end;
 
 procedure TfBG.UpdateTrendDots;
@@ -1852,6 +2016,8 @@ end;
 
 procedure TfBG.updateReading;
 begin
+  lAgo.Caption := '⟳' + lAgo.Caption;
+
   native.start;
   lastup := 0;
 
@@ -1991,6 +2157,7 @@ begin
   if (Value >= api.cgmHi) or (Value <= api.cgmLo) then
   begin
     pnOffRange.Visible := false;
+    pnOffRangeBar.Visible := false;
     if Assigned(fFloat) then
     begin
       ffloat.lRangeDown.Visible := false;
@@ -2001,8 +2168,10 @@ begin
     DisplayLowRange
   else if Value >= api.cgmRangeHi then
     DisplayHighRange
-  else
+  else begin
     pnOffRange.Visible := false;
+    pnOffRangeBar.Visible := false;
+  end;
 end;
 
 procedure TfBG.UpdateUIColors;
@@ -2026,8 +2195,17 @@ end;
 procedure TfBG.DisplayLowRange;
 begin
   pnOffRange.Color := bg_rel_color_lo;
+  pnOffRangeBar.Color := bg_rel_color_lo;
   pnOffRange.Font.Color := bg_rel_color_lo_txt;
-  pnOffRange.Visible := true;
+  if miRangeColor.Checked then begin
+    pnOffRange.Visible := false;
+    pnOffRangeBar.Visible := false;
+  end
+  else begin
+    pnOffRange.Visible := true;
+    pnOffRangeBar.Visible := true;
+  end;
+  pnOffRangeBar.Visible := true;
   pnOffRange.Caption := Format('↧ %s ↧', [RS_OFF_LO]);
 
   if Assigned(fFloat) then
@@ -2035,13 +2213,22 @@ begin
     ffloat.lRangeDown.Visible := true;
     ffloat.Font.color := bg_rel_color_lo_txt;
   end;
+  CenterPanelToCaption(pnOffRange);
 end;
 
 procedure TfBG.DisplayHighRange;
 begin
   pnOffRange.Color := bg_rel_color_hi;
+  pnOffRangeBar.Color := bg_rel_color_hi;
   pnOffRange.Font.Color := bg_rel_color_hi_txt;
-  pnOffRange.Visible := true;
+  if miRangeColor.Checked then begin
+    pnOffRange.Visible := false;
+    pnOffRangeBar.Visible := false;
+  end
+  else begin
+    pnOffRange.Visible := true;
+    pnOffRangeBar.Visible := true;
+  end;
   pnOffRange.Caption := Format('↥ %s ↥', [RS_OFF_HI]);
 
   if Assigned(fFloat) then
@@ -2049,6 +2236,7 @@ begin
     ffloat.lRangeUp.Visible := true;
     ffloat.Font.color := bg_rel_color_hi_txt;
   end;
+  CenterPanelToCaption(pnOffRange);
 end;
 
 // PlaceTrendDots method to map readings to TrendDots
