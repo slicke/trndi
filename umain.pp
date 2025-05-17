@@ -201,7 +201,7 @@ private
   function UpdateLabelForReading(SlotIndex: Integer; const Reading: BGReading): Boolean;
   function DetermineColorForReading(const Reading: BGReading): TColor;
   {$ifdef DARWIN}
-     procedure TfBG.ToggleFullscreenMac;
+     procedure ToggleFullscreenMac;
   {$endif}
 
   {$ifdef TrndiExt}
@@ -415,18 +415,30 @@ end;
 
 procedure TfBG.placeForm;
 {$ifdef DARWIN}
-function GetActiveScreen: TScreen;
+function GetActiveScreen: TMonitor; // Use TMonitor if that's what Screen.Monitors returns
+var
+  ScreenObject: NSScreen;
+  i: Integer;
 begin
   Result := nil;
   if Assigned(NSApplication.sharedApplication.mainWindow) then
   begin
-    var ScreenObject := NSApplication.sharedApplication.mainWindow.screen;
+    ScreenObject := NSApplication.sharedApplication.mainWindow.screen;
     if Assigned(ScreenObject) then
     begin
-      Result := Screen.Monitors[ScreenObject.deviceDescription.index];
+      // Attempt to match NSScreen to the TMonitor by comparing frame or unique ID
+      for i := 0 to Screen.MonitorCount - 1 do
+      begin
+        // Add your comparison logic here (e.g., by frame bounds or display ID)
+        // Example (pseudo-code):
+        // if Screen.Monitors[i].Rect = NSRectToRect(ScreenObject.frame) then
+        //   Result := Screen.Monitors[i];
+      end;
     end;
   end;
 end;
+var
+activemonitor: TMonitor;
 {$endif}
 var
   posValue: integer;
@@ -482,8 +494,8 @@ begin
   ActiveMonitor := GetActiveScreen;
   if Assigned(ActiveMonitor) then
   begin
-    Left := ActiveMonitor.BoundsRect.Left + (ActiveMonitor.WorkAreaWidth - Width) div 2;
-    Top := ActiveMonitor.BoundsRect.Top + (ActiveMonitor.WorkAreaHeight - Height) div 2;
+    Left := ActiveMonitor.BoundsRect.Left + (ActiveMonitor.WorkAreaRect.Width - Width) div 2;
+    Top := ActiveMonitor.BoundsRect.Top + (ActiveMonitor.WorkAreaRect.Height - Height) div 2;
     Exit;
   end;
   {$endif}
@@ -1123,16 +1135,19 @@ end;
 {$ifdef DARWIN}
 procedure TfBG.ToggleFullscreenMac;
 var
-  nsWindow: NSWindow;
+  macWindow: NSWindow;
 begin
-  nsWindow := NSApplication.sharedApplication.mainWindow; // Get main window
-  if Assigned(nsWindow) then
-  begin
-    if nsWindow.styleMask and NSWindowStyleMaskFullScreen = 0 then
-      nsWindow.toggleFullScreen(nil) // Enter fullscreen
-    else
-      nsWindow.toggleFullScreen(nil); // Exit fullscreen
-  end
+  // Try to get the main window or fallback to the key window
+  macWindow := NSApplication.sharedApplication.mainWindow;
+  if macWindow = nil then
+    macWindow := NSApplication.sharedApplication.keyWindow;
+
+  // If still nil, try to bridge from the Lazarus form handle
+  if macWindow = nil then
+    macWindow := NSWindow(Tfbg(self).Handle);
+
+  if Assigned(macWindow) then
+    macWindow.toggleFullScreen(nil)
   else
     ShowMessage('Unable to toggle fullscreen. Main window not found.');
 end;
@@ -1145,8 +1160,7 @@ var
   SavedBounds: TRect;
 begin
   {$ifdef DARWIN}
-  ToggleFullscreenMac
-  exit;
+  ToggleFullscreenMac;
   {$endif}
   // Store the current form bounds before making any changes
   SavedBounds := BoundsRect;
