@@ -1259,7 +1259,7 @@ var
   mt, t: boolean;
 begin
   t := native.HasTouchScreen(mt);
-  if (Button = mbLeft) and (self.BorderStyle = bsNone) then
+  if ((Button = mbLeft) and (self.BorderStyle = bsNone)) or (Button = mbMiddle) then
   begin   // Handle window moving
     DraggingWin := true;
     PX := X;
@@ -1709,7 +1709,7 @@ procedure TfBG.tClockTimer(Sender:TObject);
 begin
 tClock.Enabled := false;
   if Pos(':', lval.Caption) < 1 then begin
-    lval.caption :=  FormatDateTime('hh:nn', Now);
+    lval.caption :=  FormatDateTime(ShortTimeFormat, Now);
     tClock.Interval := 5000;
   end else begin
     lval.caption :=  lval.hint;
