@@ -182,6 +182,8 @@ jobs:
           if [ -d "Trndi.app" ]; then
             echo "Found Trndi.app, copying to artifacts..."
             cp -R Trndi.app artifacts/
+            rm -rf Trndi.app/Contents/MacOS/Trndi
+            cp -rf Trndi  Trndi.app/Contents/MacOS/Trndi
           elif [ -f "Trndi" ]; then
             echo "Found Trndi executable, copying to artifacts..."
             cp Trndi artifacts/
