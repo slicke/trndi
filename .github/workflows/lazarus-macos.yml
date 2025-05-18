@@ -181,9 +181,10 @@ jobs:
           mkdir -p artifacts
           if [ -d "Trndi.app" ]; then
             echo "Found Trndi.app, copying to artifacts..."
-            cp -R Trndi.app artifacts/
             rm -rf Trndi.app/Contents/MacOS/Trndi
             cp -rf Trndi  Trndi.app/Contents/MacOS/Trndi
+            cp -rf lang  Trndi.app/Contents/MacOS/lang
+            cp -R Trndi.app artifacts/
           elif [ -f "Trndi" ]; then
             echo "Found Trndi executable, copying to artifacts..."
             cp Trndi artifacts/
@@ -206,11 +207,10 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: Trndi-developer-build-macos-arm64.zip
-          tag_name: v${{ github.run_id }}-${{ github.run_number }}-mac-arm64 # More unique tag
-          name: macOS ARM64 Build (Run ${{ github.run_id }}.${{ github.run_number }})
+          tag_name: v${{ github.run_number }}-mac
+          name: macOS Build ${{ github.run_number }}
           body: |
-            macOS ARM64 developer build from commit ${{ github.sha }}.
-            Triggered by ${{ github.event_name }}.
+            macOS developer build from commit ${{ github.sha }}.
           prerelease: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
