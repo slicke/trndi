@@ -35,7 +35,7 @@ slicke.ux.alert, usplash,   Generics.Collections,
 trndi.Ext. Engine, trndi.Ext.jsfuncs,
 {$endif}
 {$ifdef Darwin}
-CocoaAll,
+CocoaAll, MacOSAll,
 {$endif}
 LazFileUtils, uconf, trndi.native, Trndi.API, trndi.api.xDrip,{$ifdef DEBUG} trndi.api.debug,{$endif}
 StrUtils, TouchDetection, ufloat;
@@ -201,7 +201,7 @@ private
   function UpdateLabelForReading(SlotIndex: Integer; const Reading: BGReading): Boolean;
   function DetermineColorForReading(const Reading: BGReading): TColor;
   {$ifdef DARWIN}
-     procedure TfBG.ToggleFullscreenMac;
+     procedure ToggleFullscreenMac;
   {$endif}
 
   {$ifdef TrndiExt}
@@ -213,6 +213,9 @@ public
 end;
 
 
+{$ifdef DARWIN}
+function CFStringCreateWithUTF8String(const utf8Str: PAnsiChar): CFStringRef; external name '_CFStringCreateWithUTF8String';
+{$endif}
 
 var
 native: TrndiNative;
@@ -335,23 +338,28 @@ var
   dockMenu: NSMenu;
   menuItem: NSMenuItem;
   s: string;
+  cfStr: CFStringRef;
 begin
-
   // Create a custom dock menu
   dockMenu := NSMenu.alloc.initWithTitle(NSSTR('Trndi'));
-  // Add items to the menu
 
+  // Add items to the menu
   s := TrimLeftSet((Application.MainForm as TfBG).miSettings.Caption, ['&', ' ']);
+
+  // Create a CFStringRef directly from the UTF-8 string
+  cfStr := CFStringCreateWithCString(nil, PChar(s), kCFStringEncodingUTF8);
+
+  // Initialize the menu item with the CFStringRef
   menuItem := NSMenuItem.alloc.initWithTitle_action_keyEquivalent(
-    NSSTR(UTF8Encode(s)), sel_registerName('miSettings:'), NSSTR(''));
+    NSString(cfStr), sel_registerName('miSettings:'), NSSTR(''));
 
   dockMenu.addItem(menuItem);
   menuItem.release;
-  // Add a separator
-//  dockMenu.addItem(NSMenuItem.separatorItem);
+
+  // Release the CFStringRef
+  CFRelease(cfStr);
 
   Result := dockMenu;
-
 end;
 
 function TMyAppDelegate.applicationShouldHandleReopen_hasVisibleWindows(sender: NSApplication; hasVisibleWindows: Boolean): Boolean;
@@ -402,23 +410,35 @@ end;
 
 procedure Showmessage(const str: string);
 begin
-  UXMessage(sSuccTitle, str, widechar($2139));
+  UXMessage(sSuccTitle, str, system.widechar($2139));
 end;
 
 procedure TfBG.placeForm;
 {$ifdef DARWIN}
-function GetActiveScreen: TScreen;
+function GetActiveScreen: TMonitor; // Use TMonitor if that's what Screen.Monitors returns
+var
+  ScreenObject: NSScreen;
+  i: Integer;
 begin
   Result := nil;
   if Assigned(NSApplication.sharedApplication.mainWindow) then
   begin
-    var ScreenObject := NSApplication.sharedApplication.mainWindow.screen;
+    ScreenObject := NSApplication.sharedApplication.mainWindow.screen;
     if Assigned(ScreenObject) then
     begin
-      Result := Screen.Monitors[ScreenObject.deviceDescription.index];
+      // Attempt to match NSScreen to the TMonitor by comparing frame or unique ID
+      for i := 0 to Screen.MonitorCount - 1 do
+      begin
+        // Add your comparison logic here (e.g., by frame bounds or display ID)
+        // Example (pseudo-code):
+        // if Screen.Monitors[i].Rect = NSRectToRect(ScreenObject.frame) then
+        //   Result := Screen.Monitors[i];
+      end;
     end;
   end;
 end;
+var
+activemonitor: TMonitor;
 {$endif}
 var
   posValue: integer;
@@ -474,8 +494,8 @@ begin
   ActiveMonitor := GetActiveScreen;
   if Assigned(ActiveMonitor) then
   begin
-    Left := ActiveMonitor.BoundsRect.Left + (ActiveMonitor.WorkAreaWidth - Width) div 2;
-    Top := ActiveMonitor.BoundsRect.Top + (ActiveMonitor.WorkAreaHeight - Height) div 2;
+    Left := ActiveMonitor.BoundsRect.Left + (ActiveMonitor.WorkAreaRect.Width - Width) div 2;
+    Top := ActiveMonitor.BoundsRect.Top + (ActiveMonitor.WorkAreaRect.Height - Height) div 2;
     Exit;
   end;
   {$endif}
@@ -584,7 +604,7 @@ begin
       for Y := -OutlineWidth to OutlineWidth do
         if (X <> 0) or (Y <> 0) then
           Canvas.TextRect(
-            Rect(TextRect.Left + X, TextRect.Top + Y,
+            Classes.Rect(TextRect.Left + X, TextRect.Top + Y,
             TextRect.Right + X, TextRect.Bottom + Y),
             0, 0, // Not used with text style
             Caption,
@@ -726,13 +746,56 @@ function GetLinuxDistro: string;
 
   {$endif}
   {$ifdef darwin}
+  procedure addTopMenu;
+  var
      MainMenu: TMainMenu;
      AppMenu,
      forceMenu,
      SettingsMenu,
      HelpMenu,
      GithubMenu: TMenuItem;
+  begin
+       MacAppDelegate := TMyAppDelegate.alloc.init;
+       NSApp.setDelegate(NSObject(MacAppDelegate));
+
+       Application.Title := 'Trndi';
+       MainMenu := TMainMenu.Create(self);
+       fBg.Menu := MainMenu;
+       AppMenu := TMenuItem.Create(Self); // Application menu
+       AppMenu.Caption := #$EF#$A3#$BF;   // Unicode Apple logo char
+       MainMenu.Items.Insert(0, AppMenu);
+       SettingsMenu := TMenuitem.Create(self);
+       settingsmenu.Caption := miSettings.Caption;
+       settingsmenu.OnClick := misettings.OnClick;
+       AppMenu.Insert(0, SettingsMenu);
+
+       forcemenu := TMenuItem.Create(self);
+       forcemenu.Caption := miForce.caption;
+       forcemenu.onclick := miForce.OnClick;
+       AppMenu.Insert(1, forceMenu);
+
+       helpmenu := TMenuItem.Create(self);
+       helpmenu.Caption := 'Help';
+       MainMenu.Items.Insert(1, helpMenu);
+
+       upmenu := TMenuItem.Create(self);
+       upmenu.Caption := mirefresh.Caption;
+       upmenu.Enabled := false;
+
+       githubmenu := TMenuItem.Create(self);
+       githubmenu.Caption := RS_TRNDI_GIHUB;
+       githubmenu.onclick := @onGH;
+       helpMenu.Insert(0, githubMenu);
+
+       helpMenu.Insert(0, upMenu);
+  end;
+       {$else}
+  procedure addJumpList;
+  begin
+
+  end;
   {$endif}
+
 begin
 
 
@@ -746,43 +809,7 @@ Application.OnException := @AppExceptionHandler;
   if not FontInList(s) then
     ShowMessage(Format(RS_FONT_ERROR, [s]));
 
-
-  {$ifdef darwin}
-    MacAppDelegate := TMyAppDelegate.alloc.init;
-    NSApp.setDelegate(NSObject(MacAppDelegate));
-
-    Application.Title := 'Trndi';
-    MainMenu := TMainMenu.Create(self);
-    fBg.Menu := MainMenu;
-    AppMenu := TMenuItem.Create(Self); // Application menu
-    AppMenu.Caption := #$EF#$A3#$BF;   // Unicode Apple logo char
-    MainMenu.Items.Insert(0, AppMenu);
-    SettingsMenu := TMenuitem.Create(self);
-    settingsmenu.Caption := miSettings.Caption;
-    settingsmenu.OnClick := misettings.OnClick;
-    AppMenu.Insert(0, SettingsMenu);
-
-    forcemenu := TMenuItem.Create(self);
-    forcemenu.Caption := miForce.caption;
-    forcemenu.onclick := miForce.OnClick;
-    AppMenu.Insert(1, forceMenu);
-
-    helpmenu := TMenuItem.Create(self);
-    helpmenu.Caption := 'Help';
-    MainMenu.Items.Insert(1, helpMenu);
-
-    upmenu := TMenuItem.Create(self);
-    upmenu.Caption := mirefresh.Caption;
-    upmenu.Enabled := false;
-
-    githubmenu := TMenuItem.Create(self);
-    githubmenu.Caption := RS_TRNDI_GIHUB;
-    githubmenu.onclick := @onGH;
-    helpMenu.Insert(0, githubMenu);
-
-    helpMenu.Insert(0, upMenu);
-
-  {$endif}
+  addTopMenu;
   native := TrndiNative.Create;
   if native.isDarkMode then
      native.setDarkMode{$ifdef windows}(self.Handle){$endif};
@@ -1108,16 +1135,19 @@ end;
 {$ifdef DARWIN}
 procedure TfBG.ToggleFullscreenMac;
 var
-  nsWindow: NSWindow;
+  macWindow: NSWindow;
 begin
-  nsWindow := NSApplication.sharedApplication.mainWindow; // Get main window
-  if Assigned(nsWindow) then
-  begin
-    if nsWindow.styleMask and NSWindowStyleMaskFullScreen = 0 then
-      nsWindow.toggleFullScreen(nil) // Enter fullscreen
-    else
-      nsWindow.toggleFullScreen(nil); // Exit fullscreen
-  end
+  // Try to get the main window or fallback to the key window
+  macWindow := NSApplication.sharedApplication.mainWindow;
+  if macWindow = nil then
+    macWindow := NSApplication.sharedApplication.keyWindow;
+
+  // If still nil, try to bridge from the Lazarus form handle
+  if macWindow = nil then
+    macWindow := NSWindow(Tfbg(self).Handle);
+
+  if Assigned(macWindow) then
+    macWindow.toggleFullScreen(nil)
   else
     ShowMessage('Unable to toggle fullscreen. Main window not found.');
 end;
@@ -1130,8 +1160,7 @@ var
   SavedBounds: TRect;
 begin
   {$ifdef DARWIN}
-  ToggleFullscreenMac
-  exit;
+  ToggleFullscreenMac;
   {$endif}
   // Store the current form bounds before making any changes
   SavedBounds := BoundsRect;
