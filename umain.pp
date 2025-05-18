@@ -809,7 +809,9 @@ Application.OnException := @AppExceptionHandler;
   if not FontInList(s) then
     ShowMessage(Format(RS_FONT_ERROR, [s]));
 
+    {$ifdef darwin}
   addTopMenu;
+  {$endif}
   native := TrndiNative.Create;
   if native.isDarkMode then
      native.setDarkMode{$ifdef windows}(self.Handle){$endif};
@@ -2081,7 +2083,7 @@ begin
   Self.OnResize(lVal);
 
   // Apply range color if option is enabled
-  if pnOffRange.Visible and miRangeColor.Checked then
+  if miRangeColor.Checked then
     fBG.Color := pnOffRange.Color;
 
   // Update floating window if assigned
