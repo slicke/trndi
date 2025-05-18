@@ -99,7 +99,7 @@ jobs:
         run: |
           echo "Downloading mORMot2 static libraries for macOS ARM64..."
           # IMPORTANT: Replace with the correct URL for macOS ARM64 static libraries
-          curl -L -o mormot2static_macos_arm64.7z 'URL_TO_MACOS_ARM64_MORMOT2_STATIC_LIBS.7z'
+          curl -L -o mormot2static_macos_arm64.7z 'https://github.com/synopse/mORMot2/releases/download/2.3.stable/mormot2static.7z'
           7z x mormot2static_macos_arm64.7z -o../static -y
           echo "Extraction complete."
 
