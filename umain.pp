@@ -2086,10 +2086,6 @@ begin
   tAgo.OnTimer(self);
   Self.OnResize(lVal);
 
-  // Apply range color if option is enabled
-  if miRangeColor.Checked then
-    fBG.Color := pnOffRange.Color;
-
   // Update floating window if assigned
   UpdateFloatingWindow;
 
@@ -2097,11 +2093,8 @@ begin
   UpdateUIColors;
 
   // Update system integration
-  with native do
-  begin
-    setBadge(lVal.Caption, fBG.Color);
-    done;
-  end;
+  native.setBadge(lVal.Caption, fBG.Color);
+  native.done;
 end;
 
 procedure TfBG.UpdateFloatingWindow;
@@ -2173,6 +2166,8 @@ begin
 end;
 
 procedure TfBG.UpdateOffRangePanel(const Value: Single);
+var
+  on: boolean = true;
 begin
   if (Value >= api.cgmHi) or (Value <= api.cgmLo) then
   begin
@@ -2191,7 +2186,12 @@ begin
   else begin
     pnOffRange.Visible := false;
     pnOffRangeBar.Visible := false;
+    on := false;
   end;
+                                 showmessage(api.cgmRangeHi.tostring);
+  // Apply range color if option is enabled
+  if on and miRangeColor.Checked then
+    fBG.Color := pnOffRange.Color;
 end;
 
 procedure TfBG.UpdateUIColors;
