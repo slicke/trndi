@@ -37,3 +37,12 @@ GTAGS
 *.fpc
 *.dmg
 *.zip
+
+
+# Dist
+dist/lang
+dist/*.zip
+Trndi-arm64
+Trndi-arm
+Trndi-amd64
+Trndi-linux
