@@ -10,7 +10,6 @@ object fBG: TfBG
   Color = clBlack
   Font.Color = clWhite
   Position = poDesktopCenter
-  LCLVersion = '4.0.0.4'
   OnClose = FormClose
   OnCreate = FormCreate
   OnDestroy = FormDestroy
@@ -98,6 +97,7 @@ object fBG: TfBG
     OptimalFill = True
     PopupMenu = pmSettings
     OnClick = onTrendClick
+    OnDblClick = lDot7DblClick
   end
   object lDot8: TLabel
     Left = 185
@@ -323,6 +323,10 @@ object fBG: TfBG
       object miClock: TMenuItem
         Caption = 'Show clock every 20 sec'
         OnClick = miClockClick
+      end
+      object miHistory: TMenuItem
+        Caption = 'Show history'
+        OnClick = miHistoryClick
       end
     end
     object miSplit4: TMenuItem

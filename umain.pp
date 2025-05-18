@@ -65,6 +65,7 @@ end;
 
 TfBG = class(TForm)
   lAgo:TLabel;
+  miHistory:TMenuItem;
   miClock:TMenuItem;
   miRangeColor:TMenuItem;
   miPref:TMenuItem;
@@ -110,6 +111,7 @@ TfBG = class(TForm)
   tMissed:TTimer;
   tTouch: TTimer;
   tMain: TTimer;
+  procedure fbReadingsDblClick(Sender:TObject);
   procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
   procedure FormCreate(Sender: TObject);
   procedure FormDestroy(Sender:TObject);
@@ -121,6 +123,7 @@ TfBG = class(TForm)
   procedure lAgoClick(Sender:TObject);
   procedure lArrowClick(Sender:TObject);
   procedure lDiffDblClick(Sender: TObject);
+  procedure lDot7DblClick(Sender:TObject);
   procedure lgMainClick(Sender: TObject);
   procedure lValClick(Sender: TObject);
   procedure lValMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: integer);
@@ -128,6 +131,7 @@ TfBG = class(TForm)
   procedure lValStartDrag(Sender: TObject; var DragObject: TDragObject);
   procedure miClockClick(Sender:TObject);
   procedure miFloatOnClick(Sender:TObject);
+  procedure miHistoryClick(Sender:TObject);
   procedure miRangeColorClick(Sender:TObject);
   procedure miBordersClick(Sender:TObject);
   procedure miExitClick(Sender:TObject);
@@ -161,6 +165,7 @@ private
   TrendDots: array[1..10] of TLabel;
   multi: boolean; // Multi user
 
+  function lastReading: BGReading;
   procedure updateReading;
   procedure PlaceTrendDots(const Readings: array of BGReading);
   procedure actOnTrend(proc: TTrendProc);
@@ -965,6 +970,11 @@ Application.OnException := @AppExceptionHandler;
   fs.Free;
 end;
 
+function TfBG.lastReading: BGReading;
+begin
+  result := bgs[Low(bgs)];
+end;
+
 procedure TfBG.FormDestroy(Sender:TObject);
 begin
   if assigned(native) then
@@ -1052,6 +1062,11 @@ begin
     native.SetSetting(username + 'size.last.width', self.width.tostring);
     native.SetSetting(username + 'size.last.height', self.height.tostring);
   end;
+end;
+
+procedure TfBG.fbReadingsDblClick(Sender:TObject);
+begin
+
 end;
 
 // Expands a trend dot to show actual bg value with highlighting for latest reading
@@ -1245,6 +1260,10 @@ begin
     native.setDarkMode{$ifdef windows}(self.Handle){$endif};
 end;
 
+procedure TfBG.lDot7DblClick(Sender:TObject);
+begin
+end;
+
 // Empty event handler
 procedure TfBG.lgMainClick(Sender: TObject);
 begin
@@ -1334,6 +1353,20 @@ begin
     end;
   end;
   miFloatOn.Checked := fFloat.Showing;
+end;
+
+procedure TfBG.miHistoryClick(Sender:TObject);
+var
+  r: BGReading;
+  l: TStringList;
+begin
+l := TStringList.Create;
+
+for r in bgs do
+ l.add(Format('[%s] %s', [TimeToStr(r.date), r.format(un, BG_MSG_SHORT, BGPrimary)]));
+
+ExtMsg( RS_RHISTORY, RS_RH_TITLE, RS_RH_INFO, l.Text, clWhite, clBlack,[mbOK]);
+l.free;
 end;
 
 procedure TfBG.miRangeColorClick(Sender:TObject);
@@ -2188,7 +2221,7 @@ begin
     pnOffRangeBar.Visible := false;
     on := false;
   end;
-                                 showmessage(api.cgmRangeHi.tostring);
+
   // Apply range color if option is enabled
   if on and miRangeColor.Checked then
     fBG.Color := pnOffRange.Color;
