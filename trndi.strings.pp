@@ -53,6 +53,11 @@ RS_MULTIUSER_BOX_TITLE = 'User select';
 RS_FONT_ERROR = 'You''re missing the standard font "%s". Trndi will work as intended, but some icons may be missing and/or distorted!';
 RS_TRNDI_GIHUB = 'Trndi on GitHub';
 
+RS_RHISTORY = 'Reading history';
+RS_RH_TITLE = 'Historical readings';
+RS_RH_INFO = 'These are the messages currently held in Trndi''s log';
+
+
 // Config box
 RS_tpoCenter = 'Desktop Center';
 RS_tpoBottomLeft = 'Bottom Left';
@@ -85,6 +90,7 @@ sStackFailed  = 'An error occurred, and the stacktrace could not be loaded. Show
 sDataTypeErr  = 'Datatype %s was not expected, expected in function %s';
 sDataTypeErrPos = 'Datatype %s was not expected, expected in function %s, parameter %d';
 sDataTypeErrFunc = 'Datatype "%s" was not expected, in function "%s". Expected "%s"';
+
 
 implementation
 

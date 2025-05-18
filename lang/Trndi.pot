@@ -110,6 +110,10 @@ msgstr ""
 msgid "Toggle Fullscreen"
 msgstr ""
 
+#: tfbg.mihistory.caption
+msgid "Show history"
+msgstr ""
+
 #: tfbg.miinfo.caption
 msgid "Limits"
 msgstr ""
@@ -591,6 +595,18 @@ msgstr ""
 
 #: trndi.strings.rs_restart_apply
 msgid "Trndi must be restarted for settings to take effect"
+msgstr ""
+
+#: trndi.strings.rs_rhistory
+msgid "Reading history"
+msgstr ""
+
+#: trndi.strings.rs_rh_info
+msgid "These are the messages currently held in Trndi's log"
+msgstr ""
+
+#: trndi.strings.rs_rh_title
+msgid "Historical readings"
 msgstr ""
 
 #: trndi.strings.rs_setup
