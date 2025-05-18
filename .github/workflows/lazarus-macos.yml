@@ -1,478 +1,215 @@
-name: Build Trndi for macOS ARM64
+
+name: Build Trndi for macOS ARM64 (Based on Windows Workflow)
 
 on:
   push:
-    branches: [ main, master ]
+    branches:
+      - main
   pull_request:
-    branches: [ main, master ]
-  workflow_dispatch:
+    branches:
+      - main
 
 jobs:
-  build:
-    runs-on: macos-14  # macOS with Apple Silicon
+  build-macos-arm64:
+    runs-on: macos-14 # macOS with Apple Silicon
+
+    permissions:
+      contents: write # Required for creating releases
 
     steps:
-      - name: Checkout repository
+      # 1. Check out repository
+      - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Install Command Line Developer Tools
-        run: |
-          sudo xcode-select --install || true
-          sudo xcodebuild -license accept || true
+      # 2. Cache MacPorts and Lazarus Installation
+      - name: Restore Lazarus and MacPorts Cache
+        id: cache-lazarus-macports
+        uses: actions/cache@v3
+        with:
+          path: |
+            /opt/local
+          key: ${{ runner.os }}-macports-lazarus-fpc-v1-${{ hashFiles('**/trndi-hashed-ports') }} # Consider a more specific key or use a fixed version key
 
+      # 3. Install Prerequisites and Lazarus (if not cached)
+      - name: Install Command Line Developer Tools
+        if: steps.cache-lazarus-macports.outputs.cache-hit != 'true'
+        run: |
+          echo "Installing Xcode Command Line Tools..."
+          sudo xcode-select --install || echo "Xcode tools already installed or install command initiated."
+          # Attempt to accept the license; this might require user interaction locally but often works in CI
+          sudo xcodebuild -license accept || echo "Failed to accept Xcode license automatically."
+          
       - name: Install MacPorts
+        if: steps.cache-lazarus-macports.outputs.cache-hit != 'true'
         run: |
           echo "Installing MacPorts..."
-          # Download the MacPorts pkg installer for Sonoma
           curl -L -o macports.pkg "https://github.com/macports/macports-base/releases/download/v2.8.1/MacPorts-2.8.1-14-Sonoma.pkg"
-          
-          # Install MacPorts
           sudo installer -pkg macports.pkg -target /
-          
-          # Add MacPorts to PATH directly without relying on profile
-          echo "/opt/local/bin:/opt/local/sbin" >> $GITHUB_PATH
-          
-          # Verify installation
-          echo "MacPorts installation check:"
-          which port || echo "MacPorts not found in PATH"
-          port version || echo "MacPorts command not working"
-          
-          # Update MacPorts
-          sudo port selfupdate || echo "Failed to update MacPorts"
+          echo "/opt/local/bin:/opt/local/sbin" | sudo tee -a /etc/paths # More robust way to add to PATH system-wide
+          export PATH="/opt/local/bin:/opt/local/sbin:$PATH" # For current session
+          sudo port selfupdate
 
-      - name: Install FPC and Lazarus with extensive diagnostic 
+      - name: Install FPC and Lazarus via MacPorts
+        if: steps.cache-lazarus-macports.outputs.cache-hit != 'true'
         run: |
-          echo "Installing FPC and Lazarus..."
-          sudo port install fpc +universal || echo "FPC installation failed"
-          sudo port install lazarus +universal || echo "Lazarus installation failed"
-          
-          echo "FPC version:"
-          fpc -iV || echo "FPC command failed"
-          
-          echo "Extensive MacPorts directory search for Lazarus components:"
-          echo "All lazarus-related directories:"
-          find /opt/local -name "*lazarus*" -type d | sort
-          
-          echo "All LCL-related directories:"
-          find /opt/local -name "*lcl*" -type d | sort
-          
-          echo "MacPorts package listing for lazarus:"
-          port contents lazarus | grep -i lcl
-          
-          echo "Searching for LCL components in standard locations:"
-          find /Applications -name "*lcl*" -type d | sort
-          find /opt -name "*lcl*" -type d | sort
-          find /usr/local -name "*lcl*" -type d | sort
-          
-          echo "Locating lazbuild:"
-          find /opt/local -name "lazbuild" -type f || echo "lazbuild not found"
-          which lazbuild || echo "lazbuild not in PATH"
-          
-          echo "Checking config directory:"
-          mkdir -p $HOME/.lazarus
-          mkdir -p $HOME/.config/lazarus
+          export PATH="/opt/local/bin:/opt/local/sbin:$PATH" # Ensure port is in PATH
+          echo "Installing FPC..."
+          sudo port install fpc +universal
+          echo "Installing Lazarus..."
+          sudo port install lazarus +universal
 
-      - name: Locate Lazarus components with diagnostic output
+      # 4. Verify Lazarus Installation
+      - name: Verify Lazarus Installation
         run: |
-          echo "Searching for Lazarus components..."
-          
-          # Find all lazarus-related directories
-          echo "All lazarus directories in /opt/local:"
-          find /opt/local -name "*lazarus*" -type d | sort
-          
-          echo "Looking for LCL directories:"
-          find /opt/local -name "lcl" -type d | sort
-          
-          # Check port contents for lazarus
-          echo "MacPorts package contents for lazarus:"
-          port contents lazarus | grep -i "lazarus" | head -20
-          
-          # Search for specific components
-          echo "Finding key Lazarus components:"
-          LCL_DIR=$(find /opt/local -name "lcl" -type d | head -1)
-          LAZARUS_DIR=$(dirname "$LCL_DIR" 2>/dev/null)
-          INTERFACES_DIR="$LCL_DIR/interfaces" 
-          COCOA_DIR="$INTERFACES_DIR/cocoa"
-          
-          echo "LCL directory: $LCL_DIR"
-          echo "Derived Lazarus directory: $LAZARUS_DIR"
-          echo "Interfaces directory: $INTERFACES_DIR"
-          echo "Cocoa interface directory: $COCOA_DIR"
-          
-          # If we didn't find LCL, try alternative approach
-          if [ -z "$LCL_DIR" ] || [ ! -d "$LCL_DIR" ]; then
-            echo "Looking for Lazarus directory first..."
-            LAZARUS_DIR=$(find /opt/local -path "*/share/lazarus" -type d | head -1)
-            if [ -n "$LAZARUS_DIR" ]; then
-              echo "Found Lazarus in share directory: $LAZARUS_DIR"
-              LCL_DIR="$LAZARUS_DIR/lcl"
-              INTERFACES_DIR="$LCL_DIR/interfaces"
-              COCOA_DIR="$INTERFACES_DIR/cocoa"
-            fi
-          fi
-          
-          # If still not found, search for the lazbuild executable and use it to find the path
-          if [ -z "$LCL_DIR" ] || [ ! -d "$LCL_DIR" ]; then
-            echo "Trying to locate Lazarus using lazbuild..."
-            LAZBUILD_PATH=$(find /opt/local -name "lazbuild" -type f | head -1)
-            if [ -n "$LAZBUILD_PATH" ]; then
-              echo "Found lazbuild at: $LAZBUILD_PATH"
-              LAZBUILD_DIR=$(dirname "$LAZBUILD_PATH")
-              echo "lazbuild directory: $LAZBUILD_DIR"
-              # Try to find Lazarus directory from lazbuild location
-              POSSIBLE_LAZARUS=$(dirname "$(dirname "$LAZBUILD_DIR")")
-              echo "Possible Lazarus directory from lazbuild: $POSSIBLE_LAZARUS"
-              if [ -d "$POSSIBLE_LAZARUS/share/lazarus" ]; then
-                LAZARUS_DIR="$POSSIBLE_LAZARUS/share/lazarus"
-                echo "Found Lazarus directory: $LAZARUS_DIR"
-                LCL_DIR="$LAZARUS_DIR/lcl"
-                INTERFACES_DIR="$LCL_DIR/interfaces"
-                COCOA_DIR="$INTERFACES_DIR/cocoa"
-              fi
-            fi
-          fi
-          
-          # Check if we found the required directories
-          if [ -z "$LCL_DIR" ] || [ ! -d "$LCL_DIR" ]; then
-            echo "ERROR: Could not find LCL directory!"
-            echo "Manually listing key directories in /opt/local:"
-            ls -la /opt/local/etc/lazarus || echo "No /opt/local/etc/lazarus"
-            ls -la /opt/local/share || echo "No /opt/local/share"
-            ls -la /opt/local/lib || echo "No /opt/local/lib"
-            ls -la /opt/local/bin || echo "No /opt/local/bin"
-            exit 1
-          fi
-          
-          echo "Found all required directories:"
-          echo "LAZARUS_DIR=$LAZARUS_DIR" >> $GITHUB_ENV
-          echo "LCL_DIR=$LCL_DIR" >> $GITHUB_ENV
-          echo "INTERFACES_DIR=$INTERFACES_DIR" >> $GITHUB_ENV
-          echo "COCOA_DIR=$COCOA_DIR" >> $GITHUB_ENV
-          
-          # Create comprehensive paths for FPC
-          echo "LCL_PATHS=-Fu$LCL_DIR -Fu$COCOA_DIR -Fu$COCOA_DIR/cocoa -Fu$LCL_DIR/widgetset -Fu$LAZARUS_DIR/components/lazutils" >> $GITHUB_ENV
-          
-          # Create simplified Lazarus configuration
-          mkdir -p $HOME/.config/lazarus
-          echo '<?xml version="1.0" encoding="UTF-8"?>' > $HOME/.config/lazarus/environmentoptions.xml
-          echo '<CONFIG>' >> $HOME/.config/lazarus/environmentoptions.xml
-          echo '  <EnvironmentOptions>' >> $HOME/.config/lazarus/environmentoptions.xml
-          echo '    <Version Value="110"/>' >> $HOME/.config/lazarus/environmentoptions.xml
-          echo "    <LazarusDirectory Value=\"$LAZARUS_DIR\"/>" >> $HOME/.config/lazarus/environmentoptions.xml
-          echo '  </EnvironmentOptions>' >> $HOME/.config/lazarus/environmentoptions.xml
-          echo '</CONFIG>' >> $HOME/.config/lazarus/environmentoptions.xml
-          
-          echo "Created Lazarus configuration pointing to: $LAZARUS_DIR"
-          cat $HOME/.config/lazarus/environmentoptions.xml
+          export PATH="/opt/local/bin:/opt/local/sbin:$PATH"
+          echo "--- Verifying MacPorts and Lazarus ---"
+          echo "which port: $(which port)"
+          echo "port version: $(port version || echo 'port command not found')"
+          echo "FPC version: $(fpc -iV || echo 'fpc command not found')"
+          echo "lazbuild path: $(which lazbuild || echo 'lazbuild not found')"
+          lazbuild --version || echo "lazbuild --version failed"
+          echo "Listing /opt/local/share/lazarus:"
+          ls -la /opt/local/share/lazarus || echo "/opt/local/share/lazarus not found"
+          echo "--- Verification Done ---"
 
-      - name: Remove mormot2 dependency if present
+      # 4c. Install p7zip (for 7-Zip compatibility)
+      - name: Install p7zip
         run: |
-          echo "Checking for mormot2 dependency..."
-          
-          # Find project files
-          MAIN_LPI=$(find . -name "*.lpi" | head -1)
-          MAIN_LPR=$(find . -name "*.lpr" | head -1)
-          
-          if [ -n "$MAIN_LPI" ]; then
-            echo "Found LPI file: $MAIN_LPI"
-            
-            # Check if it contains mormot2 reference
-            if grep -q "mormot2" "$MAIN_LPI"; then
-              echo "Found mormot2 reference in $MAIN_LPI, removing..."
-              cp "$MAIN_LPI" "${MAIN_LPI}.bak"
-              sed -i '' 's/<Filename Value=".*mormot2.*"\/>//g' "$MAIN_LPI"
-              sed -i '' 's/<Unit.*>.*mormot2.*<\/Unit>//g' "$MAIN_LPI"
-              echo "Modified LPI file to remove mormot2 references"
-            else
-              echo "No mormot2 references found in LPI file"
-            fi
-          fi
-          
-          if [ -n "$MAIN_LPR" ]; then
-            echo "Found LPR file: $MAIN_LPR"
-            
-            # Check if it contains mormot2 uses
-            if grep -q "mormot2" "$MAIN_LPR"; then
-              echo "Found mormot2 reference in $MAIN_LPR, commenting out..."
-              cp "$MAIN_LPR" "${MAIN_LPR}.bak"
-              sed -i '' 's/mormot2/\/\/mormot2/g' "$MAIN_LPR"
-              echo "Modified LPR file to comment out mormot2 references"
-            else
-              echo "No mormot2 references found in LPR file"
-            fi
-          fi
+          export PATH="/opt/local/bin:/opt/local/sbin:$PATH"
+          sudo port install p7zip
 
-      - name: Try to compile with lazbuild using explicit directory
+      # --- mORMot2 Related Steps (Mirroring Windows Workflow) ---
+      # If mORMot2 is NOT needed for macOS, remove/comment out steps 4d through 12.
+
+      # 4d. Create ../static directory (if not exists)
+      - name: Create static directory for mORMot2
+        run: mkdir -p ../static
+
+      # 5. Cache Static Libraries for mORMot2
+      - name: Restore mORMot2 Static Libraries Cache
+        id: cache-static-mormot2
+        uses: actions/cache@v3
+        with:
+          path: ../static
+          key: ${{ runner.os }}-mormot2-static-libs-arm64-v1 # Adjust key as needed
+
+      # 6. Download and Extract mORMot2 Static Libraries if not cached
+      - name: Download and Extract mORMot2 Static Libraries (macOS ARM64)
+        if: steps.cache-static-mormot2.outputs.cache-hit != 'true'
         run: |
-          echo "Attempting to compile with lazbuild using explicit directory..."
-          
-          # Find lazbuild
-          LAZBUILD_PATH=$(find /opt/local -name "lazbuild" -type f | head -1)
-          
-          if [ -z "$LAZBUILD_PATH" ]; then
-            echo "lazbuild not found"
-            exit 1
-          fi
-          
-          echo "Found lazbuild at: $LAZBUILD_PATH"
-          
-          # Try to find the actual Lazarus program files directory
-          # For MacPorts, this is often in /opt/local/share/lazarus
-          POTENTIAL_LAZARUS_DIRS=(
-            "/opt/local/share/lazarus"
-            "/opt/local/lib/lazarus"
-            "$(port contents lazarus | grep -i "/share/lazarus$" | head -1)"
-            "$(port contents lazarus | grep -i "/lib/lazarus$" | head -1)"
-          )
-          
-          LAZARUS_PROGRAM_DIR=""
-          for DIR in "${POTENTIAL_LAZARUS_DIRS[@]}"; do
-            if [ -d "$DIR" ] && [ -d "$DIR/lcl" ]; then
-              LAZARUS_PROGRAM_DIR="$DIR"
-              echo "Found Lazarus program directory with LCL: $LAZARUS_PROGRAM_DIR"
-              break
-            elif [ -d "$DIR" ]; then
-              echo "Found Lazarus directory (but no LCL): $DIR"
-              # Keep this as fallback if no better option is found
-              if [ -z "$LAZARUS_PROGRAM_DIR" ]; then
-                LAZARUS_PROGRAM_DIR="$DIR"
-              fi
-            fi
-          done
-          
-          # If still not found, try direct search
-          if [ -z "$LAZARUS_PROGRAM_DIR" ] || [ ! -d "$LAZARUS_PROGRAM_DIR/lcl" ]; then
-            FOUND_DIR=$(find /opt/local -path "*/lazarus*/lcl" -type d | head -1)
-            if [ -n "$FOUND_DIR" ]; then
-              LAZARUS_PROGRAM_DIR=$(dirname "$FOUND_DIR")
-              echo "Found Lazarus program directory via LCL search: $LAZARUS_PROGRAM_DIR"
-            fi
-          fi
-          
-          if [ -z "$LAZARUS_PROGRAM_DIR" ]; then
-            echo "Could not find Lazarus program directory with LCL"
-            exit 1
-          fi
-          
-          # Find the main project file
-          MAIN_LPI=$(find . -name "*.lpi" | head -1)
-          
-          if [ -z "$MAIN_LPI" ]; then
-            echo "No .lpi files found"
-            # Try to create a basic .lpi file from the .lpr
-            if [ -n "$MAIN_PROJECT" ]; then
-              echo "Creating basic .lpi file from $MAIN_PROJECT"
-              PROJECT_NAME=$(basename "$MAIN_PROJECT" .lpr)
-              mkdir -p "$(dirname "$MAIN_PROJECT")/backup"
-              "$LAZBUILD_PATH" --lazarusdir="$LAZARUS_PROGRAM_DIR" --create-lpi="$PROJECT_NAME" "$MAIN_PROJECT" || echo "Failed to create LPI file"
-              MAIN_LPI=$(find . -name "*.lpi" | head -1)
-            fi
-          fi
-          
-          if [ -n "$MAIN_LPI" ]; then
-            echo "Using LPI file: $MAIN_LPI"
-            
-            # Try to build with lazbuild and explicit Lazarus directory
-            echo "Building with: $LAZBUILD_PATH --lazarusdir=$LAZARUS_PROGRAM_DIR --ws=cocoa --cpu=aarch64 --os=darwin $MAIN_LPI"
-            "$LAZBUILD_PATH" --lazarusdir="$LAZARUS_PROGRAM_DIR" --ws=cocoa --cpu=aarch64 --os=darwin "$MAIN_LPI" || echo "lazbuild compilation failed"
-            
-            # Check if app was created
-            find . -name "*.app" -type d || echo "No .app bundle created"
+          echo "Downloading mORMot2 static libraries for macOS ARM64..."
+          # IMPORTANT: Replace with the correct URL for macOS ARM64 static libraries
+          curl -L -o mormot2static_macos_arm64.7z 'URL_TO_MACOS_ARM64_MORMOT2_STATIC_LIBS.7z'
+          7z x mormot2static_macos_arm64.7z -o../static -y
+          echo "Extraction complete."
+
+      # 7a. Log Current Directory (for context)
+      - name: Log Current Directory
+        run: pwd
+
+      # 7b. List Parent Static Directory
+      - name: List Parent Static Directory Contents
+        run: ls -R ../static || echo "../static directory not found or empty."
+
+      # 7c. Verify Static Libraries (Adjust path as needed)
+      - name: Verify mORMot2 Static Libraries
+        run: ls -R ../static/aarch64-darwin || echo "Static library path for aarch64-darwin not found."
+
+      # 8. Copy Static Libraries to Program Folder (Adjust path as needed)
+      - name: Copy mORMot2 Static Libraries
+        run: |
+          echo "Copying static libraries..."
+          if [ -d "../static/aarch64-darwin" ]; then
+            cp -R ../static/aarch64-darwin/* .
+            echo "Static libraries copied."
           else
-            echo "No LPI file available for lazbuild"
+            echo "Static library source directory '../static/aarch64-darwin' not found. Skipping copy."
           fi
 
-          - name: Try direct FPC compilation if lazbuild fails
-          run: |
-            echo "Attempting direct FPC compilation..."
-            
-            # Find main project file
-            MAIN_PROJECT=$(find . -name "*.lpr" | head -1)
-            
-            if [ -z "$MAIN_PROJECT" ]; then
-              echo "No .lpr files found"
-              exit 1
-            fi
-            
-            echo "Found main project: $MAIN_PROJECT"
-            
-            # Derive project name from filename
-            PROJECT_NAME=$(basename "$MAIN_PROJECT" .lpr)
-            echo "Project name: $PROJECT_NAME"
-            
-            # Set up build directory and outputs
-            BUILD_DIR="build"
-            BIN_NAME="$PROJECT_NAME"
-            BIN_PATH="$BUILD_DIR/$BIN_NAME"
-            
-            mkdir -p "$BUILD_DIR"
-            
-            # Debug the interfaces issue
-            echo "Looking for Interfaces unit..."
-            find "$LCL_DIR" -name "interfaces.pas" -o -name "interfaces.ppu" | sort
-            find "$INTERFACES_DIR" -name "interfaces.pas" -o -name "interfaces.ppu" | sort
-            find "$LAZARUS_DIR" -name "interfaces.pas" -o -name "interfaces.ppu" | sort
-            
-            # Also check if the file exists in a standard location
-            if [ -f "$LCL_DIR/interfaces.pas" ]; then
-              echo "Found interfaces.pas in $LCL_DIR"
-            elif [ -f "$LCL_DIR/interfaces.ppu" ]; then
-              echo "Found interfaces.ppu in $LCL_DIR"
-            else
-              echo "WARNING: interfaces unit not found in standard location"
-            fi
-            
-            # Attempt compilation with FPC directly with more comprehensive paths
-            echo "Compiling with FPC (expanded paths)..."
-            FPC_PATHS=(
-              "-Fi$(dirname "$MAIN_PROJECT")"                # Include paths
-              "-Fu$(dirname "$MAIN_PROJECT")"                # Unit paths
-              "-Fu$LCL_DIR"                                  # LCL main units
-              "-Fu$LCL_DIR/interfaces"                       # LCL interfaces
-              "-Fu$LCL_DIR/widgetset"                        # LCL widgetset
-              "-Fu$COCOA_DIR"                                # Cocoa interface
-              "-Fu$COCOA_DIR/wsdialogs"                      # Cocoa dialogs
-              "-Fu$LAZARUS_DIR/components/lazutils"          # Lazarus utilities
-              "-Fu$LAZARUS_DIR/packager/units/$(fpc -iTP)"   # Packager units
-            )
-            
-            # Check if there are any additional interface paths we should add
-            for DIR in $(find "$INTERFACES_DIR" -type d); do
-              if [ -d "$DIR" ]; then
-                FPC_PATHS+=("-Fu$DIR")
-              fi
-            done
-            
-            # Join all paths with space
-            FPC_PATH_STR="${FPC_PATHS[*]}"
-            
-            # Print compilation command
-            echo "fpc -Tdarwin -Paarch64 -MObjFPC -Scghi -O1 -g -gl -l -vewnhibq $FPC_PATH_STR -FU$BUILD_DIR -FE$BUILD_DIR -o$BIN_PATH $MAIN_PROJECT"
-            
-            # Execute compilation command
-            fpc -Tdarwin -Paarch64 -MObjFPC -Scghi -O1 -g -gl -l -vewnhibq \
-              $FPC_PATH_STR \
-              -FU"$BUILD_DIR" \
-              -FE"$BUILD_DIR" \
-              -o"$BIN_PATH" \
-              "$MAIN_PROJECT"
-            
-            if [ -f "$BIN_PATH" ]; then
-              echo "Compilation successful. Binary created at: $BIN_PATH"
-              ls -la "$BIN_PATH"
-            else
-              echo "Compilation failed. No binary created."
-              
-              # Extra diagnostics in case of failure
-              echo "Project content:"
-              cat "$MAIN_PROJECT"
-              
-              echo "Searching for Interfaces unit in all possible locations:"
-              find /opt/local -name "interfaces.pas" -o -name "interfaces.ppu" | sort
-              
-              # Try to find LCL's root unit to see if that exists
-              echo "Checking for lcl.pas or lcl.ppu:"
-              find /opt/local -name "lcl.pas" -o -name "lcl.ppu" | sort
-              
-              exit 1
-            fi
-            
-            # Create macOS application bundle
-            echo "Creating macOS application bundle..."
-            
-            # Create app bundle structure
-            APP_NAME="${BIN_NAME}.app"
-            mkdir -p "$APP_NAME/Contents/MacOS"
-            mkdir -p "$APP_NAME/Contents/Resources"
-            
-            # Copy executable
-            cp "$BIN_PATH" "$APP_NAME/Contents/MacOS/"
-            
-            # Create Info.plist - simplified approach
-            echo '<?xml version="1.0" encoding="UTF-8"?>' > "$APP_NAME/Contents/Info.plist"
-            echo '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">' >> "$APP_NAME/Contents/Info.plist"
-            echo '<plist version="1.0">' >> "$APP_NAME/Contents/Info.plist"
-            echo '<dict>' >> "$APP_NAME/Contents/Info.plist"
-            echo '  <key>CFBundleExecutable</key>' >> "$APP_NAME/Contents/Info.plist"
-            echo "  <string>$BIN_NAME</string>" >> "$APP_NAME/Contents/Info.plist"
-            echo '  <key>CFBundleInfoDictionaryVersion</key>' >> "$APP_NAME/Contents/Info.plist"
-            echo '  <string>6.0</string>' >> "$APP_NAME/Contents/Info.plist"
-            echo '  <key>CFBundlePackageType</key>' >> "$APP_NAME/Contents/Info.plist"
-            echo '  <string>APPL</string>' >> "$APP_NAME/Contents/Info.plist"
-            echo '  <key>CFBundleSignature</key>' >> "$APP_NAME/Contents/Info.plist"
-            echo '  <string>????</string>' >> "$APP_NAME/Contents/Info.plist"
-            echo '  <key>CFBundleVersion</key>' >> "$APP_NAME/Contents/Info.plist"
-            echo '  <string>1.0</string>' >> "$APP_NAME/Contents/Info.plist"
-            echo '  <key>CFBundleIdentifier</key>' >> "$APP_NAME/Contents/Info.plist"
-            echo "  <string>com.example.$BIN_NAME</string>" >> "$APP_NAME/Contents/Info.plist"
-            echo '  <key>CFBundleName</key>' >> "$APP_NAME/Contents/Info.plist"
-            echo "  <string>$BIN_NAME</string>" >> "$APP_NAME/Contents/Info.plist"
-            echo '  <key>LSMinimumSystemVersion</key>' >> "$APP_NAME/Contents/Info.plist"
-            echo '  <string>10.12</string>' >> "$APP_NAME/Contents/Info.plist"
-            echo '  <key>NSHighResolutionCapable</key>' >> "$APP_NAME/Contents/Info.plist"
-            echo '  <true/>' >> "$APP_NAME/Contents/Info.plist"
-            echo '  <key>LSRequiresNativeExecution</key>' >> "$APP_NAME/Contents/Info.plist"
-            echo '  <true/>' >> "$APP_NAME/Contents/Info.plist"
-            echo '</dict>' >> "$APP_NAME/Contents/Info.plist"
-            echo '</plist>' >> "$APP_NAME/Contents/Info.plist"
-            
-            # Create PkgInfo
-            echo "APPL????" > "$APP_NAME/Contents/PkgInfo"
-            
-            echo "App bundle created: $APP_NAME"
-            ls -la "$APP_NAME/Contents/MacOS"
-            
-            # Make executable
-            chmod +x "$APP_NAME/Contents/MacOS/$BIN_NAME"
-        
+      # 9. Restore mORMot2 Source Cache
+      - name: Restore mORMot2 Source Cache
+        id: cache-mormot2-repo
+        uses: actions/cache@v3
+        with:
+          path: externals/mORMot2
+          key: ${{ runner.os }}-mormot2-repo-v1-${{ hashFiles('**/your-project-identifier-for-cache') }}
 
-      - name: Package application
+      # 10. Clone mORMot2 Repository if cache is missing
+      - name: Clone mORMot2 Repository
+        if: steps.cache-mormot2-repo.outputs.cache-hit != 'true'
         run: |
-          # Look for any built app bundles or executables
-          APP_BUNDLE=$(find . -name "*.app" -type d | head -1)
-          EXECUTABLE=$(find . -name "trndi" -type f -perm +111 | head -1)
-          
-          # Create output directory
-          mkdir -p ./dist
-          
-          if [ -n "$APP_BUNDLE" ]; then
-            echo "Found app bundle: $APP_BUNDLE"
-            cp -R "$APP_BUNDLE" ./dist/
-          elif [ -n "$EXECUTABLE" ]; then
-            echo "Found executable: $EXECUTABLE"
-            cp "$EXECUTABLE" ./dist/
+          mkdir -p externals
+          git clone https://github.com/synopse/mORMot2.git externals/mORMot2
+
+      # 11. Verify mORMot2 Clone
+      - name: Verify mORMot2 Clone
+        run: ls -R externals/mORMot2 || echo "externals/mORMot2 directory not found."
+
+      # 12. Build mORMot2 Package
+      - name: Build mORMot2 Package
+        run: |
+          export PATH="/opt/local/bin:/opt/local/sbin:$PATH"
+          if [ -f "externals/mORMot2/packages/lazarus/mormot2.lpk" ]; then
+            lazbuild externals/mORMot2/packages/lazarus/mormot2.lpk
           else
-            echo "No built application found"
-            echo "Build failed - no application found" > ./dist/build-failed.txt
-            find . -name "*.o" -o -name "*.ppu" > ./dist/compiled-files.txt
-            
-            echo "Compilation diagnostic information:"
-            find . -name "*.compiled" | xargs cat || echo "No compilation logs found"
-            
-            cd ./dist
-            zip -r ../Trndi-build-failed.zip ./*
-            cd ..
+            echo "mORMot2 LPK file not found. Skipping mORMot2 package build."
+          fi
+      # --- End of mORMot2 Related Steps ---
+
+      # 13. Build Trndi.lpr (or your project file)
+      - name: Build Trndi Project
+        run: |
+          export PATH="/opt/local/bin:/opt/local/sbin:$PATH"
+          # Ensure Lazarus config directory exists, though MacPorts setup might handle this.
+          # mkdir -p "$HOME/.config/lazarus"
+          # mkdir -p "$HOME/.lazarus"
+          
+          echo "Building project: Trndi.lpr"
+          lazbuild --lazarusdir=/opt/local/share/lazarus \
+                   --build-mode="Release" \
+                   --ws=cocoa \
+                   --cpu=aarch64 \
+                   --os=darwin \
+                   Trndi.lpr # Or Trndi.lpi if that's your project file
+          # Check for common output locations
+          ls -la Trndi.app || ls -la Trndi || echo "Build output (Trndi.app or Trndi) not found."
+
+
+      # 14. Create artifact directory and copy build output
+      - name: Create artifacts directory
+        run: |
+          mkdir -p artifacts
+          if [ -d "Trndi.app" ]; then
+            echo "Found Trndi.app, copying to artifacts..."
+            cp -R Trndi.app artifacts/
+          elif [ -f "Trndi" ]; then
+            echo "Found Trndi executable, copying to artifacts..."
+            cp Trndi artifacts/
+          else
+            echo "Build output (Trndi.app or Trndi) not found!"
             exit 1
           fi
-          
-          # Create zip archive
-          cd ./dist
-          zip -r ../Trndi-macos-arm64.zip ./*
+          ls -R artifacts
+
+      # 15. Package artifacts
+      - name: Package artifacts
+        run: |
+          cd artifacts
+          zip -r ../Trndi-developer-build-macos-arm64.zip ./*
           cd ..
-          echo "Application packaged successfully"
+          echo "Artifacts packaged into Trndi-developer-build-macos-arm64.zip"
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
+      # 16. Create GitHub Release
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
         with:
-          name: Trndi-macOS-arm64
-          path: ./Trndi-macos-arm64.zip
-          retention-days: 7
-        if: success()
+          files: Trndi-developer-build-macos-arm64.zip
+          tag_name: v${{ github.run_id }}-${{ github.run_number }}-mac-arm64 # More unique tag
+          name: macOS ARM64 Build (Run ${{ github.run_id }}.${{ github.run_number }})
+          body: |
+            macOS ARM64 developer build from commit ${{ github.sha }}.
+            Triggered by ${{ github.event_name }}.
+          prerelease: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload build failure info
-        uses: actions/upload-artifact@v4
-        with:
-          name: Trndi-build-failure-info
-          path: ./Trndi-build-failed.zip
-          retention-days: 7
-        if: failure()
