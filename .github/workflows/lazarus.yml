@@ -1,4 +1,4 @@
-name: Build for Windows
+name: Build Trndi for Windows x64
 
 on:
   push:
