@@ -20,7 +20,7 @@
 // Include file with JS functions
 {$ifdef TrndiExt}
 uses 
-mormot.lib.quickjs;
+mormot.lib.quickjs, variants;
 
 
 
@@ -125,6 +125,37 @@ begin
     bg_rel_color_lo := HTMLColorToTColor(ctx^^.ToUtf8(argv^[6]));
     bg_rel_color_hi_txt := HTMLColorToTColor(ctx^^.ToUtf8(argv^[7]));
     bg_rel_color_lo_txt := HTMLColorToTColor(ctx^^.ToUtf8(argv^[8]));
+  end;
+
+end;
+
+// Handle badge size, mainly on Windows
+function JSBadge(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw;
+var
+ vbw, vbf: Variant;
+begin
+  if not (argc in [1,2]) then
+  begin
+    Result := JS_FALSE;
+    Exit;
+  end;
+
+  ctx^^.ToVariant(argv^[0], vbw);
+
+  if not varType(vbw) = varDecimal then begin
+    ExtError('Badge size must be percentage: 0.1-1.0');
+    exit;
+  end;
+  badge_width := vbw;
+
+  if argc <> 2 then
+  begin
+     ctx^^.ToVariant(argv^[1], vbf);
+    if not VarType(vbf) = varInteger then begin
+      ExtError('Badge font size must be an integer!');
+      exit;
+      end;
+      badge_font := vbf;
   end;
 
 end;

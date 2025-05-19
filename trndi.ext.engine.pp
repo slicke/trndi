@@ -466,7 +466,7 @@ begin
       FContext^.Done;
   except
     on E: Exception do
-      ShowMessage('An error occured while shutting down extensions: ' + E.
+      ExtError('An error occured while shutting down extensions: ' + E.
         Message);
   end;
   if FRuntime <> nil then
@@ -475,7 +475,7 @@ begin
 //    FRuntime^.DoneSafe;
   except
     on E: Exception do
-      ShowMessage('An error occured while shutting down extensions: ' + E.
+      ExtError('An error occured while shutting down extensions: ' + E.
         Message);
   end;
   eventTimer.free;
@@ -542,10 +542,10 @@ begin
     ResultStr := JS_ToCString(FContext, JS_GetException(FContext));
     Result := 'Error: ' + ResultStr + err;
     JS_FreeCString(FContext, ResultStr);
-    Showmessage(analyze(FContext, @evalresult));;
+    ExtError(analyze(FContext, @evalresult));;
   except
     on E: Exception do
-      SHowmessage('An extension''s code rasulted in an error: '
+      ExtError('An extension''s code rasulted in an error: '
         + e.message);
   end
   else
@@ -586,7 +586,7 @@ var
 begin
   if not FContext^.GetValue('Trndi', this) then
   begin
-    Showmessage('Cannot locate the Trndi class while initializing extensions');
+    ExtError('Cannot locate the Trndi class while initializing extensions');
     Exit;
   end;
 
@@ -648,7 +648,7 @@ begin
 // If it's not a function, free references and exit
     JS_Free(FContext, @GlobalObj);
     JS_Free(FContext, @FuncObj);
-    ShowMessage('No such function or it is not callable: ' + FuncName);
+    ExtError('No such function or it is not callable: ' + FuncName);
     Exit('');
   end;
 

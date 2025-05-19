@@ -141,7 +141,7 @@ public
 
   procedure start;
   procedure done;
-  procedure setBadge(const Value: string; badgeColor: Tcolor);
+  procedure setBadge(const Value: string; badgeColor: Tcolor{$ifdef LCLWIN32}; badge_size_ratio: double = 0.8; min_font_size: integer = 8{$endif});
 
   constructor create(ua, base: string); overload;
   constructor create; overload;
@@ -308,11 +308,11 @@ end;
 {$IFDEF LCLWIN32}
 // Helper method to use the overlay icon approach for taskbar badges
 
-procedure TrndiNative.SetBadge(const Value: string; BadgeColor: TColor);
+procedure TrndiNative.SetBadge(const Value: string; BadgeColor: TColor; badge_size_ratio: double = 0.8; min_font_size: integer = 8);
 const
   // Badge sizing constants
-  BADGE_SIZE_RATIO = 0.8;      // Badge size as a ratio of icon size (0.5 = half)
-  MIN_FONT_SIZE = 8;           // Minimum font size for readability
+//  BADGE_SIZE_RATIO = 0.8;      // Badge size as a ratio of icon size (0.5 = half)
+//  MIN_FONT_SIZE = 8;           // Minimum font size for readability
   INITIAL_FONT_SIZE_RATIO = 0.5; // Initial font size as ratio of badge size
   TEXT_PADDING = 4;            // Padding inside badge in pixels
   CORNER_RADIUS = 6;           // Radius for rounded corners (except bottom-right)
