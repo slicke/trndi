@@ -278,6 +278,8 @@ bgs: BGResults;
 {$ifdef TrndiExt}
 jsFuncs: TJSfuncs;
 {$endif}
+badge_width: double = 0.8;
+badge_font: integer = 8;
 
   // Touch screen
 StartTouch: TDateTime;
@@ -679,6 +681,7 @@ begin
   with TTrndiExtEngine.Instance do
   begin
     addClassFunction('uxProp', ExtFunction(@JSUX), 3);
+    addClassFunction('setBadgeSize', ExtFunction(@JSBADGE), -1);
     addClassFunction('getUnit', ExtFunction(@JSUnit), 0);
     addClassFunction('setLevelColor', ExtFunction(@JSLevelColor), -1);
     // Add the UX modification function, as declared in this file
@@ -2038,7 +2041,7 @@ begin
     fBG.Color := clBlack;
     lVal.Font.Color := clWhite;
     tMissed.Enabled := true;
-    native.setBadge('--', clBlack);
+    native.setBadge('--', clBlack{$ifdef lclwin32},badge_width,badge_font{$endif});
   end
   else
   begin
@@ -2126,7 +2129,7 @@ begin
   UpdateUIColors;
 
   // Update system integration
-  native.setBadge(lVal.Caption, fBG.Color);
+  native.setBadge(lVal.Caption, fBG.Color{$ifdef lclwin32},badge_width,badge_font{$endif});
   native.done;
 end;
 

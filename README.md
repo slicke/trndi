@@ -1,24 +1,32 @@
-# ![Trndi](/trndi-logo.png)<br> CGM Data Viewer<br><sup>_Nightscout - Dexcom - xDrip WiFi_</sup> 
-
+# ![Trndi](/trndi-logo.png)<br> Trndi - CGM data on desktop and RaspberryPi<br><sup>_Nightscout - Dexcom - xDrip WiFi_</sup> 
+<b> Windows - macOS - Linux - RaspberryPi </b>
+![Windows](doc/img_win.png)
+Swedish Windows
+![Linux](doc/img_lin.png)
+Linux (Qt6)
 ### Introduction
-Trndi is a _desktop app_ that shows the your blood sugar. It works with  _Night Scout_ and _Dexcom Share_.
+Trndi is a _desktop app_ that shows the your blood sugar and graph. It works with  _Night Scout_ and _Dexcom Share_.
 It also supports the _xDrip_ app, connecting over the local network/WiFi.
 
 # What differs Trndi from apps?
-### Fully native
-* Trndi runs natively on your computer, without needing any dependencies on __Windows__ and __macOS__. (__Linux__ might need packages OpenSSL to be installed). BSD and other systems too.
-* Trndi supports multiple languages
-### Devices
-* Trndi runs on your __Raspberry Pi__ and other arm computers
-* Trndi works on touch-screen devices
-> Trndi runs on most processors: x86, x64, Apple Sillicon, ARM, _Unoficcialy: Sparc, PowerPC._
-### Extensions
-* Trndi supports modern ___JavaScript__ extensions_, built-in on most processors.
+* __Natively__ runs on your computer without installation or other software _(on Linux, this may depend on distro)_
+* Supports __multiple languages__
+* Runs on your __Raspberry Pi__ and other arm computers, optinally as a full-screen display
+* Works on __touch-screen__ devices
+* Supports modern ___JavaScript__ extensions_
+* __Small and portable__
+* Supports dark and light color modes
+* Displays your readings in a __trend graph__
+* __Free__ and open source
+* Integrates with Windows, macOS and Linux special features such as the macOS dock, Windows taskbar and Linux notifications.
+* Linux: Supports both Qt6 and GTK2
+* Supports low, normal and high glood sugar colors. But also __ranges__ such as "normal, but on the edge to high"
+
 ### Multi-user support
-* Got more than one diabetic? Trndi supports parallel users.  See [this guide](/guides/Multiuser.md)
+Got more than one diabetic? Trndi supports parallel users.
 
 # Setup
-Hold the reading (or "Setup" text) and choose settings to access settings.
+Click/hold the reading (or "Setup" text) and choose settings to access settings.
 * For NightScout, settings will be fetched from your server and auto-applied
 * For Dexcom, see the __[Dexcom setup guide](guides/Dexcom.md)__. The backend does not support all features, but this can be fixed with some manual work.
 * For xDrip, you need to turn on the local web server and use that IP/password

@@ -194,9 +194,9 @@ begin
   if (not ((params >= cb^.params.min) and (params <= cb^.params.max))) and (cb^.params.min > -1) then
   //Use minus for feely varying
     if cb^.params.min = cb^.params.max then
-      ShowMessage(Format('[%s] Needs %d pameters, but we got %d', [func, cb^.params.min, params]))
+      ExtError(Format('[%s] Needs %d pameters, but we got %d', [func, cb^.params.min, params]))
     else
-      ShowMessage(Format('[%s] Needs %d - %d pameters, but we got %d', [func, cb^.params.min, cb^.params
+      ExtError(Format('[%s] Needs %d - %d pameters, but we got %d', [func, cb^.params.min, cb^.params
         .max, params]));
 
 // Setup promise
@@ -205,7 +205,7 @@ begin
   except
     on E: Exception do
     begin
-      ShowMessage('Init failed');
+      ExtError('Init failed');
       Exit;
     end;
   end;
