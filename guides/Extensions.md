@@ -1,4 +1,5 @@
 # Getting started with Plugins
+Full reference of funcitons in [Extensions Functions](Extensions_functions.md)
 
 ### Plugin folder
 The _plugin folder_ is located in your system's application data. You can find out where exactly in the settings.
