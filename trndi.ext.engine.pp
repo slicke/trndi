@@ -183,7 +183,7 @@ end;
 
 procedure TTrndiExtEngine.alert(const msg: string);
 begin
-  uxResponse(mtInformation, msg, 'User Information');
+  uxResponse(mtInformation, msg, sExtUserInfo);
 end;
 
 // Shows a message box, and returns the answer
@@ -191,40 +191,46 @@ function TTrndiExtEngine.uxResponse(const dialogType: TMsgDlgType; const msg:
 string; const titleadd: string): integer;
 
 var
-  btns: TMsgDlgButtons;
-  title: string;
+  btns: TUXMsgDlgBtns;
+  header, title: string;
 begin
   title := titleadd;
 
   case dialogType of
   mtWarning:
   begin
-    btns := [TMsgDlgBtn.mbOK];
+    btns := [mbOK];
     title := Format('[%s] %s', [sExtWarn,title]);
+    header := sExtWarn;
   end;
   mtError:
   begin
-    btns := [TMsgDlgBtn.mbAbort];
+    btns := [mbAbort];
     title := Format('[%s] %s', [sExtErr, title]);
+    header := sExtErr;
   end;
   mtInformation:
   begin
-    btns := [TMsgDlgBtn.mbOK];
+    btns := [mbOK];
     title := Format('[%s] %s', [sExtMsg, title]);
+    header := sExtMsg;
   end;
   mtConfirmation:
   begin
-    btns := mbYesNo;
+    btns := [mbYes, mbNo];
     title := Format('[%s] %s', [sextConfirm, title]);
+    header := sExtConfirm;
   end;
   else
   begin
-    btns := [TMsgDlgBtn.mbOK];
+    btns := [mbOK];
     title := Format('[%s] %s', [sExtEvent, title]);
+    header := sExtEvent;
   end;
   end;
 
-  result := MessageDlg(title, msg, dialogType, btns,'');
+
+  result := UXDialog(header, title, msg, btns, dialogType);
 end;
 
 // Our custom exception handler, wants the filename too
@@ -440,6 +446,7 @@ begin
 
   // Add our base functions
   addClassFunction('alert', @JSDoAlert, 1);
+  addClassFunction('confirm', @JSDoYesNo, 1);
   addClassFunction('log', ExtFunction(@JSDoLog), 1);
   addFunction('alert', ExtFunction(@JSDoAlert), 1);
 

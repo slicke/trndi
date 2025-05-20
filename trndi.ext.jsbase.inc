@@ -49,6 +49,23 @@ begin
   Result := JS_UNDEFINED;
 end;
 
+function JSDoYesNo(ctx: JSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw; cdecl;
+var
+  i : integer;
+  output: rawutf8;
+  response: string;
+begin
+  for i := 0 to argc-1 do
+    output := output + ctx^.ToUtf8(argv^[i]);
+
+  if UXDialog(sExtMsg, '',output,[mbYes, mbNo],mtConfirmation) = mrYes then
+    response := 'Yes'
+  else
+    response := 'No';
+
+  Result := JS_NewString(ctx, pansichar(Response));
+end;
+
 
 // fetch()
 function JSFetch(ctx: JSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw; cdecl;

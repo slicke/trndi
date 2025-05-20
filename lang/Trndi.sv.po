@@ -725,6 +725,10 @@ msgstr ""
 msgid "Extension Message"
 msgstr ""
 
+#: trndi.strings.sextuserinfo
+msgid "User Information"
+msgstr ""
+
 #: trndi.strings.sextwarn
 msgid "Extension Warning"
 msgstr ""
@@ -855,6 +859,12 @@ msgstr "Borttagna konton blir inaktiva, de kan återställas genom att skapa om 
 #: ufloat.rscustomop
 msgid "You can use shift+<number> to manually set visibility (0 = 100% visible)"
 msgstr "Du kan använda skift+<nummerr> för att manuellt sätta synligheten (0 = 100% synlig)"
+
+#: umain.rs_noplugins
+#, fuzzy
+msgctxt "umain.rs_noplugins"
+msgid "Built Without Support"
+msgstr "Byggd utan stöd"
 
 #: umain.rs_tpobottomleft
 msgctxt "umain.rs_tpobottomleft"
