@@ -76,6 +76,8 @@ sExtEvent = 'Extension Event';
 sExtWarn = 'Extension Warning';
 sExtFile = 'File "%s" not found';
 
+sExtUserInfo = 'User Information';
+
 sTypeErrCapt = 'A data type differes from what was expected';
 sTypeErrDesc = 'The extension was stopped';
 sTypeErrmsg = 'A data type was expected, but another was found';

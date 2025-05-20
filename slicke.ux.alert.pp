@@ -110,6 +110,8 @@ langs : ButtonLangs = (smbYes, smbUXNo, smbUXOK, smbUXCancel, smbUXAbort, smbUXR
 
 procedure UXMessage(const title, message: string; const icon: widechar = widechar($2705));
 function UXDialog(const title, message: string; buttons: TUXMsgDlgBtns; const icon: widechar = widechar($2705)): TModalResult;
+function UXDialog(const title, message: string; buttons: TUXMsgDlgBtns; const mtype: TMsgDlgType): TModalResult;
+function UXDialog(const header, title, message: string; buttons: TUXMsgDlgBtns; const mtype: TMsgDlgType): TModalResult;
 
 //function UXShowMessage(const caption, title, desc, message: string; buttons: TMsgDlgButtons; const icon: WideChar): TModalResult;
 function ExtMsg(const  caption, title, desc, logmsg: string; dumpbg: TColor = $00F5F2FD; dumptext:
@@ -524,6 +526,33 @@ end;
 function UXDialog(const title, message: string; buttons: TUXMsgDlgBtns; const icon: widechar = widechar($2705)): TModalResult;
 begin
   result := ExtMsg(sMsgTitle, title, message, '', $00AA6004, $00FDD8AA, buttons, widechar(icon));
+end;
+
+function UXDialog(const title, message: string; buttons: TUXMsgDlgBtns; const mtype: TMsgDlgType): TModalResult;
+begin
+  result := UXDialog(sMsgTitle, title, message, buttons, mtype);
+end;
+
+function UXDialog(const header, title, message: string; buttons: TUXMsgDlgBtns; const mtype: TMsgDlgType): TModalResult;
+var
+ icon: widechar;
+begin
+
+case mtype of
+  mtWarning:
+    icon := widechar($26A0); // ⚠️ WARNING SIGN
+  mtError:
+    icon := widechar($274C); // ❌ CROSS MARK
+  mtInformation:
+    icon := widechar($2139); // ℹ️ INFORMATION SOURCE
+  mtConfirmation:
+    icon := widechar($2753); // ❓ BLACK QUESTION MARK ORNAMENT
+  mtCustom:
+    icon := widechar($2699); // ⚙️ GEAR
+else
+//  icon := widechar('');
+end;
+ result := ExtMsg(header, title, message, '', $00AA6004, $00FDD8AA, buttons, icon);
 end;
 
 procedure btnmodal(sender: tbutton);
