@@ -447,6 +447,8 @@ begin
   // Add our base functions
   addClassFunction('alert', @JSDoAlert, 1);
   addClassFunction('confirm', @JSDoYesNo, 1);
+  addClassFunction('prompt', @JSInput, 4);
+  addClassFunction('select', @JSCombo, -1);
   addClassFunction('log', ExtFunction(@JSDoLog), 1);
   addFunction('alert', ExtFunction(@JSDoAlert), 1);
 

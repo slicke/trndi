@@ -10,10 +10,23 @@ Trndi.alert("hello")
 ```
 Result: none
 ### confirm
+#### Asks yes or no
 ```javascript
 Trndi.alert("Yes or no?")
 ```
-Result: 'Yes' or 'No'
+Result: ```true``` or ```false```
+### prompt
+#### Shows an input field
+```javascript
+Trndi.prompt("Enter a value", "We're asking for a value", "default value")
+```
+Result: string
+### select
+#### Shows a list of options
+```javascript
+Trndi.select("Select your choise", "Choose one of these", ...list of string options);
+```
+Result: integer
 ### Trndi.log
 _See console.log_
 ### console.log

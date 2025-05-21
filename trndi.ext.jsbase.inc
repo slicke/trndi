@@ -53,17 +53,56 @@ function JSDoYesNo(ctx: JSContext; this_val: JSValueRaw; argc: integer; argv: PJ
 var
   i : integer;
   output: rawutf8;
-  response: string;
 begin
   for i := 0 to argc-1 do
     output := output + ctx^.ToUtf8(argv^[i]);
 
   if UXDialog(sExtMsg, '',output,[mbYes, mbNo],mtConfirmation) = mrYes then
-    response := 'Yes'
+    result := JS_TRUE
   else
-    response := 'No';
+    result := JS_FALSE;
+end;
 
-  Result := JS_NewString(ctx, pansichar(Response));
+function JSInput(ctx: JSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw; cdecl;
+var
+  i : integer;
+  caption, desc, def: rawutf8;
+  response: string;
+  x: tmodalresult;
+begin
+    caption := ctx^.ToUtf8(argv^[0]);
+    desc := ctx^.ToUtf8(argv^[1]);
+    def :=  ctx^.ToUtf8(argv^[2]);
+
+    response := ExtInput(sExtMsg,caption,desc,def,x);
+    if x = mrCancel then response := '';
+
+    Result := JS_NewString(ctx, pansichar(Response));
+end;
+
+
+function JSCombo(ctx: JSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw; cdecl;
+var
+  i : integer;
+  caption, desc: rawutf8;
+  response: int64;
+  vals: TStringList;
+  res: rawutf8;
+begin
+
+    vals := TStringList.Create;
+    for i := 0 to argc-1 do
+       vals.Add(ctx^.ToUtf8(argv^[i]));
+
+    caption := ctx^.ToUtf8(argv^[0]);
+    desc := ctx^.ToUtf8(argv^[1]);
+
+    response := ExtList(sExtMsg,caption,desc,vals.ToStringArray(2,argc-1)); // Ignore the first params
+  //  res := vals.strings[response+2];
+    vals.Free;
+    result := JS_NewBigInt64(ctx,response);
+
+//    Result := JS_NewString(ctx, pansichar(res));
 end;
 
 
