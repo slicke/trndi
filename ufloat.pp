@@ -49,8 +49,8 @@ type
   { TfFloat }
 
   TfFloat = class(TForm)
+    lArrow:TLabel;
     lRangeDown:TLabel;
-    lArrow: TLabel;
     lRangeUp:TLabel;
     lVal: TLabel;
     MenuItem1:TMenuItem;
@@ -79,13 +79,14 @@ type
     procedure FormMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X,
       Y: Integer);
     procedure FormPaint(Sender: TObject);
+    procedure FormResize(Sender:TObject);
     procedure FormShow(Sender: TObject);
     procedure lValMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X,
       Y: Integer);
     procedure MenuItem1Click(Sender:TObject);
     procedure miBigClick(Sender:TObject);
     procedure miCustomVisibleClick(Sender: TObject);
-    procedure miNormalClick(Sender:TObject);
+    procedure miNormalClick(Sender:TMenuItem);
     procedure miOp100Click(Sender: TObject);
     procedure tTitlebarTimer(Sender: TObject);
   private
@@ -111,6 +112,72 @@ implementation
 
 {$R *.lfm}
 
+procedure ScaleLbl(ALabel: TLabel; customAl: TAlignment = taCenter; customTl: TTextLayout = tlCenter);
+var
+  Low, High, Mid: Integer;
+  MaxWidth, MaxHeight: Integer;
+  TextWidth, TextHeight: Integer;
+  OptimalSize: Integer;
+begin
+  // Kontrollera grundläggande synlighetsvillkor
+  if not ALabel.Visible then
+    ALabel.Visible := True;
+
+  if ALabel.Caption = '' then
+    Exit; // Ingen text att visa
+
+  // Kontrollera att etiketten har storlek
+  if (ALabel.Width <= 0) or (ALabel.Height <= 0) then
+  begin
+    ALabel.Width := 100;
+    ALabel.Height := 30;
+  end;
+
+  // Sätt korrekt formatering
+  ALabel.AutoSize := False;
+  ALabel.WordWrap := False;
+  ALabel.Alignment := customAl;
+  ALabel.Layout := customTl;
+
+  // Se till att texten är synlig mot bakgrunden
+  if ALabel.Font.Color = ALabel.Color then
+    ALabel.Font.Color := clBlack;
+
+  // Maximal bredd och höjd för texten
+  MaxWidth := ALabel.Width - 4; // Lite padding
+  MaxHeight := ALabel.Height - 4;
+
+  // Utför binärsökning för att hitta optimal fontstorlek
+  Low := 1;
+  High := 150;
+  OptimalSize := 1;
+
+  while Low <= High do
+  begin
+    Mid := (Low + High) div 2;
+    ALabel.Font.Size := Mid;
+
+    TextWidth := ALabel.Canvas.TextWidth(ALabel.Caption);
+    TextHeight := ALabel.Canvas.TextHeight(ALabel.Caption);
+
+    if (TextWidth <= MaxWidth) and (TextHeight <= MaxHeight) then
+    begin
+      OptimalSize := Mid;
+      Low := Mid + 1;
+    end
+    else
+    begin
+      High := Mid - 1;
+    end;
+  end;
+
+  // Sätt den optimala fontstorleken
+  ALabel.Font.Size := OptimalSize;
+
+  // Se till att inställningarna används
+  ALabel.Refresh;
+end;
+
 procedure TfFloat.FormCreate(Sender: TObject);
 {$IFNDEF LCLQt6}
 begin
@@ -130,6 +197,7 @@ begin
     end;
   end;
 {$ENDIF}
+
 end;
 
 procedure TfFloat.ApplyRoundedCorners;
@@ -252,6 +320,7 @@ procedure TfFloat.FormShow(Sender: TObject);
 begin
   ApplyRoundedCorners;
 
+  miNormal.Click;
   // Set the opacity
   SetFormOpacity(0.5);
 end;
@@ -276,31 +345,28 @@ begin
   ShowMessage(rsCustomOp);
 end;
 
-procedure TfFloat.miNormalClick(Sender:TObject);
-const
- h = 200;
- w = 160;
- // Fonts
- b = 95;
- s = 80;
+procedure TfFloat.miNormalClick(Sender:TMenuItem);
+var
+ h: integer;
 begin
-  if (sender as TMenuItem).Name = 'miBig' then begin
-    Width := w * 2;
-    height := h * 2;
-    lVal.Font.Size := b * 2;
-    lArrow.Font.Size := s * 2;
-  end else
-    if (sender as TMenuItem).Name = 'miSmall' then begin
-    Width := w div 2;
-    height := h  div 2;
-        lVal.Font.Size := b div 2;
-    lArrow.Font.Size := s div 2;
-  end else begin
-    Width := w;
+    miBig.Checked := false;
+    miNormal.Checked := false;
+    miSmall.Checked := false;
+
+    if sender = miBig then begin
+      miBig.Checked := true;
+      h := Screen.DesktopHeight div 10;
+    end else if sender = miNormal then begin
+      miNormal.Checked := true;
+      h := Screen.DesktopHeight div 25;
+    end else if sender = miSmall then begin
+      miSmall.Checked := true;
+      h := Screen.DesktopHeight div 50;
+    end;
+
     height := h;
-        lVal.Font.Size := b;
-    lArrow.Font.Size := s;
-  end;
+    width := round(height * 1.55);
+  //---
   ApplyRoundedCorners;
 end;
 
@@ -425,6 +491,12 @@ end;
 procedure TfFloat.FormPaint(Sender: TObject);
 begin
   CreateRoundedCorners;
+end;
+
+procedure TfFloat.FormResize(Sender:TObject);
+begin
+  ScaleLbl(lVal,taLeftJustify,tlTop);
+  ScaleLbl(lArrow,taRightJustify,tlTop);
 end;
 
 procedure TfFloat.FormMouseDown(Sender: TObject; Button: TMouseButton; Shift:

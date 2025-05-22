@@ -18,41 +18,20 @@ object fFloat: TfFloat
   OnMouseMove = FormMouseMove
   OnMouseUp = FormMouseUp
   OnPaint = FormPaint
+  OnResize = FormResize
   OnShow = FormShow
   object lVal: TLabel
     Left = 0
-    Height = 74
+    Height = 152
     Top = 0
     Width = 200
-    Align = alClient
+    Align = alLeft
     Alignment = taCenter
     AutoSize = False
     Caption = 'Setup'
     Color = 21243
     Font.Color = clBlack
     Font.Height = 95
-    OptimalFill = True
-    ParentColor = False
-    ParentFont = False
-    PopupMenu = pMain
-    OnMouseDown = FormMouseDown
-    OnMouseMove = FormMouseMove
-    OnMouseUp = FormMouseUp
-  end
-  object lArrow: TLabel
-    Left = 0
-    Height = 78
-    Top = 74
-    Width = 200
-    Align = alBottom
-    Alignment = taCenter
-    AutoSize = False
-    Caption = 'lArrow'
-    Color = clWhite
-    Font.Color = clBlack
-    Font.Height = 80
-    Layout = tlBottom
-    OptimalFill = True
     ParentColor = False
     ParentFont = False
     PopupMenu = pMain
@@ -86,6 +65,26 @@ object fFloat: TfFloat
     ParentBackground = False
     TabOrder = 0
     Visible = False
+  end
+  object lArrow: TLabel
+    Left = 0
+    Height = 152
+    Top = 0
+    Width = 200
+    Align = alRight
+    Alignment = taCenter
+    AutoSize = False
+    Caption = 'lArrow'
+    Color = clWhite
+    Font.Color = clBlack
+    Font.Height = 92
+    Layout = tlBottom
+    ParentColor = False
+    ParentFont = False
+    PopupMenu = pMain
+    OnMouseDown = FormMouseDown
+    OnMouseMove = FormMouseMove
+    OnMouseUp = FormMouseUp
   end
   object pMain: TPopupMenu
     Left = 67
