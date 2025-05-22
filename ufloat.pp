@@ -586,8 +586,8 @@ begin
     miCustomVisible.Checked := true;
   end;
 
-  if ((ssShift in Shift) and ((Key = 187 (* + *)) or (Key = 189))) then begin
-    if key = 187 then
+  if ((ssShift in Shift) and (Key in [187, (* + *) 189, 191 (*mac +*)])) then begin
+    if key <> 189 then // not -
         height := height + 5
     else
         height := height - 5;
