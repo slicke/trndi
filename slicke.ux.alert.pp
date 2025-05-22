@@ -220,6 +220,8 @@ var
   btns: TComponent;
   target: TWinControl;
 begin
+if not key in [VK_ESCAPE, VK_RETURN] then
+  Exit;
 cancel := -1;
 no := -1;
 ct := 0;
@@ -234,13 +236,23 @@ target := btns as TPanel;
      if o.ModalResult = mrCancel then cancel := i;
      if o.ModalResult = mrNo then no := i;
      if o.ModalResult = mrOK then ok := i;
+     if o.ModalResult = mrClose then ok := i;
      Inc(ct);
    end;
 
  end;
- if cancel >= 0 then (target.Components[cancel] as TCustomButton).click
- else if no >= 0 then (target.Components[no] as TCustomButton).click
- else if ((ct = 1) and (ok >= 0)) then (target.Components[ok] as TCustomButton).click;
+
+ if key = vk_escape then begin
+   if cancel >= 0 then
+     (target.Components[cancel] as TCustomButton).click
+   else if no >= 0
+     then (target.Components[no] as TCustomButton).click;
+ end else if key = VK_RETURN then begin
+    if ((ct = 1) and (ok >= 0)) then
+      (target.Components[ok] as TCustomButton).click
+    else if ((ct = 2) and (ok = 1)) then
+      (target.Components[ok] as TCustomButton).click;
+ end;
 end;
 
 {$ifndef Windows}
