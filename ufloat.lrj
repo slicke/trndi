@@ -15,6 +15,7 @@
 {"hash":13360,"name":"tffloat.miop100.hint","sourcebytes":[49,48,48],"value":"100"},
 {"hash":78424925,"name":"tffloat.micustomvisible.caption","sourcebytes":[67,117,115,116,111,109],"value":"Custom"},
 {"hash":368901,"name":"tffloat.misize.caption","sourcebytes":[83,105,122,101],"value":"Size"},
+{"hash":211504439,"name":"tffloat.mixl.caption","sourcebytes":[86,101,114,121,32,66,105,103],"value":"Very Big"},
 {"hash":18679,"name":"tffloat.mibig.caption","sourcebytes":[66,105,103],"value":"Big"},
 {"hash":89559932,"name":"tffloat.minormal.caption","sourcebytes":[78,111,114,109,97,108],"value":"Normal"},
 {"hash":5912620,"name":"tffloat.mismall.caption","sourcebytes":[83,109,97,108,108],"value":"Small"},

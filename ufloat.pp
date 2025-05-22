@@ -54,6 +54,7 @@ type
     lRangeUp:TLabel;
     lVal: TLabel;
     MenuItem1:TMenuItem;
+    miXL:TMenuItem;
     miSmall:TMenuItem;
     miNormal:TMenuItem;
     miBig:TMenuItem;
@@ -87,6 +88,7 @@ type
     procedure miBigClick(Sender:TObject);
     procedure miCustomVisibleClick(Sender: TObject);
     procedure miNormalClick(Sender:TMenuItem);
+    procedure miNormalClick(Sender:TObject);
     procedure miOp100Click(Sender: TObject);
     procedure tTitlebarTimer(Sender: TObject);
   private
@@ -352,8 +354,12 @@ begin
     miBig.Checked := false;
     miNormal.Checked := false;
     miSmall.Checked := false;
+    miXL.Checked := false;
 
-    if sender = miBig then begin
+    if sender = miXL then begin
+      miXL.Checked := true;
+      h := Screen.DesktopHeight div 5;
+    end else if sender = miBig then begin
       miBig.Checked := true;
       h := Screen.DesktopHeight div 10;
     end else if sender = miNormal then begin
@@ -368,6 +374,11 @@ begin
     width := round(height * 1.55);
   //---
   ApplyRoundedCorners;
+end;
+
+procedure TfFloat.miNormalClick(Sender:TObject);
+begin
+
 end;
 
 procedure TfFloat.miOp100Click(Sender: TObject);
