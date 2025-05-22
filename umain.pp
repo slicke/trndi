@@ -2266,8 +2266,10 @@ begin
 
   if Assigned(fFloat) then
   begin
-    ffloat.lRangeDown.Visible := true;
-    ffloat.Font.color := bg_rel_color_lo_txt;
+    if not miRangeColor.Checked then begin
+      ffloat.lRangeDown.Visible := true;
+      end;
+      ffloat.Font.color := bg_rel_color_lo_txt;
   end;
   CenterPanelToCaption(pnOffRange);
 end;
@@ -2289,8 +2291,10 @@ begin
 
   if Assigned(fFloat) then
   begin
-    ffloat.lRangeUp.Visible := true;
-    ffloat.Font.color := bg_rel_color_hi_txt;
+    if not miRangeColor.Checked then begin
+      ffloat.lRangeUp.Visible := true;
+    end;
+      ffloat.Font.color := bg_rel_color_hi_txt;
   end;
   CenterPanelToCaption(pnOffRange);
 end;
