@@ -54,6 +54,8 @@ type
     lRangeUp:TLabel;
     lVal: TLabel;
     MenuItem1:TMenuItem;
+    miCustomSize:TMenuItem;
+    Separator1:TMenuItem;
     miXL:TMenuItem;
     miSmall:TMenuItem;
     miNormal:TMenuItem;
@@ -86,6 +88,7 @@ type
       Y: Integer);
     procedure MenuItem1Click(Sender:TObject);
     procedure miBigClick(Sender:TObject);
+    procedure miCustomSizeClick(Sender:TObject);
     procedure miCustomVisibleClick(Sender: TObject);
     procedure miNormalClick(Sender:TMenuItem);
     procedure miNormalClick(Sender:TObject);
@@ -103,6 +106,7 @@ type
 
 resourcestring
   rsCustomOp = 'You can use shift+<number> to manually set visibility (0 = 100% visible)';
+  rsCustomSize = 'You can hold down shift and plus (+) or minus (-) to change the window size'
 
 var
   fFloat: TfFloat;
@@ -342,6 +346,11 @@ begin
 
 end;
 
+procedure TfFloat.miCustomSizeClick(Sender:TObject);
+begin
+ShowMessage(rsCustomSize);
+end;
+
 procedure TfFloat.miCustomVisibleClick(Sender: TObject);
 begin
   ShowMessage(rsCustomOp);
@@ -368,6 +377,8 @@ begin
     end else if sender = miSmall then begin
       miSmall.Checked := true;
       h := Screen.DesktopHeight div 50;
+    end else if sender = miCustomSize then begin
+      h := height;
     end;
 
     height := h;
@@ -540,14 +551,22 @@ begin
     Hide;
     key := 0;
   end;
-  if not ((ssShift in Shift) and (Key >= 48) and (Key <= 57)) then
-    Exit;
-  num := (key-48) / 10;
-  if num < 0.1 then
-    num := 1;
+  if ((ssShift in Shift) and (Key >= 48) and (Key <= 57)) then begin
+    num := (key-48) / 10;
+    if num < 0.1 then
+      num := 1;
 
-  SetFormOpacity(num);
-  miCustomVisible.Checked := true;
+    SetFormOpacity(num);
+    miCustomVisible.Checked := true;
+  end;
+
+  if ((ssShift in Shift) and ((Key = 187 (* + *)) or (Key = 189))) then begin
+    if key = 187 then
+        height := height + 5
+    else
+        height := height - 5;
+    miNormalClick(miCustomSize);
+  end;
 end;
 
 end.

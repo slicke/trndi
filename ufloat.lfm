@@ -150,6 +150,13 @@ object fFloat: TfFloat
         RadioItem = True
         OnClick = miNormalClick
       end
+      object Separator1: TMenuItem
+        Caption = '-'
+      end
+      object miCustomSize: TMenuItem
+        Caption = 'Custom'
+        OnClick = miCustomSizeClick
+      end
     end
     object MenuItem1: TMenuItem
       Caption = '&Hide'
