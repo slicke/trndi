@@ -362,10 +362,9 @@ msgstr "Stor"
 
 #: tffloat.miclock.caption
 msgid "Show clock"
-msgstr ""
+msgstr "Visa klocka"
 
 #: tffloat.micustomsize.caption
-#, fuzzy
 msgctxt "tffloat.micustomsize.caption"
 msgid "Custom"
 msgstr "Egen"
@@ -394,7 +393,7 @@ msgstr "Synlighet"
 
 #: tffloat.mixl.caption
 msgid "Very Big"
-msgstr ""
+msgstr "Mycket stor"
 
 #: tfsplash.label1.caption
 msgid "Loading..."
@@ -728,28 +727,28 @@ msgstr "Tilläggsbekräftelse"
 
 #: trndi.strings.sexterr
 msgid "Extension Error"
-msgstr ""
+msgstr "Fel i tillägg"
 
 #: trndi.strings.sextevent
 msgid "Extension Event"
-msgstr ""
+msgstr "Tilläggshändelse"
 
 #: trndi.strings.sextfile
 #, object-pascal-format
 msgid "File \"%s\" not found"
-msgstr ""
+msgstr "Filen \"%s\" hittades inte"
 
 #: trndi.strings.sextmsg
 msgid "Extension Message"
-msgstr ""
+msgstr "Tilläggsmeddelande"
 
 #: trndi.strings.sextuserinfo
 msgid "User Information"
-msgstr ""
+msgstr "Användarinformation"
 
 #: trndi.strings.sextwarn
 msgid "Extension Warning"
-msgstr ""
+msgstr "Tilläggsvarning"
 
 #: trndi.strings.slogdesc
 msgctxt "trndi.strings.slogdesc"
@@ -880,10 +879,9 @@ msgstr "Du kan använda skift+<nummerr> för att manuellt sätta synligheten (0 
 
 #: ufloat.rscustomsize
 msgid "You can hold down shift and plus (+) or minus (-) to change the window size"
-msgstr ""
+msgstr "Du kan hålla ned skift och plus (+) eller minus (-) för att justera fönstrets storlek"
 
 #: umain.rs_noplugins
-#, fuzzy
 msgctxt "umain.rs_noplugins"
 msgid "Built Without Support"
 msgstr "Byggd utan stöd"
@@ -912,4 +910,3 @@ msgstr "Senaste position"
 msgctxt "umain.rs_tpotopright"
 msgid "Top Right"
 msgstr "Höger topp"
-
