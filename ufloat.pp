@@ -49,11 +49,13 @@ type
   { TfFloat }
 
   TfFloat = class(TForm)
+    lTime:TLabel;
     lArrow:TLabel;
     lRangeDown:TLabel;
     lRangeUp:TLabel;
     lVal: TLabel;
     MenuItem1:TMenuItem;
+    miClock:TMenuItem;
     miCustomSize:TMenuItem;
     Separator1:TMenuItem;
     miXL:TMenuItem;
@@ -71,6 +73,7 @@ type
     miSplit1: TMenuItem;
     pMain: TPopupMenu;
     pnMultiUser:TPanel;
+    tClock:TTimer;
     procedure FormCreate(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure FormKeyPress(Sender: TObject; var Key: char);
@@ -88,11 +91,13 @@ type
       Y: Integer);
     procedure MenuItem1Click(Sender:TObject);
     procedure miBigClick(Sender:TObject);
+    procedure miClockClick(Sender:TObject);
     procedure miCustomSizeClick(Sender:TObject);
     procedure miCustomVisibleClick(Sender: TObject);
     procedure miNormalClick(Sender:TMenuItem);
     procedure miNormalClick(Sender:TObject);
     procedure miOp100Click(Sender: TObject);
+    procedure tClockTimer(Sender:TObject);
     procedure tTitlebarTimer(Sender: TObject);
   private
     procedure SetFormOpacity(Opacity: Double);
@@ -106,7 +111,7 @@ type
 
 resourcestring
   rsCustomOp = 'You can use shift+<number> to manually set visibility (0 = 100% visible)';
-  rsCustomSize = 'You can hold down shift and plus (+) or minus (-) to change the window size'
+  rsCustomSize = 'You can hold down shift and plus (+) or minus (-) to change the window size';
 
 var
   fFloat: TfFloat;
@@ -346,6 +351,16 @@ begin
 
 end;
 
+procedure TfFloat.miClockClick(Sender:TObject);
+begin
+  miClock.Checked := not miClock.Checked;
+  lTime.Visible := miClock.Checked;
+  if lTime.visible then begin
+    tClock.OnTimer(tClock);
+    tClock.Enabled := true;
+  end;
+end;
+
 procedure TfFloat.miCustomSizeClick(Sender:TObject);
 begin
 ShowMessage(rsCustomSize);
@@ -383,6 +398,8 @@ begin
 
     height := h;
     width := round(height * 1.55);
+    lVal.width := round(clientwidth * 0.75);
+    lArrow.width := round(clientwidth * 0.25);
   //---
   ApplyRoundedCorners;
 end;
@@ -403,6 +420,13 @@ begin
 
   SetFormOpacity(v);
   (sender as TMenuItem).Checked := true;
+end;
+
+procedure TfFloat.tClockTimer(Sender:TObject);
+begin
+  lTime.caption :=  FormatDateTime(ShortTimeFormat, Now);
+  if lTime.Visible = false then
+    (sender as TTimer).Enabled := false;
 end;
 
 procedure TfFloat.tTitlebarTimer(Sender: TObject);
@@ -517,8 +541,10 @@ end;
 
 procedure TfFloat.FormResize(Sender:TObject);
 begin
-  ScaleLbl(lVal,taLeftJustify,tlTop);
-  ScaleLbl(lArrow,taRightJustify,tlTop);
+  ScaleLbl(lVal,taLeftJustify,tlCenter);
+  ScaleLbl(lArrow,taCenter,tlCenter);
+  lTime.Font.Size := lArrow.font.size div 3;
+  lTime.left := larrow.left - (lTime.Width div 2);
 end;
 
 procedure TfFloat.FormMouseDown(Sender: TObject; Button: TMouseButton; Shift:
