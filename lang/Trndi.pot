@@ -342,6 +342,11 @@ msgstr ""
 msgid "Big"
 msgstr ""
 
+#: tffloat.micustomsize.caption
+msgctxt "tffloat.micustomsize.caption"
+msgid "Custom"
+msgstr ""
+
 #: tffloat.micustomvisible.caption
 msgctxt "tffloat.micustomvisible.caption"
 msgid "Custom"
@@ -362,6 +367,10 @@ msgstr ""
 #: tffloat.mivisible.caption
 msgctxt "tffloat.mivisible.caption"
 msgid "Visibility"
+msgstr ""
+
+#: tffloat.mixl.caption
+msgid "Very Big"
 msgstr ""
 
 #: tfsplash.label1.caption
