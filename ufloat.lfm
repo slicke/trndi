@@ -1,11 +1,11 @@
 object fFloat: TfFloat
   Left = 358
-  Height = 160
+  Height = 125
   Top = 250
-  Width = 200
+  Width = 218
   Caption = 'Floating Display'
-  ClientHeight = 160
-  ClientWidth = 200
+  ClientHeight = 125
+  ClientWidth = 218
   FormStyle = fsSystemStayOnTop
   PopupMenu = pMain
   Position = poDesktopCenter
@@ -22,7 +22,7 @@ object fFloat: TfFloat
   OnShow = FormShow
   object lVal: TLabel
     Left = 0
-    Height = 152
+    Height = 117
     Top = 0
     Width = 200
     Align = alLeft
@@ -58,8 +58,8 @@ object fFloat: TfFloat
   object pnMultiUser: TPanel
     Left = 0
     Height = 8
-    Top = 152
-    Width = 200
+    Top = 117
+    Width = 218
     Align = alBottom
     BevelOuter = bvNone
     ParentBackground = False
@@ -67,8 +67,8 @@ object fFloat: TfFloat
     Visible = False
   end
   object lArrow: TLabel
-    Left = 0
-    Height = 152
+    Left = 18
+    Height = 117
     Top = 0
     Width = 200
     Align = alRight
@@ -86,9 +86,17 @@ object fFloat: TfFloat
     OnMouseMove = FormMouseMove
     OnMouseUp = FormMouseUp
   end
+  object lTime: TLabel
+    Left = 167
+    Height = 15
+    Top = 0
+    Width = 27
+    Caption = '00:00'
+    Visible = False
+  end
   object pMain: TPopupMenu
     Left = 67
-    Top = 42
+    Top = 40
     object miVisible: TMenuItem
       Caption = 'Visibility'
       object miOp25: TMenuItem
@@ -125,9 +133,6 @@ object fFloat: TfFloat
         OnClick = miCustomVisibleClick
       end
     end
-    object miSplit: TMenuItem
-      Caption = '-'
-    end
     object miSIze: TMenuItem
       Caption = 'Size'
       object miXL: TMenuItem
@@ -158,9 +163,22 @@ object fFloat: TfFloat
         OnClick = miCustomSizeClick
       end
     end
+    object miSplit: TMenuItem
+      Caption = '-'
+    end
+    object miClock: TMenuItem
+      Caption = 'Show clock'
+      OnClick = miClockClick
+    end
     object MenuItem1: TMenuItem
       Caption = '&Hide'
       OnClick = MenuItem1Click
     end
+  end
+  object tClock: TTimer
+    Interval = 15000
+    OnTimer = tClockTimer
+    Left = 145
+    Top = 100
   end
 end

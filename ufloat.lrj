@@ -4,6 +4,7 @@
 {"hash":60444,"name":"tffloat.lrangedown.caption","sourcebytes":[226,150,188],"value":"\u25BC"},
 {"hash":60434,"name":"tffloat.lrangeup.caption","sourcebytes":[226,150,178],"value":"\u25B2"},
 {"hash":118004071,"name":"tffloat.larrow.caption","sourcebytes":[108,65,114,114,111,119],"value":"lArrow"},
+{"hash":3358000,"name":"tffloat.ltime.caption","sourcebytes":[48,48,58,48,48],"value":"00:00"},
 {"hash":260833321,"name":"tffloat.mivisible.caption","sourcebytes":[86,105,115,105,98,105,108,105,116,121],"value":"Visibility"},
 {"hash":13685,"name":"tffloat.miop25.caption","sourcebytes":[50,53,37],"value":"25%"},
 {"hash":853,"name":"tffloat.miop25.hint","sourcebytes":[50,53],"value":"25"},
@@ -20,5 +21,6 @@
 {"hash":89559932,"name":"tffloat.minormal.caption","sourcebytes":[78,111,114,109,97,108],"value":"Normal"},
 {"hash":5912620,"name":"tffloat.mismall.caption","sourcebytes":[83,109,97,108,108],"value":"Small"},
 {"hash":78424925,"name":"tffloat.micustomsize.caption","sourcebytes":[67,117,115,116,111,109],"value":"Custom"},
+{"hash":158190331,"name":"tffloat.miclock.caption","sourcebytes":[83,104,111,119,32,99,108,111,99,107],"value":"Show clock"},
 {"hash":2813861,"name":"tffloat.menuitem1.caption","sourcebytes":[38,72,105,100,101],"value":"&Hide"}
 ]}

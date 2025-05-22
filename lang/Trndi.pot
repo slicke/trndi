@@ -329,6 +329,10 @@ msgstr ""
 msgid "▲"
 msgstr ""
 
+#: tffloat.ltime.caption
+msgid "00:00"
+msgstr ""
+
 #: tffloat.lval.caption
 msgctxt "tffloat.lval.caption"
 msgid "Setup"
@@ -340,6 +344,10 @@ msgstr ""
 
 #: tffloat.mibig.caption
 msgid "Big"
+msgstr ""
+
+#: tffloat.miclock.caption
+msgid "Show clock"
 msgstr ""
 
 #: tffloat.micustomsize.caption
@@ -838,6 +846,10 @@ msgstr ""
 
 #: ufloat.rscustomop
 msgid "You can use shift+<number> to manually set visibility (0 = 100% visible)"
+msgstr ""
+
+#: ufloat.rscustomsize
+msgid "You can hold down shift and plus (+) or minus (-) to change the window size"
 msgstr ""
 
 #: umain.rs_noplugins
