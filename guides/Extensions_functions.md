@@ -38,10 +38,17 @@ Trndi.setBadgeSize(0.9, 9);
 Sets size of the reading overlay for Windows
 Above: Set size to 90% of the Windows app icon with font 9.
 ### getUnit
+#### Get the current measure unit
 ```javascript
 Trndi.getUnit
 ```
 Returns if the user is using mg/dL or mmol/L
+### getLocale
+#### Get the current app language
+```javascript
+Trndi.getLocale
+```
+Returns a lang code (such as sv or en)
 ### setLevelColor
 #### Sets the UX colors
 ```javascript

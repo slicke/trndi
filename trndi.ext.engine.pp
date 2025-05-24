@@ -379,6 +379,39 @@ begin
   result := FOutput;
 end;
 
+// Module loader callback for QuickJS: Loads source code from disk for the given module name
+function TrndiModuleLoader(ctx: JSContext; module_name: PAnsiChar; opaque: pointer): PAnsiChar; cdecl;
+var
+  FileName: string;
+  Script: RawUtf8;
+  FileStream: TFileStream;
+  StringStream: TStringStream;
+begin
+  // Map module_name to file path; this can be adapted for your needs
+  FileName := string(module_name); // Direct mapping; you may want to enhance this
+
+  if not FileExists(FileName) then
+  begin
+    // Returning nil signals loader error
+    Result := nil;
+    Exit;
+  end;
+
+  // Copied/adapted core logic from TTrndiExtEngine.ExecuteFile
+  FileStream := TFileStream.Create(FileName, fmOpenRead or fmShareDenyWrite);
+  StringStream := TStringStream.Create;
+  try
+    StringStream.CopyFrom(FileStream, FileStream.Size);
+    Script := StringStream.DataString;
+  finally
+    StringStream.Free;
+    FileStream.Free;
+  end;
+
+  // The returned string must be memory-managed for QuickJS; using StrNew for a C-style string
+  Result := StrNew(PAnsiChar(Script));
+end;
+
 // Constructor
 constructor TTrndiExtEngine.Create;
 var
@@ -395,6 +428,8 @@ begin
   FContext := JS_NewContext(FRuntime);
   if FContext = nil then
     raise Exception.Create('Failed to create JS context');
+
+  JS_SetModuleLoaderFunc(FRuntime, nil, PJSModuleLoaderFunc(@TrndiModuleLoader), nil);
 
 // Point back to this class via the context
   JS_SetContextOpaque(FContext, Self);

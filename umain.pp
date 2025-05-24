@@ -224,6 +224,7 @@ function CFStringCreateWithUTF8String(const utf8Str: PAnsiChar): CFStringRef; ex
 
 var
 native: TrndiNative;
+applocale: string;
 {$ifdef darwin}
 MacAppDelegate: TMyAppDelegate;
 upMenu: TMenuItem;
@@ -680,6 +681,7 @@ begin
 
   with TTrndiExtEngine.Instance do
   begin
+    addClassFunction('getLocale', ExtFunction(@JSLocale), 0);
     addClassFunction('uxProp', ExtFunction(@JSUX), 3);
     addClassFunction('setBadgeSize', ExtFunction(@JSBADGE), -1);
     addClassFunction('getUnit', ExtFunction(@JSUnit), 0);
@@ -869,6 +871,7 @@ Application.OnException := @AppExceptionHandler;
     lang := GetSetting(username +'locale', '');
     if (lang = 'auto') or (lang = '') then
       lang := GetOSLanguage;
+    applocale := lang;
     Application.processmessages;
 
     SetDefaultLang(lang, getLangPath);
@@ -1136,7 +1139,6 @@ begin
     tResize.Enabled := true;
     lVal.Visible := false;
     lAgo.Visible := false;
-    lArrow.Visible := false;
   end;
 end;
 
@@ -1144,6 +1146,7 @@ procedure TfBG.FormShow(Sender:TObject);
 begin
   placeForm;
   placed := true;
+  lVal.font.Quality := fqCleartype;
 end;
 
 procedure TfBG.lAgoClick(Sender:TObject);
