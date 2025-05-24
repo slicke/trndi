@@ -60,6 +60,18 @@ begin
   result := res.raw;
 end;
 
+// Handle the active language
+function JSLocale(ctx: JSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw; cdecl;
+
+var
+  curr: rawbytestring;
+  res: JSValue;
+begin
+  curr := applocale; // UTF8Encode(BG_UNIT_NAMES[un]);
+  res := ctx^.From(curr);
+  result := res.raw;
+end;
+
 // UX modifications from JS ("uxProp()")
 function JSUX(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw;
 cdecl;
