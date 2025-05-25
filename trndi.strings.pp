@@ -18,7 +18,7 @@ RS_RANGE_LO_UNSUPPORTED = 'Lo range not supported by API';
 
   // Error messages
 RS_SETUP = 'Setup';
-RS_NO_BACKEND = 'No readings recieved. There might be a problem with the backend, or you might not have any recent readings';
+RS_NO_BACKEND = 'No readings recieved. '#10'Has your CGM synced recently? '#10'Is the remote server working?';
 RS_MISSING_LABEL = 'Label %s is missing!';
 RS_MULTIPLE_ACCOUNTS = 'Trndi found multiple accounts. Please choose one for this instance';
 RS_USER_CAPTION = '[%s] %s';

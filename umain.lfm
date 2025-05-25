@@ -261,6 +261,19 @@ object fBG: TfBG
     OnClick = pnOffRangeClick
     OnMouseMove = FormMouseMove
   end
+  object pnWarning: TPanel
+    Left = 8
+    Height = 50
+    Top = 72
+    Width = 250
+    Color = 11575535
+    Font.Color = clBlack
+    ParentBackground = False
+    ParentColor = False
+    ParentFont = False
+    TabOrder = 3
+    Visible = False
+  end
   object tMain: TTimer
     Interval = 100000
     OnTimer = tMainTimer
@@ -270,8 +283,8 @@ object fBG: TfBG
   object pmSettings: TPopupMenu
     OnMeasureItem = pmSettingsMeasureItem
     OnPopup = pmSettingsPopup
-    Left = 155
-    Top = 66
+    Left = 168
+    Top = 32
     object miSettings: TMenuItem
       Caption = '&Settings'
       OnClick = miSettingsClick
