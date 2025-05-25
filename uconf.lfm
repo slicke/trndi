@@ -41,6 +41,7 @@ object fConf: TfConf
           'xDrip'
         )
         ReadOnly = True
+        Style = csDropDownList
         TabOrder = 0
         Text = 'NightScout'
         OnChange = cbSysChange
