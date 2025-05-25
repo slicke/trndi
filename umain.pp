@@ -1263,7 +1263,8 @@ begin
 
     // Force repaint to ensure display updates properly
     Invalidate;
-        Screen.Cursor := crNone;
+
+    Screen.Cursor := crNone;
   end;
 
   // Adjust for dark mode if applicable
@@ -1855,8 +1856,19 @@ begin
   ScaleLbl(lAgo, taLeftJustify);
 
   // Konfigurera trendpil
-  lArrow.Height := ClientHeight div 4;
-  ScaleLbl(lArrow);
+  if ClientWidth < 1000 then begin
+    lArrow.width := max(100, ClientWidth div 3);
+    lArrow.height := lArrow.Width;
+    larrow.left := clientwidth - ( larrow.width) - 5;
+    larrow.top := -1*(larrow.height div 2) + 15;
+  end else begin
+    lArrow.Height := ClientHeight;
+    lArrow.width := ClientWidth;
+    lArrow.left := ClientWidth - round(lArrow.width / 1.5);
+    lArrow.top := -1*(clientheight div 2)+25;
+  end;
+//  ScaleLbl(lArrow, taRightJustify, tlTop);
+  lArrow.OptimalFill := true;
 
   pnMultiUser.width := clientwidth div 10;
   pnMultiUser.height := clientheight div 10;
