@@ -1220,6 +1220,7 @@ begin
     // First, change the window state to normal
     WindowState := wsNormal;
     Application.ProcessMessages;
+    Screen.Cursor := crDefault;
 
     // Then restore border styles
     BorderStyle := bsSizeToolWin;
@@ -1262,6 +1263,7 @@ begin
 
     // Force repaint to ensure display updates properly
     Invalidate;
+        Screen.Cursor := crNone;
   end;
 
   // Adjust for dark mode if applicable
