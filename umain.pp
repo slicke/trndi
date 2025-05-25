@@ -70,6 +70,7 @@ TfBG = class(TForm)
   miRangeColor:TMenuItem;
   miPref:TMenuItem;
   miFloatOn:TMenuItem;
+  pnWarning:TPanel;
   pnMultiUser:TPanel;
   pnOffRangeBar:TPanel;
   Separator1:TMenuItem;
@@ -165,6 +166,7 @@ private
   TrendDots: array[1..10] of TLabel;
   multi: boolean; // Multi user
 
+  procedure fixWarningPanel;
   function lastReading: BGReading;
   procedure updateReading;
   procedure PlaceTrendDots(const Readings: array of BGReading);
@@ -1789,6 +1791,8 @@ begin
 
   // Placera om trend dots
   UpdateTrendDots;
+
+  fixWarningPanel;
 end;
 
 procedure TfBG.UpdateTrendElements;
@@ -2184,6 +2188,15 @@ begin
   UpdateOffRangePanel(b.val);
 end;
 
+procedure TfBG.fixWarningPanel;
+begin
+    pnwarning.width := min(ClientWidth, 300);
+    pnWarning.left := ClientWidth div 10;
+    pnwarning.top := ClientHeight div 10;
+    pnWarning.height := ClientHeight-(pnwarning.top*2);
+    CenterPanelToCaption(PNwARNING);
+end;
+
 function TfBG.FetchAndValidateReadings: Boolean;
 begin
   Result := False;
@@ -2193,9 +2206,12 @@ begin
 
   bgs := api.getReadings(MAX_MIN, 25);
 
-  if Length(bgs) < 1 then
+  pnWarning.Visible := false;
+  if (Length(bgs) < 1) or true then
   begin
-    ShowMessage(RS_NO_BACKEND);
+    pnWarning.Visible := true;
+    pnWarning.Caption := '⚠️ ' + RS_NO_BACKEND;
+    FixWarningPanel;
     Exit;
   end;
 

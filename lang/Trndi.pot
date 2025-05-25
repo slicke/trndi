@@ -550,7 +550,10 @@ msgid "Built Without Support"
 msgstr ""
 
 #: trndi.strings.rs_no_backend
-msgid "No readings recieved. There might be a problem with the backend, or you might not have any recent readings"
+msgid ""
+"No readings recieved. \n"
+"Has your CGM synced recently? \n"
+"Is the remote server working?"
 msgstr ""
 
 #: trndi.strings.rs_off_hi
