@@ -798,6 +798,7 @@ begin
     for i := 0 to High(Choices) do
       Combo.Items.Add(Choices[i]);
     combo.ReadOnly := true;
+    combo.style := csDropDownList;
     Combo.Left := TitleLabel.Left;
     Combo.Width := Max(ComboWidth, DescLabel.Canvas.TextWidth(ADesc));
     Combo.Top := DescLabel.Top + DescLabel.Height + Padding div 2;

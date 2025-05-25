@@ -237,6 +237,7 @@ procedure SetPointHeight(L: TLabel; value: single);
 
 const
 MAX_MIN = 1440; // Max time to request
+MAX_RESULT = 25; // Max results
 INTERVAL_MINUTES = 5; // Each time interval is 5 minutes
 NUM_DOTS = 10;        // Total number of labels (lDot1 - lDot10)
 DATA_FRESHNESS_THRESHOLD_MINUTES = 11; // Max minutes before data is considered outdated
@@ -1883,7 +1884,7 @@ begin
         end;
 
         // Set the label's Top property
-        Dot.Top := fBG.ClientHeight - DPosition;
+        Dot.Top := fBG.ClientHeight - DPosition - 100;
         Dot.Visible := True; // Ensure label is visible
       end
       else
@@ -2204,10 +2205,10 @@ begin
   if api = nil then
     Exit;
 
-  bgs := api.getReadings(MAX_MIN, 25);
+  bgs := api.getReadings(MAX_MIN, MAX_RESULT);
 
   pnWarning.Visible := false;
-  if (Length(bgs) < 1) or true then
+  if Length(bgs) < 1 then
   begin
     pnWarning.Visible := true;
     pnWarning.Caption := '⚠️ ' + RS_NO_BACKEND;

@@ -570,18 +570,13 @@ msgid "Built Without Support"
 msgstr "Byggd utan stöd"
 
 #: trndi.strings.rs_no_backend
-#, fuzzy
-#| msgid ""
-#| "No readings recieved.\n"
-#| "Has your CGM synced recently?\n"
-#| "Is the remote server working?"
 msgid ""
 "No readings recieved. \n"
 "Has your CGM synced recently? \n"
 "Is the remote server working?"
 msgstr ""
-"Inga avläsningar mottogs.\n"
-"Har din CGM synkat nyligen?\n"
+"Inga avläsningar mottogs. \n"
+"Har din CGM synkat nyligen? \n"
 "Fungerar servern?"
 
 #: trndi.strings.rs_off_hi
@@ -893,38 +888,31 @@ msgid "You can hold down shift and plus (+) or minus (-) to change the window si
 msgstr "Du kan hålla ned skift och plus (+) eller minus (-) för att justera fönstrets storlek"
 
 #: umain.rs_noplugins
-#, fuzzy
 msgctxt "umain.rs_noplugins"
 msgid "Built Without Support"
 msgstr "Byggd utan stöd"
 
 #: umain.rs_tpobottomleft
-#, fuzzy
 msgctxt "umain.rs_tpobottomleft"
 msgid "Bottom Left"
 msgstr "Nere till vänster"
 
 #: umain.rs_tpobottomright
-#, fuzzy
 msgctxt "umain.rs_tpobottomright"
 msgid "Bottom Right"
 msgstr "Nere till höger"
 
 #: umain.rs_tpocenter
-#, fuzzy
 msgctxt "umain.rs_tpocenter"
 msgid "Desktop Center"
 msgstr "Mitten av skrivbordet"
 
 #: umain.rs_tpocustom
-#, fuzzy
 msgctxt "umain.rs_tpocustom"
 msgid "Last position"
 msgstr "Senaste position"
 
 #: umain.rs_tpotopright
-#, fuzzy
 msgctxt "umain.rs_tpotopright"
 msgid "Top Right"
 msgstr "Höger topp"
-
