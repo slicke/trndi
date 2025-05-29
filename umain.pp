@@ -2005,8 +2005,11 @@ procedure TfBG.tSwapTimer(Sender:TObject);
 var
   x: integer;
 begin
-  if not TryStrToInt(lVal.Caption[1], x) then
+  if (not TryStrToInt(lVal.Caption[1], x)) or (fsStrikeOut in Lval.Font.Style) then begin
+    lArrow.Visible := false;
     exit;
+  end;
+  lArrow.Visible := true;
 
   tSwap.Enabled := false;
   if tSwap.Interval <> 5000 then begin
