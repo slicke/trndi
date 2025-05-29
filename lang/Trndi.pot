@@ -90,6 +90,10 @@ msgctxt "tfbg.lval.caption"
 msgid "Setup"
 msgstr ""
 
+#: tfbg.mialternate.caption
+msgid "Alterante arrow and reading"
+msgstr ""
+
 #: tfbg.miborders.caption
 msgid "No borders"
 msgstr ""

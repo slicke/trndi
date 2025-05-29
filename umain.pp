@@ -854,9 +854,21 @@ Application.OnException := @AppExceptionHandler;
   BorderStyle := bsSizeToolWin;
   {$endif}
   Application.processmessages;
-  lVal.Font.name := native.GetSetting(username + 'font.val', lVal.Font.name);
-  lArrow.Font.name := native.GetSetting(username + 'font.arrow', lArrow.Font.name);
-  lAgo.Font.name := native.GetSetting(username + 'font.ago', lAgo.Font.name);
+  {$ifdef Windows}
+      lArrow.Font.Name := 'Calibri Bold';
+  {$endif}
+  s := native.GetSetting(username + 'font.val', 'default');
+  if s <> 'default' then
+    lVal.Font.name := s;
+  s := native.GetSetting(username + 'font.arrow', 'default');
+  if s <> 'default' then
+    lArrow.Font.name := s;
+
+  s := native.GetSetting(username + 'font.ago', 'default');
+  if s <> 'default' then
+  lAgo.Font.name := s;
+
+  Showmessage(lArrow.font.name);
 
 
   // Assign labels to the TrendDots array
