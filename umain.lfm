@@ -342,6 +342,24 @@ object fBG: TfBG
         Caption = 'Alterante arrow and reading'
         OnClick = miAlternateClick
       end
+      object miDotSize: TMenuItem
+        Caption = 'Dot Size'
+        object miDotNormal: TMenuItem
+          Caption = 'Normal'
+          Hint = '1'
+          OnClick = miDotNormalClick
+        end
+        object miDotBig: TMenuItem
+          Caption = 'Big'
+          Hint = '3'
+          OnClick = miDotNormalClick
+        end
+        object miDotHuge: TMenuItem
+          Caption = 'Huge'
+          Hint = '6'
+          OnClick = miDotNormalClick
+        end
+      end
     end
     object miSplit4: TMenuItem
       Caption = '-'

@@ -65,6 +65,10 @@ end;
 
 TfBG = class(TForm)
   lAgo:TLabel;
+  miDotHuge:TMenuItem;
+  miDotBig:TMenuItem;
+  miDotNormal:TMenuItem;
+  miDotSize:TMenuItem;
   miAlternate:TMenuItem;
   miHistory:TMenuItem;
   miClock:TMenuItem;
@@ -134,6 +138,7 @@ TfBG = class(TForm)
   procedure lValStartDrag(Sender: TObject; var DragObject: TDragObject);
   procedure miAlternateClick(Sender:TObject);
   procedure miClockClick(Sender:TObject);
+  procedure miDotNormalClick(Sender:TObject);
   procedure miFloatOnClick(Sender:TObject);
   procedure miHistoryClick(Sender:TObject);
   procedure miRangeColorClick(Sender:TObject);
@@ -231,6 +236,7 @@ function CFStringCreateWithUTF8String(const utf8Str: PAnsiChar): CFStringRef; ex
 var
 native: TrndiNative;
 applocale: string;
+dotscale: integer = 1;
 {$ifdef darwin}
 MacAppDelegate: TMyAppDelegate;
 upMenu: TMenuItem;
@@ -1113,7 +1119,7 @@ begin
   if not isDot then
     ResizeDot(l, c, ix)
   else
-    l.font.Size := lVal.Font.Size div c;
+    l.font.Size := (lVal.Font.Size div c)*dotscale;
 
 end;
 
@@ -1127,7 +1133,7 @@ end;
 procedure TfBG.ResizeDot(l: TLabel; c, ix: integer);
 begin
   l.AutoSize := true;
-  l.Font.Size := Max(lVal.Font.Size div 8, 28); // Ensure minimum font size
+  l.Font.Size := Max((lVal.Font.Size div 8)*dotscale, 28); // Ensure minimum font size
   LogMessage(Format('TrendDots[%d] resized with Font Size = %d.', [ix, l.Font.Size]));
 end;
 
@@ -1355,6 +1361,12 @@ begin
   miClock.Checked := not miClock.Checked;
   tClock.Enabled := miClock.Checked;
   native.SetSetting('main.clock', IfThen(tClock.Enabled, 'true', 'false'));
+end;
+
+procedure TfBG.miDotNormalClick(Sender:TObject);
+begin
+  dotscale := StrToInt((sender as TMenuItem).Hint);
+  Refresh;
 end;
 
 procedure TfBG.TfFloatOnHide(Sender:TObject);
@@ -1905,7 +1917,7 @@ begin
   try
     for Dot in TrendDots do
     begin
-      dot.Font.Size := ClientWidth div 24;
+      dot.Font.Size := (ClientWidth div 24)*dotscale;
       if TryStrToFloat(Dot.Hint, Value) then
       begin
         // Use stored position if value already mapped
@@ -2036,6 +2048,7 @@ begin
   end else begin
     tSwap.Interval := 5500;
     lVal.BringToFront;
+    lArrow.SendToBack;
     lArrow.Font.Color := LightenColor(fBG.color, 0.5);
 //    lVal.Font.Color := LightenColor(lVal.font.color, 0.1); // GetTextColorForBackground(fBG.color, 0, 0.9);
   end;
@@ -2312,6 +2325,7 @@ begin
   lVal.BringToFront;
 //  lArrow.Font.Color := LightenColor(fbg.color, 0.3); // GetTextColorForBackground(fBG.color, 0, 0.9);
   lArrow.Font.Color := LightenColor(fBG.color, 0.5);
+  lArrow.SendToBack;
   lDiff.Font.Color := GetTextColorForBackground(fBG.color, 0.6, 0.4);
   lAgo.Font.Color := GetTextColorForBackground(fBG.color, 0.6, 0.4);
 end;
@@ -2493,7 +2507,7 @@ begin
 
     LogMessage(Format('TrendDots[%d] updated with reading at %s (Value: %.2f).',
                [labelNumber, DateTimeToStr(Reading.date), Reading.val]));
-
+    l.BringToFront;
     Result := True;
   end;
 end;
@@ -2513,6 +2527,8 @@ begin
     else if Reading.val >= api.cgmRangeHi then
       Result := bg_rel_color_hi_txt;
   end;
+
+  result := LightenColor(result, 0.3);
 end;
 
 // SetPointHeight procedure

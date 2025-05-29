@@ -102,6 +102,36 @@ msgstr ""
 msgid "Show clock every 20 sec"
 msgstr ""
 
+#: tfbg.midotbig.caption
+msgctxt "tfbg.midotbig.caption"
+msgid "Big"
+msgstr ""
+
+#: tfbg.midotbig.hint
+msgid "3"
+msgstr ""
+
+#: tfbg.midothuge.caption
+msgid "Huge"
+msgstr ""
+
+#: tfbg.midothuge.hint
+msgid "6"
+msgstr ""
+
+#: tfbg.midotnormal.caption
+msgctxt "tfbg.midotnormal.caption"
+msgid "Normal"
+msgstr ""
+
+#: tfbg.midotnormal.hint
+msgid "1"
+msgstr ""
+
+#: tfbg.midotsize.caption
+msgid "Dot Size"
+msgstr ""
+
 #: tfbg.mifloaton.caption
 msgid "Show Floating Window"
 msgstr ""
@@ -347,6 +377,7 @@ msgid "&Hide"
 msgstr ""
 
 #: tffloat.mibig.caption
+msgctxt "tffloat.mibig.caption"
 msgid "Big"
 msgstr ""
 
@@ -365,6 +396,7 @@ msgid "Custom"
 msgstr ""
 
 #: tffloat.minormal.caption
+msgctxt "tffloat.minormal.caption"
 msgid "Normal"
 msgstr ""
 

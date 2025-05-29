@@ -112,6 +112,38 @@ msgstr "Inga kanter"
 msgid "Show clock every 20 sec"
 msgstr "Visa klockan var 20 sek"
 
+#: tfbg.midotbig.caption
+#, fuzzy
+msgctxt "tfbg.midotbig.caption"
+msgid "Big"
+msgstr "Stor"
+
+#: tfbg.midotbig.hint
+msgid "3"
+msgstr ""
+
+#: tfbg.midothuge.caption
+msgid "Huge"
+msgstr ""
+
+#: tfbg.midothuge.hint
+msgid "6"
+msgstr ""
+
+#: tfbg.midotnormal.caption
+#, fuzzy
+msgctxt "tfbg.midotnormal.caption"
+msgid "Normal"
+msgstr "Normal"
+
+#: tfbg.midotnormal.hint
+msgid "1"
+msgstr ""
+
+#: tfbg.midotsize.caption
+msgid "Dot Size"
+msgstr ""
+
 #: tfbg.mifloaton.caption
 msgid "Show Floating Window"
 msgstr "Visa flytande fönster"
@@ -361,6 +393,7 @@ msgid "&Hide"
 msgstr "&Göm"
 
 #: tffloat.mibig.caption
+msgctxt "tffloat.mibig.caption"
 msgid "Big"
 msgstr "Stor"
 
@@ -379,6 +412,7 @@ msgid "Custom"
 msgstr "Egen"
 
 #: tffloat.minormal.caption
+msgctxt "tffloat.minormal.caption"
 msgid "Normal"
 msgstr "Normal"
 
