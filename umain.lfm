@@ -32,23 +32,6 @@ object fBG: TfBG
     OnClick = pnOffRangeClick
     OnMouseMove = FormMouseMove
   end
-  object lArrow: TLabel
-    Left = 0
-    Height = 78
-    Top = 162
-    Width = 320
-    Alignment = taCenter
-    AutoSize = False
-    Caption = 'lArrow'
-    Font.Color = clWhite
-    Font.Height = 80
-    Font.Style = [fsBold]
-    ParentColor = False
-    ParentFont = False
-    PopupMenu = pmSettings
-    OnClick = lArrowClick
-    OnMouseMove = FormMouseMove
-  end
   object lVal: TLabel
     Left = 0
     Height = 240
@@ -271,6 +254,23 @@ object fBG: TfBG
     TabOrder = 3
     Visible = False
   end
+  object lArrow: TLabel
+    Left = 0
+    Height = 78
+    Top = 162
+    Width = 320
+    Alignment = taCenter
+    AutoSize = False
+    Caption = 'lArrow'
+    Font.Color = clWhite
+    Font.Height = 80
+    Font.Style = [fsBold]
+    ParentColor = False
+    ParentFont = False
+    PopupMenu = pmSettings
+    OnClick = lArrowClick
+    OnMouseMove = FormMouseMove
+  end
   object tMain: TTimer
     Interval = 100000
     OnTimer = tMainTimer
@@ -401,5 +401,12 @@ object fBG: TfBG
     OnTimer = tClockTimer
     Left = 42
     Top = 122
+  end
+  object tSwap: TTimer
+    Enabled = False
+    Interval = 4000
+    OnTimer = tSwapTimer
+    Left = 271
+    Top = 164
   end
 end
