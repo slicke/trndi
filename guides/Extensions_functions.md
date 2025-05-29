@@ -37,6 +37,11 @@ Trndi.setBadgeSize(0.9, 9);
 ```
 Sets size of the reading overlay for Windows
 Above: Set size to 90% of the Windows app icon with font 9.
+### setDotSize
+```javascript
+Trndi.setDotSize(2);
+```
+Sets scale of the trend dots. 2 = 2x etc.
 ### getUnit
 #### Get the current measure unit
 ```javascript

@@ -697,6 +697,7 @@ begin
     addClassFunction('getLocale', ExtFunction(@JSLocale), 0);
     addClassFunction('uxProp', ExtFunction(@JSUX), 3);
     addClassFunction('setBadgeSize', ExtFunction(@JSBADGE), -1);
+    addClassFunction('setDotSize', ExtFunction(@JSDotSize), -1);
     addClassFunction('getUnit', ExtFunction(@JSUnit), 0);
     addClassFunction('setLevelColor', ExtFunction(@JSLevelColor), -1);
     // Add the UX modification function, as declared in this file
