@@ -2322,7 +2322,7 @@ end;
 procedure TfBG.UpdateUIColors;
 begin
   lVal.Font.Color := GetTextColorForBackground(fBG.color);
-  lVal.BringToFront;
+//  lVal.BringToFront;
 //  lArrow.Font.Color := LightenColor(fbg.color, 0.3); // GetTextColorForBackground(fBG.color, 0, 0.9);
   lArrow.Font.Color := LightenColor(fBG.color, 0.5);
   lArrow.SendToBack;
