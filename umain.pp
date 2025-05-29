@@ -868,9 +868,6 @@ Application.OnException := @AppExceptionHandler;
   if s <> 'default' then
   lAgo.Font.name := s;
 
-  Showmessage(lArrow.font.name);
-
-
   // Assign labels to the TrendDots array
   for i := 1 to NUM_DOTS do
   begin
