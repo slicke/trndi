@@ -338,6 +338,10 @@ object fBG: TfBG
         Caption = 'Show history'
         OnClick = miHistoryClick
       end
+      object miAlternate: TMenuItem
+        Caption = 'Alterante arrow and reading'
+        OnClick = miAlternateClick
+      end
     end
     object miSplit4: TMenuItem
       Caption = '-'
@@ -403,6 +407,7 @@ object fBG: TfBG
     Top = 122
   end
   object tSwap: TTimer
+    Enabled = False
     Interval = 4000
     OnTimer = tSwapTimer
     Left = 271

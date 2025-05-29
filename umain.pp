@@ -65,6 +65,7 @@ end;
 
 TfBG = class(TForm)
   lAgo:TLabel;
+  miAlternate:TMenuItem;
   miHistory:TMenuItem;
   miClock:TMenuItem;
   miRangeColor:TMenuItem;
@@ -131,6 +132,7 @@ TfBG = class(TForm)
   procedure lValMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: integer);
   procedure lValMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: integer);
   procedure lValStartDrag(Sender: TObject; var DragObject: TDragObject);
+  procedure miAlternateClick(Sender:TObject);
   procedure miClockClick(Sender:TObject);
   procedure miFloatOnClick(Sender:TObject);
   procedure miHistoryClick(Sender:TObject);
@@ -1333,6 +1335,12 @@ begin
   // Event handler can be left empty if not used
 end;
 
+procedure TfBG.miAlternateClick(Sender:TObject);
+begin
+  miAlternate.Checked := not miAlternate.Checked;
+  tSwap.Enabled := miAlternate.Checked;
+end;
+
 procedure TfBG.miClockClick(Sender:TObject);
 begin
   miClock.Checked := not miClock.Checked;
@@ -2292,7 +2300,9 @@ end;
 procedure TfBG.UpdateUIColors;
 begin
   lVal.Font.Color := GetTextColorForBackground(fBG.color);
-  lArrow.Font.Color := LightenColor(fbg.color, 0.3); // GetTextColorForBackground(fBG.color, 0, 0.9);
+  lVal.BringToFront;
+//  lArrow.Font.Color := LightenColor(fbg.color, 0.3); // GetTextColorForBackground(fBG.color, 0, 0.9);
+  lArrow.Font.Color := LightenColor(fBG.color, 0.5);
   lDiff.Font.Color := GetTextColorForBackground(fBG.color, 0.6, 0.4);
   lAgo.Font.Color := GetTextColorForBackground(fBG.color, 0.6, 0.4);
 end;
