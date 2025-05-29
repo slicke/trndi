@@ -1764,9 +1764,11 @@ tClock.Enabled := false;
   if Pos(':', lval.Caption) < 1 then begin
     lval.caption :=  FormatDateTime(ShortTimeFormat, Now);
     tClock.Interval := 5000;
+    lArrow.Visible := false;
   end else begin
     lval.caption :=  lval.hint;
     tClock.Interval := 20000;
+    lArrow.Visible := true;
   end;
   tClock.Enabled := true;
 end;
@@ -2006,14 +2008,18 @@ begin
   if not TryStrToInt(lVal.Caption[1], x) then
     exit;
 
-  if lArrow.Visible then begin
-    lArrow.Visible := false;
-    lVal.Visible := true;
+  tSwap.Enabled := false;
+  if tSwap.Interval <> 5000 then begin
+    tSwap.Interval := 5000;
+    lArrow.BringToFront;
+    UpdateUIColors;
   end else begin
-  lArrow.Visible := true;
-  lVal.Visible := false;
-
+    tSwap.Interval := 5500;
+    lVal.BringToFront;
+    lArrow.Font.Color := LightenColor(fBG.color, 0.5);
+//    lVal.Font.Color := LightenColor(lVal.font.color, 0.1); // GetTextColorForBackground(fBG.color, 0, 0.9);
   end;
+  tSwap.Enabled := true;
 end;
 
 // Handle a touch screen's long touch

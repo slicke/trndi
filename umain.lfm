@@ -403,7 +403,6 @@ object fBG: TfBG
     Top = 122
   end
   object tSwap: TTimer
-    Enabled = False
     Interval = 4000
     OnTimer = tSwapTimer
     Left = 271
