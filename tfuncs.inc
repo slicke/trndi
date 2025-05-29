@@ -172,4 +172,26 @@ begin
 
 end;
 
+function JSDotSize(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw;
+var
+ vds: Variant;
+begin
+  if argc <> 1 then
+  begin
+    Result := JS_FALSE;
+    Exit;
+  end;
+
+  ctx^^.ToVariant(argv^[0], vds);
+
+  if not varType(vds) = varInteger then begin
+    ExtError('Dot size must be an integer');
+    exit;
+  end;
+  dotscale := vds;
+
+end;
+
 {$endif}
+
+
