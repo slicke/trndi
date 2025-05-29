@@ -993,6 +993,7 @@ Application.OnException := @AppExceptionHandler;
     end;
   end;
   miRangeColor.Checked := native.GetSetting(username + 'ux.range_color') = 'true';
+  dotscale := native.GetIntSetting(username + 'ux.dot_scale', 1);
   Application.processmessages;
   updateReading;
   fs.Close;
@@ -1367,7 +1368,8 @@ end;
 procedure TfBG.miDotNormalClick(Sender:TObject);
 begin
   dotscale := StrToInt((sender as TMenuItem).Hint);
-  Refresh;
+  native.SetSetting(username + 'ux.dot_scale', dotscale.ToString);
+  FormResize(fBG);
 end;
 
 procedure TfBG.TfFloatOnHide(Sender:TObject);
