@@ -108,6 +108,7 @@ TfBG = class(TForm)
   mSplit5:TMenuItem;
   tAgo:TTimer;
   tClock:TTimer;
+  tSwap:TTimer;
   tResize:TTimer;
   tMissed:TTimer;
   tTouch: TTimer;
@@ -152,6 +153,7 @@ TfBG = class(TForm)
   procedure tResizeTimer(Sender:TObject);
   procedure tMainTimer(Sender: TObject);
   procedure tMissedTimer(Sender:TObject);
+  procedure tSwapTimer(Sender:TObject);
   procedure tTouchTimer(Sender: TObject);
   procedure TfFloatOnHide(Sender:TObject);
 private
@@ -1856,17 +1858,13 @@ begin
   ScaleLbl(lAgo, taLeftJustify);
 
   // Konfigurera trendpil
-  if ClientWidth < 1000 then begin
-    lArrow.width := max(100, ClientWidth div 3);
-    lArrow.height := lArrow.Width;
-    larrow.left := clientwidth - ( larrow.width) - 5;
-    larrow.top := -1*(larrow.height div 2) + 15;
-  end else begin
+
     lArrow.Height := ClientHeight;
     lArrow.width := ClientWidth;
-    lArrow.left := ClientWidth - round(lArrow.width / 1.5);
-    lArrow.top := -1*(clientheight div 2)+25;
-  end;
+    lArrow.left := 0;
+    lArrow.top := 0;
+    ScaleLbl(lArrow);
+
 //  lArrow.font.color := LightenColor(fBG.Color, 0.8);
 //  ScaleLbl(lArrow, taRightJustify, tlTop);
   lArrow.OptimalFill := true;
@@ -1999,6 +1997,23 @@ begin
   sec := (MilliSecondsBetween(Now, d) mod 60000) div 1000; // Seconds since last
 
   lDiff.Caption := Format(RS_OUTDATED_TIME, [FormatDateTime('H:mm', d), min, sec]);
+end;
+
+procedure TfBG.tSwapTimer(Sender:TObject);
+var
+  x: integer;
+begin
+  if not TryStrToInt(lVal.Caption[1], x) then
+    exit;
+
+  if lArrow.Visible then begin
+    lArrow.Visible := false;
+    lVal.Visible := true;
+  end else begin
+  lArrow.Visible := true;
+  lVal.Visible := false;
+
+  end;
 end;
 
 // Handle a touch screen's long touch
@@ -2268,7 +2283,7 @@ end;
 procedure TfBG.UpdateUIColors;
 begin
   lVal.Font.Color := GetTextColorForBackground(fBG.color);
-  lArrow.Font.Color := GetTextColorForBackground(fBG.color);
+  lArrow.Font.Color := LightenColor(fbg.color, 0.3); // GetTextColorForBackground(fBG.color, 0, 0.9);
   lDiff.Font.Color := GetTextColorForBackground(fBG.color, 0.6, 0.4);
   lAgo.Font.Color := GetTextColorForBackground(fBG.color, 0.6, 0.4);
 end;

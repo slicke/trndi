@@ -887,6 +887,12 @@ msgstr "Du kan använda skift+<nummerr> för att manuellt sätta synligheten (0 
 msgid "You can hold down shift and plus (+) or minus (-) to change the window size"
 msgstr "Du kan hålla ned skift och plus (+) eller minus (-) för att justera fönstrets storlek"
 
+#: umain.rs_noplugins
+#, fuzzy
+msgctxt "umain.rs_noplugins"
+msgid "Built Without Support"
+msgstr "Byggd utan stöd"
+
 #: umain.rs_tpobottomleft
 msgctxt "umain.rs_tpobottomleft"
 msgid "Bottom Left"
