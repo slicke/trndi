@@ -1867,6 +1867,7 @@ begin
     lArrow.left := ClientWidth - round(lArrow.width / 1.5);
     lArrow.top := -1*(clientheight div 2)+25;
   end;
+//  lArrow.font.color := LightenColor(fBG.Color, 0.8);
 //  ScaleLbl(lArrow, taRightJustify, tlTop);
   lArrow.OptimalFill := true;
 
