@@ -2516,20 +2516,20 @@ end;
 function TfBG.DetermineColorForReading(const Reading: BGReading): TColor;
 begin
   if Reading.val >= api.cgmHi then
-    Result := bg_color_hi_txt
+    Result := bg_color_hi
   else if Reading.val <= api.cgmLo then
-    Result := bg_color_lo_txt
+    Result := bg_color_lo
   else
   begin
     Result := bg_color_ok_txt;
 
     if Reading.val <= api.cgmRangeLo then
-      Result := bg_rel_color_lo_txt
+      Result := bg_rel_color_lo
     else if Reading.val >= api.cgmRangeHi then
-      Result := bg_rel_color_hi_txt;
+      Result := bg_rel_color_hi;
   end;
 
-  result := LightenColor(result, 0.3);
+  result := LightenColor(result, -0.8);
 end;
 
 // SetPointHeight procedure
