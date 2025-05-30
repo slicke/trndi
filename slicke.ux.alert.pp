@@ -1015,7 +1015,7 @@ begin
       MessageLabel.Caption)), 300 (* Log size *)) + IconBox.Width + Padding * 5;
     log.Width := ContentWidth;
     Dialog.Width := ContentWidth;
-    Dialog.Height := Padding * 2 + MessageLabel.Top + MessageLabel.Height + p3.Height;
+    Dialog.Height := round(Padding * 2.5) + MessageLabel.Top + MessageLabel.Height + p3.Height;
     // Set first (last?) button pos
     last := Dialog.Width;
     for mr in buttons do
