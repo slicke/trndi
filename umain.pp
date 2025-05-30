@@ -755,7 +755,7 @@ end;
 procedure TfBG.FormCreate(Sender: TObject);
 var
   i: integer;
-  s, apiTarget, apiCreds, lang: string;
+  s, fontName, apiTarget, apiCreds, lang: string;
   fs: TfSplash;
   fil: boolean;
 {$ifdef Linux}
@@ -831,9 +831,9 @@ fs.Show;
 Application.processmessages;
 Application.OnException := @AppExceptionHandler;
 
-fil := FontInList(s);
+  fil := FontInList(fontName);
   if not fil then
-    ShowMessage(Format(RS_FONT_ERROR, [s]));
+    ShowMessage(Format(RS_FONT_ERROR, [fontName]));
 
     {$ifdef darwin}
   addTopMenu;
@@ -863,12 +863,8 @@ fil := FontInList(s);
   BorderStyle := bsSizeToolWin;
   {$endif}
   Application.processmessages;
-  {$ifdef Windows}
-      lArrow.Font.Name := 'Calibri Bold';
-      lAgo.Font.Name := 'Calibri';
-  {$endif}
-  {$ifdef Linux}
-      lArrow.Font.Name := 'Noto Color Emoji';
+  {$ifndef DARWIN}
+      lArrow.Font.Name := fontName;
   {$endif}
   s := native.GetSetting(username + 'font.val', 'default');
   if s <> 'default' then

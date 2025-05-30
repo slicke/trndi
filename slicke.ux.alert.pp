@@ -163,10 +163,10 @@ var
   FontsList: TStrings;
 begin
   FontsList := TStrings.Create;
-  fname := 'Segoe UI Emoji';
+  fname := 'Consolas Bold';
   try
     FontsList := Screen.Fonts;
-    Result := FontsList.IndexOf('Segoe UI Emoji') >= 0;
+    Result := FontsList.IndexOf('Consolas Bold') >= 0;
   finally
     FontsList.Free;
   end;
