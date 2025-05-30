@@ -757,6 +757,7 @@ var
   i: integer;
   s, apiTarget, apiCreds, lang: string;
   fs: TfSplash;
+  fil: boolean;
 {$ifdef Linux}
 function GetLinuxDistro: string;
   const
@@ -830,7 +831,8 @@ fs.Show;
 Application.processmessages;
 Application.OnException := @AppExceptionHandler;
 
-  if not FontInList(s) then
+fil := FontInList(s);
+  if not fil then
     ShowMessage(Format(RS_FONT_ERROR, [s]));
 
     {$ifdef darwin}
@@ -863,6 +865,10 @@ Application.OnException := @AppExceptionHandler;
   Application.processmessages;
   {$ifdef Windows}
       lArrow.Font.Name := 'Calibri Bold';
+      lAgo.Font.Name := 'Calibri';
+  {$endif}
+  {$ifdef Linux}
+      lArrow.Font.Name := 'Noto Color Emoji';
   {$endif}
   s := native.GetSetting(username + 'font.val', 'default');
   if s <> 'default' then
