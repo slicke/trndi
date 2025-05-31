@@ -15,9 +15,9 @@ object fConf: TfConf
     Height = 395
     Top = 0
     Width = 416
-    ActivePage = tsDisplay
+    ActivePage = tsGeneral
     Align = alClient
-    TabIndex = 1
+    TabIndex = 0
     TabOrder = 0
     object tsGeneral: TTabSheet
       Caption = 'General'
@@ -10436,7 +10436,7 @@ object fConf: TfConf
         ClientWidth = 408
         TabOrder = 0
         object lVal: TLabel
-          Left = 41
+          Left = 80
           Height = 116
           Top = 24
           Width = 113
@@ -10450,9 +10450,9 @@ object fConf: TfConf
           OnClick = lValClick
         end
         object lArrow: TLabel
-          Left = 0
+          Left = 192
           Height = 54
-          Top = 122
+          Top = 64
           Width = 200
           Alignment = taCenter
           AutoSize = False

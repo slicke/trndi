@@ -2181,7 +2181,7 @@ var
  range, //< The OK range
  ok, //< OK count
  no: integer; //< Not OK count
- ranges: set of BGValLevel; //< Types of readings to count as OK
+ ranges: set of trndi.types.BGValLevel; //< Types of readings to count as OK
 begin
   ok := 0;
   no := 0;
