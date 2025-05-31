@@ -64,6 +64,7 @@ end;
 {$endif}
 
 TfBG = class(TForm)
+  lTir:TLabel;
   lAgo:TLabel;
   miDotHuge:TMenuItem;
   miDotBig:TMenuItem;
@@ -132,6 +133,7 @@ TfBG = class(TForm)
   procedure lDiffDblClick(Sender: TObject);
   procedure lDot7DblClick(Sender:TObject);
   procedure lgMainClick(Sender: TObject);
+  procedure lTirClick(Sender:TObject);
   procedure lValClick(Sender: TObject);
   procedure lValMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: integer);
   procedure lValMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: integer);
@@ -177,6 +179,7 @@ private
 
   procedure fixWarningPanel;
   function lastReading: BGReading;
+  procedure CalcRangeTime;
   procedure updateReading;
   procedure PlaceTrendDots(const Readings: array of BGReading);
   procedure actOnTrend(proc: TTrendProc);
@@ -876,6 +879,7 @@ Application.OnException := @AppExceptionHandler;
   s := native.GetSetting(username + 'font.ago', 'default');
   if s <> 'default' then
   lAgo.Font.name := s;
+  lTir.Font.name := s;
 
   // Assign labels to the TrendDots array
   for i := 1 to NUM_DOTS do
@@ -1165,6 +1169,7 @@ begin
     tResize.Enabled := true;
     lVal.Visible := false;
     lAgo.Visible := false;
+    lTir.Visible := false;
   end;
 end;
 
@@ -1303,6 +1308,11 @@ end;
 procedure TfBG.lgMainClick(Sender: TObject);
 begin
   // Event handler can be left empty if not used
+end;
+
+procedure TfBG.lTirClick(Sender:TObject);
+begin
+  ShowMessage(Format(RS_TIR, [ MinutesBetween(now, bgs[High(bgs)].date)]));
 end;
 
 
@@ -1505,6 +1515,8 @@ var
         fsHi.Value := GetIntSetting(username + 'override.hi', api.cgmHi);
       end;
 
+      cbTIR.Checked := native.GetBoolSetting(username + 'range.custom', true);
+
       if GetSetting(username + 'unit', 'mmol') = 'mmol' then
         rbUnitClick(Self);
 
@@ -1671,6 +1683,8 @@ if cbPos.ItemIndex = -1 then
         SetSetting(username + 'override.lo', Round(fsLo.Value).ToString);
         SetSetting(username + 'override.hi', Round(fsHi.Value).ToString);
       end;
+
+      native.SetSetting(username + 'range.custom', IfThen(cbTIR.Checked, 'true', 'false'));
 
       SetSetting(username + 'override.enabled', IfThen(cbCust.Checked, '1', '0'));
     end;
@@ -1900,6 +1914,14 @@ begin
     lArrow.left := 0;
     lArrow.top := 0;
     ScaleLbl(lArrow);
+
+// TIR
+    lTir.font.size := lAgo.Font.Size;
+    lTir.Height := lAgo.Height;
+    lTir.width := lAgo.Width;
+    lTir.left := ClientWidth-lTir.Width;
+    lTir.top := 0;
+    ScaleLbl(lTir);
 
 //  lArrow.font.color := LightenColor(fBG.Color, 0.8);
 //  ScaleLbl(lArrow, taRightJustify, tlTop);
@@ -2152,8 +2174,39 @@ begin
   {$endif}
 end;
 
+// Calculate time in range
+procedure tfBG.CalcRangeTime;
+var
+ b: BGReading; //< Holder for current reading
+ range, //< The OK range
+ ok, //< OK count
+ no: integer; //< Not OK count
+ ranges: set of BGValLevel; //< Types of readings to count as OK
+begin
+  ok := 0;
+  no := 0;
+  if native.GetBoolSetting(username + 'range.custom', true) then
+    ranges := [BGRange, BGRangeHI, BGRangeLO]
+  else
+    ranges := [BGRange];
+
+  for b in bgs do
+    if b.level in ranges then
+       Inc(ok)
+    else
+       Inc(no);
+
+  if (ok + no) > 0 then
+    range := round((ok / (ok + no)) * 100)
+  else
+    range := 0;
+
+   lTir.Caption := range.toString + '%';
+end;
+
 procedure TfBG.updateReading;
 begin
+  lTir.Caption := '';
   lAgo.Caption := '⟳' + lAgo.Caption;
 
   native.start;
@@ -2161,6 +2214,7 @@ begin
 
   if not tAgo.Enabled then
     lAgo.Caption := '🕑 ' + RS_UNKNOWN_TIME;
+
 
   // Fetch readings and exit if no data
   if not FetchAndValidateReadings then
@@ -2178,6 +2232,9 @@ begin
 
   // Complete update and finalize
   FinalizeUpdate;
+
+  // Calc ranges
+  CalcRangeTime;
 end;
 
 procedure TfBG.FinalizeUpdate;
@@ -2333,6 +2390,7 @@ begin
   lArrow.SendToBack;
   lDiff.Font.Color := GetTextColorForBackground(fBG.color, 0.6, 0.4);
   lAgo.Font.Color := GetTextColorForBackground(fBG.color, 0.6, 0.4);
+  lTir.Font.Color := GetTextColorForBackground(fBG.color, 0.6, 0.4);
 end;
 
 function TfBG.GetTextColorForBackground(const BgColor: TColor;

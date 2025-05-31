@@ -33,6 +33,7 @@ RS_LOW = 'LOW';
 RS_OFF_HI = 'Over range';
 RS_OFF_LO = 'Under range';
 RS_RANGE_COLOR = 'The entire window will now change color when out of range, instead of just displaying a colored notification in the top. Applies after the next sync.';
+RS_TIR = 'These is your time in range for the last %d minutes';
 
 // Time messages
 RS_OUTDATED_TIME = '%s (%d.%.2d ago)';

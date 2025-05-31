@@ -271,6 +271,15 @@ object fBG: TfBG
     OnClick = lArrowClick
     OnMouseMove = FormMouseMove
   end
+  object lTir: TLabel
+    Left = 124
+    Height = 15
+    Top = 33
+    Width = 76
+    AutoSize = False
+    Caption = 'Time In Range'
+    OnClick = lTirClick
+  end
   object tMain: TTimer
     Interval = 100000
     OnTimer = tMainTimer
