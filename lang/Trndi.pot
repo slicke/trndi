@@ -904,6 +904,11 @@ msgstr ""
 msgid "You can hold down shift and plus (+) or minus (-) to change the window size"
 msgstr ""
 
+#: umain.rs_noplugins
+msgctxt "umain.rs_noplugins"
+msgid "Built Without Support"
+msgstr ""
+
 #: umain.rs_tpobottomleft
 msgctxt "umain.rs_tpobottomleft"
 msgid "Bottom Left"

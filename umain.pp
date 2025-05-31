@@ -547,18 +547,20 @@ end;
 // For lightening (increase each component towards 255)
 function LightenColor(originalColor: TColor; factor: double = 0.8): TColor;
 var
-  r, g, b: byte;
+  r, g, b: Integer; // Use Integer to hold intermediate results
 begin
   // Extract RGB components
   r := GetRValue(originalColor);
   g := GetGValue(originalColor);
   b := GetBValue(originalColor);
-
   // Add factor * (255 - component) to each component
   r := Round(r + (factor * (255 - r)));
   g := Round(g + (factor * (255 - g)));
   b := Round(b + (factor * (255 - b)));
-
+  // Clip the values to the range 0..255
+  r := Min(255, Max(0, r));
+  g := Min(255, Max(0, g));
+  b := Min(255, Max(0, b));
   // Create new color
   Result := RGB(r, g, b);
 end;

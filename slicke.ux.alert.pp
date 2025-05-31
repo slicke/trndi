@@ -163,10 +163,10 @@ var
   FontsList: TStrings;
 begin
   FontsList := TStrings.Create;
-  fname := 'Consolas Bold';
+  fname := 'Consolas';
   try
     FontsList := Screen.Fonts;
-    Result := FontsList.IndexOf('Consolas Bold') >= 0;
+    Result := FontsList.IndexOf('Consolas') >= 0;
   finally
     FontsList.Free;
   end;
