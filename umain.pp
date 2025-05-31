@@ -1128,6 +1128,7 @@ begin
   // Adjust size based on current state
   if not isDot then begin // Returning to dot
     ResizeDot(l, c, ix) ;
+    l.Font.Size := (ClientWidth div 24)*dotscale;
   end
   else begin
     l.font.Size := (lVal.Font.Size div c);
@@ -1853,6 +1854,9 @@ begin
   UpdateTrendDots;
 
   fixWarningPanel;
+
+  if lDot1.Caption <> DOT_GRAPH then
+    actOnTrend(@ExpandDot);
 end;
 
 procedure TfBG.UpdateTrendElements;
