@@ -1126,10 +1126,12 @@ begin
 
   l.Caption := IfThen(isDot, l.Caption, l.Caption);
   // Adjust size based on current state
-  if not isDot then
-    ResizeDot(l, c, ix)
-  else
-    l.font.Size := (lVal.Font.Size div c)*dotscale;
+  if not isDot then begin // Returning to dot
+    ResizeDot(l, c, ix) ;
+  end
+  else begin
+    l.font.Size := (lVal.Font.Size div c);
+  end;
 
 end;
 
