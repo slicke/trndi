@@ -85,6 +85,10 @@ msgstr ""
 msgid "Information"
 msgstr ""
 
+#: tfbg.ltir.caption
+msgid "Time In Range"
+msgstr ""
+
 #: tfbg.lval.caption
 msgctxt "tfbg.lval.caption"
 msgid "Setup"
@@ -223,6 +227,10 @@ msgstr ""
 
 #: tfconf.cbsys.text
 msgid "NightScout"
+msgstr ""
+
+#: tfconf.cbtir.caption
+msgid "Count readings in the custom range as in range"
 msgstr ""
 
 #: tfconf.cbtouch.caption
@@ -668,6 +676,11 @@ msgstr ""
 #: trndi.strings.rs_setup
 msgctxt "trndi.strings.rs_setup"
 msgid "Setup"
+msgstr ""
+
+#: trndi.strings.rs_tir
+#, object-pascal-format
+msgid "These is your time in range for the last %d minutes"
 msgstr ""
 
 #: trndi.strings.rs_tpobottomleft

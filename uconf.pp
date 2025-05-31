@@ -52,6 +52,7 @@ TfConf = class(TForm)
   cbTouch: TCheckBox;
   cbNotice: TCheckBox;
   cbMultiTouch: TCheckBox;
+  cbTIR:TCheckBox;
   eAddr:TLabeledEdit;
   edNick:TEdit;
   eExt:TLabeledEdit;

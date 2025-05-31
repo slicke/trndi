@@ -95,6 +95,10 @@ msgstr "Meddelande"
 msgid "Information"
 msgstr "Information"
 
+#: tfbg.ltir.caption
+msgid "Time In Range"
+msgstr "Tid i område"
+
 #: tfbg.lval.caption
 msgctxt "tfbg.lval.caption"
 msgid "Setup"
@@ -102,7 +106,7 @@ msgstr "Konfig"
 
 #: tfbg.mialternate.caption
 msgid "Alterante arrow and reading"
-msgstr ""
+msgstr "Växla pil och värde"
 
 #: tfbg.miborders.caption
 msgid "No borders"
@@ -113,36 +117,34 @@ msgid "Show clock every 20 sec"
 msgstr "Visa klockan var 20 sek"
 
 #: tfbg.midotbig.caption
-#, fuzzy
 msgctxt "tfbg.midotbig.caption"
 msgid "Big"
 msgstr "Stor"
 
 #: tfbg.midotbig.hint
 msgid "3"
-msgstr ""
+msgstr "3"
 
 #: tfbg.midothuge.caption
 msgid "Huge"
-msgstr ""
+msgstr "Enorm"
 
 #: tfbg.midothuge.hint
 msgid "6"
-msgstr ""
+msgstr "6"
 
 #: tfbg.midotnormal.caption
-#, fuzzy
 msgctxt "tfbg.midotnormal.caption"
 msgid "Normal"
 msgstr "Normal"
 
 #: tfbg.midotnormal.hint
 msgid "1"
-msgstr ""
+msgstr "1"
 
 #: tfbg.midotsize.caption
 msgid "Dot Size"
-msgstr ""
+msgstr "Punktstorlek"
 
 #: tfbg.mifloaton.caption
 msgid "Show Floating Window"
@@ -237,6 +239,10 @@ msgstr "Kom ihåg fönsterstorlek"
 msgid "NightScout"
 msgstr "NightScout"
 
+#: tfconf.cbtir.caption
+msgid "Count readings in the custom range as in range"
+msgstr "Räkna värden i eget område som tid i område"
+
 #: tfconf.cbtouch.caption
 msgid "Touch screen"
 msgstr "Pekskärm"
@@ -324,7 +330,7 @@ msgstr "100 min"
 
 #: tfconf.larrow.caption
 msgid "->"
-msgstr ""
+msgstr "->"
 
 #: tfconf.lcurrentacc.caption
 msgid "This only applies for the current loaded account"
@@ -381,7 +387,7 @@ msgstr ""
 
 #: tffloat.ltime.caption
 msgid "00:00"
-msgstr ""
+msgstr "00:00"
 
 #: tffloat.lval.caption
 msgctxt "tffloat.lval.caption"
@@ -695,6 +701,11 @@ msgctxt "trndi.strings.rs_setup"
 msgid "Setup"
 msgstr "Konfig"
 
+#: trndi.strings.rs_tir
+#, object-pascal-format
+msgid "These is your time in range for the last %d minutes"
+msgstr "Detta är ditt tid i område (time in range) för de senaste %d minuterna"
+
 #: trndi.strings.rs_tpobottomleft
 msgctxt "trndi.strings.rs_tpobottomleft"
 msgid "Bottom Left"
@@ -926,7 +937,6 @@ msgid "You can hold down shift and plus (+) or minus (-) to change the window si
 msgstr "Du kan hålla ned skift och plus (+) eller minus (-) för att justera fönstrets storlek"
 
 #: umain.rs_noplugins
-#, fuzzy
 msgctxt "umain.rs_noplugins"
 msgid "Built Without Support"
 msgstr "Byggd utan stöd"
@@ -955,4 +965,3 @@ msgstr "Senaste position"
 msgctxt "umain.rs_tpotopright"
 msgid "Top Right"
 msgstr "Höger topp"
-
