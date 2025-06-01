@@ -623,6 +623,12 @@ msgstr ""
 "Har din CGM synkat nyligen? \n"
 "Fungerar servern?"
 
+#: trndi.strings.rs_no_boot_reading
+msgid ""
+"No fresh data is available.\n"
+"Trndi will attemp to fetch data until recent values are available"
+msgstr ""
+
 #: trndi.strings.rs_off_hi
 msgid "Over range"
 msgstr "Över område"

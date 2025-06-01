@@ -855,8 +855,10 @@ Application.OnException := @AppExceptionHandler;
   miRangeColor.Checked := native.GetSetting(username + 'ux.range_color') = 'true';
   dotscale := native.GetIntSetting(username + 'ux.dot_scale', 1);
   Application.processmessages;
-  if not updateReading then // First reading attempt failed
-    ShowMessage('First reading attempt failed!'); //@fixme
+  if not updateReading then begin // First reading attempt failed
+    pnWarning.Visible := true;
+    pnWarning.Caption := '⚠️ ' + RS_NO_BOOT_READING;
+  end;
   fs.Close;
   fs.Free;
 end;

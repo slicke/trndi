@@ -34,6 +34,7 @@ RS_OFF_HI = 'Over range';
 RS_OFF_LO = 'Under range';
 RS_RANGE_COLOR = 'The entire window will now change color when out of range, instead of just displaying a colored notification in the top. Applies after the next sync.';
 RS_TIR = 'These is your time in range for the last %d minutes';
+RS_NO_BOOT_READING = 'No fresh data is available.'#10'Trndi will attemp to fetch data until recent values are available';
 
 // Time messages
 RS_OUTDATED_TIME = '%s (%d.%.2d ago)';
