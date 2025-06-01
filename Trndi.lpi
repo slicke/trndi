@@ -470,6 +470,10 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="VersionInfo"/>
       </Unit>
+      <Unit>
+        <Filename Value="trndi.api.debug_edge.pp"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
