@@ -2153,6 +2153,7 @@ begin
     fBG.Color := clBlack;
     lVal.Font.Color := clWhite;
     tMissed.Enabled := true;
+    lArrow.Caption := ''; // Dont show arrow when not fresh
     native.setBadge('--', clBlack{$ifdef lclwin32},badge_width,badge_font{$endif});
   end
   else
