@@ -23,10 +23,8 @@ INTERVAL_MINUTES = 5; // Each time interval is 5 minutes
 NUM_DOTS = 10;        // Total number of labels (lDot1 - lDot10)
 DATA_FRESHNESS_THRESHOLD_MINUTES = 11; // Max minutes before data is considered outdated
 
-BG_API_MIN = 2;
-  // NS can't read lower
-BG_API_MAX = 22;
-  // NS can't read higher
+BG_API_MIN = 2; // NS can't read lower
+BG_API_MAX = 22.2; // NS can't read higher
 BG_REFRESH = 300000; // 5 min refresh
 
 DOT_GRAPH =  '•';
