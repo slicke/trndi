@@ -37,7 +37,7 @@ trndi.Ext. Engine, trndi.Ext.jsfuncs,
 {$ifdef Darwin}
 CocoaAll, MacOSAll,
 {$endif}
-LazFileUtils, uconf, trndi.native, Trndi.API, trndi.api.xDrip,{$ifdef DEBUG} trndi.api.debug,{$endif}
+LazFileUtils, uconf, trndi.native, Trndi.API, trndi.api.xDrip,{$ifdef DEBUG} trndi.api.debug, trndi.api.debug_edge,{$endif}
 StrUtils, TouchDetection, ufloat;
 
 type
@@ -972,6 +972,8 @@ Application.OnException := @AppExceptionHandler;
     {$ifdef DEBUG}
     '* Debug Backend *':
       api := DebugAPI.Create(apiTarget, apiCreds, '');
+   '* Debug Backend Edge *':
+      api := DebugEdgeAPI.Create(apiTarget, apiCreds, '');
       {$endif}
     else
       Exit;
@@ -1702,6 +1704,7 @@ begin
     begin
       {$ifdef DEBUG}
       fConf.cbSys.Items.Add('* Debug Backend *');
+      fConf.cbSys.Items.Add('* Debug Backend Edge *');
       {$endif}
     end;
 
