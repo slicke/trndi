@@ -181,7 +181,7 @@ private
   procedure fixWarningPanel;
   function lastReading: BGReading;
   procedure CalcRangeTime;
-  function updateReading: boolean;
+  function updateReading(boot: boolean = false): boolean;
   procedure PlaceTrendDots(const Readings: array of BGReading);
   procedure actOnTrend(proc: TTrendProc);
   procedure actOnTrend(proc: TTrendProcLoop);
@@ -855,7 +855,8 @@ Application.OnException := @AppExceptionHandler;
   miRangeColor.Checked := native.GetSetting(username + 'ux.range_color') = 'true';
   dotscale := native.GetIntSetting(username + 'ux.dot_scale', 1);
   Application.processmessages;
-  if not updateReading then begin // First reading attempt failed
+  if not updateReading(true) then begin // First reading attempt failed
+    updateReading; // We call it twice, to first setup the dots and then make it black
     pnWarning.Visible := true;
     pnWarning.Caption := '⚠️ ' + RS_NO_BOOT_READING;
   end;
@@ -2072,7 +2073,7 @@ begin
    lTir.Caption := range.toString + '%';
 end;
 
-function TfBG.updateReading: boolean;
+function TfBG.updateReading(boot: boolean = false): boolean;
 begin
   result := false;
   lTir.Caption := '';
@@ -2093,10 +2094,11 @@ begin
   ProcessCurrentReading;
 
   // Handle data freshness
-  if not IsDataFresh then
-    Exit;
-
-  result := true;
+  if not IsDataFresh then begin
+    if not boot then
+      Exit;
+  end else
+    result := true;
 
   // Update UI based on glucose values
   UpdateUIBasedOnGlucose;
