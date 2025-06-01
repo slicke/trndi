@@ -177,6 +177,7 @@ private
   TrendDots: array[1..10] of TLabel;
   multi: boolean; // Multi user
 
+  procedure SetLang;
   procedure fixWarningPanel;
   function lastReading: BGReading;
   procedure CalcRangeTime;
@@ -756,6 +757,19 @@ begin
     proc(ls[ix], NUM_DOTS, ix);
 end;
 
+procedure tfBG.SetLang;
+var
+ lang: string;
+begin
+  lang := native.GetSetting(username +'locale', '');
+  if (lang = 'auto') or (lang = '') then
+   lang := native.GetOSLanguage;
+  applocale := lang;
+  Application.processmessages;
+
+  SetDefaultLang(lang, getLangPath);
+end;
+
 // Initialize the TrendDots array in FormCreate
 procedure TfBG.FormCreate(Sender: TObject);
 var
@@ -826,6 +840,40 @@ function GetLinuxDistro: string;
   end;
   {$endif}
 
+  procedure prepUI;
+  var
+    i: integer;
+  begin
+    // Load fonts
+    s := native.GetSetting(username + 'font.val', 'default');
+    if s <> 'default' then
+      lVal.Font.name := s;
+    s := native.GetSetting(username + 'font.arrow', 'default');
+    if s <> 'default' then
+      lArrow.Font.name := s;
+
+    s := native.GetSetting(username + 'font.ago', 'default');
+    if s <> 'default' then
+    lAgo.Font.name := s;
+    lTir.Font.name := s;
+
+    // Check graph
+    for i := 1 to NUM_DOTS do
+      begin
+        s := 'lDot' + IntToStr(i);
+        TrendDots[i] := FindComponent(s) as TLabel;
+        if not Assigned(TrendDots[i]) then
+          ShowMessage(Format('Label %s is missing!', [s]))
+        else
+          LogMessage(Format('Label %s assigned to TrendDots[%d].', [s, i]));
+      end;
+
+    // Check touch screen
+    HasTouch :=  native.HasTouchScreen(HasMultiTouch);
+    if HasMultiTouch then
+      touchHelper := TTouchDetector.Create;
+  end;
+
 begin
 
 
@@ -871,41 +919,14 @@ Application.OnException := @AppExceptionHandler;
   {$ifndef DARWIN}
       lArrow.Font.Name := fontName;
   {$endif}
-  s := native.GetSetting(username + 'font.val', 'default');
-  if s <> 'default' then
-    lVal.Font.name := s;
-  s := native.GetSetting(username + 'font.arrow', 'default');
-  if s <> 'default' then
-    lArrow.Font.name := s;
 
-  s := native.GetSetting(username + 'font.ago', 'default');
-  if s <> 'default' then
-  lAgo.Font.name := s;
-  lTir.Font.name := s;
+  PrepUI;
 
   // Assign labels to the TrendDots array
-  for i := 1 to NUM_DOTS do
-  begin
-    s := 'lDot' + IntToStr(i);
-    TrendDots[i] := FindComponent(s) as TLabel;
-    if not Assigned(TrendDots[i]) then
-      ShowMessage(Format('Label %s is missing!', [s]))
-    else
-      LogMessage(Format('Label %s assigned to TrendDots[%d].', [s, i]));
-  end;
   Application.processmessages;
   with native do
   begin
-    HasTouch :=  HasTouchScreen(HasMultiTouch);
-    if HasMultiTouch then
-      touchHelper := TTouchDetector.Create;
-    lang := GetSetting(username +'locale', '');
-    if (lang = 'auto') or (lang = '') then
-      lang := GetOSLanguage;
-    applocale := lang;
-    Application.processmessages;
-
-    SetDefaultLang(lang, getLangPath);
+  setLang;
   // Idea for using multiple person/account support
     username := GetSetting('users.names','');
     if username <> '' then
@@ -984,8 +1005,8 @@ Application.OnException := @AppExceptionHandler;
     begin
       ShowMessage(api.ErrorMsg);
       tMain.Enabled := false;
-        fs.Close;
-  fs.Free;
+      fs.Close;
+      fs.Free;
       Exit;
     end;
 
@@ -1723,6 +1744,9 @@ begin
 
     // Save settings when dialog closes
     SaveUserSettings(fConf);
+
+    SetLang;
+    miForce.Click;
 
     ShowMessage(RS_RESTART_APPLY);
   finally
