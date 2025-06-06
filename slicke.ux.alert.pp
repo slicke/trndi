@@ -28,7 +28,7 @@ interface
 
 uses
 Classes, SysUtils, Dialogs, Forms, ExtCtrls, StdCtrls, Controls, Graphics, Math,
-IntfGraphics, FPImage, graphtype, lcltype, Trndi.Native,
+IntfGraphics, FPImage, graphtype, lcltype, Trndi.Native, Grids,
 {$ifdef Windows}
 DX12.D2D1, DX12.DXGI, DX12.DWrite, DX12.DCommon, DX12.WinCodec, Windows, Buttons,
 {$endif}StrUtils;
@@ -56,6 +56,9 @@ smbUXClose = 'Close';
 smbUXOpenFile = 'Open File';
 smbUxMinimize = 'Minimize';
 smbSelect = 'Select';
+
+sKey = 'Key';
+sValue = 'Value';
 
 const
 muiStop = $26D4;
@@ -130,6 +133,14 @@ function ExtInput(
   var ModalResult: TModalResult;
   const icon: WideChar = WideChar($2699)
 ): string;
+
+function ExtTable(
+  const ACaption, ATitle, ADesc: string;
+  const Keys, Values: array of string;
+  const icon: WideChar = WideChar($2699);
+  const key: string = '';
+  const value: string = ''
+): Integer;
 function ExtError(const msg, error: string; const icon: widechar = widechar($2699)): TModalResult;
 function ExtError(const error: string; const icon: widechar = widechar($2699)): TModalResult;
 function ExtSucc(const msg, desc, output: string; dumpbg: TColor = $0095EEC4; dumptext: TColor = $00147C4A; const icon: widechar = widechar($2705)): TModalResult;
@@ -723,7 +734,125 @@ begin
   end;
 end;
 
+function ExtTable(
+  const ACaption, ATitle, ADesc: string;
+  const Keys, Values: array of string;
+  const icon: WideChar = WideChar($2699);
+  const key: string = '';
+  const value: string = ''
+): Integer;
+const
+  Padding = 16;
+  IconSize = 48;
+  GridHeight = 200;
+var
+  Dialog: TDialogForm;
+  IconBox: TImage;
+  TitleLabel, DescLabel: TLabel;
+  Grid: TStringGrid;
+  BgCol: TColor;
+  OkButton, CancelButton: TButton;
+  i: Integer;
+begin
+  Result := -1;
+  // Anpassa bakgrundsfärgen för dark mode
+  BgCol := IfThen(TrndiNative.isDarkMode, $00322B27, clWhite);
 
+  // Skapa dialogrutan
+  Dialog := TDialogForm.CreateNew(nil);
+  Dialog.KeyPreview := True;
+  Dialog.OnKeyDown := @Dialog.FormKeyDown;
+  try
+    Dialog.Caption := ACaption;
+    Dialog.BorderStyle := bsDialog;
+    Dialog.Position := poScreenCenter;
+    Dialog.ClientWidth := 500 + IconSize + 4 * Padding;
+    Dialog.Color := BgCol;
+
+    // Emoji-ikon
+    IconBox := TImage.Create(Dialog);
+    IconBox.Parent := Dialog;
+    IconBox.Width := IconSize;
+    IconBox.Height := IconSize;
+    IconBox.Left := Padding;
+    IconBox.Top := Padding;
+
+    {$IFDEF Windows}
+    IconBox.Font.Name := 'Segoe UI Emoji';
+    {$ENDIF}
+
+    Dialog.HandleNeeded;
+    AssignEmoji(IconBox, icon, TrndiNative.isDarkMode);
+
+    // Titel
+    TitleLabel := TLabel.Create(Dialog);
+    TitleLabel.Parent := Dialog;
+    TitleLabel.Caption := ATitle;
+    TitleLabel.AutoSize := True;
+    TitleLabel.Font.Style := [fsBold];
+    TitleLabel.Left := IconBox.Left + IconBox.Width + Padding;
+    TitleLabel.Top := Padding;
+    TitleLabel.Font.Color := IfThen(TrndiNative.isDarkMode, clWhite, clBlack);
+
+    // Beskrivning
+    DescLabel := TLabel.Create(Dialog);
+    DescLabel.Parent := Dialog;
+    DescLabel.Caption := ADesc;
+    DescLabel.AutoSize := True;
+    DescLabel.Left := TitleLabel.Left;
+    DescLabel.Top := TitleLabel.Top + TitleLabel.Height + Padding div 2;
+    DescLabel.Font.Color := IfThen(TrndiNative.isDarkMode, clWhite, clBlack);
+
+    // Skapa tabellen
+    Grid := TStringGrid.Create(Dialog);
+    Grid.Parent := Dialog;
+    Grid.Left := Padding;
+    Grid.Top := DescLabel.Top + DescLabel.Height + Padding;
+    Grid.Width := Dialog.ClientWidth - 2 * Padding;
+    Grid.Height := GridHeight;
+    Grid.Options := [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goColSizing];
+    Grid.ColCount := 2;
+    Grid.RowCount := Length(Keys) + 1;
+
+    Grid.Cells[0, 0] := IfThen(key = '', sKEY, key);
+    Grid.Cells[1, 0] := IfThen(value = '', sVALUE, value);
+
+    for i := 0 to High(Keys) do
+    begin
+      Grid.Cells[0, i + 1] := Keys[i];
+      Grid.Cells[1, i + 1] := Values[i];
+    end;
+
+    // OK-knapp
+    OkButton := TButton.Create(Dialog);
+    OkButton.Parent := Dialog;
+    OkButton.Caption := smbUXOK;
+    OkButton.ModalResult := mrOk;
+    OkButton.Width := 80;
+
+    // Avbryt-knapp
+    CancelButton := TButton.Create(Dialog);
+    CancelButton.Parent := Dialog;
+    CancelButton.Caption := smbUXCancel;
+    CancelButton.ModalResult := mrCancel;
+    CancelButton.Width := 80;
+
+    // Placera knapparna
+    OkButton.Top := Grid.Top + Grid.Height + Padding;
+    CancelButton.Top := OkButton.Top;
+
+    OkButton.Left := Grid.Left + (Grid.Width div 2) - OkButton.Width - Padding div 2;
+    CancelButton.Left := Grid.Left + (Grid.Width div 2) + Padding div 2;
+
+    Dialog.ClientHeight := OkButton.Top + OkButton.Height + Padding;
+
+    // Visa dialogen
+    if Dialog.ShowModal = mrOk then
+      Result := Grid.Row; // Returnera vald rad
+  finally
+    Dialog.Free;
+  end;
+end;
 
 function ExtList(
   const ACaption, ATitle, ADesc: string;
@@ -817,7 +946,7 @@ begin
     // Avbryt-knapp
     CancelButton := TButton.Create(Dialog);
     CancelButton.Parent := Dialog;
-    CancelButton.Caption := 'Avbryt';
+    CancelButton.Caption := smbUXCancel;
     CancelButton.ModalResult := mrCancel;
     CancelButton.Width := 80;
 

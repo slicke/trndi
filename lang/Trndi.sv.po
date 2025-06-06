@@ -27,6 +27,10 @@ msgstr "Fel i ett tillägg"
 msgid "Extension error"
 msgstr "Tilläggsfel"
 
+#: slicke.ux.alert.skey
+msgid "Key"
+msgstr "Nyckel"
+
 #: slicke.ux.alert.smbselect
 msgid "Select"
 msgstr "Välj"
@@ -94,6 +98,10 @@ msgstr "Meddelande"
 #: slicke.ux.alert.ssucctitle
 msgid "Information"
 msgstr "Information"
+
+#: slicke.ux.alert.svalue
+msgid "Value"
+msgstr "Värde"
 
 #: tfbg.ltir.caption
 msgid "Time In Range"
@@ -531,7 +539,7 @@ msgstr "En datatyp förväntades, men en annan påträffades"
 
 #: trndi.strings.rs_compute_failed_ago
 msgid "Long ago"
-msgstr ""
+msgstr "Länge sedan"
 
 #: trndi.strings.rs_font_error
 #, object-pascal-format
@@ -545,6 +553,11 @@ msgstr "Trndi stängs nu ned för att aktivera inställningarna, vänligen start
 #: trndi.strings.rs_high
 msgid "HIGH"
 msgstr "HÖGT"
+
+#: trndi.strings.rs_history_item
+#, object-pascal-format
+msgid "Reading: %s | Difference: %s | Trend: %s"
+msgstr "Värde: %s | Skillnad: %s | Trend: %s"
 
 #: trndi.strings.rs_hi_level
 #, object-pascal-format
@@ -632,6 +645,8 @@ msgid ""
 "No fresh data is available.\n"
 "Trndi will attemp to fetch data until recent values are available"
 msgstr ""
+"Ingen färsk data finns att tillgå\n"
+"Trndi kommer försöka hämta data tills dess nyliga värden finns"
 
 #: trndi.strings.rs_off_hi
 msgid "Over range"
@@ -947,7 +962,6 @@ msgid "You can hold down shift and plus (+) or minus (-) to change the window si
 msgstr "Du kan hålla ned skift och plus (+) eller minus (-) för att justera fönstrets storlek"
 
 #: umain.rs_noplugins
-#, fuzzy
 msgctxt "umain.rs_noplugins"
 msgid "Built Without Support"
 msgstr "Byggd utan stöd"
@@ -976,4 +990,3 @@ msgstr "Senaste position"
 msgctxt "umain.rs_tpotopright"
 msgid "Top Right"
 msgstr "Höger topp"
-
