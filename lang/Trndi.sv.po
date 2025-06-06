@@ -529,6 +529,10 @@ msgctxt "trndi.ext.promise.stypeerrmsg"
 msgid "A data type was expected, but another was found"
 msgstr "En datatyp förväntades, men en annan påträffades"
 
+#: trndi.strings.rs_compute_failed_ago
+msgid "Long ago"
+msgstr ""
+
 #: trndi.strings.rs_font_error
 #, object-pascal-format
 msgid "You're missing the standard font \"%s\". Trndi will work as intended, but some icons may be missing and/or distorted!"
