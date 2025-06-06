@@ -60,6 +60,7 @@ RS_RHISTORY = 'Reading history';
 RS_RH_TITLE = 'Historical readings';
 RS_RH_INFO = 'These are the messages currently held in Trndi''s log';
 
+RS_HISTORY_ITEM = 'Reading: %s | Difference: %s | Trend: %s';
 
 // Config box
 RS_tpoCenter = 'Desktop Center';

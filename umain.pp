@@ -364,6 +364,11 @@ begin
   UXMessage(sSuccTitle, str, system.widechar($2139));
 end;
 
+procedure Showmessage(const title, str: string);
+begin
+  UXMessage(title, str, system.widechar($2139));
+end;
+
 procedure TfBG.placeForm;
 {$ifdef DARWIN}
 function GetActiveScreen: TMonitor; // Use TMonitor if that's what Screen.Monitors returns
@@ -1276,16 +1281,31 @@ end;
 
 procedure TfBG.miHistoryClick(Sender:TObject);
 var
-  r: BGReading;
-  l: TStringList;
+  i:integer;
+  keys, vals: TStringArray;
+  b: BGReading;
 begin
-l := TStringList.Create;
+SetLength(keys, high(bgs)+1);
+SetLength(vals, high(bgs)+1);
 
-for r in bgs do
- l.add(Format('[%s] %s', [TimeToStr(r.date), r.format(un, BG_MSG_SHORT, BGPrimary)]));
+for i := Low(bgs) to High(bgs) do begin
+ if bgs[i].empty then
+   continue;
 
-ExtMsg( RS_RHISTORY, RS_RH_TITLE, RS_RH_INFO, l.Text, clWhite, clBlack,[mbOK]);
-l.free;
+ keys[i] := TimeToStr(bgs[i].date);
+ vals[i] := bgs[i].format(un, BG_MSG_SHORT, BGPrimary);
+end;
+
+
+i := ExtTable ( RS_RHISTORY, RS_RH_TITLE, RS_RH_INFO, keys, vals);
+if i > 0 then begin
+  b := bgs[i-1];
+  showmessage(TimeToStr(b.date), Format(RS_HISTORY_ITEM, [
+                     b.format(un, BG_MSG_SHORT, BGPrimary),
+                     b.format(un, BG_MSG_SHORT, BGDelta),
+                     b.trend.Img]
+  ));
+end;
 end;
 
 procedure TfBG.miRangeColorClick(Sender:TObject);
