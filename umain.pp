@@ -1660,15 +1660,21 @@ var
   d: TDateTime;
   min: int64;
 begin
-  d := bgs[Low(bgs)].date; // Last reading time
-
-  min := MilliSecondsBetween(Now, d) div 60000;  // Minutes since last
-
+ if sizeof(bgs) <= 0 then begin
+    lAgo.Caption := '🕑 ' + RS_COMPUTE_FAILED_AGO;
+ end else begin
+   try
+    d := bgs[Low(bgs)].date; // Last reading time
+    min := MilliSecondsBetween(Now, d) div 60000;  // Minutes since last
   {$ifndef lclgtk2} // UTF support IS LIMITED
     lAgo.Caption := '🕑 ' + Format(RS_LAST_UPDATE, [min]);
   {$else}
     lAgo.Caption := '⌚ ' + Format(RS_LAST_UPDATE, [min]);
   {$endif}
+   except
+     lAgo.Caption := '🕑 ' + RS_COMPUTE_FAILED_AGO;
+   end;
+ end;
 end;
 
 procedure TfBG.tClockTimer(Sender:TObject);
