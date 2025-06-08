@@ -708,9 +708,20 @@ function GetLinuxDistro: string;
       touchHelper := TTouchDetector.Create;
   end;
 
+  const
+    license = '⚠️ IMPORTANT MEDICAL WARNING ⚠️'#10#13+
+#10+
+'This app is NOT a medical device.'#10 +
+'• Do NOT make medical decisions based on this data'#10+
+'• Data may be WRONG, delayed, or unavailable'#10+
+'• Always verify with your official CGM device'#10+
+'• For emergencies, contact medical professionals'#10+
+#10+
+'By continuing, you acknowledge that:'#10+
+'• You use this app at your own risk'#10+
+'• The developers have NO LIABILITY'#10+
+'• You have read and agree to the full terms';
 begin
-
-
   fs := TfSplash.Create(nil);
     FStoredWindowInfo.Initialized := False;
   fs.Image1.Picture.Icon := Application.Icon;
@@ -794,6 +805,28 @@ Application.OnException := @AppExceptionHandler;
     end
     else
       multi := false;
+
+      //-----LICENSE DO NOT MODIFY
+      while i <> mrYes do begin
+        if native.GetBoolSetting(username + 'license.250608') <> true then begin
+              i :=  ExtMsg('License', 'You must accept the full terms conditions', 'Do you agree to the terms and full license?', license, $00F5F2FD,$003411A9, [mbYes, mbCancel, mbUxRead], widechar($2699));
+              if i = mrYes then
+                 native.SetSetting(username + 'license.250608', 'true')
+              else if i = mrCancel then begin
+                Application.Terminate;
+                Exit;
+              end
+              else
+                 OpenURL('https://github.com/slicke/trndi/LICENSE.md');
+        end;
+      end;
+
+      ShowMessage(i.tostring);
+      i :=  ExtMsg('License', 'You must accept the terms and conditions', 'Do you agree to the terms?', license, $00F5F2FD,$003411A9, [mbYes, mbCancel, mbUxRead], widechar($2699));
+      ShowMessage(i.tostring);
+      i :=  ExtMsg('License', 'You must accept the terms and conditions', 'Do you agree to the terms?', license, $00F5F2FD,$003411A9, [mbYes, mbCancel, mbUxRead], widechar($2699));
+      ShowMessage(i.tostring);
+      //-----END LICENSE
 
     Application.processmessages;
     privacyMode := GetSetting(username +'ext.privacy', '0') = '1';

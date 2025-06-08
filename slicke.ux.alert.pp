@@ -56,6 +56,8 @@ smbUXClose = 'Close';
 smbUXOpenFile = 'Open File';
 smbUxMinimize = 'Minimize';
 smbSelect = 'Select';
+smbUxAgree = 'Agree';
+smbUxRead = 'Read...';
 
 sKey = 'Key';
 sValue = 'Value';
@@ -77,7 +79,6 @@ mbUXNoToAll = mbNoToAll;
 mbUXYesToAll = mbYesToAll;
 mbUXHelp = mbHelp;
 mbUXClose = mbClose;
-mbUXUXOpenFile = 110;
 
 
 type
@@ -93,7 +94,7 @@ public
 end;
 
 TUXMsgDlgBtn     = (mbYes, mbNo, mbOK, mbCancel, mbAbort, mbRetry, mbIgnore,
-  mbAll, mbNoToAll, mbYesToAll, mbHelp, mbClose, mbUXOpenFile, mbUXMinimize);
+  mbAll, mbNoToAll, mbYesToAll, mbHelp, mbClose, mbUXOpenFile, mbUXMinimize, mbUXAgree, mbUXRead);
 
 TUXMsgDlgBtns = set of TUXMsgDlgBtn;
 
@@ -106,7 +107,7 @@ UXMessageBox = record
 end;
 ButtonLangs = array[TUXMsgDlgBtn] of string;
 var
-langs : ButtonLangs = (smbYes, smbUXNo, smbUXOK, smbUXCancel, smbUXAbort, smbUXRetry, smbUXIgnore, smbUXAll, smbUXNoToAll, smbUXYesToAll, smbUXHelp, smbUXClose, smbUXOpenFile, smbUXMinimize);
+langs : ButtonLangs = (smbYes, smbUXNo, smbUXOK, smbUXCancel, smbUXAbort, smbUXRetry, smbUXIgnore, smbUXAll, smbUXNoToAll, smbUXYesToAll, smbUXHelp, smbUXClose, smbUXOpenFile, smbUXMinimize, smbUXAgree, smbUXRead);
 
 
 //function UXShowMessage(const message: string; buttons: TMsgDlgButtons; const icon: Widechar): TModalResult;

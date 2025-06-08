@@ -29,6 +29,10 @@ msgstr ""
 msgid "Abort"
 msgstr ""
 
+#: slicke.ux.alert.smbuxagree
+msgid "Agree"
+msgstr ""
+
 #: slicke.ux.alert.smbuxall
 msgid "All"
 msgstr ""
@@ -67,6 +71,10 @@ msgstr ""
 
 #: slicke.ux.alert.smbuxopenfile
 msgid "Open File"
+msgstr ""
+
+#: slicke.ux.alert.smbuxread
+msgid "Read..."
 msgstr ""
 
 #: slicke.ux.alert.smbuxretry
@@ -433,8 +441,26 @@ msgstr ""
 msgid "Very Big"
 msgstr ""
 
-#: tfsplash.label1.caption
-msgid "Loading..."
+#: tfsplash.lsplashwarn.caption
+msgctxt "tfsplash.lsplashwarn.caption"
+msgid ""
+"⚠️ IMPORTANT MEDICAL WARNING ⚠️\n"
+"\n"
+"This app is NOT a medical device.\n"
+"• Do NOT make medical decisions based on this data\n"
+"• Data may be WRONG, delayed, or unavailable  \n"
+"• Always verify with your official CGM device\n"
+"• For emergencies, contact medical professionals\n"
+"\n"
+"By continuing, you acknowledge that:\n"
+"• You use this app at your own risk\n"
+"• The developers have NO LIABILITY\n"
+"• You have read and agree to the full terms\n"
+"\n"
+"This app is licensed under the \n"
+"GNU General Public License version 3 with \n"
+"an additional medical disclaimer.\n"
+"See https://github.com/slicke/trndi/LICENSE.md"
 msgstr ""
 
 #: trndi.api.dexcom.serrdexlogin

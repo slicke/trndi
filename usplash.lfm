@@ -1,36 +1,50 @@
 object fSplash: TfSplash
   Left = 664
-  Height = 326
+  Height = 331
   Top = 34
-  Width = 320
+  Width = 622
   BorderStyle = bsNone
   Caption = 'Trndi'
-  ClientHeight = 326
-  ClientWidth = 320
+  ClientHeight = 331
+  ClientWidth = 622
   Color = 2763306
   FormStyle = fsSystemStayOnTop
   Position = poDesktopCenter
   OnCreate = FormCreate
   object Image1: TImage
-    Left = 0
-    Height = 304
-    Top = 0
-    Width = 320
-    Align = alClient
+    Left = 8
+    Height = 312
+    Top = 16
+    Width = 280
     Center = True
+    Proportional = True
     OnClick = Image1Click
   end
   object Label1: TLabel
-    Left = 0
-    Height = 22
-    Top = 304
-    Width = 320
-    Align = alBottom
+    Left = 248
+    Height = 41
+    Top = 0
+    Width = 368
     Alignment = taCenter
     AutoSize = False
-    Caption = 'Loading...'
+    Caption = 'Trndi'
     Color = 5000268
     Font.Color = clWhite
+    Font.Height = -27
+    ParentColor = False
+    ParentFont = False
+  end
+  object lSplashWarn: TLabel
+    Left = 248
+    Height = 280
+    Top = 48
+    Width = 368
+    Alignment = taCenter
+    AutoSize = False
+    Caption = '⚠️ IMPORTANT MEDICAL WARNING ⚠️'#13#10#13#10'This app is NOT a medical device.'#13#10'• Do NOT make medical decisions based on this data'#13#10'• Data may be WRONG, delayed, or unavailable  '#13#10'• Always verify with your official CGM device'#13#10'• For emergencies, contact medical professionals'#13#10#13#10'By continuing, you acknowledge that:'#13#10'• You use this app at your own risk'#13#10'• The developers have NO LIABILITY'#13#10'• You have read and agree to the full terms'#13#10#13#10'This app is licensed under the '#13#10'GNU General Public License version 3 with '#13#10'an additional medical disclaimer.'#13#10'See https://github.com/slicke/trndi/LICENSE.md'
+    Color = 5000268
+    Font.Color = clWhite
+    Font.Height = 16
     ParentColor = False
     ParentFont = False
   end
