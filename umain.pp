@@ -807,8 +807,8 @@ Application.OnException := @AppExceptionHandler;
       multi := false;
 
       //-----LICENSE DO NOT MODIFY
+      if native.GetBoolSetting(username + 'license.250608') <> true then
       while i <> mrYes do begin
-        if native.GetBoolSetting(username + 'license.250608') <> true then begin
               i :=  ExtMsg('License', 'You must accept the full terms conditions', 'Do you agree to the terms and full license?', license, $00F5F2FD,$003411A9, [mbYes, mbCancel, mbUxRead], widechar($2699));
               if i = mrYes then
                  native.SetSetting(username + 'license.250608', 'true')
@@ -817,15 +817,8 @@ Application.OnException := @AppExceptionHandler;
                 Exit;
               end
               else
-                 OpenURL('https://github.com/slicke/trndi/LICENSE.md');
-        end;
+                 OpenURL('https://github.com/slicke/trndi/blob/main/LICENSE.md');
       end;
-
-      ShowMessage(i.tostring);
-      i :=  ExtMsg('License', 'You must accept the terms and conditions', 'Do you agree to the terms?', license, $00F5F2FD,$003411A9, [mbYes, mbCancel, mbUxRead], widechar($2699));
-      ShowMessage(i.tostring);
-      i :=  ExtMsg('License', 'You must accept the terms and conditions', 'Do you agree to the terms?', license, $00F5F2FD,$003411A9, [mbYes, mbCancel, mbUxRead], widechar($2699));
-      ShowMessage(i.tostring);
       //-----END LICENSE
 
     Application.processmessages;
