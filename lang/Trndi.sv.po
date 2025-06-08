@@ -1005,6 +1005,7 @@ msgid "You can hold down shift and plus (+) or minus (-) to change the window si
 msgstr "Du kan hålla ned skift och plus (+) eller minus (-) för att justera fönstrets storlek"
 
 #: umain.rs_noplugins
+#, fuzzy
 msgctxt "umain.rs_noplugins"
 msgid "Built Without Support"
 msgstr "Byggd utan stöd"
@@ -1033,3 +1034,4 @@ msgstr "Senaste position"
 msgctxt "umain.rs_tpotopright"
 msgid "Top Right"
 msgstr "Höger topp"
+
