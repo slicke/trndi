@@ -907,7 +907,6 @@ begin
   if assigned(api) then
     api.Free;
 
-  self.Handle
 end;
 
 procedure TfBG.FormKeyPress(Sender:TObject;var Key:char);
