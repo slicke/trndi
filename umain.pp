@@ -2084,11 +2084,11 @@ begin
   i := min(BG_REFRESH, BG_REFRESH-(i*1000)); // 5 min or less if there's a recent reading
   i := max(120000, i); // Don't allow too small refresh time (min 2 minutes)
 
-  tMain.Interval := i;
+  tMain.Interval := i+15000; // Add 15 secs to allow sync
   tMain.Enabled := true;
 
   miRefresh.Caption := Format(RS_REFRESH, [TimeToStr(LastReadingTime),
-                              TimeToStr(IncMilliSecond(Now, i))]);
+                              TimeToStr(IncMilliSecond(Now, tMain.Interval))]);
   {$ifdef Darwin}
      upMenu.Caption:= miRefresh.Caption;
   {$endif}
