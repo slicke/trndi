@@ -146,7 +146,7 @@ public
   constructor create(ua, base: string); overload;
   constructor create; overload;
   {$if DEFINED(X_WIN)}
-    class function setDarkMode(win: HWND): boolean;
+    class function SetDarkMode(win: HWND; Enable: Boolean = True): Boolean;
   {$elseif DEFINED(X_MAC)}
     class function setDarkMode: boolean;
   {$else}
@@ -237,18 +237,22 @@ implementation
 
 
 {$IF DEFINED(X_WIN)}
-class function TrndiNative.setDarkMode(win: HWND): Boolean;
+class function TrndiNative.SetDarkMode(win: HWND; Enable: Boolean = True): Boolean;
 const
   DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
 var
   Value: Integer;
 begin
-  Value := 1;
-  // DwmSetWindowAttribute finns i dwmapi.dll
-  Result :=
-    Succeeded(
-      DwmSetWindowAttribute(win, DWMWA_USE_IMMERSIVE_DARK_MODE, @Value, SizeOf(Value))
-    );
+  Result := False;
+
+  // Kolla Windows-version
+  if (Win32MajorVersion < 10) or ((Win32MajorVersion = 10) and (Win32BuildNumber < 17763)) then
+    Exit; // Dark mode stöds först i Windows 10 1809 (build 17763)
+
+  Value := Ord(Enable);
+  Result := Succeeded(
+    DwmSetWindowAttribute(win, DWMWA_USE_IMMERSIVE_DARK_MODE, @Value, SizeOf(Value))
+  );
 end;
 {$elseif DEFINED(X_MAC)}
 class function TrndiNative.setDarkMode: Boolean;
