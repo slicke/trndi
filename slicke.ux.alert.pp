@@ -291,10 +291,12 @@ begin
   KeyPreview := True;
   if not TrndiNative.isDarkMode then
     Exit;
+  if (Win32MajorVersion < 10) or ((Win32MajorVersion = 10) and (Win32BuildNumber < 17763)) then
+    Exit; // Dark mode stöds först i Windows 10 1809 (build 17763)
   Value := 1;
   // Nu är Handle giltigt – anropa DWM
-  DwmSetWindowAttribute(Handle,
-    DWMWA_USE_IMMERSIVE_DARK_MODE, @Value, SizeOf(Value));
+  try DwmSetWindowAttribute(Handle,
+    DWMWA_USE_IMMERSIVE_DARK_MODE, @Value, SizeOf(Value)) except end;
   // Tvinga omritning av non-client area
   SetWindowPos(Handle, 0,0,0,0,0,
     SWP_FRAMECHANGED or SWP_NOMOVE or SWP_NOSIZE or SWP_NOZORDER);
