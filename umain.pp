@@ -559,6 +559,7 @@ begin
     addClassFunction('setDotSize', ExtFunction(@JSDotSize), -1);
     addClassFunction('getUnit', ExtFunction(@JSUnit), 0);
     addClassFunction('setLevelColor', ExtFunction(@JSLevelColor), -1);
+    addClassFunction('setTimeAndRange', ExtFunction(@JSTimeRange), 2);
     // Add the UX modification function, as declared in this file
     for s in exts do
       // Run all found files

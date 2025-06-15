@@ -90,3 +90,9 @@ _Use floats for mmol/L and integers for mg/dL!_
 ```javascript
   setLimits(3.2, 16.4, 4.1, 12.7).then(() =>Trndi.alert("Custom limits set"));
 ```
+### setTimeAndRange
+#### Sets the max minutes to fetch and max readings to fetch (subject to which metric the API uses)
+```setTimeAndRange(minutes, count)```
+```javascript
+setTimeAndRange(20, 4); // Sets the max time to fetch to 20 minutes and the range to 4 readings
+```

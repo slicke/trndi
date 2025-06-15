@@ -110,6 +110,29 @@ begin
   TTrndiExtEngine.Instance.CallFunction('uxCallback', [comp, val]);
 end;
 
+
+function JSTimeRange(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw;
+var
+ vmins, vcount: Variant;
+begin
+  if argc <> 2 then
+  begin
+    Result := JS_FALSE;
+    Exit;
+  end;
+
+  ctx^^.ToVariant(argv^[0], vmins);
+  ctx^^.ToVariant(argv^[1], vcount);
+
+  if (not varType(vmins) = varInteger) or (not varType(vcount) = varInteger) then begin
+    ExtError('Mins and Count ust be integers');
+    exit;
+  end;
+
+ MAX_MIN := vmins;
+ MAX_RESULT := vcount;
+end;
+
 function JSLevelColor(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw;
 begin
 
