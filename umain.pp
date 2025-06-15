@@ -20,10 +20,12 @@
 
 unit umain;
 
-{$mode objfpc}{$H+}
+{$I native.inc}
+
 {$ifdef Darwin}
   {$modeswitch objectivec1}
 {$endif}
+
 
 interface
 
@@ -293,7 +295,7 @@ privacyMode: boolean = false;
 DraggingWin: boolean;
 PX, PY: integer;
 
-{$ifdef LINUX}
+{$ifdef X_LINUXBSD}
 IsRaspberry: boolean;
 {$endif}
 
@@ -612,7 +614,7 @@ var
   s, fontName, apiTarget, apiCreds, lang: string;
   fs: TfSplash;
   fil: boolean;
-{$ifdef Linux}
+{$ifdef X_LINUXBSD}
 function GetLinuxDistro: string;
   const
     Issue = '/etc/os-release';
@@ -624,7 +626,7 @@ function GetLinuxDistro: string;
   end;
 
   {$endif}
-  {$ifdef darwin}
+  {$ifdef X_MAC}
   procedure addTopMenu;
   var
      MainMenu: TMainMenu;
@@ -740,7 +742,7 @@ Application.OnException := @AppExceptionHandler;
   native := TrndiNative.Create;
   if native.isDarkMode then
      native.setDarkMode{$ifdef windows}(self.Handle){$endif};
-  {$ifdef Linux}
+  {$ifdef X_LINUXBSD}
   s := GetLinuxDistro;
   if (Pos('ID=fedora', s) > -1) then
     s := 'Poppins'
@@ -1556,7 +1558,7 @@ if cbPos.ItemIndex = -1 then
       cbTouch.Checked := native.HasTouchScreen(mTouch);
       cbMultiTouch.Checked := mTouch;
 
-      {$if defined(LINUX)}
+      {$if defined(X_LINUXBSD)}
       cbNotice.Checked := IsNotifySendAvailable;
       cbNotice.Caption := cbNotice.Caption + ' (Notify Daemon)';
       {$else}

@@ -10,6 +10,7 @@ object fSplash: TfSplash
   Color = 2763306
   FormStyle = fsSystemStayOnTop
   Position = poDesktopCenter
+  LCLVersion = '4.0.0.4'
   OnCreate = FormCreate
   object Image1: TImage
     Left = 8
