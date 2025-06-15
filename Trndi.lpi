@@ -46,7 +46,7 @@
         <Item24 Value="tfFloat.lRangeDown"/>
         <Item25 Value="tfSplash.lSplashWarn"/>
       </ExcludedIdentifiers>
-      <ExcludedOriginals Count="18">
+      <ExcludedOriginals Count="20">
         <Item1 Value="Trndi"/>
         <Item2 Value="•"/>
         <Item3 Value="lArrow"/>
@@ -65,6 +65,8 @@
         <Item16 Value="75"/>
         <Item17 Value="50"/>
         <Item18 Value="25"/>
+        <Item19 Value="▼"/>
+        <Item20 Value="▲"/>
       </ExcludedOriginals>
     </i18n>
     <VersionInfo>

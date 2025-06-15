@@ -1202,8 +1202,22 @@ begin
 end;
 
 procedure TfBG.lTirClick(Sender:TObject);
+var
+  minTotal, hours, mins: Integer;
+  msg: String;
 begin
-  ShowMessage(Format(RS_TIR, [ MinutesBetween(now, bgs[High(bgs)].date)]));
+  minTotal := MinutesBetween(now, bgs[High(bgs)].date);
+  if minTotal < 60 then
+  begin
+    msg := Format(RS_TIR_M, [minTotal]);
+  end
+  else
+  begin
+    hours := minTotal div 60;
+    mins := minTotal mod 60;
+    msg := Format(RS_TIR_H, [hours, mins]);
+  end;
+  ShowMessage(msg);
 end;
 
 
