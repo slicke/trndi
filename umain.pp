@@ -1215,7 +1215,10 @@ begin
   begin
     hours := minTotal div 60;
     mins := minTotal mod 60;
-    msg := Format(RS_TIR_H, [hours, mins]);
+    if hours < 2 then
+      msg := Format(RS_TIR_H1, [hours, mins])
+    else
+      msg := Format(RS_TIR_H, [hours, mins]);
   end;
   ShowMessage(msg);
 end;
