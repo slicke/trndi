@@ -96,3 +96,9 @@ _Use floats for mmol/L and integers for mg/dL!_
 ```javascript
 setTimeAndRange(20, 4); // Sets the max time to fetch to 20 minutes and the range to 4 readings
 ```
+### getLocale
+#### Gets the selected UX language
+```setTimeAndRange(minutes, count)```
+```javascript
+setTimeAndRange(20, 4); // Sets the max time to fetch to 20 minutes and the range to 4 readings
+```

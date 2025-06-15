@@ -39,7 +39,9 @@ end;
 
 procedure TfSplash.FormCreate(Sender: TObject);
 begin
-
+  {$ifdef Linux}
+     lSplashWarn.Font.Size := 8;
+  {$endif}
 end;
 
 end.
