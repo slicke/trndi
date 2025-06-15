@@ -5,7 +5,7 @@ unit trndi.funcs;
 interface
 
 uses
-  Classes, SysUtils, ExtCtrls, stdctrls, graphics, trndi.types, forms;
+  Classes, SysUtils, ExtCtrls, stdctrls, graphics, trndi.types, forms, math;
 
 
 procedure CenterPanelToCaption(Panel: TPanel);
@@ -17,8 +17,6 @@ procedure SortReadingsDescending(var Readings: array of BGReading);
 procedure SetPointHeight(L: TLabel; Value: Single; clientHeight: integer);
 
 const
-MAX_MIN = 1440; // Max time to request
-MAX_RESULT = 25; // Max results
 INTERVAL_MINUTES = 5; // Each time interval is 5 minutes
 NUM_DOTS = 10;        // Total number of labels (lDot1 - lDot10)
 DATA_FRESHNESS_THRESHOLD_MINUTES = 11; // Max minutes before data is considered outdated
@@ -29,6 +27,10 @@ BG_REFRESH = 300000; // 5 min refresh
 
 DOT_GRAPH =  '•';
 DOT_FRESH = '☉';
+
+var
+MAX_MIN: integer = 1440; // Max time to request
+MAX_RESULT: integer = 25; // Max results
 
 implementation
 
@@ -214,6 +216,11 @@ begin
   LogMessage(Format('Label %s: Value=%.2f, Top=%d', [L.Name, Value, L.Top]));
 end;
 
+procedure setTimeRange(mins, count: integer);
+begin
+  MAX_MIN := min(mins, 20); // Max time to request
+  MAX_RESULT := min(count, 2); // Max results
+end;
 
 end.
 
