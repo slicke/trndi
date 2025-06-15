@@ -155,7 +155,7 @@ external 'ole32.dll';
 
 implementation
 
-{$if DEFINED(LINUX)}
+{$if DEFINED(X_LINUXBSD)}
 function FontInList(out fname: string): Boolean;
 var
   sl: TStrings;

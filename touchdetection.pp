@@ -1,6 +1,6 @@
 unit TouchDetection;
 
-{$mode objfpc}{$H+}
+{$I native.inc}
 
 interface
 
@@ -8,8 +8,9 @@ uses
 {$IFDEF WINDOWS}
 Windows, Messages,
 {$ENDIF}
-{$IFDEF LINUX}
-BaseUnix, Linux, Unix,
+{$IFDEF X_LINUXBSD}
+BaseUnix, Unix,
+{$ifdef X_LINUX}Linux,{$ENDIF}
 {$ENDIF}
 Classes, SysUtils;
 
@@ -35,7 +36,7 @@ private
   function InitializeWindowsTouch: boolean;
   function GetWindowsTouchInfo: TTouchInfo;
   {$ENDIF}
-  {$IFDEF LINUX}
+  {$IFDEF X_LINUXBSD}
   function FindTouchDevice: string;
   function GetLinuxTouchInfo: TTouchInfo;
   {$ENDIF}
@@ -51,7 +52,7 @@ end;
 
 implementation
 
-{$IFDEF WINDOWS}
+{$IFDEF X_WIN}
 const
   // Windows touch API constants
 TOUCH_MASK_CONTACTAREA = $0004;
@@ -105,7 +106,7 @@ begin
   Result := Info.Count;
 end;
 
-{$IFDEF WINDOWS}
+{$IFDEF X_WIN}
 function TTouchDetector.InitializeWindowsTouch: boolean;
 var
   Wnd: HWND;
@@ -151,7 +152,7 @@ begin
 end;
 {$ENDIF}
 
-{$IFDEF LINUX}
+{$IFDEF X_LINUXBSD}
 function TTouchDetector.FindTouchDevice: string;
 var
   F: Text;
@@ -273,7 +274,7 @@ begin
   Result := GetWindowsTouchInfo;
   {$ENDIF}
 
-  {$IFDEF LINUX}
+  {$IFDEF X_LINUXBSD}
   Result := GetLinuxTouchInfo;
   {$ENDIF}
 

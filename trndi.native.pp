@@ -225,7 +225,7 @@ type
 
 end;
 
-{$ifdef X_LINUX}
+{$ifdef X_LINUXBSD}
 function IsNotifySendAvailable: boolean;
 {$endif}
 //procedure QWindow_setWindowBadge(window: QWindowH; badge: PChar); cdecl; external 'libQt6Gui.so.6';
@@ -716,7 +716,7 @@ begin
 end;
 
 
-{$ifdef X_LINUX}
+{$ifdef X_LINUXBSD}
 function IsNotifySendAvailable: boolean;
 var
   AProcess: TProcess;
@@ -751,7 +751,7 @@ end;
  ------------------------------------------------------------------------------}
 
 procedure TrndiNative.attention(message: string);
-{$if  DEFINED(X_LINUX)}
+{$if  DEFINED(X_LINUXBSD)}
 
 
 procedure SendNotification(Title, Message: string);

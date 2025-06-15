@@ -1,6 +1,6 @@
 unit usplash;
 
-{$mode ObjFPC}{$H+}
+{$I native.inc}
 
 interface
 
@@ -39,7 +39,7 @@ end;
 
 procedure TfSplash.FormCreate(Sender: TObject);
 begin
-  {$ifdef Linux}
+  {$ifdef X_LINUXBSD}
      lSplashWarn.Font.Size := 8;
   {$endif}
 end;
