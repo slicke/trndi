@@ -393,14 +393,6 @@ msgstr "Fler användare"
 msgid "Floating Display"
 msgstr "Flytande visning"
 
-#: tffloat.lrangedown.caption
-msgid "▼"
-msgstr ""
-
-#: tffloat.lrangeup.caption
-msgid "▲"
-msgstr ""
-
 #: tffloat.ltime.caption
 msgid "00:00"
 msgstr "00:00"
@@ -769,10 +761,15 @@ msgctxt "trndi.strings.rs_setup"
 msgid "Setup"
 msgstr "Konfig"
 
-#: trndi.strings.rs_tir
+#: trndi.strings.rs_tir_h
 #, object-pascal-format
-msgid "These is your time in range for the last %d minutes"
-msgstr "Detta är ditt tid i område (time in range) för de senaste %d minuterna"
+msgid "This is your time in range for the last %d hour(s) and %d minute(s)"
+msgstr "Detta är din tid i målområdet under de(n) senaste %d timm(en/marna) och %d minute(n/rna)"
+
+#: trndi.strings.rs_tir_m
+#, object-pascal-format
+msgid "This is your time in range for the last %d minutes"
+msgstr "Detta är din tid i målområdet under de senaste %d minuterna"
 
 #: trndi.strings.rs_tpobottomleft
 msgctxt "trndi.strings.rs_tpobottomleft"
@@ -1005,7 +1002,6 @@ msgid "You can hold down shift and plus (+) or minus (-) to change the window si
 msgstr "Du kan hålla ned skift och plus (+) eller minus (-) för att justera fönstrets storlek"
 
 #: umain.rs_noplugins
-#, fuzzy
 msgctxt "umain.rs_noplugins"
 msgid "Built Without Support"
 msgstr "Byggd utan stöd"
