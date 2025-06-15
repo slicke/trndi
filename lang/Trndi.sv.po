@@ -763,8 +763,13 @@ msgstr "Konfig"
 
 #: trndi.strings.rs_tir_h
 #, object-pascal-format
-msgid "This is your time in range for the last %d hour(s) and %d minute(s)"
-msgstr "Detta är din tid i målområdet under de(n) senaste %d timm(en/marna) och %d minute(n/rna)"
+msgid "This is your time in range for the last %d hours and %d minutes"
+msgstr "Detta är din tid i målområdet under de senaste %d timmarna och %d minuterna"
+
+#: trndi.strings.rs_tir_h1
+#, object-pascal-format
+msgid "This is your time in range for the last hour and %d minutes"
+msgstr "Detta är din tid i målområdet under den senaste timmen och %d minuterna"
 
 #: trndi.strings.rs_tir_m
 #, object-pascal-format
@@ -1030,4 +1035,3 @@ msgstr "Senaste position"
 msgctxt "umain.rs_tpotopright"
 msgid "Top Right"
 msgstr "Höger topp"
-

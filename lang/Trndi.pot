@@ -721,7 +721,12 @@ msgstr ""
 
 #: trndi.strings.rs_tir_h
 #, object-pascal-format
-msgid "This is your time in range for the last %d hour(s) and %d minute(s)"
+msgid "This is your time in range for the last %d hours and %d minutes"
+msgstr ""
+
+#: trndi.strings.rs_tir_h1
+#, object-pascal-format
+msgid "This is your time in range for the last hour and %d minutes"
 msgstr ""
 
 #: trndi.strings.rs_tir_m
