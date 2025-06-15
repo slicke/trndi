@@ -591,8 +591,8 @@ msgstr "HÖGT"
 
 #: trndi.strings.rs_history_item
 #, object-pascal-format
-msgid "Reading: %s | Difference: %s | Trend: %s"
-msgstr "Värde: %s | Skillnad: %s | Trend: %s"
+msgid "Selected Reading: %s | Difference: %s | Trend: %s"
+msgstr "Vald Avläsning: %s | Skillnad: %s | Trend: %s"
 
 #: trndi.strings.rs_hi_level
 #, object-pascal-format
