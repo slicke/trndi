@@ -812,7 +812,7 @@ Application.OnException := @AppExceptionHandler;
       //-----LICENSE DO NOT MODIFY
       if native.GetBoolSetting(username + 'license.250608') <> true then
       while i <> mrYes do begin
-              i :=  ExtMsg('License', 'You must accept the full terms conditions', 'Do you agree to the terms and full license?', license, $00F5F2FD,$003411A9, [mbYes, mbCancel, mbUxRead], widechar($2699));
+              i :=  ExtMsg('License', 'You must accept the full terms conditions', 'Do you agree to the terms and full license?', license, $00F5F2FD,$003411A9, [mbYes, mbCancel, mbUxRead]{$ifndef X_MAC}, widechar($2699){$endif});
               if i = mrYes then
                  native.SetSetting(username + 'license.250608', 'true')
               else if i = mrCancel then begin
