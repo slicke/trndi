@@ -1,11 +1,14 @@
 unit trndi.funcs;
 
 {$mode ObjFPC}{$H+}
+{$ifdef DARWIN}
+  {$ModeSwitch objectivec1}
+{$endif}
 
 interface
 
 uses
-  Classes, SysUtils, ExtCtrls, stdctrls, graphics, trndi.types, forms, math;
+  Classes, SysUtils, ExtCtrls, stdctrls, graphics, trndi.types, forms, math{$ifdef DARWIN}, CocoaAll{$endif};
 
 
 procedure CenterPanelToCaption(Panel: TPanel);
