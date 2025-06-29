@@ -1375,6 +1375,10 @@ begin
   {$else}
   BorderStyle := bsSizeToolWin;
   {$endif}
+
+  native := TrndiNative.Create;
+  if native.isDarkMode then
+     native.setDarkMode{$ifdef windows}(self.Handle){$endif};
 end;
 
 procedure TfBG.miExitClick(Sender:TObject);
