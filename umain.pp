@@ -1998,25 +1998,30 @@ end;
 
 procedure TfBG.tSwapTimer(Sender:TObject);
 var
-  x: integer;
+  c: TColor;
+  s: string;
 begin
-  if (not TryStrToInt(lVal.Caption[1], x)) or (fsStrikeOut in Lval.Font.Style) then begin
-    lArrow.Visible := false;
-    exit;
+  // Dont swap when the reading is old
+  if fsStrikeOut in Lval.Font.Style then begin
+    lArrow.Visible := true;
+    Exit;
   end;
-  lArrow.Visible := true;
 
   tSwap.Enabled := false;
-  if tSwap.Interval <> 5000 then begin
-    tSwap.Interval := 5000;
+  s := lval.Caption;
+
+  if s.IndexOf(':') > 0 then // Clock showing
+    UpdateUIColors   // Resets standard coloring
+  else if lVal.font.color <> lArrow.font.color then begin // Neutral mode
     lArrow.BringToFront;
-    UpdateUIColors;
+    c := lArrow.Font.Color;
+    lArrow.Font.color := lVal.Font.color;
+    lVal.Font.color := c;
   end else begin
-    tSwap.Interval := 5500;
+    UpdateUIColors;   // Resets standard coloring
+    lArrow.SendToBack;
     lVal.BringToFront;
     lArrow.SendToBack;
-    lArrow.Font.Color := LightenColor(fBG.color, 0.5);
-//    lVal.Font.Color := LightenColor(lVal.font.color, 0.1); // GetTextColorForBackground(fBG.color, 0, 0.9);
   end;
   tSwap.Enabled := true;
 end;
