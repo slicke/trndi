@@ -1402,6 +1402,9 @@ begin
     self.FormStyle := fsSystemStayOnTop
   else
     self.FormStyle := fsNormal;
+
+  if native.isDarkMode then
+     native.setDarkMode{$ifdef windows}(self.Handle){$endif};
 end;
 
 // Handle settings menu click
