@@ -142,6 +142,7 @@ public
   procedure start;
   procedure done;
   procedure setBadge(const Value: string; badgeColor: Tcolor{$ifdef LCLWIN32}; badge_size_ratio: double = 0.8; min_font_size: integer = 8{$endif});
+  class procedure PlaySound(const FileName: string);
 
   constructor create(ua, base: string); overload;
   constructor create; overload;
@@ -153,6 +154,7 @@ public
     class function setDarkMode: boolean;
   {$endif}
   class function GetOSLanguage: string;
+  class function HasDangerousChars(const FileName: string): Boolean;
 protected
   useragent: string;  // HTTP User-Agent string
   baseurl:   string;  // Base URL for requests
@@ -534,6 +536,62 @@ begin
   NSS.release;
 end;
 {$ENDIF}
+
+class procedure TrndiNative.PlaySound(const FileName: string);
+function sIsValidAudioFile(const FileName: string): Boolean;
+var
+  Ext: string;
+  ValidExtensions: array[0..6] of string = (
+    '.wav', '.mp3', '.ogg', '.flac', '.aac', '.wma', '.m4a'
+  );
+  i: Integer;
+begin
+  Result := False;
+
+  // Kontrollera om filen existerar
+  if not FileExists(FileName) then
+    Exit;
+
+  Ext := LowerCase(ExtractFileExt(FileName));
+  for i := 0 to High(ValidExtensions) do
+  begin
+    if Ext = ValidExtensions[i] then
+    begin
+      Result := True;
+      Break;
+    end;
+  end;
+
+  if not Result then
+    Exit;
+
+  if HasDangerousChars(FileName) then
+    Exit;
+
+  Result := True;
+end;
+var
+  Process: TProcess;
+begin
+  Process := TProcess.Create(nil);
+
+  try
+    {$IFDEF X_WIN}
+    Process.CommandLine := 'mplay32 /play /close ' + FileName;
+    {$ENDIF}
+
+    {$IFDEF X_LINUXBSD}
+    Process.CommandLine := 'aplay ' + FileName;
+    {$ENDIF}
+
+    {$IFDEF X_MAC}
+    Process.CommandLine := 'afplay ' + FileName;
+    {$ENDIF}
+    Process.Execute;
+  finally
+    Process.Free;
+  end;
+end;
 
 {------------------------------------------------------------------------------
   TrndiNative.Destroy
@@ -1309,6 +1367,34 @@ begin
   end;
 end;
 {$ENDIF}
+
+class function TrndiNative.HasDangerousChars(const FileName: string): Boolean;
+function HasCharsInSet(const Str: string; const CharSet: TSysCharSet): Boolean;
+var
+  i: Integer;
+begin
+  Result := False;
+  for i := 1 to Length(Str) do
+  begin
+    if Str[i] in CharSet then
+    begin
+      Result := True;
+      Exit;
+    end;
+  end;
+end;
+var
+  DangerousChars: TSysCharSet;
+begin
+  {$IFDEF WINDOWS}
+  DangerousChars := ['&', '|', ';', '`', '$', '(', ')', '<', '>', '"', ''''];
+  {$ELSE}
+  DangerousChars := ['&', '|', ';', '`', '$', '(', ')', '<', '>', '"', '''', '\'];
+  {$ENDIF}
+
+  Result := HasCharsInSet(FileName, DangerousChars);
+end;
+
 
 end.
 

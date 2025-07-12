@@ -72,6 +72,14 @@ begin
   result := res.raw;
 end;
 
+function JSPlay(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw;
+var
+  filename: string;
+begin
+  filename := ctx^^.ToUtf8(argv^[0]);
+  TrndiNative.PlaySound(filename);
+end;
+
 // UX modifications from JS ("uxProp()")
 function JSUX(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw;
 cdecl;
