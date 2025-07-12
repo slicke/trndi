@@ -776,7 +776,8 @@ Application.OnException := @AppExceptionHandler;
   if (Pos('ID=debian', s) > -1) then
     IsRaspberry := FileExists('/etc/rpi-issue');
   {$endif}
-
+   if TrndiNative.DetectWSL.IsWSL then
+     Showmessage('Windows Linux Subsystem (WSL) detected. Due to limitations in WSL, graphic issues may occur. Commonly, windows will appear at random positions an not where expected!');
   {$ifdef DARWIN}
   BorderStyle := bsSizeable;
   {$else}

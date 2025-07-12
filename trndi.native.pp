@@ -49,6 +49,14 @@ fphttpclient, openssl, opensslsockets, IniFiles, Dialogs
 , process;
 
 type
+  TWSLVersion = (wslNone, wslVersion1, wslVersion2, wslUnknown);
+
+  TWSLInfo = record
+    IsWSL: Boolean;
+    Version: TWSLVersion;
+    DistroName: string;
+    KernelVersion: string;
+  end;
   { TrndiNative
     -----------
     Provides platform-native methods for:
@@ -156,6 +164,7 @@ public
   {$endif}
   class function GetOSLanguage: string;
   class function HasDangerousChars(const FileName: string): Boolean;
+  class function DetectWSL: TWSLInfo;
 protected
   useragent: string;  // HTTP User-Agent string
   baseurl:   string;  // Base URL for requests
@@ -748,7 +757,8 @@ end;
   TrndiNative.create (overload)
   -----------------------------
   Allows specifying a custom user-agent and a base URL.
- ------------------------------------------------------------------------------}
+ -------------------------------------------------------
+ -----------------------}
 constructor TrndiNative.create(ua, base: string);
 begin
   useragent := ua;
@@ -1407,6 +1417,93 @@ begin
   Result := HasCharsInSet(FileName, DangerousChars);
 end;
 
+class function TrndiNative.DetectWSL: TWSLInfo;
+var
+  Output: TStringList;
+  Content: string;
+  EnvVar: string;
+begin
+  // Initiera resultat
+  Result.IsWSL := False;
+  Result.Version := wslNone;
+  Result.DistroName := '';
+  Result.KernelVersion := '';
 
+  {$IFDEF LINUX}
+  // Kontrollera /proc/version
+  if FileExists('/proc/version') then
+  begin
+    Output := TStringList.Create;
+    try
+      Output.LoadFromFile('/proc/version');
+      if Output.Count > 0 then
+      begin
+        Content := Output[0];
+        Result.KernelVersion := Content;
+
+        Content := LowerCase(Content);
+        if Pos('microsoft', Content) > 0 then
+        begin
+          Result.IsWSL := True;
+          if Pos('wsl2', Content) > 0 then
+            Result.Version := wslVersion2
+          else
+            Result.Version := wslVersion1;
+        end
+        else if Pos('wsl', Content) > 0 then
+        begin
+          Result.IsWSL := True;
+          Result.Version := wslVersion2;
+        end;
+      end;
+    finally
+      Output.Free;
+    end;
+  end;
+
+  // Kontrollera miljövariabler
+  EnvVar := GetEnvironmentVariable('WSL_DISTRO_NAME');
+  if EnvVar <> '' then
+  begin
+    Result.IsWSL := True;
+    Result.DistroName := EnvVar;
+    if Result.Version = wslNone then
+      Result.Version := wslUnknown;
+  end;
+
+  // WSL_INTEROP (WSL2 specifik)
+  if GetEnvironmentVariable('WSL_INTEROP') <> '' then
+  begin
+    Result.IsWSL := True;
+    if Result.Version = wslNone then
+      Result.Version := wslVersion2;
+  end;
+
+  // Ytterligare kontroller om vi inte hittat WSL än
+  if not Result.IsWSL then
+  begin
+    // Kontrollera /proc/sys/kernel/osrelease
+    if FileExists('/proc/sys/kernel/osrelease') then
+    begin
+      Output := TStringList.Create;
+      try
+        Output.LoadFromFile('/proc/sys/kernel/osrelease');
+        if Output.Count > 0 then
+        begin
+          Content := LowerCase(Output[0]);
+          if (Pos('microsoft', Content) > 0) or
+             (Pos('wsl', Content) > 0) then
+          begin
+            Result.IsWSL := True;
+            Result.Version := wslUnknown;
+          end;
+        end;
+      finally
+        Output.Free;
+      end;
+    end;
+  end;
+  {$ENDIF}
+end;
 end.
 
