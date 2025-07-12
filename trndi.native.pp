@@ -145,6 +145,7 @@ public
   class procedure PlaySound(const FileName: string);
 
   constructor create(ua, base: string); overload;
+  constructor create(ua: string); overload;
   constructor create; overload;
   {$if DEFINED(X_WIN)}
     class function SetDarkMode(win: HWND; Enable: Boolean = True): Boolean;
@@ -730,6 +731,17 @@ constructor TrndiNative.create;
 begin
   // Provide a default user-agent and empty base URL
   create('Mozilla/5.0 (compatible; trndi) TrndiAPI', '');
+end;
+
+{------------------------------------------------------------------------------
+  TrndiNative.create (overload)
+  ----------------------------
+  Allow a custom user-agent.
+ ------------------------------------------------------------------------------}
+constructor TrndiNative.create(ua: string);
+begin
+  // Provide a default user-agent and empty base URL
+  create(ua, '');
 end;
 
 {------------------------------------------------------------------------------
