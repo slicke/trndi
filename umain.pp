@@ -229,6 +229,12 @@ private
   function GetTextColorForBackground(const BgColor: TColor;
     const DarkenFactor: Double = 0.5;
     const LightenFactor: Double = 0.3): TColor;
+  function GetAdjustedColorForBackground(
+  const BaseColor: TColor;
+  const BgColor: TColor;
+  const DarkenFactor: Double = 0.6;
+  const LightenFactor: Double = 0.4;
+  const PreferLighter: Boolean = False): TColor;
 
   procedure UpdateTrendElements;
   procedure UpdateApiInformation;
@@ -289,6 +295,10 @@ bg_rel_color_lo_txt: TColor = $002D074E;
   // Personal low
 bg_rel_color_hi: TColor = $0072C9DE;
 bg_rel_color_hi_txt: TColor = $001C6577;
+// When the TIR is bad
+bad_tir: integer = 5;
+// WHen the TIR is good
+good_tir: integer = 75;
 
 fBG: TfBG;
 api: TrndiAPI;
@@ -2174,6 +2184,7 @@ begin
     range := 0;
 
    lTir.Caption := range.toString + '%';
+   lTir.Hint := range.toString;
 end;
 
 function TfBG.updateReading(boot: boolean = false): boolean;
@@ -2358,6 +2369,8 @@ begin
 end;
 
 procedure TfBG.UpdateUIColors;
+var
+ r: integer;
 begin
   lVal.Font.Color := GetTextColorForBackground(fBG.color);
 //  lVal.BringToFront;
@@ -2367,6 +2380,13 @@ begin
   lDiff.Font.Color := GetTextColorForBackground(fBG.color, 0.6, 0.4);
   lAgo.Font.Color := GetTextColorForBackground(fBG.color, 0.6, 0.4);
   lTir.Font.Color := GetTextColorForBackground(fBG.color, 0.6, 0.4);
+
+  if TryStrToInt(lTir.hint, r) then begin
+     if r < bad_tir then
+       lTir.Font.color := GetAdjustedColorForBackground(clRed, fBG.Color, 0.6, 0.4, true)
+     else if r > good_tir then
+       lTir.Font.color := GetAdjustedColorForBackground(clGreen, fBG.Color, 0.6, 0.4, true);
+  end;
 end;
 
 function TfBG.GetTextColorForBackground(const BgColor: TColor;
@@ -2377,6 +2397,28 @@ begin
     Result := DarkenColor(BgColor, DarkenFactor)
   else
     Result := LightenColor(BgColor, LightenFactor);
+end;
+
+function TfBG.GetAdjustedColorForBackground(
+  const BaseColor: TColor;
+  const BgColor: TColor;
+  const DarkenFactor: Double = 0.6;
+  const LightenFactor: Double = 0.4;
+  const PreferLighter: Boolean = False): TColor;
+begin
+  if PreferLighter then
+  begin
+    // Tvinga ljusare förgrund
+    Result := LightenColor(BaseColor, LightenFactor);
+  end
+  else
+  begin
+    // Original logik
+    if IsLightColor(BgColor) then
+      Result := DarkenColor(BaseColor, DarkenFactor)
+    else
+      Result := LightenColor(BaseColor, LightenFactor);
+  end;
 end;
 
 procedure TfBG.DisplayLowRange;
