@@ -227,9 +227,18 @@ msgstr "&Hämta"
 msgid "Reset Defaults"
 msgstr "Återställ"
 
+#: tfconf.button3.caption
+msgid "Check for update"
+msgstr ""
+
 #: tfconf.caption
 msgid "Settings"
 msgstr "Inställningar"
+
+#: tfconf.cbci.caption
+msgctxt "tfconf.cbci.caption"
+msgid "Include preview versions (may be buggy!)"
+msgstr ""
 
 #: tfconf.cbcust.caption
 msgid "Use custom values"
@@ -384,6 +393,10 @@ msgstr "Visning"
 #: tfconf.tsgeneral.caption
 msgid "General"
 msgstr "Allmänt"
+
+#: tfconf.tsinstall.caption
+msgid "Update"
+msgstr ""
 
 #: tfconf.tsmulti.caption
 msgid "Multi User"
@@ -968,6 +981,14 @@ msgstr "Endast bokstäver, mellanslag och nummer"
 msgid "Enter a username"
 msgstr "Ange ett användarnamn"
 
+#: uconf.rs_newver
+msgid "A new version is available, would you like to go to the downloads page?"
+msgstr ""
+
+#: uconf.rs_newver_caption
+msgid "New version available"
+msgstr ""
+
 #: uconf.rs_override_help
 msgid ""
 "Setting values here allows you to define your own high and low blood sugar limits in Trndi.\n"
@@ -998,6 +1019,10 @@ msgstr "När privat läge är aktiverat, visas inte avläsningar. Trndi visar is
 msgid "Removed accounts are made inactive, and can be restored by adding the same name again"
 msgstr "Borttagna konton blir inaktiva, de kan återställas genom att skapa om användaren med sanna namn"
 
+#: uconf.rs_uptodate
+msgid "You are up to date"
+msgstr ""
+
 #: ufloat.rscustomop
 msgid "You can use shift+<number> to manually set visibility (0 = 100% visible)"
 msgstr "Du kan använda skift+<nummerr> för att manuellt sätta synligheten (0 = 100% synlig)"
@@ -1005,12 +1030,6 @@ msgstr "Du kan använda skift+<nummerr> för att manuellt sätta synligheten (0 
 #: ufloat.rscustomsize
 msgid "You can hold down shift and plus (+) or minus (-) to change the window size"
 msgstr "Du kan hålla ned skift och plus (+) eller minus (-) för att justera fönstrets storlek"
-
-#: umain.rs_noplugins
-#, fuzzy
-msgctxt "umain.rs_noplugins"
-msgid "Built Without Support"
-msgstr "Byggd utan stöd"
 
 #: umain.rs_tpobottomleft
 msgctxt "umain.rs_tpobottomleft"

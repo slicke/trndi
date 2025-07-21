@@ -2413,7 +2413,6 @@ begin
   end
   else
   begin
-    // Original logik
     if IsLightColor(BgColor) then
       Result := DarkenColor(BaseColor, DarkenFactor)
     else

@@ -28,7 +28,7 @@ interface
 uses 
 Classes,ComCtrls,ExtCtrls,Spin,StdCtrls,SysUtils,Forms,Controls,
 Graphics,Dialogs,LCLTranslator, trndi.native, lclintf, slicke.ux.alert,
-VersionInfo;
+VersionInfo, trndi.funcs;
 
 type
 
@@ -38,6 +38,7 @@ TfConf = class(TForm)
   bAdd: TButton;
   Button1:TButton;
   Button2:TButton;
+  Button3:TButton;
   bvExt:TBevel;
   bOverrideHelp:TButton;
   bPrivacyHelp: TButton;
@@ -53,6 +54,7 @@ TfConf = class(TForm)
   cbNotice: TCheckBox;
   cbMultiTouch: TCheckBox;
   cbTIR:TCheckBox;
+  cbCI:TCheckBox;
   eAddr:TLabeledEdit;
   edNick:TEdit;
   eExt:TLabeledEdit;
@@ -97,6 +99,7 @@ TfConf = class(TForm)
   pnDisplay:TPanel;
   pcMain:TPageControl;
   rbUnit:TRadioGroup;
+  tsInstall:TTabSheet;
   tsDisplay:TTabSheet;
   tsMulti:TTabSheet;
   tsGeneral:TTabSheet;
@@ -108,6 +111,7 @@ TfConf = class(TForm)
   procedure bRemoveClick(Sender:TObject);
   procedure Button1Click(Sender:TObject);
   procedure Button2Click(Sender:TObject);
+  procedure Button3Click(Sender:TObject);
   procedure cbCustChange(Sender:TObject);
   procedure cbSysChange(Sender:TObject);
   procedure cbUserClick(Sender:TObject);
@@ -152,6 +156,10 @@ RS_CURRENT_ACC_NO = 'These settings are available when using a multi-account';
 RS_CURRENT_ACC_DEF = 'Settings for "default" only apply while multi-user is active';
 RS_REMOVE_ACC = 'Removed accounts are made inactive, and can be restored by adding the same name again';
 RS_AUTO = 'Auto-detect';
+RS_UPTODATE = 'You are up to date';
+RS_NEWVER = 'A new version is available, would you like to go to the downloads page?';
+RS_NEWVER_CAPTION = 'New version available';
+
 var 
 fConf: TfConf;
 
@@ -471,6 +479,47 @@ begin
 lVal.font.name := pnDisplay.font.name;
 lArrow.font.name := pnDisplay.font.name;
 lAgo.font.name := pnDisplay.font.name;
+end;
+
+procedure TfConf.Button3Click(Sender:TObject);
+  function GetCurrentPlatform: string;
+  begin
+    {$IFDEF WINDOWS}
+    Result := 'Windows';
+    {$ENDIF}
+
+    {$IFDEF DARWIN}
+    Result := 'Mac';
+    {$ENDIF}
+
+    {$IFDEF LINUX}
+    Result := 'Linux';
+    {$ENDIF}
+  end;
+var
+  tn: TrndiNative;
+  res, r, pl: string;
+begin
+  tn := TrndiNative.create('Trndi/'+GetProductVersion('2'));
+  if cbCI.Checked then begin
+    tn.getURL('https://api.github.com/repos/slicke/trndi/releases', res);
+    r := GetNewerVersionName(res, true);
+    pl := GetCurrentPlatform;
+  end else begin
+    tn.getURL('https://api.github.com/repos/slicke/trndi/releases/latest', res);
+    r := GetNewerVersionName(res, false);
+    pl := '';
+  end;
+
+  if r <> '' then begin
+    r := GetNewerVersionURL(res, cbCI.Checked, pl);
+    if r = '' then
+       r := GetNewerVersionURL(res);
+     if UXDialog(RS_NEWVER_CAPTION,RS_NEWVER, [mbYes, mbNo], mtInformation) = mrYes then
+       OpenURL(r);
+  end else
+    ShowMessage(RS_UPTODATE);
+  tn.free;
 end;
 
 procedure TfConf.cbCustChange(Sender:TObject);
