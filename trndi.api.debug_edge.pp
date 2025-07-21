@@ -95,6 +95,7 @@ begin
        result[i].trend := BGTrend.TdDoubleDown;
        result[i].level := BGLOW;
     end;
+    result[i].updateEnv('DebugEdge');
   end;
 
 

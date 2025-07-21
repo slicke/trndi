@@ -134,6 +134,7 @@ begin
     result[i].update(val, diff);
     result[i].trend := guessTrend(diff);
     result[i].level := getLevel(result[i].val);
+    result[i].updateEnv('Debug');
   end;
 
 
