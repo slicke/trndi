@@ -2317,18 +2317,22 @@ begin
 end;
 
 function TfBG.FetchAndValidateReadings: Boolean;
+{$ifdef DEBUG}
 var
   res: string;
+{$endif}
 begin
   Result := False;
 
   if api = nil then
     Exit;
 
-  bgs := api.getReadings(MAX_MIN, MAX_RESULT);
   {$ifdef DEBUG}
-      bgs := api.getReadings(MAX_MIN, MAX_RESULT, '',res);
-//      Showmessage(res);
+      bgs := api.getReadings(MAX_MIN, MAX_RESULT, '', res);
+      if Showing then
+        slicke.ux.alert.ExtLog('', '', res);
+  {$ELSE}
+       bgs := api.getReadings(MAX_MIN, MAX_RESULT);
   {$endif}
 
 

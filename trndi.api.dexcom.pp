@@ -335,6 +335,8 @@ begin
       // Initialize reading record with mg/dL
     Result[i].Init(mgdl);
 
+    Result[i].updateEnv('Dexcom');
+
       // If the user wants differences (delta) and we have a previous reading
     if (FCalcDiff) and (i > 0) then
       Result[i].Update(

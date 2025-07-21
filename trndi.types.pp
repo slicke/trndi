@@ -49,6 +49,14 @@ private
   src: shortstring;
       //< The API that reportd this value
 
+  rssi: integer;
+      //< The Received Signal Strength Indicator
+  device: shortstring;
+      //< Name of the device
+  noise: integer;
+      //< Noise
+
+
   function getCurr: single;
   function getChange: single;
   function checkEmpty: boolean;
@@ -70,6 +78,7 @@ public
   procedure update(valCurr, valDelta: BGVal; u: BGUnit);
   procedure update(val: BGVal; which: BGValType);
   procedure update(valCurr, valDelta: BGVal);
+  procedure updateEnv(valdevice: shortstring; valrssi: integer = 100; valnoise: integer = 0);// NS specific stuff
   procedure clear;
   function convert(u: BGUnit; which: BGValType = BGPrimary): single;
   function round(u: BGUnit; which: BGValType = BGPrimary): smallint;
@@ -263,6 +272,13 @@ begin
     self.change  := val * BG_CONVERTIONS[u][self.valu];
   end;
 
+end;
+
+procedure BGReading.updateEnv(valdevice: shortstring; valrssi: integer = 100; valnoise: integer = 0);
+begin
+  self.rssi := valrssi;
+  self.Noise := valnoise;
+  self.device := valdevice;
 end;
 
 procedure BGReading.update(val: BGVal; which: BGValType);
