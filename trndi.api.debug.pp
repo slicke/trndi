@@ -39,7 +39,7 @@ public
     override;
   function connect: boolean;
     override;
-  function getReadings(min, maxNum: integer; extras: string = ''): BGResults;
+  function getReadings(min, maxNum: integer; extras: string; out res: string): BGResults;
     override;
 private
 
@@ -70,7 +70,7 @@ begin
 end;
 
 
-function DebugAPI.getReadings(min, maxNum: integer; extras: string = ''): BGResults;
+function DebugAPI.getReadings(min, maxNum: integer; extras: string; out res: string): BGResults;
 function getFakeVals(const min: integer; out reading, delta: integer): TDateTime;
   var
     currentTime: TDateTime;
@@ -78,6 +78,7 @@ function getFakeVals(const min: integer; out reading, delta: integer): TDateTime
     minutesFromBase: integer;
     previousReading: integer;  // We're generating a delta
   begin
+  res := '';
   // Get the current time and the 5 minutes to act on
     currentTime := Now;
     baseTime := IncMinute(currentTime, -min);

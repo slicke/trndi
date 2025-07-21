@@ -88,7 +88,7 @@ public
 
     // Required overrides from TrndiAPI
   function Connect: boolean; override;
-  function GetReadings(AMinutes, AMaxCount: integer; extras: string = ''): BGResults; override;
+  function GetReadings(AMinutes, AMaxCount: integer; extras: string; out res: string): BGResults; override;
 
 published
     // Expose some properties
@@ -277,7 +277,7 @@ end;
   returning up to AMaxCount results. If FCalcDiff is True, calculates
   the difference between consecutive readings.
 -------------------------------------------------------------------------------}
-function Dexcom.GetReadings(AMinutes, AMaxCount: integer; extras: string = ''): BGResults;
+function Dexcom.GetReadings(AMinutes, AMaxCount: integer; extras: string; out res: string): BGResults;
 
   // Helper to convert Dexcom /Date(ms)/ timestamps to TDateTime
 function DexTimeToTDateTime(const S: string): TDateTime;
@@ -316,6 +316,7 @@ begin
   LGlucoseJSON := native.Request(true, DEXCOM_GLUCOSE_READINGS_ENDPOINT, LParams, '');
   // (Optional) fetch alert settings, though often not used or returned
   LAlertJSON   := native.Request(true, DEXCOM_ALERT_ENDPOINT, LParams, '');
+  res := LGlucoseJSON;
 
   // If no readings, return empty
   if LGlucoseJSON = '' then

@@ -102,8 +102,17 @@ public
         maxNum : Maximum number of readings to retrieve.
         extras : Any additional parameters or filters.
     }
-  function getReadings(min, maxNum: integer; extras: string = ''): BGResults; virtual; abstract;
+  function getReadings(minNum, maxNum: integer; extras: string = ''): BGResults;
 
+    {
+      Retrieves BG readings. Should be implemented in subclasses to actually
+      perform the data fetch, e.g., from a remote API.
+        min    : The timespan in minutes (or similar).
+        maxNum : Maximum number of readings to retrieve.
+        extras : Any additional parameters or filters.
+        res: Returns the raw result as a string
+    }
+  function getReadings(minNum, maxNum: integer; extras: string; out res: string): BGResults; virtual; abstract;
     {
       Constructor to create a new instance of TrndiAPI.
       Parameters might be user credentials or other relevant config for a data source.
@@ -317,6 +326,13 @@ begin
     Result := UnixToDateTime((ts div 1000) - tz)
   else
     Result := UnixToDateTime(ts div 1000);
+end;
+
+function TrndiAPI.getReadings(minNum, maxNum: integer; extras: string = ''): BGResults;
+var
+  res: string;
+begin
+  result := getReadings(minNum, maxNum,extras,res);
 end;
 
 end.
