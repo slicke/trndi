@@ -194,7 +194,7 @@ var
   js:     TJSONData;
   i:   integer;
   t: BGTrend;
-  s, resp: string;
+  s, resp, dev: string;
   params: array[1..1] of string;
 begin
   if extras = '' then
@@ -209,9 +209,7 @@ begin
     Exit;
   end;
 
-  {$ifdef debug}
-    res := resp;
-  {$endif}
+  res := resp;
 
   if Pos('Unauthorized', resp) > 0 then
     Exit;
@@ -221,8 +219,11 @@ begin
   for i := 0 to js.count - 1 do
     with js.FindPath(Format('[%d]', [i])) do
     begin
+
+      dev := FindPath('device').AsString;
       result[i].Init(mgdl, self.ToString);
       result[i].update(FindPath('sgv').AsInteger, single(FindPath('delta').AsFloat));
+      result[i].updateEnv(dev, FindPath('rssi').AsInteger, FindPath('noise').AsInteger);
 
       s := FindPath('direction').AsString;
 
@@ -238,6 +239,7 @@ begin
 
       result[i].date := JSToDateTime(FindPath('date').AsInt64);
       result[i].level := getLevel(result[i].val);
+
     end;
 
 
