@@ -49,7 +49,7 @@ public
     override;
   function connect: boolean;
     override;
-  function getReadings(min, maxNum: integer; extras: string = ''): BGResults;
+  function getReadings(minNum, maxNum: integer; extras: string; out res: string): BGResults;
     override;
 private
 
@@ -188,10 +188,8 @@ begin
   Result := true;
 end;
 
-
 // extras = path
-function NightScout.getReadings(min, maxNum: integer; extras: string = ''): BGResults;
-
+function NightScout.getReadings(minNum, maxNum: integer; extras: string; out res: string): BGResults;
 var 
   js:     TJSONData;
   i:   integer;
@@ -210,6 +208,10 @@ begin
   except
     Exit;
   end;
+
+  {$ifdef debug}
+    res := resp;
+  {$endif}
 
   if Pos('Unauthorized', resp) > 0 then
     Exit;

@@ -39,7 +39,7 @@ public
     override;
   function connect: boolean;
     override;
-  function getReadings(min, maxNum: integer; extras: string = ''): BGResults;
+  function getReadings(min, maxNum: integer; extras: string; out res: string): BGResults;
     override;
 private
 
@@ -69,13 +69,14 @@ begin
 end;
 
 
-function DebugEdgeAPI.getReadings(min, maxNum: integer; extras: string = ''): BGResults;
+function DebugEdgeAPI.getReadings(min, maxNum: integer; extras: string; out res: string): BGResults;
 var
   i: integer;
   val, diff: integer;
   dbase: TDateTime;
   hi: boolean;
 begin
+  res := '';
   SetLength(result, 11);
   dbase := IncMinute(now, 5);
   for i := 0 to 10 do

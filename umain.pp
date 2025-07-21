@@ -2317,6 +2317,8 @@ begin
 end;
 
 function TfBG.FetchAndValidateReadings: Boolean;
+var
+  res: string;
 begin
   Result := False;
 
@@ -2324,6 +2326,11 @@ begin
     Exit;
 
   bgs := api.getReadings(MAX_MIN, MAX_RESULT);
+  {$ifdef DEBUG}
+      bgs := api.getReadings(MAX_MIN, MAX_RESULT, '',res);
+//      Showmessage(res);
+  {$endif}
+
 
   pnWarning.Visible := false;
   if Length(bgs) < 1 then

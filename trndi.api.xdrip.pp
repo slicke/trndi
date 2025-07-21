@@ -53,7 +53,7 @@ type
 xDrip = class(NightScout)
 public
   constructor Create(user, pass, extra: string); override;
-  function GetReadings(min, maxNum: integer; path: string = ''): BGResults; override;
+  function GetReadings(min, maxNum: integer; path: string; out res: string): BGResults; override;
   function Connect: boolean; override;
 end;
 
@@ -94,14 +94,14 @@ end;
   - maxNum: maximum number of BG results
   - path: optional custom path; defaults to XDRIP_READINGS
  ------------------------------------------------------------------------------}
-function xDrip.GetReadings(min, maxNum: integer; path: string = ''): BGResults;
+function xDrip.GetReadings(min, maxNum: integer; path: string; out res: string): BGResults;
 begin
   // If path is empty, default to the xDrip sgv.json endpoint
   if path = '' then
     path := XDRIP_READINGS;
 
   // Call the inherited NightScout getReadings method
-  Result := inherited GetReadings(min, maxNum, path);
+  Result := inherited GetReadings(min, maxNum, path, res);
 end;
 
 {------------------------------------------------------------------------------
