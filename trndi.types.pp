@@ -62,6 +62,7 @@ private
   function checkEmpty: boolean;
   function getSrc: shortstring;
   function GetLevel: BGValLevel;
+  function getDevice: string;
   procedure setReturn(bgu: BGUnit);
   procedure setLevel(bglvl: BGValLevel);
 public
@@ -78,7 +79,7 @@ public
   procedure update(valCurr, valDelta: BGVal; u: BGUnit);
   procedure update(val: BGVal; which: BGValType);
   procedure update(valCurr, valDelta: BGVal);
-  procedure updateEnv(valdevice: shortstring; valrssi: integer = 100; valnoise: integer = 0);// NS specific stuff
+  procedure updateEnv(valdevice: shortstring; valrssi: integer = -1; valnoise: integer = -1);// NS specific stuff
   procedure clear;
   function convert(u: BGUnit; which: BGValType = BGPrimary): single;
   function round(u: BGUnit; which: BGValType = BGPrimary): smallint;
@@ -91,6 +92,9 @@ public
   property empty: boolean read CheckEmpty;
   property level: BGValLevel read GetLevel write SetLevel;
   property source: shortstring read GetSrc;
+  property sensor: string read getDevice;
+  function getRSSI(out outval: integer): boolean;
+  function getNoise(out outval: integer): boolean;
 end;
 
 BGResults = array of BGReading;
@@ -104,6 +108,25 @@ BGTrendHelper =
 end;
 
 implementation
+
+function BGReading.getRSSI(out outval: integer): boolean;
+begin
+  outval := self.rssi;
+  result := Self.rssi > -1;
+end;
+
+function BGReading.getNoise(out outval: integer): boolean;
+begin
+  outval := self.noise;
+  result := Self.noise > -1;
+end;
+
+function BGReading.getDevice: string;
+begin
+   result := self.device;
+   if result.IsEmpty then
+     result := '<unknown>';
+end;
 
 { Sets the preffered return unit, for properties
   @param(bgu A unit )
@@ -274,7 +297,7 @@ begin
 
 end;
 
-procedure BGReading.updateEnv(valdevice: shortstring; valrssi: integer = 100; valnoise: integer = 0);
+procedure BGReading.updateEnv(valdevice: shortstring; valrssi: integer = -1; valnoise: integer = -1);
 begin
   self.rssi := valrssi;
   self.Noise := valnoise;

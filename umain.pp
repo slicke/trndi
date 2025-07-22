@@ -1105,8 +1105,20 @@ begin
 end;
 
 procedure TfBG.lAgoClick(Sender:TObject);
+var
+  s: string;
+  i: integer;
 begin
-  showmessage(miRefresh.Caption);
+  s := miRefresh.Caption;
+  if lastReading.getRSSI(i) then
+    s += LineEnding+Format(sRSSI, [i]);
+  if lastReading.getNoise(i) then
+    s += LineEnding + Format(sNoise, [i]);
+
+  s += LineEnding + Format(sDevice, [lastReading.sensor]);;
+
+  ShowMessage(s);
+
 end;
 
 procedure TfBG.lArrowClick(Sender:TObject);

@@ -817,6 +817,11 @@ msgctxt "trndi.strings.sdatatypeerrpos"
 msgid "Datatype %s was not expected, expected in function %s, parameter %d"
 msgstr ""
 
+#: trndi.strings.sdevice
+#, object-pascal-format
+msgid "Device: %s"
+msgstr ""
+
 #: trndi.strings.sextconfirm
 msgid "Extension Confirmation"
 msgstr ""
@@ -856,6 +861,11 @@ msgctxt "trndi.strings.slogrecevive"
 msgid "Output through console.log has been received"
 msgstr ""
 
+#: trndi.strings.snoise
+#, object-pascal-format
+msgid "Noise: %d"
+msgstr ""
+
 #: trndi.strings.snotrace
 msgctxt "trndi.strings.snotrace"
 msgid "No stack trace available"
@@ -865,6 +875,11 @@ msgstr ""
 #, object-pascal-format
 msgctxt "trndi.strings.spromerrcapt"
 msgid "The asyncronous function %s failed to complete"
+msgstr ""
+
+#: trndi.strings.srssi
+#, object-pascal-format
+msgid "RSSI: %d"
 msgstr ""
 
 #: trndi.strings.sstackerrmsg
