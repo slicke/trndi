@@ -54,6 +54,8 @@ jobs:
           # Set environment variables
           ENV DEBIAN_FRONTEND=noninteractive
           ENV PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+          ENV QT_SELECT=6
+          ENV PKG_CONFIG_PATH="/usr/lib/aarch64-linux-gnu/pkgconfig:/usr/local/lib/pkgconfig"
           
           # Install base dependencies
           RUN apt-get update && apt-get install -y \
@@ -69,6 +71,11 @@ jobs:
               libqt6gui6 \
               libqt6widgets6 \
               libqt6opengl6-dev \
+              libegl1-mesa-dev \
+              libgl1-mesa-dev \
+              libgles2-mesa-dev \
+              libglx-mesa0 \
+              mesa-common-dev \
               cmake \
               pkg-config \
               libgtk2.0-dev \
@@ -77,23 +84,30 @@ jobs:
           # Copy .deb files (includes libqt6pas6)
           COPY *.deb /tmp/
           
-          # Install Lazarus, FPC and Qt6Pas
+          # Install Lazarus, FPC and Qt6Pas with better error handling
           RUN cd /tmp && \
               echo "=== Installing FPC and Lazarus ===" && \
               dpkg -i fpc-laz_3.2.3-240813_arm64.deb fpc-src_3.2.3-240813_arm64.deb lazarus-project_4.0.0-0_arm64.deb || \
               (apt-get update && apt-get install -f -y) && \
-              echo "=== Installing Qt6Pas from .deb ===" && \
+              echo "=== Installing Qt6Pas with dependencies ===" && \
+              apt-get install -y --fix-missing qt6-base-dev libqt6core6 libqt6gui6 libqt6widgets6 && \
               dpkg -i libqt6pas6_6.2.10-1_arm64.deb || \
               (apt-get update && apt-get install -f -y) && \
-              ldconfig
-          
-          # Verify installations
-          RUN echo "=== Verification ===" && \
+              ldconfig && \
+              echo "=== Setting up Qt6 environment ===" && \
+              export QT_SELECT=6 && \
+              export PKG_CONFIG_PATH="/usr/lib/aarch64-linux-gnu/pkgconfig:$PKG_CONFIG_PATH"
+
+          # Enhanced verification with Qt6 paths
+          RUN echo "=== Enhanced Verification ===" && \
               lazbuild --version && \
               fpc -iV && \
               qmake6 -version && \
               echo "=== Qt6Pas Library Check ===" && \
-              ldconfig -p | grep Qt6Pas || echo "Qt6Pas library verification completed"
+              ldconfig -p | grep Qt6Pas && \
+              find /usr -name "*Qt6Pas*" 2>/dev/null | head -5 && \
+              echo "=== Qt6 PKG Config ===" && \
+              pkg-config --list-all | grep -i qt6 | head -3 || echo "Qt6 pkg-config check completed"
           
           WORKDIR /workspace
           EOF
@@ -122,7 +136,7 @@ jobs:
         uses: actions/cache/save@v3
         with:
           path: ../static-arm64
-          key: static-libraries-linux-arm64-qt6  # FIXAT: arm64 istället för arm6
+          key: static-libraries-linux-arm64-qt6
 
       # 9. Copy static libraries to build folder
       - name: Copy Static Libraries ARM64
@@ -146,10 +160,9 @@ jobs:
           mkdir -p externals
           git clone https://github.com/synopse/mORMot2.git externals/mORMot2
 
-      # 12. Build inside ARM64 container
+      # 12. Build inside ARM64 container with Qt6 debugging
       - name: Build Trndi.lpr in ARM64 environment
         run: |
-          # Copy source code and dependencies to container and build
           docker run --rm --platform linux/arm64 \
             -v $(pwd):/workspace \
             -w /workspace \
@@ -162,20 +175,48 @@ jobs:
               qmake6 -version && \
               echo '' && \
               
+              echo '=== Qt6 Environment Check ===' && \
+              echo 'Qt6Pas library:' && \
+              ldconfig -p | grep -i qt6pas && \
+              echo 'Qt6 libraries:' && \
+              ldconfig -p | grep -i qt6 | head -5 && \
+              echo 'PKG_CONFIG_PATH:' \$PKG_CONFIG_PATH && \
+              pkg-config --exists Qt6Core && echo 'Qt6Core found' || echo 'Qt6Core missing' && \
+              echo '' && \
+              
               echo '=== Building mORMot2 Package ===' && \
               lazbuild externals/mORMot2/packages/lazarus/mormot2.lpk && \
               echo '' && \
               
-              echo '=== Building Trndi.lpr (trying Qt6 first) ===' && \
-              lazbuild --widgetset=qt6 --build-mode='No Ext (Release)' --cpu=aarch64 --os=linux Trndi.lpr || {
-                echo 'Qt6 build failed, using GTK2 fallback...' && \
-                lazbuild --widgetset=gtk2 --build-mode='No Ext (Release)' --cpu=aarch64 --os=linux Trndi.lpr
+              # Force Qt6 environment setup
+              export QT_SELECT=6 && \
+              export LD_LIBRARY_PATH=\"/usr/local/lib:/usr/lib/aarch64-linux-gnu:\$LD_LIBRARY_PATH\" && \
+              
+              echo '=== Building Trndi with Qt6 (with environment) ===' && \
+              lazbuild \
+                --verbose \
+                --widgetset=qt6 \
+                --build-mode='No Ext (Release)' \
+                --cpu=aarch64 \
+                --os=linux \
+                Trndi.lpr && \
+              echo 'Qt6 build SUCCESS!' || {
+                echo '!!! Qt6 build FAILED, checking reasons... !!!' && \
+                echo 'Trying GTK2 fallback...' && \
+                lazbuild \
+                  --widgetset=gtk2 \
+                  --build-mode='No Ext (Release)' \
+                  --cpu=aarch64 \
+                  --os=linux \
+                  Trndi.lpr && \
+                echo 'GTK2 build SUCCESS'
               } && \
               
-              echo '=== Verifying binary architecture ===' && \
+              echo '=== Binary verification ===' && \
               file Trndi && \
               ls -lh Trndi && \
-              (ldd Trndi 2>/dev/null || echo 'Static binary or ldd not available')
+              echo 'Dependencies check:' && \
+              (ldd Trndi | grep -E '(qt6|qt|gtk)' || echo 'No GUI lib dependencies found')
             "
 
       # 13. Create artifacts directory
@@ -197,6 +238,8 @@ jobs:
             echo "=== ARM64 Binary Information ==="
             file artifacts-arm64/Trndi
             ls -lh artifacts-arm64/Trndi
+            echo "=== Widget Set Detection ==="
+            ldd artifacts-arm64/Trndi | grep -E "(qt6|qt|gtk)" | head -3 || echo "Widget set libraries not detected in ldd output"
           else
             echo "ARM64 binary not found!"
             exit 1
