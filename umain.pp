@@ -1110,8 +1110,9 @@ var
   i: integer;
 begin
   s := miRefresh.Caption;
+
   if lastReading.getRSSI(i) then
-    s += LineEnding+Format(sRSSI, [i]);
+    s += LineEnding + Format(sRSSI, [i]);
   if lastReading.getNoise(i) then
     s += LineEnding + Format(sNoise, [i]);
 

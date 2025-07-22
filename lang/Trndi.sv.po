@@ -229,7 +229,7 @@ msgstr "Återställ"
 
 #: tfconf.button3.caption
 msgid "Check for update"
-msgstr ""
+msgstr "Kolla uppdatering"
 
 #: tfconf.caption
 msgid "Settings"
@@ -238,7 +238,7 @@ msgstr "Inställningar"
 #: tfconf.cbci.caption
 msgctxt "tfconf.cbci.caption"
 msgid "Include preview versions (may be buggy!)"
-msgstr ""
+msgstr "Inkludera förhandsversioner (kan vara buggiga!)"
 
 #: tfconf.cbcust.caption
 msgid "Use custom values"
@@ -396,7 +396,7 @@ msgstr "Allmänt"
 
 #: tfconf.tsinstall.caption
 msgid "Update"
-msgstr ""
+msgstr "Uppdatera"
 
 #: tfconf.tsmulti.caption
 msgid "Multi User"
@@ -862,7 +862,7 @@ msgstr "Datatypen ”%s” förväntades inte, förväntad i funktionen %s, para
 #: trndi.strings.sdevice
 #, object-pascal-format
 msgid "Device: %s"
-msgstr ""
+msgstr "Enhet: %s"
 
 #: trndi.strings.sextconfirm
 msgid "Extension Confirmation"
@@ -906,7 +906,7 @@ msgstr "Utmatning genom console.log har mottagits"
 #: trndi.strings.snoise
 #, object-pascal-format
 msgid "Noise: %d"
-msgstr ""
+msgstr "Brus: %d"
 
 #: trndi.strings.snotrace
 msgctxt "trndi.strings.snotrace"
@@ -921,8 +921,8 @@ msgstr "Den asynkrona funktionen %s misslyckades"
 
 #: trndi.strings.srssi
 #, object-pascal-format
-msgid "RSSI: %d"
-msgstr ""
+msgid "RSSI (Signal Strength): %d%%"
+msgstr "RSSI (signalstyrka): %d%%"
 
 #: trndi.strings.sstackerrmsg
 #, object-pascal-format
@@ -997,12 +997,14 @@ msgid "Enter a username"
 msgstr "Ange ett användarnamn"
 
 #: uconf.rs_newver
-msgid "A new version is available, would you like to go to the downloads page?"
-msgstr ""
+#, object-pascal-format, fuzzy, badformat
+#| msgid "A new version is available, would you like to go to the downloads page?"
+msgid "Version %s is available, would you like to go to the downloads page?"
+msgstr "En ny version finns tillgänglig, vill du besöka nedladdningssidan?"
 
 #: uconf.rs_newver_caption
 msgid "New version available"
-msgstr ""
+msgstr "Ny version tillgänglig"
 
 #: uconf.rs_override_help
 msgid ""
@@ -1036,7 +1038,7 @@ msgstr "Borttagna konton blir inaktiva, de kan återställas genom att skapa om 
 
 #: uconf.rs_uptodate
 msgid "You are up to date"
-msgstr ""
+msgstr "Du är uppdaterad"
 
 #: ufloat.rscustomop
 msgid "You can use shift+<number> to manually set visibility (0 = 100% visible)"

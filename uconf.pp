@@ -157,7 +157,7 @@ RS_CURRENT_ACC_DEF = 'Settings for "default" only apply while multi-user is acti
 RS_REMOVE_ACC = 'Removed accounts are made inactive, and can be restored by adding the same name again';
 RS_AUTO = 'Auto-detect';
 RS_UPTODATE = 'You are up to date';
-RS_NEWVER = 'A new version is available, would you like to go to the downloads page?';
+RS_NEWVER = 'Version %s is available, would you like to go to the downloads page?';
 RS_NEWVER_CAPTION = 'New version available';
 
 var 
@@ -498,24 +498,29 @@ procedure TfConf.Button3Click(Sender:TObject);
   end;
 var
   tn: TrndiNative;
-  res, r, pl: string;
+  res, r, rn, pl: string;
+  rok: boolean;
 begin
   tn := TrndiNative.create('Trndi/'+GetProductVersion('2'));
   if cbCI.Checked then begin
     tn.getURL('https://api.github.com/repos/slicke/trndi/releases', res);
-    r := GetNewerVersionName(res, true);
+    rok := HasNewerRelease(res, rn, true);
     pl := GetCurrentPlatform;
   end else begin
     tn.getURL('https://api.github.com/repos/slicke/trndi/releases/latest', res);
-    r := GetNewerVersionName(res, false);
+    rok := HasNewerRelease(res, rn, false);
     pl := '';
   end;
 
-  if r <> '' then begin
+  if rok then begin
     r := GetNewerVersionURL(res, cbCI.Checked, pl);
     if r = '' then
        r := GetNewerVersionURL(res);
-     if UXDialog(RS_NEWVER_CAPTION,RS_NEWVER, [mbYes, mbNo], mtInformation) = mrYes then
+
+    if not pl.isempty then
+     rn := pl + ' Test';
+
+     if UXDialog(RS_NEWVER_CAPTION, Format(RS_NEWVER, [rn]), [mbYes, mbNo], mtInformation) = mrYes then
        OpenURL(r);
   end else
     ShowMessage(RS_UPTODATE);

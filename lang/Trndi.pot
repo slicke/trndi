@@ -879,7 +879,7 @@ msgstr ""
 
 #: trndi.strings.srssi
 #, object-pascal-format
-msgid "RSSI: %d"
+msgid "RSSI (Signal Strength): %d%%"
 msgstr ""
 
 #: trndi.strings.sstackerrmsg
@@ -953,7 +953,8 @@ msgid "Enter a username"
 msgstr ""
 
 #: uconf.rs_newver
-msgid "A new version is available, would you like to go to the downloads page?"
+#, object-pascal-format
+msgid "Version %s is available, would you like to go to the downloads page?"
 msgstr ""
 
 #: uconf.rs_newver_caption
