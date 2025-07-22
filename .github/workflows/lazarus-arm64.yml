@@ -34,7 +34,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.cache/lazarus-arm64
-          key: lazarus-fpc-linux-arm64-qt6-v3
+          key: lazarus-fpc-linux-arm64-qt6-v4
 
       # 5. Download Lazarus 4.0 ARM64 .deb files and Qt6Pas
       - name: Download Lazarus 4.0 ARM64 .deb files and Qt6Pas
@@ -49,7 +49,7 @@ jobs:
       # 6. Create ARM64 build environment using Docker
       - name: Build in ARM64 environment
         run: |
-          # Create Dockerfile with Qt 6.2.10+ for ARM64 build environment
+          # Create Dockerfile with correct ARM64 repositories
           cat > Dockerfile.arm64 << 'EOF'
           FROM arm64v8/ubuntu:22.04
           
@@ -61,16 +61,24 @@ jobs:
           # Install base dependencies
           RUN apt-get update && apt-get install -y \
               wget p7zip-full build-essential git cmake pkg-config \
-              software-properties-common gpg-agent \
+              software-properties-common gpg-agent ca-certificates \
               && rm -rf /var/lib/apt/lists/*
           
-          # Add newer Qt6 repository for matching versions
-          RUN apt-get update && \
-              echo "deb http://archive.ubuntu.com/ubuntu jammy-updates main" >> /etc/apt/sources.list && \
-              echo "deb http://archive.ubuntu.com/ubuntu jammy-backports main" >> /etc/apt/sources.list && \
-              apt-get update
+          # Fix sources.list for ARM64 - use ports.ubuntu.com for ARM64
+          RUN cp /etc/apt/sources.list /etc/apt/sources.list.backup && \
+              echo "deb http://ports.ubuntu.com/ubuntu-ports jammy main restricted" > /etc/apt/sources.list && \
+              echo "deb http://ports.ubuntu.com/ubuntu-ports jammy-updates main restricted" >> /etc/apt/sources.list && \
+              echo "deb http://ports.ubuntu.com/ubuntu-ports jammy-backports main restricted" >> /etc/apt/sources.list && \
+              echo "deb http://ports.ubuntu.com/ubuntu-ports jammy universe multiverse" >> /etc/apt/sources.list && \
+              echo "deb http://ports.ubuntu.com/ubuntu-ports jammy-updates universe multiverse" >> /etc/apt/sources.list && \
+              echo "deb http://ports.ubuntu.com/ubuntu-ports jammy-backports universe multiverse" >> /etc/apt/sources.list && \
+              echo "deb http://ports.ubuntu.com/ubuntu-ports jammy-security main restricted" >> /etc/apt/sources.list && \
+              echo "deb http://ports.ubuntu.com/ubuntu-ports jammy-security universe multiverse" >> /etc/apt/sources.list
           
-          # Install newer Qt6 packages to match Qt6Pas 6.2.10
+          # Update with correct ARM64 repositories
+          RUN apt-get update
+          
+          # Try to get newer Qt6 packages from backports/updates
           RUN apt-get update && apt-get install -y \
               qt6-base-dev qt6-tools-dev qt6-tools-dev-tools \
               qt6-qpa-plugins libqt6core6 libqt6gui6 libqt6widgets6 \
@@ -81,7 +89,7 @@ jobs:
           # Verify Qt version after installation
           RUN echo "=== Qt6 Version Check ===" && \
               qmake6 -version && \
-              pkg-config --modversion Qt6Core || echo "Qt6Core version check completed"
+              (pkg-config --modversion Qt6Core || echo "Qt6Core version check completed")
           
           # Copy .deb files
           COPY *.deb /tmp/
@@ -112,9 +120,7 @@ jobs:
               echo "Qt6Pas headers:" && \
               (find /usr/include -name '*qt6pas*' -o -name '*Qt6Pas*' 2>/dev/null | head -3 || echo "Qt6Pas headers check") && \
               echo "Qt6 system libraries:" && \
-              (ldconfig -p | grep -i qt6 | head -3 || echo "Qt6 system libs check") && \
-              echo "Qt6Pas linkage check:" && \
-              (ldd /usr/lib/aarch64-linux-gnu/libQt6Pas.so | head -5 || echo "Qt6Pas linkage check completed")
+              (ldconfig -p | grep -i qt6 | head -3 || echo "Qt6 system libs check")
           
           WORKDIR /workspace
           EOF
@@ -259,7 +265,7 @@ jobs:
             **Platform**: Linux
             
             Built using QEMU emulation with Qt 6.2.10+ and matching Qt6Pas libraries.
-            Version-matched Qt6 components to eliminate symbol conflicts.
+            Uses correct ARM64 package repositories (ports.ubuntu.com).
           prerelease: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
