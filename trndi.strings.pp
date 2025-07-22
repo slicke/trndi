@@ -100,7 +100,7 @@ sDataTypeErr  = 'Datatype %s was not expected, expected in function %s';
 sDataTypeErrPos = 'Datatype %s was not expected, expected in function %s, parameter %d';
 sDataTypeErrFunc = 'Datatype "%s" was not expected, in function "%s". Expected "%s"';
 
-sRSSI = 'RSSI: %d';
+sRSSI = 'RSSI (Signal Strength): %d%%';
 sNoise = 'Noise: %d';
 sDevice = 'Device: %s';
 

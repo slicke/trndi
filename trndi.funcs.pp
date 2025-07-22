@@ -20,7 +20,9 @@ procedure PaintLbl(Sender: TLabel; OutlineWidth: integer = 1; OutlineColor: TCol
 procedure LogMessage(const Msg: string);
 procedure SortReadingsDescending(var Readings: array of BGReading);
 procedure SetPointHeight(L: TLabel; Value: Single; clientHeight: integer);
-function GetNewerVersionName(const JsonResponse: string; IncludePrerelease: Boolean = False): string;
+function HasNewerRelease(const JsonResponse: string;
+                         out ReleaseName: string;
+                         IncludePrerelease: Boolean = False): Boolean;
 function ParseCompilerDate: TDateTime;
 function GetNewerVersionURL(const JsonResponse: string;
                             IncludePrerelease: Boolean = False;
@@ -38,7 +40,7 @@ BG_REFRESH = 300000; // 5 min refresh
 DOT_GRAPH =  '•';
 DOT_FRESH = '☉';
 
-APP_BUILD_DATE = '2024/06/01'; // {$I %DATE%}; // Returns "2025/07/21"
+APP_BUILD_DATE = {$I %DATE%}; // Returns "2025/07/21"
 APP_BUILD_TIME = {$I %TIME%}; // Returns "14:30:25"
 
 var
@@ -256,8 +258,9 @@ begin
   Result := EncodeDateTime(Year, Month, Day, Hour, Min, Sec, 0);
 end;
 
-function GetNewerVersionName(const JsonResponse: string;
-                             IncludePrerelease: Boolean = False): string;
+function HasNewerRelease(const JsonResponse: string;
+                         out ReleaseName: string;
+                         IncludePrerelease: Boolean = False): Boolean;
 var
   JsonData: TJSONData;
   JsonObj: TJSONObject;
@@ -268,82 +271,75 @@ var
   i: Integer;
   IsPrerelease: Boolean;
 begin
-  Result := ''; // Empty if no newer version
+  Result := False;
+  ReleaseName := '';
   JsonData := nil;
 
   try
-    // Use parsed compile-time date/time
     BuildDate := ParseCompilerDate;
-
-    // Parse JSON
     JsonData := GetJSON(JsonResponse);
 
-    // Handle both single release object and array of releases
     if JsonData is TJSONArray then
     begin
-      // Array of releases (from /releases endpoint)
       JsonArray := TJSONArray(JsonData);
-
       for i := 0 to JsonArray.Count - 1 do
       begin
         JsonObj := TJSONObject(JsonArray[i]);
         IsPrerelease := JsonObj.Get('prerelease', False);
-
-        // Skip prereleases if not wanted
         if not IncludePrerelease and IsPrerelease then
           Continue;
 
         ReleaseDateStr := JsonObj.Get('published_at', '');
         if Length(ReleaseDateStr) >= 19 then
         begin
-          // Parse date and compare
           Year := StrToInt(Copy(ReleaseDateStr, 1, 4));
           Month := StrToInt(Copy(ReleaseDateStr, 6, 2));
           Day := StrToInt(Copy(ReleaseDateStr, 9, 2));
           Hour := StrToInt(Copy(ReleaseDateStr, 12, 2));
           Min := StrToInt(Copy(ReleaseDateStr, 15, 2));
           Sec := StrToInt(Copy(ReleaseDateStr, 18, 2));
-
           ReleaseDate := EncodeDateTime(Year, Month, Day, Hour, Min, Sec, 0);
 
           if ReleaseDate > BuildDate then
           begin
-            Result := JsonObj.Get('name', JsonObj.Get('tag_name', ''));
-            Exit; // Found newer version, return it
+            ReleaseName := JsonObj.Get('name', JsonObj.Get('tag_name', ''));
+            Result := True;
+            Exit;
           end;
         end;
       end;
     end
     else if JsonData is TJSONObject then
     begin
-      // Single release object (from /releases/latest endpoint)
       JsonObj := TJSONObject(JsonData);
       ReleaseDateStr := JsonObj.Get('published_at', '');
-
       if Length(ReleaseDateStr) >= 19 then
       begin
-        // Parse ISO date
         Year := StrToInt(Copy(ReleaseDateStr, 1, 4));
         Month := StrToInt(Copy(ReleaseDateStr, 6, 2));
         Day := StrToInt(Copy(ReleaseDateStr, 9, 2));
         Hour := StrToInt(Copy(ReleaseDateStr, 12, 2));
         Min := StrToInt(Copy(ReleaseDateStr, 15, 2));
         Sec := StrToInt(Copy(ReleaseDateStr, 18, 2));
-
         ReleaseDate := EncodeDateTime(Year, Month, Day, Hour, Min, Sec, 0);
 
         if ReleaseDate > BuildDate then
-          Result := JsonObj.Get('name', JsonObj.Get('tag_name', ''));
+        begin
+          ReleaseName := JsonObj.Get('name', JsonObj.Get('tag_name', ''));
+          Result := True;
+        end;
       end;
     end;
 
   except
-    Result := ''; // On any error, return empty
+    Result := False;
+    ReleaseName := '';
   end;
 
   if Assigned(JsonData) then
     JsonData.Free;
 end;
+
 function GetNewerVersionURL(const JsonResponse: string;
                                   IncludePrerelease: Boolean = False;
                                   Platform: string = ''): string;
