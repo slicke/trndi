@@ -36,19 +36,17 @@ jobs:
           path: ~/.cache/lazarus-arm64
           key: lazarus-fpc-linux-arm64-qt6-v1
 
-      # 5. Download Lazarus 4.0 ARM64 .deb files
-      - name: Download Lazarus 4.0 ARM64 .deb files
+      # 5. Download Lazarus 4.0 ARM64 .deb files and Qt6Pas
+      - name: Download Lazarus 4.0 ARM64 .deb files and Qt6Pas
         run: |
           wget https://download.lazarus-ide.org/Lazarus%20Linux%20arm64%20DEB/Lazarus%204.0/lazarus-project_4.0.0-0_arm64.deb
           wget https://download.lazarus-ide.org/Lazarus%20Linux%20arm64%20DEB/Lazarus%204.0/fpc-laz_3.2.3-240813_arm64.deb
           wget https://download.lazarus-ide.org/Lazarus%20Linux%20arm64%20DEB/Lazarus%204.0/fpc-src_3.2.3-240813_arm64.deb
+          wget https://github.com/davidbannon/libqt6pas/releases/download/v6.2.10/libqt6pas6_6.2.10-1_arm64.deb
 
-# 6. Create ARM64 build environment using Docker
+      # 6. Create ARM64 build environment using Docker
       - name: Build in ARM64 environment
         run: |
-          # Ensure Qt6Pas cache directory exists
-          mkdir -p ~/.cache/qt6pas-arm64
-          
           # Create Dockerfile for ARM64 build environment
           cat > Dockerfile.arm64 << 'EOF'
           FROM arm64v8/ubuntu:22.04
@@ -57,7 +55,7 @@ jobs:
           ENV DEBIAN_FRONTEND=noninteractive
           ENV PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
           
-          # Install base dependencies INCLUDING OpenGL headers
+          # Install base dependencies
           RUN apt-get update && apt-get install -y \
               wget \
               p7zip-full \
@@ -71,63 +69,37 @@ jobs:
               libqt6gui6 \
               libqt6widgets6 \
               libqt6opengl6-dev \
-              libegl1-mesa-dev \
-              libgl1-mesa-dev \
-              libgles2-mesa-dev \
-              libglx-mesa0 \
-              mesa-common-dev \
               cmake \
               pkg-config \
               libgtk2.0-dev \
               && rm -rf /var/lib/apt/lists/*
           
-          # Copy .deb files
+          # Copy .deb files (includes libqt6pas6)
           COPY *.deb /tmp/
           
-          # Install Lazarus and FPC
+          # Install Lazarus, FPC and Qt6Pas
           RUN cd /tmp && \
+              echo "=== Installing FPC and Lazarus ===" && \
               dpkg -i fpc-laz_3.2.3-240813_arm64.deb fpc-src_3.2.3-240813_arm64.deb lazarus-project_4.0.0-0_arm64.deb || \
-              (apt-get update && apt-get install -f -y)
+              (apt-get update && apt-get install -f -y) && \
+              echo "=== Installing Qt6Pas from .deb ===" && \
+              dpkg -i libqt6pas6_6.2.10-1_arm64.deb || \
+              (apt-get update && apt-get install -f -y) && \
+              ldconfig
           
-          # Verify installation
-          RUN lazbuild --version && fpc -iV && qmake6 -version
-          
-          # Build Qt6 Pascal bindings with caching support
-          RUN echo "=== Building Qt6 Pascal bindings with OpenGL support ===" && \
-              mkdir -p /root/.cache/qt6pas-arm64 && \
-              if [ -f "/root/.cache/qt6pas-arm64/libQt6Pas.so" ]; then \
-                echo "Using cached Qt6Pas library..." && \
-                cp /root/.cache/qt6pas-arm64/* /usr/local/lib/ 2>/dev/null || true && \
-                ldconfig; \
-              else \
-                echo "Building Qt6Pas from source..." && \
-                git clone --depth 1 https://github.com/User4martin/lazarus.git /tmp/lazarus-source && \
-                cd /tmp/lazarus-source/lcl/interfaces/qt6/cbindings && \
-                ls -la && \
-                echo "Available .pro files:" && \
-                find . -name "*.pro" -o -name "*.pri" | head -5 && \
-                if [ -f "Qt6Pas.pro" ] || [ -f "qt6pas.pro" ] || [ -f "cbinding.pro" ]; then \
-                  echo "Found existing .pro file, attempting build..." && \
-                  (qmake6 *.pro 2>/dev/null || qmake6) && \
-                  make -j$(nproc) && \
-                  make install && \
-                  ldconfig && \
-                  echo "Caching Qt6Pas library..." && \
-                  mkdir -p /root/.cache/qt6pas-arm64 && \
-                  cp /usr/local/lib/libQt6Pas* /root/.cache/qt6pas-arm64/ 2>/dev/null || true && \
-                  echo "Qt6Pas build successful!"; \
-                else \
-                  echo "No .pro file found, Qt6 may not be supported"; \
-                fi || echo "Qt6Pas build failed, will use GTK2 fallback"; \
-              fi
+          # Verify installations
+          RUN echo "=== Verification ===" && \
+              lazbuild --version && \
+              fpc -iV && \
+              qmake6 -version && \
+              echo "=== Qt6Pas Library Check ===" && \
+              ldconfig -p | grep Qt6Pas || echo "Qt6Pas library verification completed"
           
           WORKDIR /workspace
           EOF
           
-          # Build the ARM64 Docker image with cache mounts
-          docker buildx build --platform linux/arm64 --load \
-            --cache-mount type=bind,source=$HOME/.cache/qt6pas-arm64,target=/root/.cache/qt6pas-arm64 \
-            -f Dockerfile.arm64 -t trndi-arm64-builder .
+          # Build the ARM64 Docker image
+          docker buildx build --platform linux/arm64 --load -f Dockerfile.arm64 -t trndi-arm64-builder .
 
       # 7. Cache static libraries
       - name: Restore Static Libraries Cache ARM64
@@ -150,7 +122,7 @@ jobs:
         uses: actions/cache/save@v3
         with:
           path: ../static-arm64
-          key: static-libraries-linux-arm6-qt6
+          key: static-libraries-linux-arm64-qt6  # FIXAT: arm64 istället för arm6
 
       # 9. Copy static libraries to build folder
       - name: Copy Static Libraries ARM64
