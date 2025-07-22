@@ -27,18 +27,22 @@ jobs:
           path: ~/.cache/lazarus
           key: lazarus-fpc-linux-qt6-v1
 
-      # 3a. Add Lazarus PPA
-      - name: Add Lazarus repo
+      - name: Download Lazarus 4.0 .deb files
         run: |
-          sudo add-apt-repository ppa:alrieckert/lazarus
-          sudo apt-get update
+           wget https://download.lazarus-ide.org/lazarus/releases/Lazarus%204.0/lazarus-project_4.0.0-0_amd64.deb
+           wget https://download.lazarus-ide.org/lazarus/releases/Lazarus%204.0/fpc-lazarus_3.2.2-210_amd64.deb
+           wget https://download.lazarus-ide.org/lazarus/releases/Lazarus%204.0/fpc-src_3.2.2-210_amd64.deb
 
-      # 3b. Install dependencies (FPC, Lazarus, Qt6)
-      - name: Install Dependencies
+      - name: Install dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y fpc fpc-source lazarus qt6-base-dev qt6-tools-dev qt6-tools-dev-tools libqt6pas-dev p7zip-full
+           sudo apt-get update
+           sudo apt-get install -y qt6-base-dev qt6-tools-dev qt6-tools-dev-tools libqt6pas-dev p7zip-full
 
+      - name: Install Lazarus 4.0 and FPC via .deb
+        run: |
+           sudo apt-get install -y ./fpc-lazarus_3.2.2-210_amd64.deb ./fpc-src_3.2.2-210_amd64.deb ./lazarus-project_4.0.0-0_amd64.deb
+           sudo apt-get install -f -y
+           
       # 4. Verify Lazarus Installation
       - name: Verify Lazarus Installation
         run: |
