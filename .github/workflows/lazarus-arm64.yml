@@ -179,9 +179,9 @@ jobs:
               echo '' && \
               
               echo '=== Building Trndi.lpr (trying Qt6 first) ===' && \
-              lazbuild --widgetset=qt6 --build-mode='Extensions (Release)' --cpu=aarch64 --os=linux Trndi.lpr || {
+              lazbuild --widgetset=qt6 --build-mode='No Ext (Release)' --cpu=aarch64 --os=linux Trndi.lpr || {
                 echo 'Qt6 build failed, using GTK2 fallback...' && \
-                lazbuild --widgetset=gtk2 --build-mode='Extensions (Release)' --cpu=aarch64 --os=linux Trndi.lpr
+                lazbuild --widgetset=gtk2 --build-mode='No Ext (Release)' --cpu=aarch64 --os=linux Trndi.lpr
               } && \
               
               echo '=== Verifying binary architecture ===' && \
