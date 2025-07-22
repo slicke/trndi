@@ -33,8 +33,10 @@ jobs:
             wget https://download.lazarus-ide.org/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.0/fpc-laz_3.2.2-210709_amd64.deb
             wget https://download.lazarus-ide.org/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.0/fpc-src_3.2.2-210709_amd64.deb
 
-      - name: Install dependencies
+      - name: Install base dependencies
         run: |
+            sudo apt-get update
+            wget -qO - https://download.qt.io/official_releases/qt/6.2/install.qs | sudo tee /etc/apt/sources.list.d/qt6.list
             sudo apt-get update
             sudo apt-get install -y qt6-base-dev qt6-tools-dev qt6-tools-dev-tools libqt6pas-dev p7zip-full
 
