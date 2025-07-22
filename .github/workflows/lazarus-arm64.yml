@@ -42,7 +42,9 @@ jobs:
           wget https://download.lazarus-ide.org/Lazarus%20Linux%20arm64%20DEB/Lazarus%204.0/lazarus-project_4.0.0-0_arm64.deb
           wget https://download.lazarus-ide.org/Lazarus%20Linux%20arm64%20DEB/Lazarus%204.0/fpc-laz_3.2.3-240813_arm64.deb
           wget https://download.lazarus-ide.org/Lazarus%20Linux%20arm64%20DEB/Lazarus%204.0/fpc-src_3.2.3-240813_arm64.deb
+          # Båda Qt6Pas paketen behövs - runtime och development
           wget https://github.com/davidbannon/libqt6pas/releases/download/v6.2.10/libqt6pas6_6.2.10-1_arm64.deb
+          wget https://github.com/davidbannon/libqt6pas/releases/download/v6.2.10/libqt6pas6-dev_6.2.10-1_arm64.deb
 
       # 6. Create ARM64 build environment using Docker
       - name: Build in ARM64 environment
@@ -79,12 +81,19 @@ jobs:
               (dpkg -i fpc-laz_3.2.3-240813_arm64.deb fpc-src_3.2.3-240813_arm64.deb lazarus-project_4.0.0-0_arm64.deb || true) && \
               apt-get update && apt-get install -f -y
           
-          # Install Qt6Pas carefully
+          # Install Qt6Pas runtime and development packages
           RUN cd /tmp && \
-              echo "=== Installing Qt6Pas ===" && \
+              echo "=== Installing Qt6Pas Runtime ===" && \
               (dpkg -i libqt6pas6_6.2.10-1_arm64.deb || true) && \
+              echo "=== Installing Qt6Pas Development ===" && \
+              (dpkg -i libqt6pas6-dev_6.2.10-1_arm64.deb || true) && \
+              echo "=== Fixing dependencies ===" && \
               apt-get update && apt-get install -f -y && \
-              (ldconfig || true)
+              (ldconfig || true) && \
+              echo "=== Qt6Pas verification ===" && \
+              (ls -la /usr/lib/aarch64-linux-gnu/*Qt6Pas* 2>/dev/null || true) && \
+              (ls -la /usr/include/*qt6pas* 2>/dev/null || true) && \
+              echo "Qt6Pas installation completed"
           
           # Simple verification without causing QEMU crashes
           RUN echo "=== Basic Verification ===" && \
@@ -159,11 +168,18 @@ jobs:
               echo 'QMake version:' && qmake6 -version && \
               echo '' && \
               
+              echo '=== Qt6Pas Development Files Check ===' && \
+              echo 'Qt6Pas libraries:' && \
+              (ls -la /usr/lib/aarch64-linux-gnu/*Qt6Pas* 2>/dev/null | head -3 || echo 'Qt6Pas libs not found') && \
+              echo 'Qt6Pas headers:' && \
+              (find /usr/include -name '*qt6pas*' 2>/dev/null | head -3 || echo 'Qt6Pas headers not found') && \
+              echo '' && \
+              
               echo '=== Building mORMot2 Package ===' && \
               lazbuild externals/mORMot2/packages/lazarus/mormot2.lpk && \
               echo '' && \
               
-              echo '=== Attempting Qt6 build ===' && \
+              echo '=== Attempting Qt6 build with development packages ===' && \
               lazbuild \
                 --widgetset=qt6 \
                 --build-mode='No Ext (Release)' \
@@ -237,7 +253,7 @@ jobs:
             **Platform**: Linux
             
             Built using QEMU emulation on GitHub Actions.
-            Simplified build process to avoid QEMU segmentation faults.
+            Includes both Qt6Pas runtime and development packages for proper Qt6 support.
           prerelease: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
