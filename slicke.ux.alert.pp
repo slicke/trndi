@@ -1146,6 +1146,7 @@ begin
     ContentWidth := Max(Max(Dialog.Canvas.TextWidth(TitleLabel.Caption), Dialog.Canvas.TextWidth(
       MessageLabel.Caption)), 300 (* Log size *)) + IconBox.Width + Padding * 5;
     log.Width := ContentWidth;
+    log.ScrollBars := ssAutoVertical;
     Dialog.Width := ContentWidth;
     Dialog.Height := round(Padding * 2.5) + MessageLabel.Top + MessageLabel.Height + p3.Height;
     // Set first (last?) button pos
