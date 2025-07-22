@@ -158,6 +158,7 @@ RS_REMOVE_ACC = 'Removed accounts are made inactive, and can be restored by addi
 RS_AUTO = 'Auto-detect';
 RS_UPTODATE = 'You are up to date';
 RS_NEWVER = 'Version %s is available, would you like to go to the downloads page?';
+RS_NEWVER_PRE = 'A new pre-release for %s is available, would you like to go to the downloads page?';
 RS_NEWVER_CAPTION = 'New version available';
 
 var 
@@ -498,11 +499,13 @@ procedure TfConf.Button3Click(Sender:TObject);
   end;
 var
   tn: TrndiNative;
-  res, r, rn, pl: string;
-  rok: boolean;
+  res, r, rn, pl, s: string;
+  rok, pre: boolean;
 begin
+  pre := cbCI.Checked;
+
   tn := TrndiNative.create('Trndi/'+GetProductVersion('2'));
-  if cbCI.Checked then begin
+  if pre then begin
     tn.getURL('https://api.github.com/repos/slicke/trndi/releases', res);
     rok := HasNewerRelease(res, rn, true);
     pl := GetCurrentPlatform;
@@ -518,9 +521,11 @@ begin
        r := GetNewerVersionURL(res);
 
     if not pl.isempty then
-     rn := pl + ' Test';
+      s := Format(RS_NEWVER_PRE, [pl])
+    else
+      s := Format(RS_NEWVER, [rn]);
 
-     if UXDialog(RS_NEWVER_CAPTION, Format(RS_NEWVER, [rn]), [mbYes, mbNo], mtInformation) = mrYes then
+     if UXDialog(RS_NEWVER_CAPTION, s, [mbYes, mbNo], mtInformation) = mrYes then
        OpenURL(r);
   end else
     ShowMessage(RS_UPTODATE);
