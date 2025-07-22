@@ -41,8 +41,8 @@ jobs:
       - name: Download Lazarus 4.0 ARM64 .deb files
         run: |
           wget https://download.lazarus-ide.org/Lazarus%20Linux%20arm64%20DEB/Lazarus%204.0/lazarus-project_4.0.0-0_arm64.deb
-          wget https://download.lazarus-ide.org/Lazarus%20Linux%20arm64%20DEB/Lazarus%204.0/fpc-laz_3.2.2-210709_arm64.deb
-          wget https://download.lazarus-ide.org/Lazarus%20Linux%20arm64%20DEB/Lazarus%204.0/fpc-src_3.2.2-210709_arm64.deb
+          wget https://download.lazarus-ide.org/Lazarus%20Linux%20arm64%20DEB/Lazarus%204.0/fpc-laz_3.2.3-240813_arm64.deb
+          wget https://download.lazarus-ide.org/Lazarus%20Linux%20arm64%20DEB/Lazarus%204.0/fpc-src_3.2.3-240813_arm64.deb
 
       # 6. Create ARM64 build environment using Docker
       - name: Build in ARM64 environment
