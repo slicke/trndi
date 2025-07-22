@@ -34,7 +34,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.cache/lazarus-arm64
-          key: lazarus-fpc-linux-arm64-qt6-v2
+          key: lazarus-fpc-linux-arm64-qt6-v3
 
       # 5. Download Lazarus 4.0 ARM64 .deb files and Qt6Pas
       - name: Download Lazarus 4.0 ARM64 .deb files and Qt6Pas
@@ -42,35 +42,46 @@ jobs:
           wget https://download.lazarus-ide.org/Lazarus%20Linux%20arm64%20DEB/Lazarus%204.0/lazarus-project_4.0.0-0_arm64.deb
           wget https://download.lazarus-ide.org/Lazarus%20Linux%20arm64%20DEB/Lazarus%204.0/fpc-laz_3.2.3-240813_arm64.deb
           wget https://download.lazarus-ide.org/Lazarus%20Linux%20arm64%20DEB/Lazarus%204.0/fpc-src_3.2.3-240813_arm64.deb
-          # Båda Qt6Pas paketen behövs - runtime och development
+          # Använd Qt6Pas 6.2.10 och matcha systemets Qt till samma version
           wget https://github.com/davidbannon/libqt6pas/releases/download/v6.2.10/libqt6pas6_6.2.10-1_arm64.deb
           wget https://github.com/davidbannon/libqt6pas/releases/download/v6.2.10/libqt6pas6-dev_6.2.10-1_arm64.deb
 
       # 6. Create ARM64 build environment using Docker
       - name: Build in ARM64 environment
         run: |
-          # Create simplified Dockerfile for ARM64 build environment
+          # Create Dockerfile with Qt 6.2.10+ for ARM64 build environment
           cat > Dockerfile.arm64 << 'EOF'
           FROM arm64v8/ubuntu:22.04
           
           # Set environment variables
           ENV DEBIAN_FRONTEND=noninteractive
           ENV PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+          ENV QT_SELECT=6
           
-          # Install base dependencies in stages to avoid QEMU issues
+          # Install base dependencies
           RUN apt-get update && apt-get install -y \
               wget p7zip-full build-essential git cmake pkg-config \
+              software-properties-common gpg-agent \
               && rm -rf /var/lib/apt/lists/*
           
-          # Install GUI libraries separately
+          # Add newer Qt6 repository for matching versions
+          RUN apt-get update && \
+              echo "deb http://archive.ubuntu.com/ubuntu jammy-updates main" >> /etc/apt/sources.list && \
+              echo "deb http://archive.ubuntu.com/ubuntu jammy-backports main" >> /etc/apt/sources.list && \
+              apt-get update
+          
+          # Install newer Qt6 packages to match Qt6Pas 6.2.10
           RUN apt-get update && apt-get install -y \
-              libgtk2.0-dev libgtk2.0-0 \
+              qt6-base-dev qt6-tools-dev qt6-tools-dev-tools \
+              qt6-qpa-plugins libqt6core6 libqt6gui6 libqt6widgets6 \
+              libqt6opengl6-dev libegl1-mesa-dev libgl1-mesa-dev \
+              libgles2-mesa-dev mesa-common-dev \
               && rm -rf /var/lib/apt/lists/*
           
-          # Install Qt6 with minimal packages to avoid QEMU crashes
-          RUN apt-get update && apt-get install -y \
-              qt6-base-dev qt6-tools-dev libqt6core6 libqt6gui6 libqt6widgets6 \
-              && rm -rf /var/lib/apt/lists/*
+          # Verify Qt version after installation
+          RUN echo "=== Qt6 Version Check ===" && \
+              qmake6 -version && \
+              pkg-config --modversion Qt6Core || echo "Qt6Core version check completed"
           
           # Copy .deb files
           COPY *.deb /tmp/
@@ -81,26 +92,29 @@ jobs:
               (dpkg -i fpc-laz_3.2.3-240813_arm64.deb fpc-src_3.2.3-240813_arm64.deb lazarus-project_4.0.0-0_arm64.deb || true) && \
               apt-get update && apt-get install -f -y
           
-          # Install Qt6Pas runtime and development packages
+          # Install Qt6Pas runtime and development packages (version 6.2.10)
           RUN cd /tmp && \
-              echo "=== Installing Qt6Pas Runtime ===" && \
+              echo "=== Installing Qt6Pas 6.2.10 Runtime ===" && \
               (dpkg -i libqt6pas6_6.2.10-1_arm64.deb || true) && \
-              echo "=== Installing Qt6Pas Development ===" && \
+              echo "=== Installing Qt6Pas 6.2.10 Development ===" && \
               (dpkg -i libqt6pas6-dev_6.2.10-1_arm64.deb || true) && \
-              echo "=== Fixing dependencies ===" && \
+              echo "=== Fixing Qt6Pas dependencies ===" && \
               apt-get update && apt-get install -f -y && \
-              (ldconfig || true) && \
-              echo "=== Qt6Pas verification ===" && \
-              (ls -la /usr/lib/aarch64-linux-gnu/*Qt6Pas* 2>/dev/null || true) && \
-              (ls -la /usr/include/*qt6pas* 2>/dev/null || true) && \
-              echo "Qt6Pas installation completed"
+              (ldconfig || true)
           
-          # Simple verification without causing QEMU crashes
-          RUN echo "=== Basic Verification ===" && \
-              which lazbuild && \
-              which fpc && \
-              which qmake6 && \
-              echo "Verification completed"
+          # Comprehensive verification of Qt6 and Qt6Pas
+          RUN echo "=== Final Qt6 and Qt6Pas Verification ===" && \
+              echo "Lazbuild:" && lazbuild --version && \
+              echo "FPC:" && fpc -iV && \
+              echo "QMake6:" && qmake6 -version && \
+              echo "Qt6Pas libraries:" && \
+              (ls -la /usr/lib/aarch64-linux-gnu/*Qt6Pas* 2>/dev/null || echo "Qt6Pas libs location check") && \
+              echo "Qt6Pas headers:" && \
+              (find /usr/include -name '*qt6pas*' -o -name '*Qt6Pas*' 2>/dev/null | head -3 || echo "Qt6Pas headers check") && \
+              echo "Qt6 system libraries:" && \
+              (ldconfig -p | grep -i qt6 | head -3 || echo "Qt6 system libs check") && \
+              echo "Qt6Pas linkage check:" && \
+              (ldd /usr/lib/aarch64-linux-gnu/libQt6Pas.so | head -5 || echo "Qt6Pas linkage check completed")
           
           WORKDIR /workspace
           EOF
@@ -153,56 +167,49 @@ jobs:
           mkdir -p externals
           git clone https://github.com/synopse/mORMot2.git externals/mORMot2
 
-      # 12. Build inside ARM64 container - simplified to avoid QEMU crashes
-      - name: Build Trndi.lpr in ARM64 environment
+      # 12. Build inside ARM64 container - Qt6 only
+      - name: Build Trndi.lpr in ARM64 environment (Qt6 only)
         run: |
           docker run --rm --platform linux/arm64 \
             -v $(pwd):/workspace \
             -w /workspace \
             trndi-arm64-builder \
             bash -c "
-              echo '=== ARM64 Build Environment Info ===' && \
+              echo '=== ARM64 Qt6 Build Environment ===' && \
               uname -m && \
               echo 'FPC version:' && fpc -iV && \
               echo 'Lazbuild version:' && lazbuild --version && \
-              echo 'QMake version:' && qmake6 -version && \
+              echo 'QMake6 version:' && qmake6 -version && \
               echo '' && \
               
-              echo '=== Qt6Pas Development Files Check ===' && \
-              echo 'Qt6Pas libraries:' && \
-              (ls -la /usr/lib/aarch64-linux-gnu/*Qt6Pas* 2>/dev/null | head -3 || echo 'Qt6Pas libs not found') && \
-              echo 'Qt6Pas headers:' && \
-              (find /usr/include -name '*qt6pas*' 2>/dev/null | head -3 || echo 'Qt6Pas headers not found') && \
+              echo '=== Pre-build Qt6 Environment Verification ===' && \
+              echo 'Qt6 system version:' && \
+              (pkg-config --modversion Qt6Core || echo 'Qt6Core version not available via pkg-config') && \
+              echo 'Qt6Pas library linkage:' && \
+              (ldd /usr/lib/aarch64-linux-gnu/libQt6Pas.so | grep -i qt6 | head -3 || echo 'Qt6Pas linkage check') && \
               echo '' && \
               
               echo '=== Building mORMot2 Package ===' && \
               lazbuild externals/mORMot2/packages/lazarus/mormot2.lpk && \
               echo '' && \
               
-              echo '=== Attempting Qt6 build with development packages ===' && \
+              echo '=== Building Trndi.lpr with Qt6 (matching versions) ===' && \
+              export QT_SELECT=6 && \
+              export LD_LIBRARY_PATH=\"/usr/lib/aarch64-linux-gnu:/usr/local/lib:\$LD_LIBRARY_PATH\" && \
               lazbuild \
+                --verbose \
                 --widgetset=qt6 \
                 --build-mode='No Ext (Release)' \
                 --cpu=aarch64 \
                 --os=linux \
-                Trndi.lpr 2>&1 && \
-              echo 'Qt6 build completed successfully!' && \
-              WIDGETSET='Qt6' || {
-                echo 'Qt6 build failed, using GTK2 fallback...' && \
-                lazbuild \
-                  --widgetset=gtk2 \
-                  --build-mode='No Ext (Release)' \
-                  --cpu=aarch64 \
-                  --os=linux \
-                  Trndi.lpr && \
-                echo 'GTK2 build completed successfully!' && \
-                WIDGETSET='GTK2'
-              } && \
+                Trndi.lpr && \
+              echo 'Qt6 build SUCCESSFUL!' && \
               
-              echo '=== Build Results ===' && \
-              echo \"Widgetset used: \$WIDGETSET\" && \
-              ls -lh Trndi && \
-              file Trndi
+              echo '=== Build Verification ===' && \
+              echo 'Binary info:' && file Trndi && \
+              echo 'Binary size:' && ls -lh Trndi && \
+              echo 'Qt6 linkage verification:' && \
+              (ldd Trndi | grep -i qt6 | head -5 || echo 'Qt6 linkage not detected in ldd')
             "
 
       # 13. Create artifacts directory
@@ -212,8 +219,7 @@ jobs:
           if [ -f "Trndi" ]; then
             cp Trndi artifacts-arm64/
           else
-            echo "Trndi binary not found, searching..."
-            find . -name "Trndi" -type f -executable 2>/dev/null | head -5
+            echo "Trndi binary not found!"
             exit 1
           fi
 
@@ -221,11 +227,11 @@ jobs:
       - name: Verify ARM64 binary
         run: |
           if [ -f "artifacts-arm64/Trndi" ]; then
-            echo "=== ARM64 Binary Information ==="
+            echo "=== ARM64 Qt6 Binary Information ==="
             file artifacts-arm64/Trndi
             ls -lh artifacts-arm64/Trndi
-            echo "=== Widget Set Detection ==="
-            strings artifacts-arm64/Trndi | grep -E "(qt|gtk|Qt6|GTK)" | head -5 || echo "Widget set not detected in strings"
+            echo "=== Qt6 Widget Set Verification ==="
+            strings artifacts-arm64/Trndi | grep -E "(Qt6|qt6)" | head -5 || echo "Qt6 strings not detected"
           else
             echo "ARM64 binary not found!"
             exit 1
@@ -249,11 +255,11 @@ jobs:
             Linux ARM64 developer build from commit ${{ github.sha }} (Qt6 ARM64).
             
             **Architecture**: ARM64 (aarch64)
-            **Widgetset**: Qt6 (with GTK2 fallback)
+            **Widgetset**: Qt6 Only
             **Platform**: Linux
             
-            Built using QEMU emulation on GitHub Actions.
-            Includes both Qt6Pas runtime and development packages for proper Qt6 support.
+            Built using QEMU emulation with Qt 6.2.10+ and matching Qt6Pas libraries.
+            Version-matched Qt6 components to eliminate symbol conflicts.
           prerelease: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
