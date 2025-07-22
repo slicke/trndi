@@ -93,28 +93,25 @@ jobs:
         run: |
           lazbuild --widgetset=qt6 --build-mode="Extensions (Release)" Trndi.lpr
 
-      # 12. Create artifact directory and move binary
       - name: Create artifacts directory
         run: |
           mkdir -p artifacts
           cp Trndi artifacts/
 
-      # 13. Upload artifact
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: trndi-linux-qt6
-          path: artifacts/Trndi
+      - name: Package artifact
+        run: |
+          cd artifacts
+          zip ../Trndi-developer-build-linux-qt6-x64.zip Trndi
+          cd ..
 
-      # 14. Create GitHub Release
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          files: artifacts/Trndi
+          files: Trndi-developer-build-linux-qt6-x64.zip
           tag_name: v${{ github.run_number }}-linux
-          name: Linux Qt6 Build ${{ github.run_number }}
+          name: Linux Qt6 x64 Build ${{ github.run_number }}
           body: |
-            Linux Qt6 developer build from commit ${{ github.sha }}.
+            Linux developer build from commit ${{ github.sha }} (Qt6 x64).
           prerelease: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
