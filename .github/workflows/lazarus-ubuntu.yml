@@ -33,12 +33,42 @@ jobs:
             wget https://download.lazarus-ide.org/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.0/fpc-laz_3.2.2-210709_amd64.deb
             wget https://download.lazarus-ide.org/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.0/fpc-src_3.2.2-210709_amd64.deb
 
-      - name: Install base dependencies
+      - name: Install Qt6 and build libqt6pas
         run: |
             sudo apt-get update
-            wget -qO - https://download.qt.io/official_releases/qt/6.2/install.qs | sudo tee /etc/apt/sources.list.d/qt6.list
-            sudo apt-get update
-            sudo apt-get install -y qt6-base-dev qt6-tools-dev qt6-tools-dev-tools libqt6pas-dev p7zip-full
+            sudo apt-get install -y \
+            p7zip-full \
+            build-essential \
+            qt6-base-dev \
+            qt6-tools-dev \
+            qt6-tools-dev-tools \
+            qt6-qpa-plugins \
+            libqt6core6 \
+            libqt6gui6 \
+            libqt6widgets6 \
+            git \
+            cmake
+
+            # Kontrollera Qt6 installation
+            qmake6 -version
+            
+            # Klona och bygg Qt6Pas (Pascal bindings)
+            echo "=== Building Qt6 Pascal bindings ==="
+            git clone https://github.com/davidbannon/libqt6pas.git /tmp/libqt6pas
+            cd /tmp/libqt6pas
+            
+            # Bygg biblioteket
+            qmake6 Qt6Pas.pro
+            make -j$(nproc)
+            
+            # Installera biblioteket
+            sudo make install
+            sudo ldconfig
+            
+            # Verifiera installation
+            ls -la /usr/local/lib/libQt6Pas* || ls -la /usr/lib/libQt6Pas*
+    
+            cd $GITHUB_WORKSPACE
 
       - name: Install Lazarus 4.0 and FPC via .deb
         run: |
