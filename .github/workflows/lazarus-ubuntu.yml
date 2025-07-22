@@ -27,7 +27,13 @@ jobs:
           path: ~/.cache/lazarus
           key: lazarus-fpc-linux-qt6-v1
 
-      # 3. Install dependencies (FPC, Lazarus, Qt6)
+      # 3a. Add Lazarus PPA
+      - name: Add Lazarus repo
+        run: |
+          sudo add-apt-repository ppa:alrieckert/lazarus
+          sudo apt-get update
+
+      # 3b. Install dependencies (FPC, Lazarus, Qt6)
       - name: Install Dependencies
         run: |
           sudo apt-get update
