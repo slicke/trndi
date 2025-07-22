@@ -961,6 +961,11 @@ msgstr ""
 msgid "New version available"
 msgstr ""
 
+#: uconf.rs_newver_pre
+#, object-pascal-format
+msgid "A new pre-release for %s is available, would you like to go to the downloads page?"
+msgstr ""
+
 #: uconf.rs_override_help
 msgid ""
 "Setting values here allows you to define your own high and low blood sugar limits in Trndi.\n"

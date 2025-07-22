@@ -8,6 +8,7 @@ object fConf: TfConf
   ClientHeight = 395
   ClientWidth = 416
   Position = poDesktopCenter
+  LCLVersion = '4.0.0.4'
   OnCreate = FormCreate
   OnResize = FormResize
   object pcMain: TPageControl
@@ -102,8 +103,8 @@ object fConf: TfConf
         ChildSizing.ShrinkVertical = crsScaleChilds
         ChildSizing.Layout = cclLeftToRightThenTopToBottom
         ChildSizing.ControlsPerLine = 2
-        ClientHeight = 25
-        ClientWidth = 384
+        ClientHeight = 27
+        ClientWidth = 370
         Columns = 2
         ItemIndex = 0
         Items.Strings = (
@@ -10544,8 +10545,8 @@ object fConf: TfConf
         Align = alBottom
         BorderSpacing.Around = 10
         Caption = 'System Features'
-        ClientHeight = 85
-        ClientWidth = 384
+        ClientHeight = 87
+        ClientWidth = 370
         TabOrder = 2
         object cbTouch: TCheckBox
           Left = 8
@@ -10596,8 +10597,8 @@ object fConf: TfConf
         Align = alTop
         BorderSpacing.Around = 10
         Caption = 'Override High / Low limits'
-        ClientHeight = 68
-        ClientWidth = 384
+        ClientHeight = 70
+        ClientWidth = 370
         ParentBackground = False
         TabOrder = 0
         object cbCust: TCheckBox
@@ -10746,8 +10747,8 @@ object fConf: TfConf
         Align = alTop
         BorderSpacing.Around = 10
         Caption = 'Get more languages'
-        ClientHeight = 60
-        ClientWidth = 384
+        ClientHeight = 62
+        ClientWidth = 370
         ParentBackground = False
         TabOrder = 4
         object Panel6: TPanel
@@ -10823,8 +10824,8 @@ object fConf: TfConf
         Align = alBottom
         BorderSpacing.Around = 10
         Caption = 'Account Settings'
-        ClientHeight = 81
-        ClientWidth = 384
+        ClientHeight = 83
+        ClientWidth = 370
         Enabled = False
         TabOrder = 1
         object cbUser: TColorButton
