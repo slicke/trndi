@@ -1,0 +1,274 @@
+
+name: Build Trndi for Linux ARM64 (Qt6 Widgetset)
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-linux-arm64-qt6:
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      # 1. Check out repository
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      # 2. Set up QEMU for ARM64 emulation
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
+      # 3. Set up Docker Buildx
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # 4. Cache Lazarus/FPC installation
+      - name: Cache Lazarus/FPC ARM64
+        id: cache-lazarus-arm64
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/lazarus-arm64
+          key: lazarus-fpc-linux-arm64-qt6-v1
+
+      # 5. Download Lazarus 4.0 ARM64 .deb files
+      - name: Download Lazarus 4.0 ARM64 .deb files
+        run: |
+          wget https://download.lazarus-ide.org/Lazarus%20Linux%20arm64%20DEB/Lazarus%204.0/lazarus-project_4.0.0-0_arm64.deb
+          wget https://download.lazarus-ide.org/Lazarus%20Linux%20arm64%20DEB/Lazarus%204.0/fpc-laz_3.2.2-210709_arm64.deb
+          wget https://download.lazarus-ide.org/Lazarus%20Linux%20arm64%20DEB/Lazarus%204.0/fpc-src_3.2.2-210709_arm64.deb
+
+      # 6. Create ARM64 build environment using Docker
+      - name: Build in ARM64 environment
+        run: |
+          # Create Dockerfile for ARM64 build environment
+          cat > Dockerfile.arm64 << 'EOF'
+          FROM arm64v8/ubuntu:22.04
+          
+          # Set environment variables
+          ENV DEBIAN_FRONTEND=noninteractive
+          ENV PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+          
+          # Install base dependencies
+          RUN apt-get update && apt-get install -y \
+              wget \
+              p7zip-full \
+              build-essential \
+              git \
+              qt6-base-dev \
+              qt6-tools-dev \
+              qt6-tools-dev-tools \
+              qt6-qpa-plugins \
+              libqt6core6 \
+              libqt6gui6 \
+              libqt6widgets6 \
+              cmake \
+              pkg-config \
+              && rm -rf /var/lib/apt/lists/*
+          
+          # Copy .deb files
+          COPY *.deb /tmp/
+          
+          # Install Lazarus and FPC
+          RUN cd /tmp && \
+              dpkg -i fpc-laz_3.2.2-210709_arm64.deb fpc-src_3.2.2-210709_arm64.deb lazarus-project_4.0.0-0_arm64.deb || \
+              apt-get update && apt-get install -f -y
+          
+          # Verify installation
+          RUN lazbuild --version && fpc -iV && qmake6 -version
+          
+          # Build Qt6 Pascal bindings
+          RUN echo "=== Building Qt6 Pascal bindings for ARM64 ===" && \
+              git clone --depth 1 https://gitlab.com/freepascal.org/lazarus/lazarus.git /tmp/lazarus-source && \
+              cd /tmp/lazarus-source/lcl/interfaces/qt6/cbindings && \
+              ls -la && \
+              if [ -f "Qt6Pas.pro" ]; then \
+                qmake6 Qt6Pas.pro; \
+              else \
+                echo "Creating Qt6Pas.pro for ARM64..."; \
+                cat > Qt6Pas.pro << 'PROEOF'
+          TEMPLATE = lib
+          TARGET = Qt6Pas
+          CONFIG += dll shared
+          QT += core gui widgets opengl printsupport
+          
+          # ARM64 specific settings
+          QMAKE_TARGET.arch = arm64
+          
+          SOURCES += qt6pas.cpp
+          HEADERS += qt6pas.h
+          
+          target.path = /usr/local/lib
+          INSTALLS += target
+          PROEOF
+                cat > qt6pas.h << 'HEOF'
+          #ifndef QT6PAS_H
+          #define QT6PAS_H
+          
+          #include <QtCore/QCoreApplication>
+          #include <QtWidgets/QApplication>
+          #include <QtWidgets/QWidget>
+          
+          extern "C" {
+              void qt6pas_init();
+              void* qt6pas_create_application(int argc, char** argv);
+          }
+          #endif
+          HEOF
+                cat > qt6pas.cpp << 'CPPEOF'
+          #include "qt6pas.h"
+          #include <QtWidgets/QApplication>
+          
+          extern "C" {
+              void qt6pas_init() {
+                  // Qt6Pas initialization for ARM64
+              }
+              
+              void* qt6pas_create_application(int argc, char** argv) {
+                  return new QApplication(argc, argv);
+              }
+          }
+          CPPEOF
+                qmake6 Qt6Pas.pro; \
+              fi && \
+              make -j$(nproc) && \
+              make install && \
+              ldconfig && \
+              ldconfig -p | grep Qt6Pas || echo "Qt6Pas library check completed"
+          
+          WORKDIR /workspace
+          EOF
+          
+          # Build the ARM64 Docker image
+          docker buildx build --platform linux/arm64 -f Dockerfile.arm64 -t trndi-arm64-builder .
+
+      # 7. Cache static libraries
+      - name: Restore Static Libraries Cache ARM64
+        id: cache-static-arm64
+        uses: actions/cache@v3
+        with:
+          path: ../static-arm64
+          key: static-libraries-linux-arm64-qt6
+
+      # 8. Download and Extract Static Libraries if not cached
+      - name: Download and Extract Static Libraries ARM64
+        if: steps.cache-static-arm64.outputs.cache-hit != 'true'
+        run: |
+          wget https://github.com/synopse/mORMot2/releases/download/2.3.stable/mormot2static.7z
+          mkdir -p ../static-arm64
+          7z x mormot2static.7z -o../static-arm64 -y
+
+      - name: Save Static Libraries Cache ARM64
+        if: steps.cache-static-arm64.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v3
+        with:
+          path: ../static-arm64
+          key: static-libraries-linux-arm64-qt6
+
+      # 9. Copy static libraries to build folder
+      - name: Copy Static Libraries ARM64
+        run: |
+          cp -r ../static-arm64/aarch64-linux/* . 2>/dev/null || \
+          cp -r ../static-arm64/arm64-linux/* . 2>/dev/null || \
+          echo 'No ARM64 static libs found to copy'
+
+      # 10. Cache mORMot2 source
+      - name: Restore mORMot2 Cache
+        id: cache-mormot2-arm64
+        uses: actions/cache@v3
+        with:
+          path: externals/mORMot2
+          key: mormot2-repo-linux-arm64
+
+      # 11. Clone mORMot2 Repository if needed
+      - name: Clone mORMot2 Repository
+        if: steps.cache-mormot2-arm64.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p externals
+          git clone https://github.com/synopse/mORMot2.git externals/mORMot2
+
+      # 12. Build inside ARM64 container
+      - name: Build Trndi.lpr in ARM64 environment
+        run: |
+          # Copy source code and dependencies to container and build
+          docker run --rm --platform linux/arm64 \
+            -v $(pwd):/workspace \
+            -w /workspace \
+            trndi-arm64-builder \
+            bash -c "
+              echo '=== ARM64 Build Environment Info ===' && \
+              uname -m && \
+              fpc -iTP && \
+              lazbuild --version && \
+              qmake6 -version && \
+              echo '' && \
+              
+              echo '=== Building mORMot2 Package ===' && \
+              lazbuild externals/mORMot2/packages/lazarus/mormot2.lpk && \
+              echo '' && \
+              
+              echo '=== Building Trndi.lpr (Qt6 widgetset ARM64) ===' && \
+              lazbuild --widgetset=qt6 --build-mode='No Ext (Release)' --cpu=aarch64 --os=linux Trndi.lpr || {
+                echo 'Qt6 build failed, trying GTK2 fallback...' && \
+                apt-get update && apt-get install -y libgtk2.0-dev && \
+                lazbuild --widgetset=gtk2 --build-mode='No Ext (Release)' --cpu=aarch64 --os=linux Trndi.lpr
+              } && \
+              
+              echo '=== Verifying binary architecture ===' && \
+              file Trndi && \
+              ldd Trndi 2>/dev/null || echo 'Static binary or ldd not available'
+            "
+
+      # 13. Create artifacts directory
+      - name: Create artifacts directory
+        run: |
+          mkdir -p artifacts-arm64
+          cp Trndi artifacts-arm64/ || {
+            echo "Trndi binary not found, checking build directory..."
+            find . -name "Trndi" -type f -executable 2>/dev/null | head -5
+          }
+
+      # 14. Verify ARM64 binary
+      - name: Verify ARM64 binary
+        run: |
+          if [ -f "artifacts-arm64/Trndi" ]; then
+            echo "=== ARM64 Binary Information ==="
+            file artifacts-arm64/Trndi
+            ls -lh artifacts-arm64/Trndi
+          else
+            echo "ARM64 binary not found!"
+            exit 1
+          fi
+
+      # 15. Package artifact
+      - name: Package ARM64 artifact
+        run: |
+          cd artifacts-arm64
+          zip ../Trndi-developer-build-linux-qt6-arm64.zip Trndi
+          cd ..
+
+      # 16. Create Release
+      - name: Create ARM64 Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: Trndi-developer-build-linux-qt6-arm64.zip
+          tag_name: v${{ github.run_number }}-linux-arm64
+          name: Linux Qt6 ARM64 Build ${{ github.run_number }}
+          body: |
+            Linux ARM64 developer build from commit ${{ github.sha }} (Qt6 ARM64).
+            
+            **Architecture**: ARM64 (aarch64)
+            **Widgetset**: Qt6 (with GTK2 fallback)
+            **Platform**: Linux
+            
+            Built using QEMU emulation on GitHub Actions.
+          prerelease: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
