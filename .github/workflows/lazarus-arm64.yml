@@ -1,4 +1,3 @@
-
 name: Build Trndi for Linux ARM64 (Qt6 Widgetset)
 
 on:
@@ -77,76 +76,37 @@ jobs:
           
           # Install Lazarus and FPC
           RUN cd /tmp && \
-              dpkg -i fpc-laz_3.2.2-210709_arm64.deb fpc-src_3.2.2-210709_arm64.deb lazarus-project_4.0.0-0_arm64.deb || \
-              apt-get update && apt-get install -f -y
+              dpkg -i fpc-laz_3.2.3-240813_arm64.deb fpc-src_3.2.3-240813_arm64.deb lazarus-project_4.0.0-0_arm64.deb || \
+              (apt-get update && apt-get install -f -y)
           
           # Verify installation
           RUN lazbuild --version && fpc -iV && qmake6 -version
           
           # Build Qt6 Pascal bindings
           RUN echo "=== Building Qt6 Pascal bindings for ARM64 ===" && \
-              git clone --depth 1 https://gitlab.com/freepascal.org/lazarus/lazarus.git /tmp/lazarus-source && \
+              git clone --depth 1 https://github.com/User4martin/lazarus.git /tmp/lazarus-source && \
               cd /tmp/lazarus-source/lcl/interfaces/qt6/cbindings && \
               ls -la && \
               if [ -f "Qt6Pas.pro" ]; then \
+                echo "Found existing Qt6Pas.pro, using it..."; \
                 qmake6 Qt6Pas.pro; \
               else \
                 echo "Creating Qt6Pas.pro for ARM64..."; \
-                cat > Qt6Pas.pro << 'PROEOF'
-          TEMPLATE = lib
-          TARGET = Qt6Pas
-          CONFIG += dll shared
-          QT += core gui widgets opengl printsupport
-          
-          # ARM64 specific settings
-          QMAKE_TARGET.arch = arm64
-          
-          SOURCES += qt6pas.cpp
-          HEADERS += qt6pas.h
-          
-          target.path = /usr/local/lib
-          INSTALLS += target
-          PROEOF
-                cat > qt6pas.h << 'HEOF'
-          #ifndef QT6PAS_H
-          #define QT6PAS_H
-          
-          #include <QtCore/QCoreApplication>
-          #include <QtWidgets/QApplication>
-          #include <QtWidgets/QWidget>
-          
-          extern "C" {
-              void qt6pas_init();
-              void* qt6pas_create_application(int argc, char** argv);
-          }
-          #endif
-          HEOF
-                cat > qt6pas.cpp << 'CPPEOF'
-          #include "qt6pas.h"
-          #include <QtWidgets/QApplication>
-          
-          extern "C" {
-              void qt6pas_init() {
-                  // Qt6Pas initialization for ARM64
-              }
-              
-              void* qt6pas_create_application(int argc, char** argv) {
-                  return new QApplication(argc, argv);
-              }
-          }
-          CPPEOF
+                printf 'TEMPLATE = lib\nTARGET = Qt6Pas\nCONFIG += dll shared\nQT += core gui widgets opengl printsupport\n\nQMAKE_TARGET.arch = arm64\n\nSOURCES += qt6pas.cpp\nHEADERS += qt6pas.h\n\ntarget.path = /usr/local/lib\nINSTALLS += target\n' > Qt6Pas.pro && \
+                printf '#ifndef QT6PAS_H\n#define QT6PAS_H\n\n#include <QtCore/QCoreApplication>\n#include <QtWidgets/QApplication>\n#include <QtWidgets/QWidget>\n\nextern "C" {\n    void qt6pas_init();\n    void* qt6pas_create_application(int argc, char** argv);\n}\n#endif\n' > qt6pas.h && \
+                printf '#include "qt6pas.h"\n#include <QtWidgets/QApplication>\n\nextern "C" {\n    void qt6pas_init() {\n        // Qt6Pas initialization for ARM64\n    }\n    \n    void* qt6pas_create_application(int argc, char** argv) {\n        return new QApplication(argc, argv);\n    }\n}\n' > qt6pas.cpp && \
                 qmake6 Qt6Pas.pro; \
               fi && \
               make -j$(nproc) && \
               make install && \
               ldconfig && \
-              ldconfig -p | grep Qt6Pas || echo "Qt6Pas library check completed"
+              (ldconfig -p | grep Qt6Pas || echo "Qt6Pas library check completed")
           
           WORKDIR /workspace
           EOF
           
           # Build the ARM64 Docker image
-          docker buildx build --platform linux/arm64 -f Dockerfile.arm64 -t trndi-arm64-builder .
+          docker buildx build --platform linux/arm64 --load -f Dockerfile.arm64 -t trndi-arm64-builder .
 
       # 7. Cache static libraries
       - name: Restore Static Libraries Cache ARM64
@@ -214,10 +174,10 @@ jobs:
               echo '' && \
               
               echo '=== Building Trndi.lpr (Qt6 widgetset ARM64) ===' && \
-              lazbuild --widgetset=qt6 --build-mode='No Ext (Release)' --cpu=aarch64 --os=linux Trndi.lpr || {
+              lazbuild --widgetset=qt6 --build-mode='Extensions (Release)' --cpu=aarch64 --os=linux Trndi.lpr || {
                 echo 'Qt6 build failed, trying GTK2 fallback...' && \
                 apt-get update && apt-get install -y libgtk2.0-dev && \
-                lazbuild --widgetset=gtk2 --build-mode='No Ext (Release)' --cpu=aarch64 --os=linux Trndi.lpr
+                lazbuild --widgetset=gtk2 --build-mode='Extensions (Release)' --cpu=aarch64 --os=linux Trndi.lpr
               } && \
               
               echo '=== Verifying binary architecture ===' && \
@@ -271,4 +231,3 @@ jobs:
           prerelease: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
