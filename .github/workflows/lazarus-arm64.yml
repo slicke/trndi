@@ -42,7 +42,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: qt6pas-libs-arm64
-          key: qt6pas-libraries-arm64-v3
+          key: qt6pas-libraries-arm64-v4
           restore-keys: |
             qt6pas-libraries-arm64-
 
@@ -63,7 +63,7 @@ jobs:
           echo "Qt6Pas cache directory prepared:"
           ls -la qt6pas-libs-arm64/
 
-      # 6. Create ARM64 build environment with separated build steps
+      # 6. Create ARM64 build environment with OpenGL support
       - name: Build in ARM64 environment
         run: |
           cat > Dockerfile.arm64 << 'EOF'
@@ -72,7 +72,7 @@ jobs:
           ENV DEBIAN_FRONTEND=noninteractive
           ENV PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
           
-          # Install base dependencies
+          # Install base dependencies + OpenGL libraries for Qt6Pas compilation
           RUN apt-get update && apt-get install -y \
               p7zip-full \
               build-essential \
@@ -80,8 +80,15 @@ jobs:
               qt6-tools-dev \
               qt6-tools-dev-tools \
               qt6-qpa-plugins \
+              qt6-opengl6-dev \
               git \
               wget \
+              mesa-common-dev \
+              libgl1-mesa-dev \
+              libgles2-mesa-dev \
+              libegl1-mesa-dev \
+              libglx-dev \
+              libx11-dev \
               && rm -rf /var/lib/apt/lists/*
           
           # Copy .deb files and Qt6Pas cache
@@ -116,11 +123,23 @@ jobs:
                 echo "=== Qt6Pas already available, skipping build ==="; \
               fi
           
-          # Compile Qt6Pas if source was cloned
+          # Verify OpenGL headers before compilation
           RUN if [ -d "/tmp/lazarus-source" ]; then \
-                echo "=== Compiling Qt6Pas ===" && \
+                echo "=== Verifying OpenGL headers ===" && \
+                ls -la /usr/include/GL/ && \
+                echo "Qt6 OpenGL include path:" && \
+                find /usr/include -name "qopengl.h" 2>/dev/null && \
+                echo "Mesa headers:" && \
+                (pkg-config --cflags gl || echo "GL pkg-config not found"); \
+              fi
+          
+          # Compile Qt6Pas with OpenGL support
+          RUN if [ -d "/tmp/lazarus-source" ]; then \
+                echo "=== Compiling Qt6Pas with OpenGL support ===" && \
                 cd /tmp/lazarus-source/lcl/interfaces/qt6/cbindings && \
+                echo "Running qmake6..." && \
                 qmake6 && \
+                echo "Running make with OpenGL support..." && \
                 make -j$(nproc); \
               else \
                 echo "=== Skipping Qt6Pas compilation ==="; \
@@ -163,7 +182,7 @@ jobs:
             bash -c "
               echo 'Searching for Qt6Pas libraries...'
               find /usr/local/lib -name 'libQt6Pas*' -exec cp {} /output/ \; 2>/dev/null || echo 'No libs in /usr/local/lib'
-              find /usr/lib -name 'libQt6Pas*' -exec cp {} /output/ \; 2>/dev/null || echo 'No libs in /usr/lib'
+              find /usr/lib -name 'libQt6Pas*' -exec cp {} /output/ \; 2>/dev/null || echo 'No libs in /usr/lib'  
               find /usr/lib/aarch64-linux-gnu -name 'libQt6Pas*' -exec cp {} /output/ \; 2>/dev/null || echo 'No libs in /usr/lib/aarch64-linux-gnu'
               echo 'Final extracted files:'
               ls -la /output/
@@ -264,7 +283,7 @@ jobs:
           body: |
             Linux ARM64 developer build from commit ${{ github.sha }} (Qt6 ARM64).
             
-            Built with Qt6Pas caching for faster builds.
+            Built with Qt6Pas caching and full OpenGL support.
           prerelease: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
