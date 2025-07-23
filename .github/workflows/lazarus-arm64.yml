@@ -53,12 +53,21 @@ jobs:
           wget https://download.lazarus-ide.org/Lazarus%20Linux%20arm64%20DEB/Lazarus%204.0/fpc-laz_3.2.3-240813_arm64.deb
           wget https://download.lazarus-ide.org/Lazarus%20Linux%20arm64%20DEB/Lazarus%204.0/fpc-src_3.2.3-240813_arm64.deb
 
+      # 5.5. Prepare Qt6Pas cache directory (fix for COPY issue)
+      - name: Prepare Qt6Pas cache directory
+        run: |
+          # Se till att qt6pas-libs-arm64 mappen alltid finns
+          mkdir -p qt6pas-libs-arm64
+          # Skapa en placeholder-fil om mappen är tom
+          if [ ! "$(ls -A qt6pas-libs-arm64)" ]; then
+            echo "# Qt6Pas cache placeholder" > qt6pas-libs-arm64/.placeholder
+          fi
+          echo "Qt6Pas cache directory prepared:"
+          ls -la qt6pas-libs-arm64/
+
       # 6. Create ARM64 build environment with Qt6Pas caching
       - name: Build in ARM64 environment
         run: |
-          # Create Qt6Pas cache directory
-          mkdir -p qt6pas-libs-arm64
-          
           cat > Dockerfile.arm64 << 'EOF'
           FROM arm64v8/ubuntu:22.04
           
@@ -77,9 +86,11 @@ jobs:
               wget \
               && rm -rf /var/lib/apt/lists/*
           
-          # Copy .deb files and Qt6Pas cache
+          # Copy .deb files
           COPY *.deb /tmp/
-          COPY qt6pas-libs-arm64/ /tmp/qt6pas-cache/ 2>/dev/null || true
+          
+          # Copy Qt6Pas cache (nu garanterat att mappen finns)
+          COPY qt6pas-libs-arm64/ /tmp/qt6pas-cache/
           
           # Install Lazarus and FPC
           RUN cd /tmp && \
@@ -88,25 +99,30 @@ jobs:
           
           # Install Qt6Pas - use cache if available, otherwise build
           RUN echo "=== Qt6Pas Installation/Build ===" && \
-              if [ -d "/tmp/qt6pas-cache" ] && [ -f "/tmp/qt6pas-cache/libQt6Pas.so" ]; then \
+              echo "Checking Qt6Pas cache contents:" && \
+              ls -la /tmp/qt6pas-cache/ && \
+              if [ -f "/tmp/qt6pas-cache/libQt6Pas.so" ]; then \
                 echo "Using cached Qt6Pas libraries" && \
-                cp /tmp/qt6pas-cache/* /usr/local/lib/ 2>/dev/null && \
+                cp /tmp/qt6pas-cache/libQt6Pas* /usr/local/lib/ 2>/dev/null && \
                 ldconfig && \
                 echo "Qt6Pas cache restored successfully"; \
-              else \
-                echo "Building Qt6 Pascal bindings from source" && \
+              elif [ -f "/tmp/qt6pas-cache/.placeholder" ]; then \
+                echo "No cached Qt6Pas found (placeholder detected), building from source" && \
                 git clone --depth 1 https://github.com/User4martin/lazarus.git /tmp/lazarus-source && \
                 cd /tmp/lazarus-source/lcl/interfaces/qt6/cbindings && \
                 qmake6 && \
                 make -j$(nproc) && \
                 make install && \
                 ldconfig && \
-                echo "Caching built Qt6Pas libraries" && \
-                mkdir -p /tmp/qt6pas-output && \
-                cp /usr/local/lib/libQt6Pas* /tmp/qt6pas-output/ 2>/dev/null || \
-                cp /usr/lib/aarch64-linux-gnu/libQt6Pas* /tmp/qt6pas-output/ 2>/dev/null || \
-                find /usr -name "libQt6Pas*" -exec cp {} /tmp/qt6pas-output/ \; 2>/dev/null || \
-                echo "Qt6Pas libraries cached"; \
+                echo "Qt6Pas built and installed successfully"; \
+              else \
+                echo "Unknown cache state, building from source" && \
+                git clone --depth 1 https://github.com/User4martin/lazarus.git /tmp/lazarus-source && \
+                cd /tmp/lazarus-source/lcl/interfaces/qt6/cbindings && \
+                qmake6 && \
+                make -j$(nproc) && \
+                make install && \
+                ldconfig; \
               fi
           
           # Verify installation
@@ -128,15 +144,22 @@ jobs:
         if: steps.cache-qt6pas-libs-arm64.outputs.cache-hit != 'true'
         run: |
           echo "=== Extracting Qt6Pas libraries for caching ==="
+          # Ta bort placeholder om den finns
+          rm -f qt6pas-libs-arm64/.placeholder
+          
           # Run container to copy out the built libraries
           docker run --rm --platform linux/arm64 \
             -v $(pwd)/qt6pas-libs-arm64:/output \
             trndi-arm64-builder \
             bash -c "
-              mkdir -p /output
-              find /usr -name 'libQt6Pas*' -exec cp {} /output/ \; 2>/dev/null || echo 'Qt6Pas extraction completed'
+              echo 'Extracting Qt6Pas libraries...'
+              # Hitta och kopiera alla Qt6Pas bibliotek
+              find /usr/local/lib -name 'libQt6Pas*' -exec cp {} /output/ \; 2>/dev/null
+              find /usr/lib -name 'libQt6Pas*' -exec cp {} /output/ \; 2>/dev/null  
+              find /usr/lib/aarch64-linux-gnu -name 'libQt6Pas*' -exec cp {} /output/ \; 2>/dev/null
+              echo 'Extracted files:'
               ls -la /output/
-            " || echo "Qt6Pas extraction step completed"
+            " && echo "Qt6Pas extraction completed successfully" || echo "Qt6Pas extraction completed with warnings"
 
       # 7-10. Cache steps (samma som innan)
       - name: Restore Static Libraries Cache ARM64
