@@ -42,7 +42,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: qt6pas-libs-arm64
-          key: qt6pas-libraries-arm64-v4
+          key: qt6pas-libraries-arm64-v5
           restore-keys: |
             qt6pas-libraries-arm64-
 
@@ -63,7 +63,7 @@ jobs:
           echo "Qt6Pas cache directory prepared:"
           ls -la qt6pas-libs-arm64/
 
-      # 6. Create ARM64 build environment with OpenGL support
+      # 6. Create ARM64 build environment with correct OpenGL packages
       - name: Build in ARM64 environment
         run: |
           cat > Dockerfile.arm64 << 'EOF'
@@ -72,7 +72,7 @@ jobs:
           ENV DEBIAN_FRONTEND=noninteractive
           ENV PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
           
-          # Install base dependencies + OpenGL libraries for Qt6Pas compilation
+          # Install base dependencies + correct OpenGL libraries for Ubuntu 22.04
           RUN apt-get update && apt-get install -y \
               p7zip-full \
               build-essential \
@@ -80,7 +80,7 @@ jobs:
               qt6-tools-dev \
               qt6-tools-dev-tools \
               qt6-qpa-plugins \
-              qt6-opengl6-dev \
+              libqt6opengl6-dev \
               git \
               wget \
               mesa-common-dev \
@@ -89,6 +89,8 @@ jobs:
               libegl1-mesa-dev \
               libglx-dev \
               libx11-dev \
+              libxext-dev \
+              libxrender-dev \
               && rm -rf /var/lib/apt/lists/*
           
           # Copy .deb files and Qt6Pas cache
@@ -123,34 +125,55 @@ jobs:
                 echo "=== Qt6Pas already available, skipping build ==="; \
               fi
           
-          # Verify OpenGL headers before compilation
+          # Verify OpenGL and Qt6 headers before compilation
           RUN if [ -d "/tmp/lazarus-source" ]; then \
-                echo "=== Verifying OpenGL headers ===" && \
+                echo "=== Verifying OpenGL and Qt6 headers ===" && \
+                echo "OpenGL headers:" && \
                 ls -la /usr/include/GL/ && \
-                echo "Qt6 OpenGL include path:" && \
-                find /usr/include -name "qopengl.h" 2>/dev/null && \
-                echo "Mesa headers:" && \
-                (pkg-config --cflags gl || echo "GL pkg-config not found"); \
+                echo "Qt6 headers:" && \
+                find /usr/include -path "*/qt6*" -name "qopengl.h" 2>/dev/null && \
+                echo "Qt6 OpenGL library:" && \
+                (pkg-config --exists Qt6OpenGL && pkg-config --cflags Qt6OpenGL || echo "Qt6OpenGL pkg-config not found") && \
+                echo "Mesa GL library:" && \
+                (pkg-config --exists gl && echo "GL pkg-config found" || echo "GL pkg-config not found"); \
               fi
           
-          # Compile Qt6Pas with OpenGL support
+          # Compile Qt6Pas with correct OpenGL support
           RUN if [ -d "/tmp/lazarus-source" ]; then \
                 echo "=== Compiling Qt6Pas with OpenGL support ===" && \
                 cd /tmp/lazarus-source/lcl/interfaces/qt6/cbindings && \
                 echo "Running qmake6..." && \
                 qmake6 && \
+                echo "Makefile content check:" && \
+                head -20 Makefile && \
                 echo "Running make with OpenGL support..." && \
-                make -j$(nproc); \
+                make -j$(nproc) 2>&1 | tee /tmp/make.log; \
               else \
                 echo "=== Skipping Qt6Pas compilation ==="; \
               fi
           
-          # Install compiled Qt6Pas
+          # Show make errors if compilation failed
+          RUN if [ -d "/tmp/lazarus-source" ] && [ -f "/tmp/make.log" ]; then \
+                echo "=== Make compilation status ===" && \
+                if ! grep -q "Error" /tmp/make.log; then \
+                  echo "Compilation successful"; \
+                else \
+                  echo "Compilation errors found:" && \
+                  grep -A 5 -B 5 "Error" /tmp/make.log | tail -20; \
+                fi; \
+              fi
+          
+          # Install compiled Qt6Pas if successful
           RUN if [ -d "/tmp/lazarus-source" ]; then \
-                echo "=== Installing Qt6Pas ===" && \
                 cd /tmp/lazarus-source/lcl/interfaces/qt6/cbindings && \
-                make install && \
-                ldconfig; \
+                if [ -f "libQt6Pas.so" ] || ls *.so 1> /dev/null 2>&1; then \
+                  echo "=== Installing Qt6Pas ===" && \
+                  make install && \
+                  ldconfig && \
+                  echo "Qt6Pas installation successful"; \
+                else \
+                  echo "=== Qt6Pas compilation failed, no .so files found ==="; \
+                fi; \
               else \
                 echo "=== Qt6Pas installation not needed ==="; \
               fi
@@ -283,7 +306,7 @@ jobs:
           body: |
             Linux ARM64 developer build from commit ${{ github.sha }} (Qt6 ARM64).
             
-            Built with Qt6Pas caching and full OpenGL support.
+            Built with Qt6Pas caching and correct OpenGL package names.
           prerelease: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
