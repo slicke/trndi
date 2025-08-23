@@ -944,16 +944,19 @@ end;
 
 procedure TfBG.FormKeyPress(Sender:TObject;var Key:char);
 begin
-  if (key = #27) then
-  begin // esc
-    lDiffDblClick(self);
-    key := #0;  // Prevent other handlers of esc
-  end;
-    if (key = #121) or (key = #70) then
-  begin // F10 / F
-    lDiffDblClick(self);
-    key := #0;  // Prevent other handlers of esc
-  end;
+   // Case doesnt seem to work here....
+  if (key = #27) then // esc
+    lDiffDblClick(self)
+  else if (key = 'f') or (key = 'F') then // F10
+    lDiffDblClick(self)
+  else if (key = 'R')  or (key = 'r') then begin
+    if slicke.UX.alert.UXDialog(sRefrshQ, sForceRefresh, [mbYes, mbNo]) = mrYes then
+         miForce.Click;
+  end
+  else
+    Exit; // Dont do the key = 0 thing
+
+  key := #0;  // Prevent other handlers of esc
 end;
 
 procedure TfBG.FormMouseLeave(Sender:TObject);

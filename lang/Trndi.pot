@@ -851,6 +851,10 @@ msgstr ""
 msgid "Extension Warning"
 msgstr ""
 
+#: trndi.strings.sforcerefresh
+msgid "Forcefully refresh the reading?"
+msgstr ""
+
 #: trndi.strings.slogdesc
 msgctxt "trndi.strings.slogdesc"
 msgid "Trndi has captured data sent to console.log in a JavaScript extension"
@@ -875,6 +879,10 @@ msgstr ""
 #, object-pascal-format
 msgctxt "trndi.strings.spromerrcapt"
 msgid "The asyncronous function %s failed to complete"
+msgstr ""
+
+#: trndi.strings.srefrshq
+msgid "Refresh?"
 msgstr ""
 
 #: trndi.strings.srssi
@@ -999,6 +1007,11 @@ msgstr ""
 
 #: ufloat.rscustomsize
 msgid "You can hold down shift and plus (+) or minus (-) to change the window size"
+msgstr ""
+
+#: umain.rs_noplugins
+msgctxt "umain.rs_noplugins"
+msgid "Built Without Support"
 msgstr ""
 
 #: umain.rs_tpobottomleft

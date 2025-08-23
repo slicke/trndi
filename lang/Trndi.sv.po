@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit 3.6\n"
+"X-Generator: Poedit 3.7\n"
 
 #: slicke.ux.alert.dlgerr
 msgid "An error occured while creating a message dalog"
@@ -893,6 +893,10 @@ msgstr "Användarinformation"
 msgid "Extension Warning"
 msgstr "Tilläggsvarning"
 
+#: trndi.strings.sforcerefresh
+msgid "Forcefully refresh the reading?"
+msgstr "Tvinga uppdatering av avläsning?"
+
 #: trndi.strings.slogdesc
 msgctxt "trndi.strings.slogdesc"
 msgid "Trndi has captured data sent to console.log in a JavaScript extension"
@@ -918,6 +922,10 @@ msgstr "Ingen stackspårning finns"
 msgctxt "trndi.strings.spromerrcapt"
 msgid "The asyncronous function %s failed to complete"
 msgstr "Den asynkrona funktionen %s misslyckades"
+
+#: trndi.strings.srefrshq
+msgid "Refresh?"
+msgstr "Läs om?"
 
 #: trndi.strings.srssi
 #, object-pascal-format
@@ -997,10 +1005,9 @@ msgid "Enter a username"
 msgstr "Ange ett användarnamn"
 
 #: uconf.rs_newver
-#, object-pascal-format, fuzzy, badformat
-#| msgid "A new version is available, would you like to go to the downloads page?"
+#, object-pascal-format
 msgid "Version %s is available, would you like to go to the downloads page?"
-msgstr "En ny version finns tillgänglig, vill du besöka nedladdningssidan?"
+msgstr "Version %s finns tillgänglig, vill du besöka nedladdningssidan?"
 
 #: uconf.rs_newver_caption
 msgid "New version available"
@@ -1009,7 +1016,7 @@ msgstr "Ny version tillgänglig"
 #: uconf.rs_newver_pre
 #, object-pascal-format
 msgid "A new pre-release for %s is available, would you like to go to the downloads page?"
-msgstr ""
+msgstr "En förhandsversion av %s finns tillgänglig, vill du besöka nedladdningssidan?"
 
 #: uconf.rs_override_help
 msgid ""
@@ -1053,6 +1060,12 @@ msgstr "Du kan använda skift+<nummerr> för att manuellt sätta synligheten (0 
 msgid "You can hold down shift and plus (+) or minus (-) to change the window size"
 msgstr "Du kan hålla ned skift och plus (+) eller minus (-) för att justera fönstrets storlek"
 
+#: umain.rs_noplugins
+#, fuzzy
+msgctxt "umain.rs_noplugins"
+msgid "Built Without Support"
+msgstr "Byggd utan stöd"
+
 #: umain.rs_tpobottomleft
 msgctxt "umain.rs_tpobottomleft"
 msgid "Bottom Left"
@@ -1077,4 +1090,3 @@ msgstr "Senaste position"
 msgctxt "umain.rs_tpotopright"
 msgid "Top Right"
 msgstr "Höger topp"
-
