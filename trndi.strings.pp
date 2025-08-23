@@ -104,6 +104,9 @@ sRSSI = 'RSSI (Signal Strength): %d%%';
 sNoise = 'Noise: %d';
 sDevice = 'Device: %s';
 
+sRefrshQ = 'Refresh?';
+sForceRefresh = 'Forcefully refresh the reading?';
+
 implementation
 
 end.
