@@ -127,7 +127,7 @@ msgstr "Växla pil och värde"
 #: tfbg.miannounce.caption
 msgctxt "tfbg.miannounce.caption"
 msgid "Announce readings"
-msgstr ""
+msgstr "Läs ut avläsningar"
 
 #: tfbg.miborders.caption
 msgid "No borders"
@@ -1095,4 +1095,3 @@ msgstr "Senaste position"
 msgctxt "umain.rs_tpotopright"
 msgid "Top Right"
 msgstr "Höger topp"
-
