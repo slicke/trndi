@@ -39,7 +39,7 @@ CocoaAll,
 SimpleDarkMode
 {$ELSEIF DEFINED(X_WIN)},
 Windows, Registry, Dialogs, StrUtils, winhttpclient, shellapi, comobj,
-Forms
+Forms, variants
 {$ELSEIF DEFINED(X_PC)},
 fphttpclient, openssl, opensslsockets, IniFiles, Dialogs
 {$ENDIF}
@@ -71,6 +71,8 @@ public
     // Indicates if the user system is in a "dark mode" theme
   dark: boolean;
 
+
+  procedure Speak(const Text: string);
 
   { attention
     Flash the menu bar
@@ -247,6 +249,66 @@ function DwmSetWindowAttribute(hwnd: HWND; dwAttribute: DWORD; pvAttribute: Poin
 
 implementation
 
+{$if defined(X_WIN)}
+procedure TrndiNative.Speak(const Text: string);
+var
+  Voice: OleVariant;
+begin
+  Voice := CreateOleObject('SAPI.SpVoice');
+  Voice.Speak(Text, 0);
+end;
+{$elseif defined(X_MAC)}
+procedure TrndiNative.Speak(const Text: string);
+begin
+  RunCommand('/usr/bin/say', [Text], []);
+end;
+{$else}
+procedure TrndiNative.Speak(const Text: string);
+function FindInPath(const FileName: string): string;
+var
+  PathVar, Dir: string;
+  Paths: TStringList;
+  i: Integer;
+begin
+  Result := '';
+  PathVar := GetEnvironmentVariable('PATH');
+  Paths := TStringList.Create;
+  try
+    Paths.Delimiter := ':';
+    Paths.StrictDelimiter := True;
+    Paths.DelimitedText := PathVar;
+    for i := 0 to Paths.Count - 1 do
+    begin
+      Dir := IncludeTrailingPathDelimiter(Paths[i]);
+      if FileExists(Dir + FileName) then
+        Exit(Dir + FileName);
+    end;
+  finally
+    Paths.Free;
+  end;
+end;
+var
+  CmdPath: string;
+  Proc: TProcess;
+begin
+  CmdPath := FindInPath('spd-say');
+  if CmdPath = '' then
+  begin
+    ShowMessage('Error: spd-say is not installed.');
+    Exit;
+  end;
+
+  Proc := TProcess.Create(nil);
+  try
+    Proc.Executable := CmdPath;
+    Proc.Parameters.Add(Text);
+    Proc.Options := [];
+    Proc.Execute;
+  finally
+    Proc.Free;
+  end;
+end;
+{$endif}
 
 {$IF DEFINED(X_WIN)}
 class function TrndiNative.SetDarkMode(win: HWND; Enable: Boolean = True): Boolean;

@@ -949,6 +949,8 @@ begin
     lDiffDblClick(self)
   else if (key = 'f') or (key = 'F') then // F10
     lDiffDblClick(self)
+  else if (key = 's') or (key = 'S') then
+    native.Speak(lVal.Caption)
   else if (key = 'R')  or (key = 'r') then begin
     if slicke.UX.alert.UXDialog(sRefrshQ, sForceRefresh, [mbYes, mbNo]) = mrYes then
          miForce.Click;
