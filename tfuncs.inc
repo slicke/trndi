@@ -80,6 +80,17 @@ begin
   TrndiNative.PlaySound(filename);
 end;
 
+function JSSay(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw;
+var
+  filename: string;
+  tn: trndinative;
+begin
+  filename := ctx^^.ToUtf8(argv^[0]);
+  tn := TrndiNative.create;
+  tn.PlaySound(filename);
+  tn.free;
+end;
+
 // UX modifications from JS ("uxProp()")
 function JSUX(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw;
 cdecl;

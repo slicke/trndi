@@ -596,6 +596,7 @@ begin
     addClassFunction('setLevelColor', ExtFunction(@JSLevelColor), -1);
     addClassFunction('setTimeAndRange', ExtFunction(@JSTimeRange), 2);
     addClassFunction('playSound', ExtFunction(@JSPlay), 1);
+    addClassFunction('sayText', ExtFunction(@JSSay), 1);
     // Add the UX modification function, as declared in this file
     for s in exts do
       // Run all found files
@@ -2045,6 +2046,7 @@ procedure TfBG.tMainTimer(Sender: TObject);
 begin
   updateReading;
   {$ifdef TrndiExt}
+  ShowMessage('test');
   TTrndiExtEngine.Instance.CallFunction('updateCallback', [bgs[Low(bgs)].val.ToString, DateTimeToStr(Now)]);
   {$endif}
 end;
@@ -2255,6 +2257,16 @@ begin
 
   // Calc ranges
   CalcRangeTime;
+
+  {$ifdef DEBUG}
+  TTrndiExtEngine.Instance.CallFunction('fetchCallback',[
+     bgs[0].format(mgdl, BG_MSG_SHORT), //mgdl reading
+     bgs[0].format(mmol, BG_MSG_SHORT), //mmol reading
+     bgs[0].format(mgdl, BG_MSG_SIG_SHORT, BGDelta), //mgdl diff
+     bgs[0].format(mmol, BG_MSG_SHORT, BGDelta), //mmol diff
+     IfThen(bgs[0].empty, 'false', 'true') // has reading?
+     ]);
+  {$endif}
 end;
 
 procedure TfBG.FinalizeUpdate;
