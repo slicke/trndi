@@ -2258,7 +2258,7 @@ begin
   // Calc ranges
   CalcRangeTime;
 
-  {$ifdef DEBUG}
+  {$ifdef extensions}
   TTrndiExtEngine.Instance.CallFunction('fetchCallback',[
      bgs[0].format(mgdl, BG_MSG_SHORT), //mgdl reading
      bgs[0].format(mmol, BG_MSG_SHORT), //mmol reading
