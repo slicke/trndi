@@ -10,7 +10,6 @@ object fBG: TfBG
   Color = clBlack
   Font.Color = clWhite
   Position = poDesktopCenter
-  LCLVersion = '4.2.0.0'
   OnClose = FormClose
   OnCreate = FormCreate
   OnDestroy = FormDestroy
@@ -351,6 +350,10 @@ object fBG: TfBG
       object miAlternate: TMenuItem
         Caption = 'Alterante arrow and reading'
         OnClick = miAlternateClick
+      end
+      object miAnnounce: TMenuItem
+        Caption = 'Announce readings'
+        OnClick = miAnnounceClick
       end
       object miDotSize: TMenuItem
         Caption = 'Dot Size'

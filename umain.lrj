@@ -28,6 +28,7 @@
 {"hash":54665027,"name":"tfbg.miclock.caption","sourcebytes":[83,104,111,119,32,99,108,111,99,107,32,101,118,101,114,121,32,50,48,32,115,101,99],"value":"Show clock every 20 sec"},
 {"hash":211148793,"name":"tfbg.mihistory.caption","sourcebytes":[83,104,111,119,32,104,105,115,116,111,114,121],"value":"Show history"},
 {"hash":209666247,"name":"tfbg.mialternate.caption","sourcebytes":[65,108,116,101,114,97,110,116,101,32,97,114,114,111,119,32,97,110,100,32,114,101,97,100,105,110,103],"value":"Alterante arrow and reading"},
+{"hash":125560323,"name":"tfbg.miannounce.caption","sourcebytes":[65,110,110,111,117,110,99,101,32,114,101,97,100,105,110,103,115],"value":"Announce readings"},
 {"hash":107324853,"name":"tfbg.midotsize.caption","sourcebytes":[68,111,116,32,83,105,122,101],"value":"Dot Size"},
 {"hash":89559932,"name":"tfbg.midotnormal.caption","sourcebytes":[78,111,114,109,97,108],"value":"Normal"},
 {"hash":49,"name":"tfbg.midotnormal.hint","sourcebytes":[49],"value":"1"},

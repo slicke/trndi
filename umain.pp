@@ -86,6 +86,7 @@ end;
 TfBG = class(TForm)
   lTir:TLabel;
   lAgo:TLabel;
+  miAnnounce:TMenuItem;
   miDotHuge:TMenuItem;
   miDotBig:TMenuItem;
   miDotNormal:TMenuItem;
@@ -158,6 +159,7 @@ TfBG = class(TForm)
   procedure lValMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: integer);
   procedure lValMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: integer);
   procedure lValStartDrag(Sender: TObject; var DragObject: TDragObject);
+  procedure miAnnounceClick(Sender:TObject);
   procedure miAlternateClick(Sender:TObject);
   procedure miClockClick(Sender:TObject);
   procedure miDotNormalClick(Sender:TObject);
@@ -475,6 +477,9 @@ begin
 
   if native.GetBoolSetting('main.clock') then
     miClock.OnClick(self);
+
+  if native.GetBoolSetting('main.announce') then
+    miAnnounce.OnClick(self);
 
   {$ifdef DARWIN}
   ActiveMonitor := GetActiveScreen;
@@ -1323,6 +1328,12 @@ begin
   // Event handler can be left empty if not used
 end;
 
+procedure TfBG.miAnnounceClick(Sender:TObject);
+begin
+  miAnnounce.Checked := not miAnnounce.Checked;
+  native.SetSetting('main.announce', IfThen(miAnnounce.Checked, 'true', 'false'));
+end;
+
 procedure TfBG.miAlternateClick(Sender:TObject);
 begin
   miAlternate.Checked := not miAlternate.Checked;
@@ -2123,6 +2134,10 @@ begin
 
   // Log latest reading
   LogMessage(Format(RS_LATEST_READING, [b.val, DateTimeToStr(b.date)]));
+
+  // Announce
+  if miAnnounce.Checked then
+    native.Speak(lval.Caption);
 
   // Set next update time
   SetNextUpdateTimer(b.date);
