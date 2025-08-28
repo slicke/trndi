@@ -2046,7 +2046,6 @@ procedure TfBG.tMainTimer(Sender: TObject);
 begin
   updateReading;
   {$ifdef TrndiExt}
-  ShowMessage('test');
   TTrndiExtEngine.Instance.CallFunction('updateCallback', [bgs[Low(bgs)].val.ToString, DateTimeToStr(Now)]);
   {$endif}
 end;

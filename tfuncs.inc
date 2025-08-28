@@ -72,6 +72,7 @@ begin
   result := res.raw;
 end;
 
+// Play a sound file
 function JSPlay(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw;
 var
   filename: string;
@@ -80,6 +81,7 @@ begin
   TrndiNative.PlaySound(filename);
 end;
 
+// TTS
 function JSSay(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw;
 var
   filename: string;
@@ -130,6 +132,7 @@ begin
 end;
 
 
+// Sets the max time to fetch in minutes, and the range to X readings
 function JSTimeRange(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw;
 var
  vmins, vcount: Variant;
@@ -152,6 +155,7 @@ begin
  MAX_RESULT := vcount;
 end;
 
+// Set the UX colors
 function JSLevelColor(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw;
 begin
 
@@ -214,6 +218,7 @@ begin
 
 end;
 
+// Set the dot size
 function JSDotSize(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw;
 var
  vds: Variant;

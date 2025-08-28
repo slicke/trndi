@@ -71,7 +71,9 @@ public
     // Indicates if the user system is in a "dark mode" theme
   dark: boolean;
 
-
+   { Speak
+    Play an autio file
+  }
   procedure Speak(const Text: string);
 
   { attention
@@ -252,18 +254,31 @@ implementation
 {$if defined(X_WIN)}
 procedure TrndiNative.Speak(const Text: string);
 var
-  Voice: OleVariant;
+  Voice, Voices: OleVariant;
+  xLangID: LANGID;
+  LangHex: string;
 begin
   Voice := CreateOleObject('SAPI.SpVoice');
+
+  // Widely available in FPC headers
+  xLangID := GetUserDefaultLangID;
+
+  // SAPI language filter expects hex without 0x, usually without leading zeros (e.g. "409")
+  LangHex := UpperCase(IntToHex(xLangID, 1)); // e.g. 0x0409 -> "409"
+
+  Voices := Voice.GetVoices('Language=' + LangHex, '');
+  if (not VarIsEmpty(Voices)) and (Voices.Count > 0) then
+    Voice.Voice := Voices.Item(0);
+  // else: keep default SAPI voice
+
   Voice.Speak(Text, 0);
 end;
 {$elseif defined(X_MAC)}
 procedure TrndiNative.Speak(const Text: string);
 begin
-  RunCommand('/usr/bin/say', [Text], []);
+  RunCommand('/usr/bin/say', ['--', Text], []);
 end;
 {$else}
-procedure TrndiNative.Speak(const Text: string);
 function FindInPath(const FileName: string): string;
 var
   PathVar, Dir: string;
@@ -287,8 +302,53 @@ begin
     Paths.Free;
   end;
 end;
+
+function GetSystemLangTag: string;
+  function FirstSegment(const S, Sep: string): string;
+  var P: SizeInt;
+  begin
+    Result := S;
+    P := Pos(Sep, Result);
+    if P > 0 then
+      Result := Copy(Result, 1, P-1);
+  end;
 var
-  CmdPath: string;
+  L: string;
+  P: SizeInt;
+begin
+  // Priority: LC_ALL > LANGUAGE (may be colon-separated) > LANG
+  L := GetEnvironmentVariable('LC_ALL');
+  if L = '' then
+    L := GetEnvironmentVariable('LANGUAGE');
+  if L = '' then
+    L := GetEnvironmentVariable('LANG');
+
+  if L = '' then
+    Exit(''); // Let spd-say decide
+
+  // If LANGUAGE is colon-separated (e.g., "de_CH:de:en_US"), take first
+  L := FirstSegment(L, ':');
+
+  // Remove encoding suffix (e.g., ".UTF-8")
+  P := Pos('.', L);
+  if P > 0 then
+    L := Copy(L, 1, P-1);
+
+  // Convert "en_US" -> "en-US"
+  L := StringReplace(L, '_', '-', [rfReplaceAll]);
+
+  // Normalize case: language lower, region upper
+  L := LowerCase(L);
+  P := Pos('-', L);
+  if P > 0 then
+    L := Copy(L, 1, P) + UpperCase(Copy(L, P+1, MaxInt));
+
+  Result := L;
+end;
+
+procedure TrndiNative.Speak(const Text: string);
+var
+  CmdPath, Lang: string;
   Proc: TProcess;
 begin
   CmdPath := FindInPath('spd-say');
@@ -298,10 +358,20 @@ begin
     Exit;
   end;
 
+  Lang := GetSystemLangTag;
+
   Proc := TProcess.Create(nil);
   try
     Proc.Executable := CmdPath;
+    if Lang <> '' then
+      Proc.Parameters.AddStrings(['-l', Lang]) // e.g., "en-US" or "de"
+    else
+      ; // leave to spd-say defaults
+
+    // Protect text from being misread as an option
+    Proc.Parameters.Add('--');
     Proc.Parameters.Add(Text);
+
     Proc.Options := [];
     Proc.Execute;
   finally
