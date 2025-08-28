@@ -107,6 +107,9 @@ sDevice = 'Device: %s';
 sRefrshQ = 'Refresh?';
 sForceRefresh = 'Forcefully refresh the reading?';
 
+sAnnounceOn = 'Announcing readings aloud';
+sAnnounceOff = 'No longer announcing readings aloud';
+
 implementation
 
 end.
