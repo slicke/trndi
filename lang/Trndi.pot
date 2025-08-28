@@ -804,6 +804,14 @@ msgstr ""
 msgid "Low blood sugar! Currently: %s"
 msgstr ""
 
+#: trndi.strings.sannounceoff
+msgid "No longer announcing readings aloud"
+msgstr ""
+
+#: trndi.strings.sannounceon
+msgid "Announcing readings aloud"
+msgstr ""
+
 #: trndi.strings.sdatatypeerr
 #, object-pascal-format
 msgctxt "trndi.strings.sdatatypeerr"

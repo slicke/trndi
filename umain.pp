@@ -957,6 +957,8 @@ begin
     lDiffDblClick(self)
   else if (key = 's') or (key = 'S') then
     native.Speak(lVal.Caption)
+  else if (key = 'A') or (key = 'a') then
+    miAnnounce.Click
   else if (key = 'R')  or (key = 'r') then begin
     if slicke.UX.alert.UXDialog(sRefrshQ, sForceRefresh, [mbYes, mbNo]) = mrYes then
          miForce.Click;
@@ -1333,6 +1335,7 @@ procedure TfBG.miAnnounceClick(Sender:TObject);
 begin
   miAnnounce.Checked := not miAnnounce.Checked;
   native.SetSetting('main.announce', IfThen(miAnnounce.Checked, 'true', 'false'));
+  native.speak(IfThen(miAnnounce.Checked, sAnnounceOn, sAnnounceOff));
 end;
 
 procedure TfBG.miAlternateClick(Sender:TObject);

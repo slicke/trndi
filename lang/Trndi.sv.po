@@ -846,6 +846,14 @@ msgstr "Högt blodsocker! Nuvarande: %s"
 msgid "Low blood sugar! Currently: %s"
 msgstr "Lågt blodsocker! Nuvarande: %s"
 
+#: trndi.strings.sannounceoff
+msgid "No longer announcing readings aloud"
+msgstr "Läser inte upp värden"
+
+#: trndi.strings.sannounceon
+msgid "Announcing readings aloud"
+msgstr "Läser upp värden"
+
 #: trndi.strings.sdatatypeerr
 #, object-pascal-format
 msgctxt "trndi.strings.sdatatypeerr"
@@ -1066,7 +1074,6 @@ msgid "You can hold down shift and plus (+) or minus (-) to change the window si
 msgstr "Du kan hålla ned skift och plus (+) eller minus (-) för att justera fönstrets storlek"
 
 #: umain.rs_noplugins
-#, fuzzy
 msgctxt "umain.rs_noplugins"
 msgid "Built Without Support"
 msgstr "Byggd utan stöd"
