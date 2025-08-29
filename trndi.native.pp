@@ -255,16 +255,14 @@ implementation
 procedure TrndiNative.Speak(const Text: string);
 var
   Voice, Voices: OleVariant;
-  xLangID: LANGID;
+  lang: LANGID;
   LangHex: string;
 begin
   Voice := CreateOleObject('SAPI.SpVoice');
-
-  // Widely available in FPC headers
-  xLangID := GetUserDefaultLangID;
+  lang := GetUserDefaultLangID;
 
   // SAPI language filter expects hex without 0x, usually without leading zeros (e.g. "409")
-  LangHex := UpperCase(IntToHex(xLangID, 1)); // e.g. 0x0409 -> "409"
+  LangHex := UpperCase(IntToHex(lang, 1)); // e.g. 0x0409 -> "409"
 
   Voices := Voice.GetVoices('Language=' + LangHex, '');
   if (not VarIsEmpty(Voices)) and (Voices.Count > 0) then
