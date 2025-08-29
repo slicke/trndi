@@ -25,13 +25,13 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.cache/lazarus
-          key: lazarus-fpc-linux-qt6-v1
+          key: lazarus-fpc-linux-qt6-v2
 
-      - name: Download Lazarus 4.0 .deb files
+      - name: Download Lazarus 4.2 .deb files
         run: |
-            wget https://download.lazarus-ide.org/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.0/lazarus-project_4.0.0-0_amd64.deb
-            wget https://download.lazarus-ide.org/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.0/fpc-laz_3.2.2-210709_amd64.deb
-            wget https://download.lazarus-ide.org/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.0/fpc-src_3.2.2-210709_amd64.deb
+           wget https://download.lazarus-ide.org/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.2/lazarus-project_4.2.0-0_amd64.deb
+           wget https://download.lazarus-ide.org/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.2/fpc-src_3.2.2-210709_amd64.deb
+           wget https://download.lazarus-ide.org/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.2/fpc-laz_3.2.2-210709_amd64.deb
 
       - name: Install base dependencies and Qt6 Pascal bindings
         run: |
@@ -58,9 +58,9 @@ jobs:
             
             cd $GITHUB_WORKSPACE
 
-      - name: Install Lazarus 4.0 and FPC via .deb
+      - name: Install Lazarus 4.2 and FPC via .deb
         run: |
-            sudo apt-get install -y ./fpc-laz_3.2.2-210709_amd64.deb ./fpc-src_3.2.2-210709_amd64.deb ./lazarus-project_4.0.0-0_amd64.deb
+            sudo apt-get install -y ./fpc-laz_3.2.2-210709_amd64.deb ./fpc-src_3.2.2-210709_amd64.deb ./lazarus-project_4.2.0-0_amd64.deb
             sudo apt-get install -f -y
 
       # 4. Verify Lazarus Installation
@@ -77,7 +77,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ../static
-          key: static-libraries-linux-qt6
+          key: static-libraries-linux-qt6-v2
 
       # 6. Download and Extract Static Libraries if not cached
       - name: Download and Extract Static Libraries
@@ -91,7 +91,7 @@ jobs:
         uses: actions/cache/save@v3
         with:
           path: ../static
-          key: static-libraries-linux-qt6
+          key: static-libraries-linux-qt6-v2
 
       # 7. Copy static libraries to build folder
       - name: Copy Static Libraries
