@@ -950,23 +950,21 @@ end;
 
 procedure TfBG.FormKeyPress(Sender:TObject;var Key:char);
 begin
-   // Case doesnt seem to work here....
-  if (key = #27) then // esc
-    lDiffDblClick(self)
-  else if (key = 'f') or (key = 'F') then // F10
-    lDiffDblClick(self)
-  else if (key = 's') or (key = 'S') then
-    native.Speak(lVal.Caption)
-  else if (key = 'A') or (key = 'a') then
-    miAnnounce.Click
-  else if (key = 'R')  or (key = 'r') then begin
+  case key of
+    #27: begin
+      lDiffDblClick(self);
+      key := #0; // Disable future escapes
+    end;
+  'f', 'F':
+    lDiffDblClick(self);
+  's', 'S':
+    native.Speak(lVal.Caption);
+  'A', 'a':
+    miAnnounce.Click;
+  'R', 'r':
     if slicke.UX.alert.UXDialog(sRefrshQ, sForceRefresh, [mbYes, mbNo]) = mrYes then
          miForce.Click;
-  end
-  else
-    Exit; // Dont do the key = 0 thing
-
-  key := #0;  // Prevent other handlers of esc
+  end;
 end;
 
 procedure TfBG.FormMouseLeave(Sender:TObject);
