@@ -273,9 +273,11 @@ begin
 end;
 {$elseif defined(X_MAC)}
 procedure TrndiNative.Speak(const Text: string);
+var
+  o: string;
 begin
-  RunCommand('/usr/bin/say', ['--', Text], []);
-end;
+  RunCommand('/usr/bin/say', [Text], o);
+end;  
 {$else}
 function FindInPath(const FileName: string): string;
 var
