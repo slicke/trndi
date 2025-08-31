@@ -2375,7 +2375,10 @@ begin
   {$ifdef DEBUG}
       bgs := api.getReadings(MAX_MIN, MAX_RESULT, '', res);
       if Showing then
-        slicke.ux.alert.ExtLog('', '', res);
+        if res.IsEmpty then
+          slicke.ux.alert.ExtLog('Debug Info', '[empty!]', res)
+        else
+           slicke.ux.alert.ExtLog('Debug Info', '', res);
   {$ELSE}
        bgs := api.getReadings(MAX_MIN, MAX_RESULT);
   {$endif}

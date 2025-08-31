@@ -168,7 +168,7 @@ function FontInList(out fname: string): Boolean;
 begin
   fname := 'Consolas';
   try
-    Result := Screen.Fonts.IndexOf('Consolas') >= 0;
+    Result := Screen.Fonts.IndexOf(fname) >= 0;
   finally
 
   end;
