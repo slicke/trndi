@@ -946,6 +946,10 @@ begin
   if assigned(api) then
     api.Free;
 
+  {$ifdef TRNDIEXT}
+    TTrndiExtEngine.Instance.Free;
+  {$endif}
+
 end;
 
 procedure TfBG.FormKeyPress(Sender:TObject;var Key:char);
