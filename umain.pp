@@ -1390,6 +1390,8 @@ var
   i:integer;
   keys, vals: TStringArray;
   b: BGReading;
+  xval: integer;
+  rssi, noise: string;
 begin
 SetLength(keys, high(bgs)+1);
 SetLength(vals, high(bgs)+1);
@@ -1403,13 +1405,28 @@ for i := Low(bgs) to High(bgs) do begin
 end;
 
 
-i := ExtTable ( RS_RHISTORY, RS_RH_TITLE, RS_RH_INFO, keys, vals);
+i := ExtTable ( RS_RHISTORY, RS_RH_TITLE, RS_RH_INFO, keys, vals, WideChar($2699), RS_RH_TIME, RS_RH_READING);
 if i > 0 then begin
   b := bgs[i-1];
+  if b.getRSSI(xval) then
+    rssi := xval.ToString
+  else
+    rssi := RS_RH_UNKNOWN;
+
+  if b.getNoise(xval) then
+    noise := xval.ToString
+  else
+    noise := RS_RH_UNKNOWN;
+
   showmessage(TimeToStr(b.date), Format(RS_HISTORY_ITEM, [
                      b.format(un, BG_MSG_SHORT, BGPrimary),
                      b.format(un, BG_MSG_SHORT, BGDelta),
-                     b.trend.Img]
+                     b.trend.Img,
+                     rssi,
+                     noise,
+                     b.source,
+                     b.sensor
+                     ]
   ));
 end;
 end;
