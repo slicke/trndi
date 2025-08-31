@@ -485,78 +485,6 @@ msgstr ""
 msgid "Login error during post-authentication steps"
 msgstr ""
 
-#: trndi.ext.functions.sdatatypeerr
-#, object-pascal-format
-msgctxt "trndi.ext.functions.sdatatypeerr"
-msgid "Datatype %s was not expected, expected in function %s"
-msgstr ""
-
-#: trndi.ext.functions.sdatatypeerrfunc
-#, object-pascal-format
-msgctxt "trndi.ext.functions.sdatatypeerrfunc"
-msgid "Datatype \"%s\" was not expected, in function \"%s\". Expected \"%s\""
-msgstr ""
-
-#: trndi.ext.functions.sdatatypeerrpos
-#, object-pascal-format
-msgctxt "trndi.ext.functions.sdatatypeerrpos"
-msgid "Datatype %s was not expected, expected in function %s, parameter %d"
-msgstr ""
-
-#: trndi.ext.functions.slogdesc
-msgctxt "trndi.ext.functions.slogdesc"
-msgid "Trndi has captured data sent to console.log in a JavaScript extension"
-msgstr ""
-
-#: trndi.ext.functions.slogrecevive
-msgctxt "trndi.ext.functions.slogrecevive"
-msgid "Output through console.log has been received"
-msgstr ""
-
-#: trndi.ext.functions.snotrace
-msgctxt "trndi.ext.functions.snotrace"
-msgid "No stack trace available"
-msgstr ""
-
-#: trndi.ext.functions.sstackerrmsg
-#, object-pascal-format
-msgctxt "trndi.ext.functions.sstackerrmsg"
-msgid ""
-"Error: %s \n"
-"Stack: %s %s"
-msgstr ""
-
-#: trndi.ext.functions.sstackfailed
-msgctxt "trndi.ext.functions.sstackfailed"
-msgid "An error occurred, and the stacktrace could not be loaded. Showing backtrace."
-msgstr ""
-
-#: trndi.ext.functions.sunknownerr
-msgctxt "trndi.ext.functions.sunknownerr"
-msgid "Unknown error"
-msgstr ""
-
-#: trndi.ext.promise.spromerrcapt
-#, object-pascal-format
-msgctxt "trndi.ext.promise.spromerrcapt"
-msgid "The asyncronous function %s failed to complete"
-msgstr ""
-
-#: trndi.ext.promise.stypeerrcapt
-msgctxt "trndi.ext.promise.stypeerrcapt"
-msgid "A data type differes from what was expected"
-msgstr ""
-
-#: trndi.ext.promise.stypeerrdesc
-msgctxt "trndi.ext.promise.stypeerrdesc"
-msgid "The extension was stopped"
-msgstr ""
-
-#: trndi.ext.promise.stypeerrmsg
-msgctxt "trndi.ext.promise.stypeerrmsg"
-msgid "A data type was expected, but another was found"
-msgstr ""
-
 #: trndi.strings.rs_compute_failed_ago
 msgid "Long ago"
 msgstr ""
@@ -1020,35 +948,5 @@ msgstr ""
 
 #: ufloat.rscustomsize
 msgid "You can hold down shift and plus (+) or minus (-) to change the window size"
-msgstr ""
-
-#: umain.rs_noplugins
-msgctxt "umain.rs_noplugins"
-msgid "Built Without Support"
-msgstr ""
-
-#: umain.rs_tpobottomleft
-msgctxt "umain.rs_tpobottomleft"
-msgid "Bottom Left"
-msgstr ""
-
-#: umain.rs_tpobottomright
-msgctxt "umain.rs_tpobottomright"
-msgid "Bottom Right"
-msgstr ""
-
-#: umain.rs_tpocenter
-msgctxt "umain.rs_tpocenter"
-msgid "Desktop Center"
-msgstr ""
-
-#: umain.rs_tpocustom
-msgctxt "umain.rs_tpocustom"
-msgid "Last position"
-msgstr ""
-
-#: umain.rs_tpotopright
-msgctxt "umain.rs_tpotopright"
-msgid "Top Right"
 msgstr ""
 

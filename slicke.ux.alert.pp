@@ -21,9 +21,8 @@
 
 unit slicke.ux.alert;
 
-{$mode ObjFPC}{$H+}
+{$I native.inc}
 {$modeswitch advancedrecords}
-
 interface
 
 uses
@@ -157,16 +156,11 @@ implementation
 
 {$if DEFINED(X_LINUXBSD)}
 function FontInList(out fname: string): Boolean;
-var
-  sl: TStrings;
 begin
   fname := 'Noto Color Emoji';
-  sl := TStringList.Create;
   try
-    sl := Screen.Fonts; // List fonts
-    Result := (sl.IndexOf('Noto Emoji') >= 0) or (sl.IndexOf('Noto Color Emoji') >= 0);
+    Result := (Screen.Fonts.IndexOf('Noto Emoji') >= 0) or (Screen.Fonts.IndexOf('Noto Color Emoji') >= 0);
   finally
-    sl.Free;
   end;
 end;
 {$elseif DEFINED(WINDOWS)}
