@@ -171,16 +171,12 @@ begin
 end;
 {$elseif DEFINED(WINDOWS)}
 function FontInList(out fname: string): Boolean;
-var
-  FontsList: TStrings;
 begin
-  FontsList := TStrings.Create;
   fname := 'Consolas';
   try
-    FontsList := Screen.Fonts;
-    Result := FontsList.IndexOf('Consolas') >= 0;
+    Result := Screen.Fonts.IndexOf('Consolas') >= 0;
   finally
-    FontsList.Free;
+
   end;
 end;
 
