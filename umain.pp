@@ -2440,12 +2440,15 @@ begin
   lAgo.Font.Color := GetTextColorForBackground(fBG.color, 0.6, 0.4);
   lTir.Font.Color := GetTextColorForBackground(fBG.color, 0.6, 0.4);
 
-  if TryStrToInt(lTir.hint, r) then begin
-     if r < bad_tir then
-       lTir.Font.color := GetAdjustedColorForBackground(clRed, fBG.Color, 0.6, 0.4, true)
+
+  if TryStrToInt(lTir.hint, r) then begin  // Check time in range
+     if r < bad_tir then // If the value is under the limit for "bad"
+       lTir.Font.color := GetAdjustedColorForBackground(clMaroon, fBG.Color, 0.6, 0.4, true)
      else if r > good_tir then
-       lTir.Font.color := GetAdjustedColorForBackground(clGreen, fBG.Color, 0.6, 0.4, true);
+       lTir.Font.color := GetAdjustedColorForBackground($00005900, fBG.Color, 0.6, 0.4, true);
   end;
+
+
 end;
 
 function TfBG.GetTextColorForBackground(const BgColor: TColor;
