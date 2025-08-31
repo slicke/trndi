@@ -791,6 +791,10 @@ Application.OnException := @AppExceptionHandler;
   IsRaspberry := false;
   if (Pos('ID=debian', s) > -1) then
     IsRaspberry := FileExists('/etc/rpi-issue');
+
+  {$ifndef LCLQt6}
+     Showmessage('This release of Trndi was compiled for a non-supported platform ("widgetset")'#10'Performance might be bad and features might not work as intended!'#10#10'Please download the official release (Qt6) from github.com/slicke/trndi');
+  {$endif}
   {$endif}
    if TrndiNative.DetectWSL.IsWSL then
      Showmessage('Windows Linux Subsystem (WSL) detected. Due to limitations in WSL, graphic issues may occur. Commonly, windows will appear at random positions an not where expected!');
@@ -947,7 +951,7 @@ begin
     api.Free;
 
   {$ifdef TRNDIEXT}
-    TTrndiExtEngine.Instance.Free;
+    TTrndiExtEngine.ReleaseInstance;
   {$endif}
 
 end;

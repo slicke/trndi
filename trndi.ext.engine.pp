@@ -532,7 +532,7 @@ begin
     Dispose(cb);
   callbacks.Free;
 
-  CheckSynchronize(0);
+  FreeAndNil(FInstance);
   inherited Destroy;
 end;
 
