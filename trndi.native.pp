@@ -391,7 +391,7 @@ begin
 
   // Kolla Windows-version
   if (Win32MajorVersion < 10) or ((Win32MajorVersion = 10) and (Win32BuildNumber < 17763)) then
-    Exit; // Dark mode stöds först i Windows 10 1809 (build 17763)
+    Exit; // Windows 10 1809 (build 17763)
 
   Value := Ord(Enable);
   Result := Succeeded(
