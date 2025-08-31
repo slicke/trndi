@@ -576,7 +576,7 @@ msgstr ""
 
 #: trndi.strings.rs_history_item
 #, object-pascal-format
-msgid "Selected Reading: %s | Difference: %s | Trend: %s"
+msgid "Selected Reading: %s | Difference: %s | Trend: %s | RSSI: %s | Noise: %s | Source: %s | Device: %s"
 msgstr ""
 
 #: trndi.strings.rs_hi_level
@@ -728,8 +728,20 @@ msgstr ""
 msgid "These are the messages currently held in Trndi's log"
 msgstr ""
 
+#: trndi.strings.rs_rh_reading
+msgid "Reading"
+msgstr ""
+
+#: trndi.strings.rs_rh_time
+msgid "Time"
+msgstr ""
+
 #: trndi.strings.rs_rh_title
 msgid "Historical readings"
+msgstr ""
+
+#: trndi.strings.rs_rh_unknown
+msgid "Unknown"
 msgstr ""
 
 #: trndi.strings.rs_setup
