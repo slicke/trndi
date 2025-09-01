@@ -133,6 +133,7 @@ public
        - Linux checks `/proc/bus/input/devices`
     }
   function HasTouchScreen(out multi: boolean): boolean;
+  function HasTouchScreen: boolean;
 
     { getURL (class function)
       -----------------------
@@ -754,6 +755,13 @@ end;
   --------------------------
   Platform-specific detection of touch hardware.
  ------------------------------------------------------------------------------}
+ function TrndiNative.HasTouchScreen: boolean;
+ var
+   mt: boolean;
+ begin
+   result := HasTouchScreen(mt);
+ end;
+
 {$IF DEFINED(X_WIN)}
 function TrndiNative.HasTouchScreen(out multi: boolean): boolean;
 const

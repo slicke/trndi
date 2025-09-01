@@ -10,9 +10,9 @@ object fBG: TfBG
   Color = clBlack
   Font.Color = clWhite
   Position = poDesktopCenter
-  LCLVersion = '4.2.0.0'
   OnClose = FormClose
   OnCreate = FormCreate
+  OnDblClick = FormDblClick
   OnDestroy = FormDestroy
   OnKeyPress = FormKeyPress
   OnMouseLeave = FormMouseLeave
@@ -50,6 +50,7 @@ object fBG: TfBG
     ParentFont = False
     PopupMenu = pmSettings
     OnClick = lValClick
+    OnDblClick = lValDblClick
     OnMouseDown = lValMouseDown
     OnMouseMove = FormMouseMove
     OnMouseUp = lValMouseUp

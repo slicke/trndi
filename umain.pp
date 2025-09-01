@@ -143,6 +143,7 @@ TfBG = class(TForm)
   procedure fbReadingsDblClick(Sender:TObject);
   procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
   procedure FormCreate(Sender: TObject);
+  procedure FormDblClick(Sender: TObject);
   procedure FormDestroy(Sender:TObject);
   procedure FormKeyPress(Sender:TObject;var Key:char);
   procedure FormMouseLeave(Sender:TObject);
@@ -156,6 +157,7 @@ TfBG = class(TForm)
   procedure lgMainClick(Sender: TObject);
   procedure lTirClick(Sender:TObject);
   procedure lValClick(Sender: TObject);
+  procedure lValDblClick(Sender: TObject);
   procedure lValMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: integer);
   procedure lValMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: integer);
   procedure lValStartDrag(Sender: TObject; var DragObject: TDragObject);
@@ -248,6 +250,7 @@ private
   procedure ProcessTimeIntervals(const SortedReadings: array of BGReading; CurrentTime: TDateTime);
   function UpdateLabelForReading(SlotIndex: Integer; const Reading: BGReading): Boolean;
   function DetermineColorForReading(const Reading: BGReading): TColor;
+  procedure DoFullScreen;
   {$ifdef DARWIN}
      procedure ToggleFullscreenMac;
   {$endif}
@@ -938,6 +941,12 @@ Application.OnException := @AppExceptionHandler;
   fs.Free;
 end;
 
+procedure TfBG.FormDblClick(Sender: TObject);
+begin
+  if native.HasTouchScreen then
+    DoFullScreen;
+end;
+
 function TfBG.lastReading: BGReading;
 begin
   result := bgs[Low(bgs)];
@@ -1167,8 +1176,12 @@ begin
 end;
 {$endif}
 
-// Handle full screen toggle on double-click
 procedure TfBG.lDiffDblClick(Sender: TObject);
+begin
+  DoFullscreen;
+end;
+
+procedure TfBG.DoFullScreen;
 var
   IsCurrentlyFullscreen: Boolean;
   SavedBounds: TRect;
@@ -1294,6 +1307,12 @@ procedure TfBG.lValClick(Sender: TObject);
 begin
   if lVal.Caption = RS_SETUP then
     miSettings.Click;
+end;
+
+procedure TfBG.lValDblClick(Sender: TObject);
+begin
+  if native.HasTouchScreen then
+    DoFullScreen;
 end;
 
 // Handle mouse down on lVal
