@@ -1432,7 +1432,7 @@ for i := Low(bgs) to High(bgs) do begin
 end;
 
 
-i := ExtTable ( RS_RHISTORY, RS_RH_TITLE, RS_RH_INFO, keys, vals, WideChar($2699), RS_RH_TIME, RS_RH_READING);
+i := ExtTable ( RS_RHISTORY, RS_RH_TITLE, RS_RH_INFO, keys, vals, System.WideChar($2699), RS_RH_TIME, RS_RH_READING);
 if i > 0 then begin
   b := bgs[i-1];
   if b.getRSSI(xval) then
