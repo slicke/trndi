@@ -17,10 +17,8 @@ jobs:
     runs-on: macos-14
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      # Ensure FPC finds its config when invoked by lazbuild
+      # Ensure FPC finds its config regardless of CWD
       PPC_CONFIG_PATH: /opt/local/libexec/fpc/etc
-      # Make sure the MacPorts FPC bin dir is on PATH for all steps
-      PATH: /opt/local/libexec/fpc/bin:/opt/local/bin:/opt/local/sbin:${{ env.PATH }}
 
     steps:
       - name: Checkout
@@ -31,7 +29,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          # Robustly extract macOS major version (strip CRs to avoid parsing issues)
+          # Determine macOS major version
           OSMAJOR="$(sw_vers -productVersion | tr -d '\r' | cut -d. -f1)"
           case "$OSMAJOR" in
             14) OSNAME="14-Sonoma" ;;
@@ -78,26 +76,32 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          # PATH and PPC_CONFIG_PATH are already set at job level
-          sudo port -v selfupdate
+          # Use MacPorts tool paths explicitly
+          export PATH="/opt/local/libexec/fpc/bin:/opt/local/bin:/opt/local/sbin:$PATH"
+
+          /opt/local/bin/port -v selfupdate
           # MacPorts provides 'fpc' and 'lazarus'; there is no 'fpc-src' port
-          sudo port -N install fpc lazarus p7zip
+          /opt/local/bin/port -N install fpc lazarus p7zip
 
           echo "Sanity check toolchain:"
-          echo "  fpc:      $(command -v fpc || true)"
-          echo "  lazbuild: $(command -v lazbuild || true)"
-          echo "  ppcx64:   $(command -v ppcx64 || true)"
-          echo "  PPC_CONFIG_PATH=${PPC_CONFIG_PATH}"
+          command -v fpc || true
+          command -v lazbuild || true
+          command -v ppcx64 || true
+          echo "PPC_CONFIG_PATH=${PPC_CONFIG_PATH}"
           test -f "${PPC_CONFIG_PATH}/fpc.cfg" && head -n 5 "${PPC_CONFIG_PATH}/fpc.cfg" || true
 
       - name: Prepare static libs and sources
         shell: bash
         run: |
           set -euo pipefail
+          export PATH="/opt/local/libexec/fpc/bin:/opt/local/bin:/opt/local/sbin:$PATH"
+
           curl -fsSL -A "Mozilla/5.0 GitHubActions" -o mormot2static.7z "https://github.com/synopse/mORMot2/releases/download/2.3.stable/mormot2static.7z"
           mkdir -p ./static
           7z x mormot2static.7z -o./static -y >/dev/null
+
           git clone https://github.com/synopse/mORMot2.git externals/mORMot2
+
           test -d ./static/aarch64-darwin || { echo "Expected static/aarch64-darwin not found" >&2; exit 1; }
           cp -r ./static/aarch64-darwin/* .
 
@@ -105,7 +109,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          # lazbuild should use FPC from PATH and pick up fpc.cfg via PPC_CONFIG_PATH
+          export PATH="/opt/local/libexec/fpc/bin:/opt/local/bin:/opt/local/sbin:$PATH"
+
           lazbuild externals/mORMot2/packages/lazarus/mormot2.lpk
           lazbuild --build-mode="No Ext (Release)" --ws=cocoa --cpu=aarch64 --os=darwin Trndi.lpr
           test -f ./Trndi

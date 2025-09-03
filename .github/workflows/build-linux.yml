@@ -43,9 +43,9 @@ jobs:
         run: |
           set -euo pipefail
 
-          # Use pinned URLs (deterministic, no scraping). Update if you bump versions.
-          FPC_LAZ_URL="https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.2/fpc-laz_3.2.2-210709_amd64.deb/download"
-          FPC_SRC_URL="https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.2/fpc-src_3.2.2-210709_amd64.deb/download"
+          # Pinned URLs for reproducibility; update if you bump versions
+          FPC_LAZ_URL="https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.2/fpc-laz_3.2.2-210_amd64.deb/download"
+          FPC_SRC_URL="https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.2/fpc-src_3.2.2-210_amd64.deb/download"
           LAZ_URL="https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.2/lazarus-project_4.2.0-0_amd64.deb/download"
 
           echo "Downloading Lazarus + FPC DEBs:"
@@ -57,11 +57,10 @@ jobs:
           curl -fsSL -o fpc-src.deb "${FPC_SRC_URL}"
           curl -fsSL -o lazarus.deb "${LAZ_URL}"
 
-          # Install all together; then let apt resolve system libs (e.g., libgtk2.0-dev, etc.)
+          # Install all together; then let apt resolve system libs
           sudo dpkg -i fpc-laz.deb fpc-src.deb lazarus.deb || true
           sudo apt-get -f install -y
 
-          # Sanity check for lazbuild
           if ! command -v lazbuild >/dev/null 2>&1; then
             echo "lazbuild not found after install" >&2
             exit 1
@@ -72,8 +71,38 @@ jobs:
         run: |
           set -euo pipefail
 
-          # Build libQt6Pas from upstream Lazarus 4.2.0 sources (provides CMake/qmake files).
-          git clone --depth 1 --branch lazarus_4_2_0 https://gitlab.com/freepascal.org/lazarus/lazarus.git lazarus-src
+          # Pick a Lazarus branch/tag in order of preference:
+          # 1) lazarus_4_2_0 (tag), 2) fixes_4_2 (stable), 3) main (development)
+          REPO="https://gitlab.com/freepascal.org/lazarus/lazarus.git"
+          pick_ref() {
+            local ref="\$1"
+            if git ls-remote --exit-code --heads --tags "$REPO" "$ref" >/dev/null 2>&1; then
+              echo "$ref"
+              return 0
+            fi
+            return 1
+          }
+
+          REF=""
+          for candidate in "refs/tags/lazarus_4_2_0" "refs/heads/fixes_4_2" "refs/heads/main"; do
+            if pick_ref "$candidate"; then
+              REF="$candidate"
+              break
+            fi
+          done
+
+          if [ -z "$REF" ]; then
+            echo "No preferred Lazarus refs found; cloning default branch."
+            git clone --depth 1 "$REPO" lazarus-src
+          else
+            echo "Cloning Lazarus at $REF"
+            if [[ "$REF" == refs/tags/* ]]; then
+              # Clone the tag directly
+              git clone --depth 1 --branch "${REF#refs/tags/}" "$REPO" lazarus-src
+            else
+              git clone --depth 1 --branch "${REF#refs/heads/}" "$REPO" lazarus-src
+            fi
+          fi
 
           CBLD="lazarus-src/lcl/interfaces/qt6/cbindings"
           if [ ! -d "${CBLD}" ]; then
