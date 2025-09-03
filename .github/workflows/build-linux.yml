@@ -143,4 +143,4 @@ jobs:
         run: |
           set -euo pipefail
           gh release create "$TAG" --title "Trndi $TAG" --notes "Automated multi-OS build." || true
-          gh release upload "$TAG" "Trndi-developer-build-linux-qt6-x64.zip" --clobber
+          gh release upload "$TAG" "Trndi-linux-amd64.zip" --clobber

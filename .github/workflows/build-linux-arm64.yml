@@ -1,0 +1,123 @@
+name: Linux ARM64 Builder (Qt6)
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch: {}
+
+concurrency:
+  group: trndi-build-linux-arm64-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Linux ARM64 (Qt6)
+    runs-on: ubuntu-24.04-arm  # Specific ARM64 runner
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install build prerequisites (Qt6 toolchain)
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y \
+            p7zip-full \
+            build-essential \
+            wget \
+            curl \
+            git \
+            cmake \
+            ninja-build \
+            pkg-config \
+            qt6-base-dev \
+            qt6-tools-dev \
+            qt6-base-dev-tools
+
+      - name: Install Lazarus + FPC (ARM64 DEBs)
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # ARM64-specific URLs for Lazarus and FPC
+          FPC_LAZ_URL="https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20arm64%20DEB/Lazarus%204.2/fpc-laz_3.2.3-240813_arm64.deb/download"
+          FPC_SRC_URL="https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20arm64%20DEB/Lazarus%204.2/fpc-src_3.2.3-240813_arm64.deb/download"
+          LAZ_URL="https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20arm64%20DEB/Lazarus%204.2/lazarus-project_4.2.0-0_arm64.deb/download"
+
+          echo "Downloading Lazarus + FPC ARM64 DEBs:"
+          curl -fsSL -o fpc-laz.deb "${FPC_LAZ_URL}"
+          curl -fsSL -o fpc-src.deb "${FPC_SRC_URL}"
+          curl -fsSL -o lazarus.deb "${LAZ_URL}"
+
+          sudo dpkg -i fpc-laz.deb fpc-src.deb lazarus.deb || true
+          sudo apt-get -f install -y
+
+          if ! command -v lazbuild >/dev/null 2>&1; then
+            echo "lazbuild not found after install" >&2
+            exit 1
+          fi
+
+      - name: Verify Native ARM64 Environment
+        shell: bash
+        run: |
+          echo "CPU Architecture:"
+          uname -m
+          echo "Available Platforms:"
+          dpkg --print-architecture
+          echo "Supported Architectures:"
+          dpkg-architecture -L
+
+      - name: Prepare static libs and sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ./static
+          curl -fsSL -o mormot2static.7z 'https://github.com/synopse/mORMot2/releases/download/2.3.stable/mormot2static.7z'
+          7z x mormot2static.7z -o./static -y >/dev/null
+          git clone https://github.com/synopse/mORMot2.git externals/mORMot2
+
+          # Confirm ARM64 static libs 
+          test -d ./static/aarch64-linux || { echo "Expected static/aarch64-linux not found" >&2; exit 1; }
+          cp -r ./static/aarch64-linux/* .
+
+      - name: Compilation (Qt6 ARM64 Widgetset)
+        shell: bash
+        run: |
+          set -euo pipefail
+          lazbuild externals/mORMot2/packages/lazarus/mormot2.lpk
+          lazbuild --widgetset=qt6 --build-mode="Extensions (Release)" --cpu=aarch64 Trndi.lpr
+          
+          # Verify binary
+          file ./Trndi
+          ldd ./Trndi
+          test -f ./Trndi
+
+      - name: Package artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          cp Trndi artifacts/
+          7z a -tzip Trndi-developer-build-linux-qt6-arm64.zip ./artifacts/* >/dev/null
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-arm64-build
+          path: Trndi-developer-build-linux-qt6-arm64.zip
+          if-no-files-found: error
+
+      - name: Publish to release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: v${{ github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release create "$TAG" --title "Trndi $TAG" --notes "Automated multi-OS build." || true
+          gh release upload "$TAG" "Trndi-linux-arm64.zip" --clobber

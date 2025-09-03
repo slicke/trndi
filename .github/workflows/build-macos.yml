@@ -159,4 +159,4 @@ jobs:
         run: |
           set -euo pipefail
           gh release create "$TAG" --title "Trndi $TAG" --notes "Automated multi-OS build." || true
-          gh release upload "$TAG" "Trndi-developer-build-macos-arm64.zip" --clobber
+          gh release upload "$TAG" "Trndi-macos-silicon.zip" --clobber
