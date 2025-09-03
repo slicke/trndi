@@ -15,6 +15,7 @@ jobs:
   build:
     name: Build Windows
     runs-on: windows-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -30,11 +31,12 @@ jobs:
             choco install 7zip -y
           }
 
-      - name: Install Lazarus (4.2 + FPC 3.2.2) with retry/validation
+      - name: Install Lazarus (4.2 + FPC 3.2.2) via curl.exe with retries
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
 
+          # Robust download using curl.exe (NOT Invoke-WebRequest). No UA override needed.
           function Get-WithRetry {
             param(
               [Parameter(Mandatory=$true)][string]$Url,
@@ -51,6 +53,7 @@ jobs:
                     $bytes = New-Object byte[] 2
                     [void]$fs.Read($bytes, 0, 2)
                     $fs.Close()
+                    # Validate 'MZ' PE signature and a sane size (>50MB)
                     if ($bytes[0] -eq 0x4D -and $bytes[1] -eq 0x5A) {
                       $size = (Get-Item $OutFile).Length
                       if ($size -gt 50000000) { return }
@@ -60,7 +63,7 @@ jobs:
                   }
                 } catch { }
               }
-              Write-Host "Download validation failed, retry $i/$Retries..."
+              Write-Host "Download validation failed, retry $i/$Retries. Sleeping $DelaySec sec..."
               Start-Sleep -Seconds $DelaySec
               if (Test-Path $OutFile) { Remove-Item $OutFile -Force -ErrorAction SilentlyContinue }
             }
@@ -69,8 +72,11 @@ jobs:
 
           $LazUrl = 'https://sourceforge.net/projects/lazarus/files/Lazarus%20Windows%2064%20bit/Lazarus%204.2/lazarus-4.2-fpc-3.2.2-win64.exe/download'
           Get-WithRetry -Url $LazUrl -OutFile 'lazarus-4.2.exe'
+
           Start-Process -FilePath '.\lazarus-4.2.exe' -ArgumentList '/VERYSILENT','/SP-','/NORESTART','/DIR=C:\Lazarus' -Wait
-          if (-not (Test-Path "C:\Lazarus\lazbuild.exe")) { throw "lazbuild not found after install." }
+          if (-not (Test-Path "C:\Lazarus\lazbuild.exe")) {
+            throw "lazbuild not found after install."
+          }
 
       - name: Prepare static libs and sources
         shell: pwsh
@@ -78,8 +84,12 @@ jobs:
           New-Item -ItemType Directory -Path .\static -Force | Out-Null
           & curl.exe -L --fail -o mormot2static.7z "https://github.com/synopse/mORMot2/releases/download/2.3.stable/mormot2static.7z"
           & 'C:\Program Files\7-Zip\7z.exe' x '.\mormot2static.7z' -o'.\static' -y | Out-Null
+
           git clone https://github.com/synopse/mORMot2.git externals/mORMot2
-          if (-not (Test-Path '.\static\x86_64-win64')) { throw "Expected static\x86_64-win64 not found." }
+
+          if (-not (Test-Path '.\static\x86_64-win64')) {
+            throw "Expected static\x86_64-win64 not found."
+          }
           xcopy .\static\x86_64-win64\*.* . /Y /E /I | Out-Null
 
       - name: Build
@@ -87,7 +97,9 @@ jobs:
         run: |
           & 'C:\Lazarus\lazbuild.exe' 'externals\mORMot2\packages\lazarus\mormot2.lpk'
           & 'C:\Lazarus\lazbuild.exe' --lazarusdir='C:\Lazarus' --build-mode='Extensions (Release)' 'Trndi.lpr'
-          if (-not (Test-Path '.\Trndi.exe')) { throw "Build succeeded but Trndi.exe not found." }
+          if (-not (Test-Path '.\Trndi.exe')) {
+            throw "Build succeeded but Trndi.exe not found."
+          }
 
       - name: Package artifact
         shell: pwsh
@@ -103,6 +115,7 @@ jobs:
           path: Trndi-developer-build-windows.zip
           if-no-files-found: error
 
+      # Optional: append this artifact to a single release shared by all builders
       - name: Publish to single release
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         shell: pwsh
@@ -111,5 +124,6 @@ jobs:
           TAG: v${{ github.sha }}
         run: |
           $ErrorActionPreference = "Stop"
+          # Create if missing; ignore error if already exists
           gh release create "$env:TAG" --title "Trndi $env:TAG" --notes "Automated multi-OS build." 2>$null || $true
           gh release upload "$env:TAG" "Trndi-developer-build-windows.zip" --clobber
