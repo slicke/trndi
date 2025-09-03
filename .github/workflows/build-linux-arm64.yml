@@ -71,6 +71,35 @@ jobs:
           echo "Supported Architectures:"
           dpkg-architecture -L
 
+      - name: Install libQt6Pas (ARM64 DEBs)
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Specific ARM64 libQt6Pas DEBs
+          QT6PAS_DEB="libqt6pas6_6.2.10-1_arm64.deb"
+          QT6PAS_DEV_DEB="libqt6pas6-dev_6.2.10-1_arm64.deb"
+
+          BASE_RELEASE="https://github.com/davidbannon/libqt6pas/releases/download/v6.2.10"
+          URL_QT6PAS="${BASE_RELEASE}/${QT6PAS_DEB}"
+          URL_QT6PAS_DEV="${BASE_RELEASE}/${QT6PAS_DEV_DEB}"
+
+          echo "Downloading libQt6Pas ARM64 DEBs:"
+          curl -fL -o "${QT6PAS_DEB}" "${URL_QT6PAS}"
+          curl -fL -o "${QT6PAS_DEV_DEB}" "${URL_QT6PAS_DEV}"
+
+          # Install both runtime and dev packages
+          sudo dpkg -i "${QT6PAS_DEB}" "${QT6PAS_DEV_DEB}" || true
+          sudo apt-get -f install -y  # Fix any dependency issues
+
+          # Verify library installation
+          sudo ldconfig
+          ldconfig -p | grep Qt6Pas
+
+          # Additional diagnostic checks
+          pkg-config --libs Qt6Pas || true
+          find /usr/lib -name "libQt6Pas.so*"
+
       - name: Prepare static libs and sources
         shell: bash
         run: |
