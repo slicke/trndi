@@ -37,8 +37,8 @@ jobs:
 
               # Install Lazarus if missing
               if (-not (Test-Path "C:\Lazarus\lazbuild.exe")) {
-                Write-Host "Downloading Lazarus 4.2.0 for Windows..."
-                Invoke-WebRequest -Uri 'https://sourceforge.net/projects/lazarus/files/Lazarus%20Windows%2064%20bit/Lazarus%204.2.0/lazarus-4.2.0-fpc-3.2.2-win64.exe/download' -OutFile 'lazarus-4.2.exe' -Headers $Headers
+                Write-Host "Downloading Lazarus 4.2 for Windows..."
+                Invoke-WebRequest -Uri 'https://sourceforge.net/projects/lazarus/files/Lazarus%20Windows%2064%20bit/Lazarus%204.2/lazarus-4.2-fpc-3.2.2-win64.exe/download' -OutFile 'lazarus-4.2.exe' -Headers $Headers
                 if (-not (Test-Path '.\lazarus-4.2.exe')) { throw "Lazarus installer download failed." }
                 Start-Process -FilePath '.\lazarus-4.2.exe' -ArgumentList '/VERYSILENT', '/DIR=C:\Lazarus' -Wait
               }
@@ -87,7 +87,7 @@ jobs:
               sudo apt-get install -y libqt6pas-dev || true
 
               # Install Lazarus 4.2.0 (pulls fpc/fpc-src via deps on -f)
-              wget -O lazarus.deb 'https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20x86_64/Lazarus%204.2.0/lazarus-project_4.2.0-0_amd64.deb/download'
+              wget -O lazarus.deb 'https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.2/lazarus-project_4.2.0-0_amd64.deb/download'
               sudo dpkg -i lazarus.deb || true
               sudo apt-get -f install -y
 
@@ -124,21 +124,23 @@ jobs:
             script: |
               set -euo pipefail
 
-              # Homebrew toolchain
-              brew update
-              brew install fpc p7zip
+              # Add MacPorts to PATH for later steps
+              export PATH="/opt/local/bin:/opt/local/sbin:$PATH"
 
-              # Install Lazarus via Homebrew cask (preferred on GitHub macOS runners)
-              if ! brew list --cask lazarus >/dev/null 2>&1; then
-                brew install --cask lazarus
-              fi
-
-              LAZ_DIR="/Applications/Lazarus.app/Contents/Resources/lazarus"
-              LAZBUILD="${LAZ_DIR}/lazbuild"
-              if [ ! -x "$LAZBUILD" ]; then
-                echo "lazbuild not found at ${LAZBUILD}. Ensure the Lazarus cask installed correctly." >&2
+              # Fetch the latest MacPorts Sonoma pkg URL from the official install page
+              PKG_URL="$(curl -fsSL https://www.macports.org/install.php | sed -n 's/.*href=\"\$https:[^\"\\n]*MacPorts-[^\"\\n]*-14-Sonoma.pkg\$\".*/\\1/p' | head -n1)"
+              if [ -z "${PKG_URL}" ]; then
+                echo "Failed to detect MacPorts Sonoma pkg URL from install page." >&2
                 exit 1
               fi
+              echo "Downloading MacPorts pkg: ${PKG_URL}"
+              curl -fsSL -o MacPorts-Sonoma.pkg "${PKG_URL}"
+              sudo installer -pkg MacPorts-Sonoma.pkg -target /
+
+              # Update MacPorts and install required ports
+              sudo port -v selfupdate
+              # Lazbuild will be /opt/local/bin/lazbuild after this
+              sudo port -N install fpc fpc-src lazarus p7zip
 
               # Prepare static
               curl -fsSL -A "Mozilla/5.0 GitHubActions" \
@@ -154,11 +156,10 @@ jobs:
               test -d ./static/aarch64-darwin || { echo "Expected static/aarch64-darwin not found" >&2; exit 1; }
               cp -r ./static/aarch64-darwin/* .
 
-              # Build
-              "$LAZBUILD" externals/mORMot2/packages/lazarus/mormot2.lpk
-              # If "No Ext (Release)" isn't defined in your .lpi, adjust/remove this mode.
-              "$LAZBUILD" \
-                --lazarusdir="$LAZ_DIR" \
+              # Build with Lazarus from MacPorts (arm64 cocoa)
+              lazbuild externals/mORMot2/packages/lazarus/mormot2.lpk
+              # If your project doesn't define "No Ext (Release)", adjust/remove this mode.
+              lazbuild \
                 --build-mode="No Ext (Release)" \
                 --ws=cocoa \
                 --cpu=aarch64 \
@@ -173,7 +174,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Note: Use OS-specific steps to avoid using an expression in the 'shell' key
+      # Use OS-specific steps to avoid using an expression in the 'shell' key
       - name: Set up and build (Windows)
         if: matrix.platform == 'windows'
         run: ${{ matrix.script }}
