@@ -17,6 +17,7 @@ jobs:
           - os: windows-latest
             platform: windows
             artifact: Trndi-developer-build-windows.zip
+            shell: pwsh  # Add explicit shell definition
             build_script: |
               # Restore Lazarus
               if (-not (Test-Path "C:\Lazarus\lazbuild.exe")) {
@@ -48,11 +49,11 @@ jobs:
               New-Item -ItemType Directory -Path artifacts -Force
               Copy-Item Trndi.exe artifacts/
               7z a -tzip Trndi-developer-build-windows.zip ./artifacts/*
-            shell: pwsh
 
           - os: ubuntu-latest
             platform: linux
             artifact: Trndi-developer-build-linux-qt6-x64.zip
+            shell: bash  # Add explicit shell definition
             build_script: |
               # Update and install dependencies
               sudo apt-get update
@@ -89,11 +90,11 @@ jobs:
               cd artifacts
               zip ../Trndi-developer-build-linux-qt6-x64.zip Trndi
               cd ..
-            shell: bash
 
           - os: macos-14
             platform: macos
             artifact: Trndi-developer-build-macos-arm64.zip
+            shell: bash  # Add explicit shell definition
             build_script: |
               # Install dependencies
               export PATH="/opt/local/bin:/opt/local/sbin:$PATH"
@@ -126,7 +127,6 @@ jobs:
               cd artifacts
               zip ../Trndi-developer-build-macos-arm64.zip Trndi
               cd ..
-            shell: bash
 
     runs-on: ${{ matrix.os }}
     permissions:
@@ -138,7 +138,7 @@ jobs:
 
       - name: Set up build environment
         run: ${{ matrix.build_script }}
-        shell: ${{ matrix.shell }}
+        shell: ${{ matrix.shell }}  # Use matrix-defined shell
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
