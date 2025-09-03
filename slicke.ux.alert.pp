@@ -119,8 +119,8 @@ function UXDialog(const header, title, message: string; buttons: TUXMsgDlgBtns; 
 //function UXShowMessage(const caption, title, desc, message: string; buttons: TMsgDlgButtons; const icon: WideChar): TModalResult;
 function ExtMsg(const  caption, title, desc, logmsg: string; dumpbg: TColor = $00F5F2FD; dumptext:
 TColor = $003411A9; buttons: TUXMsgDlgBtns = [mbAbort]; const icon: widechar =
-widechar($2699)): TModalResult;
-function ExtLog(const caption, msg, log: string; const icon: widechar = widechar($2699)):
+widechar($2699); scale: integer = 1): TModalResult;
+function ExtLog(const caption, msg, log: string; const icon: widechar = widechar($2699); scale: integer = 1):
 TModalResult
 ;
 function ExtList(
@@ -517,11 +517,11 @@ begin
 end;
 
 
-function ExtLog(const caption, msg, log: string; const icon: widechar = widechar($2699)):
+function ExtLog(const caption, msg, log: string; const icon: widechar = widechar($2699); scale: integer = 1):
 TModalResult
 ;
 begin
-  result := ExtMsg(sMsgTitle, caption, msg, log, $00AA6004, $00FDD8AA, [mbOK], widechar(icon));
+  result := ExtMsg(sMsgTitle, caption, msg, log, $00AA6004, $00FDD8AA, [mbOK], widechar(icon), scale);
 end;
 
 function ExtError(const error: string; const icon: widechar = widechar($2699)): TModalResult;
@@ -970,7 +970,7 @@ end;
 
 function ExtMsg(const caption, title, desc, logmsg: string; dumpbg: TColor = $00F5F2FD; dumptext:
 TColor = $003411A9; buttons: TUXMsgDlgBtns = [mbAbort]; const icon: widechar =
-widechar($2699)): TModalResult;
+widechar($2699); scale: integer = 1): TModalResult;
 
 const
   btnWidth = 75;
@@ -1151,6 +1151,8 @@ begin
 
     log.Text := string(log.Text).TrimRight([#13, #10]);
     log.Height := dialog.Canvas.TextHeight(logmsg) * (string(log.Text).CountChar(#10)+1);
+    if scale <> 1 then
+      log.height := log.height*scale;
     logpanel.height := log.Height+20;
     Dialog.height := Dialog.Height + logPanel.height;
 
