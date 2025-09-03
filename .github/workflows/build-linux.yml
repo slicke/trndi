@@ -1,4 +1,4 @@
-name: Linux Builder
+name: Linux Builder (Qt6)
 
 on:
   push:
@@ -35,36 +35,20 @@ jobs:
             ninja-build \
             pkg-config \
             qt6-base-dev \
-            qt6-base-dev-tools \
-            qt6-tools-dev
+            qt6-tools-dev \
+            qt6-base-dev-tools
 
       - name: Install Lazarus + FPC (DEBs from SourceForge)
         shell: bash
         run: |
           set -euo pipefail
 
-          SF_BASE="https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.2/"
+          # Use pinned URLs (deterministic, no scraping). Update if you bump versions.
+          FPC_LAZ_URL="https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.2/fpc-laz_3.2.2-210_amd64.deb/download"
+          FPC_SRC_URL="https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.2/fpc-src_3.2.2-210_amd64.deb/download"
+          LAZ_URL="https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.2/lazarus-project_4.2.0-0_amd64.deb/download"
 
-          # Resolver that never hard-fails (lets pinned fallbacks kick in)
-          resolve_sf() {
-            local pattern="\$1"
-            local url=""
-            url="$(curl -fsSL "$SF_BASE" \
-              | grep -Eo "https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.2/${pattern}/download" \
-              | head -n1 || true)"
-            printf '%s' "$url"
-          }
-
-          FPC_LAZ_URL="$(resolve_sf 'fpc-laz_3\.2\.2[^"]*_amd64\.deb')"
-          FPC_SRC_URL="$(resolve_sf 'fpc-src_3\.2\.2[^"]*_amd64\.deb')"
-          LAZ_URL="$(resolve_sf 'lazarus-project_4\.2(\.[0-9])?[^"]*_amd64\.deb')"
-
-          # Deterministic fallbacks
-          : "${FPC_LAZ_URL:=https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.2/fpc-laz_3.2.2-210709_amd64.deb/download}"
-          : "${FPC_SRC_URL:=https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.2/fpc-src_3.2.2-210709_amd64.deb/download}"
-          : "${LAZ_URL:=https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.2/lazarus-project_4.2.0-0_amd64.deb/download}"
-
-          echo "Downloading:"
+          echo "Downloading Lazarus + FPC DEBs:"
           echo "  ${FPC_LAZ_URL}"
           echo "  ${FPC_SRC_URL}"
           echo "  ${LAZ_URL}"
@@ -73,65 +57,58 @@ jobs:
           curl -fsSL -o fpc-src.deb "${FPC_SRC_URL}"
           curl -fsSL -o lazarus.deb "${LAZ_URL}"
 
-          # Install all together; then let apt resolve system libs (e.g., libgtk2.0-dev)
+          # Install all together; then let apt resolve system libs (e.g., libgtk2.0-dev, etc.)
           sudo dpkg -i fpc-laz.deb fpc-src.deb lazarus.deb || true
           sudo apt-get -f install -y
 
+          # Sanity check for lazbuild
           if ! command -v lazbuild >/dev/null 2>&1; then
             echo "lazbuild not found after install" >&2
             exit 1
           fi
 
-      - name: Build and install Qt6Pas (libQt6Pas)
+      - name: Build and install Qt6Pas (libQt6Pas) from Lazarus sources
         shell: bash
         run: |
           set -euo pipefail
 
-          # Locate the Lazarus Qt6 cbindings directory installed by the DEB
-          CBLD="$(find /usr/share/lazarus /usr/lib/lazarus /usr -type d -path "*/lcl/interfaces/qt6/cbindings" 2>/dev/null | head -n1 || true)"
-          if [ -z "${CBLD}" ]; then
-            echo "Could not locate Lazarus qt6 cbindings directory. Listing lazarus dirs for debug:"
-            dpkg -L lazarus-project | grep -E "lcl/interfaces/qt6|cbindings" || true
+          # Build libQt6Pas from upstream Lazarus 4.2.0 sources (provides CMake/qmake files).
+          git clone --depth 1 --branch lazarus_4_2_0 https://gitlab.com/freepascal.org/lazarus/lazarus.git lazarus-src
+
+          CBLD="lazarus-src/lcl/interfaces/qt6/cbindings"
+          if [ ! -d "${CBLD}" ]; then
+            echo "Qt6 cbindings directory not found at ${CBLD}" >&2
+            find lazarus-src -maxdepth 5 -type d -name cbindings -path '*qt6*' -print || true
             exit 1
           fi
-          echo "Found Qt6 cbindings at: ${CBLD}"
+          echo "Using Qt6 cbindings at: ${CBLD}"
 
-          # Prefer CMake build if available
           if [ -f "${CBLD}/CMakeLists.txt" ]; then
             echo "Building Qt6Pas with CMake..."
-            rm -rf "${CBLD}/build"
-            mkdir -p "${CBLD}/build"
-            cd "${CBLD}/build"
-            cmake -G Ninja -DCMAKE_BUILD_TYPE=Release ..
-            cmake --build . --config Release -j"$(nproc)"
-            sudo cmake --install .
+            cmake -S "${CBLD}" -B "${CBLD}/build" -G Ninja -DCMAKE_BUILD_TYPE=Release
+            cmake --build "${CBLD}/build" --config Release -j"$(nproc)"
+            sudo cmake --install "${CBLD}/build"
           elif [ -f "${CBLD}/libqt6pas.pro" ]; then
             echo "Building Qt6Pas with qmake..."
-            QMAKE="$(command -v qmake6 || true)"
+            QMAKE="$(command -v qmake6 || command -v qmake || true)"
             if [ -z "${QMAKE}" ]; then
-              # Some distros still ship qmake as 'qmake'; try that as a fallback
-              QMAKE="$(command -v qmake || true)"
-            fi
-            if [ -z "${QMAKE}" ]; then
-              echo "qmake/qmake6 not found. Please ensure qt6-base-dev-tools installed." >&2
+              echo "qmake/qmake6 not found. Ensure qt6-base-dev-tools is installed." >&2
               exit 1
             fi
-            cd "${CBLD}"
-            "${QMAKE}" libqt6pas.pro
-            make -j"$(nproc)"
-            sudo make install
+            ( cd "${CBLD}" && "${QMAKE}" libqt6pas.pro && make -j"$(nproc)" && sudo make install )
           else
-            echo "Neither CMakeLists.txt nor libqt6pas.pro found in ${CBLD}" >&2
+            echo "No CMakeLists.txt or libqt6pas.pro found in ${CBLD}" >&2
+            ls -la "${CBLD}"
             exit 1
           fi
 
-          # Refresh dynamic linker cache in case lib was installed to /usr/local/lib
+          # Ensure dynamic linker can find it (commonly installed to /usr/local/lib)
+          echo "/usr/local/lib" | sudo tee /etc/ld.so.conf.d/local-lib.conf >/dev/null
           sudo ldconfig
 
-          # Quick sanity check for libQt6Pas
+          # Verify visibility
           if ! ldconfig -p | grep -q "libQt6Pas.so"; then
             echo "libQt6Pas.so not visible to linker after install." >&2
-            # Try common locations for debug
             ls -la /usr/local/lib | grep -i qt6pas || true
             ls -la /usr/lib/x86_64-linux-gnu | grep -i qt6pas || true
             exit 1
