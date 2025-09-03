@@ -1,0 +1,189 @@
+name: Trndi Multi-Platform Builder
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false  # Continue even if one platform fails
+      matrix:
+        include:
+          - os: windows-latest
+            platform: windows
+            artifact: Trndi-developer-build-windows.zip
+            build_script: |
+              # Restore static libraries
+              if (!(Test-Path "C:\Lazarus\lazbuild.exe")) {
+                Invoke-WebRequest -Uri 'https://sourceforge.net/projects/lazarus/files/Lazarus%20Windows%2064%20bit/Lazarus%204.2.0/lazarus-4.2.0-fpc-3.2.2-win64.exe/download' -OutFile 'lazarus-4.2.exe' -ErrorAction Stop
+                Start-Process -FilePath 'lazarus-4.2.exe' -ArgumentList '/VERYSILENT', '/DIR=C:\Lazarus' -Wait -ErrorAction Stop
+              }
+
+              # Install 7-Zip
+              choco install 7zip -y
+
+              # Download static libraries
+              Invoke-WebRequest -Uri 'https://github.com/synopse/mORMot2/releases/download/2.3.stable/mormot2static.7z' -OutFile 'mormot2static.7z' -ErrorAction Stop
+              mkdir ../static -Force
+              & 'C:\Program Files\7-Zip\7z.exe' x 'mormot2static.7z' -o'../static' -y
+
+              # Clone mORMot2
+              git clone https://github.com/synopse/mORMot2.git externals/mORMot2
+
+              # Copy static libraries
+              xcopy ..\static\x86_64-win64\*.* . /Y /E /I
+
+              # Install mORMot2 package
+              & 'C:\Lazarus\lazbuild.exe' 'externals\mORMot2\packages\lazarus\mormot2.lpk'
+
+              # Compile project
+              & 'C:\Lazarus\lazbuild.exe' --lazarusdir='C:\Lazarus' --build-mode='Extensions (Release)' 'Trndi.lpr'
+
+              # Prepare artifacts
+              New-Item -ItemType Directory -Path artifacts -Force
+              Copy-Item Trndi.exe artifacts/
+              7z a -tzip Trndi-developer-build-windows.zip ./artifacts/*
+
+          - os: ubuntu-latest
+            platform: linux
+            artifact: Trndi-developer-build-linux-qt6-x64.zip
+            build_script: |
+              # Update and install dependencies
+              sudo apt-get update
+              sudo apt-get install -y \
+                p7zip-full \
+                build-essential \
+                qt6-base-dev \
+                qt6-tools-dev \
+                qt6-tools-dev-tools \
+                qt6-qpa-plugins \
+                git
+
+              # Install Lazarus 4.2
+              wget -O lazarus-4.2.0-amd64.deb 'https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20x86_64/Lazarus%204.2.0/lazarus-project_4.2.0-0_amd64.deb/download'
+              wget -O fpc-src-amd64.deb 'https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20x86_64/Lazarus%204.2.0/fpc-src_3.2.2-210709_amd64.deb/download'
+              wget -O fpc-laz-amd64.deb 'https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20x86_64/Lazarus%204.2.0/fpc-laz_3.2.2-210709_amd64.deb/download'
+              
+              sudo apt-get install -y ./fpc-laz_3.2.2-210709_amd64.deb ./fpc-src_3.2.2-210709_amd64.deb ./lazarus-project_4.2.0-0_amd64.deb
+
+              # Download static libraries
+              wget https://github.com/synopse/mORMot2/releases/download/2.3.stable/mormot2static.7z
+              mkdir -p ../static
+              7z x mormot2static.7z -o../static -y
+
+              # Clone mORMot2
+              git clone https://github.com/synopse/mORMot2.git externals/mORMot2
+
+              # Copy static libraries
+              cp -r ../static/x86_64-linux/* .
+
+              # Install mORMot2 package
+              lazbuild externals/mORMot2/packages/lazarus/mormot2.lpk
+
+              # Compile project
+              mkdir -p artifacts
+              lazbuild --widgetset=qt6 --build-mode="Extensions (Release)" Trndi.lpr
+              cp Trndi artifacts/
+              cd artifacts
+              zip ../Trndi-developer-build-linux-qt6-x64.zip Trndi
+              cd ..
+
+          - os: macos-14
+            platform: macos
+            artifact: Trndi-developer-build-macos-arm64.zip
+            build_script: |
+              # Install dependencies via MacPorts
+              export PATH="/opt/local/bin:/opt/local/sbin:$PATH"
+              sudo port selfupdate
+              sudo port install fpc lazarus p7zip
+
+              # Download static libraries
+              wget https://github.com/synopse/mORMot2/releases/download/2.3.stable/mormot2static.7z
+              mkdir -p ../static
+              7z x mormot2static.7z -o../static -y
+
+              # Clone mORMot2
+              git clone https://github.com/synopse/mORMot2.git externals/mORMot2
+
+              # Copy static libraries
+              cp -r ../static/aarch64-darwin/* .
+
+              # Install mORMot2 package
+              lazbuild externals/mORMot2/packages/lazarus/mormot2.lpk
+
+              # Compile project
+              mkdir -p artifacts
+              lazbuild --lazarusdir=/opt/local/share/lazarus \
+                       --build-mode="No Ext (Release)" \
+                       --ws=cocoa \
+                       --cpu=aarch64 \
+                       --os=darwin \
+                       Trndi.lpr
+              cp Trndi artifacts/
+              cd artifacts
+              zip ../Trndi-developer-build-macos-arm64.zip Trndi
+              cd ..
+
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up build environment
+        run: ${{ matrix.build_script }}
+        shell: bash
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.platform }}-build
+          path: ${{ matrix.artifact }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: artifacts
+
+      - name: Generate Unified Release Tag
+        id: generate_tag
+        run: |
+          TAG=$(date +'v%Y.%m.%d-%H%M%S')
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "Generated tag: $TAG"
+
+      - name: Create Unified Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.generate_tag.outputs.tag }}
+          name: Multi-Platform Developer Build ${{ steps.generate_tag.outputs.tag }}
+          files: |
+            artifacts/windows-build/Trndi-developer-build-windows.zip
+            artifacts/linux-build/Trndi-developer-build-linux-qt6-x64.zip
+            artifacts/macos-build/Trndi-developer-build-macos-arm64.zip
+          body: |
+            Multi-platform developer build
+            
+            Platforms:
+            - Windows x64
+            - Linux x64 (Qt6)
+            - macOS ARM64
+
+            Built from commit: ${{ github.sha }}
+          prerelease: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
