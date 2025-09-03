@@ -1,0 +1,118 @@
+name: Linux Builder
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch: {}
+
+concurrency:
+  group: trndi-build-linux-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build Linux
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install build deps
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y \
+            p7zip-full \
+            build-essential \
+            wget \
+            curl \
+            git \
+            qt6-base-dev \
+            qt6-tools-dev || true
+          sudo apt-get install -y libqt6pas-dev || true
+
+      - name: Install Lazarus + FPC (DEBs from SourceForge)
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          SF_BASE="https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.2/"
+          resolve_sf() {
+            local pattern="\$1"
+            curl -fsSL "$SF_BASE" \
+            | grep -Eo "https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.2/${pattern}/download" \
+            | head -n1
+          }
+
+          FPC_LAZ_URL="$(resolve_sf 'fpc-laz_3\.2\.2[^"]*_amd64\.deb')"
+          FPC_SRC_URL="$(resolve_sf 'fpc-src_3\.2\.2[^"]*_amd64\.deb')"
+          LAZ_URL="$(resolve_sf 'lazarus-project_4\.2(\.[0-9])?[^"]*_amd64\.deb')"
+
+          : "${FPC_LAZ_URL:=https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.2/fpc-laz_3.2.2-210_amd64.deb/download}"
+          : "${FPC_SRC_URL:=https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.2/fpc-src_3.2.2-210_amd64.deb/download}"
+          : "${LAZ_URL:=https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.2/lazarus-project_4.2.0-0_amd64.deb/download}"
+
+          echo "Downloading:"
+          echo "  ${FPC_LAZ_URL}"
+          echo "  ${FPC_SRC_URL}"
+          echo "  ${LAZ_URL}"
+
+          curl -fsSL -o fpc-laz.deb "${FPC_LAZ_URL}"
+          curl -fsSL -o fpc-src.deb "${FPC_SRC_URL}"
+          curl -fsSL -o lazarus.deb "${LAZ_URL}"
+
+          sudo dpkg -i fpc-laz.deb fpc-src.deb lazarus.deb || true
+          sudo apt-get -f install -y
+
+          if ! command -v lazbuild >/dev/null 2>&1; then
+            echo "lazbuild not found after install" >&2
+            exit 1
+          fi
+
+      - name: Prepare static libs and sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ./static
+          curl -fsSL -o mormot2static.7z 'https://github.com/synopse/mORMot2/releases/download/2.3.stable/mormot2static.7z'
+          7z x mormot2static.7z -o./static -y >/dev/null
+          git clone https://github.com/synopse/mORMot2.git externals/mORMot2
+          test -d ./static/x86_64-linux || { echo "Expected static/x86_64-linux not found" >&2; exit 1; }
+          cp -r ./static/x86_64-linux/* .
+
+      - name: Build
+        shell: bash
+        run: |
+          set -euo pipefail
+          lazbuild externals/mORMot2/packages/lazarus/mormot2.lpk
+          lazbuild --widgetset=qt6 --build-mode="Extensions (Release)" Trndi.lpr
+          test -f ./Trndi
+
+      - name: Package artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          cp Trndi artifacts/
+          7z a -tzip Trndi-developer-build-linux-qt6-x64.zip ./artifacts/* >/dev/null
+
+      - name: Upload Actions artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-build
+          path: Trndi-developer-build-linux-qt6-x64.zip
+          if-no-files-found: error
+
+      - name: Publish to single release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: v${{ github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release create "$TAG" --title "Trndi $TAG" --notes "Automated multi-OS build." || true
+          gh release upload "$TAG" "Trndi-developer-build-linux-qt6-x64.zip" --clobber
