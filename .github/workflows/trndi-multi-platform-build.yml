@@ -11,25 +11,25 @@ on:
 jobs:
   build:
     strategy:
-      fail-fast: false  # Continue even if one platform fails
+      fail-fast: false
       matrix:
         include:
           - os: windows-latest
             platform: windows
             artifact: Trndi-developer-build-windows.zip
             build_script: |
-              # Restore static libraries
-              if (!(Test-Path "C:\Lazarus\lazbuild.exe")) {
-                Invoke-WebRequest -Uri 'https://sourceforge.net/projects/lazarus/files/Lazarus%20Windows%2064%20bit/Lazarus%204.2.0/lazarus-4.2.0-fpc-3.2.2-win64.exe/download' -OutFile 'lazarus-4.2.exe' -ErrorAction Stop
-                Start-Process -FilePath 'lazarus-4.2.exe' -ArgumentList '/VERYSILENT', '/DIR=C:\Lazarus' -Wait -ErrorAction Stop
+              # Restore Lazarus
+              if (-not (Test-Path "C:\Lazarus\lazbuild.exe")) {
+                Invoke-WebRequest -Uri 'https://sourceforge.net/projects/lazarus/files/Lazarus%20Windows%2064%20bit/Lazarus%204.2.0/lazarus-4.2.0-fpc-3.2.2-win64.exe/download' -OutFile 'lazarus-4.2.exe'
+                Start-Process -FilePath 'lazarus-4.2.exe' -ArgumentList '/VERYSILENT', '/DIR=C:\Lazarus' -Wait
               }
 
               # Install 7-Zip
               choco install 7zip -y
 
               # Download static libraries
-              Invoke-WebRequest -Uri 'https://github.com/synopse/mORMot2/releases/download/2.3.stable/mormot2static.7z' -OutFile 'mormot2static.7z' -ErrorAction Stop
-              mkdir ../static -Force
+              Invoke-WebRequest -Uri 'https://github.com/synopse/mORMot2/releases/download/2.3.stable/mormot2static.7z' -OutFile 'mormot2static.7z'
+              mkdir -Force ../static
               & 'C:\Program Files\7-Zip\7z.exe' x 'mormot2static.7z' -o'../static' -y
 
               # Clone mORMot2
@@ -48,6 +48,7 @@ jobs:
               New-Item -ItemType Directory -Path artifacts -Force
               Copy-Item Trndi.exe artifacts/
               7z a -tzip Trndi-developer-build-windows.zip ./artifacts/*
+            shell: pwsh
 
           - os: ubuntu-latest
             platform: linux
@@ -60,16 +61,12 @@ jobs:
                 build-essential \
                 qt6-base-dev \
                 qt6-tools-dev \
-                qt6-tools-dev-tools \
-                qt6-qpa-plugins \
                 git
 
-              # Install Lazarus 4.2
-              wget -O lazarus-4.2.0-amd64.deb 'https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20x86_64/Lazarus%204.2.0/lazarus-project_4.2.0-0_amd64.deb/download'
-              wget -O fpc-src-amd64.deb 'https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20x86_64/Lazarus%204.2.0/fpc-src_3.2.2-210709_amd64.deb/download'
-              wget -O fpc-laz-amd64.deb 'https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20x86_64/Lazarus%204.2.0/fpc-laz_3.2.2-210709_amd64.deb/download'
-              
-              sudo apt-get install -y ./fpc-laz_3.2.2-210709_amd64.deb ./fpc-src_3.2.2-210709_amd64.deb ./lazarus-project_4.2.0-0_amd64.deb
+              # Download Lazarus
+              wget -O lazarus.deb 'https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20x86_64/Lazarus%204.2.0/lazarus-project_4.2.0-0_amd64.deb/download'
+              sudo dpkg -i lazarus.deb
+              sudo apt-get install -f -y
 
               # Download static libraries
               wget https://github.com/synopse/mORMot2/releases/download/2.3.stable/mormot2static.7z
@@ -92,12 +89,13 @@ jobs:
               cd artifacts
               zip ../Trndi-developer-build-linux-qt6-x64.zip Trndi
               cd ..
+            shell: bash
 
           - os: macos-14
             platform: macos
             artifact: Trndi-developer-build-macos-arm64.zip
             build_script: |
-              # Install dependencies via MacPorts
+              # Install dependencies
               export PATH="/opt/local/bin:/opt/local/sbin:$PATH"
               sudo port selfupdate
               sudo port install fpc lazarus p7zip
@@ -128,6 +126,7 @@ jobs:
               cd artifacts
               zip ../Trndi-developer-build-macos-arm64.zip Trndi
               cd ..
+            shell: bash
 
     runs-on: ${{ matrix.os }}
     permissions:
@@ -139,15 +138,15 @@ jobs:
 
       - name: Set up build environment
         run: ${{ matrix.build_script }}
-        shell: bash
+        shell: ${{ matrix.shell }}
 
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4 
+        uses: actions/upload-artifact@v4
         with:
-            name: ${{ matrix.platform }}-build
-            path: ${{ matrix.artifact }}
-            compression-level: 6 
-            retention-days: 5  
+          name: ${{ matrix.platform }}-build
+          path: ${{ matrix.artifact }}
+          compression-level: 6
+          retention-days: 5
 
   release:
     needs: build
@@ -157,10 +156,10 @@ jobs:
 
     steps:
       - name: Download available artifacts
-        uses: actions/download-artifact@v4 
+        uses: actions/download-artifact@v4
         with:
           path: artifacts
-          merge-multiple: true 
+          merge-multiple: true
 
       - name: Generate Unified Release Tag
         id: generate_tag
@@ -175,9 +174,9 @@ jobs:
           tag_name: ${{ steps.generate_tag.outputs.tag }}
           name: Multi-Platform Developer Build ${{ steps.generate_tag.outputs.tag }}
           files: |
-            artifacts/windows-build/Trndi-developer-build-windows.zip
-            artifacts/linux-build/Trndi-developer-build-linux-qt6-x64.zip
-            artifacts/macos-build/Trndi-developer-build-macos-arm64.zip
+            artifacts/Trndi-developer-build-windows.zip
+            artifacts/Trndi-developer-build-linux-qt6-x64.zip
+            artifacts/Trndi-developer-build-macos-arm64.zip
           body: |
             Multi-platform developer build
             
