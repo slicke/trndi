@@ -58,6 +58,7 @@ trndi.Ext. Engine, trndi.Ext.jsfuncs,
 CocoaAll, MacOSAll,
 {$endif}
 LazFileUtils, uconf, trndi.native, Trndi.API, trndi.api.xDrip,{$ifdef DEBUG} trndi.api.debug, trndi.api.debug_edge,{$endif}
+{$ifdef LCLQt6}Qt6, QtWidgets,{$endif}
 StrUtils, TouchDetection, ufloat;
 
 type
@@ -1125,7 +1126,7 @@ begin
   end;
 end;
 
-procedure TfBG.FormShow(Sender:TObject);
+procedure TfBG.FormShow(Sender: TObject);
 begin
   placeForm;
   placed := true;
@@ -1812,9 +1813,50 @@ begin
   end;
 end;
 
-procedure TfBG.pmSettingsPopup(Sender:TObject);
+procedure TfBG.pmSettingsPopup(Sender: TObject);
+{$ifdef LCLQt6}
+  function SafeQtStyle(Handle: QWidgetH; const Style: string): Boolean;
+  var
+    ws: WideString;
+  begin
+    Result := False;
+
+    // Safey checks for Qt6
+    if Handle = nil then Exit;
+    if PtrUInt(Handle) < $1000 then Exit;
+
+    try
+      // Test a simple operation
+      if not QWidget_isEnabled(Handle) and QWidget_isEnabled(Handle) then
+        Exit; // If false, the handle is not OK
+
+      ws := UTF8Decode(Style);
+      QWidget_setStyleSheet(Handle, PWideString(@ws));
+      Result := True;
+
+    except
+      Result := False;
+    end;
+  end;
+{$endif}
 begin
   miBorders.Checked := self.BorderStyle = bsNone;
+  {$ifdef LCLQt6}
+  if pmSettings.Tag <> 1 then
+  begin
+    if not SafeQtStyle(QWidgetH(pmSettings.Handle),
+        'QMenu { font-size: 16pt; font-weight: bold; }' + LineEnding +
+        'QMenu::item { padding: 8px 12px; }' + LineEnding +
+        'QMenu::item:selected { background-color: highlight; }') then
+    begin
+      {$IFDEF DEBUG}
+      ShowMessage('Qt styling failed, using fallback menu');
+      {$ENDIF}
+    end;
+
+    pmSettings.Tag := 1;
+  end;
+  {$endif}
 end;
 
 procedure TfBG.pnMultiUserClick(Sender:TObject);
