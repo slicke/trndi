@@ -17,6 +17,11 @@ jobs:
     runs-on: macos-14
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # Ensure FPC finds its config when invoked by lazbuild
+      PPC_CONFIG_PATH: /opt/local/libexec/fpc/etc
+      # Make sure the MacPorts FPC bin dir is on PATH for all steps
+      PATH: /opt/local/libexec/fpc/bin:/opt/local/bin:/opt/local/sbin:${{ env.PATH }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -25,9 +30,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          export PATH="/opt/local/bin:/opt/local/sbin:$PATH"
 
-          # Extract macOS major version (strip CRs just in case of CRLF)
+          # Robustly extract macOS major version (strip CRs to avoid parsing issues)
           OSMAJOR="$(sw_vers -productVersion | tr -d '\r' | cut -d. -f1)"
           case "$OSMAJOR" in
             14) OSNAME="14-Sonoma" ;;
@@ -39,23 +43,17 @@ jobs:
           export OSNAME
 
           GH_API="https://api.github.com/repos/macports/macports-base/releases"
-
-          # Use GitHub token if available to avoid rate limits
-          AUTH_HEADER=()
+          AUTH_HEADER=(-H "Accept: application/vnd.github+json")
           if [ -n "${GITHUB_TOKEN:-}" ]; then
-            AUTH_HEADER=(-H "Authorization: Bearer ${GITHUB_TOKEN}" -H "X-GitHub-Api-Version: 2022-11-28" -H "Accept: application/vnd.github+json")
-          else
-            AUTH_HEADER=(-H "Accept: application/vnd.github+json")
+            AUTH_HEADER+=(-H "Authorization: Bearer ${GITHUB_TOKEN}")
           fi
 
           echo "Resolving latest MacPorts pkg for ${OSNAME}..."
-          # Try 'latest' release first
           PKG_URL="$(
             curl -fsSL "${AUTH_HEADER[@]}" "${GH_API}/latest" \
             | OSNAME="${OSNAME}" python3 -c 'import sys,json,os; name=os.environ.get("OSNAME",""); d=json.load(sys.stdin); print(next((a.get("browser_download_url","") for a in d.get("assets",[]) if a.get("browser_download_url","").endswith(f"-{name}.pkg")), ""), end="")'
           )" || PKG_URL=""
 
-          # Fallback: scan recent releases
           if [ -z "${PKG_URL}" ]; then
             PKG_URL="$(
               curl -fsSL "${AUTH_HEADER[@]}" "${GH_API}" \
@@ -63,11 +61,8 @@ jobs:
             )" || PKG_URL=""
           fi
 
-          # Last fallback: official install page scrape
           if [ -z "${PKG_URL}" ]; then
-            PKG_URL="$(curl -fsSL https://www.macports.org/install.php \
-              | grep -Eo "https://[^\"[:space:]]*MacPorts-[0-9.]+-${OSNAME}\.pkg" \
-              | head -n1 || true)"
+            PKG_URL="$(curl -fsSL https://www.macports.org/install.php | grep -Eo "https://[^\"[:space:]]*MacPorts-[0-9.]+-${OSNAME}\.pkg" | head -n1 || true)"
           fi
 
           if [ -z "${PKG_URL}" ]; then
@@ -83,15 +78,22 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          export PATH="/opt/local/bin:/opt/local/sbin:$PATH"
+          # PATH and PPC_CONFIG_PATH are already set at job level
           sudo port -v selfupdate
-          sudo port -N install fpc fpc-src lazarus p7zip
+          # MacPorts provides 'fpc' and 'lazarus'; there is no 'fpc-src' port
+          sudo port -N install fpc lazarus p7zip
+
+          echo "Sanity check toolchain:"
+          echo "  fpc:      $(command -v fpc || true)"
+          echo "  lazbuild: $(command -v lazbuild || true)"
+          echo "  ppcx64:   $(command -v ppcx64 || true)"
+          echo "  PPC_CONFIG_PATH=${PPC_CONFIG_PATH}"
+          test -f "${PPC_CONFIG_PATH}/fpc.cfg" && head -n 5 "${PPC_CONFIG_PATH}/fpc.cfg" || true
 
       - name: Prepare static libs and sources
         shell: bash
         run: |
           set -euo pipefail
-          export PATH="/opt/local/bin:/opt/local/sbin:$PATH"
           curl -fsSL -A "Mozilla/5.0 GitHubActions" -o mormot2static.7z "https://github.com/synopse/mORMot2/releases/download/2.3.stable/mormot2static.7z"
           mkdir -p ./static
           7z x mormot2static.7z -o./static -y >/dev/null
@@ -103,7 +105,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          export PATH="/opt/local/bin:/opt/local/sbin:$PATH"
+          # lazbuild should use FPC from PATH and pick up fpc.cfg via PPC_CONFIG_PATH
           lazbuild externals/mORMot2/packages/lazarus/mormot2.lpk
           lazbuild --build-mode="No Ext (Release)" --ws=cocoa --cpu=aarch64 --os=darwin Trndi.lpr
           test -f ./Trndi
@@ -123,8 +125,7 @@ jobs:
           path: Trndi-developer-build-macos-arm64.zip
           if-no-files-found: error
 
-      # Optional: append this artifact to a single release shared by all builders (pushes to main only)
-      - name: Publish to single release
+      - name: Publish to single release (optional)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
