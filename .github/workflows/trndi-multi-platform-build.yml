@@ -2,11 +2,9 @@ name: Trndi Multi-Platform Builder
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
   pull_request:
-    branches:
-      - main
+    branches: [ main ]
 
 concurrency:
   group: trndi-build-${{ github.ref }}
@@ -25,30 +23,59 @@ jobs:
             script: |
               $ErrorActionPreference = "Stop"
 
-              # Ensure tools
-              if (-not (Get-Command choco -ErrorAction SilentlyContinue)) {
-                throw "Chocolatey not available on runner."
+              # Ensure 7zip
+              if (-not (Get-Command 'C:\Program Files\7-Zip\7z.exe' -ErrorAction SilentlyContinue)) {
+                if (-not (Get-Command choco -ErrorAction SilentlyContinue)) {
+                  throw "Chocolatey not available on runner."
+                }
+                choco install 7zip -y
               }
-              choco install 7zip -y
 
-              # Robust download helper
-              $ProgressPreference = 'SilentlyContinue'
-              $Headers = @{ "User-Agent" = "Mozilla/5.0 GitHubActions" }
-
-              # Install Lazarus if missing
-              if (-not (Test-Path "C:\Lazarus\lazbuild.exe")) {
-                Write-Host "Downloading Lazarus 4.2 for Windows..."
-                Invoke-WebRequest -Uri 'https://sourceforge.net/projects/lazarus/files/Lazarus%20Windows%2064%20bit/Lazarus%204.2/lazarus-4.2-fpc-3.2.2-win64.exe/download' -OutFile 'lazarus-4.2.exe' -Headers $Headers
-                if (-not (Test-Path '.\lazarus-4.2.exe')) { throw "Lazarus installer download failed." }
-                Start-Process -FilePath '.\lazarus-4.2.exe' -ArgumentList '/VERYSILENT', '/DIR=C:\Lazarus' -Wait
+              # Robust download function using curl.exe with validation
+              function Get-WithRetry {
+                param(
+                  [Parameter(Mandatory=$true)][string]$Url,
+                  [Parameter(Mandatory=$true)][string]$OutFile,
+                  [int]$Retries = 5,
+                  [int]$DelaySec = 5
+                )
+                for ($i=1; $i -le $Retries; $i++) {
+                  & curl.exe -L --fail --retry 5 --retry-delay 3 -o $OutFile $Url
+                  if (Test-Path $OutFile) {
+                    try {
+                      $fs = [System.IO.File]::OpenRead((Resolve-Path $OutFile))
+                      try {
+                        $bytes = New-Object byte[] 2
+                        [void]$fs.Read($bytes, 0, 2)
+                        $fs.Close()
+                        # Check 'MZ' header for PE executables and size sanity
+                        if ($bytes[0] -eq 0x4D -and $bytes[1] -eq 0x5A) {
+                          $size = (Get-Item $OutFile).Length
+                          if ($size -gt 50000000) { return } # >50MB
+                        }
+                      } finally {
+                        if ($fs) { $fs.Dispose() }
+                      }
+                    } catch { }
+                  }
+                  Write-Host "Download validation failed, retry $i/$Retries. Sleeping $DelaySec sec..."
+                  Start-Sleep -Seconds $DelaySec
+                  if (Test-Path $OutFile) { Remove-Item $OutFile -Force -ErrorAction SilentlyContinue }
+                }
+                throw "Failed to download a valid file from $Url after $Retries attempts."
               }
+
+              # Download and install Lazarus 4.2 (includes FPC 3.2.2)
+              $LazUrl = 'https://sourceforge.net/projects/lazarus/files/Lazarus%20Windows%2064%20bit/Lazarus%204.2/lazarus-4.2-fpc-3.2.2-win64.exe/download'
+              Write-Host "Downloading Lazarus from: $LazUrl"
+              Get-WithRetry -Url $LazUrl -OutFile 'lazarus-4.2.exe'
+
+              Start-Process -FilePath '.\lazarus-4.2.exe' -ArgumentList '/VERYSILENT','/SP-','/NORESTART','/DIR=C:\Lazarus' -Wait
               if (-not (Test-Path "C:\Lazarus\lazbuild.exe")) { throw "lazbuild not found after install." }
 
               # Prepare static libs
               New-Item -ItemType Directory -Path .\static -Force | Out-Null
-              Write-Host "Downloading mORMot2 static libs..."
-              Invoke-WebRequest -Uri 'https://github.com/synopse/mORMot2/releases/download/2.3.stable/mormot2static.7z' -OutFile '.\mormot2static.7z' -Headers $Headers
-              if (-not (Test-Path '.\mormot2static.7z')) { throw "mormot2static.7z download failed." }
+              & curl.exe -L --fail -o mormot2static.7z "https://github.com/synopse/mORMot2/releases/download/2.3.stable/mormot2static.7z"
               & 'C:\Program Files\7-Zip\7z.exe' x '.\mormot2static.7z' -o'.\static' -y | Out-Null
 
               # Clone mORMot2
@@ -63,8 +90,8 @@ jobs:
               & 'C:\Lazarus\lazbuild.exe' --lazarusdir='C:\Lazarus' --build-mode='Extensions (Release)' 'Trndi.lpr'
 
               # Package artifact
-              New-Item -ItemType Directory -Path artifacts -Force | Out-Null
               if (-not (Test-Path '.\Trndi.exe')) { throw "Build succeeded but Trndi.exe not found." }
+              New-Item -ItemType Directory -Path artifacts -Force | Out-Null
               Copy-Item .\Trndi.exe .\artifacts\
               & 'C:\Program Files\7-Zip\7z.exe' a -tzip 'Trndi-developer-build-windows.zip' .\artifacts\* | Out-Null
 
@@ -79,16 +106,43 @@ jobs:
                 p7zip-full \
                 build-essential \
                 wget \
+                curl \
                 git \
                 qt6-base-dev \
-                qt6-tools-dev
+                qt6-tools-dev || true
 
-              # Optional but often needed for LCL-Qt6 runtime (if available on the runner image)
+              # Optional runtime bindings for LCL-Qt6 (available on some images)
               sudo apt-get install -y libqt6pas-dev || true
 
-              # Install Lazarus 4.2.0 (pulls fpc/fpc-src via deps on -f)
-              wget -O lazarus.deb 'https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.2/lazarus-project_4.2.0-0_amd64.deb/download'
-              sudo dpkg -i lazarus.deb || true
+              # Helper: resolve SourceForge DEB URLs for Lazarus 4.2 + FPC 3.2.2
+              SF_BASE="https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.2/"
+              resolve_sf() {
+                local pattern="\$1"
+                curl -fsSL "$SF_BASE" \
+                | grep -Eo "https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.2/${pattern}/download" \
+                | head -n1
+              }
+
+              FPC_LAZ_URL="$(resolve_sf 'fpc-laz_3\.2\.2[^"]*_amd64\.deb')"
+              FPC_SRC_URL="$(resolve_sf 'fpc-src_3\.2\.2[^"]*_amd64\.deb')"
+              LAZ_URL="$(resolve_sf 'lazarus-project_4\.2(\.[0-9])?[^"]*_amd64\.deb')"
+
+              # Fallback to known filenames if scraping fails
+              : "${FPC_LAZ_URL:=https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.2/fpc-laz_3.2.2-210_amd64.deb/download}"
+              : "${FPC_SRC_URL:=https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.2/fpc-src_3.2.2-210_amd64.deb/download}"
+              : "${LAZ_URL:=https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.2/lazarus-project_4.2.0-0_amd64.deb/download}"
+
+              echo "Downloading Lazarus DEBs:"
+              echo "  ${FPC_LAZ_URL}"
+              echo "  ${FPC_SRC_URL}"
+              echo "  ${LAZ_URL}"
+
+              curl -fsSL -o fpc-laz.deb "${FPC_LAZ_URL}"
+              curl -fsSL -o fpc-src.deb "${FPC_SRC_URL}"
+              curl -fsSL -o lazarus.deb "${LAZ_URL}"
+
+              # Install all together; then fix missing libs (e.g., libgtk2.0-dev)
+              sudo dpkg -i fpc-laz.deb fpc-src.deb lazarus.deb || true
               sudo apt-get -f install -y
 
               if ! command -v lazbuild >/dev/null 2>&1; then
@@ -98,7 +152,7 @@ jobs:
 
               # Prepare static
               mkdir -p ./static
-              wget -O mormot2static.7z 'https://github.com/synopse/mORMot2/releases/download/2.3.stable/mormot2static.7z'
+              curl -fsSL -o mormot2static.7z 'https://github.com/synopse/mORMot2/releases/download/2.3.stable/mormot2static.7z'
               7z x mormot2static.7z -o./static -y >/dev/null
 
               # Clone mORMot2
@@ -108,12 +162,11 @@ jobs:
               test -d ./static/x86_64-linux || { echo "Expected static/x86_64-linux not found" >&2; exit 1; }
               cp -r ./static/x86_64-linux/* .
 
-              # Build
+              # Build (Qt6 widgetset)
               lazbuild externals/mORMot2/packages/lazarus/mormot2.lpk
-              # If your project does not define "Extensions (Release)", change/remove the mode.
               lazbuild --widgetset=qt6 --build-mode="Extensions (Release)" Trndi.lpr
 
-              # Package artifact (use 7z for consistency)
+              # Package artifact
               mkdir -p artifacts
               cp Trndi artifacts/
               7z a -tzip Trndi-developer-build-linux-qt6-x64.zip ./artifacts/* >/dev/null
@@ -124,25 +177,87 @@ jobs:
             script: |
               set -euo pipefail
 
-              # Add MacPorts to PATH for later steps
+              # Ensure MacPorts path after install
               export PATH="/opt/local/bin:/opt/local/sbin:$PATH"
 
-              # Fetch the latest MacPorts Sonoma pkg URL from the official install page
-              PKG_URL="$(curl -fsSL https://www.macports.org/install.php | sed -n 's/.*href=\"\$https:[^\"\\n]*MacPorts-[^\"\\n]*-14-Sonoma.pkg\$\".*/\\1/p' | head -n1)"
+              # Map macOS major version to MacPorts pkg suffix
+              OSMAJOR="$(sw_vers -productVersion | awk -F. '{print \$1}')"
+              case "$OSMAJOR" in
+                14) OSNAME="14-Sonoma" ;;
+                13) OSNAME="13-Ventura" ;;
+                12) OSNAME="12-Monterey" ;;
+                11) OSNAME="11-BigSur" ;;
+                *) echo "Unsupported/unknown macOS major version: ${OSMAJOR}" >&2; exit 1 ;;
+              esac
+
+              GH_API="https://api.github.com/repos/macports/macports-base/releases"
+
+              # Use GitHub token if available to avoid rate limits
+              AUTH_HEADER=()
+              if [ -n "${GITHUB_TOKEN:-}" ]; then
+                AUTH_HEADER=(-H "Authorization: Bearer ${GITHUB_TOKEN}")
+              fi
+
+              echo "Resolving latest MacPorts pkg for ${OSNAME}..."
+
+              # Try latest tag first
+              TAG="$(curl -fsSL "${AUTH_HEADER[@]}" "${GH_API}/latest" \
+                | python3 -c 'import sys,json; print(json.load(sys.stdin).get("tag_name",""))' || true)"
+
+              PKG_URL=""
+              if [ -n "${TAG}" ]; then
+                PKG_URL="$(curl -fsSL "${AUTH_HEADER[@]}" "${GH_API}/tags/${TAG}" \
+                  | OSNAME="${OSNAME}" python3 - <<'PY'
+import os, sys, json
+name = os.environ["OSNAME"]
+data = json.load(sys.stdin)
+for a in data.get("assets", []):
+    url = a.get("browser_download_url", "")
+    if url.endswith(f"-{name}.pkg"):
+        print(url, end="")
+        break
+PY
+                )"
+              fi
+
+              # Fallback: scan recent releases list
               if [ -z "${PKG_URL}" ]; then
-                echo "Failed to detect MacPorts Sonoma pkg URL from install page." >&2
+                PKG_URL="$(curl -fsSL "${AUTH_HEADER[@]}" "${GH_API}" \
+                  | OSNAME="${OSNAME}" python3 - <<'PY'
+import os, sys, json
+name = os.environ["OSNAME"]
+for rel in json.load(sys.stdin):
+    for a in rel.get("assets", []):
+        url = a.get("browser_download_url", "")
+        if url.endswith(f"-{name}.pkg"):
+            print(url, end="")
+            sys.exit(0)
+print("", end="")
+PY
+                )" || true
+              fi
+
+              # Last fallback: scrape the official install page
+              if [ -z "${PKG_URL}" ]; then
+                PKG_URL="$(curl -fsSL https://www.macports.org/install.php \
+                  | grep -Eo "https://[^\"[:space:]]*MacPorts-[0-9.]+-${OSNAME}\.pkg" \
+                  | head -n1 || true)"
+              fi
+
+              if [ -z "${PKG_URL}" ]; then
+                echo "Failed to resolve MacPorts pkg URL for ${OSNAME}." >&2
                 exit 1
               fi
-              echo "Downloading MacPorts pkg: ${PKG_URL}"
-              curl -fsSL -o MacPorts-Sonoma.pkg "${PKG_URL}"
-              sudo installer -pkg MacPorts-Sonoma.pkg -target /
 
-              # Update MacPorts and install required ports
+              echo "Downloading MacPorts: ${PKG_URL}"
+              curl -fsSL -o MacPorts.pkg "${PKG_URL}"
+              sudo installer -pkg MacPorts.pkg -target /
+
+              # Update MacPorts and install Lazarus toolchain
               sudo port -v selfupdate
-              # Lazbuild will be /opt/local/bin/lazbuild after this
               sudo port -N install fpc fpc-src lazarus p7zip
 
-              # Prepare static
+              # Prepare static libs
               curl -fsSL -A "Mozilla/5.0 GitHubActions" \
                 -o mormot2static.7z \
                 "https://github.com/synopse/mORMot2/releases/download/2.3.stable/mormot2static.7z"
@@ -156,9 +271,8 @@ jobs:
               test -d ./static/aarch64-darwin || { echo "Expected static/aarch64-darwin not found" >&2; exit 1; }
               cp -r ./static/aarch64-darwin/* .
 
-              # Build with Lazarus from MacPorts (arm64 cocoa)
+              # Build with Lazarus from MacPorts (Cocoa, arm64)
               lazbuild externals/mORMot2/packages/lazarus/mormot2.lpk
-              # If your project doesn't define "No Ext (Release)", adjust/remove this mode.
               lazbuild \
                 --build-mode="No Ext (Release)" \
                 --ws=cocoa \
@@ -174,7 +288,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Use OS-specific steps to avoid using an expression in the 'shell' key
       - name: Set up and build (Windows)
         if: matrix.platform == 'windows'
         run: ${{ matrix.script }}
@@ -189,6 +302,8 @@ jobs:
         if: matrix.platform == 'macos'
         run: ${{ matrix.script }}
         shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
