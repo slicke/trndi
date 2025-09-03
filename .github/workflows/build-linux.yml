@@ -13,13 +13,14 @@ concurrency:
 
 jobs:
   build:
-    name: Build Linux
+    name: Build Linux (Qt6)
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install build deps
+      - name: Install build prerequisites
         shell: bash
         run: |
           set -euo pipefail
@@ -30,10 +31,12 @@ jobs:
             wget \
             curl \
             git \
+            cmake \
+            ninja-build \
+            pkg-config \
             qt6-base-dev \
-            qt6-tools-dev || true
-          # Optional Lazarus Qt6 runtime bindings (if available)
-          sudo apt-get install -y libqt6pas-dev || true
+            qt6-base-dev-tools \
+            qt6-tools-dev
 
       - name: Install Lazarus + FPC (DEBs from SourceForge)
         shell: bash
@@ -42,7 +45,7 @@ jobs:
 
           SF_BASE="https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.2/"
 
-          # Safe resolver: never hard-fail on no match (lets fallbacks kick in)
+          # Resolver that never hard-fails (lets pinned fallbacks kick in)
           resolve_sf() {
             local pattern="\$1"
             local url=""
@@ -56,7 +59,7 @@ jobs:
           FPC_SRC_URL="$(resolve_sf 'fpc-src_3\.2\.2[^"]*_amd64\.deb')"
           LAZ_URL="$(resolve_sf 'lazarus-project_4\.2(\.[0-9])?[^"]*_amd64\.deb')"
 
-          # Deterministic fallbacks if scraping yields nothing
+          # Deterministic fallbacks
           : "${FPC_LAZ_URL:=https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.2/fpc-laz_3.2.2-210709_amd64.deb/download}"
           : "${FPC_SRC_URL:=https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.2/fpc-src_3.2.2-210709_amd64.deb/download}"
           : "${LAZ_URL:=https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.2/lazarus-project_4.2.0-0_amd64.deb/download}"
@@ -74,9 +77,63 @@ jobs:
           sudo dpkg -i fpc-laz.deb fpc-src.deb lazarus.deb || true
           sudo apt-get -f install -y
 
-          # Sanity check
           if ! command -v lazbuild >/dev/null 2>&1; then
             echo "lazbuild not found after install" >&2
+            exit 1
+          fi
+
+      - name: Build and install Qt6Pas (libQt6Pas)
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Locate the Lazarus Qt6 cbindings directory installed by the DEB
+          CBLD="$(find /usr/share/lazarus /usr/lib/lazarus /usr -type d -path "*/lcl/interfaces/qt6/cbindings" 2>/dev/null | head -n1 || true)"
+          if [ -z "${CBLD}" ]; then
+            echo "Could not locate Lazarus qt6 cbindings directory. Listing lazarus dirs for debug:"
+            dpkg -L lazarus-project | grep -E "lcl/interfaces/qt6|cbindings" || true
+            exit 1
+          fi
+          echo "Found Qt6 cbindings at: ${CBLD}"
+
+          # Prefer CMake build if available
+          if [ -f "${CBLD}/CMakeLists.txt" ]; then
+            echo "Building Qt6Pas with CMake..."
+            rm -rf "${CBLD}/build"
+            mkdir -p "${CBLD}/build"
+            cd "${CBLD}/build"
+            cmake -G Ninja -DCMAKE_BUILD_TYPE=Release ..
+            cmake --build . --config Release -j"$(nproc)"
+            sudo cmake --install .
+          elif [ -f "${CBLD}/libqt6pas.pro" ]; then
+            echo "Building Qt6Pas with qmake..."
+            QMAKE="$(command -v qmake6 || true)"
+            if [ -z "${QMAKE}" ]; then
+              # Some distros still ship qmake as 'qmake'; try that as a fallback
+              QMAKE="$(command -v qmake || true)"
+            fi
+            if [ -z "${QMAKE}" ]; then
+              echo "qmake/qmake6 not found. Please ensure qt6-base-dev-tools installed." >&2
+              exit 1
+            fi
+            cd "${CBLD}"
+            "${QMAKE}" libqt6pas.pro
+            make -j"$(nproc)"
+            sudo make install
+          else
+            echo "Neither CMakeLists.txt nor libqt6pas.pro found in ${CBLD}" >&2
+            exit 1
+          fi
+
+          # Refresh dynamic linker cache in case lib was installed to /usr/local/lib
+          sudo ldconfig
+
+          # Quick sanity check for libQt6Pas
+          if ! ldconfig -p | grep -q "libQt6Pas.so"; then
+            echo "libQt6Pas.so not visible to linker after install." >&2
+            # Try common locations for debug
+            ls -la /usr/local/lib | grep -i qt6pas || true
+            ls -la /usr/lib/x86_64-linux-gnu | grep -i qt6pas || true
             exit 1
           fi
 
@@ -93,12 +150,11 @@ jobs:
           test -d ./static/x86_64-linux || { echo "Expected static/x86_64-linux not found" >&2; exit 1; }
           cp -r ./static/x86_64-linux/* .
 
-      - name: Build
+      - name: Build (Qt6 widgetset)
         shell: bash
         run: |
           set -euo pipefail
           lazbuild externals/mORMot2/packages/lazarus/mormot2.lpk
-          # If your .lpi uses a different mode, adjust accordingly:
           lazbuild --widgetset=qt6 --build-mode="Extensions (Release)" Trndi.lpr
           test -f ./Trndi
 
