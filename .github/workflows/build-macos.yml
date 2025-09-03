@@ -1,0 +1,124 @@
+name: macOS Builder
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch: {}
+
+concurrency:
+  group: trndi-build-macos-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build macOS (arm64)
+    runs-on: macos-14
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install MacPorts (latest for OS)
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PATH="/opt/local/bin:/opt/local/sbin:$PATH"
+
+          OSMAJOR="$(sw_vers -productVersion | awk -F. '{print \$1}')"
+          case "$OSMAJOR" in
+            14) OSNAME="14-Sonoma" ;;
+            13) OSNAME="13-Ventura" ;;
+            12) OSNAME="12-Monterey" ;;
+            11) OSNAME="11-BigSur" ;;
+            *) echo "Unsupported macOS major version: ${OSMAJOR}" >&2; exit 1 ;;
+          esac
+
+          GH_API="https://api.github.com/repos/macports/macports-base/releases"
+          AUTH_HEADER=()
+          if [ -n "${GITHUB_TOKEN:-}" ]; then
+            AUTH_HEADER=(-H "Authorization: Bearer ${GITHUB_TOKEN}")
+          fi
+
+          echo "Resolving latest MacPorts pkg for ${OSNAME}..."
+          PKG_URL="$(
+            curl -fsSL "${AUTH_HEADER[@]}" "${GH_API}/latest" \
+            | python3 -c 'import sys,json,os; name=os.environ["OSNAME"]; d=json.load(sys.stdin); print(next((a.get("browser_download_url","") for a in d.get("assets",[]) if a.get("browser_download_url","").endswith(f"-{name}.pkg")), ""), end="")'
+          )"
+
+          if [ -z "${PKG_URL}" ]; then
+            PKG_URL="$(
+              curl -fsSL "${AUTH_HEADER[@]}" "${GH_API}" \
+              | python3 -c 'import sys,json,os; name=os.environ["OSNAME"]; rels=json.load(sys.stdin); urls=[a.get("browser_download_url","") for r in rels for a in r.get("assets",[]) if a.get("browser_download_url","").endswith(f"-{name}.pkg")]; print(urls[0] if urls else "", end="")'
+            )"
+          fi
+
+          if [ -z "${PKG_URL}" ]; then
+            PKG_URL="$(curl -fsSL https://www.macports.org/install.php | grep -Eo "https://[^\"[:space:]]*MacPorts-[0-9.]+-${OSNAME}\.pkg" | head -n1 || true)"
+          fi
+
+          if [ -z "${PKG_URL}" ]; then
+            echo "Failed to resolve MacPorts pkg URL for ${OSNAME}." >&2
+            exit 1
+          fi
+
+          echo "Downloading MacPorts: ${PKG_URL}"
+          curl -fsSL -o MacPorts.pkg "${PKG_URL}"
+          sudo installer -pkg MacPorts.pkg -target /
+
+      - name: Install Lazarus toolchain via MacPorts
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PATH="/opt/local/bin:/opt/local/sbin:$PATH"
+          sudo port -v selfupdate
+          sudo port -N install fpc fpc-src lazarus p7zip
+
+      - name: Prepare static libs and sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PATH="/opt/local/bin:/opt/local/sbin:$PATH"
+          curl -fsSL -A "Mozilla/5.0 GitHubActions" -o mormot2static.7z "https://github.com/synopse/mORMot2/releases/download/2.3.stable/mormot2static.7z"
+          mkdir -p ./static
+          7z x mormot2static.7z -o./static -y >/dev/null
+          git clone https://github.com/synopse/mORMot2.git externals/mORMot2
+          test -d ./static/aarch64-darwin || { echo "Expected static/aarch64-darwin not found" >&2; exit 1; }
+          cp -r ./static/aarch64-darwin/* .
+
+      - name: Build
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PATH="/opt/local/bin:/opt/local/sbin:$PATH"
+          lazbuild externals/mORMot2/packages/lazarus/mormot2.lpk
+          lazbuild --build-mode="No Ext (Release)" --ws=cocoa --cpu=aarch64 --os=darwin Trndi.lpr
+          test -f ./Trndi
+
+      - name: Package artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          cp Trndi artifacts/
+          7z a -tzip Trndi-developer-build-macos-arm64.zip ./artifacts/* >/dev/null
+
+      - name: Upload Actions artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-build
+          path: Trndi-developer-build-macos-arm64.zip
+          if-no-files-found: error
+
+      - name: Publish to single release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: v${{ github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release create "$TAG" --title "Trndi $TAG" --notes "Automated multi-OS build." || true
+          gh release upload "$TAG" "Trndi-developer-build-macos-arm64.zip" --clobber
