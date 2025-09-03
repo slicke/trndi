@@ -2464,7 +2464,7 @@ begin
         if res.IsEmpty then
           slicke.ux.alert.ExtLog('Debug Info', '[empty!]', res)
         else
-           slicke.ux.alert.ExtLog('Debug Info', '', res, System.widechar($2699), 10);
+          slicke.ux.alert.ExtLog('Debug Info', '', res, System.widechar($2699), 10);
   {$ELSE}
        bgs := api.getReadings(MAX_MIN, MAX_RESULT);
   {$endif}
