@@ -123,11 +123,31 @@ jobs:
           cp Trndi artifacts/
           7z a -tzip Trndi-developer-build-macos-arm64.zip ./artifacts/* >/dev/null
 
+      - name: Create macOS App and DMG
+        shell: bash
+        run: |
+            set -euo pipefail
+            export PATH="/opt/local/libexec/fpc/bin:/opt/local/bin:/opt/local/sbin:$PATH"
+
+            # Ensure create-dmg is installed
+            brew install create-dmg
+
+            # Run the existing macOS packaging script
+            chmod +x dist/macos.sh
+            cd dist
+            ./macos.sh
+            cd ..
+
+            # Add the .dmg to artifacts
+            mv dist/Trndi.dmg Trndi-developer-build-macos-arm64.dmg
+
       - name: Upload Actions artifact
         uses: actions/upload-artifact@v4
         with:
           name: macos-build
-          path: Trndi-developer-build-macos-arm64.zip
+          path: |
+            Trndi-developer-build-macos-arm64.zip
+            Trndi-developer-build-macos-arm64.dmg
           if-no-files-found: error
 
       - name: Publish to single release (optional)
