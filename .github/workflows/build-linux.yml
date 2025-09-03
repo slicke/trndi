@@ -57,8 +57,8 @@ jobs:
           LAZ_URL="$(resolve_sf 'lazarus-project_4\.2(\.[0-9])?[^"]*_amd64\.deb')"
 
           # Deterministic fallbacks if scraping yields nothing
-          : "${FPC_LAZ_URL:=https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.2/fpc-laz_3.2.2-210_amd64.deb/download}"
-          : "${FPC_SRC_URL:=https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.2/fpc-src_3.2.2-210_amd64.deb/download}"
+          : "${FPC_LAZ_URL:=https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.2/fpc-laz_3.2.2-210709_amd64.deb/download}"
+          : "${FPC_SRC_URL:=https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.2/fpc-src_3.2.2-210709_amd64.deb/download}"
           : "${LAZ_URL:=https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.2/lazarus-project_4.2.0-0_amd64.deb/download}"
 
           echo "Downloading:"

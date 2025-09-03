@@ -70,7 +70,7 @@ jobs:
             throw "Failed to download a valid file from $Url after $Retries attempts."
           }
 
-          $LazUrl = 'https://sourceforge.net/projects/lazarus/files/Lazarus%20Windows%2064%20bit/Lazarus%204.2/lazarus-4.2-fpc-3.2.2-win64.exe/download'
+          $LazUrl = 'https://sourceforge.net/projects/lazarus/files/Lazarus%20Windows%2064%20bits/Lazarus%204.2/lazarus-4.2-fpc-3.2.2-win64.exe/downloadd'
           Get-WithRetry -Url $LazUrl -OutFile 'lazarus-4.2.exe'
 
           Start-Process -FilePath '.\lazarus-4.2.exe' -ArgumentList '/VERYSILENT','/SP-','/NORESTART','/DIR=C:\Lazarus' -Wait
