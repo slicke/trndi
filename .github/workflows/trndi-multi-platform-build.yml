@@ -17,14 +17,14 @@ jobs:
           - os: windows-latest
             platform: windows
             artifact: Trndi-developer-build-windows.zip
-            shell: pwsh  # Add explicit shell definition
-            build_script: |
-              # Restore Lazarus
+            shell: pwsh
+            script: |
+              # Windows Lazarus and build setup
               if (-not (Test-Path "C:\Lazarus\lazbuild.exe")) {
                 Invoke-WebRequest -Uri 'https://sourceforge.net/projects/lazarus/files/Lazarus%20Windows%2064%20bit/Lazarus%204.2.0/lazarus-4.2.0-fpc-3.2.2-win64.exe/download' -OutFile 'lazarus-4.2.exe'
                 Start-Process -FilePath 'lazarus-4.2.exe' -ArgumentList '/VERYSILENT', '/DIR=C:\Lazarus' -Wait
               }
-
+              
               # Install 7-Zip
               choco install 7zip -y
 
@@ -53,9 +53,9 @@ jobs:
           - os: ubuntu-latest
             platform: linux
             artifact: Trndi-developer-build-linux-qt6-x64.zip
-            shell: bash  # Add explicit shell definition
-            build_script: |
-              # Update and install dependencies
+            shell: bash
+            script: |
+              # Linux dependencies
               sudo apt-get update
               sudo apt-get install -y \
                 p7zip-full \
@@ -94,9 +94,9 @@ jobs:
           - os: macos-14
             platform: macos
             artifact: Trndi-developer-build-macos-arm64.zip
-            shell: bash  # Add explicit shell definition
-            build_script: |
-              # Install dependencies
+            shell: bash
+            script: |
+              # macOS dependencies
               export PATH="/opt/local/bin:/opt/local/sbin:$PATH"
               sudo port selfupdate
               sudo port install fpc lazarus p7zip
@@ -129,63 +129,33 @@ jobs:
               cd ..
 
     runs-on: ${{ matrix.os }}
-    permissions:
-      contents: write
-
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Set up build environment
-        run: ${{ matrix.build_script }}
-        shell: ${{ matrix.shell }}  # Use matrix-defined shell
+        run: ${{ matrix.script }}
+        shell: ${{ matrix.shell }}
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.platform }}-build
           path: ${{ matrix.artifact }}
-          compression-level: 6
-          retention-days: 5
 
   release:
     needs: build
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-
     steps:
-      - name: Download available artifacts
-        uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4
         with:
           path: artifacts
           merge-multiple: true
 
-      - name: Generate Unified Release Tag
-        id: generate_tag
-        run: |
-          TAG=$(date +'v%Y.%m.%d-%H%M%S')
-          echo "tag=$TAG" >> $GITHUB_OUTPUT
-          echo "Generated tag: $TAG"
-
-      - name: Create Unified Release
+      - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ steps.generate_tag.outputs.tag }}
-          name: Multi-Platform Developer Build ${{ steps.generate_tag.outputs.tag }}
-          files: |
-            artifacts/Trndi-developer-build-windows.zip
-            artifacts/Trndi-developer-build-linux-qt6-x64.zip
-            artifacts/Trndi-developer-build-macos-arm64.zip
-          body: |
-            Multi-platform developer build
-            
-            Platforms:
-            - Windows x64
-            - Linux x64 (Qt6)
-            - macOS ARM64
-
-            Built from commit: ${{ github.sha }}
-          prerelease: true
+          tag_name: v${{ github.run_number }}
+          files: artifacts/*
+          generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
