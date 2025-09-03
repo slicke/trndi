@@ -142,10 +142,12 @@ jobs:
         shell: bash
 
       - name: Upload Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4 
         with:
-          name: ${{ matrix.platform }}-build
-          path: ${{ matrix.artifact }}
+            name: ${{ matrix.platform }}-build
+            path: ${{ matrix.artifact }}
+            compression-level: 6 
+            retention-days: 5  
 
   release:
     needs: build
@@ -154,10 +156,11 @@ jobs:
       contents: write
 
     steps:
-      - name: Download all artifacts
-        uses: actions/download-artifact@v3
+      - name: Download available artifacts
+        uses: actions/download-artifact@v4 
         with:
           path: artifacts
+          merge-multiple: true 
 
       - name: Generate Unified Release Tag
         id: generate_tag
