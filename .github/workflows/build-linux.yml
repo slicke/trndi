@@ -20,7 +20,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install build prerequisites
+      - name: Install build prerequisites (Qt6 toolchain)
         shell: bash
         run: |
           set -euo pipefail
@@ -43,7 +43,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          # Pinned URLs for reproducibility; update if you bump versions
+          # Pinned URLs for reproducibility (update if you bump versions)
           FPC_LAZ_URL="https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.2/fpc-laz_3.2.2-210709_amd64.deb/download"
           FPC_SRC_URL="https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.2/fpc-src_3.2.2-210709_amd64.deb/download"
           LAZ_URL="https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.2/lazarus-project_4.2.0-0_amd64.deb/download"
@@ -66,80 +66,35 @@ jobs:
             exit 1
           fi
 
-      - name: Build and install Qt6Pas (libQt6Pas) from Lazarus sources
+      - name: Install libQt6Pas (runtime + dev) from prebuilt DEBs
         shell: bash
         run: |
           set -euo pipefail
 
-          # Pick a Lazarus branch/tag in order of preference:
-          # 1) lazarus_4_2_0 (tag), 2) fixes_4_2 (stable), 3) main (development)
-          REPO="https://gitlab.com/freepascal.org/lazarus/lazarus.git"
-          pick_ref() {
-            local ref="\$1"
-            if git ls-remote --exit-code --heads --tags "$REPO" "$ref" >/dev/null 2>&1; then
-              echo "$ref"
-              return 0
-            fi
-            return 1
-          }
+          # Asset names from the libQt6Pas v6.2.10 release (x86_64/amd64)
+          # If the project renames assets later, update these two variables.
+          QT6PAS_DEB="libqt6pas6_6.2.10-1_amd64.deb"
+          QT6PAS_DEV_DEB="libqt6pas-dev_6.2.7-1_amd64.deb"
 
-          REF=""
-          for candidate in "refs/tags/lazarus_4_2_0" "refs/heads/fixes_4_2" "refs/heads/main"; do
-            if pick_ref "$candidate"; then
-              REF="$candidate"
-              break
-            fi
-          done
+          BASE_RELEASE="https://github.com/davidbannon/libqt6pas/releases/download/v6.2.10"
+          URL_QT6PAS="${BASE_RELEASE}/${QT6PAS_DEB}"
+          URL_QT6PAS_DEV="${BASE_RELEASE}/${QT6PAS_DEV_DEB}"
 
-          if [ -z "$REF" ]; then
-            echo "No preferred Lazarus refs found; cloning default branch."
-            git clone --depth 1 "$REPO" lazarus-src
-          else
-            echo "Cloning Lazarus at $REF"
-            if [[ "$REF" == refs/tags/* ]]; then
-              # Clone the tag directly
-              git clone --depth 1 --branch "${REF#refs/tags/}" "$REPO" lazarus-src
-            else
-              git clone --depth 1 --branch "${REF#refs/heads/}" "$REPO" lazarus-src
-            fi
-          fi
+          echo "Downloading libQt6Pas DEBs:"
+          echo "  ${URL_QT6PAS}"
+          echo "  ${URL_QT6PAS_DEV}"
 
-          CBLD="lazarus-src/lcl/interfaces/qt6/cbindings"
-          if [ ! -d "${CBLD}" ]; then
-            echo "Qt6 cbindings directory not found at ${CBLD}" >&2
-            find lazarus-src -maxdepth 5 -type d -name cbindings -path '*qt6*' -print || true
-            exit 1
-          fi
-          echo "Using Qt6 cbindings at: ${CBLD}"
+          curl -fL -o "${QT6PAS_DEB}" "${URL_QT6PAS}"
+          curl -fL -o "${QT6PAS_DEV_DEB}" "${URL_QT6PAS_DEV}"
 
-          if [ -f "${CBLD}/CMakeLists.txt" ]; then
-            echo "Building Qt6Pas with CMake..."
-            cmake -S "${CBLD}" -B "${CBLD}/build" -G Ninja -DCMAKE_BUILD_TYPE=Release
-            cmake --build "${CBLD}/build" --config Release -j"$(nproc)"
-            sudo cmake --install "${CBLD}/build"
-          elif [ -f "${CBLD}/libqt6pas.pro" ]; then
-            echo "Building Qt6Pas with qmake..."
-            QMAKE="$(command -v qmake6 || command -v qmake || true)"
-            if [ -z "${QMAKE}" ]; then
-              echo "qmake/qmake6 not found. Ensure qt6-base-dev-tools is installed." >&2
-              exit 1
-            fi
-            ( cd "${CBLD}" && "${QMAKE}" libqt6pas.pro && make -j"$(nproc)" && sudo make install )
-          else
-            echo "No CMakeLists.txt or libqt6pas.pro found in ${CBLD}" >&2
-            ls -la "${CBLD}"
-            exit 1
-          fi
+          # Install both (dev provides headers and .pc files)
+          sudo apt-get install -y "./${QT6PAS_DEB}" "./${QT6PAS_DEV_DEB}"
 
-          # Ensure dynamic linker can find it (commonly installed to /usr/local/lib)
-          echo "/usr/local/lib" | sudo tee /etc/ld.so.conf.d/local-lib.conf >/dev/null
+          # Verify linker sees the lib
           sudo ldconfig
-
-          # Verify visibility
           if ! ldconfig -p | grep -q "libQt6Pas.so"; then
             echo "libQt6Pas.so not visible to linker after install." >&2
-            ls -la /usr/local/lib | grep -i qt6pas || true
-            ls -la /usr/lib/x86_64-linux-gnu | grep -i qt6pas || true
+            dpkg -L libqt6pas6 | grep -E 'libQt6Pas|\.so' || true
             exit 1
           fi
 
