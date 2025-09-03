@@ -8,8 +8,13 @@ on:
     branches:
       - main
 
+concurrency:
+  group: trndi-build-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   build:
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
@@ -19,120 +24,159 @@ jobs:
             artifact: Trndi-developer-build-windows.zip
             shell: pwsh
             script: |
-              # Windows Lazarus and build setup
-              if (-not (Test-Path "C:\Lazarus\lazbuild.exe")) {
-                Invoke-WebRequest -Uri 'https://sourceforge.net/projects/lazarus/files/Lazarus%20Windows%2064%20bit/Lazarus%204.2.0/lazarus-4.2.0-fpc-3.2.2-win64.exe/download' -OutFile 'lazarus-4.2.exe'
-                Start-Process -FilePath 'lazarus-4.2.exe' -ArgumentList '/VERYSILENT', '/DIR=C:\Lazarus' -Wait
+              $ErrorActionPreference = "Stop"
+
+              # Ensure tools
+              if (-not (Get-Command choco -ErrorAction SilentlyContinue)) {
+                throw "Chocolatey not available on runner."
               }
-              
-              # Install 7-Zip
               choco install 7zip -y
 
-              # Download static libraries
-              Invoke-WebRequest -Uri 'https://github.com/synopse/mORMot2/releases/download/2.3.stable/mormot2static.7z' -OutFile 'mormot2static.7z'
-              mkdir -Force ../static
-              & 'C:\Program Files\7-Zip\7z.exe' x 'mormot2static.7z' -o'../static' -y
+              # Robust download helper
+              $ProgressPreference = 'SilentlyContinue'
+              $Headers = @{ "User-Agent" = "Mozilla/5.0 GitHubActions" }
+
+              # Install Lazarus if missing
+              if (-not (Test-Path "C:\Lazarus\lazbuild.exe")) {
+                Write-Host "Downloading Lazarus 4.2.0 for Windows..."
+                Invoke-WebRequest -Uri 'https://sourceforge.net/projects/lazarus/files/Lazarus%20Windows%2064%20bit/Lazarus%204.2.0/lazarus-4.2.0-fpc-3.2.2-win64.exe/download' -OutFile 'lazarus-4.2.exe' -Headers $Headers
+                if (-not (Test-Path '.\lazarus-4.2.exe')) { throw "Lazarus installer download failed." }
+                Start-Process -FilePath '.\lazarus-4.2.exe' -ArgumentList '/VERYSILENT', '/DIR=C:\Lazarus' -Wait
+              }
+              if (-not (Test-Path "C:\Lazarus\lazbuild.exe")) { throw "lazbuild not found after install." }
+
+              # Prepare static libs
+              New-Item -ItemType Directory -Path .\static -Force | Out-Null
+              Write-Host "Downloading mORMot2 static libs..."
+              Invoke-WebRequest -Uri 'https://github.com/synopse/mORMot2/releases/download/2.3.stable/mormot2static.7z' -OutFile '.\mormot2static.7z' -Headers $Headers
+              if (-not (Test-Path '.\mormot2static.7z')) { throw "mormot2static.7z download failed." }
+              & 'C:\Program Files\7-Zip\7z.exe' x '.\mormot2static.7z' -o'.\static' -y | Out-Null
 
               # Clone mORMot2
               git clone https://github.com/synopse/mORMot2.git externals/mORMot2
 
-              # Copy static libraries
-              xcopy ..\static\x86_64-win64\*.* . /Y /E /I
+              # Copy static libs into project dir
+              if (-not (Test-Path '.\static\x86_64-win64')) { throw "Expected static\x86_64-win64 not found." }
+              xcopy .\static\x86_64-win64\*.* . /Y /E /I | Out-Null
 
-              # Install mORMot2 package
+              # Build mORMot2 package and project
               & 'C:\Lazarus\lazbuild.exe' 'externals\mORMot2\packages\lazarus\mormot2.lpk'
-
-              # Compile project
               & 'C:\Lazarus\lazbuild.exe' --lazarusdir='C:\Lazarus' --build-mode='Extensions (Release)' 'Trndi.lpr'
 
-              # Prepare artifacts
-              New-Item -ItemType Directory -Path artifacts -Force
-              Copy-Item Trndi.exe artifacts/
-              7z a -tzip Trndi-developer-build-windows.zip ./artifacts/*
+              # Package artifact
+              New-Item -ItemType Directory -Path artifacts -Force | Out-Null
+              if (-not (Test-Path '.\Trndi.exe')) { throw "Build succeeded but Trndi.exe not found." }
+              Copy-Item .\Trndi.exe .\artifacts\
+              & 'C:\Program Files\7-Zip\7z.exe' a -tzip 'Trndi-developer-build-windows.zip' .\artifacts\* | Out-Null
 
           - os: ubuntu-latest
             platform: linux
             artifact: Trndi-developer-build-linux-qt6-x64.zip
             shell: bash
             script: |
-              # Linux dependencies
+              set -euo pipefail
+
               sudo apt-get update
               sudo apt-get install -y \
                 p7zip-full \
                 build-essential \
+                wget \
+                git \
                 qt6-base-dev \
-                qt6-tools-dev \
-                git
+                qt6-tools-dev
 
-              # Download Lazarus
+              # Optional but often needed for LCL-Qt6 runtime (if available on the runner image)
+              sudo apt-get install -y libqt6pas-dev || true
+
+              # Install Lazarus 4.2.0 (pulls fpc/fpc-src via deps on -f)
               wget -O lazarus.deb 'https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20x86_64/Lazarus%204.2.0/lazarus-project_4.2.0-0_amd64.deb/download'
-              sudo dpkg -i lazarus.deb
-              sudo apt-get install -f -y
+              sudo dpkg -i lazarus.deb || true
+              sudo apt-get -f install -y
 
-              # Download static libraries
-              wget https://github.com/synopse/mORMot2/releases/download/2.3.stable/mormot2static.7z
-              mkdir -p ../static
-              7z x mormot2static.7z -o../static -y
+              if ! command -v lazbuild >/dev/null 2>&1; then
+                echo "lazbuild not found after install" >&2
+                exit 1
+              fi
+
+              # Prepare static
+              mkdir -p ./static
+              wget -O mormot2static.7z 'https://github.com/synopse/mORMot2/releases/download/2.3.stable/mormot2static.7z'
+              7z x mormot2static.7z -o./static -y >/dev/null
 
               # Clone mORMot2
               git clone https://github.com/synopse/mORMot2.git externals/mORMot2
 
-              # Copy static libraries
-              cp -r ../static/x86_64-linux/* .
+              # Copy static libs into project dir
+              test -d ./static/x86_64-linux || { echo "Expected static/x86_64-linux not found" >&2; exit 1; }
+              cp -r ./static/x86_64-linux/* .
 
-              # Install mORMot2 package
+              # Build
               lazbuild externals/mORMot2/packages/lazarus/mormot2.lpk
-
-              # Compile project
-              mkdir -p artifacts
+              # If your project does not define "Extensions (Release)", change/remove the mode.
               lazbuild --widgetset=qt6 --build-mode="Extensions (Release)" Trndi.lpr
+
+              # Package artifact (use 7z for consistency)
+              mkdir -p artifacts
               cp Trndi artifacts/
-              cd artifacts
-              zip ../Trndi-developer-build-linux-qt6-x64.zip Trndi
-              cd ..
+              7z a -tzip Trndi-developer-build-linux-qt6-x64.zip ./artifacts/* >/dev/null
 
           - os: macos-14
             platform: macos
             artifact: Trndi-developer-build-macos-arm64.zip
             shell: bash
             script: |
-              # macOS dependencies
-              export PATH="/opt/local/bin:/opt/local/sbin:$PATH"
-              sudo port selfupdate
-              sudo port install fpc lazarus p7zip
+              set -euo pipefail
 
-              # Download static libraries
-              wget https://github.com/synopse/mORMot2/releases/download/2.3.stable/mormot2static.7z
-              mkdir -p ../static
-              7z x mormot2static.7z -o../static -y
+              # Homebrew toolchain
+              brew update
+              brew install fpc p7zip
+
+              # Install Lazarus via Homebrew cask (preferred on GitHub macOS runners)
+              if ! brew list --cask lazarus >/dev/null 2>&1; then
+                brew install --cask lazarus
+              fi
+
+              LAZ_DIR="/Applications/Lazarus.app/Contents/Resources/lazarus"
+              LAZBUILD="${LAZ_DIR}/lazbuild"
+              if [ ! -x "$LAZBUILD" ]; then
+                echo "lazbuild not found at ${LAZBUILD}. Ensure the Lazarus cask installed correctly." >&2
+                exit 1
+              fi
+
+              # Prepare static
+              curl -fsSL -A "Mozilla/5.0 GitHubActions" \
+                -o mormot2static.7z \
+                "https://github.com/synopse/mORMot2/releases/download/2.3.stable/mormot2static.7z"
+              mkdir -p ./static
+              7z x mormot2static.7z -o./static -y >/dev/null
 
               # Clone mORMot2
               git clone https://github.com/synopse/mORMot2.git externals/mORMot2
 
-              # Copy static libraries
-              cp -r ../static/aarch64-darwin/* .
+              # Copy static libs into project dir
+              test -d ./static/aarch64-darwin || { echo "Expected static/aarch64-darwin not found" >&2; exit 1; }
+              cp -r ./static/aarch64-darwin/* .
 
-              # Install mORMot2 package
-              lazbuild externals/mORMot2/packages/lazarus/mormot2.lpk
+              # Build
+              "$LAZBUILD" externals/mORMot2/packages/lazarus/mormot2.lpk
+              # If "No Ext (Release)" isn't defined in your .lpi, adjust/remove this mode.
+              "$LAZBUILD" \
+                --lazarusdir="$LAZ_DIR" \
+                --build-mode="No Ext (Release)" \
+                --ws=cocoa \
+                --cpu=aarch64 \
+                --os=darwin \
+                Trndi.lpr
 
-              # Compile project
+              # Package artifact
               mkdir -p artifacts
-              lazbuild --lazarusdir=/opt/local/share/lazarus \
-                       --build-mode="No Ext (Release)" \
-                       --ws=cocoa \
-                       --cpu=aarch64 \
-                       --os=darwin \
-                       Trndi.lpr
               cp Trndi artifacts/
-              cd artifacts
-              zip ../Trndi-developer-build-macos-arm64.zip Trndi
-              cd ..
+              7z a -tzip Trndi-developer-build-macos-arm64.zip ./artifacts/* >/dev/null
 
-    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up build environment
+      - name: Set up and build (${{ matrix.platform }})
         run: ${{ matrix.script }}
         shell: ${{ matrix.shell }}
 
@@ -141,10 +185,14 @@ jobs:
         with:
           name: ${{ matrix.platform }}-build
           path: ${{ matrix.artifact }}
+          if-no-files-found: error
 
   release:
     needs: build
     runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
     steps:
       - uses: actions/download-artifact@v4
         with:
@@ -152,10 +200,10 @@ jobs:
           merge-multiple: true
 
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ github.run_number }}
-          files: artifacts/*
+          files: artifacts/*.zip
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
