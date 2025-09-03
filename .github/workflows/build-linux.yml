@@ -71,10 +71,9 @@ jobs:
         run: |
           set -euo pipefail
 
-          # Asset names from the libQt6Pas v6.2.10 release (x86_64/amd64)
-          # If the project renames assets later, update these two variables.
+          # Correct asset names for amd64 from v6.2.10
           QT6PAS_DEB="libqt6pas6_6.2.10-1_amd64.deb"
-          QT6PAS_DEV_DEB="libqt6pas-dev_6.2.7-1_amd64.deb"
+          QT6PAS_DEV_DEB="libqt6pas6-dev_6.2.10-1_amd64.deb"
 
           BASE_RELEASE="https://github.com/davidbannon/libqt6pas/releases/download/v6.2.10"
           URL_QT6PAS="${BASE_RELEASE}/${QT6PAS_DEB}"
