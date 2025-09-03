@@ -36,6 +36,9 @@ Forms,lazcontrols,trndi.types,trndi.native,
 {$IFDEF TrndiExt}
 trndi.ext.promise, trndi.ext.functions,trndi.ext.ext,
 {$ENDIF}
+{$IFDEF DEBUG}
+ sysutils,
+{$ENDIF}
 trndi.api,trndi.api.nightscout,
 trndi.api.dexcom,umain,uconf, ufloat, slicke.ux.alert
 { you can add units after this };
@@ -43,6 +46,12 @@ trndi.api.dexcom,umain,uconf, ufloat, slicke.ux.alert
 {$R *.res}
 
 begin
+{$IFDEF DEBUG}
+  // Set up -gh output for the Leakview package:
+  if FileExists('heap.trc') then
+    DeleteFile('heap.trc');
+  SetHeapTraceOutput('heap.trc');
+{$ENDIF DEBUG}
 RequireDerivedFormResource:=true;
   Application.Scaled:=True;
 Application.{%H-}MainFormOnTaskbar:=true;
