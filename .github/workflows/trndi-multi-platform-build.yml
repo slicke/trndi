@@ -22,7 +22,6 @@ jobs:
           - os: windows-latest
             platform: windows
             artifact: Trndi-developer-build-windows.zip
-            shell: pwsh
             script: |
               $ErrorActionPreference = "Stop"
 
@@ -72,7 +71,6 @@ jobs:
           - os: ubuntu-latest
             platform: linux
             artifact: Trndi-developer-build-linux-qt6-x64.zip
-            shell: bash
             script: |
               set -euo pipefail
 
@@ -123,7 +121,6 @@ jobs:
           - os: macos-14
             platform: macos
             artifact: Trndi-developer-build-macos-arm64.zip
-            shell: bash
             script: |
               set -euo pipefail
 
@@ -176,9 +173,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up and build (${{ matrix.platform }})
+      # Note: Use OS-specific steps to avoid using an expression in the 'shell' key
+      - name: Set up and build (Windows)
+        if: matrix.platform == 'windows'
         run: ${{ matrix.script }}
-        shell: ${{ matrix.shell }}
+        shell: pwsh
+
+      - name: Set up and build (Linux)
+        if: matrix.platform == 'linux'
+        run: ${{ matrix.script }}
+        shell: bash
+
+      - name: Set up and build (macOS)
+        if: matrix.platform == 'macos'
+        run: ${{ matrix.script }}
+        shell: bash
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
