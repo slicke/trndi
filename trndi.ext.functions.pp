@@ -931,7 +931,7 @@ begin
     msg := JS_ToCString(ctx, argv^[i]);
     try
       if i > 0 then
-        fullMsg := fullMsg + ' ';
+        fullMsg := fullMsg + sLineBreak;
       fullMsg := fullMsg + string(msg);
     finally
       JS_FreeCString(ctx, msg);
