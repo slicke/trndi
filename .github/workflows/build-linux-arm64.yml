@@ -89,7 +89,7 @@ jobs:
         run: |
           set -euo pipefail
           lazbuild externals/mORMot2/packages/lazarus/mormot2.lpk
-          lazbuild --widgetset=qt6 --build-mode="Extensions (Release)" --cpu=aarch64 Trndi.lpr
+          lazbuild --widgetset=qt6 --build-mode="No Ext (Release)" --cpu=aarch64 Trndi.lpr
           
           # Verify binary
           file ./Trndi

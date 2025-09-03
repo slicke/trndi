@@ -106,13 +106,13 @@ jobs:
         run: |
           New-Item -ItemType Directory -Path artifacts -Force | Out-Null
           Copy-Item .\Trndi.exe .\artifacts\
-          & 'C:\Program Files\7-Zip\7z.exe' a -tzip 'Trndi-developer-build-windows.zip' .\artifacts\* | Out-Null
+          & 'C:\Program Files\7-Zip\7z.exe' a -tzip 'Trndi-windows-x64.zip' .\artifacts\* | Out-Null
 
       - name: Upload Actions artifact
         uses: actions/upload-artifact@v4
         with:
           name: windows-build
-          path: Trndi-developer-build-windows.zip
+          path: Trndi-windows-x64.zip
           if-no-files-found: error
 
       # Optional: append this artifact to a single release shared by all builders

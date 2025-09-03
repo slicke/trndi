@@ -121,7 +121,7 @@ jobs:
           set -euo pipefail
           mkdir -p artifacts
           cp Trndi artifacts/
-          7z a -tzip Trndi-developer-build-macos-arm64.zip ./artifacts/* >/dev/null
+          7z a -tzip Trndi-macos-silicon.zip ./artifacts/* >/dev/null
 
       - name: Create macOS App and DMG
         shell: bash
@@ -139,15 +139,15 @@ jobs:
             cd ..
 
             # Add the .dmg to artifacts
-            mv dist/Trndi.dmg Trndi-developer-build-macos-arm64.dmg
+            mv dist/Trndi.dmg Trndi-macos-silicon.dmg
 
-      - name: Upload Actions artifact
+            - name: Upload Actions artifact
         uses: actions/upload-artifact@v4
         with:
           name: macos-build
           path: |
-            Trndi-developer-build-macos-arm64.zip
-            Trndi-developer-build-macos-arm64.dmg
+            Trndi-macos-silicon.zip
+            Trndi-macos-silicon.dmg
           if-no-files-found: error
 
       - name: Publish to single release (optional)
