@@ -126,4 +126,4 @@ jobs:
           $ErrorActionPreference = "Stop"
           # Create if missing; ignore error if already exists
           gh release create "$env:TAG" --title "Trndi $env:TAG" --notes "Automated multi-OS build." 2>$null || $true
-          gh release upload "$env:TAG" "Trndi-developer-build-windows.zip" --clobber
+          gh release upload "$env:TAG" "Trndi-windows-x64.zip" --clobber
