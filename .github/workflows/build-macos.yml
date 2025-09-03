@@ -79,9 +79,9 @@ jobs:
           # Use MacPorts tool paths explicitly
           export PATH="/opt/local/libexec/fpc/bin:/opt/local/bin:/opt/local/sbin:$PATH"
 
-          /opt/local/bin/port -v selfupdate
-          # MacPorts provides 'fpc' and 'lazarus'; there is no 'fpc-src' port
-          /opt/local/bin/port -N install fpc lazarus p7zip
+          # MUST use sudo for MacPorts writes to /opt/local
+          sudo /opt/local/bin/port -v selfupdate
+          sudo /opt/local/bin/port -N install fpc lazarus p7zip
 
           echo "Sanity check toolchain:"
           command -v fpc || true
