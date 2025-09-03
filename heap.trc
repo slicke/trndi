@@ -1,0 +1,6 @@
+C:\Users\bjorn\kod\trndi\Trndi.exe 
+Heap dump by heaptrc unit of C:\Users\bjorn\kod\trndi\Trndi.exe
+115798 memory blocks allocated : 30956677/31351032
+111746 memory blocks freed     : 30743849/31132464
+4052 unfreed memory blocks : 212828
+True heap siz
