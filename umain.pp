@@ -985,6 +985,8 @@ begin
   'R', 'r':
     if slicke.UX.alert.UXDialog(sRefrshQ, sForceRefresh, [mbYes, mbNo]) = mrYes then
          miForce.Click;
+  'I', 'i':
+    miSettings.Click;
   end;
 end;
 
