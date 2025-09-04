@@ -85,6 +85,7 @@ end;
 {$endif}
 
 TfBG = class(TForm)
+  lMissing: TLabel;
   lTir:TLabel;
   lAgo:TLabel;
   miAnnounce:TMenuItem;
@@ -2448,6 +2449,13 @@ begin
     pnwarning.top := ClientHeight div 10;
     pnWarning.height := ClientHeight-(pnwarning.top*2);
     CenterPanelToCaption(PNwARNING);
+
+    lMissing.AutoSize := false;
+    lMissing.left := 5;
+    lMissing.top := 5;
+    lMissing.width := pnWarning.Width-10;
+    lMissing.height := pnWarning.height div 5;
+    lMissing.OptimalFill := true;
 end;
 
 function TfBG.FetchAndValidateReadings: Boolean;
