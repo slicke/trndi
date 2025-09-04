@@ -12,7 +12,7 @@
     - TFPGList-based collections
     - Slicke.ux.alert for logging
 
-  Author:    [Original Author]
+  Author:    Björn Lindh (github.com/slicke)
   License:   GNU General Public License (v3)
   Repository: https://github.com/slicke/trndi
 *)
