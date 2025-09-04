@@ -14,7 +14,7 @@
 {"hash":7385030,"name":"tfbg.ldiff.caption","sourcebytes":[108,68,105,102,102],"value":"lDiff"},
 {"hash":460767,"name":"tfbg.lago.caption","sourcebytes":[108,65,103,111],"value":"lAgo"},
 {"hash":120659805,"name":"tfbg.pnoffrange.caption","sourcebytes":[45,32,79,102,102,32,82,97,110,103,101,32,45],"value":"- Off Range -"},
-{"hash":149929249,"name":"tfbg.lmissing.caption","sourcebytes":[78,111,32,114,101,99,101,110,116,32,114,101,97,100,105,110,103,115,33],"value":"No recent readings!"},
+{"hash":39952465,"name":"tfbg.lmissing.caption","sourcebytes":[240,159,149,145,13,10,78,111,32,114,101,99,101,110,116,32,114,101,97,100,105,110,103,115,33],"value":"\uD83D\uDD51\r\nNo recent readings!"},
 {"hash":118004071,"name":"tfbg.larrow.caption","sourcebytes":[108,65,114,114,111,119],"value":"lArrow"},
 {"hash":190517349,"name":"tfbg.ltir.caption","sourcebytes":[84,105,109,101,32,73,110,32,82,97,110,103,101],"value":"Time In Range"},
 {"hash":213577587,"name":"tfbg.misettings.caption","sourcebytes":[38,83,101,116,116,105,110,103,115],"value":"&Settings"},

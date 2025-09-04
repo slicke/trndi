@@ -102,7 +102,9 @@ msgid "Value"
 msgstr ""
 
 #: tfbg.lmissing.caption
-msgid "No recent readings!"
+msgid ""
+"🕑\n"
+"No recent readings!"
 msgstr ""
 
 #: tfbg.ltir.caption
