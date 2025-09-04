@@ -10,7 +10,6 @@ object fBG: TfBG
   Color = clBlack
   Font.Color = clWhite
   Position = poDesktopCenter
-  LCLVersion = '4.2.0.0'
   OnClose = FormClose
   OnCreate = FormCreate
   OnDblClick = FormDblClick
@@ -249,6 +248,9 @@ object fBG: TfBG
     Height = 50
     Top = 72
     Width = 250
+    BevelOuter = bvNone
+    ClientHeight = 50
+    ClientWidth = 250
     Color = 11575535
     Font.Color = clBlack
     ParentBackground = False
@@ -256,6 +258,16 @@ object fBG: TfBG
     ParentFont = False
     TabOrder = 3
     Visible = False
+    object lMissing: TLabel
+      Left = 45
+      Height = 15
+      Top = 7
+      Width = 110
+      Caption = 'No recent readings!'
+      Font.Color = clBlack
+      Font.Style = [fsBold]
+      ParentFont = False
+    end
   end
   object lArrow: TLabel
     Left = 0

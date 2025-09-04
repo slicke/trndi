@@ -101,6 +101,10 @@ msgstr ""
 msgid "Value"
 msgstr ""
 
+#: tfbg.lmissing.caption
+msgid "No recent readings!"
+msgstr ""
+
 #: tfbg.ltir.caption
 msgid "Time In Range"
 msgstr ""
