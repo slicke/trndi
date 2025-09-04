@@ -999,43 +999,63 @@ procedure SendNotification(Title, Message: string);
   {$endif}
   {$if defined(X_WIN)}
 
-procedure SendNotification(const title, msg: string); // Do this with create process as it seems to work best for PS
-  var
-    Command: string;
-    StartupInfo: TStartupInfo;
-    ProcessInfo: TProcessInformation;
-    CommandLine: string;
+  function PSQuote(const S: UnicodeString): UnicodeString;
   begin
+    // PowerShell single-quoted literal; escape embedded single quotes by doubling them
+    Result := '''' + StringReplace(S, '''', '''''', [rfReplaceAll]) + '''';
+  end;
 
-    Command := Format(
+  function GetExePathW: UnicodeString;
+  var
+    Buf: array[0..2047] of WideChar; // larger than MAX_PATH to handle longer paths
+    Len: DWORD;
+  begin
+    Len := GetModuleFileNameW(0, @Buf[0], Length(Buf));
+    SetString(Result, PWideChar(@Buf[0]), Len);
+  end;
+
+  procedure SendNotification(const Title, Msg: UnicodeString);
+  var
+    Script: UnicodeString;
+    CommandLine: UnicodeString;
+    StartupInfo: Windows.TStartupInfoW;
+    ProcessInfo: TProcessInformation;
+    AppLogo: UnicodeString;
+  begin
+    // Use the EXE path as AppLogo (quote it for PS)
+    AppLogo := GetExePathW;
+
+    // Build a PowerShell script string. Use single-quoted PS strings for Title/Msg and path.
+    Script :=
+      'Import-Module BurntToast; ' +
       'New-BurntToastNotification ' +
-    //'-AppId Trndi ' +
-      '-AppLogo ' + ParamStr(0) +' '+  // This will just show up black
-      '-Text ''%s'', ' +
-    '''%s'' ',
-      [title, msg]
-      );
+      '-AppLogo ' + PSQuote(AppLogo) + ' ' +
+      '-Text ' + PSQuote(Title) + ', ' + PSQuote(Msg);
 
+    // Wrap the whole command in double quotes; internal arguments use single quotes already
+    CommandLine :=
+      'powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "' + Script + '"';
 
-    CommandLine := 'powershell.exe -NoProfile -ExecutionPolicy Bypass -Command Import-Module BurntToast; ' + Command;
-
-    FillChar(StartupInfo, SizeOf(TStartupInfo), 0);
-    StartupInfo.cb := SizeOf(TStartupInfo);
+    FillChar(StartupInfo, SizeOf(StartupInfo), 0);
+    StartupInfo.cb := SizeOf(StartupInfo);
     StartupInfo.dwFlags := STARTF_USESHOWWINDOW;
     StartupInfo.wShowWindow := SW_HIDE;
 
-    if not CreateProcess(
-      nil,
-      pchar(CommandLine),
-      nil,
-      nil,
-      false,
-      CREATE_NO_WINDOW,
-      nil,
-      nil,
-      StartupInfo,
-      ProcessInfo
-      ) then
+    // Ensure a unique writable buffer for CreateProcessW
+    UniqueString(CommandLine);
+
+    if not CreateProcessW(
+      nil,                         // lpApplicationName
+      PWideChar(CommandLine),      // lpCommandLine (UTF-16)
+      nil,                         // lpProcessAttributes
+      nil,                         // lpThreadAttributes
+      False,                       // bInheritHandles
+      CREATE_NO_WINDOW,            // dwCreationFlags
+      nil,                         // lpEnvironment
+      nil,                         // lpCurrentDirectory
+      StartupInfo,                 // lpStartupInfo (W)
+      ProcessInfo                  // lpProcessInformation
+    ) then
       RaiseLastOSError
     else
     begin
