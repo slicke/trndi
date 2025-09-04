@@ -2450,6 +2450,8 @@ begin
     pnWarning.height := ClientHeight-(pnwarning.top*2);
     CenterPanelToCaption(PNwARNING);
 
+    if Pos(sLineBreak, lMissing.Caption) < 1 then // Ugly solution
+      lMissing.Caption := '🕑'+sLineBreak+lMissing.Caption;
     lMissing.AutoSize := false;
     lMissing.left := 5;
     lMissing.top := 5;

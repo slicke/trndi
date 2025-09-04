@@ -260,11 +260,11 @@ object fBG: TfBG
     Visible = False
     object lMissing: TLabel
       Left = 45
-      Height = 30
+      Height = 15
       Top = 7
       Width = 110
       Alignment = taCenter
-      Caption = '🕑'#13#10'No recent readings!'
+      Caption = 'No recent readings!'
       Font.Color = clBlack
       Font.Style = [fsBold]
       ParentFont = False
