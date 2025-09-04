@@ -112,7 +112,11 @@ msgid "Value"
 msgstr "Värde"
 
 #: tfbg.lmissing.caption
-msgid "No recent readings!"
+#, fuzzy
+#| msgid "No recent readings!"
+msgid ""
+"🕑\n"
+"No recent readings!"
 msgstr "Inga färska avläsningar!"
 
 #: tfbg.ltir.caption
@@ -1117,3 +1121,4 @@ msgstr "Senaste position"
 msgctxt "umain.rs_tpotopright"
 msgid "Top Right"
 msgstr "Höger topp"
+

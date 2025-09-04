@@ -13,7 +13,7 @@ uses
   {$ifdef DARWIN}, CocoaAll{$endif};
 
 
-procedure CenterPanelToCaption(Panel: TPanel);
+procedure CenterPanelToCaption(Panel: TPanel; margin: integer = 10);
 function GetAppPath: string;
 function GetLangPath: string;
 procedure PaintLbl(Sender: TLabel; OutlineWidth: integer = 1; OutlineColor: TColor = clBlack);
@@ -49,7 +49,7 @@ MAX_RESULT: integer = 25; // Max results
 
 implementation
 
-procedure CenterPanelToCaption(Panel: TPanel);
+procedure CenterPanelToCaption(Panel: TPanel; margin: integer = 10);
 var
   TextWidth, PanelWidth, Padding: Integer;
   ParentWidth: Integer;
@@ -58,7 +58,7 @@ begin
   Panel.Canvas.Font := Panel.Font;
   TextWidth := Panel.Canvas.TextWidth(Panel.Caption);
 
-  Padding := 20; // Add 20 pixels (10 on each side, adjust as needed)
+  Padding := margin*2; // Add 20 pixels (10 on each side, adjust as needed)
   PanelWidth := TextWidth + Padding;
 
   Panel.Width := PanelWidth;
