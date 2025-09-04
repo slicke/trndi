@@ -999,70 +999,104 @@ procedure SendNotification(Title, Message: string);
   {$endif}
   {$if defined(X_WIN)}
 
-  function PSQuote(const S: UnicodeString): UnicodeString;
-  begin
-    // PowerShell single-quoted literal; escape embedded single quotes by doubling them
-    Result := '''' + StringReplace(S, '''', '''''', [rfReplaceAll]) + '''';
-  end;
+function PSQuote(const S: UnicodeString): UnicodeString;
+begin
+  // PowerShell single-quoted literal; escape embedded single quotes
+  Result := '''' + StringReplace(S, '''', '''''', [rfReplaceAll]) + '''';
+end;
 
-  function GetExePathW: UnicodeString;
-  var
-    Buf: array[0..2047] of WideChar; // larger than MAX_PATH to handle longer paths
-    Len: DWORD;
-  begin
-    Len := GetModuleFileNameW(0, @Buf[0], Length(Buf));
+function GetExePathW: UnicodeString;
+var
+  Buf: array[0..32767] of WideChar;
+  Len: DWORD;
+begin
+  Len := GetModuleFileNameW(0, @Buf[0], Length(Buf));
+  SetString(Result, PWideChar(@Buf[0]), Len);
+end;
+
+function GetEnvVarW(const Name: UnicodeString): UnicodeString;
+var
+  Buf: array[0..32767] of WideChar;
+  Len: DWORD;
+begin
+  Len := GetEnvironmentVariableW(PWideChar(Name), @Buf[0], Length(Buf));
+  if Len = 0 then
+    Result := ''
+  else
     SetString(Result, PWideChar(@Buf[0]), Len);
-  end;
+end;
 
-  procedure SendNotification(const Title, Msg: UnicodeString);
-  var
-    Script: UnicodeString;
-    CommandLine: UnicodeString;
-    StartupInfo: Windows.TStartupInfoW;
-    ProcessInfo: TProcessInformation;
-    AppLogo: UnicodeString;
-  begin
-    // Use the EXE path as AppLogo (quote it for PS)
-    AppLogo := GetExePathW;
+procedure SendNotification(const Title, Msg: UnicodeString);
+var
+  AppPath, TempDir, TempPng, LogPath: UnicodeString;
+  Script, CommandLine: UnicodeString;
+  SI: Windows.STARTUPINFOW;
+  PI: Windows.PROCESS_INFORMATION;
+begin
+  AppPath := GetExePathW;
+  TempDir := GetEnvVarW('TEMP');
+  if (TempDir <> '') and (TempDir[Length(TempDir)] <> '\') then
+    TempDir := TempDir + '\';
+  TempPng := TempDir + ExtractFileName(ChangeFileExt(AppPath, '')) + '-toast-logo.png';
+  LogPath := TempDir + 'burnttoast-error.log';
 
-    // Build a PowerShell script string. Use single-quoted PS strings for Title/Msg and path.
-    Script :=
+  // PS script: try to extract icon -> PNG; if any error, write to log and still show toast without logo
+  Script :=
+    '$ErrorActionPreference = ''Stop''; ' +
+    '$log = ' + PSQuote(LogPath) + '; ' +
+    'try { ' +
       'Import-Module BurntToast; ' +
-      'New-BurntToastNotification ' +
-      '-AppLogo ' + PSQuote(AppLogo) + ' ' +
-      '-Text ' + PSQuote(Title) + ', ' + PSQuote(Msg);
+      'Add-Type -AssemblyName System.Drawing; ' +
+      '$exe = ' + PSQuote(AppPath) + '; ' +
+      '$png = ' + PSQuote(TempPng) + '; ' +
+      '$ico = [System.Drawing.Icon]::ExtractAssociatedIcon($exe); ' +
+      'if ($ico) { ' +
+        '$bmp = $ico.ToBitmap(); ' +
+        '$bmp2 = New-Object System.Drawing.Bitmap 64,64; ' +
+        '$g = [System.Drawing.Graphics]::FromImage($bmp2); ' +
+        '$g.Clear([System.Drawing.Color]::Transparent); ' +
+        '$g.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic; ' +
+        '$g.DrawImage($bmp,0,0,64,64); ' +
+        '$bmp2.Save($png, [System.Drawing.Imaging.ImageFormat]::Png); ' +
+        '$g.Dispose(); $bmp.Dispose(); $bmp2.Dispose(); $ico.Dispose(); ' +
+      '} ' +
+      'if (Test-Path $png) { ' +
+        'New-BurntToastNotification -AppLogo $png -Text ' + PSQuote(Title) + ', ' + PSQuote(Msg) + '; ' +
+      '} else { ' +
+        'New-BurntToastNotification -Text ' + PSQuote(Title) + ', ' + PSQuote(Msg) + '; ' +
+      '} ' +
+    '} catch { ' +
+      'try { $_ | Out-String | Set-Content -Path $log -Encoding UTF8 } catch {} ' +
+      'New-BurntToastNotification -Text ' + PSQuote(Title) + ', ' + PSQuote(Msg) + '; ' +
+    '}';
 
-    // Wrap the whole command in double quotes; internal arguments use single quotes already
-    CommandLine :=
-      'powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "' + Script + '"';
+  CommandLine := 'powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "' + Script + '"';
 
-    FillChar(StartupInfo, SizeOf(StartupInfo), 0);
-    StartupInfo.cb := SizeOf(StartupInfo);
-    StartupInfo.dwFlags := STARTF_USESHOWWINDOW;
-    StartupInfo.wShowWindow := SW_HIDE;
+  FillChar(SI, SizeOf(SI), 0);
+  SI.cb := SizeOf(SI);
+  SI.dwFlags := STARTF_USESHOWWINDOW;
+  SI.wShowWindow := SW_HIDE;
 
-    // Ensure a unique writable buffer for CreateProcessW
-    UniqueString(CommandLine);
+  UniqueString(CommandLine);
 
-    if not CreateProcessW(
-      nil,                         // lpApplicationName
-      PWideChar(CommandLine),      // lpCommandLine (UTF-16)
-      nil,                         // lpProcessAttributes
-      nil,                         // lpThreadAttributes
-      False,                       // bInheritHandles
-      CREATE_NO_WINDOW,            // dwCreationFlags
-      nil,                         // lpEnvironment
-      nil,                         // lpCurrentDirectory
-      StartupInfo,                 // lpStartupInfo (W)
-      ProcessInfo                  // lpProcessInformation
-    ) then
-      RaiseLastOSError
-    else
-    begin
-      CloseHandle(ProcessInfo.hThread);
-      CloseHandle(ProcessInfo.hProcess);
-    end;
+  if not Windows.CreateProcessW(
+    nil,
+    PWideChar(CommandLine),
+    nil, nil,
+    False,
+    CREATE_NO_WINDOW,
+    nil,
+    nil,
+    SI,
+    PI
+  ) then
+    RaiseLastOSError
+  else
+  begin
+    CloseHandle(PI.hThread);
+    CloseHandle(PI.hProcess);
   end;
+end;
 
   {$endif}
   {$IF DEFINED(X_MAC)}
