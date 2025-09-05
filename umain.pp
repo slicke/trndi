@@ -2374,10 +2374,7 @@ begin
 end;
 
 procedure TfBG.FinalizeUpdate;
-var
-  b: BGReading;
 begin
-  b := bgs[Low(bgs)];
   lastup := Now;
 
   // Handle privacy mode display
@@ -2650,12 +2647,6 @@ end;
 procedure TfBG.PlaceTrendDots(const Readings: array of BGReading);
 var
   SortedReadings: array of BGReading;
-  i, labelNumber: integer;
-  slotIndex: integer;
-  l: TLabel;
-  slotStart, slotEnd: TDateTime;
-  reading: BGReading;
-  found: boolean;
   currentTime: TDateTime;
 begin
   // Grundläggande validering
@@ -2664,7 +2655,7 @@ begin
 
   // Förberedelser
   currentTime := Now;
-  SetLength(SortedReadings, Length(Readings));
+  SetLength({%H-}SortedReadings, Length(Readings));
   Move(Readings[0], SortedReadings[0], Length(Readings) * SizeOf(BGReading));
 
   // Sortera läsningarna i fallande ordning (senaste först)
