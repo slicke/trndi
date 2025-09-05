@@ -75,21 +75,12 @@ jobs:
           QT6PAS_DEB="libqt6pas6_6.2.10-1_arm64.deb"
           QT6PAS_DEV_DEB="libqt6pas6-dev_6.2.10-1_arm64.deb"
           BASE_RELEASE="https://github.com/davidbannon/libqt6pas/releases/download/v6.2.10"
-
-          echo "Downloading libQt6Pas ARM64 DEBs:"
           curl -fL -o "${QT6PAS_DEB}" "${BASE_RELEASE}/${QT6PAS_DEB}"
           curl -fL -o "${QT6PAS_DEV_DEB}" "${BASE_RELEASE}/${QT6PAS_DEV_DEB}"
-
           sudo dpkg -i "${QT6PAS_DEB}" "${QT6PAS_DEV_DEB}" || true
           sudo apt-get -f install -y
-
           sudo ldconfig
-          echo "ldconfig reports:"
           ldconfig -p | grep Qt6Pas || true
-          echo "pkg-config (if provided):"
-          pkg-config --libs Qt6Pas || true
-          echo "Library path check:"
-          find /usr/lib -name "libQt6Pas.so*" || true
 
       - name: Prepare static libs and sources
         shell: bash
@@ -99,8 +90,6 @@ jobs:
           curl -fsSL -o mormot2static.7z 'https://github.com/synopse/mORMot2/releases/download/2.3.stable/mormot2static.7z'
           7z x mormot2static.7z -o./static -y >/dev/null
           git clone https://github.com/synopse/mORMot2.git externals/mORMot2
-
-          # Confirm ARM64 static libs
           test -d ./static/aarch64-linux || { echo "Expected static/aarch64-linux not found" >&2; exit 1; }
           cp -r ./static/aarch64-linux/* .
 
@@ -110,10 +99,7 @@ jobs:
           set -euo pipefail
           lazbuild externals/mORMot2/packages/lazarus/mormot2.lpk
           lazbuild --widgetset=qt6 --build-mode="No Ext (Release)" --cpu=aarch64 Trndi.lpr
-
-          echo "Binary info:"
           file ./Trndi || true
-          echo "Runtime deps:"
           ldd ./Trndi || true
           test -f ./Trndi
 
@@ -136,14 +122,35 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: v${{ github.sha }}
-          ASSET: Trndi-linux-arm64.zip
         shell: bash
         run: |
           set -euo pipefail
-          # Create the release only if it doesn't exist (avoids 422 on parallel runs)
+          SHORT_SHA="${GITHUB_SHA::7}"
+          TAG="v${SHORT_SHA}"
+
+          # Same notes as other platforms (only applied if we create the release)
+          cat > RELEASE_NOTES.md <<EOF
+          # Trndi Release ${TAG}
+
+          > This is an automated build of Trndi's latest source code.
+
+          ### Trndi-linux-amd64.zip
+          Linux computers running on amd64 processors (Extensions supported)
+
+          ### Trndi-linux-arm64.zip
+          Linux computers running on arm64 processors, including RaspberryPi
+
+          ### Trndi-macos-silicon.zip
+          macOS computers, with Apple processors
+
+          ### Trndi-windows-x64.zip
+          Windows computers (Extensions supported)
+
+          #### You can manually build Trndi from source for a variety of other platforms.
+          EOF
+
           if ! gh release view "$TAG" >/dev/null 2>&1; then
-            gh release create "$TAG" --title "Trndi $TAG" --notes "Automated multi-OS build."
+            gh release create "$TAG" --title "Trndi ${TAG}" --notes-file RELEASE_NOTES.md
           fi
-          # Upload/replace this asset
-          gh release upload "$TAG" "$ASSET" --clobber
+
+          gh release upload "$TAG" "Trndi-linux-arm64.zip" --clobber

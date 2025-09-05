@@ -16,8 +16,6 @@ jobs:
     name: Build macOS (arm64)
     runs-on: macos-14
     env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      # Ensure FPC finds its config regardless of CWD
       PPC_CONFIG_PATH: /opt/local/libexec/fpc/etc
 
     steps:
@@ -28,8 +26,6 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-
-          # Determine macOS major version
           OSMAJOR="$(sw_vers -productVersion | tr -d '\r' | cut -d. -f1)"
           case "$OSMAJOR" in
             14) OSNAME="14-Sonoma" ;;
@@ -38,37 +34,24 @@ jobs:
             11) OSNAME="11-BigSur" ;;
             *) echo "Unsupported macOS major version: ${OSMAJOR}" >&2; exit 1 ;;
           esac
-          export OSNAME
-
           GH_API="https://api.github.com/repos/macports/macports-base/releases"
           AUTH_HEADER=(-H "Accept: application/vnd.github+json")
-          if [ -n "${GITHUB_TOKEN:-}" ]; then
-            AUTH_HEADER+=(-H "Authorization: Bearer ${GITHUB_TOKEN}")
-          fi
-
+          if [ -n "${GITHUB_TOKEN:-}" ]; then AUTH_HEADER+=(-H "Authorization: Bearer ${GITHUB_TOKEN}"); fi
           echo "Resolving latest MacPorts pkg for ${OSNAME}..."
           PKG_URL="$(
             curl -fsSL "${AUTH_HEADER[@]}" "${GH_API}/latest" \
             | OSNAME="${OSNAME}" python3 -c 'import sys,json,os; name=os.environ.get("OSNAME",""); d=json.load(sys.stdin); print(next((a.get("browser_download_url","") for a in d.get("assets",[]) if a.get("browser_download_url","").endswith(f"-{name}.pkg")), ""), end="")'
           )" || PKG_URL=""
-
           if [ -z "${PKG_URL}" ]; then
             PKG_URL="$(
               curl -fsSL "${AUTH_HEADER[@]}" "${GH_API}" \
               | OSNAME="${OSNAME}" python3 -c 'import sys,json,os; name=os.environ.get("OSNAME",""); rels=json.load(sys.stdin); urls=[a.get("browser_download_url","") for r in rels for a in r.get("assets",[]) if a.get("browser_download_url","").endswith(f"-{name}.pkg")]; print(urls[0] if urls else "", end="")'
             )" || PKG_URL=""
           fi
-
           if [ -z "${PKG_URL}" ]; then
             PKG_URL="$(curl -fsSL https://www.macports.org/install.php | grep -Eo "https://[^\"[:space:]]*MacPorts-[0-9.]+-${OSNAME}\.pkg" | head -n1 || true)"
           fi
-
-          if [ -z "${PKG_URL}" ]; then
-            echo "Failed to resolve MacPorts pkg URL for ${OSNAME}." >&2
-            exit 1
-          fi
-
-          echo "MacPorts pkg URL: ${PKG_URL}"
+          [ -n "${PKG_URL}" ] || { echo "Failed to resolve MacPorts pkg URL for ${OSNAME}." >&2; exit 1; }
           curl -fsSL -o MacPorts.pkg "${PKG_URL}"
           sudo installer -pkg MacPorts.pkg -target /
 
@@ -76,32 +59,20 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          # Use MacPorts tool paths explicitly
           export PATH="/opt/local/libexec/fpc/bin:/opt/local/bin:/opt/local/sbin:$PATH"
-
-          # MUST use sudo for MacPorts writes to /opt/local
           sudo /opt/local/bin/port -v selfupdate
           sudo /opt/local/bin/port -N install fpc lazarus p7zip
-
-          echo "Sanity check toolchain:"
-          command -v fpc || true
           command -v lazbuild || true
-          command -v ppcx64 || true
-          echo "PPC_CONFIG_PATH=${PPC_CONFIG_PATH}"
-          test -f "${PPC_CONFIG_PATH}/fpc.cfg" && head -n 5 "${PPC_CONFIG_PATH}/fpc.cfg" || true
 
       - name: Prepare static libs and sources
         shell: bash
         run: |
           set -euo pipefail
           export PATH="/opt/local/libexec/fpc/bin:/opt/local/bin:/opt/local/sbin:$PATH"
-
           curl -fsSL -A "Mozilla/5.0 GitHubActions" -o mormot2static.7z "https://github.com/synopse/mORMot2/releases/download/2.3.stable/mormot2static.7z"
           mkdir -p ./static
           7z x mormot2static.7z -o./static -y >/dev/null
-
           git clone https://github.com/synopse/mORMot2.git externals/mORMot2
-
           test -d ./static/aarch64-darwin || { echo "Expected static/aarch64-darwin not found" >&2; exit 1; }
           cp -r ./static/aarch64-darwin/* .
 
@@ -110,7 +81,6 @@ jobs:
         run: |
           set -euo pipefail
           export PATH="/opt/local/libexec/fpc/bin:/opt/local/bin:/opt/local/sbin:$PATH"
-
           lazbuild externals/mORMot2/packages/lazarus/mormot2.lpk
           lazbuild --build-mode="No Ext (Release)" --ws=cocoa --cpu=aarch64 --os=darwin Trndi.lpr
           test -f ./Trndi
@@ -126,20 +96,12 @@ jobs:
       - name: Create macOS App and DMG
         shell: bash
         run: |
-            set -euo pipefail
-            export PATH="/opt/local/libexec/fpc/bin:/opt/local/bin:/opt/local/sbin:$PATH"
-
-            # Ensure create-dmg is installed
-            brew install create-dmg
-
-            # Run the existing macOS packaging script
-            chmod +x dist/macos.sh
-            cd dist
-            ./macos.sh
-            cd ..
-
-            # Add the .dmg to artifacts
-            mv dist/Trndi.dmg Trndi-macos-silicon.dmg
+          set -euo pipefail
+          export PATH="/opt/local/libexec/fpc/bin:/opt/local/bin:/opt/local/sbin:$PATH"
+          brew install create-dmg
+          chmod +x dist/macos.sh
+          (cd dist && ./macos.sh)
+          mv dist/Trndi.dmg Trndi-macos-silicon.dmg
 
       - name: Upload Actions artifact
         uses: actions/upload-artifact@v4
@@ -150,13 +112,39 @@ jobs:
             Trndi-macos-silicon.dmg
           if-no-files-found: error
 
-      - name: Publish to single release (optional)
+      - name: Publish to single release
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: v${{ github.sha }}
         shell: bash
         run: |
           set -euo pipefail
-          gh release create "$TAG" --title "Trndi $TAG" --notes "Automated multi-OS build." || true
+          SHORT_SHA="${GITHUB_SHA::7}"
+          TAG="v${SHORT_SHA}"
+
+          cat > RELEASE_NOTES.md <<EOF
+          # Trndi Release ${TAG}
+
+          > This is an automated build of Trndi's latest source code.
+
+          ### Trndi-linux-amd64.zip
+          Linux computers running on amd64 processors (Extensions supported)
+
+          ### Trndi-linux-arm64.zip
+          Linux computers running on arm64 processors, including RaspberryPi
+
+          ### Trndi-macos-silicon.zip
+          macOS computers, with Apple processors
+
+          ### Trndi-windows-x64.zip
+          Windows computers (Extensions supported)
+
+          #### You can manually build Trndi from source for a variety of other platforms.
+          EOF
+
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" --title "Trndi ${TAG}" --notes-file RELEASE_NOTES.md
+          fi
+
           gh release upload "$TAG" "Trndi-macos-silicon.zip" --clobber
+          gh release upload "$TAG" "Trndi-macos-silicon.dmg" --clobber

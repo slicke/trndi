@@ -31,19 +31,12 @@ jobs:
             choco install 7zip -y
           }
 
-      - name: Install Lazarus (4.2 + FPC 3.2.2) via curl.exe with retries
+      - name: Install Lazarus (4.2 + FPC 3.2.2)
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
-
-          # Robust download using curl.exe (NOT Invoke-WebRequest). No UA override needed.
           function Get-WithRetry {
-            param(
-              [Parameter(Mandatory=$true)][string]$Url,
-              [Parameter(Mandatory=$true)][string]$OutFile,
-              [int]$Retries = 5,
-              [int]$DelaySec = 5
-            )
+            param([string]$Url,[string]$OutFile,[int]$Retries=5,[int]$DelaySec=5)
             for ($i=1; $i -le $Retries; $i++) {
               & curl.exe -L --fail --retry 5 --retry-delay 3 -o $OutFile $Url
               if (Test-Path $OutFile) {
@@ -53,30 +46,22 @@ jobs:
                     $bytes = New-Object byte[] 2
                     [void]$fs.Read($bytes, 0, 2)
                     $fs.Close()
-                    # Validate 'MZ' PE signature and a sane size (>50MB)
                     if ($bytes[0] -eq 0x4D -and $bytes[1] -eq 0x5A) {
-                      $size = (Get-Item $OutFile).Length
-                      if ($size -gt 50000000) { return }
+                      if ((Get-Item $OutFile).Length -gt 50000000) { return }
                     }
-                  } finally {
-                    if ($fs) { $fs.Dispose() }
-                  }
+                  } finally { if ($fs) { $fs.Dispose() } }
                 } catch { }
               }
-              Write-Host "Download validation failed, retry $i/$Retries. Sleeping $DelaySec sec..."
+              Write-Host "Retry $i/$Retries..."
               Start-Sleep -Seconds $DelaySec
               if (Test-Path $OutFile) { Remove-Item $OutFile -Force -ErrorAction SilentlyContinue }
             }
             throw "Failed to download a valid file from $Url after $Retries attempts."
           }
-
           $LazUrl = 'https://sourceforge.net/projects/lazarus/files/Lazarus%20Windows%2064%20bits/Lazarus%204.2/lazarus-4.2-fpc-3.2.2-win64.exe/download'
           Get-WithRetry -Url $LazUrl -OutFile 'lazarus-4.2.exe'
-
           Start-Process -FilePath '.\lazarus-4.2.exe' -ArgumentList '/VERYSILENT','/SP-','/NORESTART','/DIR=C:\Lazarus' -Wait
-          if (-not (Test-Path "C:\Lazarus\lazbuild.exe")) {
-            throw "lazbuild not found after install."
-          }
+          if (-not (Test-Path "C:\Lazarus\lazbuild.exe")) { throw "lazbuild not found after install." }
 
       - name: Prepare static libs and sources
         shell: pwsh
@@ -84,12 +69,8 @@ jobs:
           New-Item -ItemType Directory -Path .\static -Force | Out-Null
           & curl.exe -L --fail -o mormot2static.7z "https://github.com/synopse/mORMot2/releases/download/2.3.stable/mormot2static.7z"
           & 'C:\Program Files\7-Zip\7z.exe' x '.\mormot2static.7z' -o'.\static' -y | Out-Null
-
           git clone https://github.com/synopse/mORMot2.git externals/mORMot2
-
-          if (-not (Test-Path '.\static\x86_64-win64')) {
-            throw "Expected static\x86_64-win64 not found."
-          }
+          if (-not (Test-Path '.\static\x86_64-win64')) { throw "Expected static\x86_64-win64 not found." }
           xcopy .\static\x86_64-win64\*.* . /Y /E /I | Out-Null
 
       - name: Build
@@ -97,9 +78,7 @@ jobs:
         run: |
           & 'C:\Lazarus\lazbuild.exe' 'externals\mORMot2\packages\lazarus\mormot2.lpk'
           & 'C:\Lazarus\lazbuild.exe' --lazarusdir='C:\Lazarus' --build-mode='Extensions (Release)' 'Trndi.lpr'
-          if (-not (Test-Path '.\Trndi.exe')) {
-            throw "Build succeeded but Trndi.exe not found."
-          }
+          if (-not (Test-Path '.\Trndi.exe')) { throw "Build succeeded but Trndi.exe not found." }
 
       - name: Package artifact
         shell: pwsh
@@ -115,15 +94,38 @@ jobs:
           path: Trndi-windows-x64.zip
           if-no-files-found: error
 
-      # Optional: append this artifact to a single release shared by all builders
       - name: Publish to single release
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         shell: pwsh
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: v${{ github.sha }}
         run: |
           $ErrorActionPreference = "Stop"
-          # Create if missing; ignore error if already exists
-          gh release create "$env:TAG" --title "Trndi $env:TAG" --notes "Automated multi-OS build." 2>$null || $true
-          gh release upload "$env:TAG" "Trndi-windows-x64.zip" --clobber
+          $short = $env:GITHUB_SHA.Substring(0,7)
+          $tag = "v$short"
+
+          $notes = @"
+          # Trndi Release $tag
+
+          > This is an automated build of Trndi's latest source code.
+
+          ### Trndi-linux-amd64.zip
+          Linux computers running on amd64 processors (Extensions supported)
+
+          ### Trndi-linux-arm64.zip
+          Linux computers running on arm64 processors, including RaspberryPi
+
+          ### Trndi-macos-silicon.zip
+          macOS computers, with Apple processors
+
+          ### Trndi-windows-x64.zip
+          Windows computers (Extensions supported)
+
+          #### You can manually build Trndi from source for a variety of other platforms.
+          "@
+
+          if (-not (gh release view $tag 2>$null)) {
+            gh release create $tag --title "Trndi $tag" --notes "$notes" 2>$null | Out-Null
+          }
+
+          gh release upload $tag "Trndi-windows-x64.zip" --clobber
