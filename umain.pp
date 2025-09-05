@@ -271,6 +271,7 @@ function CFStringCreateWithUTF8String(const utf8Str: PAnsiChar): CFStringRef; ex
 {$endif}
 
 var
+fSplash: TfSplash;
 native: TrndiNative;
 {$ifdef X_LINUXBSD}
 isWSL : boolean = false;
@@ -594,6 +595,7 @@ begin
   exts := FindAllFiles(extdir, '*.js', false);
   // Find .js files
 
+  fSplash.lInfo.Caption := 'Initializing extensions backend..';
   with TTrndiExtEngine.Instance do
   begin
     addClassFunction('getLocale', ExtFunction(@JSLocale), 0);
@@ -606,9 +608,11 @@ begin
     addClassFunction('playSound', ExtFunction(@JSPlay), 1);
     addClassFunction('sayText', ExtFunction(@JSSay), 1);
     // Add the UX modification function, as declared in this file
-    for s in exts do
+    for s in exts do begin
+       fSplash.lInfo.Caption := 'Loading Extension: ' + s;
       // Run all found files
       ExecuteFile(s);
+    end;
     exts.Free;
   end;
 end;
@@ -655,7 +659,6 @@ procedure TfBG.FormCreate(Sender: TObject);
 var
   i: integer;
   s, fontName, apiTarget, apiCreds, lang: string;
-  fs: TfSplash;
   fil: boolean;
 {$ifdef X_LINUXBSD}
 function GetLinuxDistro: string;
@@ -768,12 +771,12 @@ function GetLinuxDistro: string;
 '• The developers have NO LIABILITY'#10+
 '• You have read and agree to the full terms';
 begin
-  fs := TfSplash.Create(nil);
+  fSplash := TfSplash.Create(nil);
     FStoredWindowInfo.Initialized := False;
-  fs.Image1.Picture.Icon := Application.Icon;
-  fs.lInfo.Caption := '';
-  fs.lInfo.Font.Color := fs.lSplashWarn.Font.color;
-fs.Show;
+  fSplash.Image1.Picture.Icon := Application.Icon;
+  fSplash.lInfo.Caption := '';
+  fSplash.lInfo.Font.Color := fSplash.lSplashWarn.Font.color;
+  fSplash.Show;
 Application.processmessages;
 Application.OnException := @AppExceptionHandler;
 
@@ -923,13 +926,13 @@ Application.OnException := @AppExceptionHandler;
     begin
       ShowMessage(api.ErrorMsg);
       tMain.Enabled := false;
-      fs.Close;
-      fs.Free;
+      fSplash.Close;
+      fSplash.Free;
       Exit;
     end;
 
     {$ifdef TrndiExt}
-    fs.lInfo.Caption := 'Loading Extensions...';
+    fSplash.lInfo.Caption := 'Loading Extensions...';
     LoadExtensions;
     {$endif}
 
@@ -950,8 +953,8 @@ Application.OnException := @AppExceptionHandler;
     pnWarning.Visible := true;
     pnWarning.Caption := '⚠️ ' + RS_NO_BOOT_READING;
   end;
-  fs.Close;
-  fs.Free;
+  fsplash.Close;
+  fsplash.Free;
 end;
 
 procedure TfBG.FormDblClick(Sender: TObject);
@@ -2498,13 +2501,15 @@ begin
 
 
   pnWarning.Visible := false;
-  if Length(bgs) < 1 then
+  if (Length(bgs) < 1) or (not IsDataFresh) then
   begin
     pnWarning.Visible := true;
     pnWarning.Caption := '⚠️ ' + RS_NO_BACKEND;
     FixWarningPanel;
     Exit;
   end;
+
+  ShowMessage(DateTimeToStr(bgs[0].date));
 
   // Call the method to place the points
   PlaceTrendDots(bgs);
