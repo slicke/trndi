@@ -143,13 +143,13 @@ TfBG = class(TForm)
   tTouch: TTimer;
   tMain: TTimer;
   procedure fbReadingsDblClick(Sender:TObject);
-  procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
+  procedure FormClose(Sender: TObject; var {%H-}CloseAction: TCloseAction);
   procedure FormCreate(Sender: TObject);
   procedure FormDblClick(Sender: TObject);
   procedure FormDestroy(Sender:TObject);
   procedure FormKeyPress(Sender:TObject;var Key:char);
   procedure FormMouseLeave(Sender:TObject);
-  procedure FormMouseMove(Sender:TObject;Shift:TShiftState;X,Y:integer);
+  procedure FormMouseMove(Sender:TObject;{%H-}Shift:TShiftState;X,Y:integer);
   procedure FormResize(Sender: TObject);
   procedure FormShow(Sender:TObject);
   procedure lAgoClick(Sender:TObject);
@@ -160,9 +160,9 @@ TfBG = class(TForm)
   procedure lTirClick(Sender:TObject);
   procedure lValClick(Sender: TObject);
   procedure lValDblClick(Sender: TObject);
-  procedure lValMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: integer);
-  procedure lValMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: integer);
-  procedure lValStartDrag(Sender: TObject; var DragObject: TDragObject);
+  procedure lValMouseDown(Sender: TObject; Button: TMouseButton; {%H-}Shift: TShiftState; X, Y: integer);
+  procedure lValMouseUp(Sender: TObject; {%H-}Button: TMouseButton; {%H-}Shift: TShiftState; {%H-}X, {%H-}Y: integer);
+  procedure lValStartDrag(Sender: TObject; var {%H-}DragObject: TDragObject);
   procedure miAnnounceClick(Sender:TObject);
   procedure miAlternateClick(Sender:TObject);
   procedure miClockClick(Sender:TObject);
@@ -211,9 +211,9 @@ private
   procedure PlaceTrendDots(const Readings: array of BGReading);
   procedure actOnTrend(proc: TTrendProc);
   procedure actOnTrend(proc: TTrendProcLoop);
-  procedure setDotWidth(l: TLabel; c, ix: integer; ls: array of TLabel);
-  procedure HideDot(l: TLabel; c, ix: integer);
-  procedure ResizeDot(l: TLabel; c, ix: integer);
+  procedure setDotWidth(l: TLabel; c, ix: integer; {%H-}ls: array of TLabel);
+  procedure HideDot(l: TLabel; {%H-}c, {%H-}ix: integer);
+  procedure ResizeDot(l: TLabel; {%H-}c, ix: integer);
   procedure ExpandDot(l: TLabel; c, ix: integer);
   procedure placeForm;
 
@@ -223,8 +223,8 @@ private
   function IsDataFresh: Boolean;
   procedure SetNextUpdateTimer(const LastReadingTime: TDateTime);
   procedure UpdateUIBasedOnGlucose;
-  procedure HandleHighGlucose(const b: BGReading);
-  procedure HandleLowGlucose(const b: BGReading);
+  procedure HandleHighGlucose(const {%H-}b: BGReading);
+  procedure HandleLowGlucose(const {%H-}b: BGReading);
   procedure HandleNormalGlucose(const b: BGReading);
   procedure UpdateOffRangePanel(const Value: Single);
   procedure DisplayLowRange;
@@ -261,8 +261,8 @@ private
   procedure LoadExtensions;
   {$endif}
 public
-   procedure AppExceptionHandler(Sender: TObject; E: Exception);
-   procedure onGH(sender: TObject);
+   procedure AppExceptionHandler(Sender: TObject; {%H-}E: Exception);
+   procedure onGH({%H-}sender: TObject);
 end;
 
 
@@ -658,7 +658,7 @@ end;
 procedure TfBG.FormCreate(Sender: TObject);
 var
   i: integer;
-  s, fontName, apiTarget, apiCreds, lang: string;
+  s, fontName, apiTarget, apiCreds: string;
   fil: boolean;
 {$ifdef X_LINUXBSD}
 function GetLinuxDistro: string;
@@ -777,8 +777,8 @@ begin
   fSplash.lInfo.Caption := '';
   fSplash.lInfo.Font.Color := fSplash.lSplashWarn.Font.color;
   fSplash.Show;
-Application.processmessages;
-Application.OnException := @AppExceptionHandler;
+  Application.processmessages;
+  Application.OnException := @AppExceptionHandler;
 
   fil := FontInList(fontName);
   if not fil then
@@ -1020,7 +1020,9 @@ end;
 procedure TfBG.FormClose(Sender: TObject; var CloseAction: TCloseAction);
 var
   posValue: integer;
-  mr: TModalResult;
+  {$ifdef Darwin}
+    mr: TModalResult;
+  {$endif}
 begin
   {$ifdef Darwin}
   if self.Showing then
@@ -1435,8 +1437,8 @@ var
   xval: integer;
   rssi, noise: string;
 begin
-SetLength(keys, high(bgs)+1);
-SetLength(vals, high(bgs)+1);
+SetLength({%H-}keys, high(bgs)+1);
+SetLength({%H-}vals, high(bgs)+1);
 
 for i := Low(bgs) to High(bgs) do begin
  if bgs[i].empty then
@@ -1895,7 +1897,7 @@ var
   d: TDateTime;
   min: int64;
 begin
- if sizeof(bgs) <= 0 then begin
+ if sizeof(bgs) < 1 then begin
     lAgo.Caption := '🕑 ' + RS_COMPUTE_FAILED_AGO;
  end else begin
    try
