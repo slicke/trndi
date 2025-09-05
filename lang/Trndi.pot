@@ -455,6 +455,10 @@ msgstr ""
 msgid "Very Big"
 msgstr ""
 
+#: tfsplash.linfo.caption
+msgid "Loading:"
+msgstr ""
+
 #: tfsplash.lsplashwarn.caption
 msgctxt "tfsplash.lsplashwarn.caption"
 msgid ""
