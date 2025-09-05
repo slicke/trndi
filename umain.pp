@@ -57,7 +57,7 @@ trndi.Ext. Engine, trndi.Ext.jsfuncs,
 {$ifdef Darwin}
 CocoaAll, MacOSAll,
 {$endif}
-LazFileUtils, uconf, trndi.native, Trndi.API, trndi.api.xDrip,{$ifdef DEBUG} trndi.api.debug, trndi.api.debug_edge, trndi.api.debug_missing,{$endif}
+LazFileUtils, uconf, trndi.native, Trndi.API, trndi.api.xDrip,{$ifdef DEBUG} trndi.api.debug, trndi.api.debug_edge, trndi.api.debug_missing, trndi.api.debug_perfect, {$endif}
 {$ifdef LCLQt6}Qt6, QtWidgets,{$endif}
 StrUtils, TouchDetection, ufloat;
 
@@ -907,7 +907,9 @@ Application.OnException := @AppExceptionHandler;
       api := DebugAPI.Create(apiTarget, apiCreds, '');
     '* Debug Missing Backend *':
       api := DebugMissingAPI.Create(apiTarget, apiCreds, '');
-   '* Debug Backend Edge *':
+    '* Debug Perfect Backend *':
+      api := DebugPerfectAPI.Create(apiTarget, apiCreds, '');
+   '* Debug Edge Backend *':
       api := DebugEdgeAPI.Create(apiTarget, apiCreds, '');
       {$endif}
     else
@@ -1746,7 +1748,8 @@ begin
       {$ifdef DEBUG}
       fConf.cbSys.Items.Add('* Debug Backend *');
       fConf.cbSys.Items.Add('* Debug Missing Backend *');
-      fConf.cbSys.Items.Add('* Debug Backend Edge *');
+      fConf.cbSys.Items.Add('* Debug Perfect Backend *');
+      fConf.cbSys.Items.Add('* Debug Edge Backend *');
       {$endif}
     end;
 
