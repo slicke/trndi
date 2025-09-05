@@ -42,22 +42,15 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-
-          # Pinned URLs for reproducibility (update if you bump versions)
           FPC_LAZ_URL="https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.2/fpc-laz_3.2.2-210709_amd64.deb/download"
           FPC_SRC_URL="https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.2/fpc-src_3.2.2-210709_amd64.deb/download"
           LAZ_URL="https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.2/lazarus-project_4.2.0-0_amd64.deb/download"
 
           echo "Downloading Lazarus + FPC DEBs:"
-          echo "  ${FPC_LAZ_URL}"
-          echo "  ${FPC_SRC_URL}"
-          echo "  ${LAZ_URL}"
-
           curl -fsSL -o fpc-laz.deb "${FPC_LAZ_URL}"
           curl -fsSL -o fpc-src.deb "${FPC_SRC_URL}"
           curl -fsSL -o lazarus.deb "${LAZ_URL}"
 
-          # Install all together; then let apt resolve system libs
           sudo dpkg -i fpc-laz.deb fpc-src.deb lazarus.deb || true
           sudo apt-get -f install -y
 
@@ -70,32 +63,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-
-          # Correct asset names for amd64 from v6.2.10
           QT6PAS_DEB="libqt6pas6_6.2.10-1_amd64.deb"
           QT6PAS_DEV_DEB="libqt6pas6-dev_6.2.10-1_amd64.deb"
-
           BASE_RELEASE="https://github.com/davidbannon/libqt6pas/releases/download/v6.2.10"
-          URL_QT6PAS="${BASE_RELEASE}/${QT6PAS_DEB}"
-          URL_QT6PAS_DEV="${BASE_RELEASE}/${QT6PAS_DEV_DEB}"
-
-          echo "Downloading libQt6Pas DEBs:"
-          echo "  ${URL_QT6PAS}"
-          echo "  ${URL_QT6PAS_DEV}"
-
-          curl -fL -o "${QT6PAS_DEB}" "${URL_QT6PAS}"
-          curl -fL -o "${QT6PAS_DEV_DEB}" "${URL_QT6PAS_DEV}"
-
-          # Install both (dev provides headers and .pc files)
+          curl -fL -o "${QT6PAS_DEB}" "${BASE_RELEASE}/${QT6PAS_DEB}"
+          curl -fL -o "${QT6PAS_DEV_DEB}" "${BASE_RELEASE}/${QT6PAS_DEV_DEB}"
           sudo apt-get install -y "./${QT6PAS_DEB}" "./${QT6PAS_DEV_DEB}"
-
-          # Verify linker sees the lib
           sudo ldconfig
-          if ! ldconfig -p | grep -q "libQt6Pas.so"; then
-            echo "libQt6Pas.so not visible to linker after install." >&2
-            dpkg -L libqt6pas6 | grep -E 'libQt6Pas|\.so' || true
-            exit 1
-          fi
+          ldconfig -p | grep -q "libQt6Pas.so" || { echo "libQt6Pas.so not visible to linker"; exit 1; }
 
       - name: Prepare static libs and sources
         shell: bash
@@ -105,8 +80,6 @@ jobs:
           curl -fsSL -o mormot2static.7z 'https://github.com/synopse/mORMot2/releases/download/2.3.stable/mormot2static.7z'
           7z x mormot2static.7z -o./static -y >/dev/null
           git clone https://github.com/synopse/mORMot2.git externals/mORMot2
-
-          # Copy static libs into project dir
           test -d ./static/x86_64-linux || { echo "Expected static/x86_64-linux not found" >&2; exit 1; }
           cp -r ./static/x86_64-linux/* .
 
@@ -133,14 +106,40 @@ jobs:
           path: Trndi-linux-amd64.zip
           if-no-files-found: error
 
-      # Optional: append this artifact to a single release shared by all builders (pushes to main only)
       - name: Publish to single release
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: v${{ github.sha }}
         shell: bash
         run: |
           set -euo pipefail
-          gh release create "$TAG" --title "Trndi $TAG" --notes "Automated multi-OS build." || true
+          SHORT_SHA="${GITHUB_SHA::7}"
+          TAG="v${SHORT_SHA}"
+
+          # Prepare consistent Markdown notes (only used if we create the release)
+          cat > RELEASE_NOTES.md <<EOF
+          # Trndi Release ${TAG}
+
+          > This is an automated build of Trndi's latest source code.
+
+          ### Trndi-linux-amd64.zip
+          Linux computers running on amd64 processors (Extensions supported)
+
+          ### Trndi-linux-arm64.zip
+          Linux computers running on arm64 processors, including RaspberryPi
+
+          ### Trndi-macos-silicon.zip
+          macOS computers, with Apple processors
+
+          ### Trndi-windows-x64.zip
+          Windows computers (Extensions supported)
+
+          #### You can manually build Trndi from source for a variety of other platforms.
+          EOF
+
+          # Create the release with notes if missing; otherwise just upload assets
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" --title "Trndi ${TAG}" --notes-file RELEASE_NOTES.md
+          fi
+
           gh release upload "$TAG" "Trndi-linux-amd64.zip" --clobber
