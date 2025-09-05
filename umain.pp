@@ -142,6 +142,7 @@ TfBG = class(TForm)
   tMissed:TTimer;
   tTouch: TTimer;
   tMain: TTimer;
+  procedure AdjustGraph;
   procedure fbReadingsDblClick(Sender:TObject);
   procedure FormClose(Sender: TObject; var {%H-}CloseAction: TCloseAction);
   procedure FormCreate(Sender: TObject);
@@ -809,8 +810,9 @@ begin
      Showmessage('This release of Trndi was compiled for a non-supported platform ("widgetset")'#10'Performance might be bad and features might not work as intended!'#10#10'Please download the official release (Qt6) from github.com/slicke/trndi');
   {$endif}
   isWSL := TrndiNative.DetectWSL.IsWSL;
-  if isWSL then
+  if isWSL then begin
      Showmessage('Windows Linux Subsystem (WSL) detected. Due to limitations in WSL, graphic issues may occur. Commonly, windows will appear at random positions an not where expected!');
+  end;
   {$endif}
   {$ifdef DARWIN}
   BorderStyle := bsSizeable;
@@ -1071,6 +1073,17 @@ end;
 
 procedure TfBG.fbReadingsDblClick(Sender:TObject);
 begin
+
+end;
+
+// Post-process the graph
+procedure TfBG.AdjustGraph;
+var
+  l: Tlabel;
+begin
+  for l in TrendDots do
+    l.top := l.top + round(ClientHeight * DOT_ADJUST);
+
 
 end;
 
@@ -1938,23 +1951,26 @@ procedure TfBG.tResizeTimer(Sender: TObject);
 begin
   tResize.Enabled := False;
 
-  // Uppdatera Trend-relaterade element
+  // Update trend related elements
   UpdateTrendElements;
 
   if not Assigned(api) then
     Exit;
 
-  // Uppdatera meny- och intervall-information
+  // Update meny and intervall
   UpdateApiInformation;
 
   if not api.active then
     Exit;
 
-  // Anpassa UI-element baserat på nuvarande storlek
+  // Adjust UI based on form size
   ResizeUIElements;
 
-  // Placera om trend dots
+  // Place the dots
   UpdateTrendDots;
+
+  // Post-process the dots
+  AdjustGraph;
 
   fixWarningPanel;
 
@@ -2655,22 +2671,21 @@ var
   SortedReadings: array of BGReading;
   currentTime: TDateTime;
 begin
-  // Grundläggande validering
   if Length(Readings) = 0 then
     Exit;
 
-  // Förberedelser
+  // Prepare
   currentTime := Now;
   SetLength({%H-}SortedReadings, Length(Readings));
   Move(Readings[0], SortedReadings[0], Length(Readings) * SizeOf(BGReading));
 
-  // Sortera läsningarna i fallande ordning (senaste först)
+  // Sort readings Descending (newest first)
   SortReadingsDescending(SortedReadings);
 
-  // Hantera den senaste läsningens färskhet
+  // Manage the last readings freshness
   HandleLatestReadingFreshness(SortedReadings[0], currentTime);
 
-  // Bearbeta varje tidsintervall
+  // Process every interval
   ProcessTimeIntervals(SortedReadings, currentTime);
 end;
 
@@ -2701,7 +2716,7 @@ var
 begin
   for slotIndex := 0 to NUM_DOTS - 1 do
   begin
-    // Definiera start- och sluttid för intervallet
+    // Set start and end time for the intervall
     slotEnd := IncMinute(CurrentTime, -INTERVAL_MINUTES * slotIndex);
     slotStart := IncMinute(slotEnd, -INTERVAL_MINUTES);
 
@@ -2719,7 +2734,7 @@ begin
       end;
     end;
 
-    // Om ingen läsning hittades inom intervallet, dölj etiketten
+    // Hide label if no reading
     if not found then
     begin
       labelNumber := NUM_DOTS - slotIndex;
