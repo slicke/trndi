@@ -610,7 +610,7 @@ begin
     addClassFunction('sayText', ExtFunction(@JSSay), 1);
     // Add the UX modification function, as declared in this file
     for s in exts do begin
-       fSplash.lInfo.Caption := 'Loading Extension: ' + s;
+       fSplash.lInfo.Caption := RS_SPLASH_LOADING + s;
       // Run all found files
       ExecuteFile(s);
     end;
@@ -934,7 +934,7 @@ begin
     end;
 
     {$ifdef TrndiExt}
-    fSplash.lInfo.Caption := 'Loading Extensions...';
+    fSplash.lInfo.Caption := RS_SPLASH_LOADING_INIT;
     LoadExtensions;
     {$endif}
 
