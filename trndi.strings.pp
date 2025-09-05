@@ -78,6 +78,10 @@ RS_noPlugins = 'Built Without Support';
 RS_MULTINAME = 'Showing data for: "%s"';
 RS_MULTINAME_DEF = 'Showing the standard user';
 
+RS_SPLASH_LOADING = 'Loading Extension: ';
+RS_SPLASH_LOADING_INIT  = 'Loading Extensions...';
+
+
 // EXT
 sExtErr = 'Extension Error';
 sExtMsg = 'Extension Message';
