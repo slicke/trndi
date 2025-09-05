@@ -2523,8 +2523,6 @@ begin
     Exit;
   end;
 
-  ShowMessage(DateTimeToStr(bgs[0].date));
-
   // Call the method to place the points
   PlaceTrendDots(bgs);
   Result := True;
