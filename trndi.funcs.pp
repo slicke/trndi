@@ -44,6 +44,7 @@ APP_BUILD_DATE = {$I %DATE%}; // Returns "2025/07/21"
 APP_BUILD_TIME = {$I %TIME%}; // Returns "14:30:25"
 
 var
+DOT_ADJUST: single = 1; // Multiplyer where dots appear
 MAX_MIN: integer = 1440; // Max time to request
 MAX_RESULT: integer = 25; // Max results
 
