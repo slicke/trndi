@@ -272,6 +272,9 @@ function CFStringCreateWithUTF8String(const utf8Str: PAnsiChar): CFStringRef; ex
 
 var
 native: TrndiNative;
+{$ifdef X_LINUXBSD}
+isWSL : boolean = false;
+{$endif}
 applocale: string;
 dotscale: integer = 1;
 {$ifdef darwin}
@@ -800,7 +803,8 @@ Application.OnException := @AppExceptionHandler;
   {$ifndef LCLQt6}
      Showmessage('This release of Trndi was compiled for a non-supported platform ("widgetset")'#10'Performance might be bad and features might not work as intended!'#10#10'Please download the official release (Qt6) from github.com/slicke/trndi');
   {$endif}
-  if TrndiNative.DetectWSL.IsWSL then
+  isWSL := TrndiNative.DetectWSL.IsWSL;
+  if isWSL then
      Showmessage('Windows Linux Subsystem (WSL) detected. Due to limitations in WSL, graphic issues may occur. Commonly, windows will appear at random positions an not where expected!');
   {$endif}
   {$ifdef DARWIN}
@@ -1848,6 +1852,7 @@ procedure TfBG.pmSettingsPopup(Sender: TObject);
 begin
   miBorders.Checked := self.BorderStyle = bsNone;
   {$ifdef LCLQt6}
+  Exit; // This crashes!
   if pmSettings.Tag <> 1 then
   begin
     if not SafeQtStyle(QWidgetH(pmSettings.Handle),
@@ -2018,6 +2023,10 @@ begin
     lTir.font.size := lAgo.Font.Size;
     lTir.Height := lAgo.Height;
     lTir.width := lAgo.Width;
+    {$ifdef LCLQt6}
+    if isWSL then
+     lTir.Width := 50;
+   {$endif}
     lTir.left := ClientWidth-lTir.Width;
     lTir.top := 0;
     ScaleLbl(lTir);
