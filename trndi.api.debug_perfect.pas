@@ -26,7 +26,7 @@ unit trndi.api.debug_perfect; // 5.5 mmol/L
 interface
 
 uses
-Classes, SysUtils, Dialogs, trndi.types, trndi.api, trndi.native,
+Classes, SysUtils, Dialogs, trndi.types,
 trndi.api.debug, fpjson, jsonparser, dateutils;
 
 
@@ -35,7 +35,7 @@ type
 DebugPerfectAPI = class(DebugAPI)
 protected
 public
-  function getReadings(min, maxNum: integer; extras: string; out res: string): BGResults;
+  function getReadings({%H-}min, {%H-}maxNum: integer; {%H-}extras: string; out res: string): BGResults;
     override;
 end;
 
@@ -43,9 +43,7 @@ implementation
 
 
 function DebugPerfectAPI.getReadings(min, maxNum: integer; extras: string; out res: string): BGResults;
-var
-  fNow: TDateTime;
-  function getFakeVals(const min: integer; out reading, delta: integer): TDateTime;
+  function getFakeTime(const min: integer): TDateTime;
     var
       currentTime: TDateTime;
       baseTime: TDateTime;
@@ -65,17 +63,15 @@ var
 
 var
   i: integer;
-  val, diff: integer;
 begin
-  fNow := IncHour(Now, -2);
   SetLength(result, 11);
   for i := 0 to 10 do
   begin
     result[i].Init(mgdl);
-    result[i].date := getFakeVals(i*5,val,diff);
+    result[i].date := getFakeTime(i*5); // Get the time
     result[i].update(99, 0); // Set reading
     result[i].trend := tdFlat;  // Always flat
-    result[i].level := getLevel(result[i].val);  // Could be BGRange
+    result[i].level := BGRange;
     result[i].updateEnv('Debug');
   end;
 
