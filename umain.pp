@@ -959,7 +959,7 @@ end;
 
 procedure TfBG.FormDblClick(Sender: TObject);
 begin
-  if native.HasTouchScreen then
+  if HasTouch then
     DoFullScreen;
 end;
 
@@ -1329,27 +1329,24 @@ end;
 
 procedure TfBG.lValDblClick(Sender: TObject);
 begin
-  if native.HasTouchScreen then
+  if HasTouch then
     DoFullScreen;
 end;
 
 // Handle mouse down on lVal
 procedure TfBG.lValMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: integer);
-var
-  mt, t: boolean;
 begin
-  t := native.HasTouchScreen(mt);
   if ((Button = mbLeft) and (self.BorderStyle = bsNone)) or (Button = mbMiddle) then
   begin   // Handle window moving
     DraggingWin := true;
     PX := X;
     PY := Y;
-    if not t then
+    if not hasTouch then
       Exit;
   end;
 
 
-  if not t then
+  if not hasTouch then
   Exit;
 
   // Handle touch screens
@@ -1539,7 +1536,6 @@ procedure TfBG.miSettingsClick(Sender: TObject);
 var
   fConf: TfConf;
   lastUsers: Integer;
-  mTouch: Boolean;
 
   procedure LoadUserSettings(f: TfConf);
   var
@@ -1685,8 +1681,8 @@ if cbPos.ItemIndex = -1 then
   begin
     with f, native do
     begin
-      cbTouch.Checked := native.HasTouchScreen(mTouch);
-      cbMultiTouch.Checked := mTouch;
+      cbTouch.Checked := HasTouch;
+      cbMultiTouch.Checked := HasMultiTouch;
 
       {$if defined(X_LINUXBSD)}
       cbNotice.Checked := IsNotifySendAvailable;
