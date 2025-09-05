@@ -14,6 +14,7 @@ type
   TfSplash = class(TForm)
     Image1: TImage;
     Label1: TLabel;
+    lInfo: TLabel;
     lSplashWarn:TLabel;
     procedure FormCreate(Sender: TObject);
     procedure Image1Click(Sender: TObject);

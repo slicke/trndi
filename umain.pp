@@ -771,6 +771,8 @@ begin
   fs := TfSplash.Create(nil);
     FStoredWindowInfo.Initialized := False;
   fs.Image1.Picture.Icon := Application.Icon;
+  fs.lInfo.Caption := '';
+  fs.lInfo.Font.Color := fs.lSplashWarn.Font.color;
 fs.Show;
 Application.processmessages;
 Application.OnException := @AppExceptionHandler;
@@ -927,6 +929,7 @@ Application.OnException := @AppExceptionHandler;
     end;
 
     {$ifdef TrndiExt}
+    fs.lInfo.Caption := 'Loading Extensions...';
     LoadExtensions;
     {$endif}
 
