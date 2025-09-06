@@ -88,20 +88,29 @@ jobs:
       - name: Package artifact
         shell: bash
         run: |
-          set -euo pipefail
-          mkdir -p artifacts
-          cp Trndi artifacts/
-          7z a -tzip Trndi-macos-silicon.zip ./artifacts/* >/dev/null
+            set -euo pipefail
+            mkdir -p artifacts
+            cp Trndi artifacts/
+            if [ -d "lang" ]; then
+            cp -r lang artifacts/
+            else
+            echo "Warning: lang directory not found"
+            fi
+            7z a -tzip Trndi-macos-silicon.zip ./artifacts/* >/dev/null
 
       - name: Create macOS App and DMG
         shell: bash
         run: |
-          set -euo pipefail
-          export PATH="/opt/local/libexec/fpc/bin:/opt/local/bin:/opt/local/sbin:$PATH"
-          brew install create-dmg
-          chmod +x dist/macos.sh
-          (cd dist && ./macos.sh)
-          mv dist/Trndi.dmg Trndi-macos-silicon.dmg
+            set -euo pipefail
+            export PATH="/opt/local/libexec/fpc/bin:/opt/local/bin:/opt/local/sbin:$PATH"
+            brew install create-dmg
+            chmod +x dist/macos.sh
+            # Copy lang folder to dist directory for the script to use
+            if [ -d "lang" ]; then
+            cp -r lang dist/
+            fi
+            (cd dist && ./macos.sh)
+            mv dist/Trndi.dmg Trndi-macos-silicon.dmg
 
       - name: Upload Actions artifact
         uses: actions/upload-artifact@v4
