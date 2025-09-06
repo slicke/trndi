@@ -300,12 +300,24 @@ msgstr ""
 msgid "Get more languages"
 msgstr ""
 
+#: tfconf.gboverride2.caption
+msgid "Play Media"
+msgstr ""
+
 #: tfconf.groupbox1.caption
 msgid "System Features"
 msgstr ""
 
 #: tfconf.label1.caption
 msgid "There's always a defualt user account"
+msgstr ""
+
+#: tfconf.label10.caption
+msgid "High (eg https://open.spotify.com/... or spotify:track:...)"
+msgstr ""
+
+#: tfconf.label11.caption
+msgid "Low (eg https://open.spotify.com/... or spotify:track:...)"
 msgstr ""
 
 #: tfconf.label2.caption
@@ -338,6 +350,10 @@ msgstr ""
 
 #: tfconf.label8.caption
 msgid "Click an item to change it's font"
+msgstr ""
+
+#: tfconf.label9.caption
+msgid "Trndi can trigger Spotify or Deezer to play a song when low/high"
 msgstr ""
 
 #: tfconf.lack.caption
@@ -391,6 +407,10 @@ msgstr ""
 
 #: tfconf.tsinstall.caption
 msgid "Update"
+msgstr ""
+
+#: tfconf.tsintegration.caption
+msgid "Integrations"
 msgstr ""
 
 #: tfconf.tsmulti.caption

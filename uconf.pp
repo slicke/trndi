@@ -56,6 +56,8 @@ TfConf = class(TForm)
   cbTIR:TCheckBox;
   cbCI:TCheckBox;
   eAddr:TLabeledEdit;
+  edMusicHigh: TEdit;
+  edMusicLow: TEdit;
   edNick:TEdit;
   eExt:TLabeledEdit;
   ePass:TLabeledEdit;
@@ -65,14 +67,18 @@ TfConf = class(TForm)
   gbMulti:TGroupBox;
   gbOverride:TGroupBox;
   gbOverride1:TGroupBox;
+  gbOverride2: TGroupBox;
   GroupBox1: TGroupBox;
   Image1: TImage;
   Label1: TLabel;
+  Label10: TLabel;
+  Label11: TLabel;
   Label2:TLabel;
   Label3:TLabel;
   Label6:TLabel;
   Label7:TLabel;
   Label8:TLabel;
+  Label9: TLabel;
   lAck: TButton;
   lAgo:TLabel;
   lArrow:TLabel;
@@ -99,6 +105,7 @@ TfConf = class(TForm)
   pnDisplay:TPanel;
   pcMain:TPageControl;
   rbUnit:TRadioGroup;
+  tsIntegration: TTabSheet;
   tsInstall:TTabSheet;
   tsDisplay:TTabSheet;
   tsMulti:TTabSheet;
