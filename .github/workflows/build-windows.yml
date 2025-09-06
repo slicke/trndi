@@ -84,7 +84,12 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Path artifacts -Force | Out-Null
-          Copy-Item .\Trndi.exe .\artifacts\
+          Copy-Item -Path ".\Trndi.exe" -Destination ".\artifacts\"
+          if (Test-Path -Path ".\lang" -PathType Container) {
+            Copy-Item -Path ".\lang" -Destination ".\artifacts\lang" -Recurse
+          } else {
+            Write-Warning "lang directory not found"
+          }
           & 'C:\Program Files\7-Zip\7z.exe' a -tzip 'Trndi-windows-x64.zip' .\artifacts\* | Out-Null
 
       - name: Upload Actions artifact

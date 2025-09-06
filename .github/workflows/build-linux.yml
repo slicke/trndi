@@ -97,6 +97,11 @@ jobs:
           set -euo pipefail
           mkdir -p artifacts
           cp Trndi artifacts/
+          if [ -d "lang" ]; then
+            cp -r lang artifacts/
+          else
+            echo "Warning: lang directory not found"
+          fi          
           7z a -tzip Trndi-linux-amd64.zip ./artifacts/* >/dev/null
 
       - name: Upload Actions artifact
