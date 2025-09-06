@@ -131,25 +131,37 @@ jobs:
           SHORT_SHA="${GITHUB_SHA::7}"
           TAG="v${SHORT_SHA}"
 
-          cat > RELEASE_NOTES.md <<EOF
-          # Trndi Release ${TAG}
+        cat > RELEASE_NOTES.md <<EOF
+        # Trndi Release ${TAG}
 
-          > This is an automated build of Trndi's latest source code.
+        > This is an automated build of Trndi's latest source code.
 
-          ### Trndi-linux-amd64.zip
-          Linux computers running on amd64 processors (Extensions supported)
+        ### Trndi-linux-amd64.zip
+        Linux computers running on amd64 processors (Extensions supported)
 
-          ### Trndi-linux-arm64.zip
-          Linux computers running on arm64 processors, including RaspberryPi
+        ### Trndi-linux-arm64.zip  
+        Linux computers running on arm64 processors, including RaspberryPi
 
-          ### Trndi-macos-silicon.zip
-          macOS computers, with Apple processors
+        ### Trndi-macos-silicon.zip
+        macOS computers, with Apple processors
+        #### Special requirements for macOS
+        - Unzip the file
+        - In a Terminal, run: \`xattr -c /path/to/extracted/Trndi\`
+        - Replace \`/path/to/extracted/\` with the actual path where you extracted the files
 
-          ### Trndi-windows-x64.zip
-          Windows computers (Extensions supported)
+        ### Trndi-macos-silicon.dmg
+        macOS computers, with Apple processors  
+        #### Special requirements for macOS
+        - Open the DMG file
+        - Drag Trndi.app to the Applications folder
+        - In a Terminal, run: \`xattr -c /Applications/Trndi.app\`
+        - Now you can launch Trndi from Applications or Spotlight
 
-          #### You can manually build Trndi from source for a variety of other platforms.
-          EOF
+        ### Trndi-windows-x64.zip
+        Windows computers (Extensions supported)
+
+        #### You can manually build Trndi from source for a variety of other platforms.
+        EOF
 
           if ! gh release view "$TAG" >/dev/null 2>&1; then
             gh release create "$TAG" --title "Trndi ${TAG}" --notes-file RELEASE_NOTES.md
