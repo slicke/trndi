@@ -310,6 +310,10 @@ msgstr "Åsidosätt höga / låga gränser"
 msgid "Get more languages"
 msgstr "Hämta fler språk"
 
+#: tfconf.gboverride2.caption
+msgid "Play Media"
+msgstr "Spela Media"
+
 #: tfconf.groupbox1.caption
 msgid "System Features"
 msgstr "Systemfunktioner"
@@ -317,6 +321,14 @@ msgstr "Systemfunktioner"
 #: tfconf.label1.caption
 msgid "There's always a defualt user account"
 msgstr "Ett standardkonto finns alltid"
+
+#: tfconf.label10.caption
+msgid "High (eg https://open.spotify.com/... or spotify:track:...)"
+msgstr "Hög (t ex https://open.spotify.com/... eller spotify:track:...)"
+
+#: tfconf.label11.caption
+msgid "Low (eg https://open.spotify.com/... or spotify:track:...)"
+msgstr "Låg (t ex https://open.spotify.com/... eller spotify:track:...)"
 
 #: tfconf.label2.caption
 msgid ""
@@ -353,6 +365,10 @@ msgstr ""
 #: tfconf.label8.caption
 msgid "Click an item to change it's font"
 msgstr "Klicka på en text för att ändra typsnittet"
+
+#: tfconf.label9.caption
+msgid "Trndi can trigger Spotify or Deezer to play a song when low/high"
+msgstr "Trndi kan spela en låt på Spotify eller Deezer när du är hög/låg"
 
 #: tfconf.lack.caption
 msgid "Libraries"
@@ -406,6 +422,10 @@ msgstr "Allmänt"
 #: tfconf.tsinstall.caption
 msgid "Update"
 msgstr "Uppdatera"
+
+#: tfconf.tsintegration.caption
+msgid "Integrations"
+msgstr "Integrationer"
 
 #: tfconf.tsmulti.caption
 msgid "Multi User"

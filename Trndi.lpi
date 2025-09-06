@@ -73,7 +73,8 @@
       <UseVersionInfo Value="True"/>
       <AutoIncrementBuild Value="True"/>
       <MajorVersionNr Value="2"/>
-      <BuildNr Value="57"/>
+      <MinorVersionNr Value="1"/>
+      <BuildNr Value="59"/>
       <StringTable CompanyName="Slicke" FileDescription="Trndi - CGM trend monitor" LegalCopyright="Björn Lindh" ProductName="Trndi"/>
     </VersionInfo>
     <BuildModes>
@@ -523,6 +524,11 @@
       <Unit>
         <Filename Value="trndi.api.debug_55.pas"/>
         <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="slicke.api.music.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="SystemMediaController"/>
       </Unit>
     </Units>
   </ProjectOptions>

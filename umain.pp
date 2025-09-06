@@ -51,6 +51,7 @@ uses
 trndi.strings, LCLTranslator, Classes, Menus, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, ExtCtrls,
 trndi.api.dexcom, trndi.api.nightscout, trndi.types, math, DateUtils, FileUtil, LclIntf, TypInfo, LResources,
 slicke.ux.alert, usplash, Generics.Collections, trndi.funcs,
+SystemMediaController,
 {$ifdef TrndiExt}
 trndi.Ext. Engine, trndi.Ext.jsfuncs,
 {$endif}
@@ -203,6 +204,7 @@ private
     // Array to hold references to lDot1 - lDot10
   TrendDots: array[1..10] of TLabel;
   multi: boolean; // Multi user
+  MediaController: TSystemMediaController;
 
   procedure SetLang;
   procedure fixWarningPanel;
@@ -279,6 +281,8 @@ isWSL : boolean = false;
 {$endif}
 applocale: string;
 dotscale: integer = 1;
+highAlerted: boolean = false;
+lowAlerted: boolean = false;
 {$ifdef darwin}
 MacAppDelegate: TMyAppDelegate;
 upMenu: TMenuItem;
@@ -773,13 +777,21 @@ function GetLinuxDistro: string;
 '• You have read and agree to the full terms';
 begin
   fSplash := TfSplash.Create(nil);
-    FStoredWindowInfo.Initialized := False;
+  FStoredWindowInfo.Initialized := False;
   fSplash.Image1.Picture.Icon := Application.Icon;
   fSplash.lInfo.Caption := '';
   fSplash.lInfo.Font.Color := fSplash.lSplashWarn.Font.color;
   fSplash.Show;
   Application.processmessages;
   Application.OnException := @AppExceptionHandler;
+
+  // Do this early
+  fSplash.lInfo.Caption := 'Starting Media Backend...';
+  MediaController := TSystemMediaController.Create(Self);
+  MediaController.Initialize;
+
+
+  Application.ProcessMessages;
 
   fil := FontInList(fontName);
   if not fil then
@@ -1588,6 +1600,8 @@ var
         rbUnitClick(Self);
 
       cbCust.Checked := GetIntSetting(username + 'override.enabled', 0) = 1;
+      edMusicHigh.Text := GetSetting(username + 'media_url_high', '');
+      edMusicLow.Text := GetSetting(username + 'media_url_low', '');
       fsHi.Enabled := cbCust.Checked;
       fsLo.Enabled := cbCust.Checked;
 
@@ -1754,6 +1768,8 @@ if cbPos.ItemIndex = -1 then
       native.SetSetting(username + 'range.custom', IfThen(cbTIR.Checked, 'true', 'false'));
 
       SetSetting(username + 'override.enabled', IfThen(cbCust.Checked, '1', '0'));
+      SetSetting(username + 'media_url_high', edMusicHigh.Text);
+      SetSetting(username + 'media_url_low', edMusicLow.Text);
     end;
   end;
 
@@ -2450,25 +2466,48 @@ begin
 end;
 
 procedure TfBG.HandleHighGlucose(const b: BGReading);
+var
+  url: string;
 begin
   fBG.Color := bg_color_hi;
 
   if not bg_alert then
     native.attention(Format(RS_WARN_BG_HI, [lVal.Caption]));
+
+  if highAlerted then
+    Exit;
+
+  url := native.GetSetting(username +'media_url_high', '');
+  if url <> '' then begin
+     highAlerted := true;
+     MediaController.PlayTrackFromURL(url);
+  end;
 end;
 
 procedure TfBG.HandleLowGlucose(const b: BGReading);
+var
+  url: string;
 begin
   fBG.Color := bg_color_lo;
 
   if not bg_alert then
     native.attention(Format(RS_WARN_BG_LO, [lVal.Caption]));
+
+  if lowAlerted then
+    exit;
+  url := native.GetSetting(username +'media_url_low', '');
+  if url <> '' then begin
+     lowAlerted := true;
+     MediaController.PlayTrackFromURL(url);
+  end;
 end;
 
 procedure TfBG.HandleNormalGlucose(const b: BGReading);
 begin
   bg_alert := false;
   fBG.Color := bg_color_ok;
+  highAlerted := false;
+  lowAlerted := false;
 
   UpdateOffRangePanel(b.val);
 end;
