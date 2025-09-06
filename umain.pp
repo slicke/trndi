@@ -281,8 +281,9 @@ isWSL : boolean = false;
 {$endif}
 applocale: string;
 dotscale: integer = 1;
-highAlerted: boolean = false;
-lowAlerted: boolean = false;
+highAlerted: boolean = false; // A high alert is active
+lowAlerted: boolean = false; // A low alert is active
+perfectTriggered: boolean = false; // A perfect reading is active
 {$ifdef darwin}
 MacAppDelegate: TMyAppDelegate;
 upMenu: TMenuItem;
@@ -1602,6 +1603,7 @@ var
       cbCust.Checked := GetIntSetting(username + 'override.enabled', 0) = 1;
       edMusicHigh.Text := GetSetting(username + 'media_url_high', '');
       edMusicLow.Text := GetSetting(username + 'media_url_low', '');
+      edMusicPerfect.Text := GetSetting(username + 'media_url_perfect', '');
       fsHi.Enabled := cbCust.Checked;
       fsLo.Enabled := cbCust.Checked;
 
@@ -1770,6 +1772,7 @@ if cbPos.ItemIndex = -1 then
       SetSetting(username + 'override.enabled', IfThen(cbCust.Checked, '1', '0'));
       SetSetting(username + 'media_url_high', edMusicHigh.Text);
       SetSetting(username + 'media_url_low', edMusicLow.Text);
+      SetSetting(username + 'media_url_perfect', edMusicPerfect.Text);
     end;
   end;
 
@@ -2503,11 +2506,37 @@ begin
 end;
 
 procedure TfBG.HandleNormalGlucose(const b: BGReading);
+var
+  s, url: string;
+  i: integer;
+  f: single;
+  go: boolean = false;
 begin
   bg_alert := false;
   fBG.Color := bg_color_ok;
   highAlerted := false;
   lowAlerted := false;
+
+  if un = mmol then begin
+    s := b.format(mmol, BG_MSG_SHORT, BGPrimary);
+    if (TryStrToFloat(s, f)) and (f = 5.5) then
+      go := true
+    else
+      perfecttriggered := false;
+  end else begin
+    s := b.format(mgdl, BG_MSG_SHORT, BGPrimary);
+    if (TryStrToInt(s, i)) and (i = 100) then
+      go := true
+    else
+      perfecttriggered := false;
+  end;
+
+  if go and (not perfecttriggered) then begin
+    perfectTriggered := true;
+    url := native.GetSetting(username +'media_url_perfect', '');
+    if url <> '' then
+      MediaController.PlayTrackFromURL(url);
+  end;
 
   UpdateOffRangePanel(b.val);
 end;

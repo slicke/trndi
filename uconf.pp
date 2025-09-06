@@ -58,6 +58,7 @@ TfConf = class(TForm)
   eAddr:TLabeledEdit;
   edMusicHigh: TEdit;
   edMusicLow: TEdit;
+  edMusicPerfect: TEdit;
   edNick:TEdit;
   eExt:TLabeledEdit;
   ePass:TLabeledEdit;
@@ -73,6 +74,7 @@ TfConf = class(TForm)
   Label1: TLabel;
   Label10: TLabel;
   Label11: TLabel;
+  Label12: TLabel;
   Label2:TLabel;
   Label3:TLabel;
   Label6:TLabel;
@@ -124,6 +126,7 @@ TfConf = class(TForm)
   procedure cbUserClick(Sender:TObject);
   procedure FormCreate(Sender:TObject);
   procedure FormResize(Sender: TObject);
+  procedure Label12Click(Sender: TObject);
   procedure lAckClick(Sender:TObject);
   procedure lLicenseClick(Sender:TObject);
   procedure lValClick(Sender:TObject);
@@ -588,6 +591,11 @@ begin
   ePass.width := cbSys.Width;
   bvExt.Width := cbSys.Width;
   eExt.Width := cbSys.Width;
+end;
+
+procedure TfConf.Label12Click(Sender: TObject);
+begin
+
 end;
 
 procedure TfConf.lLicenseClick(Sender:TObject);
