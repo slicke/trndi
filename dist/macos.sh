@@ -66,6 +66,18 @@ cat > "macos/Trndi.app/Contents/Info.plist" << 'EOF'
 </plist>
 EOF
 
+# Create app bundle structure
+mkdir -p "Trndi.app/Contents/MacOS"
+mkdir -p "Trndi.app/Contents/Resources"
+
+# Copy executable
+cp ../Trndi "Trndi.app/Contents/MacOS/"
+
+# Copy language files into the app bundle
+if [ -d "lang" ]; then
+  cp -r lang "Trndi.app/Contents/Resources/"
+fi
+
 chmod 644 "macos/Trndi.app/Contents/Info.plist"
 
 # DMG
