@@ -10436,11 +10436,12 @@ object fConf: TfConf
         ClientWidth = 439
         TabOrder = 0
         object lVal: TLabel
-          Left = 80
-          Height = 116
-          Top = 24
-          Width = 113
-          Alignment = taCenter
+          Left = 0
+          Height = 131
+          Top = 45
+          Width = 239
+          Align = alClient
+          Alignment = taRightJustify
           Caption = '0,0'
           Color = 21243
           Font.Color = clBlack
@@ -10450,17 +10451,18 @@ object fConf: TfConf
           OnClick = lValClick
         end
         object lArrow: TLabel
-          Left = 192
-          Height = 54
-          Top = 64
+          Left = 239
+          Height = 131
+          Top = 45
           Width = 200
+          Align = alRight
           Alignment = taCenter
           AutoSize = False
           Caption = '->'
           Color = clWhite
           Font.Color = clBlack
           Font.Height = 54
-          Layout = tlBottom
+          Layout = tlCenter
           OptimalFill = True
           ParentColor = False
           ParentFont = False
@@ -10484,9 +10486,9 @@ object fConf: TfConf
           OnClick = lValClick
         end
         object lDot1: TLabel
-          Left = 61
+          Left = 16
           Height = 25
-          Top = 107
+          Top = 104
           Width = 12
           Alignment = taCenter
           AutoSize = False
@@ -10496,9 +10498,9 @@ object fConf: TfConf
           ParentFont = False
         end
         object lDot2: TLabel
-          Left = 89
+          Left = 44
           Height = 25
-          Top = 120
+          Top = 117
           Width = 12
           Alignment = taCenter
           AutoSize = False
@@ -10508,9 +10510,9 @@ object fConf: TfConf
           ParentFont = False
         end
         object lDot3: TLabel
-          Left = 117
+          Left = 72
           Height = 25
-          Top = 126
+          Top = 123
           Width = 12
           Alignment = taCenter
           AutoSize = False
@@ -10536,52 +10538,13 @@ object fConf: TfConf
         Width = 168
         Caption = 'Click an item to change it''s font'
       end
-      object GroupBox1: TGroupBox
-        Left = 10
-        Height = 105
-        Top = 252
-        Width = 419
-        Align = alBottom
-        BorderSpacing.Around = 10
-        Caption = 'System Features'
-        ClientHeight = 85
-        ClientWidth = 415
-        TabOrder = 2
-        object cbTouch: TCheckBox
-          Left = 8
-          Height = 19
-          Top = 0
-          Width = 89
-          Caption = 'Touch screen'
-          Enabled = False
-          TabOrder = 0
-        end
-        object cbNotice: TCheckBox
-          Left = 8
-          Height = 19
-          Top = 48
-          Width = 125
-          Caption = 'System notifications'
-          Enabled = False
-          TabOrder = 1
-        end
-        object cbMultiTouch: TCheckBox
-          Left = 32
-          Height = 19
-          Top = 24
-          Width = 82
-          Caption = 'Multi-touch'
-          Enabled = False
-          TabOrder = 2
-        end
-      end
       object cbTIR: TCheckBox
         Left = 16
         Height = 19
         Top = 224
         Width = 268
         Caption = 'Count readings in the custom range as in range'
-        TabOrder = 3
+        TabOrder = 2
       end
     end
     object tsCustom: TTabSheet
@@ -11002,6 +10965,45 @@ object fConf: TfConf
           Align = alTop
           BorderSpacing.Around = 10
           Caption = 'Low (eg https://open.spotify.com/... or spotify:track:...)'
+        end
+      end
+      object GroupBox1: TGroupBox
+        Left = 10
+        Height = 105
+        Top = 252
+        Width = 419
+        Align = alBottom
+        BorderSpacing.Around = 10
+        Caption = 'System Features'
+        ClientHeight = 85
+        ClientWidth = 415
+        TabOrder = 1
+        object cbTouch: TCheckBox
+          Left = 8
+          Height = 19
+          Top = 0
+          Width = 89
+          Caption = 'Touch screen'
+          Enabled = False
+          TabOrder = 0
+        end
+        object cbNotice: TCheckBox
+          Left = 8
+          Height = 19
+          Top = 48
+          Width = 125
+          Caption = 'System notifications'
+          Enabled = False
+          TabOrder = 1
+        end
+        object cbMultiTouch: TCheckBox
+          Left = 32
+          Height = 19
+          Top = 24
+          Width = 82
+          Caption = 'Multi-touch'
+          Enabled = False
+          TabOrder = 2
         end
       end
     end
