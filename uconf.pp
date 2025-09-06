@@ -45,14 +45,14 @@ TfConf = class(TForm)
   bRemove: TButton;
   cbCust:TCheckBox;
   cbLang:TComboBox;
+  cbMultiTouch: TCheckBox;
+  cbNotice: TCheckBox;
   cbPrivacy: TCheckBox;
   cbSize:TCheckBox;
   cbSys:TComboBox;
   cbPos:TComboBox;
-  cbUser:TColorButton;
   cbTouch: TCheckBox;
-  cbNotice: TCheckBox;
-  cbMultiTouch: TCheckBox;
+  cbUser:TColorButton;
   cbTIR:TCheckBox;
   cbCI:TCheckBox;
   eAddr:TLabeledEdit;
