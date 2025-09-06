@@ -330,6 +330,10 @@ msgstr "Hög (t ex https://open.spotify.com/... eller spotify:track:...)"
 msgid "Low (eg https://open.spotify.com/... or spotify:track:...)"
 msgstr "Låg (t ex https://open.spotify.com/... eller spotify:track:...)"
 
+#: tfconf.label12.caption
+msgid "Perfect Reading (5.5mmol/L or 100 mg/dL)"
+msgstr ""
+
 #: tfconf.label2.caption
 msgid ""
 "Add users below, if you wish to track more than one person.\n"
@@ -1150,3 +1154,4 @@ msgstr "Senaste position"
 msgctxt "umain.rs_tpotopright"
 msgid "Top Right"
 msgstr "Höger topp"
+
