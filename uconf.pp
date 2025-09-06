@@ -170,6 +170,7 @@ RS_UPTODATE = 'You are up to date';
 RS_NEWVER = 'Version %s is available, would you like to go to the downloads page?';
 RS_NEWVER_PRE = 'A new pre-release for %s is available, would you like to go to the downloads page?';
 RS_NEWVER_CAPTION = 'New version available';
+RS_SELECT_FONT = 'Select a font';
 
 var 
 fConf: TfConf;
@@ -618,6 +619,8 @@ end;
 
 procedure TfConf.lValClick(Sender:TObject);
 begin
+fdFont.PreviewText := (sender as TLabel).Caption;
+fdFont.Title := RS_SELECT_FONT;
 if fdFont.Execute then
 with (sender as TLabel).Font do begin
     name := fdFont.Font.Name;
