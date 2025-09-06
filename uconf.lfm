@@ -15,9 +15,9 @@ object fConf: TfConf
     Height = 395
     Top = 0
     Width = 447
-    ActivePage = tsIntegration
+    ActivePage = tsDisplay
     Align = alClient
-    TabIndex = 5
+    TabIndex = 1
     TabOrder = 0
     object tsGeneral: TTabSheet
       Caption = 'General'
@@ -11031,7 +11031,8 @@ object fConf: TfConf
   object fdFont: TFontDialog
     MinFontSize = 0
     MaxFontSize = 0
-    Options = [fdEffects, fdNoSizeSel, fdNoStyleSel, fdWysiwyg, fdScalableOnly]
+    Options = [fdEffects, fdForceFontExist, fdNoSizeSel, fdNoStyleSel, fdWysiwyg, fdScalableOnly, fdApplyButton]
+    PreviewText = 'test'
     Left = 320
     Top = 214
   end

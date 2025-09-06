@@ -1113,6 +1113,10 @@ msgstr "När privat läge är aktiverat, visas inte avläsningar. Trndi visar is
 msgid "Removed accounts are made inactive, and can be restored by adding the same name again"
 msgstr "Borttagna konton blir inaktiva, de kan återställas genom att skapa om användaren med sanna namn"
 
+#: uconf.rs_select_font
+msgid "Select a font"
+msgstr ""
+
 #: uconf.rs_uptodate
 msgid "You are up to date"
 msgstr "Du är uppdaterad"
