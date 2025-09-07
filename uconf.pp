@@ -55,6 +55,7 @@ TfConf = class(TForm)
   cbUser:TColorButton;
   cbTIR:TCheckBox;
   cbCI:TCheckBox;
+  cbMusicPause: TCheckBox;
   eAddr:TLabeledEdit;
   edMusicHigh: TEdit;
   edMusicLow: TEdit;
@@ -107,6 +108,7 @@ TfConf = class(TForm)
   pnDisplay:TPanel;
   pcMain:TPageControl;
   rbUnit:TRadioGroup;
+  tsSystem: TTabSheet;
   tsIntegration: TTabSheet;
   tsInstall:TTabSheet;
   tsDisplay:TTabSheet;

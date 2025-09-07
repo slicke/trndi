@@ -883,7 +883,7 @@ begin
       while i <> mrYes do begin
               i :=  ExtMsg('License', 'You must accept the full terms conditions', 'Do you agree to the terms and full license?', license, $00F5F2FD,$003411A9, [mbYes, mbCancel, mbUxRead], system.widechar($2699));
               if i = mrYes then
-                 native.SetSetting(username + 'license.250608', 'true')
+                 native.SetBoolSetting(username + 'license.250608', true)
               else if i = mrCancel then begin
                 Application.Terminate;
                 Exit;
@@ -1402,7 +1402,7 @@ end;
 procedure TfBG.miAnnounceClick(Sender:TObject);
 begin
   miAnnounce.Checked := not miAnnounce.Checked;
-  native.SetSetting('main.announce', IfThen(miAnnounce.Checked, 'true', 'false'));
+  native.SetBoolSetting('main.announce', miAnnounce.Checked);
   native.speak(IfThen(miAnnounce.Checked, sAnnounceOn, sAnnounceOff));
 end;
 
@@ -1416,7 +1416,7 @@ procedure TfBG.miClockClick(Sender:TObject);
 begin
   miClock.Checked := not miClock.Checked;
   tClock.Enabled := miClock.Checked;
-  native.SetSetting('main.clock', IfThen(tClock.Enabled, 'true', 'false'));
+  native.SetBoolSetting('main.clock', tClock.Enabled);
 end;
 
 procedure TfBG.miDotNormalClick(Sender:TObject);
@@ -1505,7 +1505,7 @@ procedure TfBG.miRangeColorClick(Sender:TObject);
 begin
   miRangeColor.Checked := not miRangeColor.Checked;
   miForce.Click;
-  native.SetSetting(username + 'ux.range_color', IfThen(miRangeColor.Checked, 'true', 'false'));
+  native.SetBoolSetting(username + 'ux.range_color', miRangeColor.Checked);
 end;
 
 procedure TfBG.miBordersClick(Sender:TObject);
@@ -1604,6 +1604,7 @@ var
       edMusicHigh.Text := GetSetting(username + 'media_url_high', '');
       edMusicLow.Text := GetSetting(username + 'media_url_low', '');
       edMusicPerfect.Text := GetSetting(username + 'media_url_perfect', '');
+      cbMusicPause.Checked := GetBoolSetting(username + 'media_pause');
       fsHi.Enabled := cbCust.Checked;
       fsLo.Enabled := cbCust.Checked;
 
@@ -1736,7 +1737,7 @@ if cbPos.ItemIndex = -1 then
       s := ExtractLangCode(cbLang.Items[cbLang.ItemIndex]);
       SetSetting(username + 'locale', s);
       native.SetSetting(username + 'position.main', IntToStr(cbPos.ItemIndex));
-      native.setSetting(username + 'size.main', IfThen(cbSize.Checked, 'true', 'false'));
+      native.setBoolSetting(username + 'size.main', cbSize.Checked);
       SetSetting(username + 'user.color', ColorToString(cbUser.ButtonColor));
       SetSetting(username + 'user.nick', edNick.Text);
 
@@ -1767,12 +1768,13 @@ if cbPos.ItemIndex = -1 then
         SetSetting(username + 'override.hi', Round(fsHi.Value).ToString);
       end;
 
-      native.SetSetting(username + 'range.custom', IfThen(cbTIR.Checked, 'true', 'false'));
+      native.SetBoolSetting(username + 'range.custom', cbTIR.Checked);
 
       SetSetting(username + 'override.enabled', IfThen(cbCust.Checked, '1', '0'));
       SetSetting(username + 'media_url_high', edMusicHigh.Text);
       SetSetting(username + 'media_url_low', edMusicLow.Text);
       SetSetting(username + 'media_url_perfect', edMusicPerfect.Text);
+      SetBoolSetting(username + 'media_pause', cbMusicPause.Checked);
     end;
   end;
 
@@ -2533,6 +2535,9 @@ begin
 
   if go and (not perfecttriggered) then begin
     perfectTriggered := true;
+    if GetBoolSetting(username + 'media_pause') then
+      MediaController.Pause;
+
     url := native.GetSetting(username +'media_url_perfect', '');
     if url <> '' then
       MediaController.PlayTrackFromURL(url);
