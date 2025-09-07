@@ -10,7 +10,6 @@ object fBG: TfBG
   Color = clBlack
   Font.Color = clWhite
   Position = poDesktopCenter
-  LCLVersion = '4.2.0.0'
   OnClose = FormClose
   OnCreate = FormCreate
   OnDblClick = FormDblClick
@@ -460,5 +459,12 @@ object fBG: TfBG
     OnTimer = tSwapTimer
     Left = 271
     Top = 164
+  end
+  object apMain: TApplicationProperties
+    ExceptionDialog = aedOkMessageBox
+    Hint = 'Trndi - Blood Glucose Monitor'
+    Title = 'Trndi'
+    Left = 23
+    Top = 13
   end
 end

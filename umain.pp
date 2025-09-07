@@ -86,6 +86,7 @@ end;
 {$endif}
 
 TfBG = class(TForm)
+  apMain: TApplicationProperties;
   lMissing: TLabel;
   lTir:TLabel;
   lAgo:TLabel;
@@ -2535,7 +2536,7 @@ begin
 
   if go and (not perfecttriggered) then begin
     perfectTriggered := true;
-    if GetBoolSetting(username + 'media_pause') then
+    if native.GetBoolSetting(username + 'media_pause') then
       MediaController.Pause;
 
     url := native.GetSetting(username +'media_url_perfect', '');
