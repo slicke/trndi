@@ -2483,6 +2483,9 @@ begin
   if highAlerted then
     Exit;
 
+  if native.GetBoolSetting(username + 'media_pause') then
+    MediaController.Pause;
+
   url := native.GetSetting(username +'media_url_high', '');
   if url <> '' then begin
      highAlerted := true;
@@ -2501,6 +2504,10 @@ begin
 
   if lowAlerted then
     exit;
+
+  if native.GetBoolSetting(username + 'media_pause') then
+    MediaController.Pause;
+
   url := native.GetSetting(username +'media_url_low', '');
   if url <> '' then begin
      lowAlerted := true;
@@ -2536,8 +2543,6 @@ begin
 
   if go and (not perfecttriggered) then begin
     perfectTriggered := true;
-    if native.GetBoolSetting(username + 'media_pause') then
-      MediaController.Pause;
 
     url := native.GetSetting(username +'media_url_perfect', '');
     if url <> '' then
