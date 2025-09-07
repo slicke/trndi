@@ -102,6 +102,7 @@ public
        - macOS: NSUserDefaults (if implemented in your code)
     }
   procedure SetSetting(const key: string; const val: string);
+  procedure SetBoolSetting(const key: string; const val: boolean);
 
     { GetSetting
       ----------
@@ -1383,6 +1384,15 @@ begin
     else
       result := def;
   end;
+end;
+
+
+procedure TrndiNative.SetBoolSetting(const key: string; const val: boolean);
+begin
+  if val then
+    SetSetting(key, 'true')
+  else
+    SetSetting(key, 'false');
 end;
 
 {------------------------------------------------------------------------------

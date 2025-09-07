@@ -247,6 +247,10 @@ msgstr ""
 msgid "Multi-touch"
 msgstr ""
 
+#: tfconf.cbmusicpause.caption
+msgid "Pause music when high/low"
+msgstr ""
+
 #: tfconf.cbnotice.caption
 msgid "System notifications"
 msgstr ""
@@ -419,6 +423,10 @@ msgstr ""
 
 #: tfconf.tsmulti.caption
 msgid "Multi User"
+msgstr ""
+
+#: tfconf.tssystem.caption
+msgid "System"
 msgstr ""
 
 #: tffloat.caption

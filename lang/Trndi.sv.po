@@ -257,6 +257,10 @@ msgstr "Använd egna värden"
 msgid "Multi-touch"
 msgstr "Multipek"
 
+#: tfconf.cbmusicpause.caption
+msgid "Pause music when high/low"
+msgstr ""
+
 #: tfconf.cbnotice.caption
 msgid "System notifications"
 msgstr "Systemmeddelanden"
@@ -434,6 +438,10 @@ msgstr "Integrationer"
 #: tfconf.tsmulti.caption
 msgid "Multi User"
 msgstr "Fler användare"
+
+#: tfconf.tssystem.caption
+msgid "System"
+msgstr ""
 
 #: tffloat.caption
 msgid "Floating Display"
