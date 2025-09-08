@@ -101,23 +101,25 @@ public
        - Linux: INI file
        - macOS: NSUserDefaults (if implemented in your code)
     }
-  procedure SetSetting(const key: string; const val: string);
-  procedure SetBoolSetting(const key: string; const val: boolean);
+  procedure SetRootSetting(keyname: string; const val: string);
+  procedure SetSetting(const username, keyname: string; const val: string);
+  procedure SetBoolSetting(const username, keyname: string; const val: boolean);
 
     { GetSetting
       ----------
       Retrieves a string setting from the local store. If the key is not found,
       returns `def` by default.
     }
-  function GetSetting(const key: string; def: string = ''): string;
+  function GetRootSetting(const keyname: string; def: string = ''): string;
+  function GetSetting(const username, keyname: string; def: string = ''): string;
 
     { GetIntSetting
       -------------
       Same as GetSetting, but returns an integer. Returns `def` if parse fails.
     }
-  function GetIntSetting(const key: string; def: integer = -1): integer;
+  function GetIntSetting(const username, keyname: string; def: integer = -1): integer;
 
-  function GetBoolSetting(const key: string; def: boolean = false): boolean;
+  function GetBoolSetting(const username, keyname: string; def: boolean = false): boolean;
     { isDarkMode
       ----------
       Returns True if the system theme is "dark mode", else False. Implementation
@@ -252,6 +254,14 @@ function DwmSetWindowAttribute(hwnd: HWND; dwAttribute: DWORD; pvAttribute: Poin
 {$endif}
 
 implementation
+
+function buildKey(const user, key: string): string;
+begin
+  if Trim(user) <> '' then
+    result := Format('%s_%s', [user, key])
+  else
+    result := key;
+end;
 
 {$if defined(X_WIN)}
 procedure TrndiNative.Speak(const Text: string);
@@ -1315,6 +1325,10 @@ begin
 end;
 {$ENDIF}
 {$ENDIF}
+function TrndiNative.GetRootSetting(const keyname: string; def: string = ''): string;
+begin
+  result := GetSetting('',keyname,def);
+end;
 
 {------------------------------------------------------------------------------
   TrndiNative.GetSetting
@@ -1322,10 +1336,13 @@ end;
   Platform-specific string retrieval. Returns the default if the key isn’t found.
  ------------------------------------------------------------------------------}
 {$IF DEFINED(X_WIN)}
-function TrndiNative.GetSetting(const key: string; def: string = ''): string;
+function TrndiNative.GetSetting(const username, keyname: string; def: string = ''): string;
 var
   reg: TRegistry;
+  key: string;
 begin
+  key := buildKey(username, keyname);
+
   Result := def;
   reg := TRegistry.Create;
   try
@@ -1338,16 +1355,22 @@ begin
 end;
 
 {$ELSEIF DEFINED(X_PC)}
-function TrndiNative.GetSetting(const key: string; def: string = ''): string;
+function TrndiNative.GetSetting(const username, keyname: string; def: string = ''): string;
+var
+  key: string;
 begin
+  key := buildKey(username, keyname);
   if not Assigned(inistore) then
     inistore := TINIFile.Create(GetAppConfigFile(false));
   Result := inistore.ReadString('trndi', key, def);
 end;
 
 {$ELSEIF DEFINED(X_MAC)}
-function TrndiNative.GetSetting(const key: string; def: string = ''): string;
+function TrndiNative.GetSetting(const username, keyname: string; def: string = ''): string;
+var
+  key: string;
 begin
+  key := buildKey(username, keyname);
   Result := GetPrefString(key); // macOS-based method
   if Result = '' then
     Result := def;
@@ -1359,11 +1382,12 @@ end;
   -------------------------
   Returns an integer from settings if parseable, else returns `def`.
  ------------------------------------------------------------------------------}
-function TrndiNative.GetIntSetting(const key: string; def: integer = -1): integer;
+function TrndiNative.GetIntSetting(const username, keyname: string; def: integer = -1): integer;
 var
   r: string;
 begin
-  r := GetSetting(key, 'fail');
+  r := GetSetting(username, keyname, 'fail');
+
   if not TryStrToInt(r, Result) then
     Result := def;
 end;
@@ -1373,11 +1397,11 @@ end;
   -------------------------
   Returns a bool from settings if parseable, else returns `def`.
  ------------------------------------------------------------------------------}
-function TrndiNative.GetBoolSetting(const key: string; def: boolean = false): boolean;
+function TrndiNative.GetBoolSetting(const username, keyname: string; def: boolean = false): boolean;
 var
   r: string;
 begin
-  r := GetSetting(key, '-');
+  r := GetSetting(username, keyname, '-');
   case r of
     'true': result := true;
     'false': result := false;
@@ -1387,12 +1411,17 @@ begin
 end;
 
 
-procedure TrndiNative.SetBoolSetting(const key: string; const val: boolean);
+procedure TrndiNative.SetBoolSetting(const username, keyname: string; const val: boolean);
 begin
   if val then
-    SetSetting(key, 'true')
+    SetSetting(username, keyname, 'true')
   else
-    SetSetting(key, 'false');
+    SetSetting(username, keyname, 'false');
+end;
+
+procedure TrndiNative.SetRootSetting(keyname: string; const val: string);
+begin
+  SetSetting('', keyname, val);
 end;
 
 {------------------------------------------------------------------------------
@@ -1401,16 +1430,23 @@ end;
   Stores a string value to platform-specific storage.
  ------------------------------------------------------------------------------}
 {$IF DEFINED(X_MAC)}
-procedure TrndiNative.SetSetting(const key: string; const val: string);
+procedure TrndiNative.SetSetting(const username, keyname: string; const val: string);
+var
+  key: string;
 begin
+  key := buildKey(username, keyname);
   SetPrefString(key, val); // macOS-based method
 end;
 
+
 {$ELSEIF DEFINED(X_WIN)}
-procedure TrndiNative.SetSetting(const key: string; const val: string);
+procedure TrndiNative.SetSetting(const username, keyname: string; const val: string);
 var
   reg: TRegistry;
+  key: string;
 begin
+  key := buildKey(username, keyname);
+
   reg := TRegistry.Create;
   try
     reg.RootKey := HKEY_CURRENT_USER;
@@ -1424,8 +1460,11 @@ begin
 end;
 
 {$ELSEIF DEFINED(X_PC)}
-procedure TrndiNative.SetSetting(const key: string; const val: string);
+procedure TrndiNative.SetSetting(const username, keyname: string; const val: string);
+var
+  key: string;
 begin
+  key := buildKey(username, keyname);
   if not Assigned(inistore) then
     inistore := TINIFile.Create(GetAppConfigFile(false));
   inistore.WriteString('trndi', key, val);
