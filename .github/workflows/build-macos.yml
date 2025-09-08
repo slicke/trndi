@@ -17,6 +17,7 @@ jobs:
     runs-on: macos-14
     env:
       PPC_CONFIG_PATH: /opt/local/libexec/fpc/etc
+      MORMOT2_TAG: 2.3.stable      
 
     steps:
       - name: Checkout
@@ -69,11 +70,20 @@ jobs:
         run: |
           set -euo pipefail
           export PATH="/opt/local/libexec/fpc/bin:/opt/local/bin:/opt/local/sbin:$PATH"
-          curl -fsSL -A "Mozilla/5.0 GitHubActions" -o mormot2static.7z "https://github.com/synopse/mORMot2/releases/download/2.3.stable/mormot2static.7z"
+
+          # Download prebuilt static libraries for the specified tag
+          curl -fsSL -A "Mozilla/5.0 GitHubActions" -o mormot2static.7z \
+            "https://github.com/synopse/mORMot2/releases/download/${MORMOT2_TAG}/mormot2static.7z"
           mkdir -p ./static
           7z x mormot2static.7z -o./static -y >/dev/null
-          git clone https://github.com/synopse/mORMot2.git externals/mORMot2
+
+          # Clone mORMot2 at the same tag
+          git clone --branch "$MORMOT2_TAG" --depth 1 https://github.com/synopse/mORMot2.git externals/mORMot2
+
+          # Verify static libs exist
           test -d ./static/aarch64-darwin || { echo "Expected static/aarch64-darwin not found" >&2; exit 1; }
+
+          # Copy platform-specific static libs
           cp -r ./static/aarch64-darwin/* .
 
       - name: Build
