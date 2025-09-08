@@ -1863,7 +1863,7 @@ begin
   begin
     Brush.Color := Panel.Color;
     Brush.Style := bsSolid;
-    FillRect(Rect(0, 0, Panel.Width, Panel.Height));
+    FillRect(Classes.Rect(0, 0, Panel.Width, Panel.Height));
     Font.Assign(Panel.Font);
     Font.Orientation := 900; // 2700;
 
