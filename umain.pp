@@ -90,6 +90,9 @@ TfBG = class(TForm)
   lMissing: TLabel;
   lTir:TLabel;
   lAgo:TLabel;
+  MenuItem1: TMenuItem;
+  Separator3: TMenuItem;
+  Separator2: TMenuItem;
   miAnnounce:TMenuItem;
   miDotHuge:TMenuItem;
   miDotBig:TMenuItem;
@@ -152,6 +155,7 @@ TfBG = class(TForm)
   procedure FormDblClick(Sender: TObject);
   procedure FormDestroy(Sender:TObject);
   procedure FormKeyPress(Sender:TObject;var Key:char);
+  procedure MenuItem1Click(Sender: TObject);
   procedure speakReading;
   procedure FormMouseLeave(Sender:TObject);
   procedure FormMouseMove(Sender:TObject;{%H-}Shift:TShiftState;X,Y:integer);
@@ -1032,6 +1036,11 @@ begin
   'I', 'i':
     miSettings.Click;
   end;
+end;
+
+procedure TfBG.MenuItem1Click(Sender: TObject);
+begin
+  Close;
 end;
 
 procedure TfBG.FormMouseLeave(Sender:TObject);
