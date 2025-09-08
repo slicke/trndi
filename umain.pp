@@ -152,6 +152,7 @@ TfBG = class(TForm)
   procedure FormDblClick(Sender: TObject);
   procedure FormDestroy(Sender:TObject);
   procedure FormKeyPress(Sender:TObject;var Key:char);
+  procedure speakReading;
   procedure FormMouseLeave(Sender:TObject);
   procedure FormMouseMove(Sender:TObject;{%H-}Shift:TShiftState;X,Y:integer);
   procedure FormResize(Sender: TObject);
@@ -999,6 +1000,19 @@ begin
 
 end;
 
+procedure TfBG.speakReading;
+begin
+  if not privacyMode then
+     native.Speak(lVal.Caption)
+  else case bgs[Low(bgs)].level of
+        BGHigh: begin native.speak('High'); end;
+        BGLOW: begin native.speak('Low'); end;
+        BGRange: begin native.speak('Good'); end;
+        BGRangeHI: begin native.speak('Going high'); end;
+        BGRangeLO: begin native.speak('Going low');  end;
+   end;
+end;
+
 procedure TfBG.FormKeyPress(Sender:TObject;var Key:char);
 begin
   case key of
@@ -1009,7 +1023,7 @@ begin
   'f', 'F':
     lDiffDblClick(self);
   's', 'S':
-    native.Speak(lVal.Caption);
+    speakReading;
   'A', 'a':
     miAnnounce.Click;
   'R', 'r':
@@ -1844,7 +1858,7 @@ var
 begin
   Panel := Sender as TPanel;
   TextStr := Panel.Caption;
-//  if TextStr = '' then Exit;
+  if TextStr = '' then Exit;
   with Panel.Canvas do
   begin
     Brush.Color := Panel.Color;
@@ -1852,7 +1866,7 @@ begin
     FillRect(Rect(0, 0, Panel.Width, Panel.Height));
     Font.Assign(Panel.Font);
     Font.Orientation := 900; // 2700;
-//    Font.Color := clBlack;
+
     font.Height := panel.Width;
     Brush.Style := bsClear;
     TextW := TextWidth(TextStr);
@@ -2319,7 +2333,7 @@ begin
 
   // Announce
   if miAnnounce.Checked then
-    native.Speak(lval.Caption);
+    speakReading;
 
   // Set next update time
   SetNextUpdateTimer(b.date);
@@ -2456,12 +2470,13 @@ begin
   // Handle privacy mode display
   if privacyMode then
   begin
-    if fBG.Color = bg_color_hi then
-      lVal.Caption := '⭱'
-    else if fBG.Color = bg_color_lo then
-      lVal.Caption := '⭳'
-    else
-      lVal.Caption := '✓';
+ case bgs[Low(bgs)].level of
+       BGHigh: begin lVal.Caption := '⭱' end;
+       BGLOW: begin lVal.Caption := '⭳'; end;
+       BGRange: begin lVal.Caption := '✓'; end;
+       BGRangeHI: begin lVal.Caption := '✓⁺'; end;
+       BGRangeLO: begin lVal.Caption := '✓⁻';  end;
+  end;
     lVal.hint := lval.caption;
   end;
 
@@ -2518,7 +2533,7 @@ begin
   pnOffReading.Caption := txt;
 
     pnOffReading.color := GetAdjustedColorForBackground(fBG.Color, fBG.Color);
-    pnOffReading.font.color := GetTextColorForBackground(pnOffReading.Color);
+    pnOffReading.font.color := GetTextColorForBackground(pnOffReading.Color, 0, 0.7);
 end;
 
 procedure TfBG.HandleHighGlucose(const b: BGReading);
