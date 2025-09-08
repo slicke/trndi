@@ -1123,6 +1123,9 @@ var
   isDot: boolean;
 begin
 
+  if privacyMode then
+     exit;
+
   // Check if label currently shows a dot
   isDot := l.Caption = DOT_GRAPH;
 
@@ -1134,7 +1137,7 @@ begin
     // Earlier readings: toggle between actual value and dot
     l.Caption := IfThen(isDot, l.Hint, DOT_GRAPH);
 
-  l.Caption := IfThen(isDot, l.Caption, l.Caption);
+//  l.Caption := IfThen(isDot, l.Caption, l.Caption);
   // Adjust size based on current state
   if not isDot then begin // Returning to dot
     ResizeDot(l, c, ix) ;
@@ -2470,13 +2473,7 @@ begin
   // Handle privacy mode display
   if privacyMode then
   begin
- case bgs[Low(bgs)].level of
-       trndi.types.BGHigh: begin lVal.Caption := '⭱' end;
-       trndi.types.BGLOW: begin lVal.Caption := '⭳'; end;
-       trndi.types.BGRange: begin lVal.Caption := '✓'; end;
-       trndi.types.BGRangeHI: begin lVal.Caption := '✓⁺'; end;
-       trndi.types.BGRangeLO: begin lVal.Caption := '✓⁻';  end;
-  end;
+    lval.caption := privacyIcon(bgs[Low(bgs)].level);
     lVal.hint := lval.caption;
   end;
 

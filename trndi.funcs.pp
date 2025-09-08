@@ -28,6 +28,8 @@ function GetNewerVersionURL(const JsonResponse: string;
                             IncludePrerelease: Boolean = False;
                             Platform: string = ''): string;
 
+function privacyIcon(const v: trndi.types.BGValLevel): string;
+
 const
 INTERVAL_MINUTES = 5; // Each time interval is 5 minutes
 NUM_DOTS = 10;        // Total number of labels (lDot1 - lDot10)
@@ -470,6 +472,18 @@ begin
 
   if Assigned(JsonData) then
     JsonData.Free;
+end;
+
+function privacyIcon(const v: trndi.types.BGValLevel): string;
+begin
+  result := '?';
+   case v of
+       trndi.types.BGHigh: begin result := '⭱' end;
+       trndi.types.BGLOW: begin result := '⭳'; end;
+       trndi.types.BGRange: begin result := '✓'; end;
+       trndi.types.BGRangeHI: begin result := '✓⁺'; end;
+       trndi.types.BGRangeLO: begin result := '✓⁻';  end;
+  end;
 end;
 
 end.
