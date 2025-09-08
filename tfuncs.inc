@@ -239,6 +239,27 @@ begin
 
 end;
 
+// Set the dot adjustment
+function JSDotAdjust(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw;
+var
+ vda: Variant;
+begin
+  if argc <> 1 then
+  begin
+    Result := JS_FALSE;
+    Exit;
+  end;
+
+  ctx^^.ToVariant(argv^[0], vda);
+
+  if not varType(vda) = varSingle then begin
+    ExtError('Dot size must be a floating number');
+    exit;
+  end;
+  DOT_ADJUST := vda;
+
+end;
+
 {$endif}
 
 

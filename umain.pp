@@ -616,6 +616,7 @@ begin
     addClassFunction('uxProp', ExtFunction(@JSUX), 3);
     addClassFunction('setBadgeSize', ExtFunction(@JSBADGE), -1);
     addClassFunction('setDotSize', ExtFunction(@JSDotSize), -1);
+    addClassFunction('setDotAdjust', ExtFunction(@JSDotAdjust), -1);
     addClassFunction('getUnit', ExtFunction(@JSUnit), 0);
     addClassFunction('setLevelColor', ExtFunction(@JSLevelColor), -1);
     addClassFunction('setTimeAndRange', ExtFunction(@JSTimeRange), 2);
@@ -2505,8 +2506,7 @@ begin
 
   if privacyMode then
     DOT_ADJUST := randomrange(-3, 3) / 10
-  else
-    DOT_ADJUST := 0;
+
 end;
 
 procedure TfBG.UpdateFloatingWindow;
