@@ -2494,6 +2494,11 @@ begin
   // Update system integration
   native.setBadge(lVal.Caption, fBG.Color{$ifdef lclwin32},badge_width,badge_font{$endif});
   native.done;
+
+  if privacyMode then
+    DOT_ADJUST := randomrange(-3, 3) / 10
+  else
+    DOT_ADJUST := 0;
 end;
 
 procedure TfBG.UpdateFloatingWindow;
