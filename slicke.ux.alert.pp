@@ -90,6 +90,7 @@ public
  procedure ButtonDrawItem(Sender: TObject;
   ACanvas: TCanvas; ARect: TRect; State: TButtonState);
   {$endif}
+  procedure UXMessageOnClick(sender: TObject);
 end;
 
 TUXMsgDlgBtn     = (mbYes, mbNo, mbOK, mbCancel, mbAbort, mbRetry, mbIgnore,
@@ -111,7 +112,7 @@ langs : ButtonLangs = (smbYes, smbUXNo, smbUXOK, smbUXCancel, smbUXAbort, smbUXR
 
 //function UXShowMessage(const message: string; buttons: TMsgDlgButtons; const icon: Widechar): TModalResult;
 
-procedure UXMessage(const title, message: string; const icon: widechar = widechar($2705));
+procedure UXMessage(const title, message: string; const icon: widechar = widechar($2705); sender: TForm = nil; onForm: boolean = false);
 function UXDialog(const title, message: string; buttons: TUXMsgDlgBtns; const icon: widechar = widechar($2705)): TModalResult;
 function UXDialog(const title, message: string; buttons: TUXMsgDlgBtns; const mtype: TMsgDlgType): TModalResult;
 function UXDialog(const header, title, message: string; buttons: TUXMsgDlgBtns; const mtype: TMsgDlgType): TModalResult;
@@ -540,9 +541,42 @@ begin
   result := ExtMsg(sExtErr, sErr, msg, error, $00F5F2FD, $003411A9, [mbAbort], icon);
 end;
 
-procedure UXMessage(const title, message: string; const icon: widechar = widechar($2705));
+procedure TDialogForm.UXMessageOnClick(sender: TObject);
 begin
-  ExtMsg(sMsgTitle, title, message, '', $00AA6004, $00FDD8AA, [mbOK], widechar(icon));
+  ((sender as TButton).parent as TPanel).Hide;
+  ((sender as TButton).parent as TPanel).Free;
+  self.Free;
+end;
+
+procedure UXMessage(const title, message: string; const icon: widechar = widechar($2705); sender: TForm = nil; onForm: boolean = false);
+var
+  tp: TPanel;
+  tb: TButton;
+  df: TDialogForm;
+begin
+  if onForm and (sender <> nil) and (sender.showing) then begin
+    tp := TPanel.Create(sender);
+    tp.Parent := sender;
+    tp.top := 0;
+    tp.left := 0;
+    tp.height := sender.height;
+    tp.width := sender.width;
+    tp.BringToFront;
+    tp.color := $00FDD8AA;
+    tp.font.color := $00AA6004;
+    tp.caption := message;
+    tp.font.Size := tp.width div 25;
+    tp.WordWrap := true;
+    tb := TButton.Create(tp);
+    tb.parent := tp;
+    tb.Caption := smbUXOK;
+    tb.Top := tp.height-tb.height-10;
+    tb.left := (tp.width div 2) - (tb.width div 2);
+
+    df := TDialogForm.CreateNew(nil);
+    tb.OnClick := @df.UXMessageOnClick;
+  end else
+    ExtMsg(sMsgTitle, title, message, '', $00AA6004, $00FDD8AA, [mbOK], widechar(icon));
 end;
 
 function UXDialog(const title, message: string; buttons: TUXMsgDlgBtns; const icon: widechar = widechar($2705)): TModalResult;

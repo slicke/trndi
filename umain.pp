@@ -416,12 +416,12 @@ end;
 
 procedure Showmessage(const str: string);
 begin
-  UXMessage(sSuccTitle, str, system.widechar($2139));
+  UXMessage(sSuccTitle, str, system.widechar($2139), fBG, HasTouch);
 end;
 
 procedure Showmessage(const title, str: string);
 begin
-  UXMessage(title, str, system.widechar($2139));
+  UXMessage(title, str, system.widechar($2139), fBG, HasTouch);
 end;
 
 procedure TfBG.placeForm;
