@@ -454,12 +454,12 @@ activemonitor: TMonitor;
 var
   posValue: integer;
 begin
-  if native.GetBoolSetting(username, 'size.main') then begin
-    Width := native.GetIntSetting(username, 'size.last.width', width);
-    Height := native.GetIntSetting(username, 'size.last.height', height);
+  if native.GetBoolSetting('size.main') then begin
+    Width := native.GetIntSetting('size.last.width', width);
+    Height := native.GetIntSetting('size.last.height', height);
   end;
   // Hämta och validera position
-  posValue := native.GetIntSetting(username, 'position.main', Ord(tpoCenter));
+  posValue := native.GetIntSetting('position.main', Ord(tpoCenter));
 
   // Validera positionstyp
   if not ((posValue >= Ord(Low(TrndiPos))) and (posValue <= Ord(High(TrndiPos)))) then
@@ -493,15 +493,15 @@ begin
 
     tpoCustom:
       begin
-        Left := native.GetIntSetting(username, 'position.last.left', 10);
-        Top := native.GetIntSetting(username, 'position.last.top', 10);
+        Left := native.GetIntSetting('position.last.left', 10);
+        Top := native.GetIntSetting('position.last.top', 10);
       end;
   end;
 
-  if native.GetBoolSetting(username, 'main.clock') then
+  if native.GetBoolSetting('main.clock') then
     miClock.OnClick(self);
 
-  if native.GetBoolSetting(username, 'main.announce') then
+  if native.GetBoolSetting('main.announce') then
     miAnnounce.OnClick(self);
 
   {$ifdef DARWIN}
@@ -659,7 +659,7 @@ procedure tfBG.SetLang;
 var
  lang: string;
 begin
-  lang := native.GetSetting(username, 'locale', '');
+  lang := native.GetSetting('locale', '');
   if (lang = 'auto') or (lang = '') then
    lang := native.GetOSLanguage;
   applocale := lang;
@@ -742,14 +742,14 @@ function GetLinuxDistro: string;
     i: integer;
   begin
     // Load fonts
-    s := native.GetSetting(username, 'font.val', 'default');
+    s := native.GetSetting('font.val', 'default');
     if s <> 'default' then
       lVal.Font.name := s;
-    s := native.GetSetting(username, 'font.arrow', 'default');
+    s := native.GetSetting('font.arrow', 'default');
     if s <> 'default' then
       lArrow.Font.name := s;
 
-    s := native.GetSetting(username, 'font.ago', 'default');
+    s := native.GetSetting('font.ago', 'default');
     if s <> 'default' then
     lAgo.Font.name := s;
     lTir.Font.name := s;
@@ -854,7 +854,7 @@ begin
   setLang;
   // Idea for using multiple person/account support
     username := GetRootSetting('users.names','');
-    showmessage(username);
+
     if username <> '' then
     begin
       with TStringList.Create do
@@ -867,18 +867,19 @@ begin
         if (i > -1) and (strings[i] <> '') then
         begin
           username := strings[i];
-          s :=  GetSetting(username, 'user.nick', '');
+          s :=  GetSetting('user.nick', '');
           if s = '' then
             s := username;
 
           fbg.Caption := Format(RS_USER_CAPTION, [s, fBG.Caption]);
 //          username := username;
+          native.configUser :=  username;
         end
         else
           username := '';
       end;// Load possible other users
       multi := true;
-      s := GetSetting(username, 'user.color');
+      s := GetSetting('user.color');
       if s <> '' then
         pnMultiUser.Color := StringToColor(s);
       if pnMultiUser.Color <> clBlack then
@@ -888,11 +889,11 @@ begin
       multi := false;
 
       //-----LICENSE DO NOT MODIFY
-      if native.GetBoolSetting(username, 'license.250608') <> true then
+      if native.GetBoolSetting('license.250608') <> true then
       while i <> mrYes do begin
               i :=  ExtMsg('License', 'You must accept the full terms conditions', 'Do you agree to the terms and full license?', license, $00F5F2FD,$003411A9, [mbYes, mbCancel, mbUxRead], system.widechar($2699));
               if i = mrYes then
-                 native.SetBoolSetting(username, 'license.250608', true)
+                 native.SetBoolSetting('license.250608', true)
               else if i = mrCancel then begin
                 Application.Terminate;
                 Exit;
@@ -903,12 +904,12 @@ begin
       //-----END LICENSE
 
     Application.processmessages;
-    privacyMode := GetSetting(username, 'ext.privacy', '0') = '1';
-    if GetSetting(username,'unit', 'mmol') = 'mmol' then
+    privacyMode := GetSetting('ext.privacy', '0') = '1';
+    if GetSetting('unit', 'mmol') = 'mmol' then
       un := BGUnit.mmol
     else
       un := BGUnit.mgdl;
-    apiTarget := GetSetting(username, 'remote.target');
+    apiTarget := GetSetting('remote.target');
     if apiTarget = '' then
     begin
       tMain.Enabled := false;
@@ -920,9 +921,9 @@ begin
       Application.Terminate;
       Exit;
     end;
-    apiCreds := GetSetting(username, 'remote.creds');
+    apiCreds := GetSetting('remote.creds');
     Application.processmessages;
-    case GetSetting(username, 'remote.type') of
+    case GetSetting('remote.type') of
     'NightScout':
       api := NightScout.Create(apiTarget, apiCreds, '');
     'Dexcom (USA)':
@@ -960,17 +961,17 @@ begin
     LoadExtensions;
     {$endif}
 
-    if GetIntSetting(username, 'override.enabled', 0) = 1 then
+    if GetIntSetting('override.enabled', 0) = 1 then
     begin
-      api.cgmLo      := GetIntSetting(username, 'override.lo', api.cgmLo);
-      api.cgmHi      := GetIntSetting(username, 'override.hi', api.cgmHi);
+      api.cgmLo      := GetIntSetting('override.lo', api.cgmLo);
+      api.cgmHi      := GetIntSetting('override.hi', api.cgmHi);
 
-      api.cgmRangeLo := GetIntSetting(username, 'override.rangelo', api.cgmRangeLo);
-      api.cgmRangeHi := GetIntSetting(username, 'override.rangehi', api.cgmRangeHi);
+      api.cgmRangeLo := GetIntSetting('override.rangelo', api.cgmRangeLo);
+      api.cgmRangeHi := GetIntSetting('override.rangehi', api.cgmRangeHi);
     end;
   end;
-  miRangeColor.Checked := native.GetSetting(username, 'ux.range_color') = 'true';
-  dotscale := native.GetIntSetting(username, 'ux.dot_scale', 1);
+  miRangeColor.Checked := native.GetSetting('ux.range_color') = 'true';
+  dotscale := native.GetIntSetting('ux.dot_scale', 1);
   Application.processmessages;
   if not updateReading(true) then begin // First reading attempt failed
     updateReading; // We call it twice, to first setup the dots and then make it black
@@ -1092,7 +1093,7 @@ begin
   {$endif}
 
   // Hämta och validera position
-  posValue := native.GetIntSetting(username, 'position.main', ord(tpoCenter));
+  posValue := native.GetIntSetting('position.main', ord(tpoCenter));
 
   if not ((posValue >= Ord(Low(TrndiPos))) and (posValue <= Ord(High(TrndiPos)))) then
     posValue := ord(tpoCenter);
@@ -1100,14 +1101,14 @@ begin
   // Spara positionen om den är custom
   if TrndiPos(posValue) = tpoCustom then
   begin
-    native.SetSetting(username, 'position.last.left', self.left.toString);
-    native.SetSetting(username, 'position.last.top', self.top.toString);
+    native.SetSetting('position.last.left', self.left.toString);
+    native.SetSetting('position.last.top', self.top.toString);
   end;
 
-  if native.GetBoolSetting(username, 'size.main') then
+  if native.GetBoolSetting('size.main') then
   begin
-    native.SetSetting(username, 'size.last.width', self.width.tostring);
-    native.SetSetting(username, 'size.last.height', self.height.tostring);
+    native.SetSetting('size.last.width', self.width.tostring);
+    native.SetSetting('size.last.height', self.height.tostring);
   end;
 end;
 
@@ -1432,7 +1433,7 @@ end;
 procedure TfBG.miAnnounceClick(Sender:TObject);
 begin
   miAnnounce.Checked := not miAnnounce.Checked;
-  native.SetBoolSetting(username, 'main.announce', miAnnounce.Checked);
+  native.SetBoolSetting('main.announce', miAnnounce.Checked);
   native.speak(IfThen(miAnnounce.Checked, sAnnounceOn, sAnnounceOff));
 end;
 
@@ -1446,13 +1447,13 @@ procedure TfBG.miClockClick(Sender:TObject);
 begin
   miClock.Checked := not miClock.Checked;
   tClock.Enabled := miClock.Checked;
-  native.SetBoolSetting(username, 'main.clock', tClock.Enabled);
+  native.SetBoolSetting('main.clock', tClock.Enabled);
 end;
 
 procedure TfBG.miDotNormalClick(Sender:TObject);
 begin
   dotscale := StrToInt((sender as TMenuItem).Hint);
-  native.SetSetting(username, 'ux.dot_scale', dotscale.ToString);
+  native.SetSetting('ux.dot_scale', dotscale.ToString);
   FormResize(fBG);
 end;
 
@@ -1535,7 +1536,7 @@ procedure TfBG.miRangeColorClick(Sender:TObject);
 begin
   miRangeColor.Checked := not miRangeColor.Checked;
   miForce.Click;
-  native.SetBoolSetting(username, 'ux.range_color', miRangeColor.Checked);
+  native.SetBoolSetting('ux.range_color', miRangeColor.Checked);
 end;
 
 procedure TfBG.miBordersClick(Sender:TObject);
@@ -1605,38 +1606,38 @@ var
     with f, native do
     begin
       // Remote and user settings
-      s := GetSetting(username, 'remote.type');
+      s := GetSetting('remote.type');
       for i := 0 to cbSys.Items.Count - 1 do
         if cbSys.Items[i] = s then
           cbSys.ItemIndex := i;
-      eAddr.Text := GetSetting(username, 'remote.target');
-      ePass.Text := GetSetting(username, 'remote.creds');
-      rbUnit.ItemIndex := IfThen(GetSetting(username, 'unit', 'mmol') = 'mmol', 0, 1);
+      eAddr.Text := GetSetting('remote.target');
+      ePass.Text := GetSetting('remote.creds');
+      rbUnit.ItemIndex := IfThen(GetSetting('unit', 'mmol') = 'mmol', 0, 1);
 
       // Override range settings
       if api = nil then
       begin
-        fsLo.Value := GetIntSetting(username, 'override.lo', 60);
-        fsHi.Value := GetIntSetting(username, 'override.hi', 160);
+        fsLo.Value := GetIntSetting('override.lo', 60);
+        fsHi.Value := GetIntSetting('override.hi', 160);
       end
       else
       begin
-        fsLo.Value := GetIntSetting(username, 'override.lo', api.cgmLo);
-        fsHi.Value := GetIntSetting(username, 'override.hi', api.cgmHi);
+        fsLo.Value := GetIntSetting('override.lo', api.cgmLo);
+        fsHi.Value := GetIntSetting('override.hi', api.cgmHi);
       end;
 
-      cbTIR.Checked := native.GetBoolSetting(username, 'range.custom', true);
+      cbTIR.Checked := native.GetBoolSetting('range.custom', true);
 
-      cbOffBar.Checked := native.GetBoolSetting(username, 'off_bar', false);
+      cbOffBar.Checked := native.GetBoolSetting('off_bar', false);
 
-      if GetSetting(username, 'unit', 'mmol') = 'mmol' then
+      if GetSetting('unit', 'mmol') = 'mmol' then
         rbUnitClick(Self);
 
-      cbCust.Checked := GetIntSetting(username, 'override.enabled', 0) = 1;
-      edMusicHigh.Text := GetSetting(username, 'media_url_high', '');
-      edMusicLow.Text := GetSetting(username, 'media_url_low', '');
-      edMusicPerfect.Text := GetSetting(username, 'media_url_perfect', '');
-      cbMusicPause.Checked := GetBoolSetting(username, 'media_pause');
+      cbCust.Checked := GetIntSetting('override.enabled', 0) = 1;
+      edMusicHigh.Text := GetSetting('media_url_high', '');
+      edMusicLow.Text := GetSetting('media_url_low', '');
+      edMusicPerfect.Text := GetSetting('media_url_perfect', '');
+      cbMusicPause.Checked := GetBoolSetting('media_pause');
       fsHi.Enabled := cbCust.Checked;
       fsLo.Enabled := cbCust.Checked;
 
@@ -1651,13 +1652,13 @@ var
       else
         lCurrentAcc.Caption := Format(RS_CURRENT_ACC, [TrimRightSet(username, ['_'])]);
 
-      edNick.Text := GetSetting(username, 'user.nick', '');
-      s := GetSetting(username, 'user.color');
+      edNick.Text := GetSetting('user.nick', '');
+      s := GetSetting('user.color');
       if s <> '' then
         cbUser.ButtonColor := StringToColor(s);
 
       // Load position settings
-posValue := native.GetIntSetting(username, 'position.main', Ord(tpoCenter));
+posValue := native.GetIntSetting('position.main', Ord(tpoCenter));
 
 cbPos.Items.Clear;
 for po in TrndiPos do
@@ -1674,7 +1675,7 @@ end;
 if cbPos.ItemIndex = -1 then
   cbPos.ItemIndex := 0;
 
-      cbSize.Checked := GetBoolSetting(username, 'size.main');
+      cbSize.Checked := GetBoolSetting('size.main');
     end;
 
   end;
@@ -1696,7 +1697,7 @@ if cbPos.ItemIndex = -1 then
         cbLang.Items[i] := ExtractDelimited(2, s, ['.']);
         s := cbLang.Items[i];
         cbLang.Items[i] := Format('%s (%s)', [GetLanguageName(s), s]);
-        if GetSetting(username, 'locale', '') = s then
+        if GetSetting('locale', '') = s then
           cbLang.ItemIndex := i;
       end;
       if cbLang.ItemIndex = -1 then
@@ -1737,7 +1738,7 @@ if cbPos.ItemIndex = -1 then
       eExt.Text := '- ' + RS_noPlugins + ' -';
       eExt.Enabled := False;
       {$endif}
-      cbPrivacy.Checked := GetSetting(username, 'ext.privacy', '0') = '1';
+      cbPrivacy.Checked := GetSetting('ext.privacy', '0') = '1';
     end;
   end;
 
@@ -1763,51 +1764,51 @@ if cbPos.ItemIndex = -1 then
   begin
     with f, native do
     begin
-      SetSetting(username, 'font.val', lVal.Font.Name);
-      SetSetting(username, 'font.arrow', lArrow.Font.Name);
-      SetSetting(username, 'font.ago', lAgo.Font.Name);
+      SetSetting('font.val', lVal.Font.Name);
+      SetSetting('font.arrow', lArrow.Font.Name);
+      SetSetting('font.ago', lAgo.Font.Name);
       s := ExtractLangCode(cbLang.Items[cbLang.ItemIndex]);
-      SetSetting(username, 'locale', s);
-      native.SetSetting(username, 'position.main', IntToStr(cbPos.ItemIndex));
-      native.setBoolSetting(username, 'size.main', cbSize.Checked);
-      SetSetting(username, 'user.color', ColorToString(cbUser.ButtonColor));
-      SetSetting(username, 'user.nick', edNick.Text);
+      SetSetting('locale', s);
+      native.SetSetting('position.main', IntToStr(cbPos.ItemIndex));
+      native.setBoolSetting('size.main', cbSize.Checked);
+      SetSetting('user.color', ColorToString(cbUser.ButtonColor));
+      SetSetting('user.nick', edNick.Text);
 
       // Handle user list changes
       if lbUsers.Count > 0 then
-        SetSetting(username, 'users.names', lbUsers.Items.CommaText)
+        SetSetting('users.names', lbUsers.Items.CommaText)
       else
-        SetSetting(username, 'users.names', '');
+        SetSetting('users.names', '');
       if lbUsers.Count < lastUsers then
         ShowMessage(RS_REMOVE_ACC);
 
       // Save remote and override settings
-      SetSetting(username, 'remote.type', cbSys.Text);
-      SetSetting(username, 'remote.target', eAddr.Text);
-      SetSetting(username, 'remote.creds', ePass.Text);
-      SetSetting(username, 'unit', IfThen(rbUnit.ItemIndex = 0, 'mmol', 'mgdl'));
-      SetSetting(username, 'ext.privacy', IfThen(cbPrivacy.Checked, '1', '0'));
+      SetSetting('remote.type', cbSys.Text);
+      SetSetting('remote.target', eAddr.Text);
+      SetSetting('remote.creds', ePass.Text);
+      SetSetting('unit', IfThen(rbUnit.ItemIndex = 0, 'mmol', 'mgdl'));
+      SetSetting('ext.privacy', IfThen(cbPrivacy.Checked, '1', '0'));
 
       // Save unit-specific settings
       if rbUnit.ItemIndex = 0 then
       begin // mmol
-        SetSetting(username, 'override.lo', Round(fsLo.Value * 18.0182).ToString);
-        SetSetting(username, 'override.hi', Round(fsHi.Value * 18.0182).ToString);
+        SetSetting('override.lo', Round(fsLo.Value * 18.0182).ToString);
+        SetSetting('override.hi', Round(fsHi.Value * 18.0182).ToString);
       end
       else
       begin
-        SetSetting(username, 'override.lo', Round(fsLo.Value).ToString);
-        SetSetting(username, 'override.hi', Round(fsHi.Value).ToString);
+        SetSetting('override.lo', Round(fsLo.Value).ToString);
+        SetSetting('override.hi', Round(fsHi.Value).ToString);
       end;
 
-      native.SetBoolSetting(username, 'range.custom', cbTIR.Checked);
-      native.SetBoolSetting(username, 'off_bar', cbOffBar.Checked);
+      native.SetBoolSetting('range.custom', cbTIR.Checked);
+      native.SetBoolSetting('off_bar', cbOffBar.Checked);
 
-      SetSetting(username, 'override.enabled', IfThen(cbCust.Checked, '1', '0'));
-      SetSetting(username, 'media_url_high', edMusicHigh.Text);
-      SetSetting(username, 'media_url_low', edMusicLow.Text);
-      SetSetting(username, 'media_url_perfect', edMusicPerfect.Text);
-      SetBoolSetting(username, 'media_pause', cbMusicPause.Checked);
+      SetSetting('override.enabled', IfThen(cbCust.Checked, '1', '0'));
+      SetSetting('media_url_high', edMusicHigh.Text);
+      SetSetting('media_url_low', edMusicLow.Text);
+      SetSetting('media_url_perfect', edMusicPerfect.Text);
+      SetBoolSetting('media_pause', cbMusicPause.Checked);
     end;
   end;
 
@@ -2409,7 +2410,7 @@ var
 begin
   ok := 0;
   no := 0;
-  if native.GetBoolSetting(username, 'range.custom', true) then
+  if native.GetBoolSetting('range.custom', true) then
     ranges := [BGRange, BGRangeHI, BGRangeLO]
   else
     ranges := [BGRange];
@@ -2533,7 +2534,7 @@ begin
   else
     HandleNormalGlucose(b);
 
-  pnOffReading.Visible := native.GetBoolSetting(username, 'off_bar', false);
+  pnOffReading.Visible := native.GetBoolSetting('off_bar', false);
   case b.level of
        trndi.types.BGHigh: begin txt := RS_HIGH; end;
        trndi.types.BGLOW: begin txt := RS_LOW; end;
@@ -2560,10 +2561,10 @@ begin
   if highAlerted then
     Exit;
 
-  if native.GetBoolSetting(username, 'media_pause') then
+  if native.GetBoolSetting('media_pause') then
     MediaController.Pause;
 
-  url := native.GetSetting(username, 'media_url_high', '');
+  url := native.GetSetting('media_url_high', '');
   if url <> '' then begin
      highAlerted := true;
      MediaController.PlayTrackFromURL(url);
@@ -2582,10 +2583,10 @@ begin
   if lowAlerted then
     exit;
 
-  if native.GetBoolSetting(username, 'media_pause') then
+  if native.GetBoolSetting('media_pause') then
     MediaController.Pause;
 
-  url := native.GetSetting(username, 'media_url_low', '');
+  url := native.GetSetting('media_url_low', '');
   if url <> '' then begin
      lowAlerted := true;
      MediaController.PlayTrackFromURL(url);
@@ -2621,7 +2622,7 @@ begin
   if go and (not perfecttriggered) then begin
     perfectTriggered := true;
 
-    url := native.GetSetting(username, 'media_url_perfect', '');
+    url := native.GetSetting('media_url_perfect', '');
     if url <> '' then
       MediaController.PlayTrackFromURL(url);
   end;
