@@ -296,6 +296,18 @@ object fBG: TfBG
     Caption = 'Time In Range'
     OnClick = lTirClick
   end
+  object pnOffReading: TPanel
+    Left = 0
+    Height = 194
+    Top = 0
+    Width = 50
+    Caption = 'Off Reading'
+    DoubleBuffered = True
+    ParentBackground = False
+    ParentDoubleBuffered = False
+    TabOrder = 4
+    OnPaint = pnOffReadingPaint
+  end
   object tMain: TTimer
     Interval = 100000
     OnTimer = tMainTimer
