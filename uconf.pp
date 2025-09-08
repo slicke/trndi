@@ -419,7 +419,7 @@ const
     +#10#10+
     'Built in Object Pascal, using the Lazarus component library (LCL) and FreePascal.';
   begin
-  ExtSucc('Trndi', 'Libraries', txt);
+  ExtSucc('Trndi', 'Libraries', txt, $00AA6004, $00FDD8AA);
 end;
 
 procedure TfConf.cbSysChange(Sender:TObject);
@@ -627,9 +627,26 @@ const
     'For more information, refer to the accompanying license file or visit:'#10+
     'https://www.gnu.org/licenses/gpl-3.0'#10#10+
     'Trndi is hobby project, verify all data with an officially approved'#10+
-    'medical app before acting on any shown data!';
+    'medical app before acting on any shown data!'#10#10 +
+
+    'This app is NOT a medical device and is NOT intended for:'#10+
+'- Medical diagnosis, treatment, or prevention'#10+
+'- Making medical decisions'#10+
+'- Replacing your CGM app or medical devices'#10+
+'- Emergency medical situations'#10#10+
+'### IMPORTANT WARNINGS ###'#10+
+'• Data displayed may be inaccurate, delayed, or unavailable'#10+
+'• Always verify readings with your official CGM device'#10+
+'• Never make medical decisions based solely on this app'#10+
+'• Consult healthcare professionals for medical advice'#10#10+
+'### BY USING THIS APP, YOU ACKNOWLEDGE THAT ###'#10+
+'- The developers assume NO LIABILITY for any harm, injury, or damages'#10+
+'- You use this app entirely at your own risk'#10+
+'- This app may contain bugs or errors that could display incorrect data'#10#10+
+'- IF YOU DO NOT AGREE WITH THESE TERMS, DO NOT USE THIS APP. -';
 begin
-  ExtSucc('Trndi', 'License', txt);
+ if ExtSuccEx('Trndi', 'License', txt, [mbOK, mbUxRead], $00AA6004, $00FDD8AA) <> mrOK then
+    OpenURL('https://github.com/slicke/trndi/blob/main/LICENSE.md');
 end;
 
 procedure TfConf.lValClick(Sender:TObject);

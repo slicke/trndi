@@ -144,6 +144,7 @@ function ExtTable(
 function ExtError(const msg, error: string; const icon: widechar = widechar($2699)): TModalResult;
 function ExtError(const error: string; const icon: widechar = widechar($2699)): TModalResult;
 function ExtSucc(const msg, desc, output: string; dumpbg: TColor = $0095EEC4; dumptext: TColor = $00147C4A; const icon: widechar = widechar($2705)): TModalResult;
+function ExtSuccEx(const msg, desc, output: string; btns: TUXMsgDlgBtns; dumpbg: TColor = $0095EEC4; dumptext: TColor = $00147C4A; const icon: widechar = widechar($2705)): TModalResult;
 function FontInList(out fname: string): Boolean;
 {$ifdef Windows}
 function CoCreateInstance(const clsid: TGUID; unkOuter: IUnknown; dwClsContext: longint;
@@ -511,9 +512,14 @@ begin
 end;
 {$endif}
 
+function ExtSuccEx(const msg, desc, output: string; btns: TUXMsgDlgBtns; dumpbg: TColor = $0095EEC4; dumptext: TColor = $00147C4A; const icon: widechar = widechar($2705)): TModalResult;
+begin
+  result := ExtMsg(sSuccTitle, msg,  desc, output, dumpbg, dumptext, btns, widechar(icon));
+end;
+
 function ExtSucc(const msg, desc, output: string; dumpbg: TColor = $0095EEC4; dumptext: TColor = $00147C4A; const icon: widechar = widechar($2705)): TModalResult;
 begin
-  result := ExtMsg(sSuccTitle, msg,  desc, output, $00AA6004, $00FDD8AA, [mbOK], widechar(icon));
+  result := ExtMsg(sSuccTitle, msg,  desc, output, dumpbg, dumptext, [mbOK], widechar(icon));
 end;
 
 
