@@ -127,6 +127,8 @@ TfConf = class(TForm)
   procedure cbCustChange(Sender:TObject);
   procedure cbSysChange(Sender:TObject);
   procedure cbUserClick(Sender:TObject);
+  procedure ePassEnter(Sender: TObject);
+  procedure ePassExit(Sender: TObject);
   procedure FormCreate(Sender:TObject);
   procedure FormResize(Sender: TObject);
   procedure Label12Click(Sender: TObject);
@@ -433,6 +435,16 @@ end;
 procedure TfConf.cbUserClick(Sender:TObject);
 begin
 
+end;
+
+procedure TfConf.ePassEnter(Sender: TObject);
+begin
+  ePass.PasswordChar := #0;
+end;
+
+procedure TfConf.ePassExit(Sender: TObject);
+begin
+  ePass.PasswordChar := '*';
 end;
 
 procedure TfConf.bLimitsClick(Sender:TObject);
