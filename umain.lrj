@@ -42,5 +42,6 @@
 {"hash":28642414,"name":"tfbg.mifullscreen.caption","sourcebytes":[84,111,103,103,108,101,32,70,117,108,108,115,99,114,101,101,110],"value":"Toggle Fullscreen"},
 {"hash":158203379,"name":"tfbg.miborders.caption","sourcebytes":[78,111,32,98,111,114,100,101,114,115],"value":"No borders"},
 {"hash":255690039,"name":"tfbg.mifloaton.caption","sourcebytes":[83,104,111,119,32,70,108,111,97,116,105,110,103,32,87,105,110,100,111,119],"value":"Show Floating Window"},
+{"hash":106912681,"name":"tfbg.menuitem1.caption","sourcebytes":[69,120,105,116,32,84,114,110,100,105],"value":"Exit Trndi"},
 {"hash":214094746,"name":"tfbg.mirefresh.caption","sourcebytes":[82,101,102,114,101,115,104,32,105,110,58],"value":"Refresh in:"}
 ]}

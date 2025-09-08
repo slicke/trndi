@@ -114,6 +114,10 @@ msgctxt "tfbg.lval.caption"
 msgid "Setup"
 msgstr ""
 
+#: tfbg.menuitem1.caption
+msgid "Exit Ttndi"
+msgstr ""
+
 #: tfbg.mialternate.caption
 msgid "Alterante arrow and reading"
 msgstr ""
