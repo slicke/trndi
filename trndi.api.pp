@@ -153,6 +153,10 @@ public
     }
   function JSToDateTime(ts: int64; correct: boolean = true): TDateTime; virtual;
 
+  {
+     Tell where a value is on the range scale
+  }
+
     // -------- Properties --------
 
     // Get a threshold by level using getLevel (read)

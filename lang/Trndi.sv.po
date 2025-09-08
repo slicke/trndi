@@ -220,6 +220,11 @@ msgctxt "tfbg.pnoffrange.caption"
 msgid "- Off Range -"
 msgstr "- Utanför område -"
 
+#: tfbg.pnoffreading.caption
+msgctxt "tfbg.pnoffreading.caption"
+msgid "Off Reading"
+msgstr ""
+
 #: tfconf.badd.caption
 msgid "+ Add"
 msgstr "+ Ny"
@@ -264,6 +269,10 @@ msgstr ""
 #: tfconf.cbnotice.caption
 msgid "System notifications"
 msgstr "Systemmeddelanden"
+
+#: tfconf.cboffbar.caption
+msgid "Show sidebar when value is not in range"
+msgstr ""
 
 #: tfconf.cbprivacy.caption
 msgid "Privacy Mode (Hide number)"

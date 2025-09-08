@@ -15,9 +15,9 @@ object fConf: TfConf
     Height = 395
     Top = 0
     Width = 525
-    ActivePage = tsIntegration
+    ActivePage = tsDisplay
     Align = alClient
-    TabIndex = 5
+    TabIndex = 1
     TabOrder = 0
     object tsGeneral: TTabSheet
       Caption = 'General'
@@ -10545,6 +10545,14 @@ object fConf: TfConf
         Width = 268
         Caption = 'Count readings in the custom range as in range'
         TabOrder = 2
+      end
+      object cbOffBar: TCheckBox
+        Left = 16
+        Height = 19
+        Top = 248
+        Width = 229
+        Caption = 'Show sidebar when value is not in range'
+        TabOrder = 3
       end
     end
     object tsCustom: TTabSheet

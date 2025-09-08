@@ -56,6 +56,7 @@ TfConf = class(TForm)
   cbTIR:TCheckBox;
   cbCI:TCheckBox;
   cbMusicPause: TCheckBox;
+  cbOffBar: TCheckBox;
   eAddr:TLabeledEdit;
   edMusicHigh: TEdit;
   edMusicLow: TEdit;

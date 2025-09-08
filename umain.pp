@@ -101,6 +101,7 @@ TfBG = class(TForm)
   miRangeColor:TMenuItem;
   miPref:TMenuItem;
   miFloatOn:TMenuItem;
+  pnOffReading: TPanel;
   pnWarning:TPanel;
   pnMultiUser:TPanel;
   pnOffRangeBar:TPanel;
@@ -180,6 +181,7 @@ TfBG = class(TForm)
   procedure miOnTopClick(Sender:TObject);
   procedure miSettingsClick(Sender: TObject);
   procedure onTrendClick(Sender: TObject);
+  procedure pnOffReadingPaint(Sender: TObject);
   procedure pmSettingsMeasureItem(Sender:TObject;ACanvas:TCanvas;var AWidth,
     AHeight:integer);
   procedure pmSettingsPopup(Sender:TObject);
@@ -1598,6 +1600,8 @@ var
 
       cbTIR.Checked := native.GetBoolSetting(username + 'range.custom', true);
 
+      cbOffBar.Checked := native.GetBoolSetting(username + 'off_bar', false);
+
       if GetSetting(username + 'unit', 'mmol') = 'mmol' then
         rbUnitClick(Self);
 
@@ -1770,6 +1774,7 @@ if cbPos.ItemIndex = -1 then
       end;
 
       native.SetBoolSetting(username + 'range.custom', cbTIR.Checked);
+      native.SetBoolSetting(username + 'off_bar', cbOffBar.Checked);
 
       SetSetting(username + 'override.enabled', IfThen(cbCust.Checked, '1', '0'));
       SetSetting(username + 'media_url_high', edMusicHigh.Text);
@@ -1828,6 +1833,35 @@ begin
   isDot := l.Caption = DOT_GRAPH;;
   if isDot then
     tResize.OnTimer(self);
+end;
+
+procedure TfBG.pnOffReadingPaint(Sender: TObject);
+var
+  Panel: TPanel;
+  X, Y: Integer;
+  TextStr: string;
+  TextW, TextH: Integer;
+begin
+  Panel := Sender as TPanel;
+  TextStr := Panel.Caption;
+//  if TextStr = '' then Exit;
+  with Panel.Canvas do
+  begin
+    Brush.Color := Panel.Color;
+    Brush.Style := bsSolid;
+    FillRect(Rect(0, 0, Panel.Width, Panel.Height));
+    Font.Assign(Panel.Font);
+    Font.Orientation := 900; // 2700;
+//    Font.Color := clBlack;
+    font.Height := panel.Width;
+    Brush.Style := bsClear;
+    TextW := TextWidth(TextStr);
+    TextH := TextHeight(TextStr);
+    // Center
+    X := (Panel.Width - TextH) div 2;
+    Y := (Panel.Height + TextW) div 2;
+    TextOut(X, Y, TextStr);
+  end;
 end;
 
 procedure TfBG.pmSettingsMeasureItem(Sender: TObject; ACanvas: TCanvas; var AWidth, AHeight: Integer);
@@ -2460,6 +2494,8 @@ end;
 procedure TfBG.UpdateUIBasedOnGlucose;
 var
   b: BGReading;
+  col: TColor;
+  txt: string;
 begin
   b := bgs[Low(bgs)];
 
@@ -2469,6 +2505,20 @@ begin
     HandleLowGlucose(b)
   else
     HandleNormalGlucose(b);
+
+  pnOffReading.Visible := native.GetBoolSetting(username + 'off_bar', false);
+  case b.level of
+       BGHigh: begin txt := RS_HIGH; end;
+       BGLOW: begin txt := RS_LOW; end;
+       BGRange: begin txt := ''; pnOffReading.Visible := false; end;
+       BGRangeHI: begin txt := RS_OFF_HI; end;
+       BGRangeLO: begin txt := RS_OFF_LO;  end;
+  end;
+
+  pnOffReading.Caption := txt;
+
+    pnOffReading.color := GetAdjustedColorForBackground(fBG.Color, fBG.Color);
+    pnOffReading.font.color := GetTextColorForBackground(pnOffReading.Color);
 end;
 
 procedure TfBG.HandleHighGlucose(const b: BGReading);
@@ -2568,6 +2618,9 @@ begin
     lMissing.width := pnWarning.Width-10;
     lMissing.height := pnWarning.height div 5;
     lMissing.OptimalFill := true;
+
+    pnOffReading.Height := ClientHeight;
+    pnOffReading.ClientWidth := ClientWidth div 35;
 end;
 
 function TfBG.FetchAndValidateReadings: Boolean;
