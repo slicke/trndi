@@ -1005,11 +1005,11 @@ begin
   if not privacyMode then
      native.Speak(lVal.Caption)
   else case bgs[Low(bgs)].level of
-        BGHigh: begin native.speak('High'); end;
-        BGLOW: begin native.speak('Low'); end;
-        BGRange: begin native.speak('Good'); end;
-        BGRangeHI: begin native.speak('Going high'); end;
-        BGRangeLO: begin native.speak('Going low');  end;
+        trndi.types.BGHigh: begin native.speak('High'); end;
+        trndi.types.BGLOW: begin native.speak('Low'); end;
+        trndi.types.BGRange: begin native.speak('Good'); end;
+        trndi.types.BGRangeHI: begin native.speak('Going high'); end;
+        trndi.types.BGRangeLO: begin native.speak('Going low');  end;
    end;
 end;
 
@@ -2471,11 +2471,11 @@ begin
   if privacyMode then
   begin
  case bgs[Low(bgs)].level of
-       BGHigh: begin lVal.Caption := '⭱' end;
-       BGLOW: begin lVal.Caption := '⭳'; end;
-       BGRange: begin lVal.Caption := '✓'; end;
-       BGRangeHI: begin lVal.Caption := '✓⁺'; end;
-       BGRangeLO: begin lVal.Caption := '✓⁻';  end;
+       trndi.types.BGHigh: begin lVal.Caption := '⭱' end;
+       trndi.types.BGLOW: begin lVal.Caption := '⭳'; end;
+       trndi.types.BGRange: begin lVal.Caption := '✓'; end;
+       trndi.types.BGRangeHI: begin lVal.Caption := '✓⁺'; end;
+       trndi.types.BGRangeLO: begin lVal.Caption := '✓⁻';  end;
   end;
     lVal.hint := lval.caption;
   end;
@@ -2528,11 +2528,11 @@ begin
 
   pnOffReading.Visible := native.GetBoolSetting(username + 'off_bar', false);
   case b.level of
-       BGHigh: begin txt := RS_HIGH; end;
-       BGLOW: begin txt := RS_LOW; end;
-       BGRange: begin txt := ''; pnOffReading.Visible := false; end;
-       BGRangeHI: begin txt := RS_OFF_HI; end;
-       BGRangeLO: begin txt := RS_OFF_LO;  end;
+       trndi.types.BGHigh: begin txt := RS_HIGH; end;
+       trndi.types.BGLOW: begin txt := RS_LOW; end;
+       trndi.types.BGRange: begin txt := ''; pnOffReading.Visible := false; end;
+       trndi.types.BGRangeHI: begin txt := RS_OFF_HI; end;
+       trndi.types.BGRangeLO: begin txt := RS_OFF_LO;  end;
   end;
 
   pnOffReading.Caption := txt;
