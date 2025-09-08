@@ -2,15 +2,20 @@
 # ![Trndi](/trndi-logo.png)<br> Trndi - CGM data on desktop and RaspberryPi<br><sup>_Nightscout - Dexcom - xDrip WiFi_</sup> 
 <b> Windows - macOS - Linux - RaspberryPi </b>
 ![Windows](doc/img_win.png)
-Swedish Windows
+<br>Swedish Windows
+
 ![Linux](doc/img_lin.png)
-Linux (Qt6)
+<br>English Linux
+
+![Linux](doc/img_rpi.png)
+<br>RaspberryPi
+
 ### Introduction
 Trndi is a _desktop app_ that shows the your blood sugar and graph. It works with  _Night Scout_ and _Dexcom Share_.
 It also supports the _xDrip_ app, connecting over the local network/WiFi.
 
 # What differs Trndi from apps?
-* __Natively__ runs on your computer without installation or other software _(on Linux, this may depend on distro)_
+* __Natively__ runs on your computer without installation or other software _(on [Linux](#Linux-support), this may depend on your distro)_
 * Supports __multiple languages__
 * Runs on your __Raspberry Pi__ and other arm computers, optinally as a full-screen display
 * Works on __touch-screen__ devices
@@ -95,3 +100,22 @@ Trndi is actively tested on Windows (amd64), Fedora Linux(amd64), Debian Linux(a
 
 ### IMPORTANT: RaspberryPi / ARM64
 To compile with extension support, you have to add ```{$DEFINE LIBQUICKJSSTATIC}``` in ```mormot.defines.inc``` 
+
+<a name="Linux-support"></a>
+## Linux notes
+If you find yourself having problems running the Qt6 version of Trndi, you might be missing the Qt6 framwork and/or the pascal headers.
+
+#### Any distro
+You can download them for any RPM/DEB distro in this [repo](https://github.com/davidbannon/libqt6pas/releases).
+
+#### Debian
+You can install the ```libqt6pas``` packade on Debian-based distros via ```apt```.
+
+#### Fedora
+You can install the ```qt6pas``` package in ```DNF```.
+
+#### Arch
+You can install the ```qt6pas``` package.
+
+#### Others
+Look for ```qt6pas``` or ```libqt6-pas``` in your package manager, or search for ```libQt6Pas.so```.
