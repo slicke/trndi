@@ -42,6 +42,11 @@ Above: Set size to 90% of the Windows app icon with font 9.
 Trndi.setDotSize(2);
 ```
 Sets scale of the trend dots. 2 = 2x etc.
+### setDotAdjust
+```javascript
+Trndi.setDotAdjust(0.1);
+```
+Multiplyer on where the dots are drawn on screen up/down. Minus = up, plus = down
 ### getUnit
 #### Get the current measure unit
 ```javascript
