@@ -1080,7 +1080,7 @@ begin
   {$ifdef Darwin}
   if self.Showing then
   begin
-    mr := UXDialog('Quit or Minimize?', 'Would you like to minimize to the Dock, or close Trndi?',
+    mr := UXDialog(HasTouch, 'Quit or Minimize?', 'Would you like to minimize to the Dock, or close Trndi?',
                    [mbClose, mbUXMinimize, mbCancel]);
     case mr of
       mrClose: CloseAction := caFree;
