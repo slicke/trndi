@@ -1144,7 +1144,7 @@ begin
     Dialog.AutoSize := True;
     MaxDialogHeight := Round(Screen.Height * 0.8);
 
-    // ==== Main panel ====
+    // Main panel
     MainPanel := TPanel.Create(Dialog);
     MainPanel.Parent := Dialog;
     MainPanel.Align := alClient;
@@ -1152,7 +1152,7 @@ begin
     MainPanel.Color := bgcol;
     MainPanel.AutoSize := True;
 
-    // ==== Top panel (icon + text) ====
+    // Top panel
     TopPanel := TPanel.Create(MainPanel);
     TopPanel.Parent := MainPanel;
     TopPanel.Align := alTop;
@@ -1177,7 +1177,7 @@ begin
     TextPanel.BevelOuter := bvNone;
     TextPanel.Color := bgcol;
 
-    // === Breddberäkning med extra marginal och nya min/max ===
+    // Breddberäkning
     TitlePixelWidth := 0;
     if Trim(title) <> '' then
       TitlePixelWidth := Dialog.Canvas.TextWidth(title);
@@ -1224,6 +1224,7 @@ begin
         MsgScroll.Align := alTop;
         MsgScroll.BorderSpacing.Left := padding;
         MsgScroll.BorderSpacing.Right := padding;
+        MsgScroll.BorderSpacing.Bottom := padding; // Luft mot logpanelen
         MsgScroll.Width := MsgWidth;
         MsgScroll.Height := MaxDialogHeight div 2;
         MsgScroll.VertScrollBar.Visible := True;
@@ -1252,6 +1253,7 @@ begin
         MsgLabel.Align := alTop;
         MsgLabel.BorderSpacing.Left := padding;
         MsgLabel.BorderSpacing.Right := padding;
+        MsgLabel.BorderSpacing.Bottom := padding; // Luft mot logpanelen
       end;
 
       // Titel sist
@@ -1304,6 +1306,7 @@ begin
         MsgScroll.Height := MaxDialogHeight div 2;
         MsgScroll.VertScrollBar.Visible := True;
         MsgScroll.BorderStyle := bsNone;
+        MsgScroll.BorderSpacing.Bottom := padding; // Luft mot logpanelen
 
         MsgLabel := TLabel.Create(MsgScroll);
         MsgLabel.Parent := MsgScroll;
@@ -1329,6 +1332,7 @@ begin
         MsgLabel.Left := padding;
         MsgLabel.Width := MsgWidth;
         MsgLabel.Height := NeededHeight;
+        MsgLabel.BorderSpacing.Bottom := padding; // Luft mot logpanelen
       end;
     end;
 
@@ -1358,7 +1362,6 @@ begin
     ButtonPanel.BevelOuter := bvNone;
     ButtonPanel.Color := bgcol;
 
-    // Centrera knappar via Dialog.ClientWidth
     ButtonActualWidth := IfThen(big, btnWidth * 2, btnWidth);
     btnCount := 0;
     for mr in buttons do Inc(btnCount);
