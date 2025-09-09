@@ -1127,8 +1127,8 @@ var
   OkButton: {$ifdef Windows}TBitBtn{$else}TButton{$endif};
   mr: TUXMsgDlgBtn;
   ButtonActualWidth, MaxDialogHeight, MsgWidth, NeededHeight,
-  TitlePixelWidth, DescPixelWidth, TextPixelWidth, AvailableTextWidth,
-  posX, CurrentTop, ProposedWidth, btnCount, totalBtnWidth: Integer;
+  TitlePixelWidth, DescPixelWidth, TextPixelWidth,
+  posX, ProposedWidth, btnCount, totalBtnWidth: Integer;
   bgcol: TColor;
   TempFont: TFont;
 begin
@@ -1138,16 +1138,13 @@ begin
   try
     Dialog.Caption := caption;
     Dialog.BorderStyle := bsDialog;
-    {$ifdef LCLGTK3}
-      Dialog.BorderStyle := bsSizeable;
-    {$endif}
+    {$ifdef LCLGTK3}Dialog.BorderStyle := bsSizeable;{$endif}
     Dialog.Position := poWorkAreaCenter;
     Dialog.Color := bgcol;
     Dialog.AutoSize := True;
-
     MaxDialogHeight := Round(Screen.Height * 0.8);
 
-    // ===== Main Panel =====
+    // ==== Main panel ====
     MainPanel := TPanel.Create(Dialog);
     MainPanel.Parent := Dialog;
     MainPanel.Align := alClient;
@@ -1155,7 +1152,7 @@ begin
     MainPanel.Color := bgcol;
     MainPanel.AutoSize := True;
 
-    // ===== TopPanel: Icon + text =====
+    // ==== Top panel (icon + text) ====
     TopPanel := TPanel.Create(MainPanel);
     TopPanel.Parent := MainPanel;
     TopPanel.Align := alTop;
@@ -1169,122 +1166,173 @@ begin
     IconBox.Align := alLeft;
     IconBox.Width := IfThen(big, 100, 50);
     IconBox.Height := IconBox.Width;
-    {$ifdef Windows}
-      IconBox.Font.Name := 'Segoe UI Emoji';
-    {$endif}
+    {$ifdef Windows}IconBox.Font.Name := 'Segoe UI Emoji';{$endif}
     Dialog.HandleNeeded;
     AssignEmoji(IconBox, icon, bgcol);
 
-    // ===== TextPanel =====
+    // Text panel
     TextPanel := TPanel.Create(TopPanel);
     TextPanel.Parent := TopPanel;
     TextPanel.Align := alClient;
     TextPanel.BevelOuter := bvNone;
     TextPanel.Color := bgcol;
-    TextPanel.AutoSize := False;
 
-    // ===== Title (optional) =====
+    // === Breddberäkning med extra marginal och nya min/max ===
+    TitlePixelWidth := 0;
     if Trim(title) <> '' then
-    begin
-      TitleLabel := TLabel.Create(TextPanel);
-      TitleLabel.Parent := TextPanel;
-      TitleLabel.AutoSize := True;
-      TitleLabel.Font.Style := [fsBold];
-      if big then TitleLabel.Font.Size := 24;
-      TitleLabel.Caption := title;
-      TitleLabel.Font.Color := IfThen(TrndiNative.isDarkMode, clWhite, clBlack);
-      TitleLabel.Left := padding;
-      TitleLabel.Top := padding;
-      TitleLabel.BorderSpacing.Right := padding;
+      TitlePixelWidth := Dialog.Canvas.TextWidth(title);
+    DescPixelWidth := Dialog.Canvas.TextWidth(desc);
+    TextPixelWidth := Max(TitlePixelWidth, DescPixelWidth);
 
-      if big then
-        CurrentTop := TitleLabel.Top + TitleLabel.Height + (padding * 2)
-      else
-        CurrentTop := TitleLabel.Top + TitleLabel.Height; // tighter in non-big
+    ProposedWidth := IconBox.Width + TextPixelWidth + (padding * 6) + 20;
+
+    if big then
+    begin
+      if ProposedWidth < 650 then ProposedWidth := 650;
     end
     else
     begin
-      TitleLabel := nil;
-      CurrentTop := padding; // description at top
+      if ProposedWidth < 400 then ProposedWidth := 400;
     end;
 
-    // ===== Width based on longest of title/desc =====
-    if TitleLabel <> nil then
-      TitlePixelWidth := Dialog.Canvas.TextWidth(title)
-    else
-      TitlePixelWidth := 0;
-    DescPixelWidth  := Dialog.Canvas.TextWidth(desc);
-    TextPixelWidth  := Max(TitlePixelWidth, DescPixelWidth);
-
-    ProposedWidth := IconBox.Width + (TextPixelWidth + padding * 2) + (padding * 2);
-
-    // ✅ If log exists, min width = 500
     if logmsg <> '' then
-      if ProposedWidth < 500 then
-        ProposedWidth := 500;
+      if ProposedWidth < 500 then ProposedWidth := 500;
 
-    if ProposedWidth > 800 then
-      ProposedWidth := 800;
+    if ProposedWidth > 900 then ProposedWidth := 900;
+
     Dialog.ClientWidth := ProposedWidth;
+    MsgWidth := Dialog.ClientWidth - (IconBox.Width + (padding * 3));
 
-    // ===== Available description width =====
-    AvailableTextWidth := Dialog.ClientWidth - (IconBox.Width + (padding * 3));
-    MsgWidth := AvailableTextWidth;
-
-    // ===== Safe font for measuring description =====
+    // Höjd för description
     TempFont := TFont.Create;
     try
       if big then TempFont.Size := 24;
       TempFont.Style := [];
       TempFont.Color := IfThen(TrndiNative.isDarkMode, clWhite, clBlack);
-      if Assigned(TitleLabel) then
-        TempFont.Assign(TitleLabel.Font);
-
       NeededHeight := MeasureWrappedHeight(desc, TempFont, MsgWidth);
     finally
       TempFont.Free;
     end;
 
-    // ===== Description =====
-    if NeededHeight > (MaxDialogHeight div 2) then
+    if big then
     begin
-      MsgScroll := TScrollBox.Create(TextPanel);
-      MsgScroll.Parent := TextPanel;
-      MsgScroll.Left := padding;
-      MsgScroll.Top := CurrentTop;
-      MsgScroll.Width := MsgWidth;
-      MsgScroll.Height := MaxDialogHeight div 2;
-      MsgScroll.VertScrollBar.Visible := True;
-      MsgScroll.BorderStyle := bsNone;
+      // BIG-MODE: description först
+      if NeededHeight > (MaxDialogHeight div 2) then
+      begin
+        MsgScroll := TScrollBox.Create(TextPanel);
+        MsgScroll.Parent := TextPanel;
+        MsgScroll.Align := alTop;
+        MsgScroll.BorderSpacing.Left := padding;
+        MsgScroll.BorderSpacing.Right := padding;
+        MsgScroll.Width := MsgWidth;
+        MsgScroll.Height := MaxDialogHeight div 2;
+        MsgScroll.VertScrollBar.Visible := True;
+        MsgScroll.BorderStyle := bsNone;
 
-      MsgLabel := TLabel.Create(MsgScroll);
-      MsgLabel.Parent := MsgScroll;
-      MsgLabel.AutoSize := False;
-      if big then MsgLabel.Font.Size := 24;
-      MsgLabel.Font.Style := [];
-      MsgLabel.Caption := desc;
-      MsgLabel.WordWrap := True;
-      MsgLabel.Font.Color := IfThen(TrndiNative.isDarkMode, clWhite, clBlack);
-      MsgLabel.Width := MsgWidth;
-      MsgLabel.Height := NeededHeight;
+        MsgLabel := TLabel.Create(MsgScroll);
+        MsgLabel.Parent := MsgScroll;
+        MsgLabel.WordWrap := True;
+        MsgLabel.AutoSize := True;
+        MsgLabel.Font.Size := 24;
+        MsgLabel.Font.Style := [];
+        MsgLabel.Caption := desc;
+        MsgLabel.Font.Color := IfThen(TrndiNative.isDarkMode, clWhite, clBlack);
+        MsgLabel.Align := alTop;
+      end
+      else
+      begin
+        MsgLabel := TLabel.Create(TextPanel);
+        MsgLabel.Parent := TextPanel;
+        MsgLabel.WordWrap := True;
+        MsgLabel.AutoSize := True;
+        MsgLabel.Font.Size := 24;
+        MsgLabel.Font.Style := [];
+        MsgLabel.Caption := desc;
+        MsgLabel.Font.Color := IfThen(TrndiNative.isDarkMode, clWhite, clBlack);
+        MsgLabel.Align := alTop;
+        MsgLabel.BorderSpacing.Left := padding;
+        MsgLabel.BorderSpacing.Right := padding;
+      end;
+
+      // Titel sist
+      if Trim(title) <> '' then
+      begin
+        TitleLabel := TLabel.Create(TextPanel);
+        TitleLabel.Parent := TextPanel;
+        TitleLabel.WordWrap := True;
+        TitleLabel.AutoSize := True;
+        TitleLabel.Font.Size := 24;
+        TitleLabel.Font.Style := [fsBold];
+        TitleLabel.Caption := title;
+        TitleLabel.Font.Color := IfThen(TrndiNative.isDarkMode, clWhite, clBlack);
+        TitleLabel.Align := alTop;
+        TitleLabel.BorderSpacing.Left := padding;
+        TitleLabel.BorderSpacing.Right := padding;
+      end;
     end
     else
     begin
-      MsgLabel := TLabel.Create(TextPanel);
-      MsgLabel.Parent := TextPanel;
-      MsgLabel.AutoSize := False;
-      if big then MsgLabel.Font.Size := 24;
-      MsgLabel.Font.Style := [];
-      MsgLabel.Caption := desc;
-      MsgLabel.WordWrap := True;
-      MsgLabel.Font.Color := IfThen(TrndiNative.isDarkMode, clWhite, clBlack);
-      MsgLabel.Left := padding;
-      MsgLabel.Top := CurrentTop;
-      MsgLabel.Width := MsgWidth;
-      MsgLabel.Height := NeededHeight;
+      // NON-BIG: titel först
+      if Trim(title) <> '' then
+      begin
+        TitleLabel := TLabel.Create(TextPanel);
+        TitleLabel.Parent := TextPanel;
+        TitleLabel.WordWrap := True;
+        TitleLabel.AutoSize := False;
+        TitleLabel.Font.Style := [fsBold];
+        TitleLabel.Caption := title;
+        TitleLabel.Font.Color := IfThen(TrndiNative.isDarkMode, clWhite, clBlack);
+        TitleLabel.Top := padding;
+        TitleLabel.Left := padding;
+        TitleLabel.Width := MsgWidth;
+        TitleLabel.Height := TitleLabel.Canvas.TextHeight(TitleLabel.Caption);
+      end
+      else
+        TitleLabel := nil;
+
+      // NON-BIG: description efter titel
+      if NeededHeight > (MaxDialogHeight div 2) then
+      begin
+        MsgScroll := TScrollBox.Create(TextPanel);
+        MsgScroll.Parent := TextPanel;
+        if Assigned(TitleLabel) then
+          MsgScroll.Top := TitleLabel.Top + TitleLabel.Height + padding
+        else
+          MsgScroll.Top := padding;
+        MsgScroll.Left := padding;
+        MsgScroll.Width := MsgWidth;
+        MsgScroll.Height := MaxDialogHeight div 2;
+        MsgScroll.VertScrollBar.Visible := True;
+        MsgScroll.BorderStyle := bsNone;
+
+        MsgLabel := TLabel.Create(MsgScroll);
+        MsgLabel.Parent := MsgScroll;
+        MsgLabel.WordWrap := True;
+        MsgLabel.AutoSize := False;
+        MsgLabel.Caption := desc;
+        MsgLabel.Font.Color := IfThen(TrndiNative.isDarkMode, clWhite, clBlack);
+        MsgLabel.Width := MsgWidth;
+        MsgLabel.Height := NeededHeight;
+      end
+      else
+      begin
+        MsgLabel := TLabel.Create(TextPanel);
+        MsgLabel.Parent := TextPanel;
+        MsgLabel.WordWrap := True;
+        MsgLabel.AutoSize := False;
+        MsgLabel.Caption := desc;
+        MsgLabel.Font.Color := IfThen(TrndiNative.isDarkMode, clWhite, clBlack);
+        if Assigned(TitleLabel) then
+          MsgLabel.Top := TitleLabel.Top + TitleLabel.Height + padding
+        else
+          MsgLabel.Top := padding;
+        MsgLabel.Left := padding;
+        MsgLabel.Width := MsgWidth;
+        MsgLabel.Height := NeededHeight;
+      end;
     end;
 
-    // ===== Log panel =====
+    // LOG PANEL
     LogPanel := TPanel.Create(Dialog);
     LogPanel.Parent := Dialog;
     LogPanel.Align := alBottom;
@@ -1303,34 +1351,26 @@ begin
     LogMemo.BorderStyle := bsNone;
     LogMemo.Text := TrimSet(logmsg, [#10, #13]);
 
-    // ===== Button panel =====
+    // BUTTON PANEL
     ButtonPanel := TPanel.Create(Dialog);
     ButtonPanel.Parent := Dialog;
     ButtonPanel.Align := alBottom;
     ButtonPanel.BevelOuter := bvNone;
     ButtonPanel.Color := bgcol;
-    ButtonPanel.AutoSize := False;
 
-    // Center buttons using Dialog.ClientWidth
+    // Centrera knappar via Dialog.ClientWidth
     ButtonActualWidth := IfThen(big, btnWidth * 2, btnWidth);
     btnCount := 0;
-    for mr in buttons do
-      Inc(btnCount);
-    if btnCount = 0 then
-      btnCount := 1;
+    for mr in buttons do Inc(btnCount);
+    if btnCount = 0 then btnCount := 1;
 
     totalBtnWidth := (ButtonActualWidth * btnCount) + (padding * (btnCount - 1));
     posX := (Dialog.ClientWidth - totalBtnWidth) div 2;
-    if posX < padding then
-      posX := padding;
+    if posX < padding then posX := padding;
 
     for mr in buttons do
     begin
-      {$ifdef Windows}
-        OkButton := TBitBtn.Create(ButtonPanel);
-      {$else}
-        OkButton := TButton.Create(ButtonPanel);
-      {$endif}
+      {$ifdef Windows}OkButton := TBitBtn.Create(ButtonPanel);{$else}OkButton := TButton.Create(ButtonPanel);{$endif}
       OkButton.Parent := ButtonPanel;
       OkButton.Caption := langs[mr];
       OkButton.ModalResult := UXButtonToModalResult(mr);
@@ -1341,16 +1381,13 @@ begin
       posX := posX + OkButton.Width + padding;
     end;
 
-    // Padding under buttons
     ButtonPanel.Height := OkButton.Top + OkButton.Height + (padding * 2);
 
-    // ===== Height limit =====
     if Dialog.Height > MaxDialogHeight then
       Dialog.Height := MaxDialogHeight;
 
     Dialog.ShowModal;
     Result := Dialog.ModalResult;
-
   finally
     Dialog.Free;
   end;
