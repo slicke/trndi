@@ -58,6 +58,7 @@ TfConf = class(TForm)
   cbMusicPause: TCheckBox;
   cbOffBar: TCheckBox;
   eAddr:TLabeledEdit;
+  edCommaSep: TEdit;
   edMusicHigh: TEdit;
   edMusicLow: TEdit;
   edMusicPerfect: TEdit;
@@ -77,6 +78,7 @@ TfConf = class(TForm)
   Label10: TLabel;
   Label11: TLabel;
   Label12: TLabel;
+  Label13: TLabel;
   Label2:TLabel;
   Label3:TLabel;
   Label6:TLabel;
