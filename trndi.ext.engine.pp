@@ -230,7 +230,7 @@ begin
   end;
 
 
-  result := UXDialog(header, title, msg, btns, dialogType);
+  result := UXDialog(TrndiNative.HasTouchScreen, header, title, msg, btns, dialogType);
 end;
 
 // Our custom exception handler, wants the filename too
@@ -510,7 +510,7 @@ begin
       FContext^.Done;
   except
     on E: Exception do
-      ExtError('An error occured while shutting down extensions: ' + E.
+      ExtError(TrndiNative.HasTouchScreen, 'An error occured while shutting down extensions: ' + E.
         Message);
   end;
   if FRuntime <> nil then
@@ -519,7 +519,7 @@ begin
 //    FRuntime^.DoneSafe;
   except
     on E: Exception do
-      ExtError('An error occured while shutting down extensions: ' + E.
+      ExtError(TrndiNative.HasTouchScreen, 'An error occured while shutting down extensions: ' + E.
         Message);
   end;
   eventTimer.free;
@@ -583,14 +583,14 @@ begin
 
 
 //  TTrndiExtEngine.Instance.alert('An error occured while running extension ' + name + #13#10+err);
-    ExtError('Error loading', err);
+    ExtError(TrndiNative.HasTouchScreen, 'Error loading', err);
     ResultStr := JS_ToCString(FContext, JS_GetException(FContext));
     Result := 'Error: ' + ResultStr + err;
     JS_FreeCString(FContext, ResultStr);
-    ExtError(analyze(FContext, @evalresult));;
+    ExtError(TrndiNative.HasTouchScreen, analyze(FContext, @evalresult));;
   except
     on E: Exception do
-      ExtError('An extension''s code rasulted in an error: '
+      ExtError(TrndiNative.HasTouchScreen, 'An extension''s code rasulted in an error: '
         + e.message);
   end
   else
@@ -631,7 +631,7 @@ var
 begin
   if not FContext^.GetValue('Trndi', this) then
   begin
-    ExtError('Cannot locate the Trndi class while initializing extensions');
+    ExtError(TrndiNative.HasTouchScreen, 'Cannot locate the Trndi class while initializing extensions');
     Exit;
   end;
 
@@ -693,7 +693,7 @@ begin
 // If it's not a function, free references and exit
     JS_Free(FContext, @GlobalObj);
     JS_Free(FContext, @FuncObj);
-    ExtError('No such function or it is not callable: ' + FuncName);
+    ExtError(TrndiNative.HasTouchScreen, 'No such function or it is not callable: ' + FuncName);
     Exit('');
   end;
 
@@ -710,7 +710,7 @@ begin
   if JS_IsError(FContext, RetVal) then
   begin
 // Dump or retrieve the error
-    ExtError('Cannot call Extension function ' + funcname);
+    ExtError(TrndiNative.HasTouchScreen, 'Cannot call Extension function ' + funcname);
     js_std_dump_error(FContext);
     Result := '';
   end

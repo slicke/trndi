@@ -428,6 +428,14 @@ object fBG: TfBG
       Caption = 'Exit Trndi'
       OnClick = MenuItem1Click
     end
+    object miAdvanced: TMenuItem
+      Caption = 'Advanced Settings'
+      Visible = False
+      object miATouch: TMenuItem
+        Caption = 'Touchscreen'
+        OnClick = miATouchClick
+      end
+    end
     object Separator3: TMenuItem
       Caption = '-'
     end

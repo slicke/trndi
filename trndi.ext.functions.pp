@@ -27,7 +27,7 @@ interface
 
 uses
 Classes, SysUtils, mormot.lib.quickjs, mormot.core.base, strutils, fgl,
-Dialogs, slicke.ux.alert, Math, types, trndi.strings;
+Dialogs, slicke.ux.alert, Math, types, trndi.strings, trndi.native;
 
 (*
   Resource strings in Swedish (can be translated if needed):
@@ -939,7 +939,7 @@ begin
   end;
 
   // Log via external logging function
-  ExtLog(sLogRecevive, sLogDesc, fullMsg);
+  ExtLog(TrndiNative.HasTouchScreen, sLogRecevive, sLogDesc, fullMsg);
 
   // Return undefined
   Result := JS_UNDEFINED;
