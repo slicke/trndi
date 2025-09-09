@@ -1177,7 +1177,7 @@ begin
     TextPanel.BevelOuter := bvNone;
     TextPanel.Color := bgcol;
 
-    // Breddberäkning
+    // Width calculations
     TitlePixelWidth := 0;
     if Trim(title) <> '' then
       TitlePixelWidth := Dialog.Canvas.TextWidth(title);
@@ -1203,7 +1203,7 @@ begin
     Dialog.ClientWidth := ProposedWidth;
     MsgWidth := Dialog.ClientWidth - (IconBox.Width + (padding * 3));
 
-    // Höjd för description
+    // Desc height
     TempFont := TFont.Create;
     try
       if big then TempFont.Size := 24;
@@ -1216,7 +1216,7 @@ begin
 
     if big then
     begin
-      // BIG-MODE: description först
+      // BIG-MODE: send desc first
       if NeededHeight > (MaxDialogHeight div 2) then
       begin
         MsgScroll := TScrollBox.Create(TextPanel);
@@ -1224,7 +1224,7 @@ begin
         MsgScroll.Align := alTop;
         MsgScroll.BorderSpacing.Left := padding;
         MsgScroll.BorderSpacing.Right := padding;
-        MsgScroll.BorderSpacing.Bottom := padding; // Luft mot logpanelen
+        MsgScroll.BorderSpacing.Bottom := padding; // Padding toward log
         MsgScroll.Width := MsgWidth;
         MsgScroll.Height := MaxDialogHeight div 2;
         MsgScroll.VertScrollBar.Visible := True;
@@ -1253,10 +1253,10 @@ begin
         MsgLabel.Align := alTop;
         MsgLabel.BorderSpacing.Left := padding;
         MsgLabel.BorderSpacing.Right := padding;
-        MsgLabel.BorderSpacing.Bottom := padding; // Luft mot logpanelen
+        MsgLabel.BorderSpacing.Bottom := padding; // Padding towards log
       end;
 
-      // Titel sist
+      // Title last
       if Trim(title) <> '' then
       begin
         TitleLabel := TLabel.Create(TextPanel);
@@ -1274,7 +1274,7 @@ begin
     end
     else
     begin
-      // NON-BIG: titel först
+      // NON-BIG: title first
       if Trim(title) <> '' then
       begin
         TitleLabel := TLabel.Create(TextPanel);
@@ -1292,7 +1292,7 @@ begin
       else
         TitleLabel := nil;
 
-      // NON-BIG: description efter titel
+      // NON-BIG: desc after title
       if NeededHeight > (MaxDialogHeight div 2) then
       begin
         MsgScroll := TScrollBox.Create(TextPanel);
@@ -1306,7 +1306,7 @@ begin
         MsgScroll.Height := MaxDialogHeight div 2;
         MsgScroll.VertScrollBar.Visible := True;
         MsgScroll.BorderStyle := bsNone;
-        MsgScroll.BorderSpacing.Bottom := padding; // Luft mot logpanelen
+        MsgScroll.BorderSpacing.Bottom := padding; // Padding to log panel
 
         MsgLabel := TLabel.Create(MsgScroll);
         MsgLabel.Parent := MsgScroll;
@@ -1332,7 +1332,7 @@ begin
         MsgLabel.Left := padding;
         MsgLabel.Width := MsgWidth;
         MsgLabel.Height := NeededHeight;
-        MsgLabel.BorderSpacing.Bottom := padding; // Luft mot logpanelen
+        MsgLabel.BorderSpacing.Bottom := padding; // Padding towards log panel
       end;
     end;
 
