@@ -118,6 +118,10 @@ msgstr ""
 msgid "Exit Trndi"
 msgstr ""
 
+#: tfbg.miadots.caption
+msgid "Dot stats"
+msgstr ""
+
 #: tfbg.miadvanced.caption
 msgid "Advanced Settings"
 msgstr ""
@@ -129,6 +133,10 @@ msgstr ""
 #: tfbg.miannounce.caption
 msgctxt "tfbg.miannounce.caption"
 msgid "Announce readings"
+msgstr ""
+
+#: tfbg.miasysteminfo.caption
+msgid "System Info"
 msgstr ""
 
 #: tfbg.miatouch.caption

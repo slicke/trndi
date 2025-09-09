@@ -436,6 +436,14 @@ object fBG: TfBG
         Caption = 'Touchscreen'
         OnClick = miATouchClick
       end
+      object miADots: TMenuItem
+        Caption = 'Dot stats'
+        OnClick = miADotsClick
+      end
+      object miASystemInfo: TMenuItem
+        Caption = 'System Info'
+        OnClick = miASystemInfoClick
+      end
     end
     object Separator3: TMenuItem
       Caption = '-'

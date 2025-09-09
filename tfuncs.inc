@@ -256,6 +256,7 @@ begin
     ExtError(TrndiNative.HasTouchScreen, 'Dot size must be a floating number');
     exit;
   end;
+;
   DOT_ADJUST := vda;
 
 end;

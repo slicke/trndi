@@ -45,5 +45,7 @@
 {"hash":106912681,"name":"tfbg.menuitem1.caption","sourcebytes":[69,120,105,116,32,84,114,110,100,105],"value":"Exit Trndi"},
 {"hash":140918259,"name":"tfbg.miadvanced.caption","sourcebytes":[65,100,118,97,110,99,101,100,32,83,101,116,116,105,110,103,115],"value":"Advanced Settings"},
 {"hash":264364078,"name":"tfbg.miatouch.caption","sourcebytes":[84,111,117,99,104,115,99,114,101,101,110],"value":"Touchscreen"},
+{"hash":108717011,"name":"tfbg.miadots.caption","sourcebytes":[68,111,116,32,115,116,97,116,115],"value":"Dot stats"},
+{"hash":196087407,"name":"tfbg.miasysteminfo.caption","sourcebytes":[83,121,115,116,101,109,32,73,110,102,111],"value":"System Info"},
 {"hash":214094746,"name":"tfbg.mirefresh.caption","sourcebytes":[82,101,102,114,101,115,104,32,105,110,58],"value":"Refresh in:"}
 ]}
