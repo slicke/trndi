@@ -126,11 +126,11 @@ msgstr "Konfig"
 
 #: tfbg.menuitem1.caption
 msgid "Exit Trndi"
-msgstr ""
+msgstr "Avsluta Trndi"
 
 #: tfbg.miadvanced.caption
 msgid "Advanced Settings"
-msgstr ""
+msgstr "Avancerade Inställningar"
 
 #: tfbg.mialternate.caption
 msgid "Alterante arrow and reading"
@@ -143,7 +143,7 @@ msgstr "Läs ut avläsningar"
 
 #: tfbg.miatouch.caption
 msgid "Touchscreen"
-msgstr ""
+msgstr "Pekskärm"
 
 #: tfbg.miborders.caption
 msgid "No borders"
@@ -235,7 +235,7 @@ msgstr "- Utanför område -"
 #: tfbg.pnoffreading.caption
 msgctxt "tfbg.pnoffreading.caption"
 msgid "Off Reading"
-msgstr ""
+msgstr "Värde utanför"
 
 #: tfconf.badd.caption
 msgid "+ Add"
@@ -276,7 +276,7 @@ msgstr "Multipek"
 
 #: tfconf.cbmusicpause.caption
 msgid "Pause music when high/low"
-msgstr ""
+msgstr "Pausa musiken vid hög/låg"
 
 #: tfconf.cbnotice.caption
 msgid "System notifications"
@@ -284,7 +284,7 @@ msgstr "Systemmeddelanden"
 
 #: tfconf.cboffbar.caption
 msgid "Show sidebar when value is not in range"
-msgstr ""
+msgstr "Visa sidopanelen när värdet inte är i målområdet"
 
 #: tfconf.cbprivacy.caption
 msgid "Privacy Mode (Hide number)"
@@ -316,7 +316,7 @@ msgstr "Serveradress / Användare Dexcom"
 
 #: tfconf.edcommasep.text
 msgid "."
-msgstr ""
+msgstr "."
 
 #: tfconf.eext.editlabel.caption
 msgid "Plugin Folder"
@@ -361,11 +361,11 @@ msgstr "Låg (t ex https://open.spotify.com/... eller spotify:track:...)"
 
 #: tfconf.label12.caption
 msgid "Perfect Reading (5.5mmol/L or 100 mg/dL)"
-msgstr ""
+msgstr "Perfekt avläsning (5,5mmol/L eller 100 mg/dL)"
 
 #: tfconf.label13.caption
 msgid "Comma separator:"
-msgstr ""
+msgstr "Kommaseparator:"
 
 #: tfconf.label2.caption
 msgid ""
@@ -470,7 +470,7 @@ msgstr "Fler användare"
 
 #: tfconf.tssystem.caption
 msgid "System"
-msgstr ""
+msgstr "System"
 
 #: tffloat.caption
 msgid "Floating Display"
@@ -586,19 +586,19 @@ msgid "Login error during post-authentication steps"
 msgstr "Inloggningsfel efter autensieringen"
 
 #: trndi.ext.functions.sdatatypeerr
-#, object-pascal-format, fuzzy
+#, fuzzy, object-pascal-format
 msgctxt "trndi.ext.functions.sdatatypeerr"
 msgid "Datatype %s was not expected, expected in function %s"
 msgstr "Datatypen %s förväntades inte, förväntad i funktionen %s"
 
 #: trndi.ext.functions.sdatatypeerrfunc
-#, object-pascal-format, fuzzy
+#, fuzzy, object-pascal-format
 msgctxt "trndi.ext.functions.sdatatypeerrfunc"
 msgid "Datatype \"%s\" was not expected, in function \"%s\". Expected \"%s\""
 msgstr "Datatypen ”%s” förväntades inte, i funktionen ”%s”. Förväntade ”%s”"
 
 #: trndi.ext.functions.sdatatypeerrpos
-#, object-pascal-format, fuzzy
+#, fuzzy, object-pascal-format
 msgctxt "trndi.ext.functions.sdatatypeerrpos"
 msgid "Datatype %s was not expected, expected in function %s, parameter %d"
 msgstr "Datatypen ”%s” förväntades inte, förväntad i funktionen %s, parameter %d"
@@ -622,7 +622,7 @@ msgid "No stack trace available"
 msgstr "Ingen stackspårning finns"
 
 #: trndi.ext.functions.sstackerrmsg
-#, object-pascal-format, fuzzy
+#, fuzzy, object-pascal-format
 msgctxt "trndi.ext.functions.sstackerrmsg"
 msgid ""
 "Error: %s \n"
@@ -644,7 +644,7 @@ msgid "Unknown error"
 msgstr "Okänt fel"
 
 #: trndi.ext.promise.spromerrcapt
-#, object-pascal-format, fuzzy
+#, fuzzy, object-pascal-format
 msgctxt "trndi.ext.promise.spromerrcapt"
 msgid "The asyncronous function %s failed to complete"
 msgstr "Den asynkrona funktionen %s misslyckades"
@@ -1203,4 +1203,3 @@ msgstr "Senaste position"
 msgctxt "umain.rs_tpotopright"
 msgid "Top Right"
 msgstr "Höger topp"
-

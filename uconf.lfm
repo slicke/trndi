@@ -15,9 +15,9 @@ object fConf: TfConf
     Height = 395
     Top = 0
     Width = 525
-    ActivePage = tsDisplay
+    ActivePage = tsIntegration
     Align = alClient
-    TabIndex = 1
+    TabIndex = 5
     TabOrder = 0
     object tsGeneral: TTabSheet
       Caption = 'General'
