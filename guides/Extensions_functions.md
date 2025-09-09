@@ -44,7 +44,7 @@ Trndi.setDotSize(2);
 Sets scale of the trend dots. 2 = 2x etc.
 ### setDotAdjust
 ```javascript
-//Trndi.setDotAdjust(0.1);
+Trndi.setDotAdjust(0.1);
 ```
 Multiplyer on where the dots are drawn on screen up/down. Minus = up, plus = down
 ### getUnit

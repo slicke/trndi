@@ -128,6 +128,10 @@ msgstr "Konfig"
 msgid "Exit Trndi"
 msgstr "Avsluta Trndi"
 
+#: tfbg.miadots.caption
+msgid "Dot stats"
+msgstr ""
+
 #: tfbg.miadvanced.caption
 msgid "Advanced Settings"
 msgstr "Avancerade Inställningar"
@@ -140,6 +144,10 @@ msgstr "Växla pil och värde"
 msgctxt "tfbg.miannounce.caption"
 msgid "Announce readings"
 msgstr "Läs ut avläsningar"
+
+#: tfbg.miasysteminfo.caption
+msgid "System Info"
+msgstr ""
 
 #: tfbg.miatouch.caption
 msgid "Touchscreen"
@@ -586,19 +594,19 @@ msgid "Login error during post-authentication steps"
 msgstr "Inloggningsfel efter autensieringen"
 
 #: trndi.ext.functions.sdatatypeerr
-#, fuzzy, object-pascal-format
+#, object-pascal-format, fuzzy
 msgctxt "trndi.ext.functions.sdatatypeerr"
 msgid "Datatype %s was not expected, expected in function %s"
 msgstr "Datatypen %s förväntades inte, förväntad i funktionen %s"
 
 #: trndi.ext.functions.sdatatypeerrfunc
-#, fuzzy, object-pascal-format
+#, object-pascal-format, fuzzy
 msgctxt "trndi.ext.functions.sdatatypeerrfunc"
 msgid "Datatype \"%s\" was not expected, in function \"%s\". Expected \"%s\""
 msgstr "Datatypen ”%s” förväntades inte, i funktionen ”%s”. Förväntade ”%s”"
 
 #: trndi.ext.functions.sdatatypeerrpos
-#, fuzzy, object-pascal-format
+#, object-pascal-format, fuzzy
 msgctxt "trndi.ext.functions.sdatatypeerrpos"
 msgid "Datatype %s was not expected, expected in function %s, parameter %d"
 msgstr "Datatypen ”%s” förväntades inte, förväntad i funktionen %s, parameter %d"
@@ -622,7 +630,7 @@ msgid "No stack trace available"
 msgstr "Ingen stackspårning finns"
 
 #: trndi.ext.functions.sstackerrmsg
-#, fuzzy, object-pascal-format
+#, object-pascal-format, fuzzy
 msgctxt "trndi.ext.functions.sstackerrmsg"
 msgid ""
 "Error: %s \n"
@@ -644,7 +652,7 @@ msgid "Unknown error"
 msgstr "Okänt fel"
 
 #: trndi.ext.promise.spromerrcapt
-#, fuzzy, object-pascal-format
+#, object-pascal-format, fuzzy
 msgctxt "trndi.ext.promise.spromerrcapt"
 msgid "The asyncronous function %s failed to complete"
 msgstr "Den asynkrona funktionen %s misslyckades"
@@ -1203,3 +1211,4 @@ msgstr "Senaste position"
 msgctxt "umain.rs_tpotopright"
 msgid "Top Right"
 msgstr "Höger topp"
+

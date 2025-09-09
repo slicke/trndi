@@ -91,6 +91,8 @@ TfBG = class(TForm)
   lTir:TLabel;
   lAgo:TLabel;
   MenuItem1: TMenuItem;
+  miASystemInfo: TMenuItem;
+  miADots: TMenuItem;
   miATouch: TMenuItem;
   miAdvanced: TMenuItem;
   Separator3: TMenuItem;
@@ -158,6 +160,8 @@ TfBG = class(TForm)
   procedure FormDestroy(Sender:TObject);
   procedure FormKeyPress(Sender:TObject;var Key:char);
   procedure MenuItem1Click(Sender: TObject);
+  procedure miADotsClick(Sender: TObject);
+  procedure miASystemInfoClick(Sender: TObject);
   procedure miATouchClick(Sender: TObject);
   procedure speakReading;
   procedure FormMouseLeave(Sender:TObject);
@@ -1052,6 +1056,33 @@ end;
 procedure TfBG.MenuItem1Click(Sender: TObject);
 begin
   Close;
+end;
+
+procedure TfBG.miADotsClick(Sender: TObject);
+begin
+  ShowMessage(Format('Adjust: %f%% / Scale: %dx', [DOT_ADJUST * 100, dotscale]));
+end;
+
+procedure TfBG.miASystemInfoClick(Sender: TObject);
+begin
+
+    ShowMessage({$I %FPCTargetOS%} + '(' +{$I %FPCTargetCPU%}+ ')' + ' | ' +
+  {$if defined(LCLQt6)}
+    'QT6 - ' + qtVersion
+  {$elseif defined(LCLGTK2)}
+    'GTK2'
+  {$elseif defined(LCLGTK3)}
+    'GTK3'
+  {$elseif defined(LCLWIN32)}
+    'Windows Native - ' + SysUtils.Win32MajorVersion.tostring + '.' + SysUtils.Win32MinorVersion.tostring + ' - Build ' +  Win32BuildNumber.ToString
+  {$elseif defined(LCLCocoa)}
+    'macOS Native'
+  {$else}
+    'unsupportd widgetset'
+  {$endif});
+
+
+
 end;
 
 procedure TfBG.miATouchClick(Sender: TObject);
