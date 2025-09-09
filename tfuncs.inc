@@ -147,7 +147,7 @@ begin
   ctx^^.ToVariant(argv^[1], vcount);
 
   if (not varType(vmins) = varInteger) or (not varType(vcount) = varInteger) then begin
-    ExtError('Mins and Count ust be integers');
+    ExtError(TrndiNative.HasTouchScreen, 'Mins and Count ust be integers');
     exit;
   end;
 
@@ -201,7 +201,7 @@ begin
   ctx^^.ToVariant(argv^[0], vbw);
 
   if not varType(vbw) = varDecimal then begin
-    ExtError('Badge size must be percentage: 0.1-1.0');
+    ExtError(TrndiNative.HasTouchScreen, 'Badge size must be percentage: 0.1-1.0');
     exit;
   end;
   badge_width := vbw;
@@ -210,7 +210,7 @@ begin
   begin
      ctx^^.ToVariant(argv^[1], vbf);
     if not VarType(vbf) = varInteger then begin
-      ExtError('Badge font size must be an integer!');
+      ExtError(TrndiNative.HasTouchScreen, 'Badge font size must be an integer!');
       exit;
       end;
       badge_font := vbf;
@@ -232,7 +232,7 @@ begin
   ctx^^.ToVariant(argv^[0], vds);
 
   if not varType(vds) = varInteger then begin
-    ExtError('Dot size must be an integer');
+    ExtError(TrndiNative.HasTouchScreen, 'Dot size must be an integer');
     exit;
   end;
   dotscale := vds;
@@ -253,7 +253,7 @@ begin
   ctx^^.ToVariant(argv^[0], vda);
 
   if not varType(vda) = varSingle then begin
-    ExtError('Dot size must be a floating number');
+    ExtError(TrndiNative.HasTouchScreen, 'Dot size must be a floating number');
     exit;
   end;
   DOT_ADJUST := vda;

@@ -419,7 +419,7 @@ const
     +#10#10+
     'Built in Object Pascal, using the Lazarus component library (LCL) and FreePascal.';
   begin
-  ExtSucc('Trndi', 'Libraries', txt, $00AA6004, $00FDD8AA);
+  ExtSucc(TrndiNative.HasTouchScreen, 'Trndi', 'Libraries', txt, $00AA6004, $00FDD8AA);
 end;
 
 procedure TfConf.cbSysChange(Sender:TObject);
@@ -551,7 +551,7 @@ begin
     else
       s := Format(RS_NEWVER, [rn]);
 
-     if UXDialog(RS_NEWVER_CAPTION, s, [mbYes, mbNo], mtInformation) = mrYes then
+     if UXDialog(TrndiNative.HasTouchScreen, RS_NEWVER_CAPTION, s, [mbYes, mbNo], mtInformation) = mrYes then
        OpenURL(r);
   end else
     ShowMessage(RS_UPTODATE);
@@ -645,7 +645,7 @@ const
 '- This app may contain bugs or errors that could display incorrect data'#10#10+
 '- IF YOU DO NOT AGREE WITH THESE TERMS, DO NOT USE THIS APP. -';
 begin
- if ExtSuccEx('Trndi', 'License', txt, [mbOK, mbUxRead], $00AA6004, $00FDD8AA) <> mrOK then
+ if ExtSuccEx(TrndiNative.HasTouchScreen, 'Trndi', 'License', txt, [mbOK, mbUxRead], $00AA6004, $00FDD8AA) <> mrOK then
     OpenURL('https://github.com/slicke/trndi/blob/main/LICENSE.md');
 end;
 

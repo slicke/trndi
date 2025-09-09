@@ -139,8 +139,8 @@ public
        - macOS always returns False
        - Linux checks `/proc/bus/input/devices`
     }
-  function HasTouchScreen(out multi: boolean): boolean;
-  function HasTouchScreen: boolean;
+  class function HasTouchScreen(out multi: boolean): boolean;
+  class function HasTouchScreen: boolean;
 
     { getURL (class function)
       -----------------------
@@ -774,7 +774,7 @@ end;
   --------------------------
   Platform-specific detection of touch hardware.
  ------------------------------------------------------------------------------}
- function TrndiNative.HasTouchScreen: boolean;
+ class function TrndiNative.HasTouchScreen: boolean;
  var
    mt: boolean;
  begin
@@ -782,7 +782,7 @@ end;
  end;
 
 {$IF DEFINED(X_WIN)}
-function TrndiNative.HasTouchScreen(out multi: boolean): boolean;
+class function TrndiNative.HasTouchScreen(out multi: boolean): boolean;
 const
   TABLET_CONFIG_NONE = $00000000;
   NID_INTEGRATED_TOUCH = $00000001;
@@ -823,14 +823,14 @@ begin
   multi := IsMultiTouch;
 end;
 {$ELSEIF DEFINED(X_MAC)}
-function TrndiNative.HasTouchScreen(out multi: boolean): boolean;
+class function TrndiNative.HasTouchScreen(out multi: boolean): boolean;
 begin
   // macOS: Typically no standard touchscreen (unless iOS)
   Result := false;
   multi := false;
 end;
 {$ELSE}
-function TrndiNative.HasTouchScreen(out multi: boolean): boolean;
+class function TrndiNative.HasTouchScreen(out multi: boolean): boolean;
 var
   SL, Block: TStringList;
   i: integer;

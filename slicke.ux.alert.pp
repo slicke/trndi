@@ -113,20 +113,21 @@ langs : ButtonLangs = (smbYes, smbUXNo, smbUXOK, smbUXCancel, smbUXAbort, smbUXR
 //function UXShowMessage(const message: string; buttons: TMsgDlgButtons; const icon: Widechar): TModalResult;
 
 procedure UXMessage(const title, message: string; const icon: widechar = widechar($2705); sender: TForm = nil; onForm: boolean = false);
-function UXDialog(const title, message: string; buttons: TUXMsgDlgBtns; const icon: widechar = widechar($2705)): TModalResult;
-function UXDialog(const title, message: string; buttons: TUXMsgDlgBtns; const mtype: TMsgDlgType): TModalResult;
-function UXDialog(const header, title, message: string; buttons: TUXMsgDlgBtns; const mtype: TMsgDlgType): TModalResult;
+function UXDialog(const big: boolean; const title, message: string; buttons: TUXMsgDlgBtns; const icon: widechar = widechar($2705)): TModalResult;
+function UXDialog(const big: boolean; const title, message: string; buttons: TUXMsgDlgBtns; const mtype: TMsgDlgType): TModalResult;
+function UXDialog(const big: boolean; const header, title, message: string; buttons: TUXMsgDlgBtns; const mtype: TMsgDlgType): TModalResult;
 
 //function UXShowMessage(const caption, title, desc, message: string; buttons: TMsgDlgButtons; const icon: WideChar): TModalResult;
-function ExtMsg(const  caption, title, desc, logmsg: string; dumpbg: TColor = $00F5F2FD; dumptext:
+function ExtMsg(const big: boolean; const  caption, title, desc, logmsg: string; dumpbg: TColor = $00F5F2FD; dumptext:
 TColor = $003411A9; buttons: TUXMsgDlgBtns = [mbAbort]; const icon: widechar =
 widechar($2699); scale: integer = 1): TModalResult;
-function ExtLog(const caption, msg, log: string; const icon: widechar = widechar($2699); scale: integer = 1):
+function ExtLog(const big: boolean; const caption, msg, log: string; const icon: widechar = widechar($2699); scale: integer = 1):
 TModalResult
 ;
 function ExtList(
   const ACaption, ATitle, ADesc: string;
   const Choices: array of string;
+  const big: boolean;
   const icon: WideChar = WideChar($2699)
 ): Integer;
 function ExtInput(
@@ -142,10 +143,10 @@ function ExtTable(
   const key: string = '';
   const value: string = ''
 ): Integer;
-function ExtError(const msg, error: string; const icon: widechar = widechar($2699)): TModalResult;
-function ExtError(const error: string; const icon: widechar = widechar($2699)): TModalResult;
-function ExtSucc(const msg, desc, output: string; dumpbg: TColor = $0095EEC4; dumptext: TColor = $00147C4A; const icon: widechar = widechar($2705)): TModalResult;
-function ExtSuccEx(const msg, desc, output: string; btns: TUXMsgDlgBtns; dumpbg: TColor = $0095EEC4; dumptext: TColor = $00147C4A; const icon: widechar = widechar($2705)): TModalResult;
+function ExtError(const big: boolean; const msg, error: string; const icon: widechar = widechar($2699)): TModalResult;
+function ExtError(const big: boolean; const error: string; const icon: widechar = widechar($2699)): TModalResult;
+function ExtSucc(const big: boolean; const msg, desc, output: string; dumpbg: TColor = $0095EEC4; dumptext: TColor = $00147C4A; const icon: widechar = widechar($2705)): TModalResult;
+function ExtSuccEx(const big: boolean; const msg, desc, output: string; btns: TUXMsgDlgBtns; dumpbg: TColor = $0095EEC4; dumptext: TColor = $00147C4A; const icon: widechar = widechar($2705)): TModalResult;
 function FontInList(out fname: string): Boolean;
 {$ifdef Windows}
 function CoCreateInstance(const clsid: TGUID; unkOuter: IUnknown; dwClsContext: longint;
@@ -294,7 +295,20 @@ begin
     SWP_FRAMECHANGED or SWP_NOMOVE or SWP_NOSIZE or SWP_NOZORDER);
 end;
 
-procedure AssignEmoji(Image: TImage; const Emoji: widestring; dark: boolean = false);
+function TColorToColorF(const Col: TColor; Alpha: Single = 1.0): TD2D1_COLOR_F;
+var
+  rgb: TColor;
+begin
+  // Ensure proper RGB order
+  rgb := ColorToRGB(Col);
+
+  Result.R := GetRValue(rgb) / 255.0;
+  Result.G := GetGValue(rgb) / 255.0;
+  Result.B := GetBValue(rgb) / 255.0;
+  Result.A := Alpha;
+end;
+
+procedure AssignEmoji(Image: TImage; const Emoji: widestring; bgcol: TColor = clWhite);
 
 var
   D2DFactory: ID2D1Factory;
@@ -437,10 +451,12 @@ begin
     end;
 
     // Skapa en solid färgborste för bakgrunden
-    if not dark then
+(*    if not dark then
       BackgroundColor := ColorF(1.0, 1.0, 1.0, 1.0)
     else
-      BackgroundColor := ColorF(39/255, 43/255, 50/255, 1.0);
+      BackgroundColor := ColorF(39/255, 43/255, 50/255, 1.0); *)
+
+    BackgroundColor := TColorToColorF(bgcol);
 
     // Vit bakgrund
     if Failed(RenderTarget.CreateSolidColorBrush(@BackgroundColor, nil, BackgroundBrush)) then
@@ -453,7 +469,7 @@ begin
     if Failed(DWFactory.CreateTextFormat(pwidechar('Segoe UI Emoji'), nil, DWRITE_FONT_WEIGHT_NORMAL
       ,
       DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL,
-      48, 'en-us', TextFormat)) then
+      image.Width , 'en-us', TextFormat)) then
     begin
       ShowMessage(dlgErr);
       Exit;
@@ -486,11 +502,11 @@ begin
   end;
 end;
 {$else}
-procedure AssignEmoji(Image: TImage; const Emoji: widestring; dark: boolean = false);
+procedure AssignEmoji(Image: TImage; const Emoji: widestring; bgcol: TColor = clWhite);
 begin
   // Ställ in storleken på Canvas och bakgrundsfärgen
   Image.Picture.Bitmap.SetSize(Image.Width, Image.Height);
-  Image.Picture.Bitmap.Canvas.Brush.Color := IfThen(TrndiNative.isDarkMode, $00322B27, clWhite);
+  Image.Picture.Bitmap.Canvas.Brush.Color := bgcol;
   Image.Picture.Bitmap.Canvas.FillRect(0, 0, Image.Width, Image.Height);
 
   // Ställ in teckensnittet (här använder vi ett standardteckensnitt)
@@ -513,32 +529,32 @@ begin
 end;
 {$endif}
 
-function ExtSuccEx(const msg, desc, output: string; btns: TUXMsgDlgBtns; dumpbg: TColor = $0095EEC4; dumptext: TColor = $00147C4A; const icon: widechar = widechar($2705)): TModalResult;
+function ExtSuccEx(const big: boolean; const msg, desc, output: string; btns: TUXMsgDlgBtns; dumpbg: TColor = $0095EEC4; dumptext: TColor = $00147C4A; const icon: widechar = widechar($2705)): TModalResult;
 begin
-  result := ExtMsg(sSuccTitle, msg,  desc, output, dumpbg, dumptext, btns, widechar(icon));
+  result := ExtMsg(big, sSuccTitle, msg,  desc, output, dumpbg, dumptext, btns, widechar(icon));
 end;
 
-function ExtSucc(const msg, desc, output: string; dumpbg: TColor = $0095EEC4; dumptext: TColor = $00147C4A; const icon: widechar = widechar($2705)): TModalResult;
+function ExtSucc(const big: boolean; const msg, desc, output: string; dumpbg: TColor = $0095EEC4; dumptext: TColor = $00147C4A; const icon: widechar = widechar($2705)): TModalResult;
 begin
-  result := ExtMsg(sSuccTitle, msg,  desc, output, dumpbg, dumptext, [mbOK], widechar(icon));
+  result := ExtMsg(big, sSuccTitle, msg,  desc, output, dumpbg, dumptext, [mbOK], widechar(icon));
 end;
 
 
-function ExtLog(const caption, msg, log: string; const icon: widechar = widechar($2699); scale: integer = 1):
+function ExtLog(const big: boolean; const caption, msg, log: string; const icon: widechar = widechar($2699); scale: integer = 1):
 TModalResult
 ;
 begin
-  result := ExtMsg(sMsgTitle, caption, msg, log, $00AA6004, $00FDD8AA, [mbOK], widechar(icon), scale);
+  result := ExtMsg(big, sMsgTitle, caption, msg, log, $00AA6004, $00FDD8AA, [mbOK], widechar(icon), scale);
 end;
 
-function ExtError(const error: string; const icon: widechar = widechar($2699)): TModalResult;
+function ExtError(const big: boolean; const error: string; const icon: widechar = widechar($2699)): TModalResult;
 begin
-  result := ExtMsg(sExtErr, sExtTitle, sErr, error, $00F5F2FD, $003411A9, [mbAbort], icon);
+  result := ExtMsg(big, sExtErr, sExtTitle, sErr, error, $00F5F2FD, $003411A9, [mbAbort], icon);
 end;
 
-function ExtError(const msg, error: string; const icon: widechar = widechar($2699)): TModalResult;
+function ExtError(const big: boolean; const msg, error: string; const icon: widechar = widechar($2699)): TModalResult;
 begin
-  result := ExtMsg(sExtErr, sErr, msg, error, $00F5F2FD, $003411A9, [mbAbort], icon);
+  result := ExtMsg(big, sExtErr, sErr, msg, error, $00F5F2FD, $003411A9, [mbAbort], icon);
 end;
 
 procedure TDialogForm.UXMessageOnClick(sender: TObject);
@@ -555,7 +571,8 @@ var
   df: TDialogForm;
 begin
   if onForm and (sender <> nil) and (sender.showing) then begin
-    tp := TPanel.Create(sender);
+    // On eg touch screens display a full screen message
+    tp := TPanel.Create(sender); // Create a panel to cover the screen
     tp.Parent := sender;
     tp.top := 0;
     tp.left := 0;
@@ -564,32 +581,43 @@ begin
     tp.BringToFront;
     tp.color := $00FDD8AA;
     tp.font.color := $00AA6004;
+
     tp.caption := message;
     tp.font.Size := tp.width div 25;
     tp.WordWrap := true;
     tb := TButton.Create(tp);
     tb.parent := tp;
+    tb.AutoSize := true;
     tb.Caption := smbUXOK;
+
+    if tb.height < (tp.height div 5) then begin
+      tb.AutoSize := false;
+      tb.height := tp.height div 5;
+    end;
+    tb.left := 0;
+    tb.width := tp.width;
     tb.Top := tp.height-tb.height-10;
-    tb.left := (tp.width div 2) - (tb.width div 2);
+    tb.Font.Color := sender.font.color; // This will be blue or such on Linux otherwise
+    //tb.left := (tp.width div 2) - (tb.width div 2); // Center the button
+    // Note the dialog wont resize with the window, that's known
 
     df := TDialogForm.CreateNew(nil);
     tb.OnClick := @df.UXMessageOnClick;
   end else
-    ExtMsg(sMsgTitle, title, message, '', $00AA6004, $00FDD8AA, [mbOK], widechar(icon));
+    ExtMsg(false, sMsgTitle, title, message, '', $00AA6004, $00FDD8AA, [mbOK], widechar(icon));
 end;
 
-function UXDialog(const title, message: string; buttons: TUXMsgDlgBtns; const icon: widechar = widechar($2705)): TModalResult;
+function UXDialog(const big: boolean; const title, message: string; buttons: TUXMsgDlgBtns; const icon: widechar = widechar($2705)): TModalResult;
 begin
-  result := ExtMsg(sMsgTitle, title, message, '', $00AA6004, $00FDD8AA, buttons, widechar(icon));
+  result := ExtMsg(big, sMsgTitle, title, message, '', $00AA6004, $00FDD8AA, buttons, widechar(icon));
 end;
 
-function UXDialog(const title, message: string; buttons: TUXMsgDlgBtns; const mtype: TMsgDlgType): TModalResult;
+function UXDialog(const big: boolean; const title, message: string; buttons: TUXMsgDlgBtns; const mtype: TMsgDlgType): TModalResult;
 begin
-  result := UXDialog(sMsgTitle, title, message, buttons, mtype);
+  result := UXDialog(big, sMsgTitle, title, message, buttons, mtype);
 end;
 
-function UXDialog(const header, title, message: string; buttons: TUXMsgDlgBtns; const mtype: TMsgDlgType): TModalResult;
+function UXDialog(const big: boolean; const header, title, message: string; buttons: TUXMsgDlgBtns; const mtype: TMsgDlgType): TModalResult;
 var
  icon: widechar;
 begin
@@ -608,7 +636,7 @@ case mtype of
 else
 //  icon := widechar('');
 end;
- result := ExtMsg(header, title, message, '', $00AA6004, $00FDD8AA, buttons, icon);
+ result := ExtMsg(big, header, title, message, '', $00AA6004, $00FDD8AA, buttons, icon);
 end;
 
 procedure btnmodal(sender: tbutton);
@@ -693,7 +721,7 @@ begin
     IconBox.Font.Name := 'Segoe UI Emoji';
     {$endif}
     Dialog.HandleNeeded;
-    AssignEmoji(IconBox, icon, TrndiNative.isDarkMode);
+    AssignEmoji(IconBox, icon, bgcol);
 
     // Titel (fetstil)
     TitleLabel := TLabel.Create(Dialog);
@@ -815,7 +843,7 @@ begin
     {$ENDIF}
 
     Dialog.HandleNeeded;
-    AssignEmoji(IconBox, icon, TrndiNative.isDarkMode);
+    AssignEmoji(IconBox, icon, bgcol);
 
     // Titel
     TitleLabel := TLabel.Create(Dialog);
@@ -890,6 +918,7 @@ end;
 function ExtList(
   const ACaption, ATitle, ADesc: string;
   const Choices: array of string;
+  const big: boolean;
   const icon: WideChar = WideChar($2699)
 ): Integer;
 const
@@ -925,6 +954,10 @@ begin
     IconBox.Parent := Dialog;
     IconBox.Width := IconSize;
     IconBox.Height := IconSize;
+    if big then begin
+      IconBox.Width := IconSize*2;
+      IconBox.Height := IconSize*2;
+    end;
     IconBox.Left := Padding;
     IconBox.Top := Padding;
     IconBox.Color := bgcol;
@@ -932,7 +965,7 @@ begin
     IconBox.Font.Name := 'Segoe UI Emoji';
     {$endif}
     Dialog.HandleNeeded;
-    AssignEmoji(IconBox, icon, TrndiNative.isDarkMode);
+    AssignEmoji(IconBox, icon, bgcol);
 
     // Titel (fet)
     TitleLabel := TLabel.Create(Dialog);
@@ -940,6 +973,9 @@ begin
     TitleLabel.Caption := ATitle;
     TitleLabel.AutoSize := True;
     TitleLabel.Font.Style := [fsBold];
+    if big then
+       TitleLabel.Font.Size := 24;
+    TitleLabel.AdjustSize;
     TitleLabel.Left := IconBox.Left + IconBox.Width + Padding;
     TitleLabel.Top := Padding;
     TitleLabel.Font.Color := IfThen(TrndiNative.isDarkMode, clWhite, clBlack);
@@ -950,8 +986,14 @@ begin
     DescLabel.Caption := ADesc;
     DescLabel.AutoSize := True;
     DescLabel.Font.Style := [];
+    if big then
+       DescLabel.Font.Size := 24;
+    DescLabel.AdjustSize;
+
     DescLabel.Left := TitleLabel.Left;
-    DescLabel.Top := TitleLabel.Top + TitleLabel.Height + Padding div 10;
+    DescLabel.Top := TitleLabel.Top +
+                 TitleLabel.Canvas.TextHeight(TitleLabel.Caption) +
+                 Padding div 10;
     DescLabel.Font.Color := IfThen(TrndiNative.isDarkMode, clWhite, clBlack);
 
     // Dropdown
@@ -959,12 +1001,21 @@ begin
     Combo.Parent := Dialog;
     for i := 0 to High(Choices) do
       Combo.Items.Add(Choices[i]);
+
     combo.ReadOnly := true;
     combo.style := csDropDownList;
     Combo.Left := TitleLabel.Left;
     Combo.Width := Max(ComboWidth, DescLabel.Canvas.TextWidth(ADesc));
-    Combo.Top := DescLabel.Top + DescLabel.Height + Padding div 2;
+    Combo.Top := DescLabel.Top + DescLabel.Canvas.TextHeight(DescLabel.Caption) + Padding div 2;
     Combo.ItemIndex := 0;
+
+    if big then
+    begin
+      Combo.Font.Size := 20;
+      {$IFDEF Windows}
+        Combo.Height := 42; // needed on Windows to match bigger font
+      {$ENDIF}
+    end;
 
     // OK-knapp
     OkButton := TButton.Create(Dialog);
@@ -975,6 +1026,11 @@ begin
     {$ifdef Windows}
       OkButton.SetFocus;
     {$endif}
+    if big then begin
+      OkButton.width :=  OkButton.width*2;
+      OkButton.height := OkButton.height*2;
+    end;
+
 
     // Avbryt-knapp
     CancelButton := TButton.Create(Dialog);
@@ -982,6 +1038,10 @@ begin
     CancelButton.Caption := smbUXCancel;
     CancelButton.ModalResult := mrCancel;
     CancelButton.Width := 80;
+    if big then begin
+      CancelButton.width :=  CancelButton.width*2;
+      CancelButton.height := CancelButton.height*2;
+    end;
 
     // Knapparnas placering
     OkButton.Top := Combo.Top + Combo.Height + Padding * 2;
@@ -1008,202 +1068,290 @@ begin
   end;
 end;
 
-function ExtMsg(const caption, title, desc, logmsg: string; dumpbg: TColor = $00F5F2FD; dumptext:
-TColor = $003411A9; buttons: TUXMsgDlgBtns = [mbAbort]; const icon: widechar =
-widechar($2699); scale: integer = 1): TModalResult;
+function MeasureWrappedHeight(const AText: string; AFont: TFont; MaxWidth: Integer): Integer;
+var
+  bmp: Graphics.TBitmap;
+  words: TStringList;
+  line: string;
+  i: Integer;
+  lineCount: Integer;
+begin
+  bmp := Graphics.TBitmap.Create;
+  words := TStringList.Create;
+  try
+    bmp.Canvas.Font.Assign(AFont);
+    words.StrictDelimiter := True;
+    words.Delimiter := ' ';
+    words.DelimitedText := AText;
 
+    line := '';
+    lineCount := 1;
+
+    for i := 0 to words.Count - 1 do
+    begin
+      if bmp.Canvas.TextWidth(Trim(line + ' ' + words[i])) > MaxWidth then
+      begin
+        Inc(lineCount);
+        line := words[i];
+      end
+      else
+        line := Trim(line + ' ' + words[i]);
+    end;
+
+    Result := lineCount * bmp.Canvas.TextHeight('Hg');
+  finally
+    bmp.Free;
+    words.Free;
+  end;
+end;
+
+function ExtMsg(
+  const big: boolean;
+  const caption, title, desc, logmsg: string;
+  dumpbg: TColor = $00F5F2FD;
+  dumptext: TColor = $003411A9;
+  buttons: TUXMsgDlgBtns = [mbAbort];
+  const icon: widechar = widechar($2699);
+  scale: integer = 1
+): TModalResult;
 const
   btnWidth = 75;
-  padding = 10;
+  padding  = 10;
 var
   Dialog: TDialogForm;
+  MainPanel, TopPanel, TextPanel, LogPanel, ButtonPanel: TPanel;
   IconBox: TImage;
-  TitleLabel: TLabel;
-  MessageLabel: TLabel;
-  log: TMemo;
-  logPanel: TPanel;
+  TitleLabel, MsgLabel: TLabel;
+  MsgScroll: TScrollBox;
+  LogMemo: TMemo;
   OkButton: {$ifdef Windows}TBitBtn{$else}TButton{$endif};
-  ContentWidth: integer;
-  p2, p3: TPanel;
   mr: TUXMsgDlgBtn;
-  last: integer;
+  ButtonActualWidth, MaxDialogHeight, MsgWidth, NeededHeight,
+  TitlePixelWidth, DescPixelWidth, TextPixelWidth, AvailableTextWidth,
+  posX, CurrentTop, ProposedWidth, btnCount, totalBtnWidth: Integer;
   bgcol: TColor;
+  TempFont: TFont;
 begin
-  bgcol :=  IfThen(TrndiNative.isDarkMode, $00322B27, clWhite);
+  bgcol := IfThen(TrndiNative.isDarkMode, $00322B27, clWhite);
+
   Dialog := TDialogForm.CreateNew(nil);
-  Dialog.KeyPreview := True;
-  Dialog.OnKeyDown := @Dialog.FormKeyDown;
   try
     Dialog.Caption := caption;
     Dialog.BorderStyle := bsDialog;
     {$ifdef LCLGTK3}
-       Dialog.BorderStyle := bsSizeable;
+      Dialog.BorderStyle := bsSizeable;
     {$endif}
     Dialog.Position := poWorkAreaCenter;
+    Dialog.Color := bgcol;
+    Dialog.AutoSize := True;
 
-    // Huvudpanelen
-    p2 := TPanel.Create(Dialog);
-    p2.Parent := Dialog;
-    p2.Align := alClient;
-    p2.Color :=  bgcol;
-    p2.BevelInner := bvNone;
-    p2.BevelOuter := bvNone;
+    MaxDialogHeight := Round(Screen.Height * 0.8);
 
-    // Emoji-ikon som visas i en TImage
-    IconBox := TImage.Create(p2);
-    IconBox.Parent := p2;
-    IconBox.Width := 50;
+    // ===== Main Panel =====
+    MainPanel := TPanel.Create(Dialog);
+    MainPanel.Parent := Dialog;
+    MainPanel.Align := alClient;
+    MainPanel.BevelOuter := bvNone;
+    MainPanel.Color := bgcol;
+    MainPanel.AutoSize := True;
+
+    // ===== TopPanel: Icon + text =====
+    TopPanel := TPanel.Create(MainPanel);
+    TopPanel.Parent := MainPanel;
+    TopPanel.Align := alTop;
+    TopPanel.BevelOuter := bvNone;
+    TopPanel.Color := bgcol;
+    TopPanel.AutoSize := True;
+
+    // Icon
+    IconBox := TImage.Create(TopPanel);
+    IconBox.Parent := TopPanel;
+    IconBox.Align := alLeft;
+    IconBox.Width := IfThen(big, 100, 50);
     IconBox.Height := IconBox.Width;
-    IconBox.Left := Padding;
-    IconBox.Top := Padding;
     {$ifdef Windows}
-    IconBox.Font.Name := 'Segoe UI Emoji';
+      IconBox.Font.Name := 'Segoe UI Emoji';
     {$endif}
-    //    IconBox.Align := alleft;
-
     Dialog.HandleNeeded;
-    // Rita emoji på IconBox
-    AssignEmoji(IconBox, icon, TrndiNative.isDarkMode);
+    AssignEmoji(IconBox, icon, bgcol);
 
-    // Titel
-    TitleLabel := TLabel.Create(p2);
-    TitleLabel.Parent := p2;
-    TitleLabel.Caption := Title;
-    TitleLabel.Font.Style := [fsBold];
-    TitleLabel.AutoSize := true;
-    TitleLabel.Left := IconBox.Left + IconBox.Width + Padding;
-    TitleLabel.Top := Padding;
-    TitleLabel.Font.Color :=  IfThen(TrndiNative.isDarkMode, clWhite, clBlack);
+    // ===== TextPanel =====
+    TextPanel := TPanel.Create(TopPanel);
+    TextPanel.Parent := TopPanel;
+    TextPanel.Align := alClient;
+    TextPanel.BevelOuter := bvNone;
+    TextPanel.Color := bgcol;
+    TextPanel.AutoSize := False;
 
-    // Meddelandetext
-    MessageLabel := TLabel.Create(p2);
-    MessageLabel.Parent := p2;
-    MessageLabel.Caption := desc;
-    MessageLabel.AutoSize := true;
-    MessageLabel.Left := TitleLabel.Left;
-    MessageLabel.Top := TitleLabel.Top + TitleLabel.Height + Padding div 2;
-    MessageLabel.Font.Color :=  IfThen(TrndiNative.isDarkMode, clWhite, clBlack);
-    //  MessageLabel.Font.Size := 8;
-
-
-    logPanel := TPanel.Create(p2);
-
-    with logPanel do
+    // ===== Title (optional) =====
+    if Trim(title) <> '' then
     begin
-      Width := ClientWidth;
-      left := 0;
-      Height := 50;
-      Parent := p2;
-      align := alBottom;
-      Color := dumpbg;
-      top := Dialog.ClientHeight-height;
+      TitleLabel := TLabel.Create(TextPanel);
+      TitleLabel.Parent := TextPanel;
+      TitleLabel.AutoSize := True;
+      TitleLabel.Font.Style := [fsBold];
+      if big then TitleLabel.Font.Size := 24;
+      TitleLabel.Caption := title;
+      TitleLabel.Font.Color := IfThen(TrndiNative.isDarkMode, clWhite, clBlack);
+      TitleLabel.Left := padding;
+      TitleLabel.Top := padding;
+      TitleLabel.BorderSpacing.Right := padding;
+
+      if big then
+        CurrentTop := TitleLabel.Top + TitleLabel.Height + (padding * 2)
+      else
+        CurrentTop := TitleLabel.Top + TitleLabel.Height; // tighter in non-big
+    end
+    else
+    begin
+      TitleLabel := nil;
+      CurrentTop := padding; // description at top
     end;
 
-    //logPanel.top := p2.ClientHeight-50;
+    // ===== Width based on longest of title/desc =====
+    if TitleLabel <> nil then
+      TitlePixelWidth := Dialog.Canvas.TextWidth(title)
+    else
+      TitlePixelWidth := 0;
+    DescPixelWidth  := Dialog.Canvas.TextWidth(desc);
+    TextPixelWidth  := Max(TitlePixelWidth, DescPixelWidth);
 
-    log := TMemo.Create(logPanel);
+    ProposedWidth := IconBox.Width + (TextPixelWidth + padding * 2) + (padding * 2);
 
-    p2.height := p2.height+logPanel.height;
+    // ✅ If log exists, min width = 500
+    if logmsg <> '' then
+      if ProposedWidth < 500 then
+        ProposedWidth := 500;
 
-    with log do
-    begin
-      Text := TrimSet(logmsg, [#10,#13]);
-      parent := logpanel;
-      ReadOnly := true;
-      Color := dumpbg;
-      font.color := dumptext;
-      ScrollBars := ssNone;
-      BorderStyle := bsNone;
-      ControlStyle := [csNoFocus];
-      left := IconBox.Left;
-      width := logpanel.ClientWidth - 20;
-      top := 10;
-      left := 10;
+    if ProposedWidth > 800 then
+      ProposedWidth := 800;
+    Dialog.ClientWidth := ProposedWidth;
+
+    // ===== Available description width =====
+    AvailableTextWidth := Dialog.ClientWidth - (IconBox.Width + (padding * 3));
+    MsgWidth := AvailableTextWidth;
+
+    // ===== Safe font for measuring description =====
+    TempFont := TFont.Create;
+    try
+      if big then TempFont.Size := 24;
+      TempFont.Style := [];
+      TempFont.Color := IfThen(TrndiNative.isDarkMode, clWhite, clBlack);
+      if Assigned(TitleLabel) then
+        TempFont.Assign(TitleLabel.Font);
+
+      NeededHeight := MeasureWrappedHeight(desc, TempFont, MsgWidth);
+    finally
+      TempFont.Free;
     end;
 
-    ///--
-         //For UX Message
-    if logmsg = '' then
+    // ===== Description =====
+    if NeededHeight > (MaxDialogHeight div 2) then
     begin
-      logpanel.Visible := false;
-      dialog.ClientHeight := dialog.ClientHeight - logpanel.height;
-    ///--
+      MsgScroll := TScrollBox.Create(TextPanel);
+      MsgScroll.Parent := TextPanel;
+      MsgScroll.Left := padding;
+      MsgScroll.Top := CurrentTop;
+      MsgScroll.Width := MsgWidth;
+      MsgScroll.Height := MaxDialogHeight div 2;
+      MsgScroll.VertScrollBar.Visible := True;
+      MsgScroll.BorderStyle := bsNone;
+
+      MsgLabel := TLabel.Create(MsgScroll);
+      MsgLabel.Parent := MsgScroll;
+      MsgLabel.AutoSize := False;
+      if big then MsgLabel.Font.Size := 24;
+      MsgLabel.Font.Style := [];
+      MsgLabel.Caption := desc;
+      MsgLabel.WordWrap := True;
+      MsgLabel.Font.Color := IfThen(TrndiNative.isDarkMode, clWhite, clBlack);
+      MsgLabel.Width := MsgWidth;
+      MsgLabel.Height := NeededHeight;
+    end
+    else
+    begin
+      MsgLabel := TLabel.Create(TextPanel);
+      MsgLabel.Parent := TextPanel;
+      MsgLabel.AutoSize := False;
+      if big then MsgLabel.Font.Size := 24;
+      MsgLabel.Font.Style := [];
+      MsgLabel.Caption := desc;
+      MsgLabel.WordWrap := True;
+      MsgLabel.Font.Color := IfThen(TrndiNative.isDarkMode, clWhite, clBlack);
+      MsgLabel.Left := padding;
+      MsgLabel.Top := CurrentTop;
+      MsgLabel.Width := MsgWidth;
+      MsgLabel.Height := NeededHeight;
     end;
 
+    // ===== Log panel =====
+    LogPanel := TPanel.Create(Dialog);
+    LogPanel.Parent := Dialog;
+    LogPanel.Align := alBottom;
+    LogPanel.Height := IfThen(big, 100, 50);
+    LogPanel.Color := dumpbg;
+    LogPanel.BevelOuter := bvNone;
+    LogPanel.Visible := logmsg <> '';
 
+    LogMemo := TMemo.Create(LogPanel);
+    LogMemo.Parent := LogPanel;
+    LogMemo.Align := alClient;
+    LogMemo.ReadOnly := True;
+    LogMemo.Color := dumpbg;
+    LogMemo.Font.Color := dumptext;
+    LogMemo.ScrollBars := ssAutoVertical;
+    LogMemo.BorderStyle := bsNone;
+    LogMemo.Text := TrimSet(logmsg, [#10, #13]);
 
+    // ===== Button panel =====
+    ButtonPanel := TPanel.Create(Dialog);
+    ButtonPanel.Parent := Dialog;
+    ButtonPanel.Align := alBottom;
+    ButtonPanel.BevelOuter := bvNone;
+    ButtonPanel.Color := bgcol;
+    ButtonPanel.AutoSize := False;
 
+    // Center buttons using Dialog.ClientWidth
+    ButtonActualWidth := IfThen(big, btnWidth * 2, btnWidth);
+    btnCount := 0;
+    for mr in buttons do
+      Inc(btnCount);
+    if btnCount = 0 then
+      btnCount := 1;
 
-    // Bottenpanelen för knappen
-    p3 := TPanel.Create(Dialog);
-    p3.Parent := Dialog;
-    p3.Align := alBottom;
-    p3.BorderStyle := bsNone;
-    p3.BevelOuter := bvNone;
-    p3.color := bgcol;
-    p3.name := 'pnButtons';
-    p3.caption := '';
+    totalBtnWidth := (ButtonActualWidth * btnCount) + (padding * (btnCount - 1));
+    posX := (Dialog.ClientWidth - totalBtnWidth) div 2;
+    if posX < padding then
+      posX := padding;
 
-    last := p3.ClientWidth - Padding;
-    // OK-knapp
     for mr in buttons do
     begin
       {$ifdef Windows}
-        OkButton := TBitBtn.Create(p3);
+        OkButton := TBitBtn.Create(ButtonPanel);
       {$else}
-        OkButton := TButton.Create(p3);
+        OkButton := TButton.Create(ButtonPanel);
       {$endif}
-      OkButton.Parent := p3;
+      OkButton.Parent := ButtonPanel;
       OkButton.Caption := langs[mr];
-
       OkButton.ModalResult := UXButtonToModalResult(mr);
-      if OkButton.ModalResult = mrOK then begin
-        {$ifdef Windows}
-          OkButton.SetFocus;
-        {$endif}
-      end;
-      OkButton.Width := btnwidth;
-      OkButton.Top := (p3.Height div 2) - (OkButton.Height div 2);
-      OkButton.left := last-padding-btnwidth;
-      okbutton.name := 'btn'+IntToStr(ord(mr));
-      last := OkButton.left;
+      OkButton.Width := ButtonActualWidth;
+      if big then OkButton.Height := OkButton.Height * 2;
+      OkButton.Top := padding;
+      OkButton.Left := posX;
+      posX := posX + OkButton.Width + padding;
     end;
 
-    // Nu kan vi beräkna p3.Height efter att OkButton har skapats
-    p3.Height := Padding * 2 + OkButton.Height;
+    // Padding under buttons
+    ButtonPanel.Height := OkButton.Top + OkButton.Height + (padding * 2);
 
-    // Beräkna dialogens bredd och höjd baserat på innehållet
-    ContentWidth := Max(Max(Dialog.Canvas.TextWidth(TitleLabel.Caption), Dialog.Canvas.TextWidth(
-      MessageLabel.Caption)), 300 (* Log size *)) + IconBox.Width + Padding * 5;
-    log.Width := ContentWidth;
-    log.ScrollBars := ssAutoVertical;
-    Dialog.Width := ContentWidth;
-    Dialog.Height := round(Padding * 2.5) + MessageLabel.Top + MessageLabel.Height + p3.Height;
-    // Set first (last?) button pos
-    last := Dialog.Width;
-    for mr in buttons do
-    begin
-      OkButton := p3.FindChildControl('btn'+IntToStr(ord(mr))) as {$ifdef Windows}TBitBtn{$else}TButton{$endif};
+    // ===== Height limit =====
+    if Dialog.Height > MaxDialogHeight then
+      Dialog.Height := MaxDialogHeight;
 
-      OkButton.Left := last - padding - btnWidth;
-      last := OkButton.left;
-    end;
-
-    log.Text := string(log.Text).TrimRight([#13, #10]);
-    log.Height := dialog.Canvas.TextHeight(logmsg) * (string(log.Text).CountChar(#10)+1);
-    if scale <> 1 then
-      log.height := log.height*scale;
-    logpanel.height := log.Height+20;
-    Dialog.height := Dialog.Height + logPanel.height;
-
-(*    IconBox.Center := true;
-    IconBox.Proportional := True; *)
-    // Visa dialogen som en modal dialog
     Dialog.ShowModal;
-    result := dialog.ModalResult;
+    Result := Dialog.ModalResult;
+
   finally
-    p2.Free;
-    p3.Free;
     Dialog.Free;
   end;
 end;

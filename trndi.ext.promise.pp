@@ -28,7 +28,7 @@ interface
 
 uses 
 Classes, SysUtils, mORMot.lib.quickjs, mormot.core.base, dialogs, trndi.ext.functions, slicke.ux.
-alert, fgl, trndi.strings;
+alert, fgl, trndi.strings, trndi.native;
 
 type 
   JSDoubleVal = array[0..1] of JSValueRaw;
@@ -79,7 +79,7 @@ begin
   else
     begin
       // Complain that it wasn't set
-      ExtError('Error: Missing Function');
+      ExtError(TrndiNative.HasTouchScreen, 'Error: Missing Function');
       FSuccess := false;
       Exit;
     end;
@@ -113,12 +113,12 @@ begin
             on E: EInvalidCast do
                   begin
                     FSuccess := false;
-                    ExtError(sTypeErrMsg, e.message);
+                    ExtError(TrndiNative.HasTouchScreen, sTypeErrMsg, e.message);
                   end;
             on E: Exception do
                   begin
                     fsuccess := false;
-                    ExtError(Format(sPromErrCapt, [func]),e.Message);
+                    ExtError(TrndiNative.HasTouchScreen, Format(sPromErrCapt, [func]),e.Message);
                   end;
         end;
     end
