@@ -69,8 +69,10 @@ type
 TrndiNative = class
 private
   cfguser:   string;  // User prefix for config
+  fsettings: TFormatSettings;
 
   function buildKey(const key: string; global: boolean): string;
+  procedure updateLocale(const l: TFormatSettings);
 public
     // Indicates if the user system is in a "dark mode" theme
   dark: boolean;
@@ -116,6 +118,7 @@ public
     }
   function GetRootSetting(const keyname: string; def: string = ''): string;
   function GetSetting(const keyname: string; def: string = ''; global: boolean = false): string;
+  function GetCharSetting(const keyname: string; def: char = #0): char;
 
     { GetIntSetting
       -------------
@@ -179,6 +182,7 @@ public
   class function DetectWSL: TWSLInfo;
 
   property configUser: string read cfguser write cfguser;
+  property locale: TFormatSettings read fsettings write updateLocale;
 protected
   useragent: string;  // HTTP User-Agent string
   baseurl:   string;  // Base URL for requests
@@ -260,6 +264,12 @@ function DwmSetWindowAttribute(hwnd: HWND; dwAttribute: DWORD; pvAttribute: Poin
 {$endif}
 
 implementation
+
+procedure TrndiNative.updateLocale(const l: TFormatSettings);
+begin
+  fsettings := l;
+  DefaultFormatSettings := fsettings; // We need this for now
+end;
 
 function TrndiNative.buildKey(const key: string; global: boolean): string;
 begin
@@ -516,10 +526,8 @@ begin
 
     // Format text
     try
-      if Pos('.', Value) > 0 then
-        BadgeText := StringReplace(FormatFloat('0.0', StrToFloat(Value)), '.', ',', [rfReplaceAll])
-      else
-        BadgeText := Value;
+
+          BadgeText := FormatFloat('0.0', StrToFloat(Value, fsettings), fsettings);
     except
       BadgeText := Value;
     end;
@@ -924,6 +932,8 @@ begin
   baseurl   := base;
   // Check if we're in dark mode on creation
   dark := isDarkMode;
+  fsettings := DefaultFormatSettings;
+
   cfguser := '';
 end;
 
@@ -1334,6 +1344,18 @@ begin
 end;
 {$ENDIF}
 {$ENDIF}
+
+function TrndiNative.GetCharSetting(const keyname: string; def: char = #0): char;
+var
+ res: string;
+begin
+  res := GetSetting(keyname,'');
+  if res = '' then
+    result := def
+  else
+    result := res[1];
+end;
+
 function TrndiNative.GetRootSetting(const keyname: string; def: string = ''): string;
 begin
   result := GetSetting(keyname,def, true);

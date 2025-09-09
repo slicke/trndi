@@ -678,6 +678,7 @@ var
   i: integer;
   s, fontName, apiTarget, apiCreds: string;
   fil: boolean;
+  userlocale: TFormatSettings;
 {$ifdef X_LINUXBSD}
 function GetLinuxDistro: string;
   const
@@ -814,6 +815,7 @@ begin
   addTopMenu;
   {$endif}
   native := TrndiNative.Create;
+
   if native.isDarkMode then
      native.setDarkMode{$ifdef windows}(self.Handle){$endif};
   {$ifdef X_LINUXBSD}
@@ -892,6 +894,9 @@ begin
     else
       multi := false;
 
+      userlocale := DefaultFormatSettings;
+      userlocale.DecimalSeparator := GetCharSetting('locale.separator', '.');
+      native.locale := userlocale;
       //-----LICENSE DO NOT MODIFY
       if native.GetBoolSetting('license.250608') <> true then
       while i <> mrYes do begin
@@ -1639,6 +1644,7 @@ var
       cbTIR.Checked := native.GetBoolSetting('range.custom', true);
 
       cbOffBar.Checked := native.GetBoolSetting('off_bar', false);
+      edCommaSep.Text := GetCharSetting('locale.separator', '.');
 
       if GetSetting('unit', 'mmol') = 'mmol' then
         rbUnitClick(Self);
@@ -1813,6 +1819,7 @@ if cbPos.ItemIndex = -1 then
 
       native.SetBoolSetting('range.custom', cbTIR.Checked);
       native.SetBoolSetting('off_bar', cbOffBar.Checked);
+      native.SetSetting('locale.separator', edCommaSep.text);
 
       SetSetting('override.enabled', IfThen(cbCust.Checked, '1', '0'));
       SetSetting('media_url_high', edMusicHigh.Text);
@@ -2173,7 +2180,7 @@ begin
     for Dot in TrendDots do
     begin
       dot.Font.Size := (ClientWidth div 24)*dotscale;
-      if TryStrToFloat(Dot.Hint, Value) then
+      if TryStrToFloat(Dot.Hint, Value, native.locale) then
       begin
         // Use stored position if value already mapped
         if not UniquePositions.TryGetValue(Value, DPosition) then
@@ -2619,7 +2626,7 @@ begin
 
   if un = mmol then begin
     s := b.format(mmol, BG_MSG_SHORT, BGPrimary);
-    if (TryStrToFloat(s, f)) and (f = 5.5) then
+    if (TryStrToFloat(s, f, native.locale)) and (f = 5.5) then
       go := true
     else
       perfecttriggered := false;
