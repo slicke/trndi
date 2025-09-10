@@ -429,6 +429,10 @@ msgstr ""
 msgid "Low under"
 msgstr ""
 
+#: tfconf.ltray.caption
+msgid "Tray icon size:"
+msgstr ""
+
 #: tfconf.lval.caption
 msgctxt "tfconf.lval.caption"
 msgid "0,0"
