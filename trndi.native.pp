@@ -714,12 +714,6 @@ begin
     Exit;
   end;
 
-  // Max 4 tecken
-  if Length(Value) > 4 then
-    BadgeText := Copy(Value, 1, 4)
-  else
-    BadgeText := Value;
-
   // Basikon: Application.Icon (enkel och stabil bas varje gång)
   BaseIcon := TIcon.Create;
   OutIcon  := TIcon.Create;

@@ -79,6 +79,7 @@ TfConf = class(TForm)
   Label11: TLabel;
   Label12: TLabel;
   Label13: TLabel;
+  lTray: TLabel;
   Label2:TLabel;
   Label3:TLabel;
   Label6:TLabel;
@@ -111,6 +112,7 @@ TfConf = class(TForm)
   pnDisplay:TPanel;
   pcMain:TPageControl;
   rbUnit:TRadioGroup;
+  edTray: TSpinEdit;
   tsSystem: TTabSheet;
   tsIntegration: TTabSheet;
   tsInstall:TTabSheet;

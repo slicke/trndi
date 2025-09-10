@@ -296,6 +296,7 @@ isWSL : boolean = false;
 {$endif}
 applocale: string;
 dotscale: integer = 1;
+badge_adjust: single = 0;
 highAlerted: boolean = false; // A high alert is active
 lowAlerted: boolean = false; // A low alert is active
 perfectTriggered: boolean = false; // A perfect reading is active
@@ -948,6 +949,7 @@ begin
 
       userlocale := DefaultFormatSettings;
       userlocale.DecimalSeparator := GetCharSetting('locale.separator', '.');
+      badge_adjust := GetIntSetting('ux.badge_size', 0) / 10;
       native.locale := userlocale;
       //-----LICENSE DO NOT MODIFY
       if native.GetBoolSetting('license.250608') <> true then
@@ -1735,6 +1737,7 @@ var
 
       cbOffBar.Checked := native.GetBoolSetting('off_bar', false);
       edCommaSep.Text := GetCharSetting('locale.separator', '.');
+      edTray.Value := GetIntSetting('ux.badge_size', 0);
 
       if GetSetting('unit', 'mmol') = 'mmol' then
         rbUnitClick(Self);
@@ -1910,6 +1913,7 @@ if cbPos.ItemIndex = -1 then
       native.SetBoolSetting('range.custom', cbTIR.Checked);
       native.SetBoolSetting('off_bar', cbOffBar.Checked);
       native.SetSetting('locale.separator', edCommaSep.text);
+      native.SetSetting('ux.badge_size', edTray.Value.ToString);
 
       SetSetting('override.enabled', IfThen(cbCust.Checked, '1', '0'));
       SetSetting('media_url_high', edMusicHigh.Text);
@@ -2480,7 +2484,7 @@ begin
     lVal.Font.Color := clWhite;
     tMissed.Enabled := true;
     lArrow.Caption := ''; // Dont show arrow when not fresh
-    native.setBadge('--', clBlack{$ifndef darwin},badge_width,badge_font{$endif});
+    native.setBadge('--', clBlack{$ifndef darwin},badge_width+badge_adjust,badge_font+round(badge_adjust*10){$endif});
   end
   else
   begin

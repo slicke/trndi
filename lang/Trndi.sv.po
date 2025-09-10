@@ -443,6 +443,10 @@ msgstr "Licens"
 msgid "Low under"
 msgstr "Lågt under"
 
+#: tfconf.ltray.caption
+msgid "Tray icon size:"
+msgstr ""
+
 #: tfconf.lval.caption
 msgctxt "tfconf.lval.caption"
 msgid "0,0"
