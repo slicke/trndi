@@ -952,7 +952,7 @@ begin
       //-----LICENSE DO NOT MODIFY
       if native.GetBoolSetting('license.250608') <> true then
       while i <> mrYes do begin
-              i :=  ExtMsg(TrndiNative.HasTouchScreen, 'License', 'You must accept the full terms conditions', 'Do you agree to the terms and full license?', license, $00F5F2FD,$003411A9, [mbYes, mbCancel, mbUxRead], system.widechar($2699));
+              i :=  ExtMsg(TrndiNative.HasTouchScreen, 'License', 'You must accept the full terms conditions', 'Do you agree to the terms and full license?', license, $00F5F2FD,$003411A9, [mbYes, mbCancel, mbUxRead], system.widechar($2699),5);
               if i = mrYes then
                  native.SetBoolSetting('license.250608', true)
               else if i = mrCancel then begin

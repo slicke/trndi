@@ -1340,7 +1340,7 @@ begin
     LogPanel := TPanel.Create(Dialog);
     LogPanel.Parent := Dialog;
     LogPanel.Align := alBottom;
-    LogPanel.Height := IfThen(big, 100, 50);
+    LogPanel.Height := IfThen(big, 100, 50)*scale;
     LogPanel.Color := dumpbg;
     LogPanel.BevelOuter := bvNone;
     LogPanel.Visible := logmsg <> '';
