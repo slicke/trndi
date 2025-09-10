@@ -2484,7 +2484,7 @@ begin
     lVal.Font.Color := clWhite;
     tMissed.Enabled := true;
     lArrow.Caption := ''; // Dont show arrow when not fresh
-    native.setBadge('--', clBlack{$ifndef darwin},badge_width+badge_adjust,badge_font+round(badge_adjust*10){$endif});
+    native.setBadge('--', clBlack,badge_width+badge_adjust,badge_font+round(badge_adjust*10));
   end
   else
   begin
