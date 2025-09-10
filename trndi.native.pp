@@ -41,7 +41,7 @@ SimpleDarkMode
 Windows, Registry, Dialogs, StrUtils, winhttpclient, shellapi, comobj,
 Forms, variants
 {$ELSEIF DEFINED(X_PC)},
-fphttpclient, openssl, opensslsockets, IniFiles, Dialogs
+fphttpclient, openssl, opensslsockets, IniFiles, Dialogs, extctrls, forms, math, LCLIntf
 {$ENDIF}
 {$IFDEF LCLQt6}//,
 //qt6, qtwidgets, forms, QtWSForms, QtWSComCtrls
@@ -164,7 +164,7 @@ public
 
   procedure start;
   procedure done;
-  procedure setBadge(const Value: string; badgeColor: Tcolor{$ifdef LCLWIN32}; badge_size_ratio: double = 0.8; min_font_size: integer = 8{$endif});
+  procedure setBadge(const Value: string; badgeColor: Tcolor{$ifndef darwin}; badge_size_ratio: double = 0.8; min_font_size: integer = 8{$endif});
   class procedure PlaySound(const FileName: string);
 
   constructor create(ua, base: string); overload;
@@ -186,6 +186,9 @@ public
 protected
   useragent: string;  // HTTP User-Agent string
   baseurl:   string;  // Base URL for requests
+  {$ifdef lclqt6}
+    tray: TTrayIcon;
+  {$endif}
 
   {$IF DEFINED(X_PC)}
   inistore: TINIFile; // Linux/PC settings store
@@ -681,18 +684,129 @@ end;
 
 {$ENDIF}
 
-{$ifdef LCLQt6}
-procedure TrndiNative.SetBadge(const Value: string;  badgeColor: Tcolor);
-//var
-//  Win: QWindowH;
+{$ifdef X_PC}
+procedure TrndiNative.SetBadge(const Value: string; BadgeColor: TColor;
+                       badge_size_ratio: double = 0.8; min_font_size: integer = 8);
+const
+  INITIAL_FONT_SIZE_RATIO = 0.5;
+  TEXT_PADDING = 3;
+  CORNER_RADIUS = 6;
+var
+  BaseIcon, OutIcon: TIcon;
+  Bmp: TBitmap;
+  W, H, BadgeSize, Radius: Integer;
+  BadgeRect: TRect;
+  TextW, TextH: Integer;
+  FontSize: Integer;
+  TextColor: TColor;
+  rgb: LongInt;
+  r, g, b: Byte;
+  BadgeText: string;
 begin
-  // HÃ¤mta QWindow via QWidget_windowHandle
-  //Win := QWidget_windowHandle(QWidgetH(Application.MainForm.Handle));
+  if not assigned(Tray) then   tray := TTrayIcon.Create(Application.MainForm);
 
- // if Win <> nil then
- // begin
-//    QWindow_setWindowBadge(Win, PChar(Value));
- // end;
+  // Tomt => återställ tray-ikonen från Application.Icon
+  if Value = '' then
+  begin
+    if (Application.Icon <> nil) and (Application.Icon.Width > 0) then
+      Tray.Icon.Assign(Application.Icon);
+    Tray.Visible := False; Tray.Visible := True;
+    Exit;
+  end;
+
+  // Max 4 tecken
+  if Length(Value) > 4 then
+    BadgeText := Copy(Value, 1, 4)
+  else
+    BadgeText := Value;
+
+  // Basikon: Application.Icon (enkel och stabil bas varje gång)
+  BaseIcon := TIcon.Create;
+  OutIcon  := TIcon.Create;
+  Bmp      := TBitmap.Create;
+  try
+    if (Application.Icon <> nil) and (Application.Icon.Width > 0) then
+      BaseIcon.Assign(Application.Icon)
+    else
+      BaseIcon.SetSize(24, 24); // fallback om app-ikon saknas
+
+    W := BaseIcon.Width; H := BaseIcon.Height;
+    if (W <= 0) or (H <= 0) then begin W := 24; H := 24; end;
+
+    BadgeSize := Round(Min(W, H) * badge_size_ratio);
+    if BadgeSize < 10 then BadgeSize := 10;
+
+    Bmp.SetSize(W, H);
+    Bmp.PixelFormat := pf32bit;
+
+    // Rita bas
+    Bmp.Canvas.Brush.Style := bsSolid;
+    Bmp.Canvas.Brush.Color := clNone;
+    Bmp.Canvas.FillRect(Rect(0,0,W,H));
+    Bmp.Canvas.Draw(0, 0, BaseIcon);
+
+    // Badge-rektangel (nere till höger)
+    BadgeRect := Rect(W - BadgeSize, H - BadgeSize, W, H);
+
+    // Textfärg utifrån bakgrundens luminans
+    rgb := ColorToRGB(BadgeColor);
+    r := Byte(rgb); g := Byte(rgb shr 8); b := Byte(rgb shr 16);
+    if (0.299*r + 0.587*g + 0.114*b) > 128 then
+      TextColor := clBlack
+    else
+      TextColor := clWhite;
+
+    // Rita badge-bubbla
+    Bmp.Canvas.Brush.Color := BadgeColor;
+    Bmp.Canvas.Pen.Color := BadgeColor;
+
+    if BadgeSize <= 12 then
+      Bmp.Canvas.FillRect(BadgeRect)
+    else
+    begin
+      Radius := Round(CORNER_RADIUS * BadgeSize / 32);
+      if Radius < 2 then Radius := 2;
+      Bmp.Canvas.RoundRect(BadgeRect.Left, BadgeRect.Top, BadgeRect.Right, BadgeRect.Bottom,
+                           Radius*2, Radius*2);
+      // Liten \u201cfyrkant\u201d i nederhörnet för tydlighet
+      Bmp.Canvas.FillRect(Rect(BadgeRect.Right - Radius, BadgeRect.Bottom - Radius,
+                               BadgeRect.Right, BadgeRect.Bottom));
+    end;
+
+    // Text
+    Bmp.Canvas.Font.Name := 'DejaVu Sans';
+    Bmp.Canvas.Font.Style := [fsBold];
+    Bmp.Canvas.Font.Color := TextColor;
+
+    FontSize := Round(BadgeSize * INITIAL_FONT_SIZE_RATIO);
+    if FontSize < min_font_size then FontSize := min_font_size;
+    Bmp.Canvas.Font.Size := FontSize;
+
+    TextW := Bmp.Canvas.TextWidth(BadgeText);
+    TextH := Bmp.Canvas.TextHeight(BadgeText);
+    while (TextW > (BadgeSize - TEXT_PADDING)) and (FontSize > min_font_size) do
+    begin
+      Dec(FontSize);
+      Bmp.Canvas.Font.Size := FontSize;
+      TextW := Bmp.Canvas.TextWidth(BadgeText);
+      TextH := Bmp.Canvas.TextHeight(BadgeText);
+    end;
+
+    // Centrera texten i badgen
+    Bmp.Canvas.Brush.Style := bsClear;
+    Bmp.Canvas.TextOut(
+      BadgeRect.Left + ((BadgeRect.Right - BadgeRect.Left) - TextW) div 2,
+      BadgeRect.Top  + ((BadgeRect.Bottom - BadgeRect.Top) - TextH) div 2,
+      BadgeText
+    );
+
+    // Tilldela till tray-ikonen och refresha
+    OutIcon.Assign(Bmp);
+    Tray.Icon.Assign(OutIcon);
+    Tray.Visible := False; Tray.Visible := True;
+  finally
+    Bmp.Free; OutIcon.Free; BaseIcon.Free;
+  end;
 end;
 {$endif}
 
@@ -773,6 +887,8 @@ begin
   {$IF DEFINED(X_PC)}
   if Assigned(inistore) then
     inistore.Free;
+  if assigned(tray) then
+    tray.free;
   {$ENDIF}
   inherited Destroy;
 end;
