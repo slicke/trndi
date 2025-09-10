@@ -164,7 +164,7 @@ public
 
   procedure start;
   procedure done;
-  procedure setBadge(const Value: string; badgeColor: Tcolor{$ifndef darwin}; badge_size_ratio: double = 0.8; min_font_size: integer = 8{$endif});
+  procedure setBadge(const Value: string; badgeColor: Tcolor; badge_size_ratio: double = 0.8; min_font_size: integer = 8);
   class procedure PlaySound(const FileName: string);
 
   constructor create(ua, base: string); overload;
@@ -805,7 +805,8 @@ end;
 {$endif}
 
 {$IFDEF DARWIN}
-procedure TrndiNative.SetBadge(const Value: string;  badgeColor: Tcolor);
+procedure TrndiNative.SetBadge(const Value: string; BadgeColor: TColor;
+                       badge_size_ratio: double = 0.8; min_font_size: integer = 8);
 var
   NSS: NSString;
 begin

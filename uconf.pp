@@ -603,6 +603,10 @@ begin
        setDarkMode{$ifdef windows}(self.Handle){$endif};
       Free;
   end;
+
+  {$ifdef darwin}
+  edTray.Enabled := false; // No support
+  {$endif}
 end;
 
 procedure TfConf.FormResize(Sender: TObject);
