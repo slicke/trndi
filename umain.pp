@@ -676,15 +676,9 @@ begin
   SetDefaultLang(lang, getLangPath);
 end;
 
-// Initialize the TrendDots array in FormCreate
-procedure TfBG.FormCreate(Sender: TObject);
-var
-  i: integer;
-  s, fontName, apiTarget, apiCreds: string;
-  fil: boolean;
-  userlocale: TFormatSettings;
 {$ifdef X_LINUXBSD}
-function GetLinuxDistro: string;
+// Moved out as to support the advanced menu aswell
+function GetLinuxSystem: string;
   const
     Issue = '/etc/os-release';
   begin
@@ -694,7 +688,61 @@ function GetLinuxDistro: string;
       Result := '';
   end;
 
+function GetLinuxDistro(out ver: string): string;
+var
+  sys, s: string;
+  start, stop: integer;
+begin
+    sys := GetLinuxSystem;
+
+    start := Pos('ID=', sys)+3; // ID=...
+    if start > 0 then begin
+      s := Copy(sys, start);
+      stop := Pos(#10, s);
+      result := Copy(s, 0, stop-1);
+      result := TrimSet(result, ['"', #10]);
+    end else result := '';
+
+    if (result.IsEmpty) or (result[1] in ['0'..'9']) then begin
+      start := Pos('NAME=', sys)+5; // NAME=...
+      if start > 0 then begin
+        s := Copy(sys, start);
+        stop := Pos(#10, s);
+        result := Copy(s, 0, stop-1);
+        result := TrimSet(result, ['"', #10]);
+      end else result := 'unknown';
+    end;
+
+    start := Pos('VERSION=', sys)+8; // VERSION="..."
+    if start > 0 then begin
+      s := Copy(sys, start);
+      stop := Pos(#10, s);
+      ver := Copy(s, 0, stop-1);
+      ver := TrimSet(ver, ['"', #10]);
+    end;
+end;
+
+function ScanLinuxDistro(const opts: TStringArray): string;
+var
+  s, sys: string;
+begin
+  sys := LowerCase(GetLinuxDistro(s));
+  result := s;
+  for s in opts do
+    if Pos(LowerCase(s), sys) > -1 then begin
+      result := s;
+      Exit;
+    end;
+end;
   {$endif}
+
+// Initialize the TrendDots array in FormCreate
+procedure TfBG.FormCreate(Sender: TObject);
+var
+  i: integer;
+  s, x, fontName, apiTarget, apiCreds: string;
+  fil: boolean;
+  userlocale: TFormatSettings;
   {$ifdef X_MAC}
   procedure addTopMenu;
   var
@@ -823,19 +871,19 @@ begin
   if native.isDarkMode then
      native.setDarkMode{$ifdef windows}(self.Handle){$endif};
   {$ifdef X_LINUXBSD}
-  s := GetLinuxDistro;
-  if (Pos('ID=fedora', s) > -1) then
-    s := 'Poppins'
-  else
-  if (Pos('ID=ubuntu', s) > -1) then
-    s := 'Sans'
+  x := scanLinuxDistro(['fedora','ubuntu','debian']);
+  case x of
+  'fedora': s := 'Poppins';
+  'ubuntu': s := 'Sans';
   else
     s := 'default';
-  fBG.Font.Name := s;
+  end;
 
   IsRaspberry := false;
-  if (Pos('ID=debian', s) > -1) then
+  if x = 'debian' then
     IsRaspberry := FileExists('/etc/rpi-issue');
+
+  fBG.Font.Name := s;
 
   {$ifndef LCLQt6}
      Showmessage('This release of Trndi was compiled for a non-supported platform ("widgetset")'#10'Performance might be bad and features might not work as intended!'#10#10'Please download the official release (Qt6) from github.com/slicke/trndi');
@@ -1064,17 +1112,28 @@ begin
 end;
 
 procedure TfBG.miASystemInfoClick(Sender: TObject);
+var
+  sysver: string;
+  {$ifdef Linux}
+  s,ver: string;
+  {$endif}
 begin
+  {$if defined(LCLWin32)}
+    sysver := SysUtils.Win32MajorVersion.tostring + '.' + SysUtils.Win32MinorVersion.tostring + ' - Build ' +  Win32BuildNumber.ToString;
+  {$elseif defined(Linux)}
+    s := getlinuxdistro(ver);
+    sysver := s + ' ' + ver;
+  {$endif}
 
     ShowMessage({$I %FPCTargetOS%} + '(' +{$I %FPCTargetCPU%}+ ')' + ' | ' +
   {$if defined(LCLQt6)}
-    'QT6 - ' + qtVersion
+    'QT6 - ' + qtVersion + ' - ' + sysver
   {$elseif defined(LCLGTK2)}
-    'GTK2'
+    'GTK2 - '  + sysver
   {$elseif defined(LCLGTK3)}
     'GTK3'
   {$elseif defined(LCLWIN32)}
-    'Windows Native - ' + SysUtils.Win32MajorVersion.tostring + '.' + SysUtils.Win32MinorVersion.tostring + ' - Build ' +  Win32BuildNumber.ToString
+    'Windows Native - ' + sysver
   {$elseif defined(LCLCocoa)}
     'macOS Native'
   {$else}
