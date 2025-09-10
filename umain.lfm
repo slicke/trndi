@@ -10,7 +10,6 @@ object fBG: TfBG
   Color = clBlack
   Font.Color = clWhite
   Position = poDesktopCenter
-  LCLVersion = '4.2.0.0'
   OnClose = FormClose
   OnCreate = FormCreate
   OnDblClick = FormDblClick
@@ -439,6 +438,14 @@ object fBG: TfBG
       object miADots: TMenuItem
         Caption = 'Dot stats'
         OnClick = miADotsClick
+      end
+      object miADotAdjust: TMenuItem
+        Caption = 'Adjust Dot Positions'
+        OnClick = miADotAdjustClick
+      end
+      object miADotScale: TMenuItem
+        Caption = 'Adjust Dot Scale'
+        OnClick = miADotScaleClick
       end
       object miASystemInfo: TMenuItem
         Caption = 'System Info'

@@ -27,7 +27,7 @@ interface
 
 uses
 Classes, SysUtils, Dialogs, Forms, ExtCtrls, StdCtrls, Controls, Graphics, Math,
-IntfGraphics, FPImage, graphtype, lcltype, Trndi.Native, Grids,
+IntfGraphics, FPImage, graphtype, lcltype, Trndi.Native, Grids, Spin,
 {$ifdef Windows}
 DX12.D2D1, DX12.DXGI, DX12.DWrite, DX12.DCommon, DX12.WinCodec, Windows, Buttons,
 {$endif}StrUtils;
@@ -135,6 +135,14 @@ function ExtInput(
   var ModalResult: TModalResult;
   const icon: WideChar = WideChar($2699)
 ): string;
+
+function ExtNumericInput(
+  const ACaption, ATitle, ADesc: string;
+  ADefault: double;
+  float: boolean;
+  var ModalResult: TModalResult;
+  const icon: WideChar = WideChar($2699)
+): double;
 
 function ExtTable(
   const ACaption, ATitle, ADesc: string;
@@ -675,6 +683,131 @@ begin
 end;
 
 {$endif}
+
+function ExtNumericInput(
+  const ACaption, ATitle, ADesc: string;
+  ADefault: double;
+  float: boolean;
+  var ModalResult: TModalResult;
+  const icon: WideChar = WideChar($2699)
+): double;
+const
+  Padding = 16;
+  IconSize = 48;
+  InputWidth = 260;
+var
+  Dialog: TDialogForm;
+  IconBox: TImage;
+  TitleLabel, DescLabel: TLabel;
+  Edit: TFloatSpinEdit;
+  OkButton, CancelButton: TButton;
+  bgcol: TColor;
+begin
+  Result := 0;
+  ModalResult := mrCancel; // Default
+
+  // Bakgrundsfärg beroende på darkmode
+  bgcol := IfThen(TrndiNative.isDarkMode, $00322B27, clWhite);
+
+  Dialog := TDialogForm.CreateNew(nil);
+  Dialog.KeyPreview := True;
+  Dialog.OnKeyDown := @Dialog.FormKeyDown;
+  try
+    Dialog.Caption := ACaption;
+    Dialog.BorderStyle := bsDialog;
+    Dialog.Position := poScreenCenter;
+    Dialog.ClientWidth := InputWidth + IconSize + 4 * Padding;
+    Dialog.Color := bgcol;
+
+    // Emoji-ikon
+    IconBox := TImage.Create(Dialog);
+    IconBox.Parent := Dialog;
+    IconBox.Width := IconSize;
+    IconBox.Height := IconSize;
+    IconBox.Left := Padding;
+    IconBox.Top := Padding;
+    IconBox.Color := bgcol;
+    {$ifdef Windows}
+    IconBox.Font.Name := 'Segoe UI Emoji';
+    {$endif}
+    Dialog.HandleNeeded;
+    AssignEmoji(IconBox, icon, bgcol);
+
+    // Titel (fetstil)
+    TitleLabel := TLabel.Create(Dialog);
+    TitleLabel.Parent := Dialog;
+    TitleLabel.Caption := ATitle;
+    TitleLabel.AutoSize := True;
+    TitleLabel.Font.Style := [fsBold];
+    TitleLabel.Left := IconBox.Left + IconBox.Width + Padding;
+    TitleLabel.Top := Padding;
+    TitleLabel.Font.Color := IfThen(TrndiNative.isDarkMode, clWhite, clBlack);
+
+    // Förklaring (normal)
+    DescLabel := TLabel.Create(Dialog);
+    DescLabel.Parent := Dialog;
+    DescLabel.Caption := ADesc;
+    DescLabel.AutoSize := True;
+    DescLabel.Font.Style := [];
+    DescLabel.Left := TitleLabel.Left;
+    DescLabel.Top := TitleLabel.Top + TitleLabel.Height + Padding div 10;
+    DescLabel.Font.Color := IfThen(TrndiNative.isDarkMode, clWhite, clBlack);
+
+    // Inmatningsruta (TEdit)
+    Edit := TFloatSpinEdit.Create(Dialog);
+    Edit.Parent := Dialog;
+    Edit.Left := TitleLabel.Left;
+    Edit.Width := Max(InputWidth, DescLabel.Canvas.TextWidth(ADesc));
+
+    Edit.Top := DescLabel.Top + DescLabel.Height + Padding div 2;
+    Edit.Value := ADefault;
+    if float then
+      edit.DecimalPlaces:=2
+    else
+      edit.DecimalPlaces:=0;
+
+
+    // OK-knapp
+    OkButton := TButton.Create(Dialog);
+    OkButton.Parent := Dialog;
+    OkButton.Caption := smbSelect;
+    OkButton.ModalResult := mrOk;
+
+    OkButton.Width := 80;
+    {$ifdef Windows}
+    OkButton.SetFocus;
+    {$endif}
+
+    // Avbryt-knapp
+    CancelButton := TButton.Create(Dialog);
+    CancelButton.Parent := Dialog;
+    CancelButton.Caption := smbUXCancel;
+    CancelButton.ModalResult := mrCancel;
+    CancelButton.Width := 80;
+
+    OkButton.Top := Edit.Top + Edit.Height + Padding * 2;
+    CancelButton.Top := OkButton.Top;
+    OkButton.Left := Edit.Left + (Edit.Width div 2) - OkButton.Width - Padding div 2;
+    CancelButton.Left := Edit.Left + (Edit.Width div 2) + Padding div 2;
+
+    // Dialogstorlek
+    Dialog.ClientHeight := OkButton.Top + OkButton.Height + Padding;
+    Dialog.ClientWidth := Max(
+      Edit.Left + Edit.Width + Padding,
+      IconBox.Left + IconBox.Width + Padding
+    );
+    Dialog.ClientWidth := Max(Dialog.ClientWidth, DescLabel.Width + DescLabel.left + Padding div 2);
+    Dialog.Color := bgcol;
+
+    Dialog.ActiveControl := Edit;
+
+    ModalResult := Dialog.ShowModal;
+    if ModalResult = mrOk then
+      Result := Edit.Value;
+  finally
+    Dialog.Free;
+  end;
+end;
 
 function ExtInput(
   const ACaption, ATitle, ADesc, ADefault: string;

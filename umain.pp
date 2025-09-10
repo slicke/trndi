@@ -91,6 +91,8 @@ TfBG = class(TForm)
   lTir:TLabel;
   lAgo:TLabel;
   MenuItem1: TMenuItem;
+  miADotScale: TMenuItem;
+  miADotAdjust: TMenuItem;
   miASystemInfo: TMenuItem;
   miADots: TMenuItem;
   miATouch: TMenuItem;
@@ -160,6 +162,8 @@ TfBG = class(TForm)
   procedure FormDestroy(Sender:TObject);
   procedure FormKeyPress(Sender:TObject;var Key:char);
   procedure MenuItem1Click(Sender: TObject);
+  procedure miADotAdjustClick(Sender: TObject);
+  procedure miADotScaleClick(Sender: TObject);
   procedure miADotsClick(Sender: TObject);
   procedure miASystemInfoClick(Sender: TObject);
   procedure miATouchClick(Sender: TObject);
@@ -829,8 +833,55 @@ var
       touchHelper := TTouchDetector.Create;
   end;
 
-  const
-    license = '⚠️ IMPORTANT MEDICAL WARNING ⚠️'#10#13+
+procedure initSplash;
+begin
+  fSplash := TfSplash.Create(nil);
+  FStoredWindowInfo.Initialized := False;
+  fSplash.Image1.Picture.Icon := Application.Icon;
+  fSplash.lInfo.Caption := '';
+  fSplash.lInfo.Font.Color := fSplash.lSplashWarn.Font.color;
+  fSplash.Show;
+end;
+
+procedure loadProfile;
+begin
+  if username <> '' then
+    begin
+      with TStringList.Create do
+      begin
+        AddCommaText(username);
+        Add('');
+//        i := InputCombo(RS_MULTIUSER_BOX_TITLE, RS_MULTIUSER_BOX, ToStringArray);
+          i := ExtList(RS_MULTIUSER_BOX_TITLE, RS_MULTIUSER_BOX_TITLE, RS_MULTIUSER_BOX, ToStringArray, HasTouch);
+
+        if (i > -1) and (strings[i] <> '') then
+        begin
+          username := strings[i];
+          s :=  native.GetSetting('user.nick', '');
+          if s = '' then
+            s := username;
+
+          fbg.Caption := Format(RS_USER_CAPTION, [s, fBG.Caption]);
+
+          native.configUser :=  username;
+        end
+        else
+          username := '';
+      end;// Load possible other users
+      multi := true;
+      s := native.GetSetting('user.color');
+      if s <> '' then
+        pnMultiUser.Color := StringToColor(s);
+      if pnMultiUser.Color <> clBlack then
+        pnMultiUser.Visible := true;
+    end
+    else
+      multi := false;
+end;
+
+procedure checkLicense;
+const
+  license = '⚠️ IMPORTANT MEDICAL WARNING ⚠️'#10#13+
 #10+
 'This app is NOT a medical device.'#10 +
 '• Do NOT make medical decisions based on this data'#10+
@@ -843,35 +894,50 @@ var
 '• The developers have NO LIABILITY'#10+
 '• You have read and agree to the full terms';
 begin
-  fSplash := TfSplash.Create(nil);
-  FStoredWindowInfo.Initialized := False;
-  fSplash.Image1.Picture.Icon := Application.Icon;
-  fSplash.lInfo.Caption := '';
-  fSplash.lInfo.Font.Color := fSplash.lSplashWarn.Font.color;
-  fSplash.Show;
-  Application.processmessages;
-  Application.OnException := @AppExceptionHandler;
+  if native.GetBoolSetting('license.250608') <> true then
+  while i <> mrYes do begin
+    i :=  ExtMsg(TrndiNative.HasTouchScreen, 'License', 'You must accept the full terms conditions', 'Do you agree to the terms and full license?', license, $00F5F2FD,$003411A9, [mbYes, mbCancel, mbUxRead], system.widechar($2699),5);
+    if i = mrYes then
+       native.SetBoolSetting('license.250608', true)
+    else if i = mrCancel then begin
+      Application.Terminate;
+      Exit;
+    end
+    else
+       OpenURL('https://github.com/slicke/trndi/blob/main/LICENSE.md');
+  end;
+end;
 
-  // Do this early
-  fSplash.lInfo.Caption := 'Starting Media Backend...';
-  MediaController := TSystemMediaController.Create(Self);
-  MediaController.Initialize;
+function loadApi: boolean;
+begin
+  result := true;
+  case native.GetSetting('remote.type') of
+    'NightScout':
+      api := NightScout.Create(apiTarget, apiCreds, '');
+    'Dexcom (USA)':
+      api := Dexcom.Create(apiTarget, apiCreds, 'usa');
+    'Dexcom (Outside USA)':
+      api := Dexcom.Create(apiTarget, apiCreds, 'world');
+    'xDrip':
+      api := xDrip.Create(apiTarget, apiCreds, '');
+    {$ifdef DEBUG}
+    '* Debug Backend *':
+      api := DebugAPI.Create(apiTarget, apiCreds, '');
+    '* Debug Missing Backend *':
+      api := DebugMissingAPI.Create(apiTarget, apiCreds, '');
+    '* Debug Perfect Backend *':
+      api := DebugPerfectAPI.Create(apiTarget, apiCreds, '');
+   '* Debug Edge Backend *':
+      api := DebugEdgeAPI.Create(apiTarget, apiCreds, '');
+      {$endif}
+    else
+      result := false;
+    end;
+end;
 
-
-  Application.ProcessMessages;
-
-  fil := FontInList(fontName);
-  if not fil then
-    ShowMessage(Format(RS_FONT_ERROR, [fontName]));
-
-    {$ifdef darwin}
-  addTopMenu;
-  {$endif}
-  native := TrndiNative.Create;
-
-  if native.isDarkMode then
-     native.setDarkMode{$ifdef windows}(self.Handle){$endif};
-  {$ifdef X_LINUXBSD}
+{$ifdef X_LINUXBSD}
+procedure linuxinit;
+begin
   x := scanLinuxDistro(['fedora','ubuntu','debian']);
   case x of
   'fedora': s := 'Poppins';
@@ -893,6 +959,34 @@ begin
   if isWSL then begin
      Showmessage('Windows Linux Subsystem (WSL) detected. Due to limitations in WSL, graphic issues may occur. Commonly, windows will appear at random positions an not where expected!');
   end;
+end;
+{$endif}
+
+begin
+  InitSplash;
+  Application.processmessages;
+  Application.OnException := @AppExceptionHandler;
+
+  // Do this early
+  fSplash.lInfo.Caption := 'Starting Media Backend...';
+  MediaController := TSystemMediaController.Create(Self);
+  MediaController.Initialize;
+
+  Application.ProcessMessages;
+
+  fil := FontInList(fontName);
+  if not fil then
+    ShowMessage(Format(RS_FONT_ERROR, [fontName]));
+
+  {$ifdef darwin}
+    addTopMenu;
+  {$endif}
+  native := TrndiNative.Create;
+
+  if native.isDarkMode then
+     native.setDarkMode{$ifdef windows}(self.Handle){$endif};
+  {$ifdef X_LINUXBSD}
+   linuxinit;
   {$endif}
   {$ifdef DARWIN}
   BorderStyle := bsSizeable;
@@ -914,57 +1008,15 @@ begin
   // Idea for using multiple person/account support
     username := GetRootSetting('users.names','');
 
-    if username <> '' then
-    begin
-      with TStringList.Create do
-      begin
-        AddCommaText(username);
-        Add('');
-//        i := InputCombo(RS_MULTIUSER_BOX_TITLE, RS_MULTIUSER_BOX, ToStringArray);
-          i := ExtList(RS_MULTIUSER_BOX_TITLE, RS_MULTIUSER_BOX_TITLE, RS_MULTIUSER_BOX, ToStringArray, HasTouch);
-
-        if (i > -1) and (strings[i] <> '') then
-        begin
-          username := strings[i];
-          s :=  GetSetting('user.nick', '');
-          if s = '' then
-            s := username;
-
-          fbg.Caption := Format(RS_USER_CAPTION, [s, fBG.Caption]);
-//          username := username;
-          native.configUser :=  username;
-        end
-        else
-          username := '';
-      end;// Load possible other users
-      multi := true;
-      s := GetSetting('user.color');
-      if s <> '' then
-        pnMultiUser.Color := StringToColor(s);
-      if pnMultiUser.Color <> clBlack then
-        pnMultiUser.Visible := true;
-    end
-    else
-      multi := false;
+   loadProfile;
 
       userlocale := DefaultFormatSettings;
       userlocale.DecimalSeparator := GetCharSetting('locale.separator', '.');
       badge_adjust := GetIntSetting('ux.badge_size', 0) / 10;
       native.locale := userlocale;
-      //-----LICENSE DO NOT MODIFY
-      if native.GetBoolSetting('license.250608') <> true then
-      while i <> mrYes do begin
-              i :=  ExtMsg(TrndiNative.HasTouchScreen, 'License', 'You must accept the full terms conditions', 'Do you agree to the terms and full license?', license, $00F5F2FD,$003411A9, [mbYes, mbCancel, mbUxRead], system.widechar($2699),5);
-              if i = mrYes then
-                 native.SetBoolSetting('license.250608', true)
-              else if i = mrCancel then begin
-                Application.Terminate;
-                Exit;
-              end
-              else
-                 OpenURL('https://github.com/slicke/trndi/blob/main/LICENSE.md');
-      end;
-      //-----END LICENSE
+
+      checkLicense;
+
 
     Application.processmessages;
     privacyMode := GetSetting('ext.privacy', '0') = '1';
@@ -972,6 +1024,7 @@ begin
       un := BGUnit.mmol
     else
       un := BGUnit.mgdl;
+
     apiTarget := GetSetting('remote.target');
     if apiTarget = '' then
     begin
@@ -986,28 +1039,8 @@ begin
     end;
     apiCreds := GetSetting('remote.creds');
     Application.processmessages;
-    case GetSetting('remote.type') of
-    'NightScout':
-      api := NightScout.Create(apiTarget, apiCreds, '');
-    'Dexcom (USA)':
-      api := Dexcom.Create(apiTarget, apiCreds, 'usa');
-    'Dexcom (Outside USA)':
-      api := Dexcom.Create(apiTarget, apiCreds, 'world');
-    'xDrip':
-      api := xDrip.Create(apiTarget, apiCreds, '');
-    {$ifdef DEBUG}
-    '* Debug Backend *':
-      api := DebugAPI.Create(apiTarget, apiCreds, '');
-    '* Debug Missing Backend *':
-      api := DebugMissingAPI.Create(apiTarget, apiCreds, '');
-    '* Debug Perfect Backend *':
-      api := DebugPerfectAPI.Create(apiTarget, apiCreds, '');
-   '* Debug Edge Backend *':
-      api := DebugEdgeAPI.Create(apiTarget, apiCreds, '');
-      {$endif}
-    else
-      Exit;
-    end;
+    if not loadapi then
+      exit;
 
     Application.processmessages;
     if not api.Connect then
@@ -1106,6 +1139,20 @@ end;
 procedure TfBG.MenuItem1Click(Sender: TObject);
 begin
   Close;
+end;
+
+procedure TfBG.miADotAdjustClick(Sender: TObject);
+var
+  mr: TModalResult;
+begin
+  DOT_ADJUST := ExtNumericInput('Dot Adjustment','Add dot adjustment','You can enter plus or minus (+/- 0.x)',DOT_ADJUST,true,mr);
+end;
+
+procedure TfBG.miADotScaleClick(Sender: TObject);
+var
+  mr: TModalResult;
+begin
+  dotscale := round(ExtNumericInput('Dot Adjustment','Add dot adjustment','You can enter plus or minus (+/- 0.x)',dotscale,false,mr));
 end;
 
 procedure TfBG.miADotsClick(Sender: TObject);
