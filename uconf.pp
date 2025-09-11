@@ -461,7 +461,7 @@ var
  c: char;
  mr: TModalResult;
 begin
-  s := ExtInput(RS_ENTER_USER, RS_ENTER_USER, RS_ENTER_NAME,'',mr);
+  s := ExtInput(TrndiNative.HasTouchScreen, RS_ENTER_USER, RS_ENTER_USER, RS_ENTER_NAME,'',mr);
   if mr = mrOK then begin
     if Trim(s) = '' then begin
       ShowMessage(RS_ENTER_ANY);

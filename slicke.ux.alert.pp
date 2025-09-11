@@ -131,12 +131,14 @@ function ExtList(
   const icon: WideChar = WideChar($2699)
 ): Integer;
 function ExtInput(
+  const big: boolean;
   const ACaption, ATitle, ADesc, ADefault: string;
   var ModalResult: TModalResult;
   const icon: WideChar = WideChar($2699)
 ): string;
 
 function ExtNumericInput(
+  const big: boolean;
   const ACaption, ATitle, ADesc: string;
   ADefault: double;
   float: boolean;
@@ -685,6 +687,7 @@ end;
 {$endif}
 
 function ExtNumericInput(
+  const big: boolean;
   const ACaption, ATitle, ADesc: string;
   ADefault: double;
   float: boolean;
@@ -704,9 +707,8 @@ var
   bgcol: TColor;
 begin
   Result := 0;
-  ModalResult := mrCancel; // Default
+  ModalResult := mrCancel;
 
-  // Bakgrundsfärg beroende på darkmode
   bgcol := IfThen(TrndiNative.isDarkMode, $00322B27, clWhite);
 
   Dialog := TDialogForm.CreateNew(nil);
@@ -719,11 +721,16 @@ begin
     Dialog.ClientWidth := InputWidth + IconSize + 4 * Padding;
     Dialog.Color := bgcol;
 
-    // Emoji-ikon
+    // Icon
     IconBox := TImage.Create(Dialog);
     IconBox.Parent := Dialog;
     IconBox.Width := IconSize;
     IconBox.Height := IconSize;
+    if big then
+    begin
+      IconBox.Width := IconSize * 2;
+      IconBox.Height := IconSize * 2;
+    end;
     IconBox.Left := Padding;
     IconBox.Top := Padding;
     IconBox.Color := bgcol;
@@ -733,71 +740,99 @@ begin
     Dialog.HandleNeeded;
     AssignEmoji(IconBox, icon, bgcol);
 
-    // Titel (fetstil)
+    // Title
     TitleLabel := TLabel.Create(Dialog);
     TitleLabel.Parent := Dialog;
     TitleLabel.Caption := ATitle;
     TitleLabel.AutoSize := True;
     TitleLabel.Font.Style := [fsBold];
+    if big then
+      TitleLabel.Font.Size := 24;
+    TitleLabel.AdjustSize;
     TitleLabel.Left := IconBox.Left + IconBox.Width + Padding;
     TitleLabel.Top := Padding;
     TitleLabel.Font.Color := IfThen(TrndiNative.isDarkMode, clWhite, clBlack);
 
-    // Förklaring (normal)
+    // Description
     DescLabel := TLabel.Create(Dialog);
     DescLabel.Parent := Dialog;
     DescLabel.Caption := ADesc;
     DescLabel.AutoSize := True;
     DescLabel.Font.Style := [];
+    if big then
+      DescLabel.Font.Size := 24;
+    DescLabel.AdjustSize;
     DescLabel.Left := TitleLabel.Left;
-    DescLabel.Top := TitleLabel.Top + TitleLabel.Height + Padding div 10;
+    DescLabel.Top := TitleLabel.Top +
+                     TitleLabel.Canvas.TextHeight(TitleLabel.Caption) +
+                     Padding div 10;
     DescLabel.Font.Color := IfThen(TrndiNative.isDarkMode, clWhite, clBlack);
 
-    // Inmatningsruta (TEdit)
+    // Numeric input
     Edit := TFloatSpinEdit.Create(Dialog);
     Edit.Parent := Dialog;
     Edit.Left := TitleLabel.Left;
     Edit.Width := Max(InputWidth, DescLabel.Canvas.TextWidth(ADesc));
 
-    Edit.Top := DescLabel.Top + DescLabel.Height + Padding div 2;
+    // 🔹 FIX: use text height for accurate placement
+    Edit.Top := DescLabel.Top +
+                DescLabel.Canvas.TextHeight(DescLabel.Caption) +
+                Padding div 2;
     Edit.Value := ADefault;
+
     if float then
-      edit.DecimalPlaces:=2
+      Edit.DecimalPlaces := 2
     else
-      edit.DecimalPlaces:=0;
+      Edit.DecimalPlaces := 0;
 
+    if big then
+    begin
+      Edit.Font.Size := 20;
+      {$IFDEF Windows}
+        Edit.Height := 42;
+      {$ENDIF}
+    end;
 
-    // OK-knapp
+    // OK Button
     OkButton := TButton.Create(Dialog);
     OkButton.Parent := Dialog;
     OkButton.Caption := smbSelect;
     OkButton.ModalResult := mrOk;
-
     OkButton.Width := 80;
+    if big then
+    begin
+      OkButton.Width := OkButton.Width * 2;
+      OkButton.Height := OkButton.Height * 2;
+    end;
     {$ifdef Windows}
     OkButton.SetFocus;
     {$endif}
 
-    // Avbryt-knapp
+    // Cancel Button
     CancelButton := TButton.Create(Dialog);
     CancelButton.Parent := Dialog;
     CancelButton.Caption := smbUXCancel;
     CancelButton.ModalResult := mrCancel;
     CancelButton.Width := 80;
+    if big then
+    begin
+      CancelButton.Width := CancelButton.Width * 2;
+      CancelButton.Height := CancelButton.Height * 2;
+    end;
 
+    // Button positioning
     OkButton.Top := Edit.Top + Edit.Height + Padding * 2;
     CancelButton.Top := OkButton.Top;
     OkButton.Left := Edit.Left + (Edit.Width div 2) - OkButton.Width - Padding div 2;
     CancelButton.Left := Edit.Left + (Edit.Width div 2) + Padding div 2;
 
-    // Dialogstorlek
+    // Dialog size
     Dialog.ClientHeight := OkButton.Top + OkButton.Height + Padding;
     Dialog.ClientWidth := Max(
       Edit.Left + Edit.Width + Padding,
       IconBox.Left + IconBox.Width + Padding
     );
-    Dialog.ClientWidth := Max(Dialog.ClientWidth, DescLabel.Width + DescLabel.left + Padding div 2);
-    Dialog.Color := bgcol;
+    Dialog.ClientWidth := Max(Dialog.ClientWidth, DescLabel.Width + DescLabel.Left + Padding div 2);
 
     Dialog.ActiveControl := Edit;
 
@@ -810,6 +845,7 @@ begin
 end;
 
 function ExtInput(
+  const big: boolean;
   const ACaption, ATitle, ADesc, ADefault: string;
   var ModalResult: TModalResult;
   const icon: WideChar = WideChar($2699)
@@ -827,9 +863,9 @@ var
   bgcol: TColor;
 begin
   Result := '';
-  ModalResult := mrCancel; // Default
+  ModalResult := mrCancel;
 
-  // Bakgrundsfärg beroende på darkmode
+  // Background color based on dark mode
   bgcol := IfThen(TrndiNative.isDarkMode, $00322B27, clWhite);
 
   Dialog := TDialogForm.CreateNew(nil);
@@ -842,11 +878,16 @@ begin
     Dialog.ClientWidth := InputWidth + IconSize + 4 * Padding;
     Dialog.Color := bgcol;
 
-    // Emoji-ikon
+    // --- Icon ---
     IconBox := TImage.Create(Dialog);
     IconBox.Parent := Dialog;
     IconBox.Width := IconSize;
     IconBox.Height := IconSize;
+    if big then
+    begin
+      IconBox.Width := IconSize * 2;
+      IconBox.Height := IconSize * 2;
+    end;
     IconBox.Left := Padding;
     IconBox.Top := Padding;
     IconBox.Color := bgcol;
@@ -856,70 +897,97 @@ begin
     Dialog.HandleNeeded;
     AssignEmoji(IconBox, icon, bgcol);
 
-    // Titel (fetstil)
+    // --- Title ---
     TitleLabel := TLabel.Create(Dialog);
     TitleLabel.Parent := Dialog;
     TitleLabel.Caption := ATitle;
     TitleLabel.AutoSize := True;
     TitleLabel.Font.Style := [fsBold];
+    if big then
+      TitleLabel.Font.Size := 24;
+    TitleLabel.AdjustSize;
     TitleLabel.Left := IconBox.Left + IconBox.Width + Padding;
     TitleLabel.Top := Padding;
     TitleLabel.Font.Color := IfThen(TrndiNative.isDarkMode, clWhite, clBlack);
 
-    // Förklaring (normal)
+    // --- Description ---
     DescLabel := TLabel.Create(Dialog);
     DescLabel.Parent := Dialog;
     DescLabel.Caption := ADesc;
     DescLabel.AutoSize := True;
     DescLabel.Font.Style := [];
+    if big then
+      DescLabel.Font.Size := 24;
+    DescLabel.AdjustSize;
     DescLabel.Left := TitleLabel.Left;
-    DescLabel.Top := TitleLabel.Top + TitleLabel.Height + Padding div 10;
+    DescLabel.Top := TitleLabel.Top +
+                     TitleLabel.Canvas.TextHeight(TitleLabel.Caption) +
+                     Padding div 10;
     DescLabel.Font.Color := IfThen(TrndiNative.isDarkMode, clWhite, clBlack);
 
-    // Inmatningsruta (TEdit)
+    // --- Input field (TEdit) ---
     Edit := TEdit.Create(Dialog);
     Edit.Parent := Dialog;
     Edit.Left := TitleLabel.Left;
     Edit.Width := Max(InputWidth, DescLabel.Canvas.TextWidth(ADesc));
-
-    Edit.Top := DescLabel.Top + DescLabel.Height + Padding div 2;
+    Edit.Top := DescLabel.Top +
+                DescLabel.Canvas.TextHeight(DescLabel.Caption) +
+                Padding div 2;
     Edit.Text := ADefault;
+    if big then
+    begin
+      Edit.Font.Size := 20;
+      {$IFDEF Windows}
+        Edit.Height := 42;
+      {$ENDIF}
+    end;
 
-
-    // OK-knapp
+    // --- OK Button ---
     OkButton := TButton.Create(Dialog);
     OkButton.Parent := Dialog;
     OkButton.Caption := smbSelect;
     OkButton.ModalResult := mrOk;
-
     OkButton.Width := 80;
+    if big then
+    begin
+      OkButton.Width := OkButton.Width * 2;
+      OkButton.Height := OkButton.Height * 2;
+    end;
     {$ifdef Windows}
     OkButton.SetFocus;
     {$endif}
 
-    // Avbryt-knapp
+    // --- Cancel Button ---
     CancelButton := TButton.Create(Dialog);
     CancelButton.Parent := Dialog;
     CancelButton.Caption := smbUXCancel;
     CancelButton.ModalResult := mrCancel;
     CancelButton.Width := 80;
+    if big then
+    begin
+      CancelButton.Width := CancelButton.Width * 2;
+      CancelButton.Height := CancelButton.Height * 2;
+    end;
 
+    // --- Button positioning ---
     OkButton.Top := Edit.Top + Edit.Height + Padding * 2;
     CancelButton.Top := OkButton.Top;
     OkButton.Left := Edit.Left + (Edit.Width div 2) - OkButton.Width - Padding div 2;
     CancelButton.Left := Edit.Left + (Edit.Width div 2) + Padding div 2;
 
-    // Dialogstorlek
+    // --- Dialog size adjustments ---
     Dialog.ClientHeight := OkButton.Top + OkButton.Height + Padding;
     Dialog.ClientWidth := Max(
       Edit.Left + Edit.Width + Padding,
       IconBox.Left + IconBox.Width + Padding
     );
-    Dialog.ClientWidth := Max(Dialog.ClientWidth, DescLabel.Width + DescLabel.left + Padding div 2);
-    Dialog.Color := bgcol;
+    Dialog.ClientWidth := Max(Dialog.ClientWidth,
+      DescLabel.Width + DescLabel.Left + Padding div 2);
 
+    // --- Focus ---
     Dialog.ActiveControl := Edit;
 
+    // --- Show ---
     ModalResult := Dialog.ShowModal;
     if ModalResult = mrOk then
       Result := Edit.Text;
