@@ -12,7 +12,9 @@ msgstr ""
 "X-Generator: Poedit 3.7\n"
 
 #: slicke.ux.alert.dlgerr
-msgid "An error occured while creating a message dalog"
+#, fuzzy
+#| msgid "An error occured while creating a message dalog"
+msgid "An error occurred while creating a message dialog"
 msgstr "Ett fel uppstod medan en meddelanderuta skulle skapas"
 
 #: slicke.ux.alert.serr
@@ -20,7 +22,9 @@ msgid "Script execution failed"
 msgstr "Skriptkörning misslyckades"
 
 #: slicke.ux.alert.sexterr
-msgid "Error occured in extension"
+#, fuzzy
+#| msgid "Error occured in extension"
+msgid "Error occurred in extension"
 msgstr "Fel i ett tillägg"
 
 #: slicke.ux.alert.sexttitle
@@ -619,40 +623,43 @@ msgid "Login error during post-authentication steps"
 msgstr "Inloggningsfel efter autensieringen"
 
 #: trndi.ext.functions.sdatatypeerr
-#, object-pascal-format
+#, object-pascal-format, fuzzy
 msgctxt "trndi.ext.functions.sdatatypeerr"
 msgid "Datatype %s was not expected, expected in function %s"
 msgstr "Datatypen %s förväntades inte, förväntad i funktionen %s"
 
 #: trndi.ext.functions.sdatatypeerrfunc
-#, object-pascal-format
+#, object-pascal-format, fuzzy
 msgctxt "trndi.ext.functions.sdatatypeerrfunc"
 msgid "Datatype \"%s\" was not expected, in function \"%s\". Expected \"%s\""
 msgstr "Datatypen ”%s” förväntades inte, i funktionen ”%s”. Förväntade ”%s”"
 
 #: trndi.ext.functions.sdatatypeerrpos
-#, object-pascal-format
+#, object-pascal-format, fuzzy
 msgctxt "trndi.ext.functions.sdatatypeerrpos"
 msgid "Datatype %s was not expected, expected in function %s, parameter %d"
 msgstr "Datatypen ”%s” förväntades inte, förväntad i funktionen %s, parameter %d"
 
 #: trndi.ext.functions.slogdesc
+#, fuzzy
 msgctxt "trndi.ext.functions.slogdesc"
 msgid "Trndi has captured data sent to console.log in a JavaScript extension"
 msgstr "Trndi har fångat utdata från console.log i ett JavaScript-tillägg"
 
 #: trndi.ext.functions.slogrecevive
+#, fuzzy
 msgctxt "trndi.ext.functions.slogrecevive"
 msgid "Output through console.log has been received"
 msgstr "Utmatning genom console.log har mottagits"
 
 #: trndi.ext.functions.snotrace
+#, fuzzy
 msgctxt "trndi.ext.functions.snotrace"
 msgid "No stack trace available"
 msgstr "Ingen stackspårning finns"
 
 #: trndi.ext.functions.sstackerrmsg
-#, object-pascal-format
+#, object-pascal-format, fuzzy
 msgctxt "trndi.ext.functions.sstackerrmsg"
 msgid ""
 "Error: %s \n"
@@ -662,32 +669,37 @@ msgstr ""
 "Stack: %s %s"
 
 #: trndi.ext.functions.sstackfailed
+#, fuzzy
 msgctxt "trndi.ext.functions.sstackfailed"
 msgid "An error occurred, and the stacktrace could not be loaded. Showing backtrace."
 msgstr "Ett fel uppstod och stackspårningen kunde inte laddas. Visar bakåtspårning."
 
 #: trndi.ext.functions.sunknownerr
+#, fuzzy
 msgctxt "trndi.ext.functions.sunknownerr"
 msgid "Unknown error"
 msgstr "Okänt fel"
 
 #: trndi.ext.promise.spromerrcapt
-#, object-pascal-format
+#, object-pascal-format, fuzzy
 msgctxt "trndi.ext.promise.spromerrcapt"
 msgid "The asyncronous function %s failed to complete"
 msgstr "Den asynkrona funktionen %s misslyckades"
 
 #: trndi.ext.promise.stypeerrcapt
+#, fuzzy
 msgctxt "trndi.ext.promise.stypeerrcapt"
 msgid "A data type differes from what was expected"
 msgstr "En datatyp skiljer sig från vad som förväntats"
 
 #: trndi.ext.promise.stypeerrdesc
+#, fuzzy
 msgctxt "trndi.ext.promise.stypeerrdesc"
 msgid "The extension was stopped"
 msgstr "Tillägget stoppades"
 
 #: trndi.ext.promise.stypeerrmsg
+#, fuzzy
 msgctxt "trndi.ext.promise.stypeerrmsg"
 msgid "A data type was expected, but another was found"
 msgstr "En datatyp förväntades, men en annan påträffades"
@@ -1200,26 +1212,32 @@ msgid "You can hold down shift and plus (+) or minus (-) to change the window si
 msgstr "Du kan hålla ned skift och plus (+) eller minus (-) för att justera fönstrets storlek"
 
 #: umain.rs_tpobottomleft
+#, fuzzy
 msgctxt "umain.rs_tpobottomleft"
 msgid "Bottom Left"
 msgstr "Nere till vänster"
 
 #: umain.rs_tpobottomright
+#, fuzzy
 msgctxt "umain.rs_tpobottomright"
 msgid "Bottom Right"
 msgstr "Nere till höger"
 
 #: umain.rs_tpocenter
+#, fuzzy
 msgctxt "umain.rs_tpocenter"
 msgid "Desktop Center"
 msgstr "Mitten av skrivbordet"
 
 #: umain.rs_tpocustom
+#, fuzzy
 msgctxt "umain.rs_tpocustom"
 msgid "Last position"
 msgstr "Senaste position"
 
 #: umain.rs_tpotopright
+#, fuzzy
 msgctxt "umain.rs_tpotopright"
 msgid "Top Right"
 msgstr "Höger topp"
+
