@@ -113,6 +113,7 @@ public
   procedure SetRootSetting(keyname: string; const val: string);
   procedure SetSetting(const keyname: string; const val: string; global: boolean = false);
   procedure SetBoolSetting(const keyname: string; const val: boolean);
+  procedure SetFloatSetting(const keyname: string; const val: single);
 
     { GetSetting
       ----------
@@ -128,6 +129,8 @@ public
       Same as GetSetting, but returns an integer. Returns `def` if parse fails.
     }
   function GetIntSetting(const keyname: string; def: integer = -1): integer;
+
+  function GetFloatSetting(const keyname: string; def: single = -1): single;
 
   function GetBoolSetting(const keyname: string; def: boolean = false): boolean;
     { isDarkMode
@@ -1559,6 +1562,23 @@ begin
 end;
 
 {------------------------------------------------------------------------------
+  TrndiNative.GetFloatSetting
+  -------------------------
+  Returns a single from settings if parseable, else returns `def`.
+ ------------------------------------------------------------------------------}
+function TrndiNative.GetFloatSetting(const keyname: string; def: single = -1): single;
+var
+  r: string;
+  f: TFormatSettings;
+begin
+  r := GetSetting(keyname, 'fail');
+
+  f := DefaultFormatSettings;
+  f.DecimalSeparator := '.';
+  result := StrToFloatDef(r, def, f);
+end;
+
+{------------------------------------------------------------------------------
   TrndiNative.GetBoolSetting
   -------------------------
   Returns a bool from settings if parseable, else returns `def`.
@@ -1583,6 +1603,15 @@ begin
     SetSetting(keyname, 'true')
   else
     SetSetting(keyname, 'false');
+end;
+
+procedure TrndiNative.SetFloatSetting(const keyname: string; const val: single);
+var
+  f: TFormatSettings;
+begin
+    f := DefaultFormatSettings;
+    f.DecimalSeparator := '.';
+    SetSetting(keyname, FormatFloat('0.00',val,f));
 end;
 
 procedure TrndiNative.SetRootSetting(keyname: string; const val: string);
