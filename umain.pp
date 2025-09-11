@@ -2853,7 +2853,13 @@ begin
     lMissing.width := pnWarning.Width-10;
     lMissing.height := pnWarning.height div 5;
     lMissing.OptimalFill := true;
-
+    if native.HasTouchScreen then begin
+      lMissing.wordwrap := true;
+      lmissing.font.size :=  clientwidth div 10;
+      lmissing.width := pnWarning.width;
+      lmissing.height := pnWarning.Height;
+      pnWarning.caption := '';
+    end;
     pnOffReading.Height := ClientHeight;
     pnOffReading.ClientWidth := ClientWidth div 35;
 end;
