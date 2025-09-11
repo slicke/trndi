@@ -43,7 +43,7 @@
 {"hash":158203379,"name":"tfbg.miborders.caption","sourcebytes":[78,111,32,98,111,114,100,101,114,115],"value":"No borders"},
 {"hash":255690039,"name":"tfbg.mifloaton.caption","sourcebytes":[83,104,111,119,32,70,108,111,97,116,105,110,103,32,87,105,110,100,111,119],"value":"Show Floating Window"},
 {"hash":106912681,"name":"tfbg.menuitem1.caption","sourcebytes":[69,120,105,116,32,84,114,110,100,105],"value":"Exit Trndi"},
-{"hash":140918259,"name":"tfbg.miadvanced.caption","sourcebytes":[65,100,118,97,110,99,101,100,32,83,101,116,116,105,110,103,115],"value":"Advanced Settings"},
+{"hash":216638629,"name":"tfbg.miadvanced.caption","sourcebytes":[62,32,83,101,114,118,105,99,101,32,77,101,110,117],"value":"> Service Menu"},
 {"hash":142772414,"name":"tfbg.miatouch.caption","sourcebytes":[70,111,114,99,101,32,84,111,117,99,104,115,99,114,101,101,110],"value":"Force Touchscreen"},
 {"hash":144118435,"name":"tfbg.miatouchyes.caption","sourcebytes":[70,111,114,99,101,32,89,101,115],"value":"Force Yes"},
 {"hash":109670815,"name":"tfbg.miatouchno.caption","sourcebytes":[70,111,114,99,101,32,78,111],"value":"Force No"},

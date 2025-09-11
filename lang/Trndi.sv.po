@@ -141,8 +141,8 @@ msgid "Adjust Dot Scale"
 msgstr "Justera punktskala"
 
 #: tfbg.miadvanced.caption
-msgid "Advanced Settings"
-msgstr "Avancerade Inställningar"
+msgid "> Service Menu"
+msgstr "> Servicemeny"
 
 #: tfbg.mialternate.caption
 msgid "Alterante arrow and reading"
@@ -158,23 +158,21 @@ msgid "System Info"
 msgstr "Systeminfo"
 
 #: tfbg.miatouch.caption
-#, fuzzy
-#| msgid "Touchscreen"
 msgid "Force Touchscreen"
-msgstr "Pekskärm"
+msgstr "Tvinga pekskärm"
 
 #: tfbg.miatouchauto.caption
 msgctxt "tfbg.miatouchauto.caption"
 msgid "Auto"
-msgstr ""
+msgstr "Auto"
 
 #: tfbg.miatouchno.caption
 msgid "Force No"
-msgstr ""
+msgstr "Tvinga Nej"
 
 #: tfbg.miatouchyes.caption
 msgid "Force Yes"
-msgstr ""
+msgstr "Tvinga Ja"
 
 #: tfbg.miborders.caption
 msgid "No borders"
@@ -395,8 +393,8 @@ msgid "Perfect Reading (5.5mmol/L or 100 mg/dL)"
 msgstr "Perfekt avläsning (5,5mmol/L eller 100 mg/dL)"
 
 #: tfconf.label13.caption
-msgid "Comma separator:"
-msgstr "Kommaseparator:"
+msgid "Decimal separator:"
+msgstr "Decimalseparator:"
 
 #: tfconf.label2.caption
 msgid ""
@@ -1225,4 +1223,3 @@ msgstr "Senaste position"
 msgctxt "umain.rs_tpotopright"
 msgid "Top Right"
 msgstr "Höger topp"
-
