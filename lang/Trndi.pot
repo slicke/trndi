@@ -2,7 +2,7 @@ msgid ""
 msgstr "Content-Type: text/plain; charset=UTF-8"
 
 #: slicke.ux.alert.dlgerr
-msgid "An error occured while creating a message dalog"
+msgid "An error occurred while creating a message dialog"
 msgstr ""
 
 #: slicke.ux.alert.serr
@@ -10,7 +10,7 @@ msgid "Script execution failed"
 msgstr ""
 
 #: slicke.ux.alert.sexterr
-msgid "Error occured in extension"
+msgid "Error occurred in extension"
 msgstr ""
 
 #: slicke.ux.alert.sexttitle
