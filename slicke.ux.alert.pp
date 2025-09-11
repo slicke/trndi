@@ -173,11 +173,19 @@ type
                     const icon: WideChar = WideChar($2699)): string;
 
   function ExtNumericInput(const dialogsize: TUXDialogSize;
-                           const ACaption, ATitle, ADesc: string;
-                           ADefault: double;
-                           float: boolean;
-                           var ModalResult: TModalResult;
-                           const icon: WideChar = WideChar($2699)): double;
+                   const ACaption, ATitle, ADesc: string;
+                   ADefault: double;
+                   float: boolean;
+                   var ModalResult: TModalResult;
+                   const icon: WideChar = WideChar($2699)): double;
+
+  function ExtIntInput(
+                    const dialogsize: TUXDialogSize;
+                    const ACaption, ATitle, ADesc: string;
+                    ADefault: integer;
+                    var ModalResult: TModalResult;
+                    const icon: WideChar = WideChar($2699)
+                  ): integer;
 
   function ExtTable(const big: boolean;
                     const ACaption, ATitle, ADesc: string;
@@ -568,6 +576,17 @@ begin
   DescLabel.Caption := ADesc;
   DescLabel.Font.Color := IfThen(TrndiNative.isDarkMode, clWhite, clBlack);
   DescLabel.Height := CalcWrappedHeight(DescLabel);
+end;
+
+function ExtIntInput(
+  const dialogsize: TUXDialogSize;
+  const ACaption, ATitle, ADesc: string;
+  ADefault: integer;
+  var ModalResult: TModalResult;
+  const icon: WideChar = WideChar($2699)
+): integer;
+begin
+ result := round(ExtNumericInput(dialogsize,ACaption,ATitle,ADesc,ADefault, false, ModalResult, icon));
 end;
 
 function ExtNumericInput(

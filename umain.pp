@@ -91,10 +91,11 @@ TfBG = class(TForm)
   lTir:TLabel;
   lAgo:TLabel;
   MenuItem1: TMenuItem;
+  MenuItem2: TMenuItem;
+  misep: TMenuItem;
   miATouchAuto: TMenuItem;
   miATouchNo: TMenuItem;
   miATouchYes: TMenuItem;
-  miADotScale: TMenuItem;
   miADotAdjust: TMenuItem;
   miASystemInfo: TMenuItem;
   miADots: TMenuItem;
@@ -165,6 +166,7 @@ TfBG = class(TForm)
   procedure FormDestroy(Sender:TObject);
   procedure FormKeyPress(Sender:TObject;var Key:char);
   procedure MenuItem1Click(Sender: TObject);
+  procedure MenuItem2Click(Sender: TObject);
   procedure miATouchAutoClick(Sender: TObject);
   procedure miADotAdjustClick(Sender: TObject);
   procedure miADotScaleClick(Sender: TObject);
@@ -1083,6 +1085,7 @@ begin
   end;
   miRangeColor.Checked := native.GetSetting('ux.range_color') = 'true';
   dotscale := native.GetIntSetting('ux.dot_scale', 1);
+
   Application.processmessages;
   if not updateReading(true) then begin // First reading attempt failed
     updateReading; // We call it twice, to first setup the dots and then make it black
@@ -1156,6 +1159,18 @@ begin
   Close;
 end;
 
+procedure TfBG.MenuItem2Click(Sender: TObject);
+var
+  mr: TModalResult;
+  dots: integer;
+begin
+    dots := ExtIntInput(uxdAuto, sDotSize, sCustomiseDotSize, sEnterDotSize, dotscale, mr);
+    if mr = mrOK then begin
+       native.SetSetting('ux.dot_scale', dots.tostring);
+       dotscale := dots;
+    end;
+end;
+
 procedure TfBG.miATouchAutoClick(Sender: TObject);
 begin
     miATouchYes.Checked := false;
@@ -1177,7 +1192,7 @@ procedure TfBG.miADotScaleClick(Sender: TObject);
 var
   mr: TModalResult;
 begin
-  dotscale := round(ExtNumericInput(uxdAuto, 'Dot Adjustment','Add dot adjustment','You can enter plus or minus (+/- 0.x)',dotscale,false,mr));
+//  dotscale := round(ExtNumericInput(uxdAuto, 'Dot Adjustment','Add dot adjustment','You can enter plus or minus (+/- 0.x)',dotscale,false,mr));
 end;
 
 procedure TfBG.miADotsClick(Sender: TObject);

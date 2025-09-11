@@ -38,6 +38,7 @@
 {"hash":51,"name":"tfbg.midotbig.hint","sourcebytes":[51],"value":"3"},
 {"hash":326613,"name":"tfbg.midothuge.caption","sourcebytes":[72,117,103,101],"value":"Huge"},
 {"hash":54,"name":"tfbg.midothuge.hint","sourcebytes":[54],"value":"6"},
+{"hash":96431029,"name":"tfbg.menuitem2.caption","sourcebytes":[67,117,115,116,111,109,32,83,105,122,101],"value":"Custom Size"},
 {"hash":90209120,"name":"tfbg.miontop.caption","sourcebytes":[79,110,32,116,111,112],"value":"On top"},
 {"hash":28642414,"name":"tfbg.mifullscreen.caption","sourcebytes":[84,111,103,103,108,101,32,70,117,108,108,115,99,114,101,101,110],"value":"Toggle Fullscreen"},
 {"hash":158203379,"name":"tfbg.miborders.caption","sourcebytes":[78,111,32,98,111,114,100,101,114,115],"value":"No borders"},
@@ -50,7 +51,6 @@
 {"hash":298159,"name":"tfbg.miatouchauto.caption","sourcebytes":[65,117,116,111],"value":"Auto"},
 {"hash":108717011,"name":"tfbg.miadots.caption","sourcebytes":[68,111,116,32,115,116,97,116,115],"value":"Dot stats"},
 {"hash":208670979,"name":"tfbg.miadotadjust.caption","sourcebytes":[65,100,106,117,115,116,32,68,111,116,32,80,111,115,105,116,105,111,110,115],"value":"Adjust Dot Positions"},
-{"hash":184264277,"name":"tfbg.miadotscale.caption","sourcebytes":[65,100,106,117,115,116,32,68,111,116,32,83,99,97,108,101],"value":"Adjust Dot Scale"},
 {"hash":196087407,"name":"tfbg.miasysteminfo.caption","sourcebytes":[83,121,115,116,101,109,32,73,110,102,111],"value":"System Info"},
 {"hash":214094746,"name":"tfbg.mirefresh.caption","sourcebytes":[82,101,102,114,101,115,104,32,105,110,58],"value":"Refresh in:"}
 ]}

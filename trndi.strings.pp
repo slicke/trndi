@@ -117,6 +117,10 @@ sForceRefresh = 'Forcefully refresh the reading?';
 sAnnounceOn = 'Announcing readings aloud';
 sAnnounceOff = 'No longer announcing readings aloud';
 
+sDotSize =  'Dot Size';
+sCustomiseDotSize = 'Customize dot size';
+sEnterDotSize= 'Enter a value, the dot size will multiply by this';
+
 implementation
 
 end.
