@@ -914,7 +914,7 @@ end;
      tbTrue: result := true;
      tbFalse: result := false;
    else
-     result := HasTouchScreen(mt);
+     result := DetectTouchScreen(mt);
    end;
  end;
 

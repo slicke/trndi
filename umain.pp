@@ -862,7 +862,7 @@ begin
         AddCommaText(username);
         Add('');
 //        i := InputCombo(RS_MULTIUSER_BOX_TITLE, RS_MULTIUSER_BOX, ToStringArray);
-          i := ExtList(uxdAuto,RS_MULTIUSER_BOX_TITLE, RS_MULTIUSER_BOX_TITLE, RS_MULTIUSER_BOX, ToStringArray);
+          i := ExtList(uxdAuto, RS_MULTIUSER_BOX_TITLE, RS_MULTIUSER_BOX_TITLE, RS_MULTIUSER_BOX, ToStringArray);
 
         if (i > -1) and (strings[i] <> '') then
         begin
