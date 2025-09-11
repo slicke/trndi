@@ -1085,6 +1085,7 @@ begin
   end;
   miRangeColor.Checked := native.GetSetting('ux.range_color') = 'true';
   dotscale := native.GetIntSetting('ux.dot_scale', 1);
+  DOT_ADJUST := native.GetFloatSetting('ux.dot_adjust', 0);
 
   Application.processmessages;
   if not updateReading(true) then begin // First reading attempt failed
@@ -1184,8 +1185,15 @@ end;
 procedure TfBG.miADotAdjustClick(Sender: TObject);
 var
   mr: TModalResult;
+  da: single;
 begin
-  DOT_ADJUST := (ExtNumericInput(uxdAuto, 'Dot Adjustment','Add dot adjustment','You can enter plus or minus',DOT_ADJUST,false, mr) / 100);
+  da := (ExtNumericInput(uxdAuto, 'Dot Adjustment','Add dot adjustment','You can enter plus or minus. Plus = down',DOT_ADJUST*100,false, mr) / 100);
+  if da <> mrCancel then begin
+    showmessage(da.tostring);
+    DOT_ADJUST := da;
+      if ExtMsg(uxdAuto, 'Save?', 'Remember setting?', 'Apply this value when Trndi starts?', da.tostring, $00F5F2FD,$003411A9, [mbYes, mbNo]) = mrYes then
+      native.SetFloatSetting('ux.dot_adjust', da);
+  end;
 end;
 
 procedure TfBG.miADotScaleClick(Sender: TObject);
