@@ -158,8 +158,23 @@ msgid "System Info"
 msgstr "Systeminfo"
 
 #: tfbg.miatouch.caption
-msgid "Touchscreen"
+#, fuzzy
+#| msgid "Touchscreen"
+msgid "Force Touchscreen"
 msgstr "Pekskärm"
+
+#: tfbg.miatouchauto.caption
+msgctxt "tfbg.miatouchauto.caption"
+msgid "Auto"
+msgstr ""
+
+#: tfbg.miatouchno.caption
+msgid "Force No"
+msgstr ""
+
+#: tfbg.miatouchyes.caption
+msgid "Force Yes"
+msgstr ""
 
 #: tfbg.miborders.caption
 msgid "No borders"
@@ -1210,3 +1225,4 @@ msgstr "Senaste position"
 msgctxt "umain.rs_tpotopright"
 msgid "Top Right"
 msgstr "Höger topp"
+

@@ -57,7 +57,7 @@ begin
   for i := 0 to argc-1 do
     output := output + ctx^.ToUtf8(argv^[i]);
 
-  if UXDialog(TrndiNative.HasTouchScreen, sExtMsg, '',output,[mbYes, mbNo],mtConfirmation) = mrYes then
+  if UXDialog(uxdAuto, sExtMsg, '',output,[mbYes, mbNo],mtConfirmation) = mrYes then
     result := JS_TRUE
   else
     result := JS_FALSE;
@@ -74,7 +74,7 @@ begin
     desc := ctx^.ToUtf8(argv^[1]);
     def :=  ctx^.ToUtf8(argv^[2]);
 
-    response := ExtInput(TrndiNative.HasTouchScreen(), sExtMsg,caption,desc,def,x);
+    response := ExtInput(uxdAuto, sExtMsg,caption,desc,def,x);
     if x = mrCancel then response := '';
 
     Result := JS_NewString(ctx, pansichar(Response));
@@ -97,7 +97,7 @@ begin
     caption := ctx^.ToUtf8(argv^[0]);
     desc := ctx^.ToUtf8(argv^[1]);
 
-    response := ExtList(sExtMsg,caption,desc,vals.ToStringArray(2,argc-1), TrndiNative.HasTouchScreen); // Ignore the first params
+    response := ExtList(uxdAuto, sExtMsg,caption,desc,vals.ToStringArray(2,argc-1)); // Ignore the first params
   //  res := vals.strings[response+2];
     vals.Free;
     result := JS_NewBigInt64(ctx,response);
@@ -250,9 +250,9 @@ begin
   if (not ((params >= cb^.params.min) and (params <= cb^.params.max))) and (cb^.params.min > -1) then
   //Use minus for feely varying
     if cb^.params.min = cb^.params.max then
-      ExtError(TrndiNative.HasTouchScreen, Format('[%s] Needs %d pameters, but we got %d', [func, cb^.params.min, params]))
+      ExtError(uxdAuto, Format('[%s] Needs %d pameters, but we got %d', [func, cb^.params.min, params]))
     else
-      ExtError(TrndiNative.HasTouchScreen, Format('[%s] Needs %d - %d pameters, but we got %d', [func, cb^.params.min, cb^.params
+      ExtError(uxdAuto, Format('[%s] Needs %d - %d pameters, but we got %d', [func, cb^.params.min, cb^.params
         .max, params]));
 
 // Setup promise
@@ -261,7 +261,7 @@ begin
   except
     on E: Exception do
     begin
-      ExtError(TrndiNative.HasTouchScreen, 'Init failed');
+      ExtError(uxdAuto, 'Init failed');
       Exit;
     end;
   end;

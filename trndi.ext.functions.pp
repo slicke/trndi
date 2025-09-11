@@ -939,7 +939,7 @@ begin
   end;
 
   // Log via external logging function
-  ExtLog(TrndiNative.HasTouchScreen, sLogRecevive, sLogDesc, fullMsg);
+  ExtLog(uxdAuto, sLogRecevive, sLogDesc, fullMsg);
 
   // Return undefined
   Result := JS_UNDEFINED;

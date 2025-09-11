@@ -10,7 +10,6 @@ object fBG: TfBG
   Color = clBlack
   Font.Color = clWhite
   Position = poDesktopCenter
-  LCLVersion = '4.2.0.0'
   OnClose = FormClose
   OnCreate = FormCreate
   OnDblClick = FormDblClick
@@ -433,8 +432,21 @@ object fBG: TfBG
       Caption = 'Advanced Settings'
       Visible = False
       object miATouch: TMenuItem
-        Caption = 'Touchscreen'
+        Caption = 'Force Touchscreen'
         OnClick = miATouchClick
+        object miATouchYes: TMenuItem
+          Caption = 'Force Yes'
+          OnClick = miATouchYesClick
+        end
+        object miATouchNo: TMenuItem
+          Caption = 'Force No'
+          OnClick = miATouchNoClick
+        end
+        object miATouchAuto: TMenuItem
+          Caption = 'Auto'
+          Checked = True
+          OnClick = miATouchAutoClick
+        end
       end
       object miADots: TMenuItem
         Caption = 'Dot stats'

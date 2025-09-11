@@ -91,6 +91,9 @@ TfBG = class(TForm)
   lTir:TLabel;
   lAgo:TLabel;
   MenuItem1: TMenuItem;
+  miATouchAuto: TMenuItem;
+  miATouchNo: TMenuItem;
+  miATouchYes: TMenuItem;
   miADotScale: TMenuItem;
   miADotAdjust: TMenuItem;
   miASystemInfo: TMenuItem;
@@ -162,11 +165,14 @@ TfBG = class(TForm)
   procedure FormDestroy(Sender:TObject);
   procedure FormKeyPress(Sender:TObject;var Key:char);
   procedure MenuItem1Click(Sender: TObject);
+  procedure miATouchAutoClick(Sender: TObject);
   procedure miADotAdjustClick(Sender: TObject);
   procedure miADotScaleClick(Sender: TObject);
   procedure miADotsClick(Sender: TObject);
   procedure miASystemInfoClick(Sender: TObject);
   procedure miATouchClick(Sender: TObject);
+  procedure miATouchNoClick(Sender: TObject);
+  procedure miATouchYesClick(Sender: TObject);
   procedure speakReading;
   procedure FormMouseLeave(Sender:TObject);
   procedure FormMouseMove(Sender:TObject;{%H-}Shift:TShiftState;X,Y:integer);
@@ -831,6 +837,8 @@ var
     HasTouch :=  native.HasTouchScreen(HasMultiTouch);
     if HasMultiTouch then
       touchHelper := TTouchDetector.Create;
+
+    miATouch.Checked := hastouch;
   end;
 
 procedure initSplash;
@@ -854,8 +862,8 @@ begin
         AddCommaText(username);
         Add('');
 //        i := InputCombo(RS_MULTIUSER_BOX_TITLE, RS_MULTIUSER_BOX, ToStringArray);
-          i := ExtList(RS_MULTIUSER_BOX_TITLE, RS_MULTIUSER_BOX_TITLE, RS_MULTIUSER_BOX, ToStringArray, HasTouch);
-              ExtInput(true,'titel','under','sist','desc',mr);
+          i := ExtList(uxdAuto,RS_MULTIUSER_BOX_TITLE, RS_MULTIUSER_BOX_TITLE, RS_MULTIUSER_BOX, ToStringArray);
+
         if (i > -1) and (strings[i] <> '') then
         begin
           username := strings[i];
@@ -898,7 +906,7 @@ const
 begin
   if native.GetBoolSetting('license.250608') <> true then
   while i <> mrYes do begin
-    i :=  ExtMsg(TrndiNative.HasTouchScreen, 'License', 'You must accept the full terms conditions', 'Do you agree to the terms and full license?', license, $00F5F2FD,$003411A9, [mbYes, mbCancel, mbUxRead], system.widechar($2699),5);
+    i :=  ExtMsg(uxdAuto, 'License', 'You must accept the full terms conditions', 'Do you agree to the terms and full license?', license, $00F5F2FD,$003411A9, [mbYes, mbCancel, mbUxRead], system.widechar($2699),5);
     if i = mrYes then
        native.SetBoolSetting('license.250608', true)
     else if i = mrCancel then begin
@@ -1131,7 +1139,7 @@ begin
   'A', 'a':
     miAnnounce.Click;
   'R', 'r':
-    if slicke.UX.alert.UXDialog(TrndiNative.HasTouchScreen, sRefrshQ, sForceRefresh, [mbYes, mbNo]) = mrYes then
+    if slicke.UX.alert.UXDialog(uxdAuto, sRefrshQ, sForceRefresh, [mbYes, mbNo]) = mrYes then
          miForce.Click;
   'I', 'i':
     miSettings.Click;
@@ -1143,18 +1151,28 @@ begin
   Close;
 end;
 
+procedure TfBG.miATouchAutoClick(Sender: TObject);
+begin
+    miATouchYes.Checked := false;
+    miATouchNo.Checked := false;
+    miATouchAuto.Checked := false;
+    (sender as TMenuItem).Checked:=true;
+
+    native.touchOverride := tbUnset;
+end;
+
 procedure TfBG.miADotAdjustClick(Sender: TObject);
 var
   mr: TModalResult;
 begin
-  DOT_ADJUST := ExtNumericInput(hastouch, 'Dot Adjustment','Add dot adjustment','You can enter plus or minus (+/- 0.x)',DOT_ADJUST,true,mr);
+  DOT_ADJUST := ExtNumericInput(uxdAuto, 'Dot Adjustment','Add dot adjustment','You can enter plus or minus (+/- 0.x)',DOT_ADJUST,true,mr);
 end;
 
 procedure TfBG.miADotScaleClick(Sender: TObject);
 var
   mr: TModalResult;
 begin
-  dotscale := round(ExtNumericInput(hastouch, 'Dot Adjustment','Add dot adjustment','You can enter plus or minus (+/- 0.x)',dotscale,false,mr));
+  dotscale := round(ExtNumericInput(uxdAuto, 'Dot Adjustment','Add dot adjustment','You can enter plus or minus (+/- 0.x)',dotscale,false,mr));
 end;
 
 procedure TfBG.miADotsClick(Sender: TObject);
@@ -1197,8 +1215,27 @@ end;
 
 procedure TfBG.miATouchClick(Sender: TObject);
 begin
-  miATouch.Checked := not miATouch.Checked;
-  HasTouch := miATouch.Checked;
+
+
+end;
+
+procedure TfBG.miATouchNoClick(Sender: TObject);
+begin
+      miATouchYes.Checked := false;
+    miATouchNo.Checked := false;
+    miATouchAuto.Checked := false;
+    (sender as TMenuItem).Checked:=true;
+  native.touchOverride := tbFalse;
+
+end;
+
+procedure TfBG.miATouchYesClick(Sender: TObject);
+begin
+      miATouchYes.Checked := false;
+    miATouchNo.Checked := false;
+    miATouchAuto.Checked := false;
+    (sender as TMenuItem).Checked:=true;
+    native.touchOverride := tbTrue;
 end;
 
 procedure TfBG.FormMouseLeave(Sender:TObject);
@@ -1241,7 +1278,7 @@ begin
   end;
   {$else}
 
-  if UXDialog(HasTouch, RS_QUIT_CAPTION, RS_QUIT_MSG, [mbYes, mbNo], widechar($2705)) = mrNo then
+  if UXDialog(uxdAuto, RS_QUIT_CAPTION, RS_QUIT_MSG, [mbYes, mbNo], widechar($2705)) = mrNo then
     Abort;
   {$endif}
   {$ifdef TrndiExt}
@@ -2828,9 +2865,9 @@ begin
       bgs := api.getReadings(MAX_MIN, MAX_RESULT, '', res);
       if Showing then
         if res.IsEmpty then
-          slicke.ux.alert.ExtLog(hastouch, 'Debug Info', '[empty!]', res)
+          slicke.ux.alert.ExtLog(uxdAuto, 'Debug Info', '[empty!]', res)
         else
-          slicke.ux.alert.ExtLog(hastouch, 'Debug Info', '', res, System.widechar($2699), 10);
+          slicke.ux.alert.ExtLog(uxdAuto, 'Debug Info', '', res, System.widechar($2699), 10);
   {$ELSE}
        bgs := api.getReadings(MAX_MIN, MAX_RESULT);
   {$endif}
