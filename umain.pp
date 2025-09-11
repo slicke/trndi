@@ -434,12 +434,12 @@ end;
 
 procedure Showmessage(const str: string);
 begin
-  UXMessage(sSuccTitle, str, system.widechar($2139), fBG, HasTouch);
+  UXMessage(sSuccTitle, str, system.widechar($2139), fBG, TrndiNative.HasTouchScreen);
 end;
 
 procedure Showmessage(const title, str: string);
 begin
-  UXMessage(title, str, system.widechar($2139), fBG, HasTouch);
+  UXMessage(title, str, system.widechar($2139), fBG, TrndiNative.hastouchscreen);
 end;
 
 procedure TfBG.placeForm;
