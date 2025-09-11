@@ -1207,7 +1207,10 @@ begin
     'macOS Native'
   {$else}
     'unsupportd widgetset'
-  {$endif});
+  {$endif}
+  + ' | Default separator: ' + DefaultFormatSettings.DecimalSeparator
+
+  ) ;
 
 
 

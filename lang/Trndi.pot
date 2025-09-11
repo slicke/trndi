@@ -131,7 +131,7 @@ msgid "Adjust Dot Scale"
 msgstr ""
 
 #: tfbg.miadvanced.caption
-msgid "Advanced Settings"
+msgid "> Service Menu"
 msgstr ""
 
 #: tfbg.mialternate.caption
@@ -383,7 +383,7 @@ msgid "Perfect Reading (5.5mmol/L or 100 mg/dL)"
 msgstr ""
 
 #: tfconf.label13.caption
-msgid "Comma separator:"
+msgid "Decimal separator:"
 msgstr ""
 
 #: tfconf.label2.caption
