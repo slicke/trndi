@@ -715,6 +715,7 @@ procedure UXMessage(const title, message: string;
   sender: TForm = nil; onForm: boolean = false);
 var
   tp: TPanel;
+  tl: TLabel;
   tb: TButton;
   df: TDialogForm;
 begin
@@ -729,10 +730,19 @@ begin
     tp.Width := sender.Width;
     tp.BringToFront;
     tp.Color := $00FDD8AA;
-    tp.Font.Color := $00AA6004;
-    tp.Caption := message;
-    tp.Font.Size := tp.Width div 25;
-    tp.WordWrap := True;
+
+    tl := TLabel.Create(tp);
+    tl.parent := tp;
+    tl.autosize := false;
+    tl.Font.Color := $00AA6004;
+    tl.Caption := message;
+    tl.Font.Size := tp.Width div 20;
+    tl.WordWrap := True;
+    tl.top := 5;
+    tl.left := 5;
+    tl.width := tp.width-10;
+    tl.height := tp.height;
+    tl.WordWrap := true;
 
     tb := TButton.Create(tp);
     tb.Parent := tp;
