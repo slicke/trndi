@@ -12,8 +12,6 @@ msgstr ""
 "X-Generator: Poedit 3.7\n"
 
 #: slicke.ux.alert.dlgerr
-#, fuzzy
-#| msgid "An error occured while creating a message dalog"
 msgid "An error occurred while creating a message dialog"
 msgstr "Ett fel uppstod medan en meddelanderuta skulle skapas"
 
@@ -22,8 +20,6 @@ msgid "Script execution failed"
 msgstr "Skriptkörning misslyckades"
 
 #: slicke.ux.alert.sexterr
-#, fuzzy
-#| msgid "Error occured in extension"
 msgid "Error occurred in extension"
 msgstr "Fel i ett tillägg"
 
@@ -132,6 +128,10 @@ msgstr "Konfig"
 msgid "Exit Trndi"
 msgstr "Avsluta Trndi"
 
+#: tfbg.menuitem2.caption
+msgid "Custom Size"
+msgstr "Egen storlek"
+
 #: tfbg.miadotadjust.caption
 msgid "Adjust Dot Positions"
 msgstr "Justera punktpositioner"
@@ -139,10 +139,6 @@ msgstr "Justera punktpositioner"
 #: tfbg.miadots.caption
 msgid "Dot stats"
 msgstr "Punktstatistik"
-
-#: tfbg.miadotscale.caption
-msgid "Adjust Dot Scale"
-msgstr "Justera punktskala"
 
 #: tfbg.miadvanced.caption
 msgid "> Service Menu"
@@ -213,6 +209,7 @@ msgid "1"
 msgstr "1"
 
 #: tfbg.midotsize.caption
+msgctxt "tfbg.midotsize.caption"
 msgid "Dot Size"
 msgstr "Punktstorlek"
 
@@ -623,43 +620,40 @@ msgid "Login error during post-authentication steps"
 msgstr "Inloggningsfel efter autensieringen"
 
 #: trndi.ext.functions.sdatatypeerr
-#, object-pascal-format, fuzzy
+#, object-pascal-format
 msgctxt "trndi.ext.functions.sdatatypeerr"
 msgid "Datatype %s was not expected, expected in function %s"
 msgstr "Datatypen %s förväntades inte, förväntad i funktionen %s"
 
 #: trndi.ext.functions.sdatatypeerrfunc
-#, object-pascal-format, fuzzy
+#, object-pascal-format
 msgctxt "trndi.ext.functions.sdatatypeerrfunc"
 msgid "Datatype \"%s\" was not expected, in function \"%s\". Expected \"%s\""
 msgstr "Datatypen ”%s” förväntades inte, i funktionen ”%s”. Förväntade ”%s”"
 
 #: trndi.ext.functions.sdatatypeerrpos
-#, object-pascal-format, fuzzy
+#, object-pascal-format
 msgctxt "trndi.ext.functions.sdatatypeerrpos"
 msgid "Datatype %s was not expected, expected in function %s, parameter %d"
 msgstr "Datatypen ”%s” förväntades inte, förväntad i funktionen %s, parameter %d"
 
 #: trndi.ext.functions.slogdesc
-#, fuzzy
 msgctxt "trndi.ext.functions.slogdesc"
 msgid "Trndi has captured data sent to console.log in a JavaScript extension"
 msgstr "Trndi har fångat utdata från console.log i ett JavaScript-tillägg"
 
 #: trndi.ext.functions.slogrecevive
-#, fuzzy
 msgctxt "trndi.ext.functions.slogrecevive"
 msgid "Output through console.log has been received"
 msgstr "Utmatning genom console.log har mottagits"
 
 #: trndi.ext.functions.snotrace
-#, fuzzy
 msgctxt "trndi.ext.functions.snotrace"
 msgid "No stack trace available"
 msgstr "Ingen stackspårning finns"
 
 #: trndi.ext.functions.sstackerrmsg
-#, object-pascal-format, fuzzy
+#, object-pascal-format
 msgctxt "trndi.ext.functions.sstackerrmsg"
 msgid ""
 "Error: %s \n"
@@ -669,37 +663,32 @@ msgstr ""
 "Stack: %s %s"
 
 #: trndi.ext.functions.sstackfailed
-#, fuzzy
 msgctxt "trndi.ext.functions.sstackfailed"
 msgid "An error occurred, and the stacktrace could not be loaded. Showing backtrace."
 msgstr "Ett fel uppstod och stackspårningen kunde inte laddas. Visar bakåtspårning."
 
 #: trndi.ext.functions.sunknownerr
-#, fuzzy
 msgctxt "trndi.ext.functions.sunknownerr"
 msgid "Unknown error"
 msgstr "Okänt fel"
 
 #: trndi.ext.promise.spromerrcapt
-#, object-pascal-format, fuzzy
+#, object-pascal-format
 msgctxt "trndi.ext.promise.spromerrcapt"
 msgid "The asyncronous function %s failed to complete"
 msgstr "Den asynkrona funktionen %s misslyckades"
 
 #: trndi.ext.promise.stypeerrcapt
-#, fuzzy
 msgctxt "trndi.ext.promise.stypeerrcapt"
 msgid "A data type differes from what was expected"
 msgstr "En datatyp skiljer sig från vad som förväntats"
 
 #: trndi.ext.promise.stypeerrdesc
-#, fuzzy
 msgctxt "trndi.ext.promise.stypeerrdesc"
 msgid "The extension was stopped"
 msgstr "Tillägget stoppades"
 
 #: trndi.ext.promise.stypeerrmsg
-#, fuzzy
 msgctxt "trndi.ext.promise.stypeerrmsg"
 msgid "A data type was expected, but another was found"
 msgstr "En datatyp förväntades, men en annan påträffades"
@@ -988,6 +977,10 @@ msgstr "Läser inte upp värden"
 msgid "Announcing readings aloud"
 msgstr "Läser upp värden"
 
+#: trndi.strings.scustomisedotsize
+msgid "Customize dot size"
+msgstr "Anpassa punktstorlek"
+
 #: trndi.strings.sdatatypeerr
 #, object-pascal-format
 msgctxt "trndi.strings.sdatatypeerr"
@@ -1010,6 +1003,15 @@ msgstr "Datatypen ”%s” förväntades inte, förväntad i funktionen %s, para
 #, object-pascal-format
 msgid "Device: %s"
 msgstr "Enhet: %s"
+
+#: trndi.strings.sdotsize
+msgctxt "trndi.strings.sdotsize"
+msgid "Dot Size"
+msgstr "Punktstorlek"
+
+#: trndi.strings.senterdotsize
+msgid "Enter a value, the dot size will multiply by this"
+msgstr "Skriv in ett värde, punktstorleken kommer att gångras med detta"
 
 #: trndi.strings.sextconfirm
 msgid "Extension Confirmation"
@@ -1212,7 +1214,6 @@ msgid "You can hold down shift and plus (+) or minus (-) to change the window si
 msgstr "Du kan hålla ned skift och plus (+) eller minus (-) för att justera fönstrets storlek"
 
 #: umain.rs_tpobottomleft
-#, fuzzy
 msgctxt "umain.rs_tpobottomleft"
 msgid "Bottom Left"
 msgstr "Nere till vänster"
@@ -1240,4 +1241,3 @@ msgstr "Senaste position"
 msgctxt "umain.rs_tpotopright"
 msgid "Top Right"
 msgstr "Höger topp"
-

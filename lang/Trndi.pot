@@ -118,16 +118,16 @@ msgstr ""
 msgid "Exit Trndi"
 msgstr ""
 
+#: tfbg.menuitem2.caption
+msgid "Custom Size"
+msgstr ""
+
 #: tfbg.miadotadjust.caption
 msgid "Adjust Dot Positions"
 msgstr ""
 
 #: tfbg.miadots.caption
 msgid "Dot stats"
-msgstr ""
-
-#: tfbg.miadotscale.caption
-msgid "Adjust Dot Scale"
 msgstr ""
 
 #: tfbg.miadvanced.caption
@@ -199,6 +199,7 @@ msgid "1"
 msgstr ""
 
 #: tfbg.midotsize.caption
+msgctxt "tfbg.midotsize.caption"
 msgid "Dot Size"
 msgstr ""
 
@@ -934,6 +935,10 @@ msgstr ""
 msgid "Announcing readings aloud"
 msgstr ""
 
+#: trndi.strings.scustomisedotsize
+msgid "Customize dot size"
+msgstr ""
+
 #: trndi.strings.sdatatypeerr
 #, object-pascal-format
 msgctxt "trndi.strings.sdatatypeerr"
@@ -955,6 +960,15 @@ msgstr ""
 #: trndi.strings.sdevice
 #, object-pascal-format
 msgid "Device: %s"
+msgstr ""
+
+#: trndi.strings.sdotsize
+msgctxt "trndi.strings.sdotsize"
+msgid "Dot Size"
+msgstr ""
+
+#: trndi.strings.senterdotsize
+msgid "Enter a value, the dot size will multiply by this"
 msgstr ""
 
 #: trndi.strings.sextconfirm

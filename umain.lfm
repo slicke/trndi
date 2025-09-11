@@ -10,7 +10,6 @@ object fBG: TfBG
   Color = clBlack
   Font.Color = clWhite
   Position = poDesktopCenter
-  LCLVersion = '4.2.0.0'
   OnClose = FormClose
   OnCreate = FormCreate
   OnDblClick = FormDblClick
@@ -401,6 +400,13 @@ object fBG: TfBG
           Hint = '6'
           OnClick = miDotNormalClick
         end
+        object misep: TMenuItem
+          Caption = '-'
+        end
+        object MenuItem2: TMenuItem
+          Caption = 'Custom Size'
+          OnClick = MenuItem2Click
+        end
       end
     end
     object miSplit4: TMenuItem
@@ -456,10 +462,6 @@ object fBG: TfBG
       object miADotAdjust: TMenuItem
         Caption = 'Adjust Dot Positions'
         OnClick = miADotAdjustClick
-      end
-      object miADotScale: TMenuItem
-        Caption = 'Adjust Dot Scale'
-        OnClick = miADotScaleClick
       end
       object miASystemInfo: TMenuItem
         Caption = 'System Info'
