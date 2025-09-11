@@ -50,7 +50,7 @@ fphttpclient, openssl, opensslsockets, IniFiles, Dialogs, extctrls, forms, math,
 
 type
   TWSLVersion = (wslNone, wslVersion1, wslVersion2, wslUnknown);
-  TTrndiBool = (tbTrue, tbFalse, tbUnknown, tbUnset);
+  TTrndiBool = (tbUnset, tbTrue, tbFalse, tbUnknown);
 
   TWSLInfo = record
     IsWSL: Boolean;
@@ -1067,7 +1067,8 @@ begin
   // Check if we're in dark mode on creation
   dark := isDarkMode;
   fsettings := DefaultFormatSettings;
-  touchOverride := tbUnset;
+  if touchOverride = tbUnset then
+     touchOverride := tbUnknown;
   cfguser := '';
 end;
 
