@@ -1185,7 +1185,7 @@ procedure TfBG.miADotAdjustClick(Sender: TObject);
 var
   mr: TModalResult;
 begin
-  DOT_ADJUST := ExtNumericInput(uxdAuto, 'Dot Adjustment','Add dot adjustment','You can enter plus or minus (+/- 0.x)',DOT_ADJUST,true,mr);
+  DOT_ADJUST := (ExtNumericInput(uxdAuto, 'Dot Adjustment','Add dot adjustment','You can enter plus or minus',DOT_ADJUST,false, mr) / 100);
 end;
 
 procedure TfBG.miADotScaleClick(Sender: TObject);
