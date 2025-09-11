@@ -1158,7 +1158,7 @@ begin
     miATouchAuto.Checked := false;
     (sender as TMenuItem).Checked:=true;
 
-    native.touchOverride := tbUnset;
+    native.touchOverride := tbUnknown;
 end;
 
 procedure TfBG.miADotAdjustClick(Sender: TObject);
