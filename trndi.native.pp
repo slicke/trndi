@@ -50,6 +50,7 @@ fphttpclient, openssl, opensslsockets, IniFiles, Dialogs, extctrls, forms, math,
 
 type
   TWSLVersion = (wslNone, wslVersion1, wslVersion2, wslUnknown);
+  TTrndiBool = (tbTrue, tbFalse, tbUnknown, tbUnset);
 
   TWSLInfo = record
     IsWSL: Boolean;
@@ -74,6 +75,8 @@ private
   function buildKey(const key: string; global: boolean): string;
   procedure updateLocale(const l: TFormatSettings);
 public
+
+  class var touchOverride: TTrndiBool;
     // Indicates if the user system is in a "dark mode" theme
   dark: boolean;
 
@@ -134,7 +137,7 @@ public
     }
   class function isDarkMode: boolean;
 
-    { HasTouchScreen
+    { DetectTouchScreen
       --------------
       Returns True if the current machine supports a touch screen. This logic
       is platform-specific:
@@ -142,6 +145,7 @@ public
        - macOS always returns False
        - Linux checks `/proc/bus/input/devices`
     }
+  class function DetectTouchScreen(out multi: boolean): boolean;
   class function HasTouchScreen(out multi: boolean): boolean;
   class function HasTouchScreen: boolean;
 
@@ -509,6 +513,7 @@ var
   SavedDC: Integer;
   Region, SquareRegion: HRGN;
   RgnRect: Classes.TRect;
+  dval: double;
 begin
   // Create objects
   AppIcon := TIcon.Create;
@@ -529,8 +534,10 @@ begin
 
     // Format text
     try
-
-          BadgeText := FormatFloat('0.0', StrToFloat(Value, fsettings), fsettings);
+      if TryStrToFloat(value, dval, fsettings) then
+          BadgeText := FormatFloat('0.0', dval, fsettings)
+      else
+          BadgeText := value;
     except
       BadgeText := Value;
     end;
@@ -889,19 +896,35 @@ begin
 end;
 
 {------------------------------------------------------------------------------
-  TrndiNative.HasTouchScreen
+  TrndiNative.DetectTouchScreen
   --------------------------
-  Platform-specific detection of touch hardware.
+  Overridable touch screen setting
  ------------------------------------------------------------------------------}
+ class function TrndiNative.HasTouchScreen(out multi: boolean): boolean;
+ begin
+   DetectTouchScreen(multi);
+   result := HasTouchScreen;
+ end;
+
  class function TrndiNative.HasTouchScreen: boolean;
  var
    mt: boolean;
  begin
-   result := HasTouchScreen(mt);
+   case touchOverride of
+     tbTrue: result := true;
+     tbFalse: result := false;
+   else
+     result := HasTouchScreen(mt);
+   end;
  end;
 
+ {------------------------------------------------------------------------------
+   TrndiNative.DetectTouchScreen
+   --------------------------
+   Platform-specific detection of touch hardware.
+  ------------------------------------------------------------------------------}
 {$IF DEFINED(X_WIN)}
-class function TrndiNative.HasTouchScreen(out multi: boolean): boolean;
+class function TrndiNative.DetectTouchScreen(out multi: boolean): boolean;
 const
   TABLET_CONFIG_NONE = $00000000;
   NID_INTEGRATED_TOUCH = $00000001;
@@ -942,14 +965,14 @@ begin
   multi := IsMultiTouch;
 end;
 {$ELSEIF DEFINED(X_MAC)}
-class function TrndiNative.HasTouchScreen(out multi: boolean): boolean;
+class function TrndiNative.DetectTouchScreen(out multi: boolean): boolean;
 begin
   // macOS: Typically no standard touchscreen (unless iOS)
   Result := false;
   multi := false;
 end;
 {$ELSE}
-class function TrndiNative.HasTouchScreen(out multi: boolean): boolean;
+class function TrndiNative.DetectTouchScreen(out multi: boolean): boolean;
 var
   SL, Block: TStringList;
   i: integer;
@@ -1044,7 +1067,7 @@ begin
   // Check if we're in dark mode on creation
   dark := isDarkMode;
   fsettings := DefaultFormatSettings;
-
+  touchOverride := tbUnset;
   cfguser := '';
 end;
 

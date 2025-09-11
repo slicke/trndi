@@ -423,7 +423,7 @@ const
     +#10#10+
     'Built in Object Pascal, using the Lazarus component library (LCL) and FreePascal.';
   begin
-  ExtSucc(TrndiNative.HasTouchScreen, 'Trndi', 'Libraries', txt, $00AA6004, $00FDD8AA);
+  ExtSucc(uxdAuto, 'Trndi', 'Libraries', txt, $00AA6004, $00FDD8AA);
 end;
 
 procedure TfConf.cbSysChange(Sender:TObject);
@@ -461,7 +461,7 @@ var
  c: char;
  mr: TModalResult;
 begin
-  s := ExtInput(TrndiNative.HasTouchScreen, RS_ENTER_USER, RS_ENTER_USER, RS_ENTER_NAME,'',mr);
+  s := ExtInput(uxdAuto, RS_ENTER_USER, RS_ENTER_USER, RS_ENTER_NAME,'',mr);
   if mr = mrOK then begin
     if Trim(s) = '' then begin
       ShowMessage(RS_ENTER_ANY);
@@ -555,7 +555,7 @@ begin
     else
       s := Format(RS_NEWVER, [rn]);
 
-     if UXDialog(TrndiNative.HasTouchScreen, RS_NEWVER_CAPTION, s, [mbYes, mbNo], mtInformation) = mrYes then
+     if UXDialog(uxdAuto, RS_NEWVER_CAPTION, s, [mbYes, mbNo], mtInformation) = mrYes then
        OpenURL(r);
   end else
     ShowMessage(RS_UPTODATE);
@@ -653,7 +653,7 @@ const
 '- This app may contain bugs or errors that could display incorrect data'#10#10+
 '- IF YOU DO NOT AGREE WITH THESE TERMS, DO NOT USE THIS APP. -';
 begin
- if ExtSuccEx(TrndiNative.HasTouchScreen, 'Trndi', 'License', txt, [mbOK, mbUxRead], $00AA6004, $00FDD8AA) <> mrOK then
+ if ExtSuccEx(uxdAuto, 'Trndi', 'License', txt, [mbOK, mbUxRead], $00AA6004, $00FDD8AA) <> mrOK then
     OpenURL('https://github.com/slicke/trndi/blob/main/LICENSE.md');
 end;
 

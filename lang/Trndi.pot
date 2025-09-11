@@ -148,7 +148,20 @@ msgid "System Info"
 msgstr ""
 
 #: tfbg.miatouch.caption
-msgid "Touchscreen"
+msgid "Force Touchscreen"
+msgstr ""
+
+#: tfbg.miatouchauto.caption
+msgctxt "tfbg.miatouchauto.caption"
+msgid "Auto"
+msgstr ""
+
+#: tfbg.miatouchno.caption
+msgid "Force No"
+msgstr ""
+
+#: tfbg.miatouchyes.caption
+msgid "Force Yes"
 msgstr ""
 
 #: tfbg.miborders.caption

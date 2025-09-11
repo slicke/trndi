@@ -79,7 +79,7 @@ begin
   else
     begin
       // Complain that it wasn't set
-      ExtError(TrndiNative.HasTouchScreen, 'Error: Missing Function');
+      ExtError(uxdAuto, 'Error: Missing Function');
       FSuccess := false;
       Exit;
     end;
@@ -113,12 +113,12 @@ begin
             on E: EInvalidCast do
                   begin
                     FSuccess := false;
-                    ExtError(TrndiNative.HasTouchScreen, sTypeErrMsg, e.message);
+                    ExtError(uxdAuto, sTypeErrMsg, e.message);
                   end;
             on E: Exception do
                   begin
                     fsuccess := false;
-                    ExtError(TrndiNative.HasTouchScreen, Format(sPromErrCapt, [func]),e.Message);
+                    ExtError(uxdAuto, Format(sPromErrCapt, [func]),e.Message);
                   end;
         end;
     end
