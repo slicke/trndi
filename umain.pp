@@ -844,6 +844,8 @@ begin
 end;
 
 procedure loadProfile;
+var
+  mr: tmodalresult;
 begin
   if username <> '' then
     begin
@@ -853,7 +855,7 @@ begin
         Add('');
 //        i := InputCombo(RS_MULTIUSER_BOX_TITLE, RS_MULTIUSER_BOX, ToStringArray);
           i := ExtList(RS_MULTIUSER_BOX_TITLE, RS_MULTIUSER_BOX_TITLE, RS_MULTIUSER_BOX, ToStringArray, HasTouch);
-
+              ExtInput(true,'titel','under','sist','desc',mr);
         if (i > -1) and (strings[i] <> '') then
         begin
           username := strings[i];
@@ -1145,14 +1147,14 @@ procedure TfBG.miADotAdjustClick(Sender: TObject);
 var
   mr: TModalResult;
 begin
-  DOT_ADJUST := ExtNumericInput('Dot Adjustment','Add dot adjustment','You can enter plus or minus (+/- 0.x)',DOT_ADJUST,true,mr);
+  DOT_ADJUST := ExtNumericInput(hastouch, 'Dot Adjustment','Add dot adjustment','You can enter plus or minus (+/- 0.x)',DOT_ADJUST,true,mr);
 end;
 
 procedure TfBG.miADotScaleClick(Sender: TObject);
 var
   mr: TModalResult;
 begin
-  dotscale := round(ExtNumericInput('Dot Adjustment','Add dot adjustment','You can enter plus or minus (+/- 0.x)',dotscale,false,mr));
+  dotscale := round(ExtNumericInput(hastouch, 'Dot Adjustment','Add dot adjustment','You can enter plus or minus (+/- 0.x)',dotscale,false,mr));
 end;
 
 procedure TfBG.miADotsClick(Sender: TObject);

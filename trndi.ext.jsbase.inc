@@ -74,7 +74,7 @@ begin
     desc := ctx^.ToUtf8(argv^[1]);
     def :=  ctx^.ToUtf8(argv^[2]);
 
-    response := ExtInput(sExtMsg,caption,desc,def,x);
+    response := ExtInput(TrndiNative.HasTouchScreen(), sExtMsg,caption,desc,def,x);
     if x = mrCancel then response := '';
 
     Result := JS_NewString(ctx, pansichar(Response));
