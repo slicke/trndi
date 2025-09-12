@@ -19,7 +19,7 @@ function GetLangPath: string;
 procedure PaintLbl(Sender: TLabel; OutlineWidth: integer = 1; OutlineColor: TColor = clBlack);
 procedure LogMessage(const Msg: string);
 procedure SortReadingsDescending(var Readings: array of BGReading);
-procedure SetPointHeight(L: TLabel; Value: Single; clientHeight: integer);
+procedure SetPointHeight(l: TPaintBox; Value: Single; clientHeight: integer);
 function HasNewerRelease(const JsonResponse: string;
                          out ReleaseName: string;
                          IncludePrerelease: Boolean = False): Boolean;
@@ -207,7 +207,7 @@ begin
 end;
 
 // SetPointHeight procedure
-procedure SetPointHeight(L: TLabel; Value: Single; clientHeight: integer);
+procedure SetPointHeight(L: TPaintBox; Value: Single; clientHeight: integer);
 const
   GraphMin = 2;
   GraphMax = 22;

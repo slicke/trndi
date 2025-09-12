@@ -65,8 +65,8 @@ StrUtils, TouchDetection, ufloat;
 type
 TFloatIntDictionary = specialize TDictionary<Single, Integer>; // Specialized TDictionary
   // Procedures which are applied to the trend drawing
-TTrendProc = procedure(l: TLabel; c, ix: integer) of object;
-TTrendProcLoop = procedure(l: TLabel; c, ix: integer; ls: array of TLabel) of object;
+TTrendProc = procedure(l: TPaintBox; c, ix: integer) of object;
+TTrendProcLoop = procedure(l: TPaintBox; c, ix: integer; ls: array of TPaintbox) of object;
 TrndiPos = (tpoCenter = 0, tpoBottomLeft = 1, tpoBottomRight = 2, tpoCustom = 3, tpoTopRight = 4);
 TPONames = array[TrndiPos] of string;
 var
@@ -87,6 +87,7 @@ end;
 
 TfBG = class(TForm)
   apMain: TApplicationProperties;
+  lDot2: TPaintBox;
   lMissing: TLabel;
   lTir:TLabel;
   lAgo:TLabel;
@@ -101,6 +102,7 @@ TfBG = class(TForm)
   miADots: TMenuItem;
   miATouch: TMenuItem;
   miAdvanced: TMenuItem;
+  lDot1: TPaintBox;
   Separator3: TMenuItem;
   Separator2: TMenuItem;
   miAnnounce:TMenuItem;
@@ -137,16 +139,6 @@ TfBG = class(TForm)
   pnOffRange: TPanel;
   lArrow: TLabel;
   lDiff: TLabel;
-  lDot1: TLabel;
-  lDot10: TLabel;
-  lDot2: TLabel;
-  lDot3: TLabel;
-  lDot4: TLabel;
-  lDot5: TLabel;
-  lDot6: TLabel;
-  lDot7: TLabel;
-  lDot8: TLabel;
-  lDot9: TLabel;
   lVal: TLabel;
   miSettings: TMenuItem;
   pmSettings: TPopupMenu;
@@ -165,6 +157,7 @@ TfBG = class(TForm)
   procedure FormDblClick(Sender: TObject);
   procedure FormDestroy(Sender:TObject);
   procedure FormKeyPress(Sender:TObject;var Key:char);
+  procedure DotPaint(Sender: TObject);
   procedure MenuItem1Click(Sender: TObject);
   procedure MenuItem2Click(Sender: TObject);
   procedure miATouchAutoClick(Sender: TObject);
@@ -229,7 +222,7 @@ private
     Initialized: Boolean;
   end;
     // Array to hold references to lDot1 - lDot10
-  TrendDots: array[1..10] of TLabel;
+  TrendDots: array[1..10] of TPaintBox;
   multi: boolean; // Multi user
   MediaController: TSystemMediaController;
 
@@ -241,10 +234,11 @@ private
   procedure PlaceTrendDots(const Readings: array of BGReading);
   procedure actOnTrend(proc: TTrendProc);
   procedure actOnTrend(proc: TTrendProcLoop);
-  procedure setDotWidth(l: TLabel; c, ix: integer; {%H-}ls: array of TLabel);
-  procedure HideDot(l: TLabel; {%H-}c, {%H-}ix: integer);
-  procedure ResizeDot(l: TLabel; {%H-}c, ix: integer);
-  procedure ExpandDot(l: TLabel; c, ix: integer);
+  procedure setDotWidth(l: TPaintBox; c, ix: integer; {%H-}ls: array of TPaintBox);
+  procedure HideDot(l: TPaintBox; {%H-}c, {%H-}ix: integer);
+  procedure ResizeDot(l: TPaintBox; {%H-}c, ix: integer);
+  procedure initDot(l: TPaintBox; c, ix: integer);
+  procedure ExpandDot(l: TPaintBox; c, ix: integer);
   procedure placeForm;
 
   // Helper methods for update procedure
@@ -657,11 +651,13 @@ end;
 procedure TfBG.actOnTrend(proc: TTrendProcLoop);
 var
   ix: integer;
-  ls: array[1..10] of TLabel;
+  ls: array[1..10] of TPaintBox;
 begin
   ls := TrendDots; // Directly use the TrendDots array
-  for ix := 1 to NUM_DOTS do
+  for ix := 1 to NUM_DOTS do begin
     proc(ls[ix], NUM_DOTS, ix, ls);
+    ls[ix].Repaint;
+  end;
   // Run the procedure on the given label
 end;
 
@@ -669,11 +665,13 @@ end;
 procedure TfBG.actOnTrend(proc: TTrendProc);
 var
   ix: integer;
-  ls: array[1..10] of TLabel;
+  ls: array[1..10] of TPaintBox;
 begin
   ls := TrendDots; // Directly use the TrendDots array
-  for ix := 1 to NUM_DOTS do
+  for ix := 1 to NUM_DOTS do begin
     proc(ls[ix], NUM_DOTS, ix);
+    ls[ix].Repaint;
+  end;
 end;
 
 procedure tfBG.SetLang;
@@ -828,7 +826,7 @@ var
     for i := 1 to NUM_DOTS do
       begin
         s := 'lDot' + IntToStr(i);
-        TrendDots[i] := FindComponent(s) as TLabel;
+        TrendDots[i] := FindComponent(s) as TPaintBox;
         if not Assigned(TrendDots[i]) then
           ShowMessage(Format('Label %s is missing!', [s]))
         else
@@ -841,6 +839,8 @@ var
       touchHelper := TTouchDetector.Create;
 
     miATouch.Checked := hastouch;
+
+    actOnTrend(@initDot);
   end;
 
 procedure initSplash;
@@ -1156,6 +1156,43 @@ begin
   end;
 end;
 
+procedure TfBG.DotPaint(Sender: TObject);
+var
+  X, Y: Integer;
+  S, fontn: String;
+  L: TPaintBox;
+  hasfont: boolean;
+begin
+  L := Sender as TPaintBox;
+  hasFont := FontInList(fontn);
+  S := L.Caption;
+
+  with L.Canvas do
+  begin
+    // Transparent
+    Brush.Style := bsClear;
+
+    if hasFont then
+      Font.Name := fontn;
+
+  //  Font.Size := 32 + (15 * dotscale);
+    //if S <> DOT_GRAPH then
+    //  Font.Size := Font.Size div 10;
+
+    Font.Size := L.Font.Size;
+
+    // Center horizintally
+    X := (L.Width - TextWidth(S)) div 2;
+    // Center vertically -1
+    Y := (L.Height - TextHeight(S)) div 2 - 1;
+
+    // Draw
+    TextOut(X, Y, S);
+  end;
+  L.width := max(L.width, L.font.size);
+  L.height := max(L.height, L.font.size);
+end;
+
 procedure TfBG.MenuItem1Click(Sender: TObject);
 begin
   Close;
@@ -1345,7 +1382,7 @@ end;
 // Post-process the graph
 procedure TfBG.AdjustGraph;
 var
-  l: Tlabel;
+  l: TPaintBox;
 begin
   for l in TrendDots do
     l.top := l.top + round(ClientHeight * DOT_ADJUST);
@@ -1353,13 +1390,20 @@ begin
 
 end;
 
+procedure TfBG.initDot(l: TPaintBox; c, ix: integer);
+begin
+  {$ifdef Windows}
+    l.Font.Name := 'DejaVu Sans Mono';
+  {$endif}
+end;
+
 // Expands a trend dot to show actual bg value with highlighting for latest reading
-procedure TfBG.ExpandDot(l: TLabel; c, ix: integer);
+procedure TfBG.ExpandDot(l: TPaintBox; c, ix: integer);
 var
   isDot: boolean;
 begin
 
-  if privacyMode then
+  if privacyMode then // We dont show values while in privacy mode
      exit;
 
   // Check if label currently shows a dot
@@ -1386,13 +1430,13 @@ begin
 end;
 
 // Hides a dot
-procedure TfBG.HideDot(l: TLabel; c, ix: integer);
+procedure TfBG.HideDot(l: TPaintBox; c, ix: integer);
 begin
   l.Visible := false;
 end;
 
 // Scales a dot's font size
-procedure TfBG.ResizeDot(l: TLabel; c, ix: integer);
+procedure TfBG.ResizeDot(l: TPaintBox; c, ix: integer);
 begin
   l.AutoSize := true;
   l.Font.Size := Max((lVal.Font.Size div 8)*dotscale, 28); // Ensure minimum font size
@@ -1400,7 +1444,7 @@ begin
 end;
 
 // Sets the width (NOT the font) of a dot
-procedure TfBG.SetDotWidth(l: TLabel; c, ix: integer; ls: array of TLabel);
+procedure TfBG.SetDotWidth(l: TPaintBox; c, ix: integer; ls: array of TPaintBox);
 var
   spacing: integer;
 begin
@@ -2083,9 +2127,9 @@ end;
 procedure TfBG.onTrendClick(Sender: TObject);
 var
   isdot: boolean;
-  l: tlabel;
+  l: TPaintbox;
 begin
-  l := sender as tlabel;
+  l := sender as tPaintbox;
   actOnTrend(@ExpandDot);
   isDot := l.Caption = DOT_GRAPH;;
   if isDot then
@@ -2382,7 +2426,7 @@ end;
 procedure TfBG.UpdateTrendDots;
 var
   UniquePositions: TFloatIntDictionary; // Specialized dictionary
-  Dot: TLabel;
+  Dot: TPaintBox;
   Value: Single;
   DPosition: Integer;
 begin
@@ -2424,35 +2468,34 @@ var
   TextWidth, TextHeight: Integer;
   OptimalSize: Integer;
 begin
-  // Kontrollera grundläggande synlighetsvillkor
   if not ALabel.Visible then
     ALabel.Visible := True;
 
   if ALabel.Caption = '' then
-    Exit; // Ingen text att visa
+    Exit; // No text
 
-  // Kontrollera att etiketten har storlek
+  // Check size
   if (ALabel.Width <= 0) or (ALabel.Height <= 0) then
   begin
-    ALabel.Width := 100;
-    ALabel.Height := 30;
+    ALabel.Width := 250;
+    ALabel.Height := 250;
   end;
 
-  // Sätt korrekt formatering
+  // Format
   ALabel.AutoSize := False;
   ALabel.WordWrap := False;
   ALabel.Alignment := customAl;
   ALabel.Layout := customTl;
 
-  // Se till att texten är synlig mot bakgrunden
+  // Check visibility
   if ALabel.Font.Color = ALabel.Color then
     ALabel.Font.Color := clBlack;
 
-  // Maximal bredd och höjd för texten
-  MaxWidth := ALabel.Width - 4; // Lite padding
+  // Max size
+  MaxWidth := ALabel.Width - 4; // Add padding
   MaxHeight := ALabel.Height - 4;
 
-  // Utför binärsökning för att hitta optimal fontstorlek
+  // Find best font size
   Low := 1;
   High := 150;
   OptimalSize := 1;
@@ -2476,7 +2519,7 @@ begin
     end;
   end;
 
-  // Sätt den optimala fontstorleken
+  // Set best font size
   ALabel.Font.Size := OptimalSize;
 
   // Se till att inställningarna används
@@ -3107,7 +3150,7 @@ var
   slotStart, slotEnd: TDateTime;
   found: Boolean;
   reading: BGReading;
-  l: TLabel;
+  l: TPaintbox;
 begin
   for slotIndex := 0 to NUM_DOTS - 1 do
   begin
@@ -3147,7 +3190,7 @@ end;
 function TfBG.UpdateLabelForReading(SlotIndex: Integer; const Reading: BGReading): Boolean;
 var
   labelNumber: Integer;
-  l: TLabel;
+  l: TPaintBox;
 begin
   Result := False;
 
@@ -3161,7 +3204,7 @@ begin
     l.Visible := true;
     l.Hint := Reading.format(un, BG_MSG_SHORT, BGPrimary);
 
-    l.Caption := DOT_GRAPH; // Eller annan symbol
+    l.Caption := DOT_GRAPH;
     setPointHeight(l, Reading.convert(mmol), fBG.ClientHeight);
 
     // Sätt färger baserat på värdet
