@@ -25,6 +25,7 @@
 backup/
 *.bak
 lib/
+.vscode/
 
 # Application bundle for Mac OS
 *.app/
