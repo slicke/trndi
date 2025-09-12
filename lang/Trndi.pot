@@ -935,6 +935,18 @@ msgstr ""
 msgid "Announcing readings aloud"
 msgstr ""
 
+#: trndi.strings.schangesapply
+msgid "Apply this value when Trndi starts?"
+msgstr ""
+
+#: trndi.strings.schangesremember
+msgid "Remember setting?"
+msgstr ""
+
+#: trndi.strings.schangessave
+msgid "Save?"
+msgstr ""
+
 #: trndi.strings.scustomisedotsize
 msgid "Customize dot size"
 msgstr ""

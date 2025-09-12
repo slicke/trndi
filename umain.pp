@@ -1229,7 +1229,8 @@ begin
 
     if mr = mrOK then begin
       DOT_ADJUST := da;
-      if ExtMsg(uxdAuto, 'Save?', 'Remember setting?', 'Apply this value when Trndi starts?', FormatFloat('0.00', da), $00F5F2FD,$003411A9, [mbYes, mbNo]) = mrYes then
+
+      if ExtMsg(uxdAuto, sChangesSave, sChangesRemember, sChangesApply, FormatFloat('0.00', da), $00F5F2FD,$003411A9, [mbYes, mbNo]) = mrYes then
         native.SetFloatSetting('ux.dot_adjust', da);
   end;
 end;
@@ -2446,7 +2447,7 @@ begin
         end;
 
         // Set the label's Top property
-        Dot.Top := fBG.ClientHeight - DPosition - 100;
+        Dot.Top := fBG.ClientHeight - DPosition;
         Dot.Visible := True; // Ensure label is visible
       end
       else
