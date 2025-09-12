@@ -121,6 +121,10 @@ sDotSize =  'Dot Size';
 sCustomiseDotSize = 'Customize dot size';
 sEnterDotSize= 'Enter a value, the dot size will multiply by this';
 
+sChangesSave = 'Save?';
+sChangesRemember = 'Remember setting?';
+sChangesApply = 'Apply this value when Trndi starts?';
+
 implementation
 
 end.

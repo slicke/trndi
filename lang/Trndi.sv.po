@@ -985,6 +985,18 @@ msgstr "Läser inte upp värden"
 msgid "Announcing readings aloud"
 msgstr "Läser upp värden"
 
+#: trndi.strings.schangesapply
+msgid "Apply this value when Trndi starts?"
+msgstr ""
+
+#: trndi.strings.schangesremember
+msgid "Remember setting?"
+msgstr ""
+
+#: trndi.strings.schangessave
+msgid "Save?"
+msgstr ""
+
 #: trndi.strings.scustomisedotsize
 msgid "Customize dot size"
 msgstr "Anpassa punktstorlek"
