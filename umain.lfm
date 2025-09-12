@@ -10,7 +10,6 @@ object fBG: TfBG
   Color = clBlack
   Font.Color = clWhite
   Position = poDesktopCenter
-  LCLVersion = '4.2.0.0'
   OnClose = FormClose
   OnCreate = FormCreate
   OnDblClick = FormDblClick
@@ -56,127 +55,6 @@ object fBG: TfBG
     OnMouseMove = FormMouseMove
     OnMouseUp = lValMouseUp
     OnStartDrag = lValStartDrag
-  end
-  object lDot6: TLabel
-    Left = 215
-    Height = 25
-    Top = 208
-    Width = 12
-    Alignment = taCenter
-    AutoSize = False
-    Caption = '•'
-    OptimalFill = True
-    PopupMenu = pmSettings
-    OnClick = onTrendClick
-  end
-  object lDot7: TLabel
-    Left = 200
-    Height = 25
-    Top = 208
-    Width = 12
-    Alignment = taCenter
-    AutoSize = False
-    Caption = '•'
-    OptimalFill = True
-    PopupMenu = pmSettings
-    OnClick = onTrendClick
-    OnDblClick = lDot7DblClick
-  end
-  object lDot8: TLabel
-    Left = 185
-    Height = 25
-    Top = 208
-    Width = 12
-    Alignment = taCenter
-    AutoSize = False
-    Caption = '•'
-    OptimalFill = True
-    PopupMenu = pmSettings
-    OnClick = onTrendClick
-  end
-  object lDot9: TLabel
-    Left = 170
-    Height = 25
-    Top = 208
-    Width = 12
-    Alignment = taCenter
-    AutoSize = False
-    Caption = '•'
-    OptimalFill = True
-    PopupMenu = pmSettings
-    OnClick = onTrendClick
-  end
-  object lDot10: TLabel
-    Left = 155
-    Height = 25
-    Top = 208
-    Width = 12
-    Alignment = taCenter
-    AutoSize = False
-    Caption = '•'
-    OptimalFill = True
-    PopupMenu = pmSettings
-    OnClick = onTrendClick
-  end
-  object lDot5: TLabel
-    Left = 140
-    Height = 25
-    Top = 208
-    Width = 12
-    Alignment = taCenter
-    AutoSize = False
-    Caption = '•'
-    OptimalFill = True
-    PopupMenu = pmSettings
-    OnClick = onTrendClick
-  end
-  object lDot4: TLabel
-    Left = 125
-    Height = 25
-    Top = 208
-    Width = 12
-    Alignment = taCenter
-    AutoSize = False
-    Caption = '•'
-    OptimalFill = True
-    PopupMenu = pmSettings
-    OnClick = onTrendClick
-  end
-  object lDot3: TLabel
-    Left = 110
-    Height = 25
-    Top = 208
-    Width = 12
-    Alignment = taCenter
-    AutoSize = False
-    Caption = '•'
-    OptimalFill = True
-    PopupMenu = pmSettings
-    OnClick = onTrendClick
-  end
-  object lDot2: TLabel
-    Left = 95
-    Height = 25
-    Top = 208
-    Width = 12
-    Alignment = taCenter
-    AutoSize = False
-    Caption = '•'
-    OptimalFill = True
-    PopupMenu = pmSettings
-    OnClick = onTrendClick
-  end
-  object lDot1: TLabel
-    Left = 80
-    Height = 25
-    Top = 208
-    Width = 12
-    Alignment = taCenter
-    AutoSize = False
-    Caption = '•'
-    OptimalFill = True
-    PopupMenu = pmSettings
-    OnClick = onTrendClick
   end
   object lDiff: TLabel
     Left = 0
@@ -308,6 +186,86 @@ object fBG: TfBG
     ParentDoubleBuffered = False
     TabOrder = 4
     OnPaint = pnOffReadingPaint
+  end
+  object lDot1: TPaintBox
+    Left = 16
+    Height = 49
+    Top = 160
+    Width = 33
+    OnClick = onTrendClick
+    OnPaint = DotPaint
+  end
+  object lDot2: TPaintBox
+    Left = 44
+    Height = 49
+    Top = 188
+    Width = 33
+    OnClick = onTrendClick
+    OnPaint = DotPaint
+  end
+  object lDot3: TPaintBox
+    Left = 72
+    Height = 49
+    Top = 191
+    Width = 33
+    OnClick = onTrendClick
+    OnPaint = DotPaint
+  end
+  object lDot4: TPaintBox
+    Left = 72
+    Height = 49
+    Top = 191
+    Width = 33
+    OnClick = onTrendClick
+    OnPaint = DotPaint
+  end
+  object lDot5: TPaintBox
+    Left = 72
+    Height = 49
+    Top = 191
+    Width = 33
+    OnClick = onTrendClick
+    OnPaint = DotPaint
+  end
+  object lDot6: TPaintBox
+    Left = 72
+    Height = 49
+    Top = 191
+    Width = 33
+    OnClick = onTrendClick
+    OnPaint = DotPaint
+  end
+  object lDot7: TPaintBox
+    Left = 72
+    Height = 49
+    Top = 191
+    Width = 33
+    OnClick = onTrendClick
+    OnPaint = DotPaint
+  end
+  object lDot8: TPaintBox
+    Left = 72
+    Height = 49
+    Top = 191
+    Width = 33
+    OnClick = onTrendClick
+    OnPaint = DotPaint
+  end
+  object lDot9: TPaintBox
+    Left = 72
+    Height = 49
+    Top = 191
+    Width = 33
+    OnClick = onTrendClick
+    OnPaint = DotPaint
+  end
+  object lDot10: TPaintBox
+    Left = 72
+    Height = 49
+    Top = 191
+    Width = 33
+    OnClick = onTrendClick
+    OnPaint = DotPaint
   end
   object tMain: TTimer
     Interval = 100000
