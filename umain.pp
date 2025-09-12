@@ -1907,7 +1907,7 @@ var
 
       cbTIR.Checked := native.GetBoolSetting('range.custom', true);
 
-      cbOffBar.Checked := native.GetBoolSetting('off_bar', false);
+      cbOffBar.Checked := native.GetBoolSetting('ux.off_bar', false);
       edCommaSep.Text := GetCharSetting('locale.separator', '.');
       edTray.Value := GetIntSetting('ux.badge_size', 0);
 
@@ -1915,10 +1915,10 @@ var
         rbUnitClick(Self);
 
       cbCust.Checked := GetIntSetting('override.enabled', 0) = 1;
-      edMusicHigh.Text := GetSetting('media_url_high', '');
-      edMusicLow.Text := GetSetting('media_url_low', '');
-      edMusicPerfect.Text := GetSetting('media_url_perfect', '');
-      cbMusicPause.Checked := GetBoolSetting('media_pause');
+      edMusicHigh.Text := GetSetting('media.url_high', '');
+      edMusicLow.Text := GetSetting('media.url_low', '');
+      edMusicPerfect.Text := GetSetting('media.url_perfect', '');
+      cbMusicPause.Checked := GetBoolSetting('media.pause');
       fsHi.Enabled := cbCust.Checked;
       fsLo.Enabled := cbCust.Checked;
 
@@ -2083,15 +2083,15 @@ if cbPos.ItemIndex = -1 then
       end;
 
       native.SetBoolSetting('range.custom', cbTIR.Checked);
-      native.SetBoolSetting('off_bar', cbOffBar.Checked);
+      native.SetBoolSetting('ux.off_bar', cbOffBar.Checked);
       native.SetSetting('locale.separator', edCommaSep.text);
       native.SetSetting('ux.badge_size', edTray.Value.ToString);
 
       SetSetting('override.enabled', IfThen(cbCust.Checked, '1', '0'));
-      SetSetting('media_url_high', edMusicHigh.Text);
-      SetSetting('media_url_low', edMusicLow.Text);
-      SetSetting('media_url_perfect', edMusicPerfect.Text);
-      SetBoolSetting('media_pause', cbMusicPause.Checked);
+      SetSetting('media.url_high', edMusicHigh.Text);
+      SetSetting('media.url_low', edMusicLow.Text);
+      SetSetting('media.url_perfect', edMusicPerfect.Text);
+      SetBoolSetting('media.pause', cbMusicPause.Checked);
     end;
   end;
 
@@ -2831,7 +2831,7 @@ begin
   else
     HandleNormalGlucose(b);
 
-  pnOffReading.Visible := native.GetBoolSetting('off_bar', false);
+  pnOffReading.Visible := native.GetBoolSetting('ux.off_bar', false);
   case b.level of
        trndi.types.BGHigh: begin txt := RS_HIGH; end;
        trndi.types.BGLOW: begin txt := RS_LOW; end;
@@ -2858,10 +2858,10 @@ begin
   if highAlerted then
     Exit;
 
-  if native.GetBoolSetting('media_pause') then
+  if native.GetBoolSetting('media.pause') then
     MediaController.Pause;
 
-  url := native.GetSetting('media_url_high', '');
+  url := native.GetSetting('media.url_high', '');
   if url <> '' then begin
      highAlerted := true;
      MediaController.PlayTrackFromURL(url);
@@ -2880,10 +2880,10 @@ begin
   if lowAlerted then
     exit;
 
-  if native.GetBoolSetting('media_pause') then
+  if native.GetBoolSetting('media.pause') then
     MediaController.Pause;
 
-  url := native.GetSetting('media_url_low', '');
+  url := native.GetSetting('media.url_low', '');
   if url <> '' then begin
      lowAlerted := true;
      MediaController.PlayTrackFromURL(url);
@@ -2919,7 +2919,7 @@ begin
   if go and (not perfecttriggered) then begin
     perfectTriggered := true;
 
-    url := native.GetSetting('media_url_perfect', '');
+    url := native.GetSetting('media.url_perfect', '');
     if url <> '' then
       MediaController.PlayTrackFromURL(url);
   end;
