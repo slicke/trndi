@@ -87,12 +87,21 @@ end;
 
 TfBG = class(TForm)
   apMain: TApplicationProperties;
+  lDot10: TPaintBox;
   lDot2: TPaintBox;
+  lDot3: TPaintBox;
+  lDot4: TPaintBox;
+  lDot5: TPaintBox;
+  lDot6: TPaintBox;
+  lDot7: TPaintBox;
+  lDot8: TPaintBox;
+  lDot9: TPaintBox;
   lMissing: TLabel;
   lTir:TLabel;
   lAgo:TLabel;
   MenuItem1: TMenuItem;
   MenuItem2: TMenuItem;
+  miDotVal: TMenuItem;
   misep: TMenuItem;
   miATouchAuto: TMenuItem;
   miATouchNo: TMenuItem;
@@ -2227,11 +2236,24 @@ procedure TfBG.pmSettingsPopup(Sender: TObject);
     end;
   end;
 {$endif}
+var
+  tpb: TPaintbox;
+  H,M: integer;
 begin
   // Shift down
   miAdvanced.Visible := ssShift in GetKeyShiftState;
   miBorders.Checked := self.BorderStyle = bsNone;
   miATouch.Checked := HasTouch;
+
+  if (sender as TPopupMenu).PopupComponent is TPaintBox then begin
+    tpb := (sender as TPopupMenu).PopupComponent as TPaintBox;
+    H := tpb.Tag div 100;
+    M := tpb.Tag mod 100;
+
+    miDotVal.visible := true;
+    miDotVal.Caption := Format(sReadingHere, [tpb.hint, H, M]);
+  end else
+    miDotVal.visible := false;
   {$ifdef LCLQt6}
   Exit; // This crashes!
   if pmSettings.Tag <> 1 then
@@ -3192,6 +3214,7 @@ function TfBG.UpdateLabelForReading(SlotIndex: Integer; const Reading: BGReading
 var
   labelNumber: Integer;
   l: TPaintBox;
+  H, M, S, MS: Word;
 begin
   Result := False;
 
@@ -3204,6 +3227,8 @@ begin
     // Uppdatera etikettens egenskaper baserat på läsningen
     l.Visible := true;
     l.Hint := Reading.format(un, BG_MSG_SHORT, BGPrimary);
+    DecodeTime(reading.date, H, M, S, MS);
+    l.Tag := H * 100 + M; // 10:00 = 1000
 
     l.Caption := DOT_GRAPH;
     setPointHeight(l, Reading.convert(mmol), fBG.ClientHeight);

@@ -125,6 +125,8 @@ sChangesSave = 'Save?';
 sChangesRemember = 'Remember setting?';
 sChangesApply = 'Apply this value when Trndi starts?';
 
+sReadingHere = 'Reading here: %s at %.2d:%.2d';
+
 implementation
 
 end.
