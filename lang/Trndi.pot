@@ -203,6 +203,10 @@ msgctxt "tfbg.midotsize.caption"
 msgid "Dot Size"
 msgstr ""
 
+#: tfbg.midotval.caption
+msgid "Reading: ?"
+msgstr ""
+
 #: tfbg.mifloaton.caption
 msgid "Show Floating Window"
 msgstr ""
@@ -1040,6 +1044,11 @@ msgstr ""
 #, object-pascal-format
 msgctxt "trndi.strings.spromerrcapt"
 msgid "The asyncronous function %s failed to complete"
+msgstr ""
+
+#: trndi.strings.sreadinghere
+#, object-pascal-format
+msgid "Reading here: %s at %.2d:%.2d"
 msgstr ""
 
 #: trndi.strings.srefrshq

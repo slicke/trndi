@@ -10,7 +10,6 @@ object fBG: TfBG
   Color = clBlack
   Font.Color = clWhite
   Position = poDesktopCenter
-  LCLVersion = '4.2.0.0'
   OnClose = FormClose
   OnCreate = FormCreate
   OnDblClick = FormDblClick
@@ -193,6 +192,7 @@ object fBG: TfBG
     Height = 49
     Top = 160
     Width = 33
+    PopupMenu = pmSettings
     OnClick = onTrendClick
     OnPaint = DotPaint
   end
@@ -201,6 +201,7 @@ object fBG: TfBG
     Height = 49
     Top = 188
     Width = 33
+    PopupMenu = pmSettings
     OnClick = onTrendClick
     OnPaint = DotPaint
   end
@@ -209,6 +210,7 @@ object fBG: TfBG
     Height = 49
     Top = 191
     Width = 33
+    PopupMenu = pmSettings
     OnClick = onTrendClick
     OnPaint = DotPaint
   end
@@ -217,6 +219,7 @@ object fBG: TfBG
     Height = 49
     Top = 191
     Width = 33
+    PopupMenu = pmSettings
     OnClick = onTrendClick
     OnPaint = DotPaint
   end
@@ -225,6 +228,7 @@ object fBG: TfBG
     Height = 49
     Top = 191
     Width = 33
+    PopupMenu = pmSettings
     OnClick = onTrendClick
     OnPaint = DotPaint
   end
@@ -233,6 +237,7 @@ object fBG: TfBG
     Height = 49
     Top = 191
     Width = 33
+    PopupMenu = pmSettings
     OnClick = onTrendClick
     OnPaint = DotPaint
   end
@@ -241,6 +246,7 @@ object fBG: TfBG
     Height = 49
     Top = 191
     Width = 33
+    PopupMenu = pmSettings
     OnClick = onTrendClick
     OnPaint = DotPaint
   end
@@ -249,6 +255,7 @@ object fBG: TfBG
     Height = 49
     Top = 191
     Width = 33
+    PopupMenu = pmSettings
     OnClick = onTrendClick
     OnPaint = DotPaint
   end
@@ -257,6 +264,7 @@ object fBG: TfBG
     Height = 49
     Top = 191
     Width = 33
+    PopupMenu = pmSettings
     OnClick = onTrendClick
     OnPaint = DotPaint
   end
@@ -265,6 +273,7 @@ object fBG: TfBG
     Height = 49
     Top = 191
     Width = 33
+    PopupMenu = pmSettings
     OnClick = onTrendClick
     OnPaint = DotPaint
   end
@@ -430,6 +439,11 @@ object fBG: TfBG
     end
     object Separator3: TMenuItem
       Caption = '-'
+    end
+    object miDotVal: TMenuItem
+      Caption = 'Reading: ?'
+      Enabled = False
+      Visible = False
     end
     object miRefresh: TMenuItem
       Caption = 'Refresh in:'

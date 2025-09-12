@@ -42,5 +42,6 @@
 {"hash":108717011,"name":"tfbg.miadots.caption","sourcebytes":[68,111,116,32,115,116,97,116,115],"value":"Dot stats"},
 {"hash":208670979,"name":"tfbg.miadotadjust.caption","sourcebytes":[65,100,106,117,115,116,32,68,111,116,32,80,111,115,105,116,105,111,110,115],"value":"Adjust Dot Positions"},
 {"hash":196087407,"name":"tfbg.miasysteminfo.caption","sourcebytes":[83,121,115,116,101,109,32,73,110,102,111],"value":"System Info"},
+{"hash":184624975,"name":"tfbg.midotval.caption","sourcebytes":[82,101,97,100,105,110,103,58,32,63],"value":"Reading: ?"},
 {"hash":214094746,"name":"tfbg.mirefresh.caption","sourcebytes":[82,101,102,114,101,115,104,32,105,110,58],"value":"Refresh in:"}
 ]}
