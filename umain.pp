@@ -760,7 +760,7 @@ end;
 procedure TfBG.FormCreate(Sender: TObject);
 var
   i: integer;
-  s, x, fontName, apiTarget, apiCreds: string;
+  s, x, guifontName, txtFontName, apiTarget, apiCreds: string;
   fil: boolean;
   userlocale: TFormatSettings;
   {$ifdef X_MAC}
@@ -995,9 +995,13 @@ begin
 
   Application.ProcessMessages;
 
-  fil := FontInList(fontName);
+  fil := FontGUIInList(guifontName);
   if not fil then
-    ShowMessage(Format(RS_FONT_ERROR, [fontName]));
+    ShowMessage(Format(RS_FONT_ERROR, [guifontName]));
+
+  fil := FontTxtInList(txtfontName);
+  if not fil then
+    ShowMessage(Format(RS_FONT_ERROR, [txtfontName]));
 
   {$ifdef darwin}
     addTopMenu;
@@ -1021,7 +1025,8 @@ begin
   {$endif}
   Application.processmessages;
   {$ifndef DARWIN}
-      lArrow.Font.Name := fontName;
+   fBG.font.Name := txtFontName; // This will be applyed down later
+   lArrow.Font.Name := guifontName;
   {$endif}
 
   PrepUI;
@@ -1173,8 +1178,12 @@ var
   hasfont: boolean;
 begin
   L := Sender as TPaintBox;
-  hasFont := FontInList(fontn);
   S := L.Caption;
+
+  if S = DOT_GRAPH then
+     hasFont := FontGUIInList(fontn)
+  else
+     hasFont := FontTXTInList(fontn);
 
   with L.Canvas do
   begin
@@ -2140,6 +2149,7 @@ var
   l: TPaintbox;
 begin
   l := sender as tPaintbox;
+  ShowMessage(L.Canvas.Font.name);
   actOnTrend(@ExpandDot);
   isDot := l.Caption = DOT_GRAPH;;
   if isDot then
