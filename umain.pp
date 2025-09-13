@@ -2149,7 +2149,7 @@ var
   l: TPaintbox;
 begin
   l := sender as tPaintbox;
-  ShowMessage(L.Canvas.Font.name);
+
   actOnTrend(@ExpandDot);
   isDot := l.Caption = DOT_GRAPH;;
   if isDot then
