@@ -195,7 +195,8 @@ type
                     const value: string = ''): Integer;
 
   // Utility
-  function FontInList(out fname: string): Boolean;
+  function FontGUIInList(out fname: string): Boolean;
+  function FontTXTInList(out fname: string): Boolean;
 
 var
   langs : ButtonLangs = (smbYes, smbUXNo, smbUXOK, smbUXCancel, smbUXAbort, smbUXRetry, smbUXIgnore,
@@ -1458,7 +1459,28 @@ begin
                    widechar(icon));
 end;
 
-function FontInList(out fname: string): Boolean;
+
+function FontTXTInList(out fname: string): Boolean;
+begin
+  {$if DEFINED(X_LINUXBSD)}
+    fname := 'Noto Sans';
+    try
+      Result := Screen.Fonts.IndexOf(fname) >= 0;
+    finally
+    end;
+  {$elseif DEFINED(WINDOWS)}
+    fname := 'Segoe UI';
+    try
+      Result := Screen.Fonts.IndexOf(fname) >= 0;
+    finally
+    end;
+  {$else}
+    fname := 'font';
+    Result := True;
+  {$endif}
+end;
+
+function FontGUIInList(out fname: string): Boolean;
 begin
   {$if DEFINED(X_LINUXBSD)}
     fname := 'Noto Color Emoji';
