@@ -62,9 +62,18 @@ resourcestring
   sValue = 'Value';
 
 const
-  muiStop = $26D4;
-  muiStar = $2B50;
-  muiCog  = $2699;
+//  muiStop = $26D4;
+//  muiStar = $2B50;
+
+  //---
+  uxmtOK            = widechar($2705); // ✅ Ticked box
+  uxmtWarning       = widechar($26A0); // ⚠️ Warning sign
+  uxmtError         = widechar($274C); // ❌ Cross mark
+  uxmtInformation   = widechar($2139); // ℹ️ Info symbol
+  uxmtConfirmatio   = widechar($2753); // ❓ Question mark
+  uxmtCog           = widechar($2699); // ⚙️ Gear
+  uxmtSquare           = widechar($274F); // ❏ Square
+  uxmtCustom        = uxmtCog;
 
   mbUXYes       = mbYes;
   mbUXNo        = mbNo;
@@ -92,7 +101,7 @@ type
     procedure UXMessageOnClick(sender: TObject);
   end;
 
-  TUXDialogSize = (uxdNormal = 0, uxdBig = 1, uxdAuto = 3);
+  TUXDialogSize = (uxdNormal = 0, uxdBig = 1, uxdAuto = 3, uxdOnForm = 4);
   TUXMsgDlgBtn     = (mbYes, mbNo, mbOK, mbCancel, mbAbort, mbRetry, mbIgnore,
     mbAll, mbNoToAll, mbYesToAll, mbHelp, mbClose, mbUXOpenFile, mbUXMinimize, mbUXAgree, mbUXRead);
 
@@ -109,12 +118,12 @@ type
 
 
   // Core UX dialog APIs
-  procedure UXMessage(const title, message: string; const icon: widechar = widechar($2705); sender: TForm = nil; onForm: boolean = false);
+  procedure UXMessage(const dialogsize: TUXDialogSize; const title, message: string; const icon: widechar = uxmtOK; sender: TForm = nil);
 
   function UXDialog(const dialogsize: TUXDialogSize;
                     const title, message: string;
                     buttons: TUXMsgDlgBtns;
-                    const icon: widechar = widechar($2705)): TModalResult; overload;
+                    const icon: widechar = uxmtOK): TModalResult; overload;
 
   function UXDialog(const dialogsize: TUXDialogSize;
                     const title, message: string;
@@ -132,65 +141,65 @@ type
                   dumpbg: TColor = $00F5F2FD;
                   dumptext: TColor = $003411A9;
                   buttons: TUXMsgDlgBtns = [mbAbort];
-                  const icon: widechar = widechar($2699);
+                  const icon: widechar = uxmtCog;
                   scale: integer = 1): TModalResult;
 
   function ExtLog(const dialogsize: TUXDialogSize;
                   const caption, msg, log: string;
-                  const icon: widechar = widechar($2699);
+                  const icon: widechar = uxmtCog;
                   scale: integer = 1): TModalResult;
 
   function ExtError(const dialogsize: TUXDialogSize;
                     const msg, error: string;
-                    const icon: widechar = widechar($2699)): TModalResult; overload;
+                    const icon: widechar = uxmtCog): TModalResult; overload;
 
   function ExtError(const dialogsize: TUXDialogSize;
                     const error: string;
-                    const icon: widechar = widechar($2699)): TModalResult; overload;
+                    const icon: widechar = uxmtCog): TModalResult; overload;
 
   function ExtSucc(const dialogsize: TUXDialogSize;
                    const msg, desc, output: string;
                    dumpbg: TColor = $0095EEC4;
                    dumptext: TColor = $00147C4A;
-                   const icon: widechar = widechar($2705)): TModalResult;
+                   const icon: widechar = uxmtOK): TModalResult;
 
   function ExtSuccEx(const dialogsize: TUXDialogSize;
                      const msg, desc, output: string;
                      btns: TUXMsgDlgBtns;
                      dumpbg: TColor = $0095EEC4;
                      dumptext: TColor = $00147C4A;
-                     const icon: widechar = widechar($2705)): TModalResult;
+                     const icon: widechar = uxmtOK): TModalResult;
 
   // Selection / data entry dialogs
   function ExtList(const dialogsize: TUXDialogSize;
                    const ACaption, ATitle, ADesc: string;
                    const Choices: array of string;
-                   const icon: WideChar = WideChar($2699)): Integer;
+                   const icon: WideChar = uxmtCog): Integer;
 
   function ExtInput(const dialogsize: TUXDialogSize;
                     const ACaption, ATitle, ADesc, ADefault: string;
                     var ModalResult: TModalResult;
-                    const icon: WideChar = WideChar($2699)): string;
+                    const icon: WideChar = uxmtCog): string;
 
   function ExtNumericInput(const dialogsize: TUXDialogSize;
                    const ACaption, ATitle, ADesc: string;
                    ADefault: double;
                    float: boolean;
                    var ModalResult: TModalResult;
-                   const icon: WideChar = WideChar($2699)): double;
+                   const icon: WideChar = uxmtCog): double;
 
   function ExtIntInput(
                     const dialogsize: TUXDialogSize;
                     const ACaption, ATitle, ADesc: string;
                     ADefault: integer;
                     var ModalResult: TModalResult;
-                    const icon: WideChar = WideChar($2699)
+                    const icon: WideChar = uxmtCog
                   ): integer;
 
   function ExtTable(const big: boolean;
                     const ACaption, ATitle, ADesc: string;
                     const Keys, Values: array of string;
-                    const icon: WideChar = WideChar($2699);
+                    const icon: WideChar = uxmtCog;
                     const key: string = '';
                     const value: string = ''): Integer;
 
@@ -584,7 +593,7 @@ function ExtIntInput(
   const ACaption, ATitle, ADesc: string;
   ADefault: integer;
   var ModalResult: TModalResult;
-  const icon: WideChar = WideChar($2699)
+  const icon: WideChar = uxmtCog
 ): integer;
 begin
  result := round(ExtNumericInput(dialogsize,ACaption,ATitle,ADesc,ADefault, false, ModalResult, icon));
@@ -596,7 +605,7 @@ function ExtNumericInput(
   ADefault: double;
   float: boolean;
   var ModalResult: TModalResult;
-  const icon: WideChar = WideChar($2699)
+  const icon: WideChar = uxmtCog
 ): double;
 const
   Padding = 16;
@@ -695,7 +704,7 @@ end;
 function UXDialog(const dialogsize: TUXDialogSize;
                   const title, message: string;
                   buttons: TUXMsgDlgBtns;
-                  const icon: widechar = widechar($2705)): TModalResult;
+                  const icon: widechar = uxmtOK): TModalResult;
 begin
   Result := ExtMsg(dialogsize, sMsgTitle, title, message, '',
                    $00AA6004, $00FDD8AA, buttons, widechar(icon));
@@ -721,79 +730,84 @@ begin
     mtError:        icon := widechar($274C); // ❌ Cross mark
     mtInformation:  icon := widechar($2139); // ℹ️ Info symbol
     mtConfirmation: icon := widechar($2753); // ❓ Question mark
-    mtCustom:       icon := widechar($2699); // ⚙️ Gear
+    mtCustom:       icon := uxmtCog; // ⚙️ Gear
   else
-    icon := widechar($2699);
+    icon := uxmtCog;
   end;
 
   Result := ExtMsg(dialogsize, header, title, message, '',
                    $00AA6004, $00FDD8AA, buttons, icon);
 end;
 
-procedure UXMessage(const title, message: string;
-  const icon: widechar = widechar($2705);
-  sender: TForm = nil; onForm: boolean = false);
+procedure UXMessage(const dialogsize: TUXDialogSize; const title, message: string;
+  const icon: widechar = uxmtOK;
+  sender: TForm = nil);
 var
   tp: TPanel;
   tl: TLabel;
   tb: TButton;
   df: TDialogForm;
 begin
-  if onForm and (sender <> nil) and (sender.Showing) then
-  begin
-    // On e.g. touch screens display a full screen message
-    tp := TPanel.Create(sender); // Create a panel to cover the screen
-    tp.Parent := sender;
-    tp.Top := 0;
-    tp.Left := 0;
-    tp.Height := sender.Height;
-    tp.Width := sender.Width;
-    tp.BringToFront;
-    tp.Color := $00FDD8AA;
+  if (dialogsize = uxdOnForm) then begin
 
-    tl := TLabel.Create(tp);
-    tl.parent := tp;
-    tl.autosize := false;
-    tl.Font.Color := $00AA6004;
-    tl.Caption := message;
-    tl.Font.Size := tp.Width div 20;
-    tl.WordWrap := True;
-    tl.top := 5;
-    tl.left := 5;
-    tl.width := tp.width-10;
-    tl.height := tp.height;
-    tl.WordWrap := true;
-
-    tb := TButton.Create(tp);
-    tb.Parent := tp;
-    tb.AutoSize := True;
-    tb.Caption := smbUXOK;
-
-    if tb.Height < (tp.Height div 5) then
+    if (sender <> nil) and (sender.Showing) then
     begin
-      tb.AutoSize := False;
-      tb.Height := tp.Height div 5;
-    end;
+      // On e.g. touch screens display a full screen message
+      tp := TPanel.Create(sender); // Create a panel to cover the screen
+      tp.Parent := sender;
+      tp.Top := 0;
+      tp.Left := 0;
+      tp.Height := sender.Height;
+      tp.Width := sender.Width;
+      tp.BringToFront;
+      tp.Color := $00FDD8AA;
 
-    tb.Left := 0;
-    tb.Width := tp.Width;
-    tb.Top := tp.Height - tb.Height - 10;
-    tb.Font.Color := sender.Font.Color; // Match parent form font color
+      tl := TLabel.Create(tp);
+      tl.parent := tp;
+      tl.autosize := false;
+      tl.Font.Color := $00AA6004;
+      tl.Caption := message;
+      tl.Font.Size := tp.Width div 20;
+      tl.WordWrap := True;
+      tl.top := 5;
+      tl.left := 5;
+      tl.width := tp.width-10;
+      tl.height := tp.height;
+      tl.WordWrap := true;
 
-    // Close logic
-    df := TDialogForm.CreateNew(nil);
-    tb.OnClick := @df.UXMessageOnClick;
-  end
-  else
-    ExtMsg(uxdNormal, sMsgTitle, title, message, '',
-           $00AA6004, $00FDD8AA, [mbOK], widechar(icon));
+      tb := TButton.Create(tp);
+      tb.Parent := tp;
+      tb.AutoSize := True;
+      tb.Caption := smbUXOK;
+
+      if tb.Height < (tp.Height div 5) then
+      begin
+        tb.AutoSize := False;
+        tb.Height := tp.Height div 5;
+      end;
+
+      tb.Left := 0;
+      tb.Width := tp.Width;
+      tb.Top := tp.Height - tb.Height - 10;
+      tb.Font.Color := sender.Font.Color; // Match parent form font color
+
+      // Close logic
+      df := TDialogForm.CreateNew(nil);
+      tb.OnClick := @df.UXMessageOnClick;
+    end
+    else
+    ExtMsg(uxdBig, sMsgTitle, title, message, '',
+           $00AA6004, $00FDD8AA, [mbOK], widechar(icon))
+  end else
+    ExtMsg(dialogsize, sMsgTitle, title, message, '',
+           $00AA6004, $00FDD8AA, [mbOK], widechar(icon))
 end;
 
 function ExtInput(
   const dialogsize: TUXDialogSize;
   const ACaption, ATitle, ADesc, ADefault: string;
   var ModalResult: TModalResult;
-  const icon: WideChar = WideChar($2699)
+  const icon: WideChar = uxmtCog
 ): string;
 const
   Padding = 16;
@@ -889,7 +903,7 @@ function ExtList(
   const dialogsize: TUXDialogSize;
   const ACaption, ATitle, ADesc: string;
   const Choices: array of string;
-  const icon: WideChar = WideChar($2699)
+  const icon: WideChar = uxmtCog
 ): Integer;
 const
   Padding = 16;
@@ -989,7 +1003,7 @@ function ExtTable(
   const big: Boolean;
   const ACaption, ATitle, ADesc: string;
   const Keys, Values: array of string;
-  const icon: WideChar = WideChar($2699);
+  const icon: WideChar = uxmtCog;
   const key: string = '';
   const value: string = ''
 ): Integer;
@@ -1093,7 +1107,7 @@ end;
 function ExtLog(
   const dialogsize: TUXDialogSize;
   const caption, msg, log: string;
-  const icon: widechar = widechar($2699);
+  const icon: widechar = uxmtCog;
   scale: integer = 1
 ): TModalResult;
 begin
@@ -1107,7 +1121,7 @@ function ExtMsg(
   dumpbg: TColor = $00F5F2FD;
   dumptext: TColor = $003411A9;
   buttons: TUXMsgDlgBtns = [mbAbort];
-  const icon: widechar = widechar($2699);
+  const icon: widechar = uxmtCog;
   scale: integer = 1
 ): TModalResult;
 const
@@ -1396,7 +1410,7 @@ end;
 
 function ExtError(const dialogsize: TUXDialogSize;
                   const msg, error: string;
-                  const icon: widechar = widechar($2699)): TModalResult;
+                  const icon: widechar = uxmtCog): TModalResult;
 begin
   Result := ExtMsg(dialogsize,
                    sExtErr,  // caption
@@ -1411,7 +1425,7 @@ end;
 
 function ExtError(const dialogsize: TUXDialogSize;
                   const error: string;
-                  const icon: widechar = widechar($2699)): TModalResult;
+                  const icon: widechar = uxmtCog): TModalResult;
 begin
   Result := ExtMsg(dialogsize,
                    sExtErr,   // caption
@@ -1428,7 +1442,7 @@ function ExtSucc(const dialogsize: TUXDialogSize;
                  const msg, desc, output: string;
                  dumpbg: TColor = $0095EEC4;
                  dumptext: TColor = $00147C4A;
-                 const icon: widechar = widechar($2705)): TModalResult;
+                 const icon: widechar = uxmtOK): TModalResult;
 begin
   Result := ExtMsg(dialogsize,
                    sSuccTitle, // caption
@@ -1446,7 +1460,7 @@ function ExtSuccEx(const dialogsize: TUXDialogSize;
                    btns: TUXMsgDlgBtns;
                    dumpbg: TColor = $0095EEC4;
                    dumptext: TColor = $00147C4A;
-                   const icon: widechar = widechar($2705)): TModalResult;
+                   const icon: widechar = uxmtOK): TModalResult;
 begin
   Result := ExtMsg(dialogsize,
                    sSuccTitle,

@@ -73,7 +73,7 @@ end;
 
 procedure TJSFuncs.ShowMsg(const str: string);
 begin
-  ExtLog(uxdAuto, 'Message from Extension','An extension triggered a message', str, widechar($274F));
+  ExtLog(uxdAuto, 'Message from Extension','An extension triggered a message', str, uxmtSquare);
 end;
 
 // Blood Glucose dump, from JS

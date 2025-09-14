@@ -439,12 +439,12 @@ end;
 
 procedure Showmessage(const str: string);
 begin
-  UXMessage(sSuccTitle, str, system.widechar($2139), fBG, TrndiNative.HasTouchScreen);
+  UXMessage(uxdOnForm, sSuccTitle, str, uxmtInformation, fBG);
 end;
 
 procedure Showmessage(const title, str: string);
 begin
-  UXMessage(title, str, system.widechar($2139), fBG, TrndiNative.hastouchscreen);
+  UXMessage(uxdOnForm, title, str, uxmtInformation, fBG);
 end;
 
 procedure TfBG.placeForm;
@@ -917,7 +917,7 @@ const
 begin
   if native.GetBoolSetting('license.250608') <> true then
   while i <> mrYes do begin
-    i :=  ExtMsg(uxdAuto, 'License', 'You must accept the full terms conditions', 'Do you agree to the terms and full license?', license, $00F5F2FD,$003411A9, [mbYes, mbCancel, mbUxRead], system.widechar($2699),5);
+    i :=  ExtMsg(uxdAuto, 'License', 'You must accept the full terms conditions', 'Do you agree to the terms and full license?', license, $00F5F2FD,$003411A9, [mbYes, mbCancel, mbUxRead], uxmtCustom,5);
     if i = mrYes then
        native.SetBoolSetting('license.250608', true)
     else if i = mrCancel then begin
@@ -1366,7 +1366,7 @@ begin
   end;
   {$else}
 
-  if UXDialog(uxdAuto, RS_QUIT_CAPTION, RS_QUIT_MSG, [mbYes, mbNo], widechar($2705)) = mrNo then
+  if UXDialog(uxdAuto, RS_QUIT_CAPTION, RS_QUIT_MSG, [mbYes, mbNo], uxmtOK) = mrNo then
     Abort;
   {$endif}
   {$ifdef TrndiExt}
@@ -1794,7 +1794,7 @@ for i := Low(bgs) to High(bgs) do begin
 end;
 
 
-i := ExtTable (true, RS_RHISTORY, RS_RH_TITLE, RS_RH_INFO, keys, vals, System.WideChar($2699), RS_RH_TIME, RS_RH_READING);
+i := ExtTable (true, RS_RHISTORY, RS_RH_TITLE, RS_RH_INFO, keys, vals, uxmtCustom, RS_RH_TIME, RS_RH_READING);
 if i > 0 then begin
   b := bgs[i-1];
   if b.getRSSI(xval) then
@@ -2981,7 +2981,7 @@ begin
         if res.IsEmpty then
           slicke.ux.alert.ExtLog(uxdAuto, 'Debug Info', '[empty!]', res)
         else
-          slicke.ux.alert.ExtLog(uxdAuto, 'Debug Info', '', res, System.widechar($2699), 10);
+          slicke.ux.alert.ExtLog(uxdAuto, 'Debug Info', '', res, uxmtCustom, 10);
   {$ELSE}
        bgs := api.getReadings(MAX_MIN, MAX_RESULT);
   {$endif}
