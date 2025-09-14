@@ -1656,11 +1656,8 @@ end;
  ------------------------------------------------------------------------------}
 {$IF DEFINED(X_MAC)}
 procedure TrndiNative.DeleteSetting(const keyname: string; global: boolean = false);
-var
-  key: string;
 begin
-  key := buildKey(keyname, global);
-  DeletePref(key); // macOS-specific delete call (you must implement this if not available)
+  SetSetting(keyname,'',global);
 end;
 
 
