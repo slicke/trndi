@@ -66,6 +66,7 @@ msgid "No To All"
 msgstr ""
 
 #: slicke.ux.alert.smbuxok
+msgctxt "slicke.ux.alert.smbuxok"
 msgid "OK"
 msgstr ""
 
@@ -269,6 +270,10 @@ msgstr ""
 msgid "- Remove"
 msgstr ""
 
+#: tfconf.btreset.caption
+msgid "Reset"
+msgstr ""
+
 #: tfconf.button1.caption
 msgid "&Download"
 msgstr ""
@@ -334,6 +339,52 @@ msgstr ""
 msgid "Account color"
 msgstr ""
 
+#: tfconf.cl_hi_bg.caption
+msgctxt "tfconf.cl_hi_bg.caption"
+msgid "High"
+msgstr ""
+
+#: tfconf.cl_hi_bg_cust.caption
+msgid "High Background"
+msgstr ""
+
+#: tfconf.cl_hi_txt.caption
+msgctxt "tfconf.cl_hi_txt.caption"
+msgid "High"
+msgstr ""
+
+#: tfconf.cl_hi_txt_cust.caption
+msgid "High Text"
+msgstr ""
+
+#: tfconf.cl_lo_bg.caption
+msgctxt "tfconf.cl_lo_bg.caption"
+msgid "Low"
+msgstr ""
+
+#: tfconf.cl_lo_bg_cust.caption
+msgid "Low Background"
+msgstr ""
+
+#: tfconf.cl_lo_txt.caption
+msgctxt "tfconf.cl_lo_txt.caption"
+msgid "Low"
+msgstr ""
+
+#: tfconf.cl_lo_txt_cust.caption
+msgid "Low Text"
+msgstr ""
+
+#: tfconf.cl_ok_bg.caption
+msgctxt "tfconf.cl_ok_bg.caption"
+msgid "OK"
+msgstr ""
+
+#: tfconf.cl_ok_txt.caption
+msgctxt "tfconf.cl_ok_txt.caption"
+msgid "OK"
+msgstr ""
+
 #: tfconf.eaddr.editlabel.caption
 msgid "Server Address / Dexcom Username"
 msgstr ""
@@ -348,6 +399,10 @@ msgstr ""
 
 #: tfconf.epass.editlabel.caption
 msgid "API Secret / Dexcom Password"
+msgstr ""
+
+#: tfconf.gbcolback.caption
+msgid "Backgounds"
 msgstr ""
 
 #: tfconf.gbmulti.caption
@@ -371,6 +426,14 @@ msgstr ""
 msgid "System Features"
 msgstr ""
 
+#: tfconf.groupbox2.caption
+msgid "Texts"
+msgstr ""
+
+#: tfconf.groupbox3.caption
+msgid "Custom Range *"
+msgstr ""
+
 #: tfconf.label1.caption
 msgid "There's always a defualt user account"
 msgstr ""
@@ -389,6 +452,10 @@ msgstr ""
 
 #: tfconf.label13.caption
 msgid "Decimal separator:"
+msgstr ""
+
+#: tfconf.label14.caption
+msgid "* Support depends on your data source"
 msgstr ""
 
 #: tfconf.label2.caption
@@ -466,6 +533,10 @@ msgstr ""
 
 #: tfconf.rbunit.caption
 msgid "Display Unit"
+msgstr ""
+
+#: tfconf.tscolors.caption
+msgid "Colors"
 msgstr ""
 
 #: tfconf.tscustom.caption
