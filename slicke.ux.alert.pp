@@ -225,6 +225,8 @@ begin
     uxdNormal: result := false;
     uxdBig:    result := true;
     uxdAuto:   result := TrndiNative.HasTouchScreen;
+    else
+      result := TrndiNative.HasTouchScreen;
   end;
 end;
 
@@ -750,7 +752,7 @@ var
 begin
   if (dialogsize = uxdOnForm) then begin
 
-    if (sender <> nil) and (sender.Showing) then
+    if (sender <> nil) and (sender.Showing) and (UXDialogIsBig(uxdAuto)) then
     begin
       // On e.g. touch screens display a full screen message
       tp := TPanel.Create(sender); // Create a panel to cover the screen
@@ -796,7 +798,7 @@ begin
       tb.OnClick := @df.UXMessageOnClick;
     end
     else
-    ExtMsg(uxdBig, sMsgTitle, title, message, '',
+    ExtMsg(uxdAuto, sMsgTitle, title, message, '',
            $00AA6004, $00FDD8AA, [mbOK], widechar(icon))
   end else
     ExtMsg(dialogsize, sMsgTitle, title, message, '',
