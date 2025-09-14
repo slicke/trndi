@@ -114,6 +114,10 @@ public
   procedure SetSetting(const keyname: string; const val: string; global: boolean = false);
   procedure SetBoolSetting(const keyname: string; const val: boolean);
   procedure SetFloatSetting(const keyname: string; const val: single);
+  procedure SetColorSetting(const keyname: string; val: TColor);
+  function GetColorSetting(const keyname: string; const def: TColor = $000000): TColor;
+  procedure DeleteSetting(const keyname: string; global: boolean = false);
+  procedure DeleteRootSetting(keyname: string; const val: string);
 
     { GetSetting
       ----------
@@ -1597,6 +1601,27 @@ begin
 end;
 
 
+procedure TrndiNative.SetColorSetting(const keyname: string; val: TColor);
+begin
+  SetSetting(keyname, IntToStr(Integer(val)));
+end;
+
+function Trndinative.GetColorSetting(const keyname: string; const def: TColor): TColor;
+var
+  i: Integer;
+  s: string;
+begin
+  s := GetSetting(keyname, '');
+
+  if s.IsEmpty then
+    Exit(def);
+
+  if TryStrToInt(s, i) then
+    Exit(TColor(i));
+
+  Result := def;
+end;
+
 procedure TrndiNative.SetBoolSetting(const keyname: string; const val: boolean);
 begin
   if val then
@@ -1618,6 +1643,66 @@ procedure TrndiNative.SetRootSetting(keyname: string; const val: string);
 begin
   SetSetting(keyname, val, true);
 end;
+
+procedure TrndiNative.DeleteRootSetting(keyname: string; const val: string);
+begin
+  DeleteSetting(keyname, true);
+end;
+
+{------------------------------------------------------------------------------
+  TrndiNative.DeleteSetting
+  -------------------------
+  Deletes a stored key/value from platform-specific storage completely.
+ ------------------------------------------------------------------------------}
+{$IF DEFINED(X_MAC)}
+procedure TrndiNative.DeleteSetting(const keyname: string; global: boolean = false);
+var
+  key: string;
+begin
+  key := buildKey(keyname, global);
+  DeletePref(key); // macOS-specific delete call (you must implement this if not available)
+end;
+
+
+{$ELSEIF DEFINED(X_WIN)}
+procedure TrndiNative.DeleteSetting(const keyname: string; global: boolean = false);
+var
+  reg: TRegistry;
+  key: string;
+begin
+  key := buildKey(keyname, global);
+
+  reg := TRegistry.Create;
+  try
+    reg.RootKey := HKEY_CURRENT_USER;
+    if reg.OpenKey('\SOFTWARE\Trndi\', false) then  // false = do not create if missing
+    begin
+      if reg.ValueExists(key) then
+        reg.DeleteValue(key)
+      else
+        ShowMessage('Value not found: ' + key);
+    end
+    else
+      ShowMessage('Registry path not found.');
+  finally
+    reg.Free;
+  end;
+end;
+
+
+{$ELSEIF DEFINED(X_PC)}
+procedure TrndiNative.DeleteSetting(const keyname: string; global: boolean = false);
+var
+  key: string;
+begin
+  key := buildKey(keyname, global);
+  if not Assigned(inistore) then
+    inistore := TINIFile.Create(GetAppConfigFile(false));
+
+  inistore.DeleteKey('trndi', key);
+end;
+{$ENDIF}
+
 
 {------------------------------------------------------------------------------
   TrndiNative.SetSetting

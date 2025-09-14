@@ -76,6 +76,7 @@ msgid "No To All"
 msgstr "Nej till allt"
 
 #: slicke.ux.alert.smbuxok
+msgctxt "slicke.ux.alert.smbuxok"
 msgid "OK"
 msgstr "OK"
 
@@ -279,6 +280,10 @@ msgstr "+ Ny"
 msgid "- Remove"
 msgstr "- Radera"
 
+#: tfconf.btreset.caption
+msgid "Reset"
+msgstr ""
+
 #: tfconf.button1.caption
 msgid "&Download"
 msgstr "&Hämta"
@@ -344,6 +349,54 @@ msgstr "Pekskärm"
 msgid "Account color"
 msgstr "Kontofärg"
 
+#: tfconf.cl_hi_bg.caption
+msgctxt "tfconf.cl_hi_bg.caption"
+msgid "High"
+msgstr ""
+
+#: tfconf.cl_hi_bg_cust.caption
+msgid "High Background"
+msgstr ""
+
+#: tfconf.cl_hi_txt.caption
+msgctxt "tfconf.cl_hi_txt.caption"
+msgid "High"
+msgstr ""
+
+#: tfconf.cl_hi_txt_cust.caption
+msgid "High Text"
+msgstr ""
+
+#: tfconf.cl_lo_bg.caption
+msgctxt "tfconf.cl_lo_bg.caption"
+msgid "Low"
+msgstr ""
+
+#: tfconf.cl_lo_bg_cust.caption
+msgid "Low Background"
+msgstr ""
+
+#: tfconf.cl_lo_txt.caption
+msgctxt "tfconf.cl_lo_txt.caption"
+msgid "Low"
+msgstr ""
+
+#: tfconf.cl_lo_txt_cust.caption
+msgid "Low Text"
+msgstr ""
+
+#: tfconf.cl_ok_bg.caption
+#, fuzzy
+msgctxt "tfconf.cl_ok_bg.caption"
+msgid "OK"
+msgstr "OK"
+
+#: tfconf.cl_ok_txt.caption
+#, fuzzy
+msgctxt "tfconf.cl_ok_txt.caption"
+msgid "OK"
+msgstr "OK"
+
 #: tfconf.eaddr.editlabel.caption
 msgid "Server Address / Dexcom Username"
 msgstr "Serveradress / Användare Dexcom"
@@ -359,6 +412,10 @@ msgstr "Pluginmapp"
 #: tfconf.epass.editlabel.caption
 msgid "API Secret / Dexcom Password"
 msgstr "API-nyckel / Lösenord Dexcom"
+
+#: tfconf.gbcolback.caption
+msgid "Backgounds"
+msgstr ""
 
 #: tfconf.gbmulti.caption
 msgid "Account Settings"
@@ -381,6 +438,14 @@ msgstr "Spela Media"
 msgid "System Features"
 msgstr "Systemfunktioner"
 
+#: tfconf.groupbox2.caption
+msgid "Texts"
+msgstr ""
+
+#: tfconf.groupbox3.caption
+msgid "Custom Range *"
+msgstr ""
+
 #: tfconf.label1.caption
 msgid "There's always a defualt user account"
 msgstr "Ett standardkonto finns alltid"
@@ -400,6 +465,10 @@ msgstr "Perfekt avläsning (5,5mmol/L eller 100 mg/dL)"
 #: tfconf.label13.caption
 msgid "Decimal separator:"
 msgstr "Decimalseparator:"
+
+#: tfconf.label14.caption
+msgid "* Support depends on your data source"
+msgstr ""
 
 #: tfconf.label2.caption
 msgid ""
@@ -481,6 +550,10 @@ msgstr "0,0"
 #: tfconf.rbunit.caption
 msgid "Display Unit"
 msgstr "Enhetstyp"
+
+#: tfconf.tscolors.caption
+msgid "Colors"
+msgstr ""
 
 #: tfconf.tscustom.caption
 msgid "Customization"

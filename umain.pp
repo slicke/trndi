@@ -850,6 +850,21 @@ var
     miATouch.Checked := hastouch;
 
     actOnTrend(@initDot);
+
+    //--- Colors
+    bg_color_ok := native.GetColorSetting('ux.bg_color_ok', bg_color_ok);
+    bg_color_hi := native.GetColorSetting('ux.bg_color_hi', bg_color_hi);
+    bg_color_lo := native.GetColorSetting('ux.bg_color_lo', bg_color_lo);
+
+    bg_color_ok_txt := native.GetColorSetting('ux.bg_color_ok_txt', bg_color_ok_txt);
+    bg_color_hi_txt := native.GetColorSetting('ux.bg_color_hi_txt', bg_color_hi_txt);
+    bg_color_lo_txt := native.GetColorSetting('ux.bg_color_lo_txt', bg_color_lo_txt);
+
+    bg_rel_color_hi := native.GetColorSetting('ux.bg_rel_color_hi', bg_rel_color_hi);
+    bg_rel_color_lo := native.GetColorSetting('ux.bg_rel_color_lo', bg_rel_color_lo);
+
+    bg_rel_color_lo_txt := native.GetColorSetting('ux.bg_rel_color_lo_txt', bg_rel_color_lo_txt);
+    bg_rel_color_hi_txt := native.GetColorSetting('ux.bg_rel_color_hi_txt', bg_rel_color_hi_txt);
   end;
 
 procedure initSplash;
@@ -2015,6 +2030,20 @@ if cbPos.ItemIndex = -1 then
       lDot1.Font.Color := self.lDot1.Font.Color;
       lDot2.Font.Color := self.lDot1.Font.Color;
       lDot3.Font.Color := self.lDot1.Font.Color;
+
+      cl_ok_bg.ButtonColor := native.GetColorSetting('ux.bg_color_ok', bg_color_ok);
+      cl_hi_bg.ButtonColor := native.GetColorSetting('ux.bg_color_hi', bg_color_hi);
+      cl_lo_bg.ButtonColor := native.GetColorSetting('ux.bg_color_lo', bg_color_lo);
+
+      cl_ok_txt.ButtonColor := native.GetColorSetting('ux.bg_color_ok_txt', bg_color_ok_txt);
+      cl_hi_txt.ButtonColor := native.GetColorSetting('ux.bg_color_hi_txt', bg_color_hi_txt);
+      cl_lo_txt.ButtonColor := native.GetColorSetting('ux.bg_color_lo_txt', bg_color_lo_txt);
+
+      cl_hi_bg_cust.ButtonColor := native.GetColorSetting('ux.bg_rel_color_hi', bg_rel_color_hi);
+      cl_lo_bg_cust.ButtonColor := native.GetColorSetting('ux.bg_rel_color_lo', bg_rel_color_lo);
+
+      cl_hi_txt_cust.ButtonColor := native.GetColorSetting('ux.bg_rel_color_hi_txt', bg_rel_color_hi_txt);
+      cl_lo_txt_cust.ButtonColor := native.GetColorSetting('ux.bg_rel_color_lo_txt', bg_rel_color_lo_txt);
     end;
   end;
 
@@ -2101,6 +2130,20 @@ if cbPos.ItemIndex = -1 then
       SetSetting('media.url_low', edMusicLow.Text);
       SetSetting('media.url_perfect', edMusicPerfect.Text);
       SetBoolSetting('media.pause', cbMusicPause.Checked);
+
+      SetColorSetting('ux.bg_color_ok', cl_ok_bg.ButtonColor);
+      SetColorSetting('ux.bg_color_hi', cl_hi_bg.ButtonColor);
+      SetColorSetting('ux.bg_color_lo', cl_lo_bg.ButtonColor);
+
+      SetColorSetting('ux.bg_color_ok_txt', cl_ok_txt.ButtonColor);
+      SetColorSetting('ux.bg_color_hi_txt', cl_hi_txt.ButtonColor);
+      SetColorSetting('ux.bg_color_lo_txt', cl_lo_txt.ButtonColor);
+
+      SetColorSetting('ux.bg_rel_color_hi', cl_hi_bg_cust.ButtonColor);
+      SetColorSetting('ux.bg_rel_color_lo', cl_lo_bg_cust.ButtonColor);
+
+      SetColorSetting('ux.bg_rel_color_hi_txt', cl_hi_txt_cust.ButtonColor);
+      SetColorSetting('ux.bg_rel_color_lo_txt', cl_lo_txt_cust.ButtonColor);
     end;
   end;
 
