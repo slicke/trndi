@@ -57,6 +57,7 @@ resourcestring
   smbSelect = 'Select';
   smbUxAgree = 'Agree';
   smbUxRead = 'Read...';
+  smbUXDefault = 'Default';
 
   sKey = 'Key';
   sValue = 'Value';
@@ -109,7 +110,7 @@ type
   TUXDialogSize = (uxdNormal = 0, uxdBig = 1, uxdAuto = 3, uxdOnForm = 4);
   // Buttons
   TUXMsgDlgBtn     = (mbYes, mbNo, mbOK, mbCancel, mbAbort, mbRetry, mbIgnore,
-    mbAll, mbNoToAll, mbYesToAll, mbHelp, mbClose, mbUXOpenFile, mbUXMinimize, mbUXAgree, mbUXRead);
+    mbAll, mbNoToAll, mbYesToAll, mbHelp, mbClose, mbUXOpenFile, mbUXMinimize, mbUXAgree, mbUXRead, mbUXDefault);
   // Button set
   TUXMsgDlgBtns = set of TUXMsgDlgBtn;
 
@@ -174,6 +175,7 @@ type
   function ExtList(const dialogsize: TUXDialogSize;
                    const ACaption, ATitle, ADesc: string;
                    const Choices: array of string;
+                   const Default: boolean = false;
                    const icon: UXImage = uxmtCog): Integer;
 
   function ExtInput(const dialogsize: TUXDialogSize;
@@ -210,7 +212,7 @@ type
 var
   langs : ButtonLangs = (smbYes, smbUXNo, smbUXOK, smbUXCancel, smbUXAbort, smbUXRetry, smbUXIgnore,
                          smbUXAll, smbUXNoToAll, smbUXYesToAll, smbUXHelp, smbUXClose,
-                         smbUXOpenFile, smbUxMinimize, smbUxAgree, smbUxRead);
+                         smbUXOpenFile, smbUxMinimize, smbUxAgree, smbUxRead, smbUxDefault);
 
 implementation
 
@@ -905,6 +907,7 @@ function ExtList(
   const dialogsize: TUXDialogSize;
   const ACaption, ATitle, ADesc: string;
   const Choices: array of string;
+  const Default: boolean = false;
   const icon: UXImage = uxmtCog
 ): Integer;
 const
@@ -971,8 +974,15 @@ begin
     // --- Cancel Button ---
     CancelButton := TButton.Create(Dialog);
     CancelButton.Parent := Dialog;
-    CancelButton.Caption := smbUXCancel;
-    CancelButton.ModalResult := mrCancel;
+    if default then begin
+       CancelButton.Caption := smbUXDefault;
+       CancelButton.ModalResult := mrCancel;
+    end
+    else begin
+       CancelButton.Caption := smbUXCancel;
+       CancelButton.ModalResult := mrCancel;
+    end;
+
     CancelButton.Width := 80;
     if big then
     begin

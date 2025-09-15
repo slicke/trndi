@@ -55,6 +55,10 @@ msgstr "Avbryt"
 msgid "Close"
 msgstr "Stäng"
 
+#: slicke.ux.alert.smbuxdefault
+msgid "Default"
+msgstr "Standard"
+
 #: slicke.ux.alert.smbuxhelp
 msgid "Help"
 msgstr "Hjälp"
@@ -176,14 +180,13 @@ msgid "Show clock every 20 sec"
 msgstr "Visa klockan var 20 sek"
 
 #: tfbg.micustomdots.caption
-#, fuzzy
 msgctxt "tfbg.micustomdots.caption"
 msgid "Custom Size"
 msgstr "Egen storlek"
 
 #: tfbg.midebugbackend.caption
 msgid "Announce raw backend data"
-msgstr ""
+msgstr "Annonsera rådata från backendet"
 
 #: tfbg.midotbig.caption
 msgctxt "tfbg.midotbig.caption"
@@ -221,7 +224,6 @@ msgid "Reading: ?"
 msgstr "Avläsning: ?"
 
 #: tfbg.miexit.caption
-#, fuzzy
 msgctxt "tfbg.miexit.caption"
 msgid "Exit Trndi"
 msgstr "Avsluta Trndi"
@@ -290,7 +292,7 @@ msgstr "- Radera"
 
 #: tfconf.btreset.caption
 msgid "Reset"
-msgstr ""
+msgstr "Återställ"
 
 #: tfconf.button1.caption
 msgid "&Download"
@@ -360,47 +362,45 @@ msgstr "Kontofärg"
 #: tfconf.cl_hi_bg.caption
 msgctxt "tfconf.cl_hi_bg.caption"
 msgid "High"
-msgstr ""
+msgstr "Hög"
 
 #: tfconf.cl_hi_bg_cust.caption
 msgid "High Background"
-msgstr ""
+msgstr "Bakgrund hög"
 
 #: tfconf.cl_hi_txt.caption
 msgctxt "tfconf.cl_hi_txt.caption"
 msgid "High"
-msgstr ""
+msgstr "Hög"
 
 #: tfconf.cl_hi_txt_cust.caption
 msgid "High Text"
-msgstr ""
+msgstr "Text hög"
 
 #: tfconf.cl_lo_bg.caption
 msgctxt "tfconf.cl_lo_bg.caption"
 msgid "Low"
-msgstr ""
+msgstr "Låg"
 
 #: tfconf.cl_lo_bg_cust.caption
 msgid "Low Background"
-msgstr ""
+msgstr "Bakgrund låg"
 
 #: tfconf.cl_lo_txt.caption
 msgctxt "tfconf.cl_lo_txt.caption"
 msgid "Low"
-msgstr ""
+msgstr "Låg"
 
 #: tfconf.cl_lo_txt_cust.caption
 msgid "Low Text"
-msgstr ""
+msgstr "Text låg"
 
 #: tfconf.cl_ok_bg.caption
-#, fuzzy
 msgctxt "tfconf.cl_ok_bg.caption"
 msgid "OK"
 msgstr "OK"
 
 #: tfconf.cl_ok_txt.caption
-#, fuzzy
 msgctxt "tfconf.cl_ok_txt.caption"
 msgid "OK"
 msgstr "OK"
@@ -423,7 +423,7 @@ msgstr "API-nyckel / Lösenord Dexcom"
 
 #: tfconf.gbcolback.caption
 msgid "Backgounds"
-msgstr ""
+msgstr "Bakgrunder"
 
 #: tfconf.gbmulti.caption
 msgid "Account Settings"
@@ -448,11 +448,11 @@ msgstr "Systemfunktioner"
 
 #: tfconf.groupbox2.caption
 msgid "Texts"
-msgstr ""
+msgstr "Texter"
 
 #: tfconf.groupbox3.caption
 msgid "Custom Range *"
-msgstr ""
+msgstr "Eget område *"
 
 #: tfconf.label1.caption
 msgid "There's always a defualt user account"
@@ -476,7 +476,7 @@ msgstr "Decimalseparator:"
 
 #: tfconf.label14.caption
 msgid "* Support depends on your data source"
-msgstr ""
+msgstr "* Stöds inte av alla datakällor"
 
 #: tfconf.label2.caption
 msgid ""
@@ -561,7 +561,7 @@ msgstr "Enhetstyp"
 
 #: tfconf.tscolors.caption
 msgid "Colors"
-msgstr ""
+msgstr "Färger"
 
 #: tfconf.tscustom.caption
 msgid "Customization"
@@ -705,43 +705,40 @@ msgid "Login error during post-authentication steps"
 msgstr "Inloggningsfel efter autensieringen"
 
 #: trndi.ext.functions.sdatatypeerr
-#, object-pascal-format, fuzzy
+#, object-pascal-format
 msgctxt "trndi.ext.functions.sdatatypeerr"
 msgid "Datatype %s was not expected, expected in function %s"
 msgstr "Datatypen %s förväntades inte, förväntad i funktionen %s"
 
 #: trndi.ext.functions.sdatatypeerrfunc
-#, object-pascal-format, fuzzy
+#, object-pascal-format
 msgctxt "trndi.ext.functions.sdatatypeerrfunc"
 msgid "Datatype \"%s\" was not expected, in function \"%s\". Expected \"%s\""
 msgstr "Datatypen ”%s” förväntades inte, i funktionen ”%s”. Förväntade ”%s”"
 
 #: trndi.ext.functions.sdatatypeerrpos
-#, object-pascal-format, fuzzy
+#, object-pascal-format
 msgctxt "trndi.ext.functions.sdatatypeerrpos"
 msgid "Datatype %s was not expected, expected in function %s, parameter %d"
 msgstr "Datatypen ”%s” förväntades inte, förväntad i funktionen %s, parameter %d"
 
 #: trndi.ext.functions.slogdesc
-#, fuzzy
 msgctxt "trndi.ext.functions.slogdesc"
 msgid "Trndi has captured data sent to console.log in a JavaScript extension"
 msgstr "Trndi har fångat utdata från console.log i ett JavaScript-tillägg"
 
 #: trndi.ext.functions.slogrecevive
-#, fuzzy
 msgctxt "trndi.ext.functions.slogrecevive"
 msgid "Output through console.log has been received"
 msgstr "Utmatning genom console.log har mottagits"
 
 #: trndi.ext.functions.snotrace
-#, fuzzy
 msgctxt "trndi.ext.functions.snotrace"
 msgid "No stack trace available"
 msgstr "Ingen stackspårning finns"
 
 #: trndi.ext.functions.sstackerrmsg
-#, object-pascal-format, fuzzy
+#, object-pascal-format
 msgctxt "trndi.ext.functions.sstackerrmsg"
 msgid ""
 "Error: %s \n"
@@ -751,37 +748,32 @@ msgstr ""
 "Stack: %s %s"
 
 #: trndi.ext.functions.sstackfailed
-#, fuzzy
 msgctxt "trndi.ext.functions.sstackfailed"
 msgid "An error occurred, and the stacktrace could not be loaded. Showing backtrace."
 msgstr "Ett fel uppstod och stackspårningen kunde inte laddas. Visar bakåtspårning."
 
 #: trndi.ext.functions.sunknownerr
-#, fuzzy
 msgctxt "trndi.ext.functions.sunknownerr"
 msgid "Unknown error"
 msgstr "Okänt fel"
 
 #: trndi.ext.promise.spromerrcapt
-#, object-pascal-format, fuzzy
+#, object-pascal-format
 msgctxt "trndi.ext.promise.spromerrcapt"
 msgid "The asyncronous function %s failed to complete"
 msgstr "Den asynkrona funktionen %s misslyckades"
 
 #: trndi.ext.promise.stypeerrcapt
-#, fuzzy
 msgctxt "trndi.ext.promise.stypeerrcapt"
 msgid "A data type differes from what was expected"
 msgstr "En datatyp skiljer sig från vad som förväntats"
 
 #: trndi.ext.promise.stypeerrdesc
-#, fuzzy
 msgctxt "trndi.ext.promise.stypeerrdesc"
 msgid "The extension was stopped"
 msgstr "Tillägget stoppades"
 
 #: trndi.ext.promise.stypeerrmsg
-#, fuzzy
 msgctxt "trndi.ext.promise.stypeerrmsg"
 msgid "A data type was expected, but another was found"
 msgstr "En datatyp förväntades, men en annan påträffades"
@@ -1324,32 +1316,26 @@ msgid "You can hold down shift and plus (+) or minus (-) to change the window si
 msgstr "Du kan hålla ned skift och plus (+) eller minus (-) för att justera fönstrets storlek"
 
 #: umain.rs_tpobottomleft
-#, fuzzy
 msgctxt "umain.rs_tpobottomleft"
 msgid "Bottom Left"
 msgstr "Nere till vänster"
 
 #: umain.rs_tpobottomright
-#, fuzzy
 msgctxt "umain.rs_tpobottomright"
 msgid "Bottom Right"
 msgstr "Nere till höger"
 
 #: umain.rs_tpocenter
-#, fuzzy
 msgctxt "umain.rs_tpocenter"
 msgid "Desktop Center"
 msgstr "Mitten av skrivbordet"
 
 #: umain.rs_tpocustom
-#, fuzzy
 msgctxt "umain.rs_tpocustom"
 msgid "Last position"
 msgstr "Senaste position"
 
 #: umain.rs_tpotopright
-#, fuzzy
 msgctxt "umain.rs_tpotopright"
 msgid "Top Right"
 msgstr "Höger topp"
-
