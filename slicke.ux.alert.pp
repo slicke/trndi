@@ -1638,7 +1638,7 @@ begin
   // 3) Text
   ACanvas.Font.Assign(Btn.Font);
   ACanvas.Font.Color := clWhite;
-  TxtFlags := DT_CENTER or DT_VCENTER or DT_SINGLELINE;
+  TxtFlags := DT_CENTER or  DT_VCENTER or DT_SINGLELINE;
   DrawText(ACanvas.Handle, PChar(Btn.Caption), Length(Btn.Caption),
     ARect, TxtFlags);
 
@@ -1649,5 +1649,3 @@ end;
 {$endif}
 
 end.
-
-=
