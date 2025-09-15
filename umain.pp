@@ -99,8 +99,8 @@ TfBG = class(TForm)
   lMissing: TLabel;
   lTir:TLabel;
   lAgo:TLabel;
-  MenuItem1: TMenuItem;
-  MenuItem2: TMenuItem;
+  miExit: TMenuItem;
+  miCustomDots: TMenuItem;
   miDebugBackend: TMenuItem;
   miDotVal: TMenuItem;
   misep: TMenuItem;
@@ -113,8 +113,8 @@ TfBG = class(TForm)
   miATouch: TMenuItem;
   miAdvanced: TMenuItem;
   lDot1: TPaintBox;
-  Separator3: TMenuItem;
-  Separator2: TMenuItem;
+  miSplit6: TMenuItem;
+  miSplit5: TMenuItem;
   miAnnounce:TMenuItem;
   miDotHuge:TMenuItem;
   miDotBig:TMenuItem;
@@ -169,8 +169,8 @@ TfBG = class(TForm)
   procedure FormDestroy(Sender:TObject);
   procedure FormKeyPress(Sender:TObject;var Key:char);
   procedure DotPaint(Sender: TObject);
-  procedure MenuItem1Click(Sender: TObject);
-  procedure MenuItem2Click(Sender: TObject);
+  procedure miExitClick(Sender: TObject);
+  procedure miCustomDotsClick(Sender: TObject);
   procedure miATouchAutoClick(Sender: TObject);
   procedure miADotAdjustClick(Sender: TObject);
   procedure miADotScaleClick(Sender: TObject);
@@ -1229,12 +1229,12 @@ begin
   L.height := max(L.height, L.font.size);
 end;
 
-procedure TfBG.MenuItem1Click(Sender: TObject);
+procedure TfBG.miExitClick(Sender: TObject);
 begin
   Close;
 end;
 
-procedure TfBG.MenuItem2Click(Sender: TObject);
+procedure TfBG.miCustomDotsClick(Sender: TObject);
 var
   mr: TModalResult;
   dots: integer;
