@@ -115,14 +115,6 @@ msgctxt "tfbg.lval.caption"
 msgid "Setup"
 msgstr ""
 
-#: tfbg.menuitem1.caption
-msgid "Exit Trndi"
-msgstr ""
-
-#: tfbg.menuitem2.caption
-msgid "Custom Size"
-msgstr ""
-
 #: tfbg.miadotadjust.caption
 msgid "Adjust Dot Positions"
 msgstr ""
@@ -173,6 +165,11 @@ msgstr ""
 msgid "Show clock every 20 sec"
 msgstr ""
 
+#: tfbg.micustomdots.caption
+msgctxt "tfbg.micustomdots.caption"
+msgid "Custom Size"
+msgstr ""
+
 #: tfbg.midebugbackend.caption
 msgid "Announce raw backend data"
 msgstr ""
@@ -210,6 +207,11 @@ msgstr ""
 
 #: tfbg.midotval.caption
 msgid "Reading: ?"
+msgstr ""
+
+#: tfbg.miexit.caption
+msgctxt "tfbg.miexit.caption"
+msgid "Exit Trndi"
 msgstr ""
 
 #: tfbg.mifloaton.caption

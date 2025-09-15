@@ -125,14 +125,6 @@ msgctxt "tfbg.lval.caption"
 msgid "Setup"
 msgstr "Konfig"
 
-#: tfbg.menuitem1.caption
-msgid "Exit Trndi"
-msgstr "Avsluta Trndi"
-
-#: tfbg.menuitem2.caption
-msgid "Custom Size"
-msgstr "Egen storlek"
-
 #: tfbg.miadotadjust.caption
 msgid "Adjust Dot Positions"
 msgstr "Justera punktpositioner"
@@ -183,6 +175,12 @@ msgstr "Inga kanter"
 msgid "Show clock every 20 sec"
 msgstr "Visa klockan var 20 sek"
 
+#: tfbg.micustomdots.caption
+#, fuzzy
+msgctxt "tfbg.micustomdots.caption"
+msgid "Custom Size"
+msgstr "Egen storlek"
+
 #: tfbg.midebugbackend.caption
 msgid "Announce raw backend data"
 msgstr ""
@@ -221,6 +219,12 @@ msgstr "Punktstorlek"
 #: tfbg.midotval.caption
 msgid "Reading: ?"
 msgstr "Avläsning: ?"
+
+#: tfbg.miexit.caption
+#, fuzzy
+msgctxt "tfbg.miexit.caption"
+msgid "Exit Trndi"
+msgstr "Avsluta Trndi"
 
 #: tfbg.mifloaton.caption
 msgid "Show Floating Window"
