@@ -81,6 +81,8 @@
 {"hash":36450846,"name":"tfconf.cbtouch.caption","sourcebytes":[84,111,117,99,104,32,115,99,114,101,101,110],"value":"Touch screen"},
 {"hash":206226499,"name":"tfconf.cbnotice.caption","sourcebytes":[83,121,115,116,101,109,32,110,111,116,105,102,105,99,97,116,105,111,110,115],"value":"System notifications"},
 {"hash":203401272,"name":"tfconf.cbmultitouch.caption","sourcebytes":[77,117,108,116,105,45,116,111,117,99,104],"value":"Multi-touch"},
+{"hash":63,"name":"tfconf.bsystouch.caption","sourcebytes":[63],"value":"?"},
+{"hash":63,"name":"tfconf.bsysnotice.caption","sourcebytes":[63],"value":"?"},
 {"hash":261939365,"name":"tfconf.btestannounce.caption","sourcebytes":[84,101,115,116,32,65,110,110,111,117,110,99,101],"value":"Test Announce"},
 {"hash":242814836,"name":"tfconf.ltestannounce.caption","sourcebytes":[84,101,115,116,32,97,110,32,97,110,110,111,117,110,99,101,109,101,110,116],"value":"Test an announcement"},
 {"hash":100430328,"name":"tfconf.btestspeech.caption","sourcebytes":[84,101,115,116,32,83,112,101,101,99,104],"value":"Test Speech"},
