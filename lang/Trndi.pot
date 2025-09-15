@@ -45,6 +45,10 @@ msgstr ""
 msgid "Close"
 msgstr ""
 
+#: slicke.ux.alert.smbuxdefault
+msgid "Default"
+msgstr ""
+
 #: slicke.ux.alert.smbuxhelp
 msgid "Help"
 msgstr ""
