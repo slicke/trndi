@@ -58,6 +58,9 @@ trndi.Ext. Engine, trndi.Ext.jsfuncs,
 {$ifdef Darwin}
 CocoaAll, MacOSAll,
 {$endif}
+{$ifdef windows}
+LCLType,
+{$endif}
 LazFileUtils, uconf, trndi.native, Trndi.API, trndi.api.xDrip,{$ifdef DEBUG} trndi.api.debug, trndi.api.debug_edge, trndi.api.debug_missing, trndi.api.debug_perfect, {$endif}
 {$ifdef LCLQt6}Qt6, QtWidgets,{$endif}
 StrUtils, TouchDetection, ufloat;
@@ -180,6 +183,7 @@ TfBG = class(TForm)
   procedure miATouchNoClick(Sender: TObject);
   procedure miATouchYesClick(Sender: TObject);
   procedure miDebugBackendClick(Sender: TObject);
+  procedure pnWarningPaint(Sender: TObject);
   procedure speakReading;
   procedure FormMouseLeave(Sender:TObject);
   procedure FormMouseMove(Sender:TObject;{%H-}Shift:TShiftState;X,Y:integer);
@@ -204,7 +208,6 @@ TfBG = class(TForm)
   procedure miHistoryClick(Sender:TObject);
   procedure miRangeColorClick(Sender:TObject);
   procedure miBordersClick(Sender:TObject);
-  procedure miExitClick(Sender:TObject);
   procedure miForceClick(Sender: TObject);
   procedure miLimitExplainClick(Sender: TObject);
   procedure miOnTopClick(Sender:TObject);
@@ -383,6 +386,19 @@ implementation
 {$R *.lfm}
 {$I tfuncs.inc}
 
+
+procedure ApplyRoundedCorners(APanel: TPanel; Radius: Integer);
+{$IFDEF WINDOWS}
+var
+  Rgn: HRGN;
+{$ENDIF}
+begin
+  {$IFDEF WINDOWS}
+  // Windows: Set a real rounded window region
+  Rgn := CreateRoundRectRgn(0, 0, APanel.Width, APanel.Height, Radius, Radius);
+  SetWindowRgn(APanel.Handle, Rgn, True);
+  {$ENDIF}
+end;
 
 procedure TfBG.onGH(sender: TObject);
 begin
@@ -1349,6 +1365,32 @@ begin
   miDebugBackend.Checked := not miDebugBackend.Checked;
 end;
 
+procedure TfBG.pnWarningPaint(Sender: TObject);
+{$ifndef Windows}
+const
+  radius = 20;
+var
+  P: TPanel;
+{$endif}
+begin
+{$ifndef Windows}
+  P := TPanel(Sender);
+
+  with P.Canvas do
+  begin
+    // First, fill with dark background color in corners
+    Brush.Color := fBG.Color;
+    FillRect(0, 0, P.Width, P.Height);
+
+    // Now draw the rounded panel
+    Brush.Color := P.Color;
+    Pen.Color := clBlack;
+    Pen.Width := 1;
+    RoundRect(0, 0, P.Width, P.Height, Radius, Radius);
+  end;
+{$endif}
+end;
+
 procedure TfBG.FormMouseLeave(Sender:TObject);
 begin
 
@@ -1511,6 +1553,7 @@ begin
     lAgo.Visible := false;
     lTir.Visible := false;
   end;
+  ApplyRoundedCorners(pnWarning, 20);
 end;
 
 procedure TfBG.FormShow(Sender: TObject);
@@ -1869,11 +1912,6 @@ begin
   native := TrndiNative.Create;
   if native.isDarkMode then
      native.setDarkMode{$ifdef windows}(self.Handle){$endif};
-end;
-
-procedure TfBG.miExitClick(Sender:TObject);
-begin
-
 end;
 
 // Force update on menu click
@@ -3053,6 +3091,7 @@ begin
   if (Length(bgs) < 1) or (not IsDataFresh) then
   begin
     pnWarning.Visible := true;
+
     pnWarning.Caption := '⚠️ ' + RS_NO_BACKEND;
     if (not TryStrToInt(lVal.Caption[1], i)) or (lArrow.Caption = 'lArrow') then begin // Dont show "Setup" or similar on boot
       lVal.Caption := '--';
