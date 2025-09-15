@@ -39,6 +39,8 @@ TfConf = class(TForm)
   bOverrideHelp: TButton;
   bPrivacyHelp: TButton;
   bRemove: TButton;
+  bSysNotice: TButton;
+  bSysTouch: TButton;
   bTestSpeech: TButton;
   Button1: TButton;
   Button2: TButton;
@@ -145,6 +147,8 @@ TfConf = class(TForm)
   procedure bOverrideHelpClick(Sender:TObject);
   procedure bPrivacyHelpClick(Sender:TObject);
   procedure bRemoveClick(Sender:TObject);
+  procedure bSysNoticeClick(Sender: TObject);
+  procedure bSysTouchClick(Sender: TObject);
   procedure bTestAnnounceClick(Sender: TObject);
   procedure bTestSpeechClick(Sender: TObject);
   procedure btResetClick(Sender: TObject);
@@ -165,6 +169,7 @@ TfConf = class(TForm)
   procedure rbUnitClick(Sender:TObject);
   procedure tbAdvancedChange(Sender:TObject);
   procedure ToggleBox1Change(Sender:TObject);
+  procedure tsSystemShow(Sender: TObject);
 private
 
 public
@@ -204,6 +209,13 @@ RS_NEWVER_PRE = 'A new pre-release for %s is available, would you like to go to 
 RS_NEWVER_CAPTION = 'New version available';
 RS_SELECT_FONT = 'Select a font';
 
+
+RS_NOTIFICATIONS = 'Notifications';
+RS_NOTIFY_TITLE = 'A notification system is required';
+RS_NOTIFY_TXT = 'Trndi uses a system called "%s" to send desktop notices, you need to have this system installed in order to recieve notices.';
+RS_NOTIFY_MAC = 'Notifications will be made via macOS';
+
+RS_HASTOUCH = 'Shows if Trndi detected a touch screen';
 var 
 fConf: TfConf;
 
@@ -523,6 +535,30 @@ if lbUsers.ItemIndex > -1 then
   lbUsers.DeleteSelected;
 end;
 
+procedure TfConf.bSysNoticeClick(Sender: TObject);
+const
+  {$ifdef windows}
+  url = 'https://www.powershellgallery.com/packages/BurntToast';
+  sys = 'BurntToast';
+  {$else}
+  url = 'https://www.google.com/search?q=notify-send';
+  sys = 'notify-send';
+  {$endif}
+begin
+{$ifndef Darwin}
+  if ExtMsg(uxdAuto, RS_NOTIFICATIONS, RS_NOTIFY_TITLE, Format(RS_NOTIFY_TXT, [sys]), '', $00F5F2FD,$003411A9, [mbOK, mbUXRead], uxmtCustom,0) <> mrOK then
+     OpenURL(url);
+{$else}
+  UXMessage(uxdAuto, RS_NOTIFICATIONS, RS_NOTIFY_MAC);
+{$endif}
+
+end;
+
+procedure TfConf.bSysTouchClick(Sender: TObject);
+begin
+    SHowMessage(RS_HASTOUCH);
+end;
+
 procedure TfConf.bTestAnnounceClick(Sender: TObject);
 begin
   with TrndiNative.Create do begin
@@ -766,6 +802,18 @@ end;
 procedure TfConf.ToggleBox1Change(Sender:TObject);
 begin
 
+end;
+
+procedure TfConf.tsSystemShow(Sender: TObject);
+begin
+      {$if defined(WINDOWS)}
+      cbNotice.Checked := IsBurntToastAvailable;
+      {$elseif defined (DARWIN)}
+      cbNotice.Checked := True;
+      {$else}
+      cbNotice.Checked := IsNotifySendAvailable;
+      cbNotice.Caption := cbNotice.Caption + ' (Notify Daemon)';
+      {$endif}
 end;
 
 end.
