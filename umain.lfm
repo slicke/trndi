@@ -432,6 +432,14 @@ object fBG: TfBG
         Caption = 'Adjust Dot Positions'
         OnClick = miADotAdjustClick
       end
+      object miDebugBackend: TMenuItem
+        Caption = 'Announce raw backend data'
+        Visible = False
+        OnClick = miDebugBackendClick
+      end
+      object Separator4: TMenuItem
+        Caption = '-'
+      end
       object miASystemInfo: TMenuItem
         Caption = 'System Info'
         OnClick = miASystemInfoClick

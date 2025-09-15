@@ -183,6 +183,10 @@ msgstr "Inga kanter"
 msgid "Show clock every 20 sec"
 msgstr "Visa klockan var 20 sek"
 
+#: tfbg.midebugbackend.caption
+msgid "Announce raw backend data"
+msgstr ""
+
 #: tfbg.midotbig.caption
 msgctxt "tfbg.midotbig.caption"
 msgid "Big"

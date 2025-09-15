@@ -101,6 +101,7 @@ TfBG = class(TForm)
   lAgo:TLabel;
   MenuItem1: TMenuItem;
   MenuItem2: TMenuItem;
+  miDebugBackend: TMenuItem;
   miDotVal: TMenuItem;
   misep: TMenuItem;
   miATouchAuto: TMenuItem;
@@ -152,6 +153,7 @@ TfBG = class(TForm)
   miSettings: TMenuItem;
   pmSettings: TPopupMenu;
   mSplit5:TMenuItem;
+  Separator4: TMenuItem;
   tAgo:TTimer;
   tClock:TTimer;
   tSwap:TTimer;
@@ -177,6 +179,7 @@ TfBG = class(TForm)
   procedure miATouchClick(Sender: TObject);
   procedure miATouchNoClick(Sender: TObject);
   procedure miATouchYesClick(Sender: TObject);
+  procedure miDebugBackendClick(Sender: TObject);
   procedure speakReading;
   procedure FormMouseLeave(Sender:TObject);
   procedure FormMouseMove(Sender:TObject;{%H-}Shift:TShiftState;X,Y:integer);
@@ -1341,6 +1344,11 @@ begin
     native.touchOverride := tbTrue;
 end;
 
+procedure TfBG.miDebugBackendClick(Sender: TObject);
+begin
+  miDebugBackend.Checked := not miDebugBackend.Checked;
+end;
+
 procedure TfBG.FormMouseLeave(Sender:TObject);
 begin
 
@@ -2297,6 +2305,9 @@ begin
   miAdvanced.Visible := ssShift in GetKeyShiftState;
   miBorders.Checked := self.BorderStyle = bsNone;
   miATouch.Checked := HasTouch;
+  {$ifdef DEBUG}
+    miDebugBackend.Visible := true;
+  {$endif}
 
   if (sender as TPopupMenu).PopupComponent is TPaintBox then begin
     tpb := (sender as TPopupMenu).PopupComponent as TPaintBox;
@@ -2707,6 +2718,7 @@ end;
 function TfBG.IsDataFresh: Boolean;
 var
   b: BGReading;
+  i: integer;
 begin
   b := bgs[Low(bgs)];
 
@@ -2717,6 +2729,10 @@ begin
   begin
     tMissed.OnTimer(tMissed);
     lVal.Font.Style := [fsStrikeOut];
+    if (not TryStrToInt(lVal.Caption[1], i)) or (lArrow.Caption = 'lArrow') then begin // Dont show "Setup" or similar on boot
+      lVal.Caption := '--';
+      lArrow.Caption := '';
+    end;
     fBG.Color := clBlack;
     lVal.Font.Color := clWhite;
     tMissed.Enabled := true;
@@ -3012,6 +3028,7 @@ function TfBG.FetchAndValidateReadings: Boolean;
 var
   res: string;
 {$endif}
+i: integer;
 begin
   Result := False;
 
@@ -3019,12 +3036,14 @@ begin
     Exit;
 
   {$ifdef DEBUG}
+    if miDebugBackend.Checked then begin
       bgs := api.getReadings(MAX_MIN, MAX_RESULT, '', res);
       if Showing then
         if res.IsEmpty then
           slicke.ux.alert.ExtLog(uxdAuto, 'Debug Info', '[empty!]', res)
         else
           slicke.ux.alert.ExtLog(uxdAuto, 'Debug Info', '', res, uxmtCustom, 10);
+     end;
   {$ELSE}
        bgs := api.getReadings(MAX_MIN, MAX_RESULT);
   {$endif}
@@ -3035,6 +3054,10 @@ begin
   begin
     pnWarning.Visible := true;
     pnWarning.Caption := '⚠️ ' + RS_NO_BACKEND;
+    if (not TryStrToInt(lVal.Caption[1], i)) or (lArrow.Caption = 'lArrow') then begin // Dont show "Setup" or similar on boot
+      lVal.Caption := '--';
+      lArrow.Caption := '';
+    end;
     FixWarningPanel;
     Exit;
   end;

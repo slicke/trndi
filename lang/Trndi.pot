@@ -173,6 +173,10 @@ msgstr ""
 msgid "Show clock every 20 sec"
 msgstr ""
 
+#: tfbg.midebugbackend.caption
+msgid "Announce raw backend data"
+msgstr ""
+
 #: tfbg.midotbig.caption
 msgctxt "tfbg.midotbig.caption"
 msgid "Big"
