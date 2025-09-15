@@ -275,6 +275,7 @@ function IsNotifySendAvailable: boolean;
 //procedure QWindow_setWindowBadge(window: QWindowH; badge: PChar); cdecl; external 'libQt6Gui.so.6';
 {$ifdef Windows}
 function DwmSetWindowAttribute(hwnd: HWND; dwAttribute: DWORD; pvAttribute: Pointer; cbAttribute: DWORD): HRESULT; stdcall; external 'dwmapi.dll';
+function IsBurntToastAvailable: boolean;
 {$endif}
 
 implementation
@@ -2024,6 +2025,32 @@ begin
     end;
   end;
   {$ENDIF}
+end;
+
+function IsBurntToastAvailable: Boolean;
+var
+  Output: TStringList;
+  AProcess: TProcess;
+begin
+  Result := False;
+  Output := TStringList.Create;
+  AProcess := TProcess.Create(nil);
+  try
+    AProcess.Executable := 'powershell';
+    AProcess.Parameters.Add('-NoProfile');
+    AProcess.Parameters.Add('-Command');
+
+    AProcess.Parameters.Add('if (Get-Module -ListAvailable -Name BurntToast) { Write-Host "YES" }');
+    AProcess.Options := [poUsePipes, poWaitOnExit];
+
+    AProcess.Execute;
+    Output.LoadFromStream(AProcess.Output);
+
+    Result := (Pos('YES', Output.Text) > 0);
+  finally
+    AProcess.Free;
+    Output.Free;
+  end;
 end;
 end.
 
