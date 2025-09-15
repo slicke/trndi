@@ -183,6 +183,7 @@ TfBG = class(TForm)
   procedure miATouchNoClick(Sender: TObject);
   procedure miATouchYesClick(Sender: TObject);
   procedure miDebugBackendClick(Sender: TObject);
+  procedure pnWarningClick(Sender: TObject);
   procedure pnWarningPaint(Sender: TObject);
   procedure speakReading;
   procedure FormMouseLeave(Sender:TObject);
@@ -1363,6 +1364,11 @@ end;
 procedure TfBG.miDebugBackendClick(Sender: TObject);
 begin
   miDebugBackend.Checked := not miDebugBackend.Checked;
+end;
+
+procedure TfBG.pnWarningClick(Sender: TObject);
+begin
+  ShowMessage(RS_NO_BOOT_READING);
 end;
 
 procedure TfBG.pnWarningPaint(Sender: TObject);
@@ -3031,12 +3037,28 @@ begin
 end;
 
 procedure TfBG.fixWarningPanel;
+  function CharsFit(Canvas: TCanvas; C: Char; TotalWidth: Integer): Integer;
+  var
+    CharWidth: Integer;
+  begin
+    CharWidth := Canvas.TextWidth(C);
+    if CharWidth > 0 then
+      Result := TotalWidth div CharWidth
+    else
+      Result := 0;
+  end;
+var
+  padding: integer;
 begin
-    pnwarning.width := min(ClientWidth, 300);
-    pnWarning.left := ClientWidth div 10;
-    pnwarning.top := ClientHeight div 10;
-    pnWarning.height := ClientHeight-(pnwarning.top*2);
-    CenterPanelToCaption(PNwARNING);
+    padding := (ClientWidth div 25);
+    if not native.HasTouchScreen then
+       padding := padding*2;
+
+    pnwarning.AutoSize:=false;
+    pnwarning.width := ClientWidth - padding;
+    pnWarning.left := padding;
+    pnwarning.top := padding;
+    pnWarning.height := ClientHeight-padding;
 
     if Pos(sLineBreak, lMissing.Caption) < 1 then // Ugly solution
       lMissing.Caption := '🕑'+sLineBreak+lMissing.Caption;
@@ -3048,11 +3070,12 @@ begin
     lMissing.OptimalFill := true;
     if native.HasTouchScreen then begin
       lMissing.wordwrap := true;
-      lmissing.font.size :=  clientwidth div 10;
+      lmissing.font.size :=  pnWarning.left - padding*3;
       lmissing.width := pnWarning.width;
       lmissing.height := pnWarning.Height;
-      pnWarning.caption := '';
+      pnWarning.Font.Color := pnWarning.color;
     end;
+
     pnOffReading.Height := ClientHeight;
     pnOffReading.ClientWidth := ClientWidth div 35;
 end;

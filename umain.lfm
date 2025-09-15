@@ -10,7 +10,6 @@ object fBG: TfBG
   Color = clBlack
   Font.Color = clWhite
   Position = poDesktopCenter
-  LCLVersion = '4.2.0.0'
   OnClose = FormClose
   OnCreate = FormCreate
   OnDblClick = FormDblClick
@@ -138,6 +137,7 @@ object fBG: TfBG
     ParentFont = False
     TabOrder = 3
     Visible = False
+    OnClick = pnWarningClick
     OnPaint = pnWarningPaint
     object lMissing: TLabel
       Left = 45
