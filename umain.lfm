@@ -372,9 +372,9 @@ object fBG: TfBG
         object misep: TMenuItem
           Caption = '-'
         end
-        object MenuItem2: TMenuItem
+        object miCustomDots: TMenuItem
           Caption = 'Custom Size'
-          OnClick = MenuItem2Click
+          OnClick = miCustomDotsClick
         end
       end
     end
@@ -397,12 +397,12 @@ object fBG: TfBG
       Caption = 'Show Floating Window'
       OnClick = miFloatOnClick
     end
-    object Separator2: TMenuItem
+    object miSplit5: TMenuItem
       Caption = '-'
     end
-    object MenuItem1: TMenuItem
+    object miExit: TMenuItem
       Caption = 'Exit Trndi'
-      OnClick = MenuItem1Click
+      OnClick = miExitClick
     end
     object miAdvanced: TMenuItem
       Caption = '> Service Menu'
@@ -445,7 +445,7 @@ object fBG: TfBG
         OnClick = miASystemInfoClick
       end
     end
-    object Separator3: TMenuItem
+    object miSplit6: TMenuItem
       Caption = '-'
     end
     object miDotVal: TMenuItem
