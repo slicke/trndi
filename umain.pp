@@ -3058,8 +3058,8 @@ begin
 end;
 
 function TfBG.FetchAndValidateReadings: Boolean;
-{$ifdef DEBUG}
 var
+{$ifdef DEBUG}
   res: string;
 {$endif}
 i: integer;
