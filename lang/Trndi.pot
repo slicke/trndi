@@ -280,6 +280,14 @@ msgstr ""
 msgid "- Remove"
 msgstr ""
 
+#: tfconf.btestannounce.caption
+msgid "Test Announce"
+msgstr ""
+
+#: tfconf.btestspeech.caption
+msgid "Test Speech"
+msgstr ""
+
 #: tfconf.btreset.caption
 msgid "Reset"
 msgstr ""
@@ -530,6 +538,14 @@ msgstr ""
 
 #: tfconf.llounder.caption
 msgid "Low under"
+msgstr ""
+
+#: tfconf.ltestannounce.caption
+msgid "Test an announcement"
+msgstr ""
+
+#: tfconf.ltestannounce1.caption
+msgid "Test a spoken string"
 msgstr ""
 
 #: tfconf.ltray.caption

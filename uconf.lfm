@@ -15,9 +15,9 @@ object fConf: TfConf
     Height = 395
     Top = 0
     Width = 525
-    ActivePage = tsColors
+    ActivePage = tsSystem
     Align = alClient
-    TabIndex = 1
+    TabIndex = 7
     TabOrder = 0
     object tsGeneral: TTabSheet
       Caption = 'General'
@@ -11242,6 +11242,38 @@ object fConf: TfConf
           Enabled = False
           TabOrder = 2
         end
+      end
+      object bTestAnnounce: TButton
+        Left = 16
+        Height = 25
+        Top = 200
+        Width = 131
+        Caption = 'Test Announce'
+        TabOrder = 1
+        OnClick = bTestAnnounceClick
+      end
+      object lTestAnnounce: TLabel
+        Left = 160
+        Height = 15
+        Top = 205
+        Width = 121
+        Caption = 'Test an announcement'
+      end
+      object bTestSpeech: TButton
+        Left = 16
+        Height = 25
+        Top = 168
+        Width = 131
+        Caption = 'Test Speech'
+        TabOrder = 2
+        OnClick = bTestSpeechClick
+      end
+      object lTestAnnounce1: TLabel
+        Left = 160
+        Height = 15
+        Top = 173
+        Width = 104
+        Caption = 'Test a spoken string'
       end
     end
   end

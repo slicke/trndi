@@ -39,10 +39,12 @@ TfConf = class(TForm)
   bOverrideHelp: TButton;
   bPrivacyHelp: TButton;
   bRemove: TButton;
+  bTestSpeech: TButton;
   Button1: TButton;
   Button2: TButton;
   Button3: TButton;
   btReset: TButton;
+  bTestAnnounce: TButton;
   bvExt: TBevel;
   cbCI: TCheckBox;
   cbCust: TCheckBox;
@@ -95,6 +97,7 @@ TfConf = class(TForm)
   Label12: TLabel;
   Label13: TLabel;
   Label14: TLabel;
+  lTestAnnounce: TLabel;
   Label2: TLabel;
   Label3: TLabel;
   Label4: TLabel;
@@ -115,6 +118,7 @@ TfConf = class(TForm)
   lHiOver: TLabel;
   lLicense: TButton;
   lLounder: TLabel;
+  lTestAnnounce1: TLabel;
   lTitle: TLabel;
   lTray: TLabel;
   lVal: TLabel;
@@ -141,6 +145,8 @@ TfConf = class(TForm)
   procedure bOverrideHelpClick(Sender:TObject);
   procedure bPrivacyHelpClick(Sender:TObject);
   procedure bRemoveClick(Sender:TObject);
+  procedure bTestAnnounceClick(Sender: TObject);
+  procedure bTestSpeechClick(Sender: TObject);
   procedure btResetClick(Sender: TObject);
   procedure Button1Click(Sender:TObject);
   procedure Button2Click(Sender:TObject);
@@ -515,6 +521,22 @@ procedure TfConf.bRemoveClick(Sender:TObject);
 begin
 if lbUsers.ItemIndex > -1 then
   lbUsers.DeleteSelected;
+end;
+
+procedure TfConf.bTestAnnounceClick(Sender: TObject);
+begin
+  with TrndiNative.Create do begin
+    attention('test');
+    Free;
+  end;
+end;
+
+procedure TfConf.bTestSpeechClick(Sender: TObject);
+begin
+  with TrndiNative.Create do begin
+    speak('test 5.5');
+    Free;
+  end;
 end;
 
 procedure TfConf.btResetClick(Sender: TObject);

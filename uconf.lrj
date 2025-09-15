@@ -80,5 +80,9 @@
 {"hash":18900739,"name":"tfconf.groupbox1.caption","sourcebytes":[83,121,115,116,101,109,32,70,101,97,116,117,114,101,115],"value":"System Features"},
 {"hash":36450846,"name":"tfconf.cbtouch.caption","sourcebytes":[84,111,117,99,104,32,115,99,114,101,101,110],"value":"Touch screen"},
 {"hash":206226499,"name":"tfconf.cbnotice.caption","sourcebytes":[83,121,115,116,101,109,32,110,111,116,105,102,105,99,97,116,105,111,110,115],"value":"System notifications"},
-{"hash":203401272,"name":"tfconf.cbmultitouch.caption","sourcebytes":[77,117,108,116,105,45,116,111,117,99,104],"value":"Multi-touch"}
+{"hash":203401272,"name":"tfconf.cbmultitouch.caption","sourcebytes":[77,117,108,116,105,45,116,111,117,99,104],"value":"Multi-touch"},
+{"hash":261939365,"name":"tfconf.btestannounce.caption","sourcebytes":[84,101,115,116,32,65,110,110,111,117,110,99,101],"value":"Test Announce"},
+{"hash":242814836,"name":"tfconf.ltestannounce.caption","sourcebytes":[84,101,115,116,32,97,110,32,97,110,110,111,117,110,99,101,109,101,110,116],"value":"Test an announcement"},
+{"hash":100430328,"name":"tfconf.btestspeech.caption","sourcebytes":[84,101,115,116,32,83,112,101,101,99,104],"value":"Test Speech"},
+{"hash":25162391,"name":"tfconf.ltestannounce1.caption","sourcebytes":[84,101,115,116,32,97,32,115,112,111,107,101,110,32,115,116,114,105,110,103],"value":"Test a spoken string"}
 ]}
