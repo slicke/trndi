@@ -2655,7 +2655,10 @@ procedure TfBG.tMainTimer(Sender: TObject);
 begin
   updateReading;
   {$ifdef TrndiExt}
-  TTrndiExtEngine.Instance.CallFunction('updateCallback', [bgs[Low(bgs)].val.ToString, DateTimeToStr(Now)]);
+  try
+     TTrndiExtEngine.Instance.CallFunction('updateCallback', [bgs[Low(bgs)].val.ToString, DateTimeToStr(Now)]);
+  finally
+  end;
   {$endif}
 end;
 
@@ -3074,8 +3077,8 @@ begin
     Exit;
 
   {$ifdef DEBUG}
+    bgs := api.getReadings(MAX_MIN, MAX_RESULT, '', res);
     if miDebugBackend.Checked then begin
-      bgs := api.getReadings(MAX_MIN, MAX_RESULT, '', res);
       if Showing then
         if res.IsEmpty then
           slicke.ux.alert.ExtLog(uxdAuto, 'Debug Info', '[empty!]', res)
