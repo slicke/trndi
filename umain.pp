@@ -2117,6 +2117,8 @@ if cbPos.ItemIndex = -1 then
       {$if defined(X_LINUXBSD)}
       cbNotice.Checked := IsNotifySendAvailable;
       cbNotice.Caption := cbNotice.Caption + ' (Notify Daemon)';
+      {$elseif defined(X_WIN)}
+      cbNotice.Checked := IsBurntToastAvailable;
       {$else}
       cbNotice.Checked := True;
       {$endif}
