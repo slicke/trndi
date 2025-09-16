@@ -92,7 +92,7 @@ jobs:
           set -euo pipefail
           export PATH="/opt/local/libexec/fpc/bin:/opt/local/bin:/opt/local/sbin:$PATH"
           lazbuild externals/mORMot2/packages/lazarus/mormot2.lpk
-          lazbuild --build-mode="No Ext (Release)" --ws=cocoa --cpu=aarch64 --os=darwin Trndi.lpr
+          lazbuild --build-mode="No Ext (Release)" --ws=cocoa --cpu=aarch64 --os=darwin Trndi.lpi
           test -f ./Trndi
 
       - name: Package artifact
