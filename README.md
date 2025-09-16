@@ -1,9 +1,12 @@
 [![Linux ARM64 Builder (Qt6)](https://github.com/slicke/trndi/actions/workflows/build-linux-arm64.yml/badge.svg)](https://github.com/slicke/trndi/actions/workflows/build-linux-arm64.yml) [![Linux Builder (Qt6)](https://github.com/slicke/trndi/actions/workflows/build-linux.yml/badge.svg)](https://github.com/slicke/trndi/actions/workflows/build-linux.yml) [![macOS Builder](https://github.com/slicke/trndi/actions/workflows/build-macos.yml/badge.svg)](https://github.com/slicke/trndi/actions/workflows/build-macos.yml) [![Windows Builder](https://github.com/slicke/trndi/actions/workflows/build-windows.yml/badge.svg)](https://github.com/slicke/trndi/actions/workflows/build-windows.yml)
-<div style="text-align:center">
-![Trndi](/trndi-logo.png)
-</div>
 
-# Trndi - CGM data on desktop and RaspberryPi<br><sup>_Nightscout - Dexcom - xDrip WiFi_</sup> 
+# Trndi
+CGM data on desktop and RaspberryPi
+
+![Trndi](/trndi-logo.png)</sup>
+
+Copyright (c) 2021-2025 Björn Lindh.
+### View your CGM data easily: _Nightscout - Dexcom - xDrip_
 <b> Windows - macOS - Linux - RaspberryPi </b>
 ![Windows](doc/img_win.png)
 <br>Windows 11
