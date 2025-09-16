@@ -1,0 +1,185 @@
+object fFloat: TfFloat
+  Left = 358
+  Height = 125
+  Top = 250
+  Width = 218
+  Caption = 'Floating Display'
+  ClientHeight = 125
+  ClientWidth = 218
+  FormStyle = fsSystemStayOnTop
+  PopupMenu = pMain
+  Position = poDesktopCenter
+  SnapOptions.SnapToMonitor = True
+  LCLVersion = '4.0.0.4'
+  OnKeyDown = FormKeyDown
+  OnKeyPress = FormKeyPress
+  OnMouseDown = FormMouseDown
+  OnMouseEnter = FormMouseEnter
+  OnMouseLeave = FormMouseLeave
+  OnMouseMove = FormMouseMove
+  OnMouseUp = FormMouseUp
+  OnPaint = FormPaint
+  OnResize = FormResize
+  OnShow = FormShow
+  object lVal: TLabel
+    Left = 0
+    Height = 117
+    Top = 0
+    Width = 200
+    Align = alLeft
+    Alignment = taCenter
+    AutoSize = False
+    Caption = 'Setup'
+    Color = 21243
+    Font.Color = clBlack
+    Font.Height = 95
+    ParentColor = False
+    ParentFont = False
+    PopupMenu = pMain
+    OnMouseDown = FormMouseDown
+    OnMouseMove = FormMouseMove
+    OnMouseUp = FormMouseUp
+  end
+  object lRangeDown: TLabel
+    Left = 0
+    Height = 15
+    Top = 0
+    Width = 10
+    Caption = '▼'
+    Visible = False
+  end
+  object lRangeUp: TLabel
+    Left = 0
+    Height = 15
+    Top = 0
+    Width = 10
+    Caption = '▲'
+    Visible = False
+  end
+  object pnMultiUser: TPanel
+    Left = 0
+    Height = 8
+    Top = 117
+    Width = 218
+    Align = alBottom
+    BevelOuter = bvNone
+    ParentBackground = False
+    TabOrder = 0
+    Visible = False
+  end
+  object lArrow: TLabel
+    Left = 18
+    Height = 117
+    Top = 0
+    Width = 200
+    Align = alRight
+    Alignment = taCenter
+    AutoSize = False
+    Caption = 'lArrow'
+    Color = clWhite
+    Font.Color = clBlack
+    Font.Height = 92
+    Layout = tlBottom
+    ParentColor = False
+    ParentFont = False
+    PopupMenu = pMain
+    OnMouseDown = FormMouseDown
+    OnMouseMove = FormMouseMove
+    OnMouseUp = FormMouseUp
+  end
+  object lTime: TLabel
+    Left = 167
+    Height = 15
+    Top = 0
+    Width = 27
+    Caption = '00:00'
+    Visible = False
+  end
+  object pMain: TPopupMenu
+    Left = 67
+    Top = 40
+    object miVisible: TMenuItem
+      Caption = 'Visibility'
+      object miOp25: TMenuItem
+        Caption = '25%'
+        Hint = '25'
+        RadioItem = True
+        OnClick = miOp100Click
+      end
+      object miOp50: TMenuItem
+        Caption = '50%'
+        Checked = True
+        Hint = '50'
+        RadioItem = True
+        OnClick = miOp100Click
+      end
+      object miOp75: TMenuItem
+        Caption = '75%'
+        Hint = '75'
+        RadioItem = True
+        OnClick = miOp100Click
+      end
+      object miOp100: TMenuItem
+        Caption = '100%'
+        Hint = '100'
+        RadioItem = True
+        OnClick = miOp100Click
+      end
+      object miSplit1: TMenuItem
+        Caption = '-'
+      end
+      object miCustomVisible: TMenuItem
+        Caption = 'Custom'
+        RadioItem = True
+        OnClick = miCustomVisibleClick
+      end
+    end
+    object miSIze: TMenuItem
+      Caption = 'Size'
+      object miXL: TMenuItem
+        Caption = 'Very Big'
+        OnClick = miNormalClick
+      end
+      object miBig: TMenuItem
+        Caption = 'Big'
+        RadioItem = True
+        OnClick = miNormalClick
+      end
+      object miNormal: TMenuItem
+        Caption = 'Normal'
+        Checked = True
+        RadioItem = True
+        OnClick = miNormalClick
+      end
+      object miSmall: TMenuItem
+        Caption = 'Small'
+        RadioItem = True
+        OnClick = miNormalClick
+      end
+      object Separator1: TMenuItem
+        Caption = '-'
+      end
+      object miCustomSize: TMenuItem
+        Caption = 'Custom'
+        OnClick = miCustomSizeClick
+      end
+    end
+    object miSplit: TMenuItem
+      Caption = '-'
+    end
+    object miClock: TMenuItem
+      Caption = 'Show clock'
+      OnClick = miClockClick
+    end
+    object MenuItem1: TMenuItem
+      Caption = '&Hide'
+      OnClick = MenuItem1Click
+    end
+  end
+  object tClock: TTimer
+    Interval = 15000
+    OnTimer = tClockTimer
+    Left = 145
+    Top = 100
+  end
+end
