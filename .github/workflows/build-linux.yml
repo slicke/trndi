@@ -88,7 +88,7 @@ jobs:
         run: |
           set -euo pipefail
           lazbuild externals/mORMot2/packages/lazarus/mormot2.lpk
-          lazbuild --widgetset=qt6 --build-mode="Extensions (Release)" Trndi.lpr
+          lazbuild --widgetset=qt6 --build-mode="Extensions (Release)" Trndi.lpi
           test -f ./Trndi
 
       - name: Package artifact

@@ -77,7 +77,7 @@ jobs:
         shell: pwsh
         run: |
           & 'C:\Lazarus\lazbuild.exe' 'externals\mORMot2\packages\lazarus\mormot2.lpk'
-          & 'C:\Lazarus\lazbuild.exe' --lazarusdir='C:\Lazarus' --build-mode='Extensions (Release)' 'Trndi.lpr'
+          & 'C:\Lazarus\lazbuild.exe' --lazarusdir='C:\Lazarus' --build-mode='Extensions (Release)' 'Trndi.lpi'
           if (-not (Test-Path '.\Trndi.exe')) { throw "Build succeeded but Trndi.exe not found." }
 
       - name: Package artifact
