@@ -60,12 +60,7 @@ type
   end;
   { TrndiNative
     -----------
-    Provides platform-native methods for:
-    - Sending HTTP(S) requests (GET/POST)
-    - Storing and retrieving settings (Windows Registry, .ini on Linux, etc.)
-    - Checking for dark mode
-    - Detecting touchscreen availability
-    - Additional platform-specific utilities
+    Provides platform-native methods
   }
 TrndiNative = class
 private
@@ -80,36 +75,12 @@ public
     // Indicates if the user system is in a "dark mode" theme
   dark: boolean;
 
-   { Speak
-    Play an autio file
-  }
   procedure Speak(const Text: string);
-
-  { attention
-    Flash the menu bar
-  }
   procedure attention(message: string);
-    { request
-      -------
-      Sends an HTTP request (either GET or POST) to the given endpoint.
-      - post: True for POST, False for GET
-      - endpoint: the relative or full endpoint
-      - params: array of key-value pairs (e.g. 'name=value')
-      - jsondata: string with JSON payload (only if POSTing JSON)
-      - header: optional custom header, e.g. 'Content-Type=xxx'
-      Returns the server response as a string.
-    }
   function request(const post: boolean; const endpoint: string;
     const params: array of string; const jsondata: string = '';
     const header: string = ''): string;
 
-    { SetSetting
-      ----------
-      Stores a string setting, depending on the platform:
-       - Windows: registry
-       - Linux: INI file
-       - macOS: NSUserDefaults (if implemented in your code)
-    }
   procedure SetRootSetting(keyname: string; const val: string);
   procedure SetSetting(const keyname: string; const val: string; global: boolean = false);
   procedure SetBoolSetting(const keyname: string; const val: boolean);
@@ -118,61 +89,22 @@ public
   function GetColorSetting(const keyname: string; const def: TColor = $000000): TColor;
   procedure DeleteSetting(const keyname: string; global: boolean = false);
   procedure DeleteRootSetting(keyname: string; const val: string);
-
-    { GetSetting
-      ----------
-      Retrieves a string setting from the local store. If the key is not found,
-      returns `def` by default.
-    }
   function GetRootSetting(const keyname: string; def: string = ''): string;
   function GetSetting(const keyname: string; def: string = ''; global: boolean = false): string;
   function GetCharSetting(const keyname: string; def: char = #0): char;
-
-    { GetIntSetting
-      -------------
-      Same as GetSetting, but returns an integer. Returns `def` if parse fails.
-    }
   function GetIntSetting(const keyname: string; def: integer = -1): integer;
 
   function GetFloatSetting(const keyname: string; def: single = -1): single;
 
   function GetBoolSetting(const keyname: string; def: boolean = false): boolean;
-    { isDarkMode
-      ----------
-      Returns True if the system theme is "dark mode", else False. Implementation
-      depends on the platform (Windows registry, macOS defaults, Linux color checks, etc.).
-    }
   class function isDarkMode: boolean;
-
-    { DetectTouchScreen
-      --------------
-      Returns True if the current machine supports a touch screen. This logic
-      is platform-specific:
-       - Windows uses `GetSystemMetrics(SM_MAXIMUMTOUCHES)`
-       - macOS always returns False
-       - Linux checks `/proc/bus/input/devices`
-    }
   class function DetectTouchScreen(out multi: boolean): boolean;
   class function HasTouchScreen(out multi: boolean): boolean;
   class function HasTouchScreen: boolean;
-
-    { getURL (class function)
-      -----------------------
-      A simple helper that performs a GET request for `url` and returns
-      the response in `res`. Returns True on success, False on error.
-      This is a static method, so it can be called without an instance.
-    }
   class function getURL(const url: string; out res: string): boolean; static;
 
     // Constructor/Destructor
   destructor Destroy; override;
-
-    { create
-      ------
-      1) Constructor with custom user-agent and base URL.
-      2) A default parameterless constructor also exists.
-    }
-
   procedure start;
   procedure done;
   procedure setBadge(const Value: string; badgeColor: Tcolor; badge_size_ratio: double = 0.8; min_font_size: integer = 8);
@@ -280,22 +212,37 @@ function IsBurntToastAvailable: boolean;
 
 implementation
 
+{------------------------------------------------------------------------------
+  TrndiNative.updateLocale
+  ------------------------
+  Sets formatting settings
+ ------------------------------------------------------------------------------}
 procedure TrndiNative.updateLocale(const l: TFormatSettings);
 begin
   fsettings := l;
   DefaultFormatSettings := fsettings; // We need this for now
 end;
 
+{------------------------------------------------------------------------------
+  TrndiNative.buildKey
+  -------------------
+  Gets the key name in the ini file/registry/etc
+ ------------------------------------------------------------------------------}
 function TrndiNative.buildKey(const key: string; global: boolean): string;
 begin
   if global then
     result := key
-  else if Trim(cfguser) <> '' then
+  else if Trim(cfguser) <> '' then // Prepend the username and _
     result := Format('%s_%s', [cfguser, key])
   else
     result := key;
 end;
 
+{------------------------------------------------------------------------------
+  TrndiNative.speak
+  -----------------
+  Uses TTS to read out a text
+ ------------------------------------------------------------------------------}
 {$if defined(X_WIN)}
 procedure TrndiNative.Speak(const Text: string);
 var
@@ -348,6 +295,11 @@ begin
   end;
 end;
 
+{------------------------------------------------------------------------------
+  GetSystemLangTag
+  -------------------
+  Resturns the system's language code
+ ------------------------------------------------------------------------------}
 function GetSystemLangTag: string;
   function FirstSegment(const S, Sep: string): string;
   var P: SizeInt;
@@ -425,6 +377,11 @@ begin
 end;
 {$endif}
 
+{------------------------------------------------------------------------------
+  TrndiNative.setDarkMode
+  -------------------
+  Sets the app/window to dark mode
+ ------------------------------------------------------------------------------}
 {$IF DEFINED(X_WIN)}
 class function TrndiNative.SetDarkMode(win: HWND; Enable: Boolean = True): Boolean;
 const
@@ -480,6 +437,11 @@ begin
 end;
 {$ENDIF}
 
+{------------------------------------------------------------------------------
+  TrndiNative.setBadge
+  -------------------
+  Sets an overlay icon on the taskbar or such
+ ------------------------------------------------------------------------------}
 {$IFDEF LCLGTK3}
 procedure TrndiNative.SetBadge(const Value: string;  badgeColor: Tcolor);
 begin
@@ -831,6 +793,11 @@ begin
 end;
 {$ENDIF}
 
+{------------------------------------------------------------------------------
+  TrndiNative.playSound
+  -------------------
+  Plays an audio file
+ ------------------------------------------------------------------------------}
 class procedure TrndiNative.PlaySound(const FileName: string);
 function sIsValidAudioFile(const FileName: string): Boolean;
 var
@@ -914,6 +881,11 @@ end;
    result := HasTouchScreen;
  end;
 
+ {------------------------------------------------------------------------------
+  TrndiNative.hasTouchScreen
+  -------------------
+  Detects touch screen
+ ------------------------------------------------------------------------------}
  class function TrndiNative.HasTouchScreen: boolean;
  var
    mt: boolean;
@@ -949,6 +921,11 @@ function IsTouchReady: boolean;
     Result := value and NID_READY <> 0;
   end;
 
+{------------------------------------------------------------------------------
+  TrndiNative.isMultiTouch
+  -------------------
+  Detects more than one touch point
+ ------------------------------------------------------------------------------}
 function IsMultiTouch: boolean;
   var
     value: integer;
@@ -957,6 +934,11 @@ function IsMultiTouch: boolean;
     Result := value and NID_MULTI_INPUT <> 0;
   end;
 
+{------------------------------------------------------------------------------
+  TrndiNative.hasIntegratedTouch
+  -------------------
+  Detects a touch-first device
+ ------------------------------------------------------------------------------}
 function HasIntegratedTouch: boolean;
   var
     value: integer;
@@ -1081,6 +1063,11 @@ begin
 end;
 
   {$IFDEF MSWINDOWS}
+  {------------------------------------------------------------------------------
+  TrndiNative.getLocaleInformation
+  -------------------
+    Windows only; Gets locale data
+ ------------------------------------------------------------------------------}
 function GetLocaleInformation(Flag: integer): string;
 var
   wbuf: array[0..9] of WideChar;
@@ -1095,6 +1082,11 @@ end;
 
 {$ENDIF}
 
+{------------------------------------------------------------------------------
+  TrndiNative.getOSLanguage
+  -------------------
+  Gets the operating system's language
+ ------------------------------------------------------------------------------}
 class function TrndiNative.GetOSLanguage: string;
 begin
   {$IFDEF MSWINDOWS}
@@ -1110,6 +1102,11 @@ end;
 
 
 {$ifdef X_LINUXBSD}
+{------------------------------------------------------------------------------
+  TrndiNative.isNotifySendAvailable
+  ---------------------------------
+  Checks if notify-send can be used
+ ------------------------------------------------------------------------------}
 function IsNotifySendAvailable: boolean;
 var
   AProcess: TProcess;
@@ -1172,12 +1169,22 @@ procedure SendNotification(Title, Message: string);
   {$endif}
   {$if defined(X_WIN)}
 
+  {------------------------------------------------------------------------------
+  TrndiNative.PSQuote
+  -------------------
+  Quote text for PowerShell
+ ------------------------------------------------------------------------------}
 function PSQuote(const S: UnicodeString): UnicodeString;
 begin
   // PowerShell single-quoted literal; escape embedded single quotes
   Result := '''' + StringReplace(S, '''', '''''', [rfReplaceAll]) + '''';
 end;
 
+{------------------------------------------------------------------------------
+  TrndiNative.GetExePathW
+  -------------------
+  Get the app's path on Windows as a UTF8 string
+ ------------------------------------------------------------------------------}
 function GetExePathW: UnicodeString;
 var
   Buf: array[0..32767] of WideChar;
@@ -1187,6 +1194,11 @@ begin
   SetString(Result, PWideChar(@Buf[0]), Len);
 end;
 
+{------------------------------------------------------------------------------
+  TrndiNative.GetEnvVarW
+  -------------------
+  Get the PATH on Windows as a UTF8 string
+ ------------------------------------------------------------------------------}
 function GetEnvVarW(const Name: UnicodeString): UnicodeString;
 var
   Buf: array[0..32767] of WideChar;
@@ -1199,6 +1211,11 @@ begin
     SetString(Result, PWideChar(@Buf[0]), Len);
 end;
 
+{------------------------------------------------------------------------------
+  TrndiNative.SendNotification
+  -------------------
+  Send a notification to the desktop
+ ------------------------------------------------------------------------------}
 procedure SendNotification(const Title, Msg: UnicodeString);
 var
   AppPath, TempDir, TempPng, LogPath: UnicodeString;
@@ -1488,6 +1505,11 @@ end;
 {$ENDIF}
 {$ENDIF}
 
+{------------------------------------------------------------------------------
+  TrndiNative.GetExePathW
+  -------------------
+  Returns a char from settings if parseable, else returns `def`.
+ ------------------------------------------------------------------------------}
 function TrndiNative.GetCharSetting(const keyname: string; def: char = #0): char;
 var
  res: string;
@@ -1499,6 +1521,11 @@ begin
     result := res[1];
 end;
 
+{------------------------------------------------------------------------------
+  TrndiNative.GetExePathW
+  -------------------
+  Returns a bool from settings if parseable, else returns `def`.
+ ------------------------------------------------------------------------------}
 function TrndiNative.GetRootSetting(const keyname: string; def: string = ''): string;
 begin
   result := GetSetting(keyname,def, true);
@@ -1507,7 +1534,7 @@ end;
 {------------------------------------------------------------------------------
   TrndiNative.GetSetting
   ----------------------
-  Platform-specific string retrieval. Returns the default if the key isn’t found.
+  Platform-specific string retrieval. Returns the default if the key isn't found.
  ------------------------------------------------------------------------------}
 {$IF DEFINED(X_WIN)}
 function TrndiNative.GetSetting(const keyname: string; def: string = ''; global: boolean = false): string;
@@ -1601,12 +1628,21 @@ begin
   end;
 end;
 
-
+{------------------------------------------------------------------------------
+  TrndiNative.SetSetting
+  ----------------------
+  Stores a TColor value to platform-specific storage.
+ ------------------------------------------------------------------------------}
 procedure TrndiNative.SetColorSetting(const keyname: string; val: TColor);
 begin
   SetSetting(keyname, IntToStr(Integer(val)));
 end;
 
+{------------------------------------------------------------------------------
+  TrndiNative.GetBoolSetting
+  -------------------------
+  Returns a TColor from settings if parseable, else returns `def`.
+ ------------------------------------------------------------------------------}
 function Trndinative.GetColorSetting(const keyname: string; const def: TColor): TColor;
 var
   i: Integer;
@@ -1623,6 +1659,11 @@ begin
   Result := def;
 end;
 
+{------------------------------------------------------------------------------
+  TrndiNative.SetBoolSetting
+  ----------------------
+  Stores a bool value to platform-specific storage.
+ ------------------------------------------------------------------------------}
 procedure TrndiNative.SetBoolSetting(const keyname: string; const val: boolean);
 begin
   if val then
@@ -1631,6 +1672,11 @@ begin
     SetSetting(keyname, 'false');
 end;
 
+{------------------------------------------------------------------------------
+  TrndiNative.SetFloatSetting
+  ----------------------
+  Stores a float value to platform-specific storage.
+ ------------------------------------------------------------------------------}
 procedure TrndiNative.SetFloatSetting(const keyname: string; const val: single);
 var
   f: TFormatSettings;
@@ -1640,11 +1686,21 @@ begin
     SetSetting(keyname, FormatFloat('0.00',val,f));
 end;
 
+{------------------------------------------------------------------------------
+  TrndiNative.SetRootSetting
+  ----------------------
+  Stores a non-user specific string value to platform-specific storage.
+ ------------------------------------------------------------------------------}
 procedure TrndiNative.SetRootSetting(keyname: string; const val: string);
 begin
   SetSetting(keyname, val, true);
 end;
 
+{------------------------------------------------------------------------------
+  TrndiNative.SetSetting
+  ----------------------
+  Stores a string value to platform-specific storage.
+ ------------------------------------------------------------------------------}
 procedure TrndiNative.DeleteRootSetting(keyname: string; const val: string);
 begin
   DeleteSetting(keyname, true);
@@ -1654,6 +1710,7 @@ end;
   TrndiNative.DeleteSetting
   -------------------------
   Deletes a stored key/value from platform-specific storage completely.
+  - X_MAC sets key to blank
  ------------------------------------------------------------------------------}
 {$IF DEFINED(X_MAC)}
 procedure TrndiNative.DeleteSetting(const keyname: string; global: boolean = false);
@@ -1752,7 +1809,7 @@ end;
 {------------------------------------------------------------------------------
   TrndiNative.isDarkMode
   ----------------------
-  Determines if the user’s system is in "dark mode," per platform.
+  Determines if the user's system is in "dark mode," per platform.
  ------------------------------------------------------------------------------}
 {$IF DEFINED(X_MAC)}
 class function TrndiNative.isDarkMode: boolean;
@@ -1911,6 +1968,11 @@ begin
 end;
 {$ENDIF}
 
+{------------------------------------------------------------------------------
+  TrndiNative.HasDangerousChars
+  ----------------------
+  Detects chars which the console is not fond of
+ ------------------------------------------------------------------------------}
 class function TrndiNative.HasDangerousChars(const FileName: string): Boolean;
 function HasCharsInSet(const Str: string; const CharSet: TSysCharSet): Boolean;
 var
@@ -1938,6 +2000,11 @@ begin
   Result := HasCharsInSet(FileName, DangerousChars);
 end;
 
+{------------------------------------------------------------------------------
+  TrndiNative.DetectWSL
+  ----------------------
+  Detects if the app is running under Windows Subsystem for Linux
+ ------------------------------------------------------------------------------}
 class function TrndiNative.DetectWSL: TWSLInfo;
 var
   Output: TStringList;
@@ -2027,6 +2094,11 @@ begin
   {$ENDIF}
 end;
 
+{------------------------------------------------------------------------------
+  TrndiNative.IsBurntToastAvailable
+  ----------------------
+  Checks if the PowerShell BurntToast module is installed
+ ------------------------------------------------------------------------------}
 function IsBurntToastAvailable: Boolean;
 var
   Output: TStringList;

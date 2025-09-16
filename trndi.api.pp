@@ -16,7 +16,6 @@
  *
  * GitHub: https://github.com/slicke/trndi
  *)
-
 unit trndi.api;
 
 {$mode ObjFPC}{$H+}
@@ -24,248 +23,312 @@ unit trndi.api;
 interface
 
 uses
-Classes, SysUtils, trndi.types, dateutils, trndi.native, dialogs;
+  Classes, SysUtils, trndi.types, dateutils, trndi.native, dialogs;
 
 type
-  {
-    CGMCore holds four threshold values:
-      - hi      : The high boundary for blood glucose.
-      - lo      : The low boundary for blood glucose.
-      - top     : The upper boundary for a personalized "in-range" interval.
-      - bottom  : The lower boundary for a personalized "in-range" interval.
-  }
-CGMCore = record
-  hi, lo, top, bottom: integer;
-end;
+  {** CGMCore holds thresholds used to classify blood glucose values.
+      - @code(hi):    High boundary for blood glucose (BG).
+      - @code(lo):    Low boundary for BG.
+      - @code(top):   Upper bound of personalized in-range interval (optional).
+      - @code(bottom):Lower bound of personalized in-range interval (optional).
 
-  {
-    TrndiAPI is the main class to interact with CGM (Continuous Glucose
-    Monitoring) data. It provides methods to retrieve readings and determine
-    the current status of the glucose levels relative to configured thresholds.
-  }
-TrndiAPI = class
-protected
-    // Time difference (offset) used for computations
-  timeDiff: integer;
-    // Timezone offset in seconds
-  tz: integer;
-    // Reference to native (platform-specific) functions
-  native: TrndiNative;
-    // User agent string (or similar) for HTTP requests
-  ua: string;
-    // Base URL for the API
-  baseUrl: string;
-    // Last encountered error message
-  lastErr: string;
-    // Record containing all CGM thresholds
-  core: CGMCore;
+      Notes:
+      - @code(top=500) and @code(bottom=0) act as sentinels meaning “unused”.
+   }
+  CGMCore = record
+    hi, lo, top, bottom: integer;
+  end;
 
-    {
-      Sets the time zone offset (in seconds).
-      Multiply by 60 internally to convert from minutes if needed.
-    }
-  procedure setTZ(secs: integer);
+  {** TrndiAPI is the abstract base class for accessing CGM data sources.
+      It defines common thresholds, time handling, and helper routines to read
+      and classify BG readings. Subclasses implement connectivity and fetching.
 
-    {
-      Encodes a string to be URL-safe (percent-encoding).
-      This method is marked final (cannot be overridden further).
-    }
-  function encodeStr(src: string): string; virtual; final;
+      Typical use:
+      - Construct subclass with credentials/config.
+      - Call @code(connect).
+      - Call @code(getReadings), @code(getCurrent), or @code(getLast).
 
-    {
-      Retrieves a threshold value by BGValLevel (e.g., BGHIGH, BGLOW, etc.).
-      Override this method if you need custom logic for retrieving a threshold.
-    }
-  function getLevel(v: BGValLevel): single; virtual;
+      @seealso(BGReading, BGResults, BGValLevel)
+   }
+  TrndiAPI = class
+  protected
+    /// Time difference in seconds used to adjust clock skew vs. data source.
+    timeDiff: integer;
 
-    {
-      Returns the current CGMCore thresholds in one structure.
-    }
-  function getCGMCore: CGMCore;
+    /// Timezone offset in seconds (applied in @code(JSToDateTime) when requested).
+    tz: integer;
 
-    {
-      Initializes the CGMCore thresholds to default values.
-    }
-  procedure initCGMCore;
+    /// Reference to platform-specific/native functions (HTTP, etc.).
+    native: TrndiNative;
 
-    {
-      Checks if the API is currently "active" by verifying if a BG reading
-      can be retrieved.
-    }
-  function checkActive: boolean;
+    /// User-Agent string used for outbound HTTP requests (if applicable).
+    ua: string;
 
-public
-    {
-      Retrieves BG readings. Should be implemented in subclasses to actually
-      perform the data fetch, e.g., from a remote API.
-        min    : The timespan in minutes (or similar).
-        maxNum : Maximum number of readings to retrieve.
-        extras : Any additional parameters or filters.
-    }
-  function getReadings(minNum, maxNum: integer; extras: string = ''): BGResults;
+    /// Base URL for the API endpoint (subclasses typically set this).
+    baseUrl: string;
 
-    {
-      Retrieves BG readings. Should be implemented in subclasses to actually
-      perform the data fetch, e.g., from a remote API.
-        min    : The timespan in minutes (or similar).
-        maxNum : Maximum number of readings to retrieve.
-        extras : Any additional parameters or filters.
-        res: Returns the raw result as a string
-    }
-  function getReadings(minNum, maxNum: integer; extras: string; out res: string): BGResults; virtual; abstract;
-    {
-      Constructor to create a new instance of TrndiAPI.
-      Parameters might be user credentials or other relevant config for a data source.
-    }
-  constructor create(user, pass, extra: string); virtual;
+    /// Last error message reported by operations in this instance.
+    lastErr: string;
 
-  destructor destroy; virtual;
-    {
-      Connects to the underlying data source. Must be implemented in subclasses.
-    }
-  function connect: boolean; virtual; abstract;
+    /// Collection of BG threshold values.
+    core: CGMCore;
 
-    {
-      Returns the BGValLevel (e.g., BGHIGH, BGLOW, etc.) based on a given numeric value.
-    }
-  function getLevel(v: single): BGValLevel; virtual;
+    {** Set the timezone offset.
+        Note:
+          Despite the parameter name, this implementation expects @b(minutes)
+          and multiplies by 60 to store the value in seconds.
 
-    {
-      Retrieves the most recent (last) reading in a larger time window (e.g., 24 hours).
-      Returns true if successfully retrieved, false otherwise.
-    }
-  function getLast(var res: BGReading): boolean;
+        @param(secs Timezone offset in @b(minutes); will be multiplied by 60.)
+     }
+    procedure setTZ(secs: integer);
 
-    {
-      Retrieves the most current reading in a short timespan (e.g., last 10 minutes).
-      Returns true if successfully retrieved, false otherwise.
-    }
-  function getCurrent(var res: BGReading): boolean;
+    {** URL-encode a string using percent-encoding for non-unreserved characters.
+        Unreserved characters are [A-Z a-z 0-9 - _ ~ .]
 
-    {
-      Returns the current timestamp in Unix epoch format (adjusted with timeDiff).
-    }
-  function getBasetime: int64;
+        @param(src Input string)
+        @returns(Percent-encoded string)
+     }
+    function encodeStr(src: string): string; virtual; final;
 
-    {
-      Converts a JavaScript timestamp (milliseconds) to a TDateTime.
-      If correct = true, applies the time zone offset (tz).
-    }
-  function JSToDateTime(ts: int64; correct: boolean = true): TDateTime; virtual;
+    {** Get a threshold by level.
+        Returns the configured limit for a @code(BGValLevel) such as @code(BGHIGH),
+        @code(BGLOW), @code(BGRangeHI), or @code(BGRangeLO).
 
-  {
-     Tell where a value is on the range scale
-  }
+        @param(v Level selector)
+        @returns(Threshold value as @code(single))
+     }
+    function getLevel(v: BGValLevel): single; virtual;
+
+    {** Retrieve the current @code(CGMCore) thresholds in one record. }
+    function getCGMCore: CGMCore;
+
+    {** Initialize @code(CGMCore) thresholds to defaults.
+
+        Defaults:
+        - hi=401, lo=40, top=500 (disabled), bottom=0 (disabled)
+     }
+    procedure initCGMCore;
+
+    {** Determine whether the API appears to be active by fetching a current reading.
+        Returns @code(True) if a reading is available and has a timestamp > 1000.
+
+        @returns(@code(True) if a plausible current reading exists)
+     }
+    function checkActive: boolean;
+
+  public
+    {** Retrieve BG readings with optional extras path/params.
+        This overload captures the raw response in a string.
+
+        Subclasses must implement the abstract version. This overload typically
+        forwards to it.
+
+        @param(minNum  Time span hint (minutes), usage depends on subclass)
+        @param(maxNum  Maximum number of readings to retrieve)
+        @param(extras  Additional path or query hints; default empty)
+        @returns(Array of BGReading)
+     }
+    function getReadings(minNum, maxNum: integer; extras: string = ''): BGResults;
+
+    {** Retrieve BG readings with raw JSON/text result returned by out-parameter.
+
+        Subclasses must implement this method.
+
+        @param(minNum  Time span hint (minutes), usage depends on subclass)
+        @param(maxNum  Maximum number of readings to retrieve)
+        @param(extras  Additional path or query hints)
+        @param(res     Out parameter receiving raw response text)
+        @returns(Array of BGReading)
+     }
+    function getReadings(minNum, maxNum: integer; extras: string; out res: string): BGResults; virtual; abstract;
+
+    {** Construct a new API object.
+        Subclasses may interpret @code(user), @code(pass), and @code(extra) as needed.
+
+        Base class behavior:
+        - Sets @code(timezone) from @code(GetLocalTimeOffset).
+        - Creates @code(native).
+        - Initializes default CGM thresholds.
+
+        @param(user   Implementation-defined (e.g., base URL))
+        @param(pass   Implementation-defined (e.g., password or token))
+        @param(extra  Implementation-defined extra parameter)
+     }
+    constructor create(user, pass, extra: string); virtual;
+
+    {** Destructor; releases owned resources. }
+    destructor destroy; virtual;
+
+    {** Establish connectivity to the underlying data source.
+        Subclasses must implement.
+
+        @returns(True if connection and initial probing succeeded)
+     }
+    function connect: boolean; virtual; abstract;
+
+    {** Classify a numeric BG value into a @code(BGValLevel) (e.g. high/low/range).
+
+        Rules:
+        - @code(v >= hi) => @code(BGHIGH)
+        - @code(v <= lo) => @code(BGLOW)
+        - Else => in-range; optional sub-classification:
+          - If @code(top <> 500) and @code(v >= top) => @code(BGRangeHI)
+          - Else if @code(bottom <> 0) and @code(v <= bottom) => @code(BGRangeLO)
+          - Else => @code(BGRange)
+
+        @param(v BG value)
+        @returns(BG level classification)
+     }
+    function getLevel(v: single): BGValLevel; virtual;
+
+    {** Get the last reading in a larger time window (e.g., 24 hours).
+        Convenience that returns a single last sample.
+
+        @param(res Out parameter receiving the reading)
+        @returns(True if a reading was returned)
+     }
+    function getLast(var res: BGReading): boolean;
+
+    {** Get the most current reading within a short time window (e.g., ~10 minutes).
+
+        @param(res Out parameter receiving the reading)
+        @returns(True if a reading was returned)
+     }
+    function getCurrent(var res: BGReading): boolean;
+
+    {** Get current base time as Unix epoch (seconds), adjusted by @code(timeDiff).
+        @returns(Unix timestamp in seconds)
+     }
+    function getBasetime: int64;
+
+    {** Convert a JavaScript timestamp (milliseconds) to @code(TDateTime).
+        When @code(correct) is true, apply the timezone offset @code(tz).
+
+        @param(ts      Timestamp in milliseconds since Unix epoch)
+        @param(correct Whether to subtract @code(tz) before conversion)
+        @returns(@code(TDateTime) in local or adjusted time)
+     }
+    function JSToDateTime(ts: int64; correct: boolean = true): TDateTime; virtual;
 
     // -------- Properties --------
 
-    // Get a threshold by level using getLevel (read)
-  property threshold[lvl: BGValLevel]: single read getLevel;
+    {** Indexed read-only access to thresholds by @code(BGValLevel). }
+    property threshold[lvl: BGValLevel]: single read getLevel;
 
-    // Directly retrieve the CGMCore record
-  property cgm: CGMCore read getCGMCore;
+    {** Read-only access to the full threshold record. }
+    property cgm: CGMCore read getCGMCore;
 
-    // Access to the individual CGM threshold values
-  property cgmHi: integer read core.hi write core.hi;
-  property cgmLo: integer read core.lo write core.lo;
-  property cgmRangeHi: integer read core.top write core.top;
-  property cgmRangeLo: integer read core.bottom write core.bottom;
+    /// High threshold (modifiable).
+    property cgmHi: integer read core.hi write core.hi;
 
-published
-    // Time difference offset (readonly)
-  property offset: integer read timeDiff;
+    /// Low threshold (modifiable).
+    property cgmLo: integer read core.lo write core.lo;
 
-    // Write-only property to set the timezone offset
-  property timezone: integer write setTZ;
+    /// Personalized in-range upper bound (optional; 500 disables).
+    property cgmRangeHi: integer read core.top write core.top;
 
-    // The last error message generated by any operation
-  property errormsg: string read lastErr;
+    /// Personalized in-range lower bound (optional; 0 disables).
+    property cgmRangeLo: integer read core.bottom write core.bottom;
 
-    // Indicates whether the API is active (e.g., if data retrieval is possible)
-  property active: boolean read checkActive;
-end;
+  published
+    /// Read-only time difference offset (seconds).
+    property offset: integer read timeDiff;
+
+    {** Write-only timezone offset setter.
+        Note: Pass minutes (multiplied by 60 internally). }
+    property timezone: integer write setTZ;
+
+    /// Last error message produced by operations on this instance.
+    property errormsg: string read lastErr;
+
+    {** Convenience status flag determined via @code(checkActive). }
+    property active: boolean read checkActive;
+  end;
 
 implementation
 
-{ Checks if the API is active by attempting to fetch a current reading. }
+{** Determine whether the API appears to be active by fetching a current reading.
+    Returns @code(True) if a reading is available and its timestamp is > 1000. }
 function TrndiAPI.checkActive: boolean;
 var
   bgr: BGReading;
 begin
-  // If we cannot get a current reading, set result to false
+  // Try to obtain a “current” reading using a short lookback window
   if not getCurrent(bgr) then
     Result := false
   else
-    // Arbitrary check: consider "active" if timestamp is larger than 1000
+    // Lightweight plausibility check on timestamp
     Result := bgr.date > 1000;
 end;
 
-{ Constructor. Initializes timezone, native functionality, and CGM thresholds. }
+{** Base constructor.
+    Initializes timezone from the OS, sets up native interface, and default CGM thresholds. }
 constructor TrndiAPI.create(user, pass, extra: string);
 begin
+  // Store local timezone offset (minutes) via property; internally becomes seconds.
   timezone := GetLocalTimeOffset;
+
+  // Native helper for HTTP and other platform-specific operations.
   native := TrndiNative.create(ua, baseUrl);
+
+  // Defaults for thresholds (can be overwritten later).
   initCGMCore;
 end;
 
+{** Base destructor; frees native helper. }
 destructor TrndiAPI.destroy;
 begin
   native.Free;
 end;
 
-{ Returns the threshold as a single-precision float based on BGValLevel. }
+{** Resolve a threshold value by @code(BGValLevel). }
 function TrndiAPI.getLevel(v: BGValLevel): single;
 begin
   case v of
-  BGHIGH:
-    Result := core.hi;
-  BGLOW:
-    Result := core.lo;
-  BGRangeHI:
-    Result := core.top;
-  BGRangeLO:
-    Result := core.bottom;
+    BGHIGH:   Result := core.hi;
+    BGLOW:    Result := core.lo;
+    BGRangeHI:Result := core.top;
+    BGRangeLO:Result := core.bottom;
   end;
 end;
 
-{ Determines the BGValLevel based on a numeric BG value. }
+{** Classify a numeric BG value into a @code(BGValLevel). }
 function TrndiAPI.getLevel(v: single): BGValLevel;
 begin
   if v >= core.hi then
     Result := BGHIGH
-  else
-  if v <= core.lo then
+  else if v <= core.lo then
     Result := BGLOW
   else
   begin
-    // Default range classification
+    // Default in-range classification
     Result := BGRange;
-    // If "top" is set to something below 500 and value is >= top
+
+    // Optional upper/lower in-range refinement when sentinels are not used
     if (core.top <> 500) and (v >= core.top) then
       Result := BGRangeHI
-    // If "bottom" is set above 0 and value is <= bottom
-    else
-    if (core.bottom <> 0) and (v <= core.bottom) then
+    else if (core.bottom <> 0) and (v <= core.bottom) then
       Result := BGRangeLO;
   end;
 end;
 
-{ Sets default CGMCore values. }
+{** Initialize CGM thresholds to sensible defaults. }
 procedure TrndiAPI.initCGMCore;
 begin
-  core.hi := 401;
-  core.lo := 40;
-  core.top := 500;
-  core.bottom := 0;
+  core.hi     := 401;
+  core.lo     := 40;
+  core.top    := 500;  // 500 => “unused” for personalized upper bound
+  core.bottom := 0;    // 0   => “unused” for personalized lower bound
 end;
 
-{ Retrieves the current CGMCore record. }
+{** Return the current @code(CGMCore) record. }
 function TrndiAPI.getCGMCore: CGMCore;
 begin
   Result := core;
 end;
 
-{ URL-encodes a string to make it safe for transmission in a query/URI. }
+{** URL-encode non-unreserved characters.
+    Unreserved allowed set: [A-Z a-z 0-9 - _ ~ .] }
 function TrndiAPI.encodeStr(src: string): string;
 var
   i: integer;
@@ -275,30 +338,32 @@ begin
     if not (src[i] in ['A'..'Z', 'a'..'z', '0'..'9', '-', '_', '~', '.']) then
       Result := Result + '%' + IntToHex(Ord(src[i]), 2)
     else
-      Result := Result + src[i]// Check if character is within allowed set
-  ;
+      Result := Result + src[i]; // passthrough allowed characters
 end;
 
-{ Sets the timezone offset in seconds. Multiplies by 60 internally if needed. }
+{** Set timezone offset.
+    Note: @code(secs) is treated as minutes and multiplied by 60 to store seconds. }
 procedure TrndiAPI.setTZ(secs: integer);
 begin
   tz := secs * 60;
 end;
 
-{ Returns the current time as a Unix timestamp, adjusted by timeDiff. }
+{** Get current base time as Unix epoch (seconds), adjusted by @code(timeDiff). }
 function TrndiAPI.getBasetime: int64;
 begin
   Result := DateTimeToUnix(IncSecond(Now, timeDiff));
 end;
 
-{ Attempts to retrieve the last reading within a larger time window. }
+{** Get the last reading across a larger window (e.g., 24 hours). }
 function TrndiAPI.getLast(var res: BGReading): boolean;
 var
   r: BGResults;
 begin
   Result := false;
-  // Example: requesting readings from the past 1440 minutes (24 hours), limit 1
+
+  // Request readings from the past 1440 minutes (24 hours), limit 1
   r := getReadings(1440, 1);
+
   if Length(r) > 0 then
   begin
     res := r[0];
@@ -306,13 +371,14 @@ begin
   end;
 end;
 
-{ Attempts to retrieve the most recent reading within a short time window. }
+{** Get the most current reading across a short window (e.g., last 10 minutes). }
 function TrndiAPI.getCurrent(var res: BGReading): boolean;
 var
   r: BGResults;
 begin
   Result := false;
-  // Example: requesting readings from the past 10 minutes, limit 1
+
+  // Request readings from the past 10 minutes, limit 1
   r := getReadings(10, 1);
 
   if Length(r) > 0 then
@@ -322,8 +388,8 @@ begin
   end;
 end;
 
-{ Converts a JavaScript timestamp in milliseconds to a TDateTime.
-  If correct = true, subtracts the configured time zone offset (tz). }
+{** Convert a JavaScript millisecond epoch to @code(TDateTime).
+    When @code(correct) is true, subtracts @code(tz) before conversion. }
 function TrndiAPI.JSToDateTime(ts: int64; correct: boolean): TDateTime;
 begin
   if correct then
@@ -332,11 +398,12 @@ begin
     Result := UnixToDateTime(ts div 1000);
 end;
 
+{** Convenience overload that forwards to the abstract variant and discards raw text. }
 function TrndiAPI.getReadings(minNum, maxNum: integer; extras: string = ''): BGResults;
 var
   res: string;
 begin
-  result := getReadings(minNum, maxNum,extras,res);
+  Result := getReadings(minNum, maxNum, extras, res);
 end;
 
 end.
