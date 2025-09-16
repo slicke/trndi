@@ -18,6 +18,30 @@
  * GitHub: https://github.com/slicke/trndi
  *)
 
+{**
+  @unit slicke.ux.alert
+  @brief Adaptive Lazarus/FPC dialogs and input helpers with emoji icons, dark mode and touch-aware layout.
+
+  @details
+  This unit provides a small UX toolkit for Lazarus/FPC that renders message dialogs,
+  extended messages with logs, and input selectors (text, numeric, list, table).
+  It adapts the layout (big/small/auto) for touch screens, supports dark mode, and
+  draws emoji icons using Direct2D/DirectWrite on Windows or text rendering elsewhere.
+
+  The public API centers around:
+  - @link(UXMessage) for simple, one-button informational messages.
+  - @link(UXDialog) overloads for message dialogs with button sets or Lazarus TMsgDlgType mapping.
+  - @link(ExtMsg), @link(ExtLog), @link(ExtError), @link(ExtSucc), @link(ExtSuccEx) for rich dialogs with dumps/logs.
+  - @link(ExtInput), @link(ExtNumericInput), @link(ExtIntInput), @link(ExtList), @link(ExtTable) for data entry.
+  - Font helpers @link(FontGUIInList) and @link(FontTXTInList) to locate suitable UI/text fonts.
+
+  Platform support:
+  - Windows: emoji rendering via Direct2D/DirectWrite; custom dark-titlebar opt-in where possible.
+  - Linux/BSD: emoji/text via canvas using Noto fonts when available.
+
+  @author
+  Björn Lindh, with PasDoc annotations added.
+}
 unit slicke.ux.alert;
 
 {$I native.inc}
@@ -32,41 +56,48 @@ uses
   {$endif}
   StrUtils;
 
+{**
+  @name Localizable strings
+  @desc
+  Localized captions used across dialogs. Override via Lazarus resource machinery if needed.
+}
 resourcestring
-  dlgErr = 'An error occurred while creating a message dialog';
-  sMsgTitle = 'Message';
-  sSuccTitle = 'Information';
-  sExtTitle = 'Extension error';
-  sExtErr = 'Error occurred in extension';
-  sErr = 'Script execution failed';
+  dlgErr      = 'An error occurred while creating a message dialog';
+  sMsgTitle   = 'Message';
+  sSuccTitle  = 'Information';
+  sExtTitle   = 'Extension error';
+  sExtErr     = 'Error occurred in extension';
+  sErr        = 'Script execution failed';
 
-  smbYes = 'Yes';
-  smbUXNo = 'No';
-  smbUXOK = 'OK';
-  smbUXCancel = 'Cancel';
-  smbUXAbort = 'Abort';
-  smbUXRetry = 'Retry';
-  smbUXIgnore = 'Ignore';
-  smbUXAll = 'All';
-  smbUXNoToAll = 'No To All';
-  smbUXYesToAll = 'Yes To All';
-  smbUXHelp = 'Help';
-  smbUXClose = 'Close';
-  smbUXOpenFile = 'Open File';
-  smbUxMinimize = 'Minimize';
-  smbSelect = 'Select';
-  smbUxAgree = 'Agree';
-  smbUxRead = 'Read...';
-  smbUXDefault = 'Default';
+  smbYes          = 'Yes';
+  smbUXNo         = 'No';
+  smbUXOK         = 'OK';
+  smbUXCancel     = 'Cancel';
+  smbUXAbort      = 'Abort';
+  smbUXRetry      = 'Retry';
+  smbUXIgnore     = 'Ignore';
+  smbUXAll        = 'All';
+  smbUXNoToAll    = 'No To All';
+  smbUXYesToAll   = 'Yes To All';
+  smbUXHelp       = 'Help';
+  smbUXClose      = 'Close';
+  smbUXOpenFile   = 'Open File';
+  smbUxMinimize   = 'Minimize';
+  smbSelect       = 'Select';
+  smbUxAgree      = 'Agree';
+  smbUxRead       = 'Read...';
+  smbUXDefault    = 'Default';
 
-  sKey = 'Key';
+  sKey   = 'Key';
   sValue = 'Value';
 
 const
-//  muiStop = $26D4;
-//  muiStar = $2B50;
-
-  // Icons
+  {**
+    @name Emoji-based dialog icons
+    @desc
+    Unicode codepoints rendered as emoji or symbols on supported platforms.
+    Fallbacks depend on available system fonts.
+  }
   uxmtOK            = widechar($2705); // ✅ Ticked box
   uxmtWarning       = widechar($26A0); // ⚠️ Warning sign
   uxmtError         = widechar($274C); // ❌ Cross mark
@@ -76,7 +107,11 @@ const
   uxmtSquare        = widechar($274F); // ❏ Square
   uxmtCustom        = uxmtCog;
 
-  // Buttons
+  {**
+    @name Dialog button aliases
+    @desc
+    Aliases mapping to Lazarus modal buttons for clarity and consistency with UX naming.
+  }
   mbUXYes       = mbYes;
   mbUXNo        = mbNo;
   mbUXOK        = mbOK;
@@ -91,52 +126,121 @@ const
   mbUXClose     = mbClose;
 
 type
+  {** Emoji glyph used for icons. Typically a single widechar codepoint. }
   UXImage = widechar;
 
-  // Form for the dialogs
+  {**
+    Modal dialog form used internally by UX helpers.
+    @remarks
+      - Overrides @code(CreateWnd) for platform tweaks (e.g., dark title bar on Windows).
+      - Handles keyboard navigation (Enter/Escape) in @link(FormKeyDown).
+      - On Windows can owner-draw buttons via @link(ButtonDrawItem).
+  }
   TDialogForm = class(TForm)
+    {** Keyboard shortcuts: Enter to confirm (when appropriate), Esc to cancel/No. }
     procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
   protected
+    {** Finalizes platform window style, sets KeyPreview, and enables dark mode title bar where supported. }
     procedure CreateWnd; override;
     {$ifdef windows}
   public
+    {** Owner-draw routine for bit buttons on Windows to match dark mode styling. }
     procedure ButtonDrawItem(Sender: TObject;
       ACanvas: TCanvas; ARect: TRect; State: TButtonState);
     {$endif}
+    {** OnClick handler used by inline full-screen message overlays created via @link(UXMessage). }
     procedure UXMessageOnClick(sender: TObject);
   end;
 
-  // Type of dialog; big, small, auot (big if touch) or on form
+  {**
+    Size preset for dialog layout.
+    @value uxdNormal Standard dialog layout.
+    @value uxdBig Larger layout suitable for touch/TV screens.
+    @value uxdAuto Auto-detect (big if touch screen available).
+    @value uxdOnForm Render message inline on an existing form (used by @link(UXMessage)).
+  }
   TUXDialogSize = (uxdNormal = 0, uxdBig = 1, uxdAuto = 3, uxdOnForm = 4);
-  // Buttons
+
+  {**
+    Available dialog buttons for UX helpers.
+    @remarks Includes standard Lazarus modal buttons and a few custom labels (e.g. OpenFile, Minimize, Agree, Read, Default).
+  }
   TUXMsgDlgBtn     = (mbYes, mbNo, mbOK, mbCancel, mbAbort, mbRetry, mbIgnore,
     mbAll, mbNoToAll, mbYesToAll, mbHelp, mbClose, mbUXOpenFile, mbUXMinimize, mbUXAgree, mbUXRead, mbUXDefault);
-  // Button set
+
+  {** A set of @link(TUXMsgDlgBtn) to specify multiple buttons. }
   TUXMsgDlgBtns = set of TUXMsgDlgBtn;
 
-  // Localization of buttons
+  {** Mapping of @link(TUXMsgDlgBtn) to localized captions. }
   ButtonLangs = array[TUXMsgDlgBtn] of string;
 
-
-  // Core UX dialog APIs
+  {**
+    Show a simple message dialog, optionally inline on a form in @code(uxdOnForm) mode.
+    @param dialogsize Layout preset; @seealso(TUXDialogSize)
+    @param title Dialog title text (top label).
+    @param message Main message body.
+    @param icon Emoji icon; defaults to @code(uxmtOK).
+    @param sender Optional form used when @code(dialogsize = uxdOnForm) to render a full-screen overlay.
+  }
   procedure UXMessage(const dialogsize: TUXDialogSize; const title, message: string; const icon: uximage = uxmtOK; sender: TForm = nil);
 
+  {**
+    Generic dialog with custom button set and emoji icon.
+    @param dialogsize Layout preset; @seealso(TUXDialogSize)
+    @param title Title text displayed above @code(message).
+    @param message Description/body text.
+    @param buttons Button set to display.
+    @param icon Emoji icon; defaults to @code(uxmtOK).
+    @returns Lazarus modal result corresponding to the button clicked.
+  }
   function UXDialog(const dialogsize: TUXDialogSize;
                     const title, message: string;
                     buttons: TUXMsgDlgBtns;
                     const icon: UXImage = uxmtOK): TModalResult; overload;
 
+  {**
+    Generic dialog with custom button set and Lazarus message type mapped to a default icon.
+    @param dialogsize Layout preset; @seealso(TUXDialogSize)
+    @param title Title text displayed above @code(message).
+    @param message Description/body text.
+    @param buttons Button set to display.
+    @param mtype Lazarus message dialog type; maps to a reasonable emoji icon.
+    @returns Lazarus modal result corresponding to the button clicked.
+  }
   function UXDialog(const dialogsize: TUXDialogSize;
                     const title, message: string;
                     buttons: TUXMsgDlgBtns;
                     const mtype: TMsgDlgType): TModalResult; overload;
 
+  {**
+    Generic dialog with custom header line (caption), title and message and TMsgDlgType mapping.
+    @param dialogsize Layout preset; @seealso(TUXDialogSize)
+    @param header Window caption (top title bar).
+    @param title Title text (bold, in content).
+    @param message Description/body text.
+    @param buttons Button set to display.
+    @param mtype Lazarus message dialog type; maps to a reasonable emoji icon.
+    @returns Lazarus modal result corresponding to the button clicked.
+  }
   function UXDialog(const dialogsize: TUXDialogSize;
                     const header, title, message: string;
                     buttons: TUXMsgDlgBtns;
                     const mtype: TMsgDlgType): TModalResult; overload;
 
-  // Convenience wrappers
+  {**
+    Extended message dialog supporting an optional log/dump panel with custom colors.
+    @param dialogsize Layout preset; @seealso(TUXDialogSize)
+    @param caption Window caption.
+    @param title Title text.
+    @param desc Description/body text (supports wrapping and scrolling in big mode).
+    @param logmsg Optional log/dump text displayed in a fixed panel at the bottom; pass empty to hide.
+    @param dumpbg Background color for log/dump panel (ARGB).
+    @param dumptext Text color for log/dump panel (ARGB).
+    @param buttons Button set to display (default [mbAbort]).
+    @param icon Emoji icon to render.
+    @param scale Optional log panel vertical scale multiplier (for big outputs).
+    @returns Lazarus modal result corresponding to the button clicked.
+  }
   function ExtMsg(const dialogsize: TUXDialogSize;
                   const caption, title, desc, logmsg: string;
                   dumpbg: TColor = $00F5F2FD;
@@ -145,25 +249,73 @@ type
                   const icon: UXImage = uxmtCog;
                   scale: integer = 1): TModalResult;
 
+  {**
+    Convenience wrapper for @link(ExtMsg) that shows a message and a log/dump with an OK button.
+    @param dialogsize Layout preset.
+    @param caption Window caption.
+    @param msg Title text.
+    @param log Log or output text.
+    @param icon Emoji icon (default gear).
+    @param scale Log panel vertical scale multiplier.
+    @returns @code(mrOK) if confirmed, otherwise the modal result selected by the user.
+  }
   function ExtLog(const dialogsize: TUXDialogSize;
                   const caption, msg, log: string;
                   const icon: UXImage = uxmtCog;
                   scale: integer = 1): TModalResult;
 
+  {**
+    Show an error dialog with a short message and an error dump in the log panel.
+    @param dialogsize Layout preset.
+    @param msg Short explanation shown as description.
+    @param error Detailed error text shown in the log panel.
+    @param icon Emoji icon (default gear).
+    @returns Modal result (default is [mbAbort]).
+  }
   function ExtError(const dialogsize: TUXDialogSize;
                     const msg, error: string;
                     const icon: UXImage = uxmtCog): TModalResult; overload;
 
+  {**
+    Show an error dialog with standard captions and the given error in the log panel.
+    @param dialogsize Layout preset.
+    @param error Error text to display in log panel.
+    @param icon Emoji icon (default gear).
+    @returns Modal result (default is [mbAbort]).
+  }
   function ExtError(const dialogsize: TUXDialogSize;
                     const error: string;
                     const icon: UXImage = uxmtCog): TModalResult; overload;
 
+  {**
+    Show a success/information dialog with a dump panel.
+    @param dialogsize Layout preset.
+    @param msg Title text.
+    @param desc Description/body text.
+    @param output Dump/log text.
+    @param dumpbg Background color for dump panel.
+    @param dumptext Text color for dump panel.
+    @param icon Emoji icon (default @code(uxmtOK)).
+    @returns Modal result (OK by default).
+  }
   function ExtSucc(const dialogsize: TUXDialogSize;
                    const msg, desc, output: string;
                    dumpbg: TColor = $0095EEC4;
                    dumptext: TColor = $00147C4A;
                    const icon: UXImage = uxmtOK): TModalResult;
 
+  {**
+    Variant of @link(ExtSucc) that accepts a custom button set.
+    @param dialogsize Layout preset.
+    @param msg Title text.
+    @param desc Description/body text.
+    @param output Dump/log text.
+    @param btns Custom buttons to display.
+    @param dumpbg Background color for dump panel.
+    @param dumptext Text color for dump panel.
+    @param icon Emoji icon (default @code(uxmtOK)).
+    @returns Modal result.
+  }
   function ExtSuccEx(const dialogsize: TUXDialogSize;
                      const msg, desc, output: string;
                      btns: TUXMsgDlgBtns;
@@ -171,18 +323,51 @@ type
                      dumptext: TColor = $00147C4A;
                      const icon: UXImage = uxmtOK): TModalResult;
 
-  // Selection / data entry dialogs
+  {**
+    Show a selection dialog using a drop-down list.
+    @param dialogsize Layout preset.
+    @param ACaption Window caption.
+    @param ATitle Title text.
+    @param ADesc Description text.
+    @param Choices Array of strings to populate the combo box.
+    @param Default If @true, the cancel button is labeled "Default" to indicate defaulting.
+    @param icon Emoji icon (default gear).
+    @returns Selected index (0-based) on OK, or -1 on cancel.
+  }
   function ExtList(const dialogsize: TUXDialogSize;
                    const ACaption, ATitle, ADesc: string;
                    const Choices: array of string;
                    const Default: boolean = false;
                    const icon: UXImage = uxmtCog): Integer;
 
+  {**
+    Show a single-line string input dialog.
+    @param dialogsize Layout preset.
+    @param ACaption Window caption.
+    @param ATitle Title text.
+    @param ADesc Description text.
+    @param ADefault Initial text value.
+    @param ModalResult Out parameter holding the modal result after closing.
+    @param icon Emoji icon (default gear).
+    @returns The entered string when @code(ModalResult = mrOK); otherwise the previous/default content.
+  }
   function ExtInput(const dialogsize: TUXDialogSize;
                     const ACaption, ATitle, ADesc, ADefault: string;
                     var ModalResult: TModalResult;
                     const icon: UXImage = uxmtCog): string;
 
+  {**
+    Show a numeric input dialog using @code(TFloatSpinEdit).
+    @param dialogsize Layout preset.
+    @param ACaption Window caption.
+    @param ATitle Title text.
+    @param ADesc Description text.
+    @param ADefault Initial numeric value.
+    @param float If @true, allow fractional values (2 decimal places); if @false, integer-only.
+    @param ModalResult Out parameter holding the modal result after closing.
+    @param icon Emoji icon (default gear).
+    @returns Entered numeric value if OK; otherwise returns @code(ADefault).
+  }
   function ExtNumericInput(const dialogsize: TUXDialogSize;
                    const ACaption, ATitle, ADesc: string;
                    ADefault: double;
@@ -190,6 +375,17 @@ type
                    var ModalResult: TModalResult;
                    const icon: UXImage = uxmtCog): double;
 
+  {**
+    Convenience wrapper over @link(ExtNumericInput) for integer-only input.
+    @param dialogsize Layout preset.
+    @param ACaption Window caption.
+    @param ATitle Title text.
+    @param ADesc Description text.
+    @param ADefault Initial integer value.
+    @param ModalResult Out parameter holding the modal result after closing.
+    @param icon Emoji icon (default gear).
+    @returns Entered integer value if OK; otherwise returns @code(ADefault).
+  }
   function ExtIntInput(
                     const dialogsize: TUXDialogSize;
                     const ACaption, ATitle, ADesc: string;
@@ -198,6 +394,19 @@ type
                     const icon: UXImage = uxmtCog
                   ): integer;
 
+  {**
+    Show a two-column table (key/value) dialog using @code(TStringGrid).
+    @param big If @true, uses larger fonts and control sizes.
+    @param ACaption Window caption.
+    @param ATitle Title text.
+    @param ADesc Description text.
+    @param Keys Row header values for the first column (without header row).
+    @param Values Row values for the second column (must match @code(Keys) length).
+    @param icon Emoji icon (default gear).
+    @param key Column 0 header (defaults to localized @code(sKey)).
+    @param value Column 1 header (defaults to localized @code(sValue)).
+    @returns Selected row index on OK; -1 if canceled.
+  }
   function ExtTable(const big: boolean;
                     const ACaption, ATitle, ADesc: string;
                     const Keys, Values: array of string;
@@ -205,21 +414,33 @@ type
                     const key: string = '';
                     const value: string = ''): Integer;
 
-  // Utility
+  {**
+    Check if a suitable UI font exists on this system and return its name.
+    @param fname Out parameter that receives a preferred UI font name for emoji/mono display.
+    @returns @true if the font (or a fallback) is available; otherwise @false.
+  }
   function FontGUIInList(out fname: string): Boolean;
+
+  {**
+    Check if a suitable text font exists on this system and return its name.
+    @param fname Out parameter that receives a preferred UI text font.
+    @returns @true if the font is present; otherwise @false. On unknown platforms always @true with a generic name.
+  }
   function FontTXTInList(out fname: string): Boolean;
 
 var
+  {** Localized captions for each @link(TUXMsgDlgBtn). Initialized from resource strings. }
   langs : ButtonLangs = (smbYes, smbUXNo, smbUXOK, smbUXCancel, smbUXAbort, smbUXRetry, smbUXIgnore,
                          smbUXAll, smbUXNoToAll, smbUXYesToAll, smbUXHelp, smbUXClose,
                          smbUXOpenFile, smbUxMinimize, smbUxAgree, smbUxRead, smbUxDefault);
 
 implementation
 
-{
-  UXDialogIsBig
-  -------------------------
-  Determine if we should show a big or normal version of the window/dialog
+{**
+  Determine whether dialogs should use the large layout.
+  @param dialogsize Requested size mode.
+  @returns @true if big layout should be used; @false otherwise.
+  @remarks When @code(dialogsize = uxdAuto), it checks @code(TrndiNative.HasTouchScreen).
 }
 function UXDialogIsBig(dialogsize: TUXDialogSize): boolean;
 begin
@@ -232,6 +453,11 @@ begin
   end;
 end;
 
+{**
+  Compute the wrapped text height for a label given its fixed width.
+  @param ALabel Label with font and width already assigned.
+  @returns Pixel height needed to display the caption.
+}
 function CalcWrappedHeight(ALabel: TLabel): Integer;
 var
   bmp: Graphics.TBitmap;
@@ -268,28 +494,16 @@ begin
   end;
 end;
 
-{
-  CreateTitleAndDescription
-  -------------------------
-  Purpose:
-    Creates and positions the TitleLabel (bold) and DescLabel (normal) to the
-    right of the IconBox, with proper word wrapping, spacing, scaling for big mode,
-    and a minimum width safeguard.
-
-  Parameters:
-    AOwner      - The dialog form.
-    big         - True if big mode layout is active.
-    ATitle      - The dialog's title text.
-    ADesc       - The dialog's description text.
-    IconBox     - The icon control already placed and sized.
-    TitleLabel  - Output: returns the created title label.
-    DescLabel   - Output: returns the created description label.
-
-  Notes:
-    - In big mode, enforces a minimum width of 650px (other dialogs) or wider in caller.
-    - Title font size = 26 in big mode, desc font size = 24 in big mode.
-    - Places desc below title with full padding.
-    - Uses AutoSize after setting width and caption to correctly wrap text.
+{**
+  Create and place a bold title label and a normal description label to the right of the icon.
+  Performs word-wrapping, spacing and big-mode scaling.
+  @param AOwner Parent form/dialog.
+  @param big Use big layout when @true.
+  @param ATitle Title text (bold).
+  @param ADesc Description text.
+  @param IconBox Icon control already created and positioned.
+  @param TitleLabel Out: created title label.
+  @param DescLabel Out: created description label.
 }
 procedure CreateTitleAndDescription(
   AOwner: TForm;
@@ -326,25 +540,30 @@ begin
   TitleLabel.AdjustSize;  // now calculates proper height for given width
 
  // Description
-DescLabel := TLabel.Create(AOwner);
-DescLabel.Parent := AOwner;
-DescLabel.WordWrap := True;
-DescLabel.AutoSize := False;
-DescLabel.Font.Style := [];
-DescLabel.Left := TitleLabel.Left;
-DescLabel.Width := AvailableWidth;
-if big then
-  DescLabel.Font.Size := 24;
-DescLabel.Top := TitleLabel.Top + TitleLabel.Height + Padding;
-DescLabel.Caption := ADesc;
-DescLabel.Font.Color := IfThen(TrndiNative.isDarkMode, clWhite, clBlack);
+ DescLabel := TLabel.Create(AOwner);
+ DescLabel.Parent := AOwner;
+ DescLabel.WordWrap := True;
+ DescLabel.AutoSize := False;
+ DescLabel.Font.Style := [];
+ DescLabel.Left := TitleLabel.Left;
+ DescLabel.Width := AvailableWidth;
+ if big then
+   DescLabel.Font.Size := 24;
+ DescLabel.Top := TitleLabel.Top + TitleLabel.Height + Padding;
+ DescLabel.Caption := ADesc;
+ DescLabel.Font.Color := IfThen(TrndiNative.isDarkMode, clWhite, clBlack);
 
-// ✅ Force correct height for wrapped text
-DescLabel.Height := CalcWrappedHeight(DescLabel);
+ // ✅ Force correct height for wrapped text
+ DescLabel.Height := CalcWrappedHeight(DescLabel);
 end;
 
-
-
+{**
+  Measure wrapped text height for a given font and maximum width (label-independent).
+  @param AText The text to measure.
+  @param AFont Font to use for measurement (copied onto a temp canvas).
+  @param MaxWidth Maximum width in pixels before wrapping.
+  @returns Required height in pixels.
+}
 function MeasureWrappedHeight(const AText: string; AFont: TFont; MaxWidth: Integer): Integer;
 var
   bmp: Graphics.TBitmap;
@@ -382,6 +601,11 @@ begin
   end;
 end;
 
+{**
+  Map UX button enum to Lazarus modal results.
+  @param Btn UX button.
+  @returns Corresponding @code(TModalResult).
+}
 function UXButtonToModalResult(Btn: TUXMsgDlgBtn): TModalResult;
 begin
   case Btn of
@@ -403,19 +627,31 @@ begin
 end;
 
 {$ifdef Windows}
+{**
+  Convert a Lazarus @code(TColor) to a Direct2D color with alpha.
+  @param Col Lazarus color.
+  @param Alpha Alpha in [0..1].
+  @returns Direct2D color struct.
+}
 function TColorToColorF(const Col: TColor; Alpha: Single = 1.0): TD2D1_COLOR_F;
 var
-rgb: TColor;
+ rgb: TColor;
 begin
-// Ensure proper RGB order
-rgb := ColorToRGB(Col);
+ // Ensure proper RGB order
+ rgb := ColorToRGB(Col);
 
-Result.R := GetRValue(rgb) / 255.0;
-Result.G := GetGValue(rgb) / 255.0;
-Result.B := GetBValue(rgb) / 255.0;
-Result.A := Alpha;
+ Result.R := GetRValue(rgb) / 255.0;
+ Result.G := GetGValue(rgb) / 255.0;
+ Result.B := GetBValue(rgb) / 255.0;
+ Result.A := Alpha;
 end;
 
+{**
+  Render an emoji into a @code(TImage) using Direct2D/DirectWrite on Windows.
+  @param Image Target image control.
+  @param Emoji Emoji text (usually a single codepoint).
+  @param bgcol Background color (fills the bitmap).
+}
 procedure AssignEmoji(Image: TImage; const Emoji: widestring; bgcol: TColor = clWhite);
 var
   D2DFactory: ID2D1Factory;
@@ -499,6 +735,13 @@ begin
 end;
 
 {$else}
+{**
+  Render an emoji into a @code(TImage) using the standard canvas (non-Windows).
+  Uses "Noto Color Emoji" when available.
+  @param Image Target image control.
+  @param Emoji Emoji text (usually a single codepoint).
+  @param bgcol Background color.
+}
 procedure AssignEmoji(Image: TImage; const Emoji: widestring; bgcol: TColor = clWhite);
 var
   Inset: Integer;
@@ -523,6 +766,22 @@ begin
 end;
 {$endif}
 
+{**
+  Shared helper to lay out icon, title and description on a dialog.
+  @param Dialog Target dialog.
+  @param big Use big layout when @true.
+  @param icon Emoji icon to render into @code(IconBox).
+  @param bgcol Dialog background color.
+  @param ATitle Title text.
+  @param ADesc Description text.
+  @param IconBox Pre-created TImage for the icon (parent/size set here).
+  @param TitleLabel Out title label instance.
+  @param DescLabel Out description label instance.
+  @param MinWidthNormal Minimum width in normal mode.
+  @param MinWidthBig Minimum width in big mode.
+  @param IconSize Base icon size (doubled in big mode).
+  @param Padding Inner spacing between controls.
+}
 procedure SetupDialogTitleDesc(
   Dialog: TForm;
   const big: Boolean;
@@ -592,6 +851,7 @@ begin
   DescLabel.Height := CalcWrappedHeight(DescLabel);
 end;
 
+{** See interface docs for behavior and parameters. }
 function ExtIntInput(
   const dialogsize: TUXDialogSize;
   const ACaption, ATitle, ADesc: string;
@@ -600,9 +860,10 @@ function ExtIntInput(
   const icon: UXImage = uxmtCog
 ): integer;
 begin
- result := round(ExtNumericInput(dialogsize,ACaption,ATitle,ADesc,ADefault, false, ModalResult, icon));
+  result := round(ExtNumericInput(dialogsize,ACaption,ATitle,ADesc,ADefault, false, ModalResult, icon));
 end;
 
+{** See interface docs for behavior and parameters. }
 function ExtNumericInput(
   const dialogsize: TUXDialogSize;
   const ACaption, ATitle, ADesc: string;
@@ -705,6 +966,7 @@ begin
   end;
 end;
 
+{** See interface docs for behavior and parameters. }
 function UXDialog(const dialogsize: TUXDialogSize;
                   const title, message: string;
                   buttons: TUXMsgDlgBtns;
@@ -714,6 +976,7 @@ begin
                    $00AA6004, $00FDD8AA, buttons, widechar(icon));
 end;
 
+{** See interface docs for behavior and parameters. }
 function UXDialog(const dialogsize: TUXDialogSize;
                   const title, message: string;
                   buttons: TUXMsgDlgBtns;
@@ -722,6 +985,7 @@ begin
   Result := UXDialog(dialogsize, sMsgTitle, title, message, buttons, mtype);
 end;
 
+{** See interface docs for behavior and parameters. }
 function UXDialog(const dialogsize: TUXDialogSize;
                   const header, title, message: string;
                   buttons: TUXMsgDlgBtns;
@@ -743,6 +1007,9 @@ begin
                    $00AA6004, $00FDD8AA, buttons, icon);
 end;
 
+{**
+  See interface docs. Renders inline panel when @code(dialogsize = uxdOnForm) and a sender is available.
+}
 procedure UXMessage(const dialogsize: TUXDialogSize; const title, message: string;
   const icon: UXImage = uxmtOK;
   sender: TForm = nil);
@@ -807,6 +1074,7 @@ begin
            $00AA6004, $00FDD8AA, [mbOK], widechar(icon))
 end;
 
+{** See interface docs for behavior and parameters. }
 function ExtInput(
   const dialogsize: TUXDialogSize;
   const ACaption, ATitle, ADesc, ADefault: string;
@@ -903,6 +1171,7 @@ begin
   end;
 end;
 
+{** See interface docs for behavior and parameters. }
 function ExtList(
   const dialogsize: TUXDialogSize;
   const ACaption, ATitle, ADesc: string;
@@ -1011,6 +1280,7 @@ begin
   end;
 end;
 
+{** See interface docs for behavior and parameters. }
 function ExtTable(
   const big: Boolean;
   const ACaption, ATitle, ADesc: string;
@@ -1115,7 +1385,7 @@ begin
   end;
 end;
 
-
+{** See interface docs for behavior and parameters. }
 function ExtLog(
   const dialogsize: TUXDialogSize;
   const caption, msg, log: string;
@@ -1127,6 +1397,7 @@ begin
                    $00AA6004, $00FDD8AA, [mbOK], icon, scale);
 end;
 
+{** See interface docs for behavior and parameters. }
 function ExtMsg(
   const dialogsize: TUXDialogSize;
   const caption, title, desc, logmsg: string;
@@ -1420,6 +1691,7 @@ begin
   end;
 end;
 
+{** See interface docs for behavior and parameters. }
 function ExtError(const dialogsize: TUXDialogSize;
                   const msg, error: string;
                   const icon: UXImage = uxmtCog): TModalResult;
@@ -1435,6 +1707,7 @@ begin
                    icon);
 end;
 
+{** See interface docs for behavior and parameters. }
 function ExtError(const dialogsize: TUXDialogSize;
                   const error: string;
                   const icon: UXImage = uxmtCog): TModalResult;
@@ -1450,6 +1723,7 @@ begin
                    icon);
 end;
 
+{** See interface docs for behavior and parameters. }
 function ExtSucc(const dialogsize: TUXDialogSize;
                  const msg, desc, output: string;
                  dumpbg: TColor = $0095EEC4;
@@ -1467,6 +1741,7 @@ begin
                    widechar(icon));
 end;
 
+{** See interface docs for behavior and parameters. }
 function ExtSuccEx(const dialogsize: TUXDialogSize;
                    const msg, desc, output: string;
                    btns: TUXMsgDlgBtns;
@@ -1485,7 +1760,9 @@ begin
                    widechar(icon));
 end;
 
-
+{**
+  See interface docs. Attempts OS-appropriate defaults.
+}
 function FontTXTInList(out fname: string): Boolean;
 begin
   {$if DEFINED(X_LINUXBSD)}
@@ -1506,6 +1783,9 @@ begin
   {$endif}
 end;
 
+{**
+  See interface docs. Returns a font suitable for UI/emoji display if available.
+}
 function FontGUIInList(out fname: string): Boolean;
 begin
   {$if DEFINED(X_LINUXBSD)}
@@ -1527,6 +1807,12 @@ begin
   {$endif}
 end;
 
+{**
+  Handle Enter/Esc keys to activate default/escape buttons.
+  @param Sender Dialog form.
+  @param Key Key code pressed.
+  @param Shift Shift-state (unused).
+}
 procedure TDialogForm.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
 var
   o: TCustomButton;
@@ -1574,6 +1860,7 @@ begin
 end;
 
 {$ifndef Windows}
+{** Ensure KeyPreview is set on non-Windows upon handle creation. }
 procedure TDialogForm.CreateWnd;
 begin
   inherited CreateWnd;
@@ -1582,6 +1869,9 @@ end;
 {$endif}
 
 {$ifdef Windows}
+{**
+  Set system menu style, apply immersive dark titlebar when available, and refresh frame.
+}
 procedure TDialogForm.CreateWnd;
 const
   DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
@@ -1610,6 +1900,7 @@ begin
 end;
 {$endif}
 
+{** Close handler for full-screen overlay messages created by @link(UXMessage). }
 procedure TDialogForm.UXMessageOnClick(sender: TObject);
 begin
   ((sender as TButton).Parent as TPanel).Hide;
@@ -1618,6 +1909,13 @@ begin
 end;
 
 {$ifdef Windows}
+{**
+  Owner-draw for dark buttons on Windows.
+  @param Sender The @code(TBitBtn) being drawn.
+  @param ACanvas Canvas to draw on.
+  @param ARect Button rectangle.
+  @param State Button state (up/down/hot).
+}
 procedure TDialogForm.ButtonDrawItem(Sender: TObject;
   ACanvas: TCanvas; ARect: TRect; State: TButtonState);
 var

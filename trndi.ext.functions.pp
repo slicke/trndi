@@ -30,7 +30,7 @@ Classes, SysUtils, mormot.lib.quickjs, mormot.core.base, strutils, fgl,
 Dialogs, slicke.ux.alert, Math, types, trndi.strings, trndi.native;
 
 (*
-  Resource strings in Swedish (can be translated if needed):
+  Resource strings (can be translated if needed):
     - sNoTrace, sUnknownErr, sStackErrMsg, etc.
 *)
 
