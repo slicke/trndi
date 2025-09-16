@@ -82,24 +82,24 @@ jobs:
           git clone https://github.com/synopse/mORMot2.git externals/mORMot2
           test -d ./static/x86_64-linux || { echo "Expected static/x86_64-linux not found" >&2; exit 1; }
           cp -r ./static/x86_64-linux/* .
+      
+      - name: Verify Git checkout
+        run: |
+          echo "=== Git status ==="
+          git status
+          git ls-files | grep -E "\.(pp|pas)$" | wc -l
+          echo "=== Missing files? ==="
+          find . -name "*.pp" -o -name "*.pas" | head -10
 
-      - name: Build (Qt6 widgetset) with .pp file support
+      - name: Build (Qt6 widgetset)
         shell: bash
         run: |
           set -euo pipefail
+          cd ${{ github.workspace }}
+          pwd
           lazbuild externals/mORMot2/packages/lazarus/mormot2.lpk
-          lazbuild --widgetset=qt6 --build-mode="Extensions (Release)" \
-            --add-package-link \
-            -Fi"externals/mORMot2/src" \
-            -Fi"units/winutils" \
-            -Fi"units/winutils/directx" \
-            -Fi"units/nsutils" \
-            -Fi"units/forms" \
-            -Fi"units/slicke" \
-            -Fi"units/misc" \
-            Trndi.lpi
+          lazbuild --widgetset=qt6 --build-mode="Extensions (Release)" Trndi.lpi
           test -f ./Trndi
-
 
       - name: Package artifact
         shell: bash
