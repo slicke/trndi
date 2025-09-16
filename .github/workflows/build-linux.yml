@@ -285,7 +285,7 @@ jobs:
           find externals/mORMot2/src -type d -maxdepth 1 | sort
           
           echo "Sample mORMot2 units (first 10):"
-          find externals/mORMot2/src -name "*.pas" | head -10
+          find externals/mORMot2/src -name "*.pas" 2>/dev/null | sed -n '1,10p'
           
           echo "✓ mORMot2 dependencies prepared successfully"
 
