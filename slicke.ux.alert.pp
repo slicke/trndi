@@ -396,7 +396,7 @@ type
 
   {**
     Show a two-column table (key/value) dialog using @code(TStringGrid).
-    @param big If @true, uses larger fonts and control sizes.
+    @param dialogsize Layout preset.
     @param ACaption Window caption.
     @param ATitle Title text.
     @param ADesc Description text.
@@ -407,7 +407,7 @@ type
     @param value Column 1 header (defaults to localized @code(sValue)).
     @returns Selected row index on OK; -1 if canceled.
   }
-  function ExtTable(const big: boolean;
+  function ExtTable(const dialogsize: TUXDialogSize;
                     const ACaption, ATitle, ADesc: string;
                     const Keys, Values: array of string;
                     const icon: UXImage = uxmtCog;
@@ -1282,7 +1282,7 @@ end;
 
 {** See interface docs for behavior and parameters. }
 function ExtTable(
-  const big: Boolean;
+  const dialogsize: TUXDialogSize;
   const ACaption, ATitle, ADesc: string;
   const Keys, Values: array of string;
   const icon: UXImage = uxmtCog;
@@ -1300,8 +1300,10 @@ var
   BgCol: TColor;
   OkButton, CancelButton: TButton;
   totalButtonsWidth, i: Integer;
+  big: boolean;
 begin
   Result := -1;
+  big := UXDialogIsBig(dialogsize);
   BgCol := IfThen(TrndiNative.isDarkMode, $00322B27, clWhite);
 
   Dialog := TDialogForm.CreateNew(nil);
