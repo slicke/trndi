@@ -31,7 +31,7 @@ lib/
 *.app/
 
 trndi.log
-/Trndi
+Trndi
 GPATH
 GRTAGS
 GTAGS
