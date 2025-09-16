@@ -1,21 +1,26 @@
 [![Linux ARM64 Builder (Qt6)](https://github.com/slicke/trndi/actions/workflows/build-linux-arm64.yml/badge.svg)](https://github.com/slicke/trndi/actions/workflows/build-linux-arm64.yml) [![Linux Builder (Qt6)](https://github.com/slicke/trndi/actions/workflows/build-linux.yml/badge.svg)](https://github.com/slicke/trndi/actions/workflows/build-linux.yml) [![macOS Builder](https://github.com/slicke/trndi/actions/workflows/build-macos.yml/badge.svg)](https://github.com/slicke/trndi/actions/workflows/build-macos.yml) [![Windows Builder](https://github.com/slicke/trndi/actions/workflows/build-windows.yml/badge.svg)](https://github.com/slicke/trndi/actions/workflows/build-windows.yml)
-# ![Trndi](/trndi-logo.png)<br> Trndi - CGM data on desktop and RaspberryPi<br><sup>_Nightscout - Dexcom - xDrip WiFi_</sup> 
+<div style="text-align:center">
+![Trndi](/trndi-logo.png)
+</div>
+
+# Trndi - CGM data on desktop and RaspberryPi<br><sup>_Nightscout - Dexcom - xDrip WiFi_</sup> 
 <b> Windows - macOS - Linux - RaspberryPi </b>
 ![Windows](doc/img_win.png)
-<br>Swedish Windows
+<br>Windows 11
 
 ![Linux](doc/img_lin.png)
-<br>English Linux
+<br>Fedora Linux
 
 ![Linux](doc/img_rpi.png)
 <br>RaspberryPi
 
 ### Introduction
-Trndi is a _desktop app_ that shows the your blood sugar and graph. It works with  _Night Scout_ and _Dexcom Share_.
+Trndi is a _desktop app_ that shows the your blood sugar and graph. It works with  _Night Scout_ and _Dexcom Share_ at the moment.
 It also supports the _xDrip_ app, connecting over the local network/WiFi.
 
 # What differs Trndi from apps?
-* __Natively__ runs on your computer without installation or other software _(on [Linux](#Linux-support), this may depend on your distro)_
+* __Natively__ runs on your computer without needing installation.
+* Runs out-of-the-box! Does not depend on other software to be installed _(on [Linux](#Linux-support), this may depend on your distro)_
 * Supports __multiple languages__
 * Runs on your __Raspberry Pi__ and other arm computers, optinally as a full-screen display
 * Works on __touch-screen__ devices
@@ -25,7 +30,6 @@ It also supports the _xDrip_ app, connecting over the local network/WiFi.
 * Displays your readings in a __trend graph__
 * __Free__ and open source
 * Integrates with Windows, macOS and Linux special features such as the macOS dock, Windows taskbar and Linux notifications.
-* Linux: Supports both Qt6 and GTK2
 * Supports low, normal and high glood sugar colors. But also __ranges__ such as "normal, but on the edge to high"
 
 ### Multi-user support
@@ -68,12 +72,12 @@ Build to a release folder
 ### JS
 The JS engine, _QuickJS_, is linked into Trndi.
 
-You need the relevant library files, placed in ../static when compiling.
+To compile Trndi with extensions support you need the relevant library files, placed in ../static when compiling.
 > You can get the recommended libraries from https://synopse.info/files/mormot2static.7z - you may remove libraries you don't need!
 Due to mormot2, the support library Trndi uses, it may currently not be possible to run extensions under ARM64 computers.
 
 ### Qt6 on Raspberry Pi
-You need the libqt6pas packages from https://github.com/davidbannon/libqt6pas/releases to compile Trndi
+You need the libqt6pas and it's development packages. These are normally available with your distro. See the Linux section on how to install libqt6pas.
 
 ## Style
 ### Linter
@@ -96,10 +100,10 @@ Trndi2 is a rewrite, less bloated, version of Trndi 1, which was never released 
 
 
 ### Testing
-Trndi is actively tested on Windows (amd64), Fedora Linux(amd64), Debian Linux(arm64 / Raspberry pi).
+Trndi is actively tested on Windows (x64), Fedora Linux(amd64), Debian Linux(arm64 / Raspberry pi).
 
 ### IMPORTANT: RaspberryPi / ARM64
-To compile with extension support, you have to add ```{$DEFINE LIBQUICKJSSTATIC}``` in ```mormot.defines.inc``` 
+To compile with extension support, you have to add ```{$DEFINE LIBQUICKJSSTATIC}``` in ```mormot.defines.inc```. However extensions support in Linux is very experimental.
 
 <a name="Linux-support"></a>
 ## Linux notes
