@@ -1,5 +1,5 @@
 
-name: Linux AMD64 Builder (Qt6) - Complete Enhanced
+name: Linux AMD64 Builder (Qt6)
 
 on:
   push:
@@ -320,8 +320,8 @@ jobs:
         run: |
           set -euo pipefail
           echo "=== Building Main Project with Custom Unit Paths ==="
-          
-          # Determine if we have .lpi or .lpr
+
+          # Bestäm vilken projektfil som används
           PROJECT_FILE=""
           if [ -f "Trndi.lpi" ]; then
             PROJECT_FILE="Trndi.lpi"
@@ -332,96 +332,56 @@ jobs:
             ls -la *.lp* 2>/dev/null || echo "No .lp* files found"
             exit 1
           fi
-          
+
           echo "Using project file: ${PROJECT_FILE}"
-          
-          # Prepare custom unit paths with verification
-          echo "=== Preparing Unit Search Paths ==="
-          
-          declare -a CUSTOM_UNIT_PATHS=(
-            "units/winutils"
-            "units/winutils/directx"
-            "units/nsutils"
-            "units/trndi/ext"
-            "units/forms"
-            "units/trndi/api"
-            "units/trndi"
-            "units/slicke"
-            "units/misc"
-          )
-          
-          # Build -Fu parameters for existing paths only
-          FU_PARAMS=""
-          for path in "${CUSTOM_UNIT_PATHS[@]}"; do
-            if [ -d "${path}" ]; then
-              FU_PARAMS="${FU_PARAMS} -Fu\"${path}\""
-              echo "✓ Adding to search path: ${path}"
+
+          # Förbered param-sträng för custom units
+          declare -a FU_PARAMS
+          for path in \
+            units/winutils \
+            units/winutils/directx \
+            units/nsutils \
+            units/forms \
+            units/slicke \
+            units/misc
+          do
+            if [ -d "$path" ]; then
+              echo "✓ Adding to search path: $path"
+              FU_PARAMS+=("-Fu$path")
             else
-              echo "⚠ Skipping missing path: ${path}"
+              echo "⚠ Skipping missing path: $path"
             fi
           done
-          
-          echo "Custom unit search parameters: ${FU_PARAMS}"
-          
-          # Build with explicit unit search paths (mORMot2 + custom paths)
-          echo "Building with all explicit paths..."
-          eval lazbuild \
+
+          # Lägg även till mORMot2 paths
+          MORMOT_PATHS=(
+            externals/mORMot2/src/core
+            externals/mORMot2/src/lib
+            externals/mORMot2/src/net
+            externals/mORMot2/src/db
+            externals/mORMot2/src/rest
+            externals/mORMot2/src/orm
+            externals/mORMot2/src/soa
+            externals/mORMot2/src/app
+            externals/mORMot2/src/crypt
+            externals/mORMot2/src/ui
+            externals/mORMot2/src/misc
+            externals/mORMot2/src/tools
+          )
+          for mp in "${MORMOT_PATHS[@]}"; do
+            FU_PARAMS+=("-Fu$mp")
+          done
+
+          # Bygg med array (inget eval)
+          lazbuild \
             --widgetset=qt6 \
-            --build-mode=\"Extensions Release\" \
+            --build-mode="Extensions (Release)" \
             --verbose \
             --add-package-link \
-            -Fu\"externals/mORMot2/src/core\" \
-            -Fu\"externals/mORMot2/src/lib\" \
-            -Fu\"externals/mORMot2/src/net\" \
-            -Fu\"externals/mORMot2/src/db\" \
-            -Fu\"externals/mORMot2/src/rest\" \
-            -Fu\"externals/mORMot2/src/orm\" \
-            -Fu\"externals/mORMot2/src/soa\" \
-            -Fu\"externals/mORMot2/src/app\" \
-            -Fu\"externals/mORMot2/src/crypt\" \
-            -Fu\"externals/mORMot2/src/ui\" \
-            -Fu\"externals/mORMot2/src/misc\" \
-            -Fu\"externals/mORMot2/src/tools\" \
-            ${FU_PARAMS} \
-            -Fi\"externals/mORMot2/src\" \
-            -Fl\".\" \
-            \"${PROJECT_FILE}\" || {
-              echo "ERROR: Main project build failed" >&2
-              echo "=== Build Error Details ==="
-              echo "Working directory: $(pwd)"
-              echo "Project file: ${PROJECT_FILE}"
-              echo "Custom unit paths used: ${FU_PARAMS}"
-              echo "=== Available files after build attempt ==="
-              ls -la
-              echo "=== Build logs (if any) ==="
-              find . -name "*.log" -exec echo "=== {} ===" \; -exec cat {} \; 2>/dev/null || true
-              echo "=== Project file content (first 50 lines) ==="
-              head -50 "${PROJECT_FILE}" || true
-              echo "=== Custom unit directories content ==="
-              for path in "${CUSTOM_UNIT_PATHS[@]}"; do
-                if [ -d "${path}" ]; then
-                  echo "Contents of ${path}:"
-                  ls -la "${path}/" | head -10
-                fi
-              done
-              exit 1
-            }
-          
-          # Verify build result
-          if [ -f "./Trndi" ]; then
-            echo "✓ Build successful!"
-            echo "Executable info:"
-            ls -la ./Trndi
-            file ./Trndi
-            echo "Executable size: $(du -h ./Trndi | cut -f1)"
-          else
-            echo "ERROR: Trndi executable not found after build" >&2
-            echo "Files in current directory:"
-            ls -la
-            echo "Looking for any executables:"
-            find . -type f -executable -name "*rndi*" 2>/dev/null || true
-            exit 1
-          fi
+            "${FU_PARAMS[@]}" \
+            -Fi"externals/mORMot2/src" \
+            -Fl"." \
+            "$PROJECT_FILE"
 
       - name: Verify executable and dependencies
         shell: bash
