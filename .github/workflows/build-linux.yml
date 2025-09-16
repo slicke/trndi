@@ -1,5 +1,4 @@
-
-name: Linux AMD64 Builder (Qt6) - Complete Enhanced
+name: Linux AMD64 Builder (Qt6)
 
 on:
   push:
@@ -12,31 +11,20 @@ concurrency:
   group: trndi-build-linux-${{ github.ref }}
   cancel-in-progress: false
 
-env:
-  # Global environment variables for consistent paths
-  FPCDIR: /usr/lib/fpc/3.2.2
-  FPCSRCDIR: /usr/share/fpcsrc/3.2.2
-  LAZARUSDIR: /usr/lib/lazarus/4.2
-  LAZARUS_PRIMARY_CONFIG_PATH: ${{ github.workspace }}/.lazarus
-
 jobs:
   build:
-    name: Build Linux (Qt6) - Enhanced
+    name: Build Linux (Qt6)
     runs-on: ubuntu-latest
-    
+
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
 
       - name: Install build prerequisites (Qt6 toolchain)
         shell: bash
         run: |
           set -euo pipefail
-          echo "=== Installing system dependencies ==="
-          
-          sudo apt-get update -qq
+          sudo apt-get update
           sudo apt-get install -y \
             p7zip-full \
             build-essential \
@@ -48,454 +36,90 @@ jobs:
             pkg-config \
             qt6-base-dev \
             qt6-tools-dev \
-            qt6-base-dev-tools \
-            tree \
-            file \
-            lsb-release
-          
-          echo "✓ System dependencies installed successfully"
-          echo "System info: $(lsb_release -d)"
-          echo "Qt6 version: $(dpkg -l | grep qt6-base-dev | awk '{print $3}')"
+            qt6-base-dev-tools
 
       - name: Install Lazarus + FPC (DEBs from SourceForge)
         shell: bash
         run: |
           set -euo pipefail
-          echo "=== Installing Lazarus and FPC ==="
-          
-          # Define download URLs
           FPC_LAZ_URL="https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.2/fpc-laz_3.2.2-210709_amd64.deb/download"
           FPC_SRC_URL="https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.2/fpc-src_3.2.2-210709_amd64.deb/download"
           LAZ_URL="https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.2/lazarus-project_4.2.0-0_amd64.deb/download"
 
-          echo "Downloading Lazarus + FPC DEBs..."
-          curl -fsSL --retry 3 --retry-delay 5 -o fpc-laz.deb "${FPC_LAZ_URL}"
-          curl -fsSL --retry 3 --retry-delay 5 -o fpc-src.deb "${FPC_SRC_URL}"
-          curl -fsSL --retry 3 --retry-delay 5 -o lazarus.deb "${LAZ_URL}"
+          echo "Downloading Lazarus + FPC DEBs:"
+          curl -fsSL -o fpc-laz.deb "${FPC_LAZ_URL}"
+          curl -fsSL -o fpc-src.deb "${FPC_SRC_URL}"
+          curl -fsSL -o lazarus.deb "${LAZ_URL}"
 
-          echo "Installing packages..."
-          sudo dpkg -i fpc-laz.deb fpc-src.deb lazarus.deb || {
-            echo "Initial dpkg failed, fixing dependencies..."
-            sudo apt-get -f install -y
-          }
+          sudo dpkg -i fpc-laz.deb fpc-src.deb lazarus.deb || true
+          sudo apt-get -f install -y
 
-          # Verify installations
           if ! command -v lazbuild >/dev/null 2>&1; then
-            echo "ERROR: lazbuild not found after installation" >&2
-            echo "Available FPC/Lazarus files:"
-            find /usr -name "*lazarus*" -o -name "*fpc*" 2>/dev/null | head -20 || true
+            echo "lazbuild not found after install" >&2
             exit 1
           fi
-
-          if ! command -v fpc >/dev/null 2>&1; then
-            echo "ERROR: fpc compiler not found after installation" >&2
-            exit 1
-          fi
-
-          echo "✓ Lazarus and FPC installed successfully"
-          echo "FPC version: $(fpc -iV)"
-          echo "Lazarus path: $(command -v lazbuild)"
 
       - name: Install libQt6Pas (runtime + dev) from prebuilt DEBs
         shell: bash
         run: |
           set -euo pipefail
-          echo "=== Installing libQt6Pas ==="
-          
           QT6PAS_DEB="libqt6pas6_6.2.10-1_amd64.deb"
           QT6PAS_DEV_DEB="libqt6pas6-dev_6.2.10-1_amd64.deb"
           BASE_RELEASE="https://github.com/davidbannon/libqt6pas/releases/download/v6.2.10"
-
-          echo "Downloading Qt6Pas packages..."
-          curl -fL --retry 3 --retry-delay 5 -o "${QT6PAS_DEB}" "${BASE_RELEASE}/${QT6PAS_DEB}"
-          curl -fL --retry 3 --retry-delay 5 -o "${QT6PAS_DEV_DEB}" "${BASE_RELEASE}/${QT6PAS_DEV_DEB}"
-
-          echo "Installing Qt6Pas packages..."
+          curl -fL -o "${QT6PAS_DEB}" "${BASE_RELEASE}/${QT6PAS_DEB}"
+          curl -fL -o "${QT6PAS_DEV_DEB}" "${BASE_RELEASE}/${QT6PAS_DEV_DEB}"
           sudo apt-get install -y "./${QT6PAS_DEB}" "./${QT6PAS_DEV_DEB}"
           sudo ldconfig
+          ldconfig -p | grep -q "libQt6Pas.so" || { echo "libQt6Pas.so not visible to linker"; exit 1; }
 
-          # Verify Qt6Pas installation
-          if ! ldconfig -p | grep -q "libQt6Pas.so"; then
-            echo "ERROR: libQt6Pas.so not visible to linker" >&2
-            echo "Available Qt libraries:"
-            ldconfig -p | grep -i qt || true
-            exit 1
-          fi
-
-          echo "✓ libQt6Pas installed successfully"
-          echo "Qt6Pas library: $(ldconfig -p | grep libQt6Pas)"
-
-      - name: Setup build environment and verify
+      - name: Prepare static libs and sources
         shell: bash
         run: |
           set -euo pipefail
-          echo "=== Setting up build environment ==="
-          
-          # Create Lazarus config directories
-          mkdir -p "${LAZARUS_PRIMARY_CONFIG_PATH}"
-          mkdir -p ~/.config/lazarus
-          
-          # Verify environment variables
-          echo "FPCDIR: ${FPCDIR}"
-          echo "FPCSRCDIR: ${FPCSRCDIR}"
-          echo "LAZARUSDIR: ${LAZARUSDIR}"
-          echo "LAZARUS_PRIMARY_CONFIG_PATH: ${LAZARUS_PRIMARY_CONFIG_PATH}"
-          
-          # Test FPC configuration
-          echo "=== FPC Configuration ==="
-          fpc -va 2>&1 | grep -E "(Config|Search)" || true
-          
-          # Test lazbuild
-          echo "=== Lazbuild Help ==="
-          lazbuild --help | grep -A5 "Search paths" || true
-          
-          echo "✓ Build environment configured successfully"
-
-      - name: Debug project structure and verify custom unit paths
-        shell: bash
-        run: |
-          set -euo pipefail
-          echo "=== Project Structure Debug ==="
-          
-          echo "Current directory: $(pwd)"
-          echo "Directory contents:"
-          ls -la
-          
-          echo "=== Looking for project files ==="
-          find . -maxdepth 2 -name "*.lpi" -o -name "*.lpr" -o -name "*.pas" | head -20
-          
-          echo "=== Checking for .lpi file content ==="
-          if [ -f "Trndi.lpi" ]; then
-            echo "Found Trndi.lpi, checking search paths:"
-            grep -A10 -B2 "SearchPaths\|UnitPath\|OtherUnitFiles" Trndi.lpi || echo "No search paths found in LPI"
-          elif [ -f "Trndi.lpr" ]; then
-            echo "Found Trndi.lpr"
-            head -20 Trndi.lpr
-          else
-            echo "ERROR: Neither Trndi.lpi nor Trndi.lpr found" >&2
-            echo "Available files:"
-            find . -name "*.lp*" -o -name "*.pas"
-            exit 1
-          fi
-          
-          echo "=== Verifying Custom Unit Directories ==="
-          
-          # Define custom unit paths (converted from Windows to Linux paths)
-          declare -a CUSTOM_UNIT_PATHS=(
-            "units/winutils"
-            "units/winutils/directx"
-            "units/nsutils"
-            "units/trndi/ext"
-            "units/forms"
-            "units/trndi/api"
-            "units/trndi"
-            "units/slicke"
-            "units/misc"
-          )
-          
-          MISSING_PATHS=()
-          FOUND_PATHS=()
-          
-          for path in "${CUSTOM_UNIT_PATHS[@]}"; do
-            if [ -d "${path}" ]; then
-              echo "✓ Found: ${path}"
-              FOUND_PATHS+=("${path}")
-              
-              # Show some .pas files in this directory
-              echo "  Pascal files in ${path}:"
-              find "${path}" -name "*.pas" -type f | head -5 | sed 's/^/    /'
-              
-              # Count total .pas files
-              pas_count=$(find "${path}" -name "*.pas" -type f | wc -l)
-              echo "  Total .pas files: ${pas_count}"
-            else
-              echo "✗ Missing: ${path}"
-              MISSING_PATHS+=("${path}")
-            fi
-          done
-          
-          echo ""
-          echo "=== Custom Unit Path Summary ==="
-          echo "Found paths (${#FOUND_PATHS[@]}): ${FOUND_PATHS[*]}"
-          
-          if [ ${#MISSING_PATHS[@]} -gt 0 ]; then
-            echo "Missing paths (${#MISSING_PATHS[@]}): ${MISSING_PATHS[*]}"
-            echo ""
-            echo "WARNING: Some custom unit paths are missing!"
-            echo "This might cause compilation errors if these units are required."
-            echo ""
-            echo "=== Available units directory structure ==="
-            if [ -d "units" ]; then
-              tree units/ -L 3 2>/dev/null || find units/ -type d | head -20
-            else
-              echo "No 'units' directory found at project root"
-              echo "Looking for alternative unit directories:"
-              find . -maxdepth 2 -type d -name "*unit*" -o -name "*src*" -o -name "*lib*" | head -10
-            fi
-          else
-            echo "✓ All custom unit paths found!"
-          fi
-
-      - name: Prepare static libs and mORMot2 sources
-        shell: bash
-        run: |
-          set -euo pipefail
-          echo "=== Preparing mORMot2 dependencies ==="
-          
-          # Create static directory
           mkdir -p ./static
-          
-          # Download mORMot2 static libraries
-          echo "Downloading mORMot2 static libraries..."
-          curl -fsSL --retry 3 --retry-delay 5 -o mormot2static.7z \
-            'https://github.com/synopse/mORMot2/releases/download/2.3.stable/mormot2static.7z'
-          
-          echo "Extracting static libraries..."
+          curl -fsSL -o mormot2static.7z 'https://github.com/synopse/mORMot2/releases/download/2.3.stable/mormot2static.7z'
           7z x mormot2static.7z -o./static -y >/dev/null
-          
-          # Clone mORMot2 sources
-          echo "Cloning mORMot2 sources..."
-          git clone --depth 1 https://github.com/synopse/mORMot2.git externals/mORMot2
-          
-          # Verify static libraries
-          if [ ! -d "./static/x86_64-linux" ]; then
-            echo "ERROR: Expected static/x86_64-linux directory not found" >&2
-            echo "Available static directories:"
-            find ./static -type d -name "*linux*" 2>/dev/null || true
-            exit 1
-          fi
-          
-          # Copy static libraries to project root
-          echo "Copying static libraries..."
-          cp -r ./static/x86_64-linux/* . || {
-            echo "ERROR: Failed to copy static libraries" >&2
-            ls -la ./static/x86_64-linux/
-            exit 1
-          }
-          
-          # Verify mORMot2 source structure
-          echo "=== mORMot2 Source Structure ==="
-          if [ ! -d "externals/mORMot2/src" ]; then
-            echo "ERROR: mORMot2 source directory not found" >&2
-            tree externals/ -L 3 || ls -la externals/
-            exit 1
-          fi
-          
-          echo "mORMot2 directories:"
-          find externals/mORMot2/src -type d -maxdepth 1 | sort
-          
-          echo "Sample mORMot2 units (first 10):"
-          find externals/mORMot2/src -name "*.pas" | head -10
-          
-          echo "✓ mORMot2 dependencies prepared successfully"
+          git clone https://github.com/synopse/mORMot2.git externals/mORMot2
+          test -d ./static/x86_64-linux || { echo "Expected static/x86_64-linux not found" >&2; exit 1; }
+          cp -r ./static/x86_64-linux/* .
 
-      - name: Build mORMot2 package
+      - name: Build (Qt6 widgetset) with .pp file support
         shell: bash
         run: |
           set -euo pipefail
-          echo "=== Building mORMot2 Package ==="
-          
-          # Verify package file exists
-          MORMOT_PKG="externals/mORMot2/packages/lazarus/mormot2.lpk"
-          if [ ! -f "${MORMOT_PKG}" ]; then
-            echo "ERROR: mORMot2 package file not found at ${MORMOT_PKG}" >&2
-            find externals/mORMot2 -name "*.lpk" | head -5 || true
-            exit 1
-          fi
-          
-          echo "Building mORMot2 package with verbose output..."
-          lazbuild --verbose "${MORMOT_PKG}" || {
-            echo "ERROR: Failed to build mORMot2 package" >&2
-            echo "=== Build logs ==="
-            find . -name "*.log" -exec cat {} \; 2>/dev/null || true
-            echo "=== Package file content ==="
-            head -50 "${MORMOT_PKG}" || true
-            exit 1
-          }
-          
-          echo "✓ mORMot2 package built successfully"
-
-      - name: Build main project (Qt6 widgetset) with custom unit paths
-        shell: bash
-        run: |
-          set -euo pipefail
-          echo "=== Building Main Project with Custom Unit Paths ==="
-          
-          # Determine if we have .lpi or .lpr
-          PROJECT_FILE=""
-          if [ -f "Trndi.lpi" ]; then
-            PROJECT_FILE="Trndi.lpi"
-          elif [ -f "Trndi.lpr" ]; then
-            PROJECT_FILE="Trndi.lpr"
-          else
-            echo "ERROR: No project file found (Trndi.lpi or Trndi.lpr)" >&2
-            ls -la *.lp* 2>/dev/null || echo "No .lp* files found"
-            exit 1
-          fi
-          
-          echo "Using project file: ${PROJECT_FILE}"
-          
-          # Prepare custom unit paths with verification
-          echo "=== Preparing Unit Search Paths ==="
-          
-          declare -a CUSTOM_UNIT_PATHS=(
-            "units/winutils"
-            "units/winutils/directx"
-            "units/nsutils"
-            "units/trndi/ext"
-            "units/forms"
-            "units/trndi/api"
-            "units/trndi"
-            "units/slicke"
-            "units/misc"
-          )
-          
-          # Build -Fu parameters for existing paths only
-          FU_PARAMS=""
-          for path in "${CUSTOM_UNIT_PATHS[@]}"; do
-            if [ -d "${path}" ]; then
-              FU_PARAMS="${FU_PARAMS} -Fu\"${path}\""
-              echo "✓ Adding to search path: ${path}"
-            else
-              echo "⚠ Skipping missing path: ${path}"
-            fi
-          done
-          
-          echo "Custom unit search parameters: ${FU_PARAMS}"
-          
-          # Build with explicit unit search paths (mORMot2 + custom paths)
-          echo "Building with all explicit paths..."
-          eval lazbuild \
-            --widgetset=qt6 \
-            --build-mode=\"Extensions Release\" \
-            --verbose \
+          lazbuild externals/mORMot2/packages/lazarus/mormot2.lpk
+          lazbuild --widgetset=qt6 --build-mode="Extensions (Release)" \
             --add-package-link \
-            -Fu\"externals/mORMot2/src/core\" \
-            -Fu\"externals/mORMot2/src/lib\" \
-            -Fu\"externals/mORMot2/src/net\" \
-            -Fu\"externals/mORMot2/src/db\" \
-            -Fu\"externals/mORMot2/src/rest\" \
-            -Fu\"externals/mORMot2/src/orm\" \
-            -Fu\"externals/mORMot2/src/soa\" \
-            -Fu\"externals/mORMot2/src/app\" \
-            -Fu\"externals/mORMot2/src/crypt\" \
-            -Fu\"externals/mORMot2/src/ui\" \
-            -Fu\"externals/mORMot2/src/misc\" \
-            -Fu\"externals/mORMot2/src/tools\" \
-            ${FU_PARAMS} \
-            -Fi\"externals/mORMot2/src\" \
-            -Fl\".\" \
-            \"${PROJECT_FILE}\" || {
-              echo "ERROR: Main project build failed" >&2
-              echo "=== Build Error Details ==="
-              echo "Working directory: $(pwd)"
-              echo "Project file: ${PROJECT_FILE}"
-              echo "Custom unit paths used: ${FU_PARAMS}"
-              echo "=== Available files after build attempt ==="
-              ls -la
-              echo "=== Build logs (if any) ==="
-              find . -name "*.log" -exec echo "=== {} ===" \; -exec cat {} \; 2>/dev/null || true
-              echo "=== Project file content (first 50 lines) ==="
-              head -50 "${PROJECT_FILE}" || true
-              echo "=== Custom unit directories content ==="
-              for path in "${CUSTOM_UNIT_PATHS[@]}"; do
-                if [ -d "${path}" ]; then
-                  echo "Contents of ${path}:"
-                  ls -la "${path}/" | head -10
-                fi
-              done
-              exit 1
-            }
-          
-          # Verify build result
-          if [ -f "./Trndi" ]; then
-            echo "✓ Build successful!"
-            echo "Executable info:"
-            ls -la ./Trndi
-            file ./Trndi
-            echo "Executable size: $(du -h ./Trndi | cut -f1)"
-          else
-            echo "ERROR: Trndi executable not found after build" >&2
-            echo "Files in current directory:"
-            ls -la
-            echo "Looking for any executables:"
-            find . -type f -executable -name "*rndi*" 2>/dev/null || true
-            exit 1
-          fi
+            -Fi"externals/mORMot2/src" \
+            -Fi"units/winutils" \
+            -Fi"units/winutils/directx" \
+            -Fi"units/nsutils" \
+            -Fi"units/forms" \
+            -Fi"units/slicke" \
+            -Fi"units/misc" \
+            Trndi.lpi
+          test -f ./Trndi
 
-      - name: Verify executable and dependencies
-        shell: bash
-        run: |
-          set -euo pipefail
-          echo "=== Verifying Executable ==="
-          
-          if [ ! -f "./Trndi" ]; then
-            echo "ERROR: Trndi executable not found" >&2
-            exit 1
-          fi
-          
-          echo "Executable details:"
-          file ./Trndi
-          ldd ./Trndi | head -20 || echo "ldd failed or static executable"
-          
-          echo "Checking Qt6 dependencies:"
-          ldd ./Trndi | grep -i qt || echo "No Qt dependencies found (may be static)"
-          
-          echo "✓ Executable verification complete"
 
       - name: Package artifact
         shell: bash
         run: |
           set -euo pipefail
-          echo "=== Packaging Artifacts ==="
-          
-          # Create artifacts directory
           mkdir -p artifacts
-          
-          # Copy main executable
-          if [ ! -f "./Trndi" ]; then
-            echo "ERROR: Trndi executable not found for packaging" >&2
-            exit 1
-          fi
-          
-          echo "Copying executable..."
           cp Trndi artifacts/
-          chmod +x artifacts/Trndi
-          
-          # Copy language files if they exist
           if [ -d "lang" ]; then
-            echo "Copying language files..."
             cp -r lang artifacts/
           else
-            echo "Warning: lang directory not found, skipping..."
-          fi
-          
-          # Copy additional files if they exist
-          for file in README.md LICENSE CHANGELOG.md; do
-            if [ -f "${file}" ]; then
-              echo "Copying ${file}..."
-              cp "${file}" artifacts/
-            fi
-          done
-          
-          echo "Artifact contents:"
-          ls -la artifacts/
-          
-          echo "Creating ZIP archive..."
+            echo "Warning: lang directory not found"
+          fi          
           7z a -tzip Trndi-linux-amd64.zip ./artifacts/* >/dev/null
-          
-          echo "ZIP archive created:"
-          ls -la Trndi-linux-amd64.zip
-          
-          echo "✓ Packaging complete"
 
-      - name: Upload GitHub Actions artifact
+      - name: Upload Actions artifact
         uses: actions/upload-artifact@v4
         with:
           name: linux-build
           path: Trndi-linux-amd64.zip
           if-no-files-found: error
-          retention-days: 90
 
       - name: Publish to single release
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -514,45 +138,30 @@ jobs:
           > This is an automated build of Trndi's latest source code.
 
           ### Trndi-linux-amd64.zip
-
           Linux computers running on amd64 processors (Extensions supported)
 
           ### Trndi-linux-arm64.zip  
-
           Linux computers running on arm64 processors, including RaspberryPi
 
           ### Trndi-macos-silicon.zip
-
           macOS computers, with Apple processors
-
           #### Special requirements for macOS
-
           - Unzip the file
-
           - In a Terminal, run: \`xattr -c /path/to/extracted/Trndi\`
-
           - Replace \`/path/to/extracted/\` with the actual path where you extracted the files
 
           ### Trndi-macos-silicon.dmg
-
           macOS computers, with Apple processors  
-
           #### Special requirements for macOS
-
           - Open the DMG file
-
           - Drag Trndi.app to the Applications folder
-
           - In a Terminal, run: \`xattr -c /Applications/Trndi.app\`
-
           - Now you can launch Trndi from Applications or Spotlight
 
           ### Trndi-windows-x64.zip
-
           Windows computers (Extensions supported)
 
           #### You can manually build Trndi from source for a variety of other platforms.
-
           EOF
 
           # Create the release with notes if missing; otherwise just upload assets
@@ -561,4 +170,3 @@ jobs:
           fi
 
           gh release upload "$TAG" "Trndi-linux-amd64.zip" --clobber
-
