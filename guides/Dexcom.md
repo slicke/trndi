@@ -28,5 +28,5 @@ Trndi will, by default, assume values are high over 8.9mmol/L (160mg/dL) and low
 In addition to "High over" and "Low under" alarms, Trndi can also use a "personal range." Originally a NightScout feature, it allows you to set a smaller target range within the normal limits. As a result, you get an earlier notice before your levels actually reach "High/Low".
 
 ### Defining the levels
-To set these levels, you need to create a simple plugin as explained in the [Extension guide](Extensions.md), search for Dexcom.
+To set these levels, you need to create a simple plugin as explained in the [Extension guide](/doc/Extensions.md), search for Dexcom.
 > NOTE You can also use [the script for Windows](https://raw.githubusercontent.com/slicke/trndi/refs/heads/develop/doc/setlimit.ps1) to create a file automatically. For Linux, you will need to  [the Linux script](https://raw.githubusercontent.com/slicke/trndi/refs/heads/develop/doc/setlimit.sh).
