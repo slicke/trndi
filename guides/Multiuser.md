@@ -19,7 +19,7 @@ Open the registry and find the ```HKEY_CURRENT_USER\Software\Trndi``` key.
 There, add a string value called ```users.names```. Add the users, separated by comma - for instance ```one,two```
 
 ## How to use
-![User chooser](../doc/users.png)
+![User chooser](../doc/img/users.png)
 
 Once the names have been added, Trndi will show a dialog when starting - asking which user to use. You can configure each user in Trndi, start multiple instances and choose a different user for each.
 
