@@ -107,6 +107,15 @@ const
   uxmtSquare        = widechar($274F); // ❏ Square
   uxmtCustom        = uxmtCog;
 
+
+  uxclBlue = $00AA6004;
+  uxclLightBlue = $00FDD8AA;
+  uxclWhite = $00F5F2FD;
+  uxclRed = $003411A9;
+  uxclLightGreen = $0095EEC4;
+  uxclDarkGreen = $00147C4A;
+  uxclGray = $00322B27;
+
   {**
     @name Dialog button aliases
     @desc
@@ -243,8 +252,8 @@ type
   }
   function ExtMsg(const dialogsize: TUXDialogSize;
                   const caption, title, desc, logmsg: string;
-                  dumpbg: TColor = $00F5F2FD;
-                  dumptext: TColor = $003411A9;
+                  dumpbg: TColor = uxclWhite;
+                  dumptext: TColor = uxclRed;
                   buttons: TUXMsgDlgBtns = [mbAbort];
                   const icon: UXImage = uxmtCog;
                   scale: integer = 1): TModalResult;
@@ -300,8 +309,8 @@ type
   }
   function ExtSucc(const dialogsize: TUXDialogSize;
                    const msg, desc, output: string;
-                   dumpbg: TColor = $0095EEC4;
-                   dumptext: TColor = $00147C4A;
+                   dumpbg: TColor = uxclLightGreen;
+                   dumptext: TColor = uxclDarkGreen;
                    const icon: UXImage = uxmtOK): TModalResult;
 
   {**
@@ -319,8 +328,8 @@ type
   function ExtSuccEx(const dialogsize: TUXDialogSize;
                      const msg, desc, output: string;
                      btns: TUXMsgDlgBtns;
-                     dumpbg: TColor = $0095EEC4;
-                     dumptext: TColor = $00147C4A;
+                     dumpbg: TColor = uxclLightGreen;
+                     dumptext: TColor = uxclDarkGreen;
                      const icon: UXImage = uxmtOK): TModalResult;
 
   {**
@@ -887,7 +896,7 @@ begin
   big := UXDialogIsBig(dialogsize);
   Result := 0;
   ModalResult := mrCancel;
-  bgcol := IfThen(TrndiNative.isDarkMode, $00322B27, clWhite);
+  bgcol := IfThen(TrndiNative.isDarkMode, uxclGray, clWhite);
 
   Dialog := TDialogForm.CreateNew(nil);
   Dialog.KeyPreview := True;
@@ -973,7 +982,7 @@ function UXDialog(const dialogsize: TUXDialogSize;
                   const icon: UXImage = uxmtOK): TModalResult;
 begin
   Result := ExtMsg(dialogsize, sMsgTitle, title, message, '',
-                   $00AA6004, $00FDD8AA, buttons, widechar(icon));
+                   uxclBlue, uxclLightBlue, buttons, widechar(icon));
 end;
 
 {** See interface docs for behavior and parameters. }
@@ -1004,7 +1013,7 @@ begin
   end;
 
   Result := ExtMsg(dialogsize, header, title, message, '',
-                   $00AA6004, $00FDD8AA, buttons, icon);
+                   uxclBlue, uxclLightBlue, buttons, icon);
 end;
 
 {**
@@ -1031,12 +1040,12 @@ begin
       tp.Height := sender.Height;
       tp.Width := sender.Width;
       tp.BringToFront;
-      tp.Color := $00FDD8AA;
+      tp.Color := uxclLightBlue;
 
       tl := TLabel.Create(tp);
       tl.parent := tp;
       tl.autosize := false;
-      tl.Font.Color := $00AA6004;
+      tl.Font.Color := uxclBlue;
       tl.Caption := message;
       tl.Font.Size := tp.Width div 20;
       tl.WordWrap := True;
@@ -1068,10 +1077,10 @@ begin
     end
     else
     ExtMsg(uxdAuto, sMsgTitle, title, message, '',
-           $00AA6004, $00FDD8AA, [mbOK], widechar(icon))
+           uxclBlue, uxclLightBlue, [mbOK], widechar(icon))
   end else
     ExtMsg(dialogsize, sMsgTitle, title, message, '',
-           $00AA6004, $00FDD8AA, [mbOK], widechar(icon))
+           uxclBlue, uxclLightBlue, [mbOK], widechar(icon))
 end;
 
 {** See interface docs for behavior and parameters. }
@@ -1096,7 +1105,7 @@ begin
   Result := '';
   ModalResult := mrCancel;
   big := UXDialogIsBig(dialogsize);
-  bgcol := IfThen(TrndiNative.isDarkMode, $00322B27, clWhite);
+  bgcol := IfThen(TrndiNative.isDarkMode, uxclGray, clWhite);
 
   Dialog := TDialogForm.CreateNew(nil);
   Dialog.KeyPreview := True;
@@ -1193,7 +1202,7 @@ var
 begin
   Result := -1;
   big := UXDialogIsBig(dialogsize);
-  bgcol := IfThen(TrndiNative.isDarkMode, $00322B27, clWhite);
+  bgcol := IfThen(TrndiNative.isDarkMode, uxclGray, clWhite);
 
   Dialog := TDialogForm.CreateNew(nil);
   Dialog.KeyPreview := True;
@@ -1304,7 +1313,7 @@ var
 begin
   Result := -1;
   big := UXDialogIsBig(dialogsize);
-  BgCol := IfThen(TrndiNative.isDarkMode, $00322B27, clWhite);
+  BgCol := IfThen(TrndiNative.isDarkMode, uxclGray, clWhite);
 
   Dialog := TDialogForm.CreateNew(nil);
   Dialog.KeyPreview := True;
@@ -1396,15 +1405,15 @@ function ExtLog(
 ): TModalResult;
 begin
   Result := ExtMsg(dialogsize, sMsgTitle, caption, msg, log,
-                   $00AA6004, $00FDD8AA, [mbOK], icon, scale);
+                   uxclBlue, uxclLightBlue, [mbOK], icon, scale);
 end;
 
 {** See interface docs for behavior and parameters. }
 function ExtMsg(
   const dialogsize: TUXDialogSize;
   const caption, title, desc, logmsg: string;
-  dumpbg: TColor = $00F5F2FD;
-  dumptext: TColor = $003411A9;
+  dumpbg: TColor = uxclWhite;
+  dumptext: TColor = uxclRed;
   buttons: TUXMsgDlgBtns = [mbAbort];
   const icon: UXImage = uxmtCog;
   scale: integer = 1
@@ -1428,7 +1437,7 @@ var
   TempFont: TFont;
   big: boolean;
 begin
-  bgcol := IfThen(TrndiNative.isDarkMode, $00322B27, clWhite);
+  bgcol := IfThen(TrndiNative.isDarkMode, uxclGray, clWhite);
   big := UXDialogIsBig(dialogsize);
 
   Dialog := TDialogForm.CreateNew(nil);
@@ -1703,8 +1712,8 @@ begin
                    sErr,     // title
                    msg,      // description
                    error,    // log/dump text
-                   $00F5F2FD, // dump background color
-                   $003411A9, // dump text color
+                   uxclWhite, // dump background color
+                   uxclRed, // dump text color
                    [mbAbort], // buttons
                    icon);
 end;
@@ -1719,8 +1728,8 @@ begin
                    sExtTitle, // title
                    sErr,      // description
                    error,     // log
-                   $00F5F2FD,
-                   $003411A9,
+                   uxclWhite,
+                   uxclRed,
                    [mbAbort],
                    icon);
 end;
@@ -1728,8 +1737,8 @@ end;
 {** See interface docs for behavior and parameters. }
 function ExtSucc(const dialogsize: TUXDialogSize;
                  const msg, desc, output: string;
-                 dumpbg: TColor = $0095EEC4;
-                 dumptext: TColor = $00147C4A;
+                 dumpbg: TColor = uxclLightGreen;
+                 dumptext: TColor = uxclDarkGreen;
                  const icon: UXImage = uxmtOK): TModalResult;
 begin
   Result := ExtMsg(dialogsize,
@@ -1747,8 +1756,8 @@ end;
 function ExtSuccEx(const dialogsize: TUXDialogSize;
                    const msg, desc, output: string;
                    btns: TUXMsgDlgBtns;
-                   dumpbg: TColor = $0095EEC4;
-                   dumptext: TColor = $00147C4A;
+                   dumpbg: TColor = uxclLightGreen;
+                   dumptext: TColor = uxclDarkGreen;
                    const icon: UXImage = uxmtOK): TModalResult;
 begin
   Result := ExtMsg(dialogsize,
