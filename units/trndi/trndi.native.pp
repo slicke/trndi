@@ -1062,7 +1062,7 @@ begin
   cfguser := '';
 end;
 
-  {$IFDEF MSWINDOWS}
+  {$IFDEF X_WIN}
   {------------------------------------------------------------------------------
   TrndiNative.getLocaleInformation
   -------------------
@@ -1089,10 +1089,10 @@ end;
  ------------------------------------------------------------------------------}
 class function TrndiNative.GetOSLanguage: string;
 begin
-  {$IFDEF MSWINDOWS}
+  {$IFDEF X_WIN}
    Result := GetLocaleInformation(LOCALE_SENGLANGUAGE);
   {$ELSE}
-    {$IFDEF DARWIN}
+    {$IFDEF X_MAC}
       result := NSLocale.currentLocale.localeIdentifier.UTF8String;
     {$ELSE}
        Result := SysUtils.GetEnvironmentVariable('LANG');
