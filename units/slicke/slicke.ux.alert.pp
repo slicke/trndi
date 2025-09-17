@@ -1421,6 +1421,8 @@ function ExtMsg(
 const
   btnWidth = 75;
   padding  = 10;
+  memoPadLeft = 10;
+  memoPadTop  = 8;
 var
   Dialog: TDialogForm;
   MainPanel, TopPanel, TextPanel, LogPanel, ButtonPanel: TPanel;
@@ -1436,6 +1438,7 @@ var
   bgcol: TColor;
   TempFont: TFont;
   big: boolean;
+  MemoWrapper: TPanel;
 begin
   bgcol := IfThen(TrndiNative.isDarkMode, uxclGray, clWhite);
   big := UXDialogIsBig(dialogsize);
@@ -1651,9 +1654,21 @@ begin
     LogPanel.BevelOuter := bvNone;
     LogPanel.Visible := logmsg <> '';
 
-    LogMemo := TMemo.Create(LogPanel);
-    LogMemo.Parent := LogPanel;
-    LogMemo.Align := alClient;
+    // Wrapper panel to simulate padding
+    MemoWrapper := TPanel.Create(LogPanel);
+    MemoWrapper.Parent := LogPanel;
+    MemoWrapper.Align := alClient;
+    MemoWrapper.Color := dumpbg;
+    MemoWrapper.BevelOuter := bvNone;
+
+    LogMemo := TMemo.Create(MemoWrapper);
+    LogMemo.Parent := MemoWrapper;
+    LogMemo.Left := MemoPadLeft;
+    LogMemo.Top := MemoPadTop;
+    LogMemo.Width := MemoWrapper.ClientWidth - MemoPadLeft;
+    LogMemo.Height := MemoWrapper.ClientHeight - MemoPadTop;
+    LogMemo.Anchors := [akLeft, akTop, akRight, akBottom]; // Resizes properly
+
     LogMemo.ReadOnly := True;
     LogMemo.Color := dumpbg;
     LogMemo.Font.Color := dumptext;
