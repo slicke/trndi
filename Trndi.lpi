@@ -74,7 +74,7 @@
       <AutoIncrementBuild Value="True"/>
       <MajorVersionNr Value="2"/>
       <MinorVersionNr Value="2"/>
-      <BuildNr Value="64"/>
+      <BuildNr Value="65"/>
       <StringTable CompanyName="Slicke" FileDescription="Trndi - CGM trend monitor" LegalCopyright="Björn Lindh" ProductName="Trndi"/>
     </VersionInfo>
     <BuildModes>
@@ -400,105 +400,100 @@
         <UnitName Value="trndi"/>
       </Unit>
       <Unit>
-        <Filename Value="umain.pp"/>
+        <Filename Value="units\forms\umain.pp"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="fBG"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
       </Unit>
       <Unit>
-        <Filename Value="tfuncs.inc"/>
+        <Filename Value="inc\tfuncs.inc"/>
         <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
-        <Filename Value="uconf.pp"/>
+        <Filename Value="units\forms\uconf.pp"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="fConf"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
       </Unit>
       <Unit>
-        <Filename Value="trndi.api.xdrip.pp"/>
+        <Filename Value="units\trndi\api\trndi.api.xdrip.pp"/>
         <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
-        <Filename Value="trndi.strings.pp"/>
+        <Filename Value="units\trndi\trndi.strings.pp"/>
         <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
-        <Filename Value="trndi.types.pp"/>
+        <Filename Value="units\trndi\trndi.types.pp"/>
         <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
-        <Filename Value="trndi.ext.promise.pp"/>
+        <Filename Value="units\trndi\ext\trndi.ext.promise.pp"/>
         <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
-        <Filename Value="trndi.ext.functions.pp"/>
+        <Filename Value="units\trndi\ext\trndi.ext.functions.pp"/>
         <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
-        <Filename Value="trndi.ext.ext.pp"/>
+        <Filename Value="units\trndi\ext\trndi.ext.pp"/>
         <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
-        <Filename Value="trndi.native.pp"/>
+        <Filename Value="units\trndi\trndi.native.pp"/>
         <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
-        <Filename Value="trndi.ext.pp"/>
-        <IsPartOfProject Value="True"/>
-        <UnitName Value="trndiext"/>
-      </Unit>
-      <Unit>
-        <Filename Value="trndi.api.pp"/>
+        <Filename Value="units\trndi\trndi.api.pp"/>
         <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
-        <Filename Value="trndi.api.dexcom.pp"/>
+        <Filename Value="units\trndi\api\trndi.api.dexcom.pp"/>
         <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
-        <Filename Value="trndi.api.nightscout.pp"/>
+        <Filename Value="units\trndi\api\trndi.api.nightscout.pp"/>
         <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
-        <Filename Value="trndi.api.debug.pp"/>
+        <Filename Value="units\trndi\api\trndi.api.debug.pp"/>
         <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
-        <Filename Value="touchdetection.pp"/>
+        <Filename Value="units\misc\touchdetection.pp"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="TouchDetection"/>
       </Unit>
       <Unit>
-        <Filename Value="wintoast.pp"/>
+        <Filename Value="units\winutils\wintoast.pp"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="winToast"/>
       </Unit>
       <Unit>
-        <Filename Value="ufloat.pp"/>
+        <Filename Value="units\forms\ufloat.pp"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="fFloat"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
       </Unit>
       <Unit>
-        <Filename Value="jumplistmanager.pp"/>
+        <Filename Value="units\misc\jumplistmanager.pp"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="JumpListManager"/>
       </Unit>
       <Unit>
-        <Filename Value="slicke.ux.alert.pp"/>
+        <Filename Value="units\slicke\slicke.ux.alert.pp"/>
         <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
-        <Filename Value="nsutils\simpledarkmode.pas"/>
+        <Filename Value="units\nsutils\simpledarkmode.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="SimpleDarkMode"/>
       </Unit>
       <Unit>
-        <Filename Value="usplash.pas"/>
+        <Filename Value="units\forms\usplash.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="fSplash"/>
         <HasResources Value="True"/>
@@ -510,23 +505,23 @@
         <UnitName Value="VersionInfo"/>
       </Unit>
       <Unit>
-        <Filename Value="trndi.api.debug_edge.pp"/>
+        <Filename Value="units\trndi\api\trndi.api.debug_edge.pp"/>
         <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
-        <Filename Value="trndi.funcs.pp"/>
+        <Filename Value="units\trndi\trndi.funcs.pp"/>
         <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
-        <Filename Value="trndi.api.debug_missing.pas"/>
+        <Filename Value="units\trndi\api\trndi.api.debug_missing.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
-        <Filename Value="trndi.api.debug_55.pas"/>
+        <Filename Value="units\trndi\api\trndi.api.debug_55.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
-        <Filename Value="slicke.api.music.pas"/>
+        <Filename Value="units\slicke\slicke.api.music.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="SystemMediaController"/>
       </Unit>

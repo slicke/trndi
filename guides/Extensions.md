@@ -4,12 +4,12 @@ Full reference of funcitons in [Extensions Functions](Extensions_functions.md)
 ### Plugin folder
 The _plugin folder_ is located in your system's application data. You can find out where exactly in the settings.
 
-![Window](../doc/ext.png)
+![Window](../doc/img/ext.png)
 
 ### Plugin support
 Trndi can be built without plugin support, if that's the case the settings will show a message. This will result in a smaller program file. Most commonly, plugins are disabled on systems where the JavaScript engine cannot run 
 
-![Window](../doc/no_ext.png)
+![Window](../doc/img/no_ext.png)
 
 # Creating a plugin
 To create, or install, a plugin - create/place a ```.js``` file in the plugin folder. It will automatically load on the next run.

@@ -116,6 +116,598 @@ msgstr "Information"
 msgid "Value"
 msgstr "Värde"
 
+#: tfbg.lmissing.caption
+msgid "No recent readings!"
+msgstr "Inga färska avläsningar!"
+
+#: tfbg.ltir.caption
+msgid "Time In Range"
+msgstr "Tid i område"
+
+#: tfbg.lval.caption
+msgctxt "tfbg.lval.caption"
+msgid "Setup"
+msgstr "Konfig"
+
+#: tfbg.miadotadjust.caption
+msgid "Adjust Dot Positions"
+msgstr "Justera punktpositioner"
+
+#: tfbg.miadots.caption
+msgid "Dot stats"
+msgstr "Punktstatistik"
+
+#: tfbg.miadvanced.caption
+msgid "> Service Menu"
+msgstr "> Servicemeny"
+
+#: tfbg.mialternate.caption
+msgid "Alterante arrow and reading"
+msgstr "Växla pil och värde"
+
+#: tfbg.miannounce.caption
+msgctxt "tfbg.miannounce.caption"
+msgid "Announce readings"
+msgstr "Läs ut avläsningar"
+
+#: tfbg.miasysteminfo.caption
+msgid "System Info"
+msgstr "Systeminfo"
+
+#: tfbg.miatouch.caption
+msgid "Force Touchscreen"
+msgstr "Tvinga pekskärm"
+
+#: tfbg.miatouchauto.caption
+msgctxt "tfbg.miatouchauto.caption"
+msgid "Auto"
+msgstr "Auto"
+
+#: tfbg.miatouchno.caption
+msgid "Force No"
+msgstr "Tvinga Nej"
+
+#: tfbg.miatouchyes.caption
+msgid "Force Yes"
+msgstr "Tvinga Ja"
+
+#: tfbg.miborders.caption
+msgid "No borders"
+msgstr "Inga kanter"
+
+#: tfbg.miclock.caption
+msgid "Show clock every 20 sec"
+msgstr "Visa klockan var 20 sek"
+
+#: tfbg.micustomdots.caption
+msgctxt "tfbg.micustomdots.caption"
+msgid "Custom Size"
+msgstr "Egen storlek"
+
+#: tfbg.midebugbackend.caption
+msgid "Announce raw backend data"
+msgstr "Annonsera rådata från backendet"
+
+#: tfbg.midotbig.caption
+msgctxt "tfbg.midotbig.caption"
+msgid "Big"
+msgstr "Stor"
+
+#: tfbg.midotbig.hint
+msgid "3"
+msgstr "3"
+
+#: tfbg.midothuge.caption
+msgid "Huge"
+msgstr "Enorm"
+
+#: tfbg.midothuge.hint
+msgid "6"
+msgstr "6"
+
+#: tfbg.midotnormal.caption
+msgctxt "tfbg.midotnormal.caption"
+msgid "Normal"
+msgstr "Normal"
+
+#: tfbg.midotnormal.hint
+msgid "1"
+msgstr "1"
+
+#: tfbg.midotsize.caption
+msgctxt "tfbg.midotsize.caption"
+msgid "Dot Size"
+msgstr "Punktstorlek"
+
+#: tfbg.midotval.caption
+msgid "Reading: ?"
+msgstr "Avläsning: ?"
+
+#: tfbg.miexit.caption
+msgctxt "tfbg.miexit.caption"
+msgid "Exit Trndi"
+msgstr "Avsluta Trndi"
+
+#: tfbg.mifloaton.caption
+msgid "Show Floating Window"
+msgstr "Visa flytande fönster"
+
+#: tfbg.miforce.caption
+msgid "Force Update"
+msgstr "Tvinga uppdatering"
+
+#: tfbg.mifullscreen.caption
+msgid "Toggle Fullscreen"
+msgstr "Växla fullskärm"
+
+#: tfbg.mihistory.caption
+msgid "Show history"
+msgstr "Visa historik"
+
+#: tfbg.miinfo.caption
+msgid "Limits"
+msgstr "Gränser"
+
+#: tfbg.milimitexplain.caption
+msgid "Explain"
+msgstr "Förklara"
+
+#: tfbg.miontop.caption
+msgid "On top"
+msgstr "Överst"
+
+#: tfbg.mipref.caption
+msgid "Preferences"
+msgstr "Ytterligare val"
+
+#: tfbg.mirangecolor.caption
+msgid "Use range color for window"
+msgstr "Färga fönstret med områdesfärg"
+
+#: tfbg.mirefresh.caption
+msgid "Refresh in:"
+msgstr "Uppdaterar om:"
+
+#: tfbg.misettings.caption
+msgid "&Settings"
+msgstr "&Inställningar"
+
+#: tfbg.pnoffrange.caption
+msgctxt "tfbg.pnoffrange.caption"
+msgid "- Off Range -"
+msgstr "- Utanför område -"
+
+#: tfbg.pnoffreading.caption
+msgctxt "tfbg.pnoffreading.caption"
+msgid "Off Reading"
+msgstr "Värde utanför"
+
+#: tfconf.badd.caption
+msgid "+ Add"
+msgstr "+ Ny"
+
+#: tfconf.bremove.caption
+msgid "- Remove"
+msgstr "- Radera"
+
+#: tfconf.btestannounce.caption
+msgid "Test Announce"
+msgstr "Testa notis"
+
+#: tfconf.btestspeech.caption
+msgid "Test Speech"
+msgstr "Testa tal"
+
+#: tfconf.btreset.caption
+msgid "Reset"
+msgstr "Återställ"
+
+#: tfconf.button1.caption
+msgid "&Download"
+msgstr "&Hämta"
+
+#: tfconf.button2.caption
+msgid "Reset Defaults"
+msgstr "Återställ"
+
+#: tfconf.button3.caption
+msgid "Check for update"
+msgstr "Kolla uppdatering"
+
+#: tfconf.caption
+msgid "Settings"
+msgstr "Inställningar"
+
+#: tfconf.cbci.caption
+msgctxt "tfconf.cbci.caption"
+msgid "Include preview versions (may be buggy!)"
+msgstr "Inkludera förhandsversioner (kan vara buggiga!)"
+
+#: tfconf.cbcust.caption
+msgid "Use custom values"
+msgstr "Använd egna värden"
+
+#: tfconf.cbmultitouch.caption
+msgid "Multi-touch"
+msgstr "Multipek"
+
+#: tfconf.cbmusicpause.caption
+msgid "Pause music when high/low"
+msgstr "Pausa musiken vid hög/låg"
+
+#: tfconf.cbnotice.caption
+msgid "System notifications"
+msgstr "Systemmeddelanden"
+
+#: tfconf.cboffbar.caption
+msgid "Show sidebar when value is not in range"
+msgstr "Visa sidopanelen när värdet inte är i målområdet"
+
+#: tfconf.cbprivacy.caption
+msgid "Privacy Mode (Hide number)"
+msgstr "Privat läget (dölj nummer)"
+
+#: tfconf.cbsize.caption
+msgid "Remember window size"
+msgstr "Kom ihåg fönsterstorlek"
+
+#: tfconf.cbsys.text
+msgid "NightScout"
+msgstr "NightScout"
+
+#: tfconf.cbtir.caption
+msgid "Count readings in the custom range as in range"
+msgstr "Räkna värden i eget område som tid i område"
+
+#: tfconf.cbtouch.caption
+msgid "Touch screen"
+msgstr "Pekskärm"
+
+#: tfconf.cbuser.caption
+msgid "Account color"
+msgstr "Kontofärg"
+
+#: tfconf.cl_hi_bg.caption
+msgctxt "tfconf.cl_hi_bg.caption"
+msgid "High"
+msgstr "Hög"
+
+#: tfconf.cl_hi_bg_cust.caption
+msgid "High Background"
+msgstr "Bakgrund hög"
+
+#: tfconf.cl_hi_txt.caption
+msgctxt "tfconf.cl_hi_txt.caption"
+msgid "High"
+msgstr "Hög"
+
+#: tfconf.cl_hi_txt_cust.caption
+msgid "High Text"
+msgstr "Text hög"
+
+#: tfconf.cl_lo_bg.caption
+msgctxt "tfconf.cl_lo_bg.caption"
+msgid "Low"
+msgstr "Låg"
+
+#: tfconf.cl_lo_bg_cust.caption
+msgid "Low Background"
+msgstr "Bakgrund låg"
+
+#: tfconf.cl_lo_txt.caption
+msgctxt "tfconf.cl_lo_txt.caption"
+msgid "Low"
+msgstr "Låg"
+
+#: tfconf.cl_lo_txt_cust.caption
+msgid "Low Text"
+msgstr "Text låg"
+
+#: tfconf.cl_ok_bg.caption
+msgctxt "tfconf.cl_ok_bg.caption"
+msgid "OK"
+msgstr "OK"
+
+#: tfconf.cl_ok_txt.caption
+msgctxt "tfconf.cl_ok_txt.caption"
+msgid "OK"
+msgstr "OK"
+
+#: tfconf.eaddr.editlabel.caption
+msgid "Server Address / Dexcom Username"
+msgstr "Serveradress / Användare Dexcom"
+
+#: tfconf.edcommasep.text
+msgid "."
+msgstr "."
+
+#: tfconf.eext.editlabel.caption
+msgid "Plugin Folder"
+msgstr "Pluginmapp"
+
+#: tfconf.epass.editlabel.caption
+msgid "API Secret / Dexcom Password"
+msgstr "API-nyckel / Lösenord Dexcom"
+
+#: tfconf.gbcolback.caption
+msgid "Backgounds"
+msgstr "Bakgrunder"
+
+#: tfconf.gbmulti.caption
+msgid "Account Settings"
+msgstr "Kontoinställningar"
+
+#: tfconf.gboverride.caption
+msgctxt "tfconf.gboverride.caption"
+msgid "Override High / Low limits"
+msgstr "Åsidosätt höga / låga gränser"
+
+#: tfconf.gboverride1.caption
+msgid "Get more languages"
+msgstr "Hämta fler språk"
+
+#: tfconf.gboverride2.caption
+msgid "Play Media"
+msgstr "Spela Media"
+
+#: tfconf.groupbox1.caption
+msgid "System Features"
+msgstr "Systemfunktioner"
+
+#: tfconf.groupbox2.caption
+msgid "Texts"
+msgstr "Texter"
+
+#: tfconf.groupbox3.caption
+msgid "Custom Range *"
+msgstr "Eget område *"
+
+#: tfconf.label1.caption
+msgid "There's always a defualt user account"
+msgstr "Ett standardkonto finns alltid"
+
+#: tfconf.label10.caption
+msgid "High (eg https://open.spotify.com/... or spotify:track:...)"
+msgstr "Hög (t ex https://open.spotify.com/... eller spotify:track:...)"
+
+#: tfconf.label11.caption
+msgid "Low (eg https://open.spotify.com/... or spotify:track:...)"
+msgstr "Låg (t ex https://open.spotify.com/... eller spotify:track:...)"
+
+#: tfconf.label12.caption
+msgid "Perfect Reading (5.5mmol/L or 100 mg/dL)"
+msgstr "Perfekt avläsning (5,5mmol/L eller 100 mg/dL)"
+
+#: tfconf.label13.caption
+msgid "Decimal separator:"
+msgstr "Decimalseparator:"
+
+#: tfconf.label14.caption
+msgid "* Support depends on your data source"
+msgstr "* Stöds inte av alla datakällor"
+
+#: tfconf.label2.caption
+msgid ""
+"Add users below, if you wish to track more than one person.\n"
+"You need to start Trndi separately for each user (and select them)"
+msgstr ""
+"Lägg till användare nedan, om du ska spåra fler än en person\n"
+"Du måste starta Trndi separat för varje användare (och välja dem)"
+
+#: tfconf.label3.caption
+msgid "Nickname:"
+msgstr "Smeknamn:"
+
+#: tfconf.label4.caption
+msgid "Window start-up position"
+msgstr "Position av fönster vid start"
+
+#: tfconf.label5.caption
+msgid "Black = transparent"
+msgstr "Svart = genomskinlig"
+
+#: tfconf.label6.caption
+msgid "Language"
+msgstr "Språk"
+
+#: tfconf.label7.caption
+msgid ""
+"If your version of Trndi was not shipped with more languages, \n"
+"you can download more below."
+msgstr ""
+"Om din Trndi-version inte kom med fler språk,\n"
+"kan du ladda hem fler nedan."
+
+#: tfconf.label8.caption
+msgid "Click an item to change it's font"
+msgstr "Klicka på en text för att ändra typsnittet"
+
+#: tfconf.label9.caption
+msgid "Trndi can trigger Spotify or Deezer to play a song when low/high"
+msgstr "Trndi kan spela en låt på Spotify eller Deezer när du är hög/låg"
+
+#: tfconf.lack.caption
+msgid "Libraries"
+msgstr "Bibliotek"
+
+#: tfconf.lago.caption
+msgid "100 min"
+msgstr "100 min"
+
+#: tfconf.larrow.caption
+msgid "->"
+msgstr "->"
+
+#: tfconf.lcurrentacc.caption
+msgid "This only applies for the current loaded account"
+msgstr "Gäller endast för närvarande laddat konto"
+
+#: tfconf.lhiover.caption
+msgid "High over"
+msgstr "Högt över"
+
+#: tfconf.llicense.caption
+msgid "License"
+msgstr "Licens"
+
+#: tfconf.llounder.caption
+msgid "Low under"
+msgstr "Lågt under"
+
+#: tfconf.ltestannounce.caption
+msgid "Test an announcement"
+msgstr "Testa en notis"
+
+#: tfconf.ltestannounce1.caption
+msgid "Test a spoken string"
+msgstr "Testa en talad sträng"
+
+#: tfconf.ltray.caption
+msgid "Tray icon size:"
+msgstr "Panelikonstorlek:"
+
+#: tfconf.lval.caption
+msgctxt "tfconf.lval.caption"
+msgid "0,0"
+msgstr "0,0"
+
+#: tfconf.rbunit.caption
+msgid "Display Unit"
+msgstr "Enhetstyp"
+
+#: tfconf.tscolors.caption
+msgid "Colors"
+msgstr "Färger"
+
+#: tfconf.tscustom.caption
+msgid "Customization"
+msgstr "Personalisera"
+
+#: tfconf.tsdisplay.caption
+msgid "Display"
+msgstr "Visning"
+
+#: tfconf.tsgeneral.caption
+msgid "General"
+msgstr "Allmänt"
+
+#: tfconf.tsinstall.caption
+msgid "Update"
+msgstr "Uppdatera"
+
+#: tfconf.tsintegration.caption
+msgid "Integrations"
+msgstr "Integrationer"
+
+#: tfconf.tsmulti.caption
+msgid "Multi User"
+msgstr "Fler användare"
+
+#: tfconf.tssystem.caption
+msgid "System"
+msgstr "System"
+
+#: tffloat.caption
+msgid "Floating Display"
+msgstr "Flytande visning"
+
+#: tffloat.ltime.caption
+msgid "00:00"
+msgstr "00:00"
+
+#: tffloat.lval.caption
+msgctxt "tffloat.lval.caption"
+msgid "Setup"
+msgstr "Konfig"
+
+#: tffloat.menuitem1.caption
+msgid "&Hide"
+msgstr "&Göm"
+
+#: tffloat.mibig.caption
+msgctxt "tffloat.mibig.caption"
+msgid "Big"
+msgstr "Stor"
+
+#: tffloat.miclock.caption
+msgid "Show clock"
+msgstr "Visa klocka"
+
+#: tffloat.micustomsize.caption
+msgctxt "tffloat.micustomsize.caption"
+msgid "Custom"
+msgstr "Egen"
+
+#: tffloat.micustomvisible.caption
+msgctxt "tffloat.micustomvisible.caption"
+msgid "Custom"
+msgstr "Egen"
+
+#: tffloat.minormal.caption
+msgctxt "tffloat.minormal.caption"
+msgid "Normal"
+msgstr "Normal"
+
+#: tffloat.misize.caption
+msgid "Size"
+msgstr "Storlek"
+
+#: tffloat.mismall.caption
+msgid "Small"
+msgstr "Liten"
+
+#: tffloat.mivisible.caption
+msgctxt "tffloat.mivisible.caption"
+msgid "Visibility"
+msgstr "Synlighet"
+
+#: tffloat.mixl.caption
+msgid "Very Big"
+msgstr "Mycket stor"
+
+#: tfsplash.linfo.caption
+msgid "Loading:"
+msgstr "Laddar:"
+
+#: tfsplash.lsplashwarn.caption
+msgctxt "tfsplash.lsplashwarn.caption"
+msgid ""
+"⚠️ IMPORTANT MEDICAL WARNING ⚠️\n"
+"\n"
+"This app is NOT a medical device.\n"
+"• Do NOT make medical decisions based on this data\n"
+"• Data may be WRONG, delayed, or unavailable  \n"
+"• Always verify with your official CGM device\n"
+"• For emergencies, contact medical professionals\n"
+"\n"
+"By continuing, you acknowledge that:\n"
+"• You use this app at your own risk\n"
+"• The developers have NO LIABILITY\n"
+"• You have read and agree to the full terms\n"
+"\n"
+"This app is licensed under the \n"
+"GNU General Public License version 3 with \n"
+"an additional medical disclaimer.\n"
+"See https://github.com/slicke/trndi/LICENSE.md"
+msgstr ""
+"⚠️ VIKTIG MEDICINSK VARNING ⚠️\n"
+"\n"
+"Denna app är INTE en medicinsk enhet.\n"
+"• Ta INTE medicinska beslut baserat på denna data\n"
+"• Data kan vara FEL, fördröjd, eller otillgänglig  \n"
+"• Verifiera alltid med din officiella CGM-enhet\n"
+"• Vid akutsituationer, kontakta sjukhus\n"
+"\n"
+"Genom att fortsätta accepterar du att:\n"
+"• Du använder appen på egen risk\n"
+"• Utvecklarna inte har NÅGOT ANSVAR\n"
+"• Du måste acceptera den kompletta licensen och villkoren\n"
+"\n"
+"App är licenserad under licensen\n"
+"GNU General Public License version 3 med ett tillägg \n"
+"kring medicinsk användning.\n"
+"Se https://github.com/slicke/trndi/LICENSE.md"
+
 #: trndi.api.dexcom.serrdexlogin
 msgid "Login error: Could not establish a valid session"
 msgstr "Inloggningsfel: Kunde inte etablera en giltig session"
@@ -127,6 +719,80 @@ msgstr "Felaktigt Dexcom-lösenord eller kontoinformation"
 #: trndi.api.dexcom.serrdexpostlogin
 msgid "Login error during post-authentication steps"
 msgstr "Inloggningsfel efter autensieringen"
+
+#: trndi.ext.functions.sdatatypeerr
+#, object-pascal-format
+msgctxt "trndi.ext.functions.sdatatypeerr"
+msgid "Datatype %s was not expected, expected in function %s"
+msgstr "Datatypen %s förväntades inte, förväntad i funktionen %s"
+
+#: trndi.ext.functions.sdatatypeerrfunc
+#, object-pascal-format
+msgctxt "trndi.ext.functions.sdatatypeerrfunc"
+msgid "Datatype \"%s\" was not expected, in function \"%s\". Expected \"%s\""
+msgstr "Datatypen ”%s” förväntades inte, i funktionen ”%s”. Förväntade ”%s”"
+
+#: trndi.ext.functions.sdatatypeerrpos
+#, object-pascal-format
+msgctxt "trndi.ext.functions.sdatatypeerrpos"
+msgid "Datatype %s was not expected, expected in function %s, parameter %d"
+msgstr "Datatypen ”%s” förväntades inte, förväntad i funktionen %s, parameter %d"
+
+#: trndi.ext.functions.slogdesc
+msgctxt "trndi.ext.functions.slogdesc"
+msgid "Trndi has captured data sent to console.log in a JavaScript extension"
+msgstr "Trndi har fångat utdata från console.log i ett JavaScript-tillägg"
+
+#: trndi.ext.functions.slogrecevive
+msgctxt "trndi.ext.functions.slogrecevive"
+msgid "Output through console.log has been received"
+msgstr "Utmatning genom console.log har mottagits"
+
+#: trndi.ext.functions.snotrace
+msgctxt "trndi.ext.functions.snotrace"
+msgid "No stack trace available"
+msgstr "Ingen stackspårning finns"
+
+#: trndi.ext.functions.sstackerrmsg
+#, object-pascal-format
+msgctxt "trndi.ext.functions.sstackerrmsg"
+msgid ""
+"Error: %s \n"
+"Stack: %s %s"
+msgstr ""
+"Fel: %s \n"
+"Stack: %s %s"
+
+#: trndi.ext.functions.sstackfailed
+msgctxt "trndi.ext.functions.sstackfailed"
+msgid "An error occurred, and the stacktrace could not be loaded. Showing backtrace."
+msgstr "Ett fel uppstod och stackspårningen kunde inte laddas. Visar bakåtspårning."
+
+#: trndi.ext.functions.sunknownerr
+msgctxt "trndi.ext.functions.sunknownerr"
+msgid "Unknown error"
+msgstr "Okänt fel"
+
+#: trndi.ext.promise.spromerrcapt
+#, object-pascal-format
+msgctxt "trndi.ext.promise.spromerrcapt"
+msgid "The asyncronous function %s failed to complete"
+msgstr "Den asynkrona funktionen %s misslyckades"
+
+#: trndi.ext.promise.stypeerrcapt
+msgctxt "trndi.ext.promise.stypeerrcapt"
+msgid "A data type differes from what was expected"
+msgstr "En datatyp skiljer sig från vad som förväntats"
+
+#: trndi.ext.promise.stypeerrdesc
+msgctxt "trndi.ext.promise.stypeerrdesc"
+msgid "The extension was stopped"
+msgstr "Tillägget stoppades"
+
+#: trndi.ext.promise.stypeerrmsg
+msgctxt "trndi.ext.promise.stypeerrmsg"
+msgid "A data type was expected, but another was found"
+msgstr "En datatyp förväntades, men en annan påträffades"
 
 #: trndi.strings.rs_compute_failed_ago
 msgid "Long ago"
@@ -607,7 +1273,7 @@ msgstr "Ange ett användarnamn"
 
 #: uconf.rs_hastouch
 msgid "Shows if Trndi detected a touch screen"
-msgstr ""
+msgstr "Visar om Trndi upptäckt en pekskärm"
 
 #: uconf.rs_newver
 #, object-pascal-format
@@ -625,20 +1291,20 @@ msgstr "En förhandsversion av %s finns tillgänglig, vill du besöka nedladdnin
 
 #: uconf.rs_notifications
 msgid "Notifications"
-msgstr ""
+msgstr "Notiser"
 
 #: uconf.rs_notify_mac
 msgid "Notifications will be made via macOS"
-msgstr ""
+msgstr "Notiser görs via macOS självt"
 
 #: uconf.rs_notify_title
 msgid "A notification system is required"
-msgstr ""
+msgstr "Ett notissystem krävs"
 
 #: uconf.rs_notify_txt
 #, object-pascal-format
 msgid "Trndi uses a system called \"%s\" to send desktop notices, you need to have this system installed in order to recieve notices."
-msgstr ""
+msgstr "Trndi använder systemet \"%s\" för att visa notiser, det måste vara installerat för att dessa ska visas"
 
 #: uconf.rs_override_help
 msgid ""
@@ -686,3 +1352,27 @@ msgstr "Du kan använda skift+<nummerr> för att manuellt sätta synligheten (0 
 msgid "You can hold down shift and plus (+) or minus (-) to change the window size"
 msgstr "Du kan hålla ned skift och plus (+) eller minus (-) för att justera fönstrets storlek"
 
+#: umain.rs_tpobottomleft
+msgctxt "umain.rs_tpobottomleft"
+msgid "Bottom Left"
+msgstr "Nere till vänster"
+
+#: umain.rs_tpobottomright
+msgctxt "umain.rs_tpobottomright"
+msgid "Bottom Right"
+msgstr "Nere till höger"
+
+#: umain.rs_tpocenter
+msgctxt "umain.rs_tpocenter"
+msgid "Desktop Center"
+msgstr "Mitten av skrivbordet"
+
+#: umain.rs_tpocustom
+msgctxt "umain.rs_tpocustom"
+msgid "Last position"
+msgstr "Senaste position"
+
+#: umain.rs_tpotopright
+msgctxt "umain.rs_tpotopright"
+msgid "Top Right"
+msgstr "Höger topp"

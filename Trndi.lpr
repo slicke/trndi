@@ -31,6 +31,7 @@ cthreads,
 {$IFDEF HASAMIGA}
 athreads,
 {$ENDIF}
+LCLTranslator,
 Interfaces, // this includes the LCL widgetset
 Forms,lazcontrols,trndi.types,trndi.native,
 {$IFDEF TrndiExt}
@@ -40,7 +41,7 @@ trndi.ext.promise, trndi.ext.functions,trndi.ext.ext,
  sysutils,
 {$ENDIF}
 trndi.api,trndi.api.nightscout,
-trndi.api.dexcom,umain,uconf, ufloat, slicke.ux.alert
+trndi.api.dexcom, umain, uconf, ufloat, slicke.ux.alert
 { you can add units after this };
 
 {$R *.res}
