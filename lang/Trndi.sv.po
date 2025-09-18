@@ -413,25 +413,17 @@ msgctxt "tfconf.cl_ok_txt.caption"
 msgid "OK"
 msgstr "OK"
 
-#: tfconf.eaddr.editlabel.caption
-msgid "Server Address / Dexcom Username"
-msgstr "Serveradress / Användare Dexcom"
-
 #: tfconf.edcommasep.text
 msgid "."
 msgstr "."
 
-#: tfconf.eext.editlabel.caption
-msgid "Plugin Folder"
-msgstr "Pluginmapp"
-
-#: tfconf.epass.editlabel.caption
-msgid "API Secret / Dexcom Password"
-msgstr "API-nyckel / Lösenord Dexcom"
-
 #: tfconf.gbcolback.caption
 msgid "Backgounds"
 msgstr "Bakgrunder"
+
+#: tfconf.gbdisplayprefs.caption
+msgid "Display Preferences"
+msgstr ""
 
 #: tfconf.gbmulti.caption
 msgid "Account Settings"
@@ -485,6 +477,12 @@ msgstr "Decimalseparator:"
 #: tfconf.label14.caption
 msgid "* Support depends on your data source"
 msgstr "* Stöds inte av alla datakällor"
+
+#: tfconf.label15.caption
+#, fuzzy
+msgctxt "tfconf.label15.caption"
+msgid "Server Address / Dexcom Username"
+msgstr "Serveradress / Användare Dexcom"
 
 #: tfconf.label2.caption
 msgid ""
@@ -542,6 +540,12 @@ msgstr "->"
 msgid "This only applies for the current loaded account"
 msgstr "Gäller endast för närvarande laddat konto"
 
+#: tfconf.lext.caption
+#, fuzzy
+msgctxt "tfconf.lext.caption"
+msgid "Plugin Folder"
+msgstr "Pluginmapp"
+
 #: tfconf.lhiover.caption
 msgid "High over"
 msgstr "Högt över"
@@ -553,6 +557,10 @@ msgstr "Licens"
 #: tfconf.llounder.caption
 msgid "Low under"
 msgstr "Lågt under"
+
+#: tfconf.lpass.caption
+msgid "API Key / Dexcom Password"
+msgstr ""
 
 #: tfconf.ltestannounce.caption
 msgid "Test an announcement"
@@ -1352,27 +1360,3 @@ msgstr "Du kan använda skift+<nummerr> för att manuellt sätta synligheten (0 
 msgid "You can hold down shift and plus (+) or minus (-) to change the window size"
 msgstr "Du kan hålla ned skift och plus (+) eller minus (-) för att justera fönstrets storlek"
 
-#: umain.rs_tpobottomleft
-msgctxt "umain.rs_tpobottomleft"
-msgid "Bottom Left"
-msgstr "Nere till vänster"
-
-#: umain.rs_tpobottomright
-msgctxt "umain.rs_tpobottomright"
-msgid "Bottom Right"
-msgstr "Nere till höger"
-
-#: umain.rs_tpocenter
-msgctxt "umain.rs_tpocenter"
-msgid "Desktop Center"
-msgstr "Mitten av skrivbordet"
-
-#: umain.rs_tpocustom
-msgctxt "umain.rs_tpocustom"
-msgid "Last position"
-msgstr "Senaste position"
-
-#: umain.rs_tpotopright
-msgctxt "umain.rs_tpotopright"
-msgid "Top Right"
-msgstr "Höger topp"

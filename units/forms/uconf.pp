@@ -48,6 +48,7 @@ TfConf = class(TForm)
   btReset: TButton;
   bTestAnnounce: TButton;
   bvExt: TBevel;
+  bvExt1: TBevel;
   cbCI: TCheckBox;
   cbCust: TCheckBox;
   cbLang: TComboBox;
@@ -72,15 +73,15 @@ TfConf = class(TForm)
   cl_ok_bg: TColorButton;
   cl_ok_txt: TColorButton;
   cl_hi_bg_cust: TColorButton;
-  eAddr: TLabeledEdit;
+  eAddr: TEdit;
   edCommaSep: TEdit;
+  edTray: TSpinEdit;
+  ePass: TEdit;
+  eExt: TEdit;
   edMusicHigh: TEdit;
   edMusicLow: TEdit;
   edMusicPerfect: TEdit;
   edNick: TEdit;
-  edTray: TSpinEdit;
-  eExt: TLabeledEdit;
-  ePass: TLabeledEdit;
   fdFont:TFontDialog;
   fsHi: TFloatSpinEdit;
   fsLo: TFloatSpinEdit;
@@ -92,6 +93,7 @@ TfConf = class(TForm)
   GroupBox1: TGroupBox;
   GroupBox2: TGroupBox;
   GroupBox3: TGroupBox;
+  gbDisplayPrefs: TGroupBox;
   Image1: TImage;
   Label1: TLabel;
   Label10: TLabel;
@@ -99,6 +101,9 @@ TfConf = class(TForm)
   Label12: TLabel;
   Label13: TLabel;
   Label14: TLabel;
+  Label15: TLabel;
+  lPass: TLabel;
+  lExt: TLabel;
   lTestAnnounce: TLabel;
   Label2: TLabel;
   Label3: TLabel;
@@ -166,6 +171,7 @@ TfConf = class(TForm)
   procedure lAckClick(Sender:TObject);
   procedure lLicenseClick(Sender:TObject);
   procedure lValClick(Sender:TObject);
+  procedure pcMainChange(Sender: TObject);
   procedure rbUnitClick(Sender:TObject);
   procedure tbAdvancedChange(Sender:TObject);
   procedure ToggleBox1Change(Sender:TObject);
@@ -774,6 +780,11 @@ with (sender as TLabel).Font do begin
     name := fdFont.Font.Name;
     style := fdFont.Font.style;
 end;
+end;
+
+procedure TfConf.pcMainChange(Sender: TObject);
+begin
+
 end;
 
 procedure TfConf.rbUnitClick(Sender:TObject);
