@@ -114,13 +114,72 @@ jobs:
           else
             echo "Warning: lang directory not found"
           fi
+          if [ -f "Trndi.png" ]; then
+            cp Trndi.png artifacts/
+          fi
           7z a -tzip Trndi-linux-arm64.zip ./artifacts/* >/dev/null
+
+      - name: Build DEB and RPM packages with fpm
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y ruby ruby-dev build-essential rpm
+          sudo gem install --no-document fpm
+
+          PKG_DIR="pkgroot"
+          mkdir -p "$PKG_DIR/usr/local/trndi"
+          cp Trndi "$PKG_DIR/usr/local/trndi/"
+          if [ -d "lang" ]; then
+            cp -r lang "$PKG_DIR/usr/local/trndi/"
+          fi
+
+          mkdir -p "$PKG_DIR/usr/share/pixmaps"
+          if [ -f "Trndi.png" ]; then
+            cp Trndi.png "$PKG_DIR/usr/share/pixmaps/"
+            ICON=Trndi.png
+          else
+            ICON=utilities-terminal
+          fi
+
+          mkdir -p "$PKG_DIR/usr/share/applications"
+          cat > "$PKG_DIR/usr/share/applications/trndi.desktop" <<EOF
+[Desktop Entry]
+Name=Trndi
+Exec=/usr/local/trndi/Trndi
+Icon=${ICON}
+Type=Application
+Categories=Utility;
+EOF
+
+          fpm -s dir -t deb \
+            -n trndi \
+            -v 1.0.${GITHUB_RUN_NUMBER} \
+            --architecture arm64 \
+            --description "Trndi application with translations" \
+            --license "GPLv3" \
+            -C "$PKG_DIR" .
+
+          fpm -s dir -t rpm \
+            -n trndi \
+            -v 1.0.${GITHUB_RUN_NUMBER} \
+            --architecture aarch64 \
+            --description "Trndi application with translations" \
+            --license "GPLv3" \
+            -C "$PKG_DIR" .
+
+          for f in trndi_*deb; do mv "$f" "${f%.deb}_arm64.deb"; done
+          for f in trndi-*rpm; do mv "$f" "${f%.rpm}.aarch64.rpm"; done
+          mv trndi_*arm64.deb trndi-*.aarch64.rpm artifacts/
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: linux-arm64-build
-          path: Trndi-linux-arm64.zip
+          path: |
+            Trndi-linux-arm64.zip
+            artifacts/*.deb
+            artifacts/*.rpm
           if-no-files-found: error
 
       - name: Publish to release
@@ -140,10 +199,14 @@ jobs:
           > This is an automated build of Trndi's latest source code.
 
           ### Trndi-linux-amd64.zip
-          Linux computers running on amd64 processors (Extensions supported)
+          Linux computers running on amd64 processors (Extensions supported)  
+          - **trndi_*.deb** — Ubuntu/Debian installer (amd64)  
+          - **trndi-*.rpm** — Fedora/OpenSUSE installer (x86_64)
 
           ### Trndi-linux-arm64.zip  
-          Linux computers running on arm64 processors, including RaspberryPi
+          Linux computers running on arm64 processors, including RaspberryPi  
+          - **trndi_*.deb** — Ubuntu/Debian installer (arm64)  
+          - **trndi-*.rpm** — Fedora/OpenSUSE installer (aarch64)
 
           ### Trndi-macos-silicon.zip
           macOS computers, with Apple processors
@@ -170,4 +233,8 @@ jobs:
             gh release create "$TAG" --title "Trndi ${TAG}" --notes-file RELEASE_NOTES.md
           fi
 
-          gh release upload "$TAG" "Trndi-linux-arm64.zip" --clobber
+          gh release upload "$TAG" \
+            "Trndi-linux-arm64.zip" \
+            artifacts/*.deb \
+            artifacts/*.rpm \
+            --clobber

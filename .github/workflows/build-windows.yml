@@ -114,10 +114,14 @@ jobs:
           > This is an automated build of Trndi's latest source code.
 
           ### Trndi-linux-amd64.zip
-          Linux computers running on amd64 processors (Extensions supported)
+          Linux computers running on amd64 processors (Extensions supported)  
+          - **trndi_*.deb** — Ubuntu/Debian installer (amd64)  
+          - **trndi-*.rpm** — Fedora/OpenSUSE installer (x86_64)
 
-          ### Trndi-linux-arm64.zip
-          Linux computers running on arm64 processors, including RaspberryPi
+          ### Trndi-linux-arm64.zip  
+          Linux computers running on arm64 processors, including RaspberryPi  
+          - **trndi_*.deb** — Ubuntu/Debian installer (arm64)  
+          - **trndi-*.rpm** — Fedora/OpenSUSE installer (aarch64)
 
           ### Trndi-macos-silicon.zip
           macOS computers, with Apple processors

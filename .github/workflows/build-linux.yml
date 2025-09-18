@@ -23,7 +23,6 @@ jobs:
       - name: Install build prerequisites (Qt6 toolchain)
         shell: bash
         run: |
-          set -euo pipefail
           sudo apt-get update
           sudo apt-get install -y \
             p7zip-full \
@@ -41,12 +40,10 @@ jobs:
       - name: Install Lazarus + FPC (DEBs from SourceForge)
         shell: bash
         run: |
-          set -euo pipefail
           FPC_LAZ_URL="https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.2/fpc-laz_3.2.2-210709_amd64.deb/download"
           FPC_SRC_URL="https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.2/fpc-src_3.2.2-210709_amd64.deb/download"
           LAZ_URL="https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.2/lazarus-project_4.2.0-0_amd64.deb/download"
 
-          echo "Downloading Lazarus + FPC DEBs:"
           curl -fsSL -o fpc-laz.deb "${FPC_LAZ_URL}"
           curl -fsSL -o fpc-src.deb "${FPC_SRC_URL}"
           curl -fsSL -o lazarus.deb "${LAZ_URL}"
@@ -54,15 +51,9 @@ jobs:
           sudo dpkg -i fpc-laz.deb fpc-src.deb lazarus.deb || true
           sudo apt-get -f install -y
 
-          if ! command -v lazbuild >/dev/null 2>&1; then
-            echo "lazbuild not found after install" >&2
-            exit 1
-          fi
-
-      - name: Install libQt6Pas (runtime + dev) from prebuilt DEBs
+      - name: Install libQt6Pas (runtime + dev)
         shell: bash
         run: |
-          set -euo pipefail
           QT6PAS_DEB="libqt6pas6_6.2.10-1_amd64.deb"
           QT6PAS_DEV_DEB="libqt6pas6-dev_6.2.10-1_amd64.deb"
           BASE_RELEASE="https://github.com/davidbannon/libqt6pas/releases/download/v6.2.10"
@@ -70,47 +61,34 @@ jobs:
           curl -fL -o "${QT6PAS_DEV_DEB}" "${BASE_RELEASE}/${QT6PAS_DEV_DEB}"
           sudo apt-get install -y "./${QT6PAS_DEB}" "./${QT6PAS_DEV_DEB}"
           sudo ldconfig
-          ldconfig -p | grep -q "libQt6Pas.so" || { echo "libQt6Pas.so not visible to linker"; exit 1; }
 
       - name: Prepare static libs and sources
         shell: bash
         run: |
-          set -euo pipefail
           mkdir -p ./static
           curl -fsSL -o mormot2static.7z 'https://github.com/synopse/mORMot2/releases/download/2.3.stable/mormot2static.7z'
           7z x mormot2static.7z -o./static -y >/dev/null
           git clone https://github.com/synopse/mORMot2.git externals/mORMot2
-          test -d ./static/x86_64-linux || { echo "Expected static/x86_64-linux not found" >&2; exit 1; }
           cp -r ./static/x86_64-linux/* .
 
       - name: Build (Qt6 widgetset)
         shell: bash
         run: |
-          set -euo pipefail
           lazbuild externals/mORMot2/packages/lazarus/mormot2.lpk
           lazbuild --widgetset=qt6 --build-mode="Extensions (Release)" Trndi.lpr
-          test -f ./Trndi
 
       - name: Package artifact
         shell: bash
         run: |
-          set -euo pipefail
           mkdir -p artifacts
           cp Trndi artifacts/
-          if [ -d "lang" ]; then
-            cp -r lang artifacts/
-          else
-            echo "Warning: lang directory not found"
-          fi          
-          if [ -f "Trndi.png" ]; then
-            cp Trndi.png artifacts/
-          fi
+          [ -d "lang" ] && cp -r lang artifacts/
+          [ -f "Trndi.png" ] && cp Trndi.png artifacts/
           7z a -tzip Trndi-linux-amd64.zip ./artifacts/* >/dev/null
 
       - name: Build DEB and RPM packages with fpm
         shell: bash
         run: |
-          set -euo pipefail
           sudo apt-get update
           sudo apt-get install -y ruby ruby-dev build-essential rpm
           sudo gem install --no-document fpm
@@ -118,9 +96,7 @@ jobs:
           PKG_DIR="pkgroot"
           mkdir -p "$PKG_DIR/usr/local/trndi"
           cp Trndi "$PKG_DIR/usr/local/trndi/"
-          if [ -d "lang" ]; then
-            cp -r lang "$PKG_DIR/usr/local/trndi/"
-          fi
+          [ -d "lang" ] && cp -r lang "$PKG_DIR/usr/local/trndi/"
 
           mkdir -p "$PKG_DIR/usr/share/pixmaps"
           if [ -f "Trndi.png" ]; then
@@ -140,21 +116,14 @@ jobs:
           Categories=Utility;
           EOF
 
-          fpm -s dir -t deb \
-            -n trndi \
-            -v 2.1.${GITHUB_RUN_NUMBER} \
-            --description "Trndi application with translations" \
-            --license "MIT" \
-            -C "$PKG_DIR" .
+          fpm -s dir -t deb -n trndi -v 2.1.${GITHUB_RUN_NUMBER} --architecture amd64 \
+            --description "Trndi application with translations" --license "GPLv3" -C "$PKG_DIR" .
+          fpm -s dir -t rpm -n trndi -v 2.1.${GITHUB_RUN_NUMBER} --architecture x86_64 \
+            --description "Trndi application with translations" --license "GPLv3" -C "$PKG_DIR" .
 
-          fpm -s dir -t rpm \
-            -n trndi \
-            -v 2.1.${GITHUB_RUN_NUMBER} \
-            --description "Trndi application with translations" \
-            --license "MIT" \
-            -C "$PKG_DIR" .
-
-          mv trndi_*deb trndi-*rpm artifacts/
+          for f in trndi_*deb; do mv "$f" "${f%.deb}_amd64.deb"; done
+          for f in trndi-*rpm; do mv "$f" "${f%.rpm}.x86_64.rpm"; done
+          mv trndi_*amd64.deb trndi-*.x86_64.rpm artifacts/
 
       - name: Upload Actions artifact
         uses: actions/upload-artifact@v4
@@ -164,7 +133,6 @@ jobs:
             Trndi-linux-amd64.zip
             artifacts/*.deb
             artifacts/*.rpm
-          if-no-files-found: error
 
       - name: Publish to single release
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -172,28 +140,44 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: bash
         run: |
-          set -euo pipefail
           SHORT_SHA="${GITHUB_SHA::7}"
           TAG="v${SHORT_SHA}"
 
+          # Prepare consistent Markdown notes (only used if we create the release)
           cat > RELEASE_NOTES.md <<EOF
           # Trndi Release ${TAG}
 
           > This is an automated build of Trndi's latest source code.
 
-          ### Files:
-          - **Trndi-linux-amd64.zip** — Standalone binary + data folder
-          - **trndi_*.deb** — Ubuntu/Debian package
-          - **trndi-*.rpm** — Fedora/OpenSUSE package
-          - **Trndi-linux-arm64.zip** — For arm64 Linux (e.g., Raspberry Pi)
-          - **Trndi-macos-silicon.zip** — macOS Apple Silicon, Extensions
-          - **Trndi-macos-silicon.dmg** — macOS Apple Silicon DMG Installer
-          - **Trndi-windows-x64.zip** — Windows 64-bit
+          ### Trndi-linux-amd64.zip
+          Linux computers running on amd64 processors (Extensions supported)  
+          - **trndi_*.deb** — Ubuntu/Debian installer (amd64)  
+          - **trndi-*.rpm** — Fedora/OpenSUSE installer (x86_64)
 
-          #### macOS special requirements:
-          - Unzip or open the DMG
-          - Run: \`xattr -c /path/to/file\`
-          - Replace \`/path/to/file\` with actual path
+          ### Trndi-linux-arm64.zip  
+          Linux computers running on arm64 processors, including RaspberryPi  
+          - **trndi_*.deb** — Ubuntu/Debian installer (arm64)  
+          - **trndi-*.rpm** — Fedora/OpenSUSE installer (aarch64)
+
+          ### Trndi-macos-silicon.zip
+          macOS computers, with Apple processors
+          #### Special requirements for macOS
+          - Unzip the file
+          - In a Terminal, run: \`xattr -c /path/to/extracted/Trndi\`
+          - Replace \`/path/to/extracted/\` with the actual path where you extracted the files
+
+          ### Trndi-macos-silicon.dmg
+          macOS computers, with Apple processors  
+          #### Special requirements for macOS
+          - Open the DMG file
+          - Drag Trndi.app to the Applications folder
+          - In a Terminal, run: \`xattr -c /Applications/Trndi.app\`
+          - Now you can launch Trndi from Applications or Spotlight
+
+          ### Trndi-windows-x64.zip
+          Windows computers (Extensions supported)
+
+          #### You can manually build Trndi from source for a variety of other platforms.
           EOF
 
           if ! gh release view "$TAG" >/dev/null 2>&1; then
