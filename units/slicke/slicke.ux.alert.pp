@@ -44,7 +44,7 @@
 }
 unit slicke.ux.alert;
 
-{$I inc/native.inc}
+{$I ../../inc/native.inc}
 {$modeswitch advancedrecords}
 interface
 

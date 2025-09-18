@@ -26,7 +26,7 @@
 
 unit trndi.native;
 
-{$I inc/native.inc} // Depending on your project setup, this may define X_WIN, X_PC, X_MAC, etc.
+{$I ../../inc/native.inc} // Depending on your project setup, this may define X_WIN, X_PC, X_MAC, etc.
 
 interface
 
