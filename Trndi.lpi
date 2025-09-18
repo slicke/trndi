@@ -525,6 +525,11 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="SystemMediaController"/>
       </Unit>
+      <Unit>
+        <Filename Value="units\misc\kdebadge.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="KDEBadge"/>
+      </Unit>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
