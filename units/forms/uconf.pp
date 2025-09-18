@@ -136,8 +136,10 @@ TfConf = class(TForm)
   Panel4: TPanel;
   Panel5: TPanel;
   Panel6: TPanel;
+  pTray: TPanel;
   pcMain: TPageControl;
   pnDisplay: TPanel;
+  pDecimal: TPanel;
   rbUnit: TRadioGroup;
   tsColors: TTabSheet;
   tsCustom: TTabSheet;

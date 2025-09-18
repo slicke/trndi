@@ -15,9 +15,9 @@ object fConf: TfConf
     Height = 479
     Top = 0
     Width = 525
-    ActivePage = tsSystem
+    ActivePage = tsCustom
     Align = alClient
-    TabIndex = 7
+    TabIndex = 3
     TabOrder = 0
     OnChange = pcMainChange
     object tsGeneral: TTabSheet
@@ -10769,35 +10769,67 @@ object fConf: TfConf
         ClientHeight = 78
         ClientWidth = 515
         TabOrder = 4
-        object Label13: TLabel
-          Left = 8
-          Height = 16
-          Top = 8
-          Width = 103
-          Caption = 'Decimal separator:'
-        end
-        object edCommaSep: TEdit
-          Left = 8
-          Height = 30
-          Top = 24
-          Width = 24
-          MaxLength = 1
+        object pTray: TPanel
+          Left = 345
+          Height = 78
+          Top = 0
+          Width = 170
+          Align = alRight
+          BevelOuter = bvNone
+          ClientHeight = 78
+          ClientWidth = 170
           TabOrder = 0
-          Text = '.'
+          object lTray: TLabel
+            Left = 0
+            Height = 16
+            Top = 0
+            Width = 160
+            Align = alTop
+            BorderSpacing.Right = 10
+            Caption = 'Tray icon size:'
+          end
+          object edTray: TSpinEdit
+            Left = 0
+            Height = 30
+            Top = 21
+            Width = 160
+            Align = alTop
+            BorderSpacing.Top = 5
+            BorderSpacing.Right = 10
+            TabOrder = 0
+          end
         end
-        object edTray: TSpinEdit
-          Left = 272
-          Height = 30
-          Top = 24
-          Width = 50
+        object pDecimal: TPanel
+          Left = 0
+          Height = 78
+          Top = 0
+          Width = 170
+          Align = alLeft
+          BevelOuter = bvNone
+          ClientHeight = 78
+          ClientWidth = 170
           TabOrder = 1
-        end
-        object lTray: TLabel
-          Left = 272
-          Height = 16
-          Top = 8
-          Width = 75
-          Caption = 'Tray icon size:'
+          object Label13: TLabel
+            Left = 10
+            Height = 16
+            Top = 0
+            Width = 160
+            Align = alTop
+            BorderSpacing.Left = 10
+            Caption = 'Decimal separator:'
+          end
+          object edCommaSep: TEdit
+            Left = 10
+            Height = 30
+            Top = 21
+            Width = 160
+            Align = alTop
+            BorderSpacing.Left = 10
+            BorderSpacing.Top = 5
+            MaxLength = 1
+            TabOrder = 0
+            Text = '.'
+          end
         end
       end
     end
