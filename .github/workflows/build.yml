@@ -7,7 +7,6 @@ on:
     branches: [ main ]
   workflow_dispatch: {}
 
-# Prevent multiple parallel builds for the same commit
 concurrency:
   group: trndi-build-${{ github.ref }}
   cancel-in-progress: false
@@ -74,35 +73,28 @@ jobs:
         if: matrix.os_target == 'linux'
         run: |
           set -euo pipefail
-          # Install build tools and Qt6
           sudo apt-get update
           sudo apt-get install -y p7zip-full build-essential wget curl git cmake ninja-build pkg-config qt6-base-dev qt6-tools-dev qt6-base-dev-tools
-          # Install Lazarus + FPC
           curl -fsSL -o fpc-laz.deb "${{ matrix.fpc_laz_url }}"
           curl -fsSL -o fpc-src.deb "${{ matrix.fpc_src_url }}"
           curl -fsSL -o lazarus.deb "${{ matrix.laz_url }}"
           sudo dpkg -i fpc-laz.deb fpc-src.deb lazarus.deb || true
           sudo apt-get -f install -y
-          # Install Qt6Pas bindings
           BASE_RELEASE="https://github.com/davidbannon/libqt6pas/releases/download/v6.2.10"
           curl -fL -o "${{ matrix.qt6pas_deb }}" "${BASE_RELEASE}/${{ matrix.qt6pas_deb }}"
           curl -fL -o "${{ matrix.qt6pas_dev_deb }}" "${BASE_RELEASE}/${{ matrix.qt6pas_dev_deb }}"
           sudo apt-get install -y "./${{ matrix.qt6pas_deb }}" "./${{ matrix.qt6pas_dev_deb }}"
-          # Get static libs + sources
           mkdir -p ./static
           curl -fsSL -o mormot2static.7z 'https://github.com/synopse/mORMot2/releases/download/2.3.stable/mormot2static.7z'
           7z x mormot2static.7z -o./static -y >/dev/null
           git clone https://github.com/synopse/mORMot2.git externals/mORMot2
           cp -r ./static/${{ matrix.qt6_arch_folder }}/* .
-          # Build Trndi
           lazbuild externals/mORMot2/packages/lazarus/mormot2.lpk
           lazbuild --widgetset=qt6 --build-mode="${{ matrix.build_mode }}" ${{ matrix.cpu_flag }} ${{ matrix.project_file }}
-          # Package portable ZIP (no PNG)
           mkdir -p artifacts
           cp Trndi artifacts/
           [ -d "lang" ] && cp -r lang artifacts/
           7z a -tzip Trndi-linux-${{ matrix.arch }}.zip ./artifacts/* >/dev/null
-          # Build DEB & RPM with icon in system path
           sudo apt-get install -y ruby ruby-dev build-essential rpm
           sudo gem install --no-document fpm
           PKG_DIR="pkgroot"
@@ -114,11 +106,11 @@ jobs:
           ICON=Trndi
           mkdir -p "$PKG_DIR/usr/share/applications"
           echo "[Desktop Entry]
-          Name=Trndi
-          Exec=/usr/local/trndi/Trndi
-          Icon=${ICON}
-          Type=Application
-          Categories=Utility;" > "$PKG_DIR/usr/share/applications/trndi.desktop"
+Name=Trndi
+Exec=/usr/local/trndi/Trndi
+Icon=${ICON}
+Type=Application
+Categories=Utility;" > "$PKG_DIR/usr/share/applications/trndi.desktop"
           fpm -s dir -t deb -n trndi -v 2.1.${GITHUB_RUN_NUMBER} --architecture ${{ matrix.deb_arch }} --license "GPLv3" --description "Trndi application with translations" -C "$PKG_DIR" .
           fpm -s dir -t rpm -n trndi -v 2.1.${GITHUB_RUN_NUMBER} --architecture ${{ matrix.rpm_arch }} --license "GPLv3" --description "Trndi application with translations" -C "$PKG_DIR" .
           mv trndi_*${{ matrix.deb_arch }}.deb artifacts/
@@ -129,8 +121,8 @@ jobs:
         if: matrix.os_target == 'macos'
         run: |
           set -euo pipefail
-          # Install MacPorts
-          OSMAJOR="$(sw_vers -productVersion | cut -d. -f1)"
+          # MacPorts resolution logic restored from original workflow
+          OSMAJOR="$(sw_vers -productVersion | tr -d '\r' | cut -d. -f1)"
           case "$OSMAJOR" in
             14) OSNAME="14-Sonoma" ;;
             13) OSNAME="13-Ventura" ;;
@@ -138,26 +130,31 @@ jobs:
             11) OSNAME="11-BigSur" ;;
             *) echo "Unsupported macOS major version: ${OSMAJOR}" >&2; exit 1 ;;
           esac
-          curl -fsSL -o MacPorts.pkg "https://github.com/macports/macports-base/releases/latest/download/MacPorts-${OSNAME}.pkg"
+          GH_API="https://api.github.com/repos/macports/macports-base/releases"
+          AUTH_HEADER=(-H "Accept: application/vnd.github+json")
+          if [ -n "${GITHUB_TOKEN:-}" ]; then AUTH_HEADER+=(-H "Authorization: Bearer ${GITHUB_TOKEN}"); fi
+          PKG_URL="$(curl -fsSL "${AUTH_HEADER[@]}" "${GH_API}/latest" \
+            | OSNAME="${OSNAME}" python3 -c 'import sys,json,os; name=os.environ.get("OSNAME",""); d=json.load(sys.stdin); print(next((a.get("browser_download_url","") for a in d.get("assets",[]) if a.get("browser_download_url","").endswith(f"-{name}.pkg")), ""), end="")')"
+          [ -n "$PKG_URL" ] || PKG_URL="$(curl -fsSL "${AUTH_HEADER[@]}" "${GH_API}" \
+            | OSNAME="${OSNAME}" python3 -c 'import sys,json,os; name=os.environ.get("OSNAME",""); rels=json.load(sys.stdin); urls=[a.get("browser_download_url","") for r in rels for a in r.get("assets",[]) if a.get("browser_download_url","").endswith(f"-{name}.pkg")]; print(urls[0] if urls else "", end="")')"
+          [ -n "$PKG_URL" ] || PKG_URL="$(curl -fsSL https://www.macports.org/install.php | grep -Eo "https://[^\"[:space:]]*MacPorts-[0-9.]+-${OSNAME}\.pkg" | head -n1 || true)"
+          [ -n "$PKG_URL" ] || { echo "Failed to resolve MacPorts pkg URL for ${OSNAME}." >&2; exit 1; }
+          curl -fsSL -o MacPorts.pkg "$PKG_URL"
           sudo installer -pkg MacPorts.pkg -target /
           export PATH="/opt/local/bin:/opt/local/sbin:$PATH"
           sudo port -v selfupdate
           sudo port -N install fpc lazarus p7zip create-dmg
-          # Prepare static libs & sources
           curl -fsSL -o mormot2static.7z 'https://github.com/synopse/mORMot2/releases/download/2.3.stable/mormot2static.7z'
           mkdir -p ./static
           7z x mormot2static.7z -o./static -y >/dev/null
           git clone https://github.com/synopse/mORMot2.git externals/mORMot2
           cp -r ./static/aarch64-darwin/* .
-          # Build Trndi
           lazbuild externals/mORMot2/packages/lazarus/mormot2.lpk
           lazbuild --build-mode="No Ext (Release)" --ws=cocoa --cpu=aarch64 --os=darwin Trndi.lpi
-          # Package ZIP
           mkdir -p artifacts
           cp Trndi artifacts/
           [ -d "lang" ] && cp -r lang artifacts/
           7z a -tzip Trndi-macos-silicon.zip ./artifacts/* >/dev/null
-          # Create DMG
           chmod +x dist/macos.sh
           if [ -d "lang" ]; then cp -r lang dist/; fi
           (cd dist && ./macos.sh)
@@ -169,28 +166,36 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
-          # Ensure 7-Zip
+          function Get-WithRetry {
+            param([string]$Url,[string]$OutFile,[int]$Retries=5,[int]$DelaySec=5)
+            for ($i=1; $i -le $Retries; $i++) {
+              try {
+                Invoke-WebRequest -Uri $Url -OutFile $OutFile -UseBasicParsing
+                if ((Get-Item $OutFile).Length -gt 50000000) { return }
+              } catch { }
+              Write-Host "Retry $i/$Retries..."
+              Start-Sleep -Seconds $DelaySec
+              if (Test-Path $OutFile) { Remove-Item $OutFile -Force }
+            }
+            throw "Failed to download a valid file from $Url after $Retries attempts."
+          }
           choco install 7zip -y
-          # Install Lazarus
           $LazUrl = 'https://sourceforge.net/projects/lazarus/files/Lazarus%20Windows%2064%20bits/Lazarus%204.2/lazarus-4.2-fpc-3.2.2-win64.exe/download'
-          Invoke-WebRequest -Uri $LazUrl -OutFile 'lazarus-4.2.exe'
+          Get-WithRetry -Url $LazUrl -OutFile 'lazarus-4.2.exe'
           Start-Process '.\lazarus-4.2.exe' -ArgumentList '/VERYSILENT','/SP-','/NORESTART','/DIR=C:\Lazarus' -Wait
-          # Prepare static libs & sources
           New-Item -ItemType Directory -Path .\static -Force | Out-Null
           Invoke-WebRequest -Uri "https://github.com/synopse/mORMot2/releases/download/2.3.stable/mormot2static.7z" -OutFile "mormot2static.7z"
           & 'C:\Program Files\7-Zip\7z.exe' x '.\mormot2static.7z' -o'.\static' -y | Out-Null
           git clone https://github.com/synopse/mORMot2.git externals/mORMot2
           xcopy .\static\x86_64-win64\*.* . /Y /E /I | Out-Null
-          # Build Trndi.exe
           & 'C:\Lazarus\lazbuild.exe' 'externals\mORMot2\packages\lazarus\mormot2.lpk'
           & 'C:\Lazarus\lazbuild.exe' --lazarusdir='C:\Lazarus' --build-mode='Extensions (Release)' 'Trndi.lpi'
-          # Package ZIP
           New-Item -ItemType Directory -Path artifacts -Force | Out-Null
           Copy-Item '.\Trndi.exe' -Destination '.\artifacts\'
           if (Test-Path '.\lang') { Copy-Item '.\lang' -Destination '.\artifacts\lang' -Recurse }
           & 'C:\Program Files\7-Zip\7z.exe' a -tzip 'Trndi-windows-x64.zip' .\artifacts\* | Out-Null
 
-      # ===================== UPLOAD =====================
+      # ===================== UPLOAD ARTIFACTS =====================
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -215,7 +220,6 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Get numeric latest tag (strip 'v'), increment
           LAST_TAG=$(gh release list --limit 100 | awk '{print $1}' | grep '^v[0-9]\+$' | sed 's/^v//' | sort -n | tail -1)
           if [ -z "$LAST_TAG" ]; then
             NEXT_TAG=1
@@ -227,6 +231,7 @@ jobs:
       - name: Create or update GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ env.TAG }}
         run: |
           cat > RELEASE_NOTES.md <<EOF
           # Trndi Release ${TAG}
