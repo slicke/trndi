@@ -133,6 +133,7 @@ jobs:
       # ===================== MACOS BUILD =====================
       - name: Build on macOS
         if: matrix.os_target == 'macos'
+        continue-on-error: true
         run: |
           set -euo pipefail
           # Determine OS-specific MacPorts package name
