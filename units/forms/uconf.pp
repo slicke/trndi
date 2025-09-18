@@ -246,7 +246,7 @@ implementation
 
 procedure Showmessage(const str: string);
 begin
-  UXMessage(uxdBig, sSuccTitle, str, uxmtInformation);
+  UXMessage(uxdAuto, sSuccTitle, str, uxmtInformation);
 end;
 
 function ExtractLangCode(const AText: string): string;
