@@ -68,6 +68,7 @@ jobs:
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
+    . . .
       matrix:
         include:
           # -------- Linux AMD64 --------
@@ -278,13 +279,13 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          shopt -s nullglob
+          shopt -s nullglob globstar
 
           TAG="build-${{ needs.version.outputs.build_number }}"
           TITLE="Trndi build ${{ needs.version.outputs.build_number }}"
           echo "Publishing release $TAG"
 
-          # Build release notes dynamically from actual artifact filenames
+          # Build release notes dynamically from actual artifact filenames (with descriptions)
           {
             echo "# Trndi Release ${TAG}"
             echo
@@ -294,24 +295,40 @@ jobs:
             # Linux amd64
             echo "### Linux (amd64 / x86_64)"
             echo "Linux computers running on amd64 processors (Extensions supported)"
-            for f in ./release-files/linux-amd64-build/*.zip; do echo "- $(basename "$f")"; done
-            for f in ./release-files/linux-amd64-build/*.deb; do echo "- $(basename "$f")"; done
-            for f in ./release-files/linux-amd64-build/*.rpm; do echo "- $(basename "$f")"; done
+            for f in ./release-files/linux-amd64-build/*.zip; do
+              echo "- $(basename "$f") — Portable binary + languages"
+            done
+            for f in ./release-files/linux-amd64-build/**/*.deb; do
+              echo "- $(basename "$f") — Ubuntu/Debian installer (amd64)"
+            done
+            for f in ./release-files/linux-amd64-build/**/*.rpm; do
+              echo "- $(basename "$f") — Fedora/OpenSUSE installer (x86_64)"
+            done
             echo
 
             # Linux arm64
             echo "### Linux (arm64 / aarch64)"
             echo "Linux computers running on arm64 processors, including Raspberry Pi"
-            for f in ./release-files/linux-arm64-build/*.zip; do echo "- $(basename "$f")"; done
-            for f in ./release-files/linux-arm64-build/*.deb; do echo "- $(basename "$f")"; done
-            for f in ./release-files/linux-arm64-build/*.rpm; do echo "- $(basename "$f")"; done
+            for f in ./release-files/linux-arm64-build/*.zip; do
+              echo "- $(basename "$f") — Portable binary + languages"
+            done
+            for f in ./release-files/linux-arm64-build/**/*.deb; do
+              echo "- $(basename "$f") — Ubuntu/Debian installer (arm64)"
+            done
+            for f in ./release-files/linux-arm64-build/**/*.rpm; do
+              echo "- $(basename "$f") — Fedora/OpenSUSE installer (aarch64)"
+            done
             echo
 
             # macOS Apple Silicon
             echo "### macOS (Apple Silicon)"
             echo "macOS computers with Apple processors"
-            for f in ./release-files/macos-arm64-build/*.zip; do echo "- $(basename "$f")"; done
-            for f in ./release-files/macos-arm64-build/*.dmg; do echo "- $(basename "$f")"; done
+            for f in ./release-files/macos-arm64-build/*.zip; do
+              echo "- $(basename "$f") — Portable binary + languages"
+            done
+            for f in ./release-files/macos-arm64-build/*.dmg; do
+              echo "- $(basename "$f") — Application (\`.app\`) bundle for drag‑and‑drop install"
+            done
             echo
             echo "#### Special requirements for macOS"
             echo "- Unzip / open the file"
@@ -323,7 +340,9 @@ jobs:
             # Windows x64
             echo "### Windows (x64)"
             echo "Windows computers (Extensions supported)"
-            for f in ./release-files/windows-x64-build/*.zip; do echo "- $(basename "$f")"; done
+            for f in ./release-files/windows-x64-build/*.zip; do
+              echo "- $(basename "$f") — Portable binary + languages"
+            done
           } > RELEASE_NOTES.md
 
           # Create release if missing
