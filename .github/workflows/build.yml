@@ -31,27 +31,37 @@ concurrency:
 
 jobs:
   # ===================== DETERMINE VERSION =====================
+  # ===================== DETERMINE VERSION =====================
   version:
     runs-on: ubuntu-latest
     outputs:
       build_number: ${{ steps.setver.outputs.build_number }}
     steps:
+      # Clone repo with full history so we can see all tags
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # get all commits + tags
+
       - name: Determine next release number (start at 100 if none exist)
         id: setver
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Fetch highest numeric v<number> tag from existing releases
-          LAST_TAG=$(gh release list --repo "$GITHUB_REPOSITORY" --limit 100 \
-            | awk '{print $1}' | grep '^v[0-9]\+$' | sed 's/^v//' | sort -n | tail -1)
+          # Fetch all tags from the remote
+          git fetch --tags
 
-          # Start at 100 if no tags found, else increment
-          if [ -z "$LAST_TAG" ]; then
+          # Find the highest existing numeric tag (v<number>)
+          LATEST_TAG=$(git tag --sort=-v:refname \
+            | grep '^v[0-9]\+$' \
+            | head -n 1 \
+            | sed 's/^v//')
+
+          # If no tags found, start at 100; else increment by 1
+          if [ -z "$LATEST_TAG" ]; then
             NEXT_TAG=100
           else
-            NEXT_TAG=$((LAST_TAG + 1))
+            NEXT_TAG=$((LATEST_TAG + 1))
           fi
 
+          # Pass the new build number to other jobs
           echo "build_number=${NEXT_TAG}" >> $GITHUB_OUTPUT
           echo "Next build number: ${NEXT_TAG}"
 
