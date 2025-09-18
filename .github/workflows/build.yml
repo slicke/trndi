@@ -277,43 +277,54 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          set -euo pipefail
+          shopt -s nullglob
+
           TAG="build-${{ needs.version.outputs.build_number }}"
           TITLE="Trndi build ${{ needs.version.outputs.build_number }}"
           echo "Publishing release $TAG"
 
-          # Full detailed release notes
-          cat > RELEASE_NOTES.md <<EOF
-          # Trndi Release ${TAG}
+          # Build release notes dynamically from actual artifact filenames
+          {
+            echo "# Trndi Release ${TAG}"
+            echo
+            echo "> This is an automated build of Trndi's latest source code."
+            echo
 
-          > This is an automated build of Trndi's latest source code.
+            # Linux amd64
+            echo "### Linux (amd64 / x86_64)"
+            echo "Linux computers running on amd64 processors (Extensions supported)"
+            for f in ./release-files/linux-amd64-build/*.zip; do echo "- $(basename "$f")"; done
+            for f in ./release-files/linux-amd64-build/*.deb; do echo "- $(basename "$f")"; done
+            for f in ./release-files/linux-amd64-build/*.rpm; do echo "- $(basename "$f")"; done
+            echo
 
-          ### Linux (amd64 / x86_64)
-          Linux computers running on amd64 processors (Extensions supported)  
-          - **Trndi-linux-amd64.zip** — Portable binary + languages
-          - **trndi_*.deb** — Ubuntu/Debian installer (amd64)
-          - **trndi-*.rpm** — Fedora/OpenSUSE installer (x86_64)
+            # Linux arm64
+            echo "### Linux (arm64 / aarch64)"
+            echo "Linux computers running on arm64 processors, including Raspberry Pi"
+            for f in ./release-files/linux-arm64-build/*.zip; do echo "- $(basename "$f")"; done
+            for f in ./release-files/linux-arm64-build/*.deb; do echo "- $(basename "$f")"; done
+            for f in ./release-files/linux-arm64-build/*.rpm; do echo "- $(basename "$f")"; done
+            echo
 
-          ### Linux (arm64 / aarch64)
-          Linux computers running on arm64 processors, including Raspberry Pi  
-          - **Trndi-linux-arm64.zip** — Portable binary + languages
-          - **trndi_*.deb** — Ubuntu/Debian installer (arm64)
-          - **trndi-*.rpm** — Fedora/OpenSUSE installer (aarch64)
+            # macOS Apple Silicon
+            echo "### macOS (Apple Silicon)"
+            echo "macOS computers with Apple processors"
+            for f in ./release-files/macos-arm64-build/*.zip; do echo "- $(basename "$f")"; done
+            for f in ./release-files/macos-arm64-build/*.dmg; do echo "- $(basename "$f")"; done
+            echo
+            echo "#### Special requirements for macOS"
+            echo "- Unzip / open the file"
+            echo "- In Terminal, run: \`xattr -c /path/to/Trndi\` (or \`.app\` bundle)"
+            echo "- Replace \`/path/to/...\` with the actual path"
+            echo "- Now you can launch normally"
+            echo
 
-          ### macOS (Apple Silicon)
-          macOS computers with Apple processors  
-          - **Trndi-macos-silicon.zip** — Portable binary + languages
-          - **Trndi-macos-silicon.dmg** — Application (\`.app\`) bundle for drag‑and‑drop install  
-
-          #### Special requirements for macOS
-          - Unzip / open the file
-          - In Terminal, run: \`xattr -c /path/to/Trndi\` (or \`.app\` bundle)
-          - Replace \`/path/to/...\` with the actual path  
-          - Now you can launch normally
-
-          ### Windows (x64)
-          Windows computers (Extensions supported)  
-          - **Trndi-windows-x64.zip** — Portable binary + languages
-          EOF
+            # Windows x64
+            echo "### Windows (x64)"
+            echo "Windows computers (Extensions supported)"
+            for f in ./release-files/windows-x64-build/*.zip; do echo "- $(basename "$f")"; done
+          } > RELEASE_NOTES.md
 
           # Create release if missing
           if ! gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
