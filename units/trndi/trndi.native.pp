@@ -817,9 +817,84 @@ begin
   end;
 end;
 
+procedure EmitUnityLauncherUpdate(const DesktopIdWithDotDesktop, Dict: string);
+var
+  P: TProcess;
+begin
+  P := TProcess.Create(nil);
+  try
+    P.Executable := 'gdbus';
+    P.Options := [poWaitOnExit];
+    P.Parameters.Add('emit');
+    P.Parameters.Add('--session');
+    P.Parameters.Add('--object-path');
+    P.Parameters.Add('/com/canonical/Unity/LauncherEntry');
+    P.Parameters.Add('--signal');
+    P.Parameters.Add('com.canonical.Unity.LauncherEntry.Update');
+    P.Parameters.Add('application://' + DesktopIdWithDotDesktop);
+    P.Parameters.Add(Dict);
+    P.Execute;
+    if P.ExitStatus <> 0 then
+      raise Exception.CreateFmt('gdbus failed (exit %d): %s', [P.ExitStatus, Dict]);
+  finally
+    P.Free;
+  end;
+end;
+
+procedure ClearKDEBadge(const DesktopIdWithDotDesktop: string);
+begin
+  // Safe clear: always include count+progress with explicit types
+  EmitUnityLauncherUpdate(DesktopIdWithDotDesktop,
+    '{''count'': <int32 0>, ''count-visible'': <false>, ''progress'': <0.0>, ''progress-visible'': <false>}');
+end;
+
+procedure SetKDEBadge(const DesktopIdWithDotDesktop: string; const Value: Double);
+var
+  Count: Integer;
+  FracPart: Double;
+  FS: TFormatSettings;
+  Dict: string;
+
+  procedure DictWith(const S: string);
+  begin
+    if Dict = '' then Dict := '{' + S + '}'
+    else Dict := Copy(Dict, 1, Length(Dict)-1) + ', ' + S + '}';
+  end;
+
+begin
+  Count := Trunc(Value);
+  FracPart := Frac(Value);
+
+  FS := DefaultFormatSettings;
+  FS.DecimalSeparator := '.';
+
+  Dict := '';
+  // Always include all keys with explicit types
+  DictWith(Format('''count'': <int32 %d>', [Count]));
+  DictWith('''count-visible'': <true>');
+  if FracPart > 0 then
+  begin
+    DictWith('''progress'': <' + FormatFloat('0.###', FracPart, FS) + '>');
+    DictWith('''progress-visible'': <true>');
+  end
+  else
+  begin
+    DictWith('''progress'': <0.0>');
+    DictWith('''progress-visible'': <false>');
+  end;
+
+  EmitUnityLauncherUpdate(DesktopIdWithDotDesktop, Dict);
+end;
+
 procedure TrndiNative.SetBadge(const Value: string; BadgeColor: TColor;
                        badge_size_ratio: double = 0.8; min_font_size: integer = 8);
+var
+  f: double;
 begin
+  f := 0.0;
+  TryStrToFloat(value, f);
+  ClearKDEBadge('com.slicke.trndi.desktop');
+  SetKDEBadge('com.slicke.trndi.desktop',  f);
   SetTray(value,badgecolor,badge_size_ratio, min_font_size);
 end;
 
