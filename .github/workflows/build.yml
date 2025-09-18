@@ -31,7 +31,6 @@ concurrency:
 
 jobs:
   # ===================== DETERMINE VERSION =====================
-  # ===================== DETERMINE VERSION =====================
   version:
     runs-on: ubuntu-latest
     outputs:
@@ -46,7 +45,7 @@ jobs:
         run: |
           git fetch --tags
 
-          # Look for the highest tag of the form "Trndi build <number>"
+          # Look for the highest tag of the form "build-<number>"
           LATEST_TAG=$(git tag --sort=-v:refname \
             | grep -E '^build-[0-9]+$' \
             | sed 's/^build-//' \
@@ -68,7 +67,6 @@ jobs:
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
-    . . .
       matrix:
         include:
           # -------- Linux AMD64 --------
@@ -337,7 +335,7 @@ jobs:
             echo "- Now you can launch normally"
             echo
 
-            # Windows x64
+            # Windows (x64)
             echo "### Windows (x64)"
             echo "Windows computers (Extensions supported)"
             for f in ./release-files/windows-x64-build/*.zip; do
