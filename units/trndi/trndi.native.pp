@@ -41,7 +41,7 @@ SimpleDarkMode
 Windows, Registry, Dialogs, StrUtils, winhttpclient, shellapi, comobj,
 Forms, variants
 {$ELSEIF DEFINED(X_PC)},
-fphttpclient, openssl, opensslsockets, IniFiles, Dialogs, extctrls, forms, math, LCLIntf
+fphttpclient, openssl, opensslsockets, IniFiles, Dialogs, extctrls, forms, math, LCLIntf, KDEBadge
 {$ENDIF}
 {$IFDEF LCLQt6}//,
 //qt6, qtwidgets, forms, QtWSForms, QtWSComCtrls
@@ -70,7 +70,7 @@ private
   function buildKey(const key: string; global: boolean): string;
   procedure updateLocale(const l: TFormatSettings);
 public
-
+  noFree: boolean;
   class var touchOverride: TTrndiBool;
     // Indicates if the user system is in a "dark mode" theme
   dark: boolean;
@@ -97,13 +97,14 @@ public
   function GetFloatSetting(const keyname: string; def: single = -1): single;
 
   function GetBoolSetting(const keyname: string; def: boolean = false): boolean;
+  procedure ReloadSettings;
   class function isDarkMode: boolean;
   class function DetectTouchScreen(out multi: boolean): boolean;
   class function HasTouchScreen(out multi: boolean): boolean;
   class function HasTouchScreen: boolean;
   class function getURL(const url: string; out res: string): boolean; static;
 
-    // Constructor/Destructor
+  // Constructor/Destructor
   destructor Destroy; override;
   procedure start;
   procedure done;
@@ -119,6 +120,10 @@ public
     class function setDarkMode: boolean;
   {$else}
     class function setDarkMode: boolean;
+  {$endif}
+  {$ifdef X_PC}
+  procedure SetTray(const Value: string; BadgeColor: TColor;
+                       badge_size_ratio: double = 0.8; min_font_size: integer = 8);
   {$endif}
   class function GetOSLanguage: string;
   class function HasDangerousChars(const FileName: string): Boolean;
@@ -662,8 +667,7 @@ end;
 {$ENDIF}
 
 {$ifdef X_PC}
-{$ifdef X_PC}
-procedure TrndiNative.SetBadge(const Value: string; BadgeColor: TColor;
+procedure TrndiNative.SetTray(const Value: string; BadgeColor: TColor;
                        badge_size_ratio: double = 0.8; min_font_size: integer = 8);
 const
   INITIAL_FONT_SIZE_RATIO = 0.5;
@@ -812,7 +816,19 @@ begin
     BaseIcon.Free;
   end;
 end;
-{$endif}
+
+procedure TrndiNative.SetBadge(const Value: string; BadgeColor: TColor;
+                       badge_size_ratio: double = 0.8; min_font_size: integer = 8);
+var
+  f: double;
+begin
+  f := 0.0;
+  TryStrToFloat(value, f);
+  ClearBadge;
+  KDEBadge.SetBadge(f);
+  SetTray(value,badgecolor,badge_size_ratio, min_font_size);
+end;
+
 {$endif}
 
 {$IFDEF DARWIN}
@@ -900,6 +916,11 @@ begin
     inistore.Free;
   if assigned(tray) then
     tray.free;
+
+  if not noFree then begin
+    ClearBadge;              // leave panel clean
+    ShutdownBadge;
+   end;
   {$ENDIF}
   inherited Destroy;
 end;
@@ -1094,6 +1115,11 @@ begin
   if touchOverride = tbUnset then
      touchOverride := tbUnknown;
   cfguser := '';
+  nofree := true;
+  {$ifdef X_PC}
+    if KDEBadge.GDesktopId = '' then
+      InitializeBadge('com.slicke.trndi.desktop', 150, nil);
+  {$endif}
 end;
 
   {$IFDEF X_WIN}
@@ -1807,6 +1833,10 @@ begin
   SetPrefString(key, val); // macOS-based method
 end;
 
+procedure TrndiNative.ReloadSettings;
+begin
+
+end;
 
 {$ELSEIF DEFINED(X_WIN)}
 procedure TrndiNative.SetSetting(const keyname: string; const val: string; global: boolean = false);
@@ -1828,7 +1858,18 @@ begin
   end;
 end;
 
+procedure TrndiNative.ReloadSettings;
+begin
+
+end;
+
 {$ELSEIF DEFINED(X_PC)}
+procedure TrndiNative.ReloadSettings;
+begin
+  FreeAndNil(inistore);
+  inistore := TIniFile.Create(GetAppConfigFile(false));
+end;
+
 procedure TrndiNative.SetSetting(const keyname: string; const val: string; global: boolean = false);
 var
   key: string;

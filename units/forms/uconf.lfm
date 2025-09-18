@@ -9,15 +9,16 @@ object fConf: TfConf
   ClientWidth = 525
   Position = poDesktopCenter
   OnCreate = FormCreate
+  OnDestroy = FormDestroy
   OnResize = FormResize
   object pcMain: TPageControl
     Left = 0
     Height = 479
     Top = 0
     Width = 525
-    ActivePage = tsCustom
+    ActivePage = tsDisplay
     Align = alClient
-    TabIndex = 3
+    TabIndex = 2
     TabOrder = 0
     OnChange = pcMainChange
     object tsGeneral: TTabSheet
@@ -10424,6 +10425,8 @@ object fConf: TfConf
         EchoMode = emPassword
         PasswordChar = '*'
         TabOrder = 4
+        OnEnter = ePassEnter
+        OnExit = ePassExit
       end
       object lPass: TLabel
         Left = 15
@@ -10684,7 +10687,7 @@ object fConf: TfConf
           Caption = '100 min'
           Color = clWhite
           Font.Color = clBlack
-          Font.Height = 40
+          Font.Height = 32
           OptimalFill = True
           ParentColor = False
           ParentFont = False
@@ -11044,18 +11047,20 @@ object fConf: TfConf
       ClientWidth = 519
       object lbUsers: TListBox
         Left = 10
-        Height = 218
-        Top = 47
+        Height = 234
+        Top = 31
         Width = 499
         Align = alClient
         BorderSpacing.Around = 10
         ItemHeight = 0
         TabOrder = 0
         TopIndex = -1
+        OnEnter = lbUsersEnter
+        OnSelectionChange = lbUsersSelectionChange
       end
-      object Label2: TLabel
+      object lUserTrack: TLabel
         Left = 15
-        Height = 32
+        Height = 16
         Top = 5
         Width = 489
         Align = alTop
@@ -11063,7 +11068,7 @@ object fConf: TfConf
         BorderSpacing.Left = 10
         BorderSpacing.Right = 10
         BorderSpacing.Around = 5
-        Caption = 'Add users below, if you wish to track more than one person.'#13#10'You need to start Trndi separately for each user (and select them)'
+        Caption = 'Add users below, if you wish to track more than one person.'
       end
       object gbMulti: TGroupBox
         Left = 10
@@ -11086,15 +11091,6 @@ object fConf: TfConf
           ButtonColorSize = 16
           ButtonColor = clBlack
           Caption = 'Account color'
-        end
-        object lCurrentAcc: TLabel
-          Left = 16
-          Height = 16
-          Top = 0
-          Width = 245
-          Caption = 'This only applies for the current loaded account'
-          Font.Style = [fsItalic]
-          ParentFont = False
         end
         object Label5: TLabel
           Left = 16
@@ -11119,6 +11115,22 @@ object fConf: TfConf
           Width = 128
           TabOrder = 0
         end
+        object btUserSave: TButton
+          Left = 376
+          Height = 25
+          Top = 27
+          Width = 112
+          Caption = 'Save'
+          TabOrder = 1
+          OnClick = btUserSaveClick
+        end
+        object lUserName: TLabel
+          Left = 16
+          Height = 16
+          Top = 0
+          Width = 29
+          Caption = 'User:'
+        end
       end
       object Panel1: TPanel
         Left = 0
@@ -11130,19 +11142,6 @@ object fConf: TfConf
         ClientHeight = 48
         ClientWidth = 519
         TabOrder = 2
-        object Label1: TLabel
-          Left = 10
-          Height = 30
-          Top = 0
-          Width = 349
-          Align = alClient
-          Alignment = taCenter
-          BorderSpacing.Left = 10
-          Caption = 'There''s always a defualt user account'
-          Constraints.MaxHeight = 30
-          Font.Style = [fsItalic]
-          ParentFont = False
-        end
         object bRemove: TButton
           Left = 359
           Height = 30
