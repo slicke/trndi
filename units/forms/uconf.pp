@@ -565,6 +565,7 @@ begin
         Exit;
       end;
     lbUsers.AddItem(s, nil);
+    lbUsers.Enabled := true;
   end;
 end;
 
@@ -582,6 +583,10 @@ procedure TfConf.bRemoveClick(Sender:TObject);
 begin
 if lbUsers.ItemIndex > -1 then
   lbUsers.DeleteSelected;
+if lbUsers.Items.Count <= 1 then begin
+  lbUsers.Enabled := false;
+  gbMulti.Enabled := false;
+end;
 end;
 
 procedure TfConf.bSysNoticeClick(Sender: TObject);

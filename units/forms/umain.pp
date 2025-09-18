@@ -921,8 +921,14 @@ begin
 
           native.configUser :=  username;
         end
-        else
+        else begin
           username := '';
+          s :=  native.GetSetting('user.nick', '');
+          if s = '' then
+            s := RS_DEFAULT_ACCOUNT;
+
+          fbg.Caption := Format(RS_USER_CAPTION, [s, fBG.Caption]);
+        end;
       end;// Load possible other users
       multi := true;
       pnMultiUser.Color := native.GetColorSetting('user.color', clBlack);
@@ -2000,6 +2006,9 @@ var
       s := GetRootSetting('users.names', '');
       lbUsers.Clear;
       lbUsers.Items.CommaText := s;
+      if lbUsers.Items.Count < 1 then
+        lbUsers.Enabled := false;
+
       lbUsers.Items.Add('- ' +RS_DEFAULT_ACCOUNT + ' -');
 
       // Load position settings
