@@ -7,6 +7,24 @@ on:
     branches: [ main ]
   workflow_dispatch: {}
 
+# ---------------------------------------------------------------------------------
+# WORKFLOW OVERVIEW
+# ---------------------------------------------------------------------------------
+# 1. "version" job determines the next build number starting at 100 if no releases exist.
+#    This number is used for both the GitHub release tag and Linux package versions.
+#
+# 2. "build" job runs in a matrix to build:
+#    - Linux (amd64, arm64)
+#    - macOS (arm64)
+#    - Windows (x64)
+#    Each platform produces its own artifact (.zip, .deb/.rpm for Linux, .dmg for macOS)
+#
+# 3. "publish" job runs regardless of build outcome ("if: always()").
+#    - Downloads all artifacts
+#    - Uses "find -type f" to upload only files to the release (avoids directory errors)
+#    - Updates or creates the GitHub release with the unified version number
+# ---------------------------------------------------------------------------------
+
 concurrency:
   group: trndi-build-${{ github.ref }}
   cancel-in-progress: false
@@ -23,13 +41,17 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # Fetch highest numeric v<number> tag from existing releases
           LAST_TAG=$(gh release list --repo "$GITHUB_REPOSITORY" --limit 100 \
             | awk '{print $1}' | grep '^v[0-9]\+$' | sed 's/^v//' | sort -n | tail -1)
+
+          # Start at 100 if no tags found, else increment
           if [ -z "$LAST_TAG" ]; then
             NEXT_TAG=100
           else
             NEXT_TAG=$((LAST_TAG + 1))
           fi
+
           echo "build_number=${NEXT_TAG}" >> $GITHUB_OUTPUT
           echo "Next build number: ${NEXT_TAG}"
 
@@ -42,7 +64,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # -------- Linux AMD64 --------
           - name: linux-amd64
+            upload_name: linux-amd64-build
             os_target: linux
             arch: amd64
             runner: ubuntu-latest
@@ -58,7 +82,9 @@ jobs:
             build_mode: "Extensions (Release)"
             project_file: "Trndi.lpr"
 
+          # -------- Linux ARM64 --------
           - name: linux-arm64
+            upload_name: linux-arm64-build
             os_target: linux
             arch: arm64
             runner: ubuntu-24.04-arm
@@ -74,12 +100,16 @@ jobs:
             build_mode: "No Ext (Release)"
             project_file: "Trndi.lpi"
 
+          # -------- macOS ARM64 --------
           - name: macos-arm64
+            upload_name: macos-arm64-build
             os_target: macos
             arch: arm64
             runner: macos-14
 
+          # -------- Windows x64 --------
           - name: windows-x64
+            upload_name: windows-x64-build
             os_target: windows
             arch: x64
             runner: windows-latest
@@ -87,39 +117,46 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # -------- LINUX BUILDER --------
+      # ===================== LINUX BUILDER =====================
       - name: Build on Linux
         if: matrix.os_target == 'linux'
         run: |
           set -euo pipefail
+          # Install Qt6 build toolchain
           sudo apt-get update
           sudo apt-get install -y p7zip-full build-essential wget curl git cmake ninja-build pkg-config qt6-base-dev qt6-tools-dev qt6-base-dev-tools
+
           # Install Lazarus + FPC
           curl -fsSL -o fpc-laz.deb "${{ matrix.fpc_laz_url }}"
           curl -fsSL -o fpc-src.deb "${{ matrix.fpc_src_url }}"
           curl -fsSL -o lazarus.deb "${{ matrix.laz_url }}"
           sudo dpkg -i fpc-laz.deb fpc-src.deb lazarus.deb || true
           sudo apt-get -f install -y
+
           # Install Qt6Pas bindings
           BASE_RELEASE="https://github.com/davidbannon/libqt6pas/releases/download/v6.2.10"
           curl -fL -o "${{ matrix.qt6pas_deb }}" "${BASE_RELEASE}/${{ matrix.qt6pas_deb }}"
           curl -fL -o "${{ matrix.qt6pas_dev_deb }}" "${BASE_RELEASE}/${{ matrix.qt6pas_dev_deb }}"
           sudo apt-get install -y "./${{ matrix.qt6pas_deb }}" "./${{ matrix.qt6pas_dev_deb }}"
-          # Static libs + sources
+
+          # Fetch static mORMot2 libs
           mkdir -p ./static
           curl -fsSL -o mormot2static.7z 'https://github.com/synopse/mORMot2/releases/download/2.3.stable/mormot2static.7z'
           7z x mormot2static.7z -o./static -y >/dev/null
           git clone https://github.com/synopse/mORMot2.git externals/mORMot2
           cp -r ./static/${{ matrix.qt6_arch_folder }}/* .
+
           # Build Trndi
           lazbuild externals/mORMot2/packages/lazarus/mormot2.lpk
           lazbuild --widgetset=qt6 --build-mode="${{ matrix.build_mode }}" ${{ matrix.cpu_flag }} ${{ matrix.project_file }}
-          # Create portable ZIP
+
+          # Package portable ZIP (no PNG icon inside)
           mkdir -p artifacts
           cp Trndi artifacts/
           [ -d "lang" ] && cp -r lang artifacts/
           7z a -tzip Trndi-linux-${{ matrix.arch }}.zip ./artifacts/* >/dev/null
-          # Create DEB & RPM using release build number
+
+          # Create DEB & RPM installers (with icon inside system paths)
           sudo apt-get install -y ruby ruby-dev build-essential rpm
           sudo gem install --no-document fpm
           PKG_DIR="pkgroot"
@@ -141,33 +178,38 @@ jobs:
           mv trndi_*${{ matrix.deb_arch }}.deb artifacts/
           mv trndi-*.${{ matrix.rpm_arch }}.rpm artifacts/
 
-      # -------- MACOS BUILDER --------
+      # ===================== MACOS BUILDER =====================
       - name: Build on macOS
         if: matrix.os_target == 'macos'
         run: |
           set -euo pipefail
+          # Determine correct MacPorts pkg for OS
           OSMAJOR="$(sw_vers -productVersion | cut -d. -f1)"
           case "$OSMAJOR" in
             14) OSNAME="14-Sonoma" ;;
             13) OSNAME="13-Ventura" ;;
             12) OSNAME="12-Monterey" ;;
             11) OSNAME="11-BigSur" ;;
-            *) echo "Unsupported macOS major version: ${OSMAJOR}" >&2; exit 1 ;;
+            *) echo "Unsupported macOS version: ${OSMAJOR}" >&2; exit 1 ;;
           esac
+          # Fetch MacPorts installer directly from official site
           PKG_URL="$(curl -fsSL https://www.macports.org/install.php | grep -Eo "https://[^\"[:space:]]*MacPorts-[0-9.]+-${OSNAME}\.pkg" | head -n1 || true)"
-          [ -n "$PKG_URL" ] || { echo "Failed to resolve MacPorts pkg URL for ${OSNAME}." >&2; exit 1; }
+          [ -n "$PKG_URL" ] || { echo "Failed to resolve MacPorts pkg URL" >&2; exit 1; }
           curl -fsSL -o MacPorts.pkg "$PKG_URL"
           sudo installer -pkg MacPorts.pkg -target /
           export PATH="/opt/local/bin:/opt/local/sbin:$PATH"
           sudo port -v selfupdate
           sudo port -N install fpc lazarus p7zip create-dmg
+          # Prepare static libs + sources
           curl -fsSL -o mormot2static.7z 'https://github.com/synopse/mORMot2/releases/download/2.3.stable/mormot2static.7z'
           mkdir -p ./static
           7z x mormot2static.7z -o./static -y >/dev/null
           git clone https://github.com/synopse/mORMot2.git externals/mORMot2
           cp -r ./static/aarch64-darwin/* .
+          # Build Trndi
           lazbuild externals/mORMot2/packages/lazarus/mormot2.lpk
           lazbuild --build-mode="No Ext (Release)" --ws=cocoa --cpu=aarch64 --os=darwin Trndi.lpi
+          # Package zip & dmg
           mkdir -p artifacts
           cp Trndi artifacts/
           [ -d "lang" ] && cp -r lang artifacts/
@@ -177,31 +219,37 @@ jobs:
           (cd dist && ./macos.sh)
           mv dist/Trndi.dmg Trndi-macos-silicon.dmg
 
-      # -------- WINDOWS BUILDER --------
+      # ===================== WINDOWS BUILDER =====================
       - name: Build on Windows
         if: matrix.os_target == 'windows'
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
+          # Install curl (real) and 7-Zip via Chocolatey
           choco install curl 7zip -y
+          # Download Lazarus installer via curl
           curl -L --fail -o lazarus-4.2.exe "https://sourceforge.net/projects/lazarus/files/Lazarus%20Windows%2064%20bits/Lazarus%204.2/lazarus-4.2-fpc-3.2.2-win64.exe/download"
           Start-Process '.\lazarus-4.2.exe' -ArgumentList '/VERYSILENT','/SP-','/NORESTART','/DIR=C:\Lazarus' -Wait
+          # Prepare static libs & sources
           New-Item -ItemType Directory -Path .\static -Force | Out-Null
           curl -L --fail -o mormot2static.7z "https://github.com/synopse/mORMot2/releases/download/2.3.stable/mormot2static.7z"
           & 'C:\Program Files\7-Zip\7z.exe' x '.\mormot2static.7z' -o'.\static' -y | Out-Null
           git clone https://github.com/synopse/mORMot2.git externals/mORMot2
           xcopy .\static\x86_64-win64\*.* . /Y /E /I | Out-Null
+          # Build Trndi.exe
           & 'C:\Lazarus\lazbuild.exe' 'externals\mORMot2\packages\lazarus\mormot2.lpk'
           & 'C:\Lazarus\lazbuild.exe' --lazarusdir='C:\Lazarus' --build-mode='Extensions (Release)' 'Trndi.lpi'
+          # Package ZIP
           New-Item -ItemType Directory -Path artifacts -Force | Out-Null
           Copy-Item '.\Trndi.exe' -Destination '.\artifacts\'
           if (Test-Path '.\lang') { Copy-Item '.\lang' -Destination '.\artifacts\lang' -Recurse }
           & 'C:\Program Files\7-Zip\7z.exe' a -tzip 'Trndi-windows-x64.zip' .\artifacts\* | Out-Null
 
-      - name: Upload artifacts
+      # ===================== UPLOAD ARTIFACTS =====================
+      - name: Upload Actions artifact
         uses: actions/upload-artifact@v4
         with:
-          name: build-${{ matrix.name }}
+          name: ${{ matrix.upload_name }}
           path: |
             *.zip
             *.dmg
@@ -218,7 +266,6 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           path: ./release-files
-          merge-multiple: true
 
       - name: Create or update GitHub Release
         env:
@@ -226,31 +273,45 @@ jobs:
         run: |
           TAG="v${{ needs.version.outputs.build_number }}"
           echo "Publishing release $TAG"
+
+          # Full detailed release notes
           cat > RELEASE_NOTES.md <<EOF
           # Trndi Release ${TAG}
 
           > This is an automated build of Trndi's latest source code.
 
           ### Linux (amd64 / x86_64)
-          - **Trndi-linux-amd64.zip** — Portable binary + languages  
-          - **trndi_*.deb** — Ubuntu/Debian installer (amd64)  
+          Linux computers running on amd64 processors (Extensions supported)  
+          - **Trndi-linux-amd64.zip** — Portable binary + languages
+          - **trndi_*.deb** — Ubuntu/Debian installer (amd64)
           - **trndi-*.rpm** — Fedora/OpenSUSE installer (x86_64)
 
           ### Linux (arm64 / aarch64)
-          - **Trndi-linux-arm64.zip** — Portable binary + languages  
-          - **trndi_*.deb** — Ubuntu/Debian installer (arm64)  
+          Linux computers running on arm64 processors, including Raspberry Pi  
+          - **Trndi-linux-arm64.zip** — Portable binary + languages
+          - **trndi_*.deb** — Ubuntu/Debian installer (arm64)
           - **trndi-*.rpm** — Fedora/OpenSUSE installer (aarch64)
 
           ### macOS (Apple Silicon)
-          - **Trndi-macos-silicon.zip** — Portable binary + languages  
-          - **Trndi-macos-silicon.dmg** — App bundle for /Applications
+          macOS computers with Apple processors  
+          - **Trndi-macos-silicon.zip** — Portable binary + languages
+          - **Trndi-macos-silicon.dmg** — Application (.app) bundle for drag‑and‑drop install  
+
+          #### Special requirements for macOS
+          - Unzip / open the file
+          - In Terminal, run: \`xattr -c /path/to/Trndi\` (or `.app` bundle)
+          - Replace \`/path/to/...\` with the actual path  
+          - Now you can launch normally
 
           ### Windows (x64)
+          Windows computers (Extensions supported)  
           - **Trndi-windows-x64.zip** — Portable binary + languages
           EOF
 
+          # Create release if missing
           if ! gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             gh release create "$TAG" --title "Trndi ${TAG}" --notes-file RELEASE_NOTES.md --repo "$GITHUB_REPOSITORY"
           fi
 
-          gh release upload "$TAG" ./release-files/* --clobber --repo "$GITHUB_REPOSITORY"
+          # Upload all files from all artifacts (files only, no directories)
+          find ./release-files -type f -print0 | xargs -0 gh release upload "$TAG" --clobber --repo "$GITHUB_REPOSITORY"
