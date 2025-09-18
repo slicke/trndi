@@ -62,13 +62,14 @@ procedure ClearBadge;                               // hides both
 // Advanced: send prebuilt dict safely through the same pipeline
 procedure EmitRawDict(const Dict: string);
 
+var
+    GDesktopId: string = '';
 implementation
 
 uses
   Process, SyncObjs;
 
 var
-  GDesktopId: string = '';
   GDebounceMs: QWord = 150;
   GLog: TBadgeLogProc = nil;
 
