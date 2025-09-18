@@ -38,7 +38,7 @@
 
 unit umain;
 
-{$I inc/native.inc}
+{$I ../../inc/native.inc}
 
 {$ifdef Darwin}
   {$modeswitch objectivec1}
@@ -385,7 +385,7 @@ IsRaspberry: boolean;
 implementation
 
 {$R *.lfm}
-{$I inc/tfuncs.inc}
+{$I ../../inc/tfuncs.inc}
 
 
 procedure ApplyRoundedCorners(APanel: TPanel; Radius: Integer);
@@ -921,13 +921,17 @@ begin
 
           native.configUser :=  username;
         end
-        else
+        else begin
           username := '';
+          s :=  native.GetSetting('user.nick', '');
+          if s = '' then
+            s := RS_DEFAULT_ACCOUNT;
+
+          fbg.Caption := Format(RS_USER_CAPTION, [s, fBG.Caption]);
+        end;
       end;// Load possible other users
       multi := true;
-      s := native.GetSetting('user.color');
-      if s <> '' then
-        pnMultiUser.Color := StringToColor(s);
+      pnMultiUser.Color := native.GetColorSetting('user.color', clBlack);
       if pnMultiUser.Color <> clBlack then
         pnMultiUser.Visible := true;
     end
@@ -1881,7 +1885,7 @@ if i > 0 then begin
 
   showmessage(TimeToStr(b.date), Format(RS_HISTORY_ITEM, [
                      b.format(un, BG_MSG_SHORT, BGPrimary),
-                     b.format(un, BG_MSG_SHORT, BGDelta),
+                     b.format(un, BG_MSG_SIG_SHORT, BGDelta),
                      b.trend.Img,
                      rssi,
                      noise,
@@ -1915,7 +1919,6 @@ begin
   BorderStyle := bsSizeToolWin;
   {$endif}
 
-  native := TrndiNative.Create;
   if native.isDarkMode then
      native.setDarkMode{$ifdef windows}(self.Handle){$endif};
 end;
@@ -2000,19 +2003,12 @@ var
 
       // User customizations
       s := GetRootSetting('users.names', '');
+      lbUsers.Clear;
       lbUsers.Items.CommaText := s;
-      gbMulti.Enabled := s <> '';
-      if s = '' then
-        lCurrentAcc.Caption := RS_CURRENT_ACC_NO
-      else if username = '' then
-        lCurrentAcc.Caption := RS_CURRENT_ACC_DEF
-      else
-        lCurrentAcc.Caption := Format(RS_CURRENT_ACC, [TrimRightSet(username, ['_'])]);
+      if lbUsers.Items.Count < 1 then
+        lbUsers.Enabled := false;
 
-      edNick.Text := GetSetting('user.nick', '');
-      s := GetSetting('user.color');
-      if s <> '' then
-        cbUser.ButtonColor := StringToColor(s);
+      lbUsers.Items.Add('- ' +RS_DEFAULT_ACCOUNT + ' -');
 
       // Load position settings
 posValue := native.GetIntSetting('position.main', Ord(tpoCenter));
@@ -2125,6 +2121,7 @@ if cbPos.ItemIndex = -1 then
   procedure SaveUserSettings(f: TfConf);
   var
     s: String;
+    i: integer;
   begin
     with f, native do
     begin
@@ -2135,16 +2132,16 @@ if cbPos.ItemIndex = -1 then
       SetSetting('locale', s);
       native.SetSetting('position.main', IntToStr(cbPos.ItemIndex));
       native.setBoolSetting('size.main', cbSize.Checked);
-      SetSetting('user.color', ColorToString(cbUser.ButtonColor));
-      SetSetting('user.nick', edNick.Text);
+
+      for i := lbUsers.Items.Count-1 downto 0 do
+        if lbUsers.items[i][1] = '-' then
+          lbUsers.items.Delete(i);
 
       // Handle user list changes
       if lbUsers.Count > 0 then
         SetSetting('users.names', lbUsers.Items.CommaText)
       else
         SetSetting('users.names', '');
-      if lbUsers.Count < lastUsers then
-        ShowMessage(RS_REMOVE_ACC);
 
       // Save remote and override settings
       SetSetting('remote.type', cbSys.Text);
@@ -2217,6 +2214,9 @@ begin
 
     // Show dialog
     fConf.ShowModal;
+
+    // Reload settings, needed on X_PC
+    native.ReloadSettings;
 
     // Save settings when dialog closes
     SaveUserSettings(fConf);
