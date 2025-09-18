@@ -1,6 +1,6 @@
 unit TouchDetection;
 
-{$I inc/native.inc}
+{$I ../../inc/native.inc}
 
 interface
 
