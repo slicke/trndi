@@ -37,31 +37,27 @@ jobs:
     outputs:
       build_number: ${{ steps.setver.outputs.build_number }}
     steps:
-      # Clone repo with full history so we can see all tags
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # get all commits + tags
+          fetch-depth: 0
 
-      - name: Determine next release number (start at 100 if none exist)
+      - name: Determine next build number (start at 100 if none exist)
         id: setver
         run: |
-          # Fetch all tags from the remote
           git fetch --tags
 
-          # Find the highest existing numeric tag (v<number>)
+          # Look for the highest tag of the form "Trndi build <number>"
           LATEST_TAG=$(git tag --sort=-v:refname \
-            | grep '^v[0-9]\+$' \
-            | head -n 1 \
-            | sed 's/^v//')
+            | grep -E '^Trndi build [0-9]+$' \
+            | sed 's/^Trndi build //' \
+            | sort -n | tail -1)
 
-          # If no tags found, start at 100; else increment by 1
           if [ -z "$LATEST_TAG" ]; then
             NEXT_TAG=100
           else
             NEXT_TAG=$((LATEST_TAG + 1))
           fi
 
-          # Pass the new build number to other jobs
           echo "build_number=${NEXT_TAG}" >> $GITHUB_OUTPUT
           echo "Next build number: ${NEXT_TAG}"
 
@@ -281,7 +277,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          TAG="v${{ needs.version.outputs.build_number }}"
+          TAG="Trndi build ${{ needs.version.outputs.build_number }}"
           echo "Publishing release $TAG"
 
           # Full detailed release notes
