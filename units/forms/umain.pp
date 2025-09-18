@@ -2143,8 +2143,6 @@ if cbPos.ItemIndex = -1 then
         SetSetting('users.names', lbUsers.Items.CommaText)
       else
         SetSetting('users.names', '');
-      if lbUsers.Count < lastUsers then
-        ShowMessage(RS_REMOVE_ACC);
 
       // Save remote and override settings
       SetSetting('remote.type', cbSys.Text);
