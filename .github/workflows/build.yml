@@ -31,7 +31,6 @@ concurrency:
 
 jobs:
   # ===================== DETERMINE VERSION =====================
-  # ===================== DETERMINE VERSION =====================
   version:
     runs-on: ubuntu-latest
     outputs:
@@ -46,7 +45,7 @@ jobs:
         run: |
           git fetch --tags
 
-          # Look for the highest tag of the form "Trndi build <number>"
+          # Look for the highest tag of the form "build-<number>"
           LATEST_TAG=$(git tag --sort=-v:refname \
             | grep -E '^build-[0-9]+$' \
             | sed 's/^build-//' \
@@ -68,7 +67,6 @@ jobs:
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
-    . . .
       matrix:
         include:
           # -------- Linux AMD64 --------
@@ -173,7 +171,6 @@ jobs:
           mkdir -p "$PKG_DIR/usr/share/pixmaps"
           [ -f "Trndi.png" ] && cp Trndi.png "$PKG_DIR/usr/share/pixmaps/"
           ICON=Trndi
-
           mkdir -p "$PKG_DIR/usr/share/applications"
           echo "[Desktop Entry]
           Name=Trndi
@@ -188,14 +185,7 @@ jobs:
           Exec=/usr/local/trndi/Trndi %U
           Icon=${ICON}
           Type=Application
-          Categories=Utility;
-          DBusActivatable=false" > "$PKG_DIR/usr/share/applications/com.slicke.trndi.desktop"
-
-          # mkdir -p "$PKG_DIR/usr/share/dbus-1/services"
-          # echo "[D-BUS Service]
-          # Name=com.slicke.trndi
-          # Exec=/usr/local/trndi/Trndi --gapplication-service" > "$PKG_DIR/usr/share/dbus-1/services/com.slicke.trndi.service"
-
+          Categories=Utility;" > "$PKG_DIR/usr/share/applications/trndi.desktop"
           fpm -s dir -t deb -n trndi -v 2.1.${{ needs.version.outputs.build_number }} --architecture ${{ matrix.deb_arch }} --license "GPLv3" --description "Trndi CGM Viewer" -C "$PKG_DIR" .
           fpm -s dir -t rpm -n trndi -v 2.1.${{ needs.version.outputs.build_number }} --architecture ${{ matrix.rpm_arch }} --license "GPLv3" --description "Trndi CGM Viewer" -C "$PKG_DIR" .
           mv trndi_*${{ matrix.deb_arch }}.deb artifacts/
@@ -353,7 +343,7 @@ jobs:
             echo "- Now you can launch normally"
             echo
 
-            # Windows x64
+            # Windows (x64)
             echo "### Windows (x64)"
             echo "Windows computers (Extensions supported)"
             for f in ./release-files/windows-x64-build/*.zip; do
