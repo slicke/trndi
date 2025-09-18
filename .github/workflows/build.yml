@@ -235,7 +235,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          LAST_TAG=$(gh release list --limit 100 | awk '{print $1}' | grep '^v[0-9]\+$' | sed 's/^v//' | sort -n | tail -1)
+          LAST_TAG=$(gh release list --repo "$GITHUB_REPOSITORY" --limit 100 | awk '{print $1}' | grep '^v[0-9]\+$' | sed 's/^v//' | sort -n | tail -1)
           if [ -z "$LAST_TAG" ]; then
             NEXT_TAG=1
           else
@@ -271,8 +271,8 @@ jobs:
           - **Trndi-windows-x64.zip** — Portable binary + languages
           EOF
 
-          if ! gh release view "$TAG" >/dev/null 2>&1; then
-            gh release create "$TAG" --title "Trndi ${TAG}" --notes-file RELEASE_NOTES.md
+          if ! gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release create "$TAG" --title "Trndi ${TAG}" --notes-file RELEASE_NOTES.md --repo "$GITHUB_REPOSITORY"
           fi
 
-          gh release upload "$TAG" ./release-files/** --clobber
+          gh release upload "$TAG" ./release-files/** --clobber --repo "$GITHUB_REPOSITORY"
