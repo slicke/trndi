@@ -70,7 +70,7 @@ private
   function buildKey(const key: string; global: boolean): string;
   procedure updateLocale(const l: TFormatSettings);
 public
-
+  noFree: boolean;
   class var touchOverride: TTrndiBool;
     // Indicates if the user system is in a "dark mode" theme
   dark: boolean;
@@ -104,7 +104,7 @@ public
   class function HasTouchScreen: boolean;
   class function getURL(const url: string; out res: string): boolean; static;
 
-    // Constructor/Destructor
+  // Constructor/Destructor
   destructor Destroy; override;
   procedure start;
   procedure done;
@@ -916,6 +916,11 @@ begin
     inistore.Free;
   if assigned(tray) then
     tray.free;
+
+  if not noFree then begin
+    ClearBadge;              // leave panel clean
+    ShutdownBadge;
+   end;
   {$ENDIF}
   inherited Destroy;
 end;
@@ -1110,9 +1115,10 @@ begin
   if touchOverride = tbUnset then
      touchOverride := tbUnknown;
   cfguser := '';
-
+  nofree := true;
   {$ifdef X_PC}
-    InitializeBadge('com.slicke.trndi.desktop', 150, nil);
+    if KDEBadge.GDesktopId = '' then
+      InitializeBadge('com.slicke.trndi.desktop', 150, nil);
   {$endif}
 end;
 

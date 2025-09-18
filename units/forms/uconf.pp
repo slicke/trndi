@@ -617,18 +617,12 @@ end;
 
 procedure TfConf.bTestAnnounceClick(Sender: TObject);
 begin
-  with TrndiNative.Create do begin
-    attention('test');
-    Free;
-  end;
+  tnative.attention('test');
 end;
 
 procedure TfConf.bTestSpeechClick(Sender: TObject);
 begin
-  with TrndiNative.Create do begin
-    speak('test 5.5');
-    Free;
-  end;
+  tnative.speak('test 5.5');
 end;
 
 procedure TfConf.btResetClick(Sender: TObject);
@@ -703,19 +697,18 @@ procedure TfConf.Button3Click(Sender:TObject);
     {$ENDIF}
   end;
 var
-  tn: TrndiNative;
   res, r, rn, pl, s: string;
   rok, pre: boolean;
 begin
   pre := cbCI.Checked;
 
-  tn := TrndiNative.create('Trndi/'+GetProductVersion('2'));
+  //tnative := TrndiNative.create('Trndi/'+GetProductVersion('2'));
   if pre then begin
-    tn.getURL('https://api.github.com/repos/slicke/trndi/releases', res);
+    TrndiNative.getURL('https://api.github.com/repos/slicke/trndi/releases', res);
     rok := HasNewerRelease(res, rn, true);
     pl := GetCurrentPlatform;
   end else begin
-    tn.getURL('https://api.github.com/repos/slicke/trndi/releases/latest', res);
+    TrndiNative.getURL('https://api.github.com/repos/slicke/trndi/releases/latest', res);
     rok := HasNewerRelease(res, rn, false);
     pl := '';
   end;
@@ -734,7 +727,6 @@ begin
        OpenURL(r);
   end else
     ShowMessage(RS_UPTODATE);
-  tn.free;
 end;
 
 procedure TfConf.cbCustChange(Sender:TObject);
@@ -774,6 +766,7 @@ begin
     self.font.size := 10;
   {$endif}
   tnative := TrndiNative.create;
+  tnative.noFree := true;
   if tnative.isDarkMode then
     tnative.setDarkMode{$ifdef windows}(self.Handle){$endif};
 
