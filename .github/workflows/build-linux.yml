@@ -30,6 +30,8 @@ jobs:
             deb_arch: amd64
             rpm_arch: x86_64
             cpu_flag: ""
+            build_mode: "Extensions (Release)"
+            project_file: "Trndi.lpr"
           - arch_name: arm64
             runner: ubuntu-24.04-arm
             fpc_laz_url: "https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20arm64%20DEB/Lazarus%204.2/fpc-laz_3.2.3-240813_arm64.deb/download"
@@ -41,6 +43,8 @@ jobs:
             deb_arch: arm64
             rpm_arch: aarch64
             cpu_flag: "--cpu=aarch64"
+            build_mode: "No Ext (Release)"
+            project_file: "Trndi.lpi"
 
     steps:
       - name: Checkout
@@ -90,14 +94,14 @@ jobs:
       - name: Build (Qt6 widgetset)
         run: |
           lazbuild externals/mORMot2/packages/lazarus/mormot2.lpk
-          lazbuild --widgetset=qt6 --build-mode="Extensions (Release)" ${{ matrix.cpu_flag }} Trndi.lpr
+          lazbuild --widgetset=qt6 --build-mode="${{ matrix.build_mode }}" ${{ matrix.cpu_flag }} ${{ matrix.project_file }}
 
       - name: Package artifact (ZIP without PNG)
         run: |
           mkdir -p artifacts
           cp Trndi artifacts/
           [ -d "lang" ] && cp -r lang artifacts/
-          # no icon in the ZIP
+          # PNG intentionally not included in the ZIP
           7z a -tzip Trndi-linux-${{ matrix.arch_name }}.zip ./artifacts/* >/dev/null
 
       - name: Build DEB and RPM packages with fpm
@@ -155,6 +159,7 @@ jobs:
           SHORT_SHA="${GITHUB_SHA::7}"
           TAG="v${SHORT_SHA}"
 
+          # Prepare consistent Markdown notes (only used if we create the release)
           cat > RELEASE_NOTES.md <<EOF
           # Trndi Release ${TAG}
 
