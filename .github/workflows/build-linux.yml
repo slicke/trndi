@@ -138,9 +138,8 @@ jobs:
           fpm -s dir -t rpm -n trndi -v 2.1.${GITHUB_RUN_NUMBER} --architecture ${{ matrix.rpm_arch }} \
             --description "Trndi application with translations" --license "GPLv3" -C "$PKG_DIR" .
 
-          for f in trndi_*deb; do mv "$f" "${f%.deb}_${{ matrix.deb_arch }}.deb"; done
-          for f in trndi-*rpm; do mv "$f" "${f%.rpm}.${{ matrix.rpm_arch }}.rpm"; done
-          mv trndi_*${{ matrix.deb_arch }}.deb trndi-*.${{ matrix.rpm_arch }}.rpm artifacts/
+          mv trndi_*${{ matrix.deb_arch }}.deb artifacts/
+          mv trndi-*.${{ matrix.rpm_arch }}.rpm artifacts/
 
       - name: Upload Actions artifact
         uses: actions/upload-artifact@v4
