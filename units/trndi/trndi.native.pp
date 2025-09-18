@@ -97,6 +97,7 @@ public
   function GetFloatSetting(const keyname: string; def: single = -1): single;
 
   function GetBoolSetting(const keyname: string; def: boolean = false): boolean;
+  procedure ReloadSettings;
   class function isDarkMode: boolean;
   class function DetectTouchScreen(out multi: boolean): boolean;
   class function HasTouchScreen(out multi: boolean): boolean;
@@ -1876,6 +1877,10 @@ begin
   SetPrefString(key, val); // macOS-based method
 end;
 
+procedure TrndiNative.ReloadSettings;
+begin
+
+end;
 
 {$ELSEIF DEFINED(X_WIN)}
 procedure TrndiNative.SetSetting(const keyname: string; const val: string; global: boolean = false);
@@ -1897,7 +1902,18 @@ begin
   end;
 end;
 
+procedure TrndiNative.ReloadSettings;
+begin
+
+end;
+
 {$ELSEIF DEFINED(X_PC)}
+procedure TrndiNative.ReloadSettings;
+begin
+  FreeAndNil(inistore);
+  inistore := TIniFile.Create(GetAppConfigFile(false));
+end;
+
 procedure TrndiNative.SetSetting(const keyname: string; const val: string; global: boolean = false);
 var
   key: string;

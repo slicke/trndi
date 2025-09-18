@@ -925,9 +925,7 @@ begin
           username := '';
       end;// Load possible other users
       multi := true;
-      s := native.GetSetting('user.color');
-      if s <> '' then
-        pnMultiUser.Color := StringToColor(s);
+      pnMultiUser.Color := native.GetColorSetting('user.color', clBlack);
       if pnMultiUser.Color <> clBlack then
         pnMultiUser.Visible := true;
     end
@@ -2000,19 +1998,9 @@ var
 
       // User customizations
       s := GetRootSetting('users.names', '');
+      lbUsers.Clear;
       lbUsers.Items.CommaText := s;
-      gbMulti.Enabled := s <> '';
-      if s = '' then
-        lCurrentAcc.Caption := RS_CURRENT_ACC_NO
-      else if username = '' then
-        lCurrentAcc.Caption := RS_CURRENT_ACC_DEF
-      else
-        lCurrentAcc.Caption := Format(RS_CURRENT_ACC, [TrimRightSet(username, ['_'])]);
-
-      edNick.Text := GetSetting('user.nick', '');
-      s := GetSetting('user.color');
-      if s <> '' then
-        cbUser.ButtonColor := StringToColor(s);
+      lbUsers.Items.Add('- ' +RS_DEFAULT_ACCOUNT + ' -');
 
       // Load position settings
 posValue := native.GetIntSetting('position.main', Ord(tpoCenter));
@@ -2125,6 +2113,7 @@ if cbPos.ItemIndex = -1 then
   procedure SaveUserSettings(f: TfConf);
   var
     s: String;
+    i: integer;
   begin
     with f, native do
     begin
@@ -2135,8 +2124,10 @@ if cbPos.ItemIndex = -1 then
       SetSetting('locale', s);
       native.SetSetting('position.main', IntToStr(cbPos.ItemIndex));
       native.setBoolSetting('size.main', cbSize.Checked);
-      SetSetting('user.color', ColorToString(cbUser.ButtonColor));
-      SetSetting('user.nick', edNick.Text);
+
+      for i := lbUsers.Items.Count-1 downto 0 do
+        if lbUsers.items[i][1] = '-' then
+          lbUsers.items.Delete(i);
 
       // Handle user list changes
       if lbUsers.Count > 0 then
@@ -2217,6 +2208,9 @@ begin
 
     // Show dialog
     fConf.ShowModal;
+
+    // Reload settings, needed on X_PC
+    native.ReloadSettings;
 
     // Save settings when dialog closes
     SaveUserSettings(fConf);

@@ -47,6 +47,7 @@ TfConf = class(TForm)
   Button3: TButton;
   btReset: TButton;
   bTestAnnounce: TButton;
+  btUserSave: TButton;
   bvExt: TBevel;
   bvExt1: TBevel;
   cbCI: TCheckBox;
@@ -95,17 +96,17 @@ TfConf = class(TForm)
   GroupBox3: TGroupBox;
   gbDisplayPrefs: TGroupBox;
   Image1: TImage;
-  Label1: TLabel;
   Label10: TLabel;
   Label11: TLabel;
   Label12: TLabel;
   Label13: TLabel;
   Label14: TLabel;
   Label15: TLabel;
+  lUserName: TLabel;
   lPass: TLabel;
   lExt: TLabel;
   lTestAnnounce: TLabel;
-  Label2: TLabel;
+  lUserTrack: TLabel;
   Label3: TLabel;
   Label4: TLabel;
   Label5: TLabel;
@@ -118,7 +119,6 @@ TfConf = class(TForm)
   lArrow: TLabel;
   lbUsers: TListBox;
   lCopyright: TLabel;
-  lCurrentAcc: TLabel;
   lDot1: TLabel;
   lDot2: TLabel;
   lDot3: TLabel;
@@ -159,6 +159,7 @@ TfConf = class(TForm)
   procedure bTestAnnounceClick(Sender: TObject);
   procedure bTestSpeechClick(Sender: TObject);
   procedure btResetClick(Sender: TObject);
+  procedure btUserSaveClick(Sender: TObject);
   procedure Button1Click(Sender:TObject);
   procedure Button2Click(Sender:TObject);
   procedure Button3Click(Sender:TObject);
@@ -168,9 +169,12 @@ TfConf = class(TForm)
   procedure ePassEnter(Sender: TObject);
   procedure ePassExit(Sender: TObject);
   procedure FormCreate(Sender:TObject);
+  procedure FormDestroy(Sender: TObject);
   procedure FormResize(Sender: TObject);
   procedure Label12Click(Sender: TObject);
   procedure lAckClick(Sender:TObject);
+  procedure lbUsersEnter(Sender: TObject);
+  procedure lbUsersSelectionChange(Sender: TObject; User: boolean);
   procedure lLicenseClick(Sender:TObject);
   procedure lValClick(Sender:TObject);
   procedure pcMainChange(Sender: TObject);
@@ -183,6 +187,9 @@ private
 public
 
 end;
+
+var
+  tnative: TrndiNative;
 
 resourcestring
 RS_OVERRIDE_HELP =
@@ -224,6 +231,8 @@ RS_NOTIFY_TXT = 'Trndi uses a system called "%s" to send desktop notices, you ne
 RS_NOTIFY_MAC = 'Notifications will be made via macOS';
 
 RS_HASTOUCH = 'Shows if Trndi detected a touch screen';
+
+RS_DEFAULT_ACCOUNT = 'Default';
 var 
 fConf: TfConf;
 
@@ -469,6 +478,38 @@ const
   ExtSucc(uxdAuto, 'Trndi', 'Libraries', txt, $00AA6004, $00FDD8AA);
 end;
 
+procedure TfConf.lbUsersEnter(Sender: TObject);
+begin
+
+end;
+
+procedure TfConf.lbUsersSelectionChange(Sender: TObject; User: boolean);
+var
+  u: string;
+begin
+  if lbUsers.ItemIndex < 0 then begin
+    gbMulti.Enabled := false;
+    Exit;
+  end;
+
+  u := lbUsers.Items[lbusers.ItemIndex] ;
+
+  if u[1] = '-' then begin
+    tNative.configUser := '';
+    bRemove.Enabled := false;
+  end
+  else begin
+    tNative.configUser := u;
+    bRemove.Enabled := true;
+  end;
+
+  cbUser.ButtonColor :=  tNative.GetColorSetting('user.color', clBlack);
+  edNick.Text := tNative.GetSetting('user.nick', '') ;
+  lUserName.Caption := u;
+
+  gbMulti.Enabled := true;
+end;
+
 procedure TfConf.cbSysChange(Sender:TObject);
 begin
   gbOverride.Color := clDefault;
@@ -616,6 +657,17 @@ begin
   cl_lo_txt_cust.ButtonColor := bg_rel_color_lo_txt;
 end;
 
+procedure TfConf.btUserSaveClick(Sender: TObject);
+begin
+  if lUserName.Caption[1] = '-' then
+    tNative.configUser := ''
+  else
+    tNative.configUser := lUserName.Caption;
+
+  tNative.SetColorSetting('user.color', cbUser.ButtonColor);
+  tNative.SetSetting('user.nick', edNick.Text);
+end;
+
 procedure TfConf.Button1Click(Sender:TObject);
 begin
   Openurl('https://github.com/slicke/trndi/blob/main/LANGUAGES.md');
@@ -714,15 +766,18 @@ begin
   {$ifdef lclgtk2}
     self.font.size := 10;
   {$endif}
-  with TrndiNative.create do begin
-      if isDarkMode then
-       setDarkMode{$ifdef windows}(self.Handle){$endif};
-      Free;
-  end;
+  tnative := TrndiNative.create;
+  if tnative.isDarkMode then
+    tnative.setDarkMode{$ifdef windows}(self.Handle){$endif};
 
   {$ifdef darwin}
   edTray.Enabled := false; // No support
   {$endif}
+end;
+
+procedure TfConf.FormDestroy(Sender: TObject);
+begin
+  tnative.Free;
 end;
 
 procedure TfConf.FormResize(Sender: TObject);
