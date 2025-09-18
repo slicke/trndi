@@ -114,11 +114,11 @@ jobs:
           ICON=Trndi
           mkdir -p "$PKG_DIR/usr/share/applications"
           echo "[Desktop Entry]
-Name=Trndi
-Exec=/usr/local/trndi/Trndi
-Icon=${ICON}
-Type=Application
-Categories=Utility;" > "$PKG_DIR/usr/share/applications/trndi.desktop"
+          Name=Trndi
+          Exec=/usr/local/trndi/Trndi
+          Icon=${ICON}
+          Type=Application
+          Categories=Utility;" > "$PKG_DIR/usr/share/applications/trndi.desktop"
           fpm -s dir -t deb -n trndi -v 2.1.${GITHUB_RUN_NUMBER} --architecture ${{ matrix.deb_arch }} --license "GPLv3" --description "Trndi application with translations" -C "$PKG_DIR" .
           fpm -s dir -t rpm -n trndi -v 2.1.${GITHUB_RUN_NUMBER} --architecture ${{ matrix.rpm_arch }} --license "GPLv3" --description "Trndi application with translations" -C "$PKG_DIR" .
           mv trndi_*${{ matrix.deb_arch }}.deb artifacts/
