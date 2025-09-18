@@ -423,7 +423,7 @@ msgstr "Bakgrunder"
 
 #: tfconf.gbdisplayprefs.caption
 msgid "Display Preferences"
-msgstr ""
+msgstr "Visningsval"
 
 #: tfconf.gbmulti.caption
 msgid "Account Settings"
@@ -479,7 +479,6 @@ msgid "* Support depends on your data source"
 msgstr "* Stöds inte av alla datakällor"
 
 #: tfconf.label15.caption
-#, fuzzy
 msgctxt "tfconf.label15.caption"
 msgid "Server Address / Dexcom Username"
 msgstr "Serveradress / Användare Dexcom"
@@ -541,7 +540,6 @@ msgid "This only applies for the current loaded account"
 msgstr "Gäller endast för närvarande laddat konto"
 
 #: tfconf.lext.caption
-#, fuzzy
 msgctxt "tfconf.lext.caption"
 msgid "Plugin Folder"
 msgstr "Pluginmapp"
@@ -560,7 +558,7 @@ msgstr "Lågt under"
 
 #: tfconf.lpass.caption
 msgid "API Key / Dexcom Password"
-msgstr ""
+msgstr "API-nyckel / Dexcomlösenord"
 
 #: tfconf.ltestannounce.caption
 msgid "Test an announcement"
@@ -1312,7 +1310,7 @@ msgstr "Ett notissystem krävs"
 #: uconf.rs_notify_txt
 #, object-pascal-format
 msgid "Trndi uses a system called \"%s\" to send desktop notices, you need to have this system installed in order to recieve notices."
-msgstr "Trndi använder systemet \"%s\" för att visa notiser, det måste vara installerat för att dessa ska visas"
+msgstr "Trndi använder systemet \"%s\" för att visa notiser, det måste vara installerat för att dessa ska visas."
 
 #: uconf.rs_override_help
 msgid ""
@@ -1359,4 +1357,3 @@ msgstr "Du kan använda skift+<nummerr> för att manuellt sätta synligheten (0 
 #: ufloat.rscustomsize
 msgid "You can hold down shift and plus (+) or minus (-) to change the window size"
 msgstr "Du kan hålla ned skift och plus (+) eller minus (-) för att justera fönstrets storlek"
-
