@@ -587,6 +587,8 @@ if lbUsers.Items.Count <= 1 then begin
   lbUsers.Enabled := false;
   gbMulti.Enabled := false;
 end;
+
+  ShowMessage(RS_REMOVE_ACC);
 end;
 
 procedure TfConf.bSysNoticeClick(Sender: TObject);
