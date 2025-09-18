@@ -1,4 +1,4 @@
-name: Multi-Platform Builder (Qt6)
+name: Multi-Platform Builder
 
 on:
   push:
