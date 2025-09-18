@@ -38,7 +38,7 @@
 
 unit umain;
 
-{$I inc/native.inc}
+{$I ../../inc/native.inc}
 
 {$ifdef Darwin}
   {$modeswitch objectivec1}
@@ -385,7 +385,7 @@ IsRaspberry: boolean;
 implementation
 
 {$R *.lfm}
-{$I inc/tfuncs.inc}
+{$I ../../inc/tfuncs.inc}
 
 
 procedure ApplyRoundedCorners(APanel: TPanel; Radius: Integer);
@@ -1881,7 +1881,7 @@ if i > 0 then begin
 
   showmessage(TimeToStr(b.date), Format(RS_HISTORY_ITEM, [
                      b.format(un, BG_MSG_SHORT, BGPrimary),
-                     b.format(un, BG_MSG_SHORT, BGDelta),
+                     b.format(un, BG_MSG_SIG_SHORT, BGDelta),
                      b.trend.Img,
                      rssi,
                      noise,

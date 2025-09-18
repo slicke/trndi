@@ -27,7 +27,7 @@ interface
 uses
   SysUtils, Dialogs;
 
-{$I inc/types.inc}
+{$I ../../inc/types.inc}
 
 type
   {** Selects which BG value is referenced: the primary reading or its delta. }
