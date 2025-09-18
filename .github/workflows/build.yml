@@ -48,8 +48,8 @@ jobs:
 
           # Look for the highest tag of the form "Trndi build <number>"
           LATEST_TAG=$(git tag --sort=-v:refname \
-            | grep -E '^Trndi build [0-9]+$' \
-            | sed 's/^Trndi build //' \
+            | grep -E '^build-[0-9]+$' \
+            | sed 's/^build-//' \
             | sort -n | tail -1)
 
           if [ -z "$LATEST_TAG" ]; then
@@ -277,7 +277,8 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          TAG="Trndi build ${{ needs.version.outputs.build_number }}"
+          TAG="build-${{ needs.version.outputs.build_number }}"
+          TITLE="Trndi build ${{ needs.version.outputs.build_number }}"
           echo "Publishing release $TAG"
 
           # Full detailed release notes
@@ -316,7 +317,7 @@ jobs:
 
           # Create release if missing
           if ! gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release create "$TAG" --title "Trndi ${TAG}" --notes-file RELEASE_NOTES.md --repo "$GITHUB_REPOSITORY"
+            gh release create "$TAG" --title "$TITLE" --notes-file RELEASE_NOTES.md --repo "$GITHUB_REPOSITORY"
           fi
 
           # Upload all files from all artifacts (files only, no directories)
