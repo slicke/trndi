@@ -173,15 +173,31 @@ jobs:
           mkdir -p "$PKG_DIR/usr/share/pixmaps"
           [ -f "Trndi.png" ] && cp Trndi.png "$PKG_DIR/usr/share/pixmaps/"
           ICON=Trndi
+
           mkdir -p "$PKG_DIR/usr/share/applications"
           echo "[Desktop Entry]
           Name=Trndi
-          Exec=/usr/local/trndi/Trndi
+          GenericName=GCM Viewer
+          X-GNOME-FullName=Trndi
+          X-KDE-FullName=Trndi
+          X-Unity-FullName=Trndi
+          X-KDE-Keywords=trndi;gcm;glucose;monitoring;
+          X-DBUS-ServiceName=com.slicke.trndi
+          X-DBUS-StartupType=Multi
+          Comment=Blood glucose monitoring application
+          Exec=/usr/local/trndi/Trndi %U
           Icon=${ICON}
           Type=Application
-          Categories=Utility;" > "$PKG_DIR/usr/share/applications/trndi.desktop"
-          fpm -s dir -t deb -n trndi -v 2.1.${{ needs.version.outputs.build_number }} --architecture ${{ matrix.deb_arch }} --license "GPLv3" --description "Trndi application with translations" -C "$PKG_DIR" .
-          fpm -s dir -t rpm -n trndi -v 2.1.${{ needs.version.outputs.build_number }} --architecture ${{ matrix.rpm_arch }} --license "GPLv3" --description "Trndi application with translations" -C "$PKG_DIR" .
+          Categories=Utility;
+          DBusActivatable=false" > "$PKG_DIR/usr/share/applications/com.slicke.trndi.desktop"
+
+          # mkdir -p "$PKG_DIR/usr/share/dbus-1/services"
+          # echo "[D-BUS Service]
+          # Name=com.slicke.trndi
+          # Exec=/usr/local/trndi/Trndi --gapplication-service" > "$PKG_DIR/usr/share/dbus-1/services/com.slicke.trndi.service"
+
+          fpm -s dir -t deb -n trndi -v 2.1.${{ needs.version.outputs.build_number }} --architecture ${{ matrix.deb_arch }} --license "GPLv3" --description "Trndi CGM Viewer" -C "$PKG_DIR" .
+          fpm -s dir -t rpm -n trndi -v 2.1.${{ needs.version.outputs.build_number }} --architecture ${{ matrix.rpm_arch }} --license "GPLv3" --description "Trndi CGM Viewer" -C "$PKG_DIR" .
           mv trndi_*${{ matrix.deb_arch }}.deb artifacts/
           mv trndi-*.${{ matrix.rpm_arch }}.rpm artifacts/
 
