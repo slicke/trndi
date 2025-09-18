@@ -1339,6 +1339,8 @@ begin
     Grid.Options := [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goColSizing];
     Grid.ColCount := 2;
     Grid.RowCount := Length(Keys) + 1;
+    Grid.ColWidths[0] := 120;
+    Grid.ColWidths[1] := 120;
 
     Grid.Cells[0, 0] := IfThen(key = '', sKEY, key);
     Grid.Cells[1, 0] := IfThen(value = '', sVALUE, value);
