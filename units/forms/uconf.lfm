@@ -15,9 +15,9 @@ object fConf: TfConf
     Height = 479
     Top = 0
     Width = 525
-    ActivePage = tsCustom
+    ActivePage = tsGeneral
     Align = alClient
-    TabIndex = 3
+    TabIndex = 0
     TabOrder = 0
     OnChange = pcMainChange
     object tsGeneral: TTabSheet
@@ -10424,6 +10424,8 @@ object fConf: TfConf
         EchoMode = emPassword
         PasswordChar = '*'
         TabOrder = 4
+        OnEnter = ePassEnter
+        OnExit = ePassExit
       end
       object lPass: TLabel
         Left = 15
