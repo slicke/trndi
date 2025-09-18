@@ -120,6 +120,10 @@ public
   {$else}
     class function setDarkMode: boolean;
   {$endif}
+  {$ifdef X_PC}
+  procedure SetTray(const Value: string; BadgeColor: TColor;
+                       badge_size_ratio: double = 0.8; min_font_size: integer = 8);
+  {$endif}
   class function GetOSLanguage: string;
   class function HasDangerousChars(const FileName: string): Boolean;
   class function DetectWSL: TWSLInfo;
@@ -662,8 +666,7 @@ end;
 {$ENDIF}
 
 {$ifdef X_PC}
-{$ifdef X_PC}
-procedure TrndiNative.SetBadge(const Value: string; BadgeColor: TColor;
+procedure TrndiNative.SetTray(const Value: string; BadgeColor: TColor;
                        badge_size_ratio: double = 0.8; min_font_size: integer = 8);
 const
   INITIAL_FONT_SIZE_RATIO = 0.5;
@@ -812,7 +815,73 @@ begin
     BaseIcon.Free;
   end;
 end;
-{$endif}
+
+procedure SetKDEBadge(const DesktopIdWithDotDesktop: string; const Value: Double);
+var
+  P: TProcess;
+  Count: Int64;
+  FracPart: Double;
+  Dict: string;
+
+  function DictWith(const S: string): string;
+  begin
+    if Dict = '' then
+      Dict := '{' + S + '}'
+    else
+      // Insert before trailing '}'
+      Dict := Copy(Dict, 1, Length(Dict)-1) + ', ' + S + '}';
+    Result := Dict;
+  end;
+
+begin
+  // Split 4.5 into 4 and 0.5
+  Count := Trunc(Value);
+  FracPart := Frac(Value); // 0..1
+
+  Dict := '';
+  DictWith('''count-visible'': <true>');
+  // @x tags the literal as int64 (x). You could omit it, but this is safest.
+  DictWith(Format('''count'': <@x %d>', [Count]));
+
+  if FracPart > 0 then
+  begin
+    DictWith('''progress-visible'': <true>');
+    // Limit precision to avoid noisy strings
+    DictWith(Format('''progress'': <%.3f>', [FracPart]));
+  end
+  else
+    DictWith('''progress-visible'': <false>');
+
+  P := TProcess.Create(nil);
+  try
+    P.Executable := 'gdbus';
+    P.Parameters.Add('emit');
+    P.Parameters.Add('--session');
+    P.Parameters.Add('--object-path');
+    P.Parameters.Add('/com/canonical/Unity/LauncherEntry');
+    P.Parameters.Add('--signal');
+    P.Parameters.Add('com.canonical.Unity.LauncherEntry.Update');
+    // Must be application://<desktop-file>.desktop
+    P.Parameters.Add('application://' + DesktopIdWithDotDesktop);
+    P.Parameters.Add(Dict);
+    P.Options := [poWaitOnExit];
+    P.Execute;
+  finally
+    P.Free;
+  end;
+end;
+
+procedure TrndiNative.SetBadge(const Value: string; BadgeColor: TColor;
+                       badge_size_ratio: double = 0.8; min_font_size: integer = 8);
+var
+  f: single;
+begin
+  f := 0.0;
+  TryStrToFloat(value, f);
+  SetKDEBadge('com.slicke.trndi.desktop',  f);
+  SetTray(value,badgecolor,badge_size_ratio, min_font_size);
+end;
+
 {$endif}
 
 {$IFDEF DARWIN}
