@@ -141,13 +141,13 @@ var
   Bitmap: Graphics.TBitmap;
   BadgeText: string;
   TextWidth, TextHeight: Integer;
-  BadgeRect: Types.TRect;
+  BadgeRect: Classes.TRect;
   IconWidth, IconHeight, BadgeSize: Integer;
   FontSize, Radius: Integer;
   TextColor: TColor;
   SavedDC: Integer;
   Region, SquareRegion: HRGN;
-  RgnRect: Types.TRect;
+  RgnRect: Classes.TRect;
   dval: double;
 begin
   AppIcon := TIcon.Create;
@@ -187,11 +187,11 @@ begin
 
     Bitmap.SetSize(IconWidth, IconHeight);
     Bitmap.Canvas.Brush.Color := clNone;
-    Bitmap.Canvas.FillRect(Types.Rect(0, 0, IconWidth, IconHeight));
+  Bitmap.Canvas.FillRect(Classes.Rect(0, 0, IconWidth, IconHeight));
 
     DrawIconEx(Bitmap.Canvas.Handle, 0, 0, AppIcon.Handle, IconWidth, IconHeight, 0, 0, DI_NORMAL);
 
-    BadgeRect := Types.Rect(
+    BadgeRect := Classes.Rect(
       IconWidth - BadgeSize,
       IconHeight - BadgeSize,
       IconWidth,
