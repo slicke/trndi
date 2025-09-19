@@ -1011,8 +1011,8 @@ msgid "High blood sugar! Currently: %s"
 msgstr "Högt blodsocker! Nuvarande: %s"
 
 #: trndi.strings.rs_warn_bg_hi_title
-msgid "Blood high"
-msgstr ""
+msgid "Blood sugar high"
+msgstr "Högt blodsocker"
 
 #: trndi.strings.rs_warn_bg_lo
 #, object-pascal-format
@@ -1020,8 +1020,8 @@ msgid "Low blood sugar! Currently: %s"
 msgstr "Lågt blodsocker! Nuvarande: %s"
 
 #: trndi.strings.rs_warn_bg_lo_title
-msgid "Blood low"
-msgstr ""
+msgid "Blood sugar low"
+msgstr "Lågt blodsocker"
 
 #: trndi.strings.sannounceoff
 msgid "No longer announcing readings aloud"
@@ -1309,4 +1309,3 @@ msgstr "Du kan använda skift+<nummerr> för att manuellt sätta synligheten (0 
 #: ufloat.rscustomsize
 msgid "You can hold down shift and plus (+) or minus (-) to change the window size"
 msgstr "Du kan hålla ned skift och plus (+) eller minus (-) för att justera fönstrets storlek"
-
