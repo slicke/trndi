@@ -2211,14 +2211,9 @@ begin
   Result := DwmSetWindowAttribute(hWnd, Attr, @Data, Size);
 end;
 
-function TColorToBGR(Color: TColor): TColor;
-begin
-  Result := (Color and $FF00FF00) or ((Color and $FF0000) shr 16) or ((Color and $FF) shl 16);
-end;
-
 function HrSucceeded(hr: HRESULT): Boolean; inline;
 begin
-  Result := hr >= 0; // same as SUCCEEDED(hr) in Win32
+  Result := hr >= 0; // SUCCEEDED(hr)
 end;
 
 function TrndiNative.SetTitleColor(form: THandle; bg, text: TColor): Boolean;
@@ -2226,9 +2221,9 @@ var
   bgColor, textColor: COLORREF;
   hrCaption, hrText: HRESULT;
 begin
-  // Resolve system colors, then convert to BGR (COLORREF is BGR)
-  bgColor   := TColorToBGR(ColorToRGB(bg));
-  textColor := TColorToBGR(ColorToRGB(text));
+  // TColor and COLORREF are both 0x00BBGGRR; no swap needed
+  bgColor   := COLORREF(ColorToRGB(bg));
+  textColor := COLORREF(ColorToRGB(text));
 
   hrCaption := SetDwmAttr(form, DWMWA_CAPTION_COLOR, bgColor, SizeOf(bgColor));
   hrText    := SetDwmAttr(form, DWMWA_TEXT_COLOR, textColor, SizeOf(textColor));
