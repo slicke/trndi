@@ -574,6 +574,10 @@ msgctxt "tfconf.lval.caption"
 msgid "0,0"
 msgstr "0,0"
 
+#: tfconf.lwaitsys.caption
+msgid "Please wait..."
+msgstr ""
+
 #: tfconf.rbunit.caption
 msgid "Display Unit"
 msgstr "Enhetstyp"
