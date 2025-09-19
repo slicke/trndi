@@ -1,5 +1,22 @@
 unit trndi.native.linux;
 
+{**
+  @abstract(Linux/BSD-specific native features for Trndi.)
+
+  This unit defines @link(TTrndiNativeLinux) which derives from
+  @link(TTrndiNativeBase) and implements behaviors using common Linux tools
+  and LCL facilities.
+
+  Responsibilities include:
+  - Text-to-speech via @code(spd-say) (@link(TTrndiNativeLinux.Speak))
+  - Drawing a badge on the system tray icon (@link(TTrndiNativeLinux.SetTray))
+  - Synchronizing KDE taskbar badge (@link(TTrndiNativeLinux.SetBadge))
+  - Placeholder for dark mode toggling (@link(TTrndiNativeLinux.setDarkMode))
+
+  Prefer using the façade unit @code(trndi.native) which selects the platform
+  class alias automatically.
+}
+
 {$I ../../inc/native.inc}
 
 interface
@@ -9,12 +26,24 @@ uses
   ExtCtrls, Forms, Math, LCLIntf, KDEBadge, trndi.native.base;
 
 type
+  {!
+    @abstract(Linux implementation of @link(TTrndiNativeBase).)
+    Uses spd-say for speech and draws badges on tray/KDE taskbar.
+  }
   TTrndiNativeLinux = class(TTrndiNativeBase)
   public
+    {** Speaks @param(Text) using spd-say, if available.
+        Shows a user-visible message when the tool is not present. }
     procedure Speak(const Text: string); override;
+    {** Draw a badge with @param(Value) text on tray icon using @param(BadgeColor).
+        @param(badge_size_ratio Determines badge diameter relative to icon size)
+        @param(min_font_size Lower bound for font size while fitting text) }
     procedure SetTray(const Value: string; BadgeColor: TColor; badge_size_ratio: double = 0.8; min_font_size: integer = 8);
+    {** Convenience overload: delegates to base 2-arg SetBadge. }
     procedure setBadge(const Value: string; BadgeColor: TColor); overload; reintroduce;
+    {** Synchronize KDE badge with numeric value and update tray badge drawing. }
     procedure setBadge(const Value: string; BadgeColor: TColor; badge_size_ratio: double; min_font_size: integer); overload; override;
+    {** Placeholder; desktop environments differ. Implement where feasible. }
     class function setDarkMode: boolean; // no-op placeholder
   end;
 
@@ -136,11 +165,13 @@ var
   BadgeText: string;
   dval: double;
 begin
+  // Ensure we have a tray icon instance
   if not Assigned(Tray) then
     Tray := TTrayIcon.Create(Application.MainForm);
 
   if Value = '' then
   begin
+    // Reset to app icon and force refresh
     if (Application.Icon <> nil) and (Application.Icon.Width > 0) then
       Tray.Icon.Assign(Application.Icon);
     Tray.Visible := False;
