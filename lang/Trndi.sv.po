@@ -372,6 +372,10 @@ msgstr "Pekskärm"
 msgid "Account color"
 msgstr "Kontofärg"
 
+#: tfconf.cbusercolor.caption
+msgid "Display users' colors on the main window"
+msgstr ""
+
 #: tfconf.cl_hi_bg.caption
 msgctxt "tfconf.cl_hi_bg.caption"
 msgid "High"
