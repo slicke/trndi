@@ -59,12 +59,38 @@ type
     procedure DeleteSetting(const keyname: string; global: boolean = false); override;
     procedure ReloadSettings; override;
     class function getURL(const url: string; out res: string): boolean; override;
+    class function isDarkMode: boolean; override;
+    class function isNotificationSystemAvailable: boolean; override;
   end;
 
 implementation
 
 uses
   Process, Types, LCLType;
+
+function IsNotifySendAvailable: boolean;
+var
+  AProcess: TProcess;
+  OutputLines: TStringList;
+begin
+  Result := false;
+  AProcess := TProcess.Create(nil);
+  OutputLines := TStringList.Create;
+  try
+    AProcess.Executable := '/usr/bin/which';
+    AProcess.Parameters.Add('notify-send');
+    AProcess.Options := AProcess.Options + [poWaitOnExit, poUsePipes];
+    AProcess.Execute;
+    OutputLines.LoadFromStream(AProcess.Output);
+    if (OutputLines.Count > 0) and FileExists(Trim(OutputLines[0])) then
+      Result := true;
+  except
+    on E: Exception do
+      Result := false;
+  end;
+  OutputLines.Free;
+  AProcess.Free;
+end;
 {
   Linux/PC implementation of class function getURL
 }
@@ -95,6 +121,20 @@ begin
     client.Free;
     responseStream.Free;
   end;
+end;
+
+class function TTrndiNativeLinux.isNotificationSystemAvailable: boolean;
+begin
+  Result := IsNotifySendAvailable;
+end;
+
+class function TTrndiNativeLinux.isDarkMode: boolean;
+  function Brightness(C: TColor): double;
+  begin
+    Result := (Red(C) * 0.3) + (Green(C) * 0.59) + (Blue(C) * 0.11);
+  end;
+begin
+  Result := (Brightness(ColorToRGB(clWindow)) < Brightness(ColorToRGB(clWindowText)));
 end;
 function TTrndiNativeLinux.ResolveIniPath: string;
 var

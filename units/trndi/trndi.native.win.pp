@@ -45,6 +45,8 @@ type
     function SetTitleColor(form: THandle; bg, text: TColor): boolean; override;
   procedure SetBadge(const Value: string; BadgeColor: TColor; badge_size_ratio: double; min_font_size: integer); override;
     class function getURL(const url: string; out res: string): boolean; override;
+    class function isDarkMode: boolean; override;
+    class function isNotificationSystemAvailable: boolean; override;
 
     // Settings API overrides (Windows Registry)
     function GetSetting(const keyname: string; def: string = ''; global: boolean = false): string; override;
@@ -57,6 +59,56 @@ implementation
 
 uses
   ComObj;
+function IsBurntToastAvailable: Boolean;
+var
+  Output: TStringList;
+  AProcess: TProcess;
+begin
+  Result := False;
+  Output := TStringList.Create;
+  AProcess := TProcess.Create(nil);
+  try
+    AProcess.Executable := 'powershell';
+    AProcess.Parameters.Add('-NoProfile');
+    AProcess.Parameters.Add('-Command');
+    AProcess.Parameters.Add('if (Get-Module -ListAvailable -Name BurntToast) { Write-Host "YES" }');
+    AProcess.Options := [poUsePipes, poWaitOnExit];
+    AProcess.Execute;
+    Output.LoadFromStream(AProcess.Output);
+    Result := (Pos('YES', Output.Text) > 0);
+  finally
+    AProcess.Free;
+    Output.Free;
+  end;
+end;
+
+class function TTrndiNativeWindows.isNotificationSystemAvailable: boolean;
+begin
+  Result := IsBurntToastAvailable;
+end;
+
+class function TTrndiNativeWindows.isDarkMode: boolean;
+const
+  regtheme = 'Software\Microsoft\Windows\CurrentVersion\Themes\Personalize\';
+  reglight = 'AppsUseLightTheme';
+var
+  reg: TRegistry;
+begin
+  Result := false;
+  reg := TRegistry.Create(KEY_READ);
+  try
+    reg.RootKey := HKEY_CURRENT_USER;
+    if reg.KeyExists(regtheme) and reg.OpenKey(regtheme, false) then
+    try
+      if reg.ValueExists(reglight) then
+        Result := (reg.ReadInteger(reglight) = 0);
+    finally
+      reg.CloseKey;
+    end;
+  finally
+    reg.Free;
+  end;
+end;
 
 {$ifdef Windows}
 function DwmSetWindowAttribute(hwnd: HWND; dwAttribute: DWORD; pvAttribute: Pointer; cbAttribute: DWORD): HRESULT; stdcall; external 'dwmapi.dll';
