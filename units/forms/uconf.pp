@@ -893,14 +893,7 @@ begin
    tsSystem.Update;
    Application.ProcessMessages;
 
-  {$if defined(WINDOWS)}
-  cbNotice.Checked := IsBurntToastAvailable;
-  {$elseif defined (DARWIN)}
-  cbNotice.Checked := True;
-  {$else}
-  cbNotice.Checked := IsNotifySendAvailable;
-  cbNotice.Caption := cbNotice.Caption + ' (Notify Daemon)';
-  {$endif}
+   cbNotice.Checked := TrndiNative.isNotificationSystemAvailable;
   lWaitSys.visible := false;
 end;
 

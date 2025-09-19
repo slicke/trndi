@@ -50,7 +50,7 @@ interface
 uses
 trndi.strings, LCLTranslator, Classes, Menus, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, ExtCtrls,
 trndi.api.dexcom, trndi.api.nightscout, trndi.types, math, DateUtils, FileUtil, LclIntf, TypInfo, LResources,
-slicke.ux.alert, usplash, Generics.Collections, trndi.funcs,
+slicke.ux.alert, usplash, Generics.Collections, trndi.funcs, Trndi.native.base,
 SystemMediaController,
 {$ifdef TrndiExt}
 trndi.Ext. Engine, trndi.Ext.jsfuncs,
