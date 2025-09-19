@@ -23,7 +23,7 @@ interface
 
 uses
   Classes, SysUtils, Graphics, fphttpclient, openssl, opensslsockets, IniFiles, Dialogs,
-  ExtCtrls, Forms, Math, LCLIntf, KDEBadge, trndi.native.base;
+  ExtCtrls, Forms, Math, LCLIntf, KDEBadge, trndi.native.base, FileUtil;
 
 type
   {!
@@ -33,6 +33,9 @@ type
   TTrndiNativeLinux = class(TTrndiNativeBase)
   protected
     Tray: TTrayIcon;
+    inistore: TIniFile; // Linux-specific settings store
+    function ResolveIniPath: string; virtual;
+    procedure EnsureIni; inline;
   public
     procedure attention(topic, message: string); override;
     destructor Destroy; override;
@@ -49,12 +52,57 @@ type
     procedure setBadge(const Value: string; BadgeColor: TColor; badge_size_ratio: double; min_font_size: integer); overload; override;
     {** Placeholder; desktop environments differ. Implement where feasible. }
     class function setDarkMode: boolean; // no-op placeholder
+
+    // Settings API overrides
+    function GetSetting(const keyname: string; def: string = ''; global: boolean = false): string; override;
+    procedure SetSetting(const keyname: string; const val: string; global: boolean = false); override;
+    procedure DeleteSetting(const keyname: string; global: boolean = false); override;
+    procedure ReloadSettings; override;
   end;
 
 implementation
 
 uses
   Process, Types, LCLType;
+function TTrndiNativeLinux.ResolveIniPath: string;
+var
+  home, pA, pB, pC: string;
+begin
+  // Prefer existing files in this order:
+  // 1) Lazarus app config file (typically ~/.config/Trndi/trndi.ini)
+  // 2) Explicit ~/.config/Trndi/trndi.ini
+  // 3) Legacy ~/.config/Trndi.cfg
+  pA := GetAppConfigFile(False);
+
+  home := GetEnvironmentVariable('HOME');
+  if home = '' then
+    home := GetUserDir; // Fallback
+  pC := IncludeTrailingPathDelimiter(home) + '.config' + DirectorySeparator + 'Trndi.cfg';
+  pB := IncludeTrailingPathDelimiter(home) + '.config' + DirectorySeparator + 'Trndi' + DirectorySeparator + 'trndi.ini';
+
+  if (pA <> '') and FileExists(pA) then Exit(pA);
+  if FileExists(pB) then Exit(pB);
+  if FileExists(pC) then Exit(pC);
+
+  // Nothing exists; default to Lazarus app config file path
+  Result := pA;
+  if Result = '' then
+    Result := pB; // reasonable default under ~/.config/Trndi/trndi.ini
+end;
+
+procedure TTrndiNativeLinux.EnsureIni;
+var
+  path: string;
+begin
+  if not Assigned(inistore) then
+  begin
+    path := ResolveIniPath;
+    if ExtractFilePath(path) <> '' then
+      ForceDirectories(ExtractFilePath(path));
+    inistore := TIniFile.Create(path);
+  end;
+end;
+
 
 procedure TTrndiNativeLinux.attention(topic, message: string);
 {$IFDEF LCLQt6}
@@ -163,6 +211,8 @@ begin
   end;
   if Assigned(Tray) then
     Tray.Free;
+  if Assigned(inistore) then
+    inistore.Free;
   inherited Destroy;
 end;
 
@@ -423,6 +473,88 @@ end;
 class function TTrndiNativeLinux.setDarkMode: Boolean;
 begin
   // Placeholder: implement when desktop environment APIs are standardized
+end;
+
+function TTrndiNativeLinux.GetSetting(const keyname: string; def: string; global: boolean): string;
+var
+  key: string;
+  raw: TStringList;
+  i, p: Integer;
+  line, k, v: string;
+  path: string;
+begin
+  EnsureIni;
+  key := buildKey(keyname, global);
+  // Try common sections used historically
+  Result := inistore.ReadString('trndi', key, '');
+  if Result = '' then
+    Result := inistore.ReadString('settings', key, '');
+  if Result = '' then
+    Result := inistore.ReadString('Trndi', key, '');
+  // Legacy .cfg files may have no sections. Parse raw lines as key=value.
+  if Result = '' then
+  begin
+    raw := TStringList.Create;
+    try
+      // Read from the file backing inistore
+      path := ResolveIniPath;
+      if FileExists(path) then
+      begin
+        raw.LoadFromFile(path);
+        for i := 0 to raw.Count-1 do
+        begin
+          line := Trim(raw[i]);
+          if (line = '') or (line[1] = '#') or (line[1] = ';') then Continue;
+          p := Pos('=', line);
+          if p > 0 then
+          begin
+            k := Trim(Copy(line, 1, p-1));
+            v := Trim(Copy(line, p+1, MaxInt));
+            // Match either fully built key or plain keyname (no user prefix)
+            if SameText(k, key) or SameText(k, keyname) then
+            begin
+              Result := v;
+              Break;
+            end;
+          end;
+        end;
+      end;
+    finally
+      raw.Free;
+    end;
+  end;
+  if Result = '' then
+    Result := def;
+end;
+
+procedure TTrndiNativeLinux.SetSetting(const keyname: string; const val: string; global: boolean);
+var
+  key: string;
+begin
+  EnsureIni;
+  key := buildKey(keyname, global);
+  // Write under a canonical section
+  inistore.WriteString('trndi', key, val);
+  inistore.UpdateFile;
+end;
+
+procedure TTrndiNativeLinux.DeleteSetting(const keyname: string; global: boolean);
+var
+  key: string;
+begin
+  EnsureIni;
+  key := buildKey(keyname, global);
+  inistore.DeleteKey('trndi', key);
+  // Also try alternative sections to be thorough
+  inistore.DeleteKey('settings', key);
+  inistore.DeleteKey('Trndi', key);
+  inistore.UpdateFile;
+end;
+
+procedure TTrndiNativeLinux.ReloadSettings;
+begin
+  FreeAndNil(inistore);
+  // will be recreated on next access
 end;
 
 end.

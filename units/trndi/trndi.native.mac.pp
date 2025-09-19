@@ -30,6 +30,12 @@ type
     procedure Speak(const Text: string); override;
     {** Enables dark appearance for the application via SimpleDarkMode. }
     class function setDarkMode: boolean;
+
+    // Settings API overrides (NSUserDefaults/CFPreferences)
+    function GetSetting(const keyname: string; def: string = ''; global: boolean = false): string; override;
+    procedure SetSetting(const keyname: string; const val: string; global: boolean = false); override;
+    procedure DeleteSetting(const keyname: string; global: boolean = false); override;
+    procedure ReloadSettings; override;
   end;
 
 implementation
@@ -49,6 +55,35 @@ class function TTrndiNativeMac.setDarkMode: Boolean;
 begin
   // Enable dark appearance for the app's UI via SimpleDarkMode
   SimpleDarkMode.EnableAppDarkMode;
+end;
+
+function TTrndiNativeMac.GetSetting(const keyname: string; def: string; global: boolean): string;
+var
+  key: string;
+begin
+  key := buildKey(keyname, global);
+  Result := GetPrefString(key);
+  if Result = '' then
+    Result := def;
+end;
+
+procedure TTrndiNativeMac.SetSetting(const keyname: string; const val: string; global: boolean);
+var
+  key: string;
+begin
+  key := buildKey(keyname, global);
+  SetPrefString(key, val);
+end;
+
+procedure TTrndiNativeMac.DeleteSetting(const keyname: string; global: boolean);
+begin
+  // No direct delete helper; set to empty string for now
+  SetSetting(keyname, '', global);
+end;
+
+procedure TTrndiNativeMac.ReloadSettings;
+begin
+  // NSUserDefaults is live; no explicit reload needed
 end;
 
 end.

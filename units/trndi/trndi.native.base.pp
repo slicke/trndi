@@ -66,16 +66,15 @@ TTrndiNativeBase = class
 private
   cfguser:   string;  // User prefix for config
 
-  function buildKey(const key: string; global: boolean): string;
   procedure updateLocale(const l: TFormatSettings);
 protected
   fsettings: TFormatSettings;
   // HTTP defaults
   useragent: string;
   baseurl:   string;
-  {$IF DEFINED(X_PC)}
-  inistore: TINIFile; // Linux/PC settings store
-  {$ENDIF}
+  // Note: Platform-specific settings storage (e.g., INI on Linux) is managed
+  // by each platform unit, not the base class.
+    function buildKey(const key: string; global: boolean): string;
 public
   // Config
   noFree: boolean;
@@ -93,20 +92,20 @@ public
 
   // Settings API
   procedure SetRootSetting(keyname: string; const val: string);
-  procedure SetSetting(const keyname: string; const val: string; global: boolean = false);
+  procedure SetSetting(const keyname: string; const val: string; global: boolean = false); virtual; abstract;
   procedure SetBoolSetting(const keyname: string; const val: boolean);
   procedure SetFloatSetting(const keyname: string; const val: single);
   procedure SetColorSetting(const keyname: string; val: TColor);
   function GetColorSetting(const keyname: string; const def: TColor = $000000): TColor;
-  procedure DeleteSetting(const keyname: string; global: boolean = false);
+  procedure DeleteSetting(const keyname: string; global: boolean = false); virtual; abstract;
   procedure DeleteRootSetting(keyname: string; const val: string);
   function GetRootSetting(const keyname: string; def: string = ''): string;
-  function GetSetting(const keyname: string; def: string = ''; global: boolean = false): string;
+  function GetSetting(const keyname: string; def: string = ''; global: boolean = false): string; virtual; abstract;
   function GetCharSetting(const keyname: string; def: char = #0): char;
   function GetIntSetting(const keyname: string; def: integer = -1): integer;
   function GetFloatSetting(const keyname: string; def: single = -1): single;
   function GetBoolSetting(const keyname: string; def: boolean = false): boolean;
-  procedure ReloadSettings;
+  procedure ReloadSettings; virtual; abstract;
 
   // Theme/Env
   class function isDarkMode: boolean;
@@ -558,14 +557,10 @@ end;
 {------------------------------------------------------------------------------
   Destroy
   -------------------
-  Cleans up any allocated resources. On Linux/PC, frees the INI file handle.
+  Cleans up any allocated resources.
  ------------------------------------------------------------------------------}
 destructor TTrndiNativeBase.Destroy;
 begin
-  {$IF DEFINED(X_PC)}
-  if Assigned(inistore) then
-    inistore.Free;
-  {$ENDIF}
   inherited Destroy;
 end;
 
@@ -1278,54 +1273,8 @@ begin
   result := GetSetting(keyname, def, true);
 end;
 
-{------------------------------------------------------------------------------
-  GetSetting
-  ----------------------
-  Platform-specific string retrieval. Returns the default if the key isn't found.
- ------------------------------------------------------------------------------}
-{$IF DEFINED(X_WIN)}
-function TTrndiNativeBase.GetSetting(const keyname: string; def: string = ''; global: boolean = false): string;
-var
-  reg: TRegistry;
-  key: string;
-begin
-  key := buildKey(keyname, global);
-
-  Result := def;
-  reg := TRegistry.Create;
-  try
-    reg.RootKey := HKEY_CURRENT_USER;
-    if reg.OpenKeyReadOnly('\SOFTWARE\Trndi\') then
-      Result := reg.ReadString(key);
-  finally
-    reg.Free;
-  end;
-  if result = '' then
-    result := def;
-end;
-
-{$ELSEIF DEFINED(X_PC)}
-function TTrndiNativeBase.GetSetting(const keyname: string; def: string = ''; global: boolean = false): string;
-var
-  key: string;
-begin
-  key := buildKey(keyname, global);
-  if not Assigned(inistore) then
-    inistore := TINIFile.Create(GetAppConfigFile(false));
-  Result := inistore.ReadString('trndi', key, def);
-end;
-
-{$ELSEIF DEFINED(X_MAC)}
-function TTrndiNativeBase.GetSetting(const keyname: string; def: string = ''; global: boolean = false): string;
-var
-  key: string;
-begin
-  key := buildKey(keyname, global);
-  Result := GetPrefString(key); // macOS-based method
-  if Result = '' then
-    Result := def;
-end;
-{$ENDIF}
+{ Settings API implementations are now platform-specific and moved to
+  trndi.native.win/mac/linux units. }
 
 {------------------------------------------------------------------------------
   GetIntSetting
@@ -1460,51 +1409,8 @@ end;
   Deletes a stored key/value from platform-specific storage completely.
   - X_MAC sets key to blank
  ------------------------------------------------------------------------------}
-{$IF DEFINED(X_MAC)}
-procedure TTrndiNativeBase.DeleteSetting(const keyname: string; global: boolean = false);
-begin
-  SetSetting(keyname,'',global);
-end;
-
-
-{$ELSEIF DEFINED(X_WIN)}
-procedure TTrndiNativeBase.DeleteSetting(const keyname: string; global: boolean = false);
-var
-  reg: TRegistry;
-  key: string;
-begin
-  key := buildKey(keyname, global);
-
-  reg := TRegistry.Create;
-  try
-    reg.RootKey := HKEY_CURRENT_USER;
-    if reg.OpenKey('\SOFTWARE\Trndi\', false) then  // false = do not create if missing
-    begin
-      if reg.ValueExists(key) then
-        reg.DeleteValue(key)
-      else
-        ShowMessage('Value not found: ' + key);
-    end
-    else
-      ShowMessage('Registry path not found.');
-  finally
-    reg.Free;
-  end;
-end;
-
-
-{$ELSEIF DEFINED(X_PC)}
-procedure TTrndiNativeBase.DeleteSetting(const keyname: string; global: boolean = false);
-var
-  key: string;
-begin
-  key := buildKey(keyname, global);
-  if not Assigned(inistore) then
-    inistore := TINIFile.Create(GetAppConfigFile(false));
-
-  inistore.DeleteKey('trndi', key);
-end;
-{$ENDIF}
+{ Settings API implementations are now platform-specific and moved to
+  trndi.native.win/mac/linux units. }
 
 
 {------------------------------------------------------------------------------
@@ -1512,62 +1418,8 @@ end;
   ----------------------
   Stores a string value to platform-specific storage.
  ------------------------------------------------------------------------------}
-{$IF DEFINED(X_MAC)}
-procedure TTrndiNativeBase.SetSetting(const keyname: string; const val: string; global: boolean = false);
-var
-  key: string;
-begin
-  key := buildKey(keyname, global);
-  SetPrefString(key, val); // macOS-based method
-end;
-
-procedure TTrndiNativeBase.ReloadSettings;
-begin
-
-end;
-
-{$ELSEIF DEFINED(X_WIN)}
-procedure TTrndiNativeBase.SetSetting(const keyname: string; const val: string; global: boolean = false);
-var
-  reg: TRegistry;
-  key: string;
-begin
-  key := buildKey(keyname, global);
-
-  reg := TRegistry.Create;
-  try
-    reg.RootKey := HKEY_CURRENT_USER;
-    if reg.OpenKey('\SOFTWARE\Trndi\', true) then
-      reg.WriteString(key, val)
-    else
-      ShowMessage('Error saving to registry!');
-  finally
-    reg.Free;
-  end;
-end;
-
-procedure TTrndiNativeBase.ReloadSettings;
-begin
-
-end;
-
-{$ELSEIF DEFINED(X_PC)}
-procedure TTrndiNativeBase.ReloadSettings;
-begin
-  FreeAndNil(inistore);
-  inistore := TIniFile.Create(GetAppConfigFile(false));
-end;
-
-procedure TTrndiNativeBase.SetSetting(const keyname: string; const val: string; global: boolean = false);
-var
-  key: string;
-begin
-  key := buildKey(keyname, global);
-  if not Assigned(inistore) then
-    inistore := TINIFile.Create(GetAppConfigFile(false));
-  inistore.WriteString('trndi', key, val);
-end;
-{$ENDIF}
+{ Settings API implementations are now platform-specific and moved to
+  trndi.native.win/mac/linux units. }
 
 {------------------------------------------------------------------------------
   isDarkMode

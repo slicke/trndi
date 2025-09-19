@@ -43,6 +43,12 @@ type
     {** Applies caption (@param(bg)) and text (@param(text)) colors via DWM.
         @returns(True if both attributes are set successfully) }
     function SetTitleColor(form: THandle; bg, text: TColor): boolean; override;
+
+    // Settings API overrides (Windows Registry)
+    function GetSetting(const keyname: string; def: string = ''; global: boolean = false): string; override;
+    procedure SetSetting(const keyname: string; const val: string; global: boolean = false); override;
+    procedure DeleteSetting(const keyname: string; global: boolean = false); override;
+    procedure ReloadSettings; override;
   end;
 
 implementation
@@ -122,6 +128,70 @@ begin
   hrText    := SetDwmAttr(form, DWMWA_TEXT_COLOR, textColor, SizeOf(textColor));
 
   Result := HrSucceeded(hrCaption) and HrSucceeded(hrText);
+end;
+
+function TTrndiNativeWindows.GetSetting(const keyname: string; def: string; global: boolean): string;
+var
+  reg: TRegistry;
+  key: string;
+begin
+  key := buildKey(keyname, global);
+  Result := def;
+  reg := TRegistry.Create;
+  try
+    reg.RootKey := HKEY_CURRENT_USER;
+    if reg.OpenKeyReadOnly('\SOFTWARE\Trndi\') then
+    begin
+      if reg.ValueExists(key) then
+        Result := reg.ReadString(key)
+      else
+        Result := def;
+    end;
+  finally
+    reg.Free;
+  end;
+end;
+
+procedure TTrndiNativeWindows.SetSetting(const keyname: string; const val: string; global: boolean);
+var
+  reg: TRegistry;
+  key: string;
+begin
+  key := buildKey(keyname, global);
+  reg := TRegistry.Create;
+  try
+    reg.RootKey := HKEY_CURRENT_USER;
+    if reg.OpenKey('\SOFTWARE\Trndi\', true) then
+      reg.WriteString(key, val)
+    else
+      ;
+  finally
+    reg.Free;
+  end;
+end;
+
+procedure TTrndiNativeWindows.DeleteSetting(const keyname: string; global: boolean);
+var
+  reg: TRegistry;
+  key: string;
+begin
+  key := buildKey(keyname, global);
+  reg := TRegistry.Create;
+  try
+    reg.RootKey := HKEY_CURRENT_USER;
+    if reg.OpenKey('\SOFTWARE\Trndi\', false) then
+    begin
+      if reg.ValueExists(key) then
+        reg.DeleteValue(key);
+    end;
+  finally
+    reg.Free;
+  end;
+end;
+
+procedure TTrndiNativeWindows.ReloadSettings;
+begin
+  // Registry has no persistent handle to reload; nothing to do
 end;
 
 end.
