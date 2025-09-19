@@ -71,6 +71,7 @@ private
   procedure updateLocale(const l: TFormatSettings);
 public
   noFree: boolean;
+  noticeDuration: integer;
   class var touchOverride: TTrndiBool;
     // Indicates if the user system is in a "dark mode" theme
   dark: boolean;
@@ -1125,6 +1126,7 @@ begin
     if KDEBadge.GDesktopId = '' then
       InitializeBadge('com.slicke.trndi.desktop', 150, nil);
   {$endif}
+   noticeDuration := 5000;
 end;
 
   {$IFDEF X_WIN}
@@ -1474,7 +1476,7 @@ end;
   {$endif}
 begin
   {$ifdef lclqt6}
-  SendNotification('Trndi', topic, message, x);
+  SendNotification('Trndi', topic, message, x, noticeDuration);
   {$else}
   SendNotification(topic, message);
   {$endif}
