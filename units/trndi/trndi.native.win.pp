@@ -58,7 +58,7 @@ type
 implementation
 
 uses
-  ComObj;
+  ComObj, Process;
 function IsBurntToastAvailable: Boolean;
 var
   Output: TStringList;
@@ -86,6 +86,7 @@ class function TTrndiNativeWindows.isNotificationSystemAvailable: boolean;
 begin
   Result := IsBurntToastAvailable;
 end;
+
 
 class function TTrndiNativeWindows.isDarkMode: boolean;
 const

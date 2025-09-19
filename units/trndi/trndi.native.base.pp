@@ -118,6 +118,7 @@ public
   class function DetectWSL: TWSLInfo;
   // Notifications
   class function isNotificationSystemAvailable: boolean; virtual;
+  class function HasNotifications: boolean;
 
   // Lifecycle and UI
   destructor Destroy; override;
@@ -187,6 +188,12 @@ end;
 class function TTrndiNativeBase.isNotificationSystemAvailable: boolean;
 begin
   Result := True;
+end;
+
+class function TTrndiNativeBase.HasNotifications: boolean;
+begin
+  // Forward to the virtual for platform-specific logic
+  Result := isNotificationSystemAvailable;
 end;
 
 {$IFDEF Windows}
