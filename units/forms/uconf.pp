@@ -140,6 +140,7 @@ TfConf = class(TForm)
   Panel4: TPanel;
   Panel5: TPanel;
   Panel6: TPanel;
+  pnMisc: TPanel;
   pTray: TPanel;
   pcMain: TPageControl;
   pnDisplay: TPanel;

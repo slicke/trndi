@@ -69,9 +69,6 @@
 {"hash":2967460,"name":"tfconf.badd.caption","sourcebytes":[43,32,65,100,100],"value":"+ Add"},
 {"hash":220488643,"name":"tfconf.groupbox4.caption","sourcebytes":[65,108,108,32,97,99,99,111,117,110,116,115],"value":"All accounts"},
 {"hash":169833075,"name":"tfconf.cbusercolor.caption","sourcebytes":[68,105,115,112,108,97,121,32,117,115,101,114,115,39,32,99,111,108,111,114,115,32,111,110,32,116,104,101,32,109,97,105,110,32,97,110,100,32,102,108,111,97,116,105,110,103,32,119,105,110,100,111,119,115],"value":"Display users' colors on the main and floating windows"},
-{"hash":96905381,"name":"tfconf.tsinstall.caption","sourcebytes":[85,112,100,97,116,101],"value":"Update"},
-{"hash":236240981,"name":"tfconf.button3.caption","sourcebytes":[67,104,101,99,107,32,102,111,114,32,117,112,100,97,116,101],"value":"Check for update"},
-{"hash":199316905,"name":"tfconf.cbci.caption","sourcebytes":[73,110,99,108,117,100,101,32,112,114,101,118,105,101,119,32,118,101,114,115,105,111,110,115,32,40,109,97,121,32,98,101,32,98,117,103,103,121,33,41],"value":"Include preview versions (may be buggy!)"},
 {"hash":227504051,"name":"tfconf.tsintegration.caption","sourcebytes":[73,110,116,101,103,114,97,116,105,111,110,115],"value":"Integrations"},
 {"hash":190236785,"name":"tfconf.gboverride2.caption","sourcebytes":[80,108,97,121,32,77,101,100,105,97],"value":"Play Media"},
 {"hash":195427656,"name":"tfconf.label9.caption","sourcebytes":[84,114,110,100,105,32,99,97,110,32,116,114,105,103,103,101,114,32,83,112,111,116,105,102,121,32,111,114,32,68,101,101,122,101,114,32,116,111,32,112,108,97,121,32,97,32,115,111,110,103,32,119,104,101,110,32,108,111,119,47,104,105,103,104],"value":"Trndi can trigger Spotify or Deezer to play a song when low/high"},
@@ -90,5 +87,8 @@
 {"hash":242814836,"name":"tfconf.ltestannounce.caption","sourcebytes":[84,101,115,116,32,97,110,32,97,110,110,111,117,110,99,101,109,101,110,116],"value":"Test an announcement"},
 {"hash":100430328,"name":"tfconf.btestspeech.caption","sourcebytes":[84,101,115,116,32,83,112,101,101,99,104],"value":"Test Speech"},
 {"hash":25162391,"name":"tfconf.ltestannounce1.caption","sourcebytes":[84,101,115,116,32,97,32,115,112,111,107,101,110,32,115,116,114,105,110,103],"value":"Test a spoken string"},
-{"hash":265880334,"name":"tfconf.lwaitsys.caption","sourcebytes":[80,108,101,97,115,101,32,119,97,105,116,46,46,46],"value":"Please wait..."}
+{"hash":265880334,"name":"tfconf.lwaitsys.caption","sourcebytes":[80,108,101,97,115,101,32,119,97,105,116,46,46,46],"value":"Please wait..."},
+{"hash":96905381,"name":"tfconf.tsinstall.caption","sourcebytes":[85,112,100,97,116,101],"value":"Update"},
+{"hash":236240981,"name":"tfconf.button3.caption","sourcebytes":[67,104,101,99,107,32,102,111,114,32,117,112,100,97,116,101],"value":"Check for update"},
+{"hash":199316905,"name":"tfconf.cbci.caption","sourcebytes":[73,110,99,108,117,100,101,32,112,114,101,118,105,101,119,32,118,101,114,115,105,111,110,115,32,40,109,97,121,32,98,101,32,98,117,103,103,121,33,41],"value":"Include preview versions (may be buggy!)"}
 ]}
