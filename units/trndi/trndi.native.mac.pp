@@ -27,9 +27,11 @@ type
   TTrndiNativeMac = class(TTrndiNativeBase)
   public
     {** Speaks @param(Text) using the system @code(say) command. }
-    procedure Speak(const Text: string); override;
+  {** Speak text via the built-in 'say' command. }
+  procedure Speak(const Text: string); override;
     {** Enables dark appearance for the application via SimpleDarkMode. }
-    class function setDarkMode: boolean;
+  {** Enable dark appearance for the app UI. }
+  class function setDarkMode: boolean;
 
     // Settings API overrides (NSUserDefaults/CFPreferences)
     function GetSetting(const keyname: string; def: string = ''; global: boolean = false): string; override;
@@ -37,10 +39,15 @@ type
     procedure DeleteSetting(const keyname: string; global: boolean = false); override;
     procedure ReloadSettings; override;
     // Badge
-    procedure SetBadge(const Value: string; BadgeColor: TColor); overload; reintroduce;
-    procedure SetBadge(const Value: string; BadgeColor: TColor; badge_size_ratio: double; min_font_size: integer); overload; override;
-    class function getURL(const url: string; out res: string): boolean; override;
+  {** Set the dock tile badge label (text only). }
+  procedure SetBadge(const Value: string; BadgeColor: TColor); overload; reintroduce;
+  {** Ignore extra params and delegate to simple overload. }
+  procedure SetBadge(const Value: string; BadgeColor: TColor; badge_size_ratio: double; min_font_size: integer); overload; override;
+  {** Simple HTTP GET using NS HTTP helper with default UA. }
+  class function getURL(const url: string; out res: string): boolean; override;
+  {** True if AppleInterfaceStyle indicates dark mode. }
   class function isDarkMode: boolean; override;
+  {** NSUserNotificationCenter is available on macOS. }
   class function isNotificationSystemAvailable: boolean; override;
   end;
 
