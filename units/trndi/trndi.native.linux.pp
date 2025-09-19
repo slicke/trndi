@@ -31,7 +31,11 @@ type
     Uses spd-say for speech and draws badges on tray/KDE taskbar.
   }
   TTrndiNativeLinux = class(TTrndiNativeBase)
+  protected
+    Tray: TTrayIcon;
   public
+    procedure attention(topic, message: string); override;
+    destructor Destroy; override;
     {** Speaks @param(Text) using spd-say, if available.
         Shows a user-visible message when the tool is not present. }
     procedure Speak(const Text: string); override;
@@ -51,6 +55,117 @@ implementation
 
 uses
   Process, Types, LCLType;
+
+procedure TTrndiNativeLinux.attention(topic, message: string);
+{$IFDEF LCLQt6}
+  function RunAndCapture(const Exec: string; const Params: array of string;
+                         out StdoutS, StderrS: string; out ExitCode: Integer): Boolean;
+  var
+    P: TProcess;
+    i: Integer;
+    OutStr, ErrStr: TStringStream;
+    Buf: array[0..4095] of byte;
+    n: SizeInt;
+  begin
+    Result := False;
+    StdoutS := ''; StderrS := ''; ExitCode := -1;
+
+    P := TProcess.Create(nil);
+    OutStr := TStringStream.Create('');
+    ErrStr := TStringStream.Create('');
+    try
+      P.Executable := Exec;
+      for i := 0 to High(Params) do
+        P.Parameters.Add(Params[i]);
+      P.Options := [poUsePipes, poWaitOnExit];
+      P.ShowWindow := swoHIDE;
+      P.Execute;
+
+      repeat
+        while P.Output.NumBytesAvailable > 0 do
+        begin
+          n := P.Output.Read(Buf, SizeOf(Buf));
+          if n > 0 then OutStr.WriteBuffer(Buf, n) else Break;
+        end;
+        while P.Stderr.NumBytesAvailable > 0 do
+        begin
+          n := P.Stderr.Read(Buf, SizeOf(Buf));
+          if n > 0 then ErrStr.WriteBuffer(Buf, n) else Break;
+        end;
+        if not P.Running then Break;
+        Sleep(5);
+      until False;
+
+      ExitCode := P.ExitStatus;
+      StdoutS := OutStr.DataString;
+      StderrS := ErrStr.DataString;
+      Result := ExitCode = 0;
+    finally
+      ErrStr.Free; OutStr.Free; P.Free;
+    end;
+  end;
+{$ENDIF}
+var
+{$IFDEF LCLQt6}
+  Params: array of string;
+  OutS, ErrS: string;
+  ExitCode: Integer;
+  s: string;
+  p, i: Integer;
+  NewId: Cardinal;
+  ReplaceId: Cardinal;
+{$ENDIF}
+begin
+{$IFDEF LCLQt6}
+  ReplaceId := 0;
+  SetLength(Params, 0);
+  Params :=
+    ['call', '--session',
+     '--dest', 'org.freedesktop.Notifications',
+     '--object-path', '/org/freedesktop/Notifications',
+     '--method', 'org.freedesktop.Notifications.Notify',
+     '''Trndi''',
+     IntToStr(ReplaceId),
+     '''''',
+     '''' + topic + '''',
+     '''' + message + '''',
+     '[]',
+     '{}',
+     IntToStr(noticeDuration)];
+
+  if RunAndCapture('gdbus', Params, OutS, ErrS, ExitCode) then
+  begin
+    NewId := 0;
+    s := OutS;
+    p := Pos('uint32', s);
+    if p > 0 then
+    begin
+      Inc(p, Length('uint32'));
+      while (p <= Length(s)) and (s[p] = ' ') do Inc(p);
+      i := p;
+      while (i <= Length(s)) and (s[i] in ['0'..'9']) do Inc(i);
+      if i > p then
+        NewId := StrToIntDef(Copy(s, p, i - p), 0);
+    end;
+  end
+  else
+    inherited attention(topic, message);
+{$ELSE}
+  inherited attention(topic, message);
+{$ENDIF}
+end;
+destructor TTrndiNativeLinux.Destroy;
+begin
+  if not noFree then
+  begin
+    ClearBadge;
+    ShutdownBadge;
+  end;
+  if Assigned(Tray) then
+    Tray.Free;
+  inherited Destroy;
+end;
+
 
 function FindInPath(const FileName: string): string;
 var
@@ -294,6 +409,8 @@ var
 begin
   f := 0.0;
   TryStrToFloat(value, f);
+  if KDEBadge.GDesktopId = '' then
+    InitializeBadge('com.slicke.trndi.desktop', 150, nil);
   ClearBadge;
   KDEBadge.SetBadge(f);
   SetTray(value,badgecolor,badge_size_ratio, min_font_size);

@@ -37,21 +37,16 @@ interface
   as an alias that resolves to the appropriate subclass at compile time. }
 
 uses
-Classes, SysUtils, Graphics
-{$IF DEFINED(X_MAC)},
-NSMisc,
-ns_url_request,
-CocoaAll, LCLType
-{$ELSEIF DEFINED(X_WIN)},
-Windows, Registry, Dialogs, StrUtils, winhttpclient, shellapi, comobj,
-Forms, variants, dwmapi
-{$ELSEIF DEFINED(X_PC)},
-fphttpclient, openssl, opensslsockets, IniFiles, Dialogs, extctrls, forms, math, LCLIntf, LCLType, KDEBadge
+  Classes, SysUtils, Graphics
+{$IF DEFINED(X_MAC)}
+  , NSMisc, ns_url_request, CocoaAll, LCLType
+{$ELSEIF DEFINED(X_WIN)}
+  , Windows, Registry, Dialogs, StrUtils, winhttpclient, shellapi, comobj,
+    Forms, variants, dwmapi
+{$ELSEIF DEFINED(X_PC)}
+  , fphttpclient, openssl, opensslsockets, IniFiles, Dialogs, LCLType
 {$ENDIF}
-{$IFDEF LCLQt6}//,
-//qt6, qtwidgets, forms, QtWSForms, QtWSComCtrls
-{$endif}
-, process;
+  , process;
 
 type
   TWSLVersion = (wslNone, wslVersion1, wslVersion2, wslUnknown);
@@ -78,9 +73,6 @@ protected
   // HTTP defaults
   useragent: string;
   baseurl:   string;
-  {$ifdef lclqt6}
-  tray: TTrayIcon;
-  {$endif}
   {$IF DEFINED(X_PC)}
   inistore: TINIFile; // Linux/PC settings store
   {$ENDIF}
@@ -94,7 +86,7 @@ public
 
   // Core actions
   procedure Speak(const Text: string); virtual; abstract;
-  procedure attention(topic, message: string);
+  procedure attention(topic, message: string); virtual;
   function request(const post: boolean; const endpoint: string;
     const params: array of string; const jsondata: string = '';
     const header: string = ''): string;
@@ -500,38 +492,37 @@ end;
   Plays an audio file
  ------------------------------------------------------------------------------}
 class procedure TTrndiNativeBase.PlaySound(const FileName: string);
-function sIsValidAudioFile(const FileName: string): Boolean;
-var
-  Ext: string;
-  ValidExtensions: array[0..6] of string = (
-    '.wav', '.mp3', '.ogg', '.flac', '.aac', '.wma', '.m4a'
-  );
-  i: Integer;
-begin
-  Result := False;
-
-  // Kontrollera om filen existerar
-  if not FileExists(FileName) then
-    Exit;
-
-  Ext := LowerCase(ExtractFileExt(FileName));
-  for i := 0 to High(ValidExtensions) do
+  function sIsValidAudioFile(const FileName: string): Boolean;
+  var
+    Ext: string;
+    ValidExtensions: array[0..6] of string = (
+      '.wav', '.mp3', '.ogg', '.flac', '.aac', '.wma', '.m4a'
+    );
+    i: Integer;
   begin
-    if Ext = ValidExtensions[i] then
+    Result := False;
+
+    if not FileExists(FileName) then
+      Exit;
+
+    Ext := LowerCase(ExtractFileExt(FileName));
+    for i := 0 to High(ValidExtensions) do
     begin
-      Result := True;
-      Break;
+      if Ext = ValidExtensions[i] then
+      begin
+        Result := True;
+        Break;
+      end;
     end;
+
+    if not Result then
+      Exit;
+
+    if HasDangerousChars(FileName) then
+      Exit;
+
+    Result := True;
   end;
-
-  if not Result then
-    Exit;
-
-  if HasDangerousChars(FileName) then
-    Exit;
-
-  Result := True;
-end;
 var
   Process: TProcess;
 begin
@@ -574,13 +565,6 @@ begin
   {$IF DEFINED(X_PC)}
   if Assigned(inistore) then
     inistore.Free;
-  if assigned(tray) then
-    tray.free;
-
-  if not noFree then begin
-    ClearBadge;              // leave panel clean
-    ShutdownBadge;
-   end;
   {$ENDIF}
   inherited Destroy;
 end;
@@ -776,10 +760,6 @@ begin
      touchOverride := tbUnknown;
   cfguser := '';
   nofree := true;
-  {$ifdef X_PC}
-    if KDEBadge.GDesktopId = '' then
-      InitializeBadge('com.slicke.trndi.desktop', 150, nil);
-  {$endif}
    noticeDuration := 5000;
 end;
 
@@ -911,84 +891,28 @@ begin
   end;
 end;
 
-{$ifdef LCLqt6}
-function SendNotification(const AppName, Title, Body: string; var ReplaceId: Cardinal;
-                const TimeoutMs: Integer = 5000): Boolean;
-var
-  Params: array of string;
-  OutS, ErrS: string;
-  ExitCode: Integer;
-  s: string;
-  p, i: Integer;
-  NewId: Cardinal;
-begin
-  // Build args as separate parameters. Strings must be quoted for gdbus to parse as string.
-  SetLength(Params, 0);
-  Params :=
-    ['call', '--session',
-     '--dest', 'org.freedesktop.Notifications',
-     '--object-path', '/org/freedesktop/Notifications',
-     '--method', 'org.freedesktop.Notifications.Notify',
-     // signature: (s u s s s as a{sv} i)
-     '''' + AppName + '''',                                  // s app_name
-     IntToStr(ReplaceId),                                    // u replaces_id
-     '''' + '' + '''',                                       // s app_icon
-     '''' + Title + '''',                                    // s summary
-     '''' + Body + '''',                                     // s body
-     '[]',                                                   // as actions
-     '{}',                                                   // a{sv} hints
-     IntToStr(TimeoutMs)];                                   // i expire_timeout
-
-  Result := RunAndCapture('gdbus', Params, OutS, ErrS, ExitCode);
-  if not Result then
-  begin
-    // Helpful to surface why stdout was empty
-    raise Exception.CreateFmt('Notify failed (exit %d): %s', [ExitCode, Trim(ErrS)]);
-  end;
-
-  // OutS example: "(uint32 42,)"
-  NewId := 0;
-  s := OutS;
-  p := Pos('uint32', s);
-  if p > 0 then
-  begin
-    Inc(p, Length('uint32'));
-    // Skip spaces
-    while (p <= Length(s)) and (s[p] = ' ') do Inc(p);
-    // Read digits
-    i := p;
-    while (i <= Length(s)) and (s[i] in ['0'..'9']) do Inc(i);
-    if i > p then
-      NewId := StrToIntDef(Copy(s, p, i - p), 0);
-  end;
-
-  if NewId <> 0 then
-    ReplaceId := NewId; // Store for next update
-end;
-{$else}
 procedure SendNotification(Title, Message: string);
-  var
-    AProcess: TProcess;
+var
+  AProcess: TProcess;
+begin
+  {$IFDEF X_PC}
+  if IsNotifySendAvailable then
   begin
-    if IsNotifySendAvailable then
-    begin
-      AProcess := TProcess.Create(nil);
-      try
-        AProcess.Executable := '/usr/bin/notify-send';
-        AProcess.Parameters.Add(Title);
-        AProcess.Parameters.Add(Message);
-        AProcess.Options := AProcess.Options + [poNoConsole];
-        AProcess.Execute;
-      finally
-        AProcess.Free;
-      end;
-    end
-    else
-      ShowMessage('Notifieringsfunktionen är inte tillgänglig eftersom "notify-send" inte är installerat.')// Hantera fallet där notify-send inte är installerat
-// Alternativt kan du välja att använda en annan notifieringsmetod eller inaktivera notifieringsfunktionen
-    ;
-  end;
-  {$endif}
+    AProcess := TProcess.Create(nil);
+    try
+      AProcess.Executable := '/usr/bin/notify-send';
+      AProcess.Parameters.Add(Title);
+      AProcess.Parameters.Add(Message);
+      AProcess.Options := AProcess.Options + [poNoConsole];
+      AProcess.Execute;
+    finally
+      AProcess.Free;
+    end;
+  end
+  else
+    ShowMessage('Notifieringsfunktionen är inte tillgänglig eftersom "notify-send" inte är installerat.');
+  {$ENDIF}
+end;
   {$endif}
   {$if defined(X_WIN)}
 
@@ -1124,16 +1048,8 @@ begin
   Notification.release;
 end;
   {$endif}
-    {$ifdef lclqt6}
-  var
-  x: cardinal = 0;
-  {$endif}
 begin
-  {$ifdef lclqt6}
-  SendNotification('Trndi', topic, message, x, noticeDuration);
-  {$else}
   SendNotification(topic, message);
-  {$endif}
 end;
 
 {------------------------------------------------------------------------------
