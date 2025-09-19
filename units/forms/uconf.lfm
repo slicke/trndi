@@ -10466,40 +10466,6 @@ object fConf: TfConf
         Width = 663
         Align = alTop
       end
-      object pnMisc: TPanel
-        Left = 15
-        Height = 77
-        Top = 419
-        Width = 648
-        Align = alTop
-        BorderSpacing.Left = 15
-        BevelOuter = bvNone
-        ClientHeight = 77
-        ClientWidth = 648
-        TabOrder = 6
-        object spTHRESHOLD: TSpinEdit
-          Left = 0
-          Height = 41
-          Top = 36
-          Width = 82
-          Align = alLeft
-          BorderSpacing.Top = 5
-          MaxValue = 30
-          MinValue = 6
-          TabOrder = 0
-          Value = 6
-          OnChange = spTHRESHOLDChange
-        end
-        object Label1: TLabel
-          Left = 0
-          Height = 16
-          Top = 15
-          Width = 648
-          Align = alTop
-          BorderSpacing.Top = 15
-          Caption = 'Readings are outdated after (minutes):'
-        end
-      end
     end
     object tsColors: TTabSheet
       Caption = 'Colors'
@@ -11027,7 +10993,7 @@ object fConf: TfConf
       object gbOverride1: TGroupBox
         Left = 10
         Height = 80
-        Top = 256
+        Top = 343
         Width = 643
         Align = alTop
         BorderSpacing.Around = 10
@@ -11073,6 +11039,40 @@ object fConf: TfConf
         BorderSpacing.Around = 10
         Caption = 'Remember window size'
         TabOrder = 5
+      end
+      object pnMisc: TPanel
+        Left = 15
+        Height = 77
+        Top = 256
+        Width = 648
+        Align = alTop
+        BorderSpacing.Left = 15
+        BevelOuter = bvNone
+        ClientHeight = 77
+        ClientWidth = 648
+        TabOrder = 6
+        object spTHRESHOLD: TSpinEdit
+          Left = 0
+          Height = 41
+          Top = 36
+          Width = 82
+          Align = alLeft
+          BorderSpacing.Top = 5
+          MaxValue = 30
+          MinValue = 6
+          TabOrder = 0
+          Value = 6
+          OnChange = spTHRESHOLDChange
+        end
+        object Label1: TLabel
+          Left = 0
+          Height = 16
+          Top = 15
+          Width = 648
+          Align = alTop
+          BorderSpacing.Top = 15
+          Caption = 'Readings are outdated after (minutes):'
+        end
       end
     end
     object tsMulti: TTabSheet
