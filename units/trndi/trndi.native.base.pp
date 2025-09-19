@@ -18,10 +18,11 @@
  * GitHub: https://github.com/slicke/trndi
  *)
 
-{
-  This file contains platform-native code, written to make Trndi faster and smoother,
-  and to minimize the need for 3rd-party libraries. It also provides native features
-  such as Windows registry access and OpenSSL on Linux.
+{**
+  This base unit defines platform-neutral contracts for native features and
+  holds small, safe helpers that can work across platforms. The heavy lifting
+  is done in platform units (win/linux/mac) to keep this unit almost free of
+  ifdefs. Avoid adding platform-specific code here.
 }
 
 unit trndi.native.base;
@@ -71,10 +72,7 @@ type
     DistroName: string;
     KernelVersion: string;
   end;
-  { TrndiNative
-    -----------
-    Provides platform-native methods
-  }
+  // TrndiNative base contracts
 {**
   @abstract(Base class providing contracts for native features.)
   Note: Implement platform-specific behavior in subclasses. Keep the API
@@ -124,7 +122,7 @@ public
   procedure SetRootSetting(keyname: string; const val: string);
   {** Store a string value under @param(keyname). @param(global) bypasses user scoping. }
   procedure SetSetting(const keyname: string; const val: string; global: boolean = false); virtual; abstract;
-  {** Store a boolean setting. }
+  {** Store a boolean setting (serialized as 'true'/'false'). }
   procedure SetBoolSetting(const keyname: string; const val: boolean);
   {** Store a float setting (using '.' decimal separator). }
   procedure SetFloatSetting(const keyname: string; const val: single);
@@ -209,8 +207,8 @@ const
 implementation
 {------------------------------------------------------------------------------
   TTrndiNativeBase.updateLocale
-  ------------------------
-  Sets formatting settings
+  -----------------------------
+  Update decimal/thousand separators and other locale-driven formats.
  ------------------------------------------------------------------------------}
 procedure TTrndiNativeBase.updateLocale(const l: TFormatSettings);
 begin
@@ -220,8 +218,8 @@ end;
 
 {------------------------------------------------------------------------------
   TTrndiNativeBase.buildKey
-  -------------------
-  Gets the key name in the ini file/registry/etc
+  -------------------------
+  Build a storage key. If not global, prepend user prefix when available.
  ------------------------------------------------------------------------------}
 function TTrndiNativeBase.buildKey(const key: string; global: boolean): string;
 begin
@@ -235,7 +233,7 @@ end;
 
 {------------------------------------------------------------------------------
   isNotificationSystemAvailable (class, virtual)
-  -------------------------------------
+  ----------------------------------------------
   Platforms override; default returns True (assume available).
  ------------------------------------------------------------------------------}
 class function TTrndiNativeBase.isNotificationSystemAvailable: boolean;
@@ -275,7 +273,7 @@ end;
 
 {------------------------------------------------------------------------------
   setBadge
-  -------------------
+  --------
   Base convenience and default no-op; platform units override the 4-arg.
  ------------------------------------------------------------------------------}
 procedure TTrndiNativeBase.SetBadge(const Value: string; badgeColor: TColor);
@@ -290,8 +288,9 @@ end;
 
 {------------------------------------------------------------------------------
   PlaySound
-  -------------------
-  Plays an audio file
+  ---------
+  Play an audio file by delegating to a native player per platform.
+  Includes a basic validation on extension and characters to avoid shell issues.
  ------------------------------------------------------------------------------}
 class procedure TTrndiNativeBase.PlaySound(const FileName: string);
   function sIsValidAudioFile(const FileName: string): Boolean;
@@ -359,7 +358,7 @@ end;
 
 {------------------------------------------------------------------------------
   Destroy
-  -------------------
+  -------
   Cleans up any allocated resources.
  ------------------------------------------------------------------------------}
 destructor TTrndiNativeBase.Destroy;
@@ -380,8 +379,8 @@ end;
 
 {------------------------------------------------------------------------------
   HasTouchScreen
-  -------------------
-  Detects touch screen
+  --------------
+  Detect if the system has a touchscreen. Honors the touchOverride flag first.
  ------------------------------------------------------------------------------}
  class function TTrndiNativeBase.HasTouchScreen: boolean;
  var
@@ -419,9 +418,9 @@ function IsTouchReady: boolean;
   end;
 
 {------------------------------------------------------------------------------
-  TrndiNative.isMultiTouch
-  -------------------
-  Detects more than one touch point
+  isMultiTouch
+  ------------
+  Detect more than one touch point
  ------------------------------------------------------------------------------}
 function IsMultiTouch: boolean;
   var
@@ -432,9 +431,9 @@ function IsMultiTouch: boolean;
   end;
 
 {------------------------------------------------------------------------------
-  TrndiNative.hasIntegratedTouch
-  -------------------
-  Detects a touch-first device
+  hasIntegratedTouch
+  ------------------
+  Detect a touch-first device
  ------------------------------------------------------------------------------}
 function HasIntegratedTouch: boolean;
   var
@@ -473,21 +472,21 @@ begin
   try
     if FileExists('/proc/bus/input/devices') then
     begin
-      SL.LoadFromFile('/proc/bus/input/devices');
+  SL.LoadFromFile('/proc/bus/input/devices');
 
       Block.Clear;
       for i := 0 to SL.Count - 1 do
       begin
         if Trim(SL[i]) = '' then
         begin
-          // Blocket är slut, analysera det
+          // End of block; analyze accumulated lines
           if Block.Count > 0 then
           begin
-            // Sök touch i blocket
+            // Look for touch capability markers in this block
             if (Block.Text.ToLower.Contains('touch')) then
             begin
               Result := true;
-              // Sök multicapabilities i blocket
+              // Look for multi-touch markers in this block
               if (Block.Text.Contains('ABS_MT_POSITION')) or
                  (Block.Text.Contains('ABS_MT_SLOT')) or
                  (Block.Text.Contains('ABS_MT_TRACKING_ID')) then
@@ -499,7 +498,7 @@ begin
         else
           Block.Add(SL[i]);
       end;
-      // Kolla sista blocket om filen inte slutar med blankrad
+  // Analyze the last block if the file does not end with a blank line
       if Block.Count > 0 then
       begin
         if (Block.Text.ToLower.Contains('touch')) then

@@ -25,6 +25,8 @@ unit trndi.native.mac;
   @link(TTrndiNativeBase) and implements:
   - Text-to-speech via the built-in @code(say) command
   - Enabling dark appearance via @code(SimpleDarkMode)
+  - Dock badge label updates
+  - Simple HTTP GET using an NS-based helper
 
   Use the façade unit @code(trndi.native) which provides the platform alias.
 }
@@ -44,17 +46,23 @@ type
   }
   TTrndiNativeMac = class(TTrndiNativeBase)
   public
-    {** Speaks @param(Text) using the system @code(say) command. }
-  {** Speak text via the built-in 'say' command. }
+    {** Speak @param(Text) using the built-in 'say' command.
+        Note: This call blocks until speech completes; dispatch from a
+        background thread if you need non-blocking UI. }
   procedure Speak(const Text: string); override;
-    {** Enables dark appearance for the application via SimpleDarkMode. }
-  {** Enable dark appearance for the app UI. }
+    {** Enable dark appearance for the app UI via SimpleDarkMode.
+        @returns(True once the request is made) }
   class function setDarkMode: boolean;
 
     // Settings API overrides (NSUserDefaults/CFPreferences)
+    {** Read a string from preferences; returns @param(def) when missing.
+        Keys are scoped by @link(TTrndiNativeBase.buildKey). }
     function GetSetting(const keyname: string; def: string = ''; global: boolean = false): string; override;
+    {** Write a string to preferences under the scoped key. }
     procedure SetSetting(const keyname: string; const val: string; global: boolean = false); override;
+    {** Delete a setting (sets to empty string as some backends lack delete). }
     procedure DeleteSetting(const keyname: string; global: boolean = false); override;
+    {** Preferences are live; nothing to reload. }
     procedure ReloadSettings; override;
     // Badge
   {** Set the dock tile badge label (text only). }
@@ -82,6 +90,8 @@ var
   o: string;
 begin
   // Use the built-in macOS speech synthesis
+  // Note: This is synchronous; consider running in a background process
+  // if you need to keep the UI responsive during long messages.
   RunCommand('/usr/bin/say', [Text], o);
 end;
 
@@ -111,6 +121,7 @@ begin
       end
       else
       begin
+        // Normalize an error: LastErrMsg usually contains the reason
         res := Trim(httpClient.LastErrMsg);
         Result := false;
       end;
@@ -144,6 +155,7 @@ class function TTrndiNativeMac.setDarkMode: Boolean;
 begin
   // Enable dark appearance for the app's UI via SimpleDarkMode
   SimpleDarkMode.EnableAppDarkMode;
+  Result := True;
 end;
 
 procedure TTrndiNativeMac.SetBadge(const Value: string; BadgeColor: TColor);
