@@ -23,6 +23,13 @@ unit trndi.ext.ext;
 
 interface
 
+{**
+  @abstract(Runtime loader for Trndi extensions.)
+  Intended to discover and manage external shared libraries that implement
+  the Trndi extension ABI. Note: the implementation is currently disabled
+  in source (commented) and kept for future iterations.
+}
+
 implementation
 {
 {$mode ObjFPC}{$H+}{$ModeSwitch advancedrecords}

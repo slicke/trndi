@@ -1,21 +1,22 @@
 (*
-  trndi.ext.functions
-  ------------------------------------------------------------------
-  This unit provides extended functionality for JavaScript bindings
-  (using QuickJS via mORMot) and includes helper types, records,
-  constants, and various utility functions for parsing and handling
-  JSValue objects.
-
-  Dependencies:
-    - mormot.lib.quickjs
-    - mormot.core.base
-    - TFPGList-based collections
-    - Slicke.ux.alert for logging
-
-  Author:    Björn Lindh (github.com/slicke)
-  License:   GNU General Public License (v3)
-  Repository: https://github.com/slicke/trndi
-*)
+ * This file is part of Trndi (https://github.com/slicke/trndi).
+ * Copyright (c) 2021-2025 Björn Lindh.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ * ---------
+ *
+ * GitHub: https://github.com/slicke/trndi
+ *)
 
 unit trndi.ext.functions;
 
@@ -24,6 +25,13 @@ unit trndi.ext.functions;
 {$ModeSwitch typehelpers}
 
 interface
+
+{**
+  @abstract(Helpers for Trndi extensions and QuickJS bindings.)
+  Provides records, enums, and utility types to marshal values between
+  QuickJS and Pascal, plus common callback and list helpers used by
+  trndi.ext.* units.
+}
 
 uses
 Classes, SysUtils, mormot.lib.quickjs, mormot.core.base, strutils, fgl,
@@ -35,22 +43,15 @@ Dialogs, slicke.ux.alert, Math, types, trndi.strings, trndi.native;
 *)
 
 type
-  {
-    Forward declaration to prevent circular references.
-    PJSValueVal is a pointer to a JSValueVal record.
-  }
+  {** Forward pointer to @link(JSValueVal) to prevent circular references. }
 PJSValueVal = ^JSValueVal;
 
-  {
-    TJSValList is a list of PJSValueVal pointers (FGL-based list).
-  }
+  {** List of @code(PJSValueVal) pointers (FGL-based list). }
 TJSValList = specialize TFPGList<PJSValueVal>;
 PJSValList = ^TJSValList;
 
-  {
-    JDValue is an enum that extends QuickJS tags to cover additional
-    custom types, such as JD_ARRAY, JD_UNSET, etc.
-  }
+  {** Enum of supported value kinds, extending QuickJS tags with extras like
+      @code(JD_ARRAY), @code(JD_UNSET), etc. }
 JDValue = (
   JD_UNINITIALIZED = JS_TAG_UNINITIALIZED, // 0
   JD_INT           = JS_TAG_INT,           // 1
@@ -74,20 +75,15 @@ JDValue = (
 JDValues = set of JDValue;
 JDTypes  = array of JDValue;
 
-  {
-    JDValueHelper adds methods to the JDValue enum.
-    For instance, `code` returns the ordinal value of the enum case.
-  }
+  {** Helper for @link(JDValue). }
+{$IFNDEF PASDOC}
 JDValueHelper = type helper for JDValue
   function code: integer;
 end;
+{$ENDIF}
 
-  {
-    JSValueVal is a record encapsulating a QuickJS value, with possible
-    subtypes for various data (bigint, float, string, boolean, array, etc.)
-    It includes methods to convert between different types, compare
-    types, and retrieve array elements.
-  }
+  {** QuickJS value wrapper with typed variants (bigint, float, string, bool,
+      array, object...). Provides conversion helpers and array access. }
 JSValueVal = record
   data: packed record
     case match: JDValue of
@@ -130,7 +126,7 @@ JSValueVal = record
     // Optionally includes the function name (func) and parameter index (ppos).
   function mustbe(a: JDValue; func: string = ''; ppos: integer = -1): boolean;
 
-    // Default property so you can use e.g. `myValueVal[i]` to get array elements
+    // Default property so you can use e.g. myValueVal[i] to get array elements
   property arrval[i: integer]: JSValueVal read _a; default;
 
     // Equality operator, returns true if they have the same JDValue tag
@@ -145,10 +141,7 @@ end;
   // Alias for an array of JSValueVal
 JSValueValArray = array of JSValueVal;
 
-  {
-    JSValueParam is a simpler record used to store a single JSValueVal
-    or arrays of them. This can be used in function parameters.
-  }
+  {** Simple container for a single @link(JSValueVal) or an array of them. }
 JSValueParam = record
   BigInt: int64;
   BigFloat: double;
@@ -166,10 +159,7 @@ end;
   // An array of JSValueParam
 JSValuePArray = array of JSValueParam;
 
-  {
-    JSValueParams can hold either a single value or an array of values,
-    tracked by its JDValue 'match' type.
-  }
+  {** Holds one or many @link(JSValueParam) values, tracked by a JDValue tag. }
 JSValueParams = record
   match: JDValue;
   data: array of JSValueParam;
@@ -181,11 +171,12 @@ end;
 JSParameters = TJSValList;
 PJSParameters = ^JSParameters;
 
-  {
-    JSCallbackFunction is a function type for callbacks from JavaScript
-    to Pascal code. The function returns a boolean indicating success or
-    failure, and can store a result in `res` (JSValueVal).
-  }
+  {** Callback signature used by extensions to call into Pascal from JS.
+      @param(ctx QuickJS context)
+      @param(func Function name)
+      @param(params Arguments list)
+      @param(res Out parameter receiving the result)
+      @returns(True on success) }
 JSCallbackFunction = function(const ctx: PJSContext; const func: string;
   const params: JSParameters; out res: JSValueVal): boolean of object;
 PJSCallbackFunction = ^JSCallbackFunction;

@@ -77,8 +77,8 @@ type
   }
 {**
   @abstract(Base class providing contracts for native features.)
-  @remarks(Implement platform-specific behavior in subclasses. Keep the API
-           stable; avoid leaking OS details into the base.)
+  Note: Implement platform-specific behavior in subclasses. Keep the API
+  stable; avoid leaking OS details into the base.
 }
 TTrndiNativeBase = class
 private
