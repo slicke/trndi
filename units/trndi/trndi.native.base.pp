@@ -112,7 +112,7 @@ public
   class function DetectTouchScreen(out multi: boolean): boolean;
   class function HasTouchScreen(out multi: boolean): boolean;
   class function HasTouchScreen: boolean;
-  class function getURL(const url: string; out res: string): boolean; static;
+  class function getURL(const url: string; out res: string): boolean; virtual; abstract;
   class function GetOSLanguage: string;
   class function HasDangerousChars(const FileName: string): Boolean; static;
   class function DetectWSL: TWSLInfo;
@@ -1230,115 +1230,7 @@ begin
 end;
 {$ENDIF}
 
-{------------------------------------------------------------------------------
-  getURL (class function)
-  -----------------------------------
-  A static method for a quick GET request. Returns True if successful, False on error.
- ------------------------------------------------------------------------------}
-{$IF DEFINED(X_MAC)}
-class function TTrndiNativeBase.getURL(const url: string; out res: string): boolean;
-const
-  DEFAULT_USER_AGENT = 'Mozilla/5.0 (compatible; trndi) TrndiAPI';
-var
-  send, response: TStringStream;
-  headers: TStringList;
-  httpClient: TNSHTTPSendAndReceive;
-begin
-  res := '';
-  send := TStringStream.Create('');
-  response := TStringStream.Create('');
-  headers := TStringList.Create;
-  httpClient := TNSHTTPSendAndReceive.Create;
-  try
-    try
-      httpClient.address := url;
-      httpClient.method := 'GET';
-      headers.Add('User-Agent=' + DEFAULT_USER_AGENT);
-      //httpClient. Headers := headers;
-
-      if httpClient.SendAndReceive(send, response, headers) then
-      begin
-        res := Trim(response.DataString);
-        Result := true;
-      end
-      else
-      begin
-        res := Trim(httpClient.LastErrMsg);
-        Result := false;
-      end;
-    except
-      on E: Exception do
-      begin
-        res := E.Message;
-        Result := false;
-      end;
-    end;
-  finally
-    httpClient.Free;
-    send.Free;
-    response.Free;
-    headers.Free;
-  end;
-end;
-
-{$ELSEIF DEFINED(X_WIN)}
-class function TTrndiNativeBase.getURL(const url: string; out res: string): boolean;
-const
-  DEFAULT_USER_AGENT = 'Mozilla/5.0 (compatible; trndi) TrndiAPI';
-var
-  client: TWinHTTPClient;
-  responseStr: string;
-begin
-  res := '';
-  client := TWinHTTPClient.Create(DEFAULT_USER_AGENT);
-  try
-    try
-      responseStr := client.Get(url, []);
-      res := responseStr;
-      Result := true;
-    except
-      on E: Exception do
-      begin
-        res := E.Message;
-        Result := false;
-      end;
-    end;
-  finally
-    client.Free;
-  end;
-end;
-
-{$ELSE}
-// Linux/PC or other
-class function TTrndiNativeBase.getURL(const url: string; out res: string): boolean;
-const
-  DEFAULT_USER_AGENT = 'Mozilla/5.0 (compatible; trndi) TrndiAPI';
-var
-  client: TFPHttpClient;
-  responseStream: TStringStream;
-begin
-  res := '';
-  client := TFPHttpClient.Create(nil);
-  responseStream := TStringStream.Create('');
-  try
-    try
-      client.AddHeader('User-Agent', DEFAULT_USER_AGENT);
-      client.Get(url, responseStream);
-      res := Trim(responseStream.DataString);
-      Result := true;
-    except
-      on E: Exception do
-      begin
-        res := E.Message;
-        Result := false;
-      end;
-    end;
-  finally
-    client.Free;
-    responseStream.Free;
-  end;
-end;
-{$ENDIF}
+{ getURL moved: now a virtual abstract class function; implemented in platform units. }
 
 {------------------------------------------------------------------------------
   HasDangerousChars

@@ -44,6 +44,7 @@ type
         @returns(True if both attributes are set successfully) }
     function SetTitleColor(form: THandle; bg, text: TColor): boolean; override;
   procedure SetBadge(const Value: string; BadgeColor: TColor; badge_size_ratio: double; min_font_size: integer); override;
+    class function getURL(const url: string; out res: string): boolean; override;
 
     // Settings API overrides (Windows Registry)
     function GetSetting(const keyname: string; def: string = ''; global: boolean = false): string; override;
@@ -87,6 +88,32 @@ begin
   // else: keep default SAPI voice
 
   Voice.Speak(Text, 0);
+end;
+
+class function TTrndiNativeWindows.getURL(const url: string; out res: string): boolean;
+const
+  DEFAULT_USER_AGENT = 'Mozilla/5.0 (compatible; trndi) TrndiAPI';
+var
+  client: TWinHTTPClient;
+  responseStr: string;
+begin
+  res := '';
+  client := TWinHTTPClient.Create(DEFAULT_USER_AGENT);
+  try
+    try
+      responseStr := client.Get(url, []);
+      res := responseStr;
+      Result := true;
+    except
+      on E: Exception do
+      begin
+        res := E.Message;
+        Result := false;
+      end;
+    end;
+  finally
+    client.Free;
+  end;
 end;
 
 class function TTrndiNativeWindows.SetDarkMode(win: HWND; Enable: Boolean = True): Boolean;
