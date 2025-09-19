@@ -1,5 +1,23 @@
 unit trndi.native.win;
 
+{**
+  @abstract(Windows-specific native features for Trndi.)
+
+  This unit defines @link(TTrndiNativeWindows) which derives from
+  @link(TTrndiNativeBase) and implements behaviors that require Windows APIs
+  (SAPI for TTS, DWM for caption colors and immersive dark mode).
+
+  Consumers should use the façade unit @code(trndi.native), which exposes the
+  alias @code(TrndiNative) to the correct platform class at compile time.
+
+  @bold(Key responsibilities)
+  - Text-to-speech using SAPI (@link(TTrndiNativeWindows.Speak))
+  - Toggle immersive dark mode on a window (@link(TTrndiNativeWindows.SetDarkMode))
+  - Set window caption and text colors (@link(TTrndiNativeWindows.SetTitleColor))
+
+  @seealso(TTrndiNativeBase)
+}
+
 {$I ../../inc/native.inc}
 
 interface
@@ -9,10 +27,21 @@ uses
   Forms, variants, dwmapi, trndi.native.base;
 
 type
+  {**
+    @abstract(Windows implementation of @link(TTrndiNativeBase).)
+    Uses SAPI for speech and DWM for window appearance tweaks.
+  }
   TTrndiNativeWindows = class(TTrndiNativeBase)
   public
+    {** Speaks @param(Text) using SAPI; falls back to default voice if a
+        locale-matching voice is not found. }
     procedure Speak(const Text: string); override;
+    {** Toggles immersive dark mode for @param(win).
+        Requires Windows 10 1809+ (build >= 17763).
+        @returns(True if the DWM call succeeds) }
     class function SetDarkMode(win: HWND; Enable: Boolean = True): Boolean;
+    {** Applies caption (@param(bg)) and text (@param(text)) colors via DWM.
+        @returns(True if both attributes are set successfully) }
     function SetTitleColor(form: THandle; bg, text: TColor): boolean; override;
   end;
 
@@ -25,6 +54,7 @@ uses
 function DwmSetWindowAttribute(hwnd: HWND; dwAttribute: DWORD; pvAttribute: Pointer; cbAttribute: DWORD): HRESULT; stdcall; external 'dwmapi.dll';
 {$endif}
 
+{ DWM attribute constants used for caption and text colors, and dark mode }
 const
   DWMWA_CAPTION_COLOR = 35;
   DWMWA_TEXT_COLOR    = 36;
@@ -36,6 +66,8 @@ var
   lang: LANGID;
   LangHex: string;
 begin
+  // Use SAPI (COM-based) text-to-speech. We try to pick a voice matching the
+  // user locale; if none are available, the default SAPI voice is used.
   Voice := CreateOleObject('SAPI.SpVoice');
   lang := GetUserDefaultLangID;
 
@@ -81,6 +113,7 @@ var
   bgColor, textColor: COLORREF;
   hrCaption, hrText: HRESULT;
 begin
+  // Apply caption and text colors for the given window using DWM attributes.
   // TColor and COLORREF are both 0x00BBGGRR; no swap needed
   bgColor   := COLORREF(ColorToRGB(bg));
   textColor := COLORREF(ColorToRGB(text));
