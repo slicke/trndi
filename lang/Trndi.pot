@@ -449,6 +449,10 @@ msgstr ""
 msgid "All accounts"
 msgstr ""
 
+#: tfconf.label1.caption
+msgid "Readings are outdated after (minutes):"
+msgstr ""
+
 #: tfconf.label10.caption
 msgid "High (eg https://open.spotify.com/... or spotify:track:...)"
 msgstr ""

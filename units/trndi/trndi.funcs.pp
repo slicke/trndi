@@ -33,7 +33,6 @@ function privacyIcon(const v: trndi.types.BGValLevel): string;
 const
 INTERVAL_MINUTES = 5; // Each time interval is 5 minutes
 NUM_DOTS = 10;        // Total number of labels (lDot1 - lDot10)
-DATA_FRESHNESS_THRESHOLD_MINUTES = 11; // Max minutes before data is considered outdated
 
 BG_API_MIN = 2; // NS can't read lower
 BG_API_MAX = 22.2; // NS can't read higher
@@ -49,6 +48,7 @@ var
 DOT_ADJUST: single = 0; // Multiplyer where dots appear
 MAX_MIN: integer = 1440; // Max time to request
 MAX_RESULT: integer = 25; // Max results
+DATA_FRESHNESS_THRESHOLD_MINUTES: integer = 11; // Max minutes before data is considered outdated
 
 implementation
 

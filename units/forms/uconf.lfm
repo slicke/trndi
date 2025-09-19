@@ -10466,6 +10466,24 @@ object fConf: TfConf
         Width = 517
         Align = alTop
       end
+      object Label1: TLabel
+        Left = 15
+        Height = 15
+        Top = 400
+        Width = 202
+        Caption = 'Readings are outdated after (minutes):'
+      end
+      object spTHRESHOLD: TSpinEdit
+        Left = 20
+        Height = 23
+        Top = 420
+        Width = 82
+        MaxValue = 30
+        MinValue = 6
+        TabOrder = 6
+        Value = 6
+        OnChange = spTHRESHOLDChange
+      end
     end
     object tsColors: TTabSheet
       Caption = 'Colors'

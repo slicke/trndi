@@ -853,6 +853,9 @@ var
     lAgo.Font.name := s;
     lTir.Font.name := s;
 
+    // Sensitive data
+    DATA_FRESHNESS_THRESHOLD_MINUTES := native.GetIntSetting('system.fresh_threshold', DATA_FRESHNESS_THRESHOLD_MINUTES);
+
     // Check graph
     for i := 1 to NUM_DOTS do
       begin
@@ -1972,6 +1975,7 @@ var
       eAddr.Text := GetSetting('remote.target');
       ePass.Text := GetSetting('remote.creds');
       rbUnit.ItemIndex := IfThen(GetSetting('unit', 'mmol') = 'mmol', 0, 1);
+      spTHRESHOLD.Value := native.GetIntSetting('system.fresh_threshold', DATA_FRESHNESS_THRESHOLD_MINUTES);;
 
       // Override range settings
       if api = nil then
@@ -2152,6 +2156,8 @@ if cbPos.ItemIndex = -1 then
       SetSetting('remote.creds', ePass.Text);
       SetSetting('unit', IfThen(rbUnit.ItemIndex = 0, 'mmol', 'mgdl'));
       SetSetting('ext.privacy', IfThen(cbPrivacy.Checked, '1', '0'));
+
+      SetSetting('system.fresh_threshold', IntToStr(spTHRESHOLD.Value));
 
       // Save unit-specific settings
       if rbUnit.ItemIndex = 0 then
