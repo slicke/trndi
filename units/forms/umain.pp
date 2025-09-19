@@ -240,6 +240,7 @@ private
     // Array to hold references to lDot1 - lDot10
   TrendDots: array[1..10] of TPaintBox;
   multi: boolean; // Multi user
+  multinick: string;
   MediaController: TSystemMediaController;
 
   function setColorMode: boolean;
@@ -928,10 +929,11 @@ begin
         end
         else begin
           username := '';
-          s :=  native.GetSetting('user.nick', '');
+          s :=  native.GetSetting('user.nick', ''); // try just using RS_DEFAULT_ACCOUNT later
           if s = '' then
             s := RS_DEFAULT_ACCOUNT;
 
+          multinick := s;
           fbg.Caption := Format(RS_USER_CAPTION, [s, fBG.Caption]);
         end;
       end;// Load possible other users
@@ -2971,7 +2973,7 @@ begin
   fBG.Color := bg_color_hi;
 
   if not bg_alert then
-    native.attention(RS_WARN_BG_HI_TITLE, Format(RS_WARN_BG_HI, [lVal.Caption]));
+    native.attention(ifthen(multi, multinick, RS_WARN_BG_HI_TITLE), Format(RS_WARN_BG_HI, [lVal.Caption]));
 
   if highAlerted then
     Exit;
@@ -2993,7 +2995,7 @@ begin
   fBG.Color := bg_color_lo;
 
   if not bg_alert then
-    native.attention(RS_WARN_BG_LO_TITLE, Format(RS_WARN_BG_LO, [lVal.Caption]));
+    native.attention(ifthen(multi, multinick, RS_WARN_BG_LO_TITLE), Format(RS_WARN_BG_LO, [lVal.Caption]));
 
   if lowAlerted then
     exit;

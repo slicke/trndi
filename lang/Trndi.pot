@@ -962,7 +962,7 @@ msgid "High blood sugar! Currently: %s"
 msgstr ""
 
 #: trndi.strings.rs_warn_bg_hi_title
-msgid "Blood high"
+msgid "Blood sugar high"
 msgstr ""
 
 #: trndi.strings.rs_warn_bg_lo
@@ -971,7 +971,7 @@ msgid "Low blood sugar! Currently: %s"
 msgstr ""
 
 #: trndi.strings.rs_warn_bg_lo_title
-msgid "Blood low"
+msgid "Blood sugar low"
 msgstr ""
 
 #: trndi.strings.sannounceoff
