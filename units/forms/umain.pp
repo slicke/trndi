@@ -242,6 +242,7 @@ private
   multi: boolean; // Multi user
   MediaController: TSystemMediaController;
 
+  procedure setColorMode;
   procedure SetLang;
   procedure fixWarningPanel;
   function lastReading: BGReading;
@@ -311,6 +312,7 @@ function CFStringCreateWithUTF8String(const utf8Str: PAnsiChar): CFStringRef; ex
 {$endif}
 
 var
+customTitlebar: boolean = true;
 fSplash: TfSplash;
 native: TrndiNative;
 {$ifdef X_LINUXBSD}
@@ -932,8 +934,11 @@ begin
       end;// Load possible other users
       multi := true;
       pnMultiUser.Color := native.GetColorSetting('user.color', clBlack);
-      if pnMultiUser.Color <> clBlack then
-        pnMultiUser.Visible := true;
+      if pnMultiUser.Color <> clBlack then begin
+        pnMultiUser.Visible := not native.SetTitleColor(handle, pnMultiUser.Color, clWhite); // SHow the bar if the window isnt colored
+        customTitlebar := not pnMultiUser.Visible; // Set the custom title bar value depending if the panel is showing
+      end;
+
     end
     else
       multi := false;
@@ -1052,8 +1057,7 @@ begin
     else
       native.touchOverride := tbTrue;
 
-  if native.isDarkMode then
-     native.setDarkMode{$ifdef windows}(self.Handle){$endif};
+  setColorMode;
   {$ifdef X_LINUXBSD}
    linuxinit;
   {$endif}
@@ -1706,8 +1710,7 @@ begin
   end;
 
   // Adjust for dark mode if applicable
-  if native.isDarkMode then
-    native.setDarkMode{$ifdef windows}(self.Handle){$endif};
+  setColorMode;
 end;
 
 procedure TfBG.lDot7DblClick(Sender:TObject);
@@ -1919,8 +1922,7 @@ begin
   BorderStyle := bsSizeToolWin;
   {$endif}
 
-  if native.isDarkMode then
-     native.setDarkMode{$ifdef windows}(self.Handle){$endif};
+  setColorMode;
 end;
 
 // Force update on menu click
@@ -1944,8 +1946,7 @@ begin
   else
     self.FormStyle := fsNormal;
 
-  if native.isDarkMode then
-     native.setDarkMode{$ifdef windows}(self.Handle){$endif};
+  setColorMode;
 end;
 
 // Handle settings menu click
@@ -3396,5 +3397,16 @@ begin
   result := LightenColor(result, -0.8);
 end;
 
+procedure TfBG.setColorMode;
+begin
+  if customTitleBar and (pnMultiUser.Color <> clBlack) then // Safe that black = standard
+    if native.SetTitleColor(handle, pnMultiUser.Color, clWhite) then
+      Exit;
+
+  if native.isDarkMode and (not customTitleBar) then
+    native.setDarkMode{$ifdef windows}(self.Handle){$endif}
+
+
+end;
 
 end.
