@@ -624,7 +624,7 @@ end;
 
 procedure TfConf.bTestAnnounceClick(Sender: TObject);
 begin
-  tnative.attention('test');
+  tnative.attention('Trndi Test', 'test');
 end;
 
 procedure TfConf.bTestSpeechClick(Sender: TObject);

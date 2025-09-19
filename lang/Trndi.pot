@@ -961,9 +961,17 @@ msgstr ""
 msgid "High blood sugar! Currently: %s"
 msgstr ""
 
+#: trndi.strings.rs_warn_bg_hi_title
+msgid "Blood high"
+msgstr ""
+
 #: trndi.strings.rs_warn_bg_lo
 #, object-pascal-format
 msgid "Low blood sugar! Currently: %s"
+msgstr ""
+
+#: trndi.strings.rs_warn_bg_lo_title
+msgid "Blood low"
 msgstr ""
 
 #: trndi.strings.sannounceoff

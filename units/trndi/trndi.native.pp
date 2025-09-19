@@ -76,7 +76,7 @@ public
   dark: boolean;
 
   procedure Speak(const Text: string);
-  procedure attention(message: string);
+  procedure attention(topic, message: string);
   function request(const post: boolean; const endpoint: string;
     const params: array of string; const jsondata: string = '';
     const header: string = ''): string;
@@ -1205,7 +1205,7 @@ end;
   Flashes something depending on the system
  ------------------------------------------------------------------------------}
 
-procedure TrndiNative.attention(message: string);
+procedure TrndiNative.attention(topic, message: string);
 {$if  DEFINED(X_LINUXBSD)}
 function RunAndCapture(const Exec: string; const Params: array of string;
                        out StdoutS, StderrS: string; out ExitCode: Integer): Boolean;
@@ -1474,9 +1474,9 @@ end;
   {$endif}
 begin
   {$ifdef lclqt6}
-  SendNotification('Trndi', 'Trndi', message, x);
+  SendNotification('Trndi', topic, message, x);
   {$else}
-  SendNotification('Trndi', message);
+  SendNotification(topic, message);
   {$endif}
 end;
 
