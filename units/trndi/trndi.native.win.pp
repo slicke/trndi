@@ -1,3 +1,21 @@
+(*
+ * This file is part of Trndi (https://github.com/slicke/trndi).
+ * Copyright (c) 2021-2025 Björn Lindh.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ *
+ * GitHub: https://github.com/slicke/trndi
+ *)
 unit trndi.native.win;
 
 {**
@@ -45,10 +63,18 @@ type
         @returns(True if both attributes are set successfully) }
   {** Set window caption/background and text colors via DWM attributes. }
   function SetTitleColor(form: THandle; bg, text: TColor): boolean; override;
+    {** Draw a badge with @param(Value) on the application icon.
+        @param(BadgeColor Color of the badge circle/rounded rect)
+        @param(badge_size_ratio Badge diameter relative to icon size)
+        @param(min_font_size Minimum font size while fitting text) }
   procedure SetBadge(const Value: string; BadgeColor: TColor; badge_size_ratio: double; min_font_size: integer); override;
-  {** Simple HTTP GET using WinHTTP client with default UA. }
+  {** Simple HTTP GET using WinHTTP client with default UA.
+      @param(url URL to fetch)
+      @param(res Out parameter receiving response body or error message)
+      @returns(True on success) }
   class function getURL(const url: string; out res: string): boolean; override;
-  {** Determine if Windows is using dark app theme (AppsUseLightTheme=0). }
+  {** Determine if Windows is using dark app theme (AppsUseLightTheme=0).
+      @returns(True if dark mode is active) }
   class function isDarkMode: boolean; override;
   {** True if the BurntToast PowerShell module is available. }
   class function isNotificationSystemAvailable: boolean; override;
