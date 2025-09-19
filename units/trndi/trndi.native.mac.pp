@@ -36,6 +36,9 @@ type
     procedure SetSetting(const keyname: string; const val: string; global: boolean = false); override;
     procedure DeleteSetting(const keyname: string; global: boolean = false); override;
     procedure ReloadSettings; override;
+    // Badge
+    procedure SetBadge(const Value: string; BadgeColor: TColor); overload; reintroduce;
+    procedure SetBadge(const Value: string; BadgeColor: TColor; badge_size_ratio: double; min_font_size: integer); overload; override;
   end;
 
 implementation
@@ -55,6 +58,21 @@ class function TTrndiNativeMac.setDarkMode: Boolean;
 begin
   // Enable dark appearance for the app's UI via SimpleDarkMode
   SimpleDarkMode.EnableAppDarkMode;
+end;
+
+procedure TTrndiNativeMac.SetBadge(const Value: string; BadgeColor: TColor);
+var
+  NSS: NSString;
+begin
+  NSS := NSSTR(Value);
+  NSApp.dockTile.setBadgeLabel(NSS);
+  NSS.release;
+end;
+
+procedure TTrndiNativeMac.SetBadge(const Value: string; BadgeColor: TColor; badge_size_ratio: double; min_font_size: integer);
+begin
+  // Ignore extra params on macOS and delegate to the simple overload
+  SetBadge(Value, BadgeColor);
 end;
 
 function TTrndiNativeMac.GetSetting(const keyname: string; def: string; global: boolean): string;
