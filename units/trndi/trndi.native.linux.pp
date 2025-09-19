@@ -37,29 +37,48 @@ type
     function ResolveIniPath: string; virtual;
     procedure EnsureIni; inline;
   public
-    procedure attention(topic, message: string); override;
+  {** Prefer gdbus notifications under Qt6; fallback to base attention. }
+  procedure attention(topic, message: string); override;
     destructor Destroy; override;
     {** Speaks @param(Text) using spd-say, if available.
         Shows a user-visible message when the tool is not present. }
-    procedure Speak(const Text: string); override;
+  {** Speak text via spd-say if present; warn user if missing. }
+  procedure Speak(const Text: string); override;
     {** Draw a badge with @param(Value) text on tray icon using @param(BadgeColor).
         @param(badge_size_ratio Determines badge diameter relative to icon size)
         @param(min_font_size Lower bound for font size while fitting text) }
-    procedure SetTray(const Value: string; BadgeColor: TColor; badge_size_ratio: double = 0.8; min_font_size: integer = 8);
+  {** Draw a badge on the tray icon. }
+  procedure SetTray(const Value: string; BadgeColor: TColor; badge_size_ratio: double = 0.8; min_font_size: integer = 8);
     {** Convenience overload: delegates to base 2-arg SetBadge. }
-    procedure setBadge(const Value: string; BadgeColor: TColor); overload; reintroduce;
+  {** Convenience overload redirects to base two-arg version. }
+  procedure setBadge(const Value: string; BadgeColor: TColor); overload; reintroduce;
     {** Synchronize KDE badge with numeric value and update tray badge drawing. }
     procedure setBadge(const Value: string; BadgeColor: TColor; badge_size_ratio: double; min_font_size: integer); overload; override;
     {** Placeholder; desktop environments differ. Implement where feasible. }
-    class function setDarkMode: boolean; // no-op placeholder
+  {** Placeholder for desktop-specific dark mode. }
+  class function setDarkMode: boolean; // no-op placeholder
 
     // Settings API overrides
-    function GetSetting(const keyname: string; def: string = ''; global: boolean = false): string; override;
-    procedure SetSetting(const keyname: string; const val: string; global: boolean = false); override;
-    procedure DeleteSetting(const keyname: string; global: boolean = false); override;
-    procedure ReloadSettings; override;
-    class function getURL(const url: string; out res: string): boolean; override;
+  {** Read setting from INI (multi-section + legacy key=value fallback). }
+  function GetSetting(const keyname: string; def: string = ''; global: boolean = false): string; override;
+  {** Write setting to canonical [trndi] section and flush to disk. }
+  procedure SetSetting(const keyname: string; const val: string; global: boolean = false); override;
+  {** Delete setting across known sections for completeness. }
+  procedure DeleteSetting(const keyname: string; global: boolean = false); override;
+  {** Drop INI handle; re-created on demand. }
+  procedure ReloadSettings; override;
+  {** Simple HTTP GET using FPC HTTP client with default UA. }
+  class function getURL(const url: string; out res: string): boolean; override;
+  {** Desktop-aware dark mode detection.
+    Order:
+    1) KDE Plasma via kreadconfig5: General/ColorScheme contains "Dark".
+    2) GNOME via gsettings: org.gnome.desktop.interface color-scheme (prefer-dark/default),
+     then fallback to gtk-theme containing "-dark".
+    3) GTK_THEME environment variable contains "dark" (e.g. Adwaita:dark).
+    4) Fallback heuristic comparing clWindow vs clWindowText brightness.
+  }
   class function isDarkMode: boolean; override;
+  {** True if notify-send is available on this system. }
   class function isNotificationSystemAvailable: boolean; override;
   end;
 
@@ -68,6 +87,7 @@ implementation
 uses
   Process, Types, LCLType;
 
+{** Check PATH for the 'notify-send' tool. }
 function IsNotifySendAvailable: boolean;
 var
   AProcess: TProcess;
@@ -90,6 +110,158 @@ begin
   end;
   OutputLines.Free;
   AProcess.Free;
+end;
+
+{** Run an external command and capture stdout. Returns True on exit code 0. }
+function RunAndCaptureSimple(const Exec: string; const Params: array of string;
+                             out StdoutS: string; out ExitCode: Integer): Boolean;
+var
+  P: TProcess;
+  i: Integer;
+  OutStr: TStringStream;
+  Buf: array[0..4095] of byte;
+  n: SizeInt;
+begin
+  Result := False;
+  StdoutS := '';
+  ExitCode := -1;
+
+  P := TProcess.Create(nil);
+  OutStr := TStringStream.Create('');
+  try
+    P.Executable := Exec;
+    for i := 0 to High(Params) do
+      P.Parameters.Add(Params[i]);
+    P.Options := [poUsePipes, poWaitOnExit];
+    P.ShowWindow := swoHIDE;
+    try
+      P.Execute;
+      while P.Running do
+      begin
+        while P.Output.NumBytesAvailable > 0 do
+        begin
+          n := P.Output.Read(Buf, SizeOf(Buf));
+          if n > 0 then OutStr.WriteBuffer(Buf, n) else Break;
+        end;
+        Sleep(3);
+      end;
+      // Drain any remaining bytes after process exits
+      while P.Output.NumBytesAvailable > 0 do
+      begin
+        n := P.Output.Read(Buf, SizeOf(Buf));
+        if n > 0 then OutStr.WriteBuffer(Buf, n) else Break;
+      end;
+      ExitCode := P.ExitStatus;
+      StdoutS := Trim(OutStr.DataString);
+      Result := ExitCode = 0;
+    except
+      on E: Exception do
+      begin
+        StdoutS := '';
+        ExitCode := -1;
+        Result := False;
+      end;
+    end;
+  finally
+    OutStr.Free;
+    P.Free;
+  end;
+end;
+
+function EnvValue(const Name: string): string; inline;
+begin
+  Result := GetEnvironmentVariable(Name);
+end;
+
+function DesktopHint: string;
+begin
+  Result := EnvValue('XDG_CURRENT_DESKTOP');
+  if Result = '' then
+    Result := EnvValue('DESKTOP_SESSION');
+end;
+
+function ContainsDark(const S: string): boolean; inline;
+begin
+  Result := Pos('dark', LowerCase(S)) > 0;
+end;
+
+// Forward declaration for helper declared later in this unit
+function FindInPath(const FileName: string): string; forward;
+
+function DetectGnomeDark(out isDark: boolean): boolean;
+var
+  gsettingsPath, outS: string;
+  exitCode: Integer;
+  dHint: string;
+begin
+  Result := False;
+  isDark := False;
+  dHint := LowerCase(DesktopHint);
+  if (Pos('gnome', dHint) = 0) and (Pos('ubuntu', dHint) = 0) and (Pos('unity', dHint) = 0) then
+  begin
+    // Not obviously GNOME; still proceed if gsettings exists
+  end;
+  gsettingsPath := FindInPath('gsettings');
+  if gsettingsPath = '' then Exit(False);
+
+  // GNOME 42+: color-scheme prefer-dark/default
+  if RunAndCaptureSimple(gsettingsPath,
+     ['get','org.gnome.desktop.interface','color-scheme'], outS, exitCode) and (exitCode = 0) then
+  begin
+    outS := LowerCase(StringReplace(outS, '''', '', [rfReplaceAll]));
+    if Pos('prefer-dark', outS) > 0 then
+    begin
+      isDark := True; Exit(True);
+    end
+    else if (Pos('default', outS) > 0) or (Pos('prefer-light', outS) > 0) then
+    begin
+      isDark := False; Exit(True);
+    end;
+    // fallthrough to gtk-theme
+  end;
+
+  // Fallback: inspect gtk-theme name for '*-dark'
+  if RunAndCaptureSimple(gsettingsPath,
+     ['get','org.gnome.desktop.interface','gtk-theme'], outS, exitCode) and (exitCode = 0) then
+  begin
+    outS := LowerCase(StringReplace(outS, '''', '', [rfReplaceAll]));
+    if ContainsDark(outS) then
+      isDark := True
+    else
+      isDark := False;
+    Exit(True);
+  end;
+
+  Result := False; // unable to determine via GNOME
+end;
+
+function DetectKDEDark(out isDark: boolean): boolean;
+var
+  kreadPath, outS: string;
+  exitCode: Integer;
+  dHint: string;
+begin
+  Result := False; isDark := False;
+  dHint := LowerCase(DesktopHint);
+  if (Pos('kde', dHint) = 0) and (Pos('plasma', dHint) = 0) then
+  begin
+    // Not obviously KDE; continue if tool exists
+  end;
+  kreadPath := FindInPath('kreadconfig5');
+  if kreadPath = '' then Exit(False);
+
+  // Read the active color scheme
+  if RunAndCaptureSimple(kreadPath,
+     ['--group','General','--key','ColorScheme'], outS, exitCode) and (exitCode = 0) then
+  begin
+    if ContainsDark(outS) then
+      isDark := True
+    else
+      isDark := False;
+    Exit(True);
+  end;
+
+  Result := False;
 end;
 {
   Linux/PC implementation of class function getURL
@@ -130,11 +302,28 @@ end;
 
 
 class function TTrndiNativeLinux.isDarkMode: boolean;
+var
+  v: boolean;
+  envGtkTheme: string;
   function Brightness(C: TColor): double;
   begin
     Result := (Red(C) * 0.3) + (Green(C) * 0.59) + (Blue(C) * 0.11);
   end;
 begin
+  // 1) KDE Plasma: kreadconfig5 ColorScheme
+  if DetectKDEDark(v) then Exit(v);
+
+  // 2) GNOME: gsettings color-scheme/gtk-theme
+  if DetectGnomeDark(v) then Exit(v);
+
+  // 3) GTK_THEME environment variable (e.g. Adwaita:dark)
+  envGtkTheme := EnvValue('GTK_THEME');
+  if envGtkTheme <> '' then
+  begin
+    if ContainsDark(envGtkTheme) then Exit(True) else Exit(False);
+  end;
+
+  // 4) Last-resort heuristic using system colors
   Result := (Brightness(ColorToRGB(clWindow)) < Brightness(ColorToRGB(clWindowText)));
 end;
 function TTrndiNativeLinux.ResolveIniPath: string;
@@ -226,8 +415,8 @@ procedure TTrndiNativeLinux.attention(topic, message: string);
     end;
   end;
 {$ENDIF}
-var
 {$IFDEF LCLQt6}
+var
   Params: array of string;
   OutS, ErrS: string;
   ExitCode: Integer;
@@ -253,9 +442,11 @@ begin
      '[]',
      '{}',
      IntToStr(noticeDuration)];
+  // Above maps to: app_name, replace_id, app_icon, summary, body, actions, hints, timeout
 
   if RunAndCapture('gdbus', Params, OutS, ErrS, ExitCode) then
   begin
+    // Parse the returned uint32 notification id (for potential replace/update)
     NewId := 0;
     s := OutS;
     p := Pos('uint32', s);
@@ -270,6 +461,7 @@ begin
     end;
   end
   else
+    // Fall back to base attention implementation if gdbus is unavailable
     inherited attention(topic, message);
 {$ELSE}
   inherited attention(topic, message);
@@ -412,6 +604,7 @@ begin
     // Reset to app icon and force refresh
     if (Application.Icon <> nil) and (Application.Icon.Width > 0) then
       Tray.Icon.Assign(Application.Icon);
+    // Toggle visibility to force redraw in some tray implementations
     Tray.Visible := False;
     Tray.Visible := True;
     Exit;
@@ -442,7 +635,8 @@ begin
       W := 24; H := 24;
     end;
 
-    BadgeSize := Round(Min(W, H) * badge_size_ratio);
+  // Badge occupies a fraction of the icon's smallest side
+  BadgeSize := Round(Min(W, H) * badge_size_ratio);
     if BadgeSize < 10 then
       BadgeSize := 10;
 
@@ -499,6 +693,7 @@ begin
     TextW := Bmp.Canvas.TextWidth(BadgeText);
     TextH := Bmp.Canvas.TextHeight(BadgeText);
 
+    // Fit text without going smaller than minimum font size
     while (TextW > (BadgeSize - TEXT_PADDING)) and (FontSize > min_font_size) do
     begin
       Dec(FontSize);
@@ -545,7 +740,9 @@ begin
 end;
 class function TTrndiNativeLinux.setDarkMode: Boolean;
 begin
-  // Placeholder: implement when desktop environment APIs are standardized
+  // Placeholder: switching dark mode programmatically is DE-specific and not supported here.
+  // Return False to indicate no change was made.
+  Result := False;
 end;
 
 function TTrndiNativeLinux.GetSetting(const keyname: string; def: string; global: boolean): string;
@@ -558,7 +755,7 @@ var
 begin
   EnsureIni;
   key := buildKey(keyname, global);
-  // Try common sections used historically
+  // Try common sections used historically (backward compatibility)
   Result := inistore.ReadString('trndi', key, '');
   if Result = '' then
     Result := inistore.ReadString('settings', key, '');
@@ -584,6 +781,7 @@ begin
             k := Trim(Copy(line, 1, p-1));
             v := Trim(Copy(line, p+1, MaxInt));
             // Match either fully built key or plain keyname (no user prefix)
+            // so older files without username scoping still load.
             if SameText(k, key) or SameText(k, keyname) then
             begin
               Result := v;

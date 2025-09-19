@@ -39,14 +39,19 @@ type
     {** Toggles immersive dark mode for @param(win).
         Requires Windows 10 1809+ (build >= 17763).
         @returns(True if the DWM call succeeds) }
-    class function SetDarkMode(win: HWND; Enable: Boolean = True): Boolean;
+  {** Toggle immersive dark mode for a window (Windows 10 1809+). }
+  class function SetDarkMode(win: HWND; Enable: Boolean = True): Boolean;
     {** Applies caption (@param(bg)) and text (@param(text)) colors via DWM.
         @returns(True if both attributes are set successfully) }
-    function SetTitleColor(form: THandle; bg, text: TColor): boolean; override;
+  {** Set window caption/background and text colors via DWM attributes. }
+  function SetTitleColor(form: THandle; bg, text: TColor): boolean; override;
   procedure SetBadge(const Value: string; BadgeColor: TColor; badge_size_ratio: double; min_font_size: integer); override;
-    class function getURL(const url: string; out res: string): boolean; override;
-    class function isDarkMode: boolean; override;
-    class function isNotificationSystemAvailable: boolean; override;
+  {** Simple HTTP GET using WinHTTP client with default UA. }
+  class function getURL(const url: string; out res: string): boolean; override;
+  {** Determine if Windows is using dark app theme (AppsUseLightTheme=0). }
+  class function isDarkMode: boolean; override;
+  {** True if the BurntToast PowerShell module is available. }
+  class function isNotificationSystemAvailable: boolean; override;
 
     // Settings API overrides (Windows Registry)
     function GetSetting(const keyname: string; def: string = ''; global: boolean = false): string; override;
@@ -59,6 +64,7 @@ implementation
 
 uses
   ComObj, Process;
+{** Check if the BurntToast module is available in PowerShell. }
 function IsBurntToastAvailable: Boolean;
 var
   Output: TStringList;
@@ -267,10 +273,12 @@ begin
 
     Bitmap.SetSize(IconWidth, IconHeight);
     Bitmap.Canvas.Brush.Color := clNone;
-  Bitmap.Canvas.FillRect(Classes.Rect(0, 0, IconWidth, IconHeight));
+    // Note: Use Classes.Rect/TRect explicitly to avoid Windows unit name clashes
+    Bitmap.Canvas.FillRect(Classes.Rect(0, 0, IconWidth, IconHeight));
 
     DrawIconEx(Bitmap.Canvas.Handle, 0, 0, AppIcon.Handle, IconWidth, IconHeight, 0, 0, DI_NORMAL);
 
+    // Draw badge in the lower-right quadrant with size proportional to icon
     BadgeRect := Classes.Rect(
       IconWidth - BadgeSize,
       IconHeight - BadgeSize,
@@ -283,6 +291,7 @@ begin
 
     if BadgeSize <= 12 then
     begin
+      // Tiny badges: simple square for speed/stability
       Bitmap.Canvas.FillRect(BadgeRect);
     end
     else
@@ -295,11 +304,13 @@ begin
       Region := 0; SquareRegion := 0;
       try
         RgnRect := BadgeRect;
+        // Build a rounded-rect clipping region to paint smooth corners
         Region := CreateRoundRectRgn(
           RgnRect.Left, RgnRect.Top,
           RgnRect.Right, RgnRect.Bottom,
           Radius * 2, Radius * 2
         );
+        // Expand the rounded region with a square piece to smooth the corner join
         SquareRegion := CreateRectRgn(
           RgnRect.Right - Radius, RgnRect.Bottom - Radius,
           RgnRect.Right, RgnRect.Bottom
@@ -314,6 +325,7 @@ begin
       end;
     end;
 
+    // Choose text color based on badge luminance for contrast
     if (0.299 * GetRValue(BadgeColor) + 0.587 * GetGValue(BadgeColor) + 0.114 * GetBValue(BadgeColor)) > 128 then
       TextColor := clBlack
     else
@@ -329,6 +341,7 @@ begin
 
     TextWidth := Bitmap.Canvas.TextWidth(BadgeText);
     TextHeight := Bitmap.Canvas.TextHeight(BadgeText);
+    // Fit text within the badge, but do not shrink below minimum font size
     while (TextWidth > (BadgeSize - TEXT_PADDING)) and (FontSize > min_font_size - 2) do
     begin
       Dec(FontSize);
@@ -344,6 +357,7 @@ begin
       BadgeText
     );
 
+    // Assign the composed bitmap to the app icon and notify the window
     TempIcon.Assign(Bitmap);
     Application.Icon.Assign(TempIcon);
     SendMessage(Application.MainForm.Handle, WM_SETICON, ICON_BIG, Application.Icon.Handle);

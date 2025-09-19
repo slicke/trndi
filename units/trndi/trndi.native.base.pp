@@ -30,11 +30,24 @@ unit trndi.native.base;
 
 interface
 
-{ Note (2025-09-19):
-  This unit now exposes a base class (TTrndiNativeBase) and platform-specific subclasses:
-    - TTrndiNativeWindows, TTrndiNativeLinux, TTrndiNativeMac
-  For backwards compatibility, the public type name TrndiNative is defined in unit `trndi.native`
-  as an alias that resolves to the appropriate subclass at compile time. }
+{**
+  @abstract(Base, platform-agnostic contract for native integrations.)
+  @longnote(
+    This unit contains @link(TTrndiNativeBase), an abstract class that defines
+    platform-neutral contracts for native features. Concrete implementations
+    live in @code(trndi.native.win), @code(trndi.native.linux), and
+    @code(trndi.native.mac). Use the façade unit @code(trndi.native) which
+    exposes the alias @code(TrndiNative) resolving to the right subclass at
+    compile time.
+
+    Design rules for contributors:
+    - Keep this unit free from platform ifdefs as much as possible.
+    - Add new cross-platform contracts here; implement per-platform logic in
+      platform units.
+    - Prefer virtual methods (instance or class) for behavior that varies by
+      platform.
+  )
+}
 
 uses
   Classes, SysUtils, Graphics
@@ -62,6 +75,11 @@ type
     -----------
     Provides platform-native methods
   }
+{**
+  @abstract(Base class providing contracts for native features.)
+  @remarks(Implement platform-specific behavior in subclasses. Keep the API
+           stable; avoid leaking OS details into the base.)
+}
 TTrndiNativeBase = class
 private
   cfguser:   string;  // User prefix for config
@@ -84,40 +102,71 @@ public
   dark: boolean;
 
   // Core actions
+  {** Speak text using native TTS on the current platform. }
   procedure Speak(const Text: string); virtual; abstract;
+  {** Show a desktop notification or equivalent attention cue. }
   procedure attention(topic, message: string); virtual;
+  {**
+    Send an HTTP request to the configured @code(baseurl).
+    @param(post) True for POST, False for GET.
+    @param(endpoint) Relative endpoint to append to baseurl.
+    @param(params) Query string pairs like 'key=value' (GET or POST).
+    @param(jsondata) Optional JSON payload for POST.
+    @param(header) Optional single header string 'Key=Value'.
+    @return(Response body or error message.)
+  }
   function request(const post: boolean; const endpoint: string;
     const params: array of string; const jsondata: string = '';
     const header: string = ''): string;
 
   // Settings API
+  {** Store a non-user-scoped key (global). }
   procedure SetRootSetting(keyname: string; const val: string);
+  {** Store a string value under @param(keyname). @param(global) bypasses user scoping. }
   procedure SetSetting(const keyname: string; const val: string; global: boolean = false); virtual; abstract;
+  {** Store a boolean setting. }
   procedure SetBoolSetting(const keyname: string; const val: boolean);
+  {** Store a float setting (using '.' decimal separator). }
   procedure SetFloatSetting(const keyname: string; const val: single);
+  {** Store a color value (TColor serialized as integer). }
   procedure SetColorSetting(const keyname: string; val: TColor);
+  {** Retrieve a stored color or @param(def) if missing. }
   function GetColorSetting(const keyname: string; const def: TColor = $000000): TColor;
+  {** Delete a key (optionally global) from storage. }
   procedure DeleteSetting(const keyname: string; global: boolean = false); virtual; abstract;
+  {** Delete a non-user-scoped key. }
   procedure DeleteRootSetting(keyname: string; const val: string);
+  {** Read a non-user-scoped key or default. }
   function GetRootSetting(const keyname: string; def: string = ''): string;
+  {** Read a string setting or default; honor @param(global) scoping. }
   function GetSetting(const keyname: string; def: string = ''; global: boolean = false): string; virtual; abstract;
+  {** Read a char setting (first character), or @param(def). }
   function GetCharSetting(const keyname: string; def: char = #0): char;
+  {** Read an integer setting or @param(def). }
   function GetIntSetting(const keyname: string; def: integer = -1): integer;
+  {** Read a single-precision float setting or @param(def). }
   function GetFloatSetting(const keyname: string; def: single = -1): single;
+  {** Read a boolean setting or @param(def). Accepts 'true'/'false'. }
   function GetBoolSetting(const keyname: string; def: boolean = false): boolean;
+  {** Reload settings backend state (if any). }
   procedure ReloadSettings; virtual; abstract;
 
   // Theme/Env
+  {** Determine if the OS/theme uses a dark appearance. Platforms override. }
   class function isDarkMode: boolean; virtual;
   class function DetectTouchScreen(out multi: boolean): boolean;
+  {** Detect if the device has a touchscreen and whether it's multi-touch. }
   class function HasTouchScreen(out multi: boolean): boolean;
   class function HasTouchScreen: boolean;
+  {** Simple HTTP GET helper; platform units implement. }
   class function getURL(const url: string; out res: string): boolean; virtual; abstract;
   class function GetOSLanguage: string;
   class function HasDangerousChars(const FileName: string): Boolean; static;
   class function DetectWSL: TWSLInfo;
   // Notifications
+  {** True if a native notification system is available (override per platform). }
   class function isNotificationSystemAvailable: boolean; virtual;
+  {** Alias for readability: forwards to @link(isNotificationSystemAvailable). }
   class function HasNotifications: boolean;
 
   // Lifecycle and UI
@@ -125,15 +174,19 @@ public
   procedure start;
   procedure done;
   // Badge: provide a convenience overload and a virtual full version
+  {** Convenience overload for drawing a badge on the app icon/tray. }
   procedure setBadge(const Value: string; badgeColor: TColor); overload;
+  {** Platform override for badge rendering control. }
   procedure setBadge(const Value: string; badgeColor: TColor; badge_size_ratio: Double; min_font_size: Integer); virtual; overload;
+  {** Set native window titlebar colors if supported. }
   function SetTitleColor(form: THandle; bg, text: TColor): boolean; virtual;
+  {** Play an audio file using native facilities (safe file check included). }
   class procedure PlaySound(const FileName: string);
 
   // Constructors
-  constructor create(ua, base: string); overload;
-  constructor create(ua: string); overload;
-  constructor create; overload;
+  constructor create(ua, base: string); overload;  //!< Custom user-agent and base URL
+  constructor create(ua: string); overload;       //!< Custom user-agent
+  constructor create; overload;                   //!< Default UA/base
 
   // Properties
   property configUser: string read cfguser write cfguser;
@@ -796,11 +849,11 @@ begin
       else
         method := 'GET';
 
-      // If a custom header is provided
+      // If a custom header is provided (single 'Key=Value')
       if header <> '' then
         Headers.Add(header);
 
-      // If we have JSON data, we assume it's for POST
+      // If we have JSON data, we assume it's for POST and set headers accordingly
       if jsondata <> '' then
       begin
         Headers.Add('Content-Type=application/json');
@@ -820,7 +873,7 @@ begin
           address := address + '&' + sx;
       end;
 
-      // Perform the request
+      // Perform the request and normalize output to a trimmed string or error
       if SendAndReceive(send, res, headers) then
         Result := Trim(res.DataString)
       else
@@ -849,7 +902,7 @@ begin
   hasParams := (Length(params) > 0);
   client := TWinHTTPClient.Create(useragent);
   try
-    // Construct the full URL
+  // Construct the full URL with normalized slashes (avoid '//' or missing '/')
     address := Format('%s/%s', [TrimRightSet(baseurl, ['/']), TrimLeftSet(endpoint, ['/'])]);
 
     // Add default required headers
@@ -863,7 +916,7 @@ begin
         client.AddHeader(headers[0], headers[1]);
     end;
 
-    // Handle JSON data or query params
+  // Handle JSON data (POST body) or query params
     if jsondata <> '' then
     begin
       client.AddHeader('Content-Type', 'application/json; charset=UTF-8');
@@ -942,7 +995,7 @@ begin
     // Prepare a response stream
     res := TStringStream.Create('');
     try
-      // Send GET or POST
+      // Send GET or POST and return response body
       if post then
         client.Post(address, res)
       else
