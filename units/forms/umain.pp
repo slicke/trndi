@@ -242,7 +242,7 @@ private
   multi: boolean; // Multi user
   MediaController: TSystemMediaController;
 
-  procedure setColorMode;
+  function setColorMode: boolean;
   procedure SetLang;
   procedure fixWarningPanel;
   function lastReading: BGReading;
@@ -935,7 +935,7 @@ begin
       multi := true;
       pnMultiUser.Color := native.GetColorSetting('user.color', clBlack);
       if pnMultiUser.Color <> clBlack then begin
-        pnMultiUser.Visible := not native.SetTitleColor(handle, pnMultiUser.Color, clWhite); // SHow the bar if the window isnt colored
+        pnMultiUser.Visible := not setColorMode; // SHow the bar if the window isnt colored
         customTitlebar := not pnMultiUser.Visible; // Set the custom title bar value depending if the panel is showing
       end;
 
@@ -3397,16 +3397,17 @@ begin
   result := LightenColor(result, -0.8);
 end;
 
-procedure TfBG.setColorMode;
+function TfBG.setColorMode: boolean;
 begin
-  if customTitleBar and (pnMultiUser.Color <> clBlack) then // Safe that black = standard
-    if native.SetTitleColor(handle, pnMultiUser.Color, clWhite) then
-      Exit;
+  if customTitleBar and (pnMultiUser.Color <> clBlack) then begin // Safe that black = standard
+    if native.SetTitleColor(handle, pnMultiUser.Color, IfThen(IsLightColor(pnMultiUser.Color), clBlack, clWhite)) then
+      Exit(true);
+  end;
 
-  if native.isDarkMode and (not customTitleBar) then
-    native.setDarkMode{$ifdef windows}(self.Handle){$endif}
+  if native.isDarkMode then
+    native.setDarkMode{$ifdef windows}(self.Handle){$endif};
 
-
+   result := false;
 end;
 
 end.

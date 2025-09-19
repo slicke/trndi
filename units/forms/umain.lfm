@@ -100,7 +100,7 @@ object fBG: TfBG
     Top = 222
     Width = 320
     BevelOuter = bvNone
-    Color = clWhite
+    Color = clBlack
     ParentBackground = False
     ParentColor = False
     TabOrder = 1
