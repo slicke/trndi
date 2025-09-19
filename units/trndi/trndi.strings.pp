@@ -53,6 +53,9 @@ RS_FORCE_QUIT_SETUP = 'Trndi will now shut down to apply settings, please re-sta
 RS_WARN_BG_HI = 'High blood sugar! Currently: %s';
 RS_WARN_BG_LO = 'Low blood sugar! Currently: %s';
 
+RS_WARN_BG_HI_TITLE = 'Blood high';
+RS_WARN_BG_LO_TITLE = 'Blood low';
+
 RS_MULTIUSER_BOX = 'Trndi found multiple accounts. Please choose one for this instance, or leave empty for default';
 RS_MULTIUSER_BOX_TITLE = 'User select';
 

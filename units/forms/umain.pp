@@ -2971,7 +2971,7 @@ begin
   fBG.Color := bg_color_hi;
 
   if not bg_alert then
-    native.attention(Format(RS_WARN_BG_HI, [lVal.Caption]));
+    native.attention(RS_WARN_BG_HI_TITLE, Format(RS_WARN_BG_HI, [lVal.Caption]));
 
   if highAlerted then
     Exit;
@@ -2993,7 +2993,7 @@ begin
   fBG.Color := bg_color_lo;
 
   if not bg_alert then
-    native.attention(Format(RS_WARN_BG_LO, [lVal.Caption]));
+    native.attention(RS_WARN_BG_LO_TITLE, Format(RS_WARN_BG_LO, [lVal.Caption]));
 
   if lowAlerted then
     exit;
