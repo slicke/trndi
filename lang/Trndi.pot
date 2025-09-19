@@ -356,7 +356,7 @@ msgid "Account color"
 msgstr ""
 
 #: tfconf.cbusercolor.caption
-msgid "Display users' colors on the main window"
+msgid "Display users' colors on the main and floating windows"
 msgstr ""
 
 #: tfconf.cl_hi_bg.caption
