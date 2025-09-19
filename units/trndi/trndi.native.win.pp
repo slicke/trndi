@@ -43,6 +43,7 @@ type
     {** Applies caption (@param(bg)) and text (@param(text)) colors via DWM.
         @returns(True if both attributes are set successfully) }
     function SetTitleColor(form: THandle; bg, text: TColor): boolean; override;
+  procedure SetBadge(const Value: string; BadgeColor: TColor; badge_size_ratio: double; min_font_size: integer); override;
 
     // Settings API overrides (Windows Registry)
     function GetSetting(const keyname: string; def: string = ''; global: boolean = false): string; override;
@@ -128,6 +129,150 @@ begin
   hrText    := SetDwmAttr(form, DWMWA_TEXT_COLOR, textColor, SizeOf(textColor));
 
   Result := HrSucceeded(hrCaption) and HrSucceeded(hrText);
+end;
+
+procedure TTrndiNativeWindows.SetBadge(const Value: string; BadgeColor: TColor; badge_size_ratio: double; min_font_size: integer);
+const
+  INITIAL_FONT_SIZE_RATIO = 0.5;
+  TEXT_PADDING = 4;
+  CORNER_RADIUS = 6;
+var
+  AppIcon, TempIcon: TIcon;
+  Bitmap: Graphics.TBitmap;
+  BadgeText: string;
+  TextWidth, TextHeight: Integer;
+  BadgeRect: Types.TRect;
+  IconWidth, IconHeight, BadgeSize: Integer;
+  FontSize, Radius: Integer;
+  TextColor: TColor;
+  SavedDC: Integer;
+  Region, SquareRegion: HRGN;
+  RgnRect: Types.TRect;
+  dval: double;
+begin
+  AppIcon := TIcon.Create;
+  TempIcon := TIcon.Create;
+  Bitmap := Graphics.TBitmap.Create;
+  try
+    if Value = '' then
+    begin
+      Application.Icon.Assign(Application.MainForm.Icon);
+      SendMessage(Application.MainForm.Handle, WM_SETICON, ICON_BIG, 0);
+      SendMessage(Application.MainForm.Handle, WM_SETICON, ICON_SMALL, 0);
+      Exit;
+    end;
+
+    try
+      if TryStrToFloat(value, dval, fsettings) then
+        BadgeText := FormatFloat('0.0', dval, fsettings)
+      else
+        BadgeText := value;
+    except
+      BadgeText := Value;
+    end;
+
+    AppIcon.Assign(Application.Icon);
+    IconWidth := AppIcon.Width;
+    IconHeight := AppIcon.Height;
+    if (IconWidth <= 0) or (IconHeight <= 0) then
+    begin
+      IconWidth := 32;
+      IconHeight := 32;
+    end;
+
+    if IconWidth < IconHeight then
+      BadgeSize := Round(IconWidth * badge_size_ratio)
+    else
+      BadgeSize := Round(IconHeight * badge_size_ratio);
+
+    Bitmap.SetSize(IconWidth, IconHeight);
+    Bitmap.Canvas.Brush.Color := clNone;
+    Bitmap.Canvas.FillRect(Types.Rect(0, 0, IconWidth, IconHeight));
+
+    DrawIconEx(Bitmap.Canvas.Handle, 0, 0, AppIcon.Handle, IconWidth, IconHeight, 0, 0, DI_NORMAL);
+
+    BadgeRect := Types.Rect(
+      IconWidth - BadgeSize,
+      IconHeight - BadgeSize,
+      IconWidth,
+      IconHeight
+    );
+
+    Bitmap.Canvas.Brush.Color := BadgeColor;
+    Bitmap.Canvas.Pen.Color := BadgeColor;
+
+    if BadgeSize <= 12 then
+    begin
+      Bitmap.Canvas.FillRect(BadgeRect);
+    end
+    else
+    begin
+      Radius := Round(CORNER_RADIUS * BadgeSize / 32);
+      if Radius < 2 then
+        Radius := 2;
+
+      SavedDC := SaveDC(Bitmap.Canvas.Handle);
+      Region := 0; SquareRegion := 0;
+      try
+        RgnRect := BadgeRect;
+        Region := CreateRoundRectRgn(
+          RgnRect.Left, RgnRect.Top,
+          RgnRect.Right, RgnRect.Bottom,
+          Radius * 2, Radius * 2
+        );
+        SquareRegion := CreateRectRgn(
+          RgnRect.Right - Radius, RgnRect.Bottom - Radius,
+          RgnRect.Right, RgnRect.Bottom
+        );
+        CombineRgn(Region, Region, SquareRegion, RGN_OR);
+        SelectClipRgn(Bitmap.Canvas.Handle, Region);
+        Bitmap.Canvas.FillRect(BadgeRect);
+      finally
+        if SquareRegion <> 0 then DeleteObject(SquareRegion);
+        if Region <> 0 then DeleteObject(Region);
+        RestoreDC(Bitmap.Canvas.Handle, SavedDC);
+      end;
+    end;
+
+    if (0.299 * GetRValue(BadgeColor) + 0.587 * GetGValue(BadgeColor) + 0.114 * GetBValue(BadgeColor)) > 128 then
+      TextColor := clBlack
+    else
+      TextColor := clWhite;
+
+    Bitmap.Canvas.Font.Name := 'Arial';
+    Bitmap.Canvas.Font.Style := [fsBold];
+    Bitmap.Canvas.Font.Color := TextColor;
+    FontSize := Round(BadgeSize * INITIAL_FONT_SIZE_RATIO);
+    if FontSize < min_font_size then
+      FontSize := min_font_size;
+    Bitmap.Canvas.Font.Size := FontSize;
+
+    TextWidth := Bitmap.Canvas.TextWidth(BadgeText);
+    TextHeight := Bitmap.Canvas.TextHeight(BadgeText);
+    while (TextWidth > (BadgeSize - TEXT_PADDING)) and (FontSize > min_font_size - 2) do
+    begin
+      Dec(FontSize);
+      Bitmap.Canvas.Font.Size := FontSize;
+      TextWidth := Bitmap.Canvas.TextWidth(BadgeText);
+      TextHeight := Bitmap.Canvas.TextHeight(BadgeText);
+    end;
+
+    Bitmap.Canvas.Brush.Style := bsClear;
+    Bitmap.Canvas.TextOut(
+      BadgeRect.Left + ((BadgeRect.Right - BadgeRect.Left) - TextWidth) div 2,
+      BadgeRect.Top + ((BadgeRect.Bottom - BadgeRect.Top) - TextHeight) div 2,
+      BadgeText
+    );
+
+    TempIcon.Assign(Bitmap);
+    Application.Icon.Assign(TempIcon);
+    SendMessage(Application.MainForm.Handle, WM_SETICON, ICON_BIG, Application.Icon.Handle);
+    SendMessage(Application.MainForm.Handle, WM_SETICON, ICON_SMALL, Application.Icon.Handle);
+  finally
+    Bitmap.Free;
+    AppIcon.Free;
+    TempIcon.Free;
+  end;
 end;
 
 function TTrndiNativeWindows.GetSetting(const keyname: string; def: string; global: boolean): string;
