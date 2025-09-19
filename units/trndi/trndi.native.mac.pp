@@ -39,6 +39,7 @@ type
     // Badge
     procedure SetBadge(const Value: string; BadgeColor: TColor); overload; reintroduce;
     procedure SetBadge(const Value: string; BadgeColor: TColor; badge_size_ratio: double; min_font_size: integer); overload; override;
+    class function getURL(const url: string; out res: string): boolean; override;
   end;
 
 implementation
@@ -52,6 +53,50 @@ var
 begin
   // Use the built-in macOS speech synthesis
   RunCommand('/usr/bin/say', [Text], o);
+end;
+
+class function TTrndiNativeMac.getURL(const url: string; out res: string): boolean;
+const
+  DEFAULT_USER_AGENT = 'Mozilla/5.0 (compatible; trndi) TrndiAPI';
+var
+  send, response: TStringStream;
+  headers: TStringList;
+  httpClient: TNSHTTPSendAndReceive;
+begin
+  res := '';
+  send := TStringStream.Create('');
+  response := TStringStream.Create('');
+  headers := TStringList.Create;
+  httpClient := TNSHTTPSendAndReceive.Create;
+  try
+    try
+      httpClient.address := url;
+      httpClient.method := 'GET';
+      headers.Add('User-Agent=' + DEFAULT_USER_AGENT);
+
+      if httpClient.SendAndReceive(send, response, headers) then
+      begin
+        res := Trim(response.DataString);
+        Result := true;
+      end
+      else
+      begin
+        res := Trim(httpClient.LastErrMsg);
+        Result := false;
+      end;
+    except
+      on E: Exception do
+      begin
+        res := E.Message;
+        Result := false;
+      end;
+    end;
+  finally
+    httpClient.Free;
+    send.Free;
+    response.Free;
+    headers.Free;
+  end;
 end;
 
 class function TTrndiNativeMac.setDarkMode: Boolean;

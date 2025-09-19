@@ -58,12 +58,44 @@ type
     procedure SetSetting(const keyname: string; const val: string; global: boolean = false); override;
     procedure DeleteSetting(const keyname: string; global: boolean = false); override;
     procedure ReloadSettings; override;
+    class function getURL(const url: string; out res: string): boolean; override;
   end;
 
 implementation
 
 uses
   Process, Types, LCLType;
+{
+  Linux/PC implementation of class function getURL
+}
+class function TTrndiNativeLinux.getURL(const url: string; out res: string): boolean;
+const
+  DEFAULT_USER_AGENT = 'Mozilla/5.0 (compatible; trndi) TrndiAPI';
+var
+  client: TFPHttpClient;
+  responseStream: TStringStream;
+begin
+  res := '';
+  client := TFPHttpClient.Create(nil);
+  responseStream := TStringStream.Create('');
+  try
+    try
+      client.AddHeader('User-Agent', DEFAULT_USER_AGENT);
+      client.Get(url, responseStream);
+      res := Trim(responseStream.DataString);
+      Result := true;
+    except
+      on E: Exception do
+      begin
+        res := E.Message;
+        Result := false;
+      end;
+    end;
+  finally
+    client.Free;
+    responseStream.Free;
+  end;
+end;
 function TTrndiNativeLinux.ResolveIniPath: string;
 var
   home, pA, pB, pC: string;
