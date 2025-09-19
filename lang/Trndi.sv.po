@@ -373,8 +373,8 @@ msgid "Account color"
 msgstr "Kontofärg"
 
 #: tfconf.cbusercolor.caption
-msgid "Display users' colors on the main window"
-msgstr "Visa användares färger på huvudfönstret"
+msgid "Display users' colors on the main and floating windows"
+msgstr "Visa användares färger på huvud- och det flytande fönstret"
 
 #: tfconf.cl_hi_bg.caption
 msgctxt "tfconf.cl_hi_bg.caption"
