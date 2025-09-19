@@ -59,8 +59,8 @@ type
     procedure DeleteSetting(const keyname: string; global: boolean = false); override;
     procedure ReloadSettings; override;
     class function getURL(const url: string; out res: string): boolean; override;
-    class function isDarkMode: boolean; override;
-    class function isNotificationSystemAvailable: boolean; override;
+  class function isDarkMode: boolean; override;
+  class function isNotificationSystemAvailable: boolean; override;
   end;
 
 implementation
@@ -127,6 +127,7 @@ class function TTrndiNativeLinux.isNotificationSystemAvailable: boolean;
 begin
   Result := IsNotifySendAvailable;
 end;
+
 
 class function TTrndiNativeLinux.isDarkMode: boolean;
   function Brightness(C: TColor): double;

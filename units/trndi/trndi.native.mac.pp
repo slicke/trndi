@@ -40,8 +40,8 @@ type
     procedure SetBadge(const Value: string; BadgeColor: TColor); overload; reintroduce;
     procedure SetBadge(const Value: string; BadgeColor: TColor; badge_size_ratio: double; min_font_size: integer); overload; override;
     class function getURL(const url: string; out res: string): boolean; override;
-    class function isDarkMode: boolean; override;
-    class function isNotificationSystemAvailable: boolean; override;
+  class function isDarkMode: boolean; override;
+  class function isNotificationSystemAvailable: boolean; override;
   end;
 
 implementation
@@ -110,6 +110,7 @@ class function TTrndiNativeMac.isNotificationSystemAvailable: boolean;
 begin
   Result := True; // NSUserNotificationCenter exists
 end;
+
 
 class function TTrndiNativeMac.setDarkMode: Boolean;
 begin
