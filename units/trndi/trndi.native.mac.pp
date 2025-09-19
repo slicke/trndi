@@ -1,3 +1,21 @@
+(*
+ * This file is part of Trndi (https://github.com/slicke/trndi).
+ * Copyright (c) 2021-2025 Björn Lindh.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ *
+ * GitHub: https://github.com/slicke/trndi
+ *)
 unit trndi.native.mac;
 
 {**
@@ -43,7 +61,10 @@ type
   procedure SetBadge(const Value: string; BadgeColor: TColor); overload; reintroduce;
   {** Ignore extra params and delegate to simple overload. }
   procedure SetBadge(const Value: string; BadgeColor: TColor; badge_size_ratio: double; min_font_size: integer); overload; override;
-  {** Simple HTTP GET using NS HTTP helper with default UA. }
+  {** Simple HTTP GET using NS HTTP helper with default UA.
+      @param(url URL to fetch)
+      @param(res Out parameter receiving response body or error message)
+      @returns(True on success) }
   class function getURL(const url: string; out res: string): boolean; override;
   {** True if AppleInterfaceStyle indicates dark mode. }
   class function isDarkMode: boolean; override;

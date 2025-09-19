@@ -1,6 +1,6 @@
 (*
- * This file is part of Trndi (https://github.com/slicke/trndi or http://xxx.github.io).
- * Copyright (c) 2021-25 Björn Lindh.
+ * This file is part of Trndi (https://github.com/slicke/trndi).
+ * Copyright (c) 2021-2025 Björn Lindh.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,10 +18,10 @@
  * GitHub: https://github.com/slicke/trndi
  *)
 
-{
-  This file contains platform-native code, written to make Trndi faster and smoother,
-  and to minimize the need for 3rd-party libraries. It also provides native features
-  such as Windows registry access and OpenSSL on Linux.
+{**
+  @abstract(Façade that selects the platform-native implementation.)
+  Re-exports @link(TTrndiNativeBase) and aliases @code(TrndiNative) to the
+  platform-specific class based on compile-time defines.
 }
 
 unit trndi.native;
