@@ -66,6 +66,7 @@
 {"hash":6069338,"name":"tfconf.lusername.caption","sourcebytes":[85,115,101,114,58],"value":"User:"},
 {"hash":93078581,"name":"tfconf.bremove.caption","sourcebytes":[45,32,82,101,109,111,118,101],"value":"- Remove"},
 {"hash":2967460,"name":"tfconf.badd.caption","sourcebytes":[43,32,65,100,100],"value":"+ Add"},
+{"hash":220488643,"name":"tfconf.groupbox4.caption","sourcebytes":[65,108,108,32,97,99,99,111,117,110,116,115],"value":"All accounts"},
 {"hash":252017367,"name":"tfconf.cbusercolor.caption","sourcebytes":[68,105,115,112,108,97,121,32,117,115,101,114,115,39,32,99,111,108,111,114,115,32,111,110,32,116,104,101,32,109,97,105,110,32,119,105,110,100,111,119],"value":"Display users' colors on the main window"},
 {"hash":96905381,"name":"tfconf.tsinstall.caption","sourcebytes":[85,112,100,97,116,101],"value":"Update"},
 {"hash":236240981,"name":"tfconf.button3.caption","sourcebytes":[67,104,101,99,107,32,102,111,114,32,117,112,100,97,116,101],"value":"Check for update"},
