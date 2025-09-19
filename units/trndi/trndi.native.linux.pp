@@ -12,6 +12,8 @@ unit trndi.native.linux;
   - Drawing a badge on the system tray icon (@link(TTrndiNativeLinux.SetTray))
   - Synchronizing KDE taskbar badge (@link(TTrndiNativeLinux.SetBadge))
   - Placeholder for dark mode toggling (@link(TTrndiNativeLinux.setDarkMode))
+  - HTTP GET via FPC's TFPHttpClient
+  - Settings persisted in INI/CFG with backward compatibility
 
   Prefer using the façade unit @code(trndi.native) which selects the platform
   class alias automatically.
@@ -37,7 +39,8 @@ type
     function ResolveIniPath: string; virtual;
     procedure EnsureIni; inline;
   public
-  {** Prefer gdbus notifications under Qt6; fallback to base attention. }
+  {** Prefer gdbus notifications under Qt6; fallback to base attention when
+      gdbus is unavailable or fails. }
   procedure attention(topic, message: string); override;
     destructor Destroy; override;
     {** Speaks @param(Text) using spd-say, if available.
@@ -49,13 +52,11 @@ type
         @param(min_font_size Lower bound for font size while fitting text) }
   {** Draw a badge on the tray icon. }
   procedure SetTray(const Value: string; BadgeColor: TColor; badge_size_ratio: double = 0.8; min_font_size: integer = 8);
-    {** Convenience overload: delegates to base 2-arg SetBadge. }
-  {** Convenience overload redirects to base two-arg version. }
+    {** Convenience overload: redirects to base two-arg version. }
   procedure setBadge(const Value: string; BadgeColor: TColor); overload; reintroduce;
     {** Synchronize KDE badge with numeric value and update tray badge drawing. }
     procedure setBadge(const Value: string; BadgeColor: TColor; badge_size_ratio: double; min_font_size: integer); overload; override;
-    {** Placeholder; desktop environments differ. Implement where feasible. }
-  {** Placeholder for desktop-specific dark mode. }
+    {** Placeholder for desktop-specific dark mode. Return False for now. }
   class function setDarkMode: boolean; // no-op placeholder
 
     // Settings API overrides
@@ -67,7 +68,10 @@ type
   procedure DeleteSetting(const keyname: string; global: boolean = false); override;
   {** Drop INI handle; re-created on demand. }
   procedure ReloadSettings; override;
-  {** Simple HTTP GET using FPC HTTP client with default UA. }
+  {** Simple HTTP GET using FPC HTTP client with default UA.
+      @param(url URL to fetch)
+      @param(res Out parameter receiving response body or error message)
+      @returns(True on success) }
   class function getURL(const url: string; out res: string): boolean; override;
   {** Desktop-aware dark mode detection.
     Order:
@@ -78,7 +82,7 @@ type
     4) Fallback heuristic comparing clWindow vs clWindowText brightness.
   }
   class function isDarkMode: boolean; override;
-  {** True if notify-send is available on this system. }
+  {** Returns True if notify-send is available on this system. }
   class function isNotificationSystemAvailable: boolean; override;
   end;
 
@@ -316,7 +320,7 @@ begin
   // 2) GNOME: gsettings color-scheme/gtk-theme
   if DetectGnomeDark(v) then Exit(v);
 
-  // 3) GTK_THEME environment variable (e.g. Adwaita:dark)
+  // 3) GTK_THEME environment variable (e.g., Adwaita:dark)
   envGtkTheme := EnvValue('GTK_THEME');
   if envGtkTheme <> '' then
   begin

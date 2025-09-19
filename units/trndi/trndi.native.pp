@@ -22,6 +22,11 @@
   @abstract(Façade that selects the platform-native implementation.)
   Re-exports @link(TTrndiNativeBase) and aliases @code(TrndiNative) to the
   platform-specific class based on compile-time defines.
+  
+  Consumers should reference the @code(TrndiNative) alias in their code
+  instead of touching platform units directly. This keeps the application
+  portable and avoids conditional compilation in call-sites. All public API
+  is defined in @link(TTrndiNativeBase) and implemented by the platform class.
 }
 
 unit trndi.native;

@@ -32,6 +32,8 @@ unit trndi.native.win;
   - Text-to-speech using SAPI (@link(TTrndiNativeWindows.Speak))
   - Toggle immersive dark mode on a window (@link(TTrndiNativeWindows.SetDarkMode))
   - Set window caption and text colors (@link(TTrndiNativeWindows.SetTitleColor))
+  - Simple HTTP GET via WinHTTP (@link(TTrndiNativeWindows.getURL))
+  - Persist settings in Windows Registry (@link(TTrndiNativeWindows.GetSetting))
 
   @seealso(TTrndiNativeBase)
 }
@@ -57,11 +59,9 @@ type
     {** Toggles immersive dark mode for @param(win).
         Requires Windows 10 1809+ (build >= 17763).
         @returns(True if the DWM call succeeds) }
-  {** Toggle immersive dark mode for a window (Windows 10 1809+). }
   class function SetDarkMode(win: HWND; Enable: Boolean = True): Boolean;
     {** Applies caption (@param(bg)) and text (@param(text)) colors via DWM.
         @returns(True if both attributes are set successfully) }
-  {** Set window caption/background and text colors via DWM attributes. }
   function SetTitleColor(form: THandle; bg, text: TColor): boolean; override;
     {** Draw a badge with @param(Value) on the application icon.
         @param(BadgeColor Color of the badge circle/rounded rect)
@@ -76,13 +76,31 @@ type
   {** Determine if Windows is using dark app theme (AppsUseLightTheme=0).
       @returns(True if dark mode is active) }
   class function isDarkMode: boolean; override;
-  {** True if the BurntToast PowerShell module is available. }
+  {** Returns True if the BurntToast PowerShell module is available.
+    This is used as a proxy for whether native toast notifications can be sent
+    via PowerShell from this process. }
   class function isNotificationSystemAvailable: boolean; override;
 
-    // Settings API overrides (Windows Registry)
+  {** Settings API overrides (Windows Registry)
+    Keys are stored under HKCU\Software\Trndi\ with the same scoping rules
+    used by the base implementation. }
+  {** Retrieve a setting from HKCU\Software\Trndi\.
+    @param(keyname Logical key name; base will prefix with scope)
+    @param(def Default value if not present)
+    @param(global If True, use global scope; otherwise per-user)
+    @returns(Value if present, otherwise def) }
     function GetSetting(const keyname: string; def: string = ''; global: boolean = false): string; override;
+  {** Persist a setting to HKCU\Software\Trndi\.
+    @param(keyname Logical key name; base will prefix with scope)
+    @param(val Value to write)
+    @param(global If True, use global scope; otherwise per-user) }
     procedure SetSetting(const keyname: string; const val: string; global: boolean = false); override;
+  {** Delete a setting from HKCU\Software\Trndi\.
+    @param(keyname Logical key name; base will prefix with scope)
+    @param(global If True, use global scope; otherwise per-user) }
     procedure DeleteSetting(const keyname: string; global: boolean = false); override;
+  {** Refresh settings cache, if any. Registry access is on-demand here,
+    so nothing needs to be reloaded. }
     procedure ReloadSettings; override;
   end;
 
@@ -90,7 +108,8 @@ implementation
 
 uses
   ComObj, Process;
-{** Check if the BurntToast module is available in PowerShell. }
+{** Check if the BurntToast module is available in PowerShell.
+  Implementation detail for @link(TTrndiNativeWindows.isNotificationSystemAvailable). }
 function IsBurntToastAvailable: Boolean;
 var
   Output: TStringList;
@@ -133,6 +152,7 @@ begin
     reg.RootKey := HKEY_CURRENT_USER;
     if reg.KeyExists(regtheme) and reg.OpenKey(regtheme, false) then
     try
+      // AppsUseLightTheme = 0 means dark mode for apps is enabled
       if reg.ValueExists(reglight) then
         Result := (reg.ReadInteger(reglight) = 0);
     finally
@@ -161,6 +181,9 @@ var
 begin
   // Use SAPI (COM-based) text-to-speech. We try to pick a voice matching the
   // user locale; if none are available, the default SAPI voice is used.
+  // Note: This call is synchronous and will block the calling thread until
+  // speech completes unless SAPI is configured for async. Keep messages short
+  // or dispatch from a background thread when necessary.
   Voice := CreateOleObject('SAPI.SpVoice');
   lang := GetUserDefaultLangID;
 
@@ -206,8 +229,7 @@ var
   Value: Integer;
 begin
   Result := False;
-
-  // Kolla Windows-version
+  // Check Windows version (Windows 10 1809+ required for immersive dark mode)
   if (Win32MajorVersion < 10) or ((Win32MajorVersion = 10) and (Win32BuildNumber < 17763)) then
     Exit; // Windows 10 1809 (build 17763)
 
@@ -304,7 +326,8 @@ begin
 
     DrawIconEx(Bitmap.Canvas.Handle, 0, 0, AppIcon.Handle, IconWidth, IconHeight, 0, 0, DI_NORMAL);
 
-    // Draw badge in the lower-right quadrant with size proportional to icon
+    // Compute a badge rectangle in the lower-right quadrant with size
+    // proportional to the current icon dimensions.
     BadgeRect := Classes.Rect(
       IconWidth - BadgeSize,
       IconHeight - BadgeSize,
@@ -326,6 +349,8 @@ begin
       if Radius < 2 then
         Radius := 2;
 
+      // Clip drawing to a rounded rectangle region to get smooth corners.
+      // Use SaveDC/RestoreDC to avoid leaking the clipping region state.
       SavedDC := SaveDC(Bitmap.Canvas.Handle);
       Region := 0; SquareRegion := 0;
       try
@@ -351,7 +376,7 @@ begin
       end;
     end;
 
-    // Choose text color based on badge luminance for contrast
+    // Choose text color based on perceived luminance for contrast.
     if (0.299 * GetRValue(BadgeColor) + 0.587 * GetGValue(BadgeColor) + 0.114 * GetBValue(BadgeColor)) > 128 then
       TextColor := clBlack
     else
@@ -367,7 +392,7 @@ begin
 
     TextWidth := Bitmap.Canvas.TextWidth(BadgeText);
     TextHeight := Bitmap.Canvas.TextHeight(BadgeText);
-    // Fit text within the badge, but do not shrink below minimum font size
+    // Fit text within the badge; avoid shrinking below the requested minimum.
     while (TextWidth > (BadgeSize - TEXT_PADDING)) and (FontSize > min_font_size - 2) do
     begin
       Dec(FontSize);
@@ -383,7 +408,7 @@ begin
       BadgeText
     );
 
-    // Assign the composed bitmap to the app icon and notify the window
+    // Assign the composed bitmap to the app icon and notify the window.
     TempIcon.Assign(Bitmap);
     Application.Icon.Assign(TempIcon);
     SendMessage(Application.MainForm.Handle, WM_SETICON, ICON_BIG, Application.Icon.Handle);
@@ -456,7 +481,8 @@ end;
 
 procedure TTrndiNativeWindows.ReloadSettings;
 begin
-  // Registry has no persistent handle to reload; nothing to do
+  // Registry access is performed on demand; there is no persistent
+  // handle or cache to refresh here.
 end;
 
 end.

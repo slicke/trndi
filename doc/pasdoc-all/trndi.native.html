@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>trndi.native</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="generator" content="PasDoc 0.16.0">
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<link rel="StyleSheet" type="text/css" href="pasdoc.css">
+</head>
+<body>
+<div class="container"><div class="navigation">
+<ul><li><a href="AllUnits.html">Units</a></li><li><a href="ClassHierarchy.html">Class Hierarchy</a></li><li><a href="AllClasses.html">Classes, Interfaces, Objects and Records</a></li><li><a href="AllTypes.html">Types</a></li><li><a href="AllVariables.html">Variables</a></li><li><a href="AllConstants.html">Constants</a></li><li><a href="AllFunctions.html">Functions and Procedures</a></li><li><a href="AllIdentifiers.html">Identifiers</a></li></ul></div><div class="content">
+<h1 class="unit">Unit trndi.native</h1>
+<div class="sections">
+<div class="one_section"><a class="section" href="#PasDoc-Description">Description</a></div><div class="one_section">Uses</div><div class="one_section">Classes, Interfaces, Objects and Records</div><div class="one_section">Functions and Procedures</div><div class="one_section"><a class="section" href="#PasDoc-Types">Types</a></div><div class="one_section">Constants</div><div class="one_section">Variables</div></div>
+<span id="PasDoc-Description"></span><h2 class="description">Description</h2>
+<p>
+Façade that selects the platform-native implementation.</p>
+<p>
+**  Re-exports <a class="normal" href="trndi.native.html#TTrndiNativeBase">TTrndiNativeBase</a> and aliases <code>TrndiNative</code> to the platform-specific class based on compile-time defines.
+
+<p>Consumers should reference the <code>TrndiNative</code> alias in their code instead of touching platform units directly. This keeps the application portable and avoids conditional compilation in call-sites. All public API is defined in <a class="normal" href="trndi.native.html#TTrndiNativeBase">TTrndiNativeBase</a> and implemented by the platform class.</p>
+<span id="PasDoc-Uses"></span><h2 class="overview">Overview</h2>
+<span id="PasDoc-Types"></span><h3 class="summary">Types</h3>
+<table class="summary wide_list">
+<tr class="list">
+<td class="itemcode"><code><strong><a href="trndi.native.html#TTrndiNativeBase">TTrndiNativeBase</a></strong> = trndi.native.base.TTrndiNativeBase;</code></td>
+</tr>
+<tr class="list2">
+<td class="itemcode"><code><strong><a href="trndi.native.html#TWSLVersion">TWSLVersion</a></strong>      = trndi.native.base.TWSLVersion;</code></td>
+</tr>
+<tr class="list">
+<td class="itemcode"><code><strong><a href="trndi.native.html#TTrndiBool">TTrndiBool</a></strong>       = trndi.native.base.TTrndiBool;</code></td>
+</tr>
+<tr class="list2">
+<td class="itemcode"><code><strong><a href="trndi.native.html#TWSLInfo">TWSLInfo</a></strong>         = trndi.native.base.TWSLInfo;</code></td>
+</tr>
+<tr class="list">
+<td class="itemcode"><code><strong><a href="trndi.native.html#TTrndiNativeLinux">TTrndiNativeLinux</a></strong> = trndi.native.linux.TTrndiNativeLinux;</code></td>
+</tr>
+<tr class="list2">
+<td class="itemcode"><code><strong><a href="trndi.native.html#TrndiNative">TrndiNative</a></strong> = <a href="trndi.native.html#TTrndiNativeLinux">TTrndiNativeLinux</a>;</code></td>
+</tr>
+</table>
+<h2 class="description">Description</h2>
+<h3 class="detail">Types</h3>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="TTrndiNativeBase"></span><code><strong>TTrndiNativeBase</strong> = trndi.native.base.TTrndiNativeBase;</code></td>
+</tr>
+<tr><td colspan="1">
+<p>
+Re-export base types</p>
+</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="TWSLVersion"></span><code><strong>TWSLVersion</strong>      = trndi.native.base.TWSLVersion;</code></td>
+</tr>
+<tr><td colspan="1">
+&nbsp;</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="TTrndiBool"></span><code><strong>TTrndiBool</strong>       = trndi.native.base.TTrndiBool;</code></td>
+</tr>
+<tr><td colspan="1">
+&nbsp;</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="TWSLInfo"></span><code><strong>TWSLInfo</strong>         = trndi.native.base.TWSLInfo;</code></td>
+</tr>
+<tr><td colspan="1">
+&nbsp;</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="TTrndiNativeLinux"></span><code><strong>TTrndiNativeLinux</strong> = trndi.native.linux.TTrndiNativeLinux;</code></td>
+</tr>
+<tr><td colspan="1">
+&nbsp;</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="TrndiNative"></span><code><strong>TrndiNative</strong> = <a href="trndi.native.html#TTrndiNativeLinux">TTrndiNativeLinux</a>;</code></td>
+</tr>
+<tr><td colspan="1">
+&nbsp;</td></tr>
+</table>
+<hr><span class="appinfo"><em>Generated by <a href="https://pasdoc.github.io/">PasDoc 0.16.0</a>. </em>
+</span>
+</div></div></body></html>
