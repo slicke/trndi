@@ -1207,8 +1207,109 @@ end;
 
 procedure TrndiNative.attention(message: string);
 {$if  DEFINED(X_LINUXBSD)}
+function RunAndCapture(const Exec: string; const Params: array of string;
+                       out StdoutS, StderrS: string; out ExitCode: Integer): Boolean;
+var
+  P: TProcess;
+  i: Integer;
+  OutStr, ErrStr: TStringStream;
+  Buf: array[0..4095] of byte;
+  n: SizeInt;
+begin
+  Result := False;
+  StdoutS := ''; StderrS := ''; ExitCode := -1;
 
+  P := TProcess.Create(nil);
+  OutStr := TStringStream.Create('');
+  ErrStr := TStringStream.Create('');
+  try
+    P.Executable := Exec;
+    for i := 0 to High(Params) do
+      P.Parameters.Add(Params[i]);
+    P.Options := [poUsePipes, poWaitOnExit];
+    P.ShowWindow := swoHIDE;
+    P.Execute;
 
+    // Drain stdout/stderr fully (works on Linux/Qt6)
+    repeat
+      while P.Output.NumBytesAvailable > 0 do
+      begin
+        n := P.Output.Read(Buf, SizeOf(Buf));
+        if n > 0 then OutStr.WriteBuffer(Buf, n) else Break;
+      end;
+      while P.Stderr.NumBytesAvailable > 0 do
+      begin
+        n := P.Stderr.Read(Buf, SizeOf(Buf));
+        if n > 0 then ErrStr.WriteBuffer(Buf, n) else Break;
+      end;
+      if not P.Running then Break;
+      Sleep(5);
+    until False;
+
+    ExitCode := P.ExitStatus;
+    StdoutS := OutStr.DataString;
+    StderrS := ErrStr.DataString;
+    Result := ExitCode = 0;
+  finally
+    ErrStr.Free; OutStr.Free; P.Free;
+  end;
+end;
+
+{$ifdef LCLqt6}
+function SendNotification(const AppName, Title, Body: string; var ReplaceId: Cardinal;
+                const TimeoutMs: Integer = 5000): Boolean;
+var
+  Params: array of string;
+  OutS, ErrS: string;
+  ExitCode: Integer;
+  s: string;
+  p, i: Integer;
+  NewId: Cardinal;
+begin
+  // Build args as separate parameters. Strings must be quoted for gdbus to parse as string.
+  SetLength(Params, 0);
+  Params :=
+    ['call', '--session',
+     '--dest', 'org.freedesktop.Notifications',
+     '--object-path', '/org/freedesktop/Notifications',
+     '--method', 'org.freedesktop.Notifications.Notify',
+     // signature: (s u s s s as a{sv} i)
+     '''' + AppName + '''',                                  // s app_name
+     IntToStr(ReplaceId),                                    // u replaces_id
+     '''' + '' + '''',                                       // s app_icon
+     '''' + Title + '''',                                    // s summary
+     '''' + Body + '''',                                     // s body
+     '[]',                                                   // as actions
+     '{}',                                                   // a{sv} hints
+     IntToStr(TimeoutMs)];                                   // i expire_timeout
+
+  Result := RunAndCapture('gdbus', Params, OutS, ErrS, ExitCode);
+  if not Result then
+  begin
+    // Helpful to surface why stdout was empty
+    raise Exception.CreateFmt('Notify failed (exit %d): %s', [ExitCode, Trim(ErrS)]);
+  end;
+
+  // OutS example: "(uint32 42,)"
+  NewId := 0;
+  s := OutS;
+  p := Pos('uint32', s);
+  if p > 0 then
+  begin
+    Inc(p, Length('uint32'));
+    // Skip spaces
+    while (p <= Length(s)) and (s[p] = ' ') do Inc(p);
+    // Read digits
+    i := p;
+    while (i <= Length(s)) and (s[i] in ['0'..'9']) do Inc(i);
+    if i > p then
+      NewId := StrToIntDef(Copy(s, p, i - p), 0);
+  end;
+
+  if NewId <> 0 then
+    ReplaceId := NewId; // Store for next update
+end;
+{$else}
 procedure SendNotification(Title, Message: string);
   var
     AProcess: TProcess;
@@ -1231,6 +1332,7 @@ procedure SendNotification(Title, Message: string);
 // Alternativt kan du välja att använda en annan notifieringsmetod eller inaktivera notifieringsfunktionen
     ;
   end;
+  {$endif}
   {$endif}
   {$if defined(X_WIN)}
 
@@ -1366,8 +1468,16 @@ begin
   Notification.release;
 end;
   {$endif}
+    {$ifdef lclqt6}
+  var
+  x: cardinal = 0;
+  {$endif}
 begin
+  {$ifdef lclqt6}
+  SendNotification('Trndi', 'Trndi', message, x);
+  {$else}
   SendNotification('Trndi', message);
+  {$endif}
 end;
 
 {------------------------------------------------------------------------------
