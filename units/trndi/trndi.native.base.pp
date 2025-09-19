@@ -108,7 +108,7 @@ public
   procedure ReloadSettings; virtual; abstract;
 
   // Theme/Env
-  class function isDarkMode: boolean;
+  class function isDarkMode: boolean; virtual;
   class function DetectTouchScreen(out multi: boolean): boolean;
   class function HasTouchScreen(out multi: boolean): boolean;
   class function HasTouchScreen: boolean;
@@ -117,7 +117,7 @@ public
   class function HasDangerousChars(const FileName: string): Boolean; static;
   class function DetectWSL: TWSLInfo;
   // Notifications
-  class function isNotificationSystemAvailable: boolean; static;
+  class function isNotificationSystemAvailable: boolean; virtual;
 
   // Lifecycle and UI
   destructor Destroy; override;
@@ -140,13 +140,7 @@ public
 
 end;
 
-{$ifdef X_LINUXBSD}
-function IsNotifySendAvailable: boolean;
-{$endif}
 //procedure QWindow_setWindowBadge(window: QWindowH; badge: PChar); cdecl; external 'libQt6Gui.so.6';
-{$ifdef Windows}
-function IsBurntToastAvailable: boolean;
-{$endif}
 
 const
   DWMWA_CAPTION_COLOR = 35;
@@ -186,21 +180,13 @@ begin
 end;
 
 {------------------------------------------------------------------------------
-  isNotificationSystemAvailable (class)
+  isNotificationSystemAvailable (class, virtual)
   -------------------------------------
-  Returns True if a native desktop notification mechanism is available.
+  Platforms override; default returns True (assume available).
  ------------------------------------------------------------------------------}
 class function TTrndiNativeBase.isNotificationSystemAvailable: boolean;
 begin
-  {$IF DEFINED(X_WIN)}
-    Result := IsBurntToastAvailable;
-  {$ELSEIF DEFINED(X_MAC)}
-    // NSUserNotificationCenter exists on macOS; assume available
-    Result := True;
-  {$ELSE}
-    // Linux/BSD: notify-send is common; if missing, caller may fallback
-    Result := IsNotifySendAvailable;
-  {$ENDIF}
+  Result := True;
 end;
 
 {$IFDEF Windows}
@@ -554,39 +540,6 @@ begin
 end;
 
 
-{$ifdef X_LINUXBSD}
-{------------------------------------------------------------------------------
-  isNotifySendAvailable
-  ---------------------------------
-  Checks if notify-send can be used
- ------------------------------------------------------------------------------}
-function IsNotifySendAvailable: boolean;
-var
-  AProcess: TProcess;
-  OutputLines: TStringList;
-begin
-  Result := false;
-  AProcess := TProcess.Create(nil);
-  OutputLines := TStringList.Create;
-  try
-    AProcess.Executable := '/usr/bin/which';
-    AProcess.Parameters.Add('notify-send');
-    AProcess.Options := AProcess.Options + [poWaitOnExit, poUsePipes];
-    AProcess.Execute;
-
-    OutputLines.LoadFromStream(AProcess.Output);
-
-    if (OutputLines.Count > 0) and FileExists(Trim(OutputLines[0])) then
-      Result := true;
-
-  except
-    on E: Exception do
-      Result := false;
-  end;
-  OutputLines.Free;
-  AProcess.Free;
-end;
-{$endif}
 {------------------------------------------------------------------------------
   attention
   -------------------
@@ -648,7 +601,8 @@ var
   AProcess: TProcess;
 begin
   {$IFDEF X_PC}
-  if IsNotifySendAvailable then
+  // Linux unit may override attention or provide notification availability
+  if isNotificationSystemAvailable then
   begin
     AProcess := TProcess.Create(nil);
     try
@@ -1179,56 +1133,19 @@ end;
   trndi.native.win/mac/linux units. }
 
 {------------------------------------------------------------------------------
-  isDarkMode
+  isDarkMode (class, virtual)
   ----------------------
-  Determines if the user's system is in "dark mode," per platform.
+  Default cross-platform heuristic: compare luminance of clWindow and clWindowText.
+  Platform units may override for more accurate detection.
  ------------------------------------------------------------------------------}
-{$IF DEFINED(X_MAC)}
 class function TTrndiNativeBase.isDarkMode: boolean;
-begin
-  // Typically, AppleInterfaceStyle = 'Dark' if dark mode is active
-  Result := Pos('DARK', UpperCase(GetPrefString('AppleInterfaceStyle'))) > 0;
-end;
-
-{$ELSEIF DEFINED(X_WIN)}
-class function TTrndiNativeBase.isDarkMode: boolean;
-const
-  regtheme = 'Software\Microsoft\Windows\CurrentVersion\Themes\Personalize\';
-  reglight = 'AppsUseLightTheme';
-var
-  reg: TRegistry;
-begin
-  Result := false;
-  reg := TRegistry.Create(KEY_READ);
-  try
-    reg.RootKey := HKEY_CURRENT_USER;
-    if reg.KeyExists(regtheme) and reg.OpenKey(regtheme, false) then
-    try
-      if reg.ValueExists(reglight) then
-        // If AppsUseLightTheme = 0 => dark mode
-        Result := (reg.ReadInteger(reglight) = 0);
-    finally
-      reg.CloseKey;
-    end;
-  finally
-    reg.Free;
-  end;
-end;
-
-{$ELSE}
-class function TTrndiNativeBase.isDarkMode: boolean;
-  // A simplistic Linux approach:
-  // Compare luminance of clWindow and clWindowText to guess if it's "dark".
-function Brightness(C: TColor): double;
+  function Brightness(C: TColor): double;
   begin
-    // Simple formula for perceived luminance
     Result := (Red(C) * 0.3) + (Green(C) * 0.59) + (Blue(C) * 0.11);
   end;
 begin
-  // If the background (clWindow) is darker than the text (clWindowText), assume dark mode
   Result := (Brightness(ColorToRGB(clWindow)) < Brightness(ColorToRGB(clWindowText)));
 end;
-{$ENDIF}
 
 { getURL moved: now a virtual abstract class function; implemented in platform units. }
 
@@ -1358,36 +1275,7 @@ begin
   {$ENDIF}
 end;
 
-{------------------------------------------------------------------------------
-  IsBurntToastAvailable
-  ----------------------
-  Checks if the PowerShell BurntToast module is installed
- ------------------------------------------------------------------------------}
-function IsBurntToastAvailable: Boolean;
-var
-  Output: TStringList;
-  AProcess: TProcess;
-begin
-  Result := False;
-  Output := TStringList.Create;
-  AProcess := TProcess.Create(nil);
-  try
-    AProcess.Executable := 'powershell';
-    AProcess.Parameters.Add('-NoProfile');
-    AProcess.Parameters.Add('-Command');
-
-    AProcess.Parameters.Add('if (Get-Module -ListAvailable -Name BurntToast) { Write-Host "YES" }');
-    AProcess.Options := [poUsePipes, poWaitOnExit];
-
-    AProcess.Execute;
-    Output.LoadFromStream(AProcess.Output);
-
-    Result := (Pos('YES', Output.Text) > 0);
-  finally
-    AProcess.Free;
-    Output.Free;
-  end;
-end;
+// Windows BurntToast detection moved to trndi.native.win
 
 function TTrndiNativeBase.SetTitleColor(form: THandle; bg, text: TColor): boolean;
 begin
