@@ -260,10 +260,14 @@ end;
 {$ENDIF}
 
 // Convenience overload that calls the virtual full version with defaults
+// On macOS, a platform-specific 2-arg implementation exists below; therefore
+// this generic convenience method is excluded there to avoid duplicate bodies.
+{$IFNDEF DARWIN}
 procedure TTrndiNativeBase.SetBadge(const Value: string; badgeColor: TColor);
 begin
   SetBadge(Value, badgeColor, DEFAULT_BADGE_SIZE_RATIO, DEFAULT_MIN_FONT_SIZE);
 end;
+{$ENDIF}
 
 // Default no-op full overload for non-Windows/non-macOS builds
 {$IFNDEF LCLWIN32}

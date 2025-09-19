@@ -444,6 +444,10 @@ var
                          smbUXOpenFile, smbUxMinimize, smbUxAgree, smbUxRead, smbUxDefault);
 
 implementation
+{$ifdef Windows}
+function DwmSetWindowAttribute(hwnd: HWND; dwAttribute: DWORD; pvAttribute: Pointer; cbAttribute: DWORD): HRESULT; stdcall; external 'dwmapi.dll';
+{$endif}
+
 
 {**
   Determine whether dialogs should use the large layout.
