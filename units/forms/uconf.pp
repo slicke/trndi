@@ -96,6 +96,7 @@ TfConf = class(TForm)
   GroupBox2: TGroupBox;
   GroupBox3: TGroupBox;
   gbDisplayPrefs: TGroupBox;
+  GroupBox4: TGroupBox;
   Image1: TImage;
   lWaitSys: TLabel;
   Label10: TLabel;

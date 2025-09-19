@@ -374,7 +374,7 @@ msgstr "Kontofärg"
 
 #: tfconf.cbusercolor.caption
 msgid "Display users' colors on the main window"
-msgstr ""
+msgstr "Visa användares färger på huvudfönstret"
 
 #: tfconf.cl_hi_bg.caption
 msgctxt "tfconf.cl_hi_bg.caption"
@@ -462,6 +462,10 @@ msgstr "Texter"
 #: tfconf.groupbox3.caption
 msgid "Custom Range *"
 msgstr "Eget område *"
+
+#: tfconf.groupbox4.caption
+msgid "All accounts"
+msgstr "Alla konton"
 
 #: tfconf.label10.caption
 msgid "High (eg https://open.spotify.com/... or spotify:track:...)"
@@ -580,7 +584,7 @@ msgstr "0,0"
 
 #: tfconf.lwaitsys.caption
 msgid "Please wait..."
-msgstr ""
+msgstr "Var god dröj..."
 
 #: tfconf.rbunit.caption
 msgid "Display Unit"
@@ -1293,4 +1297,3 @@ msgstr "Du kan använda skift+<nummerr> för att manuellt sätta synligheten (0 
 #: ufloat.rscustomsize
 msgid "You can hold down shift and plus (+) or minus (-) to change the window size"
 msgstr "Du kan hålla ned skift och plus (+) eller minus (-) för att justera fönstrets storlek"
-

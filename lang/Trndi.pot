@@ -445,6 +445,10 @@ msgstr ""
 msgid "Custom Range *"
 msgstr ""
 
+#: tfconf.groupbox4.caption
+msgid "All accounts"
+msgstr ""
+
 #: tfconf.label10.caption
 msgid "High (eg https://open.spotify.com/... or spotify:track:...)"
 msgstr ""
