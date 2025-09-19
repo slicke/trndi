@@ -553,6 +553,10 @@ msgstr ""
 msgid "0,0"
 msgstr ""
 
+#: tfconf.lwaitsys.caption
+msgid "Please wait..."
+msgstr ""
+
 #: tfconf.rbunit.caption
 msgid "Display Unit"
 msgstr ""

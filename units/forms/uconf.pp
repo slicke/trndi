@@ -96,6 +96,7 @@ TfConf = class(TForm)
   GroupBox3: TGroupBox;
   gbDisplayPrefs: TGroupBox;
   Image1: TImage;
+  lWaitSys: TLabel;
   Label10: TLabel;
   Label11: TLabel;
   Label12: TLabel;
@@ -874,14 +875,19 @@ end;
 
 procedure TfConf.tsSystemShow(Sender: TObject);
 begin
-      {$if defined(WINDOWS)}
-      cbNotice.Checked := IsBurntToastAvailable;
-      {$elseif defined (DARWIN)}
-      cbNotice.Checked := True;
-      {$else}
-      cbNotice.Checked := IsNotifySendAvailable;
-      cbNotice.Caption := cbNotice.Caption + ' (Notify Daemon)';
-      {$endif}
+   lWaitSys.Show;
+   tsSystem.Update;
+   Application.ProcessMessages;
+
+  {$if defined(WINDOWS)}
+  cbNotice.Checked := IsBurntToastAvailable;
+  {$elseif defined (DARWIN)}
+  cbNotice.Checked := True;
+  {$else}
+  cbNotice.Checked := IsNotifySendAvailable;
+  cbNotice.Caption := cbNotice.Caption + ' (Notify Daemon)';
+  {$endif}
+  lWaitSys.visible := false;
 end;
 
 end.
