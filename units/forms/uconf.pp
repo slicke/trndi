@@ -98,6 +98,7 @@ TfConf = class(TForm)
   gbDisplayPrefs: TGroupBox;
   GroupBox4: TGroupBox;
   Image1: TImage;
+  Label1: TLabel;
   lWaitSys: TLabel;
   Label10: TLabel;
   Label11: TLabel;
@@ -144,6 +145,7 @@ TfConf = class(TForm)
   pnDisplay: TPanel;
   pDecimal: TPanel;
   rbUnit: TRadioGroup;
+  spTHRESHOLD: TSpinEdit;
   tsColors: TTabSheet;
   tsCustom: TTabSheet;
   tsDisplay: TTabSheet;
@@ -182,6 +184,7 @@ TfConf = class(TForm)
   procedure lValClick(Sender:TObject);
   procedure pcMainChange(Sender: TObject);
   procedure rbUnitClick(Sender:TObject);
+  procedure spTHRESHOLDChange(Sender: TObject);
   procedure tbAdvancedChange(Sender:TObject);
   procedure ToggleBox1Change(Sender:TObject);
   procedure tsSystemShow(Sender: TObject);
@@ -863,6 +866,14 @@ begin
   end;
 
   fsLo.DecimalPlaces := fsHi.DecimalPlaces;
+end;
+
+procedure TfConf.spTHRESHOLDChange(Sender: TObject);
+begin
+  if spTHRESHOLD.Value > 30 then
+    spTHRESHOLD.Value := 30
+  else if spTHRESHOLD.Value < 6 then
+    spTHRESHOLD.Value := 6;
 end;
 
 procedure TfConf.tbAdvancedChange(Sender:TObject);

@@ -467,6 +467,10 @@ msgstr "Eget område *"
 msgid "All accounts"
 msgstr "Alla konton"
 
+#: tfconf.label1.caption
+msgid "Readings are outdated after (minutes):"
+msgstr "Avläsningar anses gamla efter (minuter):"
+
 #: tfconf.label10.caption
 msgid "High (eg https://open.spotify.com/... or spotify:track:...)"
 msgstr "Hög (t ex https://open.spotify.com/... eller spotify:track:...)"
