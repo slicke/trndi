@@ -1593,7 +1593,7 @@ end;
  ------------------------------------------------------------------------------}
 function TrndiNative.GetRootSetting(const keyname: string; def: string = ''): string;
 begin
-  result := GetSetting(keyname,def, true);
+  result := GetSetting(keyname, def, true);
 end;
 
 {------------------------------------------------------------------------------
@@ -1618,6 +1618,8 @@ begin
   finally
     reg.Free;
   end;
+  if result = '' then
+    result := def;
 end;
 
 {$ELSEIF DEFINED(X_PC)}

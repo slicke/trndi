@@ -935,8 +935,8 @@ begin
       multi := true;
       pnMultiUser.Color := native.GetColorSetting('user.color', clBlack);
       if pnMultiUser.Color <> clBlack then begin
-        pnMultiUser.Visible := not setColorMode; // SHow the bar if the window isnt colored
-        customTitlebar := not pnMultiUser.Visible; // Set the custom title bar value depending if the panel is showing
+        pnMultiUser.Visible := native.GetRootSetting('users.colorbox', 'true') = 'true';
+        customTitlebar := setColorMode; // Set the custom title bar value depending if the panel is showing
       end;
 
     end
@@ -2010,7 +2010,7 @@ var
         lbUsers.Enabled := false;
 
       lbUsers.Items.Add('- ' +RS_DEFAULT_ACCOUNT + ' -');
-
+      cbUserColor.Checked := native.GetRootSetting('users.colorbox', 'true') = 'true';
       // Load position settings
 posValue := native.GetIntSetting('position.main', Ord(tpoCenter));
 
@@ -2143,6 +2143,8 @@ if cbPos.ItemIndex = -1 then
         SetSetting('users.names', lbUsers.Items.CommaText)
       else
         SetSetting('users.names', '');
+
+      native.SetRootSetting('users.colorbox', IfThen(cbUserColor.Checked, 'true', 'false'));
 
       // Save remote and override settings
       SetSetting('remote.type', cbSys.Text);

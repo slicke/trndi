@@ -16,9 +16,9 @@ object fConf: TfConf
     Height = 479
     Top = 0
     Width = 525
-    ActivePage = tsSystem
+    ActivePage = tsMulti
     Align = alClient
-    TabIndex = 7
+    TabIndex = 4
     TabOrder = 0
     OnChange = pcMainChange
     object tsGeneral: TTabSheet
@@ -11163,6 +11163,14 @@ object fConf: TfConf
           Constraints.MaxHeight = 30
           TabOrder = 1
           OnClick = bAddClick
+        end
+        object cbUserColor: TCheckBox
+          Left = 16
+          Height = 19
+          Top = 24
+          Width = 236
+          Caption = 'Display users'' colors on the main window'
+          TabOrder = 2
         end
       end
     end
