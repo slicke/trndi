@@ -39,7 +39,7 @@ CocoaAll,
 SimpleDarkMode
 {$ELSEIF DEFINED(X_WIN)},
 Windows, Registry, Dialogs, StrUtils, winhttpclient, shellapi, comobj,
-Forms, variants
+Forms, variants, dwmapi
 {$ELSEIF DEFINED(X_PC)},
 fphttpclient, openssl, opensslsockets, IniFiles, Dialogs, extctrls, forms, math, LCLIntf, KDEBadge
 {$ENDIF}
@@ -109,6 +109,8 @@ public
   procedure start;
   procedure done;
   procedure setBadge(const Value: string; badgeColor: Tcolor; badge_size_ratio: double = 0.8; min_font_size: integer = 8);
+  function SetTitleColor(form: THandle; bg, text: TColor): boolean;
+
   class procedure PlaySound(const FileName: string);
 
   constructor create(ua, base: string); overload;
@@ -214,6 +216,11 @@ function IsNotifySendAvailable: boolean;
 function DwmSetWindowAttribute(hwnd: HWND; dwAttribute: DWORD; pvAttribute: Pointer; cbAttribute: DWORD): HRESULT; stdcall; external 'dwmapi.dll';
 function IsBurntToastAvailable: boolean;
 {$endif}
+
+const
+  DWMWA_CAPTION_COLOR = 35;
+  DWMWA_TEXT_COLOR    = 36;
+  DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
 
 implementation
 
@@ -389,8 +396,6 @@ end;
  ------------------------------------------------------------------------------}
 {$IF DEFINED(X_WIN)}
 class function TrndiNative.SetDarkMode(win: HWND; Enable: Boolean = True): Boolean;
-const
-  DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
 var
   Value: Integer;
 begin
@@ -2199,5 +2204,42 @@ begin
     Output.Free;
   end;
 end;
+
+{$ifdef Windows}
+function SetDwmAttr(hWnd: HWND; Attr: DWORD; const Data; Size: DWORD): HRESULT;
+begin
+  Result := DwmSetWindowAttribute(hWnd, Attr, @Data, Size);
+end;
+
+function TColorToBGR(Color: TColor): TColor;
+begin
+  Result := (Color and $FF00FF00) or ((Color and $FF0000) shr 16) or ((Color and $FF) shl 16);
+end;
+
+function HrSucceeded(hr: HRESULT): Boolean; inline;
+begin
+  Result := hr >= 0; // same as SUCCEEDED(hr) in Win32
+end;
+
+function TrndiNative.SetTitleColor(form: THandle; bg, text: TColor): Boolean;
+var
+  bgColor, textColor: COLORREF;
+  hrCaption, hrText: HRESULT;
+begin
+  // Resolve system colors, then convert to BGR (COLORREF is BGR)
+  bgColor   := TColorToBGR(ColorToRGB(bg));
+  textColor := TColorToBGR(ColorToRGB(text));
+
+  hrCaption := SetDwmAttr(form, DWMWA_CAPTION_COLOR, bgColor, SizeOf(bgColor));
+  hrText    := SetDwmAttr(form, DWMWA_TEXT_COLOR, textColor, SizeOf(textColor));
+
+  Result := HrSucceeded(hrCaption) and HrSucceeded(hrText);
+end;
+{$else}
+function TrndiNative.SetTitleColor(form: THandle; bg, text: TColor): boolean;
+begin
+  result := false;
+end;
+{$endif}
 end.
 
