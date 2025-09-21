@@ -80,6 +80,9 @@ type
     This is used as a proxy for whether native toast notifications can be sent
     via PowerShell from this process. }
   class function isNotificationSystemAvailable: boolean; override;
+  {** Identify the notification backend for Windows.
+      Returns 'BurntToast' when the PowerShell module is available; otherwise 'none'. }
+  class function getNotificationSystem: string; override;
 
   {** Settings API overrides (Windows Registry)
     Keys are stored under HKCU\Software\Trndi\ with the same scoping rules
@@ -147,6 +150,19 @@ end;
 class function TTrndiNativeWindows.isNotificationSystemAvailable: boolean;
 begin
   Result := IsBurntToastAvailable;
+end;
+
+{------------------------------------------------------------------------------
+  getNotificationSystem
+  ---------------------
+  Return 'BurntToast' if the PowerShell module is present; otherwise 'none'.
+ ------------------------------------------------------------------------------}
+class function TTrndiNativeWindows.getNotificationSystem: string;
+begin
+  if IsBurntToastAvailable then
+    Result := 'BurntToast'
+  else
+    Result := 'none';
 end;
 
 

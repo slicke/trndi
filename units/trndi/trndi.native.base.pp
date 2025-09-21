@@ -167,6 +167,10 @@ public
   // Notifications
   {** True if a native notification system is available (override per platform). }
   class function isNotificationSystemAvailable: boolean; virtual;
+  {** Identify the notification backend in use on this platform.
+      Examples: 'notify-send', 'gdbus', 'BurntToast', 'NSUserNotification', 'none', 'unknown'.
+      Platforms should override to provide a concrete value. }
+  class function getNotificationSystem: string; virtual;
   {** Alias for readability: forwards to @link(isNotificationSystemAvailable). }
   class function HasNotifications: boolean;
 
@@ -247,6 +251,16 @@ end;
 class function TTrndiNativeBase.isNotificationSystemAvailable: boolean;
 begin
   Result := True;
+end;
+
+{------------------------------------------------------------------------------
+  getNotificationSystem (class, virtual)
+  -------------------------------------
+  Default returns 'unknown'; platform units should override with a concrete ID.
+ ------------------------------------------------------------------------------}
+class function TTrndiNativeBase.getNotificationSystem: string;
+begin
+  Result := 'unknown';
 end;
 
 class function TTrndiNativeBase.HasNotifications: boolean;

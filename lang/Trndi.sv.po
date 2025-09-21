@@ -1251,9 +1251,9 @@ msgstr "En förhandsversion av %s finns tillgänglig, vill du besöka nedladdnin
 msgid "Notifications"
 msgstr "Notiser"
 
-#: uconf.rs_notify_mac
-msgid "Notifications will be made via macOS"
-msgstr "Notiser görs via macOS självt"
+#: uconf.rs_notify_system
+msgid "Notifications will appear where you normally get notification messages."
+msgstr "Notiser visas där du brukar se notismeddelanden."
 
 #: uconf.rs_notify_title
 msgid "A notification system is required"
@@ -1309,4 +1309,3 @@ msgstr "Du kan använda skift+<nummerr> för att manuellt sätta synligheten (0 
 #: ufloat.rscustomsize
 msgid "You can hold down shift and plus (+) or minus (-) to change the window size"
 msgstr "Du kan hålla ned skift och plus (+) eller minus (-) för att justera fönstrets storlek"
-
