@@ -10,7 +10,6 @@ object fBG: TfBG
   Color = clBlack
   Font.Color = clWhite
   Position = poDesktopCenter
-  LCLVersion = '4.2.0.0'
   OnClose = FormClose
   OnCreate = FormCreate
   OnDblClick = FormDblClick
@@ -142,9 +141,9 @@ object fBG: TfBG
     OnPaint = pnWarningPaint
     object lMissing: TLabel
       Left = 45
-      Height = 15
+      Height = 16
       Top = 7
-      Width = 110
+      Width = 108
       Alignment = taCenter
       Caption = 'No recent readings!'
       Font.Color = clBlack
@@ -170,9 +169,9 @@ object fBG: TfBG
     OnMouseMove = FormMouseMove
   end
   object lTir: TLabel
-    Left = 124
+    Left = 88
     Height = 15
-    Top = 33
+    Top = 32
     Width = 76
     AutoSize = False
     Caption = 'Time In Range'
@@ -289,8 +288,8 @@ object fBG: TfBG
   object pmSettings: TPopupMenu
     OnMeasureItem = pmSettingsMeasureItem
     OnPopup = pmSettingsPopup
-    Left = 168
-    Top = 32
+    Left = 136
+    Top = 80
     object miSettings: TMenuItem
       Caption = '&Settings'
       OnClick = miSettingsClick
