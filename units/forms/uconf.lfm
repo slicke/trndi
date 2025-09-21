@@ -16,9 +16,9 @@ object fConf: TfConf
     Height = 534
     Top = 0
     Width = 675
-    ActivePage = tsMulti
+    ActivePage = tsColors
     Align = alClient
-    TabIndex = 4
+    TabIndex = 1
     TabOrder = 0
     OnChange = pcMainChange
     object tsGeneral: TTabSheet
@@ -10471,63 +10471,166 @@ object fConf: TfConf
       Caption = 'Colors'
       ClientHeight = 499
       ClientWidth = 669
-      object gbColBack: TGroupBox
-        Left = 16
-        Height = 129
-        Top = 24
-        Width = 128
-        Caption = 'Backgounds'
-        ClientHeight = 102
-        ClientWidth = 124
+      object GroupBox3: TGroupBox
+        Left = 0
+        Height = 152
+        Top = 264
+        Width = 669
+        Align = alTop
+        Caption = 'Custom Range *'
+        ClientHeight = 125
+        ClientWidth = 665
         TabOrder = 0
-        object cl_hi_bg: TColorButton
-          Left = 8
+        object cl_hi_txt_cust: TColorButton
+          Left = 5
           Height = 25
-          Top = 8
-          Width = 112
+          Top = 5
+          Width = 655
+          Align = alTop
+          BorderSpacing.Around = 5
           BorderWidth = 2
-          ButtonColorSize = 16
+          ButtonColorSize = 25
           ButtonColor = clBlack
-          Caption = 'High'
+          Caption = 'High Text'
           Layout = blGlyphRight
         end
-        object cl_lo_bg: TColorButton
-          Left = 8
+        object cl_lo_txt_cust: TColorButton
+          Left = 5
           Height = 25
-          Top = 72
-          Width = 112
+          Top = 65
+          Width = 655
+          Align = alTop
+          BorderSpacing.Around = 5
           BorderWidth = 2
-          ButtonColorSize = 16
+          ButtonColorSize = 25
           ButtonColor = clBlack
-          Caption = 'Low'
+          Caption = 'Low Text'
           Layout = blGlyphRight
         end
-        object cl_ok_bg: TColorButton
-          Left = 8
+        object cl_hi_bg_cust: TColorButton
+          Left = 5
           Height = 25
-          Top = 40
-          Width = 112
+          Top = 35
+          Width = 655
+          Align = alTop
+          BorderSpacing.Around = 5
           BorderWidth = 2
-          ButtonColorSize = 16
+          ButtonColorSize = 25
           ButtonColor = clBlack
-          Caption = 'OK'
+          Caption = 'High Background'
+          Layout = blGlyphRight
+        end
+        object cl_lo_bg_cust: TColorButton
+          Left = 5
+          Height = 25
+          Top = 95
+          Width = 655
+          Align = alTop
+          BorderSpacing.Around = 5
+          BorderWidth = 2
+          ButtonColorSize = 25
+          ButtonColor = clBlack
+          Caption = 'Low Background'
           Layout = blGlyphRight
         end
       end
-      object GroupBox2: TGroupBox
-        Left = 152
-        Height = 129
-        Top = 24
-        Width = 136
-        Caption = 'Texts'
-        ClientHeight = 102
-        ClientWidth = 132
+      object Label14: TLabel
+        Left = 5
+        Height = 16
+        Top = 478
+        Width = 659
+        Align = alBottom
+        BorderSpacing.Around = 5
+        Caption = '* Support depends on your data source'
+      end
+      object btReset: TButton
+        Left = 8
+        Height = 25
+        Top = 432
+        Width = 128
+        Caption = 'Reset'
         TabOrder = 1
+        OnClick = btResetClick
+      end
+      object Panel7: TPanel
+        Left = 0
+        Height = 136
+        Top = 0
+        Width = 669
+        Align = alTop
+        BevelOuter = bvNone
+        BevelWidth = 25
+        ClientHeight = 136
+        ClientWidth = 669
+        TabOrder = 2
+        object gbColBack: TGroupBox
+          Left = 0
+          Height = 136
+          Top = 0
+          Width = 669
+          Align = alClient
+          Caption = 'Backgounds'
+          ClientHeight = 109
+          ClientWidth = 665
+          TabOrder = 0
+          object cl_hi_bg: TColorButton
+            Left = 5
+            Height = 25
+            Top = 5
+            Width = 655
+            Align = alTop
+            BorderSpacing.Around = 5
+            BorderWidth = 2
+            ButtonColorSize = 16
+            ButtonColor = clBlack
+            Caption = 'High'
+            Layout = blGlyphRight
+          end
+          object cl_lo_bg: TColorButton
+            Left = 5
+            Height = 25
+            Top = 65
+            Width = 655
+            Align = alTop
+            BorderSpacing.Around = 5
+            BorderWidth = 2
+            ButtonColorSize = 16
+            ButtonColor = clBlack
+            Caption = 'Low'
+            Layout = blGlyphRight
+          end
+          object cl_ok_bg: TColorButton
+            Left = 5
+            Height = 25
+            Top = 35
+            Width = 655
+            Align = alTop
+            BorderSpacing.Around = 5
+            BorderWidth = 2
+            ButtonColorSize = 16
+            ButtonColor = clBlack
+            Caption = 'OK'
+            Layout = blGlyphRight
+          end
+        end
+      end
+      object GroupBox2: TGroupBox
+        Left = 0
+        Height = 128
+        Top = 136
+        Width = 669
+        Align = alTop
+        Caption = 'Texts'
+        ClientHeight = 101
+        ClientWidth = 665
+        TabOrder = 3
         object cl_hi_txt: TColorButton
-          Left = 8
+          Left = 5
           Height = 25
-          Top = 7
-          Width = 120
+          Top = 35
+          Width = 655
+          Align = alTop
+          BorderSpacing.Around = 5
           BorderWidth = 2
           ButtonColorSize = 16
           ButtonColor = clBlack
@@ -10535,10 +10638,12 @@ object fConf: TfConf
           Layout = blGlyphRight
         end
         object cl_lo_txt: TColorButton
-          Left = 8
+          Left = 5
           Height = 25
-          Top = 72
-          Width = 120
+          Top = 5
+          Width = 655
+          Align = alTop
+          BorderSpacing.Around = 5
           BorderWidth = 2
           ButtonColorSize = 16
           ButtonColor = clBlack
@@ -10546,87 +10651,18 @@ object fConf: TfConf
           Layout = blGlyphRight
         end
         object cl_ok_txt: TColorButton
-          Left = 8
+          Left = 5
           Height = 25
-          Top = 39
-          Width = 120
+          Top = 65
+          Width = 655
+          Align = alTop
+          BorderSpacing.Around = 5
           BorderWidth = 2
           ButtonColorSize = 16
           ButtonColor = clBlack
           Caption = 'OK'
           Layout = blGlyphRight
         end
-      end
-      object GroupBox3: TGroupBox
-        Left = 16
-        Height = 152
-        Top = 160
-        Width = 272
-        Caption = 'Custom Range *'
-        ClientHeight = 125
-        ClientWidth = 268
-        TabOrder = 2
-        object cl_hi_txt_cust: TColorButton
-          Left = 8
-          Height = 25
-          Top = 0
-          Width = 256
-          BorderWidth = 2
-          ButtonColorSize = 16
-          ButtonColor = clBlack
-          Caption = 'High Text'
-          Layout = blGlyphRight
-        end
-        object cl_lo_txt_cust: TColorButton
-          Left = 8
-          Height = 25
-          Top = 64
-          Width = 256
-          BorderWidth = 2
-          ButtonColorSize = 16
-          ButtonColor = clBlack
-          Caption = 'Low Text'
-          Layout = blGlyphRight
-        end
-        object cl_hi_bg_cust: TColorButton
-          Left = 8
-          Height = 25
-          Top = 32
-          Width = 256
-          BorderWidth = 2
-          ButtonColorSize = 16
-          ButtonColor = clBlack
-          Caption = 'High Background'
-          Layout = blGlyphRight
-        end
-        object cl_lo_bg_cust: TColorButton
-          Left = 8
-          Height = 25
-          Top = 96
-          Width = 256
-          BorderWidth = 2
-          ButtonColorSize = 16
-          ButtonColor = clBlack
-          Caption = 'Low Background'
-          Layout = blGlyphRight
-        end
-      end
-      object Label14: TLabel
-        Left = 0
-        Height = 16
-        Top = 483
-        Width = 669
-        Align = alBottom
-        Caption = '* Support depends on your data source'
-      end
-      object btReset: TButton
-        Left = 16
-        Height = 25
-        Top = 320
-        Width = 75
-        Caption = 'Reset'
-        TabOrder = 3
-        OnClick = btResetClick
       end
     end
     object tsDisplay: TTabSheet
