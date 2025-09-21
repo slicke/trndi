@@ -151,6 +151,8 @@ public
   function GetBoolSetting(const keyname: string; def: boolean = false): boolean;
   {** Reload settings backend state (if any). }
   procedure ReloadSettings; virtual; abstract;
+  {** Read setting, empty will return default. }
+  function GetSettingEx(const keyname: string; def: string=''; global: boolean=false): string;
 
   // Theme/Env
   {** Determine if the OS/theme uses a dark appearance. Platforms override. }
@@ -1104,6 +1106,20 @@ begin
   result := StrToFloatDef(r, def, f);
 end;
 
+{------------------------------------------------------------------------------
+  GetSettingEx
+  -------------------------
+  Gets a setting, but if empty returns default value}
+function TTrndiNativeBase.GetSettingEx(const keyname: string; def: string=''; global: boolean=false): string;
+var
+  res: string;
+begin
+  res := GetSetting(keyname, def, global);
+  if res = '' then
+    Result := def
+  else
+    Result := res;
+end;
 {------------------------------------------------------------------------------
   GetBoolSetting
   -------------------------
