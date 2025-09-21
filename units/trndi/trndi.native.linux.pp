@@ -98,7 +98,11 @@ implementation
 uses
   Process, Types, LCLType;
 
-{** Check PATH for the 'notify-send' tool. }
+{------------------------------------------------------------------------------
+  IsNotifySendAvailable
+  ---------------------
+  Check PATH for the 'notify-send' tool. Returns True if found.
+ ------------------------------------------------------------------------------}
 function IsNotifySendAvailable: boolean;
 var
   AProcess: TProcess;
@@ -123,7 +127,11 @@ begin
   AProcess.Free;
 end;
 
-{** Run an external command and capture stdout. Returns True on exit code 0. }
+{------------------------------------------------------------------------------
+  RunAndCaptureSimple
+  -------------------
+  Run an external command and capture stdout. Returns True when exit code is 0.
+ ------------------------------------------------------------------------------}
 function RunAndCaptureSimple(const Exec: string; const Params: array of string;
                              out StdoutS: string; out ExitCode: Integer): Boolean;
 var
@@ -179,11 +187,13 @@ begin
   end;
 end;
 
+// Return value of environment variable Name (empty if unset)
 function EnvValue(const Name: string): string; inline;
 begin
   Result := GetEnvironmentVariable(Name);
 end;
 
+// Best-effort desktop environment hint (XDG_CURRENT_DESKTOP or DESKTOP_SESSION)
 function DesktopHint: string;
 begin
   Result := EnvValue('XDG_CURRENT_DESKTOP');
@@ -191,6 +201,7 @@ begin
     Result := EnvValue('DESKTOP_SESSION');
 end;
 
+// True if S contains the substring "dark" (case-insensitive)
 function ContainsDark(const S: string): boolean; inline;
 begin
   Result := Pos('dark', LowerCase(S)) > 0;
@@ -199,6 +210,12 @@ end;
 // Forward declaration for helper declared later in this unit
 function FindInPath(const FileName: string): string; forward;
 
+{------------------------------------------------------------------------------
+  DetectGnomeDark
+  ---------------
+  GNOME/Ubuntu/Unity: read color-scheme (prefer-dark/default) or gtk-theme via
+  gsettings. Returns True if a decision was made and sets isDark accordingly.
+ ------------------------------------------------------------------------------}
 function DetectGnomeDark(out isDark: boolean): boolean;
 var
   gsettingsPath, outS: string;
@@ -246,6 +263,12 @@ begin
   Result := False; // unable to determine via GNOME
 end;
 
+{------------------------------------------------------------------------------
+  DetectKDEDark
+  -------------
+  KDE Plasma: read General/ColorScheme via kreadconfig5. Returns True if a
+  decision was made and sets isDark accordingly.
+ ------------------------------------------------------------------------------}
 function DetectKDEDark(out isDark: boolean): boolean;
 var
   kreadPath, outS: string;
@@ -351,15 +374,16 @@ begin
   // 4) Last-resort heuristic using system colors
   Result := (Brightness(ColorToRGB(clWindow)) < Brightness(ColorToRGB(clWindowText)));
 end;
+
+{------------------------------------------------------------------------------
+  ResolveIniPath
+  --------------
+  Locate settings file with backward compatibility and return the chosen path.
+ ------------------------------------------------------------------------------}
 function TTrndiNativeLinux.ResolveIniPath: string;
 var
   home, pA, pB, pC: string;
 begin
-{------------------------------------------------------------------------------
-  ResolveIniPath / EnsureIni
-  --------------------------
-  Locate settings file with backward compatibility and ensure it exists.
- ------------------------------------------------------------------------------}
   // Prefer existing files in this order:
   // 1) Lazarus app config file (typically ~/.config/Trndi/trndi.ini)
   // 2) Explicit ~/.config/Trndi/trndi.ini
@@ -382,15 +406,15 @@ begin
     Result := pB; // reasonable default under ~/.config/Trndi/trndi.ini
 end;
 
+{------------------------------------------------------------------------------
+  EnsureIni
+  ---------
+  Ensure the INI store is created and directory exists.
+ ------------------------------------------------------------------------------}
 procedure TTrndiNativeLinux.EnsureIni;
 var
   path: string;
 begin
-{------------------------------------------------------------------------------
-  EnsureIni
-  ----------
-  Ensure the INI store is created and directory exists.
- ------------------------------------------------------------------------------}
   if not Assigned(inistore) then
   begin
     path := ResolveIniPath;
@@ -400,7 +424,11 @@ begin
   end;
 end;
 
-
+{------------------------------------------------------------------------------
+  attention
+  ---------
+  Send a desktop notification. Prefer gdbus path under Qt6; otherwise fallback.
+ ------------------------------------------------------------------------------}
 procedure TTrndiNativeLinux.attention(topic, message: string);
 {$IFDEF LCLQt6}
   function RunAndCapture(const Exec: string; const Params: array of string;
@@ -496,17 +524,18 @@ begin
     end;
   end
   else
-  {------------------------------------------------------------------------------
-    attention
-    ---------
-    Prefer gdbus notifications under Qt6; otherwise rely on base behavior.
-   ------------------------------------------------------------------------------}
     // Fall back to base attention implementation if gdbus is unavailable
     inherited attention(topic, message);
 {$ELSE}
   inherited attention(topic, message);
 {$ENDIF}
 end;
+
+{------------------------------------------------------------------------------
+  Destroy
+  -------
+  Clean up tray, badges, and INI store before inherited destructor.
+ ------------------------------------------------------------------------------}
 destructor TTrndiNativeLinux.Destroy;
 begin
   if not noFree then
@@ -521,7 +550,11 @@ begin
   inherited Destroy;
 end;
 
-
+{------------------------------------------------------------------------------
+  FindInPath
+  ----------
+  Search PATH for a file name and return the first matching absolute path.
+ ------------------------------------------------------------------------------}
 function FindInPath(const FileName: string): string;
 var
   PathVar, Dir: string;
@@ -546,6 +579,11 @@ begin
   end;
 end;
 
+{------------------------------------------------------------------------------
+  GetSystemLangTag
+  ----------------
+  Return a BCP 47-like language tag from environment (e.g., sv-SE).
+ ------------------------------------------------------------------------------}
 function GetSystemLangTag: string;
   function FirstSegment(const S, Sep: string): string;
   var P: SizeInt;
@@ -584,6 +622,11 @@ begin
   Result := L;
 end;
 
+{------------------------------------------------------------------------------
+  Speak
+  -----
+  Use spd-say to speak the provided text in the current system language.
+ ------------------------------------------------------------------------------}
 procedure TTrndiNativeLinux.Speak(const Text: string);
 var
   CmdPath, Lang: string;
@@ -616,6 +659,11 @@ begin
   end;
 end;
 
+{------------------------------------------------------------------------------
+  SetTray
+  -------
+  Draw a badge on the system tray icon and synchronize KDE taskbar badge.
+ ------------------------------------------------------------------------------}
 procedure TTrndiNativeLinux.SetTray(const Value: string; BadgeColor: TColor;
                        badge_size_ratio: double = 0.8; min_font_size: integer = 8);
 const
@@ -635,11 +683,6 @@ var
   BadgeText: string;
   dval: double;
 begin
-{------------------------------------------------------------------------------
-  SetBadge
-  --------
-  Draw badge on tray and synchronize KDE taskbar badge.
- ------------------------------------------------------------------------------}
   // Ensure we have a tray icon instance
   if not Assigned(Tray) then
     Tray := TTrayIcon.Create(Application.MainForm);
@@ -765,6 +808,11 @@ begin
   end;
 end;
 
+{------------------------------------------------------------------------------
+  SetBadge (advanced)
+  -------------------
+  Update KDE taskbar badge and tray icon badge with size/font options.
+ ------------------------------------------------------------------------------}
 procedure TTrndiNativeLinux.SetBadge(const Value: string; BadgeColor: TColor;
                        badge_size_ratio: double; min_font_size: integer); 
 var
@@ -779,10 +827,16 @@ begin
   SetTray(value,badgecolor,badge_size_ratio, min_font_size);
 end;
 
+// Overload: delegate to base for default behavior
 procedure TTrndiNativeLinux.SetBadge(const Value: string; BadgeColor: TColor);
 begin
   inherited SetBadge(Value, BadgeColor);
 end;
+{------------------------------------------------------------------------------
+  setDarkMode
+  -----------
+  Placeholder; currently returns False on Linux.
+ ------------------------------------------------------------------------------}
 class function TTrndiNativeLinux.setDarkMode: Boolean;
 begin
 {------------------------------------------------------------------------------
@@ -795,6 +849,11 @@ begin
   Result := False;
 end;
 
+{------------------------------------------------------------------------------
+  Settings (INI/CFG)
+  ------------------
+  Read settings with legacy key=value compatibility; fallback to default.
+ ------------------------------------------------------------------------------}
 function TTrndiNativeLinux.GetSetting(const keyname: string; def: string; global: boolean): string;
 var
   key: string;
@@ -803,11 +862,6 @@ var
   line, k, v: string;
   path: string;
 begin
-{------------------------------------------------------------------------------
-  Settings (INI/CFG)
-  ------------------
-  Read, write, and delete settings, with legacy key=value compatibility.
- ------------------------------------------------------------------------------}
   EnsureIni;
   key := buildKey(keyname, global);
   // Try common sections used historically (backward compatibility)
@@ -853,15 +907,15 @@ begin
     Result := def;
 end;
 
-procedure TTrndiNativeLinux.SetSetting(const keyname: string; const val: string; global: boolean);
-var
-  key: string;
-begin
 {------------------------------------------------------------------------------
   SetSetting
   ----------
   Write setting to canonical [trndi] section and flush to disk.
  ------------------------------------------------------------------------------}
+procedure TTrndiNativeLinux.SetSetting(const keyname: string; const val: string; global: boolean);
+var
+  key: string;
+begin
   EnsureIni;
   key := buildKey(keyname, global);
   // Write under a canonical section
@@ -869,15 +923,15 @@ begin
   inistore.UpdateFile;
 end;
 
+{------------------------------------------------------------------------------
+  DeleteSetting
+  -------------
+  Delete setting across known sections for completeness.
+ ------------------------------------------------------------------------------}
 procedure TTrndiNativeLinux.DeleteSetting(const keyname: string; global: boolean);
 var
   key: string;
 begin
-{------------------------------------------------------------------------------
-  DeleteSetting
-  --------------
-  Delete setting across known sections for completeness.
- ------------------------------------------------------------------------------}
   EnsureIni;
   key := buildKey(keyname, global);
   inistore.DeleteKey('trndi', key);
@@ -887,13 +941,13 @@ begin
   inistore.UpdateFile;
 end;
 
-procedure TTrndiNativeLinux.ReloadSettings;
-begin
 {------------------------------------------------------------------------------
   ReloadSettings
   --------------
   Drop INI handle; it will be lazily re-created on next access.
  ------------------------------------------------------------------------------}
+procedure TTrndiNativeLinux.ReloadSettings;
+begin
   FreeAndNil(inistore);
   // will be recreated on next access
 end;
