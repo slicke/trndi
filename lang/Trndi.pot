@@ -538,6 +538,10 @@ msgstr ""
 msgid "Low under"
 msgstr ""
 
+#: tfconf.los.caption
+msgid "Unknown System"
+msgstr ""
+
 #: tfconf.lpass.caption
 msgid "API Key / Dexcom Password"
 msgstr ""
@@ -568,6 +572,10 @@ msgstr ""
 
 #: tfconf.lwaitsys.caption
 msgid "Please wait..."
+msgstr ""
+
+#: tfconf.lwidgetset.caption
+msgid "Unknown Widgetset"
 msgstr ""
 
 #: tfconf.rbunit.caption

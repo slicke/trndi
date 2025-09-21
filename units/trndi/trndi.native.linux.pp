@@ -25,7 +25,7 @@ interface
 
 uses
   Classes, SysUtils, Graphics, fphttpclient, openssl, opensslsockets, IniFiles, Dialogs,
-  ExtCtrls, Forms, Math, LCLIntf, KDEBadge, trndi.native.base, FileUtil;
+  ExtCtrls, Forms, Math, LCLIntf, KDEBadge, trndi.native.base, FileUtil, Menus;
 
 type
   {!
@@ -35,6 +35,7 @@ type
   TTrndiNativeLinux = class(TTrndiNativeBase)
   protected
     Tray: TTrayIcon;
+    TrayMenu: TPopupMenu;
     inistore: TIniFile; // Linux-specific settings store
     {** Resolve the INI/CFG file path with backward compatibility.
         Preference order: Lazarus app config, ~/.config/Trndi/trndi.ini, legacy ~/.config/Trndi.cfg }
@@ -568,6 +569,8 @@ begin
     ClearBadge;
     ShutdownBadge;
   end;
+  if Assigned(TrayMenU) then
+    TrayMenu.Free;
   if Assigned(Tray) then
     Tray.Free;
   if Assigned(inistore) then
@@ -721,6 +724,13 @@ begin
   if not Assigned(Tray) then begin
     Tray := TTrayIcon.Create(Application.MainForm);
     tray.OnClick := @trayClick;
+    TrayMenu := TPopupMenu.Create(tray);
+    tray.PopUpMenu := traymenu;
+    traymenu.Items.add(TMenuItem.Create(tray));
+    with TrayMenu.Items[0] do begin
+      Caption := 'Trndi';
+      onclick := @trayClick;
+    end;
   end;
 
   if Value = '' then
