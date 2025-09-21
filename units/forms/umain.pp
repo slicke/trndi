@@ -2562,9 +2562,10 @@ begin
 //  ScaleLbl(lArrow, taRightJustify, tlTop);
   lArrow.OptimalFill := true;
 
-  pnMultiUser.width := clientwidth div 10;
-  pnMultiUser.height := clientheight div 10;
-  pnMultiUser.top := clientheight-pnMultiuser.Height;
+  pnMultiUser.width := max(clientwidth div 30, 5);
+  pnMultiUser.height := clientheight;
+  pnMultiUser.top := 0;
+  pnMultiUser.left := 0;
 end;
 
 procedure TfBG.UpdateTrendDots;
