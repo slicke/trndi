@@ -935,6 +935,14 @@ msgstr "Historiska värden"
 msgid "Unknown"
 msgstr "Okänd"
 
+#: trndi.strings.rs_settings_save
+msgid "Save settings?"
+msgstr "Spara inställningarna?"
+
+#: trndi.strings.rs_settings_save_desc
+msgid "Would you like to save any changes made?"
+msgstr "Vill du spara eventuella ändringar?"
+
 #: trndi.strings.rs_setup
 msgctxt "trndi.strings.rs_setup"
 msgid "Setup"

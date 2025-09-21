@@ -2226,6 +2226,9 @@ begin
     // Show dialog
     fConf.ShowModal;
 
+    if ExtMsg(uxdAuto, RS_SETTINGS_SAVE, RS_SETTINGS_SAVE, RS_SETTINGS_SAVE_DESC, '', $00F5F2FD,$003411A9, [mbYes, mbNo]) <> mrYes then
+      Exit; // FConf.Free will run later
+
     // Reload settings, needed on X_PC
     native.ReloadSettings;
 

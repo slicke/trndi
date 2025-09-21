@@ -49,6 +49,8 @@ RS_QUIT_MSG = 'Quit the app?';
 RS_LAST_UPDATE = '%d min';
 RS_COMPUTE_FAILED_AGO = 'Long ago';
 RS_FORCE_QUIT_SETUP = 'Trndi will now shut down to apply settings, please re-start it manually!';
+RS_SETTINGS_SAVE = 'Save settings?';
+RS_SETTINGS_SAVE_DESC = 'Would you like to save any changes made?';
 
 RS_WARN_BG_HI = 'High blood sugar! Currently: %s';
 RS_WARN_BG_LO = 'Low blood sugar! Currently: %s';
