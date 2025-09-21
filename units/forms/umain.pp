@@ -920,18 +920,14 @@ begin
         begin
           username := strings[i];
           native.configUser :=  username;
-          s :=  native.GetSetting('user.nick', '');
-          if s = '' then
-            s := username;
+          s :=  native.GetSettingEx('user.nick', username);
 
           fbg.Caption := Format(RS_USER_CAPTION, [s, fBG.Caption]);
           multinick := s;
         end
         else begin
           username := '';
-          s :=  native.GetSetting('user.nick', ''); // try just using RS_DEFAULT_ACCOUNT later
-          if s = '' then
-            s := RS_DEFAULT_ACCOUNT;
+          s :=  native.GetSettingEx('user.nick', RS_DEFAULT_ACCOUNT); // try just using RS_DEFAULT_ACCOUNT later
 
           multinick := s;
           fbg.Caption := Format(RS_USER_CAPTION, [s, fBG.Caption]);
