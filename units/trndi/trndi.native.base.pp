@@ -33,21 +33,19 @@ interface
 
 {**
   @abstract(Base, platform-agnostic contract for native integrations.)
-  @longnote(
-    This unit contains @link(TTrndiNativeBase), an abstract class that defines
-    platform-neutral contracts for native features. Concrete implementations
-    live in @code(trndi.native.win), @code(trndi.native.linux), and
-    @code(trndi.native.mac). Use the façade unit @code(trndi.native) which
-    exposes the alias @code(TrndiNative) resolving to the right subclass at
-    compile time.
 
-    Design rules for contributors:
-    - Keep this unit free from platform ifdefs as much as possible.
-    - Add new cross-platform contracts here; implement per-platform logic in
-      platform units.
-    - Prefer virtual methods (instance or class) for behavior that varies by
-      platform.
-  )
+  This unit contains @link(TTrndiNativeBase), an abstract class that defines
+  platform-neutral contracts for native features. Concrete implementations live
+  in @code(trndi.native.win), @code(trndi.native.linux), and
+  @code(trndi.native.mac). Use the façade unit @code(trndi.native) which exposes
+  the alias @code(TrndiNative) resolving to the right subclass at compile time.
+
+  Design rules for contributors:
+  - Keep this unit free from platform ifdefs as much as possible.
+  - Add new cross-platform contracts here; implement per-platform logic in
+    platform units.
+  - Prefer virtual methods (instance or class) for behavior that varies by
+    platform.
 }
 
 uses
@@ -58,19 +56,22 @@ uses
   , Windows, Registry, Dialogs, StrUtils, winhttpclient, shellapi, comobj,
     Forms, variants, dwmapi
 {$ELSEIF DEFINED(X_PC)}
-  , fphttpclient, openssl, opensslsockets, IniFiles, Dialogs, LCLType
+  , fphttpclient, openssl, opensslsockets, Dialogs, LCLType
 {$ENDIF}
   , process;
 
 type
+  {** WSL version detection result. }
   TWSLVersion = (wslNone, wslVersion1, wslVersion2, wslUnknown);
+  {** Ternary-style boolean with Unset/Unknown states for user overrides. }
   TTrndiBool = (tbUnset, tbTrue, tbFalse, tbUnknown);
 
+  {** Information about a WSL environment (Windows Subsystem for Linux). }
   TWSLInfo = record
-    IsWSL: Boolean;
-    Version: TWSLVersion;
-    DistroName: string;
-    KernelVersion: string;
+    IsWSL: Boolean;       // True when running under WSL
+    Version: TWSLVersion; // Detected version (1 or 2) when applicable
+    DistroName: string;   // Optional distro name (if available)
+    KernelVersion: string;// Kernel string as reported by /proc/version
   end;
   // TrndiNative base contracts
 {**
@@ -90,7 +91,9 @@ protected
   baseurl:   string;
   // Note: Platform-specific settings storage (e.g., INI on Linux) is managed
   // by each platform unit, not the base class.
-    function buildKey(const key: string; global: boolean): string;
+  {** Build a storage key. If not @param(global), prepend the current
+    @code(configUser) with an underscore. }
+  function buildKey(const key: string; global: boolean): string;
 public
   // Config
   noFree: boolean;
@@ -111,7 +114,7 @@ public
     @param(params) Query string pairs like 'key=value' (GET or POST).
     @param(jsondata) Optional JSON payload for POST.
     @param(header) Optional single header string 'Key=Value'.
-    @return(Response body or error message.)
+    @returns(Response body or error message.)
   }
   function request(const post: boolean; const endpoint: string;
     const params: array of string; const jsondata: string = '';
@@ -169,7 +172,9 @@ public
 
   // Lifecycle and UI
   destructor Destroy; override;
+  {** Optional startup hook; platform units may override. }
   procedure start;
+  {** Optional shutdown hook; platform units may override. }
   procedure done;
   // Badge: provide a convenience overload and a virtual full version
   {** Convenience overload for drawing a badge on the app icon/tray. }
@@ -182,9 +187,12 @@ public
   class procedure PlaySound(const FileName: string);
 
   // Constructors
-  constructor create(ua, base: string); overload;  //!< Custom user-agent and base URL
-  constructor create(ua: string); overload;       //!< Custom user-agent
-  constructor create; overload;                   //!< Default UA/base
+  {** Create with custom user-agent and base URL. }
+  constructor create(ua, base: string); overload;
+  {** Create with custom user-agent and default base URL. }
+  constructor create(ua: string); overload;
+  {** Create with default user-agent and base URL. }
+  constructor create; overload;
 
   // Properties
   property configUser: string read cfguser write cfguser;
@@ -583,7 +591,10 @@ end;
 {------------------------------------------------------------------------------
   GetOSLanguage
   -------------------
-  Gets the operating system's language
+  Get the operating system's language/locale identifier.
+  - Windows: locale via GetLocaleInfoW
+  - macOS: NSLocale identifier
+  - Linux/Unix: LANG environment variable
  ------------------------------------------------------------------------------}
 class function TTrndiNativeBase.GetOSLanguage: string;
 begin
@@ -602,7 +613,8 @@ end;
 {------------------------------------------------------------------------------
   attention
   -------------------
-  Flashes something depending on the system
+  Surface a visual/sound notification depending on the platform.
+  Platform units may override; base provides simple cross-platform attempts.
  ------------------------------------------------------------------------------}
 
 procedure TTrndiNativeBase.attention(topic, message: string);
@@ -675,7 +687,7 @@ begin
     end;
   end
   else
-    ShowMessage('Notifieringsfunktionen är inte tillgänglig eftersom "notify-send" inte är installerat.');
+   // ShowMessage('notify-send is required for Trndi to make notifications!');
   {$ENDIF}
 end;
   {$endif}
@@ -1141,8 +1153,9 @@ begin
 end;
 
 {------------------------------------------------------------------------------
+  SetFloatSetting
   ----------------------
-  Stores a float value to platform-specific storage.
+  Store a float value to platform-specific storage using '.' decimal separator.
  ------------------------------------------------------------------------------}
 procedure TTrndiNativeBase.SetFloatSetting(const keyname: string; const val: single);
 var
@@ -1166,7 +1179,7 @@ end;
 {------------------------------------------------------------------------------
   DeleteRootSetting
   ----------------------
-  Stores a string value to platform-specific storage.
+  Delete a non-user-scoped key from platform-specific storage.
  ------------------------------------------------------------------------------}
 procedure TTrndiNativeBase.DeleteRootSetting(keyname: string; const val: string);
 begin
@@ -1251,7 +1264,7 @@ var
   Content: string;
   EnvVar: string;
 begin
-  // Initiera resultat
+  // Initialize result
   Result.IsWSL := False;
   Result.Version := wslNone;
   Result.DistroName := '';

@@ -36,12 +36,16 @@ type
   protected
     Tray: TTrayIcon;
     inistore: TIniFile; // Linux-specific settings store
+    {** Resolve the INI/CFG file path with backward compatibility.
+        Preference order: Lazarus app config, ~/.config/Trndi/trndi.ini, legacy ~/.config/Trndi.cfg }
     function ResolveIniPath: string; virtual;
+    {** Ensure the INI store is created and directory exists. }
     procedure EnsureIni; inline;
   public
   {** Prefer gdbus notifications under Qt6; fallback to base attention when
       gdbus is unavailable or fails. }
   procedure attention(topic, message: string); override;
+    {** Free tray resources, shutdown KDE badge if needed, and close INI store. }
     destructor Destroy; override;
     {** Speaks @param(Text) using spd-say, if available.
         Shows a user-visible message when the tool is not present. }
@@ -51,6 +55,9 @@ type
         @param(badge_size_ratio Determines badge diameter relative to icon size)
         @param(min_font_size Lower bound for font size while fitting text) }
   {** Draw a badge on the tray icon. }
+  {** Draw a badge with @param(Value) text on tray icon using @param(BadgeColor).
+      @param(badge_size_ratio Determines badge diameter relative to icon size)
+      @param(min_font_size Lower bound for font size while fitting text) }
   procedure SetTray(const Value: string; BadgeColor: TColor; badge_size_ratio: double = 0.8; min_font_size: integer = 8);
     {** Convenience overload: redirects to base two-arg version. }
   procedure setBadge(const Value: string; BadgeColor: TColor); overload; reintroduce;
@@ -298,7 +305,16 @@ begin
     responseStream.Free;
   end;
 end;
-
+{------------------------------------------------------------------------------
+  getURL
+  ------
+  Linux/PC implementation using TFPHttpClient; returns response text or error.
+ ------------------------------------------------------------------------------}
+{------------------------------------------------------------------------------
+  isNotificationSystemAvailable
+  -----------------------------
+  True when 'notify-send' exists on PATH.
+ ------------------------------------------------------------------------------}
 class function TTrndiNativeLinux.isNotificationSystemAvailable: boolean;
 begin
   Result := IsNotifySendAvailable;
@@ -314,6 +330,12 @@ var
     Result := (Red(C) * 0.3) + (Green(C) * 0.59) + (Blue(C) * 0.11);
   end;
 begin
+{------------------------------------------------------------------------------
+  isDarkMode
+  ----------
+  Desktop-aware detection: KDE (kreadconfig5), GNOME (gsettings), GTK_THEME,
+  or fallback luminance heuristic.
+ ------------------------------------------------------------------------------}
   // 1) KDE Plasma: kreadconfig5 ColorScheme
   if DetectKDEDark(v) then Exit(v);
 
@@ -334,6 +356,11 @@ function TTrndiNativeLinux.ResolveIniPath: string;
 var
   home, pA, pB, pC: string;
 begin
+{------------------------------------------------------------------------------
+  ResolveIniPath / EnsureIni
+  --------------------------
+  Locate settings file with backward compatibility and ensure it exists.
+ ------------------------------------------------------------------------------}
   // Prefer existing files in this order:
   // 1) Lazarus app config file (typically ~/.config/Trndi/trndi.ini)
   // 2) Explicit ~/.config/Trndi/trndi.ini
@@ -360,6 +387,11 @@ procedure TTrndiNativeLinux.EnsureIni;
 var
   path: string;
 begin
+{------------------------------------------------------------------------------
+  EnsureIni
+  ----------
+  Ensure the INI store is created and directory exists.
+ ------------------------------------------------------------------------------}
   if not Assigned(inistore) then
   begin
     path := ResolveIniPath;
@@ -465,6 +497,11 @@ begin
     end;
   end
   else
+  {------------------------------------------------------------------------------
+    attention
+    ---------
+    Prefer gdbus notifications under Qt6; otherwise rely on base behavior.
+   ------------------------------------------------------------------------------}
     // Fall back to base attention implementation if gdbus is unavailable
     inherited attention(topic, message);
 {$ELSE}
@@ -599,6 +636,11 @@ var
   BadgeText: string;
   dval: double;
 begin
+{------------------------------------------------------------------------------
+  SetBadge
+  --------
+  Draw badge on tray and synchronize KDE taskbar badge.
+ ------------------------------------------------------------------------------}
   // Ensure we have a tray icon instance
   if not Assigned(Tray) then
     Tray := TTrayIcon.Create(Application.MainForm);
@@ -744,6 +786,11 @@ begin
 end;
 class function TTrndiNativeLinux.setDarkMode: Boolean;
 begin
+{------------------------------------------------------------------------------
+  setDarkMode
+  -----------
+  Placeholder; currently returns False on Linux.
+ ------------------------------------------------------------------------------}
   // Placeholder: switching dark mode programmatically is DE-specific and not supported here.
   // Return False to indicate no change was made.
   Result := False;
@@ -757,6 +804,11 @@ var
   line, k, v: string;
   path: string;
 begin
+{------------------------------------------------------------------------------
+  Settings (INI/CFG)
+  ------------------
+  Read, write, and delete settings, with legacy key=value compatibility.
+ ------------------------------------------------------------------------------}
   EnsureIni;
   key := buildKey(keyname, global);
   // Try common sections used historically (backward compatibility)
@@ -806,6 +858,11 @@ procedure TTrndiNativeLinux.SetSetting(const keyname: string; const val: string;
 var
   key: string;
 begin
+{------------------------------------------------------------------------------
+  SetSetting
+  ----------
+  Write setting to canonical [trndi] section and flush to disk.
+ ------------------------------------------------------------------------------}
   EnsureIni;
   key := buildKey(keyname, global);
   // Write under a canonical section
@@ -817,6 +874,11 @@ procedure TTrndiNativeLinux.DeleteSetting(const keyname: string; global: boolean
 var
   key: string;
 begin
+{------------------------------------------------------------------------------
+  DeleteSetting
+  --------------
+  Delete setting across known sections for completeness.
+ ------------------------------------------------------------------------------}
   EnsureIni;
   key := buildKey(keyname, global);
   inistore.DeleteKey('trndi', key);
@@ -828,6 +890,11 @@ end;
 
 procedure TTrndiNativeLinux.ReloadSettings;
 begin
+{------------------------------------------------------------------------------
+  ReloadSettings
+  --------------
+  Drop INI handle; it will be lazily re-created on next access.
+ ------------------------------------------------------------------------------}
   FreeAndNil(inistore);
   // will be recreated on next access
 end;

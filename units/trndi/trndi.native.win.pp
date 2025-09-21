@@ -108,8 +108,14 @@ implementation
 
 uses
   ComObj, Process;
+{------------------------------------------------------------------------------
+  IsBurntToastAvailable
+  ---------------------
+  Check if the BurntToast PowerShell module is available on this system.
+  Used by isNotificationSystemAvailable as a proxy for toast support.
+ ------------------------------------------------------------------------------}
 {** Check if the BurntToast module is available in PowerShell.
-  Implementation detail for @link(TTrndiNativeWindows.isNotificationSystemAvailable). }
+    Implementation detail for @link(TTrndiNativeWindows.isNotificationSystemAvailable). }
 function IsBurntToastAvailable: Boolean;
 var
   Output: TStringList;
@@ -133,12 +139,22 @@ begin
   end;
 end;
 
+{------------------------------------------------------------------------------
+  isNotificationSystemAvailable
+  -----------------------------
+  Returns True if native toast notifications are likely available (BurntToast).
+ ------------------------------------------------------------------------------}
 class function TTrndiNativeWindows.isNotificationSystemAvailable: boolean;
 begin
   Result := IsBurntToastAvailable;
 end;
 
 
+{------------------------------------------------------------------------------
+  isDarkMode
+  ----------
+  Detect Windows App theme: AppsUseLightTheme = 0 means dark mode for apps.
+ ------------------------------------------------------------------------------}
 class function TTrndiNativeWindows.isDarkMode: boolean;
 const
   regtheme = 'Software\Microsoft\Windows\CurrentVersion\Themes\Personalize\';
@@ -173,6 +189,11 @@ const
   DWMWA_TEXT_COLOR    = 36;
   DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
 
+{------------------------------------------------------------------------------
+  Speak
+  -----
+  Use SAPI to speak text; pick a voice matching user locale when possible.
+ ------------------------------------------------------------------------------}
 procedure TTrndiNativeWindows.Speak(const Text: string);
 var
   Voice, Voices: OleVariant;
@@ -198,6 +219,11 @@ begin
   Voice.Speak(Text, 0);
 end;
 
+{------------------------------------------------------------------------------
+  getURL
+  ------
+  Simple HTTP GET using WinHTTP client with a default User-Agent.
+ ------------------------------------------------------------------------------}
 class function TTrndiNativeWindows.getURL(const url: string; out res: string): boolean;
 const
   DEFAULT_USER_AGENT = 'Mozilla/5.0 (compatible; trndi) TrndiAPI';
@@ -224,6 +250,11 @@ begin
   end;
 end;
 
+{------------------------------------------------------------------------------
+  SetDarkMode
+  -----------
+  Toggle immersive dark mode for a window (Windows 10 1809+ required).
+ ------------------------------------------------------------------------------}
 class function TTrndiNativeWindows.SetDarkMode(win: HWND; Enable: Boolean = True): Boolean;
 var
   Value: Integer;
@@ -249,6 +280,11 @@ begin
   Result := hr >= 0; // SUCCEEDED(hr)
 end;
 
+{------------------------------------------------------------------------------
+  SetTitleColor
+  -------------
+  Apply caption and text colors to a window using DWM attributes.
+ ------------------------------------------------------------------------------}
 function TTrndiNativeWindows.SetTitleColor(form: THandle; bg, text: TColor): Boolean;
 var
   bgColor, textColor: COLORREF;
@@ -265,6 +301,11 @@ begin
   Result := HrSucceeded(hrCaption) and HrSucceeded(hrText);
 end;
 
+{------------------------------------------------------------------------------
+  SetBadge
+  --------
+  Compose app icon with a badge showing Value; applies to taskbar icon.
+ ------------------------------------------------------------------------------}
 procedure TTrndiNativeWindows.SetBadge(const Value: string; BadgeColor: TColor; badge_size_ratio: double; min_font_size: integer);
 const
   INITIAL_FONT_SIZE_RATIO = 0.5;
@@ -420,6 +461,11 @@ begin
   end;
 end;
 
+{------------------------------------------------------------------------------
+  GetSetting
+  ----------
+  Read a value from HKCU\Software\Trndi\; returns def if not present.
+ ------------------------------------------------------------------------------}
 function TTrndiNativeWindows.GetSetting(const keyname: string; def: string; global: boolean): string;
 var
   reg: TRegistry;
@@ -442,6 +488,11 @@ begin
   end;
 end;
 
+{------------------------------------------------------------------------------
+  SetSetting
+  ----------
+  Write a value to HKCU\Software\Trndi\.
+ ------------------------------------------------------------------------------}
 procedure TTrndiNativeWindows.SetSetting(const keyname: string; const val: string; global: boolean);
 var
   reg: TRegistry;
@@ -460,6 +511,11 @@ begin
   end;
 end;
 
+{------------------------------------------------------------------------------
+  DeleteSetting
+  -------------
+  Delete a value from HKCU\Software\Trndi\ if it exists.
+ ------------------------------------------------------------------------------}
 procedure TTrndiNativeWindows.DeleteSetting(const keyname: string; global: boolean);
 var
   reg: TRegistry;
@@ -479,6 +535,11 @@ begin
   end;
 end;
 
+{------------------------------------------------------------------------------
+  ReloadSettings
+  --------------
+  No-op for registry-backed settings (access is on-demand).
+ ------------------------------------------------------------------------------}
 procedure TTrndiNativeWindows.ReloadSettings;
 begin
   // Registry access is performed on demand; there is no persistent
