@@ -817,6 +817,16 @@ msgstr "Visar data för: \"%s\""
 msgid "Showing the standard user"
 msgstr "Visar standardanvändaren"
 
+#: trndi.strings.rs_multiname_def_named
+#, object-pascal-format
+msgid "Showing %s (standard user)"
+msgstr ""
+
+#: trndi.strings.rs_multiname_named
+#, object-pascal-format
+msgid "Showing data for: %s (username \"%s\")"
+msgstr ""
+
 #: trndi.strings.rs_multiple_accounts
 msgid "Trndi found multiple accounts. Please choose one for this instance"
 msgstr "Trndi hittade fler konton. Vänligen välj ett för denna instans"
