@@ -287,7 +287,8 @@ msgstr ""
 msgid "Reset"
 msgstr ""
 
-#: tfconf.btusersave.caption
+#: tfconf.btusersave2.caption
+msgctxt "tfconf.btusersave2.caption"
 msgid "Save"
 msgstr ""
 
