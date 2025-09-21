@@ -97,11 +97,12 @@ type
 
 implementation
 
-{** Create a NightScout API client.
-    - Sets a descriptive User-Agent string.
-    - Normalizes/extends the provided @code(user) into a full API base URL.
-    - Hashes @code(pass) to build the Nightscout API-SECRET header.
-    - Invokes the inherited constructor to complete base initialization. }
+{------------------------------------------------------------------------------
+  create (constructor)
+  --------------------
+  Initialize UA, derive API base URL from user, compute API-SECRET if present,
+  and call inherited base constructor.
+ ------------------------------------------------------------------------------}
 constructor NightScout.create(user, pass, extra: string);
 begin
   ua      := 'Mozilla/5.0 (compatible; trndi) TrndiAPI';
@@ -116,12 +117,12 @@ begin
   inherited;
 end;
 
-{** Connect to Nightscout and initialize thresholds and time synchronization.
-    Requests @code(status.json), checks for connectivity and authorization,
-    extracts CGM thresholds from @code(settings.thresholds), and determines
-    @code(timeDiff) relative to local time for subsequent timestamp adjustments.
-
-    @returns(True on success; False on connectivity/authorization/parse errors; sets errormsg.) }
+{------------------------------------------------------------------------------
+  Connect
+  -------
+  Fetch status.json, validate connectivity/authorization, read thresholds,
+  and compute timeDiff vs local system time.
+ ------------------------------------------------------------------------------}
 function NightScout.Connect: boolean;
 var
   ResponseStr   : string;            // Raw response from Nightscout
@@ -239,19 +240,12 @@ begin
   Result := true;
 end;
 
-{** Fetch SGV entries and map the JSON array into @code(BGResults).
-    Uses @code(NS_READINGS) if @code(extras) is empty. For each entry, fills:
-    - value and delta
-    - device, rssi, noise (environment)
-    - trend (converted from 'direction' string)
-    - date (via @code(JSToDateTime) which respects timezone correction)
-    - level (derived from thresholds via @code(getLevel))
-
-    @param(minNum Unused in this implementation; retained for API symmetry)
-    @param(maxNum Maximum number of entries to request)
-    @param(extras Optional path override for Nightscout endpoint)
-    @param(res    Receives the raw JSON response)
-    @returns(An array of @code(BGReading); empty if unauthorized or parse failure) }
+{------------------------------------------------------------------------------
+  getReadings
+  -----------
+  Fetch SGV entries (defaults to NS_READINGS) and map JSON array into
+  BGResults: value, delta, environment, trend, date, and derived level.
+ ------------------------------------------------------------------------------}
 function NightScout.getReadings(minNum, maxNum: integer; extras: string; out res: string): BGResults;
 var
   js:     TJSONData;

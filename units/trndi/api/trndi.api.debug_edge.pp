@@ -49,6 +49,9 @@ end;
 
 implementation
 
+{------------------------------------------------------------------------------
+  Constructor
+------------------------------------------------------------------------------}
 constructor DebugEdgeAPI.create(user, pass, extra: string);
 begin
   ua      := 'Mozilla/5.0 (compatible; trndi) TrndiAPI';
@@ -56,6 +59,9 @@ begin
   inherited;
 end;
 
+{------------------------------------------------------------------------------
+  Connect: set extreme thresholds and zero time diff for edge-case testing
+------------------------------------------------------------------------------}
 function DebugEdgeAPI.Connect: boolean;
 begin
   cgmHi      := 160;
@@ -68,7 +74,9 @@ begin
   Result := true;
 end;
 
-
+{------------------------------------------------------------------------------
+  Generate alternating high/low extreme readings to exercise edge conditions
+------------------------------------------------------------------------------}
 function DebugEdgeAPI.getReadings(min, maxNum: integer; extras: string; out res: string): BGResults;
 var
   i: integer;

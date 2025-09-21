@@ -49,6 +49,9 @@ end;
 
 implementation
 
+{------------------------------------------------------------------------------
+  Constructor
+------------------------------------------------------------------------------}
 constructor DebugAPI.create(user, pass, extra: string);
 begin
   ua      := 'Mozilla/5.0 (compatible; trndi) TrndiAPI';
@@ -57,6 +60,9 @@ begin
   inherited;
 end;
 
+{------------------------------------------------------------------------------
+  Connect: set deterministic thresholds and zero time diff
+------------------------------------------------------------------------------}
 function DebugAPI.Connect: boolean;
 begin
   cgmHi      := 160;
@@ -69,7 +75,9 @@ begin
   Result := true;
 end;
 
-
+{------------------------------------------------------------------------------
+  Generate fake readings over the last 50 minutes at 5-minute intervals
+------------------------------------------------------------------------------}
 function DebugAPI.getReadings(min, maxNum: integer; extras: string; out res: string): BGResults;
 function getFakeVals(const min: integer; out reading, delta: integer): TDateTime;
   var

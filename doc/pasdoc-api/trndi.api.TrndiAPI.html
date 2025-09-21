@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>trndi.api: Class TrndiAPI</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="generator" content="PasDoc 0.16.0">
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<link rel="StyleSheet" type="text/css" href="pasdoc.css">
+</head>
+<body>
+<div class="container"><div class="navigation">
+<ul><li><a href="AllUnits.html">Units</a></li><li><a href="ClassHierarchy.html">Class Hierarchy</a></li><li><a href="AllClasses.html">Classes, Interfaces, Objects and Records</a></li><li><a href="AllTypes.html">Types</a></li><li><a href="AllVariables.html">Variables</a></li><li><a href="AllConstants.html">Constants</a></li><li><a href="AllFunctions.html">Functions and Procedures</a></li><li><a href="AllIdentifiers.html">Identifiers</a></li></ul></div><div class="content">
+<span id="TrndiAPI"></span><h1 class="cio">Class TrndiAPI</h1>
+<div class="sections">
+<div class="one_section"><a class="section" href="#PasDoc-Description">Description</a></div><div class="one_section"><a class="section" href="#PasDoc-Hierarchy">Hierarchy</a></div><div class="one_section"><a class="section" href="#PasDoc-Fields">Fields</a></div><div class="one_section"><a class="section" href="#PasDoc-Methods">Methods</a></div><div class="one_section"><a class="section" href="#PasDoc-Properties">Properties</a></div></div>
+<span id="PasDoc-Description"></span><h2 class="unit">Unit</h2>
+<p class="unitlink">
+<a href="trndi.api.html">trndi.api</a></p>
+<h2 class="declaration">Declaration</h2>
+<p class="declaration">
+<code>type TrndiAPI = class(TObject)</code></p>
+<h2 class="description">Description</h2>
+<p>
+** TrndiAPI is the abstract base class for accessing CGM data sources. It defines common thresholds, time handling, and helper routines to read and classify BG readings. Subclasses implement connectivity and fetching.
+
+<p>Typical use: - Construct subclass with credentials/config. - Call <code>connect</code>. - Call <code>getReadings</code>, <code>getCurrent</code>, or <code>getLast</code>.
+
+<p>See also: BGReading, BGResults, BGValLevel.</p>
+<span id="PasDoc-Hierarchy"></span><h2 class="hierarchy">Hierarchy</h2>
+<ul class="hierarchy"><li class="ancestor">TObject</li>
+<li class="thisitem">TrndiAPI</li></ul><h2 class="overview">Overview</h2>
+<span id="PasDoc-Fields"></span><h3 class="summary">Fields</h3>
+<table class="summary wide_list">
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="protected.gif" alt="Protected" title="Protected"></a></td>
+<td class="itemcode"><code><strong><a href="trndi.api.TrndiAPI.html#timeDiff">timeDiff</a></strong>: integer;</code></td>
+</tr>
+<tr class="list2">
+<td class="visibility"><a href="legend.html"><img  src="protected.gif" alt="Protected" title="Protected"></a></td>
+<td class="itemcode"><code><strong><a href="trndi.api.TrndiAPI.html#tz">tz</a></strong>: integer;</code></td>
+</tr>
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="protected.gif" alt="Protected" title="Protected"></a></td>
+<td class="itemcode"><code><strong><a href="trndi.api.TrndiAPI.html#native">native</a></strong>: TrndiNative;</code></td>
+</tr>
+<tr class="list2">
+<td class="visibility"><a href="legend.html"><img  src="protected.gif" alt="Protected" title="Protected"></a></td>
+<td class="itemcode"><code><strong><a href="trndi.api.TrndiAPI.html#ua">ua</a></strong>: string;</code></td>
+</tr>
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="protected.gif" alt="Protected" title="Protected"></a></td>
+<td class="itemcode"><code><strong><a href="trndi.api.TrndiAPI.html#baseUrl">baseUrl</a></strong>: string;</code></td>
+</tr>
+<tr class="list2">
+<td class="visibility"><a href="legend.html"><img  src="protected.gif" alt="Protected" title="Protected"></a></td>
+<td class="itemcode"><code><strong><a href="trndi.api.TrndiAPI.html#lastErr">lastErr</a></strong>: string;</code></td>
+</tr>
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="protected.gif" alt="Protected" title="Protected"></a></td>
+<td class="itemcode"><code><strong><a href="trndi.api.TrndiAPI.html#core">core</a></strong>: <a href="trndi.api.CGMCore.html">CGMCore</a>;</code></td>
+</tr>
+</table>
+<span id="PasDoc-Methods"></span><h3 class="summary">Methods</h3>
+<table class="summary wide_list">
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="protected.gif" alt="Protected" title="Protected"></a></td>
+<td class="itemcode"><code>procedure <strong><a href="trndi.api.TrndiAPI.html#setTZ">setTZ</a></strong>(secs: integer);</code></td>
+</tr>
+<tr class="list2">
+<td class="visibility"><a href="legend.html"><img  src="protected.gif" alt="Protected" title="Protected"></a></td>
+<td class="itemcode"><code>function <strong><a href="trndi.api.TrndiAPI.html#encodeStr">encodeStr</a></strong>(src: string): string; virtual; final;</code></td>
+</tr>
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="protected.gif" alt="Protected" title="Protected"></a></td>
+<td class="itemcode"><code>function <strong><a href="trndi.api.TrndiAPI.html#getLevel">getLevel</a></strong>(v: BGValLevel): single; virtual;</code></td>
+</tr>
+<tr class="list2">
+<td class="visibility"><a href="legend.html"><img  src="protected.gif" alt="Protected" title="Protected"></a></td>
+<td class="itemcode"><code>function <strong><a href="trndi.api.TrndiAPI.html#getCGMCore">getCGMCore</a></strong>: <a href="trndi.api.CGMCore.html">CGMCore</a>;</code></td>
+</tr>
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="protected.gif" alt="Protected" title="Protected"></a></td>
+<td class="itemcode"><code>procedure <strong><a href="trndi.api.TrndiAPI.html#initCGMCore">initCGMCore</a></strong>;</code></td>
+</tr>
+<tr class="list2">
+<td class="visibility"><a href="legend.html"><img  src="protected.gif" alt="Protected" title="Protected"></a></td>
+<td class="itemcode"><code>function <strong><a href="trndi.api.TrndiAPI.html#checkActive">checkActive</a></strong>: boolean;</code></td>
+</tr>
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><code>function <strong><a href="trndi.api.TrndiAPI.html#getReadings">getReadings</a></strong>(minNum, maxNum: integer; extras: string = ''): BGResults;</code></td>
+</tr>
+<tr class="list2">
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><code>function <strong><a href="trndi.api.TrndiAPI.html#getReadings">getReadings</a></strong>(minNum, maxNum: integer; extras: string; out res: string): BGResults; virtual; abstract;</code></td>
+</tr>
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><code>constructor <strong><a href="trndi.api.TrndiAPI.html#create">create</a></strong>(user, pass, extra: string); virtual;</code></td>
+</tr>
+<tr class="list2">
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><code>destructor <strong><a href="trndi.api.TrndiAPI.html#destroy">destroy</a></strong>; virtual;</code></td>
+</tr>
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><code>function <strong><a href="trndi.api.TrndiAPI.html#connect">connect</a></strong>: boolean; virtual; abstract;</code></td>
+</tr>
+<tr class="list2">
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><code>function <strong><a href="trndi.api.TrndiAPI.html#getLevel">getLevel</a></strong>(v: single): BGValLevel; virtual;</code></td>
+</tr>
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><code>function <strong><a href="trndi.api.TrndiAPI.html#getLast">getLast</a></strong>(var res: BGReading): boolean;</code></td>
+</tr>
+<tr class="list2">
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><code>function <strong><a href="trndi.api.TrndiAPI.html#getCurrent">getCurrent</a></strong>(var res: BGReading): boolean;</code></td>
+</tr>
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><code>function <strong><a href="trndi.api.TrndiAPI.html#getBasetime">getBasetime</a></strong>: int64;</code></td>
+</tr>
+<tr class="list2">
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><code>function <strong><a href="trndi.api.TrndiAPI.html#JSToDateTime">JSToDateTime</a></strong>(ts: int64; correct: boolean = true): TDateTime; virtual;</code></td>
+</tr>
+</table>
+<span id="PasDoc-Properties"></span><h3 class="summary">Properties</h3>
+<table class="summary wide_list">
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><code>property <strong><a href="trndi.api.TrndiAPI.html#threshold">threshold</a></strong>[lvl:BGValLevel]: single read <a href="trndi.api.TrndiAPI.html#getLevel">getLevel</a>;</code></td>
+</tr>
+<tr class="list2">
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><code>property <strong><a href="trndi.api.TrndiAPI.html#cgm">cgm</a></strong>: <a href="trndi.api.CGMCore.html">CGMCore</a> read <a href="trndi.api.TrndiAPI.html#getCGMCore">getCGMCore</a>;</code></td>
+</tr>
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><code>property <strong><a href="trndi.api.TrndiAPI.html#cgmHi">cgmHi</a></strong>: integer read core.hi write core.hi;</code></td>
+</tr>
+<tr class="list2">
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><code>property <strong><a href="trndi.api.TrndiAPI.html#cgmLo">cgmLo</a></strong>: integer read core.lo write core.lo;</code></td>
+</tr>
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><code>property <strong><a href="trndi.api.TrndiAPI.html#cgmRangeHi">cgmRangeHi</a></strong>: integer read core.top write core.top;</code></td>
+</tr>
+<tr class="list2">
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><code>property <strong><a href="trndi.api.TrndiAPI.html#cgmRangeLo">cgmRangeLo</a></strong>: integer read core.bottom write core.bottom;</code></td>
+</tr>
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="published.gif" alt="Published" title="Published"></a></td>
+<td class="itemcode"><code>property <strong><a href="trndi.api.TrndiAPI.html#offset">offset</a></strong>: integer read <a href="trndi.api.TrndiAPI.html#timeDiff">timeDiff</a>;</code></td>
+</tr>
+<tr class="list2">
+<td class="visibility"><a href="legend.html"><img  src="published.gif" alt="Published" title="Published"></a></td>
+<td class="itemcode"><code>property <strong><a href="trndi.api.TrndiAPI.html#timezone">timezone</a></strong>: integer write <a href="trndi.api.TrndiAPI.html#setTZ">setTZ</a>;</code></td>
+</tr>
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="published.gif" alt="Published" title="Published"></a></td>
+<td class="itemcode"><code>property <strong><a href="trndi.api.TrndiAPI.html#errormsg">errormsg</a></strong>: string read <a href="trndi.api.TrndiAPI.html#lastErr">lastErr</a>;</code></td>
+</tr>
+<tr class="list2">
+<td class="visibility"><a href="legend.html"><img  src="published.gif" alt="Published" title="Published"></a></td>
+<td class="itemcode"><code>property <strong><a href="trndi.api.TrndiAPI.html#active">active</a></strong>: boolean read <a href="trndi.api.TrndiAPI.html#checkActive">checkActive</a>;</code></td>
+</tr>
+</table>
+<h2 class="description">Description</h2>
+<h3 class="detail">Fields</h3>
+<table class="detail wide_list">
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="protected.gif" alt="Protected" title="Protected"></a></td>
+<td class="itemcode"><span id="timeDiff"></span><code><strong>timeDiff</strong>: integer;</code></td>
+</tr>
+<tr><td colspan="2">
+<p>
+Time difference in seconds used to adjust clock skew vs. data source.</p>
+</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="protected.gif" alt="Protected" title="Protected"></a></td>
+<td class="itemcode"><span id="tz"></span><code><strong>tz</strong>: integer;</code></td>
+</tr>
+<tr><td colspan="2">
+<p>
+Timezone offset in seconds (applied in <code>JSToDateTime</code> when requested).</p>
+</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="protected.gif" alt="Protected" title="Protected"></a></td>
+<td class="itemcode"><span id="native"></span><code><strong>native</strong>: TrndiNative;</code></td>
+</tr>
+<tr><td colspan="2">
+<p>
+Reference to platform-specific/native functions (HTTP, etc.).</p>
+</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="protected.gif" alt="Protected" title="Protected"></a></td>
+<td class="itemcode"><span id="ua"></span><code><strong>ua</strong>: string;</code></td>
+</tr>
+<tr><td colspan="2">
+<p>
+User-Agent string used for outbound HTTP requests (if applicable).</p>
+</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="protected.gif" alt="Protected" title="Protected"></a></td>
+<td class="itemcode"><span id="baseUrl"></span><code><strong>baseUrl</strong>: string;</code></td>
+</tr>
+<tr><td colspan="2">
+<p>
+Base URL for the API endpoint (subclasses typically set this).</p>
+</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="protected.gif" alt="Protected" title="Protected"></a></td>
+<td class="itemcode"><span id="lastErr"></span><code><strong>lastErr</strong>: string;</code></td>
+</tr>
+<tr><td colspan="2">
+<p>
+Last error message reported by operations in this instance.</p>
+</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="protected.gif" alt="Protected" title="Protected"></a></td>
+<td class="itemcode"><span id="core"></span><code><strong>core</strong>: <a href="trndi.api.CGMCore.html">CGMCore</a>;</code></td>
+</tr>
+<tr><td colspan="2">
+<p>
+Collection of BG threshold values.</p>
+</td></tr>
+</table>
+<h3 class="detail">Methods</h3>
+<table class="detail wide_list">
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="protected.gif" alt="Protected" title="Protected"></a></td>
+<td class="itemcode"><span id="setTZ"></span><code>procedure <strong>setTZ</strong>(secs: integer);</code></td>
+</tr>
+<tr><td colspan="2">
+<p>
+** Set the timezone offset. Note: Despite the parameter name, this implementation expects minutes and multiplies by 60 to store the value in seconds.
+
+<p></p>
+<h6 class="description_section">Parameters</h6>
+<dl class="parameters">
+<dt>secs</dt>
+<dd>Timezone offset in minutes; will be multiplied by 60.</dd>
+</dl>
+</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="protected.gif" alt="Protected" title="Protected"></a></td>
+<td class="itemcode"><span id="encodeStr"></span><code>function <strong>encodeStr</strong>(src: string): string; virtual; final;</code></td>
+</tr>
+<tr><td colspan="2">
+<p>
+** URL-encode a string using percent-encoding for non-unreserved characters. Unreserved characters are [A-Z a-z 0-9 - _ &tilde; .]
+
+<p> </p>
+<h6 class="description_section">Parameters</h6>
+<dl class="parameters">
+<dt>src</dt>
+<dd>Input string</dd>
+</dl>
+<h6 class="description_section">Returns</h6>
+<p class="return">Percent-encoded string</p></td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="protected.gif" alt="Protected" title="Protected"></a></td>
+<td class="itemcode"><span id="getLevel"></span><code>function <strong>getLevel</strong>(v: BGValLevel): single; virtual;</code></td>
+</tr>
+<tr><td colspan="2">
+<p>
+** Get a threshold by level. Returns the configured limit for a <code>BGValLevel</code> such as <code>BGHIGH</code>, <code>BGLOW</code>, <code>BGRangeHI</code>, or <code>BGRangeLO</code>.
+
+<p> </p>
+<h6 class="description_section">Parameters</h6>
+<dl class="parameters">
+<dt>v</dt>
+<dd>Level selector</dd>
+</dl>
+<h6 class="description_section">Returns</h6>
+<p class="return">Threshold value as <code>single</code></p></td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="protected.gif" alt="Protected" title="Protected"></a></td>
+<td class="itemcode"><span id="getCGMCore"></span><code>function <strong>getCGMCore</strong>: <a href="trndi.api.CGMCore.html">CGMCore</a>;</code></td>
+</tr>
+<tr><td colspan="2">
+<p>
+** Retrieve the current <code>CGMCore</code> thresholds in one record.</p>
+</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="protected.gif" alt="Protected" title="Protected"></a></td>
+<td class="itemcode"><span id="initCGMCore"></span><code>procedure <strong>initCGMCore</strong>;</code></td>
+</tr>
+<tr><td colspan="2">
+<p>
+** Initialize <code>CGMCore</code> thresholds to defaults.
+
+<p>Defaults: - hi=401, lo=40, top=500 (disabled), bottom=0 (disabled)</p>
+</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="protected.gif" alt="Protected" title="Protected"></a></td>
+<td class="itemcode"><span id="checkActive"></span><code>function <strong>checkActive</strong>: boolean;</code></td>
+</tr>
+<tr><td colspan="2">
+<p>
+** Determine whether the API appears to be active by fetching a current reading. Returns <code>True</code> if a reading is available and has a timestamp &gt; 1000.
+
+<p></p>
+<h6 class="description_section">Returns</h6>
+<p class="return"><code>True</code> if a plausible current reading exists</p></td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><span id="getReadings"></span><code>function <strong>getReadings</strong>(minNum, maxNum: integer; extras: string = ''): BGResults;</code></td>
+</tr>
+<tr><td colspan="2">
+<p>
+** Retrieve BG readings with optional extras path/params. This overload captures the raw response in a string.
+
+<p>Subclasses must implement the abstract version. This overload typically forwards to it.
+
+<p>   </p>
+<h6 class="description_section">Parameters</h6>
+<dl class="parameters">
+<dt>minNum</dt>
+<dd>Time span hint (minutes), usage depends on subclass</dd>
+<dt>maxNum</dt>
+<dd>Maximum number of readings to retrieve</dd>
+<dt>extras</dt>
+<dd>Additional path or query hints; default empty</dd>
+</dl>
+<h6 class="description_section">Returns</h6>
+<p class="return">Array of BGReading</p></td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><span id="getReadings"></span><code>function <strong>getReadings</strong>(minNum, maxNum: integer; extras: string; out res: string): BGResults; virtual; abstract;</code></td>
+</tr>
+<tr><td colspan="2">
+<p>
+** Retrieve BG readings with raw JSON/text result returned by out-parameter.
+
+<p>Subclasses must implement this method.
+
+<p>    </p>
+<h6 class="description_section">Parameters</h6>
+<dl class="parameters">
+<dt>minNum</dt>
+<dd>Time span hint (minutes), usage depends on subclass</dd>
+<dt>maxNum</dt>
+<dd>Maximum number of readings to retrieve</dd>
+<dt>extras</dt>
+<dd>Additional path or query hints</dd>
+<dt>res</dt>
+<dd>Out parameter receiving raw response text</dd>
+</dl>
+<h6 class="description_section">Returns</h6>
+<p class="return">Array of BGReading</p></td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><span id="create"></span><code>constructor <strong>create</strong>(user, pass, extra: string); virtual;</code></td>
+</tr>
+<tr><td colspan="2">
+<p>
+** Construct a new API object. Subclasses may interpret <code>user</code>, <code>pass</code>, and <code>extra</code> as needed.
+
+<p>Base class behavior: - Sets <code>timezone</code> from <code>GetLocalTimeOffset</code>. - Creates <code>native</code>. - Initializes default CGM thresholds.
+
+<p>  </p>
+<h6 class="description_section">Parameters</h6>
+<dl class="parameters">
+<dt>user</dt>
+<dd>Implementation-defined (e.g., base URL)</dd>
+<dt>pass</dt>
+<dd>Implementation-defined (e.g., password or token)</dd>
+<dt>extra</dt>
+<dd>Implementation-defined extra parameter</dd>
+</dl>
+</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><span id="destroy"></span><code>destructor <strong>destroy</strong>; virtual;</code></td>
+</tr>
+<tr><td colspan="2">
+<p>
+** Destructor; releases owned resources.</p>
+</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><span id="connect"></span><code>function <strong>connect</strong>: boolean; virtual; abstract;</code></td>
+</tr>
+<tr><td colspan="2">
+<p>
+** Establish connectivity to the underlying data source. Subclasses must implement.
+
+<p></p>
+<h6 class="description_section">Returns</h6>
+<p class="return">True if connection and initial probing succeeded</p></td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><span id="getLevel"></span><code>function <strong>getLevel</strong>(v: single): BGValLevel; virtual;</code></td>
+</tr>
+<tr><td colspan="2">
+<p>
+** Classify a numeric BG value into a <code>BGValLevel</code> (e.g. high/low/range).
+
+<p>Rules: - <code>v &gt;= hi</code> =&gt; <code>BGHIGH</code> - <code>v &lt;= lo</code> =&gt; <code>BGLOW</code> - Else =&gt; in-range; optional sub-classification: - If <code>top &lt;&gt; 500</code> and <code>v &gt;= top</code> =&gt; <code>BGRangeHI</code> - Else if <code>bottom &lt;&gt; 0</code> and <code>v &lt;= bottom</code> =&gt; <code>BGRangeLO</code> - Else =&gt; <code>BGRange</code>
+
+<p> </p>
+<h6 class="description_section">Parameters</h6>
+<dl class="parameters">
+<dt>v</dt>
+<dd>BG value</dd>
+</dl>
+<h6 class="description_section">Returns</h6>
+<p class="return">BG level classification</p></td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><span id="getLast"></span><code>function <strong>getLast</strong>(var res: BGReading): boolean;</code></td>
+</tr>
+<tr><td colspan="2">
+<p>
+** Get the last reading in a larger time window (e.g., 24 hours). Convenience that returns a single last sample.
+
+<p> </p>
+<h6 class="description_section">Parameters</h6>
+<dl class="parameters">
+<dt>res</dt>
+<dd>Out parameter receiving the reading</dd>
+</dl>
+<h6 class="description_section">Returns</h6>
+<p class="return">True if a reading was returned</p></td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><span id="getCurrent"></span><code>function <strong>getCurrent</strong>(var res: BGReading): boolean;</code></td>
+</tr>
+<tr><td colspan="2">
+<p>
+** Get the most current reading within a short time window (e.g., &tilde;10 minutes).
+
+<p> </p>
+<h6 class="description_section">Parameters</h6>
+<dl class="parameters">
+<dt>res</dt>
+<dd>Out parameter receiving the reading</dd>
+</dl>
+<h6 class="description_section">Returns</h6>
+<p class="return">True if a reading was returned</p></td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><span id="getBasetime"></span><code>function <strong>getBasetime</strong>: int64;</code></td>
+</tr>
+<tr><td colspan="2">
+<p>
+** Get current base time as Unix epoch (seconds), adjusted by <code>timeDiff</code>. </p>
+<h6 class="description_section">Returns</h6>
+<p class="return">Unix timestamp in seconds</p></td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><span id="JSToDateTime"></span><code>function <strong>JSToDateTime</strong>(ts: int64; correct: boolean = true): TDateTime; virtual;</code></td>
+</tr>
+<tr><td colspan="2">
+<p>
+** Convert a JavaScript timestamp (milliseconds) to <code>TDateTime</code>. When <code>correct</code> is true, apply the timezone offset <code>tz</code>.
+
+<p>  </p>
+<h6 class="description_section">Parameters</h6>
+<dl class="parameters">
+<dt>ts</dt>
+<dd>Timestamp in milliseconds since Unix epoch</dd>
+<dt>correct</dt>
+<dd>Whether to subtract <code>tz</code> before conversion</dd>
+</dl>
+<h6 class="description_section">Returns</h6>
+<p class="return"><code>TDateTime</code> in local or adjusted time</p></td></tr>
+</table>
+<h3 class="detail">Properties</h3>
+<table class="detail wide_list">
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><span id="threshold"></span><code>property <strong>threshold</strong>[lvl:BGValLevel]: single read <a href="trndi.api.TrndiAPI.html#getLevel">getLevel</a>;</code></td>
+</tr>
+<tr><td colspan="2">
+<p>
+** Indexed read-only access to thresholds by <code>BGValLevel</code>.</p>
+</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><span id="cgm"></span><code>property <strong>cgm</strong>: <a href="trndi.api.CGMCore.html">CGMCore</a> read <a href="trndi.api.TrndiAPI.html#getCGMCore">getCGMCore</a>;</code></td>
+</tr>
+<tr><td colspan="2">
+<p>
+** Read-only access to the full threshold record.</p>
+</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><span id="cgmHi"></span><code>property <strong>cgmHi</strong>: integer read core.hi write core.hi;</code></td>
+</tr>
+<tr><td colspan="2">
+<p>
+High threshold (modifiable).</p>
+</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><span id="cgmLo"></span><code>property <strong>cgmLo</strong>: integer read core.lo write core.lo;</code></td>
+</tr>
+<tr><td colspan="2">
+<p>
+Low threshold (modifiable).</p>
+</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><span id="cgmRangeHi"></span><code>property <strong>cgmRangeHi</strong>: integer read core.top write core.top;</code></td>
+</tr>
+<tr><td colspan="2">
+<p>
+Personalized in-range upper bound (optional; 500 disables).</p>
+</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><span id="cgmRangeLo"></span><code>property <strong>cgmRangeLo</strong>: integer read core.bottom write core.bottom;</code></td>
+</tr>
+<tr><td colspan="2">
+<p>
+Personalized in-range lower bound (optional; 0 disables).</p>
+</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="published.gif" alt="Published" title="Published"></a></td>
+<td class="itemcode"><span id="offset"></span><code>property <strong>offset</strong>: integer read <a href="trndi.api.TrndiAPI.html#timeDiff">timeDiff</a>;</code></td>
+</tr>
+<tr><td colspan="2">
+<p>
+Read-only time difference offset (seconds).</p>
+</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="published.gif" alt="Published" title="Published"></a></td>
+<td class="itemcode"><span id="timezone"></span><code>property <strong>timezone</strong>: integer write <a href="trndi.api.TrndiAPI.html#setTZ">setTZ</a>;</code></td>
+</tr>
+<tr><td colspan="2">
+<p>
+** Write-only timezone offset setter. Note: Pass minutes (multiplied by 60 internally).</p>
+</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="published.gif" alt="Published" title="Published"></a></td>
+<td class="itemcode"><span id="errormsg"></span><code>property <strong>errormsg</strong>: string read <a href="trndi.api.TrndiAPI.html#lastErr">lastErr</a>;</code></td>
+</tr>
+<tr><td colspan="2">
+<p>
+Last error message produced by operations on this instance.</p>
+</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="published.gif" alt="Published" title="Published"></a></td>
+<td class="itemcode"><span id="active"></span><code>property <strong>active</strong>: boolean read <a href="trndi.api.TrndiAPI.html#checkActive">checkActive</a>;</code></td>
+</tr>
+<tr><td colspan="2">
+<p>
+** Convenience status flag determined via <code>checkActive</code>.</p>
+</td></tr>
+</table>
+<hr><span class="appinfo"><em>Generated by <a href="https://pasdoc.github.io/">PasDoc 0.16.0</a>. </em>
+</span>
+</div></div></body></html>

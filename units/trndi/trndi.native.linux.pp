@@ -274,9 +274,12 @@ begin
 
   Result := False;
 end;
-{
-  Linux/PC implementation of class function getURL
-}
+
+{------------------------------------------------------------------------------
+  getURL
+  ------
+  Linux/PC implementation using TFPHttpClient; returns response text or error.
+ ------------------------------------------------------------------------------}
 class function TTrndiNativeLinux.getURL(const url: string; out res: string): boolean;
 const
   DEFAULT_USER_AGENT = 'Mozilla/5.0 (compatible; trndi) TrndiAPI';
@@ -305,11 +308,7 @@ begin
     responseStream.Free;
   end;
 end;
-{------------------------------------------------------------------------------
-  getURL
-  ------
-  Linux/PC implementation using TFPHttpClient; returns response text or error.
- ------------------------------------------------------------------------------}
+
 {------------------------------------------------------------------------------
   isNotificationSystemAvailable
   -----------------------------
@@ -321,6 +320,12 @@ begin
 end;
 
 
+{------------------------------------------------------------------------------
+  isDarkMode
+  ----------
+  Desktop-aware detection: KDE (kreadconfig5), GNOME (gsettings), GTK_THEME,
+  or fallback luminance heuristic.
+ ------------------------------------------------------------------------------}
 class function TTrndiNativeLinux.isDarkMode: boolean;
 var
   v: boolean;
@@ -330,12 +335,6 @@ var
     Result := (Red(C) * 0.3) + (Green(C) * 0.59) + (Blue(C) * 0.11);
   end;
 begin
-{------------------------------------------------------------------------------
-  isDarkMode
-  ----------
-  Desktop-aware detection: KDE (kreadconfig5), GNOME (gsettings), GTK_THEME,
-  or fallback luminance heuristic.
- ------------------------------------------------------------------------------}
   // 1) KDE Plasma: kreadconfig5 ColorScheme
   if DetectKDEDark(v) then Exit(v);
 
