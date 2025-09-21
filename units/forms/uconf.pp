@@ -72,9 +72,9 @@ TfConf = class(TForm)
   cl_lo_txt: TColorButton;
   cl_lo_txt_cust: TColorButton;
   cl_lo_bg_cust: TColorButton;
+  cl_hi_bg_cust: TColorButton;
   cl_ok_bg: TColorButton;
   cl_ok_txt: TColorButton;
-  cl_hi_bg_cust: TColorButton;
   eAddr: TEdit;
   edCommaSep: TEdit;
   edNick: TEdit;
@@ -140,6 +140,7 @@ TfConf = class(TForm)
   Panel4: TPanel;
   Panel5: TPanel;
   Panel6: TPanel;
+  Panel7: TPanel;
   pUserColor: TPanel;
   pnMisc: TPanel;
   pTray: TPanel;
