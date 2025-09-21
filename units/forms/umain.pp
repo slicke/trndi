@@ -1323,7 +1323,7 @@ begin
     sysver := s + ' ' + ver;
   {$endif}
 
-    ShowMessage({$I %FPCTargetOS%} + '(' +{$I %FPCTargetCPU%}+ ')' + ' | ' +
+    ShowMessage({$I %FPCTargetOS%} + '(' +{$I %FPCTargetCPU%}+ ')' + LineEnding +
   {$if defined(LCLQt6)}
     'QT6 - ' + qtVersion + ' - ' + sysver
   {$elseif defined(LCLGTK2)}
@@ -1337,7 +1337,7 @@ begin
   {$else}
     'unsupportd widgetset'
   {$endif}
-  + ' | Default separator: ' + DefaultFormatSettings.DecimalSeparator
+  + LineEnding + 'Default separator: ' + DefaultFormatSettings.DecimalSeparator
 
   ) ;
 
