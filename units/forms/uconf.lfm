@@ -16,9 +16,9 @@ object fConf: TfConf
     Height = 534
     Top = 0
     Width = 675
-    ActivePage = tsMulti
+    ActivePage = tsSystem
     Align = alClient
-    TabIndex = 4
+    TabIndex = 6
     TabOrder = 0
     OnChange = pcMainChange
     object tsGeneral: TTabSheet
@@ -11434,23 +11434,34 @@ object fConf: TfConf
           Enabled = False
           TabOrder = 2
         end
-        object bSysTouch: TButton
-          Left = 460
-          Height = 22
-          Top = 8
-          Width = 33
-          Caption = '?'
+        object pnHelp: TPanel
+          Left = 475
+          Height = 78
+          Top = 0
+          Width = 170
+          Align = alRight
+          BevelOuter = bvNone
+          ClientHeight = 78
+          ClientWidth = 170
           TabOrder = 3
-          OnClick = bSysTouchClick
-        end
-        object bSysNotice: TButton
-          Left = 460
-          Height = 22
-          Top = 48
-          Width = 33
-          Caption = '?'
-          TabOrder = 4
-          OnClick = bSysNoticeClick
+          object bSysTouch: TButton
+            Left = 128
+            Height = 22
+            Top = 0
+            Width = 33
+            Caption = '?'
+            TabOrder = 0
+            OnClick = bSysTouchClick
+          end
+          object bSysNotice: TButton
+            Left = 128
+            Height = 22
+            Top = 48
+            Width = 33
+            Caption = '?'
+            TabOrder = 1
+            OnClick = bSysNoticeClick
+          end
         end
       end
       object bTestAnnounce: TButton
