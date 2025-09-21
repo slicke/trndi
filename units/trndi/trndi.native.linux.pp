@@ -889,6 +889,7 @@ end;
   SetSetting
   ----------
   Write setting to canonical [trndi] section and flush to disk.
+  NOTE: we use [trndi] as the format in the win registry and macOS are flat
  ------------------------------------------------------------------------------}
 procedure TTrndiNativeLinux.SetSetting(const keyname: string; const val: string; global: boolean);
 var
