@@ -2196,6 +2196,8 @@ if cbPos.ItemIndex = -1 then
     end;
   end;
 
+  var
+    s: string;
 begin
   fConf := TfConf.Create(Self);
   try
@@ -2219,6 +2221,23 @@ begin
     // Store current user count for comparison later
     lastUsers := fConf.lbUsers.Count;
 
+    {$if defined(X_PC)}
+    fConf.lOS.Caption := GetLinuxDistro(s) + ' ' + s;
+
+      {$if defined(LCLQt6)}
+        fConf.lWidgetset.Caption := 'QT6 ' + qtVersion;
+      {$elseif defined(LCLGTK2)}
+       fConf.lWidgetset.Caption := 'GTK2';
+      {$elseif defined(LCLGTK3)}
+       fConf.lWidgetset.Caption := 'GTK3';
+      {$endif}
+    {$elseif defined(X_MAC)}
+    fConf.lOS.Caption := 'macOS';
+    fConf.lWidgetset.Caption := 'Native Apple Coca';
+    {$else}
+     fConf.lOS.Caption := 'Windows'  + SysUtils.Win32MajorVersion.tostring + '.' + SysUtils.Win32MinorVersion.tostring + ' - Build ' +  Win32BuildNumber.ToString;
+     fConf.lWidgetset.Caption := 'Native Windows';
+    {$endif}
     // Show dialog
     fConf.ShowModal;
 

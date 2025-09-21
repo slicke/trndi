@@ -99,6 +99,8 @@ TfConf = class(TForm)
   GroupBox4: TGroupBox;
   Image1: TImage;
   Label1: TLabel;
+  lWidgetset: TLabel;
+  lOS: TLabel;
   Label3: TLabel;
   Label5: TLabel;
   lUserName: TLabel;

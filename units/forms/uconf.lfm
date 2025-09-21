@@ -11510,6 +11510,22 @@ object fConf: TfConf
         Font.Style = [fsBold]
         ParentFont = False
       end
+      object lOS: TLabel
+        Left = 16
+        Height = 16
+        Top = 96
+        Width = 99
+        Caption = 'Unknown System'
+        Font.Style = [fsBold]
+        ParentFont = False
+      end
+      object lWidgetset: TLabel
+        Left = 16
+        Height = 16
+        Top = 112
+        Width = 114
+        Caption = 'Unknown Widgetset'
+      end
     end
     object tsInstall: TTabSheet
       Caption = 'Update'
