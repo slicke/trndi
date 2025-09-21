@@ -614,6 +614,7 @@ if lbUsers.Items.Count <= 1 then begin
 end;
 
   ShowMessage(RS_REMOVE_ACC);
+  bRemove.Enabled := false; // No item selexted now
 end;
 
 procedure TfConf.bSysNoticeClick(Sender: TObject);
