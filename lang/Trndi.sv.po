@@ -304,7 +304,6 @@ msgid "Reset"
 msgstr "Återställ"
 
 #: tfconf.btusersave2.caption
-#, fuzzy
 msgctxt "tfconf.btusersave2.caption"
 msgid "Save"
 msgstr "Spara"
@@ -820,12 +819,12 @@ msgstr "Visar standardanvändaren"
 #: trndi.strings.rs_multiname_def_named
 #, object-pascal-format
 msgid "Showing %s (standard user)"
-msgstr ""
+msgstr "Visar %s (standardanvändaren)"
 
 #: trndi.strings.rs_multiname_named
 #, object-pascal-format
 msgid "Showing data for: %s (username \"%s\")"
-msgstr ""
+msgstr "Visar data för: %s (användarnamn \"%s\")"
 
 #: trndi.strings.rs_multiple_accounts
 msgid "Trndi found multiple accounts. Please choose one for this instance"
@@ -1329,4 +1328,3 @@ msgstr "Du kan använda skift+<nummerr> för att manuellt sätta synligheten (0 
 #: ufloat.rscustomsize
 msgid "You can hold down shift and plus (+) or minus (-) to change the window size"
 msgstr "Du kan hålla ned skift och plus (+) eller minus (-) för att justera fönstrets storlek"
-
