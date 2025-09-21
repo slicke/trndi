@@ -2565,7 +2565,7 @@ begin
 //  ScaleLbl(lArrow, taRightJustify, tlTop);
   lArrow.OptimalFill := true;
 
-  pnMultiUser.width := max(clientwidth div 30, 5);
+  pnMultiUser.width := min(max(clientwidth div 30, 5), 50);
   pnMultiUser.height := clientheight;
   pnMultiUser.top := 0;
   pnMultiUser.left := 0;
