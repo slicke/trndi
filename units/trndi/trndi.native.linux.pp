@@ -93,6 +93,9 @@ type
   class function isNotificationSystemAvailable: boolean; override;
   {** Identify notification backend: 'gdbus' (Qt6 path) or 'notify-send' or 'none'. }
   class function getNotificationSystem: string; override;
+
+  {** Triggers when the tray icon is clicked }
+  procedure trayClick(sender: tobject);
   end;
 
 implementation
@@ -681,6 +684,15 @@ begin
   end;
 end;
 
+
+procedure TTrndiNativeLinux.trayClick(sender: tobject);
+begin
+  Application.mainform.hide;
+  Application.mainform.show;
+  Application.MainForm.BringToFront;
+  Application.MainForm.SetFocus;
+end;
+
 {------------------------------------------------------------------------------
   SetTray
   -------
@@ -706,8 +718,10 @@ var
   dval: double;
 begin
   // Ensure we have a tray icon instance
-  if not Assigned(Tray) then
+  if not Assigned(Tray) then begin
     Tray := TTrayIcon.Create(Application.MainForm);
+    tray.OnClick := @trayClick;
+  end;
 
   if Value = '' then
   begin

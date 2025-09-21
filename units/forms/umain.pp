@@ -919,13 +919,13 @@ begin
         if (i > -1) and (strings[i] <> '') then
         begin
           username := strings[i];
+          native.configUser :=  username;
           s :=  native.GetSetting('user.nick', '');
           if s = '' then
             s := username;
 
           fbg.Caption := Format(RS_USER_CAPTION, [s, fBG.Caption]);
-
-          native.configUser :=  username;
+          multinick := s;
         end
         else begin
           username := '';
@@ -2390,12 +2390,18 @@ end;
 
 procedure TfBG.pnMultiUserClick(Sender:TObject);
 begin
-if username <> '' then
-   ShowMessage(Format(RS_MULTINAME, [username]))
-else
-   ShowMessage(RS_MULTINAME_DEF);
+if username <> '' then begin
+  if multinick = username then
+      ShowMessage(Format(RS_MULTINAME, [username]))
+  else
+      ShowMessage(Format(RS_MULTINAME_NAMED, [multinick, username]));
+end else begin
+  if multinick <> RS_DEFAULT_ACCOUNT then
+    ShowMessage(Format(RS_MULTINAME_DEF_NAMED, [multinick]))
+  else
+    ShowMessage(RS_MULTINAME_DEF);
+  end;
 end;
-
 // Handle off range panel click
 procedure TfBG.pnOffRangeClick(Sender: TObject);
 begin

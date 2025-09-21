@@ -81,7 +81,9 @@ RS_tpoCustom = 'Last position';
 RS_tpoTopRight = 'Top Right';
 RS_noPlugins = 'Built Without Support';
 RS_MULTINAME = 'Showing data for: "%s"';
+RS_MULTINAME_NAMED = 'Showing data for: %s (username "%s")';
 RS_MULTINAME_DEF = 'Showing the standard user';
+RS_MULTINAME_DEF_NAMED = 'Showing %s (standard user)';
 
 RS_SPLASH_LOADING = 'Loading Extension: ';
 RS_SPLASH_LOADING_INIT  = 'Loading Extensions...';
