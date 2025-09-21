@@ -61,6 +61,31 @@ procedure TTrndiNativeWindows.SetBadge(const Value: string; BadgeColor: TColor; 
 
 This keeps public docs in one place (interface) while making implementation sections skimmable.
 
+### Local/nested helper functions
+
+For private/local helpers inside the implementation section (including nested functions used within a single method), add a short comment describing intent. Choose the lightest-weight form that stays readable in the file:
+
+- Use a small banner when the helper is non-trivial, widely reused within the unit, or important for navigation (e.g., DetectKDEDark, DetectGnomeDark). Example:
+
+  ````
+  {------------------------------------------------------------------------------
+    DetectKDEDark
+    -------------
+    KDE Plasma: read General/ColorScheme via kreadconfig5. Returns True if a
+    decision was made and sets isDark accordingly.
+   ------------------------------------------------------------------------------}
+  function DetectKDEDark(out isDark: boolean): boolean;
+  ````
+
+- Use a single-line `//` comment for small, obvious helpers (e.g., `ContainsDark`, `EnvValue`). Example:
+
+  ````
+  // True if S contains the substring "dark" (case-insensitive)
+  function ContainsDark(const S: string): boolean; inline;
+  ````
+
+Rule of thumb: if the helper’s behavior wouldn’t be obvious from the name and a quick skim, prefer a banner; otherwise a concise `//` is fine. Keep PasDoc blocks in interfaces only.
+
 ### API units (TrndiAPI and drivers)
 
 API implementations live under `units/trndi/api/` and subclass `TrndiAPI`.
