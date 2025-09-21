@@ -912,7 +912,7 @@ begin
       with TStringList.Create do
       begin
         AddCommaText(username);
-        Add('');
+//        Add(''); -- no longer needed as we have a standard button
 //        i := InputCombo(RS_MULTIUSER_BOX_TITLE, RS_MULTIUSER_BOX, ToStringArray);
           i := ExtList(uxdAuto, RS_MULTIUSER_BOX_TITLE, RS_MULTIUSER_BOX_TITLE, RS_MULTIUSER_BOX, ToStringArray, true);
 
