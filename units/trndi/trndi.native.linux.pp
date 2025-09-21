@@ -212,6 +212,26 @@ end;
 // Forward declaration for helper declared later in this unit
 function FindInPath(const FileName: string): string; forward;
 
+// True when the desktop environment is KDE/Plasma or GNOME-family (gnome/ubuntu/unity)
+function IsKdeOrGnomeLike: boolean; inline;
+var
+  d: string;
+begin
+  d := LowerCase(DesktopHint);
+  Result := (Pos('kde', d) > 0) or (Pos('plasma', d) > 0) or
+            (Pos('gnome', d) > 0) or (Pos('ubuntu', d) > 0) or (Pos('unity', d) > 0);
+end;
+
+// Decide whether we should use gdbus for notifications (Qt6 + gdbus + KDE/GNOME-like)
+function UseGDBusForNotifications: boolean; inline;
+begin
+  {$IFDEF LCLQt6}
+  Result := (FindInPath('gdbus') <> '') and IsKdeOrGnomeLike;
+  {$ELSE}
+  Result := False;
+  {$ENDIF}
+end;
+
 {------------------------------------------------------------------------------
   DetectGnomeDark
   ---------------
@@ -341,11 +361,10 @@ end;
  ------------------------------------------------------------------------------}
 class function TTrndiNativeLinux.isNotificationSystemAvailable: boolean;
 begin
-  {$IFDEF LCLQt6}
-  // Under Qt6, we prefer gdbus; consider notifications available if either is present
-  if FindInPath('gdbus') <> '' then
+  // Only treat gdbus as available when on KDE/GNOME-like desktops under Qt6
+  if UseGDBusForNotifications then
     Exit(True);
-  {$ENDIF}
+  // Otherwise, rely on notify-send presence
   Result := IsNotifySendAvailable;
 end;
 {------------------------------------------------------------------------------
@@ -355,10 +374,8 @@ end;
  ------------------------------------------------------------------------------}
 class function TTrndiNativeLinux.getNotificationSystem: string;
 begin
-  {$IFDEF LCLQt6}
-  if FindInPath('gdbus') <> '' then
+  if UseGDBusForNotifications then
     Exit('gdbus');
-  {$ENDIF}
   if IsNotifySendAvailable then
     Exit('notify-send');
   Result := 'none';
@@ -512,41 +529,45 @@ var
 {$ENDIF}
 begin
 {$IFDEF LCLQt6}
-  ReplaceId := 0;
-  SetLength(Params, 0);
-  Params :=
-    ['call', '--session',
-     '--dest', 'org.freedesktop.Notifications',
-     '--object-path', '/org/freedesktop/Notifications',
-     '--method', 'org.freedesktop.Notifications.Notify',
-     '''Trndi''',
-     IntToStr(ReplaceId),
-     '''''',
-     '''' + topic + '''',
-     '''' + message + '''',
-     '[]',
-     '{}',
-     IntToStr(noticeDuration)];
-  // Above maps to: app_name, replace_id, app_icon, summary, body, actions, hints, timeout
-
-  if RunAndCapture('gdbus', Params, OutS, ErrS, ExitCode) then
+  if UseGDBusForNotifications then
   begin
-    // Parse the returned uint32 notification id (for potential replace/update)
-    NewId := 0;
-    s := OutS;
-    p := Pos('uint32', s);
-    if p > 0 then
+    ReplaceId := 0;
+    SetLength(Params, 0);
+    Params :=
+      ['call', '--session',
+       '--dest', 'org.freedesktop.Notifications',
+       '--object-path', '/org/freedesktop/Notifications',
+       '--method', 'org.freedesktop.Notifications.Notify',
+       '''Trndi''',
+       IntToStr(ReplaceId),
+       '''''',
+       '''' + topic + '''',
+       '''' + message + '''',
+       '[]',
+       '{}',
+       IntToStr(noticeDuration)];
+    // Above maps to: app_name, replace_id, app_icon, summary, body, actions, hints, timeout
+
+    if RunAndCapture('gdbus', Params, OutS, ErrS, ExitCode) then
     begin
-      Inc(p, Length('uint32'));
-      while (p <= Length(s)) and (s[p] = ' ') do Inc(p);
-      i := p;
-      while (i <= Length(s)) and (s[i] in ['0'..'9']) do Inc(i);
-      if i > p then
-        NewId := StrToIntDef(Copy(s, p, i - p), 0);
-    end;
+      // Parse the returned uint32 notification id (for potential replace/update)
+      NewId := 0;
+      s := OutS;
+      p := Pos('uint32', s);
+      if p > 0 then
+      begin
+        Inc(p, Length('uint32'));
+        while (p <= Length(s)) and (s[p] = ' ') do Inc(p);
+        i := p;
+        while (i <= Length(s)) and (s[i] in ['0'..'9']) do Inc(i);
+        if i > p then
+          NewId := StrToIntDef(Copy(s, p, i - p), 0);
+      end;
+    end
+    else
+      inherited attention(topic, message);
   end
   else
-    // Fall back to base attention implementation if gdbus is unavailable
     inherited attention(topic, message);
 {$ELSE}
   inherited attention(topic, message);
