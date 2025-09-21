@@ -112,14 +112,16 @@ type
 
 implementation
 
-{** Create an xDrip API client.
+{------------------------------------------------------------------------------
+  Create an xDrip API client.
 
-    Sets a descriptive User-Agent, normalizes the base URL, computes the API secret
-    header, initializes timezone offset, and creates the native HTTP client.
+  Sets a descriptive User-Agent, normalizes the base URL, computes the API secret
+  header, initializes timezone offset, and creates the native HTTP client.
 
-    Note:
-    - @code(inherited Create) is not called here; if base initialization (e.g. default
-      thresholds) is needed, ensure it is handled elsewhere before use. }
+  Note:
+  - inherited Create is not called here; if base initialization (e.g. default
+    thresholds) is needed, ensure it is handled elsewhere before use.
+------------------------------------------------------------------------------}
 constructor xDrip.Create(user, pass, extra: string);
 begin
   // Use a standard user agent for server logs/diagnostics
@@ -142,9 +144,11 @@ begin
   native   := TrndiNative.Create(ua, baseUrl);
 end;
 
-{** Fetch BG readings from xDrip, defaulting the path if omitted, then defer to NightScout.
+{------------------------------------------------------------------------------
+  Fetch BG readings from xDrip, defaulting the path if omitted, then defer to NightScout.
 
-    The NightScout implementation handles JSON parsing and mapping to @code(BGResults). }
+  The NightScout implementation handles JSON parsing and mapping to BGResults.
+------------------------------------------------------------------------------}
 function xDrip.GetReadings(min, maxNum: integer; path: string; out res: string): BGResults;
 begin
   // If path is empty, default to the xDrip sgv.json endpoint
@@ -155,15 +159,17 @@ begin
   Result := inherited GetReadings(min, maxNum, path, res);
 end;
 
-{** Connect to xDrip, synchronize time, and read thresholds.
+{------------------------------------------------------------------------------
+  Connect to xDrip, synchronize time, and read thresholds.
 
-    - Probes @code(pebble) for "now" (milliseconds since epoch).
-    - Calculates @code(timeDiff) used elsewhere for timestamp normalization.
-    - Attempts to extract @code(bgHigh)/@code(bgLow) from @code(status.json); uses defaults if absent.
+  - Probes pebble for "now" (milliseconds since epoch).
+  - Calculates timeDiff used elsewhere for timestamp normalization.
+  - Attempts to extract bgHigh/bgLow from status.json; uses defaults if absent.
 
-    Implementation note:
-    - String slicing is used instead of JSON parsing for speed/simplicity; robust code
-      should parse JSON explicitly to avoid format brittleness. }
+  Implementation note:
+  - String slicing is used instead of JSON parsing for speed/simplicity; robust code
+    should parse JSON explicitly to avoid format brittleness.
+------------------------------------------------------------------------------}
 function xDrip.Connect: boolean;
 var
   LResponse: string;

@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>trndi.api.dexcom: Class Dexcom</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="generator" content="PasDoc 0.16.0">
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<link rel="StyleSheet" type="text/css" href="pasdoc.css">
+</head>
+<body>
+<div class="container"><div class="navigation">
+<ul><li><a href="AllUnits.html">Units</a></li><li><a href="ClassHierarchy.html">Class Hierarchy</a></li><li><a href="AllClasses.html">Classes, Interfaces, Objects and Records</a></li><li><a href="AllTypes.html">Types</a></li><li><a href="AllVariables.html">Variables</a></li><li><a href="AllConstants.html">Constants</a></li><li><a href="AllFunctions.html">Functions and Procedures</a></li><li><a href="AllIdentifiers.html">Identifiers</a></li></ul></div><div class="content">
+<span id="Dexcom"></span><h1 class="cio">Class Dexcom</h1>
+<div class="sections">
+<div class="one_section"><a class="section" href="#PasDoc-Description">Description</a></div><div class="one_section"><a class="section" href="#PasDoc-Hierarchy">Hierarchy</a></div><div class="one_section">Fields</div><div class="one_section"><a class="section" href="#PasDoc-Methods">Methods</a></div><div class="one_section"><a class="section" href="#PasDoc-Properties">Properties</a></div></div>
+<span id="PasDoc-Description"></span><h2 class="unit">Unit</h2>
+<p class="unitlink">
+<a href="trndi.api.dexcom.html">trndi.api.dexcom</a></p>
+<h2 class="declaration">Declaration</h2>
+<p class="declaration">
+<code>type Dexcom = class(<a class="normal" href="trndi.api.TrndiAPI.html">TrndiAPI</a>)</code></p>
+<h2 class="description">Description</h2>
+<p>
+****************************************************************************** Dexcom class
+
+<p>Inherits from <code>TrndiAPI</code> and implements connectivity and reading retrieval for Dexcom Share. Responsible for session handling, time-sync, and mapping Share responses into <code>BGResults</code>. *****************************************************************************</p>
+<span id="PasDoc-Hierarchy"></span><h2 class="hierarchy">Hierarchy</h2>
+<ul class="hierarchy"><li class="ancestor">TObject</li>
+<li class="ancestor"><a class="normal" href="trndi.api.TrndiAPI.html">TrndiAPI</a></li>
+<li class="thisitem">Dexcom</li></ul><h2 class="overview">Overview</h2>
+<span id="PasDoc-Methods"></span><h3 class="summary">Methods</h3>
+<table class="summary wide_list">
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><code>constructor <strong><a href="trndi.api.dexcom.Dexcom.html#Create">Create</a></strong>(user, pass, extra: string); override;</code></td>
+</tr>
+<tr class="list2">
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><code>constructor <strong><a href="trndi.api.dexcom.Dexcom.html#Create">Create</a></strong>(user, pass, extra: string; ACalcDiff: boolean); overload;</code></td>
+</tr>
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><code>function <strong><a href="trndi.api.dexcom.Dexcom.html#Connect">Connect</a></strong>: boolean; override;</code></td>
+</tr>
+<tr class="list2">
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><code>function <strong><a href="trndi.api.dexcom.Dexcom.html#GetReadings">GetReadings</a></strong>(AMinutes, AMaxCount: integer; extras: string; out res: string): BGResults; override;</code></td>
+</tr>
+</table>
+<span id="PasDoc-Properties"></span><h3 class="summary">Properties</h3>
+<table class="summary wide_list">
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="published.gif" alt="Published" title="Published"></a></td>
+<td class="itemcode"><code>property <strong><a href="trndi.api.dexcom.Dexcom.html#Remote">Remote</a></strong>       : string  read <a href="trndi.api.TrndiAPI.html#baseUrl">baseUrl</a>;</code></td>
+</tr>
+<tr class="list2">
+<td class="visibility"><a href="legend.html"><img  src="published.gif" alt="Published" title="Published"></a></td>
+<td class="itemcode"><code>property <strong><a href="trndi.api.dexcom.Dexcom.html#User">User</a></strong>         : string  read FUserName;</code></td>
+</tr>
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="published.gif" alt="Published" title="Published"></a></td>
+<td class="itemcode"><code>property <strong><a href="trndi.api.dexcom.Dexcom.html#Session">Session</a></strong>      : string  read FSessionID;</code></td>
+</tr>
+<tr class="list2">
+<td class="visibility"><a href="legend.html"><img  src="published.gif" alt="Published" title="Published"></a></td>
+<td class="itemcode"><code>property <strong><a href="trndi.api.dexcom.Dexcom.html#CalculateDiff">CalculateDiff</a></strong>: boolean read FCalcDiff;</code></td>
+</tr>
+</table>
+<h2 class="description">Description</h2>
+<h3 class="detail">Methods</h3>
+<table class="detail wide_list">
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><span id="Create"></span><code>constructor <strong>Create</strong>(user, pass, extra: string); override;</code></td>
+</tr>
+<tr><td colspan="2">
+<p>
+** Create a Dexcom API client. Matches the parent signature. Defaults to calculating deltas.
+
+<p>  </p>
+<h6 class="description_section">Parameters</h6>
+<dl class="parameters">
+<dt>user</dt>
+<dd>Dexcom username</dd>
+<dt>pass</dt>
+<dd>Dexcom password</dd>
+<dt>extra</dt>
+<dd>Region selector: use 'usa' for US servers; otherwise WORLD</dd>
+</dl>
+</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><span id="Create"></span><code>constructor <strong>Create</strong>(user, pass, extra: string; ACalcDiff: boolean); overload;</code></td>
+</tr>
+<tr><td colspan="2">
+<p>
+** Overloaded constructor that allows explicitly enabling/disabling delta calc.
+
+<p>   </p>
+<h6 class="description_section">Parameters</h6>
+<dl class="parameters">
+<dt>user</dt>
+<dd>Dexcom username</dd>
+<dt>pass</dt>
+<dd>Dexcom password</dd>
+<dt>extra</dt>
+<dd>Region selector: use 'usa' for US servers; otherwise WORLD</dd>
+<dt>ACalcDiff</dt>
+<dd>Whether to compute deltas between consecutive readings</dd>
+</dl>
+</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><span id="Connect"></span><code>function <strong>Connect</strong>: boolean; override;</code></td>
+</tr>
+<tr><td colspan="2">
+<p>
+** Authenticate with Dexcom Share, establish a session, and synchronize time.
+
+<p>Workflow: 1) Authenticate to get initial session token. 2) Validate session. 3) Call login-by-name to finalize session. 4) Retrieve server UTC time and compute <code>timeDiff</code>.
+
+<p></p>
+<h6 class="description_section">Returns</h6>
+<p class="return">True if session established and time synchronized; otherwise False and <code>errormsg</code> is set.</p></td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><span id="GetReadings"></span><code>function <strong>GetReadings</strong>(AMinutes, AMaxCount: integer; extras: string; out res: string): BGResults; override;</code></td>
+</tr>
+<tr><td colspan="2">
+<p>
+** Retrieve latest glucose readings.
+
+<p>    </p>
+<h6 class="description_section">Parameters</h6>
+<dl class="parameters">
+<dt>AMinutes</dt>
+<dd>Time window in minutes to fetch</dd>
+<dt>AMaxCount</dt>
+<dd>Maximum number of readings to return</dd>
+<dt>extras</dt>
+<dd>Reserved; not used here</dd>
+<dt>res</dt>
+<dd>Out param receiving raw JSON payload of readings</dd>
+</dl>
+<h6 class="description_section">Returns</h6>
+<p class="return">Array of <code>BGReading</code>; may be empty if none/failed</p></td></tr>
+</table>
+<h3 class="detail">Properties</h3>
+<table class="detail wide_list">
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="published.gif" alt="Published" title="Published"></a></td>
+<td class="itemcode"><span id="Remote"></span><code>property <strong>Remote</strong>       : string  read <a href="trndi.api.TrndiAPI.html#baseUrl">baseUrl</a>;</code></td>
+</tr>
+<tr><td colspan="2">
+<p>
+** The effective base URL used for API requests.</p>
+</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="published.gif" alt="Published" title="Published"></a></td>
+<td class="itemcode"><span id="User"></span><code>property <strong>User</strong>         : string  read FUserName;</code></td>
+</tr>
+<tr><td colspan="2">
+<p>
+** Dexcom username for this client instance.</p>
+</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="published.gif" alt="Published" title="Published"></a></td>
+<td class="itemcode"><span id="Session"></span><code>property <strong>Session</strong>      : string  read FSessionID;</code></td>
+</tr>
+<tr><td colspan="2">
+<p>
+** Current Dexcom session token (when connected).</p>
+</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="published.gif" alt="Published" title="Published"></a></td>
+<td class="itemcode"><span id="CalculateDiff"></span><code>property <strong>CalculateDiff</strong>: boolean read FCalcDiff;</code></td>
+</tr>
+<tr><td colspan="2">
+<p>
+** Whether this client computes deltas between consecutive readings.</p>
+</td></tr>
+</table>
+<hr><span class="appinfo"><em>Generated by <a href="https://pasdoc.github.io/">PasDoc 0.16.0</a>. </em>
+</span>
+</div></div></body></html>

@@ -153,17 +153,21 @@ resourcestring
   sErrDexPass      = 'Invalid Dexcom password or account credentials';
   sErrDexLogin     = 'Login error: Could not establish a valid session';
 
-{** Constructor (override).
-    Delegates to the overloaded constructor with @code(ACalcDiff=True). }
+{------------------------------------------------------------------------------
+  Constructor (override).
+  Delegates to the overloaded constructor with ACalcDiff=True.
+------------------------------------------------------------------------------}
 constructor Dexcom.Create(user, pass, extra: string);
 begin
   // Call overloaded constructor with default: calculate deltas
   Create(user, pass, extra, true);
 end;
 
-{** Constructor (overload).
-    Configure user-agent, region (base URL and host), credentials, and delta flag.
-    Calls inherited base constructor to init common pieces (thresholds, native, tz). }
+{------------------------------------------------------------------------------
+  Constructor (overload).
+  Configure user-agent, region (base URL and host), credentials, and delta flag.
+  Calls inherited base constructor to init common pieces (thresholds, native, tz).
+------------------------------------------------------------------------------}
 constructor Dexcom.Create(user, pass, extra: string; ACalcDiff: boolean);
 begin
   // Common Dexcom Share user-agent string observed in official apps
@@ -182,8 +186,10 @@ begin
   inherited Create(user, pass, extra);
 end;
 
-{** Connect to Dexcom Share and establish a valid session.
-    Performs authentication sequence and time synchronization. }
+{------------------------------------------------------------------------------
+  Connect to Dexcom Share and establish a valid session.
+  Performs authentication sequence and time synchronization.
+------------------------------------------------------------------------------}
 function Dexcom.Connect: boolean;
 var
   LBody, LResponse, LTimeResponse, LTimeString: string;
@@ -270,7 +276,9 @@ begin
   Result := true;
 end;
 
-{** Validate the current session token for obvious invalid values. }
+{------------------------------------------------------------------------------
+  Validate the current session token for obvious invalid values.
+------------------------------------------------------------------------------}
 function Dexcom.CheckSession: boolean;
 begin
   Result :=
@@ -278,8 +286,10 @@ begin
     (FSessionID <> '00000000-0000-0000-0000-000000000000');
 end;
 
-{** Check if a Dexcom receiver/transmitter serial is assigned to this account.
-    Returns True if the server reports 'AssignedToYou'. }
+{------------------------------------------------------------------------------
+  Check if a Dexcom receiver/transmitter serial is assigned to this account.
+  Returns True if the server reports 'AssignedToYou'.
+------------------------------------------------------------------------------}
 function Dexcom.CheckSerialNumber(const ASerial: string): boolean;
 var
   LParams: array[1..2] of string;
@@ -297,8 +307,10 @@ begin
     Result := true;
 end;
 
-{** Retrieve glucose readings for the last @code(AMinutes) minutes.
-    Returns up to @code(AMaxCount) samples, optionally computing deltas. }
+{------------------------------------------------------------------------------
+  Retrieve glucose readings for the last AMinutes minutes.
+  Returns up to AMaxCount samples, optionally computing deltas.
+------------------------------------------------------------------------------}
 function Dexcom.GetReadings(AMinutes, AMaxCount: integer; extras: string; out res: string): BGResults;
 
   // Helper: convert Dexcom /Date(ms)/ string to TDateTime

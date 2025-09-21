@@ -43,12 +43,12 @@ type
       It defines common thresholds, time handling, and helper routines to read
       and classify BG readings. Subclasses implement connectivity and fetching.
 
-      Typical use:
+  Typical use:
       - Construct subclass with credentials/config.
       - Call @code(connect).
       - Call @code(getReadings), @code(getCurrent), or @code(getLast).
 
-      @seealso(BGReading, BGResults, BGValLevel)
+  See also: BGReading, BGResults, BGValLevel.
    }
   TrndiAPI = class
   protected
@@ -75,10 +75,10 @@ type
 
     {** Set the timezone offset.
         Note:
-          Despite the parameter name, this implementation expects @b(minutes)
+          Despite the parameter name, this implementation expects minutes
           and multiplies by 60 to store the value in seconds.
 
-        @param(secs Timezone offset in @b(minutes); will be multiplied by 60.)
+        @param(secs Timezone offset in minutes; will be multiplied by 60.)
      }
     procedure setTZ(secs: integer);
 
@@ -247,8 +247,10 @@ type
 
 implementation
 
-{** Determine whether the API appears to be active by fetching a current reading.
-    Returns @code(True) if a reading is available and its timestamp is > 1000. }
+{------------------------------------------------------------------------------
+  Determine whether the API appears to be active by fetching a current reading.
+  Returns True if a reading is available and its timestamp is > 1000.
+------------------------------------------------------------------------------}
 function TrndiAPI.checkActive: boolean;
 var
   bgr: BGReading;
@@ -261,8 +263,10 @@ begin
     Result := bgr.date > 1000;
 end;
 
-{** Base constructor.
-    Initializes timezone from the OS, sets up native interface, and default CGM thresholds. }
+{------------------------------------------------------------------------------
+  Base constructor.
+  Initializes timezone from the OS, sets up native interface, and default CGM thresholds.
+------------------------------------------------------------------------------}
 constructor TrndiAPI.create(user, pass, extra: string);
 begin
   // Store local timezone offset (minutes) via property; internally becomes seconds.
@@ -275,13 +279,17 @@ begin
   initCGMCore;
 end;
 
-{** Base destructor; frees native helper. }
+{------------------------------------------------------------------------------
+  Base destructor; frees native helper.
+------------------------------------------------------------------------------}
 destructor TrndiAPI.destroy;
 begin
   native.Free;
 end;
 
-{** Resolve a threshold value by @code(BGValLevel). }
+{------------------------------------------------------------------------------
+  Resolve a threshold value by BGValLevel.
+------------------------------------------------------------------------------}
 function TrndiAPI.getLevel(v: BGValLevel): single;
 begin
   case v of
@@ -292,7 +300,9 @@ begin
   end;
 end;
 
-{** Classify a numeric BG value into a @code(BGValLevel). }
+{------------------------------------------------------------------------------
+  Classify a numeric BG value into a BGValLevel.
+------------------------------------------------------------------------------}
 function TrndiAPI.getLevel(v: single): BGValLevel;
 begin
   if v >= core.hi then
@@ -312,7 +322,9 @@ begin
   end;
 end;
 
-{** Initialize CGM thresholds to sensible defaults. }
+{------------------------------------------------------------------------------
+  Initialize CGM thresholds to sensible defaults.
+------------------------------------------------------------------------------}
 procedure TrndiAPI.initCGMCore;
 begin
   core.hi     := 401;
@@ -321,14 +333,18 @@ begin
   core.bottom := 0;    // 0   => “unused” for personalized lower bound
 end;
 
-{** Return the current @code(CGMCore) record. }
+{------------------------------------------------------------------------------
+  Return the current CGMCore record.
+------------------------------------------------------------------------------}
 function TrndiAPI.getCGMCore: CGMCore;
 begin
   Result := core;
 end;
 
-{** URL-encode non-unreserved characters.
-    Unreserved allowed set: [A-Z a-z 0-9 - _ ~ .] }
+{------------------------------------------------------------------------------
+  URL-encode non-unreserved characters.
+  Unreserved allowed set: [A-Z a-z 0-9 - _ ~ .]
+------------------------------------------------------------------------------}
 function TrndiAPI.encodeStr(src: string): string;
 var
   i: integer;
@@ -341,20 +357,26 @@ begin
       Result := Result + src[i]; // passthrough allowed characters
 end;
 
-{** Set timezone offset.
-    Note: @code(secs) is treated as minutes and multiplied by 60 to store seconds. }
+{------------------------------------------------------------------------------
+  Set timezone offset.
+  Note: secs is treated as minutes and multiplied by 60 to store seconds.
+------------------------------------------------------------------------------}
 procedure TrndiAPI.setTZ(secs: integer);
 begin
   tz := secs * 60;
 end;
 
-{** Get current base time as Unix epoch (seconds), adjusted by @code(timeDiff). }
+{------------------------------------------------------------------------------
+  Get current base time as Unix epoch (seconds), adjusted by timeDiff.
+------------------------------------------------------------------------------}
 function TrndiAPI.getBasetime: int64;
 begin
   Result := DateTimeToUnix(IncSecond(Now, timeDiff));
 end;
 
-{** Get the last reading across a larger window (e.g., 24 hours). }
+{------------------------------------------------------------------------------
+  Get the last reading across a larger window (e.g., 24 hours).
+------------------------------------------------------------------------------}
 function TrndiAPI.getLast(var res: BGReading): boolean;
 var
   r: BGResults;
@@ -371,7 +393,9 @@ begin
   end;
 end;
 
-{** Get the most current reading across a short window (e.g., last 10 minutes). }
+{------------------------------------------------------------------------------
+  Get the most current reading across a short window (e.g., last 10 minutes).
+------------------------------------------------------------------------------}
 function TrndiAPI.getCurrent(var res: BGReading): boolean;
 var
   r: BGResults;
@@ -388,8 +412,10 @@ begin
   end;
 end;
 
-{** Convert a JavaScript millisecond epoch to @code(TDateTime).
-    When @code(correct) is true, subtracts @code(tz) before conversion. }
+{------------------------------------------------------------------------------
+  Convert a JavaScript millisecond epoch to TDateTime.
+  When correct is true, subtracts tz before conversion.
+------------------------------------------------------------------------------}
 function TrndiAPI.JSToDateTime(ts: int64; correct: boolean): TDateTime;
 begin
   if correct then
@@ -398,7 +424,9 @@ begin
     Result := UnixToDateTime(ts div 1000);
 end;
 
-{** Convenience overload that forwards to the abstract variant and discards raw text. }
+{------------------------------------------------------------------------------
+  Convenience overload that forwards to the abstract variant and discards raw text.
+------------------------------------------------------------------------------}
 function TrndiAPI.getReadings(minNum, maxNum: integer; extras: string = ''): BGResults;
 var
   res: string;

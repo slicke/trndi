@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>trndi.api.nightscout: Class NightScout</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="generator" content="PasDoc 0.16.0">
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<link rel="StyleSheet" type="text/css" href="pasdoc.css">
+</head>
+<body>
+<div class="container"><div class="navigation">
+<ul><li><a href="AllUnits.html">Units</a></li><li><a href="ClassHierarchy.html">Class Hierarchy</a></li><li><a href="AllClasses.html">Classes, Interfaces, Objects and Records</a></li><li><a href="AllTypes.html">Types</a></li><li><a href="AllVariables.html">Variables</a></li><li><a href="AllConstants.html">Constants</a></li><li><a href="AllFunctions.html">Functions and Procedures</a></li><li><a href="AllIdentifiers.html">Identifiers</a></li></ul></div><div class="content">
+<span id="NightScout"></span><h1 class="cio">Class NightScout</h1>
+<div class="sections">
+<div class="one_section"><a class="section" href="#PasDoc-Description">Description</a></div><div class="one_section"><a class="section" href="#PasDoc-Hierarchy">Hierarchy</a></div><div class="one_section"><a class="section" href="#PasDoc-Fields">Fields</a></div><div class="one_section"><a class="section" href="#PasDoc-Methods">Methods</a></div><div class="one_section"><a class="section" href="#PasDoc-Properties">Properties</a></div></div>
+<span id="PasDoc-Description"></span><h2 class="unit">Unit</h2>
+<p class="unitlink">
+<a href="trndi.api.nightscout.html">trndi.api.nightscout</a></p>
+<h2 class="declaration">Declaration</h2>
+<p class="declaration">
+<code>type NightScout = class(<a class="normal" href="trndi.api.TrndiAPI.html">TrndiAPI</a>)</code></p>
+<h2 class="description">Description</h2>
+<p>
+** NightScout API client. Provides methods to connect to a Nightscout instance and fetch CGM readings, mapping responses into Trndi’s internal types.
+
+<p></p>
+<h6 class="description_section">See also</h6>
+<dl class="see_also">
+  <dt><a class="normal" href="trndi.api.TrndiAPI.html">TrndiAPI</a></dt>
+  <dd></dd>
+</dl>
+<span id="PasDoc-Hierarchy"></span><h2 class="hierarchy">Hierarchy</h2>
+<ul class="hierarchy"><li class="ancestor">TObject</li>
+<li class="ancestor"><a class="normal" href="trndi.api.TrndiAPI.html">TrndiAPI</a></li>
+<li class="thisitem">NightScout</li></ul><h2 class="overview">Overview</h2>
+<span id="PasDoc-Fields"></span><h3 class="summary">Fields</h3>
+<table class="summary wide_list">
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="protected.gif" alt="Protected" title="Protected"></a></td>
+<td class="itemcode"><code><strong><a href="trndi.api.nightscout.NightScout.html#key">key</a></strong>: string;</code></td>
+</tr>
+</table>
+<span id="PasDoc-Methods"></span><h3 class="summary">Methods</h3>
+<table class="summary wide_list">
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><code>constructor <strong><a href="trndi.api.nightscout.NightScout.html#create">create</a></strong>(user, pass, extra: string); override;</code></td>
+</tr>
+<tr class="list2">
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><code>function <strong><a href="trndi.api.nightscout.NightScout.html#connect">connect</a></strong>: boolean; override;</code></td>
+</tr>
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><code>function <strong><a href="trndi.api.nightscout.NightScout.html#getReadings">getReadings</a></strong>(minNum, maxNum: integer; extras: string; out res: string): BGResults; override;</code></td>
+</tr>
+</table>
+<span id="PasDoc-Properties"></span><h3 class="summary">Properties</h3>
+<table class="summary wide_list">
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="published.gif" alt="Published" title="Published"></a></td>
+<td class="itemcode"><code>property <strong><a href="trndi.api.nightscout.NightScout.html#remote">remote</a></strong>: string read <a href="trndi.api.TrndiAPI.html#baseUrl">baseUrl</a>;</code></td>
+</tr>
+</table>
+<h2 class="description">Description</h2>
+<h3 class="detail">Fields</h3>
+<table class="detail wide_list">
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="protected.gif" alt="Protected" title="Protected"></a></td>
+<td class="itemcode"><span id="key"></span><code><strong>key</strong>: string;</code></td>
+</tr>
+<tr><td colspan="2">
+<p>
+** Nightscout API secret header value (computed as 'API-SECRET=' + SHA1(pass) when a secret is supplied).</p>
+</td></tr>
+</table>
+<h3 class="detail">Methods</h3>
+<table class="detail wide_list">
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><span id="create"></span><code>constructor <strong>create</strong>(user, pass, extra: string); override;</code></td>
+</tr>
+<tr><td colspan="2">
+<p>
+** Create a NightScout API client. Initializes the HTTP User-Agent, derives the API base URL from <code>user</code>, prepares the API secret header from <code>pass</code>, and calls the inherited constructor.
+
+<p>  </p>
+<h6 class="description_section">Parameters</h6>
+<dl class="parameters">
+<dt>user</dt>
+<dd>Base Nightscout URL, including scheme, e.g. <a href="https://example.com">https://example.com</a></dd>
+<dt>pass</dt>
+<dd>Nightscout API secret in plain text; hashed to SHA1 for header</dd>
+<dt>extra</dt>
+<dd>Reserved for future use</dd>
+</dl>
+</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><span id="connect"></span><code>function <strong>connect</strong>: boolean; override;</code></td>
+</tr>
+<tr><td colspan="2">
+<p>
+** Connect to Nightscout, retrieve server status, thresholds, and set time offset. Requests <code>NS_STATUS</code>, validates/handles errors, parses <code>serverTimeEpoch</code> and <code>settings.thresholds</code>, and computes <code>timeDiff</code> relative to the local machine time.
+
+<p></p>
+<h6 class="description_section">Returns</h6>
+<p class="return">True on success; False otherwise. On failure, <code>errormsg</code> is set.</p></td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><span id="getReadings"></span><code>function <strong>getReadings</strong>(minNum, maxNum: integer; extras: string; out res: string): BGResults; override;</code></td>
+</tr>
+<tr><td colspan="2">
+<p>
+** Fetch SGV readings and map them to <code>BGResults</code>. If <code>extras</code> is empty, uses <code>NS_READINGS</code>. Sends <code>count=maxNum</code> as a query parameter. Populates each reading with value, delta, trend, environment (device, rssi, noise), timestamp, and derived level.
+
+<p>    </p>
+<h6 class="description_section">Parameters</h6>
+<dl class="parameters">
+<dt>minNum</dt>
+<dd>Unused here; time-span can be endpoint-dependent</dd>
+<dt>maxNum</dt>
+<dd>Maximum number of readings to fetch</dd>
+<dt>extras</dt>
+<dd>Optional endpoint path override, e.g. 'entries/sgv.json'</dd>
+<dt>res</dt>
+<dd>Out parameter receiving the raw JSON response string</dd>
+</dl>
+<h6 class="description_section">Returns</h6>
+<p class="return">Array of <code>BGReading</code>; empty on errors or unauthorized</p></td></tr>
+</table>
+<h3 class="detail">Properties</h3>
+<table class="detail wide_list">
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="published.gif" alt="Published" title="Published"></a></td>
+<td class="itemcode"><span id="remote"></span><code>property <strong>remote</strong>: string read <a href="trndi.api.TrndiAPI.html#baseUrl">baseUrl</a>;</code></td>
+</tr>
+<tr><td colspan="2">
+<p>
+** The remote Nightscout base URL actually used (read-only proxy to baseUrl).</p>
+</td></tr>
+</table>
+<hr><span class="appinfo"><em>Generated by <a href="https://pasdoc.github.io/">PasDoc 0.16.0</a>. </em>
+</span>
+</div></div></body></html>
