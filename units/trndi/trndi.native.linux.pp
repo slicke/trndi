@@ -417,32 +417,11 @@ end;
 {------------------------------------------------------------------------------
   ResolveIniPath
   --------------
-  Locate settings file with backward compatibility and return the chosen path.
+  Always use Lazarus' app config file path (typically ~/.config/Trndi/trndi.ini).
  ------------------------------------------------------------------------------}
 function TTrndiNativeLinux.ResolveIniPath: string;
-var
-  home, pA, pB, pC: string;
 begin
-  // Prefer existing files in this order:
-  // 1) Lazarus app config file (typically ~/.config/Trndi/trndi.ini)
-  // 2) Explicit ~/.config/Trndi/trndi.ini
-  // 3) Legacy ~/.config/Trndi.cfg
-  pA := GetAppConfigFile(False);
-
-  home := GetEnvironmentVariable('HOME');
-  if home = '' then
-    home := GetUserDir; // Fallback
-  pC := IncludeTrailingPathDelimiter(home) + '.config' + DirectorySeparator + 'Trndi.cfg';
-  pB := IncludeTrailingPathDelimiter(home) + '.config' + DirectorySeparator + 'Trndi' + DirectorySeparator + 'trndi.ini';
-
-  if (pA <> '') and FileExists(pA) then Exit(pA);
-  if FileExists(pB) then Exit(pB);
-  if FileExists(pC) then Exit(pC);
-
-  // Nothing exists; default to Lazarus app config file path
-  Result := pA;
-  if Result = '' then
-    Result := pB; // reasonable default under ~/.config/Trndi/trndi.ini
+  Result := GetAppConfigFile(False);
 end;
 
 {------------------------------------------------------------------------------
@@ -893,61 +872,17 @@ begin
 end;
 
 {------------------------------------------------------------------------------
-  Settings (INI/CFG)
-  ------------------
-  Read settings with legacy key=value compatibility; fallback to default.
+  Settings
+  --------
+  Read/write settings using Lazarus app config file under a single [trndi] section.
  ------------------------------------------------------------------------------}
 function TTrndiNativeLinux.GetSetting(const keyname: string; def: string; global: boolean): string;
 var
   key: string;
-  raw: TStringList;
-  i, p: Integer;
-  line, k, v: string;
-  path: string;
 begin
   EnsureIni;
   key := buildKey(keyname, global);
-  // Try common sections used historically (backward compatibility)
-  Result := inistore.ReadString('trndi', key, '');
-  if Result = '' then
-    Result := inistore.ReadString('settings', key, '');
-  if Result = '' then
-    Result := inistore.ReadString('Trndi', key, '');
-  // Legacy .cfg files may have no sections. Parse raw lines as key=value.
-  if Result = '' then
-  begin
-    raw := TStringList.Create;
-    try
-      // Read from the file backing inistore
-      path := ResolveIniPath;
-      if FileExists(path) then
-      begin
-        raw.LoadFromFile(path);
-        for i := 0 to raw.Count-1 do
-        begin
-          line := Trim(raw[i]);
-          if (line = '') or (line[1] = '#') or (line[1] = ';') then Continue;
-          p := Pos('=', line);
-          if p > 0 then
-          begin
-            k := Trim(Copy(line, 1, p-1));
-            v := Trim(Copy(line, p+1, MaxInt));
-            // Match either fully built key or plain keyname (no user prefix)
-            // so older files without username scoping still load.
-            if SameText(k, key) or SameText(k, keyname) then
-            begin
-              Result := v;
-              Break;
-            end;
-          end;
-        end;
-      end;
-    finally
-      raw.Free;
-    end;
-  end;
-  if Result = '' then
-    Result := def;
+  Result := inistore.ReadString('trndi', key, def);
 end;
 
 {------------------------------------------------------------------------------
@@ -978,9 +913,6 @@ begin
   EnsureIni;
   key := buildKey(keyname, global);
   inistore.DeleteKey('trndi', key);
-  // Also try alternative sections to be thorough
-  inistore.DeleteKey('settings', key);
-  inistore.DeleteKey('Trndi', key);
   inistore.UpdateFile;
 end;
 

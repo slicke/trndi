@@ -1142,7 +1142,7 @@ var
   i: Integer;
   s: string;
 begin
-  s := GetSetting(keyname, '');
+  s := GetSetting(keyname,  IntToStr(Integer(def)));
 
   if s.IsEmpty then
     Exit(def);
