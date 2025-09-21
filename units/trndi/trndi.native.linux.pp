@@ -91,6 +91,8 @@ type
   class function isDarkMode: boolean; override;
   {** Returns True if notify-send is available on this system. }
   class function isNotificationSystemAvailable: boolean; override;
+  {** Identify notification backend: 'gdbus' (Qt6 path) or 'notify-send' or 'none'. }
+  class function getNotificationSystem: string; override;
   end;
 
 implementation
@@ -339,7 +341,27 @@ end;
  ------------------------------------------------------------------------------}
 class function TTrndiNativeLinux.isNotificationSystemAvailable: boolean;
 begin
+  {$IFDEF LCLQt6}
+  // Under Qt6, we prefer gdbus; consider notifications available if either is present
+  if FindInPath('gdbus') <> '' then
+    Exit(True);
+  {$ENDIF}
   Result := IsNotifySendAvailable;
+end;
+{------------------------------------------------------------------------------
+  getNotificationSystem
+  ---------------------
+  Return 'gdbus' under Qt6 when gdbus is present; else 'notify-send' if found; else 'none'.
+ ------------------------------------------------------------------------------}
+class function TTrndiNativeLinux.getNotificationSystem: string;
+begin
+  {$IFDEF LCLQt6}
+  if FindInPath('gdbus') <> '' then
+    Exit('gdbus');
+  {$ENDIF}
+  if IsNotifySendAvailable then
+    Exit('notify-send');
+  Result := 'none';
 end;
 
 

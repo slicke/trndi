@@ -235,7 +235,7 @@ RS_SELECT_FONT = 'Select a font';
 RS_NOTIFICATIONS = 'Notifications';
 RS_NOTIFY_TITLE = 'A notification system is required';
 RS_NOTIFY_TXT = 'Trndi uses a system called "%s" to send desktop notices, you need to have this system installed in order to recieve notices.';
-RS_NOTIFY_MAC = 'Notifications will be made via macOS';
+RS_NOTIFY_SYSTEM = 'Notifications will appear where you normally get notification messages.';
 
 RS_HASTOUCH = 'Shows if Trndi detected a touch screen';
 
@@ -599,21 +599,25 @@ end;
 end;
 
 procedure TfConf.bSysNoticeClick(Sender: TObject);
-const
-  {$ifdef windows}
-  url = 'https://www.powershellgallery.com/packages/BurntToast';
-  sys = 'BurntToast';
-  {$else}
-  url = 'https://www.google.com/search?q=notify-send';
-  sys = 'notify-send';
-  {$endif}
+var
+ ns, url: string;
 begin
-{$ifndef Darwin}
-  if ExtMsg(uxdAuto, RS_NOTIFICATIONS, RS_NOTIFY_TITLE, Format(RS_NOTIFY_TXT, [sys]), '', $00F5F2FD,$003411A9, [mbOK, mbUXRead], uxmtCustom,0) <> mrOK then
-     OpenURL(url);
-{$else}
-  UXMessage(uxdAuto, RS_NOTIFICATIONS, RS_NOTIFY_MAC);
-{$endif}
+  ns := tnative.getNotificationSystem;
+  url := '';
+
+  case ns of
+    'BurntToast': url := 'https://www.powershellgallery.com/packages/BurntToast';
+    'notify-send': url := 'https://www.google.com/search?q=notify-send';
+  end;
+  // Natives:
+  // NSUserNotification
+  // gdbus
+
+  if url <> '' then begin
+    if ExtMsg(uxdAuto, RS_NOTIFICATIONS, RS_NOTIFY_TITLE, Format(RS_NOTIFY_TXT, [ns]), '', $00F5F2FD,$003411A9, [mbOK, mbUXRead], uxmtCustom,0) <> mrOK then
+       OpenURL(url)
+  end else
+     UXMessage(uxdAuto, RS_NOTIFICATIONS, RS_NOTIFY_SYSTEM);
 
 end;
 

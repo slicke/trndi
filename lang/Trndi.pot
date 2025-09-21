@@ -1200,8 +1200,8 @@ msgstr ""
 msgid "Notifications"
 msgstr ""
 
-#: uconf.rs_notify_mac
-msgid "Notifications will be made via macOS"
+#: uconf.rs_notify_system
+msgid "Notifications will appear where you normally get notification messages."
 msgstr ""
 
 #: uconf.rs_notify_title

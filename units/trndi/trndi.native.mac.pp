@@ -78,6 +78,8 @@ type
   class function isDarkMode: boolean; override;
   {** NSUserNotificationCenter is available on macOS. }
   class function isNotificationSystemAvailable: boolean; override;
+  {** Identify the notification backend on macOS ('NSUserNotification'). }
+  class function getNotificationSystem: string; override;
   end;
 
 implementation
@@ -167,6 +169,16 @@ end;
 class function TTrndiNativeMac.isNotificationSystemAvailable: boolean;
 begin
   Result := True; // NSUserNotificationCenter exists
+end;
+
+{------------------------------------------------------------------------------
+  getNotificationSystem
+  ---------------------
+  Identify the macOS notification backend used by this implementation.
+ ------------------------------------------------------------------------------}
+class function TTrndiNativeMac.getNotificationSystem: string;
+begin
+  Result := 'NSUserNotification';
 end;
 
 
