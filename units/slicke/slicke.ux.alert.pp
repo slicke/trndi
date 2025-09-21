@@ -330,7 +330,8 @@ type
                      btns: TUXMsgDlgBtns;
                      dumpbg: TColor = uxclLightGreen;
                      dumptext: TColor = uxclDarkGreen;
-                     const icon: UXImage = uxmtOK): TModalResult;
+                     const icon: UXImage = uxmtOK;
+                     const scale: integer = 1): TModalResult;
 
   {**
     Show a selection dialog using a drop-down list.
@@ -474,36 +475,67 @@ end;
 function CalcWrappedHeight(ALabel: TLabel): Integer;
 var
   bmp: Graphics.TBitmap;
-  textParts: TStringList;
-  line: string;
-  i, lineCount: Integer;
+  paragraphs, words: TStringList;
+  para, token, currentLine: string;
+  i, p, totalLines, lineCount: Integer;
+
+  function NormalizeLineBreaks(const S: string): string;
+  begin
+    // Convert CRLF/CR to LF to simplify splitting
+    Result := StringReplace(S, #13#10, #10, [rfReplaceAll]);
+    Result := StringReplace(Result, #13, #10, [rfReplaceAll]);
+  end;
 begin
   bmp := Graphics.TBitmap.Create;
-  textParts := TStringList.Create;
+  paragraphs := TStringList.Create;
+  words := TStringList.Create;
   try
     bmp.Canvas.Font.Assign(ALabel.Font);
-    textParts.Delimiter := ' ';
-    textParts.StrictDelimiter := True;
-    textParts.DelimitedText := ALabel.Caption;
 
-    line := '';
-    lineCount := 1;
+    // Split by explicit line breaks first (each is a forced new line)
+    paragraphs.Text := NormalizeLineBreaks(ALabel.Caption);
+    // TStringList.Text splits on LF boundaries
 
-    for i := 0 to textParts.Count - 1 do
+    totalLines := 0;
+    for p := 0 to paragraphs.Count - 1 do
     begin
-      if bmp.Canvas.TextWidth(Trim(line + ' ' + textParts[i])) > ALabel.Width then
+      para := TrimRight(paragraphs[p]); // preserve empty lines meaningfully
+      if para = '' then
       begin
-        Inc(lineCount);
-        line := textParts[i];
-      end
-      else
-        line := Trim(line + ' ' + textParts[i]);
+        Inc(totalLines); // empty paragraph still consumes one empty line
+        Continue;
+      end;
+
+      words.Clear;
+      words.Delimiter := ' ';
+      words.StrictDelimiter := True;
+      words.DelimitedText := para;
+
+      currentLine := '';
+      lineCount := 1;
+      for i := 0 to words.Count - 1 do
+      begin
+        token := words[i];
+        if bmp.Canvas.TextWidth(Trim(currentLine + ' ' + token)) > ALabel.Width then
+        begin
+          Inc(lineCount);
+          currentLine := token;
+        end
+        else
+          currentLine := Trim(currentLine + ' ' + token);
+      end;
+      Inc(totalLines, lineCount);
     end;
 
-    Result := lineCount * bmp.Canvas.TextHeight('Hg');
+    // If there were zero paragraphs, height is zero; ensure at least one line
+    if (paragraphs.Count = 0) then
+      totalLines := 1;
+
+    Result := totalLines * bmp.Canvas.TextHeight('Hg');
   finally
     bmp.Free;
-    textParts.Free;
+    paragraphs.Free;
+    words.Free;
   end;
 end;
 
@@ -580,36 +612,62 @@ end;
 function MeasureWrappedHeight(const AText: string; AFont: TFont; MaxWidth: Integer): Integer;
 var
   bmp: Graphics.TBitmap;
-  words: TStringList;
-  line: string;
-  i: Integer;
-  lineCount: Integer;
+  paragraphs, words: TStringList;
+  para, token, currentLine: string;
+  i, p, totalLines, lineCount: Integer;
+
+  function NormalizeLineBreaks(const S: string): string;
+  begin
+    Result := StringReplace(S, #13#10, #10, [rfReplaceAll]);
+    Result := StringReplace(Result, #13, #10, [rfReplaceAll]);
+  end;
 begin
   bmp := Graphics.TBitmap.Create;
+  paragraphs := TStringList.Create;
   words := TStringList.Create;
   try
     bmp.Canvas.Font.Assign(AFont);
-    words.StrictDelimiter := True;
-    words.Delimiter := ' ';
-    words.DelimitedText := AText;
 
-    line := '';
-    lineCount := 1;
+    paragraphs.Text := NormalizeLineBreaks(AText);
 
-    for i := 0 to words.Count - 1 do
+    totalLines := 0;
+    for p := 0 to paragraphs.Count - 1 do
     begin
-      if bmp.Canvas.TextWidth(Trim(line + ' ' + words[i])) > MaxWidth then
+      para := TrimRight(paragraphs[p]);
+      if para = '' then
       begin
-        Inc(lineCount);
-        line := words[i];
-      end
-      else
-        line := Trim(line + ' ' + words[i]);
+        Inc(totalLines);
+        Continue;
+      end;
+
+      words.Clear;
+      words.Delimiter := ' ';
+      words.StrictDelimiter := True;
+      words.DelimitedText := para;
+
+      currentLine := '';
+      lineCount := 1;
+      for i := 0 to words.Count - 1 do
+      begin
+        token := words[i];
+        if bmp.Canvas.TextWidth(Trim(currentLine + ' ' + token)) > MaxWidth then
+        begin
+          Inc(lineCount);
+          currentLine := token;
+        end
+        else
+          currentLine := Trim(currentLine + ' ' + token);
+      end;
+      Inc(totalLines, lineCount);
     end;
 
-    Result := lineCount * bmp.Canvas.TextHeight('Hg');
+    if (paragraphs.Count = 0) then
+      totalLines := 1;
+
+    Result := totalLines * bmp.Canvas.TextHeight('Hg');
   finally
     bmp.Free;
+    paragraphs.Free;
     words.Free;
   end;
 end;
@@ -1779,7 +1837,8 @@ function ExtSuccEx(const dialogsize: TUXDialogSize;
                    btns: TUXMsgDlgBtns;
                    dumpbg: TColor = uxclLightGreen;
                    dumptext: TColor = uxclDarkGreen;
-                   const icon: UXImage = uxmtOK): TModalResult;
+                   const icon: UXImage = uxmtOK;
+                   const scale: integer = 1): TModalResult;
 begin
   Result := ExtMsg(dialogsize,
                    sSuccTitle,
@@ -1789,7 +1848,8 @@ begin
                    dumpbg,
                    dumptext,
                    btns,
-                   widechar(icon));
+                   widechar(icon),
+                   scale);
 end;
 
 {**

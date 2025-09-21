@@ -859,7 +859,7 @@ const
 '- This app may contain bugs or errors that could display incorrect data'#10#10+
 '- IF YOU DO NOT AGREE WITH THESE TERMS, DO NOT USE THIS APP. -';
 begin
- if ExtSuccEx(uxdAuto, 'Trndi', 'License', txt, [mbOK, mbUxRead], $00AA6004, $00FDD8AA) <> mrOK then
+ if ExtSuccEx(uxdAuto, 'Trndi', 'License', txt, [mbOK, mbUxRead], $00AA6004, $00FDD8AA,uxmtOK, 8) <> mrOK then
     OpenURL('https://github.com/slicke/trndi/blob/main/LICENSE.md');
 end;
 
