@@ -2547,16 +2547,19 @@ begin
     ScaleLbl(lArrow);
 
 // TIR
-    lTir.font.size := lAgo.Font.Size;
-    lTir.Height := lAgo.Height;
-    lTir.width := lAgo.Width;
+    ScaleLbl(lTir);
+    lTir.BringToFront;
+    lTir.AutoSize := false;
+    lTir.font := lAgo.Font;
+    lTir.Height := lTir.Canvas.TextHeight(lTir.caption);
+    lTir.width := lTir.Canvas.TextWidth(lTir.caption);
     {$ifdef LCLQt6}
     if isWSL then
      lTir.Width := 50;
    {$endif}
-    lTir.left := ClientWidth-lTir.Width;
+    lTir.left := ClientWidth-lTir.Width-5;
     lTir.top := 0;
-    ScaleLbl(lTir);
+//
 
 //  lArrow.font.color := LightenColor(fBG.Color, 0.8);
 //  ScaleLbl(lArrow, taRightJustify, tlTop);
