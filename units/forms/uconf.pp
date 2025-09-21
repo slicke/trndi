@@ -42,7 +42,7 @@ TfConf = class(TForm)
   bSysNotice: TButton;
   bSysTouch: TButton;
   bTestSpeech: TButton;
-  btUserSave2: TButton;
+  btUserSave: TButton;
   Button1: TButton;
   Button2: TButton;
   Button3: TButton;
@@ -176,6 +176,8 @@ TfConf = class(TForm)
   procedure cbCustChange(Sender:TObject);
   procedure cbSysChange(Sender:TObject);
   procedure cbUserClick(Sender:TObject);
+  procedure cbUserColorChanged(Sender: TObject);
+  procedure edNickChange(Sender: TObject);
   procedure ePassEnter(Sender: TObject);
   procedure ePassExit(Sender: TObject);
   procedure FormCreate(Sender:TObject);
@@ -498,6 +500,7 @@ procedure TfConf.lbUsersSelectionChange(Sender: TObject; User: boolean);
 var
   u: string;
 begin
+  btUserSave.Enabled := false;
   if lbUsers.ItemIndex < 0 then begin
     gbMulti.Enabled := false;
     Exit;
@@ -519,6 +522,7 @@ begin
   lUserName.Caption := u;
 
   gbMulti.Enabled := true;
+  btUserSave.Enabled := false; // Twice as the fields change during update
 end;
 
 procedure TfConf.cbSysChange(Sender:TObject);
@@ -534,6 +538,16 @@ end;
 procedure TfConf.cbUserClick(Sender:TObject);
 begin
 
+end;
+
+procedure TfConf.cbUserColorChanged(Sender: TObject);
+begin
+  btUserSave.Enabled := true;
+end;
+
+procedure TfConf.edNickChange(Sender: TObject);
+begin
+    btUserSave.Enabled := true;
 end;
 
 procedure TfConf.ePassEnter(Sender: TObject);
@@ -682,6 +696,8 @@ begin
 
   tNative.SetColorSetting('user.color', cbUser.ButtonColor);
   tNative.SetSetting('user.nick', edNick.Text);
+
+    btUserSave.Enabled := false;
 end;
 
 procedure TfConf.Button1Click(Sender:TObject);
