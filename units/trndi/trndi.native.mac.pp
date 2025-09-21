@@ -84,7 +84,11 @@ implementation
 
 uses
   Process;
-
+{------------------------------------------------------------------------------
+  Speak
+  -----
+  Use the built-in 'say' tool to speak text (synchronous).
+ ------------------------------------------------------------------------------}
 procedure TTrndiNativeMac.Speak(const Text: string);
 var
   o: string;
@@ -95,6 +99,11 @@ begin
   RunCommand('/usr/bin/say', [Text], o);
 end;
 
+{------------------------------------------------------------------------------
+  getURL
+  ------
+  Simple HTTP GET using NS-based helper; returns response text or error.
+ ------------------------------------------------------------------------------}
 class function TTrndiNativeMac.getURL(const url: string; out res: string): boolean;
 const
   DEFAULT_USER_AGENT = 'Mozilla/5.0 (compatible; trndi) TrndiAPI';
@@ -140,17 +149,32 @@ begin
   end;
 end;
 
+{------------------------------------------------------------------------------
+  isDarkMode
+  ----------
+  Detect macOS dark appearance via AppleInterfaceStyle preference.
+ ------------------------------------------------------------------------------}
 class function TTrndiNativeMac.isDarkMode: boolean;
 begin
   Result := Pos('DARK', UpperCase(GetPrefString('AppleInterfaceStyle'))) > 0;
 end;
 
+{------------------------------------------------------------------------------
+  isNotificationSystemAvailable
+  -----------------------------
+  NSUserNotificationCenter is present on macOS.
+ ------------------------------------------------------------------------------}
 class function TTrndiNativeMac.isNotificationSystemAvailable: boolean;
 begin
   Result := True; // NSUserNotificationCenter exists
 end;
 
 
+{------------------------------------------------------------------------------
+  setDarkMode
+  -----------
+  Enable dark appearance for the app using SimpleDarkMode.
+ ------------------------------------------------------------------------------}
 class function TTrndiNativeMac.setDarkMode: Boolean;
 begin
   // Enable dark appearance for the app's UI via SimpleDarkMode
@@ -158,6 +182,11 @@ begin
   Result := True;
 end;
 
+{------------------------------------------------------------------------------
+  SetBadge (simple)
+  -----------------
+  Set the dock tile badge label with the provided value.
+ ------------------------------------------------------------------------------}
 procedure TTrndiNativeMac.SetBadge(const Value: string; BadgeColor: TColor);
 var
   NSS: NSString;
@@ -167,12 +196,22 @@ begin
   NSS.release;
 end;
 
+{------------------------------------------------------------------------------
+  SetBadge (full signature)
+  -------------------------
+  Ignore extra parameters and delegate to the simple overload on macOS.
+ ------------------------------------------------------------------------------}
 procedure TTrndiNativeMac.SetBadge(const Value: string; BadgeColor: TColor; badge_size_ratio: double; min_font_size: integer);
 begin
   // Ignore extra params on macOS and delegate to the simple overload
   SetBadge(Value, BadgeColor);
 end;
 
+{------------------------------------------------------------------------------
+  GetSetting / SetSetting / DeleteSetting / ReloadSettings
+  -------------------------------------------------------
+  Preferences-backed settings: read, write (no-op delete), and no reload.
+ ------------------------------------------------------------------------------}
 function TTrndiNativeMac.GetSetting(const keyname: string; def: string; global: boolean): string;
 var
   key: string;

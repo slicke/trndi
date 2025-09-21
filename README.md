@@ -122,3 +122,8 @@ You can install the ```qt6pas``` package.
 
 #### Others
 Look for ```qt6pas``` or ```libqt6-pas``` in your package manager, or search for ```libQt6Pas.so```.
+
+## Contributing
+Contributions are welcome. Please read [CONTRIBUTING](CONTRIBUTING.md) for coding style, PasDoc guidelines, and how to generate the developer docs for native, extensions, and API units.
+
+If you're adding or modifying an API driver, start with the [API guide](guides/API.md) for the contract and examples, then follow the API section in CONTRIBUTING.

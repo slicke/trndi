@@ -60,6 +60,8 @@ type
   TTrndiNativeLinux = trndi.native.linux.TTrndiNativeLinux;
   TrndiNative = TTrndiNativeLinux;
 {$ENDIF}
+  // Tip: Use TrndiNative in your code, not platform-specific class names.
+  // Example: native := TrndiNative.create('UA', 'https://...');
 
 implementation
 

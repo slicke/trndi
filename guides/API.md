@@ -1,76 +1,83 @@
 # API Support
 
-Trndi supports multiple backends, due to it's _API specification_:
+Trndi supports multiple backends via its API specification.
 
 # The TrndiAPI
-> <small>Location: ```trndi.api.pp```</small>
+> Location: `units/trndi/api/trndi.api.pp`
 
-TrndiAPI is the main class, of which API drivers inherit. Each API must provide, or fake:
+`TrndiAPI` is the base class that API drivers inherit. Each API driver must implement:
 
-### The constructor
+### Constructor
 ```pascal
 constructor create(user, pass, extra: string);
 ```
-  * _user:_ Name, IP or similar
-  * _pass_: Password, API key or similar
-  * _extra_: A third field can be used for extra data, if absolutely needed. The Dexcom driver uses this to set locale.
-Trndi will always pass user and pass, and by default empty extras
+- user: Name, URL/IP, or similar identifier
+- pass: Password, API key, or similar secret
+- extra: Optional extra data (e.g., Dexcom uses this for locale)
 
-### The connection
+Trndi always passes user and pass. `extra` defaults to empty unless needed.
+
+### Connection
 ```pascal
- function connect: boolean;
- ```
-A function to connect/start using the remote API
+function connect: boolean;
+```
+Establish connectivity and perform any initial probing.
 
 ### Getting data
 ```pascal
-function getReadings(min, maxNum: integer; extras: string = ''): BGResults;
+function getReadings(minNum, maxNum: integer; extras: string = ''): BGResults;
 ```
-  * _min_: Number of minutes to load (from the API:s reading history)
-  * _maxNum_: The desired amount of readings (if available)
-  * _extras_: Optional parameter, eg used by NightScout so decending classes (xDrip) can use the same function
+- minNum: Number of minutes to load from the API’s reading history
+- maxNum: Desired number of readings (if available)
+- extras: Optional parameter; e.g., Nightscout uses it to allow xDrip to share the same implementation
 
+Advanced overload (used by the base class and some drivers):
+```pascal
+function getReadings(minNum, maxNum: integer; extras: string; out res: string): BGResults;
+```
+This variant also returns the raw response via `res`.
 
-If these three functions are defined, the API driver will work.
+If these three functions are provided, the API driver will work.
 
 # Native
-TrndiNative is a class, used to perform Windows/Mac/Linux/etc specific actions, abstracted. It's largely used to handle HTTP(S) requests, so that they will be ran via Windows API, macOS native API etc instead of relying on other libraries.
+`TrndiNative` provides platform-specific features under a common API. It’s often used for HTTP(S) so requests run via native APIs (WinHTTP, NS, etc.) instead of third-party libs.
 
-As long as you run ```inherited;``` in your constructor, you will have access to the ```Native``` variable.
+Call `inherited;` in your constructor. You’ll have access to the `native` field.
 
-You should also set your _user agent_ and _base URL_ before, in the constructor:
+Set a user agent and base URL in your constructor:
 ```pascal
 baseUrl := 'https://service.net/API/';
 ua := 'Uploader/3.0.2.11 Darwin/14.0.0';
 ```
 
 ### Request
-The request function makes a HTTP/S request.
+`request` makes an HTTP/S request.
 ```pascal
-  function request(const post: boolean; const endpoint: string;
-    const params: array of string; const jsondata: string = '';
-    const header: string = ''): string;
+function request(const post: boolean; const endpoint: string;
+  const params: array of string; const jsondata: string = '';
+  const header: string = ''): string;
 ```
- * _post_: Set true to perform a HTTP POST, istead of GET
- * _endpoint_: The endpoint to hit, note that we already have the base
- * _params_: A list of key=value parameters
- * _jsondata_: This is the request bod
- * _heder_: Set a header, eg API tokeny
+- post: True for HTTP POST; False for GET
+- endpoint: Relative path (joined with `baseUrl`)
+- params: List of `key=value` pairs
+- jsondata: Optional request body
+- header: Optional header as `Key=Value`
 
- # Properties
- After having the functions checked out, there are also properties you need to set:
- * cgmHi - The "HI" value
- * cgmLO - The "LO" value
- * cgmRangeHI - The personal HI
- * cgmRangeLO - The personal LO
+# Properties
+You should set these thresholds (see `CGMCore`):
+- cgmHi – Global high boundary (BGHIGH)
+- cgmLo – Global low boundary (BGLOW)
+- cgmRangeHi – Personalized in-range upper bound (optional; 500 disables)
+- cgmRangeLo – Personalized in-range lower bound (optional; 0 disables)
 
- You also habe "free" access to these values:
- * offset - timezone offset
- * timezone - Local timezone offset in seconds
- And these functions:
- * JSToDateTime - Convert milliseconds timestamp
- * getBaseTime - Current time as a timestamp, adjusted with time difference
- * encodeStr - URL safe
+Helpers:
+- offset – Time difference (seconds) calculated by the implementation
+- timezone – Write-only property to set TZ offset (minutes); stored internally as seconds
 
- # Summary
- Inherit _TrndiAPI_, declare a _constructor_, a _connect_ function and a _getReadings_ function-
+Utility functions:
+- JSToDateTime – Convert JavaScript ms timestamp to `TDateTime`
+- getBaseTime – Current adjusted time as a Unix timestamp (seconds)
+- encodeStr – URL-encode (percent-encode) a string
+
+# Summary
+Inherit `TrndiAPI`, implement `create`, `connect`, and `getReadings`. Use the `native` helper for HTTP.
