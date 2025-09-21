@@ -1363,7 +1363,7 @@ begin
     // --- OK Button ---
     OkButton := TButton.Create(Dialog);
     OkButton.Parent := Dialog;
-    OkButton.Caption := smbUXOK;
+    OkButton.Caption := smbSelect;
     OkButton.ModalResult := mrOk;
     OkButton.Width := 80;
     if big then
