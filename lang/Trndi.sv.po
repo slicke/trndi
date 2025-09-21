@@ -303,8 +303,8 @@ msgstr "Testa tal"
 msgid "Reset"
 msgstr "Återställ"
 
-#: tfconf.btusersave2.caption
-msgctxt "tfconf.btusersave2.caption"
+#: tfconf.btusersave.caption
+msgctxt "tfconf.btusersave.caption"
 msgid "Save"
 msgstr "Spara"
 
@@ -1328,4 +1328,3 @@ msgstr "Du kan använda skift+<nummerr> för att manuellt sätta synligheten (0 
 #: ufloat.rscustomsize
 msgid "You can hold down shift and plus (+) or minus (-) to change the window size"
 msgstr "Du kan hålla ned skift och plus (+) eller minus (-) för att justera fönstrets storlek"
-
