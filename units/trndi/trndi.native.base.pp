@@ -114,11 +114,13 @@ public
     @param(params) Query string pairs like 'key=value' (GET or POST).
     @param(jsondata) Optional JSON payload for POST.
     @param(header) Optional single header string 'Key=Value'.
+    @param(prefix) True to prefix endpoint with baseurl.
     @returns(Response body or error message.)
   }
   function request(const post: boolean; const endpoint: string;
     const params: array of string; const jsondata: string = '';
-    const header: string = ''): string;
+    const header: string = '';
+    prefix: boolean = true): string;
 
   // Settings API
   {** Store a non-user-scoped key (global). }
@@ -857,7 +859,7 @@ end;
 {$IF DEFINED(X_MAC)}
 function TTrndiNativeBase.request(const post: boolean; const endpoint: string;
 const params: array of string; const jsondata: string = '';
-const header: string = ''): string;
+const header: string = ''; prefix: boolean = true): string;
 var
   res, send: TStringStream;
   headers: TStringList;
@@ -870,7 +872,10 @@ begin
     // We use a custom TNSHTTPSendAndReceive
     with TNSHTTPSendAndReceive.Create do
     try
-      address := Format('%s/%s', [baseurl, endpoint]);
+      if prefix then
+        address := Format('%s/%s', [baseurl, endpoint]);
+      else
+        address := endpoint;
       if post then
         method := 'POST'
       else
@@ -918,7 +923,7 @@ end;
 {$ELSEIF DEFINED(X_WIN)}
 function TTrndiNativeBase.request(const post: boolean; const endpoint: string;
 const params: array of string; const jsondata: string = '';
-const header: string = ''): string;
+const header: string = ''; prefix: boolean = true): string;
 var
   client: TWinHTTPClient;
   sx, address: string;
@@ -929,8 +934,11 @@ begin
   hasParams := (Length(params) > 0);
   client := TWinHTTPClient.Create(useragent);
   try
+    if prefix then
   // Construct the full URL with normalized slashes (avoid '//' or missing '/')
-    address := Format('%s/%s', [TrimRightSet(baseurl, ['/']), TrimLeftSet(endpoint, ['/'])]);
+      address := Format('%s/%s', [TrimRightSet(baseurl, ['/']), TrimLeftSet(endpoint, ['/'])])
+    else
+      address := endpoint;
 
     // Add default required headers
     client.AddHeader('User-Agent', useragent);
@@ -982,7 +990,7 @@ end;
 {$IFNDEF DARWIN}
 function TTrndiNativeBase.request(const post: boolean; const endpoint: string;
 const params: array of string; const jsondata: string = '';
-const header: string = ''): string;
+const header: string = ''; prefix: boolean = true): string;
 var
   client:  TFPHttpClient;
   res:     TStringStream;
@@ -993,7 +1001,10 @@ begin
   try
     // Set user-agent
     client.AddHeader('User-Agent', useragent);
-    address := Format('%s/%s', [baseurl, endpoint]);
+    if prefix then
+      address := Format('%s/%s', [baseurl, endpoint]);
+    else
+      address := endpoint;
 
     // Add optional custom header
     if header <> '' then

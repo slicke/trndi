@@ -146,6 +146,7 @@ TfConf = class(TForm)
   Panel5: TPanel;
   Panel6: TPanel;
   Panel7: TPanel;
+  pnBackend: TPanel;
   pnHelp: TPanel;
   pUserColor: TPanel;
   pnMisc: TPanel;
@@ -266,6 +267,7 @@ RS_HELP_NS_V2 =
   'Note: If you instead use the legacy API Secret, paste your API Secret value as-is.';
 
 RS_HELP_NS_V3 =
+  '** ALPHA DRIVER - Please use "NightScout" for daily use! **'+#13#10+
   'NightScout v3 setup (use FULL access token):'+#13#10#13#10+
   '1) Open your NightScout site (e.g., https://your-site).'+#13#10+
   '2) Go to Admin -> Tokens — or API Secret.'+#13#10+

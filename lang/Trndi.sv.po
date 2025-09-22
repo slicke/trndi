@@ -287,10 +287,6 @@ msgstr "Värde utanför"
 msgid "+ Add"
 msgstr "+ Ny"
 
-#: tfconf.bbackendhelp.caption
-msgid "? Backend help"
-msgstr ""
-
 #: tfconf.bremove.caption
 msgid "- Remove"
 msgstr "- Radera"
@@ -564,7 +560,7 @@ msgstr "Lågt under"
 
 #: tfconf.los.caption
 msgid "Unknown System"
-msgstr ""
+msgstr "Okänt system"
 
 #: tfconf.lpass.caption
 msgid "API Key / Dexcom Password"
@@ -601,7 +597,7 @@ msgstr "Var god dröj..."
 
 #: tfconf.lwidgetset.caption
 msgid "Unknown Widgetset"
-msgstr ""
+msgstr "Okänt grafiksystem"
 
 #: tfconf.rbunit.caption
 msgid "Display Unit"
@@ -1275,6 +1271,14 @@ msgid ""
 "If you are unsure, try “Outside USA” first if you live outside the US.\n"
 "Your username and password are your Dexcom Account (not Share) credentials."
 msgstr ""
+"Dexcom regionval:\n"
+"\n"
+"Välj serverregionen där ditt konto är registrerat i:\n"
+"• Dexcom (USA): för konton registrerade på share2.dexcom.com\n"
+"• Dexcom (Outside USA): för konton registrerade på shareous1.dexcom.com\n"
+"\n"
+"Om du är osäker, testa “Outside USA” först om du inte bor i USA.\n"
+"Ditt användarnamn och lösenord är dina Dexcom-uppgifter (inte Share)."
 
 #: uconf.rs_help_ns_v2
 msgid ""
@@ -1291,9 +1295,23 @@ msgid ""
 "\n"
 "Note: If you instead use the legacy API Secret, paste your API Secret value as-is."
 msgstr ""
+"NightScout v2 inställningar (använd HELA tokenet):\n"
+"\n"
+"\n"
+"1) Öppna din NighScout-sajt (t ex, https://din-sajt).\n"
+"2) Gå till Adminverktyg -> Ämnen -- Eller API-hemlighet.\n"
+"3) Om du använder Ämnen:\n"
+"  - Skapa ett ämne med åtminstone rollen \"readable\n"
+"\v  - Kopiera HELA åtkomstnyckeln, exakt som den visas\n"
+"4) I Trndi:\n"
+"\v   - Adress: ange din NightScout-adress\n"
+"   - Hemlighet: klistra in HELA åtkomstnyckeln (inte bara suffixet).\n"
+"\n"
+"\vOBS: Om din installation använder API-hemligheter, klistra in den som den är."
 
 #: uconf.rs_help_ns_v3
 msgid ""
+"** ALPHA DRIVER - Please use \"NightScout\" for daily use! **\n"
 "NightScout v3 setup (use FULL access token):\n"
 "\n"
 "1) Open your NightScout site (e.g., https://your-site).\n"
@@ -1307,6 +1325,22 @@ msgid ""
 "\n"
 "Note: If you instead use the legacy API Secret, paste your API Secret value as-is."
 msgstr ""
+"** ALFA DRIVRUTIN - Använd \"NightScout\" för dagligt bruk! **\n"
+"\vNightScout v2 inställningar (använd HELA tokenet):\n"
+"\n"
+"1) Öppna din NighScout-sajt (t ex, https://din-sajt).\n"
+"2) Gå till Adminverktyg -> Ämnen -- Eller API-hemlighet.\n"
+"3) Om du använder Ämnen:\n"
+"  - Skapa ett ämne med åtminstone rollen \"readable\n"
+"\n"
+"  - Kopiera HELA åtkomstnyckeln, exakt som den visas\n"
+"4) I Trndi:\n"
+"\n"
+"   - Adress: ange din NightScout-adress\n"
+"   - Hemlighet: klistra in HELA åtkomstnyckeln (inte bara suffixet).\n"
+"\n"
+"\n"
+"OBS: Om din installation använder API-hemligheter, klistra in den som den är."
 
 #: uconf.rs_newver
 #, object-pascal-format
@@ -1384,4 +1418,3 @@ msgstr "Du kan använda skift+<nummerr> för att manuellt sätta synligheten (0 
 #: ufloat.rscustomsize
 msgid "You can hold down shift and plus (+) or minus (-) to change the window size"
 msgstr "Du kan hålla ned skift och plus (+) eller minus (-) för att justera fönstrets storlek"
-
