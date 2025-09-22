@@ -202,6 +202,10 @@ msgstr ""
 msgid "1"
 msgstr ""
 
+#: tfbg.midotsinview.caption
+msgid "Are dots in view?"
+msgstr ""
+
 #: tfbg.midotsize.caption
 msgctxt "tfbg.midotsize.caption"
 msgid "Dot Size"
@@ -1252,6 +1256,14 @@ msgid ""
 "   - Auth: paste the FULL access token.\n"
 "\n"
 "Note: If you instead use the legacy API Secret, paste your API Secret value as-is."
+msgstr ""
+
+#: uconf.rs_help_xdrip
+msgid ""
+"xDrip setup:\n"
+"\n"
+"Address: your xDrip REST endpoint (base URL).\n"
+"Auth: API secret (plain text; server hashes it)."
 msgstr ""
 
 #: uconf.rs_newver

@@ -102,6 +102,7 @@ TfBG = class(TForm)
   lMissing: TLabel;
   lTir:TLabel;
   lAgo:TLabel;
+  miDotsInView: TMenuItem;
   miExit: TMenuItem;
   miCustomDots: TMenuItem;
   miDebugBackend: TMenuItem;
@@ -172,6 +173,7 @@ TfBG = class(TForm)
   procedure FormDestroy(Sender:TObject);
   procedure FormKeyPress(Sender:TObject;var Key:char);
   procedure DotPaint(Sender: TObject);
+  procedure miDotsInViewClick(Sender: TObject);
   procedure miExitClick(Sender: TObject);
   procedure miCustomDotsClick(Sender: TObject);
   procedure miATouchAutoClick(Sender: TObject);
@@ -243,6 +245,7 @@ private
   multinick: string;
   MediaController: TSystemMediaController;
 
+  function dotsInView: integer;
   function setColorMode: boolean;
   procedure SetLang;
   procedure fixWarningPanel;
@@ -390,6 +393,23 @@ implementation
 {$R *.lfm}
 {$I ../../inc/tfuncs.inc}
 
+function TfBG.dotsInView: integer;
+var
+ x: TPaintbox;
+ bottom: integer;
+begin
+  result := 0;
+  for x in TrendDots do begin
+    if x.top < 0 then    // If the dot starts out of the canvas
+       result := min(x.top, result) // Return the dot's position (if smallest known)
+    else begin
+      bottom := x.top+x.height; // Get the pixel position of the bottom of the dot
+      if x.Parent.Height < bottom then // If the bottom end after the height
+        result := max(bottom-x.Parent.Height, result); // Compare the value to prevopus ones and pick the largest
+    end;
+  end;
+
+end;
 
 procedure ApplyRoundedCorners(APanel: TPanel; Radius: Integer);
 {$IFDEF WINDOWS}
@@ -1257,6 +1277,14 @@ begin
   L.height := max(L.height, L.font.size);
 end;
 
+procedure TfBG.miDotsInViewClick(Sender: TObject);
+var
+  i: integer;
+begin
+  i := dotsInView;
+  showmessage(IfThen(i = 0, 'Yes', 'Offset: ' + i.toString));
+end;
+
 procedure TfBG.miExitClick(Sender: TObject);
 begin
   Close;
@@ -1484,10 +1512,19 @@ end;
 procedure TfBG.AdjustGraph;
 var
   l: TPaintBox;
+  da: integer;
 begin
   for l in TrendDots do
     l.top := l.top + round(ClientHeight * DOT_ADJUST);
 
+  da := dotsInView;
+
+  if da <> 0 then
+   for l in TrendDots do begin
+       l.top := l.top - da; // da is negative on top so this is valid both ways
+       if l.top+l.height = height then
+         showmessage('hej');
+   end;
 
 end;
 
