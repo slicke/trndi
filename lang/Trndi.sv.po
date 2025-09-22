@@ -215,6 +215,10 @@ msgstr "Normal"
 msgid "1"
 msgstr "1"
 
+#: tfbg.midotsinview.caption
+msgid "Are dots in view?"
+msgstr ""
+
 #: tfbg.midotsize.caption
 msgctxt "tfbg.midotsize.caption"
 msgid "Dot Size"
@@ -1302,12 +1306,12 @@ msgstr ""
 "2) Gå till Adminverktyg -> Ämnen -- Eller API-hemlighet.\n"
 "3) Om du använder Ämnen:\n"
 "  - Skapa ett ämne med åtminstone rollen \"readable\n"
-"\v  - Kopiera HELA åtkomstnyckeln, exakt som den visas\n"
+"v  - Kopiera HELA åtkomstnyckeln, exakt som den visas\n"
 "4) I Trndi:\n"
-"\v   - Adress: ange din NightScout-adress\n"
+"v   - Adress: ange din NightScout-adress\n"
 "   - Hemlighet: klistra in HELA åtkomstnyckeln (inte bara suffixet).\n"
 "\n"
-"\vOBS: Om din installation använder API-hemligheter, klistra in den som den är."
+"vOBS: Om din installation använder API-hemligheter, klistra in den som den är."
 
 #: uconf.rs_help_ns_v3
 msgid ""
@@ -1326,7 +1330,7 @@ msgid ""
 "Note: If you instead use the legacy API Secret, paste your API Secret value as-is."
 msgstr ""
 "** ALFA DRIVRUTIN - Använd \"NightScout\" för dagligt bruk! **\n"
-"\vNightScout v2 inställningar (använd HELA tokenet):\n"
+"vNightScout v2 inställningar (använd HELA tokenet):\n"
 "\n"
 "1) Öppna din NighScout-sajt (t ex, https://din-sajt).\n"
 "2) Gå till Adminverktyg -> Ämnen -- Eller API-hemlighet.\n"
@@ -1341,6 +1345,14 @@ msgstr ""
 "\n"
 "\n"
 "OBS: Om din installation använder API-hemligheter, klistra in den som den är."
+
+#: uconf.rs_help_xdrip
+msgid ""
+"xDrip setup:\n"
+"\n"
+"Address: your xDrip REST endpoint (base URL).\n"
+"Auth: API secret (plain text; server hashes it)."
+msgstr ""
 
 #: uconf.rs_newver
 #, object-pascal-format
@@ -1418,3 +1430,4 @@ msgstr "Du kan använda skift+<nummerr> för att manuellt sätta synligheten (0 
 #: ufloat.rscustomsize
 msgid "You can hold down shift and plus (+) or minus (-) to change the window size"
 msgstr "Du kan hålla ned skift och plus (+) eller minus (-) för att justera fönstrets storlek"
+

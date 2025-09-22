@@ -287,6 +287,7 @@ RS_HELP_DEX_REGION =
   'If you are unsure, try “Outside USA” first if you live outside the US.'+LineEnding +
   'Your username and password are your Dexcom Account (not Share) credentials.';
 
+RS_HELP_XDRIP = 'xDrip setup:'#13#10''#13#10'Address: your xDrip REST endpoint (base URL).'#13#10'Auth: API secret (plain text; server hashes it).';
 RS_DEFAULT_ACCOUNT = 'Default';
 var 
 fConf: TfConf;
@@ -581,30 +582,44 @@ begin
   Label15.Caption := TrndiAPI.ParamLabel(1);
   lPass.Caption   := TrndiAPI.ParamLabel(2);
 
-  // NightScout (v1)
-  if SameText(cbSys.Text, 'NightScout') then
-  begin
-    Label15.Caption := NightScout.ParamLabel(1);
-    lPass.Caption   := NightScout.ParamLabel(2);
-  end
-  // NightScout v3
-  else if SameText(cbSys.Text, 'NightScout v3') then
-  begin
-    Label15.Caption := NightScout3.ParamLabel(1);
-    lPass.Caption   := NightScout3.ParamLabel(2);
-  end
-  // xDrip
-  else if SameText(cbSys.Text, 'xDrip') then
-  begin
-    Label15.Caption := xDrip.ParamLabel(1);
-    lPass.Caption   := xDrip.ParamLabel(2);
-  end
-  // Dexcom USA / Outside USA
-  else if Pos('Dexcom', cbSys.Text) > 0 then
-  begin
-    Label15.Caption := Dexcom.ParamLabel(1);
-    lPass.Caption   := Dexcom.ParamLabel(2);
-  end;
+
+    case cbSys.Text of
+    'NightScout':
+       begin
+         Label15.Caption := NightScout.ParamLabel(1);
+         lPass.Caption   := NightScout.ParamLabel(2);
+       end;
+    'NightScout v3':
+       begin
+         Label15.Caption := NightScout3.ParamLabel(1);
+         lPass.Caption   := NightScout3.ParamLabel(2);
+       end;
+    'Dexcom (USA)':
+       begin
+         Label15.Caption := Dexcom.ParamLabel(1);
+         lPass.Caption   := Dexcom.ParamLabel(2);
+       end;
+    'Dexcom (Outside USA)':
+       begin
+         Label15.Caption := Dexcom.ParamLabel(1);
+         lPass.Caption   := Dexcom.ParamLabel(2);
+       end;
+    'xDrip':
+       begin
+         Label15.Caption := xDrip.ParamLabel(1);
+         lPass.Caption   := xDrip.ParamLabel(2);
+       end;
+    {$ifdef DEBUG}
+    '* Debug Backend *',
+    '* Debug Missing Backend *',
+    '* Debug Perfect Backend *',
+    '* Debug Edge Backend *':
+       begin
+         Label15.Caption := '<DEBUG IGNORED>';
+         lPass.Caption   := '<DEBUG IGNORED>';
+       end;
+      {$endif}
+    end;
 end;
 
 procedure TfConf.cbUserClick(Sender:TObject);
@@ -701,7 +716,9 @@ begin
   else if Pos('Dexcom', cbSys.Text) > 0 then
     s := RS_HELP_DEX_REGION
   else if SameText(cbSys.Text, 'xDrip') then
-    s := 'xDrip setup:'#13#10''#13#10'Address: your xDrip REST endpoint (base URL).'#13#10'Auth: API secret (plain text; server hashes it).';
+    s := RS_HELP_XDRIP
+  else if cbSys.Text[1] = '*' then
+    s := 'This is a debug backend, it''s used to test Trndi. It should not be used by non-developers!';
 
   if s <> '' then
     ShowMessage(s);

@@ -10,7 +10,6 @@ object fBG: TfBG
   Color = clBlack
   Font.Color = clWhite
   Position = poDesktopCenter
-  LCLVersion = '4.2.0.0'
   OnClose = FormClose
   OnCreate = FormCreate
   OnDblClick = FormDblClick
@@ -142,9 +141,9 @@ object fBG: TfBG
     OnPaint = pnWarningPaint
     object lMissing: TLabel
       Left = 45
-      Height = 16
+      Height = 15
       Top = 7
-      Width = 108
+      Width = 110
       Alignment = taCenter
       Caption = 'No recent readings!'
       Font.Color = clBlack
@@ -439,6 +438,10 @@ object fBG: TfBG
         Caption = 'Announce raw backend data'
         Visible = False
         OnClick = miDebugBackendClick
+      end
+      object miDotsInView: TMenuItem
+        Caption = 'Are dots in view?'
+        OnClick = miDotsInViewClick
       end
       object Separator4: TMenuItem
         Caption = '-'
