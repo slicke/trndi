@@ -271,10 +271,6 @@ msgstr ""
 msgid "+ Add"
 msgstr ""
 
-#: tfconf.bbackendhelp.caption
-msgid "? Backend help"
-msgstr ""
-
 #: tfconf.bremove.caption
 msgid "- Remove"
 msgstr ""
@@ -1243,6 +1239,7 @@ msgstr ""
 
 #: uconf.rs_help_ns_v3
 msgid ""
+"** ALPHA DRIVER - Please use \"NightScout\" for daily use! **\n"
 "NightScout v3 setup (use FULL access token):\n"
 "\n"
 "1) Open your NightScout site (e.g., https://your-site).\n"

@@ -34,6 +34,7 @@ const
   {** Default paths/endpoints. }
   NS3_STATUS   = 'status.json';
   NS3_ENTRIES  = 'entries.json';
+  NS3_SETTINGS = 'settings.json';
 
 type
   {** NightScout v3 API client with bearer authorization.
@@ -49,6 +50,8 @@ type
     function BuildAuthURL: string;
     function GetAuthToken(out Err: string): boolean;
     function BearerHeader: string;
+    // Fetch thresholds using legacy Nightscout status (v1) similar to the v2 controller
+    function FetchLegacyThresholds: boolean;
 
   public
     constructor create(user, pass, extra: string); override;
@@ -164,8 +167,8 @@ end;
 {------------------------------------------------------------------------------
   connect
   -------
-  Acquire bearer JWT, fetch status.json from v3, and extract thresholds and
-  server time calibration.
+  Acquire bearer JWT, fetch status.json from v3 for time calibration,
+  and always fetch thresholds from settings.json.
  ------------------------------------------------------------------------------}
 function NightScout3.connect: boolean;
 var
@@ -175,8 +178,9 @@ var
   serverEpoch: int64;
   UTCDateTime: TDateTime;
   authErr: string;
-  v1resp: string;
-  v1js: TJSONData;
+  node: TJSONData;
+  // no thresholds parsing from v3 status; handled by FetchLegacyThresholds
+  // we no longer try to read thresholds from status
 begin
   Result := false;
   lastErr := '';
@@ -238,22 +242,12 @@ begin
       if (o.IndexOfName('result') <> -1) and (o.Find('result').JSONType = jtObject) then
         topObj := TJSONObject(o.Find('result'));
 
-      // serverTimeEpoch (milliseconds)
-      serverEpoch := topObj.Get('serverTimeEpoch', int64(0));
+      // server time in ms epoch: prefer srvDate (v3), else fall back to serverTimeEpoch
+      serverEpoch := topObj.Get('srvDate', int64(0));
+      if serverEpoch <= 0 then
+        serverEpoch := topObj.Get('serverTimeEpoch', int64(0));
 
-      // Optional thresholds in settings.thresholds
-      settings := topObj.Find('settings') as TJSONObject;
-      if Assigned(settings) then
-      begin
-        thresholds := settings.Find('thresholds') as TJSONObject;
-        if Assigned(thresholds) then
-        begin
-          cgmHi      := thresholds.Get('bgHigh', 0);
-          cgmLo      := thresholds.Get('bgLow', 0);
-          cgmRangeHi := thresholds.Get('bgTargetTop', 0);
-          cgmRangeLo := thresholds.Get('bgTargetBottom', 0);
-        end;
-      end;
+      // thresholds are not parsed from status anymore
 
     finally
       // keep js for serverEpoch check below? No, parsed needed values already
@@ -268,47 +262,7 @@ begin
   end;
 
   // 4) Time calibration
-  if serverEpoch <= 0 then
-  begin
-    // Try fallback to v1 status.json to obtain server time (and optionally thresholds)
-    if TrndiNative.getURL(FSiteBase + '/api/v1/status.json', v1resp) then
-    begin
-      v1js := nil;
-      try
-        v1js := GetJSON(v1resp);
-        if Assigned(v1js) and (v1js.JSONType = jtObject) then
-        begin
-          serverEpoch := TJSONObject(v1js).Get('serverTimeEpoch', int64(0));
-
-          // thresholds may also be present in v1; backfill if missing
-          if (not Assigned(thresholds)) or
-             ((cgmHi = 0) and (cgmLo = 0) and (cgmRangeHi = 0) and (cgmRangeLo = 0)) then
-          begin
-            settings := TJSONObject(v1js).Find('settings') as TJSONObject;
-            if Assigned(settings) then
-            begin
-              thresholds := settings.Find('thresholds') as TJSONObject;
-              if Assigned(thresholds) then
-              begin
-                if cgmHi = 0 then      cgmHi      := thresholds.Get('bgHigh', 0);
-                if cgmLo = 0 then      cgmLo      := thresholds.Get('bgLow', 0);
-                if cgmRangeHi = 0 then cgmRangeHi := thresholds.Get('bgTargetTop', 0);
-                if cgmRangeLo = 0 then cgmRangeLo := thresholds.Get('bgTargetBottom', 0);
-              end;
-            end;
-          end;
-        end;
-      finally
-        if Assigned(v1js) then v1js.Free;
-      end;
-    end;
-
-    // If still missing, do not hard fail at startup; continue with neutral timeDiff
-    if serverEpoch <= 0 then
-    begin
-      serverEpoch := 0; // mark as missing, timeDiff will be 0
-    end;
-  end;
+  // serverEpoch now set during JSON parse; no further JSON access here
 
   if serverEpoch > 0 then
   begin
@@ -323,7 +277,60 @@ begin
     timeDiff := 0;
   end;
 
+  // 5) Fetch thresholds using legacy status (aligns with v2 controller semantics)
+  FetchLegacyThresholds; // thresholds remain defaults if this fails
+
   Result := true;
+end;
+
+{------------------------------------------------------------------------------
+  FetchLegacyThresholds
+  ---------------------
+  Try to read thresholds from Nightscout v1 status.json (settings.thresholds),
+  first attempting an authenticated request via native.request with baseUrl
+  temporarily redirected to /api/v1/, then falling back to an unauthenticated
+  absolute GET. Returns true if thresholds were found and set.
+ ------------------------------------------------------------------------------}
+function NightScout3.FetchLegacyThresholds: boolean;
+var
+  resp: string;
+  js: TJSONData;
+  o, settings, th: TJSONObject;
+begin
+  Result := false;
+
+  // Attempt via native.request using absolute v1 URL and bearer header (no prefix)
+  resp := native.request(false, FSiteBase + '/api/v1/status.json', [], '', BearerHeader, false {no prefix});
+
+  // If empty or app-level error, try plain GET
+  if (Trim(resp) = '') or ((resp <> '') and (resp[1] = '+')) then
+    if not TrndiNative.getURL(FSiteBase + '/api/v1/status.json', resp) then
+      Exit;
+
+  try
+    js := GetJSON(resp);
+  except
+    Exit;
+  end;
+
+  try
+    if js.JSONType <> jtObject then Exit;
+    o := TJSONObject(js);
+    settings := nil;
+    if (o.IndexOfName('settings') <> -1) and (o.Find('settings').JSONType = jtObject) then
+      settings := TJSONObject(o.Find('settings'));
+    if Assigned(settings) and (settings.Find('thresholds') <> nil) and (settings.Find('thresholds').JSONType = jtObject) then
+    begin
+      th := TJSONObject(settings.Find('thresholds'));
+      cgmHi      := th.Get('bgHigh', 0);
+      cgmLo      := th.Get('bgLow', 0);
+      cgmRangeHi := th.Get('bgTargetTop', 0);
+      cgmRangeLo := th.Get('bgTargetBottom', 0);
+      Result := true;
+    end;
+  finally
+    js.Free;
+  end;
 end;
 
 {------------------------------------------------------------------------------
@@ -340,6 +347,8 @@ var
   t: BGTrend;
   s, dev: string;
   params: array of string;
+  fbparams: array of string;
+  oldBase: string;
 
   function ExtractArrayNode(const jd: TJSONData): TJSONData;
   var
@@ -380,8 +389,16 @@ begin
 
   res := resp;
 
-  if Pos('Unauthorized', resp) > 0 then
-    Exit;
+  // If v3 denied or errored, fall back to v1 entries
+  if (Trim(resp) = '') or (Pos('Unauthorized', resp) > 0) or ((resp <> '') and (resp[1] = '+')) then
+  begin
+    // v1 typically supports count parameter and returns newest-first
+    SetLength(fbparams, 1);
+    fbparams[0] := 'count=' + IntToStr(maxNum);
+    resp := native.request(false, FSiteBase + '/api/v1/entries.json', fbparams, '', BearerHeader, false {no prefix});
+    if Trim(resp) = '' then Exit;
+    res := resp;
+  end;
 
   // Parse JSON and extract entries array
   js := nil;
@@ -395,8 +412,31 @@ begin
   arrNode := ExtractArrayNode(js);
   if (arrNode = nil) or (arrNode.JSONType <> jtArray) then
   begin
-    js.Free;
-    Exit;
+    // Try v1 fallback if we haven't already and current payload isn't an array
+    SetLength(fbparams, 1);
+    fbparams[0] := 'count=' + IntToStr(maxNum);
+    resp := native.request(false, FSiteBase + '/api/v1/entries.json', fbparams, '', BearerHeader, false {no prefix});
+    if Trim(resp) = '' then
+    begin
+      js.Free;
+      Exit;
+    end;
+    FreeAndNil(js);
+    try
+      js := GetJSON(resp);
+    except
+      on E: Exception do
+      begin
+        js.Free;
+        Exit;
+      end;
+    end;
+    arrNode := ExtractArrayNode(js);
+    if (arrNode = nil) or (arrNode.JSONType <> jtArray) then
+    begin
+      js.Free;
+      Exit;
+    end;
   end;
 
   SetLength(Result, arrNode.Count);
