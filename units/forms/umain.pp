@@ -49,7 +49,7 @@ interface
 
 uses
 trndi.strings, LCLTranslator, Classes, Menus, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, ExtCtrls,
-trndi.api.dexcom, trndi.api.nightscout, trndi.types, math, DateUtils, FileUtil, LclIntf, TypInfo, LResources,
+trndi.api.dexcom, trndi.api.nightscout, trndi.api.nightscout3, trndi.types, math, DateUtils, FileUtil, LclIntf, TypInfo, LResources,
 slicke.ux.alert, usplash, Generics.Collections, trndi.funcs, Trndi.native.base,
 SystemMediaController,
 {$ifdef TrndiExt}
@@ -980,6 +980,8 @@ begin
   case native.GetSetting('remote.type') of
     'NightScout':
       api := NightScout.Create(apiTarget, apiCreds, '');
+    'NightScout v3':
+      api := NightScout3.Create(apiTarget, apiCreds, '');
     'Dexcom (USA)':
       api := Dexcom.Create(apiTarget, apiCreds, 'usa');
     'Dexcom (Outside USA)':
@@ -2203,6 +2205,12 @@ begin
   try
     with native do
     begin
+      // Populate available backends
+      fConf.cbSys.Items.Add('NightScout');
+      fConf.cbSys.Items.Add('NightScout v3');
+      fConf.cbSys.Items.Add('Dexcom (USA)');
+      fConf.cbSys.Items.Add('Dexcom (Outside USA)');
+      fConf.cbSys.Items.Add('xDrip');
       {$ifdef DEBUG}
       fConf.cbSys.Items.Add('* Debug Backend *');
       fConf.cbSys.Items.Add('* Debug Missing Backend *');
