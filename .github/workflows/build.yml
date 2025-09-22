@@ -1,4 +1,4 @@
-name: Multi-Platform Builder
+name: Build & Release (All Platforms)
 
 on:
   push:
