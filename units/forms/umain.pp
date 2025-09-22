@@ -431,10 +431,10 @@ begin
     end;
   end;
 
-(*  if adjustSide = tbTrue then
+  if adjustSide = tbTrue then
    SHowMessage('high adjusted')
-  else
-   SHowMessage('low adjusted');    *)
+  else if adjustSide = tbFalse then
+   SHowMessage('low adjusted');
 end;
 
 procedure ApplyRoundedCorners(APanel: TPanel; Radius: Integer);
@@ -1893,7 +1893,7 @@ end;
 procedure TfBG.miDotNormalClick(Sender:TObject);
 begin
   dotscale := StrToInt((sender as TMenuItem).Hint);
-  native.SetSetting('ux.dot_scale', dotscale.ToString);
+  native.SetSetting('ux.dot_scale', dotscale.toString);
   FormResize(fBG);
 end;
 

@@ -10,7 +10,6 @@ object fBG: TfBG
   Color = clBlack
   Font.Color = clWhite
   Position = poDesktopCenter
-  LCLVersion = '4.2.0.0'
   OnClose = FormClose
   OnCreate = FormCreate
   OnDblClick = FormDblClick
@@ -373,12 +372,12 @@ object fBG: TfBG
         end
         object miDotBig: TMenuItem
           Caption = 'Big'
-          Hint = '3'
+          Hint = '2'
           OnClick = miDotNormalClick
         end
         object miDotHuge: TMenuItem
           Caption = 'Huge'
-          Hint = '6'
+          Hint = '3'
           OnClick = miDotNormalClick
         end
         object misep: TMenuItem
