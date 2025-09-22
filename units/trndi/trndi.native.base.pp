@@ -873,7 +873,7 @@ begin
     with TNSHTTPSendAndReceive.Create do
     try
       if prefix then
-        address := Format('%s/%s', [baseurl, endpoint]);
+        address := Format('%s/%s', [baseurl, endpoint])
       else
         address := endpoint;
       if post then
@@ -1002,7 +1002,7 @@ begin
     // Set user-agent
     client.AddHeader('User-Agent', useragent);
     if prefix then
-      address := Format('%s/%s', [baseurl, endpoint]);
+      address := Format('%s/%s', [baseurl, endpoint])
     else
       address := endpoint;
 
