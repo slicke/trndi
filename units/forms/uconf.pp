@@ -48,12 +48,11 @@ TfConf = class(TForm)
   btUserSave: TButton;
   Button1: TButton;
   Button2: TButton;
-  Button3: TButton;
   btReset: TButton;
   bTestAnnounce: TButton;
+  Button3: TButton;
   bvExt: TBevel;
   bvExt1: TBevel;
-  cbCI: TCheckBox;
   cbCust: TCheckBox;
   cbLang: TComboBox;
   cbMultiTouch: TCheckBox;
@@ -146,6 +145,8 @@ TfConf = class(TForm)
   Panel5: TPanel;
   Panel6: TPanel;
   Panel7: TPanel;
+  Panel8: TPanel;
+  Panel9: TPanel;
   pnBackend: TPanel;
   pnHelp: TPanel;
   pUserColor: TPanel;
@@ -162,7 +163,6 @@ TfConf = class(TForm)
   tsCustom: TTabSheet;
   tsDisplay: TTabSheet;
   tsGeneral: TTabSheet;
-  tsInstall: TTabSheet;
   tsIntegration: TTabSheet;
   tsMulti: TTabSheet;
   tsSystem: TTabSheet;
@@ -813,58 +813,50 @@ begin
   Openurl('https://github.com/slicke/trndi/blob/main/LANGUAGES.md');
 end;
 
+{------------------------------------------------------------------------------
+  Apply the display panel's font to preview labels.
+
+  This lets the user quickly see how the selected UI font looks on key
+  readouts (value, arrow, and "ago") without changing global styles.
+------------------------------------------------------------------------------}
 procedure TfConf.Button2Click(Sender:TObject);
 begin
-lVal.font.name := pnDisplay.font.name;
-lArrow.font.name := pnDisplay.font.name;
-lAgo.font.name := pnDisplay.font.name;
+  // Mirror the panel font to individual preview labels
+  lVal.Font.Name := pnDisplay.Font.Name;   // main value readout
+  lArrow.Font.Name := pnDisplay.Font.Name; // trend arrow glyph/text
+  lAgo.Font.Name := pnDisplay.Font.Name;   // time since last reading
 end;
 
+{------------------------------------------------------------------------------
+  Check for the latest Trndi release (final, all platforms) and offer to open
+  the downloads page. Pre-releases and platform-specific filtering are no
+  longer used.
+
+  Flow:
+  - Fetch https://api.github.com/repos/slicke/trndi/releases/latest
+  - Compare with current version via HasNewerRelease(..., pre=false)
+  - Resolve a suitable asset URL via GetNewerVersionURL(res)
+  - Prompt the user to open the browser
+------------------------------------------------------------------------------}
 procedure TfConf.Button3Click(Sender:TObject);
-  function GetCurrentPlatform: string;
-  begin
-    {$IFDEF WINDOWS}
-    Result := 'Windows';
-    {$ENDIF}
-
-    {$IFDEF DARWIN}
-    Result := 'Mac';
-    {$ENDIF}
-
-    {$IFDEF LINUX}
-    Result := 'Linux';
-    {$ENDIF}
-  end;
 var
-  res, r, rn, pl, s: string;
-  rok, pre: boolean;
+  res,   // raw JSON from GitHub API
+  r,     // download URL
+  rn,    // latest version name/tag
+  s: string;
+  rok: boolean;
 begin
-  pre := cbCI.Checked;
+  TrndiNative.getURL('https://api.github.com/repos/slicke/trndi/releases/latest', res);
+  rok := HasNewerRelease(res, rn, false);
 
-  //tnative := TrndiNative.create('Trndi/'+GetProductVersion('2'));
-  if pre then begin
-    TrndiNative.getURL('https://api.github.com/repos/slicke/trndi/releases', res);
-    rok := HasNewerRelease(res, rn, true);
-    pl := GetCurrentPlatform;
-  end else begin
-    TrndiNative.getURL('https://api.github.com/repos/slicke/trndi/releases/latest', res);
-    rok := HasNewerRelease(res, rn, false);
-    pl := '';
-  end;
-
-  if rok then begin
-    r := GetNewerVersionURL(res, cbCI.Checked, pl);
-    if r = '' then
-       r := GetNewerVersionURL(res);
-
-    if not pl.isempty then
-      s := Format(RS_NEWVER_PRE, [pl])
-    else
-      s := Format(RS_NEWVER, [rn]);
-
-     if UXDialog(uxdAuto, RS_NEWVER_CAPTION, s, [mbYes, mbNo], mtInformation) = mrYes then
-       OpenURL(r);
-  end else
+  if rok then
+  begin
+    r := GetNewerVersionURL(res);
+    s := Format(RS_NEWVER, [rn]);
+    if UXDialog(uxdAuto, RS_NEWVER_CAPTION, s, [mbYes, mbNo], mtInformation) = mrYes then
+      OpenURL(r);
+  end
+  else
     ShowMessage(RS_UPTODATE);
 end;
 

@@ -318,10 +318,6 @@ msgstr ""
 msgid "Settings"
 msgstr ""
 
-#: tfconf.cbci.caption
-msgid "Include preview versions (may be buggy!)"
-msgstr ""
-
 #: tfconf.cbcust.caption
 msgid "Use custom values"
 msgstr ""
@@ -606,10 +602,6 @@ msgstr ""
 
 #: tfconf.tsgeneral.caption
 msgid "General"
-msgstr ""
-
-#: tfconf.tsinstall.caption
-msgid "Update"
 msgstr ""
 
 #: tfconf.tsintegration.caption
