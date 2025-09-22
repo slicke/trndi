@@ -186,7 +186,8 @@ msgid "Big"
 msgstr ""
 
 #: tfbg.midotbig.hint
-msgid "3"
+msgctxt "tfbg.midotbig.hint"
+msgid "2"
 msgstr ""
 
 #: tfbg.midothuge.caption
@@ -194,7 +195,8 @@ msgid "Huge"
 msgstr ""
 
 #: tfbg.midothuge.hint
-msgid "6"
+msgctxt "tfbg.midothuge.hint"
+msgid "3"
 msgstr ""
 
 #: tfbg.midotnormal.caption

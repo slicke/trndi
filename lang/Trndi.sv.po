@@ -199,7 +199,10 @@ msgid "Big"
 msgstr "Stor"
 
 #: tfbg.midotbig.hint
-msgid "3"
+#, fuzzy
+#| msgid "3"
+msgctxt "tfbg.midotbig.hint"
+msgid "2"
 msgstr "3"
 
 #: tfbg.midothuge.caption
@@ -207,7 +210,10 @@ msgid "Huge"
 msgstr "Enorm"
 
 #: tfbg.midothuge.hint
-msgid "6"
+#, fuzzy
+#| msgid "6"
+msgctxt "tfbg.midothuge.hint"
+msgid "3"
 msgstr "6"
 
 #: tfbg.midotnormal.caption
