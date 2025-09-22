@@ -90,6 +90,7 @@ end;
 
 TfBG = class(TForm)
   apMain: TApplicationProperties;
+  lRef: TLabel;
   lDot10: TPaintBox;
   lDot2: TPaintBox;
   lDot3: TPaintBox;
@@ -107,11 +108,9 @@ TfBG = class(TForm)
   miCustomDots: TMenuItem;
   miDebugBackend: TMenuItem;
   miDotVal: TMenuItem;
-  misep: TMenuItem;
   miATouchAuto: TMenuItem;
   miATouchNo: TMenuItem;
   miATouchYes: TMenuItem;
-  miADotAdjust: TMenuItem;
   miASystemInfo: TMenuItem;
   miADots: TMenuItem;
   miATouch: TMenuItem;
@@ -393,22 +392,49 @@ implementation
 {$R *.lfm}
 {$I ../../inc/tfuncs.inc}
 
+// Returns vertical offset needed to bring all trend dots fully inside their parent.
+// Sign convention: negative = dots are above (need to move down); positive = dots are below (need to move up).
 function TfBG.dotsInView: integer;
 var
- x: TPaintbox;
- bottom: integer;
+  x: TPaintBox;
+  bottom, overflow: integer;
+  adjustSide: TTrndiBool;
 begin
-  result := 0;
-  for x in TrendDots do begin
-    if x.top < 0 then    // If the dot starts out of the canvas
-       result := min(x.top, result) // Return the dot's position (if smallest known)
-    else begin
-      bottom := x.top+x.height; // Get the pixel position of the bottom of the dot
-      if x.Parent.Height < bottom then // If the bottom end after the height
-        result := max(bottom-x.Parent.Height, result); // Compare the value to prevopus ones and pick the largest
+  Result := 0;
+  adjustSide := tbUnknown; // We can have both hi and lows; lock to first side encountered
+
+  for x in TrendDots do
+  begin
+    // Use the actual control size, not font metrics, to determine visibility
+    bottom := x.Top + x.Height;
+
+    // Out-of-top (negative top)
+    if (x.Top < 0) then
+    begin
+      if adjustSide in [tbTrue, tbUnknown] then
+      begin
+        // Pick the smallest (most negative) top
+        Result := Min(Result, x.Top);
+        adjustSide := tbTrue;
+      end;
+    end
+    // Out-of-bottom
+    else if (bottom > x.Parent.ClientHeight) then
+    begin
+      if adjustSide in [tbFalse, tbUnknown] then
+      begin
+        overflow := bottom - x.Parent.ClientHeight;
+        // Pick the largest overflow
+        Result := Max(Result, overflow);
+        adjustSide := tbFalse;
+      end;
     end;
   end;
 
+(*  if adjustSide = tbTrue then
+   SHowMessage('high adjusted')
+  else
+   SHowMessage('low adjusted');    *)
 end;
 
 procedure ApplyRoundedCorners(APanel: TPanel; Radius: Integer);
@@ -1238,13 +1264,14 @@ end;
 
 procedure TfBG.DotPaint(Sender: TObject);
 var
-  X, Y: Integer;
+  tw, th: Integer;
   S, fontn: String;
   L: TPaintBox;
   hasfont: boolean;
 begin
   L := Sender as TPaintBox;
   S := L.Caption;
+  L.AutoSize := false;
 
   if S = DOT_GRAPH then
      hasFont := FontGUIInList(fontn)
@@ -1253,28 +1280,25 @@ begin
 
   with L.Canvas do
   begin
-    // Transparent
+    // Transparent background
     Brush.Style := bsClear;
 
     if hasFont then
       Font.Name := fontn;
 
-  //  Font.Size := 32 + (15 * dotscale);
-    //if S <> DOT_GRAPH then
-    //  Font.Size := Font.Size div 10;
-
     Font.Size := L.Font.Size;
 
-    // Center horizintally
-    X := (L.Width - TextWidth(S)) div 2;
-    // Center vertically -1
-    Y := (L.Height - TextHeight(S)) div 2 - 1;
+    // Measure exact text size
+    tw := TextWidth(S);
+    th := TextHeight(S);
 
-    // Draw
-    TextOut(X, Y, S);
+    // Size the paintbox to fit the text tightly to avoid extra whitespace
+    L.Width := tw;
+    L.Height := th;
+
+    // Draw at (0,0); since control fits text, no centering or offsets needed
+    TextOut(0, 0, S);
   end;
-  L.width := max(L.width, L.font.size);
-  L.height := max(L.height, L.font.size);
 end;
 
 procedure TfBG.miDotsInViewClick(Sender: TObject);
@@ -1522,9 +1546,10 @@ begin
   if da <> 0 then
    for l in TrendDots do begin
        l.top := l.top - da; // da is negative on top so this is valid both ways
-       if l.top+l.height = height then
-         showmessage('hej');
    end;
+
+  lRef.Top := lDot1.Top;
+  lRef.Caption := lDot1.Hint;
 
 end;
 
@@ -1575,10 +1600,18 @@ end;
 
 // Scales a dot's font size
 procedure TfBG.ResizeDot(l: TPaintBox; c, ix: integer);
+var
+  th, tw, minSize: integer;
 begin
-  l.AutoSize := true;
+  l.AutoSize := false;
   l.Font.Size := Max((lVal.Font.Size div 8)*dotscale, 28); // Ensure minimum font size
-  LogMessage(Format('TrendDots[%d] resized with Font Size = %d.', [ix, l.Font.Size]));
+  // Tighten control size to actual text metrics of the dot glyph
+  tw := l.Canvas.TextWidth(DOT_GRAPH);
+  th := l.Canvas.TextHeight(DOT_GRAPH);
+  minSize := Max(th, l.Font.Size);
+  l.Width := tw;
+  l.Height := minSize;
+  LogMessage(Format('TrendDots[%d] resized with Font Size = %d, W=%d, H=%d.', [ix, l.Font.Size, l.Width, l.Height]));
 end;
 
 // Sets the width (NOT the font) of a dot
@@ -3450,7 +3483,8 @@ begin
     l.Tag := H * 100 + M; // 10:00 = 1000
 
     l.Caption := DOT_GRAPH;
-    setPointHeight(l, Reading.convert(mmol), fBG.ClientHeight);
+  // Use the dot's parent client height to align placement with visibility checks
+  setPointHeight(l, Reading.convert(mmol), l.Parent.ClientHeight);
 
     // Sätt färger baserat på värdet
     l.Font.Color := DetermineColorForReading(Reading);

@@ -10,6 +10,7 @@ object fBG: TfBG
   Color = clBlack
   Font.Color = clWhite
   Position = poDesktopCenter
+  LCLVersion = '4.2.0.0'
   OnClose = FormClose
   OnCreate = FormCreate
   OnDblClick = FormDblClick
@@ -183,11 +184,20 @@ object fBG: TfBG
     Top = 0
     Width = 50
     Caption = 'Off Reading'
+    ClientHeight = 194
+    ClientWidth = 50
     DoubleBuffered = True
     ParentBackground = False
     ParentDoubleBuffered = False
     TabOrder = 4
     OnPaint = pnOffReadingPaint
+    object lRef: TLabel
+      Left = 0
+      Height = 15
+      Top = 172
+      Width = 14
+      Caption = '0,?'
+    end
   end
   object lDot1: TPaintBox
     Left = 16
