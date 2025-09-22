@@ -338,11 +338,6 @@ msgstr "Kolla uppdatering"
 msgid "Settings"
 msgstr "Inställningar"
 
-#: tfconf.cbci.caption
-msgctxt "tfconf.cbci.caption"
-msgid "Include preview versions (may be buggy!)"
-msgstr "Inkludera förhandsversioner (kan vara buggiga!)"
-
 #: tfconf.cbcust.caption
 msgid "Use custom values"
 msgstr "Använd egna värden"
@@ -632,10 +627,6 @@ msgstr "Visning"
 #: tfconf.tsgeneral.caption
 msgid "General"
 msgstr "Allmänt"
-
-#: tfconf.tsinstall.caption
-msgid "Update"
-msgstr "Uppdatera"
 
 #: tfconf.tsintegration.caption
 msgid "Integrations"
