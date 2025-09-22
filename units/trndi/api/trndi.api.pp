@@ -117,6 +117,18 @@ type
     function checkActive: boolean;
 
   public
+    {** Provide a backend-specific caption for parameter labels in Settings.
+        Index mapping (by convention):
+        - 1: Label above the first edit (e.g., server URL or username)
+        - 2: Label above the second edit (e.g., API key or password)
+        - 3: Label above the optional third edit ("Extra"), if used
+
+        Subclasses should override to supply meaningful texts.
+
+        @param(Index 1..3 selecting which label to return)
+        @returns(Caption text; empty string if not applicable)
+     }
+    class function ParamLabel(Index: integer): string; virtual;
     {** Retrieve BG readings with optional extras path/params.
         This overload captures the raw response in a string.
 
@@ -432,6 +444,21 @@ var
   res: string;
 begin
   Result := getReadings(minNum, maxNum, extras, res);
+end;
+
+{------------------------------------------------------------------------------
+  Default parameter label provider for Settings UI.
+  Subclasses override to provide backend-specific captions.
+------------------------------------------------------------------------------}
+class function TrndiAPI.ParamLabel(Index: integer): string;
+begin
+  case Index of
+    1: Result := 'Server Address';
+    2: Result := 'API Key';
+    3: Result := 'Extra (optional)';
+  else
+    Result := '';
+  end;
 end;
 
 end.

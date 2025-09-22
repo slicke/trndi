@@ -108,6 +108,13 @@ type
         @returns(True on success; otherwise False and @code(errormsg) is set)
      }
     function Connect: boolean; override;
+
+    {** UI parameter label provider (override).
+        1: xDrip URL
+        2: API Secret (plain text)
+        3: (unused)
+     }
+    class function ParamLabel(Index: integer): string; override;
   end;
 
 implementation
@@ -237,6 +244,19 @@ begin
   cgmRangeLo := 0;
 
   Result := true;
+end;
+
+{------------------------------------------------------------------------------
+  Provide parameter label captions for Settings UI (xDrip backend).
+------------------------------------------------------------------------------}
+class function xDrip.ParamLabel(Index: integer): string;
+begin
+  case Index of
+    1: Result := 'xDrip URL';
+    2: Result := 'API Secret';
+  else
+    Result := inherited ParamLabel(Index);
+  end;
 end;
 
 end.

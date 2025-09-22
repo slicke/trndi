@@ -134,6 +134,12 @@ type
         @returns(Array of @code(BGReading); may be empty if none/failed)
      }
     function GetReadings(AMinutes, AMaxCount: integer; extras: string; out res: string): BGResults; override;
+    {** UI parameter label provider (override).
+        1: Dexcom Username
+        2: Dexcom Password
+        3: Region (use "usa" for US servers)
+     }
+    class function ParamLabel(Index: integer): string; override;
 
   published
     {** The effective base URL used for API requests. }
@@ -426,6 +432,20 @@ begin
   cgmLo      :=  60;
   cgmRangeHi := 159;
   cgmRangeLo :=  61;
+end;
+
+{------------------------------------------------------------------------------
+  Provide parameter label captions for Settings UI (Dexcom backend).
+------------------------------------------------------------------------------}
+class function Dexcom.ParamLabel(Index: integer): string;
+begin
+  case Index of
+    1: Result := 'Dexcom Username';
+    2: Result := 'Dexcom Password';
+    3: Result := 'Region ("usa" or empty)';
+  else
+    Result := inherited ParamLabel(Index);
+  end;
 end;
 
 end.

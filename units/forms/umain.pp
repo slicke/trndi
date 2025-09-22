@@ -2205,6 +2205,7 @@ begin
   try
     with native do
     begin
+      fConf.cbSys.Items.Clear;
       // Populate available backends
       fConf.cbSys.Items.Add('NightScout');
       fConf.cbSys.Items.Add('NightScout v3');

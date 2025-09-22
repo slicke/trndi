@@ -271,6 +271,10 @@ msgstr ""
 msgid "+ Add"
 msgstr ""
 
+#: tfconf.bbackendhelp.caption
+msgid "? Backend help"
+msgstr ""
+
 #: tfconf.bremove.caption
 msgid "- Remove"
 msgstr ""
@@ -1207,6 +1211,50 @@ msgstr ""
 
 #: uconf.rs_hastouch
 msgid "Shows if Trndi detected a touch screen"
+msgstr ""
+
+#: uconf.rs_help_dex_region
+msgid ""
+"Dexcom region selection:\n"
+"\n"
+"Choose the server based on your account region:\n"
+"• Dexcom (USA): for accounts served by share2.dexcom.com\n"
+"• Dexcom (Outside USA): for accounts served by shareous1.dexcom.com\n"
+"\n"
+"If you are unsure, try “Outside USA” first if you live outside the US.\n"
+"Your username and password are your Dexcom Account (not Share) credentials."
+msgstr ""
+
+#: uconf.rs_help_ns_v2
+msgid ""
+"NightScout v2 setup (use FULL access token):\n"
+"\n"
+"1) Open your NightScout site (e.g., https://your-site).\n"
+"2) Go to Admin -> Tokens — or API Secret.\n"
+"3) If you use Tokens:\n"
+"   - Create a token with at least READ scope.\n"
+"   - Copy the FULL access token value exactly as shown.\n"
+"4) In Trndi:\n"
+"   - Address: enter your NightScout URL\n"
+"   - Auth: paste the FULL access token (not just a suffix).\n"
+"\n"
+"Note: If you instead use the legacy API Secret, paste your API Secret value as-is."
+msgstr ""
+
+#: uconf.rs_help_ns_v3
+msgid ""
+"NightScout v3 setup (use FULL access token):\n"
+"\n"
+"1) Open your NightScout site (e.g., https://your-site).\n"
+"2) Go to Admin -> Tokens — or API Secret.\n"
+"3) If you use Tokens:\n"
+"   - Create a token with at least READ scope.\n"
+"   - Copy the FULL access token value exactly as shown.\n"
+"4) In Trndi:\n"
+"   - Address: enter your NightScout URL\n"
+"   - Auth: paste the FULL access token.\n"
+"\n"
+"Note: If you instead use the legacy API Secret, paste your API Secret value as-is."
 msgstr ""
 
 #: uconf.rs_newver

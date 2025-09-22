@@ -86,7 +86,12 @@ type
         @returns(Array of @code(BGReading); empty on errors or unauthorized)
      }
     function getReadings(minNum, maxNum: integer; extras: string; out res: string): BGResults; override;
-
+    {** UI parameter label provider (override).
+      1: NightScout URL
+      2: API Secret (plain text)
+      3: (unused)
+     }
+    class function ParamLabel(Index: integer): string; override;
   private
     // (no private members)
 
@@ -311,6 +316,19 @@ begin
       // Classify reading level relative to configured thresholds.
       result[i].level := getLevel(result[i].val);
     end;
+end;
+
+{------------------------------------------------------------------------------
+  Provide parameter label captions for Settings UI (NightScout backend).
+------------------------------------------------------------------------------}
+class function NightScout.ParamLabel(Index: integer): string;
+begin
+  case Index of
+    1: Result := 'NightScout URL';
+    2: Result := 'API Secret';
+  else
+    Result := inherited ParamLabel(Index);
+  end;
 end;
 
 end.
