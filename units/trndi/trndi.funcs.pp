@@ -38,8 +38,8 @@ BG_API_MIN = 2; // NS can't read lower
 BG_API_MAX = 22.2; // NS can't read higher
 BG_REFRESH = 300000; // 5 min refresh
 
-DOT_GRAPH: UnicodeString = #$2B24;  // Circle
-DOT_FRESH = '☉';
+DOT_GRAPH: UnicodeString = WideChar($2B24);  // Circle
+DOT_FRESH: UnicodeString = WideChar($2600);
 
 APP_BUILD_DATE = {$I %DATE%}; // Returns "2025/07/21"
 APP_BUILD_TIME = {$I %TIME%}; // Returns "14:30:25"
