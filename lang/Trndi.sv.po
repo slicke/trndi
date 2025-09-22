@@ -121,6 +121,10 @@ msgstr "Värde"
 msgid "No recent readings!"
 msgstr "Inga färska avläsningar!"
 
+#: tfbg.lref.caption
+msgid "0,?"
+msgstr ""
+
 #: tfbg.ltir.caption
 msgid "Time In Range"
 msgstr "Tid i område"

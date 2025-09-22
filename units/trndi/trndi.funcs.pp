@@ -38,7 +38,7 @@ BG_API_MIN = 2; // NS can't read lower
 BG_API_MAX = 22.2; // NS can't read higher
 BG_REFRESH = 300000; // 5 min refresh
 
-DOT_GRAPH =  '•';
+DOT_GRAPH =  '⚫';
 DOT_FRESH = '☉';
 
 APP_BUILD_DATE = {$I %DATE%}; // Returns "2025/07/21"
@@ -214,9 +214,9 @@ const
 var
   Padding, UsableHeight, Position: Integer;
 begin
-  // Define padding and usable height for scaling
-  Padding := Round(ClientHeight * 0.1); // 10% of the client height
-  UsableHeight := ClientHeight - (Padding * 2);
+  // Define padding and usable height for scaling based on provided client height
+  Padding := Round(clientHeight * 0.1); // 10% of the client height
+  UsableHeight := clientHeight - (Padding * 2);
 
   // Clamp Value within range
   if Value < GraphMin then
@@ -228,7 +228,8 @@ begin
   Position := Padding + Round((Value - GraphMin) / (GraphMax - GraphMin) * UsableHeight);
 
   // Apply the calculated position to the label's Top property
-  L.Top := ClientHeight - Position;
+  // Place dot relative to the same clientHeight reference. Keep 1px inside bottom edge
+  L.Top := (clientHeight - Position) - 1;
 
   // Optional debug/logging to verify placement
   LogMessage(Format('Label %s: Value=%.2f, Top=%d', [L.Name, Value, L.Top]));
