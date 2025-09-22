@@ -1,8 +1,8 @@
-[![Linux ARM64 Builder (Qt6)](https://github.com/slicke/trndi/actions/workflows/build-linux-arm64.yml/badge.svg)](https://github.com/slicke/trndi/actions/workflows/build-linux-arm64.yml) [![Linux Builder (Qt6)](https://github.com/slicke/trndi/actions/workflows/build-linux.yml/badge.svg)](https://github.com/slicke/trndi/actions/workflows/build-linux.yml) [![macOS Builder](https://github.com/slicke/trndi/actions/workflows/build-macos.yml/badge.svg)](https://github.com/slicke/trndi/actions/workflows/build-macos.yml) [![Windows Builder](https://github.com/slicke/trndi/actions/workflows/build-windows.yml/badge.svg)](https://github.com/slicke/trndi/actions/workflows/build-windows.yml)
+[![Build & Release (All Platforms)](https://github.com/slicke/trndi/actions/workflows/build.yml/badge.svg?branch=main&event=push)](https://github.com/slicke/trndi/actions/workflows/build.yml)
 
 ![Trndi](doc/img/trndi-logo.png)
 
-# Trndi - CGM data on desktop and RaspberryPi<br><sup>_Nightscout - Dexcom - xDrip WiFi_</sup> 
+# Trndi - CGM data on Desktop and RaspberryPi<br><sup>_Nightscout - Dexcom - xDrip WiFi_</sup> 
 <b> Windows - macOS - Linux - RaspberryPi </b>
 ![Windows](doc/img/img_win.png)
 <br>Windows 11
