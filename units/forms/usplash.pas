@@ -5,7 +5,7 @@ unit usplash;
 interface
 
 uses
-  Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls;
+  Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls, LCLType;
 
 type
 
@@ -17,6 +17,8 @@ type
     lInfo: TLabel;
     lSplashWarn:TLabel;
     procedure FormCreate(Sender: TObject);
+    procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+    procedure FormKeyPress(Sender: TObject; var Key: char);
     procedure Image1Click(Sender: TObject);
   private
 
@@ -43,6 +45,18 @@ begin
   {$ifdef X_LINUXBSD}
      lSplashWarn.Font.Size := 8;
   {$endif}
+end;
+
+procedure TfSplash.FormKeyDown(Sender: TObject; var Key: Word;
+  Shift: TShiftState);
+begin
+    if key = VK_ESCAPE then
+     Hide;
+end;
+
+procedure TfSplash.FormKeyPress(Sender: TObject; var Key: char);
+begin
+
 end;
 
 end.
