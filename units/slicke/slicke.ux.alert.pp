@@ -323,6 +323,7 @@ type
     @param dumpbg Background color for dump panel.
     @param dumptext Text color for dump panel.
     @param icon Emoji icon (default @code(uxmtOK)).
+    @param scale The size of the text box (multiplyer)
     @returns Modal result.
   }
   function ExtSuccEx(const dialogsize: TUXDialogSize;
