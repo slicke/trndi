@@ -54,7 +54,12 @@ type
     constructor create(user, pass, extra: string); override;
     function connect: boolean; override;
     function getReadings(minNum, maxNum: integer; extras: string; out res: string): BGResults; override;
-
+    {** UI parameter label provider (override).
+        1: NightScout URL
+        2: Auth token suffix (v2)
+        3: (unused)
+     }
+    class function ParamLabel(Index: integer): string; override;
   published
     property siteBase: string read FSiteBase;  // e.g. https://example.com
     property token: string read FToken;        // JWT when connected
@@ -166,10 +171,12 @@ function NightScout3.connect: boolean;
 var
   resp: string;
   js: TJSONData;
-  o, settings, thresholds: TJSONObject;
+  o, topObj, settings, thresholds: TJSONObject;
   serverEpoch: int64;
   UTCDateTime: TDateTime;
   authErr: string;
+  v1resp: string;
+  v1js: TJSONData;
 begin
   Result := false;
   lastErr := '';
@@ -226,11 +233,16 @@ begin
 
       o := TJSONObject(js);
 
+      // Some Nightscout v3 endpoints wrap payload in { status, result: { ... } }
+      topObj := o;
+      if (o.IndexOfName('result') <> -1) and (o.Find('result').JSONType = jtObject) then
+        topObj := TJSONObject(o.Find('result'));
+
       // serverTimeEpoch (milliseconds)
-      serverEpoch := o.Get('serverTimeEpoch', int64(0));
+      serverEpoch := topObj.Get('serverTimeEpoch', int64(0));
 
       // Optional thresholds in settings.thresholds
-      settings := o.Find('settings') as TJSONObject;
+      settings := topObj.Find('settings') as TJSONObject;
       if Assigned(settings) then
       begin
         thresholds := settings.Find('thresholds') as TJSONObject;
@@ -258,15 +270,58 @@ begin
   // 4) Time calibration
   if serverEpoch <= 0 then
   begin
-    lastErr := 'Invalid or missing serverTimeEpoch in JSON.';
-    Exit;
+    // Try fallback to v1 status.json to obtain server time (and optionally thresholds)
+    if TrndiNative.getURL(FSiteBase + '/api/v1/status.json', v1resp) then
+    begin
+      v1js := nil;
+      try
+        v1js := GetJSON(v1resp);
+        if Assigned(v1js) and (v1js.JSONType = jtObject) then
+        begin
+          serverEpoch := TJSONObject(v1js).Get('serverTimeEpoch', int64(0));
+
+          // thresholds may also be present in v1; backfill if missing
+          if (not Assigned(thresholds)) or
+             ((cgmHi = 0) and (cgmLo = 0) and (cgmRangeHi = 0) and (cgmRangeLo = 0)) then
+          begin
+            settings := TJSONObject(v1js).Find('settings') as TJSONObject;
+            if Assigned(settings) then
+            begin
+              thresholds := settings.Find('thresholds') as TJSONObject;
+              if Assigned(thresholds) then
+              begin
+                if cgmHi = 0 then      cgmHi      := thresholds.Get('bgHigh', 0);
+                if cgmLo = 0 then      cgmLo      := thresholds.Get('bgLow', 0);
+                if cgmRangeHi = 0 then cgmRangeHi := thresholds.Get('bgTargetTop', 0);
+                if cgmRangeLo = 0 then cgmRangeLo := thresholds.Get('bgTargetBottom', 0);
+              end;
+            end;
+          end;
+        end;
+      finally
+        if Assigned(v1js) then v1js.Free;
+      end;
+    end;
+
+    // If still missing, do not hard fail at startup; continue with neutral timeDiff
+    if serverEpoch <= 0 then
+    begin
+      serverEpoch := 0; // mark as missing, timeDiff will be 0
+    end;
   end;
 
-  UTCDateTime := UnixToDateTime(serverEpoch div 1000);
-  timeDiff := SecondsBetween(UTCDateTime, LocalTimeToUniversal(Now));
-  if timeDiff < 0 then
+  if serverEpoch > 0 then
+  begin
+    UTCDateTime := UnixToDateTime(serverEpoch div 1000);
+    timeDiff := SecondsBetween(UTCDateTime, LocalTimeToUniversal(Now));
+    if timeDiff < 0 then
+      timeDiff := 0;
+    timeDiff := -timeDiff;
+  end
+  else
+  begin
     timeDiff := 0;
-  timeDiff := -timeDiff;
+  end;
 
   Result := true;
 end;
@@ -380,6 +435,19 @@ begin
   end;
 
   js.Free;
+end;
+
+{------------------------------------------------------------------------------
+  Provide parameter label captions for Settings UI (NightScout v3 backend).
+------------------------------------------------------------------------------}
+class function NightScout3.ParamLabel(Index: integer): string;
+begin
+  case Index of
+    1: Result := 'NightScout URL';
+    2: Result := 'Auth token suffix';
+  else
+    Result := inherited ParamLabel(Index);
+  end;
 end;
 
 end.

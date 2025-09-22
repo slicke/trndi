@@ -28,7 +28,9 @@ interface
 uses 
 Classes,ComCtrls,ExtCtrls,Spin,StdCtrls,SysUtils,Forms,Controls,
 Graphics,Dialogs,LCLTranslator, trndi.native, lclintf, slicke.ux.alert,
-VersionInfo, trndi.funcs;
+VersionInfo, trndi.funcs,
+// Backend APIs for label captions
+trndi.api, trndi.api.nightscout, trndi.api.nightscout3, trndi.api.dexcom, trndi.api.xdrip;
 
 type
 
@@ -36,6 +38,7 @@ type
 
 TfConf = class(TForm)
   bAdd: TButton;
+  bBackendHelp: TButton;
   bOverrideHelp: TButton;
   bPrivacyHelp: TButton;
   bRemove: TButton;
@@ -167,6 +170,7 @@ TfConf = class(TForm)
   procedure bOverrideHelpClick(Sender:TObject);
   procedure bPrivacyHelpClick(Sender:TObject);
   procedure bRemoveClick(Sender:TObject);
+  procedure bBackendHelpClick(Sender: TObject);
   procedure bSysNoticeClick(Sender: TObject);
   procedure bSysTouchClick(Sender: TObject);
   procedure bTestAnnounceClick(Sender: TObject);
@@ -247,6 +251,39 @@ RS_NOTIFY_TXT = 'Trndi uses a system called "%s" to send desktop notices, you ne
 RS_NOTIFY_SYSTEM = 'Notifications will appear where you normally get notification messages.';
 
 RS_HASTOUCH = 'Shows if Trndi detected a touch screen';
+
+// Backend-specific help texts
+RS_HELP_NS_V2 =
+  'NightScout v2 setup (use FULL access token):'+#13#10#13#10+
+  '1) Open your NightScout site (e.g., https://your-site).'+#13#10+
+  '2) Go to Admin -> Tokens — or API Secret.'+#13#10+
+  '3) If you use Tokens:'+#13#10+
+  '   - Create a token with at least READ scope.'+#13#10+
+  '   - Copy the FULL access token value exactly as shown.'+#13#10+
+  '4) In Trndi:'+#13#10+
+  '   - Address: enter your NightScout URL'+#13#10+
+  '   - Auth: paste the FULL access token (not just a suffix).'+#13#10+#13#10+
+  'Note: If you instead use the legacy API Secret, paste your API Secret value as-is.';
+
+RS_HELP_NS_V3 =
+  'NightScout v3 setup (use FULL access token):'+#13#10#13#10+
+  '1) Open your NightScout site (e.g., https://your-site).'+#13#10+
+  '2) Go to Admin -> Tokens — or API Secret.'+#13#10+
+  '3) If you use Tokens:'+#13#10+
+  '   - Create a token with at least READ scope.'+#13#10+
+  '   - Copy the FULL access token value exactly as shown.'+#13#10+
+  '4) In Trndi:'+#13#10+
+  '   - Address: enter your NightScout URL'+#13#10+
+  '   - Auth: paste the FULL access token.'+#13#10+#13#10+
+  'Note: If you instead use the legacy API Secret, paste your API Secret value as-is.';
+
+RS_HELP_DEX_REGION =
+  'Dexcom region selection:'#13#10''#13#10'' +
+  'Choose the server based on your account region:'+LineEnding +
+  '• Dexcom (USA): for accounts served by share2.dexcom.com'+LineEnding +
+  '• Dexcom (Outside USA): for accounts served by shareous1.dexcom.com'+LineEnding+LineEnding +
+  'If you are unsure, try “Outside USA” first if you live outside the US.'+LineEnding +
+  'Your username and password are your Dexcom Account (not Share) credentials.';
 
 RS_DEFAULT_ACCOUNT = 'Default';
 var 
@@ -536,6 +573,36 @@ begin
     gbOverride.Color := $00D3D2EE;
     ShowMessage(RS_DEX);
   end
+  ;
+  // Update parameter labels above edits based on backend
+  // Defaults from base class
+  Label15.Caption := TrndiAPI.ParamLabel(1);
+  lPass.Caption   := TrndiAPI.ParamLabel(2);
+
+  // NightScout (v1)
+  if SameText(cbSys.Text, 'NightScout') then
+  begin
+    Label15.Caption := NightScout.ParamLabel(1);
+    lPass.Caption   := NightScout.ParamLabel(2);
+  end
+  // NightScout v3
+  else if SameText(cbSys.Text, 'NightScout v3') then
+  begin
+    Label15.Caption := NightScout3.ParamLabel(1);
+    lPass.Caption   := NightScout3.ParamLabel(2);
+  end
+  // xDrip
+  else if SameText(cbSys.Text, 'xDrip') then
+  begin
+    Label15.Caption := xDrip.ParamLabel(1);
+    lPass.Caption   := xDrip.ParamLabel(2);
+  end
+  // Dexcom USA / Outside USA
+  else if Pos('Dexcom', cbSys.Text) > 0 then
+  begin
+    Label15.Caption := Dexcom.ParamLabel(1);
+    lPass.Caption   := Dexcom.ParamLabel(2);
+  end;
 end;
 
 procedure TfConf.cbUserClick(Sender:TObject);
@@ -618,6 +685,24 @@ end;
 
   ShowMessage(RS_REMOVE_ACC);
   bRemove.Enabled := false; // No item selexted now
+end;
+
+procedure TfConf.bBackendHelpClick(Sender: TObject);
+var
+  s: string;
+begin
+  s := '';
+  if SameText(cbSys.Text, 'NightScout') then
+    s := RS_HELP_NS_V2
+  else if SameText(cbSys.Text, 'NightScout v3') then
+    s := RS_HELP_NS_V3
+  else if Pos('Dexcom', cbSys.Text) > 0 then
+    s := RS_HELP_DEX_REGION
+  else if SameText(cbSys.Text, 'xDrip') then
+    s := 'xDrip setup:'#13#10''#13#10'Address: your xDrip REST endpoint (base URL).'#13#10'Auth: API secret (plain text; server hashes it).';
+
+  if s <> '' then
+    ShowMessage(s);
 end;
 
 procedure TfConf.bSysNoticeClick(Sender: TObject);
@@ -808,6 +893,9 @@ begin
   {$ifdef darwin}
   edTray.Enabled := false; // No support
   {$endif}
+
+  // Initialize parameter labels for current backend selection
+  cbSysChange(Self);
 end;
 
 procedure TfConf.FormDestroy(Sender: TObject);
