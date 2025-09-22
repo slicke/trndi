@@ -399,17 +399,22 @@ var
   x: TPaintBox;
   bottom, overflow: integer;
   adjustSide: TTrndiBool;
+const
+  Tol = 5; // pixel tolerance to ignore tiny rounding differences
 begin
   Result := 0;
   adjustSide := tbUnknown; // We can have both hi and lows; lock to first side encountered
 
   for x in TrendDots do
   begin
+    // Ignore dots not currently visible
+    if not x.Visible then
+      Continue;
     // Use the actual control size, not font metrics, to determine visibility
     bottom := x.Top + x.Height;
 
     // Out-of-top (negative top)
-    if (x.Top < 0) then
+    if (x.Top < -Tol) then
     begin
       if adjustSide in [tbTrue, tbUnknown] then
       begin
@@ -419,11 +424,12 @@ begin
       end;
     end
     // Out-of-bottom
-    else if (bottom > x.Parent.ClientHeight) then
+    else if (bottom > x.Parent.ClientHeight + Tol) then
     begin
       if adjustSide in [tbFalse, tbUnknown] then
       begin
-        overflow := bottom - x.Parent.ClientHeight;
+        // Compute actual overflow beyond tolerance to avoid false positives
+        overflow := (bottom - (x.Parent.ClientHeight + Tol));
         // Pick the largest overflow
         Result := Max(Result, overflow);
         adjustSide := tbFalse;
@@ -431,10 +437,6 @@ begin
     end;
   end;
 
-  if adjustSide = tbTrue then
-   SHowMessage('high adjusted')
-  else if adjustSide = tbFalse then
-   SHowMessage('low adjusted');
 end;
 
 procedure ApplyRoundedCorners(APanel: TPanel; Radius: Integer);
