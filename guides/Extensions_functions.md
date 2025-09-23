@@ -133,3 +133,10 @@ Trndi.setTimeAndRange(20, 4); // Sets the max time to fetch to 20 minutes and th
 ### fetchCallback
 #### This function is called everytime a reading is fetched
 ```updateCallback(reading_mgdl, reading_mmol, delta_mgdl, delta_mmol, has_data)``
+
+### dotClicked
+#### This function is called everytime a trend dot is clicked
+```updateCallback(open, mgdl, mmol)```
+```javascript
+function updateCallback(open, mgdl, mmol){console.log("Is the dot now showing the value? " + open, "Reading " + mmol)}
+```
