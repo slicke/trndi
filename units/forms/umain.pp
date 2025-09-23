@@ -2343,6 +2343,7 @@ begin
      fConf.lOS.Caption := 'Windows'  + SysUtils.Win32MajorVersion.tostring + '.' + SysUtils.Win32MinorVersion.tostring + ' - Build ' +  Win32BuildNumber.ToString;
      fConf.lWidgetset.Caption := 'Native Windows';
     {$endif}
+    fConf.lArch.Caption := {$I %FPCTargetOS%}+'/'+{$I %FPCTARGETCPU%};
     // Show dialog
     fConf.ShowModal;
 

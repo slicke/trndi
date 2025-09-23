@@ -146,6 +146,7 @@ TfConf = class(TForm)
   lTray: TLabel;
   lVal: TLabel;
   lVersion: TLabel;
+  lArch: TLabel;
   Panel1: TPanel;
   Panel2: TPanel;
   Panel3: TPanel;

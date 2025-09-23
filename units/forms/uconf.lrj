@@ -97,5 +97,6 @@
 {"hash":25162391,"name":"tfconf.ltestannounce1.caption","sourcebytes":[84,101,115,116,32,97,32,115,112,111,107,101,110,32,115,116,114,105,110,103],"value":"Test a spoken string"},
 {"hash":265880334,"name":"tfconf.lwaitsys.caption","sourcebytes":[80,108,101,97,115,101,32,119,97,105,116,46,46,46],"value":"Please wait..."},
 {"hash":9814909,"name":"tfconf.los.caption","sourcebytes":[85,110,107,110,111,119,110,32,83,121,115,116,101,109],"value":"Unknown System"},
-{"hash":205567588,"name":"tfconf.lwidgetset.caption","sourcebytes":[85,110,107,110,111,119,110,32,87,105,100,103,101,116,115,101,116],"value":"Unknown Widgetset"}
+{"hash":205567588,"name":"tfconf.lwidgetset.caption","sourcebytes":[85,110,107,110,111,119,110,32,87,105,100,103,101,116,115,101,116],"value":"Unknown Widgetset"},
+{"hash":186074181,"name":"tfconf.larch.caption","sourcebytes":[85,110,107,110,111,119,110,32,65,114,99,104,105,116,101,99,116,117,114,101],"value":"Unknown Architecture"}
 ]}
