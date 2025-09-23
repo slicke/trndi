@@ -2591,20 +2591,20 @@ end;
 
 procedure TfBG.UpdateTrendElements;
 begin
-  // Uppdatera punktplacering
+  // Change dot placement
   actOnTrend(@SetDotWidth);
 
-  // Ändra storlek på punkterna
+  // Change dot size
   actOnTrend(@ResizeDot);
 end;
 
 procedure TfBG.UpdateApiInformation;
 begin
-  // Uppdatera meny- och inställningsinformation
+  // Update high and low info label/menu item
   miHi.Caption := Format(RS_HI_LEVEL, [api.cgmHi * BG_CONVERTIONS[un][mgdl]]);
   miLo.Caption := Format(RS_LO_LEVEL, [api.cgmLo * BG_CONVERTIONS[un][mgdl]]);
 
-  // Hantera övre intervall
+  // Manage top intervall
   if api.cgmRangeHi <> 500 then
     miRangeHi.Caption := Format(RS_RANGE_HI, [api.cgmRangeHi * BG_CONVERTIONS[un][mgdl]])
   else
@@ -2680,39 +2680,34 @@ end;
 
 procedure TfBG.UpdateTrendDots;
 var
-  UniquePositions: TFloatIntDictionary; // Specialized dictionary
   Dot: TPaintBox;
-  Value: Single;
-  DPosition: Integer;
+  Value: Single; // Parsed from hint (user unit), then normalized to mmol/L
+  ok: boolean;
 begin
-  // Initialize dictionary
-  UniquePositions := TFloatIntDictionary.Create;
-  try
-    for Dot in TrendDots do
-    begin
-      dot.Font.Size := (ClientWidth div 24)*dotscale;
-      if TryStrToFloat(Dot.Hint, Value, native.locale) then
-      begin
-        // Use stored position if value already mapped
-        if not UniquePositions.TryGetValue(Value, DPosition) then
-        begin
-          DPosition := Round((Value - BG_API_MIN) / (BG_API_MAX - BG_API_MIN) * fBG.ClientHeight);
-          UniquePositions.Add(Value, DPosition);
-        end;
+  for Dot in TrendDots do
+  begin
+    ok := TryStrToFloat(Dot.Hint, Value, native.locale);
 
-        // Set the label's Top property
-        Dot.Top := fBG.ClientHeight - DPosition;
-        Dot.Visible := True; // Ensure label is visible
-      end
+    Dot.Font.Size := (ClientWidth div 24) * dotscale;
+    if ok then
+    begin
+      // Normalize value to mmol/L for placement math
+      if un = mgdl then
+        Value := Value * BG_CONVERTIONS[mmol][mgdl];
+
+      // Use same placement routine as initial draw to keep behavior consistent
+      if Assigned(Dot.Parent) then
+        SetPointHeight(Dot, Value, Dot.Parent.ClientHeight)
       else
-      begin
-        // Hide labels without valid Hint values
-        Dot.Visible := False;
-      end;
+        SetPointHeight(Dot, Value, fBG.ClientHeight);
+
+      Dot.Visible := True;
+    end
+    else
+    begin
+      // Hide labels without valid Hint values
+      Dot.Visible := False;
     end;
-  finally
-    // Free dictionary
-    UniquePositions.Free;
   end;
 end;
 
