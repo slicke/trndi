@@ -74,7 +74,7 @@
       <AutoIncrementBuild Value="True"/>
       <MajorVersionNr Value="2"/>
       <MinorVersionNr Value="2"/>
-      <BuildNr Value="69"/>
+      <BuildNr Value="70"/>
       <StringTable CompanyName="Slicke" FileDescription="Trndi - CGM trend monitor" LegalCopyright="Björn Lindh" ProductName="Trndi"/>
     </VersionInfo>
     <BuildModes>
@@ -529,6 +529,10 @@
         <Filename Value="units\misc\kdebadge.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="KDEBadge"/>
+      </Unit>
+      <Unit>
+        <Filename Value="units\misc\buildinfo.pp"/>
+        <IsPartOfProject Value="True"/>
       </Unit>
     </Units>
   </ProjectOptions>
