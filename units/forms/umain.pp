@@ -2349,7 +2349,8 @@ begin
   l := sender as tPaintbox;
 
   actOnTrend(@ExpandDot);
-  isDot := l.Caption = DOT_GRAPH;;
+  isDot := UnicodeSameText(l.Caption, DOT_GRAPH);
+
   if isDot then
     tResize.OnTimer(self);
 end;
@@ -2877,32 +2878,33 @@ end;
 
 function TfBG.IsDataFresh: Boolean;
 var
-  b: BGReading;
-  i: integer;
+  b: BGReading;   // Holder for the latest (newest) reading
+  i: integer;     // Temp int used when checking if caption starts with a digit
 begin
-  b := bgs[Low(bgs)];
+  b := bgs[Low(bgs)]; // Pick the most recent reading from the buffer
 
-  // Check if the latest reading is fresh
+  // Consider data fresh if the latest reading is within the configured threshold (in minutes)
   Result := MinutesBetween(Now, b.date) <= DATA_FRESHNESS_THRESHOLD_MINUTES;
 
   if not Result then
   begin
-    tMissed.OnTimer(tMissed);
-    lVal.Font.Style := [fsStrikeOut];
+    tMissed.OnTimer(tMissed);         // Immediately trigger the "missed" handler
+    lVal.Font.Style := [fsStrikeOut]; // Strike through the value to indicate stale data
+    // If the value label isn't numeric (e.g., "Setup") or arrow is a placeholder, show neutral placeholders
     if (not TryStrToInt(lVal.Caption[1], i)) or (lArrow.Caption = 'lArrow') then begin // Dont show "Setup" or similar on boot
-      lVal.Caption := '--';
-      lArrow.Caption := '';
+      lVal.Caption := '--';           // Placeholder when data is stale
+      lArrow.Caption := '';           // Hide trend arrow when stale
     end;
-    fBG.Color := clBlack;
-    lVal.Font.Color := clWhite;
-    tMissed.Enabled := true;
-    lArrow.Caption := ''; // Dont show arrow when not fresh
-    native.setBadge('--', clBlack,badge_width+badge_adjust,badge_font+round(badge_adjust*10));
+    fBG.Color := clBlack;             // Dark background to signal stale state
+    lVal.Font.Color := clWhite;       // High-contrast text on dark background
+    tMissed.Enabled := true;          // Keep the missed timer running
+    lArrow.Caption := '';             // Dont show arrow when not fresh
+    native.setBadge('--', clBlack, badge_width+badge_adjust, badge_font+round(badge_adjust*10)); // Update system/taskbar badge
   end
   else
   begin
-    tMissed.Enabled := false;
-    bg_alert := true;
+    tMissed.Enabled := false;         // Data is fresh; stop missed timer
+    bg_alert := true;                 // Allow alerts again
   end;
 end;
 
