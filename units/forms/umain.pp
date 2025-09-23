@@ -2388,7 +2388,8 @@ begin
     TTrndiExtEngine.Instance.CallFunction('dotClicked',[
       IfThen(isDot, 'false', 'true'), // is the dot "open" as in viewing the value
       FloatToStr(StrToFloat(l.Hint) * BG_CONVERTIONS[mgdl][un], fs),
-      FloatToStr(StrToFloat(l.Hint) * BG_CONVERTIONS[mmol][un], fs)
+      FloatToStr(StrToFloat(l.Hint) * BG_CONVERTIONS[mmol][un], fs),
+      l.tag.tostring
     ]);
   {$endif}
 
@@ -3522,6 +3523,7 @@ begin
     // Uppdatera etikettens egenskaper baserat på läsningen
     l.Visible := true;
     l.Hint := Reading.format(un, BG_MSG_SHORT, BGPrimary);
+
     DecodeTime(reading.date, H, M, S, MS);
     l.Tag := H * 100 + M; // 10:00 = 1000
 
