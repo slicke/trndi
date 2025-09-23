@@ -28,7 +28,7 @@ interface
 uses 
 Classes,ComCtrls,ExtCtrls,Spin,StdCtrls,SysUtils,Forms,Controls,
 Graphics,Dialogs,LCLTranslator, trndi.native, lclintf, slicke.ux.alert,
-VersionInfo, trndi.funcs,
+VersionInfo, trndi.funcs, buildinfo,
 // Backend APIs for label captions
 trndi.api, trndi.api.nightscout, trndi.api.nightscout3, trndi.api.dexcom, trndi.api.xdrip;
 
@@ -870,7 +870,10 @@ end;
 
 procedure TfConf.FormCreate(Sender:TObject);
 begin
-  lVersion.Caption := GetProductVersion(lVersion.Caption) + ' | Built '+StringReplace({$I %DATE%}, '/', '-', [rfReplaceAll]) + ' | ' +
+  // Base app version + build date + widgetset + target CPU
+  lVersion.Caption := GetProductVersion(lVersion.Caption) +
+    ' | Built ' + StringReplace({$I %DATE%}, '/', '-', [rfReplaceAll]) +
+    ' | ' +
   {$if defined(LCLQt6)}
     'QT6'
   {$elseif defined(LCLGTK2)}
@@ -885,6 +888,10 @@ begin
     'custom'
   {$endif}
   + ' | ' + {$I %FPCTARGETCPU%};
+
+  // If CI embedded a real build number, append it
+  if CI and (BUILD_NUMBER <> 'dev') then
+    lVersion.Caption := lVersion.Caption + ' | build ' + BUILD_NUMBER;
   lversion.left := lversion.left - 20;
   pcMain.ActivePage := tsGeneral;
   {$ifdef darwin}

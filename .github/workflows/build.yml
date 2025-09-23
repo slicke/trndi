@@ -151,6 +151,25 @@ jobs:
           git clone https://github.com/synopse/mORMot2.git externals/mORMot2
           cp -r ./static/${{ matrix.qt6_arch_folder }}/* .
 
+          # Write build metadata unit for CI (overrides dev stub)
+          BUILD_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          GIT_SHA="$(git rev-parse --short HEAD)"
+          mkdir -p units/misc
+          cat > units/misc/buildinfo.pp <<EOF
+          unit buildinfo;
+          {$mode objfpc}{$H+}
+          interface
+          const
+            BUILD_NUMBER = '${{ needs.version.outputs.build_number }}';
+            BUILD_TAG    = 'build-${{ needs.version.outputs.build_number }}';
+            BUILD_DATE   = '${BUILD_DATE}';
+            GIT_SHA      = '${GIT_SHA}';
+            GIT_BRANCH   = '${{ github.ref_name }}';
+            CI           = True;
+          implementation
+          end.
+          EOF
+
           # Build Trndi
           lazbuild externals/mORMot2/packages/lazarus/mormot2.lpk
           lazbuild --widgetset=qt6 --build-mode="${{ matrix.build_mode }}" ${{ matrix.cpu_flag }} ${{ matrix.project_file }}
@@ -219,6 +238,24 @@ jobs:
           7z x mormot2static.7z -o./static -y >/dev/null
           git clone https://github.com/synopse/mORMot2.git externals/mORMot2
           cp -r ./static/aarch64-darwin/* .
+          # Write build metadata unit for CI (overrides dev stub)
+          BUILD_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          GIT_SHA="$(git rev-parse --short HEAD)"
+          mkdir -p units/misc
+          cat > units/misc/buildinfo.pp <<EOF
+          unit buildinfo;
+          {$mode objfpc}{$H+}
+          interface
+          const
+            BUILD_NUMBER = '${{ needs.version.outputs.build_number }}';
+            BUILD_TAG    = 'build-${{ needs.version.outputs.build_number }}';
+            BUILD_DATE   = '${BUILD_DATE}';
+            GIT_SHA      = '${GIT_SHA}';
+            GIT_BRANCH   = '${{ github.ref_name }}';
+            CI           = True;
+          implementation
+          end.
+          EOF
           # Build Trndi
           lazbuild externals/mORMot2/packages/lazarus/mormot2.lpk
           lazbuild --build-mode="No Ext (Release)" --ws=cocoa --cpu=aarch64 --os=darwin Trndi.lpi
@@ -249,6 +286,24 @@ jobs:
           & 'C:\Program Files\7-Zip\7z.exe' x '.\mormot2static.7z' -o'.\static' -y | Out-Null
           git clone https://github.com/synopse/mORMot2.git externals/mORMot2
           xcopy .\static\x86_64-win64\*.* . /Y /E /I | Out-Null
+          # Write build metadata unit for CI (overrides dev stub)
+          $BUILD_DATE = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+          $GIT_SHA = (git rev-parse --short HEAD)
+          New-Item -ItemType Directory -Path units\misc -Force | Out-Null
+          @"
+          unit buildinfo;
+          {$mode objfpc}{$H+}
+          interface
+          const
+            BUILD_NUMBER = '${{ needs.version.outputs.build_number }}';
+            BUILD_TAG    = 'build-${{ needs.version.outputs.build_number }}';
+            BUILD_DATE   = '$BUILD_DATE';
+            GIT_SHA      = '$GIT_SHA';
+            GIT_BRANCH   = '${{ github.ref_name }}';
+            CI           = True;
+          implementation
+          end.
+          "@ | Set-Content -Path "units\misc\buildinfo.pp" -Encoding UTF8
           # Build Trndi.exe
           & 'C:\Lazarus\lazbuild.exe' 'externals\mORMot2\packages\lazarus\mormot2.lpk'
           & 'C:\Lazarus\lazbuild.exe' --lazarusdir='C:\Lazarus' --build-mode='Extensions (Release)' 'Trndi.lpi'
