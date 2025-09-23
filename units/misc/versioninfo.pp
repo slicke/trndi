@@ -13,6 +13,9 @@ uses
   {$ENDIF};
 
 function GetProductVersion(const def: string): String;
+{ Return MAJOR.MINOR only (e.g., "2.4").
+  Fallbacks: parse from GetProductVersion(def); if missing, return def. }
+function GetProductVersionMajorMinor(const def: string): String;
 
 implementation
 
@@ -154,6 +157,70 @@ begin
   end;
   {$ENDIF}
   {$ENDIF}
+end;
+
+{------------------------------------------------------------------------------
+  GetProductVersionMajorMinor
+  ---------------------------
+  Returns only the first two numeric components (MAJOR.MINOR) of the product
+  version. It parses the result of GetProductVersion(def) and extracts the two
+  leading integer groups, ignoring any non-digit separators or suffixes.
+  Examples:
+    "2.4.1.0"   -> "2.4"
+    "v3.10-beta"-> "3.10"
+    "1"         -> "1.0"
+    ""          -> def
+ ------------------------------------------------------------------------------}
+function GetProductVersionMajorMinor(const def: string): String;
+var
+  full: string;
+  i, nCount, cur: Integer;
+  inNum: Boolean;
+  nums: array[0..3] of Integer;
+begin
+  full := GetProductVersion(def);
+  if Trim(full) = '' then
+    Exit(def);
+
+  for i := 0 to High(nums) do nums[i] := -1;
+  nCount := 0; cur := 0; inNum := False;
+
+  for i := 1 to Length(full) do
+  begin
+    if (full[i] >= '0') and (full[i] <= '9') then
+    begin
+      inNum := True;
+      cur := cur * 10 + Ord(full[i]) - Ord('0');
+    end
+    else
+    begin
+      if inNum then
+      begin
+        if nCount <= High(nums) then
+        begin
+          nums[nCount] := cur;
+          Inc(nCount);
+        end;
+        cur := 0;
+        inNum := False;
+        if nCount >= 2 then Break; // we have major & minor
+      end;
+    end;
+  end;
+
+  // Flush final number if string ended with digits
+  if inNum and (nCount <= High(nums)) then
+  begin
+    nums[nCount] := cur;
+    Inc(nCount);
+  end;
+
+  if (nCount >= 2) and (nums[0] >= 0) and (nums[1] >= 0) then
+    Result := IntToStr(nums[0]) + '.' + IntToStr(nums[1])
+  else if (nCount >= 1) and (nums[0] >= 0) then
+    Result := IntToStr(nums[0]) + '.0'
+  else
+    Result := def;
 end;
 
 end.

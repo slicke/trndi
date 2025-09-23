@@ -205,8 +205,16 @@ jobs:
           Icon=${ICON}
           Type=Application
           Categories=Utility;" > "$PKG_DIR/usr/share/applications/trndi.desktop"
-          fpm -s dir -t deb -n trndi -v 2.1.${{ needs.version.outputs.build_number }} --architecture ${{ matrix.deb_arch }} --license "GPLv3" --description "Trndi CGM Viewer" -C "$PKG_DIR" .
-          fpm -s dir -t rpm -n trndi -v 2.1.${{ needs.version.outputs.build_number }} --architecture ${{ matrix.rpm_arch }} --license "GPLv3" --description "Trndi CGM Viewer" -C "$PKG_DIR" .
+          # Determine package version from Trndi.lpi (Major.Minor.<build>)
+          MAJOR=$(sed -n -E 's/.*<MajorVersionNr[^>]*Value="([0-9]+)".*/\1/p' Trndi.lpi | head -n1)
+          MINOR=$(sed -n -E 's/.*<MinorVersionNr[^>]*Value="([0-9]+)".*/\1/p' Trndi.lpi | head -n1)
+          MAJOR=${MAJOR:-0}
+          MINOR=${MINOR:-0}
+          PKG_VERSION="${MAJOR}.${MINOR}.${{ needs.version.outputs.build_number }}"
+          echo "Packaging version: ${PKG_VERSION}"
+
+          fpm -s dir -t deb -n trndi -v "${PKG_VERSION}" --architecture ${{ matrix.deb_arch }} --license "GPLv3" --description "Trndi CGM Viewer" -C "$PKG_DIR" .
+          fpm -s dir -t rpm -n trndi -v "${PKG_VERSION}" --architecture ${{ matrix.rpm_arch }} --license "GPLv3" --description "Trndi CGM Viewer" -C "$PKG_DIR" .
           mv trndi_*${{ matrix.deb_arch }}.deb artifacts/
           mv trndi-*.${{ matrix.rpm_arch }}.rpm artifacts/
 

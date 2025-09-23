@@ -871,7 +871,7 @@ end;
 procedure TfConf.FormCreate(Sender:TObject);
 begin
   // Base app version + build date + widgetset + target CPU
-  lVersion.Caption := '2.4';
+  lVersion.Caption := GetProductVersionMajorMinor('2.x');
   // If CI embedded a real build number, append it
   if CI and (BUILD_NUMBER <> 'dev') then
     lVersion.Caption := lVersion.Caption + '.' + BUILD_NUMBER
