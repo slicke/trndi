@@ -133,8 +133,12 @@ public
   procedure SetFloatSetting(const keyname: string; const val: single);
   {** Store a color value (TColor serialized as integer). }
   procedure SetColorSetting(const keyname: string; val: TColor);
+  {** Store a WideChar (WideChar serialized as string). }
+  procedure SetWideCharSetting(const keyname: string; val: WideChar);
   {** Retrieve a stored color or @param(def) if missing. }
   function GetColorSetting(const keyname: string; const def: TColor = $000000): TColor;
+  {** Retrieve a stored WideChar or @param(def) if missing. }
+  function GetWideCharSetting(const keyname: string; const def: WideChar = WideChar($2B24)): WideChar;
   {** Delete a key (optionally global) from storage. }
   procedure DeleteSetting(const keyname: string; global: boolean = false); virtual; abstract;
   {** Delete a non-user-scoped key. }
@@ -1157,6 +1161,39 @@ end;
 procedure TTrndiNativeBase.SetColorSetting(const keyname: string; val: TColor);
 begin
   SetSetting(keyname, IntToStr(Integer(val)));
+end;
+
+{------------------------------------------------------------------------------
+  SetWideCharSetting
+  ----------------------
+  Stores a WideChar value to platform-specific storage.
+ ------------------------------------------------------------------------------}
+procedure TTrndiNativeBase.SetWideCharSetting(const keyname: string; val: WideChar);
+var
+  code: string;
+begin
+  code := IntToHex(Ord(val), 4);
+  SetSetting(keyname, code);
+end;
+
+{------------------------------------------------------------------------------
+  GetWideCharSetting
+  -------------------------
+  Returns a WideChar from settings if parseable, else returns `def`.
+ ------------------------------------------------------------------------------}
+function TTrndiNativeBase.GetWideCharSetting(const keyname: string; const def: WideChar = WideChar($2B24)): WideChar;
+var
+  code: integer;
+  s: string;
+begin
+  s := GetSetting(keyname,  '');
+
+  if s.IsEmpty then
+    Exit(def);
+
+  code := StrToInt('$' + s);
+
+  Result := WideChar(code);
 end;
 
 {------------------------------------------------------------------------------
