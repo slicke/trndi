@@ -2373,11 +2373,24 @@ procedure TfBG.onTrendClick(Sender: TObject);
 var
   isdot: boolean;
   l: TPaintbox;
+  {$ifdef TrndiExt}
+    fs: TFormatSettings;
+  {$endif}
 begin
   l := sender as tPaintbox;
 
   actOnTrend(@ExpandDot);
   isDot := UnicodeSameText(l.Caption, DOT_GRAPH);
+
+  {$ifdef TrndiExt}
+    fs := DefaultFormatSettings;
+    fs.DecimalSeparator := '.';
+    TTrndiExtEngine.Instance.CallFunction('dotClicked',[
+      IfThen(isDot, 'false', 'true'), // is the dot "open" as in viewing the value
+      FloatToStr(StrToFloat(l.Hint) * BG_CONVERTIONS[mgdl][un], fs),
+      FloatToStr(StrToFloat(l.Hint) * BG_CONVERTIONS[mmol][un], fs)
+    ]);
+  {$endif}
 
   if isDot then
     tResize.OnTimer(self);
