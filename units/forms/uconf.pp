@@ -872,7 +872,6 @@ procedure TfConf.FormCreate(Sender:TObject);
 begin
   // Base app version + build date + widgetset + target CPU
   lVersion.Caption := GetProductVersion(lVersion.Caption) +
-    ' | Built ' + StringReplace({$I %DATE%}, '/', '-', [rfReplaceAll]) +
     ' | ' +
   {$if defined(LCLQt6)}
     'QT6'
@@ -891,7 +890,9 @@ begin
 
   // If CI embedded a real build number, append it
   if CI and (BUILD_NUMBER <> 'dev') then
-    lVersion.Caption := lVersion.Caption + ' | build ' + BUILD_NUMBER;
+    lVersion.Caption := lVersion.Caption + ' | build ' + BUILD_NUMBER
+  else
+    lVersion.Caption := lVersion.Caption + ' | Built ' + StringReplace({$I %DATE%}, '/', '-', [rfReplaceAll]);
   lversion.left := lversion.left - 20;
   pcMain.ActivePage := tsGeneral;
   {$ifdef darwin}
