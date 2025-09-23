@@ -1576,6 +1576,9 @@ begin
   if privacyMode then // We dont show values while in privacy mode
      exit;
 
+  if l.hint = '' then  // Don't process non-value items
+    Exit;
+
   // Check if label currently shows a dot
   isDot := l.Caption = DOT_GRAPH;
 
