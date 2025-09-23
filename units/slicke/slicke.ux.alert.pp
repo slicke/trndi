@@ -1889,7 +1889,7 @@ begin
     finally
     end;
   {$elseif DEFINED(WINDOWS)}
-    fname := 'Consolas';
+    fname := 'Segoe UI Symbol';
     try
       Result := Screen.Fonts.IndexOf(fname) >= 0;
     finally
