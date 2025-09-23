@@ -123,7 +123,7 @@ msgstr "Inga färska avläsningar!"
 
 #: tfbg.lref.caption
 msgid "0,?"
-msgstr ""
+msgstr "0,?"
 
 #: tfbg.ltir.caption
 msgid "Time In Range"
@@ -199,22 +199,18 @@ msgid "Big"
 msgstr "Stor"
 
 #: tfbg.midotbig.hint
-#, fuzzy
-#| msgid "3"
 msgctxt "tfbg.midotbig.hint"
 msgid "2"
-msgstr "3"
+msgstr "2"
 
 #: tfbg.midothuge.caption
 msgid "Huge"
 msgstr "Enorm"
 
 #: tfbg.midothuge.hint
-#, fuzzy
-#| msgid "6"
 msgctxt "tfbg.midothuge.hint"
 msgid "3"
-msgstr "6"
+msgstr "3"
 
 #: tfbg.midotnormal.caption
 msgctxt "tfbg.midotnormal.caption"
@@ -227,7 +223,7 @@ msgstr "1"
 
 #: tfbg.midotsinview.caption
 msgid "Are dots in view?"
-msgstr ""
+msgstr "Syns punkterna?"
 
 #: tfbg.midotsize.caption
 msgctxt "tfbg.midotsize.caption"
@@ -327,12 +323,18 @@ msgid "&Download"
 msgstr "&Hämta"
 
 #: tfconf.button2.caption
+msgctxt "tfconf.button2.caption"
 msgid "Reset Defaults"
 msgstr "Återställ"
 
 #: tfconf.button3.caption
 msgid "Check for update"
 msgstr "Kolla uppdatering"
+
+#: tfconf.button4.caption
+msgctxt "tfconf.button4.caption"
+msgid "Reset Defaults"
+msgstr "Återställ"
 
 #: tfconf.caption
 msgid "Settings"
@@ -506,6 +508,18 @@ msgctxt "tfconf.label15.caption"
 msgid "Server Address / Dexcom Username"
 msgstr "Serveradress / Användare Dexcom"
 
+#: tfconf.label16.caption
+msgid "Dot Current symbol"
+msgstr "Symbol för nuvarande punkt"
+
+#: tfconf.label17.caption
+msgid "Enter the Unicode code for the character you'd like to use"
+msgstr "Skriv in Unicode-koden för det tecken du vill använda"
+
+#: tfconf.label2.caption
+msgid "Dot symbol"
+msgstr "Punktsymbol"
+
 #: tfconf.label3.caption
 msgid "Nickname:"
 msgstr "Smeknamn:"
@@ -549,6 +563,16 @@ msgstr "100 min"
 #: tfconf.larrow.caption
 msgid "->"
 msgstr "->"
+
+#: tfconf.ldot.caption
+msgctxt "tfconf.ldot.caption"
+msgid "PREVIEW"
+msgstr "FÖRHANDSVISNING"
+
+#: tfconf.ldotnow.caption
+msgctxt "tfconf.ldotnow.caption"
+msgid "PREVIEW"
+msgstr "FÖRHANDSVISNING"
 
 #: tfconf.lext.caption
 msgctxt "tfconf.lext.caption"
@@ -1354,6 +1378,10 @@ msgid ""
 "Address: your xDrip REST endpoint (base URL).\n"
 "Auth: API secret (plain text; server hashes it)."
 msgstr ""
+"xDrip-inställningar:\r\n"
+"\r\n"
+"Adress: din xDrip REST-slutpunkt (base URL).\r\n"
+"Auth: API-hemlighet (ren text; inte hashad)."
 
 #: uconf.rs_newver
 #, object-pascal-format
@@ -1431,4 +1459,3 @@ msgstr "Du kan använda skift+<nummerr> för att manuellt sätta synligheten (0 
 #: ufloat.rscustomsize
 msgid "You can hold down shift and plus (+) or minus (-) to change the window size"
 msgstr "Du kan hålla ned skift och plus (+) eller minus (-) för att justera fönstrets storlek"
-
