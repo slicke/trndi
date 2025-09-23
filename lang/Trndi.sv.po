@@ -560,6 +560,10 @@ msgstr "Bibliotek"
 msgid "100 min"
 msgstr "100 min"
 
+#: tfconf.larch.caption
+msgid "Unknown Architecture"
+msgstr ""
+
 #: tfconf.larrow.caption
 msgid "->"
 msgstr "->"
@@ -1378,9 +1382,9 @@ msgid ""
 "Address: your xDrip REST endpoint (base URL).\n"
 "Auth: API secret (plain text; server hashes it)."
 msgstr ""
-"xDrip-inställningar:\r\n"
-"\r\n"
-"Adress: din xDrip REST-slutpunkt (base URL).\r\n"
+"xDrip-inställningar:r\n"
+"r\n"
+"Adress: din xDrip REST-slutpunkt (base URL).r\n"
 "Auth: API-hemlighet (ren text; inte hashad)."
 
 #: uconf.rs_newver
@@ -1459,3 +1463,4 @@ msgstr "Du kan använda skift+<nummerr> för att manuellt sätta synligheten (0 
 #: ufloat.rscustomsize
 msgid "You can hold down shift and plus (+) or minus (-) to change the window size"
 msgstr "Du kan hålla ned skift och plus (+) eller minus (-) för att justera fönstrets storlek"
+

@@ -541,6 +541,10 @@ msgstr ""
 msgid "100 min"
 msgstr ""
 
+#: tfconf.larch.caption
+msgid "Unknown Architecture"
+msgstr ""
+
 #: tfconf.larrow.caption
 msgid "->"
 msgstr ""

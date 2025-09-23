@@ -16,9 +16,9 @@ object fConf: TfConf
     Height = 534
     Top = 0
     Width = 675
-    ActivePage = tsDisplay
+    ActivePage = tsSystem
     Align = alClient
-    TabIndex = 2
+    TabIndex = 6
     TabOrder = 0
     OnChange = pcMainChange
     object tsGeneral: TTabSheet
@@ -11642,6 +11642,13 @@ object fConf: TfConf
         Top = 112
         Width = 114
         Caption = 'Unknown Widgetset'
+      end
+      object lArch: TLabel
+        Left = 16
+        Height = 16
+        Top = 128
+        Width = 123
+        Caption = 'Unknown Architecture'
       end
     end
   end
