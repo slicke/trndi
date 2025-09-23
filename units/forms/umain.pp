@@ -256,6 +256,7 @@ private
   procedure actOnTrend(proc: TTrendProcLoop);
   procedure setDotWidth(l: TPaintBox; c, ix: integer; {%H-}ls: array of TPaintBox);
   procedure HideDot(l: TPaintBox; {%H-}c, {%H-}ix: integer);
+  procedure showDot(l: TPaintBox; {%H-}c, {%H-}ix: integer);
   procedure ResizeDot(l: TPaintBox; {%H-}c, ix: integer);
   procedure initDot(l: TPaintBox; c, ix: integer);
   procedure ExpandDot(l: TPaintBox; c, ix: integer);
@@ -1600,6 +1601,12 @@ begin
   l.Visible := false;
 end;
 
+// Shows a dot
+procedure TfBG.ShowDot(l: TPaintBox; c, ix: integer);
+begin
+  l.Visible := true;
+end;
+
 // Scales a dot's font size
 procedure TfBG.ResizeDot(l: TPaintBox; c, ix: integer);
 var
@@ -2552,6 +2559,8 @@ procedure TfBG.tResizeTimer(Sender: TObject);
 begin
   tResize.Enabled := False;
 
+  actOnTrend(@HideDot);
+
   // Update trend related elements
   UpdateTrendElements;
 
@@ -2569,6 +2578,7 @@ begin
 
   // Place the dots
   UpdateTrendDots;
+  actOnTrend(@showDot);
 
   // Post-process the dots
   AdjustGraph;
@@ -3487,8 +3497,9 @@ begin
     l.Tag := H * 100 + M; // 10:00 = 1000
 
     l.Caption := DOT_GRAPH;
-  // Use the dot's parent client height to align placement with visibility checks
-  setPointHeight(l, Reading.convert(mmol), l.Parent.ClientHeight);
+
+    // Use the dot's parent client height to align placement with visibility checks
+    setPointHeight(l, Reading.convert(mmol), l.Parent.ClientHeight);
 
     // Sätt färger baserat på värdet
     l.Font.Color := DetermineColorForReading(Reading);
