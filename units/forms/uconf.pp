@@ -51,6 +51,7 @@ TfConf = class(TForm)
   btReset: TButton;
   bTestAnnounce: TButton;
   Button3: TButton;
+  Button4: TButton;
   bvExt: TBevel;
   bvExt1: TBevel;
   cbCust: TCheckBox;
@@ -79,7 +80,9 @@ TfConf = class(TForm)
   cl_ok_txt: TColorButton;
   eAddr: TEdit;
   edCommaSep: TEdit;
+  eDot: TEdit;
   edNick: TEdit;
+  eDotNow: TEdit;
   edTray: TSpinEdit;
   ePass: TEdit;
   eExt: TEdit;
@@ -101,6 +104,11 @@ TfConf = class(TForm)
   GroupBox4: TGroupBox;
   Image1: TImage;
   Label1: TLabel;
+  Label16: TLabel;
+  Label17: TLabel;
+  lDot: TLabel;
+  Label2: TLabel;
+  lDotNow: TLabel;
   lWidgetset: TLabel;
   lOS: TLabel;
   Label3: TLabel;
@@ -181,11 +189,13 @@ TfConf = class(TForm)
   procedure Button1Click(Sender:TObject);
   procedure Button2Click(Sender:TObject);
   procedure Button3Click(Sender:TObject);
+  procedure Button4Click(Sender: TObject);
   procedure cbCustChange(Sender:TObject);
   procedure cbSysChange(Sender:TObject);
   procedure cbUserClick(Sender:TObject);
   procedure cbUserColorChanged(Sender: TObject);
   procedure edNickChange(Sender: TObject);
+  procedure eDotChange(Sender: TObject);
   procedure ePassEnter(Sender: TObject);
   procedure ePassExit(Sender: TObject);
   procedure FormCreate(Sender:TObject);
@@ -637,6 +647,28 @@ begin
     btUserSave.Enabled := true;
 end;
 
+procedure TfConf.eDotChange(Sender: TObject);
+var
+  i: integer;
+  lbl: TLabel;
+begin
+  if sender = eDot then
+    lbl := lDot
+  else
+    lbl := lDotNow;
+
+  if tryStrToInt('$' + (sender as TEdit).text, i) then begin
+    lbl.Caption := WideChar(i);
+    if sender = eDot then begin
+      lDot1.Caption :=  lbl.Caption;
+      lDot2.Caption :=  lbl.Caption;
+      lDot3.Caption :=  lbl.Caption;
+    end;
+  end
+  else
+    lbl.Caption := '- ERROR -';
+end;
+
 procedure TfConf.ePassEnter(Sender: TObject);
 begin
   ePass.PasswordChar := #0;
@@ -858,6 +890,12 @@ begin
   end
   else
     ShowMessage(RS_UPTODATE);
+end;
+
+procedure TfConf.Button4Click(Sender: TObject);
+begin
+  eDot.text := '2B24';
+  eDotNow.Text := '2600';
 end;
 
 procedure TfConf.cbCustChange(Sender:TObject);

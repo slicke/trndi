@@ -38,13 +38,12 @@ BG_API_MIN = 2; // NS can't read lower
 BG_API_MAX = 22.2; // NS can't read higher
 BG_REFRESH = 300000; // 5 min refresh
 
-DOT_GRAPH: UnicodeString = WideChar($2B24);  // Circle
-DOT_FRESH: UnicodeString = WideChar($2600);
-
 APP_BUILD_DATE = {$I %DATE%}; // Returns "2025/07/21"
 APP_BUILD_TIME = {$I %TIME%}; // Returns "14:30:25"
 
 var
+DOT_GRAPH: UnicodeString = WideChar($2B24);  // Circle
+DOT_FRESH: UnicodeString = WideChar($2600);  // Sun
 DOT_ADJUST: single = 0; // Multiplyer where dots appear
 MAX_MIN: integer = 1440; // Max time to request
 MAX_RESULT: integer = 25; // Max results

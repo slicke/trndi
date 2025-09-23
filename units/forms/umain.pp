@@ -890,6 +890,10 @@ var
   var
     i: integer;
   begin
+    // Set dots
+    DOT_GRAPH := native.GetWideCharSetting('font.dot', WideChar($2B24));
+    DOT_FRESH := native.GetWideCharSetting('font.dot_fresh', WideChar($2600));
+
     // Load fonts
     s := native.GetSetting('font.val', 'default');
     if s <> 'default' then
@@ -2146,6 +2150,14 @@ if cbPos.ItemIndex = -1 then
   begin
     with f do
     begin
+      f.lDot.Caption := native.GetWideCharSetting('font.dot', WideChar($2B24));
+      eDot.Text := native.GetSetting('font.dot', '2B24');
+      lDotNow.Caption := native.GetWideCharSetting('font.dot_fresh', WideChar($2B24));
+      eDotNow.Text := native.GetSetting('font.dot_fresh', '2600');
+      f.lDot1.Caption :=  f.lDot.Caption;
+      f.lDot2.Caption :=  f.lDot.Caption;
+      f.lDot3.Caption :=  f.lDot.Caption;
+
       // UI updates
       lVal.Font.Name := Self.lVal.Font.Name;
       lArrow.Font.Name := Self.lArrow.Font.Name;
@@ -2209,6 +2221,11 @@ if cbPos.ItemIndex = -1 then
   begin
     with f, native do
     begin
+      if TryStrToInt('$'+eDot.text, i) then
+        SetWideCharSetting('font.dot', WideChar(i));
+      if TryStrToInt('$'+eDotNow.text, i) then
+        SetWideCharSetting('font.dot_fresh', WideChar(i));
+
       SetSetting('font.val', lVal.Font.Name);
       SetSetting('font.arrow', lArrow.Font.Name);
       SetSetting('font.ago', lAgo.Font.Name);
