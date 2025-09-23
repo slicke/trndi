@@ -157,7 +157,7 @@ jobs:
           mkdir -p units/misc
           cat > units/misc/buildinfo.pp <<EOF
           unit buildinfo;
-          {$mode objfpc}{$H+}
+          {\$mode objfpc}{\$H+}
           interface
           const
             BUILD_NUMBER = '${{ needs.version.outputs.build_number }}';
@@ -244,7 +244,7 @@ jobs:
           mkdir -p units/misc
           cat > units/misc/buildinfo.pp <<EOF
           unit buildinfo;
-          {$mode objfpc}{$H+}
+          {\$mode objfpc}{\$H+}
           interface
           const
             BUILD_NUMBER = '${{ needs.version.outputs.build_number }}';
