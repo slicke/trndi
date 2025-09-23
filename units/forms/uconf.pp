@@ -871,29 +871,14 @@ end;
 procedure TfConf.FormCreate(Sender:TObject);
 begin
   // Base app version + build date + widgetset + target CPU
-  lVersion.Caption := GetProductVersion(lVersion.Caption) +
-    ' | ' +
-  {$if defined(LCLQt6)}
-    'QT6'
-  {$elseif defined(LCLGTK2)}
-    'GTK2'
-  {$elseif defined(LCLGTK3)}
-    'GTK3'
-  {$elseif defined(LCLWIN32)}
-    'Windows'
-  {$elseif defined(LCLCocoa)}
-    'macOS'
-  {$else}
-    'custom'
-  {$endif}
-  + ' | ' + {$I %FPCTARGETCPU%};
-
+  lVersion.Caption := '2.4';
   // If CI embedded a real build number, append it
   if CI and (BUILD_NUMBER <> 'dev') then
-    lVersion.Caption := lVersion.Caption + ' | build ' + BUILD_NUMBER
+    lVersion.Caption := lVersion.Caption + '.' + BUILD_NUMBER
   else
-    lVersion.Caption := lVersion.Caption + ' | Built ' + StringReplace({$I %DATE%}, '/', '-', [rfReplaceAll]);
+    lVersion.Caption := Format('%s-dev (%s)', [lVersion.Caption, StringReplace({$I %DATE%}, '/', '-', [rfReplaceAll])]);
   lversion.left := lversion.left - 20;
+
   pcMain.ActivePage := tsGeneral;
   {$ifdef darwin}
     self.width := self.width + (self.width div 9);
