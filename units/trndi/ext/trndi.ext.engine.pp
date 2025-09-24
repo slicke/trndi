@@ -432,7 +432,7 @@ var
 begin
   ok := false;
   for i := 0 to callbacks.Count-1 do
-    if callbacks[i]^.func = func then
+    if (callbacks[i] <> nil) and (callbacks[i]^.func = func) then
     begin
       ok := true;
       break;
@@ -440,6 +440,7 @@ begin
 
   if ok then
     result := callbacks[i]^;
+  // else leave Result default-initialized
 end;
 
 {** Find a registered promise by name or alert if missing.
@@ -454,8 +455,8 @@ begin
     if (promises[i] <> nil) and (promises[i]^.func = func) then
       Exit(promises[i]);
 
-  // Not found: inform the user; avoid dereferencing promises[i] here in production
-  TTrndiExtEngine.instance.alert('Required function not found: ' + func);
+  // Not found: return nil without alerting (safe for teardown paths)
+  Result := nil;
 end;
 
 {** Add Promise helper with fixed @code(params) expected (min=max). }
@@ -610,8 +611,8 @@ begin
   // Acquire prototype (unused in this snippet but kept for completeness)
   Proto := JS_GetClassProto(FContext, TrndiClassID);
 
-  // Store opaque back-reference (note: typically used with instances, not class ID)
-  JS_SetOpaque(TrndiClassId, Pointer(self));
+  // Note: Do NOT call JS_SetOpaque on a class id. JS_SetOpaque expects a JSValue
+  // instance, not a class id. Keeping only the context opaque above is correct.
 
   // Expose 'Trndi' constructor in global scope
   JS_SetPropertyStr(
@@ -656,47 +657,72 @@ end;
 destructor TTrndiExtEngine.Destroy;
 var
   cb: PJSCallback;
+  tmpCtx: JSContext;
 begin
   // Stop the job-pumping timer ASAP to avoid re-entrancy during teardown
   try
     if Assigned(eventTimer) then
+    begin
       eventTimer.Enabled := false;
+      FreeAndNil(eventTimer);
+    end;
   except
   end;
 
   // Signal extension shutdown to background tasks
   SetExtShuttingDown(true);
-  try
-    if FContext <> nil then
-      FContext^.Done;
-  except
-    on E: Exception do
-      ExtError(uxdAuto, 'An error occured while shutting down extensions: ' + E.Message);
-  end;
 
+  // Unregister host promise rejection tracker to avoid callbacks during teardown
   if FRuntime <> nil then
-  try
-    // Managed by mORMot GC; explicit free may be unnecessary or harmful here.
-    // JS_FreeRuntime(@FRuntime);
-    // FRuntime^.DoneSafe;
-  except
-    on E: Exception do
-      ExtError(uxdAuto, 'An error occured while shutting down extensions: ' + E.Message);
-  end;
+    JS_SetHostPromiseRejectionTracker(FRuntime, nil, nil);
 
-  eventTimer.free;
+  // Drain pending jobs, if any, before freeing context/runtime
+  if (FRuntime <> nil) and (FContext <> nil) then
+  begin
+    tmpCtx := FContext;
+    while JS_IsJobPending(FRuntime) do
+      if JS_ExecutePendingJob(FRuntime, @tmpCtx) <= 0 then
+        break;
+  end;
 
   // Dispose dynamically allocated callbacks
   for cb in promises do
     Dispose(cb);
-  promises.Free;
+  FreeAndNil(promises);
 
   for cb in callbacks do
     Dispose(cb);
-  callbacks.Free;
+  FreeAndNil(callbacks);
+
+  // Free auxiliary structures
+  FreeAndNil(knownfunc);
+
+  // Extra check checks
+  if Assigned(FContext) then begin
+    try
+      JS_FreeContext(FContext);
+    finally
+      FContext := nil;
+    end;
+  end;
+  // End extra checks
+
+  // Free runtime last
+  if Assigned(FRuntime) then
+  begin
+    try
+      JS_FreeRuntime(FRuntime);
+    finally
+      FRuntime := nil;
+    end;
+  end;
+
+  // Free native helper at the very end
+  FreeAndNil(native);
 
   // Clear singleton reference without freeing again
   FInstance := nil;
+
   inherited Destroy;
 end;
 
@@ -1075,6 +1101,8 @@ end;
 {** Pump the QuickJS job queue (Promises/microtasks) on each timer tick. }
 procedure TTrndiExtEngine.OnJSTimer(Sender: TObject);
 begin
+  if (FRuntime = nil) or (FContext = nil) then
+    Exit;
   while JS_IsJobPending(FRuntime) do
     if JS_ExecutePendingJob(FRuntime, @FContext) <= 0 then
       Break; // Exit when the queue is empty or on error
