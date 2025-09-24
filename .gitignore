@@ -52,3 +52,7 @@ Trndi-linux
 # In case someone downloads it locally
 /mORMot
 /mORMot2
+
+# Vi temps
+.gitignore~
+..gitignore.un~
