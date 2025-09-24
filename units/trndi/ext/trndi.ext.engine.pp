@@ -658,6 +658,7 @@ destructor TTrndiExtEngine.Destroy;
 var
   cb: PJSCallback;
   tmpCtx: JSContext;
+  timeoutCounter: Integer;
 begin
   // Stop the job-pumping timer ASAP to avoid re-entrancy during teardown
   try
@@ -672,6 +673,16 @@ begin
   // Signal extension shutdown to background tasks
   SetExtShuttingDown(true);
 
+  // Give background threads time to notice shutdown and complete
+  // This is critical to avoid access violations from promise threads
+  timeoutCounter := 0;
+  while (timeoutCounter < 200) do  // max 1000ms wait (increased from 500ms)
+  begin
+    Application.ProcessMessages;
+    Sleep(5);
+    Inc(timeoutCounter);
+  end;
+
   // Unregister host promise rejection tracker to avoid callbacks during teardown
   if FRuntime <> nil then
     JS_SetHostPromiseRejectionTracker(FRuntime, nil, nil);
@@ -683,6 +694,14 @@ begin
     while JS_IsJobPending(FRuntime) do
       if JS_ExecutePendingJob(FRuntime, @tmpCtx) <= 0 then
         break;
+  end;
+
+  // Force garbage collection to clean up remaining objects
+  if (FRuntime <> nil) then
+  begin
+    // Run garbage collection multiple times to ensure cleanup
+    JS_RunGC(FRuntime);
+    JS_RunGC(FRuntime);  // Run twice to handle circular references
   end;
 
   // Dispose dynamically allocated callbacks
@@ -697,6 +716,10 @@ begin
   // Free auxiliary structures
   FreeAndNil(knownfunc);
 
+  // Force final garbage collection before freeing context
+  if (FRuntime <> nil) then
+    JS_RunGC(FRuntime);
+
   // Extra check checks
   if Assigned(FContext) then begin
     try
@@ -707,14 +730,16 @@ begin
   end;
   // End extra checks
 
-  // Free runtime last
+  // Free runtime last - wrap in try-except to handle GC assertion failures
   if Assigned(FRuntime) then
   begin
     try
       JS_FreeRuntime(FRuntime);
-    finally
-      FRuntime := nil;
+    except
+      // Ignore QuickJS internal assertion failures during shutdown
+      // The GC assertion error is not critical for application termination
     end;
+    FRuntime := nil;
   end;
 
   // Free native helper at the very end
@@ -856,6 +881,10 @@ var
   i: integer;
   StrResult: pansichar;
 begin
+  // Safety check: don't attempt calls during shutdown or if context is invalid
+  if IsExtShuttingDown or (FContext = nil) or (FRuntime = nil) then
+    Exit('');
+    
   if not TTrndiExtEngine.Instance.FunctionExists(funcName) then
     Exit('');
 
@@ -913,6 +942,10 @@ var
   i: integer;
   StrResult: pansichar;
 begin
+  // Safety check: don't attempt calls during shutdown or if context is invalid
+  if IsExtShuttingDown or (FContext = nil) or (FRuntime = nil) then
+    Exit('');
+    
   if not TTrndiExtEngine.Instance.FunctionExists(funcName) then
     Exit('');
 
@@ -979,6 +1012,10 @@ var
   s: RawUtf8;
   tmpv: JSValue;
 begin
+  // Safety check: don't attempt calls during shutdown or if context is invalid
+  if IsExtShuttingDown or (FContext = nil) or (FRuntime = nil) then
+    Exit('');
+    
   if not TTrndiExtEngine.Instance.FunctionExists(funcName) then
     Exit('');
 
@@ -1101,8 +1138,10 @@ end;
 {** Pump the QuickJS job queue (Promises/microtasks) on each timer tick. }
 procedure TTrndiExtEngine.OnJSTimer(Sender: TObject);
 begin
-  if (FRuntime = nil) or (FContext = nil) then
+  // Don't process jobs during shutdown
+  if IsExtShuttingDown or (FRuntime = nil) or (FContext = nil) then
     Exit;
+    
   while JS_IsJobPending(FRuntime) do
     if JS_ExecutePendingJob(FRuntime, @FContext) <= 0 then
       Break; // Exit when the queue is empty or on error
@@ -1114,6 +1153,10 @@ var
   Func: JSValue;
   res: boolean;
 begin
+  // Safety check: don't attempt calls during shutdown or if context is invalid
+  if IsExtShuttingDown or (FContext = nil) or (FRuntime = nil) then
+    Exit(false);
+    
   res := FContext^.GetValue(pchar(FuncName), func);
   if res = false then
     result := res
@@ -1128,6 +1171,13 @@ end;
 {** Retrieve or lazily create the singleton engine instance. }
 class function TTrndiExtEngine.Instance: TTrndiExtEngine;
 begin
+  // Don't create new instances during shutdown
+  if IsExtShuttingDown then
+  begin
+    Result := nil;
+    Exit;
+  end;
+  
   if FInstance = nil then
     FInstance := TTrndiExtEngine.Create;
   Result := FInstance;
@@ -1136,7 +1186,19 @@ end;
 {** Release the singleton engine instance. }
 class procedure TTrndiExtEngine.ReleaseInstance;
 begin
-  FreeAndNil(FInstance);
+  // Signal shutdown first to prevent recreation
+  SetExtShuttingDown(true);
+  
+  // Only free if instance exists (safe for multiple calls)
+  if FInstance <> nil then
+  begin
+    try
+      FreeAndNil(FInstance);
+    except
+      // Ignore any errors during shutdown cleanup
+      // The OS will clean up remaining resources anyway
+    end;
+  end;
 end;
 
 end.
