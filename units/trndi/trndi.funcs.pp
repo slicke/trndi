@@ -30,6 +30,10 @@ function GetNewerVersionURL(const JsonResponse: string;
 
 function privacyIcon(const v: trndi.types.BGValLevel): string;
 
+function funcBool(const res: string): boolean;
+function funcInt(const res: string): Int64;
+function funcFloat(const res: string): double;
+
 const
 INTERVAL_MINUTES = 5; // Each time interval is 5 minutes
 NUM_DOTS = 10;        // Total number of labels (lDot1 - lDot10)
@@ -484,6 +488,35 @@ begin
        trndi.types.BGRangeHI: begin result := '✓⁺'; end;
        trndi.types.BGRangeLO: begin result := '✓⁻';  end;
   end;
+end;
+
+function funcBool(const res: string): boolean;
+begin
+  result := res = 'true';
+end;
+
+function funcInt(const res: string): Int64;
+var
+  i: integer;
+begin
+  if TryStrToInt(res, i) then
+    result := i
+  else
+    raise Exception.Create('Cannot interpret extension value '+res+' as integer!');
+end;
+
+function funcFloat(const res: string): double;
+var
+  d: double;
+  fs: TFormatSettings;
+begin
+  fs := DefaultFormatSettings;
+  fs.DecimalSeparator := '.';
+
+  if TryStrToFloat(res, d, fs) then
+    result := d
+  else
+    raise Exception.Create('Cannot interpret extension value '+res+' as float!');
 end;
 
 end.
