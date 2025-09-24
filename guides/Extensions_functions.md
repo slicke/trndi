@@ -1,8 +1,8 @@
 # Trndi Extensions API
 Trndi supports ES2023, and provides these functions in addition to it:
 
-# Trndi functions
-These functions are avilable via Trndi., such as Trndi.alert:
+## Trndi functions
+These functions are available via `Trndi.*`, such as `Trndi.alert(...)`:
 ### alert
 #### Show an alert
 ```javascript
@@ -12,9 +12,9 @@ Result: none
 ### confirm
 #### Asks yes or no
 ```javascript
-Trndi.alert("Yes or no?")
+Trndi.confirm("Yes or no?")
 ```
-Result: ```true``` or ```false```
+Result: `true` or `false`
 ### prompt
 #### Shows an input field
 ```javascript
@@ -24,11 +24,11 @@ Result: string
 ### select
 #### Shows a list of options
 ```javascript
-Trndi.select("Select your choise", "Choose one of these", ...list of string options);
+Trndi.select("Select your choice", "Choose one of these", ...listOfStringOptions);
 ```
-Result: integer
-### Trndi.log
-_See console.log_
+Result: integer (zero-based index)
+### log
+_See `console.log`_
 ### console.log
 Prints out data to the user
 ### setBadgeSize
@@ -46,19 +46,19 @@ Sets scale of the trend dots. 2 = 2x etc.
 ```javascript
 Trndi.setDotAdjust(0.1);
 ```
-Multiplyer on where the dots are drawn on screen up/down. Minus = up, plus = down
+Multiplier on where the dots are drawn on screen up/down. Minus = up, plus = down
 ### getUnit
 #### Get the current measure unit
 ```javascript
-Trndi.getUnit
+Trndi.getUnit()
 ```
-Returns if the user is using mg/dL or mmol/L
+Returns the current unit: `"mg/dL"` or `"mmol/L"`.
 ### getLocale
 #### Get the current app language
 ```javascript
-Trndi.getLocale
+Trndi.getLocale()
 ```
-Returns a lang code (such as sv or en)
+Returns a language code (such as `sv` or `en`).
 ### setLevelColor
 #### Sets the UX colors
 ```javascript
@@ -66,32 +66,24 @@ Trndi.setLevelColor('#7cd55d','#d55d5d', '#5dc6d5',// Readings (ok, hi, lo))
               '#7cd55d','#612828', '#5d75d5', // Colors for the dots (ok, hi, lo)
               '#ffbfbf', '#bffff9'); // Color for the custom levels set in NightScout (or via JS) (hi, lo)
 ``` 
-### getLocale
-#### Gets the selected UX language
-```getLocale()```
+### setTimeAndRange
+#### Sets the max minutes to fetch and max readings to fetch (subject to which metric the API uses)
 ```javascript
-let lang = Trndi.getLocale();
-const strs = {
- "sv": {"Hey": "Hej och välkommen"},
- "en": {"Hey": "Hello and welcome"},
-};             
-Trndi.alert(strs[lang]["Hey"] || "Hello and welcome!");
+Trndi.setTimeAndRange(20, 4); // Sets the max time to fetch to 20 minutes and the range to 4 readings
 ```
 ### playSound
 #### Plays an audio file
-```playSound(path)```
 ```javascript
-playSound('C:\file.wav')
+Trndi.playSound('C:\\file.wav')
 ```
 ### sayText
 #### Reads a text aloud
-```sayText(string)```
 ```javascript
-sayText('High sugar!')
+Trndi.sayText('High sugar!')
 ```
 
-# Promises
-These are promises, not prefixed with Trndi.:
+## Promises (global)
+These are global promises, not prefixed with `Trndi.`:
 ### asyncGet 
 #### Fetches a URL
 ```javascript
@@ -101,8 +93,10 @@ asyncGet("https://sample-files.com/downloads/documents/txt/simple.txt")
   ``` 
 ### runCMD 
 #### Runs a program locally
-```runCMD('appname.exe') ``` 
-```runCMD('appname.exe', 'parameter', 'sign for parameter separation') ``` 
+```javascript
+runCMD('appname.exe')
+runCMD('appname.exe', 'parameter', 'sign for parameter separation')
+```
 ex:
 ```javascript
 runCMD("explorer.exe")
@@ -111,20 +105,16 @@ runCMD("explorer.exe")
 ```
 ### setLimits - 
 #### Set the limits for high/low, and ranges
-```setLimits(low, high, low-range, high-range)```
+```javascript
+setLimits(low, high, lowRange, highRange)
+```
 > Note: parameters 3 and 4 are optional!
 _Use floats for mmol/L and integers for mg/dL!_
 ```javascript
   setLimits(3.2, 16.4, 4.1, 12.7).then(() =>Trndi.alert("Custom limits set"));
 ```
-### setTimeAndRange
-#### Sets the max minutes to fetch and max readings to fetch (subject to which metric the API uses)
-```setTimeAndRange(minutes, count)```
-```javascript
-Trndi.setTimeAndRange(20, 4); // Sets the max time to fetch to 20 minutes and the range to 4 readings
-```
 
-# Callbacks
+## Callbacks
 > _NOTE:_ Simply add a function, named the same as a callback below, to have it triggered
 ### updateCallback
 #### This function is called when the main loop updates the reading
@@ -132,11 +122,11 @@ Trndi.setTimeAndRange(20, 4); // Sets the max time to fetch to 20 minutes and th
 
 ### fetchCallback
 #### This function is called everytime a reading is fetched
-```updateCallback(reading_mgdl, reading_mmol, delta_mgdl, delta_mmol, has_data)``
+```fetchCallback(reading_mgdl, reading_mmol, delta_mgdl, delta_mmol, has_data)```
 
 ### dotClicked
 #### This function is called everytime a trend dot is clicked
-```updateCallback(open, mgdl, mmol, time)```
+```dotClicked(open, mgdl, mmol, time)```
 ```javascript
 function dotClicked(open, mgdl, mmol, time){console.log("Is the dot now showing the value? " + open, "Reading " + mmol, "Time: " + time )} // if the dot is "open" its showing the reading, not the dot icon
 ```
@@ -147,7 +137,7 @@ function dotClicked(open, mgdl, mmol, time){console.log("Is the dot now showing 
 ```javascript
 function uxClick(element, value, ...values){
   console.log('clicked', element, 'value of dialog box', value)
-  return true; // false supresses Trndi's own dialog
+  return true; // false suppresses Trndi's own dialog
   // element =
   // "tir" - Time in range was clicked, value = time span, value2 = percent
   // "no-reading" - The "No reading" popup is clicked, no args
@@ -160,10 +150,39 @@ function uxClick(element, value, ...values){
 ```clockView(glucose, time)```
 ```javascript
 function clockView(glucose, time){
-  return Trndi.getCurrentUser(); // Returns the username, if running multiple accounts
+  const user = Trndi.getCurrentUser(); // Returns the username, if running multiple accounts
+  if (user) return user;
   return "Hello"; // Shows Hello instead of the clock every 20 seconds
 }
 ```
 
-### Trndi.getCurrentUser
-#### Returns the username of the current user (empty when not in multi-user mode)
+## User info
+### getCurrentUser
+#### Returns the username of the current user (or `false` when not in multi-user mode)
+```javascript
+const user = Trndi.getCurrentUser();
+if (user === false)
+  console.log("Not multi user!");
+else if (user === '')
+  console.log("Default user");
+else
+  console.log(`Logged in as ${user}`);
+```
+
+### getCurrentNickname
+#### Returns the nickname for the current user (or `false` if not in multi-user mode)
+```javascript
+const nick = Trndi.getCurrentNickname();
+// See getCurrentUser for usage pattern
+```
+
+## Examples
+```javascript
+// Localized greeting example using getLocale
+const lang = Trndi.getLocale();
+const strs = {
+  sv: { Hey: "Hej och välkommen" },
+  en: { Hey: "Hello and welcome" },
+};
+Trndi.alert(strs[lang]?.Hey || "Hello and welcome!");
+```

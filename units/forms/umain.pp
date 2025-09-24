@@ -718,8 +718,8 @@ begin
     addClassFunction('setTimeAndRange', ExtFunction(@JSTimeRange), 2);
     addClassFunction('playSound', ExtFunction(@JSPlay), 1);
     addClassFunction('sayText', ExtFunction(@JSSay), 1);
-    addClassFunction('getCurrentUser', ExtFunction(@JSActiveUser), 1);
-    addClassFunction('getCurrentNickname', ExtFunction(@JSActiveUserNick), 1);
+    addClassFunction('getCurrentUser', ExtFunction(@JSActiveUser), 0);
+    addClassFunction('getCurrentNickname', ExtFunction(@JSActiveUserNick), 0);
 
     // Add the UX modification function, as declared in this file
     for s in exts do begin
@@ -984,7 +984,7 @@ begin
         end
         else begin
           username := '';
-          s :=  native.GetSettingEx('user.nick', RS_DEFAULT_ACCOUNT); // try just using RS_DEFAULT_ACCOUNT later
+          s :=  native.GetSettingEx('user.nick', RS_DEFAULT_ACCOUNT);
 
           multinick := s;
           fbg.Caption := Format(RS_USER_CAPTION, [s, fBG.Caption]);
