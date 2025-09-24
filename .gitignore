@@ -50,5 +50,5 @@ Trndi-linux
 *.trc
 
 # In case someone downloads it locally
-.mORMot
-.mORMot2
+/mORMot
+/mORMot2
