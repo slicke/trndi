@@ -222,7 +222,9 @@ type
         @param(FuncName Global function name)
         @param(Args     Array of string arguments)
         @returns(Stringified result; empty string if call failed/not found) }
-    function CallFunction(const FuncName: RawUtf8; const Args: JSArray): RawUtf8;
+  function CallFunction(const FuncName: RawUtf8; const Args: JSArray): RawUtf8; overload;
+  function CallFunction(const FuncName: RawUtf8; const Args: array of integer): RawUtf8; overload;
+  function CallFunction(const FuncName: RawUtf8; const Args: array of const): RawUtf8; overload;
 
     {** Set a global JS variable (string).
 
@@ -849,6 +851,188 @@ begin
   end;
 
   // NOTE: Consider freeing RetVal / ArgArray values if ownership rules require it.
+end;
+
+{** Call a global JS function with integer arguments; return the result as UTF-8.
+    Note: Integers are marshalled as JS number (Int32). If you need 64-bit, add an overload using JS_NewBigInt64. }
+function TTrndiExtEngine.CallFunction(const FuncName: RawUtf8; const Args: array of integer): RawUtf8;
+var
+  GlobalObj, FuncObj, RetVal: JSValueRaw;
+  ArgArray: array of JSValueRaw;
+  i: integer;
+  StrResult: pansichar;
+begin
+  if not TTrndiExtEngine.Instance.FunctionExists(funcName) then
+    Exit('');
+
+  Result := '';
+  GlobalObj := JS_GetGlobalObject(FContext);
+
+  // Retrieve function from global object
+  FuncObj := JS_GetPropertyStr(FContext, GlobalObj, pchar(FuncName));
+
+  // Ensure it's callable
+  if not JS_IsFunction(FContext, FuncObj) then
+  begin
+    JS_Free(FContext, @GlobalObj);
+    JS_Free(FContext, @FuncObj);
+    ExtError(uxdAuto, 'No such function or it is not callable: ' + FuncName);
+    Exit('');
+  end;
+
+  // Build integer argument values (use BigInt64 for lack of Int32 constructor in bindings)
+  SetLength(ArgArray, Length(Args));
+  for i := 0 to High(Args) do
+  begin
+    ArgArray[i] := JS_NewBigInt64(FContext, Args[i]);
+  end;
+
+  // Invoke function
+  RetVal := JS_Call(FContext, FuncObj, GlobalObj, Length(ArgArray), @ArgArray[0]);
+
+  if JS_IsError(FContext, RetVal) then
+  begin
+    ExtError(uxdAuto, 'Cannot call Extension function ' + funcname);
+    js_std_dump_error(FContext);
+    Result := '';
+  end
+  else
+  begin
+    // Convert return value to string if possible
+    StrResult := JS_ToCString(FContext, RetVal);
+    if StrResult <> nil then
+    begin
+      Result := StrResult;              // copy into our Pascal string
+      JS_FreeCString(FContext, StrResult);
+    end
+    else
+      Result := '';                     // not convertible to string
+  end;
+end;
+
+{** Call a global JS function with mixed Pascal arguments (array of const).
+    Supported TVarRec kinds are mapped as:
+    - vtInteger, vtShortInt, vtSmallint, vtLongint: JS int32
+    - vtInt64: JS BigInt64
+    - vtBoolean: JS boolean (fallback to 'true'/'false' string if no bool ctor)
+    - vtExtended, vtSingle, vtDouble, vtCurrency: JS number (string fallback if no float ctor)
+    - vtChar, vtPChar, vtAnsiString, vtUnicodeString, vtWideString, vtString: JS string
+    Others are stringified via Pascal's default conversions. }
+function TTrndiExtEngine.CallFunction(const FuncName: RawUtf8; const Args: array of const): RawUtf8;
+var
+  GlobalObj, FuncObj, RetVal: JSValueRaw;
+  ArgArray: array of JSValueRaw;
+  i: integer;
+  StrResult: pansichar;
+  tmpStrs: array of RawUtf8; // hold conversions' lifetime until call returns
+  s: RawUtf8;
+begin
+  if not TTrndiExtEngine.Instance.FunctionExists(funcName) then
+    Exit('');
+
+  Result := '';
+  GlobalObj := JS_GetGlobalObject(FContext);
+
+  // Retrieve function from global object
+  FuncObj := JS_GetPropertyStr(FContext, GlobalObj, pchar(FuncName));
+
+  // Ensure it's callable
+  if not JS_IsFunction(FContext, FuncObj) then
+  begin
+    JS_Free(FContext, @GlobalObj);
+    JS_Free(FContext, @FuncObj);
+    ExtError(uxdAuto, 'No such function or it is not callable: ' + FuncName);
+    Exit('');
+  end;
+
+  // Build mixed argument values
+  SetLength(ArgArray, Length(Args));
+  SetLength(tmpStrs, Length(Args));
+  for i := 0 to High(Args) do
+  begin
+    case Args[i].VType of
+      vtInteger:
+        ArgArray[i] := JS_NewBigInt64(FContext, Args[i].VInteger);
+
+      vtInt64:
+        ArgArray[i] := JS_NewBigInt64(FContext, Args[i].VInt64^);
+
+      vtBoolean:
+        begin
+          if Args[i].VBoolean then s := 'true' else s := 'false';
+          tmpStrs[i] := s;
+          ArgArray[i] := JS_NewString(FContext, PChar(tmpStrs[i]));
+        end;
+
+      vtExtended:
+        begin
+          s := RawUtf8(FloatToStr(Args[i].VExtended^));
+          tmpStrs[i] := s;
+          ArgArray[i] := JS_NewString(FContext, PChar(tmpStrs[i]));
+        end;
+
+      vtChar:
+        begin
+          s := RawUtf8(Args[i].VChar);
+          tmpStrs[i] := s;
+          ArgArray[i] := JS_NewString(FContext, PChar(tmpStrs[i]));
+        end;
+
+      vtPChar:
+        ArgArray[i] := JS_NewString(FContext, Args[i].VPChar);
+
+      vtAnsiString:
+        begin
+          s := RawUtf8(AnsiString(Args[i].VAnsiString));
+          tmpStrs[i] := s;
+          ArgArray[i] := JS_NewString(FContext, PChar(tmpStrs[i]));
+        end;
+
+      vtUnicodeString, vtWideString:
+        begin
+          s := RawUtf8(UnicodeString(Args[i].VUnicodeString));
+          tmpStrs[i] := s;
+          ArgArray[i] := JS_NewString(FContext, PChar(tmpStrs[i]));
+        end;
+
+      vtString:
+        begin
+          s := RawUtf8(ShortString(Args[i].VString^));
+          tmpStrs[i] := s;
+          ArgArray[i] := JS_NewString(FContext, PChar(tmpStrs[i]));
+        end;
+
+    else
+      begin
+        // Fallback: stringifies the value using default conversion
+        s := RawUtf8('{unsupported}');
+        tmpStrs[i] := s;
+        ArgArray[i] := JS_NewString(FContext, PChar(tmpStrs[i]));
+      end;
+    end;
+  end;
+
+  // Invoke function
+  RetVal := JS_Call(FContext, FuncObj, GlobalObj, Length(ArgArray), @ArgArray[0]);
+
+  if JS_IsError(FContext, RetVal) then
+  begin
+    ExtError(uxdAuto, 'Cannot call Extension function ' + funcname);
+    js_std_dump_error(FContext);
+    Result := '';
+  end
+  else
+  begin
+    // Convert return value to string if possible
+    StrResult := JS_ToCString(FContext, RetVal);
+    if StrResult <> nil then
+    begin
+      Result := StrResult;              // copy into our Pascal string
+      JS_FreeCString(FContext, StrResult);
+    end
+    else
+      Result := '';                     // not convertible to string
+  end;
 end;
 
 {******************************************************************************

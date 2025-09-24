@@ -746,6 +746,10 @@ msgstr ""
 msgid "Long ago"
 msgstr ""
 
+#: trndi.strings.rs_diff
+msgid "This is the change from the latest reading"
+msgstr ""
+
 #: trndi.strings.rs_font_error
 #, object-pascal-format
 msgid "You're missing the standard font \"%s\". Trndi will work as intended, but some icons may be missing and/or distorted!"
