@@ -417,7 +417,9 @@ begin
   //      - Performing the actual native operation tied to 'func'
   //      - Calling funcs[0] (resolve) or funcs[1] (reject) with a JS value
   //      - Freeing any allocated argument/JS values when done
-  TJSAsyncTask.Create(ctx, cb, funcs);
+  TJSAsyncTask.Create(ctx, cb^, @funcs);
+  // Avoid further use of params by the engine; ownership transferred to the task
+  cb^.params.values.data := nil;
 
   // 7) Return the Promise object to JavaScript immediately.
   Result := promise;

@@ -37,7 +37,7 @@ type
   JSDoubleVal = array[0..1] of JSValueRaw;
 
   {** Pointer alias used when passing resolve/reject function slots to tasks. }
-  PJSDoubleVal = ^JSValueRaw;
+  PJSDoubleVal = ^JSDoubleVal;
 
   {** Asynchronous task that bridges native (Pascal) callbacks to JS Promises.
       Workflow:
@@ -50,7 +50,7 @@ type
     private
       FContext: JSContext;      /// QuickJS context for this task
       funcs: JSDoubleVal;       /// Promise resolve/reject function handles
-      FPromise: PJSCallback;    /// Registered callback descriptor (name, handler, params)
+      FPromise: TJSCallback;    /// Registered callback descriptor (name, handler, params)
       FResult: JSVAlueVal;      /// Result produced by the callback (QuickJS value wrapper)
       FSuccess: boolean;        /// True if callback indicates success; otherwise reject
 
@@ -69,8 +69,12 @@ type
           @param(Context) QuickJS context
           @param(func)    Registered callback descriptor with handler and params
           @param(cbfunc)  Pointer to the resolve/reject function pair (JSDoubleVal) }
-      constructor Create(Context: JSContext; func: PJSCallback; cbfunc: PJSDoubleVal);
+    constructor Create(Context: JSContext; func: TJSCallback; cbfunc: PJSDoubleVal);
   end;
+
+// Global shutdown guard for extensions/promises
+procedure SetExtShuttingDown(const Value: boolean);
+function IsExtShuttingDown: boolean;
 
 const
   {** Index of the Promise resolve function in @code(JSDoubleVal). }
@@ -83,14 +87,31 @@ const
 
 implementation
 
+uses Forms;
+
+var
+  gExtShuttingDown: boolean = false;
+
+procedure SetExtShuttingDown(const Value: boolean);
+begin
+  gExtShuttingDown := Value;
+end;
+
+function IsExtShuttingDown: boolean;
+begin
+  Result := gExtShuttingDown;
+end;
+
 {** Construct and launch an asynchronous task bound to a JS Promise.
     Stores the context, callback descriptor, and resolve/reject functions.
     Sets FreeOnTerminate so the thread self-frees after completion. }
-constructor TJSAsyncTask.Create(Context: JSContext; func: PJSCallback; cbfunc: PJSDoubleVal);
+constructor TJSAsyncTask.Create(Context: JSContext; func: TJSCallback; cbfunc: PJSDoubleVal);
 begin
   FContext := Context;
   FPromise := func;
-  funcs := cbfunc;
+  // Copy resolve/reject function refs locally
+  if cbfunc <> nil then
+    funcs := cbfunc^;
   FreeOnTerminate := True;
   inherited Create(False);
   // This will start the thread
@@ -106,7 +127,11 @@ procedure TJSAsyncTask.Execute;
 var
   xres: JSValue;
 begin
-  if Assigned(FPromise^.callback) then // Run the main function, if it's actually set
+  // Skip if application is terminating
+  if Application.Terminated or IsExtShuttingDown then
+    Exit;
+
+  if Assigned(FPromise.callback) then // Run the main function, if it's actually set
     Synchronize(@ProcessResult)
   else
     begin
@@ -115,19 +140,6 @@ begin
       FSuccess := false;
       Exit;
     end;
-
-  xres := JSValueValToValue(FContext, FResult);
-  // Convert our result to something we can retur to JS
-
-  if FSuccess then
-    JS_Call(FContext, funcs[JprResolve], JS_UNDEFINED, 1, @xres)
-  else
-    JS_Call(FContext, funcs[JprReject], JS_UNDEFINED, 1, @xres);
-
-  //    FContext^.Free(JSValue(Promise)); -- should free automatically
-  //    JS_Free(FContext, @Promise);
-
-  FPromise^.params.values.data.Free;
   self.Terminate;
 end;
 
@@ -135,31 +147,55 @@ end;
     On success, @code(FSuccess) is True and @code(FResult) holds the JS value to return.
     On errors/exceptions, sets @code(FSuccess:=False) and reports via UX helpers. }
 procedure TJSAsyncTask.ProcessResult;
+var
+  xres: JSValue;
 begin
-  with FPromise^ do
-    begin
-      if Assigned(Callback) then
-        begin
-          // This should already be checked, but let's be safe
-          try
-            FSuccess := FPromise^.Callback(@FContext, func, params.values.data, FResult);
-            // Run the callback that was set when the function was defined
-          except
-            on E: EInvalidCast do
-                  begin
-                    FSuccess := false;
-                    ExtError(uxdAuto, sTypeErrMsg, e.message);
-                  end;
-            on E: Exception do
-                  begin
-                    fsuccess := false;
-                    ExtError(uxdAuto, Format(sPromErrCapt, [func]),e.Message);
-                  end;
-        end;
-    end
-    else fsuccess := false;
-end;
+  // Avoid doing work if app is shutting down
+  if Application.Terminated or IsExtShuttingDown then
+  begin
+    FSuccess := false;
+    Exit;
+  end;
 
+  with FPromise do
+  begin
+    if Assigned(Callback) then
+    begin
+      try
+        FSuccess := FPromise.Callback(@FContext, func, params.values.data, FResult);
+      except
+        on E: EInvalidCast do
+        begin
+          FSuccess := false;
+          ExtError(uxdAuto, sTypeErrMsg, e.message);
+        end;
+        on E: Exception do
+        begin
+          FSuccess := false;
+          ExtError(uxdAuto, Format(sPromErrCapt, [func]), e.Message);
+        end;
+      end;
+    end
+    else
+      FSuccess := false;
+  end;
+
+  if Application.Terminated or IsExtShuttingDown then
+    Exit;
+
+  if (FContext = nil) then
+    Exit;
+
+  // Convert and resolve/reject the promise
+  xres := JSValueValToValue(FContext, FResult);
+  if FSuccess then
+    JS_Call(FContext, funcs[JprResolve], JS_UNDEFINED, 1, @xres)
+  else
+    JS_Call(FContext, funcs[JprReject], JS_UNDEFINED, 1, @xres);
+
+  // Free parsed parameters captured earlier
+  if Assigned(FPromise.params.values.data) then
+    FPromise.params.values.data.Free;
 end;
 
 end.
