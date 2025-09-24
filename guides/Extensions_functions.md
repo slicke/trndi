@@ -138,5 +138,5 @@ Trndi.setTimeAndRange(20, 4); // Sets the max time to fetch to 20 minutes and th
 #### This function is called everytime a trend dot is clicked
 ```updateCallback(open, mgdl, mmol, time)```
 ```javascript
-function updateCallback(open, mgdl, mmol){console.log("Is the dot now showing the value? " + open, "Reading " + mmol, "Time: " + time )} // time will be 2255, 1201 (22:55, 12:01)
+function dotClicked(open, mgdl, mmol, time){console.log("Is the dot now showing the value? " + open, "Reading " + mmol, "Time: " + time )} // if the dot is "open" its showing the reading, not the dot icon
 ```
