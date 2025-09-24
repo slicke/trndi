@@ -48,3 +48,7 @@ Trndi-arm
 Trndi-amd64
 Trndi-linux
 *.trc
+
+# In case someone downloads it locally
+.mORMot
+.mORMot2

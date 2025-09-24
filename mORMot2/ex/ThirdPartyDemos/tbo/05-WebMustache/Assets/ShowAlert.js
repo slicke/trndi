@@ -1,1 +1,0 @@
-alert("Hi, I am a message from Thomas!");
