@@ -28,9 +28,13 @@ var
   curr: rawbytestring;
   res: JSValue;
 begin
-  curr := username;
-  res := ctx^.From(curr);
-  result := res.raw;
+  if username <> '' then begin
+    curr := username;
+    res := ctx^.From(curr);
+    result := res.raw;
+  end else
+    // Return a JS boolean false when no user has been loaded
+    result := JS_FALSE;
 end;
 
 function JSActiveUserNick(ctx: JSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw; cdecl;
@@ -38,9 +42,17 @@ var
   curr: rawbytestring;
   res: JSValue;
 begin
-  curr := multinick;
-  res := ctx^.From(curr);
-  result := res.raw;
+  if fBG.multi then
+  begin
+    curr := fBG.multinick;
+    res := ctx^.From(curr);
+    result := res.raw;
+  end
+  else
+  begin
+    // Return a real JS boolean false when not in multi-user mode
+    result := JS_FALSE;
+  end;
 end;
 
 
