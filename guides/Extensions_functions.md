@@ -140,3 +140,30 @@ Trndi.setTimeAndRange(20, 4); // Sets the max time to fetch to 20 minutes and th
 ```javascript
 function dotClicked(open, mgdl, mmol, time){console.log("Is the dot now showing the value? " + open, "Reading " + mmol, "Time: " + time )} // if the dot is "open" its showing the reading, not the dot icon
 ```
+
+### uxClick
+#### This function is called when the user triggers a UX message
+```uxClick(element, value)```
+```javascript
+function uxClick(element, value, ...values){
+  console.log('clicked', element, 'value of dialog box', value)
+  return true; // false supresses Trndi's own dialog
+  // element =
+  // "tir" - Time in range was clicked, value = time span, value2 = percent
+  // "no-reading" - The "No reading" popup is clicked, no args
+  // "range" - Over/Under range bar is clicked, value = true if the reading is high
+}
+```
+
+### clockView
+#### Replace the clock when "Show clock every 20 seconds" is on
+```clockView(glucose, time)```
+```javascript
+function clockView(glucose, time){
+  return Trndi.getCurrentUser(); // Returns the username, if running multiple accounts
+  return "Hello"; // Shows Hello instead of the clock every 20 seconds
+}
+```
+
+### Trndi.getCurrentUser
+#### Returns the username of the current user (empty when not in multi-user mode)

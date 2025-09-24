@@ -718,6 +718,9 @@ begin
     addClassFunction('setTimeAndRange', ExtFunction(@JSTimeRange), 2);
     addClassFunction('playSound', ExtFunction(@JSPlay), 1);
     addClassFunction('sayText', ExtFunction(@JSSay), 1);
+    addClassFunction('getCurrentUser', ExtFunction(@JSActiveUser), 1);
+    addClassFunction('getCurrentNickname', ExtFunction(@JSActiveUserNick), 1);
+
     // Add the UX modification function, as declared in this file
     for s in exts do begin
        fSplash.lInfo.Caption := RS_SPLASH_LOADING + s;
@@ -1444,6 +1447,12 @@ end;
 
 procedure TfBG.pnWarningClick(Sender: TObject);
 begin
+    {$ifdef TrndiExt}
+    if funcBool(TTrndiExtEngine.Instance.CallFunction('uxClick',[
+      'no-reading'
+    ])) = false then
+      Exit;
+  {$endif}
   ShowMessage(RS_NO_BOOT_READING);
 end;
 
@@ -1825,10 +1834,12 @@ var
 begin
   minTotal := MinutesBetween(now, bgs[High(bgs)].date);
   {$ifdef TrndiExt}
-    TTrndiExtEngine.Instance.CallFunction('uxClick',[
+    if funcBool(TTrndiExtEngine.Instance.CallFunction('uxClick',[
       'tir',
-      mintotal
-    ]);
+      mintotal,
+      lTir.Caption
+    ])) = false then
+      Exit;
   {$endif}
 
   if minTotal < 60 then
@@ -2398,7 +2409,7 @@ begin
   {$ifdef TrndiExt}
     fs := DefaultFormatSettings;
     fs.DecimalSeparator := '.';
-    TTrndiExtEngine.Instance.CallFunction('dotClicked',[
+   TTrndiExtEngine.Instance.CallFunction('dotClicked',[
       IfThen(isDot, 'false', 'true'), // is the dot "open" as in viewing the value
       StrToFloat(l.Hint) * BG_CONVERTIONS[mgdl][un],
       StrToFloat(l.Hint) * BG_CONVERTIONS[mmol][un],
@@ -2556,9 +2567,20 @@ end else begin
 end;
 // Handle off range panel click
 procedure TfBG.pnOffRangeClick(Sender: TObject);
+var
+  ishigh: boolean;
 begin
+  ishigh := (Sender as TPanel).Color = bg_rel_color_hi;
+  {$ifdef TrndiExt}
+    if funcBool(TTrndiExtEngine.Instance.CallFunction('uxClick',[
+      'range',
+      ishigh
+    ])) = false then
+      Exit;
+  {$endif}
+
   ShowMessage(Format(RS_RANGE_EXPLANATION,
-    [IfThen((Sender as TPanel).Color = bg_rel_color_hi, RS_OVER, RS_UNDER)]));
+    [IfThen(ishigh, RS_OVER, RS_UNDER)]));
 end;
 
 procedure TfBG.tAgoTimer(Sender:TObject);
@@ -2584,11 +2606,24 @@ begin
 end;
 
 procedure TfBG.tClockTimer(Sender:TObject);
+var
+  s: string;
+const
+  clockInterval = 5000;
 begin
 tClock.Enabled := false;
-  if Pos(':', lval.Caption) < 1 then begin
-    lval.caption :=  FormatDateTime(ShortTimeFormat, Now);
-    tClock.Interval := 5000;
+  if tClock.Interval <> clockInterval then begin
+    {$ifdef TrndiExt}
+      s := '';
+      s := TTrndiExtEngine.Instance.CallFunction('clockView', [bgs[Low(bgs)].val, DateTimeToStr(Now)]);
+      if s.IsEmpty then
+        lval.caption := FormatDateTime(ShortTimeFormat, Now)
+      else
+        lval.caption := s;
+    {$else}
+      lval.caption := FormatDateTime(ShortTimeFormat, Now);
+    {$endif}
+    tClock.Interval := clockInterval;
     lArrow.Visible := false;
   end else begin
     lval.caption :=  lval.hint;

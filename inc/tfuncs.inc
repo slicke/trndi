@@ -23,6 +23,26 @@ uses
 mormot.lib.quickjs, variants;
 
 
+function JSActiveUser(ctx: JSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw; cdecl;
+var
+  curr: rawbytestring;
+  res: JSValue;
+begin
+  curr := username;
+  res := ctx^.From(curr);
+  result := res.raw;
+end;
+
+function JSActiveUserNick(ctx: JSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw; cdecl;
+var
+  curr: rawbytestring;
+  res: JSValue;
+begin
+  curr := multinick;
+  res := ctx^.From(curr);
+  result := res.raw;
+end;
+
 
 // Convert a color, eg for a ux call in JS, to TColor
 function HTMLColorToTColor(const HTMLColor: string): TColor;
