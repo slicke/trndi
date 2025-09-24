@@ -579,6 +579,9 @@ var
 begin
   inherited Create;
 
+  // Clear shutdown guard at startup
+  SetExtShuttingDown(false);
+
   // Create the QuickJS runtime
   FRuntime := JS_NewRuntime;
   if FRuntime = nil then
@@ -654,6 +657,15 @@ destructor TTrndiExtEngine.Destroy;
 var
   cb: PJSCallback;
 begin
+  // Stop the job-pumping timer ASAP to avoid re-entrancy during teardown
+  try
+    if Assigned(eventTimer) then
+      eventTimer.Enabled := false;
+  except
+  end;
+
+  // Signal extension shutdown to background tasks
+  SetExtShuttingDown(true);
   try
     if FContext <> nil then
       FContext^.Done;
@@ -683,7 +695,8 @@ begin
     Dispose(cb);
   callbacks.Free;
 
-  FreeAndNil(FInstance);
+  // Clear singleton reference without freeing again
+  FInstance := nil;
   inherited Destroy;
 end;
 
