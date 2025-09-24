@@ -3054,7 +3054,7 @@ begin
      bgs[0].format(mmol, BG_MSG_SHORT), //mmol reading
      bgs[0].format(mgdl, BG_MSG_SIG_SHORT, BGDelta), //mgdl diff
      bgs[0].format(mmol, BG_MSG_SHORT, BGDelta), //mmol diff
-     IfThen(bgs[0].empty, false, true) // has reading?
+     not bgs[0].empty // has reading?
      ]);
   {$endif}
 end;

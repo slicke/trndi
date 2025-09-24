@@ -926,6 +926,7 @@ var
   StrResult: pansichar;
   tmpStrs: array of RawUtf8; // hold conversions' lifetime until call returns
   s: RawUtf8;
+  tmpv: JSValue;
 begin
   if not TTrndiExtEngine.Instance.FunctionExists(funcName) then
     Exit('');
@@ -951,26 +952,33 @@ begin
   for i := 0 to High(Args) do
   begin
     case Args[i].VType of
+      // Numbers
       vtInteger:
-        ArgArray[i] := JS_NewBigInt64(FContext, Args[i].VInteger);
+        begin
+          tmpv.From32(Args[i].VInteger);
+          ArgArray[i] := tmpv.Raw;
+        end;
 
       vtInt64:
-        ArgArray[i] := JS_NewBigInt64(FContext, Args[i].VInt64^);
-
-      vtBoolean:
         begin
-          if Args[i].VBoolean then s := 'true' else s := 'false';
-          tmpStrs[i] := s;
-          ArgArray[i] := JS_NewString(FContext, PChar(tmpStrs[i]));
+          tmpv.from64(Args[i].VInt64^);
+          ArgArray[i] := tmpv.Raw;
         end;
 
       vtExtended:
         begin
-          s := RawUtf8(FloatToStr(Args[i].VExtended^));
-          tmpStrs[i] := s;
-          ArgArray[i] := JS_NewString(FContext, PChar(tmpStrs[i]));
+          tmpv.FromFloat(Args[i].VExtended^);
+          ArgArray[i] := tmpv.Raw;
         end;
 
+      // Booleans
+      vtBoolean:
+        begin
+          tmpv.From(Args[i].VBoolean);
+          ArgArray[i] := tmpv.Raw;
+        end;
+
+      // Strings
       vtChar:
         begin
           s := RawUtf8(Args[i].VChar);
@@ -1004,7 +1012,7 @@ begin
 
     else
       begin
-        // Fallback: stringifies the value using default conversion
+        // Fallback: stringify unsupported types
         s := RawUtf8('{unsupported}');
         tmpStrs[i] := s;
         ArgArray[i] := JS_NewString(FContext, PChar(tmpStrs[i]));
