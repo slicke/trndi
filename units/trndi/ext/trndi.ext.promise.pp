@@ -132,11 +132,16 @@ begin
     Exit;
 
   if Assigned(FPromise.callback) then // Run the main function, if it's actually set
-    Synchronize(@ProcessResult)
+  begin
+    // Check again before synchronizing, as shutdown might have occurred
+    if not (Application.Terminated or IsExtShuttingDown) then
+      Synchronize(@ProcessResult);
+  end
   else
     begin
       // Complain that it wasn't set
-      ExtError(uxdAuto, 'Error: Missing Function');
+      if not (Application.Terminated or IsExtShuttingDown) then
+        ExtError(uxdAuto, 'Error: Missing Function');
       FSuccess := false;
       Exit;
     end;
@@ -157,6 +162,13 @@ begin
     Exit;
   end;
 
+  // Additional check: ensure context is still valid
+  if (FContext = nil) then
+  begin
+    FSuccess := false;
+    Exit;
+  end;
+
   with FPromise do
   begin
     if Assigned(Callback) then
@@ -167,12 +179,14 @@ begin
         on E: EInvalidCast do
         begin
           FSuccess := false;
-          ExtError(uxdAuto, sTypeErrMsg, e.message);
+          if not (Application.Terminated or IsExtShuttingDown) then
+            ExtError(uxdAuto, sTypeErrMsg, e.message);
         end;
         on E: Exception do
         begin
           FSuccess := false;
-          ExtError(uxdAuto, Format(sPromErrCapt, [func]), e.Message);
+          if not (Application.Terminated or IsExtShuttingDown) then
+            ExtError(uxdAuto, Format(sPromErrCapt, [func]), e.Message);
         end;
       end;
     end
@@ -180,18 +194,24 @@ begin
       FSuccess := false;
   end;
 
+  // Final check before making JS calls
   if Application.Terminated or IsExtShuttingDown then
     Exit;
 
   if (FContext = nil) then
     Exit;
 
-  // Convert and resolve/reject the promise
-  xres := JSValueValToValue(FContext, FResult);
-  if FSuccess then
-    JS_Call(FContext, funcs[JprResolve], JS_UNDEFINED, 1, @xres)
-  else
-    JS_Call(FContext, funcs[JprReject], JS_UNDEFINED, 1, @xres);
+  try
+    // Convert and resolve/reject the promise
+    xres := JSValueValToValue(FContext, FResult);
+    if FSuccess then
+      JS_Call(FContext, funcs[JprResolve], JS_UNDEFINED, 1, @xres)
+    else
+      JS_Call(FContext, funcs[JprReject], JS_UNDEFINED, 1, @xres);
+  except
+    // Silently ignore JS calls that fail during shutdown
+    // This prevents crashes when the runtime is being destroyed
+  end;
 
   // Free parsed parameters captured earlier
   if Assigned(FPromise.params.values.data) then

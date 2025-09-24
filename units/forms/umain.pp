@@ -61,6 +61,9 @@ CocoaAll, MacOSAll,
 {$ifdef windows}
 LCLType,
 {$endif}
+{$ifdef LINUX}
+kdebadge,
+{$endif}
 LazFileUtils, uconf, trndi.native, Trndi.API, trndi.api.xDrip,{$ifdef DEBUG} trndi.api.debug, trndi.api.debug_edge, trndi.api.debug_missing, trndi.api.debug_perfect, {$endif}
 {$ifdef LCLQt6}Qt6, QtWidgets,{$endif}
 StrUtils, TouchDetection, ufloat;
@@ -239,6 +242,7 @@ private
     FormStyle: TFormStyle;
     Initialized: Boolean;
   end;
+  FShuttingDown: Boolean; // Flag to prevent recursive shutdown calls
     // Array to hold references to lDot1 - lDot10
   TrendDots: array[1..10] of TPaintBox;
   multi: boolean; // Multi user
@@ -1228,15 +1232,20 @@ end;
 
 procedure TfBG.FormDestroy(Sender:TObject);
 begin
+  // These should already be freed in FormClose, but check just to be safe
   if assigned(native) then
-     native.free;
+  begin
+    native.free;
+    native := nil;
+  end;
   if assigned(api) then
+  begin
     api.Free;
+    api := nil;
+  end;
 
-  {$ifdef TRNDIEXT}
-    TTrndiExtEngine.ReleaseInstance;
-  {$endif}
-
+  // Note: TTrndiExtEngine.ReleaseInstance is already called in FormClose
+  // Calling it here would be redundant and potentially problematic
 end;
 
 procedure TfBG.speakReading;
@@ -1448,9 +1457,10 @@ end;
 procedure TfBG.pnWarningClick(Sender: TObject);
 begin
     {$ifdef TrndiExt}
-    if funcBool(TTrndiExtEngine.Instance.CallFunction('uxClick',[
-      'no-reading'
-    ])) = false then
+    if Assigned(TTrndiExtEngine.Instance) and 
+       funcBool(TTrndiExtEngine.Instance.CallFunction('uxClick',[
+         'no-reading'
+       ])) = false then
       Exit;
   {$endif}
   ShowMessage(RS_NO_BOOT_READING);
@@ -1504,6 +1514,11 @@ var
     mr: TModalResult;
   {$endif}
 begin
+  // Prevent recursive shutdown calls
+  if FShuttingDown then
+    Exit;
+  FShuttingDown := True;
+
   {$ifdef Darwin}
   if self.Showing then
   begin
@@ -1511,10 +1526,15 @@ begin
                    [mbClose, mbUXMinimize, mbCancel]);
     case mr of
       mrClose: CloseAction := caFree;
-      mrCancel: Abort;
+      mrCancel: 
+      begin
+        FShuttingDown := False; // Reset flag if user cancels
+        Abort;
+      end;
       else
       begin
         CloseAction := caHide;
+        FShuttingDown := False; // Reset flag for hide
         Exit;
       end;
     end;
@@ -1523,30 +1543,29 @@ begin
   {$else}
 
   if UXDialog(uxdAuto, RS_QUIT_CAPTION, RS_QUIT_MSG, [mbYes, mbNo], uxmtOK) = mrNo then
+  begin
+    FShuttingDown := False; // Reset flag if user cancels
     Abort;
+  end;
+  
+  // Explicitly set CloseAction to ensure the form is actually freed
+  CloseAction := caFree;
   {$endif}
   {$ifdef TrndiExt}
-  TTrndiExtEngine.ReleaseInstance;
+  // Stop all timers before destroying JS engine to prevent access violations
+  if Assigned(tAgo) then tAgo.Enabled := false;
+  if Assigned(tClock) then tClock.Enabled := false;
+  if Assigned(tSwap) then tSwap.Enabled := false;
+  if Assigned(tResize) then tResize.Enabled := false;
+  if Assigned(tMissed) then tMissed.Enabled := false;
+  if Assigned(tTouch) then tTouch.Enabled := false;
+  if Assigned(tMain) then tMain.Enabled := false;
+  
+  // DON'T release the extension engine - let the OS clean it up on process exit
+  // This avoids the access violations during shutdown
   {$endif}
 
-  // Hämta och validera position
-  posValue := native.GetIntSetting('position.main', ord(tpoCenter));
-
-  if not ((posValue >= Ord(Low(TrndiPos))) and (posValue <= Ord(High(TrndiPos)))) then
-    posValue := ord(tpoCenter);
-
-  // Spara positionen om den är custom
-  if TrndiPos(posValue) = tpoCustom then
-  begin
-    native.SetSetting('position.last.left', self.left.toString);
-    native.SetSetting('position.last.top', self.top.toString);
-  end;
-
-  if native.GetBoolSetting('size.main') then
-  begin
-    native.SetSetting('size.last.width', self.width.tostring);
-    native.SetSetting('size.last.height', self.height.tostring);
-  end;
+  // Let normal form closure process continue with CloseAction := caFree
 end;
 
 procedure TfBG.fbReadingsDblClick(Sender:TObject);
@@ -1834,11 +1853,12 @@ var
 begin
   minTotal := MinutesBetween(now, bgs[High(bgs)].date);
   {$ifdef TrndiExt}
-    if funcBool(TTrndiExtEngine.Instance.CallFunction('uxClick',[
-      'tir',
-      mintotal,
-      lTir.Caption
-    ])) = false then
+    if Assigned(TTrndiExtEngine.Instance) and
+       funcBool(TTrndiExtEngine.Instance.CallFunction('uxClick',[
+         'tir',
+         mintotal,
+         lTir.Caption
+       ])) = false then
       Exit;
   {$endif}
 
@@ -2409,12 +2429,13 @@ begin
   {$ifdef TrndiExt}
     fs := DefaultFormatSettings;
     fs.DecimalSeparator := '.';
-   TTrndiExtEngine.Instance.CallFunction('dotClicked',[
-      IfThen(isDot, 'false', 'true'), // is the dot "open" as in viewing the value
-      StrToFloat(l.Hint) * BG_CONVERTIONS[mgdl][un],
-      StrToFloat(l.Hint) * BG_CONVERTIONS[mmol][un],
-      l.tag
-    ]);
+    if Assigned(TTrndiExtEngine.Instance) then
+      TTrndiExtEngine.Instance.CallFunction('dotClicked',[
+        IfThen(isDot, 'false', 'true'), // is the dot "open" as in viewing the value
+        StrToFloat(l.Hint) * BG_CONVERTIONS[mgdl][un],
+        StrToFloat(l.Hint) * BG_CONVERTIONS[mmol][un],
+        l.tag
+      ]);
   {$endif}
 
   if isDot then
@@ -2572,10 +2593,11 @@ var
 begin
   ishigh := (Sender as TPanel).Color = bg_rel_color_hi;
   {$ifdef TrndiExt}
-    if funcBool(TTrndiExtEngine.Instance.CallFunction('uxClick',[
-      'range',
-      ishigh
-    ])) = false then
+    if Assigned(TTrndiExtEngine.Instance) and
+       funcBool(TTrndiExtEngine.Instance.CallFunction('uxClick',[
+         'range',
+         ishigh
+       ])) = false then
       Exit;
   {$endif}
 
@@ -2615,7 +2637,9 @@ tClock.Enabled := false;
   if tClock.Interval <> clockInterval then begin
     {$ifdef TrndiExt}
       s := '';
-      s := TTrndiExtEngine.Instance.CallFunction('clockView', [bgs[Low(bgs)].val, DateTimeToStr(Now)]);
+      // Check if JS engine is still available before calling
+      if Assigned(TTrndiExtEngine.Instance) then
+        s := TTrndiExtEngine.Instance.CallFunction('clockView', [bgs[Low(bgs)].val, DateTimeToStr(Now)]);
       if s.IsEmpty then
         lval.caption := FormatDateTime(ShortTimeFormat, Now)
       else
@@ -2864,7 +2888,9 @@ begin
   updateReading;
   {$ifdef TrndiExt}
   try
-     TTrndiExtEngine.Instance.CallFunction('updateCallback', [bgs[Low(bgs)].val, DateTimeToStr(Now)]);
+     // Check if JS engine is still available before calling
+     if Assigned(TTrndiExtEngine.Instance) then
+       TTrndiExtEngine.Instance.CallFunction('updateCallback', [bgs[Low(bgs)].val, DateTimeToStr(Now)]);
   finally
   end;
   {$endif}
@@ -3084,13 +3110,15 @@ begin
   CalcRangeTime;
 
   {$ifdef TrndiExt}
-  TTrndiExtEngine.Instance.CallFunction('fetchCallback',[
-     bgs[0].format(mgdl, BG_MSG_SHORT), //mgdl reading
-     bgs[0].format(mmol, BG_MSG_SHORT), //mmol reading
-     bgs[0].format(mgdl, BG_MSG_SIG_SHORT, BGDelta), //mgdl diff
-     bgs[0].format(mmol, BG_MSG_SHORT, BGDelta), //mmol diff
-     not bgs[0].empty // has reading?
-     ]);
+  // Check if JS engine is still available before calling
+  if Assigned(TTrndiExtEngine.Instance) then
+    TTrndiExtEngine.Instance.CallFunction('fetchCallback',[
+       bgs[0].format(mgdl, BG_MSG_SHORT), //mgdl reading
+       bgs[0].format(mmol, BG_MSG_SHORT), //mmol reading
+       bgs[0].format(mgdl, BG_MSG_SIG_SHORT, BGDelta), //mgdl diff
+       bgs[0].format(mmol, BG_MSG_SHORT, BGDelta), //mmol diff
+       not bgs[0].empty // has reading?
+       ]);
   {$endif}
 end;
 
