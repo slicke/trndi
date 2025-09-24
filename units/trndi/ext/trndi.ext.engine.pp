@@ -223,7 +223,19 @@ type
         @param(Args     Array of string arguments)
         @returns(Stringified result; empty string if call failed/not found) }
   function CallFunction(const FuncName: RawUtf8; const Args: JSArray): RawUtf8; overload;
+
+   {** Call a global JS function by name with integer arguments.
+
+        @param(FuncName Global function name)
+        @param(Args     Array of integer arguments)
+        @returns(Stringified result; empty string if call failed/not found) }
   function CallFunction(const FuncName: RawUtf8; const Args: array of integer): RawUtf8; overload;
+
+  {** Call a global JS function by name with different arguments.
+
+      @param(FuncName Global function name)
+      @param(Args     Array of const arguments)
+      @returns(Stringified result; empty string if call failed/not found) }
   function CallFunction(const FuncName: RawUtf8; const Args: array of const): RawUtf8; overload;
 
     {** Set a global JS variable (string).
