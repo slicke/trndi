@@ -172,6 +172,7 @@ TfBG = class(TForm)
   procedure FormDestroy(Sender:TObject);
   procedure FormKeyPress(Sender:TObject;var Key:char);
   procedure DotPaint(Sender: TObject);
+  procedure lDiffClick(Sender: TObject);
   procedure miDotsInViewClick(Sender: TObject);
   procedure miExitClick(Sender: TObject);
   procedure miCustomDotsClick(Sender: TObject);
@@ -1308,6 +1309,11 @@ begin
   end;
 end;
 
+procedure TfBG.lDiffClick(Sender: TObject);
+begin
+  ShowMessage(RS_DIFF);
+end;
+
 procedure TfBG.miDotsInViewClick(Sender: TObject);
 var
   i: integer;
@@ -1818,6 +1824,13 @@ var
   msg: String;
 begin
   minTotal := MinutesBetween(now, bgs[High(bgs)].date);
+  {$ifdef TrndiExt}
+    TTrndiExtEngine.Instance.CallFunction('uxClick',[
+      'tir',
+      mintotal
+    ]);
+  {$endif}
+
   if minTotal < 60 then
   begin
     msg := Format(RS_TIR_M, [minTotal]);
@@ -2387,9 +2400,9 @@ begin
     fs.DecimalSeparator := '.';
     TTrndiExtEngine.Instance.CallFunction('dotClicked',[
       IfThen(isDot, 'false', 'true'), // is the dot "open" as in viewing the value
-      FloatToStr(StrToFloat(l.Hint) * BG_CONVERTIONS[mgdl][un], fs),
-      FloatToStr(StrToFloat(l.Hint) * BG_CONVERTIONS[mmol][un], fs),
-      l.tag.tostring
+      StrToFloat(l.Hint) * BG_CONVERTIONS[mgdl][un],
+      StrToFloat(l.Hint) * BG_CONVERTIONS[mmol][un],
+      l.tag
     ]);
   {$endif}
 
@@ -2816,7 +2829,7 @@ begin
   updateReading;
   {$ifdef TrndiExt}
   try
-     TTrndiExtEngine.Instance.CallFunction('updateCallback', [bgs[Low(bgs)].val.ToString, DateTimeToStr(Now)]);
+     TTrndiExtEngine.Instance.CallFunction('updateCallback', [bgs[Low(bgs)].val, DateTimeToStr(Now)]);
   finally
   end;
   {$endif}
@@ -3041,7 +3054,7 @@ begin
      bgs[0].format(mmol, BG_MSG_SHORT), //mmol reading
      bgs[0].format(mgdl, BG_MSG_SIG_SHORT, BGDelta), //mgdl diff
      bgs[0].format(mmol, BG_MSG_SHORT, BGDelta), //mmol diff
-     IfThen(bgs[0].empty, 'false', 'true') // has reading?
+     IfThen(bgs[0].empty, false, true) // has reading?
      ]);
   {$endif}
 end;
