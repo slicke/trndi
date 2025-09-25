@@ -2619,6 +2619,7 @@ procedure TfBG.pmSettingsPopup(Sender: TObject);
 var
   tpb: TPaintbox;
   H,M: integer;
+  mi: integer;
 begin
   // Shift down
   miAdvanced.Visible := ssShift in GetKeyShiftState;
@@ -2627,6 +2628,19 @@ begin
   {$ifdef DEBUG}
     miDebugBackend.Visible := true;
   {$endif}
+
+  miDotNormal.checked := false;
+  miDotBig.checked := false;
+  miDotHuge.checked := false;
+  miDotVal.Checked := false;
+
+  case dotscale of
+    1: miDotNormal.checked := true;
+    2: miDotBig.checked := true;
+    3: miDotHuge.checked := true;
+    else
+      miDotVal.Checked := true;
+  end;
 
   if (sender as TPopupMenu).PopupComponent is TPaintBox then begin
     tpb := (sender as TPopupMenu).PopupComponent as TPaintBox;
@@ -2654,6 +2668,7 @@ begin
     pmSettings.Tag := 1;
   end;
   {$endif}
+
 end;
 
 procedure TfBG.pnMultiUserClick(Sender:TObject);
