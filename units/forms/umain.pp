@@ -269,6 +269,7 @@ private
   function setColorMode: boolean;
   procedure SetLang;
   procedure fixWarningPanel;
+  procedure showWarningPanel(const message: string; clearDisplayValues: boolean = false);
   function lastReading: BGReading;
   procedure CalcRangeTime;
   function updateReading(boot: boolean = false): boolean;
@@ -1237,8 +1238,7 @@ begin
   Application.processmessages;
   if not updateReading(true) then begin // First reading attempt failed
     updateReading; // We call it twice, to first setup the dots and then make it black
-    pnWarning.Visible := true;
-    pnWarning.Caption := '⚠️ ' + RS_NO_BOOT_READING;
+    showWarningPanel(RS_NO_BOOT_READING);
   end;
   fsplash.Close;
   fsplash.Free;
@@ -3441,18 +3441,38 @@ begin
     lMissing.left := 5;
     lMissing.top := 5;
     lMissing.width := pnWarning.Width-10;
-    lMissing.height := pnWarning.height div 5;
+    // Ensure label has adequate height for multiline content
+    lMissing.height := pnWarning.height - 10; // Leave margins instead of div 5
     lMissing.OptimalFill := true;
     if native.HasTouchScreen then begin
       lMissing.wordwrap := true;
-      lmissing.font.size :=  pnWarning.left - padding*3;
-      lmissing.width := pnWarning.width;
-      lmissing.height := pnWarning.Height;
+      // Calculate font size based on panel height for better scaling
+      lmissing.font.size := Max(8, pnWarning.Height div 12);
+      lmissing.width := pnWarning.width - 10; // Leave some margin
+      lmissing.height := pnWarning.Height - 10; // Leave some margin
       pnWarning.Font.Color := pnWarning.color;
     end;
 
     pnOffReading.Height := ClientHeight;
     pnOffReading.ClientWidth := ClientWidth div 35;
+end;
+
+procedure TfBG.showWarningPanel(const message: string; clearDisplayValues: boolean = false);
+var
+  i: integer;
+begin
+  pnWarning.Visible := true;
+  pnWarning.Caption := '⚠️ ' + message;
+  
+  if clearDisplayValues then
+  begin
+    if (not TryStrToInt(lVal.Caption[1], i)) or (lArrow.Caption = 'lArrow') then begin // Dont show "Setup" or similar on boot
+      lVal.Caption := '--';
+      lArrow.Caption := '';
+    end;
+  end;
+  
+  fixWarningPanel;
 end;
 
 function TfBG.DoFetchAndValidateReadings(const ForceRefresh: Boolean): Boolean;
@@ -3505,14 +3525,7 @@ begin
   pnWarning.Visible := false;
   if (Length(bgs) < 1) or (not IsDataFresh) then
   begin
-    pnWarning.Visible := true;
-
-    pnWarning.Caption := '⚠️ ' + RS_NO_BACKEND;
-    if (not TryStrToInt(lVal.Caption[1], i)) or (lArrow.Caption = 'lArrow') then begin // Dont show "Setup" or similar on boot
-      lVal.Caption := '--';
-      lArrow.Caption := '';
-    end;
-    FixWarningPanel;
+    showWarningPanel(RS_NO_BACKEND, true);
     Exit;
   end;
 
