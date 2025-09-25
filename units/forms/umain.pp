@@ -780,8 +780,8 @@ var
   s: string;
 begin
   // Set dots
-  DOT_GRAPH := native.GetWideCharSetting('font.dot', WideChar($2B24));
-  DOT_FRESH := native.GetWideCharSetting('font.dot_fresh', WideChar($2600));
+  DOT_GRAPH := native.GetWideCharSetting('font.dot', System.WideChar($2B24));
+  DOT_FRESH := native.GetWideCharSetting('font.dot_fresh', System.WideChar($2600));
 
   // Load fonts
   s := native.GetSetting('font.val', 'default');
@@ -2191,9 +2191,9 @@ if cbPos.ItemIndex = -1 then
   begin
     with f do
     begin
-      f.lDot.Caption := native.GetWideCharSetting('font.dot', WideChar($2B24));
+      f.lDot.Caption := native.GetWideCharSetting('font.dot', System.WideChar($2B24));
       eDot.Text := native.GetSetting('font.dot', '2B24');
-      lDotNow.Caption := native.GetWideCharSetting('font.dot_fresh', WideChar($2B24));
+      lDotNow.Caption := native.GetWideCharSetting('font.dot_fresh', System.WideChar($2B24));
       eDotNow.Text := native.GetSetting('font.dot_fresh', '2600');
       f.lDot1.Caption :=  f.lDot.Caption;
       f.lDot2.Caption :=  f.lDot.Caption;
@@ -2263,9 +2263,9 @@ if cbPos.ItemIndex = -1 then
     with f, native do
     begin
       if TryStrToInt('$'+eDot.text, i) then
-        SetWideCharSetting('font.dot', WideChar(i));
+        SetWideCharSetting('font.dot', System.WideChar(i));
       if TryStrToInt('$'+eDotNow.text, i) then
-        SetWideCharSetting('font.dot_fresh', WideChar(i));
+        SetWideCharSetting('font.dot_fresh', System.WideChar(i));
 
       SetSetting('font.val', lVal.Font.Name);
       SetSetting('font.arrow', lArrow.Font.Name);
