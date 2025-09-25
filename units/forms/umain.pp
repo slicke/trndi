@@ -3170,6 +3170,7 @@ begin
 
    lTir.Caption := range.toString + '%';
    lTir.Hint := range.toString;
+   lTir.Visible := true; // Ensure TIR label is visible after calculation
 end;
 
 function TfBG.updateReading(boot: boolean = false): boolean;

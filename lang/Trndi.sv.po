@@ -562,7 +562,7 @@ msgstr "100 min"
 
 #: tfconf.larch.caption
 msgid "Unknown Architecture"
-msgstr ""
+msgstr "Okänd arkietektur"
 
 #: tfconf.larrow.caption
 msgid "->"
@@ -787,7 +787,7 @@ msgstr "Länge sedan"
 
 #: trndi.strings.rs_diff
 msgid "This is the change from the latest reading"
-msgstr ""
+msgstr "Detta är skillnaden från tidigare avläsning"
 
 #: trndi.strings.rs_font_error
 #, object-pascal-format
@@ -1179,11 +1179,11 @@ msgstr "Tvinga uppdatering av avläsning?"
 #: trndi.strings.sforcerefreshcached
 #, object-pascal-format
 msgid "Last update was %d seconds ago. Wait %d more seconds for fresh data, or force refresh now?"
-msgstr ""
+msgstr "Senaste uppdateringen var %d sekunder sedan. Vänta %d sekunder för att få färsk data, eller tvinga en uppdatering?"
 
 #: trndi.strings.sforcerefreshdetail
 msgid "Force refresh will bypass the cache and make an immediate API call. Waiting allows the system to use cached data efficiently."
-msgstr ""
+msgstr "Tvingad uppdatering kommer att förbigå cachen och uppdatera omedelbart. Om du väntar kan systemet använda cachead data effektivt."
 
 #: trndi.strings.slogdesc
 msgctxt "trndi.strings.slogdesc"
@@ -1476,4 +1476,3 @@ msgstr "Du kan använda skift+<nummerr> för att manuellt sätta synligheten (0 
 #: ufloat.rscustomsize
 msgid "You can hold down shift and plus (+) or minus (-) to change the window size"
 msgstr "Du kan hålla ned skift och plus (+) eller minus (-) för att justera fönstrets storlek"
-
