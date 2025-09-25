@@ -31,11 +31,13 @@ function GetNewerVersionURL(const JsonResponse: string;
 
 function privacyIcon(const v: trndi.types.BGValLevel): string;
 
+{$ifdef TrndiExt}
 function callFunc(const func: string; params: array of const; out exists: boolean): string;
 function callFunc(const func: string; params: array of const): string;
 function funcBool(const func: string; params: array of const; const nofunc: boolean): boolean;
 function funcInt(const func: string; params: array of const; const nofunc: int64): Int64;
 function funcFloat(const func: string; params: array of const; const nofunc: double): double;
+{$endif}
 
 const
 INTERVAL_MINUTES = 5; // Each time interval is 5 minutes
@@ -493,6 +495,7 @@ begin
   end;
 end;
 
+{$ifdef TrndiExt}
 // Call a JS function and check that it exists too
 function callFunc(const func: string; params: array of const; out exists: boolean): string;
 begin
@@ -563,6 +566,7 @@ begin
   else
     raise Exception.Create('Cannot interpret extension value '+res+' as float!');
 end;
+{$endif}
 
 end.
 

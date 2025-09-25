@@ -58,9 +58,6 @@ trndi.Ext. Engine, trndi.Ext.jsfuncs,
 {$ifdef Darwin}
 CocoaAll, MacOSAll,
 {$endif}
-{$ifdef windows}
-LCLType,
-{$endif}
 {$ifdef LINUX}
 kdebadge,
 {$endif}
