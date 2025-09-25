@@ -66,7 +66,7 @@ kdebadge,
 {$endif}
 LazFileUtils, uconf, trndi.native, Trndi.API, trndi.api.xDrip,{$ifdef DEBUG} trndi.api.debug, trndi.api.debug_edge, trndi.api.debug_missing, trndi.api.debug_perfect, {$endif}
 {$ifdef LCLQt6}Qt6, QtWidgets,{$endif}
-StrUtils, TouchDetection, ufloat;
+StrUtils, TouchDetection, ufloat, LCLType;
 
 type
 TFloatIntDictionary = specialize TDictionary<Single, Integer>; // Specialized TDictionary
@@ -176,6 +176,10 @@ TfBG = class(TForm)
   procedure FormKeyPress(Sender:TObject;var Key:char);
   procedure DotPaint(Sender: TObject);
   procedure lDiffClick(Sender: TObject);
+  procedure miDotNormalDrawItem(Sender: TObject; ACanvas: TCanvas;
+    ARect: TRect; AState: TOwnerDrawState);
+  procedure miDotNormalMeasureItem(Sender: TObject; ACanvas: TCanvas;
+    var AWidth, AHeight: Integer);
   procedure miDotsInViewClick(Sender: TObject);
   procedure miExitClick(Sender: TObject);
   procedure miCustomDotsClick(Sender: TObject);
@@ -243,6 +247,18 @@ private
     Initialized: Boolean;
   end;
   FShuttingDown: Boolean; // Flag to prevent recursive shutdown calls
+  
+  // Performance optimization fields
+  FCachedTextWidth: Integer;
+  FCachedTextHeight: Integer;
+  FCachedFontSize: Integer;
+  FCachedFontName: string;
+  FLastReadingsHash: Cardinal;
+  FLastAPICall: TDateTime;
+  FCachedReadings: array of BGReading;
+  FLastUIColor: TColor;
+  FLastUICaption: string;
+  
     // Array to hold references to lDot1 - lDot10
   TrendDots: array[1..10] of TPaintBox;
   multi: boolean; // Multi user
@@ -269,10 +285,13 @@ private
 
   // Helper methods for update procedure
   function FetchAndValidateReadings: Boolean;
+  function DoFetchAndValidateReadings(const ForceRefresh: Boolean): Boolean; // Common implementation
   procedure ProcessCurrentReading;
   function IsDataFresh: Boolean;
   procedure SetNextUpdateTimer(const LastReadingTime: TDateTime);
   procedure UpdateUIBasedOnGlucose;
+  procedure CompleteUIUpdate;
+  procedure FinalizeUIUpdate;
   procedure HandleHighGlucose(const {%H-}b: BGReading);
   procedure HandleLowGlucose(const {%H-}b: BGReading);
   procedure HandleNormalGlucose(const b: BGReading);
@@ -298,6 +317,12 @@ private
   procedure UpdateTrendDots;
   procedure ScaleLbl(ALabel: TLabel; customAl: TAlignment = taCenter; customTl: TTextLayout = tlCenter);
 
+  // Performance optimization methods
+  function CalculateReadingsHash(const Readings: array of BGReading): Cardinal;
+  function ShouldUpdateUI(const NewColor: TColor; const NewCaption: string): Boolean;
+  procedure CacheUIState(const UIColor: TColor; const UICaption: string);
+  function FetchAndValidateReadingsForced: Boolean; // Force fresh API call bypassing cache
+  
   procedure HandleLatestReadingFreshness(const LatestReading: BGReading; CurrentTime: TDateTime);
   procedure ProcessTimeIntervals(const SortedReadings: array of BGReading; CurrentTime: TDateTime);
   function UpdateLabelForReading(SlotIndex: Integer; const Reading: BGReading): Boolean;
@@ -1288,6 +1313,7 @@ var
   S, fontn: String;
   L: TPaintBox;
   hasfont: boolean;
+  needsRecalc: Boolean;
 begin
   L := Sender as TPaintBox;
   S := L.Caption;
@@ -1297,6 +1323,11 @@ begin
      hasFont := FontGUIInList(fontn)
   else
      hasFont := FontTXTInList(fontn);
+
+  // Check if we need to recalculate font metrics
+  needsRecalc := (FCachedFontSize <> L.Font.Size) or 
+                 (FCachedFontName <> fontn) or 
+                 (FCachedTextWidth = 0) or (FCachedTextHeight = 0);
 
   with L.Canvas do
   begin
@@ -1308,13 +1339,18 @@ begin
 
     Font.Size := L.Font.Size;
 
-    // Measure exact text size
-    tw := TextWidth(S);
-    th := TextHeight(S);
+    // Use cached measurements if available, otherwise calculate
+    if needsRecalc then
+    begin
+      FCachedTextWidth := TextWidth(S);
+      FCachedTextHeight := TextHeight(S);
+      FCachedFontSize := L.Font.Size;
+      FCachedFontName := fontn;
+    end;
 
     // Size the paintbox to fit the text tightly to avoid extra whitespace
-    L.Width := tw;
-    L.Height := th;
+    L.Width := FCachedTextWidth;
+    L.Height := FCachedTextHeight;
 
     // Draw at (0,0); since control fits text, no centering or offsets needed
     TextOut(0, 0, S);
@@ -1324,6 +1360,18 @@ end;
 procedure TfBG.lDiffClick(Sender: TObject);
 begin
   ShowMessage(RS_DIFF);
+end;
+
+procedure TfBG.miDotNormalDrawItem(Sender: TObject; ACanvas: TCanvas;
+  ARect: TRect; AState: TOwnerDrawState);
+begin
+
+end;
+
+procedure TfBG.miDotNormalMeasureItem(Sender: TObject; ACanvas: TCanvas;
+  var AWidth, AHeight: Integer);
+begin
+
 end;
 
 procedure TfBG.miDotsInViewClick(Sender: TObject);
@@ -1503,6 +1551,10 @@ begin
   begin
     SetBounds(Left + (X - PX), Top + (Y - PY), Width, Height);
     tTouch.Enabled := false; // Dont popup stuff while moving
+  end else begin
+    // Performance optimization: only enable touch timer when there's mouse activity
+    if not tTouch.Enabled then
+      tTouch.Enabled := true;
   end;
 end;
 
@@ -2060,8 +2112,40 @@ end;
 
 // Force update on menu click
 procedure TfBG.miForceClick(Sender: TObject);
+const
+  API_CACHE_SECONDS = 10; // Same as in FetchAndValidateReadings
+var
+  secondsSinceLastCall: Integer;
+  waitTime: Integer;
+  msg: string;
+  result: Integer;
 begin
-  updateReading;
+  // Check if we're still within the cache window
+  secondsSinceLastCall := SecondsBetween(Now, FLastAPICall);
+  if secondsSinceLastCall < API_CACHE_SECONDS then
+  begin
+    waitTime := API_CACHE_SECONDS - secondsSinceLastCall;
+    msg := Format(sForceRefreshCached, [secondsSinceLastCall, waitTime]);
+    
+    // Use ExtMsg with custom buttons for better UX
+    result := slicke.UX.alert.ExtMsg(uxdAuto, sRefrshQ, msg, sForceRefreshDetail, '',
+                                     $00F5F2FD, $003411A9, 
+                                     [mbRetry, mbCancel], uxmtInformation);
+    
+    if result = mrRetry then // mbRetry returns mrRetry
+    begin
+      // User chose to force - bypass cache completely
+      FetchAndValidateReadingsForced;
+      // Update the rest of the UI manually since we bypassed normal flow
+      CompleteUIUpdate;
+    end;
+    // If Cancel was chosen, do nothing - let user wait
+  end
+  else
+  begin
+    // Cache has expired, normal update is fine
+    updateReading;
+  end;
 end;
 
 // Explain limit menu click
@@ -3100,14 +3184,8 @@ begin
   end else
     result := true;
 
-  // Update UI based on glucose values
-  UpdateUIBasedOnGlucose;
-
-  // Complete update and finalize
-  FinalizeUpdate;
-
-  // Calc ranges
-  CalcRangeTime;
+  // Complete the UI update sequence
+  FinalizeUIUpdate;
 
   {$ifdef TrndiExt}
   // Check if JS engine is still available before calling
@@ -3141,8 +3219,12 @@ begin
   // Update floating window if assigned
   UpdateFloatingWindow;
 
-  // Update text colors based on background
-  UpdateUIColors;
+  // Update text colors based on background only if UI changed
+  if ShouldUpdateUI(fBG.Color, lVal.Caption) then
+  begin
+    UpdateUIColors;
+    CacheUIState(fBG.Color, lVal.Caption);
+  end;
 
   // Update system integration
   native.setBadge(lVal.Caption, fBG.Color{$ifdef lclwin32},badge_width,badge_font{$endif});
@@ -3151,6 +3233,23 @@ begin
   if privacyMode then
     DOT_ADJUST := randomrange(-3, 3) / 10
 
+end;
+
+procedure TfBG.CompleteUIUpdate;
+begin
+  // Process the current reading and update UI
+  ProcessCurrentReading;
+  UpdateUIBasedOnGlucose;
+  FinalizeUpdate;
+  CalcRangeTime;
+end;
+
+procedure TfBG.FinalizeUIUpdate;
+begin
+  // Complete UI update sequence after data processing
+  UpdateUIBasedOnGlucose;
+  FinalizeUpdate;
+  CalcRangeTime;
 end;
 
 procedure TfBG.UpdateFloatingWindow;
@@ -3318,31 +3417,52 @@ begin
     pnOffReading.ClientWidth := ClientWidth div 35;
 end;
 
-function TfBG.FetchAndValidateReadings: Boolean;
+function TfBG.DoFetchAndValidateReadings(const ForceRefresh: Boolean): Boolean;
 var
 {$ifdef DEBUG}
   res: string;
 {$endif}
 i: integer;
+const
+  API_CACHE_SECONDS = 10; // Don't call API more than once per 10 seconds
 begin
   Result := False;
 
   if api = nil then
     Exit;
 
+  // Performance optimization: use cached readings if recent (unless forced)
+  if not ForceRefresh and 
+     (SecondsBetween(Now, FLastAPICall) < API_CACHE_SECONDS) and 
+     (Length(FCachedReadings) > 0) then
+  begin
+    bgs := FCachedReadings;
+    Result := True;
+    Exit;
+  end;
+
   {$ifdef DEBUG}
     bgs := api.getReadings(MAX_MIN, MAX_RESULT, '', res);
     if miDebugBackend.Checked then begin
       if Showing then
         if res.IsEmpty then
-          slicke.ux.alert.ExtLog(uxdAuto, 'Debug Info', '[empty!]', res)
+          slicke.ux.alert.ExtLog(uxdAuto, 
+                                 IfThen(ForceRefresh, 'Debug Info (Forced)', 'Debug Info'), 
+                                 '[empty!]', res)
         else
-          slicke.ux.alert.ExtLog(uxdAuto, 'Debug Info', '', res, uxmtCustom, 10);
+          slicke.ux.alert.ExtLog(uxdAuto, 
+                                 IfThen(ForceRefresh, 'Debug Info (Forced)', 'Debug Info'), 
+                                 '', res, uxmtCustom, 10);
      end;
   {$ELSE}
        bgs := api.getReadings(MAX_MIN, MAX_RESULT);
   {$endif}
 
+  // Cache the API call and results
+  FLastAPICall := Now;
+  SetLength(FCachedReadings, Length(bgs));
+  if Length(bgs) > 0 then
+    Move(bgs[0], FCachedReadings[0], Length(bgs) * SizeOf(BGReading));
 
   pnWarning.Visible := false;
   if (Length(bgs) < 1) or (not IsDataFresh) then
@@ -3361,6 +3481,16 @@ begin
   // Call the method to place the points
   PlaceTrendDots(bgs);
   Result := True;
+end;
+
+function TfBG.FetchAndValidateReadings: Boolean;
+begin
+  Result := DoFetchAndValidateReadings(False); // Use cached data if available
+end;
+
+function TfBG.FetchAndValidateReadingsForced: Boolean;
+begin
+  Result := DoFetchAndValidateReadings(True); // Force fresh API call, bypass cache
 end;
 
 procedure TfBG.UpdateOffRangePanel(const Value: Single);
@@ -3503,9 +3633,17 @@ procedure TfBG.PlaceTrendDots(const Readings: array of BGReading);
 var
   SortedReadings: array of BGReading;
   currentTime: TDateTime;
+  currentHash: Cardinal;
 begin
   if Length(Readings) = 0 then
     Exit;
+
+  // Performance optimization: check if data actually changed
+  currentHash := CalculateReadingsHash(Readings);
+  if currentHash = FLastReadingsHash then
+    Exit; // No change, skip processing
+    
+  FLastReadingsHash := currentHash;
 
   // Prepare
   currentTime := Now;
@@ -3648,6 +3786,28 @@ begin
     native.setDarkMode{$ifdef windows}(self.Handle){$endif};
 
    result := false;
+end;
+
+// Performance optimization methods
+function TfBG.CalculateReadingsHash(const Readings: array of BGReading): Cardinal;
+var
+  i: Integer;
+begin
+  Result := 0;
+  for i := 0 to High(Readings) do
+    Result := Result xor Cardinal(Trunc(Readings[i].val * 100)) xor 
+              Cardinal(Trunc(Readings[i].date * 86400));
+end;
+
+function TfBG.ShouldUpdateUI(const NewColor: TColor; const NewCaption: string): Boolean;
+begin
+  Result := (NewColor <> FLastUIColor) or (NewCaption <> FLastUICaption);
+end;
+
+procedure TfBG.CacheUIState(const UIColor: TColor; const UICaption: string);
+begin
+  FLastUIColor := UIColor;
+  FLastUICaption := UICaption;
 end;
 
 end.

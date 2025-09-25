@@ -1176,6 +1176,15 @@ msgstr "Tilläggsvarning"
 msgid "Forcefully refresh the reading?"
 msgstr "Tvinga uppdatering av avläsning?"
 
+#: trndi.strings.sforcerefreshcached
+#, object-pascal-format
+msgid "Last update was %d seconds ago. Wait %d more seconds for fresh data, or force refresh now?"
+msgstr ""
+
+#: trndi.strings.sforcerefreshdetail
+msgid "Force refresh will bypass the cache and make an immediate API call. Waiting allows the system to use cached data efficiently."
+msgstr ""
+
 #: trndi.strings.slogdesc
 msgctxt "trndi.strings.slogdesc"
 msgid "Trndi has captured data sent to console.log in a JavaScript extension"

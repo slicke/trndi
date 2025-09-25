@@ -121,6 +121,8 @@ sDevice = 'Device: %s';
 
 sRefrshQ = 'Refresh?';
 sForceRefresh = 'Forcefully refresh the reading?';
+sForceRefreshCached = 'Last update was %d seconds ago. Wait %d more seconds for fresh data, or force refresh now?';
+sForceRefreshDetail = 'Force refresh will bypass the cache and make an immediate API call. Waiting allows the system to use cached data efficiently.';
 
 sAnnounceOn = 'Announcing readings aloud';
 sAnnounceOff = 'No longer announcing readings aloud';
