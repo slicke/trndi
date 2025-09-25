@@ -336,6 +336,19 @@ private
   {$ifdef TrndiExt}
   procedure LoadExtensions;
   {$endif}
+  
+  // FormCreate refactored methods
+  {$ifdef DARWIN}
+  procedure InitializePlatformMenus;
+  {$endif}
+  {$ifdef X_LINUXBSD}
+  procedure InitializeLinuxPlatform;
+  {$endif}
+  procedure InitializeUIComponents;
+  procedure InitializeSplashScreen;
+  procedure LoadUserProfile;
+  procedure CheckAndAcceptLicense;
+  function InitializeAPI: Boolean;
 public
    procedure AppExceptionHandler(Sender: TObject; {%H-}E: Exception);
    procedure onGH({%H-}sender: TObject);
@@ -718,125 +731,116 @@ end;
 {$ifdef X_LINUXBSD}
   {$endif}
 
-// Initialize the TrendDots array in FormCreate
-procedure TfBG.FormCreate(Sender: TObject);
+{$ifdef DARWIN}
+procedure TfBG.InitializePlatformMenus;
+var
+  MainMenu: TMainMenu;
+  AppMenu,
+  forceMenu,
+  SettingsMenu,
+  HelpMenu,
+  GithubMenu: TMenuItem;
+begin
+  MacAppDelegate := TMyAppDelegate.alloc.init;
+  NSApp.setDelegate(NSObject(MacAppDelegate));
+
+  Application.Title := 'Trndi';
+  MainMenu := TMainMenu.Create(self);
+  fBg.Menu := MainMenu;
+  AppMenu := TMenuItem.Create(Self); // Application menu
+  AppMenu.Caption := #$EF#$A3#$BF;   // Unicode Apple logo char
+  MainMenu.Items.Insert(0, AppMenu);
+  SettingsMenu := TMenuitem.Create(self);
+  settingsmenu.Caption := miSettings.Caption;
+  settingsmenu.OnClick := misettings.OnClick;
+  AppMenu.Insert(0, SettingsMenu);
+
+  forcemenu := TMenuItem.Create(self);
+  forcemenu.Caption := miForce.caption;
+  forcemenu.onclick := miForce.OnClick;
+  AppMenu.Insert(1, forceMenu);
+
+  helpmenu := TMenuItem.Create(self);
+  helpmenu.Caption := 'Help';
+  MainMenu.Items.Insert(1, helpMenu);
+
+  upmenu := TMenuItem.Create(self);
+  upmenu.Caption := mirefresh.Caption;
+  upmenu.Enabled := false;
+
+  githubmenu := TMenuItem.Create(self);
+  githubmenu.Caption := RS_TRNDI_GIHUB;
+  githubmenu.onclick := @onGH;
+  helpMenu.Insert(0, githubMenu);
+
+  helpMenu.Insert(0, upMenu);
+end;
+{$endif}
+
+procedure TfBG.InitializeUIComponents;
 var
   i: integer;
-  s, x, guifontName, txtFontName, apiTarget, apiCreds: string;
-  fil: boolean;
-  userlocale: TFormatSettings;
-  {$ifdef X_MAC}
-  procedure addTopMenu;
-  var
-     MainMenu: TMainMenu;
-     AppMenu,
-     forceMenu,
-     SettingsMenu,
-     HelpMenu,
-     GithubMenu: TMenuItem;
+  s: string;
+begin
+  // Set dots
+  DOT_GRAPH := native.GetWideCharSetting('font.dot', WideChar($2B24));
+  DOT_FRESH := native.GetWideCharSetting('font.dot_fresh', WideChar($2600));
+
+  // Load fonts
+  s := native.GetSetting('font.val', 'default');
+  if s <> 'default' then
+    lVal.Font.name := s;
+  s := native.GetSetting('font.arrow', 'default');
+  if s <> 'default' then
+    lArrow.Font.name := s;
+
+  s := native.GetSetting('font.ago', 'default');
+  if s <> 'default' then
   begin
-       MacAppDelegate := TMyAppDelegate.alloc.init;
-       NSApp.setDelegate(NSObject(MacAppDelegate));
-
-       Application.Title := 'Trndi';
-       MainMenu := TMainMenu.Create(self);
-       fBg.Menu := MainMenu;
-       AppMenu := TMenuItem.Create(Self); // Application menu
-       AppMenu.Caption := #$EF#$A3#$BF;   // Unicode Apple logo char
-       MainMenu.Items.Insert(0, AppMenu);
-       SettingsMenu := TMenuitem.Create(self);
-       settingsmenu.Caption := miSettings.Caption;
-       settingsmenu.OnClick := misettings.OnClick;
-       AppMenu.Insert(0, SettingsMenu);
-
-       forcemenu := TMenuItem.Create(self);
-       forcemenu.Caption := miForce.caption;
-       forcemenu.onclick := miForce.OnClick;
-       AppMenu.Insert(1, forceMenu);
-
-       helpmenu := TMenuItem.Create(self);
-       helpmenu.Caption := 'Help';
-       MainMenu.Items.Insert(1, helpMenu);
-
-       upmenu := TMenuItem.Create(self);
-       upmenu.Caption := mirefresh.Caption;
-       upmenu.Enabled := false;
-
-       githubmenu := TMenuItem.Create(self);
-       githubmenu.Caption := RS_TRNDI_GIHUB;
-       githubmenu.onclick := @onGH;
-       helpMenu.Insert(0, githubMenu);
-
-       helpMenu.Insert(0, upMenu);
-  end;
-       {$else}
-  procedure addJumpList;
-  begin
-
-  end;
-  {$endif}
-
-  procedure prepUI;
-  var
-    i: integer;
-  begin
-    // Set dots
-    DOT_GRAPH := native.GetWideCharSetting('font.dot', WideChar($2B24));
-    DOT_FRESH := native.GetWideCharSetting('font.dot_fresh', WideChar($2600));
-
-    // Load fonts
-    s := native.GetSetting('font.val', 'default');
-    if s <> 'default' then
-      lVal.Font.name := s;
-    s := native.GetSetting('font.arrow', 'default');
-    if s <> 'default' then
-      lArrow.Font.name := s;
-
-    s := native.GetSetting('font.ago', 'default');
-    if s <> 'default' then
     lAgo.Font.name := s;
     lTir.Font.name := s;
-
-    // Sensitive data
-    DATA_FRESHNESS_THRESHOLD_MINUTES := native.GetIntSetting('system.fresh_threshold', DATA_FRESHNESS_THRESHOLD_MINUTES);
-
-    // Check graph
-    for i := 1 to NUM_DOTS do
-      begin
-        s := 'lDot' + IntToStr(i);
-        TrendDots[i] := FindComponent(s) as TPaintBox;
-        if not Assigned(TrendDots[i]) then
-          ShowMessage(Format('Label %s is missing!', [s]))
-        else
-          LogMessage(Format('Label %s assigned to TrendDots[%d].', [s, i]));
-      end;
-
-    // Check touch screen
-    HasTouch :=  native.HasTouchScreen(HasMultiTouch);
-    if HasMultiTouch then
-      touchHelper := TTouchDetector.Create;
-
-    miATouch.Checked := hastouch;
-
-    actOnTrend(@initDot);
-
-    //--- Colors
-    bg_color_ok := native.GetColorSetting('ux.bg_color_ok', bg_color_ok);
-    bg_color_hi := native.GetColorSetting('ux.bg_color_hi', bg_color_hi);
-    bg_color_lo := native.GetColorSetting('ux.bg_color_lo', bg_color_lo);
-
-    bg_color_ok_txt := native.GetColorSetting('ux.bg_color_ok_txt', bg_color_ok_txt);
-    bg_color_hi_txt := native.GetColorSetting('ux.bg_color_hi_txt', bg_color_hi_txt);
-    bg_color_lo_txt := native.GetColorSetting('ux.bg_color_lo_txt', bg_color_lo_txt);
-
-    bg_rel_color_hi := native.GetColorSetting('ux.bg_rel_color_hi', bg_rel_color_hi);
-    bg_rel_color_lo := native.GetColorSetting('ux.bg_rel_color_lo', bg_rel_color_lo);
-
-    bg_rel_color_lo_txt := native.GetColorSetting('ux.bg_rel_color_lo_txt', bg_rel_color_lo_txt);
-    bg_rel_color_hi_txt := native.GetColorSetting('ux.bg_rel_color_hi_txt', bg_rel_color_hi_txt);
   end;
 
-procedure initSplash;
+  // Sensitive data
+  DATA_FRESHNESS_THRESHOLD_MINUTES := native.GetIntSetting('system.fresh_threshold', DATA_FRESHNESS_THRESHOLD_MINUTES);
+
+  // Check graph
+  for i := 1 to NUM_DOTS do
+  begin
+    s := 'lDot' + IntToStr(i);
+    TrendDots[i] := FindComponent(s) as TPaintBox;
+    if not Assigned(TrendDots[i]) then
+      ShowMessage(Format('Label %s is missing!', [s]))
+    else
+      LogMessage(Format('Label %s assigned to TrendDots[%d].', [s, i]));
+  end;
+
+  // Check touch screen
+  HasTouch :=  native.HasTouchScreen(HasMultiTouch);
+  if HasMultiTouch then
+    touchHelper := TTouchDetector.Create;
+
+  miATouch.Checked := hastouch;
+
+  actOnTrend(@initDot);
+
+  //--- Colors
+  bg_color_ok := native.GetColorSetting('ux.bg_color_ok', bg_color_ok);
+  bg_color_hi := native.GetColorSetting('ux.bg_color_hi', bg_color_hi);
+  bg_color_lo := native.GetColorSetting('ux.bg_color_lo', bg_color_lo);
+
+  bg_color_ok_txt := native.GetColorSetting('ux.bg_color_ok_txt', bg_color_ok_txt);
+  bg_color_hi_txt := native.GetColorSetting('ux.bg_color_hi_txt', bg_color_hi_txt);
+  bg_color_lo_txt := native.GetColorSetting('ux.bg_color_lo_txt', bg_color_lo_txt);
+
+  bg_rel_color_hi := native.GetColorSetting('ux.bg_rel_color_hi', bg_rel_color_hi);
+  bg_rel_color_lo := native.GetColorSetting('ux.bg_rel_color_lo', bg_rel_color_lo);
+
+  bg_rel_color_lo_txt := native.GetColorSetting('ux.bg_rel_color_lo_txt', bg_rel_color_lo_txt);
+  bg_rel_color_hi_txt := native.GetColorSetting('ux.bg_rel_color_hi_txt', bg_rel_color_hi_txt);
+end;
+
+procedure TfBG.InitializeSplashScreen;
 begin
   fSplash := TfSplash.Create(nil);
   FStoredWindowInfo.Initialized := False;
@@ -846,49 +850,48 @@ begin
   fSplash.Show;
 end;
 
-procedure loadProfile;
+procedure TfBG.LoadUserProfile;
 var
-  mr: tmodalresult;
+  i: integer;
+  s: string;
 begin
   if username <> '' then
+  begin
+    with TStringList.Create do
     begin
-      with TStringList.Create do
+      AddCommaText(username);
+      i := ExtList(uxdAuto, RS_MULTIUSER_BOX_TITLE, RS_MULTIUSER_BOX_TITLE, RS_MULTIUSER_BOX, ToStringArray, true);
+
+      if (i > -1) and (strings[i] <> '') then
       begin
-        AddCommaText(username);
-//        Add(''); -- no longer needed as we have a standard button
-//        i := InputCombo(RS_MULTIUSER_BOX_TITLE, RS_MULTIUSER_BOX, ToStringArray);
-          i := ExtList(uxdAuto, RS_MULTIUSER_BOX_TITLE, RS_MULTIUSER_BOX_TITLE, RS_MULTIUSER_BOX, ToStringArray, true);
+        username := strings[i];
+        native.configUser :=  username;
+        s :=  native.GetSettingEx('user.nick', username);
 
-        if (i > -1) and (strings[i] <> '') then
-        begin
-          username := strings[i];
-          native.configUser :=  username;
-          s :=  native.GetSettingEx('user.nick', username);
+        fbg.Caption := Format(RS_USER_CAPTION, [s, fBG.Caption]);
+        multinick := s;
+      end
+      else begin
+        username := '';
+        s :=  native.GetSettingEx('user.nick', RS_DEFAULT_ACCOUNT);
 
-          fbg.Caption := Format(RS_USER_CAPTION, [s, fBG.Caption]);
-          multinick := s;
-        end
-        else begin
-          username := '';
-          s :=  native.GetSettingEx('user.nick', RS_DEFAULT_ACCOUNT);
-
-          multinick := s;
-          fbg.Caption := Format(RS_USER_CAPTION, [s, fBG.Caption]);
-        end;
-      end;// Load possible other users
-      multi := true;
-      pnMultiUser.Color := native.GetColorSetting('user.color', clBlack);
-      if pnMultiUser.Color <> clBlack then begin
-        pnMultiUser.Visible := native.GetRootSetting('users.colorbox', 'true') = 'true';
-        customTitlebar := setColorMode; // Set the custom title bar value depending if the panel is showing
+        multinick := s;
+        fbg.Caption := Format(RS_USER_CAPTION, [s, fBG.Caption]);
       end;
-
-    end
-    else
-      multi := false;
+      Free;
+    end;// Load possible other users
+    multi := true;
+    pnMultiUser.Color := native.GetColorSetting('user.color', clBlack);
+    if pnMultiUser.Color <> clBlack then begin
+      pnMultiUser.Visible := native.GetRootSetting('users.colorbox', 'true') = 'true';
+      customTitlebar := setColorMode; // Set the custom title bar value depending if the panel is showing
+    end;
+  end
+  else
+    multi := false;
 end;
 
-procedure checkLicense;
+procedure TfBG.CheckAndAcceptLicense;
 const
   license = '⚠️ IMPORTANT MEDICAL WARNING ⚠️'#10#13+
 #10+
@@ -902,6 +905,8 @@ const
 '• You use this app at your own risk'#10+
 '• The developers have NO LIABILITY'#10+
 '• You have read and agree to the full terms';
+var
+  i: integer;
 begin
   if native.GetBoolSetting('license.250608') <> true then
   while i <> mrYes do begin
@@ -917,9 +922,15 @@ begin
   end;
 end;
 
-function loadApi: boolean;
+function TfBG.InitializeAPI: Boolean;
+var
+  apiTarget, apiCreds: string;
 begin
-  result := true;
+  Result := True;
+  
+  apiTarget := native.GetSetting('remote.target');
+  apiCreds := native.GetSetting('remote.creds');
+  
   case native.GetSetting('remote.type') of
     'NightScout':
       api := NightScout.Create(apiTarget, apiCreds, '');
@@ -942,12 +953,14 @@ begin
       api := DebugEdgeAPI.Create(apiTarget, apiCreds, '');
       {$endif}
     else
-      result := false;
-    end;
+      Result := False;
+  end;
 end;
 
 {$ifdef X_LINUXBSD}
-procedure linuxinit;
+procedure TfBG.InitializeLinuxPlatform;
+var
+  x, s: string;
 begin
   x := scanLinuxDistro(['fedora','ubuntu','debian']);
   case x of
@@ -973,18 +986,26 @@ begin
 end;
 {$endif}
 
+// Initialize the TrendDots array in FormCreate
+procedure TfBG.FormCreate(Sender: TObject);
+var
+  i: integer;
+  guifontName, txtfontName, apiTarget, apiCreds: string;
+  fil: boolean;
+  userlocale: TFormatSettings;
 begin
-  InitSplash;
-  Application.processmessages;
+  // Initialize splash screen first
+  InitializeSplashScreen;
+  Application.ProcessMessages;
   Application.OnException := @AppExceptionHandler;
 
-  // Do this early
+  // Start media backend early
   fSplash.lInfo.Caption := 'Starting Media Backend...';
   MediaController := TSystemMediaController.Create(Self);
   MediaController.Initialize;
-
   Application.ProcessMessages;
 
+  // Font validation
   fil := FontGUIInList(guifontName);
   if not fil then
     ShowMessage(Format(RS_FONT_ERROR, [guifontName]));
@@ -993,9 +1014,12 @@ begin
   if not fil then
     ShowMessage(Format(RS_FONT_ERROR, [txtfontName]));
 
-  {$ifdef darwin}
-    addTopMenu;
+  // Platform-specific menu setup
+  {$ifdef DARWIN}
+  InitializePlatformMenus;
   {$endif}
+
+  // Initialize native interface
   native := TrndiNative.Create;
   if ssShift in GetKeyShiftState then
     if native.DetectTouchScreen(fil) then
@@ -1004,52 +1028,61 @@ begin
       native.touchOverride := tbTrue;
 
   setColorMode;
+
+  // Platform-specific initialization
   {$ifdef X_LINUXBSD}
-   linuxinit;
+  InitializeLinuxPlatform;
   {$endif}
+
+  // Set border style
   {$ifdef DARWIN}
   BorderStyle := bsSizeable;
   {$else}
   BorderStyle := bsSizeToolWin;
   {$endif}
-  Application.processmessages;
+
+  Application.ProcessMessages;
+
+  // Set fonts for non-Darwin platforms
   {$ifndef DARWIN}
-   fBG.font.Name := txtFontName; // This will be applyed down later
-   lArrow.Font.Name := guifontName;
+  fBG.font.Name := txtFontName;
+  lArrow.Font.Name := guifontName;
   {$endif}
 
-  PrepUI;
+  // Initialize UI components
+  InitializeUIComponents;
+  Application.ProcessMessages;
 
-  // Assign labels to the TrendDots array
-  Application.processmessages;
+  // Configuration and user setup
   with native do
   begin
-  setLang;
-  // Idea for using multiple person/account support
+    SetLang;
     username := GetRootSetting('users.names','');
+    LoadUserProfile;
 
-   loadProfile;
+    // Locale setup
+    userlocale := DefaultFormatSettings;
+    userlocale.DecimalSeparator := GetCharSetting('locale.separator', '.');
+    badge_adjust := GetIntSetting('ux.badge_size', 0) / 10;
+    native.locale := userlocale;
 
-      userlocale := DefaultFormatSettings;
-      userlocale.DecimalSeparator := GetCharSetting('locale.separator', '.');
-      badge_adjust := GetIntSetting('ux.badge_size', 0) / 10;
-      native.locale := userlocale;
+    // License check
+    CheckAndAcceptLicense;
+    Application.ProcessMessages;
 
-      checkLicense;
-
-
-    Application.processmessages;
+    // Privacy and unit settings
     privacyMode := GetSetting('ext.privacy', '0') = '1';
     if GetSetting('unit', 'mmol') = 'mmol' then
       un := BGUnit.mmol
     else
       un := BGUnit.mgdl;
 
+    // API setup and validation
     apiTarget := GetSetting('remote.target');
     if apiTarget = '' then
     begin
       tMain.Enabled := false;
-      for i := 0 to fBG.ComponentCount-1 do // Clear default texts, I want them in the designer window so I won't clear there
+      for i := 0 to fBG.ComponentCount-1 do
         if (fbg.Components[i] is TLabel) and (fbg.Components[i] <> lval) then
           (fbg.Components[i] as TLabel).Caption := '';
       miSettings.Click;
@@ -1057,12 +1090,12 @@ begin
       Application.Terminate;
       Exit;
     end;
-    apiCreds := GetSetting('remote.creds');
-    Application.processmessages;
-    if not loadapi then
-      exit;
 
-    Application.processmessages;
+    Application.ProcessMessages;
+    if not InitializeAPI then
+      Exit;
+
+    Application.ProcessMessages;
     if not api.Connect then
     begin
       ShowMessage(api.ErrorMsg);
@@ -1072,32 +1105,37 @@ begin
       Exit;
     end;
 
-    dotscale := native.GetIntSetting('ux.dot_scale', 1);
-    DOT_ADJUST := native.GetFloatSetting('ux.dot_adjust', 0);
-    miRangeColor.Checked := native.GetSetting('ux.range_color') = 'true';
+    // UI preferences
+    dotscale := GetIntSetting('ux.dot_scale', 1);
+    DOT_ADJUST := GetFloatSetting('ux.dot_adjust', 0);
+    miRangeColor.Checked := GetSetting('ux.range_color') = 'true';
 
+    // Extensions
     {$ifdef TrndiExt}
     fSplash.lInfo.Caption := RS_SPLASH_LOADING_INIT;
     LoadExtensions;
     {$endif}
 
+    // Override settings
     if GetIntSetting('override.enabled', 0) = 1 then
     begin
       api.cgmLo      := GetIntSetting('override.lo', api.cgmLo);
       api.cgmHi      := GetIntSetting('override.hi', api.cgmHi);
-
       api.cgmRangeLo := GetIntSetting('override.rangelo', api.cgmRangeLo);
       api.cgmRangeHi := GetIntSetting('override.rangehi', api.cgmRangeHi);
     end;
   end;
 
-  Application.processmessages;
-  if not updateReading(true) then begin // First reading attempt failed
-    updateReading; // We call it twice, to first setup the dots and then make it black
+  // Final initialization and first reading
+  Application.ProcessMessages;
+  if not updateReading(true) then begin
+    updateReading; // Second attempt for setup
     showWarningPanel(RS_NO_BOOT_READING);
   end;
-  fsplash.Close;
-  fsplash.Free;
+
+  // Cleanup splash screen
+  fSplash.Close;
+  fSplash.Free;
 end;
 
 procedure TfBG.FormDblClick(Sender: TObject);
