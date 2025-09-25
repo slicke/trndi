@@ -3424,6 +3424,7 @@ procedure TfBG.fixWarningPanel;
   end;
 var
   padding: integer;
+  calculatedFontSize: integer;
 begin
     padding := (ClientWidth div 25);
     if not native.HasTouchScreen then
@@ -3447,10 +3448,16 @@ begin
     if native.HasTouchScreen then begin
       lMissing.wordwrap := true;
       // Calculate font size based on panel height for better scaling
-      lmissing.font.size := Max(8, pnWarning.Height div 12);
+      calculatedFontSize := Max(8, pnWarning.Height div 12);
+      lmissing.font.size := calculatedFontSize;
       lmissing.width := pnWarning.width - 10; // Leave some margin
       lmissing.height := pnWarning.Height - 10; // Leave some margin
       pnWarning.Font.Color := pnWarning.color;
+    end else begin
+      // Also scale font for non-touch screens, but differently
+      lMissing.wordwrap := true;
+      calculatedFontSize := Max(10, pnWarning.Height div 15); // Slightly smaller scaling for non-touch
+      lmissing.font.size := calculatedFontSize;
     end;
 
     pnOffReading.Height := ClientHeight;
