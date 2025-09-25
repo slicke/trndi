@@ -50,7 +50,7 @@ interface
 uses
 trndi.strings, LCLTranslator, Classes, Menus, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, ExtCtrls,
 trndi.api.dexcom, trndi.api.nightscout, trndi.api.nightscout3, trndi.types, math, DateUtils, FileUtil, LclIntf, TypInfo, LResources,
-slicke.ux.alert, usplash, Generics.Collections, trndi.funcs, Trndi.native.base,
+slicke.ux.alert, usplash, Generics.Collections, trndi.funcs, Trndi.native.base, trndi.shared,
 SystemMediaController,
 {$ifdef TrndiExt}
 trndi.Ext. Engine, trndi.Ext.jsfuncs,
@@ -471,19 +471,6 @@ begin
 
 end;
 
-procedure ApplyRoundedCorners(APanel: TPanel; Radius: Integer);
-{$IFDEF WINDOWS}
-var
-  Rgn: HRGN;
-{$ENDIF}
-begin
-  {$IFDEF WINDOWS}
-  // Windows: Set a real rounded window region
-  Rgn := CreateRoundRectRgn(0, 0, APanel.Width, APanel.Height, Radius, Radius);
-  SetWindowRgn(APanel.Handle, Rgn, True);
-  {$ENDIF}
-end;
-
 procedure TfBG.onGH(sender: TObject);
 begin
 OpenURL('https://github.com/slicke/trndi');
@@ -641,80 +628,6 @@ begin
   {$endif}
 end;
 
-// For darkening (multiply each component by 0.8)
-function DarkenColor(originalColor: TColor; factor: double = 0.8): TColor;
-var
-  r, g, b: byte;
-begin
-  // Extract RGB components
-  r := GetRValue(originalColor);
-  g := GetGValue(originalColor);
-  b := GetBValue(originalColor);
-
-  // Multiply by factor
-  r := Round(r * factor);
-  g := Round(g * factor);
-  b := Round(b * factor);
-
-  // Create new color
-  Result := RGB(r, g, b);
-end;
-
-// For lightening (increase each component towards 255)
-function LightenColor(originalColor: TColor; factor: double = 0.8): TColor;
-var
-  r, g, b: Integer; // Use Integer to hold intermediate results
-begin
-  // Extract RGB components
-  r := GetRValue(originalColor);
-  g := GetGValue(originalColor);
-  b := GetBValue(originalColor);
-  // Add factor * (255 - component) to each component
-  r := Round(r + (factor * (255 - r)));
-  g := Round(g + (factor * (255 - g)));
-  b := Round(b + (factor * (255 - b)));
-  // Clip the values to the range 0..255
-  r := Min(255, Max(0, r));
-  g := Min(255, Max(0, g));
-  b := Min(255, Max(0, b));
-  // Create new color
-  Result := RGB(r, g, b);
-end;
-
-
-function IsLightColor(bgColor: TColor): boolean;
-var
-  R, G, B: byte;
-  r2, g2, b2: double;
-  L: double;
-begin
-  // Get RBG
-  R := GetRValue(bgColor);
-  G := GetGValue(bgColor);
-  B := GetBValue(bgColor);
-
-  // Convert to 0-1
-  r2 := R / 255.0;
-  g2 := G / 255.0;
-  b2 := B / 255.0;
-
-  // Correct gamma
-  if r2 <= 0.04045 then
-    r2 := r2 / 12.92 else r2 := Power((r2 + 0.055) / 1.055, 2.4);
-  if g2 <= 0.04045 then
-    g2 := g2 / 12.92 else g2 := Power((g2 + 0.055) / 1.055, 2.4);
-  if b2 <= 0.04045 then
-    b2 := b2 / 12.92 else b2 := Power((b2 + 0.055) / 1.055, 2.4);
-
-  // Calculate luminance
-  L := 0.2126 * r2 + 0.7152 * g2 + 0.0722 * b2;
-
-  // If L > 0.179 black is more suitable than white
-  Result := (L > 0.179);
-end;
-
-
-
 {$ifdef TrndiExt}
 // Load extension files
 procedure TfBG.LoadExtensions;
@@ -803,63 +716,6 @@ begin
 end;
 
 {$ifdef X_LINUXBSD}
-// Moved out as to support the advanced menu aswell
-function GetLinuxSystem: string;
-  const
-    Issue = '/etc/os-release';
-  begin
-    if FileExists(Issue) then
-      Result := ReadFileToString(Issue)
-    else
-      Result := '';
-  end;
-
-function GetLinuxDistro(out ver: string): string;
-var
-  sys, s: string;
-  start, stop: integer;
-begin
-    sys := GetLinuxSystem;
-
-    start := Pos('ID=', sys)+3; // ID=...
-    if start > 0 then begin
-      s := Copy(sys, start);
-      stop := Pos(#10, s);
-      result := Copy(s, 0, stop-1);
-      result := TrimSet(result, ['"', #10]);
-    end else result := '';
-
-    if (result.IsEmpty) or (result[1] in ['0'..'9']) then begin
-      start := Pos('NAME=', sys)+5; // NAME=...
-      if start > 0 then begin
-        s := Copy(sys, start);
-        stop := Pos(#10, s);
-        result := Copy(s, 0, stop-1);
-        result := TrimSet(result, ['"', #10]);
-      end else result := 'unknown';
-    end;
-
-    start := Pos('VERSION=', sys)+8; // VERSION="..."
-    if start > 0 then begin
-      s := Copy(sys, start);
-      stop := Pos(#10, s);
-      ver := Copy(s, 0, stop-1);
-      ver := TrimSet(ver, ['"', #10]);
-    end;
-end;
-
-function ScanLinuxDistro(const opts: TStringArray): string;
-var
-  s, sys: string;
-begin
-  sys := LowerCase(GetLinuxDistro(s));
-  result := s;
-  for s in opts do
-    if Pos(LowerCase(s), sys) > -1 then begin
-      result := s;
-      Exit;
-    end;
-end;
   {$endif}
 
 // Initialize the TrendDots array in FormCreate
@@ -3412,16 +3268,6 @@ begin
 end;
 
 procedure TfBG.fixWarningPanel;
-  function CharsFit(Canvas: TCanvas; C: Char; TotalWidth: Integer): Integer;
-  var
-    CharWidth: Integer;
-  begin
-    CharWidth := Canvas.TextWidth(C);
-    if CharWidth > 0 then
-      Result := TotalWidth div CharWidth
-    else
-      Result := 0;
-  end;
 var
   padding: integer;
   calculatedFontSize: integer;
