@@ -1327,7 +1327,8 @@ begin
   // Check if we need to recalculate font metrics
   needsRecalc := (FCachedFontSize <> L.Font.Size) or 
                  (FCachedFontName <> fontn) or 
-                 (FCachedTextWidth = 0) or (FCachedTextHeight = 0);
+                 (FCachedTextWidth = 0) or (FCachedTextHeight = 0) or
+                 (S <> DOT_GRAPH); // Always recalculate for non-dot text
 
   with L.Canvas do
   begin
@@ -1344,13 +1345,26 @@ begin
     begin
       FCachedTextWidth := TextWidth(S);
       FCachedTextHeight := TextHeight(S);
-      FCachedFontSize := L.Font.Size;
-      FCachedFontName := fontn;
+      // Only cache for dot characters, not expanded text
+      if S = DOT_GRAPH then
+      begin
+        FCachedFontSize := L.Font.Size;
+        FCachedFontName := fontn;
+      end;
     end;
 
-    // Size the paintbox to fit the text tightly to avoid extra whitespace
-    L.Width := FCachedTextWidth;
-    L.Height := FCachedTextHeight;
+    // Size the paintbox to fit the text (use fresh calculation for non-dots)
+    if S = DOT_GRAPH then
+    begin
+      L.Width := FCachedTextWidth;
+      L.Height := FCachedTextHeight;
+    end
+    else
+    begin
+      // For expanded text, always use fresh measurements with padding
+      L.Width := TextWidth(S) + 4;
+      L.Height := TextHeight(S) + 2;
+    end;
 
     // Draw at (0,0); since control fits text, no centering or offsets needed
     TextOut(0, 0, S);
@@ -1683,7 +1697,15 @@ begin
     l.Font.Size := (ClientWidth div 24)*dotscale;
   end
   else begin
+    // Expanding to show actual value - need to resize for text
     l.font.Size := (lVal.Font.Size div c);
+    // Clear cached font metrics to force recalculation with new text/font
+    FCachedTextWidth := 0;
+    FCachedTextHeight := 0;
+    FCachedFontSize := 0;
+    FCachedFontName := '';
+    // Force repaint with new dimensions - DotPaint will recalculate size
+    l.Invalidate;
   end;
 
 end;
