@@ -10,7 +10,6 @@ object fBG: TfBG
   Color = clBlack
   Font.Color = clWhite
   Position = poDesktopCenter
-  LCLVersion = '4.2.0.0'
   OnClose = FormClose
   OnCreate = FormCreate
   OnDblClick = FormDblClick
@@ -143,9 +142,9 @@ object fBG: TfBG
     OnPaint = pnWarningPaint
     object lMissing: TLabel
       Left = 45
-      Height = 15
+      Height = 16
       Top = 7
-      Width = 110
+      Width = 108
       Alignment = taCenter
       Caption = 'No recent readings!'
       Font.Color = clBlack
@@ -194,9 +193,9 @@ object fBG: TfBG
     OnPaint = pnOffReadingPaint
     object lRef: TLabel
       Left = 0
-      Height = 15
+      Height = 16
       Top = 172
-      Width = 14
+      Width = 18
       Caption = '0,?'
     end
   end
@@ -495,7 +494,7 @@ object fBG: TfBG
   end
   object tResize: TTimer
     Enabled = False
-    Interval = 100
+    Interval = 500
     OnTimer = tResizeTimer
     Left = 215
     Top = 39
