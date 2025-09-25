@@ -10,6 +10,7 @@ interface
 uses
   Classes, SysUtils, ExtCtrls, stdctrls, graphics, trndi.types, forms, math,
   fpjson, jsonparser, dateutils
+  {$ifdef TrndiExt},trndi.ext.engine{$endif}
   {$ifdef DARWIN}, CocoaAll{$endif};
 
 
@@ -30,9 +31,10 @@ function GetNewerVersionURL(const JsonResponse: string;
 
 function privacyIcon(const v: trndi.types.BGValLevel): string;
 
-function funcBool(const res: string): boolean;
-function funcInt(const res: string): Int64;
-function funcFloat(const res: string): double;
+function callFunc(const func: string; params: array of const; out exists: boolean): string;
+function funcBool(const func: string; params: array of const; const nofunc: boolean): boolean;
+function funcInt(const func: string; params: array of const; const nofunc: int64): Int64;
+function funcFloat(const func: string; params: array of const; const nofunc: double): double;
 
 const
 INTERVAL_MINUTES = 5; // Each time interval is 5 minutes
@@ -490,26 +492,61 @@ begin
   end;
 end;
 
-function funcBool(const res: string): boolean;
+// Call a JS function and check that it exists too
+function callFunc(const func: string; params: array of const; out exists: boolean): string;
 begin
-  result := res = 'true';
+  result := '';
+  if not Assigned(TTrndiExtEngine.Instance) then  // Safe
+    exit;
+
+  exists := TTrndiExtEngine.Instance.FunctionExists(func); // We assign the out var
+
+  if not exists then // Exit if the function doesnt exist
+    Exit;
+
+  result := TTrndiExtEngine.Instance.CallFunction(func, params); // Call the function, gives a string
 end;
 
-function funcInt(const res: string): Int64;
+// Calls a function and converts it as bool
+function funcBool(const func: string; params: array of const; const nofunc: boolean): boolean;
 var
-  i: integer;
+  ex: boolean;
 begin
-  if TryStrToInt(res, i) then
+  result := callFunc(func,params,ex) = 'true';
+  if not ex then
+    result := nofunc;
+end;
+
+function funcInt(const func: string; params: array of const; const nofunc: Int64): Int64;
+var
+  ex: boolean;
+  res: string;
+  i: int64;
+begin
+  result := 0;
+  res := callFunc(func,params,ex);
+
+  if not ex then
+    result := nofunc;
+
+  if TryStrToInt64(res, i) then
     result := i
   else
     raise Exception.Create('Cannot interpret extension value '+res+' as integer!');
 end;
 
-function funcFloat(const res: string): double;
+function funcFloat(const func: string; params: array of const; const nofunc: double): double;
 var
   d: double;
   fs: TFormatSettings;
+  res: string;
+  ex: boolean;
 begin
+  result := 0;
+  res := callFunc(func,params,ex);
+  if not ex then
+    result := nofunc;
+
   fs := DefaultFormatSettings;
   fs.DecimalSeparator := '.';
 
