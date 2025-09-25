@@ -1413,10 +1413,8 @@ end;
 procedure TfBG.pnWarningClick(Sender: TObject);
 begin
     {$ifdef TrndiExt}
-    if Assigned(TTrndiExtEngine.Instance) and 
-       funcBool(TTrndiExtEngine.Instance.CallFunction('uxClick',[
-         'no-reading'
-       ])) = false then
+       if not funcBool('uxClick',
+       ['no-reading'], true) then
       Exit;
   {$endif}
   ShowMessage(RS_NO_BOOT_READING);
@@ -1821,12 +1819,11 @@ var
 begin
   minTotal := MinutesBetween(now, bgs[High(bgs)].date);
   {$ifdef TrndiExt}
-    if Assigned(TTrndiExtEngine.Instance) and
-       funcBool(TTrndiExtEngine.Instance.CallFunction('uxClick',[
+   if not funcBool('uxClick',[
          'tir',
          mintotal,
          lTir.Caption
-       ])) = false then
+       ], true) then
       Exit;
   {$endif}
 
@@ -2605,14 +2602,16 @@ end;
 procedure TfBG.pnOffRangeClick(Sender: TObject);
 var
   ishigh: boolean;
+  {$ifdef TrndiExt}
+
+  {$endif}
 begin
   ishigh := (Sender as TPanel).Color = bg_rel_color_hi;
   {$ifdef TrndiExt}
-    if Assigned(TTrndiExtEngine.Instance) and
-       funcBool(TTrndiExtEngine.Instance.CallFunction('uxClick',[
+    if not funcBool('uxClick',[
          'range',
          ishigh
-       ])) = false then
+       ], true) then
       Exit;
   {$endif}
 
