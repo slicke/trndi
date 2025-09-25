@@ -32,6 +32,7 @@ function GetNewerVersionURL(const JsonResponse: string;
 function privacyIcon(const v: trndi.types.BGValLevel): string;
 
 function callFunc(const func: string; params: array of const; out exists: boolean): string;
+function callFunc(const func: string; params: array of const): string;
 function funcBool(const func: string; params: array of const; const nofunc: boolean): boolean;
 function funcInt(const func: string; params: array of const; const nofunc: int64): Int64;
 function funcFloat(const func: string; params: array of const; const nofunc: double): double;
@@ -505,6 +506,13 @@ begin
     Exit;
 
   result := TTrndiExtEngine.Instance.CallFunction(func, params); // Call the function, gives a string
+end;
+
+function callFunc(const func: string; params: array of const): string;
+var
+  ex: boolean;
+begin
+  result := callFunc(func, params, ex);
 end;
 
 // Calls a function and converts it as bool

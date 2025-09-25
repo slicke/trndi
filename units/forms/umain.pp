@@ -2426,8 +2426,7 @@ begin
   {$ifdef TrndiExt}
     fs := DefaultFormatSettings;
     fs.DecimalSeparator := '.';
-    if Assigned(TTrndiExtEngine.Instance) then
-      TTrndiExtEngine.Instance.CallFunction('dotClicked',[
+      callFunc('dotClicked',[
         IfThen(isDot, 'false', 'true'), // is the dot "open" as in viewing the value
         StrToFloat(l.Hint) * BG_CONVERTIONS[mgdl][un],
         StrToFloat(l.Hint) * BG_CONVERTIONS[mmol][un],
@@ -2644,6 +2643,9 @@ end;
 procedure TfBG.tClockTimer(Sender:TObject);
 var
   s: string;
+  {$ifdef TrndiExt}
+    ex: boolean; // If the function exists
+  {$endif}
 const
   clockInterval = 5000;
 begin
@@ -2652,9 +2654,8 @@ tClock.Enabled := false;
     {$ifdef TrndiExt}
       s := '';
       // Check if JS engine is still available before calling
-      if Assigned(TTrndiExtEngine.Instance) then
-        s := TTrndiExtEngine.Instance.CallFunction('clockView', [bgs[Low(bgs)].val, DateTimeToStr(Now)]);
-      if s.IsEmpty then
+      s := callFunc('clockView', [bgs[Low(bgs)].val, DateTimeToStr(Now)], ex);
+      if not ex then
         lval.caption := FormatDateTime(ShortTimeFormat, Now)
       else
         lval.caption := s;
@@ -2902,9 +2903,7 @@ begin
   updateReading;
   {$ifdef TrndiExt}
   try
-     // Check if JS engine is still available before calling
-     if Assigned(TTrndiExtEngine.Instance) then
-       TTrndiExtEngine.Instance.CallFunction('updateCallback', [bgs[Low(bgs)].val, DateTimeToStr(Now)]);
+     callFunc('updateCallback', [bgs[Low(bgs)].val, DateTimeToStr(Now)]);
   finally
   end;
   {$endif}
@@ -3120,8 +3119,7 @@ begin
 
   {$ifdef TrndiExt}
   // Check if JS engine is still available before calling
-  if Assigned(TTrndiExtEngine.Instance) then
-    TTrndiExtEngine.Instance.CallFunction('fetchCallback',[
+    callFunc('fetchCallback',[
        bgs[0].format(mgdl, BG_MSG_SHORT), //mgdl reading
        bgs[0].format(mmol, BG_MSG_SHORT), //mmol reading
        bgs[0].format(mgdl, BG_MSG_SIG_SHORT, BGDelta), //mgdl diff
