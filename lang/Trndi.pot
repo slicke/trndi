@@ -302,10 +302,6 @@ msgctxt "tfconf.btusersave.caption"
 msgid "Save"
 msgstr ""
 
-#: tfconf.button1.caption
-msgid "&Download"
-msgstr ""
-
 #: tfconf.button2.caption
 msgctxt "tfconf.button2.caption"
 msgid "Reset Defaults"
@@ -326,6 +322,22 @@ msgstr ""
 
 #: tfconf.cbcust.caption
 msgid "Use custom values"
+msgstr ""
+
+#: tfconf.cbflash.caption
+msgid "Badge Flashing"
+msgstr ""
+
+#: tfconf.cbflashhi.caption
+msgid "Flash on high blood sugar"
+msgstr ""
+
+#: tfconf.cbflashlow.caption
+msgid "Flash on low blood sugar"
+msgstr ""
+
+#: tfconf.cbflashperfect.caption
+msgid "Flash on perfect reading (5.5mmol/L / 100mg/dL)"
 msgstr ""
 
 #: tfconf.cbmultitouch.caption
@@ -442,10 +454,6 @@ msgstr ""
 msgid "Override High / Low limits"
 msgstr ""
 
-#: tfconf.gboverride1.caption
-msgid "Get more languages"
-msgstr ""
-
 #: tfconf.gboverride2.caption
 msgid "Play Media"
 msgstr ""
@@ -523,12 +531,6 @@ msgstr ""
 
 #: tfconf.label6.caption
 msgid "Language"
-msgstr ""
-
-#: tfconf.label7.caption
-msgid ""
-"If your version of Trndi was not shipped with more languages, \n"
-"you can download more below."
 msgstr ""
 
 #: tfconf.label8.caption

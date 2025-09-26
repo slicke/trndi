@@ -318,10 +318,6 @@ msgctxt "tfconf.btusersave.caption"
 msgid "Save"
 msgstr "Spara"
 
-#: tfconf.button1.caption
-msgid "&Download"
-msgstr "&Hämta"
-
 #: tfconf.button2.caption
 msgctxt "tfconf.button2.caption"
 msgid "Reset Defaults"
@@ -343,6 +339,22 @@ msgstr "Inställningar"
 #: tfconf.cbcust.caption
 msgid "Use custom values"
 msgstr "Använd egna värden"
+
+#: tfconf.cbflash.caption
+msgid "Badge Flashing"
+msgstr ""
+
+#: tfconf.cbflashhi.caption
+msgid "Flash on high blood sugar"
+msgstr ""
+
+#: tfconf.cbflashlow.caption
+msgid "Flash on low blood sugar"
+msgstr ""
+
+#: tfconf.cbflashperfect.caption
+msgid "Flash on perfect reading (5.5mmol/L / 100mg/dL)"
+msgstr ""
 
 #: tfconf.cbmultitouch.caption
 msgid "Multi-touch"
@@ -459,10 +471,6 @@ msgctxt "tfconf.gboverride.caption"
 msgid "Override High / Low limits"
 msgstr "Åsidosätt höga / låga gränser"
 
-#: tfconf.gboverride1.caption
-msgid "Get more languages"
-msgstr "Hämta fler språk"
-
 #: tfconf.gboverride2.caption
 msgid "Play Media"
 msgstr "Spela Media"
@@ -543,14 +551,6 @@ msgstr "Svart = genomskinlig"
 #: tfconf.label6.caption
 msgid "Language"
 msgstr "Språk"
-
-#: tfconf.label7.caption
-msgid ""
-"If your version of Trndi was not shipped with more languages, \n"
-"you can download more below."
-msgstr ""
-"Om din Trndi-version inte kom med fler språk,\n"
-"kan du ladda hem fler nedan."
 
 #: tfconf.label8.caption
 msgid "Click an item to change it's font"
