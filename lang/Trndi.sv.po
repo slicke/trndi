@@ -789,6 +789,10 @@ msgstr "Felaktigt Dexcom-lösenord eller kontoinformation"
 msgid "Login error during post-authentication steps"
 msgstr "Inloggningsfel efter autensieringen"
 
+#: trndi.strings.rs_cleanup
+msgid "Wait. Shutting down extensions engine..."
+msgstr ""
+
 #: trndi.strings.rs_compute_failed_ago
 msgid "Long ago"
 msgstr "Länge sedan"

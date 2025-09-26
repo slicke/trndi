@@ -89,6 +89,8 @@ RS_MULTINAME_DEF_NAMED = 'Showing %s (standard user)';
 RS_SPLASH_LOADING = 'Loading Extension: ';
 RS_SPLASH_LOADING_INIT  = 'Loading Extensions...';
 
+RS_CLEANUP = 'Wait. Shutting down extensions engine...';
+
 
 // EXT
 sExtErr = 'Extension Error';
