@@ -194,7 +194,7 @@ public
   {** Platform override for badge rendering control. }
   procedure setBadge(const Value: string; badgeColor: TColor; badge_size_ratio: Double; min_font_size: Integer); virtual; overload;
   {** Set native window titlebar colors if supported. }
-  function SetTitleColor(form: THandle; bg, text: TColor): boolean; virtual;
+  class function SetTitleColor(form: THandle; bg, text: TColor): boolean; virtual;
   {** Play an audio file using native facilities (safe file check included). }
   class procedure PlaySound(const FileName: string);
 
@@ -1427,7 +1427,7 @@ end;
 
 // Windows BurntToast detection moved to trndi.native.win
 
-function TTrndiNativeBase.SetTitleColor(form: THandle; bg, text: TColor): boolean;
+class function TTrndiNativeBase.SetTitleColor(form: THandle; bg, text: TColor): boolean;
 begin
   result := false;
 end;

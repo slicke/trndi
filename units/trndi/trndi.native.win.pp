@@ -62,7 +62,7 @@ type
   class function SetDarkMode(win: HWND; Enable: Boolean = True): Boolean;
     {** Applies caption (@param(bg)) and text (@param(text)) colors via DWM.
         @returns(True if both attributes are set successfully) }
-  function SetTitleColor(form: THandle; bg, text: TColor): boolean; override;
+  class function SetTitleColor(form: THandle; bg, text: TColor): boolean; override;
     {** Draw a badge with @param(Value) on the application icon.
         @param(BadgeColor Color of the badge circle/rounded rect)
         @param(badge_size_ratio Badge diameter relative to icon size)
@@ -301,7 +301,7 @@ end;
   -------------
   Apply caption and text colors to a window using DWM attributes.
  ------------------------------------------------------------------------------}
-function TTrndiNativeWindows.SetTitleColor(form: THandle; bg, text: TColor): Boolean;
+class function TTrndiNativeWindows.SetTitleColor(form: THandle; bg, text: TColor): Boolean;
 var
   bgColor, textColor: COLORREF;
   hrCaption, hrText: HRESULT;
