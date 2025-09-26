@@ -437,6 +437,7 @@ implementation
 {$R *.lfm}
 {$I ../../inc/tfuncs.inc}
 
+{$ifdef TrndiExt}
 // Converts the current reading to system-default, mgdl and mmol
 function getBGResults: JSValueRaw;
 var
@@ -451,7 +452,6 @@ begin
   result := TTrndiExtEngine.Instance.CreateJSArray([curr, mgdl, mmol]);
 end;
 
-{$ifdef TrndiExt}
 // Helper function that calls a JS function with additional parameters first
 // and BG readings appended at the end: functionInJS(param1, param2, bgreadings)
 function callFuncWithBGReadings(const funcName: string; const additionalParams: array of const; out exists: boolean): string;
