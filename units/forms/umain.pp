@@ -438,14 +438,17 @@ implementation
 {$I ../../inc/tfuncs.inc}
 
 // Converts the current reading to system-default, mgdl and mmol
-procedure getBGResults(out curr: single; out mgdl: integer; out mmol: single);
+function getBGResults: JSValueRaw;
 var
   bgnow: BGReading;
+  mmol, curr: single;
+  mgdl: integer;
 begin
   bgnow := bgs[Low(bgs)];
   curr := bgnow.convert(un);
   mmol := bgnow.convert(BGUnit.mmol);
   mgdl := round(bgnow.convert(BGUnit.mgdl));
+  result := TTrndiExtEngine.Instance.CreateJSArray([curr, mgdl, mmol]);
 end;
 
 // Returns vertical offset needed to bring all trend dots fully inside their parent.
@@ -2681,8 +2684,7 @@ var
   s: string;
   {$ifdef TrndiExt}
     ex: boolean; // If the function exists
-    curr, mmol: single;
-    mgdl: integer;
+    readings: JSValueRaw;
   {$endif}
 const
   clockInterval = 5000;
@@ -2690,10 +2692,10 @@ begin
 tClock.Enabled := false;
   if tClock.Interval <> clockInterval then begin
     {$ifdef TrndiExt}
-      getBGResults(curr, mgdl,mmol);
+      readings := getBGResults;
       s := '';
       // Check if JS engine is still available before calling
-      s := callFunc('clockView', [curr, mgdl, mmol, DateTimeToStr(Now)], ex);
+      s := callFuncArrayFirst('clockView',readings, [DateTimeToStr(Now)], ex);
       if ex = false then
         lval.caption := FormatDateTime(ShortTimeFormat, Now)
       else
@@ -2940,16 +2942,15 @@ end;
 procedure TfBG.tMainTimer(Sender: TObject);
 {$ifdef TrndiExt}
 var
-  curr, mmol: single;
-  mgdl: integer;
+ bgvals: JSValueRaw;
 {$endif}
 begin
   updateReading;
   {$ifdef TrndiExt}
   try
 
-     getBGResults(curr, mgdl, mmol);
-     callFunc('updateCallback', [curr, mgdl, mmol, DateTimeToStr(Now)]);
+     bgvals := getBGResults;
+     callFunc('updateCallback', [bgvals, DateTimeToStr(Now)]);
   finally
   end;
   {$endif}

@@ -10,7 +10,7 @@ interface
 uses
   Classes, SysUtils, ExtCtrls, stdctrls, graphics, trndi.types, forms, math,
   fpjson, jsonparser, dateutils
-  {$ifdef TrndiExt},trndi.ext.engine{$endif}
+  {$ifdef TrndiExt},trndi.ext.engine, mormot.lib.quickjs{$endif}
   {$ifdef DARWIN}, CocoaAll{$endif};
 
 
@@ -37,6 +37,9 @@ function callFunc(const func: string; params: array of const): string;
 function funcBool(const func: string; params: array of const; const nofunc: boolean): boolean;
 function funcInt(const func: string; params: array of const; const nofunc: int64): Int64;
 function funcFloat(const func: string; params: array of const; const nofunc: double): double;
+// Call a JS function where the first parameter is an already created JS array (JSValueRaw)
+function callFuncArrayFirst(const func: string; const firstArray: JSValueRaw; rest: array of const; out exists: boolean): string;
+function callFuncArrayFirst(const func: string; const firstArray: JSValueRaw; rest: array of const): string;
 {$endif}
 
 const
@@ -567,6 +570,22 @@ begin
     result := d
   else
     raise Exception.Create('Cannot interpret extension value '+res+' as float!');
+end;
+
+// Wrapper around engine.CallFunctionArrayFirst
+function callFuncArrayFirst(const func: string; const firstArray: JSValueRaw; rest: array of const; out exists: boolean): string;
+begin
+  result := '';
+  if not Assigned(TTrndiExtEngine.Instance) then begin exists := false; exit; end;
+  exists := TTrndiExtEngine.Instance.FunctionExists(func);
+  if not exists then exit;
+  result := TTrndiExtEngine.Instance.CallFunctionArrayFirst(func, firstArray, rest);
+end;
+
+function callFuncArrayFirst(const func: string; const firstArray: JSValueRaw; rest: array of const): string;
+var ex: boolean;
+begin
+  result := callFuncArrayFirst(func, firstArray, rest, ex);
 end;
 {$endif}
 

@@ -216,6 +216,7 @@ type
         @param(func  Native function pointer)
         @param(argc  Declared arity; use -1 for variadic) }
     procedure addClassFunction(const id: string; const func: JSFunction; const argc: integer = 0);
+    // (Removed prior experimental overload infrastructure)
 
     {** Call a global JS function by name with string arguments.
 
@@ -237,6 +238,43 @@ type
       @param(Args     Array of const arguments)
       @returns(Stringified result; empty string if call failed/not found) }
   function CallFunction(const FuncName: RawUtf8; const Args: array of const): RawUtf8; overload;
+  {** Build a QuickJS array from a Pascal open array of const values.
+    Supported element kinds mirror the mixed CallFunction overload.
+    Returns JS_UNDEFINED if context invalid or on allocation failure. }
+  function CreateJSArray(const Values: array of const): JSValueRaw;
+  {** Convenience: call a JS function passing a single array argument built
+    from Values. Equivalent JS: func([v0,v1,...]) }
+  function CallFunctionWithArrayArg(const FuncName: RawUtf8; const Values: array of const): RawUtf8;
+  { Call where first argument is a pre-built JSValueRaw (e.g. an Array) and the rest are Pascal values }
+  function CallFunctionArrayFirst(const FuncName: RawUtf8; const FirstArg: JSValueRaw; const Rest: array of const): RawUtf8;
+  {** Factories to create standalone JS values you can mix with arrays:
+       js := eng.MakeJSArray([1,2,3]);
+       s  := eng.MakeJSString('hi');
+       i  := eng.MakeJSInt64(42);
+       eng.CallFunctionJS('foo',[s, js, i]);
+     All returned JSValueRaw should normally be freed with JS_FreeValue after use
+     unless you pass autoFree=true to CallFunctionJS (default). }
+  function MakeJSString(const S: RawUtf8): JSValueRaw; inline;
+  function MakeJSInt64(const V: int64): JSValueRaw; inline;
+  function MakeJSFloat(const V: double): JSValueRaw; inline;
+  function MakeJSBool(const V: boolean): JSValueRaw; inline;
+  {** Call a function with pre-built JSValueRaw arguments (scalars, arrays, objects).
+      If autoFree=true each argument value is freed after the call returns. }
+  function CallFunctionJS(const FuncName: RawUtf8; const Args: array of JSValueRaw; autoFree: boolean = true): RawUtf8;
+  {** Example mixed usage:
+      eng.Execute('function demo(label, data, count){ return label+":"+data.length+":"+count; }');
+      arr := eng.CreateJSArray([1,2,3]);
+      res := eng.CallFunctionJS('demo', [eng.MakeJSString('sizes'), arr, eng.MakeJSInt64(3)]);
+      // res -> 'sizes:3:3'
+    }
+    {** Example:
+        // JS side:
+        // function sumArr(arr) { return arr.reduce((a,b)=>a+b,0); }
+
+        // Pascal side:
+        // eng.Execute('function sumArr(arr){return arr.reduce((a,b)=>a+b,0);}');
+        // res := eng.CallFunctionWithArrayArg('sumArr',[1,2,3,4]); // => '10'
+      }
 
     {** Set a global JS variable (string).
 
@@ -1128,6 +1166,200 @@ begin
     end
     else
       Result := '';                     // not convertible to string
+  end;
+end;
+
+{** Build a JS Array value from an array of const. }
+function TTrndiExtEngine.CreateJSArray(const Values: array of const): JSValueRaw;
+var
+  arr: JSValueRaw;
+  i: integer;
+  tmp: JSValue;
+  s: RawUtf8;
+begin
+  Result := JS_UNDEFINED;
+  if IsExtShuttingDown or (FContext = nil) or (FRuntime = nil) then
+    Exit;
+  arr := JS_NewArray(FContext);
+  for i := 0 to High(Values) do
+  begin
+    case Values[i].VType of
+      vtInteger:
+        begin tmp.From32(Values[i].VInteger); JS_SetPropertyUint32(FContext, arr, i, tmp.Raw); end;
+      vtInt64:
+        begin tmp.From64(Values[i].VInt64^); JS_SetPropertyUint32(FContext, arr, i, tmp.Raw); end;
+      vtExtended:
+        begin tmp.FromFloat(Values[i].VExtended^); JS_SetPropertyUint32(FContext, arr, i, tmp.Raw); end;
+      vtBoolean:
+        begin tmp.From(Values[i].VBoolean); JS_SetPropertyUint32(FContext, arr, i, tmp.Raw); end;
+      vtChar:
+        begin s := RawUtf8(Values[i].VChar); JS_SetPropertyUint32(FContext, arr, i, JS_NewString(FContext, PChar(s))); end;
+      vtPChar:
+        JS_SetPropertyUint32(FContext, arr, i, JS_NewString(FContext, Values[i].VPChar));
+      vtAnsiString:
+        begin s := RawUtf8(AnsiString(Values[i].VAnsiString)); JS_SetPropertyUint32(FContext, arr, i, JS_NewString(FContext, PChar(s))); end;
+      vtUnicodeString, vtWideString:
+        begin s := RawUtf8(UnicodeString(Values[i].VUnicodeString)); JS_SetPropertyUint32(FContext, arr, i, JS_NewString(FContext, PChar(s))); end;
+      vtString:
+        begin s := RawUtf8(ShortString(Values[i].VString^)); JS_SetPropertyUint32(FContext, arr, i, JS_NewString(FContext, PChar(s))); end;
+    else
+      begin s := RawUtf8('{unsupported}'); JS_SetPropertyUint32(FContext, arr, i, JS_NewString(FContext, PChar(s))); end;
+    end;
+  end;
+  Result := arr;
+end;
+
+{** Call function passing a single JS array argument. }
+function TTrndiExtEngine.CallFunctionWithArrayArg(const FuncName: RawUtf8; const Values: array of const): RawUtf8;
+var
+  arr: JSValueRaw;
+  GlobalObj, FuncObj, RetVal: JSValueRaw;
+  StrResult: PAnsiChar;
+begin
+  Result := '';
+  if IsExtShuttingDown or (FContext = nil) or (FRuntime = nil) then Exit;
+  if not FunctionExists(string(FuncName)) then Exit;
+
+  arr := CreateJSArray(Values);
+  GlobalObj := JS_GetGlobalObject(FContext);
+  FuncObj := JS_GetPropertyStr(FContext, GlobalObj, PChar(FuncName));
+  if not JS_IsFunction(FContext, FuncObj) then Exit('');
+  RetVal := JS_Call(FContext, FuncObj, GlobalObj, 1, @arr);
+  if JS_IsError(FContext, RetVal) then
+  begin
+    js_std_dump_error(FContext);
+    Exit('');
+  end;
+  StrResult := JS_ToCString(FContext, RetVal);
+  if StrResult <> nil then
+  begin
+    Result := StrResult;
+    JS_FreeCString(FContext, StrResult);
+  end;
+end;
+
+// JS value factories
+function TTrndiExtEngine.MakeJSString(const S: RawUtf8): JSValueRaw; inline;
+begin
+  if (FContext=nil) then exit(JS_UNDEFINED);
+  Result := JS_NewString(FContext, PAnsiChar(S));
+end;
+
+function TTrndiExtEngine.MakeJSInt64(const V: int64): JSValueRaw; inline;
+begin
+  if (FContext=nil) then exit(JS_UNDEFINED);
+  Result := JS_NewBigInt64(FContext, V);
+end;
+
+function TTrndiExtEngine.MakeJSFloat(const V: double): JSValueRaw; inline;
+var tmp: JSValue;
+begin
+  if (FContext=nil) then exit(JS_UNDEFINED);
+  tmp.FromFloat(V);
+  Result := tmp.Raw;
+end;
+
+function TTrndiExtEngine.MakeJSBool(const V: boolean): JSValueRaw; inline;
+var tmp: JSValue;
+begin
+  if (FContext=nil) then exit(JS_UNDEFINED);
+  tmp.From(V);
+  Result := tmp.Raw;
+end;
+
+{** Call JS with prepared JSValueRaw arguments. }
+function TTrndiExtEngine.CallFunctionJS(const FuncName: RawUtf8; const Args: array of JSValueRaw; autoFree: boolean): RawUtf8;
+var
+  GlobalObj, FuncObj, RetVal: JSValueRaw;
+  StrResult: PAnsiChar;
+  i: integer;
+begin
+  Result := '';
+  if IsExtShuttingDown or (FContext=nil) or (FRuntime=nil) then Exit;
+  if not FunctionExists(string(FuncName)) then Exit;
+
+  GlobalObj := JS_GetGlobalObject(FContext);
+  FuncObj := JS_GetPropertyStr(FContext, GlobalObj, PChar(FuncName));
+  if not JS_IsFunction(FContext, FuncObj) then Exit('');
+  if Length(Args)=0 then
+    RetVal := JS_Call(FContext, FuncObj, GlobalObj, 0, nil)
+  else
+    RetVal := JS_Call(FContext, FuncObj, GlobalObj, Length(Args), @Args[0]);
+  if JS_IsError(FContext, RetVal) then
+  begin
+    js_std_dump_error(FContext);
+    Exit('');
+  end;
+  StrResult := JS_ToCString(FContext, RetVal);
+  if StrResult<>nil then
+  begin
+    Result := StrResult;
+    JS_FreeCString(FContext, StrResult);
+  end;
+  if autoFree then
+    for i := 0 to High(Args) do
+      try
+        JS_Free(FContext, @Args[i]);
+      except end;
+end;
+
+{** Call a JS function supplying a pre-built first JS argument (e.g. an Array) followed by
+    marshalled Pascal open-array-of-const arguments. The first argument is NOT freed here. }
+function TTrndiExtEngine.CallFunctionArrayFirst(const FuncName: RawUtf8; const FirstArg: JSValueRaw; const Rest: array of const): RawUtf8;
+var
+  GlobalObj, FuncObj, RetVal: JSValueRaw;
+  ArgArray: array of JSValueRaw;
+  tmpStrs: array of RawUtf8;
+  tmpv: JSValue;
+  s: RawUtf8;
+  i: integer;
+  StrResult: PAnsiChar;
+begin
+  Result := '';
+  if IsExtShuttingDown or (FContext=nil) or (FRuntime=nil) then Exit;
+  if not FunctionExists(string(FuncName)) then Exit;
+
+  GlobalObj := JS_GetGlobalObject(FContext);
+  FuncObj := JS_GetPropertyStr(FContext, GlobalObj, PChar(FuncName));
+  if not JS_IsFunction(FContext, FuncObj) then
+  begin
+    JS_Free(FContext, @GlobalObj);
+    JS_Free(FContext, @FuncObj);
+    Exit('');
+  end;
+
+  SetLength(ArgArray, 1 + Length(Rest));
+  SetLength(tmpStrs, Length(Rest));
+  ArgArray[0] := FirstArg;
+  for i := 0 to High(Rest) do
+  begin
+    case Rest[i].VType of
+      vtInteger:    begin tmpv.From32(Rest[i].VInteger); ArgArray[1+i] := tmpv.Raw; end;
+      vtInt64:      begin tmpv.From64(Rest[i].VInt64^);  ArgArray[1+i] := tmpv.Raw; end;
+      vtExtended:   begin tmpv.FromFloat(Rest[i].VExtended^); ArgArray[1+i] := tmpv.Raw; end;
+      vtBoolean:    begin tmpv.From(Rest[i].VBoolean); ArgArray[1+i] := tmpv.Raw; end;
+      vtChar:       begin s := RawUtf8(Rest[i].VChar); tmpStrs[i] := s; ArgArray[1+i] := JS_NewString(FContext, PChar(tmpStrs[i])); end;
+      vtPChar:      ArgArray[1+i] := JS_NewString(FContext, Rest[i].VPChar);
+      vtAnsiString: begin s := RawUtf8(AnsiString(Rest[i].VAnsiString)); tmpStrs[i] := s; ArgArray[1+i] := JS_NewString(FContext, PChar(tmpStrs[i])); end;
+      vtUnicodeString, vtWideString:
+                    begin s := RawUtf8(UnicodeString(Rest[i].VUnicodeString)); tmpStrs[i] := s; ArgArray[1+i] := JS_NewString(FContext, PChar(tmpStrs[i])); end;
+      vtString:     begin s := RawUtf8(ShortString(Rest[i].VString^)); tmpStrs[i] := s; ArgArray[1+i] := JS_NewString(FContext, PChar(tmpStrs[i])); end;
+    else
+      begin s := RawUtf8('{unsupported}'); tmpStrs[i] := s; ArgArray[1+i] := JS_NewString(FContext, PChar(tmpStrs[i])); end;
+    end;
+  end;
+
+  RetVal := JS_Call(FContext, FuncObj, GlobalObj, Length(ArgArray), @ArgArray[0]);
+  if JS_IsError(FContext, RetVal) then
+  begin
+    js_std_dump_error(FContext);
+    Exit('');
+  end;
+  StrResult := JS_ToCString(FContext, RetVal);
+  if StrResult<>nil then
+  begin
+    Result := StrResult;
+    JS_FreeCString(FContext, StrResult);
   end;
 end;
 
