@@ -1125,7 +1125,7 @@ begin
     // UI preferences
     dotscale := GetIntSetting('ux.dot_scale', 1);
     DOT_ADJUST := GetFloatSetting('ux.dot_adjust', 0);
-    miRangeColor.Checked := GetSetting('ux.range_color') = 'true';
+    miRangeColor.Checked := GetBoolSetting('ux.range_color', true);
 
     // Extensions
     {$ifdef TrndiExt}
@@ -3587,6 +3587,7 @@ begin
   else begin
     pnOffRange.Visible := true;
     pnOffRangeBar.Visible := true;
+    setColorMode;
   end;
   pnOffRangeBar.Visible := true;
   pnOffRange.Caption := Format('↧ %s ↧', [RS_OFF_LO]);
@@ -3613,6 +3614,7 @@ begin
   else begin
     pnOffRange.Visible := true;
     pnOffRangeBar.Visible := true;
+    setColorMode;
   end;
   pnOffRange.Caption := Format('↥ %s ↥', [RS_OFF_HI]);
 
@@ -3783,10 +3785,16 @@ begin
   if not nocolor then
     fBG.Color := bg;
 
-  if not multi and titlecolor then begin
+  if not multi // not more users than 1
+    and titlecolor // we have chosen to color the window
+    and miRangeColor.Checked then begin // We color the entire window
     result := SetSingleColorMode;
     Exit;
-  end;
+  end else
+  if not miRangeColor.Checked // We are not coloring the entire window
+    and pnOffRange.Visible then
+      if native.SetTitleColor(handle, pnOffRange.Color, IfThen(IsLightColor(pnOffRange.Color), clBlack, clWhite)) then
+        Exit;
 
   if customTitleBar and (pnMultiUser.Color <> clBlack) then begin // Safe that black = standard
     if native.SetTitleColor(handle, pnMultiUser.Color, IfThen(IsLightColor(pnMultiUser.Color), clBlack, clWhite)) then
