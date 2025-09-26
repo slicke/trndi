@@ -2695,7 +2695,7 @@ tClock.Enabled := false;
       readings := getBGResults;
       s := '';
       // Check if JS engine is still available before calling
-      s := callFuncArrayFirst('clockView',readings, [DateTimeToStr(Now)], ex);
+      s := callFuncArrayFirst('clockView',readings, [DateTimeToStr(Now)], ex, false, false);
       if ex = false then
         lval.caption := FormatDateTime(ShortTimeFormat, Now)
       else
