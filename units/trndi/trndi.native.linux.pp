@@ -37,6 +37,14 @@ type
     Tray: TTrayIcon;
     TrayMenu: TPopupMenu;
     inistore: TIniFile; // Linux-specific settings store
+    // Flashing support
+    FFlashTimer: TTimer;
+    FFlashEnd: TDateTime;
+    FFlashPhase: Integer;
+    FFlashValue: string;
+    FFlashBaseColor: TColor;
+    FFlashCycleMS: Integer;
+    procedure FlashTimerTick(Sender: TObject);
     {** Resolve the INI/CFG file path with backward compatibility.
         Preference order: Lazarus app config, ~/.config/Trndi/trndi.ini, legacy ~/.config/Trndi.cfg }
     function ResolveIniPath: string; virtual;
@@ -64,6 +72,8 @@ type
   procedure setBadge(const Value: string; BadgeColor: TColor); overload; reintroduce;
     {** Synchronize KDE badge with numeric value and update tray badge drawing. }
     procedure setBadge(const Value: string; BadgeColor: TColor; badge_size_ratio: double; min_font_size: integer); overload; override;
+  procedure StartBadgeFlash(const Value: string; badgeColor: TColor; DurationMS: Integer = 10000; CycleMS: Integer = 400); override;
+  procedure StopBadgeFlash; override;
     {** Placeholder for desktop-specific dark mode. Return False for now. }
   class function setDarkMode: boolean; // no-op placeholder
 
@@ -573,6 +583,8 @@ begin
     TrayMenu.Free;
   if Assigned(Tray) then
     Tray.Free;
+  if Assigned(FFlashTimer) then
+    FreeAndNil(FFlashTimer);
   if Assigned(inistore) then
     inistore.Free;
   inherited Destroy;
@@ -877,6 +889,69 @@ end;
 procedure TTrndiNativeLinux.SetBadge(const Value: string; BadgeColor: TColor);
 begin
   inherited SetBadge(Value, BadgeColor);
+end;
+
+// Flash timer tick: pulse brightness (simple 4-phase like Windows)
+procedure TTrndiNativeLinux.FlashTimerTick(Sender: TObject);
+  function ScaleColor(c: TColor; factor: Double): TColor;
+  var rc: Longint; r,g,b: Integer;
+  begin
+    rc := ColorToRGB(c);
+    r := Round(GetRValue(rc)*factor); if r>255 then r:=255;
+    g := Round(GetGValue(rc)*factor); if g>255 then g:=255;
+    b := Round(GetBValue(rc)*factor); if b>255 then b:=255;
+    Result := RGB(r,g,b);
+  end;
+var
+  factor: Double;
+  phaseColor: TColor;
+begin
+  if (Now > FFlashEnd) or (FFlashValue = '') then
+  begin
+    StopBadgeFlash;
+    Exit;
+  end;
+  case FFlashPhase mod 4 of
+    0: factor := 1.0;
+    1: factor := 1.35;
+    2: factor := 1.0;
+    3: factor := 0.7;
+  else
+    factor := 1.0;
+  end;
+  phaseColor := ScaleColor(FFlashBaseColor, factor);
+  // Only tray icon animates; KDE numeric badge stays stable for clarity
+  SetTray(FFlashValue, phaseColor, DEFAULT_BADGE_SIZE_RATIO, DEFAULT_MIN_FONT_SIZE);
+  Inc(FFlashPhase);
+end;
+
+procedure TTrndiNativeLinux.StartBadgeFlash(const Value: string; badgeColor: TColor; DurationMS: Integer; CycleMS: Integer);
+begin
+  FFlashValue := Value;
+  FFlashBaseColor := badgeColor;
+  FFlashCycleMS := CycleMS;
+  FFlashEnd := Now + (DurationMS / (24*60*60*1000));
+  FFlashPhase := 0;
+  if FFlashTimer = nil then
+  begin
+    FFlashTimer := TTimer.Create(nil);
+    FFlashTimer.OnTimer := @FlashTimerTick;
+  end;
+  FFlashTimer.Interval := CycleMS;
+  FFlashTimer.Enabled := True;
+  FlashTimerTick(nil); // immediate first frame
+end;
+
+procedure TTrndiNativeLinux.StopBadgeFlash;
+begin
+  if Assigned(FFlashTimer) then
+  begin
+    FFlashTimer.Enabled := False;
+    FreeAndNil(FFlashTimer);
+  end;
+  if FFlashValue <> '' then
+    SetTray(FFlashValue, FFlashBaseColor, DEFAULT_BADGE_SIZE_RATIO, DEFAULT_MIN_FONT_SIZE);
+  FFlashValue := '';
 end;
 {------------------------------------------------------------------------------
   setDarkMode
