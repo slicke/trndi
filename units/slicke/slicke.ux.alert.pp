@@ -151,6 +151,8 @@ type
   protected
     {** Finalizes platform window style, sets KeyPreview, and enables dark mode title bar where supported. }
     procedure CreateWnd; override;
+  // Override DoShow instead of using an OnShow event method name.
+  procedure DoShow; override;
     {$ifdef windows}
   public
     {** Owner-draw routine for bit buttons on Windows to match dark mode styling. }
@@ -1898,6 +1900,13 @@ begin
     fname := 'font';
     Result := True;
   {$endif}
+end;
+
+procedure TDialogForm.DoShow;
+begin
+  inherited DoShow;
+  // Your show-time logic here. Example placeholder:
+  TrndiNative.SetTitleColor(handle, self.Color ,clWhite);
 end;
 
 {**
