@@ -68,6 +68,8 @@ function JSValueRawInt(const v: int64): JSValueRaw;
 function JSValueRawFloat(const v: double): JSValueRaw;
 function JSValueRawBool(const v: boolean): JSValueRaw;
 function JSValueRawArray(const values: array of const): JSValueRaw;
+// Convert array of const to array of JSValueRaw with proper type matching
+procedure ConvertVarRecsToJSValueRaw(const params: array of const; var jsValues: array of JSValueRaw);
 {$endif}
 
 const
@@ -677,6 +679,26 @@ function JSValueRawArray(const values: array of const): JSValueRaw;
 begin
   if not Assigned(TTrndiExtEngine.Instance) then exit(JS_UNDEFINED);
   Result := TTrndiExtEngine.Instance.MakeJSArray(values);
+end;
+
+procedure ConvertVarRecsToJSValueRaw(const params: array of const; var jsValues: array of JSValueRaw);
+var
+  i: integer;
+begin
+  for i := 0 to High(params) do
+  begin
+    case params[i].VType of
+      vtString:      jsValues[i] := JSValueRawString(RawUtf8(ShortString(params[i].VString^)));
+      vtAnsiString:  jsValues[i] := JSValueRawString(RawUtf8(AnsiString(params[i].VAnsiString)));
+      vtUnicodeString: jsValues[i] := JSValueRawString(RawUtf8(UnicodeString(params[i].VUnicodeString)));
+      vtInteger:     jsValues[i] := JSValueRawInt(params[i].VInteger);
+      vtInt64:       jsValues[i] := JSValueRawInt(params[i].VInt64^);
+      vtExtended:    jsValues[i] := JSValueRawFloat(params[i].VExtended^);
+      vtBoolean:     jsValues[i] := JSValueRawBool(params[i].VBoolean);
+    else
+      jsValues[i] := JSValueRawString('unsupported_type');
+    end;
+  end;
 end;
 {$endif}
 
