@@ -38,8 +38,9 @@ function funcBool(const func: string; params: array of const; const nofunc: bool
 function funcInt(const func: string; params: array of const; const nofunc: int64): Int64;
 function funcFloat(const func: string; params: array of const; const nofunc: double): double;
 // Call a JS function where the first parameter is an already created JS array (JSValueRaw)
-function callFuncArrayFirst(const func: string; const firstArray: JSValueRaw; rest: array of const; out exists: boolean): string;
-function callFuncArrayFirst(const func: string; const firstArray: JSValueRaw; rest: array of const): string;
+// Note: No default for autoFree here to avoid ambiguity with the overload without 'out exists'
+function callFuncArrayFirst(const func: string; const firstArray: JSValueRaw; rest: array of const; out exists: boolean; autoFree: boolean): string;
+function callFuncArrayFirst(const func: string; const firstArray: JSValueRaw; rest: array of const; autoFree: boolean = true): string;
 {$endif}
 
 const
@@ -573,19 +574,19 @@ begin
 end;
 
 // Wrapper around engine.CallFunctionArrayFirst
-function callFuncArrayFirst(const func: string; const firstArray: JSValueRaw; rest: array of const; out exists: boolean): string;
+function callFuncArrayFirst(const func: string; const firstArray: JSValueRaw; rest: array of const; out exists: boolean; autoFree: boolean): string;
 begin
   result := '';
   if not Assigned(TTrndiExtEngine.Instance) then begin exists := false; exit; end;
   exists := TTrndiExtEngine.Instance.FunctionExists(func);
   if not exists then exit;
-  result := TTrndiExtEngine.Instance.CallFunctionArrayFirst(func, firstArray, rest);
+  result := TTrndiExtEngine.Instance.CallFunctionArrayFirst(func, firstArray, rest, autoFree);
 end;
 
-function callFuncArrayFirst(const func: string; const firstArray: JSValueRaw; rest: array of const): string;
-var ex: boolean;
+function callFuncArrayFirst(const func: string; const firstArray: JSValueRaw; rest: array of const; autoFree: boolean): string;
+var ex: boolean; 
 begin
-  result := callFuncArrayFirst(func, firstArray, rest, ex);
+  result := callFuncArrayFirst(func, firstArray, rest, ex, autoFree);
 end;
 {$endif}
 

@@ -246,7 +246,7 @@ type
     from Values. Equivalent JS: func([v0,v1,...]) }
   function CallFunctionWithArrayArg(const FuncName: RawUtf8; const Values: array of const): RawUtf8;
   { Call where first argument is a pre-built JSValueRaw (e.g. an Array) and the rest are Pascal values }
-  function CallFunctionArrayFirst(const FuncName: RawUtf8; const FirstArg: JSValueRaw; const Rest: array of const): RawUtf8;
+  function CallFunctionArrayFirst(const FuncName: RawUtf8; const FirstArg: JSValueRaw; const Rest: array of const; autoFree: boolean = true): RawUtf8;
   {** Factories to create standalone JS values you can mix with arrays:
        js := eng.MakeJSArray([1,2,3]);
        s  := eng.MakeJSString('hi');
@@ -1305,7 +1305,7 @@ end;
 
 {** Call a JS function supplying a pre-built first JS argument (e.g. an Array) followed by
     marshalled Pascal open-array-of-const arguments. The first argument is NOT freed here. }
-function TTrndiExtEngine.CallFunctionArrayFirst(const FuncName: RawUtf8; const FirstArg: JSValueRaw; const Rest: array of const): RawUtf8;
+function TTrndiExtEngine.CallFunctionArrayFirst(const FuncName: RawUtf8; const FirstArg: JSValueRaw; const Rest: array of const; autoFree: boolean): RawUtf8;
 var
   GlobalObj, FuncObj, RetVal: JSValueRaw;
   ArgArray: array of JSValueRaw;
@@ -1361,6 +1361,12 @@ begin
     Result := StrResult;
     JS_FreeCString(FContext, StrResult);
   end;
+  // Free only the marshalled Rest arguments we created (strings or numbers/booleans) if requested.
+  if autoFree then
+    for i := 1 to High(ArgArray) do
+      try
+        JS_Free(FContext, @ArgArray[i]);
+      except end;
 end;
 
 {******************************************************************************
