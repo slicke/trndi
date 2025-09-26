@@ -360,6 +360,10 @@ msgstr ""
 msgid "Count readings in the custom range as in range"
 msgstr ""
 
+#: tfconf.cbtitlecolor.caption
+msgid "Color the title bar with glucose color **"
+msgstr ""
+
 #: tfconf.cbtouch.caption
 msgid "Touch screen"
 msgstr ""
@@ -483,7 +487,9 @@ msgid "Decimal separator:"
 msgstr ""
 
 #: tfconf.label14.caption
-msgid "* Support depends on your data source"
+msgid ""
+"* Support depends on your data source \n"
+"** Support depends on your system, does not apply in multi-user mode"
 msgstr ""
 
 #: tfconf.label15.caption
