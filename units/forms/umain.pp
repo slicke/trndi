@@ -53,7 +53,7 @@ trndi.api.dexcom, trndi.api.nightscout, trndi.api.nightscout3, trndi.types, math
 slicke.ux.alert, usplash, Generics.Collections, trndi.funcs, Trndi.native.base, trndi.shared,
 SystemMediaController,
 {$ifdef TrndiExt}
-trndi.Ext. Engine, trndi.Ext.jsfuncs,
+trndi.Ext.Engine, trndi.Ext.jsfuncs, mormot.core.base,
 {$endif}
 {$ifdef Darwin}
 CocoaAll, MacOSAll,
@@ -450,6 +450,51 @@ begin
   mgdl := round(bgnow.convert(BGUnit.mgdl));
   result := TTrndiExtEngine.Instance.CreateJSArray([curr, mgdl, mmol]);
 end;
+
+{$ifdef TrndiExt}
+// Helper function that calls a JS function with additional parameters first
+// and BG readings appended at the end: functionInJS(param1, param2, bgreadings)
+function callFuncWithBGReadings(const funcName: string; const additionalParams: array of const; out exists: boolean): string;
+var
+  readings: JSValueRaw;
+  allParams: array of JSValueRaw;
+begin
+  result := '';
+  exists := false;
+  
+  if not Assigned(TTrndiExtEngine.Instance) then 
+    Exit;
+    
+  readings := getBGResults;
+  try
+    // Build array with additional params first, then BG readings
+    SetLength(allParams, Length(additionalParams) + 1);
+    
+    // Convert additional params to JSValueRaw using refactored helper
+    if Length(additionalParams) > 0 then
+      ConvertVarRecsToJSValueRaw(additionalParams, allParams);
+    
+    // Add BG readings at the end
+    allParams[High(allParams)] := readings;
+    
+    result := callFuncRaw(funcName, allParams, exists, false);
+  except
+    on E: Exception do
+    begin
+      exists := false;
+      result := '';
+    end;
+  end;
+end;
+
+// Overload without exists parameter for simpler usage
+function callFuncWithBGReadings(const funcName: string; const additionalParams: array of const): string;
+var
+  exists: boolean;
+begin
+  result := callFuncWithBGReadings(funcName, additionalParams, exists);
+end;
+{$endif}
 
 // Returns vertical offset needed to bring all trend dots fully inside their parent.
 // Sign convention: negative = dots are above (need to move down); positive = dots are below (need to move up).
@@ -2684,7 +2729,6 @@ var
   s: string;
   {$ifdef TrndiExt}
     ex: boolean; // If the function exists
-    readings: JSValueRaw;
   {$endif}
 const
   clockInterval = 5000;
@@ -2692,10 +2736,9 @@ begin
 tClock.Enabled := false;
   if tClock.Interval <> clockInterval then begin
     {$ifdef TrndiExt}
-      readings := getBGResults;
       s := '';
       // Check if JS engine is still available before calling
-      s := callFuncArrayFirst('clockView',readings, [DateTimeToStr(Now)], ex, false, false);
+      s := callFuncWithBGReadings('clockView', [DateTimeToStr(Now)], ex);
       if ex = false then
         lval.caption := FormatDateTime(ShortTimeFormat, Now)
       else
