@@ -270,7 +270,6 @@ private
   procedure SetLang;
   procedure fixWarningPanel;
   procedure showWarningPanel(const message: string; clearDisplayValues: boolean = false);
-  function lastReading: BGReading;
   procedure CalcRangeTime;
   function updateReading(boot: boolean = false): boolean;
   procedure PlaceTrendDots(const Readings: array of BGReading);
@@ -352,6 +351,7 @@ private
 public
    procedure AppExceptionHandler(Sender: TObject; {%H-}E: Exception);
    procedure onGH({%H-}sender: TObject);
+   function lastReading: BGReading;
 end;
 
 
@@ -444,7 +444,7 @@ var
   mmol, curr: single;
   mgdl: integer;
 begin
-  bgnow := bgs[Low(bgs)];
+  bgnow := fBG.lastReading;
   curr := bgnow.convert(un);
   mmol := bgnow.convert(BGUnit.mmol);
   mgdl := round(bgnow.convert(BGUnit.mgdl));
@@ -1241,7 +1241,7 @@ procedure TfBG.speakReading;
 begin
   if not privacyMode then
      native.Speak(lVal.Caption)
-  else case bgs[Low(bgs)].level of
+  else case lastReading.level of
         trndi.types.BGHigh: begin native.speak('High'); end;
         trndi.types.BGLOW: begin native.speak('Low'); end;
         trndi.types.BGRange: begin native.speak('Good'); end;
@@ -2719,7 +2719,7 @@ begin
     lAgo.Caption := '🕑 ' + RS_COMPUTE_FAILED_AGO;
  end else begin
    try
-    d := bgs[Low(bgs)].date; // Last reading time
+    d := lastReading.date; // Last reading time
     min := MilliSecondsBetween(Now, d) div 60000;  // Minutes since last
   {$ifndef lclgtk2} // UTF support IS LIMITED
     lAgo.Caption := '🕑 ' + Format(RS_LAST_UPDATE, [min]);
@@ -3012,7 +3012,7 @@ var
   d: TDateTime;
   min, sec: int64;
 begin
-  d := bgs[Low(bgs)].date; // Last reading time
+  d := lastReading.date; // Last reading time
 
   min := MilliSecondsBetween(Now, d) div 60000;  // Minutes since last
   sec := (MilliSecondsBetween(Now, d) mod 60000) div 1000; // Seconds since last
@@ -3068,7 +3068,7 @@ procedure TfBG.ProcessCurrentReading;
 var
   b: BGReading;
 begin
-  b := bgs[Low(bgs)];
+  b := lastReading;
 
   // Update value label
   if not privacyMode then
@@ -3106,7 +3106,7 @@ var
   b: BGReading;   // Holder for the latest (newest) reading
   i: integer;     // Temp int used when checking if caption starts with a digit
 begin
-  b := bgs[Low(bgs)]; // Pick the most recent reading from the buffer
+  b := lastReading; // Pick the most recent reading from the buffer
 
   // Consider data fresh if the latest reading is within the configured threshold (in minutes)
   Result := MinutesBetween(Now, b.date) <= DATA_FRESHNESS_THRESHOLD_MINUTES;
@@ -3235,7 +3235,7 @@ begin
   // Handle privacy mode display
   if privacyMode then
   begin
-    lval.caption := privacyIcon(bgs[Low(bgs)].level);
+    lval.caption := privacyIcon(lastReading.level);
     lVal.hint := lval.caption;
   end;
 
@@ -3296,7 +3296,7 @@ var
   col: TColor;
   txt: string;
 begin
-  b := bgs[Low(bgs)];
+  b := lastReading;
 
   if b.val >= api.cgmHi then
     HandleHighGlucose(b)
