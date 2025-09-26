@@ -161,8 +161,27 @@ type
         @param(func Promise/callback identifier)
         @returns(Pointer to callback record; may raise if not found) }
     function findPromise(const func: string): PJSCallback;
-    { Internal unified call helper: RawPrefix are pre-built JSValueRaw args; Rest are Pascal
-      values to marshal. freeRaw/freeRest indicate which groups to free after invocation. }
+    {** Internal unified call helper dispatching all JS function invocations.
+
+        RawPrefix values are caller-prepared @code(JSValueRaw) arguments (arrays, objects, scalars)
+        passed directly without re-marshalling. @code(Rest) is an open array of const which is
+        marshalled on-the-fly to temporary JS values (numbers/strings/booleans).
+
+        Freeing semantics:
+        - @code(freeRaw=true) frees every element of @code(RawPrefix) after the call returns
+          (use only for one-shot arguments you won't reuse).
+        - @code(freeRest=true) frees each marshalled temporary produced from @code(Rest).
+        - Set corresponding flags to false if you will retain and reuse values (only meaningful for RawPrefix).
+
+        Duplicating the exact same JSValueRaw twice in @code(RawPrefix) while @code(freeRaw=true)
+        would cause double-free attempts; avoid by constructing separate values if needed.
+
+        @param(FuncName   Global JS function name to invoke)
+        @param(RawPrefix  Pre-built JSValueRaw arguments supplied as-is)
+        @param(Rest       Pascal arguments to marshal into JS values)
+        @param(freeRaw    Whether to free RawPrefix JS values after invocation)
+        @param(freeRest   Whether to free marshalled Rest JS temporaries)
+        @returns(Stringified JS return value; empty string on error or if function missing) }
     function InternalCall(const FuncName: RawUtf8; const RawPrefix: array of JSValueRaw;
       const Rest: array of const; freeRaw, freeRest: boolean): RawUtf8;
 
@@ -249,17 +268,36 @@ type
   {** Convenience: call a JS function passing a single array argument built
     from Values. Equivalent JS: func([v0,v1,...]) }
   function CallFunctionWithArrayArg(const FuncName: RawUtf8; const Values: array of const): RawUtf8;
-  { Call where first argument is a pre-built JSValueRaw (e.g. an Array/Object) and the rest are Pascal values.
-    autoFree (default true) controls freeing of ONLY the marshalled Rest arguments created inside this call.
-    autoFreeFirst (default false) optionally also frees the provided FirstArg after invocation (use for one-shot values).
-    Leave autoFreeFirst = false if you plan to reuse FirstArg for multiple calls. }
+  {** Call where the first argument is a pre-built @code(JSValueRaw) (e.g. Array/Object) and the rest are Pascal values.
+
+      Ownership:
+      - @code(autoFree=true) frees ONLY the marshalled @code(Rest) arguments created internally.
+      - @code(autoFreeFirst=true) additionally frees @code(FirstArg) (use for one-shot values).
+        Leave it false if you will reuse @code(FirstArg).
+
+      @param(FuncName      Global JS function name)
+      @param(FirstArg      Pre-built JSValueRaw passed as first argument)
+      @param(Rest          Pascal open array of const to marshal into trailing JS args)
+      @param(autoFree      Free marshalled Rest JS values after call; default true)
+      @param(autoFreeFirst Free supplied FirstArg after call; default false)
+      @returns(Stringified result; empty string on failure) }
   function CallFunctionArrayFirst(const FuncName: RawUtf8; const FirstArg: JSValueRaw; const Rest: array of const; autoFree: boolean = true; autoFreeFirst: boolean = false): RawUtf8;
-  { Call with an array of pre-built JSValueRaw arguments followed by marshalled Pascal args.
-    rawAutoFree  (default false) frees each provided RawArgs element after the call (set true for one-shot values).
-    restAutoFree (default true)  frees the marshalled Rest arguments we allocate.
-    Example:
-      raws[0] := eng.CreateJSArray([1,2,3]);
-      res := eng.CallFunctionMixed('demo', raws, ['label', 42]); }
+  {** Call with an array of pre-built @code(JSValueRaw) arguments followed by marshalled Pascal args.
+
+      Freeing rules:
+      - @code(rawAutoFree=true)  frees each element of @code(RawArgs) after invocation (one-shot usage).
+      - @code(restAutoFree=true) frees each marshalled temporary created from @code(Rest).
+
+      Example:
+        raws[0] := eng.CreateJSArray([1,2,3]);
+        res := eng.CallFunctionMixed('demo', raws, ['label', 42]);
+
+      @param(FuncName     Global JS function name)
+      @param(RawArgs      Array of pre-built JSValueRaw arguments)
+      @param(Rest         Pascal values to marshal)
+      @param(restAutoFree Free marshalled Rest values; default true)
+      @param(rawAutoFree  Free provided RawArgs values; default false)
+      @returns(Stringified result or empty string on error) }
   function CallFunctionMixed(const FuncName: RawUtf8; const RawArgs: array of JSValueRaw; const Rest: array of const; restAutoFree: boolean = true; rawAutoFree: boolean = false): RawUtf8;
   {** Factories to create standalone JS values you can mix with arrays:
        js := eng.MakeJSArray([1,2,3]);
@@ -274,8 +312,11 @@ type
   function MakeJSBool(const V: boolean): JSValueRaw; inline;
   {** Convenience alias: build a JS array from Pascal values (same as CreateJSArray). }
   function MakeJSArray(const Values: array of const): JSValueRaw; inline;
-  {** Call a function with pre-built JSValueRaw arguments (scalars, arrays, objects).
-      If autoFree=true each argument value is freed after the call returns. }
+  {** Call a function with pre-built @code(JSValueRaw) arguments (scalars, arrays, objects).
+    @param(FuncName Global JS function name)
+    @param(Args     Array of pre-built JSValueRaw values)
+    @param(autoFree Free each value in Args after the call; default true for convenience)
+    @returns(Stringified result or empty string on error) }
   function CallFunctionJS(const FuncName: RawUtf8; const Args: array of JSValueRaw; autoFree: boolean = true): RawUtf8;
   {** Example mixed usage:
       eng.Execute('function demo(label, data, count){ return label+":"+data.length+":"+count; }');
