@@ -161,6 +161,10 @@ type
         @param(func Promise/callback identifier)
         @returns(Pointer to callback record; may raise if not found) }
     function findPromise(const func: string): PJSCallback;
+    { Internal unified call helper: RawPrefix are pre-built JSValueRaw args; Rest are Pascal
+      values to marshal. freeRaw/freeRest indicate which groups to free after invocation. }
+    function InternalCall(const FuncName: RawUtf8; const RawPrefix: array of JSValueRaw;
+      const Rest: array of const; freeRaw, freeRest: boolean): RawUtf8;
 
   public
     {** All registered callbacks (promise handlers etc.). }
@@ -245,8 +249,18 @@ type
   {** Convenience: call a JS function passing a single array argument built
     from Values. Equivalent JS: func([v0,v1,...]) }
   function CallFunctionWithArrayArg(const FuncName: RawUtf8; const Values: array of const): RawUtf8;
-  { Call where first argument is a pre-built JSValueRaw (e.g. an Array) and the rest are Pascal values }
-  function CallFunctionArrayFirst(const FuncName: RawUtf8; const FirstArg: JSValueRaw; const Rest: array of const; autoFree: boolean = true): RawUtf8;
+  { Call where first argument is a pre-built JSValueRaw (e.g. an Array/Object) and the rest are Pascal values.
+    autoFree (default true) controls freeing of ONLY the marshalled Rest arguments created inside this call.
+    autoFreeFirst (default false) optionally also frees the provided FirstArg after invocation (use for one-shot values).
+    Leave autoFreeFirst = false if you plan to reuse FirstArg for multiple calls. }
+  function CallFunctionArrayFirst(const FuncName: RawUtf8; const FirstArg: JSValueRaw; const Rest: array of const; autoFree: boolean = true; autoFreeFirst: boolean = false): RawUtf8;
+  { Call with an array of pre-built JSValueRaw arguments followed by marshalled Pascal args.
+    rawAutoFree  (default false) frees each provided RawArgs element after the call (set true for one-shot values).
+    restAutoFree (default true)  frees the marshalled Rest arguments we allocate.
+    Example:
+      raws[0] := eng.CreateJSArray([1,2,3]);
+      res := eng.CallFunctionMixed('demo', raws, ['label', 42]); }
+  function CallFunctionMixed(const FuncName: RawUtf8; const RawArgs: array of JSValueRaw; const Rest: array of const; restAutoFree: boolean = true; rawAutoFree: boolean = false): RawUtf8;
   {** Factories to create standalone JS values you can mix with arrays:
        js := eng.MakeJSArray([1,2,3]);
        s  := eng.MakeJSString('hi');
@@ -258,6 +272,8 @@ type
   function MakeJSInt64(const V: int64): JSValueRaw; inline;
   function MakeJSFloat(const V: double): JSValueRaw; inline;
   function MakeJSBool(const V: boolean): JSValueRaw; inline;
+  {** Convenience alias: build a JS array from Pascal values (same as CreateJSArray). }
+  function MakeJSArray(const Values: array of const): JSValueRaw; inline;
   {** Call a function with pre-built JSValueRaw arguments (scalars, arrays, objects).
       If autoFree=true each argument value is freed after the call returns. }
   function CallFunctionJS(const FuncName: RawUtf8; const Args: array of JSValueRaw; autoFree: boolean = true): RawUtf8;
@@ -1267,54 +1283,68 @@ begin
   Result := tmp.Raw;
 end;
 
+function TTrndiExtEngine.MakeJSArray(const Values: array of const): JSValueRaw; inline;
+begin
+  Result := CreateJSArray(Values);
+end;
+
 {** Call JS with prepared JSValueRaw arguments. }
 function TTrndiExtEngine.CallFunctionJS(const FuncName: RawUtf8; const Args: array of JSValueRaw; autoFree: boolean): RawUtf8;
-var
-  GlobalObj, FuncObj, RetVal: JSValueRaw;
-  StrResult: PAnsiChar;
-  i: integer;
 begin
-  Result := '';
-  if IsExtShuttingDown or (FContext=nil) or (FRuntime=nil) then Exit;
-  if not FunctionExists(string(FuncName)) then Exit;
-
-  GlobalObj := JS_GetGlobalObject(FContext);
-  FuncObj := JS_GetPropertyStr(FContext, GlobalObj, PChar(FuncName));
-  if not JS_IsFunction(FContext, FuncObj) then Exit('');
-  if Length(Args)=0 then
-    RetVal := JS_Call(FContext, FuncObj, GlobalObj, 0, nil)
-  else
-    RetVal := JS_Call(FContext, FuncObj, GlobalObj, Length(Args), @Args[0]);
-  if JS_IsError(FContext, RetVal) then
-  begin
-    js_std_dump_error(FContext);
-    Exit('');
-  end;
-  StrResult := JS_ToCString(FContext, RetVal);
-  if StrResult<>nil then
-  begin
-    Result := StrResult;
-    JS_FreeCString(FContext, StrResult);
-  end;
-  if autoFree then
-    for i := 0 to High(Args) do
-      try
-        JS_Free(FContext, @Args[i]);
-      except end;
+  // Raw only; no Rest
+  Result := InternalCall(FuncName, Args, [], autoFree, false);
 end;
 
 {** Call a JS function supplying a pre-built first JS argument (e.g. an Array) followed by
-    marshalled Pascal open-array-of-const arguments. The first argument is NOT freed here. }
-function TTrndiExtEngine.CallFunctionArrayFirst(const FuncName: RawUtf8; const FirstArg: JSValueRaw; const Rest: array of const; autoFree: boolean): RawUtf8;
+  marshalled Pascal open-array-of-const arguments.
+  autoFree      => free the marshalled Rest arguments (default true)
+  autoFreeFirst => additionally free the supplied FirstArg (default false) }
+function TTrndiExtEngine.CallFunctionArrayFirst(const FuncName: RawUtf8; const FirstArg: JSValueRaw; const Rest: array of const; autoFree: boolean; autoFreeFirst: boolean): RawUtf8;
+begin
+  Result := InternalCall(FuncName, [FirstArg], Rest, autoFreeFirst, autoFree);
+end;
+
+{** Call with an array of pre-built JSValueRaw arguments followed by marshalled Pascal args. }
+function TTrndiExtEngine.CallFunctionMixed(const FuncName: RawUtf8; const RawArgs: array of JSValueRaw; const Rest: array of const; restAutoFree: boolean; rawAutoFree: boolean): RawUtf8;
+begin
+  Result := InternalCall(FuncName, RawArgs, Rest, rawAutoFree, restAutoFree);
+end;
+
+// Internal unified call implementation
+function TTrndiExtEngine.InternalCall(const FuncName: RawUtf8; const RawPrefix: array of JSValueRaw;
+  const Rest: array of const; freeRaw, freeRest: boolean): RawUtf8;
 var
   GlobalObj, FuncObj, RetVal: JSValueRaw;
   ArgArray: array of JSValueRaw;
   tmpStrs: array of RawUtf8;
   tmpv: JSValue;
+  i, base: integer;
   s: RawUtf8;
-  i: integer;
   StrResult: PAnsiChar;
 begin
+  { InternalCall
+    Unified backend used by:
+      - CallFunctionJS         (raw only)
+      - CallFunctionArrayFirst (one raw + marshalled tail)
+      - CallFunctionMixed      (N raw + marshalled tail)
+
+    Memory ownership / freeing rules:
+      RawPrefix: caller-created JSValueRaw values (via MakeJSString/Int/... or other constructors).
+        These are freed here only if freeRaw=true.
+      Rest: values provided as "array of const" and marshalled to temporary JS strings/numbers.
+        These temporaries are freed here only if freeRest=true.
+
+    Typical usage pattern for callers wanting automatic cleanup of throw-away values:
+      - Pass freeRaw=true (or autoFree/autoFreeFirst/rawAutoFree at public wrapper level).
+      - Do NOT reuse RawPrefix values after the call when freeRaw=true.
+
+    Reuse scenario:
+      - Pass freeRaw=false for any JSValueRaw you intend to call with again later, and free it manually once.
+
+    Edge case note:
+      - Do not duplicate the very same JSValueRaw object multiple times inside RawPrefix when freeRaw=true
+        (would attempt to free it multiple times). If needed, build separate JS values.
+  }
   Result := '';
   if IsExtShuttingDown or (FContext=nil) or (FRuntime=nil) then Exit;
   if not FunctionExists(string(FuncName)) then Exit;
@@ -1328,28 +1358,33 @@ begin
     Exit('');
   end;
 
-  SetLength(ArgArray, 1 + Length(Rest));
+  SetLength(ArgArray, Length(RawPrefix) + Length(Rest));
+  for i := 0 to High(RawPrefix) do
+    ArgArray[i] := RawPrefix[i];
+  base := Length(RawPrefix);
   SetLength(tmpStrs, Length(Rest));
-  ArgArray[0] := FirstArg;
   for i := 0 to High(Rest) do
   begin
     case Rest[i].VType of
-      vtInteger:    begin tmpv.From32(Rest[i].VInteger); ArgArray[1+i] := tmpv.Raw; end;
-      vtInt64:      begin tmpv.From64(Rest[i].VInt64^);  ArgArray[1+i] := tmpv.Raw; end;
-      vtExtended:   begin tmpv.FromFloat(Rest[i].VExtended^); ArgArray[1+i] := tmpv.Raw; end;
-      vtBoolean:    begin tmpv.From(Rest[i].VBoolean); ArgArray[1+i] := tmpv.Raw; end;
-      vtChar:       begin s := RawUtf8(Rest[i].VChar); tmpStrs[i] := s; ArgArray[1+i] := JS_NewString(FContext, PChar(tmpStrs[i])); end;
-      vtPChar:      ArgArray[1+i] := JS_NewString(FContext, Rest[i].VPChar);
-      vtAnsiString: begin s := RawUtf8(AnsiString(Rest[i].VAnsiString)); tmpStrs[i] := s; ArgArray[1+i] := JS_NewString(FContext, PChar(tmpStrs[i])); end;
+      vtInteger:    begin tmpv.From32(Rest[i].VInteger); ArgArray[base+i] := tmpv.Raw; end;
+      vtInt64:      begin tmpv.From64(Rest[i].VInt64^);  ArgArray[base+i] := tmpv.Raw; end;
+      vtExtended:   begin tmpv.FromFloat(Rest[i].VExtended^); ArgArray[base+i] := tmpv.Raw; end;
+      vtBoolean:    begin tmpv.From(Rest[i].VBoolean); ArgArray[base+i] := tmpv.Raw; end;
+      vtChar:       begin s := RawUtf8(Rest[i].VChar); tmpStrs[i] := s; ArgArray[base+i] := JS_NewString(FContext, PChar(tmpStrs[i])); end;
+      vtPChar:      ArgArray[base+i] := JS_NewString(FContext, Rest[i].VPChar);
+      vtAnsiString: begin s := RawUtf8(AnsiString(Rest[i].VAnsiString)); tmpStrs[i] := s; ArgArray[base+i] := JS_NewString(FContext, PChar(tmpStrs[i])); end;
       vtUnicodeString, vtWideString:
-                    begin s := RawUtf8(UnicodeString(Rest[i].VUnicodeString)); tmpStrs[i] := s; ArgArray[1+i] := JS_NewString(FContext, PChar(tmpStrs[i])); end;
-      vtString:     begin s := RawUtf8(ShortString(Rest[i].VString^)); tmpStrs[i] := s; ArgArray[1+i] := JS_NewString(FContext, PChar(tmpStrs[i])); end;
+                    begin s := RawUtf8(UnicodeString(Rest[i].VUnicodeString)); tmpStrs[i] := s; ArgArray[base+i] := JS_NewString(FContext, PChar(tmpStrs[i])); end;
+      vtString:     begin s := RawUtf8(ShortString(Rest[i].VString^)); tmpStrs[i] := s; ArgArray[base+i] := JS_NewString(FContext, PChar(tmpStrs[i])); end;
     else
-      begin s := RawUtf8('{unsupported}'); tmpStrs[i] := s; ArgArray[1+i] := JS_NewString(FContext, PChar(tmpStrs[i])); end;
+      begin s := RawUtf8('{unsupported}'); tmpStrs[i] := s; ArgArray[base+i] := JS_NewString(FContext, PChar(tmpStrs[i])); end;
     end;
   end;
 
-  RetVal := JS_Call(FContext, FuncObj, GlobalObj, Length(ArgArray), @ArgArray[0]);
+  if Length(ArgArray)=0 then
+    RetVal := JS_Call(FContext, FuncObj, GlobalObj, 0, nil)
+  else
+    RetVal := JS_Call(FContext, FuncObj, GlobalObj, Length(ArgArray), @ArgArray[0]);
   if JS_IsError(FContext, RetVal) then
   begin
     js_std_dump_error(FContext);
@@ -1361,12 +1396,13 @@ begin
     Result := StrResult;
     JS_FreeCString(FContext, StrResult);
   end;
-  // Free only the marshalled Rest arguments we created (strings or numbers/booleans) if requested.
-  if autoFree then
-    for i := 1 to High(ArgArray) do
-      try
-        JS_Free(FContext, @ArgArray[i]);
-      except end;
+
+  if freeRest then
+    for i := base to High(ArgArray) do
+      try JS_Free(FContext, @ArgArray[i]); except end;
+  if freeRaw then
+    for i := 0 to base-1 do
+      try JS_Free(FContext, @ArgArray[i]); except end;
 end;
 
 {******************************************************************************
