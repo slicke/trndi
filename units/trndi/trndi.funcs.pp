@@ -500,8 +500,10 @@ end;
 function callFunc(const func: string; params: array of const; out exists: boolean): string;
 begin
   result := '';
-  if not Assigned(TTrndiExtEngine.Instance) then  // Safe
+  if not Assigned(TTrndiExtEngine.Instance) then begin  // Safe
+    exists := false;
     exit;
+  end;
 
   exists := TTrndiExtEngine.Instance.FunctionExists(func); // We assign the out var
 

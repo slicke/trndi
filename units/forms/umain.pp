@@ -2680,7 +2680,7 @@ tClock.Enabled := false;
       s := '';
       // Check if JS engine is still available before calling
       s := callFunc('clockView', [bgs[Low(bgs)].val, DateTimeToStr(Now)], ex);
-      if not ex then
+      if ex then
         lval.caption := FormatDateTime(ShortTimeFormat, Now)
       else
         lval.caption := s;
