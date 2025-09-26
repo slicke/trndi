@@ -415,13 +415,36 @@ type
     property Filename: string read FFilename write FFilename;
   end;
 
+{** Emergency shutdown control functions }
+{** Set the global shutdown flag - call this as early as possible during app termination }
+procedure SetGlobalShutdown;
+{** Check if application is shutting down }
+function IsGlobalShutdown: Boolean;
+
 var
   {** Class ID used for the 'Trndi' class in QuickJS context. }
   TrndiClassID: JSClassID;
+  
+  {** Global flag to indicate application is shutting down - set as early as possible }
+  GlobalShutdownInProgress: Boolean = False;
 
 implementation
 
 {$I trndi.ext.jsbase.inc }
+
+{******************************************************************************
+  Global shutdown control functions
+******************************************************************************}
+
+procedure SetGlobalShutdown;
+begin
+  GlobalShutdownInProgress := True;
+end;
+
+function IsGlobalShutdown: Boolean;
+begin
+  Result := GlobalShutdownInProgress;
+end;
 
 {******************************************************************************
   TTrndiExtFunc
@@ -755,6 +778,28 @@ var
   tmpCtx: JSContext;
   timeoutCounter: Integer;
 begin
+  // ULTRA-EARLY EXIT: If application is terminating or global shutdown flag is set,
+  // skip ALL cleanup operations and let OS handle memory deallocation
+  if Application.Terminated or IsGlobalShutdown then
+  begin
+    // Clear references only - no QuickJS API calls whatsoever
+    FContext := nil;
+    FRuntime := nil;
+    FInstance := nil;
+    
+    // Free native helper safely without any complex cleanup
+    try
+      if Assigned(native) then
+        FreeAndNil(native);
+    except
+    end;
+    
+    // Clear singleton and exit immediately
+    inherited Destroy;
+    Exit;
+  end;
+
+  // Normal shutdown path - only execute when application is NOT terminating
   // Stop the job-pumping timer ASAP to avoid re-entrancy during teardown
   try
     if Assigned(eventTimer) then
@@ -771,24 +816,37 @@ begin
   // Give background threads time to notice shutdown and complete
   // This is critical to avoid access violations from promise threads
   timeoutCounter := 0;
-  while (timeoutCounter < 200) do  // max 1000ms wait (increased from 500ms)
+  while (timeoutCounter < 400) do  // max 2000ms wait (increased from 1000ms)
   begin
     Application.ProcessMessages;
     Sleep(5);
     Inc(timeoutCounter);
+    
+    // Early exit if no more threads are likely running
+    if timeoutCounter > 100 then  // After 500ms, reduce processing frequency
+      Sleep(10);  // Sleep longer to give threads more time to exit
   end;
 
   // Unregister host promise rejection tracker to avoid callbacks during teardown
   if FRuntime <> nil then
     JS_SetHostPromiseRejectionTracker(FRuntime, nil, nil);
 
+  // Normal shutdown path continues - application is not terminating
   // Drain pending jobs, if any, before freeing context/runtime
   if (FRuntime <> nil) and (FContext <> nil) then
   begin
-    tmpCtx := FContext;
-    while JS_IsJobPending(FRuntime) do
+    // More aggressive job draining with timeout
+    timeoutCounter := 0;
+    while JS_IsJobPending(FRuntime) and (timeoutCounter < 100) do  // Max 100 iterations
+    begin
       if JS_ExecutePendingJob(FRuntime, @tmpCtx) <= 0 then
-        break;
+        Break;
+      Inc(timeoutCounter);
+      
+      // Give a small pause every few iterations
+      if timeoutCounter mod 10 = 0 then
+        Sleep(1);
+    end;
   end;
 
   // Force garbage collection to clean up remaining objects
@@ -815,24 +873,65 @@ begin
   if (FRuntime <> nil) then
     JS_RunGC(FRuntime);
 
-  // Extra check checks
+  // Normal context cleanup
   if Assigned(FContext) then begin
     try
+      // Ensure no more jobs are pending before freeing context
+      if (FRuntime <> nil) then
+      begin
+        // Final check for any remaining jobs
+        tmpCtx := FContext;
+        timeoutCounter := 0;
+        while JS_IsJobPending(FRuntime) and (timeoutCounter < 10) do
+        begin
+          JS_ExecutePendingJob(FRuntime, @tmpCtx);
+          Inc(timeoutCounter);
+        end;
+        
+        // Final garbage collection before context destruction
+        JS_RunGC(FRuntime);
+      end;
+      
+      // Now free the context
       JS_FreeContext(FContext);
-    finally
-      FContext := nil;
+    except
+      // If context freeing fails, just continue - the runtime cleanup will handle it
     end;
+    FContext := nil;
   end;
-  // End extra checks
 
-  // Free runtime last - wrap in try-except to handle GC assertion failures
+  // Normal runtime cleanup
   if Assigned(FRuntime) then
   begin
     try
+      {$IFDEF DEBUG}
+      // In debug builds, skip QuickJS runtime cleanup to avoid debugger issues
+      // This prevents debugger stops at JS_FreeRuntime while maintaining clean shutdown
+      // The OS will handle memory cleanup when the process terminates
+      {$ELSE}
+      // Try to run final garbage collection cycles to clean up remaining objects
+      JS_RunGC(FRuntime);
+      JS_RunGC(FRuntime);  // Multiple passes for circular references
+      
+      // Wait a bit more to ensure all cleanup is done
+      Sleep(50);
+      
+      // Now attempt to free the runtime
       JS_FreeRuntime(FRuntime);
+      {$ENDIF}
     except
-      // Ignore QuickJS internal assertion failures during shutdown
-      // The GC assertion error is not critical for application termination
+      on E: Exception do
+      begin
+        // Log the error for debugging but don't crash
+        {$IFDEF DEBUG}
+        // Only log in debug mode to avoid user-facing errors
+        try
+          ExtError(uxdAuto, 'QuickJS Runtime Cleanup', 'Non-critical cleanup error: ' + E.Message);
+        except
+          // If even error reporting fails, just ignore completely
+        end;
+        {$ENDIF}
+      end;
     end;
     FRuntime := nil;
   end;
@@ -912,6 +1011,13 @@ var
   FileStream: TFileStream;
   StringStream: TStringStream;
 begin
+  // Emergency exit if application is shutting down
+  if IsGlobalShutdown then
+  begin
+    Result := '';
+    Exit;
+  end;
+
   Result := '';
   if not FileExists(FileName) then
     raise Exception.CreateFmt(sExtFile, [sExtFile, FileName]);
@@ -938,6 +1044,13 @@ var
   ResultStr: pansichar;
   err: RawUtf8;
 begin
+  // Emergency exit if application is shutting down
+  if IsGlobalShutdown then
+  begin
+    Result := '';
+    Exit;
+  end;
+
   FOutput := '';
 
   EvalResult := FContext^.Eval(Script, name, JS_EVAL_TYPE_GLOBAL, err);

@@ -53,7 +53,7 @@ trndi.api.dexcom, trndi.api.nightscout, trndi.api.nightscout3, trndi.types, math
 slicke.ux.alert, usplash, Generics.Collections, trndi.funcs, Trndi.native.base, trndi.shared,
 SystemMediaController,
 {$ifdef TrndiExt}
-trndi.Ext.Engine, trndi.Ext.jsfuncs, mormot.core.base,
+trndi.Ext.Engine, trndi.Ext.jsfuncs, trndi.ext.promise, mormot.core.base,
 {$endif}
 {$ifdef Darwin}
 CocoaAll, MacOSAll,
@@ -166,6 +166,7 @@ TfBG = class(TForm)
   tMain: TTimer;
   procedure AdjustGraph;
   procedure fbReadingsDblClick(Sender:TObject);
+  procedure FormCloseQuery(Sender: TObject; var CanClose: boolean);
   procedure FormClose(Sender: TObject; var {%H-}CloseAction: TCloseAction);
   procedure FormCreate(Sender: TObject);
   procedure FormDblClick(Sender: TObject);
@@ -1221,6 +1222,9 @@ end;
 
 procedure TfBG.FormDestroy(Sender:TObject);
 begin
+  // Ensure shutdown flag is set
+  FShuttingDown := True;
+  
   // These should already be freed in FormClose, but check just to be safe
   if assigned(native) then
   begin
@@ -1234,7 +1238,7 @@ begin
   end;
 
   // Note: TTrndiExtEngine.ReleaseInstance is already called in FormClose
-  // Calling it here would be redundant and potentially problematic
+  // The extension engine should already be shut down properly
 end;
 
 procedure TfBG.speakReading;
@@ -1534,6 +1538,26 @@ begin
   end;
 end;
 
+// FormCloseQuery event handler - called BEFORE FormClose
+procedure TfBG.FormCloseQuery(Sender: TObject; var CanClose: boolean);
+begin
+  {$ifdef TrndiExt}
+  // Set global shutdown flag immediately to prevent any new JS operations
+  try
+    trndi.ext.engine.SetGlobalShutdown;
+  except
+    // Ignore any errors during shutdown flag setting
+  end;
+  {$endif}
+  
+  // CRITICAL: Set Application.Terminated FIRST to prevent any QuickJS operations
+  // This is called even earlier than FormClose for maximum protection
+  Application.Terminate;  // This sets Application.Terminated := True
+  
+  // Always allow close to proceed
+  CanClose := True;
+end;
+
 // FormClose event handler
 procedure TfBG.FormClose(Sender: TObject; var CloseAction: TCloseAction);
 var
@@ -1579,18 +1603,42 @@ begin
   // Explicitly set CloseAction to ensure the form is actually freed
   CloseAction := caFree;
   {$endif}
-  {$ifdef TrndiExt}
-  // Stop all timers before destroying JS engine to prevent access violations
-  if Assigned(tAgo) then tAgo.Enabled := false;
-  if Assigned(tClock) then tClock.Enabled := false;
-  if Assigned(tSwap) then tSwap.Enabled := false;
-  if Assigned(tResize) then tResize.Enabled := false;
-  if Assigned(tMissed) then tMissed.Enabled := false;
-  if Assigned(tTouch) then tTouch.Enabled := false;
-  if Assigned(tMain) then tMain.Enabled := false;
   
-  // DON'T release the extension engine - let the OS clean it up on process exit
-  // This avoids the access violations during shutdown
+  {$ifdef TrndiExt}
+  // NOTE: Application.Terminate is now called in FormCloseQuery for earlier detection
+  
+  // CRITICAL: Signal extension shutdown FIRST before stopping timers
+  // This prevents new async operations from starting
+  try
+    // Signal shutdown to all extension components immediately
+    SetExtShuttingDown(true);
+    
+    // Give more time for background threads to see the shutdown signal
+    Application.ProcessMessages;
+    Sleep(150);  // Increased even more
+    Application.ProcessMessages;
+    
+    // Now stop all timers to prevent new operations
+    if Assigned(tAgo) then tAgo.Enabled := false;
+    if Assigned(tClock) then tClock.Enabled := false;
+    if Assigned(tSwap) then tSwap.Enabled := false;
+    if Assigned(tResize) then tResize.Enabled := false;
+    if Assigned(tMissed) then tMissed.Enabled := false;
+    if Assigned(tTouch) then tTouch.Enabled := false;
+    if Assigned(tMain) then tMain.Enabled := false;
+    
+    // Process any remaining messages/synchronize calls with extended wait
+    Application.ProcessMessages;
+    Sleep(250);  // Increased significantly 
+    Application.ProcessMessages;
+    Sleep(150);  // Additional wait
+    Application.ProcessMessages;
+    
+    // Now safely shutdown the extension engine
+    TTrndiExtEngine.ReleaseInstance;
+  except
+    // Ignore shutdown errors - the OS will clean up remaining resources
+  end;
   {$endif}
 
   // Let normal form closure process continue with CloseAction := caFree
