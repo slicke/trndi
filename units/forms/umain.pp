@@ -2217,6 +2217,8 @@ if cbPos.ItemIndex = -1 then
       f.lDot1.Caption :=  f.lDot.Caption;
       f.lDot2.Caption :=  f.lDot.Caption;
       f.lDot3.Caption :=  f.lDot.Caption;
+      f.lDotCurr.Caption :=  f.lDotNow.Caption;
+      f.Invalidate;
 
       // UI updates
       lVal.Font.Name := Self.lVal.Font.Name;
