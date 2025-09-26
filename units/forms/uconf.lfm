@@ -16,9 +16,9 @@ object fConf: TfConf
     Height = 534
     Top = 0
     Width = 675
-    ActivePage = tsCustom
+    ActivePage = tsDisplay
     Align = alClient
-    TabIndex = 3
+    TabIndex = 2
     TabOrder = 0
     OnChange = pcMainChange
     object tsGeneral: TTabSheet
@@ -10732,6 +10732,7 @@ object fConf: TfConf
       Caption = 'Display'
       ClientHeight = 506
       ClientWidth = 667
+      OnShow = tsDisplayShow
       object pnDisplay: TPanel
         Left = 0
         Height = 176
@@ -10743,10 +10744,11 @@ object fConf: TfConf
         ClientWidth = 667
         TabOrder = 0
         object lVal: TLabel
-          Left = 0
+          Cursor = crHandPoint
+          Left = 170
           Height = 131
           Top = 45
-          Width = 467
+          Width = 297
           Align = alClient
           Alignment = taRightJustify
           Caption = '0,0'
@@ -10758,6 +10760,7 @@ object fConf: TfConf
           OnClick = lValClick
         end
         object lArrow: TLabel
+          Cursor = crHandPoint
           Left = 467
           Height = 131
           Top = 45
@@ -10792,41 +10795,72 @@ object fConf: TfConf
           ParentFont = False
           OnClick = lValClick
         end
-        object lDot1: TLabel
-          Left = 16
-          Height = 25
-          Top = 104
-          Width = 12
-          Alignment = taCenter
-          AutoSize = False
-          Caption = '•'
-          Font.Height = 27
-          OptimalFill = True
-          ParentFont = False
-        end
-        object lDot2: TLabel
-          Left = 44
-          Height = 25
-          Top = 117
-          Width = 12
-          Alignment = taCenter
-          AutoSize = False
-          Caption = '•'
-          Font.Height = 27
-          OptimalFill = True
-          ParentFont = False
-        end
-        object lDot3: TLabel
-          Left = 72
-          Height = 25
-          Top = 123
-          Width = 12
-          Alignment = taCenter
-          AutoSize = False
-          Caption = '•'
-          Font.Height = 27
-          OptimalFill = True
-          ParentFont = False
+        object Panel6: TPanel
+          Left = 0
+          Height = 131
+          Top = 45
+          Width = 170
+          Align = alLeft
+          BevelOuter = bvNone
+          ClientHeight = 131
+          ClientWidth = 170
+          TabOrder = 0
+          object lDot1: TLabel
+            Cursor = crHandPoint
+            Left = 16
+            Height = 25
+            Top = 62
+            Width = 12
+            Alignment = taCenter
+            AutoSize = False
+            Caption = '•'
+            Font.Height = 27
+            OptimalFill = True
+            ParentFont = False
+            OnClick = dotClick
+          end
+          object lDot2: TLabel
+            Cursor = crHandPoint
+            Left = 44
+            Height = 25
+            Top = 71
+            Width = 12
+            Alignment = taCenter
+            AutoSize = False
+            Caption = '•'
+            Font.Height = 27
+            OptimalFill = True
+            ParentFont = False
+            OnClick = dotClick
+          end
+          object lDot3: TLabel
+            Cursor = crHandPoint
+            Left = 72
+            Height = 25
+            Top = 76
+            Width = 12
+            Alignment = taCenter
+            AutoSize = False
+            Caption = '•'
+            Font.Height = 27
+            OptimalFill = True
+            ParentFont = False
+            OnClick = dotClick
+          end
+          object lDotCurr: TLabel
+            Cursor = crHandPoint
+            Left = 100
+            Height = 25
+            Top = 69
+            Width = 12
+            Alignment = taCenter
+            AutoSize = False
+            Caption = '•'
+            Font.Height = 27
+            OptimalFill = True
+            ParentFont = False
+            OnClick = dotClick
+          end
         end
       end
       object Button2: TButton

@@ -111,6 +111,10 @@ TfConf = class(TForm)
   Label17: TLabel;
   lDot: TLabel;
   Label2: TLabel;
+  lDot1: TLabel;
+  lDot2: TLabel;
+  lDot3: TLabel;
+  lDotCurr: TLabel;
   lDotNow: TLabel;
   lWidgetset: TLabel;
   lOS: TLabel;
@@ -137,9 +141,6 @@ TfConf = class(TForm)
   lArrow: TLabel;
   lbUsers: TListBox;
   lCopyright: TLabel;
-  lDot1: TLabel;
-  lDot2: TLabel;
-  lDot3: TLabel;
   lHiOver: TLabel;
   lLicense: TButton;
   lLounder: TLabel;
@@ -154,6 +155,7 @@ TfConf = class(TForm)
   Panel3: TPanel;
   Panel4: TPanel;
   Panel5: TPanel;
+  Panel6: TPanel;
   Panel7: TPanel;
   Panel8: TPanel;
   Panel9: TPanel;
@@ -196,6 +198,7 @@ TfConf = class(TForm)
   procedure cbSysChange(Sender:TObject);
   procedure cbUserClick(Sender:TObject);
   procedure cbUserColorChanged(Sender: TObject);
+  procedure dotClick(Sender: TObject);
   procedure edNickChange(Sender: TObject);
   procedure eDotChange(Sender: TObject);
   procedure ePassEnter(Sender: TObject);
@@ -214,6 +217,7 @@ TfConf = class(TForm)
   procedure spTHRESHOLDChange(Sender: TObject);
   procedure tbAdvancedChange(Sender:TObject);
   procedure ToggleBox1Change(Sender:TObject);
+  procedure tsDisplayShow(Sender: TObject);
   procedure tsSystemShow(Sender: TObject);
 private
 
@@ -644,6 +648,13 @@ begin
   btUserSave.Enabled := true;
 end;
 
+procedure TfConf.dotClick(Sender: TObject);
+var
+  bg: tcolor;
+begin
+  eDot.SetFocus;
+end;
+
 procedure TfConf.edNickChange(Sender: TObject);
 begin
     btUserSave.Enabled := true;
@@ -665,7 +676,8 @@ begin
       lDot1.Caption :=  lbl.Caption;
       lDot2.Caption :=  lbl.Caption;
       lDot3.Caption :=  lbl.Caption;
-    end;
+    end else
+      lDotCurr.Caption := lbl.Caption;
   end
   else
     lbl.Caption := '- ERROR -';
@@ -1045,6 +1057,17 @@ end;
 procedure TfConf.ToggleBox1Change(Sender:TObject);
 begin
 
+end;
+
+procedure TfConf.tsDisplayShow(Sender: TObject);
+var
+  l: tlabel;
+begin
+  // The label caption looks ugly and invalidate doesnt help. Neiter does redraw at this stage
+  for l in [lDot1, lDot2, lDot3, lDotCurr] do
+    l.caption := '';
+//  eDot.OnChange(eDot);
+//  eDotNow.OnChange(eDotNow);
 end;
 
 procedure TfConf.tsSystemShow(Sender: TObject);
