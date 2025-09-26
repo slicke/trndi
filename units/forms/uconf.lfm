@@ -16,9 +16,9 @@ object fConf: TfConf
     Height = 534
     Top = 0
     Width = 675
-    ActivePage = tsColors
+    ActivePage = tsCustom
     Align = alClient
-    TabIndex = 1
+    TabIndex = 3
     TabOrder = 0
     OnChange = pcMainChange
     object tsGeneral: TTabSheet
@@ -11129,7 +11129,7 @@ object fConf: TfConf
       object Label6: TLabel
         Left = 10
         Height = 15
-        Top = 195
+        Top = 399
         Width = 647
         Align = alTop
         BorderSpacing.Around = 10
@@ -11138,7 +11138,7 @@ object fConf: TfConf
       object cbLang: TComboBox
         Left = 10
         Height = 23
-        Top = 220
+        Top = 195
         Width = 647
         Align = alTop
         AutoSize = False
@@ -11151,46 +11151,6 @@ object fConf: TfConf
         Style = csDropDownList
         TabOrder = 3
       end
-      object gbOverride1: TGroupBox
-        Left = 10
-        Height = 80
-        Top = 340
-        Width = 647
-        Align = alTop
-        BorderSpacing.Around = 10
-        Caption = 'Get more languages'
-        ClientHeight = 60
-        ClientWidth = 643
-        ParentBackground = False
-        TabOrder = 4
-        object Panel6: TPanel
-          Left = 0
-          Height = 29
-          Top = 31
-          Width = 643
-          Align = alBottom
-          BevelOuter = bvNone
-          TabOrder = 0
-        end
-        object Button1: TButton
-          Left = 296
-          Height = 25
-          Top = 24
-          Width = 75
-          Caption = '&Download'
-          TabOrder = 1
-          OnClick = Button1Click
-        end
-        object Label7: TLabel
-          Left = 5
-          Height = 30
-          Top = 0
-          Width = 638
-          Align = alTop
-          BorderSpacing.Left = 5
-          Caption = 'If your version of Trndi was not shipped with more languages, '#13#10'you can download more below.'
-        end
-      end
       object cbSize: TCheckBox
         Left = 10
         Height = 19
@@ -11199,22 +11159,22 @@ object fConf: TfConf
         Align = alTop
         BorderSpacing.Around = 10
         Caption = 'Remember window size'
-        TabOrder = 5
+        TabOrder = 4
       end
       object pnMisc: TPanel
         Left = 15
-        Height = 77
-        Top = 253
+        Height = 67
+        Top = 228
         Width = 652
         Align = alTop
         BorderSpacing.Left = 15
         BevelOuter = bvNone
-        ClientHeight = 77
+        ClientHeight = 67
         ClientWidth = 652
-        TabOrder = 6
+        TabOrder = 5
         object spTHRESHOLD: TSpinEdit
           Left = 0
-          Height = 42
+          Height = 32
           Top = 35
           Width = 82
           Align = alLeft
@@ -11233,6 +11193,50 @@ object fConf: TfConf
           Align = alTop
           BorderSpacing.Top = 15
           Caption = 'Readings are outdated after (minutes):'
+        end
+      end
+      object cbFlash: TCheckGroup
+        Left = 0
+        Height = 94
+        Top = 295
+        Width = 667
+        Align = alTop
+        AutoFill = True
+        Caption = 'Badge Flashing'
+        ChildSizing.LeftRightSpacing = 6
+        ChildSizing.TopBottomSpacing = 6
+        ChildSizing.EnlargeHorizontal = crsHomogenousChildResize
+        ChildSizing.EnlargeVertical = crsHomogenousChildResize
+        ChildSizing.ShrinkHorizontal = crsScaleChilds
+        ChildSizing.ShrinkVertical = crsScaleChilds
+        ChildSizing.Layout = cclLeftToRightThenTopToBottom
+        ChildSizing.ControlsPerLine = 1
+        ClientHeight = 74
+        ClientWidth = 663
+        TabOrder = 6
+        object cbFlashHi: TCheckBox
+          Left = 6
+          Height = 21
+          Top = 6
+          Width = 651
+          Caption = 'Flash on high blood sugar'
+          TabOrder = 0
+        end
+        object cbFlashLow: TCheckBox
+          Left = 6
+          Height = 20
+          Top = 27
+          Width = 651
+          Caption = 'Flash on low blood sugar'
+          TabOrder = 1
+        end
+        object cbFlashPerfect: TCheckBox
+          Left = 6
+          Height = 21
+          Top = 47
+          Width = 651
+          Caption = 'Flash on perfect reading (5.5mmol/L / 100mg/dL)'
+          TabOrder = 2
         end
       end
     end

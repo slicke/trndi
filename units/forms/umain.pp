@@ -1852,6 +1852,16 @@ procedure TfBG.lValClick(Sender: TObject);
 begin
   if lVal.Caption = RS_SETUP then
     miSettings.Click;
+  // Acknowledge active high/low alert by user click
+  if native <> nil then
+  begin
+    if (not highAlerted) and (fBG.Color = bg_color_hi) then
+      highAlerted := true;
+    if (not lowAlerted) and (fBG.Color = bg_color_lo) then
+      lowAlerted := true;
+    // Stop flashing if any
+    native.StopBadgeFlash;
+  end;
 end;
 
 procedure TfBG.lValDblClick(Sender: TObject);
@@ -2148,23 +2158,26 @@ var
       // Load position settings
 posValue := native.GetIntSetting('position.main', Ord(tpoCenter));
 
-cbPos.Items.Clear;
-for po in TrndiPos do
-begin
-  s := TrndiPosNames[po];
-  cbPos.Items.Add(s);
+  cbPos.Items.Clear;
+  for po in TrndiPos do
+  begin
+    s := TrndiPosNames[po];
+    cbPos.Items.Add(s);
 
-  // Match enum order with saved position
-  if Ord(po) = posValue then
-    cbPos.ItemIndex := Ord(po);
-end;
+    // Match enum order with saved position
+    if Ord(po) = posValue then
+      cbPos.ItemIndex := Ord(po);
+  end;
 
 // Fallback to first item if no valid match
 if cbPos.ItemIndex = -1 then
   cbPos.ItemIndex := 0;
 
-      cbSize.Checked := GetBoolSetting('size.main');
-    end;
+  cbSize.Checked := GetBoolSetting('size.main');
+  cbFlashHi.Checked := native.getBoolSetting('alerts.flash.high', false);
+  cbFlashLow.Checked := native.getBoolSetting('alerts.flash.low', false);
+  cbFlashPerfect.Checked := native.getBoolSetting('alerts.flash.perfect', false);
+  end;
 
   end;
 
@@ -2282,6 +2295,9 @@ if cbPos.ItemIndex = -1 then
       SetSetting('locale', s);
       native.SetSetting('position.main', IntToStr(cbPos.ItemIndex));
       native.setBoolSetting('size.main', cbSize.Checked);
+      native.setBoolSetting('alerts.flash.high', cbFlashHi.Checked);
+      native.setBoolSetting('alerts.flash.low', cbFlashLow.Checked);
+      native.setBoolSetting('alerts.flash.perfect', cbFlashPerfect.Checked);
 
       for i := lbUsers.Items.Count-1 downto 0 do
         if lbUsers.items[i][1] = '-' then
@@ -3034,6 +3050,7 @@ begin
     tMissed.Enabled := true;          // Keep the missed timer running
     lArrow.Caption := '';             // Dont show arrow when not fresh
     native.setBadge('--', clBlack, badge_width+badge_adjust, badge_font+round(badge_adjust*10)); // Update system/taskbar badge
+    native.StopBadgeFlash;            // Stop any flashing when stale
   end
   else
   begin
@@ -3231,6 +3248,7 @@ end;
 procedure TfBG.HandleHighGlucose(const b: BGReading);
 var
   url: string;
+  doFlash: boolean;
 begin
   setColorMode(bg_color_hi);
 
@@ -3248,11 +3266,15 @@ begin
      highAlerted := true;
      MediaController.PlayTrackFromURL(url);
   end;
+  doFlash := native.GetBoolSetting('alerts.flash.high', false);
+  if (not highAlerted) and doFlash then
+    native.StartBadgeFlash(lVal.Caption, bg_color_hi, 15000, 450);
 end;
 
 procedure TfBG.HandleLowGlucose(const b: BGReading);
 var
   url: string;
+  doFlash: boolean;
 begin
   SetColorMode(bg_color_lo);
 
@@ -3270,6 +3292,9 @@ begin
      lowAlerted := true;
      MediaController.PlayTrackFromURL(url);
   end;
+  doFlash := native.GetBoolSetting('alerts.flash.low', false);
+  if (not lowAlerted) and doFlash then
+    native.StartBadgeFlash(lVal.Caption, bg_color_lo, 20000, 400);
 end;
 
 procedure TfBG.HandleNormalGlucose(const b: BGReading);
@@ -3283,6 +3308,7 @@ begin
   SetColorMode(bg_color_ok);
   highAlerted := false;
   lowAlerted := false;
+  native.StopBadgeFlash; // cease alerts when normal
 
   if un = mmol then begin
     s := b.format(mmol, BG_MSG_SHORT, BGPrimary);
@@ -3304,6 +3330,8 @@ begin
     url := native.GetSetting('media.url_perfect', '');
     if url <> '' then
       MediaController.PlayTrackFromURL(url);
+    if native.GetBoolSetting('alerts.flash.perfect', false) then
+      native.StartBadgeFlash(lVal.Caption, bg_color_ok, 6000, 500); // subtle celebratory pulse
   end;
 
   UpdateOffRangePanel(b.val);

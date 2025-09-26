@@ -46,7 +46,6 @@ TfConf = class(TForm)
   bSysTouch: TButton;
   bTestSpeech: TButton;
   btUserSave: TButton;
-  Button1: TButton;
   Button2: TButton;
   btReset: TButton;
   bTestAnnounce: TButton;
@@ -55,6 +54,8 @@ TfConf = class(TForm)
   bvExt: TBevel;
   bvExt1: TBevel;
   cbCust: TCheckBox;
+  cbFlashLow: TCheckBox;
+  cbFlashPerfect: TCheckBox;
   cbLang: TComboBox;
   cbMultiTouch: TCheckBox;
   cbMusicPause: TCheckBox;
@@ -69,6 +70,8 @@ TfConf = class(TForm)
   cbUser: TColorButton;
   cbUserColor: TCheckBox;
   cbTitleColor: TCheckBox;
+  cbFlash: TCheckGroup;
+  cbFlashHi: TCheckBox;
   cl_hi_bg: TColorButton;
   cl_hi_txt: TColorButton;
   cl_hi_txt_cust: TColorButton;
@@ -96,7 +99,6 @@ TfConf = class(TForm)
   gbColBack: TGroupBox;
   gbMulti: TGroupBox;
   gbOverride: TGroupBox;
-  gbOverride1: TGroupBox;
   gbOverride2: TGroupBox;
   GroupBox1: TGroupBox;
   GroupBox2: TGroupBox;
@@ -128,7 +130,6 @@ TfConf = class(TForm)
   lUserTrack: TLabel;
   Label4: TLabel;
   Label6: TLabel;
-  Label7: TLabel;
   Label8: TLabel;
   Label9: TLabel;
   lAck: TButton;
@@ -153,7 +154,6 @@ TfConf = class(TForm)
   Panel3: TPanel;
   Panel4: TPanel;
   Panel5: TPanel;
-  Panel6: TPanel;
   Panel7: TPanel;
   Panel8: TPanel;
   Panel9: TPanel;

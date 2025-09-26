@@ -44,7 +44,7 @@ interface
 
 uses
   Classes, SysUtils, Graphics, Windows, Registry, Dialogs, StrUtils, winhttpclient, shellapi,
-  Forms, variants, dwmapi, trndi.native.base;
+  Forms, variants, dwmapi, trndi.native.base, ExtCtrls;
 
 type
   {**
@@ -52,6 +52,14 @@ type
     Uses SAPI for speech and DWM for window appearance tweaks.
   }
   TTrndiNativeWindows = class(TTrndiNativeBase)
+  private
+    FFlashTimer: TTimer;
+    FFlashEnd: TDateTime;
+    FFlashPhase: Integer;
+    FFlashValue: string;
+    FFlashBaseColor: TColor;
+    FFlashCycleMS: Integer;
+    procedure FlashTimerTick(Sender: TObject);
   public
     {** Speaks @param(Text) using SAPI; falls back to default voice if a
         locale-matching voice is not found. }
@@ -68,6 +76,8 @@ type
         @param(badge_size_ratio Badge diameter relative to icon size)
         @param(min_font_size Minimum font size while fitting text) }
   procedure SetBadge(const Value: string; BadgeColor: TColor; badge_size_ratio: double; min_font_size: integer); override;
+  procedure StartBadgeFlash(const Value: string; badgeColor: TColor; DurationMS: Integer = 10000; CycleMS: Integer = 400); override;
+  procedure StopBadgeFlash; override;
   {** Simple HTTP GET using WinHTTP client with default UA.
       @param(url URL to fetch)
       @param(res Out parameter receiving response body or error message)
@@ -140,6 +150,74 @@ begin
     AProcess.Free;
     Output.Free;
   end;
+end;
+
+procedure TTrndiNativeWindows.FlashTimerTick(Sender: TObject);
+var
+  phaseColor: TColor;
+  factor: Double;
+begin
+  if (Now > FFlashEnd) or (FFlashValue = '') then
+  begin
+    StopBadgeFlash;
+    Exit;
+  end;
+
+  // Simple 4-phase pulse: normal -> lighter -> normal -> darker
+  case FFlashPhase mod 4 of
+    0: factor := 1.0;   // base
+    1: factor := 1.35;  // brighten
+    2: factor := 1.0;   // base
+    3: factor := 0.70;  // darken
+  else
+    factor := 1.0;
+  end;
+
+  // Adjust color
+  phaseColor := RGB(
+    Min(255, Round(GetRValue(ColorToRGB(FFlashBaseColor)) * factor)),
+    Min(255, Round(GetGValue(ColorToRGB(FFlashBaseColor)) * factor)),
+    Min(255, Round(GetBValue(ColorToRGB(FFlashBaseColor)) * factor))
+  );
+
+  // Draw badge with pulsed color
+  SetBadge(FFlashValue, phaseColor, DEFAULT_BADGE_SIZE_RATIO, DEFAULT_MIN_FONT_SIZE);
+
+  Inc(FFlashPhase);
+end;
+
+procedure TTrndiNativeWindows.StartBadgeFlash(const Value: string; badgeColor: TColor; DurationMS: Integer; CycleMS: Integer);
+begin
+  // Initialize or update flashing parameters
+  FFlashValue := Value;
+  FFlashBaseColor := badgeColor;
+  FFlashCycleMS := CycleMS;
+  FFlashEnd := Now + (DurationMS / (24*60*60*1000)); // ms to TDateTime
+  FFlashPhase := 0;
+
+  if FFlashTimer = nil then
+  begin
+    FFlashTimer := TTimer.Create(nil);
+    FFlashTimer.OnTimer := @FlashTimerTick;
+  end;
+  FFlashTimer.Interval := CycleMS;
+  FFlashTimer.Enabled := True;
+
+  // Immediate first frame
+  FlashTimerTick(nil);
+end;
+
+procedure TTrndiNativeWindows.StopBadgeFlash;
+begin
+  if Assigned(FFlashTimer) then
+  begin
+    FFlashTimer.Enabled := False;
+    FreeAndNil(FFlashTimer);
+  end;
+  // Restore static badge with base color if we still have a value
+  if FFlashValue <> '' then
+    SetBadge(FFlashValue, FFlashBaseColor, DEFAULT_BADGE_SIZE_RATIO, DEFAULT_MIN_FONT_SIZE);
+  FFlashValue := '';
 end;
 
 {------------------------------------------------------------------------------
@@ -347,6 +425,42 @@ var
   Region, SquareRegion: HRGN;
   RgnRect: Classes.TRect;
   dval: double;
+  // New styling helpers
+  highlightColor, shadowColor, borderColor: TColor;
+  y: Integer;
+  t: Double;
+  lineColor: TColor;
+
+  function Luminance(c: TColor): Double;
+  var rc: Longint; r,g,b: Byte;
+  begin
+    rc := ColorToRGB(c);
+    r := GetRValue(rc); g := GetGValue(rc); b := GetBValue(rc);
+    Result := 0.299*r + 0.587*g + 0.114*b;
+  end;
+
+  function AdjustColor(c: TColor; factor: Double): TColor;
+  var rc: Longint; r,g,b: Integer;
+  begin
+    rc := ColorToRGB(c);
+    r := Round(GetRValue(rc) * factor); if r>255 then r:=255;
+    g := Round(GetGValue(rc) * factor); if g>255 then g:=255;
+    b := Round(GetBValue(rc) * factor); if b>255 then b:=255;
+    Result := RGB(r,g,b);
+  end;
+
+  function Blend(a,b: TColor; tt: Double): TColor;
+  var ar,ag,ab, br,bg,bb: Byte; rc1,rc2: Longint; r,g,_b: Integer;
+  begin
+    if tt<0 then tt:=0 else if tt>1 then tt:=1;
+    rc1 := ColorToRGB(a); rc2 := ColorToRGB(b);
+    ar := GetRValue(rc1); ag := GetGValue(rc1); ab := GetBValue(rc1);
+    br := GetRValue(rc2); bg := GetGValue(rc2); bb := GetBValue(rc2);
+    r := Round(ar + (br-ar)*tt);
+    g := Round(ag + (bg-ag)*tt);
+    _b := Round(ab + (bb-ab)*tt);
+    Result := RGB(r,g,_b);
+  end;
 begin
   AppIcon := TIcon.Create;
   TempIcon := TIcon.Create;
@@ -399,13 +513,23 @@ begin
       IconHeight
     );
 
+    // Pre-compute styling colors (light top highlight, dark shadow bottom, and border)
+    // Use luminance to decide highlight/shadow intensity for contrast.
+    highlightColor := AdjustColor(BadgeColor, 1.3); // 30% lighter
+    shadowColor := AdjustColor(BadgeColor, 0.6);    // 40% darker
+    // Border color: choose darker or lighter depending on base luminance
+    if Luminance(BadgeColor) > 140 then
+      borderColor := AdjustColor(BadgeColor, 0.55)
+    else
+      borderColor := AdjustColor(BadgeColor, 1.35);
+
     Bitmap.Canvas.Brush.Color := BadgeColor;
-    Bitmap.Canvas.Pen.Color := BadgeColor;
+    Bitmap.Canvas.Pen.Color := borderColor;
 
     if BadgeSize <= 12 then
     begin
       // Tiny badges: simple square for speed/stability
-      Bitmap.Canvas.FillRect(BadgeRect);
+        Bitmap.Canvas.FillRect(BadgeRect); // simple tiny badge (no extra effects)
     end
     else
     begin
@@ -432,12 +556,54 @@ begin
         );
         CombineRgn(Region, Region, SquareRegion, RGN_OR);
         SelectClipRgn(Bitmap.Canvas.Handle, Region);
-        Bitmap.Canvas.FillRect(BadgeRect);
+
+        // Custom gradient fill (vertical) since LCL GradientFill may not exist everywhere.
+        for y := BadgeRect.Top to BadgeRect.Bottom - 1 do
+        begin
+          t := (y - BadgeRect.Top) / (BadgeRect.Bottom - BadgeRect.Top - 1);
+          // Bias t slightly so highlight band is thinner
+          lineColor := Blend(highlightColor, shadowColor, t*0.85);
+          Bitmap.Canvas.Pen.Color := lineColor;
+          Bitmap.Canvas.MoveTo(BadgeRect.Left, y);
+          Bitmap.Canvas.LineTo(BadgeRect.Right, y);
+        end;
+
+        // Draw an inner rounded outline for bevel illusion (light top-left, dark bottom-right)
+        Bitmap.Canvas.Pen.Style := psSolid;
+        Bitmap.Canvas.Pen.Width := 1;
+        // Top/left bevel
+        Bitmap.Canvas.Pen.Color := highlightColor;
+        RoundRect(Bitmap.Canvas.Handle,
+          BadgeRect.Left, BadgeRect.Top,
+          BadgeRect.Right, BadgeRect.Bottom,
+          Radius*2, Radius*2);
+        // Bottom/right bevel overlay using shadow color (draw partial arcs/lines)
+        Bitmap.Canvas.Pen.Color := shadowColor;
+        // simple approach: inset rectangle to avoid overwriting highlight too much
+        InflateRect(BadgeRect, -1, -1);
+        RoundRect(Bitmap.Canvas.Handle,
+          BadgeRect.Left, BadgeRect.Top,
+          BadgeRect.Right, BadgeRect.Bottom,
+          Radius*2-2, Radius*2-2);
+        InflateRect(BadgeRect, 1, 1); // restore
       finally
         if SquareRegion <> 0 then DeleteObject(SquareRegion);
         if Region <> 0 then DeleteObject(Region);
         RestoreDC(Bitmap.Canvas.Handle, SavedDC);
       end;
+    end;
+
+    // Outer border (rounded) for readability on bright or cluttered taskbars
+    if BadgeSize > 10 then
+    begin
+      Bitmap.Canvas.Pen.Color := borderColor;
+      Bitmap.Canvas.Brush.Style := bsClear;
+      Radius := Round(CORNER_RADIUS * BadgeSize / 32);
+      if Radius < 2 then Radius := 2;
+      RoundRect(Bitmap.Canvas.Handle,
+        BadgeRect.Left, BadgeRect.Top,
+        BadgeRect.Right, BadgeRect.Bottom,
+        Radius*2, Radius*2);
     end;
 
     // Choose text color based on perceived luminance for contrast.

@@ -193,6 +193,10 @@ public
   procedure setBadge(const Value: string; badgeColor: TColor); overload;
   {** Platform override for badge rendering control. }
   procedure setBadge(const Value: string; badgeColor: TColor; badge_size_ratio: Double; min_font_size: Integer); virtual; overload;
+  {** Start flashing the badge (platform may animate icon). Base no-op. }
+  procedure StartBadgeFlash(const Value: string; badgeColor: TColor; DurationMS: Integer = 10000; CycleMS: Integer = 400); virtual;
+  {** Stop any active badge flashing and restore a static badge. Base no-op. }
+  procedure StopBadgeFlash; virtual;
   {** Set native window titlebar colors if supported. }
   class function SetTitleColor(form: THandle; bg, text: TColor): boolean; virtual;
   {** Play an audio file using native facilities (safe file check included). }
@@ -314,6 +318,17 @@ end;
 procedure TTrndiNativeBase.SetBadge(const Value: string; BadgeColor: TColor; badge_size_ratio: double; min_font_size: integer);
 begin
   // No-op by default in base; platform classes override
+end;
+
+procedure TTrndiNativeBase.StartBadgeFlash(const Value: string; badgeColor: TColor; DurationMS: Integer; CycleMS: Integer);
+begin
+  // Base: no animation. Platforms that support icon updates override.
+  SetBadge(Value, badgeColor, DEFAULT_BADGE_SIZE_RATIO, DEFAULT_MIN_FONT_SIZE);
+end;
+
+procedure TTrndiNativeBase.StopBadgeFlash;
+begin
+  // Base: nothing to stop.
 end;
 
 {------------------------------------------------------------------------------
