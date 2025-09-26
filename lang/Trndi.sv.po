@@ -376,6 +376,10 @@ msgstr "NightScout"
 msgid "Count readings in the custom range as in range"
 msgstr "Räkna värden i eget område som tid i område"
 
+#: tfconf.cbtitlecolor.caption
+msgid "Color the title bar with glucose color **"
+msgstr ""
+
 #: tfconf.cbtouch.caption
 msgid "Touch screen"
 msgstr "Pekskärm"
@@ -500,7 +504,11 @@ msgid "Decimal separator:"
 msgstr "Decimalseparator:"
 
 #: tfconf.label14.caption
-msgid "* Support depends on your data source"
+#, fuzzy
+#| msgid "* Support depends on your data source"
+msgid ""
+"* Support depends on your data source \n"
+"** Support depends on your system, does not apply in multi-user mode"
 msgstr "* Stöds inte av alla datakällor"
 
 #: tfconf.label15.caption

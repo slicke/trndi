@@ -243,6 +243,7 @@ private
     FormStyle: TFormStyle;
     Initialized: Boolean;
   end;
+  titlecolor: boolean;
   FShuttingDown: Boolean; // Flag to prevent recursive shutdown calls
   
   // Performance optimization fields
@@ -264,6 +265,8 @@ private
 
   function dotsInView: integer;
   function setColorMode: boolean;
+  function setColorMode(bg: tColor; const nocolor: boolean = false): boolean;
+  function setSingleColorMode: boolean;
   procedure SetLang;
   procedure fixWarningPanel;
   procedure showWarningPanel(const message: string; clearDisplayValues: boolean = false);
@@ -835,6 +838,9 @@ begin
 
   bg_rel_color_lo_txt := native.GetColorSetting('ux.bg_rel_color_lo_txt', bg_rel_color_lo_txt);
   bg_rel_color_hi_txt := native.GetColorSetting('ux.bg_rel_color_hi_txt', bg_rel_color_hi_txt);
+
+  // Color title bar (on Windows?)
+  titlecolor := native.GetBoolSetting('ux.title_color', true);
 end;
 
 procedure TfBG.InitializeSplashScreen;
@@ -2229,6 +2235,8 @@ if cbPos.ItemIndex = -1 then
 
       cl_hi_txt_cust.ButtonColor := native.GetColorSetting('ux.bg_rel_color_hi_txt', bg_rel_color_hi_txt);
       cl_lo_txt_cust.ButtonColor := native.GetColorSetting('ux.bg_rel_color_lo_txt', bg_rel_color_lo_txt);
+
+      cbTitleColor.Checked := native.GetBoolSetting('ux.title_color', true);
     end;
   end;
 
@@ -2332,6 +2340,8 @@ if cbPos.ItemIndex = -1 then
 
       SetColorSetting('ux.bg_rel_color_hi_txt', cl_hi_txt_cust.ButtonColor);
       SetColorSetting('ux.bg_rel_color_lo_txt', cl_lo_txt_cust.ButtonColor);
+
+      native.SetBoolSetting('ux.title_color', cbTitleColor.Checked);
     end;
   end;
 
@@ -3019,7 +3029,7 @@ begin
       lVal.Caption := '--';           // Placeholder when data is stale
       lArrow.Caption := '';           // Hide trend arrow when stale
     end;
-    fBG.Color := clBlack;             // Dark background to signal stale state
+    setColorMode(clBlack);
     lVal.Font.Color := clWhite;       // High-contrast text on dark background
     tMissed.Enabled := true;          // Keep the missed timer running
     lArrow.Caption := '';             // Dont show arrow when not fresh
@@ -3222,7 +3232,7 @@ procedure TfBG.HandleHighGlucose(const b: BGReading);
 var
   url: string;
 begin
-  fBG.Color := bg_color_hi;
+  setColorMode(bg_color_hi);
 
   if not bg_alert then
     native.attention(ifthen(multi, multinick, RS_WARN_BG_HI_TITLE), Format(RS_WARN_BG_HI, [lVal.Caption]));
@@ -3244,7 +3254,7 @@ procedure TfBG.HandleLowGlucose(const b: BGReading);
 var
   url: string;
 begin
-  fBG.Color := bg_color_lo;
+  SetColorMode(bg_color_lo);
 
   if not bg_alert then
     native.attention(ifthen(multi, multinick, RS_WARN_BG_LO_TITLE), Format(RS_WARN_BG_LO, [lVal.Caption]));
@@ -3270,7 +3280,7 @@ var
   go: boolean = false;
 begin
   bg_alert := false;
-  fBG.Color := bg_color_ok;
+  SetColorMode(bg_color_ok);
   highAlerted := false;
   lowAlerted := false;
 
@@ -3455,7 +3465,7 @@ begin
 
   // Apply range color if option is enabled
   if on and miRangeColor.Checked then
-    fBG.Color := pnOffRange.Color;
+    SetColorMode(pnOffRange.Color);
 end;
 
 procedure TfBG.UpdateUIColors;
@@ -3713,6 +3723,19 @@ end;
 
 function TfBG.setColorMode: boolean;
 begin
+  result := setColorMode(clFuchsia, true);
+end;
+
+function TfBG.setColorMode(bg: tColor; const nocolor: boolean = false): boolean;
+begin
+  if not nocolor then
+    fBG.Color := bg;
+
+  if not multi and titlecolor then begin
+    result := SetSingleColorMode;
+    Exit;
+  end;
+
   if customTitleBar and (pnMultiUser.Color <> clBlack) then begin // Safe that black = standard
     if native.SetTitleColor(handle, pnMultiUser.Color, IfThen(IsLightColor(pnMultiUser.Color), clBlack, clWhite)) then
       Exit(true);
@@ -3722,6 +3745,11 @@ begin
     native.setDarkMode{$ifdef windows}(self.Handle){$endif};
 
    result := false;
+end;
+
+function TfBG.setSingleColorMode: boolean;
+begin
+  result := native.SetTitleColor(handle, fBG.color, IfThen(IsLightColor(fBG.color), clBlack, clWhite));
 end;
 
 // Performance optimization methods
