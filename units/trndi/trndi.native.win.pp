@@ -302,12 +302,19 @@ end;
   Apply caption and text colors to a window using DWM attributes.
  ------------------------------------------------------------------------------}
 class function TTrndiNativeWindows.SetTitleColor(form: THandle; bg, text: TColor): Boolean;
+const
+  MIN_DWM_COLOR_BUILD = 17763; // Win10 1809 (2018-10)
 var
   bgColor, textColor: COLORREF;
   hrCaption, hrText: HRESULT;
 begin
-  // Apply caption and text colors for the given window using DWM attributes.
-  // TColor and COLORREF are both 0x00BBGGRR; no swap needed
+  // Guard: DWMWA_CAPTION_COLOR (35) & DWMWA_TEXT_COLOR (36) are supported from
+  // Windows 10 1809 (build 17763, Oct 2018). Earlier versions will just fail.
+  if (Win32MajorVersion < 10) or
+     ((Win32MajorVersion = 10) and (Win32BuildNumber < MIN_DWM_COLOR_BUILD)) then
+    Exit(False);
+
+  // TColor and COLORREF share 0x00BBGGRR layout; no byte swap required.
   bgColor   := COLORREF(ColorToRGB(bg));
   textColor := COLORREF(ColorToRGB(text));
 
