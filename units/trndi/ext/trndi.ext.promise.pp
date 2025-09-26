@@ -135,7 +135,16 @@ begin
   begin
     // Check again before synchronizing, as shutdown might have occurred
     if not (Application.Terminated or IsExtShuttingDown) then
-      Synchronize(@ProcessResult);
+    begin
+      // Additional safety check: Ensure the main thread is still processing messages
+      try
+        Synchronize(@ProcessResult);
+      except
+        // If synchronize fails (e.g., main thread shutting down), just exit
+        FSuccess := false;
+        Exit;
+      end;
+    end;
   end
   else
     begin
