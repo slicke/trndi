@@ -10,7 +10,7 @@ interface
 uses
   Classes, SysUtils, ExtCtrls, stdctrls, graphics, trndi.types, forms, math,
   fpjson, jsonparser, dateutils
-  {$ifdef TrndiExt},trndi.ext.engine, mormot.lib.quickjs{$endif}
+  {$ifdef TrndiExt},trndi.ext.engine, mormot.lib.quickjs, mormot.core.base{$endif}
   {$ifdef DARWIN}, CocoaAll{$endif};
 
 
@@ -32,6 +32,18 @@ function GetNewerVersionURL(const JsonResponse: string;
 function privacyIcon(const v: trndi.types.BGValLevel): string;
 
 {$ifdef TrndiExt}
+// ---------------------------------------------------------------------------
+// Extension Engine Interop Helpers - Ownership Summary
+// ---------------------------------------------------------------------------
+// callFunc(...) / funcInt/Float/Bool: marshal every Pascal param each call.
+// callFuncArrayFirst: firstArray is caller-owned unless autoFreeFirst=true.
+// callFuncMixed: raw[] are pre-built JSValueRaw (optionally freed with rawAutoFree);
+//                rest[] are marshalled Pascal values (freed when restAutoFree=true).
+// callFuncRaw: all args already JSValueRaw; autoFree controls freeing them.
+// Helper JSValueRaw* constructors: produce JS values you must free unless you
+// pass them through a call with the appropriate autoFree/rawAutoFree set.
+// MakeJSArray alias (engine) and JSValueRawArray wrapper create array handles.
+// ---------------------------------------------------------------------------
 function callFunc(const func: string; params: array of const; out exists: boolean): string;
 function callFunc(const func: string; params: array of const): string;
 function funcBool(const func: string; params: array of const; const nofunc: boolean): boolean;
@@ -39,8 +51,23 @@ function funcInt(const func: string; params: array of const; const nofunc: int64
 function funcFloat(const func: string; params: array of const; const nofunc: double): double;
 // Call a JS function where the first parameter is an already created JS array (JSValueRaw)
 // Note: No default for autoFree here to avoid ambiguity with the overload without 'out exists'
-function callFuncArrayFirst(const func: string; const firstArray: JSValueRaw; rest: array of const; out exists: boolean; autoFree: boolean): string;
-function callFuncArrayFirst(const func: string; const firstArray: JSValueRaw; rest: array of const; autoFree: boolean = true): string;
+// Call a JS function where the first parameter is an already created JS value (Array/Object/etc.).
+// autoFree controls freeing of marshalled Rest args; autoFreeFirst controls freeing of the supplied firstArray.
+// No defaults on the overload with 'out exists' to avoid ambiguity.
+function callFuncArrayFirst(const func: string; const firstArray: JSValueRaw; rest: array of const; out exists: boolean; autoFree: boolean; autoFreeFirst: boolean): string;
+function callFuncArrayFirst(const func: string; const firstArray: JSValueRaw; rest: array of const; autoFree: boolean = true; autoFreeFirst: boolean = false): string;
+// Mixed: multiple raw JSValueRaw args followed by marshalled Pascal args
+function callFuncMixed(const func: string; const raw: array of JSValueRaw; rest: array of const; out exists: boolean; restAutoFree: boolean = true; rawAutoFree: boolean = false): string;
+function callFuncMixed(const func: string; const raw: array of JSValueRaw; rest: array of const): string;
+// Pure raw list (no Pascal marshalling) using engine.CallFunctionJS
+function callFuncRaw(const func: string; const raw: array of JSValueRaw; out exists: boolean; autoFree: boolean = true): string;
+function callFuncRaw(const func: string; const raw: array of JSValueRaw): string;
+// Helper constructors for readable building of raw argument arrays
+function JSValueRawString(const s: RawUtf8): JSValueRaw;
+function JSValueRawInt(const v: int64): JSValueRaw;
+function JSValueRawFloat(const v: double): JSValueRaw;
+function JSValueRawBool(const v: boolean): JSValueRaw;
+function JSValueRawArray(const values: array of const): JSValueRaw;
 {$endif}
 
 const
@@ -574,19 +601,82 @@ begin
 end;
 
 // Wrapper around engine.CallFunctionArrayFirst
-function callFuncArrayFirst(const func: string; const firstArray: JSValueRaw; rest: array of const; out exists: boolean; autoFree: boolean): string;
+function callFuncArrayFirst(const func: string; const firstArray: JSValueRaw; rest: array of const; out exists: boolean; autoFree: boolean; autoFreeFirst: boolean): string;
 begin
   result := '';
   if not Assigned(TTrndiExtEngine.Instance) then begin exists := false; exit; end;
   exists := TTrndiExtEngine.Instance.FunctionExists(func);
   if not exists then exit;
-  result := TTrndiExtEngine.Instance.CallFunctionArrayFirst(func, firstArray, rest, autoFree);
+  result := TTrndiExtEngine.Instance.CallFunctionArrayFirst(func, firstArray, rest, autoFree, autoFreeFirst);
 end;
 
-function callFuncArrayFirst(const func: string; const firstArray: JSValueRaw; rest: array of const; autoFree: boolean): string;
+function callFuncArrayFirst(const func: string; const firstArray: JSValueRaw; rest: array of const; autoFree: boolean; autoFreeFirst: boolean): string;
 var ex: boolean; 
 begin
-  result := callFuncArrayFirst(func, firstArray, rest, ex, autoFree);
+  result := callFuncArrayFirst(func, firstArray, rest, ex, autoFree, autoFreeFirst);
+end;
+
+// Mixed raw + marshalled
+function callFuncMixed(const func: string; const raw: array of JSValueRaw; rest: array of const; out exists: boolean; restAutoFree: boolean; rawAutoFree: boolean): string;
+begin
+  result := '';
+  if not Assigned(TTrndiExtEngine.Instance) then begin exists := false; exit; end;
+  exists := TTrndiExtEngine.Instance.FunctionExists(func);
+  if not exists then exit;
+  result := TTrndiExtEngine.Instance.CallFunctionMixed(func, raw, rest, restAutoFree, rawAutoFree);
+end;
+
+function callFuncMixed(const func: string; const raw: array of JSValueRaw; rest: array of const): string;
+var ex: boolean;
+begin
+  result := callFuncMixed(func, raw, rest, ex, true, false);
+end;
+
+// Pure raw argument list (no additional marshalled values)
+function callFuncRaw(const func: string; const raw: array of JSValueRaw; out exists: boolean; autoFree: boolean): string;
+begin
+  Result := '';
+  if not Assigned(TTrndiExtEngine.Instance) then begin exists := false; exit; end;
+  exists := TTrndiExtEngine.Instance.FunctionExists(func);
+  if not exists then exit;
+  Result := TTrndiExtEngine.Instance.CallFunctionJS(func, raw, autoFree);
+end;
+
+function callFuncRaw(const func: string; const raw: array of JSValueRaw): string;
+var ex: boolean;
+begin
+  result := callFuncRaw(func, raw, ex, true);
+end;
+
+// Helper constructors
+function JSValueRawString(const s: RawUtf8): JSValueRaw;
+begin
+  if not Assigned(TTrndiExtEngine.Instance) then exit(JS_UNDEFINED);
+  Result := TTrndiExtEngine.Instance.MakeJSString(s);
+end;
+
+function JSValueRawInt(const v: int64): JSValueRaw;
+begin
+  if not Assigned(TTrndiExtEngine.Instance) then exit(JS_UNDEFINED);
+  Result := TTrndiExtEngine.Instance.MakeJSInt64(v);
+end;
+
+function JSValueRawFloat(const v: double): JSValueRaw;
+begin
+  if not Assigned(TTrndiExtEngine.Instance) then exit(JS_UNDEFINED);
+  Result := TTrndiExtEngine.Instance.MakeJSFloat(v);
+end;
+
+function JSValueRawBool(const v: boolean): JSValueRaw;
+begin
+  if not Assigned(TTrndiExtEngine.Instance) then exit(JS_UNDEFINED);
+  Result := TTrndiExtEngine.Instance.MakeJSBool(v);
+end;
+
+function JSValueRawArray(const values: array of const): JSValueRaw;
+begin
+  if not Assigned(TTrndiExtEngine.Instance) then exit(JS_UNDEFINED);
+  Result := TTrndiExtEngine.Instance.MakeJSArray(values);
 end;
 {$endif}
 
