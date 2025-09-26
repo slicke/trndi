@@ -3,8 +3,10 @@
 ![Trndi](doc/img/trndi-logo.png)
 
 # Trndi - CGM data on Desktop and RaspberryPi<br><sup>_Nightscout - Dexcom - xDrip WiFi_</sup> 
-<b> Windows - macOS - Linux - RaspberryPi </b>
+## <b> Windows - macOS - Linux - RaspberryPi - Embedded Linux </b>
+
 ![Windows](doc/img/img_win.png)
+
 <br>Windows 11
 
 ![Linux](doc/img/img_lin.png)
@@ -33,6 +35,9 @@ It also supports the _xDrip_ app, connecting over the local network/WiFi.
 
 ### Multi-user support
 Got more than one diabetic? Trndi supports parallel users.
+Setup the users in the _settings_, don't forget to click _save_ when editing users!
+
+You need to start Trndi multiple times, each instance lets you choose a user. Just open the app multiple times and select a different account.
 
 # Setup
 Click/hold the reading (or "Setup" text) and choose settings to access settings.
