@@ -118,7 +118,7 @@ _Use floats for mmol/L and integers for mg/dL!_
 > _NOTE:_ Simply add a function, named the same as a callback below, to have it triggered
 ### updateCallback
 #### This function is called when the main loop updates the reading
-```updateCallback(reading, time)```
+```updateCallback(reading_system, reading_mgdl, reading_mmol, time)```
 
 ### fetchCallback
 #### This function is called everytime a reading is fetched
@@ -147,7 +147,7 @@ function uxClick(element, value, ...values){
 
 ### clockView
 #### Replace the clock when "Show clock every 20 seconds" is on
-```clockView(glucose, time)```
+```clockView(glucose_mgdl, glucose_mmol, time)```
 ```javascript
 function clockView(glucose, time){
   const user = Trndi.getCurrentUser(); // Returns the username, if running multiple accounts

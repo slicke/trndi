@@ -437,6 +437,17 @@ implementation
 {$R *.lfm}
 {$I ../../inc/tfuncs.inc}
 
+// Converts the current reading to system-default, mgdl and mmol
+procedure getBGResults(out curr: single; out mgdl: integer; out mmol: single);
+var
+  bgnow: BGReading;
+begin
+  bgnow := bgs[Low(bgs)];
+  curr := bgnow.convert(un);
+  mmol := bgnow.convert(BGUnit.mmol);
+  mgdl := round(bgnow.convert(BGUnit.mgdl));
+end;
+
 // Returns vertical offset needed to bring all trend dots fully inside their parent.
 // Sign convention: negative = dots are above (need to move down); positive = dots are below (need to move up).
 function TfBG.dotsInView: integer;
@@ -2670,6 +2681,8 @@ var
   s: string;
   {$ifdef TrndiExt}
     ex: boolean; // If the function exists
+    curr, mmol: single;
+    mgdl: integer;
   {$endif}
 const
   clockInterval = 5000;
@@ -2677,10 +2690,11 @@ begin
 tClock.Enabled := false;
   if tClock.Interval <> clockInterval then begin
     {$ifdef TrndiExt}
+      getBGResults(curr, mgdl,mmol);
       s := '';
       // Check if JS engine is still available before calling
-      s := callFunc('clockView', [bgs[Low(bgs)].val, DateTimeToStr(Now)], ex);
-      if ex then
+      s := callFunc('clockView', [curr, mgdl, mmol, DateTimeToStr(Now)], ex);
+      if ex = false then
         lval.caption := FormatDateTime(ShortTimeFormat, Now)
       else
         lval.caption := s;
@@ -2924,11 +2938,18 @@ begin
 end;
 // Update remote on timer
 procedure TfBG.tMainTimer(Sender: TObject);
+{$ifdef TrndiExt}
+var
+  curr, mmol: single;
+  mgdl: integer;
+{$endif}
 begin
   updateReading;
   {$ifdef TrndiExt}
   try
-     callFunc('updateCallback', [bgs[Low(bgs)].val, DateTimeToStr(Now)]);
+
+     getBGResults(curr, mgdl, mmol);
+     callFunc('updateCallback', [curr, mgdl, mmol, DateTimeToStr(Now)]);
   finally
   end;
   {$endif}
