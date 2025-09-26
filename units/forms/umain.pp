@@ -457,7 +457,8 @@ end;
 function callFuncWithBGReadings(const funcName: string; const additionalParams: array of const; out exists: boolean): string;
 var
   readings: JSValueRaw;
-  allParams: array of JSValueRaw;
+  allParams, tempParams: array of JSValueRaw;
+  i: integer;
 begin
   result := '';
   exists := false;
@@ -470,9 +471,16 @@ begin
     // Build array with additional params first, then BG readings
     SetLength(allParams, Length(additionalParams) + 1);
     
-    // Convert additional params to JSValueRaw using refactored helper
+    // Convert additional params to JSValueRaw using the refactored helper
     if Length(additionalParams) > 0 then
-      ConvertVarRecsToJSValueRaw(additionalParams, allParams);
+    begin
+      // Create a temporary array with exact size for the helper function
+      SetLength(tempParams, Length(additionalParams));
+      ConvertVarRecsToJSValueRaw(additionalParams, tempParams);
+      // Copy converted values to the first part of allParams
+      for i := 0 to High(additionalParams) do
+        allParams[i] := tempParams[i];
+    end;
     
     // Add BG readings at the end
     allParams[High(allParams)] := readings;
