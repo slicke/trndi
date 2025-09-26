@@ -1542,6 +1542,11 @@ end;
 procedure TfBG.FormCloseQuery(Sender: TObject; var CanClose: boolean);
 begin
   {$ifdef TrndiExt}
+  // Show immediate user feedback for shutdown process using big lVal text
+  lVal.Caption := 'Shutting down extensions...';
+  lVal.Visible := True;
+  Application.ProcessMessages; // Ensure caption is updated immediately
+  
   // Set global shutdown flag immediately to prevent any new JS operations
   try
     trndi.ext.engine.SetGlobalShutdown;
@@ -1632,6 +1637,15 @@ begin
     Sleep(250);  // Increased significantly 
     Application.ProcessMessages;
     Sleep(150);  // Additional wait
+    Application.ProcessMessages;
+    
+    // Update user feedback before engine cleanup
+    lVal.Caption := RS_CLEANUP;
+    actOnTrend(@HideDot);
+    lTir.Hide;
+    lArrow.hide;
+    lDiff.Hide;
+    lAgo.hide;
     Application.ProcessMessages;
     
     // Now safely shutdown the extension engine
