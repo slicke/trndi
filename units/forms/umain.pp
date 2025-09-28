@@ -1067,11 +1067,12 @@ end;
 procedure TfBG.FormCreate(Sender: TObject);
 procedure haltBoot;
 begin
+  firstboot := true;
   fSplash.Hide;
   fSplash.Free;
   tMain.Enabled := false;
-  firstboot := true;
   lArrow.Caption := '';
+  lVal.Caption := RS_SETUP;
 end;
 
 var
