@@ -289,6 +289,16 @@ object fBG: TfBG
     OnClick = onTrendClick
     OnPaint = DotPaint
   end
+  object bSettings: TButton
+    Left = 8
+    Height = 39
+    Top = 8
+    Width = 112
+    Caption = 'Settings'
+    TabOrder = 5
+    Visible = False
+    OnClick = bSettingsClick
+  end
   object tMain: TTimer
     Enabled = False
     Interval = 100000

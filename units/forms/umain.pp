@@ -90,6 +90,7 @@ end;
 
 TfBG = class(TForm)
   apMain: TApplicationProperties;
+  bSettings: TButton;
   lRef: TLabel;
   lDot10: TPaintBox;
   lDot2: TPaintBox;
@@ -167,6 +168,7 @@ TfBG = class(TForm)
   tTouch: TTimer;
   tMain: TTimer;
   procedure AdjustGraph;
+  procedure bSettingsClick(Sender: TObject);
   procedure fbReadingsDblClick(Sender:TObject);
   procedure FormCloseQuery(Sender: TObject; var CanClose: boolean);
   procedure FormClose(Sender: TObject; var {%H-}CloseAction: TCloseAction);
@@ -1065,15 +1067,17 @@ end;
 
 // Initialize the TrendDots array in FormCreate
 procedure TfBG.FormCreate(Sender: TObject);
-procedure haltBoot;
-begin
-  firstboot := true;
-  fSplash.Hide;
-  fSplash.Free;
-  tMain.Enabled := false;
-  lArrow.Caption := '';
-  lVal.Caption := RS_SETUP;
-end;
+  procedure haltBoot;
+  begin
+    firstboot := true;
+    fSplash.Hide;
+    fSplash.Free;
+    tMain.Enabled := false;
+    lArrow.Caption := '';
+    lVal.Caption := RS_SETUP;
+    lVal.Cursor := crHandPoint;
+    bSettings.Show;
+  end;
 
 var
   i: integer;
@@ -1081,7 +1085,7 @@ var
   fil: boolean;
   userlocale: TFormatSettings;
 begin
-  firstboot := true;
+  firstboot := false;
   // Initialize splash screen first
   InitializeSplashScreen;
   Application.ProcessMessages;
@@ -1240,9 +1244,7 @@ function TfBG.lastReading: BGReading;
 begin
   try
     result := bgs[Low(bgs)];
-  except
-    on E: Exception do
-      ShowMessage('ERROR: Trndi did not recieve any readings!');
+  finally
   end;
 end;
 
@@ -1712,6 +1714,12 @@ begin
 
 end;
 
+procedure TfBG.bSettingsClick(Sender: TObject);
+begin
+  ShowMessage(RS_RIGHT_CLICK);
+  miSettings.Click;
+end;
+
 procedure TfBG.initDot(l: TPaintBox; c, ix: integer);
 begin
   {$ifdef Windows}
@@ -1831,6 +1839,8 @@ var
   s: string;
   i: integer;
 begin
+  if firstboot then exit; // Dont trigger lastReading
+
   s := miRefresh.Caption;
 
   if lastReading.getRSSI(i) then
@@ -2007,8 +2017,10 @@ end;
 // Handle lVal click
 procedure TfBG.lValClick(Sender: TObject);
 begin
-  if lVal.Caption = RS_SETUP then
+  showmessage('hej');
+  if (lVal.Caption = RS_SETUP) then
     miSettings.Click;
+  if firstboot then exit;
   // Acknowledge active high/low alert by user click
   if native <> nil then
   begin
@@ -2585,11 +2597,11 @@ begin
 
     // Save settings when dialog closes
     SaveUserSettings(fConf);
-
-    SetLang;
-    miForce.Click;
-
     ShowMessage(RS_RESTART_APPLY);
+
+    if firstboot then exit;
+//    SetLang;
+    miForce.Click;
   finally
     fConf.Free;
   end;
@@ -2809,6 +2821,8 @@ var
   d: TDateTime;
   min: int64;
 begin
+if firstboot then exit; // Dont run on first boot
+
  if sizeof(bgs) < 1 then begin
     lAgo.Caption := '🕑 ' + RS_COMPUTE_FAILED_AGO;
  end else begin
@@ -3106,6 +3120,8 @@ var
   d: TDateTime;
   min, sec: int64;
 begin
+  if firstboot then exit;
+
   d := lastReading.date; // Last reading time
 
   min := MilliSecondsBetween(Now, d) div 60000;  // Minutes since last
@@ -3162,6 +3178,7 @@ procedure TfBG.ProcessCurrentReading;
 var
   b: BGReading;
 begin
+  if firstboot then exit;
   b := lastReading;
 
   // Update value label
@@ -3200,6 +3217,8 @@ var
   b: BGReading;   // Holder for the latest (newest) reading
   i: integer;     // Temp int used when checking if caption starts with a digit
 begin
+  if firstboot then exit;
+
   b := lastReading; // Pick the most recent reading from the buffer
 
   // Consider data fresh if the latest reading is within the configured threshold (in minutes)
@@ -3232,6 +3251,7 @@ procedure TfBG.SetNextUpdateTimer(const LastReadingTime: TDateTime);
 var
   i: Int64;
 begin
+  if firstboot then exit;
   tMain.Enabled := false;
 
   i := SecondsBetween(LastReadingTime, now); // Seconds from last
@@ -3871,6 +3891,7 @@ var
   l: TPaintBox;
   H, M, S, MS: Word;
 begin
+  if firstboot then exit;
   Result := False;
 
   // Mappa slotIndex till etikettens nummer (0 -> lDot10, 1 -> lDot9, ..., 9 -> lDot1)

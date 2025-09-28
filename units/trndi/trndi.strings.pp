@@ -91,6 +91,7 @@ RS_SPLASH_LOADING_INIT  = 'Loading Extensions...';
 
 RS_CLEANUP = 'Wait. Shutting down extensions engine...';
 
+RS_RIGHT_CLICK = 'The settings dialog will now open, in the future please right-click the reading to open the menu.';
 
 // EXT
 sExtErr = 'Extension Error';

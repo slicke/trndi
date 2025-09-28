@@ -117,6 +117,12 @@ msgstr "Information"
 msgid "Value"
 msgstr "Värde"
 
+#: tfbg.bsettings.caption
+#, fuzzy
+msgctxt "tfbg.bsettings.caption"
+msgid "Settings"
+msgstr "Inställningar"
+
 #: tfbg.lmissing.caption
 msgid "No recent readings!"
 msgstr "Inga färska avläsningar!"
@@ -333,6 +339,7 @@ msgid "Reset Defaults"
 msgstr "Återställ"
 
 #: tfconf.caption
+msgctxt "tfconf.caption"
 msgid "Settings"
 msgstr "Inställningar"
 
@@ -1006,6 +1013,10 @@ msgstr "Historiska värden"
 #: trndi.strings.rs_rh_unknown
 msgid "Unknown"
 msgstr "Okänd"
+
+#: trndi.strings.rs_right_click
+msgid "The settings dialog will now open, in the future please right-click the reading to open the menu."
+msgstr ""
 
 #: trndi.strings.rs_settings_save
 msgid "Save settings?"
