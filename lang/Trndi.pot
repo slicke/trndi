@@ -513,6 +513,10 @@ msgstr ""
 msgid "Enter the Unicode code for the character you'd like to use"
 msgstr ""
 
+#: tfconf.label18.caption
+msgid "Connection"
+msgstr ""
+
 #: tfconf.label2.caption
 msgid "Dot symbol"
 msgstr ""
@@ -1224,6 +1228,10 @@ msgstr ""
 
 #: uconf.rs_auto
 msgid "Auto-detect"
+msgstr ""
+
+#: uconf.rs_choose_system
+msgid "Select your CGM system in the list, then enter your credentials"
 msgstr ""
 
 #: uconf.rs_current_acc

@@ -342,19 +342,19 @@ msgstr "Använd egna värden"
 
 #: tfconf.cbflash.caption
 msgid "Badge Flashing"
-msgstr ""
+msgstr "Brickflashning"
 
 #: tfconf.cbflashhi.caption
 msgid "Flash on high blood sugar"
-msgstr ""
+msgstr "Blixtra vid högt blodsocker"
 
 #: tfconf.cbflashlow.caption
 msgid "Flash on low blood sugar"
-msgstr ""
+msgstr "Blixtra vid lågt blodsocker"
 
 #: tfconf.cbflashperfect.caption
 msgid "Flash on perfect reading (5.5mmol/L / 100mg/dL)"
-msgstr ""
+msgstr "Blixtra vid perfekt värde (5,5mmol/L / 100mg/dL)"
 
 #: tfconf.cbmultitouch.caption
 msgid "Multi-touch"
@@ -390,7 +390,7 @@ msgstr "Räkna värden i eget område som tid i område"
 
 #: tfconf.cbtitlecolor.caption
 msgid "Color the title bar with glucose color **"
-msgstr ""
+msgstr "Färga titelbaren med blodsockerfärgen **"
 
 #: tfconf.cbtouch.caption
 msgid "Touch screen"
@@ -512,12 +512,12 @@ msgid "Decimal separator:"
 msgstr "Decimalseparator:"
 
 #: tfconf.label14.caption
-#, fuzzy
-#| msgid "* Support depends on your data source"
 msgid ""
 "* Support depends on your data source \n"
 "** Support depends on your system, does not apply in multi-user mode"
-msgstr "* Stöds inte av alla datakällor"
+msgstr ""
+"* Stöds inte av alla datakällor\\n\n"
+"** Stöda inte av alla system, gäller ej vid flera användare"
 
 #: tfconf.label15.caption
 msgctxt "tfconf.label15.caption"
@@ -531,6 +531,10 @@ msgstr "Symbol för nuvarande punkt"
 #: tfconf.label17.caption
 msgid "Enter the Unicode code for the character you'd like to use"
 msgstr "Skriv in Unicode-koden för det tecken du vill använda"
+
+#: tfconf.label18.caption
+msgid "Connection"
+msgstr "Anslutning"
 
 #: tfconf.label2.caption
 msgid "Dot symbol"
@@ -791,7 +795,7 @@ msgstr "Inloggningsfel efter autensieringen"
 
 #: trndi.strings.rs_cleanup
 msgid "Wait. Shutting down extensions engine..."
-msgstr ""
+msgstr "Vänta. Stänger tilläggsmotorn..."
 
 #: trndi.strings.rs_compute_failed_ago
 msgid "Long ago"
@@ -1276,6 +1280,10 @@ msgstr "Okänt fel"
 msgid "Auto-detect"
 msgstr "Automatisk"
 
+#: uconf.rs_choose_system
+msgid "Select your CGM system in the list, then enter your credentials"
+msgstr "Välj ditt CGM-system, ange sedan dina uppgifter"
+
 #: uconf.rs_current_acc
 #, object-pascal-format
 msgid "This only applies for the current loaded account:  %s"
@@ -1488,4 +1496,3 @@ msgstr "Du kan använda skift+<nummerr> för att manuellt sätta synligheten (0 
 #: ufloat.rscustomsize
 msgid "You can hold down shift and plus (+) or minus (-) to change the window size"
 msgstr "Du kan hålla ned skift och plus (+) eller minus (-) för att justera fönstrets storlek"
-

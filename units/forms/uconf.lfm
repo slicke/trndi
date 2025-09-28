@@ -16,9 +16,9 @@ object fConf: TfConf
     Height = 534
     Top = 0
     Width = 675
-    ActivePage = tsDisplay
+    ActivePage = tsGeneral
     Align = alClient
-    TabIndex = 2
+    TabIndex = 0
     TabOrder = 0
     OnChange = pcMainChange
     object tsGeneral: TTabSheet
@@ -28,14 +28,14 @@ object fConf: TfConf
       object bvExt: TBevel
         Left = 0
         Height = 1
-        Top = 262
+        Top = 280
         Width = 667
         Align = alTop
       end
       object rbUnit: TRadioGroup
         Left = 15
         Height = 56
-        Top = 337
+        Top = 355
         Width = 642
         Align = alTop
         AutoFill = True
@@ -10371,7 +10371,7 @@ object fConf: TfConf
       object lExt: TLabel
         Left = 15
         Height = 15
-        Top = 273
+        Top = 291
         Width = 652
         Align = alTop
         BorderSpacing.Left = 15
@@ -10381,7 +10381,7 @@ object fConf: TfConf
       object eExt: TEdit
         Left = 15
         Height = 23
-        Top = 293
+        Top = 311
         Width = 647
         Align = alTop
         BorderSpacing.Left = 10
@@ -10393,7 +10393,7 @@ object fConf: TfConf
       object ePass: TEdit
         Left = 15
         Height = 23
-        Top = 229
+        Top = 247
         Width = 647
         Align = alTop
         BorderSpacing.Left = 10
@@ -10408,7 +10408,7 @@ object fConf: TfConf
       object lPass: TLabel
         Left = 15
         Height = 15
-        Top = 209
+        Top = 227
         Width = 652
         Align = alTop
         BorderSpacing.Left = 15
@@ -10418,17 +10418,16 @@ object fConf: TfConf
       object Label15: TLabel
         Left = 15
         Height = 15
-        Top = 156
+        Top = 174
         Width = 652
         Align = alTop
         BorderSpacing.Left = 15
-        BorderSpacing.Top = 10
         Caption = 'Server Address / Dexcom Username'
       end
       object eAddr: TEdit
         Left = 15
         Height = 23
-        Top = 176
+        Top = 194
         Width = 647
         Align = alTop
         BorderSpacing.Left = 10
@@ -10439,28 +10438,27 @@ object fConf: TfConf
       object bvExt1: TBevel
         Left = 0
         Height = 1
-        Top = 326
+        Top = 344
         Width = 667
         Align = alTop
       end
       object pnBackend: TPanel
         Left = 0
-        Height = 50
-        Top = 96
+        Height = 48
+        Top = 126
         Width = 667
         Align = alTop
         BevelOuter = bvNone
-        ClientHeight = 50
+        ClientHeight = 48
         ClientWidth = 667
         TabOrder = 5
         object cbSys: TComboBox
           Left = 15
           Height = 23
-          Top = 20
+          Top = 10
           Width = 599
           Align = alClient
           BorderSpacing.Left = 5
-          BorderSpacing.Top = 10
           BorderSpacing.Around = 10
           ItemHeight = 15
           ItemIndex = 0
@@ -10479,11 +10477,11 @@ object fConf: TfConf
         end
         object bBackendHelp: TButton
           Left = 624
-          Height = 30
-          Top = 15
+          Height = 33
+          Top = 5
           Width = 38
           Align = alRight
-          BorderSpacing.Top = 10
+          BorderSpacing.Bottom = 5
           BorderSpacing.Around = 5
           Caption = '?'
           TabOrder = 1
@@ -10520,6 +10518,16 @@ object fConf: TfConf
             OnClick = Button3Click
           end
         end
+      end
+      object Label18: TLabel
+        Left = 15
+        Height = 15
+        Top = 111
+        Width = 652
+        Align = alTop
+        BorderSpacing.Left = 15
+        BorderSpacing.Top = 15
+        Caption = 'Connection'
       end
     end
     object tsColors: TTabSheet

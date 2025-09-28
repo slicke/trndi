@@ -13,6 +13,7 @@
 {"hash":261941524,"name":"tfconf.cbsys.text","sourcebytes":[78,105,103,104,116,83,99,111,117,116],"value":"NightScout"},
 {"hash":63,"name":"tfconf.bbackendhelp.caption","sourcebytes":[63],"value":"?"},
 {"hash":236240981,"name":"tfconf.button3.caption","sourcebytes":[67,104,101,99,107,32,102,111,114,32,117,112,100,97,116,101],"value":"Check for update"},
+{"hash":79563278,"name":"tfconf.label18.caption","sourcebytes":[67,111,110,110,101,99,116,105,111,110],"value":"Connection"},
 {"hash":78001811,"name":"tfconf.tscolors.caption","sourcebytes":[67,111,108,111,114,115],"value":"Colors"},
 {"hash":82808026,"name":"tfconf.groupbox3.caption","sourcebytes":[67,117,115,116,111,109,32,82,97,110,103,101,32,42],"value":"Custom Range *"},
 {"hash":228975108,"name":"tfconf.cl_hi_txt_cust.caption","sourcebytes":[72,105,103,104,32,84,101,120,116],"value":"High Text"},
