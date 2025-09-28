@@ -91,7 +91,6 @@ end;
 TfBG = class(TForm)
   apMain: TApplicationProperties;
   bSettings: TButton;
-  Label1: TLabel;
   lRef: TLabel;
   lDot10: TPaintBox;
   lDot2: TPaintBox;
