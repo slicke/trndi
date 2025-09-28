@@ -109,6 +109,7 @@ TfConf = class(TForm)
   Label1: TLabel;
   Label16: TLabel;
   Label17: TLabel;
+  Label18: TLabel;
   lDot: TLabel;
   Label2: TLabel;
   lDot1: TLabel;
@@ -305,6 +306,7 @@ RS_HELP_DEX_REGION =
 
 RS_HELP_XDRIP = 'xDrip setup:'#13#10''#13#10'Address: your xDrip REST endpoint (base URL).'#13#10'Auth: API secret (plain text; server hashes it).';
 RS_DEFAULT_ACCOUNT = 'Default';
+RS_CHOOSE_SYSTEM = 'Select your CGM system in the list, then enter your credentials';
 var 
 fConf: TfConf;
 
@@ -764,7 +766,9 @@ begin
   else if SameText(cbSys.Text, 'xDrip') then
     s := RS_HELP_XDRIP
   else if cbSys.Text[1] = '*' then
-    s := 'This is a debug backend, it''s used to test Trndi. It should not be used by non-developers!';
+    s := 'This is a debug backend, it''s used to test Trndi. It should not be used by non-developers!'
+  else
+    s := RS_CHOOSE_SYSTEM;
 
   if s <> '' then
     ShowMessage(s);

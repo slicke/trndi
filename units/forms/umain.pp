@@ -2238,6 +2238,7 @@ var
     begin
       // Remote and user settings
       s := GetSetting('remote.type');
+      cbSys.ItemIndex := 0; // Default driver
       for i := 0 to cbSys.Items.Count - 1 do
         if cbSys.Items[i] = s then
           cbSys.ItemIndex := i;
