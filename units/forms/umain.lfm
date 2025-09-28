@@ -198,6 +198,13 @@ object fBG: TfBG
       Width = 14
       Caption = '0,?'
     end
+    object Label1: TLabel
+      Left = 8
+      Height = 15
+      Top = 160
+      Width = 145
+      Caption = 'Right-click to access menu!'
+    end
   end
   object lDot1: TPaintBox
     Left = 16
