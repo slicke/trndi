@@ -107,6 +107,11 @@ msgstr ""
 msgid "Value"
 msgstr ""
 
+#: tfbg.bsettings.caption
+msgctxt "tfbg.bsettings.caption"
+msgid "Settings"
+msgstr ""
+
 #: tfbg.lmissing.caption
 msgid "No recent readings!"
 msgstr ""
@@ -317,6 +322,7 @@ msgid "Reset Defaults"
 msgstr ""
 
 #: tfconf.caption
+msgctxt "tfconf.caption"
 msgid "Settings"
 msgstr ""
 
@@ -957,6 +963,10 @@ msgstr ""
 
 #: trndi.strings.rs_rh_unknown
 msgid "Unknown"
+msgstr ""
+
+#: trndi.strings.rs_right_click
+msgid "The settings dialog will now open, in the future please right-click the reading to open the menu."
 msgstr ""
 
 #: trndi.strings.rs_settings_save
