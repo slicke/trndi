@@ -290,6 +290,7 @@ object fBG: TfBG
     OnPaint = DotPaint
   end
   object tMain: TTimer
+    Enabled = False
     Interval = 100000
     OnTimer = tMainTimer
     Left = 200

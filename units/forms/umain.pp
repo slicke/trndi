@@ -1226,6 +1226,7 @@ begin
   // Cleanup splash screen
   fSplash.Close;
   fSplash.Free;
+  tmain.Enabled := true;
 end;
 
 procedure TfBG.FormDblClick(Sender: TObject);
