@@ -10,7 +10,6 @@ object fBG: TfBG
   Color = clBlack
   Font.Color = clWhite
   Position = poDesktopCenter
-  LCLVersion = '4.2.0.0'
   OnClose = FormClose
   OnCreate = FormCreate
   OnDblClick = FormDblClick
@@ -299,8 +298,8 @@ object fBG: TfBG
   object pmSettings: TPopupMenu
     OnMeasureItem = pmSettingsMeasureItem
     OnPopup = pmSettingsPopup
-    Left = 136
-    Top = 80
+    Left = 120
+    Top = 120
     object miSettings: TMenuItem
       Caption = '&Settings'
       OnClick = miSettingsClick

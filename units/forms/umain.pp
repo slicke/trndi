@@ -103,6 +103,7 @@ TfBG = class(TForm)
   lMissing: TLabel;
   lTir:TLabel;
   lAgo:TLabel;
+  miADotAdjust: TMenuItem;
   miDotsInView: TMenuItem;
   miExit: TMenuItem;
   miCustomDots: TMenuItem;
@@ -116,6 +117,7 @@ TfBG = class(TForm)
   miATouch: TMenuItem;
   miAdvanced: TMenuItem;
   lDot1: TPaintBox;
+  misep: TMenuItem;
   miSplit6: TMenuItem;
   miSplit5: TMenuItem;
   miAnnounce:TMenuItem;
@@ -1063,6 +1065,15 @@ end;
 
 // Initialize the TrendDots array in FormCreate
 procedure TfBG.FormCreate(Sender: TObject);
+procedure haltBoot;
+begin
+  fSplash.Hide;
+  fSplash.Free;
+  tMain.Enabled := false;
+  firstboot := true;
+  lArrow.Caption := '';
+end;
+
 var
   i: integer;
   guifontName, txtfontName, apiTarget, apiCreds: string;
@@ -1165,29 +1176,24 @@ begin
       ShowMessage(RS_FORCE_QUIT_SETUP);
       Application.Terminate;
       Exit;
-    end else
-      firstBoot := false;
+    end;
 
     Application.ProcessMessages;
     if not InitializeAPI then begin
-      firstboot := true;
-      fConf.Hide;
-      fSplash.Free;
+      haltBoot;
       Exit;
     end;
 
     Application.ProcessMessages;
     if not api.Connect then
     begin
-       fSplash.Close;
-      fSplash.Free;
-      firstboot := true;
+      haltBoot;
       ShowMessage(api.ErrorMsg);
-      tMain.Enabled := false;
       miSettings.Click;
       self.Close;
       Exit;
     end;
+
 
     // UI preferences
     dotscale := GetIntSetting('ux.dot_scale', 1);
@@ -1230,7 +1236,12 @@ end;
 
 function TfBG.lastReading: BGReading;
 begin
-  result := bgs[Low(bgs)];
+  try
+    result := bgs[Low(bgs)];
+  except
+    on E: Exception do
+      ShowMessage('ERROR: Trndi did not recieve any readings!');
+  end;
 end;
 
 procedure TfBG.FormDestroy(Sender:TObject);
