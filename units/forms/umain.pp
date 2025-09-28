@@ -919,6 +919,9 @@ begin
   fSplash.Image1.Picture.Icon := Application.Icon;
   fSplash.lInfo.Caption := '';
   fSplash.lInfo.Font.Color := fSplash.lSplashWarn.Font.color;
+  {$ifdef X_WIN}
+    fSplash.ShowInTaskBar := stAlways;
+  {$endif}
   fSplash.Show;
 end;
 
@@ -1166,17 +1169,21 @@ begin
       firstBoot := false;
 
     Application.ProcessMessages;
-    if not InitializeAPI then
+    if not InitializeAPI then begin
+      firstboot := true;
+      fConf.Hide;
+      fSplash.Free;
       Exit;
+    end;
 
     Application.ProcessMessages;
     if not api.Connect then
     begin
+       fSplash.Close;
+      fSplash.Free;
       firstboot := true;
       ShowMessage(api.ErrorMsg);
       tMain.Enabled := false;
-      fSplash.Close;
-      fSplash.Free;
       miSettings.Click;
       self.Close;
       Exit;
