@@ -350,6 +350,7 @@ private
   procedure CheckAndAcceptLicense;
   function InitializeAPI: Boolean;
 public
+   firstboot: boolean;
    procedure AppExceptionHandler(Sender: TObject; {%H-}E: Exception);
    procedure onGH({%H-}sender: TObject);
    function lastReading: BGReading;
@@ -1065,6 +1066,7 @@ var
   fil: boolean;
   userlocale: TFormatSettings;
 begin
+  firstboot := true;
   // Initialize splash screen first
   InitializeSplashScreen;
   Application.ProcessMessages;
@@ -1160,7 +1162,8 @@ begin
       ShowMessage(RS_FORCE_QUIT_SETUP);
       Application.Terminate;
       Exit;
-    end;
+    end else
+      firstBoot := false;
 
     Application.ProcessMessages;
     if not InitializeAPI then
@@ -1169,10 +1172,13 @@ begin
     Application.ProcessMessages;
     if not api.Connect then
     begin
+      firstboot := true;
       ShowMessage(api.ErrorMsg);
       tMain.Enabled := false;
       fSplash.Close;
       fSplash.Free;
+      miSettings.Click;
+      self.Close;
       Exit;
     end;
 
@@ -1577,6 +1583,7 @@ begin
   FShuttingDown := True;
 
   {$ifdef Darwin}
+  if not firstboot then
   if self.Showing then
   begin
     mr := UXDialog(uxdAuto, 'Quit or Minimize?', 'Would you like to minimize to the Dock, or close Trndi?',
@@ -1599,6 +1606,7 @@ begin
   end;
   {$else}
 
+  if not firstboot then
   if UXDialog(uxdAuto, RS_QUIT_CAPTION, RS_QUIT_MSG, [mbYes, mbNo], uxmtOK) = mrNo then
   begin
     FShuttingDown := False; // Reset flag if user cancels
@@ -2175,6 +2183,8 @@ var
   msg: string;
   result: Integer;
 begin
+if firstboot then
+  exit;
   // Check if we're still within the cache window
   secondsSinceLastCall := SecondsBetween(Now, FLastAPICall);
   if secondsSinceLastCall < API_CACHE_SECONDS then
@@ -2546,6 +2556,7 @@ begin
     // Show dialog
     fConf.ShowModal;
 
+    if not firstboot then
     if ExtMsg(uxdAuto, RS_SETTINGS_SAVE, RS_SETTINGS_SAVE, RS_SETTINGS_SAVE_DESC, '', $00F5F2FD,$003411A9, [mbYes, mbNo]) <> mrYes then
       Exit; // FConf.Free will run later
 
