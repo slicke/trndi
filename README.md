@@ -1,11 +1,11 @@
-> _Quick intro:_ Right-click on Trndi to open it's menu for settings and other options
+> ⚠️ _Quick intro:_ __Right-click__ on Trndiäs window to open it's menu for settings and other options!
 
 [![Build & Release (All Platforms)](https://github.com/slicke/trndi/actions/workflows/build.yml/badge.svg?branch=main&event=push)](https://github.com/slicke/trndi/actions/workflows/build.yml)
 
 ![Trndi](doc/img/trndi-logo.png)
 
 # Trndi - CGM data on Desktop and RaspberryPi<br><sup>_Nightscout - Dexcom - xDrip WiFi_</sup> 
-## <b> Windows - macOS - Linux - RaspberryPi - Embedded Linux </b>
+## <b> 🪟 Windows - 🍎 macOS - 🐧 Linux - 🥧 RaspberryPi/ARM Linux </b>
 
 ![Windows](doc/img/img_win.png)
 
@@ -42,7 +42,7 @@ Setup the users in the _settings_, don't forget to click _save_ when editing use
 You need to start Trndi multiple times, each instance lets you choose a user. Just open the app multiple times and select a different account.
 
 # Usage
-Right-click on the reading on the screen to access the menu.
+⚠️ Right-click on the reading on the screen to access the menu.
 
 # Setup
 Click/hold the reading (or "Setup" text) and choose settings to access settings.
