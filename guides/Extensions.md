@@ -2,22 +2,24 @@
 Full reference of functions in [Extensions Functions](Extensions_functions.md)
 
 ### Plugin folder
-The _plugin folder_ is located in your system's application data. You can find out where exactly in the settings.
+The _plugin folder_ is located in your user's application data folder. You can find out where exactly in Trndi's settings, see below.
 
 ![Window](../doc/img/ext.png)
 
 ### Plugin support
-Trndi can be built without plugin support; if that's the case the settings will show a message. This will result in a smaller program file. Most commonly, plugins are disabled on systems where the JavaScript engine cannot run reliably.
+In some cases Trndi can be built without plugin support; this will be shown in the settings also. Official versions of Trndi support extensions on Windows and Linux (amd64/x64).
 
 ![Window](../doc/img/no_ext.png)
 
-# Creating a plugin
-To create, or install, a plugin - create/place a ```.js``` file in the plugin folder. It will automatically load on the next run.
+# Creating/Installing a plugin
+To create, or install, a plugin - create/move a ```.js``` file in the plugin folder. It will automatically load on the next start of Trndi.
+> If you are using multiple users in Trndi, plugins will run independently of each other on each instance of Trndi.
 
-### Custom levels ("Dexcom example")
-This example demonstrates how to set custom high, low and a range via a plugin.
+### Custom levels (Aka the "Dexcom example")
+This example demonstrates how to set custom high, low and a custom range via a plugin.
+> A custom range is a range within the limits of high/low, where the blood sugar is considered optimal.
 
-While this can be used for any backend, it's especially useful for _Dexcom_ as the backend does _not provide this info_, while NightScout provides these values itself:
+While this plugin can be used for any backend, it's especially useful for _Dexcom_ as the backend does _not provide this info_:
 
 ```javascript
 setLimits(3.2, 10.4);
@@ -25,20 +27,23 @@ setLimits(3.2, 10.4);
 In this example, we declare that:
 * Readings under 3.2 are low
 * Readings over 10.4 are high
+> These settings will override the settings in Trndi's settings window.
 
-We can also set the preferred values:
+We can also set the custom range, by adding more parameters:
 ```javascript
 setLimits(3.2, 10.4, 4.1, 8.7);
 ```
-This adds that:
+This adds:
 * We prefer values over 4.1
 * We prefer values under 8.7
 
+Save his line in a file ending with ```.js```, such as ```ranges.js``` in the plugin folder.
 ### Color example
 We can also change the high/low colors displayed:
 ```javascript
 Trndi.setLevelColor('#7cd55d','#d55d5d', '#5dc6d5'); // Set colors for okay readings, high readings and low readings with HTML colors
 ```
+> This will override any colors chosen in Trndi's settings!
 
 You can also set colors for the dots in the graph, by adding three more colors:
 ```javascript
@@ -52,3 +57,5 @@ Trndi.setLevelColor('#7cd55d','#d55d5d', '#5dc6d5', // Set colors for okay readi
                     '#7cd55d','#612828', '#5d75d5', // Colors for the dots (ok, hi, lo)
                     '#ffbfbf', '#bffff9'); // Color for the custom levels set in NightScout (or via JS) (hi, lo)
 ```
+
+### See the full reference of functions in [Extensions Functions](Extensions_functions.md)
