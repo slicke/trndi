@@ -123,10 +123,6 @@ msgctxt "tfbg.bsettings.caption"
 msgid "Settings"
 msgstr "Inställningar"
 
-#: tfbg.label1.caption
-msgid "Right-click to access menu!"
-msgstr ""
-
 #: tfbg.lmissing.caption
 msgid "No recent readings!"
 msgstr "Inga färska avläsningar!"

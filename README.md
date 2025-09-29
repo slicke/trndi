@@ -8,41 +8,40 @@
 ## <b> 🪟 Windows - 🍎 macOS - 🐧 Linux - 🥧 RaspberryPi/ARM Linux </b>
 
 ![Windows](doc/img/img_win.png)
-
 <br>Windows 11
 
 ![Linux](doc/img/img_lin.png)
 <br>Fedora Linux
 
 ![Linux](doc/img/img_rpi.png)
-<br>RaspberryPi
+<br>RaspberryPi (with touch screen)
 
 ### Introduction
 Trndi is a _desktop app_ that shows the your blood sugar and graph. It works with  _Night Scout_ and _Dexcom Share_ at the moment.
 It also supports the _xDrip_ app, connecting over the local network/WiFi.
 
 # What differs Trndi from apps?
-* __Natively__ runs on your computer without needing installation.
+* __Natively__ runs on your computer without needing installation
 * Runs out-of-the-box! Does not depend on other software to be installed _(on [Linux](#Linux-support), this may depend on your distro)_
 * Supports __multiple languages__
 * Runs on your __Raspberry Pi__ and other arm computers, optinally as a full-screen display
-* Works on __touch-screen__ devices
+* Works on __touch-screen__ devices, such as a RaspberryPi with screen
 * Supports modern ___JavaScript__ extensions_
 * __Small and portable__
 * Supports dark and light color modes
 * Displays your readings in a __trend graph__
 * __Free__ and open source
 * Integrates with Windows, macOS and Linux special features such as the macOS dock, Windows taskbar and Linux notifications.
-* Supports low, normal and high glood sugar colors. But also __ranges__ such as "normal, but on the edge to high"
+* Supports low, normal and high glood sugar colors. But also __custom ranges__ such as "normal, but on the edge to high"
 
 ### Multi-user support
-Got more than one diabetic? Trndi supports parallel users.
-Setup the users in the _settings_, don't forget to click _save_ when editing users!
+Need to see more than one person? Trndi supports parallel users.
+Setup the users in the _settings_. Don't forget to click _Save_ when editing users!
 
-You need to start Trndi multiple times, each instance lets you choose a user. Just open the app multiple times and select a different account.
+You need to start Trndi multiple times, each instance lets you choose a user. Just open the app multiple times and select a different account. Users can have different sources and runs JavaScript plugins independently.
 
 # Usage
-⚠️ Right-click on the reading on the screen to access the menu.
+⚠️ Right-click on the reading on the screen to access the menu, this is how you control Trndi.
 
 # Setup
 Click/hold the reading (or "Setup" text) and choose settings to access settings.
