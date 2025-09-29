@@ -35,7 +35,7 @@ It also supports the _xDrip_ app, connecting over the local network/WiFi.
 * Supports low, normal and high glood sugar colors. But also __custom ranges__ such as "normal, but on the edge to high"
 
 ### Multi-user support
-Need to see more than one person? Trndi supports parallel users.
+Need to see more than one person? Trndi supports [parallel users](guides/Multiuser.md).
 Setup the users in the _settings_. Don't forget to click _Save_ when editing users!
 
 You need to start Trndi multiple times, each instance lets you choose a user. Just open the app multiple times and select a different account. Users can have different sources and runs JavaScript plugins independently.
