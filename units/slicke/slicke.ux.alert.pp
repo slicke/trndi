@@ -457,8 +457,16 @@ function DwmSetWindowAttribute(hwnd: HWND; dwAttribute: DWORD; pvAttribute: Poin
    Helper for getting the base color, based on color mode
 }
 function getBaseColor: TColor;
+var
+  f: tcolor;
 begin
-  result := IfThen(TrndiNative.isDarkMode, clWhite, clBlack);
+  {$ifdef Windows}
+    f := GetSysColor(COLOR_WINDOWTEXT)
+  {$else}
+    f := clWindowText;
+  {$endif}
+  result := f;
+//  result := IfThen(TrndiNative.isDarkMode, clWhite, clBlack);
 end;
 
 {**
@@ -470,11 +478,12 @@ var
 begin
   {$ifdef Windows}
     bg := GetSysColor(COLOR_BTNFACE);
+//    bg := IfThen(TrndiNative.isDarkMode, uxclGray, bg);
   {$else}
-    bg := clWhite;
+    bg := clBtnFace;
   {$endif}
 
-  result := IfThen(TrndiNative.isDarkMode, uxclGray, bg);
+  result := bg;
 end;
 
 {**
