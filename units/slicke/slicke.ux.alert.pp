@@ -454,6 +454,30 @@ function DwmSetWindowAttribute(hwnd: HWND; dwAttribute: DWORD; pvAttribute: Poin
 
 
 {**
+   Helper for getting the base color, based on color mode
+}
+function getBaseColor: TColor;
+begin
+  result := IfThen(TrndiNative.isDarkMode, clWhite, clBlack);
+end;
+
+{**
+   Helper for getting the background color, based on color mode
+}
+function getBackground: TColor;
+var
+  bg: TColor;
+begin
+  {$ifdef Windows}
+    bg := GetSysColor(COLOR_BTNFACE);
+  {$else}
+    bg := clWhite;
+  {$endif}
+
+  result := IfThen(TrndiNative.isDarkMode, uxclGray, bg);
+end;
+
+{**
   Determine whether dialogs should use the large layout.
   @param dialogsize Requested size mode.
   @returns @true if big layout should be used; @false otherwise.
@@ -584,7 +608,7 @@ begin
   if big then TitleLabel.Font.Size := 26;
   TitleLabel.Top := Padding;
   TitleLabel.Caption := ATitle;
-  TitleLabel.Font.Color := IfThen(TrndiNative.isDarkMode, clWhite, clBlack);
+  TitleLabel.Font.Color := getBaseColor;
   TitleLabel.AdjustSize;  // now calculates proper height for given width
 
  // Description
@@ -599,7 +623,7 @@ begin
    DescLabel.Font.Size := 24;
  DescLabel.Top := TitleLabel.Top + TitleLabel.Height + Padding;
  DescLabel.Caption := ADesc;
- DescLabel.Font.Color := IfThen(TrndiNative.isDarkMode, clWhite, clBlack);
+ DescLabel.Font.Color := getBaseColor;
 
  // ✅ Force correct height for wrapped text
  DescLabel.Height := CalcWrappedHeight(DescLabel);
@@ -908,7 +932,7 @@ begin
   if big then TitleLabel.Font.Size := 26;
   TitleLabel.Top := IconBox.Top; // aligns with icon top
   TitleLabel.Caption := ATitle;
-  TitleLabel.Font.Color := IfThen(TrndiNative.isDarkMode, clWhite, clBlack);
+  TitleLabel.Font.Color := getBaseColor;
   TitleLabel.Height := CalcWrappedHeight(TitleLabel);
 
   // --- Description label ---
@@ -921,7 +945,7 @@ begin
   if big then DescLabel.Font.Size := 24;
   DescLabel.Top := TitleLabel.Top + TitleLabel.Height + Padding;
   DescLabel.Caption := ADesc;
-  DescLabel.Font.Color := IfThen(TrndiNative.isDarkMode, clWhite, clBlack);
+  DescLabel.Font.Color := getBaseColor;
   DescLabel.Height := CalcWrappedHeight(DescLabel);
 end;
 
@@ -961,7 +985,7 @@ begin
   big := UXDialogIsBig(dialogsize);
   Result := 0;
   ModalResult := mrCancel;
-  bgcol := IfThen(TrndiNative.isDarkMode, uxclGray, clWhite);
+  bgcol := getBackground;
 
   Dialog := TDialogForm.CreateNew(nil);
   Dialog.KeyPreview := True;
@@ -1170,7 +1194,7 @@ begin
   Result := '';
   ModalResult := mrCancel;
   big := UXDialogIsBig(dialogsize);
-  bgcol := IfThen(TrndiNative.isDarkMode, uxclGray, clWhite);
+  bgcol := getBackground;
 
   Dialog := TDialogForm.CreateNew(nil);
   Dialog.KeyPreview := True;
@@ -1267,7 +1291,7 @@ var
 begin
   Result := -1;
   big := UXDialogIsBig(dialogsize);
-  bgcol := IfThen(TrndiNative.isDarkMode, uxclGray, clWhite);
+  bgcol := getBackground;
 
   Dialog := TDialogForm.CreateNew(nil);
   Dialog.KeyPreview := True;
@@ -1378,7 +1402,7 @@ var
 begin
   Result := -1;
   big := UXDialogIsBig(dialogsize);
-  BgCol := IfThen(TrndiNative.isDarkMode, uxclGray, clWhite);
+  BgCol := getBackground;
 
   Dialog := TDialogForm.CreateNew(nil);
   Dialog.KeyPreview := True;
@@ -1507,7 +1531,7 @@ var
   big: boolean;
   MemoWrapper: TPanel;
 begin
-  bgcol := IfThen(TrndiNative.isDarkMode, uxclGray, clWhite);
+  bgcol := getBackground;
   big := UXDialogIsBig(dialogsize);
 
   Dialog := TDialogForm.CreateNew(nil);
@@ -1584,7 +1608,7 @@ begin
     try
       if big then TempFont.Size := 24;
       TempFont.Style := [];
-      TempFont.Color := IfThen(TrndiNative.isDarkMode, clWhite, clBlack);
+      TempFont.Color := getBaseColor;
       NeededHeight := MeasureWrappedHeight(desc, TempFont, MsgWidth);
     finally
       TempFont.Free;
@@ -1613,7 +1637,7 @@ begin
         MsgLabel.Font.Size := 24;
         MsgLabel.Font.Style := [];
         MsgLabel.Caption := desc;
-        MsgLabel.Font.Color := IfThen(TrndiNative.isDarkMode, clWhite, clBlack);
+        MsgLabel.Font.Color := getBaseColor;
         MsgLabel.Align := alTop;
       end
       else
@@ -1625,7 +1649,7 @@ begin
         MsgLabel.Font.Size := 24;
         MsgLabel.Font.Style := [];
         MsgLabel.Caption := desc;
-        MsgLabel.Font.Color := IfThen(TrndiNative.isDarkMode, clWhite, clBlack);
+        MsgLabel.Font.Color := getBaseColor;
         MsgLabel.Align := alTop;
         MsgLabel.BorderSpacing.Left := padding;
         MsgLabel.BorderSpacing.Right := padding;
@@ -1642,7 +1666,7 @@ begin
         TitleLabel.Font.Size := 24;
         TitleLabel.Font.Style := [fsBold];
         TitleLabel.Caption := title;
-        TitleLabel.Font.Color := IfThen(TrndiNative.isDarkMode, clWhite, clBlack);
+        TitleLabel.Font.Color := getBaseColor;
         TitleLabel.Align := alTop;
         TitleLabel.BorderSpacing.Left := padding;
         TitleLabel.BorderSpacing.Right := padding;
@@ -1659,7 +1683,7 @@ begin
         TitleLabel.AutoSize := False;
         TitleLabel.Font.Style := [fsBold];
         TitleLabel.Caption := title;
-        TitleLabel.Font.Color := IfThen(TrndiNative.isDarkMode, clWhite, clBlack);
+        TitleLabel.Font.Color := getBaseColor;
         TitleLabel.Top := padding;
         TitleLabel.Left := padding;
         TitleLabel.Width := MsgWidth;
@@ -1689,7 +1713,7 @@ begin
         MsgLabel.WordWrap := True;
         MsgLabel.AutoSize := False;
         MsgLabel.Caption := desc;
-        MsgLabel.Font.Color := IfThen(TrndiNative.isDarkMode, clWhite, clBlack);
+        MsgLabel.Font.Color := getBaseColor;
         MsgLabel.Width := MsgWidth;
         MsgLabel.Height := NeededHeight;
       end
@@ -1700,7 +1724,7 @@ begin
         MsgLabel.WordWrap := True;
         MsgLabel.AutoSize := False;
         MsgLabel.Caption := desc;
-        MsgLabel.Font.Color := IfThen(TrndiNative.isDarkMode, clWhite, clBlack);
+        MsgLabel.Font.Color := getBaseColor;
         if Assigned(TitleLabel) then
           MsgLabel.Top := TitleLabel.Top + TitleLabel.Height + padding
         else
@@ -1906,7 +1930,10 @@ procedure TDialogForm.DoShow;
 begin
   inherited DoShow;
   // Your show-time logic here. Example placeholder:
-  TrndiNative.SetTitleColor(handle, self.Color ,clWhite);
+  if TrndiNative.isDarkMode then
+    TrndiNative.SetTitleColor(handle, self.Color, clWhite)
+  else
+    TrndiNative.SetTitleColor(handle, self.Color, clBlack);
 end;
 
 {**
