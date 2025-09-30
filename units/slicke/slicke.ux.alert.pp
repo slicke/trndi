@@ -458,15 +458,17 @@ function DwmSetWindowAttribute(hwnd: HWND; dwAttribute: DWORD; pvAttribute: Poin
 }
 function getBaseColor: TColor;
 var
-  f: tcolor;
+  light, dark: TColor;
 begin
   {$ifdef Windows}
-    f := GetSysColor(COLOR_WINDOWTEXT)
+    light := GetSysColor(COLOR_WINDOWTEXT);
+    dark := clWhite;
   {$else}
-    f := clWindowText;
+    dark := clWindowText;
+    light := dark;
   {$endif}
-  result := f;
-//  result := IfThen(TrndiNative.isDarkMode, clWhite, clBlack);
+
+  result := IfThen(TrndiNative.isDarkMode, dark, light);
 end;
 
 {**
@@ -474,16 +476,18 @@ end;
 }
 function getBackground: TColor;
 var
-  bg: TColor;
+  light, dark: TColor;
 begin
   {$ifdef Windows}
-    bg := GetSysColor(COLOR_BTNFACE);
+    light := GetSysColor(COLOR_BTNFACE);
+    dark := RGB(32, 32, 32);
 //    bg := IfThen(TrndiNative.isDarkMode, uxclGray, bg);
   {$else}
-    bg := clBtnFace;
+    light := clBtnFace;
+    dark := light;
   {$endif}
 
-  result := bg;
+  result := IfThen(TrndiNative.isDarkMode, dark, light);
 end;
 
 {**
