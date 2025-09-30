@@ -2017,7 +2017,6 @@ end;
 // Handle lVal click
 procedure TfBG.lValClick(Sender: TObject);
 begin
-  showmessage('hej');
   if (lVal.Caption = RS_SETUP) then
     miSettings.Click;
   if firstboot then exit;
