@@ -1526,14 +1526,13 @@ begin
 end;
 
 procedure TfBG.pnWarningPaint(Sender: TObject);
-{$ifndef Windows}
 const
   radius = 20;
 var
   P: TPanel;
-{$endif}
 begin
-{$ifndef Windows}
+  // Use manual drawing for rounded corners on all platforms
+  // This prevents interference with scaling operations
   P := TPanel(Sender);
 
   with P.Canvas do
@@ -1548,7 +1547,6 @@ begin
     Pen.Width := 1;
     RoundRect(0, 0, P.Width, P.Height, Radius, Radius);
   end;
-{$endif}
 end;
 
 procedure TfBG.FormMouseLeave(Sender:TObject);
@@ -1562,6 +1560,13 @@ begin
   begin
     SetBounds(Left + (X - PX), Top + (Y - PY), Width, Height);
     tTouch.Enabled := false; // Dont popup stuff while moving
+    // Use the resize timer with a very short interval for smooth panel scaling during drag
+    // This prevents too frequent calls while still providing responsive scaling
+    if not tResize.Enabled then
+    begin
+      tResize.Interval := 50; // Very short interval during dragging for responsiveness
+      tResize.Enabled := true;
+    end;
   end else begin
     // Performance optimization: only enable touch timer when there's mouse activity
     if not tTouch.Enabled then
@@ -1821,14 +1826,28 @@ begin
     tResize.OnTimer(self)
   else
   begin
-    tResize.Enabled := false;
-    tResize.Enabled := true;
-    lVal.Visible := false;
-    lAgo.Visible := false;
-    lTir.Visible := false;
+    // Normal resize handling - let the timer handle dragging vs non-dragging logic
+    if not tResize.Enabled then
+    begin
+      tResize.Enabled := true;
+    end
+    else if not DraggingWin then
+    begin
+      // Only restart timer when not dragging to prevent rapid resize interruptions
+      tResize.Enabled := false;
+      tResize.Enabled := true;
+    end;
+    
+    if not DraggingWin then
+    begin
+      lVal.Visible := false;
+      lAgo.Visible := false;
+      lTir.Visible := false;
+    end;
+    
+    // Apply alpha control only - rounded corners are handled by pnWarningPaint
+    ApplyAlphaControl(pnWarning, 235);
   end;
-  ApplyRoundedCorners(pnWarning, 20);
-  ApplyAlphaControl(pnWarning, 235);
 end;
 
 procedure TfBG.FormShow(Sender: TObject);
@@ -2071,7 +2090,15 @@ begin
   IsTouched := false;
   tTouch.Enabled := false;
 
-  DraggingWin := false;
+  if DraggingWin then
+  begin
+    DraggingWin := false;
+    // Restore normal timer interval
+    tResize.Interval := 500; // Back to normal interval from form design
+    // Trigger a full resize operation now that dragging is complete
+    // This ensures all UI elements are properly scaled for the final window size
+    FormResize(Self);
+  end;
 end;
 
 // Empty drag event handler
@@ -2890,6 +2917,19 @@ procedure TfBG.tResizeTimer(Sender: TObject);
 begin
   tResize.Enabled := False;
 
+  if DraggingWin then
+  begin
+    // During dragging, only update the warning panel and essential elements
+    // Skip complex operations that could interfere with dragging performance
+    if pnWarning.Visible then
+    begin
+      fixWarningPanel;
+      ApplyAlphaControl(pnWarning, 235);
+    end;
+    Exit; // Don't do full resize operations during dragging
+  end;
+
+  // Normal full resize operations when not dragging
   actOnTrend(@HideDot);
 
   // Update trend related elements
@@ -3541,43 +3581,50 @@ var
   calculatedFontSize: integer;
   i: integer;
 begin
+    // Calculate padding consistently
     padding := (ClientWidth div 25);
     if not native.HasTouchScreen then
-       padding := padding*2;
+       padding := padding * 2;
 
-    pnwarning.AutoSize:=false;
-    pnwarning.width := ClientWidth - padding;
+    // First, set panel dimensions and ensure it's properly configured
+    pnwarning.AutoSize := false;
+    pnwarning.width := ClientWidth - (padding * 2);  // Use padding on both sides
     pnWarning.left := padding;
     pnwarning.top := padding;
-    pnWarning.height := ClientHeight-padding;
+    pnWarning.height := ClientHeight - (padding * 2);  // Use padding on top and bottom
+    
+    // Force panel to update its size before calculating font
+    Application.ProcessMessages;
 
+    // Configure the main warning label
     if Pos(sLineBreak, lMissing.Caption) < 1 then // Ugly solution
       lMissing.Caption := '🕑'+sLineBreak+lMissing.Caption;
+    
     lMissing.AutoSize := false;
     lMissing.left := 5;
     lMissing.top := 5;
-    lMissing.width := pnWarning.Width-10;
-    // Ensure label has adequate height for multiline content
-    lMissing.height := pnWarning.height - 10; // Leave margins instead of div 5
+    lMissing.width := pnWarning.Width - 10;
+    lMissing.height := pnWarning.height - 60; // Leave room for pnWarnLast at bottom
+    lMissing.wordwrap := true;
     lMissing.OptimalFill := true;
-    if native.HasTouchScreen then begin
-      lMissing.wordwrap := true;
-      // Calculate font size based on panel height for better scaling
-      calculatedFontSize := Max(8, pnWarning.Height div 12);
-      lmissing.font.size := calculatedFontSize;
-      lmissing.width := pnWarning.width - 10; // Leave some margin
-      lmissing.height := pnWarning.Height - 10; // Leave some margin
+    
+    // Calculate font size consistently for both touch and non-touch
+    // Use a unified approach that works reliably
+    calculatedFontSize := Max(8, Min(36, pnWarning.Height div 10));
+    if not native.HasTouchScreen then
+      calculatedFontSize := Max(10, calculatedFontSize - 2); // Slightly smaller for non-touch
+    
+    lmissing.font.size := calculatedFontSize;
+    
+    // Ensure font color is visible
+    if native.HasTouchScreen then
       pnWarning.Font.Color := pnWarning.color;
-    end else begin
-      // Also scale font for non-touch screens, but differently
-      lMissing.wordwrap := true;
-      calculatedFontSize := Max(10, pnWarning.Height div 15); // Slightly smaller scaling for non-touch
-      lmissing.font.size := calculatedFontSize;
-    end;
 
+    // Configure other UI elements
     pnOffReading.Height := ClientHeight;
     pnOffReading.ClientWidth := ClientWidth div 35;
 
+    // Configure the last reading info
     if (Length(lVal.hint) > 0) and TryStrToInt(lVal.hint[1], i) then begin
        if (Length(lAgo.Caption) > 0) and TryStrToInt(lAgo.Caption[1], i) then
          pnWarnLast.Caption := Format(RS_LAST_RECIEVE, [lVal.hint, lAgo.Caption])
@@ -3588,10 +3635,16 @@ begin
        pnWarnLast.Caption := RS_LAST_RECIEVE_NO;
 
     pnWarnLast.Caption := pnWarnLast.Caption + LineEnding + Format(RS_LAST_RECIEVE_AGE, [DATA_FRESHNESS_THRESHOLD_MINUTES]);
-    pnWarnLast.font.size := Min(25, lMissing.font.size div 5);
+    
+    // Set pnWarnLast font size relative to main font, but with bounds checking
+    pnWarnLast.font.size := Max(8, Min(20, calculatedFontSize div 3));
     pnWarning.Canvas.Font.size := pnWarnLast.font.size;
-    pnWarnLast.height := pnWarning.Canvas.TextHeight(pnWarnLast.Caption)*2;
-    pnWarnLast.width := pnWarning.Canvas.TextWidth(pnWarnLast.Caption);
+    
+    // Position pnWarnLast at bottom of panel
+    pnWarnLast.height := pnWarning.Canvas.TextHeight(pnWarnLast.Caption) * 2;
+    pnWarnLast.width := Min(pnWarning.Width - 10, pnWarning.Canvas.TextWidth(pnWarnLast.Caption) + 10);
+    pnWarnLast.left := 5;
+    pnWarnLast.top := pnWarning.Height - pnWarnLast.height - 5;
 end;
 
 procedure TfBG.showWarningPanel(const message: string; clearDisplayValues: boolean = false);
