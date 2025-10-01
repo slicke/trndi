@@ -39,6 +39,7 @@ function ScanLinuxDistro(const opts: TStringArray): string;
 
 // UI utility functions
 procedure ApplyRoundedCorners(APanel: TPanel; Radius: Integer);
+procedure ApplyAlphaControl(Control: TWinControl; Alpha: Byte);
 
 // Text measurement functions
 function CharsFit(Canvas: TCanvas; C: Char; TotalWidth: Integer): Integer;
@@ -201,6 +202,19 @@ begin
   Rgn := CreateRoundRectRgn(0, 0, APanel.Width, APanel.Height, Radius, Radius);
   SetWindowRgn(APanel.Handle, Rgn, True);
   {$ENDIF}
+end;
+
+procedure ApplyAlphaControl(Control: TWinControl; Alpha: Byte);
+{$IFDEF WINDOWS}
+var
+  ExStyle: LongInt;
+{$ENDIF}
+begin
+{$IFDEF WINDOWS}
+  ExStyle := GetWindowLong(Control.Handle, GWL_EXSTYLE);
+  SetWindowLong(Control.Handle, GWL_EXSTYLE, ExStyle or WS_EX_LAYERED);
+  SetLayeredWindowAttributes(Control.Handle, 0, Alpha, LWA_ALPHA);
+{$ENDIF}
 end;
 
 // Text measurement functions
