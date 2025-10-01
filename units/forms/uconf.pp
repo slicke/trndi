@@ -110,6 +110,7 @@ TfConf = class(TForm)
   Label16: TLabel;
   Label17: TLabel;
   Label18: TLabel;
+  lProblematic: TLabel;
   lDot: TLabel;
   Label2: TLabel;
   lDot1: TLabel;
@@ -320,7 +321,7 @@ implementation
 
 procedure Showmessage(const str: string);
 begin
-  UXMessage(uxdAuto, sSuccTitle, str, uxmtInformation);
+ UXMessage(uxdAuto, sSuccTitle, str, uxmtInformation);
 end;
 
 function ExtractLangCode(const AText: string): string;
@@ -1081,7 +1082,11 @@ begin
    Application.ProcessMessages;
 
    cbNotice.Checked := TrndiNative.isNotificationSystemAvailable;
-  lWaitSys.visible := false;
+   lWaitSys.visible := false;
+   lProblematic.Visible := false;
+   if IsProblematicWM then begin
+     lProblematic.Visible := true;
+   end;
 end;
 
 end.
