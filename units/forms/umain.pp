@@ -3646,6 +3646,13 @@ begin
     pnWarning.height := ClientHeight - (padding * 2);  // Use padding on top and bottom
     
     // Force panel to update its size before calculating font
+    // Multiple approaches for different platforms, especially important for Raspberry Pi
+    Application.ProcessMessages;
+    pnWarning.Update; // Force immediate visual update
+    Application.ProcessMessages; // Process any pending updates
+    
+    // Ensure we're using the actual updated dimensions, not cached ones
+    pnWarning.Invalidate;
     Application.ProcessMessages;
 
     // Configure the main warning label
@@ -3661,8 +3668,8 @@ begin
     lMissing.OptimalFill := true;
     
     // Calculate font size consistently for both touch and non-touch
-    // Use a unified approach that works reliably
-    calculatedFontSize := Max(8, Min(36, pnWarning.Height div 10));
+    // Use current ClientHeight directly to avoid any panel size caching issues
+    calculatedFontSize := Max(8, Min(36, (ClientHeight - (padding * 2)) div 10));
     if not native.HasTouchScreen then
       calculatedFontSize := Max(10, calculatedFontSize - 2); // Slightly smaller for non-touch
     
