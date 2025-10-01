@@ -337,7 +337,10 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     needs: [version, build]
-    if: always()
+    # Only create/update releases on direct pushes to main (not on pull_request events).
+    # This is defense-in-depth: we removed `pull_request` from the workflow triggers above,
+    # and additionally ensure the publish job only runs for push events to main.
+    if: ${{ always() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
     steps:
       - uses: actions/download-artifact@v4
         with:
