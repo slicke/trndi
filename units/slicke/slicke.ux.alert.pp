@@ -447,6 +447,11 @@ type
   }
   function FontTXTInList(out fname: string): Boolean;
 
+  {**
+    Check if the Window Manaager is problematic, which means it can't handle ShowModal
+    @returns @true if the VM is problematic
+    }
+  function IsProblematicWM: Boolean;
 var
   {** Localized captions for each @link(TUXMsgDlgBtn). Initialized from resource strings. }
   langs : ButtonLangs = (smbYes, smbUXNo, smbUXOK, smbUXCancel, smbUXAbort, smbUXRetry, smbUXIgnore,
@@ -518,7 +523,6 @@ end;
   may be ignored by the window manager. On non-Windows systems we use
   fsStayOnTop as a conservative fallback while the dialog is active.
 }
-function IsProblematicWM: Boolean; forward;
 
 function ShowModalSafe(aDialog: TDialogForm): Integer;
 var
