@@ -3716,6 +3716,8 @@ begin
 
   pnWarning.Caption := '';  // Clear for now
   fixWarningPanel;
+  // Ensure visual effects are applied when showing the panel
+  ApplyAlphaControl(pnWarning, 235);
 end;
 
 function TfBG.DoFetchAndValidateReadings(const ForceRefresh: Boolean): Boolean;
