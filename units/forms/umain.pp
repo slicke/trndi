@@ -1624,9 +1624,8 @@ begin
       tResize.Enabled := true;
     end;
   end else begin
-    // Performance optimization: only enable touch timer when there's mouse activity
-    if not tTouch.Enabled then
-      tTouch.Enabled := true;
+    // Don't enable touch timer on general mouse movement - only on actual lVal interaction
+    // The timer will be enabled in lValMouseDown when there's actual touch/click on lVal
   end;
 end;
 
@@ -3273,7 +3272,8 @@ var
   touchDuration: Integer;
 begin
   tTouch.Enabled := false;
-  if IsTouched then
+  // Ensure we have a valid touch state and touch screen capability
+  if IsTouched and HasTouch and (StartTouch > 0) then
   begin
     // Check if this is actually a long press (at least 450ms to account for timer precision)
     touchDuration := MilliSecondsBetween(Now, StartTouch);
