@@ -772,6 +772,11 @@ msgstr ""
 msgid "Long ago"
 msgstr ""
 
+#: trndi.strings.rs_days_ago
+#, object-pascal-format
+msgid "%d days ago"
+msgstr ""
+
 #: trndi.strings.rs_diff
 msgid "This is the change from the latest reading"
 msgstr ""
@@ -811,11 +816,6 @@ msgstr ""
 
 #: trndi.strings.rs_last_recieve_no
 msgid "There's no last reading to show"
-msgstr ""
-
-#: trndi.strings.rs_last_recieve_no_time
-#, object-pascal-format
-msgid "Last reading was %s (unknown time)"
 msgstr ""
 
 #: trndi.strings.rs_last_update

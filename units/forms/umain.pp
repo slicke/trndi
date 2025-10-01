@@ -361,6 +361,7 @@ public
    procedure AppExceptionHandler(Sender: TObject; {%H-}E: Exception);
    procedure onGH({%H-}sender: TObject);
    function lastReading: BGReading;
+   function tryLastReading(out bg: BGReading): boolean;
 end;
 
 
@@ -1241,6 +1242,13 @@ procedure TfBG.FormDblClick(Sender: TObject);
 begin
   if HasTouch then
     DoFullScreen;
+end;
+
+function TfBG.tryLastReading(out bg: BGReading): boolean;
+begin
+  result := (bgs <> nil) and (length(bgs) > 0);
+  if result then
+    bg := lastReading;
 end;
 
 function TfBG.lastReading: BGReading;
@@ -3580,6 +3588,9 @@ var
   padding: integer;
   calculatedFontSize: integer;
   i: integer;
+  bg: BGReading;
+  last, val: string;
+  tf: TFormatSettings;
 begin
     // Calculate padding consistently
     padding := (ClientWidth div 25);
@@ -3624,12 +3635,12 @@ begin
     pnOffReading.Height := ClientHeight;
     pnOffReading.ClientWidth := ClientWidth div 35;
 
-    // Configure the last reading info
-    if (Length(lVal.hint) > 0) and TryStrToInt(lVal.hint[1], i) then begin
-       if (Length(lAgo.Caption) > 0) and TryStrToInt(lAgo.Caption[1], i) then
-         pnWarnLast.Caption := Format(RS_LAST_RECIEVE, [lVal.hint, lAgo.Caption])
-       else
-         pnWarnLast.Caption := Format(RS_LAST_RECIEVE_NO_TIME, [lVal.hint])
+    if tryLastReading(bg) then begin
+       val := bg.format(un, BG_MSG_SHORT);
+       last := HourOf(bg.date).ToString + ':' + MinuteOf(bg.date).tostring;
+       if DateOf(bg.date) <> Dateof(now) then
+         last := last + ' ' + Format(RS_DAYS_AGO, [DaysBetween(now, bg.date)]);
+       pnWarnLast.Caption := Format(RS_LAST_RECIEVE, [val, last]);
     end
     else
        pnWarnLast.Caption := RS_LAST_RECIEVE_NO;

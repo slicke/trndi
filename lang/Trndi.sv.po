@@ -811,6 +811,11 @@ msgstr "Vänta. Stänger tilläggsmotorn..."
 msgid "Long ago"
 msgstr "Länge sedan"
 
+#: trndi.strings.rs_days_ago
+#, object-pascal-format
+msgid "%d days ago"
+msgstr ""
+
 #: trndi.strings.rs_diff
 msgid "This is the change from the latest reading"
 msgstr "Detta är skillnaden från tidigare avläsning"
@@ -851,11 +856,6 @@ msgstr "Gräns: %d minuter"
 #: trndi.strings.rs_last_recieve_no
 msgid "There's no last reading to show"
 msgstr "Det finns inget senaste värde att visa"
-
-#: trndi.strings.rs_last_recieve_no_time
-#, object-pascal-format
-msgid "Last reading was %s (unknown time)"
-msgstr "Senaste värde var %s (okänd tid)"
 
 #: trndi.strings.rs_last_update
 #, object-pascal-format
@@ -1529,3 +1529,4 @@ msgstr "Du kan använda skift+<nummerr> för att manuellt sätta synligheten (0 
 #: ufloat.rscustomsize
 msgid "You can hold down shift and plus (+) or minus (-) to change the window size"
 msgstr "Du kan hålla ned skift och plus (+) eller minus (-) för att justera fönstrets storlek"
+
