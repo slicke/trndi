@@ -606,6 +606,10 @@ msgstr ""
 msgid "API Key / Dexcom Password"
 msgstr ""
 
+#: tfconf.lproblematic.caption
+msgid "Compatibility mode: Your window manager does not support all features, please consider eg KDE"
+msgstr ""
+
 #: tfconf.ltestannounce.caption
 msgid "Test an announcement"
 msgstr ""

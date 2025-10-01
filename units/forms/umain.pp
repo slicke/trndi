@@ -925,6 +925,23 @@ end;
 procedure TfBG.InitializeSplashScreen;
 begin
   fSplash := TfSplash.Create(nil);
+  if IsProblematicWM then // It might hide dialogs behind the splash screen
+   with fsplash do begin
+    fSplash.Image1.Hide;
+    lSplashWarn.hide;
+    linfo.caption := 'Trndi is loading...';
+    linfo.top := 0;
+    linfo.left := 400;
+    height := linfo.canvas.TextHeight('Pq')+5;
+
+    label1.AutoSize := true;
+    label1.caption := 'Trndi | You need to accept the license agreement! ';
+    label1.top := 0;
+    label1.left := 0;
+    label1.font := linfo.font;
+    label1.font.color := clWhite;
+    Application.ProcessMessages;
+    end;
   FStoredWindowInfo.Initialized := False;
   fSplash.Image1.Picture.Icon := Application.Icon;
   fSplash.lInfo.Caption := '';
@@ -2674,10 +2691,15 @@ begin
   // Show dialog (use safe helper that handles problematic WMs)
   ShowFormModalSafe(fConf);
 
-    if not firstboot then
-    if ExtMsg(uxdAuto, RS_SETTINGS_SAVE, RS_SETTINGS_SAVE, RS_SETTINGS_SAVE_DESC, '', $00F5F2FD,$003411A9, [mbYes, mbNo]) <> mrYes then
-      Exit; // FConf.Free will run later
-
+    if not firstboot then begin
+      if IsProblematicWM then
+        fBG.Hide;
+       if ExtMsg(uxdAuto, RS_SETTINGS_SAVE, RS_SETTINGS_SAVE, RS_SETTINGS_SAVE_DESC, '', $00F5F2FD,$003411A9, [mbYes, mbNo]) <> mrYes then begin
+         fBG.Show;
+         Exit; // FConf.Free will run later
+       end;
+       fBG.Show;
+    end;
     // Reload settings, needed on X_PC
     native.ReloadSettings;
 

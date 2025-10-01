@@ -625,6 +625,10 @@ msgstr "Okänt system"
 msgid "API Key / Dexcom Password"
 msgstr "API-nyckel / Dexcomlösenord"
 
+#: tfconf.lproblematic.caption
+msgid "Compatibility mode: Your window manager does not support all features, please consider eg KDE"
+msgstr ""
+
 #: tfconf.ltestannounce.caption
 msgid "Test an announcement"
 msgstr "Testa en notis"
