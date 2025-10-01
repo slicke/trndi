@@ -3645,17 +3645,7 @@ begin
     pnwarning.top := padding;
     pnWarning.height := ClientHeight - (padding * 2);  // Use padding on top and bottom
     
-    // Force panel to update its size before calculating font
-    // Multiple approaches for different platforms, especially important for Raspberry Pi
-    Application.ProcessMessages;
-    pnWarning.Update; // Force immediate visual update
-    Application.ProcessMessages; // Process any pending updates
-    
-    // Ensure we're using the actual updated dimensions, not cached ones
-    pnWarning.Invalidate;
-    Application.ProcessMessages;
-
-    // Configure the main warning label
+    // Configure the main warning label first
     if Pos(sLineBreak, lMissing.Caption) < 1 then // Ugly solution
       lMissing.Caption := '🕑'+sLineBreak+lMissing.Caption;
     
@@ -3667,11 +3657,20 @@ begin
     lMissing.wordwrap := true;
     lMissing.OptimalFill := true;
     
-    // Calculate font size consistently for both touch and non-touch
-    // Use current ClientHeight directly to avoid any panel size caching issues
-    calculatedFontSize := Max(8, Min(36, (ClientHeight - (padding * 2)) div 10));
+    // Calculate font size based on current form dimensions
+    // Use a more aggressive calculation for better scaling
+    calculatedFontSize := Max(12, Min(48, ClientHeight div 8)); // Larger base size and more aggressive scaling
+    
+    // Special handling for Raspberry Pi and touch screens
+    {$ifdef X_LINUXBSD}
+    if IsRaspberry then
+      calculatedFontSize := Max(16, calculatedFontSize + 4) // Larger font on Pi
+    else if not native.HasTouchScreen then
+      calculatedFontSize := Max(14, calculatedFontSize - 2);
+    {$else}
     if not native.HasTouchScreen then
-      calculatedFontSize := Max(10, calculatedFontSize - 2); // Slightly smaller for non-touch
+      calculatedFontSize := Max(10, calculatedFontSize - 2);
+    {$endif}
     
     lmissing.font.size := calculatedFontSize;
     
@@ -3725,6 +3724,15 @@ begin
   fixWarningPanel;
   // Ensure visual effects are applied when showing the panel
   ApplyAlphaControl(pnWarning, 235);
+  
+  // Fallback for Raspberry Pi: trigger a delayed resize to ensure proper scaling
+  {$ifdef X_LINUXBSD}
+  if IsRaspberry then
+  begin
+    tResize.Interval := 100; // Very short interval for immediate retry
+    tResize.Enabled := true;
+  end;
+  {$endif}
 end;
 
 function TfBG.DoFetchAndValidateReadings(const ForceRefresh: Boolean): Boolean;
