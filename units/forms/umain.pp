@@ -2145,6 +2145,7 @@ procedure TfBG.lValMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftS
 begin
   IsTouched := false;
   tTouch.Enabled := false;
+  StartTouch := 0; // Reset the touch start time
 
   if DraggingWin then
   begin
@@ -3269,14 +3270,20 @@ end;
 procedure TfBG.tTouchTimer(Sender: TObject);
 var
   p: TPoint;
+  touchDuration: Integer;
 begin
   tTouch.Enabled := false;
   if IsTouched then
   begin
-    p := Mouse.CursorPos;
-    if SecondsBetween(Now, last_popup) > 2 then begin
-      pmSettings.PopUp(p.X, p.Y);
-      last_popup := now
+    // Check if this is actually a long press (at least 450ms to account for timer precision)
+    touchDuration := MilliSecondsBetween(Now, StartTouch);
+    if touchDuration >= 450 then
+    begin
+      p := Mouse.CursorPos;
+      if SecondsBetween(Now, last_popup) > 2 then begin
+        pmSettings.PopUp(p.X, p.Y);
+        last_popup := now;
+      end;
     end;
   end;
 end;
