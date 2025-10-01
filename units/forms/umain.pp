@@ -2671,8 +2671,8 @@ begin
      fConf.lWidgetset.Caption := 'Native Windows';
     {$endif}
     fConf.lArch.Caption := {$I %FPCTargetOS%}+'/'+{$I %FPCTARGETCPU%};
-    // Show dialog
-    fConf.ShowModal;
+  // Show dialog (use safe helper that handles problematic WMs)
+  ShowFormModalSafe(fConf);
 
     if not firstboot then
     if ExtMsg(uxdAuto, RS_SETTINGS_SAVE, RS_SETTINGS_SAVE, RS_SETTINGS_SAVE_DESC, '', $00F5F2FD,$003411A9, [mbYes, mbNo]) <> mrYes then
