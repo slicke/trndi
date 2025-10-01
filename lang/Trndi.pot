@@ -282,6 +282,10 @@ msgstr ""
 msgid "Off Reading"
 msgstr ""
 
+#: tfbg.pnwarnlast.caption
+msgid "Last recieved reading:"
+msgstr ""
+
 #: tfconf.badd.caption
 msgid "+ Add"
 msgstr ""
@@ -793,6 +797,25 @@ msgstr ""
 #: trndi.strings.rs_hi_level
 #, object-pascal-format
 msgid "Hi > %.1f"
+msgstr ""
+
+#: trndi.strings.rs_last_recieve
+#, object-pascal-format
+msgid "Last reading was %s (%s)"
+msgstr ""
+
+#: trndi.strings.rs_last_recieve_age
+#, object-pascal-format
+msgid "Threshold: %d minutes"
+msgstr ""
+
+#: trndi.strings.rs_last_recieve_no
+msgid "There's no last reading to show"
+msgstr ""
+
+#: trndi.strings.rs_last_recieve_no_time
+#, object-pascal-format
+msgid "Last reading was %s (unknown time)"
 msgstr ""
 
 #: trndi.strings.rs_last_update

@@ -5,6 +5,7 @@
 {"hash":460767,"name":"tfbg.lago.caption","sourcebytes":[108,65,103,111],"value":"lAgo"},
 {"hash":120659805,"name":"tfbg.pnoffrange.caption","sourcebytes":[45,32,79,102,102,32,82,97,110,103,101,32,45],"value":"- Off Range -"},
 {"hash":149929249,"name":"tfbg.lmissing.caption","sourcebytes":[78,111,32,114,101,99,101,110,116,32,114,101,97,100,105,110,103,115,33],"value":"No recent readings!"},
+{"hash":30151290,"name":"tfbg.pnwarnlast.caption","sourcebytes":[76,97,115,116,32,114,101,99,105,101,118,101,100,32,114,101,97,100,105,110,103,58],"value":"Last recieved reading:"},
 {"hash":118004071,"name":"tfbg.larrow.caption","sourcebytes":[108,65,114,114,111,119],"value":"lArrow"},
 {"hash":190517349,"name":"tfbg.ltir.caption","sourcebytes":[84,105,109,101,32,73,110,32,82,97,110,103,101],"value":"Time In Range"},
 {"hash":149055511,"name":"tfbg.pnoffreading.caption","sourcebytes":[79,102,102,32,82,101,97,100,105,110,103],"value":"Off Reading"},

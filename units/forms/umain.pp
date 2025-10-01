@@ -91,6 +91,7 @@ end;
 TfBG = class(TForm)
   apMain: TApplicationProperties;
   bSettings: TButton;
+  pnWarnlast: TLabel;
   lRef: TLabel;
   lDot10: TPaintBox;
   lDot2: TPaintBox;
@@ -162,6 +163,7 @@ TfBG = class(TForm)
   Separator4: TMenuItem;
   tAgo:TTimer;
   tClock:TTimer;
+  tInit: TTimer;
   tSwap:TTimer;
   tResize:TTimer;
   tMissed:TTimer;
@@ -234,6 +236,7 @@ TfBG = class(TForm)
   procedure tAgoTimer(Sender:TObject);
   procedure tClockTimer(Sender:TObject);
   procedure tEdgesTimer(Sender:TObject);
+  procedure tInitTimer(Sender: TObject);
   procedure tResizeTimer(Sender:TObject);
   procedure tMainTimer(Sender: TObject);
   procedure tMissedTimer(Sender:TObject);
@@ -1825,6 +1828,7 @@ begin
     lTir.Visible := false;
   end;
   ApplyRoundedCorners(pnWarning, 20);
+  ApplyAlphaControl(pnWarning, 235);
 end;
 
 procedure TfBG.FormShow(Sender: TObject);
@@ -2286,7 +2290,7 @@ var
       eAddr.Text := GetSetting('remote.target');
       ePass.Text := GetSetting('remote.creds');
       rbUnit.ItemIndex := IfThen(GetSetting('unit', 'mmol') = 'mmol', 0, 1);
-      spTHRESHOLD.Value := native.GetIntSetting('system.fresh_threshold', DATA_FRESHNESS_THRESHOLD_MINUTES);;
+      spTHRESHOLD.Value := native.GetIntSetting('system.fresh_threshold', DATA_FRESHNESS_THRESHOLD_MINUTES);
 
       // Override range settings
       if api = nil then
@@ -2874,6 +2878,12 @@ end;
 procedure TfBG.tEdgesTimer(Sender:TObject);
 begin
 
+end;
+
+procedure TfBG.tInitTimer(Sender: TObject);
+begin
+  tInit.Enabled := false;
+  self.width := self.width+1;  // Force a natural resize call, calling onResize doesnt work
 end;
 
 procedure TfBG.tResizeTimer(Sender: TObject);
@@ -3529,6 +3539,7 @@ procedure TfBG.fixWarningPanel;
 var
   padding: integer;
   calculatedFontSize: integer;
+  i: integer;
 begin
     padding := (ClientWidth div 25);
     if not native.HasTouchScreen then
@@ -3566,6 +3577,21 @@ begin
 
     pnOffReading.Height := ClientHeight;
     pnOffReading.ClientWidth := ClientWidth div 35;
+
+    if (Length(lVal.hint) > 0) and TryStrToInt(lVal.hint[1], i) then begin
+       if (Length(lAgo.Caption) > 0) and TryStrToInt(lAgo.Caption[1], i) then
+         pnWarnLast.Caption := Format(RS_LAST_RECIEVE, [lVal.hint, lAgo.Caption])
+       else
+         pnWarnLast.Caption := Format(RS_LAST_RECIEVE_NO_TIME, [lVal.hint])
+    end
+    else
+       pnWarnLast.Caption := RS_LAST_RECIEVE_NO;
+
+    pnWarnLast.Caption := pnWarnLast.Caption + LineEnding + Format(RS_LAST_RECIEVE_AGE, [DATA_FRESHNESS_THRESHOLD_MINUTES]);
+    pnWarnLast.font.size := Min(25, lMissing.font.size div 5);
+    pnWarning.Canvas.Font.size := pnWarnLast.font.size;
+    pnWarnLast.height := pnWarning.Canvas.TextHeight(pnWarnLast.Caption)*2;
+    pnWarnLast.width := pnWarning.Canvas.TextWidth(pnWarnLast.Caption);
 end;
 
 procedure TfBG.showWarningPanel(const message: string; clearDisplayValues: boolean = false);
@@ -3582,7 +3608,8 @@ begin
       lArrow.Caption := '';
     end;
   end;
-  
+
+  pnWarning.Caption := '';  // Clear for now
   fixWarningPanel;
 end;
 

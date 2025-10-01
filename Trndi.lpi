@@ -19,7 +19,7 @@
     <i18n>
       <EnableI18N Value="True"/>
       <OutDir Value="lang"/>
-      <ExcludedIdentifiers Count="25">
+      <ExcludedIdentifiers Count="26">
         <Item1 Value="tfconf.lcopyright.caption"/>
         <Item2 Value="tfconf.lversion.caption"/>
         <Item3 Value="tffloat.lRangeDown"/>
@@ -45,6 +45,7 @@
         <Item23 Value="tfFloat.lRangeUp"/>
         <Item24 Value="tfFloat.lRangeDown"/>
         <Item25 Value="tfSplash.lSplashWarn"/>
+        <Item26 Value="tfBG.pnWarnLast"/>
       </ExcludedIdentifiers>
       <ExcludedOriginals Count="20">
         <Item1 Value="Trndi"/>

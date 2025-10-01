@@ -16,9 +16,9 @@ object fConf: TfConf
     Height = 534
     Top = 0
     Width = 675
-    ActivePage = tsDisplay
+    ActivePage = tsCustom
     Align = alClient
-    TabIndex = 2
+    TabIndex = 3
     TabOrder = 0
     OnChange = pcMainChange
     object tsGeneral: TTabSheet

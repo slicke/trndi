@@ -118,7 +118,6 @@ msgid "Value"
 msgstr "Värde"
 
 #: tfbg.bsettings.caption
-#, fuzzy
 msgctxt "tfbg.bsettings.caption"
 msgid "Settings"
 msgstr "Inställningar"
@@ -298,6 +297,10 @@ msgstr "- Utanför område -"
 msgctxt "tfbg.pnoffreading.caption"
 msgid "Off Reading"
 msgstr "Värde utanför"
+
+#: tfbg.pnwarnlast.caption
+msgid "Last recieved reading:"
+msgstr "Senast mottagna värde:"
 
 #: tfconf.badd.caption
 msgid "+ Add"
@@ -835,6 +838,25 @@ msgstr "Vald Avläsning: %s | Skillnad: %s | Trend: %s | Signalstyrka (RSSI): %s
 msgid "Hi > %.1f"
 msgstr "Hög > %.1f"
 
+#: trndi.strings.rs_last_recieve
+#, object-pascal-format
+msgid "Last reading was %s (%s)"
+msgstr "Senaste värde var %s (%s)"
+
+#: trndi.strings.rs_last_recieve_age
+#, object-pascal-format
+msgid "Threshold: %d minutes"
+msgstr "Gräns: %d minuter"
+
+#: trndi.strings.rs_last_recieve_no
+msgid "There's no last reading to show"
+msgstr "Det finns inget senaste värde att visa"
+
+#: trndi.strings.rs_last_recieve_no_time
+#, object-pascal-format
+msgid "Last reading was %s (unknown time)"
+msgstr "Senaste värde var %s (okänd tid)"
+
 #: trndi.strings.rs_last_update
 #, object-pascal-format
 msgid "%d min"
@@ -1016,7 +1038,7 @@ msgstr "Okänd"
 
 #: trndi.strings.rs_right_click
 msgid "The settings dialog will now open, in the future please right-click the reading to open the menu."
-msgstr ""
+msgstr "Inställningarna kommer nu att öppnas, i framtiden vänligen höger-klicka för att öppna menyn."
 
 #: trndi.strings.rs_settings_save
 msgid "Save settings?"
@@ -1507,4 +1529,3 @@ msgstr "Du kan använda skift+<nummerr> för att manuellt sätta synligheten (0 
 #: ufloat.rscustomsize
 msgid "You can hold down shift and plus (+) or minus (-) to change the window size"
 msgstr "Du kan hålla ned skift och plus (+) eller minus (-) för att justera fönstrets storlek"
-
