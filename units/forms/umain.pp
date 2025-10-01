@@ -3657,22 +3657,9 @@ begin
     lMissing.wordwrap := true;
     lMissing.OptimalFill := true;
     
-    // Calculate font size based on current form dimensions
-    // Use form dimensions directly since panel dimensions might not be reliable on all platforms
-    calculatedFontSize := Max(12, Min(64, ClientHeight div 6)); // More aggressive scaling
-    
-    // Platform-specific adjustments (not performance related, but UI behavior differences)
-    {$ifdef X_LINUXBSD}
-    // Linux (including RPi5) may need slightly larger fonts due to display/DPI differences
-    calculatedFontSize := Max(16, calculatedFontSize + 2);
-    if not native.HasTouchScreen then
-      calculatedFontSize := Max(14, calculatedFontSize - 1);
-    {$else}
-    if not native.HasTouchScreen then
-      calculatedFontSize := Max(10, calculatedFontSize - 2);
-    {$endif}
-    
-    lmissing.font.size := calculatedFontSize;
+    // Use the same scaling method as resize operations for consistency
+    // This ensures the font size matches what you get when manually resizing
+    ScaleLbl(lMissing, taCenter, tlCenter);
     
     // Ensure font color is visible
     if native.HasTouchScreen then
