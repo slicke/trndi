@@ -102,5 +102,6 @@
 {"hash":265880334,"name":"tfconf.lwaitsys.caption","sourcebytes":[80,108,101,97,115,101,32,119,97,105,116,46,46,46],"value":"Please wait..."},
 {"hash":9814909,"name":"tfconf.los.caption","sourcebytes":[85,110,107,110,111,119,110,32,83,121,115,116,101,109],"value":"Unknown System"},
 {"hash":205567588,"name":"tfconf.lwidgetset.caption","sourcebytes":[85,110,107,110,111,119,110,32,87,105,100,103,101,116,115,101,116],"value":"Unknown Widgetset"},
-{"hash":186074181,"name":"tfconf.larch.caption","sourcebytes":[85,110,107,110,111,119,110,32,65,114,99,104,105,116,101,99,116,117,114,101],"value":"Unknown Architecture"}
+{"hash":186074181,"name":"tfconf.larch.caption","sourcebytes":[85,110,107,110,111,119,110,32,65,114,99,104,105,116,101,99,116,117,114,101],"value":"Unknown Architecture"},
+{"hash":229780469,"name":"tfconf.lproblematic.caption","sourcebytes":[67,111,109,112,97,116,105,98,105,108,105,116,121,32,109,111,100,101,58,32,89,111,117,114,32,119,105,110,100,111,119,32,109,97,110,97,103,101,114,32,100,111,101,115,32,110,111,116,32,115,117,112,112,111,114,116,32,97,108,108,32,102,101,97,116,117,114,101,115,44,32,112,108,101,97,115,101,32,99,111,110,115,105,100,101,114,32,101,103,32,75,68,69],"value":"Compatibility mode: Your window manager does not support all features, please consider eg KDE"}
 ]}

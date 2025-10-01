@@ -196,6 +196,12 @@ type
   procedure UXMessage(const dialogsize: TUXDialogSize; const title, message: string; const icon: uximage = uxmtOK; sender: TForm = nil);
 
   {**
+    Show a standard TForm modally with the same 'bad-WM' fallback logic as
+    the other UX dialog helpers. Returns the form ModalResult.
+  }
+  function ShowFormModalSafe(aForm: TForm): Integer;
+
+  {**
     Generic dialog with custom button set and emoji icon.
     @param dialogsize Layout preset; @seealso(TUXDialogSize)
     @param title Title text displayed above @code(message).
@@ -441,6 +447,11 @@ type
   }
   function FontTXTInList(out fname: string): Boolean;
 
+  {**
+    Check if the Window Manaager is problematic, which means it can't handle ShowModal
+    @returns @true if the VM is problematic
+    }
+  function IsProblematicWM: Boolean;
 var
   {** Localized captions for each @link(TUXMsgDlgBtn). Initialized from resource strings. }
   langs : ButtonLangs = (smbYes, smbUXNo, smbUXOK, smbUXCancel, smbUXAbort, smbUXRetry, smbUXIgnore,
@@ -505,6 +516,109 @@ begin
     else
       result := TrndiNative.HasTouchScreen;
   end;
+end;
+
+{**
+  Show a dialog in a safe way on platforms where transient/owner hints
+  may be ignored by the window manager. On non-Windows systems we use
+  fsStayOnTop as a conservative fallback while the dialog is active.
+}
+
+function ShowModalSafe(aDialog: TDialogForm): Integer;
+var
+  oldStyle: TFormStyle;
+begin
+  if not Assigned(aDialog) then Exit(mrNone);
+  {$ifndef Windows}
+  // Only apply the aggressive fallback on known-bad/lightweight WMs.
+  if IsProblematicWM then
+  begin
+    oldStyle := aDialog.FormStyle;
+    aDialog.FormStyle := fsStayOnTop;
+    try
+      Result := aDialog.ShowModal;
+    finally
+      try
+        if Assigned(aDialog) then aDialog.FormStyle := oldStyle;
+      except end;
+    end;
+    Exit;
+  end;
+  {$endif}
+  Result := aDialog.ShowModal;
+end;
+
+{**
+  Detect a window manager likely to ignore transient/owner hints.
+  Uses environment variables as a lightweight heuristic and supports
+  runtime overrides via TRNDI_FORCE_MODAL_FALLBACK / TRNDI_DISABLE_MODAL_FALLBACK.
+}
+{$ifdef X_LINUXBSD}
+function IsProblematicWM: Boolean;
+var
+  env, s: string;
+  i: Integer;
+const
+  Bad: array[0..11] of string = (
+    'openbox', 'matchbox', 'fluxbox', 'fvwm', 'icewm', 'twm', 'pekwm',
+    'lxde', 'lxde-pi', 'lxsession', 'pixel', 'raspbian'
+  );
+begin
+  // Overrides
+  env := GetEnvironmentVariable('TRNDI_DISABLE_MODAL_FALLBACK');
+  if env = '1' then Exit(False);
+  env := GetEnvironmentVariable('TRNDI_FORCE_MODAL_FALLBACK');
+  if env = '1' then Exit(True);
+
+  s := LowerCase(Trim(GetEnvironmentVariable('XDG_CURRENT_DESKTOP') + ' ' +
+    GetEnvironmentVariable('DESKTOP_SESSION') + ' ' +
+    GetEnvironmentVariable('XDG_SESSION_DESKTOP') + ' ' +
+    GetEnvironmentVariable('WINDOW_MANAGER')));
+
+  for i := Low(Bad) to High(Bad) do
+    if Pos(Bad[i], s) > 0 then Exit(True);
+
+  Result := False;
+end;
+{$else}
+function IsProblematicWM: Boolean;
+begin
+  result := false; // Win and mac are always good
+end;
+
+{$endif}
+
+function ShowFormModalSafe(aForm: TForm): Integer;
+var
+  oldStyle: TFormStyle;
+begin
+  if not Assigned(aForm) then Exit(mrNone);
+  // Attempt to set popup owner where possible
+  try
+    if Assigned(Application) and Assigned(Application.MainForm) then
+    begin
+      aForm.PopupMode := pmExplicit;
+      aForm.PopupParent := Application.MainForm;
+    end;
+  except end;
+
+  {$ifndef Windows}
+  if IsProblematicWM then
+  begin
+    oldStyle := aForm.FormStyle;
+    aForm.FormStyle := fsStayOnTop;
+    try
+      aForm.ShowModal;
+      Result := aForm.ModalResult;
+    finally
+      try if Assigned(aForm) then aForm.FormStyle := oldStyle; except end;
+    end;
+    Exit;
+  end;
+  {$endif}
+
+  aForm.ShowModal;
+  Result := aForm.ModalResult;
 end;
 
 {**
@@ -1069,7 +1183,7 @@ begin
     Dialog.ClientHeight := OkButton.Top + OkButton.Height + Padding;
     Dialog.ActiveControl := Edit;
 
-    ModalResult := Dialog.ShowModal;
+  ModalResult := ShowModalSafe(Dialog);
     if ModalResult = mrOk then
       Result := Edit.Value;
   finally
@@ -1274,7 +1388,7 @@ begin
     Dialog.ClientHeight := OkButton.Top + OkButton.Height + Padding;
     Dialog.ActiveControl := Edit;
 
-    ModalResult := Dialog.ShowModal;
+  ModalResult := ShowModalSafe(Dialog);
     if ModalResult = mrOk then
       Result := Edit.Text;
   finally
@@ -1382,7 +1496,7 @@ begin
     Dialog.ClientHeight := OkButton.Top + OkButton.Height + Padding;
     Dialog.ActiveControl := Combo;
 
-    if Dialog.ShowModal = mrOk then
+    if ShowModalSafe(Dialog) = mrOk then
       Result := Combo.ItemIndex
     else
       Result := -1;
@@ -1814,8 +1928,8 @@ begin
     if Dialog.Height > MaxDialogHeight then
       Dialog.Height := MaxDialogHeight;
 
-    Dialog.ShowModal;
-    Result := Dialog.ModalResult;
+  ShowModalSafe(Dialog);
+  Result := Dialog.ModalResult;
   finally
     Dialog.Free;
   end;
@@ -2007,6 +2121,32 @@ procedure TDialogForm.CreateWnd;
 begin
   inherited CreateWnd;
   KeyPreview := True;
+  // Ensure dialogs have an explicit popup owner so X11/Wayland window managers
+  // can treat them as transient for the initiating window. Also provide a
+  // conservative fallback on non-Windows systems by keeping the dialog on top
+  // briefly which mitigates cases where the WM ignores transient hints
+  // (common on some Raspberry Pi/embedded setups).
+  try
+    // Prefer the currently active form (most likely the initiator) as the popup
+    // parent. Fall back to Owner (if it's a TForm) and then Application.MainForm.
+    if Assigned(Screen) and Assigned(Screen.ActiveForm) then
+    begin
+      PopupMode := pmExplicit;
+      PopupParent := Screen.ActiveForm;
+    end
+    else if Assigned(Owner) and (Owner is TForm) then
+    begin
+      PopupMode := pmExplicit;
+      PopupParent := TForm(Owner);
+    end
+    else if Assigned(Application) and Assigned(Application.MainForm) then
+    begin
+      PopupMode := pmExplicit;
+      PopupParent := Application.MainForm;
+    end;
+  except
+    // Some LCL backends may raise; ignore and continue.
+  end;
 end;
 {$endif}
 
@@ -2026,6 +2166,24 @@ begin
       GetWindowLong(Handle, GWL_STYLE) or WS_SYSMENU);
 
   KeyPreview := True;
+  // As above, ensure PopupMode/PopupParent is set where possible.
+  try
+    if Assigned(Screen) and Assigned(Screen.ActiveForm) then
+    begin
+      PopupMode := pmExplicit;
+      PopupParent := Screen.ActiveForm;
+    end
+    else if Assigned(Owner) and (Owner is TForm) then
+    begin
+      PopupMode := pmExplicit;
+      PopupParent := TForm(Owner);
+    end
+    else if Assigned(Application) and Assigned(Application.MainForm) then
+    begin
+      PopupMode := pmExplicit;
+      PopupParent := Application.MainForm;
+    end;
+  except end;
   if not TrndiNative.isDarkMode then Exit;
   if (Win32MajorVersion < 10) or
      ((Win32MajorVersion = 10) and (Win32BuildNumber < 17763)) then
