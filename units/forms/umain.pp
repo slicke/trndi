@@ -196,6 +196,7 @@ TfBG = class(TForm)
   procedure miATouchNoClick(Sender: TObject);
   procedure miATouchYesClick(Sender: TObject);
   procedure miDebugBackendClick(Sender: TObject);
+  procedure pmSettingsClose(Sender: TObject);
   procedure pnWarningClick(Sender: TObject);
   procedure pnWarningPaint(Sender: TObject);
   procedure speakReading;
@@ -1522,6 +1523,11 @@ end;
 procedure TfBG.miDebugBackendClick(Sender: TObject);
 begin
   miDebugBackend.Checked := not miDebugBackend.Checked;
+end;
+
+procedure TfBG.pmSettingsClose(Sender: TObject);
+begin
+  last_popup := now;
 end;
 
 procedure TfBG.pnWarningClick(Sender: TObject);
