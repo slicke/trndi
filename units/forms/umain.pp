@@ -1538,6 +1538,9 @@ const
   radius = 20;
 var
   P: TPanel;
+  {$ifdef X_PC}
+  lValRelativeX, lValRelativeY: Integer;
+  {$endif}
 begin
   // Use manual drawing for rounded corners on all platforms
   // This prevents interference with scaling operations
@@ -1554,6 +1557,44 @@ begin
     Pen.Color := clBlack;
     Pen.Width := 1;
     RoundRect(0, 0, P.Width, P.Height, Radius, Radius);
+    
+    {$ifdef X_PC}
+    // On Linux, ApplyAlphaControl doesn't work, so draw lVal as backdrop
+    // to simulate transparency effect
+    if lVal.Visible and (lVal.Caption <> '') then
+    begin
+      // Calculate lVal position relative to pnWarning
+      lValRelativeX := lVal.Left - P.Left;
+      lValRelativeY := lVal.Top - P.Top;
+      
+      // Set up text rendering to match lVal
+      Font.Assign(lVal.Font);
+      
+      // Simulate the original lVal text at 92% transparency (0.92 where 1=fully transparent)
+      // Formula: blended = (originalTextColor * opacity + panelColor * transparency)
+      // where transparency = 0.92 and opacity = 0.08
+      Font.Color := RGB(
+        Round(GetRValue(lVal.Font.Color) * 0.18 + GetRValue(P.Color) * 0.82),
+        Round(GetGValue(lVal.Font.Color) * 0.18 + GetGValue(P.Color) * 0.82),
+        Round(GetBValue(lVal.Font.Color) * 0.18 + GetBValue(P.Color) * 0.82)
+      );
+        
+      Brush.Style := bsClear; // Transparent background for text
+      
+      // Calculate proper text positioning based on lVal's alignment
+      case lVal.Alignment of
+        taLeftJustify: 
+          TextOut(lValRelativeX, lValRelativeY, lVal.Caption);
+        taRightJustify: 
+          TextOut(lValRelativeX + lVal.Width - TextWidth(lVal.Caption), lValRelativeY, lVal.Caption);
+        taCenter: 
+          TextOut(lValRelativeX + (lVal.Width - TextWidth(lVal.Caption)) div 2, lValRelativeY, lVal.Caption);
+      end;
+      
+      // Restore brush style
+      Brush.Style := bsSolid;
+    end;
+    {$endif}
   end;
 end;
 
