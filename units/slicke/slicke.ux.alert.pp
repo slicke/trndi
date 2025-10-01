@@ -553,6 +553,7 @@ end;
   Uses environment variables as a lightweight heuristic and supports
   runtime overrides via TRNDI_FORCE_MODAL_FALLBACK / TRNDI_DISABLE_MODAL_FALLBACK.
 }
+{$ifdef X_LINUXBSD}
 function IsProblematicWM: Boolean;
 var
   env, s: string;
@@ -579,6 +580,13 @@ begin
 
   Result := False;
 end;
+{$else}
+function IsProblematicWM: Boolean;
+begin
+  result := false; // Win and mac are always good
+end;
+
+{$endif}
 
 function ShowFormModalSafe(aForm: TForm): Integer;
 var
