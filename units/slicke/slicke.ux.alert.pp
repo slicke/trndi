@@ -2115,16 +2115,22 @@ begin
   // briefly which mitigates cases where the WM ignores transient hints
   // (common on some Raspberry Pi/embedded setups).
   try
-    // Prefer Application.MainForm as the popup parent when available.
-    if Assigned(Application) and Assigned(Application.MainForm) then
+    // Prefer the currently active form (most likely the initiator) as the popup
+    // parent. Fall back to Owner (if it's a TForm) and then Application.MainForm.
+    if Assigned(Screen) and Assigned(Screen.ActiveForm) then
     begin
       PopupMode := pmExplicit;
-      PopupParent := Application.MainForm;
+      PopupParent := Screen.ActiveForm;
     end
     else if Assigned(Owner) and (Owner is TForm) then
     begin
       PopupMode := pmExplicit;
       PopupParent := TForm(Owner);
+    end
+    else if Assigned(Application) and Assigned(Application.MainForm) then
+    begin
+      PopupMode := pmExplicit;
+      PopupParent := Application.MainForm;
     end;
   except
     // Some LCL backends may raise; ignore and continue.
@@ -2150,15 +2156,20 @@ begin
   KeyPreview := True;
   // As above, ensure PopupMode/PopupParent is set where possible.
   try
-    if Assigned(Application) and Assigned(Application.MainForm) then
+    if Assigned(Screen) and Assigned(Screen.ActiveForm) then
     begin
       PopupMode := pmExplicit;
-      PopupParent := Application.MainForm;
+      PopupParent := Screen.ActiveForm;
     end
     else if Assigned(Owner) and (Owner is TForm) then
     begin
       PopupMode := pmExplicit;
       PopupParent := TForm(Owner);
+    end
+    else if Assigned(Application) and Assigned(Application.MainForm) then
+    begin
+      PopupMode := pmExplicit;
+      PopupParent := Application.MainForm;
     end;
   except end;
   if not TrndiNative.isDarkMode then Exit;
