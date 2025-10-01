@@ -317,6 +317,7 @@ object fBG: TfBG
   object pmSettings: TPopupMenu
     OnMeasureItem = pmSettingsMeasureItem
     OnPopup = pmSettingsPopup
+    OnClose = pmSettingsClose
     Left = 120
     Top = 120
     object miSettings: TMenuItem
