@@ -388,6 +388,7 @@ upMenu: TMenuItem;
 {$endif}
 
 var
+last_popup: TDateTime = 0;
 bg_alert: boolean = false; // If the BG is high/low since before, so we don't spam notifications
 placed: boolean = false; // If the window has been placed at setup
 
@@ -2857,7 +2858,7 @@ begin
     pmSettings.Tag := 1;
   end;
   {$endif}
-
+  last_popup := now
 end;
 
 procedure TfBG.pnMultiUserClick(Sender:TObject);
@@ -3267,7 +3268,10 @@ begin
   if IsTouched then
   begin
     p := Mouse.CursorPos;
-    pmSettings.PopUp(p.X, p.Y);
+    if SecondsBetween(Now, last_popup) > 2 then begin
+      pmSettings.PopUp(p.X, p.Y);
+      last_popup := now
+    end;
   end;
 end;
 
