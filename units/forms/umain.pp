@@ -1538,7 +1538,7 @@ const
   radius = 20;
 var
   P: TPanel;
-  {$ifdef X_PC}
+  {$ifndef X_WIN}
   lValRelativeX, lValRelativeY: Integer;
   {$endif}
 begin
@@ -1558,8 +1558,8 @@ begin
     Pen.Width := 1;
     RoundRect(0, 0, P.Width, P.Height, Radius, Radius);
     
-    {$ifdef X_PC}
-    // On Linux, ApplyAlphaControl doesn't work, so draw lVal as backdrop
+    {$ifndef X_WIN}
+    // On non-Windows platforms, ApplyAlphaControl doesn't work, so draw lVal as backdrop
     // to simulate transparency effect
     if lVal.Visible and (lVal.Caption <> '') then
     begin
