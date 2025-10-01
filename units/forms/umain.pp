@@ -3658,15 +3658,15 @@ begin
     lMissing.OptimalFill := true;
     
     // Calculate font size based on current form dimensions
-    // Use a more aggressive calculation for better scaling
-    calculatedFontSize := Max(12, Min(48, ClientHeight div 8)); // Larger base size and more aggressive scaling
+    // Use form dimensions directly since panel dimensions might not be reliable on all platforms
+    calculatedFontSize := Max(12, Min(64, ClientHeight div 6)); // More aggressive scaling
     
-    // Special handling for Raspberry Pi and touch screens
+    // Platform-specific adjustments (not performance related, but UI behavior differences)
     {$ifdef X_LINUXBSD}
-    if IsRaspberry then
-      calculatedFontSize := Max(16, calculatedFontSize + 4) // Larger font on Pi
-    else if not native.HasTouchScreen then
-      calculatedFontSize := Max(14, calculatedFontSize - 2);
+    // Linux (including RPi5) may need slightly larger fonts due to display/DPI differences
+    calculatedFontSize := Max(16, calculatedFontSize + 2);
+    if not native.HasTouchScreen then
+      calculatedFontSize := Max(14, calculatedFontSize - 1);
     {$else}
     if not native.HasTouchScreen then
       calculatedFontSize := Max(10, calculatedFontSize - 2);
@@ -3725,14 +3725,9 @@ begin
   // Ensure visual effects are applied when showing the panel
   ApplyAlphaControl(pnWarning, 235);
   
-  // Fallback for Raspberry Pi: trigger a delayed resize to ensure proper scaling
-  {$ifdef X_LINUXBSD}
-  if IsRaspberry then
-  begin
-    tResize.Interval := 100; // Very short interval for immediate retry
-    tResize.Enabled := true;
-  end;
-  {$endif}
+  // Force a complete UI update to ensure proper rendering on all platforms
+  pnWarning.Refresh;
+  lMissing.Refresh;
 end;
 
 function TfBG.DoFetchAndValidateReadings(const ForceRefresh: Boolean): Boolean;
