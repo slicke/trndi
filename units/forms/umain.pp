@@ -2061,6 +2061,8 @@ begin
     Invalidate;
 
     Screen.Cursor := crNone;
+    if IsProblematicWM then
+       BorderStyle := bsToolWindow; // Restore the borderstyle on Rpi (etc??) as the window wont fill otherwise
   end;
 
   // Adjust for dark mode if applicable
