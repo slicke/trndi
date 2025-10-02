@@ -3446,7 +3446,6 @@ end;
 function TfBG.updateReading(boot: boolean = false): boolean;
 begin
   result := false;
-  lTir.Caption := '';
   lAgo.Caption := '⟳' + lAgo.Caption;
 
   native.start;
