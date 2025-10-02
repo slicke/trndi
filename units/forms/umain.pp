@@ -265,6 +265,8 @@ private
   FCachedReadings: array of BGReading;
   FLastUIColor: TColor;
   FLastUICaption: string;
+  FLastTir: string;
+  FLastTirColor: TColor;
   
     // Array to hold references to lDot1 - lDot10
   TrendDots: array[1..10] of TPaintBox;
@@ -328,8 +330,8 @@ private
 
   // Performance optimization methods
   function CalculateReadingsHash(const Readings: array of BGReading): Cardinal;
-  function ShouldUpdateUI(const NewColor: TColor; const NewCaption: string): Boolean;
-  procedure CacheUIState(const UIColor: TColor; const UICaption: string);
+  function ShouldUpdateUI(const NewColor: TColor; const NewCaption: string; const NewTIR: string; const NewTIRColor: TColor): Boolean;
+  procedure CacheUIState(const UIColor: TColor; const UICaption: string; const UITir: string; const UITirColor: TColor);
   function FetchAndValidateReadingsForced: Boolean; // Force fresh API call bypassing cache
   
   procedure HandleLatestReadingFreshness(const LatestReading: BGReading; CurrentTime: TDateTime);
@@ -3503,10 +3505,10 @@ begin
   UpdateFloatingWindow;
 
   // Update text colors based on background only if UI changed
-  if ShouldUpdateUI(fBG.Color, lVal.Caption) then
+  if ShouldUpdateUI(fBG.Color, lVal.Caption, lTir.caption, lTir.Color) then
   begin
     UpdateUIColors;
-    CacheUIState(fBG.Color, lVal.Caption);
+    CacheUIState(fBG.Color, lVal.Caption, lTir.Caption, lTir.color);
   end;
 
   // Update system integration
@@ -4164,15 +4166,17 @@ begin
               Cardinal(Trunc(Readings[i].date * 86400));
 end;
 
-function TfBG.ShouldUpdateUI(const NewColor: TColor; const NewCaption: string): Boolean;
+function TfBG.ShouldUpdateUI(const NewColor: TColor; const NewCaption: string; const NewTir: string; const NewTirColor: TColor): Boolean;
 begin
-  Result := (NewColor <> FLastUIColor) or (NewCaption <> FLastUICaption);
+  Result := (NewColor <> FLastUIColor) or (NewCaption <> FLastUICaption) or (NewTir <> FLastTir) or (NewTirColor <> FLastTirColor);
 end;
 
-procedure TfBG.CacheUIState(const UIColor: TColor; const UICaption: string);
+procedure TfBG.CacheUIState(const UIColor: TColor; const UICaption: string; const UITir: string; const UITirColor: TColor);
 begin
   FLastUIColor := UIColor;
   FLastUICaption := UICaption;
+  FLastTir := UITir;
+  FLastTirColor := UITirColor;
 end;
 
 end.
