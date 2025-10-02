@@ -271,6 +271,9 @@ RS_NOTIFY_SYSTEM = 'Notifications will appear where you normally get notificatio
 
 RS_HASTOUCH = 'Shows if Trndi detected a touch screen';
 
+RS_Saftey_Hi = 'Trndi won''t allow a larger limit, for your own saftey. This can be overridden manually/via plugin';
+RS_Saftey_Low = 'Trndi won''t allow a lower limit, the backend system only reports values every 5 minutes. 6 = one reading missing.';
+
 // Backend-specific help texts
 RS_HELP_NS_V2 =
   'NightScout v2 setup (use FULL access token):'+#13#10#13#10+
@@ -1051,10 +1054,14 @@ end;
 
 procedure TfConf.spTHRESHOLDChange(Sender: TObject);
 begin
-  if spTHRESHOLD.Value > 30 then
-    spTHRESHOLD.Value := 30
-  else if spTHRESHOLD.Value < 6 then
+  if spTHRESHOLD.Value > 30 then begin
+    spTHRESHOLD.Value := 30;
+    ShowMessage(RS_Saftey_Hi);
+  end
+  else if spTHRESHOLD.Value < 6 then begin
     spTHRESHOLD.Value := 6;
+    ShowMessage(RS_Saftey_Low);
+  end;
 end;
 
 procedure TfConf.tbAdvancedChange(Sender:TObject);
