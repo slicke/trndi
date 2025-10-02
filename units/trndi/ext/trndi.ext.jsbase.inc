@@ -293,23 +293,25 @@ procedure PromiseRejectionTracker(
   opaque: Pointer
 ); cdecl;
 var
-  error_msg: PChar;
+  error_msg: RawUtf8;
 begin
   // Only act on genuinely unhandled rejections
   if not is_handled then
   begin
-    // Convert the JS 'reason' value to a C string for display/logging
-    // Note: JS_ToCString allocates memory that must be freed with JS_FreeCString.
-    error_msg := JS_ToCString(ctx^, reason);
     try
+      // Convert the JS 'reason' value to a string for display/logging
+      // JSValueConstToUtf8 expects JSContext (not PJSContext), so we pass ctx^ 
+      error_msg := JSValueConstToUtf8(ctx^, reason);
+      
       // Show a helpful alert message. Fall back to a generic message if no text was produced.
-      if error_msg <> nil then
-        TTrndiExtEngine.Instance.alert('Unhandled Promise rejection: ' + error_msg)
+      if error_msg <> '' then
+        TTrndiExtEngine.Instance.alert('Unhandled Promise rejection: ' + string(error_msg))
       else
         TTrndiExtEngine.Instance.alert('Unhandled Promise rejection: [no error message]');
-    finally
-      // Always free the C string allocated by JS_ToCString to avoid memory leaks
-      JS_FreeCString(ctx^, error_msg);
+    except
+      on E: Exception do
+        // If conversion fails completely, show a generic error
+        TTrndiExtEngine.Instance.alert('Unhandled Promise rejection: [error retrieving message]');
     end;
   end;
 end;

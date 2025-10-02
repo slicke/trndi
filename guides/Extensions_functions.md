@@ -89,6 +89,11 @@ Trndi.sayText('High sugar!')
 Trndi.setOverrideThresholdMinutes(15) // Shows the "No fresh readings" box after 16 minutes. Cannot be set below 6.
 ```
 
+### setClockInterval
+Sets the interval when the clock is shown (if enabled), and for how long.
+```javascript
+Trndi.setClockInterval(100000,10000); // Show clock every 100 sec and for 10 sec. NOTE the values cannot be the same or the clock will always show
+```
 ## Promises (global)
 These are global promises, not prefixed with `Trndi.`:
 ### asyncGet 
