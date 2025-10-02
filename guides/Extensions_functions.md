@@ -98,8 +98,16 @@ Trndi.setClockInterval(100000,10000); // Show clock every 100 sec and for 10 sec
 These are global promises, not prefixed with `Trndi.`:
 ### asyncGet 
 #### Fetches a URL
+> Note that theres a size limit of the response, see jsonGet for complex JSONs
 ```javascript
 asyncGet("https://sample-files.com/downloads/documents/txt/simple.txt")
+  .then(result => console.log(result))
+  .catch(error => console.log(`Error: ${error}`));
+  ``` 
+### jsonGet 
+#### Fetches a URL and extracts a JSON path
+```javascript
+asyncGet("https://some-json", "item.subitem")
   .then(result => console.log(result))
   .catch(error => console.log(`Error: ${error}`));
   ``` 

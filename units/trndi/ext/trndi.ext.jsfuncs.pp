@@ -28,13 +28,15 @@ interface
 
 uses 
 Classes, SysUtils, trndi.ext.functions, trndi.types, slicke.ux.alert, trndi.api, trndi.ext.engine,
-Trndi.Native,
+Trndi.Native, fpjson,
 dialogs, math;
 
 type 
 TJSFuncs = class(TObject)
 public
   function asyncget(ctx: pointer; const func: string; const params: JSParameters; out res:
+    JSValueVal): boolean;
+  function jsonget(ctx: pointer; const func: string; const params: JSParameters; out res:
     JSValueVal): boolean;
   function bgDump(ctx: pointer; const func: string; const params: JSParameters; out res:
     JSValueVal): boolean;
@@ -64,6 +66,7 @@ begin
       // Register the functions in JS
     AddPromise('bgDump', JSCallbackFunction(@bgDump));
     AddPromise('asyncGet', JSCallbackFunction(@asyncGet));
+    AddPromise('jsonGet', JSCallbackFunction(@jsonGet),2);
     AddPromise('runCMD', JSCallbackFunction(@asyncGet));
     AddPromise('querySvc', JSCallbackFunction(@querySvc));
     AddPromise('setLimits', JSCallbackFunction(@setLimits), 2, 5);
@@ -128,6 +131,77 @@ begin
     r := s;
     result := true;
   end;
+  v := StringToValueVal(r);
+  res := v;
+end;
+
+function TJSFuncs.jsonget(ctx: pointer; const func: string; const params: JSParameters; out res:
+JSValueVal): boolean;
+
+var
+  s,r: string;
+  v, v2: JSValueVal;
+  jsonData, jval: TJSONData;
+begin
+  v := params[0]^;
+  v2 := params[1]^;
+
+  // URL must be a string (param 0) and path must be a string (param 1)
+  if not v.mustbe(JD_STR, func, 0) then
+  begin
+    result := false;
+    r := 'Wrong data type for URL';
+    v := StringToValueVal(r);
+    res := v;
+    Exit(false);
+  end;
+  if not v2.mustbe(JD_STR, func, 1) then
+  begin
+    result := false;
+    r := 'Wrong data type for JSON path';
+    v := StringToValueVal(r);
+    res := v;
+    Exit(false);
+  end;
+
+  if not TrndiNative.getURL(v.data.StrVal, s) then
+  begin
+    result := false;
+    r := 'Cannot fetch URL ' + v.data.StrVal;
+    v := StringToValueVal(r);
+    res := v;
+    Exit(false);
+  end;
+
+  // Try to parse JSON and find the path. Uses fpjson.GetJSON and FindPath
+  jsonData := nil;
+  try
+    jsonData := GetJSON(s);
+    jval := jsonData.FindPath(v2.data.StrVal); // path like "a.b[0].c"
+    if jval = nil then
+    begin
+      result := false;
+      r := 'JSON path not found: ' + v2.data.StrVal;
+    end
+    else
+    begin
+      // Prefer native string for JSON strings, otherwise return JSON text for objects/numbers/arrays
+      if jval.JSONType = jtString then
+        r := jval.AsString
+      else
+        r := jval.AsJSON;
+      result := true;
+    end;
+  except
+    on E: Exception do
+    begin
+      result := false;
+      r := 'JSON parse error: ' + E.Message;
+    end;
+  end;
+  if Assigned(jsonData) then
+    jsonData.Free;
+
   v := StringToValueVal(r);
   res := v;
 end;
