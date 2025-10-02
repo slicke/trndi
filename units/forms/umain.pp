@@ -3321,7 +3321,7 @@ begin
   try
 
      bgvals := getBGResults;
-     callFunc('updateCallback', [bgvals, DateTimeToStr(Now)]);
+     callFuncWithBGReadings('updateCallback', [DateTimeToStr(Now)]);
   finally
   end;
   {$endif}
