@@ -367,40 +367,83 @@ jobs:
             # Linux amd64
             echo "### Linux (amd64 / x86_64)"
             echo "Linux computers running on amd64 processors (Extensions supported)"
-            for f in ./release-files/linux-amd64-build/*.zip; do
-              echo "- $(basename "$f") — Portable binary + languages"
-            done
-            for f in ./release-files/linux-amd64-build/**/*.deb; do
-              echo "- $(basename "$f") — Ubuntu/Debian installer (amd64)"
-            done
-            for f in ./release-files/linux-amd64-build/**/*.rpm; do
-              echo "- $(basename "$f") — Fedora/OpenSUSE installer (x86_64)"
-            done
+            shopt -s nullglob globstar
+            files=(./release-files/linux-amd64-build/*.zip)
+            if [ ${#files[@]} -eq 0 ]; then
+              echo "- No Linux (amd64) releases for this build -"
+            else
+              for f in "${files[@]}"; do
+                echo "- $(basename "$f") — Portable binary + languages"
+              done
+            fi
+            debs=(./release-files/linux-amd64-build/**/*.deb)
+            if [ ${#debs[@]} -eq 0 ]; then
+              echo "- No Debian/Ubuntu (amd64) installer for this build -"
+            else
+              for f in "${debs[@]}"; do
+                echo "- $(basename "$f") — Ubuntu/Debian installer (amd64)"
+              done
+            fi
+            rpms=(./release-files/linux-amd64-build/**/*.rpm)
+            if [ ${#rpms[@]} -eq 0 ]; then
+              echo "- No RPM (x86_64) installer for this build -"
+            else
+              for f in "${rpms[@]}"; do
+                echo "- $(basename "$f") — Fedora/OpenSUSE installer (x86_64)"
+              done
+            fi
             echo
 
             # Linux arm64
             echo "### Linux (arm64 / aarch64)"
             echo "Linux computers running on arm64 processors, including Raspberry Pi"
-            for f in ./release-files/linux-arm64-build/*.zip; do
-              echo "- $(basename "$f") — Portable binary + languages"
-            done
-            for f in ./release-files/linux-arm64-build/**/*.deb; do
-              echo "- $(basename "$f") — Ubuntu/Debian installer (arm64)"
-            done
-            for f in ./release-files/linux-arm64-build/**/*.rpm; do
-              echo "- $(basename "$f") — Fedora/OpenSUSE installer (aarch64)"
-            done
+            shopt -s nullglob globstar
+            files=(./release-files/linux-arm64-build/*.zip)
+            if [ ${#files[@]} -eq 0 ]; then
+              echo "- No Linux (arm64) releases for this build -"
+            else
+              for f in "${files[@]}"; do
+                echo "- $(basename "$f") — Portable binary + languages"
+              done
+            fi
+            debs=(./release-files/linux-arm64-build/**/*.deb)
+            if [ ${#debs[@]} -eq 0 ]; then
+              echo "- No Debian/Ubuntu (arm64) installer for this build -"
+            else
+              for f in "${debs[@]}"; do
+                echo "- $(basename "$f") — Ubuntu/Debian installer (arm64)"
+              done
+            fi
+            rpms=(./release-files/linux-arm64-build/**/*.rpm)
+            if [ ${#rpms[@]} -eq 0 ]; then
+              echo "- No RPM (aarch64) installer for this build -"
+            else
+              for f in "${rpms[@]}"; do
+                echo "- $(basename "$f") — Fedora/OpenSUSE installer (aarch64)"
+              done
+            fi
             echo
 
             # macOS Apple Silicon
             echo "### macOS (Apple Silicon)"
             echo "macOS computers with Apple processors"
-            for f in ./release-files/macos-arm64-build/*.zip; do
-              echo "- $(basename "$f") — Portable binary + languages"
-            done
-            for f in ./release-files/macos-arm64-build/*.dmg; do
-              echo "- $(basename "$f") — Application (\`.app\`) bundle for drag‑and‑drop install"
-            done
+            shopt -s nullglob
+            files=(./release-files/macos-arm64-build/*.zip)
+            if [ ${#files[@]} -eq 0 ]; then
+              echo "- No macOS (Apple Silicon) releases for this build -"
+            else
+              for f in "${files[@]}"; do
+                echo "- $(basename "$f") — Portable binary + languages"
+              done
+            fi
+            dmgs=(./release-files/macos-arm64-build/*.dmg)
+            if [ ${#dmgs[@]} -eq 0 ]; then
+              echo "- No macOS (.dmg) release for this build -"
+            else
+              for f in "${dmgs[@]}"; do
+                echo "- $(basename "$f") — Application (\`.app\`) bundle for drag‑and‑drop install"
+              done
+            fi
             echo
             echo "#### Special requirements for macOS"
             echo "- Unzip / open the file"
@@ -412,9 +455,17 @@ jobs:
             # Windows (x64)
             echo "### Windows (x64)"
             echo "Windows computers (Extensions supported)"
-            for f in ./release-files/windows-x64-build/*.zip; do
-              echo "- $(basename "$f") — Portable binary + languages"
-            done
+            # If no ZIPs were produced, print a fallback line so the release notes
+            # still mention the platform. We use an array to detect an empty glob.
+            shopt -s nullglob
+            files=(./release-files/windows-x64-build/*.zip)
+            if [ ${#files[@]} -eq 0 ]; then
+              echo "- No Windows (x64) releases for this build -"
+            else
+              for f in "${files[@]}"; do
+                echo "- $(basename "$f") — Portable binary + languages"
+              done
+            fi
           } > RELEASE_NOTES.md
 
           # Create release if missing
