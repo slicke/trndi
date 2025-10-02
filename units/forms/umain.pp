@@ -1012,7 +1012,7 @@ var
 begin
   if native.GetBoolSetting('license.250608') <> true then
   while i <> mrYes do begin
-    i :=  ExtMsg(uxdAuto, 'License', 'You must accept the full terms conditions', 'Do you agree to the terms and full license?', license, $00F5F2FD,$003411A9, [mbYes, mbCancel, mbUxRead], uxmtCustom,5);
+    i :=  ExtMsg(uxdAuto, 'License', 'You must accept the full terms conditions', 'Do you agree to the terms and full license?', license, uxclWhite,uxclRed, [mbYes, mbCancel, mbUxRead], uxmtCustom,5);
     if i = mrYes then
        native.SetBoolSetting('license.250608', true)
     else if i = mrCancel then begin
@@ -1459,7 +1459,7 @@ begin
     if mr = mrOK then begin
       DOT_ADJUST := da;
 
-      if ExtMsg(uxdAuto, sChangesSave, sChangesRemember, sChangesApply, FormatFloat('0.00', da), $00F5F2FD,$003411A9, [mbYes, mbNo]) = mrYes then
+      if ExtMsg(uxdAuto, sChangesSave, sChangesRemember, sChangesApply, FormatFloat('0.00', da), uxclWhite, uxclRed, [mbYes, mbNo]) = mrYes then
         native.SetFloatSetting('ux.dot_adjust', da);
   end;
 end;
@@ -2331,7 +2331,7 @@ if firstboot then
     
     // Use ExtMsg with custom buttons for better UX
     result := slicke.UX.alert.ExtMsg(uxdAuto, sRefrshQ, msg, sForceRefreshDetail, '',
-                                     $00F5F2FD, $003411A9, 
+                                     uxclWhite, uxclRed,
                                      [mbRetry, mbCancel], uxmtInformation);
     
     if result = mrRetry then // mbRetry returns mrRetry
@@ -2484,12 +2484,14 @@ if cbPos.ItemIndex = -1 then
   end;
 
   procedure SetupUIElements(f: TfConf);
+  const
+    dotdef = $2b24;
   begin
     with f do
     begin
-      f.lDot.Caption := native.GetWideCharSetting('font.dot', System.WideChar($2B24));
+      f.lDot.Caption := native.GetWideCharSetting('font.dot', System.WideChar(dotdef));
       eDot.Text := native.GetSetting('font.dot', '2B24');
-      lDotNow.Caption := native.GetWideCharSetting('font.dot_fresh', System.WideChar($2B24));
+      lDotNow.Caption := native.GetWideCharSetting('font.dot_fresh', System.WideChar(dotdef));
       eDotNow.Text := native.GetSetting('font.dot_fresh', '2600');
       f.lDot1.Caption :=  f.lDot.Caption;
       f.lDot2.Caption :=  f.lDot.Caption;
@@ -2696,7 +2698,7 @@ begin
     if not firstboot then begin
       if IsProblematicWM then
         fBG.Hide;
-       if ExtMsg(uxdAuto, RS_SETTINGS_SAVE, RS_SETTINGS_SAVE, RS_SETTINGS_SAVE_DESC, '', $00F5F2FD,$003411A9, [mbYes, mbNo]) <> mrYes then begin
+       if ExtMsg(uxdAuto, RS_SETTINGS_SAVE, RS_SETTINGS_SAVE, RS_SETTINGS_SAVE_DESC, '', uxclWhite,uxclRed, [mbYes, mbNo]) <> mrYes then begin
          fBG.Show;
          Exit; // FConf.Free will run later
        end;
@@ -3857,6 +3859,8 @@ begin
 end;
 
 procedure TfBG.UpdateUIColors;
+const
+  clGoodGreen = $00005900;
 var
  r: integer;
 begin
@@ -3874,7 +3878,7 @@ begin
      if r < bad_tir then // If the value is under the limit for "bad"
        lTir.Font.color := GetAdjustedColorForBackground(clMaroon, fBG.Color, 0.6, 0.4, true)
      else if r > good_tir then
-       lTir.Font.color := GetAdjustedColorForBackground($00005900, fBG.Color, 0.6, 0.4, true);
+       lTir.Font.color := GetAdjustedColorForBackground(clGoodGreen, fBG.Color, 0.6, 0.4, true);
   end;
 
 

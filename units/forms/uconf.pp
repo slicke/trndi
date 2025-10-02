@@ -791,7 +791,7 @@ begin
   // gdbus
 
   if url <> '' then begin
-    if ExtMsg(uxdAuto, RS_NOTIFICATIONS, RS_NOTIFY_TITLE, Format(RS_NOTIFY_TXT, [ns]), '', $00F5F2FD,$003411A9, [mbOK, mbUXRead], uxmtCustom,0) <> mrOK then
+    if ExtMsg(uxdAuto, RS_NOTIFICATIONS, RS_NOTIFY_TITLE, Format(RS_NOTIFY_TXT, [ns]), '', uxclWhite, uxclRed, [mbOK, mbUXRead], uxmtCustom,0) <> mrOK then
        OpenURL(url)
   end else
      UXMessage(uxdAuto, RS_NOTIFICATIONS, RS_NOTIFY_SYSTEM);
