@@ -10,6 +10,7 @@ object fBG: TfBG
   Color = clBlack
   Font.Color = clWhite
   Position = poDesktopCenter
+  LCLVersion = '4.2.0.0'
   OnClose = FormClose
   OnCreate = FormCreate
   OnDblClick = FormDblClick
@@ -549,14 +550,14 @@ object fBG: TfBG
   end
   object tInit: TTimer
     OnTimer = tInitTimer
-    Left = 16
-    Top = 198
+    Left = 23
+    Top = 176
   end
   object tSetup: TTimer
     Enabled = False
     Interval = 5000
     OnTimer = tSetupTimer
-    Left = 145
-    Top = 164
+    Left = 128
+    Top = 176
   end
 end

@@ -308,6 +308,9 @@ RS_HELP_DEX_REGION =
 RS_HELP_XDRIP = 'xDrip setup:'#13#10''#13#10'Address: your xDrip REST endpoint (base URL).'#13#10'Auth: API secret (plain text; server hashes it).';
 RS_DEFAULT_ACCOUNT = 'Default';
 RS_CHOOSE_SYSTEM = 'Select your CGM system in the list, then enter your credentials';
+
+RS_WAYLAND = 'Your desktop session is Wayland. Wayland compositors (including KWin) restrict third-party apps from forcing windows above others.'+LineEnding+
+  'Right-click the title bar, select more options and check the always-on-top option (or similar)';
 var 
 fConf: TfConf;
 
