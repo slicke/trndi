@@ -2683,8 +2683,8 @@ if cbPos.ItemIndex = -1 then
       // Save unit-specific settings
       if rbUnit.ItemIndex = 0 then
       begin // mmol
-        SetSetting('override.lo', Round(fsLo.Value * 18.0182).ToString);
-        SetSetting('override.hi', Round(fsHi.Value * 18.0182).ToString);
+        SetSetting('override.lo', Round(fsLo.Value * TrndiAPI.toMGDL).ToString);
+        SetSetting('override.hi', Round(fsHi.Value * TrndiAPI.toMGDL).ToString);
       end
       else
       begin

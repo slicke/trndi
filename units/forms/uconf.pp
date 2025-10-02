@@ -1036,13 +1036,13 @@ begin
   if (sender is TForm) or (rbUnit.ItemIndex = 0) then
   begin
     fsHi.DecimalPlaces := 1;
-    fsHi.Value := round(fsHi.Value * 0.0555 * 10) / 10; // Do the / 10 thing to keep the decimal
-    fsLo.Value := round(fsLo.Value * 0.0555 * 10) / 10;
+    fsHi.Value := round(fsHi.Value * TrndiAPI.toMMOL * 10) / 10; // Do the / 10 thing to keep the decimal
+    fsLo.Value := round(fsLo.Value * TrndiAPI.toMMOL * 10) / 10;
   end
   else
   begin
-    fsHi.Value := round(fsHi.Value * 18.0182);
-    fsLo.Value := round(fsLo.Value * 18.0182);
+    fsHi.Value := round(fsHi.Value * TrndiAPI.toMgdl);
+    fsLo.Value := round(fsLo.Value * TrndiAPI.toMgdl);
     fsHi.DecimalPlaces := 0;
   end;
 
