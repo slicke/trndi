@@ -1,39 +1,24 @@
-const WEATHER_API_KEY = 'be572a474bcc47ef99b183712250210';
+// Show the current weather instead of the clock
+const WEATHER_API_KEY = '<KEY>';
 
-async function getStockholmTemperature() {
-    const url = `https://api.weatherapi.com/v1/current.json?key=${WEATHER_API_KEY}&q=Stockholm,Sweden&aqi=no`;
-    try {
-        const res = await asyncGet(url);
+const getStockholmTemperature = () => {
+    const q = encodeURIComponent('Stockholm');
+    const url = `https://api.weatherapi.com/v1/current.json?key=${WEATHER_API_KEY}&q=${q}&aqi=no`;
+    
+    return jsonGet(url, "current.temp_c")
+        .then(val => {
+            return val;
+        })
+        .catch(e => {
+            console.error('Failed to fetch Stockholm temperature', e);
+            return 'N/A';
+        });
+};
 
-        console.log(res);
-        // If asyncGet returns a Response-like object, check ok and parse JSON.
-        if (res && typeof res.ok === 'boolean' && !res.ok) {
-            throw new Error(`Weather API request failed: ${res.status} ${res.statusText}`);
-        }
+let WeatherVal = '';
+getStockholmTemperature().then(temp => { WeatherVal = temp.substring(0, 3); });
 
-        let data;
-        if (res && typeof res.json === 'function') {
-            data = await res.json();
-        } else {
-            // Assume asyncGet already returned parsed JSON or other body.
-            data = res;
-        }
-
-        const tempC = data && data.current && typeof data.current.temp_c === 'number' ? data.current.temp_c : null;
-        if (tempC === null) throw new Error('Could not read temperature from response');
-        return tempC;
-    } catch (err) {
-        console.error('Error fetching Stockholm temperature:', err);
-        throw err;
-    }
+function clockView(glucose, time) {
+    // You could trigger getStockholmTemperature() here if you want to update more often
+    return WeatherVal;
 }
-
-let WeatherVal = 0;
-// Example usage: fetch and log the current temperature
-getStockholmTemperature()
-    .then(temp => WeatherVal = temp)
-    .catch(() => {});
-
-    Trndi.clockView = (glucose, time) => {
-        return WeatherVal;
-    }
