@@ -163,6 +163,7 @@ TfBG = class(TForm)
   Separator4: TMenuItem;
   tAgo:TTimer;
   tClock:TTimer;
+  tSetup: TTimer;
   tInit: TTimer;
   tSwap:TTimer;
   tResize:TTimer;
@@ -241,6 +242,7 @@ TfBG = class(TForm)
   procedure tResizeTimer(Sender:TObject);
   procedure tMainTimer(Sender: TObject);
   procedure tMissedTimer(Sender:TObject);
+  procedure tSetupTimer(Sender: TObject);
   procedure tSwapTimer(Sender:TObject);
   procedure tTouchTimer(Sender: TObject);
   procedure TfFloatOnHide(Sender:TObject);
@@ -1170,6 +1172,13 @@ begin
   InitializeUIComponents;
   Application.ProcessMessages;
 
+  // Force first UI update by initializing cached UI state to sentinel values
+  // This ensures ShouldUpdateUI(...) returns true on first valid update
+  FLastUIColor := TColor(-1);
+  FLastTirColor := TColor(-1);
+  FLastUICaption := '<uninitialized>';
+  FLastTir := '<uninitialized>';
+
   // Configuration and user setup
   with native do
   begin
@@ -1257,6 +1266,7 @@ begin
   fSplash.Close;
   fSplash.Free;
   tmain.Enabled := true;
+  tsetup.enabled := true;
 end;
 
 procedure TfBG.FormDblClick(Sender: TObject);
@@ -3263,6 +3273,12 @@ begin
   lDiff.Caption := Format(RS_OUTDATED_TIME, [FormatDateTime('H:mm', d), min, sec]);
 end;
 
+procedure TfBG.tSetupTimer(Sender: TObject);
+begin
+  tSetup.enabled := false;
+  UpdateUIColors; // Force an update of TIR
+end;
+
 procedure TfBG.tSwapTimer(Sender:TObject);
 var
   c: TColor;
@@ -3875,10 +3891,10 @@ begin
   lTir.Font.Color := GetTextColorForBackground(fBG.color, 0.6, 0.4);
 
 
-  if TryStrToInt(lTir.hint, r) then begin  // Check time in range
+    if TryStrToInt(lTir.hint, r) then begin  // Check time in range
      if r < bad_tir then // If the value is under the limit for "bad"
        lTir.Font.color := GetAdjustedColorForBackground(clMaroon, fBG.Color, 0.6, 0.4, true)
-     else if r > good_tir then
+     else if r >= good_tir then
        lTir.Font.color := GetAdjustedColorForBackground(clGoodGreen, fBG.Color, 0.6, 0.4, true);
   end;
 
