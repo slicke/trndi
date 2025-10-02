@@ -759,6 +759,7 @@ begin
     addClassFunction('sayText', ExtFunction(@JSSay), 1);
     addClassFunction('getCurrentUser', ExtFunction(@JSActiveUser), 0);
     addClassFunction('getCurrentNickname', ExtFunction(@JSActiveUserNick), 0);
+    addClassFunction('setOverrideThresholdMinutes', ExtFunction(@JSvar_DATA_FRESHNESS_THRESHOLD_MINUTES), 1);
 
     // Add the UX modification function, as declared in this file
     for s in exts do begin

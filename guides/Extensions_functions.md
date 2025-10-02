@@ -81,6 +81,13 @@ Trndi.playSound('C:\\file.wav')
 ```javascript
 Trndi.sayText('High sugar!')
 ```
+<a name="overridemins"></a>
+### setOverrideThresholdMinutes
+#### Sets number of minutes before a reading is considered old
+> ⚠️ WARNING ⚠️ Allowing a reading to be considered recent for many minutes can be dangerous!
+```javascript
+Trndi.setOverrideThresholdMinutes(15) // Shows the "No fresh readings" box after 16 minutes. Cannot be set below 6.
+```
 
 ## Promises (global)
 These are global promises, not prefixed with `Trndi.`:

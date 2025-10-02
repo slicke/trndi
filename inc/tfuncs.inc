@@ -112,6 +112,22 @@ begin
   TrndiNative.PlaySound(filename);
 end;
 
+function JSvar_DATA_FRESHNESS_THRESHOLD_MINUTES(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw;
+var
+  a0: Variant;
+begin
+  ctx^^.ToVariant(argv^[0], a0);
+
+  if varType(a0) <> varInteger then begin
+    ExtError(uxdAuto, '(DATA_FRESHNESS_THRESHOLD_MINUTES) Mins must be integer');
+    exit;
+  end;
+
+  if a0 < 6 then
+    a0 := 6;
+  DATA_FRESHNESS_THRESHOLD_MINUTES := a0;
+end;
+
 // TTS
 function JSSay(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw;
 var

@@ -1420,6 +1420,14 @@ msgstr ""
 msgid "Removed accounts are made inactive, and can be restored by adding the same name again"
 msgstr ""
 
+#: uconf.rs_saftey_hi
+msgid "Trndi won't allow a larger limit, for your own saftey. This can be overridden manually/via plugin"
+msgstr ""
+
+#: uconf.rs_saftey_low
+msgid "Trndi won't allow a lower limit, the backend system only reports values every 5 minutes. 6 = one reading missing."
+msgstr ""
+
 #: uconf.rs_select_font
 msgid "Select a font"
 msgstr ""
