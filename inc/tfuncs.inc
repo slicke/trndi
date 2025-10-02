@@ -128,6 +128,23 @@ begin
   DATA_FRESHNESS_THRESHOLD_MINUTES := a0;
 end;
 
+function JSvar_CLockInterval(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw;
+var
+  a0, a1: Variant;
+begin
+  ctx^^.ToVariant(argv^[0], a0);
+  ctx^^.ToVariant(argv^[1], a1);
+
+  if (varType(a0) <> varInteger) or (varType(a1) <> varInteger) then begin
+    ExtError(uxdAuto, '(ClockInterval) secs must be integer');
+    exit;
+  end;
+
+  clockInterval := a0;
+  clockDisplay := a1;
+end;
+
+
 // TTS
 function JSSay(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw;
 var

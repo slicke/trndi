@@ -376,6 +376,8 @@ function CFStringCreateWithUTF8String(const utf8Str: PAnsiChar): CFStringRef; ex
 
 var
 customTitlebar: boolean = true;
+clockInterval: integer = 20000;
+clockDisplay: integer = 5000;
 fSplash: TfSplash;
 native: TrndiNative;
 {$ifdef X_LINUXBSD}
@@ -760,6 +762,7 @@ begin
     addClassFunction('getCurrentUser', ExtFunction(@JSActiveUser), 0);
     addClassFunction('getCurrentNickname', ExtFunction(@JSActiveUserNick), 0);
     addClassFunction('setOverrideThresholdMinutes', ExtFunction(@JSvar_DATA_FRESHNESS_THRESHOLD_MINUTES), 1);
+    addClassFunction('setClockInterval', ExtFunction(@JSvar_ClockInterval), 1);
 
     // Add the UX modification function, as declared in this file
     for s in exts do begin
@@ -3038,11 +3041,9 @@ var
   {$ifdef TrndiExt}
     ex: boolean; // If the function exists
   {$endif}
-const
-  clockInterval = 5000;
 begin
 tClock.Enabled := false;
-  if tClock.Interval <> clockInterval then begin
+  if tClock.Interval <> clockDisplay then begin
     {$ifdef TrndiExt}
       s := '';
       // Check if JS engine is still available before calling
@@ -3054,11 +3055,11 @@ tClock.Enabled := false;
     {$else}
       lval.caption := FormatDateTime(ShortTimeFormat, Now);
     {$endif}
-    tClock.Interval := clockInterval;
+    tClock.Interval := clockDisplay;
     lArrow.Visible := false;
   end else begin
     lval.caption :=  lval.hint;
-    tClock.Interval := 20000;
+    tClock.Interval := clockInterval;
     lArrow.Visible := true;
   end;
   tClock.Enabled := true;

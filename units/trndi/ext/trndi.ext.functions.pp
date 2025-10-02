@@ -502,14 +502,19 @@ function JSValueConstToUtf8(ctx: JSContext; value: JSValueConst): RawUtf8;
 var
   cStr: pansichar;
 begin
-  cStr := JS_ToCString(ctx, value);
-  if cStr <> nil then
-  begin
-    Result := RawUtf8(cStr);
-    JS_FreeCString(ctx, cStr);
-  end
-  else
+  Result := '';
+  try
+    // QuickJS C API call - handle potential errors gracefully
+    cStr := JS_ToCString(ctx, value);
+    if cStr <> nil then
+    begin
+      Result := RawUtf8(cStr);
+      JS_FreeCString(ctx, cStr);
+    end;
+  except
+    // If conversion fails, return empty string
     Result := '';
+  end;
 end;
 
 function JSFunctionParams(ctx: JSContext; argc: integer; argv: PJSValueConstArr): TStringList;
