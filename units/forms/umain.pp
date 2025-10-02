@@ -2370,12 +2370,79 @@ ShowMessage(RS_LIMIT_EXPLAIN_TEXT);
 end;
 
 procedure TfBG.miOnTopClick(Sender:TObject);
+{$ifdef LCLQt6}
+var
+  QtWidget: TQtWidget;
+  flags: NativeUInt;
+  sessionType: string;
+const
+  // Qt::WindowStaysOnTopHint (use numeric mask to avoid missing symbol on some setups)
+  Qt_WindowStaysOnTopHint = $00008000;
+{$endif}
 begin
   miOnTop.Checked := not miOnTop.Checked;
   if miOnTop.Checked then
-    self.FormStyle := fsSystemStayOnTop
+  begin
+    {$ifdef LCLQt6}
+    // Use fsStayOnTop for Qt widgetset; it's better respected by some WMs.
+    self.FormStyle := fsStayOnTop;
+    {$else}
+    self.FormStyle := fsSystemStayOnTop;
+    {$endif}
+  end
   else
     self.FormStyle := fsNormal;
+
+  {$ifdef LCLQt6}
+  // KDE/Qt may ignore LCL's FormStyle mapping; force Qt's WindowStaysOnTopHint.
+  // Detect session type: Wayland sessions often prevent external programs from
+  // forcing window stacking. Inform the user instead of attempting external hacks.
+  sessionType := GetEnvironmentVariable('XDG_SESSION_TYPE');
+  if LowerCase(sessionType) = 'wayland' then
+  begin
+    LogMessage('OnTop requested but session is Wayland; compositor may ignore programmatic hints.');
+    // Friendly guidance for users running KDE/Wayland
+    if miOnTop.Checked then
+      ShowMessage(RS_WAYLAND);
+    // Continue with LCL/Qt hints — they may or may not be honored.
+  end;
+  try
+    if HandleAllocated then
+    begin
+      QtWidget := TQtWidget(Handle);
+      if Assigned(QtWidget) and Assigned(QtWidget.Widget) then
+      begin
+        flags := QtWidget.windowFlags;
+        if miOnTop.Checked then
+        begin
+          QtWidget.setWindowFlags(flags or Qt_WindowStaysOnTopHint);
+          // Use LCL methods to bring the form forward and ensure it's visible
+          Self.Visible := True;
+          Self.Show;
+          Self.BringToFront;
+          Self.SetFocus;
+          // Also request the application to bring windows forward
+          try
+            Application.BringToFront;
+          except end;
+          // If the window is off-screen (some WMs may move it), center it as a safeguard
+          if (Left < -1000) or (Top < -1000) or (Left > Screen.Width) or (Top > Screen.Height) then
+          begin
+            Width := Min(Width, Screen.Width - 40);
+            Height := Min(Height, Screen.Height - 40);
+            Left := (Screen.Width - Width) div 2;
+            Top := (Screen.Height - Height) div 2;
+            Application.ProcessMessages;
+          end;
+        end
+        else
+          QtWidget.setWindowFlags(flags and (not Qt_WindowStaysOnTopHint));
+      end;
+    end;
+  except
+    // Ignore any failures - fallback is LCL behavior
+  end;
+  {$endif}
 
   setColorMode;
 end;

@@ -1428,6 +1428,12 @@ msgstr ""
 msgid "You are up to date"
 msgstr ""
 
+#: uconf.rs_wayland
+msgid ""
+"Your desktop session is Wayland. Wayland compositors (including KWin) restrict third-party apps from forcing windows above others.\n"
+"Right-click the title bar, select more options and check the always-on-top option (or similar)"
+msgstr ""
+
 #: ufloat.rscustomop
 msgid "You can use shift+<number> to manually set visibility (0 = 100% visible)"
 msgstr ""
