@@ -12,7 +12,7 @@ unit trndi.native.linux;
   - Drawing a badge on the system tray icon (@link(TTrndiNativeLinux.SetTray))
   - Synchronizing KDE taskbar badge (@link(TTrndiNativeLinux.SetBadge))
   - Placeholder for dark mode toggling (@link(TTrndiNativeLinux.setDarkMode))
-  - HTTP GET via FPC's TFPHttpClient
+  - HTTP GET via libCURL
   - Settings persisted in INI/CFG with backward compatibility
 
   Prefer using the façade unit @code(trndi.native) which selects the platform
@@ -24,7 +24,7 @@ unit trndi.native.linux;
 interface
 
 uses
-  Classes, SysUtils, Graphics, fphttpclient, openssl, opensslsockets, IniFiles, Dialogs,
+  Classes, SysUtils, Graphics, IniFiles, Dialogs,
   ExtCtrls, Forms, Math, LCLIntf, KDEBadge, trndi.native.base, FileUtil, Menus,
   libpascurl;
 
@@ -356,7 +356,7 @@ end;
 {------------------------------------------------------------------------------
   getURL
   ------
-  Linux/PC implementation using TFPHttpClient; returns response text or error.
+  Linux/PC implementation using cURL; returns response text or error.
  ------------------------------------------------------------------------------}
 class function TTrndiNativeLinux.getURL(const url: string; out res: string): boolean;
 const
