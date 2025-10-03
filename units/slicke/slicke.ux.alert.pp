@@ -452,6 +452,12 @@ type
     @returns @true if the VM is problematic
     }
   function IsProblematicWM: Boolean;
+
+  {**
+    Check if the Window Manaager is problematic to a lesser extent - ie "just" fails with showmodal
+    @returns @true if the VM is semi-problematic
+    }
+  function IsSemiProblematicWM: Boolean;
 var
   {** Localized captions for each @link(TUXMsgDlgBtn). Initialized from resource strings. }
   langs : ButtonLangs = (smbYes, smbUXNo, smbUXOK, smbUXCancel, smbUXAbort, smbUXRetry, smbUXIgnore,
@@ -549,19 +555,48 @@ begin
 end;
 
 {**
+  Detect a window manager likely to ignore showmodal, but supports other things.
+}
+{$ifdef X_LINUXBSD}
+function IsSemiProblematicWM: boolean;
+var
+  env, s: string;
+  i: Integer;
+const
+  Bad: array[0..0] of string = (
+    'gnome'
+  );
+begin
+  // Overrides
+  env := GetEnvironmentVariable('TRNDI_DISABLE_MODAL_FALLBACK');
+  if env = '1' then Exit(False);
+  env := GetEnvironmentVariable('TRNDI_FORCE_MODAL_FALLBACK');
+  if env = '1' then Exit(True);
+
+  s := LowerCase(Trim(GetEnvironmentVariable('XDG_CURRENT_DESKTOP') + ' ' +
+    GetEnvironmentVariable('DESKTOP_SESSION') + ' ' +
+    GetEnvironmentVariable('XDG_SESSION_DESKTOP') + ' ' +
+    GetEnvironmentVariable('WINDOW_MANAGER')));
+
+  for i := Low(Bad) to High(Bad) do
+    if Pos(Bad[i], s) > 0 then Exit(True);
+
+  Result := False;
+end;
+
+{**
   Detect a window manager likely to ignore transient/owner hints.
   Uses environment variables as a lightweight heuristic and supports
   runtime overrides via TRNDI_FORCE_MODAL_FALLBACK / TRNDI_DISABLE_MODAL_FALLBACK.
 }
-{$ifdef X_LINUXBSD}
 function IsProblematicWM: Boolean;
 var
   env, s: string;
   i: Integer;
 const
-  Bad: array[0..11] of string = (
+  Bad: array[0..12] of string = (
     'openbox', 'matchbox', 'fluxbox', 'fvwm', 'icewm', 'twm', 'pekwm',
-    'lxde', 'lxde-pi', 'lxsession', 'pixel', 'raspbian'
+    'lxde', 'lxde-pi', 'lxsession', 'pixel', 'raspbian', 'gnome'
   );
 begin
   // Overrides

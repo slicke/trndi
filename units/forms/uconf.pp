@@ -1095,7 +1095,8 @@ begin
    lWaitSys.visible := false;
    lProblematic.Visible := false;
    if IsProblematicWM then begin
-     lProblematic.Visible := true;
+     if not IsSemiProblematicWM then
+       lProblematic.Visible := true;
    end;
 end;
 

@@ -934,6 +934,7 @@ procedure TfBG.InitializeSplashScreen;
 begin
   fSplash := TfSplash.Create(nil);
   if IsProblematicWM then // It might hide dialogs behind the splash screen
+   if not IsSemiProblematicWM then // Gnome etc kind of works
    with fsplash do begin
     fSplash.Image1.Hide;
     lSplashWarn.hide;
