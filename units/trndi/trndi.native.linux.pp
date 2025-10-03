@@ -25,7 +25,8 @@ interface
 
 uses
   Classes, SysUtils, Graphics, fphttpclient, openssl, opensslsockets, IniFiles, Dialogs,
-  ExtCtrls, Forms, Math, LCLIntf, KDEBadge, trndi.native.base, FileUtil, Menus;
+  ExtCtrls, Forms, Math, LCLIntf, KDEBadge, trndi.native.base, FileUtil, Menus,
+  libpascurl;
 
 type
   {!
@@ -203,6 +204,24 @@ begin
   end;
 end;
 
+// C-compatible write callback for libcurl used in this unit
+function CurlWriteCallback_Linux(buffer: PChar; size, nmemb: LongWord; userdata: Pointer): LongWord; cdecl;
+var
+  Bytes: SizeInt;
+  SS: TStringStream;
+begin
+  if (userdata = nil) or (buffer = nil) then
+  begin
+    Result := 0;
+    Exit;
+  end;
+  SS := TStringStream(userdata);
+  Bytes := SizeInt(size) * SizeInt(nmemb);
+  if Bytes > 0 then
+    SS.WriteBuffer(buffer^, Bytes);
+  Result := Bytes;
+end;
+
 // Return value of environment variable Name (empty if unset)
 function EnvValue(const Name: string): string; inline;
 begin
@@ -343,27 +362,49 @@ class function TTrndiNativeLinux.getURL(const url: string; out res: string): boo
 const
   DEFAULT_USER_AGENT = 'Mozilla/5.0 (compatible; trndi) TrndiAPI';
 var
-  client: TFPHttpClient;
+  handle: CURL;
+  headers: pcurl_slist;
+  errCode: CURLcode;
   responseStream: TStringStream;
 begin
   res := '';
-  client := TFPHttpClient.Create(nil);
+  headers := nil;
   responseStream := TStringStream.Create('');
   try
-    try
-      client.AddHeader('User-Agent', DEFAULT_USER_AGENT);
-      client.Get(url, responseStream);
-      res := Trim(responseStream.DataString);
-      Result := true;
-    except
-      on E: Exception do
-      begin
-        res := E.Message;
-        Result := false;
-      end;
+    curl_global_init(CURL_GLOBAL_DEFAULT);
+    handle := curl_easy_init();
+    if handle = nil then
+    begin
+      res := 'curl: failed to init';
+      Result := False;
+      Exit;
     end;
+
+    // Set URL and options
+    curl_easy_setopt(handle, CURLOPT_URL, PChar(url));
+    curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, LongInt(1));
+    curl_easy_setopt(handle, CURLOPT_USERAGENT, PChar(DEFAULT_USER_AGENT));
+
+    // Write callback
+    curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, Pointer(@CurlWriteCallback_Linux));
+    curl_easy_setopt(handle, CURLOPT_WRITEDATA, Pointer(responseStream));
+
+    errCode := curl_easy_perform(handle);
+    if errCode <> CURLE_OK then
+    begin
+      res := string(curl_easy_strerror(errCode));
+      Result := False;
+    end
+    else
+    begin
+      res := Trim(responseStream.DataString);
+      Result := True;
+    end;
+
+    curl_easy_cleanup(handle);
   finally
-    client.Free;
+    if headers <> nil then
+      curl_slist_free_all(headers);
     responseStream.Free;
   end;
 end;
