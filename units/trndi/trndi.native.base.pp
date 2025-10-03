@@ -56,7 +56,7 @@ uses
   , Windows, Registry, Dialogs, StrUtils, winhttpclient, shellapi, comobj,
     Forms, variants, dwmapi
 {$ELSEIF DEFINED(X_PC)}
-  , fphttpclient, openssl, opensslsockets, Dialogs, LCLType
+  , fphttpclient, libpascurl, Dialogs, LCLType
 {$ENDIF}
   , process;
 
@@ -229,6 +229,23 @@ const
 // (implementation continued)
 
 implementation
+// C-compatible write callback used by libcurl to collect response data.
+function CurlWriteCallback(buffer: PChar; size, nmemb: LongWord; userdata: Pointer): LongWord; cdecl;
+var
+  Bytes: SizeInt;
+  SS: TStringStream;
+begin
+  if (userdata = nil) or (buffer = nil) then
+  begin
+    Result := 0;
+    Exit;
+  end;
+  SS := TStringStream(userdata);
+  Bytes := SizeInt(size) * SizeInt(nmemb);
+  if Bytes > 0 then
+    SS.WriteBuffer(buffer^, Bytes);
+  Result := Bytes;
+end;
 {------------------------------------------------------------------------------
   TTrndiNativeBase.updateLocale
   -----------------------------
@@ -1011,65 +1028,117 @@ function TTrndiNativeBase.request(const post: boolean; const endpoint: string;
 const params: array of string; const jsondata: string = '';
 const header: string = ''; prefix: boolean = true): string;
 var
-  client:  TFPHttpClient;
-  res:     TStringStream;
-  sx, address: string;
-  headers: array of string;
+  handle: CURL;
+  headers: pcurl_slist;
+  errCode: CURLcode;
+  address, sx: string;
+  p, i: Integer;
+  key, val: string;
+  responseStream: TStringStream;
 begin
-  client := TFPHttpClient.Create(nil);
-  try
-    // Set user-agent
-    client.AddHeader('User-Agent', useragent);
-    if prefix then
-      address := Format('%s/%s', [baseurl, endpoint])
-    else
-      address := endpoint;
+  Result := '';
 
-    // Add optional custom header
+  // Build URL
+  if prefix then
+    address := Format('%s/%s', [baseurl, endpoint])
+  else
+    address := endpoint;
+
+  // If not JSON and params present, append as query string
+  if (jsondata = '') and (Length(params) > 0) then
+  begin
+    address := address + '?';
+    for sx in params do
+      address := address + '&' + sx;
+  end;
+
+  // Initialize libcurl (global init is safe to call repeatedly)
+  curl_global_init(CURL_GLOBAL_DEFAULT);
+  headers := nil;
+  responseStream := TStringStream.Create('');
+  try
+    handle := curl_easy_init();
+    if handle = nil then
+    begin
+      Result := 'curl: failed to init';
+      Exit;
+    end;
+
+    // Set URL
+    curl_easy_setopt(handle, CURLOPT_URL, PChar(address));
+
+    // Follow redirects
+    curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, LongInt(1));
+
+    // Set user agent if provided
+    if useragent <> '' then
+      curl_easy_setopt(handle, CURLOPT_USERAGENT, PChar(useragent));
+
+    // Optional custom header "Key=Value" -> "Key: Value"
     if header <> '' then
     begin
-      headers := header.Split(['=']);
-      if Length(headers) = 2 then
-        client.AddHeader(headers[0], headers[1]);
+      p := Pos('=', header);
+      if p > 0 then
+      begin
+        key := Trim(Copy(header, 1, p-1));
+        val := Trim(Copy(header, p+1, MaxInt));
+        if (key <> '') then
+          headers := curl_slist_append(headers, PChar(Format('%s: %s', [key, val])));
+      end;
     end;
 
-    // If we have JSON data
+    // If JSON body is provided, set content-type and POST data
     if jsondata <> '' then
     begin
-      client.AddHeader('Content-Type', 'application/json; charset=UTF-8');
-      client.AddHeader('Accept', 'application/json');
-      client.RequestBody := TRawByteStringStream.Create(jsondata);
+      headers := curl_slist_append(headers, 'Content-Type: application/json; charset=UTF-8');
+      headers := curl_slist_append(headers, 'Accept: application/json');
+      curl_easy_setopt(handle, CURLOPT_POST, LongInt(1));
+      curl_easy_setopt(handle, CURLOPT_POSTFIELDS, PChar(jsondata));
+      curl_easy_setopt(handle, CURLOPT_POSTFIELDSIZE, LongInt(Length(jsondata)));
+    end
+    else if post then
+    begin
+      // If POST with params but no json, send as form-urlencoded
+      if Length(params) > 0 then
+      begin
+        sx := '';
+        for i := 0 to High(params) do
+        begin
+          if i > 0 then sx := sx + '&';
+          sx := sx + params[i];
+        end;
+        curl_easy_setopt(handle, CURLOPT_POST, LongInt(1));
+        curl_easy_setopt(handle, CURLOPT_POSTFIELDS, PChar(sx));
+      end
+      else
+        curl_easy_setopt(handle, CURLOPT_POST, LongInt(1));
+    end;
+
+    // Attach headers list if present
+    if headers <> nil then
+      curl_easy_setopt(handle, CURLOPT_HTTPHEADER, headers);
+
+  // Set up write callback to capture response (use a C-compatible top-level function)
+  curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, Pointer(@CurlWriteCallback));
+  curl_easy_setopt(handle, CURLOPT_WRITEDATA, Pointer(responseStream));
+
+    // Perform the request
+    errCode := curl_easy_perform(handle);
+    if errCode <> CURLE_OK then
+    begin
+      Result := string(curl_easy_strerror(errCode));
     end
     else
-    if Length(params) > 0 then
-    begin
-      // Build URL with query parameters
-      address := address + '?';
-      for sx in params do
-        address := address + '&' + sx;
-    end;
+      Result := responseStream.DataString;
 
-    // Prepare a response stream
-    res := TStringStream.Create('');
-    try
-      // Send GET or POST and return response body
-      if post then
-        client.Post(address, res)
-      else
-        client.Get(address, res);
-
-      // Return the server response as a string
-      Result := res.DataString;
-    except
-      on E: EHttpClient do
-        Result := E.Message;
-    end;
-  finally
     // Cleanup
-    if Assigned(client.RequestBody) then
-      client.RequestBody.Free;
-    client.Free;
-    res.Free;
+    curl_easy_cleanup(handle);
+  finally
+    if headers <> nil then
+      curl_slist_free_all(headers);
+    responseStream.Free;
+    // global cleanup is optional and process-wide; leave it out to avoid interfering
+    // with other curl usage: curl_global_cleanup();
   end;
 end;
 {$ENDIF}
