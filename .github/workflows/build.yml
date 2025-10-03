@@ -129,7 +129,8 @@ jobs:
           set -euo pipefail
           # Install Qt6 build toolchain
           sudo apt-get update
-          sudo apt-get install -y p7zip-full build-essential wget curl git cmake ninja-build pkg-config qt6-base-dev qt6-tools-dev qt6-base-dev-tools
+          # Include libcurl development package (needed for building against libcurl)
+          sudo apt-get install -y p7zip-full build-essential wget curl git cmake ninja-build pkg-config qt6-base-dev qt6-tools-dev qt6-base-dev-tools libcurl4-openssl-dev
 
           # Install Lazarus + FPC
           curl -fsSL -o fpc-laz.deb "${{ matrix.fpc_laz_url }}"
