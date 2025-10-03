@@ -56,7 +56,7 @@ uses
   , Windows, Registry, Dialogs, StrUtils, winhttpclient, shellapi, comobj,
     Forms, variants, dwmapi
 {$ELSEIF DEFINED(X_PC)}
-  , fphttpclient, libpascurl, Dialogs, LCLType
+  , libpascurl, Dialogs, LCLType
 {$ENDIF}
   , process;
 
@@ -890,7 +890,7 @@ end;
   Behavior differs by platform. Each platform has its own implementation block:
     - X_MAC uses TNSHTTPSendAndReceive
     - X_WIN uses TWinHTTPClient
-    - X_PC (Linux) uses TFPHttpClient with OpenSSL
+    - X_PC (Linux) uses libCURL
  ------------------------------------------------------------------------------}
 {$IF DEFINED(X_MAC)}
 function TTrndiNativeBase.request(const post: boolean; const endpoint: string;

@@ -75,34 +75,6 @@ Build release:
 Build to a release folder
 ```lazbuild -B output_directory Trndi.lpi``` 
 
-
-## Dependancies
-### JS
-The JS engine, _QuickJS_, is linked into Trndi.
-
-To compile Trndi with extensions support you need the relevant library files, placed in ../static when compiling.
-> You can get the recommended libraries from https://synopse.info/files/mormot2static.7z - you may remove libraries you don't need!
-Due to mormot2, the support library Trndi uses, it may currently not be possible to run extensions under ARM64 computers.
-
-### Qt6 on Raspberry Pi
-You need the libqt6pas and it's development packages. These are normally available with your distro. See the Linux section on how to install libqt6pas.
-
-## Style
-### Linter
-Trndi uses __JEDI__ to format code, in Lazarus: Source > JEDI Code Format > Global Settings. Choose _JCFSettings.xml_
-
-### Naming
-Units should end with ```.pp```, 
-
-### VSCode
-Should you choose not to use Lazarus IDE, these are the recommendations for Visual Studio Code:
-* Language Support: https://marketplace.visualstudio.com/items?itemName=alefragnani.pascal
-
-* Formatting: Name: Pascal Formatter
-VS Marketplace Link: https://marketplace.visualstudio.com/items?itemName=alefragnani.pascal-formatter
-
-* Debugging: https://marketplace.visualstudio.com/items?itemName=CNOC.fpdebug
-
 ### History
 Trndi2 is a rewrite, less bloated, version of Trndi 1, which was never released publically. Trndi 1 was originally called Dexmon (and only did Dexcom). The original idea spawns from an old app called TrayTrend which I made with a similar purpose.
 
@@ -110,12 +82,9 @@ Trndi2 is a rewrite, less bloated, version of Trndi 1, which was never released 
 ### Testing
 Trndi is actively tested on Windows (x64), Fedora Linux(amd64), Debian Linux(arm64 / Raspberry pi).
 
-### IMPORTANT: RaspberryPi / ARM64
-To compile with extension support, you have to add ```{$DEFINE LIBQUICKJSSTATIC}``` in ```mormot.defines.inc```. However extensions support in Linux is very experimental.
-
 <a name="Linux-support"></a>
 ## Linux notes
-If you find yourself having problems running the Qt6 version of Trndi, you might be missing the Qt6 framwork and/or the pascal headers.
+If you find yourself having problems running Trndi, ie it will not start, you might be missing the Qt6 framwork and/or the pascal headers.
 
 #### Any distro
 You can download them for any RPM/DEB distro in this [repo](https://github.com/davidbannon/libqt6pas/releases).
@@ -144,3 +113,5 @@ On Linux, this is a single INI file consistently used for Get/Set/Delete operati
 Contributions are welcome. Please read [CONTRIBUTING](CONTRIBUTING.md) for coding style, PasDoc guidelines, and how to generate the developer docs for native, extensions, and API units.
 
 If you're adding or modifying an API driver, start with the [API guide](guides/API.md) for the contract and examples, then follow the API section in CONTRIBUTING.
+
+_See also [BUILDING.md](guides/BUILDING.md)_
