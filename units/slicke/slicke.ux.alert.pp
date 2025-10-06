@@ -554,10 +554,11 @@ begin
   Result := aDialog.ShowModal;
 end;
 
+
+{$ifdef X_LINUXBSD}
 {**
   Detect a window manager likely to ignore showmodal, but supports other things.
 }
-{$ifdef X_LINUXBSD}
 function IsSemiProblematicWM: boolean;
 var
   env, s: string;
@@ -569,9 +570,9 @@ const
 begin
   // Overrides
   env := GetEnvironmentVariable('TRNDI_DISABLE_MODAL_FALLBACK');
-  if env = '1' then Exit(False);
+  if env = '1' then Exit(false);                               // This shouldnt really trigger as problematic would be false
   env := GetEnvironmentVariable('TRNDI_FORCE_MODAL_FALLBACK');
-  if env = '1' then Exit(True);
+  if env = '1' then Exit(False);                               // "We're" a problematic vm
 
   s := LowerCase(Trim(GetEnvironmentVariable('XDG_CURRENT_DESKTOP') + ' ' +
     GetEnvironmentVariable('DESKTOP_SESSION') + ' ' +
