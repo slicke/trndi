@@ -386,6 +386,14 @@ msgstr "Visa sidopanelen när värdet inte är i målområdet"
 msgid "Paint the area between high and low"
 msgstr "Rita ytan mellan hög och låg"
 
+#: tfconf.cbpainthilorange.caption
+msgid "Also paint custom range"
+msgstr "Rita egna gränser också"
+
+#: tfconf.cbpaintlines.caption
+msgid "Show threshold lines"
+msgstr "Visa gränslinjer"
+
 #: tfconf.cbprivacy.caption
 msgid "Privacy Mode (Hide number)"
 msgstr "Privat läget (dölj nummer)"
@@ -504,6 +512,10 @@ msgstr "Eget område *"
 #: tfconf.groupbox4.caption
 msgid "All accounts"
 msgstr "Alla konton"
+
+#: tfconf.groupbox6.caption
+msgid "Color Thresholds"
+msgstr "Färglägg gränser"
 
 #: tfconf.label1.caption
 msgid "Readings are outdated after (minutes):"
@@ -1079,7 +1091,7 @@ msgid ""
 msgstr ""
 "Detta är din tid i målområdet under de senaste %d timmarna och %d minuterna\n"
 "\n"
-"Din låga gräns är %.1f, hög är %1.f\n"
+"Din låga gräns är %.1f, hög är %1f.\n"
 "Ditt låga område är %.1f, hög är %.1f"
 
 #: trndi.strings.rs_tir_h1
@@ -1092,7 +1104,7 @@ msgid ""
 msgstr ""
 "Detta är din tid i målområdet under den senaste timmen och %d minuterna\n"
 "\n"
-"Din låga gräns är %.1f, hög är %1.f\n"
+"Din låga gräns är %.1f, hög är %.1f\n"
 "Ditt låga område är %.1f, hög är %.1f"
 
 #: trndi.strings.rs_tir_m
@@ -1105,7 +1117,7 @@ msgid ""
 msgstr ""
 "Detta är din tid i målområdet under de senaste %d minuterna\n"
 "\n"
-"Din låga gräns är %.1f, hög är %1.f\n"
+"Din låga gräns är %.1f, hög är %.1f\n"
 "Ditt låga område är %.1f, hög är %.1f"
 
 #: trndi.strings.rs_tpobottomleft

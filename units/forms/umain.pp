@@ -392,6 +392,8 @@ highAlerted: boolean = false; // A high alert is active
 lowAlerted: boolean = false; // A low alert is active
 perfectTriggered: boolean = false; // A perfect reading is active
 PaintRange: boolean = true;
+PaintRangeCGMRange: boolean = true; // Show cgmRangeLo/cgmRangeHi inner threshold lines
+PaintRangeLines: boolean = false; // Show threshold lines (if false, only filled areas are drawn)
 {$ifdef darwin}
 MacAppDelegate: TMyAppDelegate;
 upMenu: TMenuItem;
@@ -1250,6 +1252,8 @@ begin
     // DOT_VISUAL_OFFSET := CalculateDotVisualOffset;  // No longer needed - centering uses half dot height
     miRangeColor.Checked := GetBoolSetting('ux.range_color', true);
     PaintRange := native.GetBoolSetting('ux.paint_range', true);
+    PaintRangeLines := native.GetBoolSetting('ux.paint_range_lines', false);
+    PaintRangeCGMRange := native.GetBoolSetting('ux.paint_range_cgmrange', false);
     // Extensions
     {$ifdef TrndiExt}
     fSplash.lInfo.Caption := RS_SPLASH_LOADING_INIT;
@@ -1821,10 +1825,10 @@ end;
 
 procedure TfBG.FormPaint(Sender: TObject);
 var
-  loY, hiY: Integer;
+  loY, hiY, rangeLoY, rangeHiY: Integer;
   cnv: TCanvas;
   lineColor: TColor;
-  drawLo, drawHi: Boolean;
+  drawLo, drawHi, drawRangeLo, drawRangeHi: Boolean;
   tmp: Integer;
   clientH: Integer;
   daAdjust: Integer;
@@ -1845,11 +1849,12 @@ var
     Result := (clientH - Position) - 1;
   end;
 begin
-  if not PaintRange then
-     Exit;
-
   // Only draw when form has been created and API thresholds available
   if not Assigned(Self) then Exit;
+  
+  // Exit early if nothing is enabled
+  if not (PaintRange or PaintRangeCGMRange) then Exit;
+  
   cnv := Self.Canvas;
   // Prefer the TrendDots parent client height if available so mapping matches SetPointHeight
   if (Length(TrendDots) > 0) and Assigned(TrendDots[1]) and Assigned(TrendDots[1].Parent) then
@@ -1863,8 +1868,10 @@ begin
     dotHeight := TrendDots[1].Canvas.TextHeight(DOT_GRAPH);
 
   // Decide whether to draw low/high range indicators (0 disables)
-  drawLo := (Assigned(api) and (api.cgmLo <> 0));
-  drawHi := (Assigned(api) and (api.cgmHi <> 0));
+  drawLo := (Assigned(api) and (api.cgmLo <> 0) and PaintRange);
+  drawHi := (Assigned(api) and (api.cgmHi <> 0) and PaintRange);
+  drawRangeLo := (Assigned(api) and (api.cgmRangeLo <> 0) and PaintRangeCGMRange);
+  drawRangeHi := (Assigned(api) and (api.cgmRangeHi <> 0) and PaintRangeCGMRange);
 
   // Apply same adjustments as AdjustGraph so lines align with moved dots
   daAdjust := dotsInView; // same variable used in AdjustGraph
@@ -1884,40 +1891,93 @@ begin
     hiY := hiY + (dotHeight div 2);
   end;
 
+  // Calculate Y positions for range low and high thresholds
+  if drawRangeLo then
+  begin
+    rangeLoY := ValueToY(api.cgmRangeLo * BG_CONVERTIONS[mmol][mgdl]);
+    rangeLoY := rangeLoY + round(clientH * DOT_ADJUST) - daAdjust;
+    rangeLoY := rangeLoY + (dotHeight div 2);
+  end;
+
+  if drawRangeHi then
+  begin
+    rangeHiY := ValueToY(api.cgmRangeHi * BG_CONVERTIONS[mmol][mgdl]);
+    rangeHiY := rangeHiY + round(clientH * DOT_ADJUST) - daAdjust;
+    rangeHiY := rangeHiY + (dotHeight div 2);
+  end;
+
   // Fill the area between low and high thresholds with a darkened background color
   if drawLo and drawHi then
   begin
     cnv.Brush.Style := bsSolid;
-    cnv.Brush.Color := DarkenColor(fBG.Color);
+    cnv.Brush.Color := DarkenColor(fBG.Color, 0.9);
     cnv.Pen.Style := psClear;
     cnv.FillRect(Rect(0, hiY, Self.ClientWidth, loY));
+  end;
+
+  // Fill the area between inner range thresholds with a lightened background color
+  if drawRangeLo and drawRangeHi then
+  begin
+    cnv.Brush.Style := bsSolid;
+    cnv.Brush.Color := DarkenColor(fBG.Color, 0.85);
+    cnv.Pen.Style := psClear;
+    cnv.FillRect(Rect(0, rangeHiY, Self.ClientWidth, rangeLoY));
   end;
 
   // Use semi-transparent versions of range colors
   cnv.Brush.Style := bsClear;
 
-  if drawLo then
+  // Only draw lines if PaintRangeLines is enabled
+  if PaintRangeLines then
   begin
-    // Draw horizontal line for low threshold
-    lineColor := LightenColor(bg_rel_color_lo);
-    cnv.Pen.Color := lineColor;
-    cnv.Pen.Style := psSolid;
-    cnv.Pen.Width := 2;
-    tmp := loY;
-    cnv.MoveTo(0, tmp);
-    cnv.LineTo(Self.ClientWidth, tmp);
-  end;
+    if drawLo then
+    begin
+      // Draw horizontal line for low threshold
+      lineColor := LightenColor(bg_rel_color_lo);
+      cnv.Pen.Color := lineColor;
+      cnv.Pen.Style := psSolid;
+      cnv.Pen.Width := 2;
+      tmp := loY;
+      cnv.MoveTo(0, tmp);
+      cnv.LineTo(Self.ClientWidth, tmp);
+    end;
 
-  if drawHi then
-  begin
-    // Draw horizontal line for high threshold
-    lineColor := LightenColor(bg_rel_color_hi);
-    cnv.Pen.Color := lineColor;
-    cnv.Pen.Style := psSolid;
-    cnv.Pen.Width := 2;
-    tmp := hiY;
-    cnv.MoveTo(0, tmp);
-    cnv.LineTo(Self.ClientWidth, tmp);
+    if drawHi then
+    begin
+      // Draw horizontal line for high threshold
+      lineColor := LightenColor(bg_rel_color_hi);
+      cnv.Pen.Color := lineColor;
+      cnv.Pen.Style := psSolid;
+      cnv.Pen.Width := 2;
+      tmp := hiY;
+      cnv.MoveTo(0, tmp);
+      cnv.LineTo(Self.ClientWidth, tmp);
+    end;
+
+    // Draw range threshold lines (inner thresholds within the main range)
+    if drawRangeLo then
+    begin
+      // Draw horizontal line for range low threshold
+      lineColor := LightenColor(fBG.Color, 0.5);
+      cnv.Pen.Color := lineColor;
+      cnv.Pen.Style := psSolid;
+      cnv.Pen.Width := 1;
+      tmp := rangeLoY;
+      cnv.MoveTo(0, tmp);
+      cnv.LineTo(Self.ClientWidth, tmp);
+    end;
+
+    if drawRangeHi then
+    begin
+      // Draw horizontal line for range high threshold
+      lineColor := LightenColor(fBG.Color, 0.5);
+      cnv.Pen.Color := lineColor;
+      cnv.Pen.Style := psSolid;
+      cnv.Pen.Width := 1;
+      tmp := rangeHiY;
+      cnv.MoveTo(0, tmp);
+      cnv.LineTo(Self.ClientWidth, tmp);
+    end;
   end;
 end;
 
@@ -2685,6 +2745,8 @@ var
 
       cbOffBar.Checked := native.GetBoolSetting('ux.off_bar', false);
       cbPaintHiLo.Checked := native.GetBoolSetting('ux.paint_range', true);
+      cbPaintLines.Checked := native.GetBoolSetting('ux.paint_range_lines', false);
+      cbPaintHiLoRange.checked := native.GetBoolSetting('ux.paint_range_cgmrange', false);
       edCommaSep.Text := GetCharSetting('locale.separator', '.');
       edTray.Value := GetIntSetting('ux.badge_size', 0);
 
@@ -2892,6 +2954,8 @@ if cbPos.ItemIndex = -1 then
       native.SetBoolSetting('range.custom', cbTIR.Checked);
       native.SetBoolSetting('ux.off_bar', cbOffBar.Checked);
       native.SetBoolSetting('ux.paint_range', cbPaintHiLo.Checked);
+      native.SetBoolSetting('ux.paint_range_lines', cbPaintLines.Checked);
+      native.SetBoolSetting('ux.paint_range_cgmrange', cbPaintHiLoRange.checked);
       native.SetSetting('locale.separator', edCommaSep.text);
       native.SetSetting('ux.badge_size', edTray.Value.ToString);
 
