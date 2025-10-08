@@ -2296,25 +2296,26 @@ begin
       Exit;
   {$endif}
 
+  hi := api.cgmHi * BG_CONVERTIONS[un][mgdl];
+  lo := api.cgmLo * BG_CONVERTIONS[un][mgdl];
+  rhi := api.cgmRangeHi * BG_CONVERTIONS[un][mgdl];
+  rlo := api.cgmRangeLo * BG_CONVERTIONS[un][mgdl];
+
   if minTotal < 60 then
   begin
-    msg := Format(RS_TIR_M, [minTotal]);
+    msg := Format(RS_TIR_M, [minTotal, lo, hi, rlo, rhi]);
   end
   else
   begin
     hours := minTotal div 60;
     mins := minTotal mod 60;
     if hours < 2 then
-      msg := Format(RS_TIR_H1, [hours, mins])
+      msg := Format(RS_TIR_H1, [hours, mins, lo, hi, rlo, rhi])
     else
-      msg := Format(RS_TIR_H, [hours, mins]);
+      msg := Format(RS_TIR_H, [hours, mins, lo, hi, rlo, rhi]);
   end;
-  hi := api.cgmHi * BG_CONVERTIONS[un][mgdl];
-  lo := api.cgmLo * BG_CONVERTIONS[un][mgdl];
-  rhi := api.cgmRangeHi * BG_CONVERTIONS[un][mgdl];
-  rlo := api.cgmRangeLo * BG_CONVERTIONS[un][mgdl];
 
-  ShowMessage(msg+LineEnding+LineEnding+' '+FormatFloat('0.00', lo) + '  ' + FormatFloat('0.00', hi));
+  ShowMessage(msg+LineEnding);
 end;
 
 
