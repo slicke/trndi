@@ -1891,7 +1891,6 @@ var
   drawLo, drawHi, drawRangeLo, drawRangeHi: boolean;
   tmp: integer;
   clientH: integer;
-  daAdjust: integer;
   dotHeight: integer;
 // Helper to map a BG value in internal units to a Y coordinate matching SetPointHeight
   function ValueToY(const Value: single): integer;
@@ -1937,37 +1936,30 @@ begin
   drawRangeLo := (Assigned(api) and (api.cgmRangeLo <> 0) and PaintRangeCGMRange);
   drawRangeHi := (Assigned(api) and (api.cgmRangeHi <> 0) and PaintRangeCGMRange);
 
-  // Apply same adjustments as AdjustGraph so lines align with moved dots
-  daAdjust := dotsInView; // same variable used in AdjustGraph
-
-  // Calculate Y positions for low and high thresholds
+  // Calculate Y positions for low and high thresholds (static positions, no dot adjustments)
   if drawLo then
   begin
     loY := ValueToY(api.cgmLo * BG_CONVERTIONS[mmol][mgdl]);
-    loY := loY + round(clientH * DOT_ADJUST) - daAdjust;
-    loY := loY + (dotHeight div 2);
+    loY := loY + (dotHeight div 2);  // Center line through middle of dot height
   end;
 
   if drawHi then
   begin
     hiY := ValueToY(api.cgmHi * BG_CONVERTIONS[mmol][mgdl]);
-    hiY := hiY + round(clientH * DOT_ADJUST) - daAdjust;
-    hiY := hiY + (dotHeight div 2);
+    hiY := hiY + (dotHeight div 2);  // Center line through middle of dot height
   end;
 
   // Calculate Y positions for range low and high thresholds
   if drawRangeLo then
   begin
     rangeLoY := ValueToY(api.cgmRangeLo * BG_CONVERTIONS[mmol][mgdl]);
-    rangeLoY := rangeLoY + round(clientH * DOT_ADJUST) - daAdjust;
-    rangeLoY := rangeLoY + (dotHeight div 2);
+    rangeLoY := rangeLoY + (dotHeight div 2);  // Center line through middle of dot height
   end;
 
   if drawRangeHi then
   begin
     rangeHiY := ValueToY(api.cgmRangeHi * BG_CONVERTIONS[mmol][mgdl]);
-    rangeHiY := rangeHiY + round(clientH * DOT_ADJUST) - daAdjust;
-    rangeHiY := rangeHiY + (dotHeight div 2);
+    rangeHiY := rangeHiY + (dotHeight div 2);  // Center line through middle of dot height
   end;
 
   // Fill the area between low and high thresholds with a darkened background color
