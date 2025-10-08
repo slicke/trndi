@@ -1023,17 +1023,29 @@ msgstr ""
 
 #: trndi.strings.rs_tir_h
 #, object-pascal-format
-msgid "This is your time in range for the last %d hours and %d minutes"
+msgid ""
+"This is your time in range for the last %d hours and %d minutes\n"
+"\n"
+"Your low limit is %.1f, high is %.1f\n"
+"Your low range is %.1f, high is %.1f"
 msgstr ""
 
 #: trndi.strings.rs_tir_h1
 #, object-pascal-format
-msgid "This is your time in range for the last hour and %d minutes"
+msgid ""
+"This is your time in range for the last hour and %d minutes\n"
+"\n"
+"Your low limit is %.1f, high is %.1f\n"
+"Your low range is %.1f, high is %.1f"
 msgstr ""
 
 #: trndi.strings.rs_tir_m
 #, object-pascal-format
-msgid "This is your time in range for the last %d minutes"
+msgid ""
+"This is your time in range for the last %d minutes\n"
+"\n"
+"Your low limit is %.1f, high is %.1f\n"
+"Your low range is %.1f, high is %.1f"
 msgstr ""
 
 #: trndi.strings.rs_tpobottomleft

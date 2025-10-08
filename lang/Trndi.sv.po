@@ -384,7 +384,7 @@ msgstr "Visa sidopanelen när värdet inte är i målområdet"
 
 #: tfconf.cbpainthilo.caption
 msgid "Paint the area between high and low"
-msgstr ""
+msgstr "Rita ytan mellan hög och låg"
 
 #: tfconf.cbprivacy.caption
 msgid "Privacy Mode (Hide number)"
@@ -631,7 +631,7 @@ msgstr "API-nyckel / Dexcomlösenord"
 
 #: tfconf.lproblematic.caption
 msgid "Compatibility mode: Your window manager does not support all features, please consider eg KDE"
-msgstr ""
+msgstr "Kompatibilitetsläge: Din fönsterhanterare stöder inte alla funktioner, överväg t ex KDE"
 
 #: tfconf.ltestannounce.caption
 msgid "Test an announcement"
@@ -822,7 +822,7 @@ msgstr "Länge sedan"
 #: trndi.strings.rs_days_ago
 #, object-pascal-format
 msgid "%d days ago"
-msgstr ""
+msgstr "%d dagar sedan"
 
 #: trndi.strings.rs_diff
 msgid "This is the change from the latest reading"
@@ -1071,18 +1071,42 @@ msgstr "Laddar tillägg..."
 
 #: trndi.strings.rs_tir_h
 #, object-pascal-format
-msgid "This is your time in range for the last %d hours and %d minutes"
-msgstr "Detta är din tid i målområdet under de senaste %d timmarna och %d minuterna"
+msgid ""
+"This is your time in range for the last %d hours and %d minutes\n"
+"\n"
+"Your low limit is %.1f, high is %.1f\n"
+"Your low range is %.1f, high is %.1f"
+msgstr ""
+"Detta är din tid i målområdet under de senaste %d timmarna och %d minuterna\n"
+"\n"
+"Din låga gräns är %.1f, hög är %1.f\n"
+"Ditt låga område är %.1f, hög är %.1f"
 
 #: trndi.strings.rs_tir_h1
 #, object-pascal-format
-msgid "This is your time in range for the last hour and %d minutes"
-msgstr "Detta är din tid i målområdet under den senaste timmen och %d minuterna"
+msgid ""
+"This is your time in range for the last hour and %d minutes\n"
+"\n"
+"Your low limit is %.1f, high is %.1f\n"
+"Your low range is %.1f, high is %.1f"
+msgstr ""
+"Detta är din tid i målområdet under den senaste timmen och %d minuterna\n"
+"\n"
+"Din låga gräns är %.1f, hög är %1.f\n"
+"Ditt låga område är %.1f, hög är %.1f"
 
 #: trndi.strings.rs_tir_m
 #, object-pascal-format
-msgid "This is your time in range for the last %d minutes"
-msgstr "Detta är din tid i målområdet under de senaste %d minuterna"
+msgid ""
+"This is your time in range for the last %d minutes\n"
+"\n"
+"Your low limit is %.1f, high is %.1f\n"
+"Your low range is %.1f, high is %.1f"
+msgstr ""
+"Detta är din tid i målområdet under de senaste %d minuterna\n"
+"\n"
+"Din låga gräns är %.1f, hög är %1.f\n"
+"Ditt låga område är %.1f, hög är %.1f"
 
 #: trndi.strings.rs_tpobottomleft
 msgctxt "trndi.strings.rs_tpobottomleft"
@@ -1524,11 +1548,11 @@ msgstr "Borttagna konton blir inaktiva, de kan återställas genom att skapa om 
 
 #: uconf.rs_saftey_hi
 msgid "Trndi won't allow a larger limit, for your own saftey. This can be overridden manually/via plugin"
-msgstr ""
+msgstr "Trndi tillåter inte en större gräns, för din egen säkerhet. Detta kan överskrivas manuellt/via plugin"
 
 #: uconf.rs_saftey_low
 msgid "Trndi won't allow a lower limit, the backend system only reports values every 5 minutes. 6 = one reading missing."
-msgstr ""
+msgstr "Trndi tillåter inte en lägre gräns, backendsystemet rapporterar bara värden var 5:e minut. 6 = en missad avläsning."
 
 #: uconf.rs_select_font
 msgid "Select a font"
@@ -1542,7 +1566,7 @@ msgstr "Du är uppdaterad"
 msgid ""
 "Your desktop session is Wayland. Wayland compositors (including KWin) restrict third-party apps from forcing windows above others.\n"
 "Right-click the title bar, select more options and check the always-on-top option (or similar)"
-msgstr ""
+msgstr "Din skrivbordssession är Wayland. Wayland-kompositorer (inklusive KWin) begränsar tredjepartsappar från att tvinga sig överst. Högerklicka på titelraden, välj fler alternativ och klicka på alltid överst (eller liknande)"
 
 #: ufloat.rscustomop
 msgid "You can use shift+<number> to manually set visibility (0 = 100% visible)"
@@ -1551,4 +1575,3 @@ msgstr "Du kan använda skift+<nummerr> för att manuellt sätta synligheten (0 
 #: ufloat.rscustomsize
 msgid "You can hold down shift and plus (+) or minus (-) to change the window size"
 msgstr "Du kan hålla ned skift och plus (+) eller minus (-) för att justera fönstrets storlek"
-
