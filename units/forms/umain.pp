@@ -1925,10 +1925,21 @@ begin
     clientH := Self.ClientHeight;
 
   // Get dot height for centering lines through the middle of dots
+  // Important: Calculate using DOT_GRAPH character at normal dot font size,
+  // not the current caption/font which may be showing a value
   dotHeight := 0;
-  if (Length(TrendDots) > 0) and Assigned(TrendDots[1]) and
-    Assigned(TrendDots[1].Canvas) then
-    dotHeight := TrendDots[1].Canvas.TextHeight(DOT_GRAPH);
+  if (Length(TrendDots) > 0) and Assigned(TrendDots[1]) then
+  begin
+    // Save current font size
+    tmp := TrendDots[1].Font.Size;
+    // Set to normal dot size temporarily
+    TrendDots[1].Font.Size := (ClientWidth div 24) * dotscale;
+    // Measure the dot character at normal size
+    if Assigned(TrendDots[1].Canvas) then
+      dotHeight := TrendDots[1].Canvas.TextHeight(DOT_GRAPH);
+    // Restore original font size
+    TrendDots[1].Font.Size := tmp;
+  end;
 
   // Decide whether to draw low/high range indicators (0 disables)
   drawLo := (Assigned(api) and (api.cgmLo <> 0) and PaintRange);
