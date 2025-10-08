@@ -405,7 +405,6 @@ isWSL : boolean = false;
   applocale: string;
   dotscale: integer = 1;
   badge_adjust: single = 0;
-  DOT_OFFSET_RANGE: integer = {$ifdef windows}3{$else}0{$endif}; // Fine-tune vertical alignment of threshold lines with dots
   highAlerted: boolean = False; // A high alert is active
   lowAlerted: boolean = False; // A low alert is active
   perfectTriggered: boolean = False; // A perfect reading is active
@@ -416,6 +415,13 @@ isWSL : boolean = false;
   {$ifdef darwin}
 MacAppDelegate: TMyAppDelegate;
 upMenu: TMenuItem;
+  DOT_OFFSET_RANGE: integer = 0; // Fine-tune vertical alignment of threshold lines with dots
+  {$endif}
+  {$ifdef windows}
+    DOT_OFFSET_RANGE: integer = 3; // Fine-tune vertical alignment of threshold lines with dots
+  {$endif}
+  {$ifdef X_LINUXBSD}
+  DOT_OFFSET_RANGE: integer = -15; // Fine-tune vertical alignment of threshold lines with dots
   {$endif}
 
 var
@@ -1286,6 +1292,8 @@ begin
     // UI preferences
     dotscale := GetIntSetting('ux.dot_scale', 1);
     DOT_ADJUST := GetFloatSetting('ux.dot_adjust', 0);
+
+    DOT_OFFSET_RANGE := GetIntSetting('ux.dot_offset_range', DOT_OFFSET_RANGE);
     // DOT_VISUAL_OFFSET := CalculateDotVisualOffset;  // No longer needed - centering uses half dot height
     miRangeColor.Checked := GetBoolSetting('ux.range_color', True);
     PaintRange := native.GetBoolSetting('ux.paint_range', True);
