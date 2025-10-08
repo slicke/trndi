@@ -48,36 +48,46 @@ unit umain;
 interface
 
 uses
-trndi.strings, LCLTranslator, Classes, Menus, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, ExtCtrls,
-trndi.api.dexcom, trndi.api.nightscout, trndi.api.nightscout3, trndi.types, math, DateUtils, FileUtil, LclIntf, TypInfo, LResources,
-slicke.ux.alert, usplash, Generics.Collections, trndi.funcs, Trndi.native.base, trndi.shared, trndi.api.debug_custom,
-SystemMediaController,
-{$ifdef TrndiExt}
+  trndi.strings, LCLTranslator, Classes, Menus, SysUtils, Forms, Controls,
+  Graphics, Dialogs, StdCtrls, ExtCtrls,
+  trndi.api.dexcom, trndi.api.nightscout, trndi.api.nightscout3, trndi.types,
+  Math, DateUtils, FileUtil, LclIntf, TypInfo, LResources,
+  slicke.ux.alert, usplash, Generics.Collections, trndi.funcs,
+  Trndi.native.base, trndi.shared, trndi.api.debug_custom,
+  SystemMediaController,
+  {$ifdef TrndiExt}
 trndi.Ext.Engine, trndi.Ext.jsfuncs, trndi.ext.promise, mormot.core.base,
-{$endif}
-{$ifdef Darwin}
+  {$endif}
+  {$ifdef Darwin}
 CocoaAll, MacOSAll,
-{$endif}
-{$ifdef LINUX}
+  {$endif}
+  {$ifdef LINUX}
 kdebadge,
-{$endif}
-LazFileUtils, uconf, trndi.native, Trndi.API, trndi.api.xDrip,{$ifdef DEBUG} trndi.api.debug, trndi.api.debug_edge, trndi.api.debug_missing, trndi.api.debug_perfect, {$endif}
-{$ifdef LCLQt6}Qt6, QtWidgets,{$endif}
-StrUtils, TouchDetection, ufloat, LCLType;
+  {$endif}
+  LazFileUtils, uconf, trndi.native, Trndi.API,
+  trndi.api.xDrip,{$ifdef DEBUG} trndi.api.debug, trndi.api.debug_edge, trndi.api.debug_missing, trndi.api.debug_perfect, {$endif}
+  {$ifdef LCLQt6}Qt6, QtWidgets,{$endif}
+  StrUtils, TouchDetection, ufloat, LCLType;
 
 type
-TFloatIntDictionary = specialize TDictionary<Single, Integer>; // Specialized TDictionary
+  TFloatIntDictionary = specialize TDictionary<single, integer>;
+  // Specialized TDictionary
   // Procedures which are applied to the trend drawing
-TTrendProc = procedure(l: TPaintBox; c, ix: integer) of object;
-TTrendProcLoop = procedure(l: TPaintBox; c, ix: integer; ls: array of TPaintbox) of object;
-TrndiPos = (tpoCenter = 0, tpoBottomLeft = 1, tpoBottomRight = 2, tpoCustom = 3, tpoTopRight = 4);
-TPONames = array[TrndiPos] of string;
+  TTrendProc = procedure(l: TPaintBox; c, ix: integer) of object;
+  TTrendProcLoop = procedure(l: TPaintBox; c, ix: integer;
+    ls: array of TPaintbox) of object;
+  TrndiPos = (tpoCenter = 0, tpoBottomLeft = 1, tpoBottomRight = 2,
+    tpoCustom = 3, tpoTopRight = 4);
+  TPONames = array[TrndiPos] of string;
+
 var
-TrndiPosNames: TPONames = (  RS_tpoCenter,  RS_tpoBottomLeft , RS_tpoBottomRight,  RS_tpoCustom, RS_tpoTopRight );
+  TrndiPosNames: TPONames = (RS_tpoCenter, RS_tpoBottomLeft,
+    RS_tpoBottomRight, RS_tpoCustom, RS_tpoTopRight);
+
 type
   { TfBG }
 
-{$ifdef Darwin}
+  {$ifdef Darwin}
 { Custom NSApplicationDelegate class }
 TMyAppDelegate = objcclass(NSObject, NSApplicationDelegateProtocol)
 public
@@ -86,378 +96,388 @@ public
   function applicationDockMenu(sender: NSApplication): NSMenu; message 'applicationDockMenu:';
     procedure miSettingsMacClick(sender: id); message 'miSettings:';
 end;
-{$endif}
+  {$endif}
 
-TfBG = class(TForm)
-  apMain: TApplicationProperties;
-  bSettings: TButton;
-  pnWarnlast: TLabel;
-  lRef: TLabel;
-  lDot10: TPaintBox;
-  lDot2: TPaintBox;
-  lDot3: TPaintBox;
-  lDot4: TPaintBox;
-  lDot5: TPaintBox;
-  lDot6: TPaintBox;
-  lDot7: TPaintBox;
-  lDot8: TPaintBox;
-  lDot9: TPaintBox;
-  lMissing: TLabel;
-  lTir:TLabel;
-  lAgo:TLabel;
-  miADotAdjust: TMenuItem;
-  miDotsInView: TMenuItem;
-  miExit: TMenuItem;
-  miCustomDots: TMenuItem;
-  miDebugBackend: TMenuItem;
-  miDotVal: TMenuItem;
-  miATouchAuto: TMenuItem;
-  miATouchNo: TMenuItem;
-  miATouchYes: TMenuItem;
-  miASystemInfo: TMenuItem;
-  miADots: TMenuItem;
-  miATouch: TMenuItem;
-  miAdvanced: TMenuItem;
-  lDot1: TPaintBox;
-  misep: TMenuItem;
-  miSplit6: TMenuItem;
-  miSplit5: TMenuItem;
-  miAnnounce:TMenuItem;
-  miDotHuge:TMenuItem;
-  miDotBig:TMenuItem;
-  miDotNormal:TMenuItem;
-  miDotSize:TMenuItem;
-  miAlternate:TMenuItem;
-  miHistory:TMenuItem;
-  miClock:TMenuItem;
-  miRangeColor:TMenuItem;
-  miPref:TMenuItem;
-  miFloatOn:TMenuItem;
-  pnOffReading: TPanel;
-  pnWarning:TPanel;
-  pnMultiUser:TPanel;
-  pnOffRangeBar:TPanel;
-  Separator1:TMenuItem;
-  miBorders:TMenuItem;
-  miFullScreen:TMenuItem;
-  miOnTop:TMenuItem;
-  miRefresh:TMenuItem;
-  miSplit4:TMenuItem;
-  miLimitExplain: TMenuItem;
-  miSplit3: TMenuItem;
-  miRangeLo: TMenuItem;
-  miRangeHi: TMenuItem;
-  miSplit2: TMenuItem;
-  miLO: TMenuItem;
-  miHi: TMenuItem;
-  miInfo: TMenuItem;
-  miSplit1: TMenuItem;
-  miForce: TMenuItem;
-  pnOffRange: TPanel;
-  lArrow: TLabel;
-  lDiff: TLabel;
-  lVal: TLabel;
-  miSettings: TMenuItem;
-  pmSettings: TPopupMenu;
-  mSplit5:TMenuItem;
-  Separator4: TMenuItem;
-  tAgo:TTimer;
-  tClock:TTimer;
-  tSetup: TTimer;
-  tInit: TTimer;
-  tSwap:TTimer;
-  tResize:TTimer;
-  tMissed:TTimer;
-  tTouch: TTimer;
-  tMain: TTimer;
-  procedure AdjustGraph;
-  procedure bSettingsClick(Sender: TObject);
-  procedure fbReadingsDblClick(Sender:TObject);
-  procedure FormCloseQuery(Sender: TObject; var CanClose: boolean);
-  procedure FormClose(Sender: TObject; var {%H-}CloseAction: TCloseAction);
-  procedure FormCreate(Sender: TObject);
-  procedure FormDblClick(Sender: TObject);
-  procedure FormDestroy(Sender:TObject);
-  procedure FormKeyPress(Sender:TObject;var Key:char);
-  procedure DotPaint(Sender: TObject);
-  procedure lDiffClick(Sender: TObject);
-  procedure miDotNormalDrawItem(Sender: TObject; ACanvas: TCanvas;
-    ARect: TRect; AState: TOwnerDrawState);
-  procedure miDotNormalMeasureItem(Sender: TObject; ACanvas: TCanvas;
-    var AWidth, AHeight: Integer);
-  procedure miDotsInViewClick(Sender: TObject);
-  procedure miExitClick(Sender: TObject);
-  procedure miCustomDotsClick(Sender: TObject);
-  procedure miATouchAutoClick(Sender: TObject);
-  procedure miADotAdjustClick(Sender: TObject);
-  procedure miADotScaleClick(Sender: TObject);
-  procedure miADotsClick(Sender: TObject);
-  procedure miASystemInfoClick(Sender: TObject);
-  procedure miATouchClick(Sender: TObject);
-  procedure miATouchNoClick(Sender: TObject);
-  procedure miATouchYesClick(Sender: TObject);
-  procedure miDebugBackendClick(Sender: TObject);
-  procedure pmSettingsClose(Sender: TObject);
-  procedure pnWarningClick(Sender: TObject);
-  procedure pnWarningPaint(Sender: TObject);
-  procedure speakReading;
-  procedure FormMouseLeave(Sender:TObject);
-  procedure FormMouseMove(Sender:TObject;{%H-}Shift:TShiftState;X,Y:integer);
-  procedure FormResize(Sender: TObject);
-  procedure FormShow(Sender:TObject);
-  procedure FormPaint(Sender: TObject);
-  procedure lAgoClick(Sender:TObject);
-  procedure lArrowClick(Sender:TObject);
-  procedure lDiffDblClick(Sender: TObject);
-  procedure lDot7DblClick(Sender:TObject);
-  procedure lgMainClick(Sender: TObject);
-  procedure lTirClick(Sender:TObject);
-  procedure lValClick(Sender: TObject);
-  procedure lValDblClick(Sender: TObject);
-  procedure lValMouseDown(Sender: TObject; Button: TMouseButton; {%H-}Shift: TShiftState; X, Y: integer);
-  procedure lValMouseUp(Sender: TObject; {%H-}Button: TMouseButton; {%H-}Shift: TShiftState; {%H-}X, {%H-}Y: integer);
-  procedure lValStartDrag(Sender: TObject; var {%H-}DragObject: TDragObject);
-  procedure miAnnounceClick(Sender:TObject);
-  procedure miAlternateClick(Sender:TObject);
-  procedure miClockClick(Sender:TObject);
-  procedure miDotNormalClick(Sender:TObject);
-  procedure miFloatOnClick(Sender:TObject);
-  procedure miHistoryClick(Sender:TObject);
-  procedure miRangeColorClick(Sender:TObject);
-  procedure miBordersClick(Sender:TObject);
-  procedure miForceClick(Sender: TObject);
-  procedure miLimitExplainClick(Sender: TObject);
-  procedure miOnTopClick(Sender:TObject);
-  procedure miSettingsClick(Sender: TObject);
-  procedure onTrendClick(Sender: TObject);
-  procedure pnOffReadingPaint(Sender: TObject);
-  procedure pmSettingsMeasureItem(Sender:TObject;ACanvas:TCanvas;var AWidth,
-    AHeight:integer);
-  procedure pmSettingsPopup(Sender:TObject);
-  procedure pnMultiUserClick(Sender:TObject);
-  procedure pnOffRangeClick(Sender: TObject);
-  procedure tAgoTimer(Sender:TObject);
-  procedure tClockTimer(Sender:TObject);
-  procedure tEdgesTimer(Sender:TObject);
-  procedure tInitTimer(Sender: TObject);
-  procedure tResizeTimer(Sender:TObject);
-  procedure tMainTimer(Sender: TObject);
-  procedure tMissedTimer(Sender:TObject);
-  procedure tSetupTimer(Sender: TObject);
-  procedure tSwapTimer(Sender:TObject);
-  procedure tTouchTimer(Sender: TObject);
-  procedure TfFloatOnHide(Sender:TObject);
-private
-  FStoredWindowInfo: record
-    Left, Top, Width, Height: Integer;
-    WindowState: TWindowState;
-    BorderStyle: TFormBorderStyle;
-    FormStyle: TFormStyle;
-    Initialized: Boolean;
-  end;
-  titlecolor: boolean;
-  FShuttingDown: Boolean; // Flag to prevent recursive shutdown calls
-  
-  // Performance optimization fields
-  FCachedTextWidth: Integer;
-  FCachedTextHeight: Integer;
-  FCachedFontSize: Integer;
-  FCachedFontName: string;
-  FLastReadingsHash: Cardinal;
-  FLastAPICall: TDateTime;
-  FCachedReadings: array of BGReading;
-  FLastUIColor: TColor;
-  FLastUICaption: string;
-  FLastTir: string;
-  FLastTirColor: TColor;
-  
+  TfBG = class(TForm)
+    apMain: TApplicationProperties;
+    bSettings: TButton;
+    pnWarnlast: TLabel;
+    lRef: TLabel;
+    lDot10: TPaintBox;
+    lDot2: TPaintBox;
+    lDot3: TPaintBox;
+    lDot4: TPaintBox;
+    lDot5: TPaintBox;
+    lDot6: TPaintBox;
+    lDot7: TPaintBox;
+    lDot8: TPaintBox;
+    lDot9: TPaintBox;
+    lMissing: TLabel;
+    lTir: TLabel;
+    lAgo: TLabel;
+    miADotAdjust: TMenuItem;
+    miDotsInView: TMenuItem;
+    miExit: TMenuItem;
+    miCustomDots: TMenuItem;
+    miDebugBackend: TMenuItem;
+    miDotVal: TMenuItem;
+    miATouchAuto: TMenuItem;
+    miATouchNo: TMenuItem;
+    miATouchYes: TMenuItem;
+    miASystemInfo: TMenuItem;
+    miADots: TMenuItem;
+    miATouch: TMenuItem;
+    miAdvanced: TMenuItem;
+    lDot1: TPaintBox;
+    misep: TMenuItem;
+    miSplit6: TMenuItem;
+    miSplit5: TMenuItem;
+    miAnnounce: TMenuItem;
+    miDotHuge: TMenuItem;
+    miDotBig: TMenuItem;
+    miDotNormal: TMenuItem;
+    miDotSize: TMenuItem;
+    miAlternate: TMenuItem;
+    miHistory: TMenuItem;
+    miClock: TMenuItem;
+    miRangeColor: TMenuItem;
+    miPref: TMenuItem;
+    miFloatOn: TMenuItem;
+    pnOffReading: TPanel;
+    pnWarning: TPanel;
+    pnMultiUser: TPanel;
+    pnOffRangeBar: TPanel;
+    Separator1: TMenuItem;
+    miBorders: TMenuItem;
+    miFullScreen: TMenuItem;
+    miOnTop: TMenuItem;
+    miRefresh: TMenuItem;
+    miSplit4: TMenuItem;
+    miLimitExplain: TMenuItem;
+    miSplit3: TMenuItem;
+    miRangeLo: TMenuItem;
+    miRangeHi: TMenuItem;
+    miSplit2: TMenuItem;
+    miLO: TMenuItem;
+    miHi: TMenuItem;
+    miInfo: TMenuItem;
+    miSplit1: TMenuItem;
+    miForce: TMenuItem;
+    pnOffRange: TPanel;
+    lArrow: TLabel;
+    lDiff: TLabel;
+    lVal: TLabel;
+    miSettings: TMenuItem;
+    pmSettings: TPopupMenu;
+    mSplit5: TMenuItem;
+    Separator4: TMenuItem;
+    tAgo: TTimer;
+    tClock: TTimer;
+    tSetup: TTimer;
+    tInit: TTimer;
+    tSwap: TTimer;
+    tResize: TTimer;
+    tMissed: TTimer;
+    tTouch: TTimer;
+    tMain: TTimer;
+    procedure AdjustGraph;
+    procedure bSettingsClick(Sender: TObject);
+    procedure fbReadingsDblClick(Sender: TObject);
+    procedure FormCloseQuery(Sender: TObject; var CanClose: boolean);
+    procedure FormClose(Sender: TObject; var {%H-}CloseAction: TCloseAction);
+    procedure FormCreate(Sender: TObject);
+    procedure FormDblClick(Sender: TObject);
+    procedure FormDestroy(Sender: TObject);
+    procedure FormKeyPress(Sender: TObject; var Key: char);
+    procedure DotPaint(Sender: TObject);
+    procedure lDiffClick(Sender: TObject);
+    procedure miDotNormalDrawItem(Sender: TObject; ACanvas: TCanvas;
+      ARect: TRect; AState: TOwnerDrawState);
+    procedure miDotNormalMeasureItem(Sender: TObject; ACanvas: TCanvas;
+      var AWidth, AHeight: integer);
+    procedure miDotsInViewClick(Sender: TObject);
+    procedure miExitClick(Sender: TObject);
+    procedure miCustomDotsClick(Sender: TObject);
+    procedure miATouchAutoClick(Sender: TObject);
+    procedure miADotAdjustClick(Sender: TObject);
+    procedure miADotScaleClick(Sender: TObject);
+    procedure miADotsClick(Sender: TObject);
+    procedure miASystemInfoClick(Sender: TObject);
+    procedure miATouchClick(Sender: TObject);
+    procedure miATouchNoClick(Sender: TObject);
+    procedure miATouchYesClick(Sender: TObject);
+    procedure miDebugBackendClick(Sender: TObject);
+    procedure pmSettingsClose(Sender: TObject);
+    procedure pnWarningClick(Sender: TObject);
+    procedure pnWarningPaint(Sender: TObject);
+    procedure speakReading;
+    procedure FormMouseLeave(Sender: TObject);
+    procedure FormMouseMove(Sender: TObject;{%H-}Shift: TShiftState; X, Y: integer);
+    procedure FormResize(Sender: TObject);
+    procedure FormShow(Sender: TObject);
+    procedure FormPaint(Sender: TObject);
+    procedure lAgoClick(Sender: TObject);
+    procedure lArrowClick(Sender: TObject);
+    procedure lDiffDblClick(Sender: TObject);
+    procedure lDot7DblClick(Sender: TObject);
+    procedure lgMainClick(Sender: TObject);
+    procedure lTirClick(Sender: TObject);
+    procedure lValClick(Sender: TObject);
+    procedure lValDblClick(Sender: TObject);
+    procedure lValMouseDown(Sender: TObject; Button: TMouseButton;
+    {%H-}Shift: TShiftState; X, Y: integer);
+    procedure lValMouseUp(Sender: TObject; {%H-}Button: TMouseButton;
+    {%H-}Shift: TShiftState; {%H-}X, {%H-}Y: integer);
+    procedure lValStartDrag(Sender: TObject; var {%H-}DragObject: TDragObject);
+    procedure miAnnounceClick(Sender: TObject);
+    procedure miAlternateClick(Sender: TObject);
+    procedure miClockClick(Sender: TObject);
+    procedure miDotNormalClick(Sender: TObject);
+    procedure miFloatOnClick(Sender: TObject);
+    procedure miHistoryClick(Sender: TObject);
+    procedure miRangeColorClick(Sender: TObject);
+    procedure miBordersClick(Sender: TObject);
+    procedure miForceClick(Sender: TObject);
+    procedure miLimitExplainClick(Sender: TObject);
+    procedure miOnTopClick(Sender: TObject);
+    procedure miSettingsClick(Sender: TObject);
+    procedure onTrendClick(Sender: TObject);
+    procedure pnOffReadingPaint(Sender: TObject);
+    procedure pmSettingsMeasureItem(Sender: TObject; ACanvas: TCanvas;
+      var AWidth, AHeight: integer);
+    procedure pmSettingsPopup(Sender: TObject);
+    procedure pnMultiUserClick(Sender: TObject);
+    procedure pnOffRangeClick(Sender: TObject);
+    procedure tAgoTimer(Sender: TObject);
+    procedure tClockTimer(Sender: TObject);
+    procedure tEdgesTimer(Sender: TObject);
+    procedure tInitTimer(Sender: TObject);
+    procedure tResizeTimer(Sender: TObject);
+    procedure tMainTimer(Sender: TObject);
+    procedure tMissedTimer(Sender: TObject);
+    procedure tSetupTimer(Sender: TObject);
+    procedure tSwapTimer(Sender: TObject);
+    procedure tTouchTimer(Sender: TObject);
+    procedure TfFloatOnHide(Sender: TObject);
+  private
+    FStoredWindowInfo: record
+      Left, Top, Width, Height: integer;
+      WindowState: TWindowState;
+      BorderStyle: TFormBorderStyle;
+      FormStyle: TFormStyle;
+      Initialized: boolean;
+      end;
+    titlecolor: boolean;
+    FShuttingDown: boolean; // Flag to prevent recursive shutdown calls
+
+    // Performance optimization fields
+    FCachedTextWidth: integer;
+    FCachedTextHeight: integer;
+    FCachedFontSize: integer;
+    FCachedFontName: string;
+    FLastReadingsHash: cardinal;
+    FLastAPICall: TDateTime;
+    FCachedReadings: array of BGReading;
+    FLastUIColor: TColor;
+    FLastUICaption: string;
+    FLastTir: string;
+    FLastTirColor: TColor;
+
     // Array to hold references to lDot1 - lDot10
-  TrendDots: array[1..10] of TPaintBox;
-  multi: boolean; // Multi user
-  multinick: string;
-  MediaController: TSystemMediaController;
+    TrendDots: array[1..10] of TPaintBox;
+    multi: boolean; // Multi user
+    multinick: string;
+    MediaController: TSystemMediaController;
 
-  function dotsInView: integer;
-  function setColorMode: boolean;
-  function setColorMode(bg: tColor; const nocolor: boolean = false): boolean;
-  function setSingleColorMode: boolean;
-  procedure SetLang;
-  procedure fixWarningPanel;
-  procedure showWarningPanel(const message: string; clearDisplayValues: boolean = false);
-  procedure CalcRangeTime;
-  function updateReading(boot: boolean = false): boolean;
-  procedure PlaceTrendDots(const Readings: array of BGReading);
-  procedure actOnTrend(proc: TTrendProc);
-  procedure actOnTrend(proc: TTrendProcLoop);
-  procedure setDotWidth(l: TPaintBox; c, ix: integer; {%H-}ls: array of TPaintBox);
-  procedure HideDot(l: TPaintBox; {%H-}c, {%H-}ix: integer);
-  procedure showDot(l: TPaintBox; {%H-}c, {%H-}ix: integer);
-  procedure ResizeDot(l: TPaintBox; {%H-}c, ix: integer);
-  procedure initDot(l: TPaintBox; c, ix: integer);
-  procedure ExpandDot(l: TPaintBox; c, ix: integer);
-  procedure placeForm;
-  function CalculateDotVisualOffset: integer;
+    function dotsInView: integer;
+    function setColorMode: boolean;
+    function setColorMode(bg: tColor; const nocolor: boolean = False): boolean;
+    function setSingleColorMode: boolean;
+    procedure SetLang;
+    procedure fixWarningPanel;
+    procedure showWarningPanel(const message: string;
+      clearDisplayValues: boolean = False);
+    procedure CalcRangeTime;
+    function updateReading(boot: boolean = False): boolean;
+    procedure PlaceTrendDots(const Readings: array of BGReading);
+    procedure actOnTrend(proc: TTrendProc);
+    procedure actOnTrend(proc: TTrendProcLoop);
+    procedure setDotWidth(l: TPaintBox; c, ix: integer; {%H-}ls: array of TPaintBox);
+    procedure HideDot(l: TPaintBox; {%H-}c, {%H-}ix: integer);
+    procedure showDot(l: TPaintBox; {%H-}c, {%H-}ix: integer);
+    procedure ResizeDot(l: TPaintBox; {%H-}c, ix: integer);
+    procedure initDot(l: TPaintBox; c, ix: integer);
+    procedure ExpandDot(l: TPaintBox; c, ix: integer);
+    procedure placeForm;
+    function CalculateDotVisualOffset: integer;
 
-  // Helper methods for update procedure
-  function FetchAndValidateReadings: Boolean;
-  function DoFetchAndValidateReadings(const ForceRefresh: Boolean): Boolean; // Common implementation
-  procedure ProcessCurrentReading;
-  function IsDataFresh: Boolean;
-  procedure SetNextUpdateTimer(const LastReadingTime: TDateTime);
-  procedure UpdateUIBasedOnGlucose;
-  procedure CompleteUIUpdate;
-  procedure FinalizeUIUpdate;
-  procedure HandleHighGlucose(const {%H-}b: BGReading);
-  procedure HandleLowGlucose(const {%H-}b: BGReading);
-  procedure HandleNormalGlucose(const b: BGReading);
-  procedure UpdateOffRangePanel(const Value: Single);
-  procedure DisplayLowRange;
-  procedure DisplayHighRange;
-  procedure FinalizeUpdate;
-  procedure UpdateFloatingWindow;
-  procedure UpdateUIColors;
-  function GetTextColorForBackground(const BgColor: TColor;
-    const DarkenFactor: Double = 0.5;
-    const LightenFactor: Double = 0.3): TColor;
-  function GetAdjustedColorForBackground(
-  const BaseColor: TColor;
-  const BgColor: TColor;
-  const DarkenFactor: Double = 0.6;
-  const LightenFactor: Double = 0.4;
-  const PreferLighter: Boolean = False): TColor;
+    // Helper methods for update procedure
+    function FetchAndValidateReadings: boolean;
+    function DoFetchAndValidateReadings(const ForceRefresh: boolean): boolean;
+    // Common implementation
+    procedure ProcessCurrentReading;
+    function IsDataFresh: boolean;
+    procedure SetNextUpdateTimer(const LastReadingTime: TDateTime);
+    procedure UpdateUIBasedOnGlucose;
+    procedure CompleteUIUpdate;
+    procedure FinalizeUIUpdate;
+    procedure HandleHighGlucose(const {%H-}b: BGReading);
+    procedure HandleLowGlucose(const {%H-}b: BGReading);
+    procedure HandleNormalGlucose(const b: BGReading);
+    procedure UpdateOffRangePanel(const Value: single);
+    procedure DisplayLowRange;
+    procedure DisplayHighRange;
+    procedure FinalizeUpdate;
+    procedure UpdateFloatingWindow;
+    procedure UpdateUIColors;
+    function GetTextColorForBackground(const BgColor: TColor;
+      const DarkenFactor: double = 0.5; const LightenFactor: double = 0.3): TColor;
+    function GetAdjustedColorForBackground(const BaseColor: TColor;
+      const BgColor: TColor; const DarkenFactor: double = 0.6;
+      const LightenFactor: double = 0.4; const PreferLighter: boolean = False): TColor;
 
-  procedure UpdateTrendElements;
-  procedure UpdateApiInformation;
-  procedure ResizeUIElements;
-  procedure UpdateTrendDots;
-  procedure ScaleLbl(ALabel: TLabel; customAl: TAlignment = taCenter; customTl: TTextLayout = tlCenter);
+    procedure UpdateTrendElements;
+    procedure UpdateApiInformation;
+    procedure ResizeUIElements;
+    procedure UpdateTrendDots;
+    procedure ScaleLbl(ALabel: TLabel; customAl: TAlignment = taCenter;
+      customTl: TTextLayout = tlCenter);
 
-  // Performance optimization methods
-  function CalculateReadingsHash(const Readings: array of BGReading): Cardinal;
-  function ShouldUpdateUI(const NewColor: TColor; const NewCaption: string; const NewTIR: string; const NewTIRColor: TColor): Boolean;
-  procedure CacheUIState(const UIColor: TColor; const UICaption: string; const UITir: string; const UITirColor: TColor);
-  function FetchAndValidateReadingsForced: Boolean; // Force fresh API call bypassing cache
-  
-  procedure HandleLatestReadingFreshness(const LatestReading: BGReading; CurrentTime: TDateTime);
-  procedure ProcessTimeIntervals(const SortedReadings: array of BGReading; CurrentTime: TDateTime);
-  function UpdateLabelForReading(SlotIndex: Integer; const Reading: BGReading): Boolean;
-  function DetermineColorForReading(const Reading: BGReading): TColor;
-  procedure DoFullScreen;
-  {$ifdef DARWIN}
+    // Performance optimization methods
+    function CalculateReadingsHash(const Readings: array of BGReading): cardinal;
+    function ShouldUpdateUI(const NewColor: TColor; const NewCaption: string;
+      const NewTIR: string; const NewTIRColor: TColor): boolean;
+    procedure CacheUIState(const UIColor: TColor; const UICaption: string;
+      const UITir: string; const UITirColor: TColor);
+    function FetchAndValidateReadingsForced: boolean;
+    // Force fresh API call bypassing cache
+
+    procedure HandleLatestReadingFreshness(const LatestReading: BGReading;
+      CurrentTime: TDateTime);
+    procedure ProcessTimeIntervals(const SortedReadings: array of BGReading;
+      CurrentTime: TDateTime);
+    function UpdateLabelForReading(SlotIndex: integer;
+      const Reading: BGReading): boolean;
+    function DetermineColorForReading(const Reading: BGReading): TColor;
+    procedure DoFullScreen;
+    {$ifdef DARWIN}
      procedure ToggleFullscreenMac;
-  {$endif}
+    {$endif}
 
-  {$ifdef TrndiExt}
+    {$ifdef TrndiExt}
   procedure LoadExtensions;
-  {$endif}
-  
-  // FormCreate refactored methods
-  {$ifdef DARWIN}
+    {$endif}
+
+    // FormCreate refactored methods
+    {$ifdef DARWIN}
   procedure InitializePlatformMenus;
-  {$endif}
-  {$ifdef X_LINUXBSD}
+    {$endif}
+    {$ifdef X_LINUXBSD}
   procedure InitializeLinuxPlatform;
-  {$endif}
-  procedure InitializeUIComponents;
-  procedure InitializeSplashScreen;
-  procedure LoadUserProfile;
-  procedure CheckAndAcceptLicense;
-  function InitializeAPI: Boolean;
-public
-   firstboot: boolean;
-   procedure AppExceptionHandler(Sender: TObject; {%H-}E: Exception);
-   procedure onGH({%H-}sender: TObject);
-   function lastReading: BGReading;
-   function tryLastReading(out bg: BGReading): boolean;
-end;
+    {$endif}
+    procedure InitializeUIComponents;
+    procedure InitializeSplashScreen;
+    procedure LoadUserProfile;
+    procedure CheckAndAcceptLicense;
+    function InitializeAPI: boolean;
+  public
+    firstboot: boolean;
+    procedure AppExceptionHandler(Sender: TObject; {%H-}E: Exception);
+    procedure onGH({%H-}Sender: TObject);
+    function lastReading: BGReading;
+    function tryLastReading(out bg: BGReading): boolean;
+  end;
 
 
-{$ifdef DARWIN}
+  {$ifdef DARWIN}
 function CFStringCreateWithUTF8String(const utf8Str: PAnsiChar): CFStringRef; external name '_CFStringCreateWithUTF8String';
-{$endif}
+  {$endif}
 
 var
-customTitlebar: boolean = true;
-clockInterval: integer = 20000;
-clockDisplay: integer = 5000;
-fSplash: TfSplash;
-native: TrndiNative;
-{$ifdef X_LINUXBSD}
+  customTitlebar: boolean = True;
+  clockInterval: integer = 20000;
+  clockDisplay: integer = 5000;
+  fSplash: TfSplash;
+  native: TrndiNative;
+  {$ifdef X_LINUXBSD}
 isWSL : boolean = false;
-{$endif}
-applocale: string;
-dotscale: integer = 1;
-badge_adjust: single = 0;
-highAlerted: boolean = false; // A high alert is active
-lowAlerted: boolean = false; // A low alert is active
-perfectTriggered: boolean = false; // A perfect reading is active
-PaintRange: boolean = true;
-PaintRangeCGMRange: boolean = true; // Show cgmRangeLo/cgmRangeHi inner threshold lines
-PaintRangeLines: boolean = false; // Show threshold lines (if false, only filled areas are drawn)
-{$ifdef darwin}
+  {$endif}
+  applocale: string;
+  dotscale: integer = 1;
+  badge_adjust: single = 0;
+  highAlerted: boolean = False; // A high alert is active
+  lowAlerted: boolean = False; // A low alert is active
+  perfectTriggered: boolean = False; // A perfect reading is active
+  PaintRange: boolean = True;
+  PaintRangeCGMRange: boolean = True; // Show cgmRangeLo/cgmRangeHi inner threshold lines
+  PaintRangeLines: boolean = False;
+  // Show threshold lines (if false, only filled areas are drawn)
+  {$ifdef darwin}
 MacAppDelegate: TMyAppDelegate;
 upMenu: TMenuItem;
-{$endif}
+  {$endif}
 
 var
-last_popup: TDateTime = 0;
-bg_alert: boolean = false; // If the BG is high/low since before, so we don't spam notifications
-placed: boolean = false; // If the window has been placed at setup
+  last_popup: TDateTime = 0;
+  bg_alert: boolean = False;
+  // If the BG is high/low since before, so we don't spam notifications
+  placed: boolean = False; // If the window has been placed at setup
 
-username: string = '';
-lastup: tdatetime;
+  username: string = '';
+  lastup: tdatetime;
   // Colors (b)lood(g)lucose (c)olor XX
   // In range
-bg_color_ok: TColor = $0000DC84;
-bg_color_ok_txt: TColor = $00F2FFF2;
+  bg_color_ok: TColor = $0000DC84;
+  bg_color_ok_txt: TColor = $00F2FFF2;
   // Hi
-bg_color_hi: TColor = $0007DAFF;
-bg_color_hi_txt: TColor = $000052FB;
+  bg_color_hi: TColor = $0007DAFF;
+  bg_color_hi_txt: TColor = $000052FB;
   // Low
-bg_color_lo: TColor = $00FFBE0B;
-bg_color_lo_txt: TColor = $00FFFEE9;
+  bg_color_lo: TColor = $00FFBE0B;
+  bg_color_lo_txt: TColor = $00FFFEE9;
 
   // Personal hi
-bg_rel_color_lo: TColor = $00A859EE;
-bg_rel_color_lo_txt: TColor = $002D074E;
+  bg_rel_color_lo: TColor = $00A859EE;
+  bg_rel_color_lo_txt: TColor = $002D074E;
   // Personal low
-bg_rel_color_hi: TColor = $0072C9DE;
-bg_rel_color_hi_txt: TColor = $001C6577;
-// When the TIR is bad
-bad_tir: integer = 5;
-// WHen the TIR is good
-good_tir: integer = 75;
+  bg_rel_color_hi: TColor = $0072C9DE;
+  bg_rel_color_hi_txt: TColor = $001C6577;
+  // When the TIR is bad
+  bad_tir: integer = 5;
+  // WHen the TIR is good
+  good_tir: integer = 75;
 
-fBG: TfBG;
-api: TrndiAPI;
-un: BGUnit = BGUnit.mmol;
-bgs: BGResults;
-{$ifdef TrndiExt}
+  fBG: TfBG;
+  api: TrndiAPI;
+  un: BGUnit = BGUnit.mmol;
+  bgs: BGResults;
+  {$ifdef TrndiExt}
 jsFuncs: TJSfuncs;
-{$endif}
-badge_width: double = 0.8;
-badge_font: integer = 8;
+  {$endif}
+  badge_width: double = 0.8;
+  badge_font: integer = 8;
 
   // Touch screen
-StartTouch: TDateTime;
-IsTouched: boolean;
-HasTouch: boolean;
-HasMultiTouch: boolean;
-touchHelper: TTouchDetector;
+  StartTouch: TDateTime;
+  IsTouched: boolean;
+  HasTouch: boolean;
+  HasMultiTouch: boolean;
+  touchHelper: TTouchDetector;
 
-privacyMode: boolean = false;
+  privacyMode: boolean = False;
 
-// Handle dragging on window
-DraggingWin: boolean;
-PX, PY: integer;
+  // Handle dragging on window
+  DraggingWin: boolean;
+  PX, PY: integer;
 
-{$ifdef X_LINUXBSD}
+  {$ifdef X_LINUXBSD}
 IsRaspberry: boolean;
-{$endif}
+  {$endif}
 
 implementation
 
 {$R *.lfm}
+
 {$I ../../inc/tfuncs.inc}
 
 {$ifdef TrndiExt}
@@ -538,7 +558,8 @@ const
   Tol = 5; // pixel tolerance to ignore tiny rounding differences
 begin
   Result := 0;
-  adjustSide := tbUnknown; // We can have both hi and lows; lock to first side encountered
+  adjustSide := tbUnknown;
+  // We can have both hi and lows; lock to first side encountered
 
   for x in TrendDots do
   begin
@@ -574,9 +595,9 @@ begin
 
 end;
 
-procedure TfBG.onGH(sender: TObject);
+procedure TfBG.onGH(Sender: TObject);
 begin
-OpenURL('https://github.com/slicke/trndi');
+  OpenURL('https://github.com/slicke/trndi');
 end;
 
 {$IFDEF DARWIN}
@@ -630,12 +651,12 @@ begin
   // Handle exceptions during shutdown gracefully
 end;
 
-procedure Showmessage(const str: string);
+procedure ShowMessage(const str: string);
 begin
   UXMessage(uxdOnForm, sSuccTitle, str, uxmtInformation, fBG);
 end;
 
-procedure Showmessage(const title, str: string);
+procedure ShowMessage(const title, str: string);
 begin
   UXMessage(uxdOnForm, title, str, uxmtInformation, fBG);
 end;
@@ -670,48 +691,49 @@ activemonitor: TMonitor;
 var
   posValue: integer;
 begin
-  if native.GetBoolSetting('size.main') then begin
-    Width := native.GetIntSetting('size.last.width', width);
-    Height := native.GetIntSetting('size.last.height', height);
+  if native.GetBoolSetting('size.main') then
+  begin
+    Width := native.GetIntSetting('size.last.width', Width);
+    Height := native.GetIntSetting('size.last.height', Height);
   end;
   // Hämta och validera position
   posValue := native.GetIntSetting('position.main', Ord(tpoCenter));
 
   // Validera positionstyp
   if not ((posValue >= Ord(Low(TrndiPos))) and (posValue <= Ord(High(TrndiPos)))) then
-    posValue := ord(tpoCenter);
+    posValue := Ord(tpoCenter);
 
   // Hantera positionering
   case TrndiPos(posValue) of
     tpoCenter:
-      begin
-        Left := Screen.WorkAreaLeft + (Screen.WorkAreaWidth - Width) div 2;
-        Top := Screen.WorkAreaTop + (Screen.WorkAreaHeight - Height) div 2;
-      end;
+    begin
+      Left := Screen.WorkAreaLeft + (Screen.WorkAreaWidth - Width) div 2;
+      Top := Screen.WorkAreaTop + (Screen.WorkAreaHeight - Height) div 2;
+    end;
 
     tpoBottomLeft:
-      begin
-        Left := 20;
-        Top := Screen.WorkAreaRect.Bottom - Height - 200;
-      end;
+    begin
+      Left := 20;
+      Top := Screen.WorkAreaRect.Bottom - Height - 200;
+    end;
 
     tpoBottomRight:
-      begin
-        Left := Screen.WorkAreaRect.Right - Width - 20;
-        Top := Screen.WorkAreaRect.Bottom - Height - 200;
-      end;
+    begin
+      Left := Screen.WorkAreaRect.Right - Width - 20;
+      Top := Screen.WorkAreaRect.Bottom - Height - 200;
+    end;
 
     tpoTopRight:
-      begin
-        Left := Screen.WorkAreaRect.Right - Width - 20;
-        Top := 200;
-      end;
+    begin
+      Left := Screen.WorkAreaRect.Right - Width - 20;
+      Top := 200;
+    end;
 
     tpoCustom:
-      begin
-        Left := native.GetIntSetting('position.last.left', 10);
-        Top := native.GetIntSetting('position.last.top', 10);
-      end;
+    begin
+      Left := native.GetIntSetting('position.last.left', 10);
+      Top := native.GetIntSetting('position.last.top', 10);
+    end;
   end;
 
   if native.GetBoolSetting('main.clock') then
@@ -787,7 +809,8 @@ var
   ls: array[1..10] of TPaintBox;
 begin
   ls := TrendDots; // Directly use the TrendDots array
-  for ix := 1 to NUM_DOTS do begin
+  for ix := 1 to NUM_DOTS do
+  begin
     proc(ls[ix], NUM_DOTS, ix, ls);
     ls[ix].Repaint;
   end;
@@ -801,7 +824,8 @@ var
   ls: array[1..10] of TPaintBox;
 begin
   ls := TrendDots; // Directly use the TrendDots array
-  for ix := 1 to NUM_DOTS do begin
+  for ix := 1 to NUM_DOTS do
+  begin
     proc(ls[ix], NUM_DOTS, ix);
     ls[ix].Repaint;
   end;
@@ -809,19 +833,19 @@ end;
 
 procedure tfBG.SetLang;
 var
- lang: string;
+  lang: string;
 begin
   lang := native.GetSetting('locale', '');
   if (lang = 'auto') or (lang = '') then
-   lang := native.GetOSLanguage;
+    lang := native.GetOSLanguage;
   applocale := lang;
-  Application.processmessages;
+  Application.ProcessMessages;
 
   SetDefaultLang(lang, getLangPath);
 end;
 
 {$ifdef X_LINUXBSD}
-  {$endif}
+{$endif}
 
 {$ifdef DARWIN}
 procedure TfBG.InitializePlatformMenus;
@@ -875,26 +899,27 @@ var
   s: string;
 begin
   // Set dots
-  DOT_GRAPH := native.GetWideCharSetting('font.dot', System.WideChar($2B24));
-  DOT_FRESH := native.GetWideCharSetting('font.dot_fresh', System.WideChar($2600));
+  DOT_GRAPH := native.GetWideCharSetting('font.dot', System.widechar($2B24));
+  DOT_FRESH := native.GetWideCharSetting('font.dot_fresh', System.widechar($2600));
 
   // Load fonts
   s := native.GetSetting('font.val', 'default');
   if s <> 'default' then
-    lVal.Font.name := s;
+    lVal.Font.Name := s;
   s := native.GetSetting('font.arrow', 'default');
   if s <> 'default' then
-    lArrow.Font.name := s;
+    lArrow.Font.Name := s;
 
   s := native.GetSetting('font.ago', 'default');
   if s <> 'default' then
   begin
-    lAgo.Font.name := s;
-    lTir.Font.name := s;
+    lAgo.Font.Name := s;
+    lTir.Font.Name := s;
   end;
 
   // Sensitive data
-  DATA_FRESHNESS_THRESHOLD_MINUTES := native.GetIntSetting('system.fresh_threshold', DATA_FRESHNESS_THRESHOLD_MINUTES);
+  DATA_FRESHNESS_THRESHOLD_MINUTES :=
+    native.GetIntSetting('system.fresh_threshold', DATA_FRESHNESS_THRESHOLD_MINUTES);
 
   // Check graph
   for i := 1 to NUM_DOTS do
@@ -908,7 +933,7 @@ begin
   end;
 
   // Check touch screen
-  HasTouch :=  native.HasTouchScreen(HasMultiTouch);
+  HasTouch := native.HasTouchScreen(HasMultiTouch);
   if HasMultiTouch then
     touchHelper := TTouchDetector.Create;
 
@@ -928,34 +953,37 @@ begin
   bg_rel_color_hi := native.GetColorSetting('ux.bg_rel_color_hi', bg_rel_color_hi);
   bg_rel_color_lo := native.GetColorSetting('ux.bg_rel_color_lo', bg_rel_color_lo);
 
-  bg_rel_color_lo_txt := native.GetColorSetting('ux.bg_rel_color_lo_txt', bg_rel_color_lo_txt);
-  bg_rel_color_hi_txt := native.GetColorSetting('ux.bg_rel_color_hi_txt', bg_rel_color_hi_txt);
+  bg_rel_color_lo_txt := native.GetColorSetting('ux.bg_rel_color_lo_txt',
+    bg_rel_color_lo_txt);
+  bg_rel_color_hi_txt := native.GetColorSetting('ux.bg_rel_color_hi_txt',
+    bg_rel_color_hi_txt);
 
   // Color title bar (on Windows?)
-  titlecolor := native.GetBoolSetting('ux.title_color', true);
+  titlecolor := native.GetBoolSetting('ux.title_color', True);
 end;
 
 procedure TfBG.InitializeSplashScreen;
 begin
   fSplash := TfSplash.Create(nil);
   if IsProblematicWM then // It might hide dialogs behind the splash screen
-   if not IsSemiProblematicWM then // Gnome etc kind of works
-   with fsplash do begin
-    fSplash.Image1.Hide;
-    lSplashWarn.hide;
-    linfo.caption := 'Trndi is loading...';
-    linfo.top := 0;
-    linfo.left := 400;
-    height := linfo.canvas.TextHeight('Pq')+5;
+    if not IsSemiProblematicWM then // Gnome etc kind of works
+      with fsplash do
+      begin
+        fSplash.Image1.Hide;
+        lSplashWarn.hide;
+        linfo.Caption := 'Trndi is loading...';
+        linfo.top := 0;
+        linfo.left := 400;
+        Height := linfo.canvas.TextHeight('Pq') + 5;
 
-    label1.AutoSize := true;
-    label1.caption := 'Trndi | You need to accept the license agreement! ';
-    label1.top := 0;
-    label1.left := 0;
-    label1.font := linfo.font;
-    label1.font.color := clWhite;
-    Application.ProcessMessages;
-    end;
+        label1.AutoSize := True;
+        label1.Caption := 'Trndi | You need to accept the license agreement! ';
+        label1.top := 0;
+        label1.left := 0;
+        label1.font := linfo.font;
+        label1.font.color := clWhite;
+        Application.ProcessMessages;
+      end;
   FStoredWindowInfo.Initialized := False;
   fSplash.Image1.Picture.Icon := Application.Icon;
   fSplash.lInfo.Caption := '';
@@ -976,77 +1004,83 @@ begin
     with TStringList.Create do
     begin
       AddCommaText(username);
-      i := ExtList(uxdAuto, RS_MULTIUSER_BOX_TITLE, RS_MULTIUSER_BOX_TITLE, RS_MULTIUSER_BOX, ToStringArray, true);
+      i := ExtList(uxdAuto, RS_MULTIUSER_BOX_TITLE, RS_MULTIUSER_BOX_TITLE,
+        RS_MULTIUSER_BOX, ToStringArray, True);
 
       if (i > -1) and (strings[i] <> '') then
       begin
         username := strings[i];
-        native.configUser :=  username;
-        s :=  native.GetSettingEx('user.nick', username);
+        native.configUser := username;
+        s := native.GetSettingEx('user.nick', username);
 
         fbg.Caption := Format(RS_USER_CAPTION, [s, fBG.Caption]);
         multinick := s;
       end
-      else begin
+      else
+      begin
         username := '';
-        s :=  native.GetSettingEx('user.nick', RS_DEFAULT_ACCOUNT);
+        s := native.GetSettingEx('user.nick', RS_DEFAULT_ACCOUNT);
 
         multinick := s;
         fbg.Caption := Format(RS_USER_CAPTION, [s, fBG.Caption]);
       end;
       Free;
     end;// Load possible other users
-    multi := true;
+    multi := True;
     pnMultiUser.Color := native.GetColorSetting('user.color', clBlack);
-    if pnMultiUser.Color <> clBlack then begin
+    if pnMultiUser.Color <> clBlack then
+    begin
       pnMultiUser.Visible := native.GetRootSetting('users.colorbox', 'true') = 'true';
-      customTitlebar := setColorMode; // Set the custom title bar value depending if the panel is showing
+      customTitlebar := setColorMode;
+      // Set the custom title bar value depending if the panel is showing
     end;
   end
   else
-    multi := false;
+    multi := False;
 end;
 
 procedure TfBG.CheckAndAcceptLicense;
 const
-  license = '⚠️ IMPORTANT MEDICAL WARNING ⚠️'#10#13+
-#10+
-'This app is NOT a medical device.'#10 +
-'• Do NOT make medical decisions based on this data'#10+
-'• Data may be WRONG, delayed, or unavailable'#10+
-'• Always verify with your official CGM device'#10+
-'• For emergencies, contact medical professionals'#10+
-#10+
-'By continuing, you acknowledge that:'#10+
-'• You use this app at your own risk'#10+
-'• The developers have NO LIABILITY'#10+
-'• You have read and agree to the full terms';
+  license = '⚠️ IMPORTANT MEDICAL WARNING ⚠️'#10#13 + #10 +
+    'This app is NOT a medical device.'#10 +
+    '• Do NOT make medical decisions based on this data'#10 +
+    '• Data may be WRONG, delayed, or unavailable'#10 +
+    '• Always verify with your official CGM device'#10 +
+    '• For emergencies, contact medical professionals'#10 + #10 +
+    'By continuing, you acknowledge that:'#10 +
+    '• You use this app at your own risk'#10 +
+    '• The developers have NO LIABILITY'#10 +
+    '• You have read and agree to the full terms';
 var
   i: integer;
 begin
-  if native.GetBoolSetting('license.250608') <> true then
-  while i <> mrYes do begin
-    i :=  ExtMsg(uxdAuto, 'License', 'You must accept the full terms conditions', 'Do you agree to the terms and full license?', license, uxclWhite,uxclRed, [mbYes, mbCancel, mbUxRead], uxmtCustom,5);
-    if i = mrYes then
-       native.SetBoolSetting('license.250608', true)
-    else if i = mrCancel then begin
-      Application.Terminate;
-      Exit;
-    end
-    else
-       OpenURL('https://github.com/slicke/trndi/blob/main/LICENSE.md');
-  end;
+  if native.GetBoolSetting('license.250608') <> True then
+    while i <> mrYes do
+    begin
+      i := ExtMsg(uxdAuto, 'License', 'You must accept the full terms conditions',
+        'Do you agree to the terms and full license?', license,
+        uxclWhite, uxclRed, [mbYes, mbCancel, mbUxRead], uxmtCustom, 5);
+      if i = mrYes then
+        native.SetBoolSetting('license.250608', True)
+      else if i = mrCancel then
+      begin
+        Application.Terminate;
+        Exit;
+      end
+      else
+        OpenURL('https://github.com/slicke/trndi/blob/main/LICENSE.md');
+    end;
 end;
 
-function TfBG.InitializeAPI: Boolean;
+function TfBG.InitializeAPI: boolean;
 var
   apiTarget, apiCreds: string;
 begin
   Result := True;
-  
+
   apiTarget := native.GetSetting('remote.target');
   apiCreds := native.GetSetting('remote.creds');
-  
+
   case native.GetSetting('remote.type') of
     'NightScout':
       api := NightScout.Create(apiTarget, apiCreds, '');
@@ -1058,7 +1092,7 @@ begin
       api := Dexcom.Create(apiTarget, apiCreds, 'world');
     'xDrip':
       api := xDrip.Create(apiTarget, apiCreds, '');
-    {$ifdef DEBUG}
+      {$ifdef DEBUG}
     '* Debug Backend *':
       api := DebugAPI.Create(apiTarget, apiCreds, '');
     '* Debug Missing Backend *':
@@ -1069,7 +1103,7 @@ begin
       api := DebugCustomAPI.Create(apiTarget, apiCreds, '');
    '* Debug Edge Backend *':
       api := DebugEdgeAPI.Create(apiTarget, apiCreds, '');
-      {$endif}
+    {$endif}
     else
       Result := False;
   end;
@@ -1106,12 +1140,13 @@ end;
 
 // Initialize the TrendDots array in FormCreate
 procedure TfBG.FormCreate(Sender: TObject);
+
   procedure haltBoot;
   begin
-    firstboot := true;
+    firstboot := True;
     fSplash.Hide;
     fSplash.Free;
-    tMain.Enabled := false;
+    tMain.Enabled := False;
     lArrow.Caption := '';
     lVal.Caption := RS_SETUP;
     lVal.Cursor := crHandPoint;
@@ -1124,7 +1159,7 @@ var
   fil: boolean;
   userlocale: TFormatSettings;
 begin
-  firstboot := false;
+  firstboot := False;
   // Initialize splash screen first
   InitializeSplashScreen;
   Application.ProcessMessages;
@@ -1195,7 +1230,7 @@ begin
   with native do
   begin
     SetLang;
-    username := GetRootSetting('users.names','');
+    username := GetRootSetting('users.names', '');
     LoadUserProfile;
 
     // Locale setup
@@ -1219,8 +1254,8 @@ begin
     apiTarget := GetSetting('remote.target');
     if apiTarget = '' then
     begin
-      tMain.Enabled := false;
-      for i := 0 to fBG.ComponentCount-1 do
+      tMain.Enabled := False;
+      for i := 0 to fBG.ComponentCount - 1 do
         if (fbg.Components[i] is TLabel) and (fbg.Components[i] <> lval) then
           (fbg.Components[i] as TLabel).Caption := '';
       miSettings.Click;
@@ -1230,7 +1265,8 @@ begin
     end;
 
     Application.ProcessMessages;
-    if not InitializeAPI then begin
+    if not InitializeAPI then
+    begin
       haltBoot;
       Exit;
     end;
@@ -1250,10 +1286,10 @@ begin
     dotscale := GetIntSetting('ux.dot_scale', 1);
     DOT_ADJUST := GetFloatSetting('ux.dot_adjust', 0);
     // DOT_VISUAL_OFFSET := CalculateDotVisualOffset;  // No longer needed - centering uses half dot height
-    miRangeColor.Checked := GetBoolSetting('ux.range_color', true);
-    PaintRange := native.GetBoolSetting('ux.paint_range', true);
-    PaintRangeLines := native.GetBoolSetting('ux.paint_range_lines', false);
-    PaintRangeCGMRange := native.GetBoolSetting('ux.paint_range_cgmrange', false);
+    miRangeColor.Checked := GetBoolSetting('ux.range_color', True);
+    PaintRange := native.GetBoolSetting('ux.paint_range', True);
+    PaintRangeLines := native.GetBoolSetting('ux.paint_range_lines', False);
+    PaintRangeCGMRange := native.GetBoolSetting('ux.paint_range_cgmrange', False);
     // Extensions
     {$ifdef TrndiExt}
     fSplash.lInfo.Caption := RS_SPLASH_LOADING_INIT;
@@ -1263,8 +1299,8 @@ begin
     // Override settings
     if GetIntSetting('override.enabled', 0) = 1 then
     begin
-      api.cgmLo      := GetIntSetting('override.lo', api.cgmLo);
-      api.cgmHi      := GetIntSetting('override.hi', api.cgmHi);
+      api.cgmLo := GetIntSetting('override.lo', api.cgmLo);
+      api.cgmHi := GetIntSetting('override.hi', api.cgmHi);
       api.cgmRangeLo := GetIntSetting('override.rangelo', api.cgmRangeLo);
       api.cgmRangeHi := GetIntSetting('override.rangehi', api.cgmRangeHi);
     end;
@@ -1272,7 +1308,8 @@ begin
 
   // Final initialization and first reading
   Application.ProcessMessages;
-  if not updateReading(true) then begin
+  if not updateReading(True) then
+  begin
     updateReading; // Second attempt for setup
     showWarningPanel(RS_NO_BOOT_READING);
   end;
@@ -1280,8 +1317,8 @@ begin
   // Cleanup splash screen
   fSplash.Close;
   fSplash.Free;
-  tmain.Enabled := true;
-  tsetup.enabled := true;
+  tmain.Enabled := True;
+  tsetup.Enabled := True;
 end;
 
 procedure TfBG.FormDblClick(Sender: TObject);
@@ -1292,28 +1329,28 @@ end;
 
 function TfBG.tryLastReading(out bg: BGReading): boolean;
 begin
-  result := (bgs <> nil) and (length(bgs) > 0);
-  if result then
+  Result := (bgs <> nil) and (length(bgs) > 0);
+  if Result then
     bg := lastReading;
 end;
 
 function TfBG.lastReading: BGReading;
 begin
   try
-    result := bgs[Low(bgs)];
+    Result := bgs[Low(bgs)];
   finally
   end;
 end;
 
-procedure TfBG.FormDestroy(Sender:TObject);
+procedure TfBG.FormDestroy(Sender: TObject);
 begin
   // Ensure shutdown flag is set
   FShuttingDown := True;
-  
+
   // These should already be freed in FormClose, but check just to be safe
   if assigned(native) then
   begin
-    native.free;
+    native.Free;
     native := nil;
   end;
   if assigned(api) then
@@ -1329,59 +1366,70 @@ end;
 procedure TfBG.speakReading;
 begin
   if not privacyMode then
-     native.Speak(lVal.Caption)
-  else case lastReading.level of
-        trndi.types.BGHigh: begin native.speak('High'); end;
-        trndi.types.BGLOW: begin native.speak('Low'); end;
-        trndi.types.BGRange: begin native.speak('Good'); end;
-        trndi.types.BGRangeHI: begin native.speak('Going high'); end;
-        trndi.types.BGRangeLO: begin native.speak('Going low');  end;
-   end;
+    native.Speak(lVal.Caption)
+  else
+    case lastReading.level of
+      trndi.types.BGHigh: begin
+        native.speak('High');
+      end;
+      trndi.types.BGLOW: begin
+        native.speak('Low');
+      end;
+      trndi.types.BGRange: begin
+        native.speak('Good');
+      end;
+      trndi.types.BGRangeHI: begin
+        native.speak('Going high');
+      end;
+      trndi.types.BGRangeLO: begin
+        native.speak('Going low');
+      end;
+    end;
 end;
 
-procedure TfBG.FormKeyPress(Sender:TObject;var Key:char);
+procedure TfBG.FormKeyPress(Sender: TObject; var Key: char);
 begin
   case key of
     #27: begin
       lDiffDblClick(self);
       key := #0; // Disable future escapes
     end;
-  'f', 'F':
-    lDiffDblClick(self);
-  's', 'S':
-    speakReading;
-  'A', 'a':
-    miAnnounce.Click;
-  'R', 'r':
-    if slicke.UX.alert.UXDialog(uxdAuto, sRefrshQ, sForceRefresh, [mbYes, mbNo]) = mrYes then
-         miForce.Click;
-  'I', 'i':
-    miSettings.Click;
+    'f', 'F':
+      lDiffDblClick(self);
+    's', 'S':
+      speakReading;
+    'A', 'a':
+      miAnnounce.Click;
+    'R', 'r':
+      if slicke.UX.alert.UXDialog(uxdAuto, sRefrshQ, sForceRefresh,
+        [mbYes, mbNo]) = mrYes then
+        miForce.Click;
+    'I', 'i':
+      miSettings.Click;
   end;
 end;
 
 procedure TfBG.DotPaint(Sender: TObject);
 var
-  tw, th: Integer;
-  S, fontn: String;
+  tw, th: integer;
+  S, fontn: string;
   L: TPaintBox;
   hasfont: boolean;
-  needsRecalc: Boolean;
+  needsRecalc: boolean;
 begin
   L := Sender as TPaintBox;
   S := L.Caption;
-  L.AutoSize := false;
+  L.AutoSize := False;
 
   if S = DOT_GRAPH then
-     hasFont := FontGUIInList(fontn)
+    hasFont := FontGUIInList(fontn)
   else
-     hasFont := FontTXTInList(fontn);
+    hasFont := FontTXTInList(fontn);
 
   // Check if we need to recalculate font metrics
-  needsRecalc := (FCachedFontSize <> L.Font.Size) or 
-                 (FCachedFontName <> fontn) or 
-                 (FCachedTextWidth = 0) or (FCachedTextHeight = 0) or
-                 (S <> DOT_GRAPH); // Always recalculate for non-dot text
+  needsRecalc := (FCachedFontSize <> L.Font.Size) or (FCachedFontName <> fontn) or
+    (FCachedTextWidth = 0) or (FCachedTextHeight = 0) or (S <> DOT_GRAPH);
+  // Always recalculate for non-dot text
 
   with L.Canvas do
   begin
@@ -1436,7 +1484,7 @@ begin
 end;
 
 procedure TfBG.miDotNormalMeasureItem(Sender: TObject; ACanvas: TCanvas;
-  var AWidth, AHeight: Integer);
+  var AWidth, AHeight: integer);
 begin
 
 end;
@@ -1446,7 +1494,7 @@ var
   i: integer;
 begin
   i := dotsInView;
-  showmessage(IfThen(i = 0, 'Yes', 'Offset: ' + i.toString));
+  ShowMessage(IfThen(i = 0, 'Yes', 'Offset: ' + i.toString));
 end;
 
 procedure TfBG.miExitClick(Sender: TObject);
@@ -1459,21 +1507,23 @@ var
   mr: TModalResult;
   dots: integer;
 begin
-    dots := ExtIntInput(uxdAuto, sDotSize, sCustomiseDotSize, sEnterDotSize, dotscale, mr);
-    if mr = mrOK then begin
-       native.SetSetting('ux.dot_scale', dots.tostring);
-       dotscale := dots;
-    end;
+  dots := ExtIntInput(uxdAuto, sDotSize, sCustomiseDotSize, sEnterDotSize,
+    dotscale, mr);
+  if mr = mrOk then
+  begin
+    native.SetSetting('ux.dot_scale', dots.tostring);
+    dotscale := dots;
+  end;
 end;
 
 procedure TfBG.miATouchAutoClick(Sender: TObject);
 begin
-    miATouchYes.Checked := false;
-    miATouchNo.Checked := false;
-    miATouchAuto.Checked := false;
-    (sender as TMenuItem).Checked:=true;
+  miATouchYes.Checked := False;
+  miATouchNo.Checked := False;
+  miATouchAuto.Checked := False;
+  (Sender as TMenuItem).Checked := True;
 
-    native.touchOverride := tbUnknown;
+  native.touchOverride := tbUnknown;
 end;
 
 procedure TfBG.miADotAdjustClick(Sender: TObject);
@@ -1481,13 +1531,17 @@ var
   mr: TModalResult;
   da: single;
 begin
-  da := (ExtNumericInput(uxdAuto, 'Dot Adjustment','Add dot adjustment','You can enter plus or minus. Plus = down. 0 = neutral', DOT_ADJUST*100,false, mr) / 100);
+  da := (ExtNumericInput(uxdAuto, 'Dot Adjustment', 'Add dot adjustment',
+    'You can enter plus or minus. Plus = down. 0 = neutral', DOT_ADJUST *
+    100, False, mr) / 100);
 
-    if mr = mrOK then begin
-      DOT_ADJUST := da;
+  if mr = mrOk then
+  begin
+    DOT_ADJUST := da;
 
-      if ExtMsg(uxdAuto, sChangesSave, sChangesRemember, sChangesApply, FormatFloat('0.00', da), uxclWhite, uxclRed, [mbYes, mbNo]) = mrYes then
-        native.SetFloatSetting('ux.dot_adjust', da);
+    if ExtMsg(uxdAuto, sChangesSave, sChangesRemember, sChangesApply,
+      FormatFloat('0.00', da), uxclWhite, uxclRed, [mbYes, mbNo]) = mrYes then
+      native.SetFloatSetting('ux.dot_adjust', da);
   end;
 end;
 
@@ -1495,7 +1549,7 @@ procedure TfBG.miADotScaleClick(Sender: TObject);
 var
   mr: TModalResult;
 begin
-//  dotscale := round(ExtNumericInput(uxdAuto, 'Dot Adjustment','Add dot adjustment','You can enter plus or minus (+/- 0.x)',dotscale,false,mr));
+  //  dotscale := round(ExtNumericInput(uxdAuto, 'Dot Adjustment','Add dot adjustment','You can enter plus or minus (+/- 0.x)',dotscale,false,mr));
 end;
 
 procedure TfBG.miADotsClick(Sender: TObject);
@@ -1517,51 +1571,48 @@ begin
     sysver := s + ' ' + ver;
   {$endif}
 
-    ShowMessage({$I %FPCTargetOS%} + '(' +{$I %FPCTargetCPU%}+ ')' + LineEnding +
-  {$if defined(LCLQt6)}
+  ShowMessage({$I %FPCTargetOS%} + '(' + {$I %FPCTargetCPU%} + ')' + LineEnding +
+    {$if defined(LCLQt6)}
     'QT6 - ' + qtVersion + ' - ' + sysver
-  {$elseif defined(LCLGTK2)}
+    {$elseif defined(LCLGTK2)}
     'GTK2 - '  + sysver
-  {$elseif defined(LCLGTK3)}
+    {$elseif defined(LCLGTK3)}
     'GTK3'
-  {$elseif defined(LCLWIN32)}
+    {$elseif defined(LCLWIN32)}
     'Windows Native - ' + sysver
-  {$elseif defined(LCLCocoa)}
+    {$elseif defined(LCLCocoa)}
     'macOS Native'
-  {$else}
+    {$else}
     'unsupportd widgetset'
-  {$endif}
-  + LineEnding + 'Default separator: ' + DefaultFormatSettings.DecimalSeparator
+    {$endif}
+    + LineEnding + 'Default separator: ' + DefaultFormatSettings.DecimalSeparator
 
-  ) ;
-
-
+    );
 
 end;
 
 procedure TfBG.miATouchClick(Sender: TObject);
 begin
 
-
 end;
 
 procedure TfBG.miATouchNoClick(Sender: TObject);
 begin
-      miATouchYes.Checked := false;
-    miATouchNo.Checked := false;
-    miATouchAuto.Checked := false;
-    (sender as TMenuItem).Checked:=true;
+  miATouchYes.Checked := False;
+  miATouchNo.Checked := False;
+  miATouchAuto.Checked := False;
+  (Sender as TMenuItem).Checked := True;
   native.touchOverride := tbFalse;
 
 end;
 
 procedure TfBG.miATouchYesClick(Sender: TObject);
 begin
-      miATouchYes.Checked := false;
-    miATouchNo.Checked := false;
-    miATouchAuto.Checked := false;
-    (sender as TMenuItem).Checked:=true;
-    native.touchOverride := tbTrue;
+  miATouchYes.Checked := False;
+  miATouchNo.Checked := False;
+  miATouchAuto.Checked := False;
+  (Sender as TMenuItem).Checked := True;
+  native.touchOverride := tbTrue;
 end;
 
 procedure TfBG.miDebugBackendClick(Sender: TObject);
@@ -1576,7 +1627,7 @@ end;
 
 procedure TfBG.pnWarningClick(Sender: TObject);
 begin
-    {$ifdef TrndiExt}
+  {$ifdef TrndiExt}
        if not funcBool('uxClick',
        ['no-reading'], true) then
       Exit;
@@ -1590,7 +1641,7 @@ const
 var
   P: TPanel;
   {$ifndef X_WIN}
-  lValRelativeX, lValRelativeY: Integer;
+  lValRelativeX, lValRelativeY: integer;
   {$endif}
 begin
   // Use manual drawing for rounded corners on all platforms
@@ -1608,7 +1659,7 @@ begin
     Pen.Color := clBlack;
     Pen.Width := 1;
     RoundRect(0, 0, P.Width, P.Height, Radius, Radius);
-    
+
     {$ifndef X_WIN}
     // On non-Windows platforms, ApplyAlphaControl doesn't work, so draw lVal as backdrop
     // to simulate transparency effect
@@ -1617,31 +1668,32 @@ begin
       // Calculate lVal position relative to pnWarning
       lValRelativeX := lVal.Left - P.Left;
       lValRelativeY := lVal.Top - P.Top;
-      
+
       // Set up text rendering to match lVal
       Font.Assign(lVal.Font);
-      
+
       // Simulate the original lVal text at 92% transparency (0.92 where 1=fully transparent)
       // Formula: blended = (originalTextColor * opacity + panelColor * transparency)
       // where transparency = 0.92 and opacity = 0.08
-      Font.Color := RGB(
-        Round(GetRValue(lVal.Font.Color) * 0.18 + GetRValue(P.Color) * 0.82),
-        Round(GetGValue(lVal.Font.Color) * 0.18 + GetGValue(P.Color) * 0.82),
-        Round(GetBValue(lVal.Font.Color) * 0.18 + GetBValue(P.Color) * 0.82)
-      );
-        
+      Font.Color := RGB(Round(GetRValue(lVal.Font.Color) * 0.18 +
+        GetRValue(P.Color) * 0.82), Round(GetGValue(lVal.Font.Color) *
+        0.18 + GetGValue(P.Color) * 0.82), Round(GetBValue(lVal.Font.Color) *
+        0.18 + GetBValue(P.Color) * 0.82));
+
       Brush.Style := bsClear; // Transparent background for text
-      
+
       // Calculate proper text positioning based on lVal's alignment
       case lVal.Alignment of
-        taLeftJustify: 
+        taLeftJustify:
           TextOut(lValRelativeX, lValRelativeY, lVal.Caption);
-        taRightJustify: 
-          TextOut(lValRelativeX + lVal.Width - TextWidth(lVal.Caption), lValRelativeY, lVal.Caption);
-        taCenter: 
-          TextOut(lValRelativeX + (lVal.Width - TextWidth(lVal.Caption)) div 2, lValRelativeY, lVal.Caption);
+        taRightJustify:
+          TextOut(lValRelativeX + lVal.Width - TextWidth(lVal.Caption),
+            lValRelativeY, lVal.Caption);
+        taCenter:
+          TextOut(lValRelativeX + (lVal.Width - TextWidth(lVal.Caption)) div
+            2, lValRelativeY, lVal.Caption);
       end;
-      
+
       // Restore brush style
       Brush.Style := bsSolid;
     end;
@@ -1649,25 +1701,27 @@ begin
   end;
 end;
 
-procedure TfBG.FormMouseLeave(Sender:TObject);
+procedure TfBG.FormMouseLeave(Sender: TObject);
 begin
 
 end;
 
-procedure TfBG.FormMouseMove(Sender:TObject;Shift:TShiftState;X,Y:integer);
+procedure TfBG.FormMouseMove(Sender: TObject; Shift: TShiftState; X, Y: integer);
 begin
   if DraggingWin then
   begin
     SetBounds(Left + (X - PX), Top + (Y - PY), Width, Height);
-    tTouch.Enabled := false; // Dont popup stuff while moving
+    tTouch.Enabled := False; // Dont popup stuff while moving
     // Use the resize timer with a very short interval for smooth panel scaling during drag
     // This prevents too frequent calls while still providing responsive scaling
     if not tResize.Enabled then
     begin
       tResize.Interval := 50; // Very short interval during dragging for responsiveness
-      tResize.Enabled := true;
+      tResize.Enabled := True;
     end;
-  end else begin
+  end
+  else
+  begin
     // Don't enable touch timer on general mouse movement - only on actual lVal interaction
     // The timer will be enabled in lValMouseDown when there's actual touch/click on lVal
   end;
@@ -1689,11 +1743,11 @@ begin
     // Ignore any errors during shutdown flag setting
   end;
   {$endif}
-  
+
   // CRITICAL: Set Application.Terminated FIRST to prevent any QuickJS operations
   // This is called even earlier than FormClose for maximum protection
   Application.Terminate;  // This sets Application.Terminated := True
-  
+
   // Always allow close to proceed
   CanClose := True;
 end;
@@ -1736,16 +1790,16 @@ begin
   {$else}
 
   if not firstboot then
-  if UXDialog(uxdAuto, RS_QUIT_CAPTION, RS_QUIT_MSG, [mbYes, mbNo], uxmtOK) = mrNo then
-  begin
-    FShuttingDown := False; // Reset flag if user cancels
-    Abort;
-  end;
-  
+    if UXDialog(uxdAuto, RS_QUIT_CAPTION, RS_QUIT_MSG, [mbYes, mbNo], uxmtOK) = mrNo then
+    begin
+      FShuttingDown := False; // Reset flag if user cancels
+      Abort;
+    end;
+
   // Explicitly set CloseAction to ensure the form is actually freed
   CloseAction := caFree;
   {$endif}
-  
+
   {$ifdef TrndiExt}
   // NOTE: Application.Terminate is now called in FormCloseQuery for earlier detection
   
@@ -1795,7 +1849,7 @@ begin
   // Let normal form closure process continue with CloseAction := caFree
 end;
 
-procedure TfBG.fbReadingsDblClick(Sender:TObject);
+procedure TfBG.fbReadingsDblClick(Sender: TObject);
 begin
 
 end;
@@ -1812,9 +1866,10 @@ begin
   da := dotsInView;
 
   if da <> 0 then
-   for l in TrendDots do begin
-       l.top := l.top - da; // da is negative on top so this is valid both ways
-   end;
+    for l in TrendDots do
+    begin
+      l.top := l.top - da; // da is negative on top so this is valid both ways
+    end;
 
   lRef.Top := lDot1.Top;
   lRef.Caption := lDot1.Hint;
@@ -1825,19 +1880,19 @@ end;
 
 procedure TfBG.FormPaint(Sender: TObject);
 var
-  loY, hiY, rangeLoY, rangeHiY: Integer;
+  loY, hiY, rangeLoY, rangeHiY: integer;
   cnv: TCanvas;
   lineColor: TColor;
-  drawLo, drawHi, drawRangeLo, drawRangeHi: Boolean;
-  tmp: Integer;
-  clientH: Integer;
-  daAdjust: Integer;
-  dotHeight: Integer;
-  // Helper to map a BG value in internal units to a Y coordinate matching SetPointHeight
-  function ValueToY(const Value: Single): Integer;
+  drawLo, drawHi, drawRangeLo, drawRangeHi: boolean;
+  tmp: integer;
+  clientH: integer;
+  daAdjust: integer;
+  dotHeight: integer;
+// Helper to map a BG value in internal units to a Y coordinate matching SetPointHeight
+  function ValueToY(const Value: single): integer;
   var
-    Padding, UsableHeight, Position: Integer;
-    v: Single;
+    Padding, UsableHeight, Position: integer;
+    v: single;
   begin
     // clientH is determined in the outer scope to match SetPointHeight's clientHeight
     Padding := Round(clientH * 0.1);
@@ -1845,26 +1900,30 @@ var
     v := Value;
     if v < BG_API_MIN then v := BG_API_MIN;
     if v > BG_API_MAX then v := BG_API_MAX;
-    Position := Padding + Round((v - BG_API_MIN) / (BG_API_MAX - BG_API_MIN) * UsableHeight);
+    Position := Padding + Round((v - BG_API_MIN) / (BG_API_MAX - BG_API_MIN) *
+      UsableHeight);
     Result := (clientH - Position) - 1;
   end;
+
 begin
   // Only draw when form has been created and API thresholds available
   if not Assigned(Self) then Exit;
-  
+
   // Exit early if nothing is enabled
   if not (PaintRange or PaintRangeCGMRange) then Exit;
-  
+
   cnv := Self.Canvas;
   // Prefer the TrendDots parent client height if available so mapping matches SetPointHeight
-  if (Length(TrendDots) > 0) and Assigned(TrendDots[1]) and Assigned(TrendDots[1].Parent) then
+  if (Length(TrendDots) > 0) and Assigned(TrendDots[1]) and
+    Assigned(TrendDots[1].Parent) then
     clientH := TrendDots[1].Parent.ClientHeight
   else
     clientH := Self.ClientHeight;
 
   // Get dot height for centering lines through the middle of dots
   dotHeight := 0;
-  if (Length(TrendDots) > 0) and Assigned(TrendDots[1]) and Assigned(TrendDots[1].Canvas) then
+  if (Length(TrendDots) > 0) and Assigned(TrendDots[1]) and
+    Assigned(TrendDots[1].Canvas) then
     dotHeight := TrendDots[1].Canvas.TextHeight(DOT_GRAPH);
 
   // Decide whether to draw low/high range indicators (0 disables)
@@ -2014,12 +2073,12 @@ begin
     fontSize := 24;
     bmp.Width := fontSize * 2;
     bmp.Height := fontSize * 2;
-    
+
     // Set background color and clear bitmap
     bgColor := clWhite;
     bmp.Canvas.Brush.Color := bgColor;
     bmp.Canvas.FillRect(0, 0, bmp.Width, bmp.Height);
-    
+
     // Set font properties matching the dots - use GUI font on all platforms
     if FontGUIInList(fontName) then
       bmp.Canvas.Font.Name := fontName
@@ -2027,14 +2086,14 @@ begin
       bmp.Canvas.Font.Name := 'default';
     bmp.Canvas.Font.Size := fontSize;
     bmp.Canvas.Font.Color := clBlack;
-    
+
     // Draw the dot character centered
     bmp.Canvas.TextOut(fontSize div 2, fontSize div 2, DOT_GRAPH);
-    
+
     // Find the first row with a non-background pixel (scanning from top)
     firstPixelY := -1;
-    found := false;
-    
+    found := False;
+
     for y := 0 to bmp.Height - 1 do
     begin
       for x := 0 to bmp.Width - 1 do
@@ -2044,13 +2103,13 @@ begin
         if pixelColor <> bgColor then
         begin
           firstPixelY := y;
-          found := true;
+          found := True;
           break;
         end;
       end;
       if found then break;
     end;
-    
+
     // Calculate offset based on where we found the first pixel
     if found then
     begin
@@ -2059,10 +2118,12 @@ begin
       // If first pixel is below center, offset is positive (move lines down)
       // If first pixel is above center, offset is negative (move lines up)
       Result := firstPixelY - halfHeight;
-      LogMessage(Format('DOT_VISUAL_OFFSET calculated: font=%s, firstPixel=%d, halfHeight=%d, offset=%d', 
-                       [fontName, firstPixelY, halfHeight, Result]));
+      LogMessage(Format(
+        'DOT_VISUAL_OFFSET calculated: font=%s, firstPixel=%d, halfHeight=%d, offset=%d',
+        [
+        fontName, firstPixelY, halfHeight, Result]));
     end;
-    
+
   finally
     bmp.Free;
   end;
@@ -2075,7 +2136,7 @@ var
 begin
 
   if privacyMode then // We dont show values while in privacy mode
-     exit;
+    exit;
 
   if l.hint = '' then  // Don't process non-value items
     Exit;
@@ -2091,13 +2152,15 @@ begin
     // Earlier readings: toggle between actual value and dot
     l.Caption := IfThen(isDot, l.Hint, DOT_GRAPH);
 
-//  l.Caption := IfThen(isDot, l.Caption, l.Caption);
+  //  l.Caption := IfThen(isDot, l.Caption, l.Caption);
   // Adjust size based on current state
-  if not isDot then begin // Returning to dot
-    ResizeDot(l, c, ix) ;
-    l.Font.Size := (ClientWidth div 24)*dotscale;
+  if not isDot then
+  begin // Returning to dot
+    ResizeDot(l, c, ix);
+    l.Font.Size := (ClientWidth div 24) * dotscale;
   end
-  else begin
+  else
+  begin
     // Expanding to show actual value - need to resize for text
     l.font.Size := (lVal.Font.Size div c);
     // Clear cached font metrics to force recalculation with new text/font
@@ -2114,13 +2177,13 @@ end;
 // Hides a dot
 procedure TfBG.HideDot(l: TPaintBox; c, ix: integer);
 begin
-  l.Visible := false;
+  l.Visible := False;
 end;
 
 // Shows a dot
 procedure TfBG.ShowDot(l: TPaintBox; c, ix: integer);
 begin
-  l.Visible := true;
+  l.Visible := True;
 end;
 
 // Scales a dot's font size
@@ -2128,15 +2191,16 @@ procedure TfBG.ResizeDot(l: TPaintBox; c, ix: integer);
 var
   th, tw, minSize: integer;
 begin
-  l.AutoSize := false;
-  l.Font.Size := Max((lVal.Font.Size div 8)*dotscale, 28); // Ensure minimum font size
+  l.AutoSize := False;
+  l.Font.Size := Max((lVal.Font.Size div 8) * dotscale, 28); // Ensure minimum font size
   // Tighten control size to actual text metrics of the dot glyph
   tw := l.Canvas.TextWidth(DOT_GRAPH);
   th := l.Canvas.TextHeight(DOT_GRAPH);
   minSize := Max(th, l.Font.Size);
   l.Width := tw;
   l.Height := minSize;
-  LogMessage(Format('TrendDots[%d] resized with Font Size = %d, W=%d, H=%d.', [ix, l.Font.Size, l.Width, l.Height]));
+  LogMessage(Format('TrendDots[%d] resized with Font Size = %d, W=%d, H=%d.',
+    [ix, l.Font.Size, l.Width, l.Height]));
 end;
 
 // Sets the width (NOT the font) of a dot
@@ -2155,29 +2219,29 @@ end;
 // FormResize event handler
 procedure TfBG.FormResize(Sender: TObject);
 begin
-  if sender = lval then
+  if Sender = lval then
     tResize.OnTimer(self)
   else
   begin
     // Normal resize handling - let the timer handle dragging vs non-dragging logic
     if not tResize.Enabled then
     begin
-      tResize.Enabled := true;
+      tResize.Enabled := True;
     end
     else if not DraggingWin then
     begin
       // Only restart timer when not dragging to prevent rapid resize interruptions
-      tResize.Enabled := false;
-      tResize.Enabled := true;
+      tResize.Enabled := False;
+      tResize.Enabled := True;
     end;
-    
+
     if not DraggingWin then
     begin
-      lVal.Visible := false;
-      lAgo.Visible := false;
-      lTir.Visible := false;
+      lVal.Visible := False;
+      lAgo.Visible := False;
+      lTir.Visible := False;
     end;
-    
+
     // Apply alpha control only - rounded corners are handled by pnWarningPaint
     ApplyAlphaControl(pnWarning, 235);
   end;
@@ -2186,11 +2250,11 @@ end;
 procedure TfBG.FormShow(Sender: TObject);
 begin
   placeForm;
-  placed := true;
+  placed := True;
   lVal.font.Quality := fqCleartype;
 end;
 
-procedure TfBG.lAgoClick(Sender:TObject);
+procedure TfBG.lAgoClick(Sender: TObject);
 var
   s: string;
   i: integer;
@@ -2204,13 +2268,14 @@ begin
   if lastReading.getNoise(i) then
     s += LineEnding + Format(sNoise, [i]);
 
-  s += LineEnding + Format(sDevice, [lastReading.sensor]);;
+  s += LineEnding + Format(sDevice, [lastReading.sensor]);
+  ;
 
   ShowMessage(s);
 
 end;
 
-procedure TfBG.lArrowClick(Sender:TObject);
+procedure TfBG.lArrowClick(Sender: TObject);
 begin
 
 end;
@@ -2243,7 +2308,7 @@ end;
 
 procedure TfBG.DoFullScreen;
 var
-  IsCurrentlyFullscreen: Boolean;
+  IsCurrentlyFullscreen: boolean;
   SavedBounds: TRect;
 begin
   {$ifdef DARWIN}
@@ -2255,9 +2320,8 @@ begin
   // Determine if form is currently in fullscreen mode
   // This needs to check multiple conditions as WindowState alone isn't reliable
   IsCurrentlyFullscreen := (BorderStyle = bsNone) and
-                          ((WindowState = wsFullScreen) or
-                           (BoundsRect.Width >= Screen.Width) and
-                           (BoundsRect.Height >= Screen.Height));
+    ((WindowState = wsFullScreen) or (BoundsRect.Width >= Screen.Width) and
+    (BoundsRect.Height >= Screen.Height));
 
   // Remember the window position for restoration
   if not FStoredWindowInfo.Initialized and not IsCurrentlyFullscreen then
@@ -2288,7 +2352,7 @@ begin
     if FStoredWindowInfo.Initialized then
     begin
       SetBounds(FStoredWindowInfo.Left, FStoredWindowInfo.Top,
-                FStoredWindowInfo.Width, FStoredWindowInfo.Height);
+        FStoredWindowInfo.Width, FStoredWindowInfo.Height);
       WindowState := FStoredWindowInfo.WindowState;
       FStoredWindowInfo.Initialized := False;
     end
@@ -2323,14 +2387,15 @@ begin
 
     Screen.Cursor := crNone;
     if IsProblematicWM then
-       BorderStyle := bsToolWindow; // Restore the borderstyle on Rpi (etc??) as the window wont fill otherwise
+      BorderStyle := bsToolWindow;
+    // Restore the borderstyle on Rpi (etc??) as the window wont fill otherwise
   end;
 
   // Adjust for dark mode if applicable
   setColorMode;
 end;
 
-procedure TfBG.lDot7DblClick(Sender:TObject);
+procedure TfBG.lDot7DblClick(Sender: TObject);
 begin
 end;
 
@@ -2340,11 +2405,11 @@ begin
   // Event handler can be left empty if not used
 end;
 
-procedure TfBG.lTirClick(Sender:TObject);
+procedure TfBG.lTirClick(Sender: TObject);
 var
-  minTotal, hours, mins: Integer;
-  msg: String;
-  hi,lo,rhi,rlo: double;
+  minTotal, hours, mins: integer;
+  msg: string;
+  hi, lo, rhi, rlo: double;
 begin
   minTotal := MinutesBetween(now, bgs[High(bgs)].date);
   {$ifdef TrndiExt}
@@ -2375,7 +2440,7 @@ begin
       msg := Format(RS_TIR_H, [hours, mins, lo, hi, rlo, rhi]);
   end;
 
-  ShowMessage(msg+LineEnding);
+  ShowMessage(msg + LineEnding);
 end;
 
 
@@ -2389,9 +2454,9 @@ begin
   if native <> nil then
   begin
     if (not highAlerted) and (fBG.Color = bg_color_hi) then
-      highAlerted := true;
+      highAlerted := True;
     if (not lowAlerted) and (fBG.Color = bg_color_lo) then
-      lowAlerted := true;
+      lowAlerted := True;
     // Stop flashing if any
     native.StopBadgeFlash;
   end;
@@ -2404,11 +2469,12 @@ begin
 end;
 
 // Handle mouse down on lVal
-procedure TfBG.lValMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: integer);
+procedure TfBG.lValMouseDown(Sender: TObject; Button: TMouseButton;
+  Shift: TShiftState; X, Y: integer);
 begin
   if ((Button = mbLeft) and (self.BorderStyle = bsNone)) or (Button = mbMiddle) then
   begin   // Handle window moving
-    DraggingWin := true;
+    DraggingWin := True;
     PX := X;
     PY := Y;
     if not hasTouch then
@@ -2417,25 +2483,26 @@ begin
 
 
   if not hasTouch then
-  Exit;
+    Exit;
 
   // Handle touch screens
   StartTouch := Now;
-  IsTouched := true;
-  tTouch.Enabled := true;
+  IsTouched := True;
+  tTouch.Enabled := True;
 
 end;
 
 // Handle mouse up on lVal
-procedure TfBG.lValMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: integer);
+procedure TfBG.lValMouseUp(Sender: TObject; Button: TMouseButton;
+  Shift: TShiftState; X, Y: integer);
 begin
-  IsTouched := false;
-  tTouch.Enabled := false;
+  IsTouched := False;
+  tTouch.Enabled := False;
   StartTouch := 0; // Reset the touch start time
 
   if DraggingWin then
   begin
-    DraggingWin := false;
+    DraggingWin := False;
     // Restore normal timer interval
     tResize.Interval := 500; // Back to normal interval from form design
     // Trigger a full resize operation now that dragging is complete
@@ -2450,46 +2517,47 @@ begin
   // Event handler can be left empty if not used
 end;
 
-procedure TfBG.miAnnounceClick(Sender:TObject);
+procedure TfBG.miAnnounceClick(Sender: TObject);
 begin
   miAnnounce.Checked := not miAnnounce.Checked;
   native.SetBoolSetting('main.announce', miAnnounce.Checked);
   native.speak(IfThen(miAnnounce.Checked, sAnnounceOn, sAnnounceOff));
 end;
 
-procedure TfBG.miAlternateClick(Sender:TObject);
+procedure TfBG.miAlternateClick(Sender: TObject);
 begin
   miAlternate.Checked := not miAlternate.Checked;
   tSwap.Enabled := miAlternate.Checked;
 end;
 
-procedure TfBG.miClockClick(Sender:TObject);
+procedure TfBG.miClockClick(Sender: TObject);
 begin
   miClock.Checked := not miClock.Checked;
   tClock.Enabled := miClock.Checked;
   native.SetBoolSetting('main.clock', tClock.Enabled);
 end;
 
-procedure TfBG.miDotNormalClick(Sender:TObject);
+procedure TfBG.miDotNormalClick(Sender: TObject);
 begin
-  dotscale := StrToInt((sender as TMenuItem).Hint);
+  dotscale := StrToInt((Sender as TMenuItem).Hint);
   native.SetSetting('ux.dot_scale', dotscale.toString);
   FormResize(fBG);
 end;
 
-procedure TfBG.TfFloatOnHide(Sender:TObject);
+procedure TfBG.TfFloatOnHide(Sender: TObject);
 begin
   miFloatOn.Checked := fFloat.Showing;
 end;
 
-procedure TfBG.miFloatOnClick(Sender:TObject);
+procedure TfBG.miFloatOnClick(Sender: TObject);
 begin
   {$ifdef LCLGTK3}
   Dialogs.ShowMessage('Your widgetset does not support this feature, pleae use QT');
   Exit;
   {$endif}
   if fFloat.Showing then
-    fFloat.Hide else
+    fFloat.Hide
+  else
   begin
     fFloat.Show;
     if not assigned(fFloat.onhide) then
@@ -2499,80 +2567,77 @@ begin
     fFloat.lArrow.Caption := lArrow.Caption;
     if pnMultiUser.Visible then
     begin
-      fFloat.pnMultiUser.Visible := true;
+      fFloat.pnMultiUser.Visible := True;
       fFloat.pnMultiUser.Color := pnMultiUser.Color;
     end;
   end;
   miFloatOn.Checked := fFloat.Showing;
 end;
 
-procedure TfBG.miHistoryClick(Sender:TObject);
+procedure TfBG.miHistoryClick(Sender: TObject);
 var
-  i:integer;
+  i: integer;
   keys, vals: TStringArray;
   b: BGReading;
   xval: integer;
   rssi, noise: string;
 begin
-SetLength({%H-}keys, high(bgs)+1);
-SetLength({%H-}vals, high(bgs)+1);
+  SetLength({%H-}keys, high(bgs) + 1);
+  SetLength({%H-}vals, high(bgs) + 1);
 
-for i := Low(bgs) to High(bgs) do begin
- if bgs[i].empty then
-   continue;
+  for i := Low(bgs) to High(bgs) do
+  begin
+    if bgs[i].empty then
+      continue;
 
- keys[i] := TimeToStr(bgs[i].date);
- vals[i] := bgs[i].format(un, BG_MSG_SHORT, BGPrimary);
+    keys[i] := TimeToStr(bgs[i].date);
+    vals[i] := bgs[i].format(un, BG_MSG_SHORT, BGPrimary);
+  end;
+
+
+  i := ExtTable(uxdAuto, RS_RHISTORY, RS_RH_TITLE, RS_RH_INFO, keys,
+    vals, uxmtCustom, RS_RH_TIME, RS_RH_READING);
+  if i > 0 then
+  begin
+    b := bgs[i - 1];
+    if b.getRSSI(xval) then
+      rssi := xval.ToString
+    else
+      rssi := RS_RH_UNKNOWN;
+
+    if b.getNoise(xval) then
+      noise := xval.ToString
+    else
+      noise := RS_RH_UNKNOWN;
+
+    ShowMessage(TimeToStr(b.date), Format(RS_HISTORY_ITEM,
+      [b.format(un, BG_MSG_SHORT, BGPrimary), b.format(un,
+      BG_MSG_SIG_SHORT, BGDelta), b.trend.Img, rssi, noise,
+      b.Source, b.sensor]));
+  end;
 end;
 
-
-i := ExtTable (uxdAuto, RS_RHISTORY, RS_RH_TITLE, RS_RH_INFO, keys, vals, uxmtCustom, RS_RH_TIME, RS_RH_READING);
-if i > 0 then begin
-  b := bgs[i-1];
-  if b.getRSSI(xval) then
-    rssi := xval.ToString
-  else
-    rssi := RS_RH_UNKNOWN;
-
-  if b.getNoise(xval) then
-    noise := xval.ToString
-  else
-    noise := RS_RH_UNKNOWN;
-
-  showmessage(TimeToStr(b.date), Format(RS_HISTORY_ITEM, [
-                     b.format(un, BG_MSG_SHORT, BGPrimary),
-                     b.format(un, BG_MSG_SIG_SHORT, BGDelta),
-                     b.trend.Img,
-                     rssi,
-                     noise,
-                     b.source,
-                     b.sensor
-                     ]
-  ));
-end;
-end;
-
-procedure TfBG.miRangeColorClick(Sender:TObject);
+procedure TfBG.miRangeColorClick(Sender: TObject);
 begin
   miRangeColor.Checked := not miRangeColor.Checked;
   miForce.Click;
   native.SetBoolSetting('ux.range_color', miRangeColor.Checked);
 end;
 
-procedure TfBG.miBordersClick(Sender:TObject);
+procedure TfBG.miBordersClick(Sender: TObject);
 begin
   {$ifdef LCLGTK3}
     Dialogs.ShowMessage('Your widgetset does not support this feature, pleae use QT');
     Exit;
   {$endif}
   miBorders.Checked := not miBorders.Checked;
-  if miBorders.checked then
+  if miBorders.Checked then
     self.BorderStyle := bsNone
   else
-    {$ifdef DARWIN}
+  {$ifdef DARWIN}
     BorderStyle := bsSizeable;
-  {$else}
-  BorderStyle := bsSizeToolWin;
+    {$else}
+    BorderStyle := bsSizeToolWin;
   {$endif}
 
   setColorMode;
@@ -2583,26 +2648,26 @@ procedure TfBG.miForceClick(Sender: TObject);
 const
   API_CACHE_SECONDS = 10; // Same as in FetchAndValidateReadings
 var
-  secondsSinceLastCall: Integer;
-  waitTime: Integer;
+  secondsSinceLastCall: integer;
+  waitTime: integer;
   msg: string;
-  result: Integer;
+  Result: integer;
 begin
-if firstboot then
-  exit;
+  if firstboot then
+    exit;
   // Check if we're still within the cache window
   secondsSinceLastCall := SecondsBetween(Now, FLastAPICall);
   if secondsSinceLastCall < API_CACHE_SECONDS then
   begin
     waitTime := API_CACHE_SECONDS - secondsSinceLastCall;
     msg := Format(sForceRefreshCached, [secondsSinceLastCall, waitTime]);
-    
+
     // Use ExtMsg with custom buttons for better UX
-    result := slicke.UX.alert.ExtMsg(uxdAuto, sRefrshQ, msg, sForceRefreshDetail, '',
-                                     uxclWhite, uxclRed,
-                                     [mbRetry, mbCancel], uxmtInformation);
-    
-    if result = mrRetry then // mbRetry returns mrRetry
+    Result := slicke.UX.alert.ExtMsg(uxdAuto, sRefrshQ, msg,
+      sForceRefreshDetail, '', uxclWhite, uxclRed, [mbRetry, mbCancel],
+      uxmtInformation);
+
+    if Result = mrRetry then // mbRetry returns mrRetry
     begin
       // User chose to force - bypass cache completely
       FetchAndValidateReadingsForced;
@@ -2621,11 +2686,11 @@ end;
 // Explain limit menu click
 procedure TfBG.miLimitExplainClick(Sender: TObject);
 begin
-//  MessageDlg('Trndi', RS_LIMIT_EXPLAIN_TEXT, mtInformation, [mbOK], '');
-ShowMessage(RS_LIMIT_EXPLAIN_TEXT);
+  //  MessageDlg('Trndi', RS_LIMIT_EXPLAIN_TEXT, mtInformation, [mbOK], '');
+  ShowMessage(RS_LIMIT_EXPLAIN_TEXT);
 end;
 
-procedure TfBG.miOnTopClick(Sender:TObject);
+procedure TfBG.miOnTopClick(Sender: TObject);
 {$ifdef LCLQt6}
 var
   QtWidget: TQtWidget;
@@ -2707,13 +2772,13 @@ end;
 procedure TfBG.miSettingsClick(Sender: TObject);
 var
   fConf: TfConf;
-  lastUsers: Integer;
+  lastUsers: integer;
 
   procedure LoadUserSettings(f: TfConf);
   var
-    s: String;
-    i: Integer;
-    posValue: Integer;
+    s: string;
+    i: integer;
+    posValue: integer;
     po: TrndiPos;
   begin
     with f, native do
@@ -2727,7 +2792,8 @@ var
       eAddr.Text := GetSetting('remote.target');
       ePass.Text := GetSetting('remote.creds');
       rbUnit.ItemIndex := IfThen(GetSetting('unit', 'mmol') = 'mmol', 0, 1);
-      spTHRESHOLD.Value := native.GetIntSetting('system.fresh_threshold', DATA_FRESHNESS_THRESHOLD_MINUTES);
+      spTHRESHOLD.Value := native.GetIntSetting('system.fresh_threshold',
+        DATA_FRESHNESS_THRESHOLD_MINUTES);
 
       // Override range settings
       if api = nil then
@@ -2741,12 +2807,13 @@ var
         fsHi.Value := GetIntSetting('override.hi', api.cgmHi);
       end;
 
-      cbTIR.Checked := native.GetBoolSetting('range.custom', true);
+      cbTIR.Checked := native.GetBoolSetting('range.custom', True);
 
-      cbOffBar.Checked := native.GetBoolSetting('ux.off_bar', false);
-      cbPaintHiLo.Checked := native.GetBoolSetting('ux.paint_range', true);
-      cbPaintLines.Checked := native.GetBoolSetting('ux.paint_range_lines', false);
-      cbPaintHiLoRange.checked := native.GetBoolSetting('ux.paint_range_cgmrange', false);
+      cbOffBar.Checked := native.GetBoolSetting('ux.off_bar', False);
+      cbPaintHiLo.Checked := native.GetBoolSetting('ux.paint_range', True);
+      cbPaintLines.Checked := native.GetBoolSetting('ux.paint_range_lines', False);
+      cbPaintHiLoRange.Checked :=
+        native.GetBoolSetting('ux.paint_range_cgmrange', False);
       edCommaSep.Text := GetCharSetting('locale.separator', '.');
       edTray.Value := GetIntSetting('ux.badge_size', 0);
 
@@ -2766,40 +2833,40 @@ var
       lbUsers.Clear;
       lbUsers.Items.CommaText := s;
       if lbUsers.Items.Count < 1 then
-        lbUsers.Enabled := false;
+        lbUsers.Enabled := False;
 
-      lbUsers.Items.Add('- ' +RS_DEFAULT_ACCOUNT + ' -');
+      lbUsers.Items.Add('- ' + RS_DEFAULT_ACCOUNT + ' -');
       cbUserColor.Checked := native.GetRootSetting('users.colorbox', 'true') = 'true';
       // Load position settings
-posValue := native.GetIntSetting('position.main', Ord(tpoCenter));
+      posValue := native.GetIntSetting('position.main', Ord(tpoCenter));
 
-  cbPos.Items.Clear;
-  for po in TrndiPos do
-  begin
-    s := TrndiPosNames[po];
-    cbPos.Items.Add(s);
+      cbPos.Items.Clear;
+      for po in TrndiPos do
+      begin
+        s := TrndiPosNames[po];
+        cbPos.Items.Add(s);
 
-    // Match enum order with saved position
-    if Ord(po) = posValue then
-      cbPos.ItemIndex := Ord(po);
-  end;
+        // Match enum order with saved position
+        if Ord(po) = posValue then
+          cbPos.ItemIndex := Ord(po);
+      end;
 
-// Fallback to first item if no valid match
-if cbPos.ItemIndex = -1 then
-  cbPos.ItemIndex := 0;
+      // Fallback to first item if no valid match
+      if cbPos.ItemIndex = -1 then
+        cbPos.ItemIndex := 0;
 
-  cbSize.Checked := GetBoolSetting('size.main');
-  cbFlashHi.Checked := native.getBoolSetting('alerts.flash.high', false);
-  cbFlashLow.Checked := native.getBoolSetting('alerts.flash.low', false);
-  cbFlashPerfect.Checked := native.getBoolSetting('alerts.flash.perfect', false);
-  end;
+      cbSize.Checked := GetBoolSetting('size.main');
+      cbFlashHi.Checked := native.getBoolSetting('alerts.flash.high', False);
+      cbFlashLow.Checked := native.getBoolSetting('alerts.flash.low', False);
+      cbFlashPerfect.Checked := native.getBoolSetting('alerts.flash.perfect', False);
+    end;
 
   end;
 
   procedure LoadLanguageSettings(f: TfConf);
   var
-    i: Integer;
-    s: String;
+    i: integer;
+    s: string;
   begin
     with f, native do
     begin
@@ -2827,14 +2894,15 @@ if cbPos.ItemIndex = -1 then
   begin
     with f do
     begin
-      f.lDot.Caption := native.GetWideCharSetting('font.dot', System.WideChar(dotdef));
+      f.lDot.Caption := native.GetWideCharSetting('font.dot', System.widechar(dotdef));
       eDot.Text := native.GetSetting('font.dot', '2B24');
-      lDotNow.Caption := native.GetWideCharSetting('font.dot_fresh', System.WideChar(dotdef));
+      lDotNow.Caption := native.GetWideCharSetting('font.dot_fresh',
+        System.widechar(dotdef));
       eDotNow.Text := native.GetSetting('font.dot_fresh', '2600');
-      f.lDot1.Caption :=  f.lDot.Caption;
-      f.lDot2.Caption :=  f.lDot.Caption;
-      f.lDot3.Caption :=  f.lDot.Caption;
-      f.lDotCurr.Caption :=  f.lDotNow.Caption;
+      f.lDot1.Caption := f.lDot.Caption;
+      f.lDot2.Caption := f.lDot.Caption;
+      f.lDot3.Caption := f.lDot.Caption;
+      f.lDotCurr.Caption := f.lDotNow.Caption;
       f.Invalidate;
 
       // UI updates
@@ -2858,17 +2926,24 @@ if cbPos.ItemIndex = -1 then
       cl_hi_bg.ButtonColor := native.GetColorSetting('ux.bg_color_hi', bg_color_hi);
       cl_lo_bg.ButtonColor := native.GetColorSetting('ux.bg_color_lo', bg_color_lo);
 
-      cl_ok_txt.ButtonColor := native.GetColorSetting('ux.bg_color_ok_txt', bg_color_ok_txt);
-      cl_hi_txt.ButtonColor := native.GetColorSetting('ux.bg_color_hi_txt', bg_color_hi_txt);
-      cl_lo_txt.ButtonColor := native.GetColorSetting('ux.bg_color_lo_txt', bg_color_lo_txt);
+      cl_ok_txt.ButtonColor :=
+        native.GetColorSetting('ux.bg_color_ok_txt', bg_color_ok_txt);
+      cl_hi_txt.ButtonColor :=
+        native.GetColorSetting('ux.bg_color_hi_txt', bg_color_hi_txt);
+      cl_lo_txt.ButtonColor :=
+        native.GetColorSetting('ux.bg_color_lo_txt', bg_color_lo_txt);
 
-      cl_hi_bg_cust.ButtonColor := native.GetColorSetting('ux.bg_rel_color_hi', bg_rel_color_hi);
-      cl_lo_bg_cust.ButtonColor := native.GetColorSetting('ux.bg_rel_color_lo', bg_rel_color_lo);
+      cl_hi_bg_cust.ButtonColor :=
+        native.GetColorSetting('ux.bg_rel_color_hi', bg_rel_color_hi);
+      cl_lo_bg_cust.ButtonColor :=
+        native.GetColorSetting('ux.bg_rel_color_lo', bg_rel_color_lo);
 
-      cl_hi_txt_cust.ButtonColor := native.GetColorSetting('ux.bg_rel_color_hi_txt', bg_rel_color_hi_txt);
-      cl_lo_txt_cust.ButtonColor := native.GetColorSetting('ux.bg_rel_color_lo_txt', bg_rel_color_lo_txt);
+      cl_hi_txt_cust.ButtonColor :=
+        native.GetColorSetting('ux.bg_rel_color_hi_txt', bg_rel_color_hi_txt);
+      cl_lo_txt_cust.ButtonColor :=
+        native.GetColorSetting('ux.bg_rel_color_lo_txt', bg_rel_color_lo_txt);
 
-      cbTitleColor.Checked := native.GetBoolSetting('ux.title_color', true);
+      cbTitleColor.Checked := native.GetBoolSetting('ux.title_color', True);
     end;
   end;
 
@@ -2878,10 +2953,10 @@ if cbPos.ItemIndex = -1 then
     begin
       {$ifdef TrndiExt}
       eExt.Text := GetAppConfigDirUTF8(False, True) + 'extensions' + DirectorySeparator;
-      {$else}
+    {$else}
       eExt.Text := '- ' + RS_noPlugins + ' -';
       eExt.Enabled := False;
-      {$endif}
+    {$endif}
       cbPrivacy.Checked := GetSetting('ext.privacy', '0') = '1';
     end;
   end;
@@ -2897,15 +2972,15 @@ if cbPos.ItemIndex = -1 then
 
   procedure SaveUserSettings(f: TfConf);
   var
-    s: String;
+    s: string;
     i: integer;
   begin
     with f, native do
     begin
-      if TryStrToInt('$'+eDot.text, i) then
-        SetWideCharSetting('font.dot', System.WideChar(i));
-      if TryStrToInt('$'+eDotNow.text, i) then
-        SetWideCharSetting('font.dot_fresh', System.WideChar(i));
+      if TryStrToInt('$' + eDot.Text, i) then
+        SetWideCharSetting('font.dot', System.widechar(i));
+      if TryStrToInt('$' + eDotNow.Text, i) then
+        SetWideCharSetting('font.dot_fresh', System.widechar(i));
 
       SetSetting('font.val', lVal.Font.Name);
       SetSetting('font.arrow', lArrow.Font.Name);
@@ -2918,7 +2993,7 @@ if cbPos.ItemIndex = -1 then
       native.setBoolSetting('alerts.flash.low', cbFlashLow.Checked);
       native.setBoolSetting('alerts.flash.perfect', cbFlashPerfect.Checked);
 
-      for i := lbUsers.Items.Count-1 downto 0 do
+      for i := lbUsers.Items.Count - 1 downto 0 do
         if lbUsers.items[i][1] = '-' then
           lbUsers.items.Delete(i);
 
@@ -2928,7 +3003,8 @@ if cbPos.ItemIndex = -1 then
       else
         SetSetting('users.names', '');
 
-      native.SetRootSetting('users.colorbox', IfThen(cbUserColor.Checked, 'true', 'false'));
+      native.SetRootSetting('users.colorbox', IfThen(cbUserColor.Checked,
+        'true', 'false'));
 
       // Save remote and override settings
       SetSetting('remote.type', cbSys.Text);
@@ -2955,8 +3031,8 @@ if cbPos.ItemIndex = -1 then
       native.SetBoolSetting('ux.off_bar', cbOffBar.Checked);
       native.SetBoolSetting('ux.paint_range', cbPaintHiLo.Checked);
       native.SetBoolSetting('ux.paint_range_lines', cbPaintLines.Checked);
-      native.SetBoolSetting('ux.paint_range_cgmrange', cbPaintHiLoRange.checked);
-      native.SetSetting('locale.separator', edCommaSep.text);
+      native.SetBoolSetting('ux.paint_range_cgmrange', cbPaintHiLoRange.Checked);
+      native.SetSetting('locale.separator', edCommaSep.Text);
       native.SetSetting('ux.badge_size', edTray.Value.ToString);
 
       SetSetting('override.enabled', IfThen(cbCust.Checked, '1', '0'));
@@ -2983,8 +3059,8 @@ if cbPos.ItemIndex = -1 then
     end;
   end;
 
-  var
-    s: string;
+var
+  s: string;
 begin
   fConf := TfConf.Create(Self);
   try
@@ -3003,7 +3079,7 @@ begin
       fConf.cbSys.Items.Add('* Debug Perfect Backend *');
       fConf.cbSys.Items.Add('* Debug Custom Backend *');
       fConf.cbSys.Items.Add('* Debug Edge Backend *');
-      {$endif}
+    {$endif}
     end;
 
     // Initialize form with user settings
@@ -3019,13 +3095,13 @@ begin
     {$if defined(X_PC)}
     fConf.lOS.Caption := GetLinuxDistro(s) + ' ' + s;
 
-      {$if defined(LCLQt6)}
+    {$if defined(LCLQt6)}
         fConf.lWidgetset.Caption := 'QT6 ' + qtVersion;
-      {$elseif defined(LCLGTK2)}
+    {$elseif defined(LCLGTK2)}
        fConf.lWidgetset.Caption := 'GTK2';
-      {$elseif defined(LCLGTK3)}
+    {$elseif defined(LCLGTK3)}
        fConf.lWidgetset.Caption := 'GTK3';
-      {$endif}
+    {$endif}
     {$elseif defined(X_MAC)}
     fConf.lOS.Caption := 'macOS';
     fConf.lWidgetset.Caption := 'Native Apple Coca';
@@ -3033,18 +3109,21 @@ begin
      fConf.lOS.Caption := 'Windows'  + SysUtils.Win32MajorVersion.tostring + '.' + SysUtils.Win32MinorVersion.tostring + ' - Build ' +  Win32BuildNumber.ToString;
      fConf.lWidgetset.Caption := 'Native Windows';
     {$endif}
-    fConf.lArch.Caption := {$I %FPCTargetOS%}+'/'+{$I %FPCTARGETCPU%};
-  // Show dialog (use safe helper that handles problematic WMs)
-  ShowFormModalSafe(fConf);
+    fConf.lArch.Caption := {$I %FPCTargetOS%} + '/' + {$I %FPCTARGETCPU%};
+    // Show dialog (use safe helper that handles problematic WMs)
+    ShowFormModalSafe(fConf);
 
-    if not firstboot then begin
+    if not firstboot then
+    begin
       if IsProblematicWM then
         fBG.Hide;
-       if ExtMsg(uxdAuto, RS_SETTINGS_SAVE, RS_SETTINGS_SAVE, RS_SETTINGS_SAVE_DESC, '', uxclWhite,uxclRed, [mbYes, mbNo]) <> mrYes then begin
-         fBG.Show;
-         Exit; // FConf.Free will run later
-       end;
-       fBG.Show;
+      if ExtMsg(uxdAuto, RS_SETTINGS_SAVE, RS_SETTINGS_SAVE,
+        RS_SETTINGS_SAVE_DESC, '', uxclWhite, uxclRed, [mbYes, mbNo]) <> mrYes then
+      begin
+        fBG.Show;
+        Exit; // FConf.Free will run later
+      end;
+      fBG.Show;
     end;
     // Reload settings, needed on X_PC
     native.ReloadSettings;
@@ -3054,7 +3133,7 @@ begin
     ShowMessage(RS_RESTART_APPLY);
 
     if firstboot then exit;
-//    SetLang;
+    //    SetLang;
     miForce.Click;
   finally
     fConf.Free;
@@ -3070,7 +3149,7 @@ var
     fs: TFormatSettings;
   {$endif}
 begin
-  l := sender as tPaintbox;
+  l := Sender as tPaintbox;
 
   actOnTrend(@ExpandDot);
   isDot := UnicodeSameText(l.Caption, DOT_GRAPH);
@@ -3093,9 +3172,9 @@ end;
 procedure TfBG.pnOffReadingPaint(Sender: TObject);
 var
   Panel: TPanel;
-  X, Y: Integer;
+  X, Y: integer;
   TextStr: string;
-  TextW, TextH: Integer;
+  TextW, TextH: integer;
 begin
   Panel := Sender as TPanel;
   TextStr := Panel.Caption;
@@ -3119,7 +3198,8 @@ begin
   end;
 end;
 
-procedure TfBG.pmSettingsMeasureItem(Sender: TObject; ACanvas: TCanvas; var AWidth, AHeight: Integer);
+procedure TfBG.pmSettingsMeasureItem(Sender: TObject; ACanvas: TCanvas;
+  var AWidth, AHeight: integer);
 const
   PaddingHorizontal = 40; // Additional width padding for icons or spacing
   PaddingVertical = 8;    // Vertical padding for spacing
@@ -3182,7 +3262,7 @@ procedure TfBG.pmSettingsPopup(Sender: TObject);
 {$endif}
 var
   tpb: TPaintbox;
-  H,M: integer;
+  H, M: integer;
   mi: integer;
 begin
   // Shift down
@@ -3193,28 +3273,30 @@ begin
     miDebugBackend.Visible := true;
   {$endif}
 
-  miDotNormal.checked := false;
-  miDotBig.checked := false;
-  miDotHuge.checked := false;
-  miDotVal.Checked := false;
+  miDotNormal.Checked := False;
+  miDotBig.Checked := False;
+  miDotHuge.Checked := False;
+  miDotVal.Checked := False;
 
   case dotscale of
-    1: miDotNormal.checked := true;
-    2: miDotBig.checked := true;
-    3: miDotHuge.checked := true;
+    1: miDotNormal.Checked := True;
+    2: miDotBig.Checked := True;
+    3: miDotHuge.Checked := True;
     else
-      miDotVal.Checked := true;
+      miDotVal.Checked := True;
   end;
 
-  if (sender as TPopupMenu).PopupComponent is TPaintBox then begin
-    tpb := (sender as TPopupMenu).PopupComponent as TPaintBox;
+  if (Sender as TPopupMenu).PopupComponent is TPaintBox then
+  begin
+    tpb := (Sender as TPopupMenu).PopupComponent as TPaintBox;
     H := tpb.Tag div 100;
     M := tpb.Tag mod 100;
 
-    miDotVal.visible := true;
+    miDotVal.Visible := True;
     miDotVal.Caption := Format(sReadingHere, [tpb.hint, H, M]);
-  end else
-    miDotVal.visible := false;
+  end
+  else
+    miDotVal.Visible := False;
   {$ifdef LCLQt6}
   Exit; // This crashes!
   if pmSettings.Tag <> 1 then
@@ -3232,21 +3314,24 @@ begin
     pmSettings.Tag := 1;
   end;
   {$endif}
-  last_popup := now
+  last_popup := now;
 end;
 
-procedure TfBG.pnMultiUserClick(Sender:TObject);
+procedure TfBG.pnMultiUserClick(Sender: TObject);
 begin
-if username <> '' then begin
-  if multinick = username then
+  if username <> '' then
+  begin
+    if multinick = username then
       ShowMessage(Format(RS_MULTINAME, [username]))
-  else
+    else
       ShowMessage(Format(RS_MULTINAME_NAMED, [multinick, username]));
-end else begin
-  if multinick <> RS_DEFAULT_ACCOUNT then
-    ShowMessage(Format(RS_MULTINAME_DEF_NAMED, [multinick]))
+  end
   else
-    ShowMessage(RS_MULTINAME_DEF);
+  begin
+    if multinick <> RS_DEFAULT_ACCOUNT then
+      ShowMessage(Format(RS_MULTINAME_DEF_NAMED, [multinick]))
+    else
+      ShowMessage(RS_MULTINAME_DEF);
   end;
 end;
 // Handle off range panel click
@@ -3255,7 +3340,7 @@ var
   ishigh: boolean;
   {$ifdef TrndiExt}
 
-  {$endif}
+{$endif}
 begin
   ishigh := (Sender as TPanel).Color = bg_rel_color_hi;
   {$ifdef TrndiExt}
@@ -3266,43 +3351,46 @@ begin
       Exit;
   {$endif}
 
-  ShowMessage(Format(RS_RANGE_EXPLANATION,
-    [IfThen(ishigh, RS_OVER, RS_UNDER)]));
+  ShowMessage(Format(RS_RANGE_EXPLANATION, [IfThen(ishigh, RS_OVER, RS_UNDER)]));
 end;
 
-procedure TfBG.tAgoTimer(Sender:TObject);
+procedure TfBG.tAgoTimer(Sender: TObject);
 var
   d: TDateTime;
   min: int64;
 begin
-if firstboot then exit; // Dont run on first boot
+  if firstboot then exit; // Dont run on first boot
 
- if sizeof(bgs) < 1 then begin
+  if sizeof(bgs) < 1 then
+  begin
     lAgo.Caption := '🕑 ' + RS_COMPUTE_FAILED_AGO;
- end else begin
-   try
-    d := lastReading.date; // Last reading time
-    min := MilliSecondsBetween(Now, d) div 60000;  // Minutes since last
-  {$ifndef lclgtk2} // UTF support IS LIMITED
-    lAgo.Caption := '🕑 ' + Format(RS_LAST_UPDATE, [min]);
-  {$else}
+  end
+  else
+  begin
+    try
+      d := lastReading.date; // Last reading time
+      min := MilliSecondsBetween(Now, d) div 60000;  // Minutes since last
+      {$ifndef lclgtk2}// UTF support IS LIMITED
+      lAgo.Caption := '🕑 ' + Format(RS_LAST_UPDATE, [min]);
+      {$else}
     lAgo.Caption := '⌚ ' + Format(RS_LAST_UPDATE, [min]);
-  {$endif}
-   except
-     lAgo.Caption := '🕑 ' + RS_COMPUTE_FAILED_AGO;
-   end;
- end;
+      {$endif}
+    except
+      lAgo.Caption := '🕑 ' + RS_COMPUTE_FAILED_AGO;
+    end;
+  end;
 end;
 
-procedure TfBG.tClockTimer(Sender:TObject);
+procedure TfBG.tClockTimer(Sender: TObject);
 var
   s: string;
   {$ifdef TrndiExt}
     ex: boolean; // If the function exists
   {$endif}
 begin
-tClock.Enabled := false;
-  if tClock.Interval <> clockDisplay then begin
+  tClock.Enabled := False;
+  if tClock.Interval <> clockDisplay then
+  begin
     {$ifdef TrndiExt}
       s := '';
       // Check if JS engine is still available before calling
@@ -3312,27 +3400,30 @@ tClock.Enabled := false;
       else
         lval.caption := s;
     {$else}
-      lval.caption := FormatDateTime(ShortTimeFormat, Now);
+    lval.Caption := FormatDateTime(ShortTimeFormat, Now);
     {$endif}
     tClock.Interval := clockDisplay;
-    lArrow.Visible := false;
-  end else begin
-    lval.caption :=  lval.hint;
+    lArrow.Visible := False;
+  end
+  else
+  begin
+    lval.Caption := lval.hint;
     tClock.Interval := clockInterval;
-    lArrow.Visible := true;
+    lArrow.Visible := True;
   end;
-  tClock.Enabled := true;
+  tClock.Enabled := True;
 end;
 
-procedure TfBG.tEdgesTimer(Sender:TObject);
+procedure TfBG.tEdgesTimer(Sender: TObject);
 begin
 
 end;
 
 procedure TfBG.tInitTimer(Sender: TObject);
 begin
-  tInit.Enabled := false;
-  self.width := self.width+1;  // Force a natural resize call, calling onResize doesnt work
+  tInit.Enabled := False;
+  self.Width := self.Width + 1;
+  // Force a natural resize call, calling onResize doesnt work
 end;
 
 procedure TfBG.tResizeTimer(Sender: TObject);
@@ -3421,8 +3512,8 @@ begin
   pnOffRange.Font.Size := 7 + pnOffRange.Height div 5;
 
   CenterPanelToCaption(pnOffRange);
-  pnOffRangeBar.Height := pnOffRange.height div 4;
-  pnOffRangeBar.width := ClientWidth+10;
+  pnOffRangeBar.Height := pnOffRange.Height div 4;
+  pnOffRangeBar.Width := ClientWidth + 10;
 
   // Anpassa huvudetiketterna
   ScaleLbl(lVal);
@@ -3434,39 +3525,39 @@ begin
   ScaleLbl(lDiff);
 
   // Konfigurera tidsvisning
-//  lAgo.Top := 1 + IfThen(pnOffRange.Visible, pnOffRange.Height, 3);
+  //  lAgo.Top := 1 + IfThen(pnOffRange.Visible, pnOffRange.Height, 3);
   lAgo.Height := ClientHeight div 9;
   ScaleLbl(lAgo, taLeftJustify);
 
   // Konfigurera trendpil
 
-    lArrow.Height := ClientHeight;
-    lArrow.width := ClientWidth;
-    lArrow.left := 0;
-    lArrow.top := 0;
-    ScaleLbl(lArrow);
+  lArrow.Height := ClientHeight;
+  lArrow.Width := ClientWidth;
+  lArrow.left := 0;
+  lArrow.top := 0;
+  ScaleLbl(lArrow);
 
-// TIR
-    ScaleLbl(lTir);
-    lTir.BringToFront;
-    lTir.AutoSize := false;
-    lTir.font := lAgo.Font;
-    lTir.Height := lTir.Canvas.TextHeight(lTir.caption);
-    lTir.width := lTir.Canvas.TextWidth(lTir.caption);
-    {$ifdef LCLQt6}
+  // TIR
+  ScaleLbl(lTir);
+  lTir.BringToFront;
+  lTir.AutoSize := False;
+  lTir.font := lAgo.Font;
+  lTir.Height := lTir.Canvas.TextHeight(lTir.Caption);
+  lTir.Width := lTir.Canvas.TextWidth(lTir.Caption);
+  {$ifdef LCLQt6}
     if isWSL then
      lTir.Width := 50;
-   {$endif}
-    lTir.left := ClientWidth-lTir.Width-5;
-    lTir.top := 0;
-//
+  {$endif}
+  lTir.left := ClientWidth - lTir.Width - 5;
+  lTir.top := 0;
 
-//  lArrow.font.color := LightenColor(fBG.Color, 0.8);
-//  ScaleLbl(lArrow, taRightJustify, tlTop);
-  lArrow.OptimalFill := true;
 
-  pnMultiUser.width := min(max(clientwidth div 30, 5), 50);
-  pnMultiUser.height := clientheight;
+  //  lArrow.font.color := LightenColor(fBG.Color, 0.8);
+  //  ScaleLbl(lArrow, taRightJustify, tlTop);
+  lArrow.OptimalFill := True;
+
+  pnMultiUser.Width := min(max(clientwidth div 30, 5), 50);
+  pnMultiUser.Height := clientheight;
   pnMultiUser.top := 0;
   pnMultiUser.left := 0;
 end;
@@ -3474,7 +3565,7 @@ end;
 procedure TfBG.UpdateTrendDots;
 var
   Dot: TPaintBox;
-  Value: Single; // Parsed from hint (user unit), then normalized to mmol/L
+  Value: single; // Parsed from hint (user unit), then normalized to mmol/L
   ok: boolean;
 begin
   for Dot in TrendDots do
@@ -3504,12 +3595,13 @@ begin
   end;
 end;
 
-procedure TfBG.ScaleLbl(ALabel: TLabel; customAl: TAlignment = taCenter; customTl: TTextLayout = tlCenter);
+procedure TfBG.ScaleLbl(ALabel: TLabel; customAl: TAlignment = taCenter;
+  customTl: TTextLayout = tlCenter);
 var
-  Low, High, Mid: Integer;
-  MaxWidth, MaxHeight: Integer;
-  TextWidth, TextHeight: Integer;
-  OptimalSize: Integer;
+  Low, High, Mid: integer;
+  MaxWidth, MaxHeight: integer;
+  TextWidth, TextHeight: integer;
+  OptimalSize: integer;
 begin
   if not ALabel.Visible then
     ALabel.Visible := True;
@@ -3586,7 +3678,7 @@ begin
   {$endif}
 end;
 
-procedure TfBG.tMissedTimer(Sender:TObject);
+procedure TfBG.tMissedTimer(Sender: TObject);
 var
   d: TDateTime;
   min, sec: int64;
@@ -3603,47 +3695,51 @@ end;
 
 procedure TfBG.tSetupTimer(Sender: TObject);
 begin
-  tSetup.enabled := false;
+  tSetup.Enabled := False;
   UpdateUIColors; // Force an update of TIR
 end;
 
-procedure TfBG.tSwapTimer(Sender:TObject);
+procedure TfBG.tSwapTimer(Sender: TObject);
 var
   c: TColor;
   s: string;
 begin
   // Dont swap when the reading is old
-  if fsStrikeOut in Lval.Font.Style then begin
-    lArrow.Visible := true;
+  if fsStrikeOut in Lval.Font.Style then
+  begin
+    lArrow.Visible := True;
     Exit;
   end;
 
-  tSwap.Enabled := false;
+  tSwap.Enabled := False;
   s := lval.Caption;
 
   if s.IndexOf(':') > 0 then // Clock showing
     UpdateUIColors   // Resets standard coloring
-  else if lVal.font.color <> lArrow.font.color then begin // Neutral mode
+  else if lVal.font.color <> lArrow.font.color then
+  begin // Neutral mode
     lArrow.BringToFront;
     c := lArrow.Font.Color;
     lArrow.Font.color := lVal.Font.color;
     lVal.Font.color := c;
-  end else begin
+  end
+  else
+  begin
     UpdateUIColors;   // Resets standard coloring
     lArrow.SendToBack;
     lVal.BringToFront;
     lArrow.SendToBack;
   end;
-  tSwap.Enabled := true;
+  tSwap.Enabled := True;
 end;
 
 // Handle a touch screen's long touch
 procedure TfBG.tTouchTimer(Sender: TObject);
 var
   p: TPoint;
-  touchDuration: Integer;
+  touchDuration: integer;
 begin
-  tTouch.Enabled := false;
+  tTouch.Enabled := False;
   // Ensure we have a valid touch state and touch screen capability
   if IsTouched and HasTouch and (StartTouch > 0) then
   begin
@@ -3652,7 +3748,8 @@ begin
     if touchDuration >= 450 then
     begin
       p := Mouse.CursorPos;
-      if SecondsBetween(Now, last_popup) > 2 then begin
+      if SecondsBetween(Now, last_popup) > 2 then
+      begin
         pmSettings.PopUp(p.X, p.Y);
         last_popup := now;
       end;
@@ -3681,7 +3778,7 @@ begin
   else
     lVal.Caption := '';
 
-  lval.hint := lval.caption;
+  lval.hint := lval.Caption;
 
   // Update other UI elements
   lDiff.Caption := b.format(un, BG_MSG_SIG_SHORT, BGDelta);
@@ -3699,7 +3796,7 @@ begin
   SetNextUpdateTimer(b.date);
 end;
 
-function TfBG.IsDataFresh: Boolean;
+function TfBG.IsDataFresh: boolean;
 var
   b: BGReading;   // Holder for the latest (newest) reading
   i: integer;     // Temp int used when checking if caption starts with a digit
@@ -3716,40 +3813,43 @@ begin
     tMissed.OnTimer(tMissed);         // Immediately trigger the "missed" handler
     lVal.Font.Style := [fsStrikeOut]; // Strike through the value to indicate stale data
     // If the value label isn't numeric (e.g., "Setup") or arrow is a placeholder, show neutral placeholders
-    if (not TryStrToInt(lVal.Caption[1], i)) or (lArrow.Caption = 'lArrow') then begin // Dont show "Setup" or similar on boot
+    if (not TryStrToInt(lVal.Caption[1], i)) or (lArrow.Caption = 'lArrow') then
+    begin // Dont show "Setup" or similar on boot
       lVal.Caption := '--';           // Placeholder when data is stale
       lArrow.Caption := '';           // Hide trend arrow when stale
     end;
     setColorMode(clBlack);
     lVal.Font.Color := clWhite;       // High-contrast text on dark background
-    tMissed.Enabled := true;          // Keep the missed timer running
+    tMissed.Enabled := True;          // Keep the missed timer running
     lArrow.Caption := '';             // Dont show arrow when not fresh
-    native.setBadge('--', clBlack, badge_width+badge_adjust, badge_font+round(badge_adjust*10)); // Update system/taskbar badge
+    native.setBadge('--', clBlack, badge_width + badge_adjust,
+      badge_font + round(badge_adjust * 10)); // Update system/taskbar badge
     native.StopBadgeFlash;            // Stop any flashing when stale
   end
   else
   begin
-    tMissed.Enabled := false;         // Data is fresh; stop missed timer
-    bg_alert := true;                 // Allow alerts again
+    tMissed.Enabled := False;         // Data is fresh; stop missed timer
+    bg_alert := True;                 // Allow alerts again
   end;
 end;
 
 procedure TfBG.SetNextUpdateTimer(const LastReadingTime: TDateTime);
 var
-  i: Int64;
+  i: int64;
 begin
   if firstboot then exit;
-  tMain.Enabled := false;
+  tMain.Enabled := False;
 
   i := SecondsBetween(LastReadingTime, now); // Seconds from last
-  i := min(BG_REFRESH, BG_REFRESH-(i*1000)); // 5 min or less if there's a recent reading
+  i := min(BG_REFRESH, BG_REFRESH - (i * 1000));
+  // 5 min or less if there's a recent reading
   i := max(120000, i); // Don't allow too small refresh time (min 2 minutes)
 
-  tMain.Interval := i+15000; // Add 15 secs to allow sync
-  tMain.Enabled := true;
+  tMain.Interval := i + 15000; // Add 15 secs to allow sync
+  tMain.Enabled := True;
 
   miRefresh.Caption := Format(RS_REFRESH, [TimeToStr(LastReadingTime),
-                              TimeToStr(IncMilliSecond(Now, tMain.Interval))]);
+    TimeToStr(IncMilliSecond(Now, tMain.Interval))]);
   {$ifdef Darwin}
      upMenu.Caption:= miRefresh.Caption;
   {$endif}
@@ -3758,38 +3858,38 @@ end;
 // Calculate time in range
 procedure tfBG.CalcRangeTime;
 var
- b: BGReading; //< Holder for current reading
- range, //< The OK range
- ok, //< OK count
- no: integer; //< Not OK count
- ranges: set of trndi.types.BGValLevel; //< Types of readings to count as OK
+  b: BGReading; //< Holder for current reading
+  range, //< The OK range
+  ok, //< OK count
+  no: integer; //< Not OK count
+  ranges: set of trndi.types.BGValLevel; //< Types of readings to count as OK
 begin
   ok := 0;
   no := 0;
-  if native.GetBoolSetting('range.custom', true) then
+  if native.GetBoolSetting('range.custom', True) then
     ranges := [BGRange, BGRangeHI, BGRangeLO]
   else
     ranges := [BGRange];
 
   for b in bgs do
     if b.level in ranges then
-       Inc(ok)
+      Inc(ok)
     else
-       Inc(no);
+      Inc(no);
 
   if (ok + no) > 0 then
     range := round((ok / (ok + no)) * 100)
   else
     range := 0;
 
-   lTir.Caption := range.toString + '%';
-   lTir.Hint := range.toString;
-   lTir.Visible := true; // Ensure TIR label is visible after calculation
+  lTir.Caption := range.toString + '%';
+  lTir.Hint := range.toString;
+  lTir.Visible := True; // Ensure TIR label is visible after calculation
 end;
 
-function TfBG.updateReading(boot: boolean = false): boolean;
+function TfBG.updateReading(boot: boolean = False): boolean;
 begin
-  result := false;
+  Result := False;
   lAgo.Caption := '⟳' + lAgo.Caption;
 
   native.start;
@@ -3807,11 +3907,13 @@ begin
   ProcessCurrentReading;
 
   // Handle data freshness
-  if not IsDataFresh then begin
+  if not IsDataFresh then
+  begin
     if not boot then
       Exit;
-  end else
-    result := true;
+  end
+  else
+    Result := True;
 
   // Complete the UI update sequence
   FinalizeUIUpdate;
@@ -3835,12 +3937,12 @@ begin
   // Handle privacy mode display
   if privacyMode then
   begin
-    lval.caption := privacyIcon(lastReading.level);
-    lVal.hint := lval.caption;
+    lval.Caption := privacyIcon(lastReading.level);
+    lVal.hint := lval.Caption;
   end;
 
   // Update timers and UI
-  tAgo.Enabled := true;
+  tAgo.Enabled := True;
   tAgo.OnTimer(self);
   Self.OnResize(lVal);
 
@@ -3848,18 +3950,22 @@ begin
   UpdateFloatingWindow;
 
   // Update text colors based on background only if UI changed
-  if ShouldUpdateUI(fBG.Color, lVal.Caption, lTir.caption, lTir.Color) then
+  if ShouldUpdateUI(fBG.Color, lVal.Caption, lTir.Caption, lTir.Color) then
   begin
     UpdateUIColors;
     CacheUIState(fBG.Color, lVal.Caption, lTir.Caption, lTir.color);
   end;
 
   // Update system integration
-  native.setBadge(lVal.Caption, fBG.Color{$ifdef lclwin32},badge_width,badge_font{$endif});
+  native.setBadge(lVal.Caption, fBG.Color
+    {$ifdef lclwin32}
+,badge_width,badge_font
+    {$endif}
+    );
   native.done;
 
   if privacyMode then
-    DOT_ADJUST := randomrange(-3, 3) / 10
+    DOT_ADJUST := randomrange(-3, 3) / 10;
 
 end;
 
@@ -3905,19 +4011,30 @@ begin
   else
     HandleNormalGlucose(b);
 
-  pnOffReading.Visible := native.GetBoolSetting('ux.off_bar', false);
+  pnOffReading.Visible := native.GetBoolSetting('ux.off_bar', False);
   case b.level of
-       trndi.types.BGHigh: begin txt := RS_HIGH; end;
-       trndi.types.BGLOW: begin txt := RS_LOW; end;
-       trndi.types.BGRange: begin txt := ''; pnOffReading.Visible := false; end;
-       trndi.types.BGRangeHI: begin txt := RS_OFF_HI; end;
-       trndi.types.BGRangeLO: begin txt := RS_OFF_LO;  end;
+    trndi.types.BGHigh: begin
+      txt := RS_HIGH;
+    end;
+    trndi.types.BGLOW: begin
+      txt := RS_LOW;
+    end;
+    trndi.types.BGRange: begin
+      txt := '';
+      pnOffReading.Visible := False;
+    end;
+    trndi.types.BGRangeHI: begin
+      txt := RS_OFF_HI;
+    end;
+    trndi.types.BGRangeLO: begin
+      txt := RS_OFF_LO;
+    end;
   end;
 
   pnOffReading.Caption := txt;
 
-    pnOffReading.color := GetAdjustedColorForBackground(fBG.Color, fBG.Color);
-    pnOffReading.font.color := GetTextColorForBackground(pnOffReading.Color, 0, 0.7);
+  pnOffReading.color := GetAdjustedColorForBackground(fBG.Color, fBG.Color);
+  pnOffReading.font.color := GetTextColorForBackground(pnOffReading.Color, 0, 0.7);
 end;
 
 procedure TfBG.HandleHighGlucose(const b: BGReading);
@@ -3928,7 +4045,8 @@ begin
   setColorMode(bg_color_hi);
 
   if not bg_alert then
-    native.attention(ifthen(multi, multinick, RS_WARN_BG_HI_TITLE), Format(RS_WARN_BG_HI, [lVal.Caption]));
+    native.attention(ifthen(multi, multinick, RS_WARN_BG_HI_TITLE),
+      Format(RS_WARN_BG_HI, [lVal.Caption]));
 
   if highAlerted then
     Exit;
@@ -3937,11 +4055,12 @@ begin
     MediaController.Pause;
 
   url := native.GetSetting('media.url_high', '');
-  if url <> '' then begin
-     highAlerted := true;
-     MediaController.PlayTrackFromURL(url);
+  if url <> '' then
+  begin
+    highAlerted := True;
+    MediaController.PlayTrackFromURL(url);
   end;
-  doFlash := native.GetBoolSetting('alerts.flash.high', false);
+  doFlash := native.GetBoolSetting('alerts.flash.high', False);
   if (not highAlerted) and doFlash then
     native.StartBadgeFlash(lVal.Caption, bg_color_hi, 15000, 450);
 end;
@@ -3954,7 +4073,8 @@ begin
   SetColorMode(bg_color_lo);
 
   if not bg_alert then
-    native.attention(ifthen(multi, multinick, RS_WARN_BG_LO_TITLE), Format(RS_WARN_BG_LO, [lVal.Caption]));
+    native.attention(ifthen(multi, multinick, RS_WARN_BG_LO_TITLE),
+      Format(RS_WARN_BG_LO, [lVal.Caption]));
 
   if lowAlerted then
     exit;
@@ -3963,11 +4083,12 @@ begin
     MediaController.Pause;
 
   url := native.GetSetting('media.url_low', '');
-  if url <> '' then begin
-     lowAlerted := true;
-     MediaController.PlayTrackFromURL(url);
+  if url <> '' then
+  begin
+    lowAlerted := True;
+    MediaController.PlayTrackFromURL(url);
   end;
-  doFlash := native.GetBoolSetting('alerts.flash.low', false);
+  doFlash := native.GetBoolSetting('alerts.flash.low', False);
   if (not lowAlerted) and doFlash then
     native.StartBadgeFlash(lVal.Caption, bg_color_lo, 20000, 400);
 end;
@@ -3977,36 +4098,41 @@ var
   s, url: string;
   i: integer;
   f: single;
-  go: boolean = false;
+  go: boolean = False;
 begin
-  bg_alert := false;
+  bg_alert := False;
   SetColorMode(bg_color_ok);
-  highAlerted := false;
-  lowAlerted := false;
+  highAlerted := False;
+  lowAlerted := False;
   native.StopBadgeFlash; // cease alerts when normal
 
-  if un = mmol then begin
+  if un = mmol then
+  begin
     s := b.format(mmol, BG_MSG_SHORT, BGPrimary);
     if (TryStrToFloat(s, f, native.locale)) and (f = 5.5) then
-      go := true
+      go := True
     else
-      perfecttriggered := false;
-  end else begin
+      perfecttriggered := False;
+  end
+  else
+  begin
     s := b.format(mgdl, BG_MSG_SHORT, BGPrimary);
     if (TryStrToInt(s, i)) and (i = 100) then
-      go := true
+      go := True
     else
-      perfecttriggered := false;
+      perfecttriggered := False;
   end;
 
-  if go and (not perfecttriggered) then begin
-    perfectTriggered := true;
+  if go and (not perfecttriggered) then
+  begin
+    perfectTriggered := True;
 
     url := native.GetSetting('media.url_perfect', '');
     if url <> '' then
       MediaController.PlayTrackFromURL(url);
-    if native.GetBoolSetting('alerts.flash.perfect', false) then
-      native.StartBadgeFlash(lVal.Caption, bg_color_ok, 6000, 500); // subtle celebratory pulse
+    if native.GetBoolSetting('alerts.flash.perfect', False) then
+      native.StartBadgeFlash(lVal.Caption, bg_color_ok, 6000, 500);
+    // subtle celebratory pulse
   end;
 
   UpdateOffRangePanel(b.val);
@@ -4021,75 +4147,80 @@ var
   last, val: string;
   tf: TFormatSettings;
 begin
-    // Calculate padding consistently
-    padding := (ClientWidth div 25);
-    if not native.HasTouchScreen then
-       padding := padding * 2;
+  // Calculate padding consistently
+  padding := (ClientWidth div 25);
+  if not native.HasTouchScreen then
+    padding := padding * 2;
 
-    // First, set panel dimensions and ensure it's properly configured
-    pnwarning.AutoSize := false;
-    pnwarning.width := ClientWidth - (padding * 2);  // Use padding on both sides
-    pnWarning.left := padding;
-    pnwarning.top := padding;
-    pnWarning.height := ClientHeight - (padding * 2);  // Use padding on top and bottom
-    
-    // Configure the main warning label first
-    if Pos(sLineBreak, lMissing.Caption) < 1 then // Ugly solution
-      lMissing.Caption := '🕑'+sLineBreak+lMissing.Caption;
-    
-    lMissing.AutoSize := false;
-    lMissing.left := 5;
-    lMissing.top := 5;
-    lMissing.width := pnWarning.Width - 10;
-    lMissing.height := pnWarning.height - 60; // Leave room for pnWarnLast at bottom
-    lMissing.wordwrap := true;
-    lMissing.OptimalFill := true;
-    
-    // Use the same scaling method as resize operations for consistency
-    // This ensures the font size matches what you get when manually resizing
-    ScaleLbl(lMissing, taCenter, tlCenter);
-    
-    // Ensure font color is visible
-    if native.HasTouchScreen then
-      pnWarning.Font.Color := pnWarning.color;
+  // First, set panel dimensions and ensure it's properly configured
+  pnwarning.AutoSize := False;
+  pnwarning.Width := ClientWidth - (padding * 2);  // Use padding on both sides
+  pnWarning.left := padding;
+  pnwarning.top := padding;
+  pnWarning.Height := ClientHeight - (padding * 2);  // Use padding on top and bottom
 
-    // Configure other UI elements
-    pnOffReading.Height := ClientHeight;
-    pnOffReading.ClientWidth := ClientWidth div 35;
+  // Configure the main warning label first
+  if Pos(sLineBreak, lMissing.Caption) < 1 then // Ugly solution
+    lMissing.Caption := '🕑' + sLineBreak + lMissing.Caption;
 
-    if tryLastReading(bg) then begin
-       val := bg.format(un, BG_MSG_SHORT);
-       last := HourOf(bg.date).ToString + ':' + MinuteOf(bg.date).tostring;
-       if DateOf(bg.date) <> Dateof(now) then
-         last := last + ' ' + Format(RS_DAYS_AGO, [DaysBetween(now, bg.date)]);
-       pnWarnLast.Caption := Format(RS_LAST_RECIEVE, [val, last]);
-    end
-    else
-       pnWarnLast.Caption := RS_LAST_RECIEVE_NO;
+  lMissing.AutoSize := False;
+  lMissing.left := 5;
+  lMissing.top := 5;
+  lMissing.Width := pnWarning.Width - 10;
+  lMissing.Height := pnWarning.Height - 60; // Leave room for pnWarnLast at bottom
+  lMissing.wordwrap := True;
+  lMissing.OptimalFill := True;
 
-    pnWarnLast.Caption := pnWarnLast.Caption + LineEnding + Format(RS_LAST_RECIEVE_AGE, [DATA_FRESHNESS_THRESHOLD_MINUTES]);
-    
-    // Set pnWarnLast font size relative to main font, but with bounds checking
-    pnWarnLast.font.size := Max(8, Min(20, calculatedFontSize div 3));
-    pnWarning.Canvas.Font.size := pnWarnLast.font.size;
-    
-    // Position pnWarnLast at bottom of panel
-    pnWarnLast.height := pnWarning.Canvas.TextHeight(pnWarnLast.Caption) * 2;
-    pnWarnLast.width := Min(pnWarning.Width - 10, pnWarning.Canvas.TextWidth(pnWarnLast.Caption) + 10);
-    pnWarnLast.left := 5;
-    pnWarnLast.top := pnWarning.Height - pnWarnLast.height - 5;
+  // Use the same scaling method as resize operations for consistency
+  // This ensures the font size matches what you get when manually resizing
+  ScaleLbl(lMissing, taCenter, tlCenter);
+
+  // Ensure font color is visible
+  if native.HasTouchScreen then
+    pnWarning.Font.Color := pnWarning.color;
+
+  // Configure other UI elements
+  pnOffReading.Height := ClientHeight;
+  pnOffReading.ClientWidth := ClientWidth div 35;
+
+  if tryLastReading(bg) then
+  begin
+    val := bg.format(un, BG_MSG_SHORT);
+    last := HourOf(bg.date).ToString + ':' + MinuteOf(bg.date).tostring;
+    if DateOf(bg.date) <> Dateof(now) then
+      last := last + ' ' + Format(RS_DAYS_AGO, [DaysBetween(now, bg.date)]);
+    pnWarnLast.Caption := Format(RS_LAST_RECIEVE, [val, last]);
+  end
+  else
+    pnWarnLast.Caption := RS_LAST_RECIEVE_NO;
+
+  pnWarnLast.Caption := pnWarnLast.Caption + LineEnding +
+    Format(RS_LAST_RECIEVE_AGE, [DATA_FRESHNESS_THRESHOLD_MINUTES]);
+
+  // Set pnWarnLast font size relative to main font, but with bounds checking
+  pnWarnLast.font.size := Max(8, Min(20, calculatedFontSize div 3));
+  pnWarning.Canvas.Font.size := pnWarnLast.font.size;
+
+  // Position pnWarnLast at bottom of panel
+  pnWarnLast.Height := pnWarning.Canvas.TextHeight(pnWarnLast.Caption) * 2;
+  pnWarnLast.Width := Min(pnWarning.Width - 10,
+    pnWarning.Canvas.TextWidth(pnWarnLast.Caption) + 10);
+  pnWarnLast.left := 5;
+  pnWarnLast.top := pnWarning.Height - pnWarnLast.Height - 5;
 end;
 
-procedure TfBG.showWarningPanel(const message: string; clearDisplayValues: boolean = false);
+procedure TfBG.showWarningPanel(const message: string;
+  clearDisplayValues: boolean = False);
 var
   i: integer;
 begin
-  pnWarning.Visible := true;
+  pnWarning.Visible := True;
   pnWarning.Caption := '⚠️ ' + message;
-  
+
   if clearDisplayValues then
   begin
-    if (not TryStrToInt(lVal.Caption[1], i)) or (lArrow.Caption = 'lArrow') then begin // Dont show "Setup" or similar on boot
+    if (not TryStrToInt(lVal.Caption[1], i)) or (lArrow.Caption = 'lArrow') then
+    begin // Dont show "Setup" or similar on boot
       lVal.Caption := '--';
       lArrow.Caption := '';
     end;
@@ -4099,18 +4230,18 @@ begin
   fixWarningPanel;
   // Ensure visual effects are applied when showing the panel
   ApplyAlphaControl(pnWarning, 235);
-  
+
   // Force a complete UI update to ensure proper rendering on all platforms
   pnWarning.Refresh;
   lMissing.Refresh;
 end;
 
-function TfBG.DoFetchAndValidateReadings(const ForceRefresh: Boolean): Boolean;
+function TfBG.DoFetchAndValidateReadings(const ForceRefresh: boolean): boolean;
 var
-{$ifdef DEBUG}
+  {$ifdef DEBUG}
   res: string;
-{$endif}
-i: integer;
+  {$endif}
+  i: integer;
 const
   API_CACHE_SECONDS = 10; // Don't call API more than once per 10 seconds
 begin
@@ -4120,9 +4251,8 @@ begin
     Exit;
 
   // Performance optimization: use cached readings if recent (unless forced)
-  if not ForceRefresh and 
-     (SecondsBetween(Now, FLastAPICall) < API_CACHE_SECONDS) and 
-     (Length(FCachedReadings) > 0) then
+  if not ForceRefresh and (SecondsBetween(Now, FLastAPICall) < API_CACHE_SECONDS) and
+    (Length(FCachedReadings) > 0) then
   begin
     bgs := FCachedReadings;
     Result := True;
@@ -4143,7 +4273,7 @@ begin
                                  '', res, uxmtCustom, 10);
      end;
   {$ELSE}
-       bgs := api.getReadings(MAX_MIN, MAX_RESULT);
+  bgs := api.getReadings(MAX_MIN, MAX_RESULT);
   {$endif}
 
   // Cache the API call and results
@@ -4152,10 +4282,10 @@ begin
   if Length(bgs) > 0 then
     Move(bgs[0], FCachedReadings[0], Length(bgs) * SizeOf(BGReading));
 
-  pnWarning.Visible := false;
+  pnWarning.Visible := False;
   if (Length(bgs) < 1) or (not IsDataFresh) then
   begin
-    showWarningPanel(RS_NO_BACKEND, true);
+    showWarningPanel(RS_NO_BACKEND, True);
     Exit;
   end;
 
@@ -4164,38 +4294,39 @@ begin
   Result := True;
 end;
 
-function TfBG.FetchAndValidateReadings: Boolean;
+function TfBG.FetchAndValidateReadings: boolean;
 begin
   Result := DoFetchAndValidateReadings(False); // Use cached data if available
 end;
 
-function TfBG.FetchAndValidateReadingsForced: Boolean;
+function TfBG.FetchAndValidateReadingsForced: boolean;
 begin
   Result := DoFetchAndValidateReadings(True); // Force fresh API call, bypass cache
 end;
 
-procedure TfBG.UpdateOffRangePanel(const Value: Single);
+procedure TfBG.UpdateOffRangePanel(const Value: single);
 var
-  on: boolean = true;
+  on: boolean = True;
 begin
   if (Value >= api.cgmHi) or (Value <= api.cgmLo) then
   begin
-    pnOffRange.Visible := false;
-    pnOffRangeBar.Visible := false;
+    pnOffRange.Visible := False;
+    pnOffRangeBar.Visible := False;
     if Assigned(fFloat) then
     begin
-      ffloat.lRangeDown.Visible := false;
-      ffloat.lRangeUp.Visible := false;
+      ffloat.lRangeDown.Visible := False;
+      ffloat.lRangeUp.Visible := False;
     end;
   end
   else if Value <= api.cgmRangeLo then
     DisplayLowRange
   else if Value >= api.cgmRangeHi then
     DisplayHighRange
-  else begin
-    pnOffRange.Visible := false;
-    pnOffRangeBar.Visible := false;
-    on := false;
+  else
+  begin
+    pnOffRange.Visible := False;
+    pnOffRangeBar.Visible := False;
+    on := False;
   end;
 
   // Apply range color if option is enabled
@@ -4207,11 +4338,11 @@ procedure TfBG.UpdateUIColors;
 const
   clGoodGreen = $00005900;
 var
- r: integer;
+  r: integer;
 begin
   lVal.Font.Color := GetTextColorForBackground(fBG.color);
-//  lVal.BringToFront;
-//  lArrow.Font.Color := LightenColor(fbg.color, 0.3); // GetTextColorForBackground(fBG.color, 0, 0.9);
+  //  lVal.BringToFront;
+  //  lArrow.Font.Color := LightenColor(fbg.color, 0.3); // GetTextColorForBackground(fBG.color, 0, 0.9);
   lArrow.Font.Color := LightenColor(fBG.color, 0.5);
   lArrow.SendToBack;
   lDiff.Font.Color := GetTextColorForBackground(fBG.color, 0.6, 0.4);
@@ -4219,19 +4350,20 @@ begin
   lTir.Font.Color := GetTextColorForBackground(fBG.color, 0.6, 0.4);
 
 
-    if TryStrToInt(lTir.hint, r) then begin  // Check time in range
-     if r < bad_tir then // If the value is under the limit for "bad"
-       lTir.Font.color := GetAdjustedColorForBackground(clMaroon, fBG.Color, 0.6, 0.4, true)
-     else if r >= good_tir then
-       lTir.Font.color := GetAdjustedColorForBackground(clGoodGreen, fBG.Color, 0.6, 0.4, true);
+  if TryStrToInt(lTir.hint, r) then
+  begin  // Check time in range
+    if r < bad_tir then // If the value is under the limit for "bad"
+      lTir.Font.color := GetAdjustedColorForBackground(clMaroon,
+        fBG.Color, 0.6, 0.4, True)
+    else if r >= good_tir then
+      lTir.Font.color := GetAdjustedColorForBackground(clGoodGreen,
+        fBG.Color, 0.6, 0.4, True);
   end;
-
 
 end;
 
 function TfBG.GetTextColorForBackground(const BgColor: TColor;
-  const DarkenFactor: Double = 0.5;
-  const LightenFactor: Double = 0.3): TColor;
+  const DarkenFactor: double = 0.5; const LightenFactor: double = 0.3): TColor;
 begin
   if IsLightColor(BgColor) then
     Result := DarkenColor(BgColor, DarkenFactor)
@@ -4239,12 +4371,9 @@ begin
     Result := LightenColor(BgColor, LightenFactor);
 end;
 
-function TfBG.GetAdjustedColorForBackground(
-  const BaseColor: TColor;
-  const BgColor: TColor;
-  const DarkenFactor: Double = 0.6;
-  const LightenFactor: Double = 0.4;
-  const PreferLighter: Boolean = False): TColor;
+function TfBG.GetAdjustedColorForBackground(const BaseColor: TColor;
+  const BgColor: TColor; const DarkenFactor: double = 0.6;
+  const LightenFactor: double = 0.4; const PreferLighter: boolean = False): TColor;
 begin
   if PreferLighter then
   begin
@@ -4265,24 +4394,27 @@ begin
   pnOffRange.Color := bg_rel_color_lo;
   pnOffRangeBar.Color := bg_rel_color_lo;
   pnOffRange.Font.Color := bg_rel_color_lo_txt;
-  if miRangeColor.Checked then begin
-    pnOffRange.Visible := false;
-    pnOffRangeBar.Visible := false;
+  if miRangeColor.Checked then
+  begin
+    pnOffRange.Visible := False;
+    pnOffRangeBar.Visible := False;
   end
-  else begin
-    pnOffRange.Visible := true;
-    pnOffRangeBar.Visible := true;
+  else
+  begin
+    pnOffRange.Visible := True;
+    pnOffRangeBar.Visible := True;
     setColorMode;
   end;
-  pnOffRangeBar.Visible := true;
+  pnOffRangeBar.Visible := True;
   pnOffRange.Caption := Format('↧ %s ↧', [RS_OFF_LO]);
 
   if Assigned(fFloat) then
   begin
-    if not miRangeColor.Checked then begin
-      ffloat.lRangeDown.Visible := true;
-      end;
-      ffloat.Font.color := bg_rel_color_lo_txt;
+    if not miRangeColor.Checked then
+    begin
+      ffloat.lRangeDown.Visible := True;
+    end;
+    ffloat.Font.color := bg_rel_color_lo_txt;
   end;
   CenterPanelToCaption(pnOffRange);
 end;
@@ -4292,23 +4424,26 @@ begin
   pnOffRange.Color := bg_rel_color_hi;
   pnOffRangeBar.Color := bg_rel_color_hi;
   pnOffRange.Font.Color := bg_rel_color_hi_txt;
-  if miRangeColor.Checked then begin
-    pnOffRange.Visible := false;
-    pnOffRangeBar.Visible := false;
+  if miRangeColor.Checked then
+  begin
+    pnOffRange.Visible := False;
+    pnOffRangeBar.Visible := False;
   end
-  else begin
-    pnOffRange.Visible := true;
-    pnOffRangeBar.Visible := true;
+  else
+  begin
+    pnOffRange.Visible := True;
+    pnOffRangeBar.Visible := True;
     setColorMode;
   end;
   pnOffRange.Caption := Format('↥ %s ↥', [RS_OFF_HI]);
 
   if Assigned(fFloat) then
   begin
-    if not miRangeColor.Checked then begin
-      ffloat.lRangeUp.Visible := true;
+    if not miRangeColor.Checked then
+    begin
+      ffloat.lRangeUp.Visible := True;
     end;
-      ffloat.Font.color := bg_rel_color_hi_txt;
+    ffloat.Font.color := bg_rel_color_hi_txt;
   end;
   CenterPanelToCaption(pnOffRange);
 end;
@@ -4318,7 +4453,7 @@ procedure TfBG.PlaceTrendDots(const Readings: array of BGReading);
 var
   SortedReadings: array of BGReading;
   currentTime: TDateTime;
-  currentHash: Cardinal;
+  currentHash: cardinal;
 begin
   if Length(Readings) = 0 then
     Exit;
@@ -4327,7 +4462,7 @@ begin
   currentHash := CalculateReadingsHash(Readings);
   if currentHash = FLastReadingsHash then
     Exit; // No change, skip processing
-    
+
   FLastReadingsHash := currentHash;
 
   // Prepare
@@ -4345,11 +4480,13 @@ begin
   ProcessTimeIntervals(SortedReadings, currentTime);
 end;
 
-procedure TfBG.HandleLatestReadingFreshness(const LatestReading: BGReading; CurrentTime: TDateTime);
+procedure TfBG.HandleLatestReadingFreshness(const LatestReading: BGReading;
+  CurrentTime: TDateTime);
 var
-  isFresh: Boolean;
+  isFresh: boolean;
 begin
-  isFresh := MinutesBetween(CurrentTime, LatestReading.date) <= DATA_FRESHNESS_THRESHOLD_MINUTES;
+  isFresh := MinutesBetween(CurrentTime, LatestReading.date) <=
+    DATA_FRESHNESS_THRESHOLD_MINUTES;
 
   if Assigned(TrendDots[10]) then
   begin
@@ -4362,11 +4499,12 @@ begin
   end;
 end;
 
-procedure TfBG.ProcessTimeIntervals(const SortedReadings: array of BGReading; CurrentTime: TDateTime);
+procedure TfBG.ProcessTimeIntervals(const SortedReadings: array of BGReading;
+  CurrentTime: TDateTime);
 var
-  slotIndex, i, labelNumber: Integer;
+  slotIndex, i, labelNumber: integer;
   slotStart, slotEnd: TDateTime;
-  found: Boolean;
+  found: boolean;
   reading: BGReading;
   l: TPaintbox;
 begin
@@ -4376,7 +4514,7 @@ begin
     slotEnd := IncMinute(CurrentTime, -INTERVAL_MINUTES * slotIndex);
     slotStart := IncMinute(slotEnd, -INTERVAL_MINUTES);
 
-    found := false;
+    found := False;
 
     // Sök efter den senaste läsningen inom intervallet
     for i := 0 to High(SortedReadings) do
@@ -4398,18 +4536,20 @@ begin
 
       if Assigned(l) then
       begin
-        l.Visible := false;
-        LogMessage(Format('TrendDots[%d] hidden as no reading found in interval.', [labelNumber]));
+        l.Visible := False;
+        LogMessage(Format('TrendDots[%d] hidden as no reading found in interval.',
+          [labelNumber]));
       end;
     end;
   end;
 end;
 
-function TfBG.UpdateLabelForReading(SlotIndex: Integer; const Reading: BGReading): Boolean;
+function TfBG.UpdateLabelForReading(SlotIndex: integer;
+  const Reading: BGReading): boolean;
 var
-  labelNumber: Integer;
+  labelNumber: integer;
   l: TPaintBox;
-  H, M, S, MS: Word;
+  H, M, S, MS: word;
 begin
   if firstboot then exit;
   Result := False;
@@ -4421,7 +4561,7 @@ begin
   if Assigned(l) then
   begin
     // Uppdatera etikettens egenskaper baserat på läsningen
-    l.Visible := true;
+    l.Visible := True;
     l.Hint := Reading.format(un, BG_MSG_SHORT, BGPrimary);
 
     DecodeTime(reading.date, H, M, S, MS);
@@ -4436,7 +4576,7 @@ begin
     l.Font.Color := DetermineColorForReading(Reading);
 
     LogMessage(Format('TrendDots[%d] updated with reading at %s (Value: %.2f).',
-               [labelNumber, DateTimeToStr(Reading.date), Reading.val]));
+      [labelNumber, DateTimeToStr(Reading.date), Reading.val]));
     l.BringToFront;
     Result := True;
   end;
@@ -4458,63 +4598,76 @@ begin
       Result := bg_rel_color_hi;
   end;
 
-  result := LightenColor(result, -0.8);
+  Result := LightenColor(Result, -0.8);
 end;
 
 function TfBG.setColorMode: boolean;
 begin
-  result := setColorMode(clFuchsia, true);
+  Result := setColorMode(clFuchsia, True);
 end;
 
-function TfBG.setColorMode(bg: tColor; const nocolor: boolean = false): boolean;
+function TfBG.setColorMode(bg: tColor; const nocolor: boolean = False): boolean;
 begin
   if not nocolor then
     fBG.Color := bg;
 
   if not multi // not more users than 1
     and titlecolor // we have chosen to color the window
-    and miRangeColor.Checked then begin // We color the entire window
-    result := SetSingleColorMode;
+    and miRangeColor.Checked then
+  begin // We color the entire window
+    Result := SetSingleColorMode;
     Exit;
-  end else
+  end
+  else
   if not miRangeColor.Checked // We are not coloring the entire window
     and pnOffRange.Visible then
-      if native.SetTitleColor(handle, pnOffRange.Color, IfThen(IsLightColor(pnOffRange.Color), clBlack, clWhite)) then
-        Exit;
+    if native.SetTitleColor(handle, pnOffRange.Color,
+      IfThen(IsLightColor(pnOffRange.Color), clBlack, clWhite)) then
+      Exit;
 
-  if customTitleBar and (pnMultiUser.Color <> clBlack) then begin // Safe that black = standard
-    if native.SetTitleColor(handle, pnMultiUser.Color, IfThen(IsLightColor(pnMultiUser.Color), clBlack, clWhite)) then
-      Exit(true);
+  if customTitleBar and (pnMultiUser.Color <> clBlack) then
+  begin // Safe that black = standard
+    if native.SetTitleColor(handle, pnMultiUser.Color,
+      IfThen(IsLightColor(pnMultiUser.Color), clBlack, clWhite)) then
+      Exit(True);
   end;
 
   if native.isDarkMode then
-    native.setDarkMode{$ifdef windows}(self.Handle){$endif};
+    native.setDarkMode
+  {$ifdef windows}
+(self.Handle)
+  {$endif}
+  ;
 
-   result := false;
+  Result := False;
 end;
 
 function TfBG.setSingleColorMode: boolean;
 begin
-  result := native.SetTitleColor(handle, fBG.color, IfThen(IsLightColor(fBG.color), clBlack, clWhite));
+  Result := native.SetTitleColor(handle, fBG.color,
+    IfThen(IsLightColor(fBG.color), clBlack, clWhite));
 end;
 
 // Performance optimization methods
-function TfBG.CalculateReadingsHash(const Readings: array of BGReading): Cardinal;
+function TfBG.CalculateReadingsHash(const Readings: array of BGReading): cardinal;
 var
-  i: Integer;
+  i: integer;
 begin
   Result := 0;
   for i := 0 to High(Readings) do
-    Result := Result xor Cardinal(Trunc(Readings[i].val * 100)) xor 
-              Cardinal(Trunc(Readings[i].date * 86400));
+    Result := Result xor cardinal(Trunc(Readings[i].val * 100)) xor
+      cardinal(Trunc(Readings[i].date * 86400));
 end;
 
-function TfBG.ShouldUpdateUI(const NewColor: TColor; const NewCaption: string; const NewTir: string; const NewTirColor: TColor): Boolean;
+function TfBG.ShouldUpdateUI(const NewColor: TColor; const NewCaption: string;
+  const NewTir: string; const NewTirColor: TColor): boolean;
 begin
-  Result := (NewColor <> FLastUIColor) or (NewCaption <> FLastUICaption) or (NewTir <> FLastTir) or (NewTirColor <> FLastTirColor);
+  Result := (NewColor <> FLastUIColor) or (NewCaption <> FLastUICaption) or
+    (NewTir <> FLastTir) or (NewTirColor <> FLastTirColor);
 end;
 
-procedure TfBG.CacheUIState(const UIColor: TColor; const UICaption: string; const UITir: string; const UITirColor: TColor);
+procedure TfBG.CacheUIState(const UIColor: TColor; const UICaption: string;
+  const UITir: string; const UITirColor: TColor);
 begin
   FLastUIColor := UIColor;
   FLastUICaption := UICaption;
