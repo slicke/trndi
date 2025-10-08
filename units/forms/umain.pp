@@ -296,6 +296,7 @@ private
   procedure initDot(l: TPaintBox; c, ix: integer);
   procedure ExpandDot(l: TPaintBox; c, ix: integer);
   procedure placeForm;
+  function CalculateDotVisualOffset: integer;
 
   // Helper methods for update procedure
   function FetchAndValidateReadings: Boolean;
@@ -1245,6 +1246,7 @@ begin
     // UI preferences
     dotscale := GetIntSetting('ux.dot_scale', 1);
     DOT_ADJUST := GetFloatSetting('ux.dot_adjust', 0);
+    // DOT_VISUAL_OFFSET := CalculateDotVisualOffset;  // No longer needed - centering uses half dot height
     miRangeColor.Checked := GetBoolSetting('ux.range_color', true);
 
     // Extensions
@@ -1825,6 +1827,7 @@ var
   tmp: Integer;
   clientH: Integer;
   daAdjust: Integer;
+  dotHeight: Integer;
   // Helper to map a BG value in internal units to a Y coordinate matching SetPointHeight
   function ValueToY(const Value: Single): Integer;
   var
@@ -1850,6 +1853,11 @@ begin
   else
     clientH := Self.ClientHeight;
 
+  // Get dot height for centering lines through the middle of dots
+  dotHeight := 0;
+  if (Length(TrendDots) > 0) and Assigned(TrendDots[1]) and Assigned(TrendDots[1].Canvas) then
+    dotHeight := TrendDots[1].Canvas.TextHeight(DOT_GRAPH);
+
   // Decide whether to draw low/high range indicators (0 disables)
   drawLo := (Assigned(api) and (api.cgmLo <> 0));
   drawHi := (Assigned(api) and (api.cgmHi <> 0));
@@ -1857,22 +1865,40 @@ begin
   // Apply same adjustments as AdjustGraph so lines align with moved dots
   daAdjust := dotsInView; // same variable used in AdjustGraph
 
+  // Calculate Y positions for low and high thresholds
+  if drawLo then
+  begin
+    loY := ValueToY(api.cgmLo * BG_CONVERTIONS[mmol][mgdl]);
+    loY := loY + round(clientH * DOT_ADJUST) - daAdjust;
+    loY := loY + (dotHeight div 2);
+  end;
+
+  if drawHi then
+  begin
+    hiY := ValueToY(api.cgmHi * BG_CONVERTIONS[mmol][mgdl]);
+    hiY := hiY + round(clientH * DOT_ADJUST) - daAdjust;
+    hiY := hiY + (dotHeight div 2);
+  end;
+
+  // Fill the area between low and high thresholds with a darkened background color
+  if drawLo and drawHi then
+  begin
+    cnv.Brush.Style := bsSolid;
+    cnv.Brush.Color := DarkenColor(fBG.Color);
+    cnv.Pen.Style := psClear;
+    cnv.FillRect(Rect(0, hiY, Self.ClientWidth, loY));
+  end;
+
   // Use semi-transparent versions of range colors
   cnv.Brush.Style := bsClear;
 
   if drawLo then
   begin
-    // api.cgmLo is in mg/dL; convert to mmol/L which SetPointHeight and ValueToY use
-    loY := ValueToY(api.cgmLo * BG_CONVERTIONS[mmol][mgdl]);
-    // Apply same adjustments as AdjustGraph: first DOT_ADJUST, then subtract dotsInView
-    loY := loY + round(clientH * DOT_ADJUST) - daAdjust;
-    // Apply visual offset to compensate for whitespace in dot character
-    loY := loY + DOT_VISUAL_OFFSET;
+    // Draw horizontal line for low threshold
     lineColor := LightenColor(bg_rel_color_lo);
     cnv.Pen.Color := lineColor;
     cnv.Pen.Style := psSolid;
     cnv.Pen.Width := 2;
-    // Draw a horizontal line across the area where dots are shown
     tmp := loY;
     cnv.MoveTo(0, tmp);
     cnv.LineTo(Self.ClientWidth, tmp);
@@ -1880,12 +1906,7 @@ begin
 
   if drawHi then
   begin
-    // api.cgmHi is in mg/dL; convert to mmol/L which SetPointHeight and ValueToY use
-    hiY := ValueToY(api.cgmHi * BG_CONVERTIONS[mmol][mgdl]);
-    // Apply same adjustments as AdjustGraph: first DOT_ADJUST, then subtract dotsInView
-    hiY := hiY + round(clientH * DOT_ADJUST) - daAdjust;
-    // Apply visual offset to compensate for whitespace in dot character
-    hiY := hiY + DOT_VISUAL_OFFSET;
+    // Draw horizontal line for high threshold
     lineColor := LightenColor(bg_rel_color_hi);
     cnv.Pen.Color := lineColor;
     cnv.Pen.Style := psSolid;
@@ -1907,6 +1928,80 @@ begin
   {$ifdef Windows}
     l.Font.Name := 'DejaVu Sans Mono';
   {$endif}
+end;
+
+// Calculate the vertical offset needed to align limit lines with the visual center of the dot character
+// by analyzing where the first non-transparent pixel appears in the rendered dot
+function TfBG.CalculateDotVisualOffset: integer;
+var
+  bmp: TBitmap;
+  y, x: integer;
+  fontSize: integer;
+  halfHeight: integer;
+  firstPixelY: integer;
+  bgColor, pixelColor: TColor;
+  found: boolean;
+  fontName: string;
+begin
+  Result := 0;
+  bmp := TBitmap.Create;
+  try
+    // Use a reasonable font size for measurement (similar to what dots use)
+    fontSize := 24;
+    bmp.Width := fontSize * 2;
+    bmp.Height := fontSize * 2;
+    
+    // Set background color and clear bitmap
+    bgColor := clWhite;
+    bmp.Canvas.Brush.Color := bgColor;
+    bmp.Canvas.FillRect(0, 0, bmp.Width, bmp.Height);
+    
+    // Set font properties matching the dots - use GUI font on all platforms
+    if FontGUIInList(fontName) then
+      bmp.Canvas.Font.Name := fontName
+    else
+      bmp.Canvas.Font.Name := 'default';
+    bmp.Canvas.Font.Size := fontSize;
+    bmp.Canvas.Font.Color := clBlack;
+    
+    // Draw the dot character centered
+    bmp.Canvas.TextOut(fontSize div 2, fontSize div 2, DOT_GRAPH);
+    
+    // Find the first row with a non-background pixel (scanning from top)
+    firstPixelY := -1;
+    found := false;
+    
+    for y := 0 to bmp.Height - 1 do
+    begin
+      for x := 0 to bmp.Width - 1 do
+      begin
+        pixelColor := bmp.Canvas.Pixels[x, y];
+        // Check if pixel is significantly different from background
+        if pixelColor <> bgColor then
+        begin
+          firstPixelY := y;
+          found := true;
+          break;
+        end;
+      end;
+      if found then break;
+    end;
+    
+    // Calculate offset based on where we found the first pixel
+    if found then
+    begin
+      // The visual center should be at halfHeight
+      halfHeight := bmp.Height div 2;
+      // If first pixel is below center, offset is positive (move lines down)
+      // If first pixel is above center, offset is negative (move lines up)
+      Result := firstPixelY - halfHeight;
+      LogMessage(Format('DOT_VISUAL_OFFSET calculated: font=%s, firstPixel=%d, halfHeight=%d, offset=%d', 
+                       [fontName, firstPixelY, halfHeight, Result]));
+    end;
+    
+  finally
+    bmp.Free;
+  end;
 end;
 
 // Expands a trend dot to show actual bg value with highlighting for latest reading
