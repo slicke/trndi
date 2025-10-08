@@ -61,6 +61,7 @@ TfConf = class(TForm)
   cbMusicPause: TCheckBox;
   cbNotice: TCheckBox;
   cbOffBar: TCheckBox;
+  cbPaintHiLo: TCheckBox;
   cbPos: TComboBox;
   cbPrivacy: TCheckBox;
   cbSize: TCheckBox;
