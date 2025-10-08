@@ -622,6 +622,11 @@ begin
   result := false; // Win and mac are always good
 end;
 
+function IsSemiProblematicWM: boolean;
+begin
+   result := false;
+end;
+
 {$endif}
 
 function ShowFormModalSafe(aForm: TForm): Integer;

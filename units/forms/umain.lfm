@@ -13,6 +13,7 @@ object fBG: TfBG
   LCLVersion = '4.2.0.0'
   OnClose = FormClose
   OnCreate = FormCreate
+  OnPaint = FormPaint
   OnDblClick = FormDblClick
   OnDestroy = FormDestroy
   OnKeyPress = FormKeyPress
