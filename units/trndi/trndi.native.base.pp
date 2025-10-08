@@ -1381,8 +1381,6 @@ begin
   Result := (Brightness(ColorToRGB(clWindow)) < Brightness(ColorToRGB(clWindowText)));
 end;
 
-{ getURL moved: now a virtual abstract class function; implemented in platform units. }
-
 {------------------------------------------------------------------------------
   HasDangerousChars
   ----------------------
@@ -1508,8 +1506,6 @@ begin
   end;
   {$ENDIF}
 end;
-
-// Windows BurntToast detection moved to trndi.native.win
 
 class function TTrndiNativeBase.SetTitleColor(form: THandle; bg, text: TColor): boolean;
 begin

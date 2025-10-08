@@ -205,6 +205,7 @@ TfBG = class(TForm)
   procedure FormMouseMove(Sender:TObject;{%H-}Shift:TShiftState;X,Y:integer);
   procedure FormResize(Sender: TObject);
   procedure FormShow(Sender:TObject);
+  procedure FormPaint(Sender: TObject);
   procedure lAgoClick(Sender:TObject);
   procedure lArrowClick(Sender:TObject);
   procedure lDiffDblClick(Sender: TObject);
@@ -1808,7 +1809,74 @@ begin
 
   lRef.Top := lDot1.Top;
   lRef.Caption := lDot1.Hint;
+  // Redraw form so range indicators follow dot positions
+  Invalidate;
 
+end;
+
+procedure TfBG.FormPaint(Sender: TObject);
+var
+  loY, hiY: Integer;
+  cnv: TCanvas;
+  lineColor: TColor;
+  drawLo, drawHi: Boolean;
+  tmp: Integer;
+  clientH: Integer;
+  // Helper to map a BG value in internal units to a Y coordinate matching SetPointHeight
+  function ValueToY(const Value: Single): Integer;
+  const
+    GraphMin = 2;
+    GraphMax = 22;
+  var
+    Padding, UsableHeight, Position: Integer;
+    v: Single;
+  begin
+    clientH := fBG.ClientHeight;
+    Padding := Round(clientH * 0.1);
+    UsableHeight := clientH - (Padding * 2);
+    v := Value;
+    if v < GraphMin then v := GraphMin;
+    if v > GraphMax then v := GraphMax;
+    Position := Padding + Round((v - GraphMin) / (GraphMax - GraphMin) * UsableHeight);
+    Result := (clientH - Position) - 1;
+  end;
+begin
+  // Only draw when form has been created and API thresholds available
+  if not Assigned(Self) then Exit;
+  cnv := Self.Canvas;
+  clientH := Self.ClientHeight;
+
+  // Decide whether to draw low/high range indicators (range 0 disables)
+  drawLo := (Assigned(api) and (api.cgmRangeLo <> 0));
+  drawHi := (Assigned(api) and (api.cgmRangeHi <> 0));
+
+  // Use semi-transparent versions of range colors
+  cnv.Brush.Style := bsClear;
+
+  if drawLo then
+  begin
+  loY := ValueToY(api.cgmRangeLo * BG_CONVERTIONS[mmol][mgdl]);
+    lineColor := bg_rel_color_lo;
+    cnv.Pen.Color := lineColor;
+    cnv.Pen.Style := psSolid;
+    cnv.Pen.Width := 2;
+    // Draw a thin horizontal line across the area where dots are shown
+    tmp := loY;
+    cnv.MoveTo(0, tmp);
+    cnv.LineTo(Self.ClientWidth, tmp);
+  end;
+
+  if drawHi then
+  begin
+  hiY := ValueToY(api.cgmRangeHi * BG_CONVERTIONS[mmol][mgdl]);
+    lineColor := bg_rel_color_hi;
+    cnv.Pen.Color := lineColor;
+    cnv.Pen.Style := psSolid;
+    cnv.Pen.Width := 2;
+    tmp := hiY;
+    cnv.MoveTo(0, tmp);
+    cnv.LineTo(Self.ClientWidth, tmp);
+  end;
 end;
 
 procedure TfBG.bSettingsClick(Sender: TObject);
