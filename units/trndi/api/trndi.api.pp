@@ -23,7 +23,7 @@ unit trndi.api;
 interface
 
 uses
-  Classes, SysUtils, trndi.types, dateutils, trndi.native, dialogs;
+  Classes, SysUtils, trndi.types, dateutils, trndi.native, Dialogs;
 
 type
   {** CGMCore holds thresholds used to classify blood glucose values.
@@ -115,10 +115,11 @@ type
         @returns(@code(True) if a plausible current reading exists)
      }
     function checkActive: boolean;
-
   public
-    const toMMOL = 0.0555555556; // Factor to multiply mg/dL by to get mmol/L
-    const toMGDL = 18.0182; // Facvtor to multiply mmol/L to get mg/dL
+  const
+    toMMOL = 0.0555555556; // Factor to multiply mg/dL by to get mmol/L
+  const
+    toMGDL = 18.0182; // Facvtor to multiply mmol/L to get mg/dL
     {** Provide a backend-specific caption for parameter labels in Settings.
         Index mapping (by convention):
         - 1: Label above the first edit (e.g., server URL or username)
@@ -154,7 +155,8 @@ type
         @param(res     Out parameter receiving raw response text)
         @returns(Array of BGReading)
      }
-    function getReadings(minNum, maxNum: integer; extras: string; out res: string): BGResults; virtual; abstract;
+    function getReadings(minNum, maxNum: integer; extras: string;
+      out res: string): BGResults; virtual; abstract;
 
     {** Construct a new API object.
         Subclasses may interpret @code(user), @code(pass), and @code(extra) as needed.
@@ -168,10 +170,10 @@ type
         @param(pass   Implementation-defined (e.g., password or token))
         @param(extra  Implementation-defined extra parameter)
      }
-    constructor create(user, pass, extra: string); virtual;
+    constructor Create(user, pass, extra: string); virtual;
 
     {** Destructor; releases owned resources. }
-    destructor destroy; virtual;
+    destructor Destroy; virtual;
 
     {** Establish connectivity to the underlying data source.
         Subclasses must implement.
@@ -222,7 +224,7 @@ type
         @param(correct Whether to subtract @code(tz) before conversion)
         @returns(@code(TDateTime) in local or adjusted time)
      }
-    function JSToDateTime(ts: int64; correct: boolean = true): TDateTime; virtual;
+    function JSToDateTime(ts: int64; correct: boolean = True): TDateTime; virtual;
 
     // -------- Properties --------
 
@@ -271,7 +273,7 @@ var
 begin
   // Try to obtain a “current” reading using a short lookback window
   if not getCurrent(bgr) then
-    Result := false
+    Result := False
   else
     // Lightweight plausibility check on timestamp
     Result := bgr.date > 1000;
@@ -281,13 +283,13 @@ end;
   Base constructor.
   Initializes timezone from the OS, sets up native interface, and default CGM thresholds.
 ------------------------------------------------------------------------------}
-constructor TrndiAPI.create(user, pass, extra: string);
+constructor TrndiAPI.Create(user, pass, extra: string);
 begin
   // Store local timezone offset (minutes) via property; internally becomes seconds.
   timezone := GetLocalTimeOffset;
 
   // Native helper for HTTP and other platform-specific operations.
-  native := TrndiNative.create(ua, baseUrl);
+  native := TrndiNative.Create(ua, baseUrl);
 
   // Defaults for thresholds (can be overwritten later).
   initCGMCore;
@@ -296,7 +298,7 @@ end;
 {------------------------------------------------------------------------------
   Base destructor; frees native helper.
 ------------------------------------------------------------------------------}
-destructor TrndiAPI.destroy;
+destructor TrndiAPI.Destroy;
 begin
   native.Free;
 end;
@@ -307,10 +309,10 @@ end;
 function TrndiAPI.getLevel(v: BGValLevel): single;
 begin
   case v of
-    BGHIGH:   Result := core.hi;
-    BGLOW:    Result := core.lo;
-    BGRangeHI:Result := core.top;
-    BGRangeLO:Result := core.bottom;
+    BGHIGH: Result := core.hi;
+    BGLOW: Result := core.lo;
+    BGRangeHI: Result := core.top;
+    BGRangeLO: Result := core.bottom;
   end;
 end;
 
@@ -341,9 +343,9 @@ end;
 ------------------------------------------------------------------------------}
 procedure TrndiAPI.initCGMCore;
 begin
-  core.hi     := 401;
-  core.lo     := 40;
-  core.top    := 500;  // 500 => “unused” for personalized upper bound
+  core.hi := 401;
+  core.lo := 40;
+  core.top := 500;  // 500 => “unused” for personalized upper bound
   core.bottom := 0;    // 0   => “unused” for personalized lower bound
 end;
 
@@ -395,7 +397,7 @@ function TrndiAPI.getLast(var res: BGReading): boolean;
 var
   r: BGResults;
 begin
-  Result := false;
+  Result := False;
 
   // Request readings from the past 1440 minutes (24 hours), limit 1
   r := getReadings(1440, 1);
@@ -403,7 +405,7 @@ begin
   if Length(r) > 0 then
   begin
     res := r[0];
-    Result := true;
+    Result := True;
   end;
 end;
 
@@ -414,7 +416,7 @@ function TrndiAPI.getCurrent(var res: BGReading): boolean;
 var
   r: BGResults;
 begin
-  Result := false;
+  Result := False;
 
   // Request readings from the past 10 minutes, limit 1
   r := getReadings(10, 1);
@@ -422,7 +424,7 @@ begin
   if Length(r) > 0 then
   begin
     res := r[0];
-    Result := true;
+    Result := True;
   end;
 end;
 
@@ -458,8 +460,8 @@ begin
     1: Result := 'Server Address';
     2: Result := 'API Key';
     3: Result := 'Extra (optional)';
-  else
-    Result := '';
+    else
+      Result := '';
   end;
 end;
 

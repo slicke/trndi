@@ -8,26 +8,26 @@ unit trndi.funcs;
 interface
 
 uses
-  Classes, SysUtils, ExtCtrls, stdctrls, graphics, trndi.types, forms, math,
+  Classes, SysUtils, ExtCtrls, StdCtrls, Graphics, trndi.types, Forms, Math,
   fpjson, jsonparser, dateutils
   {$ifdef TrndiExt},trndi.ext.engine, mormot.lib.quickjs, mormot.core.base{$endif}
   {$ifdef DARWIN}, CocoaAll{$endif};
 
-
 procedure CenterPanelToCaption(Panel: TPanel; margin: integer = 10);
 function GetAppPath: string;
 function GetLangPath: string;
-procedure PaintLbl(Sender: TLabel; OutlineWidth: integer = 1; OutlineColor: TColor = clBlack);
+procedure PaintLbl(Sender: TLabel; OutlineWidth: integer = 1;
+  OutlineColor: TColor = clBlack);
 procedure LogMessage(const Msg: string);
 procedure SortReadingsDescending(var Readings: array of BGReading);
-procedure SetPointHeight(l: TPaintBox; Value: Single; clientHeight: integer);
+procedure SetPointHeight(l: TPaintBox; Value: single; clientHeight: integer);
 function HasNewerRelease(const JsonResponse: string;
-                         out ReleaseName: string;
-                         IncludePrerelease: Boolean = False): Boolean;
+  out ReleaseName: string;
+  IncludePrerelease: boolean = False): boolean;
 function ParseCompilerDate: TDateTime;
 function GetNewerVersionURL(const JsonResponse: string;
-                            IncludePrerelease: Boolean = False;
-                            Platform: string = ''): string;
+  IncludePrerelease: boolean = False;
+  Platform: string = ''): string;
 
 function privacyIcon(const v: trndi.types.BGValLevel): string;
 
@@ -73,37 +73,39 @@ procedure ConvertVarRecsToJSValueRaw(const params: array of const; var jsValues:
 {$endif}
 
 const
-INTERVAL_MINUTES = 5; // Each time interval is 5 minutes
-NUM_DOTS = 10;        // Total number of labels (lDot1 - lDot10)
+  INTERVAL_MINUTES = 5; // Each time interval is 5 minutes
+  NUM_DOTS = 10;        // Total number of labels (lDot1 - lDot10)
 
-BG_API_MIN = 2; // NS can't read lower
-BG_API_MAX = 22.2; // NS can't read higher
-BG_REFRESH = 300000; // 5 min refresh
+  BG_API_MIN = 2; // NS can't read lower
+  BG_API_MAX = 22.2; // NS can't read higher
+  BG_REFRESH = 300000; // 5 min refresh
 
-APP_BUILD_DATE = {$I %DATE%}; // Returns "2025/07/21"
-APP_BUILD_TIME = {$I %TIME%}; // Returns "14:30:25"
+  APP_BUILD_DATE = {$I %DATE%}; // Returns "2025/07/21"
+  APP_BUILD_TIME = {$I %TIME%}; // Returns "14:30:25"
 
 var
-DOT_GRAPH: UnicodeString = WideChar($2B24);  // Circle
-DOT_FRESH: UnicodeString = WideChar($2600);  // Sun
-DOT_ADJUST: single = 0; // Multiplyer where dots appear
-DOT_VISUAL_OFFSET: integer = 0; // Vertical offset to align limit lines with visual center of dot (compensates for internal whitespace in dot character)
-MAX_MIN: integer = 1440; // Max time to request
-MAX_RESULT: integer = 25; // Max results
-DATA_FRESHNESS_THRESHOLD_MINUTES: integer = 11; // Max minutes before data is considered outdated
+  DOT_GRAPH: unicodestring = widechar($2B24);  // Circle
+  DOT_FRESH: unicodestring = widechar($2600);  // Sun
+  DOT_ADJUST: single = 0; // Multiplyer where dots appear
+  DOT_VISUAL_OFFSET: integer = 0;
+  // Vertical offset to align limit lines with visual center of dot (compensates for internal whitespace in dot character)
+  MAX_MIN: integer = 1440; // Max time to request
+  MAX_RESULT: integer = 25; // Max results
+  DATA_FRESHNESS_THRESHOLD_MINUTES: integer = 11;
+  // Max minutes before data is considered outdated
 
 implementation
 
 procedure CenterPanelToCaption(Panel: TPanel; margin: integer = 10);
 var
-  TextWidth, PanelWidth, Padding: Integer;
-  ParentWidth: Integer;
+  TextWidth, PanelWidth, Padding: integer;
+  ParentWidth: integer;
 begin
   // Calculate text width using the panel's font
   Panel.Canvas.Font := Panel.Font;
   TextWidth := Panel.Canvas.TextWidth(Panel.Caption);
 
-  Padding := margin*2; // Add 20 pixels (10 on each side, adjust as needed)
+  Padding := margin * 2; // Add 20 pixels (10 on each side, adjust as needed)
   PanelWidth := TextWidth + Padding;
 
   Panel.Width := PanelWidth;
@@ -139,17 +141,20 @@ begin
 end;
 
 {$else}
+
 function GetAppPath: string;
 begin
-  result := ExtractFilePath(Application.ExeName);
+  Result := ExtractFilePath(Application.ExeName);
 end;
+
 function getLangPath: string;
 begin
-  result := GetAppPath + 'lang/';
+  Result := GetAppPath + 'lang/';
 end;
 {$endif}
 
-procedure PaintLbl(Sender: TLabel; OutlineWidth: integer = 1; OutlineColor: TColor = clBlack);
+procedure PaintLbl(Sender: TLabel; OutlineWidth: integer = 1;
+  OutlineColor: TColor = clBlack);
 var
   X, Y: integer;
   OriginalColor: TColor;
@@ -167,7 +172,7 @@ begin
     TextStyle.Layout := Layout;
     TextStyle.Wordbreak := WordWrap;
     TextStyle.SingleLine := not WordWrap;
-    TextStyle.Clipping := true;
+    TextStyle.Clipping := True;
 
     // Remember original color
     OriginalColor := Font.Color;
@@ -249,9 +254,9 @@ begin
 end;
 
 // SetPointHeight procedure
-procedure SetPointHeight(L: TPaintBox; Value: Single; clientHeight: integer);
+procedure SetPointHeight(L: TPaintBox; Value: single; clientHeight: integer);
 var
-  Padding, UsableHeight, Position: Integer;
+  Padding, UsableHeight, Position: integer;
 begin
   // Define padding and usable height for scaling based on provided client height
   Padding := Round(clientHeight * 0.1); // 10% of the client height
@@ -264,7 +269,8 @@ begin
     Value := BG_API_MAX;
 
   // Calculate position as a proportion of the usable height
-  Position := Padding + Round((Value - BG_API_MIN) / (BG_API_MAX - BG_API_MIN) * UsableHeight);
+  Position := Padding + Round((Value - BG_API_MIN) / (BG_API_MAX - BG_API_MIN) *
+    UsableHeight);
 
   // Apply the calculated position to the label's Top property
   // Place dot relative to the same clientHeight reference. Keep 1px inside bottom edge
@@ -274,17 +280,17 @@ begin
   LogMessage(Format('Label %s: Value=%.2f, Top=%d', [L.Name, Value, L.Top]));
 end;
 
-procedure setTimeRange(mins, count: integer);
+procedure setTimeRange(mins, Count: integer);
 begin
   MAX_MIN := min(mins, 20); // Max time to request
-  MAX_RESULT := min(count, 2); // Max results
+  MAX_RESULT := min(Count, 2); // Max results
 end;
 
 function ParseCompilerDate: TDateTime;
 var
   DateParts: TStringArray;
   TimeParts: TStringArray;
-  Year, Month, Day, Hour, Min, Sec: Word;
+  Year, Month, Day, Hour, Min, Sec: word;
 begin
   // Parse date: "2025/07/21"
   DateParts := APP_BUILD_DATE.Split('/');
@@ -302,17 +308,17 @@ begin
 end;
 
 function HasNewerRelease(const JsonResponse: string;
-                         out ReleaseName: string;
-                         IncludePrerelease: Boolean = False): Boolean;
+  out ReleaseName: string;
+  IncludePrerelease: boolean = False): boolean;
 var
   JsonData: TJSONData;
   JsonObj: TJSONObject;
   JsonArray: TJSONArray;
   ReleaseDateStr: string;
   ReleaseDate, BuildDate: TDateTime;
-  Year, Month, Day, Hour, Min, Sec: Word;
-  i: Integer;
-  IsPrerelease: Boolean;
+  Year, Month, Day, Hour, Min, Sec: word;
+  i: integer;
+  IsPrerelease: boolean;
 begin
   Result := False;
   ReleaseName := '';
@@ -384,17 +390,17 @@ begin
 end;
 
 function GetNewerVersionURL(const JsonResponse: string;
-                                  IncludePrerelease: Boolean = False;
-                                  Platform: string = ''): string;
+  IncludePrerelease: boolean = False;
+  Platform: string = ''): string;
 var
   JsonData: TJSONData;
   JsonObj: TJSONObject;
   JsonArray: TJSONArray;
   ReleaseDateStr, ReleaseTitle: string;
   ReleaseDate, BuildDate: TDateTime;
-  Year, Month, Day, Hour, Min, Sec: Word;
-  i: Integer;
-  IsPrerelease, MatchesPlatform: Boolean;
+  Year, Month, Day, Hour, Min, Sec: word;
+  i: integer;
+  IsPrerelease, MatchesPlatform: boolean;
 begin
   Result := ''; // Empty if no newer version
   JsonData := nil;
@@ -416,11 +422,12 @@ begin
 
         case LowerCase(Platform) of
           'windows': MatchesPlatform := Pos('windows', LowerCase(ReleaseTitle)) > 0;
-          'mac', 'macos': MatchesPlatform := (Pos('mac', LowerCase(ReleaseTitle)) > 0) or
-                                           (Pos('macos', LowerCase(ReleaseTitle)) > 0);
+          'mac', 'macos': MatchesPlatform :=
+              (Pos('mac', LowerCase(ReleaseTitle)) > 0) or
+              (Pos('macos', LowerCase(ReleaseTitle)) > 0);
           'linux': MatchesPlatform := Pos('linux', LowerCase(ReleaseTitle)) > 0;
-        else
-          MatchesPlatform := Pos(LowerCase(Platform), LowerCase(ReleaseTitle)) > 0;
+          else
+            MatchesPlatform := Pos(LowerCase(Platform), LowerCase(ReleaseTitle)) > 0;
         end;
 
         if not MatchesPlatform then
@@ -473,11 +480,12 @@ begin
 
           case LowerCase(Platform) of
             'windows': MatchesPlatform := Pos('windows', LowerCase(ReleaseTitle)) > 0;
-            'mac', 'macos': MatchesPlatform := (Pos('mac', LowerCase(ReleaseTitle)) > 0) or
-                                             (Pos('macos', LowerCase(ReleaseTitle)) > 0);
+            'mac', 'macos': MatchesPlatform :=
+                (Pos('mac', LowerCase(ReleaseTitle)) > 0) or
+                (Pos('macos', LowerCase(ReleaseTitle)) > 0);
             'linux': MatchesPlatform := Pos('linux', LowerCase(ReleaseTitle)) > 0;
-          else
-            MatchesPlatform := Pos(LowerCase(Platform), LowerCase(ReleaseTitle)) > 0;
+            else
+              MatchesPlatform := Pos(LowerCase(Platform), LowerCase(ReleaseTitle)) > 0;
           end;
 
           if not MatchesPlatform then
@@ -516,13 +524,23 @@ end;
 
 function privacyIcon(const v: trndi.types.BGValLevel): string;
 begin
-  result := '?';
-   case v of
-       trndi.types.BGHigh: begin result := '⭱' end;
-       trndi.types.BGLOW: begin result := '⭳'; end;
-       trndi.types.BGRange: begin result := '✓'; end;
-       trndi.types.BGRangeHI: begin result := '✓⁺'; end;
-       trndi.types.BGRangeLO: begin result := '✓⁻';  end;
+  Result := '?';
+  case v of
+    trndi.types.BGHigh: begin
+      Result := '⭱';
+    end;
+    trndi.types.BGLOW: begin
+      Result := '⭳';
+    end;
+    trndi.types.BGRange: begin
+      Result := '✓';
+    end;
+    trndi.types.BGRangeHI: begin
+      Result := '✓⁺';
+    end;
+    trndi.types.BGRangeLO: begin
+      Result := '✓⁻';
+    end;
   end;
 end;
 
@@ -701,4 +719,3 @@ end;
 {$endif}
 
 end.
-

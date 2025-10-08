@@ -32,8 +32,8 @@ const
   NS3_URL_BASE = '/api/v3/';
 
   {** Default paths/endpoints. }
-  NS3_STATUS   = 'status.json';
-  NS3_ENTRIES  = 'entries.json';
+  NS3_STATUS = 'status.json';
+  NS3_ENTRIES = 'entries.json';
   NS3_SETTINGS = 'settings.json';
 
 type
@@ -52,11 +52,11 @@ type
     function BearerHeader: string;
     // Fetch thresholds using legacy Nightscout status (v1) similar to the v2 controller
     function FetchLegacyThresholds: boolean;
-
   public
-    constructor create(user, pass, extra: string); override;
+    constructor Create(user, pass, extra: string); override;
     function connect: boolean; override;
-    function getReadings(minNum, maxNum: integer; extras: string; out res: string): BGResults; override;
+    function getReadings(minNum, maxNum: integer; extras: string;
+      out res: string): BGResults; override;
     {** UI parameter label provider (override).
         1: NightScout URL
         2: Auth token suffix (v2)
@@ -82,14 +82,14 @@ type
 {------------------------------------------------------------------------------
   Helper: Normalize and store site base and API base URL.
  ------------------------------------------------------------------------------}
-constructor NightScout3.create(user, pass, extra: string);
+constructor NightScout3.Create(user, pass, extra: string);
 begin
   // Normalize site base (no trailing slash)
   FSiteBase := TrimRightSet(user, ['/']);
   FTokenSuffix := pass; // In v3, we expect 'pass' to be the token suffix for v2 auth
 
   // Set UA and API base URL before inherited (so native is initialized correctly)
-  ua      := 'Mozilla/5.0 (compatible; trndi) TrndiAPI';
+  ua := 'Mozilla/5.0 (compatible; trndi) TrndiAPI';
   baseUrl := FSiteBase + NS3_URL_BASE;
 
   inherited;
@@ -119,7 +119,7 @@ var
   url, res: string;
   js: TJSONData;
 begin
-  Result := false;
+  Result := False;
   Err := '';
 
   if FTokenSuffix = '' then
@@ -182,7 +182,7 @@ var
   // no thresholds parsing from v3 status; handled by FetchLegacyThresholds
   // we no longer try to read thresholds from status
 begin
-  Result := false;
+  Result := False;
   lastErr := '';
 
   // 1) Acquire JWT via v2 authorization flow
@@ -193,7 +193,7 @@ begin
   end;
 
   // 2) Fetch v3 status (bearer)
-  resp := native.request(false, NS3_STATUS, [], '', BearerHeader);
+  resp := native.request(False, NS3_STATUS, [], '', BearerHeader);
 
   if Trim(resp) = '' then
   begin
@@ -280,7 +280,7 @@ begin
   // 5) Fetch thresholds using legacy status (aligns with v2 controller semantics)
   FetchLegacyThresholds; // thresholds remain defaults if this fails
 
-  Result := true;
+  Result := True;
 end;
 
 {------------------------------------------------------------------------------
@@ -297,10 +297,11 @@ var
   js: TJSONData;
   o, settings, th: TJSONObject;
 begin
-  Result := false;
+  Result := False;
 
   // Attempt via native.request using absolute v1 URL and bearer header (no prefix)
-  resp := native.request(false, FSiteBase + '/api/v1/status.json', [], '', BearerHeader, false {no prefix});
+  resp := native.request(False, FSiteBase + '/api/v1/status.json',
+    [], '', BearerHeader, False {no prefix});
 
   // If empty or app-level error, try plain GET
   if (Trim(resp) = '') or ((resp <> '') and (resp[1] = '+')) then
@@ -317,16 +318,18 @@ begin
     if js.JSONType <> jtObject then Exit;
     o := TJSONObject(js);
     settings := nil;
-    if (o.IndexOfName('settings') <> -1) and (o.Find('settings').JSONType = jtObject) then
+    if (o.IndexOfName('settings') <> -1) and (o.Find('settings').JSONType =
+      jtObject) then
       settings := TJSONObject(o.Find('settings'));
-    if Assigned(settings) and (settings.Find('thresholds') <> nil) and (settings.Find('thresholds').JSONType = jtObject) then
+    if Assigned(settings) and (settings.Find('thresholds') <> nil) and
+      (settings.Find('thresholds').JSONType = jtObject) then
     begin
       th := TJSONObject(settings.Find('thresholds'));
-      cgmHi      := th.Get('bgHigh', 0);
-      cgmLo      := th.Get('bgLow', 0);
+      cgmHi := th.Get('bgHigh', 0);
+      cgmLo := th.Get('bgLow', 0);
       cgmRangeHi := th.Get('bgTargetTop', 0);
       cgmRangeLo := th.Get('bgTargetBottom', 0);
-      Result := true;
+      Result := True;
     end;
   finally
     js.Free;
@@ -339,7 +342,8 @@ end;
   Fetch SGV entries via v3 entries.json. Supports either the v3 object shape
   {status, result: [...]} or a direct array for robustness.
  ------------------------------------------------------------------------------}
-function NightScout3.getReadings(minNum, maxNum: integer; extras: string; out res: string): BGResults;
+function NightScout3.getReadings(minNum, maxNum: integer; extras: string;
+  out res: string): BGResults;
 var
   resp: string;
   js, arrNode: TJSONData;
@@ -382,7 +386,7 @@ begin
   params[1] := 'sort$desc=date';
 
   try
-    resp := native.request(false, extras, params, '', BearerHeader);
+    resp := native.request(False, extras, params, '', BearerHeader);
   except
     Exit; // return empty set
   end;
@@ -390,12 +394,14 @@ begin
   res := resp;
 
   // If v3 denied or errored, fall back to v1 entries
-  if (Trim(resp) = '') or (Pos('Unauthorized', resp) > 0) or ((resp <> '') and (resp[1] = '+')) then
+  if (Trim(resp) = '') or (Pos('Unauthorized', resp) > 0) or
+    ((resp <> '') and (resp[1] = '+')) then
   begin
     // v1 typically supports count parameter and returns newest-first
     SetLength(fbparams, 1);
     fbparams[0] := 'count=' + IntToStr(maxNum);
-    resp := native.request(false, FSiteBase + '/api/v1/entries.json', fbparams, '', BearerHeader, false {no prefix});
+    resp := native.request(False, FSiteBase + '/api/v1/entries.json',
+      fbparams, '', BearerHeader, False {no prefix});
     if Trim(resp) = '' then Exit;
     res := resp;
   end;
@@ -415,7 +421,8 @@ begin
     // Try v1 fallback if we haven't already and current payload isn't an array
     SetLength(fbparams, 1);
     fbparams[0] := 'count=' + IntToStr(maxNum);
-    resp := native.request(false, FSiteBase + '/api/v1/entries.json', fbparams, '', BearerHeader, false {no prefix});
+    resp := native.request(False, FSiteBase + '/api/v1/entries.json',
+      fbparams, '', BearerHeader, False {no prefix});
     if Trim(resp) = '' then
     begin
       js.Free;
@@ -441,38 +448,38 @@ begin
 
   SetLength(Result, arrNode.Count);
   for i := 0 to arrNode.Count - 1 do
-  with arrNode.FindPath(Format('[%d]', [i])) do
-  begin
-    dev := FindPath('device').AsString;
-
-    Result[i].Init(mgdl, Self.ToString);
-
-    // Values
-    Result[i].update(FindPath('sgv').AsInteger, single(FindPath('delta').AsFloat));
-    Result[i].updateEnv(dev, FindPath('rssi').AsInteger, FindPath('noise').AsInteger);
-
-    // Trend mapping by name
-    s := FindPath('direction').AsString;
-    for t in BGTrend do
+    with arrNode.FindPath(Format('[%d]', [i])) do
     begin
-      if BG_TRENDS_STRING[t] = s then
+      dev := FindPath('device').AsString;
+
+      Result[i].Init(mgdl, Self.ToString);
+
+      // Values
+      Result[i].update(FindPath('sgv').AsInteger, single(FindPath('delta').AsFloat));
+      Result[i].updateEnv(dev, FindPath('rssi').AsInteger, FindPath('noise').AsInteger);
+
+      // Trend mapping by name
+      s := FindPath('direction').AsString;
+      for t in BGTrend do
       begin
-        Result[i].trend := t;
-        break;
+        if BG_TRENDS_STRING[t] = s then
+        begin
+          Result[i].trend := t;
+          break;
+        end;
+        Result[i].trend := TdNotComputable;
       end;
-      Result[i].trend := TdNotComputable;
+
+      // Use ms epoch when available
+      if Assigned(FindPath('date')) then
+        Result[i].date := JSToDateTime(FindPath('date').AsInt64)
+      else if Assigned(FindPath('srvModified')) then
+        Result[i].date := JSToDateTime(FindPath('srvModified').AsInt64)
+      else
+        Result[i].date := Now; // fallback
+
+      Result[i].level := getLevel(Result[i].val);
     end;
-
-    // Use ms epoch when available
-    if Assigned(FindPath('date')) then
-      Result[i].date := JSToDateTime(FindPath('date').AsInt64)
-    else if Assigned(FindPath('srvModified')) then
-      Result[i].date := JSToDateTime(FindPath('srvModified').AsInt64)
-    else
-      Result[i].date := Now; // fallback
-
-    Result[i].level := getLevel(Result[i].val);
-  end;
 
   js.Free;
 end;
@@ -485,8 +492,8 @@ begin
   case Index of
     1: Result := 'NightScout URL';
     2: Result := 'Auth token suffix';
-  else
-    Result := inherited ParamLabel(Index);
+    else
+      Result := inherited ParamLabel(Index);
   end;
 end;
 

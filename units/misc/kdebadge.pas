@@ -46,24 +46,26 @@ type
   TBadgeLogProc = procedure(const Msg: string);
 
 procedure InitializeBadge(const DesktopIdWithDotDesktop: string;
-                          const DebounceMs: Cardinal = 150;
-                          const LogProc: TBadgeLogProc = nil);
+  const DebounceMs: cardinal = 150;
+  const LogProc: TBadgeLogProc = nil);
 procedure ShutdownBadge;
 
 procedure SetDesktopId(const DesktopIdWithDotDesktop: string);
-procedure SetDebounceMs(const Ms: Cardinal);
+procedure SetDebounceMs(const Ms: cardinal);
 procedure SetLogProc(const LogProc: TBadgeLogProc);
 
-procedure SetBadge(const Value: Double);            // count=int(Value), progress=Frac(Value)
-procedure ShowOnlyCount(const Count: Integer);      // progress hidden
-procedure ShowOnlyProgress(const Progress: Double); // count hidden
+procedure SetBadge(const Value: double);
+// count=int(Value), progress=Frac(Value)
+procedure ShowOnlyCount(const Count: integer);      // progress hidden
+procedure ShowOnlyProgress(const Progress: double); // count hidden
 procedure ClearBadge;                               // hides both
 
 // Advanced: send prebuilt dict safely through the same pipeline
 procedure EmitRawDict(const Dict: string);
 
 var
-    GDesktopId: string = '';
+  GDesktopId: string = '';
+
 implementation
 
 uses
@@ -78,7 +80,7 @@ type
   private
     FLock: TRTLCriticalSection;
     FEvt: TEvent;
-    FPending: Boolean;
+    FPending: boolean;
     FPendingDict: string;
     FLastRequestTick: QWord;
     FLastSentDict: string;
@@ -97,7 +99,7 @@ var
 function EnsureDotDesktop(const Id: string): string;
 begin
   if Id = '' then Exit('');
-  if (Length(Id) >= 8) and (CompareText(Copy(Id, Length(Id)-7, 8), '.desktop') = 0) then
+  if (Length(Id) >= 8) and (CompareText(Copy(Id, Length(Id) - 7, 8), '.desktop') = 0) then
     Result := Id
   else
     Result := Id + '.desktop';
@@ -108,7 +110,7 @@ begin
   if Assigned(GLog) then GLog(S);
 end;
 
-function DotFloat(const V: Double; Digits: Integer = 3): string;
+function DotFloat(const V: double; Digits: integer = 3): string;
 var
   FS: TFormatSettings;
   Fmt: string;
@@ -121,34 +123,29 @@ begin
     2: Fmt := '0.00';
     3: Fmt := '0.000';
     4: Fmt := '0.0000';
-  else
-    Fmt := '0.###';
+    else
+      Fmt := '0.###';
   end;
   Result := FormatFloat(Fmt, V, FS);
 end;
 
-function ClampInt32(const V: Int64): Integer;
+function ClampInt32(const V: int64): integer;
 begin
-  if V > High(Integer) then Exit(High(Integer));
-  if V < Low(Integer) then Exit(Low(Integer));
-  Result := Integer(V);
+  if V > High(integer) then Exit(High(integer));
+  if V < Low(integer) then Exit(Low(integer));
+  Result := integer(V);
 end;
 
-function BuildDict(const Count: Integer; const CountVisible: Boolean;
-                   const Progress: Double; const ProgressVisible: Boolean): string;
+function BuildDict(const Count: integer; const CountVisible: boolean;
+  const Progress: double; const ProgressVisible: boolean): string;
 begin
   // Always include all four keys; explicit types for safety
   Result :=
-    Format('{' +
-           '''count'': <int32 %d>, ' +
-           '''count-visible'': <%s>, ' +
-           '''progress'': <%s>, ' +
-           '''progress-visible'': <%s>' +
-           '}',
-           [Count,
-            LowerCase(BoolToStr(CountVisible, True)),
-            DotFloat(Progress),
-            LowerCase(BoolToStr(ProgressVisible, True))]);
+    Format('{' + '''count'': <int32 %d>, ' +
+           '''count-visible'': <%s>, ' + '''progress'': <%s>, ' +
+           '''progress-visible'': <%s>' + '}',
+    [Count, LowerCase(BoolToStr(CountVisible, True)),
+    DotFloat(Progress), LowerCase(BoolToStr(ProgressVisible, True))]);
 end;
 
 procedure EmitUnityLauncherUpdate(const DesktopIdWithDotDesktop, Dict: string);
@@ -317,8 +314,8 @@ begin
 end;
 
 procedure InitializeBadge(const DesktopIdWithDotDesktop: string;
-                          const DebounceMs: Cardinal;
-                          const LogProc: TBadgeLogProc);
+  const DebounceMs: cardinal;
+  const LogProc: TBadgeLogProc);
 begin
   GDesktopId := EnsureDotDesktop(DesktopIdWithDotDesktop);
   GDebounceMs := DebounceMs;
@@ -346,7 +343,7 @@ begin
   Log('DesktopId set to ' + GDesktopId);
 end;
 
-procedure SetDebounceMs(const Ms: Cardinal);
+procedure SetDebounceMs(const Ms: cardinal);
 begin
   GDebounceMs := Ms;
   Log(Format('Debounce set to %d ms', [Ms]));
@@ -374,10 +371,10 @@ begin
     GWorker.Submit(Dict);
 end;
 
-procedure SetBadge(const Value: Double);
+procedure SetBadge(const Value: double);
 var
-  Count: Integer;
-  FracPart: Double;
+  Count: integer;
+  FracPart: double;
   Dict: string;
 begin
   Count := ClampInt32(Trunc(Value));
@@ -387,7 +384,7 @@ begin
   SubmitDict(Dict);
 end;
 
-procedure ShowOnlyCount(const Count: Integer);
+procedure ShowOnlyCount(const Count: integer);
 var
   Dict: string;
 begin
@@ -395,15 +392,16 @@ begin
   SubmitDict(Dict);
 end;
 
-procedure ShowOnlyProgress(const Progress: Double);
+procedure ShowOnlyProgress(const Progress: double);
 var
-  P: Double;
+  P: double;
   Dict: string;
 begin
   // Clamp to [0,1]
   if Progress < 0 then P := 0
   else if Progress > 1 then P := 1
-  else P := Progress;
+  else
+    P := Progress;
 
   Dict := BuildDict(0, False, P, True);
   SubmitDict(Dict);

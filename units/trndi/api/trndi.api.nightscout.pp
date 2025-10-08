@@ -25,7 +25,7 @@ interface
 
 uses
   Classes, SysUtils, Dialogs, trndi.types, trndi.api, trndi.native,
-  fpjson, jsonparser, dateutils, StrUtils, sha1, math, jsonscanner;
+  fpjson, jsonparser, dateutils, StrUtils, sha1, Math, jsonscanner;
 
 const
   {** Relative filename for the Nightscout status endpoint used to probe
@@ -63,7 +63,7 @@ type
         @param(pass  Nightscout API secret in plain text; hashed to SHA1 for header)
         @param(extra Reserved for future use)
      }
-    constructor create(user, pass, extra: string); override;
+    constructor Create(user, pass, extra: string); override;
 
     {** Connect to Nightscout, retrieve server status, thresholds, and set time offset.
         Requests @code(NS_STATUS), validates/handles errors, parses
@@ -85,7 +85,8 @@ type
         @param(res    Out parameter receiving the raw JSON response string)
         @returns(Array of @code(BGReading); empty on errors or unauthorized)
      }
-    function getReadings(minNum, maxNum: integer; extras: string; out res: string): BGResults; override;
+    function getReadings(minNum, maxNum: integer; extras: string;
+      out res: string): BGResults; override;
     {** UI parameter label provider (override).
       1: NightScout URL
       2: API Secret (plain text)
@@ -108,15 +109,15 @@ implementation
   Initialize UA, derive API base URL from user, compute API-SECRET if present,
   and call inherited base constructor.
  ------------------------------------------------------------------------------}
-constructor NightScout.create(user, pass, extra: string);
+constructor NightScout.Create(user, pass, extra: string);
 begin
-  ua      := 'Mozilla/5.0 (compatible; trndi) TrndiAPI';
+  ua := 'Mozilla/5.0 (compatible; trndi) TrndiAPI';
   // Ensure no trailing slash before appending API base path.
   baseUrl := TrimRightSet(user, ['/']) + NS_URL_BASE;
 
   // Build API-SECRET header value if a secret is provided.
   // Nightscout expects a SHA1 hex digest of the plain-text secret.
-  key     := IfThen(pass <> '', 'API-SECRET=' + SHA1Print(SHA1String(pass)), '');
+  key := IfThen(pass <> '', 'API-SECRET=' + SHA1Print(SHA1String(pass)), '');
 
   // Call the base class constructor with the same signature.
   inherited;
@@ -130,31 +131,31 @@ end;
  ------------------------------------------------------------------------------}
 function NightScout.Connect: boolean;
 var
-  ResponseStr   : string;            // Raw response from Nightscout
-  JSONParser    : TJSONParser;       // Parser to convert string to JSON
-  JSONData      : TJSONData;         // Base JSON data type
-  RootObject    : TJSONObject;       // Root JSON object
-  SettingsObj   : TJSONObject;       // "settings" object
-  ThresholdsObj : TJSONObject;       // "thresholds" object under settings
-  ServerEpoch   : int64;             // serverTimeEpoch (milliseconds)
-  UTCDateTime   : TDateTime;         // Server time as TDateTime (UTC)
+  ResponseStr: string;            // Raw response from Nightscout
+  JSONParser: TJSONParser;       // Parser to convert string to JSON
+  JSONData: TJSONData;         // Base JSON data type
+  RootObject: TJSONObject;       // Root JSON object
+  SettingsObj: TJSONObject;       // "settings" object
+  ThresholdsObj: TJSONObject;       // "thresholds" object under settings
+  ServerEpoch: int64;             // serverTimeEpoch (milliseconds)
+  UTCDateTime: TDateTime;         // Server time as TDateTime (UTC)
 begin
   // 1) Quick sanity check on URL; avoids obvious mistakes early.
   if (Copy(BaseUrl, 1, 4) <> 'http') then
   begin
-    Result  := false;
+    Result := False;
     LastErr := 'Invalid address. Must start with http:// or https://!';
     Exit;
   end;
 
   // 2) Probe server status and settings.
   //    Native.Request(signature): (useGet, path, params, body, header)
-  ResponseStr := Native.Request(false, NS_STATUS, [], '', Key);
+  ResponseStr := Native.Request(False, NS_STATUS, [], '', Key);
 
   // 3) Basic validation for empty payloads.
   if Trim(ResponseStr) = '' then
   begin
-    Result  := false;
+    Result := False;
     LastErr := 'Did not receive any data from the server!';
     Exit;
   end;
@@ -162,7 +163,7 @@ begin
   // 4) Some backends may prefix '+' to indicate application-level errors.
   if (ResponseStr[1] = '+') then
   begin
-    Result  := false;
+    Result := False;
     LastErr := TrimLeftSet(ResponseStr, ['+']);
     Exit;
   end;
@@ -170,7 +171,7 @@ begin
   // 5) Coarse unauthorized detection (Nightscout messages vary by version).
   if Pos('Unau', ResponseStr) > 0 then
   begin
-    Result  := false;
+    Result := False;
     LastErr := 'Incorrect access code for NightScout';
     Exit;
   end;
@@ -187,7 +188,7 @@ begin
 
     if not (JSONData is TJSONObject) then
     begin
-      Result  := false;
+      Result := False;
       LastErr := 'Unexpected JSON structure (not a JSON object).';
       JSONData.Free;
       Exit;
@@ -206,8 +207,8 @@ begin
       if Assigned(ThresholdsObj) then
       begin
         // These map directly into TrndiAPI’s exposed properties.
-        cgmHi      := ThresholdsObj.Get('bgHigh', 0);
-        cgmLo      := ThresholdsObj.Get('bgLow', 0);
+        cgmHi := ThresholdsObj.Get('bgHigh', 0);
+        cgmLo := ThresholdsObj.Get('bgLow', 0);
         cgmRangeHi := ThresholdsObj.Get('bgTargetTop', 0);
         cgmRangeLo := ThresholdsObj.Get('bgTargetBottom', 0);
       end;
@@ -218,7 +219,7 @@ begin
   except
     on E: Exception do
     begin
-      Result  := false;
+      Result := False;
       LastErr := 'JSON parse error: ' + E.Message;
       Exit;
     end;
@@ -227,7 +228,7 @@ begin
   // 9) Require a valid epoch to establish time calibration.
   if ServerEpoch <= 0 then
   begin
-    Result  := false;
+    Result := False;
     LastErr := 'Invalid or missing serverTimeEpoch in JSON.';
     Exit;
   end;
@@ -242,7 +243,7 @@ begin
     TimeDiff := 0;
   TimeDiff := -TimeDiff;
 
-  Result := true;
+  Result := True;
 end;
 
 {------------------------------------------------------------------------------
@@ -251,11 +252,12 @@ end;
   Fetch SGV entries (defaults to NS_READINGS) and map JSON array into
   BGResults: value, delta, environment, trend, date, and derived level.
  ------------------------------------------------------------------------------}
-function NightScout.getReadings(minNum, maxNum: integer; extras: string; out res: string): BGResults;
+function NightScout.getReadings(minNum, maxNum: integer; extras: string;
+  out res: string): BGResults;
 var
-  js:     TJSONData;
-  i:      integer;
-  t:      BGTrend;
+  js: TJSONData;
+  i: integer;
+  t: BGTrend;
   s, resp, dev: string;
   params: array[1..1] of string;
 begin
@@ -267,7 +269,7 @@ begin
   params[1] := 'count=' + IntToStr(maxNum);
 
   try
-    resp := native.request(false, extras, params, '', key);
+    resp := native.request(False, extras, params, '', key);
     js := GETJSON(resp); // Expecting an array of entries
   except
     // Any exception during request/parse yields an empty result.
@@ -281,21 +283,21 @@ begin
     Exit;
 
   // Pre-size the results array to the number of JSON items.
-  SetLength(result, js.count);
+  SetLength(Result, js.Count);
 
-  for i := 0 to js.count - 1 do
+  for i := 0 to js.Count - 1 do
     with js.FindPath(Format('[%d]', [i])) do
     begin
       dev := FindPath('device').AsString;
 
       // Initialize reading in mg/dL; source identifier uses class name.
-      result[i].Init(mgdl, self.ToString);
+      Result[i].Init(mgdl, self.ToString);
 
       // Value and trend delta.
-      result[i].update(FindPath('sgv').AsInteger, single(FindPath('delta').AsFloat));
+      Result[i].update(FindPath('sgv').AsInteger, single(FindPath('delta').AsFloat));
 
       // Receiver environment details (optional fields in Nightscout).
-      result[i].updateEnv(dev, FindPath('rssi').AsInteger, FindPath('noise').AsInteger);
+      Result[i].updateEnv(dev, FindPath('rssi').AsInteger, FindPath('noise').AsInteger);
 
       // Translate Nightscout 'direction' string to BGTrend enum.
       s := FindPath('direction').AsString;
@@ -303,18 +305,18 @@ begin
       begin
         if BG_TRENDS_STRING[t] = s then
         begin
-          result[i].trend := t;
+          Result[i].trend := t;
           break;
         end;
         // Default if no mapping matched this iteration (will be overwritten if matched later)
-        result[i].trend := TdNotComputable;
+        Result[i].trend := TdNotComputable;
       end;
 
       // Nightscout dates are ms since epoch; JSToDateTime will apply tz correction if configured.
-      result[i].date := JSToDateTime(FindPath('date').AsInt64);
+      Result[i].date := JSToDateTime(FindPath('date').AsInt64);
 
       // Classify reading level relative to configured thresholds.
-      result[i].level := getLevel(result[i].val);
+      Result[i].level := getLevel(Result[i].val);
     end;
 end;
 
@@ -326,8 +328,8 @@ begin
   case Index of
     1: Result := 'NightScout URL';
     2: Result := 'API Secret';
-  else
-    Result := inherited ParamLabel(Index);
+    else
+      Result := inherited ParamLabel(Index);
   end;
 end;
 

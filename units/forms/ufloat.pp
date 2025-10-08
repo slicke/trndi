@@ -40,30 +40,31 @@ uses
    qt6, qtwidgets, qtobjects, qtint
   {$ENDIF};
 
-{$ifdef LCLQt6}
+  {$ifdef LCLQt6}
 type
     BGValLevel = (BGHigh, BGLOW, BGOFF);    // Range = depending on API
-{$endif}
+  {$endif}
+
 type
 
   { TfFloat }
 
   TfFloat = class(TForm)
-    lTime:TLabel;
-    lArrow:TLabel;
-    lRangeDown:TLabel;
-    lRangeUp:TLabel;
+    lTime: TLabel;
+    lArrow: TLabel;
+    lRangeDown: TLabel;
+    lRangeUp: TLabel;
     lVal: TLabel;
-    MenuItem1:TMenuItem;
-    miClock:TMenuItem;
-    miCustomSize:TMenuItem;
-    Separator1:TMenuItem;
-    miXL:TMenuItem;
-    miSmall:TMenuItem;
-    miNormal:TMenuItem;
-    miBig:TMenuItem;
-    miSIze:TMenuItem;
-    miSplit:TMenuItem;
+    MenuItem1: TMenuItem;
+    miClock: TMenuItem;
+    miCustomSize: TMenuItem;
+    Separator1: TMenuItem;
+    miXL: TMenuItem;
+    miSmall: TMenuItem;
+    miNormal: TMenuItem;
+    miBig: TMenuItem;
+    miSIze: TMenuItem;
+    miSplit: TMenuItem;
     miVisible: TMenuItem;
     miOp100: TMenuItem;
     miOp25: TMenuItem;
@@ -72,46 +73,47 @@ type
     miCustomVisible: TMenuItem;
     miSplit1: TMenuItem;
     pMain: TPopupMenu;
-    pnMultiUser:TPanel;
-    tClock:TTimer;
+    pnMultiUser: TPanel;
+    tClock: TTimer;
     procedure FormCreate(Sender: TObject);
-    procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+    procedure FormKeyDown(Sender: TObject; var Key: word; Shift: TShiftState);
     procedure FormKeyPress(Sender: TObject; var Key: char);
-    procedure FormMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState;
-      X, Y: Integer);
+    procedure FormMouseDown(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: integer);
     procedure FormMouseEnter(Sender: TObject);
     procedure FormMouseLeave(Sender: TObject);
-    procedure FormMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
-    procedure FormMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X,
-      Y: Integer);
+    procedure FormMouseMove(Sender: TObject; Shift: TShiftState; X, Y: integer);
+    procedure FormMouseUp(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: integer);
     procedure FormPaint(Sender: TObject);
-    procedure FormResize(Sender:TObject);
+    procedure FormResize(Sender: TObject);
     procedure FormShow(Sender: TObject);
-    procedure lValMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X,
-      Y: Integer);
-    procedure MenuItem1Click(Sender:TObject);
-    procedure miBigClick(Sender:TObject);
-    procedure miClockClick(Sender:TObject);
-    procedure miCustomSizeClick(Sender:TObject);
+    procedure lValMouseUp(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: integer);
+    procedure MenuItem1Click(Sender: TObject);
+    procedure miBigClick(Sender: TObject);
+    procedure miClockClick(Sender: TObject);
+    procedure miCustomSizeClick(Sender: TObject);
     procedure miCustomVisibleClick(Sender: TObject);
-    procedure miNormalClick(Sender:TMenuItem);
-    procedure miNormalClick(Sender:TObject);
+    procedure miNormalClick(Sender: TMenuItem);
+    procedure miNormalClick(Sender: TObject);
     procedure miOp100Click(Sender: TObject);
-    procedure tClockTimer(Sender:TObject);
+    procedure tClockTimer(Sender: TObject);
     procedure tTitlebarTimer(Sender: TObject);
   private
-    procedure SetFormOpacity(Opacity: Double);
+    procedure SetFormOpacity(Opacity: double);
     procedure ApplyRoundedCorners;
     procedure CreateRoundedCorners;
   public
-      {$ifdef LCLQt6}
+    {$ifdef LCLQt6}
     lvl: BGValLevel;
   {$endif}
   end;
 
 resourcestring
   rsCustomOp = 'You can use shift+<number> to manually set visibility (0 = 100% visible)';
-  rsCustomSize = 'You can hold down shift and plus (+) or minus (-) to change the window size';
+  rsCustomSize =
+    'You can hold down shift and plus (+) or minus (-) to change the window size';
 
 var
   fFloat: TfFloat;
@@ -123,12 +125,13 @@ implementation
 
 {$R *.lfm}
 
-procedure ScaleLbl(ALabel: TLabel; customAl: TAlignment = taCenter; customTl: TTextLayout = tlCenter);
+procedure ScaleLbl(ALabel: TLabel; customAl: TAlignment = taCenter;
+  customTl: TTextLayout = tlCenter);
 var
-  Low, High, Mid: Integer;
-  MaxWidth, MaxHeight: Integer;
-  TextWidth, TextHeight: Integer;
-  OptimalSize: Integer;
+  Low, High, Mid: integer;
+  MaxWidth, MaxHeight: integer;
+  TextWidth, TextHeight: integer;
+  OptimalSize: integer;
 begin
   // Kontrollera grundläggande synlighetsvillkor
   if not ALabel.Visible then
@@ -213,16 +216,15 @@ end;
 
 procedure TfFloat.ApplyRoundedCorners;
 var
-{$IF DEFINED(DARWIN)}
+  {$IF DEFINED(DARWIN)}
   NSViewHandle: NSView;
   NSWin: NSWindow;
   Mask: NSBezierPath;
-{$ELSEIF DEFINED(LCLQT6_DISABLED)}
-  StyleStr: WideString;
-{$ELSE}
+  {$ELSEIF DEFINED(LCLQT6_DISABLED)}
+  StyleStr: widestring;
+  {$ELSE}
  ABitmap: TBitmap;
-{$ENDIF}
-
+  {$ENDIF}
 begin
   {$IF DEFINED(DARWIN)}
   try
@@ -255,13 +257,12 @@ begin
     // Ignore any errors
   end;
   {$ELSEIF DEFINED(LCLQT6_DISABLED)}
-    StyleStr := 'border-radius: 10px; background-color: rgba(240, 240, 240, 255);';
+  StyleStr := 'border-radius: 10px; background-color: rgba(240, 240, 240, 255);';
   Self.BorderStyle := bsNone; // Remove border
-if HandleAllocated then
-QWidget_setStyleSheet(TQtWidget(Handle).Widget,
-  @stylestr);
+  if HandleAllocated then
+    QWidget_setStyleSheet(TQtWidget(Handle).Widget, @stylestr);
   CreateRoundedCorners;
-   {$ELSE}
+  {$ELSE}
   Self.BorderStyle := bsNone; // Remove border
   // Use LCL stuff when Windows (or not Qt really)
   try
@@ -284,7 +285,7 @@ QWidget_setStyleSheet(TQtWidget(Handle).Widget,
   {$ENDIF}
 end;
 
-procedure TfFloat.SetFormOpacity(Opacity: Double);
+procedure TfFloat.SetFormOpacity(Opacity: double);
 {$IFDEF DARWIN}
 var
   NSViewHandle: NSView;
@@ -313,17 +314,17 @@ begin
     end;
   end;
   {$ELSE}
-    {$IFDEF LCLQt6}
+  {$IFDEF LCLQt6}
     if HandleAllocated then
     begin
       // For Qt6, use style sheets to set opacity
       StyleStr := Format('background-color: rgba(240, 240, 240, %.0f);', [Opacity * 255]);
       QWidget_setStyleSheet(TQtWidget(Handle).Widget, @StyleStr);
     end;
-    {$ENDIF}
-      // Standard LCL approach for other platforms
-      AlphaBlend := Opacity < 1.0;
-      AlphaBlendValue := Round(Opacity * 255);
+  {$ENDIF}
+  // Standard LCL approach for other platforms
+  AlphaBlend := Opacity < 1.0;
+  AlphaBlendValue := Round(Opacity * 255);
   {$ENDIF}
 end;
 
@@ -336,34 +337,35 @@ begin
   SetFormOpacity(0.5);
 end;
 
-procedure TfFloat.lValMouseUp(Sender: TObject; Button: TMouseButton; Shift:
-  TShiftState; X, Y: Integer);
+procedure TfFloat.lValMouseUp(Sender: TObject; Button: TMouseButton;
+  Shift: TShiftState; X, Y: integer);
 begin
 end;
 
-procedure TfFloat.MenuItem1Click(Sender:TObject);
+procedure TfFloat.MenuItem1Click(Sender: TObject);
 begin
   Hide;
 end;
 
-procedure TfFloat.miBigClick(Sender:TObject);
+procedure TfFloat.miBigClick(Sender: TObject);
 begin
 
 end;
 
-procedure TfFloat.miClockClick(Sender:TObject);
+procedure TfFloat.miClockClick(Sender: TObject);
 begin
   miClock.Checked := not miClock.Checked;
   lTime.Visible := miClock.Checked;
-  if lTime.visible then begin
+  if lTime.Visible then
+  begin
     tClock.OnTimer(tClock);
-    tClock.Enabled := true;
+    tClock.Enabled := True;
   end;
 end;
 
-procedure TfFloat.miCustomSizeClick(Sender:TObject);
+procedure TfFloat.miCustomSizeClick(Sender: TObject);
 begin
-ShowMessage(rsCustomSize);
+  ShowMessage(rsCustomSize);
 end;
 
 procedure TfFloat.miCustomVisibleClick(Sender: TObject);
@@ -371,40 +373,49 @@ begin
   ShowMessage(rsCustomOp);
 end;
 
-procedure TfFloat.miNormalClick(Sender:TMenuItem);
+procedure TfFloat.miNormalClick(Sender: TMenuItem);
 var
- h: integer;
+  h: integer;
 begin
-    miBig.Checked := false;
-    miNormal.Checked := false;
-    miSmall.Checked := false;
-    miXL.Checked := false;
+  miBig.Checked := False;
+  miNormal.Checked := False;
+  miSmall.Checked := False;
+  miXL.Checked := False;
 
-    if sender = miXL then begin
-      miXL.Checked := true;
-      h := Screen.DesktopHeight div 5;
-    end else if sender = miBig then begin
-      miBig.Checked := true;
-      h := Screen.DesktopHeight div 10;
-    end else if sender = miNormal then begin
-      miNormal.Checked := true;
-      h := Screen.DesktopHeight div 25;
-    end else if sender = miSmall then begin
-      miSmall.Checked := true;
-      h := Screen.DesktopHeight div 50;
-    end else if sender = miCustomSize then begin
-      h := height;
-    end;
+  if Sender = miXL then
+  begin
+    miXL.Checked := True;
+    h := Screen.DesktopHeight div 5;
+  end
+  else if Sender = miBig then
+  begin
+    miBig.Checked := True;
+    h := Screen.DesktopHeight div 10;
+  end
+  else if Sender = miNormal then
+  begin
+    miNormal.Checked := True;
+    h := Screen.DesktopHeight div 25;
+  end
+  else if Sender = miSmall then
+  begin
+    miSmall.Checked := True;
+    h := Screen.DesktopHeight div 50;
+  end
+  else if Sender = miCustomSize then
+  begin
+    h := Height;
+  end;
 
-    height := h;
-    width := round(height * 1.55);
-    lVal.width := round(clientwidth * 0.75);
-    lArrow.width := round(clientwidth * 0.25);
+  Height := h;
+  Width := round(Height * 1.55);
+  lVal.Width := round(clientwidth * 0.75);
+  lArrow.Width := round(clientwidth * 0.25);
   //---
   ApplyRoundedCorners;
 end;
 
-procedure TfFloat.miNormalClick(Sender:TObject);
+procedure TfFloat.miNormalClick(Sender: TObject);
 begin
 
 end;
@@ -414,28 +425,28 @@ var
   i: integer;
   v: double;
 begin
-  if not TryStrToInt((sender as TMenuItem).hint, i) then
+  if not TryStrToInt((Sender as TMenuItem).hint, i) then
     Exit;
   v := i / 100;
 
   SetFormOpacity(v);
-  (sender as TMenuItem).Checked := true;
+  (Sender as TMenuItem).Checked := True;
 end;
 
-procedure TfFloat.tClockTimer(Sender:TObject);
+procedure TfFloat.tClockTimer(Sender: TObject);
 begin
-  lTime.caption :=  FormatDateTime(ShortTimeFormat, Now);
-  if lTime.Visible = false then
-    (sender as TTimer).Enabled := false;
+  lTime.Caption := FormatDateTime(ShortTimeFormat, Now);
+  if lTime.Visible = False then
+    (Sender as TTimer).Enabled := False;
 end;
 
 procedure TfFloat.tTitlebarTimer(Sender: TObject);
 var
-  x,y: integer;
+  x, y: integer;
 begin
 end;
 
-procedure TfFloat.FormMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
+procedure TfFloat.FormMouseMove(Sender: TObject; Shift: TShiftState; X, Y: integer);
 begin
   if DraggingWin then
   begin
@@ -443,13 +454,13 @@ begin
   end;
 end;
 
-procedure TfFloat.FormMouseUp(Sender: TObject; Button: TMouseButton; Shift:
-  TShiftState; X, Y: Integer);
+procedure TfFloat.FormMouseUp(Sender: TObject; Button: TMouseButton;
+  Shift: TShiftState; X, Y: integer);
 begin
-DraggingWin := false;
-{$IF DEFINED(DARWIN) OR DEFINED(LCLQt6)}
+  DraggingWin := False;
+  {$IF DEFINED(DARWIN) OR DEFINED(LCLQt6)}
    BorderStyle:= bsNone;
-{$endif}
+  {$endif}
 end;
 
 
@@ -526,9 +537,9 @@ begin
   QPen_destroy(Pen);
   QColor_destroy(BlackColor);
   QPainter_destroy(Painter);
-  {$else}
-  begin
-      {$ENDIF}
+{$else}
+begin
+{$ENDIF}
 
 end;
 
@@ -539,18 +550,18 @@ begin
   CreateRoundedCorners;
 end;
 
-procedure TfFloat.FormResize(Sender:TObject);
+procedure TfFloat.FormResize(Sender: TObject);
 begin
-  ScaleLbl(lVal,taLeftJustify,tlCenter);
-  ScaleLbl(lArrow,taCenter,tlCenter);
+  ScaleLbl(lVal, taLeftJustify, tlCenter);
+  ScaleLbl(lArrow, taCenter, tlCenter);
   lTime.Font.Size := lArrow.font.size div 3;
   lTime.left := larrow.left - (lTime.Width div 2);
 end;
 
-procedure TfFloat.FormMouseDown(Sender: TObject; Button: TMouseButton; Shift:
-  TShiftState; X, Y: Integer);
+procedure TfFloat.FormMouseDown(Sender: TObject; Button: TMouseButton;
+  Shift: TShiftState; X, Y: integer);
 begin
-  DraggingWin := true;
+  DraggingWin := True;
   PX := X;
   PY := Y;
 end;
@@ -569,31 +580,33 @@ procedure TfFloat.FormKeyPress(Sender: TObject; var Key: char);
 begin
 end;
 
-procedure TfFloat.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+procedure TfFloat.FormKeyDown(Sender: TObject; var Key: word; Shift: TShiftState);
 var
   num: double;
 begin
-  if key = VK_ESCAPE then begin
+  if key = VK_ESCAPE then
+  begin
     Hide;
     key := 0;
   end;
-  if ((ssShift in Shift) and (Key >= 48) and (Key <= 57)) then begin
-    num := (key-48) / 10;
+  if ((ssShift in Shift) and (Key >= 48) and (Key <= 57)) then
+  begin
+    num := (key - 48) / 10;
     if num < 0.1 then
       num := 1;
 
     SetFormOpacity(num);
-    miCustomVisible.Checked := true;
+    miCustomVisible.Checked := True;
   end;
 
-  if ((ssShift in Shift) and (Key in [187, (* + *) 189, 191 (*mac +*)])) then begin
+  if ((ssShift in Shift) and (Key in [187, (* + *) 189, 191 (*mac +*)])) then
+  begin
     if key <> 189 then // not -
-        height := height + 5
+      Height := Height + 5
     else
-        height := height - 5;
+      Height := Height - 5;
     miNormalClick(miCustomSize);
   end;
 end;
 
 end.
-

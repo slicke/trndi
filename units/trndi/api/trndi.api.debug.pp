@@ -26,35 +26,32 @@ unit trndi.api.debug;
 interface
 
 uses
-Classes, SysUtils, Dialogs, trndi.types, trndi.api, trndi.native,
-fpjson, jsonparser, dateutils;
-
+  Classes, SysUtils, Dialogs, trndi.types, trndi.api, trndi.native,
+  fpjson, jsonparser, dateutils;
 
 type
   // Main class
-DebugAPI = class(TrndiAPI)
-protected
-public
-  constructor create(user, pass, extra: string);
-    override;
-  function connect: boolean;
-    override;
-  function getReadings(min, maxNum: integer; extras: string; out res: string): BGResults;
-    override;
-private
+  DebugAPI = class(TrndiAPI)
+  protected
+  public
+    constructor Create(user, pass, extra: string); override;
+    function connect: boolean; override;
+    function getReadings(min, maxNum: integer; extras: string; out res: string): BGResults;
+      override;
+  private
 
-published
-  property remote: string read baseUrl;
-end;
+  published
+    property remote: string read baseUrl;
+  end;
 
 implementation
 
 {------------------------------------------------------------------------------
   Constructor
 ------------------------------------------------------------------------------}
-constructor DebugAPI.create(user, pass, extra: string);
+constructor DebugAPI.Create(user, pass, extra: string);
 begin
-  ua      := 'Mozilla/5.0 (compatible; trndi) TrndiAPI';
+  ua := 'Mozilla/5.0 (compatible; trndi) TrndiAPI';
   baseUrl := user;
   //key     := pass;
   inherited;
@@ -65,29 +62,31 @@ end;
 ------------------------------------------------------------------------------}
 function DebugAPI.Connect: boolean;
 begin
-  cgmHi      := 160;
-  cgmLo      := 60;
+  cgmHi := 160;
+  cgmLo := 60;
   cgmRangeHi := 140;
   cgmRangeLo := 90;
 
   TimeDiff := 0;
 
-  Result := true;
+  Result := True;
 end;
 
 {------------------------------------------------------------------------------
   Generate fake readings over the last 50 minutes at 5-minute intervals
 ------------------------------------------------------------------------------}
-function DebugAPI.getReadings(min, maxNum: integer; extras: string; out res: string): BGResults;
-function getFakeVals(const min: integer; out reading, delta: integer): TDateTime;
+function DebugAPI.getReadings(min, maxNum: integer; extras: string;
+  out res: string): BGResults;
+
+  function getFakeVals(const min: integer; out reading, delta: integer): TDateTime;
   var
     currentTime: TDateTime;
     baseTime: TDateTime;
     minutesFromBase: integer;
     previousReading: integer;  // We're generating a delta
   begin
-  res := '';
-  // Get the current time and the 5 minutes to act on
+    res := '';
+    // Get the current time and the 5 minutes to act on
     currentTime := Now;
     baseTime := IncMinute(currentTime, -min);
     minutesFromBase := (MinuteOf(baseTime) div 5) * 5;
@@ -97,54 +96,53 @@ function getFakeVals(const min: integer; out reading, delta: integer): TDateTime
     Result := RecodeMilliSecond(Result, 0);
 
 
-  // Generate a fake reading
+    // Generate a fake reading
     reading := 40 + ((DateTimeToUnix(Result) div 300) mod 360);
 
-  // Generate the previous 5 min reading
+    // Generate the previous 5 min reading
     previousReading := 40 + ((DateTimeToUnix(IncMinute(Result, -5)) div 300) mod 360);
 
-  // Set the delta
+    // Set the delta
     delta := reading - previousReading;
   end;
 
-function guessTrend(diff: integer): BGTrend;
+  function guessTrend(diff: integer): BGTrend;
   begin
     if diff < -20 then
-      result := TdDoubleDown
+      Result := TdDoubleDown
     else
     if diff < -15 then
-      result := TdSingleDown
+      Result := TdSingleDown
     else
     if diff < -10 then
-      result := TdFortyFiveDown
+      Result := TdFortyFiveDown
     else
     if diff < 5 then
-      result := TdFlat
+      Result := TdFlat
     else
     if diff < 10 then
-      result := TdFortyFiveUp
+      Result := TdFortyFiveUp
     else
     if diff < 15 then
-      result := TdSingleUp
+      Result := TdSingleUp
     else
-      result := TdDoubleUp
+      Result := TdDoubleUp;
   end;
 
 var
   i: integer;
   val, diff: integer;
 begin
-  SetLength(result, 11);
+  SetLength(Result, 11);
   for i := 0 to 10 do
   begin
-    result[i].Init(mgdl);
-    result[i].date := getFakeVals(i*5,val,diff);
-    result[i].update(val, diff);
-    result[i].trend := guessTrend(diff);
-    result[i].level := getLevel(result[i].val);
-    result[i].updateEnv('Debug');
+    Result[i].Init(mgdl);
+    Result[i].date := getFakeVals(i * 5, val, diff);
+    Result[i].update(val, diff);
+    Result[i].trend := guessTrend(diff);
+    Result[i].level := getLevel(Result[i].val);
+    Result[i].updateEnv('Debug');
   end;
-
 
 end;
 

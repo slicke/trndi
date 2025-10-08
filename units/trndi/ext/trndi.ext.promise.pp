@@ -26,7 +26,7 @@ unit trndi.ext.promise;
 interface
 
 uses
-  Classes, SysUtils, mORMot.lib.quickjs, mormot.core.base, dialogs,
+  Classes, SysUtils, mORMot.lib.quickjs, mormot.core.base, Dialogs,
   trndi.ext.functions, slicke.ux.alert, fgl, trndi.strings, trndi.native;
 
 type
@@ -47,24 +47,25 @@ type
       - Schedules a call to the proper resolve/reject using the QuickJS API.
       - Frees any argument structures allocated during parameter parsing. }
   TJSAsyncTask = class(TThread)
-    private
-      FContext: JSContext;      /// QuickJS context for this task
-      funcs: JSDoubleVal;       /// Promise resolve/reject function handles
-      FPromise: TJSCallback;    /// Registered callback descriptor (name, handler, params)
-      FResult: JSVAlueVal;      /// Result produced by the callback (QuickJS value wrapper)
-      FSuccess: boolean;        /// True if callback indicates success; otherwise reject
+  private
+    FContext: JSContext;      /// QuickJS context for this task
+    funcs: JSDoubleVal;       /// Promise resolve/reject function handles
+    FPromise: TJSCallback;
+    /// Registered callback descriptor (name, handler, params)
+    FResult: JSVAlueVal;
+    /// Result produced by the callback (QuickJS value wrapper)
+    FSuccess: boolean;        /// True if callback indicates success; otherwise reject
 
-    protected
+  protected
       {** Thread entry point. Invokes the registered callback (via ProcessResult),
           then calls resolve or reject with the produced JS value. }
-      procedure Execute; override;
+    procedure Execute; override;
 
       {** Run the registered callback, storing success flag and result.
           Executed via Synchronize to ensure safe interaction with GUI/JS context
           if required by the surrounding framework. }
-      procedure ProcessResult;
-
-    public
+    procedure ProcessResult;
+  public
       {** Create and start an async task bound to a JS Promise.
           @param(Context) QuickJS context
           @param(func)    Registered callback descriptor with handler and params
@@ -90,7 +91,7 @@ implementation
 uses Forms;
 
 var
-  gExtShuttingDown: boolean = false;
+  gExtShuttingDown: boolean = False;
 
 procedure SetExtShuttingDown(const Value: boolean);
 begin
@@ -105,7 +106,8 @@ end;
 {** Construct and launch an asynchronous task bound to a JS Promise.
     Stores the context, callback descriptor, and resolve/reject functions.
     Sets FreeOnTerminate so the thread self-frees after completion. }
-constructor TJSAsyncTask.Create(Context: JSContext; func: TJSCallback; cbfunc: PJSDoubleVal);
+constructor TJSAsyncTask.Create(Context: JSContext; func: TJSCallback;
+  cbfunc: PJSDoubleVal);
 begin
   FContext := Context;
   FPromise := func;
@@ -141,19 +143,19 @@ begin
         Synchronize(@ProcessResult);
       except
         // If synchronize fails (e.g., main thread shutting down), just exit
-        FSuccess := false;
+        FSuccess := False;
         Exit;
       end;
     end;
   end
   else
-    begin
-      // Complain that it wasn't set
-      if not (Application.Terminated or IsExtShuttingDown) then
-        ExtError(uxdAuto, 'Error: Missing Function');
-      FSuccess := false;
-      Exit;
-    end;
+  begin
+    // Complain that it wasn't set
+    if not (Application.Terminated or IsExtShuttingDown) then
+      ExtError(uxdAuto, 'Error: Missing Function');
+    FSuccess := False;
+    Exit;
+  end;
   self.Terminate;
 end;
 
@@ -167,14 +169,14 @@ begin
   // Avoid doing work if app is shutting down
   if Application.Terminated or IsExtShuttingDown then
   begin
-    FSuccess := false;
+    FSuccess := False;
     Exit;
   end;
 
   // Additional check: ensure context is still valid
   if (FContext = nil) then
   begin
-    FSuccess := false;
+    FSuccess := False;
     Exit;
   end;
 
@@ -183,24 +185,24 @@ begin
     if Assigned(Callback) then
     begin
       try
-        FSuccess := FPromise.Callback(@FContext, func, params.values.data, FResult);
+        FSuccess := FPromise.Callback(@FContext, func, params.values.Data, FResult);
       except
         on E: EInvalidCast do
         begin
-          FSuccess := false;
+          FSuccess := False;
           if not (Application.Terminated or IsExtShuttingDown) then
             ExtError(uxdAuto, sTypeErrMsg, e.message);
         end;
         on E: Exception do
         begin
-          FSuccess := false;
+          FSuccess := False;
           if not (Application.Terminated or IsExtShuttingDown) then
             ExtError(uxdAuto, Format(sPromErrCapt, [func]), e.Message);
         end;
       end;
     end
     else
-      FSuccess := false;
+      FSuccess := False;
   end;
 
   // Final check before making JS calls
@@ -223,8 +225,8 @@ begin
   end;
 
   // Free parsed parameters captured earlier
-  if Assigned(FPromise.params.values.data) then
-    FPromise.params.values.data.Free;
+  if Assigned(FPromise.params.values.Data) then
+    FPromise.params.values.Data.Free;
 end;
 
 end.

@@ -26,35 +26,32 @@ unit trndi.api.debug_edge;
 interface
 
 uses
-Classes, SysUtils, Dialogs, trndi.types, trndi.api, trndi.native,
-fpjson, jsonparser, dateutils;
-
+  Classes, SysUtils, Dialogs, trndi.types, trndi.api, trndi.native,
+  fpjson, jsonparser, dateutils;
 
 type
   // Main class
-DebugEdgeAPI = class(TrndiAPI)
-protected
-public
-  constructor create(user, pass, extra: string);
-    override;
-  function connect: boolean;
-    override;
-  function getReadings(min, maxNum: integer; extras: string; out res: string): BGResults;
-    override;
-private
+  DebugEdgeAPI = class(TrndiAPI)
+  protected
+  public
+    constructor Create(user, pass, extra: string); override;
+    function connect: boolean; override;
+    function getReadings(min, maxNum: integer; extras: string; out res: string): BGResults;
+      override;
+  private
 
-published
-  property remote: string read baseUrl;
-end;
+  published
+    property remote: string read baseUrl;
+  end;
 
 implementation
 
 {------------------------------------------------------------------------------
   Constructor
 ------------------------------------------------------------------------------}
-constructor DebugEdgeAPI.create(user, pass, extra: string);
+constructor DebugEdgeAPI.Create(user, pass, extra: string);
 begin
-  ua      := 'Mozilla/5.0 (compatible; trndi) TrndiAPI';
+  ua := 'Mozilla/5.0 (compatible; trndi) TrndiAPI';
   baseUrl := user;
   inherited;
 end;
@@ -64,20 +61,21 @@ end;
 ------------------------------------------------------------------------------}
 function DebugEdgeAPI.Connect: boolean;
 begin
-  cgmHi      := 160;
-  cgmLo      := 60;
+  cgmHi := 160;
+  cgmLo := 60;
   cgmRangeHi := 140;
   cgmRangeLo := 90;
 
   TimeDiff := 0;
 
-  Result := true;
+  Result := True;
 end;
 
 {------------------------------------------------------------------------------
   Generate alternating high/low extreme readings to exercise edge conditions
 ------------------------------------------------------------------------------}
-function DebugEdgeAPI.getReadings(min, maxNum: integer; extras: string; out res: string): BGResults;
+function DebugEdgeAPI.getReadings(min, maxNum: integer; extras: string;
+  out res: string): BGResults;
 var
   i: integer;
   val, diff: integer;
@@ -85,27 +83,28 @@ var
   hi: boolean;
 begin
   res := '';
-  SetLength(result, 11);
+  SetLength(Result, 11);
   dbase := IncMinute(now, 5);
   for i := 0 to 10 do
   begin
     hi := MinuteOf(dbase) mod 2 = 0;
     dbase := IncMinute(dbase, -5);
-    result[i].Init(mgdl);
-    result[i].date := dbase;
-    if hi then begin
-       result[i].update(400, cgmHi);
-       result[i].trend := BGTrend.TdDoubleUp;
-       result[i].level := BGHigh;
+    Result[i].Init(mgdl);
+    Result[i].date := dbase;
+    if hi then
+    begin
+      Result[i].update(400, cgmHi);
+      Result[i].trend := BGTrend.TdDoubleUp;
+      Result[i].level := BGHigh;
     end
-    else begin
-       result[i].update(40, -cgmHi);
-       result[i].trend := BGTrend.TdDoubleDown;
-       result[i].level := BGLOW;
+    else
+    begin
+      Result[i].update(40, -cgmHi);
+      Result[i].trend := BGTrend.TdDoubleDown;
+      Result[i].level := BGLOW;
     end;
-    result[i].updateEnv('DebugEdge');
+    Result[i].updateEnv('DebugEdge');
   end;
-
 
 end;
 

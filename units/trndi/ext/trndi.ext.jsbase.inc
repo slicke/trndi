@@ -28,7 +28,8 @@
     @param(argv)     Pointer to argument array (unused)
     @returns         A new JS object with class @code(TrndiClassID)
 }
-function TrndiConstructor(ctx: JSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw; cdecl;
+function TrndiConstructor(ctx: JSContext; this_val: JSValueRaw;
+  argc: integer; argv: PJSValues): JSValueRaw; cdecl;
 begin
   // Create a new object of the Trndi class
   Result := JS_NewObjectClass(ctx, TrndiClassID);
@@ -45,13 +46,14 @@ end;
     @param(argv)     Array of argument values to stringify
     @returns         @code(JS_UNDEFINED)
 }
-function JSDoLog(ctx: JSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw; cdecl;
+function JSDoLog(ctx: JSContext; this_val: JSValueRaw; argc: integer;
+  argv: PJSValues): JSValueRaw; cdecl;
 var
   i: integer;
   buffer: TSynTempBuffer;
   res: RawUtf8;
 begin
-  TTrndiExtEngine.Instance.SetOutput(@ctx, argv, argc-1);
+  TTrndiExtEngine.Instance.SetOutput(@ctx, argv, argc - 1);
   Result := JS_UNDEFINED;
 end;
 
@@ -64,12 +66,13 @@ end;
     @param(argv)     Values to stringify and concatenate
     @returns         @code(JS_UNDEFINED)
 }
-function JSDoAlert(ctx: JSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw; cdecl;
+function JSDoAlert(ctx: JSContext; this_val: JSValueRaw; argc: integer;
+  argv: PJSValues): JSValueRaw; cdecl;
 var
-  i : integer;
+  i: integer;
   output: rawutf8;
 begin
-  for i := 0 to argc-1 do
+  for i := 0 to argc - 1 do
     output := output + ctx^.ToUtf8(argv^[i]);
   TTrndiExtEngine.Instance.alert(Output);
   Result := JS_UNDEFINED;
@@ -85,17 +88,18 @@ end;
     @param(argv)     Values to stringify and concatenate
     @returns         @code(JS_TRUE) on Yes; @code(JS_FALSE) on No
 }
-function JSDoYesNo(ctx: JSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw; cdecl;
+function JSDoYesNo(ctx: JSContext; this_val: JSValueRaw; argc: integer;
+  argv: PJSValues): JSValueRaw; cdecl;
 var
-  i : integer;
+  i: integer;
   output: rawutf8;
 begin
-  for i := 0 to argc-1 do
+  for i := 0 to argc - 1 do
     output := output + ctx^.ToUtf8(argv^[i]);
-  if UXDialog(uxdAuto, sExtMsg, '',output,[mbYes, mbNo],mtConfirmation) = mrYes then
-    result := JS_TRUE
+  if UXDialog(uxdAuto, sExtMsg, '', output, [mbYes, mbNo], mtConfirmation) = mrYes then
+    Result := JS_TRUE
   else
-    result := JS_FALSE;
+    Result := JS_FALSE;
 end;
 
 {** Prompt (input) dialog returning the user input as a JS string.
@@ -111,19 +115,20 @@ end;
     @param(argv)     caption, description, default value
     @returns         JS string of user input (or empty on cancel)
 }
-function JSInput(ctx: JSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw; cdecl;
+function JSInput(ctx: JSContext; this_val: JSValueRaw; argc: integer;
+  argv: PJSValues): JSValueRaw; cdecl;
 var
-  i : integer;
-  caption, desc, def: rawutf8;
+  i: integer;
+  Caption, desc, def: rawutf8;
   response: string;
   x: tmodalresult;
 begin
-    caption := ctx^.ToUtf8(argv^[0]);
-    desc := ctx^.ToUtf8(argv^[1]);
-    def :=  ctx^.ToUtf8(argv^[2]);
-    response := ExtInput(uxdAuto, sExtMsg,caption,desc,def,x);
-    if x = mrCancel then response := '';
-    Result := JS_NewString(ctx, pansichar(Response));
+  Caption := ctx^.ToUtf8(argv^[0]);
+  desc := ctx^.ToUtf8(argv^[1]);
+  def := ctx^.ToUtf8(argv^[2]);
+  response := ExtInput(uxdAuto, sExtMsg, Caption, desc, def, x);
+  if x = mrCancel then response := '';
+  Result := JS_NewString(ctx, pansichar(Response));
 end;
 
 {** Combo-box selection dialog returning the selected index (BigInt).
@@ -139,24 +144,26 @@ end;
     @param(argv)     caption, description, followed by options
     @returns         BigInt index of selected option
 }
-function JSCombo(ctx: JSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw; cdecl;
+function JSCombo(ctx: JSContext; this_val: JSValueRaw; argc: integer;
+  argv: PJSValues): JSValueRaw; cdecl;
 var
-  i : integer;
-  caption, desc: rawutf8;
+  i: integer;
+  Caption, desc: rawutf8;
   response: int64;
   vals: TStringList;
   res: rawutf8;
 begin
-    vals := TStringList.Create;
-    for i := 0 to argc-1 do
-       vals.Add(ctx^.ToUtf8(argv^[i]));
-    caption := ctx^.ToUtf8(argv^[0]);
-    desc := ctx^.ToUtf8(argv^[1]);
-    response := ExtList(uxdAuto, sExtMsg,caption,desc,vals.ToStringArray(2,argc-1)); // Ignore the first params
+  vals := TStringList.Create;
+  for i := 0 to argc - 1 do
+    vals.Add(ctx^.ToUtf8(argv^[i]));
+  Caption := ctx^.ToUtf8(argv^[0]);
+  desc := ctx^.ToUtf8(argv^[1]);
+  response := ExtList(uxdAuto, sExtMsg, Caption, desc, vals.ToStringArray(2, argc - 1));
+  // Ignore the first params
   //  res := vals.strings[response+2];
-    vals.Free;
-    result := JS_NewBigInt64(ctx,response);
-//    Result := JS_NewString(ctx, pansichar(res));
+  vals.Free;
+  Result := JS_NewBigInt64(ctx, response);
+  //    Result := JS_NewString(ctx, pansichar(res));
 end;
 
 {** Fetch a URL and return the response body as a JS string.
@@ -169,10 +176,11 @@ end;
     @param(argv)     argv[0] = URL string
     @returns         JS string with the HTTP response body or @code(JS_UNDEFINED)
 }
-function JSFetch(ctx: JSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw; cdecl;
+function JSFetch(ctx: JSContext; this_val: JSValueRaw; argc: integer;
+  argv: PJSValues): JSValueRaw; cdecl;
 var
   URL, res: string;
-  response : RawUtf8;
+  response: RawUtf8;
 begin
   if argc > 0 then
   begin
@@ -202,13 +210,15 @@ end;
     @param(argv)     argv[0] = error message string
     @returns         @code(JS_UNDEFINED)
 }
-function JSHandleError(ctx: JSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw; cdecl;
+function JSHandleError(ctx: JSContext; this_val: JSValueRaw; argc: integer;
+  argv: PJSValues): JSValueRaw; cdecl;
 var
   err: string;
 begin
   if argc > 0 then
-    err := TTrndiExtEngine.Instance.ParseArgv(@ctx, argv, 0)//    ;                                     ctx^^.ErrorDump(true, nil)IsException
-//  TTrndiExtEngine.Instance.excepion(err,);
+    err := TTrndiExtEngine.Instance.ParseArgv(@ctx, argv, 0)
+  //    ;                                     ctx^^.ErrorDump(true, nil)IsException
+  //  TTrndiExtEngine.Instance.excepion(err,);
   ;
   Result := JS_UNDEFINED;
 end;
@@ -225,7 +235,8 @@ end;
     @param(argv)     argv[0] = file path string
     @returns         JS string with file contents or @code(JS_UNDEFINED)
 }
-function JSReadFile(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw; cdecl;
+function JSReadFile(ctx: PJSContext; this_val: JSValueRaw; argc: integer;
+  argv: PJSValues): JSValueRaw; cdecl;
 var
   FileName, FileContent: RawUtf8;
 begin
@@ -254,7 +265,8 @@ end;
     @param(argv)     argv[0]=file name, argv[1]=content
     @returns         JS boolean indicating write success
 }
-function JSWriteFile(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw; cdecl;
+function JSWriteFile(ctx: PJSContext; this_val: JSValueRaw; argc: integer;
+  argv: PJSValues): JSValueRaw; cdecl;
 var
   FileName, FileContent: RawUtf8;
 begin
@@ -286,12 +298,8 @@ end;
     @param(is_handled)  True if the rejection was (or became) handled; False if unhandled
     @param(opaque)      User data pointer passed when the tracker was registered
 }
-procedure PromiseRejectionTracker(
-  ctx: PJSContext;
-  promise, reason: JSValueConst;
-  is_handled: longbool;
-  opaque: Pointer
-); cdecl;
+procedure PromiseRejectionTracker(ctx: PJSContext; promise, reason: JSValueConst;
+  is_handled: longbool; opaque: Pointer); cdecl;
 var
   error_msg: RawUtf8;
 begin
@@ -302,16 +310,19 @@ begin
       // Convert the JS 'reason' value to a string for display/logging
       // JSValueConstToUtf8 expects JSContext (not PJSContext), so we pass ctx^ 
       error_msg := JSValueConstToUtf8(ctx^, reason);
-      
+
       // Show a helpful alert message. Fall back to a generic message if no text was produced.
       if error_msg <> '' then
-        TTrndiExtEngine.Instance.alert('Unhandled Promise rejection: ' + string(error_msg))
+        TTrndiExtEngine.Instance.alert('Unhandled Promise rejection: ' +
+          string(error_msg))
       else
-        TTrndiExtEngine.Instance.alert('Unhandled Promise rejection: [no error message]');
+        TTrndiExtEngine.Instance.alert(
+          'Unhandled Promise rejection: [no error message]');
     except
       on E: Exception do
         // If conversion fails completely, show a generic error
-        TTrndiExtEngine.Instance.alert('Unhandled Promise rejection: [error retrieving message]');
+        TTrndiExtEngine.Instance.alert(
+          'Unhandled Promise rejection: [error retrieving message]');
     end;
   end;
 end;
@@ -346,14 +357,9 @@ end;
     - If arity validation fails, we currently just log an error and continue; you might prefer
       to reject the Promise immediately in that case.
 }
-function AsyncTask(
-  ctx: JSContext;
-  this_val: JSValueConst;
-  argc: integer;
-  argv: PJSValueConst;
-  magic: integer;
-  func_data: PJSValueRaw
-): JSValueRaw; cdecl;
+function AsyncTask(ctx: JSContext; this_val: JSValueConst;
+  argc: integer; argv: PJSValueConst; magic: integer;
+  func_data: PJSValueRaw): JSValueRaw; cdecl;
 var
   func: string;        // Name of the registered Pascal callback (bound via func_data)
   cb: PJSCallback;     // Pointer to the callback metadata (includes arity and handler)
@@ -380,18 +386,21 @@ begin
 
   // 3) Parse/collect JS arguments into the callback’s parameter holder.
   //    NOTE: JSParseParameters likely allocates memory; the async task must free it later.
-  cb^.params.values.data := JSParseParameters(ctx, argc, argv); // Free later in TJSAsyncTask
-  params := cb^.params.values.data.Count;
+  cb^.params.values.Data := JSParseParameters(ctx, argc, argv);
+  // Free later in TJSAsyncTask
+  params := cb^.params.values.Data.Count;
 
   // 4) Validate arity against min/max constraints (unless min=-1 which means “free-form”).
-  if (not ((params >= cb^.params.min) and (params <= cb^.params.max))) and (cb^.params.min > -1) then
+  if (not ((params >= cb^.params.min) and (params <= cb^.params.max))) and
+    (cb^.params.min > -1) then
   begin
     // Inform the user about the mismatch. Consider rejecting the Promise immediately instead.
     if cb^.params.min = cb^.params.max then
-      ExtError(uxdAuto, Format('[%s] Needs %d parameters, but we got %d', [func, cb^.params.min, params]))
+      ExtError(uxdAuto, Format('[%s] Needs %d parameters, but we got %d',
+        [func, cb^.params.min, params]))
     else
       ExtError(uxdAuto, Format('[%s] Needs %d - %d parameters, but we got %d',
-                               [func, cb^.params.min, cb^.params.max, params]));
+        [func, cb^.params.min, cb^.params.max, params]));
   end;
 
   // 5) Create a Promise and capture its resolving functions.
@@ -421,7 +430,7 @@ begin
   //      - Freeing any allocated argument/JS values when done
   TJSAsyncTask.Create(ctx, cb^, @funcs);
   // Avoid further use of params by the engine; ownership transferred to the task
-  cb^.params.values.data := nil;
+  cb^.params.values.Data := nil;
 
   // 7) Return the Promise object to JavaScript immediately.
   Result := promise;

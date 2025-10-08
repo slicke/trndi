@@ -26,34 +26,35 @@ unit trndi.api.debug_missing;
 interface
 
 uses
-Classes, SysUtils, Dialogs, trndi.types, trndi.api, trndi.native,
-trndi.api.debug, fpjson, jsonparser, dateutils;
-
+  Classes, SysUtils, Dialogs, trndi.types, trndi.api, trndi.native,
+  trndi.api.debug, fpjson, jsonparser, dateutils;
 
 type
   // Main class
-DebugMissingAPI = class(DebugAPI)
-protected
-public
-  function getReadings(min, maxNum: integer; extras: string; out res: string): BGResults;
-    override;
-end;
+  DebugMissingAPI = class(DebugAPI)
+  protected
+  public
+    function getReadings(min, maxNum: integer; extras: string; out res: string): BGResults;
+      override;
+  end;
 
 implementation
 
 
-function DebugMissingAPI.getReadings(min, maxNum: integer; extras: string; out res: string): BGResults;
+function DebugMissingAPI.getReadings(min, maxNum: integer; extras: string;
+  out res: string): BGResults;
 var
   fNow: TDateTime;
-function getFakeVals(const min: integer; out reading, delta: integer): TDateTime;
+
+  function getFakeVals(const min: integer; out reading, delta: integer): TDateTime;
   var
     currentTime: TDateTime;
     baseTime: TDateTime;
     minutesFromBase: integer;
     previousReading: integer;  // We're generating a delta
   begin
-  res := '';
-  // Get the current time and the 5 minutes to act on
+    res := '';
+    // Get the current time and the 5 minutes to act on
     currentTime := fNow;
     baseTime := IncMinute(currentTime, -min);
     minutesFromBase := (MinuteOf(baseTime) div 5) * 5;
@@ -63,37 +64,37 @@ function getFakeVals(const min: integer; out reading, delta: integer): TDateTime
     Result := RecodeMilliSecond(Result, 0);
 
 
-  // Generate a fake reading
+    // Generate a fake reading
     reading := 40 + ((DateTimeToUnix(Result) div 300) mod 360);
 
-  // Generate the previous 5 min reading
+    // Generate the previous 5 min reading
     previousReading := 40 + ((DateTimeToUnix(IncMinute(Result, -5)) div 300) mod 360);
 
-  // Set the delta
+    // Set the delta
     delta := reading - previousReading;
   end;
 
-function guessTrend(diff: integer): BGTrend;
+  function guessTrend(diff: integer): BGTrend;
   begin
     if diff < -20 then
-      result := TdDoubleDown
+      Result := TdDoubleDown
     else
     if diff < -15 then
-      result := TdSingleDown
+      Result := TdSingleDown
     else
     if diff < -10 then
-      result := TdFortyFiveDown
+      Result := TdFortyFiveDown
     else
     if diff < 5 then
-      result := TdFlat
+      Result := TdFlat
     else
     if diff < 10 then
-      result := TdFortyFiveUp
+      Result := TdFortyFiveUp
     else
     if diff < 15 then
-      result := TdSingleUp
+      Result := TdSingleUp
     else
-      result := TdDoubleUp
+      Result := TdDoubleUp;
   end;
 
 var
@@ -101,17 +102,16 @@ var
   val, diff: integer;
 begin
   fNow := IncHour(Now, -2);
-  SetLength(result, 11);
+  SetLength(Result, 11);
   for i := 0 to 10 do
   begin
-    result[i].Init(mgdl);
-    result[i].date := getFakeVals(i*5,val,diff);
-    result[i].update(val, diff);
-    result[i].trend := guessTrend(diff);
-    result[i].level := getLevel(result[i].val);
-    result[i].updateEnv('Debug');
+    Result[i].Init(mgdl);
+    Result[i].date := getFakeVals(i * 5, val, diff);
+    Result[i].update(val, diff);
+    Result[i].trend := guessTrend(diff);
+    Result[i].level := getLevel(Result[i].val);
+    Result[i].updateEnv('Debug');
   end;
-
 
 end;
 

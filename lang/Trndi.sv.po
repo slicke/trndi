@@ -1082,7 +1082,7 @@ msgid "Loading Extensions..."
 msgstr "Laddar tillägg..."
 
 #: trndi.strings.rs_tir_h
-#, object-pascal-format
+#, object-pascal-format, fuzzy, badformat
 msgid ""
 "This is your time in range for the last %d hours and %d minutes\n"
 "\n"
@@ -1587,3 +1587,4 @@ msgstr "Du kan använda skift+<nummerr> för att manuellt sätta synligheten (0 
 #: ufloat.rscustomsize
 msgid "You can hold down shift and plus (+) or minus (-) to change the window size"
 msgstr "Du kan hålla ned skift och plus (+) eller minus (-) för att justera fönstrets storlek"
+

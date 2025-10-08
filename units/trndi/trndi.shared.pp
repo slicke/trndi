@@ -24,8 +24,7 @@ uses
   {$ifdef LINUX}
   FileUtil, StrUtils,
   {$endif}
-  LCLIntf
-  ;
+  LCLIntf;
 
 // Color utility functions
 function DarkenColor(originalColor: TColor; factor: double = 0.8): TColor;
@@ -38,11 +37,11 @@ function GetLinuxDistro(out ver: string): string;
 function ScanLinuxDistro(const opts: TStringArray): string;
 
 // UI utility functions
-procedure ApplyRoundedCorners(APanel: TPanel; Radius: Integer);
-procedure ApplyAlphaControl(Control: TWinControl; Alpha: Byte);
+procedure ApplyRoundedCorners(APanel: TPanel; Radius: integer);
+procedure ApplyAlphaControl(Control: TWinControl; Alpha: byte);
 
 // Text measurement functions
-function CharsFit(Canvas: TCanvas; C: Char; TotalWidth: Integer): Integer;
+function CharsFit(Canvas: TCanvas; C: char; TotalWidth: integer): integer;
 
 implementation
 
@@ -67,7 +66,7 @@ end;
 
 function LightenColor(originalColor: TColor; factor: double = 0.8): TColor;
 var
-  r, g, b: Integer; // Use Integer to hold intermediate results
+  r, g, b: integer; // Use Integer to hold intermediate results
 begin
   // Extract RGB components
   r := GetRValue(originalColor);
@@ -103,11 +102,17 @@ begin
 
   // Correct gamma
   if r2 <= 0.04045 then
-    r2 := r2 / 12.92 else r2 := Power((r2 + 0.055) / 1.055, 2.4);
+    r2 := r2 / 12.92
+  else
+    r2 := Power((r2 + 0.055) / 1.055, 2.4);
   if g2 <= 0.04045 then
-    g2 := g2 / 12.92 else g2 := Power((g2 + 0.055) / 1.055, 2.4);
+    g2 := g2 / 12.92
+  else
+    g2 := Power((g2 + 0.055) / 1.055, 2.4);
   if b2 <= 0.04045 then
-    b2 := b2 / 12.92 else b2 := Power((b2 + 0.055) / 1.055, 2.4);
+    b2 := b2 / 12.92
+  else
+    b2 := Power((b2 + 0.055) / 1.055, 2.4);
 
   // Calculate luminance
   L := 0.2126 * r2 + 0.7152 * g2 + 0.0722 * b2;
@@ -132,11 +137,11 @@ begin
 end;
 
 function GetLinuxDistro(out ver: string): string;
-{$ifdef LINUX}
+  {$ifdef LINUX}
 var
   sys, s: string;
   start, stop: integer;
-{$endif}
+  {$endif}
 begin
   Result := '';
   ver := '';
@@ -172,10 +177,10 @@ begin
 end;
 
 function ScanLinuxDistro(const opts: TStringArray): string;
-{$ifdef LINUX}
+  {$ifdef LINUX}
 var
   s, sys: string;
-{$endif}
+  {$endif}
 begin
   {$ifdef LINUX}
   sys := LowerCase(GetLinuxDistro(s));
@@ -186,12 +191,12 @@ begin
       Exit;
     end;
   {$else}
-  result := '';
+  Result := '';
   {$endif}
 end;
 
 // UI utility functions
-procedure ApplyRoundedCorners(APanel: TPanel; Radius: Integer);
+procedure ApplyRoundedCorners(APanel: TPanel; Radius: integer);
 {$IFDEF WINDOWS}
 var
   Rgn: HRGN;
@@ -204,23 +209,23 @@ begin
   {$ENDIF}
 end;
 
-procedure ApplyAlphaControl(Control: TWinControl; Alpha: Byte);
+procedure ApplyAlphaControl(Control: TWinControl; Alpha: byte);
 {$IFDEF WINDOWS}
 var
   ExStyle: LongInt;
 {$ENDIF}
 begin
-{$IFDEF WINDOWS}
+  {$IFDEF WINDOWS}
   ExStyle := GetWindowLong(Control.Handle, GWL_EXSTYLE);
   SetWindowLong(Control.Handle, GWL_EXSTYLE, ExStyle or WS_EX_LAYERED);
   SetLayeredWindowAttributes(Control.Handle, 0, Alpha, LWA_ALPHA);
-{$ENDIF}
+  {$ENDIF}
 end;
 
 // Text measurement functions
-function CharsFit(Canvas: TCanvas; C: Char; TotalWidth: Integer): Integer;
+function CharsFit(Canvas: TCanvas; C: char; TotalWidth: integer): integer;
 var
-  CharWidth: Integer;
+  CharWidth: integer;
 begin
   CharWidth := Canvas.TextWidth(C);
   if CharWidth > 0 then

@@ -26,55 +26,54 @@ unit trndi.api.debug_perfect; // 5.5 mmol/L
 interface
 
 uses
-Classes, SysUtils, Dialogs, trndi.types,
-trndi.api.debug, fpjson, jsonparser, dateutils;
-
+  Classes, SysUtils, Dialogs, trndi.types,
+  trndi.api.debug, fpjson, jsonparser, dateutils;
 
 type
   // Main class
-DebugPerfectAPI = class(DebugAPI)
-protected
-public
-  function getReadings({%H-}min, {%H-}maxNum: integer; {%H-}extras: string; out res: string): BGResults;
-    override;
-end;
+  DebugPerfectAPI = class(DebugAPI)
+  protected
+  public
+    function getReadings({%H-}min, {%H-}maxNum: integer; {%H-}extras: string;
+      out res: string): BGResults; override;
+  end;
 
 implementation
 
 
-function DebugPerfectAPI.getReadings(min, maxNum: integer; extras: string; out res: string): BGResults;
+function DebugPerfectAPI.getReadings(min, maxNum: integer; extras: string;
+  out res: string): BGResults;
+
   function getFakeTime(const min: integer): TDateTime;
-    var
-      currentTime: TDateTime;
-      baseTime: TDateTime;
-      minutesFromBase: integer;
-    begin
+  var
+    currentTime: TDateTime;
+    baseTime: TDateTime;
+    minutesFromBase: integer;
+  begin
     res := '';
     // Get the current time and the 5 minutes to act on
-      currentTime := Now;
-      baseTime := IncMinute(currentTime, -min);
-      minutesFromBase := (MinuteOf(baseTime) div 5) * 5;
+    currentTime := Now;
+    baseTime := IncMinute(currentTime, -min);
+    minutesFromBase := (MinuteOf(baseTime) div 5) * 5;
 
-      Result := RecodeMinute(baseTime, minutesFromBase);
-      Result := RecodeSecond(Result, 0);
-      Result := RecodeMilliSecond(Result, 0);
-    end;
-
+    Result := RecodeMinute(baseTime, minutesFromBase);
+    Result := RecodeSecond(Result, 0);
+    Result := RecodeMilliSecond(Result, 0);
+  end;
 
 var
   i: integer;
 begin
-  SetLength(result, 11);
+  SetLength(Result, 11);
   for i := 0 to 10 do
   begin
-    result[i].Init(mgdl);
-    result[i].date := getFakeTime(i*5); // Get the time
-    result[i].update(99, 0); // Set reading
-    result[i].trend := tdFlat;  // Always flat
-    result[i].level := BGRange;
-    result[i].updateEnv('Debug');
+    Result[i].Init(mgdl);
+    Result[i].date := getFakeTime(i * 5); // Get the time
+    Result[i].update(99, 0); // Set reading
+    Result[i].trend := tdFlat;  // Always flat
+    Result[i].level := BGRange;
+    Result[i].updateEnv('Debug');
   end;
-
 
 end;
 
