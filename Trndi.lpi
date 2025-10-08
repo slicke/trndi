@@ -535,6 +535,10 @@
         <Filename Value="units\misc\buildinfo.pp"/>
         <IsPartOfProject Value="True"/>
       </Unit>
+      <Unit>
+        <Filename Value="units\trndi\api\trndi.api.debug_custom.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

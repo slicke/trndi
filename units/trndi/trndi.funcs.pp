@@ -249,9 +249,6 @@ end;
 
 // SetPointHeight procedure
 procedure SetPointHeight(L: TPaintBox; Value: Single; clientHeight: integer);
-const
-  GraphMin = 2;
-  GraphMax = 22;
 var
   Padding, UsableHeight, Position: Integer;
 begin
@@ -260,13 +257,13 @@ begin
   UsableHeight := clientHeight - (Padding * 2);
 
   // Clamp Value within range
-  if Value < GraphMin then
-    Value := GraphMin
-  else if Value > GraphMax then
-    Value := GraphMax;
+  if Value < BG_API_MIN then
+    Value := BG_API_MIN
+  else if Value > BG_API_MAX then
+    Value := BG_API_MAX;
 
   // Calculate position as a proportion of the usable height
-  Position := Padding + Round((Value - GraphMin) / (GraphMax - GraphMin) * UsableHeight);
+  Position := Padding + Round((Value - BG_API_MIN) / (BG_API_MAX - BG_API_MIN) * UsableHeight);
 
   // Apply the calculated position to the label's Top property
   // Place dot relative to the same clientHeight reference. Keep 1px inside bottom edge

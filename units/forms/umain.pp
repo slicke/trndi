@@ -50,7 +50,7 @@ interface
 uses
 trndi.strings, LCLTranslator, Classes, Menus, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, ExtCtrls,
 trndi.api.dexcom, trndi.api.nightscout, trndi.api.nightscout3, trndi.types, math, DateUtils, FileUtil, LclIntf, TypInfo, LResources,
-slicke.ux.alert, usplash, Generics.Collections, trndi.funcs, Trndi.native.base, trndi.shared,
+slicke.ux.alert, usplash, Generics.Collections, trndi.funcs, Trndi.native.base, trndi.shared, trndi.api.debug_custom,
 SystemMediaController,
 {$ifdef TrndiExt}
 trndi.Ext.Engine, trndi.Ext.jsfuncs, trndi.ext.promise, mormot.core.base,
@@ -1061,6 +1061,8 @@ begin
       api := DebugMissingAPI.Create(apiTarget, apiCreds, '');
     '* Debug Perfect Backend *':
       api := DebugPerfectAPI.Create(apiTarget, apiCreds, '');
+    '* Debug Custom Backend *':
+      api := DebugCustomAPI.Create(apiTarget, apiCreds, '');
    '* Debug Edge Backend *':
       api := DebugEdgeAPI.Create(apiTarget, apiCreds, '');
       {$endif}
@@ -1822,45 +1824,53 @@ var
   drawLo, drawHi: Boolean;
   tmp: Integer;
   clientH: Integer;
+  daAdjust: Integer;
   // Helper to map a BG value in internal units to a Y coordinate matching SetPointHeight
   function ValueToY(const Value: Single): Integer;
-  const
-    GraphMin = 2;
-    GraphMax = 22;
   var
     Padding, UsableHeight, Position: Integer;
     v: Single;
   begin
-    clientH := fBG.ClientHeight;
+    // clientH is determined in the outer scope to match SetPointHeight's clientHeight
     Padding := Round(clientH * 0.1);
     UsableHeight := clientH - (Padding * 2);
     v := Value;
-    if v < GraphMin then v := GraphMin;
-    if v > GraphMax then v := GraphMax;
-    Position := Padding + Round((v - GraphMin) / (GraphMax - GraphMin) * UsableHeight);
+    if v < BG_API_MIN then v := BG_API_MIN;
+    if v > BG_API_MAX then v := BG_API_MAX;
+    Position := Padding + Round((v - BG_API_MIN) / (BG_API_MAX - BG_API_MIN) * UsableHeight);
     Result := (clientH - Position) - 1;
   end;
 begin
   // Only draw when form has been created and API thresholds available
   if not Assigned(Self) then Exit;
   cnv := Self.Canvas;
-  clientH := Self.ClientHeight;
+  // Prefer the TrendDots parent client height if available so mapping matches SetPointHeight
+  if (Length(TrendDots) > 0) and Assigned(TrendDots[1]) and Assigned(TrendDots[1].Parent) then
+    clientH := TrendDots[1].Parent.ClientHeight
+  else
+    clientH := Self.ClientHeight;
 
-  // Decide whether to draw low/high range indicators (range 0 disables)
-  drawLo := (Assigned(api) and (api.cgmRangeLo <> 0));
-  drawHi := (Assigned(api) and (api.cgmRangeHi <> 0));
+  // Decide whether to draw low/high range indicators (0 disables)
+  drawLo := (Assigned(api) and (api.cgmLo <> 0));
+  drawHi := (Assigned(api) and (api.cgmHi <> 0));
+
+  // Apply same adjustments as AdjustGraph so lines align with moved dots
+  daAdjust := dotsInView; // same variable used in AdjustGraph
 
   // Use semi-transparent versions of range colors
   cnv.Brush.Style := bsClear;
 
   if drawLo then
   begin
-  loY := ValueToY(api.cgmRangeLo * BG_CONVERTIONS[mmol][mgdl]);
-    lineColor := bg_rel_color_lo;
+    // api.cgmLo is in mg/dL; convert to mmol/L which SetPointHeight and ValueToY use
+    loY := ValueToY(api.cgmLo * BG_CONVERTIONS[mmol][mgdl]);
+    // Apply same adjustments as AdjustGraph: first DOT_ADJUST, then subtract dotsInView
+    loY := loY + round(clientH * DOT_ADJUST) - daAdjust;
+    lineColor := LightenColor(bg_rel_color_lo);
     cnv.Pen.Color := lineColor;
     cnv.Pen.Style := psSolid;
     cnv.Pen.Width := 2;
-    // Draw a thin horizontal line across the area where dots are shown
+    // Draw a horizontal line across the area where dots are shown
     tmp := loY;
     cnv.MoveTo(0, tmp);
     cnv.LineTo(Self.ClientWidth, tmp);
@@ -1868,8 +1878,11 @@ begin
 
   if drawHi then
   begin
-  hiY := ValueToY(api.cgmRangeHi * BG_CONVERTIONS[mmol][mgdl]);
-    lineColor := bg_rel_color_hi;
+    // api.cgmHi is in mg/dL; convert to mmol/L which SetPointHeight and ValueToY use
+    hiY := ValueToY(api.cgmHi * BG_CONVERTIONS[mmol][mgdl]);
+    // Apply same adjustments as AdjustGraph: first DOT_ADJUST, then subtract dotsInView
+    hiY := hiY + round(clientH * DOT_ADJUST) - daAdjust;
+    lineColor := LightenColor(bg_rel_color_hi);
     cnv.Pen.Color := lineColor;
     cnv.Pen.Style := psSolid;
     cnv.Pen.Width := 2;
@@ -2168,6 +2181,7 @@ procedure TfBG.lTirClick(Sender:TObject);
 var
   minTotal, hours, mins: Integer;
   msg: String;
+  hi,lo,rhi,rlo: double;
 begin
   minTotal := MinutesBetween(now, bgs[High(bgs)].date);
   {$ifdef TrndiExt}
@@ -2192,7 +2206,12 @@ begin
     else
       msg := Format(RS_TIR_H, [hours, mins]);
   end;
-  ShowMessage(msg);
+  hi := api.cgmHi * BG_CONVERTIONS[un][mgdl];
+  lo := api.cgmLo * BG_CONVERTIONS[un][mgdl];
+  rhi := api.cgmRangeHi * BG_CONVERTIONS[un][mgdl];
+  rlo := api.cgmRangeLo * BG_CONVERTIONS[un][mgdl];
+
+  ShowMessage(msg+LineEnding+LineEnding+' '+FormatFloat('0.00', lo) + '  ' + FormatFloat('0.00', hi));
 end;
 
 
@@ -2812,6 +2831,7 @@ begin
       fConf.cbSys.Items.Add('* Debug Backend *');
       fConf.cbSys.Items.Add('* Debug Missing Backend *');
       fConf.cbSys.Items.Add('* Debug Perfect Backend *');
+      fConf.cbSys.Items.Add('* Debug Custom Backend *');
       fConf.cbSys.Items.Add('* Debug Edge Backend *');
       {$endif}
     end;
