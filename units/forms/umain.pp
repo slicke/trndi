@@ -405,6 +405,7 @@ isWSL : boolean = false;
   applocale: string;
   dotscale: integer = 1;
   badge_adjust: single = 0;
+  DOT_OFFSET_RANGE: integer = 3; // Fine-tune vertical alignment of threshold lines with dots
   highAlerted: boolean = False; // A high alert is active
   lowAlerted: boolean = False; // A low alert is active
   perfectTriggered: boolean = False; // A perfect reading is active
@@ -1950,26 +1951,35 @@ begin
   if drawLo then
   begin
     loY := ValueToY(api.cgmLo * BG_CONVERTIONS[mmol][mgdl]);
-    loY := loY + (dotHeight div 2);  // Center line through middle of dot height
+    // Center line through visual center of dot: ValueToY gives top of control,
+    // add half the dot height to reach the vertical center (using Round for better precision)
+    // Apply DOT_OFFSET_RANGE for fine-tuning alignment
+    loY := loY + Round(dotHeight / 2.0) + DOT_OFFSET_RANGE;
   end;
 
   if drawHi then
   begin
     hiY := ValueToY(api.cgmHi * BG_CONVERTIONS[mmol][mgdl]);
-    hiY := hiY + (dotHeight div 2);  // Center line through middle of dot height
+    // Center line through visual center of dot (using Round for better precision)
+    // Apply DOT_OFFSET_RANGE for fine-tuning alignment
+    hiY := hiY + Round(dotHeight / 2.0) + DOT_OFFSET_RANGE;
   end;
 
   // Calculate Y positions for range low and high thresholds
   if drawRangeLo then
   begin
     rangeLoY := ValueToY(api.cgmRangeLo * BG_CONVERTIONS[mmol][mgdl]);
-    rangeLoY := rangeLoY + (dotHeight div 2);  // Center line through middle of dot height
+    // Center line through visual center of dot (using Round for better precision)
+    // Apply DOT_OFFSET_RANGE for fine-tuning alignment
+    rangeLoY := rangeLoY + Round(dotHeight / 2.0) + DOT_OFFSET_RANGE;
   end;
 
   if drawRangeHi then
   begin
     rangeHiY := ValueToY(api.cgmRangeHi * BG_CONVERTIONS[mmol][mgdl]);
-    rangeHiY := rangeHiY + (dotHeight div 2);  // Center line through middle of dot height
+    // Center line through visual center of dot (using Round for better precision)
+    // Apply DOT_OFFSET_RANGE for fine-tuning alignment
+    rangeHiY := rangeHiY + Round(dotHeight / 2.0) + DOT_OFFSET_RANGE;
   end;
 
   // Fill the area between low and high thresholds with a darkened background color
