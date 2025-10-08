@@ -27,7 +27,7 @@ interface
 uses
   SysUtils, Dialogs;
 
-{$I ../../inc/types.inc}
+  {$I ../../inc/types.inc}
 
 type
   {** Selects which BG value is referenced: the primary reading or its delta. }
@@ -63,7 +63,6 @@ type
     function getDevice: string;
     procedure setReturn(bgu: BGUnit);
     procedure setLevel(bglvl: BGValLevel);
-
   public
     trend: BGTrend;       //< Trend “arrow” enumeration
     date: TDateTime;      //< Timestamp when the reading occurred
@@ -102,10 +101,11 @@ type
         @param(valdevice Device name)
         @param(valrssi   Signal indicator; -1 if unknown)
         @param(valnoise  Noise indicator; -1 if unknown) }
-    procedure updateEnv(valdevice: shortstring; valrssi: integer = -1; valnoise: integer = -1);// NS specific stuff
+    procedure updateEnv(valdevice: shortstring; valrssi: integer = -1;
+      valnoise: integer = -1);// NS specific stuff
 
     {** Clear the numeric values (sets to @code(BG_NO_VAL)). }
-    procedure clear;
+    procedure Clear;
 
     {** Convert a value to another unit.
         @param(u     Target unit)
@@ -128,8 +128,8 @@ type
         @param(which   Primary or delta value)
         @param(rounded If true, uses rounded value)
         @returns Formatted string }
-    function format(u: BGUnit; fmt: BgUnitMeta; which: BGValType = BGPrimary; rounded: boolean =
-      false): string;
+    function format(u: BGUnit; fmt: BgUnitMeta; which: BGValType = BGPrimary;
+      rounded: boolean = False): string;
 
     {** Current value in preferred return unit. }
     property val: single read GetCurr;
@@ -147,7 +147,7 @@ type
     property level: BGValLevel read GetLevel write SetLevel;
 
     {** Source identifier (API) string. }
-    property source: shortstring read GetSrc;
+    property Source: shortstring read GetSrc;
 
     {** Device/sensor string; returns '<unknown>' if empty. }
     property sensor: string read getDevice;
@@ -169,31 +169,31 @@ type
   {** Helper for @code(BGTrend) to produce textual/UTF representations. }
   BGTrendHelper =
     type helper for BGTrend //< A type helper to transform trends to images/text
-      {** UTF representation (emoji/arrow) for the trend. }
-      function Img: string;
-      {** Text (ASCII) representation for the trend. }
-      function Text: string;
-    end;
+    {** UTF representation (emoji/arrow) for the trend. }
+    function Img: string;
+    {** Text (ASCII) representation for the trend. }
+    function Text: string;
+  end;
 
 implementation
 
 function BGReading.getRSSI(out outval: integer): boolean;
 begin
   outval := self.rssi;
-  result := Self.rssi > -1;
+  Result := Self.rssi > -1;
 end;
 
 function BGReading.getNoise(out outval: integer): boolean;
 begin
   outval := self.noise;
-  result := Self.noise > -1;
+  Result := Self.noise > -1;
 end;
 
 function BGReading.getDevice: string;
 begin
-  result := self.device;
-  if result.IsEmpty then
-    result := '<unknown>';
+  Result := self.device;
+  if Result.IsEmpty then
+    Result := '<unknown>';
 end;
 
 { Sets the preffered return unit, for properties
@@ -211,14 +211,13 @@ end;
   @returns( the value )
   @raises( none )
 }
-function BGReading.convert(u: BGUnit; which: BGValType = BGPrimary
-): single;
+function BGReading.convert(u: BGUnit; which: BGValType = BGPrimary): single;
 begin
   case which of
-  BGPrimary:
-    result := curr * BG_CONVERTIONS[u][valu];
-  BGDelta:
-    result  := change * BG_CONVERTIONS[u][valu];
+    BGPrimary:
+      Result := curr * BG_CONVERTIONS[u][valu];
+    BGDelta:
+      Result := change * BG_CONVERTIONS[u][valu];
   end;
 end;
 
@@ -228,10 +227,9 @@ end;
   @returns( A rounded integer value )
   @raises( none )
 }
-function BGReading.round(u: BGUnit; which: BGValType = BGPrimary):
-smallint;
+function BGReading.round(u: BGUnit; which: BGValType = BGPrimary): smallint;
 begin
-  result := system.Round(self.convert(u,which));
+  Result := system.Round(self.convert(u, which));
 end;
 
 { Returns a text/string representation
@@ -242,8 +240,8 @@ end;
   @returns( Format ran over the requested value, in the "u" unit )
   @raises( none )
 }
-function BGReading.format(u: BGUnit; fmt: BgUnitMeta; which:
-BGValType = BGPrimary; rounded: boolean = false): string;
+function BGReading.format(u: BGUnit; fmt: BgUnitMeta; which: BGValType = BGPrimary;
+  rounded: boolean = False): string;
 var
   cval: single;
   str: string;
@@ -252,15 +250,15 @@ var
   @returns( description )
   @raises( none )
 }
-function sign: string;
+  function sign: string;
   begin
     if cval = 0 then
-      result := '±'
+      Result := '±'
     else
     if cval >= 0 then
-      result := '+'
+      Result := '+'
     else // Minus is appended by the conversion
-      result := '';
+      Result := '';
   end;
 
 begin
@@ -268,9 +266,9 @@ begin
     cval := round(u, which)
   else
     cval := convert(u, which);
-                                  // We replace our owhen %- with the sign
-  str := StringReplace(fmt[u], '%+', sign,  [rfReplaceAll]);
-  result := SysUtils.Format(str, [cval])
+  // We replace our owhen %- with the sign
+  str := StringReplace(fmt[u], '%+', sign, [rfReplaceAll]);
+  Result := SysUtils.Format(str, [cval]);
 end;
 
 constructor BGReading.Init(vtype: BGUnit; api: shortstring = '');
@@ -283,8 +281,7 @@ end;
   @param(rtype Preffered return unit, used for properties. Can be omitted )
   @raises( none )
 }
-constructor BGReading.Init(vtype, rtype: BGUnit; api: shortstring
-= '');
+constructor BGReading.Init(vtype, rtype: BGUnit; api: shortstring = '');
 begin
   valu := vtype;
   retu := rtype;
@@ -299,7 +296,7 @@ end;
 }
 function BGReading.checkEmpty: boolean;
 begin
-  result := curr = BG_NO_VAL;
+  Result := curr = BG_NO_VAL;
 end;
 
 { Returns the API's native high/low
@@ -308,7 +305,7 @@ end;
 }
 function BGReading.GetLevel: BGValLevel;
 begin
-  result := lvl;
+  Result := lvl;
 end;
 
 { Returns the API's native high/low
@@ -326,7 +323,7 @@ end;
 }
 function BGReading.getCurr: single;
 begin
-  result := self.convert(retu);
+  Result := self.convert(retu);
 end;
 
 { Returns the current delta, in the pre-set default return unit
@@ -335,7 +332,7 @@ end;
 }
 function BGReading.getChange: single;
 begin
-  result := self.convert(retu, BGDelta);
+  Result := self.convert(retu, BGDelta);
 end;
 
 { Set the glucose data
@@ -344,18 +341,18 @@ end;
   @param(u unit in which the data is provided)
   @raises( none )
 }
-procedure BGReading.update(val: BGVal; which: BGValType; u: BGUnit
-);
+procedure BGReading.update(val: BGVal; which: BGValType; u: BGUnit);
 begin
   case which of
-  BGPrimary:
-    self.curr := val * BG_CONVERTIONS[u][self.valu];
-  BGDelta:
-    self.change  := val * BG_CONVERTIONS[u][self.valu];
+    BGPrimary:
+      self.curr := val * BG_CONVERTIONS[u][self.valu];
+    BGDelta:
+      self.change := val * BG_CONVERTIONS[u][self.valu];
   end;
 end;
 
-procedure BGReading.updateEnv(valdevice: shortstring; valrssi: integer = -1; valnoise: integer = -1);
+procedure BGReading.updateEnv(valdevice: shortstring; valrssi: integer = -1;
+  valnoise: integer = -1);
 begin
   self.rssi := valrssi;
   self.Noise := valnoise;
@@ -378,14 +375,14 @@ begin
   self.update(valCurr, valDelta, valu);
 end;
 
-                                  //--
+//--
 { Returns the image (UTF) representation of a trend
   @returns( UTF )
   @raises( none )
 }
 function BGTrendHelper.Img: string;
 begin
-  result := BG_TREND_ARROWS_UTF[self];
+  Result := BG_TREND_ARROWS_UTF[self];
 end;
 
 { Returns the tect (ASCII) representation of a trend
@@ -394,13 +391,13 @@ end;
 }
 function BGTrendHelper.Text: string;
 begin
-  result := BG_TREND_ARROWS[self];
+  Result := BG_TREND_ARROWS[self];
 end;
 
 { Clears out all bg data and sets it to undefined
   @raises( none )
 }
-procedure BgReading.clear;
+procedure BgReading.Clear;
 begin
   self.curr := BG_NO_VAL;
   self.change := BG_NO_VAL;
@@ -408,7 +405,7 @@ end;
 
 function BgReading.getSrc: shortstring;
 begin
-  result := src;
+  Result := src;
 end;
 
 (*

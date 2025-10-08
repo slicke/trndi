@@ -46,24 +46,23 @@ uses
 type
   // Re-export base types
   TTrndiNativeBase = trndi.native.base.TTrndiNativeBase;
-  TWSLVersion      = trndi.native.base.TWSLVersion;
-  TTrndiBool       = trndi.native.base.TTrndiBool;
-  TWSLInfo         = trndi.native.base.TWSLInfo;
+  TWSLVersion = trndi.native.base.TWSLVersion;
+  TTrndiBool = trndi.native.base.TTrndiBool;
+  TWSLInfo = trndi.native.base.TWSLInfo;
 
-{$IF DEFINED(X_WIN)}
+  {$IF DEFINED(X_WIN)}
   TTrndiNativeWindows = trndi.native.win.TTrndiNativeWindows;
   TrndiNative = TTrndiNativeWindows;
-{$ELSEIF DEFINED(X_MAC)}
+  {$ELSEIF DEFINED(X_MAC)}
   TTrndiNativeMac = trndi.native.mac.TTrndiNativeMac;
   TrndiNative = TTrndiNativeMac;
-{$ELSE}
+  {$ELSE}
   TTrndiNativeLinux = trndi.native.linux.TTrndiNativeLinux;
   TrndiNative = TTrndiNativeLinux;
-{$ENDIF}
+  {$ENDIF}
   // Tip: Use TrndiNative in your code, not platform-specific class names.
   // Example: native := TrndiNative.create('UA', 'https://...');
 
 implementation
 
 end.
-

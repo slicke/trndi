@@ -26,33 +26,34 @@ unit trndi.ext.jsfuncs;
 
 interface
 
-uses 
-Classes, SysUtils, trndi.ext.functions, trndi.types, slicke.ux.alert, trndi.api, trndi.ext.engine,
-Trndi.Native, fpjson,
-dialogs, math;
+uses
+  Classes, SysUtils, trndi.ext.functions, trndi.types, slicke.ux.alert,
+  trndi.api, trndi.ext.engine,
+  Trndi.Native, fpjson,
+  Dialogs, Math;
 
-type 
-TJSFuncs = class(TObject)
-public
-  function asyncget(ctx: pointer; const func: string; const params: JSParameters; out res:
-    JSValueVal): boolean;
-  function jsonget(ctx: pointer; const func: string; const params: JSParameters; out res:
-    JSValueVal): boolean;
-  function bgDump(ctx: pointer; const func: string; const params: JSParameters; out res:
-    JSValueVal): boolean;
-  function setLimits(ctx: pointer; const func: string; const params: JSParameters; out res:
-    JSValueVal): boolean;
-  function querySvc(ctx: pointer; const func: string; const params: JSParameters; out res:
-    JSValueVal): boolean;
-  function runCMD(ctx: pointer; const func: string; const params: JSParameters; out res:
-    JSValueVal): boolean;
+type
+  TJSFuncs = class(TObject)
+  public
+    function asyncget(ctx: pointer; const func: string; const params: JSParameters;
+      out res: JSValueVal): boolean;
+    function jsonget(ctx: pointer; const func: string; const params: JSParameters;
+      out res: JSValueVal): boolean;
+    function bgDump(ctx: pointer; const func: string; const params: JSParameters;
+      out res: JSValueVal): boolean;
+    function setLimits(ctx: pointer; const func: string; const params: JSParameters;
+      out res: JSValueVal): boolean;
+    function querySvc(ctx: pointer; const func: string; const params: JSParameters;
+      out res: JSValueVal): boolean;
+    function runCMD(ctx: pointer; const func: string; const params: JSParameters;
+      out res: JSValueVal): boolean;
 
-  constructor Create(cgm: TrndiAPI);
+    constructor Create(cgm: TrndiAPI);
 
-private
-  tapi: TrndiAPI;
-  procedure ShowMsg(const str: string);
-end;
+  private
+    tapi: TrndiAPI;
+    procedure ShowMsg(const str: string);
+  end;
 
 implementation
 
@@ -63,10 +64,10 @@ begin
 
   with TTrndiExtEngine.Instance do
   begin
-      // Register the functions in JS
+    // Register the functions in JS
     AddPromise('bgDump', JSCallbackFunction(@bgDump));
     AddPromise('asyncGet', JSCallbackFunction(@asyncGet));
-    AddPromise('jsonGet', JSCallbackFunction(@jsonGet),2);
+    AddPromise('jsonGet', JSCallbackFunction(@jsonGet), 2);
     AddPromise('runCMD', JSCallbackFunction(@asyncGet));
     AddPromise('querySvc', JSCallbackFunction(@querySvc));
     AddPromise('setLimits', JSCallbackFunction(@setLimits), 2, 5);
@@ -76,70 +77,68 @@ end;
 
 procedure TJSFuncs.ShowMsg(const str: string);
 begin
-  ExtLog(uxdAuto, 'Message from Extension','An extension triggered a message', str, uxmtSquare);
+  ExtLog(uxdAuto, 'Message from Extension', 'An extension triggered a message',
+    str, uxmtSquare);
 end;
 
 // Blood Glucose dump, from JS
-function TJSFuncs.bgDump(ctx: pointer; const func: string; const params: JSParameters; out res:
-JSValueVal): boolean;
-
-var 
+function TJSFuncs.bgDump(ctx: pointer; const func: string;
+  const params: JSParameters; out res: JSValueVal): boolean;
+var
   i: integer;
   r: BGResults;
 begin
 
-  if params[1]^.data.match <> JD_INT then
+  if params[1]^.Data.match <> JD_INT then
   begin
     ShowMsg('Unknown paramter #1');
-    Exit(false);
+    Exit(False);
   end;
-  if params[2]^.data.match <> JD_INT then
+  if params[2]^.Data.match <> JD_INT then
   begin
     ShowMsg('Unknown paramter #2');
-    Exit(false);
+    Exit(False);
   end;
-  tapi.getReadings(params[0]^.data.Int32Val, params[1]^.data.Int32Val);
+  tapi.getReadings(params[0]^.Data.Int32Val, params[1]^.Data.Int32Val);
   //@fixme not done
-  result := true;
+  Result := True;
 end;
 
 // backend for asyncGet in JS
 // Fetches a file from the web
-function TJSFuncs.asyncget(ctx: pointer; const func: string; const params: JSParameters; out res:
-JSValueVal): boolean;
-
-var 
-  s,r: string;
+function TJSFuncs.asyncget(ctx: pointer; const func: string;
+  const params: JSParameters; out res: JSValueVal): boolean;
+var
+  s, r: string;
   v: JSValueVal;
 begin
   v := params[0]^;
   if not v.mustbe(JD_STR, func, 0) then
   begin
-    result := false;
+    Result := False;
     r := 'Wrong data type for URL';
     v := StringToValueVal(r);
-    Exit(false);
+    Exit(False);
   end;
 
-  if not TrndiNative.getURL(v.data.StrVal, s) then
+  if not TrndiNative.getURL(v.Data.StrVal, s) then
   begin
-    result := false;
-    r := 'Cannot fetch URL ' + v.data.strval;
+    Result := False;
+    r := 'Cannot fetch URL ' + v.Data.strval;
   end
   else
   begin
     r := s;
-    result := true;
+    Result := True;
   end;
   v := StringToValueVal(r);
   res := v;
 end;
 
-function TJSFuncs.jsonget(ctx: pointer; const func: string; const params: JSParameters; out res:
-JSValueVal): boolean;
-
+function TJSFuncs.jsonget(ctx: pointer; const func: string;
+  const params: JSParameters; out res: JSValueVal): boolean;
 var
-  s,r: string;
+  s, r: string;
   v, v2: JSValueVal;
   jsonData, jval: TJSONData;
 begin
@@ -149,39 +148,39 @@ begin
   // URL must be a string (param 0) and path must be a string (param 1)
   if not v.mustbe(JD_STR, func, 0) then
   begin
-    result := false;
+    Result := False;
     r := 'Wrong data type for URL';
     v := StringToValueVal(r);
     res := v;
-    Exit(false);
+    Exit(False);
   end;
   if not v2.mustbe(JD_STR, func, 1) then
   begin
-    result := false;
+    Result := False;
     r := 'Wrong data type for JSON path';
     v := StringToValueVal(r);
     res := v;
-    Exit(false);
+    Exit(False);
   end;
 
-  if not TrndiNative.getURL(v.data.StrVal, s) then
+  if not TrndiNative.getURL(v.Data.StrVal, s) then
   begin
-    result := false;
-    r := 'Cannot fetch URL ' + v.data.StrVal;
+    Result := False;
+    r := 'Cannot fetch URL ' + v.Data.StrVal;
     v := StringToValueVal(r);
     res := v;
-    Exit(false);
+    Exit(False);
   end;
 
   // Try to parse JSON and find the path. Uses fpjson.GetJSON and FindPath
   jsonData := nil;
   try
     jsonData := GetJSON(s);
-    jval := jsonData.FindPath(v2.data.StrVal); // path like "a.b[0].c"
+    jval := jsonData.FindPath(v2.Data.StrVal); // path like "a.b[0].c"
     if jval = nil then
     begin
-      result := false;
-      r := 'JSON path not found: ' + v2.data.StrVal;
+      Result := False;
+      r := 'JSON path not found: ' + v2.Data.StrVal;
     end
     else
     begin
@@ -190,12 +189,12 @@ begin
         r := jval.AsString
       else
         r := jval.AsJSON;
-      result := true;
+      Result := True;
     end;
   except
     on E: Exception do
     begin
-      result := false;
+      Result := False;
       r := 'JSON parse error: ' + E.Message;
     end;
   end;
@@ -207,31 +206,32 @@ begin
 end;
 
 // Set high/low values
-function TJSFuncs.setLimits(ctx: pointer; const func: string; const params: JSParameters; out res:
-JSValueVal): boolean;
-
+function TJSFuncs.setLimits(ctx: pointer; const func: string;
+  const params: JSParameters; out res: JSValueVal): boolean;
 var
   v: JSValueVal; // Return data
   times: single; // Unit multiplier
   f: boolean;
 begin
   // Values has to be int and might have a bool
-  if checkJSParams(params, [JD_INT, JD_INT, JD_INT, JD_INT], [JD_INT, JD_INT]) = JS_PARAM_OK then
+  if checkJSParams(params, [JD_INT, JD_INT, JD_INT, JD_INT], [JD_INT, JD_INT]) =
+    JS_PARAM_OK then
   begin
     times := 1;
-    f := false;
+    f := False;
   end
   else
-  if checkJSParams(params, [JD_F64, JD_F64, JD_F64, JD_F64], [JD_F64, JD_F64]) = JS_PARAM_OK then
+  if checkJSParams(params, [JD_F64, JD_F64, JD_F64, JD_F64], [JD_F64, JD_F64]) =
+    JS_PARAM_OK then
   begin
     times := 18.0182;
-    f := true;
+    f := True;
   end
   else
   begin
-    result := false;
-    res.data.Int32Val := -1;
-    Exit(false);
+    Result := False;
+    res.Data.Int32Val := -1;
+    Exit(False);
   end;
 
   tapi.cgmLo := round(params[0]^.floatify * times);
@@ -245,16 +245,15 @@ begin
 
   v := IntToValueVal(tapi.cgmHi);
   res := v;
-  result := true;
+  Result := True;
 end;
 
 // Query the backend via JS
-function TJSFuncs.querySvc(ctx: pointer; const func: string; const params: JSParameters; out res:
-JSValueVal): boolean;
-const 
+function TJSFuncs.querySvc(ctx: pointer; const func: string;
+  const params: JSParameters; out res: JSValueVal): boolean;
+const
   QUERY = 0;
-
-var 
+var
   sd: string;
   v: JSValueVal;
 begin
@@ -268,22 +267,23 @@ begin
 end;
 
 // Query the backend via JS
-function TJSFuncs.runCMD(ctx: pointer; const func: string; const params: JSParameters; out res:
-JSValueVal): boolean;
+function TJSFuncs.runCMD(ctx: pointer; const func: string;
+  const params: JSParameters; out res: JSValueVal): boolean;
 begin
   if not checkJSParams(params, [JD_STR], [JD_STR, JD_STR, JD_STR]) = JS_PARAM_OK then
   begin
-    result := false;
-    res.data.Int32Val := -1;
-    Exit(false);
+    Result := False;
+    res.Data.Int32Val := -1;
+    Exit(False);
   end;
 
-  if params.count = 2 then
-    res.data.Int32Val := ExecuteProcess(params[0]^.stringify, [])
+  if params.Count = 2 then
+    res.Data.Int32Val := ExecuteProcess(params[0]^.stringify, [])
   else
-    res.data.Int32Val := ExecuteProcess(params[0]^.stringify, params[1]^.stringify.Split(params[2]^.stringify));
+    res.Data.Int32Val := ExecuteProcess(params[0]^.stringify,
+      params[1]^.stringify.Split(params[2]^.stringify));
 
-  result := true;
+  Result := True;
 end;
 
 end.

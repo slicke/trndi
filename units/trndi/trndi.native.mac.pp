@@ -49,37 +49,40 @@ type
     {** Speak @param(Text) using the built-in 'say' command.
         Note: This call blocks until speech completes; dispatch from a
         background thread if you need non-blocking UI. }
-  procedure Speak(const Text: string); override;
+    procedure Speak(const Text: string); override;
     {** Enable dark appearance for the app UI via SimpleDarkMode.
         @returns(True once the request is made) }
-  class function setDarkMode: boolean;
+    class function setDarkMode: boolean;
 
     // Settings API overrides (NSUserDefaults/CFPreferences)
     {** Read a string from preferences; returns @param(def) when missing.
         Keys are scoped by @link(TTrndiNativeBase.buildKey). }
-    function GetSetting(const keyname: string; def: string = ''; global: boolean = false): string; override;
+    function GetSetting(const keyname: string; def: string = '';
+      global: boolean = False): string; override;
     {** Write a string to preferences under the scoped key. }
-    procedure SetSetting(const keyname: string; const val: string; global: boolean = false); override;
+    procedure SetSetting(const keyname: string; const val: string;
+      global: boolean = False); override;
     {** Delete a setting (sets to empty string as some backends lack delete). }
-    procedure DeleteSetting(const keyname: string; global: boolean = false); override;
+    procedure DeleteSetting(const keyname: string; global: boolean = False); override;
     {** Preferences are live; nothing to reload. }
     procedure ReloadSettings; override;
     // Badge
-  {** Set the dock tile badge label (text only). }
-  procedure SetBadge(const Value: string; BadgeColor: TColor); overload; reintroduce;
-  {** Ignore extra params and delegate to simple overload. }
-  procedure SetBadge(const Value: string; BadgeColor: TColor; badge_size_ratio: double; min_font_size: integer); overload; override;
+    {** Set the dock tile badge label (text only). }
+    procedure SetBadge(const Value: string; BadgeColor: TColor); overload; reintroduce;
+    {** Ignore extra params and delegate to simple overload. }
+    procedure SetBadge(const Value: string; BadgeColor: TColor;
+      badge_size_ratio: double; min_font_size: integer); overload; override;
   {** Simple HTTP GET using NS HTTP helper with default UA.
       @param(url URL to fetch)
       @param(res Out parameter receiving response body or error message)
       @returns(True on success) }
-  class function getURL(const url: string; out res: string): boolean; override;
-  {** True if AppleInterfaceStyle indicates dark mode. }
-  class function isDarkMode: boolean; override;
-  {** NSUserNotificationCenter is available on macOS. }
-  class function isNotificationSystemAvailable: boolean; override;
-  {** Identify the notification backend on macOS ('NSUserNotification'). }
-  class function getNotificationSystem: string; override;
+    class function getURL(const url: string; out res: string): boolean; override;
+    {** True if AppleInterfaceStyle indicates dark mode. }
+    class function isDarkMode: boolean; override;
+    {** NSUserNotificationCenter is available on macOS. }
+    class function isNotificationSystemAvailable: boolean; override;
+    {** Identify the notification backend on macOS ('NSUserNotification'). }
+    class function getNotificationSystem: string; override;
   end;
 
 implementation
@@ -128,19 +131,19 @@ begin
       if httpClient.SendAndReceive(send, response, headers) then
       begin
         res := Trim(response.DataString);
-        Result := true;
+        Result := True;
       end
       else
       begin
         // Normalize an error: LastErrMsg usually contains the reason
         res := Trim(httpClient.LastErrMsg);
-        Result := false;
+        Result := False;
       end;
     except
       on E: Exception do
       begin
         res := E.Message;
-        Result := false;
+        Result := False;
       end;
     end;
   finally
@@ -187,7 +190,7 @@ end;
   -----------
   Enable dark appearance for the app using SimpleDarkMode.
  ------------------------------------------------------------------------------}
-class function TTrndiNativeMac.setDarkMode: Boolean;
+class function TTrndiNativeMac.setDarkMode: boolean;
 begin
   // Enable dark appearance for the app's UI via SimpleDarkMode
   SimpleDarkMode.EnableAppDarkMode;
@@ -205,7 +208,7 @@ var
 begin
   NSS := NSSTR(Value);
   NSApp.dockTile.setBadgeLabel(NSS);
-  NSS.release;
+  NSS.Release;
 end;
 
 {------------------------------------------------------------------------------
@@ -213,7 +216,8 @@ end;
   -------------------------
   Ignore extra parameters and delegate to the simple overload on macOS.
  ------------------------------------------------------------------------------}
-procedure TTrndiNativeMac.SetBadge(const Value: string; BadgeColor: TColor; badge_size_ratio: double; min_font_size: integer);
+procedure TTrndiNativeMac.SetBadge(const Value: string; BadgeColor: TColor;
+  badge_size_ratio: double; min_font_size: integer);
 begin
   // Ignore extra params on macOS and delegate to the simple overload
   SetBadge(Value, BadgeColor);
@@ -224,7 +228,8 @@ end;
   -------------------------------------------------------
   Preferences-backed settings: read, write (no-op delete), and no reload.
  ------------------------------------------------------------------------------}
-function TTrndiNativeMac.GetSetting(const keyname: string; def: string; global: boolean): string;
+function TTrndiNativeMac.GetSetting(const keyname: string; def: string;
+  global: boolean): string;
 var
   key: string;
 begin
@@ -234,7 +239,8 @@ begin
     Result := def;
 end;
 
-procedure TTrndiNativeMac.SetSetting(const keyname: string; const val: string; global: boolean);
+procedure TTrndiNativeMac.SetSetting(const keyname: string; const val: string;
+  global: boolean);
 var
   key: string;
 begin

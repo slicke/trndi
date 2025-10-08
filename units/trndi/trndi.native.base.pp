@@ -27,7 +27,7 @@
 
 unit trndi.native.base;
 
-{$I ../../inc/native.inc} // Depending on your project setup, this may define X_WIN, X_PC, X_MAC, etc.
+{$I ../../inc/native.inc}// Depending on your project setup, this may define X_WIN, X_PC, X_MAC, etc.
 
 interface
 
@@ -50,14 +50,14 @@ interface
 
 uses
   Classes, SysUtils, Graphics
-{$IF DEFINED(X_MAC)}
+  {$IF DEFINED(X_MAC)}
   , NSMisc, ns_url_request, CocoaAll, LCLType
-{$ELSEIF DEFINED(X_WIN)}
+  {$ELSEIF DEFINED(X_WIN)}
   , Windows, Registry, Dialogs, StrUtils, winhttpclient, shellapi, comobj,
     Forms, variants, dwmapi
-{$ELSEIF DEFINED(X_PC)}
+  {$ELSEIF DEFINED(X_PC)}
   , libpascurl, Dialogs, LCLType
-{$ENDIF}
+  {$ENDIF}
   , process;
 
 type
@@ -68,7 +68,7 @@ type
 
   {** Information about a WSL environment (Windows Subsystem for Linux). }
   TWSLInfo = record
-    IsWSL: Boolean;       // True when running under WSL
+    IsWSL: boolean;       // True when running under WSL
     Version: TWSLVersion; // Detected version (1 or 2) when applicable
     DistroName: string;   // Optional distro name (if available)
     KernelVersion: string;// Kernel string as reported by /proc/version
@@ -79,34 +79,34 @@ type
   Note: Implement platform-specific behavior in subclasses. Keep the API
   stable; avoid leaking OS details into the base.
 }
-TTrndiNativeBase = class
-private
-  cfguser:   string;  // User prefix for config
+  TTrndiNativeBase = class
+  private
+    cfguser: string;  // User prefix for config
 
-  procedure updateLocale(const l: TFormatSettings);
-protected
-  fsettings: TFormatSettings;
-  // HTTP defaults
-  useragent: string;
-  baseurl:   string;
-  // Note: Platform-specific settings storage (e.g., INI on Linux) is managed
-  // by each platform unit, not the base class.
+    procedure updateLocale(const l: TFormatSettings);
+  protected
+    fsettings: TFormatSettings;
+    // HTTP defaults
+    useragent: string;
+    baseurl: string;
+    // Note: Platform-specific settings storage (e.g., INI on Linux) is managed
+    // by each platform unit, not the base class.
   {** Build a storage key. If not @param(global), prepend the current
     @code(configUser) with an underscore. }
-  function buildKey(const key: string; global: boolean): string;
-public
-  // Config
-  noFree: boolean;
-  noticeDuration: integer;
+    function buildKey(const key: string; global: boolean): string;
+  public
+    // Config
+    noFree: boolean;
+    noticeDuration: integer;
   class var touchOverride: TTrndiBool;
-  // Indicates if the user system is in a "dark mode" theme
-  dark: boolean;
+    // Indicates if the user system is in a "dark mode" theme
+    dark: boolean;
 
-  // Core actions
-  {** Speak text using native TTS on the current platform. }
-  procedure Speak(const Text: string); virtual; abstract;
-  {** Show a desktop notification or equivalent attention cue. }
-  procedure attention(topic, message: string); virtual;
+    // Core actions
+    {** Speak text using native TTS on the current platform. }
+    procedure Speak(const Text: string); virtual; abstract;
+    {** Show a desktop notification or equivalent attention cue. }
+    procedure attention(topic, message: string); virtual;
   {**
     Send an HTTP request to the configured @code(baseurl).
     @param(post) True for POST, False for GET.
@@ -117,120 +117,128 @@ public
     @param(prefix) True to prefix endpoint with baseurl.
     @returns(Response body or error message.)
   }
-  function request(const post: boolean; const endpoint: string;
-    const params: array of string; const jsondata: string = '';
-    const header: string = '';
-    prefix: boolean = true): string;
+    function request(const post: boolean; const endpoint: string;
+      const params: array of string; const jsondata: string = '';
+      const header: string = ''; prefix: boolean = True): string;
 
-  // Settings API
-  {** Store a non-user-scoped key (global). }
-  procedure SetRootSetting(keyname: string; const val: string);
-  {** Store a string value under @param(keyname). @param(global) bypasses user scoping. }
-  procedure SetSetting(const keyname: string; const val: string; global: boolean = false); virtual; abstract;
-  {** Store a boolean setting (serialized as 'true'/'false'). }
-  procedure SetBoolSetting(const keyname: string; const val: boolean);
-  {** Store a float setting (using '.' decimal separator). }
-  procedure SetFloatSetting(const keyname: string; const val: single);
-  {** Store a color value (TColor serialized as integer). }
-  procedure SetColorSetting(const keyname: string; val: TColor);
-  {** Store a WideChar (WideChar serialized as string). }
-  procedure SetWideCharSetting(const keyname: string; val: WideChar);
-  {** Retrieve a stored color or @param(def) if missing. }
-  function GetColorSetting(const keyname: string; const def: TColor = $000000): TColor;
-  {** Retrieve a stored WideChar or @param(def) if missing. }
-  function GetWideCharSetting(const keyname: string; const def: WideChar = WideChar($2B24)): WideChar;
-  {** Delete a key (optionally global) from storage. }
-  procedure DeleteSetting(const keyname: string; global: boolean = false); virtual; abstract;
-  {** Delete a non-user-scoped key. }
-  procedure DeleteRootSetting(keyname: string; const val: string);
-  {** Read a non-user-scoped key or default. }
-  function GetRootSetting(const keyname: string; def: string = ''): string;
-  {** Read a string setting or default; honor @param(global) scoping. }
-  function GetSetting(const keyname: string; def: string = ''; global: boolean = false): string; virtual; abstract;
-  {** Read a char setting (first character), or @param(def). }
-  function GetCharSetting(const keyname: string; def: char = #0): char;
-  {** Read an integer setting or @param(def). }
-  function GetIntSetting(const keyname: string; def: integer = -1): integer;
-  {** Read a single-precision float setting or @param(def). }
-  function GetFloatSetting(const keyname: string; def: single = -1): single;
-  {** Read a boolean setting or @param(def). Accepts 'true'/'false'. }
-  function GetBoolSetting(const keyname: string; def: boolean = false): boolean;
-  {** Reload settings backend state (if any). }
-  procedure ReloadSettings; virtual; abstract;
-  {** Read setting, empty will return default. }
-  function GetSettingEx(const keyname: string; def: string=''; global: boolean=false): string;
+    // Settings API
+    {** Store a non-user-scoped key (global). }
+    procedure SetRootSetting(keyname: string; const val: string);
+    {** Store a string value under @param(keyname). @param(global) bypasses user scoping. }
+    procedure SetSetting(const keyname: string; const val: string;
+      global: boolean = False); virtual; abstract;
+    {** Store a boolean setting (serialized as 'true'/'false'). }
+    procedure SetBoolSetting(const keyname: string; const val: boolean);
+    {** Store a float setting (using '.' decimal separator). }
+    procedure SetFloatSetting(const keyname: string; const val: single);
+    {** Store a color value (TColor serialized as integer). }
+    procedure SetColorSetting(const keyname: string; val: TColor);
+    {** Store a WideChar (WideChar serialized as string). }
+    procedure SetWideCharSetting(const keyname: string; val: widechar);
+    {** Retrieve a stored color or @param(def) if missing. }
+    function GetColorSetting(const keyname: string; const def: TColor = $000000): TColor;
+    {** Retrieve a stored WideChar or @param(def) if missing. }
+    function GetWideCharSetting(const keyname: string;
+      const def: widechar = widechar($2B24)): widechar;
+    {** Delete a key (optionally global) from storage. }
+    procedure DeleteSetting(const keyname: string; global: boolean = False);
+      virtual; abstract;
+    {** Delete a non-user-scoped key. }
+    procedure DeleteRootSetting(keyname: string; const val: string);
+    {** Read a non-user-scoped key or default. }
+    function GetRootSetting(const keyname: string; def: string = ''): string;
+    {** Read a string setting or default; honor @param(global) scoping. }
+    function GetSetting(const keyname: string; def: string = '';
+      global: boolean = False): string; virtual; abstract;
+    {** Read a char setting (first character), or @param(def). }
+    function GetCharSetting(const keyname: string; def: char = #0): char;
+    {** Read an integer setting or @param(def). }
+    function GetIntSetting(const keyname: string; def: integer = -1): integer;
+    {** Read a single-precision float setting or @param(def). }
+    function GetFloatSetting(const keyname: string; def: single = -1): single;
+    {** Read a boolean setting or @param(def). Accepts 'true'/'false'. }
+    function GetBoolSetting(const keyname: string; def: boolean = False): boolean;
+    {** Reload settings backend state (if any). }
+    procedure ReloadSettings; virtual; abstract;
+    {** Read setting, empty will return default. }
+    function GetSettingEx(const keyname: string; def: string = '';
+      global: boolean = False): string;
 
-  // Theme/Env
-  {** Determine if the OS/theme uses a dark appearance. Platforms override. }
-  class function isDarkMode: boolean; virtual;
-  class function DetectTouchScreen(out multi: boolean): boolean;
-  {** Detect if the device has a touchscreen and whether it's multi-touch. }
-  class function HasTouchScreen(out multi: boolean): boolean;
-  class function HasTouchScreen: boolean;
-  {** Simple HTTP GET helper; platform units implement. }
-  class function getURL(const url: string; out res: string): boolean; virtual; abstract;
-  class function GetOSLanguage: string;
-  class function HasDangerousChars(const FileName: string): Boolean; static;
-  class function DetectWSL: TWSLInfo;
-  // Notifications
-  {** True if a native notification system is available (override per platform). }
-  class function isNotificationSystemAvailable: boolean; virtual;
+    // Theme/Env
+    {** Determine if the OS/theme uses a dark appearance. Platforms override. }
+    class function isDarkMode: boolean; virtual;
+    class function DetectTouchScreen(out multi: boolean): boolean;
+    {** Detect if the device has a touchscreen and whether it's multi-touch. }
+    class function HasTouchScreen(out multi: boolean): boolean;
+    class function HasTouchScreen: boolean;
+    {** Simple HTTP GET helper; platform units implement. }
+    class function getURL(const url: string; out res: string): boolean; virtual; abstract;
+    class function GetOSLanguage: string;
+    class function HasDangerousChars(const FileName: string): boolean; static;
+    class function DetectWSL: TWSLInfo;
+    // Notifications
+    {** True if a native notification system is available (override per platform). }
+    class function isNotificationSystemAvailable: boolean; virtual;
   {** Identify the notification backend in use on this platform.
       Examples: 'notify-send', 'gdbus', 'BurntToast', 'NSUserNotification', 'none', 'unknown'.
       Platforms should override to provide a concrete value. }
-  class function getNotificationSystem: string; virtual;
-  {** Alias for readability: forwards to @link(isNotificationSystemAvailable). }
-  class function HasNotifications: boolean;
+    class function getNotificationSystem: string; virtual;
+    {** Alias for readability: forwards to @link(isNotificationSystemAvailable). }
+    class function HasNotifications: boolean;
 
-  // Lifecycle and UI
-  destructor Destroy; override;
-  {** Optional startup hook; platform units may override. }
-  procedure start;
-  {** Optional shutdown hook; platform units may override. }
-  procedure done;
-  // Badge: provide a convenience overload and a virtual full version
-  {** Convenience overload for drawing a badge on the app icon/tray. }
-  procedure setBadge(const Value: string; badgeColor: TColor); overload;
-  {** Platform override for badge rendering control. }
-  procedure setBadge(const Value: string; badgeColor: TColor; badge_size_ratio: Double; min_font_size: Integer); virtual; overload;
-  {** Start flashing the badge (platform may animate icon). Base no-op. }
-  procedure StartBadgeFlash(const Value: string; badgeColor: TColor; DurationMS: Integer = 10000; CycleMS: Integer = 400); virtual;
-  {** Stop any active badge flashing and restore a static badge. Base no-op. }
-  procedure StopBadgeFlash; virtual;
-  {** Set native window titlebar colors if supported. }
-  class function SetTitleColor(form: THandle; bg, text: TColor): boolean; virtual;
-  {** Play an audio file using native facilities (safe file check included). }
-  class procedure PlaySound(const FileName: string);
+    // Lifecycle and UI
+    destructor Destroy; override;
+    {** Optional startup hook; platform units may override. }
+    procedure start;
+    {** Optional shutdown hook; platform units may override. }
+    procedure done;
+    // Badge: provide a convenience overload and a virtual full version
+    {** Convenience overload for drawing a badge on the app icon/tray. }
+    procedure setBadge(const Value: string; badgeColor: TColor); overload;
+    {** Platform override for badge rendering control. }
+    procedure setBadge(const Value: string; badgeColor: TColor;
+      badge_size_ratio: double; min_font_size: integer); virtual; overload;
+    {** Start flashing the badge (platform may animate icon). Base no-op. }
+    procedure StartBadgeFlash(const Value: string; badgeColor: TColor;
+      DurationMS: integer = 10000; CycleMS: integer = 400); virtual;
+    {** Stop any active badge flashing and restore a static badge. Base no-op. }
+    procedure StopBadgeFlash; virtual;
+    {** Set native window titlebar colors if supported. }
+    class function SetTitleColor(form: THandle; bg, Text: TColor): boolean; virtual;
+    {** Play an audio file using native facilities (safe file check included). }
+    class procedure PlaySound(const FileName: string);
 
-  // Constructors
-  {** Create with custom user-agent and base URL. }
-  constructor create(ua, base: string); overload;
-  {** Create with custom user-agent and default base URL. }
-  constructor create(ua: string); overload;
-  {** Create with default user-agent and base URL. }
-  constructor create; overload;
+    // Constructors
+    {** Create with custom user-agent and base URL. }
+    constructor Create(ua, base: string); overload;
+    {** Create with custom user-agent and default base URL. }
+    constructor Create(ua: string); overload;
+    {** Create with default user-agent and base URL. }
+    constructor Create; overload;
 
-  // Properties
-  property configUser: string read cfguser write cfguser;
-  property locale: TFormatSettings read fsettings write updateLocale;
+    // Properties
+    property configUser: string read cfguser write cfguser;
+    property locale: TFormatSettings read fsettings write updateLocale;
 
-end;
+  end;
 
-//procedure QWindow_setWindowBadge(window: QWindowH; badge: PChar); cdecl; external 'libQt6Gui.so.6';
+  //procedure QWindow_setWindowBadge(window: QWindowH; badge: PChar); cdecl; external 'libQt6Gui.so.6';
 
 const
   DWMWA_CAPTION_COLOR = 35;
-  DWMWA_TEXT_COLOR    = 36;
+  DWMWA_TEXT_COLOR = 36;
   DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
   // Default badge rendering parameters
   DEFAULT_BADGE_SIZE_RATIO = 0.8;
-  DEFAULT_MIN_FONT_SIZE    = 8;
+  DEFAULT_MIN_FONT_SIZE = 8;
 
-// (implementation continued)
+  // (implementation continued)
 
 implementation
+
 // C-compatible write callback used by libcurl to collect response data.
-function CurlWriteCallback(buffer: PChar; size, nmemb: LongWord; userdata: Pointer): LongWord; cdecl;
+function CurlWriteCallback(buffer: pchar; size, nmemb: longword;
+  userdata: Pointer): longword; cdecl;
 var
   Bytes: SizeInt;
   SS: TStringStream;
@@ -265,11 +273,11 @@ end;
 function TTrndiNativeBase.buildKey(const key: string; global: boolean): string;
 begin
   if global then
-    result := key
+    Result := key
   else if Trim(cfguser) <> '' then // Prepend the username and _
-    result := Format('%s_%s', [cfguser, key])
+    Result := Format('%s_%s', [cfguser, key])
   else
-    result := key;
+    Result := key;
 end;
 
 {------------------------------------------------------------------------------
@@ -332,12 +340,14 @@ begin
   SetBadge(Value, badgeColor, DEFAULT_BADGE_SIZE_RATIO, DEFAULT_MIN_FONT_SIZE);
 end;
 
-procedure TTrndiNativeBase.SetBadge(const Value: string; BadgeColor: TColor; badge_size_ratio: double; min_font_size: integer);
+procedure TTrndiNativeBase.SetBadge(const Value: string; BadgeColor: TColor;
+  badge_size_ratio: double; min_font_size: integer);
 begin
   // No-op by default in base; platform classes override
 end;
 
-procedure TTrndiNativeBase.StartBadgeFlash(const Value: string; badgeColor: TColor; DurationMS: Integer; CycleMS: Integer);
+procedure TTrndiNativeBase.StartBadgeFlash(const Value: string;
+  badgeColor: TColor; DurationMS: integer; CycleMS: integer);
 begin
   // Base: no animation. Platforms that support icon updates override.
   SetBadge(Value, badgeColor, DEFAULT_BADGE_SIZE_RATIO, DEFAULT_MIN_FONT_SIZE);
@@ -355,13 +365,13 @@ end;
   Includes a basic validation on extension and characters to avoid shell issues.
  ------------------------------------------------------------------------------}
 class procedure TTrndiNativeBase.PlaySound(const FileName: string);
-  function sIsValidAudioFile(const FileName: string): Boolean;
+
+  function sIsValidAudioFile(const FileName: string): boolean;
   var
     Ext: string;
-    ValidExtensions: array[0..6] of string = (
-      '.wav', '.mp3', '.ogg', '.flac', '.aac', '.wma', '.m4a'
-    );
-    i: Integer;
+    ValidExtensions: array[0..6] of
+    string = ('.wav', '.mp3', '.ogg', '.flac', '.aac', '.wma', '.m4a');
+    i: integer;
   begin
     Result := False;
 
@@ -386,6 +396,7 @@ class procedure TTrndiNativeBase.PlaySound(const FileName: string);
 
     Result := True;
   end;
+
 var
   Process: TProcess;
 begin
@@ -401,17 +412,17 @@ begin
     Process.Parameters.Add('/play');
     Process.Parameters.Add('/close');
     Process.Parameters.Add(FileName);
-    {$ENDIF}
+  {$ENDIF}
 
     {$IFDEF X_LINUXBSD}
     Process.Executable := 'aplay';
     Process.Parameters.Add(FileName);
-    {$ENDIF}
+  {$ENDIF}
 
     {$IFDEF X_MAC}
     Process.Executable := 'afplay';
     Process.Parameters.Add(FileName);
-    {$ENDIF}
+  {$ENDIF}
     Process.Execute;
   finally
     Process.Free;
@@ -433,28 +444,28 @@ end;
   --------------------------
   Overridable touch screen setting
  ------------------------------------------------------------------------------}
- class function TTrndiNativeBase.HasTouchScreen(out multi: boolean): boolean;
- begin
-   DetectTouchScreen(multi);
-   result := HasTouchScreen;
- end;
+class function TTrndiNativeBase.HasTouchScreen(out multi: boolean): boolean;
+begin
+  DetectTouchScreen(multi);
+  Result := HasTouchScreen;
+end;
 
 {------------------------------------------------------------------------------
   HasTouchScreen
   --------------
   Detect if the system has a touchscreen. Honors the touchOverride flag first.
  ------------------------------------------------------------------------------}
- class function TTrndiNativeBase.HasTouchScreen: boolean;
- var
-   mt: boolean;
- begin
-   case touchOverride of
-     tbTrue: result := true;
-     tbFalse: result := false;
-   else
-     result := DetectTouchScreen(mt);
-   end;
- end;
+class function TTrndiNativeBase.HasTouchScreen: boolean;
+var
+  mt: boolean;
+begin
+  case touchOverride of
+    tbTrue: Result := True;
+    tbFalse: Result := False;
+    else
+      Result := DetectTouchScreen(mt);
+  end;
+end;
 
 {------------------------------------------------------------------------------
   DetectTouchScreen (platform)
@@ -471,12 +482,13 @@ const
   NID_EXTERNAL_PEN = $00000008;
   NID_MULTI_INPUT = $00000040;
   NID_READY = $00000080;
-function IsTouchReady: boolean;
+
+  function IsTouchReady: boolean;
   var
-    value: integer;
+    Value: integer;
   begin
-    value := GetSystemMetrics(SM_DIGITIZER);
-    Result := value and NID_READY <> 0;
+    Value := GetSystemMetrics(SM_DIGITIZER);
+    Result := Value and NID_READY <> 0;
   end;
 
 {------------------------------------------------------------------------------
@@ -484,12 +496,12 @@ function IsTouchReady: boolean;
   ------------
   Detect more than one touch point
  ------------------------------------------------------------------------------}
-function IsMultiTouch: boolean;
+  function IsMultiTouch: boolean;
   var
-    value: integer;
+    Value: integer;
   begin
-    value := GetSystemMetrics(SM_DIGITIZER);
-    Result := value and NID_MULTI_INPUT <> 0;
+    Value := GetSystemMetrics(SM_DIGITIZER);
+    Result := Value and NID_MULTI_INPUT <> 0;
   end;
 
 {------------------------------------------------------------------------------
@@ -497,19 +509,20 @@ function IsMultiTouch: boolean;
   ------------------
   Detect a touch-first device
  ------------------------------------------------------------------------------}
-function HasIntegratedTouch: boolean;
+  function HasIntegratedTouch: boolean;
   var
-    value: integer;
+    Value: integer;
   begin
-    value := GetSystemMetrics(SM_DIGITIZER);
-    Result := value and NID_INTEGRATED_TOUCH <> 0;
+    Value := GetSystemMetrics(SM_DIGITIZER);
+    Result := Value and NID_INTEGRATED_TOUCH <> 0;
   end;
+
 var
   val: integer;
 const
   SM_MAXIMUMTOUCHES = 95;
 begin
-  result := (HasIntegratedTouch) and (IsTouchReady);
+  Result := (HasIntegratedTouch) and (IsTouchReady);
   multi := IsMultiTouch;
 end;
 {$ELSEIF DEFINED(X_MAC)}
@@ -585,10 +598,10 @@ end;
   ----------------------------
   An empty constructor that defaults useragent/baseurl to minimal placeholders.
  ------------------------------------------------------------------------------}
-constructor TTrndiNativeBase.create;
+constructor TTrndiNativeBase.Create;
 begin
   // Provide a default user-agent and empty base URL
-  create('Mozilla/5.0 (compatible; trndi) TrndiAPI', '');
+  Create('Mozilla/5.0 (compatible; trndi) TrndiAPI', '');
 end;
 
 {------------------------------------------------------------------------------
@@ -596,10 +609,10 @@ end;
   ----------------------------
   Allow a custom user-agent.
  ------------------------------------------------------------------------------}
-constructor TTrndiNativeBase.create(ua: string);
+constructor TTrndiNativeBase.Create(ua: string);
 begin
   // Provide a default user-agent and empty base URL
-  create(ua, '');
+  Create(ua, '');
 end;
 
 {------------------------------------------------------------------------------
@@ -608,21 +621,21 @@ end;
   Allows specifying a custom user-agent and a base URL.
  -------------------------------------------------------
  -----------------------}
-constructor TTrndiNativeBase.create(ua, base: string);
+constructor TTrndiNativeBase.Create(ua, base: string);
 begin
   useragent := ua;
-  baseurl   := base;
+  baseurl := base;
   // Check if we're in dark mode on creation
   dark := isDarkMode;
   fsettings := DefaultFormatSettings;
   if touchOverride = tbUnset then
-     touchOverride := tbUnknown;
+    touchOverride := tbUnknown;
   cfguser := '';
-  nofree := true;
-   noticeDuration := 5000;
+  nofree := True;
+  noticeDuration := 5000;
 end;
 
-  {$IFDEF X_WIN}
+{$IFDEF X_WIN}
   {------------------------------------------------------------------------------
     getLocaleInformation
   -------------------
@@ -655,11 +668,11 @@ begin
   {$IFDEF X_WIN}
    Result := GetLocaleInformation(LOCALE_SENGLANGUAGE);
   {$ELSE}
-    {$IFDEF X_MAC}
+  {$IFDEF X_MAC}
       result := NSLocale.currentLocale.localeIdentifier.UTF8String;
-    {$ELSE}
-       Result := SysUtils.GetEnvironmentVariable('LANG');
-    {$ENDIF}
+  {$ELSE}
+  Result := SysUtils.GetEnvironmentVariable('LANG');
+  {$ENDIF}
   {$ENDIF}
 end;
 
@@ -673,59 +686,67 @@ end;
 
 procedure TTrndiNativeBase.attention(topic, message: string);
 {$if  DEFINED(X_LINUXBSD)}
-function RunAndCapture(const Exec: string; const Params: array of string;
-                       out StdoutS, StderrS: string; out ExitCode: Integer): Boolean;
-var
-  P: TProcess;
-  i: Integer;
-  OutStr, ErrStr: TStringStream;
-  Buf: array[0..4095] of byte;
-  n: SizeInt;
-begin
-  Result := False;
-  StdoutS := ''; StderrS := ''; ExitCode := -1;
+  function RunAndCapture(const Exec: string; const Params: array of string;
+    out StdoutS, StderrS: string; out ExitCode: integer): boolean;
+  var
+    P: TProcess;
+    i: integer;
+    OutStr, ErrStr: TStringStream;
+    Buf: array[0..4095] of byte;
+    n: SizeInt;
+  begin
+    Result := False;
+    StdoutS := '';
+    StderrS := '';
+    ExitCode := -1;
 
-  P := TProcess.Create(nil);
-  OutStr := TStringStream.Create('');
-  ErrStr := TStringStream.Create('');
-  try
-    P.Executable := Exec;
-    for i := 0 to High(Params) do
-      P.Parameters.Add(Params[i]);
-    P.Options := [poUsePipes, poWaitOnExit];
-    P.ShowWindow := swoHIDE;
-    P.Execute;
+    P := TProcess.Create(nil);
+    OutStr := TStringStream.Create('');
+    ErrStr := TStringStream.Create('');
+    try
+      P.Executable := Exec;
+      for i := 0 to High(Params) do
+        P.Parameters.Add(Params[i]);
+      P.Options := [poUsePipes, poWaitOnExit];
+      P.ShowWindow := swoHIDE;
+      P.Execute;
 
-    // Drain stdout/stderr fully (works on Linux/Qt6)
-    repeat
-      while P.Output.NumBytesAvailable > 0 do
-      begin
-        n := P.Output.Read(Buf, SizeOf(Buf));
-        if n > 0 then OutStr.WriteBuffer(Buf, n) else Break;
-      end;
-      while P.Stderr.NumBytesAvailable > 0 do
-      begin
-        n := P.Stderr.Read(Buf, SizeOf(Buf));
-        if n > 0 then ErrStr.WriteBuffer(Buf, n) else Break;
-      end;
-      if not P.Running then Break;
-      Sleep(5);
-    until False;
+      // Drain stdout/stderr fully (works on Linux/Qt6)
+      repeat
+        while P.Output.NumBytesAvailable > 0 do
+        begin
+          n := P.Output.Read(Buf, SizeOf(Buf));
+          if n > 0 then OutStr.WriteBuffer(Buf, n)
+          else
+            Break;
+        end;
+        while P.Stderr.NumBytesAvailable > 0 do
+        begin
+          n := P.Stderr.Read(Buf, SizeOf(Buf));
+          if n > 0 then ErrStr.WriteBuffer(Buf, n)
+          else
+            Break;
+        end;
+        if not P.Running then Break;
+        Sleep(5);
+      until False;
 
-    ExitCode := P.ExitStatus;
-    StdoutS := OutStr.DataString;
-    StderrS := ErrStr.DataString;
-    Result := ExitCode = 0;
-  finally
-    ErrStr.Free; OutStr.Free; P.Free;
+      ExitCode := P.ExitStatus;
+      StdoutS := OutStr.DataString;
+      StderrS := ErrStr.DataString;
+      Result := ExitCode = 0;
+    finally
+      ErrStr.Free;
+      OutStr.Free;
+      P.Free;
+    end;
   end;
-end;
 
-procedure SendNotification(Title, Message: string);
-var
-  AProcess: TProcess;
-begin
-  {$IFDEF X_PC}
+  procedure SendNotification(Title, Message: string);
+  var
+    AProcess: TProcess;
+  begin
+    {$IFDEF X_PC}
   // Linux unit may override attention or provide notification availability
   if isNotificationSystemAvailable then
   begin
@@ -742,8 +763,8 @@ begin
   end
   else
    // ShowMessage('notify-send is required for Trndi to make notifications!');
-  {$ENDIF}
-end;
+    {$ENDIF}
+  end;
   {$endif}
   {$if defined(X_WIN)}
 
@@ -752,132 +773,119 @@ end;
   -------------------
   Quote text for PowerShell
  ------------------------------------------------------------------------------}
-function PSQuote(const S: UnicodeString): UnicodeString;
-begin
-  // PowerShell single-quoted literal; escape embedded single quotes
-  Result := '''' + StringReplace(S, '''', '''''', [rfReplaceAll]) + '''';
-end;
+  function PSQuote(const S: unicodestring): unicodestring;
+  begin
+    // PowerShell single-quoted literal; escape embedded single quotes
+    Result := '''' + StringReplace(S, '''', '''''', [rfReplaceAll]) + '''';
+  end;
 
 {------------------------------------------------------------------------------
   GetExePathW
   -------------------
   Get the app's path on Windows as a UTF8 string
  ------------------------------------------------------------------------------}
-function GetExePathW: UnicodeString;
-var
-  Buf: array[0..32767] of WideChar;
-  Len: DWORD;
-begin
-  Len := GetModuleFileNameW(0, @Buf[0], Length(Buf));
-  SetString(Result, PWideChar(@Buf[0]), Len);
-end;
+  function GetExePathW: unicodestring;
+  var
+    Buf: array[0..32767] of widechar;
+    Len: DWORD;
+  begin
+    Len := GetModuleFileNameW(0, @Buf[0], Length(Buf));
+    SetString(Result, pwidechar(@Buf[0]), Len);
+  end;
 
 {------------------------------------------------------------------------------
   GetEnvVarW
   -------------------
   Get the PATH on Windows as a UTF8 string
  ------------------------------------------------------------------------------}
-function GetEnvVarW(const Name: UnicodeString): UnicodeString;
-var
-  Buf: array[0..32767] of WideChar;
-  Len: DWORD;
-begin
-  Len := GetEnvironmentVariableW(PWideChar(Name), @Buf[0], Length(Buf));
-  if Len = 0 then
-    Result := ''
-  else
-    SetString(Result, PWideChar(@Buf[0]), Len);
-end;
+  function GetEnvVarW(const Name: unicodestring): unicodestring;
+  var
+    Buf: array[0..32767] of widechar;
+    Len: DWORD;
+  begin
+    Len := GetEnvironmentVariableW(pwidechar(Name), @Buf[0], Length(Buf));
+    if Len = 0 then
+      Result := ''
+    else
+      SetString(Result, pwidechar(@Buf[0]), Len);
+  end;
 
 {------------------------------------------------------------------------------
   SendNotification
   -------------------
   Send a notification to the desktop
  ------------------------------------------------------------------------------}
-procedure SendNotification(const Title, Msg: UnicodeString);
-var
-  AppPath, TempDir, TempPng, LogPath: UnicodeString;
-  Script, CommandLine: UnicodeString;
-  SI: Windows.STARTUPINFOW;
-  PI: Windows.PROCESS_INFORMATION;
-begin
-  AppPath := GetExePathW;
-  TempDir := GetEnvVarW('TEMP');
-  if (TempDir <> '') and (TempDir[Length(TempDir)] <> '\') then
-    TempDir := TempDir + '\';
-  TempPng := TempDir + ExtractFileName(ChangeFileExt(AppPath, '')) + '-toast-logo.png';
-  LogPath := TempDir + 'burnttoast-error.log';
-
-  // PS script: try to extract icon -> PNG; if any error, write to log and still show toast without logo
-  Script :=
-    '$ErrorActionPreference = ''Stop''; ' +
-    '$log = ' + PSQuote(LogPath) + '; ' +
-    'try { ' +
-      'Import-Module BurntToast; ' +
-      'Add-Type -AssemblyName System.Drawing; ' +
-      '$exe = ' + PSQuote(AppPath) + '; ' +
-      '$png = ' + PSQuote(TempPng) + '; ' +
-      '$ico = [System.Drawing.Icon]::ExtractAssociatedIcon($exe); ' +
-      'if ($ico) { ' +
-        '$bmp = $ico.ToBitmap(); ' +
-        '$bmp2 = New-Object System.Drawing.Bitmap 64,64; ' +
-        '$g = [System.Drawing.Graphics]::FromImage($bmp2); ' +
-        '$g.Clear([System.Drawing.Color]::Transparent); ' +
-        '$g.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic; ' +
-        '$g.DrawImage($bmp,0,0,64,64); ' +
-        '$bmp2.Save($png, [System.Drawing.Imaging.ImageFormat]::Png); ' +
-        '$g.Dispose(); $bmp.Dispose(); $bmp2.Dispose(); $ico.Dispose(); ' +
-      '} ' +
-      'if (Test-Path $png) { ' +
-        'New-BurntToastNotification -AppLogo $png -Text ' + PSQuote(Title) + ', ' + PSQuote(Msg) + '; ' +
-      '} else { ' +
-        'New-BurntToastNotification -Text ' + PSQuote(Title) + ', ' + PSQuote(Msg) + '; ' +
-      '} ' +
-    '} catch { ' +
-      'try { $_ | Out-String | Set-Content -Path $log -Encoding UTF8 } catch {} ' +
-      'New-BurntToastNotification -Text ' + PSQuote(Title) + ', ' + PSQuote(Msg) + '; ' +
-    '}';
-
-  CommandLine := 'powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "' + Script + '"';
-
-  FillChar(SI, SizeOf(SI), 0);
-  SI.cb := SizeOf(SI);
-  SI.dwFlags := STARTF_USESHOWWINDOW;
-  SI.wShowWindow := SW_HIDE;
-
-  UniqueString(CommandLine);
-
-  if not Windows.CreateProcessW(
-    nil,
-    PWideChar(CommandLine),
-    nil, nil,
-    False,
-    CREATE_NO_WINDOW,
-    nil,
-    nil,
-    SI,
-    PI
-  ) then
-    RaiseLastOSError
-  else
+  procedure SendNotification(const Title, Msg: unicodestring);
+  var
+    AppPath, TempDir, TempPng, LogPath: unicodestring;
+    Script, CommandLine: unicodestring;
+    SI: Windows.STARTUPINFOW;
+    PI: Windows.PROCESS_INFORMATION;
   begin
-    CloseHandle(PI.hThread);
-    CloseHandle(PI.hProcess);
+    AppPath := GetExePathW;
+    TempDir := GetEnvVarW('TEMP');
+    if (TempDir <> '') and (TempDir[Length(TempDir)] <> '\') then
+      TempDir := TempDir + '\';
+    TempPng := TempDir + ExtractFileName(ChangeFileExt(AppPath, '')) + '-toast-logo.png';
+    LogPath := TempDir + 'burnttoast-error.log';
+
+    // PS script: try to extract icon -> PNG; if any error, write to log and still show toast without logo
+    Script :=
+      '$ErrorActionPreference = ''Stop''; ' + '$log = ' + PSQuote(LogPath) +
+      '; ' + 'try { ' + 'Import-Module BurntToast; ' +
+      'Add-Type -AssemblyName System.Drawing; ' + '$exe = ' +
+      PSQuote(AppPath) + '; ' + '$png = ' + PSQuote(TempPng) + '; ' +
+      '$ico = [System.Drawing.Icon]::ExtractAssociatedIcon($exe); ' +
+      'if ($ico) { ' + '$bmp = $ico.ToBitmap(); ' +
+      '$bmp2 = New-Object System.Drawing.Bitmap 64,64; ' +
+      '$g = [System.Drawing.Graphics]::FromImage($bmp2); ' +
+      '$g.Clear([System.Drawing.Color]::Transparent); ' +
+      '$g.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic; '
+      + '$g.DrawImage($bmp,0,0,64,64); ' +
+      '$bmp2.Save($png, [System.Drawing.Imaging.ImageFormat]::Png); ' +
+      '$g.Dispose(); $bmp.Dispose(); $bmp2.Dispose(); $ico.Dispose(); ' +
+      '} ' + 'if (Test-Path $png) { ' +
+      'New-BurntToastNotification -AppLogo $png -Text ' + PSQuote(Title) +
+      ', ' + PSQuote(Msg) + '; ' + '} else { ' +
+      'New-BurntToastNotification -Text ' + PSQuote(Title) + ', ' +
+      PSQuote(Msg) + '; ' + '} ' + '} catch { ' +
+      'try { $_ | Out-String | Set-Content -Path $log -Encoding UTF8 } catch {} ' +
+      'New-BurntToastNotification -Text ' + PSQuote(Title) + ', ' +
+      PSQuote(Msg) + '; ' + '}';
+
+    CommandLine := 'powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "' +
+      Script + '"';
+
+    FillChar(SI, SizeOf(SI), 0);
+    SI.cb := SizeOf(SI);
+    SI.dwFlags := STARTF_USESHOWWINDOW;
+    SI.wShowWindow := SW_HIDE;
+
+    UniqueString(CommandLine);
+
+    if not Windows.CreateProcessW(nil, pwidechar(CommandLine),
+      nil, nil, False, CREATE_NO_WINDOW, nil, nil, SI, PI) then
+      RaiseLastOSError
+    else
+    begin
+      CloseHandle(PI.hThread);
+      CloseHandle(PI.hProcess);
+    end;
   end;
-end;
 
   {$endif}
   {$IF DEFINED(X_MAC)}
   procedure SendNotification(const title, msg: string);
   var
-  Notification: NSUserNotification;
-begin
-  Notification := NSUserNotification.alloc.init;
-  Notification.setTitle(NSSTR(Title));
-  Notification.setInformativeText(NSSTR(Message));
-  NSUserNotificationCenter.defaultUserNotificationCenter.deliverNotification(Notification);
-  Notification.release;
-end;
+    Notification: NSUserNotification;
+  begin
+    Notification := NSUserNotification.alloc.init;
+    Notification.setTitle(NSSTR(Title));
+    Notification.setInformativeText(NSSTR(Message));
+    NSUserNotificationCenter.defaultUserNotificationCenter.deliverNotification(
+      Notification);
+    Notification.Release;
+  end;
   {$endif}
 begin
   SendNotification(topic, message);
@@ -894,8 +902,8 @@ end;
  ------------------------------------------------------------------------------}
 {$IF DEFINED(X_MAC)}
 function TTrndiNativeBase.request(const post: boolean; const endpoint: string;
-const params: array of string; const jsondata: string = '';
-const header: string = ''; prefix: boolean = true): string;
+  const params: array of string; const jsondata: string = '';
+  const header: string = ''; prefix: boolean = True): string;
 var
   res, send: TStringStream;
   headers: TStringList;
@@ -1151,13 +1159,13 @@ end;
  ------------------------------------------------------------------------------}
 function TTrndiNativeBase.GetCharSetting(const keyname: string; def: char = #0): char;
 var
- res: string;
+  res: string;
 begin
-  res := GetSetting(keyname,'');
+  res := GetSetting(keyname, '');
   if res = '' then
-    result := def
+    Result := def
   else
-    result := res[1];
+    Result := res[1];
 end;
 
 {------------------------------------------------------------------------------
@@ -1165,9 +1173,10 @@ end;
   -------------------
   Returns a bool from settings if parseable, else returns `def`.
  ------------------------------------------------------------------------------}
-function TTrndiNativeBase.GetRootSetting(const keyname: string; def: string = ''): string;
+function TTrndiNativeBase.GetRootSetting(const keyname: string;
+  def: string = ''): string;
 begin
-  result := GetSetting(keyname, def, true);
+  Result := GetSetting(keyname, def, True);
 end;
 
 { Settings API implementations are now platform-specific and moved to
@@ -1178,7 +1187,8 @@ end;
   -------------------------
   Returns an integer from settings if parseable, else returns `def`.
  ------------------------------------------------------------------------------}
-function TTrndiNativeBase.GetIntSetting(const keyname: string; def: integer = -1): integer;
+function TTrndiNativeBase.GetIntSetting(const keyname: string;
+  def: integer = -1): integer;
 var
   r: string;
 begin
@@ -1193,7 +1203,8 @@ end;
   -------------------------
   Returns a single from settings if parseable, else returns `def`.
  ------------------------------------------------------------------------------}
-function TTrndiNativeBase.GetFloatSetting(const keyname: string; def: single = -1): single;
+function TTrndiNativeBase.GetFloatSetting(const keyname: string;
+  def: single = -1): single;
 var
   r: string;
   f: TFormatSettings;
@@ -1202,14 +1213,15 @@ begin
 
   f := DefaultFormatSettings;
   f.DecimalSeparator := '.';
-  result := StrToFloatDef(r, def, f);
+  Result := StrToFloatDef(r, def, f);
 end;
 
 {------------------------------------------------------------------------------
   GetSettingEx
   -------------------------
   Gets a setting, but if empty returns default value}
-function TTrndiNativeBase.GetSettingEx(const keyname: string; def: string=''; global: boolean=false): string;
+function TTrndiNativeBase.GetSettingEx(const keyname: string;
+  def: string = ''; global: boolean = False): string;
 var
   res: string;
 begin
@@ -1224,16 +1236,17 @@ end;
   -------------------------
   Returns a bool from settings if parseable, else returns `def`.
  ------------------------------------------------------------------------------}
-function TTrndiNativeBase.GetBoolSetting(const keyname: string; def: boolean = false): boolean;
+function TTrndiNativeBase.GetBoolSetting(const keyname: string;
+  def: boolean = False): boolean;
 var
   r: string;
 begin
   r := GetSetting(keyname, '-');
   case r of
-    'true': result := true;
-    'false': result := false;
+    'true': Result := True;
+    'false': Result := False;
     else
-      result := def;
+      Result := def;
   end;
 end;
 
@@ -1244,7 +1257,7 @@ end;
  ------------------------------------------------------------------------------}
 procedure TTrndiNativeBase.SetColorSetting(const keyname: string; val: TColor);
 begin
-  SetSetting(keyname, IntToStr(Integer(val)));
+  SetSetting(keyname, IntToStr(integer(val)));
 end;
 
 {------------------------------------------------------------------------------
@@ -1252,7 +1265,7 @@ end;
   ----------------------
   Stores a WideChar value to platform-specific storage.
  ------------------------------------------------------------------------------}
-procedure TTrndiNativeBase.SetWideCharSetting(const keyname: string; val: WideChar);
+procedure TTrndiNativeBase.SetWideCharSetting(const keyname: string; val: widechar);
 var
   code: string;
 begin
@@ -1265,19 +1278,20 @@ end;
   -------------------------
   Returns a WideChar from settings if parseable, else returns `def`.
  ------------------------------------------------------------------------------}
-function TTrndiNativeBase.GetWideCharSetting(const keyname: string; const def: WideChar = WideChar($2B24)): WideChar;
+function TTrndiNativeBase.GetWideCharSetting(const keyname: string;
+  const def: widechar = widechar($2B24)): widechar;
 var
   code: integer;
   s: string;
 begin
-  s := GetSetting(keyname,  '');
+  s := GetSetting(keyname, '');
 
   if s.IsEmpty then
     Exit(def);
 
   code := StrToInt('$' + s);
 
-  Result := WideChar(code);
+  Result := widechar(code);
 end;
 
 {------------------------------------------------------------------------------
@@ -1285,12 +1299,13 @@ end;
   -------------------------
   Returns a TColor from settings if parseable, else returns `def`.
  ------------------------------------------------------------------------------}
-function TTrndiNativeBase.GetColorSetting(const keyname: string; const def: TColor): TColor;
+function TTrndiNativeBase.GetColorSetting(const keyname: string;
+  const def: TColor): TColor;
 var
-  i: Integer;
+  i: integer;
   s: string;
 begin
-  s := GetSetting(keyname,  IntToStr(Integer(def)));
+  s := GetSetting(keyname, IntToStr(integer(def)));
 
   if s.IsEmpty then
     Exit(def);
@@ -1323,9 +1338,9 @@ procedure TTrndiNativeBase.SetFloatSetting(const keyname: string; const val: sin
 var
   f: TFormatSettings;
 begin
-    f := DefaultFormatSettings;
-    f.DecimalSeparator := '.';
-    SetSetting(keyname, FormatFloat('0.00',val,f));
+  f := DefaultFormatSettings;
+  f.DecimalSeparator := '.';
+  SetSetting(keyname, FormatFloat('0.00', val, f));
 end;
 
 {------------------------------------------------------------------------------
@@ -1335,7 +1350,7 @@ end;
  ------------------------------------------------------------------------------}
 procedure TTrndiNativeBase.SetRootSetting(keyname: string; const val: string);
 begin
-  SetSetting(keyname, val, true);
+  SetSetting(keyname, val, True);
 end;
 
 {------------------------------------------------------------------------------
@@ -1345,7 +1360,7 @@ end;
  ------------------------------------------------------------------------------}
 procedure TTrndiNativeBase.DeleteRootSetting(keyname: string; const val: string);
 begin
-  DeleteSetting(keyname, true);
+  DeleteSetting(keyname, True);
 end;
 
 {------------------------------------------------------------------------------
@@ -1373,10 +1388,12 @@ end;
   Platform units may override for more accurate detection.
  ------------------------------------------------------------------------------}
 class function TTrndiNativeBase.isDarkMode: boolean;
+
   function Brightness(C: TColor): double;
   begin
     Result := (Red(C) * 0.3) + (Green(C) * 0.59) + (Blue(C) * 0.11);
   end;
+
 begin
   Result := (Brightness(ColorToRGB(clWindow)) < Brightness(ColorToRGB(clWindowText)));
 end;
@@ -1386,21 +1403,23 @@ end;
   ----------------------
   Detects chars which the console is not fond of
  ------------------------------------------------------------------------------}
-class function TTrndiNativeBase.HasDangerousChars(const FileName: string): Boolean;
-function HasCharsInSet(const Str: string; const CharSet: TSysCharSet): Boolean;
-var
-  i: Integer;
-begin
-  Result := False;
-  for i := 1 to Length(Str) do
+class function TTrndiNativeBase.HasDangerousChars(const FileName: string): boolean;
+
+  function HasCharsInSet(const Str: string; const CharSet: TSysCharSet): boolean;
+  var
+    i: integer;
   begin
-    if Str[i] in CharSet then
+    Result := False;
+    for i := 1 to Length(Str) do
     begin
-      Result := True;
-      Exit;
+      if Str[i] in CharSet then
+      begin
+        Result := True;
+        Exit;
+      end;
     end;
   end;
-end;
+
 var
   DangerousChars: TSysCharSet;
 begin
@@ -1507,10 +1526,9 @@ begin
   {$ENDIF}
 end;
 
-class function TTrndiNativeBase.SetTitleColor(form: THandle; bg, text: TColor): boolean;
+class function TTrndiNativeBase.SetTitleColor(form: THandle; bg, Text: TColor): boolean;
 begin
-  result := false;
+  Result := False;
 end;
 
 end.
-

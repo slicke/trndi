@@ -40,11 +40,11 @@ const
 
 const
   {** Endpoint used to fetch pebble-style status information (contains "now" timestamp). }
-  XDRIP_STATUS   = 'pebble';
+  XDRIP_STATUS = 'pebble';
 
 const
   {** Endpoint that may include current BG range settings (hi/lo targets). }
-  XDRIP_RANGES   = 'status.json';
+  XDRIP_RANGES = 'status.json';
 
 type
   {** xDrip client.
@@ -91,7 +91,8 @@ type
         @param(res     Out parameter receiving the raw JSON/text response)
         @returns(Array of @code(BGReading); may be empty on errors)
      }
-    function GetReadings(min, maxNum: integer; path: string; out res: string): BGResults; override;
+    function GetReadings(min, maxNum: integer; path: string;
+      out res: string): BGResults; override;
 
     {** Connect to the xDrip server and initialize time offset and thresholds.
 
@@ -132,7 +133,7 @@ implementation
 constructor xDrip.Create(user, pass, extra: string);
 begin
   // Use a standard user agent for server logs/diagnostics
-  ua      := 'Mozilla/5.0 (compatible; trndi) TrndiAPI';
+  ua := 'Mozilla/5.0 (compatible; trndi) TrndiAPI';
 
   // Ensure trailing slash so relative paths append correctly
   baseUrl := TrimRightSet(user, ['/']) + '/';
@@ -148,7 +149,7 @@ begin
   timezone := GetLocalTimeOffset;
 
   // Create the native HTTP helper bound to this UA and base URL
-  native   := TrndiNative.Create(ua, baseUrl);
+  native := TrndiNative.Create(ua, baseUrl);
 end;
 
 {------------------------------------------------------------------------------
@@ -156,7 +157,8 @@ end;
 
   The NightScout implementation handles JSON parsing and mapping to BGResults.
 ------------------------------------------------------------------------------}
-function xDrip.GetReadings(min, maxNum: integer; path: string; out res: string): BGResults;
+function xDrip.GetReadings(min, maxNum: integer; path: string;
+  out res: string): BGResults;
 begin
   // If path is empty, default to the xDrip sgv.json endpoint
   if path = '' then
@@ -187,18 +189,18 @@ begin
   // Basic check for protocol correctness to catch obvious misconfiguration early
   if Copy(baseUrl, 1, 4) <> 'http' then
   begin
-    Result := false;
+    Result := False;
     lastErr := 'Invalid address. Must begin with http:// or https://!';
     Exit;
   end;
 
   // Fetch xDrip "pebble" info. If the secret fails, xDrip often replies with "Authentication failed"
   // Match a substring ("uthentication failed") to avoid case sensitivity issues.
-  LResponse := native.Request(false, XDRIP_STATUS, [], '', key);
+  LResponse := native.Request(False, XDRIP_STATUS, [], '', key);
   if Pos('uthentication failed', LResponse) > 0 then
   begin
     lastErr := 'Access token rejected by xDrip. Is it correct?';
-    Result := false;
+    Result := False;
     Exit;
   end;
 
@@ -211,7 +213,7 @@ begin
   if not TryStrToInt64(LResponse, LTimeStamp) then
   begin
     lastErr := 'xDrip could not initialize. Cannot sync clocks; xDrip may be offline.';
-    Result := false;
+    Result := False;
     Exit;
   end;
 
@@ -225,16 +227,18 @@ begin
   timeDiff := -1 * timeDiff; // Negative to match the expected adjustment direction
 
   // Retrieve hi/lo ranges from xDrip (status.json); parse simple integers by slicing
-  LResponse := native.Request(false, XDRIP_RANGES, [], '', key);
+  LResponse := native.Request(False, XDRIP_RANGES, [], '', key);
 
   // Parse bgHigh, e.g. ..."bgHigh":160,...
-  if TryStrToInt(TrimSet(Copy(LResponse, Pos('bgHigh', LResponse) + 8, 4), [' ', ',', '}']), i) then
+  if TryStrToInt(TrimSet(Copy(LResponse, Pos('bgHigh', LResponse) + 8, 4),
+    [' ', ',', '}']), i) then
     cgmHi := i
   else
     cgmHi := 160; // sensible fallback if not present
 
   // Parse bgLow, e.g. ..."bgLow":60,...
-  if TryStrToInt(TrimSet(Copy(LResponse, Pos('bgLow', LResponse) + 7, 4), [' ', ',', '}']), i) then
+  if TryStrToInt(TrimSet(Copy(LResponse, Pos('bgLow', LResponse) + 7, 4),
+    [' ', ',', '}']), i) then
     cgmLo := i
   else
     cgmLo := 60; // sensible fallback if not present
@@ -243,7 +247,7 @@ begin
   cgmRangeHi := 500;
   cgmRangeLo := 0;
 
-  Result := true;
+  Result := True;
 end;
 
 {------------------------------------------------------------------------------
@@ -254,8 +258,8 @@ begin
   case Index of
     1: Result := 'xDrip URL';
     2: Result := 'API Secret';
-  else
-    Result := inherited ParamLabel(Index);
+    else
+      Result := inherited ParamLabel(Index);
   end;
 end;
 

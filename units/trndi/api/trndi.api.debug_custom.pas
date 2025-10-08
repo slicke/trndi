@@ -26,28 +26,26 @@ unit trndi.api.debug_custom;
 interface
 
 uses
-Classes, SysUtils, Dialogs, trndi.types,
-trndi.api.debug, fpjson, jsonparser, dateutils;
-
+  Classes, SysUtils, Dialogs, trndi.types,
+  trndi.api.debug, fpjson, jsonparser, dateutils;
 
 type
   // Main class
-DebugCustomAPI = class(DebugAPI)
-protected
-public
-  setval: integer;
-  function getReadings({%H-}min, {%H-}maxNum: integer; {%H-}extras: string; out res: string): BGResults;
-    override;
-  constructor create(user, pass, extra: string);
-    override;
-end;
+  DebugCustomAPI = class(DebugAPI)
+  protected
+  public
+    setval: integer;
+    function getReadings({%H-}min, {%H-}maxNum: integer; {%H-}extras: string;
+      out res: string): BGResults; override;
+    constructor Create(user, pass, extra: string); override;
+  end;
 
 implementation
 
 
-constructor DebugCustomAPI.create(user, pass, extra: string);
+constructor DebugCustomAPI.Create(user, pass, extra: string);
 begin
-  ua      := 'Mozilla/5.0 (compatible; trndi) TrndiAPI';
+  ua := 'Mozilla/5.0 (compatible; trndi) TrndiAPI';
   baseUrl := user;
   //key     := pass;
   if not TryStrToInt(user, setval) then
@@ -55,39 +53,39 @@ begin
   inherited;
 end;
 
-function DebugCustomAPI.getReadings(min, maxNum: integer; extras: string; out res: string): BGResults;
+function DebugCustomAPI.getReadings(min, maxNum: integer; extras: string;
+  out res: string): BGResults;
+
   function getFakeTime(const min: integer): TDateTime;
-    var
-      currentTime: TDateTime;
-      baseTime: TDateTime;
-      minutesFromBase: integer;
-    begin
+  var
+    currentTime: TDateTime;
+    baseTime: TDateTime;
+    minutesFromBase: integer;
+  begin
     res := '';
     // Get the current time and the 5 minutes to act on
-      currentTime := Now;
-      baseTime := IncMinute(currentTime, -min);
-      minutesFromBase := (MinuteOf(baseTime) div 5) * 5;
+    currentTime := Now;
+    baseTime := IncMinute(currentTime, -min);
+    minutesFromBase := (MinuteOf(baseTime) div 5) * 5;
 
-      Result := RecodeMinute(baseTime, minutesFromBase);
-      Result := RecodeSecond(Result, 0);
-      Result := RecodeMilliSecond(Result, 0);
-    end;
-
+    Result := RecodeMinute(baseTime, minutesFromBase);
+    Result := RecodeSecond(Result, 0);
+    Result := RecodeMilliSecond(Result, 0);
+  end;
 
 var
   i: integer;
 begin
-  SetLength(result, 11);
+  SetLength(Result, 11);
   for i := 0 to 10 do
   begin
-    result[i].Init(mgdl);
-    result[i].date := getFakeTime(i*5); // Get the time
-    result[i].update(setval, 0); // Set reading
-    result[i].trend := tdFlat;  // Always flat
-    result[i].level := BGRange;
-    result[i].updateEnv('Debug');
+    Result[i].Init(mgdl);
+    Result[i].date := getFakeTime(i * 5); // Get the time
+    Result[i].update(setval, 0); // Set reading
+    Result[i].trend := tdFlat;  // Always flat
+    Result[i].level := BGRange;
+    Result[i].updateEnv('Debug');
   end;
-
 
 end;
 

@@ -15,9 +15,9 @@ type
     Image1: TImage;
     Label1: TLabel;
     lInfo: TLabel;
-    lSplashWarn:TLabel;
+    lSplashWarn: TLabel;
     procedure FormCreate(Sender: TObject);
-    procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+    procedure FormKeyDown(Sender: TObject; var Key: word; Shift: TShiftState);
     procedure FormKeyPress(Sender: TObject; var Key: char);
     procedure Image1Click(Sender: TObject);
   private
@@ -47,11 +47,10 @@ begin
   {$endif}
 end;
 
-procedure TfSplash.FormKeyDown(Sender: TObject; var Key: Word;
-  Shift: TShiftState);
+procedure TfSplash.FormKeyDown(Sender: TObject; var Key: word; Shift: TShiftState);
 begin
-    if key = VK_ESCAPE then
-     Hide;
+  if key = VK_ESCAPE then
+    Hide;
 end;
 
 procedure TfSplash.FormKeyPress(Sender: TObject; var Key: char);
@@ -60,4 +59,3 @@ begin
 end;
 
 end.
-

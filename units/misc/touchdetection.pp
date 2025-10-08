@@ -5,50 +5,50 @@ unit TouchDetection;
 interface
 
 uses
-{$IFDEF WINDOWS}
+  {$IFDEF WINDOWS}
 Windows, Messages,
-{$ENDIF}
-{$IFDEF X_LINUXBSD}
+  {$ENDIF}
+  {$IFDEF X_LINUXBSD}
 BaseUnix, Unix,
 {$ifdef X_LINUX}Linux,{$ENDIF}
-{$ENDIF}
-Classes, SysUtils;
+  {$ENDIF}
+  Classes, SysUtils;
 
 type
-TTouchPoint = record
-  X, Y: integer;
-  Pressure: single;
-  ID: integer;
-  IsValid: boolean;
-end;
+  TTouchPoint = record
+    X, Y: integer;
+    Pressure: single;
+    ID: integer;
+    IsValid: boolean;
+  end;
 
-TTouchInfo = record
-  Count: integer;
-  Points: array of TTouchPoint;
-end;
+  TTouchInfo = record
+    Count: integer;
+    Points: array of TTouchPoint;
+  end;
 
   { TTouchDetector }
 
-TTouchDetector = class
-private
-  FLastError: string;
-  {$IFDEF WINDOWS}
+  TTouchDetector = class
+  private
+    FLastError: string;
+    {$IFDEF WINDOWS}
   function InitializeWindowsTouch: boolean;
   function GetWindowsTouchInfo: TTouchInfo;
-  {$ENDIF}
-  {$IFDEF X_LINUXBSD}
+    {$ENDIF}
+    {$IFDEF X_LINUXBSD}
   function FindTouchDevice: string;
   function GetLinuxTouchInfo: TTouchInfo;
-  {$ENDIF}
-public
-  constructor Create;
-  destructor Destroy; override;
+    {$ENDIF}
+  public
+    constructor Create;
+    destructor Destroy; override;
 
-  function GetTouchInfo: TTouchInfo;
-  function GetActiveTouchCount: integer;
+    function GetTouchInfo: TTouchInfo;
+    function GetActiveTouchCount: integer;
 
-  property LastError: string read FLastError;
-end;
+    property LastError: string read FLastError;
+  end;
 
 implementation
 

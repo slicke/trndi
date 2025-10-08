@@ -1,4 +1,3 @@
-
 (*
  * This file is part of Trndi (https://github.com/slicke/trndi).
  * Copyright (c) 2021-2025 Björn Lindh.
@@ -19,17 +18,17 @@
  * GitHub: https://github.com/slicke/trndi
  *)
 
-{$mode objfpc}{$H+}
-{$ifdef darwin}
+  {$mode objfpc}{$H+}
+  {$ifdef darwin}
   {$modeswitch objectivec2}
-{$endif}
+  {$endif}
 
-{$IF DEFINED(WINDOWS)}
+  {$IF DEFINED(WINDOWS)}
   {$DEFINE X_WIN}// Windows
   {$IFDEF CPU32}{$DEFINE X_WIN32}{$ENDIF}
   {$IFDEF CPU64}{$DEFINE X_WIN64}{$ENDIF}
   {$IFDEF CPUARM}{$DEFINE X_WINARM}{$ENDIF}
-{$ELSEIF DEFINED(UNIX)}
+  {$ELSEIF DEFINED(UNIX)}
   {$DEFINE X_POSIX} // All Unix
   {$IFDEF DARWIN}
     {$DEFINE X_MAC}
@@ -51,18 +50,18 @@
     {$IFDEF CPUPOWERPC32}{$DEFINE X_PCPPC32}{$ENDIF}
     {$IFDEF CPUPOWERPC64}{$DEFINE X_PCPPC64}{$ENDIF}
   {$ENDIF}
-{$ELSE}
+  {$ELSE}
   {$Error Missing platoform suppport}
-{$ENDIF}
+  {$ENDIF}
 
-{$IFDEF LINUX}
+  {$IFDEF LINUX}
 {$DEFINE X_LINUX}
-   {$ENDIF}
+  {$ENDIF}
 
-{$IF DEFINED(FreeBSD) or DEFINED(OpenBSD) or DEFINED(NetBSD)}
+  {$IF DEFINED(FreeBSD) or DEFINED(OpenBSD) or DEFINED(NetBSD)}
    {$DEFINE X_BSD}
-{$ENDIF}
+  {$ENDIF}
 
-{$IF DEFINED(X_BSD) OR DEFINED(X_LINUX)}
-    {$DEFINE X_LINUXBSD}
-{$ENDIF}
+  {$IF DEFINED(X_BSD) OR DEFINED(X_LINUX)}
+  {$DEFINE X_LINUXBSD}
+  {$ENDIF}
