@@ -1912,7 +1912,7 @@ begin
     cnv.Brush.Style := bsSolid;
     cnv.Brush.Color := DarkenColor(fBG.Color, 0.9);
     cnv.Pen.Style := psClear;
-    cnv.FillRect(Rect(0, hiY, Self.ClientWidth, loY));
+    cnv.FillRect(Classes.Rect(0, hiY, Self.ClientWidth, loY));
   end;
 
   // Fill the area between inner range thresholds with a lightened background color
@@ -1921,7 +1921,7 @@ begin
     cnv.Brush.Style := bsSolid;
     cnv.Brush.Color := DarkenColor(fBG.Color, 0.85);
     cnv.Pen.Style := psClear;
-    cnv.FillRect(Rect(0, rangeHiY, Self.ClientWidth, rangeLoY));
+    cnv.FillRect(Classes.Rect(0, rangeHiY, Self.ClientWidth, rangeLoY));
   end;
 
   // Use semi-transparent versions of range colors
