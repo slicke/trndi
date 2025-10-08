@@ -10905,22 +10905,22 @@ object fConf: TfConf
       end
       object gbDisplayPrefs: TGroupBox
         Left = 0
-        Height = 105
-        Top = 401
+        Height = 130
+        Top = 376
         Width = 667
         Align = alBottom
         Caption = 'Display Preferences'
-        ClientHeight = 85
+        ClientHeight = 110
         ClientWidth = 663
         TabOrder = 4
         object pTray: TPanel
           Left = 493
-          Height = 85
+          Height = 110
           Top = 0
           Width = 170
           Align = alRight
           BevelOuter = bvNone
-          ClientHeight = 85
+          ClientHeight = 110
           ClientWidth = 170
           TabOrder = 0
           object lTray: TLabel
@@ -10945,12 +10945,12 @@ object fConf: TfConf
         end
         object pDecimal: TPanel
           Left = 0
-          Height = 85
+          Height = 110
           Top = 0
           Width = 170
           Align = alLeft
           BevelOuter = bvNone
-          ClientHeight = 85
+          ClientHeight = 110
           ClientWidth = 170
           TabOrder = 1
           object Label13: TLabel
@@ -10975,13 +10975,39 @@ object fConf: TfConf
             Text = '.'
           end
         end
-        object cbPaintHiLo: TCheckBox
-          Left = 10
-          Height = 19
-          Top = 56
-          Width = 210
-          Caption = 'Paint the area between high and low'
+        object GroupBox6: TGroupBox
+          Left = 9
+          Height = 50
+          Top = 58
+          Width = 639
+          Caption = 'Color Thresholds'
+          ClientHeight = 30
+          ClientWidth = 635
           TabOrder = 2
+          object cbPaintLines: TCheckBox
+            Left = 392
+            Height = 19
+            Top = 5
+            Width = 127
+            Caption = 'Show threshold lines'
+            TabOrder = 0
+          end
+          object cbPaintHiLoRange: TCheckBox
+            Left = 232
+            Height = 19
+            Top = 5
+            Width = 147
+            Caption = 'Also paint custom range'
+            TabOrder = 1
+          end
+          object cbPaintHiLo: TCheckBox
+            Left = 10
+            Height = 19
+            Top = 5
+            Width = 210
+            Caption = 'Paint the area between high and low'
+            TabOrder = 2
+          end
         end
       end
       object Label2: TLabel

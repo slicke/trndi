@@ -62,6 +62,8 @@ TfConf = class(TForm)
   cbNotice: TCheckBox;
   cbOffBar: TCheckBox;
   cbPaintHiLo: TCheckBox;
+  cbPaintHiLoRange: TCheckBox;
+  cbPaintLines: TCheckBox;
   cbPos: TComboBox;
   cbPrivacy: TCheckBox;
   cbSize: TCheckBox;
@@ -106,6 +108,7 @@ TfConf = class(TForm)
   GroupBox3: TGroupBox;
   gbDisplayPrefs: TGroupBox;
   GroupBox4: TGroupBox;
+  GroupBox6: TGroupBox;
   Image1: TImage;
   Label1: TLabel;
   Label16: TLabel;

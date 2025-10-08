@@ -370,6 +370,14 @@ msgstr ""
 msgid "Paint the area between high and low"
 msgstr ""
 
+#: tfconf.cbpainthilorange.caption
+msgid "Also paint custom range"
+msgstr ""
+
+#: tfconf.cbpaintlines.caption
+msgid "Show threshold lines"
+msgstr ""
+
 #: tfconf.cbprivacy.caption
 msgid "Privacy Mode (Hide number)"
 msgstr ""
@@ -486,6 +494,10 @@ msgstr ""
 
 #: tfconf.groupbox4.caption
 msgid "All accounts"
+msgstr ""
+
+#: tfconf.groupbox6.caption
+msgid "Color Thresholds"
 msgstr ""
 
 #: tfconf.label1.caption
