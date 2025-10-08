@@ -405,7 +405,7 @@ isWSL : boolean = false;
   applocale: string;
   dotscale: integer = 1;
   badge_adjust: single = 0;
-  DOT_OFFSET_RANGE: integer = 3; // Fine-tune vertical alignment of threshold lines with dots
+  DOT_OFFSET_RANGE: integer = {$ifdef windows}3{$else}0{$endif}; // Fine-tune vertical alignment of threshold lines with dots
   highAlerted: boolean = False; // A high alert is active
   lowAlerted: boolean = False; // A low alert is active
   perfectTriggered: boolean = False; // A perfect reading is active
