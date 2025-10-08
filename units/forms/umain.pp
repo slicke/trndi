@@ -1892,6 +1892,7 @@ var
   tmp: integer;
   clientH: integer;
   dotHeight: integer;
+  bmp: TBitmap;
 // Helper to map a BG value in internal units to a Y coordinate matching SetPointHeight
   function ValueToY(const Value: single): integer;
   var
@@ -1925,20 +1926,18 @@ begin
     clientH := Self.ClientHeight;
 
   // Get dot height for centering lines through the middle of dots
-  // Important: Calculate using DOT_GRAPH character at normal dot font size,
-  // not the current caption/font which may be showing a value
+  // Calculate using a temporary bitmap to avoid affecting actual dots during paint
   dotHeight := 0;
   if (Length(TrendDots) > 0) and Assigned(TrendDots[1]) then
   begin
-    // Save current font size
-    tmp := TrendDots[1].Font.Size;
-    // Set to normal dot size temporarily
-    TrendDots[1].Font.Size := (ClientWidth div 24) * dotscale;
-    // Measure the dot character at normal size
-    if Assigned(TrendDots[1].Canvas) then
-      dotHeight := TrendDots[1].Canvas.TextHeight(DOT_GRAPH);
-    // Restore original font size
-    TrendDots[1].Font.Size := tmp;
+    bmp := TBitmap.Create;
+    try
+      bmp.Canvas.Font.Assign(TrendDots[1].Font);
+      bmp.Canvas.Font.Size := (ClientWidth div 24) * dotscale;
+      dotHeight := bmp.Canvas.TextHeight(DOT_GRAPH);
+    finally
+      bmp.Free;
+    end;
   end;
 
   // Decide whether to draw low/high range indicators (0 disables)
