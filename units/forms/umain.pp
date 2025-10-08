@@ -1875,6 +1875,11 @@ begin
   lRef.Caption := lDot1.Hint;
   // Redraw form so range indicators follow dot positions
   Invalidate;
+  
+  // Force all dots to repaint on top of the filled areas (Update forces immediate paint)
+  for l in TrendDots do
+    if l.Visible then
+      l.Update;
 
 end;
 
