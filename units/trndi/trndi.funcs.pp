@@ -87,6 +87,7 @@ var
 DOT_GRAPH: UnicodeString = WideChar($2B24);  // Circle
 DOT_FRESH: UnicodeString = WideChar($2600);  // Sun
 DOT_ADJUST: single = 0; // Multiplyer where dots appear
+DOT_VISUAL_OFFSET: integer = 0; // Vertical offset to align limit lines with visual center of dot (compensates for internal whitespace in dot character)
 MAX_MIN: integer = 1440; // Max time to request
 MAX_RESULT: integer = 25; // Max results
 DATA_FRESHNESS_THRESHOLD_MINUTES: integer = 11; // Max minutes before data is considered outdated

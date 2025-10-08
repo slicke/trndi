@@ -1866,6 +1866,8 @@ begin
     loY := ValueToY(api.cgmLo * BG_CONVERTIONS[mmol][mgdl]);
     // Apply same adjustments as AdjustGraph: first DOT_ADJUST, then subtract dotsInView
     loY := loY + round(clientH * DOT_ADJUST) - daAdjust;
+    // Apply visual offset to compensate for whitespace in dot character
+    loY := loY + DOT_VISUAL_OFFSET;
     lineColor := LightenColor(bg_rel_color_lo);
     cnv.Pen.Color := lineColor;
     cnv.Pen.Style := psSolid;
@@ -1882,6 +1884,8 @@ begin
     hiY := ValueToY(api.cgmHi * BG_CONVERTIONS[mmol][mgdl]);
     // Apply same adjustments as AdjustGraph: first DOT_ADJUST, then subtract dotsInView
     hiY := hiY + round(clientH * DOT_ADJUST) - daAdjust;
+    // Apply visual offset to compensate for whitespace in dot character
+    hiY := hiY + DOT_VISUAL_OFFSET;
     lineColor := LightenColor(bg_rel_color_hi);
     cnv.Pen.Color := lineColor;
     cnv.Pen.Style := psSolid;
