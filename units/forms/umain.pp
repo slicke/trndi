@@ -391,6 +391,7 @@ badge_adjust: single = 0;
 highAlerted: boolean = false; // A high alert is active
 lowAlerted: boolean = false; // A low alert is active
 perfectTriggered: boolean = false; // A perfect reading is active
+PaintRange: boolean = true;
 {$ifdef darwin}
 MacAppDelegate: TMyAppDelegate;
 upMenu: TMenuItem;
@@ -1248,7 +1249,7 @@ begin
     DOT_ADJUST := GetFloatSetting('ux.dot_adjust', 0);
     // DOT_VISUAL_OFFSET := CalculateDotVisualOffset;  // No longer needed - centering uses half dot height
     miRangeColor.Checked := GetBoolSetting('ux.range_color', true);
-
+    PaintRange := native.GetBoolSetting('ux.paint_range', true);
     // Extensions
     {$ifdef TrndiExt}
     fSplash.lInfo.Caption := RS_SPLASH_LOADING_INIT;
@@ -1844,6 +1845,9 @@ var
     Result := (clientH - Position) - 1;
   end;
 begin
+  if not PaintRange then
+     Exit;
+
   // Only draw when form has been created and API thresholds available
   if not Assigned(Self) then Exit;
   cnv := Self.Canvas;
@@ -2679,6 +2683,7 @@ var
       cbTIR.Checked := native.GetBoolSetting('range.custom', true);
 
       cbOffBar.Checked := native.GetBoolSetting('ux.off_bar', false);
+      cbPaintHiLo.Checked := native.GetBoolSetting('ux.paint_range', true);
       edCommaSep.Text := GetCharSetting('locale.separator', '.');
       edTray.Value := GetIntSetting('ux.badge_size', 0);
 
@@ -2885,6 +2890,7 @@ if cbPos.ItemIndex = -1 then
 
       native.SetBoolSetting('range.custom', cbTIR.Checked);
       native.SetBoolSetting('ux.off_bar', cbOffBar.Checked);
+      native.SetBoolSetting('ux.paint_range', cbPaintHiLo.Checked);
       native.SetSetting('locale.separator', edCommaSep.text);
       native.SetSetting('ux.badge_size', edTray.Value.ToString);
 

@@ -47,6 +47,7 @@
 {"hash":147895146,"name":"tfconf.ltray.caption","sourcebytes":[84,114,97,121,32,105,99,111,110,32,115,105,122,101,58],"value":"Tray icon size:"},
 {"hash":197437962,"name":"tfconf.label13.caption","sourcebytes":[68,101,99,105,109,97,108,32,115,101,112,97,114,97,116,111,114,58],"value":"Decimal separator:"},
 {"hash":46,"name":"tfconf.edcommasep.text","sourcebytes":[46],"value":"."},
+{"hash":78865591,"name":"tfconf.cbpainthilo.caption","sourcebytes":[80,97,105,110,116,32,116,104,101,32,97,114,101,97,32,98,101,116,119,101,101,110,32,104,105,103,104,32,97,110,100,32,108,111,119],"value":"Paint the area between high and low"},
 {"hash":128749372,"name":"tfconf.label2.caption","sourcebytes":[68,111,116,32,115,121,109,98,111,108],"value":"Dot symbol"},
 {"hash":90877431,"name":"tfconf.ldot.caption","sourcebytes":[80,82,69,86,73,69,87],"value":"PREVIEW"},
 {"hash":90877431,"name":"tfconf.ldotnow.caption","sourcebytes":[80,82,69,86,73,69,87],"value":"PREVIEW"},

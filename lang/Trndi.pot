@@ -366,6 +366,10 @@ msgstr ""
 msgid "Show sidebar when value is not in range"
 msgstr ""
 
+#: tfconf.cbpainthilo.caption
+msgid "Paint the area between high and low"
+msgstr ""
+
 #: tfconf.cbprivacy.caption
 msgid "Privacy Mode (Hide number)"
 msgstr ""
