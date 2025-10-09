@@ -328,22 +328,18 @@ msgid "Save"
 msgstr "Spara"
 
 #: tfconf.button2.caption
-#, fuzzy
-#| msgid "Reset Defaults"
 msgctxt "tfconf.button2.caption"
 msgid "Reset Fonts"
-msgstr "Återställ"
+msgstr "Återställ typsnitt"
 
 #: tfconf.button3.caption
 msgid "Check for update"
 msgstr "Kolla uppdatering"
 
 #: tfconf.button4.caption
-#, fuzzy
-#| msgid "Reset Defaults"
 msgctxt "tfconf.button4.caption"
 msgid "Reset Dots"
-msgstr "Återställ"
+msgstr "Återställ punkter"
 
 #: tfconf.caption
 msgctxt "tfconf.caption"
@@ -356,7 +352,6 @@ msgid "Use custom values"
 msgstr "Använd egna värden"
 
 #: tfconf.cbcustrange.caption
-#, fuzzy
 msgctxt "tfconf.cbcustrange.caption"
 msgid "Use custom values"
 msgstr "Använd egna värden"
@@ -390,22 +385,16 @@ msgid "System notifications"
 msgstr "Systemmeddelanden"
 
 #: tfconf.cboffbar.caption
-#, fuzzy
-#| msgid "Show sidebar when value is not in range"
 msgid "Show a sidebar when value is not in range"
-msgstr "Visa sidopanelen när värdet inte är i målområdet"
+msgstr "Visa en sidopanel när värdet inte är i målområdet"
 
 #: tfconf.cbpainthilo.caption
-#, fuzzy
-#| msgid "Paint the area between high and low"
 msgid "Color the graph's background with your range"
-msgstr "Rita ytan mellan hög och låg"
+msgstr "Rita grafens bakgrund med ditt målområde"
 
 #: tfconf.cbpainthilorange.caption
-#, fuzzy
-#| msgid "Also paint custom range"
 msgid "Color the graph's background with your custom range"
-msgstr "Rita egna gränser också"
+msgstr "Rita grafens bakgrund med ditt föredragna område"
 
 #: tfconf.cbpaintlines.caption
 msgid "Show threshold lines"
@@ -424,30 +413,28 @@ msgid "NightScout"
 msgstr "NightScout"
 
 #: tfconf.cbtir.caption
-#, fuzzy
-#| msgid "Count readings in the custom range as in range"
 msgid "Count custom range as time in range"
-msgstr "Räkna värden i eget område som tid i område"
+msgstr "Räkna värden i föredragna området som tid i område"
 
 #: tfconf.cbtircolor.caption
 msgctxt "tfconf.cbtircolor.caption"
 msgid "Use this color:"
-msgstr ""
+msgstr "Med denna färg:"
 
 #: tfconf.cbtircolorbg.caption
 msgctxt "tfconf.cbtircolorbg.caption"
 msgid "Adjust color based on background"
-msgstr ""
+msgstr "Justera färg baserat på bakgrund"
 
 #: tfconf.cbtircolorbgcustom.caption
 msgctxt "tfconf.cbtircolorbgcustom.caption"
 msgid "Adjust color based on background"
-msgstr ""
+msgstr "Justera färg baserat på bakgrund"
 
 #: tfconf.cbtircolorcustom.caption
 msgctxt "tfconf.cbtircolorcustom.caption"
 msgid "Use this color:"
-msgstr ""
+msgstr "Med denna färg:"
 
 #: tfconf.cbtitlecolor.caption
 msgid "Color the title bar with glucose color **"
@@ -546,7 +533,7 @@ msgstr "Texter"
 
 #: tfconf.groupbox3.caption
 msgid "Custom Range *"
-msgstr "Eget område *"
+msgstr "Föredraget område *"
 
 #: tfconf.groupbox4.caption
 msgid "All accounts"
@@ -554,17 +541,15 @@ msgstr "Alla konton"
 
 #: tfconf.groupbox5.caption
 msgid "Extra Settings"
-msgstr ""
+msgstr "Extrainställningar"
 
 #: tfconf.groupbox6.caption
-#, fuzzy
-#| msgid "Color Thresholds"
 msgid "In-range coloring"
 msgstr "Färglägg gränser"
 
 #: tfconf.groupbox7.caption
-msgid "Override Time In Range"
-msgstr ""
+msgid "Override Custom Range"
+msgstr "Överskrid föredraget område"
 
 #: tfconf.label1.caption
 msgid "Readings are outdated after (minutes):"
@@ -600,26 +585,24 @@ msgid "Server Address / Dexcom Username"
 msgstr "Serveradress / Användare Dexcom"
 
 #: tfconf.label16.caption
-#, fuzzy
-#| msgid "Dot Current symbol"
 msgid "Current dot:"
-msgstr "Symbol för nuvarande punkt"
+msgstr "Nuvarande punkt:"
 
 #: tfconf.label17.caption
-#, fuzzy
-#| msgid "Enter the Unicode code for the character you'd like to use"
 msgid "Dots: Enter the Unicode code for a character"
-msgstr "Skriv in Unicode-koden för det tecken du vill använda"
+msgstr "Punkter: Skriv in Unicode-koden ett tecken"
 
 #: tfconf.label18.caption
 msgid "Connection"
 msgstr "Anslutning"
 
 #: tfconf.label2.caption
-#, fuzzy
-#| msgid "Dot symbol"
 msgid "Trend dot:"
-msgstr "Punktsymbol"
+msgstr "Punktsymbol:"
+
+#: tfconf.label20.caption
+msgid "The custom range is a subrange with your ideal goal."
+msgstr "Föredraget område är ett inre område med ditt ideala mål."
 
 #: tfconf.label3.caption
 msgid "Nickname:"
@@ -639,13 +622,11 @@ msgstr "Språk"
 
 #: tfconf.label7.caption
 msgid "Time-in-range (TIR) is the amount of time you are within your high/low goal."
-msgstr ""
+msgstr "Tid i målområdet (TIR) är den tid du varit inom ditt mål för höga/låga värden."
 
 #: tfconf.label8.caption
-#, fuzzy
-#| msgid "Click an item to change it's font"
 msgid "Click on a component to the left, to edit it's font"
-msgstr "Klicka på en text för att ändra typsnittet"
+msgstr "Klicka på en komponent till vänster, för att ändra typsnittet"
 
 #: tfconf.label9.caption
 msgid "Trndi can trigger Spotify or Deezer to play a song when low/high"
@@ -703,7 +684,6 @@ msgid "High over"
 msgstr "Högt över"
 
 #: tfconf.lhiover1.caption
-#, fuzzy
 msgctxt "tfconf.lhiover1.caption"
 msgid "High over"
 msgstr "Högt över"
@@ -718,7 +698,6 @@ msgid "Low under"
 msgstr "Lågt under"
 
 #: tfconf.llounder1.caption
-#, fuzzy
 msgctxt "tfconf.llounder1.caption"
 msgid "Low under"
 msgstr "Lågt under"
@@ -774,7 +753,7 @@ msgstr "Enhetstyp"
 
 #: tfconf.tabsheet1.caption
 msgid "Time-in-range"
-msgstr ""
+msgstr "Tid-i-målområde"
 
 #: tfconf.tscolors.caption
 msgid "Colors"
@@ -1176,7 +1155,7 @@ msgid "Loading Extensions..."
 msgstr "Laddar tillägg..."
 
 #: trndi.strings.rs_tir_h
-#, object-pascal-format, fuzzy, badformat
+#, object-pascal-format
 msgid ""
 "This is your time in range for the last %d hours and %d minutes\n"
 "\n"
@@ -1185,7 +1164,7 @@ msgid ""
 msgstr ""
 "Detta är din tid i målområdet under de senaste %d timmarna och %d minuterna\n"
 "\n"
-"Din låga gräns är %.1f, hög är %1f.\n"
+"Din låga gräns är %.1f, hög är %.1f.\n"
 "Ditt låga område är %.1f, hög är %.1f"
 
 #: trndi.strings.rs_tir_h1
@@ -1681,4 +1660,3 @@ msgstr "Du kan använda skift+<nummerr> för att manuellt sätta synligheten (0 
 #: ufloat.rscustomsize
 msgid "You can hold down shift and plus (+) or minus (-) to change the window size"
 msgstr "Du kan hålla ned skift och plus (+) eller minus (-) för att justera fönstrets storlek"
-

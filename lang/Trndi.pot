@@ -531,7 +531,7 @@ msgid "In-range coloring"
 msgstr ""
 
 #: tfconf.groupbox7.caption
-msgid "Override Time In Range"
+msgid "Override Custom Range"
 msgstr ""
 
 #: tfconf.label1.caption
@@ -579,6 +579,10 @@ msgstr ""
 
 #: tfconf.label2.caption
 msgid "Trend dot:"
+msgstr ""
+
+#: tfconf.label20.caption
+msgid "The custom range is a subrange with your ideal goal."
 msgstr ""
 
 #: tfconf.label3.caption
