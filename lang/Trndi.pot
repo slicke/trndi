@@ -313,7 +313,7 @@ msgstr ""
 
 #: tfconf.button2.caption
 msgctxt "tfconf.button2.caption"
-msgid "Reset Defaults"
+msgid "Reset Fonts"
 msgstr ""
 
 #: tfconf.button3.caption
@@ -322,7 +322,7 @@ msgstr ""
 
 #: tfconf.button4.caption
 msgctxt "tfconf.button4.caption"
-msgid "Reset Defaults"
+msgid "Reset Dots"
 msgstr ""
 
 #: tfconf.caption
@@ -363,15 +363,15 @@ msgid "System notifications"
 msgstr ""
 
 #: tfconf.cboffbar.caption
-msgid "Show sidebar when value is not in range"
+msgid "Sidebar: Show a sidebar when value is not in range"
 msgstr ""
 
 #: tfconf.cbpainthilo.caption
-msgid "Paint the area between high and low"
+msgid "In range: Color background  in graph"
 msgstr ""
 
 #: tfconf.cbpainthilorange.caption
-msgid "Also paint custom range"
+msgid "Also paint the custom range"
 msgstr ""
 
 #: tfconf.cbpaintlines.caption
@@ -391,7 +391,7 @@ msgid "NightScout"
 msgstr ""
 
 #: tfconf.cbtir.caption
-msgid "Count readings in the custom range as in range"
+msgid "Time in range: Count based on custom range"
 msgstr ""
 
 #: tfconf.cbtitlecolor.caption
@@ -496,8 +496,12 @@ msgstr ""
 msgid "All accounts"
 msgstr ""
 
+#: tfconf.groupbox5.caption
+msgid "Extra Settings"
+msgstr ""
+
 #: tfconf.groupbox6.caption
-msgid "Color Thresholds"
+msgid "In-range coloring"
 msgstr ""
 
 #: tfconf.label1.caption
@@ -532,11 +536,11 @@ msgid "Server Address / Dexcom Username"
 msgstr ""
 
 #: tfconf.label16.caption
-msgid "Dot Current symbol"
+msgid "Current dot:"
 msgstr ""
 
 #: tfconf.label17.caption
-msgid "Enter the Unicode code for the character you'd like to use"
+msgid "Dots: Enter the Unicode code for a character"
 msgstr ""
 
 #: tfconf.label18.caption
@@ -544,7 +548,7 @@ msgid "Connection"
 msgstr ""
 
 #: tfconf.label2.caption
-msgid "Dot symbol"
+msgid "Trend dot:"
 msgstr ""
 
 #: tfconf.label3.caption
@@ -564,7 +568,7 @@ msgid "Language"
 msgstr ""
 
 #: tfconf.label8.caption
-msgid "Click an item to change it's font"
+msgid "Click on a component to the left, to edit it's font"
 msgstr ""
 
 #: tfconf.label9.caption
@@ -590,6 +594,21 @@ msgstr ""
 #: tfconf.ldot.caption
 msgctxt "tfconf.ldot.caption"
 msgid "PREVIEW"
+msgstr ""
+
+#: tfconf.ldot1.caption
+msgctxt "tfconf.ldot1.caption"
+msgid "lDot1"
+msgstr ""
+
+#: tfconf.ldot2.caption
+msgctxt "tfconf.ldot2.caption"
+msgid "lDot1"
+msgstr ""
+
+#: tfconf.ldot3.caption
+msgctxt "tfconf.ldot3.caption"
+msgid "lDot1"
 msgstr ""
 
 #: tfconf.ldotnow.caption

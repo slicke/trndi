@@ -328,8 +328,10 @@ msgid "Save"
 msgstr "Spara"
 
 #: tfconf.button2.caption
+#, fuzzy
+#| msgid "Reset Defaults"
 msgctxt "tfconf.button2.caption"
-msgid "Reset Defaults"
+msgid "Reset Fonts"
 msgstr "Återställ"
 
 #: tfconf.button3.caption
@@ -337,8 +339,10 @@ msgid "Check for update"
 msgstr "Kolla uppdatering"
 
 #: tfconf.button4.caption
+#, fuzzy
+#| msgid "Reset Defaults"
 msgctxt "tfconf.button4.caption"
-msgid "Reset Defaults"
+msgid "Reset Dots"
 msgstr "Återställ"
 
 #: tfconf.caption
@@ -379,15 +383,21 @@ msgid "System notifications"
 msgstr "Systemmeddelanden"
 
 #: tfconf.cboffbar.caption
-msgid "Show sidebar when value is not in range"
+#, fuzzy
+#| msgid "Show sidebar when value is not in range"
+msgid "Sidebar: Show a sidebar when value is not in range"
 msgstr "Visa sidopanelen när värdet inte är i målområdet"
 
 #: tfconf.cbpainthilo.caption
-msgid "Paint the area between high and low"
+#, fuzzy
+#| msgid "Paint the area between high and low"
+msgid "In range: Color background  in graph"
 msgstr "Rita ytan mellan hög och låg"
 
 #: tfconf.cbpainthilorange.caption
-msgid "Also paint custom range"
+#, fuzzy
+#| msgid "Also paint custom range"
+msgid "Also paint the custom range"
 msgstr "Rita egna gränser också"
 
 #: tfconf.cbpaintlines.caption
@@ -407,7 +417,9 @@ msgid "NightScout"
 msgstr "NightScout"
 
 #: tfconf.cbtir.caption
-msgid "Count readings in the custom range as in range"
+#, fuzzy
+#| msgid "Count readings in the custom range as in range"
+msgid "Time in range: Count based on custom range"
 msgstr "Räkna värden i eget område som tid i område"
 
 #: tfconf.cbtitlecolor.caption
@@ -513,8 +525,14 @@ msgstr "Eget område *"
 msgid "All accounts"
 msgstr "Alla konton"
 
+#: tfconf.groupbox5.caption
+msgid "Extra Settings"
+msgstr ""
+
 #: tfconf.groupbox6.caption
-msgid "Color Thresholds"
+#, fuzzy
+#| msgid "Color Thresholds"
+msgid "In-range coloring"
 msgstr "Färglägg gränser"
 
 #: tfconf.label1.caption
@@ -551,11 +569,15 @@ msgid "Server Address / Dexcom Username"
 msgstr "Serveradress / Användare Dexcom"
 
 #: tfconf.label16.caption
-msgid "Dot Current symbol"
+#, fuzzy
+#| msgid "Dot Current symbol"
+msgid "Current dot:"
 msgstr "Symbol för nuvarande punkt"
 
 #: tfconf.label17.caption
-msgid "Enter the Unicode code for the character you'd like to use"
+#, fuzzy
+#| msgid "Enter the Unicode code for the character you'd like to use"
+msgid "Dots: Enter the Unicode code for a character"
 msgstr "Skriv in Unicode-koden för det tecken du vill använda"
 
 #: tfconf.label18.caption
@@ -563,7 +585,9 @@ msgid "Connection"
 msgstr "Anslutning"
 
 #: tfconf.label2.caption
-msgid "Dot symbol"
+#, fuzzy
+#| msgid "Dot symbol"
+msgid "Trend dot:"
 msgstr "Punktsymbol"
 
 #: tfconf.label3.caption
@@ -583,7 +607,9 @@ msgid "Language"
 msgstr "Språk"
 
 #: tfconf.label8.caption
-msgid "Click an item to change it's font"
+#, fuzzy
+#| msgid "Click an item to change it's font"
+msgid "Click on a component to the left, to edit it's font"
 msgstr "Klicka på en text för att ändra typsnittet"
 
 #: tfconf.label9.caption
@@ -610,6 +636,21 @@ msgstr "->"
 msgctxt "tfconf.ldot.caption"
 msgid "PREVIEW"
 msgstr "FÖRHANDSVISNING"
+
+#: tfconf.ldot1.caption
+msgctxt "tfconf.ldot1.caption"
+msgid "lDot1"
+msgstr ""
+
+#: tfconf.ldot2.caption
+msgctxt "tfconf.ldot2.caption"
+msgid "lDot1"
+msgstr ""
+
+#: tfconf.ldot3.caption
+msgctxt "tfconf.ldot3.caption"
+msgid "lDot1"
+msgstr ""
 
 #: tfconf.ldotnow.caption
 msgctxt "tfconf.ldotnow.caption"
