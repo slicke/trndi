@@ -34,8 +34,8 @@ interface
 }
 
 uses
-  Classes, SysUtils, mormot.lib.quickjs, mormot.core.base, strutils, fgl,
-  Dialogs, slicke.ux.alert, Math, types, trndi.strings, trndi.native;
+Classes, SysUtils, mormot.lib.quickjs, mormot.core.base, strutils, fgl,
+Dialogs, slicke.ux.alert, Math, types, trndi.strings, trndi.native;
 
 (*
   Resource strings (can be translated if needed):
@@ -44,132 +44,132 @@ uses
 
 type
   {** Forward pointer to @link(JSValueVal) to prevent circular references. }
-  PJSValueVal = ^JSValueVal;
+PJSValueVal = ^JSValueVal;
 
   {** List of @code(PJSValueVal) pointers (FGL-based list). }
-  TJSValList = specialize TFPGList<PJSValueVal>;
-  PJSValList = ^TJSValList;
+TJSValList = specialize TFPGList<PJSValueVal>;
+PJSValList = ^TJSValList;
 
   {** Enum of supported value kinds, extending QuickJS tags with extras like
       @code(JD_ARRAY), @code(JD_UNSET), etc. }
-  JDValue = (
-    JD_UNINITIALIZED = JS_TAG_UNINITIALIZED, // 0
-    JD_INT = JS_TAG_INT,           // 1
-    JD_BOOL = JS_TAG_BOOL,          // 2
-    JD_NULL = JS_TAG_NULL,          // 3
-    JD_F64 = JS_TAG_FLOAT64,       // 7
-    JD_OBJ = JS_TAG_OBJECT,        // 8
-    JD_STR = JS_TAG_STRING,        // 11
-    JD_BFLOAT = JS_TAG_BIG_FLOAT,     // 13
-    JD_BINT = JS_TAG_BIG_INT,       // 14
-    JD_BDECIMAL = JS_TAG_BIG_DECIMAL,   // 15
-    JD_ARRAY = 150,
-    JD_UNSET = 151,
-    JD_NAN = 152,
-    JD_UNASSIGNED = 153,
-    JD_UNKNOWN = 154,
-    JD_UNDEFINED = 155,
-    JD_FUNC = 156
-    );
+JDValue = (
+  JD_UNINITIALIZED = JS_TAG_UNINITIALIZED, // 0
+  JD_INT = JS_TAG_INT,           // 1
+  JD_BOOL = JS_TAG_BOOL,          // 2
+  JD_NULL = JS_TAG_NULL,          // 3
+  JD_F64 = JS_TAG_FLOAT64,       // 7
+  JD_OBJ = JS_TAG_OBJECT,        // 8
+  JD_STR = JS_TAG_STRING,        // 11
+  JD_BFLOAT = JS_TAG_BIG_FLOAT,     // 13
+  JD_BINT = JS_TAG_BIG_INT,       // 14
+  JD_BDECIMAL = JS_TAG_BIG_DECIMAL,   // 15
+  JD_ARRAY = 150,
+  JD_UNSET = 151,
+  JD_NAN = 152,
+  JD_UNASSIGNED = 153,
+  JD_UNKNOWN = 154,
+  JD_UNDEFINED = 155,
+  JD_FUNC = 156
+  );
 
-  JDValues = set of JDValue;
-  JDTypes = array of JDValue;
+JDValues = set of JDValue;
+JDTypes = array of JDValue;
 
   {** Helper for @link(JDValue). }
-  {$IFNDEF PASDOC}
-  JDValueHelper = type helper for JDValue
-    function code: integer;
-  end;
-  {$ENDIF}
+{$IFNDEF PASDOC}
+JDValueHelper = type helper for JDValue
+  function code: integer;
+end;
+{$ENDIF}
 
   {** QuickJS value wrapper with typed variants (bigint, float, string, bool,
       array, object...). Provides conversion helpers and array access. }
-  JSValueVal = record
-    Data: packed record
-      case match: JDValue of
-        JD_BINT: (BigInt: int64);
-        JD_BFLOAT: (BigFloat: double);
-        JD_BDECIMAL: (BigDecimal: double);
-        JD_INT: (Int32Val: int32);
-        JD_F64: (FloatVal: double);
-        JD_STR: (StrVal: string[255]);
-        JD_BOOL: (BoolVal: boolean);
-        JD_FUNC: (Func: Pointer);
-        JD_OBJ: (ObjectVal: Pointer);
-        JD_UNKNOWN: (Parsed: string[255]);
-        JD_ARRAY: (ArrayVal: TJSValList);
-      end;
+JSValueVal = record
+  Data: packed record
+    case match: JDValue of
+      JD_BINT: (BigInt: int64);
+      JD_BFLOAT: (BigFloat: double);
+      JD_BDECIMAL: (BigDecimal: double);
+      JD_INT: (Int32Val: int32);
+      JD_F64: (FloatVal: double);
+      JD_STR: (StrVal: string[255]);
+      JD_BOOL: (BoolVal: boolean);
+      JD_FUNC: (Func: Pointer);
+      JD_OBJ: (ObjectVal: Pointer);
+      JD_UNKNOWN: (Parsed: string[255]);
+      JD_ARRAY: (ArrayVal: TJSValList);
+    end;
 
     // Returns the JDValue type as a string (e.g., "int", "bool", etc.)
-    function valtype: string;
+  function valtype: string;
 
     // Converts the record to a string representation
-    function stringify: string;
+  function stringify: string;
 
     // Converts the record to a floating-point, if compatible
-    function floatify: double;
+  function floatify: double;
 
     // Converts the record to an integer, if compatible
-    function intify: int64;
+  function intify: int64;
 
     // Gets an element from the embedded array by index
-    function _a(i: integer): JSValueVal;
+  function _a(i: integer): JSValueVal;
 
     // Enforces that the `val` parameter must match a given JDValue type
     // otherwise fill with defaults or handle as needed.
-    function acttype(const val: JSValueVal; want: JDValue): JSValueVal;
+  function acttype(const val: JSValueVal; want: JDValue): JSValueVal;
 
     // Returns true if the `self` matches the specified JDValue type.
-    function match(a: JDValue): boolean;
+  function match(a: JDValue): boolean;
 
     // Raises an exception if the `self` does not match the specified JDValue.
     // Optionally includes the function name (func) and parameter index (ppos).
-    function mustbe(a: JDValue; func: string = ''; ppos: integer = -1): boolean;
+  function mustbe(a: JDValue; func: string = ''; ppos: integer = -1): boolean;
 
     // Default property so you can use e.g. myValueVal[i] to get array elements
-    property arrval[i: integer]: JSValueVal read _a; default;
+  property arrval[i: integer]: JSValueVal read _a; default;
 
     // Equality operator, returns true if they have the same JDValue tag
-    class operator =(const a, b: JSValueVal): boolean; overload; inline;
+  class operator =(const a, b: JSValueVal): boolean; overload; inline;
 
     // Type conversion operators
-    class operator explicit(a: JSValueVal): integer; inline;
-    class operator explicit(a: JSValueVal): TJSValList; inline;
-    class operator explicit(a: JSValueVal): string; inline;
-  end;
+  class operator explicit(a: JSValueVal): integer; inline;
+  class operator explicit(a: JSValueVal): TJSValList; inline;
+  class operator explicit(a: JSValueVal): string; inline;
+end;
 
   // Alias for an array of JSValueVal
-  JSValueValArray = array of JSValueVal;
+JSValueValArray = array of JSValueVal;
 
   {** Simple container for a single @link(JSValueVal) or an array of them. }
-  JSValueParam = record
-    BigInt: int64;
-    BigFloat: double;
-    BigDecimal: double;
-    Int32Val: int32;
-    FloatVal: double;
-    StrVal: string;
-    BoolVal: boolean;
-    Func: Pointer;
-    ObjectVal: Pointer;
-    match: JDValue;
-    arrayVal: array of JSValueParam;
-  end;
+JSValueParam = record
+  BigInt: int64;
+  BigFloat: double;
+  BigDecimal: double;
+  Int32Val: int32;
+  FloatVal: double;
+  StrVal: string;
+  BoolVal: boolean;
+  Func: Pointer;
+  ObjectVal: Pointer;
+  match: JDValue;
+  arrayVal: array of JSValueParam;
+end;
 
   // An array of JSValueParam
-  JSValuePArray = array of JSValueParam;
+JSValuePArray = array of JSValueParam;
 
   {** Holds one or many @link(JSValueParam) values, tracked by a JDValue tag. }
-  JSValueParams = record
-    match: JDValue;
-    Data: array of JSValueParam;
-    Count: integer;
-    arrayVal: JSValuePArray;
-  end;
+JSValueParams = record
+  match: JDValue;
+  Data: array of JSValueParam;
+  Count: integer;
+  arrayVal: JSValuePArray;
+end;
 
   // Specialized list of JSParameters
-  JSParameters = TJSValList;
-  PJSParameters = ^JSParameters;
+JSParameters = TJSValList;
+PJSParameters = ^JSParameters;
 
   {** Callback signature used by extensions to call into Pascal from JS.
       @param(ctx QuickJS context)
@@ -177,18 +177,18 @@ type
       @param(params Arguments list)
       @param(res Out parameter receiving the result)
       @returns(True on success) }
-  JSCallbackFunction = function(const ctx: PJSContext; const func: string;
-    const params: JSParameters; out res: JSValueVal): boolean of object;
-  PJSCallbackFunction = ^JSCallbackFunction;
+JSCallbackFunction = function(const ctx: PJSContext; const func: string;
+  const params: JSParameters; out res: JSValueVal): boolean of object;
+PJSCallbackFunction = ^JSCallbackFunction;
 
   {
     TJSGValList is a generic TFPList-based container for any type T.
     Exposes GetInline for direct item retrieval.
   }
-  generic TJSGValList<T> = class(specialize TFPGList<T>)
-  public
-    function GetInline(Index: longint): T; inline;
-  end;
+generic TJSGValList<T> = class(specialize TFPGList<T>)
+public
+  function GetInline(Index: longint): T; inline;
+end;
 
   {
     TJSCallback is a record storing callback information including:
@@ -197,57 +197,57 @@ type
       - the function name (func)
       - the callback function pointer
   }
-  TJSCallback = record
-    params: record
-      values: packed record
-        case boolean of
-          True: (Data: JSParameters);
-          False: ();
-        end;
-      min, max: integer;
+TJSCallback = record
+  params: record
+    values: packed record
+      case boolean of
+        true: (Data: JSParameters);
+        false: ();
       end;
-    func: string;
-    callback: JSCallbackFunction;
-    class operator =(const a, b: TJSCallback): boolean; overload; inline;
-  end;
+    min, max: integer;
+    end;
+  func: string;
+  callback: JSCallbackFunction;
+  class operator =(const a, b: TJSCallback): boolean; overload; inline;
+end;
 
-  PJSCallback = ^TJSCallback;
+PJSCallback = ^TJSCallback;
 
 // Function declarations
 function JSValueToString(ctx: JSContext; Value: JSValue): string;
 function JSValueConstToUtf8(ctx: JSContext; Value: JSValueConst): RawUtf8;
 function JSFunctionParams(ctx: JSContext; argc: integer;
-  argv: PJSValueConstArr): TStringList;
+argv: PJSValueConstArr): TStringList;
 function JSParseValue(ctx: JSContext; val: JSValue): JSValueVal; overload;
 function JSParseValue(ctx: JSContext; val: JSValueRaw): JSValueVal; overload;
 function JSParseParameters(ctx: JSContext; argc: integer;
-  argv: PJSValueConstArr): JSParameters; overload;
+argv: PJSValueConstArr): JSParameters; overload;
 function JSParseParameters(ctx: JSContext; argc: integer;
-  argv: PJSValueConst): JSParameters; overload;
+argv: PJSValueConst): JSParameters; overload;
 function JSDumpObject(ctx: JSContext; obj: JSValueConst; var dump: string): boolean;
 function JSTryToString(ctx: JSContext; Data: JSValue; out str: string): boolean;
 function JSStringifyValue(val: JSValueVal): string;
-function analyze(ctx: JSContext; EvalResult: PJSValue; loop: boolean = False): string;
+function analyze(ctx: JSContext; EvalResult: PJSValue; loop: boolean = false): string;
 function JSConsoleLog(ctx: JSContext; this_val: JSValueConst;
-  argc: integer; argv: PJSValueConstArr): JSValueRaw; cdecl;
+argc: integer; argv: PJSValueConstArr): JSValueRaw; cdecl;
 procedure RegisterConsoleLog(ctx: PJSContext);
 function JSValueValToValue(ctx: JSContext; val: JSValueVal): JSValue;
 function JSValueValArrayToArray(ctx: JSContext;
-  val: JSValueVal): JSValueValArray; inline;
+val: JSValueVal): JSValueValArray; inline;
 function StringToValueVal(const s: string): JSValueVal;
 function IntToValueVal(const i: integer): JSValueVal;
 
 function JSValueParamCheck(const params: PJSParameters;
-  const fmts: array of JDValue): boolean;
+const fmts: array of JDValue): boolean;
 function valTypeToStr(val: JDValue): string;
 function checkJSParams(params: JSParameters; expect: JDTypes): integer; overload;
 function checkJSParams(params: JSParameters; expect, expect2: JDTypes): integer;
-  overload;
+overload;
 
 const
-  JS_TAG_UNKNOWN = -10;
-  JS_PARAM_MISSMATCH = 150;
-  JS_PARAM_OK = -1;
+JS_TAG_UNKNOWN = -10;
+JS_PARAM_MISSMATCH = 150;
+JS_PARAM_OK = -1;
 
 implementation
 
@@ -313,47 +313,47 @@ end;
 function JSValueVal.intify: int64;
 begin
   case self.Data.match of
-    JD_BINT:
-      Result := self.Data.BigInt;
-    JD_INT:
-      Result := self.Data.Int32Val;
-    JD_STR:
+  JD_BINT:
+    Result := self.Data.BigInt;
+  JD_INT:
+    Result := self.Data.Int32Val;
+  JD_STR:
       // Attempt string -> int64
-      if not TryStrToInt64(self.Data.StrVal, Result) then
-        raise Exception.Create('Could not interpret string as int');
-    else
+    if not TryStrToInt64(self.Data.StrVal, Result) then
+      raise Exception.Create('Could not interpret string as int');
+  else
       // For other types, you can choose whether to raise an error or return 0
-      raise Exception.Create('Cannot convert this JDValue to integer');
+    raise Exception.Create('Cannot convert this JDValue to integer');
   end;
 end;
 
 function JSValueVal.floatify: double;
 begin
   case self.Data.match of
-    JD_BINT:
-      Result := self.Data.BigInt;
-    JD_BFLOAT:
-      Result := self.Data.BigFloat;
-    JD_BDECIMAL:
-      Result := self.Data.BigDecimal;
-    JD_INT:
-      Result := self.Data.Int32Val;
-    JD_F64:
-      Result := self.Data.FloatVal;
-    JD_STR:
+  JD_BINT:
+    Result := self.Data.BigInt;
+  JD_BFLOAT:
+    Result := self.Data.BigFloat;
+  JD_BDECIMAL:
+    Result := self.Data.BigDecimal;
+  JD_INT:
+    Result := self.Data.Int32Val;
+  JD_F64:
+    Result := self.Data.FloatVal;
+  JD_STR:
       // Attempt string -> float
-      if not TryStrToFloat(self.Data.StrVal, Result) then
-        raise Exception.Create('Could not interpret string as float');
-    else
+    if not TryStrToFloat(self.Data.StrVal, Result) then
+      raise Exception.Create('Could not interpret string as float');
+  else
       // For other types, handle as you see fit
-      raise Exception.Create('Cannot convert this JDValue to float');
+    raise Exception.Create('Cannot convert this JDValue to float');
   end;
 end;
 
 function JSValueVal.stringify: string;
 
   // Helper function for arrays
-  function doArray(arr: JSParameters; depth: integer): string;
+function doArray(arr: JSParameters; depth: integer): string;
   var
     i: integer;
   begin
@@ -386,37 +386,37 @@ begin
 
   // Otherwise, convert based on match type
   case self.Data.match of
-    JD_UNSET:
-      Result := 'Unset';
-    JD_NAN:
-      Result := 'NaN';
-    JD_UNASSIGNED:
-      Result := 'Unassigned';
-    JD_UNKNOWN:
-      Result := 'Unknown';
-    JD_UNINITIALIZED:
-      Result := 'Uninitialized';
-    JD_NULL:
-      Result := 'null';
-    JD_BINT:
-      Result := IntToStr(self.Data.BigInt);
-    JD_BFLOAT:
-      Result := FloatToStr(self.Data.BigFloat);
-    JD_BDECIMAL:
-      Result := FloatToStr(self.Data.BigDecimal);
-    JD_INT:
-      Result := IntToStr(self.Data.Int32Val);
-    JD_F64:
-      Result := FloatToStr(self.Data.FloatVal);
-    JD_STR:
-      Result := self.Data.StrVal;
-    JD_BOOL:
-      Result := BoolToStr(self.Data.BoolVal, 'true', 'false');
-    JD_OBJ:
-      Result := '<object>';
-    else
+  JD_UNSET:
+    Result := 'Unset';
+  JD_NAN:
+    Result := 'NaN';
+  JD_UNASSIGNED:
+    Result := 'Unassigned';
+  JD_UNKNOWN:
+    Result := 'Unknown';
+  JD_UNINITIALIZED:
+    Result := 'Uninitialized';
+  JD_NULL:
+    Result := 'null';
+  JD_BINT:
+    Result := IntToStr(self.Data.BigInt);
+  JD_BFLOAT:
+    Result := FloatToStr(self.Data.BigFloat);
+  JD_BDECIMAL:
+    Result := FloatToStr(self.Data.BigDecimal);
+  JD_INT:
+    Result := IntToStr(self.Data.Int32Val);
+  JD_F64:
+    Result := FloatToStr(self.Data.FloatVal);
+  JD_STR:
+    Result := self.Data.StrVal;
+  JD_BOOL:
+    Result := BoolToStr(self.Data.BoolVal, 'true', 'false');
+  JD_OBJ:
+    Result := '<object>';
+  else
       // Default if not recognized
-      Result := 'unknown ' + self.Data.Parsed;
+    Result := 'unknown ' + self.Data.Parsed;
   end;
 end;
 
@@ -445,7 +445,7 @@ end;
 
 function JSValueVal.mustbe(a: JDValue; func: string = ''; ppos: integer = -1): boolean;
 begin
-  Result := False;
+  Result := false;
   if not match(a) then
     if func = '' then
       raise EInvalidCast.Create(Format(sDataTypeErr, [valtype, valTypeToStr(a)]))
@@ -458,7 +458,7 @@ begin
         [valtype, valTypeToStr(a), func]))
   // If mismatch, raise an exception with contextual info
   ;
-  Result := True;
+  Result := true;
 end;
 
 class operator JSValueVal.=(const a, b: JSValueVal): boolean;
@@ -527,7 +527,7 @@ begin
 end;
 
 function JSFunctionParams(ctx: JSContext; argc: integer;
-  argv: PJSValueConstArr): TStringList;
+argv: PJSValueConstArr): TStringList;
 var
   i: integer;
   argstr: RawUtf8;
@@ -544,7 +544,7 @@ begin
 end;
 
 function JSParseParameters(ctx: JSContext; argc: integer;
-  argv: PJSValueConstArr): JSParameters;
+argv: PJSValueConstArr): JSParameters;
 var
   i: integer;
   pVal: PJSValueVal;
@@ -567,7 +567,7 @@ begin
 end;
 
 function JSParseParameters(ctx: JSContext; argc: integer;
-  argv: PJSValueConst): JSParameters;
+argv: PJSValueConst): JSParameters;
 var
   i: integer;
   pVal: PJSValueVal;
@@ -594,11 +594,11 @@ begin
   // Attempt to parse the JSValue as a string
   with JSParseValue(ctx, Data) do
     if Data.match <> JD_STR then
-      Result := False
+      Result := false
     else
     begin
       str := Data.StrVal;
-      Result := True;
+      Result := true;
     end;
 end;
 
@@ -724,22 +724,22 @@ var
 begin
   // Converts a JSValueVal to a Pascal string, depending on the match type
   case val.Data.match of
-    JD_BDECIMAL:
-      s := FloatToStr(val.Data.BigDecimal);
-    JD_BFLOAT:
-      s := FloatToStr(val.Data.BigFloat);
-    JD_BINT:
-      s := IntToStr(val.Data.BigInt);
-    JD_F64:
-      s := FloatToStr(val.Data.FloatVal);
-    JD_INT:
-      s := IntToStr(val.Data.Int32Val);
-    JD_STR:
-      s := val.Data.StrVal;
-    JD_BOOL:
-      s := BoolToStr(val.Data.BoolVal);
-    else
-      s := 'Unknown';
+  JD_BDECIMAL:
+    s := FloatToStr(val.Data.BigDecimal);
+  JD_BFLOAT:
+    s := FloatToStr(val.Data.BigFloat);
+  JD_BINT:
+    s := IntToStr(val.Data.BigInt);
+  JD_F64:
+    s := FloatToStr(val.Data.FloatVal);
+  JD_INT:
+    s := IntToStr(val.Data.Int32Val);
+  JD_STR:
+    s := val.Data.StrVal;
+  JD_BOOL:
+    s := BoolToStr(val.Data.BoolVal);
+  else
+    s := 'Unknown';
   end;
   Result := s;
 end;
@@ -748,45 +748,45 @@ function valTypeToStr(val: JDValue): string;
 begin
   // Returns a textual description of a JDValue
   case val of
-    JD_ARRAY:
-      Result := 'array';
-    JD_UNSET:
-      Result := 'Unset';
-    JD_NAN:
-      Result := 'NaN';
-    JD_UNASSIGNED:
-      Result := 'Unassigned';
-    JD_UNKNOWN:
-      Result := 'Unknown';
-    JD_UNINITIALIZED:
-      Result := 'Uninitialized';
-    JD_NULL:
-      Result := 'null';
-    JD_BINT:
-      Result := 'bigint';
-    JD_BFLOAT:
-      Result := 'bigfloat';
-    JD_BDECIMAL:
-      Result := 'bigdecimal';
-    JD_INT:
-      Result := 'int';
-    JD_F64:
-      Result := 'float64';
-    JD_STR:
-      Result := 'string';
-    JD_BOOL:
-      Result := 'bool';
-    JD_OBJ:
-      Result := 'object';
-    else
-      Result := 'unknown';
+  JD_ARRAY:
+    Result := 'array';
+  JD_UNSET:
+    Result := 'Unset';
+  JD_NAN:
+    Result := 'NaN';
+  JD_UNASSIGNED:
+    Result := 'Unassigned';
+  JD_UNKNOWN:
+    Result := 'Unknown';
+  JD_UNINITIALIZED:
+    Result := 'Uninitialized';
+  JD_NULL:
+    Result := 'null';
+  JD_BINT:
+    Result := 'bigint';
+  JD_BFLOAT:
+    Result := 'bigfloat';
+  JD_BDECIMAL:
+    Result := 'bigdecimal';
+  JD_INT:
+    Result := 'int';
+  JD_F64:
+    Result := 'float64';
+  JD_STR:
+    Result := 'string';
+  JD_BOOL:
+    Result := 'bool';
+  JD_OBJ:
+    Result := 'object';
+  else
+    Result := 'unknown';
   end;
 end;
 
 function JSValueValToValue(ctx: JSContext; val: JSValueVal): JSValue;
 
   // Helper function to convert arrays
-  function doArray(arr: JSParameters; depth: integer): JSValue;
+function doArray(arr: JSParameters; depth: integer): JSValue;
   var
     i: integer;
     retarr: JSValueRaw;
@@ -818,31 +818,31 @@ begin
 
   // Otherwise handle each type
   case val.Data.match of
-    JD_BINT:
-      Result.from64(val.Data.BigInt);
-    JD_BFLOAT:
-      Result.FromFloat(val.Data.BigFloat);
-    JD_BDECIMAL:
-      Result.fromFloat(val.Data.BigDecimal);
-    JD_INT:
-      Result.From32(val.Data.Int32Val);
-    JD_F64:
-      Result.FromFloat(val.Data.FloatVal);
-    JD_STR:
-      Result := ctx^.From(val.Data.StrVal);
-    JD_BOOL:
-      Result.From(val.Data.BoolVal);
-    JD_OBJ:
+  JD_BINT:
+    Result.from64(val.Data.BigInt);
+  JD_BFLOAT:
+    Result.FromFloat(val.Data.BigFloat);
+  JD_BDECIMAL:
+    Result.fromFloat(val.Data.BigDecimal);
+  JD_INT:
+    Result.From32(val.Data.Int32Val);
+  JD_F64:
+    Result.FromFloat(val.Data.FloatVal);
+  JD_STR:
+    Result := ctx^.From(val.Data.StrVal);
+  JD_BOOL:
+    Result.From(val.Data.BoolVal);
+  JD_OBJ:
       // If ObjectVal is already a JSValue object pointer
-      Result := JSValue(val.Data.ObjectVal);
-    else
+    Result := JSValue(val.Data.ObjectVal);
+  else
       // For non-supported types, return `undefined`
-      Result := JSValue(JS_UNDEFINED);
+    Result := JSValue(JS_UNDEFINED);
   end;
 end;
 
 function JSValueValArrayToArray(ctx: JSContext;
-  val: JSValueVal): JSValueValArray; inline;
+val: JSValueVal): JSValueValArray; inline;
 var
   i: integer;
 begin
@@ -862,7 +862,7 @@ begin
   // Retrieve property names from the object
   if JS_GetOwnPropertyNames(ctx, @propEnum, @propCount, obj, JS_GPN_STRING_MASK) = 0 then
   try
-    Result := False;
+    Result := false;
     for i := 0 to propCount - 1 do
     begin
       propName := JS_AtomToCString(ctx, propEnum[i].atom);
@@ -870,7 +870,7 @@ begin
         // Write out or handle each property name
         dump := Format('%s%s%s: %s', [IfThen(i = 0, '', #13#10),
           dump, 'Property Name', propName]);
-        Result := True;
+        Result := true;
       finally
         // Free the property name
         JS_FreeCString(ctx, propName);
@@ -884,21 +884,21 @@ begin
     JS_Free(ctx, propEnum);
   end
   else
-    Result := False;
+    Result := false;
 end;
 
-function analyze(ctx: JSContext; EvalResult: PJSValue; loop: boolean = False): string;
+function analyze(ctx: JSContext; EvalResult: PJSValue; loop: boolean = false): string;
 var
   messageVal, stackVal: JSValue;
   messageStr, stackStr: pchar;
   err: string;
 begin
   // Retrieve the exception object and its 'message'
-  messageVal := JSValue(JS_GetPropertyStr(ctx, JS_GetException(ctx), PChar('message')));
+  messageVal := JSValue(JS_GetPropertyStr(ctx, JS_GetException(ctx), pchar('message')));
   if messageVal.IsString then
     messageStr := JS_ToCString(ctx, messageVal.raw)
   else
-    messageStr := PChar(sUnknownErr);
+    messageStr := pchar(sUnknownErr);
 
   // Retrieve the 'stack' from the exception object if available
   stackVal := JSValue(JS_GetPropertyStr(ctx, JS_GetException(ctx), 'stack'));
@@ -908,11 +908,11 @@ begin
   if not loop then
   begin
     // Attempt to fix if first pass fails
-    Result := sStackFailed + analyze(ctx, @stackVal, True);
+    Result := sStackFailed + analyze(ctx, @stackVal, true);
     Exit;
   end
   else
-    stackStr := PChar(sNoTrace);
+    stackStr := pchar(sNoTrace);
 
   try
     // Format the error message
@@ -926,7 +926,7 @@ begin
 end;
 
 function JSConsoleLog(ctx: JSContext; this_val: JSValueConst;
-  argc: integer; argv: PJSValueConstArr): JSValueRaw; cdecl;
+argc: integer; argv: PJSValueConstArr): JSValueRaw; cdecl;
 var
   msg: pchar;
   i: integer;
@@ -975,23 +975,23 @@ begin
 end;
 
 function JSValueParamCheck(const params: PJSParameters;
-  const fmts: array of JDValue): boolean;
+const fmts: array of JDValue): boolean;
 var
   i: integer;
   v: JSValueVal;
 begin
   // Quick check for count
   if params^.Count <> Length(fmts) then
-    Exit(False);
+    Exit(false);
 
   // Check each parameter's JDValue match
   for i := 0 to params^.Count - 1 do
   begin
     v := (params^[i]^);
     if v.Data.match <> fmts[i] then
-      Exit(False);
+      Exit(false);
   end;
-  Result := True;
+  Result := true;
 end;
 
 function IntToValueVal(const i: integer): JSValueVal;

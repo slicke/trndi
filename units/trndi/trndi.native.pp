@@ -36,30 +36,30 @@ unit trndi.native;
 interface
 
 uses
-  trndi.native.base
-  {$IF DEFINED(X_WIN)}, trndi.native.win
-  {$ELSEIF DEFINED(X_MAC)}, trndi.native.mac
-  {$ELSE}, trndi.native.linux
-  {$ENDIF}
-  ;
+trndi.native.base
+{$IF DEFINED(X_WIN)}, trndi.native.win
+{$ELSEIF DEFINED(X_MAC)}, trndi.native.mac
+{$ELSE}, trndi.native.linux
+{$ENDIF}
+;
 
 type
   // Re-export base types
-  TTrndiNativeBase = trndi.native.base.TTrndiNativeBase;
-  TWSLVersion = trndi.native.base.TWSLVersion;
-  TTrndiBool = trndi.native.base.TTrndiBool;
-  TWSLInfo = trndi.native.base.TWSLInfo;
+TTrndiNativeBase = trndi.native.base.TTrndiNativeBase;
+TWSLVersion = trndi.native.base.TWSLVersion;
+TTrndiBool = trndi.native.base.TTrndiBool;
+TWSLInfo = trndi.native.base.TWSLInfo;
 
-  {$IF DEFINED(X_WIN)}
-  TTrndiNativeWindows = trndi.native.win.TTrndiNativeWindows;
-  TrndiNative = TTrndiNativeWindows;
-  {$ELSEIF DEFINED(X_MAC)}
-  TTrndiNativeMac = trndi.native.mac.TTrndiNativeMac;
-  TrndiNative = TTrndiNativeMac;
-  {$ELSE}
-  TTrndiNativeLinux = trndi.native.linux.TTrndiNativeLinux;
-  TrndiNative = TTrndiNativeLinux;
-  {$ENDIF}
+{$IF DEFINED(X_WIN)}
+TTrndiNativeWindows = trndi.native.win.TTrndiNativeWindows;
+TrndiNative = TTrndiNativeWindows;
+{$ELSEIF DEFINED(X_MAC)}
+TTrndiNativeMac = trndi.native.mac.TTrndiNativeMac;
+TrndiNative = TTrndiNativeMac;
+{$ELSE}
+TTrndiNativeLinux = trndi.native.linux.TTrndiNativeLinux;
+TrndiNative = TTrndiNativeLinux;
+{$ENDIF}
   // Tip: Use TrndiNative in your code, not platform-specific class names.
   // Example: native := TrndiNative.create('UA', 'https://...');
 

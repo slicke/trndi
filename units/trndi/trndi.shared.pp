@@ -17,14 +17,14 @@ unit trndi.shared;
 interface
 
 uses
-  Classes, SysUtils, Graphics, Controls, ExtCtrls, Math,
-  {$ifdef WINDOWS}
-  LCLType, Windows,
-  {$endif}
-  {$ifdef LINUX}
-  FileUtil, StrUtils,
-  {$endif}
-  LCLIntf;
+Classes, SysUtils, Graphics, Controls, ExtCtrls, Math,
+{$ifdef WINDOWS}
+LCLType, Windows,
+{$endif}
+{$ifdef LINUX}
+FileUtil, StrUtils,
+{$endif}
+LCLIntf;
 
 // Color utility functions
 function DarkenColor(originalColor: TColor; factor: double = 0.8): TColor;
@@ -149,25 +149,31 @@ begin
   sys := GetLinuxSystem;
 
   start := Pos('ID=', sys)+3; // ID=...
-  if start > 0 then begin
+  if start > 0 then
+  begin
     s := Copy(sys, start);
     stop := Pos(#10, s);
     result := Copy(s, 0, stop-1);
     result := TrimSet(result, ['"', #10]);
-  end else result := '';
+  end
+  else result := '';
 
-  if (result.IsEmpty) or (result[1] in ['0'..'9']) then begin
+  if (result.IsEmpty) or (result[1] in ['0'..'9']) then
+  begin
     start := Pos('NAME=', sys)+5; // NAME=...
-    if start > 0 then begin
+    if start > 0 then
+    begin
       s := Copy(sys, start);
       stop := Pos(#10, s);
       result := Copy(s, 0, stop-1);
       result := TrimSet(result, ['"', #10]);
-    end else result := 'unknown';
+    end
+    else result := 'unknown';
   end;
 
   start := Pos('VERSION=', sys)+8; // VERSION="..."
-  if start > 0 then begin
+  if start > 0 then
+  begin
     s := Copy(sys, start);
     stop := Pos(#10, s);
     ver := Copy(s, 0, stop-1);
@@ -186,7 +192,8 @@ begin
   sys := LowerCase(GetLinuxDistro(s));
   result := s;
   for s in opts do
-    if Pos(LowerCase(s), sys) > -1 then begin
+    if Pos(LowerCase(s), sys) > -1 then
+    begin
       result := s;
       Exit;
     end;
@@ -200,20 +207,20 @@ procedure ApplyRoundedCorners(APanel: TPanel; Radius: integer);
 {$IFDEF WINDOWS}
 var
   Rgn: HRGN;
-{$ENDIF}
+  {$ENDIF}
 begin
   {$IFDEF WINDOWS}
   // Windows: Set a real rounded window region
   Rgn := CreateRoundRectRgn(0, 0, APanel.Width, APanel.Height, Radius, Radius);
-  SetWindowRgn(APanel.Handle, Rgn, True);
+  SetWindowRgn(APanel.Handle, Rgn, true);
   {$ENDIF}
 end;
 
 procedure ApplyAlphaControl(Control: TWinControl; Alpha: byte);
 {$IFDEF WINDOWS}
 var
-  ExStyle: LongInt;
-{$ENDIF}
+  ExStyle: longint;
+  {$ENDIF}
 begin
   {$IFDEF WINDOWS}
   ExStyle := GetWindowLong(Control.Handle, GWL_EXSTYLE);

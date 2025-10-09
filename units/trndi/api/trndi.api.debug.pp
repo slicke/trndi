@@ -26,23 +26,23 @@ unit trndi.api.debug;
 interface
 
 uses
-  Classes, SysUtils, Dialogs, trndi.types, trndi.api, trndi.native,
-  fpjson, jsonparser, dateutils;
+Classes, SysUtils, Dialogs, trndi.types, trndi.api, trndi.native,
+fpjson, jsonparser, dateutils;
 
 type
   // Main class
-  DebugAPI = class(TrndiAPI)
-  protected
-  public
-    constructor Create(user, pass, extra: string); override;
-    function connect: boolean; override;
-    function getReadings(min, maxNum: integer; extras: string; out res: string): BGResults;
-      override;
-  private
+DebugAPI = class(TrndiAPI)
+protected
+public
+  constructor Create(user, pass, extra: string); override;
+  function connect: boolean; override;
+  function getReadings(min, maxNum: integer; extras: string; out res: string): BGResults;
+    override;
+private
 
-  published
-    property remote: string read baseUrl;
-  end;
+published
+  property remote: string read baseUrl;
+end;
 
 implementation
 
@@ -69,16 +69,16 @@ begin
 
   TimeDiff := 0;
 
-  Result := True;
+  Result := true;
 end;
 
 {------------------------------------------------------------------------------
   Generate fake readings over the last 50 minutes at 5-minute intervals
 ------------------------------------------------------------------------------}
 function DebugAPI.getReadings(min, maxNum: integer; extras: string;
-  out res: string): BGResults;
+out res: string): BGResults;
 
-  function getFakeVals(const min: integer; out reading, delta: integer): TDateTime;
+function getFakeVals(const min: integer; out reading, delta: integer): TDateTime;
   var
     currentTime: TDateTime;
     baseTime: TDateTime;
@@ -106,7 +106,7 @@ function DebugAPI.getReadings(min, maxNum: integer; extras: string;
     delta := reading - previousReading;
   end;
 
-  function guessTrend(diff: integer): BGTrend;
+function guessTrend(diff: integer): BGTrend;
   begin
     if diff < -20 then
       Result := TdDoubleDown

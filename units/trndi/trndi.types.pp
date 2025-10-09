@@ -25,13 +25,13 @@ unit trndi.types;
 interface
 
 uses
-  SysUtils, Dialogs;
+SysUtils, Dialogs;
 
-  {$I ../../inc/types.inc}
+{$I ../../inc/types.inc}
 
 type
   {** Selects which BG value is referenced: the primary reading or its delta. }
-  BGValType = (BGPrimary, BGDelta);
+BGValType = (BGPrimary, BGDelta);
 
   {** A single blood glucose (BG) reading with metadata and helpers.
       Stores the current value, change (delta), units, level classification,
@@ -43,81 +43,81 @@ type
       - Call @code(update) to set values and optionally delta.
       - Read via properties @code(val), @code(delta), @code(level), etc.
    }
-  BGReading = object
-  private
-    curr: BGVal;          //< The current reading value (native internal unit)
-    change: BGVal;        //< The difference since last reading (native internal unit)
-    valu: BGUnit;         //< Internal unit in which the reading is stored
-    retu: BGUnit;         //< Preferred output unit for property-based access
-    lvl: BGValLevel;      //< Classification limits as provided by the API
-    src: shortstring;     //< Source/API identifier that reported this value
-    rssi: integer;        //< Received Signal Strength Indicator (-1 if unknown)
-    device: shortstring;  //< Device name/identifier (may be empty)
-    noise: integer;       //< Noise indicator (-1 if unknown)
+BGReading = object
+private
+  curr: BGVal;          //< The current reading value (native internal unit)
+  change: BGVal;        //< The difference since last reading (native internal unit)
+  valu: BGUnit;         //< Internal unit in which the reading is stored
+  retu: BGUnit;         //< Preferred output unit for property-based access
+  lvl: BGValLevel;      //< Classification limits as provided by the API
+  src: shortstring;     //< Source/API identifier that reported this value
+  rssi: integer;        //< Received Signal Strength Indicator (-1 if unknown)
+  device: shortstring;  //< Device name/identifier (may be empty)
+  noise: integer;       //< Noise indicator (-1 if unknown)
 
-    function getCurr: single;
-    function getChange: single;
-    function checkEmpty: boolean;
-    function getSrc: shortstring;
-    function GetLevel: BGValLevel;
-    function getDevice: string;
-    procedure setReturn(bgu: BGUnit);
-    procedure setLevel(bglvl: BGValLevel);
-  public
-    trend: BGTrend;       //< Trend “arrow” enumeration
-    date: TDateTime;      //< Timestamp when the reading occurred
+  function getCurr: single;
+  function getChange: single;
+  function checkEmpty: boolean;
+  function getSrc: shortstring;
+  function GetLevel: BGValLevel;
+  function getDevice: string;
+  procedure setReturn(bgu: BGUnit);
+  procedure setLevel(bglvl: BGValLevel);
+public
+  trend: BGTrend;       //< Trend “arrow” enumeration
+  date: TDateTime;      //< Timestamp when the reading occurred
 
     {** Initialize with same storage and return unit.
         @param(vtype Internal storage unit)
         @param(api   Optional API/source name) }
-    constructor Init(vtype: BGUnit; api: shortstring = '');
+  constructor Init(vtype: BGUnit; api: shortstring = '');
 
     {** Initialize with explicit storage and preferred return units.
         @param(vtype Internal storage unit)
         @param(rtype Preferred return unit for property access)
         @param(api   Optional API/source name) }
-    constructor Init(vtype, rtype: BGUnit; api: shortstring = '');
+  constructor Init(vtype, rtype: BGUnit; api: shortstring = '');
 
     {** Update either primary or delta value with an explicit source unit.
         Value is converted into internal storage unit.
         @param(val   Numeric value)
         @param(which Which value to update: primary or delta)
         @param(u     Unit of the provided value) }
-    procedure update(val: BGVal; which: BGValType; u: BGUnit);
+  procedure update(val: BGVal; which: BGValType; u: BGUnit);
 
     {** Update both current and delta values with an explicit source unit.
         @param(valCurr  Current reading)
         @param(valDelta Delta)
         @param(u        Unit of the provided values) }
-    procedure update(valCurr, valDelta: BGVal; u: BGUnit);
+  procedure update(valCurr, valDelta: BGVal; u: BGUnit);
 
     {** Update either primary or delta value, assuming the object’s internal unit. }
-    procedure update(val: BGVal; which: BGValType);
+  procedure update(val: BGVal; which: BGValType);
 
     {** Update both current and delta values, assuming the object’s internal unit. }
-    procedure update(valCurr, valDelta: BGVal);
+  procedure update(valCurr, valDelta: BGVal);
 
     {** Populate environment metadata (device, rssi, noise).
         @param(valdevice Device name)
         @param(valrssi   Signal indicator; -1 if unknown)
         @param(valnoise  Noise indicator; -1 if unknown) }
-    procedure updateEnv(valdevice: shortstring; valrssi: integer = -1;
-      valnoise: integer = -1);// NS specific stuff
+  procedure updateEnv(valdevice: shortstring; valrssi: integer = -1;
+    valnoise: integer = -1);// NS specific stuff
 
     {** Clear the numeric values (sets to @code(BG_NO_VAL)). }
-    procedure Clear;
+  procedure Clear;
 
     {** Convert a value to another unit.
         @param(u     Target unit)
         @param(which Which value to convert: primary or delta)
         @returns Converted value as single }
-    function convert(u: BGUnit; which: BGValType = BGPrimary): single;
+  function convert(u: BGUnit; which: BGValType = BGPrimary): single;
 
     {** Convert then round to nearest integer (for display).
         @param(u     Target unit)
         @param(which Which value: primary or delta)
         @returns Rounded smallint }
-    function round(u: BGUnit; which: BGValType = BGPrimary): smallint;
+  function round(u: BGUnit; which: BGValType = BGPrimary): smallint;
 
     {** Format a value using a unit-specific format string.
         The format map @code(fmt) holds per-unit format strings. A special
@@ -128,52 +128,52 @@ type
         @param(which   Primary or delta value)
         @param(rounded If true, uses rounded value)
         @returns Formatted string }
-    function format(u: BGUnit; fmt: BgUnitMeta; which: BGValType = BGPrimary;
-      rounded: boolean = False): string;
+  function format(u: BGUnit; fmt: BgUnitMeta; which: BGValType = BGPrimary;
+    rounded: boolean = false): string;
 
     {** Current value in preferred return unit. }
-    property val: single read GetCurr;
+  property val: single read GetCurr;
 
     {** Set the preferred return unit for property-based reads. }
-    property return: BGUnit write SetReturn;
+  property return: BGUnit write SetReturn;
 
     {** Delta value in preferred return unit. }
-    property delta: single read GetChange;
+  property delta: single read GetChange;
 
     {** True if the primary BG value is unset (@code(BG_NO_VAL)). }
-    property empty: boolean read CheckEmpty;
+  property empty: boolean read CheckEmpty;
 
     {** Level classification as provided by the API or computed elsewhere. }
-    property level: BGValLevel read GetLevel write SetLevel;
+  property level: BGValLevel read GetLevel write SetLevel;
 
     {** Source identifier (API) string. }
-    property Source: shortstring read GetSrc;
+  property Source: shortstring read GetSrc;
 
     {** Device/sensor string; returns '<unknown>' if empty. }
-    property sensor: string read getDevice;
+  property sensor: string read getDevice;
 
     {** Get RSSI value if present.
         @param(outval Receives RSSI)
         @returns True if RSSI is defined (>=0) }
-    function getRSSI(out outval: integer): boolean;
+  function getRSSI(out outval: integer): boolean;
 
     {** Get noise value if present.
         @param(outval Receives noise)
         @returns True if noise is defined (>=0) }
-    function getNoise(out outval: integer): boolean;
-  end;
+  function getNoise(out outval: integer): boolean;
+end;
 
   {** Dynamic array of readings (timeline or batch). }
-  BGResults = array of BGReading; //< Array definition for mulitple readings
+BGResults = array of BGReading; //< Array definition for mulitple readings
 
   {** Helper for @code(BGTrend) to produce textual/UTF representations. }
-  BGTrendHelper =
-    type helper for BGTrend //< A type helper to transform trends to images/text
+BGTrendHelper =
+  type helper for BGTrend //< A type helper to transform trends to images/text
     {** UTF representation (emoji/arrow) for the trend. }
-    function Img: string;
+  function Img: string;
     {** Text (ASCII) representation for the trend. }
-    function Text: string;
-  end;
+  function Text: string;
+end;
 
 implementation
 
@@ -214,10 +214,10 @@ end;
 function BGReading.convert(u: BGUnit; which: BGValType = BGPrimary): single;
 begin
   case which of
-    BGPrimary:
-      Result := curr * BG_CONVERTIONS[u][valu];
-    BGDelta:
-      Result := change * BG_CONVERTIONS[u][valu];
+  BGPrimary:
+    Result := curr * BG_CONVERTIONS[u][valu];
+  BGDelta:
+    Result := change * BG_CONVERTIONS[u][valu];
   end;
 end;
 
@@ -241,7 +241,7 @@ end;
   @raises( none )
 }
 function BGReading.format(u: BGUnit; fmt: BgUnitMeta; which: BGValType = BGPrimary;
-  rounded: boolean = False): string;
+rounded: boolean = false): string;
 var
   cval: single;
   str: string;
@@ -250,7 +250,7 @@ var
   @returns( description )
   @raises( none )
 }
-  function sign: string;
+function sign: string;
   begin
     if cval = 0 then
       Result := '±'
@@ -344,15 +344,15 @@ end;
 procedure BGReading.update(val: BGVal; which: BGValType; u: BGUnit);
 begin
   case which of
-    BGPrimary:
-      self.curr := val * BG_CONVERTIONS[u][self.valu];
-    BGDelta:
-      self.change := val * BG_CONVERTIONS[u][self.valu];
+  BGPrimary:
+    self.curr := val * BG_CONVERTIONS[u][self.valu];
+  BGDelta:
+    self.change := val * BG_CONVERTIONS[u][self.valu];
   end;
 end;
 
 procedure BGReading.updateEnv(valdevice: shortstring; valrssi: integer = -1;
-  valnoise: integer = -1);
+valnoise: integer = -1);
 begin
   self.rssi := valrssi;
   self.Noise := valnoise;

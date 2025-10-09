@@ -26,18 +26,18 @@ unit trndi.ext.promise;
 interface
 
 uses
-  Classes, SysUtils, mORMot.lib.quickjs, mormot.core.base, Dialogs,
-  trndi.ext.functions, slicke.ux.alert, fgl, trndi.strings, trndi.native;
+Classes, SysUtils, mORMot.lib.quickjs, mormot.core.base, Dialogs,
+trndi.ext.functions, slicke.ux.alert, fgl, trndi.strings, trndi.native;
 
 type
   {** Pair holding QuickJS resolve/reject functions for a Promise.
       Index mapping used in this unit:
       - index 0 = resolve (see JprResolve)
       - index 1 = reject  (see JprReject) }
-  JSDoubleVal = array[0..1] of JSValueRaw;
+JSDoubleVal = array[0..1] of JSValueRaw;
 
   {** Pointer alias used when passing resolve/reject function slots to tasks. }
-  PJSDoubleVal = ^JSDoubleVal;
+PJSDoubleVal = ^JSDoubleVal;
 
   {** Asynchronous task that bridges native (Pascal) callbacks to JS Promises.
       Workflow:
@@ -46,32 +46,32 @@ type
       - Runs the callback and captures a JS-compatible result value.
       - Schedules a call to the proper resolve/reject using the QuickJS API.
       - Frees any argument structures allocated during parameter parsing. }
-  TJSAsyncTask = class(TThread)
-  private
-    FContext: JSContext;      /// QuickJS context for this task
-    funcs: JSDoubleVal;       /// Promise resolve/reject function handles
-    FPromise: TJSCallback;
+TJSAsyncTask = class(TThread)
+private
+  FContext: JSContext;      /// QuickJS context for this task
+  funcs: JSDoubleVal;       /// Promise resolve/reject function handles
+  FPromise: TJSCallback;
     /// Registered callback descriptor (name, handler, params)
-    FResult: JSVAlueVal;
+  FResult: JSVAlueVal;
     /// Result produced by the callback (QuickJS value wrapper)
-    FSuccess: boolean;        /// True if callback indicates success; otherwise reject
+  FSuccess: boolean;        /// True if callback indicates success; otherwise reject
 
-  protected
+protected
       {** Thread entry point. Invokes the registered callback (via ProcessResult),
           then calls resolve or reject with the produced JS value. }
-    procedure Execute; override;
+  procedure Execute; override;
 
       {** Run the registered callback, storing success flag and result.
           Executed via Synchronize to ensure safe interaction with GUI/JS context
           if required by the surrounding framework. }
-    procedure ProcessResult;
-  public
+  procedure ProcessResult;
+public
       {** Create and start an async task bound to a JS Promise.
           @param(Context) QuickJS context
           @param(func)    Registered callback descriptor with handler and params
           @param(cbfunc)  Pointer to the resolve/reject function pair (JSDoubleVal) }
-    constructor Create(Context: JSContext; func: TJSCallback; cbfunc: PJSDoubleVal);
-  end;
+  constructor Create(Context: JSContext; func: TJSCallback; cbfunc: PJSDoubleVal);
+end;
 
 // Global shutdown guard for extensions/promises
 procedure SetExtShuttingDown(const Value: boolean);
@@ -79,11 +79,11 @@ function IsExtShuttingDown: boolean;
 
 const
   {** Index of the Promise resolve function in @code(JSDoubleVal). }
-  JprResolve = 0;
+JprResolve = 0;
   // const for "async function worked"
 
   {** Index of the Promise reject function in @code(JSDoubleVal). }
-  JprReject = 1;
+JprReject = 1;
   // for "didnt work"
 
 implementation
@@ -91,7 +91,7 @@ implementation
 uses Forms;
 
 var
-  gExtShuttingDown: boolean = False;
+gExtShuttingDown: boolean = false;
 
 procedure SetExtShuttingDown(const Value: boolean);
 begin
@@ -107,15 +107,15 @@ end;
     Stores the context, callback descriptor, and resolve/reject functions.
     Sets FreeOnTerminate so the thread self-frees after completion. }
 constructor TJSAsyncTask.Create(Context: JSContext; func: TJSCallback;
-  cbfunc: PJSDoubleVal);
+cbfunc: PJSDoubleVal);
 begin
   FContext := Context;
   FPromise := func;
   // Copy resolve/reject function refs locally
   if cbfunc <> nil then
     funcs := cbfunc^;
-  FreeOnTerminate := True;
-  inherited Create(False);
+  FreeOnTerminate := true;
+  inherited Create(false);
   // This will start the thread
 end;
 
@@ -137,23 +137,21 @@ begin
   begin
     // Check again before synchronizing, as shutdown might have occurred
     if not (Application.Terminated or IsExtShuttingDown) then
-    begin
-      // Additional safety check: Ensure the main thread is still processing messages
-      try
-        Synchronize(@ProcessResult);
-      except
+    try
+      Synchronize(@ProcessResult);
+    except
         // If synchronize fails (e.g., main thread shutting down), just exit
-        FSuccess := False;
-        Exit;
-      end;
-    end;
+      FSuccess := false;
+      Exit;
+    end// Additional safety check: Ensure the main thread is still processing messages
+    ;
   end
   else
   begin
     // Complain that it wasn't set
     if not (Application.Terminated or IsExtShuttingDown) then
       ExtError(uxdAuto, 'Error: Missing Function');
-    FSuccess := False;
+    FSuccess := false;
     Exit;
   end;
   self.Terminate;
@@ -169,19 +167,18 @@ begin
   // Avoid doing work if app is shutting down
   if Application.Terminated or IsExtShuttingDown then
   begin
-    FSuccess := False;
+    FSuccess := false;
     Exit;
   end;
 
   // Additional check: ensure context is still valid
   if (FContext = nil) then
   begin
-    FSuccess := False;
+    FSuccess := false;
     Exit;
   end;
 
   with FPromise do
-  begin
     if Assigned(Callback) then
     begin
       try
@@ -189,21 +186,20 @@ begin
       except
         on E: EInvalidCast do
         begin
-          FSuccess := False;
+          FSuccess := false;
           if not (Application.Terminated or IsExtShuttingDown) then
             ExtError(uxdAuto, sTypeErrMsg, e.message);
         end;
         on E: Exception do
         begin
-          FSuccess := False;
+          FSuccess := false;
           if not (Application.Terminated or IsExtShuttingDown) then
             ExtError(uxdAuto, Format(sPromErrCapt, [func]), e.Message);
         end;
       end;
     end
     else
-      FSuccess := False;
-  end;
+      FSuccess := false;
 
   // Final check before making JS calls
   if Application.Terminated or IsExtShuttingDown then

@@ -24,43 +24,43 @@ unit trndi.native.linux;
 interface
 
 uses
-  Classes, SysUtils, Graphics, IniFiles, Dialogs,
-  ExtCtrls, Forms, Math, LCLIntf, KDEBadge, trndi.native.base, FileUtil, Menus,
-  libpascurl;
+Classes, SysUtils, Graphics, IniFiles, Dialogs,
+ExtCtrls, Forms, Math, LCLIntf, KDEBadge, trndi.native.base, FileUtil, Menus,
+libpascurl;
 
 type
   {!
     @abstract(Linux implementation of @link(TTrndiNativeBase).)
     Uses spd-say for speech and draws badges on tray/KDE taskbar.
   }
-  TTrndiNativeLinux = class(TTrndiNativeBase)
-  protected
-    Tray: TTrayIcon;
-    TrayMenu: TPopupMenu;
-    inistore: TIniFile; // Linux-specific settings store
+TTrndiNativeLinux = class(TTrndiNativeBase)
+protected
+  Tray: TTrayIcon;
+  TrayMenu: TPopupMenu;
+  inistore: TIniFile; // Linux-specific settings store
     // Flashing support
-    FFlashTimer: TTimer;
-    FFlashEnd: TDateTime;
-    FFlashPhase: integer;
-    FFlashValue: string;
-    FFlashBaseColor: TColor;
-    FFlashCycleMS: integer;
-    procedure FlashTimerTick(Sender: TObject);
+  FFlashTimer: TTimer;
+  FFlashEnd: TDateTime;
+  FFlashPhase: integer;
+  FFlashValue: string;
+  FFlashBaseColor: TColor;
+  FFlashCycleMS: integer;
+  procedure FlashTimerTick(Sender: TObject);
     {** Resolve the INI/CFG file path with backward compatibility.
         Preference order: Lazarus app config, ~/.config/Trndi/trndi.ini, legacy ~/.config/Trndi.cfg }
-    function ResolveIniPath: string; virtual;
+  function ResolveIniPath: string; virtual;
     {** Ensure the INI store is created and directory exists. }
-    procedure EnsureIni; inline;
-  public
+  procedure EnsureIni; inline;
+public
   {** Prefer gdbus notifications under Qt6; fallback to base attention when
       gdbus is unavailable or fails. }
-    procedure attention(topic, message: string); override;
+  procedure attention(topic, message: string); override;
     {** Free tray resources, shutdown KDE badge if needed, and close INI store. }
-    destructor Destroy; override;
+  destructor Destroy; override;
     {** Speaks @param(Text) using spd-say, if available.
         Shows a user-visible message when the tool is not present. }
     {** Speak text via spd-say if present; warn user if missing. }
-    procedure Speak(const Text: string); override;
+  procedure Speak(const Text: string); override;
     {** Draw a badge with @param(Value) text on tray icon using @param(BadgeColor).
         @param(badge_size_ratio Determines badge diameter relative to icon size)
         @param(min_font_size Lower bound for font size while fitting text) }
@@ -68,35 +68,35 @@ type
   {** Draw a badge with @param(Value) text on tray icon using @param(BadgeColor).
       @param(badge_size_ratio Determines badge diameter relative to icon size)
       @param(min_font_size Lower bound for font size while fitting text) }
-    procedure SetTray(const Value: string; BadgeColor: TColor;
-      badge_size_ratio: double = 0.8; min_font_size: integer = 8);
+  procedure SetTray(const Value: string; BadgeColor: TColor;
+    badge_size_ratio: double = 0.8; min_font_size: integer = 8);
     {** Convenience overload: redirects to base two-arg version. }
-    procedure setBadge(const Value: string; BadgeColor: TColor); overload; reintroduce;
+  procedure setBadge(const Value: string; BadgeColor: TColor); overload; reintroduce;
     {** Synchronize KDE badge with numeric value and update tray badge drawing. }
-    procedure setBadge(const Value: string; BadgeColor: TColor;
-      badge_size_ratio: double; min_font_size: integer); overload; override;
-    procedure StartBadgeFlash(const Value: string; badgeColor: TColor;
-      DurationMS: integer = 10000; CycleMS: integer = 400); override;
-    procedure StopBadgeFlash; override;
+  procedure setBadge(const Value: string; BadgeColor: TColor;
+    badge_size_ratio: double; min_font_size: integer); overload; override;
+  procedure StartBadgeFlash(const Value: string; badgeColor: TColor;
+    DurationMS: integer = 10000; CycleMS: integer = 400); override;
+  procedure StopBadgeFlash; override;
     {** Placeholder for desktop-specific dark mode. Return False for now. }
-    class function setDarkMode: boolean; // no-op placeholder
+  class function setDarkMode: boolean; // no-op placeholder
 
     // Settings API overrides
     {** Read setting from INI (multi-section + legacy key=value fallback). }
-    function GetSetting(const keyname: string; def: string = '';
-      global: boolean = False): string; override;
+  function GetSetting(const keyname: string; def: string = '';
+    global: boolean = false): string; override;
     {** Write setting to canonical [trndi] section and flush to disk. }
-    procedure SetSetting(const keyname: string; const val: string;
-      global: boolean = False); override;
+  procedure SetSetting(const keyname: string; const val: string;
+    global: boolean = false); override;
     {** Delete setting across known sections for completeness. }
-    procedure DeleteSetting(const keyname: string; global: boolean = False); override;
+  procedure DeleteSetting(const keyname: string; global: boolean = false); override;
     {** Drop INI handle; re-created on demand. }
-    procedure ReloadSettings; override;
+  procedure ReloadSettings; override;
   {** Simple HTTP GET using FPC HTTP client with default UA.
       @param(url URL to fetch)
       @param(res Out parameter receiving response body or error message)
       @returns(True on success) }
-    class function getURL(const url: string; out res: string): boolean; override;
+  class function getURL(const url: string; out res: string): boolean; override;
   {** Desktop-aware dark mode detection.
     Order:
     1) KDE Plasma via kreadconfig5: General/ColorScheme contains "Dark".
@@ -105,20 +105,20 @@ type
     3) GTK_THEME environment variable contains "dark" (e.g. Adwaita:dark).
     4) Fallback heuristic comparing clWindow vs clWindowText brightness.
   }
-    class function isDarkMode: boolean; override;
+  class function isDarkMode: boolean; override;
     {** Returns True if notify-send is available on this system. }
-    class function isNotificationSystemAvailable: boolean; override;
+  class function isNotificationSystemAvailable: boolean; override;
     {** Identify notification backend: 'gdbus' (Qt6 path) or 'notify-send' or 'none'. }
-    class function getNotificationSystem: string; override;
+  class function getNotificationSystem: string; override;
 
     {** Triggers when the tray icon is clicked }
-    procedure trayClick(Sender: TObject);
-  end;
+  procedure trayClick(Sender: TObject);
+end;
 
 implementation
 
 uses
-  Process, Types, LCLType;
+Process, Types, LCLType;
 
 {------------------------------------------------------------------------------
   IsNotifySendAvailable
@@ -130,7 +130,7 @@ var
   AProcess: TProcess;
   OutputLines: TStringList;
 begin
-  Result := False;
+  Result := false;
   AProcess := TProcess.Create(nil);
   OutputLines := TStringList.Create;
   try
@@ -140,10 +140,10 @@ begin
     AProcess.Execute;
     OutputLines.LoadFromStream(AProcess.Output);
     if (OutputLines.Count > 0) and FileExists(Trim(OutputLines[0])) then
-      Result := True;
+      Result := true;
   except
     on E: Exception do
-      Result := False;
+      Result := false;
   end;
   OutputLines.Free;
   AProcess.Free;
@@ -155,7 +155,7 @@ end;
   Run an external command and capture stdout. Returns True when exit code is 0.
  ------------------------------------------------------------------------------}
 function RunAndCaptureSimple(const Exec: string; const Params: array of string;
-  out StdoutS: string; out ExitCode: integer): boolean;
+out StdoutS: string; out ExitCode: integer): boolean;
 var
   P: TProcess;
   i: integer;
@@ -163,7 +163,7 @@ var
   Buf: array[0..4095] of byte;
   n: SizeInt;
 begin
-  Result := False;
+  Result := false;
   StdoutS := '';
   ExitCode := -1;
 
@@ -182,7 +182,8 @@ begin
         while P.Output.NumBytesAvailable > 0 do
         begin
           n := P.Output.Read(Buf, SizeOf(Buf));
-          if n > 0 then OutStr.WriteBuffer(Buf, n)
+          if n > 0 then
+            OutStr.WriteBuffer(Buf, n)
           else
             Break;
         end;
@@ -192,7 +193,8 @@ begin
       while P.Output.NumBytesAvailable > 0 do
       begin
         n := P.Output.Read(Buf, SizeOf(Buf));
-        if n > 0 then OutStr.WriteBuffer(Buf, n)
+        if n > 0 then
+          OutStr.WriteBuffer(Buf, n)
         else
           Break;
       end;
@@ -204,7 +206,7 @@ begin
       begin
         StdoutS := '';
         ExitCode := -1;
-        Result := False;
+        Result := false;
       end;
     end;
   finally
@@ -215,7 +217,7 @@ end;
 
 // C-compatible write callback for libcurl used in this unit
 function CurlWriteCallback_Linux(buffer: pchar; size, nmemb: longword;
-  userdata: Pointer): longword; cdecl;
+userdata: Pointer): longword; cdecl;
 var
   Bytes: SizeInt;
   SS: TStringStream;
@@ -271,7 +273,7 @@ begin
   {$IFDEF LCLQt6}
   Result := (FindInPath('gdbus') <> '') and IsKdeOrGnomeLike;
   {$ELSE}
-  Result := False;
+  Result := false;
   {$ENDIF}
 end;
 
@@ -287,16 +289,16 @@ var
   exitCode: integer;
   dHint: string;
 begin
-  Result := False;
-  isDark := False;
+  Result := false;
+  isDark := false;
   dHint := LowerCase(DesktopHint);
   if (Pos('gnome', dHint) = 0) and (Pos('ubuntu', dHint) = 0) and
     (Pos('unity', dHint) = 0) then
-  begin
-    // Not obviously GNOME; still proceed if gsettings exists
-  end;
+  // Not obviously GNOME; still proceed if gsettings exists
+  ;
   gsettingsPath := FindInPath('gsettings');
-  if gsettingsPath = '' then Exit(False);
+  if gsettingsPath = '' then
+    Exit(false);
 
   // GNOME 42+: color-scheme prefer-dark/default
   if RunAndCaptureSimple(gsettingsPath,
@@ -306,13 +308,14 @@ begin
     outS := LowerCase(StringReplace(outS, '''', '', [rfReplaceAll]));
     if Pos('prefer-dark', outS) > 0 then
     begin
-      isDark := True;
-      Exit(True);
+      isDark := true;
+      Exit(true);
     end
-    else if (Pos('default', outS) > 0) or (Pos('prefer-light', outS) > 0) then
+    else
+    if (Pos('default', outS) > 0) or (Pos('prefer-light', outS) > 0) then
     begin
-      isDark := False;
-      Exit(True);
+      isDark := false;
+      Exit(true);
     end;
     // fallthrough to gtk-theme
   end;
@@ -324,13 +327,13 @@ begin
   begin
     outS := LowerCase(StringReplace(outS, '''', '', [rfReplaceAll]));
     if ContainsDark(outS) then
-      isDark := True
+      isDark := true
     else
-      isDark := False;
-    Exit(True);
+      isDark := false;
+    Exit(true);
   end;
 
-  Result := False; // unable to determine via GNOME
+  Result := false; // unable to determine via GNOME
 end;
 
 {------------------------------------------------------------------------------
@@ -345,28 +348,28 @@ var
   exitCode: integer;
   dHint: string;
 begin
-  Result := False;
-  isDark := False;
+  Result := false;
+  isDark := false;
   dHint := LowerCase(DesktopHint);
   if (Pos('kde', dHint) = 0) and (Pos('plasma', dHint) = 0) then
-  begin
-    // Not obviously KDE; continue if tool exists
-  end;
+  // Not obviously KDE; continue if tool exists
+  ;
   kreadPath := FindInPath('kreadconfig5');
-  if kreadPath = '' then Exit(False);
+  if kreadPath = '' then
+    Exit(false);
 
   // Read the active color scheme
   if RunAndCaptureSimple(kreadPath, ['--group', 'General', '--key', 'ColorScheme'],
     outS, exitCode) and (exitCode = 0) then
   begin
     if ContainsDark(outS) then
-      isDark := True
+      isDark := true
     else
-      isDark := False;
-    Exit(True);
+      isDark := false;
+    Exit(true);
   end;
 
-  Result := False;
+  Result := false;
 end;
 
 {------------------------------------------------------------------------------
@@ -392,14 +395,14 @@ begin
     if handle = nil then
     begin
       res := 'curl: failed to init';
-      Result := False;
+      Result := false;
       Exit;
     end;
 
     // Set URL and options
-    curl_easy_setopt(handle, CURLOPT_URL, PChar(url));
+    curl_easy_setopt(handle, CURLOPT_URL, pchar(url));
     curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, longint(1));
-    curl_easy_setopt(handle, CURLOPT_USERAGENT, PChar(DEFAULT_USER_AGENT));
+    curl_easy_setopt(handle, CURLOPT_USERAGENT, pchar(DEFAULT_USER_AGENT));
 
     // Write callback
     curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, Pointer(@CurlWriteCallback_Linux));
@@ -409,12 +412,12 @@ begin
     if errCode <> CURLE_OK then
     begin
       res := string(curl_easy_strerror(errCode));
-      Result := False;
+      Result := false;
     end
     else
     begin
       res := Trim(responseStream.DataString);
-      Result := True;
+      Result := true;
     end;
 
     curl_easy_cleanup(handle);
@@ -434,7 +437,7 @@ class function TTrndiNativeLinux.isNotificationSystemAvailable: boolean;
 begin
   // Only treat gdbus as available when on KDE/GNOME-like desktops under Qt6
   if UseGDBusForNotifications then
-    Exit(True);
+    Exit(true);
   // Otherwise, rely on notify-send presence
   Result := IsNotifySendAvailable;
 end;
@@ -464,26 +467,27 @@ var
   v: boolean;
   envGtkTheme: string;
 
-  function Brightness(C: TColor): double;
+function Brightness(C: TColor): double;
   begin
     Result := (Red(C) * 0.3) + (Green(C) * 0.59) + (Blue(C) * 0.11);
   end;
 
 begin
   // 1) KDE Plasma: kreadconfig5 ColorScheme
-  if DetectKDEDark(v) then Exit(v);
+  if DetectKDEDark(v) then
+    Exit(v);
 
   // 2) GNOME: gsettings color-scheme/gtk-theme
-  if DetectGnomeDark(v) then Exit(v);
+  if DetectGnomeDark(v) then
+    Exit(v);
 
   // 3) GTK_THEME environment variable (e.g., Adwaita:dark)
   envGtkTheme := EnvValue('GTK_THEME');
   if envGtkTheme <> '' then
-  begin
-    if ContainsDark(envGtkTheme) then Exit(True)
+    if ContainsDark(envGtkTheme) then
+      Exit(true)
     else
-      Exit(False);
-  end;
+      Exit(false);
 
   // 4) Last-resort heuristic using system colors
   Result := (Brightness(ColorToRGB(clWindow)) < Brightness(ColorToRGB(clWindowText)));
@@ -496,7 +500,7 @@ end;
  ------------------------------------------------------------------------------}
 function TTrndiNativeLinux.ResolveIniPath: string;
 begin
-  Result := GetAppConfigFile(False);
+  Result := GetAppConfigFile(false);
 end;
 
 {------------------------------------------------------------------------------
@@ -524,16 +528,16 @@ end;
  ------------------------------------------------------------------------------}
 procedure TTrndiNativeLinux.attention(topic, message: string);
 {$IFDEF LCLQt6}
-  function RunAndCapture(const Exec: string; const Params: array of string;
-                         out StdoutS, StderrS: string; out ExitCode: Integer): Boolean;
+function RunAndCapture(const Exec: string; const Params: array of string;
+  out StdoutS, StderrS: string; out ExitCode: integer): boolean;
   var
     P: TProcess;
-    i: Integer;
+    i: integer;
     OutStr, ErrStr: TStringStream;
     Buf: array[0..4095] of byte;
     n: SizeInt;
   begin
-    Result := False;
+    Result := false;
     StdoutS := ''; StderrS := ''; ExitCode := -1;
 
     P := TProcess.Create(nil);
@@ -551,16 +555,19 @@ procedure TTrndiNativeLinux.attention(topic, message: string);
         while P.Output.NumBytesAvailable > 0 do
         begin
           n := P.Output.Read(Buf, SizeOf(Buf));
-          if n > 0 then OutStr.WriteBuffer(Buf, n) else Break;
+          if n > 0 then
+            OutStr.WriteBuffer(Buf, n) else Break;
         end;
         while P.Stderr.NumBytesAvailable > 0 do
         begin
           n := P.Stderr.Read(Buf, SizeOf(Buf));
-          if n > 0 then ErrStr.WriteBuffer(Buf, n) else Break;
+          if n > 0 then
+            ErrStr.WriteBuffer(Buf, n) else Break;
         end;
-        if not P.Running then Break;
+        if not P.Running then
+          Break;
         Sleep(5);
-      until False;
+      until false;
 
       ExitCode := P.ExitStatus;
       StdoutS := OutStr.DataString;
@@ -570,17 +577,17 @@ procedure TTrndiNativeLinux.attention(topic, message: string);
       ErrStr.Free; OutStr.Free; P.Free;
     end;
   end;
-{$ENDIF}
-{$IFDEF LCLQt6}
+  {$ENDIF}
+  {$IFDEF LCLQt6}
 var
   Params: array of string;
   OutS, ErrS: string;
-  ExitCode: Integer;
+  ExitCode: integer;
   s: string;
-  p, i: Integer;
-  NewId: Cardinal;
-  ReplaceId: Cardinal;
-{$ENDIF}
+  p, i: integer;
+  NewId: cardinal;
+  ReplaceId: cardinal;
+  {$ENDIF}
 begin
   {$IFDEF LCLQt6}
   if UseGDBusForNotifications then
@@ -589,17 +596,17 @@ begin
     SetLength(Params, 0);
     Params :=
       ['call', '--session',
-       '--dest', 'org.freedesktop.Notifications',
-       '--object-path', '/org/freedesktop/Notifications',
-       '--method', 'org.freedesktop.Notifications.Notify',
+      '--dest', 'org.freedesktop.Notifications',
+      '--object-path', '/org/freedesktop/Notifications',
+      '--method', 'org.freedesktop.Notifications.Notify',
        '''Trndi''',
-       IntToStr(ReplaceId),
-       '''''',
-       '''' + topic + '''',
-       '''' + message + '''',
-       '[]',
-       '{}',
-       IntToStr(noticeDuration)];
+      IntToStr(ReplaceId),
+      '''''',
+      '''' + topic + '''',
+      '''' + message + '''',
+      '[]',
+      '{}',
+      IntToStr(noticeDuration)];
     // Above maps to: app_name, replace_id, app_icon, summary, body, actions, hints, timeout
 
     if RunAndCapture('gdbus', Params, OutS, ErrS, ExitCode) then
@@ -611,9 +618,11 @@ begin
       if p > 0 then
       begin
         Inc(p, Length('uint32'));
-        while (p <= Length(s)) and (s[p] = ' ') do Inc(p);
+        while (p <= Length(s)) and (s[p] = ' ') do
+          Inc(p);
         i := p;
-        while (i <= Length(s)) and (s[i] in ['0'..'9']) do Inc(i);
+        while (i <= Length(s)) and (s[i] in ['0'..'9']) do
+          Inc(i);
         if i > p then
           NewId := StrToIntDef(Copy(s, p, i - p), 0);
       end;
@@ -667,7 +676,7 @@ begin
   Paths := TStringList.Create;
   try
     Paths.Delimiter := ':';
-    Paths.StrictDelimiter := True;
+    Paths.StrictDelimiter := true;
     Paths.DelimitedText := PathVar;
     for i := 0 to Paths.Count - 1 do
     begin
@@ -687,7 +696,7 @@ end;
  ------------------------------------------------------------------------------}
 function GetSystemLangTag: string;
 
-  function FirstSegment(const S, Sep: string): string;
+function FirstSegment(const S, Sep: string): string;
   var
     P: SizeInt;
   begin
@@ -778,7 +787,7 @@ end;
   Draw a badge on the system tray icon and synchronize KDE taskbar badge.
  ------------------------------------------------------------------------------}
 procedure TTrndiNativeLinux.SetTray(const Value: string; BadgeColor: TColor;
-  badge_size_ratio: double = 0.8; min_font_size: integer = 8);
+badge_size_ratio: double = 0.8; min_font_size: integer = 8);
 const
   INITIAL_FONT_SIZE_RATIO = 0.5;
   TEXT_PADDING = 3;
@@ -817,8 +826,8 @@ begin
     if (Application.Icon <> nil) and (Application.Icon.Width > 0) then
       Tray.Icon.Assign(Application.Icon);
     // Toggle visibility to force redraw in some tray implementations
-    Tray.Visible := False;
-    Tray.Visible := True;
+    Tray.Visible := false;
+    Tray.Visible := true;
     Exit;
   end;
 
@@ -925,8 +934,8 @@ begin
 
     OutIcon.Assign(Bmp);
     Tray.Icon.Assign(OutIcon);
-    Tray.Visible := False;
-    Tray.Visible := True;
+    Tray.Visible := false;
+    Tray.Visible := true;
   finally
     Bmp.Free;
     OutIcon.Free;
@@ -940,7 +949,7 @@ end;
   Update KDE taskbar badge and tray icon badge with size/font options.
  ------------------------------------------------------------------------------}
 procedure TTrndiNativeLinux.SetBadge(const Value: string; BadgeColor: TColor;
-  badge_size_ratio: double; min_font_size: integer);
+badge_size_ratio: double; min_font_size: integer);
 var
   f: double;
 begin
@@ -962,18 +971,21 @@ end;
 // Flash timer tick: pulse brightness (simple 4-phase like Windows)
 procedure TTrndiNativeLinux.FlashTimerTick(Sender: TObject);
 
-  function ScaleColor(c: TColor; factor: double): TColor;
+function ScaleColor(c: TColor; factor: double): TColor;
   var
     rc: longint;
     r, g, b: integer;
   begin
     rc := ColorToRGB(c);
     r := Round(GetRValue(rc) * factor);
-    if r > 255 then r := 255;
+    if r > 255 then
+      r := 255;
     g := Round(GetGValue(rc) * factor);
-    if g > 255 then g := 255;
+    if g > 255 then
+      g := 255;
     b := Round(GetBValue(rc) * factor);
-    if b > 255 then b := 255;
+    if b > 255 then
+      b := 255;
     Result := RGB(r, g, b);
   end;
 
@@ -987,12 +999,16 @@ begin
     Exit;
   end;
   case FFlashPhase mod 4 of
-    0: factor := 1.0;
-    1: factor := 1.35;
-    2: factor := 1.0;
-    3: factor := 0.7;
-    else
-      factor := 1.0;
+  0:
+    factor := 1.0;
+  1:
+    factor := 1.35;
+  2:
+    factor := 1.0;
+  3:
+    factor := 0.7;
+  else
+    factor := 1.0;
   end;
   phaseColor := ScaleColor(FFlashBaseColor, factor);
   // Only tray icon animates; KDE numeric badge stays stable for clarity
@@ -1001,7 +1017,7 @@ begin
 end;
 
 procedure TTrndiNativeLinux.StartBadgeFlash(const Value: string;
-  badgeColor: TColor; DurationMS: integer; CycleMS: integer);
+badgeColor: TColor; DurationMS: integer; CycleMS: integer);
 begin
   FFlashValue := Value;
   FFlashBaseColor := badgeColor;
@@ -1014,7 +1030,7 @@ begin
     FFlashTimer.OnTimer := @FlashTimerTick;
   end;
   FFlashTimer.Interval := CycleMS;
-  FFlashTimer.Enabled := True;
+  FFlashTimer.Enabled := true;
   FlashTimerTick(nil); // immediate first frame
 end;
 
@@ -1022,7 +1038,7 @@ procedure TTrndiNativeLinux.StopBadgeFlash;
 begin
   if Assigned(FFlashTimer) then
   begin
-    FFlashTimer.Enabled := False;
+    FFlashTimer.Enabled := false;
     FreeAndNil(FFlashTimer);
   end;
   if FFlashValue <> '' then
@@ -1044,7 +1060,7 @@ begin
  ------------------------------------------------------------------------------}
   // Placeholder: switching dark mode programmatically is DE-specific and not supported here.
   // Return False to indicate no change was made.
-  Result := False;
+  Result := false;
 end;
 
 {------------------------------------------------------------------------------
@@ -1053,7 +1069,7 @@ end;
   Read/write settings using Lazarus app config file under a single [trndi] section.
  ------------------------------------------------------------------------------}
 function TTrndiNativeLinux.GetSetting(const keyname: string; def: string;
-  global: boolean): string;
+global: boolean): string;
 var
   key: string;
 begin
@@ -1069,7 +1085,7 @@ end;
   NOTE: we use [trndi] as the format in the win registry and macOS are flat
  ------------------------------------------------------------------------------}
 procedure TTrndiNativeLinux.SetSetting(const keyname: string;
-  const val: string; global: boolean);
+const val: string; global: boolean);
 var
   key: string;
 begin

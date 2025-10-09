@@ -38,7 +38,7 @@ Forms,lazcontrols,trndi.types,trndi.native,
 trndi.ext.promise, trndi.ext.functions,trndi.ext.ext,
 {$ENDIF}
 {$IFDEF DEBUG}
- sysutils,
+sysutils,
 {$ENDIF}
 trndi.api,trndi.api.nightscout,
 trndi.api.dexcom, umain, uconf, ufloat, slicke.ux.alert, buildinfo
@@ -49,12 +49,12 @@ trndi.api.dexcom, umain, uconf, ufloat, slicke.ux.alert, buildinfo
 begin
 {$IFDEF DEBUG}
   // Set up -gh output for the Leakview package:
-  if FileExists('heap.trc') then
-    DeleteFile('heap.trc');
-  SetHeapTraceOutput('heap.trc');
+if FileExists('heap.trc') then
+  DeleteFile('heap.trc');
+SetHeapTraceOutput('heap.trc');
 {$ENDIF DEBUG}
 RequireDerivedFormResource:=true;
-  Application.Scaled:=True;
+Application.Scaled:=true;
 Application.{%H-}MainFormOnTaskbar:=true;
 Application.Initialize;
 Application.CreateForm(TfBG, fBG);

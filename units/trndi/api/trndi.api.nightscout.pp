@@ -24,21 +24,21 @@ unit trndi.api.nightscout;
 interface
 
 uses
-  Classes, SysUtils, Dialogs, trndi.types, trndi.api, trndi.native,
-  fpjson, jsonparser, dateutils, StrUtils, sha1, Math, jsonscanner;
+Classes, SysUtils, Dialogs, trndi.types, trndi.api, trndi.native,
+fpjson, jsonparser, dateutils, StrUtils, sha1, Math, jsonscanner;
 
 const
   {** Relative filename for the Nightscout status endpoint used to probe
       server health, time, and thresholds. }
-  NS_STATUS = 'status.json';
+NS_STATUS = 'status.json';
 
 const
   {** Base path for Nightscout v1 API endpoints (appended to the provided base URL). }
-  NS_URL_BASE = '/api/v1/';
+NS_URL_BASE = '/api/v1/';
 
 const
   {** Default path for SGV (sensor glucose value) entries. }
-  NS_READINGS = 'entries/sgv.json';
+NS_READINGS = 'entries/sgv.json';
 
 type
   {** NightScout API client.
@@ -47,13 +47,13 @@ type
 
       @seealso(TrndiAPI)
    }
-  NightScout = class(TrndiAPI)
-  protected
+NightScout = class(TrndiAPI)
+protected
     {** Nightscout API secret header value (computed as
         'API-SECRET=' + SHA1(pass) when a secret is supplied). }
-    key: string;
+  key: string;
 
-  public
+public
     {** Create a NightScout API client.
         Initializes the HTTP User-Agent, derives the API base URL from @code(user),
         prepares the API secret header from @code(pass), and calls the inherited
@@ -63,7 +63,7 @@ type
         @param(pass  Nightscout API secret in plain text; hashed to SHA1 for header)
         @param(extra Reserved for future use)
      }
-    constructor Create(user, pass, extra: string); override;
+  constructor Create(user, pass, extra: string); override;
 
     {** Connect to Nightscout, retrieve server status, thresholds, and set time offset.
         Requests @code(NS_STATUS), validates/handles errors, parses
@@ -72,7 +72,7 @@ type
 
         @returns(True on success; False otherwise. On failure, @code(errormsg) is set.)
      }
-    function connect: boolean; override;
+  function connect: boolean; override;
 
     {** Fetch SGV readings and map them to @code(BGResults).
         If @code(extras) is empty, uses @code(NS_READINGS). Sends @code(count=maxNum)
@@ -85,21 +85,21 @@ type
         @param(res    Out parameter receiving the raw JSON response string)
         @returns(Array of @code(BGReading); empty on errors or unauthorized)
      }
-    function getReadings(minNum, maxNum: integer; extras: string;
-      out res: string): BGResults; override;
+  function getReadings(minNum, maxNum: integer; extras: string;
+    out res: string): BGResults; override;
     {** UI parameter label provider (override).
       1: NightScout URL
       2: API Secret (plain text)
       3: (unused)
      }
-    class function ParamLabel(Index: integer): string; override;
-  private
+  class function ParamLabel(Index: integer): string; override;
+private
     // (no private members)
 
-  published
+published
     {** The remote Nightscout base URL actually used (read-only proxy to baseUrl). }
-    property remote: string read baseUrl;
-  end;
+  property remote: string read baseUrl;
+end;
 
 implementation
 
@@ -143,19 +143,19 @@ begin
   // 1) Quick sanity check on URL; avoids obvious mistakes early.
   if (Copy(BaseUrl, 1, 4) <> 'http') then
   begin
-    Result := False;
+    Result := false;
     LastErr := 'Invalid address. Must start with http:// or https://!';
     Exit;
   end;
 
   // 2) Probe server status and settings.
   //    Native.Request(signature): (useGet, path, params, body, header)
-  ResponseStr := Native.Request(False, NS_STATUS, [], '', Key);
+  ResponseStr := Native.Request(false, NS_STATUS, [], '', Key);
 
   // 3) Basic validation for empty payloads.
   if Trim(ResponseStr) = '' then
   begin
-    Result := False;
+    Result := false;
     LastErr := 'Did not receive any data from the server!';
     Exit;
   end;
@@ -163,7 +163,7 @@ begin
   // 4) Some backends may prefix '+' to indicate application-level errors.
   if (ResponseStr[1] = '+') then
   begin
-    Result := False;
+    Result := false;
     LastErr := TrimLeftSet(ResponseStr, ['+']);
     Exit;
   end;
@@ -171,7 +171,7 @@ begin
   // 5) Coarse unauthorized detection (Nightscout messages vary by version).
   if Pos('Unau', ResponseStr) > 0 then
   begin
-    Result := False;
+    Result := false;
     LastErr := 'Incorrect access code for NightScout';
     Exit;
   end;
@@ -188,7 +188,7 @@ begin
 
     if not (JSONData is TJSONObject) then
     begin
-      Result := False;
+      Result := false;
       LastErr := 'Unexpected JSON structure (not a JSON object).';
       JSONData.Free;
       Exit;
@@ -219,7 +219,7 @@ begin
   except
     on E: Exception do
     begin
-      Result := False;
+      Result := false;
       LastErr := 'JSON parse error: ' + E.Message;
       Exit;
     end;
@@ -228,7 +228,7 @@ begin
   // 9) Require a valid epoch to establish time calibration.
   if ServerEpoch <= 0 then
   begin
-    Result := False;
+    Result := false;
     LastErr := 'Invalid or missing serverTimeEpoch in JSON.';
     Exit;
   end;
@@ -243,7 +243,7 @@ begin
     TimeDiff := 0;
   TimeDiff := -TimeDiff;
 
-  Result := True;
+  Result := true;
 end;
 
 {------------------------------------------------------------------------------
@@ -253,7 +253,7 @@ end;
   BGResults: value, delta, environment, trend, date, and derived level.
  ------------------------------------------------------------------------------}
 function NightScout.getReadings(minNum, maxNum: integer; extras: string;
-  out res: string): BGResults;
+out res: string): BGResults;
 var
   js: TJSONData;
   i: integer;
@@ -269,7 +269,7 @@ begin
   params[1] := 'count=' + IntToStr(maxNum);
 
   try
-    resp := native.request(False, extras, params, '', key);
+    resp := native.request(false, extras, params, '', key);
     js := GETJSON(resp); // Expecting an array of entries
   except
     // Any exception during request/parse yields an empty result.
@@ -326,10 +326,12 @@ end;
 class function NightScout.ParamLabel(Index: integer): string;
 begin
   case Index of
-    1: Result := 'NightScout URL';
-    2: Result := 'API Secret';
-    else
-      Result := inherited ParamLabel(Index);
+  1:
+    Result := 'NightScout URL';
+  2:
+    Result := 'API Secret';
+  else
+    Result := inherited ParamLabel(Index);
   end;
 end;
 
