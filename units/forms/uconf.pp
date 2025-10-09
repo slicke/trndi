@@ -118,6 +118,7 @@ TfConf = class(TForm)
   Label17: TLabel;
   Label18: TLabel;
   Label2: TLabel;
+  Label7: TLabel;
   Label8: TLabel;
   lDot: TLabel;
   lDot1: TLabel;
@@ -179,6 +180,7 @@ TfConf = class(TForm)
   pUserSave2: TPanel;
   rbUnit: TRadioGroup;
   spTHRESHOLD: TSpinEdit;
+  TabSheet1: TTabSheet;
   tsColors: TTabSheet;
   tsCustom: TTabSheet;
   tsDisplay: TTabSheet;
