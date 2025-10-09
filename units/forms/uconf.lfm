@@ -16,9 +16,9 @@ object fConf: TfConf
     Height = 534
     Top = 0
     Width = 675
-    ActivePage = tsDisplay
+    ActivePage = TabSheet1
     Align = alClient
-    TabIndex = 2
+    TabIndex = 3
     TabOrder = 0
     OnChange = pcMainChange
     object tsGeneral: TTabSheet
@@ -10870,13 +10870,6 @@ object fConf: TfConf
             TabOrder = 3
             OnClick = Button2Click
           end
-          object Label8: TLabel
-            Left = 64
-            Height = 16
-            Top = 136
-            Width = 261
-            Caption = 'Click on a component to the left, to edit it''s font'
-          end
         end
         object lVal: TLabel
           Cursor = crHandPoint
@@ -10915,33 +10908,6 @@ object fConf: TfConf
           Caption = 'lDot1'
         end
       end
-      object GroupBox5: TGroupBox
-        Left = 0
-        Height = 88
-        Top = 176
-        Width = 669
-        Align = alTop
-        Caption = 'Extra Settings'
-        ClientHeight = 61
-        ClientWidth = 665
-        TabOrder = 1
-        object cbTIR: TCheckBox
-          Left = 17
-          Height = 20
-          Top = 32
-          Width = 268
-          Caption = 'Time in range: Count based on custom range'
-          TabOrder = 0
-        end
-        object cbOffBar: TCheckBox
-          Left = 16
-          Height = 20
-          Top = 8
-          Width = 299
-          Caption = 'Sidebar: Show a sidebar when value is not in range'
-          TabOrder = 1
-        end
-      end
       object gbDisplayPrefs: TGroupBox
         Left = 0
         Height = 130
@@ -10951,7 +10917,7 @@ object fConf: TfConf
         Caption = 'Display Preferences'
         ClientHeight = 103
         ClientWidth = 665
-        TabOrder = 2
+        TabOrder = 1
         object pTray: TPanel
           Left = 495
           Height = 103
@@ -11015,41 +10981,92 @@ object fConf: TfConf
           end
         end
       end
+      object Label8: TLabel
+        Left = 8
+        Height = 16
+        Top = 184
+        Width = 261
+        Caption = 'Click on a component to the left, to edit it''s font'
+      end
+    end
+    object TabSheet1: TTabSheet
+      Caption = 'Time-in-range'
+      ClientHeight = 499
+      ClientWidth = 669
+      object Label7: TLabel
+        Left = 5
+        Height = 16
+        Top = 5
+        Width = 659
+        Align = alTop
+        Alignment = taCenter
+        BorderSpacing.Around = 5
+        Caption = 'Time-in-range (TIR) is the amount of time you are within your high/low goal.'
+      end
+      object GroupBox5: TGroupBox
+        Left = 0
+        Height = 88
+        Top = 136
+        Width = 669
+        Align = alTop
+        Caption = 'Extra Settings'
+        ClientHeight = 61
+        ClientWidth = 665
+        TabOrder = 0
+        object cbTIR: TCheckBox
+          Left = 0
+          Height = 20
+          Top = 20
+          Width = 665
+          Align = alTop
+          Caption = 'Count custom range as time in range'
+          TabOrder = 0
+        end
+        object cbOffBar: TCheckBox
+          Left = 0
+          Height = 20
+          Top = 0
+          Width = 665
+          Align = alTop
+          Caption = 'Show a sidebar when value is not in range'
+          TabOrder = 1
+        end
+      end
       object GroupBox6: TGroupBox
         Left = 0
-        Height = 66
-        Top = 264
+        Height = 110
+        Top = 26
         Width = 669
         Align = alTop
         Caption = 'In-range coloring'
-        ClientHeight = 39
+        ClientHeight = 83
         ClientWidth = 665
-        TabOrder = 3
+        TabOrder = 1
         object cbPaintLines: TCheckBox
-          Left = 526
-          Height = 39
-          Top = 0
-          Width = 139
-          Align = alRight
+          Left = 0
+          Height = 20
+          Top = 40
+          Width = 665
+          Align = alTop
           Caption = 'Show threshold lines'
           TabOrder = 0
         end
         object cbPaintHiLoRange: TCheckBox
-          Left = 220
-          Height = 39
-          Top = 0
-          Width = 306
-          Align = alClient
+          Left = 0
+          Height = 20
+          Top = 20
+          Width = 665
+          Align = alTop
           Caption = 'Also paint the custom range'
           TabOrder = 1
         end
         object cbPaintHiLo: TCheckBox
           Left = 0
-          Height = 39
+          Height = 20
           Top = 0
-          Width = 220
-          Align = alLeft
-          Caption = 'In range: Color background  in graph'
+          Width = 665
+          Align = alTop
+          Caption = 'Color the graph''s background with your range'
           TabOrder = 2
         end
       end
@@ -11334,18 +11351,18 @@ object fConf: TfConf
         Align = alBottom
         BorderSpacing.Around = 10
         Caption = 'Account Settings'
-        ClientHeight = 101
-        ClientWidth = 649
+        ClientHeight = 74
+        ClientWidth = 645
         Enabled = False
         TabOrder = 1
         object pUserColor: TPanel
           Left = 0
-          Height = 101
+          Height = 74
           Top = 0
           Width = 170
           Align = alLeft
           BevelOuter = bvNone
-          ClientHeight = 101
+          ClientHeight = 74
           ClientWidth = 170
           TabOrder = 0
           object lUserName: TLabel
@@ -11378,19 +11395,19 @@ object fConf: TfConf
         end
         object pUserNick: TPanel
           Left = 170
-          Height = 101
+          Height = 74
           Top = 0
-          Width = 309
+          Width = 305
           Align = alClient
           BevelOuter = bvNone
-          ClientHeight = 101
-          ClientWidth = 309
+          ClientHeight = 74
+          ClientWidth = 305
           TabOrder = 1
           object edNick: TEdit
             Left = 78
-            Height = 52
+            Height = 25
             Top = 24
-            Width = 231
+            Width = 227
             Align = alClient
             BorderSpacing.Top = 24
             BorderSpacing.Bottom = 25
@@ -11399,7 +11416,7 @@ object fConf: TfConf
           end
           object Label3: TLabel
             Left = 10
-            Height = 81
+            Height = 54
             Top = 10
             Width = 58
             Align = alLeft
@@ -11409,13 +11426,13 @@ object fConf: TfConf
           end
         end
         object pUserSave2: TPanel
-          Left = 479
-          Height = 101
+          Left = 475
+          Height = 74
           Top = 0
           Width = 170
           Align = alRight
           BevelOuter = bvNone
-          ClientHeight = 101
+          ClientHeight = 74
           ClientWidth = 170
           TabOrder = 2
           object btUserSave: TButton
@@ -11471,8 +11488,8 @@ object fConf: TfConf
         Align = alBottom
         BorderSpacing.Around = 10
         Caption = 'All accounts'
-        ClientHeight = 58
-        ClientWidth = 649
+        ClientHeight = 31
+        ClientWidth = 645
         TabOrder = 3
         object cbUserColor: TCheckBox
           Left = 16
@@ -11496,15 +11513,15 @@ object fConf: TfConf
         Align = alTop
         BorderSpacing.Around = 10
         Caption = 'Play Media'
-        ClientHeight = 216
-        ClientWidth = 649
+        ClientHeight = 189
+        ClientWidth = 645
         ParentBackground = False
         TabOrder = 0
         object Label9: TLabel
           Left = 5
           Height = 16
           Top = 0
-          Width = 644
+          Width = 640
           Align = alTop
           BorderSpacing.Left = 5
           Caption = 'Trndi can trigger Spotify or Deezer to play a song when low/high'
@@ -11513,7 +11530,7 @@ object fConf: TfConf
           Left = 10
           Height = 16
           Top = 26
-          Width = 629
+          Width = 625
           Align = alTop
           BorderSpacing.Around = 10
           Caption = 'High (eg https://open.spotify.com/... or spotify:track:...)'
@@ -11522,7 +11539,7 @@ object fConf: TfConf
           Left = 10
           Height = 30
           Top = 52
-          Width = 629
+          Width = 625
           Align = alTop
           BorderSpacing.Left = 10
           BorderSpacing.Right = 10
@@ -11532,7 +11549,7 @@ object fConf: TfConf
           Left = 10
           Height = 30
           Top = 118
-          Width = 629
+          Width = 625
           Align = alTop
           BorderSpacing.Left = 10
           BorderSpacing.Right = 10
@@ -11542,7 +11559,7 @@ object fConf: TfConf
           Left = 10
           Height = 16
           Top = 92
-          Width = 629
+          Width = 625
           Align = alTop
           BorderSpacing.Around = 10
           Caption = 'Low (eg https://open.spotify.com/... or spotify:track:...)'
@@ -11551,7 +11568,7 @@ object fConf: TfConf
           Left = 10
           Height = 16
           Top = 158
-          Width = 629
+          Width = 625
           Align = alTop
           BorderSpacing.Around = 10
           Caption = 'Perfect Reading (5.5mmol/L or 100 mg/dL)'
@@ -11561,7 +11578,7 @@ object fConf: TfConf
           Left = 10
           Height = 30
           Top = 184
-          Width = 629
+          Width = 625
           Align = alTop
           BorderSpacing.Left = 10
           BorderSpacing.Right = 10
@@ -11590,8 +11607,8 @@ object fConf: TfConf
         Align = alBottom
         BorderSpacing.Around = 10
         Caption = 'System Features'
-        ClientHeight = 105
-        ClientWidth = 649
+        ClientHeight = 78
+        ClientWidth = 645
         TabOrder = 0
         object cbTouch: TCheckBox
           Left = 8
@@ -11621,13 +11638,13 @@ object fConf: TfConf
           TabOrder = 2
         end
         object pnHelp: TPanel
-          Left = 479
-          Height = 105
+          Left = 475
+          Height = 78
           Top = 0
           Width = 170
           Align = alRight
           BevelOuter = bvNone
-          ClientHeight = 105
+          ClientHeight = 78
           ClientWidth = 170
           TabOrder = 3
           object bSysTouch: TButton
