@@ -454,6 +454,9 @@ bad_tir: integer = 5;
   // WHen the TIR is good
 good_tir: integer = 75;
 
+tir_bg: TColor = -1;
+tir_custom_bg: TColor = -1;
+
 fBG: TfBG;
 api: TrndiAPI;
 un: BGUnit = BGUnit.mmol;
@@ -964,6 +967,11 @@ begin
 
   // Color title bar (on Windows?)
   titlecolor := native.GetBoolSetting('ux.title_color', true);
+
+  if native.GetBoolSetting('ux.tir_color_on') then
+    tir_bg := native.GetColorSetting('ux.tir_color');
+  if native.GetBoolSetting('ux.tir_color_custom_on') then
+    tir_custom_bg := native.GetColorSetting('ux.tir_color_custom');
 end;
 
 procedure TfBG.InitializeSplashScreen;
@@ -2003,7 +2011,10 @@ begin
   if drawLo and drawHi then
   begin
     cnv.Brush.Style := bsSolid;
-    cnv.Brush.Color := DarkenColor(fBG.Color, 0.9);
+    if tir_bg = -1 then
+      cnv.Brush.Color := DarkenColor(fBG.Color, 0.9)
+    else
+      cnv.Brush.Color := tir_bg;
     cnv.Pen.Style := psClear;
     cnv.FillRect(Classes.Rect(0, hiY, Self.ClientWidth, loY));
   end;
@@ -2012,7 +2023,10 @@ begin
   if drawRangeLo and drawRangeHi then
   begin
     cnv.Brush.Style := bsSolid;
-    cnv.Brush.Color := DarkenColor(fBG.Color, 0.85);
+    if tir_custom_bg = -1 then
+      cnv.Brush.Color := DarkenColor(fBG.Color, 0.85)
+    else
+     cnv.Brush.Color := tir_custom_bg;
     cnv.Pen.Style := psClear;
     cnv.FillRect(Classes.Rect(0, rangeHiY, Self.ClientWidth, rangeLoY));
   end;
@@ -2983,6 +2997,15 @@ procedure SetupUIElements(f: TfConf);
         native.GetColorSetting('ux.bg_rel_color_lo_txt', bg_rel_color_lo_txt);
 
       cbTitleColor.Checked := native.GetBoolSetting('ux.title_color', true);
+
+      cbTirColor.Checked := native.GetBoolSetting('ux.tir_color_on');
+      cbTirColorCustom.Checked := native.GetBoolSetting('ux.tir_color_custom_on');
+
+      cbTirColorBg.Checked := not cbTirColor.Checked;
+      cbTirColorBgCustom.Checked := not cbTirColorCustom.Checked;
+
+      cbTirBar.ButtonColor := native.GetColorSetting('ux.tir_color');
+      cbTirBarCustom.ButtonColor := native.GetColorSetting('ux.tir_color_custom');
     end;
   end;
 
@@ -3100,6 +3123,12 @@ procedure SaveUserSettings(f: TfConf);
       SetColorSetting('ux.bg_rel_color_lo_txt', cl_lo_txt_cust.ButtonColor);
 
       native.SetBoolSetting('ux.title_color', cbTitleColor.Checked);
+
+      native.SetBoolSetting('ux.tir_color_on', cbTirColor.Checked);
+      native.SetBoolSetting('ux.tir_color_custom_on', cbTirColorCustom.Checked);
+
+      native.SetColorSetting('ux.tir_color', cbTirBar.ButtonColor);
+      native.SetColorSetting('ux.tir_color_custom', cbTirBarCustom.ButtonColor);
     end;
   end;
 

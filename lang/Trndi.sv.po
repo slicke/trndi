@@ -404,7 +404,7 @@ msgstr "Rita ytan mellan hög och låg"
 #: tfconf.cbpainthilorange.caption
 #, fuzzy
 #| msgid "Also paint custom range"
-msgid "Also paint the custom range"
+msgid "Color the graph's background with your custom range"
 msgstr "Rita egna gränser också"
 
 #: tfconf.cbpaintlines.caption
@@ -428,6 +428,26 @@ msgstr "NightScout"
 #| msgid "Count readings in the custom range as in range"
 msgid "Count custom range as time in range"
 msgstr "Räkna värden i eget område som tid i område"
+
+#: tfconf.cbtircolor.caption
+msgctxt "tfconf.cbtircolor.caption"
+msgid "Use this color:"
+msgstr ""
+
+#: tfconf.cbtircolorbg.caption
+msgctxt "tfconf.cbtircolorbg.caption"
+msgid "Adjust color based on background"
+msgstr ""
+
+#: tfconf.cbtircolorbgcustom.caption
+msgctxt "tfconf.cbtircolorbgcustom.caption"
+msgid "Adjust color based on background"
+msgstr ""
+
+#: tfconf.cbtircolorcustom.caption
+msgctxt "tfconf.cbtircolorcustom.caption"
+msgid "Use this color:"
+msgstr ""
 
 #: tfconf.cbtitlecolor.caption
 msgid "Color the title bar with glucose color **"

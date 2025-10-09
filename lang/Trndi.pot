@@ -377,7 +377,7 @@ msgid "Color the graph's background with your range"
 msgstr ""
 
 #: tfconf.cbpainthilorange.caption
-msgid "Also paint the custom range"
+msgid "Color the graph's background with your custom range"
 msgstr ""
 
 #: tfconf.cbpaintlines.caption
@@ -398,6 +398,26 @@ msgstr ""
 
 #: tfconf.cbtir.caption
 msgid "Count custom range as time in range"
+msgstr ""
+
+#: tfconf.cbtircolor.caption
+msgctxt "tfconf.cbtircolor.caption"
+msgid "Use this color:"
+msgstr ""
+
+#: tfconf.cbtircolorbg.caption
+msgctxt "tfconf.cbtircolorbg.caption"
+msgid "Adjust color based on background"
+msgstr ""
+
+#: tfconf.cbtircolorbgcustom.caption
+msgctxt "tfconf.cbtircolorbgcustom.caption"
+msgid "Adjust color based on background"
+msgstr ""
+
+#: tfconf.cbtircolorcustom.caption
+msgctxt "tfconf.cbtircolorcustom.caption"
+msgid "Use this color:"
 msgstr ""
 
 #: tfconf.cbtitlecolor.caption

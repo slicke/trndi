@@ -27,8 +27,8 @@ interface
 
 uses
 Classes, ComCtrls, ExtCtrls, Spin, StdCtrls, SysUtils, Forms, Controls,
-Graphics, Dialogs, LCLTranslator, trndi.native, lclintf, slicke.ux.alert,
-VersionInfo, trndi.funcs, buildinfo,
+Graphics, Dialogs, LCLTranslator, trndi.native, lclintf, ColorBox,
+slicke.ux.alert, VersionInfo, trndi.funcs, buildinfo,
   // Backend APIs for label captions
 trndi.api, trndi.api.nightscout, trndi.api.nightscout3, trndi.api.dexcom,
 trndi.api.xdrip;
@@ -71,6 +71,9 @@ TfConf = class(TForm)
   cbSize: TCheckBox;
   cbSys: TComboBox;
   cbTIR: TCheckBox;
+  cbTirColorBgCustom: TRadioButton;
+  cbTirColor: TRadioButton;
+  cbTirColorCustom: TRadioButton;
   cbTouch: TCheckBox;
   cbUser: TColorButton;
   cbUserColor: TCheckBox;
@@ -87,6 +90,8 @@ TfConf = class(TForm)
   cl_hi_bg_cust: TColorButton;
   cl_ok_bg: TColorButton;
   cl_ok_txt: TColorButton;
+  cbTirBar: TColorButton;
+  cbTirBarCustom: TColorButton;
   eAddr: TEdit;
   edCommaSep: TEdit;
   edNick: TEdit;
@@ -167,6 +172,8 @@ TfConf = class(TForm)
   lArch: TLabel;
   Panel1: TPanel;
   Panel10: TPanel;
+  Panel11: TPanel;
+  Panel12: TPanel;
   Panel2: TPanel;
   Panel3: TPanel;
   Panel4: TPanel;
@@ -185,6 +192,7 @@ TfConf = class(TForm)
   pnDisplay: TPanel;
   pUserNick: TPanel;
   pUserSave2: TPanel;
+  cbTirColorBg: TRadioButton;
   rbUnit: TRadioGroup;
   spTHRESHOLD: TSpinEdit;
   TabSheet1: TTabSheet;
