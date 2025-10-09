@@ -1574,9 +1574,9 @@ end;
 
 procedure TfBG.miASystemInfoClick(Sender: TObject);
 var
-  sysver: string;
+  sysver, s: string;
   {$ifdef Linux}
-  s,ver: string;
+  ver: string;
   {$endif}
 begin
   {$if defined(LCLWin32)}
