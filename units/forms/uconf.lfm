@@ -16,9 +16,9 @@ object fConf: TfConf
     Height = 534
     Top = 0
     Width = 675
-    ActivePage = TabSheet1
+    ActivePage = tsCustom
     Align = alClient
-    TabIndex = 3
+    TabIndex = 4
     TabOrder = 0
     OnChange = pcMainChange
     object tsGeneral: TTabSheet
@@ -11068,6 +11068,68 @@ object fConf: TfConf
           Align = alTop
           Caption = 'Color the graph''s background with your range'
           TabOrder = 2
+        end
+      end
+      object GroupBox7: TGroupBox
+        Left = 0
+        Height = 80
+        Top = 224
+        Width = 669
+        Align = alTop
+        Caption = 'Override Time In Range'
+        ClientHeight = 53
+        ClientWidth = 665
+        TabOrder = 2
+        object cbCustRange: TCheckBox
+          Left = 0
+          Height = 18
+          Top = 0
+          Width = 128
+          Align = alLeft
+          Caption = 'Use custom values'
+          TabOrder = 0
+          OnChange = cbCustRangeChange
+        end
+        object Panel6: TPanel
+          Left = 0
+          Height = 35
+          Top = 18
+          Width = 665
+          Align = alBottom
+          BevelOuter = bvNone
+          ClientHeight = 35
+          ClientWidth = 665
+          TabOrder = 1
+          object lHiOver1: TLabel
+            Left = 16
+            Height = 16
+            Top = 3
+            Width = 54
+            Caption = 'High over'
+          end
+          object fsHiRange: TFloatSpinEdit
+            Left = 91
+            Height = 30
+            Top = 0
+            Width = 77
+            DecimalPlaces = 0
+            TabOrder = 0
+          end
+          object lLounder1: TLabel
+            Left = 181
+            Height = 16
+            Top = 4
+            Width = 59
+            Caption = 'Low under'
+          end
+          object fsLoRange: TFloatSpinEdit
+            Left = 257
+            Height = 30
+            Top = 0
+            Width = 78
+            DecimalPlaces = 0
+            TabOrder = 1
+          end
         end
       end
     end

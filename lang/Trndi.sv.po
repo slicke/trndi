@@ -351,6 +351,13 @@ msgid "Settings"
 msgstr "Inställningar"
 
 #: tfconf.cbcust.caption
+msgctxt "tfconf.cbcust.caption"
+msgid "Use custom values"
+msgstr "Använd egna värden"
+
+#: tfconf.cbcustrange.caption
+#, fuzzy
+msgctxt "tfconf.cbcustrange.caption"
 msgid "Use custom values"
 msgstr "Använd egna värden"
 
@@ -385,13 +392,13 @@ msgstr "Systemmeddelanden"
 #: tfconf.cboffbar.caption
 #, fuzzy
 #| msgid "Show sidebar when value is not in range"
-msgid "Sidebar: Show a sidebar when value is not in range"
+msgid "Show a sidebar when value is not in range"
 msgstr "Visa sidopanelen när värdet inte är i målområdet"
 
 #: tfconf.cbpainthilo.caption
 #, fuzzy
 #| msgid "Paint the area between high and low"
-msgid "In range: Color background  in graph"
+msgid "Color the graph's background with your range"
 msgstr "Rita ytan mellan hög och låg"
 
 #: tfconf.cbpainthilorange.caption
@@ -419,7 +426,7 @@ msgstr "NightScout"
 #: tfconf.cbtir.caption
 #, fuzzy
 #| msgid "Count readings in the custom range as in range"
-msgid "Time in range: Count based on custom range"
+msgid "Count custom range as time in range"
 msgstr "Räkna värden i eget område som tid i område"
 
 #: tfconf.cbtitlecolor.caption
@@ -535,6 +542,10 @@ msgstr ""
 msgid "In-range coloring"
 msgstr "Färglägg gränser"
 
+#: tfconf.groupbox7.caption
+msgid "Override Time In Range"
+msgstr ""
+
 #: tfconf.label1.caption
 msgid "Readings are outdated after (minutes):"
 msgstr "Avläsningar anses gamla efter (minuter):"
@@ -606,6 +617,10 @@ msgstr "Svart = genomskinlig"
 msgid "Language"
 msgstr "Språk"
 
+#: tfconf.label7.caption
+msgid "Time-in-range (TIR) is the amount of time you are within your high/low goal."
+msgstr ""
+
 #: tfconf.label8.caption
 #, fuzzy
 #| msgid "Click an item to change it's font"
@@ -663,6 +678,13 @@ msgid "Plugin Folder"
 msgstr "Pluginmapp"
 
 #: tfconf.lhiover.caption
+msgctxt "tfconf.lhiover.caption"
+msgid "High over"
+msgstr "Högt över"
+
+#: tfconf.lhiover1.caption
+#, fuzzy
+msgctxt "tfconf.lhiover1.caption"
 msgid "High over"
 msgstr "Högt över"
 
@@ -671,6 +693,13 @@ msgid "License"
 msgstr "Licens"
 
 #: tfconf.llounder.caption
+msgctxt "tfconf.llounder.caption"
+msgid "Low under"
+msgstr "Lågt under"
+
+#: tfconf.llounder1.caption
+#, fuzzy
+msgctxt "tfconf.llounder1.caption"
 msgid "Low under"
 msgstr "Lågt under"
 
@@ -722,6 +751,10 @@ msgstr "Okänt grafiksystem"
 #: tfconf.rbunit.caption
 msgid "Display Unit"
 msgstr "Enhetstyp"
+
+#: tfconf.tabsheet1.caption
+msgid "Time-in-range"
+msgstr ""
 
 #: tfconf.tscolors.caption
 msgid "Colors"

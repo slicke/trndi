@@ -55,6 +55,7 @@ TfConf = class(TForm)
   bvExt: TBevel;
   bvExt1: TBevel;
   cbCust: TCheckBox;
+  cbCustRange: TCheckBox;
   cbFlashLow: TCheckBox;
   cbFlashPerfect: TCheckBox;
   cbLang: TComboBox;
@@ -99,7 +100,9 @@ TfConf = class(TForm)
   edMusicPerfect: TEdit;
   fdFont: TFontDialog;
   fsHi: TFloatSpinEdit;
+  fsHiRange: TFloatSpinEdit;
   fsLo: TFloatSpinEdit;
+  fsLoRange: TFloatSpinEdit;
   gbColBack: TGroupBox;
   gbDisplayPrefs: TGroupBox;
   gbMulti: TGroupBox;
@@ -111,6 +114,7 @@ TfConf = class(TForm)
   GroupBox4: TGroupBox;
   GroupBox5: TGroupBox;
   GroupBox6: TGroupBox;
+  GroupBox7: TGroupBox;
   Image1: TImage;
   Label1: TLabel;
   Label13: TLabel;
@@ -126,6 +130,8 @@ TfConf = class(TForm)
   lDot3: TLabel;
   lDotCurr: TLabel;
   lDotNow: TLabel;
+  lHiOver1: TLabel;
+  lLounder1: TLabel;
   lProblematic: TLabel;
   lTray: TLabel;
   lWidgetset: TLabel;
@@ -165,6 +171,7 @@ TfConf = class(TForm)
   Panel3: TPanel;
   Panel4: TPanel;
   Panel5: TPanel;
+  Panel6: TPanel;
   Panel7: TPanel;
   Panel8: TPanel;
   Panel9: TPanel;
@@ -205,6 +212,7 @@ TfConf = class(TForm)
   procedure Button3Click(Sender: TObject);
   procedure Button4Click(Sender: TObject);
   procedure cbCustChange(Sender: TObject);
+  procedure cbCustRangeChange(Sender: TObject);
   procedure cbSysChange(Sender: TObject);
   procedure cbUserClick(Sender: TObject);
   procedure cbUserColorChanged(Sender: TObject);
@@ -1129,6 +1137,14 @@ begin
     ShowMessage(RS_OVERRIDE_NS);
 end;
 
+procedure TfConf.cbCustRangeChange(Sender: TObject);
+begin
+  fsHiRange.Enabled := cbCustRange.Checked;
+  fsLoRange.Enabled := cbCustRange.Checked;
+  if (cbCustRange.Checked) and (cbSys.Text = 'NightScout') then
+    ShowMessage(RS_OVERRIDE_NS);
+end;
+
 procedure TfConf.FormCreate(Sender: TObject);
 begin
   // Base app version + build date + widgetset + target CPU
@@ -1239,18 +1255,27 @@ begin
   if (Sender is TForm) or (rbUnit.ItemIndex = 0) then
   begin
     fsHi.DecimalPlaces := 1;
+    fsLo.DecimalPlaces := 1;
+    fsHiRange.DecimalPlaces := 1;
+    fsLoRange.DecimalPlaces := 1;
+
     fsHi.Value := round(fsHi.Value * TrndiAPI.toMMOL * 10) / 10;
     // Do the / 10 thing to keep the decimal
     fsLo.Value := round(fsLo.Value * TrndiAPI.toMMOL * 10) / 10;
+    fsLoRange.Value := round(fsLoRange.Value * TrndiAPI.toMMOL * 10) / 10;
+    fsHiRange.Value := round(fsHiRange.Value * TrndiAPI.toMMOL * 10) / 10;
   end
   else
   begin
     fsHi.Value := round(fsHi.Value * TrndiAPI.toMgdl);
     fsLo.Value := round(fsLo.Value * TrndiAPI.toMgdl);
+    fsHiRange.Value := round(fsHiRange.Value * TrndiAPI.toMgdl);
+    fsLoRange.Value := round(fsLoRange.Value * TrndiAPI.toMgdl);
     fsHi.DecimalPlaces := 0;
+    fsLo.DecimalPlaces := 0;
+    fsHiRange.DecimalPlaces := 0;
+    fsLoRange.DecimalPlaces := 0;
   end;
-
-  fsLo.DecimalPlaces := fsHi.DecimalPlaces;
 end;
 
 procedure TfConf.spTHRESHOLDChange(Sender: TObject);

@@ -1309,6 +1309,9 @@ begin
     begin
       api.cgmLo := GetIntSetting('override.lo', api.cgmLo);
       api.cgmHi := GetIntSetting('override.hi', api.cgmHi);
+    end;
+    if GetIntSetting('override.range', 0) = 1 then
+    begin
       api.cgmRangeLo := GetIntSetting('override.rangelo', api.cgmRangeLo);
       api.cgmRangeHi := GetIntSetting('override.rangehi', api.cgmRangeHi);
     end;
@@ -2829,11 +2832,15 @@ procedure LoadUserSettings(f: TfConf);
       begin
         fsLo.Value := GetIntSetting('override.lo', 60);
         fsHi.Value := GetIntSetting('override.hi', 160);
+        fsLoRange.Value := GetIntSetting('override.rangelo', 80);
+        fsHiRange.Value := GetIntSetting('override.rangehi', 180);
       end
       else
       begin
         fsLo.Value := GetIntSetting('override.lo', api.cgmLo);
         fsHi.Value := GetIntSetting('override.hi', api.cgmHi);
+        fsLoRange.Value := GetIntSetting('override.rangelo', api.cgmRangeLo);
+        fsHiRange.Value := GetIntSetting('override.rangehi', api.cgmRangeHi);
       end;
 
       cbTIR.Checked := native.GetBoolSetting('range.custom', true);
@@ -2850,12 +2857,15 @@ procedure LoadUserSettings(f: TfConf);
         rbUnitClick(Self);
 
       cbCust.Checked := GetIntSetting('override.enabled', 0) = 1;
+      cbCustRange.Checked := GetIntSetting('override.range', 0) = 1;
       edMusicHigh.Text := GetSetting('media.url_high', '');
       edMusicLow.Text := GetSetting('media.url_low', '');
       edMusicPerfect.Text := GetSetting('media.url_perfect', '');
       cbMusicPause.Checked := GetBoolSetting('media.pause');
       fsHi.Enabled := cbCust.Checked;
       fsLo.Enabled := cbCust.Checked;
+      fsHiRange.Enabled := cbCustRange.Checked;
+      fsLoRange.Enabled := cbCustRange.Checked;
 
       // User customizations
       s := GetRootSetting('users.names', '');
@@ -3049,11 +3059,15 @@ procedure SaveUserSettings(f: TfConf);
       begin // mmol
         SetSetting('override.lo', Round(fsLo.Value * TrndiAPI.toMGDL).ToString);
         SetSetting('override.hi', Round(fsHi.Value * TrndiAPI.toMGDL).ToString);
+        SetSetting('override.rangelo', Round(fsLoRange.Value * TrndiAPI.toMGDL).ToString);
+        SetSetting('override.rangehi', Round(fsHiRange.Value * TrndiAPI.toMGDL).ToString);
       end
       else
       begin
         SetSetting('override.lo', Round(fsLo.Value).ToString);
         SetSetting('override.hi', Round(fsHi.Value).ToString);
+        SetSetting('override.rangelo', Round(fsLoRange.Value).ToString);
+        SetSetting('override.rangehi', Round(fsHiRange.Value).ToString);
       end;
 
       native.SetBoolSetting('range.custom', cbTIR.Checked);
@@ -3065,6 +3079,7 @@ procedure SaveUserSettings(f: TfConf);
       native.SetSetting('ux.badge_size', edTray.Value.ToString);
 
       SetSetting('override.enabled', IfThen(cbCust.Checked, '1', '0'));
+      SetSetting('override.range', IfThen(cbCustRange.Checked, '1', '0'));
       SetSetting('media.url_high', edMusicHigh.Text);
       SetSetting('media.url_low', edMusicLow.Text);
       SetSetting('media.url_perfect', edMusicPerfect.Text);

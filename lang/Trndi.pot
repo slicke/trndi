@@ -331,6 +331,12 @@ msgid "Settings"
 msgstr ""
 
 #: tfconf.cbcust.caption
+msgctxt "tfconf.cbcust.caption"
+msgid "Use custom values"
+msgstr ""
+
+#: tfconf.cbcustrange.caption
+msgctxt "tfconf.cbcustrange.caption"
 msgid "Use custom values"
 msgstr ""
 
@@ -363,11 +369,11 @@ msgid "System notifications"
 msgstr ""
 
 #: tfconf.cboffbar.caption
-msgid "Sidebar: Show a sidebar when value is not in range"
+msgid "Show a sidebar when value is not in range"
 msgstr ""
 
 #: tfconf.cbpainthilo.caption
-msgid "In range: Color background  in graph"
+msgid "Color the graph's background with your range"
 msgstr ""
 
 #: tfconf.cbpainthilorange.caption
@@ -391,7 +397,7 @@ msgid "NightScout"
 msgstr ""
 
 #: tfconf.cbtir.caption
-msgid "Time in range: Count based on custom range"
+msgid "Count custom range as time in range"
 msgstr ""
 
 #: tfconf.cbtitlecolor.caption
@@ -504,6 +510,10 @@ msgstr ""
 msgid "In-range coloring"
 msgstr ""
 
+#: tfconf.groupbox7.caption
+msgid "Override Time In Range"
+msgstr ""
+
 #: tfconf.label1.caption
 msgid "Readings are outdated after (minutes):"
 msgstr ""
@@ -567,6 +577,10 @@ msgstr ""
 msgid "Language"
 msgstr ""
 
+#: tfconf.label7.caption
+msgid "Time-in-range (TIR) is the amount of time you are within your high/low goal."
+msgstr ""
+
 #: tfconf.label8.caption
 msgid "Click on a component to the left, to edit it's font"
 msgstr ""
@@ -622,6 +636,12 @@ msgid "Plugin Folder"
 msgstr ""
 
 #: tfconf.lhiover.caption
+msgctxt "tfconf.lhiover.caption"
+msgid "High over"
+msgstr ""
+
+#: tfconf.lhiover1.caption
+msgctxt "tfconf.lhiover1.caption"
 msgid "High over"
 msgstr ""
 
@@ -630,6 +650,12 @@ msgid "License"
 msgstr ""
 
 #: tfconf.llounder.caption
+msgctxt "tfconf.llounder.caption"
+msgid "Low under"
+msgstr ""
+
+#: tfconf.llounder1.caption
+msgctxt "tfconf.llounder1.caption"
 msgid "Low under"
 msgstr ""
 
@@ -679,6 +705,10 @@ msgstr ""
 
 #: tfconf.rbunit.caption
 msgid "Display Unit"
+msgstr ""
+
+#: tfconf.tabsheet1.caption
+msgid "Time-in-range"
 msgstr ""
 
 #: tfconf.tscolors.caption
