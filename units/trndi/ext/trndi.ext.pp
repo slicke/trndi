@@ -26,16 +26,10 @@ type
     public 
       procedure RegisterExtension(const ctx : JSContext; module: JSModuleDef = nil);
       cdecl;
-      procedure RegisterModule(var val: JSValue; var ctx : JSContext; name, export: string; module:
-                               JSModuleDef = nil);
-      class function VerifySource(const ctx: JSContext; Buf: PChar; buf_len: integer;
-                                  filename: PChar; is_main : boolean; eval_flags: integer = -1):
-                                                                                             JSValue
-        ;
-
-
-        constructor Create;
-      end;
+      procedure RegisterModule(var val: JSValue; var ctx : JSContext; name, export: string; module: JSModuleDef = nil);
+      class function VerifySource(const ctx: JSContext; Buf: PChar; buf_len: integer; filename: PChar; is_main : boolean; eval_flags: integer = -1):JSValue;
+      constructor Create;
+end;
 
       implementation
 

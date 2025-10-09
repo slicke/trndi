@@ -2,32 +2,32 @@ unit trndi.funcs;
 
 {$mode ObjFPC}{$H+}
 {$ifdef DARWIN}
-  {$ModeSwitch objectivec1}
+{$ModeSwitch objectivec1}
 {$endif}
 
 interface
 
 uses
-  Classes, SysUtils, ExtCtrls, StdCtrls, Graphics, trndi.types, Forms, Math,
-  fpjson, jsonparser, dateutils
-  {$ifdef TrndiExt},trndi.ext.engine, mormot.lib.quickjs, mormot.core.base{$endif}
-  {$ifdef DARWIN}, CocoaAll{$endif};
+Classes, SysUtils, ExtCtrls, StdCtrls, Graphics, trndi.types, Forms, Math,
+fpjson, jsonparser, dateutils
+{$ifdef TrndiExt},trndi.ext.engine, mormot.lib.quickjs, mormot.core.base{$endif}
+{$ifdef DARWIN}, CocoaAll{$endif};
 
 procedure CenterPanelToCaption(Panel: TPanel; margin: integer = 10);
 function GetAppPath: string;
 function GetLangPath: string;
 procedure PaintLbl(Sender: TLabel; OutlineWidth: integer = 1;
-  OutlineColor: TColor = clBlack);
+OutlineColor: TColor = clBlack);
 procedure LogMessage(const Msg: string);
 procedure SortReadingsDescending(var Readings: array of BGReading);
 procedure SetPointHeight(l: TPaintBox; Value: single; clientHeight: integer);
 function HasNewerRelease(const JsonResponse: string;
-  out ReleaseName: string;
-  IncludePrerelease: boolean = False): boolean;
+out ReleaseName: string;
+IncludePrerelease: boolean = false): boolean;
 function ParseCompilerDate: TDateTime;
 function GetNewerVersionURL(const JsonResponse: string;
-  IncludePrerelease: boolean = False;
-  Platform: string = ''): string;
+IncludePrerelease: boolean = false;
+Platform: string = ''): string;
 
 function privacyIcon(const v: trndi.types.BGValLevel): string;
 
@@ -47,7 +47,7 @@ function privacyIcon(const v: trndi.types.BGValLevel): string;
 function callFunc(const func: string; params: array of const; out exists: boolean): string;
 function callFunc(const func: string; params: array of const): string;
 function funcBool(const func: string; params: array of const; const nofunc: boolean): boolean;
-function funcInt(const func: string; params: array of const; const nofunc: int64): Int64;
+function funcInt(const func: string; params: array of const; const nofunc: int64): int64;
 function funcFloat(const func: string; params: array of const; const nofunc: double): double;
 // Call a JS function where the first parameter is an already created JS array (JSValueRaw)
 // Note: No default for autoFree here to avoid ambiguity with the overload without 'out exists'
@@ -73,25 +73,25 @@ procedure ConvertVarRecsToJSValueRaw(const params: array of const; var jsValues:
 {$endif}
 
 const
-  INTERVAL_MINUTES = 5; // Each time interval is 5 minutes
-  NUM_DOTS = 10;        // Total number of labels (lDot1 - lDot10)
+INTERVAL_MINUTES = 5; // Each time interval is 5 minutes
+NUM_DOTS = 10;        // Total number of labels (lDot1 - lDot10)
 
-  BG_API_MIN = 2; // NS can't read lower
-  BG_API_MAX = 22.2; // NS can't read higher
-  BG_REFRESH = 300000; // 5 min refresh
+BG_API_MIN = 2; // NS can't read lower
+BG_API_MAX = 22.2; // NS can't read higher
+BG_REFRESH = 300000; // 5 min refresh
 
-  APP_BUILD_DATE = {$I %DATE%}; // Returns "2025/07/21"
-  APP_BUILD_TIME = {$I %TIME%}; // Returns "14:30:25"
+APP_BUILD_DATE = {$I %DATE%}; // Returns "2025/07/21"
+APP_BUILD_TIME = {$I %TIME%}; // Returns "14:30:25"
 
 var
-  DOT_GRAPH: unicodestring = widechar($2B24);  // Circle
-  DOT_FRESH: unicodestring = widechar($2600);  // Sun
-  DOT_ADJUST: single = 0; // Multiplyer where dots appear
-  DOT_VISUAL_OFFSET: integer = 0;
+DOT_GRAPH: unicodestring = widechar($2B24);  // Circle
+DOT_FRESH: unicodestring = widechar($2600);  // Sun
+DOT_ADJUST: single = 0; // Multiplyer where dots appear
+DOT_VISUAL_OFFSET: integer = 0;
   // Vertical offset to align limit lines with visual center of dot (compensates for internal whitespace in dot character)
-  MAX_MIN: integer = 1440; // Max time to request
-  MAX_RESULT: integer = 25; // Max results
-  DATA_FRESHNESS_THRESHOLD_MINUTES: integer = 11;
+MAX_MIN: integer = 1440; // Max time to request
+MAX_RESULT: integer = 25; // Max results
+DATA_FRESHNESS_THRESHOLD_MINUTES: integer = 11;
   // Max minutes before data is considered outdated
 
 implementation
@@ -126,7 +126,7 @@ var
   NSAppBundle: NSBundle;
 begin
   NSAppBundle := NSBundle.mainBundle;
-  Result := UTF8ToString(NSAppBundle.bundlePath.UTF8String);
+  Result := UTF8ToString(NSAppBundle.bundlePath.utf8string);
   result := ExtractFilePath(result);
 end;
 function getLangPath: string;
@@ -154,7 +154,7 @@ end;
 {$endif}
 
 procedure PaintLbl(Sender: TLabel; OutlineWidth: integer = 1;
-  OutlineColor: TColor = clBlack);
+OutlineColor: TColor = clBlack);
 var
   X, Y: integer;
   OriginalColor: TColor;
@@ -172,7 +172,7 @@ begin
     TextStyle.Layout := Layout;
     TextStyle.Wordbreak := WordWrap;
     TextStyle.SingleLine := not WordWrap;
-    TextStyle.Clipping := True;
+    TextStyle.Clipping := true;
 
     // Remember original color
     OriginalColor := Font.Color;
@@ -265,7 +265,8 @@ begin
   // Clamp Value within range
   if Value < BG_API_MIN then
     Value := BG_API_MIN
-  else if Value > BG_API_MAX then
+  else
+  if Value > BG_API_MAX then
     Value := BG_API_MAX;
 
   // Calculate position as a proportion of the usable height
@@ -308,8 +309,8 @@ begin
 end;
 
 function HasNewerRelease(const JsonResponse: string;
-  out ReleaseName: string;
-  IncludePrerelease: boolean = False): boolean;
+out ReleaseName: string;
+IncludePrerelease: boolean = false): boolean;
 var
   JsonData: TJSONData;
   JsonObj: TJSONObject;
@@ -320,7 +321,7 @@ var
   i: integer;
   IsPrerelease: boolean;
 begin
-  Result := False;
+  Result := false;
   ReleaseName := '';
   JsonData := nil;
 
@@ -334,7 +335,7 @@ begin
       for i := 0 to JsonArray.Count - 1 do
       begin
         JsonObj := TJSONObject(JsonArray[i]);
-        IsPrerelease := JsonObj.Get('prerelease', False);
+        IsPrerelease := JsonObj.Get('prerelease', false);
         if not IncludePrerelease and IsPrerelease then
           Continue;
 
@@ -352,13 +353,14 @@ begin
           if ReleaseDate > BuildDate then
           begin
             ReleaseName := JsonObj.Get('name', JsonObj.Get('tag_name', ''));
-            Result := True;
+            Result := true;
             Exit;
           end;
         end;
       end;
     end
-    else if JsonData is TJSONObject then
+    else
+    if JsonData is TJSONObject then
     begin
       JsonObj := TJSONObject(JsonData);
       ReleaseDateStr := JsonObj.Get('published_at', '');
@@ -375,13 +377,13 @@ begin
         if ReleaseDate > BuildDate then
         begin
           ReleaseName := JsonObj.Get('name', JsonObj.Get('tag_name', ''));
-          Result := True;
+          Result := true;
         end;
       end;
     end;
 
   except
-    Result := False;
+    Result := false;
     ReleaseName := '';
   end;
 
@@ -390,8 +392,8 @@ begin
 end;
 
 function GetNewerVersionURL(const JsonResponse: string;
-  IncludePrerelease: boolean = False;
-  Platform: string = ''): string;
+IncludePrerelease: boolean = false;
+Platform: string = ''): string;
 var
   JsonData: TJSONData;
   JsonObj: TJSONObject;
@@ -418,16 +420,19 @@ begin
       if Platform <> '' then
       begin
         ReleaseTitle := JsonObj.Get('name', JsonObj.Get('tag_name', ''));
-        MatchesPlatform := False;
+        MatchesPlatform := false;
 
         case LowerCase(Platform) of
-          'windows': MatchesPlatform := Pos('windows', LowerCase(ReleaseTitle)) > 0;
-          'mac', 'macos': MatchesPlatform :=
-              (Pos('mac', LowerCase(ReleaseTitle)) > 0) or
-              (Pos('macos', LowerCase(ReleaseTitle)) > 0);
-          'linux': MatchesPlatform := Pos('linux', LowerCase(ReleaseTitle)) > 0;
-          else
-            MatchesPlatform := Pos(LowerCase(Platform), LowerCase(ReleaseTitle)) > 0;
+        'windows':
+          MatchesPlatform := Pos('windows', LowerCase(ReleaseTitle)) > 0;
+        'mac', 'macos':
+          MatchesPlatform :=
+            (Pos('mac', LowerCase(ReleaseTitle)) > 0) or
+            (Pos('macos', LowerCase(ReleaseTitle)) > 0);
+        'linux':
+          MatchesPlatform := Pos('linux', LowerCase(ReleaseTitle)) > 0;
+        else
+          MatchesPlatform := Pos(LowerCase(Platform), LowerCase(ReleaseTitle)) > 0;
         end;
 
         if not MatchesPlatform then
@@ -453,39 +458,44 @@ begin
     end
 
     // Handle array of releases (from /releases)
-    else if JsonData is TJSONArray then
+    else
+    if JsonData is TJSONArray then
     begin
       JsonArray := TJSONArray(JsonData);
 
       for i := 0 to JsonArray.Count - 1 do
       begin
         JsonObj := TJSONObject(JsonArray[i]);
-        IsPrerelease := JsonObj.Get('prerelease', False);
+        IsPrerelease := JsonObj.Get('prerelease', false);
 
         // Filter by prerelease setting
         if IncludePrerelease then
         begin
-          if not IsPrerelease then Continue; // Want prerelease, skip stable
+          if not IsPrerelease then
+            Continue; // Want prerelease, skip stable
         end
         else
-        begin
-          if IsPrerelease then Continue; // Want stable, skip prerelease
-        end;
+        if IsPrerelease then
+          Continue// Want stable, skip prerelease
+        ;
 
         // Check platform filter
         if Platform <> '' then
         begin
           ReleaseTitle := JsonObj.Get('name', JsonObj.Get('tag_name', ''));
-          MatchesPlatform := False;
+          MatchesPlatform := false;
 
           case LowerCase(Platform) of
-            'windows': MatchesPlatform := Pos('windows', LowerCase(ReleaseTitle)) > 0;
-            'mac', 'macos': MatchesPlatform :=
-                (Pos('mac', LowerCase(ReleaseTitle)) > 0) or
-                (Pos('macos', LowerCase(ReleaseTitle)) > 0);
-            'linux': MatchesPlatform := Pos('linux', LowerCase(ReleaseTitle)) > 0;
-            else
-              MatchesPlatform := Pos(LowerCase(Platform), LowerCase(ReleaseTitle)) > 0;
+          'windows':
+            MatchesPlatform := Pos('windows', LowerCase(ReleaseTitle)) > 0;
+          'mac', 'macos':
+            MatchesPlatform :=
+              (Pos('mac', LowerCase(ReleaseTitle)) > 0) or
+              (Pos('macos', LowerCase(ReleaseTitle)) > 0);
+          'linux':
+            MatchesPlatform := Pos('linux', LowerCase(ReleaseTitle)) > 0;
+          else
+            MatchesPlatform := Pos(LowerCase(Platform), LowerCase(ReleaseTitle)) > 0;
           end;
 
           if not MatchesPlatform then
@@ -526,21 +536,16 @@ function privacyIcon(const v: trndi.types.BGValLevel): string;
 begin
   Result := '?';
   case v of
-    trndi.types.BGHigh: begin
-      Result := '⭱';
-    end;
-    trndi.types.BGLOW: begin
-      Result := '⭳';
-    end;
-    trndi.types.BGRange: begin
-      Result := '✓';
-    end;
-    trndi.types.BGRangeHI: begin
-      Result := '✓⁺';
-    end;
-    trndi.types.BGRangeLO: begin
-      Result := '✓⁻';
-    end;
+  trndi.types.BGHigh:
+    Result := '⭱';
+  trndi.types.BGLOW:
+    Result := '⭳';
+  trndi.types.BGRange:
+    Result := '✓';
+  trndi.types.BGRangeHI:
+    Result := '✓⁺';
+  trndi.types.BGRangeLO:
+    Result := '✓⁻';
   end;
 end;
 
@@ -549,7 +554,8 @@ end;
 function callFunc(const func: string; params: array of const; out exists: boolean): string;
 begin
   result := '';
-  if not Assigned(TTrndiExtEngine.Instance) then begin  // Safe
+  if not Assigned(TTrndiExtEngine.Instance) then
+  begin  // Safe
     exists := false;
     exit;
   end;
@@ -579,7 +585,7 @@ begin
     result := nofunc;
 end;
 
-function funcInt(const func: string; params: array of const; const nofunc: Int64): Int64;
+function funcInt(const func: string; params: array of const; const nofunc: int64): int64;
 var
   ex: boolean;
   res: string;
@@ -622,9 +628,11 @@ end;
 function callFuncArrayFirst(const func: string; const firstArray: JSValueRaw; rest: array of const; out exists: boolean; autoFree: boolean; autoFreeFirst: boolean): string;
 begin
   result := '';
-  if not Assigned(TTrndiExtEngine.Instance) then begin exists := false; exit; end;
+  if not Assigned(TTrndiExtEngine.Instance) then
+  begin exists := false; exit; end;
   exists := TTrndiExtEngine.Instance.FunctionExists(func);
-  if not exists then exit;
+  if not exists then
+    exit;
   result := TTrndiExtEngine.Instance.CallFunctionArrayFirst(func, firstArray, rest, autoFree, autoFreeFirst);
 end;
 
@@ -638,9 +646,11 @@ end;
 function callFuncMixed(const func: string; const raw: array of JSValueRaw; rest: array of const; out exists: boolean; restAutoFree: boolean; rawAutoFree: boolean): string;
 begin
   result := '';
-  if not Assigned(TTrndiExtEngine.Instance) then begin exists := false; exit; end;
+  if not Assigned(TTrndiExtEngine.Instance) then
+  begin exists := false; exit; end;
   exists := TTrndiExtEngine.Instance.FunctionExists(func);
-  if not exists then exit;
+  if not exists then
+    exit;
   result := TTrndiExtEngine.Instance.CallFunctionMixed(func, raw, rest, restAutoFree, rawAutoFree);
 end;
 
@@ -654,9 +664,11 @@ end;
 function callFuncRaw(const func: string; const raw: array of JSValueRaw; out exists: boolean; autoFree: boolean): string;
 begin
   Result := '';
-  if not Assigned(TTrndiExtEngine.Instance) then begin exists := false; exit; end;
+  if not Assigned(TTrndiExtEngine.Instance) then
+  begin exists := false; exit; end;
   exists := TTrndiExtEngine.Instance.FunctionExists(func);
-  if not exists then exit;
+  if not exists then
+    exit;
   Result := TTrndiExtEngine.Instance.CallFunctionJS(func, raw, autoFree);
 end;
 
@@ -669,31 +681,36 @@ end;
 // Helper constructors
 function JSValueRawString(const s: RawUtf8): JSValueRaw;
 begin
-  if not Assigned(TTrndiExtEngine.Instance) then exit(JS_UNDEFINED);
+  if not Assigned(TTrndiExtEngine.Instance) then
+    exit(JS_UNDEFINED);
   Result := TTrndiExtEngine.Instance.MakeJSString(s);
 end;
 
 function JSValueRawInt(const v: int64): JSValueRaw;
 begin
-  if not Assigned(TTrndiExtEngine.Instance) then exit(JS_UNDEFINED);
+  if not Assigned(TTrndiExtEngine.Instance) then
+    exit(JS_UNDEFINED);
   Result := TTrndiExtEngine.Instance.MakeJSInt64(v);
 end;
 
 function JSValueRawFloat(const v: double): JSValueRaw;
 begin
-  if not Assigned(TTrndiExtEngine.Instance) then exit(JS_UNDEFINED);
+  if not Assigned(TTrndiExtEngine.Instance) then
+    exit(JS_UNDEFINED);
   Result := TTrndiExtEngine.Instance.MakeJSFloat(v);
 end;
 
 function JSValueRawBool(const v: boolean): JSValueRaw;
 begin
-  if not Assigned(TTrndiExtEngine.Instance) then exit(JS_UNDEFINED);
+  if not Assigned(TTrndiExtEngine.Instance) then
+    exit(JS_UNDEFINED);
   Result := TTrndiExtEngine.Instance.MakeJSBool(v);
 end;
 
 function JSValueRawArray(const values: array of const): JSValueRaw;
 begin
-  if not Assigned(TTrndiExtEngine.Instance) then exit(JS_UNDEFINED);
+  if not Assigned(TTrndiExtEngine.Instance) then
+    exit(JS_UNDEFINED);
   Result := TTrndiExtEngine.Instance.MakeJSArray(values);
 end;
 
@@ -702,19 +719,24 @@ var
   i: integer;
 begin
   for i := 0 to High(params) do
-  begin
     case params[i].VType of
-      vtString:      jsValues[i] := JSValueRawString(RawUtf8(ShortString(params[i].VString^)));
-      vtAnsiString:  jsValues[i] := JSValueRawString(RawUtf8(AnsiString(params[i].VAnsiString)));
-      vtUnicodeString: jsValues[i] := JSValueRawString(RawUtf8(UnicodeString(params[i].VUnicodeString)));
-      vtInteger:     jsValues[i] := JSValueRawInt(params[i].VInteger);
-      vtInt64:       jsValues[i] := JSValueRawInt(params[i].VInt64^);
-      vtExtended:    jsValues[i] := JSValueRawFloat(params[i].VExtended^);
-      vtBoolean:     jsValues[i] := JSValueRawBool(params[i].VBoolean);
+    vtString:
+      jsValues[i] := JSValueRawString(RawUtf8(shortstring(params[i].VString^)));
+    vtAnsiString:
+      jsValues[i] := JSValueRawString(RawUtf8(ansistring(params[i].VAnsiString)));
+    vtUnicodeString:
+      jsValues[i] := JSValueRawString(RawUtf8(unicodestring(params[i].VUnicodeString)));
+    vtInteger:
+      jsValues[i] := JSValueRawInt(params[i].VInteger);
+    vtInt64:
+      jsValues[i] := JSValueRawInt(params[i].VInt64^);
+    vtExtended:
+      jsValues[i] := JSValueRawFloat(params[i].VExtended^);
+    vtBoolean:
+      jsValues[i] := JSValueRawBool(params[i].VBoolean);
     else
       jsValues[i] := JSValueRawString('unsupported_type');
     end;
-  end;
 end;
 {$endif}
 

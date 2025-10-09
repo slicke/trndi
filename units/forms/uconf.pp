@@ -26,304 +26,304 @@ unit uconf;
 interface
 
 uses
-  Classes, ComCtrls, ExtCtrls, Spin, StdCtrls, SysUtils, Forms, Controls,
-  Graphics, Dialogs, LCLTranslator, trndi.native, lclintf, slicke.ux.alert,
-  VersionInfo, trndi.funcs, buildinfo,
+Classes, ComCtrls, ExtCtrls, Spin, StdCtrls, SysUtils, Forms, Controls,
+Graphics, Dialogs, LCLTranslator, trndi.native, lclintf, slicke.ux.alert,
+VersionInfo, trndi.funcs, buildinfo,
   // Backend APIs for label captions
-  trndi.api, trndi.api.nightscout, trndi.api.nightscout3, trndi.api.dexcom,
-  trndi.api.xdrip;
+trndi.api, trndi.api.nightscout, trndi.api.nightscout3, trndi.api.dexcom,
+trndi.api.xdrip;
 
 type
 
   { TfConf }
 
-  TfConf = class(TForm)
-    bAdd: TButton;
-    bBackendHelp: TButton;
-    bOverrideHelp: TButton;
-    bPrivacyHelp: TButton;
-    bRemove: TButton;
-    bSysNotice: TButton;
-    bSysTouch: TButton;
-    bTestSpeech: TButton;
-    btUserSave: TButton;
-    Button2: TButton;
-    btReset: TButton;
-    bTestAnnounce: TButton;
-    Button3: TButton;
-    Button4: TButton;
-    bvExt: TBevel;
-    bvExt1: TBevel;
-    cbCust: TCheckBox;
-    cbFlashLow: TCheckBox;
-    cbFlashPerfect: TCheckBox;
-    cbLang: TComboBox;
-    cbMultiTouch: TCheckBox;
-    cbMusicPause: TCheckBox;
-    cbNotice: TCheckBox;
-    cbOffBar: TCheckBox;
-    cbPaintHiLo: TCheckBox;
-    cbPaintHiLoRange: TCheckBox;
-    cbPaintLines: TCheckBox;
-    cbPos: TComboBox;
-    cbPrivacy: TCheckBox;
-    cbSize: TCheckBox;
-    cbSys: TComboBox;
-    cbTIR: TCheckBox;
-    cbTouch: TCheckBox;
-    cbUser: TColorButton;
-    cbUserColor: TCheckBox;
-    cbTitleColor: TCheckBox;
-    cbFlash: TCheckGroup;
-    cbFlashHi: TCheckBox;
-    cl_hi_bg: TColorButton;
-    cl_hi_txt: TColorButton;
-    cl_hi_txt_cust: TColorButton;
-    cl_lo_bg: TColorButton;
-    cl_lo_txt: TColorButton;
-    cl_lo_txt_cust: TColorButton;
-    cl_lo_bg_cust: TColorButton;
-    cl_hi_bg_cust: TColorButton;
-    cl_ok_bg: TColorButton;
-    cl_ok_txt: TColorButton;
-    eAddr: TEdit;
-    edCommaSep: TEdit;
-    eDot: TEdit;
-    edNick: TEdit;
-    eDotNow: TEdit;
-    edTray: TSpinEdit;
-    ePass: TEdit;
-    eExt: TEdit;
-    edMusicHigh: TEdit;
-    edMusicLow: TEdit;
-    edMusicPerfect: TEdit;
-    fdFont: TFontDialog;
-    fsHi: TFloatSpinEdit;
-    fsLo: TFloatSpinEdit;
-    gbColBack: TGroupBox;
-    gbMulti: TGroupBox;
-    gbOverride: TGroupBox;
-    gbOverride2: TGroupBox;
-    GroupBox1: TGroupBox;
-    GroupBox2: TGroupBox;
-    GroupBox3: TGroupBox;
-    gbDisplayPrefs: TGroupBox;
-    GroupBox4: TGroupBox;
-    GroupBox6: TGroupBox;
-    Image1: TImage;
-    Label1: TLabel;
-    Label16: TLabel;
-    Label17: TLabel;
-    Label18: TLabel;
-    lProblematic: TLabel;
-    lDot: TLabel;
-    Label2: TLabel;
-    lDot1: TLabel;
-    lDot2: TLabel;
-    lDot3: TLabel;
-    lDotCurr: TLabel;
-    lDotNow: TLabel;
-    lWidgetset: TLabel;
-    lOS: TLabel;
-    Label3: TLabel;
-    Label5: TLabel;
-    lUserName: TLabel;
-    lWaitSys: TLabel;
-    Label10: TLabel;
-    Label11: TLabel;
-    Label12: TLabel;
-    Label13: TLabel;
-    Label14: TLabel;
-    Label15: TLabel;
-    lPass: TLabel;
-    lExt: TLabel;
-    lTestAnnounce: TLabel;
-    lUserTrack: TLabel;
-    Label4: TLabel;
-    Label6: TLabel;
-    Label8: TLabel;
-    Label9: TLabel;
-    lAck: TButton;
-    lAgo: TLabel;
-    lArrow: TLabel;
-    lbUsers: TListBox;
-    lCopyright: TLabel;
-    lHiOver: TLabel;
-    lLicense: TButton;
-    lLounder: TLabel;
-    lTestAnnounce1: TLabel;
-    lTitle: TLabel;
-    lTray: TLabel;
-    lVal: TLabel;
-    lVersion: TLabel;
-    lArch: TLabel;
-    Panel1: TPanel;
-    Panel2: TPanel;
-    Panel3: TPanel;
-    Panel4: TPanel;
-    Panel5: TPanel;
-    Panel6: TPanel;
-    Panel7: TPanel;
-    Panel8: TPanel;
-    Panel9: TPanel;
-    pnBackend: TPanel;
-    pnHelp: TPanel;
-    pUserColor: TPanel;
-    pnMisc: TPanel;
-    pTray: TPanel;
-    pcMain: TPageControl;
-    pnDisplay: TPanel;
-    pDecimal: TPanel;
-    pUserNick: TPanel;
-    pUserSave2: TPanel;
-    rbUnit: TRadioGroup;
-    spTHRESHOLD: TSpinEdit;
-    tsColors: TTabSheet;
-    tsCustom: TTabSheet;
-    tsDisplay: TTabSheet;
-    tsGeneral: TTabSheet;
-    tsIntegration: TTabSheet;
-    tsMulti: TTabSheet;
-    tsSystem: TTabSheet;
-    procedure bAddClick(Sender: TObject);
-    procedure bLimitsClick(Sender: TObject);
-    procedure bOverrideHelpClick(Sender: TObject);
-    procedure bPrivacyHelpClick(Sender: TObject);
-    procedure bRemoveClick(Sender: TObject);
-    procedure bBackendHelpClick(Sender: TObject);
-    procedure bSysNoticeClick(Sender: TObject);
-    procedure bSysTouchClick(Sender: TObject);
-    procedure bTestAnnounceClick(Sender: TObject);
-    procedure bTestSpeechClick(Sender: TObject);
-    procedure btResetClick(Sender: TObject);
-    procedure btUserSaveClick(Sender: TObject);
-    procedure Button1Click(Sender: TObject);
-    procedure Button2Click(Sender: TObject);
-    procedure Button3Click(Sender: TObject);
-    procedure Button4Click(Sender: TObject);
-    procedure cbCustChange(Sender: TObject);
-    procedure cbSysChange(Sender: TObject);
-    procedure cbUserClick(Sender: TObject);
-    procedure cbUserColorChanged(Sender: TObject);
-    procedure dotClick(Sender: TObject);
-    procedure edNickChange(Sender: TObject);
-    procedure eDotChange(Sender: TObject);
-    procedure ePassEnter(Sender: TObject);
-    procedure ePassExit(Sender: TObject);
-    procedure FormCreate(Sender: TObject);
-    procedure FormDestroy(Sender: TObject);
-    procedure FormResize(Sender: TObject);
-    procedure Label12Click(Sender: TObject);
-    procedure lAckClick(Sender: TObject);
-    procedure lbUsersEnter(Sender: TObject);
-    procedure lbUsersSelectionChange(Sender: TObject; User: boolean);
-    procedure lLicenseClick(Sender: TObject);
-    procedure lValClick(Sender: TObject);
-    procedure pcMainChange(Sender: TObject);
-    procedure rbUnitClick(Sender: TObject);
-    procedure spTHRESHOLDChange(Sender: TObject);
-    procedure tbAdvancedChange(Sender: TObject);
-    procedure ToggleBox1Change(Sender: TObject);
-    procedure tsDisplayShow(Sender: TObject);
-    procedure tsSystemShow(Sender: TObject);
-  private
+TfConf = class(TForm)
+  bAdd: TButton;
+  bBackendHelp: TButton;
+  bOverrideHelp: TButton;
+  bPrivacyHelp: TButton;
+  bRemove: TButton;
+  bSysNotice: TButton;
+  bSysTouch: TButton;
+  bTestSpeech: TButton;
+  btUserSave: TButton;
+  Button2: TButton;
+  btReset: TButton;
+  bTestAnnounce: TButton;
+  Button3: TButton;
+  Button4: TButton;
+  bvExt: TBevel;
+  bvExt1: TBevel;
+  cbCust: TCheckBox;
+  cbFlashLow: TCheckBox;
+  cbFlashPerfect: TCheckBox;
+  cbLang: TComboBox;
+  cbMultiTouch: TCheckBox;
+  cbMusicPause: TCheckBox;
+  cbNotice: TCheckBox;
+  cbOffBar: TCheckBox;
+  cbPaintHiLo: TCheckBox;
+  cbPaintHiLoRange: TCheckBox;
+  cbPaintLines: TCheckBox;
+  cbPos: TComboBox;
+  cbPrivacy: TCheckBox;
+  cbSize: TCheckBox;
+  cbSys: TComboBox;
+  cbTIR: TCheckBox;
+  cbTouch: TCheckBox;
+  cbUser: TColorButton;
+  cbUserColor: TCheckBox;
+  cbTitleColor: TCheckBox;
+  cbFlash: TCheckGroup;
+  cbFlashHi: TCheckBox;
+  cl_hi_bg: TColorButton;
+  cl_hi_txt: TColorButton;
+  cl_hi_txt_cust: TColorButton;
+  cl_lo_bg: TColorButton;
+  cl_lo_txt: TColorButton;
+  cl_lo_txt_cust: TColorButton;
+  cl_lo_bg_cust: TColorButton;
+  cl_hi_bg_cust: TColorButton;
+  cl_ok_bg: TColorButton;
+  cl_ok_txt: TColorButton;
+  eAddr: TEdit;
+  edCommaSep: TEdit;
+  eDot: TEdit;
+  edNick: TEdit;
+  eDotNow: TEdit;
+  edTray: TSpinEdit;
+  ePass: TEdit;
+  eExt: TEdit;
+  edMusicHigh: TEdit;
+  edMusicLow: TEdit;
+  edMusicPerfect: TEdit;
+  fdFont: TFontDialog;
+  fsHi: TFloatSpinEdit;
+  fsLo: TFloatSpinEdit;
+  gbColBack: TGroupBox;
+  gbMulti: TGroupBox;
+  gbOverride: TGroupBox;
+  gbOverride2: TGroupBox;
+  GroupBox1: TGroupBox;
+  GroupBox2: TGroupBox;
+  GroupBox3: TGroupBox;
+  gbDisplayPrefs: TGroupBox;
+  GroupBox4: TGroupBox;
+  GroupBox6: TGroupBox;
+  Image1: TImage;
+  Label1: TLabel;
+  Label16: TLabel;
+  Label17: TLabel;
+  Label18: TLabel;
+  lProblematic: TLabel;
+  lDot: TLabel;
+  Label2: TLabel;
+  lDot1: TLabel;
+  lDot2: TLabel;
+  lDot3: TLabel;
+  lDotCurr: TLabel;
+  lDotNow: TLabel;
+  lWidgetset: TLabel;
+  lOS: TLabel;
+  Label3: TLabel;
+  Label5: TLabel;
+  lUserName: TLabel;
+  lWaitSys: TLabel;
+  Label10: TLabel;
+  Label11: TLabel;
+  Label12: TLabel;
+  Label13: TLabel;
+  Label14: TLabel;
+  Label15: TLabel;
+  lPass: TLabel;
+  lExt: TLabel;
+  lTestAnnounce: TLabel;
+  lUserTrack: TLabel;
+  Label4: TLabel;
+  Label6: TLabel;
+  Label8: TLabel;
+  Label9: TLabel;
+  lAck: TButton;
+  lAgo: TLabel;
+  lArrow: TLabel;
+  lbUsers: TListBox;
+  lCopyright: TLabel;
+  lHiOver: TLabel;
+  lLicense: TButton;
+  lLounder: TLabel;
+  lTestAnnounce1: TLabel;
+  lTitle: TLabel;
+  lTray: TLabel;
+  lVal: TLabel;
+  lVersion: TLabel;
+  lArch: TLabel;
+  Panel1: TPanel;
+  Panel2: TPanel;
+  Panel3: TPanel;
+  Panel4: TPanel;
+  Panel5: TPanel;
+  Panel6: TPanel;
+  Panel7: TPanel;
+  Panel8: TPanel;
+  Panel9: TPanel;
+  pnBackend: TPanel;
+  pnHelp: TPanel;
+  pUserColor: TPanel;
+  pnMisc: TPanel;
+  pTray: TPanel;
+  pcMain: TPageControl;
+  pnDisplay: TPanel;
+  pDecimal: TPanel;
+  pUserNick: TPanel;
+  pUserSave2: TPanel;
+  rbUnit: TRadioGroup;
+  spTHRESHOLD: TSpinEdit;
+  tsColors: TTabSheet;
+  tsCustom: TTabSheet;
+  tsDisplay: TTabSheet;
+  tsGeneral: TTabSheet;
+  tsIntegration: TTabSheet;
+  tsMulti: TTabSheet;
+  tsSystem: TTabSheet;
+  procedure bAddClick(Sender: TObject);
+  procedure bLimitsClick(Sender: TObject);
+  procedure bOverrideHelpClick(Sender: TObject);
+  procedure bPrivacyHelpClick(Sender: TObject);
+  procedure bRemoveClick(Sender: TObject);
+  procedure bBackendHelpClick(Sender: TObject);
+  procedure bSysNoticeClick(Sender: TObject);
+  procedure bSysTouchClick(Sender: TObject);
+  procedure bTestAnnounceClick(Sender: TObject);
+  procedure bTestSpeechClick(Sender: TObject);
+  procedure btResetClick(Sender: TObject);
+  procedure btUserSaveClick(Sender: TObject);
+  procedure Button1Click(Sender: TObject);
+  procedure Button2Click(Sender: TObject);
+  procedure Button3Click(Sender: TObject);
+  procedure Button4Click(Sender: TObject);
+  procedure cbCustChange(Sender: TObject);
+  procedure cbSysChange(Sender: TObject);
+  procedure cbUserClick(Sender: TObject);
+  procedure cbUserColorChanged(Sender: TObject);
+  procedure dotClick(Sender: TObject);
+  procedure edNickChange(Sender: TObject);
+  procedure eDotChange(Sender: TObject);
+  procedure ePassEnter(Sender: TObject);
+  procedure ePassExit(Sender: TObject);
+  procedure FormCreate(Sender: TObject);
+  procedure FormDestroy(Sender: TObject);
+  procedure FormResize(Sender: TObject);
+  procedure Label12Click(Sender: TObject);
+  procedure lAckClick(Sender: TObject);
+  procedure lbUsersEnter(Sender: TObject);
+  procedure lbUsersSelectionChange(Sender: TObject; User: boolean);
+  procedure lLicenseClick(Sender: TObject);
+  procedure lValClick(Sender: TObject);
+  procedure pcMainChange(Sender: TObject);
+  procedure rbUnitClick(Sender: TObject);
+  procedure spTHRESHOLDChange(Sender: TObject);
+  procedure tbAdvancedChange(Sender: TObject);
+  procedure ToggleBox1Change(Sender: TObject);
+  procedure tsDisplayShow(Sender: TObject);
+  procedure tsSystemShow(Sender: TObject);
+private
 
-  public
+public
 
-  end;
+end;
 
 var
-  tnative: TrndiNative;
+tnative: TrndiNative;
 
 resourcestring
-  RS_OVERRIDE_HELP =
-    'Setting values here allows you to define your own high and low blood sugar limits in Trndi.'
-    + #10 + #10 + 'NightScout:'#10 +
-    'Trndi automatically retrieves your custom high and low settings from NightScout, so manually setting them here is usually unnecessary.'
-    + #10 + #10 + 'Dexcom:' + #10 +
-    'Dexcom servers do not provide custom high and low values. By setting them here, you can establish your own thresholds for Dexcom data.';
-  RS_OVERRIDE_NS =
-    'You are using the NightScout backend, you should set these values on your server (if possible), as Trndi uses your NightScout preferences by default';
+RS_OVERRIDE_HELP =
+  'Setting values here allows you to define your own high and low blood sugar limits in Trndi.'
+  + #10 + #10 + 'NightScout:'#10 +
+  'Trndi automatically retrieves your custom high and low settings from NightScout, so manually setting them here is usually unnecessary.'
+  + #10 + #10 + 'Dexcom:' + #10 +
+  'Dexcom servers do not provide custom high and low values. By setting them here, you can establish your own thresholds for Dexcom data.';
+RS_OVERRIDE_NS =
+  'You are using the NightScout backend, you should set these values on your server (if possible), as Trndi uses your NightScout preferences by default';
 
-  RS_PRIVACY_HELP =
-    'When in Privacy Mode, the actual blood glucose value is hidden. Trndi will only tell the user if it''s good, high or low.';
+RS_PRIVACY_HELP =
+  'When in Privacy Mode, the actual blood glucose value is hidden. Trndi will only tell the user if it''s good, high or low.';
 
-  RS_DEX =
-    'Dexcom servers do not provide custom high and low blood sugar values. Please set your own thresholds at the bottom of this window.';
+RS_DEX =
+  'Dexcom servers do not provide custom high and low blood sugar values. Please set your own thresholds at the bottom of this window.';
 
-  RS_ENTER_USER = 'Enter a username';
-  RS_ENTER_NAME = 'Letters, space and numbers only';
-  RS_ENTER_ANY = 'Please enter a name';
-  RS_DUPE_NAME = 'Names must be unique';
-  RS_CURRENT_ACC = 'This only applies for the current loaded account:  %s';
-  RS_CURRENT_ACC_NO = 'These settings are available when using a multi-account';
-  RS_CURRENT_ACC_DEF = 'Settings for "default" only apply while multi-user is active';
-  RS_REMOVE_ACC =
-    'Removed accounts are made inactive, and can be restored by adding the same name again';
-  RS_AUTO = 'Auto-detect';
-  RS_UPTODATE = 'You are up to date';
-  RS_NEWVER = 'Version %s is available, would you like to go to the downloads page?';
-  RS_NEWVER_PRE =
-    'A new pre-release for %s is available, would you like to go to the downloads page?';
-  RS_NEWVER_CAPTION = 'New version available';
-  RS_SELECT_FONT = 'Select a font';
+RS_ENTER_USER = 'Enter a username';
+RS_ENTER_NAME = 'Letters, space and numbers only';
+RS_ENTER_ANY = 'Please enter a name';
+RS_DUPE_NAME = 'Names must be unique';
+RS_CURRENT_ACC = 'This only applies for the current loaded account:  %s';
+RS_CURRENT_ACC_NO = 'These settings are available when using a multi-account';
+RS_CURRENT_ACC_DEF = 'Settings for "default" only apply while multi-user is active';
+RS_REMOVE_ACC =
+  'Removed accounts are made inactive, and can be restored by adding the same name again';
+RS_AUTO = 'Auto-detect';
+RS_UPTODATE = 'You are up to date';
+RS_NEWVER = 'Version %s is available, would you like to go to the downloads page?';
+RS_NEWVER_PRE =
+  'A new pre-release for %s is available, would you like to go to the downloads page?';
+RS_NEWVER_CAPTION = 'New version available';
+RS_SELECT_FONT = 'Select a font';
 
 
-  RS_NOTIFICATIONS = 'Notifications';
-  RS_NOTIFY_TITLE = 'A notification system is required';
-  RS_NOTIFY_TXT =
-    'Trndi uses a system called "%s" to send desktop notices, you need to have this system installed in order to recieve notices.';
-  RS_NOTIFY_SYSTEM =
-    'Notifications will appear where you normally get notification messages.';
+RS_NOTIFICATIONS = 'Notifications';
+RS_NOTIFY_TITLE = 'A notification system is required';
+RS_NOTIFY_TXT =
+  'Trndi uses a system called "%s" to send desktop notices, you need to have this system installed in order to recieve notices.';
+RS_NOTIFY_SYSTEM =
+  'Notifications will appear where you normally get notification messages.';
 
-  RS_HASTOUCH = 'Shows if Trndi detected a touch screen';
+RS_HASTOUCH = 'Shows if Trndi detected a touch screen';
 
-  RS_Saftey_Hi =
-    'Trndi won''t allow a larger limit, for your own saftey. This can be overridden manually/via plugin';
-  RS_Saftey_Low =
-    'Trndi won''t allow a lower limit, the backend system only reports values every 5 minutes. 6 = one reading missing.';
+RS_Saftey_Hi =
+  'Trndi won''t allow a larger limit, for your own saftey. This can be overridden manually/via plugin';
+RS_Saftey_Low =
+  'Trndi won''t allow a lower limit, the backend system only reports values every 5 minutes. 6 = one reading missing.';
 
   // Backend-specific help texts
-  RS_HELP_NS_V2 =
-    'NightScout v2 setup (use FULL access token):' + #13#10#13#10 +
-    '1) Open your NightScout site (e.g., https://your-site).' + #13#10 +
-    '2) Go to Admin -> Tokens — or API Secret.' + #13#10 +
-    '3) If you use Tokens:' + #13#10 + '   - Create a token with at least READ scope.' +
-    #13#10 + '   - Copy the FULL access token value exactly as shown.' + #13#10 +
-    '4) In Trndi:' + #13#10 + '   - Address: enter your NightScout URL' + #13#10 +
-    '   - Auth: paste the FULL access token (not just a suffix).' + #13#10 + #13#10 +
-    'Note: If you instead use the legacy API Secret, paste your API Secret value as-is.';
+RS_HELP_NS_V2 =
+  'NightScout v2 setup (use FULL access token):' + #13#10#13#10 +
+  '1) Open your NightScout site (e.g., https://your-site).' + #13#10 +
+  '2) Go to Admin -> Tokens — or API Secret.' + #13#10 +
+  '3) If you use Tokens:' + #13#10 + '   - Create a token with at least READ scope.' +
+  #13#10 + '   - Copy the FULL access token value exactly as shown.' + #13#10 +
+  '4) In Trndi:' + #13#10 + '   - Address: enter your NightScout URL' + #13#10 +
+  '   - Auth: paste the FULL access token (not just a suffix).' + #13#10 + #13#10 +
+  'Note: If you instead use the legacy API Secret, paste your API Secret value as-is.';
 
-  RS_HELP_NS_V3 =
-    '** ALPHA DRIVER - Please use "NightScout" for daily use! **' + #13#10 +
-    'NightScout v3 setup (use FULL access token):' + #13#10#13#10 +
-    '1) Open your NightScout site (e.g., https://your-site).' + #13#10 +
-    '2) Go to Admin -> Tokens — or API Secret.' + #13#10 +
-    '3) If you use Tokens:' + #13#10 + '   - Create a token with at least READ scope.' +
-    #13#10 + '   - Copy the FULL access token value exactly as shown.' + #13#10 +
-    '4) In Trndi:' + #13#10 + '   - Address: enter your NightScout URL' + #13#10 +
-    '   - Auth: paste the FULL access token.' + #13#10 + #13#10 +
-    'Note: If you instead use the legacy API Secret, paste your API Secret value as-is.';
+RS_HELP_NS_V3 =
+  '** ALPHA DRIVER - Please use "NightScout" for daily use! **' + #13#10 +
+  'NightScout v3 setup (use FULL access token):' + #13#10#13#10 +
+  '1) Open your NightScout site (e.g., https://your-site).' + #13#10 +
+  '2) Go to Admin -> Tokens — or API Secret.' + #13#10 +
+  '3) If you use Tokens:' + #13#10 + '   - Create a token with at least READ scope.' +
+  #13#10 + '   - Copy the FULL access token value exactly as shown.' + #13#10 +
+  '4) In Trndi:' + #13#10 + '   - Address: enter your NightScout URL' + #13#10 +
+  '   - Auth: paste the FULL access token.' + #13#10 + #13#10 +
+  'Note: If you instead use the legacy API Secret, paste your API Secret value as-is.';
 
-  RS_HELP_DEX_REGION =
-    'Dexcom region selection:'#13#10''#13#10'' +
-    'Choose the server based on your account region:' + LineEnding +
-    '• Dexcom (USA): for accounts served by share2.dexcom.com' + LineEnding +
-    '• Dexcom (Outside USA): for accounts served by shareous1.dexcom.com' +
-    LineEnding + LineEnding +
-    'If you are unsure, try “Outside USA” first if you live outside the US.' +
-    LineEnding + 'Your username and password are your Dexcom Account (not Share) credentials.';
+RS_HELP_DEX_REGION =
+  'Dexcom region selection:'#13#10''#13#10'' +
+  'Choose the server based on your account region:' + LineEnding +
+  '• Dexcom (USA): for accounts served by share2.dexcom.com' + LineEnding +
+  '• Dexcom (Outside USA): for accounts served by shareous1.dexcom.com' +
+  LineEnding + LineEnding +
+  'If you are unsure, try “Outside USA” first if you live outside the US.' +
+  LineEnding + 'Your username and password are your Dexcom Account (not Share) credentials.';
 
-  RS_HELP_XDRIP = 'xDrip setup:'#13#10''#13#10'Address: your xDrip REST endpoint (base URL).'#13#10'Auth: API secret (plain text; server hashes it).';
-  RS_DEFAULT_ACCOUNT = 'Default';
-  RS_CHOOSE_SYSTEM = 'Select your CGM system in the list, then enter your credentials';
+RS_HELP_XDRIP = 'xDrip setup:'#13#10''#13#10'Address: your xDrip REST endpoint (base URL).'#13#10'Auth: API secret (plain text; server hashes it).';
+RS_DEFAULT_ACCOUNT = 'Default';
+RS_CHOOSE_SYSTEM = 'Select your CGM system in the list, then enter your credentials';
 
-  RS_WAYLAND =
-    'Your desktop session is Wayland. Wayland compositors (including KWin) restrict third-party apps from forcing windows above others.' +
-    LineEnding + 'Right-click the title bar, select more options and check the always-on-top option (or similar)';
+RS_WAYLAND =
+  'Your desktop session is Wayland. Wayland compositors (including KWin) restrict third-party apps from forcing windows above others.' +
+  LineEnding + 'Right-click the title bar, select more options and check the always-on-top option (or similar)';
 
 var
-  fConf: TfConf;
+fConf: TfConf;
 
 procedure ListLanguageFiles(list: TStrings; const Path: string);
 function GetLanguageName(const ACode: string): string;
@@ -358,178 +358,348 @@ begin
   C := LowerCase(Trim(ACode));
 
   case C of
-    'aa': Result := 'Afar';
-    'ab': Result := 'Abkhazian';
-    'ae': Result := 'Avestan';
-    'af': Result := 'Afrikaans';
-    'ak': Result := 'Akan';
-    'sq': Result := 'Albanian';
-    'am': Result := 'Amharic';
-    'ar': Result := 'Arabic';
-    'an': Result := 'Aragonese';
-    'hy': Result := 'Armenian';
-    'as': Result := 'Assamese';
-    'av': Result := 'Avaric';
-    'ay': Result := 'Aymara';
-    'az': Result := 'Azerbaijani';
-    'bm': Result := 'Bambara';
-    'ba': Result := 'Bashkir';
-    'eu': Result := 'Basque';
-    'be': Result := 'Belarusian';
-    'bn': Result := 'Bengali';
-    'bh': Result := 'Bihari';
-    'bi': Result := 'Bislama';
-    'bs': Result := 'Bosnian';
-    'br': Result := 'Breton';
-    'bg': Result := 'Bulgarian';
-    'my': Result := 'Burmese';
-    'ca': Result := 'Catalan';
-    'ch': Result := 'Chamorro';
-    'ce': Result := 'Chechen';
-    'ny': Result := 'Chichewa';        // also Nyanja
-    'zh': Result := 'Chinese';
-    'cu': Result := 'Church Slavonic';
-    'cv': Result := 'Chuvash';
-    'kw': Result := 'Cornish';
-    'co': Result := 'Corsican';
-    'cr': Result := 'Cree';
-    'hr': Result := 'Croatian';
-    'cs': Result := 'Czech';
-    'da': Result := 'Danish';
-    'dv': Result := 'Divehi';
-    'nl': Result := 'Dutch';
-    'dz': Result := 'Dzongkha';
-    'en': Result := 'English';
-    'eo': Result := 'Esperanto';
-    'et': Result := 'Estonian';
-    'ee': Result := 'Ewe';
-    'fo': Result := 'Faroese';
-    'fj': Result := 'Fijian';
-    'fi': Result := 'Finnish';
-    'fr': Result := 'French';
-    'ff': Result := 'Fulah';
-    'gl': Result := 'Galician';
-    'ka': Result := 'Georgian';
-    'de': Result := 'German';
-    'el': Result := 'Greek';
-    'gu': Result := 'Gujarati';
-    'ht': Result := 'Haitian Creole';
-    'ha': Result := 'Hausa';
-    'he': Result := 'Hebrew';
-    'hi': Result := 'Hindi';
-    'ho': Result := 'Hiri Motu';
-    'hu': Result := 'Hungarian';
-    'is': Result := 'Icelandic';
-    'io': Result := 'Ido';
-    'ig': Result := 'Igbo';
-    'id': Result := 'Indonesian';
-    'ia': Result := 'Interlingua';
-    'ie': Result := 'Interlingue';
-    'iu': Result := 'Inuktitut';
-    'ik': Result := 'Inupiaq';
-    'ga': Result := 'Irish';
-    'it': Result := 'Italian';
-    'ja': Result := 'Japanese';
-    'jv': Result := 'Javanese';
-    'kn': Result := 'Kannada';
-    'kr': Result := 'Kanuri';
-    'ks': Result := 'Kashmiri';
-    'kk': Result := 'Kazakh';
-    'km': Result := 'Khmer';
-    'ki': Result := 'Kikuyu';
-    'rw': Result := 'Kinyarwanda';
-    'rn': Result := 'Rundi';
-    'kv': Result := 'Komi';
-    'kg': Result := 'Kongo';
-    'ko': Result := 'Korean';
-    'kj': Result := 'Kuanyama';
-    'ku': Result := 'Kurdish';
-    'ky': Result := 'Kyrgyz';
-    'lo': Result := 'Lao';
-    'la': Result := 'Latin';
-    'lv': Result := 'Latvian';
-    'lt': Result := 'Lithuanian';
-    'lb': Result := 'Luxembourgish';
-    'mk': Result := 'Macedonian';
-    'mg': Result := 'Malagasy';
-    'ms': Result := 'Malay';
-    'ml': Result := 'Malayalam';
-    'mt': Result := 'Maltese';
-    'mi': Result := 'Maori';
-    'mr': Result := 'Marathi';
-    'mn': Result := 'Mongolian';
-    'na': Result := 'Nauru';
-    'nv': Result := 'Navajo';
-    'ng': Result := 'Ndonga';
-    'ne': Result := 'Nepali';
-    'no': Result := 'Norwegian';
-    'nb': Result := 'Norwegian Bokmål';
-    'nn': Result := 'Norwegian Nynorsk';
-    'nd': Result := 'North Ndebele';
-    'nr': Result := 'South Ndebele';
-    'oc': Result := 'Occitan';
-    'oj': Result := 'Ojibwe';
-    'om': Result := 'Oromo';
-    'or': Result := 'Odia';
-    'os': Result := 'Ossetian';
-    'pa': Result := 'Punjabi';
-    'pi': Result := 'Pali';
-    'pl': Result := 'Polish';
-    'ps': Result := 'Pashto';
-    'fa': Result := 'Persian';
-    'pt': Result := 'Portuguese';
-    'qu': Result := 'Quechua';
-    'rm': Result := 'Romansh';
-    'ro': Result := 'Romanian';
-    'ru': Result := 'Russian';
-    'se': Result := 'Northern Sami';
-    'sm': Result := 'Samoan';
-    'sg': Result := 'Sango';
-    'sa': Result := 'Sanskrit';
-    'sc': Result := 'Sardinian';
-    'sd': Result := 'Sindhi';
-    'si': Result := 'Sinhala';
-    'sk': Result := 'Slovak';
-    'sl': Result := 'Slovenian';
-    'so': Result := 'Somali';
-    'es': Result := 'Spanish';
-    'su': Result := 'Sundanese';
-    'sw': Result := 'Swahili';
-    'ss': Result := 'Swati';
-    'sv': Result := 'Swedish';
-    'tl': Result := 'Tagalog';
-    'ty': Result := 'Tahitian';
-    'tg': Result := 'Tajik';
-    'ta': Result := 'Tamil';
-    'tt': Result := 'Tatar';
-    'te': Result := 'Telugu';
-    'th': Result := 'Thai';
-    'bo': Result := 'Tibetan';
-    'ti': Result := 'Tigrinya';
-    'ts': Result := 'Tsonga';
-    'tn': Result := 'Tswana';
-    'tr': Result := 'Turkish';
-    'tk': Result := 'Turkmen';
-    'tw': Result := 'Twi';
-    'ug': Result := 'Uyghur';
-    'uk': Result := 'Ukrainian';
-    'ur': Result := 'Urdu';
-    'uz': Result := 'Uzbek';
-    've': Result := 'Venda';
-    'vi': Result := 'Vietnamese';
-    'vo': Result := 'Volapük';
-    'wa': Result := 'Walloon';
-    'cy': Result := 'Welsh';
-    'wo': Result := 'Wolof';
-    'fy': Result := 'Western Frisian';
-    'xh': Result := 'Xhosa';
-    'yi': Result := 'Yiddish';
-    'yo': Result := 'Yoruba';
-    'za': Result := 'Zhuang';
-    'zu': Result := 'Zulu';
-    'auto': Result := RS_AUTO;
-    else
-      Result := c;
+  'aa':
+    Result := 'Afar';
+  'ab':
+    Result := 'Abkhazian';
+  'ae':
+    Result := 'Avestan';
+  'af':
+    Result := 'Afrikaans';
+  'ak':
+    Result := 'Akan';
+  'sq':
+    Result := 'Albanian';
+  'am':
+    Result := 'Amharic';
+  'ar':
+    Result := 'Arabic';
+  'an':
+    Result := 'Aragonese';
+  'hy':
+    Result := 'Armenian';
+  'as':
+    Result := 'Assamese';
+  'av':
+    Result := 'Avaric';
+  'ay':
+    Result := 'Aymara';
+  'az':
+    Result := 'Azerbaijani';
+  'bm':
+    Result := 'Bambara';
+  'ba':
+    Result := 'Bashkir';
+  'eu':
+    Result := 'Basque';
+  'be':
+    Result := 'Belarusian';
+  'bn':
+    Result := 'Bengali';
+  'bh':
+    Result := 'Bihari';
+  'bi':
+    Result := 'Bislama';
+  'bs':
+    Result := 'Bosnian';
+  'br':
+    Result := 'Breton';
+  'bg':
+    Result := 'Bulgarian';
+  'my':
+    Result := 'Burmese';
+  'ca':
+    Result := 'Catalan';
+  'ch':
+    Result := 'Chamorro';
+  'ce':
+    Result := 'Chechen';
+  'ny':
+    Result := 'Chichewa';        // also Nyanja
+  'zh':
+    Result := 'Chinese';
+  'cu':
+    Result := 'Church Slavonic';
+  'cv':
+    Result := 'Chuvash';
+  'kw':
+    Result := 'Cornish';
+  'co':
+    Result := 'Corsican';
+  'cr':
+    Result := 'Cree';
+  'hr':
+    Result := 'Croatian';
+  'cs':
+    Result := 'Czech';
+  'da':
+    Result := 'Danish';
+  'dv':
+    Result := 'Divehi';
+  'nl':
+    Result := 'Dutch';
+  'dz':
+    Result := 'Dzongkha';
+  'en':
+    Result := 'English';
+  'eo':
+    Result := 'Esperanto';
+  'et':
+    Result := 'Estonian';
+  'ee':
+    Result := 'Ewe';
+  'fo':
+    Result := 'Faroese';
+  'fj':
+    Result := 'Fijian';
+  'fi':
+    Result := 'Finnish';
+  'fr':
+    Result := 'French';
+  'ff':
+    Result := 'Fulah';
+  'gl':
+    Result := 'Galician';
+  'ka':
+    Result := 'Georgian';
+  'de':
+    Result := 'German';
+  'el':
+    Result := 'Greek';
+  'gu':
+    Result := 'Gujarati';
+  'ht':
+    Result := 'Haitian Creole';
+  'ha':
+    Result := 'Hausa';
+  'he':
+    Result := 'Hebrew';
+  'hi':
+    Result := 'Hindi';
+  'ho':
+    Result := 'Hiri Motu';
+  'hu':
+    Result := 'Hungarian';
+  'is':
+    Result := 'Icelandic';
+  'io':
+    Result := 'Ido';
+  'ig':
+    Result := 'Igbo';
+  'id':
+    Result := 'Indonesian';
+  'ia':
+    Result := 'Interlingua';
+  'ie':
+    Result := 'Interlingue';
+  'iu':
+    Result := 'Inuktitut';
+  'ik':
+    Result := 'Inupiaq';
+  'ga':
+    Result := 'Irish';
+  'it':
+    Result := 'Italian';
+  'ja':
+    Result := 'Japanese';
+  'jv':
+    Result := 'Javanese';
+  'kn':
+    Result := 'Kannada';
+  'kr':
+    Result := 'Kanuri';
+  'ks':
+    Result := 'Kashmiri';
+  'kk':
+    Result := 'Kazakh';
+  'km':
+    Result := 'Khmer';
+  'ki':
+    Result := 'Kikuyu';
+  'rw':
+    Result := 'Kinyarwanda';
+  'rn':
+    Result := 'Rundi';
+  'kv':
+    Result := 'Komi';
+  'kg':
+    Result := 'Kongo';
+  'ko':
+    Result := 'Korean';
+  'kj':
+    Result := 'Kuanyama';
+  'ku':
+    Result := 'Kurdish';
+  'ky':
+    Result := 'Kyrgyz';
+  'lo':
+    Result := 'Lao';
+  'la':
+    Result := 'Latin';
+  'lv':
+    Result := 'Latvian';
+  'lt':
+    Result := 'Lithuanian';
+  'lb':
+    Result := 'Luxembourgish';
+  'mk':
+    Result := 'Macedonian';
+  'mg':
+    Result := 'Malagasy';
+  'ms':
+    Result := 'Malay';
+  'ml':
+    Result := 'Malayalam';
+  'mt':
+    Result := 'Maltese';
+  'mi':
+    Result := 'Maori';
+  'mr':
+    Result := 'Marathi';
+  'mn':
+    Result := 'Mongolian';
+  'na':
+    Result := 'Nauru';
+  'nv':
+    Result := 'Navajo';
+  'ng':
+    Result := 'Ndonga';
+  'ne':
+    Result := 'Nepali';
+  'no':
+    Result := 'Norwegian';
+  'nb':
+    Result := 'Norwegian Bokmål';
+  'nn':
+    Result := 'Norwegian Nynorsk';
+  'nd':
+    Result := 'North Ndebele';
+  'nr':
+    Result := 'South Ndebele';
+  'oc':
+    Result := 'Occitan';
+  'oj':
+    Result := 'Ojibwe';
+  'om':
+    Result := 'Oromo';
+  'or':
+    Result := 'Odia';
+  'os':
+    Result := 'Ossetian';
+  'pa':
+    Result := 'Punjabi';
+  'pi':
+    Result := 'Pali';
+  'pl':
+    Result := 'Polish';
+  'ps':
+    Result := 'Pashto';
+  'fa':
+    Result := 'Persian';
+  'pt':
+    Result := 'Portuguese';
+  'qu':
+    Result := 'Quechua';
+  'rm':
+    Result := 'Romansh';
+  'ro':
+    Result := 'Romanian';
+  'ru':
+    Result := 'Russian';
+  'se':
+    Result := 'Northern Sami';
+  'sm':
+    Result := 'Samoan';
+  'sg':
+    Result := 'Sango';
+  'sa':
+    Result := 'Sanskrit';
+  'sc':
+    Result := 'Sardinian';
+  'sd':
+    Result := 'Sindhi';
+  'si':
+    Result := 'Sinhala';
+  'sk':
+    Result := 'Slovak';
+  'sl':
+    Result := 'Slovenian';
+  'so':
+    Result := 'Somali';
+  'es':
+    Result := 'Spanish';
+  'su':
+    Result := 'Sundanese';
+  'sw':
+    Result := 'Swahili';
+  'ss':
+    Result := 'Swati';
+  'sv':
+    Result := 'Swedish';
+  'tl':
+    Result := 'Tagalog';
+  'ty':
+    Result := 'Tahitian';
+  'tg':
+    Result := 'Tajik';
+  'ta':
+    Result := 'Tamil';
+  'tt':
+    Result := 'Tatar';
+  'te':
+    Result := 'Telugu';
+  'th':
+    Result := 'Thai';
+  'bo':
+    Result := 'Tibetan';
+  'ti':
+    Result := 'Tigrinya';
+  'ts':
+    Result := 'Tsonga';
+  'tn':
+    Result := 'Tswana';
+  'tr':
+    Result := 'Turkish';
+  'tk':
+    Result := 'Turkmen';
+  'tw':
+    Result := 'Twi';
+  'ug':
+    Result := 'Uyghur';
+  'uk':
+    Result := 'Ukrainian';
+  'ur':
+    Result := 'Urdu';
+  'uz':
+    Result := 'Uzbek';
+  've':
+    Result := 'Venda';
+  'vi':
+    Result := 'Vietnamese';
+  'vo':
+    Result := 'Volapük';
+  'wa':
+    Result := 'Walloon';
+  'cy':
+    Result := 'Welsh';
+  'wo':
+    Result := 'Wolof';
+  'fy':
+    Result := 'Western Frisian';
+  'xh':
+    Result := 'Xhosa';
+  'yi':
+    Result := 'Yiddish';
+  'yo':
+    Result := 'Yoruba';
+  'za':
+    Result := 'Zhuang';
+  'zu':
+    Result := 'Zulu';
+  'auto':
+    Result := RS_AUTO;
+  else
+    Result := c;
   end;
 end;
 
@@ -574,10 +744,10 @@ procedure TfConf.lbUsersSelectionChange(Sender: TObject; User: boolean);
 var
   u: string;
 begin
-  btUserSave.Enabled := False;
+  btUserSave.Enabled := false;
   if lbUsers.ItemIndex < 0 then
   begin
-    gbMulti.Enabled := False;
+    gbMulti.Enabled := false;
     Exit;
   end;
 
@@ -586,20 +756,20 @@ begin
   if u[1] = '-' then
   begin
     tNative.configUser := '';
-    bRemove.Enabled := False;
+    bRemove.Enabled := false;
   end
   else
   begin
     tNative.configUser := u;
-    bRemove.Enabled := True;
+    bRemove.Enabled := true;
   end;
 
   cbUser.ButtonColor := tNative.GetColorSetting('user.color', clBlack);
   edNick.Text := tNative.GetSetting('user.nick', '');
   lUserName.Caption := u;
 
-  gbMulti.Enabled := True;
-  btUserSave.Enabled := False; // Twice as the fields change during update
+  gbMulti.Enabled := true;
+  btUserSave.Enabled := false; // Twice as the fields change during update
 end;
 
 procedure TfConf.cbSysChange(Sender: TObject);
@@ -617,40 +787,40 @@ begin
 
 
   case cbSys.Text of
-    'NightScout':
-    begin
-      Label15.Caption := NightScout.ParamLabel(1);
-      lPass.Caption := NightScout.ParamLabel(2);
-    end;
-    'NightScout v3':
-    begin
-      Label15.Caption := NightScout3.ParamLabel(1);
-      lPass.Caption := NightScout3.ParamLabel(2);
-    end;
-    'Dexcom (USA)':
-    begin
-      Label15.Caption := Dexcom.ParamLabel(1);
-      lPass.Caption := Dexcom.ParamLabel(2);
-    end;
-    'Dexcom (Outside USA)':
-    begin
-      Label15.Caption := Dexcom.ParamLabel(1);
-      lPass.Caption := Dexcom.ParamLabel(2);
-    end;
-    'xDrip':
-    begin
-      Label15.Caption := xDrip.ParamLabel(1);
-      lPass.Caption := xDrip.ParamLabel(2);
-    end;
-    {$ifdef DEBUG}
-    '* Debug Backend *',
-    '* Debug Missing Backend *',
-    '* Debug Perfect Backend *',
-    '* Debug Edge Backend *':
-       begin
-         Label15.Caption := '<DEBUG IGNORED>';
-         lPass.Caption   := '<DEBUG IGNORED>';
-       end;
+  'NightScout':
+  begin
+    Label15.Caption := NightScout.ParamLabel(1);
+    lPass.Caption := NightScout.ParamLabel(2);
+  end;
+  'NightScout v3':
+  begin
+    Label15.Caption := NightScout3.ParamLabel(1);
+    lPass.Caption := NightScout3.ParamLabel(2);
+  end;
+  'Dexcom (USA)':
+  begin
+    Label15.Caption := Dexcom.ParamLabel(1);
+    lPass.Caption := Dexcom.ParamLabel(2);
+  end;
+  'Dexcom (Outside USA)':
+  begin
+    Label15.Caption := Dexcom.ParamLabel(1);
+    lPass.Caption := Dexcom.ParamLabel(2);
+  end;
+  'xDrip':
+  begin
+    Label15.Caption := xDrip.ParamLabel(1);
+    lPass.Caption := xDrip.ParamLabel(2);
+  end;
+  {$ifdef DEBUG}
+  '* Debug Backend *',
+  '* Debug Missing Backend *',
+  '* Debug Perfect Backend *',
+  '* Debug Edge Backend *':
+  begin
+    Label15.Caption := '<DEBUG IGNORED>';
+    lPass.Caption   := '<DEBUG IGNORED>';
+  end;
     {$endif}
   end;
 end;
@@ -662,7 +832,7 @@ end;
 
 procedure TfConf.cbUserColorChanged(Sender: TObject);
 begin
-  btUserSave.Enabled := True;
+  btUserSave.Enabled := true;
 end;
 
 procedure TfConf.dotClick(Sender: TObject);
@@ -674,7 +844,7 @@ end;
 
 procedure TfConf.edNickChange(Sender: TObject);
 begin
-  btUserSave.Enabled := True;
+  btUserSave.Enabled := true;
 end;
 
 procedure TfConf.eDotChange(Sender: TObject);
@@ -732,13 +902,11 @@ begin
       Exit;
     end;
     for c in s do
-    begin
       if not (c in ['0'..'9', 'A'..'z', ' ']) then
       begin
         ShowMessage(RS_ENTER_NAME);
         Exit;
       end;
-    end;
 
     // No duplicates!
     for x in lbusers.Items do
@@ -748,7 +916,7 @@ begin
         Exit;
       end;
     lbUsers.AddItem(s, nil);
-    lbUsers.Enabled := True;
+    lbUsers.Enabled := true;
   end;
 end;
 
@@ -768,12 +936,12 @@ begin
     lbUsers.DeleteSelected;
   if lbUsers.Items.Count <= 1 then
   begin
-    lbUsers.Enabled := False;
-    gbMulti.Enabled := False;
+    lbUsers.Enabled := false;
+    gbMulti.Enabled := false;
   end;
 
   ShowMessage(RS_REMOVE_ACC);
-  bRemove.Enabled := False; // No item selexted now
+  bRemove.Enabled := false; // No item selexted now
 end;
 
 procedure TfConf.bBackendHelpClick(Sender: TObject);
@@ -783,13 +951,17 @@ begin
   s := '';
   if SameText(cbSys.Text, 'NightScout') then
     s := RS_HELP_NS_V2
-  else if SameText(cbSys.Text, 'NightScout v3') then
+  else
+  if SameText(cbSys.Text, 'NightScout v3') then
     s := RS_HELP_NS_V3
-  else if Pos('Dexcom', cbSys.Text) > 0 then
+  else
+  if Pos('Dexcom', cbSys.Text) > 0 then
     s := RS_HELP_DEX_REGION
-  else if SameText(cbSys.Text, 'xDrip') then
+  else
+  if SameText(cbSys.Text, 'xDrip') then
     s := RS_HELP_XDRIP
-  else if cbSys.Text[1] = '*' then
+  else
+  if cbSys.Text[1] = '*' then
     s := 'This is a debug backend, it''s used to test Trndi. It should not be used by non-developers!'
   else
     s := RS_CHOOSE_SYSTEM;
@@ -806,8 +978,10 @@ begin
   url := '';
 
   case ns of
-    'BurntToast': url := 'https://www.powershellgallery.com/packages/BurntToast';
-    'notify-send': url := 'https://www.google.com/search?q=notify-send';
+  'BurntToast':
+    url := 'https://www.powershellgallery.com/packages/BurntToast';
+  'notify-send':
+    url := 'https://www.google.com/search?q=notify-send';
   end;
   // Natives:
   // NSUserNotification
@@ -883,7 +1057,7 @@ begin
   tNative.SetColorSetting('user.color', cbUser.ButtonColor);
   tNative.SetSetting('user.nick', edNick.Text);
 
-  btUserSave.Enabled := False;
+  btUserSave.Enabled := false;
 end;
 
 procedure TfConf.Button1Click(Sender: TObject);
@@ -925,7 +1099,7 @@ var
   rok: boolean;
 begin
   TrndiNative.getURL('https://api.github.com/repos/slicke/trndi/releases/latest', res);
-  rok := HasNewerRelease(res, rn, False);
+  rok := HasNewerRelease(res, rn, false);
 
   if rok then
   begin
@@ -966,20 +1140,20 @@ begin
 
   pcMain.ActivePage := tsGeneral;
   {$ifdef darwin}
-    self.width := self.width + (self.width div 9);
+  self.width := self.width + (self.width div 9);
   {$endif}
   {$ifdef lclqt6}
-    self.font.size := 10;
+  self.font.size := 10;
   {$endif}
   {$ifdef lclgtk2}
-    self.font.size := 10;
+  self.font.size := 10;
   {$endif}
   tnative := TrndiNative.Create;
-  tnative.noFree := True;
+  tnative.noFree := true;
   if tnative.isDarkMode then
     tnative.setDarkMode
-  {$ifdef windows}
-(self.Handle)
+    {$ifdef windows}
+    (self.Handle)
   {$endif}
   ;
 
@@ -1083,7 +1257,8 @@ begin
     spTHRESHOLD.Value := 30;
     ShowMessage(RS_Saftey_Hi);
   end
-  else if spTHRESHOLD.Value < 6 then
+  else
+  if spTHRESHOLD.Value < 6 then
   begin
     spTHRESHOLD.Value := 6;
     ShowMessage(RS_Saftey_Low);
@@ -1118,13 +1293,11 @@ begin
   Application.ProcessMessages;
 
   cbNotice.Checked := TrndiNative.isNotificationSystemAvailable;
-  lWaitSys.Visible := False;
-  lProblematic.Visible := False;
+  lWaitSys.Visible := false;
+  lProblematic.Visible := false;
   if IsProblematicWM then
-  begin
     if not IsSemiProblematicWM then
-      lProblematic.Visible := True;
-  end;
+      lProblematic.Visible := true;
 end;
 
 end.

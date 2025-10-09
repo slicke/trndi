@@ -24,11 +24,11 @@ unit trndi.api.dexcom;
 interface
 
 uses
-  Classes, SysUtils, Dialogs,
+Classes, SysUtils, Dialogs,
   // Trndi units
-  trndi.types, trndi.api, trndi.native,
+trndi.types, trndi.api, trndi.native,
   // FPC units
-  fpjson, jsonparser, dateutils, StrUtils;
+fpjson, jsonparser, dateutils, StrUtils;
 
 (*******************************************************************************
   Dexcom Share API endpoint definitions
@@ -36,41 +36,41 @@ uses
 
 const
   {** Dexcom Share login by account name endpoint. }
-  DEXCOM_LOGIN_ENDPOINT = 'General/LoginPublisherAccountByName';
+DEXCOM_LOGIN_ENDPOINT = 'General/LoginPublisherAccountByName';
   {** Dexcom Share authenticate account endpoint. }
-  DEXCOM_AUTHENTICATE_ENDPOINT = 'General/AuthenticatePublisherAccount';
+DEXCOM_AUTHENTICATE_ENDPOINT = 'General/AuthenticatePublisherAccount';
   {** Verify receiver/transmitter serial assignment status. }
-  DEXCOM_VERIFY_SERIAL_NUMBER_ENDPOINT =
-    'Publisher/CheckMonitoredReceiverAssignmentStatus';
+DEXCOM_VERIFY_SERIAL_NUMBER_ENDPOINT =
+  'Publisher/CheckMonitoredReceiverAssignmentStatus';
   {** Retrieve system UTC time from Dexcom Share. }
-  DEXCOM_TIME_ENDPOINT = 'General/SystemUtcTime';
+DEXCOM_TIME_ENDPOINT = 'General/SystemUtcTime';
   {** Fetch latest glucose values. }
-  DEXCOM_GLUCOSE_READINGS_ENDPOINT = 'Publisher/ReadPublisherLatestGlucoseValues';
+DEXCOM_GLUCOSE_READINGS_ENDPOINT = 'Publisher/ReadPublisherLatestGlucoseValues';
   {** Fetch alert settings (may not always be returned). }
-  DEXCOM_ALERT_ENDPOINT = 'Publisher/ReadSubscriberAlertSettings';
+DEXCOM_ALERT_ENDPOINT = 'Publisher/ReadSubscriberAlertSettings';
 
   {** Dexcom Share application ID used by mobile apps (commonly reused). }
-  DEXCOM_APPLICATION_ID = 'd89443d2-327c-4a6f-89e5-496bbb0317db';
+DEXCOM_APPLICATION_ID = 'd89443d2-327c-4a6f-89e5-496bbb0317db';
 
   {** Base URL (US region) for Dexcom Share services. }
-  DEXCOM_BASE_URL_US = 'https://share2.dexcom.com/ShareWebServices/Services';
+DEXCOM_BASE_URL_US = 'https://share2.dexcom.com/ShareWebServices/Services';
   {** Base URL (Worldwide) for Dexcom Share services. }
-  DEXCOM_BASE_URL_WORLD = 'https://shareous1.dexcom.com/ShareWebServices/Services';
+DEXCOM_BASE_URL_WORLD = 'https://shareous1.dexcom.com/ShareWebServices/Services';
 
   {** Host (US region) for Dexcom Share. }
-  DEXCOM_HOST_US = 'share2.dexcom.com';
+DEXCOM_HOST_US = 'share2.dexcom.com';
   {** Host (Worldwide) for Dexcom Share. }
-  DEXCOM_HOST_WORLD = 'shareous1.dexcom.com';
+DEXCOM_HOST_WORLD = 'shareous1.dexcom.com';
 
   {** Helper array mapping region selector to base URL.
       Index: False = WORLD, True = USA (when extra = 'usa'). }
-  DEXCOM_BASE_URLS: array[False..True] of string =
-    (DEXCOM_BASE_URL_WORLD, DEXCOM_BASE_URL_US);
+DEXCOM_BASE_URLS: array[false..true] of string =
+  (DEXCOM_BASE_URL_WORLD, DEXCOM_BASE_URL_US);
 
   {** Helper array mapping region selector to base host.
       Index: False = WORLD, True = USA (when extra = 'usa'). }
-  DEXCOM_BASE_HOSTS: array[False..True] of string =
-    (DEXCOM_HOST_WORLD, DEXCOM_HOST_US);
+DEXCOM_BASE_HOSTS: array[false..true] of string =
+  (DEXCOM_HOST_WORLD, DEXCOM_HOST_US);
 
 type
   (*******************************************************************************
@@ -80,20 +80,20 @@ type
     retrieval for Dexcom Share. Responsible for session handling, time-sync,
     and mapping Share responses into @code(BGResults).
    ******************************************************************************)
-  Dexcom = class(TrndiAPI)
-  private
-    FBaseHost: string;   /// The chosen Dexcom host (USA or Worldwide)
-    FUserName: string;   /// Dexcom Share account username
-    FPassword: string;   /// Dexcom Share account password
-    FSessionID: string;   /// Session ID returned by Dexcom after authentication
-    FCalcDiff: boolean;  /// If True, compute deltas between consecutive readings
+Dexcom = class(TrndiAPI)
+private
+  FBaseHost: string;   /// The chosen Dexcom host (USA or Worldwide)
+  FUserName: string;   /// Dexcom Share account username
+  FPassword: string;   /// Dexcom Share account password
+  FSessionID: string;   /// Session ID returned by Dexcom after authentication
+  FCalcDiff: boolean;  /// If True, compute deltas between consecutive readings
 
     {** Check that the current session token looks valid (non-empty and not dummy). }
-    function CheckSession: boolean;
+  function CheckSession: boolean;
 
     {** Check whether a Dexcom receiver/transmitter serial is assigned to the account. }
-    function CheckSerialNumber(const ASerial: string): boolean;
-  public
+  function CheckSerialNumber(const ASerial: string): boolean;
+public
     {** Create a Dexcom API client.
         Matches the parent signature. Defaults to calculating deltas.
 
@@ -101,7 +101,7 @@ type
         @param(pass   Dexcom password)
         @param(extra  Region selector: use 'usa' for US servers; otherwise WORLD)
      }
-    constructor Create(user, pass, extra: string); override;
+  constructor Create(user, pass, extra: string); override;
 
     {** Overloaded constructor that allows explicitly enabling/disabling delta calc.
 
@@ -110,7 +110,7 @@ type
         @param(extra    Region selector: use 'usa' for US servers; otherwise WORLD)
         @param(ACalcDiff Whether to compute deltas between consecutive readings)
      }
-    constructor Create(user, pass, extra: string; ACalcDiff: boolean); overload;
+  constructor Create(user, pass, extra: string; ACalcDiff: boolean); overload;
 
     {** Authenticate with Dexcom Share, establish a session, and synchronize time.
 
@@ -123,7 +123,7 @@ type
         @returns(True if session established and time synchronized; otherwise False
                  and @code(errormsg) is set.)
      }
-    function Connect: boolean; override;
+  function Connect: boolean; override;
 
     {** Retrieve latest glucose readings.
 
@@ -133,32 +133,32 @@ type
         @param(res       Out param receiving raw JSON payload of readings)
         @returns(Array of @code(BGReading); may be empty if none/failed)
      }
-    function GetReadings(AMinutes, AMaxCount: integer; extras: string;
-      out res: string): BGResults; override;
+  function GetReadings(AMinutes, AMaxCount: integer; extras: string;
+    out res: string): BGResults; override;
     {** UI parameter label provider (override).
         1: Dexcom Username
         2: Dexcom Password
         3: Region (use "usa" for US servers)
      }
-    class function ParamLabel(Index: integer): string; override;
+  class function ParamLabel(Index: integer): string; override;
 
-  published
+published
     {** The effective base URL used for API requests. }
-    property Remote: string read baseUrl;
+  property Remote: string read baseUrl;
     {** Dexcom username for this client instance. }
-    property User: string read FUserName;
+  property User: string read FUserName;
     {** Current Dexcom session token (when connected). }
-    property Session: string read FSessionID;
+  property Session: string read FSessionID;
     {** Whether this client computes deltas between consecutive readings. }
-    property CalculateDiff: boolean read FCalcDiff;
-  end;
+  property CalculateDiff: boolean read FCalcDiff;
+end;
 
 implementation
 
 resourcestring
-  sErrDexPostLogin = 'Login error during post-authentication steps';
-  sErrDexPass = 'Invalid Dexcom password or account credentials';
-  sErrDexLogin = 'Login error: Could not establish a valid session';
+sErrDexPostLogin = 'Login error during post-authentication steps';
+sErrDexPass = 'Invalid Dexcom password or account credentials';
+sErrDexLogin = 'Login error: Could not establish a valid session';
 
 {------------------------------------------------------------------------------
   Constructor (override).
@@ -167,7 +167,7 @@ resourcestring
 constructor Dexcom.Create(user, pass, extra: string);
 begin
   // Call overloaded constructor with default: calculate deltas
-  Create(user, pass, extra, True);
+  Create(user, pass, extra, true);
 end;
 
 {------------------------------------------------------------------------------
@@ -208,13 +208,13 @@ begin
 
   // 1) Authenticate to obtain preliminary session token
   FSessionID := StringReplace(
-    native.Request(True, DEXCOM_AUTHENTICATE_ENDPOINT, [], LBody),
+    native.Request(true, DEXCOM_AUTHENTICATE_ENDPOINT, [], LBody),
     '"', '', [rfReplaceAll]);
 
   // If response indicates password/credential issues, fail early
   if Pos('AccountPassword', FSessionID) > 0 then
   begin
-    Result := False;
+    Result := false;
     lastErr := sErrDexPass + ' (Dex1)';
     Exit;
   end;
@@ -222,25 +222,25 @@ begin
   // 2) Validate current session token
   if not CheckSession then
   begin
-    Result := False;
+    Result := false;
     lastErr := sErrDexLogin + ' (Dex2)';
     Exit;
   end;
 
   // 3) Finalize session by logging in by account name
-  FSessionID := StringReplace(native.Request(True, DEXCOM_LOGIN_ENDPOINT, [], LBody),
+  FSessionID := StringReplace(native.Request(true, DEXCOM_LOGIN_ENDPOINT, [], LBody),
     '"', '', [rfReplaceAll]);
 
   // Validate once more
   if not CheckSession then
   begin
-    Result := False;
+    Result := false;
     lastErr := sErrDexPostLogin + ' (Dex3)';
     Exit;
   end;
 
   // 4) Retrieve system UTC time for time-diff calibration
-  LTimeResponse := native.Request(False, DEXCOM_TIME_ENDPOINT, [], '');
+  LTimeResponse := native.Request(false, DEXCOM_TIME_ENDPOINT, [], '');
 
   // Dexcom may respond as XML-like <SystemTime> or JSON-ish /Date(ms)/ format
   if Pos('>', LTimeResponse) > 0 then
@@ -257,14 +257,14 @@ begin
     LTimeString := ExtractDelimited(2, LTimeResponse, ['(', ')']);
     if LTimeString <> '' then
       // LTimeString in ms; JSToDateTime expects milliseconds when correct=false path used
-      LServerDateTime := JSToDateTime(StrToInt64(LTimeString), False);
+      LServerDateTime := JSToDateTime(StrToInt64(LTimeString), false);
   end;
 
   // If we failed to parse any time value, abort with error
   if LTimeString = '' then
   begin
     lastErr := 'Cannot parse Dexcom time/zone data';
-    Result := False;
+    Result := false;
     Exit;
   end;
 
@@ -275,7 +275,7 @@ begin
   // Store negative offset to match consumer logic elsewhere in the codebase
   timeDiff := -1 * timeDiff;
 
-  Result := True;
+  Result := true;
 end;
 
 {------------------------------------------------------------------------------
@@ -296,16 +296,16 @@ var
   LParams: array[1..2] of string;
   LResponse: string;
 begin
-  Result := False;
+  Result := false;
 
   // Encode parameters to be safe in URLs
   LParams[1] := 'sessionId=' + encodeStr(FSessionID);
   LParams[2] := 'serialNumber=' + encodeStr(ASerial);
 
   // Dexcom returns 'AssignedToYou' when serial number is associated
-  LResponse := native.Request(True, DEXCOM_VERIFY_SERIAL_NUMBER_ENDPOINT, LParams, '');
+  LResponse := native.Request(true, DEXCOM_VERIFY_SERIAL_NUMBER_ENDPOINT, LParams, '');
   if LResponse = 'AssignedToYou' then
-    Result := True;
+    Result := true;
 end;
 
 {------------------------------------------------------------------------------
@@ -313,10 +313,10 @@ end;
   Returns up to AMaxCount samples, optionally computing deltas.
 ------------------------------------------------------------------------------}
 function Dexcom.GetReadings(AMinutes, AMaxCount: integer; extras: string;
-  out res: string): BGResults;
+out res: string): BGResults;
 
   // Helper: convert Dexcom /Date(ms)/ string to TDateTime
-  function DexTimeToTDateTime(const S: string): TDateTime;
+function DexTimeToTDateTime(const S: string): TDateTime;
   var
     LMsString: string;
     LMs: int64;
@@ -325,7 +325,7 @@ function Dexcom.GetReadings(AMinutes, AMaxCount: integer; extras: string;
     LMsString := Copy(S, 6, Length(S) - 6);               // drop '/Date('
     LMsString := StringReplace(LMsString, ')', '', []);   // drop ')'
     LMs := StrToInt64(LMsString);
-    Result := UnixToDateTime(LMs div 1000, False);     // milliseconds -> seconds
+    Result := UnixToDateTime(LMs div 1000, false);     // milliseconds -> seconds
   end;
 
 var
@@ -347,8 +347,8 @@ begin
   LParams[3] := 'maxCount=' + IntToStr(AMaxCount);
 
   // Fetch glucose values; some deployments also allow reading alert settings
-  LGlucoseJSON := native.Request(True, DEXCOM_GLUCOSE_READINGS_ENDPOINT, LParams, '');
-  LAlertJSON := native.Request(True, DEXCOM_ALERT_ENDPOINT, LParams, '');
+  LGlucoseJSON := native.Request(true, DEXCOM_GLUCOSE_READINGS_ENDPOINT, LParams, '');
+  LAlertJSON := native.Request(true, DEXCOM_ALERT_ENDPOINT, LParams, '');
 
   res := LGlucoseJSON;
 
@@ -378,7 +378,8 @@ begin
         LData.Items[i].FindPath('Value').AsFloat -
         LData.Items[i - 1].FindPath('Value').AsFloat
         )
-    else if FCalcDiff then
+    else
+    if FCalcDiff then
       // First item: delta not computable; use 0
       Result[i].Update(LData.Items[i].FindPath('Value').AsFloat, 0)
     else
@@ -404,10 +405,8 @@ begin
       end;
     end
     else
-    begin
-      // Numeric mapping not defined; keep placeholder unless you add a map
-      Result[i].trend := TdPlaceholder;
-    end;
+      Result[i].trend := TdPlaceholder// Numeric mapping not defined; keep placeholder unless you add a map
+    ;
 
     // Convert Dexcom timestamp "/Date(ms)/" to TDateTime
     Result[i].date := DexTimeToTDateTime(LData.Items[i].FindPath('ST').AsString);
@@ -436,11 +435,14 @@ end;
 class function Dexcom.ParamLabel(Index: integer): string;
 begin
   case Index of
-    1: Result := 'Dexcom Username';
-    2: Result := 'Dexcom Password';
-    3: Result := 'Region ("usa" or empty)';
-    else
-      Result := inherited ParamLabel(Index);
+  1:
+    Result := 'Dexcom Username';
+  2:
+    Result := 'Dexcom Password';
+  3:
+    Result := 'Region ("usa" or empty)';
+  else
+    Result := inherited ParamLabel(Index);
   end;
 end;
 

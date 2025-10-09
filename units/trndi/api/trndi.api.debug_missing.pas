@@ -26,27 +26,27 @@ unit trndi.api.debug_missing;
 interface
 
 uses
-  Classes, SysUtils, Dialogs, trndi.types, trndi.api, trndi.native,
-  trndi.api.debug, fpjson, jsonparser, dateutils;
+Classes, SysUtils, Dialogs, trndi.types, trndi.api, trndi.native,
+trndi.api.debug, fpjson, jsonparser, dateutils;
 
 type
   // Main class
-  DebugMissingAPI = class(DebugAPI)
-  protected
-  public
-    function getReadings(min, maxNum: integer; extras: string; out res: string): BGResults;
-      override;
-  end;
+DebugMissingAPI = class(DebugAPI)
+protected
+public
+  function getReadings(min, maxNum: integer; extras: string; out res: string): BGResults;
+    override;
+end;
 
 implementation
 
 
 function DebugMissingAPI.getReadings(min, maxNum: integer; extras: string;
-  out res: string): BGResults;
+out res: string): BGResults;
 var
   fNow: TDateTime;
 
-  function getFakeVals(const min: integer; out reading, delta: integer): TDateTime;
+function getFakeVals(const min: integer; out reading, delta: integer): TDateTime;
   var
     currentTime: TDateTime;
     baseTime: TDateTime;
@@ -74,7 +74,7 @@ var
     delta := reading - previousReading;
   end;
 
-  function guessTrend(diff: integer): BGTrend;
+function guessTrend(diff: integer): BGTrend;
   begin
     if diff < -20 then
       Result := TdDoubleDown

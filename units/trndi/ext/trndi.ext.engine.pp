@@ -25,79 +25,79 @@ unit trndi.ext.engine;
 interface
 
 uses
-  SysUtils,
-  mormot.core.base,
-  mormot.core.os,
-  mormot.core.Text,
-  mormot.core.buffers,
-  mormot.core.unicode,
-  mormot.core.datetime,
-  mormot.core.rtti,
-  mormot.crypt.core,
-  mormot.core.Data,
-  mormot.core.variants,
-  mormot.core.json,
-  mormot.core.log,
-  mormot.core.perf,
-  mormot.core.test,
-  mormot.lib.quickjs,
-  Dialogs,
-  Classes,
-  trndi.native,
-  trndi.ext.promise,
-  trndi.ext.functions,
-  fgl,
-  ExtCtrls,
-  fpTimer,
-  Forms,
-  Controls,
-  Graphics,
-  Math,
-  StdCtrls,
-  slicke.ux.alert,
-  trndi.strings,
-  fpimage, IntfGraphics, GraphType, EasyLazFreeType, LazFreeTypeIntfDrawer;
+SysUtils,
+mormot.core.base,
+mormot.core.os,
+mormot.core.Text,
+mormot.core.buffers,
+mormot.core.unicode,
+mormot.core.datetime,
+mormot.core.rtti,
+mormot.crypt.core,
+mormot.core.Data,
+mormot.core.variants,
+mormot.core.json,
+mormot.core.log,
+mormot.core.perf,
+mormot.core.test,
+mormot.lib.quickjs,
+Dialogs,
+Classes,
+trndi.native,
+trndi.ext.promise,
+trndi.ext.functions,
+fgl,
+ExtCtrls,
+fpTimer,
+Forms,
+Controls,
+Graphics,
+Math,
+StdCtrls,
+slicke.ux.alert,
+trndi.strings,
+fpimage, IntfGraphics, GraphType, EasyLazFreeType, LazFreeTypeIntfDrawer;
 
 type
   {** Callback signature invoked when JavaScript code emits output via this engine. }
-  TOutputCallback = procedure(const Msg: RawUtf8) of object;
+TOutputCallback = procedure(const Msg: RawUtf8) of object;
 
   {** Alias to the JS function type used by QuickJS bindings. }
-  ExtFunction = JSFunction;
+ExtFunction = JSFunction;
 
   {** Placeholder alias for argv-like arrays. @fixme Consider removing if unused. }
-  ExtArgv = array of ExtFunction;
+ExtArgv = array of ExtFunction;
 
   {** Convenience alias for passing string arguments to JS calls. }
-  JSArray = array of RawUtf8;
+JSArray = array of RawUtf8;
 
   {** 64-bit integer array helper. }
-  QWordArray = array of qword;
+QWordArray = array of qword;
 
   {** Descriptor for a registered extension function. Compares by @code(name). }
-  TTrndiExtFunc = record
-  private
-    args: ExtArgv;
-    function getArgCount: integer;
-  public
+TTrndiExtFunc = record
+private
+  args: ExtArgv;
+  function getArgCount: integer;
+public
     {** Function name (identifier exposed to JS). }
-    Name: RawUtf8;
+  Name: RawUtf8;
     {** Number of arguments registered for this function. }
-    property argc: integer read getArgCount;
+  property argc: integer read getArgCount;
     {** Synonym of @code(argc). }
-    property Count: integer read getArgCount;
+  property Count: integer read getArgCount;
 
     {** Equality operator compares on @code(name) only. }
-    class operator =(const a, b: TTrndiExtFunc): boolean; overload;
-  end;
+  class operator =(const a, b: TTrndiExtFunc): boolean; overload;
+end;
 
   {** List of known/registered extension functions. }
-  TExtFuncList = specialize TFPGList<TTrndiExtFunc>;
+TExtFuncList = specialize TFPGList<TTrndiExtFunc>;
 
   {** List of registered callbacks (e.g., for Promises and async tasks). }
-  TCallbacks = specialize TFPGList<PJSCallback>;
+TCallbacks = specialize TFPGList<PJSCallback>;
   {** Alias: promises are managed as callbacks. }
-  TPromises = TCallbacks;
+TPromises = TCallbacks;
 
   {** Embedded JavaScript engine wrapper using QuickJS via mORMot bindings.
 
@@ -111,35 +111,35 @@ type
       Pattern:
       - Implemented as a singleton via @code(Instance)/@code(ReleaseInstance).
    }
-  TTrndiExtEngine = class
-  private
-  class
-    var
+TTrndiExtEngine = class
+private
+class
+  var
     {** Singleton instance. Use @code(Instance) to access. }
-    FInstance: TTrndiExtEngine;
+  FInstance: TTrndiExtEngine;
 
-  private
+private
     {** Definition for the 'Trndi' class exposed to JS. }
-    TrndiClass: JSClassDef;
+  TrndiClass: JSClassDef;
     {** Registry of known/added functions (optional bookkeeping). }
-    knownfunc: TExtFuncList;
+  knownfunc: TExtFuncList;
     {** Periodic timer to pump QuickJS job queue (Promises/microtasks). }
-    eventTimer: TFPTimer;
+  eventTimer: TFPTimer;
     {** QuickJS runtime handle. }
-    FRuntime: JSRuntime;
+  FRuntime: JSRuntime;
     {** QuickJS context handle. }
-    FContext: JSContext;
+  FContext: JSContext;
     {** Accumulated output produced by JS. }
-    FOutput: RawUtf8;
+  FOutput: RawUtf8;
     {** Output sink callback invoked by @code(SetOutput). }
-    OutCallback: TOutputCallback;
+  OutCallback: TOutputCallback;
     {** Native helper for OS/HTTP glue (Trndi platform integration). }
-    native: TrndiNative;
+  native: TrndiNative;
     {** Registered promises. }
-    promises: TPromises;
+  promises: TPromises;
 
-    function GetOutput: RawUtf8;
-    procedure SetOutput(const val: RawUtf8);
+  function GetOutput: RawUtf8;
+  procedure SetOutput(const val: RawUtf8);
 
     {** Show a UX dialog and return the button pressed.
 
@@ -147,20 +147,20 @@ type
         @param(msg        Dialog message text)
         @param(titleadd   Extra title suffix/prefix)
         @returns(Integer code based on selected button) }
-    function uxResponse(const dialogType: TMsgDlgType; const msg: string;
-      const titleadd: string): integer;
+  function uxResponse(const dialogType: TMsgDlgType; const msg: string;
+    const titleadd: string): integer;
 
     {** Find a registered callback by name.
 
         @param(func Callback identifier)
         @returns(TJSCallback record; undefined if not found) }
-    function findCallback(const func: string): TJSCallback;
+  function findCallback(const func: string): TJSCallback;
 
     {** Find a registered promise callback by name.
 
         @param(func Promise/callback identifier)
         @returns(Pointer to callback record; may raise if not found) }
-    function findPromise(const func: string): PJSCallback;
+  function findPromise(const func: string): PJSCallback;
     {** Internal unified call helper dispatching all JS function invocations.
 
         RawPrefix values are caller-prepared @code(JSValueRaw) arguments (arrays, objects, scalars)
@@ -182,64 +182,64 @@ type
         @param(freeRaw    Whether to free RawPrefix JS values after invocation)
         @param(freeRest   Whether to free marshalled Rest JS temporaries)
         @returns(Stringified JS return value; empty string on error or if function missing) }
-    function InternalCall(const FuncName: RawUtf8; const RawPrefix: array of JSValueRaw;
-      const Rest: array of const; freeRaw, freeRest: boolean): RawUtf8;
-  public
+  function InternalCall(const FuncName: RawUtf8; const RawPrefix: array of JSValueRaw;
+    const Rest: array of const; freeRaw, freeRest: boolean): RawUtf8;
+public
     {** All registered callbacks (promise handlers etc.). }
-    callbacks: TCallbacks;
+  callbacks: TCallbacks;
 
     {** Construct the JS engine: runtime, context, 'Trndi' class, timers, base functions. }
-    constructor Create;
+  constructor Create;
     {** Destroy and cleanup: timers, callbacks, context/runtime, singleton instance. }
-    destructor Destroy; override;
+  destructor Destroy; override;
 
     {** Execute a JavaScript source string in the global scope.
 
         @param(Script JavaScript source as UTF-8)
         @param(name   Optional script name for diagnostics; default '<script>')
         @returns(Output or result string; on error returns formatted error text) }
-    function Execute(const Script: RawUtf8; Name: string = '<script>'): RawUtf8;
+  function Execute(const Script: RawUtf8; Name: string = '<script>'): RawUtf8;
 
     {** Load a JS file from disk and execute its contents.
 
         @param(FileName Path to script file)
         @returns(Result string from @code(Execute))
         @raises(Exception if file not found) }
-    function ExecuteFile(const FileName: string): RawUtf8;
+  function ExecuteFile(const FileName: string): RawUtf8;
 
     {** Get the singleton instance of the engine (creates on first use). }
-    class function Instance: TTrndiExtEngine;
+  class function Instance: TTrndiExtEngine;
     {** Release the singleton instance (frees resources). }
-    class procedure ReleaseInstance;
+  class procedure ReleaseInstance;
 
     {** Append values to @code(Output) by converting JS values to UTF-8.
 
         @param(ctx  JS context)
         @param(vals Pointer to first JS value)
         @param(len  Number of items-1 to read; iterates inclusive from 0..len) }
-    procedure SetOutput(ctx: JSContext; const vals: PJSValues; const len: integer);
+  procedure SetOutput(ctx: JSContext; const vals: PJSValues; const len: integer);
 
     {** Clear the accumulated @code(Output). }
-    procedure ClearOutput;
+  procedure ClearOutput;
 
     {** Accessor to accumulated output; writes also trigger @code(OutCallback). }
-    property Output: RawUtf8 read GetOutput write SetOutput;
+  property Output: RawUtf8 read GetOutput write SetOutput;
 
     {** Register a global JS function in the current context.
 
         @param(id    Function name in global scope)
         @param(func  Native function pointer)
         @param(argc  Declared arity; 0 means variable/unspecified) }
-    procedure addFunction(const id: string; const func: JSFunction;
-      const argc: integer = 0);
+  procedure addFunction(const id: string; const func: JSFunction;
+    const argc: integer = 0);
 
     {** Register a function as a method of the 'Trndi' JS class.
 
         @param(id    Method name)
         @param(func  Native function pointer)
         @param(argc  Declared arity; use -1 for variadic) }
-    procedure addClassFunction(const id: string; const func: JSFunction;
-      const argc: integer = 0);
+  procedure addClassFunction(const id: string; const func: JSFunction;
+    const argc: integer = 0);
     // (Removed prior experimental overload infrastructure)
 
     {** Call a global JS function by name with string arguments.
@@ -247,33 +247,33 @@ type
         @param(FuncName Global function name)
         @param(Args     Array of string arguments)
         @returns(Stringified result; empty string if call failed/not found) }
-    function CallFunction(const FuncName: RawUtf8; const Args: JSArray): RawUtf8;
-      overload;
+  function CallFunction(const FuncName: RawUtf8; const Args: JSArray): RawUtf8;
+    overload;
 
    {** Call a global JS function by name with integer arguments.
 
         @param(FuncName Global function name)
         @param(Args     Array of integer arguments)
         @returns(Stringified result; empty string if call failed/not found) }
-    function CallFunction(const FuncName: RawUtf8;
-      const Args: array of integer): RawUtf8;
-      overload;
+  function CallFunction(const FuncName: RawUtf8;
+    const Args: array of integer): RawUtf8;
+    overload;
 
   {** Call a global JS function by name with different arguments.
 
       @param(FuncName Global function name)
       @param(Args     Array of const arguments)
       @returns(Stringified result; empty string if call failed/not found) }
-    function CallFunction(const FuncName: RawUtf8; const Args: array of const): RawUtf8;
-      overload;
+  function CallFunction(const FuncName: RawUtf8; const Args: array of const): RawUtf8;
+    overload;
   {** Build a QuickJS array from a Pascal open array of const values.
     Supported element kinds mirror the mixed CallFunction overload.
     Returns JS_UNDEFINED if context invalid or on allocation failure. }
-    function CreateJSArray(const Values: array of const): JSValueRaw;
+  function CreateJSArray(const Values: array of const): JSValueRaw;
   {** Convenience: call a JS function passing a single array argument built
     from Values. Equivalent JS: func([v0,v1,...]) }
-    function CallFunctionWithArrayArg(const FuncName: RawUtf8;
-      const Values: array of const): RawUtf8;
+  function CallFunctionWithArrayArg(const FuncName: RawUtf8;
+    const Values: array of const): RawUtf8;
   {** Call where the first argument is a pre-built @code(JSValueRaw) (e.g. Array/Object) and the rest are Pascal values.
 
       Ownership:
@@ -287,9 +287,9 @@ type
       @param(autoFree      Free marshalled Rest JS values after call; default true)
       @param(autoFreeFirst Free supplied FirstArg after call; default false)
       @returns(Stringified result; empty string on failure) }
-    function CallFunctionArrayFirst(const FuncName: RawUtf8;
-      const FirstArg: JSValueRaw; const Rest: array of const;
-      autoFree: boolean = True; autoFreeFirst: boolean = False): RawUtf8;
+  function CallFunctionArrayFirst(const FuncName: RawUtf8;
+    const FirstArg: JSValueRaw; const Rest: array of const;
+    autoFree: boolean = true; autoFreeFirst: boolean = false): RawUtf8;
   {** Call with an array of pre-built @code(JSValueRaw) arguments followed by marshalled Pascal args.
 
       Freeing rules:
@@ -306,9 +306,9 @@ type
       @param(restAutoFree Free marshalled Rest values; default true)
       @param(rawAutoFree  Free provided RawArgs values; default false)
       @returns(Stringified result or empty string on error) }
-    function CallFunctionMixed(const FuncName: RawUtf8;
-      const RawArgs: array of JSValueRaw; const Rest: array of const;
-      restAutoFree: boolean = True; rawAutoFree: boolean = False): RawUtf8;
+  function CallFunctionMixed(const FuncName: RawUtf8;
+    const RawArgs: array of JSValueRaw; const Rest: array of const;
+    restAutoFree: boolean = true; rawAutoFree: boolean = false): RawUtf8;
   {** Factories to create standalone JS values you can mix with arrays:
        js := eng.MakeJSArray([1,2,3]);
        s  := eng.MakeJSString('hi');
@@ -316,19 +316,19 @@ type
        eng.CallFunctionJS('foo',[s, js, i]);
      All returned JSValueRaw should normally be freed with JS_FreeValue after use
      unless you pass autoFree=true to CallFunctionJS (default). }
-    function MakeJSString(const S: RawUtf8): JSValueRaw; inline;
-    function MakeJSInt64(const V: int64): JSValueRaw; inline;
-    function MakeJSFloat(const V: double): JSValueRaw; inline;
-    function MakeJSBool(const V: boolean): JSValueRaw; inline;
+  function MakeJSString(const S: RawUtf8): JSValueRaw; inline;
+  function MakeJSInt64(const V: int64): JSValueRaw; inline;
+  function MakeJSFloat(const V: double): JSValueRaw; inline;
+  function MakeJSBool(const V: boolean): JSValueRaw; inline;
     {** Convenience alias: build a JS array from Pascal values (same as CreateJSArray). }
-    function MakeJSArray(const Values: array of const): JSValueRaw; inline;
+  function MakeJSArray(const Values: array of const): JSValueRaw; inline;
   {** Call a function with pre-built @code(JSValueRaw) arguments (scalars, arrays, objects).
     @param(FuncName Global JS function name)
     @param(Args     Array of pre-built JSValueRaw values)
     @param(autoFree Free each value in Args after the call; default true for convenience)
     @returns(Stringified result or empty string on error) }
-    function CallFunctionJS(const FuncName: RawUtf8; const Args: array of JSValueRaw;
-      autoFree: boolean = True): RawUtf8;
+  function CallFunctionJS(const FuncName: RawUtf8; const Args: array of JSValueRaw;
+    autoFree: boolean = true): RawUtf8;
   {** Example mixed usage:
       eng.Execute('function demo(label, data, count){ return label+":"+data.length+":"+count; }');
       arr := eng.CreateJSArray([1,2,3]);
@@ -349,29 +349,29 @@ type
         @param(VarName Variable name)
         @param(Value   String value)
         @param(obj     Unused placeholder; reserved) }
-    procedure SetGlobalVariable(const VarName: RawUtf8; const Value: RawUtf8;
-      const obj: string = '');
+  procedure SetGlobalVariable(const VarName: RawUtf8; const Value: RawUtf8;
+    const obj: string = '');
 
     {** Set a global JS variable (int64).
 
         @param(VarName Variable name)
         @param(Value   64-bit integer value)
         @param(obj     Unused placeholder; reserved) }
-    procedure SetGlobalVariable(const VarName: RawUtf8; const Value: int64;
-      const obj: string = '');
+  procedure SetGlobalVariable(const VarName: RawUtf8; const Value: int64;
+    const obj: string = '');
 
     {** Create an empty global JS object with the given name.
 
         @param(name Global identifier for the new object) }
-    procedure CreateNewObject(const Name: string);
+  procedure CreateNewObject(const Name: string);
 
     {** Register a Promise-style async entry point with fixed arity.
 
         @param(funcName  Name of the JS function to expose)
         @param(cbfunc    Pascal callback to run when job executes)
         @param(params    Exact number of parameters expected) }
-    procedure AddPromise(const funcName: string; cbfunc: JSCallbackFunction;
-      params: integer = 1);
+  procedure AddPromise(const funcName: string; cbfunc: JSCallbackFunction;
+    params: integer = 1);
 
     {** Register a Promise-style async entry point with min/max arity.
 
@@ -379,14 +379,14 @@ type
         @param(cbfunc    Pascal callback to run when job executes)
         @param(minParams Minimum number of parameters allowed)
         @param(maxParams Maximum number of parameters allowed) }
-    procedure AddPromise(const funcName: string; cbfunc: JSCallbackFunction;
-      minParams, maxParams: integer);
+  procedure AddPromise(const funcName: string; cbfunc: JSCallbackFunction;
+    minParams, maxParams: integer);
 
     {** Raise an EJSException carrying a message and file name.
 
         @param(message Error message)
         @param(fn      Source file or logical script name) }
-    procedure excepion(const message, fn: string);
+  procedure excepion(const message, fn: string);
 
     {** Convert an argument at @code(pos) from JS to a pascal @code(PChar).
 
@@ -397,39 +397,39 @@ type
         @param(vals Pointer to argument array)
         @param(pos  Index of argument to convert)
         @returns(PChar pointing to temporary-encoded UTF-8 buffer) }
-    class function ParseArgv(ctx: PJSContext; const vals: PJSValues;
-      const pos: integer): pchar;
+  class function ParseArgv(ctx: PJSContext; const vals: PJSValues;
+    const pos: integer): pchar;
 
     {** Show an informational alert dialog to the user. }
-    procedure alert(const msg: string);
+  procedure alert(const msg: string);
 
     {** Access a registered callback by name. }
-    property callback[f: string]: TJSCallback read findCallback;
+  property callback[f: string]: TJSCallback read findCallback;
     {** Access a registered promise callback pointer by name. }
-    property promise[f: string]: PJSCallback read findPromise;
+  property promise[f: string]: PJSCallback read findPromise;
 
     {** Timer callback to process pending JS jobs (Promises/microtasks). }
-    procedure OnJSTimer(Sender: TObject);
+  procedure OnJSTimer(Sender: TObject);
 
     {** Check whether a global function with @code(FuncName) exists in JS.
 
         @param(FuncName Global function identifier)
         @returns(True if a callable object is found) }
-    function FunctionExists(const FuncName: string): boolean;
-  end;
+  function FunctionExists(const FuncName: string): boolean;
+end;
 
   {** Exception type for JS-related errors with filename context. }
-  EJSException = class(Exception)
-  private
-    FFilename: string;
-  public
+EJSException = class(Exception)
+private
+  FFilename: string;
+public
     {** Create exception with a message and file name context. }
-    constructor CreateWithName(const msg: string; const AFileName: string);
+  constructor CreateWithName(const msg: string; const AFileName: string);
     {** Stringify exception as 'ClassName: FileName<newline>Message'. }
-    function ToString: string; override;
+  function ToString: string; override;
     {** Name of the source file or logical script name. }
-    property Filename: string read FFilename write FFilename;
-  end;
+  property Filename: string read FFilename write FFilename;
+end;
 
 {** Emergency shutdown control functions }
 {** Set the global shutdown flag - call this as early as possible during app termination }
@@ -439,10 +439,10 @@ function IsGlobalShutdown: boolean;
 
 var
   {** Class ID used for the 'Trndi' class in QuickJS context. }
-  TrndiClassID: JSClassID;
+TrndiClassID: JSClassID;
 
   {** Global flag to indicate application is shutting down - set as early as possible }
-  GlobalShutdownInProgress: boolean = False;
+GlobalShutdownInProgress: boolean = false;
 
 implementation
 
@@ -454,7 +454,7 @@ implementation
 
 procedure SetGlobalShutdown;
 begin
-  GlobalShutdownInProgress := True;
+  GlobalShutdownInProgress := true;
 end;
 
 function IsGlobalShutdown: boolean;
@@ -506,7 +506,7 @@ end;
 
 {** Show a UX dialog and return the button pressed. }
 function TTrndiExtEngine.uxResponse(const dialogType: TMsgDlgType;
-  const msg: string; const titleadd: string): integer;
+const msg: string; const titleadd: string): integer;
 var
   btns: TUXMsgDlgBtns;
   header, title: string;
@@ -514,36 +514,36 @@ begin
   title := titleadd;
 
   case dialogType of
-    mtWarning:
-    begin
-      btns := [mbOK];
-      title := Format('[%s] %s', [sExtWarn, title]);
-      header := sExtWarn;
-    end;
-    mtError:
-    begin
-      btns := [mbAbort];
-      title := Format('[%s] %s', [sExtErr, title]);
-      header := sExtErr;
-    end;
-    mtInformation:
-    begin
-      btns := [mbOK];
-      title := Format('[%s] %s', [sExtMsg, title]);
-      header := sExtMsg;
-    end;
-    mtConfirmation:
-    begin
-      btns := [mbYes, mbNo];
-      title := Format('[%s] %s', [sextConfirm, title]);
-      header := sExtConfirm;
-    end;
-    else
-    begin
-      btns := [mbOK];
-      title := Format('[%s] %s', [sExtEvent, title]);
-      header := sExtEvent;
-    end;
+  mtWarning:
+  begin
+    btns := [mbOK];
+    title := Format('[%s] %s', [sExtWarn, title]);
+    header := sExtWarn;
+  end;
+  mtError:
+  begin
+    btns := [mbAbort];
+    title := Format('[%s] %s', [sExtErr, title]);
+    header := sExtErr;
+  end;
+  mtInformation:
+  begin
+    btns := [mbOK];
+    title := Format('[%s] %s', [sExtMsg, title]);
+    header := sExtMsg;
+  end;
+  mtConfirmation:
+  begin
+    btns := [mbYes, mbNo];
+    title := Format('[%s] %s', [sextConfirm, title]);
+    header := sExtConfirm;
+  end;
+  else
+  begin
+    btns := [mbOK];
+    title := Format('[%s] %s', [sExtEvent, title]);
+    header := sExtEvent;
+  end;
   end;
 
   Result := UXDialog(uxdAuto, header, title, msg, btns, dialogType);
@@ -565,11 +565,11 @@ var
   i: integer;
   ok: boolean;
 begin
-  ok := False;
+  ok := false;
   for i := 0 to callbacks.Count - 1 do
     if (callbacks[i] <> nil) and (callbacks[i]^.func = func) then
     begin
-      ok := True;
+      ok := true;
       break;
     end;
 
@@ -596,7 +596,7 @@ end;
 
 {** Add Promise helper with fixed @code(params) expected (min=max). }
 procedure TTrndiExtEngine.AddPromise(const funcName: string;
-  cbfunc: JSCallbackFunction; params: integer = 1);
+cbfunc: JSCallbackFunction; params: integer = 1);
 begin
   AddPromise(funcName, cbfunc, params, params);
 end;
@@ -604,7 +604,7 @@ end;
 {** Register a Promise entry point by exposing an async task wrapper in JS
     and storing the associated Pascal callback with arity constraints. }
 procedure TTrndiExtEngine.AddPromise(const funcName: string;
-  cbfunc: JSCallbackFunction; minParams, maxParams: integer);
+cbfunc: JSCallbackFunction; minParams, maxParams: integer);
 var
   Data: JSValueConst;
   cb: PJSCallback;
@@ -614,7 +614,7 @@ begin
   JS_SetPropertyStr(
     FContext,
     JS_GetGlobalObject(FContext),
-    PChar(funcname),
+    pchar(funcname),
     JS_NewCFunctionData(FContext, PJSCFunctionData(@AsyncTask), 1, 0, 1, @Data)
     );
 
@@ -634,15 +634,15 @@ end;
 
 {** Return a @code(PChar) for argument @code(pos). Use with care re: lifetime. }
 class function TTrndiExtEngine.ParseArgv(ctx: PJSContext; const vals: PJSValues;
-  const pos: integer): pchar;
+const pos: integer): pchar;
 begin
   // Hack to coerce RawUtf8 to PChar. Ensure caller uses the pointer immediately.
-  Result := PChar(Result + ctx^^.ToUtf8(vals^[pos]));
+  Result := pchar(Result + ctx^^.ToUtf8(vals^[pos]));
 end;
 
 {** Append JS values (0..len) to @code(Output) as UTF-8 strings. }
 procedure TTrndiExtEngine.SetOutput(ctx: JSContext; const vals: PJSValues;
-  const len: integer);
+const len: integer);
 var
   i: integer;
 begin
@@ -678,7 +678,7 @@ end;
 
     @returns(Allocated C-string with module source, or nil on error) }
 function TrndiModuleLoader(ctx: JSContext; module_name: pansichar;
-  opaque: pointer): pansichar; cdecl;
+opaque: pointer): pansichar; cdecl;
 var
   FileName: string;
   Script: RawUtf8;
@@ -721,7 +721,7 @@ begin
   inherited Create;
 
   // Clear shutdown guard at startup
-  SetExtShuttingDown(False);
+  SetExtShuttingDown(false);
 
   // Create the QuickJS runtime
   FRuntime := JS_NewRuntime;
@@ -774,7 +774,7 @@ begin
   eventTimer := TFPTimer.Create(nil);
   eventTimer.Interval := 50;       // run every 50ms
   eventTimer.OnTimer := @self.OnJSTimer;
-  eventTimer.Enabled := True;
+  eventTimer.Enabled := true;
 
   // Collections
   promises := TPromises.Create;
@@ -828,14 +828,14 @@ begin
   try
     if Assigned(eventTimer) then
     begin
-      eventTimer.Enabled := False;
+      eventTimer.Enabled := false;
       FreeAndNil(eventTimer);
     end;
   except
   end;
 
   // Signal extension shutdown to background tasks
-  SetExtShuttingDown(True);
+  SetExtShuttingDown(true);
 
   // Give background threads time to notice shutdown and complete
   // This is critical to avoid access violations from promise threads
@@ -976,14 +976,14 @@ end;
 
 {** Add a global JS function. }
 procedure TTrndiExtEngine.addFunction(const id: string; const func: JSFunction;
-  const argc: integer = 0);
+const argc: integer = 0);
 begin
-  FContext^.SetFunction([], PChar(id), func, argc);
+  FContext^.SetFunction([], pchar(id), func, argc);
 end;
 
 {** Add a JS method under the 'Trndi' class. }
 procedure TTrndiExtEngine.addClassFunction(const id: string;
-  const func: JSFunction; const argc: integer = 0);
+const func: JSFunction; const argc: integer = 0);
 var
   this: JSValue;
 begin
@@ -993,7 +993,7 @@ begin
     Exit;
   end;
 
-  FContext^.SetFunction(this, PChar(id), func, argc);
+  FContext^.SetFunction(this, pchar(id), func, argc);
 end;
 
 {** Create an empty global object named @code(name). }
@@ -1009,7 +1009,7 @@ end;
 
 {** Set a global JS string variable. }
 procedure TTrndiExtEngine.SetGlobalVariable(const VarName: RawUtf8;
-  const Value: RawUtf8; const obj: string = '');
+const Value: RawUtf8; const obj: string = '');
 var
   JValue, GlobalObj: JSValueRaw;
 begin
@@ -1020,7 +1020,7 @@ end;
 
 {** Set a global JS int64 variable. }
 procedure TTrndiExtEngine.SetGlobalVariable(const VarName: RawUtf8;
-  const Value: int64; const obj: string = '');
+const Value: int64; const obj: string = '');
 var
   GlobalObj, JValue: JSValueRaw;
 begin
@@ -1068,7 +1068,7 @@ end;
 
 {** Execute a JS string in global scope and return its stringified result or error text. }
 function TTrndiExtEngine.Execute(const Script: RawUtf8;
-  Name: string = '<script>'): RawUtf8;
+Name: string = '<script>'): RawUtf8;
 var
   EvalResult: JSValue;
   ResultStr: pansichar;
@@ -1113,7 +1113,7 @@ end;
 
 {** Call a global JS function with string arguments; return the result as UTF-8. }
 function TTrndiExtEngine.CallFunction(const FuncName: RawUtf8;
-  const Args: JSArray): RawUtf8;
+const Args: JSArray): RawUtf8;
 var
   GlobalObj, FuncObj, RetVal: JSValueRaw;
   ArgArray: array of JSValueRaw;
@@ -1131,7 +1131,7 @@ begin
   GlobalObj := JS_GetGlobalObject(FContext);
 
   // Retrieve function from global object
-  FuncObj := JS_GetPropertyStr(FContext, GlobalObj, PChar(FuncName));
+  FuncObj := JS_GetPropertyStr(FContext, GlobalObj, pchar(FuncName));
 
   // Ensure it's callable
   if not JS_IsFunction(FContext, FuncObj) then
@@ -1145,7 +1145,7 @@ begin
   // Build argument values
   SetLength(ArgArray, Length(Args));
   for i := 0 to High(Args) do
-    ArgArray[i] := JS_NewString(FContext, PChar(Args[i]));
+    ArgArray[i] := JS_NewString(FContext, pchar(Args[i]));
 
   // Invoke function
   RetVal := JS_Call(FContext, FuncObj, GlobalObj, Length(ArgArray), @ArgArray[0]);
@@ -1175,7 +1175,7 @@ end;
 {** Call a global JS function with integer arguments; return the result as UTF-8.
     Note: Integers are marshalled as JS number (Int32). If you need 64-bit, add an overload using JS_NewBigInt64. }
 function TTrndiExtEngine.CallFunction(const FuncName: RawUtf8;
-  const Args: array of integer): RawUtf8;
+const Args: array of integer): RawUtf8;
 var
   GlobalObj, FuncObj, RetVal: JSValueRaw;
   ArgArray: array of JSValueRaw;
@@ -1193,7 +1193,7 @@ begin
   GlobalObj := JS_GetGlobalObject(FContext);
 
   // Retrieve function from global object
-  FuncObj := JS_GetPropertyStr(FContext, GlobalObj, PChar(FuncName));
+  FuncObj := JS_GetPropertyStr(FContext, GlobalObj, pchar(FuncName));
 
   // Ensure it's callable
   if not JS_IsFunction(FContext, FuncObj) then
@@ -1207,9 +1207,7 @@ begin
   // Build integer argument values (use BigInt64 for lack of Int32 constructor in bindings)
   SetLength(ArgArray, Length(Args));
   for i := 0 to High(Args) do
-  begin
     ArgArray[i] := JS_NewBigInt64(FContext, Args[i]);
-  end;
 
   // Invoke function
   RetVal := JS_Call(FContext, FuncObj, GlobalObj, Length(ArgArray), @ArgArray[0]);
@@ -1243,7 +1241,7 @@ end;
     - vtChar, vtPChar, vtAnsiString, vtUnicodeString, vtWideString, vtString: JS string
     Others are stringified via Pascal's default conversions. }
 function TTrndiExtEngine.CallFunction(const FuncName: RawUtf8;
-  const Args: array of const): RawUtf8;
+const Args: array of const): RawUtf8;
 var
   GlobalObj, FuncObj, RetVal: JSValueRaw;
   ArgArray: array of JSValueRaw;
@@ -1264,7 +1262,7 @@ begin
   GlobalObj := JS_GetGlobalObject(FContext);
 
   // Retrieve function from global object
-  FuncObj := JS_GetPropertyStr(FContext, GlobalObj, PChar(FuncName));
+  FuncObj := JS_GetPropertyStr(FContext, GlobalObj, pchar(FuncName));
 
   // Ensure it's callable
   if not JS_IsFunction(FContext, FuncObj) then
@@ -1279,75 +1277,73 @@ begin
   SetLength(ArgArray, Length(Args));
   SetLength(tmpStrs, Length(Args));
   for i := 0 to High(Args) do
-  begin
     case Args[i].VType of
       // Numbers
-      vtInteger:
-      begin
-        tmpv.From32(Args[i].VInteger);
-        ArgArray[i] := tmpv.Raw;
-      end;
+    vtInteger:
+    begin
+      tmpv.From32(Args[i].VInteger);
+      ArgArray[i] := tmpv.Raw;
+    end;
 
-      vtInt64:
-      begin
-        tmpv.from64(Args[i].VInt64^);
-        ArgArray[i] := tmpv.Raw;
-      end;
+    vtInt64:
+    begin
+      tmpv.from64(Args[i].VInt64^);
+      ArgArray[i] := tmpv.Raw;
+    end;
 
-      vtExtended:
-      begin
-        tmpv.FromFloat(Args[i].VExtended^);
-        ArgArray[i] := tmpv.Raw;
-      end;
+    vtExtended:
+    begin
+      tmpv.FromFloat(Args[i].VExtended^);
+      ArgArray[i] := tmpv.Raw;
+    end;
 
       // Booleans
-      vtBoolean:
-      begin
-        tmpv.From(Args[i].VBoolean);
-        ArgArray[i] := tmpv.Raw;
-      end;
+    vtBoolean:
+    begin
+      tmpv.From(Args[i].VBoolean);
+      ArgArray[i] := tmpv.Raw;
+    end;
 
       // Strings
-      vtChar:
-      begin
-        s := RawUtf8(Args[i].VChar);
-        tmpStrs[i] := s;
-        ArgArray[i] := JS_NewString(FContext, PChar(tmpStrs[i]));
-      end;
-
-      vtPChar:
-        ArgArray[i] := JS_NewString(FContext, Args[i].VPChar);
-
-      vtAnsiString:
-      begin
-        s := RawUtf8(ansistring(Args[i].VAnsiString));
-        tmpStrs[i] := s;
-        ArgArray[i] := JS_NewString(FContext, PChar(tmpStrs[i]));
-      end;
-
-      vtUnicodeString, vtWideString:
-      begin
-        s := RawUtf8(unicodestring(Args[i].VUnicodeString));
-        tmpStrs[i] := s;
-        ArgArray[i] := JS_NewString(FContext, PChar(tmpStrs[i]));
-      end;
-
-      vtString:
-      begin
-        s := RawUtf8(shortstring(Args[i].VString^));
-        tmpStrs[i] := s;
-        ArgArray[i] := JS_NewString(FContext, PChar(tmpStrs[i]));
-      end;
-
-      else
-      begin
-        // Fallback: stringify unsupported types
-        s := RawUtf8('{unsupported}');
-        tmpStrs[i] := s;
-        ArgArray[i] := JS_NewString(FContext, PChar(tmpStrs[i]));
-      end;
+    vtChar:
+    begin
+      s := RawUtf8(Args[i].VChar);
+      tmpStrs[i] := s;
+      ArgArray[i] := JS_NewString(FContext, pchar(tmpStrs[i]));
     end;
-  end;
+
+    vtPChar:
+      ArgArray[i] := JS_NewString(FContext, Args[i].VPChar);
+
+    vtAnsiString:
+    begin
+      s := RawUtf8(ansistring(Args[i].VAnsiString));
+      tmpStrs[i] := s;
+      ArgArray[i] := JS_NewString(FContext, pchar(tmpStrs[i]));
+    end;
+
+    vtUnicodeString, vtWideString:
+    begin
+      s := RawUtf8(unicodestring(Args[i].VUnicodeString));
+      tmpStrs[i] := s;
+      ArgArray[i] := JS_NewString(FContext, pchar(tmpStrs[i]));
+    end;
+
+    vtString:
+    begin
+      s := RawUtf8(shortstring(Args[i].VString^));
+      tmpStrs[i] := s;
+      ArgArray[i] := JS_NewString(FContext, pchar(tmpStrs[i]));
+    end;
+
+    else
+    begin
+        // Fallback: stringify unsupported types
+      s := RawUtf8('{unsupported}');
+      tmpStrs[i] := s;
+      ArgArray[i] := JS_NewString(FContext, pchar(tmpStrs[i]));
+    end;
+    end;
 
   // Invoke function
   RetVal := JS_Call(FContext, FuncObj, GlobalObj, Length(ArgArray), @ArgArray[0]);
@@ -1385,76 +1381,77 @@ begin
     Exit;
   arr := JS_NewArray(FContext);
   for i := 0 to High(Values) do
-  begin
     case Values[i].VType of
-      vtInteger:
-      begin
-        tmp.From32(Values[i].VInteger);
-        JS_SetPropertyUint32(FContext, arr, i, tmp.Raw);
-      end;
-      vtInt64:
-      begin
-        tmp.From64(Values[i].VInt64^);
-        JS_SetPropertyUint32(FContext, arr, i, tmp.Raw);
-      end;
-      vtExtended:
-      begin
-        tmp.FromFloat(Values[i].VExtended^);
-        JS_SetPropertyUint32(FContext, arr, i, tmp.Raw);
-      end;
-      vtBoolean:
-      begin
-        tmp.From(Values[i].VBoolean);
-        JS_SetPropertyUint32(FContext, arr, i, tmp.Raw);
-      end;
-      vtChar:
-      begin
-        s := RawUtf8(Values[i].VChar);
-        JS_SetPropertyUint32(FContext, arr, i, JS_NewString(FContext, PChar(s)));
-      end;
-      vtPChar:
-        JS_SetPropertyUint32(FContext, arr, i, JS_NewString(FContext, Values[i].VPChar));
-      vtAnsiString:
-      begin
-        s := RawUtf8(ansistring(Values[i].VAnsiString));
-        JS_SetPropertyUint32(FContext, arr, i, JS_NewString(FContext, PChar(s)));
-      end;
-      vtUnicodeString, vtWideString:
-      begin
-        s := RawUtf8(unicodestring(Values[i].VUnicodeString));
-        JS_SetPropertyUint32(FContext, arr, i, JS_NewString(FContext, PChar(s)));
-      end;
-      vtString:
-      begin
-        s := RawUtf8(shortstring(Values[i].VString^));
-        JS_SetPropertyUint32(FContext, arr, i, JS_NewString(FContext, PChar(s)));
-      end;
-      else
-      begin
-        s := RawUtf8('{unsupported}');
-        JS_SetPropertyUint32(FContext, arr, i, JS_NewString(FContext, PChar(s)));
-      end;
+    vtInteger:
+    begin
+      tmp.From32(Values[i].VInteger);
+      JS_SetPropertyUint32(FContext, arr, i, tmp.Raw);
     end;
-  end;
+    vtInt64:
+    begin
+      tmp.From64(Values[i].VInt64^);
+      JS_SetPropertyUint32(FContext, arr, i, tmp.Raw);
+    end;
+    vtExtended:
+    begin
+      tmp.FromFloat(Values[i].VExtended^);
+      JS_SetPropertyUint32(FContext, arr, i, tmp.Raw);
+    end;
+    vtBoolean:
+    begin
+      tmp.From(Values[i].VBoolean);
+      JS_SetPropertyUint32(FContext, arr, i, tmp.Raw);
+    end;
+    vtChar:
+    begin
+      s := RawUtf8(Values[i].VChar);
+      JS_SetPropertyUint32(FContext, arr, i, JS_NewString(FContext, pchar(s)));
+    end;
+    vtPChar:
+      JS_SetPropertyUint32(FContext, arr, i, JS_NewString(FContext, Values[i].VPChar));
+    vtAnsiString:
+    begin
+      s := RawUtf8(ansistring(Values[i].VAnsiString));
+      JS_SetPropertyUint32(FContext, arr, i, JS_NewString(FContext, pchar(s)));
+    end;
+    vtUnicodeString, vtWideString:
+    begin
+      s := RawUtf8(unicodestring(Values[i].VUnicodeString));
+      JS_SetPropertyUint32(FContext, arr, i, JS_NewString(FContext, pchar(s)));
+    end;
+    vtString:
+    begin
+      s := RawUtf8(shortstring(Values[i].VString^));
+      JS_SetPropertyUint32(FContext, arr, i, JS_NewString(FContext, pchar(s)));
+    end;
+    else
+    begin
+      s := RawUtf8('{unsupported}');
+      JS_SetPropertyUint32(FContext, arr, i, JS_NewString(FContext, pchar(s)));
+    end;
+    end;
   Result := arr;
 end;
 
 {** Call function passing a single JS array argument. }
 function TTrndiExtEngine.CallFunctionWithArrayArg(const FuncName: RawUtf8;
-  const Values: array of const): RawUtf8;
+const Values: array of const): RawUtf8;
 var
   arr: JSValueRaw;
   GlobalObj, FuncObj, RetVal: JSValueRaw;
   StrResult: pansichar;
 begin
   Result := '';
-  if IsExtShuttingDown or (FContext = nil) or (FRuntime = nil) then Exit;
-  if not FunctionExists(string(FuncName)) then Exit;
+  if IsExtShuttingDown or (FContext = nil) or (FRuntime = nil) then
+    Exit;
+  if not FunctionExists(string(FuncName)) then
+    Exit;
 
   arr := CreateJSArray(Values);
   GlobalObj := JS_GetGlobalObject(FContext);
-  FuncObj := JS_GetPropertyStr(FContext, GlobalObj, PChar(FuncName));
-  if not JS_IsFunction(FContext, FuncObj) then Exit('');
+  FuncObj := JS_GetPropertyStr(FContext, GlobalObj, pchar(FuncName));
+  if not JS_IsFunction(FContext, FuncObj) then
+    Exit('');
   RetVal := JS_Call(FContext, FuncObj, GlobalObj, 1, @arr);
   if JS_IsError(FContext, RetVal) then
   begin
@@ -1472,13 +1469,15 @@ end;
 // JS value factories
 function TTrndiExtEngine.MakeJSString(const S: RawUtf8): JSValueRaw; inline;
 begin
-  if (FContext = nil) then exit(JS_UNDEFINED);
+  if (FContext = nil) then
+    exit(JS_UNDEFINED);
   Result := JS_NewString(FContext, pansichar(S));
 end;
 
 function TTrndiExtEngine.MakeJSInt64(const V: int64): JSValueRaw; inline;
 begin
-  if (FContext = nil) then exit(JS_UNDEFINED);
+  if (FContext = nil) then
+    exit(JS_UNDEFINED);
   Result := JS_NewBigInt64(FContext, V);
 end;
 
@@ -1486,7 +1485,8 @@ function TTrndiExtEngine.MakeJSFloat(const V: double): JSValueRaw; inline;
 var
   tmp: JSValue;
 begin
-  if (FContext = nil) then exit(JS_UNDEFINED);
+  if (FContext = nil) then
+    exit(JS_UNDEFINED);
   tmp.FromFloat(V);
   Result := tmp.Raw;
 end;
@@ -1495,7 +1495,8 @@ function TTrndiExtEngine.MakeJSBool(const V: boolean): JSValueRaw; inline;
 var
   tmp: JSValue;
 begin
-  if (FContext = nil) then exit(JS_UNDEFINED);
+  if (FContext = nil) then
+    exit(JS_UNDEFINED);
   tmp.From(V);
   Result := tmp.Raw;
 end;
@@ -1507,10 +1508,10 @@ end;
 
 {** Call JS with prepared JSValueRaw arguments. }
 function TTrndiExtEngine.CallFunctionJS(const FuncName: RawUtf8;
-  const Args: array of JSValueRaw; autoFree: boolean): RawUtf8;
+const Args: array of JSValueRaw; autoFree: boolean): RawUtf8;
 begin
   // Raw only; no Rest
-  Result := InternalCall(FuncName, Args, [], autoFree, False);
+  Result := InternalCall(FuncName, Args, [], autoFree, false);
 end;
 
 {** Call a JS function supplying a pre-built first JS argument (e.g. an Array) followed by
@@ -1518,24 +1519,24 @@ end;
   autoFree      => free the marshalled Rest arguments (default true)
   autoFreeFirst => additionally free the supplied FirstArg (default false) }
 function TTrndiExtEngine.CallFunctionArrayFirst(const FuncName: RawUtf8;
-  const FirstArg: JSValueRaw; const Rest: array of const; autoFree: boolean;
-  autoFreeFirst: boolean): RawUtf8;
+const FirstArg: JSValueRaw; const Rest: array of const; autoFree: boolean;
+autoFreeFirst: boolean): RawUtf8;
 begin
   Result := InternalCall(FuncName, [FirstArg], Rest, autoFreeFirst, autoFree);
 end;
 
 {** Call with an array of pre-built JSValueRaw arguments followed by marshalled Pascal args. }
 function TTrndiExtEngine.CallFunctionMixed(const FuncName: RawUtf8;
-  const RawArgs: array of JSValueRaw; const Rest: array of const;
-  restAutoFree: boolean; rawAutoFree: boolean): RawUtf8;
+const RawArgs: array of JSValueRaw; const Rest: array of const;
+restAutoFree: boolean; rawAutoFree: boolean): RawUtf8;
 begin
   Result := InternalCall(FuncName, RawArgs, Rest, rawAutoFree, restAutoFree);
 end;
 
 // Internal unified call implementation
 function TTrndiExtEngine.InternalCall(const FuncName: RawUtf8;
-  const RawPrefix: array of JSValueRaw; const Rest: array of const;
-  freeRaw, freeRest: boolean): RawUtf8;
+const RawPrefix: array of JSValueRaw; const Rest: array of const;
+freeRaw, freeRest: boolean): RawUtf8;
 var
   GlobalObj, FuncObj, RetVal: JSValueRaw;
   ArgArray: array of JSValueRaw;
@@ -1569,11 +1570,13 @@ begin
         (would attempt to free it multiple times). If needed, build separate JS values.
   }
   Result := '';
-  if IsExtShuttingDown or (FContext = nil) or (FRuntime = nil) then Exit;
-  if not FunctionExists(string(FuncName)) then Exit;
+  if IsExtShuttingDown or (FContext = nil) or (FRuntime = nil) then
+    Exit;
+  if not FunctionExists(string(FuncName)) then
+    Exit;
 
   GlobalObj := JS_GetGlobalObject(FContext);
-  FuncObj := JS_GetPropertyStr(FContext, GlobalObj, PChar(FuncName));
+  FuncObj := JS_GetPropertyStr(FContext, GlobalObj, pchar(FuncName));
   if not JS_IsFunction(FContext, FuncObj) then
   begin
     JS_Free(FContext, @GlobalObj);
@@ -1587,54 +1590,60 @@ begin
   base := Length(RawPrefix);
   SetLength(tmpStrs, Length(Rest));
   for i := 0 to High(Rest) do
-  begin
     case Rest[i].VType of
-      vtInteger: begin
-        tmpv.From32(Rest[i].VInteger);
-        ArgArray[base + i] := tmpv.Raw;
-      end;
-      vtInt64: begin
-        tmpv.From64(Rest[i].VInt64^);
-        ArgArray[base + i] := tmpv.Raw;
-      end;
-      vtExtended: begin
-        tmpv.FromFloat(Rest[i].VExtended^);
-        ArgArray[base + i] := tmpv.Raw;
-      end;
-      vtBoolean: begin
-        tmpv.From(Rest[i].VBoolean);
-        ArgArray[base + i] := tmpv.Raw;
-      end;
-      vtChar: begin
-        s := RawUtf8(Rest[i].VChar);
-        tmpStrs[i] := s;
-        ArgArray[base + i] := JS_NewString(FContext, PChar(tmpStrs[i]));
-      end;
-      vtPChar: ArgArray[base + i] := JS_NewString(FContext, Rest[i].VPChar);
-      vtAnsiString: begin
-        s := RawUtf8(ansistring(Rest[i].VAnsiString));
-        tmpStrs[i] := s;
-        ArgArray[base + i] := JS_NewString(FContext, PChar(tmpStrs[i]));
-      end;
-      vtUnicodeString, vtWideString:
-      begin
-        s := RawUtf8(unicodestring(Rest[i].VUnicodeString));
-        tmpStrs[i] := s;
-        ArgArray[base + i] := JS_NewString(FContext, PChar(tmpStrs[i]));
-      end;
-      vtString: begin
-        s := RawUtf8(shortstring(Rest[i].VString^));
-        tmpStrs[i] := s;
-        ArgArray[base + i] := JS_NewString(FContext, PChar(tmpStrs[i]));
-      end;
-      else
-      begin
-        s := RawUtf8('{unsupported}');
-        tmpStrs[i] := s;
-        ArgArray[base + i] := JS_NewString(FContext, PChar(tmpStrs[i]));
-      end;
+    vtInteger:
+    begin
+      tmpv.From32(Rest[i].VInteger);
+      ArgArray[base + i] := tmpv.Raw;
     end;
-  end;
+    vtInt64:
+    begin
+      tmpv.From64(Rest[i].VInt64^);
+      ArgArray[base + i] := tmpv.Raw;
+    end;
+    vtExtended:
+    begin
+      tmpv.FromFloat(Rest[i].VExtended^);
+      ArgArray[base + i] := tmpv.Raw;
+    end;
+    vtBoolean:
+    begin
+      tmpv.From(Rest[i].VBoolean);
+      ArgArray[base + i] := tmpv.Raw;
+    end;
+    vtChar:
+    begin
+      s := RawUtf8(Rest[i].VChar);
+      tmpStrs[i] := s;
+      ArgArray[base + i] := JS_NewString(FContext, pchar(tmpStrs[i]));
+    end;
+    vtPChar:
+      ArgArray[base + i] := JS_NewString(FContext, Rest[i].VPChar);
+    vtAnsiString:
+    begin
+      s := RawUtf8(ansistring(Rest[i].VAnsiString));
+      tmpStrs[i] := s;
+      ArgArray[base + i] := JS_NewString(FContext, pchar(tmpStrs[i]));
+    end;
+    vtUnicodeString, vtWideString:
+    begin
+      s := RawUtf8(unicodestring(Rest[i].VUnicodeString));
+      tmpStrs[i] := s;
+      ArgArray[base + i] := JS_NewString(FContext, pchar(tmpStrs[i]));
+    end;
+    vtString:
+    begin
+      s := RawUtf8(shortstring(Rest[i].VString^));
+      tmpStrs[i] := s;
+      ArgArray[base + i] := JS_NewString(FContext, pchar(tmpStrs[i]));
+    end;
+    else
+    begin
+      s := RawUtf8('{unsupported}');
+      tmpStrs[i] := s;
+      ArgArray[base + i] := JS_NewString(FContext, pchar(tmpStrs[i]));
+    end;
+    end;
 
   if Length(ArgArray) = 0 then
     RetVal := JS_Call(FContext, FuncObj, GlobalObj, 0, nil)
@@ -1690,10 +1699,10 @@ var
 begin
   // Safety check: don't attempt calls during shutdown or if context is invalid
   if IsExtShuttingDown or (FContext = nil) or (FRuntime = nil) then
-    Exit(False);
+    Exit(false);
 
-  res := FContext^.GetValue(PChar(FuncName), func);
-  if res = False then
+  res := FContext^.GetValue(pchar(FuncName), func);
+  if res = false then
     Result := res
   else
     Result := func.IsObject;
@@ -1722,17 +1731,15 @@ end;
 class procedure TTrndiExtEngine.ReleaseInstance;
 begin
   // Signal shutdown first to prevent recreation
-  SetExtShuttingDown(True);
+  SetExtShuttingDown(true);
 
   // Only free if instance exists (safe for multiple calls)
   if FInstance <> nil then
-  begin
-    try
-      FreeAndNil(FInstance);
-    except
+  try
+    FreeAndNil(FInstance);
+  except
       // Ignore any errors during shutdown cleanup
       // The OS will clean up remaining resources anyway
-    end;
   end;
 end;
 

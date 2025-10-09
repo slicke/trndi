@@ -26,19 +26,19 @@ unit trndi.api.debug_custom;
 interface
 
 uses
-  Classes, SysUtils, Dialogs, trndi.types,
-  trndi.api.debug, fpjson, jsonparser, dateutils;
+Classes, SysUtils, Dialogs, trndi.types,
+trndi.api.debug, fpjson, jsonparser, dateutils;
 
 type
   // Main class
-  DebugCustomAPI = class(DebugAPI)
-  protected
-  public
-    setval: integer;
-    function getReadings({%H-}min, {%H-}maxNum: integer; {%H-}extras: string;
-      out res: string): BGResults; override;
-    constructor Create(user, pass, extra: string); override;
-  end;
+DebugCustomAPI = class(DebugAPI)
+protected
+public
+  setval: integer;
+  function getReadings({%H-}min, {%H-}maxNum: integer; {%H-}extras: string;
+    out res: string): BGResults; override;
+  constructor Create(user, pass, extra: string); override;
+end;
 
 implementation
 
@@ -54,9 +54,9 @@ begin
 end;
 
 function DebugCustomAPI.getReadings(min, maxNum: integer; extras: string;
-  out res: string): BGResults;
+out res: string): BGResults;
 
-  function getFakeTime(const min: integer): TDateTime;
+function getFakeTime(const min: integer): TDateTime;
   var
     currentTime: TDateTime;
     baseTime: TDateTime;
