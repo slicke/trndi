@@ -163,6 +163,9 @@ class var touchOverride: TTrndiBool;
     {** Read setting, empty will return default. }
   function GetSettingEx(const keyname: string; def: string = '';
     global: boolean = false): string;
+    {** Compare a setting to a value. }
+  function CheckSetting(const keyname: string; def: string; match: string;
+    global: boolean = false): boolean; virtual;
 
     // Theme/Env
     {** Determine if the OS/theme uses a dark appearance. Platforms override. }
@@ -1229,6 +1232,23 @@ begin
   else
     Result := res;
 end;
+
+{------------------------------------------------------------------------------
+  CheckSetting
+  -------------------------
+  Compares a setting result to an expected value
+ ------------------------------------------------------------------------------}
+function TTrndiNativeBase.CheckSetting(const keyname: string; def: string; match: string;
+  global: boolean = false): boolean;
+var
+  val: string;
+begin
+   val := GetSetting(keyname, def, global);
+   val := Trim(val);
+   val := LowerCase(val);
+   result := SameText(val, LowerCase(match));
+end;
+
 {------------------------------------------------------------------------------
   GetBoolSetting
   -------------------------
