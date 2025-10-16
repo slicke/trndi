@@ -1259,7 +1259,7 @@ begin
 
     // Privacy and unit settings
     privacyMode := GetBoolSetting('ext.privacy');
-    if GetSetting('unit', 'mmol') = 'mmol' then
+    if CheckSetting('unit', 'mmol', 'mmol') then
       un := BGUnit.mmol
     else
       un := BGUnit.mgdl;
@@ -2867,7 +2867,7 @@ procedure LoadUserSettings(f: TfConf);
       edCommaSep.Text := GetCharSetting('locale.separator', '.');
       edTray.Value := GetIntSetting('ux.badge_size', 0);
 
-      if GetSetting('unit', 'mmol') = 'mmol' then
+      if CheckSetting('unit', 'mmol', 'mmol') then
         rbUnitClick(Self);
 
       cbCust.Checked := GetBoolSetting('override.enabled');
@@ -2933,7 +2933,7 @@ procedure LoadLanguageSettings(f: TfConf);
         cbLang.Items[i] := ExtractDelimited(2, s, ['.']);
         s := cbLang.Items[i];
         cbLang.Items[i] := Format('%s (%s)', [GetLanguageName(s), s]);
-        if GetSetting('locale', '') = s then
+        if CheckSetting('locale', '', s) then
           cbLang.ItemIndex := i;
       end;
       if cbLang.ItemIndex = -1 then
