@@ -1243,6 +1243,10 @@ begin
   case r of
   'true':
     Result := true;
+  '1':
+    Result := true;
+  '0':
+    Result := false;
   'false':
     Result := false;
   else
