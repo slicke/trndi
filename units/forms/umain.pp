@@ -1258,7 +1258,7 @@ begin
     Application.ProcessMessages;
 
     // Privacy and unit settings
-    privacyMode := GetSetting('ext.privacy', '0') = '1';
+    privacyMode := GetBoolSetting('ext.privacy');
     if GetSetting('unit', 'mmol') = 'mmol' then
       un := BGUnit.mmol
     else
@@ -1313,12 +1313,12 @@ begin
     {$endif}
 
     // Override settings
-    if GetIntSetting('override.enabled', 0) = 1 then
+    if GetBoolSetting('override.enabled') then
     begin
       api.cgmLo := GetIntSetting('override.lo', api.cgmLo);
       api.cgmHi := GetIntSetting('override.hi', api.cgmHi);
     end;
-    if GetIntSetting('override.range', 0) = 1 then
+    if GetBoolSetting('override.range') then
     begin
       api.cgmRangeLo := GetIntSetting('override.rangelo', api.cgmRangeLo);
       api.cgmRangeHi := GetIntSetting('override.rangehi', api.cgmRangeHi);
@@ -2870,8 +2870,8 @@ procedure LoadUserSettings(f: TfConf);
       if GetSetting('unit', 'mmol') = 'mmol' then
         rbUnitClick(Self);
 
-      cbCust.Checked := GetIntSetting('override.enabled', 0) = 1;
-      cbCustRange.Checked := GetIntSetting('override.range', 0) = 1;
+      cbCust.Checked := GetBoolSetting('override.enabled');
+      cbCustRange.Checked := GetBoolSetting('override.range');
       edMusicHigh.Text := GetSetting('media.url_high', '');
       edMusicLow.Text := GetSetting('media.url_low', '');
       edMusicPerfect.Text := GetSetting('media.url_perfect', '');
@@ -3019,7 +3019,7 @@ procedure SetupExtensions(f: TfConf);
       eExt.Text := '- ' + RS_noPlugins + ' -';
       eExt.Enabled := false;
       {$endif}
-      cbPrivacy.Checked := GetSetting('ext.privacy', '0') = '1';
+      cbPrivacy.Checked := GetBoolSetting('ext.privacy');
     end;
   end;
 
@@ -3073,7 +3073,7 @@ procedure SaveUserSettings(f: TfConf);
       SetSetting('remote.target', eAddr.Text);
       SetSetting('remote.creds', ePass.Text);
       SetSetting('unit', IfThen(rbUnit.ItemIndex = 0, 'mmol', 'mgdl'));
-      SetSetting('ext.privacy', IfThen(cbPrivacy.Checked, '1', '0'));
+      SetBoolSetting('ext.privacy', cbPrivacy.Checked);
 
       SetSetting('system.fresh_threshold', IntToStr(spTHRESHOLD.Value));
 
@@ -3101,8 +3101,8 @@ procedure SaveUserSettings(f: TfConf);
       native.SetSetting('locale.separator', edCommaSep.Text);
       native.SetSetting('ux.badge_size', edTray.Value.ToString);
 
-      SetSetting('override.enabled', IfThen(cbCust.Checked, '1', '0'));
-      SetSetting('override.range', IfThen(cbCustRange.Checked, '1', '0'));
+      SetBoolSetting('override.enabled', cbCust.Checked);
+      SetBoolSetting('override.range', cbCustRange.Checked);
       SetSetting('media.url_high', edMusicHigh.Text);
       SetSetting('media.url_low', edMusicLow.Text);
       SetSetting('media.url_perfect', edMusicPerfect.Text);
