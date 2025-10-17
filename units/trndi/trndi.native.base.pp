@@ -144,7 +144,7 @@ class var touchOverride: TTrndiBool;
   procedure DeleteSetting(const keyname: string; global: boolean = false);
     virtual; abstract;
     {** Delete a non-user-scoped key. }
-  procedure DeleteRootSetting(keyname: string; const val: string);
+  procedure DeleteRootSetting(keyname: string);
     {** Read a non-user-scoped key or default. }
   function GetRootSetting(const keyname: string; def: string = ''): string;
     {** Read a string setting or default. Empty is a valid value, @link(GetSettingEx) handles empty values as default; honor @param(global) scoping. }
@@ -1383,7 +1383,7 @@ end;
   ----------------------
   Delete a non-user-scoped key from platform-specific storage.
  ------------------------------------------------------------------------------}
-procedure TTrndiNativeBase.DeleteRootSetting(keyname: string; const val: string);
+procedure TTrndiNativeBase.DeleteRootSetting(keyname: string);
 begin
   DeleteSetting(keyname, true);
 end;
