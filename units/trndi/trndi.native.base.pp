@@ -147,7 +147,7 @@ class var touchOverride: TTrndiBool;
   procedure DeleteRootSetting(keyname: string; const val: string);
     {** Read a non-user-scoped key or default. }
   function GetRootSetting(const keyname: string; def: string = ''): string;
-    {** Read a string setting or default; honor @param(global) scoping. }
+    {** Read a string setting or default. Empty is a valid value, @link(GetSettingEx) handles empty values as default; honor @param(global) scoping. }
   function GetSetting(const keyname: string; def: string = '';
     global: boolean = false): string; virtual; abstract;
     {** Read a char setting (first character), or @param(def). }
@@ -1220,7 +1220,8 @@ end;
 {------------------------------------------------------------------------------
   GetSettingEx
   -------------------------
-  Gets a setting, but if empty returns default value}
+  Gets a setting, but if empty returns default value
+  -----------------------------------------------------------------------------}
 function TTrndiNativeBase.GetSettingEx(const keyname: string;
 def: string = ''; global: boolean = false): string;
 var
