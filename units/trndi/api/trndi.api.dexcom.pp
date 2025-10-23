@@ -37,8 +37,6 @@ fpjson, jsonparser, dateutils, StrUtils;
 const
   {** Dexcom Share login by account name endpoint. }
 DEXCOM_LOGIN_ENDPOINT = 'General/LoginPublisherAccountByName';
-  {** Dexcom Share authenticate account endpoint. }
-DEXCOM_AUTHENTICATE_ENDPOINT = 'General/AuthenticatePublisherAccount';
   {** Verify receiver/transmitter serial assignment status. }
 DEXCOM_VERIFY_SERIAL_NUMBER_ENDPOINT =
   'Publisher/CheckMonitoredReceiverAssignmentStatus';
@@ -115,10 +113,9 @@ public
     {** Authenticate with Dexcom Share, establish a session, and synchronize time.
 
         Workflow:
-        1) Authenticate to get initial session token.
+        1) Login using LoginPublisherAccountByName to get session token.
         2) Validate session.
-        3) Call login-by-name to finalize session.
-        4) Retrieve server UTC time and compute @code(timeDiff).
+        3) Retrieve server UTC time and compute @code(timeDiff).
 
         @returns(True if session established and time synchronized; otherwise False
                  and @code(errormsg) is set.)
@@ -206,9 +203,9 @@ begin
   LBody := Format('{ "accountName": "%s", "password": "%s", "applicationId": "%s" }',
     [FUserName, FPassword, DEXCOM_APPLICATION_ID]);
 
-  // 1) Authenticate to obtain preliminary session token
+  // 1) Authenticate to obtain session token
   FSessionID := StringReplace(
-    native.Request(true, DEXCOM_AUTHENTICATE_ENDPOINT, [], LBody),
+    native.Request(true, DEXCOM_LOGIN_ENDPOINT, [], LBody),
     '"', '', [rfReplaceAll]);
 
   // If response indicates password/credential issues, fail early
@@ -227,20 +224,8 @@ begin
     Exit;
   end;
 
-  // 3) Finalize session by logging in by account name
-  FSessionID := StringReplace(native.Request(true, DEXCOM_LOGIN_ENDPOINT, [], LBody),
-    '"', '', [rfReplaceAll]);
-
-  // Validate once more
-  if not CheckSession then
-  begin
-    Result := false;
-    lastErr := sErrDexPostLogin + ' (Dex3)';
-    Exit;
-  end;
-
-  // 4) Retrieve system UTC time for time-diff calibration
-  LTimeResponse := native.Request(false, DEXCOM_TIME_ENDPOINT, [], '');
+  // 3) Retrieve system UTC time for time-diff calibration
+  LTimeResponse := native.Request(false, DEXCOM_TIME_ENDPOINT, [], '', 'Accept=application/json');
 
   // Dexcom may respond as XML-like <SystemTime> or JSON-ish /Date(ms)/ format
   if Pos('>', LTimeResponse) > 0 then
@@ -303,7 +288,7 @@ begin
   LParams[2] := 'serialNumber=' + encodeStr(ASerial);
 
   // Dexcom returns 'AssignedToYou' when serial number is associated
-  LResponse := native.Request(true, DEXCOM_VERIFY_SERIAL_NUMBER_ENDPOINT, LParams, '');
+  LResponse := native.Request(true, DEXCOM_VERIFY_SERIAL_NUMBER_ENDPOINT, LParams, '', 'Accept=application/json');
   if LResponse = 'AssignedToYou' then
     Result := true;
 end;
@@ -347,8 +332,8 @@ begin
   LParams[3] := 'maxCount=' + IntToStr(AMaxCount);
 
   // Fetch glucose values; some deployments also allow reading alert settings
-  LGlucoseJSON := native.Request(true, DEXCOM_GLUCOSE_READINGS_ENDPOINT, LParams, '');
-  LAlertJSON := native.Request(true, DEXCOM_ALERT_ENDPOINT, LParams, '');
+  LGlucoseJSON := native.Request(true, DEXCOM_GLUCOSE_READINGS_ENDPOINT, LParams, '', 'Accept=application/json');
+  LAlertJSON := native.Request(true, DEXCOM_ALERT_ENDPOINT, LParams, '', 'Accept=application/json');
 
   res := LGlucoseJSON;
 
