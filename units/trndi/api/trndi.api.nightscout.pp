@@ -236,12 +236,12 @@ begin
   // 10) Convert milliseconds to TDateTime (UnixToDateTime expects seconds).
   UTCDateTime := UnixToDateTime(ServerEpoch div 1000);
 
-  // 11) Compute timeDiff as the difference between server UTC and local UTC.
-  //     Note: Clamped to non-negative, then negated to align with later usage.
-  TimeDiff := SecondsBetween(UTCDateTime, LocalTimeToUniversal(Now));
-  if TimeDiff < 0 then
-    TimeDiff := 0;
-  TimeDiff := -TimeDiff;
+  // 11) Compute timeDiff as the difference between server UTC and local time.
+  //     Calculate time difference: server time (UTC) minus local time (not converted to UTC)
+  //     This accounts for both clock skew and timezone offset
+  TimeDiff := Round((UTCDateTime - Now) * 86400);
+  // Set tz so JSToDateTime applies the correction to reading timestamps
+  tz := TimeDiff;
 
   Result := true;
 end;
