@@ -5,7 +5,7 @@
 ![Trndi](doc/img/trndi-logo.png)
 
 # Trndi - CGM data on Desktop and RaspberryPi<br><sup>_Nightscout - Dexcom - xDrip WiFi_</sup> 
-## <b> 🪟 Windows - 🍎 macOS - 🐧 Linux - 🥧 RaspberryPi/ARM Linux </b>
+## <b> 🪟 Windows - 🍎 macOS - 🐧 Linux - 🥧 RaspberryPi/ARM Linux </b
 
 ![Windows](doc/img/img_win.png)
 <br>Windows 11
@@ -17,6 +17,8 @@
 <br>RaspberryPi (with touch screen)
 
 ### Introduction
+> __NEW__: Join us on [Discord](https://discord.gg/QXACfpcW)
+
 Trndi is a _desktop app_ that shows the your blood sugar and graph. It works with  _Night Scout_ and _Dexcom Share_ at the moment.
 It also supports the _xDrip_ app, connecting over the local network/WiFi.
 
@@ -53,6 +55,9 @@ Click/hold the reading (or "Setup" text) and choose settings to access settings.
 > _NOTE_ To receive notifications see [here](guides/Notifications.md)
 
 > See a box instead of an icon? On Debian systems, you may need to install a graphic font. I recommend fonts-noto-color-emoji.
+
+# Support
+Join us on [Discord](https://discord.gg/QXACfpcW) to discuss issues or new features
 
 # Development
 Development tools can be obtained via most distros package managers:
