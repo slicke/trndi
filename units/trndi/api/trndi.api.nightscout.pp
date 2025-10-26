@@ -260,6 +260,9 @@ var
   t: BGTrend;
   s, resp, dev: string;
   params: array[1..1] of string;
+  deltaField, rssiField, noiseField: TJSONData;
+  deltaValue: single;
+  rssiValue, noiseValue, currentSgv, prevSgv: integer;
 begin
   // Default to SGV endpoint if caller provided no override.
   if extras = '' then
@@ -293,11 +296,42 @@ begin
       // Initialize reading in mg/dL; source identifier uses class name.
       Result[i].Init(mgdl, self.ToString);
 
+      // Get current SGV value
+      currentSgv := FindPath('sgv').AsInteger;
+
       // Value and trend delta.
-      Result[i].update(FindPath('sgv').AsInteger, single(FindPath('delta').AsFloat));
+      // Some Nightscout entries may not include delta field
+      deltaField := FindPath('delta');
+      if Assigned(deltaField) then
+        deltaValue := single(deltaField.AsFloat)
+      else
+      begin
+        // Calculate delta manually from previous reading
+        // Nightscout returns entries in reverse chronological order (newest first)
+        if i < js.Count - 1 then
+        begin
+          // Get the previous (older) reading's SGV
+          prevSgv := js.FindPath(Format('[%d].sgv', [i + 1])).AsInteger;
+          deltaValue := single(currentSgv - prevSgv);
+        end
+        else
+          // Last (oldest) entry has no previous reading to compare
+          deltaValue := 0;
+      end;
+      Result[i].update(currentSgv, deltaValue);
 
       // Receiver environment details (optional fields in Nightscout).
-      Result[i].updateEnv(dev, FindPath('rssi').AsInteger, FindPath('noise').AsInteger);
+      rssiField := FindPath('rssi');
+      noiseField := FindPath('noise');
+      if Assigned(rssiField) then
+        rssiValue := rssiField.AsInteger
+      else
+        rssiValue := 0;
+      if Assigned(noiseField) then
+        noiseValue := noiseField.AsInteger
+      else
+        noiseValue := 0;
+      Result[i].updateEnv(dev, rssiValue, noiseValue);
 
       // Translate Nightscout 'direction' string to BGTrend enum.
       s := FindPath('direction').AsString;
