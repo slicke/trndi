@@ -267,14 +267,16 @@ begin
   if serverEpoch > 0 then
   begin
     UTCDateTime := UnixToDateTime(serverEpoch div 1000);
-    timeDiff := SecondsBetween(UTCDateTime, LocalTimeToUniversal(Now));
-    if timeDiff < 0 then
-      timeDiff := 0;
-    timeDiff := -timeDiff;
+    // Calculate time difference: server time (UTC) minus local time (not converted to UTC)
+    // This accounts for both clock skew and timezone offset
+    timeDiff := Round((UTCDateTime - Now) * 86400);
+    // Set tz so JSToDateTime applies the correction to reading timestamps
+    tz := timeDiff;
   end
   else
   begin
     timeDiff := 0;
+    tz := 0;
   end;
 
   // 5) Fetch thresholds using legacy status (aligns with v2 controller semantics)
@@ -353,6 +355,11 @@ var
   params: array of string;
   fbparams: array of string;
   oldBase: string;
+  deltaField, rssiField, noiseField: TJSONData;
+  deltaValue: single;
+  rssiValue, noiseValue, currentSgv, prevSgv: integer;
+  j: integer;
+  tempReading: BGReading;
 
   function ExtractArrayNode(const jd: TJSONData): TJSONData;
   var
@@ -381,9 +388,11 @@ begin
     extras := NS3_ENTRIES;
 
   // Build v3 query params
-  SetLength(params, 2);
+  // Try both limit and sort parameters - v3 API may use different syntax
+  SetLength(params, 3);
   params[0] := 'limit=' + IntToStr(maxNum);
-  params[1] := 'sort$desc=date';
+  params[1] := 'sort=-date';
+  params[2] := 'fields=date,sgv,delta,direction,device,rssi,noise';
 
   try
     resp := native.request(False, extras, params, '', BearerHeader);
@@ -454,9 +463,43 @@ begin
 
       Result[i].Init(mgdl, Self.ToString);
 
-      // Values
-      Result[i].update(FindPath('sgv').AsInteger, single(FindPath('delta').AsFloat));
-      Result[i].updateEnv(dev, FindPath('rssi').AsInteger, FindPath('noise').AsInteger);
+      // Get current SGV value
+      currentSgv := FindPath('sgv').AsInteger;
+
+      // Value and trend delta.
+      // Some Nightscout entries may not include delta field
+      deltaField := FindPath('delta');
+      if Assigned(deltaField) then
+        deltaValue := single(deltaField.AsFloat)
+      else
+      begin
+        // Calculate delta manually from previous reading
+        // Nightscout returns entries in reverse chronological order (newest first)
+        if i < arrNode.Count - 1 then
+        begin
+          // Get the previous (older) reading's SGV
+          prevSgv := arrNode.FindPath(Format('[%d].sgv', [i + 1])).AsInteger;
+          deltaValue := single(currentSgv - prevSgv);
+        end
+        else
+          // Last (oldest) entry has no previous reading to compare
+          deltaValue := 0;
+      end;
+
+      // Receiver environment details (optional fields in Nightscout).
+      rssiField := FindPath('rssi');
+      noiseField := FindPath('noise');
+      if Assigned(rssiField) then
+        rssiValue := rssiField.AsInteger
+      else
+        rssiValue := 0;
+      if Assigned(noiseField) then
+        noiseValue := noiseField.AsInteger
+      else
+        noiseValue := 0;
+
+      Result[i].update(currentSgv, deltaValue);
+      Result[i].updateEnv(dev, rssiValue, noiseValue);
 
       // Trend mapping by name
       s := FindPath('direction').AsString;
@@ -482,6 +525,36 @@ begin
     end;
 
   js.Free;
+
+  // Check if array is in ascending order (oldest first) by comparing first and last dates
+  // If so, reverse it so newest is first (expected by the rest of Trndi)
+  if (Length(Result) > 1) and (Result[0].date < Result[Length(Result) - 1].date) then
+  begin
+    // Reverse the array
+    for i := 0 to (Length(Result) div 2) - 1 do
+    begin
+      j := Length(Result) - 1 - i;
+      tempReading := Result[i];
+      Result[i] := Result[j];
+      Result[j] := tempReading;
+    end;
+
+    // Recalculate deltas since the order has changed
+    // After reversal, newest is first, so delta = current - previous (next in array)
+    for i := 0 to Length(Result) - 1 do
+    begin
+      if i < Length(Result) - 1 then
+      begin
+        deltaValue := single(Result[i].val - Result[i + 1].val);
+        Result[i].update(Result[i].val, deltaValue);
+      end
+      else
+      begin
+        // Last (oldest) entry has no previous reading
+        Result[i].update(Result[i].val, 0);
+      end;
+    end;
+  end;
 end;
 
 {------------------------------------------------------------------------------
