@@ -204,9 +204,19 @@ begin
     [FUserName, FPassword, DEXCOM_APPLICATION_ID]);
 
   // 1) Authenticate to obtain session token
+  // Note: native.Request automatically adds Content-Type and Accept headers when jsondata is provided
   FSessionID := StringReplace(
     native.Request(true, DEXCOM_LOGIN_ENDPOINT, [], LBody),
     '"', '', [rfReplaceAll]);
+
+  // Check for various error responses before validation
+  if (FSessionID = '') or (Pos('error', LowerCase(FSessionID)) > 0) or
+     (Pos('invalid', LowerCase(FSessionID)) > 0) then
+  begin
+    Result := false;
+    lastErr := sErrDexLogin + ' (Dex1a): ' + FSessionID;
+    Exit;
+  end;
 
   // If response indicates password/credential issues, fail early
   if Pos('AccountPassword', FSessionID) > 0 then
@@ -220,7 +230,8 @@ begin
   if not CheckSession then
   begin
     Result := false;
-    lastErr := sErrDexLogin + ' (Dex2)';
+    // Include the actual session ID in error for debugging
+    lastErr := sErrDexLogin + ' (Dex2): Received invalid session ID: ' + FSessionID;
     Exit;
   end;
 
