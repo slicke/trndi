@@ -272,6 +272,9 @@ RS_PRIVACY_HELP =
 RS_DEX =
   'Dexcom servers do not provide custom high and low blood sugar values. Please set your own thresholds at the bottom of this window.';
 
+RS_BETA =
+  'This backend is in a beta stage, it may not work as intended! If possible, choose another backend.';
+
 RS_ENTER_USER = 'Enter a username';
 RS_ENTER_NAME = 'Letters, space and numbers only';
 RS_ENTER_ANY = 'Please enter a name';
@@ -801,6 +804,8 @@ begin
     gbOverride.Color := $00D3D2EE;
     ShowMessage(RS_DEX);
   end;
+    if Pos('Scout v3', cbSys.Text) > 0 then
+      ShowMessage(RS_BETA);
   // Update parameter labels above edits based on backend
   // Defaults from base class
   Label15.Caption := TrndiAPI.ParamLabel(1);

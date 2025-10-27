@@ -388,10 +388,11 @@ begin
     extras := NS3_ENTRIES;
 
   // Build v3 query params
-  // Try both limit and sort parameters - v3 API may use different syntax
+  // Nightscout v3 API may have different sort syntax than v1/v2
+  // Try using sort$desc for descending order
   SetLength(params, 3);
   params[0] := 'limit=' + IntToStr(maxNum);
-  params[1] := 'sort=-date';
+  params[1] := 'sort$desc=date';  // Try v3 syntax for descending sort
   params[2] := 'fields=date,sgv,delta,direction,device,rssi,noise';
 
   try
@@ -526,11 +527,11 @@ begin
 
   js.Free;
 
-  // Check if array is in ascending order (oldest first) by comparing first and last dates
-  // If so, reverse it so newest is first (expected by the rest of Trndi)
+  // Data from Nightscout v3 should come in descending order (newest first) due to sort=-date
+  // However, check and reverse if needed for compatibility
   if (Length(Result) > 1) and (Result[0].date < Result[Length(Result) - 1].date) then
   begin
-    // Reverse the array
+    // Data came in ascending order (oldest first) - need to reverse
     for i := 0 to (Length(Result) div 2) - 1 do
     begin
       j := Length(Result) - 1 - i;
@@ -538,21 +539,20 @@ begin
       Result[i] := Result[j];
       Result[j] := tempReading;
     end;
+  end;
 
-    // Recalculate deltas since the order has changed
-    // After reversal, newest is first, so delta = current - previous (next in array)
-    for i := 0 to Length(Result) - 1 do
+  // Recalculate deltas for all readings (newest should be first)
+  for i := 0 to Length(Result) - 1 do
+  begin
+    if i < Length(Result) - 1 then
     begin
-      if i < Length(Result) - 1 then
-      begin
-        deltaValue := single(Result[i].val - Result[i + 1].val);
-        Result[i].update(Result[i].val, deltaValue);
-      end
-      else
-      begin
-        // Last (oldest) entry has no previous reading
-        Result[i].update(Result[i].val, 0);
-      end;
+      deltaValue := single(Result[i].val - Result[i + 1].val);
+      Result[i].update(Result[i].val, deltaValue);
+    end
+    else
+    begin
+      // Last (oldest) entry has no previous reading
+      Result[i].update(Result[i].val, 0);
     end;
   end;
 end;

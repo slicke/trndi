@@ -1368,6 +1368,10 @@ msgstr ""
 msgid "Auto-detect"
 msgstr ""
 
+#: uconf.rs_beta
+msgid "This backend is in a beta stage, it may not work as intended! If possible, choose another backend."
+msgstr ""
+
 #: uconf.rs_choose_system
 msgid "Select your CGM system in the list, then enter your credentials"
 msgstr ""
