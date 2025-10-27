@@ -226,6 +226,28 @@ const
      }
   function JSToDateTime(ts: int64; correct: boolean = true): TDateTime; virtual;
 
+    {** Predict future blood glucose readings using linear regression.
+        Uses recent historical readings to calculate a trend line and projects
+        future values. The prediction quality depends on the stability of the trend.
+
+        Algorithm:
+        - Fetches recent readings (last 30-60 minutes)
+        - Applies linear regression on time vs. BG value
+        - Extrapolates forward to predict future values
+        - Each prediction is spaced by the average interval between historical readings
+
+        @param(numPredictions Number of future readings to predict (1-10 recommended))
+        @param(predictions    Out parameter receiving array of predicted readings)
+        @returns(True if prediction succeeded; False if insufficient data)
+
+        Notes:
+        - Requires at least 3 historical readings for reliable prediction
+        - Predictions become less accurate further into the future
+        - Does not account for meals, insulin, or other external factors
+        - Predicted readings have their @code(trend) field set to BGUnknown
+     }
+  function predictReadings(numPredictions: integer; out predictions: BGResults): boolean;
+
     // -------- Properties --------
 
     {** Indexed read-only access to thresholds by @code(BGValLevel). }
@@ -472,6 +494,127 @@ begin
   else
     Result := '';
   end;
+end;
+
+{------------------------------------------------------------------------------
+  Predict future blood glucose readings using linear regression.
+  Returns True if prediction succeeded; False if insufficient data.
+------------------------------------------------------------------------------}
+function TrndiAPI.predictReadings(numPredictions: integer; 
+  out predictions: BGResults): boolean;
+var
+  historicalReadings: BGResults;
+  n, i: integer;
+  sumX, sumY, sumXY, sumX2: double;
+  meanX, meanY, slope, intercept: double;
+  timeValues: array of double;
+  bgValues: array of double;
+  avgInterval: double;
+  lastTime: TDateTime;
+  predictedTime: TDateTime;
+  predictedValue: double;
+  minReadings: integer;
+begin
+  Result := False;
+  SetLength(predictions, 0);
+  
+  // Validate input
+  if numPredictions < 1 then
+    Exit;
+  
+  // Clamp to reasonable range
+  if numPredictions > 20 then
+    numPredictions := 20;
+  
+  // Minimum readings needed for prediction
+  minReadings := 3;
+  
+  // Fetch recent readings (last 60 minutes, up to 12 readings = ~5 min intervals)
+  historicalReadings := getReadings(60, 12);
+  n := Length(historicalReadings);
+  
+  if n < minReadings then
+  begin
+    lastErr := 'Insufficient data for prediction (need at least ' + 
+               IntToStr(minReadings) + ' readings)';
+    Exit;
+  end;
+  
+  // Prepare arrays for linear regression
+  SetLength(timeValues, n);
+  SetLength(bgValues, n);
+  
+  // Convert readings to time/value pairs
+  // Use minutes since first reading as X axis for numerical stability
+  for i := 0 to n - 1 do
+  begin
+    timeValues[i] := (historicalReadings[i].date - historicalReadings[0].date) * 24 * 60;
+    bgValues[i] := historicalReadings[i].convert(BGUnit.mgdl);
+  end;
+  
+  // Calculate linear regression: y = slope * x + intercept
+  sumX := 0;
+  sumY := 0;
+  sumXY := 0;
+  sumX2 := 0;
+  
+  for i := 0 to n - 1 do
+  begin
+    sumX := sumX + timeValues[i];
+    sumY := sumY + bgValues[i];
+    sumXY := sumXY + (timeValues[i] * bgValues[i]);
+    sumX2 := sumX2 + (timeValues[i] * timeValues[i]);
+  end;
+  
+  meanX := sumX / n;
+  meanY := sumY / n;
+  
+  // Calculate slope and intercept
+  if (sumX2 - (sumX * sumX / n)) <> 0 then
+    slope := (sumXY - (sumX * sumY / n)) / (sumX2 - (sumX * sumX / n))
+  else
+  begin
+    lastErr := 'Cannot calculate trend (invalid time distribution)';
+    Exit;
+  end;
+  
+  intercept := meanY - (slope * meanX);
+  
+  // Calculate average interval between readings
+  if n > 1 then
+    avgInterval := (historicalReadings[n-1].date - historicalReadings[0].date) / (n - 1)
+  else
+    avgInterval := 5.0 / (24 * 60); // Default to 5 minutes
+  
+  // Generate predictions
+  SetLength(predictions, numPredictions);
+  lastTime := historicalReadings[n-1].date;
+  
+  for i := 0 to numPredictions - 1 do
+  begin
+    // Time of prediction (in minutes from first reading)
+    predictedTime := lastTime + (avgInterval * (i + 1));
+    
+    // Calculate predicted BG value using linear regression
+    predictedValue := slope * ((predictedTime - historicalReadings[0].date) * 24 * 60) + intercept;
+    
+    // Clamp to reasonable range
+    if predictedValue < 20 then
+      predictedValue := 20;
+    if predictedValue > 600 then
+      predictedValue := 600;
+    
+    // Create predicted reading
+    predictions[i].Init(BGUnit.mgdl, BGUnit.mgdl);
+    predictions[i].update(predictedValue, BGPrimary, BGUnit.mgdl);
+    predictions[i].date := predictedTime;
+    predictions[i].trend := TdNotComputable;
+    
+    // Classify the predicted level using current thresholds
+    predictions[i].level := getLevel(predictedValue);
+  end;
+  
+  Result := True;
 end;
 
 end.
