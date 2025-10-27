@@ -35,8 +35,12 @@ fpjson, jsonparser, dateutils, StrUtils;
  ******************************************************************************)
 
 const
-  {** Dexcom Share login by account name endpoint. }
-DEXCOM_LOGIN_ENDPOINT = 'General/LoginPublisherAccountByName';
+  {** Dexcom Share authenticate endpoint (returns account ID from username/email/phone). }
+DEXCOM_AUTHENTICATE_ENDPOINT = 'General/AuthenticatePublisherAccount';
+  {** Dexcom Share login by account ID endpoint (returns session ID from account ID). }
+DEXCOM_LOGIN_BY_ID_ENDPOINT = 'General/LoginPublisherAccountById';
+  {** Dexcom Share login by account name endpoint (returns session ID from username only). }
+DEXCOM_LOGIN_BY_NAME_ENDPOINT = 'General/LoginPublisherAccountByName';
   {** Verify receiver/transmitter serial assignment status. }
 DEXCOM_VERIFY_SERIAL_NUMBER_ENDPOINT =
   'Publisher/CheckMonitoredReceiverAssignmentStatus';
@@ -195,19 +199,83 @@ end;
   Performs authentication sequence and time synchronization.
 ------------------------------------------------------------------------------}
 function Dexcom.Connect: boolean;
+
+  // Helper: Escape a string for safe inclusion in JSON
+  function JSONEscape(const S: string): string;
+  var
+    i: Integer;
+    c: Char;
+  begin
+    Result := '';
+    for i := 1 to Length(S) do
+    begin
+      c := S[i];
+      case c of
+        '"':  Result := Result + '\"';
+        '\':  Result := Result + '\\';
+        #8:   Result := Result + '\b';   // backspace
+        #9:   Result := Result + '\t';   // tab
+        #10:  Result := Result + '\n';   // newline
+        #12:  Result := Result + '\f';   // form feed
+        #13:  Result := Result + '\r';   // carriage return
+      else
+        Result := Result + c;
+      end;
+    end;
+  end;
+
 var
-  LBody, LResponse, LTimeResponse, LTimeString: string;
+  LBody, LResponse, LTimeResponse, LTimeString, LAccountID: string;
   LServerDateTime: TDateTime;
+  LUseEmailAuth: Boolean;
 begin
-  // Prepare JSON payload for authentication
+  // Detect if user provided email (contains @) or phone (starts with +)
+  // These require two-step auth: AuthenticatePublisherAccount → LoginPublisherAccountById
+  LUseEmailAuth := (Pos('@', FUserName) > 0) or (Pos('+', FUserName) = 1);
+
+  // Prepare JSON payload for authentication with properly escaped credentials
   LBody := Format('{ "accountName": "%s", "password": "%s", "applicationId": "%s" }',
-    [FUserName, FPassword, DEXCOM_APPLICATION_ID]);
+    [JSONEscape(FUserName), JSONEscape(FPassword), DEXCOM_APPLICATION_ID]);
 
   // 1) Authenticate to obtain session token
   // Note: native.Request automatically adds Content-Type and Accept headers when jsondata is provided
-  FSessionID := StringReplace(
-    native.Request(true, DEXCOM_LOGIN_ENDPOINT, [], LBody),
-    '"', '', [rfReplaceAll]);
+  
+  if LUseEmailAuth then
+  begin
+    // Two-step authentication for email/phone:
+    // Step 1: Get account ID from email/phone
+    LAccountID := StringReplace(
+      native.Request(true, DEXCOM_AUTHENTICATE_ENDPOINT, [], LBody),
+      '"', '', [rfReplaceAll]);
+    
+    // Check for authentication errors
+    if (LAccountID = '') or (Pos('error', LowerCase(LAccountID)) > 0) or
+       (Pos('invalid', LowerCase(LAccountID)) > 0) or
+       (Pos('AccountPassword', LAccountID) > 0) then
+    begin
+      Result := false;
+      if Pos('AccountPassword', LAccountID) > 0 then
+        lastErr := sErrDexPass + ' (Dex1)'
+      else
+        lastErr := sErrDexLogin + ' (Dex1a): ' + LAccountID;
+      Exit;
+    end;
+    
+    // Step 2: Use account ID to get session ID
+    LBody := Format('{ "accountId": "%s", "password": "%s", "applicationId": "%s" }',
+      [LAccountID, JSONEscape(FPassword), DEXCOM_APPLICATION_ID]);
+    
+    FSessionID := StringReplace(
+      native.Request(true, DEXCOM_LOGIN_BY_ID_ENDPOINT, [], LBody),
+      '"', '', [rfReplaceAll]);
+  end
+  else
+  begin
+    // Single-step authentication for plain usernames
+    FSessionID := StringReplace(
+      native.Request(true, DEXCOM_LOGIN_BY_NAME_ENDPOINT, [], LBody),
+      '"', '', [rfReplaceAll]);
+  end;
 
   // Check for various error responses before validation
   if (FSessionID = '') or (Pos('error', LowerCase(FSessionID)) > 0) or
