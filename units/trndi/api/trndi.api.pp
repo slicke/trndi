@@ -23,7 +23,7 @@ unit trndi.api;
 interface
 
 uses
-Classes, SysUtils, trndi.types, dateutils, trndi.native, Dialogs;
+Classes, SysUtils, trndi.types, dateutils, trndi.native, Dialogs, trndi.funcs;
 
 type
   {** CGMCore holds thresholds used to classify blood glucose values.
@@ -514,6 +514,8 @@ var
   predictedTime: TDateTime;
   predictedValue: double;
   minReadings: integer;
+  lastValue, prevValue, minutesDiff, maxDrop, maxRise: double;
+  temp: BGReading;
 begin
   Result := False;
   SetLength(predictions, 0);
@@ -538,6 +540,17 @@ begin
     lastErr := 'Insufficient data for prediction (need at least ' + 
                IntToStr(minReadings) + ' readings)';
     Exit;
+  end;
+  
+  // Sort readings in ascending order by date (oldest first)
+  // API typically returns newest first, but we need oldest first for regression
+  SortReadingsDescending(historicalReadings);
+  // Now reverse the array to get ascending order
+  for i := 0 to (n div 2) - 1 do
+  begin
+    temp := historicalReadings[i];
+    historicalReadings[i] := historicalReadings[n - 1 - i];
+    historicalReadings[n - 1 - i] := temp;
   end;
   
   // Prepare arrays for linear regression
@@ -580,6 +593,10 @@ begin
   
   intercept := meanY - (slope * meanX);
   
+  // Add diagnostic output for debugging steep predictions
+  // LogMessage(Format('Prediction: n=%d, slope=%.2f mg/dL/min, intercept=%.2f', 
+  //   [n, slope, intercept]));
+  
   // Calculate average interval between readings
   if n > 1 then
     avgInterval := (historicalReadings[n-1].date - historicalReadings[0].date) / (n - 1)
@@ -598,7 +615,37 @@ begin
     // Calculate predicted BG value using linear regression
     predictedValue := slope * ((predictedTime - historicalReadings[0].date) * 24 * 60) + intercept;
     
-    // Clamp to reasonable range
+    // Apply rate-of-change limiter to prevent unrealistic predictions
+    // Max decline: -3 mg/dL per minute (~54 mg/dL per prediction if 5min intervals)
+    // Max rise: +3 mg/dL per minute
+    if i = 0 then
+    begin
+      // First prediction: limit change from last actual reading
+      lastValue := historicalReadings[n-1].convert(BGUnit.mgdl);
+      minutesDiff := avgInterval * 24 * 60;
+      maxDrop := lastValue - (3.0 * minutesDiff);
+      maxRise := lastValue + (3.0 * minutesDiff);
+      
+      if predictedValue < maxDrop then
+        predictedValue := maxDrop;
+      if predictedValue > maxRise then
+        predictedValue := maxRise;
+    end
+    else
+    begin
+      // Subsequent predictions: limit change from previous prediction
+      prevValue := predictions[i-1].convert(BGUnit.mgdl);
+      minutesDiff := avgInterval * 24 * 60;
+      maxDrop := prevValue - (3.0 * minutesDiff);
+      maxRise := prevValue + (3.0 * minutesDiff);
+      
+      if predictedValue < maxDrop then
+        predictedValue := maxDrop;
+      if predictedValue > maxRise then
+        predictedValue := maxRise;
+    end;
+    
+    // Clamp to physiological range
     if predictedValue < 20 then
       predictedValue := 20;
     if predictedValue > 600 then

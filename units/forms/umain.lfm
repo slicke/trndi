@@ -475,6 +475,10 @@ object fBG: TfBG
         Caption = 'Are dots in view?'
         OnClick = miDotsInViewClick
       end
+      object miPredict: TMenuItem
+        Caption = 'Prediction...'
+        OnClick = miPredictClick
+      end
       object Separator4: TMenuItem
         Caption = '-'
       end

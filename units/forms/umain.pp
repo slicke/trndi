@@ -101,6 +101,7 @@ end;
 TfBG = class(TForm)
   apMain: TApplicationProperties;
   bSettings: TButton;
+  miPredict: TMenuItem;
   pnWarnlast: TLabel;
   lRef: TLabel;
   lDot10: TPaintBox;
@@ -207,6 +208,7 @@ TfBG = class(TForm)
   procedure miATouchNoClick(Sender: TObject);
   procedure miATouchYesClick(Sender: TObject);
   procedure miDebugBackendClick(Sender: TObject);
+  procedure miPredictClick(Sender: TObject);
   procedure pmSettingsClose(Sender: TObject);
   procedure pnWarningClick(Sender: TObject);
   procedure pnWarningPaint(Sender: TObject);
@@ -1635,6 +1637,32 @@ end;
 procedure TfBG.miDebugBackendClick(Sender: TObject);
 begin
   miDebugBackend.Checked := not miDebugBackend.Checked;
+end;
+
+procedure TfBG.miPredictClick(Sender: TObject);
+var
+  bgr: BGResults;
+  i: integer;
+  msg: string;
+begin
+  if not api.predictReadings(3, bgr) then
+  begin
+    ShowMessage('Unable to predict: ' + api.errormsg);
+    Exit;
+  end;
+
+  msg := 'Predictions:' + LineEnding;
+  for i := 0 to High(bgr) do
+  begin
+    msg := msg + Format('Reading %d: %.1f %s at %s', [
+      i + 1,
+      bgr[i].convert(un),
+      BG_UNIT_NAMES[un],
+      FormatDateTime('hh:nn', bgr[i].date)  // Show time
+    ]) + LineEnding;
+  end;
+
+  ShowMessage(msg);
 end;
 
 procedure TfBG.pmSettingsClose(Sender: TObject);

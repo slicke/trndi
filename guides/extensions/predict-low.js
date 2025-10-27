@@ -42,10 +42,16 @@ function updateCallback(reading_system, reading_mgdl, reading_mmol, time) {
   
   // Alert if prediction shows low and we haven't already alerted
   if (willGoBelowThreshold && !hasAlerted && currentValue >= threshold) {
+    // Calculate approximate time until low
+    const lowPrediction = predictions[timeToLow - 1];
+    const minutesUntilLow = Math.round((lowPrediction[3] - time) * 24 * 60);
+    const timeOfLow = new Date(lowPrediction[3]);
+    
     const message = `⚠️ Prediction Alert!\n\n` +
                    `Current: ${currentValue.toFixed(1)} ${unit}\n` +
                    `Predicted to drop below ${threshold} ${unit}\n` +
-                   `in approximately ${timeToLow} reading(s).\n\n` +
+                   `in approximately ${minutesUntilLow} minutes\n` +
+                   `(around ${timeOfLow.toLocaleTimeString()}).\n\n` +
                    `Consider taking action to prevent low.`;
     
     Trndi.alert(message);
@@ -61,8 +67,11 @@ function updateCallback(reading_system, reading_mgdl, reading_mmol, time) {
   }
   
   // Log predictions for debugging
-  console.log(`Current: ${currentValue.toFixed(1)} ${unit}`);
+  console.log(`Current: ${currentValue.toFixed(1)} ${unit} at ${new Date(time)}`);
   predictions.forEach((pred, idx) => {
-    console.log(`  Prediction ${idx + 1}: ${pred[unitIdx].toFixed(1)} ${unit}`);
+    const predValue = pred[unitIdx].toFixed(1);
+    const predTime = new Date(pred[3]);  // pred[3] is the timestamp
+    const minutesFromNow = Math.round((pred[3] - time) * 24 * 60);  // Convert TDateTime to minutes
+    console.log(`  Prediction ${idx + 1}: ${predValue} ${unit} in ~${minutesFromNow} min (at ${predTime.toLocaleTimeString()})`);
   });
 }
