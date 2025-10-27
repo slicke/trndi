@@ -3939,7 +3939,7 @@ var
 begin
   ok := 0;
   no := 0;
-  if native.GetBoolSetting('range.custom', true) then
+  if native.GetBoolSetting('range.custom', false) then
     ranges := [BGRange, BGRangeHI, BGRangeLO]
   else
     ranges := [BGRange];
