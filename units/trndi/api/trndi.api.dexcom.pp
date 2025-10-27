@@ -230,8 +230,14 @@ begin
   if not CheckSession then
   begin
     Result := false;
-    // Include the actual session ID in error for debugging
-    lastErr := sErrDexLogin + ' (Dex2): Received invalid session ID: ' + FSessionID;
+    // Null GUID indicates authentication rejection (not wrong password)
+    if FSessionID = '00000000-0000-0000-0000-000000000000' then
+      lastErr := 'Dexcom authentication rejected. Possible causes: ' +
+                 '1) Wrong region (try using another region), ' +
+                 '2) Dexcom Share not enabled in official app, ' +
+                 '3) Account requires action in official Dexcom app. (Dex2)'
+    else
+      lastErr := sErrDexLogin + ' (Dex2): Received invalid session ID: ' + FSessionID;
     Exit;
   end;
 

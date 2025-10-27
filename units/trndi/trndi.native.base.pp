@@ -1101,8 +1101,8 @@ begin
     // If JSON body is provided, set content-type and POST data
     if jsondata <> '' then
     begin
-      headers := curl_slist_append(headers, 'Content-Type: application/json; charset=UTF-8');
-      headers := curl_slist_append(headers, 'Accept: application/json');
+      headers := curl_slist_append(headers, pchar('Content-Type: application/json; charset=UTF-8'));
+      headers := curl_slist_append(headers, pchar('Accept: application/json'));
       curl_easy_setopt(handle, CURLOPT_POST, longint(1));
       curl_easy_setopt(handle, CURLOPT_POSTFIELDS, pchar(jsondata));
       curl_easy_setopt(handle, CURLOPT_POSTFIELDSIZE, longint(Length(jsondata)));
