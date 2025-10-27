@@ -55,8 +55,8 @@ private
   device: shortstring;  //< Device name/identifier (may be empty)
   noise: integer;       //< Noise indicator (-1 if unknown)
 
-  function getCurr: single;
-  function getChange: single;
+  function getCurr: double;
+  function getChange: double;
   function checkEmpty: boolean;
   function getSrc: shortstring;
   function GetLevel: BGValLevel;
@@ -110,8 +110,8 @@ public
     {** Convert a value to another unit.
         @param(u     Target unit)
         @param(which Which value to convert: primary or delta)
-        @returns Converted value as single }
-  function convert(u: BGUnit; which: BGValType = BGPrimary): single;
+        @returns Converted value as double }
+  function convert(u: BGUnit; which: BGValType = BGPrimary): double;
 
     {** Convert then round to nearest integer (for display).
         @param(u     Target unit)
@@ -132,13 +132,13 @@ public
     rounded: boolean = false): string;
 
     {** Current value in preferred return unit. }
-  property val: single read GetCurr;
+  property val: double read GetCurr;
 
     {** Set the preferred return unit for property-based reads. }
   property return: BGUnit write SetReturn;
 
     {** Delta value in preferred return unit. }
-  property delta: single read GetChange;
+  property delta: double read GetChange;
 
     {** True if the primary BG value is unset (@code(BG_NO_VAL)). }
   property empty: boolean read CheckEmpty;
@@ -211,7 +211,7 @@ end;
   @returns( the value )
   @raises( none )
 }
-function BGReading.convert(u: BGUnit; which: BGValType = BGPrimary): single;
+function BGReading.convert(u: BGUnit; which: BGValType = BGPrimary): double;
 begin
   case which of
   BGPrimary:
@@ -243,7 +243,7 @@ end;
 function BGReading.format(u: BGUnit; fmt: BgUnitMeta; which: BGValType = BGPrimary;
 rounded: boolean = false): string;
 var
-  cval: single;
+  cval: double;
   str: string;
 
 { Returns a sign, eg + or +/- to make string output signed, not only when -
@@ -321,7 +321,7 @@ end;
   @returns( The reading )
   @raises( none )
 }
-function BGReading.getCurr: single;
+function BGReading.getCurr: double;
 begin
   Result := self.convert(retu);
 end;
@@ -330,7 +330,7 @@ end;
   @returns( The delta )
   @raises( none )
 }
-function BGReading.getChange: single;
+function BGReading.getChange: double;
 begin
   Result := self.convert(retu, BGDelta);
 end;
