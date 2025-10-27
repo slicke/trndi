@@ -94,6 +94,52 @@ Sets the interval when the clock is shown (if enabled), and for how long.
 ```javascript
 Trndi.setClockInterval(100000,10000); // Show clock every 100 sec and for 10 sec. NOTE the values cannot be the same or the clock will always show
 ```
+
+### predictReadings
+#### Predict future blood glucose readings
+Predicts future blood glucose values based on recent trends using linear regression.
+
+```javascript
+// Predict the next 3 readings (default)
+const predictions = Trndi.predictReadings();
+
+// Predict the next 5 readings
+const predictions = Trndi.predictReadings(5);
+```
+
+**Returns:** Array of predictions, where each prediction is an array:
+- `[0]`: Predicted value in current unit (mg/dL or mmol/L)
+- `[1]`: Predicted value in mg/dL
+- `[2]`: Predicted value in mmol/L  
+- `[3]`: Predicted timestamp (TDateTime)
+
+**Example:**
+```javascript
+function updateCallback(reading_system, reading_mgdl, reading_mmol, time) {
+  const predictions = Trndi.predictReadings(3);
+  
+  if (predictions.length > 0) {
+    console.log("Current:", reading_mmol, "mmol/L");
+    predictions.forEach((pred, idx) => {
+      console.log(`Prediction ${idx + 1}:`, pred[2].toFixed(1), "mmol/L");
+    });
+    
+    // Alert if predicted to go low within next 3 readings
+    const willGoBelowFour = predictions.some(pred => pred[2] < 4.0);
+    if (willGoBelowFour) {
+      Trndi.alert("Warning: Glucose predicted to drop below 4.0 mmol/L soon!");
+    }
+  }
+}
+```
+
+**Notes:**
+- Requires at least 3 recent readings for prediction
+- Returns empty array if insufficient data
+- Predictions are based on linear trend and don't account for meals, insulin, or other factors
+- Accuracy decreases for predictions further into the future
+- Maximum 20 predictions can be requested
+
 ## Promises (global)
 These are global promises, not prefixed with `Trndi.`:
 ### asyncGet 
