@@ -272,6 +272,10 @@ msgstr "Förklara"
 msgid "On top"
 msgstr "Överst"
 
+#: tfbg.mipredict.caption
+msgid "Prediction..."
+msgstr ""
+
 #: tfbg.mipref.caption
 msgid "Preferences"
 msgstr "Ytterligare val"
