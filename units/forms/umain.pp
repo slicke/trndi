@@ -1953,14 +1953,17 @@ begin
 
   // Get dot height for centering lines through the middle of dots
   // Calculate using a temporary bitmap to avoid affecting actual dots during paint
+  // IMPORTANT: Must match the exact calculation used in ResizeDot to ensure alignment
   dotHeight := 0;
   if (Length(TrendDots) > 0) and Assigned(TrendDots[1]) then
   begin
     bmp := TBitmap.Create;
     try
       bmp.Canvas.Font.Assign(TrendDots[1].Font);
-      bmp.Canvas.Font.Size := (ClientWidth div 24) * dotscale;
-      dotHeight := bmp.Canvas.TextHeight(DOT_GRAPH);
+      // Use the same font size formula as ResizeDot: (lVal.Font.Size div 8) * dotscale
+      bmp.Canvas.Font.Size := Max((lVal.Font.Size div 8) * dotscale, 28);
+      // Use the same height calculation as ResizeDot: Max(TextHeight, Font.Size)
+      dotHeight := Max(bmp.Canvas.TextHeight(DOT_GRAPH), bmp.Canvas.Font.Size);
     finally
       bmp.Free;
     end;
