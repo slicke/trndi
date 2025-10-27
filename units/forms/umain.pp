@@ -324,7 +324,7 @@ private
   procedure HandleHighGlucose(const {%H-}b: BGReading);
   procedure HandleLowGlucose(const {%H-}b: BGReading);
   procedure HandleNormalGlucose(const b: BGReading);
-  procedure UpdateOffRangePanel(const Value: single);
+  procedure UpdateOffRangePanel(const Value: double);
   procedure DisplayLowRange;
   procedure DisplayHighRange;
   procedure FinalizeUpdate;
@@ -4372,7 +4372,7 @@ begin
   Result := DoFetchAndValidateReadings(true); // Force fresh API call, bypass cache
 end;
 
-procedure TfBG.UpdateOffRangePanel(const Value: single);
+procedure TfBG.UpdateOffRangePanel(const Value: double);
 var
   on: boolean = true;
 begin

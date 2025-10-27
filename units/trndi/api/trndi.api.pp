@@ -117,9 +117,9 @@ protected
   function checkActive: boolean;
 public
 const
-  toMMOL = 0.0555555556; // Factor to multiply mg/dL by to get mmol/L
+  toMMOL = 0.05555555555555556; // Factor to multiply mg/dL by to get mmol/L
 const
-  toMGDL = 18.0182; // Facvtor to multiply mmol/L to get mg/dL
+  toMGDL = 18.0156; // Facvtor to multiply mmol/L to get mg/dL
     {** Provide a backend-specific caption for parameter labels in Settings.
         Index mapping (by convention):
         - 1: Label above the first edit (e.g., server URL or username)
