@@ -799,13 +799,15 @@ end;
 procedure TfConf.cbSysChange(Sender: TObject);
 begin
   gbOverride.Color := clDefault;
-  if Pos('Dexcom', cbSys.Text) > 0 then
-  begin
-    gbOverride.Color := $00D3D2EE;
-    ShowMessage(RS_DEX);
+  if not (sender is TfConf) then begin
+    if Pos('Dexcom', cbSys.Text) > 0 then
+    begin
+      gbOverride.Color := $00D3D2EE;
+      ShowMessage(RS_DEX);
+    end;
+      if Pos('Scout v3', cbSys.Text) > 0 then
+        ShowMessage(RS_BETA);
   end;
-    if Pos('Scout v3', cbSys.Text) > 0 then
-      ShowMessage(RS_BETA);
   // Update parameter labels above edits based on backend
   // Defaults from base class
   Label15.Caption := TrndiAPI.ParamLabel(1);

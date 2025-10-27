@@ -2838,6 +2838,7 @@ procedure LoadUserSettings(f: TfConf);
       for i := 0 to cbSys.Items.Count - 1 do
         if cbSys.Items[i] = s then
           cbSys.ItemIndex := i;
+      f.cbSysChange(f); // Update labels
       eAddr.Text := GetSetting('remote.target');
       ePass.Text := GetSetting('remote.creds');
       rbUnit.ItemIndex := IfThen(GetSetting('unit', 'mmol') = 'mmol', 0, 1);
