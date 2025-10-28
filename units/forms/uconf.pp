@@ -291,6 +291,9 @@ RS_NEWVER_PRE =
 RS_NEWVER_CAPTION = 'New version available';
 RS_SELECT_FONT = 'Select a font';
 RS_SELECT_FONT_DESC = 'Choose a font to use';
+RS_SELECT_FONT_ARROW = 'Select a font for the arrow';
+RS_SELECT_FONT_READING = 'Select a font for the reading';
+RS_SELECT_FONT_TIME = 'Select a font for the time';
 
 
 RS_NOTIFICATIONS = 'Notifications';
@@ -1254,8 +1257,17 @@ procedure TfConf.lValClick(Sender: TObject);
 var
   f: TFont;
   mr: TModalResult;
+  title: string;
 begin
-  f := ExtFontPicker(uxdAuto,RS_SELECT_FONT, RS_SELECT_FONT, RS_SELECT_FONT_DESC, (sender as TLabel).font,mr);
+
+  case (sender as TLabel).Name of
+    'lArrow': title := RS_SELECT_FONT_ARROW;
+    'lVal': title := RS_SELECT_FONT_READING;
+    'lAgo': title := RS_SELECT_FONT_TIME;
+  else
+    title := RS_SELECT_FONT_DESC;
+  end;
+  f := ExtFontPicker(uxdAuto,RS_SELECT_FONT, RS_SELECT_FONT, title, (sender as TLabel).font,mr);
   if mr = mrOK then
    (Sender as TLabel).Font := f;
 end;
