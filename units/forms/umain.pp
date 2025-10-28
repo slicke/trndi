@@ -1809,6 +1809,15 @@ begin
     Exit;
   FShuttingDown := true;
 
+  // Save window position if using custom positioning
+  posValue := native.GetIntSetting('position.main', Ord(tpoCenter));
+  if ((posValue >= Ord(Low(TrndiPos))) and (posValue <= Ord(High(TrndiPos)))) then
+    if TrndiPos(posValue) = tpoCustom then
+    begin
+      native.SetSetting('position.last.left', IntToStr(Left));
+      native.SetSetting('position.last.top', IntToStr(Top));
+    end;
+
   {$ifdef Darwin}
   if not firstboot then
     if self.Showing then
