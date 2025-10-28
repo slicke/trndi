@@ -1267,7 +1267,7 @@ begin
   else
     title := RS_SELECT_FONT_DESC;
   end;
-  f := ExtFontPicker(uxdAuto,RS_SELECT_FONT, RS_SELECT_FONT, title, (sender as TLabel).font,mr);
+  f := ExtFontPicker(uxdAuto,RS_SELECT_FONT, RS_SELECT_FONT, title, (sender as TLabel).font, (sender as TLabel).caption, mr);
   if mr = mrOK then
    (Sender as TLabel).Font := f;
 end;
