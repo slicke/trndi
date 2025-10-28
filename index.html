@@ -30,8 +30,8 @@
             <h1>CGM Data on Desktop & Raspberry Pi</h1>
             <p class="hero-subtitle">Nightscout • Dexcom • xDrip WiFi</p>
             <p class="hero-platforms">Windows • macOS • Linux • Raspberry Pi • Embedded Linux</p>
-            
-            <div class="hero-buttons">
+            <p class="hero-latest">Latest Release: <span id="latest-release">Loading...</span>, <span id="release-date">Loading Date...</span></p>
+            <br><div class="hero-buttons">
                 <a href="#download" class="btn-primary">Download Now</a>
                 <a href="https://github.com/slicke/trndi" class="btn-secondary">View on GitHub</a>
             </div>
@@ -250,4 +250,27 @@
         });
     </script>
 </body>
+<script>
+    const owner = "slicke";
+  const repo = "trndi";
+
+ fetch(`https://api.github.com/repos/${owner}/${repo}/releases/latest`)
+    .then(response => response.json())
+    .then(data => {
+      const name = data.name || data.tag_name || "(no name)";
+      const publishedDate = new Date(data.published_at);
+      const formatted = publishedDate.toLocaleDateString(undefined, {
+        year: "numeric",
+        month: "short",
+        day: "numeric"
+      });
+
+      document.getElementById("latest-release").textContent = name;
+      document.getElementById("release-date").textContent = `Released ${formatted}`;
+    })
+    .catch(err => {
+      console.error("Fetch failed:", err);
+      document.getElementById("latest-release").textContent = "(unavailable)";
+    });
+</script>
 </html>
