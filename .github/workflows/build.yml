@@ -326,6 +326,22 @@ jobs:
           & 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe' '.\dist\windows_setup.iss'
           # Move the generated installer to the root for easier artifact upload
           Move-Item '.\dist\Output\TrndiSetup.exe' '.\TrndiSetup.exe'
+          # Build NuGet package
+          choco install nuget.commandline -y
+          # Determine package version from Trndi.lpi (Major.Minor.<build>)
+          [xml]$lpi = Get-Content 'Trndi.lpi'
+          $MAJOR = $lpi.CONFIG.ProjectOptions.VersionInfo.MajorVersionNr.Value
+          $MINOR = $lpi.CONFIG.ProjectOptions.VersionInfo.MinorVersionNr.Value
+          if ([string]::IsNullOrEmpty($MAJOR)) { $MAJOR = "0" }
+          if ([string]::IsNullOrEmpty($MINOR)) { $MINOR = "0" }
+          $PKG_VERSION = "$MAJOR.$MINOR.${{ needs.version.outputs.build_number }}"
+          Write-Host "Packaging version: $PKG_VERSION"
+          # Update nuspec with actual version
+          $nuspecContent = Get-Content 'dist\trndi.nuspec' -Raw
+          $nuspecContent = $nuspecContent -replace 'VERSION_PLACEHOLDER', $PKG_VERSION
+          $nuspecContent | Set-Content 'dist\trndi.nuspec' -Encoding UTF8
+          # Pack the NuGet package
+          & nuget pack 'dist\trndi.nuspec' -OutputDirectory '.'
 
       # ===================== UPLOAD ARTIFACTS =====================
       - name: Upload Actions artifact
@@ -335,6 +351,7 @@ jobs:
           path: |
             *.zip
             *.dmg
+            *.nupkg
             TrndiSetup.exe
             artifacts/*.deb
             artifacts/*.rpm
@@ -479,6 +496,14 @@ jobs:
             else
               for f in "${exes[@]}"; do
                 echo "- $(basename "$f") — Windows installer (recommended)"
+              done
+            fi
+            nupkgs=(./release-files/windows-x64-build/*.nupkg)
+            if [ ${#nupkgs[@]} -eq 0 ]; then
+              echo "- No NuGet package for this build -"
+            else
+              for f in "${nupkgs[@]}"; do
+                echo "- $(basename "$f") — Chocolatey package (\`choco install $(basename "$f")\`)"
               done
             fi
           } > RELEASE_NOTES.md

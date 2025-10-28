@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
+  <metadata>
+    <id>trndi</id>
+    <version>VERSION_PLACEHOLDER</version>
+    <authors>Björn Lindh</authors>
+    <owners>Björn Lindh</owners>
+    <licenseUrl>https://github.com/slicke/trndi/blob/main/LICENSE.md</licenseUrl>
+    <projectUrl>https://github.com/slicke/trndi</projectUrl>
+    <iconUrl>https://raw.githubusercontent.com/slicke/trndi/main/Trndi.png</iconUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Trndi - Continuous Glucose Monitor (CGM) viewer for Windows. Monitor your blood glucose levels with support for Dexcom, Nightscout, and xDrip+ data sources.</description>
+    <summary>CGM viewer for Windows with extension support</summary>
+    <releaseNotes>Automated build from GitHub Actions</releaseNotes>
+    <copyright>Copyright 2025 Björn Lindh</copyright>
+    <tags>diabetes glucose cgm dexcom nightscout xdrip monitoring health</tags>
+  </metadata>
+  <files>
+    <file src="..\Trndi.exe" target="tools\Trndi.exe" />
+    <file src="..\lang\**" target="tools\lang" />
+  </files>
+</package>
