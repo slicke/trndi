@@ -1541,6 +1541,10 @@ msgstr ""
 msgid "Select a font"
 msgstr ""
 
+#: uconf.rs_select_font_desc
+msgid "Choose a font to use"
+msgstr ""
+
 #: uconf.rs_uptodate
 msgid "You are up to date"
 msgstr ""
