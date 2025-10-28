@@ -321,6 +321,11 @@ jobs:
           Copy-Item '.\Trndi.exe' -Destination '.\artifacts\'
           if (Test-Path '.\lang') { Copy-Item '.\lang' -Destination '.\artifacts\lang' -Recurse }
           & 'C:\Program Files\7-Zip\7z.exe' a -tzip 'Trndi-windows-x64.zip' .\artifacts\* | Out-Null
+          # Build Inno Setup installer
+          choco install innosetup -y
+          & 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe' '.\dist\windows_setup.iss'
+          # Move the generated installer to the root for easier artifact upload
+          Move-Item '.\dist\Output\TrndiSetup.exe' '.\TrndiSetup.exe'
 
       # ===================== UPLOAD ARTIFACTS =====================
       - name: Upload Actions artifact
@@ -330,6 +335,7 @@ jobs:
           path: |
             *.zip
             *.dmg
+            *.exe
             artifacts/*.deb
             artifacts/*.rpm
           if-no-files-found: ignore
@@ -465,6 +471,14 @@ jobs:
             else
               for f in "${files[@]}"; do
                 echo "- $(basename "$f") — Portable binary + languages"
+              done
+            fi
+            exes=(./release-files/windows-x64-build/*.exe)
+            if [ ${#exes[@]} -eq 0 ]; then
+              echo "- No Windows installer for this build -"
+            else
+              for f in "${exes[@]}"; do
+                echo "- $(basename "$f") — Windows installer (recommended)"
               done
             fi
           } > RELEASE_NOTES.md
