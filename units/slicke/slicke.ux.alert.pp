@@ -161,6 +161,11 @@ type
     {$endif}
     {** OnClick handler used by inline full-screen message overlays created via @link(UXMessage). }
     procedure UXMessageOnClick(sender: TObject);
+  public
+    {** Helper fields for font picker dialog. }
+    FontPickerPreview: TLabel;
+    {** OnChange handler for font combo box in ExtFontPicker. }
+    procedure FontComboChange(Sender: TObject);
   end;
 
   {**
@@ -432,6 +437,24 @@ type
                     const icon: UXImage = uxmtCog;
                     const key: string = '';
                     const value: string = ''): Integer;
+
+  {**
+    Show a font picker dialog.
+    @param dialogsize Layout preset.
+    @param ACaption Window caption.
+    @param ATitle Title text.
+    @param ADesc Description text.
+    @param ADefaultFont Initial font to display in the picker.
+    @param ModalResult Out parameter holding the modal result after closing.
+    @param icon Emoji icon (default gear).
+    @returns The selected TFont object if OK; otherwise returns @code(ADefaultFont).
+    @remarks The returned font is a new instance; caller is responsible for freeing it.
+  }
+  function ExtFontPicker(const dialogsize: TUXDialogSize;
+                         const ACaption, ATitle, ADesc: string;
+                         ADefaultFont: TFont;
+                         var ModalResult: TModalResult;
+                         const icon: UXImage = uxmtCog): TFont;
 
   {**
     Check if a suitable UI font exists on this system and return its name.
@@ -1656,6 +1679,153 @@ begin
 end;
 
 {** See interface docs for behavior and parameters. }
+function ExtFontPicker(
+  const dialogsize: TUXDialogSize;
+  const ACaption, ATitle, ADesc: string;
+  ADefaultFont: TFont;
+  var ModalResult: TModalResult;
+  const icon: UXImage = uxmtCog
+): TFont;
+const
+  Padding = 16;
+var
+  Dialog: TDialogForm;
+  IconBox: TImage;
+  TitleLabel, DescLabel: TLabel;
+  PreviewLabel: TLabel;
+  FontCombo: TComboBox;
+  OkButton, CancelButton: TButton;
+  bgcol: TColor;
+  big: Boolean;
+  totalButtonsWidth: Integer;
+  SelectedFont: TFont;
+  i, initialIndex: Integer;
+
+begin
+  Result := TFont.Create;
+  Result.Assign(ADefaultFont);
+  ModalResult := mrCancel;
+  big := UXDialogIsBig(dialogsize);
+  bgcol := getBackground;
+
+  Dialog := TDialogForm.CreateNew(nil);
+  Dialog.KeyPreview := True;
+  Dialog.OnKeyDown := @Dialog.FormKeyDown;
+  SelectedFont := TFont.Create;
+  SelectedFont.Assign(ADefaultFont);
+  try
+    Dialog.Caption := ACaption;
+    Dialog.BorderStyle := bsDialog;
+    Dialog.Position := poScreenCenter;
+
+    IconBox := TImage.Create(Dialog);
+    TitleLabel := TLabel.Create(Dialog);
+    DescLabel := TLabel.Create(Dialog);
+
+    // Use shared helper for consistent title/description layout
+    SetupDialogTitleDesc(Dialog, big, icon, bgcol, ATitle, ADesc, IconBox, TitleLabel, DescLabel);
+
+    // --- Font ComboBox ---
+    FontCombo := TComboBox.Create(Dialog);
+    FontCombo.Parent := Dialog;
+    FontCombo.Left := DescLabel.Left;
+    FontCombo.Width := DescLabel.Width;
+    FontCombo.Top := DescLabel.Top + DescLabel.Height + ifthen(big, Padding * 2, Padding);
+    FontCombo.Style := csDropDownList;
+    FontCombo.Sorted := True;
+    
+    // Populate with system fonts
+    FontCombo.Items.Assign(Screen.Fonts);
+    
+    // Find and select the default font
+    initialIndex := FontCombo.Items.IndexOf(ADefaultFont.Name);
+    if initialIndex >= 0 then
+      FontCombo.ItemIndex := initialIndex
+    else if FontCombo.Items.Count > 0 then
+      FontCombo.ItemIndex := 0;
+    
+    if big then
+    begin
+      FontCombo.Font.Size := 16;
+      {$IFDEF Windows} FontCombo.Height := 42; {$ENDIF}
+    end;
+
+    // --- Preview Label ---
+    PreviewLabel := TLabel.Create(Dialog);
+    PreviewLabel.Parent := Dialog;
+    PreviewLabel.Left := DescLabel.Left;
+    PreviewLabel.Width := DescLabel.Width;
+    PreviewLabel.Top := FontCombo.Top + FontCombo.Height + ifthen(big, Padding * 2, Padding);
+    PreviewLabel.Caption := 'AaBbCcXxYyZz 123';
+    PreviewLabel.AutoSize := False;
+    PreviewLabel.Alignment := taCenter;
+    PreviewLabel.Font.Assign(SelectedFont);
+    if big then
+    begin
+      PreviewLabel.Height := 80;
+      PreviewLabel.Font.Size := 24;
+    end
+    else
+    begin
+      PreviewLabel.Height := 50;
+      PreviewLabel.Font.Size := 16;
+    end;
+
+    // Set up live preview update
+    Dialog.FontPickerPreview := PreviewLabel;
+    FontCombo.OnChange := @Dialog.FontComboChange;
+
+    // --- OK Button ---
+    OkButton := TButton.Create(Dialog);
+    OkButton.Parent := Dialog;
+    OkButton.Caption := smbUXOK;
+    OkButton.ModalResult := mrOk;
+    OkButton.Width := 80;
+    if big then
+    begin
+      OkButton.Width := OkButton.Width * 2;
+      OkButton.Height := OkButton.Height * 2;
+      OkButton.Font.Size := 12;
+    end;
+    Dialog.ActiveControl := OkButton;
+
+    // --- Cancel Button ---
+    CancelButton := TButton.Create(Dialog);
+    CancelButton.Parent := Dialog;
+    CancelButton.Caption := smbUXCancel;
+    CancelButton.ModalResult := mrCancel;
+    CancelButton.Width := 80;
+    if big then
+    begin
+      CancelButton.Width := CancelButton.Width * 2;
+      CancelButton.Height := CancelButton.Height * 2;
+      CancelButton.Font.Size := 12;
+    end;
+
+    // --- Center buttons ---
+    OkButton.Top := PreviewLabel.Top + PreviewLabel.Height + ifthen(big, Padding * 3, Padding * 2);
+    CancelButton.Top := OkButton.Top;
+    totalButtonsWidth := OkButton.Width + Padding + CancelButton.Width;
+    OkButton.Left := (Dialog.ClientWidth - totalButtonsWidth) div 2;
+    CancelButton.Left := OkButton.Left + OkButton.Width + Padding;
+
+    Dialog.ClientHeight := OkButton.Top + OkButton.Height + Padding;
+
+    ModalResult := ShowModalSafe(Dialog);
+    if ModalResult = mrOk then
+    begin
+      // Get selected font name from combo box
+      if FontCombo.ItemIndex >= 0 then
+        SelectedFont.Name := FontCombo.Items[FontCombo.ItemIndex];
+      Result.Assign(SelectedFont);
+    end;
+  finally
+    SelectedFont.Free;
+    Dialog.Free;
+  end;
+end;
+
+{** See interface docs for behavior and parameters. }
 function ExtLog(
   const dialogsize: TUXDialogSize;
   const caption, msg, log: string;
@@ -2247,6 +2417,16 @@ begin
   ((sender as TButton).Parent as TPanel).Hide;
   ((sender as TButton).Parent as TPanel).Free;
   Self.Free;
+end;
+
+{** OnChange handler for font combo in ExtFontPicker - updates live preview. }
+procedure TDialogForm.FontComboChange(Sender: TObject);
+var
+  Combo: TComboBox;
+begin
+  Combo := Sender as TComboBox;
+  if Assigned(FontPickerPreview) and (Combo.ItemIndex >= 0) then
+    FontPickerPreview.Font.Name := Combo.Items[Combo.ItemIndex];
 end;
 
 {$ifdef Windows}

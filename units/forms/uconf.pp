@@ -103,7 +103,6 @@ TfConf = class(TForm)
   edMusicHigh: TEdit;
   edMusicLow: TEdit;
   edMusicPerfect: TEdit;
-  fdFont: TFontDialog;
   fsHi: TFloatSpinEdit;
   fsHiRange: TFloatSpinEdit;
   fsLo: TFloatSpinEdit;
@@ -291,6 +290,7 @@ RS_NEWVER_PRE =
   'A new pre-release for %s is available, would you like to go to the downloads page?';
 RS_NEWVER_CAPTION = 'New version available';
 RS_SELECT_FONT = 'Select a font';
+RS_SELECT_FONT_DESC = 'Choose a font to use';
 
 
 RS_NOTIFICATIONS = 'Notifications';
@@ -1251,15 +1251,13 @@ begin
 end;
 
 procedure TfConf.lValClick(Sender: TObject);
+var
+  f: TFont;
+  mr: TModalResult;
 begin
-  fdFont.PreviewText := (Sender as TLabel).Caption;
-  fdFont.Title := RS_SELECT_FONT;
-  if fdFont.Execute then
-    with (Sender as TLabel).Font do
-    begin
-      Name := fdFont.Font.Name;
-      style := fdFont.Font.style;
-    end;
+  f := ExtFontPicker(uxdAuto,RS_SELECT_FONT, RS_SELECT_FONT, RS_SELECT_FONT_DESC, (sender as TLabel).font,mr);
+  if mr = mrOK then
+   (Sender as TLabel).Font := f;
 end;
 
 procedure TfConf.pcMainChange(Sender: TObject);

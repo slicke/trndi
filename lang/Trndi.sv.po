@@ -1651,6 +1651,10 @@ msgstr "Trndi tillåter inte en lägre gräns, backendsystemet rapporterar bara 
 msgid "Select a font"
 msgstr "Välj ett typsnitt"
 
+#: uconf.rs_select_font_desc
+msgid "Choose a font to use"
+msgstr ""
+
 #: uconf.rs_uptodate
 msgid "You are up to date"
 msgstr "Du är uppdaterad"
