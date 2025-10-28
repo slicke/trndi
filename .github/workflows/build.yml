@@ -335,7 +335,7 @@ jobs:
           path: |
             *.zip
             *.dmg
-            *.exe
+            TrndiSetup.exe
             artifacts/*.deb
             artifacts/*.rpm
           if-no-files-found: ignore
