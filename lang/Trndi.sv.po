@@ -274,7 +274,7 @@ msgstr "Överst"
 
 #: tfbg.mipredict.caption
 msgid "Prediction..."
-msgstr ""
+msgstr "Förutsägelse..."
 
 #: tfbg.mipref.caption
 msgid "Preferences"
@@ -1651,9 +1651,21 @@ msgstr "Trndi tillåter inte en lägre gräns, backendsystemet rapporterar bara 
 msgid "Select a font"
 msgstr "Välj ett typsnitt"
 
+#: uconf.rs_select_font_arrow
+msgid "Select a font for the arrow"
+msgstr "Välj ett typsnitt för pilen"
+
 #: uconf.rs_select_font_desc
 msgid "Choose a font to use"
-msgstr ""
+msgstr "Välj ett typsnitt"
+
+#: uconf.rs_select_font_reading
+msgid "Select a font for the reading"
+msgstr "Välj ett typsnitt för avläsningen"
+
+#: uconf.rs_select_font_time
+msgid "Select a font for the time"
+msgstr "Välj ett typsnitt för tiden"
 
 #: uconf.rs_uptodate
 msgid "You are up to date"
@@ -1672,4 +1684,3 @@ msgstr "Du kan använda skift+<nummerr> för att manuellt sätta synligheten (0 
 #: ufloat.rscustomsize
 msgid "You can hold down shift and plus (+) or minus (-) to change the window size"
 msgstr "Du kan hålla ned skift och plus (+) eller minus (-) för att justera fönstrets storlek"
-

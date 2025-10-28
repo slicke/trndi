@@ -1541,8 +1541,20 @@ msgstr ""
 msgid "Select a font"
 msgstr ""
 
+#: uconf.rs_select_font_arrow
+msgid "Select a font for the arrow"
+msgstr ""
+
 #: uconf.rs_select_font_desc
 msgid "Choose a font to use"
+msgstr ""
+
+#: uconf.rs_select_font_reading
+msgid "Select a font for the reading"
+msgstr ""
+
+#: uconf.rs_select_font_time
+msgid "Select a font for the time"
 msgstr ""
 
 #: uconf.rs_uptodate
