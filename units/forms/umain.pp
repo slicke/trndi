@@ -300,6 +300,7 @@ private
   procedure showWarningPanel(const message: string;
     clearDisplayValues: boolean = false);
   procedure CalcRangeTime;
+  function GetValidatedPosition: TrndiPos;
   function updateReading(boot: boolean = false): boolean;
   procedure PlaceTrendDots(const Readings: array of BGReading);
   procedure actOnTrend(proc: TTrendProc);
@@ -672,6 +673,20 @@ begin
   UXMessage(uxdOnForm, title, str, uxmtInformation, fBG);
 end;
 
+// Helper function to get validated position setting
+function TfBG.GetValidatedPosition: TrndiPos;
+var
+  posValue: integer;
+begin
+  posValue := native.GetIntSetting('position.main', Ord(tpoCenter));
+  
+  // Validate position type
+  if (posValue >= Ord(Low(TrndiPos))) and (posValue <= Ord(High(TrndiPos))) then
+    Result := TrndiPos(posValue)
+  else
+    Result := tpoCenter; // Default fallback
+end;
+
 procedure TfBG.placeForm;
 {$ifdef DARWIN}
 function GetActiveScreen: TMonitor; // Use TMonitor if that's what Screen.Monitors returns
@@ -697,22 +712,19 @@ var
   activemonitor: TMonitor;
   {$endif}
 var
-  posValue: integer;
+  posValue: TrndiPos;
 begin
   if native.GetBoolSetting('size.main') then
   begin
     Width := native.GetIntSetting('size.last.width', Width);
     Height := native.GetIntSetting('size.last.height', Height);
   end;
-  // Hämta och validera position
-  posValue := native.GetIntSetting('position.main', Ord(tpoCenter));
+  
+  // Get and validate position
+  posValue := GetValidatedPosition;
 
-  // Validera positionstyp
-  if not ((posValue >= Ord(Low(TrndiPos))) and (posValue <= Ord(High(TrndiPos)))) then
-    posValue := Ord(tpoCenter);
-
-  // Hantera positionering
-  case TrndiPos(posValue) of
+  // Handle positioning
+  case posValue of
   tpoCenter:
   begin
     Left := Screen.WorkAreaLeft + (Screen.WorkAreaWidth - Width) div 2;
@@ -1798,9 +1810,8 @@ end;
 
 // FormClose event handler
 procedure TfBG.FormClose(Sender: TObject; var CloseAction: TCloseAction);
-var
-  posValue: integer;
   {$ifdef Darwin}
+var
   mr: TModalResult;
   {$endif}
 begin
@@ -1810,13 +1821,11 @@ begin
   FShuttingDown := true;
 
   // Save window position if using custom positioning
-  posValue := native.GetIntSetting('position.main', Ord(tpoCenter));
-  if ((posValue >= Ord(Low(TrndiPos))) and (posValue <= Ord(High(TrndiPos)))) then
-    if TrndiPos(posValue) = tpoCustom then
-    begin
-      native.SetSetting('position.last.left', IntToStr(Left));
-      native.SetSetting('position.last.top', IntToStr(Top));
-    end;
+  if GetValidatedPosition = tpoCustom then
+  begin
+    native.SetSetting('position.last.left', IntToStr(Left));
+    native.SetSetting('position.last.top', IntToStr(Top));
+  end;
 
   {$ifdef Darwin}
   if not firstboot then
