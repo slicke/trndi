@@ -445,6 +445,7 @@ type
     @param ATitle Title text.
     @param ADesc Description text.
     @param ADefaultFont Initial font to display in the picker.
+    @param AFontSample Sample text to display in the preview label.
     @param ModalResult Out parameter holding the modal result after closing.
     @param icon Emoji icon (default gear).
     @returns The selected TFont object if OK; otherwise returns @code(ADefaultFont).
@@ -453,6 +454,7 @@ type
   function ExtFontPicker(const dialogsize: TUXDialogSize;
                          const ACaption, ATitle, ADesc: string;
                          ADefaultFont: TFont;
+                         const AFontSample: string;
                          var ModalResult: TModalResult;
                          const icon: UXImage = uxmtCog): TFont;
 
@@ -1683,6 +1685,7 @@ function ExtFontPicker(
   const dialogsize: TUXDialogSize;
   const ACaption, ATitle, ADesc: string;
   ADefaultFont: TFont;
+  const AFontSample: string;
   var ModalResult: TModalResult;
   const icon: UXImage = uxmtCog
 ): TFont;
@@ -1756,7 +1759,7 @@ begin
     PreviewLabel.Left := DescLabel.Left;
     PreviewLabel.Width := DescLabel.Width;
     PreviewLabel.Top := FontCombo.Top + FontCombo.Height + ifthen(big, Padding * 2, Padding);
-    PreviewLabel.Caption := 'AaBbCcXxYyZz 123';
+    PreviewLabel.Caption := AFontSample;
     PreviewLabel.AutoSize := False;
     PreviewLabel.Alignment := taCenter;
     PreviewLabel.Font.Assign(SelectedFont);
