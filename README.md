@@ -8,6 +8,7 @@
 ## <b> 🪟 Windows - 🍎 macOS - 🐧 Linux - 🥧 RaspberryPi/ARM Linux
 
 ![Windows](doc/img/img_win.png)
+![Windows](doc/img/img_win_Range.png)
 <br>Windows 11
 
 ![Linux](doc/img/img_lin.png)
