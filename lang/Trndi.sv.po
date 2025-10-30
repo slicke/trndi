@@ -823,6 +823,10 @@ msgctxt "tffloat.micustomvisible.caption"
 msgid "Custom"
 msgstr "Egen"
 
+#: tffloat.mimain.caption
+msgid "Show/Hide Main Window"
+msgstr ""
+
 #: tffloat.minormal.caption
 msgctxt "tffloat.minormal.caption"
 msgid "Normal"
