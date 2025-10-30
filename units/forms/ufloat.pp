@@ -56,6 +56,7 @@ TfFloat = class(TForm)
   lRangeUp: TLabel;
   lVal: TLabel;
   MenuItem1: TMenuItem;
+  miMain: TMenuItem;
   miClock: TMenuItem;
   miCustomSize: TMenuItem;
   Separator1: TMenuItem;
@@ -95,6 +96,7 @@ TfFloat = class(TForm)
   procedure miClockClick(Sender: TObject);
   procedure miCustomSizeClick(Sender: TObject);
   procedure miCustomVisibleClick(Sender: TObject);
+  procedure miMainClick(Sender: TObject);
   procedure miNormalClick(Sender: TMenuItem);
   procedure miNormalClick(Sender: TObject);
   procedure miOp100Click(Sender: TObject);
@@ -367,6 +369,14 @@ end;
 procedure TfFloat.miCustomVisibleClick(Sender: TObject);
 begin
   ShowMessage(rsCustomOp);
+end;
+
+procedure TfFloat.miMainClick(Sender: TObject);
+begin
+  if Application.MainForm.Visible then
+    Application.MainForm.Hide
+  else
+    Application.MainForm.Show;
 end;
 
 procedure TfFloat.miNormalClick(Sender: TMenuItem);

@@ -10,7 +10,6 @@ object fFloat: TfFloat
   PopupMenu = pMain
   Position = poDesktopCenter
   SnapOptions.SnapToMonitor = True
-  LCLVersion = '4.2.0.0'
   OnKeyDown = FormKeyDown
   OnKeyPress = FormKeyPress
   OnMouseDown = FormMouseDown
@@ -170,6 +169,10 @@ object fFloat: TfFloat
     object miClock: TMenuItem
       Caption = 'Show clock'
       OnClick = miClockClick
+    end
+    object miMain: TMenuItem
+      Caption = 'Show/Hide Main Window'
+      OnClick = miMainClick
     end
     object MenuItem1: TMenuItem
       Caption = '&Hide'
