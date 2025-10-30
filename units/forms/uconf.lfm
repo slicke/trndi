@@ -16,9 +16,9 @@ object fConf: TfConf
     Height = 523
     Top = 11
     Width = 675
-    ActivePage = tsDisplay
+    ActivePage = tsCustom
     Align = alClient
-    TabIndex = 2
+    TabIndex = 4
     TabOrder = 0
     OnChange = pcMainChange
     object tsGeneral: TTabSheet
@@ -11374,7 +11374,7 @@ object fConf: TfConf
       object Label6: TLabel
         Left = 10
         Height = 15
-        Top = 399
+        Top = 366
         Width = 647
         Align = alTop
         BorderSpacing.Around = 10
@@ -11383,7 +11383,7 @@ object fConf: TfConf
       object cbLang: TComboBox
         Left = 10
         Height = 23
-        Top = 195
+        Top = 391
         Width = 647
         Align = alTop
         AutoSize = False
@@ -11409,7 +11409,7 @@ object fConf: TfConf
       object pnMisc: TPanel
         Left = 15
         Height = 67
-        Top = 228
+        Top = 195
         Width = 652
         Align = alTop
         BorderSpacing.Left = 15
@@ -11443,7 +11443,7 @@ object fConf: TfConf
       object cbFlash: TCheckGroup
         Left = 0
         Height = 94
-        Top = 295
+        Top = 262
         Width = 667
         Align = alTop
         AutoFill = True
