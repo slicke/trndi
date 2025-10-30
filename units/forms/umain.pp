@@ -4669,6 +4669,13 @@ begin
     exit;
   Result := false;
 
+  // Check if reading is empty/invalid
+  if Reading.empty then
+  begin
+    LogMessage(Format('Skipping empty reading at slot %d', [SlotIndex]));
+    Exit(false);
+  end;
+
   // Mappa slotIndex till etikettens nummer (0 -> lDot10, 1 -> lDot9, ..., 9 -> lDot1)
   labelNumber := NUM_DOTS - SlotIndex;
   l := TrendDots[labelNumber];
