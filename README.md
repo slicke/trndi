@@ -45,6 +45,46 @@ You need to start Trndi multiple times, each instance lets you choose a user. Ju
 # Usage
 ⚠️ Right-click on the reading on the screen to access the menu, this is how you control Trndi.
 
+# Installation
+
+## Windows
+### Via Installer (Recommended)
+Download `TrndiSetup.exe` from the [latest release](https://github.com/slicke/trndi/releases) and run it.
+
+### Via NuGet/Chocolatey (GitHub Packages)
+You can install Trndi via NuGet from GitHub Packages:
+
+```powershell
+# One-time setup: Add GitHub Packages as a source (requires a GitHub personal access token with read:packages scope)
+dotnet nuget add source https://nuget.pkg.github.com/slicke/index.json --name github --username YOUR_GITHUB_USERNAME --password YOUR_GITHUB_PAT
+
+# Install Trndi
+nuget install trndi
+```
+
+Or install the `.nupkg` file directly with Chocolatey:
+```powershell
+# Download the .nupkg from releases, then:
+choco install trndi.VERSION.nupkg
+```
+
+### Portable
+Download `Trndi-windows-x64.zip` from the [latest release](https://github.com/slicke/trndi/releases), extract and run `Trndi.exe`.
+
+## Linux
+Download the appropriate package for your distribution from the [latest release](https://github.com/slicke/trndi/releases):
+- **Debian/Ubuntu**: `trndi_VERSION_amd64.deb` or `trndi_VERSION_arm64.deb`
+- **Fedora/RHEL**: `trndi-VERSION.x86_64.rpm` or `trndi-VERSION.aarch64.rpm`
+- **Portable**: `Trndi-linux-amd64.zip` or `Trndi-linux-arm64.zip`
+
+## macOS
+Download `Trndi-macos-silicon.dmg` from the [latest release](https://github.com/slicke/trndi/releases).
+
+**Note**: After opening, you need to remove the quarantine attribute:
+```bash
+xattr -c /path/to/Trndi.app
+```
+
 # Setup
 Click/hold the reading (or "Setup" text) and choose settings to access settings.
 * For NightScout, settings will be fetched from your server and auto-applied

@@ -342,6 +342,9 @@ jobs:
           $nuspecContent | Set-Content 'dist\trndi.nuspec' -Encoding UTF8
           # Pack the NuGet package
           & nuget pack 'dist\trndi.nuspec' -OutputDirectory '.'
+          # Publish to GitHub Packages
+          & nuget sources Add -Name "GitHub" -Source "https://nuget.pkg.github.com/slicke/index.json" -UserName slicke -Password ${{ secrets.GITHUB_TOKEN }}
+          & nuget push trndi.*.nupkg -Source "GitHub" -SkipDuplicate
 
       # ===================== UPLOAD ARTIFACTS =====================
       - name: Upload Actions artifact
