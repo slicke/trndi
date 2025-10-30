@@ -528,13 +528,57 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Get Release Info
+        id: release_info
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="build-${{ needs.version.outputs.build_number }}"
+          
+          # Get release URL
+          RELEASE_URL=$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json url --jq .url)
+          echo "release_url=${RELEASE_URL}" >> $GITHUB_OUTPUT
+          
+          # Get commits since last build tag
+          PREV_TAG=$(git tag --sort=-v:refname | grep -E '^build-[0-9]+$' | sed 's/^build-//' | sort -n | tail -2 | head -1)
+          if [ -n "$PREV_TAG" ]; then
+            PREV_TAG="build-${PREV_TAG}"
+            echo "## Changes in this build" > commits.txt
+            git log --oneline --no-merges "${PREV_TAG}..HEAD" | sed 's/^/- /' >> commits.txt
+          else
+            echo "## Changes in this build" > commits.txt
+            git log --oneline --no-merges -10 | sed 's/^/- /' >> commits.txt
+          fi
+
       - name: Send Discord Notification
-        uses: SethCohen/github-releases-to-discord@v1
-        with:
-          webhook_url: ${{ secrets.WEBHOOK_URL }}
-          color: "2105893"
-          username: "Trndi Release Bot"
-          avatar_url: "https://raw.githubusercontent.com/slicke/trndi/main/Trndi.png"
-          content: "||@everyone|| New Trndi build available!"
-          footer_title: "Build ${{ needs.version.outputs.build_number }}"
-          reduce_headings: true
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.WEBHOOK_URL }}
+        run: |
+          # Read commit messages
+          DESCRIPTION=$(cat commits.txt)
+          
+          # Create Discord embed JSON
+          cat << 'EOF' > discord_payload.json
+          {
+            "content": "||@everyone|| **New Trndi build available!**",
+            "username": "Trndi Release Bot",
+            "avatar_url": "https://raw.githubusercontent.com/slicke/trndi/main/Trndi.png",
+            "embeds": [{
+              "title": "Trndi Build ${{ needs.version.outputs.build_number }}",
+              "description": "DESCRIPTION_PLACEHOLDER",
+              "url": "${{ steps.release_info.outputs.release_url }}",
+              "color": 2105893,
+              "footer": {
+                "text": "Build ${{ needs.version.outputs.build_number }}"
+              }
+            }]
+          }
+          EOF
+          
+          # Escape and insert description (truncate to 2000 chars for Discord limit)
+          DESCRIPTION_ESCAPED=$(echo "$DESCRIPTION" | head -c 2000 | jq -Rs .)
+          sed -i "s|\"DESCRIPTION_PLACEHOLDER\"|${DESCRIPTION_ESCAPED}|g" discord_payload.json
+          
+          # Send to Discord
+          curl -H "Content-Type: application/json" -d @discord_payload.json "$DISCORD_WEBHOOK"
+
