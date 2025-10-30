@@ -1684,3 +1684,4 @@ msgstr "Du kan använda skift+<nummerr> för att manuellt sätta synligheten (0 
 #: ufloat.rscustomsize
 msgid "You can hold down shift and plus (+) or minus (-) to change the window size"
 msgstr "Du kan hålla ned skift och plus (+) eller minus (-) för att justera fönstrets storlek"
+
