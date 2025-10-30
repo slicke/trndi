@@ -172,7 +172,7 @@ TfConf = class(TForm)
   lVersion: TLabel;
   lArch: TLabel;
   Panel1: TPanel;
-  Panel10: TPanel;
+  pnFonts: TPanel;
   Panel11: TPanel;
   Panel12: TPanel;
   Panel2: TPanel;

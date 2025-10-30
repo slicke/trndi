@@ -16,9 +16,9 @@ object fConf: TfConf
     Height = 523
     Top = 11
     Width = 675
-    ActivePage = tsCustom
+    ActivePage = tsDisplay
     Align = alClient
-    TabIndex = 4
+    TabIndex = 2
     TabOrder = 0
     OnChange = pcMainChange
     object tsGeneral: TTabSheet
@@ -10795,7 +10795,7 @@ object fConf: TfConf
           ParentFont = False
           OnClick = lValClick
         end
-        object Panel10: TPanel
+        object pnFonts: TPanel
           Left = 294
           Height = 176
           Top = 0
