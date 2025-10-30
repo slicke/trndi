@@ -4635,7 +4635,7 @@ begin
     begin
       reading := SortedReadings[i];
 
-      if (reading.date <= slotEnd) and (reading.date > slotStart) then
+      if (reading.date <= slotEnd) and (reading.date >= slotStart) then
       begin
         found := UpdateLabelForReading(slotIndex, reading);
         Break; // Gå till nästa tidsintervall
