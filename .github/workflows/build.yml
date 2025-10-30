@@ -518,3 +518,23 @@ jobs:
 
           # Upload all files from all artifacts (files only, no directories)
           find ./release-files -type f -print0 | xargs -0 gh release upload "$TAG" --clobber --repo "$GITHUB_REPOSITORY"
+  # ===================== DISCORD NOTIFICATION =====================
+  discord-notify:
+    runs-on: ubuntu-latest
+    needs: [version, publish]
+    # Only notify on successful releases to main
+    if: ${{ success() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Send Discord Notification
+        uses: SethCohen/github-releases-to-discord@v1
+        with:
+          webhook_url: ${{ secrets.WEBHOOK_URL }}
+          color: "2105893"
+          username: "Trndi Release Bot"
+          avatar_url: "https://raw.githubusercontent.com/slicke/trndi/main/Trndi.png"
+          content: "||@everyone|| New Trndi build available!"
+          footer_title: "Build ${{ needs.version.outputs.build_number }}"
+          reduce_headings: true
