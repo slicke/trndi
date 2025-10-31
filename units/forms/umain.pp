@@ -4657,6 +4657,7 @@ begin
       if Assigned(l) then
       begin
         l.Visible := false;
+        l.Hint := '';  // Clear hint to prevent UpdateTrendDots from re-showing stale data
         LogMessage(Format('TrendDots[%d] hidden as no reading found in interval.',
           [labelNumber]));
       end;
