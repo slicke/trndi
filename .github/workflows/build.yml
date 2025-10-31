@@ -527,6 +527,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Get Release Info
         id: release_info
@@ -535,18 +537,23 @@ jobs:
         run: |
           TAG="build-${{ needs.version.outputs.build_number }}"
           
+          # Fetch all tags
+          git fetch --tags
+          
           # Get release URL
           RELEASE_URL=$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json url --jq .url)
           echo "release_url=${RELEASE_URL}" >> $GITHUB_OUTPUT
           
-          # Get commits since last build tag
+          # Get commits since last build tag (not just last commit)
           PREV_TAG=$(git tag --sort=-v:refname | grep -E '^build-[0-9]+$' | sed 's/^build-//' | sort -n | tail -2 | head -1)
           if [ -n "$PREV_TAG" ]; then
             PREV_TAG="build-${PREV_TAG}"
             echo "## Changes in this build" > commits.txt
+            echo "" >> commits.txt
             git log --oneline --no-merges "${PREV_TAG}..HEAD" | sed 's/^/- /' >> commits.txt
           else
             echo "## Changes in this build" > commits.txt
+            echo "" >> commits.txt
             git log --oneline --no-merges -10 | sed 's/^/- /' >> commits.txt
           fi
 
