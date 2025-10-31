@@ -11,7 +11,6 @@ object fBG: TfBG
   Font.Color = clWhite
   PopupMenu = pmSettings
   Position = poDesktopCenter
-  LCLVersion = '4.2.0.0'
   OnClose = FormClose
   OnCreate = FormCreate
   OnDblClick = FormDblClick
@@ -309,6 +308,13 @@ object fBG: TfBG
     TabOrder = 5
     Visible = False
     OnClick = bSettingsClick
+  end
+  object lPredict: TLabel
+    Left = 224
+    Height = 16
+    Top = 214
+    Width = 62
+    Caption = 'Predictions'
   end
   object tMain: TTimer
     Enabled = False

@@ -101,6 +101,7 @@ end;
 TfBG = class(TForm)
   apMain: TApplicationProperties;
   bSettings: TButton;
+  lPredict: TLabel;
   miPredict: TMenuItem;
   pnWarnlast: TLabel;
   lRef: TLabel;
@@ -363,6 +364,7 @@ private
     const Reading: BGReading): boolean;
   function DetermineColorForReading(const Reading: BGReading): TColor;
   procedure DoFullScreen;
+  procedure UpdatePredictionLabel;
   {$ifdef DARWIN}
   procedure ToggleFullscreenMac;
   {$endif}
@@ -414,6 +416,7 @@ perfectTriggered: boolean = false; // A perfect reading is active
 PaintRange: boolean = true;
 PaintRangeCGMRange: boolean = true; // Show cgmRangeLo/cgmRangeHi inner threshold lines
 PaintRangeLines: boolean = false;
+PredictGlucoseReading: boolean = false;
   // Show threshold lines (if false, only filled areas are drawn)
 {$ifdef darwin}
 MacAppDelegate: TMyAppDelegate;
@@ -1003,12 +1006,12 @@ begin
         linfo.left := 400;
         Height := linfo.canvas.TextHeight('Pq') + 5;
 
-        label1.AutoSize := true;
-        label1.Caption := 'Trndi | You need to accept the license agreement! ';
-        label1.top := 0;
-        label1.left := 0;
-        label1.font := linfo.font;
-        label1.font.color := clWhite;
+        lPredict.AutoSize := true;
+        lPredict.Caption := 'Trndi | You need to accept the license agreement! ';
+        lPredict.top := 0;
+        lPredict.left := 0;
+        lPredict.font := linfo.font;
+        lPredict.font.color := clWhite;
         Application.ProcessMessages;
       end;
   FStoredWindowInfo.Initialized := false;
@@ -1338,6 +1341,9 @@ begin
       api.cgmRangeLo := GetIntSetting('override.rangelo', api.cgmRangeLo);
       api.cgmRangeHi := GetIntSetting('override.rangehi', api.cgmRangeHi);
     end;
+
+    PredictGlucoseReading := GetBoolSetting('predictions.enable', false);
+    lPredict.Visible := PredictGlucoseReading;
   end;
 
   // Final initialization and first reading
@@ -2942,6 +2948,8 @@ procedure LoadUserSettings(f: TfConf);
 
       cbCust.Checked := GetBoolSetting('override.enabled');
       cbCustRange.Checked := GetBoolSetting('override.range');
+      cbPredictions.Checked := GetBoolSetting('predictions.enable');
+
       edMusicHigh.Text := GetSetting('media.url_high', '');
       edMusicLow.Text := GetSetting('media.url_low', '');
       edMusicPerfect.Text := GetSetting('media.url_perfect', '');
@@ -3174,6 +3182,7 @@ procedure SaveUserSettings(f: TfConf);
 
       SetBoolSetting('override.enabled', cbCust.Checked);
       SetBoolSetting('override.range', cbCustRange.Checked);
+      SetBoolSetting('predictions.enable', cbPredictions.Checked);
       SetSetting('media.url_high', edMusicHigh.Text);
       SetSetting('media.url_low', edMusicLow.Text);
       SetSetting('media.url_perfect', edMusicPerfect.Text);
@@ -3702,6 +3711,14 @@ begin
   pnMultiUser.Height := clientheight;
   pnMultiUser.top := 0;
   pnMultiUser.left := 0;
+  
+  // Position lPredict in lower-right corner
+  if Assigned(lPredict) and lPredict.Visible then
+  begin
+    lPredict.AutoSize := true;
+    lPredict.Left := ClientWidth - lPredict.Width - 5;
+    lPredict.Top := ClientHeight - lPredict.Height - 5;
+  end;
 end;
 
 procedure TfBG.UpdateTrendDots;
@@ -4093,6 +4110,9 @@ begin
   // Update floating window if assigned
   UpdateFloatingWindow;
 
+  // Update prediction label if enabled
+  UpdatePredictionLabel;
+
   // Update text colors based on background only if UI changed
   if ShouldUpdateUI(fBG.Color, lVal.Caption, lTir.Caption, lTir.Color) then
   begin
@@ -4111,6 +4131,45 @@ begin
   if privacyMode then
     DOT_ADJUST := randomrange(-3, 3) / 10;
 
+end;
+
+procedure TfBG.UpdatePredictionLabel;
+var
+  bgr: BGResults;
+  pred5, pred10, pred15: string;
+begin
+  if not PredictGlucoseReading then
+  begin
+    lPredict.Visible := false;
+    Exit;
+  end;
+
+  lPredict.Visible := true;
+
+  // Try to get 3 predictions (5, 10, 15 minutes)
+  if not api.predictReadings(3, bgr) then
+  begin
+    lPredict.Caption := 'Predictions unavailable';
+    Exit;
+  end;
+
+  // Format predictions: "5: value | 10: value | 15: value"
+  if Length(bgr) >= 1 then
+    pred5 := Format('%.1f', [bgr[0].convert(un)])
+  else
+    pred5 := '?';
+
+  if Length(bgr) >= 2 then
+    pred10 := Format('%.1f', [bgr[1].convert(un)])
+  else
+    pred10 := '?';
+
+  if Length(bgr) >= 3 then
+    pred15 := Format('%.1f', [bgr[2].convert(un)])
+  else
+    pred15 := '?';
+
+  lPredict.Caption := Format('5: %s | 10: %s | 15: %s', [pred5, pred10, pred15]);
 end;
 
 procedure TfBG.CompleteUIUpdate;

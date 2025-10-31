@@ -388,6 +388,10 @@ msgstr ""
 msgid "Show threshold lines"
 msgstr ""
 
+#: tfconf.cbpredictions.caption
+msgid "Show glucose predictions"
+msgstr ""
+
 #: tfconf.cbprivacy.caption
 msgid "Privacy Mode (Hide number)"
 msgstr ""
@@ -536,6 +540,10 @@ msgstr ""
 
 #: tfconf.groupbox7.caption
 msgid "Override Custom Range"
+msgstr ""
+
+#: tfconf.groupbox8.caption
+msgid "Predictions"
 msgstr ""
 
 #: tfconf.label1.caption
@@ -729,6 +737,10 @@ msgstr ""
 
 #: tfconf.lwaitsys.caption
 msgid "Please wait..."
+msgstr ""
+
+#: tfconf.lwarnpredict.caption
+msgid "WARNING: This is a very experimental feature!. Do not depend on these readings!"
 msgstr ""
 
 #: tfconf.lwidgetset.caption
@@ -1527,6 +1539,10 @@ msgstr ""
 
 #: uconf.rs_override_ns
 msgid "You are using the NightScout backend, you should set these values on your server (if possible), as Trndi uses your NightScout preferences by default"
+msgstr ""
+
+#: uconf.rs_predictionwarn
+msgid "Trndi will try to predict future readings. This is experimental and potentially unsafe! Do not make any treatment decisions based on these values! This feature is used on your own risk and responsibility!"
 msgstr ""
 
 #: uconf.rs_privacy_help
