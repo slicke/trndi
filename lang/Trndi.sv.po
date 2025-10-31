@@ -126,6 +126,11 @@ msgstr "Inställningar"
 msgid "No recent readings!"
 msgstr "Inga färska avläsningar!"
 
+#: tfbg.lpredict.caption
+msgctxt "tfbg.lpredict.caption"
+msgid "Predictions"
+msgstr ""
+
 #: tfbg.lref.caption
 msgid "0,?"
 msgstr "0,?"
@@ -560,6 +565,7 @@ msgid "Override Custom Range"
 msgstr "Överskrid föredraget område"
 
 #: tfconf.groupbox8.caption
+msgctxt "tfconf.groupbox8.caption"
 msgid "Predictions"
 msgstr ""
 
