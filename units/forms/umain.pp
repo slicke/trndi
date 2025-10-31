@@ -4136,7 +4136,11 @@ end;
 procedure TfBG.UpdatePredictionLabel;
 var
   bgr: BGResults;
-  pred5, pred10, pred15: string;
+  pred1, pred2, pred3: string;
+  min1, min2, min3: integer;
+  lastReadingTime: TDateTime;
+  i, closest5, closest10, closest15: integer;
+  diff5, diff10, diff15, currentDiff: integer;
 begin
   if not PredictGlucoseReading then
   begin
@@ -4146,30 +4150,81 @@ begin
 
   lPredict.Visible := true;
 
-  // Try to get 3 predictions (5, 10, 15 minutes)
-  if not api.predictReadings(3, bgr) then
+  // Request more predictions to get ones closer to 5, 10, 15 minutes
+  if not api.predictReadings(9, bgr) then
   begin
     lPredict.Caption := 'Predictions unavailable';
     Exit;
   end;
 
-  // Format predictions: "5: value | 10: value | 15: value"
-  if Length(bgr) >= 1 then
-    pred5 := Format('%.1f', [bgr[0].convert(un)])
-  else
-    pred5 := '?';
+  // Get the last reading time to calculate minutes ahead
+  lastReadingTime := lastReading.date;
 
-  if Length(bgr) >= 2 then
-    pred10 := Format('%.1f', [bgr[1].convert(un)])
-  else
-    pred10 := '?';
+  // Find predictions closest to 5, 10, and 15 minutes
+  // Ensure we pick different predictions for each slot
+  closest5 := -1;
+  closest10 := -1;
+  closest15 := -1;
+  diff5 := MaxInt;
+  diff10 := MaxInt;
+  diff15 := MaxInt;
 
-  if Length(bgr) >= 3 then
-    pred15 := Format('%.1f', [bgr[2].convert(un)])
-  else
-    pred15 := '?';
+  for i := 0 to High(bgr) do
+  begin
+    currentDiff := Round(MinutesBetween(bgr[i].date, lastReadingTime));
+    
+    // Skip predictions that are too close to current time (less than 2 minutes ahead)
+    if currentDiff < 2 then
+      continue;
+    
+    // Find closest to 5 minutes
+    if Abs(currentDiff - 5) < diff5 then
+    begin
+      diff5 := Abs(currentDiff - 5);
+      closest5 := i;
+    end;
+    
+    // Find closest to 10 minutes (but different from closest5)
+    if (Abs(currentDiff - 10) < diff10) and (i <> closest5) then
+    begin
+      diff10 := Abs(currentDiff - 10);
+      closest10 := i;
+    end;
+    
+    // Find closest to 15 minutes (but different from closest5 and closest10)
+    if (Abs(currentDiff - 15) < diff15) and (i <> closest5) and (i <> closest10) then
+    begin
+      diff15 := Abs(currentDiff - 15);
+      closest15 := i;
+    end;
+  end;
 
-  lPredict.Caption := Format('5: %s | 10: %s | 15: %s', [pred5, pred10, pred15]);
+  // Format predictions with actual time in minutes from last reading
+  if closest5 >= 0 then
+  begin
+    min1 := Round(MinutesBetween(bgr[closest5].date, lastReadingTime));
+    pred1 := Format('%d: %.1f', [min1, bgr[closest5].convert(un)]);
+  end
+  else
+    pred1 := '?';
+
+  if closest10 >= 0 then
+  begin
+    min2 := Round(MinutesBetween(bgr[closest10].date, lastReadingTime));
+    pred2 := Format('%d: %.1f', [min2, bgr[closest10].convert(un)]);
+  end
+  else
+    pred2 := '?';
+
+  if closest15 >= 0 then
+  begin
+    min3 := Round(MinutesBetween(bgr[closest15].date, lastReadingTime));
+    pred3 := Format('%d: %.1f', [min3, bgr[closest15].convert(un)]);
+  end
+  else
+    pred3 := '?';
+
+  lPredict.Caption := Format('%s | %s | %s', [pred1, pred2, pred3]);
 end;
 
 procedure TfBG.CompleteUIUpdate;
@@ -4548,6 +4603,7 @@ begin
   lDiff.Font.Color := GetTextColorForBackground(fBG.color, 0.6, 0.4);
   lAgo.Font.Color := GetTextColorForBackground(fBG.color, 0.6, 0.4);
   lTir.Font.Color := GetTextColorForBackground(fBG.color, 0.6, 0.4);
+  lPredict.Font.Color := GetTextColorForBackground(fBG.color, 0.6, 0.4);
 
 
   if TryStrToInt(lTir.hint, r) then
