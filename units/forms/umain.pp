@@ -4156,6 +4156,13 @@ var
   minutes: integer;
   validCount: integer;
 begin
+  // Safety check - api might not be initialized yet
+  if not Assigned(api) then
+  begin
+    lPredict.Visible := false;
+    Exit;
+  end;
+  
   if not PredictGlucoseReading then
   begin
     lPredict.Visible := false;
