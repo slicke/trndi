@@ -80,6 +80,7 @@ TfConf = class(TForm)
   cbTitleColor: TCheckBox;
   cbFlash: TCheckGroup;
   cbFlashHi: TCheckBox;
+  cbPredictions: TCheckBox;
   cl_hi_bg: TColorButton;
   cl_hi_txt: TColorButton;
   cl_hi_txt_cust: TColorButton;
@@ -119,6 +120,7 @@ TfConf = class(TForm)
   GroupBox5: TGroupBox;
   GroupBox6: TGroupBox;
   GroupBox7: TGroupBox;
+  GroupBox8: TGroupBox;
   Image1: TImage;
   Label1: TLabel;
   Label13: TLabel;
@@ -129,6 +131,7 @@ TfConf = class(TForm)
   Label2: TLabel;
   Label20: TLabel;
   Label21: TLabel;
+  lWarnPredict: TLabel;
   Label7: TLabel;
   Label8: TLabel;
   lDot: TLabel;
@@ -223,6 +226,7 @@ TfConf = class(TForm)
   procedure Button4Click(Sender: TObject);
   procedure cbCustChange(Sender: TObject);
   procedure cbCustRangeChange(Sender: TObject);
+  procedure cbPredictionsChange(Sender: TObject);
   procedure cbSysChange(Sender: TObject);
   procedure cbUserClick(Sender: TObject);
   procedure cbUserColorChanged(Sender: TObject);
@@ -350,6 +354,7 @@ RS_WAYLAND =
   'Your desktop session is Wayland. Wayland compositors (including KWin) restrict third-party apps from forcing windows above others.' +
   LineEnding + 'Right-click the title bar, select more options and check the always-on-top option (or similar)';
 
+RS_PredictionWarn = 'Trndi will try to predict future readings. This is experimental and potentially unsafe! Do not make any treatment decisions based on these values! This feature is used on your own risk and responsibility!';
 var
 fConf: TfConf;
 
@@ -1164,6 +1169,12 @@ begin
   fsLoRange.Enabled := cbCustRange.Checked;
   if (cbCustRange.Checked) and (cbSys.Text = 'NightScout') then
     ShowMessage(RS_OVERRIDE_NS);
+end;
+
+procedure TfConf.cbPredictionsChange(Sender: TObject);
+begin
+  if cbPredictions.Checked then
+    ShowMessage(RS_PredictionWarn);
 end;
 
 procedure TfConf.FormCreate(Sender: TObject);

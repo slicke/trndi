@@ -404,6 +404,10 @@ msgstr "Rita grafens bakgrund med ditt föredragna område"
 msgid "Show threshold lines"
 msgstr "Visa gränslinjer"
 
+#: tfconf.cbpredictions.caption
+msgid "Show glucose predictions"
+msgstr ""
+
 #: tfconf.cbprivacy.caption
 msgid "Privacy Mode (Hide number)"
 msgstr "Privat läget (dölj nummer)"
@@ -554,6 +558,10 @@ msgstr "Färglägg gränser"
 #: tfconf.groupbox7.caption
 msgid "Override Custom Range"
 msgstr "Överskrid föredraget område"
+
+#: tfconf.groupbox8.caption
+msgid "Predictions"
+msgstr ""
 
 #: tfconf.label1.caption
 msgid "Readings are outdated after (minutes):"
@@ -750,6 +758,10 @@ msgstr "0,0"
 #: tfconf.lwaitsys.caption
 msgid "Please wait..."
 msgstr "Var god dröj..."
+
+#: tfconf.lwarnpredict.caption
+msgid "WARNING: This is a very experimental feature!. Do not depend on these readings!"
+msgstr ""
 
 #: tfconf.lwidgetset.caption
 msgid "Unknown Widgetset"
@@ -1638,6 +1650,10 @@ msgstr ""
 #: uconf.rs_override_ns
 msgid "You are using the NightScout backend, you should set these values on your server (if possible), as Trndi uses your NightScout preferences by default"
 msgstr "Du använder NightScout, du bör sätta dessa värden på din server (om möjligt), eftersom Trndi plockar upp värdena som standard"
+
+#: uconf.rs_predictionwarn
+msgid "Trndi will try to predict future readings. This is experimental and potentially unsafe! Do not make any treatment decisions based on these values! This feature is used on your own risk and responsibility!"
+msgstr ""
 
 #: uconf.rs_privacy_help
 msgid "When in Privacy Mode, the actual blood glucose value is hidden. Trndi will only tell the user if it's good, high or low."
