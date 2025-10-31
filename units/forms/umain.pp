@@ -3682,8 +3682,10 @@ begin
   ScaleLbl(lDiff);
 
   // Konfigurera tidsvisning
-  //  lAgo.Top := 1 + IfThen(pnOffRange.Visible, pnOffRange.Height, 3);
+  lAgo.Width := ClientWidth div 2;
   lAgo.Height := ClientHeight div 9;
+  lAgo.Left := 5;
+  lAgo.Top := 1 + IfThen(pnOffRange.Visible, pnOffRange.Height, 3);
   ScaleLbl(lAgo, taLeftJustify);
 
   // Konfigurera trendpil
@@ -3718,12 +3720,14 @@ begin
   pnMultiUser.top := 0;
   pnMultiUser.left := 0;
   
-  // Position lPredict in lower-right corner
+  // Position and scale lPredict in lower-right corner
   if Assigned(lPredict) and lPredict.Visible then
   begin
-    lPredict.AutoSize := true;
+    lPredict.Width := ClientWidth div 3;
+    lPredict.Height := ClientHeight div 12;
     lPredict.Left := ClientWidth - lPredict.Width - 5;
     lPredict.Top := ClientHeight - lPredict.Height - 5;
+    ScaleLbl(lPredict, taRightJustify, tlBottom);
   end;
 end;
 
@@ -4145,8 +4149,11 @@ var
   pred1, pred2, pred3: string;
   min1, min2, min3: integer;
   lastReadingTime: TDateTime;
+  lastReadingValue: single;
   i, closest5, closest10, closest15: integer;
   diff5, diff10, diff15, currentDiff: integer;
+  trend1, trend2, trend3: BGTrend;
+  delta: single;
 begin
   if not PredictGlucoseReading then
   begin
@@ -4163,8 +4170,9 @@ begin
     Exit;
   end;
 
-  // Get the last reading time to calculate minutes ahead
+  // Get the last reading time and value to calculate trend
   lastReadingTime := lastReading.date;
+  lastReadingValue := lastReading.convert(mgdl);
 
   // Find predictions closest to 5, 10, and 15 minutes
   // Ensure we pick different predictions for each slot
@@ -4205,11 +4213,76 @@ begin
     end;
   end;
 
-  // Format predictions with actual time in minutes from last reading
+  // Calculate trend for each prediction based on delta from current reading
+  // Using similar logic to guessTrend in debug API
+  if closest5 >= 0 then
+  begin
+    delta := bgr[closest5].convert(mgdl) - lastReadingValue;
+    if delta < -20 then
+      trend1 := TdDoubleDown
+    else if delta < -15 then
+      trend1 := TdSingleDown
+    else if delta < -10 then
+      trend1 := TdFortyFiveDown
+    else if delta < 5 then
+      trend1 := TdFlat
+    else if delta < 10 then
+      trend1 := TdFortyFiveUp
+    else if delta < 15 then
+      trend1 := TdSingleUp
+    else
+      trend1 := TdDoubleUp;
+  end
+  else
+    trend1 := TdNotComputable;
+
+  if closest10 >= 0 then
+  begin
+    delta := bgr[closest10].convert(mgdl) - lastReadingValue;
+    if delta < -20 then
+      trend2 := TdDoubleDown
+    else if delta < -15 then
+      trend2 := TdSingleDown
+    else if delta < -10 then
+      trend2 := TdFortyFiveDown
+    else if delta < 5 then
+      trend2 := TdFlat
+    else if delta < 10 then
+      trend2 := TdFortyFiveUp
+    else if delta < 15 then
+      trend2 := TdSingleUp
+    else
+      trend2 := TdDoubleUp;
+  end
+  else
+    trend2 := TdNotComputable;
+
+  if closest15 >= 0 then
+  begin
+    delta := bgr[closest15].convert(mgdl) - lastReadingValue;
+    if delta < -20 then
+      trend3 := TdDoubleDown
+    else if delta < -15 then
+      trend3 := TdSingleDown
+    else if delta < -10 then
+      trend3 := TdFortyFiveDown
+    else if delta < 5 then
+      trend3 := TdFlat
+    else if delta < 10 then
+      trend3 := TdFortyFiveUp
+    else if delta < 15 then
+      trend3 := TdSingleUp
+    else
+      trend3 := TdDoubleUp;
+  end
+  else
+    trend3 := TdNotComputable;
+
+  // Format predictions with clock emoji, trend arrows, and values
   if closest5 >= 0 then
   begin
     min1 := Round(MinutesBetween(bgr[closest5].date, lastReadingTime));
-    pred1 := Format('%d: %.1f', [min1, bgr[closest5].convert(un)]);
+    pred1 := Format('⏱%d'' %s %.1f', [min1, BG_TREND_ARROWS_UTF[trend1], bgr[closest5].convert(un)]);
   end
   else
     pred1 := '?';
@@ -4217,7 +4290,7 @@ begin
   if closest10 >= 0 then
   begin
     min2 := Round(MinutesBetween(bgr[closest10].date, lastReadingTime));
-    pred2 := Format('%d: %.1f', [min2, bgr[closest10].convert(un)]);
+    pred2 := Format('⏱%d'' %s %.1f', [min2, BG_TREND_ARROWS_UTF[trend2], bgr[closest10].convert(un)]);
   end
   else
     pred2 := '?';
@@ -4225,7 +4298,7 @@ begin
   if closest15 >= 0 then
   begin
     min3 := Round(MinutesBetween(bgr[closest15].date, lastReadingTime));
-    pred3 := Format('%d: %.1f', [min3, bgr[closest15].convert(un)]);
+    pred3 := Format('⏱%d'' %s %.1f', [min3, BG_TREND_ARROWS_UTF[trend3], bgr[closest15].convert(un)]);
   end
   else
     pred3 := '?';
