@@ -2285,10 +2285,12 @@ begin
   l.Visible := false;
 end;
 
-// Shows a dot
+// Shows a dot only if it has valid data (non-empty Hint)
 procedure TfBG.ShowDot(l: TPaintBox; c, ix: integer);
 begin
-  l.Visible := true;
+  // Only show dots that have been populated with data
+  if l.Hint <> '' then
+    l.Visible := true;
 end;
 
 // Scales a dot's font size
@@ -2341,7 +2343,9 @@ begin
 
     if not DraggingWin then
     begin
-      lVal.Visible := false;
+      // Only hide labels during resize if they don't have valid content
+      if lVal.Caption = '' then
+        lVal.Visible := false;
       lAgo.Visible := false;
       lTir.Visible := false;
     end;
@@ -2759,6 +2763,15 @@ var
 begin
   if firstboot then
     exit;
+  
+  // Check if we have made an API call before
+  if FLastAPICall = 0 then
+  begin
+    // No previous API call, just do a normal update
+    updateReading;
+    Exit;
+  end;
+  
   // Check if we're still within the cache window
   secondsSinceLastCall := SecondsBetween(Now, FLastAPICall);
   if secondsSinceLastCall < API_CACHE_SECONDS then
