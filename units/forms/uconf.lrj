@@ -63,6 +63,7 @@
 {"hash":33618586,"name":"tfconf.cbtircolor.caption","sourcebytes":[85,115,101,32,116,104,105,115,32,99,111,108,111,114,58],"value":"Use this color:"},
 {"hash":238656900,"name":"tfconf.cbtircolorbgcustom.caption","sourcebytes":[65,100,106,117,115,116,32,99,111,108,111,114,32,98,97,115,101,100,32,111,110,32,98,97,99,107,103,114,111,117,110,100],"value":"Adjust color based on background"},
 {"hash":33618586,"name":"tfconf.cbtircolorcustom.caption","sourcebytes":[85,115,101,32,116,104,105,115,32,99,111,108,111,114,58],"value":"Use this color:"},
+{"hash":166768468,"name":"tfconf.label21.caption","sourcebytes":[78,79,84,69,58,32,67,111,108,111,114,115,32,119,105,108,108,32,98,101,32,98,108,101,110,100,101,100,32,119,105,116,104,32,84,114,110,100,105,39,115,32,98,97,99,107,103,114,111,117,110,100],"value":"NOTE: Colors will be blended with Trndi's background"},
 {"hash":124551989,"name":"tfconf.groupbox7.caption","sourcebytes":[79,118,101,114,114,105,100,101,32,67,117,115,116,111,109,32,82,97,110,103,101],"value":"Override Custom Range"},
 {"hash":223508819,"name":"tfconf.cbcustrange.caption","sourcebytes":[85,115,101,32,99,117,115,116,111,109,32,118,97,108,117,101,115],"value":"Use custom values"},
 {"hash":229057074,"name":"tfconf.lhiover1.caption","sourcebytes":[72,105,103,104,32,111,118,101,114],"value":"High over"},

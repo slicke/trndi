@@ -128,6 +128,7 @@ TfConf = class(TForm)
   Label19: TLabel;
   Label2: TLabel;
   Label20: TLabel;
+  Label21: TLabel;
   Label7: TLabel;
   Label8: TLabel;
   lDot: TLabel;

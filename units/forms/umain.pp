@@ -2064,7 +2064,7 @@ begin
     if tir_bg = -1 then
       cnv.Brush.Color := DarkenColor(fBG.Color, 0.9)
     else
-      cnv.Brush.Color := tir_bg;
+      cnv.Brush.Color := BlendColors(tir_bg, fBG.Color, 0.3); // 30% tir_bg, 70% background
     cnv.Pen.Style := psClear;
     cnv.FillRect(Classes.Rect(0, hiY, Self.ClientWidth, loY));
   end;
@@ -2076,7 +2076,13 @@ begin
     if tir_custom_bg = -1 then
       cnv.Brush.Color := DarkenColor(fBG.Color, 0.85)
     else
-     cnv.Brush.Color := tir_custom_bg;
+    begin
+      // Blend tir_custom_bg with the base layer (either blended tir_bg or fBG.Color)
+      if tir_bg = -1 then
+        cnv.Brush.Color := BlendColors(tir_custom_bg, fBG.Color, 0.3) // Blend with background
+      else
+        cnv.Brush.Color := BlendColors(tir_custom_bg, BlendColors(tir_bg, fBG.Color, 0.3), 0.3); // Blend with tir_bg layer
+    end;
     cnv.Pen.Style := psClear;
     cnv.FillRect(Classes.Rect(0, rangeHiY, Self.ClientWidth, rangeLoY));
   end;
