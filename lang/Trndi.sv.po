@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit 3.8\n"
+"X-Generator: Poedit 3.7\n"
 
 #: slicke.ux.alert.dlgerr
 msgid "An error occurred while creating a message dialog"
@@ -129,7 +129,7 @@ msgstr "Inga färska avläsningar!"
 #: tfbg.lpredict.caption
 msgctxt "tfbg.lpredict.caption"
 msgid "Predictions"
-msgstr ""
+msgstr "Förutspåelser"
 
 #: tfbg.lref.caption
 msgid "0,?"
@@ -411,7 +411,7 @@ msgstr "Visa gränslinjer"
 
 #: tfconf.cbpredictions.caption
 msgid "Show glucose predictions"
-msgstr ""
+msgstr "Visa glukosförutspåelser"
 
 #: tfconf.cbprivacy.caption
 msgid "Privacy Mode (Hide number)"
@@ -567,7 +567,7 @@ msgstr "Överskrid föredraget område"
 #: tfconf.groupbox8.caption
 msgctxt "tfconf.groupbox8.caption"
 msgid "Predictions"
-msgstr ""
+msgstr "Förutspåelser"
 
 #: tfconf.label1.caption
 msgid "Readings are outdated after (minutes):"
@@ -767,7 +767,7 @@ msgstr "Var god dröj..."
 
 #: tfconf.lwarnpredict.caption
 msgid "WARNING: This is a very experimental feature!. Do not depend on these readings!"
-msgstr ""
+msgstr "VARNING: Detta är en experimentell funktion! Lita inte på dessa värden!"
 
 #: tfconf.lwidgetset.caption
 msgid "Unknown Widgetset"
@@ -1659,7 +1659,7 @@ msgstr "Du använder NightScout, du bör sätta dessa värden på din server (om
 
 #: uconf.rs_predictionwarn
 msgid "Trndi will try to predict future readings. This is experimental and potentially unsafe! Do not make any treatment decisions based on these values! This feature is used on your own risk and responsibility!"
-msgstr ""
+msgstr "Trndi kommer försöka att förutspå framtida värden. Detta är experimentellt och potentiellt osäkert! Gör inga behandlingar baserat på dessa värden! Du använder funktionen på egen risk och ansvar!"
 
 #: uconf.rs_privacy_help
 msgid "When in Privacy Mode, the actual blood glucose value is hidden. Trndi will only tell the user if it's good, high or low."
@@ -1714,4 +1714,3 @@ msgstr "Du kan använda skift+<nummerr> för att manuellt sätta synligheten (0 
 #: ufloat.rscustomsize
 msgid "You can hold down shift and plus (+) or minus (-) to change the window size"
 msgstr "Du kan hålla ned skift och plus (+) eller minus (-) för att justera fönstrets storlek"
-
