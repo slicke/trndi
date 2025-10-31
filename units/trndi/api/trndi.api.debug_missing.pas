@@ -27,7 +27,7 @@ interface
 
 uses
 Classes, SysUtils, Dialogs, trndi.types, trndi.api, trndi.native,
-trndi.api.debug, fpjson, jsonparser, dateutils;
+trndi.api.debug, trndi.funcs, fpjson, jsonparser, dateutils;
 
 type
   // Main class
@@ -74,29 +74,6 @@ function getFakeVals(const min: integer; out reading, delta: integer): TDateTime
     delta := reading - previousReading;
   end;
 
-function guessTrend(diff: integer): BGTrend;
-  begin
-    if diff < -20 then
-      Result := TdDoubleDown
-    else
-    if diff < -15 then
-      Result := TdSingleDown
-    else
-    if diff < -10 then
-      Result := TdFortyFiveDown
-    else
-    if diff < 5 then
-      Result := TdFlat
-    else
-    if diff < 10 then
-      Result := TdFortyFiveUp
-    else
-    if diff < 15 then
-      Result := TdSingleUp
-    else
-      Result := TdDoubleUp;
-  end;
-
 var
   i: integer;
   val, diff: integer;
@@ -108,7 +85,7 @@ begin
     Result[i].Init(mgdl);
     Result[i].date := getFakeVals(i * 5, val, diff);
     Result[i].update(val, diff);
-    Result[i].trend := guessTrend(diff);
+    Result[i].trend := CalculateTrendFromDelta(diff);
     Result[i].level := getLevel(Result[i].val);
     Result[i].updateEnv('Debug');
   end;
