@@ -40,6 +40,7 @@ OutlineColor: TColor = clBlack);
 procedure LogMessage(const Msg: string);
 procedure SortReadingsDescending(var Readings: array of BGReading);
 procedure SetPointHeight(l: TPaintBox; Value: single; clientHeight: integer);
+function CalculateTrendFromDelta(delta: single): BGTrend;
 function HasNewerRelease(const JsonResponse: string;
 out ReleaseName: string;
 IncludePrerelease: boolean = false): boolean;
@@ -298,6 +299,26 @@ begin
 
   // Optional debug/logging to verify placement
   LogMessage(Format('Label %s: Value=%.2f, Top=%d', [L.Name, Value, L.Top]));
+end;
+
+function CalculateTrendFromDelta(delta: single): BGTrend;
+begin
+  // Calculate trend based on delta in mg/dL
+  // Using similar logic to guessTrend in debug API
+  if delta < -20 then
+    Result := TdDoubleDown
+  else if delta < -15 then
+    Result := TdSingleDown
+  else if delta < -10 then
+    Result := TdFortyFiveDown
+  else if delta < 5 then
+    Result := TdFlat
+  else if delta < 10 then
+    Result := TdFortyFiveUp
+  else if delta < 15 then
+    Result := TdSingleUp
+  else
+    Result := TdDoubleUp;
 end;
 
 procedure setTimeRange(mins, Count: integer);
