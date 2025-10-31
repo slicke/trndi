@@ -966,10 +966,10 @@ begin
   SetTray(Value, badgecolor, badge_size_ratio, min_font_size);
 end;
 
-// Overload: delegate to base for default behavior
+// Overload: delegate to the full implementation with default parameters
 procedure TTrndiNativeLinux.SetBadge(const Value: string; BadgeColor: TColor);
 begin
-  inherited SetBadge(Value, BadgeColor);
+  SetBadge(Value, BadgeColor, DEFAULT_BADGE_SIZE_RATIO, DEFAULT_MIN_FONT_SIZE);
 end;
 
 // Flash timer tick: pulse brightness (simple 4-phase like Windows)
