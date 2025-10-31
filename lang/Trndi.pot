@@ -589,6 +589,10 @@ msgstr ""
 msgid "The custom range is a subrange with your ideal goal."
 msgstr ""
 
+#: tfconf.label21.caption
+msgid "NOTE: Colors will be blended with Trndi's background"
+msgstr ""
+
 #: tfconf.label3.caption
 msgid "Nickname:"
 msgstr ""

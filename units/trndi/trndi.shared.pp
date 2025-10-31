@@ -30,6 +30,7 @@ LCLIntf;
 function DarkenColor(originalColor: TColor; factor: double = 0.8): TColor;
 function LightenColor(originalColor: TColor; factor: double = 0.8): TColor;
 function IsLightColor(bgColor: TColor): boolean;
+function BlendColors(foreground, background: TColor; alpha: double = 0.5): TColor;
 
 // System information functions  
 function GetLinuxSystem: string;
@@ -119,6 +120,31 @@ begin
 
   // If L > 0.179 black is more suitable than white
   Result := (L > 0.179);
+end;
+
+function BlendColors(foreground, background: TColor; alpha: double = 0.5): TColor;
+var
+  fgR, fgG, fgB: byte;
+  bgR, bgG, bgB: byte;
+  outR, outG, outB: byte;
+begin
+  // Extract RGB components from foreground
+  fgR := GetRValue(foreground);
+  fgG := GetGValue(foreground);
+  fgB := GetBValue(foreground);
+
+  // Extract RGB components from background
+  bgR := GetRValue(background);
+  bgG := GetGValue(background);
+  bgB := GetBValue(background);
+
+  // Blend: output = (foreground * alpha) + (background * (1 - alpha))
+  outR := Round(fgR * alpha + bgR * (1 - alpha));
+  outG := Round(fgG * alpha + bgG * (1 - alpha));
+  outB := Round(fgB * alpha + bgB * (1 - alpha));
+
+  // Create blended color
+  Result := RGB(outR, outG, outB);
 end;
 
 // System information functions
