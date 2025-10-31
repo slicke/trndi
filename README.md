@@ -12,6 +12,7 @@
 <br>Windows 11
 
 ![Linux](doc/img/img_lin.png)
+![Linux](doc/img/img_lin_range.png)
 <br>Fedora Linux
 
 ![Linux](doc/img/img_rpi.png)
