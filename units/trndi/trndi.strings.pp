@@ -97,6 +97,8 @@ RS_CLEANUP = 'Wait. Shutting down extensions engine...';
 
 RS_RIGHT_CLICK = 'The settings dialog will now open, in the future please right-click the reading to open the menu.';
 
+RS_PREDICT = 'These are your predicted readings; Time-difference: predicted-reading';
+
 // EXT
 sExtErr = 'Extension Error';
 sExtMsg = 'Extension Message';

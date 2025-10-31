@@ -1043,6 +1043,10 @@ msgstr ""
 msgid "over"
 msgstr ""
 
+#: trndi.strings.rs_predict
+msgid "These are your predicted readings; Time-difference: predicted-reading"
+msgstr ""
+
 #: trndi.strings.rs_quit_caption
 msgid "Exit Trndi?"
 msgstr ""
