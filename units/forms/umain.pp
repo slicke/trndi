@@ -193,6 +193,7 @@ TfBG = class(TForm)
   procedure FormKeyPress(Sender: TObject; var Key: char);
   procedure DotPaint(Sender: TObject);
   procedure lDiffClick(Sender: TObject);
+  procedure lPredictClick(Sender: TObject);
   procedure miDotNormalDrawItem(Sender: TObject; ACanvas: TCanvas;
     ARect: TRect; AState: TOwnerDrawState);
   procedure miDotNormalMeasureItem(Sender: TObject; ACanvas: TCanvas;
@@ -1511,6 +1512,11 @@ end;
 procedure TfBG.lDiffClick(Sender: TObject);
 begin
   ShowMessage(RS_DIFF);
+end;
+
+procedure TfBG.lPredictClick(Sender: TObject);
+begin
+  SHowMessage(RS_PREDICT);
 end;
 
 procedure TfBG.miDotNormalDrawItem(Sender: TObject; ACanvas: TCanvas;

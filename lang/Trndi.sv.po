@@ -1091,6 +1091,10 @@ msgstr "%s (%d.%.2d sedan)"
 msgid "over"
 msgstr "över"
 
+#: trndi.strings.rs_predict
+msgid "These are your predicted readings; Time-difference: predicted-reading"
+msgstr "Detta är dina förutspådda avläsningar; Tidsskillnad: förutspådd-avläsning"
+
 #: trndi.strings.rs_quit_caption
 msgid "Exit Trndi?"
 msgstr "Avsluta Trndi?"

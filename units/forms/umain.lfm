@@ -315,6 +315,7 @@ object fBG: TfBG
     Top = 214
     Width = 62
     Caption = 'Predictions'
+    OnClick = lPredictClick
   end
   object tMain: TTimer
     Enabled = False
