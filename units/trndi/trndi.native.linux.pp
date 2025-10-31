@@ -953,12 +953,16 @@ badge_size_ratio: double; min_font_size: integer);
 var
   f: double;
 begin
-  f := 0.0;
-  TryStrToFloat(Value, f);
   if KDEBadge.GDesktopId = '' then
     InitializeBadge('com.slicke.trndi.desktop', 150, nil);
   ClearBadge;
-  KDEBadge.SetBadge(f);
+  
+  // Only set numeric badge if value can be parsed as a number
+  // For placeholders like '--', clear the badge instead
+  if TryStrToFloat(Value, f) then
+    KDEBadge.SetBadge(f);
+  // If TryStrToFloat fails, badge stays cleared (ClearBadge above)
+  
   SetTray(Value, badgecolor, badge_size_ratio, min_font_size);
 end;
 
