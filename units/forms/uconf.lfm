@@ -16,10 +16,10 @@ object fConf: TfConf
     Height = 518
     Top = 11
     Width = 665
-    ActivePage = tsDisplay
+    ActivePage = tsSystem
     Align = alClient
     BorderSpacing.Around = 5
-    TabIndex = 2
+    TabIndex = 7
     TabOrder = 0
     OnChange = pcMainChange
     object tsGeneral: TTabSheet
@@ -11818,106 +11818,6 @@ object fConf: TfConf
       ClientHeight = 483
       ClientWidth = 659
       OnShow = tsSystemShow
-      object GroupBox1: TGroupBox
-        Left = 10
-        Height = 105
-        Top = 368
-        Width = 639
-        Align = alBottom
-        BorderSpacing.Around = 10
-        Caption = 'System Features'
-        ClientHeight = 78
-        ClientWidth = 635
-        TabOrder = 0
-        object cbTouch: TCheckBox
-          Left = 8
-          Height = 20
-          Top = 0
-          Width = 96
-          Caption = 'Touch screen'
-          Enabled = False
-          TabOrder = 0
-        end
-        object cbNotice: TCheckBox
-          Left = 8
-          Height = 20
-          Top = 48
-          Width = 137
-          Caption = 'System notifications'
-          Enabled = False
-          TabOrder = 1
-        end
-        object cbMultiTouch: TCheckBox
-          Left = 32
-          Height = 20
-          Top = 24
-          Width = 88
-          Caption = 'Multi-touch'
-          Enabled = False
-          TabOrder = 2
-        end
-        object pnHelp: TPanel
-          Left = 465
-          Height = 78
-          Top = 0
-          Width = 170
-          Align = alRight
-          BevelOuter = bvNone
-          ClientHeight = 78
-          ClientWidth = 170
-          TabOrder = 3
-          object bSysTouch: TButton
-            Left = 128
-            Height = 22
-            Top = 0
-            Width = 33
-            Caption = '?'
-            TabOrder = 0
-            OnClick = bSysTouchClick
-          end
-          object bSysNotice: TButton
-            Left = 128
-            Height = 22
-            Top = 48
-            Width = 33
-            Caption = '?'
-            TabOrder = 1
-            OnClick = bSysNoticeClick
-          end
-        end
-      end
-      object bTestAnnounce: TButton
-        Left = 16
-        Height = 25
-        Top = 200
-        Width = 131
-        Caption = 'Test Announce'
-        TabOrder = 1
-        OnClick = bTestAnnounceClick
-      end
-      object lTestAnnounce: TLabel
-        Left = 160
-        Height = 16
-        Top = 205
-        Width = 127
-        Caption = 'Test an announcement'
-      end
-      object bTestSpeech: TButton
-        Left = 16
-        Height = 25
-        Top = 168
-        Width = 131
-        Caption = 'Test Speech'
-        TabOrder = 2
-        OnClick = bTestSpeechClick
-      end
-      object lTestAnnounce1: TLabel
-        Left = 160
-        Height = 16
-        Top = 173
-        Width = 108
-        Caption = 'Test a spoken string'
-      end
       object lWaitSys: TLabel
         Left = 25
         Height = 71
@@ -11932,37 +11832,149 @@ object fConf: TfConf
         Font.Style = [fsBold]
         ParentFont = False
       end
-      object lOS: TLabel
-        Left = 16
-        Height = 16
-        Top = 96
-        Width = 99
-        Caption = 'Unknown System'
-        Font.Style = [fsBold]
-        ParentFont = False
-      end
-      object lWidgetset: TLabel
-        Left = 16
-        Height = 16
-        Top = 112
-        Width = 114
-        Caption = 'Unknown Widgetset'
-      end
-      object lArch: TLabel
-        Left = 16
-        Height = 16
-        Top = 128
-        Width = 123
-        Caption = 'Unknown Architecture'
-      end
-      object lProblematic: TLabel
-        Left = 16
-        Height = 16
-        Top = 144
-        Width = 498
-        Caption = 'Compatibility mode: Your window manager does not support all features, please consider eg KDE'
-        Font.Style = [fsItalic]
-        ParentFont = False
+      object pnSysInfo: TPanel
+        Left = 0
+        Height = 362
+        Top = 121
+        Width = 659
+        Align = alClient
+        BevelOuter = bvNone
+        ClientHeight = 362
+        ClientWidth = 659
+        TabOrder = 0
+        Visible = False
+        object lOS: TLabel
+          Left = 16
+          Height = 16
+          Top = 22
+          Width = 99
+          Caption = 'Unknown System'
+          Font.Style = [fsBold]
+          ParentFont = False
+        end
+        object lWidgetset: TLabel
+          Left = 16
+          Height = 16
+          Top = 38
+          Width = 114
+          Caption = 'Unknown Widgetset'
+        end
+        object lArch: TLabel
+          Left = 16
+          Height = 16
+          Top = 54
+          Width = 123
+          Caption = 'Unknown Architecture'
+        end
+        object lProblematic: TLabel
+          Left = 16
+          Height = 16
+          Top = 70
+          Width = 498
+          Caption = 'Compatibility mode: Your window manager does not support all features, please consider eg KDE'
+          Font.Style = [fsItalic]
+          ParentFont = False
+        end
+        object bTestSpeech: TButton
+          Left = 16
+          Height = 25
+          Top = 117
+          Width = 131
+          Caption = 'Test Speech'
+          TabOrder = 0
+          OnClick = bTestSpeechClick
+        end
+        object lTestAnnounce1: TLabel
+          Left = 160
+          Height = 16
+          Top = 122
+          Width = 108
+          Caption = 'Test a spoken string'
+        end
+        object bTestAnnounce: TButton
+          Left = 16
+          Height = 25
+          Top = 149
+          Width = 131
+          Caption = 'Test Announce'
+          TabOrder = 1
+          OnClick = bTestAnnounceClick
+        end
+        object lTestAnnounce: TLabel
+          Left = 160
+          Height = 16
+          Top = 154
+          Width = 127
+          Caption = 'Test an announcement'
+        end
+        object GroupBox1: TGroupBox
+          Left = 10
+          Height = 105
+          Top = 247
+          Width = 639
+          Align = alBottom
+          BorderSpacing.Around = 10
+          Caption = 'System Features'
+          ClientHeight = 78
+          ClientWidth = 635
+          TabOrder = 2
+          object cbTouch: TCheckBox
+            Left = 8
+            Height = 20
+            Top = 0
+            Width = 96
+            Caption = 'Touch screen'
+            Enabled = False
+            TabOrder = 0
+          end
+          object cbNotice: TCheckBox
+            Left = 8
+            Height = 20
+            Top = 48
+            Width = 137
+            Caption = 'System notifications'
+            Enabled = False
+            TabOrder = 1
+          end
+          object cbMultiTouch: TCheckBox
+            Left = 32
+            Height = 20
+            Top = 24
+            Width = 88
+            Caption = 'Multi-touch'
+            Enabled = False
+            TabOrder = 2
+          end
+          object pnHelp: TPanel
+            Left = 465
+            Height = 78
+            Top = 0
+            Width = 170
+            Align = alRight
+            BevelOuter = bvNone
+            ClientHeight = 78
+            ClientWidth = 170
+            TabOrder = 3
+            object bSysTouch: TButton
+              Left = 128
+              Height = 22
+              Top = 0
+              Width = 33
+              Caption = '?'
+              TabOrder = 0
+              OnClick = bSysTouchClick
+            end
+            object bSysNotice: TButton
+              Left = 128
+              Height = 22
+              Top = 48
+              Width = 33
+              Caption = '?'
+              TabOrder = 1
+              OnClick = bSysNoticeClick
+            end
+          end
+        end
       end
     end
   end
