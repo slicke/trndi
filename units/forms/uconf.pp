@@ -46,8 +46,8 @@ TfConf = class(TForm)
   bSysNotice: TButton;
   bSysTouch: TButton;
   bTestSpeech: TButton;
-  btUserSave: TButton;
   btReset: TButton;
+  btUserSave: TButton;
   bTestAnnounce: TButton;
   Button2: TButton;
   Button3: TButton;
@@ -74,25 +74,25 @@ TfConf = class(TForm)
   cbTirColorBgCustom: TRadioButton;
   cbTirColor: TRadioButton;
   cbTirColorCustom: TRadioButton;
+  cbTitleColor: TCheckBox;
   cbTouch: TCheckBox;
   cbUser: TColorButton;
   cbUserColor: TCheckBox;
-  cbTitleColor: TCheckBox;
   cbFlash: TCheckGroup;
   cbFlashHi: TCheckBox;
   cbPredictions: TCheckBox;
+  cbTirBar: TColorButton;
+  cbTirBarCustom: TColorButton;
   cl_hi_bg: TColorButton;
+  cl_hi_bg_cust: TColorButton;
   cl_hi_txt: TColorButton;
   cl_hi_txt_cust: TColorButton;
   cl_lo_bg: TColorButton;
+  cl_lo_bg_cust: TColorButton;
   cl_lo_txt: TColorButton;
   cl_lo_txt_cust: TColorButton;
-  cl_lo_bg_cust: TColorButton;
-  cl_hi_bg_cust: TColorButton;
   cl_ok_bg: TColorButton;
   cl_ok_txt: TColorButton;
-  cbTirBar: TColorButton;
-  cbTirBarCustom: TColorButton;
   eAddr: TEdit;
   edCommaSep: TEdit;
   edNick: TEdit;
@@ -108,14 +108,11 @@ TfConf = class(TForm)
   fsHiRange: TFloatSpinEdit;
   fsLo: TFloatSpinEdit;
   fsLoRange: TFloatSpinEdit;
-  gbColBack: TGroupBox;
   gbDisplayPrefs: TGroupBox;
   gbMulti: TGroupBox;
   gbOverride: TGroupBox;
   gbOverride2: TGroupBox;
   GroupBox1: TGroupBox;
-  GroupBox2: TGroupBox;
-  GroupBox3: TGroupBox;
   GroupBox4: TGroupBox;
   GroupBox5: TGroupBox;
   GroupBox6: TGroupBox;
@@ -124,6 +121,7 @@ TfConf = class(TForm)
   Image1: TImage;
   Label1: TLabel;
   Label13: TLabel;
+  Label14: TLabel;
   Label16: TLabel;
   Label17: TLabel;
   Label18: TLabel;
@@ -131,6 +129,9 @@ TfConf = class(TForm)
   Label2: TLabel;
   Label20: TLabel;
   Label21: TLabel;
+  Label22: TLabel;
+  Label23: TLabel;
+  Label24: TLabel;
   lWarnPredict: TLabel;
   Label7: TLabel;
   Label8: TLabel;
@@ -153,7 +154,6 @@ TfConf = class(TForm)
   Label10: TLabel;
   Label11: TLabel;
   Label12: TLabel;
-  Label14: TLabel;
   Label15: TLabel;
   lPass: TLabel;
   lExt: TLabel;
@@ -175,7 +175,9 @@ TfConf = class(TForm)
   lVal: TLabel;
   lVersion: TLabel;
   lArch: TLabel;
+  pcColors: TPageControl;
   Panel1: TPanel;
+  Panel7: TPanel;
   pnFonts: TPanel;
   Panel11: TPanel;
   Panel12: TPanel;
@@ -184,7 +186,6 @@ TfConf = class(TForm)
   Panel4: TPanel;
   Panel5: TPanel;
   Panel6: TPanel;
-  Panel7: TPanel;
   Panel8: TPanel;
   Panel9: TPanel;
   pDecimal: TPanel;
@@ -201,6 +202,9 @@ TfConf = class(TForm)
   rbUnit: TRadioGroup;
   spTHRESHOLD: TSpinEdit;
   TabSheet1: TTabSheet;
+  tsBackgrounds: TTabSheet;
+  tsTexts: TTabSheet;
+  tsCustomRange: TTabSheet;
   tsColors: TTabSheet;
   tsCustom: TTabSheet;
   tsDisplay: TTabSheet;
@@ -244,6 +248,7 @@ TfConf = class(TForm)
   procedure lbUsersSelectionChange(Sender: TObject; User: boolean);
   procedure lLicenseClick(Sender: TObject);
   procedure lValClick(Sender: TObject);
+  procedure pcColorsChange(Sender: TObject);
   procedure pcMainChange(Sender: TObject);
   procedure rbUnitClick(Sender: TObject);
   procedure spTHRESHOLDChange(Sender: TObject);
@@ -1282,6 +1287,11 @@ begin
   f := ExtFontPicker(uxdAuto,RS_SELECT_FONT, RS_SELECT_FONT, title, (sender as TLabel).font, (sender as TLabel).caption, mr);
   if mr = mrOK then
    (Sender as TLabel).Font := f;
+end;
+
+procedure TfConf.pcColorsChange(Sender: TObject);
+begin
+
 end;
 
 procedure TfConf.pcMainChange(Sender: TObject);
