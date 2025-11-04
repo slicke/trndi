@@ -126,5 +126,10 @@
 {"hash":203401272,"name":"tfconf.cbmultitouch.caption","sourcebytes":[77,117,108,116,105,45,116,111,117,99,104],"value":"Multi-touch"},
 {"hash":63,"name":"tfconf.bsystouch.caption","sourcebytes":[63],"value":"?"},
 {"hash":63,"name":"tfconf.bsysnotice.caption","sourcebytes":[63],"value":"?"},
+{"hash":207440883,"name":"tfconf.tsext.caption","sourcebytes":[69,120,116,101,110,115,105,111,110,115],"value":"Extensions"},
+{"hash":115860858,"name":"tfconf.label25.caption","sourcebytes":[76,111,97,100,101,100,32,69,120,116,101,110,115,105,111,110,115,58],"value":"Loaded Extensions:"},
+{"hash":114836563,"name":"tfconf.label26.caption","sourcebytes":[69,120,116,101,110,115,105,111,110,115,32,109,97,100,101,32,112,111,115,115,105,98,108,101,32,119,105,116,104,32,81,117,105,99,107,74,83],"value":"Extensions made possible with QuickJS"},
+{"hash":55712490,"name":"tfconf.lextcount.caption","sourcebytes":[69,120,116,101,110,115,105,111,110,115,32,99,111,117,110,116,58],"value":"Extensions count:"},
+{"hash":93151194,"name":"tfconf.label27.caption","sourcebytes":[118,105,97,32,84,104,101,32,109,79,82,77,111,116,32,102,114,97,109,101,119,111,114,107,46,32,67,111,112,121,114,105,103,104,116,32,40,67,41,32,65,114,110,97,117,100,32,66,111,117,99,104,101,122],"value":"via The mORMot framework. Copyright (C) Arnaud Bouchez"},
 {"hash":60066,"name":"tfconf.ldotcurr.caption","sourcebytes":[226,128,162],"value":"\u2022"}
 ]}

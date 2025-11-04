@@ -605,6 +605,18 @@ msgstr ""
 msgid "Change Trndi's default background and colors, when in the custom range"
 msgstr ""
 
+#: tfconf.label25.caption
+msgid "Loaded Extensions:"
+msgstr ""
+
+#: tfconf.label26.caption
+msgid "Extensions made possible with QuickJS"
+msgstr ""
+
+#: tfconf.label27.caption
+msgid "via The mORMot framework. Copyright (C) Arnaud Bouchez"
+msgstr ""
+
 #: tfconf.label3.caption
 msgid "Nickname:"
 msgstr ""
@@ -677,6 +689,10 @@ msgstr ""
 #: tfconf.lext.caption
 msgctxt "tfconf.lext.caption"
 msgid "Plugin Folder"
+msgstr ""
+
+#: tfconf.lextcount.caption
+msgid "Extensions count:"
 msgstr ""
 
 #: tfconf.lhiover.caption
@@ -777,6 +793,10 @@ msgstr ""
 
 #: tfconf.tsdisplay.caption
 msgid "Display"
+msgstr ""
+
+#: tfconf.tsext.caption
+msgid "Extensions"
 msgstr ""
 
 #: tfconf.tsgeneral.caption
@@ -1457,6 +1477,11 @@ msgstr ""
 
 #: uconf.rs_enter_user
 msgid "Enter a username"
+msgstr ""
+
+#: uconf.rs_extcount
+#, object-pascal-format
+msgid "Extensions count: %d"
 msgstr ""
 
 #: uconf.rs_hastouch
