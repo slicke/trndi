@@ -450,10 +450,8 @@ msgid "Use this color:"
 msgstr "Med denna färg:"
 
 #: tfconf.cbtitlecolor.caption
-#, fuzzy
-#| msgid "Color the title bar with glucose color **"
 msgid "Color the title bar with glucose color (Windows only)"
-msgstr "Färga titelbaren med blodsockerfärgen **"
+msgstr "Färga titeln med blodsockerfärgen (endast Windows)"
 
 #: tfconf.cbtouch.caption
 msgid "Touch screen"
@@ -580,14 +578,8 @@ msgid "Decimal separator:"
 msgstr "Decimalseparator:"
 
 #: tfconf.label14.caption
-#, fuzzy
-#| msgid ""
-#| "* Support depends on your data source \n"
-#| "** Support depends on your system, does not apply in multi-user mode"
 msgid "NOTE: Support depends on your data source "
-msgstr ""
-"* Stöds inte av alla datakällor\n"
-"** Stöda inte av alla system, gäller ej vid flera användare"
+msgstr "OBS: Stöds inte av alla datakällor"
 
 #: tfconf.label15.caption
 msgctxt "tfconf.label15.caption"
@@ -620,15 +612,15 @@ msgstr "OBS: Färgerna kommer att blandas med Trndis bakgrund"
 
 #: tfconf.label22.caption
 msgid "Change Trndi's default background colors, depending on glucose reading"
-msgstr ""
+msgstr "Ändra Trndis standardfärger för bakgrund, beroende på glukosavläsning"
 
 #: tfconf.label23.caption
 msgid "Change Trndi's default text colors, depending on glucose reading"
-msgstr ""
+msgstr "Ändra Trndis standardfärger för text, beroende på glukosavläsning"
 
 #: tfconf.label24.caption
 msgid "Change Trndi's default background and colors, when in the custom range"
-msgstr ""
+msgstr "Ändra Trndis standardfärger för bakgrund och text, när du är i eget område"
 
 #: tfconf.label3.caption
 msgid "Nickname:"
@@ -787,7 +779,7 @@ msgstr "Tid-i-målområde"
 
 #: tfconf.tsbackgrounds.caption
 msgid "Backgrounds"
-msgstr ""
+msgstr "Bakgrunder"
 
 #: tfconf.tscolors.caption
 msgid "Colors"
@@ -799,7 +791,7 @@ msgstr "Personalisera"
 
 #: tfconf.tscustomrange.caption
 msgid "Custom range"
-msgstr ""
+msgstr "Eget område"
 
 #: tfconf.tsdisplay.caption
 msgid "Display"
@@ -822,7 +814,6 @@ msgid "System"
 msgstr "System"
 
 #: tfconf.tstexts.caption
-#, fuzzy
 msgctxt "tfconf.tstexts.caption"
 msgid "Texts"
 msgstr "Texter"
@@ -1736,4 +1727,3 @@ msgstr "Du kan använda skift+<nummerr> för att manuellt sätta synligheten (0 
 #: ufloat.rscustomsize
 msgid "You can hold down shift and plus (+) or minus (-) to change the window size"
 msgstr "Du kan hålla ned skift och plus (+) eller minus (-) för att justera fönstrets storlek"
-

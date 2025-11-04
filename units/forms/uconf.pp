@@ -45,10 +45,10 @@ TfConf = class(TForm)
   bRemove: TButton;
   bSysNotice: TButton;
   bSysTouch: TButton;
+  bTestAnnounce: TButton;
   bTestSpeech: TButton;
   btReset: TButton;
   btUserSave: TButton;
-  bTestAnnounce: TButton;
   Button2: TButton;
   Button3: TButton;
   Button4: TButton;
@@ -132,6 +132,11 @@ TfConf = class(TForm)
   Label22: TLabel;
   Label23: TLabel;
   Label24: TLabel;
+  lArch: TLabel;
+  lOS: TLabel;
+  lProblematic: TLabel;
+  lTestAnnounce: TLabel;
+  lTestAnnounce1: TLabel;
   lWarnPredict: TLabel;
   Label7: TLabel;
   Label8: TLabel;
@@ -143,10 +148,7 @@ TfConf = class(TForm)
   lDotNow: TLabel;
   lHiOver1: TLabel;
   lLounder1: TLabel;
-  lProblematic: TLabel;
   lTray: TLabel;
-  lWidgetset: TLabel;
-  lOS: TLabel;
   Label3: TLabel;
   Label5: TLabel;
   lUserName: TLabel;
@@ -157,7 +159,6 @@ TfConf = class(TForm)
   Label15: TLabel;
   lPass: TLabel;
   lExt: TLabel;
-  lTestAnnounce: TLabel;
   lUserTrack: TLabel;
   Label4: TLabel;
   Label6: TLabel;
@@ -170,11 +171,11 @@ TfConf = class(TForm)
   lHiOver: TLabel;
   lLicense: TButton;
   lLounder: TLabel;
-  lTestAnnounce1: TLabel;
   lTitle: TLabel;
   lVal: TLabel;
   lVersion: TLabel;
-  lArch: TLabel;
+  lWidgetset: TLabel;
+  pnSysInfo: TPanel;
   pcColors: TPageControl;
   Panel1: TPanel;
   Panel7: TPanel;
@@ -1365,6 +1366,7 @@ end;
 
 procedure TfConf.tsSystemShow(Sender: TObject);
 begin
+  pnSysInfo.Hide;
   lWaitSys.Show;
   tsSystem.Update;
   Application.ProcessMessages;
@@ -1375,6 +1377,8 @@ begin
   if IsProblematicWM then
     if not IsSemiProblematicWM then
       lProblematic.Visible := true;
+
+  pnSysInfo.Show;
 end;
 
 end.
