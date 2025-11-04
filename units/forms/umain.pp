@@ -3270,6 +3270,18 @@ begin
     {$endif}
     fConf.lArch.Caption := {$I %FPCTargetOS%} + '/' + {$I %FPCTARGETCPU%};
     // Show dialog (use safe helper that handles problematic WMs)
+
+    {$ifdef TrndiExt}
+     s := GetAppConfigDirUTF8(false, true) + 'extensions' + DirectorySeparator;
+    // Find extensions folder
+     ForceDirectoriesUTF8(s);
+    // Create the directory if it doesn't exist
+    fConf.lbExtensions.Items := FindAllFiles(s, '*.js', false);
+    fConf.lExtCount.Caption := Format(RS_ExtCount, [fConf.lbExtensions.Count]);
+    {$else}
+      fConf.tsExt.Enabled := false;
+      fConf.tsExt.Visible := false;
+    {$endif}
     ShowFormModalSafe(fConf);
 
     if not firstboot then
@@ -4350,7 +4362,7 @@ begin
   if native.GetBoolSetting('media.pause') then
     MediaController.Pause;
 
-  if native.TryGetSetting('media.url_high', '', url) then
+  if native.TryGetSetting('media.url_high', url) then
   begin
     highAlerted := true;
     MediaController.PlayTrackFromURL(url);
@@ -4377,7 +4389,7 @@ begin
   if native.GetBoolSetting('media.pause') then
     MediaController.Pause;
 
-  if url := native.TryGetSetting('media.url_low', '', url) then
+  if native.TryGetSetting('media.url_low', url) then
   begin
     lowAlerted := true;
     MediaController.PlayTrackFromURL(url);
@@ -4421,7 +4433,7 @@ begin
   begin
     perfectTriggered := true;
 
-    if native.TryGetSetting('media.url_perfect', '', url) then
+    if native.TryGetSetting('media.url_perfect', url) then
       MediaController.PlayTrackFromURL(url);
     if native.GetBoolSetting('alerts.flash.perfect', false) then
       native.StartBadgeFlash(lVal.Caption, bg_color_ok, 6000, 500);

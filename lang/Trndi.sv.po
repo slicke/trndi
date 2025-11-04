@@ -579,7 +579,7 @@ msgstr "Decimalseparator:"
 
 #: tfconf.label14.caption
 msgid "NOTE: Support depends on your data source "
-msgstr "OBS: Stöds inte av alla datakällor"
+msgstr "OBS: Stöds inte av alla datakällor."
 
 #: tfconf.label15.caption
 msgctxt "tfconf.label15.caption"
@@ -621,6 +621,18 @@ msgstr "Ändra Trndis standardfärger för text, beroende på glukosavläsning"
 #: tfconf.label24.caption
 msgid "Change Trndi's default background and colors, when in the custom range"
 msgstr "Ändra Trndis standardfärger för bakgrund och text, när du är i eget område"
+
+#: tfconf.label25.caption
+msgid "Loaded Extensions:"
+msgstr "Laddade tillägg:"
+
+#: tfconf.label26.caption
+msgid "Extensions made possible with QuickJS"
+msgstr "Tillägg görs möjliga med QuickJS"
+
+#: tfconf.label27.caption
+msgid "via The mORMot framework. Copyright (C) Arnaud Bouchez"
+msgstr "via mORMot framework. Copyright (c) Arnaud Bouchez"
 
 #: tfconf.label3.caption
 msgid "Nickname:"
@@ -695,6 +707,10 @@ msgstr "FÖRHANDSVISNING"
 msgctxt "tfconf.lext.caption"
 msgid "Plugin Folder"
 msgstr "Pluginmapp"
+
+#: tfconf.lextcount.caption
+msgid "Extensions count:"
+msgstr "Tilläggsantal:"
 
 #: tfconf.lhiover.caption
 msgctxt "tfconf.lhiover.caption"
@@ -796,6 +812,10 @@ msgstr "Eget område"
 #: tfconf.tsdisplay.caption
 msgid "Display"
 msgstr "Visning"
+
+#: tfconf.tsext.caption
+msgid "Extensions"
+msgstr "Tillägg"
 
 #: tfconf.tsgeneral.caption
 msgid "General"
@@ -1518,6 +1538,11 @@ msgstr "Endast bokstäver, mellanslag och nummer"
 #: uconf.rs_enter_user
 msgid "Enter a username"
 msgstr "Ange ett användarnamn"
+
+#: uconf.rs_extcount
+#, object-pascal-format
+msgid "Extensions count: %d"
+msgstr "Tilläggsantal: %d"
 
 #: uconf.rs_hastouch
 msgid "Shows if Trndi detected a touch screen"

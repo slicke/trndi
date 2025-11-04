@@ -132,7 +132,12 @@ TfConf = class(TForm)
   Label22: TLabel;
   Label23: TLabel;
   Label24: TLabel;
+  Label25: TLabel;
+  Label26: TLabel;
+  Label27: TLabel;
+  lExtCount: TLabel;
   lArch: TLabel;
+  lbExtensions: TListBox;
   lOS: TLabel;
   lProblematic: TLabel;
   lTestAnnounce: TLabel;
@@ -203,6 +208,7 @@ TfConf = class(TForm)
   rbUnit: TRadioGroup;
   spTHRESHOLD: TSpinEdit;
   TabSheet1: TTabSheet;
+  tsExt: TTabSheet;
   tsBackgrounds: TTabSheet;
   tsTexts: TTabSheet;
   tsCustomRange: TTabSheet;
@@ -361,6 +367,8 @@ RS_WAYLAND =
   LineEnding + 'Right-click the title bar, select more options and check the always-on-top option (or similar)';
 
 RS_PredictionWarn = 'Trndi will try to predict future readings. This is experimental and potentially unsafe! Do not make any treatment decisions based on these values! This feature is used on your own risk and responsibility!';
+
+RS_ExtCount = 'Extensions count: %d';
 var
 fConf: TfConf;
 
