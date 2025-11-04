@@ -1178,7 +1178,7 @@ end;
 
 procedure TfConf.cbPredictionsChange(Sender: TObject);
 begin
-  if cbPredictions.Checked then
+  if (cbPredictions.Checked) and self.Showing then
     ShowMessage(RS_PredictionWarn);
 end;
 
