@@ -16,10 +16,10 @@ object fConf: TfConf
     Height = 518
     Top = 11
     Width = 665
-    ActivePage = tsSystem
+    ActivePage = tsIntegration
     Align = alClient
     BorderSpacing.Around = 5
-    TabIndex = 7
+    TabIndex = 6
     TabOrder = 0
     OnChange = pcMainChange
     object tsGeneral: TTabSheet
@@ -11726,13 +11726,13 @@ object fConf: TfConf
       ClientWidth = 659
       object gbOverride2: TGroupBox
         Left = 10
-        Height = 256
+        Height = 278
         Top = 10
         Width = 639
         Align = alTop
         BorderSpacing.Around = 10
         Caption = 'Play Media'
-        ClientHeight = 229
+        ClientHeight = 251
         ClientWidth = 635
         ParentBackground = False
         TabOrder = 0
@@ -11803,14 +11803,16 @@ object fConf: TfConf
           BorderSpacing.Right = 10
           TabOrder = 2
         end
-      end
-      object cbMusicPause: TCheckBox
-        Left = 10
-        Height = 20
-        Top = 272
-        Width = 176
-        Caption = 'Pause music when high/low'
-        TabOrder = 1
+        object cbMusicPause: TCheckBox
+          Left = 5
+          Height = 20
+          Top = 226
+          Width = 625
+          Align = alBottom
+          BorderSpacing.Around = 5
+          Caption = 'Pause music when high/low'
+          TabOrder = 3
+        end
       end
     end
     object tsSystem: TTabSheet
