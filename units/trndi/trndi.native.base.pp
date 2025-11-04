@@ -163,6 +163,9 @@ class var touchOverride: TTrndiBool;
     {** Read setting, empty will return default. }
   function GetSettingEx(const keyname: string; def: string = '';
     global: boolean = false): string;
+  {** Read setting, return true/false if it exists. }
+  function TryGetSetting(const keyname: string; def: string = ''; out res: string;
+  global: boolean = false): string;
     {** Compare a setting to a value. }
   function CheckSetting(const keyname: string; def: string; match: string;
     global: boolean = false): boolean; virtual;
@@ -1232,6 +1235,21 @@ begin
     Result := def
   else
     Result := res;
+end;
+
+{------------------------------------------------------------------------------
+  TryGetSetting
+  -------------------------
+  Gets a setting, returns true if the reading is non-empty and the value in def
+  -----------------------------------------------------------------------------}
+function TryGetSetting(const keyname: string; def: string = ''; out res: string;
+global: boolean = false): string;
+begin
+  res := GetSetting(keyname, def, global);
+  if res = '' then
+    Result := false
+  else
+    Result := true;
 end;
 
 {------------------------------------------------------------------------------

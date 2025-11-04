@@ -4350,8 +4350,7 @@ begin
   if native.GetBoolSetting('media.pause') then
     MediaController.Pause;
 
-  url := native.GetSetting('media.url_high', '');
-  if url <> '' then
+  if native.TryGetSetting('media.url_high', '', url) then
   begin
     highAlerted := true;
     MediaController.PlayTrackFromURL(url);
@@ -4378,8 +4377,7 @@ begin
   if native.GetBoolSetting('media.pause') then
     MediaController.Pause;
 
-  url := native.GetSetting('media.url_low', '');
-  if url <> '' then
+  if url := native.TryGetSetting('media.url_low', '', url) then
   begin
     lowAlerted := true;
     MediaController.PlayTrackFromURL(url);
@@ -4423,8 +4421,7 @@ begin
   begin
     perfectTriggered := true;
 
-    url := native.GetSetting('media.url_perfect', '');
-    if url <> '' then
+    if native.TryGetSetting('media.url_perfect', '', url) then
       MediaController.PlayTrackFromURL(url);
     if native.GetBoolSetting('alerts.flash.perfect', false) then
       native.StartBadgeFlash(lVal.Caption, bg_color_ok, 6000, 500);
