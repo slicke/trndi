@@ -450,7 +450,9 @@ msgid "Use this color:"
 msgstr "Med denna färg:"
 
 #: tfconf.cbtitlecolor.caption
-msgid "Color the title bar with glucose color **"
+#, fuzzy
+#| msgid "Color the title bar with glucose color **"
+msgid "Color the title bar with glucose color (Windows only)"
 msgstr "Färga titelbaren med blodsockerfärgen **"
 
 #: tfconf.cbtouch.caption
@@ -515,10 +517,6 @@ msgstr "OK"
 msgid "."
 msgstr "."
 
-#: tfconf.gbcolback.caption
-msgid "Backgounds"
-msgstr "Bakgrunder"
-
 #: tfconf.gbdisplayprefs.caption
 msgid "Display Preferences"
 msgstr "Visningsval"
@@ -539,14 +537,6 @@ msgstr "Spela Media"
 #: tfconf.groupbox1.caption
 msgid "System Features"
 msgstr "Systemfunktioner"
-
-#: tfconf.groupbox2.caption
-msgid "Texts"
-msgstr "Texter"
-
-#: tfconf.groupbox3.caption
-msgid "Custom Range *"
-msgstr "Föredraget område *"
 
 #: tfconf.groupbox4.caption
 msgid "All accounts"
@@ -590,9 +580,11 @@ msgid "Decimal separator:"
 msgstr "Decimalseparator:"
 
 #: tfconf.label14.caption
-msgid ""
-"* Support depends on your data source \n"
-"** Support depends on your system, does not apply in multi-user mode"
+#, fuzzy
+#| msgid ""
+#| "* Support depends on your data source \n"
+#| "** Support depends on your system, does not apply in multi-user mode"
+msgid "NOTE: Support depends on your data source "
 msgstr ""
 "* Stöds inte av alla datakällor\n"
 "** Stöda inte av alla system, gäller ej vid flera användare"
@@ -625,6 +617,18 @@ msgstr "Föredraget område är ett inre område med ditt ideala mål."
 #: tfconf.label21.caption
 msgid "NOTE: Colors will be blended with Trndi's background"
 msgstr "OBS: Färgerna kommer att blandas med Trndis bakgrund"
+
+#: tfconf.label22.caption
+msgid "Change Trndi's default background colors, depending on glucose reading"
+msgstr ""
+
+#: tfconf.label23.caption
+msgid "Change Trndi's default text colors, depending on glucose reading"
+msgstr ""
+
+#: tfconf.label24.caption
+msgid "Change Trndi's default background and colors, when in the custom range"
+msgstr ""
 
 #: tfconf.label3.caption
 msgid "Nickname:"
@@ -781,6 +785,10 @@ msgstr "Enhetstyp"
 msgid "Time-in-range"
 msgstr "Tid-i-målområde"
 
+#: tfconf.tsbackgrounds.caption
+msgid "Backgrounds"
+msgstr ""
+
 #: tfconf.tscolors.caption
 msgid "Colors"
 msgstr "Färger"
@@ -788,6 +796,10 @@ msgstr "Färger"
 #: tfconf.tscustom.caption
 msgid "Customization"
 msgstr "Personalisera"
+
+#: tfconf.tscustomrange.caption
+msgid "Custom range"
+msgstr ""
 
 #: tfconf.tsdisplay.caption
 msgid "Display"
@@ -808,6 +820,12 @@ msgstr "Fler användare"
 #: tfconf.tssystem.caption
 msgid "System"
 msgstr "System"
+
+#: tfconf.tstexts.caption
+#, fuzzy
+msgctxt "tfconf.tstexts.caption"
+msgid "Texts"
+msgstr "Texter"
 
 #: tffloat.caption
 msgid "Floating Display"

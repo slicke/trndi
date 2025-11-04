@@ -434,7 +434,7 @@ msgid "Use this color:"
 msgstr ""
 
 #: tfconf.cbtitlecolor.caption
-msgid "Color the title bar with glucose color **"
+msgid "Color the title bar with glucose color (Windows only)"
 msgstr ""
 
 #: tfconf.cbtouch.caption
@@ -499,10 +499,6 @@ msgstr ""
 msgid "."
 msgstr ""
 
-#: tfconf.gbcolback.caption
-msgid "Backgounds"
-msgstr ""
-
 #: tfconf.gbdisplayprefs.caption
 msgid "Display Preferences"
 msgstr ""
@@ -521,14 +517,6 @@ msgstr ""
 
 #: tfconf.groupbox1.caption
 msgid "System Features"
-msgstr ""
-
-#: tfconf.groupbox2.caption
-msgid "Texts"
-msgstr ""
-
-#: tfconf.groupbox3.caption
-msgid "Custom Range *"
 msgstr ""
 
 #: tfconf.groupbox4.caption
@@ -573,9 +561,7 @@ msgid "Decimal separator:"
 msgstr ""
 
 #: tfconf.label14.caption
-msgid ""
-"* Support depends on your data source \n"
-"** Support depends on your system, does not apply in multi-user mode"
+msgid "NOTE: Support depends on your data source "
 msgstr ""
 
 #: tfconf.label15.caption
@@ -605,6 +591,18 @@ msgstr ""
 
 #: tfconf.label21.caption
 msgid "NOTE: Colors will be blended with Trndi's background"
+msgstr ""
+
+#: tfconf.label22.caption
+msgid "Change Trndi's default background colors, depending on glucose reading"
+msgstr ""
+
+#: tfconf.label23.caption
+msgid "Change Trndi's default text colors, depending on glucose reading"
+msgstr ""
+
+#: tfconf.label24.caption
+msgid "Change Trndi's default background and colors, when in the custom range"
 msgstr ""
 
 #: tfconf.label3.caption
@@ -761,12 +759,20 @@ msgstr ""
 msgid "Time-in-range"
 msgstr ""
 
+#: tfconf.tsbackgrounds.caption
+msgid "Backgrounds"
+msgstr ""
+
 #: tfconf.tscolors.caption
 msgid "Colors"
 msgstr ""
 
 #: tfconf.tscustom.caption
 msgid "Customization"
+msgstr ""
+
+#: tfconf.tscustomrange.caption
+msgid "Custom range"
 msgstr ""
 
 #: tfconf.tsdisplay.caption
@@ -787,6 +793,11 @@ msgstr ""
 
 #: tfconf.tssystem.caption
 msgid "System"
+msgstr ""
+
+#: tfconf.tstexts.caption
+msgctxt "tfconf.tstexts.caption"
+msgid "Texts"
 msgstr ""
 
 #: tffloat.caption
