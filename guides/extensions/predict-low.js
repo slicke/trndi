@@ -1,3 +1,6 @@
+/* Notify extension for Nightscout
+(c) slicke / No copyright
+*/
 // Example extension: Predict Low Blood Sugar
 // This extension predicts future blood glucose readings and alerts if a low is predicted
 
