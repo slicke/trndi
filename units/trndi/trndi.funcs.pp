@@ -303,21 +303,21 @@ end;
 
 function CalculateTrendFromDelta(delta: single): BGTrend;
 begin
-  // Calculate trend based on delta in mg/dL
-  // Using similar logic to guessTrend in debug API
-  if delta < -20 then
+  // Calculate trend based on delta in mg/dL over 5 minutes
+  // Based on standard CGM trend arrow thresholds
+  if delta <= -15 then          // ≤-3 mg/dL/min
     Result := TdDoubleDown
-  else if delta < -15 then
+  else if delta <= -10 then     // ≤-2 mg/dL/min
     Result := TdSingleDown
-  else if delta < -10 then
+  else if delta <= -5 then      // ≤-1 mg/dL/min
     Result := TdFortyFiveDown
-  else if delta < 5 then
+  else if delta < 5 then        // -1 to +1 mg/dL/min
     Result := TdFlat
-  else if delta < 10 then
+  else if delta < 10 then       // +1 to +2 mg/dL/min
     Result := TdFortyFiveUp
-  else if delta < 15 then
+  else if delta < 15 then       // +2 to +3 mg/dL/min
     Result := TdSingleUp
-  else
+  else                          // ≥+3 mg/dL/min
     Result := TdDoubleUp;
 end;
 
