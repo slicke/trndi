@@ -28,7 +28,7 @@ interface
 uses
 Classes, ComCtrls, ExtCtrls, Spin, StdCtrls, SysUtils, Forms, Controls,
 Graphics, Dialogs, LCLTranslator, trndi.native, lclintf, ColorBox,
-slicke.ux.alert, VersionInfo, trndi.funcs, buildinfo,
+slicke.ux.alert, VersionInfo, trndi.funcs, buildinfo, StrUtils,
   // Backend APIs for label captions
 trndi.api, trndi.api.nightscout, trndi.api.nightscout3, trndi.api.dexcom,
 trndi.api.xdrip;
@@ -135,6 +135,8 @@ TfConf = class(TForm)
   Label25: TLabel;
   Label26: TLabel;
   Label27: TLabel;
+  lExtCopyright: TLabel;
+  lExtName: TLabel;
   lExtCount: TLabel;
   lArch: TLabel;
   lbExtensions: TListBox;
@@ -251,6 +253,7 @@ TfConf = class(TForm)
   procedure FormResize(Sender: TObject);
   procedure Label12Click(Sender: TObject);
   procedure lAckClick(Sender: TObject);
+  procedure lbExtensionsSelectionChange(Sender: TObject; User: boolean);
   procedure lbUsersEnter(Sender: TObject);
   procedure lbUsersSelectionChange(Sender: TObject; User: boolean);
   procedure lLicenseClick(Sender: TObject);
@@ -780,6 +783,25 @@ const
     + #10#10 + 'Built in Object Pascal, using the Lazarus component library (LCL) and FreePascal.';
 begin
   ExtSucc(uxdAuto, 'Trndi', 'Libraries', txt, $00AA6004, $00FDD8AA);
+end;
+
+procedure TfConf.lbExtensionsSelectionChange(Sender: TObject; User: boolean);
+var
+  f: TStringList;
+  l: string;
+begin
+  l := lbExtensions.GetSelectedText;
+  f := TStringList.Create;
+  f.Delimiter := #10;
+  f.LoadFromFile(l);
+  lExtName.Caption := '';
+  lExtCopyright.Caption := '';
+
+  if f.Strings[0][2] = '*' then // /*
+    lExtName.Caption := TrimLeftSet(f.Strings[0], ['*', '/', ' ']);
+  if (f.Strings[0][2] = '*') and (f.Strings[1][length(f.strings[1])-1] = '*') then // */
+    lExtCopyright.Caption := TrimRightSet(f.Strings[1], ['*', '/']);
+  f.Free;
 end;
 
 procedure TfConf.lbUsersEnter(Sender: TObject);

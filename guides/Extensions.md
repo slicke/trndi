@@ -59,3 +59,11 @@ Trndi.setLevelColor('#7cd55d','#d55d5d', '#5dc6d5', // Set colors for okay readi
 ```
 
 ### See the full reference of functions in [Extensions Functions](Extensions_functions.md)
+
+# Info and Copyright
+To have your extensions show their name and copyright, add a header at the very start:
+```
+/* My Extension
+(c) My Name
+*/
+```

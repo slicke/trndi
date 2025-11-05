@@ -708,9 +708,17 @@ msgctxt "tfconf.lext.caption"
 msgid "Plugin Folder"
 msgstr "Pluginmapp"
 
+#: tfconf.lextcopyright.caption
+msgid "for more info"
+msgstr ""
+
 #: tfconf.lextcount.caption
 msgid "Extensions count:"
 msgstr "Tilläggsantal:"
+
+#: tfconf.lextname.caption
+msgid "Choose an extension"
+msgstr ""
 
 #: tfconf.lhiover.caption
 msgctxt "tfconf.lhiover.caption"
