@@ -113,6 +113,8 @@ TfConf = class(TForm)
   gbOverride: TGroupBox;
   gbOverride2: TGroupBox;
   GroupBox1: TGroupBox;
+  GroupBox2: TGroupBox;
+  GroupBox3: TGroupBox;
   GroupBox4: TGroupBox;
   GroupBox5: TGroupBox;
   GroupBox6: TGroupBox;
@@ -132,14 +134,11 @@ TfConf = class(TForm)
   Label22: TLabel;
   Label23: TLabel;
   Label24: TLabel;
-  Label25: TLabel;
-  Label26: TLabel;
-  Label27: TLabel;
+  lbExtensions: TListBox;
   lExtCopyright: TLabel;
-  lExtName: TLabel;
   lExtCount: TLabel;
   lArch: TLabel;
-  lbExtensions: TListBox;
+  lExtName: TLabel;
   lOS: TLabel;
   lProblematic: TLabel;
   lTestAnnounce: TLabel;

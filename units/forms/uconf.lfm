@@ -11985,62 +11985,64 @@ object fConf: TfConf
       Caption = 'Extensions'
       ClientHeight = 490
       ClientWidth = 657
-      object lbExtensions: TListBox
-        Left = 5
-        Height = 195
-        Top = 290
-        Width = 647
-        Align = alBottom
-        BorderSpacing.Around = 5
-        ItemHeight = 0
-        TabOrder = 0
-        OnSelectionChange = lbExtensionsSelectionChange
-      end
-      object Label25: TLabel
-        Left = 5
-        Height = 15
-        Top = 270
-        Width = 647
-        Align = alBottom
-        BorderSpacing.Around = 5
-        Caption = 'Loaded Extensions:'
-      end
-      object Label26: TLabel
-        Left = 8
-        Height = 15
-        Top = 64
-        Width = 204
-        Caption = 'Extensions made possible with QuickJS'
-      end
       object lExtCount: TLabel
-        Left = 8
+        Left = 0
         Height = 15
-        Top = 112
-        Width = 92
+        Top = 0
+        Width = 647
+        Align = alTop
+        Alignment = taRightJustify
+        BorderSpacing.Right = 10
         Caption = 'Extensions count:'
       end
-      object Label27: TLabel
-        Left = 23
-        Height = 15
-        Top = 83
-        Width = 318
-        Caption = 'via The mORMot framework. Copyright (C) Arnaud Bouchez'
+      object GroupBox2: TGroupBox
+        Left = 0
+        Height = 394
+        Top = 15
+        Width = 657
+        Align = alClient
+        Caption = 'Available Extensions'
+        ClientHeight = 374
+        ClientWidth = 653
+        TabOrder = 0
+        object lbExtensions: TListBox
+          Left = 5
+          Height = 364
+          Top = 5
+          Width = 643
+          Align = alClient
+          BorderSpacing.Around = 5
+          ItemHeight = 0
+          TabOrder = 0
+          OnSelectionChange = lbExtensionsSelectionChange
+        end
       end
-      object lExtName: TLabel
-        Left = 8
-        Height = 15
-        Top = 203
-        Width = 114
-        Caption = 'Choose an extension'
-        Font.Style = [fsBold]
-        ParentFont = False
-      end
-      object lExtCopyright: TLabel
-        Left = 8
-        Height = 15
-        Top = 224
-        Width = 70
-        Caption = 'for more info'
+      object GroupBox3: TGroupBox
+        Left = 0
+        Height = 81
+        Top = 409
+        Width = 657
+        Align = alBottom
+        Caption = 'Extension Info'
+        ClientHeight = 61
+        ClientWidth = 653
+        TabOrder = 1
+        object lExtName: TLabel
+          Left = 8
+          Height = 15
+          Top = 8
+          Width = 114
+          Caption = 'Choose an extension'
+          Font.Style = [fsBold]
+          ParentFont = False
+        end
+        object lExtCopyright: TLabel
+          Left = 8
+          Height = 15
+          Top = 24
+          Width = 70
+          Caption = 'for more info'
+        end
       end
     end
   end

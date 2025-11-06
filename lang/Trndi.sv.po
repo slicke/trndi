@@ -536,6 +536,14 @@ msgstr "Spela Media"
 msgid "System Features"
 msgstr "Systemfunktioner"
 
+#: tfconf.groupbox2.caption
+msgid "Available Extensions"
+msgstr ""
+
+#: tfconf.groupbox3.caption
+msgid "Extension Info"
+msgstr ""
+
 #: tfconf.groupbox4.caption
 msgid "All accounts"
 msgstr "Alla konton"
@@ -621,18 +629,6 @@ msgstr "Ändra Trndis standardfärger för text, beroende på glukosavläsning"
 #: tfconf.label24.caption
 msgid "Change Trndi's default background and colors, when in the custom range"
 msgstr "Ändra Trndis standardfärger för bakgrund och text, när du är i eget område"
-
-#: tfconf.label25.caption
-msgid "Loaded Extensions:"
-msgstr "Laddade tillägg:"
-
-#: tfconf.label26.caption
-msgid "Extensions made possible with QuickJS"
-msgstr "Tillägg görs möjliga med QuickJS"
-
-#: tfconf.label27.caption
-msgid "via The mORMot framework. Copyright (C) Arnaud Bouchez"
-msgstr "via mORMot framework. Copyright (c) Arnaud Bouchez"
 
 #: tfconf.label3.caption
 msgid "Nickname:"
