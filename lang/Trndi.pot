@@ -519,6 +519,14 @@ msgstr ""
 msgid "System Features"
 msgstr ""
 
+#: tfconf.groupbox2.caption
+msgid "Available Extensions"
+msgstr ""
+
+#: tfconf.groupbox3.caption
+msgid "Extension Info"
+msgstr ""
+
 #: tfconf.groupbox4.caption
 msgid "All accounts"
 msgstr ""
@@ -603,18 +611,6 @@ msgstr ""
 
 #: tfconf.label24.caption
 msgid "Change Trndi's default background and colors, when in the custom range"
-msgstr ""
-
-#: tfconf.label25.caption
-msgid "Loaded Extensions:"
-msgstr ""
-
-#: tfconf.label26.caption
-msgid "Extensions made possible with QuickJS"
-msgstr ""
-
-#: tfconf.label27.caption
-msgid "via The mORMot framework. Copyright (C) Arnaud Bouchez"
 msgstr ""
 
 #: tfconf.label3.caption
