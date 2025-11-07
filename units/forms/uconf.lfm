@@ -11986,30 +11986,32 @@ object fConf: TfConf
       ClientHeight = 490
       ClientWidth = 657
       object lExtCount: TLabel
-        Left = 0
+        Left = 5
         Height = 15
-        Top = 0
-        Width = 647
+        Top = 5
+        Width = 637
         Align = alTop
         Alignment = taRightJustify
         BorderSpacing.Right = 10
+        BorderSpacing.Around = 5
         Caption = 'Extensions count:'
       end
       object GroupBox2: TGroupBox
-        Left = 0
-        Height = 394
-        Top = 15
-        Width = 657
+        Left = 10
+        Height = 359
+        Top = 30
+        Width = 637
         Align = alClient
+        BorderSpacing.Around = 10
         Caption = 'Available Extensions'
-        ClientHeight = 374
-        ClientWidth = 653
+        ClientHeight = 339
+        ClientWidth = 633
         TabOrder = 0
         object lbExtensions: TListBox
           Left = 5
-          Height = 364
+          Height = 329
           Top = 5
-          Width = 643
+          Width = 623
           Align = alClient
           BorderSpacing.Around = 5
           ItemHeight = 0
@@ -12018,14 +12020,15 @@ object fConf: TfConf
         end
       end
       object GroupBox3: TGroupBox
-        Left = 0
+        Left = 10
         Height = 81
-        Top = 409
-        Width = 657
+        Top = 399
+        Width = 637
         Align = alBottom
+        BorderSpacing.Around = 10
         Caption = 'Extension Info'
         ClientHeight = 61
-        ClientWidth = 653
+        ClientWidth = 633
         TabOrder = 1
         object lExtName: TLabel
           Left = 8
