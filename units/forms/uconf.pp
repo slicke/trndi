@@ -135,6 +135,7 @@ TfConf = class(TForm)
   Label23: TLabel;
   Label24: TLabel;
   lbExtensions: TListBox;
+  lCopyright: TLabel;
   lExtCopyright: TLabel;
   lExtCount: TLabel;
   lArch: TLabel;
@@ -143,6 +144,7 @@ TfConf = class(TForm)
   lProblematic: TLabel;
   lTestAnnounce: TLabel;
   lTestAnnounce1: TLabel;
+  lTitle: TLabel;
   lWarnPredict: TLabel;
   Label7: TLabel;
   Label8: TLabel;
@@ -173,14 +175,13 @@ TfConf = class(TForm)
   lAgo: TLabel;
   lArrow: TLabel;
   lbUsers: TListBox;
-  lCopyright: TLabel;
   lHiOver: TLabel;
   lLicense: TButton;
   lLounder: TLabel;
-  lTitle: TLabel;
   lVal: TLabel;
   lVersion: TLabel;
   lWidgetset: TLabel;
+  Panel10: TPanel;
   pnSysInfo: TPanel;
   pcColors: TPageControl;
   Panel1: TPanel;

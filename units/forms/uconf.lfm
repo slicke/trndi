@@ -16,10 +16,10 @@ object fConf: TfConf
     Height = 518
     Top = 11
     Width = 665
-    ActivePage = tsExt
+    ActivePage = tsGeneral
     Align = alClient
     BorderSpacing.Around = 5
-    TabIndex = 8
+    TabIndex = 0
     TabOrder = 0
     OnChange = pcMainChange
     object tsGeneral: TTabSheet
@@ -74,10 +74,12 @@ object fConf: TfConf
         ClientWidth = 657
         TabOrder = 6
         object Image1: TImage
-          Left = 16
-          Height = 96
-          Top = 0
+          Left = 5
+          Height = 86
+          Top = 5
           Width = 99
+          Align = alLeft
+          BorderSpacing.Around = 5
           Picture.Data = {
             055449636F6E11FE04000000010001000000000001002000FBFD040016000000
             89504E470D0A1A0A0000000D49484452000002CA0000030508060000006D5FD0
@@ -10307,25 +10309,6 @@ object fConf: TfConf
           }
           Proportional = True
         end
-        object lTitle: TLabel
-          Left = 136
-          Height = 45
-          Top = 16
-          Width = 79
-          Caption = 'Trndi'
-          Font.Height = -33
-          Font.Style = [fsBold]
-          ParentFont = False
-        end
-        object lCopyright: TLabel
-          Left = 128
-          Height = 26
-          Top = 64
-          Width = 186
-          Caption = 'Copyright (c) 2017-2025 Björn Lindh '#13#10'<github.com/slicke>'
-          Font.Height = -11
-          ParentFont = False
-        end
         object Panel5: TPanel
           Left = 571
           Height = 96
@@ -10353,6 +10336,40 @@ object fConf: TfConf
             Caption = 'License'
             TabOrder = 1
             OnClick = lLicenseClick
+          end
+        end
+        object Panel10: TPanel
+          Left = 109
+          Height = 96
+          Top = 0
+          Width = 462
+          Align = alClient
+          BevelOuter = bvNone
+          ClientHeight = 96
+          ClientWidth = 462
+          TabOrder = 1
+          object lCopyright: TLabel
+            Left = 15
+            Height = 26
+            Top = 55
+            Width = 447
+            Align = alTop
+            BorderSpacing.Left = 15
+            Caption = 'Copyright (c) 2017-2025 Björn Lindh '#13#10'<github.com/slicke>'
+            Font.Height = -11
+            ParentFont = False
+          end
+          object lTitle: TLabel
+            Left = 0
+            Height = 45
+            Top = 10
+            Width = 462
+            Align = alTop
+            BorderSpacing.Top = 10
+            Caption = 'Trndi'
+            Font.Height = -33
+            Font.Style = [fsBold]
+            ParentFont = False
           end
         end
       end
