@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit 3.7\n"
+"X-Generator: Poedit 3.8\n"
 
 #: slicke.ux.alert.dlgerr
 msgid "An error occurred while creating a message dialog"
@@ -538,11 +538,11 @@ msgstr "Systemfunktioner"
 
 #: tfconf.groupbox2.caption
 msgid "Available Extensions"
-msgstr ""
+msgstr "Tillgängliga tillägg"
 
 #: tfconf.groupbox3.caption
 msgid "Extension Info"
-msgstr ""
+msgstr "Tilläggsinfo"
 
 #: tfconf.groupbox4.caption
 msgid "All accounts"
@@ -587,7 +587,7 @@ msgstr "Decimalseparator:"
 
 #: tfconf.label14.caption
 msgid "NOTE: Support depends on your data source "
-msgstr "OBS: Stöds inte av alla datakällor."
+msgstr "OBS: Stöds inte av alla datakällor "
 
 #: tfconf.label15.caption
 msgctxt "tfconf.label15.caption"
@@ -706,7 +706,7 @@ msgstr "Pluginmapp"
 
 #: tfconf.lextcopyright.caption
 msgid "for more info"
-msgstr ""
+msgstr "för mer information"
 
 #: tfconf.lextcount.caption
 msgid "Extensions count:"
@@ -714,7 +714,7 @@ msgstr "Tilläggsantal:"
 
 #: tfconf.lextname.caption
 msgid "Choose an extension"
-msgstr ""
+msgstr "Välj ett tillägg"
 
 #: tfconf.lhiover.caption
 msgctxt "tfconf.lhiover.caption"
@@ -1756,4 +1756,3 @@ msgstr "Du kan använda skift+<nummerr> för att manuellt sätta synligheten (0 
 #: ufloat.rscustomsize
 msgid "You can hold down shift and plus (+) or minus (-) to change the window size"
 msgstr "Du kan hålla ned skift och plus (+) eller minus (-) för att justera fönstrets storlek"
-
