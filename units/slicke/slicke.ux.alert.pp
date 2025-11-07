@@ -50,7 +50,7 @@ interface
 
 uses
   Classes, SysUtils, Dialogs, Forms, ExtCtrls, StdCtrls, Controls, Graphics, Math,
-  IntfGraphics, FPImage, graphtype, lcltype, Trndi.Native, Grids, Spin,
+  IntfGraphics, FPImage, graphtype, lcltype, Trndi.Native, Grids, Spin, IpHtml,
   {$ifdef Windows}
   DX12.D2D1, DX12.DXGI, DX12.DWrite, DX12.DCommon, DX12.WinCodec, Windows, Buttons, ActiveX, ComObj,
   {$endif}
@@ -270,6 +270,31 @@ type
                   buttons: TUXMsgDlgBtns = [mbAbort];
                   const icon: UXImage = uxmtCog;
                   scale: integer = 1): TModalResult;
+
+  {**
+    Extended message dialog with HTML support in log panel.
+    @param dialogsize Layout preset.
+    @param caption Window caption.
+    @param title Title text (bold).
+    @param desc Description text.
+    @param logmsg Log or dump text (can be plain text or HTML).
+    @param isHTML If @true, logmsg is interpreted as HTML data using TIpHtmlPanel; otherwise plain text with TMemo.
+    @param dumpbg Background color for log panel (default white).
+    @param dumptext Text color for log panel (default red, ignored if HTML is used).
+    @param buttons Set of buttons to display.
+    @param icon Emoji icon (default gear).
+    @param scale Log panel vertical scale multiplier.
+    @returns Modal result based on user button selection.
+    @remarks HTML rendering is supported cross-platform via TIpHtmlPanel from IpHtml unit. Use standard HTML tags like &lt;b&gt;, &lt;i&gt;, &lt;font color="red"&gt;, etc.
+  }
+  function ExtMessage(const dialogsize: TUXDialogSize;
+                      const caption, title, desc, logmsg: string;
+                      isHTML: boolean;
+                      dumpbg: TColor = uxclWhite;
+                      dumptext: TColor = uxclRed;
+                      buttons: TUXMsgDlgBtns = [mbAbort];
+                      const icon: UXImage = uxmtCog;
+                      scale: integer = 1): TModalResult;
 
   {**
     Convenience wrapper for @link(ExtMsg) that shows a message and a log/dump with an OK button.
@@ -530,6 +555,23 @@ begin
   {$endif}
 
   result := IfThen(TrndiNative.isDarkMode, dark, light);
+end;
+
+{**
+  Convert TColor to HTML color format (#RRGGBB).
+  @param AColor Lazarus TColor value.
+  @returns HTML color string in #RRGGBB format.
+}
+function TColorToHTML(AColor: TColor): string;
+var
+  rgb: TColor;
+  R, G, B: Byte;
+begin
+  rgb := ColorToRGB(AColor);
+  R := GetRValue(rgb);
+  G := GetGValue(rgb);
+  B := GetBValue(rgb);
+  Result := Format('#%.2x%.2x%.2x', [R, G, B]);
 end;
 
 {**
@@ -1850,6 +1892,23 @@ function ExtMsg(
   const icon: UXImage = uxmtCog;
   scale: integer = 1
 ): TModalResult;
+begin
+  // Call ExtMessage with isHTML = false for backward compatibility
+  Result := ExtMessage(dialogsize, caption, title, desc, logmsg, False,
+                       dumpbg, dumptext, buttons, icon, scale);
+end;
+
+{** See interface docs for behavior and parameters. }
+function ExtMessage(
+  const dialogsize: TUXDialogSize;
+  const caption, title, desc, logmsg: string;
+  isHTML: boolean;
+  dumpbg: TColor = uxclWhite;
+  dumptext: TColor = uxclRed;
+  buttons: TUXMsgDlgBtns = [mbAbort];
+  const icon: UXImage = uxmtCog;
+  scale: integer = 1
+): TModalResult;
 const
   btnWidth = 75;
   padding  = 10;
@@ -1862,6 +1921,7 @@ var
   TitleLabel, MsgLabel: TLabel;
   MsgScroll: TScrollBox;
   LogMemo: TMemo;
+  LogHtmlPanel: TIpHtmlPanel;
   OkButton: {$ifdef Windows}TBitBtn{$else}TButton{$endif};
   mr: TUXMsgDlgBtn;
   ButtonActualWidth, MaxDialogHeight, MsgWidth, NeededHeight,
@@ -2093,20 +2153,56 @@ begin
     MemoWrapper.Color := dumpbg;
     MemoWrapper.BevelOuter := bvNone;
 
-    LogMemo := TMemo.Create(MemoWrapper);
-    LogMemo.Parent := MemoWrapper;
-    LogMemo.Left := MemoPadLeft;
-    LogMemo.Top := MemoPadTop;
-    LogMemo.Width := MemoWrapper.ClientWidth - MemoPadLeft;
-    LogMemo.Height := MemoWrapper.ClientHeight - MemoPadTop;
-    LogMemo.Anchors := [akLeft, akTop, akRight, akBottom]; // Resizes properly
-
-    LogMemo.ReadOnly := True;
-    LogMemo.Color := dumpbg;
-    LogMemo.Font.Color := dumptext;
-    LogMemo.ScrollBars := ssAutoVertical;
-    LogMemo.BorderStyle := bsNone;
-    LogMemo.Text := TrimSet(logmsg, [#10, #13]);
+    if isHTML then
+    begin
+      // Use TIpHtmlPanel for HTML content (cross-platform)
+      LogHtmlPanel := TIpHtmlPanel.Create(MemoWrapper);
+      LogHtmlPanel.Parent := MemoWrapper;
+      LogHtmlPanel.Left := MemoPadLeft;
+      LogHtmlPanel.Top := MemoPadTop;
+      LogHtmlPanel.Width := MemoWrapper.ClientWidth - MemoPadLeft;
+      LogHtmlPanel.Height := MemoWrapper.ClientHeight - MemoPadTop;
+      LogHtmlPanel.Anchors := [akLeft, akTop, akRight, akBottom];
+      LogHtmlPanel.Color := dumpbg;
+      LogHtmlPanel.BorderStyle := bsNone;
+      
+      // Load HTML content with body tag for background color
+      try
+        // Wrap content in HTML structure with background color from dumpbg
+        LogHtmlPanel.SetHtmlFromStr(
+          '<html><body bgcolor="' + TColorToHTML(dumpbg) + '" text="' + TColorToHTML(dumptext) + '">' +
+          logmsg +
+          '</body></html>'
+        );
+      except
+        on E: Exception do
+        begin
+          // Fallback to plain text if HTML parsing fails
+          LogHtmlPanel.SetHtmlFromStr(
+            '<html><body bgcolor="' + TColorToHTML(dumpbg) + '" text="' + TColorToHTML(dumptext) + '"><pre>' +
+            logmsg +
+            '</pre></body></html>'
+          );
+        end;
+      end;
+    end
+    else
+    begin
+      // Use TMemo for plain text
+      LogMemo := TMemo.Create(MemoWrapper);
+      LogMemo.Parent := MemoWrapper;
+      LogMemo.Left := MemoPadLeft;
+      LogMemo.Top := MemoPadTop;
+      LogMemo.Width := MemoWrapper.ClientWidth - MemoPadLeft;
+      LogMemo.Height := MemoWrapper.ClientHeight - MemoPadTop;
+      LogMemo.Anchors := [akLeft, akTop, akRight, akBottom];
+      LogMemo.ReadOnly := True;
+      LogMemo.Color := dumpbg;
+      LogMemo.Font.Color := dumptext;
+      LogMemo.ScrollBars := ssAutoVertical;
+      LogMemo.BorderStyle := bsNone;
+      LogMemo.Text := TrimSet(logmsg, [#10, #13]);
+    end;
 
     // BUTTON PANEL
     ButtonPanel := TPanel.Create(Dialog);

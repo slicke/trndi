@@ -1272,32 +1272,34 @@ end;
 
 procedure TfConf.lLicenseClick(Sender: TObject);
 const
-  txt = 'Trndi - CGM viewer'#10 +
-    'A re-imagination of TrayTrend by Björn Lindh'#10#10 +
-    'Copyright (C) 2017-2025 Björn Lindh'#10#10 +
-    'This program is free software: you can redistribute it and/or modify it'#10 +
-    'under the terms of the GNU General Public License version 3 as published'#10 +
-    'by the Free Software Foundation.'#10#10 +
-    'For more information, refer to the accompanying license file or visit:'#10 +
-    'https://www.gnu.org/licenses/gpl-3.0'#10#10 +
-    'Trndi is hobby project, verify all data with an officially approved'#10 +
-    'medical app before acting on any shown data!'#10#10 +
-    'This app is NOT a medical device and is NOT intended for:'#10 +
-    '- Medical diagnosis, treatment, or prevention'#10 + '- Making medical decisions'#10 +
-    '- Replacing your CGM app or medical devices'#10 + '- Emergency medical situations'#10#10 +
-    '### IMPORTANT WARNINGS ###'#10 +
-    '• Data displayed may be inaccurate, delayed, or unavailable'#10 +
-    '• Always verify readings with your official CGM device'#10 +
-    '• Never make medical decisions based solely on this app'#10 +
-    '• Consult healthcare professionals for medical advice'#10#10 +
-    '### BY USING THIS APP, YOU ACKNOWLEDGE THAT ###'#10 +
-    '- The developers assume NO LIABILITY for any harm, injury, or damages'#10 +
-    '- You use this app entirely at your own risk'#10 +
-    '- This app may contain bugs or errors that could display incorrect data'#10#10 +
-    '- IF YOU DO NOT AGREE WITH THESE TERMS, DO NOT USE THIS APP. -';
+  txt = '<b>Trndi - CGM viewer</b><br>' +
+    '<i>A re-imagination of TrayTrend by Björn Lindh</i><br>' +
+    'Copyright (C) 2017-2025 Björn Lindh<br><br>' +
+    'This program is free software: you can redistribute it and/or modify it<br>' +
+    'under the terms of the GNU General Public License version 3 as published<br>' +
+    'by the Free Software Foundation.<br>' +
+    'For more information, refer to the accompanying license file or visit:<br>' +
+    'https://www.gnu.org/licenses/gpl-3.0<br>' +
+    'Trndi is hobby project, verify all data with an officially approved<br>' +
+    'medical app before acting on any shown data!<br>' +
+    'This app is NOT a medical device and is NOT intended for:<br>' +
+    '- Medical diagnosis, treatment, or prevention'#10 + '- Making medical decisions<br>' +
+    '- Replacing your CGM app or medical devices'#10 + '- Emergency medical situations<br><br>' +
+    '<b>### IMPORTANT WARNINGS ###</b><br>' +
+    '<ul>'+
+    '<li>Data displayed may be inaccurate, delayed, or unavailable</li>' +
+    '<li> Always verify readings with your official CGM device</li>' +
+    '<li> Never make medical decisions based solely on this app</li>' +
+    '<li> Consult healthcare professionals for medical advice</li>'+
+    '</ul><br>' +
+    '<b>### BY USING THIS APP, YOU ACKNOWLEDGE THAT ###</b><br>' +
+    '- The developers assume NO LIABILITY for any harm, injury, or damages<br>' +
+    '- You use this app entirely at your own risk<br>' +
+    '- This app may contain bugs or errors that could display incorrect data<br><br>' +
+    '<b><i>- IF YOU DO NOT AGREE WITH THESE TERMS, DO NOT USE THIS APP. -</i></b>';
 begin
-  if ExtSuccEx(uxdAuto, 'Trndi', 'License', txt, [mbOK, mbUxRead],
-    $00AA6004, $00FDD8AA, uxmtOK, 8) <> mrOk then
+  if ExtMessage(uxdAuto, 'Trndi', 'License', '', txt, true,
+    $00AA6004, $00FDD8AA,  [mbOK, mbUxRead], uxmtOK, 8) <> mrOk then
     OpenURL('https://github.com/slicke/trndi/blob/main/LICENSE.md');
 end;
 

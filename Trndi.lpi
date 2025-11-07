@@ -382,6 +382,9 @@
     </RunParams>
     <RequiredPackages>
       <Item>
+        <PackageName Value="TurboPowerIPro"/>
+      </Item>
+      <Item>
         <PackageName Value="mormot2"/>
       </Item>
       <Item>
