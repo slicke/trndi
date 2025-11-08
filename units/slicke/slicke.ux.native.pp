@@ -43,7 +43,7 @@ unit slicke.ux.native;
 interface
 
 uses
-  Classes, SysUtils;
+  Classes, SysUtils, forms, controls;
 
   {**
     Check if a suitable UI font exists on this system and return its name.
@@ -70,6 +70,12 @@ uses
     @returns @true if the VM is semi-problematic
     }
   function IsSemiProblematicWM: Boolean;  
+
+  {**
+    Show a standard TForm modally with the same 'bad-WM' fallback logic as
+    the other UX dialog helpers. Returns the form ModalResult.
+  }
+  function ShowFormModalSafe(aForm: TForm): Integer;
 
 implementation
 
@@ -193,6 +199,44 @@ begin
 end;
 
 {$endif}
+
+{**
+  Show a dialog in a safe way on platforms where transient/owner hints
+  may be ignored by the window manager. On non-Windows systems we use
+  fsStayOnTop as a conservative fallback while the dialog is active.
+}
+function ShowFormModalSafe(aForm: TForm): Integer;
+var
+  oldStyle: TFormStyle;
+begin
+  if not Assigned(aForm) then Exit(mrNone);
+  // Attempt to set popup owner where possible
+  try
+    if Assigned(Application) and Assigned(Application.MainForm) then
+    begin
+      aForm.PopupMode := pmExplicit;
+      aForm.PopupParent := Application.MainForm;
+    end;
+  except end;
+
+  {$ifndef Windows}
+  if IsProblematicWM then
+  begin
+    oldStyle := aForm.FormStyle;
+    aForm.FormStyle := fsStayOnTop;
+    try
+      aForm.ShowModal;
+      Result := aForm.ModalResult;
+    finally
+      try if Assigned(aForm) then aForm.FormStyle := oldStyle; except end;
+    end;
+    Exit;
+  end;
+  {$endif}
+
+  aForm.ShowModal;
+  Result := aForm.ModalResult;
+end;
 
 
 
