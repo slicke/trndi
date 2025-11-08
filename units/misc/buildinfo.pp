@@ -7,7 +7,7 @@ interface
 const
 BUILD_NUMBER = 'dev';
 BUILD_TAG    = 'dev';
-BUILD_DATE   = '2024-06-01T00:00:00Z';
+BUILD_DATE   = 'local';
 GIT_SHA      = 'local';
 GIT_BRANCH   = 'local';
 CI           = false;
