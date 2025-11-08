@@ -926,6 +926,10 @@ msgstr ""
 msgid "Wait. Shutting down extensions engine..."
 msgstr ""
 
+#: trndi.strings.rs_cleanup_wait
+msgid "Please wait up to 20 seconds..."
+msgstr ""
+
 #: trndi.strings.rs_compute_failed_ago
 msgid "Long ago"
 msgstr ""

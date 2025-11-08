@@ -1058,7 +1058,8 @@ begin
     actOnTrend(@HideDot);
     lTir.Hide;
     lArrow.hide;
-    lDiff.Hide;
+//    lDiff.Hide;
+    lDiff.Caption := RS_CLEANUP_WAIT;
     lAgo.hide;
     Application.ProcessMessages;
     
