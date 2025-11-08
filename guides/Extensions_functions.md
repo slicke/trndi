@@ -1,6 +1,45 @@
 # Trndi Extensions API
 Trndi supports ES2023, and provides these functions in addition to it:
 
+## Contents
+
+ - [Trndi functions](#trndi-functions)
+   - [alert](#alert)
+   - [confirm](#confirm)
+   - [prompt](#prompt)
+   - [select](#select)
+   - [log](#log)
+   - [console.log](#consolelog)
+   - [htmlMsg](#htmlmsg)
+   - [setBadgeSize](#setbadgesize)
+   - [setDotSize](#setdotsize)
+   - [setDotAdjust](#setdotadjust)
+   - [getUnit](#getunit)
+   - [getLocale](#getlocale)
+   - [setLevelColor](#setlevelcolor)
+   - [setTimeAndRange](#settimeandrange)
+   - [playSound](#playsound)
+   - [sayText](#saytext)
+   - [setOverrideThresholdMinutes](#setoverridethresholdminutes)
+   - [setClockInterval](#setclockinterval)
+   - [predictReadings](#predictreadings)
+ - [Promises (global)](#promises-global)
+   - [asyncGet](#asyncget)
+   - [jsonGet](#jsonget)
+   - [runCMD](#runcmd)
+   - [setLimits](#setlimits)
+ - [Callbacks](#callbacks)
+   - [updateCallback](#updatecallback)
+   - [fetchCallback](#fetchcallback)
+   - [dotClicked](#dotclicked)
+   - [uxClick](#uxclick)
+   - [clockView](#clockview)
+ - [User info](#user-info)
+   - [getCurrentUser](#getcurrentuser)
+   - [getCurrentNickname](#getcurrentnickname)
+ - [Examples](#examples)
+
+
 ## Trndi functions
 These functions are available via `Trndi.*`, such as `Trndi.alert(...)`:
 ### alert
