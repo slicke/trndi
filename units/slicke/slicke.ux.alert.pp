@@ -200,12 +200,6 @@ type
   procedure UXMessage(const dialogsize: TUXDialogSize; const title, message: string; const icon: uximage = uxmtOK; sender: TForm = nil);
 
   {**
-    Show a standard TForm modally with the same 'bad-WM' fallback logic as
-    the other UX dialog helpers. Returns the form ModalResult.
-  }
-  function ShowFormModalSafe(aForm: TForm): Integer;
-
-  {**
     Generic dialog with custom button set and emoji icon.
     @param dialogsize Layout preset; @seealso(TUXDialogSize)
     @param title Title text displayed above @code(message).
@@ -570,69 +564,6 @@ begin
 end;
 
 {**
-  Show a dialog in a safe way on platforms where transient/owner hints
-  may be ignored by the window manager. On non-Windows systems we use
-  fsStayOnTop as a conservative fallback while the dialog is active.
-}
-
-function ShowModalSafe(aDialog: TDialogForm): Integer;
-var
-  oldStyle: TFormStyle;
-begin
-  if not Assigned(aDialog) then Exit(mrNone);
-  {$ifndef Windows}
-  // Only apply the aggressive fallback on known-bad/lightweight WMs.
-  if IsProblematicWM then
-  begin
-    oldStyle := aDialog.FormStyle;
-    aDialog.FormStyle := fsStayOnTop;
-    try
-      Result := aDialog.ShowModal;
-    finally
-      try
-        if Assigned(aDialog) then aDialog.FormStyle := oldStyle;
-      except end;
-    end;
-    Exit;
-  end;
-  {$endif}
-  Result := aDialog.ShowModal;
-end;
-
-function ShowFormModalSafe(aForm: TForm): Integer;
-var
-  oldStyle: TFormStyle;
-begin
-  if not Assigned(aForm) then Exit(mrNone);
-  // Attempt to set popup owner where possible
-  try
-    if Assigned(Application) and Assigned(Application.MainForm) then
-    begin
-      aForm.PopupMode := pmExplicit;
-      aForm.PopupParent := Application.MainForm;
-    end;
-  except end;
-
-  {$ifndef Windows}
-  if IsProblematicWM then
-  begin
-    oldStyle := aForm.FormStyle;
-    aForm.FormStyle := fsStayOnTop;
-    try
-      aForm.ShowModal;
-      Result := aForm.ModalResult;
-    finally
-      try if Assigned(aForm) then aForm.FormStyle := oldStyle; except end;
-    end;
-    Exit;
-  end;
-  {$endif}
-
-  aForm.ShowModal;
-  Result := aForm.ModalResult;
-end;
-
-{**
   Compute the wrapped text height for a label given its fixed width.
   @param ALabel Label with font and width already assigned.
   @returns Pixel height needed to display the caption.
@@ -702,6 +633,33 @@ begin
     paragraphs.Free;
     words.Free;
   end;
+end;
+
+{**
+  Overloaded function from slicke.ux.native for our dialog form
+}
+function ShowModalSafe(aDialog: TDialogForm): Integer;
+var
+  oldStyle: TFormStyle;
+begin
+  if not Assigned(aDialog) then Exit(mrNone);
+  {$ifndef Windows}
+  // Only apply the aggressive fallback on known-bad/lightweight WMs.
+  if IsProblematicWM then
+  begin
+    oldStyle := aDialog.FormStyle;
+    aDialog.FormStyle := fsStayOnTop;
+    try
+      Result := aDialog.ShowModal;
+    finally
+      try
+        if Assigned(aDialog) then aDialog.FormStyle := oldStyle;
+      except end;
+    end;
+    Exit;
+  end;
+  {$endif}
+  Result := aDialog.ShowModal;
 end;
 
 {**
