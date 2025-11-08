@@ -30,7 +30,15 @@ Result: integer (zero-based index)
 ### log
 _See `console.log`_
 ### console.log
+```javascript
+console.log(something);
+```
 Prints out data to the user
+### htmlMsg
+```javascript
+Trndi.htmlMsg('Window Title', 'Title', 'Description', '<b>HTML</b> box content', 1)
+```
+Shows a HTML content box, last parameter is the scale of the window (it can be scrolled, but you might want to scale it too)
 ### setBadgeSize
 ```javascript
 Trndi.setBadgeSize(0.9, 9);

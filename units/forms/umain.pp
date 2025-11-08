@@ -815,6 +815,7 @@ begin
     addClassFunction('setOverrideThresholdMinutes', ExtFunction(@JSvar_DATA_FRESHNESS_THRESHOLD_MINUTES), 1);
     addClassFunction('setClockInterval', ExtFunction(@JSvar_ClockInterval), 1);
     addClassFunction('predictReadings', ExtFunction(@JSPredictReadings), -1);
+    addClassFunction('htmlMsg', ExtFunction(@JSHTMLMsg), -1);
 
     // Add the UX modification function, as declared in this file
     for s in exts do
