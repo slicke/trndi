@@ -16,7 +16,7 @@
 <br>Fedora Linux
 
 ![Linux](doc/img/img_rpi.png)
-<br>RaspberryPi (with touch screen)
+<br>RaspberryPi (with touch screen) - see [Guide for RPi display](guides/Display.md)
 
 ### Introduction
 > __NEW__: Join us on [Discord](https://discord.gg/QXACfpcW)
