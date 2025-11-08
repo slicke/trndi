@@ -28,7 +28,7 @@ interface
 
 uses
 Classes, SysUtils, ExtCtrls, StdCtrls, Graphics, trndi.types, Forms, Math,
-fpjson, jsonparser, dateutils
+fpjson, jsonparser, dateutils, buildinfo
 {$ifdef TrndiExt},trndi.ext.engine, mormot.lib.quickjs, mormot.core.base{$endif}
 {$ifdef DARWIN}, CocoaAll{$endif};
 
@@ -348,6 +348,53 @@ begin
   Result := EncodeDateTime(Year, Month, Day, Hour, Min, Sec, 0);
 end;
 
+function TryExtractBuildNumber(const Value: string; out BuildNumber: int64): boolean;
+var
+  digits: string;
+  i: integer;
+begin
+  digits := '';
+  for i := 1 to Length(Value) do
+    if Value[i] in ['0'..'9'] then
+      digits := digits + Value[i];
+
+  Result := (digits <> '') and TryStrToInt64(digits, BuildNumber);
+end;
+
+function TryExtractBuildNumberFromJson(const JsonObj: TJSONObject; out BuildNumber: int64): boolean;
+begin
+  Result := TryExtractBuildNumber(JsonObj.Get('tag_name', ''), BuildNumber);
+  if not Result then
+    Result := TryExtractBuildNumber(JsonObj.Get('name', ''), BuildNumber);
+end;
+
+function TryExtractPublishedAt(const JsonObj: TJSONObject; out PublishedAt: TDateTime): boolean;
+var
+  ReleaseDateStr: string;
+  Year, Month, Day, Hour, Min, Sec: word;
+begin
+  ReleaseDateStr := JsonObj.Get('published_at', '');
+  if Length(ReleaseDateStr) < 19 then
+    Exit(false);
+
+  Year := StrToIntDef(Copy(ReleaseDateStr, 1, 4), -1);
+  Month := StrToIntDef(Copy(ReleaseDateStr, 6, 2), -1);
+  Day := StrToIntDef(Copy(ReleaseDateStr, 9, 2), -1);
+  Hour := StrToIntDef(Copy(ReleaseDateStr, 12, 2), -1);
+  Min := StrToIntDef(Copy(ReleaseDateStr, 15, 2), -1);
+  Sec := StrToIntDef(Copy(ReleaseDateStr, 18, 2), -1);
+
+  if (Year < 0) or (Month < 0) or (Day < 0) or (Hour < 0) or (Min < 0) or (Sec < 0) then
+    Exit(false);
+
+  try
+    PublishedAt := EncodeDateTime(Year, Month, Day, Hour, Min, Sec, 0);
+    Result := true;
+  except
+    Result := false;
+  end;
+end;
+
 function HasNewerRelease(const JsonResponse: string;
 out ReleaseName: string;
 IncludePrerelease: boolean = false): boolean;
@@ -355,18 +402,64 @@ var
   JsonData: TJSONData;
   JsonObj: TJSONObject;
   JsonArray: TJSONArray;
-  ReleaseDateStr: string;
-  ReleaseDate, BuildDate: TDateTime;
-  Year, Month, Day, Hour, Min, Sec: word;
+  BuildDate: TDateTime;
+  BuildDateValid: boolean;
+  CurrentBuildNumber, ReleaseBuildNumber: int64;
+  HasNumericBuild: boolean;
+  CurrentTag: string;
   i: integer;
-  IsPrerelease: boolean;
+
+  function EnsureBuildDate: TDateTime;
+  begin
+    if not BuildDateValid then
+    begin
+      BuildDate := ParseCompilerDate;
+      BuildDateValid := true;
+    end;
+    Result := BuildDate;
+  end;
+
+  function EvaluateRelease(const Obj: TJSONObject): boolean;
+  var
+    CandidateName, ReleaseTag: string;
+    PublishedAt: TDateTime;
+  begin
+    Result := false;
+
+    if (not IncludePrerelease) and Obj.Get('prerelease', false) then
+      Exit;
+
+    ReleaseTag := Obj.Get('tag_name', '');
+    if (CurrentTag <> '') and (CurrentTag <> 'dev') and (ReleaseTag <> '') and SameText(ReleaseTag, CurrentTag) then
+      Exit;
+
+    CandidateName := Obj.Get('name', ReleaseTag);
+
+    if HasNumericBuild and TryExtractBuildNumberFromJson(Obj, ReleaseBuildNumber) then
+    begin
+      if ReleaseBuildNumber > CurrentBuildNumber then
+      begin
+        ReleaseName := CandidateName;
+        Exit(true);
+      end;
+      Exit;
+    end;
+
+    if TryExtractPublishedAt(Obj, PublishedAt) and (PublishedAt > EnsureBuildDate) then
+    begin
+      ReleaseName := CandidateName;
+      Exit(true);
+    end;
+  end;
 begin
   Result := false;
   ReleaseName := '';
   JsonData := nil;
 
   try
-    BuildDate := ParseCompilerDate;
+    HasNumericBuild := TryStrToInt64(BUILD_NUMBER, CurrentBuildNumber);
+    CurrentTag := BUILD_TAG;
+    BuildDateValid := false;
     JsonData := GetJSON(JsonResponse);
 
     if JsonData is TJSONArray then
@@ -375,27 +468,10 @@ begin
       for i := 0 to JsonArray.Count - 1 do
       begin
         JsonObj := TJSONObject(JsonArray[i]);
-        IsPrerelease := JsonObj.Get('prerelease', false);
-        if not IncludePrerelease and IsPrerelease then
-          Continue;
-
-        ReleaseDateStr := JsonObj.Get('published_at', '');
-        if Length(ReleaseDateStr) >= 19 then
+        if EvaluateRelease(JsonObj) then
         begin
-          Year := StrToInt(Copy(ReleaseDateStr, 1, 4));
-          Month := StrToInt(Copy(ReleaseDateStr, 6, 2));
-          Day := StrToInt(Copy(ReleaseDateStr, 9, 2));
-          Hour := StrToInt(Copy(ReleaseDateStr, 12, 2));
-          Min := StrToInt(Copy(ReleaseDateStr, 15, 2));
-          Sec := StrToInt(Copy(ReleaseDateStr, 18, 2));
-          ReleaseDate := EncodeDateTime(Year, Month, Day, Hour, Min, Sec, 0);
-
-          if ReleaseDate > BuildDate then
-          begin
-            ReleaseName := JsonObj.Get('name', JsonObj.Get('tag_name', ''));
-            Result := true;
-            Exit;
-          end;
+          Result := true;
+          Exit;
         end;
       end;
     end
@@ -403,23 +479,8 @@ begin
     if JsonData is TJSONObject then
     begin
       JsonObj := TJSONObject(JsonData);
-      ReleaseDateStr := JsonObj.Get('published_at', '');
-      if Length(ReleaseDateStr) >= 19 then
-      begin
-        Year := StrToInt(Copy(ReleaseDateStr, 1, 4));
-        Month := StrToInt(Copy(ReleaseDateStr, 6, 2));
-        Day := StrToInt(Copy(ReleaseDateStr, 9, 2));
-        Hour := StrToInt(Copy(ReleaseDateStr, 12, 2));
-        Min := StrToInt(Copy(ReleaseDateStr, 15, 2));
-        Sec := StrToInt(Copy(ReleaseDateStr, 18, 2));
-        ReleaseDate := EncodeDateTime(Year, Month, Day, Hour, Min, Sec, 0);
-
-        if ReleaseDate > BuildDate then
-        begin
-          ReleaseName := JsonObj.Get('name', JsonObj.Get('tag_name', ''));
-          Result := true;
-        end;
-      end;
+      if EvaluateRelease(JsonObj) then
+        Result := true;
     end;
 
   except
@@ -438,17 +499,93 @@ var
   JsonData: TJSONData;
   JsonObj: TJSONObject;
   JsonArray: TJSONArray;
-  ReleaseDateStr, ReleaseTitle: string;
-  ReleaseDate, BuildDate: TDateTime;
-  Year, Month, Day, Hour, Min, Sec: word;
+  BuildDate: TDateTime;
+  BuildDateValid: boolean;
+  CurrentBuildNumber, ReleaseBuildNumber: int64;
+  HasNumericBuild: boolean;
+  CurrentTag: string;
+  PublishedAt: TDateTime;
   i: integer;
-  IsPrerelease, MatchesPlatform: boolean;
+  IsPrerelease: boolean;
+
+  function EnsureBuildDate: TDateTime;
+  begin
+    if not BuildDateValid then
+    begin
+      BuildDate := ParseCompilerDate;
+      BuildDateValid := true;
+    end;
+    Result := BuildDate;
+  end;
+
+  function MatchesPlatformFilter(const Title: string): boolean;
+  var
+    LowerTitle, LowerPlatform: string;
+  begin
+    if Platform = '' then
+      Exit(true);
+
+    LowerTitle := LowerCase(Title);
+    LowerPlatform := LowerCase(Platform);
+
+    case LowerPlatform of
+    'windows':
+      Result := Pos('windows', LowerTitle) > 0;
+    'mac', 'macos':
+      Result := (Pos('mac', LowerTitle) > 0) or (Pos('macos', LowerTitle) > 0);
+    'linux':
+      Result := Pos('linux', LowerTitle) > 0;
+    else
+      Result := Pos(LowerPlatform, LowerTitle) > 0;
+    end;
+  end;
+
+  function EvaluateRelease(const Obj: TJSONObject): string;
+  var
+    ReleaseTag, Title, Url: string;
+  begin
+    Result := '';
+
+    IsPrerelease := Obj.Get('prerelease', false);
+    if IncludePrerelease then
+    begin
+      if not IsPrerelease then
+        Exit;
+    end
+    else
+    if IsPrerelease then
+      Exit;
+
+    Title := Obj.Get('name', Obj.Get('tag_name', ''));
+    if not MatchesPlatformFilter(Title) then
+      Exit;
+
+    Url := Obj.Get('html_url', '');
+    if Url = '' then
+      Exit;
+
+    ReleaseTag := Obj.Get('tag_name', '');
+    if (CurrentTag <> '') and (CurrentTag <> 'dev') and (ReleaseTag <> '') and SameText(ReleaseTag, CurrentTag) then
+      Exit;
+
+    if HasNumericBuild and TryExtractBuildNumberFromJson(Obj, ReleaseBuildNumber) then
+    begin
+      if ReleaseBuildNumber > CurrentBuildNumber then
+        Result := Url;
+      Exit;
+    end;
+
+    if TryExtractPublishedAt(Obj, PublishedAt) and (PublishedAt > EnsureBuildDate) then
+      Result := Url;
+  end;
 begin
   Result := ''; // Empty if no newer version
   JsonData := nil;
 
   try
-    BuildDate := ParseCompilerDate;
+    HasNumericBuild := TryStrToInt64(BUILD_NUMBER, CurrentBuildNumber);
+    CurrentTag := BUILD_TAG;
+    BuildDateValid := false;
     JsonData := GetJSON(JsonResponse);
 
     // Handle single release object (from /releases/latest)
@@ -456,45 +593,7 @@ begin
     begin
       JsonObj := TJSONObject(JsonData);
 
-      // Check platform filter
-      if Platform <> '' then
-      begin
-        ReleaseTitle := JsonObj.Get('name', JsonObj.Get('tag_name', ''));
-        MatchesPlatform := false;
-
-        case LowerCase(Platform) of
-        'windows':
-          MatchesPlatform := Pos('windows', LowerCase(ReleaseTitle)) > 0;
-        'mac', 'macos':
-          MatchesPlatform :=
-            (Pos('mac', LowerCase(ReleaseTitle)) > 0) or
-            (Pos('macos', LowerCase(ReleaseTitle)) > 0);
-        'linux':
-          MatchesPlatform := Pos('linux', LowerCase(ReleaseTitle)) > 0;
-        else
-          MatchesPlatform := Pos(LowerCase(Platform), LowerCase(ReleaseTitle)) > 0;
-        end;
-
-        if not MatchesPlatform then
-          Exit; // No match, return empty
-      end;
-
-      // Check date
-      ReleaseDateStr := JsonObj.Get('published_at', '');
-      if Length(ReleaseDateStr) >= 19 then
-      begin
-        Year := StrToInt(Copy(ReleaseDateStr, 1, 4));
-        Month := StrToInt(Copy(ReleaseDateStr, 6, 2));
-        Day := StrToInt(Copy(ReleaseDateStr, 9, 2));
-        Hour := StrToInt(Copy(ReleaseDateStr, 12, 2));
-        Min := StrToInt(Copy(ReleaseDateStr, 15, 2));
-        Sec := StrToInt(Copy(ReleaseDateStr, 18, 2));
-
-        ReleaseDate := EncodeDateTime(Year, Month, Day, Hour, Min, Sec, 0);
-
-        if ReleaseDate > BuildDate then
-          Result := JsonObj.Get('html_url', ''); // Return URL for single release
-      end;
+      Result := EvaluateRelease(JsonObj);
     end
 
     // Handle array of releases (from /releases)
@@ -506,61 +605,9 @@ begin
       for i := 0 to JsonArray.Count - 1 do
       begin
         JsonObj := TJSONObject(JsonArray[i]);
-        IsPrerelease := JsonObj.Get('prerelease', false);
-
-        // Filter by prerelease setting
-        if IncludePrerelease then
-        begin
-          if not IsPrerelease then
-            Continue; // Want prerelease, skip stable
-        end
-        else
-        if IsPrerelease then
-          Continue// Want stable, skip prerelease
-        ;
-
-        // Check platform filter
-        if Platform <> '' then
-        begin
-          ReleaseTitle := JsonObj.Get('name', JsonObj.Get('tag_name', ''));
-          MatchesPlatform := false;
-
-          case LowerCase(Platform) of
-          'windows':
-            MatchesPlatform := Pos('windows', LowerCase(ReleaseTitle)) > 0;
-          'mac', 'macos':
-            MatchesPlatform :=
-              (Pos('mac', LowerCase(ReleaseTitle)) > 0) or
-              (Pos('macos', LowerCase(ReleaseTitle)) > 0);
-          'linux':
-            MatchesPlatform := Pos('linux', LowerCase(ReleaseTitle)) > 0;
-          else
-            MatchesPlatform := Pos(LowerCase(Platform), LowerCase(ReleaseTitle)) > 0;
-          end;
-
-          if not MatchesPlatform then
-            Continue;
-        end;
-
-        // Check date
-        ReleaseDateStr := JsonObj.Get('published_at', '');
-        if Length(ReleaseDateStr) >= 19 then
-        begin
-          Year := StrToInt(Copy(ReleaseDateStr, 1, 4));
-          Month := StrToInt(Copy(ReleaseDateStr, 6, 2));
-          Day := StrToInt(Copy(ReleaseDateStr, 9, 2));
-          Hour := StrToInt(Copy(ReleaseDateStr, 12, 2));
-          Min := StrToInt(Copy(ReleaseDateStr, 15, 2));
-          Sec := StrToInt(Copy(ReleaseDateStr, 18, 2));
-
-          ReleaseDate := EncodeDateTime(Year, Month, Day, Hour, Min, Sec, 0);
-
-          if ReleaseDate > BuildDate then
-          begin
-            Result := JsonObj.Get('html_url', ''); // Return URL
-            Exit; // Found it, exit
-          end;
-        end;
+        Result := EvaluateRelease(JsonObj);
+        if Result <> '' then
+          Exit;
       end;
     end;
 
