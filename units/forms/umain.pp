@@ -4006,8 +4006,8 @@ begin
       reading := SortedReadings[i];
 
       // For slot 0, be more lenient with the upper bound to catch the anchor reading
-      // Use a small epsilon (1 second) to handle floating point comparison issues
-      if reading.date > slotEnd + (1 / 86400) then
+      // Use a 10 second epsilon to handle timing variations
+      if reading.date > slotEnd + (10 / 86400) then
       begin
         LogMessage(Format('  Reading at %s is too new (>%.3f sec after slot end), skipping', 
           [DateTimeToStr(reading.date), (reading.date - slotEnd) * 86400]));
@@ -4016,7 +4016,7 @@ begin
 
       // Check if reading falls within this interval BEFORE checking if it's too old
       // This ensures boundary readings (exactly at slotStart) get matched
-      if (reading.date >= slotStart) and (reading.date <= slotEnd + (1 / 86400)) then
+      if (reading.date >= slotStart - (10 / 86400)) and (reading.date <= slotEnd + (10 / 86400)) then
       begin
         LogMessage(Format('  Found match at %s (value: %.1f, diff from slotEnd: %.1f sec)', 
           [DateTimeToStr(reading.date), reading.val, (slotEnd - reading.date) * 86400]));
@@ -4025,7 +4025,7 @@ begin
         begin
           // Only advance searchStart if this reading is NOT on a slot boundary
           // Boundary readings (at slotStart) should be available for the next slot too
-          if Abs(reading.date - slotStart) > (0.5 / 86400) then
+          if Abs(reading.date - slotStart) > (10 / 86400) then
             searchStart := i + 1
           else
           begin
@@ -4036,7 +4036,7 @@ begin
           Break; // Move to next interval
         end;
       end
-      else if reading.date < slotStart then
+      else if reading.date < slotStart - (10 / 86400) then
       begin
         // Stop if we've gone past this interval into older readings
         LogMessage(Format('  Reading at %s is too old (%.3f sec before slot start), stopping', 
