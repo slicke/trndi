@@ -3728,6 +3728,18 @@ begin
   if Length(bgs) > 0 then
     Move(bgs[0], FCachedReadings[0], Length(bgs) * SizeOf(BGReading));
 
+  // Reapply override settings after API fetch (API may have set its own defaults)
+  if native.GetBoolSetting('override.enabled') then
+  begin
+    api.cgmLo := native.GetIntSetting('override.lo', api.cgmLo);
+    api.cgmHi := native.GetIntSetting('override.hi', api.cgmHi);
+  end;
+  if native.GetBoolSetting('override.range') then
+  begin
+    api.cgmRangeLo := native.GetIntSetting('override.rangelo', api.cgmRangeLo);
+    api.cgmRangeHi := native.GetIntSetting('override.rangehi', api.cgmRangeHi);
+  end;
+
   pnWarning.Visible := false;
   if (Length(bgs) < 1) or (not IsDataFresh) then
   begin
