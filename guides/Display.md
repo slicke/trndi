@@ -1,5 +1,8 @@
 # Creating an always-on display with a RaspberryPi and Trndi
 
+## Disclaimer
+There's no guarantee that this setup will work for you, or that it will continue to work with future updates to Linux or similar operating systems. I take no responsibility for any purchases or commitments you make based on this guide.
+
 ## Hardware
 1. Aquire a RaspberryPi (tested on RPi4 Model B)
 2. Aquire a power supply (eg by getting a Rpi kit with a charger included)
@@ -19,6 +22,7 @@ sudo apt install -y \
   libxcb1 libx11-6 libxext6 libxrender1 libxrandr2 \
   libfontconfig1 libfreetype6 libdbus-1-3
   ```
+4. Install the Qt6Pas library from https://github.com/davidbannon/libqt6pas/releases
   ## Install Trndi
 
   1. In this repo, visit the [latest release](https://github.com/slicke/trndi/releases/latest), and down load the _arm64_ package: ```trndi_X.Y.Z_arm64.deb```
