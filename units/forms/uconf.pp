@@ -289,7 +289,7 @@ RS_PRIVACY_HELP =
   'When in Privacy Mode, the actual blood glucose value is hidden. Trndi will only tell the user if it''s good, high or low.';
 
 RS_DEX =
-  'Dexcom servers do not provide custom high and low blood sugar values. Please set your own thresholds at the bottom of this window.';
+  'Dexcom servers do not provide custom high and low blood sugar values. Please set your own thresholds in the Customization tab.';
 
 RS_BETA =
   'This backend is in a beta stage, it may not work as intended! If possible, choose another backend.';

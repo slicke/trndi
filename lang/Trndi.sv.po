@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit 3.7\n"
+"X-Generator: Poedit 3.8\n"
 
 #: slicke.ux.alert.dlgerr
 msgid "An error occurred while creating a message dialog"
@@ -1524,8 +1524,8 @@ msgid "Default"
 msgstr "Standard"
 
 #: uconf.rs_dex
-msgid "Dexcom servers do not provide custom high and low blood sugar values. Please set your own thresholds at the bottom of this window."
-msgstr "Dexcom:s servrar tillhandahåller inte värden för vad som är högt och lågt. Vänligen ställ in dina egna gränser i slutet av fönstret."
+msgid "Dexcom servers do not provide custom high and low blood sugar values. Please set your own thresholds in the Customization tab."
+msgstr "Dexcom:s servrar tillhandahåller inte värden för vad som är högt och lågt. Vänligen ställ in dina egna gränser under fliken Personalisera."
 
 #: uconf.rs_dupe_name
 msgid "Names must be unique"
@@ -1756,4 +1756,3 @@ msgstr "Du kan använda skift+<nummerr> för att manuellt sätta synligheten (0 
 #: ufloat.rscustomsize
 msgid "You can hold down shift and plus (+) or minus (-) to change the window size"
 msgstr "Du kan hålla ned skift och plus (+) eller minus (-) för att justera fönstrets storlek"
-
