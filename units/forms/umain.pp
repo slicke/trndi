@@ -3937,12 +3937,14 @@ end;
 procedure TfBG.ProcessTimeIntervals(const SortedReadings: array of BGReading;
 CurrentTime: TDateTime);
 var
-  slotIndex, i, labelNumber: integer;
+  slotIndex, i, labelNumber, searchStart: integer;
   slotStart, slotEnd: TDateTime;
   found: boolean;
   reading: BGReading;
   l: TPaintbox;
 begin
+  searchStart := 0;
+
   for slotIndex := 0 to NUM_DOTS - 1 do
   begin
     // Set start and end time for the intervall
@@ -3952,13 +3954,15 @@ begin
     found := false;
 
     // Sök efter den senaste läsningen inom intervallet
-    for i := 0 to High(SortedReadings) do
+    for i := searchStart to High(SortedReadings) do
     begin
       reading := SortedReadings[i];
 
       if (reading.date <= slotEnd) and (reading.date >= slotStart) then
       begin
         found := UpdateLabelForReading(slotIndex, reading);
+        if found then
+          searchStart := i + 1;
         Break; // Gå till nästa tidsintervall
       end;
     end;
