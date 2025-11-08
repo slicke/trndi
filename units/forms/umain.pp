@@ -1097,6 +1097,11 @@ begin
       if i = mrCancel then
       begin
         Application.Terminate;
+        try
+          Halt(1);
+        finally
+          halt(1);
+        end;
         Exit;
       end
       else
