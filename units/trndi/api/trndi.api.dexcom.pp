@@ -492,11 +492,8 @@ begin
     end;
   end;
 
-  // Set default thresholds (can be made configurable or sourced from alerts)
-  cgmHi := 160;
-  cgmLo := 60;
-  cgmRangeHi := 159;
-  cgmRangeLo := 61;
+  // Note: Dexcom API does not provide threshold information
+  // Thresholds should be set via override settings or use API defaults from Connect()
 end;
 
 {------------------------------------------------------------------------------
