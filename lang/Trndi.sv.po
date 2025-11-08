@@ -1077,7 +1077,9 @@ msgid "Trndi found multiple accounts. Please choose one for this instance"
 msgstr "Trndi hittade fler konton. Vänligen välj ett för denna instans"
 
 #: trndi.strings.rs_multiuser_box
-msgid "Trndi found multiple accounts. Please choose one for this instance, or leave empty for default"
+#, fuzzy
+#| msgid "Trndi found multiple accounts. Please choose one for this instance, or leave empty for default"
+msgid "Trndi found multiple accounts. Please choose one for this instance, or continue with the default account"
 msgstr "Trndi hittade flera konton. Välj ett för denna session, eller lämna tomt för standard"
 
 #: trndi.strings.rs_multiuser_box_title

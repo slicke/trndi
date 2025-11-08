@@ -63,7 +63,7 @@ RS_WARN_BG_LO = 'Low blood sugar! Currently: %s';
 RS_WARN_BG_HI_TITLE = 'Blood sugar high';
 RS_WARN_BG_LO_TITLE = 'Blood sugar low';
 
-RS_MULTIUSER_BOX = 'Trndi found multiple accounts. Please choose one for this instance, or leave empty for default';
+RS_MULTIUSER_BOX = 'Trndi found multiple accounts. Please choose one for this instance, or continue with the default account';
 RS_MULTIUSER_BOX_TITLE = 'User select';
 
 RS_FONT_ERROR = 'You''re missing the standard font "%s". Trndi will work as intended, but some icons may be missing and/or distorted!';

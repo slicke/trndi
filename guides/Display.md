@@ -1,3 +1,4 @@
+![RPi Display](/doc/img/img_rpi.png)
 # Creating an always-on display with a RaspberryPi and Trndi
 
 ## Disclaimer
