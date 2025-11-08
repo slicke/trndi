@@ -1036,7 +1036,7 @@ msgid "Trndi found multiple accounts. Please choose one for this instance"
 msgstr ""
 
 #: trndi.strings.rs_multiuser_box
-msgid "Trndi found multiple accounts. Please choose one for this instance, or leave empty for default"
+msgid "Trndi found multiple accounts. Please choose one for this instance, or continue with the default account"
 msgstr ""
 
 #: trndi.strings.rs_multiuser_box_title

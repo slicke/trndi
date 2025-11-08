@@ -2,17 +2,23 @@
 # Setting up an additional user
 
 ## Adding a user
-* Start Trndi
+* Start Trndi as usual
 * Richt-click and open settings
 * Click the "Multi User" tab
 * Click Add
 * Close the window and __save settings__
-#### A new user has been created
+* __A new user has been created__
+![User select](/doc/img/user_config.png)
+
+## Logging in as a user
+When users exist, Trndi will ask which one you want to use on start-up:
+
+![User select](/doc/img/user_select.png)
 
 ## Customizing a user
 * In the user list, click the user's username
 * Below choose an account color and nickname
-> Click Save, settings wont apply unless you click Save!
+> Click _Save_, __before__ closing the window or selecting another user. Settings wont apply unless you click Save!
 
 The color chosen will be assigned to the window when Trndi loads the user.
 The username is also displayed in the title bar.

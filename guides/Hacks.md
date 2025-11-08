@@ -6,7 +6,7 @@ Trndi saves it's configuration in
 ```bash
 ~/.config/Trndi.cfg
 ```
-> If your system defaults have changed this might be located elsewhere. Look for your default config folder
+> If your system defaults have changed this might be located elsewhere. Look for your default config folder.
 
 ## Windows
 Trndi stores it's settings in the registry under
@@ -26,9 +26,11 @@ To convert from/to CSS coloring, use the JavaScript code in the bottom of the fi
 # Hacks
 
 ## Override the 6-30 minute block for readings
+> This is not recommended as it might not be safe!
+
 Trndi limits you to between 6-30 before a value is "old" and the "No recent readings" warning shows. This can be overridden:
 ```ini
-system.fresh_threshold=11
+system.fresh_threshold=31
 ```
 
 ## Override the 100% badge size (the reading icon on Trndi's app icon)
@@ -39,6 +41,9 @@ ux.badge_size=100
 #### Delete all keys and Trndi will reset to factory-default settings
 <br><br>
 
+# Shift magic
+* Holding shift on start will trigger big/touch screen mode, making dialogs larger
+* Shift-right clicking on Trndi will add the "Service menu" option, it adds debugging options and hidden features, though it's not recommended you use it on production environments!
 # Helpers
 
 How to convert TColors:
