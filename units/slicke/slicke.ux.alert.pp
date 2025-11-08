@@ -568,9 +568,13 @@ var
   R, G, B: Byte;
 begin
   rgb := ColorToRGB(AColor);
-  R := GetRValue(rgb);
-  G := GetGValue(rgb);
-  B := GetBValue(rgb);
+  { Extract bytes: Windows provides GetRValue/GetGValue/GetBValue, but
+    those are not available on Linux; use bit operations which are
+    portable. ColorToRGB returns a COLORREF-like value where
+    low byte = red, next = green, next = blue. }
+  R := Byte(rgb and $FF);
+  G := Byte((rgb shr 8) and $FF);
+  B := Byte((rgb shr 16) and $FF);
   Result := Format('#%.2x%.2x%.2x', [R, G, B]);
 end;
 
