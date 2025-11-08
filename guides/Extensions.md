@@ -7,7 +7,7 @@ The _plugin folder_ is located in your user's application data folder. You can f
 ![Window](../doc/img/ext.png)
 
 ### Plugin support
-In some cases Trndi can be built without plugin support; this will be shown in the settings also. Official versions of Trndi support extensions on Windows and Linux (amd64/x64).
+In some cases Trndi can be built without plugin support; this will be shown in the settings also. Official versions of Trndi support extensions on Windows and Linux (amd64/x64). Due to limitations in the engine Trndi uses, extensions are not supported on arm platforms such as RaspberryPi and macOS.
 
 ![Window](../doc/img/no_ext.png)
 
@@ -64,6 +64,5 @@ Trndi.setLevelColor('#7cd55d','#d55d5d', '#5dc6d5', // Set colors for okay readi
 To have your extensions show their name and copyright, add a header at the very start:
 ```
 /* My Extension
-(c) My Name
-*/
+(c) My Name*/
 ```
