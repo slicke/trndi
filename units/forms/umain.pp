@@ -53,7 +53,7 @@ Graphics, Dialogs, StdCtrls, ExtCtrls,
 trndi.api.dexcom, trndi.api.nightscout, trndi.api.nightscout3, trndi.types,
 Math, DateUtils, FileUtil, LclIntf, TypInfo, LResources,
 slicke.ux.alert, slicke.ux.native, usplash, Generics.Collections, trndi.funcs,
-Trndi.native.base, trndi.shared, trndi.api.debug_custom,
+Trndi.native.base, trndi.shared, trndi.api.debug_custom, buildinfo, fpjson, jsonparser,
 SystemMediaController,
 {$ifdef TrndiExt}
 trndi.Ext.Engine, trndi.Ext.jsfuncs, trndi.ext.promise, mormot.core.base,
@@ -386,6 +386,7 @@ private
   procedure LoadUserProfile;
   procedure CheckAndAcceptLicense;
   function InitializeAPI: boolean;
+  procedure CheckForUpdates(ShowUpToDateMessage: boolean = false);
 public
   firstboot: boolean;
   procedure AppExceptionHandler(Sender: TObject; {%H-}E: Exception);
@@ -581,6 +582,8 @@ begin
       miForce.Click;
   'I', 'i':
     miSettings.Click;
+  'U', 'u':
+    CheckForUpdates(true);
   end;
 end;
 
@@ -1510,6 +1513,9 @@ begin
   placeForm;
   placed := true;
   lVal.font.Quality := fqCleartype;
+  
+  // Check for updates on startup (non-blocking)
+  CheckForUpdates;
 end;
 
 procedure TfBG.lAgoClick(Sender: TObject);
@@ -4115,6 +4121,67 @@ begin
   FLastUICaption := UICaption;
   FLastTir := UITir;
   FLastTirColor := UITirColor;
+end;
+
+procedure TfBG.CheckForUpdates(ShowUpToDateMessage: boolean = false);
+var
+  res, rn, r, s: string;
+  rok: boolean;
+  JsonData: TJSONData;
+  JsonObj: TJSONObject;
+  latestRelease: string;
+begin
+  try
+    // Fetch latest release info from GitHub
+    TrndiNative.getURL('https://api.github.com/repos/slicke/trndi/releases/latest', res);
+    
+    // Try to get the latest release name from JSON
+    latestRelease := 'Unknown';
+    JsonData := nil;
+    try
+      JsonData := GetJSON(res);
+      if Assigned(JsonData) and (JsonData is TJSONObject) then
+      begin
+        JsonObj := TJSONObject(JsonData);
+        latestRelease := JsonObj.Get('name', JsonObj.Get('tag_name', 'Unknown'));
+      end;
+    except
+      latestRelease := 'Parse error';
+    end;
+    
+    // Free the JSON data after we're done with it
+    if Assigned(JsonData) then
+      FreeAndNil(JsonData);
+    
+    rok := HasNewerRelease(res, rn, false);
+
+    if rok then
+    begin
+      r := GetNewerVersionURL(res);
+      if r = '' then r := 'https://github.com/slicke/trndi/releases/latest';
+      s := Format(RS_NEWVER, [rn]);
+      if UXDialog(uxdAuto, RS_NEWVER_CAPTION, s, [mbYes, mbNo], mtInformation) = mrYes then
+        OpenURL(r);
+    end
+    else if ShowUpToDateMessage then
+    begin
+      // Show debug info for dev builds
+      if BUILD_NUMBER = 'dev' then
+        ShowMessage('Up to date (Dev Build)' + LineEnding + 
+                   'Build: ' + BUILD_NUMBER + LineEnding +
+                   'Branch: ' + GIT_BRANCH + LineEnding +
+                   'Build Date: ' + {$I %DATE%} + ' ' + {$I %TIME%} + LineEnding +
+                   'Latest release: ' + latestRelease + LineEnding + LineEnding +
+                   'Note: Dev builds are always considered "newer" than releases')
+      else
+        ShowMessage(RS_UPTODATE);
+    end;
+    // Silently ignore if up to date when ShowUpToDateMessage is false
+  except
+    on E: Exception do
+      if ShowUpToDateMessage then
+        ShowMessage('Update check failed: ' + E.Message);
+  end;
 end;
 
 end.
