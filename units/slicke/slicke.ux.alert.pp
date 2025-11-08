@@ -33,7 +33,6 @@
   - @link(UXDialog) overloads for message dialogs with button sets or Lazarus TMsgDlgType mapping.
   - @link(ExtMsg), @link(ExtLog), @link(ExtError), @link(ExtSucc), @link(ExtSuccEx) for rich dialogs with dumps/logs.
   - @link(ExtInput), @link(ExtNumericInput), @link(ExtIntInput), @link(ExtList), @link(ExtTable) for data entry.
-  - Font helpers @link(FontGUIInList) and @link(FontTXTInList) to locate suitable UI/text fonts.
 
   Platform support:
   - Windows: emoji rendering via Direct2D/DirectWrite; custom dark-titlebar opt-in where possible.
@@ -50,7 +49,7 @@ interface
 
 uses
   Classes, SysUtils, Dialogs, Forms, ExtCtrls, StdCtrls, Controls, Graphics, Math,
-  IntfGraphics, FPImage, graphtype, lcltype, Trndi.Native, Grids, Spin, IpHtml,
+  IntfGraphics, FPImage, graphtype, lcltype, Trndi.Native, Grids, Spin, IpHtml, slicke.ux.native,
   {$ifdef Windows}
   DX12.D2D1, DX12.DXGI, DX12.DWrite, DX12.DCommon, DX12.WinCodec, Windows, Buttons, ActiveX, ComObj,
   {$endif}
@@ -483,31 +482,6 @@ type
                          var ModalResult: TModalResult;
                          const icon: UXImage = uxmtCog): TFont;
 
-  {**
-    Check if a suitable UI font exists on this system and return its name.
-    @param fname Out parameter that receives a preferred UI font name for emoji/mono display.
-    @returns @true if the font (or a fallback) is available; otherwise @false.
-  }
-  function FontGUIInList(out fname: string): Boolean;
-
-  {**
-    Check if a suitable text font exists on this system and return its name.
-    @param fname Out parameter that receives a preferred UI text font.
-    @returns @true if the font is present; otherwise @false. On unknown platforms always @true with a generic name.
-  }
-  function FontTXTInList(out fname: string): Boolean;
-
-  {**
-    Check if the Window Manaager is problematic, which means it can't handle ShowModal
-    @returns @true if the VM is problematic
-    }
-  function IsProblematicWM: Boolean;
-
-  {**
-    Check if the Window Manaager is problematic to a lesser extent - ie "just" fails with showmodal
-    @returns @true if the VM is semi-problematic
-    }
-  function IsSemiProblematicWM: Boolean;
 var
   {** Localized captions for each @link(TUXMsgDlgBtn). Initialized from resource strings. }
   langs : ButtonLangs = (smbYes, smbUXNo, smbUXOK, smbUXCancel, smbUXAbort, smbUXRetry, smbUXIgnore,
@@ -624,81 +598,6 @@ begin
   {$endif}
   Result := aDialog.ShowModal;
 end;
-
-
-{$ifdef X_LINUXBSD}
-{**
-  Detect a window manager likely to ignore showmodal, but supports other things.
-}
-function IsSemiProblematicWM: boolean;
-var
-  env, s: string;
-  i: Integer;
-const
-  Bad: array[0..0] of string = (
-    'gnome'
-  );
-begin
-  // Overrides
-  env := GetEnvironmentVariable('TRNDI_DISABLE_MODAL_FALLBACK');
-  if env = '1' then Exit(false);                               // This shouldnt really trigger as problematic would be false
-  env := GetEnvironmentVariable('TRNDI_FORCE_MODAL_FALLBACK');
-  if env = '1' then Exit(False);                               // "We're" a problematic vm
-
-  s := LowerCase(Trim(GetEnvironmentVariable('XDG_CURRENT_DESKTOP') + ' ' +
-    GetEnvironmentVariable('DESKTOP_SESSION') + ' ' +
-    GetEnvironmentVariable('XDG_SESSION_DESKTOP') + ' ' +
-    GetEnvironmentVariable('WINDOW_MANAGER')));
-
-  for i := Low(Bad) to High(Bad) do
-    if Pos(Bad[i], s) > 0 then Exit(True);
-
-  Result := False;
-end;
-
-{**
-  Detect a window manager likely to ignore transient/owner hints.
-  Uses environment variables as a lightweight heuristic and supports
-  runtime overrides via TRNDI_FORCE_MODAL_FALLBACK / TRNDI_DISABLE_MODAL_FALLBACK.
-}
-function IsProblematicWM: Boolean;
-var
-  env, s: string;
-  i: Integer;
-const
-  Bad: array[0..12] of string = (
-    'openbox', 'matchbox', 'fluxbox', 'fvwm', 'icewm', 'twm', 'pekwm',
-    'lxde', 'lxde-pi', 'lxsession', 'pixel', 'raspbian', 'gnome'
-  );
-begin
-  // Overrides
-  env := GetEnvironmentVariable('TRNDI_DISABLE_MODAL_FALLBACK');
-  if env = '1' then Exit(False);
-  env := GetEnvironmentVariable('TRNDI_FORCE_MODAL_FALLBACK');
-  if env = '1' then Exit(True);
-
-  s := LowerCase(Trim(GetEnvironmentVariable('XDG_CURRENT_DESKTOP') + ' ' +
-    GetEnvironmentVariable('DESKTOP_SESSION') + ' ' +
-    GetEnvironmentVariable('XDG_SESSION_DESKTOP') + ' ' +
-    GetEnvironmentVariable('WINDOW_MANAGER')));
-
-  for i := Low(Bad) to High(Bad) do
-    if Pos(Bad[i], s) > 0 then Exit(True);
-
-  Result := False;
-end;
-{$else}
-function IsProblematicWM: Boolean;
-begin
-  result := false; // Win and mac are always good
-end;
-
-function IsSemiProblematicWM: boolean;
-begin
-   result := false;
-end;
-
-{$endif}
 
 function ShowFormModalSafe(aForm: TForm): Integer;
 var
@@ -2318,53 +2217,6 @@ begin
                    btns,
                    widechar(icon),
                    scale);
-end;
-
-{**
-  See interface docs. Attempts OS-appropriate defaults.
-}
-function FontTXTInList(out fname: string): Boolean;
-begin
-  {$if DEFINED(X_LINUXBSD)}
-    fname := 'Noto Sans';
-    try
-      Result := Screen.Fonts.IndexOf(fname) >= 0;
-    finally
-    end;
-  {$elseif DEFINED(WINDOWS)}
-    fname := 'Segoe UI';
-    try
-      Result := Screen.Fonts.IndexOf(fname) >= 0;
-    finally
-    end;
-  {$else}
-    fname := 'font';
-    Result := True;
-  {$endif}
-end;
-
-{**
-  See interface docs. Returns a font suitable for UI/emoji display if available.
-}
-function FontGUIInList(out fname: string): Boolean;
-begin
-  {$if DEFINED(X_LINUXBSD)}
-    fname := 'Noto Color Emoji';
-    try
-      Result := (Screen.Fonts.IndexOf('Noto Emoji') >= 0) or
-                (Screen.Fonts.IndexOf('Noto Color Emoji') >= 0);
-    finally
-    end;
-  {$elseif DEFINED(WINDOWS)}
-    fname := 'Segoe UI Symbol';
-    try
-      Result := Screen.Fonts.IndexOf(fname) >= 0;
-    finally
-    end;
-  {$else}
-    fname := 'font';
-    Result := True;
-  {$endif}
 end;
 
 procedure TDialogForm.DoShow;

@@ -28,7 +28,7 @@ interface
 uses
 Classes, ComCtrls, ExtCtrls, Spin, StdCtrls, SysUtils, Forms, Controls,
 Graphics, Dialogs, LCLTranslator, trndi.native, lclintf, ColorBox,
-slicke.ux.alert, VersionInfo, trndi.funcs, buildinfo, StrUtils,
+slicke.ux.alert, slicke.ux.native, VersionInfo, trndi.funcs, buildinfo, StrUtils,
   // Backend APIs for label captions
 trndi.api, trndi.api.nightscout, trndi.api.nightscout3, trndi.api.dexcom,
 trndi.api.xdrip;
