@@ -2892,9 +2892,13 @@ var
   Dot: TPaintBox;
   Value: single; // Parsed from hint (user unit), then normalized to mmol/L
   ok: boolean;
+  wasVisible: boolean;
 begin
   for Dot in TrendDots do
   begin
+    // Remember if dot was marked visible by PlaceTrendDots
+    wasVisible := Dot.Visible;
+    
     ok := TryStrToFloat(Dot.Hint, Value, native.locale);
 
     Dot.Font.Size := (ClientWidth div 24) * dotscale;
@@ -2912,9 +2916,19 @@ begin
 
       Dot.Visible := true;
     end
+    else if Dot.Hint <> '' then
+    begin
+      // Hint is set but can't be parsed - this is a problem
+      // Keep visibility as it was set by PlaceTrendDots, but log the issue
+      LogMessage(Format('Warning: Could not parse Hint "%s" for dot. Keeping visibility=%s',
+        [Dot.Hint, BoolToStr(wasVisible, true)]));
+      Dot.Visible := wasVisible;
+    end
     else
-      Dot.Visible := false// Hide labels without valid Hint values
-    ;
+    begin
+      // No hint means no data for this dot
+      Dot.Visible := false;
+    end;
   end;
 end;
 
@@ -3747,6 +3761,8 @@ begin
     Exit;
   end;
 
+  LogMessage(Format('DoFetchAndValidateReadings: Got %d readings from API', [Length(bgs)]));
+
   // Call the method to place the points
   PlaceTrendDots(bgs);
   Result := true;
@@ -3956,36 +3972,80 @@ procedure TfBG.ProcessTimeIntervals(const SortedReadings: array of BGReading;
 CurrentTime: TDateTime);
 var
   slotIndex, i, labelNumber, searchStart: integer;
-  slotStart, slotEnd: TDateTime;
+  slotStart, slotEnd, anchorTime: TDateTime;
   found: boolean;
   reading: BGReading;
   l: TPaintbox;
 begin
+  if Length(SortedReadings) = 0 then
+    Exit;
+
   searchStart := 0;
+  // Anchor intervals to the most recent reading, not current time
+  // This ensures dots remain visible even if data is slightly delayed
+  anchorTime := SortedReadings[0].date;
+  
+  LogMessage(Format('PlaceTrendDots: Processing %d readings, anchor=%s', 
+    [Length(SortedReadings), DateTimeToStr(anchorTime)]));
 
   for slotIndex := 0 to NUM_DOTS - 1 do
   begin
-    // Set start and end time for the intervall
-    slotEnd := IncMinute(CurrentTime, -INTERVAL_MINUTES * slotIndex);
+    // Set start and end time for the interval, anchored to latest reading
+    // For slot 0, we want to include readings from (anchorTime - 5 min) to anchorTime
+    slotEnd := IncMinute(anchorTime, -INTERVAL_MINUTES * slotIndex);
     slotStart := IncMinute(slotEnd, -INTERVAL_MINUTES);
 
     found := false;
 
-    // Sök efter den senaste läsningen inom intervallet
+    LogMessage(Format('Searching slot %d (TrendDots[%d]): %s to %s', 
+      [slotIndex, NUM_DOTS - slotIndex, DateTimeToStr(slotStart), DateTimeToStr(slotEnd)]));
+
+    // Search for the most recent reading within this interval
     for i := searchStart to High(SortedReadings) do
     begin
       reading := SortedReadings[i];
 
-      if (reading.date <= slotEnd) and (reading.date >= slotStart) then
+      // For slot 0, be more lenient with the upper bound to catch the anchor reading
+      // Use a small epsilon (1 second) to handle floating point comparison issues
+      if reading.date > slotEnd + (1 / 86400) then
       begin
+        LogMessage(Format('  Reading at %s is too new (>%.3f sec after slot end), skipping', 
+          [DateTimeToStr(reading.date), (reading.date - slotEnd) * 86400]));
+        Continue;
+      end;
+
+      // Check if reading falls within this interval BEFORE checking if it's too old
+      // This ensures boundary readings (exactly at slotStart) get matched
+      if (reading.date >= slotStart) and (reading.date <= slotEnd + (1 / 86400)) then
+      begin
+        LogMessage(Format('  Found match at %s (value: %.1f, diff from slotEnd: %.1f sec)', 
+          [DateTimeToStr(reading.date), reading.val, (slotEnd - reading.date) * 86400]));
         found := UpdateLabelForReading(slotIndex, reading);
         if found then
-          searchStart := i + 1;
-        Break; // Gå till nästa tidsintervall
+        begin
+          // Only advance searchStart if this reading is NOT on a slot boundary
+          // Boundary readings (at slotStart) should be available for the next slot too
+          if Abs(reading.date - slotStart) > (0.5 / 86400) then
+            searchStart := i + 1
+          else
+          begin
+            // Reading is at the boundary - next slot should also check it
+            LogMessage(Format('  Reading at boundary (%.2f sec from slotStart), not advancing searchStart', 
+              [(reading.date - slotStart) * 86400]));
+          end;
+          Break; // Move to next interval
+        end;
+      end
+      else if reading.date < slotStart then
+      begin
+        // Stop if we've gone past this interval into older readings
+        LogMessage(Format('  Reading at %s is too old (%.3f sec before slot start), stopping', 
+          [DateTimeToStr(reading.date), (slotStart - reading.date) * 86400]));
+        Break;
       end;
     end;
 
-    // Hide label if no reading
+    // Hide label if no reading found in this interval
     if not found then
     begin
       labelNumber := NUM_DOTS - slotIndex;
@@ -4000,6 +4060,9 @@ begin
       end;
     end;
   end;
+  
+  // Summary log
+  LogMessage(Format('PlaceTrendDots complete: anchor=%s', [DateTimeToStr(anchorTime)]));
 end;
 
 function TfBG.UpdateLabelForReading(SlotIndex: integer;
