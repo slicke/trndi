@@ -963,6 +963,10 @@ msgstr "Inloggningsfel efter autensieringen"
 msgid "Wait. Shutting down extensions engine..."
 msgstr "Vänta. Stänger tilläggsmotorn..."
 
+#: trndi.strings.rs_cleanup_wait
+msgid "Please wait up to 20 seconds..."
+msgstr "Vänligen dröj upp till 20 sekunder..."
+
 #: trndi.strings.rs_compute_failed_ago
 msgid "Long ago"
 msgstr "Länge sedan"

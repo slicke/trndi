@@ -94,6 +94,7 @@ RS_SPLASH_LOADING = 'Loading Extension: ';
 RS_SPLASH_LOADING_INIT  = 'Loading Extensions...';
 
 RS_CLEANUP = 'Wait. Shutting down extensions engine...';
+RS_CLEANUP_WAIT = 'Please wait up to 20 seconds...';
 
 RS_RIGHT_CLICK = 'The settings dialog will now open, in the future please right-click the reading to open the menu.';
 
