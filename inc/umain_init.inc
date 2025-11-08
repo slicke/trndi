@@ -527,17 +527,12 @@ begin
     LoadExtensions;
     {$endif}
 
-    // Override settings
-    if GetBoolSetting('override.enabled') then
-    begin
-      api.cgmLo := GetIntSetting('override.lo', api.cgmLo);
-      api.cgmHi := GetIntSetting('override.hi', api.cgmHi);
-    end;
-    if GetBoolSetting('override.range') then
-    begin
-      api.cgmRangeLo := GetIntSetting('override.rangelo', api.cgmRangeLo);
-      api.cgmRangeHi := GetIntSetting('override.rangehi', api.cgmRangeHi);
-    end;
+    // Override settings - always apply if set, regardless of checkbox state
+    // This allows extensions and manual config edits to work
+    api.cgmLo := GetIntSetting('override.lo', api.cgmLo);
+    api.cgmHi := GetIntSetting('override.hi', api.cgmHi);
+    api.cgmRangeLo := GetIntSetting('override.rangelo', api.cgmRangeLo);
+    api.cgmRangeHi := GetIntSetting('override.rangehi', api.cgmRangeHi);
 
     PredictGlucoseReading := GetBoolSetting('predictions.enable', false);
     lPredict.Visible := PredictGlucoseReading;
