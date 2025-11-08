@@ -542,6 +542,10 @@
         <Filename Value="units\trndi\api\trndi.api.debug_custom.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit>
+      <Unit>
+        <Filename Value="units\slicke\slicke.ux.native.pp"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

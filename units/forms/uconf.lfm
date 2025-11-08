@@ -8,6 +8,7 @@ object fConf: TfConf
   ClientHeight = 534
   ClientWidth = 675
   Position = poDesktopCenter
+  LCLVersion = '4.2.0.0'
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   OnResize = FormResize
@@ -51,8 +52,8 @@ object fConf: TfConf
         ChildSizing.ShrinkVertical = crsScaleChilds
         ChildSizing.Layout = cclLeftToRightThenTopToBottom
         ChildSizing.ControlsPerLine = 2
-        ClientHeight = 36
-        ClientWidth = 628
+        ClientHeight = 44
+        ClientWidth = 620
         Columns = 2
         ItemIndex = 0
         Items.Strings = (
@@ -10952,8 +10953,8 @@ object fConf: TfConf
         Width = 657
         Align = alBottom
         Caption = 'Display Preferences'
-        ClientHeight = 110
-        ClientWidth = 653
+        ClientHeight = 118
+        ClientWidth = 645
         TabOrder = 1
         object pTray: TPanel
           Left = 483
@@ -11032,8 +11033,8 @@ object fConf: TfConf
         Width = 657
         Align = alBottom
         Caption = 'Predictions'
-        ClientHeight = 85
-        ClientWidth = 653
+        ClientHeight = 93
+        ClientWidth = 645
         TabOrder = 2
         object cbPredictions: TCheckBox
           Left = 8
@@ -11077,8 +11078,8 @@ object fConf: TfConf
         Align = alTop
         BorderSpacing.Around = 10
         Caption = 'Extra Settings'
-        ClientHeight = 68
-        ClientWidth = 633
+        ClientHeight = 76
+        ClientWidth = 625
         TabOrder = 0
         object cbTIR: TCheckBox
           Left = 0
@@ -11107,8 +11108,8 @@ object fConf: TfConf
         Align = alTop
         BorderSpacing.Around = 10
         Caption = 'In-range coloring'
-        ClientHeight = 146
-        ClientWidth = 633
+        ClientHeight = 154
+        ClientWidth = 625
         TabOrder = 1
         object cbPaintLines: TCheckBox
           Left = 0
@@ -11243,8 +11244,8 @@ object fConf: TfConf
         Align = alTop
         BorderSpacing.Around = 10
         Caption = 'Override Custom Range'
-        ClientHeight = 60
-        ClientWidth = 633
+        ClientHeight = 68
+        ClientWidth = 625
         TabOrder = 2
         object cbCustRange: TCheckBox
           Left = 0
@@ -11321,8 +11322,8 @@ object fConf: TfConf
         Align = alTop
         BorderSpacing.Around = 10
         Caption = 'Override High / Low limits'
-        ClientHeight = 68
-        ClientWidth = 633
+        ClientHeight = 76
+        ClientWidth = 625
         ParentBackground = False
         TabOrder = 0
         object cbCust: TCheckBox
@@ -11524,8 +11525,8 @@ object fConf: TfConf
         ChildSizing.ShrinkVertical = crsScaleChilds
         ChildSizing.Layout = cclLeftToRightThenTopToBottom
         ChildSizing.ControlsPerLine = 1
-        ClientHeight = 74
-        ClientWidth = 653
+        ClientHeight = 82
+        ClientWidth = 645
         TabOrder = 6
         object cbFlashHi: TCheckBox
           Left = 6
@@ -11589,8 +11590,8 @@ object fConf: TfConf
         Align = alBottom
         BorderSpacing.Around = 10
         Caption = 'Account Settings'
-        ClientHeight = 81
-        ClientWidth = 633
+        ClientHeight = 89
+        ClientWidth = 625
         Enabled = False
         TabOrder = 1
         object pUserColor: TPanel
@@ -11726,8 +11727,8 @@ object fConf: TfConf
         Align = alBottom
         BorderSpacing.Around = 10
         Caption = 'All accounts'
-        ClientHeight = 38
-        ClientWidth = 633
+        ClientHeight = 46
+        ClientWidth = 625
         TabOrder = 3
         object cbUserColor: TCheckBox
           Left = 16
@@ -11751,8 +11752,8 @@ object fConf: TfConf
         Align = alTop
         BorderSpacing.Around = 10
         Caption = 'Play Media'
-        ClientHeight = 258
-        ClientWidth = 633
+        ClientHeight = 266
+        ClientWidth = 625
         ParentBackground = False
         TabOrder = 0
         object Label9: TLabel
@@ -11936,8 +11937,8 @@ object fConf: TfConf
           Align = alBottom
           BorderSpacing.Around = 10
           Caption = 'System Features'
-          ClientHeight = 85
-          ClientWidth = 633
+          ClientHeight = 93
+          ClientWidth = 625
           TabOrder = 2
           object cbTouch: TCheckBox
             Left = 8
@@ -12021,8 +12022,8 @@ object fConf: TfConf
         Align = alClient
         BorderSpacing.Around = 10
         Caption = 'Available Extensions'
-        ClientHeight = 339
-        ClientWidth = 633
+        ClientHeight = 347
+        ClientWidth = 625
         TabOrder = 0
         object lbExtensions: TListBox
           Left = 5
@@ -12044,8 +12045,8 @@ object fConf: TfConf
         Align = alBottom
         BorderSpacing.Around = 10
         Caption = 'Extension Info'
-        ClientHeight = 61
-        ClientWidth = 633
+        ClientHeight = 69
+        ClientWidth = 625
         TabOrder = 1
         object lExtName: TLabel
           Left = 8
