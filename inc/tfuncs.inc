@@ -219,6 +219,25 @@ begin
  MAX_RESULT := vcount;
 end;
 
+function JSHTMLMsg(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw;
+var
+ vbs: Variant; //Variant box size
+begin
+  if argc <> 5 then begin
+     ExtError(uxdAuto, 'A dialog box could not be displayed, as the parameter count was wrong');
+  end;
+
+  ctx^^.ToVariant(argv^[4], vbs);
+
+  if not varType(vbs) = varInteger then begin
+    ExtError(uxdAuto, 'Box Size must be an integer');
+    exit;
+  end;
+
+ // Title, Desc, html, size
+    ExtMessage(uxdAuto, ctx^^.ToUtf8(argv^[0]), ctx^^.ToUtf8(argv^[1]), ctx^^.ToUtf8(argv^[2]), ctx^^.ToUtf8(argv^[3]), true,
+    $00AA6004, $00FDD8AA,  [mbOK], uxmtOK, vbs);
+end;
 // Set the UX colors
 function JSLevelColor(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw;
 begin
