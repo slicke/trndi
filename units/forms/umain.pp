@@ -1061,6 +1061,7 @@ begin
 //    lDiff.Hide;
     lDiff.Caption := RS_CLEANUP_WAIT;
     lAgo.hide;
+    lPredict.hide;
     Application.ProcessMessages;
     
     // Now safely shutdown the extension engine
