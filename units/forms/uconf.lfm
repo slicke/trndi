@@ -17,10 +17,10 @@ object fConf: TfConf
     Height = 518
     Top = 11
     Width = 665
-    ActivePage = tsGeneral
+    ActivePage = tsExt
     Align = alClient
     BorderSpacing.Around = 5
-    TabIndex = 0
+    TabIndex = 8
     TabOrder = 0
     OnChange = pcMainChange
     object tsGeneral: TTabSheet
@@ -11597,12 +11597,12 @@ object fConf: TfConf
         TabOrder = 1
         object pUserColor: TPanel
           Left = 0
-          Height = 101
+          Height = 74
           Top = 0
           Width = 170
           Align = alLeft
           BevelOuter = bvNone
-          ClientHeight = 101
+          ClientHeight = 74
           ClientWidth = 170
           TabOrder = 0
           object lUserName: TLabel
@@ -11635,19 +11635,19 @@ object fConf: TfConf
         end
         object pUserNick: TPanel
           Left = 170
-          Height = 101
+          Height = 74
           Top = 0
-          Width = 299
+          Width = 295
           Align = alClient
           BevelOuter = bvNone
-          ClientHeight = 101
-          ClientWidth = 299
+          ClientHeight = 74
+          ClientWidth = 295
           TabOrder = 1
           object edNick: TEdit
             Left = 78
-            Height = 52
+            Height = 25
             Top = 24
-            Width = 221
+            Width = 217
             Align = alClient
             BorderSpacing.Top = 24
             BorderSpacing.Bottom = 25
@@ -11656,7 +11656,7 @@ object fConf: TfConf
           end
           object Label3: TLabel
             Left = 10
-            Height = 81
+            Height = 54
             Top = 10
             Width = 58
             Align = alLeft
@@ -11666,13 +11666,13 @@ object fConf: TfConf
           end
         end
         object pUserSave2: TPanel
-          Left = 469
-          Height = 101
+          Left = 465
+          Height = 74
           Top = 0
           Width = 170
           Align = alRight
           BevelOuter = bvNone
-          ClientHeight = 101
+          ClientHeight = 74
           ClientWidth = 170
           TabOrder = 2
           object btUserSave: TButton
@@ -11761,7 +11761,7 @@ object fConf: TfConf
           Left = 5
           Height = 16
           Top = 0
-          Width = 634
+          Width = 630
           Align = alTop
           BorderSpacing.Left = 5
           Caption = 'Trndi can trigger Spotify or Deezer to play a song when low/high'
@@ -11770,7 +11770,7 @@ object fConf: TfConf
           Left = 10
           Height = 16
           Top = 26
-          Width = 619
+          Width = 615
           Align = alTop
           BorderSpacing.Around = 10
           Caption = 'High (eg https://open.spotify.com/... or spotify:track:...)'
@@ -11779,7 +11779,7 @@ object fConf: TfConf
           Left = 10
           Height = 30
           Top = 52
-          Width = 619
+          Width = 615
           Align = alTop
           BorderSpacing.Left = 10
           BorderSpacing.Right = 10
@@ -11789,7 +11789,7 @@ object fConf: TfConf
           Left = 10
           Height = 30
           Top = 118
-          Width = 619
+          Width = 615
           Align = alTop
           BorderSpacing.Left = 10
           BorderSpacing.Right = 10
@@ -11799,7 +11799,7 @@ object fConf: TfConf
           Left = 10
           Height = 16
           Top = 92
-          Width = 619
+          Width = 615
           Align = alTop
           BorderSpacing.Around = 10
           Caption = 'Low (eg https://open.spotify.com/... or spotify:track:...)'
@@ -11808,7 +11808,7 @@ object fConf: TfConf
           Left = 10
           Height = 16
           Top = 158
-          Width = 619
+          Width = 615
           Align = alTop
           BorderSpacing.Around = 10
           Caption = 'Perfect Reading (5.5mmol/L or 100 mg/dL)'
@@ -11818,7 +11818,7 @@ object fConf: TfConf
           Left = 10
           Height = 30
           Top = 184
-          Width = 619
+          Width = 615
           Align = alTop
           BorderSpacing.Left = 10
           BorderSpacing.Right = 10
@@ -11827,8 +11827,8 @@ object fConf: TfConf
         object cbMusicPause: TCheckBox
           Left = 5
           Height = 20
-          Top = 253
-          Width = 629
+          Top = 226
+          Width = 625
           Align = alBottom
           BorderSpacing.Around = 5
           Caption = 'Pause music when high/low'
@@ -11969,13 +11969,13 @@ object fConf: TfConf
             TabOrder = 2
           end
           object pnHelp: TPanel
-            Left = 469
-            Height = 105
+            Left = 465
+            Height = 78
             Top = 0
             Width = 170
             Align = alRight
             BevelOuter = bvNone
-            ClientHeight = 105
+            ClientHeight = 78
             ClientWidth = 170
             TabOrder = 3
             object bSysTouch: TButton
@@ -12028,9 +12028,9 @@ object fConf: TfConf
         TabOrder = 0
         object lbExtensions: TListBox
           Left = 5
-          Height = 341
+          Height = 314
           Top = 5
-          Width = 629
+          Width = 625
           Align = alClient
           BorderSpacing.Around = 5
           ItemHeight = 0
