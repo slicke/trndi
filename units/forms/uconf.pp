@@ -372,6 +372,8 @@ RS_WAYLAND =
 RS_PredictionWarn = 'Trndi will try to predict future readings. This is experimental and potentially unsafe! Do not make any treatment decisions based on these values! This feature is used on your own risk and responsibility!';
 
 RS_ExtCount = 'Extensions count: %d';
+
+RS_NO_COPYRIGHT = '- Extension has no copyright info -';
 var
 fConf: TfConf;
 
@@ -797,10 +799,14 @@ begin
   lExtName.Caption := '';
   lExtCopyright.Caption := '';
 
-  if f.Strings[0][2] = '*' then // /*
+
+  if (f.Count > 1 ) and (length(f.Strings[0]) > 2) and (f.Strings[0][2] = '*') then begin // /*
     lExtName.Caption := TrimLeftSet(f.Strings[0], ['*', '/', ' ']);
-  if (f.Strings[0][2] = '*') and (f.Strings[1][length(f.strings[1])-1] = '*') then // */
-    lExtCopyright.Caption := TrimRightSet(f.Strings[1], ['*', '/']);
+
+    if (length(f.strings[1]) > 2) and (f.Strings[1][length(f.strings[1])-1] = '*') then // */
+      lExtCopyright.Caption := TrimRightSet(f.Strings[1], ['*', '/']);
+  end else
+    lExtName.Caption := RS_NO_COPYRIGHT;
   f.Free;
 end;
 

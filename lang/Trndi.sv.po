@@ -1681,6 +1681,10 @@ msgstr "Ett notissystem krävs"
 msgid "Trndi uses a system called \"%s\" to send desktop notices, you need to have this system installed in order to recieve notices."
 msgstr "Trndi använder systemet \"%s\" för att visa notiser, det måste vara installerat för att dessa ska visas."
 
+#: uconf.rs_no_copyright
+msgid "- Extension has no copyright info -"
+msgstr ""
+
 #: uconf.rs_override_help
 msgid ""
 "Setting values here allows you to define your own high and low blood sugar limits in Trndi.\n"
