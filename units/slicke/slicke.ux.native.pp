@@ -38,7 +38,7 @@
 }
 unit slicke.ux.native;
 
-{$mode ObjFPC}{$H+}
+{$I ../../inc/native.inc}
 
 interface
 
