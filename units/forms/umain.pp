@@ -1653,8 +1653,13 @@ begin
     Invalidate;
 
     Screen.Cursor := crNone;
-    if IsProblematicWM then
-      ShowMessage(sProblematicFullscreen);
+    // FIx Raspbian issues
+    if IsProblematicWM then begin
+      if not IsSemiProblematicWM then begin
+       miBorders.Checked := false;
+       BorderStyle := bsToolWindow;
+      end;
+    end;
   end;
 
   // Adjust for dark mode if applicable
