@@ -128,7 +128,7 @@ begin
     // Add the UX modification function, as declared in this file
     for s in exts do
     begin
-      fSplash.lInfo.Caption := RS_SPLASH_LOADING + s;
+      fSplash.lInfo.Caption := RS_SPLASH_LOADING + ExtractFileName(s);
       // Run all found files
       ExecuteFile(s);
     end;
