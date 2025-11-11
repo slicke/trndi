@@ -1442,6 +1442,10 @@ msgctxt "trndi.strings.snotrace"
 msgid "No stack trace available"
 msgstr "Ingen stackspårning finns"
 
+#: trndi.strings.sproblematicfullscreen
+msgid "Your Window Manager might have issues with full screen modes. You may need to toggle \"no borders\" for a complete full screen!"
+msgstr ""
+
 #: trndi.strings.spromerrcapt
 #, object-pascal-format
 msgctxt "trndi.strings.spromerrcapt"

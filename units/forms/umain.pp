@@ -1654,8 +1654,7 @@ begin
 
     Screen.Cursor := crNone;
     if IsProblematicWM then
-      BorderStyle := bsToolWindow;
-    // Restore the borderstyle on Rpi (etc??) as the window wont fill otherwise
+      ShowMessage(sProblematicFullscreen);
   end;
 
   // Adjust for dark mode if applicable
@@ -2588,7 +2587,6 @@ var
 begin
   // Shift down
   miAdvanced.Visible := ssShift in GetKeyShiftState;
-  miBorders.Checked := self.BorderStyle = bsNone;
   miATouch.Checked := HasTouch;
   {$ifdef DEBUG}
   miDebugBackend.Visible := true;
