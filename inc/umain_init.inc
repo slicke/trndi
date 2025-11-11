@@ -198,12 +198,12 @@ begin
         linfo.left := 400;
         Height := linfo.canvas.TextHeight('Pq') + 5;
 
-        lPredict.AutoSize := true;
-        lPredict.Caption := 'Trndi | You need to accept the license agreement! ';
-        lPredict.top := 0;
-        lPredict.left := 0;
-        lPredict.font := linfo.font;
-        lPredict.font.color := clWhite;
+        label1.AutoSize := true;
+        label1.Caption := 'Trndi | You need to accept the license agreement! ';
+        label1.top := 0;
+        label1.left := 0;
+        label1.font := linfo.font;
+        label1.font.color := clWhite;
         Application.ProcessMessages;
       end;
   FStoredWindowInfo.Initialized := false;
