@@ -131,10 +131,6 @@ msgctxt "tfbg.lpredict.caption"
 msgid "Predictions"
 msgstr "Förutspåelser"
 
-#: tfbg.lref.caption
-msgid "0,?"
-msgstr "0,?"
-
 #: tfbg.ltir.caption
 msgid "Time In Range"
 msgstr "Tid i område"
@@ -208,28 +204,14 @@ msgctxt "tfbg.midotbig.caption"
 msgid "Big"
 msgstr "Stor"
 
-#: tfbg.midotbig.hint
-msgctxt "tfbg.midotbig.hint"
-msgid "2"
-msgstr "2"
-
 #: tfbg.midothuge.caption
 msgid "Huge"
 msgstr "Enorm"
-
-#: tfbg.midothuge.hint
-msgctxt "tfbg.midothuge.hint"
-msgid "3"
-msgstr "3"
 
 #: tfbg.midotnormal.caption
 msgctxt "tfbg.midotnormal.caption"
 msgid "Normal"
 msgstr "Normal"
-
-#: tfbg.midotnormal.hint
-msgid "1"
-msgstr "1"
 
 #: tfbg.midotsinview.caption
 msgid "Are dots in view?"
@@ -511,10 +493,6 @@ msgctxt "tfconf.cl_ok_txt.caption"
 msgid "OK"
 msgstr "OK"
 
-#: tfconf.edcommasep.text
-msgid "."
-msgstr "."
-
 #: tfconf.gbdisplayprefs.caption
 msgid "Display Preferences"
 msgstr "Visningsval"
@@ -670,10 +648,6 @@ msgstr "100 min"
 msgid "Unknown Architecture"
 msgstr "Okänd arkietektur"
 
-#: tfconf.larrow.caption
-msgid "->"
-msgstr "->"
-
 #: tfconf.ldot.caption
 msgctxt "tfconf.ldot.caption"
 msgid "PREVIEW"
@@ -756,11 +730,6 @@ msgstr "Användare:"
 #: tfconf.lusertrack.caption
 msgid "Add users below, if you wish to track more than one person."
 msgstr "Lägg till användare nedan, om du vill spåra fler än en person."
-
-#: tfconf.lval.caption
-msgctxt "tfconf.lval.caption"
-msgid "0,0"
-msgstr "0,0"
 
 #: tfconf.lwaitsys.caption
 msgid "Please wait..."
