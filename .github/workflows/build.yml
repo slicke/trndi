@@ -264,6 +264,11 @@ jobs:
             echo "Signing RPM: ${RPM_FILE}"
             rpm --addsign "${RPM_FILE}"
             
+            # Verify signatures were created
+            echo "Verifying signatures..."
+            gpg --verify "${DEB_FILE}.asc" "${DEB_FILE}" && echo "✓ DEB signature verified" || echo "✗ DEB signature verification failed"
+            rpm --checksig "${RPM_FILE}" && echo "✓ RPM signature verified" || echo "✗ RPM signature verification failed"
+            
             echo "Packages signed successfully"
           else
             echo "No GPG key configured, skipping package signing"
