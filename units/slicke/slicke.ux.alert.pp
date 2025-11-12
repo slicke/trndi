@@ -2026,7 +2026,8 @@ begin
       LogHtmlPanel.Anchors := [akLeft, akTop, akRight, akBottom];
       LogHtmlPanel.Color := dumpbg;
       LogHtmlPanel.BorderStyle := bsNone;
-      
+      LogHtmlPanel.TabStop := False;  // Prevent focus
+      LogHtmlPanel.OnKeyDown := @Dialog.FormKeyDown;
       // Load HTML content with body tag for background color
       try
         // Wrap content in HTML structure with background color from dumpbg
@@ -2063,10 +2064,12 @@ begin
       LogMemo.ScrollBars := ssAutoVertical;
       LogMemo.BorderStyle := bsNone;
       LogMemo.Text := TrimSet(logmsg, [#10, #13]);
+      LogMemo.OnKeyDown := @Dialog.FormKeyDown;
     end;
 
     // BUTTON PANEL
     ButtonPanel := TPanel.Create(Dialog);
+    ButtonPanel.Name := 'pnButtons';
     ButtonPanel.Parent := Dialog;
     ButtonPanel.Align := alBottom;
     ButtonPanel.BevelOuter := bvNone;
@@ -2196,13 +2199,16 @@ end;
 procedure TDialogForm.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
 var
   o: TCustomButton;
-  i, cancel, no, ok, ct: Integer;
+  i, cancel, no, yes, ok, abort, ct: Integer;
   btns: TComponent;
   target: TWinControl;
 begin
   if not (key in [VK_ESCAPE, VK_RETURN]) then Exit;
   cancel := -1;
   no := -1;
+  yes := -1;
+  ok := -1;
+  abort := -1;
   ct := 0;
   btns := Self.FindComponent('pnButtons');
   if btns = nil then
@@ -2217,25 +2223,32 @@ begin
       o := target.components[i] as TCustomButton;
       if o.ModalResult = mrCancel then cancel := i;
       if o.ModalResult = mrNo then no := i;
-      if o.ModalResult = mrOk then ok := i;
-      if o.ModalResult = mrClose then ok := i;
+      if o.ModalResult = mrYes then yes := i;
+      if (o.ModalResult = mrOk) or (o.ModalResult = mrClose) then ok := i;
+      if o.ModalResult = mrAbort then abort := i;
       Inc(ct);
     end;
   end;
 
   if key = vk_escape then
   begin
+    // ESC priority: Cancel > No > Abort > OK/Close (for single-button dialogs)
     if cancel >= 0 then
       (target.Components[cancel] as TCustomButton).Click
     else if no >= 0 then
-      (target.Components[no] as TCustomButton).Click;
+      (target.Components[no] as TCustomButton).Click
+    else if abort >= 0 then
+      (target.Components[abort] as TCustomButton).Click
+    else if (ct = 1) and (ok >= 0) then
+      (target.Components[ok] as TCustomButton).Click;
   end
   else if key = VK_RETURN then
   begin
-    if ((ct = 1) and (ok >= 0)) then
+    // ENTER priority: OK > Yes > Close (affirmative actions)
+    if ok >= 0 then
       (target.Components[ok] as TCustomButton).Click
-    else if ((ct = 2) and (ok = 1)) then
-      (target.Components[ok] as TCustomButton).Click;
+    else if yes >= 0 then
+      (target.Components[yes] as TCustomButton).Click;
   end;
 end;
 
