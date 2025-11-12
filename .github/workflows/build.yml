@@ -223,10 +223,16 @@ jobs:
             sudo apt-get update
             sudo apt-get install -y debsigs rpm
             
-            # Import GPG key
-            echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
-            GPG_KEY_ID=$(echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import --import-options show-only 2>&1 | grep -oP '(?<=key )[A-F0-9]+' | head -1)
+            # Import GPG key and extract key ID
+            echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import 2>&1
+            GPG_KEY_ID=$(gpg --list-secret-keys --keyid-format=long | grep -A 1 "^sec" | grep -oP '[A-F0-9]{16}' | head -1)
             echo "Using GPG key: ${GPG_KEY_ID}"
+            
+            # Verify key was imported
+            if [ -z "${GPG_KEY_ID}" ]; then
+              echo "Error: Failed to extract GPG key ID"
+              exit 1
+            fi
             
             # Configure RPM macros for signing
             mkdir -p ~/.rpmmacros
@@ -237,9 +243,6 @@ jobs:
             # Sign DEB package using debsigs
             DEB_FILE=$(ls trndi_*${{ matrix.deb_arch }}.deb)
             echo "Signing DEB: ${DEB_FILE}"
-            # Export GPG key to debsigs format
-            mkdir -p ~/.gnupg/debsigs
-            gpg --armor --export "${GPG_KEY_ID}" > ~/.gnupg/debsigs/key.asc
             debsigs --sign=origin --default-key="${GPG_KEY_ID}" "${DEB_FILE}"
             
             # Sign RPM package
