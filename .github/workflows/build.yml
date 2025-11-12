@@ -429,6 +429,8 @@ jobs:
     # and additionally ensure the publish job only runs for push events to main.
     if: ${{ always() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
     steps:
+      - uses: actions/checkout@v4
+      
       - uses: actions/download-artifact@v4
         with:
           path: ./release-files
@@ -577,15 +579,15 @@ jobs:
             echo "---"
             echo
             echo "### 🔐 Package Verification"
-            shopt -s nullglob
-            signing_keys=(./release-files/linux-*-build/trndi-signing-key.asc)
-            if [ ${#signing_keys[@]} -gt 0 ] && [ -f "${signing_keys[0]}" ]; then
+            
+            if [ -f "doc/trndi-signing-key.asc" ]; then
               echo "Linux packages (DEB/RPM) are cryptographically signed."
               echo
               echo "**Verification:**"
-              echo "1. Download \`trndi-signing-key.asc\` and import it: \`gpg --import trndi-signing-key.asc\`"
-              echo "2. For DEB: \`gpg --verify trndi_*.deb.asc trndi_*.deb\`"
-              echo "3. For RPM: \`rpm --import trndi-signing-key.asc && rpm --checksig trndi-*.rpm\`"
+              echo "1. Download the signing key: [trndi-signing-key.asc](https://raw.githubusercontent.com/slicke/trndi/main/doc/trndi-signing-key.asc)"
+              echo "2. Import it: \`gpg --import trndi-signing-key.asc\`"
+              echo "3. For DEB: \`gpg --verify trndi_*.deb.asc trndi_*.deb\`"
+              echo "4. For RPM: \`rpm --import trndi-signing-key.asc && rpm --checksig trndi-*.rpm\`"
             else
               echo "No signing key available for this build."
             fi
