@@ -47,7 +47,7 @@
         <Item25 Value="tfSplash.lSplashWarn"/>
         <Item26 Value="tfBG.pnWarnLast"/>
       </ExcludedIdentifiers>
-      <ExcludedOriginals Count="20">
+      <ExcludedOriginals Count="21">
         <Item1 Value="Trndi"/>
         <Item2 Value="•"/>
         <Item3 Value="lArrow"/>
@@ -68,6 +68,7 @@
         <Item18 Value="25"/>
         <Item19 Value="▼"/>
         <Item20 Value="▲"/>
+        <Item21 Value="lDot1"/>
       </ExcludedOriginals>
     </i18n>
     <VersionInfo>

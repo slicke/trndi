@@ -662,21 +662,6 @@ msgctxt "tfconf.ldot.caption"
 msgid "PREVIEW"
 msgstr ""
 
-#: tfconf.ldot1.caption
-msgctxt "tfconf.ldot1.caption"
-msgid "lDot1"
-msgstr ""
-
-#: tfconf.ldot2.caption
-msgctxt "tfconf.ldot2.caption"
-msgid "lDot1"
-msgstr ""
-
-#: tfconf.ldot3.caption
-msgctxt "tfconf.ldot3.caption"
-msgid "lDot1"
-msgstr ""
-
 #: tfconf.ldotnow.caption
 msgctxt "tfconf.ldotnow.caption"
 msgid "PREVIEW"
@@ -1084,6 +1069,10 @@ msgstr ""
 
 #: trndi.strings.rs_predict
 msgid "These are your predicted readings; Time-difference: predicted-reading"
+msgstr ""
+
+#: trndi.strings.rs_predictions_unavailable
+msgid "Predictions unavailable"
 msgstr ""
 
 #: trndi.strings.rs_quit_caption

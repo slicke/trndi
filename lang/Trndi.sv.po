@@ -679,21 +679,6 @@ msgctxt "tfconf.ldot.caption"
 msgid "PREVIEW"
 msgstr "FÖRHANDSVISNING"
 
-#: tfconf.ldot1.caption
-msgctxt "tfconf.ldot1.caption"
-msgid "lDot1"
-msgstr ""
-
-#: tfconf.ldot2.caption
-msgctxt "tfconf.ldot2.caption"
-msgid "lDot1"
-msgstr ""
-
-#: tfconf.ldot3.caption
-msgctxt "tfconf.ldot3.caption"
-msgid "lDot1"
-msgstr ""
-
 #: tfconf.ldotnow.caption
 msgctxt "tfconf.ldotnow.caption"
 msgid "PREVIEW"
@@ -1132,6 +1117,10 @@ msgstr "över"
 msgid "These are your predicted readings; Time-difference: predicted-reading"
 msgstr "Detta är dina förutspådda avläsningar; Tidsskillnad: förutspådd-avläsning"
 
+#: trndi.strings.rs_predictions_unavailable
+msgid "Predictions unavailable"
+msgstr "Förutspåelser otillgängliga"
+
 #: trndi.strings.rs_quit_caption
 msgid "Exit Trndi?"
 msgstr "Avsluta Trndi?"
@@ -1444,7 +1433,7 @@ msgstr "Ingen stackspårning finns"
 
 #: trndi.strings.sproblematicfullscreen
 msgid "Your Window Manager might have issues with full screen modes. You may need to toggle \"no borders\" for a complete full screen!"
-msgstr ""
+msgstr "Din fönsterhanterare kan ha problem med fullskärm. Du kan behöva slå på/av \"inga kanter\" för en fungerande fullskärm!"
 
 #: trndi.strings.spromerrcapt
 #, object-pascal-format
@@ -1687,7 +1676,7 @@ msgstr "Trndi använder systemet \"%s\" för att visa notiser, det måste vara i
 
 #: uconf.rs_no_copyright
 msgid "- Extension has no copyright info -"
-msgstr ""
+msgstr "- Tillägget saknar upphovsrättsinfo -"
 
 #: uconf.rs_override_help
 msgid ""
