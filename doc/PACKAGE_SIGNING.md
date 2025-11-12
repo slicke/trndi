@@ -85,8 +85,9 @@ Add instructions to your README or installation guide:
 # Import the Trndi signing key
 wget -qO - https://raw.githubusercontent.com/slicke/trndi/main/doc/trndi-signing-key.asc | sudo gpg --dearmor -o /usr/share/keyrings/trndi-archive-keyring.gpg
 
-# Verify the package signature
-dpkg-sig --verify trndi_*.deb
+# Verify the package signature (requires debsig-verify package)
+sudo apt-get install debsig-verify
+sudo debsig-verify trndi_*.deb
 ```
 
 ### For RPM Packages (Fedora/RHEL/OpenSUSE)
@@ -107,7 +108,7 @@ The CI workflow automatically signs packages during the build process:
 2. **Imports the key:** Loads your private key into GPG in the CI environment
 3. **Extracts key ID:** Automatically determines the GPG key ID from the imported key
 4. **Configures RPM:** Sets up `~/.rpmmacros` with the key ID and GPG settings for RPM signing
-5. **Signs DEB:** Uses `dpkg-sig --sign builder` to sign the Debian package
+5. **Signs DEB:** Uses `debsigs --sign=origin` to sign the Debian package (compatible with Ubuntu 23.04+)
 6. **Signs RPM:** Uses `rpm --addsign` (with passphrase piped in) to sign the RPM package
 7. **Includes public key:** Copies `doc/trndi-signing-key.asc` to artifacts if it exists
 8. **Continues normally:** If no GPG key is configured, packages are built unsigned (no errors)
@@ -127,8 +128,9 @@ The signing happens in the Linux build matrix for both amd64 and arm64 architect
 After the workflow runs, you can verify signatures:
 
 ```bash
-# For DEB
-dpkg-sig --verify trndi_*.deb
+# For DEB (requires debsig-verify package)
+sudo apt-get install debsig-verify
+sudo debsig-verify trndi_*.deb
 
 # For RPM
 rpm --checksig trndi-*.rpm
