@@ -83,11 +83,10 @@ Add instructions to your README or installation guide:
 
 ```bash
 # Import the Trndi signing key
-wget -qO - https://raw.githubusercontent.com/slicke/trndi/main/doc/trndi-signing-key.asc | sudo gpg --dearmor -o /usr/share/keyrings/trndi-archive-keyring.gpg
+gpg --import trndi-signing-key.asc
 
-# Verify the package signature (requires debsig-verify package)
-sudo apt-get install debsig-verify
-sudo debsig-verify trndi_*.deb
+# Verify the package signature (using the separate .asc signature file)
+gpg --verify trndi_*.deb.asc trndi_*.deb
 ```
 
 ### For RPM Packages (Fedora/RHEL/OpenSUSE)
@@ -108,12 +107,14 @@ The CI workflow automatically signs packages during the build process:
 2. **Imports the key:** Loads your private key into GPG in the CI environment
 3. **Extracts key ID:** Automatically determines the GPG key ID from the imported key
 4. **Configures RPM:** Sets up `~/.rpmmacros` with the key ID and GPG settings for RPM signing
-5. **Signs DEB:** Uses `debsigs --sign=origin` to sign the Debian package (compatible with Ubuntu 23.04+)
-6. **Signs RPM:** Uses `rpm --addsign` (with passphrase piped in) to sign the RPM package
+5. **Signs DEB:** Creates a detached GPG signature (`.deb.asc` file) for the Debian package using `gpg --detach-sign`
+6. **Signs RPM:** Uses `rpm --addsign` (with passphrase piped in) to sign the RPM package (signature embedded)
 7. **Includes public key:** Copies `doc/trndi-signing-key.asc` to artifacts if it exists
 8. **Continues normally:** If no GPG key is configured, packages are built unsigned (no errors)
 
 The signing happens in the Linux build matrix for both amd64 and arm64 architectures, right after the `fpm` packaging step and before moving files to the `artifacts/` directory.
+
+**Note:** DEB packages use detached signatures (separate `.asc` files) while RPM packages have embedded signatures.
 
 ## Security Notes
 
@@ -128,9 +129,9 @@ The signing happens in the Linux build matrix for both amd64 and arm64 architect
 After the workflow runs, you can verify signatures:
 
 ```bash
-# For DEB (requires debsig-verify package)
-sudo apt-get install debsig-verify
-sudo debsig-verify trndi_*.deb
+# For DEB (using the detached .asc signature file)
+gpg --import trndi-signing-key.asc
+gpg --verify trndi_*.deb.asc trndi_*.deb
 
 # For RPM
 rpm --checksig trndi-*.rpm
