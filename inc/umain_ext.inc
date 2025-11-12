@@ -108,22 +108,25 @@ begin
   fSplash.lInfo.Caption := 'Initializing extensions backend..';
   with TTrndiExtEngine.Instance do
   begin
+    fSplash.lInfo.Caption := 'Registering Core functions...';
     addClassFunction('getLocale', ExtFunction(@JSLocale), 0);
+    addClassFunction('getUnit', ExtFunction(@JSUnit), 0);
+    addClassFunction('getCurrentUser', ExtFunction(@JSActiveUser), 0);
+    addClassFunction('getCurrentNickname', ExtFunction(@JSActiveUserNick), 0);
+    addClassFunction('setTimeAndRange', ExtFunction(@JSTimeRange), 2);
+    addClassFunction('setOverrideThresholdMinutes', ExtFunction(@JSvar_DATA_FRESHNESS_THRESHOLD_MINUTES), 1);
+    addClassFunction('predictReadings', ExtFunction(@JSPredictReadings), -1);
+
+    fSplash.lInfo.Caption := 'Registering UX functions...';
     addClassFunction('uxProp', ExtFunction(@JSUX), 3);
     addClassFunction('setBadgeSize', ExtFunction(@JSBADGE), -1);
     addClassFunction('setDotSize', ExtFunction(@JSDotSize), -1);
     addClassFunction('setDotAdjust', ExtFunction(@JSDotAdjust), -1);
-    addClassFunction('getUnit', ExtFunction(@JSUnit), 0);
     addClassFunction('setLevelColor', ExtFunction(@JSLevelColor), -1);
-    addClassFunction('setTimeAndRange', ExtFunction(@JSTimeRange), 2);
     addClassFunction('playSound', ExtFunction(@JSPlay), 1);
     addClassFunction('sayText', ExtFunction(@JSSay), 1);
-    addClassFunction('getCurrentUser', ExtFunction(@JSActiveUser), 0);
-    addClassFunction('getCurrentNickname', ExtFunction(@JSActiveUserNick), 0);
-    addClassFunction('setOverrideThresholdMinutes', ExtFunction(@JSvar_DATA_FRESHNESS_THRESHOLD_MINUTES), 1);
-    addClassFunction('setClockInterval', ExtFunction(@JSvar_ClockInterval), 1);
-    addClassFunction('predictReadings', ExtFunction(@JSPredictReadings), -1);
     addClassFunction('htmlMsg', ExtFunction(@JSHTMLMsg), -1);
+    addClassFunction('setClockInterval', ExtFunction(@JSvar_ClockInterval), 1);
 
     // Add the UX modification function, as declared in this file
     for s in exts do
