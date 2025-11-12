@@ -239,40 +239,29 @@ jobs:
             echo "%__gpg /usr/bin/gpg" >> ~/.rpmmacros
             echo "%_gpg_digest_algo sha256" >> ~/.rpmmacros
             
-            # Configure GPG for non-interactive signing with passphrase file
+            # Configure GPG for batch mode with passphrase
             mkdir -p ~/.gnupg
             chmod 700 ~/.gnupg
             echo "use-agent" > ~/.gnupg/gpg.conf
             echo "pinentry-mode loopback" >> ~/.gnupg/gpg.conf
             echo "allow-loopback-pinentry" > ~/.gnupg/gpg-agent.conf
-            echo "max-cache-ttl 21600" >> ~/.gnupg/gpg-agent.conf
             
-            # Create passphrase file
-            echo "${{ secrets.GPG_PASSPHRASE }}" > ~/.gnupg/passphrase
-            chmod 600 ~/.gnupg/passphrase
-            
-            # Restart gpg-agent to apply config
-            gpgconf --kill gpg-agent
+            # Restart gpg-agent
+            gpgconf --kill gpg-agent 2>/dev/null || true
             gpgconf --launch gpg-agent
             
-            # Preset the passphrase in the agent
-            KEYGRIP=$(gpg --with-keygrip --list-secret-keys "${GPG_KEY_ID}" | grep -A1 "^ssb" | tail -1 | awk '{print $3}')
-            if [ -n "${KEYGRIP}" ]; then
-              /usr/lib/gnupg/gpg-preset-passphrase --preset "${KEYGRIP}" < ~/.gnupg/passphrase
-            fi
-            
-            # Sign DEB package using debsigs
+            # Sign DEB package manually (ar-sig format)
             DEB_FILE=$(ls trndi_*${{ matrix.deb_arch }}.deb)
             echo "Signing DEB: ${DEB_FILE}"
-            GNUPGHOME=~/.gnupg debsigs --sign=origin --default-key="${GPG_KEY_ID}" "${DEB_FILE}"
+            
+            # Create detached signature for the DEB
+            cat "${DEB_FILE}" | gpg --batch --yes --pinentry-mode loopback --passphrase "${{ secrets.GPG_PASSPHRASE }}" --armor --detach-sign --default-key "${GPG_KEY_ID}" > "${DEB_FILE}.asc"
+            echo "DEB signature created: ${DEB_FILE}.asc"
             
             # Sign RPM package
             RPM_FILE=$(ls trndi-*.${{ matrix.rpm_arch }}.rpm)
             echo "Signing RPM: ${RPM_FILE}"
             echo "${{ secrets.GPG_PASSPHRASE }}" | rpm --addsign "${RPM_FILE}"
-            
-            # Clean up passphrase file
-            rm -f ~/.gnupg/passphrase
             
             echo "Packages signed successfully"
           else
@@ -281,6 +270,8 @@ jobs:
           
           mv trndi_*${{ matrix.deb_arch }}.deb artifacts/
           mv trndi-*.${{ matrix.rpm_arch }}.rpm artifacts/
+          # Move signature files if they exist
+          [ -f trndi_*${{ matrix.deb_arch }}.deb.asc ] && mv trndi_*${{ matrix.deb_arch }}.deb.asc artifacts/ || true
           
           # Include public signing key if available (for users to verify signatures)
           if [ -f "doc/trndi-signing-key.asc" ]; then
