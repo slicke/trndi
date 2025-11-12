@@ -856,7 +856,7 @@ begin
     mpDeezer: Result := PlayDeezerTrack(URL);
     else
     begin
-      // Fallback: öppna i webbläsare
+      // Fallback: open in browser
       {$IFDEF WINDOWS}
       Result := WindowsOpenURL(URL);
       {$ENDIF}
@@ -880,11 +880,11 @@ begin
   TrackID := ExtractTrackID(SpotifyURL, mpSpotify);
   if TrackID = '' then Exit;
 
-  // Skapa Spotify URI
+  // Create Spotify URI
   SpotifyURI := 'spotify:track:' + TrackID;
 
   {$IFDEF WINDOWS}
-  // Använd ShellExecute för att öppna Spotify URI
+  // Use ShellExecute to open Spotify URI
   Result := WindowsOpenURL(SpotifyURI);
   {$ENDIF}
 
@@ -992,7 +992,7 @@ begin
     MacOSExecuteAppleScript(Script);
     Result := True;
   except
-    // Fallback: öppna i webbläsare
+    // Fallback: open in browser
     Result := ExecuteCommand('open "' + URL + '"') <> '';
   end;
 end;
@@ -1001,7 +1001,7 @@ function TSystemMediaController.MacOSPlayDeezerURL(const URL: string): Boolean;
 begin
   Result := False;
   try
-    // Deezer har begränsat AppleScript-stöd, använd webbläsare
+    // Deezer has limited AppleScript support, use browser
     Result := ExecuteCommand('open "' + URL + '"') <> '';
   except
     Result := False;
@@ -1020,7 +1020,7 @@ begin
   if PlayerName <> '' then
   begin
     try
-      // Försök med D-Bus först
+      // Try D-Bus first
       Command := Format('dbus-send --type=method_call --dest=%s /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.OpenUri string:"%s"',
                        [PlayerName, URL]);
       ExecuteCommand(Command);

@@ -6,7 +6,7 @@ uses
   Windows, SysUtils, ActiveX;
 
 type
-  // Grundläggande färgstruktur för Direct2D
+  // Basic color structure for Direct2D
   D2D1_COLOR_F = record
     r: Single;
     g: Single;
@@ -14,7 +14,7 @@ type
     a: Single;
   end;
 
-  // Rektangelstruktur med flyttalsvärden
+  // Rectangle structure with floating point values
   D2D1_RECT_F = record
     left: Single;
     top: Single;
@@ -28,7 +28,7 @@ type
     alphaMode: UINT;
   end;
 
-  // Enums för fabriks- och render target-typer
+  // Enums for factory and render target types
   D2D1_FACTORY_TYPE = (
     D2D1_FACTORY_TYPE_SINGLE_THREADED,
     D2D1_FACTORY_TYPE_MULTI_THREADED
@@ -70,29 +70,29 @@ type
     presentOptions: UINT;
   end;
 
-  // Gränssnitt för DirectWrite textformat
+  // Interface for DirectWrite text format
   IDWriteTextFormat = interface(IUnknown)
     ['{9C906818-31D7-4FD3-A151-7C5E225DB55A}']
-    // Metoder för IDWriteTextFormat kan läggas till här om de behövs
+    // Methods for IDWriteTextFormat can be added here if needed
   end;
 
-  // Gränssnitt för ID2D1Resource
+  // Interface for ID2D1Resource
   ID2D1Resource = interface(IUnknown)
     ['{2CD90691-12E2-11DC-9FED-001143A055F9}']
     procedure GetFactory(out factory: ID2D1Factory); stdcall;
   end;
 
-  // Gränssnitt för Direct2D borste
+  // Interface for Direct2D brush
   ID2D1Brush = interface(ID2D1Resource)
     ['{2CD906A8-12E2-11DC-9FED-001143A055F9}']
   end;
 
-  // Gränssnitt för Direct2D solid färgborste
+  // Interface for Direct2D solid color brush
   ID2D1SolidColorBrush = interface(ID2D1Brush)
     ['{2CD906A9-12E2-11DC-9FED-001143A055F9}']
   end;
 
-  // Gränssnitt för ID2D1RenderTarget
+  // Interface for ID2D1RenderTarget
   ID2D1RenderTarget = interface(ID2D1Resource)
     ['{2CD90694-12E2-11DC-9FED-001143A055F9}']
     function CreateSolidColorBrush(
@@ -114,7 +114,7 @@ type
     ); stdcall;
   end;
 
-  // Gränssnitt för ID2D1Factory
+  // Interface for ID2D1Factory
   ID2D1Factory = interface(IUnknown)
     ['{06152247-6F50-465A-9245-118BFD3B6007}']
     function ReloadSystemMetrics(): HRESULT; stdcall;
@@ -126,7 +126,7 @@ type
     ): HRESULT; stdcall;
   end;
 
-  // Funktioner för att skapa Direct2D- och DirectWrite-fabriker
+  // Functions for creating Direct2D and DirectWrite factories
 function D2D1CreateFactory(
   factoryType: D2D1_FACTORY_TYPE;
   const riid: TGUID;

@@ -11,14 +11,14 @@ uses
 fgl, trndi.ext.shared;
 
 type 
-  // Specialisering för JSValueVal
+  // Specialization for JSValueVal
   generic TJSValList<T> = class(specialize TFPGList<T>)
     public 
-      // Metod för att hitta en post baserat på en specifik funktion
+      // Method to find an entry based on a specific function
       function FindByFunc(FuncPtr: Pointer): T;
   end;
 
-  // Specialisering för JSValueVal
+  // Specialization for JSValueVal
   TJSValListJSValueVal = specialize TJSValList<JSValueVal>;
 
 implementation
@@ -31,10 +31,10 @@ var
   i: Integer;
 begin
   Result := Default(T);
-  // Eller ett annat lämpligt defaultvärde beroende på T
+  // Or another appropriate default value depending on T
   for i := 0 to Self.Count - 1 do
     begin
-      // Antag att T är JSValueVal
+      // Assume T is JSValueVal
       if (Self[i].data.match = JD_FUNC) and (Self[i].data.Func = FuncPtr) then
         begin
           Result := Self[i];

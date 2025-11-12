@@ -135,12 +135,12 @@ var
   TextWidth, TextHeight: integer;
   OptimalSize: integer;
 begin
-  // Kontrollera grundläggande synlighetsvillkor
+  // Check basic visibility conditions
   if not ALabel.Visible then
     ALabel.Visible := true;
 
   if ALabel.Caption = '' then
-    Exit; // Ingen text att visa
+    Exit; // No text to display
 
   // Kontrollera att etiketten har storlek
   if (ALabel.Width <= 0) or (ALabel.Height <= 0) then
@@ -149,21 +149,21 @@ begin
     ALabel.Height := 30;
   end;
 
-  // Sätt korrekt formatering
+  // Set correct formatting
   ALabel.AutoSize := false;
   ALabel.WordWrap := false;
   ALabel.Alignment := customAl;
   ALabel.Layout := customTl;
 
-  // Se till att texten är synlig mot bakgrunden
+  // Ensure text is visible against the background
   if ALabel.Font.Color = ALabel.Color then
     ALabel.Font.Color := clBlack;
 
-  // Maximal bredd och höjd för texten
+  // Maximum width and height for the text
   MaxWidth := ALabel.Width - 4; // Lite padding
   MaxHeight := ALabel.Height - 4;
 
-  // Utför binärsökning för att hitta optimal fontstorlek
+  // Perform binary search to find optimal font size
   Low := 1;
   High := 150;
   OptimalSize := 1;
@@ -185,10 +185,10 @@ begin
       High := Mid - 1;
   end;
 
-  // Sätt den optimala fontstorleken
+  // Set the optimal font size
   ALabel.Font.Size := OptimalSize;
 
-  // Se till att inställningarna används
+  // Ensure settings are applied
   ALabel.Refresh;
 end;
 
@@ -499,49 +499,49 @@ begin
   QtWidget := TQtWidget(Handle);
   WidgetHandle := QtWidget.GetContainerWidget;
 
-  // Se till att widgeten har transparent bakgrund
+  // Ensure the widget has a transparent background
   QWidget_setAttribute(WidgetHandle, QtWA_TranslucentBackground, true);
 
 
-  // Skapa QColor för svart
+  // Create QColor for black
   BlackColor := QColor_create(0, 0, 0);
 
-  // Hämta paint device från widget
+  // Get paint device from widget
   PaintDevice := QWidget_to_QPaintDevice(WidgetHandle);
 
-  // Skapa målare direkt på widgeten
+  // Create painter directly on the widget
   Painter := QPainter_create();
   QPainter_begin(Painter, PaintDevice);
 
   // Aktivera antialiasing
   QPainter_setRenderHint(Painter, QPainterAntialiasing, true);
 
-  // Skapa en path för rundade hörn
+  // Create a path for rounded corners
   Path := QPainterPath_create();
   QPainterPath_addRoundedRect(Path, 0, 0, Width, Height, 20, 20);
 
-  // Skapa pensel för fyllning
+  // Create brush for filling
   XBrush := QBrush_create();
   QBrush_setStyle(XBrush, QtSolidPattern);
-  // För QBrush_setColor används QtGlobalColor enum
+  // For QBrush_setColor, QtGlobalColor enum is used
   QBrush_setColor(XBrush, bgcol);
 
-  // Skapa penna för kontur
+  // Create pen for outline
   Pen := QPen_create();
   QPen_setStyle(Pen, QtSolidLine);
-  // För QPen_setColor används PQColor (QColorH)
+  // For QPen_setColor, PQColor (QColorH) is used
   QPen_setColor(Pen, @BlackColor);
   QPen_setWidth(Pen, 1);
 
-  // Rita direkt på widgeten
+  // Draw directly on the widget
   QPainter_setPen(Painter, Pen);
   QPainter_setBrush(Painter, XBrush);
   QPainter_drawPath(Painter, Path);
 
-  // Avsluta målning
+  // End painting
   QPainter_end(Painter);
 
-  // Städa upp
+  // Clean up
   QPainterPath_destroy(Path);
   QBrush_destroy(XBrush);
   QPen_destroy(Pen);
