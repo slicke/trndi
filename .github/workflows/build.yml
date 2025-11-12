@@ -234,8 +234,7 @@ jobs:
               exit 1
             fi
             
-            # Configure RPM macros for signing
-            mkdir -p ~/.rpmmacros
+            # Configure RPM macros for signing (create file, not directory)
             echo "%_gpg_name ${GPG_KEY_ID}" > ~/.rpmmacros
             echo "%__gpg /usr/bin/gpg" >> ~/.rpmmacros
             echo "%_gpg_digest_algo sha256" >> ~/.rpmmacros
