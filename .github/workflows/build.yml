@@ -238,7 +238,7 @@ jobs:
             echo "%_gpg_name ${GPG_KEY_ID}" > ~/.rpmmacros
             echo "%__gpg /usr/bin/gpg" >> ~/.rpmmacros
             echo "%_gpg_digest_algo sha256" >> ~/.rpmmacros
-            echo "%__gpg_sign_cmd %{__gpg} gpg --batch --pinentry-mode loopback --passphrase '${{ secrets.GPG_PASSPHRASE }}' --no-verbose --no-armor --no-secmem-warning -u %{_gpg_name} -sbo %{__signature_filename} %{__plaintext_filename}" >> ~/.rpmmacros
+            echo "%__gpg_sign_cmd %{__gpg} --batch --pinentry-mode loopback --passphrase '${{ secrets.GPG_PASSPHRASE }}' --no-verbose --no-armor --no-secmem-warning -u %{_gpg_name} -sbo %{__signature_filename} %{__plaintext_filename}" >> ~/.rpmmacros
             
             # Configure GPG for batch mode with passphrase
             mkdir -p ~/.gnupg
