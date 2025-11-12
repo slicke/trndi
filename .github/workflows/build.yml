@@ -220,7 +220,8 @@ jobs:
           # Sign packages if GPG key is available
           if [ -n "${{ secrets.GPG_PRIVATE_KEY }}" ]; then
             echo "GPG key available, signing packages..."
-            sudo apt-get install -y dpkg-sig rpm
+            sudo apt-get update
+            sudo apt-get install -y debsigs rpm
             
             # Import GPG key
             echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
@@ -233,10 +234,13 @@ jobs:
             echo "%__gpg /usr/bin/gpg" >> ~/.rpmmacros
             echo "%_gpg_digest_algo sha256" >> ~/.rpmmacros
             
-            # Sign DEB package
+            # Sign DEB package using debsigs
             DEB_FILE=$(ls trndi_*${{ matrix.deb_arch }}.deb)
             echo "Signing DEB: ${DEB_FILE}"
-            dpkg-sig --sign builder "${DEB_FILE}"
+            # Export GPG key to debsigs format
+            mkdir -p ~/.gnupg/debsigs
+            gpg --armor --export "${GPG_KEY_ID}" > ~/.gnupg/debsigs/key.asc
+            debsigs --sign=origin --default-key="${GPG_KEY_ID}" "${DEB_FILE}"
             
             # Sign RPM package
             RPM_FILE=$(ls trndi-*.${{ matrix.rpm_arch }}.rpm)
