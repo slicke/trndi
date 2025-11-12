@@ -274,6 +274,10 @@ begin
             WinHttpSetOption(hRequest, WINHTTP_OPTION_SECURITY_FLAGS, @Flags, SizeOf(Flags));
           end;
 
+        // Add headers
+        if FHeaders.Count > 0 then
+          begin
+            Headers := WideString(FHeaders.Text);
             WinHttpAddRequestHeaders(hRequest, PWideChar(Headers), Length(Headers),
             WINHTTP_ADDREQ_FLAG_ADD);
           end;
