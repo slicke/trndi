@@ -455,12 +455,35 @@ jobs:
           TAG="build-${{ needs.version.outputs.build_number }}"
           TITLE="Trndi build ${{ needs.version.outputs.build_number }}"
           echo "Publishing release $TAG"
+          
+          # Generate changelog
+          CURRENT_NUM="${{ needs.version.outputs.build_number }}"
+          PREV_NUM=$((CURRENT_NUM - 1))
+          PREV_TAG="build-${PREV_NUM}"
+          
+          # Get commits for changelog
+          git fetch --tags
+          if git rev-parse "$PREV_TAG" >/dev/null 2>&1; then
+            COMMIT_COUNT=$(git log --oneline --no-merges "${PREV_TAG}..HEAD" | wc -l)
+            if [ "$COMMIT_COUNT" -gt 0 ]; then
+              CHANGELOG=$(git log --oneline --no-merges "${PREV_TAG}..HEAD" | sed 's/^/- /')
+            else
+              CHANGELOG="- No new commits (build triggered manually or by workflow change)"
+            fi
+          else
+            CHANGELOG="- First build or showing last 10 commits"
+            CHANGELOG="${CHANGELOG}\n$(git log --oneline --no-merges -10 | sed 's/^/- /')"
+          fi
 
           # Build release notes dynamically from actual artifact filenames (with descriptions)
           {
             echo "# Trndi Release ${TAG}"
             echo
             echo "> This is an automated build of Trndi's latest source code."
+            echo
+            echo "## 📝 Changes in This Build"
+            echo
+            echo "${CHANGELOG}"
             echo
             echo "**📦 Important:** Click **\"Show all X assets\"** at the bottom of this page to see all available files for download."
             echo
