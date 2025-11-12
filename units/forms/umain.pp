@@ -185,6 +185,8 @@ TfBG = class(TForm)
   procedure AdjustGraph;
   procedure bSettingsClick(Sender: TObject);
   procedure fbReadingsDblClick(Sender: TObject);
+  procedure FormActivate(Sender: TObject);
+  procedure FormClick(Sender: TObject);
   procedure FormCloseQuery(Sender: TObject; var CanClose: boolean);
   procedure FormClose(Sender: TObject; var {%H-}CloseAction: TCloseAction);
   procedure FormCreate(Sender: TObject);
@@ -1079,6 +1081,16 @@ begin
 
 end;
 
+procedure TfBG.FormActivate(Sender: TObject);
+begin
+  StopFlashing;
+end;
+
+procedure TfBG.FormClick(Sender: TObject);
+begin
+  StopFlashing;
+end;
+
 // Post-process the graph
 procedure TfBG.AdjustGraph;
 var
@@ -1712,7 +1724,6 @@ begin
   ShowMessage(msg + LineEnding);
 end;
 
-
 // Handle lVal click
 procedure TfBG.lValClick(Sender: TObject);
 begin
@@ -1720,16 +1731,7 @@ begin
     miSettings.Click;
   if firstboot then
     exit;
-  // Acknowledge active high/low alert by user click
-  if native <> nil then
-  begin
-    if (not highAlerted) and (fBG.Color = bg_color_hi) then
-      highAlerted := true;
-    if (not lowAlerted) and (fBG.Color = bg_color_lo) then
-      lowAlerted := true;
-    // Stop flashing if any
-    native.StopBadgeFlash;
-  end;
+  StopFlashing;
 end;
 
 procedure TfBG.lValDblClick(Sender: TObject);

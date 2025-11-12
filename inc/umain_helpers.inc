@@ -19,6 +19,22 @@
  *)
 // Main form helper functions
 
+
+// Stops flashing the tray
+procedure StopFlashing;
+begin
+  // Acknowledge active high/low alert by user click
+  if native <> nil then
+  begin
+    if (not highAlerted) and (fBG.Color = bg_color_hi) then
+      highAlerted := true;
+    if (not lowAlerted) and (fBG.Color = bg_color_lo) then
+      lowAlerted := true;
+    // Stop flashing if any
+    native.StopBadgeFlash;
+  end;
+end;
+
 // Returns vertical offset needed to bring all trend dots fully inside their parent.
 // Sign convention: negative = dots are above (need to move down); positive = dots are below (need to move up).
 function TfBG.dotsInView: integer;
