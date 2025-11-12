@@ -239,21 +239,40 @@ jobs:
             echo "%__gpg /usr/bin/gpg" >> ~/.rpmmacros
             echo "%_gpg_digest_algo sha256" >> ~/.rpmmacros
             
-            # Configure GPG for non-interactive signing
+            # Configure GPG for non-interactive signing with passphrase file
+            mkdir -p ~/.gnupg
+            chmod 700 ~/.gnupg
             echo "use-agent" > ~/.gnupg/gpg.conf
             echo "pinentry-mode loopback" >> ~/.gnupg/gpg.conf
             echo "allow-loopback-pinentry" > ~/.gnupg/gpg-agent.conf
-            gpgconf --kill gpg-agent
+            echo "max-cache-ttl 21600" >> ~/.gnupg/gpg-agent.conf
             
-            # Sign DEB package using debsigs (with passphrase)
+            # Create passphrase file
+            echo "${{ secrets.GPG_PASSPHRASE }}" > ~/.gnupg/passphrase
+            chmod 600 ~/.gnupg/passphrase
+            
+            # Restart gpg-agent to apply config
+            gpgconf --kill gpg-agent
+            gpgconf --launch gpg-agent
+            
+            # Preset the passphrase in the agent
+            KEYGRIP=$(gpg --with-keygrip --list-secret-keys "${GPG_KEY_ID}" | grep -A1 "^ssb" | tail -1 | awk '{print $3}')
+            if [ -n "${KEYGRIP}" ]; then
+              /usr/lib/gnupg/gpg-preset-passphrase --preset "${KEYGRIP}" < ~/.gnupg/passphrase
+            fi
+            
+            # Sign DEB package using debsigs
             DEB_FILE=$(ls trndi_*${{ matrix.deb_arch }}.deb)
             echo "Signing DEB: ${DEB_FILE}"
-            echo "${{ secrets.GPG_PASSPHRASE }}" | debsigs --sign=origin --default-key="${GPG_KEY_ID}" "${DEB_FILE}"
+            GNUPGHOME=~/.gnupg debsigs --sign=origin --default-key="${GPG_KEY_ID}" "${DEB_FILE}"
             
             # Sign RPM package
             RPM_FILE=$(ls trndi-*.${{ matrix.rpm_arch }}.rpm)
             echo "Signing RPM: ${RPM_FILE}"
             echo "${{ secrets.GPG_PASSPHRASE }}" | rpm --addsign "${RPM_FILE}"
+            
+            # Clean up passphrase file
+            rm -f ~/.gnupg/passphrase
             
             echo "Packages signed successfully"
           else
