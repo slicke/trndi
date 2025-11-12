@@ -121,10 +121,6 @@ msgctxt "tfbg.lpredict.caption"
 msgid "Predictions"
 msgstr ""
 
-#: tfbg.lref.caption
-msgid "0,?"
-msgstr ""
-
 #: tfbg.ltir.caption
 msgid "Time In Range"
 msgstr ""
@@ -195,27 +191,13 @@ msgctxt "tfbg.midotbig.caption"
 msgid "Big"
 msgstr ""
 
-#: tfbg.midotbig.hint
-msgctxt "tfbg.midotbig.hint"
-msgid "2"
-msgstr ""
-
 #: tfbg.midothuge.caption
 msgid "Huge"
-msgstr ""
-
-#: tfbg.midothuge.hint
-msgctxt "tfbg.midothuge.hint"
-msgid "3"
 msgstr ""
 
 #: tfbg.midotnormal.caption
 msgctxt "tfbg.midotnormal.caption"
 msgid "Normal"
-msgstr ""
-
-#: tfbg.midotnormal.hint
-msgid "1"
 msgstr ""
 
 #: tfbg.midotsinview.caption
@@ -495,10 +477,6 @@ msgctxt "tfconf.cl_ok_txt.caption"
 msgid "OK"
 msgstr ""
 
-#: tfconf.edcommasep.text
-msgid "."
-msgstr ""
-
 #: tfconf.gbdisplayprefs.caption
 msgid "Display Preferences"
 msgstr ""
@@ -653,10 +631,6 @@ msgstr ""
 msgid "Unknown Architecture"
 msgstr ""
 
-#: tfconf.larrow.caption
-msgid "->"
-msgstr ""
-
 #: tfconf.ldot.caption
 msgctxt "tfconf.ldot.caption"
 msgid "PREVIEW"
@@ -738,10 +712,6 @@ msgstr ""
 
 #: tfconf.lusertrack.caption
 msgid "Add users below, if you wish to track more than one person."
-msgstr ""
-
-#: tfconf.lval.caption
-msgid "0,0"
 msgstr ""
 
 #: tfconf.lwaitsys.caption
