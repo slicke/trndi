@@ -577,9 +577,15 @@ jobs:
             echo "---"
             echo
             echo "### 🔐 Package Verification"
-            signing_keys=(./release-files/**/trndi-signing-key.asc)
-            if [ ${#signing_keys[@]} -gt 0 ]; then
-              echo "Linux packages (DEB/RPM) are cryptographically signed. Download \`trndi-signing-key.asc\` to verify signatures."
+            shopt -s nullglob
+            signing_keys=(./release-files/linux-*-build/trndi-signing-key.asc)
+            if [ ${#signing_keys[@]} -gt 0 ] && [ -f "${signing_keys[0]}" ]; then
+              echo "Linux packages (DEB/RPM) are cryptographically signed."
+              echo
+              echo "**Verification:**"
+              echo "1. Download \`trndi-signing-key.asc\` and import it: \`gpg --import trndi-signing-key.asc\`"
+              echo "2. For DEB: \`gpg --verify trndi_*.deb.asc trndi_*.deb\`"
+              echo "3. For RPM: \`rpm --import trndi-signing-key.asc && rpm --checksig trndi-*.rpm\`"
             else
               echo "No signing key available for this build."
             fi
