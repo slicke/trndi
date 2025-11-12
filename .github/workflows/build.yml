@@ -637,14 +637,27 @@ jobs:
           echo "release_url=${RELEASE_URL}" >> $GITHUB_OUTPUT
           
           # Get commits since last build tag (not just last commit)
-          PREV_TAG=$(git tag --sort=-v:refname | grep -E '^build-[0-9]+$' | sed 's/^build-//' | sort -n | tail -2 | head -1)
-          if [ -n "$PREV_TAG" ]; then
-            PREV_TAG="build-${PREV_TAG}"
+          # Find the previous build tag (one before current)
+          CURRENT_NUM="${{ needs.version.outputs.build_number }}"
+          PREV_NUM=$((CURRENT_NUM - 1))
+          PREV_TAG="build-${PREV_NUM}"
+          
+          # Check if previous tag exists
+          if git rev-parse "$PREV_TAG" >/dev/null 2>&1; then
             echo "## Changes in this build" > commits.txt
             echo "" >> commits.txt
-            git log --oneline --no-merges "${PREV_TAG}..HEAD" | sed 's/^/- /' >> commits.txt
+            # Get commits between previous tag and current commit
+            COMMIT_COUNT=$(git log --oneline --no-merges "${PREV_TAG}..HEAD" | wc -l)
+            echo "Found ${COMMIT_COUNT} commits since ${PREV_TAG}"
+            if [ "$COMMIT_COUNT" -gt 0 ]; then
+              git log --oneline --no-merges "${PREV_TAG}..HEAD" | sed 's/^/- /' >> commits.txt
+            else
+              echo "- No new commits (build triggered manually or by workflow change)" >> commits.txt
+            fi
           else
             echo "## Changes in this build" > commits.txt
+            echo "" >> commits.txt
+            echo "First build or previous tag not found. Showing last 10 commits:" >> commits.txt
             echo "" >> commits.txt
             git log --oneline --no-merges -10 | sed 's/^/- /' >> commits.txt
           fi
