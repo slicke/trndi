@@ -165,7 +165,7 @@ var
   ProtocolPos, PathPos, PortPos: Integer;
   PortStr: string;
 begin
-  // Hitta positionen för "://"
+  // Find the position of "://"
   ProtocolPos := Pos('://', URL);
 
   port.secure := false;
@@ -181,11 +181,11 @@ begin
     end
   else
     ProtocolPos := 1;
-  // Börja direkt om inget protokoll anges
+  // Start directly if no protocol is specified
 
-  // Hitta nästa "/" som anger början på sökvägen
+  // Find the next "/" that indicates the beginning of the path
   PathPos := PosEx('/', URL, ProtocolPos);
-  // Hitta om en port är specificerad efter domännamnet
+  // Find if a port is specified after the domain name
   PortPos := PosEx(':', URL, ProtocolPos);
 
   if (PortPos > 0) and ((PathPos = 0) or (PortPos < PathPos)) then
@@ -195,18 +195,18 @@ begin
       // Extrahera porten
       PortStr := Copy(URL, PortPos + 1, PathPos - PortPos - 1);
       Port.port := StrToIntDef(PortStr, Port.port);
-      // Konvertera till integer, eller behåll standardport om ogiltigt
+      // Convert to integer, or keep default port if invalid
     end
   else
     begin
-      // Om det inte finns någon port, extrahera servernamnet fram till sökvägen eller slutet
+      // If there is no port, extract the server name up to the path or end
       if PathPos > 0 then
         ServerName := Copy(URL, ProtocolPos, PathPos - ProtocolPos)
       else
         ServerName := Copy(URL, ProtocolPos, Length(URL) - ProtocolPos + 1);
     end;
 
-  // Sätt sökvägen, om ingen hittades sätt till "/"
+  // Set the path, if none is found set to "/"
   if PathPos > 0 then
     Path := Copy(URL, PathPos, Length(URL) - PathPos + 1)
   else
@@ -256,7 +256,7 @@ begin
       raise Exception.Create('WinHttpConnect failed: ' + SysErrorMessage(GetLastError));
 
     try
-      // Sätt flaggor beroende på om anslutningen är säker (HTTPS)
+      // Set flags depending on whether the connection is secure (HTTPS)
       Flags := 0;
       if Port.secure then
         Flags := WINHTTP_FLAG_SECURE;
@@ -274,15 +274,11 @@ begin
             WinHttpSetOption(hRequest, WINHTTP_OPTION_SECURITY_FLAGS, @Flags, SizeOf(Flags));
           end;
 
-        // Lägg till headers
-        if FHeaders.Count > 0 then
-          begin
-            Headers := WideString(FHeaders.Text);
             WinHttpAddRequestHeaders(hRequest, PWideChar(Headers), Length(Headers),
             WINHTTP_ADDREQ_FLAG_ADD);
           end;
 
-        // Skicka begäran
+        // Send request
         if not WinHttpSendRequest(hRequest, nil, 0, nil, 0, 0, 0) then
           raise Exception.Create('WinHttpSendRequest failed: ' + SysErrorMessage(GetLastError));
 
@@ -338,7 +334,7 @@ var
 begin
   Result := '';
 
-  // Extrahera servernamn, sökväg och port
+  // Extract server name, path, and port
   ParseURL(URL, ServerName, Path, Port);
 
   // Skapa WinHTTP-session
@@ -353,7 +349,7 @@ begin
       raise Exception.Create('WinHttpConnect failed: ' + SysErrorMessage(GetLastError));
 
     try
-      // Sätt flaggor beroende på om anslutningen är säker (HTTPS)
+      // Set flags depending on whether the connection is secure (HTTPS)
       Flags := 0;
       if Port.secure then
         Flags := WINHTTP_FLAG_SECURE;
@@ -364,14 +360,14 @@ begin
         raise Exception.Create('WinHttpOpenRequest failed: ' + SysErrorMessage(GetLastError));
 
       try
-        // Aktivera TLS 1.2 om anslutningen är säker
+        // Enable TLS 1.2 if the connection is secure
         if Port.secure then
           begin
             Flags := WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2 or WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_3;
             WinHttpSetOption(hRequest, WINHTTP_OPTION_SECURITY_FLAGS, @Flags, SizeOf(Flags));
           end;
 
-        // Lägg till headers
+        // Add headers
         if FHeaders.Count > 0 then
           begin
             Headers := WideString(FHeaders.Text);
@@ -379,7 +375,7 @@ begin
             WINHTTP_ADDREQ_FLAG_ADD);
           end;
 
-        // Skicka POST-begäran med body
+        // Send POST request with body
         if not WinHttpSendRequest(hRequest, nil, 0, PByte(FRequestBody), Length(FRequestBody),
            Length(FRequestBody), 0) then
           raise Exception.Create('WinHttpSendRequest failed: ' + SysErrorMessage(GetLastError));
@@ -387,7 +383,7 @@ begin
         if not WinHttpReceiveResponse(hRequest, nil) then
           raise Exception.Create('WinHttpReceiveResponse failed: ' + SysErrorMessage(GetLastError));
 
-        // Läs svar
+        // Read response
         ResponseStream := TStringStream.Create;
         try
           repeat

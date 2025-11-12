@@ -29,21 +29,21 @@ type
    UTFCanvas = TPanel;
 
 
-  // Framåtreferenser för gränssnitt och typer
+  // Forward references for interfaces and types
   ID2D1Factory = interface;
   ID2D1HwndRenderTarget = interface;
 
-  // Grundläggande enums
+  // Basic enums
   D2D1_FACTORY_TYPE = (D2D1_FACTORY_TYPE_SINGLE_THREADED, D2D1_FACTORY_TYPE_MULTI_THREADED);
   D2D1_RENDER_TARGET_TYPE = (D2D1_RENDER_TARGET_TYPE_DEFAULT, D2D1_RENDER_TARGET_TYPE_SOFTWARE, D2D1_RENDER_TARGET_TYPE_HARDWARE);
   D2D1_ALPHA_MODE = (D2D1_ALPHA_MODE_UNKNOWN, D2D1_ALPHA_MODE_PREMULTIPLIED, D2D1_ALPHA_MODE_STRAIGHT, D2D1_ALPHA_MODE_IGNORE);
 
-  // Grundläggande färgstruktur
+  // Basic color structure
   D2D1_COLOR_F = record
     r, g, b, a: Single;
   end;
 
-  // Pixel Format-struktur för att specificera alpha-mode och format
+  // Pixel Format structure to specify alpha-mode and format
   D2D1_PIXEL_FORMAT = record
     format: UINT;
     alphaMode: D2D1_ALPHA_MODE;
@@ -75,7 +75,7 @@ type
     out factory: IUnknown
   ): HRESULT; stdcall;
 
-  // Minimal definition av ID2D1Factory för att skapa HwndRenderTarget
+  // Minimal definition of ID2D1Factory for creating HwndRenderTarget
   ID2D1Factory = interface(IUnknown)
     ['{06152247-6F50-465A-9245-118BFD3B6007}']
     function CreateHwndRenderTarget(
@@ -138,23 +138,23 @@ type
     procedure Clear(const clearColor: D2D1_COLOR_F); stdcall;
 
      procedure DrawText(
-    const string_: PWideChar;            // Texten som ska ritas
-    stringLength: UINT32;                // Antal tecken i texten
-    textFormat: IDWriteTextFormat;       // Textformat (typsnitt, storlek, etc.)
-    const layoutRect: D2D1_RECT_F;       // Rektangel inom vilken texten ritas
-    defaultForegroundBrush: ID2D1Brush;  // Borste för textfärg
-    options: UINT32 = 0;                 // Ritalternativ (t.ex. färgade teckensnitt)
-    measuringMode: UINT32 = 0            // Mätläge för text (t.ex. IDWriteMeasuringMode_Natural)
+    const string_: PWideChar;            // Text to be drawn
+    stringLength: UINT32;                // Number of characters in the text
+    textFormat: IDWriteTextFormat;       // Text format (font, size, etc.)
+    const layoutRect: D2D1_RECT_F;       // Rectangle within which the text is drawn
+    defaultForegroundBrush: ID2D1Brush;  // Brush for text color
+    options: UINT32 = 0;                 // Drawing options (e.g. colored fonts)
+    measuringMode: UINT32 = 0            // Measuring mode for text (e.g. IDWriteMeasuringMode_Natural)
   ); stdcall;
   end;
 
-  // Gränssnitt för Direct2D render target på en Windows-fönsterhanterare (HWND)
+  // Interface for Direct2D render target on a Windows window handle (HWND)
   ID2D1HwndRenderTarget = interface(ID2D1RenderTarget)
     ['{2CD90698-12E2-11DC-9FED-001143A055F9}']
   end;
 
 
-  // Förenklad extern funktion för att skapa en Direct2D Factory
+  // Simplified external function for creating a Direct2D Factory
   function D2D1CreateFactory(
     factoryType: D2D1_FACTORY_TYPE;
     const riid: TGUID;

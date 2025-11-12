@@ -2,13 +2,13 @@
 // Fake NightScout for testing
 
 function generateRecord() {
-    // 1. Generera unik identifierare (liknande MongoDB ObjectId)
+    // 1. Generate unique identifier (similar to MongoDB ObjectId)
     $identifier = generateObjectId();
 
-    // 2. Hämta aktuell Unix-tidsstämpel i millisekunder
+    // 2. Get current Unix timestamp in milliseconds
     $timestampMs = round(microtime(true) * 1000);
 
-    // 3. Konvertera tidsstämpeln till ISO 8601-format
+    // 3. Convert timestamp to ISO 8601 format
     $isoDate = convertMillisecondsToISO8601($timestampMs);
 
     return [
@@ -25,14 +25,14 @@ function generateRecord() {
  * @throws Exception Vid fel vid generering av slumpmässiga bytes.
  */
 function generateObjectId() {
-    // 4 bytes för tidsstämpeln (sekunder sedan epoch)
+    // 4 bytes for the timestamp (seconds since epoch)
     $time = dechex(time());
     $time = str_pad($time, 8, '0', STR_PAD_LEFT);
 
-    // 5 bytes slumpmässiga bytes
+    // 5 random bytes
     $random = bin2hex(random_bytes(5));
 
-    // 3 bytes räknare (initieras slumpmässigt)
+    // 3 byte counter (initialized randomly)
     $counter = dechex(mt_rand(0, 0xFFFFFF));
     $counter = str_pad($counter, 6, '0', STR_PAD_LEFT);
 
@@ -46,7 +46,7 @@ function generateObjectId() {
  * @return string ISO 8601-formaterad datumsträng.
  */
 function convertMillisecondsToISO8601($milliseconds) {
-    // Om timestampen är som en sträng (för stora tal på 32-bitars system)
+    // If the timestamp is a string (for large numbers on 32-bit systems)
     if (is_string($milliseconds)) {
         $seconds = bcdiv($milliseconds, '1000', 0);
         $millis = bcmod($milliseconds, '1000');
@@ -55,12 +55,12 @@ function convertMillisecondsToISO8601($milliseconds) {
         $millis = $milliseconds % 1000;
     }
 
-    // Skapa DateTime-objekt från sekunder
+    // Create DateTime object from seconds
     $date = new DateTime("@$seconds");
-    $date->setTimezone(new DateTimeZone('UTC')); // Ställ in tidszon till UTC
+    $date->setTimezone(new DateTimeZone('UTC')); // Set timezone to UTC
 
-    // Lägg till millisekunder
-    // PHP DateTime stöder endast mikrosekunder, så vi justerar därefter
+    // Add milliseconds
+    // PHP DateTime only supports microseconds, so we adjust accordingly
     $date->modify("+{$millis} milliseconds");
 
     // Formatera till ISO 8601 med millisekunder

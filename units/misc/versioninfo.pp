@@ -8,7 +8,7 @@ uses
 Classes, SysUtils
 {$IFDEF WINDOWS}, Windows{$ENDIF},
 {$IFDEF FPC}
-  // FCL enheter för versionsinformation
+  // FCL units for version information
 fileinfo, versiontypes, versionresource
 {$ENDIF};
 
@@ -20,7 +20,7 @@ function GetProductVersionMajorMinor(const def: string): string;
 implementation
 
 {$IFDEF WINDOWS}
-// Windows API-definitioner som behövs om vi inte använder FCL
+// Windows API definitions needed if we're not using FCL
 type
 VS_FIXEDFILEINFO = record
   dwSignature: DWORD;
@@ -44,7 +44,7 @@ function GetFileVersionInfoSizeA(lptstrFilename: pchar; var lpdwHandle: DWORD): 
 function GetFileVersionInfoA(lptstrFilename: pchar; dwHandle: DWORD; dwLen: DWORD; lpData: Pointer): BOOL; stdcall; external 'version.dll' name 'GetFileVersionInfoA';
 function VerQueryValueA(pBlock: Pointer; lpSubBlock: pchar; var lplpBuffer: Pointer; var puLen: DWORD): BOOL; stdcall; external 'version.dll' name 'VerQueryValueA';
 
-// Här använder vi alias för att kunna använda samma funktionsnamn oavsett om det är Unicode eller inte
+// Here we use aliases so we can use the same function names regardless of Unicode or not
 function GetFileVersionInfoSize(lptstrFilename: pchar; var lpdwHandle: DWORD): DWORD; stdcall;
 begin
   Result := GetFileVersionInfoSizeA(lptstrFilename, lpdwHandle);
@@ -60,7 +60,7 @@ begin
   Result := VerQueryValueA(pBlock, lpSubBlock, lplpBuffer, puLen);
 end;
 
-// Hjälpfunktioner för manipulering av DWORD-värden
+// Helper functions for manipulating DWORD values
 function HiWord(Value: DWORD): word;
 begin
   Result := word(Value shr 16);
@@ -86,24 +86,24 @@ var
   {$ENDIF}
   {$ENDIF}
 begin
-  Result := def; // Standardvärde som används om inget annat hittas
+  Result := def; // Default value used if nothing else is found
 
   {$IFDEF FPC}
-  // FCL-baserad versionsdetektion som fungerar på alla plattformar
+  // FCL-based version detection that works on all platforms
   try
     FileVerInfo := TFileVersionInfo.Create(nil);
     try
       FileVerInfo.FileName := ParamStr(0);
       FileVerInfo.ReadFileInfo;
 
-      // Försök först med produktversionssträngen
+      // Try product version string first
       Result := FileVerInfo.VersionStrings.Values['ProductVersion'];
 
-      // Om det inte fungerar, pröva fileversionssträngen
+      // If that doesn't work, try the file version string
       if (Result = '') or (Result = '0.0.0.0') then
         Result := FileVerInfo.VersionStrings.Values['FileVersion'];
 
-      // Om vi fortfarande inte har något, använd numeriska värden
+      // If we still don't have anything, use numeric values
       if (Result = '') or (Result = '0.0.0.0') then
         Result := Format('%s.%s.%s.%s', [
           FileVerInfo.VersionStrings[0],
@@ -112,19 +112,19 @@ begin
           FileVerInfo.VersionStrings[3]
           ]);
 
-      // Om det fortfarande är 0.0.0.0, använd standardvärdet
+      // If it's still 0.0.0.0, use the default value
       if (Result = '') or (Result = '0.0.0.0') then
         Result := def;
     finally
       FileVerInfo.Free;
     end;
   except
-    // Om något går fel, använd standardvärdet
+    // If something goes wrong, use the default value
     Result := def;
   end;
   {$ELSE}
   {$IFDEF WINDOWS}
-  // Windows-specifik implementering baserad på Windows API
+  // Windows-specific implementation based on Windows API
   FileName := ParamStr(0);
   VerInfoSize := GetFileVersionInfoSize(pchar(FileName), Dummy);
 
@@ -143,7 +143,7 @@ begin
               LoWord(dwProductVersionLS)
               ]);
 
-            // Om resultatet är tomt eller nollor, använd standardvärdet
+            // If the result is empty or zeros, use the default value
             if (Result = '') or (Result = '0.0.0.0') then
               Result := def;
           end;

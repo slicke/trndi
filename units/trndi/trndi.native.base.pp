@@ -1523,7 +1523,7 @@ begin
     end;
   end;
 
-  // Kontrollera miljövariabler
+  // Check environment variables
   EnvVar := GetEnvironmentVariable('WSL_DISTRO_NAME');
   if EnvVar <> '' then
   begin
@@ -1541,7 +1541,7 @@ begin
       Result.Version := wslVersion2;
   end;
 
-  // Ytterligare kontroller om vi inte hittat WSL än
+  // Additional checks if we haven't found WSL yet
   if not Result.IsWSL then
     if FileExists('/proc/sys/kernel/osrelease') then
     begin

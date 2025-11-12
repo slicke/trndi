@@ -761,14 +761,14 @@ var
   sr: TSearchRec;
 begin
   list.Clear;
-  // Sök efter alla .po i angiven katalog
+  // Search for all .po files in the specified directory
   if FindFirst(IncludeTrailingPathDelimiter(Path) + '*.po',
     faAnyFile, sr) = 0 then
   begin
     repeat
-      // Hoppa över undermappar
+      // Skip subdirectories
       if (sr.Attr and faDirectory) = 0 then
-        // Extrahera språkkod utan ".po"
+        // Extract language code without ".po"
         list.Add(ChangeFileExt(sr.Name, ''));
     until FindNext(sr) <> 0;
     FindClose(sr);

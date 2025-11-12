@@ -37,7 +37,7 @@ type
 implementation
 
 uses
-  JwaWinType, PropSys; // Kräver jwa-win32api-paketet
+  JwaWinType, PropSys; // Requires jwa-win32api package
 
 { TJumpListManager }
 
@@ -55,7 +55,7 @@ begin
   FDestList := nil;
   FObjectArray := nil;
 
-  // Frigör COM
+  // Release COM
   CoUninitialize;
   inherited;
 end;
@@ -66,18 +66,18 @@ var
 begin
   Result := False;
 
-  // Skapa Custom Destination List
+  // Create Custom Destination List
   HR := CoCreateInstance(CLSID_DestinationList, nil, CLSCTX_INPROC_SERVER,
                        IID_ICustomDestinationList, FDestList);
   if Failed(HR) then
     Exit;
 
-  // Sätt AppID (viktig för Windows 11 för att associera appen korrekt)
+  // Set AppID (important for Windows 11 to associate the app correctly)
   HR := FDestList.SetAppID(PWideChar(FAppId));
   if Failed(HR) then
     Exit;
 
-  // Börja bygga listan
+  // Start building the list
   HR := FDestList.BeginList(FMaxItems, IID_IObjectArray, FObjectArray);
   Result := Succeeded(HR);
 end;

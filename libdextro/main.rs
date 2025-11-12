@@ -154,13 +154,13 @@ async fn fetch_auth_token(
     base_url: &str,
     token_suffix: &str,
 ) -> Result<AuthResponse, Box<dyn std::error::Error>> {
-    // Bygg URL:en för att hämta token
+    // Build the URL to fetch the token
     let auth_url = format!(
         "https://{}/api/v2/authorization/request/{}",
         base_url, token_suffix
     );
 
-    // Hämta token
+    // Fetch token
     let res = client.get(&auth_url).send().await?;
    
     if res.status().is_success() {
@@ -204,7 +204,7 @@ async fn fetch_entries(
 
         // Kontrollera statuskoden
         if entries_response.status == 200 {
-            // Iterera över varje entry och gör något med dem
+            // Iterate over each entry and do something with them
             for entry in entries_response.result {
 
                 println!("Device: {}", entry.device);
