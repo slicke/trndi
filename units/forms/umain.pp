@@ -3351,7 +3351,7 @@ begin
   // Request more predictions to get ones closer to 5, 10, 15 minutes
   if not api.predictReadings(9, bgr) then
   begin
-    lPredict.Caption := 'Predictions unavailable';
+    lPredict.Caption := RS_PREDICTIONS_UNAVAILABLE;
     Exit;
   end;
 
