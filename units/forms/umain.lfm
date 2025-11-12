@@ -11,6 +11,8 @@ object fBG: TfBG
   Font.Color = clWhite
   PopupMenu = pmSettings
   Position = poDesktopCenter
+  OnActivate = FormActivate
+  OnClick = FormClick
   OnClose = FormClose
   OnCreate = FormCreate
   OnDblClick = FormDblClick
