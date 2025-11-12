@@ -239,10 +239,16 @@ jobs:
             echo "%__gpg /usr/bin/gpg" >> ~/.rpmmacros
             echo "%_gpg_digest_algo sha256" >> ~/.rpmmacros
             
-            # Sign DEB package using debsigs
+            # Configure GPG for non-interactive signing
+            echo "use-agent" > ~/.gnupg/gpg.conf
+            echo "pinentry-mode loopback" >> ~/.gnupg/gpg.conf
+            echo "allow-loopback-pinentry" > ~/.gnupg/gpg-agent.conf
+            gpgconf --kill gpg-agent
+            
+            # Sign DEB package using debsigs (with passphrase)
             DEB_FILE=$(ls trndi_*${{ matrix.deb_arch }}.deb)
             echo "Signing DEB: ${DEB_FILE}"
-            debsigs --sign=origin --default-key="${GPG_KEY_ID}" "${DEB_FILE}"
+            echo "${{ secrets.GPG_PASSPHRASE }}" | debsigs --sign=origin --default-key="${GPG_KEY_ID}" "${DEB_FILE}"
             
             # Sign RPM package
             RPM_FILE=$(ls trndi-*.${{ matrix.rpm_arch }}.rpm)
