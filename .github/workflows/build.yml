@@ -75,9 +75,9 @@ jobs:
             os_target: linux
             arch: amd64
             runner: ubuntu-latest
-            fpc_laz_url: "https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.2/fpc-laz_3.2.2-210709_amd64.deb/download"
-            fpc_src_url: "https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.2/fpc-src_3.2.2-210709_amd64.deb/download"
-            laz_url: "https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.2/lazarus-project_4.2.0-0_amd64.deb/download"
+            fpc_laz_url: "https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.4/fpc-laz_3.2.2-210709_amd64.deb/download"
+            fpc_src_url: "https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.4/fpc-src_3.2.2-210709_amd64.deb/download"
+            laz_url: "https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.4/lazarus-project_4.4.0-0_amd64.deb/download"
             qt6pas_deb: "libqt6pas6_6.2.10-1_amd64.deb"
             qt6pas_dev_deb: "libqt6pas6-dev_6.2.10-1_amd64.deb"
             qt6_arch_folder: "x86_64-linux"
@@ -93,9 +93,9 @@ jobs:
             os_target: linux
             arch: arm64
             runner: ubuntu-24.04-arm
-            fpc_laz_url: "https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20arm64%20DEB/Lazarus%204.2/fpc-laz_3.2.3-240813_arm64.deb/download"
-            fpc_src_url: "https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20arm64%20DEB/Lazarus%204.2/fpc-src_3.2.3-240813_arm64.deb/download"
-            laz_url: "https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20arm64%20DEB/Lazarus%204.2/lazarus-project_4.2.0-0_arm64.deb/download"
+            fpc_laz_url: "https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20arm64%20DEB/Lazarus%204.4/fpc-laz_3.2.3-240813_arm64.deb/download"
+            fpc_src_url: "https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20arm64%20DEB/Lazarus%204.4/fpc-src_3.2.3-240813_arm64.deb/download"
+            laz_url: "https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20arm64%20DEB/Lazarus%204.4/lazarus-project_4.4.0-0_arm64.deb/download"
             qt6pas_deb: "libqt6pas6_6.2.10-1_arm64.deb"
             qt6pas_dev_deb: "libqt6pas6-dev_6.2.10-1_arm64.deb"
             qt6_arch_folder: "aarch64-linux"
@@ -357,8 +357,8 @@ jobs:
           # Install curl (real) and 7-Zip via Chocolatey
           choco install curl 7zip -y
           # Download Lazarus installer via curl
-          curl -L --fail -o lazarus-4.2.exe "https://sourceforge.net/projects/lazarus/files/Lazarus%20Windows%2064%20bits/Lazarus%204.2/lazarus-4.2-fpc-3.2.2-win64.exe/download"
-          Start-Process '.\lazarus-4.2.exe' -ArgumentList '/VERYSILENT','/SP-','/NORESTART','/DIR=C:\Lazarus' -Wait
+          curl -L --fail -o lazarus-4.4.exe "https://sourceforge.net/projects/lazarus/files/Lazarus%20Windows%2064%20bits/Lazarus%204.4/lazarus-4.4-fpc-3.2.2-win64.exe/download"
+          Start-Process '.\lazarus-4.4.exe' -ArgumentList '/VERYSILENT','/SP-','/NORESTART','/DIR=C:\Lazarus' -Wait
           # Prepare static libs & sources
           New-Item -ItemType Directory -Path .\static -Force | Out-Null
           curl -L --fail -o mormot2static.7z "https://github.com/synopse/mORMot2/releases/download/2.3.stable/mormot2static.7z"
