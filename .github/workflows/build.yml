@@ -267,6 +267,10 @@ jobs:
             # Verify signatures were created
             echo "Verifying signatures..."
             gpg --verify "${DEB_FILE}.asc" "${DEB_FILE}" && echo "✓ DEB signature verified" || echo "✗ DEB signature verification failed"
+            
+            # Import public key to RPM for verification
+            gpg --armor --export "${GPG_KEY_ID}" > /tmp/rpm-public-key.asc
+            rpm --import /tmp/rpm-public-key.asc
             rpm --checksig "${RPM_FILE}" && echo "✓ RPM signature verified" || echo "✗ RPM signature verification failed"
             
             echo "Packages signed successfully"
