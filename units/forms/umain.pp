@@ -421,6 +421,7 @@ PaintRange: boolean = true;
 PaintRangeCGMRange: boolean = true; // Show cgmRangeLo/cgmRangeHi inner threshold lines
 PaintRangeLines: boolean = false;
 PredictGlucoseReading: boolean = false;
+PredictShortMode: boolean = false;
   // Show threshold lines (if false, only filled areas are drawn)
 {$ifdef darwin}
 MacAppDelegate: TMyAppDelegate;
@@ -2107,6 +2108,7 @@ procedure LoadUserSettings(f: TfConf);
       cbCust.Checked := GetBoolSetting('override.enabled');
       cbCustRange.Checked := GetBoolSetting('override.range');
       cbPredictions.Checked := GetBoolSetting('predictions.enable');
+      cbPredictShort.Checked := GetBoolSetting('predictions.short');
 
       edMusicHigh.Text := GetSetting('media.url_high', '');
       edMusicLow.Text := GetSetting('media.url_low', '');
@@ -2341,6 +2343,7 @@ procedure SaveUserSettings(f: TfConf);
       SetBoolSetting('override.enabled', cbCust.Checked);
       SetBoolSetting('override.range', cbCustRange.Checked);
       SetBoolSetting('predictions.enable', cbPredictions.Checked);
+      SetBoolSetting('predictions.short', cbPredictShort.Checked);
       SetSetting('media.url_high', edMusicHigh.Text);
       SetSetting('media.url_low', edMusicLow.Text);
       SetSetting('media.url_perfect', edMusicPerfect.Text);
@@ -2450,6 +2453,11 @@ begin
     end;
     // Reload settings, needed on X_PC
     native.ReloadSettings;
+
+    // Reload prediction settings
+    PredictGlucoseReading := native.GetBoolSetting('predictions.enable', false);
+    PredictShortMode := native.GetBoolSetting('predictions.short', false);
+    lPredict.Visible := PredictGlucoseReading;
 
     // Save settings when dialog closes
     SaveUserSettings(fConf);
@@ -2886,8 +2894,18 @@ begin
   // Position and scale lPredict in lower-right corner
   if Assigned(lPredict) and lPredict.Visible then
   begin
-    lPredict.Width := ClientWidth div 3;
-    lPredict.Height := ClientHeight div 12;
+    if PredictShortMode then
+    begin
+      // Short mode: larger area for bigger single arrow
+      lPredict.Width := ClientWidth div 2;
+      lPredict.Height := ClientHeight div 6;
+    end
+    else
+    begin
+      // Full mode: normal size for detailed predictions
+      lPredict.Width := ClientWidth div 3;
+      lPredict.Height := ClientHeight div 12;
+    end;
     lPredict.Left := ClientWidth - lPredict.Width - 5;
     lPredict.Top := ClientHeight - lPredict.Height - 5;
     ScaleLbl(lPredict, taRightJustify, tlBottom);
@@ -3411,37 +3429,59 @@ begin
   end;
 
   // Format predictions with clock emoji, trend arrows, and values
-  if closest5 >= 0 then
+  if PredictShortMode then
   begin
-    minutes := Round(MinutesBetween(bgr[closest5].date, lastReadingTime));
-    delta := bgr[closest5].convert(mgdl) - lastReadingValue;
-    trend := CalculateTrendFromDelta(delta);
-    pred1 := Format('⏱%d'' %s %.1f', [minutes, BG_TREND_ARROWS_UTF[trend], bgr[closest5].convert(un)]);
+    // Short mode: show only middle prediction with simplified arrow
+    if closest10 >= 0 then
+    begin
+      delta := bgr[closest10].convert(mgdl) - lastReadingValue;
+      trend := CalculateTrendFromDelta(delta);
+      // Map to simplified arrows: up=↗, flat=→, down=↘
+      case trend of
+        TdDoubleUp, TdSingleUp, TdFortyFiveUp: lPredict.Caption := '↗';
+        TdFlat: lPredict.Caption := '→';
+        TdFortyFiveDown, TdSingleDown, TdDoubleDown: lPredict.Caption := '↘';
+        else lPredict.Caption := '?';
+      end;
+    end
+    else
+      lPredict.Caption := '?';
   end
   else
-    pred1 := '?';
-
-  if closest10 >= 0 then
   begin
-    minutes := Round(MinutesBetween(bgr[closest10].date, lastReadingTime));
-    delta := bgr[closest10].convert(mgdl) - lastReadingValue;
-    trend := CalculateTrendFromDelta(delta);
-    pred2 := Format('⏱%d'' %s %.1f', [minutes, BG_TREND_ARROWS_UTF[trend], bgr[closest10].convert(un)]);
-  end
-  else
-    pred2 := '?';
+    // Full mode: show time, trend, and value
+    if closest5 >= 0 then
+    begin
+      minutes := Round(MinutesBetween(bgr[closest5].date, lastReadingTime));
+      delta := bgr[closest5].convert(mgdl) - lastReadingValue;
+      trend := CalculateTrendFromDelta(delta);
+      pred1 := Format('⏱%d'' %s %.1f', [minutes, BG_TREND_ARROWS_UTF[trend], bgr[closest5].convert(un)]);
+    end
+    else
+      pred1 := '?';
 
-  if closest15 >= 0 then
-  begin
-    minutes := Round(MinutesBetween(bgr[closest15].date, lastReadingTime));
-    delta := bgr[closest15].convert(mgdl) - lastReadingValue;
-    trend := CalculateTrendFromDelta(delta);
-    pred3 := Format('⏱%d'' %s %.1f', [minutes, BG_TREND_ARROWS_UTF[trend], bgr[closest15].convert(un)]);
-  end
-  else
-    pred3 := '?';
+    if closest10 >= 0 then
+    begin
+      minutes := Round(MinutesBetween(bgr[closest10].date, lastReadingTime));
+      delta := bgr[closest10].convert(mgdl) - lastReadingValue;
+      trend := CalculateTrendFromDelta(delta);
+      pred2 := Format('⏱%d'' %s %.1f', [minutes, BG_TREND_ARROWS_UTF[trend], bgr[closest10].convert(un)]);
+    end
+    else
+      pred2 := '?';
 
-  lPredict.Caption := Format('%s | %s | %s', [pred1, pred2, pred3]);
+    if closest15 >= 0 then
+    begin
+      minutes := Round(MinutesBetween(bgr[closest15].date, lastReadingTime));
+      delta := bgr[closest15].convert(mgdl) - lastReadingValue;
+      trend := CalculateTrendFromDelta(delta);
+      pred3 := Format('⏱%d'' %s %.1f', [minutes, BG_TREND_ARROWS_UTF[trend], bgr[closest15].convert(un)]);
+    end
+    else
+      pred3 := '?';
+
+    lPredict.Caption := Format('%s | %s | %s', [pred1, pred2, pred3]);
+  end;
 end;
 
 procedure TfBG.CompleteUIUpdate;

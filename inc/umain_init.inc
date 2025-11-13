@@ -535,6 +535,7 @@ begin
     api.cgmRangeHi := GetIntSetting('override.rangehi', api.cgmRangeHi);
 
     PredictGlucoseReading := GetBoolSetting('predictions.enable', false);
+    PredictShortMode := GetBoolSetting('predictions.short', false);
     lPredict.Visible := PredictGlucoseReading;
   end;
 

@@ -81,6 +81,7 @@ TfConf = class(TForm)
   cbFlash: TCheckGroup;
   cbFlashHi: TCheckBox;
   cbPredictions: TCheckBox;
+  cbPredictShort: TCheckBox;
   cbTirBar: TColorButton;
   cbTirBarCustom: TColorButton;
   cl_hi_bg: TColorButton;
