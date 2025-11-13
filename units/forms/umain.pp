@@ -67,7 +67,7 @@ kdebadge,
 LazFileUtils, uconf, trndi.native, Trndi.API,
 trndi.api.xDrip,{$ifdef DEBUG} trndi.api.debug, trndi.api.debug_edge, trndi.api.debug_missing, trndi.api.debug_perfect,{$endif}
 {$ifdef LCLQt6}Qt6, QtWidgets,{$endif}
-StrUtils, TouchDetection, ufloat, LCLType;
+StrUtils, TouchDetection, ufloat, LCLType, trndi.webserver.threaded;
 
 type
 TFloatIntDictionary = specialize TDictionary<single, integer>;
@@ -294,6 +294,8 @@ private
   multi: boolean; // Multi user
   multinick: string;
   MediaController: TSystemMediaController;
+  FWebServer: TObject; // TTrndiWebServer - using TObject to avoid circular dependency
+  tWebServerStart: TTimer;
 
   function dotsInView: integer;
   function setColorMode: boolean;
@@ -342,6 +344,14 @@ private
   function GetAdjustedColorForBackground(const BaseColor: TColor;
     const BgColor: TColor; const DarkenFactor: double = 0.6;
     const LightenFactor: double = 0.4; const PreferLighter: boolean = false): TColor;
+
+  // Web server methods
+  procedure StartWebServer;
+  procedure StopWebServer;
+  function GetCurrentReadingForWeb: BGReading;
+  function GetPredictionsForWeb: BGResults;
+  function WebServerActive: Boolean;
+  procedure tWebServerStartTimer(Sender: TObject);
 
   procedure UpdateTrendElements;
   procedure UpdateApiInformation;
@@ -529,6 +539,9 @@ procedure TfBG.FormDestroy(Sender: TObject);
 begin
   // Ensure shutdown flag is set
   FShuttingDown := true;
+
+  // Stop web server first to prevent callbacks during shutdown
+  StopWebServer;
 
   // These should already be freed in FormClose, but check just to be safe
   if assigned(native) then
@@ -1073,6 +1086,16 @@ begin
     // Ignore shutdown errors - the OS will clean up remaining resources
   end;
   {$endif}
+
+  // Stop web server timer if it's still running
+  if Assigned(tWebServerStart) then
+  begin
+    tWebServerStart.Enabled := false;
+    FreeAndNil(tWebServerStart);
+  end;
+  
+  // Stop web server
+  StopWebServer;
 
   // Let normal form closure process continue with CloseAction := caFree
 end;
@@ -3759,7 +3782,7 @@ begin
     Exit;
 
   // Performance optimization: use cached readings if recent (unless forced)
-  if not ForceRefresh and (SecondsBetween(Now, FLastAPICall) < API_CACHE_SECONDS) and
+  if (not ForceRefresh) and (SecondsBetween(Now, FLastAPICall) < API_CACHE_SECONDS) and
     (Length(FCachedReadings) > 0) then
   begin
     bgs := FCachedReadings;
