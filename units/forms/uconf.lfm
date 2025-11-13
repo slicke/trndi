@@ -11045,10 +11045,18 @@ object fConf: TfConf
           TabOrder = 0
           OnChange = cbPredictionsChange
         end
+        object cbPredictShort: TCheckBox
+          Left = 24
+          Height = 20
+          Top = 32
+          Width = 200
+          Caption = 'Show only trend arrows (short mode)'
+          TabOrder = 1
+        end
         object lWarnPredict: TLabel
           Left = 8
           Height = 16
-          Top = 32
+          Top = 56
           Width = 416
           Caption = 'WARNING: This is a very experimental feature!. Do not depend on these readings!'
           Font.Style = [fsItalic]
