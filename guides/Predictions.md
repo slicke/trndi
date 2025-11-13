@@ -97,13 +97,16 @@ The arrow is automatically scaled larger for better visibility.
 
 ## Technical Details
 
-### API Access
+### Extensions Access
 
-Extensions can access predictions via the JavaScript API:
+Extensions can access predictions via the JavaScript Extensions Engine:
 
 ```javascript
-// Request 3 predictions
-const predictions = api.predict(3);
+// Predict the next 3 readings (default)
+const predictions = Trndi.predictReadings();
+
+// Predict the next 5 readings
+const predictions = Trndi.predictReadings(5);
 
 // Each prediction contains:
 // [value_in_current_unit, mgdl, mmol, timestamp]
