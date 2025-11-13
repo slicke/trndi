@@ -53,14 +53,23 @@ Returns the current glucose reading with both mg/dL and mmol/L values.
 **Response Format:**
 ```json
 {
-  "current": {
+  "0": {
+    "mgdl": "163.0",
+    "mmol": "9.0",
+    "mgdl_delta": "0.0",
+    "mmol_delta": "0.0",
+    "trend": 3,
+    "timestamp": "2025-11-13 14:30:00"
+  },
+  "1": {
     "mgdl": "163.0",
     "mmol": "9.0",
     "mgdl_delta": "-5.0",
     "mmol_delta": "-0.3",
     "trend": 3,
-    "timestamp": "2025-11-13 14:30:00"
-  }
+    "timestamp": "2025-11-13 14:25:00"
+  }, 
+    ...
 }
 ```
 
