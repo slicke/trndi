@@ -82,7 +82,7 @@
       <UseVersionInfo Value="True"/>
       <AutoIncrementBuild Value="True"/>
       <MajorVersionNr Value="3"/>
-      <MinorVersionNr Value="1"/>
+      <MinorVersionNr Value="2"/>
       <BuildNr Value="115"/>
       <StringTable CompanyName="Slicke" FileDescription="Trndi - CGM trend monitor" LegalCopyright="Björn Lindh" ProductName="Trndi"/>
     </VersionInfo>
@@ -130,7 +130,9 @@
             </Options>
           </Linking>
           <Other>
-            <CustomOptions Value="-dTrndiExt -dDEBUG"/>
+            <CustomOptions Value="-B
+-dTrndiExt
+-dDEBUG"/>
           </Other>
         </CompilerOptions>
       </Item>
@@ -166,7 +168,8 @@
             </Options>
           </Linking>
           <Other>
-            <CustomOptions Value="-dTrndiExt"/>
+            <CustomOptions Value="-B
+-dTrndiExt"/>
           </Other>
         </CompilerOptions>
       </Item>
@@ -201,7 +204,8 @@
             </Options>
           </Linking>
           <Other>
-            <CustomOptions Value="-dDEBUG"/>
+            <CustomOptions Value="-B
+-dDEBUG"/>
           </Other>
         </CompilerOptions>
       </Item>
@@ -239,6 +243,9 @@
               </Win32>
             </Options>
           </Linking>
+          <Other>
+            <CustomOptions Value="-B"/>
+          </Other>
         </CompilerOptions>
       </Item>
       <Item Name="Custtom">
@@ -271,7 +278,8 @@
             </Options>
           </Linking>
           <Other>
-            <CustomOptions Value="-dDEBUG"/>
+            <CustomOptions Value="-B
+-dDEBUG"/>
           </Other>
         </CompilerOptions>
       </Item>
@@ -309,6 +317,9 @@
               </Win32>
             </Options>
           </Linking>
+          <Other>
+            <CustomOptions Value="-B"/>
+          </Other>
         </CompilerOptions>
       </Item>
       <Item Name="Qt6 (Debug)">
@@ -344,7 +355,8 @@
             </Options>
           </Linking>
           <Other>
-            <CustomOptions Value="-dDEBUG"/>
+            <CustomOptions Value="-B
+-dDEBUG"/>
           </Other>
         </CompilerOptions>
       </Item>
@@ -380,6 +392,9 @@
               </Win32>
             </Options>
           </Linking>
+          <Other>
+            <CustomOptions Value="-B"/>
+          </Other>
         </CompilerOptions>
       </Item>
       <SharedMatrixOptions Count="3">
@@ -593,5 +608,8 @@
         </Win32>
       </Options>
     </Linking>
+    <Other>
+      <CustomOptions Value="-B"/>
+    </Other>
   </CompilerOptions>
 </CONFIG>
