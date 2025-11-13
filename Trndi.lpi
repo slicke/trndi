@@ -83,12 +83,19 @@
       <AutoIncrementBuild Value="True"/>
       <MajorVersionNr Value="3"/>
       <MinorVersionNr Value="1"/>
-      <BuildNr Value="108"/>
+      <BuildNr Value="115"/>
       <StringTable CompanyName="Slicke" FileDescription="Trndi - CGM trend monitor" LegalCopyright="Björn Lindh" ProductName="Trndi"/>
     </VersionInfo>
     <BuildModes>
       <Item Name="No Ext (Release)" Default="True"/>
       <Item Name="Extensions (Debug)">
+        <MacroValues Count="5">
+          <Macro1 Name="LCLWidgetType" Value="qt6"/>
+          <Macro2 Name="LCLWidgetType" Value="qt6"/>
+          <Macro3 Name="LCLWidgetType" Value="qt6"/>
+          <Macro4 Name="LCLWidgetType" Value="qt6"/>
+          <Macro5 Name="LCLWidgetType" Value="qt6"/>
+        </MacroValues>
         <CompilerOptions>
           <Version Value="11"/>
           <PathDelim Value="\"/>
@@ -587,20 +594,4 @@
       </Options>
     </Linking>
   </CompilerOptions>
-  <Debugging>
-    <Exceptions>
-      <Item>
-        <Name Value="EAbort"/>
-      </Item>
-      <Item>
-        <Name Value="ECodetoolError"/>
-      </Item>
-      <Item>
-        <Name Value="EFOpenError"/>
-      </Item>
-      <Item>
-        <Name Value="ELibStatic"/>
-      </Item>
-    </Exceptions>
-  </Debugging>
 </CONFIG>

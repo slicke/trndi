@@ -37,6 +37,7 @@ It also supports the _xDrip_ app, connecting over the local network/WiFi.
 * __Free__ and open source
 * Integrates with Windows, macOS and Linux special features such as the macOS dock, Windows taskbar and Linux notifications.
 * Supports low, normal and high glood sugar colors. But also __custom ranges__ such as "normal, but on the edge to high"
+* Offers a [WebAPI](doc/WebAPI.md) for other clients to access glucose data
 * Supports experimental [predictions](guides/Predictions.md).
 
 ### Multi-user support
@@ -80,6 +81,7 @@ Click/hold the reading (or "Setup" text) and choose settings to access settings.
 * For Dexcom, see the __[Dexcom setup guide](guides/Dexcom.md)__. The backend does not support all features, but this can be fixed with some manual work.
 * For xDrip, you need to turn on the local web server and use that IP/password
 * For other backends, feel free to contribute a api driver. See [API Drivers](guides/API.md)
+* For HTTP API access, see the __[Web API documentation](doc/WebAPI.md)__ to expose glucose data to other applications
 
 > _NOTE_ To receive notifications see [here](guides/Notifications.md)
 
