@@ -179,17 +179,20 @@ begin
 end;
 
 function TWebServerThread.ReadingToJSON(const Reading: BGReading; IncludeDelta: Boolean): TJSONObject;
+var
+  fs: TFormatSettings;
 begin
+  fs.decimalSeparator := '.';
   Result := TJSONObject.Create;
   try
     // Add both mg/dL and mmol/L values
-    Result.Add('mgdl', FormatFloat('0.0', Reading.val));
-    Result.Add('mmol', FormatFloat('0.0', Reading.convert(mmol, BGPrimary)));
+    Result.Add('mgdl', round(Reading.val));
+    Result.Add('mmol', FormatFloat('0.0', Reading.convert(mmol, BGPrimary), fs));
     
     if IncludeDelta then
     begin
-      Result.Add('mgdl_delta', FormatFloat('0.0', Reading.delta));
-      Result.Add('mmol_delta', FormatFloat('0.0', Reading.convert(mmol, BGDelta)));
+      Result.Add('mgdl_delta', round(Reading.delta));
+      Result.Add('mmol_delta', FormatFloat('0.0', Reading.convert(mmol, BGDelta), fs));
     end;
     
     Result.Add('trend', Integer(Reading.trend));
