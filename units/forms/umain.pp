@@ -348,7 +348,7 @@ private
   // Web server methods
   procedure StartWebServer;
   procedure StopWebServer;
-  function GetCurrentReadingForWeb: BGReading;
+  function GetCurrentReadingForWeb: BGResults;
   function GetPredictionsForWeb: BGResults;
   function WebServerActive: Boolean;
   procedure tWebServerStartTimer(Sender: TObject);
