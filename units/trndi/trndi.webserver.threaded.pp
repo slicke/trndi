@@ -5,7 +5,8 @@ unit trndi.webserver.threaded;
 interface
 
 uses
-  Classes, SysUtils, Sockets, BaseUnix, fpjson, jsonparser, trndi.funcs, trndi.types;
+  Classes, SysUtils, Sockets, fpjson, jsonparser, trndi.funcs, trndi.types
+  {$IFNDEF Windows}, BaseUnix{$ELSE}, WinSock2{$IFEND};
 
 type
   { Callback function types for thread-safe data access }
@@ -55,6 +56,66 @@ implementation
 
 const
   INVALID_SOCKET = TSocket(-1);
+  {$IFDEF WINDOWS}
+  SHUT_RDWR = SD_BOTH;
+  {$ELSE}
+  SHUT_RDWR = 2;
+  {$ENDIF}
+
+{$IFDEF WINDOWS}
+// Windows-specific socket wrapper functions
+function SocketShutdown(s: TSocket; how: Integer): Integer;
+begin
+  Result := WinSock2.shutdown(s, how);
+end;
+
+function SocketSetOpt(s: TSocket; level, optname: Integer; optval: PChar; optlen: Integer): Integer;
+begin
+  Result := WinSock2.setsockopt(s, level, optname, optval, optlen);
+end;
+
+function SocketSelect(nfds: Integer; readfds, writefds, exceptfds: PFDSet; timeout: PTimeVal): Integer;
+begin
+  Result := WinSock2.select(nfds, readfds, writefds, exceptfds, timeout);
+end;
+
+procedure FD_ZERO_Helper(var fdset: TFDSet);
+begin
+  WinSock2.FD_ZERO(fdset);
+end;
+
+procedure FD_SET_Helper(s: TSocket; var fdset: TFDSet);
+begin
+  WinSock2.FD_SET(s, fdset);
+end;
+
+{$ELSE}
+// Unix-specific socket wrapper functions
+function SocketShutdown(s: TSocket; how: Integer): Integer;
+begin
+  Result := fpShutdown(s, how);
+end;
+
+function SocketSetOpt(s: TSocket; level, optname: Integer; optval: PChar; optlen: Integer): Integer;
+begin
+  Result := fpSetSockOpt(s, level, optname, optval, optlen);
+end;
+
+function SocketSelect(nfds: Integer; readfds, writefds, exceptfds: PFDSet; timeout: PTimeVal): Integer;
+begin
+  Result := fpSelect(nfds, readfds, writefds, exceptfds, timeout);
+end;
+
+procedure FD_ZERO_Helper(var fdset: TFDSet);
+begin
+  fpFD_ZERO(fdset);
+end;
+
+procedure FD_SET_Helper(s: TSocket; var fdset: TFDSet);
+begin
+  fpFD_SET(s, fdset);
+end;
+{$ENDIF}
 
 { TWebServerThread }
 
@@ -83,7 +144,7 @@ begin
   if FServerSocket <> INVALID_SOCKET then
   begin
     // Shutdown the socket to interrupt any blocking accept/recv calls
-    fpShutdown(FServerSocket, 2);  // SHUT_RDWR = 2
+    SocketShutdown(FServerSocket, SHUT_RDWR);
     CloseSocket(FServerSocket);
     FServerSocket := INVALID_SOCKET;
   end;
@@ -252,38 +313,73 @@ var
   Request, Response: string;
   Buffer: array[0..4095] of Char;
   BytesRead: Integer;
+  {$IFDEF WINDOWS}
+  SockAddr: WinSock2.TSockAddr;
+  {$ELSE}
   SockAddr: TInetSockAddr;
+  {$ENDIF}
   SockLen: TSockLen;
   OptVal: Integer;
   ReadFDs: TFDSet;
   TimeVal: TTimeVal;
   SelectResult: Integer;
+  {$IFDEF WINDOWS}
+  WSAData: TWSAData;
+  InetAddr: TInetSockAddr;
+  {$ENDIF}
 begin
+  {$IFDEF WINDOWS}
+  // Initialize Winsock on Windows
+  if WSAStartup($0202, WSAData) <> 0 then  // Version 2.2
+    Exit;
+  {$ENDIF}
+  
   try
     // Create socket
+    {$IFDEF WINDOWS}
+    FServerSocket := WinSock2.socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    {$ELSE}
     FServerSocket := fpSocket(AF_INET, SOCK_STREAM, 0);
+    {$ENDIF}
     if FServerSocket = INVALID_SOCKET then
       Exit;
 
     // Set socket options
     OptVal := 1;
-    fpSetSockOpt(FServerSocket, SOL_SOCKET, SO_REUSEADDR, @OptVal, SizeOf(OptVal));
+    SocketSetOpt(FServerSocket, SOL_SOCKET, SO_REUSEADDR, PChar(@OptVal), SizeOf(OptVal));
 
     // Bind to port
+    {$IFDEF WINDOWS}
+    FillChar(InetAddr, SizeOf(InetAddr), 0);
+    InetAddr.sin_family := AF_INET;
+    InetAddr.sin_port := WinSock2.htons(FPort);
+    InetAddr.sin_addr.s_addr := INADDR_ANY;
+    Move(InetAddr, SockAddr, SizeOf(InetAddr));
+    if WinSock2.bind(FServerSocket, SockAddr, SizeOf(SockAddr)) <> 0 then
+    begin
+      CloseSocket(FServerSocket);
+      FServerSocket := INVALID_SOCKET;
+      Exit;
+    end;
+    {$ELSE}
     FillChar(SockAddr, SizeOf(SockAddr), 0);
     SockAddr.sin_family := AF_INET;
     SockAddr.sin_port := htons(FPort);
     SockAddr.sin_addr.s_addr := INADDR_ANY;
-    
     if fpBind(FServerSocket, @SockAddr, SizeOf(SockAddr)) <> 0 then
     begin
       CloseSocket(FServerSocket);
       FServerSocket := INVALID_SOCKET;
       Exit;
     end;
+    {$ENDIF}
 
     // Listen
+    {$IFDEF WINDOWS}
+    if WinSock2.listen(FServerSocket, 5) <> 0 then
+    {$ELSE}
     if fpListen(FServerSocket, 5) <> 0 then
+    {$ENDIF}
     begin
       CloseSocket(FServerSocket);
       FServerSocket := INVALID_SOCKET;
@@ -298,12 +394,12 @@ begin
         Break;
       
       // Use select with timeout to check for incoming connections
-      fpFD_ZERO(ReadFDs);
-      fpFD_SET(FServerSocket, ReadFDs);
+      FD_ZERO_Helper(ReadFDs);
+      FD_SET_Helper(FServerSocket, ReadFDs);
       TimeVal.tv_sec := 0;
       TimeVal.tv_usec := 500000;  // 500ms timeout
       
-      SelectResult := fpSelect(FServerSocket + 1, @ReadFDs, nil, nil, @TimeVal);
+      SelectResult := SocketSelect(FServerSocket + 1, @ReadFDs, nil, nil, @TimeVal);
       
       // Check terminated after select
       if Terminated then
@@ -315,7 +411,11 @@ begin
         
       // Socket is ready for accept
       SockLen := SizeOf(SockAddr);
+      {$IFDEF WINDOWS}
+      ClientSocket := WinSock2.accept(FServerSocket, @SockAddr, @SockLen);
+      {$ELSE}
       ClientSocket := fpAccept(FServerSocket, @SockAddr, @SockLen);
+      {$ENDIF}
       
       // Check terminated again after accept
       if Terminated then
@@ -332,7 +432,11 @@ begin
           Request := '';
           repeat
             FillChar(Buffer, SizeOf(Buffer), 0);
+            {$IFDEF WINDOWS}
+            BytesRead := WinSock2.recv(ClientSocket, Buffer, SizeOf(Buffer), 0);
+            {$ELSE}
             BytesRead := fpRecv(ClientSocket, @Buffer, SizeOf(Buffer), 0);
+            {$ENDIF}
             if BytesRead > 0 then
               Request := Request + Copy(Buffer, 0, BytesRead);
           until (BytesRead <= 0) or (Pos(#13#10#13#10, Request) > 0);
@@ -341,7 +445,11 @@ begin
           begin
             // Handle request and send response
             Response := HandleRequest(Request);
+            {$IFDEF WINDOWS}
+            WinSock2.send(ClientSocket, Response[1], Length(Response), 0);
+            {$ELSE}
             fpSend(ClientSocket, @Response[1], Length(Response), 0);
+            {$ENDIF}
           end;
         finally
           CloseSocket(ClientSocket);
@@ -357,6 +465,10 @@ begin
     CloseSocket(FServerSocket);
     FServerSocket := INVALID_SOCKET;
   end;
+  
+  {$IFDEF WINDOWS}
+  WSACleanup;
+  {$ENDIF}
 end;
 
 { TTrndiWebServer }
