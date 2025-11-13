@@ -3,10 +3,12 @@
 ## Overview
 
 Trndi includes an embedded HTTP API server that exposes glucose readings and predictions via REST endpoints. The server runs in a separate thread and does not interfere with the GUI's responsiveness.
+> This is especially useful for Dexcom users, as they have no easy API access
 
 ## Configuration
 
-Enable the web server in your configuration file (`~/.config/Trndi.cfg`):
+#### Linux
+Enable the web server in your configuration file (eg `~/.config/Trndi.cfg`):
 
 ```ini
 [webserver]
@@ -14,6 +16,17 @@ enable=true
 port=8080
 token=your_optional_auth_token_here
 ```
+#### Windows
+In the Registry, access ```HKEY_CURRENT_USER\Software\Trndi```
+Add these keys:
+```ini
+webserver.enable=true
+webserver.port=8080
+webserver.token=your_optional_auth_token_here
+```
+
+#### macOS
+In your app's config add the values seen under Windows
 
 ### Configuration Options
 
