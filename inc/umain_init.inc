@@ -606,15 +606,15 @@ begin
   end;
 end;
 
-function TfBG.GetCurrentReadingForWeb: BGReading;
+function TfBG.GetCurrentReadingForWeb: BGResults;
 begin
   // Return the cached current reading if available
   if Length(FCachedReadings) > 0 then
-    Result := FCachedReadings[0]
+    Result := FCachedReadings
   else
   begin
     // Return an empty reading if no data is available - Init will set curr to BG_NO_VAL
-    Result.Init(mmol);
+    result := [];
   end;
 end;
 

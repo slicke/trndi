@@ -10,7 +10,7 @@ uses
 
 type
   { Callback function types for thread-safe data access }
-  TGetCurrentReadingFunc = function: BGReading of object;
+  TGetCurrentReadingFunc = function: BGResults of object;
   TGetPredictionsFunc = function: BGResults of object;
 
   { TWebServerThread }
@@ -209,6 +209,7 @@ var
   Method, URI, Headers: string;
   ResponseObj: TJSONObject;
   CurrentReading: BGReading;
+  CurrentReadings: BGResults;
   Predictions: BGResults;
   PredArray: TJSONArray;
   i: Integer;
@@ -255,10 +256,18 @@ begin
       begin
         if Assigned(FGetCurrentReading) then
         begin
-          CurrentReading := FGetCurrentReading();
+          CurrentReadings := FGetCurrentReading();
+          if Length(CurrentReadings) > 0 then
+            CurrentReading := CurrentReadings[0]
+          else
+            CurrentReading.init(mmol);
           if not CurrentReading.empty then
           begin
             ResponseObj.Add('current', ReadingToJSON(CurrentReading, True));
+            if Length(CurrentReadings) > 1 then
+              ResponseObj.Add('last', ReadingToJSON(CurrentReadings[1], True));
+            if Length(CurrentReadings) > 2 then
+              ResponseObj.Add('before_last', ReadingToJSON(CurrentReadings[2], True));
             Result := 'HTTP/1.1 200 OK'#13#10;
           end
           else
