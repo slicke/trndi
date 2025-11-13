@@ -389,6 +389,7 @@ var
   userlocale: TFormatSettings;
 begin
   firstboot := false;
+  
   // Initialize splash screen first
   InitializeSplashScreen;
   Application.ProcessMessages;
@@ -552,4 +553,79 @@ begin
   fSplash.Free;
   tmain.Enabled := true;
   tsetup.Enabled := true;
+  
+  // Initialize web server fields
+  FWebServer := nil;
+  tWebServerStart := nil;
+  
+  // Start web server with delayed timer (after all initialization is complete)
+  if native.GetBoolSetting('webserver.enable', false) then
+  begin
+    tWebServerStart := TTimer.Create(Self);
+    tWebServerStart.Interval := 2000; // 2 second delay
+    tWebServerStart.OnTimer := @tWebServerStartTimer;
+    tWebServerStart.Enabled := true;
+  end;
+end;
+
+// Web Server Methods
+procedure TfBG.tWebServerStartTimer(Sender: TObject);
+begin
+  // Disable the timer after first execution
+  if Assigned(tWebServerStart) then
+  begin
+    tWebServerStart.Enabled := false;
+    FreeAndNil(tWebServerStart);
+  end;
+  
+  // Start the web server
+  StartWebServer;
+end;
+
+procedure TfBG.StartWebServer;
+var
+  Port: Integer;
+  Token: string;
+begin
+  if Assigned(FWebServer) then
+    Exit; // Already running
+    
+  Port := native.GetIntSetting('webserver.port', 8080);
+  Token := native.GetSetting('webserver.token', '');
+  
+  FWebServer := TTrndiWebServer.Create(Port, Token, @GetCurrentReadingForWeb, @GetPredictionsForWeb);
+  TTrndiWebServer(FWebServer).Start;
+end;
+
+procedure TfBG.StopWebServer;
+begin
+  if Assigned(FWebServer) then
+  begin
+    TTrndiWebServer(FWebServer).Stop;
+    FreeAndNil(FWebServer);
+  end;
+end;
+
+function TfBG.GetCurrentReadingForWeb: BGReading;
+begin
+  // Return the cached current reading if available
+  if Length(FCachedReadings) > 0 then
+    Result := FCachedReadings[0]
+  else
+  begin
+    // Return an empty reading if no data is available - Init will set curr to BG_NO_VAL
+    Result.Init(mmol);
+  end;
+end;
+
+function TfBG.GetPredictionsForWeb: BGResults;
+begin
+  // Return empty array - predictions should be cached separately if needed
+  // We cannot make API calls from the web server thread as they would block
+  SetLength(Result, 0);
+end;
+
+function TfBG.WebServerActive: Boolean;
+begin
+  Result := Assigned(FWebServer) and TTrndiWebServer(FWebServer).Active;
 end;
