@@ -37,6 +37,7 @@ It also supports the _xDrip_ app, connecting over the local network/WiFi.
 * __Free__ and open source
 * Integrates with Windows, macOS and Linux special features such as the macOS dock, Windows taskbar and Linux notifications.
 * Supports low, normal and high glood sugar colors. But also __custom ranges__ such as "normal, but on the edge to high"
+* Supports experimental [predictions](guides/Predictions.md).
 
 ### Multi-user support
 Need to see more than one person? Trndi supports [parallel users](guides/Multiuser.md).
