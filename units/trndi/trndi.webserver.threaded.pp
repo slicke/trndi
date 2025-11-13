@@ -212,7 +212,7 @@ var
   CurrentReadings: BGResults;
   Predictions: BGResults;
   PredArray: TJSONArray;
-  i: Integer;
+  i, currReading: Integer;
 begin
   Lines := TStringList.Create;
   try
@@ -258,16 +258,15 @@ begin
         begin
           CurrentReadings := FGetCurrentReading();
           if Length(CurrentReadings) > 0 then
-            CurrentReading := CurrentReadings[0]
+            //CurrentReading := CurrentReadings[0]
           else
             CurrentReading.init(mmol);
           if not CurrentReading.empty then
           begin
-            ResponseObj.Add('current', ReadingToJSON(CurrentReading, True));
-            if Length(CurrentReadings) > 1 then
-              ResponseObj.Add('last', ReadingToJSON(CurrentReadings[1], True));
-            if Length(CurrentReadings) > 2 then
-              ResponseObj.Add('before_last', ReadingToJSON(CurrentReadings[2], True));
+            currReading := -1;
+            for i := Low(CurrentReadings) to High(CurrentReadings) do begin
+              ResponseObj.Add(i.ToString, ReadingToJSON(CurrentReadings[i], True));
+            end;
             Result := 'HTTP/1.1 200 OK'#13#10;
           end
           else
