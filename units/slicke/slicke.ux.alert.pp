@@ -2070,6 +2070,7 @@ begin
     // BUTTON PANEL
     ButtonPanel := TPanel.Create(Dialog);
     ButtonPanel.Name := 'pnButtons';
+    ButtonPanel.Caption := '';
     ButtonPanel.Parent := Dialog;
     ButtonPanel.Align := alBottom;
     ButtonPanel.BevelOuter := bvNone;
