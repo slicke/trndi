@@ -1105,8 +1105,10 @@ begin
     Edit.Width := DescLabel.Width;
     Edit.Top := DescLabel.Top + DescLabel.Height + ifthen(big, Padding * 2, Padding);
     Edit.Value := ADefault;
-    if float then
-      Edit.DecimalPlaces := 2
+    if float then begin
+      Edit.DecimalPlaces := 2;
+      Edit.Increment := 0.01;
+    end
     else
       Edit.DecimalPlaces := 0;
     if big then

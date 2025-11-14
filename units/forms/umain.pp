@@ -711,10 +711,9 @@ end;
 procedure TfBG.miCustomDotsClick(Sender: TObject);
 var
   mr: TModalResult;
-  dots: integer;
+  dots: single;
 begin
-  dots := ExtIntInput(uxdAuto, sDotSize, sCustomiseDotSize, sEnterDotSize,
-    round(dotscale), mr);
+  dots := ExtNumericInput(uxdAuto,sDotSize,sCustomiseDotSize, sEnterDotSize,dotscale,true,mr);
   if mr = mrOk then
   begin
     native.SetSetting('ux.dot_scale', dots.tostring);
