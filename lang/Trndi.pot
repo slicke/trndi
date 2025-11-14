@@ -209,6 +209,11 @@ msgctxt "tfbg.midotsize.caption"
 msgid "Dot Size"
 msgstr ""
 
+#: tfbg.midotsmall.caption
+msgctxt "tfbg.midotsmall.caption"
+msgid "Small"
+msgstr ""
+
 #: tfbg.midotval.caption
 msgid "Reading: ?"
 msgstr ""
@@ -829,6 +834,7 @@ msgid "Size"
 msgstr ""
 
 #: tffloat.mismall.caption
+msgctxt "tffloat.mismall.caption"
 msgid "Small"
 msgstr ""
 
