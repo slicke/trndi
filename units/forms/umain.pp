@@ -2652,9 +2652,10 @@ begin
     miDotHuge.Checked := true
   else if dotscale = 0.7 then
     miDotSmall.Checked := true
-  else
-    miDotVal.Checked := true;
-
+  else begin
+    miCustomDots.Checked := true;
+    miCustomDots.Caption := Format('%s [%.2f]', [miCustomDots.Caption, dotscale]);
+  end;
 
   if (Sender as TPopupMenu).PopupComponent is TPaintBox then
   begin

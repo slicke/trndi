@@ -49,7 +49,7 @@ interface
 
 uses
   Classes, SysUtils, Dialogs, Forms, ExtCtrls, StdCtrls, Controls, Graphics, Math,
-  IntfGraphics, FPImage, graphtype, lcltype, Trndi.Native, Grids, Spin, IpHtml, slicke.ux.native,
+  IntfGraphics, FPImage, graphtype, lcltype, Trndi.Native, Grids, Spin, IpHtml, slicke.ux.native, SpinEx,
   {$ifdef Windows}
   DX12.D2D1, DX12.DXGI, DX12.DWrite, DX12.DCommon, DX12.WinCodec, Windows, Buttons, ActiveX, ComObj,
   {$endif}
@@ -399,7 +399,7 @@ type
                     const icon: UXImage = uxmtCog): string;
 
   {**
-    Show a numeric input dialog using @code(TFloatSpinEdit).
+    Show a numeric input dialog using @code(TFloatSpinEditEx).
     @param dialogsize Layout preset.
     @param ACaption Window caption.
     @param ATitle Title text.
@@ -1072,7 +1072,7 @@ var
   Dialog: TDialogForm;
   IconBox: TImage;
   TitleLabel, DescLabel: TLabel;
-  Edit: TFloatSpinEdit;
+  Edit: TFloatSpinEditEx;
   OkButton, CancelButton: TButton;
   bgcol: TColor;
   big: Boolean;
@@ -1099,7 +1099,7 @@ begin
     SetupDialogTitleDesc(Dialog, big, icon, bgcol, ATitle, ADesc, IconBox, TitleLabel, DescLabel);
 
     // --- Numeric input ---
-    Edit := TFloatSpinEdit.Create(Dialog);
+    Edit := TFloatSpinEditEx.Create(Dialog);
     Edit.Parent := Dialog;
     Edit.Left := DescLabel.Left;
     Edit.Width := DescLabel.Width;
