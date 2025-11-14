@@ -399,6 +399,11 @@ object fBG: TfBG
       end
       object miDotSize: TMenuItem
         Caption = 'Dot Size'
+        object miDotSmall: TMenuItem
+          Caption = 'Small'
+          Hint = '0.7'
+          OnClick = miDotNormalClick
+        end
         object miDotNormal: TMenuItem
           Caption = 'Normal'
           Hint = '1'

@@ -222,6 +222,11 @@ msgctxt "tfbg.midotsize.caption"
 msgid "Dot Size"
 msgstr "Punktstorlek"
 
+#: tfbg.midotsmall.caption
+msgctxt "tfbg.midotsmall.caption"
+msgid "Small"
+msgstr "Liten"
+
 #: tfbg.midotval.caption
 msgid "Reading: ?"
 msgstr "Avläsning: ?"
@@ -846,6 +851,7 @@ msgid "Size"
 msgstr "Storlek"
 
 #: tffloat.mismall.caption
+msgctxt "tffloat.mismall.caption"
 msgid "Small"
 msgstr "Liten"
 
@@ -1726,4 +1732,3 @@ msgstr "Du kan använda skift+<nummerr> för att manuellt sätta synligheten (0 
 #: ufloat.rscustomsize
 msgid "You can hold down shift and plus (+) or minus (-) to change the window size"
 msgstr "Du kan hålla ned skift och plus (+) eller minus (-) för att justera fönstrets storlek"
-

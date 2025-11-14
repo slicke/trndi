@@ -102,6 +102,7 @@ TfBG = class(TForm)
   apMain: TApplicationProperties;
   bSettings: TButton;
   lPredict: TLabel;
+  miDotSmall: TMenuItem;
   miPredict: TMenuItem;
   pnWarnlast: TLabel;
   lRef: TLabel;
@@ -201,6 +202,7 @@ TfBG = class(TForm)
   procedure miDotNormalMeasureItem(Sender: TObject; ACanvas: TCanvas;
     var AWidth, AHeight: integer);
   procedure miDotsInViewClick(Sender: TObject);
+  procedure miDotSmallClick(Sender: TObject);
   procedure miExitClick(Sender: TObject);
   procedure miCustomDotsClick(Sender: TObject);
   procedure miATouchAutoClick(Sender: TObject);
@@ -422,7 +424,7 @@ native: TrndiNative;
 isWSL : boolean = false;
 {$endif}
 applocale: string;
-dotscale: integer = 1;
+dotscale: single = 1;
 badge_adjust: single = 0;
 highAlerted: boolean = false; // A high alert is active
 lowAlerted: boolean = false; // A low alert is active
@@ -696,6 +698,11 @@ begin
   ShowMessage(IfThen(i = 0, 'Yes', 'Offset: ' + i.toString));
 end;
 
+procedure TfBG.miDotSmallClick(Sender: TObject);
+begin
+
+end;
+
 procedure TfBG.miExitClick(Sender: TObject);
 begin
   Close;
@@ -707,7 +714,7 @@ var
   dots: integer;
 begin
   dots := ExtIntInput(uxdAuto, sDotSize, sCustomiseDotSize, sEnterDotSize,
-    dotscale, mr);
+    round(dotscale), mr);
   if mr = mrOk then
   begin
     native.SetSetting('ux.dot_scale', dots.tostring);
@@ -1199,7 +1206,7 @@ begin
     try
       bmp.Canvas.Font.Assign(TrendDots[1].Font);
       // Use the same font size formula as ResizeDot: (lVal.Font.Size div 8) * dotscale
-      bmp.Canvas.Font.Size := Max((lVal.Font.Size div 8) * dotscale, 28);
+      bmp.Canvas.Font.Size := round(Max((lVal.Font.Size div 8) * dotscale, 28));
       // Use the same height calculation as ResizeDot: Max(TextHeight, Font.Size)
       dotHeight := Max(bmp.Canvas.TextHeight(DOT_GRAPH), bmp.Canvas.Font.Size);
     finally
@@ -1453,7 +1460,7 @@ begin
   if not isDot then
   begin // Returning to dot
     ResizeDot(l, c, ix);
-    l.Font.Size := (ClientWidth div 24) * dotscale;
+    l.Font.Size := round((ClientWidth div 24) * dotscale);
   end
   else
   begin
@@ -1490,7 +1497,7 @@ var
   th, tw, minSize: integer;
 begin
   l.AutoSize := false;
-  l.Font.Size := Max((lVal.Font.Size div 8) * dotscale, 28); // Ensure minimum font size
+  l.Font.Size := round(Max((lVal.Font.Size div 8) * dotscale, 28)); // Ensure minimum font size
   // Tighten control size to actual text metrics of the dot glyph
   tw := l.Canvas.TextWidth(DOT_GRAPH);
   th := l.Canvas.TextHeight(DOT_GRAPH);
@@ -1834,8 +1841,11 @@ begin
 end;
 
 procedure TfBG.miDotNormalClick(Sender: TObject);
+var
+  fmt: TFormatSettings;
 begin
-  dotscale := StrToInt((Sender as TMenuItem).Hint);
+  fmt.DecimalSeparator := '.';
+  dotscale := StrToFloat((Sender as TMenuItem).Hint, fmt);
   native.SetSetting('ux.dot_scale', dotscale.toString);
   FormResize(fBG);
 end;
@@ -2635,16 +2645,17 @@ begin
   miDotHuge.Checked := false;
   miDotVal.Checked := false;
 
-  case dotscale of
-  1:
-    miDotNormal.Checked := true;
-  2:
-    miDotBig.Checked := true;
-  3:
-    miDotHuge.Checked := true;
+  if dotscale = 1 then
+    miDotNormal.Checked := true
+  else if dotscale = 2 then
+    miDotBig.Checked := true
+  else if dotscale = 3 then
+    miDotHuge.Checked := true
+  else if dotscale = 0.7 then
+    miDotSmall.Checked := true
   else
     miDotVal.Checked := true;
-  end;
+
 
   if (Sender as TPopupMenu).PopupComponent is TPaintBox then
   begin
@@ -2949,7 +2960,7 @@ begin
     
     ok := TryStrToFloat(Dot.Hint, Value, native.locale);
 
-    Dot.Font.Size := (ClientWidth div 24) * dotscale;
+    Dot.Font.Size := round((ClientWidth div 24) * dotscale);
     if ok then
     begin
       // Normalize value to mmol/L for placement math

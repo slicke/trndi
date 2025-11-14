@@ -26,6 +26,8 @@
 {"hash":209666247,"name":"tfbg.mialternate.caption","sourcebytes":[65,108,116,101,114,97,110,116,101,32,97,114,114,111,119,32,97,110,100,32,114,101,97,100,105,110,103],"value":"Alterante arrow and reading"},
 {"hash":125560323,"name":"tfbg.miannounce.caption","sourcebytes":[65,110,110,111,117,110,99,101,32,114,101,97,100,105,110,103,115],"value":"Announce readings"},
 {"hash":107324853,"name":"tfbg.midotsize.caption","sourcebytes":[68,111,116,32,83,105,122,101],"value":"Dot Size"},
+{"hash":5912620,"name":"tfbg.midotsmall.caption","sourcebytes":[83,109,97,108,108],"value":"Small"},
+{"hash":13079,"name":"tfbg.midotsmall.hint","sourcebytes":[48,46,55],"value":"0.7"},
 {"hash":89559932,"name":"tfbg.midotnormal.caption","sourcebytes":[78,111,114,109,97,108],"value":"Normal"},
 {"hash":49,"name":"tfbg.midotnormal.hint","sourcebytes":[49],"value":"1"},
 {"hash":18679,"name":"tfbg.midotbig.caption","sourcebytes":[66,105,103],"value":"Big"},
