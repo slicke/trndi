@@ -419,7 +419,7 @@ begin
 
   // Initialize native interface
   native := TrndiNative.Create;
-  if ssShift in GetKeyShiftState then
+  if (ssShift in GetKeyShiftState) and (ssCtrl in GetKeyShiftState) then
     if native.DetectTouchScreen(fil) then
       native.touchOverride := tbFalse
     else
