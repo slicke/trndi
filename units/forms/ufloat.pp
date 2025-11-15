@@ -76,6 +76,7 @@ TfFloat = class(TForm)
   pMain: TPopupMenu;
   pnMultiUser: TPanel;
   tClock: TTimer;
+  tTitlebar: TTimer;
   procedure FormCreate(Sender: TObject);
   procedure FormKeyDown(Sender: TObject; var Key: word; Shift: TShiftState);
   procedure FormKeyPress(Sender: TObject; var Key: char);
@@ -449,24 +450,44 @@ begin
 end;
 
 procedure TfFloat.tTitlebarTimer(Sender: TObject);
-var
-  x, y: integer;
 begin
+  {$IF NOT DEFINED(DARWIN)}
+  // Hide the title bar after the delay
+  BorderStyle := bsNone;
+  tTitlebar.Enabled := False;
+  // Reapply rounded corners after hiding title bar
+  ApplyRoundedCorners;
+  {$ENDIF}
 end;
 
 procedure TfFloat.FormMouseMove(Sender: TObject; Shift: TShiftState; X, Y: integer);
+var
+  ScreenPt: TPoint;
 begin
   if DraggingWin then
-    SetBounds(Left + (X - PX), Top + (Y - PY), Width, Height);
+  begin
+    // Convert to screen coordinates to handle moves from child controls
+    if Sender is TControl then
+      ScreenPt := (Sender as TControl).ClientToScreen(Point(X, Y))
+    else
+      ScreenPt := ClientToScreen(Point(X, Y));
+    
+    Left := ScreenPt.X - PX + Left;
+    Top := ScreenPt.Y - PY + Top;
+    
+    PX := ScreenPt.X;
+    PY := ScreenPt.Y;
+  end;
 end;
 
 procedure TfFloat.FormMouseUp(Sender: TObject; Button: TMouseButton;
 Shift: TShiftState; X, Y: integer);
 begin
   DraggingWin := false;
-  {$IF DEFINED(DARWIN) OR DEFINED(LCLQt6)}
-  BorderStyle:= bsNone;
-  {$endif}
+  {$IFDEF DARWIN}
+  // On macOS, restore borderless immediately after dragging
+  BorderStyle := bsNone;
+  {$ENDIF}
 end;
 
 
@@ -567,20 +588,48 @@ end;
 
 procedure TfFloat.FormMouseDown(Sender: TObject; Button: TMouseButton;
 Shift: TShiftState; X, Y: integer);
+var
+  ScreenPt: TPoint;
 begin
-  DraggingWin := true;
-  PX := X;
-  PY := Y;
+  if Button = mbLeft then
+  begin
+    DraggingWin := true;
+    
+    // Convert to screen coordinates to handle clicks from child controls
+    if Sender is TControl then
+      ScreenPt := (Sender as TControl).ClientToScreen(Point(X, Y))
+    else
+      ScreenPt := ClientToScreen(Point(X, Y));
+    
+    PX := ScreenPt.X;
+    PY := ScreenPt.Y;
+  end;
 end;
 
 procedure TfFloat.FormMouseEnter(Sender: TObject);
 begin
-
+  {$IF NOT DEFINED(DARWIN)}
+  // On Linux (and Windows), show the title bar when hovering
+  // Use bsToolWindow to get a minimal title bar without min/max/close buttons
+  if BorderStyle = bsNone then
+  begin
+    BorderStyle := bsToolWindow;
+    BorderIcons:= [];
+    // Stop the hide timer if it's running
+    tTitlebar.Enabled := False;
+  end;
+  {$ENDIF}
 end;
 
 procedure TfFloat.FormMouseLeave(Sender: TObject);
 begin
-
+  {$IF NOT DEFINED(DARWIN)}
+  // Start timer to hide the title bar after a delay
+  if (BorderStyle = bsToolWindow) or (BorderStyle = bsSizeable) then
+  begin
+    tTitlebar.Enabled := True;
+  end;
+  {$ENDIF}
 end;
 
 procedure TfFloat.FormKeyPress(Sender: TObject; var Key: char);
