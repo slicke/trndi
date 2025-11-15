@@ -33,6 +33,8 @@ jobs:
   # ===================== DETERMINE VERSION =====================
   version:
     runs-on: ubuntu-latest
+    # Only determine version for push events to main (skip for PRs)
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     outputs:
       build_number: ${{ steps.setver.outputs.build_number }}
     steps:
@@ -63,6 +65,8 @@ jobs:
   # ===================== BUILD MATRIX =====================
   build:
     needs: version
+    # Allow build to run even if version job was skipped (for PRs)
+    if: always()
     name: Build (${{ matrix.name }})
     runs-on: ${{ matrix.runner }}
     strategy:
@@ -156,13 +160,26 @@ jobs:
           BUILD_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
           GIT_SHA="$(git rev-parse --short HEAD)"
           mkdir -p units/misc
+          
+          # Use actual build number for pushes to main, PR number for PRs, or 0 for other events
+          if [ "${{ github.event_name }}" = "push" ] && [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            BUILD_NUMBER="${{ needs.version.outputs.build_number }}"
+            BUILD_TAG="build-${BUILD_NUMBER}"
+          elif [ "${{ github.event_name }}" = "pull_request" ]; then
+            BUILD_NUMBER="PR-${{ github.event.pull_request.number }}"
+            BUILD_TAG="pr-${{ github.event.pull_request.number }}"
+          else
+            BUILD_NUMBER="0"
+            BUILD_TAG="dev"
+          fi
+          
           cat > units/misc/buildinfo.pp <<EOF
           unit buildinfo;
           {\$mode objfpc}{\$H+}
           interface
           const
-            BUILD_NUMBER = '${{ needs.version.outputs.build_number }}';
-            BUILD_TAG    = 'build-${{ needs.version.outputs.build_number }}';
+            BUILD_NUMBER = '${BUILD_NUMBER}';
+            BUILD_TAG    = '${BUILD_TAG}';
             BUILD_DATE   = '${BUILD_DATE}';
             GIT_SHA      = '${GIT_SHA}';
             GIT_BRANCH   = '${{ github.ref_name }}';
@@ -321,13 +338,26 @@ jobs:
           BUILD_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
           GIT_SHA="$(git rev-parse --short HEAD)"
           mkdir -p units/misc
+          
+          # Use actual build number for pushes to main, PR number for PRs, or 0 for other events
+          if [ "${{ github.event_name }}" = "push" ] && [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            BUILD_NUMBER="${{ needs.version.outputs.build_number }}"
+            BUILD_TAG="build-${BUILD_NUMBER}"
+          elif [ "${{ github.event_name }}" = "pull_request" ]; then
+            BUILD_NUMBER="PR-${{ github.event.pull_request.number }}"
+            BUILD_TAG="pr-${{ github.event.pull_request.number }}"
+          else
+            BUILD_NUMBER="0"
+            BUILD_TAG="dev"
+          fi
+          
           cat > units/misc/buildinfo.pp <<EOF
           unit buildinfo;
           {\$mode objfpc}{\$H+}
           interface
           const
-            BUILD_NUMBER = '${{ needs.version.outputs.build_number }}';
-            BUILD_TAG    = 'build-${{ needs.version.outputs.build_number }}';
+            BUILD_NUMBER = '${BUILD_NUMBER}';
+            BUILD_TAG    = '${BUILD_TAG}';
             BUILD_DATE   = '${BUILD_DATE}';
             GIT_SHA      = '${GIT_SHA}';
             GIT_BRANCH   = '${{ github.ref_name }}';
@@ -369,13 +399,26 @@ jobs:
           $BUILD_DATE = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
           $GIT_SHA = (git rev-parse --short HEAD)
           New-Item -ItemType Directory -Path units\misc -Force | Out-Null
+          
+          # Use actual build number for pushes to main, PR number for PRs, or 0 for other events
+          if ("${{ github.event_name }}" -eq "push" -and "${{ github.ref }}" -eq "refs/heads/main") {
+            $BUILD_NUMBER = "${{ needs.version.outputs.build_number }}"
+            $BUILD_TAG = "build-$BUILD_NUMBER"
+          } elseif ("${{ github.event_name }}" -eq "pull_request") {
+            $BUILD_NUMBER = "PR-${{ github.event.pull_request.number }}"
+            $BUILD_TAG = "pr-${{ github.event.pull_request.number }}"
+          } else {
+            $BUILD_NUMBER = "0"
+            $BUILD_TAG = "dev"
+          }
+          
           @"
           unit buildinfo;
           {$mode objfpc}{$H+}
           interface
           const
-            BUILD_NUMBER = '${{ needs.version.outputs.build_number }}';
-            BUILD_TAG    = 'build-${{ needs.version.outputs.build_number }}';
+            BUILD_NUMBER = '$BUILD_NUMBER';
+            BUILD_TAG    = '$BUILD_TAG';
             BUILD_DATE   = '$BUILD_DATE';
             GIT_SHA      = '$GIT_SHA';
             GIT_BRANCH   = '${{ github.ref_name }}';
