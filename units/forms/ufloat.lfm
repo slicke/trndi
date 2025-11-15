@@ -10,6 +10,7 @@ object fFloat: TfFloat
   PopupMenu = pMain
   Position = poDesktopCenter
   SnapOptions.SnapToMonitor = True
+  LCLVersion = '4.4.0.0'
   OnKeyDown = FormKeyDown
   OnKeyPress = FormKeyPress
   OnMouseDown = FormMouseDown
@@ -36,6 +37,8 @@ object fFloat: TfFloat
     ParentFont = False
     PopupMenu = pMain
     OnMouseDown = FormMouseDown
+    OnMouseEnter = FormMouseEnter
+    OnMouseLeave = FormMouseLeave
     OnMouseMove = FormMouseMove
     OnMouseUp = FormMouseUp
   end
@@ -83,6 +86,8 @@ object fFloat: TfFloat
     ParentFont = False
     PopupMenu = pMain
     OnMouseDown = FormMouseDown
+    OnMouseEnter = FormMouseEnter
+    OnMouseLeave = FormMouseLeave
     OnMouseMove = FormMouseMove
     OnMouseUp = FormMouseUp
   end
@@ -184,5 +189,12 @@ object fFloat: TfFloat
     OnTimer = tClockTimer
     Left = 145
     Top = 100
+  end
+  object tTitlebar: TTimer
+    Enabled = False
+    Interval = 2000
+    OnTimer = tTitlebarTimer
+    Left = 145
+    Top = 60
   end
 end
