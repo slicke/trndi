@@ -53,7 +53,7 @@ Graphics, Dialogs, StdCtrls, ExtCtrls,
 trndi.api.dexcom, trndi.api.nightscout, trndi.api.nightscout3, trndi.types,
 Math, DateUtils, FileUtil, LclIntf, TypInfo, LResources,
 slicke.ux.alert, slicke.ux.native, usplash, Generics.Collections, trndi.funcs,
-Trndi.native.base, trndi.shared, trndi.api.debug_custom, buildinfo, fpjson, jsonparser,
+Trndi.native.base, trndi.shared, buildinfo, fpjson, jsonparser,
 SystemMediaController,
 {$ifdef TrndiExt}
 trndi.Ext.Engine, trndi.Ext.jsfuncs, trndi.ext.promise, mormot.core.base,
@@ -65,7 +65,7 @@ CocoaAll, MacOSAll,
 kdebadge,
 {$endif}
 LazFileUtils, uconf, trndi.native, Trndi.API,
-trndi.api.xDrip,{$ifdef DEBUG} trndi.api.debug, trndi.api.debug_edge, trndi.api.debug_missing, trndi.api.debug_perfect,{$endif}
+trndi.api.xDrip,{$ifdef DEBUG} trndi.api.debug_custom, trndi.api.debug, trndi.api.debug_edge, trndi.api.debug_missing, trndi.api.debug_perfect, trndi.api.debug_firstmissing,{$endif}
 {$ifdef LCLQt6}Qt6, QtWidgets,{$endif}
 StrUtils, TouchDetection, ufloat, LCLType, trndi.webserver.threaded;
 
@@ -2425,6 +2425,7 @@ begin
       fConf.cbSys.Items.Add('* Debug Perfect Backend *');
       fConf.cbSys.Items.Add('* Debug Custom Backend *');
       fConf.cbSys.Items.Add('* Debug Edge Backend *');
+      fConf.cbSys.Items.Add('* Debug First Reading Missing *');
       {$endif}
     end;
 
@@ -4050,7 +4051,7 @@ begin
 end;
 
 procedure TfBG.ProcessTimeIntervals(const SortedReadings: array of BGReading;
-CurrentTime: TDateTime);
+  CurrentTime: TDateTime);
 var
   slotIndex, i, labelNumber, searchStart: integer;
   slotStart, slotEnd, anchorTime: TDateTime;
@@ -4062,17 +4063,33 @@ begin
     Exit;
 
   searchStart := 0;
-  // Anchor intervals to the most recent reading, not current time
-  // This ensures dots remain visible even if data is slightly delayed
-  anchorTime := SortedReadings[0].date;
+  // Anchor intervals to the expected grid time, not directly to the latest
+  // reading. This keeps the 5-minute slots stable ("...:00, :05, :10, ...")
+  // and allows the rightmost slot to be empty when the latest reading is
+  // older than one interval.
+  //
+  // Example:
+  //   Latest reading at 11:03.
+  //   We snap CurrentTime to the nearest lower 5-minute boundary (10:58).
+  //   Slot 0 then represents 10:53-10:58 and is empty.
+  //   The reading at 11:03 will land in a later slot instead of being
+  //   forced into the first one.
+
+  // Snap the *visual* anchor to a 5-minute grid based on CurrentTime.
+  // We keep seconds/milliseconds at 0 to avoid flicker.
+  anchorTime := RecodeMinute(CurrentTime,
+    (MinuteOf(CurrentTime) div INTERVAL_MINUTES) * INTERVAL_MINUTES);
+  anchorTime := RecodeSecond(anchorTime, 0);
+  anchorTime := RecodeMilliSecond(anchorTime, 0);
   
-  LogMessage(Format('PlaceTrendDots: Processing %d readings, anchor=%s', 
-    [Length(SortedReadings), DateTimeToStr(anchorTime)]));
+  LogMessage(Format('PlaceTrendDots: Processing %d readings, anchor=%s (latest=%s)', 
+    [Length(SortedReadings), DateTimeToStr(anchorTime), DateTimeToStr(SortedReadings[0].date)]));
 
   for slotIndex := 0 to NUM_DOTS - 1 do
   begin
-    // Set start and end time for the interval, anchored to latest reading
-    // For slot 0, we want to include readings from (anchorTime - 5 min) to anchorTime
+  // Set start and end time for the interval, anchored to the snapped grid time
+  // (see comment above). For slot 0, this is the most recent visual 5-minute
+  // bucket, which may be empty if no reading falls inside it.
     slotEnd := IncMinute(anchorTime, -INTERVAL_MINUTES * slotIndex);
     slotStart := IncMinute(slotEnd, -INTERVAL_MINUTES);
 

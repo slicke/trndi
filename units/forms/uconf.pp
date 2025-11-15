@@ -896,7 +896,8 @@ begin
   '* Debug Backend *',
   '* Debug Missing Backend *',
   '* Debug Perfect Backend *',
-  '* Debug Edge Backend *':
+  '* Debug Edge Backend *',
+  '* Debug First Reading Missing *':
   begin
     Label15.Caption := '<DEBUG IGNORED>';
     lPass.Caption   := '<DEBUG IGNORED>';
