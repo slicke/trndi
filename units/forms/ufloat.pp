@@ -329,6 +329,7 @@ end;
 
 procedure TfFloat.FormShow(Sender: TObject);
 begin
+  // Do not auto-center here; respect current position so user dragging stays stable
   ApplyRoundedCorners;
 
   miNormal.Click;
@@ -452,17 +453,15 @@ end;
 procedure TfFloat.tTitlebarTimer(Sender: TObject);
 begin
   {$IF NOT DEFINED(DARWIN)}
-  // Hide the title bar after the delay
-  BorderStyle := bsNone;
+  // On non-macOS, keep float always borderless; timer does nothing
   tTitlebar.Enabled := False;
-  // Reapply rounded corners after hiding title bar
-  ApplyRoundedCorners;
   {$ENDIF}
 end;
 
 procedure TfFloat.FormMouseMove(Sender: TObject; Shift: TShiftState; X, Y: integer);
 var
   ScreenPt: TPoint;
+  DeltaX, DeltaY: Integer;
 begin
   if DraggingWin then
   begin
@@ -472,9 +471,15 @@ begin
     else
       ScreenPt := ClientToScreen(Point(X, Y));
     
-    Left := ScreenPt.X - PX + Left;
-    Top := ScreenPt.Y - PY + Top;
+    // Calculate the delta (how much the mouse moved)
+    DeltaX := ScreenPt.X - PX;
+    DeltaY := ScreenPt.Y - PY;
     
+    // Move the window by the delta
+    Left := Left + DeltaX;
+    Top := Top + DeltaY;
+    
+    // Update stored position for next move
     PX := ScreenPt.X;
     PY := ScreenPt.Y;
   end;
@@ -609,26 +614,16 @@ end;
 procedure TfFloat.FormMouseEnter(Sender: TObject);
 begin
   {$IF NOT DEFINED(DARWIN)}
-  // On Linux (and Windows), show the title bar when hovering
-  // Use bsToolWindow to get a minimal title bar without min/max/close buttons
-  if BorderStyle = bsNone then
-  begin
-    BorderStyle := bsToolWindow;
-    BorderIcons:= [];
-    // Stop the hide timer if it's running
-    tTitlebar.Enabled := False;
-  end;
+  // On Linux/Windows keep the form borderless; no hover titlebar
+  Exit;
   {$ENDIF}
 end;
 
 procedure TfFloat.FormMouseLeave(Sender: TObject);
 begin
   {$IF NOT DEFINED(DARWIN)}
-  // Start timer to hide the title bar after a delay
-  if (BorderStyle = bsToolWindow) or (BorderStyle = bsSizeable) then
-  begin
-    tTitlebar.Enabled := True;
-  end;
+  // No hover titlebar on non-macOS
+  Exit;
   {$ENDIF}
 end;
 
