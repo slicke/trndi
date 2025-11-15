@@ -87,7 +87,7 @@
       <AutoIncrementBuild Value="True"/>
       <MajorVersionNr Value="3"/>
       <MinorVersionNr Value="2"/>
-      <BuildNr Value="115"/>
+      <BuildNr Value="116"/>
       <StringTable CompanyName="Slicke" FileDescription="Trndi - CGM trend monitor" LegalCopyright="Björn Lindh" ProductName="Trndi"/>
     </VersionInfo>
     <BuildModes>
@@ -578,6 +578,10 @@
       </Unit>
       <Unit>
         <Filename Value="units\slicke\slicke.ux.native.pp"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="units\trndi\api\trndi.api.debug_firstmissing.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit>
     </Units>

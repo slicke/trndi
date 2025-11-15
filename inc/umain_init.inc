@@ -331,7 +331,9 @@ begin
     api := DebugCustomAPI.Create(apiTarget, apiCreds, '');
   '* Debug Edge Backend *':
     api := DebugEdgeAPI.Create(apiTarget, apiCreds, '');
-    {$endif}
+  '* Debug First Reading Missing *':
+    api := DebugFirstMissingAPI.Create(apiTarget, apiCreds, '');
+  {$endif}
   else
     Result := false;
   end;
