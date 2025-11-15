@@ -402,7 +402,7 @@ msgstr "Visa glukosförutspåelser"
 
 #: tfconf.cbpredictshort.caption
 msgid "Show only trend arrows (short mode)"
-msgstr ""
+msgstr "Visa endast trendpilar (short mode)"
 
 #: tfconf.cbprivacy.caption
 msgid "Privacy Mode (Hide number)"
@@ -458,7 +458,7 @@ msgstr "Visa användares färger på huvud- och det flytande fönstret"
 
 #: tfconf.cbwebapi.caption
 msgid " Enable Web API"
-msgstr ""
+msgstr "Slå på Web-API:et"
 
 #: tfconf.cl_hi_bg.caption
 msgctxt "tfconf.cl_hi_bg.caption"
@@ -1735,7 +1735,7 @@ msgstr "Din skrivbordssession är Wayland. Wayland-kompositorer (inklusive KWin)
 
 #: uconf.rs_webapi
 msgid "Trndi can expose a WebAPI for use with third-party systems."
-msgstr ""
+msgstr "Trndi kan starta ett Web-API för att kommunicera med tredjepartssystem."
 
 #: ufloat.rscustomop
 msgid "You can use shift+<number> to manually set visibility (0 = 100% visible)"

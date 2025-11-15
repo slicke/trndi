@@ -1208,8 +1208,8 @@ end;
 
 procedure TfConf.bWebAPIClick(Sender: TObject);
 begin
-  if ExtMessage(uxdAuto, 'Trndi', 'WebAPI', '', RS_WEBAPI, false,
-    $00AA6004, $00FDD8AA,  [mbOK, mbUxRead], uxmtOK, 8) <> mrOk then
+  if ExtMessage(uxdAuto, 'Trndi', 'WebAPI', RS_WEBAPI, '', false,
+    $00AA6004, $00FDD8AA,  [mbOK, mbUxRead], uxmtOK) <> mrOk then
     OpenURL('https://github.com/slicke/trndi/blob/main/doc/WebAPI.md');
 end;
 
