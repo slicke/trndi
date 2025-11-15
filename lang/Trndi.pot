@@ -384,6 +384,10 @@ msgstr ""
 msgid "Show glucose predictions"
 msgstr ""
 
+#: tfconf.cbpredictshort.caption
+msgid "Show only trend arrows (short mode)"
+msgstr ""
+
 #: tfconf.cbprivacy.caption
 msgid "Privacy Mode (Hide number)"
 msgstr ""
@@ -434,6 +438,10 @@ msgstr ""
 
 #: tfconf.cbusercolor.caption
 msgid "Display users' colors on the main and floating windows"
+msgstr ""
+
+#: tfconf.cbwebapi.caption
+msgid " Enable Web API"
 msgstr ""
 
 #: tfconf.cl_hi_bg.caption
@@ -1616,6 +1624,10 @@ msgstr ""
 msgid ""
 "Your desktop session is Wayland. Wayland compositors (including KWin) restrict third-party apps from forcing windows above others.\n"
 "Right-click the title bar, select more options and check the always-on-top option (or similar)"
+msgstr ""
+
+#: uconf.rs_webapi
+msgid "Trndi can expose a WebAPI for use with third-party systems."
 msgstr ""
 
 #: ufloat.rscustomop

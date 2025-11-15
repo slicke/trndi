@@ -2140,6 +2140,7 @@ procedure LoadUserSettings(f: TfConf);
       cbCust.Checked := GetBoolSetting('override.enabled');
       cbCustRange.Checked := GetBoolSetting('override.range');
       cbPredictions.Checked := GetBoolSetting('predictions.enable');
+      cbWebAPI.Checked := GetBoolSetting('webserver.enable');
       cbPredictShort.Checked := GetBoolSetting('predictions.short');
 
       edMusicHigh.Text := GetSetting('media.url_high', '');
@@ -2375,6 +2376,7 @@ procedure SaveUserSettings(f: TfConf);
       SetBoolSetting('override.enabled', cbCust.Checked);
       SetBoolSetting('override.range', cbCustRange.Checked);
       SetBoolSetting('predictions.enable', cbPredictions.Checked);
+      SetBoolSetting('webserver.enable', cbWebAPI.Checked);
       SetBoolSetting('predictions.short', cbPredictShort.Checked);
       SetSetting('media.url_high', edMusicHigh.Text);
       SetSetting('media.url_low', edMusicLow.Text);
