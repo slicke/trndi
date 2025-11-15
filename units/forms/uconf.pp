@@ -44,6 +44,7 @@ TfConf = class(TForm)
   bPrivacyHelp: TButton;
   bRemove: TButton;
   bSysNotice: TButton;
+  bWebAPI: TButton;
   bSysTouch: TButton;
   bTestAnnounce: TButton;
   bTestSpeech: TButton;
@@ -62,6 +63,7 @@ TfConf = class(TForm)
   cbMultiTouch: TCheckBox;
   cbMusicPause: TCheckBox;
   cbNotice: TCheckBox;
+  cbWebAPI: TCheckBox;
   cbOffBar: TCheckBox;
   cbPaintHiLo: TCheckBox;
   cbPaintHiLoRange: TCheckBox;
@@ -238,6 +240,7 @@ TfConf = class(TForm)
   procedure Button2Click(Sender: TObject);
   procedure Button3Click(Sender: TObject);
   procedure Button4Click(Sender: TObject);
+  procedure bWebAPIClick(Sender: TObject);
   procedure cbCustChange(Sender: TObject);
   procedure cbCustRangeChange(Sender: TObject);
   procedure cbPredictionsChange(Sender: TObject);
@@ -325,6 +328,7 @@ RS_NOTIFY_SYSTEM =
   'Notifications will appear where you normally get notification messages.';
 
 RS_HASTOUCH = 'Shows if Trndi detected a touch screen';
+RS_WEBAPI = 'Trndi can expose a WebAPI for use with third-party systems.';
 
 RS_Saftey_Hi =
   'Trndi won''t allow a larger limit, for your own saftey. This can be overridden manually/via plugin';
@@ -1197,6 +1201,13 @@ procedure TfConf.Button4Click(Sender: TObject);
 begin
   eDot.Text := '2B24';
   eDotNow.Text := '2600';
+end;
+
+procedure TfConf.bWebAPIClick(Sender: TObject);
+begin
+  if ExtMessage(uxdAuto, 'Trndi', 'WebAPI', '', RS_WEBAPI, false,
+    $00AA6004, $00FDD8AA,  [mbOK, mbUxRead], uxmtOK, 8) <> mrOk then
+    OpenURL('https://github.com/slicke/trndi/blob/main/doc/WebAPI.md');
 end;
 
 procedure TfConf.cbCustChange(Sender: TObject);

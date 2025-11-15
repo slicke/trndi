@@ -400,6 +400,10 @@ msgstr "Visa gränslinjer"
 msgid "Show glucose predictions"
 msgstr "Visa glukosförutspåelser"
 
+#: tfconf.cbpredictshort.caption
+msgid "Show only trend arrows (short mode)"
+msgstr ""
+
 #: tfconf.cbprivacy.caption
 msgid "Privacy Mode (Hide number)"
 msgstr "Privat läget (dölj nummer)"
@@ -451,6 +455,10 @@ msgstr "Kontofärg"
 #: tfconf.cbusercolor.caption
 msgid "Display users' colors on the main and floating windows"
 msgstr "Visa användares färger på huvud- och det flytande fönstret"
+
+#: tfconf.cbwebapi.caption
+msgid " Enable Web API"
+msgstr ""
 
 #: tfconf.cl_hi_bg.caption
 msgctxt "tfconf.cl_hi_bg.caption"
@@ -1724,6 +1732,10 @@ msgid ""
 "Your desktop session is Wayland. Wayland compositors (including KWin) restrict third-party apps from forcing windows above others.\n"
 "Right-click the title bar, select more options and check the always-on-top option (or similar)"
 msgstr "Din skrivbordssession är Wayland. Wayland-kompositorer (inklusive KWin) begränsar tredjepartsappar från att tvinga sig överst. Högerklicka på titelraden, välj fler alternativ och klicka på alltid överst (eller liknande)"
+
+#: uconf.rs_webapi
+msgid "Trndi can expose a WebAPI for use with third-party systems."
+msgstr ""
 
 #: ufloat.rscustomop
 msgid "You can use shift+<number> to manually set visibility (0 = 100% visible)"
