@@ -1096,7 +1096,10 @@ end;
 
 procedure TfConf.bTestSpeechClick(Sender: TObject);
 begin
-  tnative.speak('test 5.5');
+  if rbUnit.ItemIndex = 0 then
+    tnative.speak('test 5.5')
+  else
+    tnative.speak('test 100');
 end;
 
 procedure TfConf.btResetClick(Sender: TObject);
