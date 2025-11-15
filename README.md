@@ -151,3 +151,6 @@ Contributions are welcome. Please read [CONTRIBUTING](CONTRIBUTING.md) for codin
 If you're adding or modifying an API driver, start with the [API guide](guides/API.md) for the contract and examples, then follow the API section in CONTRIBUTING.
 
 _See also [BUILDING.md](guides/BUILDING.md)_
+
+## Languages / Translations
+To contribute a translation, checkout [LANGUAGES.md](LANGUAGES.md).
