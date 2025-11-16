@@ -141,6 +141,7 @@ object fFloat: TfFloat
       Caption = 'Size'
       object miXL: TMenuItem
         Caption = 'Very Big'
+        RadioItem = True
         OnClick = miNormalClick
       end
       object miBig: TMenuItem
