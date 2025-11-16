@@ -144,7 +144,7 @@ begin
   if ALabel.Caption = '' then
     Exit; // No text to display
 
-  // Kontrollera att etiketten har storlek
+  // Check that the label has size
   if (ALabel.Width <= 0) or (ALabel.Height <= 0) then
   begin
     ALabel.Width := 100;
@@ -162,7 +162,7 @@ begin
     ALabel.Font.Color := clBlack;
 
   // Maximum width and height for the text
-  MaxWidth := ALabel.Width - 4; // Lite padding
+  MaxWidth := ALabel.Width - 4; // Small padding
   MaxHeight := ALabel.Height - 4;
 
   // Perform binary search to find optimal font size
@@ -504,7 +504,7 @@ end;
 
 
 procedure TfFloat.CreateRoundedCorners;
-{$IFDEF LCLQt6_DISABLED}
+{$IFDEF LCLQt6}
 var
   Path: QPainterPathH;
   Painter: QPainterH;
@@ -528,7 +528,7 @@ begin
   else
     bgcol := QtGreen;
   end;
-  // Konvertera LCL handle till Qt widget
+  // Convert LCL handle to Qt widget
   QtWidget := TQtWidget(Handle);
   WidgetHandle := QtWidget.GetContainerWidget;
 
@@ -546,7 +546,7 @@ begin
   Painter := QPainter_create();
   QPainter_begin(Painter, PaintDevice);
 
-  // Aktivera antialiasing
+  // Enable antialiasing
   QPainter_setRenderHint(Painter, QPainterAntialiasing, true);
 
   // Create a path for rounded corners
@@ -657,7 +657,7 @@ begin
     miCustomVisible.Checked := true;
   end;
 
-  if ((ssShift in Shift) and (Key in [187, (* + *) 189, 191 (*mac +*)])) then
+  if ((ssShift in Shift) and (Key in [{$ifdef LINUX}63 (*linux **),{$endif} 187, (* + *) 189, 191 (*mac +*)])) then
   begin
     if key <> 189 then // not -
       Height := Height + 5
