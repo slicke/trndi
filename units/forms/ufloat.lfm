@@ -8,7 +8,6 @@ object fFloat: TfFloat
   ClientWidth = 218
   FormStyle = fsSystemStayOnTop
   PopupMenu = pMain
-  Position = poDesigned
   SnapOptions.SnapToMonitor = True
   LCLVersion = '4.4.0.0'
   OnKeyDown = FormKeyDown
@@ -44,17 +43,17 @@ object fFloat: TfFloat
   end
   object lRangeDown: TLabel
     Left = 0
-    Height = 15
+    Height = 16
     Top = 0
-    Width = 10
+    Width = 14
     Caption = '▼'
     Visible = False
   end
   object lRangeUp: TLabel
     Left = 0
-    Height = 15
+    Height = 16
     Top = 0
-    Width = 10
+    Width = 14
     Caption = '▲'
     Visible = False
   end
@@ -93,9 +92,9 @@ object fFloat: TfFloat
   end
   object lTime: TLabel
     Left = 167
-    Height = 15
+    Height = 16
     Top = 0
-    Width = 27
+    Width = 39
     Caption = '00:00'
     Visible = False
   end

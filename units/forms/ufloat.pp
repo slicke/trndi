@@ -97,6 +97,7 @@ TfFloat = class(TForm)
   procedure miClockClick(Sender: TObject);
   procedure miCustomSizeClick(Sender: TObject);
   procedure miCustomVisibleClick(Sender: TObject);
+  procedure miHideTitleClick(Sender: TObject);
   procedure miMainClick(Sender: TObject);
   procedure miNormalClick(Sender: TMenuItem);
   procedure miNormalClick(Sender: TObject);
@@ -222,7 +223,7 @@ var
   NSViewHandle: NSView;
   NSWin: NSWindow;
   Mask: NSBezierPath;
-  {$ELSEIF DEFINED(LCLQT6_DISABLED)}
+  {$ELSEIF DEFINED(LCLQT6)}
   StyleStr: widestring;
   {$ELSE}
   ABitmap: TBitmap;
@@ -258,9 +259,10 @@ begin
   except
     // Ignore any errors
   end;
-  {$ELSEIF DEFINED(LCLQT6_DISABLED)}
+  {$ELSEIF DEFINED(LCLQT6)}
   StyleStr := 'border-radius: 10px; background-color: rgba(240, 240, 240, 255);';
-  Self.BorderStyle := bsNone; // Remove border
+//  Self.BorderStyle := bsNone; // Remove border
+  self.borderstyle := bsToolWindow;
   if HandleAllocated then
     QWidget_setStyleSheet(TQtWidget(Handle).Widget, @stylestr);
   CreateRoundedCorners;
@@ -371,6 +373,11 @@ end;
 procedure TfFloat.miCustomVisibleClick(Sender: TObject);
 begin
   ShowMessage(rsCustomOp);
+end;
+
+procedure TfFloat.miHideTitleClick(Sender: TObject);
+begin
+
 end;
 
 procedure TfFloat.miMainClick(Sender: TObject);
