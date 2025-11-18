@@ -1854,6 +1854,7 @@ begin
     HtmlViewer.DefaultFontSize := IfThen(big, 16, 12);
     HtmlViewer.FlagErrors := False;
     HtmlViewer.Color := bgcol;
+    HtmlViewer.AllowTextSelect := False;  // Prevent text selection like TLabel
     
     // Load HTML content with system font and colors
     FontTXTInList(sysfont);
@@ -1865,7 +1866,7 @@ begin
 
     // Calculate content height and adjust dialog
     maxHeight := Round(Screen.Height * 0.8);
-    contentHeight := Round((HtmlViewer.GetContentSize.cy + 20) * scale);  // Apply scale multiplier
+    contentHeight := Round((HtmlViewer.GetContentSize.cy + 20) * scale);  // Apply scale multiplier to height
     if contentHeight < 150 then contentHeight := 150;  // Minimum height
     if contentHeight > (maxHeight - 200) then contentHeight := maxHeight - 200;  // Leave room for icon and buttons
     
