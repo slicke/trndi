@@ -49,7 +49,7 @@ interface
 
 uses
   Classes, SysUtils, Dialogs, Forms, ExtCtrls, StdCtrls, Controls, Graphics, Math,
-  IntfGraphics, FPImage, graphtype, lcltype, Trndi.Native, Grids, Spin, IpHtml, slicke.ux.native, SpinEx,
+  IntfGraphics, FPImage, graphtype, lcltype, Trndi.Native, Grids, Spin, IpHtml, Iphttpbroker, slicke.ux.native, SpinEx,
   {$ifdef Windows}
   DX12.D2D1, DX12.DXGI, DX12.DWrite, DX12.DCommon, DX12.WinCodec, Windows, Buttons, ActiveX, ComObj,
   {$endif}
@@ -165,6 +165,7 @@ type
     FontPickerPreview: TLabel;
     {** OnChange handler for font combo box in ExtFontPicker. }
     procedure FontComboChange(Sender: TObject);
+    procedure HTMLGetImageX(Sender: TIpHtmlNode; const URL: string; var Picture: TPicture);
   end;
 
   {**
@@ -1801,12 +1802,14 @@ var
   big: boolean;
   sysfont: string;
   contentHeight, maxHeight, finalHeight: Integer;
+  hpd: TIpHttpDataProvider;
 begin
   bgcol := getBackground;
   big := UXDialogIsBig(dialogsize);
 
   Dialog := TDialogForm.CreateNew(nil);
   try
+
     Dialog.Caption := caption;
     Dialog.BorderStyle := bsDialog;
     {$ifdef LCLGTK3}Dialog.BorderStyle := bsSizeable;{$endif}
@@ -1837,6 +1840,11 @@ begin
     HtmlPanel.BevelOuter := bvNone;
 
     HtmlViewer := TIpHtmlPanel.Create(HtmlPanel);
+
+    hpd := TIpHttpDataProvider.Create(nil);
+    HtmlViewer.DataProvider := hpd;
+    hpd.OnGetImage := @dialog.HTMLGetImageX;
+
     HtmlViewer.Parent := HtmlPanel;
     HtmlViewer.Left := 0;
     HtmlViewer.Top := 0;
@@ -1898,6 +1906,7 @@ begin
 
     Result := ShowModalSafe(Dialog);
   finally
+    hpd.Free;
     Dialog.Free;
   end;
 end;
@@ -1936,6 +1945,7 @@ var
   big: boolean;
   MemoWrapper: TPanel;
   sysfont: string;
+  hpd: TIpHttpDataProvider;
 begin
   bgcol := getBackground;
   big := UXDialogIsBig(dialogsize);
@@ -2162,6 +2172,9 @@ begin
     begin
       // Use TIpHtmlPanel for HTML content (cross-platform)
       LogHtmlPanel := TIpHtmlPanel.Create(MemoWrapper);
+      hpd := TIpHttpDataProvider.Create(nil);
+      LogHtmlPanel.DataProvider := hpd;
+      hpd.OnGetImage := @dialog.HTMLGetImageX;
       LogHtmlPanel.Parent := MemoWrapper;
       LogHtmlPanel.Left := MemoPadLeft;
       LogHtmlPanel.Top := MemoPadTop;
@@ -2253,6 +2266,7 @@ begin
   ShowModalSafe(Dialog);
   Result := Dialog.ModalResult;
   finally
+    hpd.free;
     Dialog.Free;
   end;
 end;
@@ -2540,5 +2554,20 @@ begin
     ACanvas.DrawFocusRect(ARect);
 end;
 {$endif}
+
+procedure TDialogForm.HTMLGetImageX(Sender: TIpHtmlNode; const URL: string;
+  var Picture: TPicture);
+var
+  res: string;
+  ms: TStringStream;
+begin
+  picture := TPicture.Create;
+  TrndiNative.getURL(url, res);
+  ms := TStringStream.Create(res);
+  picture.LoadFromStream(ms);
+  ms.Free;
+end;
+
+
 
 end.

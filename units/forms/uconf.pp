@@ -1294,7 +1294,8 @@ end;
 
 procedure TfConf.lLicenseClick(Sender: TObject);
 const
-  txt = '<b>Trndi - CGM viewer</b><br>' +
+  txt = '<img src="https://trndi.app/doc/img/trndi-logo.png"><br>' +
+    '<b>Trndi - CGM viewer</b><br>' +
     '<i>A re-imagination of TrayTrend by Björn Lindh</i><br>' +
     'Copyright (C) 2017-2025 Björn Lindh<br><br>' +
     'This program is free software: you can redistribute it and/or modify it<br>' +
@@ -1320,8 +1321,7 @@ const
     '- This app may contain bugs or errors that could display incorrect data<br><br>' +
     '<b><i>- IF YOU DO NOT AGREE WITH THESE TERMS, DO NOT USE THIS APP. -</i></b>';
 begin
-  if ExtMessage(uxdAuto, 'Trndi', 'License', '', txt, true,
-    $00AA6004, $00FDD8AA,  [mbOK, mbUxRead], uxmtOK, 8) <> mrOk then
+  if ExtMsg(uxdAuto, 'License', txt, [mbOK, mbUxRead], uxmtOK, 18) <> mrOk then
     OpenURL('https://github.com/slicke/trndi/blob/main/LICENSE.md');
 end;
 
