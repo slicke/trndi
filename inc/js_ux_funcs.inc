@@ -67,7 +67,7 @@ begin
 
   ctx^^.ToVariant(argv^[4], vbs);
 
-  if not varType(vbs) = varInteger then begin
+  if not varType(vbs) = varSingle then begin
     ExtError(uxdAuto, 'Box Size must be an integer');
     exit;
   end;
