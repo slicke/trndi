@@ -287,7 +287,7 @@ type
                       dumptext: TColor = uxclRed;
                       buttons: TUXMsgDlgBtns = [mbAbort];
                       const icon: UXImage = uxmtCog;
-                      scale: integer = 1): TModalResult;
+                      scale: single = 1): TModalResult;
 
   {**
     Convenience wrapper for @link(ExtMsg) that shows a message and a log/dump with an OK button.
@@ -1770,7 +1770,7 @@ function ExtMessage(
   dumptext: TColor = uxclRed;
   buttons: TUXMsgDlgBtns = [mbAbort];
   const icon: UXImage = uxmtCog;
-  scale: integer = 1
+  scale: single = 1
 ): TModalResult;
 const
   btnWidth = 75;
@@ -1794,6 +1794,7 @@ var
   TempFont: TFont;
   big: boolean;
   MemoWrapper: TPanel;
+  sysfont: string;
 begin
   bgcol := getBackground;
   big := UXDialogIsBig(dialogsize);
@@ -2004,7 +2005,7 @@ begin
     LogPanel := TPanel.Create(Dialog);
     LogPanel.Parent := Dialog;
     LogPanel.Align := alBottom;
-    LogPanel.Height := IfThen(big, 100, 50) * scale;
+    LogPanel.Height := round(IfThen(big, 100, 50) * scale);
     LogPanel.Color := dumpbg;
     LogPanel.BevelOuter := bvNone;
     LogPanel.Visible := logmsg <> '';
@@ -2030,11 +2031,14 @@ begin
       LogHtmlPanel.BorderStyle := bsNone;
       LogHtmlPanel.TabStop := False;  // Prevent focus
       LogHtmlPanel.OnKeyDown := @Dialog.FormKeyDown;
+      LogHTMLPanel.MarginHeight:=0;
+      LogHTMLPanel.MarginWidth:=0;
       // Load HTML content with body tag for background color
       try
         // Wrap content in HTML structure with background color from dumpbg
+        FontTXTInList(sysfont);
         LogHtmlPanel.SetHtmlFromStr(
-          '<html><body bgcolor="' + TColorToHTML(dumpbg) + '" text="' + TColorToHTML(dumptext) + '">' +
+          '<html><body bgcolor="' + TColorToHTML(dumpbg) + '" text="' + TColorToHTML(dumptext) + '" style="font-family: ' + sysfont + ';">' +
           logmsg +
           '</body></html>'
         );
@@ -2043,7 +2047,7 @@ begin
         begin
           // Fallback to plain text if HTML parsing fails
           LogHtmlPanel.SetHtmlFromStr(
-            '<html><body bgcolor="' + TColorToHTML(dumpbg) + '" text="' + TColorToHTML(dumptext) + '"><pre>' +
+            '<html><body bgcolor="' + TColorToHTML(dumpbg) + '" text="' + TColorToHTML(dumptext) + '" style="font-family: Verdana, Arial, sans-serif;"><pre>' +
             logmsg +
             '</pre></body></html>'
           );
