@@ -126,6 +126,8 @@ begin
     addClassFunction('playSound', ExtFunction(@JSPlay), 1);
     addClassFunction('sayText', ExtFunction(@JSSay), 1);
     addClassFunction('htmlMsg', ExtFunction(@JSHTMLMsg), -1);
+    addClassFunction('htmlDlg', ExtFunction(@JSHTMLDlg), -1);    
+    addClassFunction('htmlYesNo', ExtFunction(@JSHTMLYesNo), -1);    
     addClassFunction('setClockInterval', ExtFunction(@JSvar_ClockInterval), 1);
 
     // Add the UX modification function, as declared in this file
