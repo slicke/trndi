@@ -265,6 +265,23 @@ type
                   scale: integer = 1): TModalResult;
 
   {**
+    HTML-only dialog with buttons.
+    @param dialogsize Layout preset.
+    @param caption Window caption.
+    @param html HTML content to display in the dialog.
+    @param buttons Button set to display.
+    @param icon Emoji icon (default gear).
+    @param scale Content height multiplier (default 1).
+    @returns Modal result based on user button selection.
+    @remarks This variant displays only HTML content without title/description sections.
+  }
+  function ExtMsg(const dialogsize: TUXDialogSize;
+                  const caption, html: string;
+                  buttons: TUXMsgDlgBtns = [mbAbort];
+                  const icon: UXImage = uxmtCog;
+                  scale: single = 1): TModalResult; overload;
+
+  {**
     Extended message dialog with HTML support in log panel.
     @param dialogsize Layout preset.
     @param caption Window caption.
@@ -1759,6 +1776,130 @@ begin
   // Call ExtMessage with isHTML = false for backward compatibility
   Result := ExtMessage(dialogsize, caption, title, desc, logmsg, False,
                        dumpbg, dumptext, buttons, icon, scale);
+end;
+
+{** See interface docs for behavior and parameters. }
+function ExtMsg(
+  const dialogsize: TUXDialogSize;
+  const caption, html: string;
+  buttons: TUXMsgDlgBtns = [mbAbort];
+  const icon: UXImage = uxmtCog;
+  scale: single = 1
+): TModalResult;
+const
+  btnWidth = 75;
+  padding  = 10;
+var
+  Dialog: TDialogForm;
+  MainPanel, HtmlPanel, ButtonPanel: TPanel;
+  IconBox: TImage;
+  HtmlViewer: TIpHtmlPanel;
+  OkButton: {$ifdef Windows}TBitBtn{$else}TButton{$endif};
+  mr: TUXMsgDlgBtn;
+  ButtonActualWidth, posX, ProposedWidth, btnCount, totalBtnWidth: Integer;
+  bgcol: TColor;
+  big: boolean;
+  sysfont: string;
+  contentHeight, maxHeight, finalHeight: Integer;
+begin
+  bgcol := getBackground;
+  big := UXDialogIsBig(dialogsize);
+
+  Dialog := TDialogForm.CreateNew(nil);
+  try
+    Dialog.Caption := caption;
+    Dialog.BorderStyle := bsDialog;
+    {$ifdef LCLGTK3}Dialog.BorderStyle := bsSizeable;{$endif}
+    Dialog.Position := poWorkAreaCenter;
+    Dialog.Color := bgcol;
+
+    ProposedWidth := IfThen(big, 650, 500);
+    if ProposedWidth > 900 then ProposedWidth := 900;
+    Dialog.ClientWidth := ProposedWidth;
+
+    // Icon at top
+    IconBox := TImage.Create(Dialog);
+    IconBox.Parent := Dialog;
+    IconBox.Left := padding;
+    IconBox.Top := padding;
+    IconBox.Width := IfThen(big, 80, 48);
+    IconBox.Height := IconBox.Width;
+    {$ifdef Windows}IconBox.Font.Name := 'Segoe UI Emoji';{$endif}
+    AssignEmoji(IconBox, icon, bgcol);
+
+    // HTML panel
+    HtmlPanel := TPanel.Create(Dialog);
+    HtmlPanel.Parent := Dialog;
+    HtmlPanel.Left := IconBox.Left + IconBox.Width + padding;
+    HtmlPanel.Top := padding;
+    HtmlPanel.Width := Dialog.ClientWidth - HtmlPanel.Left - padding;
+    HtmlPanel.Color := bgcol;
+    HtmlPanel.BevelOuter := bvNone;
+
+    HtmlViewer := TIpHtmlPanel.Create(HtmlPanel);
+    HtmlViewer.Parent := HtmlPanel;
+    HtmlViewer.Left := 0;
+    HtmlViewer.Top := 0;
+    HtmlViewer.Width := HtmlPanel.Width;
+    HtmlViewer.FixedTypeface := 'Courier New';
+    HtmlViewer.DefaultTypeFace := IfThen(big, 'Segoe UI', 'Tahoma');
+    HtmlViewer.DefaultFontSize := IfThen(big, 16, 12);
+    HtmlViewer.FlagErrors := False;
+    HtmlViewer.Color := bgcol;
+    
+    // Load HTML content with system font and colors
+    FontTXTInList(sysfont);
+    HtmlViewer.SetHtmlFromStr(
+      '<html><body bgcolor="' + TColorToHTML(bgcol) + '" text="' + TColorToHTML(getBaseColor) + '" style="font-family: ' + sysfont + ';">' +
+      html +
+      '</body></html>'
+    );
+
+    // Calculate content height and adjust dialog
+    maxHeight := Round(Screen.Height * 0.8);
+    contentHeight := Round((HtmlViewer.GetContentSize.cy + 20) * scale);  // Apply scale multiplier
+    if contentHeight < 150 then contentHeight := 150;  // Minimum height
+    if contentHeight > (maxHeight - 200) then contentHeight := maxHeight - 200;  // Leave room for icon and buttons
+    
+    HtmlViewer.Height := contentHeight;
+    HtmlPanel.Height := contentHeight;
+
+    // Count buttons
+    btnCount := 0;
+    for mr in buttons do Inc(btnCount);
+
+    ButtonActualWidth := IfThen(big, btnWidth * 2, btnWidth);
+    totalBtnWidth := (btnCount * ButtonActualWidth) + ((btnCount - 1) * padding);
+    posX := (Dialog.ClientWidth - totalBtnWidth) div 2;
+
+    // Create buttons
+    for mr in buttons do
+    begin
+      {$ifdef Windows}
+      OkButton := TBitBtn.Create(Dialog);
+      {$else}
+      OkButton := TButton.Create(Dialog);
+      {$endif}
+      OkButton.Parent := Dialog;
+      OkButton.Caption := langs[mr];
+      OkButton.Width := ButtonActualWidth;
+      OkButton.Height := IfThen(big, 50, 25);
+      if big then
+        OkButton.Font.Size := 12;
+      OkButton.Left := posX;
+      OkButton.Top := HtmlPanel.Top + HtmlPanel.Height + padding;
+      OkButton.ModalResult := UXButtonToModalResult(mr);
+      Inc(posX, ButtonActualWidth + padding);
+    end;
+
+    // Set final dialog height based on content
+    finalHeight := OkButton.Top + OkButton.Height + padding;
+    Dialog.ClientHeight := finalHeight;
+
+    Result := ShowModalSafe(Dialog);
+  finally
+    Dialog.Free;
+  end;
 end;
 
 {** See interface docs for behavior and parameters. }

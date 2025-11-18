@@ -11,6 +11,8 @@ Trndi supports ES2023, and provides these functions in addition to it:
    - [log](#log)
    - [console.log](#consolelog)
    - [htmlMsg](#htmlmsg)
+   - [htmlDlg](#htmldlg)   
+   - [htmlYesNo](#htmlyesno)      
    - [setBadgeSize](#setbadgesize)
    - [setDotSize](#setdotsize)
    - [setDotAdjust](#setdotadjust)
@@ -78,6 +80,17 @@ Prints out data to the user
 Trndi.htmlMsg('Window Title', 'Title', 'Description', '<b>HTML</b> box content', 1)
 ```
 Shows a HTML content box, last parameter is the scale of the window (it can be scrolled, but you might want to scale it too)
+### htmlDlg
+```javascript
+Trndi.htmlDlg('Window Title', '<b>HTML</b> box content', 1)
+```
+Shows a full HTML dialog with all content HTML. Last parameter is scale.
+### htmlYesNo
+```javascript
+const res = Trndi.htmlYesNo('Window Title', '<b>Load config?</b><br>Load configuration again?', 1)
+console.log("Response was yes?" + (res ? 'yes' : 'no'))
+```
+Shows a full HTML dialog with all content HTML. User can click yes or no
 ### setBadgeSize
 ```javascript
 Trndi.setBadgeSize(0.9, 9);
