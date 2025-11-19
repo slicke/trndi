@@ -612,12 +612,25 @@ var
   L: TPaintBox;
   hasfont: boolean;
   needsRecalc: boolean;
+  {$ifdef LCLCocoa}
+  // macOS Cocoa: TPaintBox canvas has CheckDC issues, use autosize instead
+  {$else}
   {$ifdef DARWIN}
-  tempCanvas: TCanvas;
+  bmp: TBitmap;
+  {$endif}
   {$endif}
 begin
   L := Sender as TPaintBox;
   S := L.Caption;
+
+  {$ifdef LCLCocoa}
+  // macOS Cocoa workaround: Skip custom painting due to CheckDC bug
+  // in cocoagdiobjects.pas (TObject(dc) is TCocoaContext fails)
+  // Just let the control use its Caption directly with AutoSize
+  L.AutoSize := True;
+  Exit;
+  {$endif}
+
   L.AutoSize := false;
 
   if S = DOT_GRAPH then
@@ -631,34 +644,30 @@ begin
   // Always recalculate for non-dot text
 
   {$ifdef DARWIN}
-  // macOS workaround: Ensure canvas handle is valid before use
-  // This prevents CheckDC errors in LCL Cocoa (bug in cocoagdiobjects.pas)
-  if L.Canvas.Handle = 0 then
-  begin
-    // Try to force canvas creation by requesting it from parent
-    if Assigned(L.Parent) and L.Parent.HandleAllocated then
-      L.Invalidate;
-    Exit; // Skip this paint cycle, will be called again
-  end;
-  {$endif}
-
+  // macOS (non-Cocoa): Use bitmap buffer to avoid potential canvas issues
+  bmp := TBitmap.Create;
   try
-    with L.Canvas do
+    // Set up bitmap with reasonable size
+    bmp.Width := Max(L.Width, 100);
+    bmp.Height := Max(L.Height, 50);
+    
+    with bmp.Canvas do
     begin
       // Transparent background
       Brush.Style := bsClear;
-
+      Brush.Color := L.Parent.Color;
+      FillRect(0, 0, bmp.Width, bmp.Height);
+      
       if hasFont then
         Font.Name := fontn;
-
       Font.Size := L.Font.Size;
+      Font.Color := L.Font.Color;
 
       // Use cached measurements if available, otherwise calculate
       if needsRecalc then
       begin
         FCachedTextWidth := TextWidth(S);
         FCachedTextHeight := TextHeight(S);
-        // Only cache for dot characters, not expanded text
         if S = DOT_GRAPH then
         begin
           FCachedFontSize := L.Font.Size;
@@ -666,7 +675,7 @@ begin
         end;
       end;
 
-      // Size the paintbox to fit the text (use fresh calculation for non-dots)
+      // Size the paintbox to fit the text
       if S = DOT_GRAPH then
       begin
         L.Width := FCachedTextWidth;
@@ -674,27 +683,61 @@ begin
       end
       else
       begin
-        // For expanded text, always use fresh measurements with padding
         L.Width := TextWidth(S) + 4;
         L.Height := TextHeight(S) + 2;
       end;
 
-      // Draw at (0,0); since control fits text, no centering or offsets needed
+      // Draw text to bitmap
       TextOut(0, 0, S);
     end;
-  except
-    on E: Exception do
-    begin
-      {$ifdef DARWIN}
-      // Log and suppress Cocoa canvas errors to prevent crash
-      LogMessage('DotPaint error on macOS: ' + E.Message);
-      // Force repaint on next cycle
-      L.Invalidate;
-      {$else}
-      raise; // Re-raise on other platforms
-      {$endif}
-    end;
+
+    // Now copy bitmap to canvas
+    L.Canvas.Draw(0, 0, bmp);
+  finally
+    bmp.Free;
   end;
+  {$else}
+  // Non-macOS: Use direct canvas drawing (original code)
+  with L.Canvas do
+  begin
+    // Transparent background
+    Brush.Style := bsClear;
+
+    if hasFont then
+      Font.Name := fontn;
+
+    Font.Size := L.Font.Size;
+
+    // Use cached measurements if available, otherwise calculate
+    if needsRecalc then
+    begin
+      FCachedTextWidth := TextWidth(S);
+      FCachedTextHeight := TextHeight(S);
+      // Only cache for dot characters, not expanded text
+      if S = DOT_GRAPH then
+      begin
+        FCachedFontSize := L.Font.Size;
+        FCachedFontName := fontn;
+      end;
+    end;
+
+    // Size the paintbox to fit the text (use fresh calculation for non-dots)
+    if S = DOT_GRAPH then
+    begin
+      L.Width := FCachedTextWidth;
+      L.Height := FCachedTextHeight;
+    end
+    else
+    begin
+      // For expanded text, always use fresh measurements with padding
+      L.Width := TextWidth(S) + 4;
+      L.Height := TextHeight(S) + 2;
+    end;
+
+    // Draw at (0,0); since control fits text, no centering or offsets needed
+    TextOut(0, 0, S);
+  end;
+  {$endif}
 end;
 
 procedure TfBG.lDiffClick(Sender: TObject);
