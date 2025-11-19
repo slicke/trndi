@@ -281,7 +281,8 @@ procedure SetPointHeight(L: TControl; Value: single; clientHeight: integer);
 var
   Padding, UsableHeight, Position: integer;
   {$ifdef DARWIN}
-  BottomMargin: integer;
+  EstimatedHeight: integer;
+  BottomPadding: integer;
   {$endif}
 begin
   // Define padding and usable height for scaling based on provided client height
@@ -302,22 +303,35 @@ begin
   // Apply the calculated position to the label's Top property
   // Place dot relative to the same clientHeight reference. Keep 1px inside bottom edge
   {$ifdef DARWIN}
-  // On macOS with TLabel: Account for label height to prevent bottom clipping
-  // Position is where we want the visual center, so adjust for half the height
-  BottomMargin := 5; // Extra margin to ensure dots aren't clipped
-  L.Top := (clientHeight - Position) - (L.Height div 2) - BottomMargin;
-  // Ensure we don't go negative or below zero
-  if L.Top < 0 then
-    L.Top := 0;
-  // Ensure bottom doesn't exceed clientHeight
-  if (L.Top + L.Height) > (clientHeight - BottomMargin) then
-    L.Top := clientHeight - L.Height - BottomMargin;
+  // On macOS with TLabel: Need aggressive bottom padding to prevent clipping
+  // TLabel with large fonts can have descenders that extend below baseline
+  
+  // Get actual or estimated height
+  if L.Height > 0 then
+    EstimatedHeight := L.Height
+  else
+    // Estimate based on font size if height not yet calculated
+    EstimatedHeight := Round(L.Font.Size * 1.5);
+  
+  // Reserve 15% of client height as bottom padding to ensure dots never clip
+  BottomPadding := Round(clientHeight * 0.15);
+  
+  // Position the top of the label, accounting for its height
+  L.Top := (clientHeight - Position) - EstimatedHeight;
+  
+  // Ensure we stay within bounds
+  if L.Top < Padding then
+    L.Top := Padding;
+  if (L.Top + EstimatedHeight) > (clientHeight - BottomPadding) then
+    L.Top := clientHeight - BottomPadding - EstimatedHeight;
+  
+  LogMessage(Format('Label %s: Value=%.2f, Top=%d, Height=%d (est=%d), BottomPad=%d',
+    [L.Name, Value, L.Top, L.Height, EstimatedHeight, BottomPadding]));
   {$else}
   L.Top := (clientHeight - Position) - 1;
-  {$endif}
-
-  // Optional debug/logging to verify placement
   LogMessage(Format('Label %s: Value=%.2f, Top=%d, Height=%d', [L.Name, Value, L.Top, L.Height]));
+  {$endif}
+end;
 end;
 
 function CalculateTrendFromDelta(delta: single): BGTrend;

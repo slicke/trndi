@@ -1602,8 +1602,10 @@ begin
   // macOS: TLabel handles sizing automatically via AutoSize
   l.AutoSize := True;
   l.Font.Size := round(Max((lVal.Font.Size div 8) * dotscale, 28)); // Ensure minimum font size
-  LogMessage(Format('TrendDots[%d] resized with Font Size = %d (AutoSize).',
-    [ix, l.Font.Size]));
+  // Force immediate size calculation by triggering a layout update
+  l.AdjustSize;
+  LogMessage(Format('TrendDots[%d] resized with Font Size = %d, Height=%d (AutoSize).',
+    [ix, l.Font.Size, l.Height]));
   {$else}
   l.AutoSize := false;
   l.Font.Size := round(Max((lVal.Font.Size div 8) * dotscale, 28)); // Ensure minimum font size
@@ -4301,6 +4303,11 @@ begin
     l.Tag := H * 100 + M; // 10:00 = 1000
 
     l.Caption := DOT_GRAPH;
+    
+    {$ifdef DARWIN}
+    // On macOS, force TLabel to calculate its size before positioning
+    l.AdjustSize;
+    {$endif}
 
     // Use the dot's parent client height to align placement with visibility checks
     setPointHeight(l, Reading.convert(mmol), l.Parent.ClientHeight);
