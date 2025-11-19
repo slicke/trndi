@@ -280,6 +280,9 @@ end;
 procedure SetPointHeight(L: TControl; Value: single; clientHeight: integer);
 var
   Padding, UsableHeight, Position: integer;
+  {$ifdef DARWIN}
+  BottomMargin: integer;
+  {$endif}
 begin
   // Define padding and usable height for scaling based on provided client height
   Padding := Round(clientHeight * 0.1); // 10% of the client height
@@ -298,10 +301,23 @@ begin
 
   // Apply the calculated position to the label's Top property
   // Place dot relative to the same clientHeight reference. Keep 1px inside bottom edge
+  {$ifdef DARWIN}
+  // On macOS with TLabel: Account for label height to prevent bottom clipping
+  // Position is where we want the visual center, so adjust for half the height
+  BottomMargin := 5; // Extra margin to ensure dots aren't clipped
+  L.Top := (clientHeight - Position) - (L.Height div 2) - BottomMargin;
+  // Ensure we don't go negative or below zero
+  if L.Top < 0 then
+    L.Top := 0;
+  // Ensure bottom doesn't exceed clientHeight
+  if (L.Top + L.Height) > (clientHeight - BottomMargin) then
+    L.Top := clientHeight - L.Height - BottomMargin;
+  {$else}
   L.Top := (clientHeight - Position) - 1;
+  {$endif}
 
   // Optional debug/logging to verify placement
-  LogMessage(Format('Label %s: Value=%.2f, Top=%d', [L.Name, Value, L.Top]));
+  LogMessage(Format('Label %s: Value=%.2f, Top=%d, Height=%d', [L.Name, Value, L.Top, L.Height]));
 end;
 
 function CalculateTrendFromDelta(delta: single): BGTrend;
