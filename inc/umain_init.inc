@@ -138,16 +138,8 @@ begin
   DATA_FRESHNESS_THRESHOLD_MINUTES :=
     native.GetIntSetting('system.fresh_threshold', DATA_FRESHNESS_THRESHOLD_MINUTES);
 
-  // Check graph
-  for i := 1 to NUM_DOTS do
-  begin
-    s := 'lDot' + IntToStr(i);
-    TrendDots[i] := FindComponent(s) as TPaintBox;
-    if not Assigned(TrendDots[i]) then
-      ShowMessage(Format('Label %s is missing!', [s]))
-    else
-      LogMessage(Format('Label %s assigned to TrendDots[%d].', [s, i]));
-  end;
+  // Create trend dots dynamically (TLabel on Darwin, TPaintBox elsewhere)
+  CreateTrendDots;
 
   // Check touch screen
   HasTouch := native.HasTouchScreen(HasMultiTouch);
