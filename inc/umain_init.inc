@@ -23,7 +23,7 @@
 procedure TfBG.actOnTrend(proc: TTrendProcLoop);
 var
   ix: integer;
-  ls: array[1..10] of TPaintBox;
+  ls: array[1..10] of TDotControl;
 begin
   ls := TrendDots; // Directly use the TrendDots array
   for ix := 1 to NUM_DOTS do
@@ -38,7 +38,7 @@ end;
 procedure TfBG.actOnTrend(proc: TTrendProc);
 var
   ix: integer;
-  ls: array[1..10] of TPaintBox;
+  ls: array[1..10] of TDotControl;
 begin
   ls := TrendDots; // Directly use the TrendDots array
   for ix := 1 to NUM_DOTS do
