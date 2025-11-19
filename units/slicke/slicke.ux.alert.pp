@@ -669,6 +669,8 @@ begin
     aDialog.FormStyle := fsStayOnTop;
     try
       Result := aDialog.ShowModal;
+      if Result = mrNone then
+        Result := aDialog.ModalResult;
     finally
       try
         if Assigned(aDialog) then aDialog.FormStyle := oldStyle;
@@ -678,6 +680,8 @@ begin
   end;
   {$endif}
   Result := aDialog.ShowModal;
+  if Result = mrNone then
+    Result := aDialog.ModalResult;
 end;
 
 {**
