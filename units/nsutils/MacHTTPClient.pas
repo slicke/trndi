@@ -1,48 +1,16 @@
 unit MacHTTPClient;
-(*
- * Copyright (c) 2021-2025 Björn Lindh.
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, version 3.
- *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
- * ---------
- *
- * GitHub: https://github.com/slicke
- *)
+
 {!
-  Lightweight macOS HTTP helper that wraps Apple's NSURL loading system.
-  Provides synchronous helpers for simple GET/POST style requests without
-  pulling in external libraries.
+  Thin HTTP wrapper that routes macOS requests through libcurl, mirroring the
+  Linux implementation so we share the same behaviour across both targets.
 }
 
 {$mode delphi}
-{$modeswitch objectivec1}
 
 interface
 
 uses
-  Classes, SysUtils,
-{$IF (DEFINED(IPHONESIM) OR DEFINED(CPUARM) OR DEFINED(CPUAARCH64)) AND (NOT DEFINED(LCLCOCOA)) } // iOS targets
- {$IFDEF NoiPhoneAll}
-  Foundation
- {$ELSE}
-  iPhoneAll
- {$ENDIF}
-{$ELSE} // macOS
- {$IFDEF NoCocoaAll}
-  Foundation
- {$ELSE}
-  CocoaAll
- {$ENDIF}
-{$ENDIF};
+  Classes, SysUtils, Math, Types, ctypes, libpascurl;
 
 function MacHttpSend(const Url, Method: string;
                      RequestBody: TStream;
@@ -59,19 +27,53 @@ function MacHttpGet(const Url: string;
 
 implementation
 
-function NSStringFromString(const Value: string): NSString;
+function StreamWriteCallback(ptr: Pointer; size, nmemb: size_t; userdata: Pointer): size_t; cdecl;
 var
-  Utf8Value: UTF8String;
+  bytesTotal: size_t;
+  target: TStream;
 begin
-  Utf8Value := UTF8String(Value);
-  Result := NSString.stringWithUTF8String(PAnsiChar(Utf8Value));
+  bytesTotal := size * nmemb;
+  if (userdata <> nil) and (bytesTotal > 0) then
+  begin
+    target := TStream(userdata);
+    try
+      target.WriteBuffer(ptr^, bytesTotal);
+    except
+      Exit(0);
+    end;
+  end;
+  Result := bytesTotal;
 end;
 
-function NSStringToStringSafe(const Value: NSString): string;
+function BuildHeaderList(const Headers: TStrings): pcurl_slist;
+var
+  i, eqPos: Integer;
+  line, name, value, headerLine: string;
+  headerUtf8: UTF8String;
 begin
-  if Value = nil then
-    Exit('');
-  Result := string(UTF8Decode(UTF8String(Value.UTF8String)));
+  Result := nil;
+  if Headers = nil then
+    Exit;
+
+  for i := 0 to Headers.Count - 1 do
+  begin
+    line := Headers[i];
+    eqPos := Pos('=', line);
+    if eqPos > 0 then
+    begin
+      name := Trim(Copy(line, 1, eqPos - 1));
+      value := Trim(Copy(line, eqPos + 1, MaxInt));
+      headerLine := Format('%s: %s', [name, value]);
+    end
+    else
+      headerLine := line;
+
+    if headerLine = '' then
+      Continue;
+
+    headerUtf8 := UTF8String(headerLine);
+    Result := curl_slist_append(Result, PAnsiChar(headerUtf8));
+  end;
 end;
 
 function MacHttpSend(const Url, Method: string;
@@ -81,92 +83,121 @@ function MacHttpSend(const Url, Method: string;
                      out ErrorMessage: string;
                      TimeoutSec: Double): Boolean;
 var
-  Request: NSMutableURLRequest;
-  UrlObj: NSURL;
-  ResponseData: NSData;
-  Response: NSURLResponse;
-  Error: NSError;
-  BodyBuffer: NSMutableData;
-  Name, Value: string;
-  I: Integer;
-  TimeoutValue: NSTimeInterval;
+  curlHandle: CURL;
+  headerList: pcurl_slist;
+  errCode: CURLcode;
+  methodUpper: string;
+  urlUtf8: UTF8String;
+  customMethod: UTF8String;
+  timeoutSeconds: LongInt;
+  responseOwner: Boolean;
+  localResponse: TMemoryStream;
+  requestData: TBytes;
+  requestSize: SizeInt;
+  errorBuffer: array[0..CURL_ERROR_SIZE-1] of AnsiChar;
 begin
-  ErrorMessage := '';
   Result := False;
+  ErrorMessage := '';
+  headerList := nil;
+  curl_global_init(CURL_GLOBAL_DEFAULT);
 
-  if Assigned(ResponseBody) then
+  responseOwner := False;
+  if ResponseBody = nil then
+  begin
+    localResponse := TMemoryStream.Create;
+    ResponseBody := localResponse;
+    responseOwner := True;
+  end
+  else
   begin
     ResponseBody.Position := 0;
     if ResponseBody is TMemoryStream then
       TMemoryStream(ResponseBody).SetSize(0);
   end;
 
-  UrlObj := NSURL.URLWithString(NSStringFromString(Url));
-  if not Assigned(UrlObj) then
+  curlHandle := curl_easy_init();
+  if curlHandle = nil then
   begin
-    ErrorMessage := 'Invalid URL';
+    ErrorMessage := 'curl: failed to initialise';
+    if responseOwner then
+      localResponse.Free;
     Exit;
   end;
 
-  TimeoutValue := TimeoutSec;
-  Request := NSMutableURLRequest.requestWithURL_cachePolicy_timeoutInterval(
-               UrlObj,
-               NSURLRequestUseProtocolCachePolicy,
-               TimeoutValue);
+  try
+    FillChar(errorBuffer, SizeOf(errorBuffer), 0);
+    curl_easy_setopt(curlHandle, CURLOPT_ERRORBUFFER, @errorBuffer[0]);
 
-  if Method <> '' then
-    Request.setHTTPMethod(NSStringFromString(Method));
+  urlUtf8 := UTF8String(Url);
+    curl_easy_setopt(curlHandle, CURLOPT_URL, PAnsiChar(urlUtf8));
+    curl_easy_setopt(curlHandle, CURLOPT_FOLLOWLOCATION, LongInt(1));
+    curl_easy_setopt(curlHandle, CURLOPT_NOSIGNAL, LongInt(1));
 
-  if Assigned(Headers) then
-    for I := 0 to Headers.Count - 1 do
+    if TimeoutSec > 0 then
     begin
-      Name := Headers.Names[I];
-      if Name = '' then
-        Continue;
-      Value := Headers.ValueFromIndex[I];
-      Request.setValue_forHTTPHeaderField(NSStringFromString(Value),
-                                          NSStringFromString(Name));
+      timeoutSeconds := Ceil(TimeoutSec);
+      curl_easy_setopt(curlHandle, CURLOPT_CONNECTTIMEOUT, timeoutSeconds);
+      curl_easy_setopt(curlHandle, CURLOPT_TIMEOUT, timeoutSeconds);
     end;
 
-  if Assigned(RequestBody) and (RequestBody.Size > 0) then
-  begin
-    BodyBuffer := NSMutableData.alloc.initWithLength(RequestBody.Size);
-    try
-      RequestBody.Position := 0;
-      RequestBody.ReadBuffer(BodyBuffer.mutableBytes^, RequestBody.Size);
-      Request.setHTTPBody(BodyBuffer);
-    finally
-      BodyBuffer.release;
-    end;
-  end
-  else
-    Request.setHTTPBody(nil);
+    methodUpper := UpperCase(Trim(Method));
+    if methodUpper = '' then
+      methodUpper := 'GET';
 
-  ResponseData := NSURLConnection.sendSynchronousRequest_returningResponse_error(
-                    Request, @Response, @Error);
-
-  if not Assigned(ResponseData) then
-  begin
-    if Assigned(Error) then
-      ErrorMessage := NSStringToStringSafe(Error.localizedDescription)
+    if methodUpper = 'GET' then
+      curl_easy_setopt(curlHandle, CURLOPT_HTTPGET, LongInt(1))
+    else if methodUpper = 'POST' then
+      curl_easy_setopt(curlHandle, CURLOPT_POST, LongInt(1))
     else
-      ErrorMessage := 'No response received';
-    Exit;
-  end;
-
-  if Assigned(ResponseBody) then
-  begin
-    if ResponseData.length > 0 then
     begin
-      ResponseBody.Position := 0;
-      if ResponseBody is TMemoryStream then
-        TMemoryStream(ResponseBody).SetSize(ResponseData.length);
-      ResponseBody.WriteBuffer(ResponseData.bytes^, ResponseData.length);
-      ResponseBody.Position := 0;
+  customMethod := UTF8String(methodUpper);
+      curl_easy_setopt(curlHandle, CURLOPT_CUSTOMREQUEST, PAnsiChar(customMethod));
     end;
-  end;
 
-  Result := True;
+    headerList := BuildHeaderList(Headers);
+    if headerList <> nil then
+      curl_easy_setopt(curlHandle, CURLOPT_HTTPHEADER, headerList);
+
+    if Assigned(RequestBody) and (RequestBody.Size > 0) then
+    begin
+      requestSize := SizeInt(RequestBody.Size);
+      SetLength(requestData, requestSize);
+      RequestBody.Position := 0;
+      if requestSize > 0 then
+        RequestBody.ReadBuffer(requestData[0], requestSize);
+      curl_easy_setopt(curlHandle, CURLOPT_POSTFIELDSIZE, LongInt(requestSize));
+      curl_easy_setopt(curlHandle, CURLOPT_POSTFIELDS, @requestData[0]);
+    end
+    else if methodUpper = 'POST' then
+    begin
+      curl_easy_setopt(curlHandle, CURLOPT_POSTFIELDSIZE, 0);
+      curl_easy_setopt(curlHandle, CURLOPT_POSTFIELDS, nil);
+    end;
+
+    curl_easy_setopt(curlHandle, CURLOPT_WRITEFUNCTION, @StreamWriteCallback);
+    curl_easy_setopt(curlHandle, CURLOPT_WRITEDATA, Pointer(ResponseBody));
+
+    errCode := curl_easy_perform(curlHandle);
+    if errCode = CURLE_OK then
+    begin
+      if ResponseBody <> nil then
+        ResponseBody.Position := 0;
+      Result := True;
+    end
+    else
+    begin
+      if errorBuffer[0] <> #0 then
+        ErrorMessage := string(UTF8String(PAnsiChar(@errorBuffer[0])))
+      else
+        ErrorMessage := string(UTF8String(curl_easy_strerror(errCode)));
+    end;
+  finally
+    if headerList <> nil then
+      curl_slist_free_all(headerList);
+    curl_easy_cleanup(curlHandle);
+    if responseOwner then
+      localResponse.Free;
+  end;
 end;
 
 function MacHttpGet(const Url: string;
