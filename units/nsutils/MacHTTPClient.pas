@@ -27,9 +27,9 @@ function MacHttpGet(const Url: string;
 
 implementation
 
-function StreamWriteCallback(ptr: Pointer; size, nmemb: size_t; userdata: Pointer): size_t; cdecl;
+function StreamWriteCallback(ptr: Pointer; size, nmemb: csize_t; userdata: Pointer): csize_t; cdecl;
 var
-  bytesTotal: size_t;
+  bytesTotal: csize_t;
   target: TStream;
 begin
   bytesTotal := size * nmemb;
@@ -37,7 +37,7 @@ begin
   begin
     target := TStream(userdata);
     try
-      target.WriteBuffer(ptr^, bytesTotal);
+      target.WriteBuffer(ptr^, SizeInt(bytesTotal));
     except
       Exit(0);
     end;
@@ -128,7 +128,7 @@ begin
     FillChar(errorBuffer, SizeOf(errorBuffer), 0);
     curl_easy_setopt(curlHandle, CURLOPT_ERRORBUFFER, @errorBuffer[0]);
 
-  urlUtf8 := UTF8String(Url);
+    urlUtf8 := UTF8String(Url);
     curl_easy_setopt(curlHandle, CURLOPT_URL, PAnsiChar(urlUtf8));
     curl_easy_setopt(curlHandle, CURLOPT_FOLLOWLOCATION, LongInt(1));
     curl_easy_setopt(curlHandle, CURLOPT_NOSIGNAL, LongInt(1));
@@ -150,7 +150,7 @@ begin
       curl_easy_setopt(curlHandle, CURLOPT_POST, LongInt(1))
     else
     begin
-  customMethod := UTF8String(methodUpper);
+      customMethod := UTF8String(methodUpper);
       curl_easy_setopt(curlHandle, CURLOPT_CUSTOMREQUEST, PAnsiChar(customMethod));
     end;
 
