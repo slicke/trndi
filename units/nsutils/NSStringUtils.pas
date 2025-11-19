@@ -1,5 +1,5 @@
 unit NSStringUtils;
-
+// (c) slicke. 2025, LGPL License, with FPC linking exception.
 {$mode delphi}
 {$modeswitch objectivec1}
 
@@ -30,35 +30,37 @@ implementation
 
 function NSStringFromString(const S: string): NSString;
 var
-  Utf8Value: UTF8String;
+  Utf8Value: RawByteString;
 begin
-  Utf8Value := UTF8String(S);
+  Utf8Value := RawByteString(UTF8Encode(S));
   Result := NSString.stringWithUTF8String(PAnsiChar(Utf8Value));
 end;
 
 function NSStringFromUTF8(const S: AnsiString): NSString;
 var
-  Utf8Value: UTF8String;
+  Utf8Value: RawByteString;
 begin
-  Utf8Value := UTF8String(S);
+  Utf8Value := RawByteString(S);
   Result := NSString.stringWithUTF8String(PAnsiChar(Utf8Value));
 end;
 
 function NSStringToString(const S: NSString): string;
-var
-  Utf8Value: UTF8String;
 begin
   if S = nil then
     Exit('');
-  Utf8Value := UTF8String(S.UTF8String);
-  Result := string(Utf8Value);
+  Result := string(NSStringToUTF8(S));
 end;
 
 function NSStringToUTF8(const S: NSString): AnsiString;
+var
+  Ptr: PAnsiChar;
 begin
   if S = nil then
     Exit('');
-  Result := AnsiString(UTF8String(S.UTF8String));
+  Ptr := S.UTF8String;
+  if Ptr = nil then
+    Exit('');
+  Result := StrPas(Ptr);
 end;
 
 end.
