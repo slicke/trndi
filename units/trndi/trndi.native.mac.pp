@@ -97,27 +97,15 @@ var
   GPlistCache: TStringList = nil;
   GPlistLoaded: boolean = false;
 
-function NSStringFromString(const Value: string): NSString;
+function ReadGlobalPreference(const Key: string): string;
 var
-  Utf8Value: UTF8String;
+  Output: string;
+  ExitCode: Integer;
 begin
-  Utf8Value := UTF8String(Value);
-  Result := NSString.stringWithUTF8String(PAnsiChar(Utf8Value));
-end;
-
-function NSStringToStringSafe(const Value: NSString): string;
-begin
-  if Value = nil then
-    Exit('');
-  Result := string(UTF8Decode(UTF8String(Value.UTF8String)));
-end;
-
-function GetNSUserDefaultString(const Key: string): string;
-var
-  KeyStr: NSString;
-begin
-  KeyStr := NSStringFromString(Key);
-  Result := NSStringToStringSafe(NSUserDefaults.standardUserDefaults.stringForKey(KeyStr));
+  Result := '';
+  if RunCommand('/usr/bin/defaults', ['read', '-g', Key], Output, ExitCode) then
+    if ExitCode = 0 then
+      Result := Trim(Output);
 end;
 
 function MacConfigDirectory: string;
@@ -355,7 +343,7 @@ end;
  ------------------------------------------------------------------------------}
 class function TTrndiNativeMac.isDarkMode: boolean;
 begin
-  Result := Pos('DARK', UpperCase(GetNSUserDefaultString('AppleInterfaceStyle'))) > 0;
+  Result := Pos('DARK', UpperCase(ReadGlobalPreference('AppleInterfaceStyle'))) > 0;
 end;
 
 {------------------------------------------------------------------------------
@@ -427,7 +415,6 @@ function TTrndiNativeMac.GetSetting(const keyname: string; def: string;
 var
   key: string;
   idx: integer;
-  legacy: string;
 begin
   key := buildKey(keyname, global);
   EnsurePlistCache;
@@ -435,17 +422,7 @@ begin
   if idx <> -1 then
     Result := GPlistCache.ValueFromIndex[idx]
   else
-  begin
-  legacy := GetNSUserDefaultString(key);
-    if legacy <> '' then
-    begin
-      GPlistCache.Values[key] := legacy;
-      SavePlistCache;
-      Result := legacy;
-    end
-    else
-      Result := def;
-  end;
+    Result := def;
 end;
 
 procedure TTrndiNativeMac.SetSetting(const keyname: string; const val: string;
