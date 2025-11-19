@@ -213,7 +213,7 @@ begin
   {$ifdef X_WIN}
   fSplash.ShowInTaskBar := stAlways;
   {$endif}
-  {$if DARWIN}
+  {$ifdef DARWIN}
   fSplash.lSplashWarn.Font.Size := 9;
   {$endif}
   fSplash.Show;
