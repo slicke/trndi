@@ -51,7 +51,7 @@ interface
 uses
 Classes, SysUtils, Graphics
 {$IF DEFINED(X_MAC)}
-, NSMisc, ns_url_request, CocoaAll, LCLType
+, ns_url_request, CocoaAll, LCLType
 {$ELSEIF DEFINED(X_WIN)}
 , Windows, Registry, Dialogs, StrUtils, winhttpclient, shellapi, comobj,
 Forms, variants, dwmapi

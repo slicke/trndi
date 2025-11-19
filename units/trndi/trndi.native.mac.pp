@@ -36,7 +36,7 @@ unit trndi.native.mac;
 interface
 
 uses
-  Classes, SysUtils, Graphics, NSMisc, ns_url_request, CocoaAll, SimpleDarkMode,
+  Classes, SysUtils, Graphics, ns_url_request, CocoaAll, SimpleDarkMode,
   trndi.native.base;
 
 type
@@ -96,6 +96,29 @@ const
 var
   GPlistCache: TStringList = nil;
   GPlistLoaded: boolean = false;
+
+function NSStringFromString(const Value: string): NSString;
+var
+  Utf8Value: UTF8String;
+begin
+  Utf8Value := UTF8String(Value);
+  Result := NSString.stringWithUTF8String(PAnsiChar(Utf8Value));
+end;
+
+function NSStringToStringSafe(const Value: NSString): string;
+begin
+  if Value = nil then
+    Exit('');
+  Result := string(UTF8Decode(UTF8String(Value.UTF8String)));
+end;
+
+function GetNSUserDefaultString(const Key: string): string;
+var
+  KeyStr: NSString;
+begin
+  KeyStr := NSStringFromString(Key);
+  Result := NSStringToStringSafe(NSUserDefaults.standardUserDefaults.stringForKey(KeyStr));
+end;
 
 function MacConfigDirectory: string;
 var
@@ -348,7 +371,7 @@ end;
  ------------------------------------------------------------------------------}
 class function TTrndiNativeMac.isDarkMode: boolean;
 begin
-  Result := Pos('DARK', UpperCase(GetPrefString('AppleInterfaceStyle'))) > 0;
+  Result := Pos('DARK', UpperCase(GetNSUserDefaultString('AppleInterfaceStyle'))) > 0;
 end;
 
 {------------------------------------------------------------------------------
@@ -429,7 +452,7 @@ begin
     Result := GPlistCache.ValueFromIndex[idx]
   else
   begin
-    legacy := GetPrefString(key);
+  legacy := GetNSUserDefaultString(key);
     if legacy <> '' then
     begin
       GPlistCache.Values[key] := legacy;
