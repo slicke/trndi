@@ -332,7 +332,6 @@ begin
   LogMessage(Format('Label %s: Value=%.2f, Top=%d, Height=%d', [L.Name, Value, L.Top, L.Height]));
   {$endif}
 end;
-end;
 
 function CalculateTrendFromDelta(delta: single): BGTrend;
 begin
