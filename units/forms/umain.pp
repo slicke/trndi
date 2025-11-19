@@ -612,18 +612,75 @@ var
   L: TPaintBox;
   hasfont: boolean;
   needsRecalc: boolean;
+  {$ifdef LCLCocoa}
+  nsStr: NSString;
+  nsFont: NSFont;
+  attrs: NSMutableDictionary;
+  textSize: NSSize;
+  nsView: NSView;
+  rect: NSRect;
+  {$else}
   {$ifdef DARWIN}
   bmp: TBitmap;
+  {$endif}
   {$endif}
 begin
   L := Sender as TPaintBox;
   S := L.Caption;
 
   {$ifdef LCLCocoa}
-  // macOS Cocoa workaround: Skip custom painting due to CheckDC bug
+  // macOS Cocoa workaround: Use native NSString drawing to avoid CheckDC bug
   // in cocoagdiobjects.pas (TObject(dc) is TCocoaContext fails)
-  // Just let the control use its Caption directly with AutoSize
-  L.AutoSize := True;
+  if S = '' then Exit;
+  
+  try
+    // Create NSString from Pascal string
+    nsStr := NSStringUTF8(S);
+    
+    // Get or create font
+    if S = DOT_GRAPH then
+      hasFont := FontGUIInList(fontn)
+    else
+      hasFont := FontTXTInList(fontn);
+    
+    if hasFont then
+      nsFont := NSFont.fontWithName_size(NSStringUTF8(fontn), L.Font.Size)
+    else
+      nsFont := NSFont.systemFontOfSize(L.Font.Size);
+    
+    if not Assigned(nsFont) then
+      nsFont := NSFont.systemFontOfSize(L.Font.Size);
+    
+    // Create attributes dictionary for text rendering
+    attrs := NSMutableDictionary.dictionaryWithCapacity(2);
+    attrs.setObject_forKey(nsFont, NSFontAttributeName);
+    attrs.setObject_forKey(NSColor.colorWithCalibratedRed_green_blue_alpha(
+      L.Font.Color and $FF / 255.0,
+      (L.Font.Color shr 8) and $FF / 255.0,
+      (L.Font.Color shr 16) and $FF / 255.0,
+      1.0), NSForegroundColorAttributeName);
+    
+    // Get text size for sizing the control
+    textSize := nsStr.sizeWithAttributes(attrs);
+    L.Width := Round(textSize.width) + 2;
+    L.Height := Round(textSize.height) + 2;
+    
+    // Get NSView from handle and draw
+    if L.HandleAllocated then
+    begin
+      nsView := NSView(L.Handle);
+      if Assigned(nsView) then
+      begin
+        rect := NSMakeRect(0, 0, textSize.width, textSize.height);
+        nsStr.drawInRect_withAttributes(rect, attrs);
+      end;
+    end;
+    
+    nsStr.release;
+  except
+    on E: Exception do
+      LogMessage('DotPaint Cocoa native draw error: ' + E.Message);
+  end;
   Exit;
   {$endif}
 
