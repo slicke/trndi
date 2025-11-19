@@ -49,7 +49,7 @@ interface
 }
 
 uses
-Classes, SysUtils, Graphics
+Classes, SysUtils, Graphics, ctypes
 {$IF DEFINED(X_MAC)}
 , MacHTTPClient, CocoaAll, LCLType
 {$ELSEIF DEFINED(X_WIN)}
@@ -243,10 +243,10 @@ DEFAULT_MIN_FONT_SIZE = 8;
 implementation
 
 // C-compatible write callback used by libcurl to collect response data.
-function CurlWriteCallback(buffer: pchar; size, nmemb: longword;
-userdata: Pointer): longword; cdecl;
+function CurlWriteCallback(buffer: PAnsiChar; size, nmemb: csize_t;
+  userdata: Pointer): csize_t; cdecl;
 var
-  Bytes: SizeInt;
+  bytesTotal: csize_t;
   SS: TStringStream;
 begin
   if (userdata = nil) or (buffer = nil) then
@@ -255,10 +255,10 @@ begin
     Exit;
   end;
   SS := TStringStream(userdata);
-  Bytes := SizeInt(size) * SizeInt(nmemb);
-  if Bytes > 0 then
-    SS.WriteBuffer(buffer^, Bytes);
-  Result := Bytes;
+  bytesTotal := size * nmemb;
+  if bytesTotal > 0 then
+    SS.WriteBuffer(buffer^, SizeInt(bytesTotal));
+  Result := bytesTotal;
 end;
 {------------------------------------------------------------------------------
   TTrndiNativeBase.updateLocale

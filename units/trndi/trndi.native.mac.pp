@@ -136,7 +136,7 @@ begin
     // As a last resort, use a writable per-user folder so settings are not lost.
     dir := GetUserDir + '.trndi';
     if not ForceDirectoriesUTF8(dir) then
-      dir := GetTempDirUTF8;
+      dir := GetTempDir;
   end;
 
   Result := IncludeTrailingPathDelimiter(dir);

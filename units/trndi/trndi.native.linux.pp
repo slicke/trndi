@@ -26,7 +26,7 @@ interface
 uses
 Classes, SysUtils, Graphics, IniFiles, Dialogs,
 ExtCtrls, Forms, Math, LCLIntf, KDEBadge, trndi.native.base, FileUtil, Menus,
-libpascurl;
+libpascurl, ctypes;
 
 type
   {!
@@ -216,10 +216,10 @@ begin
 end;
 
 // C-compatible write callback for libcurl used in this unit
-function CurlWriteCallback_Linux(buffer: pchar; size, nmemb: longword;
-userdata: Pointer): longword; cdecl;
+function CurlWriteCallback_Linux(buffer: PAnsiChar; size, nmemb: csize_t;
+  userdata: Pointer): csize_t; cdecl;
 var
-  Bytes: SizeInt;
+  bytesTotal: csize_t;
   SS: TStringStream;
 begin
   if (userdata = nil) or (buffer = nil) then
@@ -228,10 +228,10 @@ begin
     Exit;
   end;
   SS := TStringStream(userdata);
-  Bytes := SizeInt(size) * SizeInt(nmemb);
-  if Bytes > 0 then
-    SS.WriteBuffer(buffer^, Bytes);
-  Result := Bytes;
+  bytesTotal := size * nmemb;
+  if bytesTotal > 0 then
+    SS.WriteBuffer(buffer^, SizeInt(bytesTotal));
+  Result := bytesTotal;
 end;
 
 // Return value of environment variable Name (empty if unset)
