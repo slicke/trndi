@@ -612,12 +612,8 @@ var
   L: TPaintBox;
   hasfont: boolean;
   needsRecalc: boolean;
-  {$ifdef LCLCocoa}
-  // macOS Cocoa: TPaintBox canvas has CheckDC issues, use autosize instead
-  {$else}
   {$ifdef DARWIN}
   bmp: TBitmap;
-  {$endif}
   {$endif}
 begin
   L := Sender as TPaintBox;
