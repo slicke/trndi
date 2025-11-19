@@ -1907,7 +1907,8 @@ begin
 
     Result := ShowModalSafe(Dialog);
   finally
-    hpd.Free;
+  if assigned(hpd) then
+      hpd.Free;
     Dialog.Free;
   end;
 end;
@@ -2267,6 +2268,7 @@ begin
   ShowModalSafe(Dialog);
   Result := Dialog.ModalResult;
   finally
+  if assigned(hpd) then
     hpd.free;
     Dialog.Free;
   end;
