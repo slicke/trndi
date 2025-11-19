@@ -1908,8 +1908,8 @@ begin
     Result := ShowModalSafe(Dialog);
   finally
   {$ifndef Darwin}
-  if assigned(hpd) then
-      hpd.Free;
+//  if assigned(hpd) then
+  //    hpd.Free;
   {$endif}
     Dialog.Free;
   end;
@@ -2270,7 +2270,7 @@ begin
   ShowModalSafe(Dialog);
   Result := Dialog.ModalResult;
   finally
-    hpd.free;
+//    hpd.free;
     Dialog.Free;
   end;
 end;
