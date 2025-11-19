@@ -39,7 +39,7 @@ end;
 // Sign convention: negative = dots are above (need to move down); positive = dots are below (need to move up).
 function TfBG.dotsInView: integer;
 var
-  x: TPaintBox;
+  x: TDotControl;
   bottom, overflow: integer;
   adjustSide: TTrndiBool;
 const

@@ -72,10 +72,15 @@ StrUtils, TouchDetection, ufloat, LCLType, trndi.webserver.threaded;
 type
 TFloatIntDictionary = specialize TDictionary<single, integer>;
   // Specialized TDictionary
+  {$ifdef DARWIN}
+  TDotControl = TLabel;
+  {$else}
+  TDotControl = TPaintBox;
+  {$endif}
   // Procedures which are applied to the trend drawing
-TTrendProc = procedure(l: TPaintBox; c, ix: integer) of object;
-TTrendProcLoop = procedure(l: TPaintBox; c, ix: integer;
-  ls: array of TPaintbox) of object;
+TTrendProc = procedure(l: TDotControl; c, ix: integer) of object;
+TTrendProcLoop = procedure(l: TDotControl; c, ix: integer;
+  ls: array of TDotControl) of object;
 TrndiPos = (tpoCenter = 0, tpoBottomLeft = 1, tpoBottomRight = 2,
   tpoCustom = 3, tpoTopRight = 4);
 TPONames = array[TrndiPos] of string;
@@ -106,15 +111,15 @@ TfBG = class(TForm)
   miPredict: TMenuItem;
   pnWarnlast: TLabel;
   lRef: TLabel;
-  lDot10: TPaintBox;
-  lDot2: TPaintBox;
-  lDot3: TPaintBox;
-  lDot4: TPaintBox;
-  lDot5: TPaintBox;
-  lDot6: TPaintBox;
-  lDot7: TPaintBox;
-  lDot8: TPaintBox;
-  lDot9: TPaintBox;
+  lDot10: TDotControl;
+  lDot2: TDotControl;
+  lDot3: TDotControl;
+  lDot4: TDotControl;
+  lDot5: TDotControl;
+  lDot6: TDotControl;
+  lDot7: TDotControl;
+  lDot8: TDotControl;
+  lDot9: TDotControl;
   lMissing: TLabel;
   lTir: TLabel;
   lAgo: TLabel;
@@ -131,7 +136,7 @@ TfBG = class(TForm)
   miADots: TMenuItem;
   miATouch: TMenuItem;
   miAdvanced: TMenuItem;
-  lDot1: TPaintBox;
+  lDot1: TDotControl;
   misep: TMenuItem;
   miSplit6: TMenuItem;
   miSplit5: TMenuItem;
@@ -292,7 +297,7 @@ private
   FLastTirColor: TColor;
 
     // Array to hold references to lDot1 - lDot10
-  TrendDots: array[1..10] of TPaintBox;
+  TrendDots: array[1..10] of TDotControl;
   multi: boolean; // Multi user
   multinick: string;
   MediaController: TSystemMediaController;
@@ -313,12 +318,13 @@ private
   procedure PlaceTrendDots(const Readings: array of BGReading);
   procedure actOnTrend(proc: TTrendProc);
   procedure actOnTrend(proc: TTrendProcLoop);
-  procedure setDotWidth(l: TPaintBox; c, ix: integer; {%H-}ls: array of TPaintBox);
-  procedure HideDot(l: TPaintBox; {%H-}c, {%H-}ix: integer);
-  procedure showDot(l: TPaintBox; {%H-}c, {%H-}ix: integer);
-  procedure ResizeDot(l: TPaintBox; {%H-}c, ix: integer);
-  procedure initDot(l: TPaintBox; c, ix: integer);
-  procedure ExpandDot(l: TPaintBox; c, ix: integer);
+  procedure setDotWidth(l: TDotControl; c, ix: integer; {%H-}ls: array of TDotControl);
+  procedure HideDot(l: TDotControl; {%H-}c, {%H-}ix: integer);
+  procedure showDot(l: TDotControl; {%H-}c, {%H-}ix: integer);
+  procedure ResizeDot(l: TDotControl; {%H-}c, ix: integer);
+  procedure initDot(l: TDotControl; c, ix: integer);
+  procedure ExpandDot(l: TDotControl; c, ix: integer);
+  procedure CreateTrendDots;
   procedure placeForm;
   function CalculateDotVisualOffset: integer;
 
@@ -605,16 +611,32 @@ begin
   end;
 end;
 
+// DotPaint: Custom paint handler for trend dot TPaintBox controls
+// 
+// KNOWN ISSUE: On macOS with LCLCocoa widgetset, TPaintBox OnPaint has a bug where
+// CheckDC() in cocoagdiobjects.pas fails with "TObject(dc) is TCocoaContext" error.
+// WORKAROUND: Use Qt6 or Qt5 widgetset on macOS (recommended and default).
+// This function works correctly on all other platforms and with Qt6/Qt5 on macOS.
 procedure TfBG.DotPaint(Sender: TObject);
 var
   tw, th: integer;
   S, fontn: string;
-  L: TPaintBox;
+  L: TDotControl;
   hasfont: boolean;
   needsRecalc: boolean;
 begin
-  L := Sender as TPaintBox;
+  L := Sender as TDotControl;
   S := L.Caption;
+  
+  {$ifdef DARWIN}
+  // macOS: Use TLabel instead of TPaintBox to avoid Cocoa CheckDC issues
+  // TLabel handles rendering automatically via Caption property
+  L.AutoSize := True;
+  L.Alignment := taCenter;
+  L.Layout := tlCenter;
+  Exit;
+  {$endif}
+  
   L.AutoSize := false;
 
   if S = DOT_GRAPH then
@@ -1124,7 +1146,7 @@ end;
 // Post-process the graph
 procedure TfBG.AdjustGraph;
 var
-  l: TPaintBox;
+  l: TDotControl;
   da: integer;
 begin
   for l in TrendDots do
@@ -1347,7 +1369,70 @@ begin
   miSettings.Click;
 end;
 
-procedure TfBG.initDot(l: TPaintBox; c, ix: integer);
+// Create trend dot controls dynamically at runtime
+// Uses TLabel on macOS (Darwin) to avoid Cocoa CheckDC bugs, TPaintBox elsewhere
+procedure TfBG.CreateTrendDots;
+var
+  i: integer;
+  dotArray: array[1..NUM_DOTS] of ^TDotControl;
+begin
+  // Set up array of pointers to each dot field
+  dotArray[1] := @lDot1;
+  dotArray[2] := @lDot2;
+  dotArray[3] := @lDot3;
+  dotArray[4] := @lDot4;
+  dotArray[5] := @lDot5;
+  dotArray[6] := @lDot6;
+  dotArray[7] := @lDot7;
+  dotArray[8] := @lDot8;
+  dotArray[9] := @lDot9;
+  dotArray[10] := @lDot10;
+
+  for i := 1 to NUM_DOTS do
+  begin
+    {$ifdef DARWIN}
+    // macOS: Create TLabel to avoid TPaintBox.OnPaint Cocoa bugs
+    dotArray[i]^ := TLabel.Create(Self);
+    with TLabel(dotArray[i]^) do
+    begin
+      Parent := Self;
+      AutoSize := True;
+      Alignment := taCenter;
+      Layout := tlCenter;
+      Transparent := True;
+    end;
+    {$else}
+    // Other platforms: Use TPaintBox with custom painting
+    dotArray[i]^ := TPaintBox.Create(Self);
+    with TPaintBox(dotArray[i]^) do
+    begin
+      Parent := Self;
+      AutoSize := False;
+      OnPaint := @DotPaint;
+    end;
+    {$endif}
+    
+    // Common properties for both control types
+    with dotArray[i]^ do
+    begin
+      Left := 72;
+      Top := 191;
+      Width := 33;
+      Height := 49;
+      Visible := False;
+      Caption := DOT_GRAPH;
+      PopupMenu := pmSettings;
+      OnClick := @onTrendClick;
+    end;
+    
+    // Add to TrendDots array for easy access
+    TrendDots[i] := dotArray[i]^;
+  end;
+  
+  LogMessage('Trend dots created dynamically');
+end;
+
+procedure TfBG.initDot(l: TDotControl; c, ix: integer);
 begin
   {$ifdef Windows}
   l.Font.Name := 'DejaVu Sans Mono';
@@ -1370,60 +1455,78 @@ begin
   Result := 0;
   bmp := TBitmap.Create;
   try
-    // Use a reasonable font size for measurement (similar to what dots use)
-    fontSize := 24;
-    bmp.Width := fontSize * 2;
-    bmp.Height := fontSize * 2;
+    try
+      // Use a reasonable font size for measurement (similar to what dots use)
+      fontSize := 24;
+      bmp.Width := fontSize * 2;
+      bmp.Height := fontSize * 2;
 
-    // Set background color and clear bitmap
-    bgColor := clWhite;
-    bmp.Canvas.Brush.Color := bgColor;
-    bmp.Canvas.FillRect(0, 0, bmp.Width, bmp.Height);
+      {$ifdef DARWIN}
+      // macOS: Force handle allocation before canvas operations
+      bmp.Canvas.Handle; // This ensures the bitmap context is properly created
+      {$endif}
 
-    // Set font properties matching the dots - use GUI font on all platforms
-    if FontGUIInList(fontName) then
-      bmp.Canvas.Font.Name := fontName
-    else
-      bmp.Canvas.Font.Name := 'default';
-    bmp.Canvas.Font.Size := fontSize;
-    bmp.Canvas.Font.Color := clBlack;
+      // Set background color and clear bitmap
+      bgColor := clWhite;
+      bmp.Canvas.Brush.Color := bgColor;
+      bmp.Canvas.FillRect(0, 0, bmp.Width, bmp.Height);
 
-    // Draw the dot character centered
-    bmp.Canvas.TextOut(fontSize div 2, fontSize div 2, DOT_GRAPH);
+      // Set font properties matching the dots - use GUI font on all platforms
+      if FontGUIInList(fontName) then
+        bmp.Canvas.Font.Name := fontName
+      else
+        bmp.Canvas.Font.Name := 'default';
+      bmp.Canvas.Font.Size := fontSize;
+      bmp.Canvas.Font.Color := clBlack;
 
-    // Find the first row with a non-background pixel (scanning from top)
-    firstPixelY := -1;
-    found := false;
+      // Draw the dot character centered
+      bmp.Canvas.TextOut(fontSize div 2, fontSize div 2, DOT_GRAPH);
 
-    for y := 0 to bmp.Height - 1 do
-    begin
-      for x := 0 to bmp.Width - 1 do
+      // Find the first row with a non-background pixel (scanning from top)
+      firstPixelY := -1;
+      found := false;
+
+      for y := 0 to bmp.Height - 1 do
       begin
-        pixelColor := bmp.Canvas.Pixels[x, y];
-        // Check if pixel is significantly different from background
-        if pixelColor <> bgColor then
+        for x := 0 to bmp.Width - 1 do
         begin
-          firstPixelY := y;
-          found := true;
-          break;
+          pixelColor := bmp.Canvas.Pixels[x, y];
+          // Check if pixel is significantly different from background
+          if pixelColor <> bgColor then
+          begin
+            firstPixelY := y;
+            found := true;
+            break;
+          end;
         end;
+        if found then
+          break;
       end;
-      if found then
-        break;
-    end;
 
-    // Calculate offset based on where we found the first pixel
-    if found then
-    begin
-      // The visual center should be at halfHeight
-      halfHeight := bmp.Height div 2;
-      // If first pixel is below center, offset is positive (move lines down)
-      // If first pixel is above center, offset is negative (move lines up)
-      Result := firstPixelY - halfHeight;
-      LogMessage(Format(
-        'DOT_VISUAL_OFFSET calculated: font=%s, firstPixel=%d, halfHeight=%d, offset=%d',
-        [
-        fontName, firstPixelY, halfHeight, Result]));
+      // Calculate offset based on where we found the first pixel
+      if found then
+      begin
+        // The visual center should be at halfHeight
+        halfHeight := bmp.Height div 2;
+        // If first pixel is below center, offset is positive (move lines down)
+        // If first pixel is above center, offset is negative (move lines up)
+        Result := firstPixelY - halfHeight;
+        LogMessage(Format(
+          'DOT_VISUAL_OFFSET calculated: font=%s, firstPixel=%d, halfHeight=%d, offset=%d',
+          [
+          fontName, firstPixelY, halfHeight, Result]));
+      end;
+    except
+      on E: Exception do
+      begin
+        {$ifdef DARWIN}
+        // On macOS, log canvas errors but don't crash
+        LogMessage('CalculateDotVisualOffset error on macOS: ' + E.Message);
+        Result := 0; // Use default offset
+        {$else}
+        raise; // Re-raise on other platforms
+        {$endif}
+      end;
     end;
 
   finally
@@ -1432,7 +1535,7 @@ begin
 end;
 
 // Expands a trend dot to show actual bg value with highlighting for latest reading
-procedure TfBG.ExpandDot(l: TPaintBox; c, ix: integer);
+procedure TfBG.ExpandDot(l: TDotControl; c, ix: integer);
 var
   isDot: boolean;
 begin
@@ -1477,13 +1580,13 @@ begin
 end;
 
 // Hides a dot
-procedure TfBG.HideDot(l: TPaintBox; c, ix: integer);
+procedure TfBG.HideDot(l: TDotControl; c, ix: integer);
 begin
   l.Visible := false;
 end;
 
 // Shows a dot only if it has valid data (non-empty Hint)
-procedure TfBG.ShowDot(l: TPaintBox; c, ix: integer);
+procedure TfBG.ShowDot(l: TDotControl; c, ix: integer);
 begin
   // Only show dots that have been populated with data
   if l.Hint <> '' then
@@ -1491,10 +1594,19 @@ begin
 end;
 
 // Scales a dot's font size
-procedure TfBG.ResizeDot(l: TPaintBox; c, ix: integer);
+procedure TfBG.ResizeDot(l: TDotControl; c, ix: integer);
 var
   th, tw, minSize: integer;
 begin
+  {$ifdef DARWIN}
+  // macOS: TLabel handles sizing automatically via AutoSize
+  l.AutoSize := True;
+  l.Font.Size := round(Max((lVal.Font.Size div 8) * dotscale, 28)); // Ensure minimum font size
+  // Force immediate size calculation by triggering a layout update
+  l.AdjustSize;
+  LogMessage(Format('TrendDots[%d] resized with Font Size = %d, Height=%d (AutoSize).',
+    [ix, l.Font.Size, l.Height]));
+  {$else}
   l.AutoSize := false;
   l.Font.Size := round(Max((lVal.Font.Size div 8) * dotscale, 28)); // Ensure minimum font size
   // Tighten control size to actual text metrics of the dot glyph
@@ -1505,10 +1617,11 @@ begin
   l.Height := minSize;
   LogMessage(Format('TrendDots[%d] resized with Font Size = %d, W=%d, H=%d.',
     [ix, l.Font.Size, l.Width, l.Height]));
+  {$endif}
 end;
 
 // Sets the width (NOT the font) of a dot
-procedure TfBG.SetDotWidth(l: TPaintBox; c, ix: integer; ls: array of TPaintBox);
+procedure TfBG.SetDotWidth(l: TDotControl; c, ix: integer; ls: array of TDotControl);
 var
   spacing: integer;
 begin
@@ -2511,12 +2624,12 @@ end;
 procedure TfBG.onTrendClick(Sender: TObject);
 var
   isdot: boolean;
-  l: TPaintbox;
+  l: TDotControl;
   {$ifdef TrndiExt}
   fs: TFormatSettings;
   {$endif}
 begin
-  l := Sender as tPaintbox;
+  l := Sender as TDotControl;
 
   actOnTrend(@ExpandDot);
   isDot := UnicodeSameText(l.Caption, DOT_GRAPH);
@@ -2631,7 +2744,7 @@ function SafeQtStyle(Handle: QWidgetH; const Style: string): boolean;
   end;
   {$endif}
 var
-  tpb: TPaintbox;
+  tpb: TDotControl;
   H, M: integer;
   mi: integer;
 begin
@@ -2660,9 +2773,9 @@ begin
     miCustomDots.Caption := Format('%s [%.2f]', [miCustomDots.Caption, dotscale]);
   end;
 
-  if (Sender as TPopupMenu).PopupComponent is TPaintBox then
+  if (Sender as TPopupMenu).PopupComponent is TDotControl then
   begin
-    tpb := (Sender as TPopupMenu).PopupComponent as TPaintBox;
+    tpb := (Sender as TPopupMenu).PopupComponent as TDotControl;
     H := tpb.Tag div 100;
     M := tpb.Tag mod 100;
 
@@ -2951,7 +3064,7 @@ end;
 
 procedure TfBG.UpdateTrendDots;
 var
-  Dot: TPaintBox;
+  Dot: TDotControl;
   Value: single; // Parsed from hint (user unit), then normalized to mmol/L
   ok: boolean;
   wasVisible: boolean;
@@ -4059,7 +4172,7 @@ var
   slotStart, slotEnd, anchorTime: TDateTime;
   found: boolean;
   reading: BGReading;
-  l: TPaintbox;
+  l: TDotControl;
 begin
   if Length(SortedReadings) = 0 then
     Exit;
@@ -4169,7 +4282,7 @@ function TfBG.UpdateLabelForReading(SlotIndex: integer;
 const Reading: BGReading): boolean;
 var
   labelNumber: integer;
-  l: TPaintBox;
+  l: TDotControl;
   H, M, S, MS: word;
 begin
   if firstboot then
@@ -4190,6 +4303,11 @@ begin
     l.Tag := H * 100 + M; // 10:00 = 1000
 
     l.Caption := DOT_GRAPH;
+    
+    {$ifdef DARWIN}
+    // On macOS, force TLabel to calculate its size before positioning
+    l.AdjustSize;
+    {$endif}
 
     // Use the dot's parent client height to align placement with visibility checks
     setPointHeight(l, Reading.convert(mmol), l.Parent.ClientHeight);

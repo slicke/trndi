@@ -49,7 +49,7 @@ interface
 
 uses
   Classes, SysUtils, Dialogs, Forms, ExtCtrls, StdCtrls, Controls, Graphics, Math,
-  IntfGraphics, FPImage, graphtype, lcltype, Trndi.Native, Grids, Spin, IpHtml, slicke.ux.native, SpinEx,
+  IntfGraphics, FPImage, graphtype, lcltype, Trndi.Native, Grids, Spin, IpHtml, Iphttpbroker, slicke.ux.native, SpinEx,
   {$ifdef Windows}
   DX12.D2D1, DX12.DXGI, DX12.DWrite, DX12.DCommon, DX12.WinCodec, Windows, Buttons, ActiveX, ComObj,
   {$endif}
@@ -165,6 +165,7 @@ type
     FontPickerPreview: TLabel;
     {** OnChange handler for font combo box in ExtFontPicker. }
     procedure FontComboChange(Sender: TObject);
+    procedure HTMLGetImageX(Sender: TIpHtmlNode; const URL: string; var Picture: TPicture);
   end;
 
   {**
@@ -265,6 +266,23 @@ type
                   scale: integer = 1): TModalResult;
 
   {**
+    HTML-only dialog with buttons.
+    @param dialogsize Layout preset.
+    @param caption Window caption.
+    @param html HTML content to display in the dialog.
+    @param buttons Button set to display.
+    @param icon Emoji icon (default gear).
+    @param scale Content height multiplier (default 1).
+    @returns Modal result based on user button selection.
+    @remarks This variant displays only HTML content without title/description sections.
+  }
+  function ExtMsg(const dialogsize: TUXDialogSize;
+                  const caption, html: string;
+                  buttons: TUXMsgDlgBtns = [mbAbort];
+                  const icon: UXImage = uxmtCog;
+                  scale: single = 1): TModalResult; overload;
+
+  {**
     Extended message dialog with HTML support in log panel.
     @param dialogsize Layout preset.
     @param caption Window caption.
@@ -287,7 +305,7 @@ type
                       dumptext: TColor = uxclRed;
                       buttons: TUXMsgDlgBtns = [mbAbort];
                       const icon: UXImage = uxmtCog;
-                      scale: integer = 1): TModalResult;
+                      scale: single = 1): TModalResult;
 
   {**
     Convenience wrapper for @link(ExtMsg) that shows a message and a log/dump with an OK button.
@@ -1762,6 +1780,142 @@ begin
 end;
 
 {** See interface docs for behavior and parameters. }
+function ExtMsg(
+  const dialogsize: TUXDialogSize;
+  const caption, html: string;
+  buttons: TUXMsgDlgBtns = [mbAbort];
+  const icon: UXImage = uxmtCog;
+  scale: single = 1
+): TModalResult;
+const
+  btnWidth = 75;
+  padding  = 10;
+var
+  Dialog: TDialogForm;
+  MainPanel, HtmlPanel, ButtonPanel: TPanel;
+  IconBox: TImage;
+  HtmlViewer: TIpHtmlPanel;
+  OkButton: {$ifdef Windows}TBitBtn{$else}TButton{$endif};
+  mr: TUXMsgDlgBtn;
+  ButtonActualWidth, posX, ProposedWidth, btnCount, totalBtnWidth: Integer;
+  bgcol: TColor;
+  big: boolean;
+  sysfont: string;
+  contentHeight, maxHeight, finalHeight: Integer;
+  hpd: TIpHttpDataProvider;
+begin
+  bgcol := getBackground;
+  big := UXDialogIsBig(dialogsize);
+
+  Dialog := TDialogForm.CreateNew(nil);
+  try
+
+    Dialog.Caption := caption;
+    Dialog.BorderStyle := bsDialog;
+    {$ifdef LCLGTK3}Dialog.BorderStyle := bsSizeable;{$endif}
+    Dialog.Position := poWorkAreaCenter;
+    Dialog.Color := bgcol;
+
+    ProposedWidth := IfThen(big, 650, 500);
+    if ProposedWidth > 900 then ProposedWidth := 900;
+    Dialog.ClientWidth := ProposedWidth;
+
+    // Icon at top
+    IconBox := TImage.Create(Dialog);
+    IconBox.Parent := Dialog;
+    IconBox.Left := padding;
+    IconBox.Top := padding;
+    IconBox.Width := IfThen(big, 80, 48);
+    IconBox.Height := IconBox.Width;
+    {$ifdef Windows}IconBox.Font.Name := 'Segoe UI Emoji';{$endif}
+    AssignEmoji(IconBox, icon, bgcol);
+
+    // HTML panel
+    HtmlPanel := TPanel.Create(Dialog);
+    HtmlPanel.Parent := Dialog;
+    HtmlPanel.Left := IconBox.Left + IconBox.Width + padding;
+    HtmlPanel.Top := padding;
+    HtmlPanel.Width := Dialog.ClientWidth - HtmlPanel.Left - padding;
+    HtmlPanel.Color := bgcol;
+    HtmlPanel.BevelOuter := bvNone;
+
+    HtmlViewer := TIpHtmlPanel.Create(HtmlPanel);
+
+    hpd := TIpHttpDataProvider.Create(nil);
+    HtmlViewer.DataProvider := hpd;
+    hpd.OnGetImage := @dialog.HTMLGetImageX;
+
+    HtmlViewer.Parent := HtmlPanel;
+    HtmlViewer.Left := 0;
+    HtmlViewer.Top := 0;
+    HtmlViewer.Width := HtmlPanel.Width;
+    HtmlViewer.FixedTypeface := 'Courier New';
+    HtmlViewer.DefaultTypeFace := IfThen(big, 'Segoe UI', 'Tahoma');
+    HtmlViewer.DefaultFontSize := IfThen(big, 16, 12);
+    HtmlViewer.FlagErrors := False;
+    HtmlViewer.Color := bgcol;
+    HtmlViewer.AllowTextSelect := False;  // Prevent text selection like TLabel
+    
+    // Load HTML content with system font and colors
+    FontTXTInList(sysfont);
+    HtmlViewer.SetHtmlFromStr(
+      '<html><body bgcolor="' + TColorToHTML(bgcol) + '" text="' + TColorToHTML(getBaseColor) + '" style="font-family: ' + sysfont + ';">' +
+      html +
+      '</body></html>'
+    );
+
+    // Calculate content height and adjust dialog
+    maxHeight := Round(Screen.Height * 0.8);
+    contentHeight := Round((HtmlViewer.GetContentSize.cy + 20) * scale);  // Apply scale multiplier to height
+    if contentHeight < 150 then contentHeight := 150;  // Minimum height
+    if contentHeight > (maxHeight - 200) then contentHeight := maxHeight - 200;  // Leave room for icon and buttons
+    
+    HtmlViewer.Height := contentHeight;
+    HtmlPanel.Height := contentHeight;
+
+    // Count buttons
+    btnCount := 0;
+    for mr in buttons do Inc(btnCount);
+
+    ButtonActualWidth := IfThen(big, btnWidth * 2, btnWidth);
+    totalBtnWidth := (btnCount * ButtonActualWidth) + ((btnCount - 1) * padding);
+    posX := (Dialog.ClientWidth - totalBtnWidth) div 2;
+
+    // Create buttons
+    for mr in buttons do
+    begin
+      {$ifdef Windows}
+      OkButton := TBitBtn.Create(Dialog);
+      {$else}
+      OkButton := TButton.Create(Dialog);
+      {$endif}
+      OkButton.Parent := Dialog;
+      OkButton.Caption := langs[mr];
+      OkButton.Width := ButtonActualWidth;
+      OkButton.Height := IfThen(big, 50, 25);
+      if big then
+        OkButton.Font.Size := 12;
+      OkButton.Left := posX;
+      OkButton.Top := HtmlPanel.Top + HtmlPanel.Height + padding;
+      OkButton.ModalResult := UXButtonToModalResult(mr);
+      Inc(posX, ButtonActualWidth + padding);
+    end;
+
+    // Set final dialog height based on content
+    finalHeight := OkButton.Top + OkButton.Height + padding;
+    Dialog.ClientHeight := finalHeight;
+
+    Result := ShowModalSafe(Dialog);
+  finally
+  {$ifndef Darwin}
+//  if assigned(hpd) then
+  //    hpd.Free;
+  {$endif}
+    Dialog.Free;
+  end;
+end;
+
+{** See interface docs for behavior and parameters. }
 function ExtMessage(
   const dialogsize: TUXDialogSize;
   const caption, title, desc, logmsg: string;
@@ -1770,7 +1924,7 @@ function ExtMessage(
   dumptext: TColor = uxclRed;
   buttons: TUXMsgDlgBtns = [mbAbort];
   const icon: UXImage = uxmtCog;
-  scale: integer = 1
+  scale: single = 1
 ): TModalResult;
 const
   btnWidth = 75;
@@ -1794,6 +1948,8 @@ var
   TempFont: TFont;
   big: boolean;
   MemoWrapper: TPanel;
+  sysfont: string;
+  hpd: TIpHttpDataProvider;
 begin
   bgcol := getBackground;
   big := UXDialogIsBig(dialogsize);
@@ -2004,7 +2160,7 @@ begin
     LogPanel := TPanel.Create(Dialog);
     LogPanel.Parent := Dialog;
     LogPanel.Align := alBottom;
-    LogPanel.Height := IfThen(big, 100, 50) * scale;
+    LogPanel.Height := round(IfThen(big, 100, 50) * scale);
     LogPanel.Color := dumpbg;
     LogPanel.BevelOuter := bvNone;
     LogPanel.Visible := logmsg <> '';
@@ -2020,6 +2176,9 @@ begin
     begin
       // Use TIpHtmlPanel for HTML content (cross-platform)
       LogHtmlPanel := TIpHtmlPanel.Create(MemoWrapper);
+      hpd := TIpHttpDataProvider.Create(nil);
+      LogHtmlPanel.DataProvider := hpd;
+      hpd.OnGetImage := @dialog.HTMLGetImageX;
       LogHtmlPanel.Parent := MemoWrapper;
       LogHtmlPanel.Left := MemoPadLeft;
       LogHtmlPanel.Top := MemoPadTop;
@@ -2030,11 +2189,14 @@ begin
       LogHtmlPanel.BorderStyle := bsNone;
       LogHtmlPanel.TabStop := False;  // Prevent focus
       LogHtmlPanel.OnKeyDown := @Dialog.FormKeyDown;
+      LogHTMLPanel.MarginHeight:=0;
+      LogHTMLPanel.MarginWidth:=0;
       // Load HTML content with body tag for background color
       try
         // Wrap content in HTML structure with background color from dumpbg
+        FontTXTInList(sysfont);
         LogHtmlPanel.SetHtmlFromStr(
-          '<html><body bgcolor="' + TColorToHTML(dumpbg) + '" text="' + TColorToHTML(dumptext) + '">' +
+          '<html><body bgcolor="' + TColorToHTML(dumpbg) + '" text="' + TColorToHTML(dumptext) + '" style="font-family: ' + sysfont + ';">' +
           logmsg +
           '</body></html>'
         );
@@ -2043,7 +2205,7 @@ begin
         begin
           // Fallback to plain text if HTML parsing fails
           LogHtmlPanel.SetHtmlFromStr(
-            '<html><body bgcolor="' + TColorToHTML(dumpbg) + '" text="' + TColorToHTML(dumptext) + '"><pre>' +
+            '<html><body bgcolor="' + TColorToHTML(dumpbg) + '" text="' + TColorToHTML(dumptext) + '" style="font-family: Verdana, Arial, sans-serif;"><pre>' +
             logmsg +
             '</pre></body></html>'
           );
@@ -2108,6 +2270,7 @@ begin
   ShowModalSafe(Dialog);
   Result := Dialog.ModalResult;
   finally
+//    hpd.free;
     Dialog.Free;
   end;
 end;
@@ -2395,5 +2558,20 @@ begin
     ACanvas.DrawFocusRect(ARect);
 end;
 {$endif}
+
+procedure TDialogForm.HTMLGetImageX(Sender: TIpHtmlNode; const URL: string;
+  var Picture: TPicture);
+var
+  res: string;
+  ms: TStringStream;
+begin
+  picture := TPicture.Create;
+  TrndiNative.getURL(url, res);
+  ms := TStringStream.Create(res);
+  picture.LoadFromStream(ms);
+  ms.Free;
+end;
+
+
 
 end.

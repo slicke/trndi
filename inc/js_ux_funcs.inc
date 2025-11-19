@@ -62,19 +62,61 @@ var
  vbs: Variant; //Variant box size
 begin
   if argc <> 5 then begin
-     ExtError(uxdAuto, 'A dialog box could not be displayed, as the parameter count was wrong');
+     ExtError(uxdAuto, '[htmlMsg] A dialog box could not be displayed, as the parameter count was wrong; got' + IntToStr(argc) + ', expected 5');
   end;
 
   ctx^^.ToVariant(argv^[4], vbs);
 
-  if not varType(vbs) = varInteger then begin
-    ExtError(uxdAuto, 'Box Size must be an integer');
+  if not varType(vbs) = varSingle then begin
+    ExtError(uxdAuto, 'Box Size must be a float or integer');
     exit;
   end;
 
  // Title, Desc, html, size
     ExtMessage(uxdAuto, ctx^^.ToUtf8(argv^[0]), ctx^^.ToUtf8(argv^[1]), ctx^^.ToUtf8(argv^[2]), ctx^^.ToUtf8(argv^[3]), true,
     $00AA6004, $00FDD8AA,  [mbOK], uxmtOK, vbs);
+end;
+
+// Display an HTML message dialog
+function JSHTMLDlg(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw;
+var
+ vbs: Variant; //Variant box size
+begin
+  if argc <> 3 then begin
+     ExtError(uxdAuto, '[htmlDlg] A dialog box could not be displayed, as the parameter count was wrong; got' + IntToStr(argc) + ', expected 3');
+  end;
+
+  ctx^^.ToVariant(argv^[2], vbs);
+
+  if not varType(vbs) = varSingle then begin
+    ExtError(uxdAuto, 'Box Size must be a float or integer');
+    exit;
+  end;
+
+ // Title, Desc, html, size
+ ExtMsg(uxdAuto, ctx^^.ToUtf8(argv^[0]), ctx^^.ToUtf8(argv^[1]), [mbOK], uxmtOk, vbs);
+end;
+
+function JSHTMLYesNo(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw;
+var
+ vbs: Variant; //Variant box size
+begin
+  if argc <> 3 then begin
+     ExtError(uxdAuto, '[htmlYesNo] A dialog box could not be displayed, as the parameter count was wrong; got' + IntToStr(argc) + ', expected 3');
+  end;
+
+  ctx^^.ToVariant(argv^[2], vbs);
+
+  if not varType(vbs) = varSingle then begin
+    ExtError(uxdAuto, 'Box Size must be a float or integer');
+    exit;
+  end;
+
+ // Title, Desc, html, size
+ if ExtMsg(uxdAuto, ctx^^.ToUtf8(argv^[0]), ctx^^.ToUtf8(argv^[1]), [mbYes, mbNo], uxmtOk, vbs) = mrYes then
+   Result := JS_TRUE
+ else
+   Result := JS_FALSE;
 end;
 
 // Set the UX colors for different BG levels
