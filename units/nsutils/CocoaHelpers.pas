@@ -49,18 +49,17 @@ type
 
 implementation
 
-uses
 {$IFDEF LCLCOCOA}
-  CocoaUtils,
+uses
+  CocoaUtils;
 {$ENDIF}
-  NSHelpers;
 
 function NSStringFromString(const Value: string): NSString;
 begin
 {$IFDEF LCLCOCOA}
   Result := CocoaUtils.StrToNSStr(Value);
 {$ELSE}
-  Result := StrToNSStr(Value);
+  Result := NSString.stringWithUTF8String(PAnsiChar(UTF8String(Value)));
 {$ENDIF}
 end;
 

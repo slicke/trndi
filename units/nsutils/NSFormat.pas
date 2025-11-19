@@ -76,7 +76,7 @@ procedure GetNSFormatSettings(var FmtSettings : TFormatSettings;
    code point (for example, with UTF8 encoding, the British pound symbol is 
    two bytes, while the Euro symbol is three bytes). To properly display these 
   Unicode chars in a Cocoa or Cocoa Touch control, convert them to an NSString 
-  using NSHelpers.Utf8StrToNSStr or, under LCL Cocoa, CocoaUtils.StrToNSStr.
+  using NSString.stringWithUTF8String or, under LCL Cocoa, CocoaUtils.StrToNSStr.
 
   Note: There does not appear to be any way to obtain the CurrencyFormat, 
    NegCurrFormat and CurrencyDecimals settings. If you need these settings

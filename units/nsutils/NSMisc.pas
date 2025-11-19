@@ -56,18 +56,17 @@ function GetDocumentsPath : string;
 
 implementation
 
-uses
 {$IFDEF LCLCOCOA}
-  CocoaUtils,
+uses
+  CocoaUtils;
 {$ENDIF}
-  NSHelpers;
 
 function StringToNSString(const Value: string): NSString;
 begin
 {$IFDEF LCLCOCOA}
   Result := CocoaUtils.StrToNSStr(Value);
 {$ELSE}
-  Result := StrToNSStr(Value);
+  Result := NSString.stringWithUTF8String(PAnsiChar(UTF8String(Value)));
 {$ENDIF}
 end;
 
@@ -76,7 +75,7 @@ begin
 {$IFDEF LCLCOCOA}
   Result := CocoaUtils.StrToNSStr(string(Value));
 {$ELSE}
-  Result := Utf8StrToNSStr(Value);
+  Result := NSString.stringWithUTF8String(PAnsiChar(Value));
 {$ENDIF}
 end;
 
@@ -87,7 +86,7 @@ begin
 {$IFDEF LCLCOCOA}
   Result := CocoaUtils.NSStringToString(Value);
 {$ELSE}
-  Result := NSStrToStr(Value);
+  Result := string(UTF8Decode(UTF8String(Value.UTF8String)));
 {$ENDIF}
 end;
 
@@ -98,7 +97,7 @@ begin
 {$IFDEF LCLCOCOA}
   Result := UTF8String(CocoaUtils.NSStringToString(Value));
 {$ELSE}
-  Result := NSStrToUtf8Str(Value);
+  Result := AnsiString(UTF8String(Value.UTF8String));
 {$ENDIF}
 end;
 
