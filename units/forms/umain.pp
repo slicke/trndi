@@ -612,6 +612,9 @@ var
   L: TPaintBox;
   hasfont: boolean;
   needsRecalc: boolean;
+  {$ifdef DARWIN}
+  tempCanvas: TCanvas;
+  {$endif}
 begin
   L := Sender as TPaintBox;
   S := L.Caption;
@@ -627,44 +630,70 @@ begin
     (FCachedTextWidth = 0) or (FCachedTextHeight = 0) or (S <> DOT_GRAPH);
   // Always recalculate for non-dot text
 
-  with L.Canvas do
+  {$ifdef DARWIN}
+  // macOS workaround: Ensure canvas handle is valid before use
+  // This prevents CheckDC errors in LCL Cocoa (bug in cocoagdiobjects.pas)
+  if not Assigned(L.Canvas.Handle) or (L.Canvas.Handle = 0) then
   begin
-    // Transparent background
-    Brush.Style := bsClear;
+    // Try to force canvas creation by requesting it from parent
+    if Assigned(L.Parent) and L.Parent.HandleAllocated then
+      L.Invalidate;
+    Exit; // Skip this paint cycle, will be called again
+  end;
+  {$endif}
 
-    if hasFont then
-      Font.Name := fontn;
-
-    Font.Size := L.Font.Size;
-
-    // Use cached measurements if available, otherwise calculate
-    if needsRecalc then
+  try
+    with L.Canvas do
     begin
-      FCachedTextWidth := TextWidth(S);
-      FCachedTextHeight := TextHeight(S);
-      // Only cache for dot characters, not expanded text
+      // Transparent background
+      Brush.Style := bsClear;
+
+      if hasFont then
+        Font.Name := fontn;
+
+      Font.Size := L.Font.Size;
+
+      // Use cached measurements if available, otherwise calculate
+      if needsRecalc then
+      begin
+        FCachedTextWidth := TextWidth(S);
+        FCachedTextHeight := TextHeight(S);
+        // Only cache for dot characters, not expanded text
+        if S = DOT_GRAPH then
+        begin
+          FCachedFontSize := L.Font.Size;
+          FCachedFontName := fontn;
+        end;
+      end;
+
+      // Size the paintbox to fit the text (use fresh calculation for non-dots)
       if S = DOT_GRAPH then
       begin
-        FCachedFontSize := L.Font.Size;
-        FCachedFontName := fontn;
+        L.Width := FCachedTextWidth;
+        L.Height := FCachedTextHeight;
+      end
+      else
+      begin
+        // For expanded text, always use fresh measurements with padding
+        L.Width := TextWidth(S) + 4;
+        L.Height := TextHeight(S) + 2;
       end;
-    end;
 
-    // Size the paintbox to fit the text (use fresh calculation for non-dots)
-    if S = DOT_GRAPH then
-    begin
-      L.Width := FCachedTextWidth;
-      L.Height := FCachedTextHeight;
-    end
-    else
-    begin
-      // For expanded text, always use fresh measurements with padding
-      L.Width := TextWidth(S) + 4;
-      L.Height := TextHeight(S) + 2;
+      // Draw at (0,0); since control fits text, no centering or offsets needed
+      TextOut(0, 0, S);
     end;
-
-    // Draw at (0,0); since control fits text, no centering or offsets needed
-    TextOut(0, 0, S);
+  except
+    on E: Exception do
+    begin
+      {$ifdef DARWIN}
+      // Log and suppress Cocoa canvas errors to prevent crash
+      LogMessage('DotPaint error on macOS: ' + E.Message);
+      // Force repaint on next cycle
+      L.Invalidate;
+      {$else}
+      raise; // Re-raise on other platforms
+      {$endif}
+    end;
   end;
 end;
 
@@ -1370,60 +1399,78 @@ begin
   Result := 0;
   bmp := TBitmap.Create;
   try
-    // Use a reasonable font size for measurement (similar to what dots use)
-    fontSize := 24;
-    bmp.Width := fontSize * 2;
-    bmp.Height := fontSize * 2;
+    try
+      // Use a reasonable font size for measurement (similar to what dots use)
+      fontSize := 24;
+      bmp.Width := fontSize * 2;
+      bmp.Height := fontSize * 2;
 
-    // Set background color and clear bitmap
-    bgColor := clWhite;
-    bmp.Canvas.Brush.Color := bgColor;
-    bmp.Canvas.FillRect(0, 0, bmp.Width, bmp.Height);
+      {$ifdef DARWIN}
+      // macOS: Force handle allocation before canvas operations
+      bmp.Canvas.Handle; // This ensures the bitmap context is properly created
+      {$endif}
 
-    // Set font properties matching the dots - use GUI font on all platforms
-    if FontGUIInList(fontName) then
-      bmp.Canvas.Font.Name := fontName
-    else
-      bmp.Canvas.Font.Name := 'default';
-    bmp.Canvas.Font.Size := fontSize;
-    bmp.Canvas.Font.Color := clBlack;
+      // Set background color and clear bitmap
+      bgColor := clWhite;
+      bmp.Canvas.Brush.Color := bgColor;
+      bmp.Canvas.FillRect(0, 0, bmp.Width, bmp.Height);
 
-    // Draw the dot character centered
-    bmp.Canvas.TextOut(fontSize div 2, fontSize div 2, DOT_GRAPH);
+      // Set font properties matching the dots - use GUI font on all platforms
+      if FontGUIInList(fontName) then
+        bmp.Canvas.Font.Name := fontName
+      else
+        bmp.Canvas.Font.Name := 'default';
+      bmp.Canvas.Font.Size := fontSize;
+      bmp.Canvas.Font.Color := clBlack;
 
-    // Find the first row with a non-background pixel (scanning from top)
-    firstPixelY := -1;
-    found := false;
+      // Draw the dot character centered
+      bmp.Canvas.TextOut(fontSize div 2, fontSize div 2, DOT_GRAPH);
 
-    for y := 0 to bmp.Height - 1 do
-    begin
-      for x := 0 to bmp.Width - 1 do
+      // Find the first row with a non-background pixel (scanning from top)
+      firstPixelY := -1;
+      found := false;
+
+      for y := 0 to bmp.Height - 1 do
       begin
-        pixelColor := bmp.Canvas.Pixels[x, y];
-        // Check if pixel is significantly different from background
-        if pixelColor <> bgColor then
+        for x := 0 to bmp.Width - 1 do
         begin
-          firstPixelY := y;
-          found := true;
-          break;
+          pixelColor := bmp.Canvas.Pixels[x, y];
+          // Check if pixel is significantly different from background
+          if pixelColor <> bgColor then
+          begin
+            firstPixelY := y;
+            found := true;
+            break;
+          end;
         end;
+        if found then
+          break;
       end;
-      if found then
-        break;
-    end;
 
-    // Calculate offset based on where we found the first pixel
-    if found then
-    begin
-      // The visual center should be at halfHeight
-      halfHeight := bmp.Height div 2;
-      // If first pixel is below center, offset is positive (move lines down)
-      // If first pixel is above center, offset is negative (move lines up)
-      Result := firstPixelY - halfHeight;
-      LogMessage(Format(
-        'DOT_VISUAL_OFFSET calculated: font=%s, firstPixel=%d, halfHeight=%d, offset=%d',
-        [
-        fontName, firstPixelY, halfHeight, Result]));
+      // Calculate offset based on where we found the first pixel
+      if found then
+      begin
+        // The visual center should be at halfHeight
+        halfHeight := bmp.Height div 2;
+        // If first pixel is below center, offset is positive (move lines down)
+        // If first pixel is above center, offset is negative (move lines up)
+        Result := firstPixelY - halfHeight;
+        LogMessage(Format(
+          'DOT_VISUAL_OFFSET calculated: font=%s, firstPixel=%d, halfHeight=%d, offset=%d',
+          [
+          fontName, firstPixelY, halfHeight, Result]));
+      end;
+    except
+      on E: Exception do
+      begin
+        {$ifdef DARWIN}
+        // On macOS, log canvas errors but don't crash
+        LogMessage('CalculateDotVisualOffset error on macOS: ' + E.Message);
+        Result := 0; // Use default offset
+        {$else}
+        raise; // Re-raise on other platforms
+        {$endif}
+      end;
     end;
 
   finally
