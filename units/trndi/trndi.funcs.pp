@@ -39,7 +39,7 @@ procedure PaintLbl(Sender: TLabel; OutlineWidth: integer = 1;
 OutlineColor: TColor = clBlack);
 procedure LogMessage(const Msg: string);
 procedure SortReadingsDescending(var Readings: array of BGReading);
-procedure SetPointHeight(l: TPaintBox; Value: single; clientHeight: integer);
+procedure SetPointHeight(l: TControl; Value: single; clientHeight: integer);
 function CalculateTrendFromDelta(delta: single): BGTrend;
 function HasNewerRelease(const JsonResponse: string;
 out ReleaseName: string;
@@ -277,7 +277,7 @@ begin
 end;
 
 // SetPointHeight procedure
-procedure SetPointHeight(L: TPaintBox; Value: single; clientHeight: integer);
+procedure SetPointHeight(L: TControl; Value: single; clientHeight: integer);
 var
   Padding, UsableHeight, Position: integer;
 begin
