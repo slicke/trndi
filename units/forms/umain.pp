@@ -633,7 +633,7 @@ begin
   {$ifdef DARWIN}
   // macOS workaround: Ensure canvas handle is valid before use
   // This prevents CheckDC errors in LCL Cocoa (bug in cocoagdiobjects.pas)
-  if not Assigned(L.Canvas.Handle) or (L.Canvas.Handle = 0) then
+  if L.Canvas.Handle = 0 then
   begin
     // Try to force canvas creation by requesting it from parent
     if Assigned(L.Parent) and L.Parent.HandleAllocated then
