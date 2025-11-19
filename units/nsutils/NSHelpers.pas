@@ -144,14 +144,9 @@ function UniStrToNSStr(const aStr : UnicodeString) : NSString; overload;
 implementation
 
 const
-  LossySubstitutionChar = Ord('?');
+  LossySubstitutionChar: Byte = Ord('?');
 
-{$if not declared(PUniChar)}
-type
-  PUniChar = ^UniChar;
-{$ifend}
-
-function CFStringHasContent(const cfStr: CFStringRef; out range: CFRange): Boolean; inline;
+function CFStringHasContent(const cfStr: CFStringRef; out range: CFRange): Boolean;
 begin
   range.location := 0;
   if cfStr = nil then
@@ -200,33 +195,6 @@ begin
   Result := CFStringCreateWithBytes(nil, buffer, count, encoding, False);
 end;
 
-function CFStringCreateWithCharsInternal(const chars: PUniChar; const count: CFIndex): CFStringRef;
-begin
-  Result := CFStringCreateWithCharacters(nil, chars, count);
-end;
-
-function CFStringToWide(const cfStr: CFStringRef): WideString;
-var
-  range : CFRange;
-begin
-  if not CFStringHasContent(cfStr, range) then
-    Exit('');
-
-  SetLength(Result, range.length);
-  CFStringGetCharacters(cfStr, range, PUniChar(@Result[1]));
-end;
-
-function CFStringToUnicode(const cfStr: CFStringRef): UnicodeString;
-var
-  range : CFRange;
-begin
-  if not CFStringHasContent(cfStr, range) then
-    Exit('');
-
-  SetLength(Result, range.length);
-  CFStringGetCharacters(cfStr, range, PUniChar(@Result[1]));
-end;
-
 function CFStringFromAnsi(const value: AnsiString; const encoding: CFStringEncoding): CFStringRef;
 var
   count : CFIndex;
@@ -241,64 +209,36 @@ begin
   Result := CFStringCreateWithBytesInternal(bytes, count, encoding);
 end;
 
-function CFStringFromWide(const value: WideString): CFStringRef;
-var
-  count : CFIndex;
-  chars : PUniChar;
-begin
-  count := Length(value);
-  if count > 0 then
-    chars := PUniChar(@value[1])
-  else
-    chars := nil;
-
-  Result := CFStringCreateWithCharsInternal(chars, count);
-end;
-
-function CFStringFromUnicode(const value: UnicodeString): CFStringRef;
-var
-  count : CFIndex;
-  chars : PUniChar;
-begin
-  count := Length(value);
-  if count > 0 then
-    chars := PUniChar(@value[1])
-  else
-    chars := nil;
-
-  Result := CFStringCreateWithCharsInternal(chars, count);
-end;
-
-function NSStringWrap(const cfStr: CFStringRef): NSString; inline;
+function NSStringWrap(const cfStr: CFStringRef): NSString;
 begin
   if cfStr = nil then
     Exit(nil);
   Result := NSString(cfStr);
 end;
 
-function NSStringUnwrap(const aNSStr: NSString): CFStringRef; inline;
+function NSStringUnwrap(const aNSStr: NSString): CFStringRef;
 begin
   Result := CFStringRef(aNSStr);
 end;
 
-function NSStringFromAnsi(const value: AnsiString; const encoding: CFStringEncoding): NSString; inline;
+function NSStringFromAnsi(const value: AnsiString; const encoding: CFStringEncoding): NSString;
 begin
   Result := NSStringWrap(CFStringFromAnsi(value, encoding));
 end;
 
-function NSStringFromUtf8(const value: AnsiString): NSString; inline;
+function NSStringFromUtf8(const value: AnsiString): NSString;
 begin
   Result := NSStringWrap(CFStringFromAnsi(value, kCFStringEncodingUTF8));
 end;
 
-function NSStringFromWide(const value: WideString): NSString; inline;
+function NSStringFromWide(const value: WideString): NSString;
 begin
-  Result := NSStringWrap(CFStringFromWide(value));
+  Result := NSStringWrap(CFStringFromAnsi(UTF8Encode(value), kCFStringEncodingUTF8));
 end;
 
-function NSStringFromUnicode(const value: UnicodeString): NSString; inline;
+function NSStringFromUnicode(const value: UnicodeString): NSString;
 begin
-  Result := NSStringWrap(CFStringFromUnicode(value));
+  Result := NSStringWrap(CFStringFromAnsi(UTF8Encode(value), kCFStringEncodingUTF8));
 end;
 
 
@@ -341,24 +281,24 @@ end;
 
 function CFStrToWideStr(cfStr : CFStringRef): WideString;
 begin
-  Result := CFStringToWide(cfStr);
+  Result := UTF8Decode(CFStringToAnsiInternal(cfStr, kCFStringEncodingUTF8));
 end;
 
 procedure WideStrToCFStr(const aStr  : WideString;
                            out cfStr : CFStringRef);
 begin
-  cfStr := CFStringFromWide(aStr);
+  cfStr := CFStringFromAnsi(UTF8Encode(aStr), kCFStringEncodingUTF8);
 end;
 
 function CFStrToUniStr(cfStr : CFStringRef): UnicodeString;
 begin
-  Result := CFStringToUnicode(cfStr);
+  Result := UTF8Decode(CFStringToAnsiInternal(cfStr, kCFStringEncodingUTF8));
 end;
 
 procedure UniStrToCFStr(const aStr  : UnicodeString;
                           out cfStr : CFStringRef);
 begin
-  cfStr := CFStringFromUnicode(aStr);
+  cfStr := CFStringFromAnsi(UTF8Encode(aStr), kCFStringEncodingUTF8);
 end;
 
 procedure FreeCFRef(var cfRef: CFTypeRef);
@@ -435,7 +375,7 @@ end;
 
 function NSStrToWideStr(aNSStr : NSString): WideString;
 begin
-  Result := CFStringToWide(NSStringUnwrap(aNSStr));
+  Result := UTF8Decode(CFStringToAnsiInternal(NSStringUnwrap(aNSStr), kCFStringEncodingUTF8));
 end;
 
 procedure WideStrToNSStr(const aStr   : WideString;
@@ -453,7 +393,7 @@ end;
 
 function NSStrToUniStr(aNSStr : NSString): UnicodeString;
 begin
-  Result := CFStringToUnicode(NSStringUnwrap(aNSStr));
+  Result := UTF8Decode(CFStringToAnsiInternal(NSStringUnwrap(aNSStr), kCFStringEncodingUTF8));
 end;
 
 procedure UniStrToNSStr(const aStr   : UnicodeString;
