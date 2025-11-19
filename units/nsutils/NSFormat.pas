@@ -75,8 +75,8 @@ procedure GetNSFormatSettings(var FmtSettings : TFormatSettings;
    example, the currency symbol returned in CurrencyString is often a Unicode 
    code point (for example, with UTF8 encoding, the British pound symbol is 
    two bytes, while the Euro symbol is three bytes). To properly display these 
-   Unicode chars in a Cocoa or Cocoa Touch control, convert them to an NSString 
-   using the NSHelpers unit's Utf8StrToNSStr function.
+  Unicode chars in a Cocoa or Cocoa Touch control, convert them to an NSString 
+  using NSStringUtils.NSStringFromUTF8.
 
   Note: There does not appear to be any way to obtain the CurrencyFormat, 
    NegCurrFormat and CurrencyDecimals settings. If you need these settings

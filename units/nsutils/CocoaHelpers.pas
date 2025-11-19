@@ -25,7 +25,7 @@ uses
 {$ELSE}
   CocoaAll,
 {$ENDIF}
-  NSHelpers;
+  NSStringUtils;
   
 procedure ErrorDlg(const ErrorMsg : string);
 
@@ -56,7 +56,7 @@ var
   Alert : NSAlert;
 begin
   Alert := NSAlert.alloc.init;
-  Alert.setInformativeText(StrToNSStr(ErrorMsg));
+  Alert.setInformativeText(NSStringFromString(ErrorMsg));
   Alert.runModal;
   Alert.release;
 end;
@@ -69,7 +69,7 @@ var
   Alert : NSAlert;
 begin
   Alert := NSAlert.alloc.init;
-  Alert.setInformativeText(StrToNSStr(ErrorMSg));
+  Alert.setInformativeText(NSStringFromString(ErrorMSg));
   Alert.beginSheetModalForWindow_modalDelegate_didEndSelector_contextInfo
    (ParentWindow, nil, nil, nil);  //assume don't need alertDidEndSelector method
 end;
@@ -85,7 +85,7 @@ var
 begin
   Alert := NSAlert.alloc.init;
   Alert.setMessageText(NSSTR('Confirm'));
-  Alert.setInformativeText(StrToNSStr(ConfirmMsg));
+  Alert.setInformativeText(NSStringFromString(ConfirmMsg));
   Alert.setAlertStyle(NSInformationalAlertStyle);
   Alert.addButtonWithTitle(NSSTR('OK'));  {returnCode=NSAlertFirstButtonReturn}
   Alert.addButtonWithTitle(NSSTR('Cancel'));  {returnCode=NSAlertSecondButtonReturn}

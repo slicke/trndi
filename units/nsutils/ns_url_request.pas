@@ -33,7 +33,7 @@ uses
   CocoaAll,
  {$ENDIF}
 {$ENDIF}
-  NSHelpers;
+  NSStringUtils;
 
 type
   TNSHTTPSendAndReceive = class(TObject)
@@ -86,11 +86,11 @@ begin
   Result := False;
   try
     urlRequest := NSMutableURLRequest.requestWithURL_cachePolicy_timeoutInterval(
-                   NSURL.URLWithString(StrToNSStr(Address)), 
+                   NSURL.URLWithString(NSStringFromString(Address)), 
                    NSURLRequestUseProtocolCachePolicy, Timeout);
 
     if Method <> '' then
-      urlRequest.setHTTPMethod(StrToNSStr(Method));
+      urlRequest.setHTTPMethod(NSStringFromString(Method));
 
     if Assigned(ARequest) and (ARequest.Size > 0) then
       begin
@@ -108,8 +108,8 @@ begin
       begin
       for HdrNum := 0 to Headers.Count-1 do
         begin
-        urlRequest.addValue_forHTTPHeaderField(StrToNSStr(Headers.ValueFromIndex[HdrNum]),
-                                               StrToNSStr(Headers.Names[HdrNum]));
+  urlRequest.addValue_forHTTPHeaderField(NSStringFromString(Headers.ValueFromIndex[HdrNum]),
+                 NSStringFromString(Headers.Names[HdrNum]));
         end;
       end;
 
@@ -117,7 +117,7 @@ begin
                 urlRequest, @urlResponse, @error);
     if not Assigned(urlData) then
       begin
-      FLastErrMsg := NSStrToStr(error.localizedDescription);
+      FLastErrMsg := NSStringToString(error.localizedDescription);
       Exit;
       end;
 

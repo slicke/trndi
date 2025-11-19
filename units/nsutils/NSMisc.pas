@@ -32,7 +32,7 @@ uses
   CocoaAll,
  {$ENDIF}
 {$ENDIF}
-  NSHelpers;
+  NSStringUtils;
 
 function GetInfoPlistString(const KeyName : string) : string;
 
@@ -58,58 +58,52 @@ function GetDocumentsPath : string;
 implementation
 
 function GetInfoPlistString(const KeyName : string) : string;
- {Retrieve key's string value from app bundle's Info.plist file.
-   String returned is encoded using NSStrToStr's default encoding.}
+ {Retrieve key's string value from app bundle's Info.plist file.}
 begin
-  Result := NSStrToStr(NSBundle.mainBundle.objectForInfoDictionaryKey(
-                        StrToNSStr(KeyName)));
+  Result := NSStringToString(NSBundle.mainBundle.objectForInfoDictionaryKey(
+                        NSStringFromString(KeyName)));
 end;
 
 
 function GetInfoPlistUTF8String(const KeyName : string) : AnsiString;
- {Retrieve key's string value from app bundle's Info.plist file.
-   String returned is encoded as UTF8.}
+ {Retrieve key's string value from app bundle's Info.plist file as UTF8.}
 begin
-  Result := NSBundle.mainBundle.objectForInfoDictionaryKey(StrToNSStr(KeyName)).
-             UTF8String;
+  Result := NSBundle.mainBundle.objectForInfoDictionaryKey(
+             NSStringFromString(KeyName)).UTF8String;
 end;
 
 
 function GetPrefString(const KeyName : string) : string;
- {Retrieve key's string value from preferences.
-   String returned is encoded using NSStrToStr's default encoding.}
+ {Retrieve key's string value from preferences.}
 begin
-  Result := NSStrToStr(NSUserDefaults.standardUserDefaults.stringForKey(
-                        StrToNSStr(KeyName)));
+  Result := NSStringToString(NSUserDefaults.standardUserDefaults.stringForKey(
+                        NSStringFromString(KeyName)));
 end;
 
 
 function GetPrefUTF8String(const KeyName : string) : AnsiString;
- {Retrieve key's string value from preferences.
-   String returned is encoded as UTF8.}
+ {Retrieve key's string value from preferences as UTF8.}
 begin
   Result := NSUserDefaults.standardUserDefaults.stringForKey(
-             StrToNSStr(KeyName)).UTF8String;
+             NSStringFromString(KeyName)).UTF8String;
 end;
 
 
 procedure SetPrefString(const KeyName : string;
                         const Value   : string);
- {Set key's string value in preferences.
-   Value is assumed to be in StrToNSStr's default encoding.}
+ {Set key's string value in preferences.}
 begin
   NSUserDefaults.standardUserDefaults.setObject_forKey(
-   StrToNSStr(Value), StrToNSStr(KeyName));
+  NSStringFromString(Value), NSStringFromString(KeyName));
 end;
 
 
 procedure SetPrefUTF8String(const KeyName : string;
                             const Value   : AnsiString);
- {Set key's string value in preferences.
-   Value is assumed to be encoded in UTF8.}
+ {Set key's string value in preferences using UTF8 data.}
 begin
   NSUserDefaults.standardUserDefaults.setObject_forKey(
-   Utf8StrToNSStr(Value), StrToNSStr(KeyName));
+  NSStringFromUTF8(Value), NSStringFromString(KeyName));
 end;
 
 
@@ -118,7 +112,7 @@ function GetResourcesPath : string;
    on iOS, returns path to app bundle.
   If called from console app, returns app executable's folder.}
 begin
-  Result := NSStrToStr(NSBundle.mainBundle.resourcePath);
+  Result := NSStringToString(NSBundle.mainBundle.resourcePath);
 end;
 
 
@@ -131,7 +125,7 @@ var
   paths : NSArray;
 begin
   paths := NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, True);
-  Result := NSStrToStr(paths.objectAtIndex(0));
+  Result := NSStringToString(paths.objectAtIndex(0));
 end;
 
 

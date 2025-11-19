@@ -143,9 +143,6 @@ function UniStrToNSStr(const aStr : UnicodeString) : NSString; overload;
 
 implementation
 
-const
-  LossySubstitutionChar: Byte = Ord('?');
-
 function CFStringHasContent(const cfStr: CFStringRef; out range: CFRange): Boolean;
 begin
   range.location := 0;
@@ -177,12 +174,12 @@ begin
     Exit('');
 
   bufferLen := 0;
-  CFStringGetBytes(cfStr, range, encoding, LossySubstitutionChar, False, nil, 0, bufferLen);
+  CFStringGetBytes(cfStr, range, encoding, Ord('?'), False, nil, 0, bufferLen);
   if bufferLen <= 0 then
     Exit('');
 
   SetLength(Result, bufferLen);
-  bytesUsed := CFStringGetBytes(cfStr, range, encoding, LossySubstitutionChar, False, @Result[1], bufferLen, bufferLen);
+  bytesUsed := CFStringGetBytes(cfStr, range, encoding, Ord('?'), False, @Result[1], bufferLen, bufferLen);
 
   if bytesUsed <= 0 then
     Result := ''
