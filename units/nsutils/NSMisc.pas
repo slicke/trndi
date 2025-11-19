@@ -21,18 +21,17 @@ uses
   SysUtils,
 {$IF (DEFINED(IPHONESIM) OR DEFINED(CPUARM) OR DEFINED(CPUAARCH64)) AND (NOT DEFINED(LCLCOCOA)) }  //iOS
  {$IFDEF NoiPhoneAll}
-  Foundation,
+  Foundation
  {$ELSE}
-  iPhoneAll,
+  iPhoneAll
  {$ENDIF}
 {$ELSE}  //macOS
  {$IFDEF NoCocoaAll}
-  Foundation,
+  Foundation
  {$ELSE}
-  CocoaAll,
+  CocoaAll
  {$ENDIF}
-{$ENDIF}
-  NSStringUtils;
+{$ENDIF};
 
 function GetInfoPlistString(const KeyName : string) : string;
 
@@ -57,35 +56,81 @@ function GetDocumentsPath : string;
 
 implementation
 
+uses
+{$IFDEF LCLCOCOA}
+  CocoaUtils,
+{$ENDIF}
+  NSHelpers;
+
+function StringToNSString(const Value: string): NSString;
+begin
+{$IFDEF LCLCOCOA}
+  Result := CocoaUtils.StrToNSStr(Value);
+{$ELSE}
+  Result := StrToNSStr(Value);
+{$ENDIF}
+end;
+
+function Utf8ToNSString(const Value: AnsiString): NSString;
+begin
+{$IFDEF LCLCOCOA}
+  Result := CocoaUtils.StrToNSStr(string(Value));
+{$ELSE}
+  Result := Utf8StrToNSStr(Value);
+{$ENDIF}
+end;
+
+function NSStringToStringSafe(const Value: NSString): string;
+begin
+  if Value = nil then
+    Exit('');
+{$IFDEF LCLCOCOA}
+  Result := CocoaUtils.NSStringToString(Value);
+{$ELSE}
+  Result := NSStrToStr(Value);
+{$ENDIF}
+end;
+
+function NSStringToUtf8(const Value: NSString): AnsiString;
+begin
+  if Value = nil then
+    Exit('');
+{$IFDEF LCLCOCOA}
+  Result := UTF8String(CocoaUtils.NSStringToString(Value));
+{$ELSE}
+  Result := NSStrToUtf8Str(Value);
+{$ENDIF}
+end;
+
 function GetInfoPlistString(const KeyName : string) : string;
  {Retrieve key's string value from app bundle's Info.plist file.}
 begin
-  Result := NSStringToString(NSBundle.mainBundle.objectForInfoDictionaryKey(
-                        NSStringFromString(KeyName)));
+  Result := NSStringToStringSafe(NSBundle.mainBundle.objectForInfoDictionaryKey(
+                        StringToNSString(KeyName)));
 end;
 
 
 function GetInfoPlistUTF8String(const KeyName : string) : AnsiString;
  {Retrieve key's string value from app bundle's Info.plist file as UTF8.}
 begin
-  Result := NSBundle.mainBundle.objectForInfoDictionaryKey(
-             NSStringFromString(KeyName)).UTF8String;
+  Result := NSStringToUtf8(NSBundle.mainBundle.objectForInfoDictionaryKey(
+             StringToNSString(KeyName)));
 end;
 
 
 function GetPrefString(const KeyName : string) : string;
  {Retrieve key's string value from preferences.}
 begin
-  Result := NSStringToString(NSUserDefaults.standardUserDefaults.stringForKey(
-                        NSStringFromString(KeyName)));
+  Result := NSStringToStringSafe(NSUserDefaults.standardUserDefaults.stringForKey(
+                        StringToNSString(KeyName)));
 end;
 
 
 function GetPrefUTF8String(const KeyName : string) : AnsiString;
  {Retrieve key's string value from preferences as UTF8.}
 begin
-  Result := NSUserDefaults.standardUserDefaults.stringForKey(
-             NSStringFromString(KeyName)).UTF8String;
+  Result := NSStringToUtf8(NSUserDefaults.standardUserDefaults.stringForKey(
+             StringToNSString(KeyName)));
 end;
 
 
@@ -94,7 +139,7 @@ procedure SetPrefString(const KeyName : string;
  {Set key's string value in preferences.}
 begin
   NSUserDefaults.standardUserDefaults.setObject_forKey(
-  NSStringFromString(Value), NSStringFromString(KeyName));
+  StringToNSString(Value), StringToNSString(KeyName));
 end;
 
 
@@ -103,7 +148,7 @@ procedure SetPrefUTF8String(const KeyName : string;
  {Set key's string value in preferences using UTF8 data.}
 begin
   NSUserDefaults.standardUserDefaults.setObject_forKey(
-  NSStringFromUTF8(Value), NSStringFromString(KeyName));
+  Utf8ToNSString(Value), StringToNSString(KeyName));
 end;
 
 
@@ -112,7 +157,7 @@ function GetResourcesPath : string;
    on iOS, returns path to app bundle.
   If called from console app, returns app executable's folder.}
 begin
-  Result := NSStringToString(NSBundle.mainBundle.resourcePath);
+  Result := NSStringToStringSafe(NSBundle.mainBundle.resourcePath);
 end;
 
 
@@ -125,7 +170,7 @@ var
   paths : NSArray;
 begin
   paths := NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, True);
-  Result := NSStringToString(paths.objectAtIndex(0));
+  Result := NSStringToStringSafe(NSString(paths.objectAtIndex(0)));
 end;
 
 

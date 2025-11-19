@@ -17,23 +17,22 @@ unit ns_url_request;
 
 interface
 
-uses 
+uses
   SysUtils,
-  Classes, 
-  {$IF (DEFINED(IPHONESIM) OR DEFINED(CPUARM) OR DEFINED(CPUAARCH64)) AND (NOT DEFINED(LCLCOCOA)) }  //iOS
+  Classes,
+{$IF (DEFINED(IPHONESIM) OR DEFINED(CPUARM) OR DEFINED(CPUAARCH64)) AND (NOT DEFINED(LCLCOCOA)) }  //iOS
  {$IFDEF NoiPhoneAll}
-  Foundation,
+  Foundation
  {$ELSE}
-  iPhoneAll,
+  iPhoneAll
  {$ENDIF}
 {$ELSE}  //macOS
  {$IFDEF NoCocoaAll}
-  Foundation,
+  Foundation
  {$ELSE}
-  CocoaAll,
+  CocoaAll
  {$ENDIF}
-{$ENDIF}
-  NSStringUtils;
+{$ENDIF};
 
 type
   TNSHTTPSendAndReceive = class(TObject)
@@ -58,6 +57,32 @@ type
 
 
 implementation
+
+uses
+{$IFDEF LCLCOCOA}
+  CocoaUtils,
+{$ENDIF}
+  NSHelpers;
+
+function NSStringFromString(const Value: string): NSString;
+begin
+{$IFDEF LCLCOCOA}
+  Result := CocoaUtils.StrToNSStr(Value);
+{$ELSE}
+  Result := StrToNSStr(Value);
+{$ENDIF}
+end;
+
+function NSStringToString(const Value: NSString): string;
+begin
+  if Value = nil then
+    Exit('');
+{$IFDEF LCLCOCOA}
+  Result := CocoaUtils.NSStringToString(Value);
+{$ELSE}
+  Result := NSStrToStr(Value);
+{$ENDIF}
+end;
 
 constructor TNSHTTPSendAndReceive.Create;
 begin

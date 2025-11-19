@@ -21,11 +21,10 @@ uses
   CGBase,
 {$IFDEF NoCocoaAll}
   Foundation,
-  AppKit,
+  AppKit
 {$ELSE}
-  CocoaAll,
-{$ENDIF}
-  NSStringUtils;
+  CocoaAll
+{$ENDIF};
   
 procedure ErrorDlg(const ErrorMsg : string);
 
@@ -49,6 +48,21 @@ type
 
 
 implementation
+
+uses
+{$IFDEF LCLCOCOA}
+  CocoaUtils,
+{$ENDIF}
+  NSHelpers;
+
+function NSStringFromString(const Value: string): NSString;
+begin
+{$IFDEF LCLCOCOA}
+  Result := CocoaUtils.StrToNSStr(Value);
+{$ELSE}
+  Result := StrToNSStr(Value);
+{$ENDIF}
+end;
 
 procedure ErrorDlg(const ErrorMsg : string);
  {Display error message modal dialog with OK button.}
