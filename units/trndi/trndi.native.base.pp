@@ -51,7 +51,7 @@ interface
 uses
 Classes, SysUtils, Graphics
 {$IF DEFINED(X_MAC)}
-, ns_url_request, CocoaAll, LCLType
+, MacHTTPClient, CocoaAll, LCLType
 {$ELSEIF DEFINED(X_WIN)}
 , Windows, Registry, Dialogs, StrUtils, winhttpclient, shellapi, comobj,
 Forms, variants, dwmapi
@@ -902,7 +902,7 @@ end;
   -------------------
   Sends a GET or POST request, depending on the "post" parameter.
   Behavior differs by platform. Each platform has its own implementation block:
-    - X_MAC uses TNSHTTPSendAndReceive
+    - X_MAC uses MacHTTPClient
     - X_WIN uses TWinHTTPClient
     - X_PC (Linux) uses libCURL
  ------------------------------------------------------------------------------}
@@ -911,62 +911,67 @@ function TTrndiNativeBase.request(const post: boolean; const endpoint: string;
 const params: array of string; const jsondata: string = '';
 const header: string = ''; prefix: boolean = true): string;
 var
-  res, send: TStringStream;
-  headers: TStringList;
-  sx: string;
+  ResponseStream, RequestStream: TMemoryStream;
+  Headers: TStringList;
+  RequestUrl, MethodName, ParamValue, ResponseText, ErrorText: string;
+  BodyUtf8: UTF8String;
 begin
-  res := TStringStream.Create('');
-  send := TStringStream.Create('');
-  headers := TStringList.Create;
+  ResponseStream := TMemoryStream.Create;
+  Headers := TStringList.Create;
+  RequestStream := nil;
   try
-    // We use a custom TNSHTTPSendAndReceive
-    with TNSHTTPSendAndReceive.Create do
-    try
-      if prefix then
-        address := Format('%s/%s', [baseurl, endpoint])
-      else
-        address := endpoint;
-      if post then
-        method := 'POST'
-      else
-        method := 'GET';
+    if prefix then
+      RequestUrl := Format('%s/%s', [baseurl, endpoint])
+    else
+      RequestUrl := endpoint;
 
-      // If a custom header is provided (single 'Key=Value')
-      if header <> '' then
-        Headers.Add(header);
+    if post then
+      MethodName := 'POST'
+    else
+      MethodName := 'GET';
 
-      // If we have JSON data, we assume it's for POST and set headers accordingly
-      if jsondata <> '' then
-      begin
-        Headers.Add('Content-Type=application/json');
-        if useragent <> '' then
-          Headers.Add('User-Agent=' + useragent);
+    if header <> '' then
+      Headers.Add(header);
 
-        // Write JSON to send stream
-        send.Write(jsondata[1], Length(jsondata));
-        Headers.Add('Content-Length=' + IntToStr(send.Size));
-      end
-      else
-      if Length(params) > 0 then
-      begin
-        // If we have query params, append them
-        address := address + '?';
-        for sx in params do
-          address := address + '&' + sx;
-      end;
+    if jsondata <> '' then
+    begin
+      Headers.Add('Content-Type=application/json');
+      if useragent <> '' then
+        Headers.Add('User-Agent=' + useragent);
 
-      // Perform the request and normalize output to a trimmed string or error
-      if SendAndReceive(send, res, headers) then
-        Result := Trim(res.DataString)
-      else
-        Result := '+' + LastErrMsg;
-    finally
-      Free; // free the TNSHTTPSendAndReceive
+      BodyUtf8 := UTF8String(jsondata);
+      RequestStream := TMemoryStream.Create;
+      if Length(BodyUtf8) > 0 then
+        RequestStream.WriteBuffer(BodyUtf8[1], Length(BodyUtf8));
+      Headers.Add('Content-Length=' + IntToStr(Length(BodyUtf8)));
+      RequestStream.Position := 0;
+    end
+    else
+    if Length(params) > 0 then
+    begin
+      RequestUrl := RequestUrl + '?';
+      for ParamValue in params do
+        RequestUrl := RequestUrl + '&' + ParamValue;
     end;
+
+    if MacHttpSend(RequestUrl, MethodName, RequestStream, ResponseStream,
+                   Headers, ErrorText) then
+    begin
+      SetLength(ResponseText, ResponseStream.Size);
+      if ResponseStream.Size > 0 then
+      begin
+        ResponseStream.Position := 0;
+        ResponseStream.ReadBuffer(ResponseText[1], ResponseStream.Size);
+      end;
+      Result := Trim(ResponseText);
+    end
+    else
+      Result := '+' + ErrorText;
   finally
-    res.Free;
-    send.Free;
-    headers.Free;
+    if Assigned(RequestStream) then
+      RequestStream.Free;
+    ResponseStream.Free;
+    Headers.Free;
   end;
 end;
 

@@ -36,7 +36,7 @@ unit trndi.native.mac;
 interface
 
 uses
-  Classes, SysUtils, Graphics, ns_url_request, CocoaAll, SimpleDarkMode,
+  Classes, SysUtils, Graphics, MacHTTPClient, CocoaAll, SimpleDarkMode,
   trndi.native.base;
 
 type
@@ -323,32 +323,19 @@ class function TTrndiNativeMac.getURL(const url: string; out res: string): boole
 const
   DEFAULT_USER_AGENT = 'Mozilla/5.0 (compatible; trndi) TrndiAPI';
 var
-  send, response: TStringStream;
-  headers: TStringList;
-  httpClient: TNSHTTPSendAndReceive;
+  Headers: TStringList;
+  ErrorText: string;
 begin
   res := '';
-  send := TStringStream.Create('');
-  response := TStringStream.Create('');
-  headers := TStringList.Create;
-  httpClient := TNSHTTPSendAndReceive.Create;
+  Headers := TStringList.Create;
   try
+    Headers.Values['User-Agent'] := DEFAULT_USER_AGENT;
     try
-      httpClient.address := url;
-      httpClient.method := 'GET';
-      headers.Add('User-Agent=' + DEFAULT_USER_AGENT);
-
-      if httpClient.SendAndReceive(send, response, headers) then
-      begin
-        res := Trim(response.DataString);
-        Result := True;
-      end
+      Result := MacHttpGet(url, res, ErrorText, Headers, 30.0);
+      if Result then
+        res := Trim(res)
       else
-      begin
-        // Normalize an error: LastErrMsg usually contains the reason
-        res := Trim(httpClient.LastErrMsg);
-        Result := False;
-      end;
+        res := Trim(ErrorText);
     except
       on E: Exception do
       begin
@@ -357,10 +344,7 @@ begin
       end;
     end;
   finally
-    httpClient.Free;
-    send.Free;
-    response.Free;
-    headers.Free;
+    Headers.Free;
   end;
 end;
 
