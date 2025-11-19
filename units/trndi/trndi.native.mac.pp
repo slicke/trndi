@@ -88,7 +88,7 @@ type
 implementation
 
 uses
-  Process;
+  Process, NSHelpers;
 {------------------------------------------------------------------------------
   Speak
   -----
@@ -246,17 +246,23 @@ var
 begin
   key := buildKey(keyname, global);
   SetPrefString(key, val);
+  NSUserDefaults.standardUserDefaults.synchronize;
 end;
 
 procedure TTrndiNativeMac.DeleteSetting(const keyname: string; global: boolean);
+var
+  key: string;
+  nsKey: NSString;
 begin
-  // No direct delete helper; set to empty string for now
-  SetSetting(keyname, '', global);
+  key := buildKey(keyname, global);
+  nsKey := StrToNSStr(key);
+  NSUserDefaults.standardUserDefaults.removeObjectForKey(nsKey);
+  NSUserDefaults.standardUserDefaults.synchronize;
 end;
 
 procedure TTrndiNativeMac.ReloadSettings;
 begin
-  // NSUserDefaults is live; no explicit reload needed
+  NSUserDefaults.standardUserDefaults.synchronize;
 end;
 
 end.
