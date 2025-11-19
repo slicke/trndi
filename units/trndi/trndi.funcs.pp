@@ -227,6 +227,9 @@ const
 var
   LogLines: TStringList;
 begin
+{$ifdef DARWIN}
+Exit; // Disable logging on macOS as it crashes due to file permission issues
+{$endif}
   LogLines := TStringList.Create;
   try
     // Load log if exists
