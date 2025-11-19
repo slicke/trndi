@@ -1806,6 +1806,7 @@ var
 begin
   bgcol := getBackground;
   big := UXDialogIsBig(dialogsize);
+  hpd := nil;
 
   Dialog := TDialogForm.CreateNew(nil);
   try
@@ -2264,10 +2265,10 @@ begin
     if Dialog.Height > MaxDialogHeight then
       Dialog.Height := MaxDialogHeight;
 
-  ShowModalSafe(Dialog);
-  Result := Dialog.ModalResult;
+    Result := ShowModalSafe(Dialog);
   finally
-    hpd.free;
+    if Assigned(hpd) then
+      hpd.Free;
     Dialog.Free;
   end;
 end;
