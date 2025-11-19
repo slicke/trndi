@@ -23,6 +23,8 @@ unit NSHelpers;
    and Get Rule: 
   https://developer.apple.com/library/mac/#documentation/CoreFoundation/
           Conceptual/CFMemoryMgmt/Concepts/Ownership.html
+
+  (c) slicke. Classified and updated by Björn Lindh, November 2025
 }
 
 {$MODE Delphi}
@@ -141,60 +143,245 @@ function UniStrToNSStr(const aStr : UnicodeString) : NSString; overload;
 
 implementation
 
-function CFStrToAnsiStr(cfStr    : CFStringRef;
-                        encoding : CFStringEncoding = kCFStringEncodingWindowsLatin1): AnsiString;
- {Convert CFString to AnsiString.
-  If encoding is not specified, encode using CP1252.}
-var
-  StrPtr   : Pointer;
-  StrRange : CFRange;
-  StrSize  : CFIndex;
+const
+  LossySubstitutionChar = Ord('?');
+
+type
+  TCFStringBridge = class sealed
+  strict private
+    class function ConvertToAnsi(const cfStr: CFStringRef; const encoding: CFStringEncoding): AnsiString; static;
+    class function CreateWithBytes(const buffer: PUInt8; const count: CFIndex; const encoding: CFStringEncoding): CFStringRef; static;
+    class function CreateWithChars(const chars: PUniChar; const count: CFIndex): CFStringRef; static;
+    class function HasContent(const cfStr: CFStringRef; out range: CFRange): Boolean; static; inline;
+  public
+    class function ToAnsi(const cfStr: CFStringRef; const encoding: CFStringEncoding = kCFStringEncodingWindowsLatin1): AnsiString; static; inline;
+    class function ToUtf8(const cfStr: CFStringRef): AnsiString; static; inline;
+    class function ToWide(const cfStr: CFStringRef): WideString; static;
+    class function ToUnicode(const cfStr: CFStringRef): UnicodeString; static;
+    class function FromAnsi(const value: AnsiString; const encoding: CFStringEncoding = kCFStringEncodingWindowsLatin1): CFStringRef; static;
+    class function FromUtf8(const value: AnsiString): CFStringRef; static; inline;
+    class function FromWide(const value: WideString): CFStringRef; static;
+    class function FromUnicode(const value: UnicodeString): CFStringRef; static;
+  end;
+
+  TNSStringBridge = class sealed
+  strict private
+    class function Wrap(const cfStr: CFStringRef): NSString; static; inline;
+    class function Unwrap(const aNSStr: NSString): CFStringRef; static; inline;
+  public
+    class function ToAnsi(const aNSStr: NSString; const encoding: CFStringEncoding = kCFStringEncodingWindowsLatin1): AnsiString; static; inline;
+    class function ToUtf8(const aNSStr: NSString): AnsiString; static; inline;
+    class function ToWide(const aNSStr: NSString): WideString; static; inline;
+    class function ToUnicode(const aNSStr: NSString): UnicodeString; static; inline;
+    class function FromAnsi(const value: AnsiString; const encoding: CFStringEncoding = kCFStringEncodingWindowsLatin1): NSString; static;
+    class function FromUtf8(const value: AnsiString): NSString; static; inline;
+    class function FromWide(const value: WideString): NSString; static; inline;
+    class function FromUnicode(const value: UnicodeString): NSString; static; inline;
+  end;
+
+
+class function TCFStringBridge.HasContent(const cfStr: CFStringRef; out range: CFRange): Boolean;
 begin
+  range.location := 0;
   if cfStr = nil then
     begin
-    Result := '';
-    Exit;
+    range.length := 0;
+    Exit(False);
     end;
 
-   {First try the optimized function}
-  StrPtr := CFStringGetCStringPtr(cfStr, encoding);
-  if StrPtr <> nil then  {Succeeded?}
-    Result := PChar(StrPtr)
-  else  {Use slower approach - see comments in CFString.pas}
-    begin
-    StrRange.location := 0;
-    StrRange.length := CFStringGetLength(cfStr);
+  range.length := CFStringGetLength(cfStr);
+  Result := range.length > 0;
+end;
 
-     {Determine how long resulting string will be}
-    CFStringGetBytes(cfStr, StrRange, encoding, Ord('?'),
-                     False, nil, 0, StrSize);
-    SetLength(Result, StrSize);  {Expand string to needed length}
+class function TCFStringBridge.ConvertToAnsi(const cfStr: CFStringRef; const encoding: CFStringEncoding): AnsiString;
+var
+  directPtr : PAnsiChar;
+  range     : CFRange;
+  bufferLen : CFIndex;
+  bytesUsed : CFIndex;
+begin
+  if cfStr = nil then
+    Exit('');
 
-    if StrSize > 0 then  {Convert string?}
-      CFStringGetBytes(cfStr, StrRange, encoding, Ord('?'),
-                       False, @Result[1], StrSize, StrSize);
-    end;
-end;  {CFStrToAnsiStr}
+  directPtr := PAnsiChar(CFStringGetCStringPtr(cfStr, encoding));
+  if directPtr <> nil then
+    Exit(AnsiString(directPtr));
+
+  if not HasContent(cfStr, range) then
+    Exit('');
+
+  bufferLen := 0;
+  CFStringGetBytes(cfStr, range, encoding, LossySubstitutionChar, False, nil, 0, bufferLen);
+  if bufferLen <= 0 then
+    Exit('');
+
+  SetLength(Result, bufferLen);
+  bytesUsed := CFStringGetBytes(cfStr, range, encoding, LossySubstitutionChar, False, @Result[1], bufferLen, bufferLen);
+
+  if bytesUsed <= 0 then
+    Result := ''
+  else if bytesUsed < bufferLen then
+    SetLength(Result, bytesUsed);
+end;
+
+class function TCFStringBridge.CreateWithBytes(const buffer: PUInt8; const count: CFIndex; const encoding: CFStringEncoding): CFStringRef;
+begin
+  Result := CFStringCreateWithBytes(nil, buffer, count, encoding, False);
+end;
+
+class function TCFStringBridge.CreateWithChars(const chars: PUniChar; const count: CFIndex): CFStringRef;
+begin
+  Result := CFStringCreateWithCharacters(nil, chars, count);
+end;
+
+class function TCFStringBridge.ToAnsi(const cfStr: CFStringRef; const encoding: CFStringEncoding): AnsiString;
+begin
+  Result := ConvertToAnsi(cfStr, encoding);
+end;
+
+class function TCFStringBridge.ToUtf8(const cfStr: CFStringRef): AnsiString;
+begin
+  Result := ConvertToAnsi(cfStr, kCFStringEncodingUTF8);
+end;
+
+class function TCFStringBridge.ToWide(const cfStr: CFStringRef): WideString;
+var
+  range : CFRange;
+begin
+  if not HasContent(cfStr, range) then
+    Exit('');
+
+  SetLength(Result, range.length);
+  CFStringGetCharacters(cfStr, range, PUniChar(@Result[1]));
+end;
+
+class function TCFStringBridge.ToUnicode(const cfStr: CFStringRef): UnicodeString;
+var
+  range : CFRange;
+begin
+  if not HasContent(cfStr, range) then
+    Exit('');
+
+  SetLength(Result, range.length);
+  CFStringGetCharacters(cfStr, range, PUniChar(@Result[1]));
+end;
+
+class function TCFStringBridge.FromAnsi(const value: AnsiString; const encoding: CFStringEncoding): CFStringRef;
+var
+  count : CFIndex;
+  bytes : PUInt8;
+begin
+  count := Length(value);
+  if count > 0 then
+    bytes := PUInt8(@value[1])
+  else
+    bytes := nil;
+
+  Result := CreateWithBytes(bytes, count, encoding);
+end;
+
+class function TCFStringBridge.FromUtf8(const value: AnsiString): CFStringRef;
+begin
+  Result := FromAnsi(value, kCFStringEncodingUTF8);
+end;
+
+class function TCFStringBridge.FromWide(const value: WideString): CFStringRef;
+var
+  count : CFIndex;
+  chars : PUniChar;
+begin
+  count := Length(value);
+  if count > 0 then
+    chars := PUniChar(@value[1])
+  else
+    chars := nil;
+
+  Result := CreateWithChars(chars, count);
+end;
+
+class function TCFStringBridge.FromUnicode(const value: UnicodeString): CFStringRef;
+var
+  count : CFIndex;
+  chars : PUniChar;
+begin
+  count := Length(value);
+  if count > 0 then
+    chars := PUniChar(@value[1])
+  else
+    chars := nil;
+
+  Result := CreateWithChars(chars, count);
+end;
+
+
+class function TNSStringBridge.Wrap(const cfStr: CFStringRef): NSString;
+begin
+  if cfStr = nil then
+    Exit(nil);
+  Result := NSString(cfStr);
+end;
+
+class function TNSStringBridge.Unwrap(const aNSStr: NSString): CFStringRef;
+begin
+  Result := CFStringRef(aNSStr);
+end;
+
+class function TNSStringBridge.ToAnsi(const aNSStr: NSString; const encoding: CFStringEncoding): AnsiString;
+begin
+  Result := TCFStringBridge.ToAnsi(Unwrap(aNSStr), encoding);
+end;
+
+class function TNSStringBridge.ToUtf8(const aNSStr: NSString): AnsiString;
+begin
+  Result := TCFStringBridge.ToUtf8(Unwrap(aNSStr));
+end;
+
+class function TNSStringBridge.ToWide(const aNSStr: NSString): WideString;
+begin
+  Result := TCFStringBridge.ToWide(Unwrap(aNSStr));
+end;
+
+class function TNSStringBridge.ToUnicode(const aNSStr: NSString): UnicodeString;
+begin
+  Result := TCFStringBridge.ToUnicode(Unwrap(aNSStr));
+end;
+
+class function TNSStringBridge.FromAnsi(const value: AnsiString; const encoding: CFStringEncoding): NSString;
+begin
+  Result := Wrap(TCFStringBridge.FromAnsi(value, encoding));
+end;
+
+class function TNSStringBridge.FromUtf8(const value: AnsiString): NSString;
+begin
+  Result := Wrap(TCFStringBridge.FromUtf8(value));
+end;
+
+class function TNSStringBridge.FromWide(const value: WideString): NSString;
+begin
+  Result := Wrap(TCFStringBridge.FromWide(value));
+end;
+
+class function TNSStringBridge.FromUnicode(const value: UnicodeString): NSString;
+begin
+  Result := Wrap(TCFStringBridge.FromUnicode(value));
+end;
+
+
+function CFStrToAnsiStr(cfStr    : CFStringRef;
+                        encoding : CFStringEncoding = kCFStringEncodingWindowsLatin1): AnsiString;
+begin
+  Result := TCFStringBridge.ToAnsi(cfStr, encoding);
+end;
 
 procedure AnsiStrToCFStr(const aStr     : AnsiString;
                            out cfStr    : CFStringRef;
                                encoding : CFStringEncoding = kCFStringEncodingWindowsLatin1);
- {Create CFString from AnsiString.
-  If encoding is not specified, assume encoded as CP1252.
-  Note: Calling code is responsible for calling CFRelease on 
-   returned CFString. Presumably that's the reason why CarbonProc 
-   unit's CreateCFString is a procedure, so you don't use it in 
-   an expression and leave the CFString dangling.}
 begin
-  cfStr := CFStringCreateWithCString(nil, Pointer(PChar(aStr)), encoding);
+  cfStr := TCFStringBridge.FromAnsi(aStr, encoding);
 end;
-
 
 function CFStrToStr(cfStr    : CFStringRef;
                     encoding : CFStringEncoding = kCFStringEncodingWindowsLatin1): string;
- {Convert CFString to string.
-  If encoding is not specified, encode using CP1252.
-  This assumes string = AnsiString.}
 begin
   Result := CFStrToAnsiStr(cfStr, encoding);
 end;
@@ -202,231 +389,149 @@ end;
 procedure StrToCFStr(const aStr     : string;
                        out cfStr    : CFStringRef;
                            encoding : CFStringEncoding = kCFStringEncodingWindowsLatin1);
- {Create CFString from string.
-  If encoding is not specified, assume encoded as CP1252.
-  This assumes string = AnsiString.
-  Note: Calling code is responsible for calling CFRelease on 
-   returned CFString.}
 begin
   AnsiStrToCFStr(aStr, cfStr, encoding);
 end;
 
-
 function CFStrToUtf8Str(cfStr : CFStringRef): AnsiString;
- {Convert CFString to UTF8-encoded AnsiString.}
 begin
-  Result := CFStrToAnsiStr(cfStr, kCFStringEncodingUTF8);
+  Result := TCFStringBridge.ToUtf8(cfStr);
 end;
 
 procedure Utf8StrToCFStr(const aStr  : AnsiString;
                            out cfStr : CFStringRef);
- {Create CFString from UTF8-encoded AnsiString.
-  Note: Calling code is responsible for calling CFRelease on 
-   returned CFString.}
 begin
-  AnsiStrToCFStr(aStr, cfStr, kCFStringEncodingUTF8);
+  cfStr := TCFStringBridge.FromUtf8(aStr);
 end;
 
-
 function CFStrToWideStr(cfStr : CFStringRef): WideString;
- {Convert CFString to WideString.}
 begin
-  Result := UTF8Decode(CFStrToAnsiStr(cfStr, kCFStringEncodingUTF8));
+  Result := TCFStringBridge.ToWide(cfStr);
 end;
 
 procedure WideStrToCFStr(const aStr  : WideString;
                            out cfStr : CFStringRef);
- {Create CFString from WideString.
-  Note: Calling code is responsible for calling CFRelease on 
-   returned CFString.}
 begin
-  AnsiStrToCFStr(UTF8Encode(aStr), cfStr, kCFStringEncodingUTF8);
+  cfStr := TCFStringBridge.FromWide(aStr);
 end;
 
-
 function CFStrToUniStr(cfStr : CFStringRef): UnicodeString;
- {Convert CFString to UnicodeString.}
 begin
-  Result := UTF8Decode(CFStrToAnsiStr(cfStr, kCFStringEncodingUTF8));
+  Result := TCFStringBridge.ToUnicode(cfStr);
 end;
 
 procedure UniStrToCFStr(const aStr  : UnicodeString;
                           out cfStr : CFStringRef);
- {Create CFString from UnicodeString.
-  Note: Calling code is responsible for calling CFRelease on 
-   returned CFString.}
 begin
-  AnsiStrToCFStr(UTF8Encode(aStr), cfStr, kCFStringEncodingUTF8);
+  cfStr := TCFStringBridge.FromUnicode(aStr);
 end;
 
-
-procedure FreeCFRef(var cfRef : CFTypeRef);
- {Convenience routine to free a CF reference so you don't have
-   to check if it's nil.}
+procedure FreeCFRef(var cfRef: CFTypeRef);
 begin
   if Assigned(cfRef) then
     CFRelease(cfRef);
 end;
 
 procedure FreeAndNilCFRef(var cfRef : CFTypeRef);
- {Convenience routine to free a CF reference and set it to nil.}
 begin
   FreeCFRef(cfRef);
   cfRef := nil;
 end;
 
-
-  {NSString routines}
-
 function NSStrToAnsiStr(aNSStr   : NSString;
                         encoding : CFStringEncoding = kCFStringEncodingWindowsLatin1): AnsiString;
- {Convert NSString to AnsiString.
-  If encoding is not specified, encode using CP1252.}
 begin
-   {Note NSString and CFStringRef are interchangable}
-  Result := CFStrToAnsiStr(CFStringRef(aNSStr), encoding);
+  Result := TNSStringBridge.ToAnsi(aNSStr, encoding);
 end;
 
 procedure AnsiStrToNSStr(const aStr     : AnsiString;
                            out aNSStr   : NSString;
                                encoding : CFStringEncoding = kCFStringEncodingWindowsLatin1);
- {Create NSString from AnsiString.
-  If encoding is not specified, assume encoded as CP1252.
-  Note: Calling code is responsible for calling returned
-   NSString's release method.}
 begin
-   {Note NSString and CFStringRef are interchangable}
-  AnsiStrToCFStr(aStr, CFStringRef(aNSStr), encoding);
+  aNSStr := TNSStringBridge.FromAnsi(aStr, encoding);
 end;
 
 function AnsiStrToNSStr(const aStr     : AnsiString;
                               encoding : CFStringEncoding = kCFStringEncodingWindowsLatin1) : NSString;
- {Function version of previous procedure that can be called
-   without releasing NSString result.
-  Tip: You can use the procedure version and call release
-   explictly to reduce use of autoreleased objects.}
 begin
-  AnsiStrToNSStr(aStr, Result, encoding);
-  Result.autorelease;
+  Result := TNSStringBridge.FromAnsi(aStr, encoding);
+  if Result <> nil then
+    Result.autorelease;
 end;
-
 
 function NSStrToStr(aNSStr   : NSString;
                     encoding : CFStringEncoding = kCFStringEncodingWindowsLatin1): string;
- {Convert NSString to string.
-  If encoding is not specified, encode using CP1252.
-  This assumes string = AnsiString.}
 begin
-   {Note NSString and CFStringRef are interchangable}
-  Result := CFStrToAnsiStr(CFStringRef(aNSStr), encoding);
+  Result := TNSStringBridge.ToAnsi(aNSStr, encoding);
 end;
 
 procedure StrToNSStr(const aStr     : string;
                        out aNSStr   : NSString;
                            encoding : CFStringEncoding = kCFStringEncodingWindowsLatin1);
- {Create NSString from string.
-  If encoding is not specified, assume encoded as CP1252.
-  This assumes string = AnsiString.
-  Note: Calling code is responsible for calling returned
-   NSString's release method.}
 begin
-   {Note NSString and CFStringRef are interchangable}
-  AnsiStrToCFStr(aStr, CFStringRef(aNSStr), encoding);
+  AnsiStrToNSStr(aStr, aNSStr, encoding);
 end;
 
 function StrToNSStr(const aStr     : string;
                           encoding : CFStringEncoding = kCFStringEncodingWindowsLatin1) : NSString;
- {Function version of previous procedure that can be called
-   without releasing NSString result.
-  Tip: You can use the procedure version and call release
-   explictly to reduce use of autoreleased objects.}
 begin
-  StrToNSStr(aStr, Result, encoding);
-  Result.autorelease;
+  Result := TNSStringBridge.FromAnsi(aStr, encoding);
+  if Result <> nil then
+    Result.autorelease;
 end;
 
-
 function NSStrToUtf8Str(aNSStr : NSString): AnsiString;
- {Convert NSString to UTF8-encoded AnsiString.}
 begin
-   {Note NSString and CFStringRef are interchangable}
-  Result := CFStrToAnsiStr(CFStringRef(aNSStr), kCFStringEncodingUTF8);
+  Result := TNSStringBridge.ToUtf8(aNSStr);
 end;
 
 procedure Utf8StrToNSStr(const aStr   : AnsiString;
                            out aNSStr : NSString);
- {Create NSString from UTF8-encoded AnsiString.
-  Note: Calling code is responsible for calling returned
-   NSString's release method.}
 begin
-   {Note NSString and CFStringRef are interchangable}
-  AnsiStrToCFStr(aStr, CFStringRef(aNSStr), kCFStringEncodingUTF8);
+  aNSStr := TNSStringBridge.FromUtf8(aStr);
 end;
 
 function Utf8StrToNSStr(const aStr : AnsiString) : NSString;
- {Function version of previous procedure that can be called
-   without releasing NSString result.
-  Tip: You can use the procedure version and call release
-   explictly to reduce use of autoreleased objects.}
 begin
-  Utf8StrToNSStr(aStr, Result);
-  Result.autorelease;
+  Result := TNSStringBridge.FromUtf8(aStr);
+  if Result <> nil then
+    Result.autorelease;
 end;
 
-
 function NSStrToWideStr(aNSStr : NSString): WideString;
- {Convert NSString to WideString.}
 begin
-   {Note NSString and CFStringRef are interchangable}
-  Result := CFStrToWideStr(CFStringRef(aNSStr));
+  Result := TNSStringBridge.ToWide(aNSStr);
 end;
 
 procedure WideStrToNSStr(const aStr   : WideString;
                            out aNSStr : NSString);
- {Create NSString from WideString.
-  Note: Calling code is responsible for calling returned
-   NSString's release method.}
 begin
-   {Note NSString and CFStringRef are interchangable}
-  WideStrToCFStr(aStr, CFStringRef(aNSStr));
+  aNSStr := TNSStringBridge.FromWide(aStr);
 end;
 
 function WideStrToNSStr(const aStr : WideString) : NSString;
- {Function version of previous procedure that can be called
-   without releasing NSString result.
-  Tip: You can use the procedure version and call release
-   explictly to reduce use of autoreleased objects.}
 begin
-  WideStrToNSStr(aStr, Result);
-  Result.autorelease;
+  Result := TNSStringBridge.FromWide(aStr);
+  if Result <> nil then
+    Result.autorelease;
 end;
 
-
 function NSStrToUniStr(aNSStr : NSString): UnicodeString;
- {Convert NSString to UnicodeString.}
 begin
-   {Note NSString and CFStringRef are interchangable}
-  Result := CFStrToUniStr(CFStringRef(aNSStr));
+  Result := TNSStringBridge.ToUnicode(aNSStr);
 end;
 
 procedure UniStrToNSStr(const aStr   : UnicodeString;
                           out aNSStr : NSString);
- {Create NSString from UnicodeString.
-  Note: Calling code is responsible for calling returned
-   NSString's release method.}
 begin
-   {Note NSString and CFStringRef are interchangable}
-  UniStrToCFStr(aStr, CFStringRef(aNSStr));
+  aNSStr := TNSStringBridge.FromUnicode(aStr);
 end;
 
 function UniStrToNSStr(const aStr : UnicodeString) : NSString;
- {Function version of previous procedure that can be called
-   without releasing NSString result.
-  Tip: You can use the procedure version and call release
-   explictly to reduce use of autoreleased objects.}
 begin
-  UniStrToNSStr(aStr, Result);
-  Result.autorelease;
+  Result := TNSStringBridge.FromUnicode(aStr);
+  if Result <> nil then
+    Result.autorelease;
 end;
 
 
