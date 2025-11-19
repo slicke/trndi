@@ -27,7 +27,7 @@ unit trndi.funcs;
 interface
 
 uses
-Classes, SysUtils, ExtCtrls, StdCtrls, Graphics, trndi.types, Forms, Math,
+Classes, SysUtils, Controls, ExtCtrls, StdCtrls, Graphics, trndi.types, Forms, Math,
 fpjson, jsonparser, dateutils, buildinfo
 {$ifdef TrndiExt},trndi.ext.engine, mormot.lib.quickjs, mormot.core.base{$endif}
 {$ifdef DARWIN}, CocoaAll{$endif};
