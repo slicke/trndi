@@ -37,7 +37,7 @@ interface
 
 uses
   Classes, SysUtils, Graphics, MacHTTPClient, CocoaAll, SimpleDarkMode,
-  trndi.native.base;
+  trndi.native.base, IniFiles;
 
 type
   {!
@@ -88,14 +88,14 @@ type
 implementation
 
 uses
-  Process, DOM, XMLRead, XMLWrite, LazFileUtils;
+  Process, DOM, XMLRead, LazFileUtils;
 
 const
   MAC_PLIST_FILENAME = 'Trndi.plist';
 
 var
-  GPlistCache: TStringList = nil;
-  GPlistLoaded: boolean = false;
+  GIniStore: TIniFile = nil;
+  GLegacyPlistMigrated: boolean = false;
 
 function ReadGlobalPreference(const Key: string): string;
 var
@@ -114,14 +114,11 @@ var
 begin
   dir := GetAppConfigDirUTF8(false, false);
 
-  // Lazarus may return an empty string when the bundle lacks metadata; fall back to the
-  // standard per-user Application Support folder in that case.
   if Trim(dir) = '' then
     dir := GetUserDir + 'Library/Application Support/Trndi';
 
   if not ForceDirectoriesUTF8(dir) then
   begin
-    // As a last resort, use a writable per-user folder so settings are not lost.
     dir := GetUserDir + '.trndi';
     if not ForceDirectoriesUTF8(dir) then
       dir := GetTempDir;
@@ -133,6 +130,51 @@ end;
 function MacConfigPlistPath: string;
 begin
   Result := MacConfigDirectory + MAC_PLIST_FILENAME;
+end;
+
+function MacIniPath: string;
+begin
+  Result := MacConfigDirectory + 'trndi.ini';
+end;
+
+procedure MigrateLegacyPlistToIni;
+var
+  Legacy: TStringList;
+  i: Integer;
+begin
+  if GLegacyPlistMigrated then
+    Exit;
+
+  if (GIniStore = nil) or (not FileExistsUTF8(MacConfigPlistPath)) then
+  begin
+    GLegacyPlistMigrated := True;
+    Exit;
+  end;
+
+  Legacy := TStringList.Create;
+  try
+    LoadPlistIntoCache(Legacy);
+    for i := 0 to Legacy.Count - 1 do
+      if Legacy.Names[i] <> '' then
+        GIniStore.WriteString('trndi', Legacy.Names[i], Legacy.ValueFromIndex[i]);
+    GIniStore.UpdateFile;
+  finally
+    Legacy.Free;
+    GLegacyPlistMigrated := True;
+  end;
+end;
+
+procedure EnsureIniStore;
+var
+  iniPath: string;
+begin
+  if GIniStore <> nil then
+    Exit;
+
+  iniPath := MacIniPath;
+  ForceDirectoriesUTF8(ExtractFilePath(iniPath));
+  GIniStore := TIniFile.Create(iniPath);
+  MigrateLegacyPlistToIni;
 end;
 
 function NextElementSibling(Node: TDOMNode): TDOMNode;
@@ -227,66 +269,6 @@ begin
   end;
 end;
 
-procedure EnsurePlistCache;
-begin
-  if GPlistCache = nil then
-  begin
-    GPlistCache := TStringList.Create;
-    GPlistCache.NameValueSeparator := '=';
-    GPlistCache.CaseSensitive := false;
-    GPlistCache.Sorted := false;
-  end;
-
-  if not GPlistLoaded then
-  begin
-    LoadPlistIntoCache(GPlistCache);
-    GPlistLoaded := true;
-  end;
-end;
-
-procedure SavePlistCache;
-var
-  doc: TXMLDocument;
-  plistElem, dictElem, keyElem, valueElem: TDOMElement;
-  i: integer;
-  key, value: string;
-  path: string;
-begin
-  if GPlistCache = nil then
-    Exit;
-
-  doc := TXMLDocument.Create;
-  try
-    plistElem := doc.CreateElement('plist');
-    plistElem.SetAttribute('version', '1.0');
-    doc.AppendChild(plistElem);
-
-    dictElem := doc.CreateElement('dict');
-    plistElem.AppendChild(dictElem);
-
-    for i := 0 to GPlistCache.Count - 1 do
-    begin
-      key := GPlistCache.Names[i];
-      if key = '' then
-        Continue;
-      value := GPlistCache.ValueFromIndex[i];
-
-      keyElem := doc.CreateElement('key');
-      keyElem.AppendChild(doc.CreateTextNode(key));
-      dictElem.AppendChild(keyElem);
-
-      valueElem := doc.CreateElement('string');
-      valueElem.AppendChild(doc.CreateTextNode(value));
-      dictElem.AppendChild(valueElem);
-    end;
-
-    path := MacConfigPlistPath;
-    ForceDirectoriesUTF8(ExtractFilePath(path));
-    WriteXMLFile(doc, path);
-  finally
-    doc.Free;
-  end;
-end;
 {------------------------------------------------------------------------------
   Speak
   -----
@@ -414,15 +396,10 @@ function TTrndiNativeMac.GetSetting(const keyname: string; def: string;
   global: boolean): string;
 var
   key: string;
-  idx: integer;
 begin
+  EnsureIniStore;
   key := buildKey(keyname, global);
-  EnsurePlistCache;
-  idx := GPlistCache.IndexOfName(key);
-  if idx <> -1 then
-    Result := GPlistCache.ValueFromIndex[idx]
-  else
-    Result := def;
+  Result := GIniStore.ReadString('trndi', key, def);
 end;
 
 procedure TTrndiNativeMac.SetSetting(const keyname: string; const val: string;
@@ -430,34 +407,29 @@ procedure TTrndiNativeMac.SetSetting(const keyname: string; const val: string;
 var
   key: string;
 begin
+  EnsureIniStore;
   key := buildKey(keyname, global);
-  EnsurePlistCache;
-  GPlistCache.Values[key] := val;
-  SavePlistCache;
+  GIniStore.WriteString('trndi', key, val);
+  GIniStore.UpdateFile;
 end;
 
 procedure TTrndiNativeMac.DeleteSetting(const keyname: string; global: boolean);
 var
   key: string;
-  idx: integer;
 begin
+  EnsureIniStore;
   key := buildKey(keyname, global);
-  EnsurePlistCache;
-  idx := GPlistCache.IndexOfName(key);
-  if idx <> -1 then
-  begin
-    GPlistCache.Delete(idx);
-    SavePlistCache;
-  end;
+  GIniStore.DeleteKey('trndi', key);
+  GIniStore.UpdateFile;
 end;
 
 procedure TTrndiNativeMac.ReloadSettings;
 begin
-  GPlistLoaded := false;
-  EnsurePlistCache;
+  GLegacyPlistMigrated := True;
+  FreeAndNil(GIniStore);
 end;
 
 finalization
-  FreeAndNil(GPlistCache);
+  FreeAndNil(GIniStore);
 
 end.
