@@ -15,7 +15,10 @@ HKEY_CURRENT_USER\SOFTWARE\Trndi
 ```
 
 ## macOS
-On macOS, Trndi stores it's settings in the app's preference file
+On macOS, Trndi stores its settings in the user application support folder:
+```
+~/Library/Application Support/Trndi/Trndi.plist
+```
 
 # Color notice
 Colors are stored as integer representations of ```TColor```.

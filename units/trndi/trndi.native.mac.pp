@@ -98,14 +98,6 @@ var
   GPlistLoaded: boolean = false;
 
 function MacConfigDirectory: string;
-function MacConfigPlistPath: string;
-procedure EnsurePlistCache;
-procedure SavePlistCache;
-procedure LoadPlistIntoCache(list: TStringList);
-function NextElementSibling(Node: TDOMNode): TDOMNode;
-function ExtractPlistValue(ValueNode: TDOMNode): string;
-
-function MacConfigDirectory: string;
 var
   dir: string;
 begin
@@ -164,6 +156,7 @@ begin
   if not FileExistsUTF8(path) then
     Exit;
 
+  doc := nil;
   try
     ReadXMLFile(doc, path);
   except
@@ -314,15 +307,15 @@ begin
         res := Trim(response.DataString);
         Result := True;
       end
-      uses
-        Process, DOM, XMLRead, XMLWrite, LazFileUtils;
+      else
+      begin
         // Normalize an error: LastErrMsg usually contains the reason
-      const
-        MAC_PLIST_FILENAME = 'Trndi.plist';
-
-      var
-        GPlistCache: TStringList = nil;
-        GPlistLoaded: boolean = false;
+        res := Trim(httpClient.LastErrMsg);
+        Result := False;
+      end;
+    except
+      on E: Exception do
+      begin
         res := E.Message;
         Result := False;
       end;
@@ -414,6 +407,7 @@ function TTrndiNativeMac.GetSetting(const keyname: string; def: string;
 var
   key: string;
   idx: integer;
+  legacy: string;
 begin
   key := buildKey(keyname, global);
   EnsurePlistCache;
@@ -421,7 +415,17 @@ begin
   if idx <> -1 then
     Result := GPlistCache.ValueFromIndex[idx]
   else
-    Result := def;
+  begin
+    legacy := GetPrefString(key);
+    if legacy <> '' then
+    begin
+      GPlistCache.Values[key] := legacy;
+      SavePlistCache;
+      Result := legacy;
+    end
+    else
+      Result := def;
+  end;
 end;
 
 procedure TTrndiNativeMac.SetSetting(const keyname: string; const val: string;

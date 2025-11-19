@@ -164,7 +164,7 @@ Look for ```qt6pas``` or ```libqt6-pas``` in your package manager, or search for
 ## Settings storage
 Trndi stores settings per platform in the standard location:
 - Windows: Registry under HKCU\Software\Trndi
-- macOS: User defaults (Preferences) for the app
+- macOS: `~/Library/Application Support/Trndi/Trndi.plist` (created via Lazarus app config dir)
 - Linux: Lazarus GetAppConfigFile path, typically ~/.config/Trndi/trndi.ini in section [trndi]
 
 On Linux, this is a single INI file consistently used for Get/Set/Delete operations — no legacy paths or multiple files.
