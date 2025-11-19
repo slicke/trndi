@@ -669,8 +669,6 @@ begin
     aDialog.FormStyle := fsStayOnTop;
     try
       Result := aDialog.ShowModal;
-      if Result = mrNone then
-        Result := aDialog.ModalResult;
     finally
       try
         if Assigned(aDialog) then aDialog.FormStyle := oldStyle;
@@ -680,8 +678,6 @@ begin
   end;
   {$endif}
   Result := aDialog.ShowModal;
-  if Result = mrNone then
-    Result := aDialog.ModalResult;
 end;
 
 {**
@@ -1810,7 +1806,6 @@ var
 begin
   bgcol := getBackground;
   big := UXDialogIsBig(dialogsize);
-  hpd := nil;
 
   Dialog := TDialogForm.CreateNew(nil);
   try
@@ -2269,10 +2264,10 @@ begin
     if Dialog.Height > MaxDialogHeight then
       Dialog.Height := MaxDialogHeight;
 
-    Result := ShowModalSafe(Dialog);
+  ShowModalSafe(Dialog);
+  Result := Dialog.ModalResult;
   finally
-    if Assigned(hpd) then
-      hpd.Free;
+    hpd.free;
     Dialog.Free;
   end;
 end;
