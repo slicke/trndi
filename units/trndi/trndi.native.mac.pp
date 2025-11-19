@@ -101,8 +101,21 @@ function MacConfigDirectory: string;
 var
   dir: string;
 begin
-  dir := GetAppConfigDirUTF8(false, true);
-  ForceDirectoriesUTF8(dir);
+  dir := GetAppConfigDirUTF8(false, false);
+
+  // Lazarus may return an empty string when the bundle lacks metadata; fall back to the
+  // standard per-user Application Support folder in that case.
+  if Trim(dir) = '' then
+    dir := GetUserDir + 'Library/Application Support/Trndi';
+
+  if not ForceDirectoriesUTF8(dir) then
+  begin
+    // As a last resort, use a writable per-user folder so settings are not lost.
+    dir := GetUserDir + '.trndi';
+    if not ForceDirectoriesUTF8(dir) then
+      dir := GetTempDirUTF8;
+  end;
+
   Result := IncludeTrailingPathDelimiter(dir);
 end;
 
