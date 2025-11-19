@@ -23,7 +23,7 @@
 procedure TfBG.actOnTrend(proc: TTrendProcLoop);
 var
   ix: integer;
-  ls: array[1..10] of TPaintBox;
+  ls: array[1..10] of TDotControl;
 begin
   ls := TrendDots; // Directly use the TrendDots array
   for ix := 1 to NUM_DOTS do
@@ -38,7 +38,7 @@ end;
 procedure TfBG.actOnTrend(proc: TTrendProc);
 var
   ix: integer;
-  ls: array[1..10] of TPaintBox;
+  ls: array[1..10] of TDotControl;
 begin
   ls := TrendDots; // Directly use the TrendDots array
   for ix := 1 to NUM_DOTS do
@@ -138,16 +138,8 @@ begin
   DATA_FRESHNESS_THRESHOLD_MINUTES :=
     native.GetIntSetting('system.fresh_threshold', DATA_FRESHNESS_THRESHOLD_MINUTES);
 
-  // Check graph
-  for i := 1 to NUM_DOTS do
-  begin
-    s := 'lDot' + IntToStr(i);
-    TrendDots[i] := FindComponent(s) as TPaintBox;
-    if not Assigned(TrendDots[i]) then
-      ShowMessage(Format('Label %s is missing!', [s]))
-    else
-      LogMessage(Format('Label %s assigned to TrendDots[%d].', [s, i]));
-  end;
+  // Create trend dots dynamically (TLabel on Darwin, TPaintBox elsewhere)
+  CreateTrendDots;
 
   // Check touch screen
   HasTouch := native.HasTouchScreen(HasMultiTouch);
@@ -212,6 +204,9 @@ begin
   fSplash.lInfo.Font.Color := fSplash.lSplashWarn.Font.color;
   {$ifdef X_WIN}
   fSplash.ShowInTaskBar := stAlways;
+  {$endif}
+  {$ifdef DARWIN}
+  fSplash.lSplashWarn.Font.Size := 9;
   {$endif}
   fSplash.Show;
 end;
@@ -419,7 +414,7 @@ begin
 
   // Initialize native interface
   native := TrndiNative.Create;
-  if ssShift in GetKeyShiftState then
+  if (ssShift in GetKeyShiftState) and (ssCtrl in GetKeyShiftState) then
     if native.DetectTouchScreen(fil) then
       native.touchOverride := tbFalse
     else

@@ -8,8 +8,8 @@ object fFloat: TfFloat
   ClientWidth = 218
   FormStyle = fsSystemStayOnTop
   PopupMenu = pMain
-  Position = poDesktopCenter
   SnapOptions.SnapToMonitor = True
+  LCLVersion = '4.4.0.0'
   OnKeyDown = FormKeyDown
   OnKeyPress = FormKeyPress
   OnMouseDown = FormMouseDown
@@ -36,22 +36,24 @@ object fFloat: TfFloat
     ParentFont = False
     PopupMenu = pMain
     OnMouseDown = FormMouseDown
+    OnMouseEnter = FormMouseEnter
+    OnMouseLeave = FormMouseLeave
     OnMouseMove = FormMouseMove
     OnMouseUp = FormMouseUp
   end
   object lRangeDown: TLabel
     Left = 0
-    Height = 15
+    Height = 16
     Top = 0
-    Width = 10
+    Width = 14
     Caption = '▼'
     Visible = False
   end
   object lRangeUp: TLabel
     Left = 0
-    Height = 15
+    Height = 16
     Top = 0
-    Width = 10
+    Width = 14
     Caption = '▲'
     Visible = False
   end
@@ -83,14 +85,16 @@ object fFloat: TfFloat
     ParentFont = False
     PopupMenu = pMain
     OnMouseDown = FormMouseDown
+    OnMouseEnter = FormMouseEnter
+    OnMouseLeave = FormMouseLeave
     OnMouseMove = FormMouseMove
     OnMouseUp = FormMouseUp
   end
   object lTime: TLabel
     Left = 167
-    Height = 15
+    Height = 16
     Top = 0
-    Width = 27
+    Width = 39
     Caption = '00:00'
     Visible = False
   end
@@ -137,6 +141,7 @@ object fFloat: TfFloat
       Caption = 'Size'
       object miXL: TMenuItem
         Caption = 'Very Big'
+        RadioItem = True
         OnClick = miNormalClick
       end
       object miBig: TMenuItem
@@ -184,5 +189,12 @@ object fFloat: TfFloat
     OnTimer = tClockTimer
     Left = 145
     Top = 100
+  end
+  object tTitlebar: TTimer
+    Enabled = False
+    Interval = 2000
+    OnTimer = tTitlebarTimer
+    Left = 145
+    Top = 60
   end
 end

@@ -76,6 +76,7 @@ TfFloat = class(TForm)
   pMain: TPopupMenu;
   pnMultiUser: TPanel;
   tClock: TTimer;
+  tTitlebar: TTimer;
   procedure FormCreate(Sender: TObject);
   procedure FormKeyDown(Sender: TObject; var Key: word; Shift: TShiftState);
   procedure FormKeyPress(Sender: TObject; var Key: char);
@@ -96,6 +97,7 @@ TfFloat = class(TForm)
   procedure miClockClick(Sender: TObject);
   procedure miCustomSizeClick(Sender: TObject);
   procedure miCustomVisibleClick(Sender: TObject);
+  procedure miHideTitleClick(Sender: TObject);
   procedure miMainClick(Sender: TObject);
   procedure miNormalClick(Sender: TMenuItem);
   procedure miNormalClick(Sender: TObject);
@@ -142,7 +144,7 @@ begin
   if ALabel.Caption = '' then
     Exit; // No text to display
 
-  // Kontrollera att etiketten har storlek
+  // Check that the label has size
   if (ALabel.Width <= 0) or (ALabel.Height <= 0) then
   begin
     ALabel.Width := 100;
@@ -160,7 +162,7 @@ begin
     ALabel.Font.Color := clBlack;
 
   // Maximum width and height for the text
-  MaxWidth := ALabel.Width - 4; // Lite padding
+  MaxWidth := ALabel.Width - 4; // Small padding
   MaxHeight := ALabel.Height - 4;
 
   // Perform binary search to find optimal font size
@@ -221,7 +223,7 @@ var
   NSViewHandle: NSView;
   NSWin: NSWindow;
   Mask: NSBezierPath;
-  {$ELSEIF DEFINED(LCLQT6_DISABLED)}
+  {$ELSEIF DEFINED(LCLQT6)}
   StyleStr: widestring;
   {$ELSE}
   ABitmap: TBitmap;
@@ -257,9 +259,10 @@ begin
   except
     // Ignore any errors
   end;
-  {$ELSEIF DEFINED(LCLQT6_DISABLED)}
+  {$ELSEIF DEFINED(LCLQT6)}
   StyleStr := 'border-radius: 10px; background-color: rgba(240, 240, 240, 255);';
-  Self.BorderStyle := bsNone; // Remove border
+//  Self.BorderStyle := bsNone; // Remove border
+  self.borderstyle := bsToolWindow;
   if HandleAllocated then
     QWidget_setStyleSheet(TQtWidget(Handle).Widget, @stylestr);
   CreateRoundedCorners;
@@ -328,6 +331,7 @@ end;
 
 procedure TfFloat.FormShow(Sender: TObject);
 begin
+  // Do not auto-center here; respect current position so user dragging stays stable
   ApplyRoundedCorners;
 
   miNormal.Click;
@@ -369,6 +373,11 @@ end;
 procedure TfFloat.miCustomVisibleClick(Sender: TObject);
 begin
   ShowMessage(rsCustomOp);
+end;
+
+procedure TfFloat.miHideTitleClick(Sender: TObject);
+begin
+
 end;
 
 procedure TfFloat.miMainClick(Sender: TObject);
@@ -449,29 +458,53 @@ begin
 end;
 
 procedure TfFloat.tTitlebarTimer(Sender: TObject);
-var
-  x, y: integer;
 begin
+  {$IF NOT DEFINED(DARWIN)}
+  // On non-macOS, keep float always borderless; timer does nothing
+  tTitlebar.Enabled := False;
+  {$ENDIF}
 end;
 
 procedure TfFloat.FormMouseMove(Sender: TObject; Shift: TShiftState; X, Y: integer);
+var
+  ScreenPt: TPoint;
+  DeltaX, DeltaY: Integer;
 begin
   if DraggingWin then
-    SetBounds(Left + (X - PX), Top + (Y - PY), Width, Height);
+  begin
+    // Convert to screen coordinates to handle moves from child controls
+    if Sender is TControl then
+      ScreenPt := (Sender as TControl).ClientToScreen(Point(X, Y))
+    else
+      ScreenPt := ClientToScreen(Point(X, Y));
+    
+    // Calculate the delta (how much the mouse moved)
+    DeltaX := ScreenPt.X - PX;
+    DeltaY := ScreenPt.Y - PY;
+    
+    // Move the window by the delta
+    Left := Left + DeltaX;
+    Top := Top + DeltaY;
+    
+    // Update stored position for next move
+    PX := ScreenPt.X;
+    PY := ScreenPt.Y;
+  end;
 end;
 
 procedure TfFloat.FormMouseUp(Sender: TObject; Button: TMouseButton;
 Shift: TShiftState; X, Y: integer);
 begin
   DraggingWin := false;
-  {$IF DEFINED(DARWIN) OR DEFINED(LCLQt6)}
-  BorderStyle:= bsNone;
-  {$endif}
+  {$IFDEF DARWIN}
+  // On macOS, restore borderless immediately after dragging
+  BorderStyle := bsNone;
+  {$ENDIF}
 end;
 
 
 procedure TfFloat.CreateRoundedCorners;
-{$IFDEF LCLQt6_DISABLED}
+{$IFDEF LCLQt6}
 var
   Path: QPainterPathH;
   Painter: QPainterH;
@@ -495,7 +528,7 @@ begin
   else
     bgcol := QtGreen;
   end;
-  // Konvertera LCL handle till Qt widget
+  // Convert LCL handle to Qt widget
   QtWidget := TQtWidget(Handle);
   WidgetHandle := QtWidget.GetContainerWidget;
 
@@ -513,7 +546,7 @@ begin
   Painter := QPainter_create();
   QPainter_begin(Painter, PaintDevice);
 
-  // Aktivera antialiasing
+  // Enable antialiasing
   QPainter_setRenderHint(Painter, QPainterAntialiasing, true);
 
   // Create a path for rounded corners
@@ -567,20 +600,38 @@ end;
 
 procedure TfFloat.FormMouseDown(Sender: TObject; Button: TMouseButton;
 Shift: TShiftState; X, Y: integer);
+var
+  ScreenPt: TPoint;
 begin
-  DraggingWin := true;
-  PX := X;
-  PY := Y;
+  if Button = mbLeft then
+  begin
+    DraggingWin := true;
+    
+    // Convert to screen coordinates to handle clicks from child controls
+    if Sender is TControl then
+      ScreenPt := (Sender as TControl).ClientToScreen(Point(X, Y))
+    else
+      ScreenPt := ClientToScreen(Point(X, Y));
+    
+    PX := ScreenPt.X;
+    PY := ScreenPt.Y;
+  end;
 end;
 
 procedure TfFloat.FormMouseEnter(Sender: TObject);
 begin
-
+  {$IF NOT DEFINED(DARWIN)}
+  // On Linux/Windows keep the form borderless; no hover titlebar
+  Exit;
+  {$ENDIF}
 end;
 
 procedure TfFloat.FormMouseLeave(Sender: TObject);
 begin
-
+  {$IF NOT DEFINED(DARWIN)}
+  // No hover titlebar on non-macOS
+  Exit;
+  {$ENDIF}
 end;
 
 procedure TfFloat.FormKeyPress(Sender: TObject; var Key: char);
@@ -606,7 +657,7 @@ begin
     miCustomVisible.Checked := true;
   end;
 
-  if ((ssShift in Shift) and (Key in [187, (* + *) 189, 191 (*mac +*)])) then
+  if ((ssShift in Shift) and (Key in [{$ifdef LINUX}63 (*linux **),{$endif} 187, (* + *) 189, 191 (*mac +*)])) then
   begin
     if key <> 189 then // not -
       Height := Height + 5

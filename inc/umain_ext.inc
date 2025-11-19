@@ -126,14 +126,20 @@ begin
     addClassFunction('playSound', ExtFunction(@JSPlay), 1);
     addClassFunction('sayText', ExtFunction(@JSSay), 1);
     addClassFunction('htmlMsg', ExtFunction(@JSHTMLMsg), -1);
+    addClassFunction('htmlDlg', ExtFunction(@JSHTMLDlg), -1);    
+    addClassFunction('htmlYesNo', ExtFunction(@JSHTMLYesNo), -1);    
     addClassFunction('setClockInterval', ExtFunction(@JSvar_ClockInterval), 1);
 
     // Add the UX modification function, as declared in this file
-    for s in exts do
-    begin
-      fSplash.lInfo.Caption := RS_SPLASH_LOADING + ExtractFileName(s);
-      // Run all found files
-      ExecuteFile(s);
+    if ssCtrl in GetKeyShiftState then
+     SHowMessage('Trndi is running in Safe Mode, no extensions will be loaded')
+    else begin
+      for s in exts do
+      begin
+        fSplash.lInfo.Caption := RS_SPLASH_LOADING + ExtractFileName(s);
+        // Run all found files
+        ExecuteFile(s);
+      end;
     end;
     exts.Free;
   end;
