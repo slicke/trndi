@@ -54,17 +54,17 @@ type
         @returns(True once the request is made) }
     class function setDarkMode: boolean;
 
-    // Settings API overrides (NSUserDefaults/CFPreferences)
-    {** Read a string from preferences; returns @param(def) when missing.
-        Keys are scoped by @link(TTrndiNativeBase.buildKey). }
+  // Settings API overrides (plist-backed in app config directory)
+  {** Read a string from the plist store; returns @param(def) when missing.
+    Keys are scoped by @link(TTrndiNativeBase.buildKey). }
     function GetSetting(const keyname: string; def: string = '';
       global: boolean = False): string; override;
-    {** Write a string to preferences under the scoped key. }
+  {** Write a string to the plist store under the scoped key. }
     procedure SetSetting(const keyname: string; const val: string;
       global: boolean = False); override;
-    {** Delete a setting (sets to empty string as some backends lack delete). }
+  {** Delete a setting by removing it from the plist store. }
     procedure DeleteSetting(const keyname: string; global: boolean = False); override;
-    {** Preferences are live; nothing to reload. }
+  {** Reload plist cache from disk. }
     procedure ReloadSettings; override;
     // Badge
     {** Set the dock tile badge label (text only). }
@@ -88,7 +88,188 @@ type
 implementation
 
 uses
-  Process, NSHelpers;
+  Process, DOM, XMLRead, XMLWrite, LazFileUtils;
+
+const
+  MAC_PLIST_FILENAME = 'Trndi.plist';
+
+var
+  GPlistCache: TStringList = nil;
+  GPlistLoaded: boolean = false;
+
+function MacConfigDirectory: string;
+function MacConfigPlistPath: string;
+procedure EnsurePlistCache;
+procedure SavePlistCache;
+procedure LoadPlistIntoCache(list: TStringList);
+function NextElementSibling(Node: TDOMNode): TDOMNode;
+function ExtractPlistValue(ValueNode: TDOMNode): string;
+
+function MacConfigDirectory: string;
+var
+  dir: string;
+begin
+  dir := GetAppConfigDirUTF8(false, true);
+  ForceDirectoriesUTF8(dir);
+  Result := IncludeTrailingPathDelimiter(dir);
+end;
+
+function MacConfigPlistPath: string;
+begin
+  Result := MacConfigDirectory + MAC_PLIST_FILENAME;
+end;
+
+function NextElementSibling(Node: TDOMNode): TDOMNode;
+begin
+  Result := Node;
+  repeat
+    if Result = nil then
+      Exit(nil);
+    Result := Result.NextSibling;
+  until (Result = nil) or (Result.NodeType = ELEMENT_NODE);
+end;
+
+function ExtractPlistValue(ValueNode: TDOMNode): string;
+begin
+  if not Assigned(ValueNode) then
+    Exit('');
+
+  if SameText(ValueNode.NodeName, 'string') or
+     SameText(ValueNode.NodeName, 'integer') or
+     SameText(ValueNode.NodeName, 'real') or
+     SameText(ValueNode.NodeName, 'data') then
+    Result := ValueNode.TextContent
+  else
+  if SameText(ValueNode.NodeName, 'true') then
+    Result := 'true'
+  else
+  if SameText(ValueNode.NodeName, 'false') then
+    Result := 'false'
+  else
+    Result := ValueNode.TextContent;
+end;
+
+procedure LoadPlistIntoCache(list: TStringList);
+var
+  path: string;
+  doc: TXMLDocument;
+  dictNode, node, valueNode: TDOMNode;
+  keyName, valueText: string;
+begin
+  if list = nil then
+    Exit;
+
+  list.Clear;
+  path := MacConfigPlistPath;
+  if not FileExistsUTF8(path) then
+    Exit;
+
+  try
+    ReadXMLFile(doc, path);
+  except
+    Exit;
+  end;
+
+  try
+    if not Assigned(doc.DocumentElement) then
+      Exit;
+
+    if not SameText(doc.DocumentElement.NodeName, 'plist') then
+      Exit;
+
+    dictNode := nil;
+    node := doc.DocumentElement.FirstChild;
+    while node <> nil do
+    begin
+      if (node.NodeType = ELEMENT_NODE) and SameText(node.NodeName, 'dict') then
+      begin
+        dictNode := node;
+        Break;
+      end;
+      node := node.NextSibling;
+    end;
+
+    if dictNode = nil then
+      Exit;
+
+    node := dictNode.FirstChild;
+    while node <> nil do
+    begin
+      if (node.NodeType = ELEMENT_NODE) and SameText(node.NodeName, 'key') then
+      begin
+        keyName := Trim(node.TextContent);
+        valueNode := NextElementSibling(node);
+        valueText := ExtractPlistValue(valueNode);
+        if keyName <> '' then
+          list.Values[keyName] := valueText;
+      end;
+      node := node.NextSibling;
+    end;
+  finally
+    doc.Free;
+  end;
+end;
+
+procedure EnsurePlistCache;
+begin
+  if GPlistCache = nil then
+  begin
+    GPlistCache := TStringList.Create;
+    GPlistCache.NameValueSeparator := '=';
+    GPlistCache.CaseSensitive := false;
+    GPlistCache.Sorted := false;
+  end;
+
+  if not GPlistLoaded then
+  begin
+    LoadPlistIntoCache(GPlistCache);
+    GPlistLoaded := true;
+  end;
+end;
+
+procedure SavePlistCache;
+var
+  doc: TXMLDocument;
+  plistElem, dictElem, keyElem, valueElem: TDOMElement;
+  i: integer;
+  key, value: string;
+  path: string;
+begin
+  if GPlistCache = nil then
+    Exit;
+
+  doc := TXMLDocument.Create;
+  try
+    plistElem := doc.CreateElement('plist');
+    plistElem.SetAttribute('version', '1.0');
+    doc.AppendChild(plistElem);
+
+    dictElem := doc.CreateElement('dict');
+    plistElem.AppendChild(dictElem);
+
+    for i := 0 to GPlistCache.Count - 1 do
+    begin
+      key := GPlistCache.Names[i];
+      if key = '' then
+        Continue;
+      value := GPlistCache.ValueFromIndex[i];
+
+      keyElem := doc.CreateElement('key');
+      keyElem.AppendChild(doc.CreateTextNode(key));
+      dictElem.AppendChild(keyElem);
+
+      valueElem := doc.CreateElement('string');
+      valueElem.AppendChild(doc.CreateTextNode(value));
+      dictElem.AppendChild(valueElem);
+    end;
+
+    path := MacConfigPlistPath;
+    ForceDirectoriesUTF8(ExtractFilePath(path));
+    WriteXMLFile(doc, path);
+  finally
+    doc.Free;
+  end;
+end;
 {------------------------------------------------------------------------------
   Speak
   -----
@@ -133,15 +314,15 @@ begin
         res := Trim(response.DataString);
         Result := True;
       end
-      else
-      begin
+      uses
+        Process, DOM, XMLRead, XMLWrite, LazFileUtils;
         // Normalize an error: LastErrMsg usually contains the reason
-        res := Trim(httpClient.LastErrMsg);
-        Result := False;
-      end;
-    except
-      on E: Exception do
-      begin
+      const
+        MAC_PLIST_FILENAME = 'Trndi.plist';
+
+      var
+        GPlistCache: TStringList = nil;
+        GPlistLoaded: boolean = false;
         res := E.Message;
         Result := False;
       end;
@@ -226,16 +407,20 @@ end;
 {------------------------------------------------------------------------------
   GetSetting / SetSetting / DeleteSetting / ReloadSettings
   -------------------------------------------------------
-  Preferences-backed settings: read, write (no-op delete), and no reload.
+  Plist-backed settings stored in the app config directory.
  ------------------------------------------------------------------------------}
 function TTrndiNativeMac.GetSetting(const keyname: string; def: string;
   global: boolean): string;
 var
   key: string;
+  idx: integer;
 begin
   key := buildKey(keyname, global);
-  Result := GetPrefString(key);
-  if Result = '' then
+  EnsurePlistCache;
+  idx := GPlistCache.IndexOfName(key);
+  if idx <> -1 then
+    Result := GPlistCache.ValueFromIndex[idx]
+  else
     Result := def;
 end;
 
@@ -245,24 +430,33 @@ var
   key: string;
 begin
   key := buildKey(keyname, global);
-  SetPrefString(key, val);
-  NSUserDefaults.standardUserDefaults.synchronize;
+  EnsurePlistCache;
+  GPlistCache.Values[key] := val;
+  SavePlistCache;
 end;
 
 procedure TTrndiNativeMac.DeleteSetting(const keyname: string; global: boolean);
 var
   key: string;
-  nsKey: NSString;
+  idx: integer;
 begin
   key := buildKey(keyname, global);
-  nsKey := StrToNSStr(key);
-  NSUserDefaults.standardUserDefaults.removeObjectForKey(nsKey);
-  NSUserDefaults.standardUserDefaults.synchronize;
+  EnsurePlistCache;
+  idx := GPlistCache.IndexOfName(key);
+  if idx <> -1 then
+  begin
+    GPlistCache.Delete(idx);
+    SavePlistCache;
+  end;
 end;
 
 procedure TTrndiNativeMac.ReloadSettings;
 begin
-  NSUserDefaults.standardUserDefaults.synchronize;
+  GPlistLoaded := false;
+  EnsurePlistCache;
 end;
+
+finalization
+  FreeAndNil(GPlistCache);
 
 end.
