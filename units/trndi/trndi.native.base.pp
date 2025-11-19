@@ -913,7 +913,7 @@ const header: string = ''; prefix: boolean = true): string;
 var
   ResponseStream, RequestStream: TMemoryStream;
   Headers: TStringList;
-  RequestUrl, MethodName, ParamValue, ResponseText, ErrorText: string;
+  RequestUrl, HttpMethod, ParamValue, ResponseText, ErrorText: string;
   BodyUtf8: UTF8String;
 begin
   ResponseStream := TMemoryStream.Create;
@@ -926,9 +926,9 @@ begin
       RequestUrl := endpoint;
 
     if post then
-      MethodName := 'POST'
+      HttpMethod := 'POST'
     else
-      MethodName := 'GET';
+      HttpMethod := 'GET';
 
     if header <> '' then
       Headers.Add(header);
@@ -954,7 +954,7 @@ begin
         RequestUrl := RequestUrl + '&' + ParamValue;
     end;
 
-    if MacHttpSend(RequestUrl, MethodName, RequestStream, ResponseStream,
+    if MacHttpSend(RequestUrl, HttpMethod, RequestStream, ResponseStream,
                    Headers, ErrorText) then
     begin
       SetLength(ResponseText, ResponseStream.Size);
