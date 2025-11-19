@@ -9,7 +9,8 @@ uses
   SysUtils,
 {$IF (DEFINED(IPHONESIM) OR DEFINED(CPUARM) OR DEFINED(CPUAARCH64)) AND (NOT DEFINED(LCLCOCOA)) }
  {$IFDEF NoiPhoneAll}
-  Foundation;
+  Foundation,
+  CocoaUtils;
  {$ELSE}
   iPhoneAll;
  {$ENDIF}
@@ -29,38 +30,23 @@ function NSStringToUTF8(const S: NSString): AnsiString;
 implementation
 
 function NSStringFromString(const S: string): NSString;
-var
-  Utf8Value: RawByteString;
 begin
-  Utf8Value := RawByteString(UTF8Encode(S));
-  Result := NSString.stringWithUTF8String(PAnsiChar(Utf8Value));
+  Result := StrToNSStr(S);
 end;
 
 function NSStringFromUTF8(const S: AnsiString): NSString;
-var
-  Utf8Value: RawByteString;
 begin
-  Utf8Value := RawByteString(S);
-  Result := NSString.stringWithUTF8String(PAnsiChar(Utf8Value));
+  Result := StrToNSStr(string(S));
 end;
 
 function NSStringToString(const S: NSString): string;
 begin
-  if S = nil then
-    Exit('');
-  Result := string(NSStringToUTF8(S));
+  Result := CocoaUtils.NSStringToString(S);
 end;
 
 function NSStringToUTF8(const S: NSString): AnsiString;
-var
-  Ptr: PAnsiChar;
 begin
-  if S = nil then
-    Exit('');
-  Ptr := S.UTF8String;
-  if Ptr = nil then
-    Exit('');
-  Result := StrPas(Ptr);
+  Result := UTF8String(CocoaUtils.NSStringToString(S));
 end;
 
 end.
