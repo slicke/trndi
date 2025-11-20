@@ -698,6 +698,10 @@ msgctxt "tfconf.lhiover1.caption"
 msgid "High over"
 msgstr "Högt över"
 
+#: tfconf.lhiover2.caption
+msgid "Maximum minutes to count time in range on (depending on source data availability):"
+msgstr "Max minuter att räkna tid-i-målområde på (beror på tillgänglig data):"
+
 #: tfconf.llicense.caption
 msgid "License"
 msgstr "Licens"
@@ -1744,4 +1748,3 @@ msgstr "Du kan använda skift+<nummerr> för att manuellt sätta synligheten (0 
 #: ufloat.rscustomsize
 msgid "You can hold down shift and plus (+) or minus (-) to change the window size"
 msgstr "Du kan hålla ned skift och plus (+) eller minus (-) för att justera fönstrets storlek"
-

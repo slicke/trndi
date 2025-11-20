@@ -143,6 +143,7 @@ TfConf = class(TForm)
   lExtCount: TLabel;
   lArch: TLabel;
   lExtName: TLabel;
+  lHiOver2: TLabel;
   lOS: TLabel;
   lProblematic: TLabel;
   lTestAnnounce: TLabel;
@@ -211,6 +212,7 @@ TfConf = class(TForm)
   pUserSave2: TPanel;
   cbTirColorBg: TRadioButton;
   rbUnit: TRadioGroup;
+  seTIR: TSpinEdit;
   spTHRESHOLD: TSpinEdit;
   TabSheet1: TTabSheet;
   tsExt: TTabSheet;
