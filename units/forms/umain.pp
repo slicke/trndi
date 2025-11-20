@@ -3377,7 +3377,8 @@ var
   b: BGReading; //< Holder for current reading
   range, //< The OK range
   ok, //< OK count
-  no: integer; //< Not OK count
+  no, //< Not OK count
+  cust: integer; //< Custom time
   ranges: set of trndi.types.BGValLevel; //< Types of readings to count as OK
 begin
   ok := 0;
@@ -3387,11 +3388,14 @@ begin
   else
     ranges := [BGRange];
 
+   cust := native.GetIntSetting('range.time', 9999);
+
   for b in bgs do
-    if b.level in ranges then
-      Inc(ok)
-    else
-      Inc(no);
+    if b.date >= IncMinute(now, cust*-1) then
+      if b.level in ranges then
+        Inc(ok)
+      else
+        Inc(no);
 
   if (ok + no) > 0 then begin
     range := round((ok / (ok + no)) * 100);
