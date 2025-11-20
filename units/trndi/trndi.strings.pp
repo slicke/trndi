@@ -45,7 +45,7 @@ RS_DIFF = 'This is the change from the latest reading';
 RS_NO_BOOT_READING = 'No fresh data is available.'#10'Trndi will attemp to fetch data until recent values are available';
 
 // Time messages
-RS_OUTDATED_TIME = '%s (%d.%.2d ago)';
+RS_OUTDATED_TIME = '%s (%d.%.2d min ago)';
 RS_LATEST_READING = 'Latest Reading: Value = %.2f, Date = %s';
 
 RS_RESTART_APPLY = 'Trndi must be restarted for settings to take effect';
