@@ -212,7 +212,6 @@ object fBG: TfBG
       Caption = '0,?'
     end
   end
-
   object bSettings: TButton
     Left = 8
     Height = 39

@@ -3393,12 +3393,16 @@ begin
     else
       Inc(no);
 
-  if (ok + no) > 0 then
-    range := round((ok / (ok + no)) * 100)
-  else
+  if (ok + no) > 0 then begin
+    range := round((ok / (ok + no)) * 100);
+    lTir.Caption := range.toString + '%';
+  end
+  else begin
     range := 0;
+    lTir.Caption := range.toString + '-%';
+  end;
 
-  lTir.Caption := range.toString + '%';
+
   lTir.Hint := range.toString;
   lTir.Visible := true; // Ensure TIR label is visible after calculation
 end;
