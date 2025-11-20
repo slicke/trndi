@@ -458,7 +458,7 @@ msgstr "Visa användares färger på huvud- och det flytande fönstret"
 
 #: tfconf.cbwebapi.caption
 msgid " Enable Web API"
-msgstr "Slå på Web-API:et"
+msgstr " Slå på Web-API:et"
 
 #: tfconf.cl_hi_bg.caption
 msgctxt "tfconf.cl_hi_bg.caption"
@@ -1093,8 +1093,8 @@ msgstr "Under område"
 
 #: trndi.strings.rs_outdated_time
 #, object-pascal-format
-msgid "%s (%d.%.2d ago)"
-msgstr "%s (%d.%.2d sedan)"
+msgid "%s (%d.%.2d min ago)"
+msgstr "%s (%d.%.2d min sedan)"
 
 #: trndi.strings.rs_over
 msgid "over"

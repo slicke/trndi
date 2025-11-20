@@ -1048,7 +1048,7 @@ msgstr ""
 
 #: trndi.strings.rs_outdated_time
 #, object-pascal-format
-msgid "%s (%d.%.2d ago)"
+msgid "%s (%d.%.2d min ago)"
 msgstr ""
 
 #: trndi.strings.rs_over
