@@ -1833,11 +1833,15 @@ end;
 
 procedure TfBG.lTirClick(Sender: TObject);
 var
-  minTotal, hours, mins: integer;
+  minTotal, hours, mins, cust: integer;
   msg: string;
   hi, lo, rhi, rlo: double;
 begin
   minTotal := MinutesBetween(now, bgs[High(bgs)].date);
+  cust := native.GetIntSetting('range.time', 9999);
+  if minTotal > cust then // our cust is smaller than the available data
+    mintotal := cust;
+
   {$ifdef TrndiExt}
   if not funcBool('uxClick',[
     'tir',
@@ -1846,6 +1850,7 @@ begin
     ], true) then
     Exit;
   {$endif}
+
 
   hi := api.cgmHi * BG_CONVERTIONS[un][mgdl];
   lo := api.cgmLo * BG_CONVERTIONS[un][mgdl];
@@ -1859,7 +1864,7 @@ begin
     hours := minTotal div 60;
     mins := minTotal mod 60;
     if hours < 2 then
-      msg := Format(RS_TIR_H1, [hours, mins, lo, hi, rlo, rhi])
+      msg := Format(RS_TIR_H1, [mins, lo, hi, rlo, rhi])
     else
       msg := Format(RS_TIR_H, [hours, mins, lo, hi, rlo, rhi]);
   end;
@@ -2238,6 +2243,7 @@ procedure LoadUserSettings(f: TfConf);
       end;
 
       cbTIR.Checked := native.GetBoolSetting('range.custom', true);
+      seTir.Value := native.GetIntSetting('range.time', 9999);
 
       cbOffBar.Checked := native.GetBoolSetting('ux.off_bar', false);
       cbPaintHiLo.Checked := native.GetBoolSetting('ux.paint_range', true);
@@ -2479,6 +2485,7 @@ procedure SaveUserSettings(f: TfConf);
       end;
 
       native.SetBoolSetting('range.custom', cbTIR.Checked);
+      native.SetSetting('range.time', IntToStr(seTir.Value));
       native.SetBoolSetting('ux.off_bar', cbOffBar.Checked);
       native.SetBoolSetting('ux.paint_range', cbPaintHiLo.Checked);
       native.SetBoolSetting('ux.paint_range_lines', cbPaintLines.Checked);

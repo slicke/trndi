@@ -681,6 +681,10 @@ msgctxt "tfconf.lhiover1.caption"
 msgid "High over"
 msgstr ""
 
+#: tfconf.lhiover2.caption
+msgid "Maximum minutes to count time in range on (depending on source data availability):"
+msgstr ""
+
 #: tfconf.llicense.caption
 msgid "License"
 msgstr ""
