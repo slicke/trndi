@@ -510,7 +510,7 @@ begin
 
 
     // UI preferences
-    dotscale := GetIntSetting('ux.dot_scale', 1);
+    dotscale := GetFloatSetting('ux.dot_scale', {$ifdef DARWIN}0.7{$else}1{$endif});
     DOT_ADJUST := GetFloatSetting('ux.dot_adjust', 0);
 
     DOT_OFFSET_RANGE := GetIntSetting('ux.dot_offset_range', DOT_OFFSET_RANGE);
