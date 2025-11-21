@@ -2103,7 +2103,6 @@ begin
     begin
       // User chose to force - bypass cache completely
       FetchAndValidateReadingsForced;
-      ShowMessage('forced');
       // Update the rest of the UI manually since we bypassed normal flow
       CompleteUIUpdate;
     end;

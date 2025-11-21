@@ -101,6 +101,9 @@ RS_RIGHT_CLICK = 'The settings dialog will now open, in the future please right-
 
 RS_PREDICT = 'These are your predicted readings; Time-difference: predicted-reading';
 
+RS_SAFEMODE = 'Safe Mode Enabled';
+RS_SAFEMODE_DESC = 'Trndi is running in <b>Safe Mode</b>!<ul><li>No start-up actions from extensions will run</li><li>You cannot use, and no actions will trigger from, extensions</li></ul><br>Extensions will load next run, unless you press <b>CTRL</b>!';
+
 // EXT
 sExtErr = 'Extension Error';
 sExtMsg = 'Extension Message';

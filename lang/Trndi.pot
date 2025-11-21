@@ -1135,6 +1135,14 @@ msgstr ""
 msgid "The settings dialog will now open, in the future please right-click the reading to open the menu."
 msgstr ""
 
+#: trndi.strings.rs_safemode
+msgid "Safe Mode Enabled"
+msgstr ""
+
+#: trndi.strings.rs_safemode_desc
+msgid "Trndi is running in <b>Safe Mode</b>!<ul><li>No start-up actions from extensions will run</li><li>You cannot use, and no actions will trigger from, extensions</li></ul><br>Extensions will load next run, unless you press <b>CTRL</b>!"
+msgstr ""
+
 #: trndi.strings.rs_settings_save
 msgid "Save settings?"
 msgstr ""
