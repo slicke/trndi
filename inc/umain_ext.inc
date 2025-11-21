@@ -132,7 +132,7 @@ begin
 
     // Add the UX modification function, as declared in this file
     if ssCtrl in GetKeyShiftState then
-     SHowMessage('Trndi is running in Safe Mode, no extensions will be loaded')
+     ExtHTML(uxdAuto, RS_SAFEMODE, RS_SAFEMODE_DESC,[mbOK], uxmtInformation, 10)
     else begin
       for s in exts do
       begin

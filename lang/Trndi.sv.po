@@ -1180,6 +1180,14 @@ msgstr "Okänd"
 msgid "The settings dialog will now open, in the future please right-click the reading to open the menu."
 msgstr "Inställningarna kommer nu att öppnas, i framtiden vänligen höger-klicka för att öppna menyn."
 
+#: trndi.strings.rs_safemode
+msgid "Safe Mode Enabled"
+msgstr "Felsäkert läge aktiverat"
+
+#: trndi.strings.rs_safemode_desc
+msgid "Trndi is running in <b>Safe Mode</b>!<ul><li>No start-up actions from extensions will run</li><li>You cannot use, and no actions will trigger from, extensions</li></ul><br>Extensions will load next run, unless you press <b>CTRL</b>!"
+msgstr "Trndi körs i <b>felsäkertläge</b>!<ul><li>Inga startåtgärder från tillägg körs</li><li>Du kan inte använda, och inga åtgärder kommer att köras från, tillägg</li></ul><br>Tillägg kommer att köras nästa start, såvida du inte trycker <b>CTRL</b>!"
+
 #: trndi.strings.rs_settings_save
 msgid "Save settings?"
 msgstr "Spara inställningarna?"
