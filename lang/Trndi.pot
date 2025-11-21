@@ -1631,7 +1631,7 @@ msgid ""
 msgstr ""
 
 #: uconf.rs_webapi
-msgid "Trndi can expose a WebAPI for use with third-party systems."
+msgid "Trndi can expose a <b>WebAPI</b> for use with <i>third-party systems</i>.<br><br>This is an advanced feature, you can safely disregard it if you don't know what it does!"
 msgstr ""
 
 #: ufloat.rscustomop

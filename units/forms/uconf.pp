@@ -330,7 +330,7 @@ RS_NOTIFY_SYSTEM =
   'Notifications will appear where you normally get notification messages.';
 
 RS_HASTOUCH = 'Shows if Trndi detected a touch screen';
-RS_WEBAPI = 'Trndi can expose a WebAPI for use with third-party systems.';
+RS_WEBAPI = 'Trndi can expose a <b>WebAPI</b> for use with <i>third-party systems</i>.<br><br>This is an advanced feature, you can safely disregard it if you don''t know what it does!';
 
 RS_Saftey_Hi =
   'Trndi won''t allow a larger limit, for your own saftey. This can be overridden manually/via plugin';
@@ -1210,8 +1210,8 @@ end;
 
 procedure TfConf.bWebAPIClick(Sender: TObject);
 begin
-  if ExtMessage(uxdAuto, 'Trndi', 'WebAPI', RS_WEBAPI, '', false,
-    $00AA6004, $00FDD8AA,  [mbOK, mbUxRead], uxmtOK) <> mrOk then
+
+  if ExtHTML(uxdAuto,'WebAPI', RS_WEBAPI, [mbOK, mbUxRead], uxmtOK) <> mrOk then
     OpenURL('https://github.com/slicke/trndi/blob/main/doc/WebAPI.md');
 end;
 

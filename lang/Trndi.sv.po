@@ -1738,8 +1738,8 @@ msgid ""
 msgstr "Din skrivbordssession är Wayland. Wayland-kompositorer (inklusive KWin) begränsar tredjepartsappar från att tvinga sig överst. Högerklicka på titelraden, välj fler alternativ och klicka på alltid överst (eller liknande)"
 
 #: uconf.rs_webapi
-msgid "Trndi can expose a WebAPI for use with third-party systems."
-msgstr "Trndi kan starta ett Web-API för att kommunicera med tredjepartssystem."
+msgid "Trndi can expose a <b>WebAPI</b> for use with <i>third-party systems</i>.<br><br>This is an advanced feature, you can safely disregard it if you don't know what it does!"
+msgstr "Trndi kan starta ett <b>Web-API</b> för att kommunicera med <i>tredjepartssystem</i>.<br><br>Detta är en avancerad funktion, du kan ignorera den säkert om du inte vet vad den gör!"
 
 #: ufloat.rscustomop
 msgid "You can use shift+<number> to manually set visibility (0 = 100% visible)"
