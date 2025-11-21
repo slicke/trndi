@@ -2103,6 +2103,7 @@ begin
     begin
       // User chose to force - bypass cache completely
       FetchAndValidateReadingsForced;
+      ShowMessage('forced');
       // Update the rest of the UI manually since we bypassed normal flow
       CompleteUIUpdate;
     end;
@@ -2598,8 +2599,7 @@ begin
     begin
       if IsProblematicWM then
         fBG.Hide;
-      if ExtMsg(uxdAuto, RS_SETTINGS_SAVE, RS_SETTINGS_SAVE,
-        RS_SETTINGS_SAVE_DESC, '', uxclWhite, uxclRed, [mbYes, mbNo]) <> mrYes then
+      if ExtText(uxdAuto, RS_SETTINGS_SAVE,RS_SETTINGS_SAVE_DESC,[mbYes, mbNo]) <> mrYes then
       begin
         fBG.Show;
         Exit; // FConf.Free will run later

@@ -263,7 +263,7 @@ type
                   dumptext: TColor = uxclRed;
                   buttons: TUXMsgDlgBtns = [mbAbort];
                   const icon: UXImage = uxmtCog;
-                  scale: integer = 1): TModalResult;
+                  scale: single = 1): TModalResult;
 
   {**
     HTML-only dialog with buttons.
@@ -281,6 +281,24 @@ type
                   buttons: TUXMsgDlgBtns = [mbAbort];
                   const icon: UXImage = uxmtCog;
                   scale: single = 1): TModalResult; overload;
+
+  {**
+    Alias for @lnk(ExtMsg) with HTML data
+  }
+  function ExtHTML(const dialogsize: TUXDialogSize;
+                  const caption, html: string;
+                  buttons: TUXMsgDlgBtns = [mbAbort];
+                  const icon: UXImage = uxmtCog;
+                  scale: single = 1): TModalResult;
+
+  {**
+    Helper for @lnk(ExtMsg) with text data
+  }
+  function ExtText(const dialogsize: TUXDialogSize;
+                  const caption, text: string;
+                  buttons: TUXMsgDlgBtns = [mbAbort];
+                  const icon: UXImage = uxmtCog;
+                  scale: single = 1): TModalResult;
 
   {**
     Extended message dialog with HTML support in log panel.
@@ -1771,12 +1789,34 @@ function ExtMsg(
   dumptext: TColor = uxclRed;
   buttons: TUXMsgDlgBtns = [mbAbort];
   const icon: UXImage = uxmtCog;
-  scale: integer = 1
+  scale: single = 1
 ): TModalResult;
 begin
   // Call ExtMessage with isHTML = false for backward compatibility
   Result := ExtMessage(dialogsize, caption, title, desc, logmsg, False,
                        dumpbg, dumptext, buttons, icon, scale);
+end;
+
+
+function ExtText(const dialogsize: TUXDialogSize;
+                const caption, text: string;
+                buttons: TUXMsgDlgBtns = [mbAbort];
+                const icon: UXImage = uxmtCog;
+                scale: single = 1): TModalResult;
+begin
+  result := ExtMsg(dialogsize, 'Trndi', caption, text, '', uxclWhite, uxclRed, buttons,icon, scale);
+end;
+
+{** Alias for ExtMsg. }
+function ExtHTML(
+  const dialogsize: TUXDialogSize;
+  const caption, html: string;
+  buttons: TUXMsgDlgBtns = [mbAbort];
+  const icon: UXImage = uxmtCog;
+  scale: single = 1
+): TModalResult;
+begin
+  result := ExtMsg(dialogsize,caption,html,buttons,icon,scale);
 end;
 
 {** See interface docs for behavior and parameters. }
