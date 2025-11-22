@@ -11,7 +11,7 @@ cp ../Trndi macos/Trndi.app/Contents/MacOS/Trndi
 # Setup languages (put them in Resources, not MacOS)
 mkdir -p macos/Trndi.app/Contents/Resources
 if [ -d "../lang" ]; then
-  cp -r ../lang macos/Trndi.app/Contents/Resources/
+  cp -r ../lang macos/Trndi.app/Contents/MacOS/
 fi
 
 # Create icons
