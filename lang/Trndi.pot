@@ -907,6 +907,11 @@ msgstr ""
 msgid "Long ago"
 msgstr ""
 
+#: trndi.strings.rs_custom_dots
+#, object-pascal-format
+msgid "Custom Size [%.2f]"
+msgstr ""
+
 #: trndi.strings.rs_days_ago
 #, object-pascal-format
 msgid "%d days ago"

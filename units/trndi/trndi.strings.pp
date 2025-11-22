@@ -79,6 +79,8 @@ RS_RH_UNKNOWN = 'Unknown';
 RS_HISTORY_ITEM = 'Selected Reading: %s | Difference: %s | Trend: %s | RSSI: %s | Noise: %s | Source: %s | Device: %s';
 
 RS_PREDICTIONS_UNAVAILABLE = 'Predictions unavailable';
+
+RS_CUSTOM_DOTS = 'Custom Size [%.2f]';
 // Config box
 RS_tpoCenter = 'Desktop Center';
 RS_tpoBottomLeft = 'Bottom Left';
