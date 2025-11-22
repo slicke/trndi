@@ -2776,7 +2776,7 @@ begin
     miDotSmall.Checked := true
   else begin
     miCustomDots.Checked := true;
-    miCustomDots.Caption := Format('%s [%.2f]', [miCustomDots.Caption, dotscale]);
+    miCustomDots.Caption := Format(RS_CUSTOM_DOTS, [dotscale]);
   end;
 
   if (Sender as TPopupMenu).PopupComponent is TDotControl then

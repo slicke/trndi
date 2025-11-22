@@ -943,6 +943,11 @@ msgstr "Vänligen dröj upp till 20 sekunder..."
 msgid "Long ago"
 msgstr "Länge sedan"
 
+#: trndi.strings.rs_custom_dots
+#, object-pascal-format
+msgid "Custom Size [%.2f]"
+msgstr "Egen storlek [%.2f]"
+
 #: trndi.strings.rs_days_ago
 #, object-pascal-format
 msgid "%d days ago"
