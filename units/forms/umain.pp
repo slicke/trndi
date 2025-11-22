@@ -72,11 +72,11 @@ StrUtils, TouchDetection, ufloat, LCLType, trndi.webserver.threaded;
 type
 TFloatIntDictionary = specialize TDictionary<single, integer>;
   // Specialized TDictionary
-  {$ifdef DARWIN}
-  TDotControl = TLabel;
-  {$else}
-  TDotControl = TPaintBox;
-  {$endif}
+{$ifdef DARWIN}
+TDotControl = TLabel;
+{$else}
+TDotControl = TPaintBox;
+{$endif}
   // Procedures which are applied to the trend drawing
 TTrendProc = procedure(l: TDotControl; c, ix: integer) of object;
 TTrendProcLoop = procedure(l: TDotControl; c, ix: integer;
@@ -92,7 +92,7 @@ TrndiPosNames: TPONames = (RS_tpoCenter, RS_tpoBottomLeft,
 type
   { TfBG }
 
-  {$ifdef Darwin}
+{$ifdef Darwin}
 { Custom NSApplicationDelegate class }
 TMyAppDelegate = objcclass(NSObject, NSApplicationDelegateProtocol)
 public
@@ -101,7 +101,7 @@ public
   function applicationDockMenu(sender: NSApplication): NSMenu; message 'applicationDockMenu:';
     procedure miSettingsMacClick(sender: id); message 'miSettings:';
 end;
-  {$endif}
+{$endif}
 
 TfBG = class(TForm)
   apMain: TApplicationProperties;
@@ -358,7 +358,7 @@ private
   procedure StopWebServer;
   function GetCurrentReadingForWeb: BGResults;
   function GetPredictionsForWeb: BGResults;
-  function WebServerActive: Boolean;
+  function WebServerActive: boolean;
   procedure tWebServerStartTimer(Sender: TObject);
 
   procedure UpdateTrendElements;
@@ -612,7 +612,7 @@ begin
 end;
 
 // DotPaint: Custom paint handler for trend dot TPaintBox controls
-// 
+
 // KNOWN ISSUE: On macOS with LCLCocoa widgetset, TPaintBox OnPaint has a bug where
 // CheckDC() in cocoagdiobjects.pas fails with "TObject(dc) is TCocoaContext" error.
 // WORKAROUND: Use Qt6 or Qt5 widgetset on macOS (recommended and default).
@@ -631,7 +631,7 @@ begin
   {$ifdef DARWIN}
   // macOS: Use TLabel instead of TPaintBox to avoid Cocoa CheckDC issues
   // TLabel handles rendering automatically via Caption property
-  L.AutoSize := True;
+  L.AutoSize := true;
   L.Alignment := taCenter;
   L.Layout := tlCenter;
   Exit;
@@ -862,14 +862,12 @@ begin
 
   msg := 'Predictions:' + LineEnding;
   for i := 0 to High(bgr) do
-  begin
     msg := msg + Format('Reading %d: %.1f %s at %s', [
       i + 1,
       bgr[i].convert(un),
       BG_UNIT_NAMES[un],
       FormatDateTime('hh:nn', bgr[i].date)  // Show time
-    ]) + LineEnding;
-  end;
+      ]) + LineEnding;
 
   ShowMessage(msg);
 end;
@@ -1007,7 +1005,7 @@ end;
 
 // FormClose event handler
 procedure TfBG.FormClose(Sender: TObject; var CloseAction: TCloseAction);
-  {$ifdef Darwin}
+{$ifdef Darwin}
 var
   mr: TModalResult;
   {$endif}
@@ -1295,13 +1293,12 @@ begin
     if tir_custom_bg = -1 then
       cnv.Brush.Color := DarkenColor(fBG.Color, 0.85)
     else
-    begin
-      // Blend tir_custom_bg with the base layer (either blended tir_bg or fBG.Color)
-      if tir_bg = -1 then
-        cnv.Brush.Color := BlendColors(tir_custom_bg, fBG.Color, 0.3) // Blend with background
-      else
-        cnv.Brush.Color := BlendColors(tir_custom_bg, BlendColors(tir_bg, fBG.Color, 0.3), 0.3); // Blend with tir_bg layer
-    end;
+    if tir_bg = -1 then
+      cnv.Brush.Color := BlendColors(tir_custom_bg, fBG.Color, 0.3) // Blend with background
+    else
+      cnv.Brush.Color := BlendColors(tir_custom_bg, BlendColors(tir_bg, fBG.Color, 0.3), 0.3)// Blend tir_custom_bg with the base layer (either blended tir_bg or fBG.Color)
+// Blend with tir_bg layer
+    ;
     cnv.Pen.Style := psClear;
     cnv.FillRect(Classes.Rect(0, rangeHiY, Self.ClientWidth, rangeLoY));
   end;
@@ -1396,10 +1393,10 @@ begin
     with TLabel(dotArray[i]^) do
     begin
       Parent := Self;
-      AutoSize := True;
+      AutoSize := true;
       Alignment := taCenter;
       Layout := tlCenter;
-      Transparent := True;
+      Transparent := true;
     end;
     {$else}
     // Other platforms: Use TPaintBox with custom painting
@@ -1407,7 +1404,7 @@ begin
     with TPaintBox(dotArray[i]^) do
     begin
       Parent := Self;
-      AutoSize := False;
+      AutoSize := false;
       OnPaint := @DotPaint;
     end;
     {$endif}
@@ -1419,7 +1416,7 @@ begin
       Top := 191;
       Width := 33;
       Height := 49;
-      Visible := False;
+      Visible := false;
       Caption := DOT_GRAPH;
       PopupMenu := pmSettings;
       OnClick := @onTrendClick;
@@ -1600,7 +1597,7 @@ var
 begin
   {$ifdef DARWIN}
   // macOS: TLabel handles sizing automatically via AutoSize
-  l.AutoSize := True;
+  l.AutoSize := true;
   l.Font.Size := round(Max((lVal.Font.Size div 8) * dotscale, 28)); // Ensure minimum font size
   // Force immediate size calculation by triggering a layout update
   l.AdjustSize;
@@ -1809,12 +1806,12 @@ begin
 
     Screen.Cursor := crNone;
     // FIx Raspbian issues
-    if IsProblematicWM then begin
-      if not IsSemiProblematicWM then begin
-       miBorders.Checked := false;
-       BorderStyle := bsToolWindow;
+    if IsProblematicWM then
+      if not IsSemiProblematicWM then
+      begin
+        miBorders.Checked := false;
+        BorderStyle := bsToolWindow;
       end;
-    end;
   end;
 
   // Adjust for dark mode if applicable
@@ -2582,15 +2579,15 @@ begin
     // Show dialog (use safe helper that handles problematic WMs)
 
     {$ifdef TrndiExt}
-     s := GetAppConfigDirUTF8(false, true) + 'extensions' + DirectorySeparator;
+    s := GetAppConfigDirUTF8(false, true) + 'extensions' + DirectorySeparator;
     // Find extensions folder
-     ForceDirectoriesUTF8(s);
+    ForceDirectoriesUTF8(s);
     // Create the directory if it doesn't exist
     fConf.lbExtensions.Items := FindAllFiles(s, '*.js', false);
     fConf.lExtCount.Caption := Format(RS_ExtCount, [fConf.lbExtensions.Count]);
     {$else}
-      fConf.tsExt.Enabled := false;
-      fConf.tsExt.Visible := false;
+    fConf.tsExt.Enabled := false;
+    fConf.tsExt.Visible := false;
     {$endif}
     ShowFormModalSafe(fConf);
 
@@ -2768,13 +2765,17 @@ begin
 
   if dotscale = 1 then
     miDotNormal.Checked := true
-  else if dotscale = 2 then
+  else
+  if dotscale = 2 then
     miDotBig.Checked := true
-  else if dotscale = 3 then
+  else
+  if dotscale = 3 then
     miDotHuge.Checked := true
-  else if dotscale = 0.7 then
+  else
+  if dotscale = 0.7 then
     miDotSmall.Checked := true
-  else begin
+  else
+  begin
     miCustomDots.Checked := true;
     miCustomDots.Caption := Format(RS_CUSTOM_DOTS, [dotscale]);
   end;
@@ -3097,7 +3098,8 @@ begin
 
       Dot.Visible := true;
     end
-    else if Dot.Hint <> '' then
+    else
+    if Dot.Hint <> '' then
     begin
       // Hint is set but can't be parsed - this is a problem
       // Keep visibility as it was set by PlaceTrendDots, but log the issue
@@ -3106,10 +3108,8 @@ begin
       Dot.Visible := wasVisible;
     end
     else
-    begin
-      // No hint means no data for this dot
-      Dot.Visible := false;
-    end;
+      Dot.Visible := false// No hint means no data for this dot
+    ;
   end;
 end;
 
@@ -3394,7 +3394,7 @@ begin
   else
     ranges := [BGRange];
 
-   cust := native.GetIntSetting('range.time', 9999);
+  cust := native.GetIntSetting('range.time', 9999);
 
   for b in bgs do
     if b.date >= IncMinute(now, cust*-1) then
@@ -3403,11 +3403,13 @@ begin
       else
         Inc(no);
 
-  if (ok + no) > 0 then begin
+  if (ok + no) > 0 then
+  begin
     range := round((ok / (ok + no)) * 100);
     lTir.Caption := range.toString + '%';
   end
-  else begin
+  else
+  begin
     range := 0;
     lTir.Caption := range.toString + '-%';
   end;
@@ -3582,9 +3584,12 @@ begin
 
   // Check if we have at least one valid prediction
   validCount := 0;
-  if closest5 >= 0 then Inc(validCount);
-  if closest10 >= 0 then Inc(validCount);
-  if closest15 >= 0 then Inc(validCount);
+  if closest5 >= 0 then
+    Inc(validCount);
+  if closest10 >= 0 then
+    Inc(validCount);
+  if closest15 >= 0 then
+    Inc(validCount);
   
   if validCount = 0 then
   begin
@@ -3602,10 +3607,14 @@ begin
       trend := CalculateTrendFromDelta(delta);
       // Map to simplified arrows: up=↗, flat=→, down=↘
       case trend of
-        TdDoubleUp, TdSingleUp, TdFortyFiveUp: lPredict.Caption := '↗';
-        TdFlat: lPredict.Caption := '→';
-        TdFortyFiveDown, TdSingleDown, TdDoubleDown: lPredict.Caption := '↘';
-        else lPredict.Caption := '?';
+      TdDoubleUp, TdSingleUp, TdFortyFiveUp:
+        lPredict.Caption := '↗';
+      TdFlat:
+        lPredict.Caption := '→';
+      TdFortyFiveDown, TdSingleDown, TdDoubleDown:
+        lPredict.Caption := '↘';
+      else
+        lPredict.Caption := '?';
       end;
     end
     else
@@ -4180,7 +4189,7 @@ begin
 end;
 
 procedure TfBG.ProcessTimeIntervals(const SortedReadings: array of BGReading;
-  CurrentTime: TDateTime);
+CurrentTime: TDateTime);
 var
   slotIndex, i, labelNumber, searchStart: integer;
   slotStart, slotEnd, anchorTime: TDateTime;
@@ -4196,7 +4205,7 @@ begin
   // reading. This keeps the 5-minute slots stable ("...:00, :05, :10, ...")
   // and allows the rightmost slot to be empty when the latest reading is
   // older than one interval.
-  //
+
   // Example:
   //   Latest reading at 11:03.
   //   We snap CurrentTime to the nearest lower 5-minute boundary (10:58).
@@ -4255,15 +4264,14 @@ begin
           if Abs(reading.date - slotStart) > (10 / 86400) then
             searchStart := i + 1
           else
-          begin
-            // Reading is at the boundary - next slot should also check it
-            LogMessage(Format('  Reading at boundary (%.2f sec from slotStart), not advancing searchStart', 
-              [(reading.date - slotStart) * 86400]));
-          end;
+            LogMessage(Format('  Reading at boundary (%.2f sec from slotStart), not advancing searchStart',
+              [(reading.date - slotStart) * 86400]))// Reading is at the boundary - next slot should also check it
+          ;
           Break; // Move to next interval
         end;
       end
-      else if reading.date < slotStart - (10 / 86400) then
+      else
+      if reading.date < slotStart - (10 / 86400) then
       begin
         // Stop if we've gone past this interval into older readings
         LogMessage(Format('  Reading at %s is too old (%.3f sec before slot start), stopping', 
@@ -4465,24 +4473,24 @@ begin
     if rok then
     begin
       r := GetNewerVersionURL(res);
-      if r = '' then r := 'https://github.com/slicke/trndi/releases/latest';
+      if r = '' then
+        r := 'https://github.com/slicke/trndi/releases/latest';
       s := Format(RS_NEWVER, [rn]);
       if UXDialog(uxdAuto, RS_NEWVER_CAPTION, s, [mbYes, mbNo], mtInformation) = mrYes then
         OpenURL(r);
     end
-    else if ShowUpToDateMessage then
-    begin
-      // Show debug info for dev builds
+    else
+    if ShowUpToDateMessage then
       if BUILD_NUMBER = 'dev' then
         ShowMessage('Up to date (Dev Build)' + LineEnding + 
-                   'Build: ' + BUILD_NUMBER + LineEnding +
-                   'Branch: ' + GIT_BRANCH + LineEnding +
-                   'Build Date: ' + {$I %DATE%} + ' ' + {$I %TIME%} + LineEnding +
-                   'Latest release: ' + latestRelease + LineEnding + LineEnding +
-                   'Note: Dev builds are always considered "newer" than releases')
+          'Build: ' + BUILD_NUMBER + LineEnding +
+          'Branch: ' + GIT_BRANCH + LineEnding +
+          'Build Date: ' + {$I %DATE%} + ' ' + {$I %TIME%} + LineEnding +
+          'Latest release: ' + latestRelease + LineEnding + LineEnding +
+          'Note: Dev builds are always considered "newer" than releases')
       else
-        ShowMessage(RS_UPTODATE);
-    end;
+        ShowMessage(RS_UPTODATE)// Show debug info for dev builds
+    ;
     // Silently ignore if up to date when ShowUpToDateMessage is false
   except
     on E: Exception do

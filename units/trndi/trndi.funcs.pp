@@ -227,9 +227,9 @@ const
 var
   LogLines: TStringList;
 begin
-{$ifdef DARWIN}
-Exit; // Disable logging on macOS as it crashes due to file permission issues
-{$endif}
+  {$ifdef DARWIN}
+  Exit; // Disable logging on macOS as it crashes due to file permission issues
+  {$endif}
   LogLines := TStringList.Create;
   try
     // Load log if exists
@@ -339,15 +339,20 @@ begin
   // Based on standard CGM trend arrow thresholds
   if delta <= -15 then          // ≤-3 mg/dL/min
     Result := TdDoubleDown
-  else if delta <= -10 then     // ≤-2 mg/dL/min
+  else
+  if delta <= -10 then     // ≤-2 mg/dL/min
     Result := TdSingleDown
-  else if delta <= -5 then      // ≤-1 mg/dL/min
+  else
+  if delta <= -5 then      // ≤-1 mg/dL/min
     Result := TdFortyFiveDown
-  else if delta < 5 then        // -1 to +1 mg/dL/min
+  else
+  if delta < 5 then        // -1 to +1 mg/dL/min
     Result := TdFlat
-  else if delta < 10 then       // +1 to +2 mg/dL/min
+  else
+  if delta < 10 then       // +1 to +2 mg/dL/min
     Result := TdFortyFiveUp
-  else if delta < 15 then       // +2 to +3 mg/dL/min
+  else
+  if delta < 15 then       // +2 to +3 mg/dL/min
     Result := TdSingleUp
   else                          // ≥+3 mg/dL/min
     Result := TdDoubleUp;
@@ -441,7 +446,7 @@ var
   CurrentTag: string;
   i: integer;
 
-  function EnsureBuildDate: TDateTime;
+function EnsureBuildDate: TDateTime;
   begin
     if not BuildDateValid then
     begin
@@ -451,7 +456,7 @@ var
     Result := BuildDate;
   end;
 
-  function EvaluateRelease(const Obj: TJSONObject): boolean;
+function EvaluateRelease(const Obj: TJSONObject): boolean;
   var
     CandidateName, ReleaseTag: string;
     PublishedAt: TDateTime;
@@ -540,7 +545,7 @@ var
   i: integer;
   IsPrerelease: boolean;
 
-  function EnsureBuildDate: TDateTime;
+function EnsureBuildDate: TDateTime;
   begin
     if not BuildDateValid then
     begin
@@ -550,7 +555,7 @@ var
     Result := BuildDate;
   end;
 
-  function MatchesPlatformFilter(const Title: string): boolean;
+function MatchesPlatformFilter(const Title: string): boolean;
   var
     LowerTitle, LowerPlatform: string;
   begin
@@ -572,7 +577,7 @@ var
     end;
   end;
 
-  function EvaluateRelease(const Obj: TJSONObject): string;
+function EvaluateRelease(const Obj: TJSONObject): string;
   var
     ReleaseTag, Title, Url: string;
   begin

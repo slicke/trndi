@@ -5,76 +5,76 @@ unit trndi.webserver.threaded;
 interface
 
 uses
-  Classes, SysUtils, Sockets, fpjson, jsonparser, trndi.funcs, trndi.types
-  {$IFNDEF Windows}, BaseUnix{$ELSE}, WinSock2{$IFEND};
+Classes, SysUtils, Sockets, fpjson, jsonparser, trndi.funcs, trndi.types
+{$IFNDEF Windows}, BaseUnix{$ELSE}, WinSock2{$IFEND};
 
 type
   { Callback function types for thread-safe data access }
-  TGetCurrentReadingFunc = function: BGResults of object;
-  TGetPredictionsFunc = function: BGResults of object;
+TGetCurrentReadingFunc = function: BGResults of object;
+TGetPredictionsFunc = function: BGResults of object;
 
   { TWebServerThread }
-  TWebServerThread = class(TThread)
-  private
-    FPort: Word;
-    FAuthToken: string;
-    FServerSocket: TSocket;
-    FGetCurrentReading: TGetCurrentReadingFunc;
-    FGetPredictions: TGetPredictionsFunc;
-    function ReadingToJSON(const Reading: BGReading; IncludeDelta: Boolean = True): TJSONObject;
-    function HandleRequest(const Request: string): string;
-    function CheckAuth(const Headers: string): Boolean;
-  protected
-    procedure Execute; override;
-  public
-    constructor Create(APort: Word; const AAuthToken: string;
-                       AGetCurrentReading: TGetCurrentReadingFunc;
-                       AGetPredictions: TGetPredictionsFunc);
-    destructor Destroy; override;
-    procedure CloseServerSocket;
-  end;
+TWebServerThread = class(TThread)
+private
+  FPort: word;
+  FAuthToken: string;
+  FServerSocket: TSocket;
+  FGetCurrentReading: TGetCurrentReadingFunc;
+  FGetPredictions: TGetPredictionsFunc;
+  function ReadingToJSON(const Reading: BGReading; IncludeDelta: boolean = true): TJSONObject;
+  function HandleRequest(const Request: string): string;
+  function CheckAuth(const Headers: string): boolean;
+protected
+  procedure Execute; override;
+public
+  constructor Create(APort: word; const AAuthToken: string;
+    AGetCurrentReading: TGetCurrentReadingFunc;
+    AGetPredictions: TGetPredictionsFunc);
+  destructor Destroy; override;
+  procedure CloseServerSocket;
+end;
 
   { TTrndiWebServer }
-  TTrndiWebServer = class
-  private
-    FThread: TWebServerThread;
-    FPort: Word;
-    FEnabled: Boolean;
-  public
-    constructor Create(APort: Word; const AAuthToken: string;
-                       AGetCurrentReading: TGetCurrentReadingFunc;
-                       AGetPredictions: TGetPredictionsFunc);
-    destructor Destroy; override;
-    procedure Start;
-    procedure Stop;
-    function Active: Boolean;
-    property Port: Word read FPort;
-    property Enabled: Boolean read FEnabled;
-  end;
+TTrndiWebServer = class
+private
+  FThread: TWebServerThread;
+  FPort: word;
+  FEnabled: boolean;
+public
+  constructor Create(APort: word; const AAuthToken: string;
+    AGetCurrentReading: TGetCurrentReadingFunc;
+    AGetPredictions: TGetPredictionsFunc);
+  destructor Destroy; override;
+  procedure Start;
+  procedure Stop;
+  function Active: boolean;
+  property Port: word read FPort;
+  property Enabled: boolean read FEnabled;
+end;
 
 implementation
 
 const
-  INVALID_SOCKET = TSocket(-1);
-  {$IFDEF WINDOWS}
-  SHUT_RDWR = SD_BOTH;
-  {$ELSE}
-  SHUT_RDWR = 2;
-  {$ENDIF}
+INVALID_SOCKET = TSocket(-1);
+{$IFDEF WINDOWS}
+SHUT_RDWR = SD_BOTH;
+{$ELSE}
+SHUT_RDWR = 2;
+{$ENDIF}
 
 {$IFDEF WINDOWS}
 // Windows-specific socket wrapper functions
-function SocketShutdown(s: TSocket; how: Integer): Integer;
+function SocketShutdown(s: TSocket; how: integer): integer;
 begin
   Result := WinSock2.shutdown(s, how);
 end;
 
-function SocketSetOpt(s: TSocket; level, optname: Integer; optval: PChar; optlen: Integer): Integer;
+function SocketSetOpt(s: TSocket; level, optname: integer; optval: pchar; optlen: integer): integer;
 begin
   Result := WinSock2.setsockopt(s, level, optname, optval, optlen);
 end;
 
-function SocketSelect(nfds: Integer; readfds, writefds, exceptfds: PFDSet; timeout: PTimeVal): Integer;
+function SocketSelect(nfds: integer; readfds, writefds, exceptfds: PFDSet; timeout: PTimeVal): integer;
 begin
   Result := WinSock2.select(nfds, readfds, writefds, exceptfds, timeout);
 end;
@@ -91,17 +91,17 @@ end;
 
 {$ELSE}
 // Unix-specific socket wrapper functions
-function SocketShutdown(s: TSocket; how: Integer): Integer;
+function SocketShutdown(s: TSocket; how: integer): integer;
 begin
   Result := fpShutdown(s, how);
 end;
 
-function SocketSetOpt(s: TSocket; level, optname: Integer; optval: PChar; optlen: Integer): Integer;
+function SocketSetOpt(s: TSocket; level, optname: integer; optval: pchar; optlen: integer): integer;
 begin
   Result := fpSetSockOpt(s, level, optname, optval, optlen);
 end;
 
-function SocketSelect(nfds: Integer; readfds, writefds, exceptfds: PFDSet; timeout: PTimeVal): Integer;
+function SocketSelect(nfds: integer; readfds, writefds, exceptfds: PFDSet; timeout: PTimeVal): integer;
 begin
   Result := fpSelect(nfds, readfds, writefds, exceptfds, timeout);
 end;
@@ -119,12 +119,12 @@ end;
 
 { TWebServerThread }
 
-constructor TWebServerThread.Create(APort: Word; const AAuthToken: string;
-                                    AGetCurrentReading: TGetCurrentReadingFunc;
-                                    AGetPredictions: TGetPredictionsFunc);
+constructor TWebServerThread.Create(APort: word; const AAuthToken: string;
+AGetCurrentReading: TGetCurrentReadingFunc;
+AGetPredictions: TGetPredictionsFunc);
 begin
-  inherited Create(True); // Create suspended
-  FreeOnTerminate := True;  // Let thread clean itself up
+  inherited Create(true); // Create suspended
+  FreeOnTerminate := true;  // Let thread clean itself up
   FPort := APort;
   FAuthToken := AAuthToken;
   FGetCurrentReading := AGetCurrentReading;
@@ -150,13 +150,13 @@ begin
   end;
 end;
 
-function TWebServerThread.CheckAuth(const Headers: string): Boolean;
+function TWebServerThread.CheckAuth(const Headers: string): boolean;
 var
   Lines: TStringList;
-  i: Integer;
+  i: integer;
   Line: string;
 begin
-  Result := True; // Allow if no token configured
+  Result := true; // Allow if no token configured
   if FAuthToken = '' then
     Exit;
 
@@ -175,10 +175,10 @@ begin
   finally
     Lines.Free;
   end;
-  Result := False;
+  Result := false;
 end;
 
-function TWebServerThread.ReadingToJSON(const Reading: BGReading; IncludeDelta: Boolean): TJSONObject;
+function TWebServerThread.ReadingToJSON(const Reading: BGReading; IncludeDelta: boolean): TJSONObject;
 var
   fs: TFormatSettings;
 begin
@@ -195,7 +195,7 @@ begin
       Result.Add('mmol_delta', FormatFloat('0.0', Reading.convert(mmol, BGDelta), fs));
     end;
     
-    Result.Add('trend', Integer(Reading.trend));
+    Result.Add('trend', integer(Reading.trend));
     Result.Add('timestamp', DateTimeToStr(Reading.date));
   except
     Result.Free;
@@ -212,7 +212,7 @@ var
   CurrentReadings: BGResults;
   Predictions: BGResults;
   PredArray: TJSONArray;
-  i, currReading: Integer;
+  i, currReading: integer;
 begin
   Lines := TStringList.Create;
   try
@@ -233,9 +233,9 @@ begin
     if Method = 'OPTIONS' then
     begin
       Result := 'HTTP/1.1 204 No Content'#13#10 +
-                'Access-Control-Allow-Origin: *'#13#10 +
-                'Access-Control-Allow-Methods: GET, POST, OPTIONS'#13#10 +
-                'Access-Control-Allow-Headers: Content-Type, Authorization'#13#10#13#10;
+        'Access-Control-Allow-Origin: *'#13#10 +
+        'Access-Control-Allow-Methods: GET, POST, OPTIONS'#13#10 +
+        'Access-Control-Allow-Headers: Content-Type, Authorization'#13#10#13#10;
       Exit;
     end;
 
@@ -243,9 +243,9 @@ begin
     if not CheckAuth(Headers) then
     begin
       Result := 'HTTP/1.1 401 Unauthorized'#13#10 +
-                'Content-Type: application/json'#13#10 +
-                'Access-Control-Allow-Origin: *'#13#10#13#10 +
-                '{"error":"Unauthorized"}';
+        'Content-Type: application/json'#13#10 +
+        'Access-Control-Allow-Origin: *'#13#10#13#10 +
+        '{"error":"Unauthorized"}';
       Exit;
     end;
 
@@ -264,9 +264,8 @@ begin
           if not CurrentReading.empty then
           begin
             currReading := -1;
-            for i := Low(CurrentReadings) to High(CurrentReadings) do begin
-              ResponseObj.Add(i.ToString, ReadingToJSON(CurrentReadings[i], True));
-            end;
+            for i := Low(CurrentReadings) to High(CurrentReadings) do
+              ResponseObj.Add(i.ToString, ReadingToJSON(CurrentReadings[i], true));
             Result := 'HTTP/1.1 200 OK'#13#10;
           end
           else
@@ -281,19 +280,21 @@ begin
           Result := 'HTTP/1.1 500 Internal Server Error'#13#10;
         end;
       end
-      else if URI = '/predict' then
+      else
+      if URI = '/predict' then
       begin
         PredArray := TJSONArray.Create;
         if Assigned(FGetPredictions) then
         begin
           Predictions := FGetPredictions();
           for i := 0 to High(Predictions) do
-            PredArray.Add(ReadingToJSON(Predictions[i], True));
+            PredArray.Add(ReadingToJSON(Predictions[i], true));
         end;
         ResponseObj.Add('predictions', PredArray);
         Result := 'HTTP/1.1 200 OK'#13#10;
       end
-      else if URI = '/status' then
+      else
+      if URI = '/status' then
       begin
         ResponseObj.Add('status', 'ok');
         ResponseObj.Add('data_available', Assigned(FGetCurrentReading));
@@ -306,10 +307,10 @@ begin
       end;
 
       Result := Result +
-                'Content-Type: application/json'#13#10 +
-                'Access-Control-Allow-Origin: *'#13#10 +
-                'Connection: close'#13#10#13#10 +
-                ResponseObj.AsJSON;
+        'Content-Type: application/json'#13#10 +
+        'Access-Control-Allow-Origin: *'#13#10 +
+        'Connection: close'#13#10#13#10 +
+        ResponseObj.AsJSON;
     finally
       ResponseObj.Free;
     end;
@@ -322,18 +323,18 @@ procedure TWebServerThread.Execute;
 var
   ClientSocket: TSocket;
   Request, Response: string;
-  Buffer: array[0..4095] of Char;
-  BytesRead: Integer;
+  Buffer: array[0..4095] of char;
+  BytesRead: integer;
   {$IFDEF WINDOWS}
   SockAddr: WinSock2.TSockAddr;
   {$ELSE}
   SockAddr: TInetSockAddr;
   {$ENDIF}
   SockLen: TSockLen;
-  OptVal: Integer;
+  OptVal: integer;
   ReadFDs: TFDSet;
   TimeVal: TTimeVal;
-  SelectResult: Integer;
+  SelectResult: integer;
   {$IFDEF WINDOWS}
   WSAData: TWSAData;
   InetAddr: TInetSockAddr;
@@ -357,7 +358,7 @@ begin
 
     // Set socket options
     OptVal := 1;
-    SocketSetOpt(FServerSocket, SOL_SOCKET, SO_REUSEADDR, PChar(@OptVal), SizeOf(OptVal));
+    SocketSetOpt(FServerSocket, SOL_SOCKET, SO_REUSEADDR, pchar(@OptVal), SizeOf(OptVal));
 
     // Bind to port
     {$IFDEF WINDOWS}
@@ -388,14 +389,14 @@ begin
     // Listen
     {$IFDEF WINDOWS}
     if WinSock2.listen(FServerSocket, 5) <> 0 then
-    {$ELSE}
-    if fpListen(FServerSocket, 5) <> 0 then
-    {$ENDIF}
-    begin
-      CloseSocket(FServerSocket);
-      FServerSocket := INVALID_SOCKET;
-      Exit;
-    end;
+      {$ELSE}
+      if fpListen(FServerSocket, 5) <> 0 then
+        {$ENDIF}
+      begin
+        CloseSocket(FServerSocket);
+        FServerSocket := INVALID_SOCKET;
+        Exit;
+      end;
 
     // Accept loop with select timeout
     while not Terminated do
@@ -437,34 +438,32 @@ begin
       end;
       
       if ClientSocket <> INVALID_SOCKET then
-      begin
-        try
+      try
           // Read request
-          Request := '';
-          repeat
-            FillChar(Buffer, SizeOf(Buffer), 0);
-            {$IFDEF WINDOWS}
-            BytesRead := WinSock2.recv(ClientSocket, Buffer, SizeOf(Buffer), 0);
-            {$ELSE}
-            BytesRead := fpRecv(ClientSocket, @Buffer, SizeOf(Buffer), 0);
-            {$ENDIF}
-            if BytesRead > 0 then
-              Request := Request + Copy(Buffer, 0, BytesRead);
-          until (BytesRead <= 0) or (Pos(#13#10#13#10, Request) > 0);
-
+        Request := '';
+        repeat
+          FillChar(Buffer, SizeOf(Buffer), 0);
+          {$IFDEF WINDOWS}
+          BytesRead := WinSock2.recv(ClientSocket, Buffer, SizeOf(Buffer), 0);
+          {$ELSE}
+          BytesRead := fpRecv(ClientSocket, @Buffer, SizeOf(Buffer), 0);
+          {$ENDIF}
           if BytesRead > 0 then
-          begin
+            Request := Request + Copy(Buffer, 0, BytesRead);
+        until (BytesRead <= 0) or (Pos(#13#10#13#10, Request) > 0);
+
+        if BytesRead > 0 then
+        begin
             // Handle request and send response
-            Response := HandleRequest(Request);
-            {$IFDEF WINDOWS}
-            WinSock2.send(ClientSocket, Response[1], Length(Response), 0);
-            {$ELSE}
-            fpSend(ClientSocket, @Response[1], Length(Response), 0);
-            {$ENDIF}
-          end;
-        finally
-          CloseSocket(ClientSocket);
+          Response := HandleRequest(Request);
+          {$IFDEF WINDOWS}
+          WinSock2.send(ClientSocket, Response[1], Length(Response), 0);
+          {$ELSE}
+          fpSend(ClientSocket, @Response[1], Length(Response), 0);
+          {$ENDIF}
         end;
+      finally
+        CloseSocket(ClientSocket);
       end;
     end;
   except
@@ -484,13 +483,13 @@ end;
 
 { TTrndiWebServer }
 
-constructor TTrndiWebServer.Create(APort: Word; const AAuthToken: string;
-                                   AGetCurrentReading: TGetCurrentReadingFunc;
-                                   AGetPredictions: TGetPredictionsFunc);
+constructor TTrndiWebServer.Create(APort: word; const AAuthToken: string;
+AGetCurrentReading: TGetCurrentReadingFunc;
+AGetPredictions: TGetPredictionsFunc);
 begin
   inherited Create;
   FPort := APort;
-  FEnabled := False;
+  FEnabled := false;
   FThread := TWebServerThread.Create(APort, AAuthToken, AGetCurrentReading, AGetPredictions);
 end;
 
@@ -506,7 +505,7 @@ begin
   if not FEnabled and Assigned(FThread) then
   begin
     FThread.Start;
-    FEnabled := True;
+    FEnabled := true;
   end;
 end;
 
@@ -520,11 +519,11 @@ begin
     // Just signal termination, don't wait (thread will free itself)
     FThread.Terminate;
     FThread := nil;  // Clear reference since thread will free itself
-    FEnabled := False;
+    FEnabled := false;
   end;
 end;
 
-function TTrndiWebServer.Active: Boolean;
+function TTrndiWebServer.Active: boolean;
 begin
   Result := FEnabled and Assigned(FThread) and not FThread.Finished;
 end;
