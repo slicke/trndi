@@ -1294,6 +1294,8 @@ begin
       tl.width := tp.width-10;
       tl.height := tp.height;
       tl.WordWrap := true;
+      if IsProblematicWM then
+        tl.Font.size := 38;
 
       tb := TButton.Create(tp);
       tb.Parent := tp;
