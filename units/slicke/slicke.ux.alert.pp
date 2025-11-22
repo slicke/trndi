@@ -1001,7 +1001,11 @@ begin
 
   Inset := Round(Image.Width * 0.15); // 15% padding around the emoji
 
-  Image.Picture.Bitmap.Canvas.Font.Name := 'Noto Color Emoji';
+  {$ifdef Darwin}
+    Image.Picture.Bitmap.Canvas.Font.Name := 'Apple Color Emoji';
+  {$else}
+    Image.Picture.Bitmap.Canvas.Font.Name := 'Noto Color Emoji';
+  {$endif}
   Image.Picture.Bitmap.Canvas.Font.Size := Image.Height - (Inset * 2);
   Image.Picture.Bitmap.Canvas.Font.Color := clBlack;
 
@@ -1887,6 +1891,7 @@ begin
     IconBox.Width := IfThen(big, 80, 48);
     IconBox.Height := IconBox.Width;
     {$ifdef Windows}IconBox.Font.Name := 'Segoe UI Emoji';{$endif}
+    {$ifdef Darwin}IconBox.Font.Name := 'Apple Color Emoji';{$endif}
     AssignEmoji(IconBox, icon, bgcol);
 
     // HTML panel
@@ -2046,6 +2051,7 @@ begin
     IconBox.Width := IfThen(big, 100, 50);
     IconBox.Height := IconBox.Width;
     {$ifdef Windows}IconBox.Font.Name := 'Segoe UI Emoji';{$endif}
+    {$ifdef Darwin}IconBox.Font.Name := 'Apple Color Emoji';{$endif}
     Dialog.HandleNeeded;
     AssignEmoji(IconBox, icon, bgcol);
 
