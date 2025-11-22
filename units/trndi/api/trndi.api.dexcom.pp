@@ -201,23 +201,30 @@ end;
 function Dexcom.Connect: boolean;
 
   // Helper: Escape a string for safe inclusion in JSON
-  function JSONEscape(const S: string): string;
+function JSONEscape(const S: string): string;
   var
-    i: Integer;
-    c: Char;
+    i: integer;
+    c: char;
   begin
     Result := '';
     for i := 1 to Length(S) do
     begin
       c := S[i];
       case c of
-        '"':  Result := Result + '\"';
-        '\':  Result := Result + '\\';
-        #8:   Result := Result + '\b';   // backspace
-        #9:   Result := Result + '\t';   // tab
-        #10:  Result := Result + '\n';   // newline
-        #12:  Result := Result + '\f';   // form feed
-        #13:  Result := Result + '\r';   // carriage return
+      '"':
+        Result := Result + '\"';
+      '\':
+        Result := Result + '\\';
+      #8:
+        Result := Result + '\b';   // backspace
+      #9:
+        Result := Result + '\t';   // tab
+      #10:
+        Result := Result + '\n';   // newline
+      #12:
+        Result := Result + '\f';   // form feed
+      #13:
+        Result := Result + '\r';   // carriage return
       else
         Result := Result + c;
       end;
@@ -227,7 +234,7 @@ function Dexcom.Connect: boolean;
 var
   LBody, LResponse, LTimeResponse, LTimeString, LAccountID: string;
   LServerDateTime: TDateTime;
-  LUseEmailAuth: Boolean;
+  LUseEmailAuth: boolean;
 begin
   // Detect if user provided email (contains @) or phone (starts with +)
   // These require two-step auth: AuthenticatePublisherAccount → LoginPublisherAccountById
@@ -250,8 +257,8 @@ begin
     
     // Check for authentication errors
     if (LAccountID = '') or (Pos('error', LowerCase(LAccountID)) > 0) or
-       (Pos('invalid', LowerCase(LAccountID)) > 0) or
-       (Pos('AccountPassword', LAccountID) > 0) then
+      (Pos('invalid', LowerCase(LAccountID)) > 0) or
+      (Pos('AccountPassword', LAccountID) > 0) then
     begin
       Result := false;
       if Pos('AccountPassword', LAccountID) > 0 then
@@ -270,16 +277,14 @@ begin
       '"', '', [rfReplaceAll]);
   end
   else
-  begin
-    // Single-step authentication for plain usernames
     FSessionID := StringReplace(
       native.Request(true, DEXCOM_LOGIN_BY_NAME_ENDPOINT, [], LBody),
-      '"', '', [rfReplaceAll]);
-  end;
+      '"', '', [rfReplaceAll])// Single-step authentication for plain usernames
+  ;
 
   // Check for various error responses before validation
   if (FSessionID = '') or (Pos('error', LowerCase(FSessionID)) > 0) or
-     (Pos('invalid', LowerCase(FSessionID)) > 0) then
+    (Pos('invalid', LowerCase(FSessionID)) > 0) then
   begin
     Result := false;
     lastErr := sErrDexLogin + ' (Dex1a): ' + FSessionID;
@@ -301,9 +306,9 @@ begin
     // Null GUID indicates authentication rejection (not wrong password)
     if FSessionID = '00000000-0000-0000-0000-000000000000' then
       lastErr := 'Dexcom authentication rejected. Possible causes: ' +
-                 '1) Wrong region (try using another region), ' +
-                 '2) Dexcom Share not enabled in official app, ' +
-                 '3) Account requires action in official Dexcom app. (Dex2)'
+        '1) Wrong region (try using another region), ' +
+        '2) Dexcom Share not enabled in official app, ' +
+        '3) Account requires action in official Dexcom app. (Dex2)'
     else
       lastErr := sErrDexLogin + ' (Dex2): Received invalid session ID: ' + FSessionID;
     Exit;

@@ -807,12 +807,14 @@ begin
   lExtCopyright.Caption := '';
 
 
-  if (f.Count > 1 ) and (length(f.Strings[0]) > 2) and (f.Strings[0][2] = '*') then begin // /*
+  if (f.Count > 1 ) and (length(f.Strings[0]) > 2) and (f.Strings[0][2] = '*') then
+  begin // /*
     lExtName.Caption := TrimLeftSet(f.Strings[0], ['*', '/', ' ']);
 
     if (length(f.strings[1]) > 2) and (f.Strings[1][length(f.strings[1])-1] = '*') then // */
       lExtCopyright.Caption := TrimRightSet(f.Strings[1], ['*', '/']);
-  end else
+  end
+  else
     lExtName.Caption := RS_NO_COPYRIGHT;
   f.Free;
 end;
@@ -857,14 +859,15 @@ end;
 procedure TfConf.cbSysChange(Sender: TObject);
 begin
   gbOverride.Color := clDefault;
-  if not (sender is TfConf) then begin
+  if not (sender is TfConf) then
+  begin
     if Pos('Dexcom', cbSys.Text) > 0 then
     begin
       gbOverride.Color := $00D3D2EE;
       ShowMessage(RS_DEX);
     end;
-      if Pos('Scout v3', cbSys.Text) > 0 then
-        ShowMessage(RS_BETA);
+    if Pos('Scout v3', cbSys.Text) > 0 then
+      ShowMessage(RS_BETA);
   end;
   // Update parameter labels above edits based on backend
   // Defaults from base class
@@ -1335,15 +1338,18 @@ var
 begin
 
   case (sender as TLabel).Name of
-    'lArrow': title := RS_SELECT_FONT_ARROW;
-    'lVal': title := RS_SELECT_FONT_READING;
-    'lAgo': title := RS_SELECT_FONT_TIME;
+  'lArrow':
+    title := RS_SELECT_FONT_ARROW;
+  'lVal':
+    title := RS_SELECT_FONT_READING;
+  'lAgo':
+    title := RS_SELECT_FONT_TIME;
   else
     title := RS_SELECT_FONT_DESC;
   end;
   f := ExtFontPicker(uxdAuto,RS_SELECT_FONT, RS_SELECT_FONT, title, (sender as TLabel).font, (sender as TLabel).caption, mr);
   if mr = mrOK then
-   (Sender as TLabel).Font := f;
+    (Sender as TLabel).Font := f;
 end;
 
 procedure TfConf.pcColorsChange(Sender: TObject);

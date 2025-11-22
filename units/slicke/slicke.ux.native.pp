@@ -43,86 +43,86 @@ unit slicke.ux.native;
 interface
 
 uses
-  Classes, SysUtils, forms, controls;
+Classes, SysUtils, forms, controls;
 
   {**
     Check if a suitable UI font exists on this system and return its name.
     @param fname Out parameter that receives a preferred UI font name for emoji/mono display.
     @returns @true if the font (or a fallback) is available; otherwise @false.
   }
-  function FontGUIInList(out fname: string): Boolean;
+function FontGUIInList(out fname: string): boolean;
 
   {**
     Check if a suitable text font exists on this system and return its name.
     @param fname Out parameter that receives a preferred UI text font.
     @returns @true if the font is present; otherwise @false. On unknown platforms always @true with a generic name.
   }
-  function FontTXTInList(out fname: string): Boolean;
+function FontTXTInList(out fname: string): boolean;
 
   {**
     Check if the Window Manaager is problematic, which means it can't handle ShowModal
     @returns @true if the VM is problematic
     }
-  function IsProblematicWM: Boolean;
+function IsProblematicWM: boolean;
 
   {**
     Check if the Window Manaager is problematic to a lesser extent - ie "just" fails with showmodal
     @returns @true if the VM is semi-problematic
     }
-  function IsSemiProblematicWM: Boolean;  
+function IsSemiProblematicWM: boolean;
 
   {**
     Show a standard TForm modally with the same 'bad-WM' fallback logic as
     the other UX dialog helpers. Returns the form ModalResult.
   }
-  function ShowFormModalSafe(aForm: TForm): Integer;
+function ShowFormModalSafe(aForm: TForm): integer;
 
 implementation
 
 {**
   See interface docs. Attempts OS-appropriate defaults.
 }
-function FontTXTInList(out fname: string): Boolean;
+function FontTXTInList(out fname: string): boolean;
 begin
   {$if DEFINED(X_LINUXBSD)}
-    fname := 'Noto Sans';
-    try
-      Result := Screen.Fonts.IndexOf(fname) >= 0;
-    finally
-    end;
+  fname := 'Noto Sans';
+  try
+    Result := Screen.Fonts.IndexOf(fname) >= 0;
+  finally
+  end;
   {$elseif DEFINED(WINDOWS)}
-    fname := 'Segoe UI';
-    try
-      Result := Screen.Fonts.IndexOf(fname) >= 0;
-    finally
-    end;
+  fname := 'Segoe UI';
+  try
+    Result := Screen.Fonts.IndexOf(fname) >= 0;
+  finally
+  end;
   {$else}
-    fname := 'font';
-    Result := True;
+  fname := 'font';
+  Result := true;
   {$endif}
 end;
 
 {**
   See interface docs. Returns a font suitable for UI/emoji display if available.
 }
-function FontGUIInList(out fname: string): Boolean;
+function FontGUIInList(out fname: string): boolean;
 begin
   {$if DEFINED(X_LINUXBSD)}
-    fname := 'Noto Color Emoji';
-    try
-      Result := (Screen.Fonts.IndexOf('Noto Emoji') >= 0) or
-                (Screen.Fonts.IndexOf('Noto Color Emoji') >= 0);
-    finally
-    end;
+  fname := 'Noto Color Emoji';
+  try
+    Result := (Screen.Fonts.IndexOf('Noto Emoji') >= 0) or
+      (Screen.Fonts.IndexOf('Noto Color Emoji') >= 0);
+  finally
+  end;
   {$elseif DEFINED(WINDOWS)}
-    fname := 'Segoe UI Symbol';
-    try
-      Result := Screen.Fonts.IndexOf(fname) >= 0;
-    finally
-    end;
+  fname := 'Segoe UI Symbol';
+  try
+    Result := Screen.Fonts.IndexOf(fname) >= 0;
+  finally
+  end;
   {$else}
-    fname := 'font';
-    Result := True;
+  fname := 'font';
+  Result := true;
   {$endif}
 end;
 
@@ -133,17 +133,19 @@ end;
 function IsSemiProblematicWM: boolean;
 var
   env, s: string;
-  i: Integer;
+  i: integer;
 const
   Bad: array[0..0] of string = (
     'gnome'
-  );
+    );
 begin
   // Overrides
   env := GetEnvironmentVariable('TRNDI_DISABLE_MODAL_FALLBACK');
-  if env = '1' then Exit(false);                               // This shouldnt really trigger as problematic would be false
+  if env = '1' then
+    Exit(false);                               // This shouldnt really trigger as problematic would be false
   env := GetEnvironmentVariable('TRNDI_FORCE_MODAL_FALLBACK');
-  if env = '1' then Exit(False);                               // "We're" a problematic vm
+  if env = '1' then
+    Exit(false);                               // "We're" a problematic vm
 
   s := LowerCase(Trim(GetEnvironmentVariable('XDG_CURRENT_DESKTOP') + ' ' +
     GetEnvironmentVariable('DESKTOP_SESSION') + ' ' +
@@ -151,9 +153,10 @@ begin
     GetEnvironmentVariable('WINDOW_MANAGER')));
 
   for i := Low(Bad) to High(Bad) do
-    if Pos(Bad[i], s) > 0 then Exit(True);
+    if Pos(Bad[i], s) > 0 then
+      Exit(true);
 
-  Result := False;
+  Result := false;
 end;
 
 {**
@@ -161,21 +164,23 @@ end;
   Uses environment variables as a lightweight heuristic and supports
   runtime overrides via TRNDI_FORCE_MODAL_FALLBACK / TRNDI_DISABLE_MODAL_FALLBACK.
 }
-function IsProblematicWM: Boolean;
+function IsProblematicWM: boolean;
 var
   env, s: string;
-  i: Integer;
+  i: integer;
 const
   Bad: array[0..12] of string = (
     'openbox', 'matchbox', 'fluxbox', 'fvwm', 'icewm', 'twm', 'pekwm',
     'lxde', 'lxde-pi', 'lxsession', 'pixel', 'raspbian', 'gnome'
-  );
+    );
 begin
   // Overrides
   env := GetEnvironmentVariable('TRNDI_DISABLE_MODAL_FALLBACK');
-  if env = '1' then Exit(False);
+  if env = '1' then
+    Exit(false);
   env := GetEnvironmentVariable('TRNDI_FORCE_MODAL_FALLBACK');
-  if env = '1' then Exit(True);
+  if env = '1' then
+    Exit(true);
 
   s := LowerCase(Trim(GetEnvironmentVariable('XDG_CURRENT_DESKTOP') + ' ' +
     GetEnvironmentVariable('DESKTOP_SESSION') + ' ' +
@@ -183,19 +188,20 @@ begin
     GetEnvironmentVariable('WINDOW_MANAGER')));
 
   for i := Low(Bad) to High(Bad) do
-    if Pos(Bad[i], s) > 0 then Exit(True);
+    if Pos(Bad[i], s) > 0 then
+      Exit(true);
 
-  Result := False;
+  Result := false;
 end;
 {$else}
-function IsProblematicWM: Boolean;
+function IsProblematicWM: boolean;
 begin
   result := false; // Win and mac are always good
 end;
 
 function IsSemiProblematicWM: boolean;
 begin
-   result := false;
+  result := false;
 end;
 
 {$endif}
@@ -205,11 +211,12 @@ end;
   may be ignored by the window manager. On non-Windows systems we use
   fsStayOnTop as a conservative fallback while the dialog is active.
 }
-function ShowFormModalSafe(aForm: TForm): Integer;
+function ShowFormModalSafe(aForm: TForm): integer;
 var
   oldStyle: TFormStyle;
 begin
-  if not Assigned(aForm) then Exit(mrNone);
+  if not Assigned(aForm) then
+    Exit(mrNone);
   // Attempt to set popup owner where possible
   try
     if Assigned(Application) and Assigned(Application.MainForm) then
@@ -228,7 +235,8 @@ begin
       aForm.ShowModal;
       Result := aForm.ModalResult;
     finally
-      try if Assigned(aForm) then aForm.FormStyle := oldStyle; except end;
+      try if Assigned(aForm) then
+          aForm.FormStyle := oldStyle; except end;
     end;
     Exit;
   end;
@@ -241,4 +249,3 @@ end;
 
 
 end.
-
