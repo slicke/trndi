@@ -132,15 +132,13 @@ begin
 
     // Add the UX modification function, as declared in this file
     if ssCtrl in GetKeyShiftState then
-     ExtHTML(uxdAuto, RS_SAFEMODE, RS_SAFEMODE_DESC,[mbOK], uxmtInformation, 10)
-    else begin
-      for s in exts do
+      ExtHTML(uxdAuto, RS_SAFEMODE, RS_SAFEMODE_DESC, [mbOK], uxmtInformation, uxscLarge)
+    else for s in exts do
       begin
         fSplash.lInfo.Caption := RS_SPLASH_LOADING + ExtractFileName(s);
         // Run all found files
         ExecuteFile(s);
       end;
-    end;
     exts.Free;
   end;
 end;

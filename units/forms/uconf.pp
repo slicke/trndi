@@ -1323,7 +1323,7 @@ const
     '- This app may contain bugs or errors that could display incorrect data<br><br>' +
     '<b><i>- IF YOU DO NOT AGREE WITH THESE TERMS, DO NOT USE THIS APP. -</i></b>';
 begin
-  if ExtMsg(uxdAuto, 'License', txt, [mbOK, mbUxRead], uxmtOK, 18) <> mrOk then
+  if ExtMsg(uxdAuto, 'License', txt, [mbOK, mbUxRead], uxmtOK, uxscHuge) <> mrOk then
     OpenURL('https://github.com/slicke/trndi/blob/main/LICENSE.md');
 end;
 

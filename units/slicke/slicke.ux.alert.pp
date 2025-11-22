@@ -106,7 +106,11 @@ const
   uxmtSquare        = widechar($274F); // ❏ Square
   uxmtCustom        = uxmtCog;
 
-
+  {**
+    @name Dialog colors
+    @desc
+    Dialog colors presets
+  }
   uxclBlue = $00AA6004;
   uxclLightBlue = $00FDD8AA;
   uxclWhite = $00F5F2FD;
@@ -114,6 +118,19 @@ const
   uxclLightGreen = $0095EEC4;
   uxclDarkGreen = $00147C4A;
   uxclGray = $00322B27;
+
+ {**
+    @name Dialog Scales
+    @desc
+    Presets for dialog scales
+  }
+  uxscSmall = 0.75;
+  uxscNormal = 1;
+  uxscBig = 5;
+  uxscBigger = 7.5;
+  uxscLarge = 10;
+  uxscHuge = 20;
+  uxscEnormous = 30;
 
   {**
     @name Dialog button aliases

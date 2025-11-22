@@ -276,7 +276,7 @@ begin
     begin
       i := ExtMsg(uxdAuto, 'License', 'You must accept the full terms conditions',
         'Do you agree to the terms and full license?', license,
-        uxclWhite, uxclRed, [mbYes, mbCancel, mbUxRead], uxmtCustom, 5);
+        uxclWhite, uxclRed, [mbYes, mbCancel, mbUxRead], uxmtCustom, uxscLarge);
       if i = mrYes then
         native.SetBoolSetting('license.250608', true)
       else
