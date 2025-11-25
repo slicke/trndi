@@ -2614,6 +2614,7 @@ begin
     {$else}
     fConf.tsExt.Enabled := false;
     fConf.tsExt.Visible := false;
+    fConf.lbExtensions.items.add('- Extensions disabled -');
     {$endif}
     ShowFormModalSafe(fConf);
 
@@ -3777,6 +3778,7 @@ begin
     native.getURL(url, url);
   end;
 
+  if assigned(native) and assigned(chroma) then
   if native.GetBoolSetting('razer.enabled', false) and chroma.Initialized then
   {$ifdef Windows}
     Chroma.SetStaticAll(clRazerRed);
@@ -3820,12 +3822,13 @@ begin
   if (not lowAlerted) and doFlash then
     native.StartBadgeFlash(lVal.Caption, bg_color_lo, 20000, 400);
 
-  if native.GetBoolSetting('razer.enabled', false) and chroma.Initialized then
-  {$ifdef Windows}
-    Chroma.SetStaticAll(clRazerBlue);
-  {$else}
+  if assigned(native) and assigned(chroma) then
+    if native.GetBoolSetting('razer.enabled', false) and chroma.Initialized then
+    {$ifdef Windows}
+      Chroma.SetStaticAll(clRazerBlue);
+    {$else}
       Chroma.SetBreathDualAll(clRazerBlue, clRazerBlack);
-  {$endif}
+    {$endif}
 end;
 
 procedure TfBG.HandleNormalGlucose(const b: BGReading);
