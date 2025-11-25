@@ -401,7 +401,7 @@ msgid "NightScout"
 msgstr ""
 
 #: tfconf.cbtir.caption
-msgid "Count custom range as time in range"
+msgid "Include full high/low in time-in-range, not just the custom range"
 msgstr ""
 
 #: tfconf.cbtircolor.caption
