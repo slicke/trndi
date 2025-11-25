@@ -1,3 +1,29 @@
+(*
+ * This file is part of Trndi (https://github.com/slicke/trndi).
+ * Copyright (c) 2021-2025 Björn Lindh.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ * ---------
+ *
+ * GitHub: https://github.com/slicke/trndi
+ *)
+{**
+  @unit RazerChromaLinux
+  @brief Linux driver that proxies lighting commands to the OpenRazer DBus daemon.
+  @details
+    Uses `dbus-send` to enumerate devices and send lighting or brightness commands so OpenRazer-managed
+    Razer hardware can participate in the same effect API as the native Windows driver.
+}
 unit RazerChromaLinux;
 
 {$mode objfpc}{$H+}
@@ -8,7 +34,7 @@ uses
   SysUtils, Classes, Process, RazerChroma;
 
 type
-  { TRazerChromaLinux }
+  {** Linux implementation of `TRazerChromaBase` interacting with OpenRazer. }
   TRazerChromaLinux = class(TRazerChromaBase)
   private
     function ExecuteDBus(const Args: array of string): string;
