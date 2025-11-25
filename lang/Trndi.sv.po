@@ -417,8 +417,8 @@ msgid "NightScout"
 msgstr "NightScout"
 
 #: tfconf.cbtir.caption
-msgid "Count custom range as time in range"
-msgstr "Räkna värden i föredragna området som tid i område"
+msgid "Include full high/low in time-in-range, not just the custom range"
+msgstr "Inkludera hela hög/låg som tid-i-målområde, inte bara föredraget område"
 
 #: tfconf.cbtircolor.caption
 msgctxt "tfconf.cbtircolor.caption"
@@ -525,7 +525,7 @@ msgstr "Spela Media"
 
 #: tfconf.gboverride3.caption
 msgid "Use URL"
-msgstr ""
+msgstr "Använd URL"
 
 #: tfconf.groupbox1.caption
 msgid "System Features"
@@ -628,18 +628,17 @@ msgstr "Ändra Trndis standardfärger för bakgrund och text, när du är i eget
 
 #: tfconf.label25.caption
 msgid "Trndi can load a URL when high/low"
-msgstr ""
+msgstr "Trndi kan ladda en URL vid högt/lågt"
 
 #: tfconf.label26.caption
 msgid "High (eg https://url.local/hi"
-msgstr ""
+msgstr "Hög (tex https://url.local/hög)"
 
 #: tfconf.label27.caption
 msgid "Low (eg https://url.local/lo)"
-msgstr ""
+msgstr "Låg (t ex http://url.local/låg)"
 
 #: tfconf.label28.caption
-#, fuzzy
 msgctxt "tfconf.label28.caption"
 msgid "Perfect Reading (5.5mmol/L or 100 mg/dL)"
 msgstr "Perfekt avläsning (5,5mmol/L eller 100 mg/dL)"
@@ -1784,4 +1783,3 @@ msgstr "Du kan använda skift+<nummerr> för att manuellt sätta synligheten (0 
 #: ufloat.rscustomsize
 msgid "You can hold down shift and plus (+) or minus (-) to change the window size"
 msgstr "Du kan hålla ned skift och plus (+) eller minus (-) för att justera fönstrets storlek"
-
