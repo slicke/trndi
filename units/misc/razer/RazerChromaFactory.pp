@@ -63,7 +63,7 @@ begin
   Result := TRazerChromaWindows.Create;
   {$ENDIF}
   {$IFDEF DARWIN}
-  raise Exception.Create('macOS is not supported');
+  result := TRazerChromaMac.Create;
   {$ENDIF}
 end;
 
