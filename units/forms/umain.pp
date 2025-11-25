@@ -2262,6 +2262,11 @@ procedure LoadUserSettings(f: TfConf);
       edMusicHigh.Text := GetSetting('media.url_high', '');
       edMusicLow.Text := GetSetting('media.url_low', '');
       edMusicPerfect.Text := GetSetting('media.url_perfect', '');
+
+      edURLHigh.Text := GetSetting('url_remote.url_high', '');
+      edURLLow.Text := GetSetting('url_remote.url_low', '');
+      edURLPerfect.Text := GetSetting('url_remote.url_perfect', '');
+
       cbMusicPause.Checked := GetBoolSetting('media.pause');
       fsHi.Enabled := cbCust.Checked;
       fsLo.Enabled := cbCust.Checked;
@@ -2498,6 +2503,11 @@ procedure SaveUserSettings(f: TfConf);
       SetSetting('media.url_high', edMusicHigh.Text);
       SetSetting('media.url_low', edMusicLow.Text);
       SetSetting('media.url_perfect', edMusicPerfect.Text);
+
+      SetSetting('url_remote.url_high', edURLHigh.Text);
+      SetSetting('url_remote.url_low', edURLLow.Text);
+      SetSetting('url_remote.url_perfect', edURLPerfect.Text);
+
       SetBoolSetting('media.pause', cbMusicPause.Checked);
 
       SetColorSetting('ux.bg_color_ok', cl_ok_bg.ButtonColor);
@@ -3745,6 +3755,12 @@ begin
     highAlerted := true;
     MediaController.PlayTrackFromURL(url);
   end;
+  if native.TryGetSetting('url_remote.url_high', url) then
+  begin
+    highAlerted := true;
+    native.getURL(url, url);
+  end;
+
   doFlash := native.GetBoolSetting('alerts.flash.high', false);
   if (not highAlerted) and doFlash then
     native.StartBadgeFlash(lVal.Caption, bg_color_hi, 15000, 450);
@@ -3771,6 +3787,11 @@ begin
   begin
     lowAlerted := true;
     MediaController.PlayTrackFromURL(url);
+  end;
+  if native.TryGetSetting('url_remote.url_low', url) then
+  begin
+    lowAlerted := true;
+    native.getURL(url, url);
   end;
   doFlash := native.GetBoolSetting('alerts.flash.low', false);
   if (not lowAlerted) and doFlash then
@@ -3813,6 +3834,9 @@ begin
 
     if native.TryGetSetting('media.url_perfect', url) then
       MediaController.PlayTrackFromURL(url);
+    if native.TryGetSetting('url_remote.url_high', url) then
+      native.getURL(url, url);
+
     if native.GetBoolSetting('alerts.flash.perfect', false) then
       native.StartBadgeFlash(lVal.Caption, bg_color_ok, 6000, 500);
     // subtle celebratory pulse
