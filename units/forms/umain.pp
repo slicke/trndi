@@ -3778,7 +3778,11 @@ begin
   end;
 
   if native.GetBoolSetting('razer.enabled', false) and chroma.Initialized then
+  {$ifdef Windows}
+    Chroma.SetStaticAll(clRazerRed);
+  {$else}
       Chroma.SetBreathDualAll(clRazerRed, clRazerBlack);
+  {$endif}
 
   doFlash := native.GetBoolSetting('alerts.flash.high', false);
   if (not highAlerted) and doFlash then
@@ -3817,7 +3821,11 @@ begin
     native.StartBadgeFlash(lVal.Caption, bg_color_lo, 20000, 400);
 
   if native.GetBoolSetting('razer.enabled', false) and chroma.Initialized then
+  {$ifdef Windows}
+    Chroma.SetStaticAll(clRazerBlue);
+  {$else}
       Chroma.SetBreathDualAll(clRazerBlue, clRazerBlack);
+  {$endif}
 end;
 
 procedure TfBG.HandleNormalGlucose(const b: BGReading);
