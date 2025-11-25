@@ -67,7 +67,7 @@ kdebadge,
 LazFileUtils, uconf, trndi.native, Trndi.API,
 trndi.api.xDrip,{$ifdef DEBUG} trndi.api.debug_custom, trndi.api.debug, trndi.api.debug_edge, trndi.api.debug_missing, trndi.api.debug_perfect, trndi.api.debug_firstmissing,{$endif}
 {$ifdef LCLQt6}Qt6, QtWidgets,{$endif}
-StrUtils, TouchDetection, ufloat, LCLType, trndi.webserver.threaded;
+StrUtils, TouchDetection, ufloat, LCLType, trndi.webserver.threaded, RazerChromaFactory, RazerChroma;
 
 type
 TFloatIntDictionary = specialize TDictionary<single, integer>;
@@ -303,6 +303,8 @@ private
   MediaController: TSystemMediaController;
   FWebServer: TObject; // TTrndiWebServer - using TObject to avoid circular dependency
   tWebServerStart: TTimer;
+
+  Chroma: TRazerChromaBase;
 
   function dotsInView: integer;
   function setColorMode: boolean;
@@ -927,7 +929,7 @@ begin
       // Simulate the original lVal text at 92% transparency (0.92 where 1=fully transparent)
       // Formula: blended = (originalTextColor * opacity + panelColor * transparency)
       // where transparency = 0.92 and opacity = 0.08
-      Font.Color := RGB(Round(GetRValue(lVal.Font.Color) * 0.18 +
+      Font.Color := lclintf.RGB(Round(GetRValue(lVal.Font.Color) * 0.18 +
         GetRValue(P.Color) * 0.82), Round(GetGValue(lVal.Font.Color) *
         0.18 + GetGValue(P.Color) * 0.82), Round(GetBValue(lVal.Font.Color) *
         0.18 + GetBValue(P.Color) * 0.82));
@@ -2267,6 +2269,8 @@ procedure LoadUserSettings(f: TfConf);
       edURLLow.Text := GetSetting('url_remote.url_low', '');
       edURLPerfect.Text := GetSetting('url_remote.url_perfect', '');
 
+      cbChroma.Checked := GetBoolSetting('razer.enabled', false);
+
       cbMusicPause.Checked := GetBoolSetting('media.pause');
       fsHi.Enabled := cbCust.Checked;
       fsLo.Enabled := cbCust.Checked;
@@ -2508,6 +2512,8 @@ procedure SaveUserSettings(f: TfConf);
       SetSetting('url_remote.url_low', edURLLow.Text);
       SetSetting('url_remote.url_perfect', edURLPerfect.Text);
 
+      SetBoolSetting('razer.enabled', cbChroma.Checked);
+
       SetBoolSetting('media.pause', cbMusicPause.Checked);
 
       SetColorSetting('ux.bg_color_ok', cl_ok_bg.ButtonColor);
@@ -2536,6 +2542,7 @@ procedure SaveUserSettings(f: TfConf);
 
 var
   s: string;
+  i: integer;
 begin
   fConf := TfConf.Create(Self);
   try
@@ -2557,6 +2564,15 @@ begin
       fConf.cbSys.Items.Add('* Debug First Reading Missing *');
       {$endif}
     end;
+
+     fConf.chroma := TRazerChromaFactory.CreateInstance;
+     if not fconf.chroma.Initialize then
+       fConf.lbChroma.Items.Add('No Razer driver detected')
+     else begin
+       for i := 0 to fConf.Chroma.GetDeviceCount - 1 do
+        fConf.lbChroma.Items.Add(fConf.Chroma.GetDevice(i).Name);
+     end;
+      fConf.Chroma.Free;
 
     // Initialize form with user settings
     LoadUserSettings(fConf);
@@ -3761,6 +3777,9 @@ begin
     native.getURL(url, url);
   end;
 
+  if native.GetBoolSetting('razer.enabled', false) and chroma.Initialized then
+      Chroma.SetBreathDualAll(clRazerRed, clRazerBlack);
+
   doFlash := native.GetBoolSetting('alerts.flash.high', false);
   if (not highAlerted) and doFlash then
     native.StartBadgeFlash(lVal.Caption, bg_color_hi, 15000, 450);
@@ -3796,6 +3815,9 @@ begin
   doFlash := native.GetBoolSetting('alerts.flash.low', false);
   if (not lowAlerted) and doFlash then
     native.StartBadgeFlash(lVal.Caption, bg_color_lo, 20000, 400);
+
+  if native.GetBoolSetting('razer.enabled', false) and chroma.Initialized then
+      Chroma.SetBreathDualAll(clRazerBlue, clRazerBlack);
 end;
 
 procedure TfBG.HandleNormalGlucose(const b: BGReading);

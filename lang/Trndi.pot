@@ -326,6 +326,10 @@ msgctxt "tfconf.caption"
 msgid "Settings"
 msgstr ""
 
+#: tfconf.cbchroma.caption
+msgid "Enable Razer Chroma integration"
+msgstr ""
+
 #: tfconf.cbcust.caption
 msgctxt "tfconf.cbcust.caption"
 msgid "Use custom values"
@@ -626,8 +630,24 @@ msgctxt "tfconf.label28.caption"
 msgid "Perfect Reading (5.5mmol/L or 100 mg/dL)"
 msgstr ""
 
+#: tfconf.label29.caption
+msgid "Trndi can control the color of Razer keyboards, mouses and other devices"
+msgstr ""
+
 #: tfconf.label3.caption
 msgid "Nickname:"
+msgstr ""
+
+#: tfconf.label30.caption
+msgid "Trndi will control these devices:"
+msgstr ""
+
+#: tfconf.label31.caption
+msgid "Units will pule in red on high and blue on low"
+msgstr ""
+
+#: tfconf.label32.caption
+msgid "NOTE: Razer Synapse required on Windows; OpenRazer on Linux. No macOS support at this time."
 msgstr ""
 
 #: tfconf.label4.caption
@@ -775,6 +795,10 @@ msgstr ""
 
 #: tfconf.tsbackgrounds.caption
 msgid "Backgrounds"
+msgstr ""
+
+#: tfconf.tschroma.caption
+msgid "Razer Chroma"
 msgstr ""
 
 #: tfconf.tscolors.caption

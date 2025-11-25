@@ -563,6 +563,13 @@ begin
     showWarningPanel(RS_NO_BOOT_READING);
   end;
 
+  Chroma := TRazerChromaFactory.CreateInstance;
+  if native.GetBoolSetting('razer.enabled', false) then
+    if not Chroma.Initialize then
+    begin
+      Showmessage('❌ Failed to initialize Razer Chroma: ', Chroma.LastError);
+    end;
+
   // Cleanup splash screen
   fSplash.Close;
   fSplash.Free;
