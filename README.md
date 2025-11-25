@@ -62,7 +62,8 @@ It also supports the _xDrip_ app, connecting over the local network/WiFi.
 * Integrates with Windows, macOS and Linux special features such as the macOS dock, Windows taskbar and Linux notifications.
 * Supports low, normal and high blood sugar colors. But also __custom ranges__ such as "normal, but on the edge to high"
 * Offers a [WebAPI](doc/WebAPI.md) for other clients to access glucose data
-* Supports experimental [predictions](guides/Predictions.md).
+* Supports experimental [predictions](guides/Predictions.md)
+* Supports Razer Chroma on Windows and Linux
 
 ### Multi-user support
 Need to see more than one person? Trndi supports [parallel users](guides/Multiuser.md).
