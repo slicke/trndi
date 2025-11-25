@@ -1,3 +1,30 @@
+(*
+ * This file is part of Trndi (https://github.com/slicke/trndi).
+ * Copyright (c) 2021-2025 Björn Lindh.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ * ---------
+ *
+ * GitHub: https://github.com/slicke/trndi
+ *)
+{**
+  @unit RazerChroma
+  @brief Shared definitions for discovering and driving Razer Chroma devices.
+  @details
+    The unit introduces the cross-platform device model, the abstract effect API used by
+    `TRazerChromaBase` descendants, and helpers for converting colors between `TRGBColor`
+    records and SDK integers.
+}
 unit RazerChroma;
 
 {$mode objfpc}{$H+}
@@ -8,12 +35,12 @@ uses
   SysUtils, Classes, contnrs;
 
 type
-  { TRGBColor }
+  {** Packed RGB values used when issuing Chroma effects. }
   TRGBColor = packed record
     R, G, B: Byte;
   end;
 
-  { TRazerDeviceType }
+  {** Enumerates the Razer device categories exposed through the SDK/daemon. }
   TRazerDeviceType = (
     rdtUnknown,
     rdtKeyboard,
@@ -25,7 +52,7 @@ type
     rdtLaptop
   );
 
-  { TRazerDevice }
+  {** Represents a Razer device entry discovered during enumeration. }
   TRazerDevice = class
   private
     FSerial: string;
@@ -37,12 +64,13 @@ type
     property DeviceType: TRazerDeviceType read FDeviceType write FDeviceType;
   end;
 
-  { TRazerDeviceList }
+  {** Owned list of `TRazerDevice` instances, keyed by serial number. }
   TRazerDeviceList = class(TObjectList)
   private
     function GetDevice(Index: Integer): TRazerDevice;
   public
     function Add(ADevice: TRazerDevice): Integer;
+    {** Returns the device matching `ASerial` or nil when the serial is unknown. }
     function FindBySerial(const ASerial: string): TRazerDevice;
     property Items[Index: Integer]: TRazerDevice read GetDevice; default;
   end;
@@ -56,7 +84,14 @@ type
   { TRazerEffectSpeed }
   TRazerEffectSpeed = (resSlow = 1, resMedium = 2, resFast = 3);
 
-  { TRazerChromaBase - Abstract base class }
+  {**
+    @class TRazerChromaBase
+    @brief Abstract driver that normalizes initialization, device enumeration, and effect APIs.
+    @details
+      Each platform-specific descendant overrides `DoInitialize`/`DoSet*` when interacting with the
+      native Razer SDK or OpenRazer daemon. The base class exposes strongly typed `Set*` helpers along
+      with `LastError` tracking so callers can react when an effect fails.
+  }
   TRazerChromaBase = class abstract
   protected
     FInitialized: Boolean;
@@ -126,10 +161,34 @@ type
     property LastError: string read FLastError;
   end;
 
-// Helper functions
+{**
+  @brief Create a `TRGBColor` from explicit channel components.
+  @param R Red channel in the range 0..255.
+  @param G Green channel in the range 0..255.
+  @param B Blue channel in the range 0..255.
+  @returns Constructed color record.
+}
 function RGB(R, G, B: Byte): TRGBColor;
+
+{**
+  @brief Convert a color record to a packed integer accepted by the SDK.
+  @param AColor Color to convert.
+  @returns Integer value with RGB channels packed as `$RRGGBB`.
+}
 function RGBToInt(const AColor: TRGBColor): Integer;
+
+{**
+  @brief Restore a `TRGBColor` from a packed integer value.
+  @param AValue Packed `$RRGGBB` value.
+  @returns Equivalent color record.
+}
 function IntToRGB(AValue: Integer): TRGBColor;
+
+{**
+  @brief Human-readable name for a `TRazerDeviceType`.
+  @param AType Device type to describe.
+  @returns Description such as 'Keyboard' or 'Mousepad'.
+}
 function DeviceTypeToStr(AType: TRazerDeviceType): string;
 
 // Predefined colors
