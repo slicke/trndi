@@ -49,7 +49,7 @@ Graphics, Dialogs, LCLTranslator, trndi.native, lclintf, ColorBox,
 slicke.ux.alert, slicke.ux.native, VersionInfo, trndi.funcs, buildinfo, StrUtils,
   // Backend APIs for label captions
 trndi.api, trndi.api.nightscout, trndi.api.nightscout3, trndi.api.dexcom,
-trndi.api.xdrip;
+trndi.api.xdrip, RazerChroma;
 
 type
 
@@ -104,6 +104,7 @@ TfConf = class(TForm)
   cbPredictShort: TCheckBox;
   cbTirBar: TColorButton;
   cbTirBarCustom: TColorButton;
+  cbChroma: TCheckBox;
   cl_hi_bg: TColorButton;
   cl_hi_bg_cust: TColorButton;
   cl_hi_txt: TColorButton;
@@ -163,6 +164,10 @@ TfConf = class(TForm)
   Label26: TLabel;
   Label27: TLabel;
   Label28: TLabel;
+  Label29: TLabel;
+  Label30: TLabel;
+  Label31: TLabel;
+  Label32: TLabel;
   lbExtensions: TListBox;
   lCopyright: TLabel;
   lExtCopyright: TLabel;
@@ -170,6 +175,7 @@ TfConf = class(TForm)
   lArch: TLabel;
   lExtName: TLabel;
   lHiOver2: TLabel;
+  lbChroma: TListBox;
   lOS: TLabel;
   lProblematic: TLabel;
   lTestAnnounce: TLabel;
@@ -241,6 +247,7 @@ TfConf = class(TForm)
   seTIR: TSpinEdit;
   spTHRESHOLD: TSpinEdit;
   TabSheet1: TTabSheet;
+  tsChroma: TTabSheet;
   tsExt: TTabSheet;
   tsBackgrounds: TTabSheet;
   tsTexts: TTabSheet;
@@ -301,7 +308,7 @@ TfConf = class(TForm)
 private
 
 public
-
+  chroma: TRazerChromaBase;
 end;
 
 var

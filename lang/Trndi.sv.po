@@ -342,6 +342,10 @@ msgctxt "tfconf.caption"
 msgid "Settings"
 msgstr "Inställningar"
 
+#: tfconf.cbchroma.caption
+msgid "Enable Razer Chroma integration"
+msgstr "Slå på Razer Chroma-integrationen"
+
 #: tfconf.cbcust.caption
 msgctxt "tfconf.cbcust.caption"
 msgid "Use custom values"
@@ -643,9 +647,25 @@ msgctxt "tfconf.label28.caption"
 msgid "Perfect Reading (5.5mmol/L or 100 mg/dL)"
 msgstr "Perfekt avläsning (5,5mmol/L eller 100 mg/dL)"
 
+#: tfconf.label29.caption
+msgid "Trndi can control the color of Razer keyboards, mouses and other devices"
+msgstr "Trndi kan kontrollera färgen på Razertangentbord, möss och andra enheter"
+
 #: tfconf.label3.caption
 msgid "Nickname:"
 msgstr "Smeknamn:"
+
+#: tfconf.label30.caption
+msgid "Trndi will control these devices:"
+msgstr "Trndi kommer kontrollera dessa enheter:"
+
+#: tfconf.label31.caption
+msgid "Units will pule in red on high and blue on low"
+msgstr "Enheterna kommer pulsera i rött vid högt och blått vid lågt"
+
+#: tfconf.label32.caption
+msgid "NOTE: Razer Synapse required on Windows; OpenRazer on Linux. No macOS support at this time."
+msgstr "OBS: Razer Synapse krävs på Windows; OpenRazer på Linux. Inget stöd för macOS just nu."
 
 #: tfconf.label4.caption
 msgid "Window start-up position"
@@ -793,6 +813,10 @@ msgstr "Tid-i-målområde"
 #: tfconf.tsbackgrounds.caption
 msgid "Backgrounds"
 msgstr "Bakgrunder"
+
+#: tfconf.tschroma.caption
+msgid "Razer Chroma"
+msgstr "Razer Chroma"
 
 #: tfconf.tscolors.caption
 msgid "Colors"
