@@ -53,6 +53,9 @@ uses
   {$IFDEF WINDOWS}
   RazerChromaWindows;
   {$ENDIF}
+  {$IFDEF DARWIN}
+  RazerChromaMac;
+  {$ENDIF}
 
 class function TRazerChromaFactory.CreateInstance: TRazerChromaBase;
 begin
