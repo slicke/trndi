@@ -523,6 +523,10 @@ msgstr "Åsidosätt höga / låga gränser"
 msgid "Play Media"
 msgstr "Spela Media"
 
+#: tfconf.gboverride3.caption
+msgid "Use URL"
+msgstr ""
+
 #: tfconf.groupbox1.caption
 msgid "System Features"
 msgstr "Systemfunktioner"
@@ -569,6 +573,7 @@ msgid "Low (eg https://open.spotify.com/... or spotify:track:...)"
 msgstr "Låg (t ex https://open.spotify.com/... eller spotify:track:...)"
 
 #: tfconf.label12.caption
+msgctxt "tfconf.label12.caption"
 msgid "Perfect Reading (5.5mmol/L or 100 mg/dL)"
 msgstr "Perfekt avläsning (5,5mmol/L eller 100 mg/dL)"
 
@@ -620,6 +625,24 @@ msgstr "Ändra Trndis standardfärger för text, beroende på glukosavläsning"
 #: tfconf.label24.caption
 msgid "Change Trndi's default background and colors, when in the custom range"
 msgstr "Ändra Trndis standardfärger för bakgrund och text, när du är i eget område"
+
+#: tfconf.label25.caption
+msgid "Trndi can load a URL when high/low"
+msgstr ""
+
+#: tfconf.label26.caption
+msgid "High (eg https://url.local/hi"
+msgstr ""
+
+#: tfconf.label27.caption
+msgid "Low (eg https://url.local/lo)"
+msgstr ""
+
+#: tfconf.label28.caption
+#, fuzzy
+msgctxt "tfconf.label28.caption"
+msgid "Perfect Reading (5.5mmol/L or 100 mg/dL)"
+msgstr "Perfekt avläsning (5,5mmol/L eller 100 mg/dL)"
 
 #: tfconf.label3.caption
 msgid "Nickname:"
@@ -1761,3 +1784,4 @@ msgstr "Du kan använda skift+<nummerr> för att manuellt sätta synligheten (0 
 #: ufloat.rscustomsize
 msgid "You can hold down shift and plus (+) or minus (-) to change the window size"
 msgstr "Du kan hålla ned skift och plus (+) eller minus (-) för att justera fönstrets storlek"
+

@@ -98,6 +98,9 @@ TfConf = class(TForm)
   cl_ok_txt: TColorButton;
   eAddr: TEdit;
   edCommaSep: TEdit;
+  edURLHigh: TEdit;
+  edURLLow: TEdit;
+  edURLPerfect: TEdit;
   edNick: TEdit;
   eDot: TEdit;
   eDotNow: TEdit;
@@ -115,6 +118,7 @@ TfConf = class(TForm)
   gbMulti: TGroupBox;
   gbOverride: TGroupBox;
   gbOverride2: TGroupBox;
+  gbOverride3: TGroupBox;
   GroupBox1: TGroupBox;
   GroupBox2: TGroupBox;
   GroupBox3: TGroupBox;
@@ -137,6 +141,10 @@ TfConf = class(TForm)
   Label22: TLabel;
   Label23: TLabel;
   Label24: TLabel;
+  Label25: TLabel;
+  Label26: TLabel;
+  Label27: TLabel;
+  Label28: TLabel;
   lbExtensions: TListBox;
   lCopyright: TLabel;
   lExtCopyright: TLabel;
