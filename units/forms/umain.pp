@@ -69,6 +69,14 @@ trndi.api.xDrip,{$ifdef DEBUG} trndi.api.debug_custom, trndi.api.debug, trndi.ap
 {$ifdef LCLQt6}Qt6, QtWidgets,{$endif}
 StrUtils, TouchDetection, ufloat, LCLType, trndi.webserver.threaded, RazerChromaFactory, RazerChroma;
 
+{** Main application unit exposing the primary UI and helpers for the
+  Trndi application. This unit defines the `TfBG` form which handles
+  presentation of CGM readings, predictions, alerts, and integrations
+  with backends and the built-in web server.
+
+  Keep PasDoc blocks in the interface section to ensure they are
+  included in generated documentation.
+}
 type
 TFloatIntDictionary = specialize TDictionary<single, integer>;
   // Specialized TDictionary
@@ -103,6 +111,13 @@ public
 end;
 {$endif}
 
+{** Application main form.
+  The `TfBG` class is responsible for the primary user interface: displaying
+  current glucose readings, managing alerts, trends/dots, and exposing
+  small helpers used by the application web server for remote clients.
+  Important UI lifecycle methods (e.g., FormCreate, FormShow, FormDestroy)
+  are documented to clarify their role during initialization and shutdown.
+}
 TfBG = class(TForm)
   apMain: TApplicationProperties;
   bSettings: TButton;
@@ -188,15 +203,26 @@ TfBG = class(TForm)
   tMissed: TTimer;
   tTouch: TTimer;
   tMain: TTimer;
-  procedure AdjustGraph;
+    {** Recompute and apply layout offsets for all graph elements.
+      This adjusts trend dots, labels and other elements when the UI size or
+      dot-count changes to keep everything visually aligned.
+     }
+    procedure AdjustGraph;
   procedure bSettingsClick(Sender: TObject);
   procedure fbReadingsDblClick(Sender: TObject);
   procedure FormActivate(Sender: TObject);
   procedure FormClick(Sender: TObject);
   procedure FormCloseQuery(Sender: TObject; var CanClose: boolean);
   procedure FormClose(Sender: TObject; var {%H-}CloseAction: TCloseAction);
+  {** Initialize UI state, load configuration, start any required services,
+      and prepare connections to backends and extensions.
+      Called by the framework when the form instance is created.
+   }
   procedure FormCreate(Sender: TObject);
   procedure FormDblClick(Sender: TObject);
+  {** Shutdown and cleanup all resources, including timers, web server, and
+      persistent connections. Called when the form is destroyed.
+   }
   procedure FormDestroy(Sender: TObject);
   procedure FormKeyPress(Sender: TObject; var Key: char);
   procedure DotPaint(Sender: TObject);
@@ -273,7 +299,7 @@ TfBG = class(TForm)
   procedure tTouchTimer(Sender: TObject);
   procedure TfFloatOnHide(Sender: TObject);
 private
-  FStoredWindowInfo: record
+  FStoredWindowInfo: record // Saved geometry and window state for restore/toggle
     Left, Top, Width, Height: integer;
     WindowState: TWindowState;
     BorderStyle: TFormBorderStyle;
@@ -288,9 +314,9 @@ private
   FCachedTextHeight: integer;
   FCachedFontSize: integer;
   FCachedFontName: string;
-  FLastReadingsHash: cardinal;
-  FLastAPICall: TDateTime;
-  FCachedReadings: array of BGReading;
+  FLastReadingsHash: cardinal; // Hash of last readings for change detection
+  FLastAPICall: TDateTime; // Timestamp of the last successful API call
+  FCachedReadings: array of BGReading; // Readings saved from last fetch
   FLastUIColor: TColor;
   FLastUICaption: string;
   FLastTir: string;
@@ -316,6 +342,10 @@ private
     clearDisplayValues: boolean = false);
   procedure CalcRangeTime;
   function GetValidatedPosition: TrndiPos;
+    {** Acquire the latest reading(s) and process them for display.
+        @param(boot  Treat as initial load to bypass some caches.)
+        @returns(True when the UI should be refreshed based on new values.)
+     }
   function updateReading(boot: boolean = false): boolean;
   procedure PlaceTrendDots(const Readings: array of BGReading);
   procedure actOnTrend(proc: TTrendProc);
@@ -331,13 +361,34 @@ private
   function CalculateDotVisualOffset: integer;
 
     // Helper methods for update procedure
+  {** Fetch readings from the configured data source(s) and validate them.
+      The resulting values are stored in `FCachedReadings` on success.
+      @returns(True if a valid dataset was retrieved.)
+   }
   function FetchAndValidateReadings: boolean;
+  {** Under-the-hood implementation of FetchAndValidateReadings.
+      @param(ForceRefresh  Force bypass of any caching.)
+      @returns(True on successful fetch/validation.)
+   }
   function DoFetchAndValidateReadings(const ForceRefresh: boolean): boolean;
     // Common implementation
+  {** Process the current reading and update any internal state derived from it
+      (e.g., predicted values, cached metadata). This is a small helper used
+      by the main update loop to keep logic modular.
+   }
   procedure ProcessCurrentReading;
   function IsDataFresh: boolean;
+  {** Configure the timer for the next update based on the last reading time.
+      This helps reduce unnecessary polling by setting intelligent intervals
+      based on recency and backend requirements.
+   }
   procedure SetNextUpdateTimer(const LastReadingTime: TDateTime);
+  {** Apply visual changes following the latest readings, such as redraws and
+      color/label updates depending on thresholds and state.
+   }
   procedure UpdateUIBasedOnGlucose;
+  {** Perform deferred work required after the main UI update chain has finished.
+   }
   procedure CompleteUIUpdate;
   procedure FinalizeUIUpdate;
   procedure HandleHighGlucose(const {%H-}b: BGReading);
@@ -355,14 +406,32 @@ private
     const BgColor: TColor; const DarkenFactor: double = 0.6;
     const LightenFactor: double = 0.4; const PreferLighter: boolean = false): TColor;
 
-  // Web server methods
+    // Web server methods
+    {** Initialize and start the integrated web server which provides basic
+      HTTP endpoints for reading data and predictions.
+     }
   procedure StartWebServer;
+    {** Stop and tear down the integrated web server.
+     }
   procedure StopWebServer;
+    {** Return the current readings formatted as BGResults for use by the web API.
+      @returns(Array of BGReading representing the current reading(s).)
+     }
   function GetCurrentReadingForWeb: BGResults;
+    {** Return predictions formatted as BGResults for web clients.
+      Useful for simple web-based display of short-term predictions.
+     }
   function GetPredictionsForWeb: BGResults;
+    {** Indicates whether the web server is active and serving connections.
+      @returns(True when a server is running.)
+     }
   function WebServerActive: boolean;
   procedure tWebServerStartTimer(Sender: TObject);
 
+  {** Refresh trend-related UI elements like labels and trend markers.
+      Called after readings are processed to ensure the trend visuals match
+      the calculated BGTrend values.
+   }
   procedure UpdateTrendElements;
   procedure UpdateApiInformation;
   procedure ResizeUIElements;
@@ -4546,8 +4615,8 @@ begin
           'Latest release: ' + latestRelease + LineEnding + LineEnding +
           'Note: Dev builds are always considered "newer" than releases')
       else
-        ShowMessage(RS_UPTODATE)// Show debug info for dev builds
-    ;
+        ShowMessage(RS_UPTODATE);// Show debug info for dev builds
+
     // Silently ignore if up to date when ShowUpToDateMessage is false
   except
     on E: Exception do
