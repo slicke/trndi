@@ -713,6 +713,10 @@ begin
   // Stop web server first to prevent callbacks during shutdown
   StopWebServer;
 
+
+  if assigned(chroma) then
+    chroma.free;
+
   // These should already be freed in FormClose, but check just to be safe
   if assigned(native) then
   begin
