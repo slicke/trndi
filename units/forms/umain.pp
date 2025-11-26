@@ -253,6 +253,10 @@ TfBG = class(TForm)
   procedure FormMouseLeave(Sender: TObject);
   procedure FormMouseMove(Sender: TObject;{%H-}Shift: TShiftState; X, Y: integer);
   procedure FormResize(Sender: TObject);
+  {** Called when the form becomes visible after creation; performs final
+      placement operations and triggers initial UI refreshes once all controls
+      are initialized and loaded.
+   }
   procedure FormShow(Sender: TObject);
   procedure FormPaint(Sender: TObject);
   procedure lAgoClick(Sender: TObject);
@@ -347,6 +351,11 @@ private
         @returns(True when the UI should be refreshed based on new values.)
      }
   function updateReading(boot: boolean = false): boolean;
+  {** Map incoming readings to the visual trend slots. This function sorts and
+      anchors readings to a fixed grid (5-minute intervals) and updates the
+      state of `TrendDots` accordingly.
+      @param(Readings The array of BGReading to map.)
+   }
   procedure PlaceTrendDots(const Readings: array of BGReading);
   procedure actOnTrend(proc: TTrendProc);
   procedure actOnTrend(proc: TTrendProcLoop);
@@ -358,6 +367,11 @@ private
   procedure ExpandDot(l: TDotControl; c, ix: integer);
   procedure CreateTrendDots;
   procedure placeForm;
+  {** Analyze a generated glyph bitmap for the dot character to compute a
+      vertical offset that aligns limit lines with the visual center of
+      a drawn dot across widgetset/font differences.
+      @returns(integer offset in pixels.)
+   }
   function CalculateDotVisualOffset: integer;
 
     // Helper methods for update procedure
@@ -390,6 +404,10 @@ private
   {** Perform deferred work required after the main UI update chain has finished.
    }
   procedure CompleteUIUpdate;
+  {** Final housekeeping after the UI update pipeline completes. Ensures that
+      timers, overlays and other stateful UI pieces are synchronized after
+      a new reading or manual refresh.
+   }
   procedure FinalizeUIUpdate;
   procedure HandleHighGlucose(const {%H-}b: BGReading);
   procedure HandleLowGlucose(const {%H-}b: BGReading);
@@ -397,11 +415,26 @@ private
   procedure UpdateOffRangePanel(const Value: double);
   procedure DisplayLowRange;
   procedure DisplayHighRange;
+  {** Called when the update flow is completed to set final badges, floating
+      window and other OS integrations. Ensures internal caches are updated
+      so that redundant repaints are avoided until next change.
+   }
   procedure FinalizeUpdate;
   procedure UpdateFloatingWindow;
   procedure UpdateUIColors;
+  {** Compute an appropriate foreground (text) color for the provided background.
+      Uses lightness heuristics to choose whether to darken or lighten the
+      base color and returns a safe contrasting foreground color.
+      @param(BgColor The background color to calculate contrast for.)
+      @returns(TColor suitable for text over the given background.)
+   }
   function GetTextColorForBackground(const BgColor: TColor;
     const DarkenFactor: double = 0.5; const LightenFactor: double = 0.3): TColor;
+  {** Adjust a base color so that it remains visible/readable against a
+      specified background color by darkening or lightening accordingly.
+      @param(PreferLighter Try to prefer a lighter color if set True.)
+      @returns(Adjusted foreground color.)
+   }
   function GetAdjustedColorForBackground(const BaseColor: TColor;
     const BgColor: TColor; const DarkenFactor: double = 0.6;
     const LightenFactor: double = 0.4; const PreferLighter: boolean = false): TColor;
@@ -433,16 +466,39 @@ private
       the calculated BGTrend values.
    }
   procedure UpdateTrendElements;
+  {** Refresh labels and menu captions that display API-derived thresholds
+      and other backend metadata (e.g., cgmHi/cgmLo values).
+   }
   procedure UpdateApiInformation;
+  {** Recompute layout and sizes of UI elements when the form size or scale
+      changes. This includes updating of panels, labels and dot metrics.
+   }
   procedure ResizeUIElements;
+  {** Iterate over all trend dots and update their position and visibility
+      based on the data in `TrendDots[].Hint`. This only adjusts visuals and
+      doesn't fetch data from backends.
+   }
   procedure UpdateTrendDots;
+  {** Scale a TLabel font size to fit within its bounds using a binary search.
+      This utility is used across many UI labels to ensure readable and
+      consistent visual sizes across different screen resolutions.
+   }
   procedure ScaleLbl(ALabel: TLabel; customAl: TAlignment = taCenter;
     customTl: TTextLayout = tlCenter);
 
     // Performance optimization methods
+  {** Compute a simple hash of an array of readings used for change detection
+      to avoid unnecessary UI updates when data didn't change.
+   }
   function CalculateReadingsHash(const Readings: array of BGReading): cardinal;
+  {** Determine whether the UI needs to refresh by comparing cached state
+      to new candidate state (colors, captions, TIR). This reduces flicker
+      and expensive redraws.
+   }
   function ShouldUpdateUI(const NewColor: TColor; const NewCaption: string;
     const NewTIR: string; const NewTIRColor: TColor): boolean;
+  {** Store the current UI state values for later comparisons in ShouldUpdateUI.
+   }
   procedure CacheUIState(const UIColor: TColor; const UICaption: string;
     const UITir: string; const UITirColor: TColor);
   function FetchAndValidateReadingsForced: boolean;
@@ -452,16 +508,38 @@ private
     CurrentTime: TDateTime);
   procedure ProcessTimeIntervals(const SortedReadings: array of BGReading;
     CurrentTime: TDateTime);
+  {** Update a specific UI trend label (slot) to reflect a BGReading.
+      Sets hint, caption, tag and positions the label according to its value.
+      @param(SlotIndex Index of the visual slot to update (0=rightmost/most recent)).
+      @param(Reading The BGReading to display.)
+      @returns(True when the slot was successfully updated.)
+   }
   function UpdateLabelForReading(SlotIndex: integer;
     const Reading: BGReading): boolean;
+  {** Choose a color to display for a reading based on threshold configuration.
+      This uses the current API's `cgmLo/cgmHi` and `cgmRangeLo/cgmRangeHi` to
+      map a reading value to a foreground color suitable for text/labels.
+   }
   function DetermineColorForReading(const Reading: BGReading): TColor;
+  {** Toggle full-screen mode; handles saving/restoring window placement and
+      adjusts window border/style for the requested state. Platform-specific
+      behaviors (macOS) are delegated to ToggleFullscreenMac.
+   }
   procedure DoFullScreen;
+  {** Fetch and display short-term predictions (e.g., 5/10/15 minute values)
+      in `lPredict`. Predictions are optional and controlled by user settings;
+      when unavailable, the label is hidden.
+   }
   procedure UpdatePredictionLabel;
   {$ifdef DARWIN}
   procedure ToggleFullscreenMac;
   {$endif}
 
   {$ifdef TrndiExt}
+  {** Load and initialize optional extensions engine and JS functions.
+      This is only compiled when `TrndiExt` is enabled and will create the
+      extension engine instance and register callbacks used by UI and APIs.
+   }
   procedure LoadExtensions;
   {$endif}
 
@@ -477,13 +555,26 @@ private
   procedure LoadUserProfile;
   procedure CheckAndAcceptLicense;
   function InitializeAPI: boolean;
+  {** Check GitHub releases for newer versions of Trndi and optionally notify
+      the user. When `ShowUpToDateMessage` is True, a message will be shown
+      when the application is already current.
+   }
   procedure CheckForUpdates(ShowUpToDateMessage: boolean = false);
 public
   firstboot: boolean;
-  procedure AppExceptionHandler(Sender: TObject; {%H-}E: Exception);
-  procedure onGH({%H-}Sender: TObject);
-  function lastReading: BGReading;
-  function tryLastReading(out bg: BGReading): boolean;
+    {** Generic application exception handler used for reporting unhandled
+      exceptions during runtime to a unified error dialog.
+     }
+    procedure AppExceptionHandler(Sender: TObject; {%H-}E: Exception);
+    procedure onGH({%H-}Sender: TObject);
+    {** Return the most recent reading (the newest element in `bgs`).
+      Caller should ensure `bgs` is not empty (use `tryLastReading` first).
+     }
+    function lastReading: BGReading;
+    {** Safely get the most recent reading as an out parameter.
+      @returns(True when a reading was present, False when `bgs` is empty.)
+     }
+    function tryLastReading(out bg: BGReading): boolean;
 end;
 
 
@@ -3182,7 +3273,8 @@ begin
     Dot.Font.Size := round((ClientWidth div 24) * dotscale);
     if ok then
     begin
-      // Normalize value to mmol/L for placement math
+      // Normalize value to mmol/L for placement math; the API may return
+      // values in mg/dL while positioning calculation assumes mmol/L units.
       if un = mgdl then
         Value := Value * BG_CONVERTIONS[mmol][mgdl];
 
@@ -4082,13 +4174,14 @@ begin
   bgs := api.getReadings(MAX_MIN, MAX_RESULT);
   {$endif}
 
-  // Cache the API call and results
+  // Cache the API call and results (used to reduce repeated calls when polling)
   FLastAPICall := Now;
   SetLength(FCachedReadings, Length(bgs));
   if Length(bgs) > 0 then
     Move(bgs[0], FCachedReadings[0], Length(bgs) * SizeOf(BGReading));
 
   // Reapply override settings after API fetch (API may have set its own defaults)
+  // These settings allow users to override server-provided thresholds locally.
   if native.GetBoolSetting('override.enabled') then
   begin
     api.cgmLo := native.GetIntSetting('override.lo', api.cgmLo);
