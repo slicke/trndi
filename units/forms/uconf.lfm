@@ -17,10 +17,10 @@ object fConf: TfConf
     Height = 518
     Top = 11
     Width = 665
-    ActivePage = tsExt
+    ActivePage = tsChroma
     Align = alClient
     BorderSpacing.Around = 5
-    TabIndex = 9
+    TabIndex = 7
     TabOrder = 0
     OnChange = pcMainChange
     object tsGeneral: TTabSheet
@@ -12002,6 +12002,14 @@ object fConf: TfConf
         Top = 456
         Width = 533
         Caption = 'NOTE: Razer Synapse required on Windows; OpenRazer on Linux. No macOS support at this time.'
+      end
+      object cbChromaNormal: TCheckBox
+        Left = 8
+        Height = 20
+        Top = 336
+        Width = 247
+        Caption = 'Make units green when reading is normal'
+        TabOrder = 2
       end
     end
     object tsSystem: TTabSheet
