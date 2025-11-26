@@ -346,6 +346,10 @@ msgstr "Inställningar"
 msgid "Enable Razer Chroma integration"
 msgstr "Slå på Razer Chroma-integrationen"
 
+#: tfconf.cbchromanormal.caption
+msgid "Make units green when reading is normal"
+msgstr ""
+
 #: tfconf.cbcust.caption
 msgctxt "tfconf.cbcust.caption"
 msgid "Use custom values"

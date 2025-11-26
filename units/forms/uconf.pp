@@ -73,6 +73,7 @@ TfConf = class(TForm)
   Button4: TButton;
   bvExt: TBevel;
   bvExt1: TBevel;
+  cbChromaNormal: TCheckBox;
   cbCust: TCheckBox;
   cbCustRange: TCheckBox;
   cbFlashLow: TCheckBox;

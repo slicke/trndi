@@ -2434,6 +2434,7 @@ procedure LoadUserSettings(f: TfConf);
       edURLPerfect.Text := GetSetting('url_remote.url_perfect', '');
 
       cbChroma.Checked := GetBoolSetting('razer.enabled', false);
+      cbChromaNormal.Checked := GetBoolSetting('razer.normal', false);
 
       cbMusicPause.Checked := GetBoolSetting('media.pause');
       fsHi.Enabled := cbCust.Checked;
@@ -2677,6 +2678,7 @@ procedure SaveUserSettings(f: TfConf);
       SetSetting('url_remote.url_perfect', edURLPerfect.Text);
 
       SetBoolSetting('razer.enabled', cbChroma.Checked);
+      SetBoolSetting('razer.normal', cbChromaNormal.Checked);
 
       SetBoolSetting('media.pause', cbMusicPause.Checked);
 
@@ -4039,6 +4041,11 @@ begin
       native.StartBadgeFlash(lVal.Caption, bg_color_ok, 6000, 500);
     // subtle celebratory pulse
   end;
+
+ if assigned(native) and assigned(chroma) then
+    if chroma.Initialized and native.GetBoolSetting('razer.enabled', false) and native.GetBoolSetting('razer.normal', false) then
+      Chroma.SetStaticAll(clRazerGreen);
+
 
   UpdateOffRangePanel(b.val);
 end;
