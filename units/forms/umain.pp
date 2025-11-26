@@ -4047,10 +4047,8 @@ procedure TfBG.fixWarningPanel;
 var
   padding: integer;
   calculatedFontSize: integer;
-  i: integer;
   bg: BGReading;
   last, val: string;
-  tf: TFormatSettings;
 begin
   // Calculate padding consistently
   padding := (ClientWidth div 25);
@@ -4144,7 +4142,6 @@ var
   {$ifdef DEBUG}
   res: string;
   {$endif}
-  i: integer;
 const
   API_CACHE_SECONDS = 10; // Don't call API more than once per 10 seconds
 begin

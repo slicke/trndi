@@ -267,7 +267,7 @@ end;
 procedure TBadgeWorker.Execute;
 var
   ToSend: string;
-  NowTick, WaitMs: QWord;
+  NowTick: QWord;
 begin
   while not Terminated do
   begin
