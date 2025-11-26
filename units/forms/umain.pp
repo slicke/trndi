@@ -4138,10 +4138,10 @@ begin
 end;
 
 function TfBG.DoFetchAndValidateReadings(const ForceRefresh: boolean): boolean;
+{$ifdef DEBUG}
 var
-  {$ifdef DEBUG}
   res: string;
-  {$endif}
+{$endif}
 const
   API_CACHE_SECONDS = 10; // Don't call API more than once per 10 seconds
 begin
