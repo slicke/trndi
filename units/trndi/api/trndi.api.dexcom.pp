@@ -175,7 +175,6 @@ end;
 implementation
 
 resourcestring
-sErrDexPostLogin = 'Login error during post-authentication steps';
 sErrDexPass = 'Invalid Dexcom password or account credentials';
 sErrDexLogin = 'Login error: Could not establish a valid session';
 

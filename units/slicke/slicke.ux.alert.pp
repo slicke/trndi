@@ -1855,7 +1855,7 @@ const
   padding  = 10;
 var
   Dialog: TDialogForm;
-  MainPanel, HtmlPanel, ButtonPanel: TPanel;
+  HtmlPanel: TPanel;
   IconBox: TImage;
   HtmlViewer: TIpHtmlPanel;
   OkButton: {$ifdef Windows}TBitBtn{$else}TButton{$endif};

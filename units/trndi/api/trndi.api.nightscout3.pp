@@ -90,13 +90,6 @@ end;
 
 implementation
 
-type
-  // Minimal auth response structure from /api/v2/authorization/request/<suffix>
-TNSAuthResponse = class
-public
-  token: string;
-end;
-
 {------------------------------------------------------------------------------
   Helper: Normalize and store site base and API base URL.
  ------------------------------------------------------------------------------}
