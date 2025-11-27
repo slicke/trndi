@@ -945,8 +945,13 @@ begin
     Label15.Caption := '<DEBUG IGNORED>';
     lPass.Caption   := '<DEBUG IGNORED>';
   end;
+   '* Debug Custom Backend *':
+   begin
+     label15.caption := 'Show this Reading (mg/dL)';
+     lPass.Caption   := '<DEBUG IGNORED>';
+   end;
     {$endif}
-  end;
+   end;
 end;
 
 procedure TfConf.cbUserClick(Sender: TObject);
