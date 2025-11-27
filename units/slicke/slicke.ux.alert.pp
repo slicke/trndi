@@ -192,7 +192,7 @@ type
     @value uxdAuto Auto-detect (big if touch screen available).
     @value uxdOnForm Render message inline on an existing form (used by @link(UXMessage)).
   }
-  TUXDialogSize = (uxdNormal = 0, uxdBig = 1, uxdAuto = 3, uxdOnForm = 4);
+  TUXDialogSize = (uxdNormal = 0, uxdBig = 1, uxdAuto = 3, uxdOnForm = 4, uxdMedium = 5);
 
   {**
     Available dialog buttons for UX helpers.
@@ -605,14 +605,21 @@ end;
   @returns @true if big layout should be used; @false otherwise.
   @remarks When @code(dialogsize = uxdAuto), it checks @code(TrndiNative.HasTouchScreen).
 }
-function UXDialogIsBig(dialogsize: TUXDialogSize): boolean;
+function GetUXDialogSize(dialogsize: TUXDialogSize): TUXDialogSize;
 begin
   case dialogsize of
-    uxdNormal: result := false;
-    uxdBig:    result := true;
-    uxdAuto:   result := TrndiNative.HasTouchScreen;
+    uxdNormal,
+    uxdBig,
+    uxdMedium:
+      result := dialogsize;
+    uxdAuto: begin
+      if TrndiNative.HasTouchScreen then
+        result := uxdBig
+      else
+        result := uxdNormal;
+    end;
     else
-      result := TrndiNative.HasTouchScreen;
+      result := GetUXDialogSize(uxdAuto);
   end;
 end;
 
@@ -728,7 +735,7 @@ end;
 }
 procedure CreateTitleAndDescription(
   AOwner: TForm;
-  const big: Boolean;
+  const DialogSize: TUXDialogSize;
   const ATitle, ADesc: string;
   IconBox: TImage;
   out TitleLabel, DescLabel: TLabel
@@ -740,7 +747,7 @@ var
   RightContentLeft, AvailableWidth: Integer;
 begin
   // Minimum width for big mode
-  if big and (AOwner.ClientWidth < MinDialogWidth) then
+  if (dialogsize = uxdBig) and (AOwner.ClientWidth < MinDialogWidth) then
     AOwner.ClientWidth := MinDialogWidth;
 
   RightContentLeft := IconBox.Left + IconBox.Width + Padding;
@@ -754,7 +761,10 @@ begin
   TitleLabel.Font.Style := [fsBold];
   TitleLabel.Left := RightContentLeft;
   TitleLabel.Width := AvailableWidth;
-  if big then TitleLabel.Font.Size := 26;
+  case DialogSize of
+    uxdBig: TitleLabel.Font.Size := 24;
+    uxdMedium: TitleLabel.Font.Size := 20;
+  end;
   TitleLabel.Top := Padding;
   TitleLabel.Caption := ATitle;
   TitleLabel.Font.Color := getBaseColor;
@@ -768,8 +778,10 @@ begin
  DescLabel.Font.Style := [];
  DescLabel.Left := TitleLabel.Left;
  DescLabel.Width := AvailableWidth;
- if big then
-   DescLabel.Font.Size := 24;
+ case DialogSize of
+    uxdBig: DescLabel.Font.Size := 24;
+    uxdMedium: DescLabel.Font.Size := 20;
+  end;
  DescLabel.Top := TitleLabel.Top + TitleLabel.Height + Padding;
  DescLabel.Caption := ADesc;
  DescLabel.Font.Color := getBaseColor;
@@ -1035,7 +1047,7 @@ end;
 }
 procedure SetupDialogTitleDesc(
   Dialog: TForm;
-  const big: Boolean;
+  const size: TUXDialogSize;
   const icon: UXImage;
   const bgcol: TColor;
   const ATitle, ADesc: string;
@@ -1052,13 +1064,13 @@ var
 begin
   // --- Ensure minimum dialog width ---
   Dialog.ClientWidth := MinWidthNormal;
-  if big and (Dialog.ClientWidth < MinWidthBig) then
+  if (size = uxdBig) and (Dialog.ClientWidth < MinWidthBig) then
     Dialog.ClientWidth := MinWidthBig;
   Dialog.Color := bgcol;
 
   // --- Icon size scaling ---
   currentIconSize := IconSize;
-  if big then
+  if (size = uxdBig) then
     currentIconSize := IconSize * 2;
 
   // --- Create & position the icon ---
@@ -1082,7 +1094,8 @@ begin
   TitleLabel.Left := IconBox.Left + IconBox.Width + Padding;
   availableWidth := Dialog.ClientWidth - TitleLabel.Left - Padding;
   TitleLabel.Width := availableWidth;
-  if big then TitleLabel.Font.Size := 26;
+  if (size = uxdBig) then TitleLabel.Font.Size := 26;
+  if (size = uxdMedium) then TitleLabel.Font.Size := 22;
   TitleLabel.Top := IconBox.Top; // aligns with icon top
   TitleLabel.Caption := ATitle;
   TitleLabel.Font.Color := getBaseColor;
@@ -1095,7 +1108,10 @@ begin
   DescLabel.Font.Style := [];
   DescLabel.Left := TitleLabel.Left;
   DescLabel.Width := availableWidth;
-  if big then DescLabel.Font.Size := 24;
+  case size of
+    uxdBig: DescLabel.Font.Size := 24;
+    uxdMedium: DescLabel.Font.Size := 20;
+  end;
   DescLabel.Top := TitleLabel.Top + TitleLabel.Height + Padding;
   DescLabel.Caption := ADesc;
   DescLabel.Font.Color := getBaseColor;
@@ -1132,10 +1148,10 @@ var
   Edit: TFloatSpinEditEx;
   OkButton, CancelButton: TButton;
   bgcol: TColor;
-  big: Boolean;
+  size: TUXDialogSize;
   totalButtonsWidth: Integer;
 begin
-  big := UXDialogIsBig(dialogsize);
+  size := GetUXDialogSize(dialogsize);
   Result := 0;
   ModalResult := mrCancel;
   bgcol := getBackground;
@@ -1153,14 +1169,14 @@ begin
     DescLabel := TLabel.Create(Dialog);
 
     // Use shared helper for title + description
-    SetupDialogTitleDesc(Dialog, big, icon, bgcol, ATitle, ADesc, IconBox, TitleLabel, DescLabel);
+    SetupDialogTitleDesc(Dialog, size, icon, bgcol, ATitle, ADesc, IconBox, TitleLabel, DescLabel);
 
     // --- Numeric input ---
     Edit := TFloatSpinEditEx.Create(Dialog);
     Edit.Parent := Dialog;
     Edit.Left := DescLabel.Left;
     Edit.Width := DescLabel.Width;
-    Edit.Top := DescLabel.Top + DescLabel.Height + ifthen(big, Padding * 2, Padding);
+    Edit.Top := DescLabel.Top + DescLabel.Height + ifthen(size = uxdBig, Padding * 2, Padding);
     Edit.Value := ADefault;
     if float then begin
       Edit.DecimalPlaces := 2;
@@ -1168,7 +1184,7 @@ begin
     end
     else
       Edit.DecimalPlaces := 0;
-    if big then
+    if (size = uxdBig) then
     begin
       Edit.Font.Size := 20;
       {$IFDEF Windows} Edit.Height := 42; {$ENDIF}
@@ -1180,7 +1196,7 @@ begin
     OkButton.Caption := smbSelect;
     OkButton.ModalResult := mrOk;
     OkButton.Width := 80;
-    if big then
+    if (size = uxdBig) then
     begin
       OkButton.Width := OkButton.Width * 2;
       OkButton.Height := OkButton.Height * 2;
@@ -1194,7 +1210,7 @@ begin
     CancelButton.Caption := smbUXCancel;
     CancelButton.ModalResult := mrCancel;
     CancelButton.Width := 80;
-    if big then
+    if (size = uxdBig) then
     begin
       CancelButton.Width := CancelButton.Width * 2;
       CancelButton.Height := CancelButton.Height * 2;
@@ -1202,7 +1218,7 @@ begin
     end;
 
     // --- Center buttons ---
-    OkButton.Top := Edit.Top + Edit.Height + ifthen(big, Padding * 3, Padding * 2);
+    OkButton.Top := Edit.Top + Edit.Height + ifthen((size = uxdBig), Padding * 3, Padding * 2);
     CancelButton.Top := OkButton.Top;
     totalButtonsWidth := OkButton.Width + Padding + CancelButton.Width;
     OkButton.Left := (Dialog.ClientWidth - totalButtonsWidth) div 2;
@@ -1274,7 +1290,7 @@ var
 begin
   if (dialogsize = uxdOnForm) then begin
 
-    if (sender <> nil) and (sender.Showing) and (UXDialogIsBig(uxdAuto)) then
+    if (sender <> nil) and (sender.Showing) and (GetUXDialogSize(uxdAuto) = uxdBig) then
     begin
       // On e.g. touch screens display a full screen message
       tp := TPanel.Create(sender); // Create a panel to cover the screen
@@ -1345,12 +1361,12 @@ var
   Edit: TEdit;
   OkButton, CancelButton: TButton;
   bgcol: TColor;
-  big: Boolean;
+  size: TUXDialogSize;
   totalButtonsWidth: Integer;
 begin
   Result := '';
   ModalResult := mrCancel;
-  big := UXDialogIsBig(dialogsize);
+  size := GetUXDialogSize(dialogsize);
   bgcol := getBackground;
 
   Dialog := TDialogForm.CreateNew(nil);
@@ -1366,16 +1382,16 @@ begin
     DescLabel := TLabel.Create(Dialog);
 
     // Use shared helper for consistent title/description layout
-    SetupDialogTitleDesc(Dialog, big, icon, bgcol, ATitle, ADesc, IconBox, TitleLabel, DescLabel);
+    SetupDialogTitleDesc(Dialog, size, icon, bgcol, ATitle, ADesc, IconBox, TitleLabel, DescLabel);
 
     // --- Input field ---
     Edit := TEdit.Create(Dialog);
     Edit.Parent := Dialog;
     Edit.Left := DescLabel.Left;
     Edit.Width := DescLabel.Width;
-    Edit.Top := DescLabel.Top + DescLabel.Height + ifthen(big, Padding * 2, Padding);
+    Edit.Top := DescLabel.Top + DescLabel.Height + ifthen((size = uxdBig), Padding * 2, Padding);
     Edit.Text := ADefault;
-    if big then
+    if (size = uxdBig) then
     begin
       Edit.Font.Size := 20;
       {$IFDEF Windows} Edit.Height := 42; {$ENDIF}
@@ -1387,7 +1403,7 @@ begin
     OkButton.Caption := smbSelect;
     OkButton.ModalResult := mrOk;
     OkButton.Width := 80;
-    if big then
+    if (size = uxdBig) then
     begin
       OkButton.Width := OkButton.Width * 2;
       OkButton.Height := OkButton.Height * 2;
@@ -1401,7 +1417,7 @@ begin
     CancelButton.Caption := smbUXCancel;
     CancelButton.ModalResult := mrCancel;
     CancelButton.Width := 80;
-    if big then
+    if (size = uxdBig) then
     begin
       CancelButton.Width := CancelButton.Width * 2;
       CancelButton.Height := CancelButton.Height * 2;
@@ -1409,7 +1425,7 @@ begin
     end;
 
     // --- Center buttons ---
-    OkButton.Top := Edit.Top + Edit.Height + ifthen(big, Padding * 3, Padding * 2);
+    OkButton.Top := Edit.Top + Edit.Height + ifthen((size = uxdBig), Padding * 3, Padding * 2);
     CancelButton.Top := OkButton.Top;
     totalButtonsWidth := OkButton.Width + Padding + CancelButton.Width;
     OkButton.Left := (Dialog.ClientWidth - totalButtonsWidth) div 2;
@@ -1444,10 +1460,10 @@ var
   OkButton, CancelButton: TButton;
   bgcol: TColor;
   i, totalButtonsWidth: Integer;
-  big: Boolean;
+  size: TUXDialogSize;
 begin
   Result := -1;
-  big := UXDialogIsBig(dialogsize);
+  size := GetUXDialogSize(dialogsize);
   bgcol := getBackground;
 
   Dialog := TDialogForm.CreateNew(nil);
@@ -1462,7 +1478,7 @@ begin
     TitleLabel := TLabel.Create(Dialog);
     DescLabel := TLabel.Create(Dialog);
 
-    SetupDialogTitleDesc(Dialog, big, icon, bgcol, ATitle, ADesc, IconBox, TitleLabel, DescLabel);
+    SetupDialogTitleDesc(Dialog, size, icon, bgcol, ATitle, ADesc, IconBox, TitleLabel, DescLabel);
 
     // --- ComboBox ---
     Combo := TComboBox.Create(Dialog);
@@ -1473,12 +1489,12 @@ begin
     Combo.Style := csDropDownList;
     Combo.Left := DescLabel.Left;
     Combo.Width := DescLabel.Width;
-    if big then
+    if (size = uxdBig) then
     begin
       Combo.Font.Size := 20;
       {$IFDEF Windows} Combo.Height := 42; {$ENDIF}
     end;
-    Combo.Top := DescLabel.Top + DescLabel.Height + ifthen(big, Padding * 2, Padding);
+    Combo.Top := DescLabel.Top + DescLabel.Height + ifthen((size = uxdBig) , Padding * 2, Padding);
     Combo.ItemIndex := 0;
 
     // --- OK Button ---
@@ -1487,7 +1503,7 @@ begin
     OkButton.Caption := smbSelect;
     OkButton.ModalResult := mrOk;
     OkButton.Width := 80;
-    if big then
+    if (size = uxdBig) then
     begin
       OkButton.Width := OkButton.Width * 2;
       OkButton.Height := OkButton.Height * 2;
@@ -1508,7 +1524,7 @@ begin
     end;
 
     CancelButton.Width := 80;
-    if big then
+    if (size = uxdBig) then
     begin
       CancelButton.Width := CancelButton.Width * 2;
       CancelButton.Height := CancelButton.Height * 2;
@@ -1516,7 +1532,7 @@ begin
     end;
 
     // --- Center buttons ---
-    OkButton.Top := Combo.Top + Combo.Height + ifthen(big, Padding * 3, Padding * 2);
+    OkButton.Top := Combo.Top + Combo.Height + ifthen((size = uxdBig) , Padding * 3, Padding * 2);
     CancelButton.Top := OkButton.Top;
     totalButtonsWidth := OkButton.Width + Padding + CancelButton.Width;
     OkButton.Left := (Dialog.ClientWidth - totalButtonsWidth) div 2;
@@ -1555,10 +1571,10 @@ var
   BgCol: TColor;
   OkButton, CancelButton: TButton;
   totalButtonsWidth, i: Integer;
-  big: boolean;
+  size: TUXDialogSize;
 begin
   Result := -1;
-  big := UXDialogIsBig(dialogsize);
+  size := GetUXDialogSize(dialogsize);
   BgCol := getBackground;
 
   Dialog := TDialogForm.CreateNew(nil);
@@ -1573,7 +1589,7 @@ begin
     TitleLabel := TLabel.Create(Dialog);
     DescLabel := TLabel.Create(Dialog);
 
-    SetupDialogTitleDesc(Dialog, big, icon, BgCol, ATitle, ADesc, IconBox, TitleLabel, DescLabel);
+    SetupDialogTitleDesc(Dialog, size, icon, BgCol, ATitle, ADesc, IconBox, TitleLabel, DescLabel);
 
     // --- Grid ---
     Grid := TStringGrid.Create(Dialog);
@@ -1581,7 +1597,7 @@ begin
     Grid.Left := DescLabel.Left;
     Grid.Width := DescLabel.Width;
     Grid.Top := DescLabel.Top + DescLabel.Height + Padding;
-    Grid.Height := ifthen(big, GridHeight + 80, GridHeight);
+    Grid.Height := ifthen((size = uxdBig) , GridHeight + 80, GridHeight);
     Grid.Options := [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goColSizing];
     Grid.ColCount := 2;
     Grid.RowCount := Length(Keys) + 1;
@@ -1596,7 +1612,7 @@ begin
       Grid.Cells[1, i + 1] := Values[i];
     end;
 
-    if big then
+    if (size = uxdBig) then
     begin
       Grid.Font.Size := 14;
       {$IFDEF Windows} Grid.DefaultRowHeight := 28; {$ENDIF}
@@ -1608,7 +1624,7 @@ begin
     OkButton.Caption := smbSelect;
     OkButton.ModalResult := mrOk;
     OkButton.Width := 80;
-    if big then
+    if (size = uxdBig) then
     begin
       OkButton.Width := OkButton.Width * 2;
       OkButton.Height := OkButton.Height * 2;
@@ -1621,7 +1637,7 @@ begin
     CancelButton.Caption := smbUXCancel;
     CancelButton.ModalResult := mrCancel;
     CancelButton.Width := 80;
-    if big then
+    if (size = uxdBig) then
     begin
       CancelButton.Width := CancelButton.Width * 2;
       CancelButton.Height := CancelButton.Height * 2;
@@ -1629,7 +1645,7 @@ begin
     end;
 
     // --- Center buttons ---
-    OkButton.Top := Grid.Top + Grid.Height + ifthen(big, Padding * 3, Padding * 2);
+    OkButton.Top := Grid.Top + Grid.Height + ifthen((size = uxdBig) , Padding * 3, Padding * 2);
     CancelButton.Top := OkButton.Top;
     totalButtonsWidth := OkButton.Width + Padding + CancelButton.Width;
     OkButton.Left := (Dialog.ClientWidth - totalButtonsWidth) div 2;
@@ -1663,7 +1679,7 @@ var
   FontCombo: TComboBox;
   OkButton, CancelButton: TButton;
   bgcol: TColor;
-  big: Boolean;
+  size: TUXDialogSize;
   totalButtonsWidth: Integer;
   SelectedFont: TFont;
   i, initialIndex: Integer;
@@ -1672,7 +1688,7 @@ begin
   Result := TFont.Create;
   Result.Assign(ADefaultFont);
   ModalResult := mrCancel;
-  big := UXDialogIsBig(dialogsize);
+  size := GetUXDialogSize(dialogsize);
   bgcol := getBackground;
 
   Dialog := TDialogForm.CreateNew(nil);
@@ -1690,14 +1706,14 @@ begin
     DescLabel := TLabel.Create(Dialog);
 
     // Use shared helper for consistent title/description layout
-    SetupDialogTitleDesc(Dialog, big, icon, bgcol, ATitle, ADesc, IconBox, TitleLabel, DescLabel);
+    SetupDialogTitleDesc(Dialog, size, icon, bgcol, ATitle, ADesc, IconBox, TitleLabel, DescLabel);
 
     // --- Font ComboBox ---
     FontCombo := TComboBox.Create(Dialog);
     FontCombo.Parent := Dialog;
     FontCombo.Left := DescLabel.Left;
     FontCombo.Width := DescLabel.Width;
-    FontCombo.Top := DescLabel.Top + DescLabel.Height + ifthen(big, Padding * 2, Padding);
+    FontCombo.Top := DescLabel.Top + DescLabel.Height + ifthen((size = uxdBig) , Padding * 2, Padding);
     FontCombo.Style := csDropDownList;
     FontCombo.Sorted := True;
     
@@ -1711,7 +1727,7 @@ begin
     else if FontCombo.Items.Count > 0 then
       FontCombo.ItemIndex := 0;
     
-    if big then
+    if (size = uxdBig) then
     begin
       FontCombo.Font.Size := 16;
       {$IFDEF Windows} FontCombo.Height := 42; {$ENDIF}
@@ -1722,21 +1738,27 @@ begin
     PreviewLabel.Parent := Dialog;
     PreviewLabel.Left := DescLabel.Left;
     PreviewLabel.Width := DescLabel.Width;
-    PreviewLabel.Top := FontCombo.Top + FontCombo.Height + ifthen(big, Padding * 2, Padding);
+    PreviewLabel.Top := FontCombo.Top + FontCombo.Height + ifthen((size = uxdBig) , Padding * 2, Padding);
     PreviewLabel.Caption := AFontSample;
     PreviewLabel.AutoSize := False;
     PreviewLabel.Alignment := taCenter;
     PreviewLabel.Font.Assign(SelectedFont);
-    if big then
-    begin
-      PreviewLabel.Height := 80;
-      PreviewLabel.Font.Size := 24;
-    end
-    else
-    begin
-      PreviewLabel.Height := 50;
-      PreviewLabel.Font.Size := 16;
+    case size of
+      uxdBig: begin
+        PreviewLabel.Height := 80;
+        PreviewLabel.Font.Size := 24;
+      end;
+      uxdMedium: begin
+        PreviewLabel.Height := 65;
+        PreviewLabel.Font.Size := 20;
+      end
+      else begin
+        PreviewLabel.Height := 50;
+        PreviewLabel.Font.Size := 16;
+      end;
+
     end;
+
 
     // Set up live preview update
     Dialog.FontPickerPreview := PreviewLabel;
@@ -1748,7 +1770,7 @@ begin
     OkButton.Caption := smbUXOK;
     OkButton.ModalResult := mrOk;
     OkButton.Width := 80;
-    if big then
+    if (size = uxdBig) then
     begin
       OkButton.Width := OkButton.Width * 2;
       OkButton.Height := OkButton.Height * 2;
@@ -1762,7 +1784,7 @@ begin
     CancelButton.Caption := smbUXCancel;
     CancelButton.ModalResult := mrCancel;
     CancelButton.Width := 80;
-    if big then
+    if (size = uxdBig) then
     begin
       CancelButton.Width := CancelButton.Width * 2;
       CancelButton.Height := CancelButton.Height * 2;
@@ -1770,7 +1792,7 @@ begin
     end;
 
     // --- Center buttons ---
-    OkButton.Top := PreviewLabel.Top + PreviewLabel.Height + ifthen(big, Padding * 3, Padding * 2);
+    OkButton.Top := PreviewLabel.Top + PreviewLabel.Height + ifthen((size = uxdBig) , Padding * 3, Padding * 2);
     CancelButton.Top := OkButton.Top;
     totalButtonsWidth := OkButton.Width + Padding + CancelButton.Width;
     OkButton.Left := (Dialog.ClientWidth - totalButtonsWidth) div 2;
@@ -1862,13 +1884,13 @@ var
   mr: TUXMsgDlgBtn;
   ButtonActualWidth, posX, ProposedWidth, btnCount, totalBtnWidth: Integer;
   bgcol: TColor;
-  big: boolean;
+  size: TUXDialogSize;
   sysfont: string;
   contentHeight, maxHeight, finalHeight: Integer;
   hpd: TIpHttpDataProvider;
 begin
   bgcol := getBackground;
-  big := UXDialogIsBig(dialogsize);
+  size := GetUXDialogSize(dialogsize);
 
   Dialog := TDialogForm.CreateNew(nil);
   try
@@ -1879,7 +1901,7 @@ begin
     Dialog.Position := poWorkAreaCenter;
     Dialog.Color := bgcol;
 
-    ProposedWidth := IfThen(big, 650, 500);
+    ProposedWidth := ifthen((size = uxdBig) , 650, 500);
     if ProposedWidth > 900 then ProposedWidth := 900;
     Dialog.ClientWidth := ProposedWidth;
 
@@ -1888,7 +1910,7 @@ begin
     IconBox.Parent := Dialog;
     IconBox.Left := padding;
     IconBox.Top := padding;
-    IconBox.Width := IfThen(big, 80, 48);
+    IconBox.Width := ifthen((size = uxdBig) , 80, 48);
     IconBox.Height := IconBox.Width;
     {$ifdef Windows}IconBox.Font.Name := 'Segoe UI Emoji';{$endif}
     {$ifdef Darwin}IconBox.Font.Name := 'Apple Color Emoji';{$endif}
@@ -1914,8 +1936,8 @@ begin
     HtmlViewer.Top := 0;
     HtmlViewer.Width := HtmlPanel.Width;
     HtmlViewer.FixedTypeface := 'Courier New';
-    HtmlViewer.DefaultTypeFace := IfThen(big, 'Segoe UI', 'Tahoma');
-    HtmlViewer.DefaultFontSize := IfThen(big, 16, 12);
+    HtmlViewer.DefaultTypeFace := ifthen((size = uxdBig) , 'Segoe UI', 'Tahoma');
+    HtmlViewer.DefaultFontSize := ifthen((size = uxdBig) , 16, 12);
     HtmlViewer.FlagErrors := False;
     HtmlViewer.Color := bgcol;
     HtmlViewer.AllowTextSelect := False;  // Prevent text selection like TLabel
@@ -1941,7 +1963,7 @@ begin
     btnCount := 0;
     for mr in buttons do Inc(btnCount);
 
-    ButtonActualWidth := IfThen(big, btnWidth * 2, btnWidth);
+    ButtonActualWidth := ifthen((size = uxdBig) , btnWidth * 2, btnWidth);
     totalBtnWidth := (btnCount * ButtonActualWidth) + ((btnCount - 1) * padding);
     posX := (Dialog.ClientWidth - totalBtnWidth) div 2;
 
@@ -1956,8 +1978,8 @@ begin
       OkButton.Parent := Dialog;
       OkButton.Caption := langs[mr];
       OkButton.Width := ButtonActualWidth;
-      OkButton.Height := IfThen(big, 50, 25);
-      if big then
+      OkButton.Height := ifthen((size = uxdBig) , 50, 25);
+      if (size = uxdBig) then
         OkButton.Font.Size := 12;
       OkButton.Left := posX;
       OkButton.Top := HtmlPanel.Top + HtmlPanel.Height + padding;
@@ -2010,13 +2032,13 @@ var
   posX, ProposedWidth, btnCount, totalBtnWidth: Integer;
   bgcol: TColor;
   TempFont: TFont;
-  big: boolean;
+  size: TUXDialogSize;
   MemoWrapper: TPanel;
   sysfont: string;
   hpd: TIpHttpDataProvider;
 begin
   bgcol := getBackground;
-  big := UXDialogIsBig(dialogsize);
+  size := GetUXDialogSize(dialogsize);
 
   Dialog := TDialogForm.CreateNew(nil);
   try
@@ -2048,7 +2070,12 @@ begin
     IconBox := TImage.Create(TopPanel);
     IconBox.Parent := TopPanel;
     IconBox.Align := alLeft;
-    IconBox.Width := IfThen(big, 100, 50);
+    case size of
+      uxdBig:     IconBox.Width := 100;
+      uxdMedium:     IconBox.Width :=75;
+    else
+      IconBox.Width := 50;
+    end;
     IconBox.Height := IconBox.Width;
     {$ifdef Windows}IconBox.Font.Name := 'Segoe UI Emoji';{$endif}
     {$ifdef Darwin}IconBox.Font.Name := 'Apple Color Emoji';{$endif}
@@ -2071,7 +2098,7 @@ begin
 
     ProposedWidth := IconBox.Width + TextPixelWidth + (padding * 6) + 20;
 
-    if big then
+    if (size = uxdBig) then
     begin
       if ProposedWidth < 650 then ProposedWidth := 650;
     end
@@ -2091,7 +2118,10 @@ begin
     // Desc height
     TempFont := TFont.Create;
     try
-      if big then TempFont.Size := 24;
+      case size of
+        uxdBig: TempFont.Size := 24;
+        uxdMedium: TempFont.Size := 20;
+      end;
       TempFont.Style := [];
       TempFont.Color := getBaseColor;
       NeededHeight := MeasureWrappedHeight(desc, TempFont, MsgWidth);
@@ -2099,7 +2129,7 @@ begin
       TempFont.Free;
     end;
 
-    if big then
+    if (size = uxdBig) then
     begin
       // BIG-MODE: send desc first
       if NeededHeight > (MaxDialogHeight div 2) then
@@ -2166,6 +2196,8 @@ begin
         TitleLabel.Parent := TextPanel;
         TitleLabel.WordWrap := True;
         TitleLabel.AutoSize := False;
+        if size = uxdMedium then
+          TitleLabel.Font.Size := 20;
         TitleLabel.Font.Style := [fsBold];
         TitleLabel.Caption := title;
         TitleLabel.Font.Color := getBaseColor;
@@ -2225,7 +2257,7 @@ begin
     LogPanel := TPanel.Create(Dialog);
     LogPanel.Parent := Dialog;
     LogPanel.Align := alBottom;
-    LogPanel.Height := round(IfThen(big, 100, 50) * scale);
+    LogPanel.Height := round(ifthen((size = uxdBig) , 100, 50) * scale);
     LogPanel.Color := dumpbg;
     LogPanel.BevelOuter := bvNone;
     LogPanel.Visible := logmsg <> '';
@@ -2305,7 +2337,13 @@ begin
     ButtonPanel.BevelOuter := bvNone;
     ButtonPanel.Color := bgcol;
 
-    ButtonActualWidth := IfThen(big, btnWidth * 2, btnWidth);
+    case size of
+      uxdBig: ButtonActualWidth := btnWidth*2;
+      uxdMedium: ButtonActualWidth := ceil(btnWidth*1.5);
+    else
+      ButtonActualWidth := btnWidth;
+    end;
+
     btnCount := 0;
     for mr in buttons do Inc(btnCount);
     if btnCount = 0 then btnCount := 1;
@@ -2321,7 +2359,10 @@ begin
       OkButton.Caption := langs[mr];
       OkButton.ModalResult := UXButtonToModalResult(mr);
       OkButton.Width := ButtonActualWidth;
-      if big then OkButton.Height := OkButton.Height * 2;
+      case size of
+        uxdBig: OkButton.Height := OkButton.Height * 2;
+        uxdMedium: OkButton.Height := ceil(OkButton.Height * 1.5);
+      end;
       OkButton.Top := padding;
       OkButton.Left := posX;
       posX := posX + OkButton.Width + padding;
