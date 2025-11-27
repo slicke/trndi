@@ -1150,6 +1150,8 @@ var
 begin
   if SameText(cbSys.Text, 'NightScout') then
     res := NightScout.testConnection(eAddr.text,ePass.text,eExt.text)
+  else if SameText(cbSys.Text, 'NightScout v3') then
+    res := NightScout3.testConnection(eAddr.text,ePass.text,eExt.text)
   else begin
     ShowMessage(RS_TEST_UNSUPPORTED);
     exit;

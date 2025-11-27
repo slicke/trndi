@@ -75,6 +75,9 @@ public
   function connect: boolean; override;
   function getReadings(minNum, maxNum: integer; extras: string;
     out res: string): BGResults; override;
+    {** Test NightScout credentials
+    }   
+  class function testConnection(user, pass, extra: string): Byte; override;
     {** UI parameter label provider (override).
         1: NightScout URL
         2: Auth token suffix (v2)
@@ -573,6 +576,134 @@ begin
     Result := sParamPassword;
   else
     Result := inherited ParamLabel(Index);
+  end;
+end;
+
+{------------------------------------------------------------------------------
+  Test connection details for Nightscout v3
+  - Performs a v2 authorization request if a token suffix (pass) is provided.
+  - Probes v3 status.json using the retrieved bearer token (if available),
+    falling back to a public v3 or v1 status endpoint where applicable.
+ ------------------------------------------------------------------------------}
+class function NightScout3.testConnection(user, pass, extra: string): byte;
+var
+  tn: TrndiNative;
+  base, authURL, resp, localToken, res: string;
+  js: TJSONData;
+  rootObj, topObj: TJSONObject;
+  serverEpoch: int64;
+begin
+  Result := 1; // default to failure
+
+  // Basic sanity checks for URL
+  if (Copy(user, 1, 4) <> 'http') then
+  begin
+    Exit;
+  end;
+
+  base := TrimRightSet(user, ['/']);
+
+  // If pass is provided, try v2 auth flow to obtain a token
+  localToken := '';
+  if (Trim(pass) <> '') then
+  begin
+    authURL := base + '/api/v2/authorization/request/' + pass;
+    if TrndiNative.getURL(authURL, res) then
+    begin
+      // parse JSON and extract token
+      try
+        js := GetJSON(res);
+        try
+          if (js.JSONType = jtObject) and (TJSONObject(js).IndexOfName('token') <> -1) then
+            localToken := TJSONObject(js).Get('token');
+        finally
+          js.Free;
+        end;
+      except
+        // JSON parse error -> treat as failure
+        Result := 1;
+        Exit;
+      end;
+    end
+    else
+    begin
+      // Couldn't contact auth endpoint
+      Result := 1;
+      Exit;
+    end;
+  end;
+
+  // Try the v3 status endpoint with bearer header if we have a token
+  tn := TrndiNative.Create('Mozilla/5.0 (compatible; trndi) TrndiAPI',
+    base + NS3_URL_BASE);
+  try
+    if localToken <> '' then
+      resp := tn.Request(false, NS3_STATUS, [], '', 'Authorization=Bearer ' + localToken)
+    else
+      resp := tn.Request(false, NS3_STATUS, [], '', '');
+
+    if Trim(resp) = '' then
+    begin
+      // Try fallback to v1 absolute URL without auth
+      if not TrndiNative.getURL(base + '/api/v1/status.json', resp) then
+      begin
+        Result := 1;
+        Exit;
+      end;
+    end;
+
+    // Application-level errors prefixed with '+'
+    if (resp <> '') and (resp[1] = '+') then
+    begin
+      Result := 1;
+      Exit;
+    end;
+
+    // Basic unauthorized check
+    if Pos('Unau', resp) > 0 then
+    begin
+      Result := 1;
+      Exit;
+    end;
+
+    // Parse JSON and require a valid server time
+    try
+      js := GetJSON(resp);
+      try
+        if js.JSONType <> jtObject then
+        begin
+          Result := 1;
+          Exit;
+        end;
+        rootObj := TJSONObject(js);
+        topObj := rootObj;
+        // v3 may have a result wrapper
+        if (rootObj.IndexOfName('result') <> -1) and
+           (rootObj.Find('result').JSONType = jtObject) then
+          topObj := TJSONObject(rootObj.Find('result'));
+
+        serverEpoch := topObj.Get('srvDate', int64(0));
+        if serverEpoch <= 0 then
+          serverEpoch := topObj.Get('serverTimeEpoch', int64(0));
+        if serverEpoch <= 0 then
+        begin
+          Result := 1;
+          Exit;
+        end;
+      finally
+        js.Free;
+      end;
+    except
+      on E: Exception do
+      begin
+        Result := 1;
+        Exit;
+      end;
+    end;
+
+    Result := 0; // success
+  finally
+    tn.Free;
   end;
 end;
 
