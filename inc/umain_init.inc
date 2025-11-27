@@ -364,7 +364,7 @@ begin
   'ubuntu':
     fontName := 'Sans';
   else
-    fontName := 'default';
+    fontName := 'Sans';
   end;
 
   IsRaspberry := false;
