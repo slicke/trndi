@@ -434,11 +434,13 @@ begin
 
   // Initialize native interface
   native := TrndiNative.Create;
-  if (ssShift in GetKeyShiftState) and (ssCtrl in GetKeyShiftState) then
-    if native.DetectTouchScreen(fil) then
-      native.touchOverride := tbFalse
-    else
-      native.touchOverride := tbTrue;
+  if ssShift in GetKeyShiftState then begin
+    if ExtText(uxdAuto,'Override big screen?','Shift Pressed! Force Trndi to treat your system as ' + IfThen(native.DetectTouchScreen(fil), 'Small screen (non-touch)', 'Big screen (touch)')+'?',[MbYes, mbNo],uxmtWarning) = mrYes then
+      if native.DetectTouchScreen(fil) then
+        native.touchOverride := tbFalse
+      else
+        native.touchOverride := tbTrue;
+  end;
 
   setColorMode;
 
