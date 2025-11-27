@@ -2716,18 +2716,22 @@ begin
     begin
       fConf.cbSys.Items.Clear;
       // Populate available backends
-      fConf.cbSys.Items.Add('NightScout');
-      fConf.cbSys.Items.Add('NightScout v3');
-      fConf.cbSys.Items.Add('Dexcom (USA)');
-      fConf.cbSys.Items.Add('Dexcom (Outside USA)');
-      fConf.cbSys.Items.Add('xDrip');
+      fConf.cbSys.Items.AddStrings([
+        'NightScout',
+        'NightScout v3',
+        'Dexcom (USA)',
+        'Dexcom (Outside USA)',
+        'xDrip'
+      ]);
       {$ifdef DEBUG}
-      fConf.cbSys.Items.Add('* Debug Backend *');
-      fConf.cbSys.Items.Add('* Debug Missing Backend *');
-      fConf.cbSys.Items.Add('* Debug Perfect Backend *');
-      fConf.cbSys.Items.Add('* Debug Custom Backend *');
-      fConf.cbSys.Items.Add('* Debug Edge Backend *');
-      fConf.cbSys.Items.Add('* Debug First Reading Missing *');
+      fConf.cbSys.Items.AddStrings([
+        '* Debug Backend *',
+        '* Debug Missing Backend *',
+        '* Debug Perfect Backend *',
+        '* Debug Custom Backend *',
+        '* Debug Edge Backend *',
+        '* Debug First Reading Missing *'
+      ]);
       {$endif}
     end;
 
@@ -2834,7 +2838,7 @@ begin
   fs := DefaultFormatSettings;
   fs.DecimalSeparator := '.';
   callFunc('dotClicked',[
-    IfThen(isDot, 'false', 'true'), // is the dot "open" as in viewing the value
+    isDot, // is the dot "open" as in viewing the value
     StrToFloat(l.Hint) * BG_CONVERTIONS[mgdl][un],
     StrToFloat(l.Hint) * BG_CONVERTIONS[mmol][un],
     l.tag
@@ -2942,7 +2946,6 @@ function SafeQtStyle(Handle: QWidgetH; const Style: string): boolean;
 var
   tpb: TDotControl;
   H, M: integer;
-  mi: integer;
 begin
   // Shift down
   miAdvanced.Visible := ssShift in GetKeyShiftState;
@@ -3019,9 +3022,6 @@ end;
 procedure TfBG.pnOffRangeClick(Sender: TObject);
 var
   ishigh: boolean;
-  {$ifdef TrndiExt}
-
-  {$endif}
 begin
   ishigh := (Sender as TPanel).Color = bg_rel_color_hi;
   {$ifdef TrndiExt}
@@ -3074,11 +3074,11 @@ begin
       // Check if JS engine is still available before calling
     s := callFuncWithBGReadings('clockView', [DateTimeToStr(Now)], ex);
     if ex = false then
-      lval.caption := FormatDateTime(ShortTimeFormat, Now)
+      lval.caption := FormatDateTime(FormatSettings.ShortTimeFormat, Now)
     else
       lval.caption := s;
     {$else}
-    lval.Caption := FormatDateTime(ShortTimeFormat, Now);
+    lval.Caption := FormatDateTime(FormatSettings.ShortTimeFormat, Now);
     {$endif}
     tClock.Interval := clockDisplay;
     lArrow.Visible := false;
