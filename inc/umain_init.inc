@@ -404,7 +404,7 @@ procedure haltBoot;
 
 var
   i: integer;
-  guifontName, txtfontName, apiTarget, apiCreds: string;
+  guifontName, txtfontName, apiTarget: string;
   fil: boolean;
   userlocale: TFormatSettings;
 begin
