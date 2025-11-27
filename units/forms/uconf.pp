@@ -58,6 +58,7 @@ type
 TfConf = class(TForm)
   bAdd: TButton;
   bBackendHelp: TButton;
+  bTest: TButton;
   bOverrideHelp: TButton;
   bPrivacyHelp: TButton;
   bRemove: TButton;
@@ -269,6 +270,7 @@ TfConf = class(TForm)
   procedure bSysNoticeClick(Sender: TObject);
   procedure bSysTouchClick(Sender: TObject);
   procedure bTestAnnounceClick(Sender: TObject);
+  procedure bTestClick(Sender: TObject);
   procedure bTestSpeechClick(Sender: TObject);
   procedure btResetClick(Sender: TObject);
   procedure btUserSaveClick(Sender: TObject);
@@ -415,6 +417,10 @@ RS_PredictionWarn = 'Trndi will try to predict future readings. This is experime
 RS_ExtCount = 'Extensions count: %d';
 
 RS_NO_COPYRIGHT = '- Extension has no copyright info -';
+
+RS_TEST_UNSUPPORTED = 'Sorry! Trndi does not (yet) support connection testing for this service!';
+RS_TEST_SUCCESS = 'Successfully connected!';
+RS_TEST_FAIL = 'Could not connect!';
 var
 fConf: TfConf;
 
@@ -1136,6 +1142,23 @@ end;
 procedure TfConf.bTestAnnounceClick(Sender: TObject);
 begin
   tnative.attention('Trndi Test', 'test');
+end;
+
+procedure TfConf.bTestClick(Sender: TObject);
+var
+  res: integer;
+begin
+  if SameText(cbSys.Text, 'NightScout') then
+    res := NightScout.testConnection(eAddr.text,ePass.text,eExt.text)
+  else begin
+    ShowMessage(RS_TEST_UNSUPPORTED);
+    exit;
+  end;
+
+  if res = 0 then
+    ShowMessage(RS_TEST_SUCCESS)
+  else
+    ShowMessage(RS_TEST_FAIL);
 end;
 
 procedure TfConf.bTestSpeechClick(Sender: TObject);

@@ -12,6 +12,7 @@
 {"hash":151828037,"name":"tfconf.label15.caption","sourcebytes":[83,101,114,118,101,114,32,65,100,100,114,101,115,115,32,47,32,68,101,120,99,111,109,32,85,115,101,114,110,97,109,101],"value":"Server Address / Dexcom Username"},
 {"hash":261941524,"name":"tfconf.cbsys.text","sourcebytes":[78,105,103,104,116,83,99,111,117,116],"value":"NightScout"},
 {"hash":63,"name":"tfconf.bbackendhelp.caption","sourcebytes":[63],"value":"?"},
+{"hash":371876,"name":"tfconf.btest.caption","sourcebytes":[84,101,115,116],"value":"Test"},
 {"hash":236240981,"name":"tfconf.button3.caption","sourcebytes":[67,104,101,99,107,32,102,111,114,32,117,112,100,97,116,101],"value":"Check for update"},
 {"hash":79563278,"name":"tfconf.label18.caption","sourcebytes":[67,111,110,110,101,99,116,105,111,110],"value":"Connection"},
 {"hash":78001811,"name":"tfconf.tscolors.caption","sourcebytes":[67,111,108,111,114,115],"value":"Colors"},

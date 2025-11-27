@@ -306,6 +306,10 @@ msgstr "+ Ny"
 msgid "- Remove"
 msgstr "- Radera"
 
+#: tfconf.btest.caption
+msgid "Test"
+msgstr ""
+
 #: tfconf.btestannounce.caption
 msgid "Test Announce"
 msgstr "Testa notis"
@@ -1825,6 +1829,18 @@ msgstr "Välj ett typsnitt för avläsningen"
 #: uconf.rs_select_font_time
 msgid "Select a font for the time"
 msgstr "Välj ett typsnitt för tiden"
+
+#: uconf.rs_test_fail
+msgid "Could not connect!"
+msgstr ""
+
+#: uconf.rs_test_success
+msgid "Successfully connected!"
+msgstr ""
+
+#: uconf.rs_test_unsupported
+msgid "Sorry! Trndi does not (yet) support connection testing for this service!"
+msgstr ""
 
 #: uconf.rs_uptodate
 msgid "You are up to date"

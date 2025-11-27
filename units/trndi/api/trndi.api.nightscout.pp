@@ -111,6 +111,9 @@ public
       3: (unused)
      }
   class function ParamLabel(Index: integer): string; override;
+    {** Test NightScout credentials
+    }
+  class function testConnection(user, pass, extra: string): Byte; override;
 private
     // (no private members)
 
@@ -389,6 +392,98 @@ begin
   else
     Result := inherited ParamLabel(Index);
   end;
+end;
+
+{------------------------------------------------------------------------------
+  Test if the connection data is correct
+------------------------------------------------------------------------------}
+class function NightScout.testConnection(user, pass, extra: string): byte;
+var
+  password, responseStr: string;
+  tn: TrndiNative;
+  JSONParser: TJSONParser;
+  JSONData: TJSONData;
+  RootObject: TJSONObject;
+  ServerEpoch: int64;
+begin
+  // Create native with a correctly configured base URL (like constructor does)
+  tn := TrndiNative.Create('Mozilla/5.0 (compatible; trndi) TrndiAPI',
+    TrimRightSet(user, ['/']) + NS_URL_BASE);
+    // 1) Quick sanity check on URL; avoids obvious mistakes early.
+  if (Copy(user, 1, 4) <> 'http') then
+  begin
+    Result := 1;
+    tn.Free;
+    Exit;
+  end;
+
+  // 2) Probe server status and settings.
+  //    Native.Request(signature): (useGet, path, params, body, header)
+  password := IfThen(pass <> '', 'API-SECRET=' + SHA1Print(SHA1String(pass)), '');
+  ResponseStr := tn.Request(false, NS_STATUS, [], '', password);
+
+  // 3) Basic validation for empty payloads.
+  if Trim(ResponseStr) = '' then
+  begin
+    Result := 1;
+    tn.Free;
+    Exit;
+  end;
+
+  // 4) Some backends may prefix '+' to indicate application-level errors.
+  if (ResponseStr[1] = '+') then
+  begin
+    Result := 1;
+    tn.Free;
+    Exit;
+  end;
+
+  // 5) Coarse unauthorized detection (Nightscout messages vary by version).
+  if Pos('Unau', ResponseStr) > 0 then
+  begin
+    Result := 1;
+    tn.Free;
+    Exit;
+  end;
+  // Optional: verify we got a valid JSON object and a reasonable server epoch
+  try
+    JSONParser := TJSONParser.Create(ResponseStr, [joUTF8, joIgnoreTrailingComma]);
+    try
+      JSONData := JSONParser.Parse;
+    finally
+      JSONParser.Free;
+    end;
+
+    if (JSONData is TJSONObject) then
+    begin
+      RootObject := TJSONObject(JSONData);
+      ServerEpoch := RootObject.Get('serverTimeEpoch', int64(0));
+      JSONData.Free;
+      if ServerEpoch <= 0 then
+      begin
+        Result := 1; // No server epoch values: treat as failure for probing
+        tn.Free;
+        Exit;
+      end;
+    end
+    else
+    begin
+      Result := 1;
+      JSONData.Free;
+      tn.Free;
+      Exit;
+    end;
+  except
+    on E: Exception do
+    begin
+      Result := 1;
+      tn.Free;
+      Exit;
+    end;
+  end;
+
+  Result := 0; // success
+  tn.Free;
 end;
 
 end.
