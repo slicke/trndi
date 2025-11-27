@@ -121,6 +121,10 @@ end;
 
 implementation
 
+resourcestring
+ sParamUsername = 'NightScout URL';
+ sParamPassword = 'API Secret';
+
 {------------------------------------------------------------------------------
   create (constructor)
   --------------------
@@ -379,9 +383,9 @@ class function NightScout.ParamLabel(Index: integer): string;
 begin
   case Index of
   1:
-    Result := 'NightScout URL';
+    Result := sParamUsername;
   2:
-    Result := 'API Secret';
+    Result := sParamPassword;
   else
     Result := inherited ParamLabel(Index);
   end;

@@ -941,6 +941,46 @@ msgstr ""
 msgid "Invalid Dexcom password or account credentials"
 msgstr ""
 
+#: trndi.api.dexcom.sparampassword
+msgid "Dexcom Password"
+msgstr ""
+
+#: trndi.api.dexcom.sparamregion
+msgid "Region (\"usa\" or empty)"
+msgstr ""
+
+#: trndi.api.dexcom.sparamusername
+msgid "Dexcom Username"
+msgstr ""
+
+#: trndi.api.nightscout.sparampassword
+msgctxt "trndi.api.nightscout.sparampassword"
+msgid "API Secret"
+msgstr ""
+
+#: trndi.api.nightscout.sparamusername
+msgctxt "trndi.api.nightscout.sparamusername"
+msgid "NightScout URL"
+msgstr ""
+
+#: trndi.api.nightscout3.sparampassword
+msgid "Auth token suffix"
+msgstr ""
+
+#: trndi.api.nightscout3.sparamusername
+msgctxt "trndi.api.nightscout3.sparamusername"
+msgid "NightScout URL"
+msgstr ""
+
+#: trndi.api.xdrip.sparampassword
+msgctxt "trndi.api.xdrip.sparampassword"
+msgid "API Secret"
+msgstr ""
+
+#: trndi.api.xdrip.sparamusername
+msgid "xDrip URL"
+msgstr ""
+
 #: trndi.strings.rs_cleanup
 msgid "Wait. Shutting down extensions engine..."
 msgstr ""

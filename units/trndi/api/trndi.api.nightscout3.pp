@@ -90,6 +90,10 @@ end;
 
 implementation
 
+resourcestring
+  sParamUsername = 'NightScout URL';
+  sParamPassword = 'Auth token suffix';
+
 {------------------------------------------------------------------------------
   Helper: Normalize and store site base and API base URL.
  ------------------------------------------------------------------------------}
@@ -564,9 +568,9 @@ class function NightScout3.ParamLabel(Index: integer): string;
 begin
   case Index of
   1:
-    Result := 'NightScout URL';
+    Result := sParamUsername;
   2:
-    Result := 'Auth token suffix';
+    Result := sParamPassword;
   else
     Result := inherited ParamLabel(Index);
   end;

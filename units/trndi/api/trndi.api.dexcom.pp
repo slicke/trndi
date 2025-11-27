@@ -177,6 +177,9 @@ implementation
 resourcestring
 sErrDexPass = 'Invalid Dexcom password or account credentials';
 sErrDexLogin = 'Login error: Could not establish a valid session';
+sParamUserName = 'Dexcom Username';
+sParamPassword = 'Dexcom Password';
+sParamRegion = 'Region ("usa" or empty)';
 
 {------------------------------------------------------------------------------
   Constructor (override).
@@ -525,11 +528,11 @@ class function Dexcom.ParamLabel(Index: integer): string;
 begin
   case Index of
   1:
-    Result := 'Dexcom Username';
+    Result := sParamUserName;
   2:
-    Result := 'Dexcom Password';
+    Result := sParamPassword;
   3:
-    Result := 'Region ("usa" or empty)';
+    Result := sParamRegion;
   else
     Result := inherited ParamLabel(Index);
   end;
