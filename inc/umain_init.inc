@@ -356,15 +356,20 @@ end;
 procedure TfBG.InitializeLinuxPlatform;
 var
   distroId, fontName: string;
+  hasDefaultFont: boolean;
 begin
-  distroId := scanLinuxDistro(['fedora','ubuntu','debian']);
-  case distroId of
-  'fedora':
-    fontName := 'Poppins';
-  'ubuntu':
-    fontName := 'Sans';
-  else
-    fontName := 'Sans';
+  hasDefaultFont := FontTXTInList(fontName);
+
+  if not hasDefaultFont then begin
+    distroId := scanLinuxDistro(['fedora','ubuntu','debian']);
+    case distroId of
+    'fedora':
+      fontName := 'Poppins';
+    'ubuntu':
+      fontName := 'Sans';
+    else
+      fontName := 'Sans';
+    end;
   end;
 
   IsRaspberry := false;
