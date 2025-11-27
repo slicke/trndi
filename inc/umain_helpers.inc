@@ -116,17 +116,17 @@ function TMyAppDelegate.applicationDockMenu(sender: NSApplication): NSMenu;
 var
   dockMenu: NSMenu;
   menuItem: NSMenuItem;
-  s: string;
+  menuTitle: string;
   cfStr: CFStringRef;
 begin
   // Create a custom dock menu
   dockMenu := NSMenu.alloc.initWithTitle(NSSTR('Trndi'));
 
   // Add items to the menu
-  s := TrimLeftSet((Application.MainForm as TfBG).miSettings.Caption, ['&', ' ']);
+  menuTitle := TrimLeftSet((Application.MainForm as TfBG).miSettings.Caption, ['&', ' ']);
 
   // Create a CFStringRef directly from the UTF-8 string
-  cfStr := CFStringCreateWithCString(nil, pchar(s), kCFStringEncodingUTF8);
+  cfStr := CFStringCreateWithCString(nil, pchar(menuTitle), kCFStringEncodingUTF8);
 
   // Initialize the menu item with the CFStringRef
   menuItem := NSMenuItem.alloc.initWithTitle_action_keyEquivalent(

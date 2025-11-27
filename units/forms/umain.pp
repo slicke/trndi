@@ -96,6 +96,10 @@ TPONames = array[TrndiPos] of string;
 var
 TrndiPosNames: TPONames = (RS_tpoCenter, RS_tpoBottomLeft,
   RS_tpoBottomRight, RS_tpoCustom, RS_tpoTopRight);
+const
+  // Public timing constants used across the unit/interface
+  MILLIS_PER_MINUTE = 60000; // Milliseconds in a minute
+  CLOCK_INTERVAL_MS = 20000; // Default clock interval used for the clock tick
 
 type
   { TfBG }
@@ -109,6 +113,8 @@ public
   function applicationDockMenu(sender: NSApplication): NSMenu; message 'applicationDockMenu:';
     procedure miSettingsMacClick(sender: id); message 'miSettings:';
 end;
+
+{** Darwin-specific declarations above }
 {$endif}
 
 {** Application main form.
@@ -409,9 +415,9 @@ private
       a new reading or manual refresh.
    }
   procedure FinalizeUIUpdate;
-  procedure HandleHighGlucose(const {%H-}b: BGReading);
-  procedure HandleLowGlucose(const {%H-}b: BGReading);
-  procedure HandleNormalGlucose(const b: BGReading);
+  procedure HandleHighGlucose(const {%H-}reading: BGReading);
+  procedure HandleLowGlucose(const {%H-}reading: BGReading);
+  procedure HandleNormalGlucose(const reading: BGReading);
   procedure UpdateOffRangePanel(const Value: double);
   procedure DisplayLowRange;
   procedure DisplayHighRange;
@@ -584,7 +590,7 @@ function CFStringCreateWithUTF8String(const utf8Str: pansichar): CFStringRef; ex
 
 var
 customTitlebar: boolean = true;
-clockInterval: integer = 20000;
+clockInterval: integer = CLOCK_INTERVAL_MS;
 clockDisplay: integer = 5000;
 fSplash: TfSplash;
 native: TrndiNative;
@@ -683,6 +689,16 @@ implementation
 {$I ../../inc/umain_ext.inc}
 {$I ../../inc/umain_helpers.inc}
 {$I ../../inc/umain_init.inc}
+
+const
+  MIN_REFRESH_INTERVAL_MS = 120000; // 2 minutes
+  REFRESH_RESYNC_BUFFER_MS = 15000; // Additional buffer to allow backend sync
+  BADGE_FLASH_DURATION_HIGH_MS = 15000;
+  BADGE_FLASH_REPEAT_DELAY_HIGH_MS = 450;
+  BADGE_FLASH_DURATION_LOW_MS = 20000;
+  BADGE_FLASH_REPEAT_DELAY_LOW_MS = 400;
+  BADGE_FLASH_DURATION_OK_MS = 6000;
+  BADGE_FLASH_REPEAT_DELAY_OK_MS = 500;
 
 procedure TfBG.FormDblClick(Sender: TObject);
 begin
@@ -952,7 +968,7 @@ end;
 
 procedure TfBG.miASystemInfoClick(Sender: TObject);
 var
-  sysver, s: string;
+  sysver, platformInfo: string;
   {$ifdef Linux}
   ver: string;
   {$endif}
@@ -960,26 +976,26 @@ begin
   {$if defined(LCLWin32)}
   sysver := SysUtils.Win32MajorVersion.tostring + '.' + SysUtils.Win32MinorVersion.tostring + ' - Build ' +  Win32BuildNumber.ToString;
   {$elseif defined(Linux)}
-  s := getlinuxdistro(ver);
-  sysver := s + ' ' + ver;
+  platformInfo := getlinuxdistro(ver);
+  sysver := platformInfo + ' ' + ver;
   {$endif}
 
   {$if defined(LCLQt6)}
-  s := 'QT6 - ' + qtVersion + ' - ' + sysver;
+  platformInfo := 'QT6 - ' + qtVersion + ' - ' + sysver;
   {$elseif defined(LCLGTK2)}
-  s := 'GTK2 - '  + sysver;
+  platformInfo := 'GTK2 - '  + sysver;
   {$elseif defined(LCLGTK3)}
-  s := 'GTK3';
+  platformInfo := 'GTK3';
   {$elseif defined(LCLWIN32)}
-  s := 'Windows Native - ' + sysver;
+  platformInfo := 'Windows Native - ' + sysver;
   {$elseif defined(LCLCocoa)}
-  s := 'macOS Native';
+  platformInfo := 'macOS Native';
   {$else}
-  s := 'unsupportd widgetset';
+  platformInfo := 'unsupportd widgetset';
   {$endif}
 
   ShowMessage({$I %FPCTargetOS%} + '(' + {$I %FPCTargetCPU%} + ')' + LineEnding +
-    s +
+    platformInfo +
     LineEnding + 'Default separator: ' + DefaultFormatSettings.DecimalSeparator
     );
 
@@ -1840,23 +1856,23 @@ end;
 
 procedure TfBG.lAgoClick(Sender: TObject);
 var
-  s: string;
+  displayMsg: string;
   i: integer;
 begin
   if firstboot then
     exit; // Dont trigger lastReading
 
-  s := miRefresh.Caption;
+  displayMsg := miRefresh.Caption;
 
   if lastReading.getRSSI(i) then
-    s += LineEnding + Format(sRSSI, [i]);
+    displayMsg += LineEnding + Format(sRSSI, [i]);
   if lastReading.getNoise(i) then
-    s += LineEnding + Format(sNoise, [i]);
+    displayMsg += LineEnding + Format(sNoise, [i]);
 
-  s += LineEnding + Format(sDevice, [lastReading.sensor]);
+  displayMsg += LineEnding + Format(sDevice, [lastReading.sensor]);
   ;
 
-  ShowMessage(s);
+  ShowMessage(displayMsg);
 
 end;
 
@@ -1996,14 +2012,14 @@ end;
 
 procedure TfBG.lTirClick(Sender: TObject);
 var
-  minTotal, hours, mins, cust: integer;
+  minTotal, hours, mins, rangeMinutes: integer;
   msg: string;
   hi, lo, rhi, rlo: double;
 begin
   minTotal := MinutesBetween(now, bgs[High(bgs)].date);
-  cust := native.GetIntSetting('range.time', 9999);
-  if minTotal > cust then // our cust is smaller than the available data
-    mintotal := cust;
+  rangeMinutes := native.GetIntSetting('range.time', 9999);
+  if minTotal > rangeMinutes then // our custom range is smaller than the available data
+    minTotal := rangeMinutes;
 
   {$ifdef TrndiExt}
   if not funcBool('uxClick',[
@@ -2163,8 +2179,8 @@ end;
 procedure TfBG.miHistoryClick(Sender: TObject);
 var
   i: integer;
+  b: BGReading; // selected reading for the popup
   keys, vals: TStringArray;
-  b: BGReading;
   xval: integer;
   rssi, noise: string;
 begin
@@ -2369,7 +2385,9 @@ var
 
 procedure LoadUserSettings(f: TfConf);
   var
-    s: string;
+    remoteType: string;
+    userNamesCSV: string;
+    posName: string;
     i: integer;
     posValue: integer;
     po: TrndiPos;
@@ -2377,10 +2395,10 @@ procedure LoadUserSettings(f: TfConf);
     with f, native do
     begin
       // Remote and user settings
-      s := GetSetting('remote.type');
+      remoteType := GetSetting('remote.type');
       cbSys.ItemIndex := 0; // Default driver
       for i := 0 to cbSys.Items.Count - 1 do
-        if cbSys.Items[i] = s then
+        if cbSys.Items[i] = remoteType then
           cbSys.ItemIndex := i;
       f.cbSysChange(f); // Update labels
       eAddr.Text := GetSetting('remote.target');
@@ -2443,9 +2461,9 @@ procedure LoadUserSettings(f: TfConf);
       fsLoRange.Enabled := cbCustRange.Checked;
 
       // User customizations
-      s := GetRootSetting('users.names', '');
+      userNamesCSV := GetRootSetting('users.names', '');
       lbUsers.Clear;
-      lbUsers.Items.CommaText := s;
+      lbUsers.Items.CommaText := userNamesCSV;
       if lbUsers.Items.Count < 1 then
         lbUsers.Enabled := false;
 
@@ -2457,8 +2475,8 @@ procedure LoadUserSettings(f: TfConf);
       cbPos.Items.Clear;
       for po in TrndiPos do
       begin
-        s := TrndiPosNames[po];
-        cbPos.Items.Add(s);
+        posName := TrndiPosNames[po];
+        cbPos.Items.Add(posName);
 
         // Match enum order with saved position
         if Ord(po) = posValue then
@@ -2480,7 +2498,7 @@ procedure LoadUserSettings(f: TfConf);
 procedure LoadLanguageSettings(f: TfConf);
   var
     i: integer;
-    s: string;
+    langEntry: string;
   begin
     with f, native do
     begin
@@ -2490,11 +2508,11 @@ procedure LoadLanguageSettings(f: TfConf);
       cbLang.Items.Add('Trndi.auto');
       for i := 0 to cbLang.Items.Count - 1 do
       begin
-        s := cbLang.Items[i];
-        cbLang.Items[i] := ExtractDelimited(2, s, ['.']);
-        s := cbLang.Items[i];
-        cbLang.Items[i] := Format('%s (%s)', [GetLanguageName(s), s]);
-        if CheckSetting('locale', '', s) then
+        langEntry := cbLang.Items[i];
+        cbLang.Items[i] := ExtractDelimited(2, langEntry, ['.']);
+        langEntry := cbLang.Items[i];
+        cbLang.Items[i] := Format('%s (%s)', [GetLanguageName(langEntry), langEntry]);
+        if CheckSetting('locale', '', langEntry) then
           cbLang.ItemIndex := i;
       end;
       if cbLang.ItemIndex = -1 then
@@ -2596,7 +2614,7 @@ procedure SetupTouchAndNotifications(f: TfConf);
 
 procedure SaveUserSettings(f: TfConf);
   var
-    s: string;
+    langCode: string;
     i: integer;
   begin
     with f, native do
@@ -2609,8 +2627,8 @@ procedure SaveUserSettings(f: TfConf);
       SetSetting('font.val', lVal.Font.Name);
       SetSetting('font.arrow', lArrow.Font.Name);
       SetSetting('font.ago', lAgo.Font.Name);
-      s := ExtractLangCode(cbLang.Items[cbLang.ItemIndex]);
-      SetSetting('locale', s);
+      langCode := ExtractLangCode(cbLang.Items[cbLang.ItemIndex]);
+      SetSetting('locale', langCode);
       native.SetSetting('position.main', IntToStr(cbPos.ItemIndex));
       native.setBoolSetting('size.main', cbSize.Checked);
       native.setBoolSetting('alerts.flash.high', cbFlashHi.Checked);
@@ -2707,8 +2725,9 @@ procedure SaveUserSettings(f: TfConf);
   end;
 
 var
-  s: string;
+  extensionsPath: string;
   i: integer;
+  distro: string;
 begin
   fConf := TfConf.Create(Self);
   try
@@ -2755,7 +2774,7 @@ begin
     lastUsers := fConf.lbUsers.Count;
 
     {$if defined(X_PC)}
-    fConf.lOS.Caption := GetLinuxDistro(s) + ' ' + s;
+    fConf.lOS.Caption := GetLinuxDistro(distro) + ' ' + distro;
 
     {$if defined(LCLQt6)}
     fConf.lWidgetset.Caption := 'QT6 ' + qtVersion;
@@ -2775,11 +2794,11 @@ begin
     // Show dialog (use safe helper that handles problematic WMs)
 
     {$ifdef TrndiExt}
-    s := GetAppConfigDirUTF8(false, true) + 'extensions' + DirectorySeparator;
+    extensionsPath := GetAppConfigDirUTF8(false, true) + 'extensions' + DirectorySeparator;
     // Find extensions folder
-    ForceDirectoriesUTF8(s);
+    ForceDirectoriesUTF8(extensionsPath);
     // Create the directory if it doesn't exist
-    fConf.lbExtensions.Items := FindAllFiles(s, '*.js', false);
+    fConf.lbExtensions.Items := FindAllFiles(extensionsPath, '*.js', false);
     fConf.lExtCount.Caption := Format(RS_ExtCount, [fConf.lbExtensions.Count]);
     {$else}
     fConf.tsExt.Enabled := false;
@@ -3048,7 +3067,7 @@ begin
   else
   try
     d := lastReading.date; // Last reading time
-    min := MilliSecondsBetween(Now, d) div 60000;  // Minutes since last
+    min := MilliSecondsBetween(Now, d) div MILLIS_PER_MINUTE;  // Minutes since last
     {$ifndef lclgtk2}// UTF support IS LIMITED
     lAgo.Caption := '🕑 ' + Format(RS_LAST_UPDATE, [min]);
     {$else}
@@ -3061,7 +3080,7 @@ end;
 
 procedure TfBG.tClockTimer(Sender: TObject);
 var
-  s: string;
+  clockText: string;
   {$ifdef TrndiExt}
   ex: boolean; // If the function exists
   {$endif}
@@ -3070,13 +3089,13 @@ begin
   if tClock.Interval <> clockDisplay then
   begin
     {$ifdef TrndiExt}
-    s := '';
+    clockText := '';
       // Check if JS engine is still available before calling
-    s := callFuncWithBGReadings('clockView', [DateTimeToStr(Now)], ex);
+    clockText := callFuncWithBGReadings('clockView', [DateTimeToStr(Now)], ex);
     if ex = false then
       lval.caption := FormatDateTime(FormatSettings.ShortTimeFormat, Now)
     else
-      lval.caption := s;
+      lval.caption := clockText;
     {$else}
     lval.Caption := FormatDateTime(FormatSettings.ShortTimeFormat, Now);
     {$endif}
@@ -3398,8 +3417,8 @@ begin
 
   d := lastReading.date; // Last reading time
 
-  min := MilliSecondsBetween(Now, d) div 60000;  // Minutes since last
-  sec := (MilliSecondsBetween(Now, d) mod 60000) div 1000; // Seconds since last
+  min := MilliSecondsBetween(Now, d) div MILLIS_PER_MINUTE;  // Minutes since last
+  sec := (MilliSecondsBetween(Now, d) mod MILLIS_PER_MINUTE) div 1000; // Seconds since last
 
   lDiff.Caption := Format(RS_OUTDATED_TIME, [FormatDateTime('H:mm', d), min, sec]);
 end;
@@ -3413,7 +3432,7 @@ end;
 procedure TfBG.tSwapTimer(Sender: TObject);
 var
   c: TColor;
-  s: string;
+  currentCaption: string;
 begin
   // Dont swap when the reading is old
   if fsStrikeOut in Lval.Font.Style then
@@ -3423,9 +3442,9 @@ begin
   end;
 
   tSwap.Enabled := false;
-  s := lval.Caption;
+  currentCaption := lval.Caption;
 
-  if s.IndexOf(':') > 0 then // Clock showing
+  if currentCaption.IndexOf(':') > 0 then // Clock showing
     UpdateUIColors   // Resets standard coloring
   else
   if lVal.font.color <> lArrow.font.color then
@@ -3472,22 +3491,22 @@ end;
 // Request data from the backend and update GUI
 procedure TfBG.ProcessCurrentReading;
 var
-  b: BGReading;
+  reading: BGReading;
 begin
   if firstboot then
     exit;
-  b := lastReading;
+  reading := lastReading;
 
   // Update value label
   if not privacyMode then
   begin
-    if b.val > 400 then
+    if reading.val > 400 then
       lVal.Caption := RS_HIGH
     else
-    if b.val < 40 then
+    if reading.val < 40 then
       lVal.Caption := RS_LOW
     else
-      lVal.Caption := b.format(un, BG_MSG_SHORT, BGPrimary);
+      lVal.Caption := reading.format(un, BG_MSG_SHORT, BGPrimary);
   end
   else
     lVal.Caption := '';
@@ -3495,33 +3514,33 @@ begin
   lval.hint := lval.Caption;
 
   // Update other UI elements
-  lDiff.Caption := b.format(un, BG_MSG_SIG_SHORT, BGDelta);
-  lArrow.Caption := b.trend.Img;
+  lDiff.Caption := reading.format(un, BG_MSG_SIG_SHORT, BGDelta);
+  lArrow.Caption := reading.trend.Img;
   lVal.Font.Style := [];
 
   // Log latest reading
-  LogMessage(Format(RS_LATEST_READING, [b.val, DateTimeToStr(b.date)]));
+  LogMessage(Format(RS_LATEST_READING, [reading.val, DateTimeToStr(reading.date)]));
 
   // Announce
   if miAnnounce.Checked then
     speakReading;
 
   // Set next update time
-  SetNextUpdateTimer(b.date);
+  SetNextUpdateTimer(reading.date);
 end;
 
 function TfBG.IsDataFresh: boolean;
 var
-  b: BGReading;   // Holder for the latest (newest) reading
+  reading: BGReading;   // Holder for the latest (newest) reading
   i: integer;     // Temp int used when checking if caption starts with a digit
 begin
   if firstboot then
     exit;
 
-  b := lastReading; // Pick the most recent reading from the buffer
+  reading := lastReading; // Pick the most recent reading from the buffer
 
   // Consider data fresh if the latest reading is within the configured threshold (in minutes)
-  Result := MinutesBetween(Now, b.date) <= DATA_FRESHNESS_THRESHOLD_MINUTES;
+  Result := MinutesBetween(Now, reading.date) <= DATA_FRESHNESS_THRESHOLD_MINUTES;
 
   if not Result then
   begin
@@ -3550,18 +3569,18 @@ end;
 
 procedure TfBG.SetNextUpdateTimer(const LastReadingTime: TDateTime);
 var
-  i: int64;
+  secondsSinceLast: int64; // Seconds since last reading
+  intervalMs: int64; // Computed interval in milliseconds
 begin
   if firstboot then
     exit;
   tMain.Enabled := false;
-
-  i := SecondsBetween(LastReadingTime, now); // Seconds from last
-  i := min(BG_REFRESH, BG_REFRESH - (i * 1000));
+  secondsSinceLast := SecondsBetween(LastReadingTime, now); // Seconds since last
+  intervalMs := min(BG_REFRESH, BG_REFRESH - (secondsSinceLast * 1000));
   // 5 min or less if there's a recent reading
-  i := max(120000, i); // Don't allow too small refresh time (min 2 minutes)
+  intervalMs := max(MIN_REFRESH_INTERVAL_MS, intervalMs); // Don't allow too small refresh time (min 2 minutes)
 
-  tMain.Interval := i + 15000; // Add 15 secs to allow sync
+  tMain.Interval := intervalMs + REFRESH_RESYNC_BUFFER_MS; // Add buffer to allow sync
   tMain.Enabled := true;
 
   miRefresh.Caption := Format(RS_REFRESH, [TimeToStr(LastReadingTime),
@@ -3574,11 +3593,11 @@ end;
 // Calculate time in range
 procedure tfBG.CalcRangeTime;
 var
-  b: BGReading; //< Holder for current reading
-  range, //< The OK range
+  reading: BGReading; //< Holder for current reading iteration
+  range, //< The OK range in percent
   ok, //< OK count
   no, //< Not OK count
-  cust: integer; //< Custom time
+  rangeMinutes: integer; //< Time window in minutes to inspect (custom setting)
   ranges: set of trndi.types.BGValLevel; //< Types of readings to count as OK
 begin
   ok := 0;
@@ -3588,11 +3607,11 @@ begin
   else
     ranges := [BGRange];
 
-  cust := native.GetIntSetting('range.time', 9999);
+  rangeMinutes := native.GetIntSetting('range.time', 9999);
 
-  for b in bgs do
-    if b.date >= IncMinute(now, cust*-1) then
-      if b.level in ranges then
+  for reading in bgs do
+    if reading.date >= IncMinute(now, rangeMinutes * -1) then
+      if reading.level in ranges then
         Inc(ok)
       else
         Inc(no);
@@ -3880,22 +3899,22 @@ end;
 
 procedure TfBG.UpdateUIBasedOnGlucose;
 var
-  b: BGReading;
+  reading: BGReading;
   col: TColor;
   txt: string;
 begin
-  b := lastReading;
+  reading := lastReading;
 
-  if b.val >= api.cgmHi then
-    HandleHighGlucose(b)
+  if reading.val >= api.cgmHi then
+    HandleHighGlucose(reading)
   else
-  if b.val <= api.cgmLo then
-    HandleLowGlucose(b)
+  if reading.val <= api.cgmLo then
+    HandleLowGlucose(reading)
   else
-    HandleNormalGlucose(b);
+    HandleNormalGlucose(reading);
 
   pnOffReading.Visible := native.GetBoolSetting('ux.off_bar', false);
-  case b.level of
+  case reading.level of
   trndi.types.BGHigh:
     txt := RS_HIGH;
   trndi.types.BGLOW:
@@ -3917,7 +3936,7 @@ begin
   pnOffReading.font.color := GetTextColorForBackground(pnOffReading.Color, 0, 0.7);
 end;
 
-procedure TfBG.HandleHighGlucose(const b: BGReading);
+procedure TfBG.HandleHighGlucose(const reading: BGReading);
 var
   url: string;
   doFlash: boolean;
@@ -3955,10 +3974,10 @@ begin
 
   doFlash := native.GetBoolSetting('alerts.flash.high', false);
   if (not highAlerted) and doFlash then
-    native.StartBadgeFlash(lVal.Caption, bg_color_hi, 15000, 450);
+    native.StartBadgeFlash(lVal.Caption, bg_color_hi, BADGE_FLASH_DURATION_HIGH_MS, BADGE_FLASH_REPEAT_DELAY_HIGH_MS);
 end;
 
-procedure TfBG.HandleLowGlucose(const b: BGReading);
+procedure TfBG.HandleLowGlucose(const reading: BGReading);
 var
   url: string;
   doFlash: boolean;
@@ -3987,7 +4006,7 @@ begin
   end;
   doFlash := native.GetBoolSetting('alerts.flash.low', false);
   if (not lowAlerted) and doFlash then
-    native.StartBadgeFlash(lVal.Caption, bg_color_lo, 20000, 400);
+    native.StartBadgeFlash(lVal.Caption, bg_color_lo, BADGE_FLASH_DURATION_LOW_MS, BADGE_FLASH_REPEAT_DELAY_LOW_MS);
 
   if assigned(native) and assigned(chroma) then
     if native.GetBoolSetting('razer.enabled', false) and chroma.Initialized then
@@ -3998,11 +4017,11 @@ begin
     {$endif}
 end;
 
-procedure TfBG.HandleNormalGlucose(const b: BGReading);
+procedure TfBG.HandleNormalGlucose(const reading: BGReading);
 var
-  s, url: string;
-  i: integer;
-  f: single;
+  formattedReading, url: string;
+  parsedInt: integer;
+  parsedFloat: single;
   go: boolean = false;
 begin
   bg_alert := false;
@@ -4013,22 +4032,22 @@ begin
 
   if un = mmol then
   begin
-    s := b.format(mmol, BG_MSG_SHORT, BGPrimary);
-    if (TryStrToFloat(s, f, native.locale)) and (f = 5.5) then
+    formattedReading := reading.format(mmol, BG_MSG_SHORT, BGPrimary);
+    if (TryStrToFloat(formattedReading, parsedFloat, native.locale)) and (parsedFloat = 5.5) then
       go := true
     else
-      perfecttriggered := false;
+      perfectTriggered := false;
   end
   else
   begin
-    s := b.format(mgdl, BG_MSG_SHORT, BGPrimary);
-    if (TryStrToInt(s, i)) and (i = 100) then
+    formattedReading := reading.format(mgdl, BG_MSG_SHORT, BGPrimary);
+    if (TryStrToInt(formattedReading, parsedInt)) and (parsedInt = 100) then
       go := true
     else
-      perfecttriggered := false;
+      perfectTriggered := false;
   end;
 
-  if go and (not perfecttriggered) then
+  if go and (not perfectTriggered) then
   begin
     perfectTriggered := true;
 
@@ -4038,7 +4057,7 @@ begin
       native.getURL(url, url);
 
     if native.GetBoolSetting('alerts.flash.perfect', false) then
-      native.StartBadgeFlash(lVal.Caption, bg_color_ok, 6000, 500);
+      native.StartBadgeFlash(lVal.Caption, bg_color_ok, BADGE_FLASH_DURATION_OK_MS, BADGE_FLASH_REPEAT_DELAY_OK_MS);
     // subtle celebratory pulse
   end;
 
@@ -4047,7 +4066,7 @@ begin
       Chroma.SetStaticAll(clRazerGreen);
 
 
-  UpdateOffRangePanel(b.val);
+  UpdateOffRangePanel(reading.val);
 end;
 
 procedure TfBG.fixWarningPanel;
@@ -4667,7 +4686,7 @@ end;
 
 procedure TfBG.CheckForUpdates(ShowUpToDateMessage: boolean = false);
 var
-  res, rn, r, s: string;
+  res, rn, r, newVersionMessage: string;
   rok: boolean;
   JsonData: TJSONData;
   JsonObj: TJSONObject;
@@ -4702,8 +4721,8 @@ begin
       r := GetNewerVersionURL(res);
       if r = '' then
         r := 'https://github.com/slicke/trndi/releases/latest';
-      s := Format(RS_NEWVER, [rn]);
-      if UXDialog(uxdAuto, RS_NEWVER_CAPTION, s, [mbYes, mbNo], mtInformation) = mrYes then
+      newVersionMessage := Format(RS_NEWVER, [rn]);
+      if UXDialog(uxdAuto, RS_NEWVER_CAPTION, newVersionMessage, [mbYes, mbNo], mtInformation) = mrYes then
         OpenURL(r);
     end
     else

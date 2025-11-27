@@ -131,25 +131,25 @@ end;
 procedure TfBG.InitializeUIComponents;
 var
   i: integer;
-  s: string;
+  fontName: string;
 begin
   // Set dots
   DOT_GRAPH := native.GetWideCharSetting('font.dot', System.widechar($2B24));
   DOT_FRESH := native.GetWideCharSetting('font.dot_fresh', System.widechar($2600));
 
   // Load fonts
-  s := native.GetSetting('font.val', 'default');
-  if s <> 'default' then
-    lVal.Font.Name := s;
-  s := native.GetSetting('font.arrow', 'default');
-  if s <> 'default' then
-    lArrow.Font.Name := s;
+  fontName := native.GetSetting('font.val', 'default');
+  if fontName <> 'default' then
+    lVal.Font.Name := fontName;
+  fontName := native.GetSetting('font.arrow', 'default');
+  if fontName <> 'default' then
+    lArrow.Font.Name := fontName;
 
-  s := native.GetSetting('font.ago', 'default');
-  if s <> 'default' then
+  fontName := native.GetSetting('font.ago', 'default');
+  if fontName <> 'default' then
   begin
-    lAgo.Font.Name := s;
-    lTir.Font.Name := s;
+    lAgo.Font.Name := fontName;
+    lTir.Font.Name := fontName;
   end;
 
   // Sensitive data
@@ -232,7 +232,7 @@ end;
 procedure TfBG.LoadUserProfile;
 var
   i: integer;
-  s: string;
+  userNick: string;
 begin
   if username <> '' then
   begin
@@ -246,18 +246,18 @@ begin
       begin
         username := strings[i];
         native.configUser := username;
-        s := native.GetSettingEx('user.nick', username);
+        userNick := native.GetSettingEx('user.nick', username);
 
-        fbg.Caption := Format(RS_USER_CAPTION, [s, fBG.Caption]);
-        multinick := s;
+        fbg.Caption := Format(RS_USER_CAPTION, [userNick, fBG.Caption]);
+        multinick := userNick;
       end
       else
       begin
         username := '';
-        s := native.GetSettingEx('user.nick', RS_DEFAULT_ACCOUNT);
+        userNick := native.GetSettingEx('user.nick', RS_DEFAULT_ACCOUNT);
 
-        multinick := s;
-        fbg.Caption := Format(RS_USER_CAPTION, [s, fBG.Caption]);
+        multinick := userNick;
+        fbg.Caption := Format(RS_USER_CAPTION, [userNick, fBG.Caption]);
       end;
       Free;
     end;// Load possible other users
@@ -355,23 +355,23 @@ end;
 {$ifdef X_LINUXBSD}
 procedure TfBG.InitializeLinuxPlatform;
 var
-  x, s: string;
+  distroId, fontName: string;
 begin
-  x := scanLinuxDistro(['fedora','ubuntu','debian']);
-  case x of
+  distroId := scanLinuxDistro(['fedora','ubuntu','debian']);
+  case distroId of
   'fedora':
-    s := 'Poppins';
+    fontName := 'Poppins';
   'ubuntu':
-    s := 'Sans';
+    fontName := 'Sans';
   else
-    s := 'default';
+    fontName := 'default';
   end;
 
   IsRaspberry := false;
-  if x = 'debian' then
+  if distroId = 'debian' then
     IsRaspberry := FileExists('/etc/rpi-issue');
 
-  fBG.Font.Name := s;
+  fBG.Font.Name := fontName;
 
   {$ifndef LCLQt6}
   Showmessage('This release of Trndi was compiled for a non-supported platform ("widgetset")'#10'Performance might be bad and features might not work as intended!'#10#10'Please download the official release (Qt6) from github.com/slicke/trndi');
