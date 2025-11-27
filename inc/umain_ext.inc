@@ -109,7 +109,7 @@ procedure TfBG.LoadExtensions;
 
 var
   exts: TStringList;
-  s, extdir: string;
+  extFile, extdir: string;
 begin
   TTrndiExtEngine.Instance;
   // Creates the class, if it's not already
@@ -151,11 +151,11 @@ begin
     // Add the UX modification function, as declared in this file
     if ssCtrl in GetKeyShiftState then
       ExtHTML(uxdAuto, RS_SAFEMODE, RS_SAFEMODE_DESC, [mbOK], uxmtInformation, uxscLarge)
-    else for s in exts do
+    else for extFile in exts do
       begin
-        fSplash.lInfo.Caption := RS_SPLASH_LOADING + ExtractFileName(s);
+        fSplash.lInfo.Caption := RS_SPLASH_LOADING + ExtractFileName(extFile);
         // Run all found files
-        ExecuteFile(s);
+        ExecuteFile(extFile);
       end;
     exts.Free;
   end;
