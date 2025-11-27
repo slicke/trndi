@@ -138,6 +138,9 @@ type
 
 implementation
 
+resourcestring
+  sParamUsername = 'xDrip URL';
+  sParamPassword = 'API Secret';
 {------------------------------------------------------------------------------
   Create an xDrip API client.
 
@@ -274,8 +277,8 @@ end;
 class function xDrip.ParamLabel(Index: integer): string;
 begin
   case Index of
-    1: Result := 'xDrip URL';
-    2: Result := 'API Secret';
+    1: Result := sParamUsername;
+    2: Result := sParamPassword;
     else
       Result := inherited ParamLabel(Index);
   end;

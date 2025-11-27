@@ -348,7 +348,7 @@ msgstr "Slå på Razer Chroma-integrationen"
 
 #: tfconf.cbchromanormal.caption
 msgid "Make units green when reading is normal"
-msgstr ""
+msgstr "Gör enheter gröna vid normalt värde"
 
 #: tfconf.cbcust.caption
 msgctxt "tfconf.cbcust.caption"
@@ -768,7 +768,7 @@ msgstr "Okänt system"
 
 #: tfconf.lpass.caption
 msgid "API Key / Dexcom Password"
-msgstr "API-nyckel / Dexcomlösenord"
+msgstr "API-nyckel / Dexcom-lösenord"
 
 #: tfconf.lproblematic.caption
 msgid "Compatibility mode: Your window manager does not support all features, please consider eg KDE"
@@ -976,6 +976,46 @@ msgstr "Inloggningsfel: Kunde inte etablera en giltig session"
 #: trndi.api.dexcom.serrdexpass
 msgid "Invalid Dexcom password or account credentials"
 msgstr "Felaktigt Dexcom-lösenord eller kontoinformation"
+
+#: trndi.api.dexcom.sparampassword
+msgid "Dexcom Password"
+msgstr "Dexcom-lösenord"
+
+#: trndi.api.dexcom.sparamregion
+msgid "Region (\"usa\" or empty)"
+msgstr "Region (\"usa\" eller tom)"
+
+#: trndi.api.dexcom.sparamusername
+msgid "Dexcom Username"
+msgstr "Dexcom-användarnamn"
+
+#: trndi.api.nightscout.sparampassword
+msgctxt "trndi.api.nightscout.sparampassword"
+msgid "API Secret"
+msgstr "API-hemlighet"
+
+#: trndi.api.nightscout.sparamusername
+msgctxt "trndi.api.nightscout.sparamusername"
+msgid "NightScout URL"
+msgstr "NightScout-adress"
+
+#: trndi.api.nightscout3.sparampassword
+msgid "Auth token suffix"
+msgstr "Tokensuffix för autensiering"
+
+#: trndi.api.nightscout3.sparamusername
+msgctxt "trndi.api.nightscout3.sparamusername"
+msgid "NightScout URL"
+msgstr "NightScout-adress"
+
+#: trndi.api.xdrip.sparampassword
+msgctxt "trndi.api.xdrip.sparampassword"
+msgid "API Secret"
+msgstr "API-hemlighet"
+
+#: trndi.api.xdrip.sparamusername
+msgid "xDrip URL"
+msgstr "xDrip-adress"
 
 #: trndi.strings.rs_cleanup
 msgid "Wait. Shutting down extensions engine..."
@@ -1807,4 +1847,3 @@ msgstr "Du kan använda skift+<nummerr> för att manuellt sätta synligheten (0 
 #: ufloat.rscustomsize
 msgid "You can hold down shift and plus (+) or minus (-) to change the window size"
 msgstr "Du kan hålla ned skift och plus (+) eller minus (-) för att justera fönstrets storlek"
-
