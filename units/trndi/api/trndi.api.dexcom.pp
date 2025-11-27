@@ -160,6 +160,11 @@ public
         3: Region (use "usa" for US servers)
      }
   class function ParamLabel(Index: integer): string; override;
+  {** Test connection for Dexcom Share API
+      - Performs authentication sequence similar to Connect to validate credentials
+      - Probes /General/SystemUtcTime to ensure server responds with time info
+  }
+  class function testConnection(user, pass, extra: string): Byte; override;
 
 published
     {** The effective base URL used for API requests. }
@@ -535,6 +540,132 @@ begin
     Result := sParamRegion;
   else
     Result := inherited ParamLabel(Index);
+  end;
+end;
+
+{------------------------------------------------------------------------------
+  Test connection for Dexcom Share API
+  - Performs authentication sequence similar to Connect to validate credentials
+  - Probes /General/SystemUtcTime to ensure server responds with time info
+ ------------------------------------------------------------------------------}
+class function Dexcom.testConnection(user, pass, extra: string): Byte;
+var
+  tn: TrndiNative;
+  base, body, resp, accountId, sessionId, timeResp, timeStr: string;
+  js: TJSONData;
+  useEmailAuth: boolean;
+  LServerDateTime: TDateTime;
+  i: integer;
+  function JSONEscape(const S: string): string;
+  var
+    i: integer;
+    c: char;
+  begin
+    Result := '';
+    for i := 1 to Length(S) do
+    begin
+      c := S[i];
+      case c of
+      '"': Result := Result + '\"';
+      '\': Result := Result + '\\';
+      #8: Result := Result + '\b';
+      #9: Result := Result + '\t';
+      #10: Result := Result + '\n';
+      #12: Result := Result + '\f';
+      #13: Result := Result + '\r';
+      else Result := Result + c;
+      end;
+    end;
+  end;
+begin
+  Result := 1; // default failure
+  // Basic parameter checks
+  if Trim(user) = '' then
+    Exit;
+
+  base := DEXCOM_BASE_URLS[extra = 'usa'];
+  // Create native with same UA as client
+  tn := TrndiNative.Create('Dexcom Share/3.0.2.11 CFNetwork/711.2.23 Darwin/14.0.0', base);
+  try
+    useEmailAuth := (Pos('@', user) > 0) or (Pos('+', user) = 1);
+    body := Format('{"accountName":"%s","password":"%s","applicationId":"%s"}',
+      [JSONEscape(user), JSONEscape(pass), DEXCOM_APPLICATION_ID]);
+
+    // 1) Authenticate
+    if useEmailAuth then
+    begin
+      accountId := StringReplace(tn.Request(true, DEXCOM_AUTHENTICATE_ENDPOINT, [], body), '"', '', [rfReplaceAll]);
+      if (accountId = '') or (Pos('error', LowerCase(accountId)) > 0) or (Pos('invalid', LowerCase(accountId)) > 0) then
+        Exit;
+
+      body := Format('{"accountId":"%s","password":"%s","applicationId":"%s"}',
+        [accountId, JSONEscape(pass), DEXCOM_APPLICATION_ID]);
+
+      sessionId := StringReplace(tn.Request(true, DEXCOM_LOGIN_BY_ID_ENDPOINT, [], body), '"', '', [rfReplaceAll]);
+    end
+    else
+      sessionId := StringReplace(tn.Request(true, DEXCOM_LOGIN_BY_NAME_ENDPOINT, [], body), '"', '', [rfReplaceAll]);
+
+    // 2) Basic checks on session token
+    if (sessionId = '') or (Pos('error', LowerCase(sessionId)) > 0) or (Pos('invalid', LowerCase(sessionId)) > 0) or (Pos('AccountPassword', sessionId) > 0) then
+      Exit;
+
+    // 3) Time probe
+    timeResp := tn.Request(false, DEXCOM_TIME_ENDPOINT, [], '', 'Accept=application/json');
+    if Trim(timeResp) = '' then
+      Exit;
+
+    // Parse time response: try '<SystemTime>...' or '/Date(ms)/' or JSON object
+    if Pos('>', timeResp) > 0 then
+    begin
+      // Example: <SystemTime>YYYY-MM-DDTHH:mm:ss</SystemTime>
+      timeStr := ExtractDelimited(2, timeResp, ['>', '<']);
+      if timeStr = '' then
+        Exit;
+      try
+        LServerDateTime := ScanDateTime('YYYY-MM-DD"T"hh:nn:ss', Copy(timeStr, 1, 19));
+      except
+        Exit;
+      end;
+    end
+    else
+    begin
+      // JSON or /Date(ms)/ format. Find digits between '(' and ')'
+      timeStr := '';
+      i := Pos('(', timeResp);
+      if i > 0 then
+      begin
+        timeStr := Copy(timeResp, i + 1, Pos(')', timeResp) - i - 1);
+      end
+      else
+      begin
+        // Try a simple JSON parse for numeric ServerTime value
+        try
+          js := GetJSON(timeResp);
+          try
+            if js.JSONType = jtObject then
+              timeStr := TJSONObject(js).Get('ServerTime', '');
+          finally
+            js.Free;
+          end;
+        except
+          timeStr := '';
+        end;
+      end;
+
+      if timeStr = '' then
+        Exit;
+      try
+        LServerDateTime := UnixToDateTime(StrToInt64(timeStr) div 1000, false);
+      except
+        Exit;
+      end;
+    end;
+
+    // If all above succeeded, we consider this a success
+    Result := 0;
+  finally
+    tn.Free;
   end;
 end;
 

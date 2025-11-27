@@ -1149,9 +1149,13 @@ var
   res: integer;
 begin
   if SameText(cbSys.Text, 'NightScout') then
-    res := NightScout.testConnection(eAddr.text,ePass.text,eExt.text)
+    res := NightScout.testConnection(eAddr.text,ePass.text,'')
   else if SameText(cbSys.Text, 'NightScout v3') then
-    res := NightScout3.testConnection(eAddr.text,ePass.text,eExt.text)
+    res := NightScout3.testConnection(eAddr.text,ePass.text,'')
+  else if SameText(cbSys.Text, 'Dexcom (USA)') then
+    res := Dexcom.testConnection(eAddr.text,ePass.text,'usa')
+  else if SameText(cbSys.Text, 'Dexcom (Outside USA)') then
+    res := Dexcom.testConnection(eAddr.text,ePass.text,'eu')
   else begin
     ShowMessage(RS_TEST_UNSUPPORTED);
     exit;
