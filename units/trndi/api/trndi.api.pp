@@ -248,6 +248,14 @@ const
      }
   function predictReadings(numPredictions: integer; out predictions: BGResults): boolean;
 
+     {** Test a connection before using it
+        @param(user The username, or URL)
+        @param(pass The password or auth token)
+        @param(extra Extra info)
+
+        @returns(0 if it works, 1 if it doesnt, 3 if not supported)
+     }
+  class function testConnection(user, pass, extra: string): Byte; virtual;
     // -------- Properties --------
 
     {** Indexed read-only access to thresholds by @code(BGValLevel). }
@@ -662,6 +670,14 @@ begin
   end;
   
   Result := True;
+end;
+
+{------------------------------------------------------------------------------
+  Test connection details
+------------------------------------------------------------------------------}
+class function TrndiAPI.testConnection(user, pass, extra: string): byte;
+begin
+  result := 3; // Not supported
 end;
 
 end.
