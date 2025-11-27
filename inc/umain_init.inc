@@ -589,12 +589,13 @@ begin
   end;
 
   Chroma := TRazerChromaFactory.CreateInstance;
-  if native.GetBoolSetting('razer.enabled', false) then
+  if native.GetBoolSetting('razer.enabled', false) then begin
     fSplash.linfo.Caption := 'Initializing Chroma...';
     if not Chroma.Initialize then
     begin
       Showmessage('❌ Failed to initialize Razer Chroma: ', Chroma.LastError);
     end;
+  end;
 
   // Cleanup splash screen
   fSplash.Close;
