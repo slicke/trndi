@@ -308,7 +308,7 @@ msgstr "- Radera"
 
 #: tfconf.btest.caption
 msgid "Test"
-msgstr ""
+msgstr "Testa"
 
 #: tfconf.btestannounce.caption
 msgid "Test Announce"
@@ -1832,15 +1832,15 @@ msgstr "Välj ett typsnitt för tiden"
 
 #: uconf.rs_test_fail
 msgid "Could not connect!"
-msgstr ""
+msgstr "Kunde inte ansluta!"
 
 #: uconf.rs_test_success
 msgid "Successfully connected!"
-msgstr ""
+msgstr "Ansluten!"
 
 #: uconf.rs_test_unsupported
 msgid "Sorry! Trndi does not (yet) support connection testing for this service!"
-msgstr ""
+msgstr "Ledsen! Trndi stöder (ännu) inte anslutningstest för denna tjänst!"
 
 #: uconf.rs_uptodate
 msgid "You are up to date"
@@ -1863,4 +1863,3 @@ msgstr "Du kan använda skift+<nummerr> för att manuellt sätta synligheten (0 
 #: ufloat.rscustomsize
 msgid "You can hold down shift and plus (+) or minus (-) to change the window size"
 msgstr "Du kan hålla ned skift och plus (+) eller minus (-) för att justera fönstrets storlek"
-
