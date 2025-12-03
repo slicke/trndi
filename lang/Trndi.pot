@@ -1045,7 +1045,14 @@ msgstr ""
 
 #: trndi.strings.rs_history_item
 #, object-pascal-format
-msgid "Selected Reading: %s | Difference: %s | Trend: %s | RSSI: %s | Noise: %s | Source: %s | Device: %s"
+msgid ""
+"Selected Reading: %s\n"
+"Difference: %s\n"
+"Trend: %s\n"
+"RSSI: %s\n"
+"Noise: %s\n"
+"Source: %s\n"
+"Device: %s"
 msgstr ""
 
 #: trndi.strings.rs_hi_level
@@ -1234,6 +1241,7 @@ msgid "Reading"
 msgstr ""
 
 #: trndi.strings.rs_rh_time
+msgctxt "trndi.strings.rs_rh_time"
 msgid "Time"
 msgstr ""
 
@@ -1242,6 +1250,7 @@ msgid "Historical readings"
 msgstr ""
 
 #: trndi.strings.rs_rh_unknown
+msgctxt "trndi.strings.rs_rh_unknown"
 msgid "Unknown"
 msgstr ""
 
@@ -1774,5 +1783,68 @@ msgstr ""
 
 #: ufloat.rscustomsize
 msgid "You can hold down shift and plus (+) or minus (-) to change the window size"
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_axis_time
+msgctxt "uhistorygraph.rs_history_graph_axis_time"
+msgid "Time"
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_empty
+msgid "No history data to plot"
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_help
+msgid "Click a dot to see the full reading details"
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_key_high
+msgctxt "uhistorygraph.rs_history_graph_key_high"
+msgid "High"
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_key_low
+msgctxt "uhistorygraph.rs_history_graph_key_low"
+msgid "Low"
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_key_range
+msgid "In range"
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_key_range_hi
+msgid "Range high"
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_key_range_lo
+msgid "Range low"
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_key_title
+msgid "Legend"
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_key_unknown
+msgctxt "uhistorygraph.rs_history_graph_key_unknown"
+msgid "Unknown"
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_point_count
+#, object-pascal-format
+msgid "%d readings"
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_range
+#, object-pascal-format
+msgid "%s – %s"
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_title
+msgid "History graph"
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_unit_fmt
+#, object-pascal-format
+msgid "Readings (%s)"
 msgstr ""
 
