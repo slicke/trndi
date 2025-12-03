@@ -127,9 +127,15 @@ end;
 TfBG = class(TForm)
   apMain: TApplicationProperties;
   bSettings: TButton;
+  bTouchMenu: TButton;
+  bTouchSettings: TButton;
+  bMenuPanelClose: TButton;
+  bTouchFull: TButton;
   lPredict: TLabel;
   miDotSmall: TMenuItem;
   miPredict: TMenuItem;
+  pnTouchContents: TPanel;
+  pnTouchMenu: TPanel;
   pnWarnlast: TLabel;
   lRef: TLabel;
   lDot10: TDotControl;
@@ -214,7 +220,11 @@ TfBG = class(TForm)
       dot-count changes to keep everything visually aligned.
      }
     procedure AdjustGraph;
+    procedure bMenuPanelCloseClick(Sender: TObject);
   procedure bSettingsClick(Sender: TObject);
+  procedure bTouchFullClick(Sender: TObject);
+  procedure bTouchMenuClick(Sender: TObject);
+  procedure bTouchSettingsClick(Sender: TObject);
   procedure fbReadingsDblClick(Sender: TObject);
   procedure FormActivate(Sender: TObject);
   procedure FormClick(Sender: TObject);
@@ -1351,6 +1361,11 @@ begin
 
 end;
 
+procedure TfBG.bMenuPanelCloseClick(Sender: TObject);
+begin
+  pnTouchMenu.Hide;
+end;
+
 procedure TfBG.FormPaint(Sender: TObject);
 var
   loY, hiY, rangeLoY, rangeHiY: integer;
@@ -1545,6 +1560,25 @@ end;
 procedure TfBG.bSettingsClick(Sender: TObject);
 begin
   ShowMessage(RS_RIGHT_CLICK);
+  miSettings.Click;
+end;
+
+procedure TfBG.bTouchFullClick(Sender: TObject);
+begin
+  miFullScreen.Click;
+  pnTouchMenu.Hide;
+end;
+
+procedure TfBG.bTouchMenuClick(Sender: TObject);
+var
+  p: TPoint;
+begin
+  p := Mouse.CursorPos;
+  pmSettings.PopUp(p.X, p.Y)
+end;
+
+procedure TfBG.bTouchSettingsClick(Sender: TObject);
+begin
   miSettings.Click;
 end;
 
@@ -2935,6 +2969,8 @@ begin
 end;
 
 procedure TfBG.pmSettingsPopup(Sender: TObject);
+var
+  shifted: boolean;
 {$ifdef LCLQt6}
 function SafeQtStyle(Handle: QWidgetH; const Style: string): boolean;
   var
@@ -2967,7 +3003,13 @@ var
   H, M: integer;
 begin
   // Shift down
-  miAdvanced.Visible := ssShift in GetKeyShiftState;
+  Application.ProcessMessages;
+  try
+    shifted := ssShift in GetKeyShiftState;
+  except
+    shifted := false;
+  end;
+  miAdvanced.Visible := shifted;
   miATouch.Checked := HasTouch;
   {$ifdef DEBUG}
   miDebugBackend.Visible := true;
@@ -3481,8 +3523,18 @@ begin
       p := Mouse.CursorPos;
       if SecondsBetween(Now, last_popup) > 2 then
       begin
-        pmSettings.PopUp(p.X, p.Y);
         last_popup := now;
+        if not native.HasTouchScreen then begin
+          sleep(100); // Let getshiftstate catch up
+          Application.ProcessMessages;
+          pmSettings.PopUp(p.X, p.Y);
+        end
+        else begin
+          CenterPanelToCaption(pnTouchMenu);
+          pnTouchMenu.Width := Width;
+          pnTouchMenu.left := 0;
+          pnTouchMenu.Show;
+        end;
       end;
     end;
   end;
