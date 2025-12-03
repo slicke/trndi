@@ -348,7 +348,14 @@ object fBG: TfBG
       end
     end
     object miPref: TMenuItem
-      Caption = 'Preferences'
+      Caption = 'More options'
+      object miHistory: TMenuItem
+        Caption = 'Show history'
+        OnClick = miHistoryClick
+      end
+      object Separator2: TMenuItem
+        Caption = '-'
+      end
       object miRangeColor: TMenuItem
         Caption = 'Use range color for window'
         OnClick = miRangeColorClick
@@ -356,10 +363,6 @@ object fBG: TfBG
       object miClock: TMenuItem
         Caption = 'Show clock every 20 sec'
         OnClick = miClockClick
-      end
-      object miHistory: TMenuItem
-        Caption = 'Show history'
-        OnClick = miHistoryClick
       end
       object miAlternate: TMenuItem
         Caption = 'Alterante arrow and reading'
