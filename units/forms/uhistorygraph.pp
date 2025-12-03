@@ -177,7 +177,7 @@ var
 implementation
 
 uses
-  LCLType;
+  LCLType, trndi.funcs;
 
 resourcestring
   RS_HISTORY_GRAPH_TITLE = 'History graph';
@@ -240,6 +240,8 @@ var
   y, x: integer;
   labelText: string;
   lineColor: TColor;
+  apiMinVal, apiMaxVal: double;
+  apiMinY, apiMaxY: integer;
 begin
   ACanvas.Brush.Style := bsClear;
   ACanvas.Pen.Style := psSolid;
@@ -257,12 +259,34 @@ begin
     ACanvas.MoveTo(PlotRect.Left, y);
     ACanvas.LineTo(PlotRect.Right, y);
 
-    // Draw value tick labels to the left of the plot. Format string
-    // mirrors the usual BG_MSG_SHORT format used elsewhere.
-    labelText := FormatFloat('0.0', value);
+    // Draw value tick labels to the left of the plot. Use BG_MSG_SHORT to
+    // follow the same unit display rules used across the app (1-decimal for
+    // mmol/L, no decimals for mg/dL).
+    labelText := Format(BG_MSG_SHORT[FUnit], [value]);
     ACanvas.Pen.Color := clGray;
     ACanvas.TextOut(PlotRect.Left - 48,
       y - ACanvas.TextHeight(labelText) div 2, labelText);
+  end;
+
+  {** Draw API min/max horizontal markers (the API's acceptable value range).
+      These are drawn after the grid so the user immediately sees the
+      full low/high range even if there is limited data. }
+  begin
+    // BG_API_MIN/MAX are in mmol/L; convert to the display unit (FUnit)
+    // by using BG_CONVERTIONS[mmol][FUnit].
+      apiMinVal := BG_API_MIN * BG_CONVERTIONS[FUnit][mmol];
+      apiMaxVal := BG_API_MAX * BG_CONVERTIONS[FUnit][mmol];
+    apiMinY := ValueToY(apiMinVal, PlotRect);
+    apiMaxY := ValueToY(apiMaxVal, PlotRect);
+    // Draw thin dashed lines for min/max
+    ACanvas.Pen.Style := psDot;
+    ACanvas.Pen.Color := clGray;
+    ACanvas.MoveTo(PlotRect.Left, apiMinY);
+    ACanvas.LineTo(PlotRect.Right, apiMinY);
+    ACanvas.MoveTo(PlotRect.Left, apiMaxY);
+    ACanvas.LineTo(PlotRect.Right, apiMaxY);
+    ACanvas.Pen.Style := psSolid;
+    // No explicit numeric labels for API min/max; the dashed lines suffice.
   end;
 
   for i := 0 to GRAPH_DIVISIONS do
@@ -669,6 +693,7 @@ procedure TfHistoryGraph.UpdateExtents;
 var
   i: integer;
   padding: double;
+  apiMin, apiMax: double;
 begin
   if not HasData then
     Exit;
@@ -692,6 +717,18 @@ begin
 
   if IsZero(FMaxTime - FMinTime) then
     FMaxTime := FMaxTime + EncodeTime(0, 5, 0, 0);
+
+  // Ensure the graph spans at least the API-defined limits. The API min/max
+  // (BG_API_MIN and BG_API_MAX) are defined in mmol/L in `trndi.funcs`.
+  // Convert to the configured display unit using BG_CONVERTIONS before
+  // deciding extents so the full low-high range is always visible.
+  apiMin := BG_API_MIN * BG_CONVERTIONS[FUnit][mmol];
+  apiMax := BG_API_MAX * BG_CONVERTIONS[FUnit][mmol];
+
+  if FMinValue > apiMin then
+    FMinValue := apiMin;
+  if FMaxValue < apiMax then
+    FMaxValue := apiMax;
 
   if SameValue(FMaxValue, FMinValue) then
   begin
