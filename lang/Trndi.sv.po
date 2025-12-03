@@ -1293,6 +1293,7 @@ msgid "Reading"
 msgstr "Avläsning"
 
 #: trndi.strings.rs_rh_time
+msgctxt "trndi.strings.rs_rh_time"
 msgid "Time"
 msgstr "Tidpunkt"
 
@@ -1301,6 +1302,7 @@ msgid "Historical readings"
 msgstr "Historiska värden"
 
 #: trndi.strings.rs_rh_unknown
+msgctxt "trndi.strings.rs_rh_unknown"
 msgid "Unknown"
 msgstr "Okänd"
 
@@ -1896,3 +1898,66 @@ msgstr "Du kan använda skift+<nummerr> för att manuellt sätta synligheten (0 
 #: ufloat.rscustomsize
 msgid "You can hold down shift and plus (+) or minus (-) to change the window size"
 msgstr "Du kan hålla ned skift och plus (+) eller minus (-) för att justera fönstrets storlek"
+
+#: uhistorygraph.rs_history_graph_axis_time
+msgctxt "uhistorygraph.rs_history_graph_axis_time"
+msgid "Time"
+msgstr "Tidpunkt"
+
+#: uhistorygraph.rs_history_graph_empty
+msgid "No history data to plot"
+msgstr "Ingen historisk data att rita ut"
+
+#: uhistorygraph.rs_history_graph_help
+msgid "Click a dot to see the full reading details"
+msgstr "Klicka på en punkt för att se detaljer om avläsningen"
+
+#: uhistorygraph.rs_history_graph_key_high
+msgctxt "uhistorygraph.rs_history_graph_key_high"
+msgid "High"
+msgstr "Hög"
+
+#: uhistorygraph.rs_history_graph_key_low
+msgctxt "uhistorygraph.rs_history_graph_key_low"
+msgid "Low"
+msgstr "Låg"
+
+#: uhistorygraph.rs_history_graph_key_range
+msgid "In range"
+msgstr "Inom område"
+
+#: uhistorygraph.rs_history_graph_key_range_hi
+msgid "Range high"
+msgstr "Högt område"
+
+#: uhistorygraph.rs_history_graph_key_range_lo
+msgid "Range low"
+msgstr "Lågt område"
+
+#: uhistorygraph.rs_history_graph_key_title
+msgid "Legend"
+msgstr "Förklaring"
+
+#: uhistorygraph.rs_history_graph_key_unknown
+msgctxt "uhistorygraph.rs_history_graph_key_unknown"
+msgid "Unknown"
+msgstr "Okänd"
+
+#: uhistorygraph.rs_history_graph_point_count
+#, object-pascal-format
+msgid "%d readings"
+msgstr "%d avläsningar"
+
+#: uhistorygraph.rs_history_graph_range
+#, object-pascal-format
+msgid "%s – %s"
+msgstr "%s - %s"
+
+#: uhistorygraph.rs_history_graph_title
+msgid "History graph"
+msgstr "Historikgraf"
+
+#: uhistorygraph.rs_history_graph_unit_fmt
+#, object-pascal-format
+msgid "Readings (%s)"
+msgstr "Avläsningar (%s)"
