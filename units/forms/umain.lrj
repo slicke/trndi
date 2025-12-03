@@ -12,7 +12,7 @@
 {"hash":13055,"name":"tfbg.lref.caption","sourcebytes":[48,44,63],"value":"0,?"},
 {"hash":213582195,"name":"tfbg.bsettings.caption","sourcebytes":[83,101,116,116,105,110,103,115],"value":"Settings"},
 {"hash":268275699,"name":"tfbg.lpredict.caption","sourcebytes":[80,114,101,100,105,99,116,105,111,110,115],"value":"Predictions"},
-{"hash":104100227,"name":"tfbg.btouchsettings.caption","sourcebytes":[240,159,148,167,32,83,101,116,116,105,110,103,115],"value":"\uD83D\uDD27 Settings"},
+{"hash":41505139,"name":"tfbg.btouchsettings.caption","sourcebytes":[226,154,153,32,83,101,116,116,105,110,103,115],"value":"\u2699 Settings"},
 {"hash":139123397,"name":"tfbg.bmenupanelclose.caption","sourcebytes":[226,156,150,32,67,108,111,115,101],"value":"\u2716 Close"},
 {"hash":52770453,"name":"tfbg.btouchmenu.caption","sourcebytes":[226,152,176,32,77,101,110,117],"value":"\u2630 Menu"},
 {"hash":81257086,"name":"tfbg.btouchfull.caption","sourcebytes":[226,135,177,32,70,117,108,108,32,115,99,114,101,101,110],"value":"\u21F1 Full screen"},

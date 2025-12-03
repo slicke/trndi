@@ -3493,9 +3493,11 @@ begin
           pmSettings.PopUp(p.X, p.Y);
         end
         else begin
-          CenterPanelToCaption(pnTouchMenu);
           pnTouchMenu.Width := Width;
+          pnTouchMenu.Height := Height;
+          pnTouchMenu.top := 0;
           pnTouchMenu.left := 0;
+          pnTouchMenu.Font.Color := clBlack; // Fix RPi issue
           pnTouchMenu.Show;
         end;
       end;

@@ -138,8 +138,8 @@ msgstr "☰ Meny"
 
 #: tfbg.btouchsettings.caption
 msgctxt "tfbg.btouchsettings.caption"
-msgid "🔧 Settings"
-msgstr "🔧 Inställningar"
+msgid "⚙ Settings"
+msgstr "⚙ Inställningar"
 
 #: tfbg.lmissing.caption
 msgid "No recent readings!"
