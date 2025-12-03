@@ -52,6 +52,7 @@ msgid "Cancel"
 msgstr "Avbryt"
 
 #: slicke.ux.alert.smbuxclose
+msgctxt "slicke.ux.alert.smbuxclose"
 msgid "Close"
 msgstr "Stäng"
 
@@ -117,10 +118,28 @@ msgstr "Information"
 msgid "Value"
 msgstr "Värde"
 
+#: tfbg.bmenupanelclose.caption
+msgctxt "tfbg.bmenupanelclose.caption"
+msgid "✖ Close"
+msgstr "✖ Stäng"
+
 #: tfbg.bsettings.caption
 msgctxt "tfbg.bsettings.caption"
 msgid "Settings"
 msgstr "Inställningar"
+
+#: tfbg.btouchfull.caption
+msgid "⇱ Full screen"
+msgstr "⇱ Fullskärm"
+
+#: tfbg.btouchmenu.caption
+msgid "☰ Menu"
+msgstr "☰ Meny"
+
+#: tfbg.btouchsettings.caption
+msgctxt "tfbg.btouchsettings.caption"
+msgid "🔧 Settings"
+msgstr "🔧 Inställningar"
 
 #: tfbg.lmissing.caption
 msgid "No recent readings!"
