@@ -576,6 +576,12 @@ begin
 
     PredictGlucoseReading := GetBoolSetting('predictions.enable', false);
     PredictShortMode := GetBoolSetting('predictions.short', false);
+    // Read short mode size setting (small or big). Sanitize to 'small' otherwise.
+    PredictShortSize := native.GetIntSetting('predictions.short.size', 1);
+    if PredictShortSize < 1 then
+      PredictShortSize := 1
+    else if PredictShortSize > 3 then
+      PredictShortSize := 3;
     lPredict.Visible := PredictGlucoseReading;
   end;
 

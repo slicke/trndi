@@ -435,6 +435,10 @@ msgstr "Visa glukosförutspåelser"
 msgid "Show only trend arrows (short mode)"
 msgstr "Visa endast trendpilar (short mode)"
 
+#: tfconf.cbpredictshortsize.text
+msgid "small"
+msgstr "liten"
+
 #: tfconf.cbprivacy.caption
 msgid "Privacy Mode (Hide number)"
 msgstr "Privat läget (dölj nummer)"
@@ -792,6 +796,10 @@ msgstr "Okänt system"
 #: tfconf.lpass.caption
 msgid "API Key / Dexcom Password"
 msgstr "API-nyckel / Dexcom-lösenord"
+
+#: tfconf.lpredictshortsize.caption
+msgid "Trend arrow size:"
+msgstr "Trendpilsstorlek:"
 
 #: tfconf.lproblematic.caption
 msgid "Compatibility mode: Your window manager does not support all features, please consider eg KDE"
@@ -1961,4 +1969,3 @@ msgstr "Historikgraf"
 #, object-pascal-format
 msgid "Readings (%s)"
 msgstr "Avläsningar (%s)"
-

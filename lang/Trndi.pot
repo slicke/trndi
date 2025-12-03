@@ -419,6 +419,10 @@ msgstr ""
 msgid "Show only trend arrows (short mode)"
 msgstr ""
 
+#: tfconf.cbpredictshortsize.text
+msgid "small"
+msgstr ""
+
 #: tfconf.cbprivacy.caption
 msgid "Privacy Mode (Hide number)"
 msgstr ""
@@ -774,6 +778,10 @@ msgstr ""
 
 #: tfconf.lpass.caption
 msgid "API Key / Dexcom Password"
+msgstr ""
+
+#: tfconf.lpredictshortsize.caption
+msgid "Trend arrow size:"
 msgstr ""
 
 #: tfconf.lproblematic.caption

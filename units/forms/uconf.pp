@@ -104,6 +104,8 @@ TfConf = class(TForm)
   cbFlashHi: TCheckBox;
   cbPredictions: TCheckBox;
   cbPredictShort: TCheckBox;
+  cbPredictShortSize: TComboBox;
+  lPredictShortSize: TLabel;
   cbTirBar: TColorButton;
   cbTirBarCustom: TColorButton;
   cbChroma: TCheckBox;
@@ -282,6 +284,7 @@ TfConf = class(TForm)
   procedure cbCustChange(Sender: TObject);
   procedure cbCustRangeChange(Sender: TObject);
   procedure cbPredictionsChange(Sender: TObject);
+  procedure cbPredictShortSizeChange(Sender: TObject);
   procedure cbSysChange(Sender: TObject);
   procedure cbUserClick(Sender: TObject);
   procedure cbUserColorChanged(Sender: TObject);
@@ -1306,6 +1309,17 @@ procedure TfConf.cbPredictionsChange(Sender: TObject);
 begin
   if (cbPredictions.Checked) and self.Showing then
     ShowMessage(RS_PredictionWarn);
+end;
+
+procedure TfConf.cbPredictShortSizeChange(Sender: TObject);
+begin
+  // Apply short size selection to native settings immediately; the main UI will
+  // reload settings after the dialog is closed and apply layout changes.
+  if cbPredictShortSize.ItemIndex >= 0 then
+    tNative.SetSetting('predictions.short.size', IntToStr(cbPredictShortSize.ItemIndex + 1));
+  // We do not touch the main form from the settings form to avoid circular
+  // dependencies; the main UI reads this setting and will refresh on dialog
+  // close. If you want immediate preview, close the settings dialog.
 end;
 
 procedure TfConf.FormCreate(Sender: TObject);

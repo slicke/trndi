@@ -86,6 +86,7 @@ The arrow is automatically scaled larger for better visibility.
 
 - `predictions.enable` - Enable/disable predictions (default: `false`)
 - `predictions.short` - Use simplified arrow display (default: `false`)
+ - `predictions.short.size` - Short-mode arrow size (integer). Use 1 for `small` (default), 2 for `medium`, 3 for `big`. The numeric value controls the UI scale/area used when showing only a single arrow.
 
 ## Limitations
 
