@@ -71,7 +71,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, Math,
-  trndi.types, trndi.strings;
+  trndi.types, trndi.strings, slicke.ux.alert;
 
 type
   {** TfHistoryGraph
@@ -631,11 +631,11 @@ begin
   else
     noise := RS_RH_UNKNOWN;
 
-  ShowMessage(TimeToStr(Reading.date) + sLineBreak+
+  slicke.ux.alert.ExtText(uxdAuto, RS_RH_READING, TimeToStr(Reading.date) + sLineBreak+
     Format(RS_HISTORY_ITEM,
     [Reading.format(FUnit, BG_MSG_SHORT, BGPrimary),
     Reading.format(FUnit, BG_MSG_SIG_SHORT, BGDelta),
-    Reading.trend.Img, rssi, noise, Reading.Source, Reading.sensor]));
+    Reading.trend.Img, rssi, noise, Reading.Source, Reading.sensor]), [mbOK]);
 end;
 
 procedure TfHistoryGraph.SortPointsByTime;
