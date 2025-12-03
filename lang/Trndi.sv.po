@@ -1081,8 +1081,22 @@ msgstr "HÖGT"
 
 #: trndi.strings.rs_history_item
 #, object-pascal-format
-msgid "Selected Reading: %s | Difference: %s | Trend: %s | RSSI: %s | Noise: %s | Source: %s | Device: %s"
-msgstr "Vald Avläsning: %s | Skillnad: %s | Trend: %s | Signalstyrka (RSSI): %s | Brus: %s | Källa: %s | Enhet: %s"
+msgid ""
+"Selected Reading: %s\n"
+"Difference: %s\n"
+"Trend: %s\n"
+"RSSI: %s\n"
+"Noise: %s\n"
+"Source: %s\n"
+"Device: %s"
+msgstr ""
+"Vald Avläsning: %s\n"
+"Skillnad: %s\n"
+"Trend: %s\n"
+"Signalstyrka (RSSI): %s\n"
+"Brus: %s\n"
+"Källa: %s\n"
+"Enhet: %s"
 
 #: trndi.strings.rs_hi_level
 #, object-pascal-format

@@ -67,7 +67,7 @@ kdebadge,
 LazFileUtils, uconf, trndi.native, Trndi.API,
 trndi.api.xDrip,{$ifdef DEBUG} trndi.api.debug_custom, trndi.api.debug, trndi.api.debug_edge, trndi.api.debug_missing, trndi.api.debug_perfect, trndi.api.debug_firstmissing,{$endif}
 {$ifdef LCLQt6}Qt6, QtWidgets,{$endif}
-StrUtils, TouchDetection, ufloat, LCLType, trndi.webserver.threaded, RazerChromaFactory, RazerChroma;
+StrUtils, TouchDetection, ufloat, uhistorygraph, LCLType, trndi.webserver.threaded, RazerChromaFactory, RazerChroma;
 
 {** Main application unit exposing the primary UI and helpers for the
   Trndi application. This unit defines the `TfBG` form which handles
@@ -2211,46 +2211,8 @@ begin
 end;
 
 procedure TfBG.miHistoryClick(Sender: TObject);
-var
-  i: integer;
-  b: BGReading; // selected reading for the popup
-  keys, vals: TStringArray;
-  xval: integer;
-  rssi, noise: string;
 begin
-  SetLength({%H-}keys, high(bgs) + 1);
-  SetLength({%H-}vals, high(bgs) + 1);
-
-  for i := Low(bgs) to High(bgs) do
-  begin
-    if bgs[i].empty then
-      continue;
-
-    keys[i] := TimeToStr(bgs[i].date);
-    vals[i] := bgs[i].format(un, BG_MSG_SHORT, BGPrimary);
-  end;
-
-
-  i := ExtTable(uxdAuto, RS_RHISTORY, RS_RH_TITLE, RS_RH_INFO, keys,
-    vals, uxmtCustom, RS_RH_TIME, RS_RH_READING);
-  if i > 0 then
-  begin
-    b := bgs[i - 1];
-    if b.getRSSI(xval) then
-      rssi := xval.ToString
-    else
-      rssi := RS_RH_UNKNOWN;
-
-    if b.getNoise(xval) then
-      noise := xval.ToString
-    else
-      noise := RS_RH_UNKNOWN;
-
-    ShowMessage(TimeToStr(b.date), Format(RS_HISTORY_ITEM,
-      [b.format(un, BG_MSG_SHORT, BGPrimary), b.format(un,
-      BG_MSG_SIG_SHORT, BGDelta), b.trend.Img, rssi, noise,
-      b.Source, b.sensor]));
-  end;
+  ShowHistoryGraph(bgs, un);
 end;
 
 procedure TfBG.miRangeColorClick(Sender: TObject);

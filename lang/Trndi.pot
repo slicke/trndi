@@ -1045,7 +1045,14 @@ msgstr ""
 
 #: trndi.strings.rs_history_item
 #, object-pascal-format
-msgid "Selected Reading: %s | Difference: %s | Trend: %s | RSSI: %s | Noise: %s | Source: %s | Device: %s"
+msgid ""
+"Selected Reading: %s\n"
+"Difference: %s\n"
+"Trend: %s\n"
+"RSSI: %s\n"
+"Noise: %s\n"
+"Source: %s\n"
+"Device: %s"
 msgstr ""
 
 #: trndi.strings.rs_hi_level
