@@ -246,7 +246,7 @@ object fBG: TfBG
       Top = 1
       Width = 238
       Align = alTop
-      Caption = '🔧 Settings'
+      Caption = '⚙ Settings'
       TabOrder = 0
       OnClick = bTouchSettingsClick
     end
@@ -271,11 +271,11 @@ object fBG: TfBG
       ParentBackground = False
       TabOrder = 2
       object bTouchMenu: TButton
-        Left = -1
+        Left = 88
         Height = 76
         Top = 1
-        Width = 238
-        Align = alRight
+        Width = 149
+        Align = alClient
         Caption = '☰ Menu'
         TabOrder = 0
         OnClick = bTouchMenuClick

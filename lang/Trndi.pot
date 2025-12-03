@@ -128,7 +128,7 @@ msgstr ""
 
 #: tfbg.btouchsettings.caption
 msgctxt "tfbg.btouchsettings.caption"
-msgid "🔧 Settings"
+msgid "⚙ Settings"
 msgstr ""
 
 #: tfbg.lmissing.caption
