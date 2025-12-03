@@ -619,6 +619,8 @@ PaintRangeCGMRange: boolean = true; // Show cgmRangeLo/cgmRangeHi inner threshol
 PaintRangeLines: boolean = false;
 PredictGlucoseReading: boolean = false;
 PredictShortMode: boolean = false;
+// 'small' or 'big' to control single-arrow prediction size
+PredictShortSize: integer = 1; // 1=small, 2=medium, 3=big
   // Show threshold lines (if false, only filled areas are drawn)
 {$ifdef darwin}
 MacAppDelegate: TMyAppDelegate;
@@ -2388,6 +2390,7 @@ procedure LoadUserSettings(f: TfConf);
     i: integer;
     posValue: integer;
     po: TrndiPos;
+    sizeVal: integer;
   begin
     with f, native do
     begin
@@ -2439,6 +2442,14 @@ procedure LoadUserSettings(f: TfConf);
       cbPredictions.Checked := GetBoolSetting('predictions.enable');
       cbWebAPI.Checked := GetBoolSetting('webserver.enable');
       cbPredictShort.Checked := GetBoolSetting('predictions.short');
+      // Load short arrow size
+      // Load and clamp numeric size setting, mapping to combobox index
+      sizeVal := native.GetIntSetting('predictions.short.size', 1);
+      if sizeVal < 1 then
+        sizeVal := 1;
+      if sizeVal > 3 then
+        sizeVal := 3;
+      cbPredictShortSize.ItemIndex := sizeVal - 1;
 
       edMusicHigh.Text := GetSetting('media.url_high', '');
       edMusicLow.Text := GetSetting('media.url_low', '');
@@ -2684,6 +2695,8 @@ procedure SaveUserSettings(f: TfConf);
       SetBoolSetting('predictions.enable', cbPredictions.Checked);
       SetBoolSetting('webserver.enable', cbWebAPI.Checked);
       SetBoolSetting('predictions.short', cbPredictShort.Checked);
+      if cbPredictShortSize.ItemIndex >= 0 then
+        SetSetting('predictions.short.size', IntToStr(cbPredictShortSize.ItemIndex + 1));
       SetSetting('media.url_high', edMusicHigh.Text);
       SetSetting('media.url_low', edMusicLow.Text);
       SetSetting('media.url_perfect', edMusicPerfect.Text);
@@ -2821,7 +2834,14 @@ begin
     // Reload prediction settings
     PredictGlucoseReading := native.GetBoolSetting('predictions.enable', false);
     PredictShortMode := native.GetBoolSetting('predictions.short', false);
+    PredictShortSize := native.GetIntSetting('predictions.short.size', 1);
+    if PredictShortSize < 1 then
+      PredictShortSize := 1
+    else if PredictShortSize > 3 then
+      PredictShortSize := 3;
     lPredict.Visible := PredictGlucoseReading;
+    // Recalculate layout and scale to account for potential short-size change
+    Self.OnResize(nil);
 
     // Save settings when dialog closes
     SaveUserSettings(fConf);
@@ -3207,6 +3227,12 @@ begin
 end;
 
 procedure TfBG.ResizeUIElements;
+const
+  // Numerator for width/height ratios; denominator = 12
+  PRED_WIDTH_NUM: array[1..3] of integer = (6, 8, 9);
+  PRED_HEIGHT_NUM: array[1..3] of integer = (2, 3, 4);
+var
+  wnum, hnum: integer;
 begin
   // Anpassa storleken på panelen
   pnOffRange.Height := ClientHeight div 10;
@@ -3270,9 +3296,11 @@ begin
   begin
     if PredictShortMode then
     begin
-      // Short mode: larger area for bigger single arrow
-      lPredict.Width := ClientWidth div 2;
-      lPredict.Height := ClientHeight div 6;
+      // Short mode: change size depending on setting predictions.short.size (1..3)
+      wnum := PRED_WIDTH_NUM[Max(Min(PredictShortSize, 3), 1)];
+      hnum := PRED_HEIGHT_NUM[Max(Min(PredictShortSize, 3), 1)];
+      lPredict.Width := (ClientWidth * wnum) div 12;
+      lPredict.Height := (ClientHeight * hnum) div 12;
     end
     else
     begin
@@ -4532,6 +4560,11 @@ begin
           ;
           Break; // Move to next interval
         end;
+        // If user selected largest size, make the font bold for better visibility
+        if PredictShortSize >= 3 then
+          lPredict.Font.Style := [fsBold]
+        else
+          lPredict.Font.Style := [];
       end
       else
       if reading.date < slotStart - (10 / 86400) then
