@@ -205,6 +205,7 @@ TfBG = class(TForm)
   miSettings: TMenuItem;
   pmSettings: TPopupMenu;
   mSplit5: TMenuItem;
+  Separator2: TMenuItem;
   Separator4: TMenuItem;
   tAgo: TTimer;
   tClock: TTimer;

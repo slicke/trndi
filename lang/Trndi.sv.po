@@ -288,7 +288,7 @@ msgid "Prediction..."
 msgstr "Förutsägelse..."
 
 #: tfbg.mipref.caption
-msgid "Preferences"
+msgid "More options"
 msgstr "Ytterligare val"
 
 #: tfbg.mirangecolor.caption
