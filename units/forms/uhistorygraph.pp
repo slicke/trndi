@@ -36,6 +36,33 @@
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *)
 
+{**
+  uhistorygraph - A lightweight history visualization form for BG readings.
+
+  This unit implements TfHistoryGraph, a minimal, dependency-free plotting
+  form used to visualize a sequence of BG readings as dots linked by a
+  polyline. It is intentionally simple and does not rely on external charting
+  libraries to keep bundle size, compilation time and runtime footprint
+  small.
+
+  Key features:
+  - Plot readings across a time axis and a value axis (units aware).
+  - Click a dot to show a small details popup (same format as the existing
+    history list popup in main UI).
+  - Lightweight, single-form instance reused via ShowHistoryGraph().
+
+  Developer notes:
+  - The layout is intentionally simple: change GRAPH_MARGIN_* constants if
+    the UI needs to be more compact or if panels overflow.
+  - The color mapping is done in LevelColor() and should match other
+    application UI where possible — keeping the same color scheme improves
+    accessibility (and is easier for users to read).
+  - The form uses `DoubleBuffered` to reduce flicker; any additional
+    interaction (zooming/panning) should preserve the double buffering.
+
+  The file uses PasDoc comments and conservative layout so it is friendly to
+  extend or port between widgetsets.
+}
 unit uhistorygraph;
 
 {$mode ObjFPC}{$H+}
@@ -47,32 +74,71 @@ uses
   trndi.types, trndi.strings;
 
 type
+  {** TfHistoryGraph
+      Primary lightweight form used to render BG readings as a simple dot
+      graph with a time (X) axis and value (Y) axis. The class stores
+      the plotting series in `FPoints` and exposes a single method:
+      `SetReadings` which populates the internal point array and updates the
+      plot. This class is intentionally minimal — features like zoom,
+      panning, tooltips and export are omitted to keep the UI fast and
+      maintainable.
+  }
   { TfHistoryGraph }
   TfHistoryGraph = class(TForm)
   private
     type
-      TGraphPoint = record
+        {** TGraphPoint: Internal structure that ties a BGReading with a
+            converted numeric value (in the configured preferred unit).
+            Storing a separate Value avoids repeated unit conversions while
+            drawing and simplifies sorting/comparison operations. }
+        TGraphPoint = record
         Reading: BGReading;
         Value: double;
       end;
   private
-    FPoints: array of TGraphPoint;
+    FPoints: array of TGraphPoint; // Array of converted readings (value in preferred unit)
     FUnit: BGUnit;
     FMinValue: double;
     FMaxValue: double;
     FMinTime: TDateTime;
     FMaxTime: TDateTime;
-    FDotRadius: integer;
+    FDotRadius: integer; // Dot radius in pixels
+    {** GetPlotRect: Determine the plotting rectangle inside the form where
+      dots and lines are drawn. Respects the margins defined above. }
     function GetPlotRect: TRect;
+    {** SortPointsByTime: Ensure FPoints are sorted chronologically (ascending).
+      This keeps both the polyline and chart axes consistent. }
     procedure SortPointsByTime;
+    {** UpdateExtents: Recompute min/max values and times used to map
+      value/time to device coordinates. Adds a small padding to avoid
+      degenerate spans. }
     procedure UpdateExtents;
+    {** DrawAxesAndGrid: Draws a simple XY-grid and labels for the value
+      (left) and time (bottom) axes. Uses the plot extents from
+      UpdateExtents. }
     procedure DrawAxesAndGrid(ACanvas: TCanvas; const PlotRect: TRect);
+    {** DrawPolyline: Connects the chronological points with a thin
+      line to indicate trend (optional visual aid). }
     procedure DrawPolyline(ACanvas: TCanvas; const PlotRect: TRect);
+    {** DrawPoints: Draws a filled circle for each reading using
+      colors determined by LevelColor. Clicking a dot triggers
+      ShowReadingDetails. }
     procedure DrawPoints(ACanvas: TCanvas; const PlotRect: TRect);
+    {** DrawLegend: Draws a small key and information panel to the right
+      of the plot showing counts, time-range and color legend. }
     procedure DrawLegend(ACanvas: TCanvas; const PlotRect: TRect);
+    {** TimeToX: Map a timestamp into an X coordinate inside PlotRect.
+      @param(TimeValue Input timestamp) @returns X coordinate in pixels. }
     function TimeToX(const TimeValue: TDateTime; const PlotRect: TRect): integer;
+    {** ValueToY: Map a glucose value into a Y coordinate inside PlotRect.
+      @param(Value Numeric value in the configured unit) @returns Y coordinate in pixels. }
     function ValueToY(const Value: double; const PlotRect: TRect): integer;
+    {** LevelColor: Convert a BGValLevel into a display TColor used for
+      dot-fill and legend chips. Maintains consistent color usage
+      between the main UI and the graph. }
     function LevelColor(const Level: BGValLevel): TColor;
+    {** PointAt: Returns the index of a point if the (X,Y) is within a small
+      distance of a drawn dot, otherwise -1. Used to detect clicks. }
     function PointAt(const X, Y: integer): integer;
     function HasData: boolean;
     procedure ShowReadingDetails(const Reading: BGReading);
@@ -83,8 +149,18 @@ type
       override;
     procedure DoClose(var CloseAction: TCloseAction); override;
   public
+    {** Create: Construct a new TfHistoryGraph instance. The form
+      uses Double-buffering to reduce flicker and has configurable
+      initial size. }
     constructor Create(AOwner: TComponent); override;
+    {** Destroy: Free the form and any references; resets the global
+      `fHistoryGraph` variable if it points to the closed instance. }
     destructor Destroy; override;
+    {** SetReadings: Populate the graph with an array of BGReadings.
+      The method will drop empty readings, convert values to the
+      requested unit and compute plot extents before repainting.
+      @param(Readings Array of BGReading objects to draw)
+      @param(UnitPref Preferred output unit for formatting/drawing) }
     procedure SetReadings(const Readings: BGResults; UnitPref: BGUnit);
   end;
 
@@ -93,6 +169,9 @@ type
   procedure ShowHistoryGraph(const Readings: BGResults; const UnitPref: BGUnit);
 
 var
+  {** fHistoryGraph: A single, reusable instance of the history graph.
+      The ShowHistoryGraph helper will create the form once and re-use it
+      to preserve user position and keep memory allocations lower. }
   fHistoryGraph: TfHistoryGraph = nil;
 
 implementation
@@ -116,6 +195,8 @@ resourcestring
   RS_HISTORY_GRAPH_KEY_LOW = 'Low';
   RS_HISTORY_GRAPH_KEY_UNKNOWN = 'Unknown';
 
+{** Constants used for layout and division handling in this graph unit.
+  Changing these values will affect overall margins and grid density. }
 const
   GRAPH_MARGIN_LEFT = 72;
   GRAPH_MARGIN_TOP = 40;
@@ -176,6 +257,8 @@ begin
     ACanvas.MoveTo(PlotRect.Left, y);
     ACanvas.LineTo(PlotRect.Right, y);
 
+    // Draw value tick labels to the left of the plot. Format string
+    // mirrors the usual BG_MSG_SHORT format used elsewhere.
     labelText := FormatFloat('0.0', value);
     ACanvas.Pen.Color := clGray;
     ACanvas.TextOut(PlotRect.Left - 48,
@@ -190,6 +273,8 @@ begin
     ACanvas.MoveTo(x, PlotRect.Top);
     ACanvas.LineTo(x, PlotRect.Bottom);
 
+    // X-axis tick labels show only hours and minutes; keep them compact
+    // so they never overlap grid lines or form borders.
     labelText := FormatDateTime('hh:nn', timeVal);
     ACanvas.Pen.Color := clGray;
     ACanvas.TextOut(x - ACanvas.TextWidth(labelText) div 2,
@@ -216,7 +301,7 @@ const
   INFO_PADDING = 6;
   KEY_BOX = 14;
 var
-  info, rangeInfo: string;
+  info, rangeFirst, rangeSecond: string;
   firstStamp, lastStamp: string;
   infoRect, helpRect, keyRect: TRect;
   textY, lineHeight: integer;
@@ -226,10 +311,24 @@ var
     Result := RGBToColor(246, 246, 246);
   end;
 
+  {** DrawInfoPanel: Internal helper that renders a rounded information box
+      containing the point count and the time range. It is positioned in the
+      right margin and visible for most window sizes. }
   procedure DrawInfoPanel;
+  var
+    hInfo1, hInfo2, hInfo3: integer;
   begin
-    infoRect := Rect(PlotRect.Left - 12, 12,
-      PlotRect.Left + 260, 12 + (lineHeight * 2) + INFO_PADDING * 3);
+    // Dynamically calculate the height for the info rect to ensure its
+    // contents never overflow regardless of font size.
+    hInfo1 := ACanvas.TextHeight(info);
+    hInfo2 := ACanvas.TextHeight(rangeFirst);
+    hInfo3 := ACanvas.TextHeight(rangeSecond);
+    infoRect := Rect(PlotRect.Right + 12,
+      keyRect.Bottom + 12,
+      ClientWidth - 12,
+      keyRect.Bottom + 12 + (hInfo1 + hInfo2 + hInfo3) + (INFO_PADDING * 4));
+    if infoRect.Right - infoRect.Left < 160 then
+      infoRect.Right := infoRect.Left + 160;
     ACanvas.Brush.Style := bsSolid;
     ACanvas.Brush.Color := LegendBackground;
     ACanvas.Pen.Color := $00C8C8C8;
@@ -240,9 +339,13 @@ var
     ACanvas.TextOut(infoRect.Left + INFO_PADDING, textY, info);
     Inc(textY, lineHeight + 2);
     ACanvas.Font.Style := [];
-    ACanvas.TextOut(infoRect.Left + INFO_PADDING, textY, rangeInfo);
+    ACanvas.TextOut(infoRect.Left + INFO_PADDING, textY, rangeFirst);
+    Inc(textY, lineHeight + 2);
+    ACanvas.TextOut(infoRect.Left + INFO_PADDING, textY, rangeSecond);
   end;
 
+  {** DrawHelpPanel: Internal helper to render a single-line help banner
+      beneath the chart with instructions for interacting with the graph. }
   procedure DrawHelpPanel;
   var
     panelTop: integer;
@@ -261,6 +364,8 @@ var
       helpRect.Top + INFO_PADDING, RS_HISTORY_GRAPH_HELP);
   end;
 
+  {** DrawKeyEntry: Render a single key entry (small colored box + label)
+      used by DrawKeyPanel to fill the legend with items for each level. }
   procedure DrawKeyEntry(const Caption: string; const Color: TColor);
   var
     textOffset: integer;
@@ -277,6 +382,9 @@ var
     Inc(keyY, KEY_BOX + 6);
   end;
 
+  {** DrawKeyPanel: Build the legend panel showing color chips and text.
+      The panel is rendered to the right of the plot area to avoid covering
+      the most recent readings. }
   procedure DrawKeyPanel;
   begin
     keyRect := Rect(PlotRect.Right + 12, PlotRect.Top,
@@ -309,11 +417,12 @@ begin
   firstStamp := FormatDateTime('ddd dd mmm hh:nn', FPoints[0].Reading.date);
   lastStamp := FormatDateTime('ddd dd mmm hh:nn',
     FPoints[High(FPoints)].Reading.date);
-  rangeInfo := Format(RS_HISTORY_GRAPH_RANGE, [firstStamp, lastStamp]);
+  rangeFirst := firstStamp;
+  rangeSecond := '→ ' + lastStamp;
   lineHeight := ACanvas.TextHeight('Hg');
 
-  DrawInfoPanel;
   DrawKeyPanel;
+  DrawInfoPanel;
   DrawHelpPanel;
 end;
 
@@ -373,6 +482,8 @@ procedure TfHistoryGraph.MouseDown(Button: TMouseButton; Shift: TShiftState;
 var
   idx: integer;
 begin
+  // Forward mouse clicks to the base handler and check for dot clicks.
+  // If a dot is clicked, ShowReadingDetails displays the reading info dialog.
   inherited MouseDown(Button, Shift, X, Y);
   if (Button <> mbLeft) or (not HasData) then
     Exit;
@@ -387,6 +498,8 @@ var
   plotRect: TRect;
   messageText: string;
 begin
+  // Main paint handler - clears the background and draws the grid, polyline,
+  // points and legend. Avoids unnecessary drawing if there is no data.
   inherited Paint;
   Canvas.Brush.Color := Color;
   Canvas.FillRect(ClientRect);
@@ -482,6 +595,8 @@ var
   xval: integer;
   rssi, noise: string;
 begin
+  // Build the RSSI and noise fields for the popup; these use the same
+  // getters and formatting as the main UI for consistency.
   if Reading.getRSSI(xval) then
     rssi := xval.ToString
   else
@@ -504,6 +619,8 @@ var
   i, j: integer;
   tmp: TGraphPoint;
 begin
+  // Use a simple insertion sort because the number of readings is small
+  // (a few dozen at most) and the algorithm is simple and stable.
   for i := 1 to High(FPoints) do
   begin
     tmp := FPoints[i];
@@ -519,6 +636,9 @@ end;
 
 function TfHistoryGraph.LevelColor(const Level: BGValLevel): TColor;
 begin
+  // Return a color which represents the given BG level. These are
+  // illustrative defaults mapping to green/blue/orange/grey similar to
+  // main application theme. Adjust as needed to keep visuals consistent.
   case Level of
     BGRange, BGRangeHI:
       Result := RGBToColor(64, 145, 108);
