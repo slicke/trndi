@@ -307,6 +307,7 @@ object fBG: TfBG
     Top = 88
     object miSettings: TMenuItem
       Caption = '&Settings'
+      ShortCut = 16467
       OnClick = miSettingsClick
     end
     object miForce: TMenuItem
@@ -351,6 +352,7 @@ object fBG: TfBG
       Caption = 'More options'
       object miHistory: TMenuItem
         Caption = 'Show history'
+        ShortCut = 16456
         OnClick = miHistoryClick
       end
       object Separator2: TMenuItem
@@ -408,18 +410,22 @@ object fBG: TfBG
     end
     object miOnTop: TMenuItem
       Caption = 'On top'
+      ShortCut = 16468
       OnClick = miOnTopClick
     end
     object miFullScreen: TMenuItem
       Caption = 'Toggle Fullscreen'
+      ShortCut = 16454
       OnClick = lDiffDblClick
     end
     object miBorders: TMenuItem
       Caption = 'No borders'
+      ShortCut = 16450
       OnClick = miBordersClick
     end
     object miFloatOn: TMenuItem
       Caption = 'Show Floating Window'
+      ShortCut = 16471
       OnClick = miFloatOnClick
     end
     object miSplit5: TMenuItem
@@ -427,6 +433,7 @@ object fBG: TfBG
     end
     object miExit: TMenuItem
       Caption = 'Exit Trndi'
+      ShortCut = 49233
       OnClick = miExitClick
     end
     object miAdvanced: TMenuItem
