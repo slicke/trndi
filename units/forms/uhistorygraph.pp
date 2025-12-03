@@ -106,13 +106,21 @@ resourcestring
   RS_HISTORY_GRAPH_HELP = 'Click a dot to see the full reading details';
   RS_HISTORY_GRAPH_POINT_COUNT = '%d readings';
   RS_HISTORY_GRAPH_RANGE = '%s – %s';
-  RS_HISTORY_GRAPH_UNIT_FMT = 'Values in %s';
+  RS_HISTORY_GRAPH_UNIT_FMT = 'Readings (%s)';
+  RS_HISTORY_GRAPH_AXIS_TIME = 'Time';
+  RS_HISTORY_GRAPH_KEY_TITLE = 'Legend';
+  RS_HISTORY_GRAPH_KEY_RANGE = 'In range';
+  RS_HISTORY_GRAPH_KEY_RANGE_HI = 'Range high';
+  RS_HISTORY_GRAPH_KEY_RANGE_LO = 'Range low';
+  RS_HISTORY_GRAPH_KEY_HIGH = 'High';
+  RS_HISTORY_GRAPH_KEY_LOW = 'Low';
+  RS_HISTORY_GRAPH_KEY_UNKNOWN = 'Unknown';
 
 const
   GRAPH_MARGIN_LEFT = 72;
   GRAPH_MARGIN_TOP = 40;
-  GRAPH_MARGIN_RIGHT = 36;
-  GRAPH_MARGIN_BOTTOM = 72;
+  GRAPH_MARGIN_RIGHT = 220;
+  GRAPH_MARGIN_BOTTOM = 120;
   GRAPH_DIVISIONS = 5;
 
 { TfHistoryGraph }
@@ -155,6 +163,7 @@ begin
   ACanvas.Brush.Style := bsClear;
   ACanvas.Pen.Style := psSolid;
   ACanvas.Pen.Color := clSilver;
+  ACanvas.Font.Color := clBlack;
   ACanvas.Rectangle(PlotRect);
 
   lineColor := $00E0E0E0;
@@ -187,30 +196,125 @@ begin
       PlotRect.Bottom + 8, labelText);
   end;
 
-  ACanvas.TextOut(PlotRect.Left, PlotRect.Bottom + 28,
-    Format(RS_HISTORY_GRAPH_UNIT_FMT, [BG_UNIT_NAMES[FUnit]]));
+  ACanvas.Font.Style := [fsBold];
+  labelText := RS_HISTORY_GRAPH_AXIS_TIME;
+  ACanvas.TextOut(
+    (PlotRect.Left + PlotRect.Right - ACanvas.TextWidth(labelText)) div 2,
+    PlotRect.Bottom + 60, labelText);
+
+  labelText := Format(RS_HISTORY_GRAPH_UNIT_FMT, [BG_UNIT_NAMES[FUnit]]);
+  ACanvas.Font.Orientation := 900;
+  ACanvas.TextOut(PlotRect.Left - GRAPH_MARGIN_LEFT + 8,
+    (PlotRect.Top + PlotRect.Bottom + ACanvas.TextWidth(labelText)) div 2,
+    labelText);
+  ACanvas.Font.Orientation := 0;
+  ACanvas.Font.Style := [];
 end;
 
 procedure TfHistoryGraph.DrawLegend(ACanvas: TCanvas; const PlotRect: TRect);
+const
+  INFO_PADDING = 6;
+  KEY_BOX = 14;
 var
   info, rangeInfo: string;
   firstStamp, lastStamp: string;
-  bottomY: integer;
+  infoRect, helpRect, keyRect: TRect;
+  textY, lineHeight: integer;
+  keyX, keyY: integer;
+  function LegendBackground: TColor; inline;
+  begin
+    Result := RGBToColor(246, 246, 246);
+  end;
+
+  procedure DrawInfoPanel;
+  begin
+    infoRect := Rect(PlotRect.Left - 12, 12,
+      PlotRect.Left + 260, 12 + (lineHeight * 2) + INFO_PADDING * 3);
+    ACanvas.Brush.Style := bsSolid;
+    ACanvas.Brush.Color := LegendBackground;
+    ACanvas.Pen.Color := $00C8C8C8;
+    ACanvas.RoundRect(infoRect, 6, 6);
+    ACanvas.Brush.Style := bsClear;
+    textY := infoRect.Top + INFO_PADDING;
+    ACanvas.Font.Style := [fsBold];
+    ACanvas.TextOut(infoRect.Left + INFO_PADDING, textY, info);
+    Inc(textY, lineHeight + 2);
+    ACanvas.Font.Style := [];
+    ACanvas.TextOut(infoRect.Left + INFO_PADDING, textY, rangeInfo);
+  end;
+
+  procedure DrawHelpPanel;
+  var
+    panelTop: integer;
+  begin
+    panelTop := PlotRect.Bottom + 92;
+    helpRect := Rect(PlotRect.Left - 12,
+      panelTop,
+      PlotRect.Right + 12,
+      panelTop + lineHeight + INFO_PADDING * 2);
+    ACanvas.Brush.Style := bsSolid;
+    ACanvas.Brush.Color := LegendBackground;
+    ACanvas.Pen.Color := $00C8C8C8;
+    ACanvas.RoundRect(helpRect, 6, 6);
+    ACanvas.Brush.Style := bsClear;
+    ACanvas.TextOut(helpRect.Left + INFO_PADDING,
+      helpRect.Top + INFO_PADDING, RS_HISTORY_GRAPH_HELP);
+  end;
+
+  procedure DrawKeyEntry(const Caption: string; const Color: TColor);
+  var
+    textOffset: integer;
+  begin
+    ACanvas.Brush.Style := bsSolid;
+    ACanvas.Brush.Color := Color;
+    ACanvas.Pen.Color := clGray;
+    ACanvas.Rectangle(keyX, keyY, keyX + KEY_BOX, keyY + KEY_BOX);
+    ACanvas.Brush.Style := bsClear;
+    textOffset := keyY + (KEY_BOX - lineHeight) div 2;
+    if textOffset < keyY then
+      textOffset := keyY;
+    ACanvas.TextOut(keyX + KEY_BOX + 8, textOffset, Caption);
+    Inc(keyY, KEY_BOX + 6);
+  end;
+
+  procedure DrawKeyPanel;
+  begin
+    keyRect := Rect(PlotRect.Right + 12, PlotRect.Top,
+      ClientWidth - 12,
+      PlotRect.Top + (KEY_BOX + 6) * 6 + INFO_PADDING * 3 + lineHeight);
+    if keyRect.Right - keyRect.Left < 160 then
+      keyRect.Right := keyRect.Left + 160;
+    ACanvas.Brush.Style := bsSolid;
+    ACanvas.Brush.Color := LegendBackground;
+    ACanvas.Pen.Color := $00C8C8C8;
+    ACanvas.RoundRect(keyRect, 6, 6);
+    ACanvas.Brush.Style := bsClear;
+    ACanvas.Font.Style := [fsBold];
+    ACanvas.TextOut(keyRect.Left + INFO_PADDING,
+      keyRect.Top + INFO_PADDING, RS_HISTORY_GRAPH_KEY_TITLE);
+    ACanvas.Font.Style := [];
+    keyX := keyRect.Left + INFO_PADDING;
+    keyY := keyRect.Top + INFO_PADDING + lineHeight + 4;
+    DrawKeyEntry(RS_HISTORY_GRAPH_KEY_RANGE, LevelColor(BGRange));
+    DrawKeyEntry(RS_HISTORY_GRAPH_KEY_RANGE_HI, LevelColor(BGRangeHI));
+    DrawKeyEntry(RS_HISTORY_GRAPH_KEY_RANGE_LO, LevelColor(BGRangeLO));
+    DrawKeyEntry(RS_HISTORY_GRAPH_KEY_HIGH, LevelColor(BGHigh));
+    DrawKeyEntry(RS_HISTORY_GRAPH_KEY_LOW, LevelColor(BGLOW));
+    DrawKeyEntry(RS_HISTORY_GRAPH_KEY_UNKNOWN, RGBToColor(180, 180, 180));
+  end;
+
 begin
+  ACanvas.Font.Color := clBlack;
   info := Format(RS_HISTORY_GRAPH_POINT_COUNT, [Length(FPoints)]);
   firstStamp := FormatDateTime('ddd dd mmm hh:nn', FPoints[0].Reading.date);
   lastStamp := FormatDateTime('ddd dd mmm hh:nn',
     FPoints[High(FPoints)].Reading.date);
   rangeInfo := Format(RS_HISTORY_GRAPH_RANGE, [firstStamp, lastStamp]);
+  lineHeight := ACanvas.TextHeight('Hg');
 
-  ACanvas.Brush.Style := bsClear;
-  ACanvas.Font.Style := [];
-  ACanvas.TextOut(PlotRect.Left, 12, info);
-  ACanvas.TextOut(PlotRect.Left, 12 + ACanvas.TextHeight(info) + 2, rangeInfo);
-
-  bottomY := ClientHeight - 26;
-  ACanvas.TextOut(PlotRect.Left,
-    bottomY, RS_HISTORY_GRAPH_HELP);
+  DrawInfoPanel;
+  DrawKeyPanel;
+  DrawHelpPanel;
 end;
 
 procedure TfHistoryGraph.DrawPoints(ACanvas: TCanvas; const PlotRect: TRect);
