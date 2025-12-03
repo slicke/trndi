@@ -76,7 +76,7 @@ RS_RH_READING = 'Reading';
 RS_RH_TIME = 'Time';
 RS_RH_UNKNOWN = 'Unknown';
 
-RS_HISTORY_ITEM = 'Selected Reading: %s | Difference: %s | Trend: %s | RSSI: %s | Noise: %s | Source: %s | Device: %s';
+RS_HISTORY_ITEM = 'Selected Reading: %s'+sLineBreak+'Difference: %s'+sLineBreak+'Trend: %s'+sLineBreak+'RSSI: %s'+sLineBreak+'Noise: %s'+sLineBreak+'Source: %s'+sLineBreak+'Device: %s';
 
 RS_PREDICTIONS_UNAVAILABLE = 'Predictions unavailable';
 
