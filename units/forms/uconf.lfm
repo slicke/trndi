@@ -10857,10 +10857,10 @@ object fConf: TfConf
             Caption = 'Trend dot:'
           end
           object eDot: TEdit
-            Left = 16
+            Left = 20
             Height = 30
             Top = 24
-            Width = 80
+            Width = 75
             MaxLength = 4
             TabOrder = 0
             OnChange = eDotChange
@@ -10887,10 +10887,10 @@ object fConf: TfConf
             Caption = 'PREVIEW'
           end
           object eDotNow: TEdit
-            Left = 16
+            Left = 20
             Height = 30
             Top = 80
-            Width = 80
+            Width = 75
             MaxLength = 4
             TabOrder = 1
             OnChange = eDotChange
@@ -10988,11 +10988,12 @@ object fConf: TfConf
             Caption = 'Tray icon size:'
           end
           object edTray: TSpinEdit
-            Left = 0
+            Left = 5
             Height = 30
             Top = 21
-            Width = 160
+            Width = 155
             Align = alTop
+            BorderSpacing.Left = 5
             BorderSpacing.Top = 5
             BorderSpacing.Right = 10
             TabOrder = 0
@@ -11008,15 +11009,6 @@ object fConf: TfConf
           ClientHeight = 79
           ClientWidth = 170
           TabOrder = 1
-          object Label13: TLabel
-            Left = 10
-            Height = 16
-            Top = 0
-            Width = 160
-            Align = alTop
-            BorderSpacing.Left = 10
-            Caption = 'Decimal separator:'
-          end
           object edCommaSep: TEdit
             Left = 10
             Height = 30
@@ -11028,6 +11020,15 @@ object fConf: TfConf
             MaxLength = 1
             TabOrder = 0
             Text = '.'
+          end
+          object Label13: TLabel
+            Left = 5
+            Height = 16
+            Top = 0
+            Width = 165
+            Align = alTop
+            BorderSpacing.Left = 5
+            Caption = 'Decimal separator:'
           end
         end
       end
@@ -11049,46 +11050,26 @@ object fConf: TfConf
         ClientWidth = 655
         TabOrder = 2
         object cbPredictions: TCheckBox
-          Left = 8
+          Left = 5
           Height = 20
-          Top = 8
-          Width = 164
+          Top = 5
+          Width = 645
+          Align = alTop
+          BorderSpacing.Around = 5
           Caption = 'Show glucose predictions'
           TabOrder = 0
           OnChange = cbPredictionsChange
         end
         object cbPredictShort: TCheckBox
-          Left = 24
+          Left = 15
           Height = 20
-          Top = 32
-          Width = 227
+          Top = 30
+          Width = 640
+          Align = alTop
+          BorderSpacing.Left = 15
+          BorderSpacing.Bottom = 5
           Caption = 'Show only trend arrows (short mode)'
           TabOrder = 1
-        end
-        object lPredictShortSize: TLabel
-          Left = 56
-          Height = 16
-          Top = 56
-          Width = 91
-          Caption = 'Trend arrow size:'
-          ParentFont = False
-        end
-        object cbPredictShortSize: TComboBox
-          Left = 152
-          Height = 32
-          Top = 56
-          Width = 120
-          ItemHeight = 22
-          ItemIndex = 0
-          Items.Strings = (
-            'small'
-            'medium'
-            'big'
-          )
-          Style = csDropDownList
-          TabOrder = 2
-          Text = 'small'
-          OnChange = cbPredictShortSizeChange
         end
         object lWarnPredict: TLabel
           Left = 0
@@ -11100,6 +11081,49 @@ object fConf: TfConf
           Caption = 'WARNING: This is a very experimental feature!. Do not depend on these readings!'
           Font.Style = [fsItalic]
           ParentFont = False
+        end
+        object Panel13: TPanel
+          Left = 0
+          Height = 41
+          Top = 55
+          Width = 655
+          Align = alClient
+          BevelOuter = bvNone
+          ClientHeight = 41
+          ClientWidth = 655
+          TabOrder = 2
+          object cbPredictShortSize: TComboBox
+            Left = 126
+            Height = 31
+            Top = 0
+            Width = 120
+            Align = alLeft
+            BorderSpacing.Left = 10
+            BorderSpacing.Bottom = 10
+            ItemHeight = 22
+            ItemIndex = 0
+            Items.Strings = (
+              'small'
+              'medium'
+              'big'
+            )
+            Style = csDropDownList
+            TabOrder = 0
+            Text = 'small'
+            OnChange = cbPredictShortSizeChange
+          end
+          object lPredictShortSize: TLabel
+            Left = 25
+            Height = 31
+            Top = 0
+            Width = 91
+            Align = alLeft
+            BorderSpacing.Left = 25
+            BorderSpacing.Bottom = 10
+            Caption = 'Trend arrow size:'
+            Layout = tlCenter
+            ParentFont = False
+          end
         end
       end
     end
