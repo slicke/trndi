@@ -83,6 +83,7 @@ TfConf = class(TForm)
   cbMultiTouch: TCheckBox;
   cbMusicPause: TCheckBox;
   cbNotice: TCheckBox;
+  cbPredictShortSize: TComboBox;
   cbWebAPI: TCheckBox;
   cbOffBar: TCheckBox;
   cbPaintHiLo: TCheckBox;
@@ -104,8 +105,6 @@ TfConf = class(TForm)
   cbFlashHi: TCheckBox;
   cbPredictions: TCheckBox;
   cbPredictShort: TCheckBox;
-  cbPredictShortSize: TComboBox;
-  lPredictShortSize: TLabel;
   cbTirBar: TColorButton;
   cbTirBarCustom: TColorButton;
   cbChroma: TCheckBox;
@@ -181,6 +180,7 @@ TfConf = class(TForm)
   lHiOver2: TLabel;
   lbChroma: TListBox;
   lOS: TLabel;
+  lPredictShortSize: TLabel;
   lProblematic: TLabel;
   lTestAnnounce: TLabel;
   lTestAnnounce1: TLabel;
@@ -222,6 +222,7 @@ TfConf = class(TForm)
   lVersion: TLabel;
   lWidgetset: TLabel;
   Panel10: TPanel;
+  Panel13: TPanel;
   pnSysInfo: TPanel;
   pcColors: TPageControl;
   Panel1: TPanel;
