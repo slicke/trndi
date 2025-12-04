@@ -649,7 +649,7 @@ msgid "Trndi can load a URL when high/low"
 msgstr ""
 
 #: tfconf.label26.caption
-msgid "High (eg https://url.local/hi"
+msgid "High (eg https://url.local/hi)"
 msgstr ""
 
 #: tfconf.label27.caption
