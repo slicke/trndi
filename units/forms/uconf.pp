@@ -223,6 +223,9 @@ TfConf = class(TForm)
   lWidgetset: TLabel;
   Panel10: TPanel;
   Panel13: TPanel;
+  Panel14: TPanel;
+  Panel15: TPanel;
+  Panel16: TPanel;
   pnSysInfo: TPanel;
   pcColors: TPageControl;
   Panel1: TPanel;

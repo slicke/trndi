@@ -666,7 +666,9 @@ msgid "Trndi can load a URL when high/low"
 msgstr "Trndi kan ladda en URL vid högt/lågt"
 
 #: tfconf.label26.caption
-msgid "High (eg https://url.local/hi"
+#, fuzzy
+#| msgid "High (eg https://url.local/hi"
+msgid "High (eg https://url.local/hi)"
 msgstr "Hög (tex https://url.local/hög)"
 
 #: tfconf.label27.caption
@@ -1969,3 +1971,4 @@ msgstr "Historikgraf"
 #, object-pascal-format
 msgid "Readings (%s)"
 msgstr "Avläsningar (%s)"
+
