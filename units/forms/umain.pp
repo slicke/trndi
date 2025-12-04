@@ -3526,7 +3526,7 @@ begin
           pnTouchMenu.top := 0;
           pnTouchMenu.left := 0;
           pnTouchMenu.Font.Color := clBlack; // Fix RPi issue
-          bTouchFull.width := width div 4;
+          bTouchFull.width := width div 3;
           bTouchSettings.height := height div 4;
           bMenuPanelClose.height := height div 4;
           bTouchFull.font.size := lDiff.Font.size;
