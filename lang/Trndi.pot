@@ -104,6 +104,14 @@ msgstr ""
 msgid "Information"
 msgstr ""
 
+#: slicke.ux.alert.surl
+msgid "Leave the app and open your browser? The link may not be secure!"
+msgstr ""
+
+#: slicke.ux.alert.surltitle
+msgid "Open external link?"
+msgstr ""
+
 #: slicke.ux.alert.svalue
 msgid "Value"
 msgstr ""

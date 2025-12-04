@@ -114,6 +114,14 @@ msgstr "Meddelande"
 msgid "Information"
 msgstr "Information"
 
+#: slicke.ux.alert.surl
+msgid "Leave the app and open your browser? The link may not be secure!"
+msgstr "Lämna appen och öppna din webbläsare? Länken kanske inte är säker!"
+
+#: slicke.ux.alert.surltitle
+msgid "Open external link?"
+msgstr "Öppna extern länk?"
+
 #: slicke.ux.alert.svalue
 msgid "Value"
 msgstr "Värde"
@@ -666,8 +674,6 @@ msgid "Trndi can load a URL when high/low"
 msgstr "Trndi kan ladda en URL vid högt/lågt"
 
 #: tfconf.label26.caption
-#, fuzzy
-#| msgid "High (eg https://url.local/hi"
 msgid "High (eg https://url.local/hi)"
 msgstr "Hög (tex https://url.local/hög)"
 
@@ -1971,4 +1977,3 @@ msgstr "Historikgraf"
 #, object-pascal-format
 msgid "Readings (%s)"
 msgstr "Avläsningar (%s)"
-

@@ -49,7 +49,7 @@ interface
 
 uses
   Classes, SysUtils, Dialogs, Forms, ExtCtrls, StdCtrls, Controls, Graphics, Math,
-  IntfGraphics, FPImage, graphtype, lcltype, Trndi.Native, Grids, Spin, IpHtml, Iphttpbroker, slicke.ux.native, SpinEx,
+  IntfGraphics, FPImage, graphtype, lcltype, Trndi.Native, Grids, Spin, IpHtml, Iphttpbroker, slicke.ux.native, SpinEx, LCLIntf,
   {$ifdef Windows}
   DX12.D2D1, DX12.DXGI, DX12.DWrite, DX12.DCommon, DX12.WinCodec, Windows, Buttons, ActiveX, ComObj,
   {$endif}
@@ -67,6 +67,8 @@ resourcestring
   sExtTitle   = 'Extension error';
   sExtErr     = 'Error occurred in extension';
   sErr        = 'Script execution failed';
+  sURLTitle   = 'Open external link?';
+  sURL        = 'Leave the app and open your browser? The link may not be secure!';
 
   smbYes          = 'Yes';
   smbUXNo         = 'No';
@@ -183,6 +185,7 @@ type
     {** OnChange handler for font combo box in ExtFontPicker. }
     procedure FontComboChange(Sender: TObject);
     procedure HTMLGetImageX(Sender: TIpHtmlNode; const URL: string; var Picture: TPicture);
+    procedure HTMLHotClick(Sender: TObject);
   end;
 
   {**
@@ -2276,6 +2279,7 @@ begin
       hpd := TIpHttpDataProvider.Create(nil);
       LogHtmlPanel.DataProvider := hpd;
       hpd.OnGetImage := @dialog.HTMLGetImageX;
+      LogHTMLPanel.OnHotClick := @dialog.HTMLHotClick;
       LogHtmlPanel.Parent := MemoWrapper;
       LogHtmlPanel.Left := MemoPadLeft;
       LogHtmlPanel.Top := MemoPadTop;
@@ -2664,6 +2668,12 @@ begin
     ACanvas.DrawFocusRect(ARect);
 end;
 {$endif}
+
+procedure TDialogForm.HTMLHotClick(Sender: TObject);
+begin
+ if ExtText(uxdAuto, sURLTitle, sURL,[mbYes, mbNo]) = mrYes then
+   OpenURL((sender as TIpHtmlPanel).HotURL);
+end;
 
 procedure TDialogForm.HTMLGetImageX(Sender: TIpHtmlNode; const URL: string;
   var Picture: TPicture);
