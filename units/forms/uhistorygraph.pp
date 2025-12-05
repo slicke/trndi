@@ -71,7 +71,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, Math,
-  trndi.types, trndi.strings, slicke.ux.alert;
+  trndi.types, trndi.strings, slicke.ux.alert, dateutils;
 
 type
   {** TfHistoryGraph
@@ -299,7 +299,10 @@ begin
 
     // X-axis tick labels show only hours and minutes; keep them compact
     // so they never overlap grid lines or form borders.
-    labelText := FormatDateTime('hh:nn', timeVal);
+    if Dateof(timeVal) = DateOf(Now) then
+      labelText := FormatDateTime('hh:nn', timeVal)
+    else
+      labelText := FormatDateTime('ddd hh:nn', timeVal);
     ACanvas.Pen.Color := clGray;
     ACanvas.TextOut(x - ACanvas.TextWidth(labelText) div 2,
       PlotRect.Bottom + 8, labelText);
