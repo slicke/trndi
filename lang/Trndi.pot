@@ -1066,13 +1066,13 @@ msgstr ""
 #: trndi.strings.rs_history_item
 #, object-pascal-format
 msgid ""
-"Selected Reading: %s\n"
-"Difference: %s\n"
-"Trend: %s\n"
-"RSSI: %s\n"
-"Noise: %s\n"
-"Source: %s\n"
-"Device: %s"
+"» Selected Reading: %s\n"
+"Δ Difference: %s\n"
+"↔ Trend: %s\n"
+"📻 RSSI: %s\n"
+"𐩘 Noise: %s\n"
+"ℹ Source: %s\n"
+"💻 Device: %s"
 msgstr ""
 
 #: trndi.strings.rs_hi_level
@@ -1241,7 +1241,7 @@ msgstr ""
 
 #: trndi.strings.rs_refresh
 #, object-pascal-format
-msgid "Updated: %s | Refreshing: %s"
+msgid "⟳ Updated: %s (next: %s)"
 msgstr ""
 
 #: trndi.strings.rs_restart_apply
@@ -1438,7 +1438,7 @@ msgstr ""
 
 #: trndi.strings.sdevice
 #, object-pascal-format
-msgid "Device: %s"
+msgid "💻 Device: %s"
 msgstr ""
 
 #: trndi.strings.sdotsize
@@ -1504,7 +1504,7 @@ msgstr ""
 
 #: trndi.strings.snoise
 #, object-pascal-format
-msgid "Noise: %d"
+msgid "𐩘 Noise: %d"
 msgstr ""
 
 #: trndi.strings.snotrace
@@ -1533,7 +1533,7 @@ msgstr ""
 
 #: trndi.strings.srssi
 #, object-pascal-format
-msgid "RSSI (Signal Strength): %d%%"
+msgid "📻 RSSI (Signal Strength): %d%%"
 msgstr ""
 
 #: trndi.strings.sstackerrmsg

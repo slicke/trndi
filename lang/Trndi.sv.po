@@ -1102,21 +1102,21 @@ msgstr "HÖGT"
 #: trndi.strings.rs_history_item
 #, object-pascal-format
 msgid ""
-"Selected Reading: %s\n"
-"Difference: %s\n"
-"Trend: %s\n"
-"RSSI: %s\n"
-"Noise: %s\n"
-"Source: %s\n"
-"Device: %s"
+"» Selected Reading: %s\n"
+"Δ Difference: %s\n"
+"↔ Trend: %s\n"
+"📻 RSSI: %s\n"
+"𐩘 Noise: %s\n"
+"ℹ Source: %s\n"
+"💻 Device: %s"
 msgstr ""
-"Vald Avläsning: %s\n"
-"Skillnad: %s\n"
-"Trend: %s\n"
-"Signalstyrka (RSSI): %s\n"
-"Brus: %s\n"
-"Källa: %s\n"
-"Enhet: %s"
+"» Vald Avläsning: %s\n"
+"Δ Skillnad: %s\n"
+"↔ Trend: %s\n"
+"📻 Signalstyrka (RSSI): %s\n"
+"𐩘 Brus: %s\n"
+"ℹ Källa: %s\n"
+"💻 Enhet: %s"
 
 #: trndi.strings.rs_hi_level
 #, object-pascal-format
@@ -1293,8 +1293,8 @@ msgstr "Lågt område stöds inte av källans gränssnitt"
 
 #: trndi.strings.rs_refresh
 #, object-pascal-format
-msgid "Updated: %s | Refreshing: %s"
-msgstr "Uppdaterad: %s | Uppdaterar: %s"
+msgid "⟳ Updated: %s (next: %s)"
+msgstr "⟳ Uppdaterad: %s (Nästa: %s)"
 
 #: trndi.strings.rs_restart_apply
 msgid "Trndi must be restarted for settings to take effect"
@@ -1502,8 +1502,8 @@ msgstr "Datatypen ”%s” förväntades inte, förväntad i funktionen %s, para
 
 #: trndi.strings.sdevice
 #, object-pascal-format
-msgid "Device: %s"
-msgstr "Enhet: %s"
+msgid "💻 Device: %s"
+msgstr "💻 Enhet: %s"
 
 #: trndi.strings.sdotsize
 msgctxt "trndi.strings.sdotsize"
@@ -1568,8 +1568,8 @@ msgstr "Utmatning genom console.log har mottagits"
 
 #: trndi.strings.snoise
 #, object-pascal-format
-msgid "Noise: %d"
-msgstr "Brus: %d"
+msgid "𐩘 Noise: %d"
+msgstr "𐩘 Brus: %d"
 
 #: trndi.strings.snotrace
 msgctxt "trndi.strings.snotrace"
@@ -1597,8 +1597,8 @@ msgstr "Läs om?"
 
 #: trndi.strings.srssi
 #, object-pascal-format
-msgid "RSSI (Signal Strength): %d%%"
-msgstr "RSSI (signalstyrka): %d%%"
+msgid "📻 RSSI (Signal Strength): %d%%"
+msgstr "📻 RSSI (signalstyrka): %d%%"
 
 #: trndi.strings.sstackerrmsg
 #, object-pascal-format
