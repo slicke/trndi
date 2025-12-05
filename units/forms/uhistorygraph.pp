@@ -618,6 +618,8 @@ begin
 end;
 
 procedure TfHistoryGraph.ShowReadingDetails(const Reading: BGReading);
+const
+  br = '<br>'; //Override LB
 var
   xval: integer;
   rssi, noise: string;
@@ -634,11 +636,12 @@ begin
   else
     noise := RS_RH_UNKNOWN;
 
-  slicke.ux.alert.ExtText(uxdAuto, RS_RH_READING, TimeToStr(Reading.date) + sLineBreak+
-    Format(RS_HISTORY_ITEM,
+  ExtHTML(uxdAuto, RS_RH_READING, '<font size="4">'+TimeToStr(Reading.date) +
+   '</font><font size="3">' + br+
+    StringReplace(Format(RS_HISTORY_ITEM,
     [Reading.format(FUnit, BG_MSG_SHORT, BGPrimary),
     Reading.format(FUnit, BG_MSG_SIG_SHORT, BGDelta),
-    Reading.trend.Img, rssi, noise, Reading.Source, Reading.sensor]), [mbOK]);
+    Reading.trend.Img, rssi, noise, Reading.Source, Reading.sensor]), sLineBreak, '<br>', [rfReplaceAll]), [mbOK],uxmtInformation,12.5);
 end;
 
 procedure TfHistoryGraph.SortPointsByTime;

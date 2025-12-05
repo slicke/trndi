@@ -1901,6 +1901,8 @@ begin
 end;
 
 procedure TfBG.lAgoClick(Sender: TObject);
+const
+  LineEnding = '<br>';  // Override the LE
 var
   displayMsg: string;
   i: integer;
@@ -1918,7 +1920,9 @@ begin
   displayMsg += LineEnding + Format(sDevice, [lastReading.sensor]);
   ;
 
-  ShowMessage(displayMsg);
+
+  ExtHTML(uxdAuto,'Trndi','<font size="3">'+displayMsg,[mbOK],uxmtInformation);
+//  ShowMessage(displayMsg);
 
 end;
 
