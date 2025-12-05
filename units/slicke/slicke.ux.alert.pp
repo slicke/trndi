@@ -186,6 +186,7 @@ type
     procedure FontComboChange(Sender: TObject);
     procedure HTMLGetImageX(Sender: TIpHtmlNode; const URL: string; var Picture: TPicture);
     procedure HTMLHotClick(Sender: TObject);
+    procedure ElementKeyDown(Sender: TObject; var Key: char);
   end;
 
   {**
@@ -1933,6 +1934,8 @@ begin
     hpd := TIpHttpDataProvider.Create(nil);
     HtmlViewer.DataProvider := hpd;
     hpd.OnGetImage := @dialog.HTMLGetImageX;
+    HtmlViewer.OnHotClick := @dialog.HTMLHotClick;
+    HtmlViewer.OnKeyPress := @dialog.ElementKeyDown;
 
     HtmlViewer.Parent := HtmlPanel;
     HtmlViewer.Left := 0;
@@ -2280,6 +2283,7 @@ begin
       LogHtmlPanel.DataProvider := hpd;
       hpd.OnGetImage := @dialog.HTMLGetImageX;
       LogHTMLPanel.OnHotClick := @dialog.HTMLHotClick;
+      LogHtmlPanel.OnKeyPress := @dialog.ElementKeyDown;
       LogHtmlPanel.Parent := MemoWrapper;
       LogHtmlPanel.Left := MemoPadLeft;
       LogHtmlPanel.Top := MemoPadTop;
@@ -2668,6 +2672,14 @@ begin
     ACanvas.DrawFocusRect(ARect);
 end;
 {$endif}
+
+procedure TDialogForm.ElementKeyDown(Sender: TObject; var Key: char);
+begin
+  key := '';
+end;
+
+ SHowMessage(key);
+end;
 
 procedure TDialogForm.HTMLHotClick(Sender: TObject);
 begin
