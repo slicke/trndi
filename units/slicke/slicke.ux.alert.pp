@@ -2675,10 +2675,7 @@ end;
 
 procedure TDialogForm.ElementKeyDown(Sender: TObject; var Key: char);
 begin
-  key := '';
-end;
-
- SHowMessage(key);
+  key := #0;
 end;
 
 procedure TDialogForm.HTMLHotClick(Sender: TObject);
