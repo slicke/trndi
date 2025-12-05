@@ -167,6 +167,10 @@ msgctxt "tfbg.lval.caption"
 msgid "Setup"
 msgstr "Konfig"
 
+#: tfbg.mi24h.caption
+msgid "Show last-day readings"
+msgstr "Visa dygnsavläsningar"
+
 #: tfbg.miadotadjust.caption
 msgid "Adjust Dot Positions"
 msgstr "Justera punktpositioner"

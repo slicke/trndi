@@ -132,6 +132,7 @@ TfBG = class(TForm)
   bMenuPanelClose: TButton;
   bTouchFull: TButton;
   lPredict: TLabel;
+  mi24h: TMenuItem;
   miDotSmall: TMenuItem;
   miPredict: TMenuItem;
   pnTouchContents: TPanel;
@@ -245,6 +246,7 @@ TfBG = class(TForm)
   procedure DotPaint(Sender: TObject);
   procedure lDiffClick(Sender: TObject);
   procedure lPredictClick(Sender: TObject);
+  procedure mi24hClick(Sender: TObject);
   procedure miDotNormalDrawItem(Sender: TObject; ACanvas: TCanvas;
     ARect: TRect; AState: TOwnerDrawState);
   procedure miDotNormalMeasureItem(Sender: TObject; ACanvas: TCanvas;
@@ -893,6 +895,13 @@ end;
 procedure TfBG.lPredictClick(Sender: TObject);
 begin
   SHowMessage(RS_PREDICT);
+end;
+
+procedure TfBG.mi24hClick(Sender: TObject);
+var
+res: string;
+begin
+  ShowHistoryGraph(api.getReadings(1440, 288, '', res), un);
 end;
 
 procedure TfBG.miDotNormalDrawItem(Sender: TObject; ACanvas: TCanvas;
