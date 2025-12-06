@@ -1889,7 +1889,7 @@ var
   ButtonActualWidth, posX, ProposedWidth, btnCount, totalBtnWidth: Integer;
   bgcol: TColor;
   size: TUXDialogSize;
-  sysfont: string;
+  sysfont, htmlstr: string;
   contentHeight, maxHeight, finalHeight: Integer;
   hpd: TIpHttpDataProvider;
 begin
@@ -1950,9 +1950,21 @@ begin
     
     // Load HTML content with system font and colors
     FontTXTInList(sysfont);
+    htmlstr := StringReplace(
+    html,
+    '">', '"><u><font color="' + TColorToHTML(getBaseColor) + '">',
+    [rfReplaceAll]
+  );
+
+    htmlstr := StringReplace(
+    htmlstr,
+    '</a>',
+    '</font></u></a>',
+    [rfReplaceAll]
+  );
     HtmlViewer.SetHtmlFromStr(
       '<html><body bgcolor="' + TColorToHTML(bgcol) + '" text="' + TColorToHTML(getBaseColor) + '" style="font-family: ' + sysfont + ';">' +
-      html +
+      htmlstr +
       '</body></html>'
     );
 
@@ -2040,7 +2052,7 @@ var
   TempFont: TFont;
   size: TUXDialogSize;
   MemoWrapper: TPanel;
-  sysfont: string;
+  sysfont, htmlstr: string;
   hpd: TIpHttpDataProvider;
 begin
   bgcol := getBackground;
@@ -2300,9 +2312,21 @@ begin
       try
         // Wrap content in HTML structure with background color from dumpbg
         FontTXTInList(sysfont);
+        htmlstr := StringReplace(
+         logmsg,
+          '">', '"><u><font color="' + TColorToHTML(getBaseColor) + '">',
+          [rfReplaceAll]
+        );
+
+          htmlstr := StringReplace(
+          htmlstr,
+          '</a>',
+          '</font></u></a>',
+          [rfReplaceAll]
+        );
         LogHtmlPanel.SetHtmlFromStr(
           '<html><body bgcolor="' + TColorToHTML(dumpbg) + '" text="' + TColorToHTML(dumptext) + '" style="font-family: ' + sysfont + ';">' +
-          logmsg +
+          htmlstr +
           '</body></html>'
         );
       except
