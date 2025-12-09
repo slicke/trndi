@@ -3533,8 +3533,7 @@ begin
           Application.ProcessMessages;
           pmSettings.PopUp(p.X, p.Y);
         end
-        else if not (pmSettings.HandleAllocated and IsWindowVisible(pmSettings.handle)) then begin
-
+        else begin
           pnTouchMenu.Width := Width;
           pnTouchMenu.Height := Height;
           pnTouchMenu.top := 0;
