@@ -108,6 +108,7 @@ TfConf = class(TForm)
   cbTirBar: TColorButton;
   cbTirBarCustom: TColorButton;
   cbChroma: TCheckBox;
+  cbTirIcon: TCheckBox;
   cl_hi_bg: TColorButton;
   cl_hi_bg_cust: TColorButton;
   cl_hi_txt: TColorButton;

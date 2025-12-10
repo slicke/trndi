@@ -613,6 +613,7 @@ isWSL : boolean = false;
 applocale: string;
 dotscale: single = 1;
 badge_adjust: single = 0;
+tir_icon: boolean = true;
 highAlerted: boolean = false; // A high alert is active
 lowAlerted: boolean = false; // A low alert is active
 perfectTriggered: boolean = false; // A perfect reading is active
@@ -2463,6 +2464,8 @@ procedure LoadUserSettings(f: TfConf);
       cbTIR.Checked := native.GetBoolSetting('range.custom', true);
       seTir.Value := native.GetIntSetting('range.time', 9999);
 
+      cbTirIcon.checked := native.GetBoolSetting('range.tir_icon', false);
+
       cbOffBar.Checked := native.GetBoolSetting('ux.off_bar', false);
       cbPaintHiLo.Checked := native.GetBoolSetting('ux.paint_range', true);
       cbPaintLines.Checked := native.GetBoolSetting('ux.paint_range_lines', false);
@@ -2719,6 +2722,8 @@ procedure SaveUserSettings(f: TfConf);
       end;
 
       native.SetBoolSetting('range.custom', cbTIR.Checked);
+      native.SetBoolSetting('range.tir_icon', cbTirIcon.checked);
+
       native.SetSetting('range.time', IntToStr(seTir.Value));
       native.SetBoolSetting('ux.off_bar', cbOffBar.Checked);
       native.SetBoolSetting('ux.paint_range', cbPaintHiLo.Checked);
@@ -3721,7 +3726,17 @@ begin
   if (ok + no) > 0 then
   begin
     range := round((ok / (ok + no)) * 100);
-    lTir.Caption := range.toString + '%';
+    if tir_icon then
+      case range of
+        100..MaxInt: lTir.Caption := '👌'; // MaxInt is unneeded really
+        80..99: lTir.Caption := '😃';
+        50..79: lTir.Caption := '😶';
+        30..49: lTir.Caption := '😥';
+        10..29: lTir.Caption := '😞';
+        0..9: lTir.Caption := '😓';
+      end
+    else
+      lTir.Caption := range.toString + '%';
   end
   else
   begin
