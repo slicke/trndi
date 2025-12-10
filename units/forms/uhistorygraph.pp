@@ -74,6 +74,20 @@ uses
   trndi.types, trndi.strings, slicke.ux.alert, dateutils;
 
 type
+  {** THistoryGraphPalette
+      Shared palette values used by the history graph to map BG levels to
+      consistent colors. Each field corresponds to the LevelColor cases and
+      allows the main UI to provide its runtime palette while keeping this
+      unit decoupled from `umain`. }
+  THistoryGraphPalette = record
+    Range: TColor;
+    RangeHigh: TColor;
+    RangeLow: TColor;
+    High: TColor;
+    Low: TColor;
+    Unknown: TColor;
+  end;
+
   {** TfHistoryGraph
       Primary lightweight form used to render BG readings as a simple dot
       graph with a time (X) axis and value (Y) axis. The class stores
@@ -103,6 +117,7 @@ type
     FMinTime: TDateTime;
     FMaxTime: TDateTime;
     FDotRadius: integer; // Dot radius in pixels
+    FPalette: THistoryGraphPalette; // Runtime palette supplied by main UI
     {** GetPlotRect: Determine the plotting rectangle inside the form where
       dots and lines are drawn. Respects the margins defined above. }
     function GetPlotRect: TRect;
@@ -162,11 +177,16 @@ type
       @param(Readings Array of BGReading objects to draw)
       @param(UnitPref Preferred output unit for formatting/drawing) }
     procedure SetReadings(const Readings: BGResults; UnitPref: BGUnit);
+    {** SetPalette: Allow callers to inject the palette used when
+      drawing level colors so the graph matches the main UI. }
+    procedure SetPalette(const Palette: THistoryGraphPalette);
   end;
 
   {** Display a dot-based history plot for the supplied readings. Reuses the
     same form instance between invocations to avoid repeated allocations. }
-  procedure ShowHistoryGraph(const Readings: BGResults; const UnitPref: BGUnit);
+  procedure ShowHistoryGraph(const Readings: BGResults; const UnitPref: BGUnit); overload;
+  procedure ShowHistoryGraph(const Readings: BGResults; const UnitPref: BGUnit;
+    const Palette: THistoryGraphPalette); overload;
 
 var
   {** fHistoryGraph: A single, reusable instance of the history graph.
@@ -204,6 +224,16 @@ const
   GRAPH_MARGIN_BOTTOM = 120;
   GRAPH_DIVISIONS = 5;
 
+function DefaultHistoryGraphPalette: THistoryGraphPalette; inline;
+begin
+  Result.Range := RGBToColor(64, 145, 108);
+  Result.RangeHigh := RGBToColor(64, 145, 108);
+  Result.RangeLow := RGBToColor(33, 99, 174);
+  Result.High := RGBToColor(217, 95, 2);
+  Result.Low := RGBToColor(33, 99, 174);
+  Result.Unknown := RGBToColor(180, 180, 180);
+end;
+
 { TfHistoryGraph }
 
 constructor TfHistoryGraph.Create(AOwner: TComponent);
@@ -217,6 +247,7 @@ begin
   BorderIcons := [biSystemMenu, biMinimize, biMaximize];
   Color := clWhite;
   FDotRadius := 5;
+  FPalette := DefaultHistoryGraphPalette;
 end;
 
 procedure TfHistoryGraph.DoClose(var CloseAction: TCloseAction);
@@ -435,7 +466,7 @@ var
     DrawKeyEntry(RS_HISTORY_GRAPH_KEY_RANGE_LO, LevelColor(BGRangeLO));
     DrawKeyEntry(RS_HISTORY_GRAPH_KEY_HIGH, LevelColor(BGHigh));
     DrawKeyEntry(RS_HISTORY_GRAPH_KEY_LOW, LevelColor(BGLOW));
-    DrawKeyEntry(RS_HISTORY_GRAPH_KEY_UNKNOWN, RGBToColor(180, 180, 180));
+    DrawKeyEntry(RS_HISTORY_GRAPH_KEY_UNKNOWN, FPalette.Unknown);
   end;
 
 begin
@@ -617,6 +648,11 @@ begin
   Invalidate;
 end;
 
+procedure TfHistoryGraph.SetPalette(const Palette: THistoryGraphPalette);
+begin
+  FPalette := Palette;
+end;
+
 procedure TfHistoryGraph.ShowReadingDetails(const Reading: BGReading);
 const
   br = '<br>'; //Override LB
@@ -666,18 +702,22 @@ end;
 
 function TfHistoryGraph.LevelColor(const Level: BGValLevel): TColor;
 begin
-  // Return a color which represents the given BG level. These are
-  // illustrative defaults mapping to green/blue/orange/grey similar to
-  // main application theme. Adjust as needed to keep visuals consistent.
+  // Return a color which represents the given BG level using the current
+  // palette supplied by the main UI. This keeps the graph in sync with the
+  // user's configured theme.
   case Level of
-    BGRange, BGRangeHI:
-      Result := RGBToColor(64, 145, 108);
-    BGRangeLO, BGLOW:
-      Result := RGBToColor(33, 99, 174);
+    BGRange:
+      Result := FPalette.Range;
+    BGRangeHI:
+      Result := FPalette.RangeHigh;
+    BGRangeLO:
+      Result := FPalette.RangeLow;
     BGHigh:
-      Result := RGBToColor(217, 95, 2);
+      Result := FPalette.High;
+    BGLOW:
+      Result := FPalette.Low;
   else
-    Result := RGBToColor(180, 180, 180);
+    Result := FPalette.Unknown;
   end;
 end;
 
@@ -758,14 +798,21 @@ begin
   Result := PlotRect.Bottom - Round(ratio * (PlotRect.Bottom - PlotRect.Top));
 end;
 
-procedure ShowHistoryGraph(const Readings: BGResults; const UnitPref: BGUnit);
+procedure ShowHistoryGraph(const Readings: BGResults; const UnitPref: BGUnit;
+  const Palette: THistoryGraphPalette);
 begin
   if not Assigned(fHistoryGraph) then
     fHistoryGraph := TfHistoryGraph.Create(Application);
 
+  fHistoryGraph.SetPalette(Palette);
   fHistoryGraph.SetReadings(Readings, UnitPref);
   fHistoryGraph.Show;
   fHistoryGraph.BringToFront;
+end;
+
+procedure ShowHistoryGraph(const Readings: BGResults; const UnitPref: BGUnit);
+begin
+  ShowHistoryGraph(Readings, UnitPref, DefaultHistoryGraphPalette);
 end;
 
 end.
