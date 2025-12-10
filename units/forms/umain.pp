@@ -132,7 +132,6 @@ TfBG = class(TForm)
   bMenuPanelClose: TButton;
   bTouchFull: TButton;
   lPredict: TLabel;
-  mi24h: TMenuItem;
   miDotSmall: TMenuItem;
   miPredict: TMenuItem;
   pnTouchContents: TPanel;
@@ -246,7 +245,6 @@ TfBG = class(TForm)
   procedure DotPaint(Sender: TObject);
   procedure lDiffClick(Sender: TObject);
   procedure lPredictClick(Sender: TObject);
-  procedure mi24hClick(Sender: TObject);
   procedure miDotNormalDrawItem(Sender: TObject; ACanvas: TCanvas;
     ARect: TRect; AState: TOwnerDrawState);
   procedure miDotNormalMeasureItem(Sender: TObject; ACanvas: TCanvas;
@@ -296,6 +294,7 @@ TfBG = class(TForm)
   procedure miClockClick(Sender: TObject);
   procedure miDotNormalClick(Sender: TObject);
   procedure miFloatOnClick(Sender: TObject);
+  procedure mi24hClick(Sender: TObject);
   procedure miHistoryClick(Sender: TObject);
   procedure miRangeColorClick(Sender: TObject);
   procedure miBordersClick(Sender: TObject);
@@ -895,13 +894,6 @@ end;
 procedure TfBG.lPredictClick(Sender: TObject);
 begin
   SHowMessage(RS_PREDICT);
-end;
-
-procedure TfBG.mi24hClick(Sender: TObject);
-var
-res: string;
-begin
-  ShowHistoryGraph(api.getReadings(1440, 288, '', res), un);
 end;
 
 procedure TfBG.miDotNormalDrawItem(Sender: TObject; ACanvas: TCanvas;
@@ -1901,8 +1893,6 @@ begin
 end;
 
 procedure TfBG.lAgoClick(Sender: TObject);
-const
-  LineEnding = '<br>';  // Override the LE
 var
   displayMsg: string;
   i: integer;
@@ -1920,9 +1910,7 @@ begin
   displayMsg += LineEnding + Format(sDevice, [lastReading.sensor]);
   ;
 
-
-  ExtHTML(uxdAuto,'Trndi','<font size="3">'+displayMsg,[mbOK],uxmtInformation);
-//  ShowMessage(displayMsg);
+  ShowMessage(displayMsg);
 
 end;
 
@@ -2224,6 +2212,31 @@ begin
     end;
   end;
   miFloatOn.Checked := fFloat.Showing;
+end;
+
+procedure TfBG.mi24hClick(Sender: TObject);
+var
+  res: string;
+  readings: BGResults;
+begin
+  if api = nil then
+  begin
+    ShowMessage('API not initialized yet.');
+    Exit;
+  end;
+
+  readings := api.getReadings(1440, 288, '', res);
+
+  if Length(readings) = 0 then
+  begin
+    if res <> '' then
+      ShowMessage('No readings returned: ' + res)
+    else
+      ShowMessage('No readings returned for the last 24 hours.');
+    Exit;
+  end;
+
+  ShowHistoryGraph(readings, un);
 end;
 
 procedure TfBG.miHistoryClick(Sender: TObject);
@@ -2993,7 +3006,20 @@ function SafeQtStyle(Handle: QWidgetH; const Style: string): boolean;
       Result := false;
     end;
   end;
-  {$endif}
+
+function ShiftKeyPressed: boolean;
+var
+  modifiers: QtKeyboardModifiers;
+begin
+  modifiers := QGuiApplication_keyboardModifiers;
+  Result := (modifiers and QtShiftModifier) <> 0;
+end;
+{$else}
+function ShiftKeyPressed: boolean;
+begin
+  Result := ssShift in GetKeyShiftState;
+end;
+{$endif}
 var
   tpb: TDotControl;
   H, M: integer;
@@ -3001,7 +3027,7 @@ begin
   // Shift down
   Application.ProcessMessages;
   try
-    shifted := ssShift in GetKeyShiftState;
+    shifted := ShiftKeyPressed;
   except
     shifted := false;
   end;
