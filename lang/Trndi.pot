@@ -471,6 +471,10 @@ msgctxt "tfconf.cbtircolorcustom.caption"
 msgid "Use this color:"
 msgstr ""
 
+#: tfconf.cbtiricon.caption
+msgid "Show a smiley instead of percentage"
+msgstr ""
+
 #: tfconf.cbtitlecolor.caption
 msgid "Color the title bar with glucose color (Windows only)"
 msgstr ""

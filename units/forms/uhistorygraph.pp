@@ -672,7 +672,7 @@ begin
   else
     noise := RS_RH_UNKNOWN;
 
-  ExtHTML(uxdAuto, RS_RH_READING, '<font size="4">'+TimeToStr(Reading.date) +
+  ExtHTML(uxdAuto, RS_RH_READING, '<font size="4"><u></u>'+TimeToStr(Reading.date) +
    '</font><font size="3">' + br+
     StringReplace(Format(RS_HISTORY_ITEM,
     [Reading.format(FUnit, BG_MSG_SHORT, BGPrimary),

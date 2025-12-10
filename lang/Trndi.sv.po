@@ -487,6 +487,10 @@ msgctxt "tfconf.cbtircolorcustom.caption"
 msgid "Use this color:"
 msgstr "Med denna färg:"
 
+#: tfconf.cbtiricon.caption
+msgid "Show a smiley instead of percentage"
+msgstr "Visa en smiley istället för procent"
+
 #: tfconf.cbtitlecolor.caption
 msgid "Color the title bar with glucose color (Windows only)"
 msgstr "Färga titeln med blodsockerfärgen (endast Windows)"
@@ -1981,4 +1985,3 @@ msgstr "Historikgraf"
 #, object-pascal-format
 msgid "Readings (%s)"
 msgstr "Avläsningar (%s)"
-

@@ -156,6 +156,8 @@ begin
   DATA_FRESHNESS_THRESHOLD_MINUTES :=
     native.GetIntSetting('system.fresh_threshold', DATA_FRESHNESS_THRESHOLD_MINUTES);
 
+  tir_icon := native.GetBoolSetting('range.tir_icon', false);
+
   // Create trend dots dynamically (TLabel on Darwin, TPaintBox elsewhere)
   CreateTrendDots;
 
