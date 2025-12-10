@@ -216,6 +216,7 @@ TfBG = class(TForm)
   tMissed: TTimer;
   tTouch: TTimer;
   tMain: TTimer;
+  mi24h: TMenuItem;
     {** Recompute and apply layout offsets for all graph elements.
       This adjusts trend dots, labels and other elements when the UI size or
       dot-count changes to keep everything visually aligned.
@@ -713,6 +714,16 @@ const
   BADGE_FLASH_REPEAT_DELAY_LOW_MS = 400;
   BADGE_FLASH_DURATION_OK_MS = 6000;
   BADGE_FLASH_REPEAT_DELAY_OK_MS = 500;
+
+function CurrentHistoryGraphPalette: THistoryGraphPalette;
+begin
+  Result.Range := bg_color_ok;
+  Result.RangeHigh := bg_rel_color_hi;
+  Result.RangeLow := bg_rel_color_lo;
+  Result.High := bg_color_hi;
+  Result.Low := bg_color_lo;
+  Result.Unknown := RGBToColor(180, 180, 180);
+end;
 
 procedure TfBG.FormDblClick(Sender: TObject);
 begin
@@ -2236,12 +2247,12 @@ begin
     Exit;
   end;
 
-  ShowHistoryGraph(readings, un);
+  ShowHistoryGraph(readings, un, CurrentHistoryGraphPalette);
 end;
 
 procedure TfBG.miHistoryClick(Sender: TObject);
 begin
-  ShowHistoryGraph(bgs, un);
+  ShowHistoryGraph(bgs, un, CurrentHistoryGraphPalette);
 end;
 
 procedure TfBG.miRangeColorClick(Sender: TObject);
