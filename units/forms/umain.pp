@@ -3086,19 +3086,6 @@ begin
   end
   else
     miDotVal.Visible := false;
-  {$ifdef LCLQt6}
-  Exit; // This crashes!
-  if pmSettings.Tag <> 1 then
-  begin
-    if not SafeQtStyle(QWidgetH(pmSettings.Handle),
-      'QMenu { font-size: 16pt; font-weight: bold; }' + LineEnding +
-      'QMenu::item { padding: 8px 12px; }' + LineEnding +
-      'QMenu::item:selected { background-color: highlight; }') then
-      ShowMessage('Qt styling failed, using fallback menu'){$IFDEF DEBUG}{$ENDIF};
-
-    pmSettings.Tag := 1;
-  end;
-  {$endif}
   last_popup := now;
 end;
 
