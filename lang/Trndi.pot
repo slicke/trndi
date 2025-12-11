@@ -1084,6 +1084,70 @@ msgstr ""
 msgid "Hi > %.1f"
 msgstr ""
 
+#: trndi.strings.rs_init_api
+msgid "Initializing API..."
+msgstr ""
+
+#: trndi.strings.rs_init_chroma
+msgid "Initializing Chroma..."
+msgstr ""
+
+#: trndi.strings.rs_init_connect
+msgid "Attempting to connect..."
+msgstr ""
+
+#: trndi.strings.rs_init_custom_overrides
+msgid "Initializing custom overrides..."
+msgstr ""
+
+#: trndi.strings.rs_init_first
+msgid "Fetching first reading..."
+msgstr ""
+
+#: trndi.strings.rs_init_fonts
+msgid "Processing fonts..."
+msgstr ""
+
+#: trndi.strings.rs_init_initial
+msgid "Preparing initial setup..."
+msgstr ""
+
+#: trndi.strings.rs_init_license
+msgid "Verifying license..."
+msgstr ""
+
+#: trndi.strings.rs_init_linux
+msgid "Attempting to adjust Linux overrides..."
+msgstr ""
+
+#: trndi.strings.rs_init_locale
+msgid "Setting up locale settings..."
+msgstr ""
+
+#: trndi.strings.rs_init_mac
+msgid "Attempting to adjust macOS overrides..."
+msgstr ""
+
+#: trndi.strings.rs_init_media
+msgid "Starting Media Backend..."
+msgstr ""
+
+#: trndi.strings.rs_init_profiles
+msgid "Processing user profiles..."
+msgstr ""
+
+#: trndi.strings.rs_init_ui
+msgid "Initializing UI..."
+msgstr ""
+
+#: trndi.strings.rs_init_unit
+msgid "Determining glucose unit..."
+msgstr ""
+
+#: trndi.strings.rs_init_ux
+msgid "Initializing UX..."
+msgstr ""
+
 #: trndi.strings.rs_last_recieve
 #, object-pascal-format
 msgid "Last reading was %s (%s)"
@@ -1683,6 +1747,11 @@ msgid ""
 "\n"
 "Address: your xDrip REST endpoint (base URL).\n"
 "Auth: API secret (plain text; server hashes it)."
+msgstr ""
+
+#: uconf.rs_min_minutes
+#, object-pascal-format
+msgid "When calculatingg time-in-range, do so over this amount of minutes. If the number is higher than the data available, the max time will be used - this is currently %d minutes."
 msgstr ""
 
 #: uconf.rs_newver

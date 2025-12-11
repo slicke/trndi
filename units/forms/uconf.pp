@@ -63,6 +63,7 @@ TfConf = class(TForm)
   bPrivacyHelp: TButton;
   bRemove: TButton;
   bSysNotice: TButton;
+  bMinMinutesHelp: TButton;
   bWebAPI: TButton;
   bSysTouch: TButton;
   bTestAnnounce: TButton;
@@ -84,6 +85,7 @@ TfConf = class(TForm)
   cbMusicPause: TCheckBox;
   cbNotice: TCheckBox;
   cbPredictShortSize: TComboBox;
+  cbTirIcon: TCheckBox;
   cbWebAPI: TCheckBox;
   cbOffBar: TCheckBox;
   cbPaintHiLo: TCheckBox;
@@ -108,7 +110,6 @@ TfConf = class(TForm)
   cbTirBar: TColorButton;
   cbTirBarCustom: TColorButton;
   cbChroma: TCheckBox;
-  cbTirIcon: TCheckBox;
   cl_hi_bg: TColorButton;
   cl_hi_bg_cust: TColorButton;
   cl_hi_txt: TColorButton;
@@ -178,8 +179,8 @@ TfConf = class(TForm)
   lExtCount: TLabel;
   lArch: TLabel;
   lExtName: TLabel;
-  lHiOver2: TLabel;
   lbChroma: TListBox;
+  lHiOver2: TLabel;
   lOS: TLabel;
   lPredictShortSize: TLabel;
   lProblematic: TLabel;
@@ -227,6 +228,7 @@ TfConf = class(TForm)
   Panel14: TPanel;
   Panel15: TPanel;
   Panel16: TPanel;
+  Panel17: TPanel;
   pnSysInfo: TPanel;
   pcColors: TPageControl;
   Panel1: TPanel;
@@ -270,6 +272,7 @@ TfConf = class(TForm)
   tsSystem: TTabSheet;
   procedure bAddClick(Sender: TObject);
   procedure bLimitsClick(Sender: TObject);
+  procedure bMinMinutesHelpClick(Sender: TObject);
   procedure bOverrideHelpClick(Sender: TObject);
   procedure bPrivacyHelpClick(Sender: TObject);
   procedure bRemoveClick(Sender: TObject);
@@ -365,6 +368,7 @@ RS_SELECT_FONT_ARROW = 'Select a font for the arrow';
 RS_SELECT_FONT_READING = 'Select a font for the reading';
 RS_SELECT_FONT_TIME = 'Select a font for the time';
 
+RS_MIN_MINUTES = 'When calculatingg time-in-range, do so over this amount of minutes. If the number is higher than the data available, the max time will be used - this is currently %d minutes.';
 
 RS_NOTIFICATIONS = 'Notifications';
 RS_NOTIFY_TITLE = 'A notification system is required';
@@ -1028,6 +1032,11 @@ end;
 
 procedure TfConf.bLimitsClick(Sender: TObject);
 begin
+end;
+
+procedure TfConf.bMinMinutesHelpClick(Sender: TObject);
+begin
+  ShowMessage(Format(RS_MIN_MINUTES, [MAX_MIN]));
 end;
 
 procedure TfConf.bAddClick(Sender: TObject);
