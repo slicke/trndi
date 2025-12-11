@@ -857,10 +857,6 @@ msgstr "Okänt grafiksystem"
 msgid "Display Unit"
 msgstr "Enhetstyp"
 
-#: tfconf.tabsheet1.caption
-msgid "Time-in-range"
-msgstr "Tid-i-målområde"
-
 #: tfconf.tsbackgrounds.caption
 msgid "Backgrounds"
 msgstr "Bakgrunder"
@@ -909,6 +905,12 @@ msgstr "System"
 msgctxt "tfconf.tstexts.caption"
 msgid "Texts"
 msgstr "Texter"
+
+#: tfconf.tstir.caption
+#, fuzzy
+msgctxt "tfconf.tstir.caption"
+msgid "Time-in-range"
+msgstr "Tid-i-målområde"
 
 #: tffloat.caption
 msgid "Floating Display"
@@ -2054,3 +2056,4 @@ msgstr "Historikgraf"
 #, object-pascal-format
 msgid "Readings (%s)"
 msgstr "Avläsningar (%s)"
+

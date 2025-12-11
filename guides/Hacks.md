@@ -37,6 +37,17 @@ system.fresh_threshold=31
 ```ini
 ux.badge_size=100
 ```
+
+## Override the number readings fetched
+Trndi defaults to a set amount of minutes it fetches (1440), this only affects time-in-range - not the graph!
+```ini
+remote.max_min=2000
+```
+To make this work you must also set a limit on the number of readings fetched (default 25). This is ignored by some APIs, but required here for consistency:
+```ini
+remote.max_result=400
+```
+
 ## Resetting Trndi
 #### Delete all keys and Trndi will reset to factory-default settings
 <br><br>
