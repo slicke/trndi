@@ -11172,22 +11172,60 @@ object fConf: TfConf
           Caption = 'Show a sidebar when value is not in range'
           TabOrder = 1
         end
-        object lHiOver2: TLabel
+        object Panel17: TPanel
           Left = 0
-          Height = 16
-          Top = 48
-          Width = 458
-          Caption = 'Maximum minutes to count time in range on (depending on source data availability):'
-        end
-        object seTIR: TSpinEdit
-          Left = 8
           Height = 30
-          Top = 69
-          Width = 64
-          MaxValue = 9999
-          MinValue = 5
+          Top = 50
+          Width = 635
+          Align = alTop
+          BevelOuter = bvNone
+          ClientHeight = 30
+          ClientWidth = 635
           TabOrder = 2
-          Value = 5
+          object lHiOver2: TLabel
+            Left = 25
+            Height = 25
+            Top = 5
+            Width = 458
+            Align = alLeft
+            BorderSpacing.Left = 25
+            BorderSpacing.Top = 5
+            BorderSpacing.Right = 5
+            Caption = 'Maximum minutes to count time in range on (depending on source data availability):'
+          end
+          object seTIR: TSpinEdit
+            Left = 488
+            Height = 30
+            Top = 0
+            Width = 64
+            Align = alLeft
+            MaxValue = 9999
+            MinValue = 5
+            TabOrder = 0
+            Value = 5
+          end
+          object bMinMinutesHelp: TButton
+            Left = 557
+            Height = 30
+            Top = 0
+            Width = 20
+            Align = alLeft
+            AutoSize = True
+            BorderSpacing.Left = 5
+            Caption = '?'
+            TabOrder = 1
+            OnClick = bMinMinutesHelpClick
+          end
+        end
+        object cbTirIcon: TCheckBox
+          Left = 0
+          Height = 20
+          Top = 83
+          Width = 635
+          Align = alBottom
+          BorderSpacing.Bottom = 10
+          Caption = 'Show a smiley instead of percentage'
+          TabOrder = 3
         end
       end
       object GroupBox6: TGroupBox
@@ -11386,14 +11424,6 @@ object fConf: TfConf
             Width = 78
             DecimalPlaces = 0
             TabOrder = 1
-          end
-          object cbTirIcon: TCheckBox
-            Left = 352
-            Height = 20
-            Top = 3
-            Width = 224
-            Caption = 'Show a smiley instead of percentage'
-            TabOrder = 2
           end
         end
       end

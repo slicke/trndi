@@ -1127,6 +1127,70 @@ msgstr ""
 msgid "Hi > %.1f"
 msgstr "Hög > %.1f"
 
+#: trndi.strings.rs_init_api
+msgid "Initializing API..."
+msgstr "Initierar API..."
+
+#: trndi.strings.rs_init_chroma
+msgid "Initializing Chroma..."
+msgstr "Initierar Chroma..."
+
+#: trndi.strings.rs_init_connect
+msgid "Attempting to connect..."
+msgstr "Försöker ansluta..."
+
+#: trndi.strings.rs_init_custom_overrides
+msgid "Initializing custom overrides..."
+msgstr "Initierar personliga åsidosättanden..."
+
+#: trndi.strings.rs_init_first
+msgid "Fetching first reading..."
+msgstr "Hämta första avläsning..."
+
+#: trndi.strings.rs_init_fonts
+msgid "Processing fonts..."
+msgstr "Bearbetar typsnitt..."
+
+#: trndi.strings.rs_init_initial
+msgid "Preparing initial setup..."
+msgstr "Förbereder initiala inställningar..."
+
+#: trndi.strings.rs_init_license
+msgid "Verifying license..."
+msgstr "Verifierar licens..."
+
+#: trndi.strings.rs_init_linux
+msgid "Attempting to adjust Linux overrides..."
+msgstr "Försöker att justera Linux-åtidosättanden"
+
+#: trndi.strings.rs_init_locale
+msgid "Setting up locale settings..."
+msgstr "Ställer in lokalisering..."
+
+#: trndi.strings.rs_init_mac
+msgid "Attempting to adjust macOS overrides..."
+msgstr "Försöker att justera macOS-åsidosättanden..."
+
+#: trndi.strings.rs_init_media
+msgid "Starting Media Backend..."
+msgstr "Startar mediasystemet"
+
+#: trndi.strings.rs_init_profiles
+msgid "Processing user profiles..."
+msgstr "Bearbetar användarprofiler"
+
+#: trndi.strings.rs_init_ui
+msgid "Initializing UI..."
+msgstr "Initierar gränssnittet..."
+
+#: trndi.strings.rs_init_unit
+msgid "Determining glucose unit..."
+msgstr "Bedömmer glukosenhet..."
+
+#: trndi.strings.rs_init_ux
+msgid "Initializing UX..."
+msgstr "Initierar användarupplevelsen"
+
 #: trndi.strings.rs_last_recieve
 #, object-pascal-format
 msgid "Last reading was %s (%s)"
@@ -1791,6 +1855,11 @@ msgstr ""
 "r\n"
 "Adress: din xDrip REST-slutpunkt (base URL).r\n"
 "Auth: API-hemlighet (ren text; inte hashad)."
+
+#: uconf.rs_min_minutes
+#, object-pascal-format
+msgid "When calculatingg time-in-range, do so over this amount of minutes. If the number is higher than the data available, the max time will be used - this is currently %d minutes."
+msgstr "När tid-i-målområdet beräknas, gör det för detta antal minuter. Om numret är högre än tillgänglig data, visas maxtiden - vilket just nu är %d minuter."
 
 #: uconf.rs_newver
 #, object-pascal-format

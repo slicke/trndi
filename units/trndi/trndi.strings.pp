@@ -96,6 +96,23 @@ RS_MULTINAME_DEF_NAMED = 'Showing %s (standard user)';
 RS_SPLASH_LOADING = 'Loading Extension: ';
 RS_SPLASH_LOADING_INIT  = 'Loading Extensions...';
 
+RS_INIT_MEDIA = 'Starting Media Backend...';
+RS_INIT_FONTS = 'Processing fonts...';
+RS_INIT_LINUX = 'Attempting to adjust Linux overrides...';
+RS_INIT_MAC = 'Attempting to adjust macOS overrides...';
+RS_INIT_UI = 'Initializing UI...';
+RS_INIT_PROFILES = 'Processing user profiles...';
+RS_INIT_LOCALE = 'Setting up locale settings...';
+RS_INIT_LICENSE = 'Verifying license...';
+RS_INIT_UNIT = 'Determining glucose unit...';
+RS_INIT_INITIAL = 'Preparing initial setup...';
+RS_INIT_API = 'Initializing API...';
+RS_INIT_CONNECT = 'Attempting to connect...';
+RS_INIT_UX = 'Initializing UX...';
+RS_INIT_CUSTOM_OVERRIDES = 'Initializing custom overrides...';
+RS_INIT_FIRST = 'Fetching first reading...';
+RS_INIT_CHROMA = 'Initializing Chroma...';
+
 RS_CLEANUP = 'Wait. Shutting down extensions engine...';
 RS_CLEANUP_WAIT = 'Please wait up to 20 seconds...';
 

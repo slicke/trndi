@@ -418,13 +418,12 @@ begin
   Application.OnException := @AppExceptionHandler;
 
   // Start media backend early
-  fSplash.lInfo.Caption := 'Starting Media Backend...';
+  fSplash.lInfo.Caption := RS_INIT_MEDIA;
   MediaController := TSystemMediaController.Create(Self);
   MediaController.Initialize;
   Application.ProcessMessages;
 
-
-  fSplash.linfo.Caption := 'Processing fonts...';
+  fSplash.linfo.Caption := RS_INIT_FONTS;
   // Font validation
   fil := FontGUIInList(guifontName);
   if not fil then
@@ -453,7 +452,7 @@ begin
 
   // Platform-specific initialization
   {$ifdef X_LINUXBSD}
-  fSplash.linfo.Caption := 'Attempting to adjust Linux overrides...';
+  fSplash.linfo.Caption := RS_INIT_LINUX;
   InitializeLinuxPlatform;
   {$endif}
 
@@ -468,13 +467,13 @@ begin
 
   // Set fonts for non-Darwin platforms
   {$ifndef DARWIN}
-  fSplash.linfo.Caption := 'Attempting to adjust macOS overrides...';
+  fSplash.linfo.Caption := RS_INIT_MAC;
   fBG.font.Name := txtFontName;
   lArrow.Font.Name := guifontName;
   {$endif}
 
 
-  fSplash.linfo.Caption := 'Initializing UI...';
+  fSplash.linfo.Caption := RS_INIT_UI;
   // Initialize UI components
   InitializeUIComponents;
   Application.ProcessMessages;
@@ -490,24 +489,24 @@ begin
   with native do
   begin
     SetLang;
+    fSplash.linfo.Caption := RS_INIT_PROFILES;
 
-    fSplash.linfo.Caption := 'Processing user profiles...';
     username := GetRootSetting('users.names', '');
     LoadUserProfile;
 
-    fSplash.linfo.Caption := 'Setting up locale settings...';
+    fSplash.linfo.Caption := RS_INIT_LOCALE;
     // Locale setup
     userlocale := DefaultFormatSettings;
     userlocale.DecimalSeparator := GetCharSetting('locale.separator', '.');
     badge_adjust := GetIntSetting('ux.badge_size', 0) / 10;
     native.locale := userlocale;
 
-    fSplash.linfo.Caption := 'Verifying license...';
+    fSplash.linfo.Caption := RS_INIT_LICENSE;
     // License check
     CheckAndAcceptLicense;
     Application.ProcessMessages;
 
-    fSplash.linfo.Caption := 'Determining glucose unit...';
+    fSplash.linfo.Caption := RS_INIT_UNIT;
     // Privacy and unit settings
     privacyMode := GetBoolSetting('ext.privacy');
     if CheckSetting('unit', 'mmol', 'mmol') then
@@ -520,7 +519,7 @@ begin
     apiTarget := GetSetting('remote.target');
     if apiTarget = '' then
     begin
-      fSplash.linfo.Caption := 'Preparing initial setup...';
+      fSplash.linfo.Caption := RS_INIT_INITIAL;
       tMain.Enabled := false;
       for i := 0 to fBG.ComponentCount - 1 do
         if (fbg.Components[i] is TLabel) and (fbg.Components[i] <> lval) then
@@ -531,7 +530,7 @@ begin
       Exit;
     end;
 
-    fSplash.linfo.Caption := 'Initializing API...';
+    fSplash.linfo.Caption := RS_INIT_API;
     Application.ProcessMessages;
     if not InitializeAPI then
     begin
@@ -539,7 +538,7 @@ begin
       Exit;
     end;
 
-    fSplash.linfo.Caption := 'Attempting to connect...';
+    fSplash.linfo.Caption := RS_INIT_CONNECT;
     Application.ProcessMessages;
     if not api.Connect then
     begin
@@ -550,8 +549,7 @@ begin
       Exit;
     end;
 
-
-    fSplash.linfo.Caption := 'Initializing UX...';
+    fSplash.linfo.Caption := RS_INIT_UX;
     // UI preferences
     dotscale := GetFloatSetting('ux.dot_scale', {$ifdef DARWIN}0.7{$else}1{$endif});
     DOT_ADJUST := GetFloatSetting('ux.dot_adjust', 0);
@@ -568,7 +566,7 @@ begin
     LoadExtensions;
     {$endif}
 
-    fSplash.linfo.Caption := 'Initializing custom overrides...';
+    fSplash.linfo.Caption := RS_INIT_CUSTOM_OVERRIDES;
     // Override settings - always apply if set, regardless of checkbox state
     // This allows extensions and manual config edits to work
     api.cgmLo := GetIntSetting('override.lo', api.cgmLo);
@@ -591,14 +589,14 @@ begin
   Application.ProcessMessages;
   if not updateReading(true) then
   begin
-    fSplash.linfo.Caption := 'Fetching first reading...';
+    fSplash.linfo.Caption := RS_INIT_FIRST;
     updateReading; // Second attempt for setup
     showWarningPanel(RS_NO_BOOT_READING);
   end;
 
   Chroma := TRazerChromaFactory.CreateInstance;
   if native.GetBoolSetting('razer.enabled', false) then begin
-    fSplash.linfo.Caption := 'Initializing Chroma...';
+    fSplash.linfo.Caption := RS_INIT_CHROMA;
     if not Chroma.Initialize then
     begin
       Showmessage('❌ Failed to initialize Razer Chroma: ', Chroma.LastError);
