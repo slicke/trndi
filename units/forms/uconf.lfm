@@ -17,7 +17,7 @@ object fConf: TfConf
     Height = 518
     Top = 11
     Width = 665
-    ActivePage = TabSheet1
+    ActivePage = tsTir
     Align = alClient
     BorderSpacing.Around = 5
     TabIndex = 3
@@ -11127,7 +11127,7 @@ object fConf: TfConf
         end
       end
     end
-    object TabSheet1: TTabSheet
+    object tsTir: TTabSheet
       Caption = 'Time-in-range'
       ClientHeight = 483
       ClientWidth = 659

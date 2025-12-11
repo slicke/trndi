@@ -840,10 +840,6 @@ msgstr ""
 msgid "Display Unit"
 msgstr ""
 
-#: tfconf.tabsheet1.caption
-msgid "Time-in-range"
-msgstr ""
-
 #: tfconf.tsbackgrounds.caption
 msgid "Backgrounds"
 msgstr ""
@@ -891,6 +887,11 @@ msgstr ""
 #: tfconf.tstexts.caption
 msgctxt "tfconf.tstexts.caption"
 msgid "Texts"
+msgstr ""
+
+#: tfconf.tstir.caption
+msgctxt "tfconf.tstir.caption"
+msgid "Time-in-range"
 msgstr ""
 
 #: tffloat.caption

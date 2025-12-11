@@ -257,7 +257,7 @@ TfConf = class(TForm)
   rbUnit: TRadioGroup;
   seTIR: TSpinEdit;
   spTHRESHOLD: TSpinEdit;
-  TabSheet1: TTabSheet;
+  tsTir: TTabSheet;
   tsChroma: TTabSheet;
   tsExt: TTabSheet;
   tsBackgrounds: TTabSheet;

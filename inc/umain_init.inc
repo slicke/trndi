@@ -317,9 +317,19 @@ end;
 
 function TfBG.InitializeAPI: boolean;
 var
-  apiTarget, apiCreds: string;
+  apiTarget, apiCreds, maxmin, maxresult: string;
+  minmax, resultmax: integer;
 begin
   Result := true;
+
+  if native.TryGetSetting('remote.max_min', maxmin) then begin
+    if native.TryGetSetting('remote.max_result', maxresult) then begin
+       if TryStrToInt(maxmin, minmax) and TryStrToInt(maxresult, resultmax) then begin
+            MAX_MIN := minmax;
+            MAX_RESULT := resultmax;
+       end;
+     end;
+  end;
 
   apiTarget := native.GetSetting('remote.target');
   apiCreds := native.GetSetting('remote.creds');
