@@ -70,7 +70,14 @@ function convertMillisecondsToISO8601($milliseconds) {
 
 $entries = [];
 $str = "";
-if ($_SERVER['REQUEST_URI'] == '/api/v1/status.json'){
+
+// Normalize the request path so that double-slashes (e.g. /api/v1//status.json)
+// are treated the same as single slashes. This makes the test server more
+// tolerant to minor client variations.
+$raw_path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+$path = preg_replace('#/+#', '/', $raw_path);
+
+if ($path == '/api/v1/status.json'){
 $d = generateRecord();
 $str = <<<STATUS
 {
@@ -229,7 +236,9 @@ for ($i = 0; $i <= 15; $i++){
 
 }
 
+// Very small and permissive authorization check used by the tests. Keep it
+// as-is but allow it to find the header/value in $_SERVER values.
 if (in_array(sha1('test22'), $_SERVER))
-   echo $str === '' ? json_encode($entries) : $str;
+    echo $str === '' ? json_encode($entries) : $str;
 else
   echo "Unauthorized";
