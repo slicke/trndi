@@ -77,6 +77,26 @@ $str = "";
 $raw_path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $path = preg_replace('#/+#', '/', $raw_path);
 
+// Log requests for debugging (writes to /tmp/trndi-test-server.log)
+$logEntry = sprintf("[%s] %s %s (normalized: %s) - API-SECRET: %s\n",
+    date('Y-m-d H:i:s'),
+    $_SERVER['REQUEST_METHOD'],
+    $raw_path,
+    $path,
+    isset($_SERVER['HTTP_API_SECRET']) ? substr($_SERVER['HTTP_API_SECRET'], 0, 10) . '...' : 'NONE'
+);
+file_put_contents('/tmp/trndi-test-server.log', $logEntry, FILE_APPEND);
+
+// Debug endpoint to see what path is being requested
+if ($path == '/debug') {
+    header('Content-Type: text/plain');
+    echo "Requested path: " . $path . "\n";
+    echo "Raw path: " . $raw_path . "\n";
+    echo "Request URI: " . $_SERVER['REQUEST_URI'] . "\n";
+    print_r($_SERVER);
+    exit;
+}
+
 // -----------------------------------------------------------------------------
 // Fake Dexcom Share API for testing
 // -----------------------------------------------------------------------------
@@ -140,6 +160,128 @@ if (str_starts_with($path, '/ShareWebServices/Services/')) {
 
     http_response_code(404);
     echo json_encode(['error' => 'Unknown Dexcom endpoint', 'path' => $sub]);
+    exit;
+}
+
+// -----------------------------------------------------------------------------
+// xDrip /pebble endpoint
+// -----------------------------------------------------------------------------
+// xDrip uses /pebble for a simplified status/current reading response
+// This mimics the format with "status" containing "now" timestamp and
+// "bgs" containing the current reading
+if ($path == '/pebble') {
+    header('Content-Type: application/json');
+    
+    // Check authorization: look for HTTP_API_SECRET header
+    // PHP converts "api-secret" header to "HTTP_API_SECRET" in $_SERVER
+    $expectedHash = sha1('test22');
+    $providedSecret = isset($_SERVER['HTTP_API_SECRET']) ? $_SERVER['HTTP_API_SECRET'] : '';
+    if ($providedSecret !== $expectedHash) {
+        echo 'Authentication failed';
+        exit;
+    }
+    
+    $nowMs = (int) floor(microtime(true) * 1000);
+    $readingMs = $nowMs - (5 * 60 * 1000); // 5 minutes ago
+    
+    $response = [
+        'status' => [
+            ['now' => $nowMs]
+        ],
+        'bgs' => [
+            [
+                'sgv' => '9,6', // European decimal format (9.6 mmol/L)
+                'trend' => 4,
+                'direction' => 'Flat',
+                'datetime' => $readingMs,
+                'filtered' => 0,
+                'unfiltered' => -127,
+                'noise' => 1,
+                'bgdelta' => '-0.2',
+                'battery' => '',
+                'iob' => 'unknown'
+            ]
+        ]
+    ];
+    
+    echo json_encode($response);
+    exit;
+}
+
+// -----------------------------------------------------------------------------
+// xDrip /sgv.json endpoint
+// -----------------------------------------------------------------------------
+// xDrip uses /sgv.json for retrieving glucose readings
+// This returns an array similar to Nightscout's /api/v1/entries format
+if ($path == '/sgv.json') {
+    header('Content-Type: application/json');
+    
+    // Check authorization: look for HTTP_API_SECRET header
+    $expectedHash = sha1('test22');
+    $providedSecret = isset($_SERVER['HTTP_API_SECRET']) ? $_SERVER['HTTP_API_SECRET'] : '';
+    if ($providedSecret !== $expectedHash) {
+        echo 'Authentication failed';
+        exit;
+    }
+    
+    // Respect count parameter
+    $count = 16;
+    if (isset($_GET['count'])) {
+        $count = intval($_GET['count']);
+    }
+    if ($count < 0) $count = 0;
+    if ($count > 200) $count = 200;
+    
+    $entries = [];
+    for ($i = 0; $i < $count; $i++) {
+        $d = generateRecord();
+        $entries[$i] = [
+            '_id' => $d['identifier'],
+            'device' => 'xDrip-DexcomG5',
+            'date' => $d['timestamp_ms'],
+            'dateString' => $d['iso_date'],
+            'sgv' => random_int(60, 200),
+            'delta' => floatval(random_int(1,4).'.009'),
+            'direction' => 'Flat',
+            'type' => 'sgv',
+            'filtered' => 0,
+            'unfiltered' => 0,
+            'rssi' => 100,
+            'noise' => 1,
+            'sysTime' => $d['iso_date'],
+            'utcOffset' => 60,
+            'mills' => $d['timestamp_ms']
+        ];
+    }
+    
+    echo json_encode($entries);
+    exit;
+}
+
+// -----------------------------------------------------------------------------
+// xDrip /status.json endpoint
+// -----------------------------------------------------------------------------
+// xDrip uses /status.json for configuration including bgHigh/bgLow thresholds
+if ($path == '/status.json') {
+    header('Content-Type: application/json');
+    
+    // Check authorization: look for HTTP_API_SECRET header
+    $expectedHash = sha1('test22');
+    $providedSecret = isset($_SERVER['HTTP_API_SECRET']) ? $_SERVER['HTTP_API_SECRET'] : '';
+    if ($providedSecret !== $expectedHash) {
+        echo 'Authentication failed';
+        exit;
+    }
+    
+    $response = [
+        'status' => 'ok',
+        'bgHigh' => 260,
+        'bgLow' => 55,
+        'bgTargetTop' => 180,
+        'bgTargetBottom' => 80
+    ];
+    
+    echo json_encode($response);
     exit;
 }
 
@@ -313,9 +455,11 @@ for ($i = 0; $i < $count; $i++){
 
 }
 
-// Very small and permissive authorization check used by the tests. Keep it
-// as-is but allow it to find the header/value in $_SERVER values.
-if (in_array(sha1('test22'), $_SERVER))
+// Very small and permissive authorization check used by the tests for Nightscout endpoints
+$expectedHash = sha1('test22');
+$providedSecret = isset($_SERVER['HTTP_API_SECRET']) ? $_SERVER['HTTP_API_SECRET'] : '';
+if ($providedSecret === $expectedHash)
     echo $str === '' ? json_encode($entries) : $str;
 else
   echo "Unauthorized";
+
