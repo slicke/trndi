@@ -1578,11 +1578,15 @@ begin
     debugValue := i * 5.0; // 5, 10, 15, 20 mmol/L
     if (debugValue >= BG_API_MIN) and (debugValue <= BG_API_MAX) then
     begin
-      debugY := ValueToY(debugValue * BG_CONVERTIONS[mmol][mgdl]) + Round(dotHeight / 2.0) + DOT_OFFSET_RANGE;
+      // debugValue is already in mmol, which is the internal API unit, so no conversion needed
+      debugY := ValueToY(debugValue) + Round(dotHeight / 2.0) + DOT_OFFSET_RANGE;
       cnv.MoveTo(0, debugY);
       cnv.LineTo(Self.ClientWidth, debugY);
       debugText := Format('%.0f', [debugValue]);
-      cnv.TextOut(5, debugY - 8, debugText);
+      // Draw text on right side, centered vertically on the line
+      cnv.TextOut(Self.ClientWidth - cnv.TextWidth(debugText) - 5, 
+                  debugY - (cnv.TextHeight(debugText) div 2), 
+                  debugText);
     end;
   end;
   {$ENDIF}
