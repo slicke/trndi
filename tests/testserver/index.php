@@ -213,7 +213,18 @@ STATUS;
 
 } else {
 $entries = [];
-for ($i = 0; $i <= 15; $i++){
+
+// Respect Nightscout's common `count` parameter.
+// Default to 16 entries to match previous behavior.
+$count = 16;
+if (isset($_GET['count'])) {
+        $count = intval($_GET['count']);
+}
+// Clamp to a reasonable range for tests.
+if ($count < 0) $count = 0;
+if ($count > 200) $count = 200;
+
+for ($i = 0; $i < $count; $i++){
   $d = generateRecord();
   $entries[$i] = [
         "_id" => $d["identifier"],
