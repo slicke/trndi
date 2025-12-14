@@ -11,7 +11,7 @@ type
     procedure TestExample;
   end;
 
-procedure TMyTest.TestExample;
+procedure TTrndiTest.TestExample;
 begin
   AssertEquals('1+1=2', 2, 1 + 1);
 end;
