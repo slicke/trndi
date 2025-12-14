@@ -2464,9 +2464,9 @@ procedure LoadUserSettings(f: TfConf);
       if api = nil then
       begin
         fsLo.Value := GetIntSetting('override.lo', 60);
-        fsHi.Value := GetIntSetting('override.hi', 160);
+        fsHi.Value := GetIntSetting('override.hi', 180);
         fsLoRange.Value := GetIntSetting('override.rangelo', 80);
-        fsHiRange.Value := GetIntSetting('override.rangehi', 180);
+        fsHiRange.Value := GetIntSetting('override.rangehi', 160);
       end
       else
       begin
