@@ -51,6 +51,7 @@
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
+      <OtherUnitFiles Value="..\units\winutils;..\units\winutils\directx;..\units\nsutils;..\units\trndi\ext;..\units\forms;..\units\trndi\api;..\units\trndi;..\units\slicke;..\units\misc;..\units\misc\razer"/>
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <Linking>

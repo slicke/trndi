@@ -46,8 +46,11 @@ begin
     PHPProcess.Executable :={$ifdef Windows}'c:\tools\php84\'+{$endif}'php'; // Choco path for win
     PHPProcess.Parameters.Add('-S');
     PHPProcess.Parameters.Add('localhost:8080');
-    PHPProcess.Parameters.Add('-t');
-    PHPProcess.Parameters.Add(ExtractFileDir(ParamStr(0)) + '\testserver');
+      PHPProcess.Parameters.Add('-t');
+      // Use OS-agnostic path joining so tests work on both Windows and Unix-like systems
+      PHPProcess.Parameters.Add(IncludeTrailingPathDelimiter(ExtractFileDir(ParamStr(0))) + 'testserver');
+      // Use the router so the built-in server forwards API paths to index.php
+      PHPProcess.Parameters.Add(IncludeTrailingPathDelimiter(ExtractFileDir(ParamStr(0))) + 'router.php');
     PHPProcess.Options := [poNoConsole];  // Run without console window
     PHPProcess.Execute;
 
