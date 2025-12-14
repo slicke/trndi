@@ -58,12 +58,14 @@ type
 TfConf = class(TForm)
   bAdd: TButton;
   bBackendHelp: TButton;
+  bTemplateCurrent: TButton;
   bTest: TButton;
   bOverrideHelp: TButton;
   bPrivacyHelp: TButton;
   bRemove: TButton;
   bSysNotice: TButton;
   bMinMinutesHelp: TButton;
+  bTemplateTrend: TButton;
   bWebAPI: TButton;
   bSysTouch: TButton;
   bTestAnnounce: TButton;
@@ -279,6 +281,8 @@ TfConf = class(TForm)
   procedure bBackendHelpClick(Sender: TObject);
   procedure bSysNoticeClick(Sender: TObject);
   procedure bSysTouchClick(Sender: TObject);
+  procedure bTemplateCurrentClick(Sender: TObject);
+  procedure bTemplateTrendClick(Sender: TObject);
   procedure bTestAnnounceClick(Sender: TObject);
   procedure bTestClick(Sender: TObject);
   procedure bTestSpeechClick(Sender: TObject);
@@ -433,8 +437,42 @@ RS_NO_COPYRIGHT = '- Extension has no copyright info -';
 RS_TEST_UNSUPPORTED = 'Sorry! Trndi does not (yet) support connection testing for this service!';
 RS_TEST_SUCCESS = 'Successfully connected!';
 RS_TEST_FAIL = 'Could not connect!';
+
+RS_GRAPH_ICON_TITLE = 'Choose icon';
+RS_GRAPH_ICON_GRAPH = 'Choose an icon for points in the graph';
+RS_GRAPH_ICON_GRAPH_DESC = 'This will be used for graph points';
+RS_GRAPH_ICON_CURRENT = 'Choose an icon for the current point in the graph';
+RS_GRAPH_ICON_CURRENT_DESC = 'This will be used for curent graph point';
+
 var
 fConf: TfConf;
+
+const
+  GRAPH_ICONS: array[0..9] of UnicodeString = (
+    WideChar($2B24), // \u2b24 BLACK LARGE CIRCLE (default)
+    WideChar($25CF), // \u25cf BLACK CIRCLE
+    WideChar($26AB), // \u26ab MEDIUM BLACK CIRCLE
+    WideChar($25CB), // \u25cb WHITE CIRCLE
+    WideChar($26AA), // \u26aa MEDIUM WHITE CIRCLE
+    WideChar($2022), // \u2022 BULLET
+    WideChar($2219), // \u2219 BULLET OPERATOR (thinner)
+    WideChar($25AA), // \u25aa BLACK SMALL SQUARE
+    WideChar($25A0), // \u25a0 BLACK SQUARE
+    WideChar($25C6)  // \u25c6 BLACK DIAMOND
+  );
+
+  FRESH_ICONS: array[0..9] of UnicodeString = (
+    WideChar($2600), // \u2600 SUN (default)
+    WideChar($2605), // \u2605 BLACK STAR
+    WideChar($2606), // \u2606 WHITE STAR
+    WideChar($2736), // \u2736 SIX POINTED BLACK STAR
+    WideChar($272A), // \u272a CIRCLED WHITE STAR
+    WideChar($25B6), // \u25b6 BLACK RIGHT-POINTING TRIANGLE (\u201dnu\u201d-arrow)
+    WideChar($25C0), // \u25c0 BLACK LEFT-POINTING TRIANGLE
+    WideChar($25B2), // \u25b2 BLACK UP-POINTING TRIANGLE
+    WideChar($25BC), // \u25bc BLACK DOWN-POINTING TRIANGLE
+    WideChar($25CE)  // \u25ce BULLSEYE
+  );
 
 procedure ListLanguageFiles(list: TStrings; const Path: string);
 function GetLanguageName(const ACode: string): string;
@@ -459,6 +497,13 @@ begin
     Result := Copy(AText, L + 1, R - L - 1)
   else
     Result := '';
+end;
+
+
+function CodepointHex(const s: UnicodeString): string;
+begin
+  if s = '' then Exit('');
+  Result := IntToHex(Ord(s[1]), 4);
 end;
 
 
@@ -1154,6 +1199,29 @@ end;
 procedure TfConf.bSysTouchClick(Sender: TObject);
 begin
   ShowMessage(RS_HASTOUCH);
+end;
+
+procedure TfConf.bTemplateCurrentClick(Sender: TObject);
+var
+  res: integer;
+begin
+  res := ExtList(uxdAuto,RS_GRAPH_ICON_TITLE,RS_GRAPH_ICON_CURRENT,RS_GRAPH_ICON_CURRENT_DESC, FRESH_ICONS);
+  if res < 0 then
+    Exit;
+
+  eDotNow.Text := CodePointHex(FRESH_ICONS[res]);
+end;
+
+procedure TfConf.bTemplateTrendClick(Sender: TObject);
+var
+  res: integer;
+begin
+  res := ExtList(uxdAuto,RS_GRAPH_ICON_TITLE, RS_GRAPH_ICON_GRAPH, RS_GRAPH_ICON_GRAPH_DESC, GRAPH_ICONS);
+
+  if res < 0 then
+    Exit;
+
+  eDot.Text := CodePointHex(GRAPH_ICONS[res]);
 end;
 
 procedure TfConf.bTestAnnounceClick(Sender: TObject);
