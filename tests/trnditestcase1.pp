@@ -20,6 +20,7 @@ published
   procedure TestJSToDateTimeNoCrash;
   procedure TestPredictReadingsInsufficientData;
   procedure TestDexcom;
+  procedure TestDexcomLocalServer;
   procedure TestNightscoutInvalidUrl;
   procedure TestNightscoutUnauthorized;
   procedure TestNightscoutGetReadingsRespectsMax;
@@ -154,6 +155,46 @@ begin
   AssertFalse('API Connect Fail', api.connect);
   asserttrue('Time correct', api.getBasetime > IncHour(DateTimeToUnix(now), -2));
   api.Free;
+end;
+
+procedure TAPITester.TestDexcomLocalServer;
+var
+  api: TrndiAPI;
+  PHPProcess: TProcess;
+  res: string;
+  readings: BGResults;
+begin
+  // Start PHP server (same harness as Nightscout tests)
+  PHPProcess := TProcess.Create(nil);
+  try
+    PHPProcess.Executable :={$ifdef Windows}'c:\tools\php84\'+{$endif}'php';
+    PHPProcess.Parameters.Add('-S');
+    PHPProcess.Parameters.Add('localhost:8080');
+    PHPProcess.Parameters.Add('-t');
+    PHPProcess.Parameters.Add(IncludeTrailingPathDelimiter(ExtractFileDir(ParamStr(0))) + 'testserver');
+    PHPProcess.Parameters.Add(IncludeTrailingPathDelimiter(ExtractFileDir(ParamStr(0))) + 'router.php');
+    PHPProcess.Options := [poNoConsole];
+    PHPProcess.Execute;
+    Sleep(1000);
+
+    try
+      // Use the new "full URL" override for Dexcom baseUrl.
+      api := Dexcom.create('anyuser', 'anypass', 'http://localhost:8080/ShareWebServices/Services');
+      try
+        AssertTrue('Dexcom connects to local fake server', api.connect);
+        readings := api.getReadings(30, 3, '', res);
+        AssertTrue('Dexcom returns at least one reading', Length(readings) > 0);
+        AssertTrue('Dexcom reading value set', readings[0].val > 0);
+        AssertTrue('Dexcom reading timestamp set', readings[0].date > 0);
+      finally
+        api.Free;
+      end;
+    finally
+      PHPProcess.Terminate(0);
+    end;
+  finally
+    PHPProcess.Free;
+  end;
 end;
 
 procedure TAPITester.TestNightscoutInvalidUrl;

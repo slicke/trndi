@@ -77,6 +77,72 @@ $str = "";
 $raw_path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $path = preg_replace('#/+#', '/', $raw_path);
 
+// -----------------------------------------------------------------------------
+// Fake Dexcom Share API for testing
+// -----------------------------------------------------------------------------
+// Dexcom client base URL ends with: /ShareWebServices/Services
+// so endpoints look like:
+//   /ShareWebServices/Services/General/LoginPublisherAccountByName
+//   /ShareWebServices/Services/General/SystemUtcTime
+//   /ShareWebServices/Services/Publisher/ReadPublisherLatestGlucoseValues
+//
+// The Dexcom client in Trndi uses a JSON POST body; keep parsing permissive.
+function getJsonBody() {
+    $raw = file_get_contents('php://input');
+    if ($raw === false || trim($raw) === '') return [];
+    $decoded = json_decode($raw, true);
+    return is_array($decoded) ? $decoded : [];
+}
+
+if (str_starts_with($path, '/ShareWebServices/Services/')) {
+    header('Content-Type: application/json');
+
+    $sub = substr($path, strlen('/ShareWebServices/Services/'));
+    $body = getJsonBody();
+
+    if ($sub === 'General/LoginPublisherAccountByName') {
+        // Return a deterministic non-empty session token.
+        echo json_encode('TEST-DEXCOM-SESSION');
+        exit;
+    }
+
+    if ($sub === 'General/SystemUtcTime') {
+        // Dexcom Share often returns a JSON string like "/Date(1690000000000)/".
+        $ms = (int) floor(microtime(true) * 1000);
+        // NOTE: json_encode will escape slashes ("\/Date(... )\/") which breaks
+        // the strict Pascal string slicing in Dexcom.GetReadings.
+        echo '"/Date(' . $ms . ')/"';
+        exit;
+    }
+
+    if ($sub === 'Publisher/ReadPublisherLatestGlucoseValues') {
+        // Return a minimal array of readings. Fields picked to match common
+        // Dexcom Share JSON.
+        $nowMs = (int) floor(microtime(true) * 1000);
+        $items = [];
+        for ($i = 0; $i < 3; $i++) {
+            $t = ($nowMs - ($i * 5 * 60 * 1000));
+            $items[] = [
+                // NOTE: Trndi's current Dexcom parser slices with Copy(S, 6, ..)
+                // and then StrToInt64. That only works if the string is exactly
+                // "/Date" + digits + ")/" (no opening parenthesis after Date).
+                'WT' => '/Date' . $t . ')/',
+                'ST' => '/Date' . $t . ')/',
+                'Value' => 120 + $i,
+                'Trend' => 'Flat'
+            ];
+        }
+        // Emit JSON without escaping forward slashes so the client sees
+        // "/Date(ms)/" (not "\/Date(ms)\/").
+        echo json_encode($items, JSON_UNESCAPED_SLASHES);
+        exit;
+    }
+
+    http_response_code(404);
+    echo json_encode(['error' => 'Unknown Dexcom endpoint', 'path' => $sub]);
+    exit;
+}
+
 if ($path == '/api/v1/status.json'){
 $d = generateRecord();
 $str = <<<STATUS

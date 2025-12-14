@@ -206,9 +206,21 @@ begin
   // Common Dexcom Share user-agent string observed in official apps
   ua := 'Dexcom Share/3.0.2.11 CFNetwork/711.2.23 Darwin/14.0.0';
 
-  // Select region-specific base URL and host (extra='usa' selects US)
-  baseUrl := DEXCOM_BASE_URLS[extra = 'usa'];
-  FBaseHost := DEXCOM_BASE_HOSTS[extra = 'usa'];
+  // Select base URL/host.
+  // - If extra is a full URL (http/https), treat it as an override. This is
+  //   primarily used by integration tests that run against a local fake server.
+  // - Otherwise, extra='usa' selects US endpoints; anything else uses WORLD.
+  if (LeftStr(LowerCase(Trim(extra)), 7) = 'http://') or
+     (LeftStr(LowerCase(Trim(extra)), 8) = 'https://') then
+    begin
+      baseUrl := Trim(extra);
+      FBaseHost := '';
+    end
+  else
+    begin
+      baseUrl := DEXCOM_BASE_URLS[extra = 'usa'];
+      FBaseHost := DEXCOM_BASE_HOSTS[extra = 'usa'];
+    end;
 
   // Store credentials and preferences
   FUserName := user;
