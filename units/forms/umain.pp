@@ -1392,6 +1392,12 @@ var
   clientH: integer;
   dotHeight: integer;
   bmp: TBitmap;
+  {$IFDEF DEBUG}
+  debugY: integer;
+  debugValue: single;
+  debugText: string;
+  i: integer;
+  {$ENDIF}
 // Helper to map a BG value in internal units to a Y coordinate matching SetPointHeight
 function ValueToY(const Value: single): integer;
   var
@@ -1452,42 +1458,23 @@ begin
   drawRangeLo := (Assigned(api) and (api.cgmRangeLo <> 0) and PaintRangeCGMRange);
   drawRangeHi := (Assigned(api) and (api.cgmRangeHi <> 0) and PaintRangeCGMRange);
 
-  // Calculate Y positions for low and high thresholds (static positions, no dot adjustments)
+  // Calculate Y positions for low and high thresholds
+  // These are the RAW positions matching where the TOP of a dot control would be placed
   if drawLo then
-  begin
     loY := ValueToY(api.cgmLo * BG_CONVERTIONS[mmol][mgdl]);
-    // Center line through visual center of dot: ValueToY gives top of control,
-    // add half the dot height to reach the vertical center (using Round for better precision)
-    // Apply DOT_OFFSET_RANGE for fine-tuning alignment
-    loY := loY + Round(dotHeight / 2.0) + DOT_OFFSET_RANGE;
-  end;
 
   if drawHi then
-  begin
     hiY := ValueToY(api.cgmHi * BG_CONVERTIONS[mmol][mgdl]);
-    // Center line through visual center of dot (using Round for better precision)
-    // Apply DOT_OFFSET_RANGE for fine-tuning alignment
-    hiY := hiY + Round(dotHeight / 2.0) + DOT_OFFSET_RANGE;
-  end;
 
   // Calculate Y positions for range low and high thresholds
   if drawRangeLo then
-  begin
     rangeLoY := ValueToY(api.cgmRangeLo * BG_CONVERTIONS[mmol][mgdl]);
-    // Center line through visual center of dot (using Round for better precision)
-    // Apply DOT_OFFSET_RANGE for fine-tuning alignment
-    rangeLoY := rangeLoY + Round(dotHeight / 2.0) + DOT_OFFSET_RANGE;
-  end;
 
   if drawRangeHi then
-  begin
     rangeHiY := ValueToY(api.cgmRangeHi * BG_CONVERTIONS[mmol][mgdl]);
-    // Center line through visual center of dot (using Round for better precision)
-    // Apply DOT_OFFSET_RANGE for fine-tuning alignment
-    rangeHiY := rangeHiY + Round(dotHeight / 2.0) + DOT_OFFSET_RANGE;
-  end;
 
   // Fill the area between low and high thresholds with a darkened background color
+  // Use RAW Y positions (matching the top of where dots would be)
   if drawLo and drawHi then
   begin
     cnv.Brush.Style := bsSolid;
@@ -1500,6 +1487,7 @@ begin
   end;
 
   // Fill the area between inner range thresholds with a lightened background color
+  // Use RAW Y positions (matching the top of where dots would be)
   if drawRangeLo and drawRangeHi then
   begin
     cnv.Brush.Style := bsSolid;
@@ -1525,11 +1513,12 @@ begin
     if drawLo then
     begin
       // Draw horizontal line for low threshold
+      // Add dotHeight offset so line goes through the center of dots
       lineColor := LightenColor(bg_rel_color_lo);
       cnv.Pen.Color := lineColor;
       cnv.Pen.Style := psSolid;
       cnv.Pen.Width := 2;
-      tmp := loY;
+      tmp := loY + Round(dotHeight / 2.0) + DOT_OFFSET_RANGE;
       cnv.MoveTo(0, tmp);
       cnv.LineTo(Self.ClientWidth, tmp);
     end;
@@ -1537,11 +1526,12 @@ begin
     if drawHi then
     begin
       // Draw horizontal line for high threshold
+      // Add dotHeight offset so line goes through the center of dots
       lineColor := LightenColor(bg_rel_color_hi);
       cnv.Pen.Color := lineColor;
       cnv.Pen.Style := psSolid;
       cnv.Pen.Width := 2;
-      tmp := hiY;
+      tmp := hiY + Round(dotHeight / 2.0) + DOT_OFFSET_RANGE;
       cnv.MoveTo(0, tmp);
       cnv.LineTo(Self.ClientWidth, tmp);
     end;
@@ -1550,11 +1540,12 @@ begin
     if drawRangeLo then
     begin
       // Draw horizontal line for range low threshold
+      // Add dotHeight offset so line goes through the center of dots
       lineColor := LightenColor(fBG.Color, 0.5);
       cnv.Pen.Color := lineColor;
       cnv.Pen.Style := psSolid;
       cnv.Pen.Width := 1;
-      tmp := rangeLoY;
+      tmp := rangeLoY + Round(dotHeight / 2.0) + DOT_OFFSET_RANGE;
       cnv.MoveTo(0, tmp);
       cnv.LineTo(Self.ClientWidth, tmp);
     end;
@@ -1562,15 +1553,39 @@ begin
     if drawRangeHi then
     begin
       // Draw horizontal line for range high threshold
+      // Add dotHeight offset so line goes through the center of dots
       lineColor := LightenColor(fBG.Color, 0.5);
       cnv.Pen.Color := lineColor;
       cnv.Pen.Style := psSolid;
       cnv.Pen.Width := 1;
-      tmp := rangeHiY;
+      tmp := rangeHiY + Round(dotHeight / 2.0) + DOT_OFFSET_RANGE;
       cnv.MoveTo(0, tmp);
       cnv.LineTo(Self.ClientWidth, tmp);
     end;
   end;
+
+  {$IFDEF DEBUG}
+  // Draw debug gridlines showing mmol/L values (5, 10, 15, 20)
+  cnv.Brush.Style := bsClear;
+  cnv.Pen.Style := psDot;
+  cnv.Pen.Width := 1;
+  cnv.Pen.Color := LightenColor(fBG.Color, 0.3);
+  cnv.Font.Size := 8;
+  cnv.Font.Color := LightenColor(fBG.Color, 0.4);
+  
+  for i := 1 to 4 do
+  begin
+    debugValue := i * 5.0; // 5, 10, 15, 20 mmol/L
+    if (debugValue >= BG_API_MIN) and (debugValue <= BG_API_MAX) then
+    begin
+      debugY := ValueToY(debugValue * BG_CONVERTIONS[mmol][mgdl]) + Round(dotHeight / 2.0) + DOT_OFFSET_RANGE;
+      cnv.MoveTo(0, debugY);
+      cnv.LineTo(Self.ClientWidth, debugY);
+      debugText := Format('%.0f', [debugValue]);
+      cnv.TextOut(5, debugY - 8, debugText);
+    end;
+  end;
+  {$ENDIF}
 end;
 
 procedure TfBG.bSettingsClick(Sender: TObject);
