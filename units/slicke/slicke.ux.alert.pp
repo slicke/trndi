@@ -435,10 +435,15 @@ type
   }
   function ExtList(const dialogsize: TUXDialogSize;
                    const ACaption, ATitle, ADesc: string;
+                   const Choices: array of UnicodeString;
+                   const Default: boolean = false;
+                   const icon: UXImage = uxmtCog): Integer; overload;
+
+  function ExtList(const dialogsize: TUXDialogSize;
+                   const ACaption, ATitle, ADesc: string;
                    const Choices: array of string;
                    const Default: boolean = false;
-                   const icon: UXImage = uxmtCog): Integer;
-
+                   const icon: UXImage = uxmtCog): Integer; overload;
   {**
     Show a single-line string input dialog.
     @param dialogsize Layout preset.
@@ -1446,11 +1451,27 @@ begin
   end;
 end;
 
+function ExtList(const dialogsize: TUXDialogSize;
+  const ACaption, ATitle, ADesc: string;
+  const Choices: array of string;
+  const Default: boolean = false;
+  const icon: UXImage = uxmtCog): Integer; overload;
+var
+  UChoices: array of UnicodeString;
+  i: Integer;
+begin
+  SetLength(UChoices, Length(Choices));
+  for i := 0 to High(Choices) do
+    UChoices[i] := UnicodeString(Choices[i]);
+
+  Result := ExtList(dialogsize, ACaption, ATitle, ADesc, UChoices, Default, icon);
+end;
+
 {** See interface docs for behavior and parameters. }
 function ExtList(
   const dialogsize: TUXDialogSize;
   const ACaption, ATitle, ADesc: string;
-  const Choices: array of string;
+  const Choices: array of unicodestring;
   const Default: boolean = false;
   const icon: UXImage = uxmtCog
 ): Integer;

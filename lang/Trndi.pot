@@ -321,6 +321,16 @@ msgstr ""
 msgid "- Remove"
 msgstr ""
 
+#: tfconf.btemplatecurrent.caption
+msgctxt "tfconf.btemplatecurrent.caption"
+msgid "Template"
+msgstr ""
+
+#: tfconf.btemplatetrend.caption
+msgctxt "tfconf.btemplatetrend.caption"
+msgid "Template"
+msgstr ""
+
 #: tfconf.btest.caption
 msgid "Test"
 msgstr ""
@@ -629,7 +639,7 @@ msgid "Current dot:"
 msgstr ""
 
 #: tfconf.label17.caption
-msgid "Dots: Enter the Unicode code for a character"
+msgid "Dots: Enter the Unicode code for a character, or use a template"
 msgstr ""
 
 #: tfconf.label18.caption
@@ -1691,6 +1701,26 @@ msgstr ""
 #: uconf.rs_extcount
 #, object-pascal-format
 msgid "Extensions count: %d"
+msgstr ""
+
+#: uconf.rs_graph_icon_current
+msgid "Choose an icon for the current point in the graph"
+msgstr ""
+
+#: uconf.rs_graph_icon_current_desc
+msgid "This will be used for curent graph point"
+msgstr ""
+
+#: uconf.rs_graph_icon_graph
+msgid "Choose an icon for points in the graph"
+msgstr ""
+
+#: uconf.rs_graph_icon_graph_desc
+msgid "This will be used for graph points"
+msgstr ""
+
+#: uconf.rs_graph_icon_title
+msgid "Choose icon"
 msgstr ""
 
 #: uconf.rs_hastouch

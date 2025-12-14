@@ -337,6 +337,16 @@ msgstr "+ Ny"
 msgid "- Remove"
 msgstr "- Radera"
 
+#: tfconf.btemplatecurrent.caption
+msgctxt "tfconf.btemplatecurrent.caption"
+msgid "Template"
+msgstr "Mallar"
+
+#: tfconf.btemplatetrend.caption
+msgctxt "tfconf.btemplatetrend.caption"
+msgid "Template"
+msgstr "Mallar"
+
 #: tfconf.btest.caption
 msgid "Test"
 msgstr "Testa"
@@ -646,8 +656,8 @@ msgid "Current dot:"
 msgstr "Nuvarande punkt:"
 
 #: tfconf.label17.caption
-msgid "Dots: Enter the Unicode code for a character"
-msgstr "Punkter: Skriv in Unicode-koden ett tecken"
+msgid "Dots: Enter the Unicode code for a character, or use a template"
+msgstr "Punkter: Ange Unicode-koden för ett tecken, eller använd mallarna"
 
 #: tfconf.label18.caption
 msgid "Connection"
@@ -907,7 +917,6 @@ msgid "Texts"
 msgstr "Texter"
 
 #: tfconf.tstir.caption
-#, fuzzy
 msgctxt "tfconf.tstir.caption"
 msgid "Time-in-range"
 msgstr "Tid-i-målområde"
@@ -1163,7 +1172,7 @@ msgstr "Verifierar licens..."
 
 #: trndi.strings.rs_init_linux
 msgid "Attempting to adjust Linux overrides..."
-msgstr "Försöker att justera Linux-åtidosättanden"
+msgstr "Försöker att justera Linux-åtidosättanden..."
 
 #: trndi.strings.rs_init_locale
 msgid "Setting up locale settings..."
@@ -1175,11 +1184,11 @@ msgstr "Försöker att justera macOS-åsidosättanden..."
 
 #: trndi.strings.rs_init_media
 msgid "Starting Media Backend..."
-msgstr "Startar mediasystemet"
+msgstr "Startar mediasystemet..."
 
 #: trndi.strings.rs_init_profiles
 msgid "Processing user profiles..."
-msgstr "Bearbetar användarprofiler"
+msgstr "Bearbetar användarprofiler..."
 
 #: trndi.strings.rs_init_ui
 msgid "Initializing UI..."
@@ -1191,7 +1200,7 @@ msgstr "Bedömmer glukosenhet..."
 
 #: trndi.strings.rs_init_ux
 msgid "Initializing UX..."
-msgstr "Initierar användarupplevelsen"
+msgstr "Initierar användarupplevelsen..."
 
 #: trndi.strings.rs_last_recieve
 #, object-pascal-format
@@ -1760,6 +1769,26 @@ msgstr "Ange ett användarnamn"
 msgid "Extensions count: %d"
 msgstr "Tilläggsantal: %d"
 
+#: uconf.rs_graph_icon_current
+msgid "Choose an icon for the current point in the graph"
+msgstr "Välj en ikon för den nuvarande punkten i grafen"
+
+#: uconf.rs_graph_icon_current_desc
+msgid "This will be used for curent graph point"
+msgstr "Denna kommer användas för den nuvarande grafpunkten"
+
+#: uconf.rs_graph_icon_graph
+msgid "Choose an icon for points in the graph"
+msgstr "Välj en ikon för punkterna i grafen"
+
+#: uconf.rs_graph_icon_graph_desc
+msgid "This will be used for graph points"
+msgstr "Denna kommer att användas för grafpunkterna"
+
+#: uconf.rs_graph_icon_title
+msgid "Choose icon"
+msgstr "Välj ikon"
+
 #: uconf.rs_hastouch
 msgid "Shows if Trndi detected a touch screen"
 msgstr "Visar om Trndi upptäckt en pekskärm"
@@ -2056,4 +2085,3 @@ msgstr "Historikgraf"
 #, object-pascal-format
 msgid "Readings (%s)"
 msgstr "Avläsningar (%s)"
-
