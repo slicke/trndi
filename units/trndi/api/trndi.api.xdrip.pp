@@ -157,7 +157,8 @@ begin
   ua := 'Mozilla/5.0 (compatible; trndi) TrndiAPI';
 
   // Ensure trailing slash so relative paths append correctly
-  baseUrl := TrimRightSet(user, ['/']) + '/';
+  // But avoid double slashes which confuse parse_url in PHP
+  baseUrl := TrimRightSet(user, ['/']);
 
   // xDrip expects the API secret as a SHA1 hex digest, commonly as a query/header
   if pass <> '' then
@@ -218,9 +219,19 @@ begin
   // Fetch xDrip "pebble" info. If the secret fails, xDrip often replies with "Authentication failed"
   // Match a substring ("uthentication failed") to avoid case sensitivity issues.
   LResponse := native.Request(False, XDRIP_STATUS, [], '', key);
+  
+  // Check if response is empty or contains connection errors
+  if (LResponse = '') or (Pos('Could not connect', LResponse) > 0) or 
+     (Pos('Failed to connect', LResponse) > 0) then
+  begin
+    lastErr := 'Cannot connect to xDrip server at ' + baseUrl + '. Check URL and network.';
+    Result := False;
+    Exit;
+  end;
+  
   if Pos('uthentication failed', LResponse) > 0 then
   begin
-    lastErr := 'Access token rejected by xDrip. Is it correct?';
+    lastErr := 'Wrong API secret. xDrip rejected authentication.';
     Result := False;
     Exit;
   end;
@@ -228,12 +239,23 @@ begin
   // Extract the server time "now" from the pebble JSON by slicing:
   // e.g., ..."now":1618353053000,..."  -> take 13 chars after the value starts
   // NOTE: This assumes a 13-digit millisecond timestamp; prefer JSON parsing for safety.
+  if Pos('"now":', LResponse) = 0 then
+  begin
+    // Show first 200 chars of response for debugging
+    if Length(LResponse) > 200 then
+      lastErr := 'Wrong response format from ' + XDRIP_STATUS + ' endpoint. Expected "now" timestamp. Got: ' + Copy(LResponse, 1, 200) + '...'
+    else
+      lastErr := 'Wrong response format from ' + XDRIP_STATUS + ' endpoint. Expected "now" timestamp. Got: ' + LResponse;
+    Result := False;
+    Exit;
+  end;
+  
   LResponse := Copy(LResponse, Pos('"now":', LResponse) + 6, 13);
 
   // Convert the extracted substring to int64 milliseconds
   if not TryStrToInt64(LResponse, LTimeStamp) then
   begin
-    lastErr := 'xDrip could not initialize. Cannot sync clocks; xDrip may be offline.';
+    lastErr := 'Wrong timestamp format in xDrip response. Expected numeric value, got: ' + LResponse;
     Result := False;
     Exit;
   end;
@@ -252,14 +274,14 @@ begin
 
   // Parse bgHigh, e.g. ..."bgHigh":160,...
   if TryStrToInt(TrimSet(Copy(LResponse, Pos('bgHigh', LResponse) + 8, 4),
-    [' ', ',', '}']), i) then
+    [' ', ',', '}', '"']), i) then
     cgmHi := i
   else
     cgmHi := 160; // sensible fallback if not present
 
   // Parse bgLow, e.g. ..."bgLow":60,...
   if TryStrToInt(TrimSet(Copy(LResponse, Pos('bgLow', LResponse) + 7, 4),
-    [' ', ',', '}']), i) then
+    [' ', ',', '}', '"']), i) then
     cgmLo := i
   else
     cgmLo := 60; // sensible fallback if not present

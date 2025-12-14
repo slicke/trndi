@@ -6,7 +6,7 @@ interface
 
 uses
 Classes, SysUtils, fpcunit, testutils, testregistry,
-trndi.native, trndi.api, trndi.api.nightscout, trndi.api.dexcom, trndi.types, dialogs, dateutils,
+trndi.native, trndi.api, trndi.api.nightscout, trndi.api.dexcom, trndi.api.xdrip, trndi.types, dialogs, dateutils,
 process;
 
 type
@@ -21,6 +21,8 @@ published
   procedure TestPredictReadingsInsufficientData;
   procedure TestDexcom;
   procedure TestDexcomLocalServer;
+  procedure TestXDrip;
+  procedure TestXDripLocalServer;
   procedure TestNightscoutInvalidUrl;
   procedure TestNightscoutUnauthorized;
   procedure TestNightscoutGetReadingsRespectsMax;
@@ -186,6 +188,75 @@ begin
         AssertTrue('Dexcom returns at least one reading', Length(readings) > 0);
         AssertTrue('Dexcom reading value set', readings[0].val > 0);
         AssertTrue('Dexcom reading timestamp set', readings[0].date > 0);
+      finally
+        api.Free;
+      end;
+    finally
+      PHPProcess.Terminate(0);
+    end;
+  finally
+    PHPProcess.Free;
+  end;
+end;
+
+procedure TAPITester.TestXDrip;
+var
+  api: TrndiAPI;
+begin
+  // Can create
+  api := xDrip.create('http://localhost:8080', 'testsecret', '');
+  try
+    // Test if the connect function runs (will fail without server)
+    AssertFalse('API Connect should fail without server', api.connect);
+    AssertTrue('Time correct', api.getBasetime > IncHour(DateTimeToUnix(now), -2));
+  finally
+    api.Free;
+  end;
+end;
+
+procedure TAPITester.TestXDripLocalServer;
+var
+  api: TrndiAPI;
+  PHPProcess: TProcess;
+  res: string;
+  readings: BGResults;
+  bg: BGReading;
+begin
+  // Start PHP server
+  PHPProcess := TProcess.Create(nil);
+  try
+    PHPProcess.Executable :={$ifdef Windows}'c:\tools\php84\'+{$endif}'php';
+    PHPProcess.Parameters.Add('-S');
+    PHPProcess.Parameters.Add('localhost:8080');
+    PHPProcess.Parameters.Add('-t');
+    PHPProcess.Parameters.Add(IncludeTrailingPathDelimiter(ExtractFileDir(ParamStr(0))) + 'testserver');
+    PHPProcess.Parameters.Add(IncludeTrailingPathDelimiter(ExtractFileDir(ParamStr(0))) + 'router.php');
+    PHPProcess.Options := [poNoConsole];
+    PHPProcess.Execute;
+    Sleep(1000);
+
+    try
+      api := xDrip.create('http://localhost:8080', 'test22', '');
+      try
+        if not api.connect then
+          Fail('xDrip connects to local fake server. Error: ' + api.errormsg);
+        AssertTrue('xDrip connected', true);
+        
+        // Test thresholds from status.json (same as Nightscout)
+        AssertEquals('xDrip bgHigh threshold mapped', 260, api.cgmHi);
+        AssertEquals('xDrip bgLow threshold mapped', 55, api.cgmLo);
+        
+        // Test getting current reading from pebble endpoint
+        bg.Clear;
+        AssertTrue('xDrip getCurrent returns data', api.getCurrent(bg));
+        AssertTrue('Current reading has plausible value', bg.val > 0);
+        AssertTrue('Current reading has plausible timestamp', bg.date > 0);
+        
+        // Test getting multiple readings
+        readings := api.getReadings(30, 3, '', res);
+        AssertTrue('xDrip returns at least one reading', Length(readings) > 0);
+        AssertTrue('xDrip reading value set', readings[0].val > 0);
+        AssertTrue('xDrip reading timestamp set', readings[0].date > 0);
       finally
         api.Free;
       end;
