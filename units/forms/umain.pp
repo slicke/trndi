@@ -67,7 +67,7 @@ kdebadge,
 LazFileUtils, uconf, trndi.native, Trndi.API,
 trndi.api.xDrip,{$ifdef DEBUG} trndi.api.debug_custom, trndi.api.debug, trndi.api.debug_edge, trndi.api.debug_missing, trndi.api.debug_perfect, trndi.api.debug_firstmissing,{$endif}
 {$ifdef LCLQt6}Qt6, QtWidgets,{$endif}
-StrUtils, TouchDetection, ufloat, uhistorygraph, LCLType, trndi.webserver.threaded, RazerChromaFactory, RazerChroma;
+StrUtils, TouchDetection, ufloat, uhistorygraph, LCLType, trndi.webserver.threaded, RazerChromaFactory, RazerChroma, Sockets, netdb;
 
 {** Main application unit exposing the primary UI and helpers for the
   Trndi application. This unit defines the `TfBG` form which handles
@@ -132,6 +132,7 @@ TfBG = class(TForm)
   bMenuPanelClose: TButton;
   bTouchFull: TButton;
   lPredict: TLabel;
+  miDNS: TMenuItem;
   miDotSmall: TMenuItem;
   miPredict: TMenuItem;
   pnTouchContents: TPanel;
@@ -209,6 +210,7 @@ TfBG = class(TForm)
   Separator4: TMenuItem;
   tAgo: TTimer;
   tClock: TTimer;
+  tPing: TTimer;
   tSetup: TTimer;
   tInit: TTimer;
   tSwap: TTimer;
@@ -246,6 +248,7 @@ TfBG = class(TForm)
   procedure DotPaint(Sender: TObject);
   procedure lDiffClick(Sender: TObject);
   procedure lPredictClick(Sender: TObject);
+  procedure miDNSClick(Sender: TObject);
   procedure miDotNormalDrawItem(Sender: TObject; ACanvas: TCanvas;
     ARect: TRect; AState: TOwnerDrawState);
   procedure miDotNormalMeasureItem(Sender: TObject; ACanvas: TCanvas;
@@ -314,6 +317,7 @@ TfBG = class(TForm)
   procedure tClockTimer(Sender: TObject);
   procedure tEdgesTimer(Sender: TObject);
   procedure tInitTimer(Sender: TObject);
+  procedure tPingTimer(Sender: TObject);
   procedure tResizeTimer(Sender: TObject);
   procedure tMainTimer(Sender: TObject);
   procedure tMissedTimer(Sender: TObject);
@@ -906,6 +910,11 @@ end;
 procedure TfBG.lPredictClick(Sender: TObject);
 begin
   SHowMessage(RS_PREDICT);
+end;
+
+procedure TfBG.miDNSClick(Sender: TObject);
+begin
+  tPingTimer(self);
 end;
 
 procedure TfBG.miDotNormalDrawItem(Sender: TObject; ACanvas: TCanvas;
@@ -3209,6 +3218,69 @@ begin
   // Force a natural resize call, calling onResize doesnt work
 end;
 
+procedure TfBG.tPingTimer(Sender: TObject);
+function IsURLReachable(const URL: string; Port: Word = 80): Boolean;
+var
+  Socket: Longint;
+  Addr: TInetSockAddr;
+  HostAddr: THostAddr;
+begin
+  Result := False;
+
+  Socket := fpSocket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+  if Socket < 0 then
+    Exit;
+
+  try
+    try
+      HostAddr := StrToHostAddr(URL);
+
+      if HostAddr.s_addr = 0 then
+        Exit;
+
+      FillByte(Addr, SizeOf(Addr), 0);
+      Addr.sin_family := AF_INET;
+      Addr.sin_port := htons(Port);
+      Addr.sin_addr := HostAddr;
+
+      if fpConnect(Socket, @Addr, SizeOf(Addr)) = 0 then
+        Result := True;
+    except
+      Result := False;
+    end;
+  finally
+    CloseSocket(Socket);
+  end;
+end;
+function IsInternetOnline: Boolean;
+var
+  IPs: array of string;
+  i: Integer;
+begin
+  IPs := [
+    '8.8.8.8',       // Google DNS
+    '1.1.1.1',       // Cloudflare DNS
+    '208.67.222.222' // OpenDNS
+  ];
+
+  for i := Low(IPs) to High(IPs) do
+  begin
+    if IsURLReachable(IPs[i], 53) then
+    begin
+      Result := True;
+      Exit;
+    end;
+  end;
+
+  Result := False;
+end;
+begin
+  tPing.Enabled := false;
+if not IsInternetOnline then
+  ShowMessage(RS_NO_INTERNET);
+  tPing.Enabled := true;
+end;
+
 procedure TfBG.tResizeTimer(Sender: TObject);
 begin
   tResize.Enabled := false;
@@ -4267,6 +4339,7 @@ var
   i: integer;
 begin
   pnWarning.Visible := true;
+  tPing.Enabled := true;  // Enable network ping check when no readings available
   pnWarning.Caption := '⚠️ ' + message;
 
   if clearDisplayValues then
@@ -4344,6 +4417,7 @@ begin
   end;
 
   pnWarning.Visible := false;
+  tPing.Enabled := false;  // Disable network ping check when readings are available
   if (Length(bgs) < 1) or (not IsDataFresh) then
   begin
     showWarningPanel(RS_NO_BACKEND, true);

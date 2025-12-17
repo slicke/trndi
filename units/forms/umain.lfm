@@ -481,6 +481,10 @@ object fBG: TfBG
         Caption = 'Prediction...'
         OnClick = miPredictClick
       end
+      object miDNS: TMenuItem
+        Caption = 'Run DNS Lookup Test'
+        OnClick = miDNSClick
+      end
       object Separator4: TMenuItem
         Caption = '-'
       end
@@ -566,5 +570,12 @@ object fBG: TfBG
     OnTimer = tSetupTimer
     Left = 224
     Top = 160
+  end
+  object tPing: TTimer
+    Enabled = False
+    Interval = 120000
+    OnTimer = tPingTimer
+    Left = 160
+    Top = 16
   end
 end
