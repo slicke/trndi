@@ -63,11 +63,15 @@ CocoaAll, MacOSAll,
 {$endif}
 {$ifdef LINUX}
 kdebadge,
+netdb,
+{$endif}
+{$ifdef Windows}
+winsock,
 {$endif}
 LazFileUtils, uconf, trndi.native, Trndi.API,
 trndi.api.xDrip,{$ifdef DEBUG} trndi.api.debug_custom, trndi.api.debug, trndi.api.debug_edge, trndi.api.debug_missing, trndi.api.debug_perfect, trndi.api.debug_firstmissing,{$endif}
 {$ifdef LCLQt6}Qt6, QtWidgets,{$endif}
-StrUtils, TouchDetection, ufloat, uhistorygraph, LCLType, trndi.webserver.threaded, RazerChromaFactory, RazerChroma, Sockets, netdb;
+StrUtils, TouchDetection, ufloat, uhistorygraph, LCLType, trndi.webserver.threaded, RazerChromaFactory, RazerChroma, Sockets;
 
 {** Main application unit exposing the primary UI and helpers for the
   Trndi application. This unit defines the `TfBG` form which handles
@@ -3219,6 +3223,43 @@ begin
 end;
 
 procedure TfBG.tPingTimer(Sender: TObject);
+{$ifdef Windows}
+ function IsURLReachable(const URL: string; Port: Word = 80): Boolean;
+var
+  Socket: TSocket;
+  Addr: TSockAddr;
+  HostEnt: PHostEnt;
+begin
+  Result := False;
+
+  Socket := socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+  if Socket = INVALID_SOCKET then
+    Exit;
+
+  try
+    try
+      // DNS resolution
+      HostEnt := gethostbyname(PChar(URL));
+      if HostEnt = nil then
+        Exit;
+
+      // Set up address
+      FillByte(Addr, SizeOf(Addr), 0);
+      PSockAddrIn(@Addr)^.sin_family := AF_INET;
+      PSockAddrIn(@Addr)^.sin_port := htons(Port);
+      PSockAddrIn(@Addr)^.sin_addr := PInAddr(HostEnt^.h_addr_list^)^;
+
+      // Try to connect
+      if connect(Socket, Addr, SizeOf(Addr)) = 0 then
+        Result := True;
+    except
+      Result := False;
+    end;
+  finally
+    closesocket(Socket);
+  end;
+end;
+{$else}
 function IsURLReachable(const URL: string; Port: Word = 80): Boolean;
 var
   Socket: Longint;
@@ -3252,6 +3293,7 @@ begin
     CloseSocket(Socket);
   end;
 end;
+{$endif}
 function IsInternetOnline: Boolean;
 var
   IPs: array of string;
