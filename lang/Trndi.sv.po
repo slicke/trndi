@@ -230,6 +230,10 @@ msgstr "Egen storlek"
 msgid "Announce raw backend data"
 msgstr "Annonsera rådata från backendet"
 
+#: tfbg.midns.caption
+msgid "Run DNS Lookup Test"
+msgstr ""
+
 #: tfbg.midotbig.caption
 msgctxt "tfbg.midotbig.caption"
 msgid "Big"

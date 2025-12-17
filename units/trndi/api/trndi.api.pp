@@ -82,6 +82,10 @@ protected
      }
   procedure setTZ(secs: integer);
 
+  {** Get the URL to the remote source
+   }
+  function getAPIUrl: string;
+
     {** URL-encode a string using percent-encoding for non-unreserved characters.
         Unreserved characters are [A-Z a-z 0-9 - _ ~ .]
 
@@ -289,6 +293,9 @@ published
 
     {** Convenience status flag determined via @code(checkActive). }
   property active: boolean read checkActive;
+
+    {** The source URL for the API, useful for eg alive testing. }
+  property source: string read getApiUrl;
 end;
 
 implementation
@@ -678,6 +685,12 @@ end;
 class function TrndiAPI.testConnection(user, pass, extra: string): byte;
 begin
   result := 3; // Not supported
+end;
+
+
+function TrndiAPI.getAPIUrl: string;
+begin
+  result := baseUrl;
 end;
 
 end.
