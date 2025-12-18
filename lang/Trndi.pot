@@ -1262,6 +1262,10 @@ msgid ""
 "Trndi will attemp to fetch data until recent values are available"
 msgstr ""
 
+#: trndi.strings.rs_no_internet
+msgid "Your internet connection is not working, Trndi cannot fetch readings!"
+msgstr ""
+
 #: trndi.strings.rs_off_hi
 msgid "Over range"
 msgstr ""

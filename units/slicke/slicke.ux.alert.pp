@@ -1202,6 +1202,7 @@ begin
     // --- OK Button ---
     OkButton := TButton.Create(Dialog);
     OkButton.Parent := Dialog;
+    {$ifdef LCLGTK2}OkButton.Font.Color := clBlack;{$endif}
     OkButton.Caption := smbSelect;
     OkButton.ModalResult := mrOk;
     OkButton.Width := 80;
@@ -1409,6 +1410,7 @@ begin
     // --- OK Button ---
     OkButton := TButton.Create(Dialog);
     OkButton.Parent := Dialog;
+    {$ifdef LCLGTK2}OkButton.Font.Color := clBlack;{$endif}
     OkButton.Caption := smbSelect;
     OkButton.ModalResult := mrOk;
     OkButton.Width := 80;
@@ -1525,6 +1527,7 @@ begin
     // --- OK Button ---
     OkButton := TButton.Create(Dialog);
     OkButton.Parent := Dialog;
+    {$ifdef LCLGTK2}OkButton.Font.Color := clBlack;{$endif}
     OkButton.Caption := smbSelect;
     OkButton.ModalResult := mrOk;
     OkButton.Width := 80;
@@ -1646,6 +1649,7 @@ begin
     // --- OK Button ---
     OkButton := TButton.Create(Dialog);
     OkButton.Parent := Dialog;
+    {$ifdef LCLGTK2}OkButton.Font.Color := clBlack;{$endif}
     OkButton.Caption := smbSelect;
     OkButton.ModalResult := mrOk;
     OkButton.Width := 80;
@@ -1792,6 +1796,7 @@ begin
     // --- OK Button ---
     OkButton := TButton.Create(Dialog);
     OkButton.Parent := Dialog;
+    {$ifdef LCLGTK2}OkButton.Font.Color := clBlack;{$endif}
     OkButton.Caption := smbUXOK;
     OkButton.ModalResult := mrOk;
     OkButton.Width := 80;
@@ -2015,6 +2020,7 @@ begin
       OkButton := TButton.Create(Dialog);
       {$endif}
       OkButton.Parent := Dialog;
+      {$ifdef LCLGTK2}OkButton.Font.Color := clBlack;{$endif}
       OkButton.Caption := langs[mr];
       OkButton.Width := ButtonActualWidth;
       OkButton.Height := ifthen((size = uxdBig) , 50, 25);
@@ -2409,6 +2415,7 @@ begin
     begin
       {$ifdef Windows}OkButton := TBitBtn.Create(ButtonPanel);{$else}OkButton := TButton.Create(ButtonPanel);{$endif}
       OkButton.Parent := ButtonPanel;
+      {$ifdef LCLGTK2}OkButton.Font.Color := clBlack;{$endif}
       OkButton.Caption := langs[mr];
       OkButton.ModalResult := UXButtonToModalResult(mr);
       OkButton.Width := ButtonActualWidth;
