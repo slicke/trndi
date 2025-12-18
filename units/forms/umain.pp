@@ -830,10 +830,16 @@ end;
 
 // DotPaint: Custom paint handler for trend dot TPaintBox controls
 
-// KNOWN ISSUE: On macOS with LCLCocoa widgetset, TPaintBox OnPaint has a bug where
-// CheckDC() in cocoagdiobjects.pas fails with "TObject(dc) is TCocoaContext" error.
-// WORKAROUND: Use Qt6 or Qt5 widgetset on macOS (recommended and default).
-// This function works correctly on all other platforms and with Qt6/Qt5 on macOS.
+// NOTE (macOS/Cocoa): Historically, `TPaintBox.OnPaint` could fail under the
+// Cocoa widgetset with a CheckDC()/TCocoaContext error.
+//
+// Current workaround: on macOS we use `TLabel` for trend dots
+// (see `TDotControl = TLabel` under `{$ifdef DARWIN}`), so we avoid custom
+// canvas painting for that control.
+//
+// If you *do* use a `TPaintBox`-based implementation on macOS in the future and
+// run into Cocoa paint issues again, building with the Qt widgetset is an
+// alternative workaround.
 procedure TfBG.DotPaint(Sender: TObject);
 var
   tw, th: integer;

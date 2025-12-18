@@ -1405,6 +1405,11 @@ begin
 end;
 
 procedure TfConf.FormCreate(Sender: TObject);
+{$ifdef LCLGtk2}
+var
+  wc: TWinControl;
+  wi: integer;
+{$endif}
 begin
   // Base app version + build date + widgetset + target CPU
   lVersion.Caption := GetProductVersionMajorMinor('2.x');
@@ -1425,6 +1430,12 @@ begin
   {$endif}
   {$ifdef lclgtk2}
   self.font.size := 10;
+  for wi := 0 to self.ComponentCount-1 do
+    if (self.components[wi] is TEdit) or (self.components[wi] is TSpinEdit) then begin
+      wc := self.components[wi] as TWinControl;
+      wc.Font.Color := clBlack;
+    end;
+
   {$endif}
   tnative := TrndiNative.Create;
   tnative.noFree := true;
