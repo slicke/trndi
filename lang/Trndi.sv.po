@@ -1314,6 +1314,10 @@ msgstr ""
 "Ingen färsk data finns att tillgå\n"
 "Trndi kommer försöka hämta data tills dess nyliga värden finns"
 
+#: trndi.strings.rs_no_internet
+msgid "Your internet connection is not working, Trndi cannot fetch readings!"
+msgstr ""
+
 #: trndi.strings.rs_off_hi
 msgid "Over range"
 msgstr "Över område"
