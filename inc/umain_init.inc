@@ -391,7 +391,19 @@ begin
   fBG.Font.Name := fontName;
 
   {$ifndef LCLQt6}
-  Showmessage('This release of Trndi was compiled for a non-supported platform ("widgetset")'#10'Performance might be bad and features might not work as intended!'#10#10'Please download the official release (Qt6) from github.com/slicke/trndi');
+  case ExtText(uxdAuto, 'This version may not work as intended!',
+    'This release of Trndi was compiled for a non-supported platform ("widgetset")'#10#10+
+    'Performance might be bad, graphics might not work correctly and features might not work as intended!'#10+
+    'Please download the official release (Qt6) from github.com/slicke/trndi'#10#10+
+    'Continue Anyway?',
+  [MbYes, mbNo, mbUXRead],uxmtWarning) of
+    mrNo:
+      Application.Terminate;
+    mrYes:
+      Application.ProcessMessages;
+    else
+      OpenURL('https://github.com/slicke/trndi/blob/main/doc/Widgetsets.md');
+    end;
   {$endif}
   isWSL := TrndiNative.DetectWSL.IsWSL;
   if isWSL then
