@@ -194,6 +194,10 @@ begin
     tir_bg := native.GetColorSetting('ux.tir_color');
   if native.GetBoolSetting('ux.tir_color_custom_on') then
     tir_custom_bg := native.GetColorSetting('ux.tir_color_custom');
+
+  // Clear labels at startup (they'll be populated when readings are available)
+  lRef.Caption := '';
+  lDiff.Caption := '';
 end;
 
 procedure TfBG.InitializeSplashScreen;
