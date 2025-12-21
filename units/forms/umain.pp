@@ -3798,6 +3798,9 @@ begin
   begin
     tMissed.Enabled := false;         // Data is fresh; stop missed timer
     bg_alert := true;                 // Allow alerts again
+    // Reset font color when data becomes fresh again (it may have been set to white when stale)
+    if lVal.Font.Color = clWhite then
+      lVal.Font.Color := GetTextColorForBackground(fBG.color);
   end;
 end;
 
