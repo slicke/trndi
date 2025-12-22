@@ -60,6 +60,9 @@ trndi.Ext.Engine, trndi.Ext.jsfuncs, trndi.ext.promise, mormot.core.base,
 {$endif}
 {$ifdef Darwin}
 CocoaAll, MacOSAll,
+Sockets,
+BaseUnix,
+netdb,
 {$endif}
 {$ifdef LINUX}
 kdebadge,
