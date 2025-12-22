@@ -71,6 +71,15 @@ protected
         'API-SECRET=' + SHA1(pass) when a secret is supplied). }
   key: string;
 
+  {** Get the value which represents the maximum reading for the backend
+   }
+  function getLimitHigh: integer; override;
+ 
+  {** Get the value which represents the minimum reading for the backend
+   }
+  function getLimitLow: integer; override;
+  
+
 public
     {** Create a NightScout API client.
         Initializes the HTTP User-Agent, derives the API base URL from @code(user),
@@ -484,6 +493,16 @@ begin
 
   Result := 0; // success
   tn.Free;
+end;
+
+function NightScout.getLimitHigh: integer;
+begin
+  result := 400;
+end; 
+
+function NightScout.getLimitLow: integer;
+begin
+  result := 40;
 end;
 
 end.

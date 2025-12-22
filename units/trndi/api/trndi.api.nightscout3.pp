@@ -89,6 +89,14 @@ published
   property token: string read FToken;        // JWT when connected
     // For parity with v2 unit; exposes the effective API base URL in use
   property remote: string read baseUrl;
+protected
+    {** Get the value which represents the maximum reading for the backend
+     }
+  function getLimitHigh: integer; override;
+  
+    {** Get the value which represents the minimum reading for the backend
+     }
+  function getLimitLow: integer; override;
 end;
 
 implementation
@@ -705,6 +713,16 @@ begin
   finally
     tn.Free;
   end;
+end;
+
+function NightScout3.getLimitHigh: integer;
+begin
+  result := 400;
+end;
+
+function NightScout3.getLimitLow: integer;
+begin
+  result := 40;
 end;
 
 end.

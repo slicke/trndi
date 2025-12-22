@@ -134,6 +134,14 @@ type
         3: (unused)
      }
     class function ParamLabel(Index: integer): string; override;
+  protected
+  {** Get the value which represents the maximum reading for the backend
+  }
+  function getLimitHigh: integer; override;
+  
+  {** Get the value which represents the minimum reading for the backend
+  }
+  function getLimitLow: integer; override;
   end;
 
 implementation
@@ -304,6 +312,16 @@ begin
     else
       Result := inherited ParamLabel(Index);
   end;
+end;
+
+function xDrip.getLimitHigh: integer;
+begin
+  Result := 600; // xDrip typical high limit
+end;
+
+function xDrip.getLimitLow: integer;
+begin
+  Result := 40; // xDrip typical low limit 
 end;
 
 end.

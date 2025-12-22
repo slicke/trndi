@@ -82,6 +82,14 @@ protected
      }
   procedure setTZ(secs: integer);
 
+  {** Get the value which represents the maximum reading for the backend
+   }
+  function getLimitHigh: integer; virtual; abstract;
+ 
+  {** Get the value which represents the minimum reading for the backend
+   }
+  function getLimitLow: integer; virtual; abstract;
+  
   {** Get the URL to the remote source
    }
   function getAPIUrl: string;
@@ -261,6 +269,12 @@ const
      }
   class function testConnection(user, pass, extra: string): Byte; virtual;
     // -------- Properties --------
+
+  {** Backend's maximum reading. }
+  property limitHI: integer read getLimitHigh;
+
+  {** Backend's minimum reading. }
+  property limitLO: integer read getLimitLow;
 
     {** Indexed read-only access to thresholds by @code(BGValLevel). }
   property threshold[lvl: BGValLevel]: single read getLevel;

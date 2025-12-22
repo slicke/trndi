@@ -175,6 +175,14 @@ published
   property Session: string read FSessionID;
     {** Whether this client computes deltas between consecutive readings. }
   property CalculateDiff: boolean read FCalcDiff;
+protected
+    {** Get the value which represents the maximum reading for the backend
+     }
+  function getLimitHigh: integer; override;
+
+    {** Get the value which represents the minimum reading for the backend
+     }
+  function getLimitLow: integer; override;
 end;
 
 implementation
@@ -679,6 +687,16 @@ begin
   finally
     tn.Free;
   end;
+end;
+
+function Dexcom.getLimitHigh: integer;
+begin
+  Result := 400; // Dexcom typical high limit
+end;
+
+function Dexcom.getLimitLow: integer;
+begin
+  Result := 40; // Dexcom typical low limit
 end;
 
 end.
