@@ -725,10 +725,6 @@ const
   BADGE_FLASH_DURATION_OK_MS = 6000;
   BADGE_FLASH_REPEAT_DELAY_OK_MS = 500;
 
-  // Display sentinels for extreme BG values (mg/dL) when showing RS_HIGH/RS_LOW
-  BG_DISPLAY_HIGH_SENTINEL_MGDL = 400;
-  BG_DISPLAY_LOW_SENTINEL_MGDL = 40;
-
 function CurrentHistoryGraphPalette: THistoryGraphPalette;
 begin
   Result.Range := bg_color_ok;
@@ -3738,10 +3734,10 @@ begin
   // Update value label
   if not privacyMode then
   begin
-    if reading.val > BG_DISPLAY_HIGH_SENTINEL_MGDL then
+    if reading.val > api.limitHI then
       lVal.Caption := RS_HIGH
     else
-    if reading.val < BG_DISPLAY_LOW_SENTINEL_MGDL then
+    if reading.val < api.limitLO then
       lVal.Caption := RS_LOW
     else
       lVal.Caption := reading.format(un, BG_MSG_SHORT, BGPrimary);
