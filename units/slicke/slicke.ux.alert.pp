@@ -1918,6 +1918,38 @@ var
   sysfont, htmlstr: string;
   contentHeight, maxHeight, finalHeight: Integer;
   hpd: TIpHttpDataProvider;
+
+  function DecorateLinks(const Src, LinkColorHtml: string): string;
+  var
+    lower: string;
+    searchPos, openPos, tagEndPos, closePos: SizeInt;
+  begin
+    Result := Src;
+    lower := LowerCase(Result);
+    searchPos := 1;
+    while True do
+    begin
+      openPos := PosEx('<a', lower, searchPos);
+      if openPos = 0 then
+        Break;
+
+      tagEndPos := PosEx('>', lower, openPos);
+      if tagEndPos = 0 then
+        Break;
+
+      Insert('<u><font color="' + LinkColorHtml + '">', Result, tagEndPos + 1);
+      lower := LowerCase(Result);
+
+      closePos := PosEx('</a>', lower, tagEndPos + 1);
+      if closePos = 0 then
+        Break;
+
+      Insert('</font></u>', Result, closePos);
+      lower := LowerCase(Result);
+
+      searchPos := closePos + Length('</a>') + Length('</font></u>');
+    end;
+  end;
 begin
   bgcol := getBackground;
   size := GetUXDialogSize(dialogsize);
@@ -1976,18 +2008,7 @@ begin
     
     // Load HTML content with system font and colors
     FontTXTInList(sysfont);
-    htmlstr := StringReplace(
-    html,
-    '">', '"><u><font color="' + TColorToHTML(getBaseColor) + '">',
-    [rfReplaceAll]
-  );
-
-    htmlstr := StringReplace(
-    htmlstr,
-    '</a>',
-    '</font></u></a>',
-    [rfReplaceAll]
-  );
+    htmlstr := DecorateLinks(html, TColorToHTML(getBaseColor));
     HtmlViewer.SetHtmlFromStr(
       '<html><body bgcolor="' + TColorToHTML(bgcol) + '" text="' + TColorToHTML(getBaseColor) + '" style="font-family: ' + sysfont + ';">' +
       htmlstr +
