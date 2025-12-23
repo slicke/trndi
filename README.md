@@ -92,6 +92,12 @@ Download the appropriate package for your distribution from the [latest release]
 - **Fedora/RHEL**: `trndi-VERSION.x86_64.rpm` or `trndi-VERSION.aarch64.rpm`
 - **Portable**: `Trndi-linux-amd64.zip` or `Trndi-linux-arm64.zip`
 
+### Linux desktop indicators (optional)
+- **GNOME**: includes a GNOME Shell top-bar extension (`trndi-current@slicke.com`) that shows the current reading.
+- **KDE Plasma 6**: includes a panel widget (“Trndi Current”) you can add via *Add Widgets*.
+
+Both indicators read the same cache file: `${XDG_CACHE_HOME:-$HOME/.cache}/trndi/current.txt`.
+
 ## macOS
 Download `Trndi-macos-silicon.dmg` from the [latest release](https://github.com/slicke/trndi/releases).
 

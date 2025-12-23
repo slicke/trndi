@@ -215,6 +215,13 @@ jobs:
             cp -r "gnome-shell-extension/trndi-current" \
               "$PKG_DIR/usr/local/share/trndi/gnome-shell-extension/trndi-current@slicke.com"
           fi
+
+          # Optional KDE Plasma plasmoid (panel widget) source
+          if [ -d "kde-plasmoid/trndi-current" ]; then
+            mkdir -p "$PKG_DIR/usr/local/share/trndi/kde-plasmoid"
+            cp -r "kde-plasmoid/trndi-current" \
+              "$PKG_DIR/usr/local/share/trndi/kde-plasmoid/com.slicke.trndi.current"
+          fi
           mkdir -p "$PKG_DIR/usr/share/pixmaps"
           [ -f "Trndi.png" ] && cp Trndi.png "$PKG_DIR/usr/share/pixmaps/"
           ICON=Trndi

@@ -1,0 +1,20 @@
+{
+  "KPackageStructure": "Plasma/Applet",
+  "KPlugin": {
+    "Id": "com.slicke.trndi.current",
+    "Name": "Trndi Current",
+    "Description": "Shows Trndi's current reading in the panel",
+    "Icon": "view-statistics",
+    "Version": "1.0",
+    "Website": "https://github.com/slicke/trndi",
+    "Category": "System Information",
+    "Authors": [
+      {
+        "Name": "Björn Lindh"
+      }
+    ]
+  },
+  "X-Plasma-API-Minimum-Version": "6.0",
+  "X-Plasma-API": "declarativeappletscript",
+  "X-Plasma-MainScript": "ui/main.qml"
+}
