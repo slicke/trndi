@@ -120,6 +120,9 @@ implementation
 uses
 Process, Types, LCLType;
 
+// Used by destructor; implemented later in this unit.
+procedure WriteTrndiCurrentValueCache(const Value: string); forward;
+
 {------------------------------------------------------------------------------
   IsNotifySendAvailable
   ---------------------
@@ -644,6 +647,8 @@ end;
  ------------------------------------------------------------------------------}
 destructor TTrndiNativeLinux.Destroy;
 begin
+  // Clear GNOME indicator cache on normal shutdown
+  WriteTrndiCurrentValueCache('');
   if not noFree then
   begin
     ClearBadge;

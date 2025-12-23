@@ -27,6 +27,14 @@ export default class TrndiCurrentExtension extends Extension {
       if (!file.query_exists(null))
         return null;
 
+      // If the file hasn't been updated recently, treat it as "not running".
+      // This avoids showing a stale value if Trndi was killed/crashed.
+      const info = file.query_info('time::modified', Gio.FileQueryInfoFlags.NONE, null);
+      const mtime = info.get_attribute_uint64('time::modified');
+      const now = Math.floor(Date.now() / 1000);
+      if (mtime > 0 && (now - mtime) > 120)
+        return null;
+
       const stream = file.read(null);
       const dis = new Gio.DataInputStream({ base_stream: stream });
       const [line] = dis.read_line_utf8(null);
@@ -46,7 +54,16 @@ export default class TrndiCurrentExtension extends Extension {
       return GLib.SOURCE_REMOVE;
 
     const v = this._readCurrentValue();
-    this._label.set_text(v ?? '--');
+    if (!v) {
+      if (this._button)
+        this._button.visible = false;
+      this._label.set_text('');
+      return GLib.SOURCE_CONTINUE;
+    }
+
+    if (this._button)
+      this._button.visible = true;
+    this._label.set_text(v);
     return GLib.SOURCE_CONTINUE;
   }
 
@@ -61,7 +78,7 @@ export default class TrndiCurrentExtension extends Extension {
 
     this._button = new PanelMenu.Button(0.0, 'Trndi Current', false);
     this._label = new St.Label({
-      text: '--',
+      text: '',
       y_align: Clutter.ActorAlign.CENTER,
       style_class: 'panel-label'
     });
@@ -71,6 +88,9 @@ export default class TrndiCurrentExtension extends Extension {
 
     // Use a simple key for statusArea (avoid special chars causing surprises)
     Main.panel.addToStatusArea('trndiCurrent', this._button, 0, 'right');
+
+    // Start hidden until we have a value.
+    this._button.visible = false;
 
     // Poll every 5 seconds; Trndi writes the file when readings update.
     this._timeoutId = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 5, this._tick.bind(this));
