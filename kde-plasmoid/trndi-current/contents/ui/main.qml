@@ -20,8 +20,8 @@ PlasmoidItem {
         text: root.readingText.length > 0 ? root.readingText
                                           : (root.lastErrorText.length > 0 ? "!" : "")
         visible: text.length > 0
-        elide: Text.ElideRight
-        minPointSize: 7
+        elide: Text.ElideNone
+        minPointSize: 5
         maxPointSize: 48
     }
 
@@ -29,8 +29,8 @@ PlasmoidItem {
         text: root.readingText.length > 0 ? root.readingText : root.lastErrorText
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
-        elide: Text.ElideRight
-        minPointSize: 10
+        elide: Text.ElideNone
+        minPointSize: 8
         maxPointSize: 72
     }
 
@@ -65,6 +65,11 @@ PlasmoidItem {
 
             out = out.trim();
             err = err.trim();
+
+            // Compact range formatting to improve fit in panel (e.g. "70 - 180" -> "70-180").
+            if (out.indexOf("-") !== -1) {
+                out = out.replace(/\s*-\s*/g, "-");
+            }
 
             if (out.length > 0) {
                 root.readingText = out;

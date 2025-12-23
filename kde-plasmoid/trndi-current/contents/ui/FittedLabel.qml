@@ -12,7 +12,7 @@ Item {
 
     property int horizontalAlignment: Text.AlignHCenter
     property int verticalAlignment: Text.AlignVCenter
-    property int elide: Text.ElideRight
+    property int elide: Text.ElideNone
 
     function recompute() {
         // Avoid thrashing during layout; keep a sane default.
