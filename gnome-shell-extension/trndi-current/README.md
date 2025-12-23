@@ -21,7 +21,16 @@ Then reload GNOME Shell and enable the extension:
 
 Enable with the Extensions app (or `gnome-extensions enable trndi-current@slicke.com`).
 
+## Install (system-wide)
+
+```bash
+sudo rm -rf /usr/share/gnome-shell/extensions/trndi-current@slicke.com
+sudo cp -r gnome-shell-extension/trndi-current /usr/share/gnome-shell/extensions/trndi-current@slicke.com
+```
+
 ## Notes
 
 - The indicator updates every 5 seconds.
 - If no value is available it shows `--`.
+- GNOME requires the extension `metadata.json` to list your GNOME Shell major version in `shell-version`.
+	The DEB/RPM installer auto-adds your current version during install.
