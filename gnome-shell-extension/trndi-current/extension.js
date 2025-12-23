@@ -32,7 +32,8 @@ export default class TrndiCurrentExtension extends Extension {
       const info = file.query_info('time::modified', Gio.FileQueryInfoFlags.NONE, null);
       const mtime = info.get_attribute_uint64('time::modified');
       const now = Math.floor(Date.now() / 1000);
-      if (mtime > 0 && (now - mtime) > 120)
+      // Ignore values older than 10 minutes.
+      if (mtime > 0 && (now - mtime) > 600)
         return null;
 
       const stream = file.read(null);
