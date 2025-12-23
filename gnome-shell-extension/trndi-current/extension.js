@@ -26,9 +26,15 @@ export default class TrndiCurrentExtension extends Extension {
       const file = Gio.File.new_for_path(path);
       if (!file.query_exists(null))
         return null;
-      const [, bytes] = file.load_contents(null);
-      const text = new TextDecoder('utf-8').decode(bytes);
-      const trimmed = text.trim();
+
+      const stream = file.read(null);
+      const dis = new Gio.DataInputStream({ base_stream: stream });
+      const [line] = dis.read_line_utf8(null);
+      dis.close(null);
+
+      if (!line)
+        return null;
+      const trimmed = line.trim();
       return trimmed.length > 0 ? trimmed : null;
     } catch (_) {
       return null;
@@ -40,7 +46,7 @@ export default class TrndiCurrentExtension extends Extension {
       return GLib.SOURCE_REMOVE;
 
     const v = this._readCurrentValue();
-    this._label.text = v ?? '--';
+    this._label.set_text(v ?? '--');
     return GLib.SOURCE_CONTINUE;
   }
 
@@ -57,7 +63,9 @@ export default class TrndiCurrentExtension extends Extension {
 
     // Clutter is available globally in GNOME Shell; avoid an extra import.
     this._button.add_child(this._label);
-    Main.panel.addToStatusArea(this.uuid, this._button, 0, 'right');
+
+    const name = this.metadata?.uuid ?? this.uuid ?? 'trndi-current';
+    Main.panel.addToStatusArea(name, this._button, 0, 'right');
 
     // Poll every 5 seconds; Trndi writes the file when readings update.
     this._timeoutId = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 5, this._tick.bind(this));
