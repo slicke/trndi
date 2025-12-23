@@ -60,6 +60,15 @@ private
 
 published
   property remote: string read baseUrl;
+
+protected
+    {** Get the value which represents the maximum reading for the backend
+  }
+  function getLimitHigh: integer; override;
+  
+  {** Get the value which represents the minimum reading for the backend
+  }
+  function getLimitLow: integer; override;
 end;
 
 implementation
@@ -124,6 +133,16 @@ begin
     Result[i].updateEnv('DebugEdge');
   end;
 
+end;
+
+function DebugEdgeAPI.getLimitHigh: integer;
+begin
+  Result := 400; // DebugEdge maximum high limit
+end;  
+
+function DebugEdgeAPI.getLimitLow: integer;
+begin
+  Result := 40; // DebugEdge minimum low limit
 end;
 
 end.
