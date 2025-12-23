@@ -689,6 +689,66 @@ begin
   end;
 end;
 
+function GetUserCacheDirLinux: string;
+var
+  xdg, home: string;
+begin
+  xdg := GetEnvironmentVariable('XDG_CACHE_HOME');
+  if xdg <> '' then
+    Exit(ExcludeTrailingPathDelimiter(xdg));
+
+  home := GetEnvironmentVariable('HOME');
+  if home = '' then
+    home := ExcludeTrailingPathDelimiter(GetUserDir);
+  if home <> '' then
+    Exit(IncludeTrailingPathDelimiter(home) + '.cache');
+
+  Result := '';
+end;
+
+procedure WriteTrndiCurrentValueCache(const Value: string);
+var
+  cacheDir, filePath, badgeText: string;
+  dval: double;
+  sl: TStringList;
+begin
+  cacheDir := GetUserCacheDirLinux;
+  if cacheDir = '' then
+    Exit;
+
+  filePath := IncludeTrailingPathDelimiter(cacheDir) + 'trndi' + PathDelim + 'current.txt';
+
+  if Value = '' then
+  begin
+    try
+      DeleteFile(filePath);
+    except
+    end;
+    Exit;
+  end;
+
+  // Keep formatting consistent with tray badge (one decimal when numeric)
+  badgeText := Value;
+  try
+    if TryStrToFloat(Value, dval, DefaultFormatSettings) then
+      badgeText := FormatFloat('0.0', dval, DefaultFormatSettings);
+  except
+    badgeText := Value;
+  end;
+
+  try
+    ForceDirectories(ExtractFileDir(filePath));
+    sl := TStringList.Create;
+    try
+      sl.Add(badgeText);
+      sl.SaveToFile(filePath);
+    finally
+      sl.Free;
+    end;
+  except
+  end;
+end;
+
 {------------------------------------------------------------------------------
   GetSystemLangTag
   ----------------
@@ -962,6 +1022,9 @@ begin
   if TryStrToFloat(Value, f) then
     KDEBadge.SetBadge(f);
   // If TryStrToFloat fails, badge stays cleared (ClearBadge above)
+
+  // Write current reading for GNOME top-bar indicator (reads ~/.cache/trndi/current.txt)
+  WriteTrndiCurrentValueCache(Value);
   
   SetTray(Value, badgecolor, badge_size_ratio, min_font_size);
 end;

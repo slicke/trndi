@@ -201,10 +201,20 @@ jobs:
           # Create DEB & RPM installers (with icon inside system paths)
           sudo apt-get install -y ruby ruby-dev build-essential rpm
           sudo gem install --no-document fpm
+
+          # fpm maintainer scripts (optional)
+          chmod +x dist/linux/after-install.sh dist/linux/after-remove.sh || true
           PKG_DIR="pkgroot"
           mkdir -p "$PKG_DIR/usr/local/trndi"
           cp Trndi "$PKG_DIR/usr/local/trndi/"
           [ -d "lang" ] && cp -r lang "$PKG_DIR/usr/local/trndi/"
+
+          # Optional GNOME Shell top-bar indicator extension source
+          if [ -d "gnome-shell-extension/trndi-current" ]; then
+            mkdir -p "$PKG_DIR/usr/local/share/trndi/gnome-shell-extension"
+            cp -r "gnome-shell-extension/trndi-current" \
+              "$PKG_DIR/usr/local/share/trndi/gnome-shell-extension/trndi-current@slicke.com"
+          fi
           mkdir -p "$PKG_DIR/usr/share/pixmaps"
           [ -f "Trndi.png" ] && cp Trndi.png "$PKG_DIR/usr/share/pixmaps/"
           ICON=Trndi
@@ -231,8 +241,12 @@ jobs:
           PKG_VERSION="${MAJOR}.${MINOR}.${{ needs.version.outputs.build_number }}"
           echo "Packaging version: ${PKG_VERSION}"
 
-          fpm -s dir -t deb -n trndi -v "${PKG_VERSION}" --architecture ${{ matrix.deb_arch }} --license "GPLv3" --description "Trndi CGM Viewer" -C "$PKG_DIR" .
-          fpm -s dir -t rpm -n trndi -v "${PKG_VERSION}" --architecture ${{ matrix.rpm_arch }} --license "GPLv3" --description "Trndi CGM Viewer" -C "$PKG_DIR" .
+          FPM_SCRIPTS=()
+          [ -f dist/linux/after-install.sh ] && FPM_SCRIPTS+=(--after-install dist/linux/after-install.sh)
+          [ -f dist/linux/after-remove.sh ] && FPM_SCRIPTS+=(--after-remove dist/linux/after-remove.sh)
+
+          fpm -s dir -t deb -n trndi -v "${PKG_VERSION}" --architecture ${{ matrix.deb_arch }} --license "GPLv3" --description "Trndi CGM Viewer" "${FPM_SCRIPTS[@]}" -C "$PKG_DIR" .
+          fpm -s dir -t rpm -n trndi -v "${PKG_VERSION}" --architecture ${{ matrix.rpm_arch }} --license "GPLv3" --description "Trndi CGM Viewer" "${FPM_SCRIPTS[@]}" -C "$PKG_DIR" .
           
           # Sign packages if GPG key is available
           if [ -n "${{ secrets.GPG_PRIVATE_KEY }}" ]; then
