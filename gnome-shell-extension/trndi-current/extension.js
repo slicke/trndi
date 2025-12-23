@@ -2,6 +2,7 @@ import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import St from 'gi://St';
 import Clutter from 'gi://Clutter';
+import Pango from 'gi://Pango';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
@@ -43,7 +44,8 @@ export default class TrndiCurrentExtension extends Extension {
 
       if (!line)
         return null;
-      const trimmed = line.trim();
+      // Compact ranges for panel fit: "70 - 180" -> "70-180".
+      const trimmed = line.trim().replace(/\s*-\s*/g, '-');
       return trimmed.length > 0 ? trimmed : null;
     } catch (_) {
       return null;
@@ -68,6 +70,11 @@ export default class TrndiCurrentExtension extends Extension {
         y_align: Clutter.ActorAlign.CENTER,
         style_class: 'panel-label'
       });
+      // Never show ellipsis (we rely on shorter formatting + panel width).
+      try {
+        this._label.clutter_text.ellipsize = Pango.EllipsizeMode.NONE;
+      } catch (_) {
+      }
       this._button.add_child(this._label);
       Main.panel.addToStatusArea('trndiCurrent', this._button, 0, 'right');
     }
