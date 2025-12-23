@@ -54,6 +54,11 @@ export default class TrndiCurrentExtension extends Extension {
     if (this._button)
       return;
 
+    try {
+      log(`[TrndiCurrent] enable (${this.metadata?.uuid ?? 'unknown'})`);
+    } catch (_) {
+    }
+
     this._button = new PanelMenu.Button(0.0, 'Trndi Current', false);
     this._label = new St.Label({
       text: '--',
@@ -64,8 +69,8 @@ export default class TrndiCurrentExtension extends Extension {
     // Clutter is available globally in GNOME Shell; avoid an extra import.
     this._button.add_child(this._label);
 
-    const name = this.metadata?.uuid ?? this.uuid ?? 'trndi-current';
-    Main.panel.addToStatusArea(name, this._button, 0, 'right');
+    // Use a simple key for statusArea (avoid special chars causing surprises)
+    Main.panel.addToStatusArea('trndiCurrent', this._button, 0, 'right');
 
     // Poll every 5 seconds; Trndi writes the file when readings update.
     this._timeoutId = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 5, this._tick.bind(this));
@@ -73,6 +78,10 @@ export default class TrndiCurrentExtension extends Extension {
   }
 
   disable() {
+    try {
+      log('[TrndiCurrent] disable');
+    } catch (_) {
+    }
     if (this._timeoutId) {
       GLib.source_remove(this._timeoutId);
       this._timeoutId = null;
