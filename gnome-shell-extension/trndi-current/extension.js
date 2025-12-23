@@ -50,19 +50,27 @@ export default class TrndiCurrentExtension extends Extension {
   }
 
   _tick() {
-    if (!this._label)
-      return GLib.SOURCE_REMOVE;
-
     const v = this._readCurrentValue();
     if (!v) {
-      if (this._button)
-        this._button.visible = false;
-      this._label.set_text('');
+      if (this._button) {
+        this._button.destroy();
+        this._button = null;
+        this._label = null;
+      }
       return GLib.SOURCE_CONTINUE;
     }
 
-    if (this._button)
-      this._button.visible = true;
+    if (!this._button) {
+      this._button = new PanelMenu.Button(0.0, 'Trndi Current', false);
+      this._label = new St.Label({
+        text: '',
+        y_align: Clutter.ActorAlign.CENTER,
+        style_class: 'panel-label'
+      });
+      this._button.add_child(this._label);
+      Main.panel.addToStatusArea('trndiCurrent', this._button, 0, 'right');
+    }
+
     this._label.set_text(v);
     return GLib.SOURCE_CONTINUE;
   }
@@ -75,22 +83,6 @@ export default class TrndiCurrentExtension extends Extension {
       log(`[TrndiCurrent] enable (${this.metadata?.uuid ?? 'unknown'})`);
     } catch (_) {
     }
-
-    this._button = new PanelMenu.Button(0.0, 'Trndi Current', false);
-    this._label = new St.Label({
-      text: '',
-      y_align: Clutter.ActorAlign.CENTER,
-      style_class: 'panel-label'
-    });
-
-    // Clutter is available globally in GNOME Shell; avoid an extra import.
-    this._button.add_child(this._label);
-
-    // Use a simple key for statusArea (avoid special chars causing surprises)
-    Main.panel.addToStatusArea('trndiCurrent', this._button, 0, 'right');
-
-    // Start hidden until we have a value.
-    this._button.visible = false;
 
     // Poll every 5 seconds; Trndi writes the file when readings update.
     this._timeoutId = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 5, this._tick.bind(this));
