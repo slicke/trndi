@@ -5,7 +5,7 @@ A minimal Plasma widget that shows Trndi’s current reading in the panel.
 It reads the same cache file as the GNOME top-bar extension:
 - `${XDG_CACHE_HOME:-$HOME/.cache}/trndi/current.txt`
 
-If the file is missing or older than 120 seconds, nothing is shown.
+If the file is missing or older than 10 minutes, nothing is shown.
 
 ## Install (Plasma 6)
 ```bash

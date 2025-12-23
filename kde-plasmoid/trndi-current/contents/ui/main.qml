@@ -95,12 +95,12 @@ PlasmoidItem {
 
     function readCmd() {
         // Read the same cache file as GNOME extension.
-        // Hide value if missing or stale (>120s).
+        // Hide value if missing or stale (>10 minutes).
         return "bash -lc '" +
                "f=\"${XDG_CACHE_HOME:-$HOME/.cache}/trndi/current.txt\"; " +
                "if [ -f \"$f\" ]; then " +
                "now=$(date +%s); m=$(stat -c %Y \"$f\" 2>/dev/null || echo 0); " +
-               "if [ $((now-m)) -le 120 ]; then head -n1 \"$f\"; fi; " +
+               "if [ $((now-m)) -le 600 ]; then head -n1 \"$f\"; fi; " +
                "fi'";
     }
 }
