@@ -120,6 +120,9 @@ implementation
 uses
 Process, Types, LCLType;
 
+// Used by destructor; implemented later in this unit.
+procedure WriteTrndiCurrentValueCache(const Value: string); forward;
+
 {------------------------------------------------------------------------------
   IsNotifySendAvailable
   ---------------------
@@ -215,6 +218,55 @@ begin
   end;
 end;
 
+// Forward declarations used by GNOME extension detection (implemented later)
+function DesktopHint: string; forward;
+function FindInPath(const FileName: string): string; forward;
+
+function IsTrndiGnomeExtensionEnabled: boolean;
+const
+  TRNDI_GNOME_EXT_UUID = 'trndi-current@slicke.com';
+var
+  dHint: string;
+  gsettingsPath, gnomeExtensionsPath, outS: string;
+  exitCode: integer;
+begin
+  Result := false;
+
+  // Only consider disabling tray on GNOME-family desktops.
+  dHint := LowerCase(DesktopHint);
+  if (Pos('gnome', dHint) = 0) and (Pos('ubuntu', dHint) = 0) and
+    (Pos('unity', dHint) = 0) then
+    Exit(false);
+
+  // Prefer the gnome-extensions CLI if present.
+  gnomeExtensionsPath := FindInPath('gnome-extensions');
+  if gnomeExtensionsPath <> '' then
+  begin
+    if RunAndCaptureSimple(gnomeExtensionsPath, ['info', TRNDI_GNOME_EXT_UUID], outS,
+      exitCode) and (exitCode = 0) then
+    begin
+      outS := UpperCase(outS);
+      // GNOME versions vary: we treat ENABLED/ACTIVE as "on".
+      if (Pos('STATE:', outS) > 0) and
+        ((Pos('ENABLED', outS) > 0) or (Pos('ACTIVE', outS) > 0)) then
+        Exit(true);
+    end;
+  end;
+
+  // Fallback: inspect org.gnome.shell enabled-extensions list.
+  gsettingsPath := FindInPath('gsettings');
+  if gsettingsPath = '' then
+    Exit(false);
+
+  if RunAndCaptureSimple(gsettingsPath,
+    ['get', 'org.gnome.shell', 'enabled-extensions'], outS, exitCode) and
+    (exitCode = 0) then
+  begin
+    // Example: "['uuid@domain', 'other@domain']" or "@as []"
+    Result := Pos('''' + TRNDI_GNOME_EXT_UUID + '''', outS) > 0;
+  end;
+end;
+
 // C-compatible write callback for libcurl used in this unit
 function CurlWriteCallback_Linux(buffer: pchar; size, nmemb: longword;
 userdata: Pointer): longword; cdecl;
@@ -253,9 +305,6 @@ function ContainsDark(const S: string): boolean; inline;
 begin
   Result := Pos('dark', LowerCase(S)) > 0;
 end;
-
-// Forward declaration for helper declared later in this unit
-function FindInPath(const FileName: string): string; forward;
 
 // True when the desktop environment is KDE/Plasma or GNOME-family (gnome/ubuntu/unity)
 function IsKdeOrGnomeLike: boolean; inline;
@@ -644,6 +693,8 @@ end;
  ------------------------------------------------------------------------------}
 destructor TTrndiNativeLinux.Destroy;
 begin
+  // Clear GNOME indicator cache on normal shutdown
+  WriteTrndiCurrentValueCache('');
   if not noFree then
   begin
     ClearBadge;
@@ -686,6 +737,66 @@ begin
     end;
   finally
     Paths.Free;
+  end;
+end;
+
+function GetUserCacheDirLinux: string;
+var
+  xdg, home: string;
+begin
+  xdg := GetEnvironmentVariable('XDG_CACHE_HOME');
+  if xdg <> '' then
+    Exit(ExcludeTrailingPathDelimiter(xdg));
+
+  home := GetEnvironmentVariable('HOME');
+  if home = '' then
+    home := ExcludeTrailingPathDelimiter(GetUserDir);
+  if home <> '' then
+    Exit(IncludeTrailingPathDelimiter(home) + '.cache');
+
+  Result := '';
+end;
+
+procedure WriteTrndiCurrentValueCache(const Value: string);
+var
+  cacheDir, filePath, badgeText: string;
+  dval: double;
+  sl: TStringList;
+begin
+  cacheDir := GetUserCacheDirLinux;
+  if cacheDir = '' then
+    Exit;
+
+  filePath := IncludeTrailingPathDelimiter(cacheDir) + 'trndi' + PathDelim + 'current.txt';
+
+  if Value = '' then
+  begin
+    try
+      DeleteFile(filePath);
+    except
+    end;
+    Exit;
+  end;
+
+  // Keep formatting consistent with tray badge (one decimal when numeric)
+  badgeText := Value;
+  try
+    if TryStrToFloat(Value, dval, DefaultFormatSettings) then
+      badgeText := FormatFloat('0.0', dval, DefaultFormatSettings);
+  except
+    badgeText := Value;
+  end;
+
+  try
+    ForceDirectories(ExtractFileDir(filePath));
+    sl := TStringList.Create;
+    try
+      sl.Add(badgeText);
+      sl.SaveToFile(filePath);
+    finally
+      sl.Free;
+    end;
+  except
   end;
 end;
 
@@ -805,6 +916,16 @@ var
   BadgeText: string;
   dval: double;
 begin
+  // If the GNOME top-bar extension is enabled, suppress the legacy tray icon.
+  if IsTrndiGnomeExtensionEnabled then
+  begin
+    if Assigned(TrayMenu) then
+      FreeAndNil(TrayMenu);
+    if Assigned(Tray) then
+      FreeAndNil(Tray);
+    Exit;
+  end;
+
   // Ensure we have a tray icon instance
   if not Assigned(Tray) then
   begin
@@ -962,6 +1083,9 @@ begin
   if TryStrToFloat(Value, f) then
     KDEBadge.SetBadge(f);
   // If TryStrToFloat fails, badge stays cleared (ClearBadge above)
+
+  // Write current reading for GNOME top-bar indicator (reads ~/.cache/trndi/current.txt)
+  WriteTrndiCurrentValueCache(Value);
   
   SetTray(Value, badgecolor, badge_size_ratio, min_font_size);
 end;
