@@ -1,31 +1,27 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-EXT_UUID='trndi-current@slicke.com'
-SRC="/usr/local/share/trndi/gnome-shell-extension/${EXT_UUID}"
-DST="/usr/share/gnome-shell/extensions/${EXT_UUID}"
+GNOME_EXT_UUID='trndi-current@slicke.com'
+GNOME_SRC="/usr/local/share/trndi/gnome-shell-extension/${GNOME_EXT_UUID}"
+GNOME_DST="/usr/share/gnome-shell/extensions/${GNOME_EXT_UUID}"
 
-# Only proceed when the extension payload is present.
-if [[ ! -d "$SRC" ]]; then
-  exit 0
-fi
+KDE_PLASMOID_ID='com.slicke.trndi.current'
+KDE_SRC="/usr/local/share/trndi/kde-plasmoid/${KDE_PLASMOID_ID}"
+KDE_DST="/usr/share/plasma/plasmoids/${KDE_PLASMOID_ID}"
 
-# Only install system-wide if GNOME Shell is present.
-if [[ ! -d "/usr/share/gnome-shell" ]]; then
-  exit 0
-fi
+# --- GNOME Shell extension (system-wide install) ---
+if [[ -d "$GNOME_SRC" && -d "/usr/share/gnome-shell" ]]; then
+  mkdir -p "$(dirname "$GNOME_DST")"
+  rm -rf "$GNOME_DST"
+  cp -a "$GNOME_SRC" "$GNOME_DST"
 
-mkdir -p "$(dirname "$DST")"
-rm -rf "$DST"
-cp -a "$SRC" "$DST"
-
-# Ensure metadata.json declares support for the currently installed GNOME Shell.
-# GNOME requires an explicit match in "shell-version".
-if command -v gnome-shell >/dev/null 2>&1; then
-  ver="$(gnome-shell --version 2>/dev/null | grep -Eo '[0-9]+' | head -n1 || true)"
-  meta="$DST/metadata.json"
-  if [[ -n "$ver" && -f "$meta" ]]; then
-    python3 - <<'PY' "$meta" "$ver" || true
+  # Ensure metadata.json declares support for the currently installed GNOME Shell.
+  # GNOME requires an explicit match in "shell-version".
+  if command -v gnome-shell >/dev/null 2>&1; then
+    ver="$(gnome-shell --version 2>/dev/null | grep -Eo '[0-9]+' | head -n1 || true)"
+    meta="$GNOME_DST/metadata.json"
+    if [[ -n "$ver" && -f "$meta" ]]; then
+      python3 - <<'PY' "$meta" "$ver" || true
 import json, sys
 path, ver = sys.argv[1], sys.argv[2]
 try:
@@ -50,7 +46,16 @@ try:
 except Exception:
   pass
 PY
+    fi
   fi
+fi
+
+# --- KDE Plasma plasmoid (system-wide install) ---
+# Plasma discovers widgets placed under /usr/share/plasma/plasmoids/<id>
+if [[ -d "$KDE_SRC" && -d "/usr/share/plasma" ]]; then
+  mkdir -p "$(dirname "$KDE_DST")"
+  rm -rf "$KDE_DST"
+  cp -a "$KDE_SRC" "$KDE_DST"
 fi
 
 # Note: enabling is per-user; users can enable via Extensions app.
