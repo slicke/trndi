@@ -267,6 +267,74 @@ begin
   end;
 end;
 
+function GetUserConfigDirLinux: string;
+var
+  xdg, home: string;
+begin
+  xdg := GetEnvironmentVariable('XDG_CONFIG_HOME');
+  if xdg <> '' then
+    Exit(ExcludeTrailingPathDelimiter(xdg));
+
+  home := GetEnvironmentVariable('HOME');
+  if home = '' then
+    home := ExcludeTrailingPathDelimiter(GetUserDir);
+  if home <> '' then
+    Exit(IncludeTrailingPathDelimiter(home) + '.config');
+
+  Result := '';
+end;
+
+function IsTrndiKdePlasmoidVisible: boolean;
+const
+  TRNDI_KDE_PLASMOID_ID = 'com.slicke.trndi.current';
+  PLASMA_APPLETS_FILE = 'plasma-org.kde.plasma.desktop-appletsrc';
+var
+  dHint: string;
+  configDir, filePath, line: string;
+  sl: TStringList;
+  i: integer;
+begin
+  Result := false;
+
+  // Only consider disabling tray on KDE/Plasma desktops.
+  dHint := LowerCase(DesktopHint);
+  if (Pos('kde', dHint) = 0) and (Pos('plasma', dHint) = 0) then
+    Exit(false);
+
+  configDir := GetUserConfigDirLinux;
+  if configDir = '' then
+    Exit(false);
+
+  filePath := IncludeTrailingPathDelimiter(configDir) + PLASMA_APPLETS_FILE;
+  if not FileExists(filePath) then
+    Exit(false);
+
+  sl := TStringList.Create;
+  try
+    try
+      sl.LoadFromFile(filePath);
+    except
+      Exit(false);
+    end;
+
+    for i := 0 to sl.Count - 1 do
+    begin
+      line := LowerCase(Trim(sl[i]));
+      if line = '' then
+        Continue;
+
+      // Normalize whitespace to match both "plugin=..." and "plugin = ...".
+      line := StringReplace(line, ' ', '', [rfReplaceAll]);
+      line := StringReplace(line, #9, '', [rfReplaceAll]);
+
+      if Pos('plugin=' + TRNDI_KDE_PLASMOID_ID, line) > 0 then
+        Exit(true);
+    end;
+  finally
+    sl.Free;
+  end;
+end;
+
 // C-compatible write callback for libcurl used in this unit
 function CurlWriteCallback_Linux(buffer: pchar; size, nmemb: longword;
 userdata: Pointer): longword; cdecl;
@@ -916,8 +984,8 @@ var
   BadgeText: string;
   dval: double;
 begin
-  // If the GNOME top-bar extension is enabled, suppress the legacy tray icon.
-  if IsTrndiGnomeExtensionEnabled then
+  // If the GNOME top-bar extension or KDE plasmoid is in use, suppress the legacy tray icon.
+  if IsTrndiGnomeExtensionEnabled or IsTrndiKdePlasmoidVisible then
   begin
     if Assigned(TrayMenu) then
       FreeAndNil(TrayMenu);
