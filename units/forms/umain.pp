@@ -928,7 +928,7 @@ end;
 
 procedure TfBG.miDNSClick(Sender: TObject);
 begin
-  tPingTimer(self);
+  tPingTimer(miDNS);
 end;
 
 procedure TfBG.miDotNormalDrawItem(Sender: TObject; ACanvas: TCanvas;
@@ -989,8 +989,8 @@ var
   mr: TModalResult;
   da: single;
 begin
-  da := (ExtNumericInput(uxdAuto, 'Dot Adjustment', 'Add dot adjustment',
-    'You can enter plus or minus. Plus = down. 0 = neutral', DOT_ADJUST *
+  da := (ExtNumericInput(uxdAuto, RS_SERVICE_DOT_ADJUST, RS_SERVICE_DOT_ADJUST_ADD,
+    RS_SERVICE_DOT_ADJUST_DESC, DOT_ADJUST *
     100, false, mr) / 100);
 
   if mr = mrOk then
@@ -1012,7 +1012,7 @@ end;
 
 procedure TfBG.miADotsClick(Sender: TObject);
 begin
-  ShowMessage(Format('Adjust: %f%% / Scale: %dx', [DOT_ADJUST * 100, dotscale]));
+  ShowMessage(Format(RS_SERVICE_ADJUST, [DOT_ADJUST * 100, dotscale]));
 end;
 
 procedure TfBG.miASystemInfoClick(Sender: TObject);
@@ -1043,10 +1043,7 @@ begin
   platformInfo := 'unsupportd widgetset';
   {$endif}
 
-  ShowMessage({$I %FPCTargetOS%} + '(' + {$I %FPCTargetCPU%} + ')' + LineEnding +
-    platformInfo +
-    LineEnding + 'Default separator: ' + DefaultFormatSettings.DecimalSeparator
-    );
+  ShowMessage(Format(RS_SERVICE_SYSINFO, [{$I %FPCTargetOS%}, {$I %FPCTargetCPU%}, platformInfo, DefaultFormatSettings.DecimalSeparator]));
 
 end;
 
@@ -1084,16 +1081,23 @@ var
   bgr: BGResults;
   i: integer;
   msg: string;
+  mr: TModalResult;
 begin
-  if not api.predictReadings(3, bgr) then
+  i := ExtIntInput(uxdAuto, RS_PREDICT_AMOUNT_CAPTION, RS_PREDICT_AMOUNT_TITLE, RS_PREDICT_AMOUNT_DESC, 3, mr);
+  if (mr <> mrOK) or (i < 1) then
+    i := 3;
+  if i > 20 then
+    i := 20;
+
+  if not api.predictReadings(i, bgr) then
   begin
-    ShowMessage('Unable to predict: ' + api.errormsg);
+    ShowMessage(Format(RS_SERVICE_PREDICT_UNABLE, [api.errormsg]));
     Exit;
   end;
 
-  msg := 'Predictions:' + LineEnding;
+  msg := RS_SERVICE_PREDICTIONS + LineEnding;
   for i := 0 to High(bgr) do
-    msg := msg + Format('Reading %d: %.1f %s at %s', [
+    msg := msg + Format(RS_SERVICE_PREDICT_POINT, [
       i + 1,
       bgr[i].convert(un),
       BG_UNIT_NAMES[un],
@@ -3329,7 +3333,10 @@ end;
 begin
   tPing.Enabled := false;
 if not IsInternetOnline then
-  ShowMessage(RS_NO_INTERNET);
+  ShowMessage(RS_NO_INTERNET)
+else if (sender = miDNS) then
+  ShowMessage(RS_DNS_INTERNET_OK);
+
   tPing.Enabled := true;
 end;
 

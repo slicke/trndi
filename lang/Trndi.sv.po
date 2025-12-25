@@ -232,7 +232,7 @@ msgstr "Annonsera rådata från backendet"
 
 #: tfbg.midns.caption
 msgid "Run DNS Lookup Test"
-msgstr ""
+msgstr "Kär DNS-kontrolltest"
 
 #: tfbg.midotbig.caption
 msgctxt "tfbg.midotbig.caption"
@@ -1105,6 +1105,10 @@ msgstr "%d dagar sedan"
 msgid "This is the change from the latest reading"
 msgstr "Detta är skillnaden från tidigare avläsning"
 
+#: trndi.strings.rs_dns_internet_ok
+msgid "Your internet connection is working!"
+msgstr "Din internetanslutning fungerar!"
+
 #: trndi.strings.rs_font_error
 #, object-pascal-format
 msgid "You're missing the standard font \"%s\". Trndi will work as intended, but some icons may be missing and/or distorted!"
@@ -1316,7 +1320,7 @@ msgstr ""
 
 #: trndi.strings.rs_no_internet
 msgid "Your internet connection is not working, Trndi cannot fetch readings!"
-msgstr ""
+msgstr "Din internetanslutning fungerar inte. Trndi kan inte hämta avläsningar!"
 
 #: trndi.strings.rs_off_hi
 msgid "Over range"
@@ -1342,6 +1346,18 @@ msgstr "Detta är dina förutspådda avläsningar; Tidsskillnad: förutspådd-av
 #: trndi.strings.rs_predictions_unavailable
 msgid "Predictions unavailable"
 msgstr "Förutspåelser otillgängliga"
+
+#: trndi.strings.rs_predict_amount_caption
+msgid "Force predictions"
+msgstr "Tvinga förutspåelser"
+
+#: trndi.strings.rs_predict_amount_desc
+msgid "Enter the amount of readings to predict (1-20)"
+msgstr "Ange antalet avläsningar att förutspå (1-20)"
+
+#: trndi.strings.rs_predict_amount_title
+msgid "Force a prediction"
+msgstr "Tvinga en förutspåelse"
 
 #: trndi.strings.rs_quit_caption
 msgid "Exit Trndi?"
@@ -1424,6 +1440,48 @@ msgstr "Felsäkert läge aktiverat"
 #: trndi.strings.rs_safemode_desc
 msgid "Trndi is running in <b>Safe Mode</b>!<ul><li>No start-up actions from extensions will run</li><li>You cannot use, and no actions will trigger from, extensions</li></ul><br>Extensions will load next run, unless you press <b>CTRL</b>!"
 msgstr "Trndi körs i <b>felsäkertläge</b>!<ul><li>Inga startåtgärder från tillägg körs</li><li>Du kan inte använda, och inga åtgärder kommer att köras från, tillägg</li></ul><br>Tillägg kommer att köras nästa start, såvida du inte trycker <b>CTRL</b>!"
+
+#: trndi.strings.rs_service_adjust
+#, object-pascal-format
+msgid "Adjust: %.2f / Scale: %.2fx"
+msgstr "Justering: %.2f / Skala: %.2fx"
+
+#: trndi.strings.rs_service_dot_adjust
+msgid "Dot Adjustment"
+msgstr "Punktjustering"
+
+#: trndi.strings.rs_service_dot_adjust_add
+msgid "Add dot adjustment"
+msgstr "Lägg till punktjustering"
+
+#: trndi.strings.rs_service_dot_adjust_desc
+msgid "You can enter plus or minus. Plus = down. 0 = neutral"
+msgstr "Du kan ange plus eller minus. Plus = ned, 0 = neutral"
+
+#: trndi.strings.rs_service_predictions
+msgid "Predictions:"
+msgstr "Förutspåelser:"
+
+#: trndi.strings.rs_service_predict_point
+#, object-pascal-format
+msgid "Reading %d: %.1f %s at %s"
+msgstr "Avläsning %d: %.1f %s vid %s"
+
+#: trndi.strings.rs_service_predict_unable
+#, object-pascal-format
+msgid "Unable to predict: %s"
+msgstr "Kunde inte förutspå: %s"
+
+#: trndi.strings.rs_service_sysinfo
+#, object-pascal-format
+msgid ""
+"%s (%s)\n"
+"%s\n"
+"Default Separator: %s"
+msgstr ""
+"%s (%s)r\n"
+"%sr\n"
+"Standardsavgränsare: %s"
 
 #: trndi.strings.rs_settings_save
 msgid "Save settings?"
@@ -2093,4 +2151,3 @@ msgstr "Historikgraf"
 #, object-pascal-format
 msgid "Readings (%s)"
 msgstr "Avläsningar (%s)"
-
