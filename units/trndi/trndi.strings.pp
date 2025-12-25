@@ -28,7 +28,7 @@ RS_MULTIPLE_ACCOUNTS = 'Trndi found multiple accounts. Please choose one for thi
 RS_USER_CAPTION = '[%s] %s';
 RS_UNKNOWN_TIME = 'Loading';
 RS_NO_INTERNET = 'Your internet connection is not working, Trndi cannot fetch readings!';
-
+RS_DNS_INTERNET_OK = 'Your internet connection is working!';
   // Range messages
 RS_RANGE_EXPLANATION = 'In addition to high and low levels, you have set a personal range within "OK". You are now %s that range';
 RS_OVER = 'over';
@@ -44,6 +44,20 @@ RS_TIR_H = 'This is your time in range for the last %d hours and %d minutes'+#10
 RS_DIFF = 'This is the change from the latest reading';
 
 RS_NO_BOOT_READING = 'No fresh data is available.'#10'Trndi will attemp to fetch data until recent values are available';
+
+RS_SERVICE_SYSINFO = '%s (%s)'#10'%s'#10'Default Separator: %s';
+RS_SERVICE_ADJUST = 'Adjust: %.2f / Scale: %.2fx';
+RS_SERVICE_DOT_ADJUST = 'Dot Adjustment';
+RS_SERVICE_DOT_ADJUST_ADD = 'Add dot adjustment';
+RS_SERVICE_DOT_ADJUST_DESC = 'You can enter plus or minus. Plus = down. 0 = neutral';
+
+RS_SERVICE_PREDICT_UNABLE = 'Unable to predict: %s';
+RS_SERVICE_PREDICTIONS = 'Predictions:';
+RS_SERVICE_PREDICT_POINT = 'Reading %d: %.1f %s at %s';
+
+RS_PREDICT_AMOUNT_CAPTION = 'Force predictions';
+RS_PREDICT_AMOUNT_TITLE = 'Force a prediction';
+RS_PREDICT_AMOUNT_DESC = 'Enter the amount of readings to predict (1-20)';
 
 // Time messages
 RS_OUTDATED_TIME = '%s (%d.%.2d min ago)';

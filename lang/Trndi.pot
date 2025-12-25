@@ -1069,6 +1069,10 @@ msgstr ""
 msgid "This is the change from the latest reading"
 msgstr ""
 
+#: trndi.strings.rs_dns_internet_ok
+msgid "Your internet connection is working!"
+msgstr ""
+
 #: trndi.strings.rs_font_error
 #, object-pascal-format
 msgid "You're missing the standard font \"%s\". Trndi will work as intended, but some icons may be missing and/or distorted!"
@@ -1291,6 +1295,18 @@ msgstr ""
 msgid "Predictions unavailable"
 msgstr ""
 
+#: trndi.strings.rs_predict_amount_caption
+msgid "Force predictions"
+msgstr ""
+
+#: trndi.strings.rs_predict_amount_desc
+msgid "Enter the amount of readings to predict (1-20)"
+msgstr ""
+
+#: trndi.strings.rs_predict_amount_title
+msgid "Force a prediction"
+msgstr ""
+
 #: trndi.strings.rs_quit_caption
 msgid "Exit Trndi?"
 msgstr ""
@@ -1371,6 +1387,45 @@ msgstr ""
 
 #: trndi.strings.rs_safemode_desc
 msgid "Trndi is running in <b>Safe Mode</b>!<ul><li>No start-up actions from extensions will run</li><li>You cannot use, and no actions will trigger from, extensions</li></ul><br>Extensions will load next run, unless you press <b>CTRL</b>!"
+msgstr ""
+
+#: trndi.strings.rs_service_adjust
+#, object-pascal-format
+msgid "Adjust: %.2f / Scale: %.2fx"
+msgstr ""
+
+#: trndi.strings.rs_service_dot_adjust
+msgid "Dot Adjustment"
+msgstr ""
+
+#: trndi.strings.rs_service_dot_adjust_add
+msgid "Add dot adjustment"
+msgstr ""
+
+#: trndi.strings.rs_service_dot_adjust_desc
+msgid "You can enter plus or minus. Plus = down. 0 = neutral"
+msgstr ""
+
+#: trndi.strings.rs_service_predictions
+msgid "Predictions:"
+msgstr ""
+
+#: trndi.strings.rs_service_predict_point
+#, object-pascal-format
+msgid "Reading %d: %.1f %s at %s"
+msgstr ""
+
+#: trndi.strings.rs_service_predict_unable
+#, object-pascal-format
+msgid "Unable to predict: %s"
+msgstr ""
+
+#: trndi.strings.rs_service_sysinfo
+#, object-pascal-format
+msgid ""
+"%s (%s)\n"
+"%s\n"
+"Default Separator: %s"
 msgstr ""
 
 #: trndi.strings.rs_settings_save
