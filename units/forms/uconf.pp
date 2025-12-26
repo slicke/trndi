@@ -1554,9 +1554,21 @@ begin
     fsLo.Value := RoundMMOL(fsLo.Value);
     fsLoRange.Value := RoundMMOL(fsLoRange.Value);
     fsHiRange.Value := RoundMMOL(fsHiRange.Value);
+
+    // Set max after, as mmol will be lower
+    fsHi.MaxValue := 33.3;
+    fsLo.MaxValue := 33.3;
+    fsHiRange.MaxValue := 33.3;
+    fsLoRange.MaxValue := 33.3;
   end
   else
   begin
+    // Se the max first as mgdl will be higher
+    fsHi.MaxValue := 600;
+    fsLo.MaxValue := 600;
+    fsHiRange.MaxValue := 600;
+    fsLoRange.MaxValue := 600;
+
     fsHi.Value := round(fsHi.Value * TrndiAPI.toMgdl);
     fsLo.Value := round(fsLo.Value * TrndiAPI.toMgdl);
     fsHiRange.Value := round(fsHiRange.Value * TrndiAPI.toMgdl);
