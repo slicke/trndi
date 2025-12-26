@@ -1538,6 +1538,10 @@ begin
 end;
 
 procedure TfConf.rbUnitClick(Sender: TObject);
+  function RoundMMOL(const v: double): double;
+  begin
+    Result := round(v * TrndiAPI.toMMOL * 10) / 10;
+  end;
 begin
   if (Sender is TForm) or (rbUnit.ItemIndex = 0) then
   begin
@@ -1546,11 +1550,10 @@ begin
     fsHiRange.DecimalPlaces := 1;
     fsLoRange.DecimalPlaces := 1;
 
-    fsHi.Value := round(fsHi.Value * TrndiAPI.toMMOL * 10) / 10;
-    // Do the / 10 thing to keep the decimal
-    fsLo.Value := round(fsLo.Value * TrndiAPI.toMMOL * 10) / 10;
-    fsLoRange.Value := round(fsLoRange.Value * TrndiAPI.toMMOL * 10) / 10;
-    fsHiRange.Value := round(fsHiRange.Value * TrndiAPI.toMMOL * 10) / 10;
+    fsHi.Value := RoundMMOL(fsHi.Value);
+    fsLo.Value := RoundMMOL(fsLo.Value);
+    fsLoRange.Value := RoundMMOL(fsLoRange.Value);
+    fsHiRange.Value := RoundMMOL(fsHiRange.Value);
   end
   else
   begin
