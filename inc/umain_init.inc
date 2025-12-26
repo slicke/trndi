@@ -339,28 +339,28 @@ begin
   apiCreds := native.GetSetting('remote.creds');
 
   case native.GetSetting('remote.type') of
-  'NightScout':
+   API_NS:
     api := NightScout.Create(apiTarget, apiCreds, '');
-  'NightScout v3':
+  API_NS3:
     api := NightScout3.Create(apiTarget, apiCreds, '');
-  'Dexcom (USA)':
+  API_DEX_USA:
     api := Dexcom.Create(apiTarget, apiCreds, 'usa');
-  'Dexcom (Outside USA)':
+  API_DEX_EU:
     api := Dexcom.Create(apiTarget, apiCreds, 'world');
-  'xDrip':
+  API_XDRIP:
     api := xDrip.Create(apiTarget, apiCreds, '');
   {$ifdef DEBUG}
-  '* Debug Backend *':
+   API_D_DEBUG:
     api := DebugAPI.Create(apiTarget, apiCreds, '');
-  '* Debug Missing Backend *':
+   API_D_MISSING:
     api := DebugMissingAPI.Create(apiTarget, apiCreds, '');
-  '* Debug Perfect Backend *':
+   API_D_PERFECT:
     api := DebugPerfectAPI.Create(apiTarget, apiCreds, '');
-  '* Debug Custom Backend *':
+   API_D_CUSTOM:
     api := DebugCustomAPI.Create(apiTarget, apiCreds, '');
-  '* Debug Edge Backend *':
+   API_D_EDGE:
     api := DebugEdgeAPI.Create(apiTarget, apiCreds, '');
-  '* Debug First Reading Missing *':
+   API_D_FIRST:
     api := DebugFirstMissingAPI.Create(apiTarget, apiCreds, '');
   {$endif}
   else

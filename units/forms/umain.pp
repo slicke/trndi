@@ -2834,21 +2834,14 @@ begin
       fConf.cbSys.Items.Clear;
       // Populate available backends
       fConf.cbSys.Items.AddStrings([
-        'NightScout',
-        'NightScout v3',
-        'Dexcom (USA)',
-        'Dexcom (Outside USA)',
-        'xDrip'
+        API_NS,
+        API_NS3,
+        API_DEX_USA,
+        API_DEX_EU,
+        API_XDRIP
       ]);
       {$ifdef DEBUG}
-      fConf.cbSys.Items.AddStrings([
-        '* Debug Backend *',
-        '* Debug Missing Backend *',
-        '* Debug Perfect Backend *',
-        '* Debug Custom Backend *',
-        '* Debug Edge Backend *',
-        '* Debug First Reading Missing *'
-      ]);
+      fConf.cbSys.Items.AddStrings(API_DEBUG);
       {$endif}
     end;
 
