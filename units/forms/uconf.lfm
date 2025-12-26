@@ -17,10 +17,10 @@ object fConf: TfConf
     Height = 518
     Top = 11
     Width = 665
-    ActivePage = tsGeneral
+    ActivePage = tsTir
     Align = alClient
     BorderSpacing.Around = 5
-    TabIndex = 0
+    TabIndex = 3
     TabOrder = 0
     OnChange = pcMainChange
     object tsGeneral: TTabSheet
@@ -11438,6 +11438,7 @@ object fConf: TfConf
             Top = 0
             Width = 77
             DecimalPlaces = 0
+            MaxValue = 600
             TabOrder = 0
           end
           object lLounder1: TLabel
@@ -11453,6 +11454,7 @@ object fConf: TfConf
             Top = 0
             Width = 78
             DecimalPlaces = 0
+            MaxValue = 600
             TabOrder = 1
           end
         end
@@ -11527,6 +11529,7 @@ object fConf: TfConf
             Top = 0
             Width = 77
             DecimalPlaces = 0
+            MaxValue = 600
             TabOrder = 0
           end
           object lLounder: TLabel
@@ -11542,6 +11545,7 @@ object fConf: TfConf
             Top = 0
             Width = 78
             DecimalPlaces = 0
+            MaxValue = 600
             TabOrder = 1
           end
         end
