@@ -324,11 +324,27 @@ TfConf = class(TForm)
   procedure tsDisplayShow(Sender: TObject);
   procedure tsSystemShow(Sender: TObject);
 private
-
+  procedure getAPILabels(out pl1, pl2: string);
 public
   chroma: TRazerChromaBase;
 end;
 
+const
+  API_NS = 'NightScout';
+  API_NS3 = 'NightScout v3';
+  API_DEX_USA = 'Dexcom (USA)';
+  API_DEX_EU = 'Dexcom (Outside USA)';
+  API_XDRIP = 'xDrip';
+  {$ifdef DEBUG}
+    API_D_DEBUG =  '* Debug Backend *';
+    API_D_MISSING = '* Debug Missing Backend *';
+    API_D_PERFECT = '* Debug Perfect Backend *';
+    API_D_CUSTOM = '* Debug Custom Backend *';
+    API_D_EDGE = '* Debug Edge Backend *';
+    API_D_FIRST = '* Debug First Reading Missing *';
+
+    API_DEBUG: array of string = (API_D_DEBUG, API_D_MISSING, API_D_PERFECT, API_D_CUSTOM, API_D_EDGE, API_D_FIRST);
+{$endif}
 var
 tnative: TrndiNative;
 
@@ -953,68 +969,83 @@ begin
   btUserSave.Enabled := false; // Twice as the fields change during update
 end;
 
-procedure TfConf.cbSysChange(Sender: TObject);
+procedure TfConf.getAPILabels(out pl1, pl2: string);
+var
+  api: TrndiAPI;
 begin
-  gbOverride.Color := clDefault;
-  if not (sender is TfConf) then
+  case cbSys.Text of
+  API_NS:
   begin
-    if Pos('Dexcom', cbSys.Text) > 0 then
+    pl1 := NightScout.ParamLabel(1);
+    pl2 := NightScout.ParamLabel(2);
+  end;
+  API_NS3:
+  begin
+    pl1 := NightScout3.ParamLabel(1);
+    pl2 := NightScout3.ParamLabel(2);
+  end;
+  API_DEX_USA:
+  begin
+    pl1 := Dexcom.ParamLabel(1);
+    pl2 := Dexcom.ParamLabel(2);
+  end;
+  API_DEX_EU:
+  begin
+    pl1 := Dexcom.ParamLabel(1);
+    pl2 := Dexcom.ParamLabel(2);
+  end;
+  API_XDRIP:
+  begin
+    pl1 := xDrip.ParamLabel(1);
+    pl2 := xDrip.ParamLabel(2);
+  end;
+  {$ifdef DEBUG}
+  API_D_DEBUG,
+  API_D_MISSING,
+  API_D_PERFECT,
+  API_D_EDGE,
+  API_D_FIRST:
+  begin
+    pl1 := '<DEBUG IGNORED>';
+    pl2   := '<DEBUG IGNORED>';
+  end;
+   API_D_CUSTOM:
+   begin
+     pl1 := 'Show this Reading (mg/dL)';
+     pl2   := '<DEBUG IGNORED>';
+   end;
+    {$endif}
+  else begin
+    // Defaults from base class
+    Label15.Caption := TrndiAPI.ParamLabel(1);
+    lPass.Caption := TrndiAPI.ParamLabel(2);
+    end;
+   end;
+end;
+
+procedure TfConf.cbSysChange(Sender: TObject);
+  procedure WarnUnstableAPI;
+  begin
+    if (cbSys.Text = API_DEX_USA) or (cbSys.Text = API_DEX_EU) then
     begin
       gbOverride.Color := $00D3D2EE;
       ShowMessage(RS_DEX);
     end;
-    if Pos('Scout v3', cbSys.Text) > 0 then
+    if cbSys.Text = API_NS3 then
       ShowMessage(RS_BETA);
   end;
+
+var p1, p2: string;
+begin
+  gbOverride.Color := clDefault;
+  if not (sender is TfConf) then
+    WarnUnstableAPI;
   // Update parameter labels above edits based on backend
-  // Defaults from base class
-  Label15.Caption := TrndiAPI.ParamLabel(1);
-  lPass.Caption := TrndiAPI.ParamLabel(2);
+  getAPILabels(p1, p2);
+  label15.caption := p1;
+  lPass.Caption := p1;
 
 
-  case cbSys.Text of
-  'NightScout':
-  begin
-    Label15.Caption := NightScout.ParamLabel(1);
-    lPass.Caption := NightScout.ParamLabel(2);
-  end;
-  'NightScout v3':
-  begin
-    Label15.Caption := NightScout3.ParamLabel(1);
-    lPass.Caption := NightScout3.ParamLabel(2);
-  end;
-  'Dexcom (USA)':
-  begin
-    Label15.Caption := Dexcom.ParamLabel(1);
-    lPass.Caption := Dexcom.ParamLabel(2);
-  end;
-  'Dexcom (Outside USA)':
-  begin
-    Label15.Caption := Dexcom.ParamLabel(1);
-    lPass.Caption := Dexcom.ParamLabel(2);
-  end;
-  'xDrip':
-  begin
-    Label15.Caption := xDrip.ParamLabel(1);
-    lPass.Caption := xDrip.ParamLabel(2);
-  end;
-  {$ifdef DEBUG}
-  '* Debug Backend *',
-  '* Debug Missing Backend *',
-  '* Debug Perfect Backend *',
-  '* Debug Edge Backend *',
-  '* Debug First Reading Missing *':
-  begin
-    Label15.Caption := '<DEBUG IGNORED>';
-    lPass.Caption   := '<DEBUG IGNORED>';
-  end;
-   '* Debug Custom Backend *':
-   begin
-     label15.caption := 'Show this Reading (mg/dL)';
-     lPass.Caption   := '<DEBUG IGNORED>';
-   end;
-    {$endif}
-   end;
 end;
 
 procedure TfConf.cbUserClick(Sender: TObject);
@@ -1146,16 +1177,16 @@ var
   s: string;
 begin
   s := '';
-  if SameText(cbSys.Text, 'NightScout') then
+  if cbSys.Text = API_NS then
     s := RS_HELP_NS_V2
   else
-  if SameText(cbSys.Text, 'NightScout v3') then
+  if cbSys.Text = API_NS3 then
     s := RS_HELP_NS_V3
   else
   if Pos('Dexcom', cbSys.Text) > 0 then
     s := RS_HELP_DEX_REGION
   else
-  if SameText(cbSys.Text, 'xDrip') then
+  if cbSys.Text = API_XDRIP then
     s := RS_HELP_XDRIP
   else
   if cbSys.Text[1] = '*' then
@@ -1233,13 +1264,13 @@ procedure TfConf.bTestClick(Sender: TObject);
 var
   res: integer;
 begin
-  if SameText(cbSys.Text, 'NightScout') then
+  if cbSys.Text = API_NS then
     res := NightScout.testConnection(eAddr.text,ePass.text,'')
-  else if SameText(cbSys.Text, 'NightScout v3') then
+  else if cbSys.Text = API_NS3 then
     res := NightScout3.testConnection(eAddr.text,ePass.text,'')
-  else if SameText(cbSys.Text, 'Dexcom (USA)') then
+  else if cbSys.Text = API_DEX_USA then
     res := Dexcom.testConnection(eAddr.text,ePass.text,'usa')
-  else if SameText(cbSys.Text, 'Dexcom (Outside USA)') then
+  else if cbSys.Text = API_DEX_EU then
     res := Dexcom.testConnection(eAddr.text,ePass.text,'eu')
   else begin
     ShowMessage(RS_TEST_UNSUPPORTED);
