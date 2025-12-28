@@ -75,6 +75,9 @@ sudo apt install -y \
   In KDE:s menu, navigate to Utilities and find Trndi.
 
   ## Extra Notes
+
+  ### Power saving
+  You should disable power saving so that the Pi won't enter sleep mode!
   ### LightDM Bug
   There's a bug in the current Raspberry Pi OS that makes lightdm fail. To fix it, edit ```/etc/lightdm/lightdm.conf```, locate the line:
 ```

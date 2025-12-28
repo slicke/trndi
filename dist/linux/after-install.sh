@@ -52,10 +52,14 @@ fi
 
 # --- KDE Plasma plasmoid (system-wide install) ---
 # Plasma discovers widgets placed under /usr/share/plasma/plasmoids/<id>
-if [[ -d "$KDE_SRC" && -d "/usr/share/plasma" ]]; then
-  mkdir -p "$(dirname "$KDE_DST")"
-  rm -rf "$KDE_DST"
-  cp -a "$KDE_SRC" "$KDE_DST"
+if [[ -d "$KDE_SRC" ]]; then
+  # Check if KDE Plasma is installed by looking for common KDE components
+  if command -v plasmashell >/dev/null 2>&1 || [[ -d "/usr/share/plasma" ]] || [[ -d "/usr/share/kservices5" ]]; then
+    mkdir -p "$(dirname "$KDE_DST")"
+    rm -rf "$KDE_DST"
+    cp -a "$KDE_SRC" "$KDE_DST"
+    echo "KDE Plasma plasmoid installed to $KDE_DST"
+  fi
 fi
 
 # Note: enabling is per-user; users can enable via Extensions app.
