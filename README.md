@@ -156,8 +156,8 @@ If you find yourself having problems running Trndi, i.e., it will not start, you
 #### Any distro
 You can download them for any RPM/DEB distro in this [repo](https://github.com/davidbannon/libqt6pas/releases).
 
-#### Debian
-You can install the ```libqt6pas``` package on Debian-based distros via ```apt```.
+#### Debian / Raspbian
+You can install the ```libqt6pas6``` package on Debian-based distros via ```apt```.
 
 #### Fedora
 You can install the ```qt6pas``` package in ```DNF```.
@@ -166,7 +166,7 @@ You can install the ```qt6pas``` package in ```DNF```.
 You can install the ```qt6pas``` package.
 
 #### Others
-Look for ```qt6pas``` or ```libqt6-pas``` in your package manager, or search for ```libQt6Pas.so```.
+Look for ```qt6pas``` or ```libqt6-pas``` (or ```qt6pas6```) in your package manager, or search for ```libQt6Pas.so```.
 
 ## Settings storage
 Trndi stores settings per platform in the standard location:
