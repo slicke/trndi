@@ -96,13 +96,6 @@
     <BuildModes>
       <Item Name="No Ext (Release)" Default="True"/>
       <Item Name="Extensions (Debug)">
-        <MacroValues Count="5">
-          <Macro1 Name="LCLWidgetType" Value="qt6"/>
-          <Macro2 Name="LCLWidgetType" Value="qt6"/>
-          <Macro3 Name="LCLWidgetType" Value="qt6"/>
-          <Macro4 Name="LCLWidgetType" Value="qt6"/>
-          <Macro5 Name="LCLWidgetType" Value="qt6"/>
-        </MacroValues>
         <CompilerOptions>
           <Version Value="11"/>
           <PathDelim Value="\"/>
@@ -404,10 +397,48 @@
           </Other>
         </CompilerOptions>
       </Item>
-      <SharedMatrixOptions Count="3">
+      <Item Name="FPC Native (Debug)">
+        <MacroValues Count="1">
+          <Macro4 Name="LCLWidgetType" Value="fpgui"/>
+        </MacroValues>
+        <CompilerOptions>
+          <Version Value="11"/>
+          <PathDelim Value="\"/>
+          <Target>
+            <Filename Value="Trndi"/>
+          </Target>
+          <SearchPaths>
+            <IncludeFiles Value="$(ProjOutDir)"/>
+            <OtherUnitFiles Value="units\winutils;units\winutils\directx;units\nsutils;units\trndi\ext;units\forms;units\trndi\api;units\trndi;units\slicke;units\misc;units\misc\razer"/>
+            <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
+          </SearchPaths>
+          <CodeGeneration>
+            <SmartLinkUnit Value="True"/>
+            <Optimizations>
+              <OptimizationLevel Value="3"/>
+            </Optimizations>
+          </CodeGeneration>
+          <Linking>
+            <Debugging>
+              <DebugInfoType Value="dsDwarf3"/>
+            </Debugging>
+            <LinkSmart Value="True"/>
+            <Options>
+              <Win32>
+                <GraphicApplication Value="True"/>
+              </Win32>
+            </Options>
+          </Linking>
+          <Other>
+            <CustomOptions Value="-B"/>
+          </Other>
+        </CompilerOptions>
+      </Item>
+      <SharedMatrixOptions Count="4">
         <Item1 ID="755046395446" Modes="GTK2" Type="IDEMacro" MacroName="LCLWidgetType" Value="gtk2"/>
         <Item2 ID="979021082886" Modes="Qt6 (Release),Qt6 (Debug)" Type="IDEMacro" MacroName="LCLWidgetType" Value="qt6"/>
         <Item3 ID="684332631560" Modes="GTK3" Type="IDEMacro" MacroName="LCLWidgetType" Value="gtk3"/>
+        <Item4 ID="441506697152" Modes="FPC Native (Debug)" Type="IDEMacro" MacroName="LCLWidgetType" Value="fpgui"/>
       </SharedMatrixOptions>
     </BuildModes>
     <PublishOptions>

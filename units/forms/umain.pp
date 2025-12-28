@@ -2867,13 +2867,13 @@ begin
     {$if defined(X_PC)}
     fConf.lOS.Caption := GetLinuxDistro(distro) + ' ' + distro;
 
-    {$if defined(LCLQt6)}
-    fConf.lWidgetset.Caption := 'QT6 ' + qtVersion;
-    {$elseif defined(LCLGTK2)}
-    fConf.lWidgetset.Caption := 'GTK2';
-    {$elseif defined(LCLGTK3)}
-    fConf.lWidgetset.Caption := 'GTK3';
-    {$endif}
+      {$if defined(LCLQt6)}
+      fConf.lWidgetset.Caption := 'QT6 ' + qtVersion;
+      {$elseif defined(LCLGTK2)}
+      fConf.lWidgetset.Caption := 'GTK2';
+      {$elseif defined(LCLGTK3)}
+      fConf.lWidgetset.Caption := 'GTK3';
+      {$endif}
     {$elseif defined(X_MAC)}
     fConf.lOS.Caption := 'macOS';
     fConf.lWidgetset.Caption := 'Native Apple Coca';
