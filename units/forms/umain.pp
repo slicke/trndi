@@ -637,6 +637,7 @@ PredictShortMode: boolean = false;
 // 'small' or 'big' to control single-arrow prediction size
 PredictShortSize: integer = 1; // 1=small, 2=medium, 3=big
   // Show threshold lines (if false, only filled areas are drawn)
+semiTouchMode: boolean = false; // Disables some touch elements while on touch
 {$ifdef darwin}
 MacAppDelegate: TMyAppDelegate;
 upMenu: TMenuItem;
@@ -3700,7 +3701,7 @@ begin
       if SecondsBetween(Now, last_popup) > 2 then
       begin
         last_popup := now;
-        if not native.HasTouchScreen then begin
+        if ((not native.HasTouchScreen) or semiTouchMode) then begin
           sleep(100); // Let getshiftstate catch up
           Application.ProcessMessages;
           pmSettings.PopUp(p.X, p.Y);

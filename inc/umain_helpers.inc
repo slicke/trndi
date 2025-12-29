@@ -158,12 +158,18 @@ end;
 
 procedure ShowMessage(const str: string);
 begin
-  UXMessage(uxdOnForm, sSuccTitle, str, uxmtInformation, fBG);
+  if semiTouchMode then
+    UXMessage(uxdAuto, sSuccTitle, str, uxmtInformation, fBG)
+  else
+    UXMessage(uxdOnForm, sSuccTitle, str, uxmtInformation, fBG);
 end;
 
 procedure ShowMessage(const title, str: string);
 begin
-  UXMessage(uxdOnForm, title, str, uxmtInformation, fBG);
+  if semiTouchMode then
+    UXMessage(uxdAuto, title, str, uxmtInformation, fBG)
+  else
+    UXMessage(uxdOnForm, title, str, uxmtInformation, fBG);
 end;
 
 // Helper function to get validated position setting
