@@ -48,6 +48,14 @@ To make this work you must also set a limit on the number of readings fetched (d
 remote.max_result=400
 ```
 
+## Disable touch overrides
+To have touch screens display the normal:
+* Pop-up menu when long-pressing
+* Popup messages (not full screen OK dialogs)
+```ini
+ux.semi_touch=true
+``` 
+
 ## Resetting Trndi
 #### Delete all keys and Trndi will reset to factory-default settings
 <br><br>

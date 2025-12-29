@@ -526,6 +526,7 @@ begin
     userlocale.DecimalSeparator := GetCharSetting('locale.separator', '.');
     badge_adjust := GetIntSetting('ux.badge_size', 0) / 10;
     native.locale := userlocale;
+    semiTouchMode := GetBoolSetting('ux.semi_touch', false);
 
     fSplash.linfo.Caption := RS_INIT_LICENSE;
     // License check
