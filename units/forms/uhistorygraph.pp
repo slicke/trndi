@@ -654,8 +654,6 @@ begin
 end;
 
 procedure TfHistoryGraph.ShowReadingDetails(const Reading: BGReading);
-const
-  br = '<br>'; //Override LB
 var
   xval: integer;
   rssi, noise: string;
@@ -673,11 +671,11 @@ begin
     noise := RS_RH_UNKNOWN;
 
   ExtHTML(uxdAuto, RS_RH_READING, '<font size="4"><u></u>'+TimeToStr(Reading.date) +
-   '</font><font size="3">' + br+
+   '</font><font size="3">' + sHTMLLineBreak+
     StringReplace(Format(RS_HISTORY_ITEM,
     [Reading.format(FUnit, BG_MSG_SHORT, BGPrimary),
     Reading.format(FUnit, BG_MSG_SIG_SHORT, BGDelta),
-    Reading.trend.Img, rssi, noise, Reading.Source, Reading.sensor]), sLineBreak, '<br>', [rfReplaceAll]), [mbOK],uxmtInformation,12.5);
+    Reading.trend.Img, rssi, noise, Reading.Source, Reading.sensor]), sLineBreak, sHTMLLineBreak, [rfReplaceAll]), [mbOK],uxmtInformation,12.5);
 end;
 
 procedure TfHistoryGraph.SortPointsByTime;

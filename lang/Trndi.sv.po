@@ -1396,8 +1396,8 @@ msgstr "Lågt område stöds inte av källans gränssnitt"
 
 #: trndi.strings.rs_refresh
 #, object-pascal-format
-msgid "⟳ Updated: %s (next: %s)"
-msgstr "⟳ Uppdaterad: %s (Nästa: %s)"
+msgid "⟳ Updated: <b>%s</b> <i>(Next update: %s)</i>"
+msgstr "⟳ Uppdaterad: <b>%s</b> <i>(Nästa uppdatering: %s)</i>"
 
 #: trndi.strings.rs_restart_apply
 msgid "Trndi must be restarted for settings to take effect"
@@ -1759,6 +1759,10 @@ msgstr ""
 msgctxt "trndi.strings.sstackfailed"
 msgid "An error occurred, and the stacktrace could not be loaded. Showing backtrace."
 msgstr "Ett fel uppstod och stackspårningen kunde inte laddas. Visar bakåtspårning."
+
+#: trndi.strings.stransmitterinfo
+msgid "Transmitter information"
+msgstr "Sändarinformation"
 
 #: trndi.strings.stypeerrcapt
 msgctxt "trndi.strings.stypeerrcapt"
@@ -2151,4 +2155,3 @@ msgstr "Historikgraf"
 #, object-pascal-format
 msgid "Readings (%s)"
 msgstr "Avläsningar (%s)"
-

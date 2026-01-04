@@ -1962,14 +1962,13 @@ begin
   displayMsg := miRefresh.Caption;
 
   if lastReading.getRSSI(i) then
-    displayMsg += LineEnding + Format(sRSSI, [i]);
+    displayMsg += sHTMLLineBreak + Format(sRSSI, [i]);
   if lastReading.getNoise(i) then
-    displayMsg += LineEnding + Format(sNoise, [i]);
+    displayMsg += sHTMLLineBreak + Format(sNoise, [i]);
 
-  displayMsg += LineEnding + Format(sDevice, [lastReading.sensor]);
-  ;
+  displayMsg += sHTMLLineBreak + Format(sDevice, [lastReading.sensor]);
 
-  ShowMessage(displayMsg);
+  ExtHTML(uxdAuto, sTransmitterInfo, displayMsg, [mbOK],uxmtInformation);
 
 end;
 

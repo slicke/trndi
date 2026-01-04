@@ -1344,7 +1344,7 @@ msgstr ""
 
 #: trndi.strings.rs_refresh
 #, object-pascal-format
-msgid "⟳ Updated: %s (next: %s)"
+msgid "⟳ Updated: <b>%s</b> <i>(Next update: %s)</i>"
 msgstr ""
 
 #: trndi.strings.rs_restart_apply
@@ -1689,6 +1689,10 @@ msgstr ""
 #: trndi.strings.sstackfailed
 msgctxt "trndi.strings.sstackfailed"
 msgid "An error occurred, and the stacktrace could not be loaded. Showing backtrace."
+msgstr ""
+
+#: trndi.strings.stransmitterinfo
+msgid "Transmitter information"
 msgstr ""
 
 #: trndi.strings.stypeerrcapt
