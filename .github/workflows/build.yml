@@ -327,6 +327,24 @@ jobs:
             echo "Included public signing key in artifacts"
           fi
 
+          # ===================== BUILD APPIMAGE =====================
+          echo "Building AppImage..."
+          chmod +x dist/linux/build-appimage.sh
+          
+          # Set version for AppImage
+          export VERSION="${PKG_VERSION}"
+          
+          # Build AppImage (script handles architecture detection)
+          if [ "${{ matrix.arch }}" = "amd64" ]; then
+            dist/linux/build-appimage.sh x86_64
+            mv Trndi-x86_64.AppImage artifacts/
+          else
+            dist/linux/build-appimage.sh aarch64
+            mv Trndi-aarch64.AppImage artifacts/
+          fi
+          
+          echo "✓ AppImage build complete"
+
       # ===================== MACOS BUILDER =====================
       - name: Build on macOS
         if: matrix.os_target == 'macos'
@@ -492,6 +510,7 @@ jobs:
             TrndiSetup.exe
             artifacts/*.deb
             artifacts/*.rpm
+            artifacts/*.AppImage
           if-no-files-found: ignore
 
   # ===================== PUBLISH =====================
@@ -558,6 +577,16 @@ jobs:
             echo "### Linux (amd64 / x86_64)"
             echo "Linux computers running on amd64 processors (Extensions supported)"
             shopt -s nullglob globstar
+            
+            # AppImage
+            appimages=(./release-files/linux-amd64-build/**/*.AppImage)
+            if [ ${#appimages[@]} -gt 0 ]; then
+              for f in "${appimages[@]}"; do
+                echo "- **$(basename "$f")** — **Universal AppImage** (recommended for portability)"
+              done
+            fi
+            
+            # Portable ZIP
             files=(./release-files/linux-amd64-build/*.zip)
             if [ ${#files[@]} -eq 0 ]; then
               echo "- No Linux (amd64) releases for this build -"
@@ -566,6 +595,8 @@ jobs:
                 echo "- $(basename "$f") — Portable binary + languages"
               done
             fi
+            
+            # DEB packages
             debs=(./release-files/linux-amd64-build/**/*.deb)
             if [ ${#debs[@]} -eq 0 ]; then
               echo "- No Debian/Ubuntu (amd64) installer for this build -"
@@ -574,6 +605,8 @@ jobs:
                 echo "- $(basename "$f") — Ubuntu/Debian installer (amd64)"
               done
             fi
+            
+            # RPM packages
             rpms=(./release-files/linux-amd64-build/**/*.rpm)
             if [ ${#rpms[@]} -eq 0 ]; then
               echo "- No RPM (x86_64) installer for this build -"
@@ -588,6 +621,16 @@ jobs:
             echo "### Linux (arm64 / aarch64)"
             echo "Linux computers running on arm64 processors, including Raspberry Pi"
             shopt -s nullglob globstar
+            
+            # AppImage
+            appimages=(./release-files/linux-arm64-build/**/*.AppImage)
+            if [ ${#appimages[@]} -gt 0 ]; then
+              for f in "${appimages[@]}"; do
+                echo "- **$(basename "$f")** — **Universal AppImage** (recommended for portability)"
+              done
+            fi
+            
+            # Portable ZIP
             files=(./release-files/linux-arm64-build/*.zip)
             if [ ${#files[@]} -eq 0 ]; then
               echo "- No Linux (arm64) releases for this build -"
@@ -596,6 +639,8 @@ jobs:
                 echo "- $(basename "$f") — Portable binary + languages"
               done
             fi
+            
+            # DEB packages
             debs=(./release-files/linux-arm64-build/**/*.deb)
             if [ ${#debs[@]} -eq 0 ]; then
               echo "- No Debian/Ubuntu (arm64) installer for this build -"
@@ -604,6 +649,8 @@ jobs:
                 echo "- $(basename "$f") — Ubuntu/Debian installer (arm64)"
               done
             fi
+            
+            # RPM packages
             rpms=(./release-files/linux-arm64-build/**/*.rpm)
             if [ ${#rpms[@]} -eq 0 ]; then
               echo "- No RPM (aarch64) installer for this build -"
