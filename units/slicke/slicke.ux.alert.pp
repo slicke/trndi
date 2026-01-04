@@ -152,6 +152,12 @@ const
   mbUXHelp      = mbHelp;
   mbUXClose     = mbClose;
 
+  {**
+    @name System constants
+    @desc
+    Constants used for system-related things
+  }
+  sHTMLLineBreak = '<br>';
 type
   {** Emoji glyph used for icons. Typically a single widechar codepoint. }
   UXImage = widechar;
