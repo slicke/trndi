@@ -88,13 +88,26 @@ You can install Trndi via NuGet from GitHub Packages (or Chocolatey), see the [g
 
 ## Linux
 Download the appropriate package for your distribution from the [latest release](https://github.com/slicke/trndi/releases):
-- **AppImage** (Universal): `Trndi-x86_64.AppImage` or `Trndi-aarch64.AppImage` — Works on all distributions, download and run
-- **Debian/Ubuntu**: `trndi_VERSION_amd64.deb` or `trndi_VERSION_arm64.deb`
-- **Fedora/RHEL**: `trndi-VERSION.x86_64.rpm` or `trndi-VERSION.aarch64.rpm`
+- **Debian/Ubuntu**: `trndi_VERSION_amd64.deb` or `trndi_VERSION_arm64.deb` — **Recommended** for best desktop integration
+- **Fedora/RHEL**: `trndi-VERSION.x86_64.rpm` or `trndi-VERSION.aarch64.rpm` — **Recommended** for best desktop integration
+- **AppImage** (Universal): `Trndi-x86_64.AppImage` or `Trndi-aarch64.AppImage` — **Recommended** for Arch, openSUSE, and other distributions
 - **Portable**: `Trndi-linux-amd64.zip` or `Trndi-linux-arm64.zip`
 
-### Using AppImage (Recommended)
-The AppImage is the easiest way to run Trndi on any Linux distribution:
+### Package Recommendations
+
+**Use native packages (.deb/.rpm) when available:**
+- ✅ Better system integration
+- ✅ Desktop extensions (GNOME/KDE) install to system locations automatically
+- ✅ Automatic updates via package manager
+- ✅ Proper uninstallation support
+
+**Use AppImage for other distributions:**
+- ✅ Works on any Linux distribution
+- ✅ No installation required
+- ✅ Portable and self-contained
+- ℹ️ Desktop extensions need manual installation (see below)
+
+### Using AppImage
 ```bash
 # Download the AppImage for your architecture
 wget https://github.com/slicke/trndi/releases/latest/download/Trndi-x86_64.AppImage
@@ -106,13 +119,29 @@ chmod +x Trndi-x86_64.AppImage
 ./Trndi-x86_64.AppImage
 ```
 
-The AppImage includes all dependencies and works with the GNOME/KDE desktop extensions out of the box.
-
 ### Linux desktop indicators (optional)
 - **GNOME**: includes a GNOME Shell top-bar extension (`trndi-current@slicke.com`) that shows the current reading.
-- **KDE Plasma 6**: includes a panel widget (“Trndi Current”) you can add via *Add Widgets*.
+- **KDE Plasma 6**: includes a panel widget ("Trndi Current") you can add via *Add Widgets*.
 
 Both indicators read the same cache file: `${XDG_CACHE_HOME:-$HOME/.cache}/trndi/current.txt`.
+
+**Installation:**
+- **DEB/RPM packages**: Extensions install automatically to `/usr/local/share/trndi/`
+- **AppImage**: Extensions are bundled but require manual installation:
+  ```bash
+  # Extract AppImage to access extensions
+  ./Trndi-x86_64.AppImage --appimage-extract
+  
+  # GNOME: Copy to extensions directory
+  mkdir -p ~/.local/share/gnome-shell/extensions
+  cp -r squashfs-root/usr/share/trndi/gnome-shell-extension/trndi-current@slicke.com \
+    ~/.local/share/gnome-shell/extensions/
+  
+  # KDE: Copy to plasmoids directory
+  mkdir -p ~/.local/share/plasma/plasmoids
+  cp -r squashfs-root/usr/share/trndi/kde-plasmoid/com.slicke.trndi.current \
+    ~/.local/share/plasma/plasmoids/
+  ```
 
 ## macOS
 Download `Trndi-macos-silicon.dmg` from the [latest release](https://github.com/slicke/trndi/releases).
