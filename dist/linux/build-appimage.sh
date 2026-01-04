@@ -103,8 +103,18 @@ if [ ! -f "${APPIMAGETOOL}" ]; then
 fi
 
 # Build AppImage
+# In CI environments without FUSE, extract and run appimagetool directly
 echo "Building AppImage..."
-ARCH="${ARCH}" ./"${APPIMAGETOOL}" "${APP_DIR}" "${APP_NAME}-${ARCH}.AppImage"
+if [ ! -d "squashfs-root" ]; then
+  echo "Extracting appimagetool (FUSE not available in CI)..."
+  ./"${APPIMAGETOOL}" --appimage-extract >/dev/null 2>&1
+fi
+
+# Run appimagetool directly from extracted directory
+ARCH="${ARCH}" ./squashfs-root/AppRun "${APP_DIR}" "${APP_NAME}-${ARCH}.AppImage"
+
+# Clean up extracted appimagetool
+rm -rf squashfs-root
 
 echo "✓ AppImage created: ${APP_NAME}-${ARCH}.AppImage"
 ls -lh "${APP_NAME}-${ARCH}.AppImage"
