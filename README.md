@@ -88,9 +88,25 @@ You can install Trndi via NuGet from GitHub Packages (or Chocolatey), see the [g
 
 ## Linux
 Download the appropriate package for your distribution from the [latest release](https://github.com/slicke/trndi/releases):
+- **AppImage** (Universal): `Trndi-x86_64.AppImage` or `Trndi-aarch64.AppImage` — Works on all distributions, download and run
 - **Debian/Ubuntu**: `trndi_VERSION_amd64.deb` or `trndi_VERSION_arm64.deb`
 - **Fedora/RHEL**: `trndi-VERSION.x86_64.rpm` or `trndi-VERSION.aarch64.rpm`
 - **Portable**: `Trndi-linux-amd64.zip` or `Trndi-linux-arm64.zip`
+
+### Using AppImage (Recommended)
+The AppImage is the easiest way to run Trndi on any Linux distribution:
+```bash
+# Download the AppImage for your architecture
+wget https://github.com/slicke/trndi/releases/latest/download/Trndi-x86_64.AppImage
+
+# Make it executable
+chmod +x Trndi-x86_64.AppImage
+
+# Run it
+./Trndi-x86_64.AppImage
+```
+
+The AppImage includes all dependencies and works with the GNOME/KDE desktop extensions out of the box.
 
 ### Linux desktop indicators (optional)
 - **GNOME**: includes a GNOME Shell top-bar extension (`trndi-current@slicke.com`) that shows the current reading.

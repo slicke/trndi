@@ -1968,7 +1968,7 @@ begin
 
   displayMsg += sHTMLLineBreak + Format(sDevice, [lastReading.sensor]);
 
-  ExtHTML(uxdAuto, sTransmitterInfo, displayMsg, [mbOK],uxmtInformation);
+  ExtHTML(uxdAuto, sTransmitterInfo, displayMsg, [mbOK], uxmtInformation);
 
 end;
 
