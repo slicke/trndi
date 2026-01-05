@@ -56,12 +56,18 @@ uses
   {$IFDEF DARWIN}
   RazerChromaMac;
   {$ENDIF}
+  {$IFDEF HAIKU}
+  RazerChromaLinux;
+  {$ENDIF}  
 
 class function TRazerChromaFactory.CreateInstance: TRazerChromaBase;
 begin
   {$IFDEF LINUX}
   Result := TRazerChromaLinux.Create;
   {$ENDIF}
+  {$IFDEF HAIKU}
+  Result := TRazerChromaLinux.Create;
+  {$ENDIF}  
   {$IFDEF WINDOWS}
   Result := TRazerChromaWindows.Create;
   {$ENDIF}

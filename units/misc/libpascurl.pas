@@ -33,7 +33,7 @@ unit libpascurl;
 interface
 
 uses
-  Classes, SysUtils, Types{$IF DEFINED(LINUX) OR DEFINED(DARWIN)}, Sockets, BaseUnix{$ELSE}, WinSock
+  Classes, SysUtils, Types{$IF DEFINED(LINUX) OR DEFINED(DARWIN) OR DEFINED(HAIKU)}, Sockets, BaseUnix{$ELSE}, WinSock
   {$IFEND};
 
 {$IFDEF FPC}
@@ -48,6 +48,9 @@ const
     {$IFDEF LINUX}
       CurlLib = 'libcurl.so';
     {$ENDIF}
+    {$IFDEF HAIKU}
+      CurlLib = 'libcurl.so';
+    {$ENDIF}    
     {$IFDEF DARWIN}
       CurlLib = 'libcurl.dylib';
       {$LINKLIB libcurl}
