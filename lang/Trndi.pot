@@ -850,6 +850,10 @@ msgstr ""
 msgid "Unknown Widgetset"
 msgstr ""
 
+#: tfconf.lwm.caption
+msgid "Unknown Window Manager"
+msgstr ""
+
 #: tfconf.rbunit.caption
 msgid "Display Unit"
 msgstr ""
@@ -1654,10 +1658,6 @@ msgctxt "trndi.strings.snotrace"
 msgid "No stack trace available"
 msgstr ""
 
-#: trndi.strings.sproblematicfullscreen
-msgid "Your Window Manager might have issues with full screen modes. You may need to toggle \"no borders\" for a complete full screen!"
-msgstr ""
-
 #: trndi.strings.spromerrcapt
 #, object-pascal-format
 msgctxt "trndi.strings.spromerrcapt"
@@ -1900,6 +1900,19 @@ msgstr ""
 
 #: uconf.rs_override_ns
 msgid "You are using the NightScout backend, you should set these values on your server (if possible), as Trndi uses your NightScout preferences by default"
+msgstr ""
+
+#: uconf.rs_pos
+#, object-pascal-format
+msgid "This feature depends on your Window Manager (WM). %s may not support this feature."
+msgstr ""
+
+#: uconf.rs_pos_title
+msgid "Restricted Feature"
+msgstr ""
+
+#: uconf.rs_pos_unknown
+msgid "This feature depends on your Window Manager. It may not support this feature."
 msgstr ""
 
 #: uconf.rs_predictionwarn

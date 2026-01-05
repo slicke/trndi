@@ -96,6 +96,8 @@ type
   {** Identify the notification backend for Windows.
       Returns 'BurntToast' when the PowerShell module is available; otherwise 'none'. }
     class function getNotificationSystem: string; override;
+    {** Best-effort window manager name for Windows. }
+    class function GetWindowManagerName: string; override;
 
   {** Settings API overrides (Windows Registry)
     Keys are stored under HKCU\Software\Trndi\ with the same scoping rules
@@ -156,6 +158,17 @@ begin
     AProcess.Free;
     Output.Free;
   end;
+end;
+
+{------------------------------------------------------------------------------
+  GetWindowManagerName (Windows)
+  ------------------------------
+  Return a stable identifier for Windows. No separate window manager process
+  is exposed like on X11, so we return a human-friendly value.
+ ------------------------------------------------------------------------------}
+class function TTrndiNativeWindows.GetWindowManagerName: string;
+begin
+  Result := 'Windows Desktop';
 end;
 
 procedure TTrndiNativeWindows.FlashTimerTick(Sender: TObject);

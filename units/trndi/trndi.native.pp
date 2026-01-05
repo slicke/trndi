@@ -63,6 +63,15 @@ TrndiNative = TTrndiNativeLinux;
   // Tip: Use TrndiNative in your code, not platform-specific class names.
   // Example: native := TrndiNative.create('UA', 'https://...');
 
+// Convenience: expose a simple helper that returns the current window manager
+// name via the platform class. This keeps existing call-sites that expect a
+// plain function working.
+function GetWindowManagerName: string;
 implementation
+
+function GetWindowManagerName: string;
+begin
+  Result := TrndiNative.GetWindowManagerName;
+end;
 
 end.

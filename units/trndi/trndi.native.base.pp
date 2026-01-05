@@ -173,6 +173,9 @@ class var touchOverride: TTrndiBool;
     // Theme/Env
     {** Determine if the OS/theme uses a dark appearance. Platforms override. }
   class function isDarkMode: boolean; virtual;
+  {** Return a best-effort window manager name for the current platform.
+      Examples: 'openbox', 'WindowServer', 'Windows Desktop', or empty string when unknown. }
+  class function GetWindowManagerName: string; virtual;
   class function DetectTouchScreen(out multi: boolean): boolean;
     {** Detect if the device has a touchscreen and whether it's multi-touch. }
   class function HasTouchScreen(out multi: boolean): boolean;
@@ -472,6 +475,18 @@ begin
   else
     Result := DetectTouchScreen(mt);
   end;
+end;
+
+{------------------------------------------------------------------------------
+  GetWindowManagerName
+  --------------------
+  Default implementation returns empty string. Platform units override to
+  provide a sensible value (Linux: env/DesktopHint, Windows/macOS: fixed
+  names like 'Windows Desktop' / 'WindowServer').
+ ------------------------------------------------------------------------------}
+class function TTrndiNativeBase.GetWindowManagerName: string;
+begin
+  Result := '';
 end;
 
 {------------------------------------------------------------------------------

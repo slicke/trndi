@@ -110,9 +110,12 @@ public
   class function isNotificationSystemAvailable: boolean; override;
     {** Identify notification backend: 'gdbus' (Qt6 path) or 'notify-send' or 'none'. }
   class function getNotificationSystem: string; override;
+  {** Best-effort window manager name for Linux. }
+  class function GetWindowManagerName: string; override;
 
     {** Triggers when the tray icon is clicked }
   procedure trayClick(Sender: TObject);
+
 end;
 
 implementation
@@ -366,6 +369,19 @@ begin
   Result := EnvValue('XDG_CURRENT_DESKTOP');
   if Result = '' then
     Result := EnvValue('DESKTOP_SESSION');
+end;
+
+{------------------------------------------------------------------------------
+  GetWindowManagerName (Linux)
+  ------------------------------
+  Returns WINDOW_MANAGER env var or DesktopHint (XDG_CURRENT_DESKTOP / DESKTOP_SESSION).
+  Empty string when unknown.
+ ------------------------------------------------------------------------------}
+class function TTrndiNativeLinux.GetWindowManagerName: string;
+begin
+  Result := Trim(EnvValue('WINDOW_MANAGER'));
+  if Result = '' then
+    Result := Trim(DesktopHint);
 end;
 
 // True if S contains the substring "dark" (case-insensitive)
