@@ -69,6 +69,10 @@ kdebadge,
 Sockets,
 netdb,
 {$endif}
+{$ifdef HAIKU}
+Sockets,
+netdb,
+{$endif}
 {$ifdef Windows}
 winsock,
 {$endif}
@@ -650,6 +654,10 @@ DOT_OFFSET_RANGE: integer = 3; // Fine-tune vertical alignment of threshold line
 {$ifdef X_LINUXBSD}
 DOT_OFFSET_RANGE: integer = -15; // Fine-tune vertical alignment of threshold lines with dots
 {$endif}
+{$ifdef HAIKU}
+DOT_OFFSET_RANGE: integer = -15; // Fine-tune vertical alignment of threshold lines with dots
+{$endif}
+
 
 var
 last_popup: TDateTime = 0;
@@ -3471,7 +3479,7 @@ begin
   lTir.font := lAgo.Font;
   lTir.Height := lTir.Canvas.TextHeight(lTir.Caption);
   lTir.Width := lTir.Canvas.TextWidth(lTir.Caption);
-  {$ifdef LCLQt6}
+  {$if DEFINED(LCLQt6) AND DEFINED(X_LINUXBSD)}
   if isWSL then
     lTir.Width := 50;
   {$endif}
