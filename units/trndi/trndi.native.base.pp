@@ -778,7 +778,7 @@ end;
  ------------------------------------------------------------------------------}
 
 procedure TTrndiNativeBase.attention(topic, message: string);
-{$if  DEFINED(X_LINUXBSD) or DEFINED(HAIKU)}
+{$if  DEFINED(X_LINUXBSD)}
 function RunAndCapture(const Exec: string; const Params: array of string;
   out StdoutS, StderrS: string; out ExitCode: integer): boolean;
   var
@@ -981,6 +981,13 @@ procedure SendNotification(const title, msg: string);
     NSUserNotificationCenter.defaultUserNotificationCenter.deliverNotification(
       Notification);
     Notification.Release;
+  end;
+  {$else}
+  // Fallback for platforms without specific notification implementation
+  // (Haiku and other platforms should override the attention method)
+procedure SendNotification(const title, msg: string);
+  begin
+    // No-op: notification system not available on this platform
   end;
   {$endif}
 begin
