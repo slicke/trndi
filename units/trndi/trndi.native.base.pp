@@ -741,7 +741,7 @@ begin
   // For UI language, prefer the system preferred language list.
   Result := '';
   if (NSLocale.preferredLanguages <> nil) and (NSLocale.preferredLanguages.count > 0) then
-    Result := UTF8Encode(TNSString(NSLocale.preferredLanguages.objectAtIndex(0)).UTF8String);
+    Result := UTF8Encode(NSString(NSLocale.preferredLanguages.objectAtIndex(0)).UTF8String);
   if Result = '' then
     Result := UTF8Encode(NSLocale.currentLocale.localeIdentifier.UTF8String);
   Result := NormalizeLang(Result);
