@@ -186,8 +186,6 @@ sChangesApply = 'Apply this value when Trndi starts?';
 
 sReadingHere = 'Reading here: %s at %.2d:%.2d';
 
-sProblematicFullscreen = 'Your Window Manager might have issues with full screen modes. You may need to toggle "no borders" for a complete full screen!';
-
 implementation
 
 end.

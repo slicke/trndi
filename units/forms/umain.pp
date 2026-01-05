@@ -2881,6 +2881,7 @@ begin
     fConf.lOS.Caption := 'Windows'  + SysUtils.Win32MajorVersion.tostring + '.' + SysUtils.Win32MinorVersion.tostring + ' - Build ' +  Win32BuildNumber.ToString;
     fConf.lWidgetset.Caption := 'Native Windows';
     {$endif}
+    fConf.lWM.Caption := GetWindowManagerName;
     fConf.lArch.Caption := {$I %FPCTargetOS%} + '/' + {$I %FPCTARGETCPU%};
     // Show dialog (use safe helper that handles problematic WMs)
 

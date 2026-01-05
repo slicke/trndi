@@ -225,6 +225,7 @@ TfConf = class(TForm)
   lVal: TLabel;
   lVersion: TLabel;
   lWidgetset: TLabel;
+  lWM: TLabel;
   Panel10: TPanel;
   Panel13: TPanel;
   Panel14: TPanel;
@@ -295,6 +296,7 @@ TfConf = class(TForm)
   procedure bWebAPIClick(Sender: TObject);
   procedure cbCustChange(Sender: TObject);
   procedure cbCustRangeChange(Sender: TObject);
+  procedure cbPosChange(Sender: TObject);
   procedure cbPredictionsChange(Sender: TObject);
   procedure cbPredictShortSizeChange(Sender: TObject);
   procedure cbSysChange(Sender: TObject);
@@ -459,6 +461,10 @@ RS_GRAPH_ICON_GRAPH = 'Choose an icon for points in the graph';
 RS_GRAPH_ICON_GRAPH_DESC = 'This will be used for graph points';
 RS_GRAPH_ICON_CURRENT = 'Choose an icon for the current point in the graph';
 RS_GRAPH_ICON_CURRENT_DESC = 'This will be used for curent graph point';
+
+RS_POS_TITLE = 'Restricted Feature';
+RS_POS = 'This feature depends on your Window Manager (WM). %s may not support this feature.';
+RS_POS_UNKNOWN = 'This feature depends on your Window Manager. It may not support this feature.';
 
 var
 fConf: TfConf;
@@ -1416,6 +1422,19 @@ begin
   fsLoRange.Enabled := cbCustRange.Checked;
   if (cbCustRange.Checked) and (cbSys.Text = 'NightScout') then
     ShowMessage(RS_OVERRIDE_NS);
+end;
+
+procedure TfConf.cbPosChange(Sender: TObject);
+{$ifdef Unix}
+var
+  s: string;
+begin
+  s := GetWindowManagerName;
+  ExtHTML(uxdAuto, RS_POS_TITLE, IfThen(s = '', RS_POS_UNKNOWN, Format(RS_POS, [s])));
+
+{$else}
+begin
+{$endif}
 end;
 
 procedure TfConf.cbPredictionsChange(Sender: TObject);

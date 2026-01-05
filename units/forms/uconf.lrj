@@ -149,6 +149,7 @@
 {"hash":63,"name":"tfconf.bsysnotice.caption","sourcebytes":[63],"value":"?"},
 {"hash":63,"name":"tfconf.bwebapi.caption","sourcebytes":[63],"value":"?"},
 {"hash":164447705,"name":"tfconf.cbwebapi.caption","sourcebytes":[32,69,110,97,98,108,101,32,87,101,98,32,65,80,73],"value":" Enable Web API"},
+{"hash":140563458,"name":"tfconf.lwm.caption","sourcebytes":[85,110,107,110,111,119,110,32,87,105,110,100,111,119,32,77,97,110,97,103,101,114],"value":"Unknown Window Manager"},
 {"hash":207440883,"name":"tfconf.tsext.caption","sourcebytes":[69,120,116,101,110,115,105,111,110,115],"value":"Extensions"},
 {"hash":55712490,"name":"tfconf.lextcount.caption","sourcebytes":[69,120,116,101,110,115,105,111,110,115,32,99,111,117,110,116,58],"value":"Extensions count:"},
 {"hash":112012003,"name":"tfconf.groupbox2.caption","sourcebytes":[65,118,97,105,108,97,98,108,101,32,69,120,116,101,110,115,105,111,110,115],"value":"Available Extensions"},

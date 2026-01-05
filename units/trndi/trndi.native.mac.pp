@@ -83,6 +83,8 @@ type
     class function isNotificationSystemAvailable: boolean; override;
     {** Identify the notification backend on macOS ('NSUserNotification'). }
     class function getNotificationSystem: string; override;
+    {** Best-effort window manager name for macOS. }
+    class function GetWindowManagerName: string; override;
   end;
 
 implementation
@@ -102,6 +104,17 @@ begin
   // Note: This is synchronous; consider running in a background process
   // if you need to keep the UI responsive during long messages.
   RunCommand('/usr/bin/say', [Text], o);
+end;
+
+{------------------------------------------------------------------------------
+  GetWindowManagerName (macOS)
+  -----------------------------
+  Return the macOS window server identifier. Historically the macOS window
+  system is provided by WindowServer.
+ ------------------------------------------------------------------------------}
+class function TTrndiNativeMac.GetWindowManagerName: string;
+begin
+  Result := 'WindowServer';
 end;
 
 {------------------------------------------------------------------------------

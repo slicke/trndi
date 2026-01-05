@@ -867,6 +867,10 @@ msgstr "VARNING: Detta är en experimentell funktion! Lita inte på dessa värde
 msgid "Unknown Widgetset"
 msgstr "Okänt grafiksystem"
 
+#: tfconf.lwm.caption
+msgid "Unknown Window Manager"
+msgstr "Okänd fönsterhanterare"
+
 #: tfconf.rbunit.caption
 msgid "Display Unit"
 msgstr "Enhetstyp"
@@ -1721,10 +1725,6 @@ msgctxt "trndi.strings.snotrace"
 msgid "No stack trace available"
 msgstr "Ingen stackspårning finns"
 
-#: trndi.strings.sproblematicfullscreen
-msgid "Your Window Manager might have issues with full screen modes. You may need to toggle \"no borders\" for a complete full screen!"
-msgstr "Din fönsterhanterare kan ha problem med fullskärm. Du kan behöva slå på/av \"inga kanter\" för en fungerande fullskärm!"
-
 #: trndi.strings.spromerrcapt
 #, object-pascal-format
 msgctxt "trndi.strings.spromerrcapt"
@@ -2018,6 +2018,19 @@ msgstr ""
 #: uconf.rs_override_ns
 msgid "You are using the NightScout backend, you should set these values on your server (if possible), as Trndi uses your NightScout preferences by default"
 msgstr "Du använder NightScout, du bör sätta dessa värden på din server (om möjligt), eftersom Trndi plockar upp värdena som standard"
+
+#: uconf.rs_pos
+#, object-pascal-format
+msgid "This feature depends on your Window Manager (WM). %s may not support this feature."
+msgstr "Denna funktion beror på din fönsterhanterare ((WM). %s kanske inte stöder denna funktion."
+
+#: uconf.rs_pos_title
+msgid "Restricted Feature"
+msgstr "Begränsad funktion"
+
+#: uconf.rs_pos_unknown
+msgid "This feature depends on your Window Manager. It may not support this feature."
+msgstr "Denna funktion beror på din fönsterhanterare ((WM). Den kanske inte stöder denna funktion."
 
 #: uconf.rs_predictionwarn
 msgid "Trndi will try to predict future readings. This is experimental and potentially unsafe! Do not make any treatment decisions based on these values! This feature is used on your own risk and responsibility!"
