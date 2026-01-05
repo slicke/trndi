@@ -3785,7 +3785,7 @@ begin
   reading := lastReading; // Pick the most recent reading from the buffer
 
   // Consider data fresh if the latest reading is within the configured threshold (in minutes)
-  Result := MinutesBetween(Now, reading.date) <= DATA_FRESHNESS_THRESHOLD_MINUTES;
+  Result := MinutesBetween(Now, reading.date) <= native.GetIntSetting('system.fresh_threshold', DATA_FRESHNESS_THRESHOLD_MINUTES);
 
   if not Result then
   begin
@@ -3971,7 +3971,7 @@ begin
   // Write reading timestamp + freshness threshold for desktop indicators
   // (GNOME/KDE) so they can strike-through when data is old.
   native.WriteCurrentIndicatorCache(lVal.Caption, lastReading.date,
-    DATA_FRESHNESS_THRESHOLD_MINUTES);
+    native.GetIntSetting('system.fresh_threshold', DATA_FRESHNESS_THRESHOLD_MINUTES));
   native.done;
 
   if privacyMode then
@@ -4386,7 +4386,7 @@ begin
     pnWarnLast.Caption := RS_LAST_RECIEVE_NO;
 
   pnWarnLast.Caption := pnWarnLast.Caption + LineEnding +
-    Format(RS_LAST_RECIEVE_AGE, [DATA_FRESHNESS_THRESHOLD_MINUTES]);
+    Format(RS_LAST_RECIEVE_AGE, [native.GetIntSetting('system.fresh_threshold', DATA_FRESHNESS_THRESHOLD_MINUTES)]);
 
   // Set pnWarnLast font size relative to main font, but with bounds checking
   pnWarnLast.font.size := Max(8, Min(20, calculatedFontSize div 3));
@@ -4685,7 +4685,7 @@ var
   isFresh: boolean;
 begin
   isFresh := MinutesBetween(CurrentTime, LatestReading.date) <=
-    DATA_FRESHNESS_THRESHOLD_MINUTES;
+    native.GetIntSetting('system.fresh_threshold', DATA_FRESHNESS_THRESHOLD_MINUTES);
 
   if Assigned(TrendDots[10]) then
   begin
