@@ -16,45 +16,74 @@ export default class TrndiCurrentExtension extends Extension {
     this._timeoutId = null;
   }
 
+  _staleAfterSeconds() {
+    // Default hide threshold for the cache file mtime.
+    // If the cache provides an explicit threshold, we use that instead.
+    return 11 * 60;
+  }
+
   _cachePath() {
     const cacheDir = GLib.get_user_cache_dir();
     return GLib.build_filenamev([cacheDir, 'trndi', 'current.txt']);
   }
 
-  _readCurrentValue() {
+  _readCurrentState() {
     const path = this._cachePath();
     try {
       const file = Gio.File.new_for_path(path);
       if (!file.query_exists(null))
         return null;
 
-      // If the file hasn't been updated recently, treat it as "not running".
-      // This avoids showing a stale value if Trndi was killed/crashed.
+      // We'll decide whether to hide based on cache file mtime, using the
+      // freshness threshold (line 3) when available.
       const info = file.query_info('time::modified', Gio.FileQueryInfoFlags.NONE, null);
       const mtime = info.get_attribute_uint64('time::modified');
       const now = Math.floor(Date.now() / 1000);
-      // Ignore values older than 10 minutes.
-      if (mtime > 0 && (now - mtime) > 600)
-        return null;
+      const mtimeAge = (mtime > 0) ? (now - mtime) : 0;
 
       const stream = file.read(null);
       const dis = new Gio.DataInputStream({ base_stream: stream });
-      const [line] = dis.read_line_utf8(null);
+      const [line1] = dis.read_line_utf8(null);
+      const [line2] = dis.read_line_utf8(null);
+      const [line3] = dis.read_line_utf8(null);
       dis.close(null);
 
-      if (!line)
+      if (!line1)
         return null;
+
       // Compact ranges for panel fit: "70 - 180" -> "70-180".
-      const trimmed = line.trim().replace(/\s*-\s*/g, '-');
-      return trimmed.length > 0 ? trimmed : null;
+      const trimmed = line1.trim().replace(/\s*-\s*/g, '-');
+      const value = trimmed.length > 0 ? trimmed : null;
+      if (!value)
+        return null;
+
+      // Newer Trndi writes:
+      // line1: value
+      // line2: reading epoch seconds
+      // line3: freshness threshold minutes
+      let isStale = false;
+      const epoch = line2 ? parseInt(String(line2).trim(), 10) : NaN;
+      const freshMin = line3 ? parseInt(String(line3).trim(), 10) : NaN;
+      if (!Number.isNaN(epoch) && epoch > 0 && !Number.isNaN(freshMin) && freshMin > 0) {
+        const now = Math.floor(Date.now() / 1000);
+        isStale = (now - epoch) > (freshMin * 60);
+      }
+
+      // Hide when the cache file itself is old (e.g. Trndi not running).
+      // Use the freshness threshold when provided; otherwise fall back to 11 min.
+      const hideAfterSeconds = (!Number.isNaN(freshMin) && freshMin > 0) ? (freshMin * 60) : this._staleAfterSeconds();
+      if (mtimeAge > 0 && mtimeAge > hideAfterSeconds)
+        return null;
+
+      return { value, isStale };
     } catch (_) {
       return null;
     }
   }
 
   _tick() {
-    const v = this._readCurrentValue();
-    if (!v) {
+    const state = this._readCurrentState();
+    if (!state) {
       if (this._button) {
         this._button.destroy();
         this._button = null;
@@ -79,7 +108,17 @@ export default class TrndiCurrentExtension extends Extension {
       Main.panel.addToStatusArea('trndiCurrent', this._button, 0, 'right');
     }
 
-    this._label.set_text(v);
+    if (state.isStale) {
+      // Stale reading: strike-through but keep the last value (like the app).
+      try {
+        const safe = GLib.markup_escape_text(state.value, -1);
+        this._label.clutter_text.set_markup(`<span strikethrough="true">${safe}</span>`);
+      } catch (_) {
+        this._label.set_text(state.value);
+      }
+    } else {
+      this._label.set_text(state.value);
+    }
     return GLib.SOURCE_CONTINUE;
   }
 
