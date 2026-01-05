@@ -314,7 +314,7 @@ type
   }
   function ExtHTML(const dialogsize: TUXDialogSize;
                   const caption, html: string;
-                  buttons: TUXMsgDlgBtns = [mbAbort];
+                  buttons: TUXMsgDlgBtns = [mbOK];
                   const icon: UXImage = uxmtCog;
                   scale: single = 1): TModalResult;
 
@@ -323,7 +323,7 @@ type
   }
   function ExtText(const dialogsize: TUXDialogSize;
                   const caption, text: string;
-                  buttons: TUXMsgDlgBtns = [mbAbort];
+                  buttons: TUXMsgDlgBtns = [mbOK];
                   const icon: UXImage = uxmtCog;
                   scale: single = 1): TModalResult;
 
@@ -1881,7 +1881,7 @@ end;
 
 function ExtText(const dialogsize: TUXDialogSize;
                 const caption, text: string;
-                buttons: TUXMsgDlgBtns = [mbAbort];
+                buttons: TUXMsgDlgBtns = [mbOK];
                 const icon: UXImage = uxmtCog;
                 scale: single = 1): TModalResult;
 begin
@@ -1892,7 +1892,7 @@ end;
 function ExtHTML(
   const dialogsize: TUXDialogSize;
   const caption, html: string;
-  buttons: TUXMsgDlgBtns = [mbAbort];
+  buttons: TUXMsgDlgBtns = [mbOK];
   const icon: UXImage = uxmtCog;
   scale: single = 1
 ): TModalResult;
