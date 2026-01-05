@@ -91,8 +91,20 @@ PlasmoidItem {
             if (isNaN(epoch)) epoch = 0;
             if (isNaN(freshMin)) freshMin = 0;
 
+            // Accept seconds or milliseconds epoch; correct future timestamps
+            // from older writers by subtracting a rounded hour offset.
+            var nowS = Math.floor(now / 1000);
+            if (epoch > 1000000000000)
+                epoch = Math.floor(epoch / 1000);
+            if (epoch > (nowS + 60)) {
+                var delta = epoch - nowS;
+                var hours = Math.round(delta / 3600);
+                if (hours !== 0)
+                    epoch = epoch - (hours * 3600);
+            }
+
             root.readingStale = (epoch > 0 && freshMin > 0) ?
-                ((Math.floor(now / 1000) - epoch) > (freshMin * 60)) : false;
+                ((nowS - epoch) > (freshMin * 60)) : false;
 
             // Compact range formatting to improve fit in panel (e.g. "70 - 180" -> "70-180").
             if (value.indexOf("-") !== -1) {
