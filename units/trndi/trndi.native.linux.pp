@@ -875,6 +875,32 @@ var
   dval: double;
   sl: TStringList;
   existing: TStringList;
+
+  procedure SaveStringListAtomic(const TargetPath: string; const Lines: TStringList);
+  var
+    tmp: string;
+  begin
+    tmp := TargetPath + '.tmp';
+    try
+      Lines.SaveToFile(tmp);
+      // Atomic replace (same directory).
+      if not RenameFile(tmp, TargetPath) then
+      begin
+        // Fallback if target exists and rename fails.
+        try
+          DeleteFile(TargetPath);
+        except
+        end;
+        RenameFile(tmp, TargetPath);
+      end;
+    finally
+      try
+        if FileExists(tmp) then
+          DeleteFile(tmp);
+      except
+      end;
+    end;
+  end;
 begin
   cacheDir := GetUserCacheDirLinux;
   if cacheDir = '' then
@@ -919,7 +945,7 @@ begin
           sl.Add(existing[1]);
         if existing.Count > 2 then
           sl.Add(existing[2]);
-        sl.SaveToFile(filePath);
+        SaveStringListAtomic(filePath, sl);
       finally
         sl.Free;
       end;
@@ -936,6 +962,30 @@ var
   cacheDir, filePath, badgeText: string;
   dval: double;
   sl: TStringList;
+
+  procedure SaveStringListAtomic(const TargetPath: string; const Lines: TStringList);
+  var
+    tmp: string;
+  begin
+    tmp := TargetPath + '.tmp';
+    try
+      Lines.SaveToFile(tmp);
+      if not RenameFile(tmp, TargetPath) then
+      begin
+        try
+          DeleteFile(TargetPath);
+        except
+        end;
+        RenameFile(tmp, TargetPath);
+      end;
+    finally
+      try
+        if FileExists(tmp) then
+          DeleteFile(tmp);
+      except
+      end;
+    end;
+  end;
 begin
   cacheDir := GetUserCacheDirLinux;
   if cacheDir = '' then
@@ -967,7 +1017,7 @@ begin
       sl.Add(badgeText);
       sl.Add(IntToStr(ReadingEpoch));
       sl.Add(IntToStr(FreshMinutes));
-      sl.SaveToFile(filePath);
+      SaveStringListAtomic(filePath, sl);
     finally
       sl.Free;
     end;
