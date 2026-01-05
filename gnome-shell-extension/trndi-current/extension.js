@@ -110,13 +110,11 @@ export default class TrndiCurrentExtension extends Extension {
 
     if (state.isStale) {
       // Stale reading: strike-through but keep the last value (like the app).
-      try {
-        const safe = GLib.markup_escape_text(state.value, -1);
-        this._label.clutter_text.set_markup(`<span strikethrough="true">${safe}</span>`);
-      } catch (_) {
-        this._label.set_text(state.value);
-      }
+      // Use CSS to avoid markup quirks across GNOME Shell versions/themes.
+      this._label.set_style('text-decoration: line-through;');
+      this._label.set_text(state.value);
     } else {
+      this._label.set_style(null);
       this._label.set_text(state.value);
     }
     return GLib.SOURCE_CONTINUE;
