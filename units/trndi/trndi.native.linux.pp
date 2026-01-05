@@ -110,6 +110,10 @@ public
   class function isNotificationSystemAvailable: boolean; override;
     {** Identify notification backend: 'gdbus' (Qt6 path) or 'notify-send' or 'none'. }
   class function getNotificationSystem: string; override;
+  {** Check whether platform TTS is available (spd-say on Linux). }
+  class function SpeakAvailable: boolean; override;
+  {** Name of required software for TTS on this platform (e.g., 'spd-say'). }
+  class function SpeakSoftwareName: string; override;
   {** Best-effort window manager name for Linux. }
   class function GetWindowManagerName: string; override;
 
@@ -370,6 +374,26 @@ begin
   if Result = '' then
     Result := EnvValue('DESKTOP_SESSION');
 end;
+
+{------------------------------------------------------------------------------
+  SpeakAvailable (Linux)
+  ----------------------
+  Check for 'spd-say' on PATH which is used by TTrndiNativeLinux.Speak.
+ ------------------------------------------------------------------------------}
+class function TTrndiNativeLinux.SpeakAvailable: boolean;
+begin
+  Result := FindInPath('spd-say') <> '';
+end;
+
+{------------------------------------------------------------------------------
+  SpeakSoftwareName (Linux)
+  -------------------------
+  Name of the software used for TTS on Linux.
+ ------------------------------------------------------------------------------}
+class function TTrndiNativeLinux.SpeakSoftwareName: string;
+begin
+  Result := 'spd-say';
+end; 
 
 {------------------------------------------------------------------------------
   GetWindowManagerName (Linux)

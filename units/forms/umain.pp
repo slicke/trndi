@@ -2214,6 +2214,13 @@ end;
 
 procedure TfBG.miAnnounceClick(Sender: TObject);
 begin
+  if not native.SpeakAvailable then
+  begin
+    ShowMessage(Format(sAnnounceNotAvailable, [native.SpeakSoftwareName]));
+    native.SetBoolSetting('main.announce', false);
+    miAnnounce.Checked := false;
+    Exit;
+  end;
   miAnnounce.Checked := not miAnnounce.Checked;
   native.SetBoolSetting('main.announce', miAnnounce.Checked);
   native.speak(IfThen(miAnnounce.Checked, sAnnounceOn, sAnnounceOff));
