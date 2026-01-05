@@ -62,10 +62,24 @@ export default class TrndiCurrentExtension extends Extension {
       // line2: reading epoch seconds
       // line3: freshness threshold minutes
       let isStale = false;
-      const epoch = line2 ? parseInt(String(line2).trim(), 10) : NaN;
+      let epoch = line2 ? parseInt(String(line2).trim(), 10) : NaN;
       const freshMin = line3 ? parseInt(String(line3).trim(), 10) : NaN;
       if (!Number.isNaN(epoch) && epoch > 0 && !Number.isNaN(freshMin) && freshMin > 0) {
         const now = Math.floor(Date.now() / 1000);
+
+        // Accept both seconds and milliseconds epoch.
+        if (epoch > 1000000000000)
+          epoch = Math.floor(epoch / 1000);
+
+        // If epoch is in the future (timezone bug in old writers), try to
+        // correct by subtracting a whole-hour offset.
+        if (epoch > (now + 60)) {
+          const delta = epoch - now;
+          const hours = Math.round(delta / 3600);
+          if (hours !== 0)
+            epoch = epoch - (hours * 3600);
+        }
+
         isStale = (now - epoch) > (freshMin * 60);
       }
 
