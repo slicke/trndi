@@ -445,6 +445,10 @@ msgstr ""
 msgid "Show only trend arrows (short mode)"
 msgstr ""
 
+#: tfconf.cbpredictshortfullarrows.caption
+msgid "Use full arrow set (↑↑, ↑, ↗, →, ↘, ↓, ↓↓) in short mode"
+msgstr ""
+
 #: tfconf.cbpredictshortsize.text
 msgid "small"
 msgstr ""
@@ -1958,6 +1962,10 @@ msgstr ""
 
 #: uconf.rs_select_font_time
 msgid "Select a font for the time"
+msgstr ""
+
+#: uconf.rs_shortmode_full
+msgid "By default, Trndi only shows up/down/straight. You can enable the full range of arrows here - however you must realize that this is very experimental and potentially less accurate!"
 msgstr ""
 
 #: uconf.rs_test_fail

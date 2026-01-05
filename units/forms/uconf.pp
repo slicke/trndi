@@ -86,6 +86,8 @@ TfConf = class(TForm)
   cbMultiTouch: TCheckBox;
   cbMusicPause: TCheckBox;
   cbNotice: TCheckBox;
+  cbPredictShort: TCheckBox;
+  cbPredictShortFullArrows: TCheckBox;
   cbPredictShortSize: TComboBox;
   cbTirIcon: TCheckBox;
   cbWebAPI: TCheckBox;
@@ -108,7 +110,6 @@ TfConf = class(TForm)
   cbFlash: TCheckGroup;
   cbFlashHi: TCheckBox;
   cbPredictions: TCheckBox;
-  cbPredictShort: TCheckBox;
   cbTirBar: TColorButton;
   cbTirBarCustom: TColorButton;
   cbChroma: TCheckBox;
@@ -232,6 +233,7 @@ TfConf = class(TForm)
   Panel15: TPanel;
   Panel16: TPanel;
   Panel17: TPanel;
+  Panel18: TPanel;
   pnSysInfo: TPanel;
   pcColors: TPageControl;
   Panel1: TPanel;
@@ -298,6 +300,7 @@ TfConf = class(TForm)
   procedure cbCustRangeChange(Sender: TObject);
   procedure cbPosChange(Sender: TObject);
   procedure cbPredictionsChange(Sender: TObject);
+  procedure cbPredictShortFullArrowsChange(Sender: TObject);
   procedure cbPredictShortSizeChange(Sender: TObject);
   procedure cbSysChange(Sender: TObject);
   procedure cbUserClick(Sender: TObject);
@@ -466,6 +469,7 @@ RS_POS_TITLE = 'Restricted Feature';
 RS_POS = 'This feature depends on your Window Manager (WM). %s may not support this feature.';
 RS_POS_UNKNOWN = 'This feature depends on your Window Manager. It may not support this feature.';
 
+RS_SHORTMODE_FULL = 'By default, Trndi only shows up/down/straight. You can enable the full range of arrows here - however you must realize that this is very experimental and potentially less accurate!';
 var
 fConf: TfConf;
 
@@ -1441,6 +1445,12 @@ procedure TfConf.cbPredictionsChange(Sender: TObject);
 begin
   if (cbPredictions.Checked) and self.Showing then
     ShowMessage(RS_PredictionWarn);
+end;
+
+procedure TfConf.cbPredictShortFullArrowsChange(Sender: TObject);
+begin
+  if cbPredictShortFullArrows.Checked and (self.Showing) then
+    ShowMessage(RS_SHORTMODE_FULL);
 end;
 
 procedure TfConf.cbPredictShortSizeChange(Sender: TObject);

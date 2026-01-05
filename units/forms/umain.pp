@@ -636,6 +636,7 @@ PredictGlucoseReading: boolean = false;
 PredictShortMode: boolean = false;
 // 'small' or 'big' to control single-arrow prediction size
 PredictShortSize: integer = 1; // 1=small, 2=medium, 3=big
+PredictShortFullArrows: boolean = false; // Use full UTF arrow set in short mode
   // Show threshold lines (if false, only filled areas are drawn)
 semiTouchMode: boolean = false; // Disables some touch elements while on touch
 {$ifdef darwin}
@@ -2535,6 +2536,7 @@ procedure LoadUserSettings(f: TfConf);
       cbPredictions.Checked := GetBoolSetting('predictions.enable');
       cbWebAPI.Checked := GetBoolSetting('webserver.enable');
       cbPredictShort.Checked := GetBoolSetting('predictions.short');
+      cbPredictShortFullArrows.Checked := GetBoolSetting('predictions.short.fullarrows');
       // Load short arrow size
       // Load and clamp numeric size setting, mapping to combobox index
       sizeVal := native.GetIntSetting('predictions.short.size', 1);
@@ -2790,6 +2792,7 @@ procedure SaveUserSettings(f: TfConf);
       SetBoolSetting('predictions.enable', cbPredictions.Checked);
       SetBoolSetting('webserver.enable', cbWebAPI.Checked);
       SetBoolSetting('predictions.short', cbPredictShort.Checked);
+      SetBoolSetting('predictions.short.fullarrows', cbPredictShortFullArrows.Checked);
       if cbPredictShortSize.ItemIndex >= 0 then
         SetSetting('predictions.short.size', IntToStr(cbPredictShortSize.ItemIndex + 1));
       SetSetting('media.url_high', edMusicHigh.Text);
@@ -2923,6 +2926,7 @@ begin
     // Reload prediction settings
     PredictGlucoseReading := native.GetBoolSetting('predictions.enable', false);
     PredictShortMode := native.GetBoolSetting('predictions.short', false);
+    PredictShortFullArrows := native.GetBoolSetting('predictions.short.fullarrows', false);
     PredictShortSize := native.GetIntSetting('predictions.short.size', 1);
     if PredictShortSize < 1 then
       PredictShortSize := 1
@@ -4075,21 +4079,30 @@ begin
   // Format predictions with clock emoji, trend arrows, and values
   if PredictShortMode then
   begin
-    // Short mode: show only middle prediction with simplified arrow
+    // Short mode: show only middle prediction with arrow
     if closest10 >= 0 then
     begin
       delta := bgr[closest10].convert(mgdl) - lastReadingValue;
       trend := CalculateTrendFromDelta(delta);
-      // Map to simplified arrows: up=↗, flat=→, down=↘
-      case trend of
-      TdDoubleUp, TdSingleUp, TdFortyFiveUp:
-        lPredict.Caption := '↗';
-      TdFlat:
-        lPredict.Caption := '→';
-      TdFortyFiveDown, TdSingleDown, TdDoubleDown:
-        lPredict.Caption := '↘';
+      
+      if PredictShortFullArrows then
+      begin
+        // Use full UTF arrow set
+        lPredict.Caption := BG_TREND_ARROWS_UTF[trend];
+      end
       else
-        lPredict.Caption := '?';
+      begin
+        // Map to simplified arrows: up=↗, flat=→, down=↘
+        case trend of
+        TdDoubleUp, TdSingleUp, TdFortyFiveUp:
+          lPredict.Caption := '↗';
+        TdFlat:
+          lPredict.Caption := '→';
+        TdFortyFiveDown, TdSingleDown, TdDoubleDown:
+          lPredict.Caption := '↘';
+        else
+          lPredict.Caption := '?';
+        end;
       end;
     end
     else
