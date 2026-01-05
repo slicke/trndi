@@ -61,8 +61,10 @@ export default class TrndiCurrentExtension extends Extension {
       // Hide when the cache file itself is old (e.g. Trndi not running).
       // Important: this is NOT the same as reading freshness; keep it fixed at 11 minutes.
       const hideAfterSeconds = this._staleAfterSeconds();
-      if (mtimeAge > 0 && mtimeAge > hideAfterSeconds)
+      if (mtimeAge > 0 && mtimeAge > hideAfterSeconds) {
+        log(`[TrndiCurrent] File too old: mtime=${mtime}, age=${mtimeAge}s, threshold=${hideAfterSeconds}s`);
         return null;
+      }
 
       // Newer Trndi writes:
       // line1: value
@@ -90,8 +92,10 @@ export default class TrndiCurrentExtension extends Extension {
         isStale = (now - epoch) > (freshMin * 60);
       }
 
+      log(`[TrndiCurrent] Read: value=${value}, isStale=${isStale}, epoch=${epoch}, freshMin=${freshMin}, mtimeAge=${mtimeAge}`);
       return { value, isStale, epoch, freshMin };
-    } catch (_) {
+    } catch (e) {
+      log(`[TrndiCurrent] Error reading file: ${e}`);
       return null;
     }
   }
@@ -99,6 +103,7 @@ export default class TrndiCurrentExtension extends Extension {
   _tick() {
     const state = this._readCurrentState();
     if (!state) {
+      log('[TrndiCurrent] No state, hiding');
       if (this._button) {
         this._button.destroy();
         this._button = null;
