@@ -85,8 +85,8 @@ export default class TrndiCurrentExtension extends Extension {
       }
 
       // Hide when the cache file itself is old (e.g. Trndi not running).
-      // Use the freshness threshold when provided; otherwise fall back to 11 min.
-      const hideAfterSeconds = (!Number.isNaN(freshMin) && freshMin > 0) ? (freshMin * 60) : this._staleAfterSeconds();
+      // Important: this is NOT the same as reading freshness; keep it fixed.
+      const hideAfterSeconds = this._staleAfterSeconds();
       if (mtimeAge > 0 && mtimeAge > hideAfterSeconds)
         return null;
 

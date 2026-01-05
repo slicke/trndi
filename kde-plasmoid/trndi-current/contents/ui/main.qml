@@ -154,9 +154,8 @@ PlasmoidItem {
              "v=$(head -n1 \"$f\" 2>/dev/null); " +
              "t=$(sed -n 2p \"$f\" 2>/dev/null); " +
              "m=$(sed -n 3p \"$f\" 2>/dev/null); " +
-             // Hide if cache file is old (Trndi likely not running). Default 11 minutes.
-             "fm=${m:-11}; " +
-             "age=$((now-mt)); thr=$((fm*60)); " +
+             // Hide if cache file is old (Trndi likely not running). Fixed 11 minutes.
+             "age=$((now-mt)); thr=$((11*60)); " +
              "if [ $mt -gt 0 ] && [ $age -gt $thr ]; then exit 0; fi; " +
              "printf \"%s\\t%s\\t%s\\n\" \"$v\" \"$t\" \"$m\"; " +
                "fi'";
