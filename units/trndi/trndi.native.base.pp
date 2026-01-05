@@ -708,14 +708,45 @@ end;
   - Linux/Unix: LANG environment variable
  ------------------------------------------------------------------------------}
 class function TTrndiNativeBase.GetOSLanguage: string;
+  function NormalizeLang(const s: string): string;
+  var
+    v: string;
+    p: SizeInt;
+  begin
+    v := Trim(s);
+    v := StringReplace(v, '-', '_', [rfReplaceAll]);
+
+    // Strip encoding / modifiers if present (e.g. sv_SE.UTF-8, sv_SE@euro)
+    p := Pos('.', v);
+    if p > 0 then
+      v := Copy(v, 1, p - 1);
+    p := Pos('@', v);
+    if p > 0 then
+      v := Copy(v, 1, p - 1);
+
+    // Prefer just the language code for Lazarus translations (e.g. sv_SE -> sv)
+    p := Pos('_', v);
+    if p > 0 then
+      v := Copy(v, 1, p - 1);
+
+    Result := LowerCase(Trim(v));
+  end;
+
 begin
   {$IFDEF X_WIN}
   Result := GetLocaleInformation(LOCALE_SENGLANGUAGE);
   {$ELSE}
   {$IFDEF X_MAC}
-  result := NSLocale.currentLocale.localeIdentifier.utf8string;
+  // NSLocale.currentLocale.localeIdentifier reflects locale/region (can be en_SE).
+  // For UI language, prefer the system preferred language list.
+  Result := '';
+  if (NSLocale.preferredLanguages <> nil) and (NSLocale.preferredLanguages.count > 0) then
+    Result := UTF8Encode(TNSString(NSLocale.preferredLanguages.objectAtIndex(0)).UTF8String);
+  if Result = '' then
+    Result := UTF8Encode(NSLocale.currentLocale.localeIdentifier.UTF8String);
+  Result := NormalizeLang(Result);
   {$ELSE}
-  Result := SysUtils.GetEnvironmentVariable('LANG');
+  Result := NormalizeLang(SysUtils.GetEnvironmentVariable('LANG'));
   {$ENDIF}
   {$ENDIF}
 end;
