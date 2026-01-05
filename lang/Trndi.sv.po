@@ -461,6 +461,10 @@ msgstr "Visa glukosförutspåelser"
 msgid "Show only trend arrows (short mode)"
 msgstr "Visa endast trendpilar (short mode)"
 
+#: tfconf.cbpredictshortfullarrows.caption
+msgid "Use full arrow set (↑↑, ↑, ↗, →, ↘, ↓, ↓↓) in short mode"
+msgstr "Visa alla pilar (↑↑, ↑, ↗, →, ↘, ↓, ↓↓) i short mode"
+
 #: tfconf.cbpredictshortsize.text
 msgid "small"
 msgstr "liten"
@@ -1610,7 +1614,7 @@ msgstr "Lågt blodsocker"
 #: trndi.strings.sannouncenotavailable
 #, object-pascal-format
 msgid "The text-to-speech (TTS) software \"%s\" is not available."
-msgstr ""
+msgstr "Text-till-tal (TTS-mjukvaran) \"%s\" är inte tillgänglig."
 
 #: trndi.strings.sannounceoff
 msgid "No longer announcing readings aloud"
@@ -2077,6 +2081,10 @@ msgstr "Välj ett typsnitt för avläsningen"
 msgid "Select a font for the time"
 msgstr "Välj ett typsnitt för tiden"
 
+#: uconf.rs_shortmode_full
+msgid "By default, Trndi only shows up/down/straight. You can enable the full range of arrows here - however you must realize that this is very experimental and potentially less accurate!"
+msgstr "Som standard visar Trndi bara upp/ned/rakt. Du kan aktivera att hela mängden av pilar ska visas - dock måste du vara medveten om att detta är mycket experimentfullt och kan potentiellt vara mindre exakt!"
+
 #: uconf.rs_test_fail
 msgid "Could not connect!"
 msgstr "Kunde inte ansluta!"
@@ -2173,4 +2181,3 @@ msgstr "Historikgraf"
 #, object-pascal-format
 msgid "Readings (%s)"
 msgstr "Avläsningar (%s)"
-

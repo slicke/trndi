@@ -17,10 +17,10 @@ object fConf: TfConf
     Height = 518
     Top = 11
     Width = 665
-    ActivePage = tsSystem
+    ActivePage = tsDisplay
     Align = alClient
     BorderSpacing.Around = 5
-    TabIndex = 8
+    TabIndex = 2
     TabOrder = 0
     OnChange = pcMainChange
     object tsGeneral: TTabSheet
@@ -11090,17 +11090,6 @@ object fConf: TfConf
           TabOrder = 0
           OnChange = cbPredictionsChange
         end
-        object cbPredictShort: TCheckBox
-          Left = 15
-          Height = 20
-          Top = 30
-          Width = 640
-          Align = alTop
-          BorderSpacing.Left = 15
-          BorderSpacing.Bottom = 5
-          Caption = 'Show only trend arrows (short mode)'
-          TabOrder = 1
-        end
         object lWarnPredict: TLabel
           Left = 0
           Height = 16
@@ -11114,18 +11103,18 @@ object fConf: TfConf
         end
         object Panel13: TPanel
           Left = 0
-          Height = 41
-          Top = 55
+          Height = 66
+          Top = 30
           Width = 655
           Align = alClient
           BevelOuter = bvNone
-          ClientHeight = 41
+          ClientHeight = 66
           ClientWidth = 655
-          TabOrder = 2
+          TabOrder = 1
           object cbPredictShortSize: TComboBox
             Left = 126
-            Height = 31
-            Top = 0
+            Height = 24
+            Top = 32
             Width = 120
             Align = alLeft
             BorderSpacing.Left = 10
@@ -11144,8 +11133,8 @@ object fConf: TfConf
           end
           object lPredictShortSize: TLabel
             Left = 25
-            Height = 31
-            Top = 0
+            Height = 24
+            Top = 32
             Width = 91
             Align = alLeft
             BorderSpacing.Left = 25
@@ -11153,6 +11142,40 @@ object fConf: TfConf
             Caption = 'Trend arrow size:'
             Layout = tlCenter
             ParentFont = False
+          end
+          object Panel18: TPanel
+            Left = 0
+            Height = 32
+            Top = 0
+            Width = 655
+            Align = alTop
+            BevelOuter = bvNone
+            ClientHeight = 32
+            ClientWidth = 655
+            TabOrder = 1
+            object cbPredictShort: TCheckBox
+              Left = 15
+              Height = 27
+              Top = 0
+              Width = 227
+              Align = alLeft
+              BorderSpacing.Left = 15
+              BorderSpacing.Bottom = 5
+              Caption = 'Show only trend arrows (short mode)'
+              TabOrder = 0
+            end
+            object cbPredictShortFullArrows: TCheckBox
+              Left = 267
+              Height = 27
+              Top = 0
+              Width = 341
+              Align = alLeft
+              BorderSpacing.Left = 25
+              BorderSpacing.Bottom = 5
+              Caption = 'Use full arrow set (↑↑, ↑, ↗, →, ↘, ↓, ↓↓) in short mode'
+              TabOrder = 1
+              OnChange = cbPredictShortFullArrowsChange
+            end
           end
         end
       end
