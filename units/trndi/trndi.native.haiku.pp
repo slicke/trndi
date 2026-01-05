@@ -78,6 +78,8 @@ public
   class function SpeakSoftwareName: string; override;
   {** Window manager name for Haiku. }
   class function GetWindowManagerName: string; override;
+  {** Placeholder for dark mode toggling on Haiku. }
+  class function setDarkMode: boolean;
 end;
 
 implementation
@@ -399,6 +401,17 @@ end;
 class function TTrndiNativeHaiku.GetWindowManagerName: string;
 begin
   Result := 'Haiku Desktop';
+end;
+
+{------------------------------------------------------------------------------
+  setDarkMode
+  -----------
+  Placeholder for dark mode toggling on Haiku.
+ ------------------------------------------------------------------------------}
+class function TTrndiNativeHaiku.setDarkMode: boolean;
+begin
+  // No-op placeholder for Haiku
+  Result := false;
 end;
 
 end.
