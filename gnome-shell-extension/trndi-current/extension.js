@@ -58,6 +58,12 @@ export default class TrndiCurrentExtension extends Extension {
       if (!value)
         return null;
 
+      // Hide when the cache file itself is old (e.g. Trndi not running).
+      // Important: this is NOT the same as reading freshness; keep it fixed at 11 minutes.
+      const hideAfterSeconds = this._staleAfterSeconds();
+      if (mtimeAge > 0 && mtimeAge > hideAfterSeconds)
+        return null;
+
       // Newer Trndi writes:
       // line1: value
       // line2: reading epoch seconds
@@ -83,12 +89,6 @@ export default class TrndiCurrentExtension extends Extension {
 
         isStale = (now - epoch) > (freshMin * 60);
       }
-
-      // Hide when the cache file itself is old (e.g. Trndi not running).
-      // Important: this is NOT the same as reading freshness; keep it fixed.
-      const hideAfterSeconds = this._staleAfterSeconds();
-      if (mtimeAge > 0 && mtimeAge > hideAfterSeconds)
-        return null;
 
       return { value, isStale, epoch, freshMin };
     } catch (_) {
