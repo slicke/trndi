@@ -39,7 +39,7 @@
 
 unit uconf;
 
-{$mode ObjFPC}{$H+}
+{$I ../../inc/native.inc}
 
 interface
 
@@ -1429,7 +1429,7 @@ begin
 end;
 
 procedure TfConf.cbPosChange(Sender: TObject);
-{$ifdef Unix}
+{$ifdef X_LINUXBSD}
 var
   s: string;
 begin
@@ -1482,7 +1482,7 @@ begin
   lversion.left := lversion.left - 20;
 
   pcMain.ActivePage := tsGeneral;
-  {$ifdef darwin}
+  {$ifdef X_MAC}
   self.width := self.width + (self.width div 9);
   {$endif}
   {$ifdef lclqt6}
@@ -1501,12 +1501,12 @@ begin
   tnative.noFree := true;
   if tnative.isDarkMode then
     tnative.setDarkMode
-    {$ifdef windows}
+    {$ifdef X_WIN}
     (self.Handle)
   {$endif}
   ;
 
-  {$ifdef darwin}
+  {$ifdef X_MAC}
   edTray.Enabled := false; // No support
   {$endif}
 
