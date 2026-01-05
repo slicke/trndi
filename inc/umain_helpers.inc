@@ -252,6 +252,17 @@ begin
   begin
     Left := native.GetIntSetting('position.last.left', 10);
     Top := native.GetIntSetting('position.last.top', 10);
+    
+    // Validate position is within screen bounds
+    // Ensure at least 50 pixels of the window is visible
+    if Left < Screen.DesktopLeft - Width + 50 then
+      Left := Screen.DesktopLeft;
+    if Left > Screen.DesktopWidth - 50 then
+      Left := Screen.DesktopWidth - Width;
+    if Top < Screen.DesktopTop - Height + 50 then
+      Top := Screen.DesktopTop;
+    if Top > Screen.DesktopHeight - 50 then
+      Top := Screen.DesktopHeight - Height;
   end;
   end;
 
