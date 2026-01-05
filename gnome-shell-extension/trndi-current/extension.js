@@ -109,12 +109,43 @@ export default class TrndiCurrentExtension extends Extension {
     }
 
     if (state.isStale) {
-      // Stale reading: strike-through but keep the last value (like the app).
-      // Use CSS to avoid markup quirks across GNOME Shell versions/themes.
-      this._label.set_style('text-decoration: line-through;');
-      this._label.set_text(state.value);
+      // Stale reading: ideally strike-through but keep last value.
+      // Prefer Pango attributes (most reliable in GNOME Shell panel).
+      let struck = false;
+      try {
+        const attrs = new Pango.AttrList();
+        attrs.insert(Pango.attr_strikethrough_new(true));
+        this._label.clutter_text.set_attributes(attrs);
+        struck = true;
+      } catch (_) {
+      }
+
+      if (!struck) {
+        // Fallback 1: markup (some shells/themes disable/ignore it).
+        try {
+          const safe = GLib.markup_escape_text(state.value, -1);
+          this._label.clutter_text.set_markup(`<span strikethrough="true">${safe}</span>`);
+          struck = true;
+        } catch (_) {
+        }
+      }
+
+      if (!struck) {
+        // Fallback 2: show placeholder when we can't strike through.
+        try {
+          this._label.clutter_text.set_attributes(null);
+        } catch (_) {
+        }
+        this._label.set_text('--');
+      } else {
+        // Ensure plain text is up to date when using attributes.
+        this._label.set_text(state.value);
+      }
     } else {
-      this._label.set_style(null);
+      try {
+        this._label.clutter_text.set_attributes(null);
+      } catch (_) {
+      }
       this._label.set_text(state.value);
     }
     return GLib.SOURCE_CONTINUE;
