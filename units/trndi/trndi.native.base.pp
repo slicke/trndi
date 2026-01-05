@@ -982,6 +982,13 @@ procedure SendNotification(const title, msg: string);
       Notification);
     Notification.Release;
   end;
+  {$else}
+  // Fallback for platforms without specific notification implementation
+  // (Haiku and other platforms should override the attention method)
+procedure SendNotification(const title, msg: string);
+  begin
+    // No-op: notification system not available on this platform
+  end;
   {$endif}
 begin
   SendNotification(topic, message);
