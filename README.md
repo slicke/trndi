@@ -17,6 +17,7 @@
 	- [Windows](#windows)
 	- [Linux](#linux)
 	- [macOS](#macos)
+  - [Haiku](#haiku)
 - [Setup](#setup)
 - [Support](#support)
 - [Development](#development)
@@ -150,6 +151,31 @@ Download `Trndi-macos-silicon.dmg` from the [latest release](https://github.com/
 ```bash
 xattr -c /path/to/Trndi.app
 ```
+
+## Haiku
+Trndi can be built for Haiku OS using Lazarus. 
+
+**Requirements:**
+- Free Pascal Compiler: `pkgman install fpc`
+- Lazarus build tools: `pkgman install lazarus_bin`
+- OpenSSL for HTTPS support: `pkgman install openssl`
+
+**Building from source:**
+```bash
+# Install dependencies
+pkgman install fpc lazarus_bin openssl
+
+# Clone and build
+git clone https://github.com/slicke/trndi.git
+cd trndi
+lazbuild -B --widgetset=qt6 Trndi.lpi
+```
+
+**Features on Haiku:**
+- Native notification support (via `notify-send` if available)
+- Text-to-speech support (via `espeak` if available)
+- Settings stored in `~/config/settings/Trndi/trndi.ini`
+- HTTP/HTTPS support via FPC's TFPHTTPClient
 
 # Setup
 Right click or click/hold the reading (or "Setup" text) and choose settings to access settings.
