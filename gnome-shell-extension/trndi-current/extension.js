@@ -14,6 +14,7 @@ export default class TrndiCurrentExtension extends Extension {
     this._button = null;
     this._label = null;
     this._timeoutId = null;
+    this._lastDebugKey = null;
   }
 
   _staleAfterSeconds() {
@@ -89,7 +90,7 @@ export default class TrndiCurrentExtension extends Extension {
       if (mtimeAge > 0 && mtimeAge > hideAfterSeconds)
         return null;
 
-      return { value, isStale };
+      return { value, isStale, epoch, freshMin };
     } catch (_) {
       return null;
     }
@@ -128,6 +129,16 @@ export default class TrndiCurrentExtension extends Extension {
       this._label.set_text('--');
     } else {
       this._label.set_text(state.value);
+    }
+
+    // Low-noise debug: log only when value/stale changes.
+    try {
+      const dbg = `${state.value}|${state.isStale ? 'stale' : 'fresh'}|${state.epoch ?? ''}|${state.freshMin ?? ''}`;
+      if (dbg !== this._lastDebugKey) {
+        this._lastDebugKey = dbg;
+        log(`[TrndiCurrent] ${dbg}`);
+      }
+    } catch (_) {
     }
     return GLib.SOURCE_CONTINUE;
   }
