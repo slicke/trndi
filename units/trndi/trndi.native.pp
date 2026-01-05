@@ -39,6 +39,7 @@ uses
 trndi.native.base
 {$IF DEFINED(X_WIN)}, trndi.native.win
 {$ELSEIF DEFINED(X_MAC)}, trndi.native.mac
+{$ELSEIF DEFINED(HAIKU)}, trndi.native.haiku
 {$ELSE}, trndi.native.linux
 {$ENDIF}
 ;
@@ -56,6 +57,9 @@ TrndiNative = TTrndiNativeWindows;
 {$ELSEIF DEFINED(X_MAC)}
 TTrndiNativeMac = trndi.native.mac.TTrndiNativeMac;
 TrndiNative = TTrndiNativeMac;
+{$ELSEIF DEFINED(HAIKU)}
+TTrndiNativeHaiku = trndi.native.haiku.TTrndiNativeHaiku;
+TrndiNative = TTrndiNativeHaiku;
 {$ELSE}
 TTrndiNativeLinux = trndi.native.linux.TTrndiNativeLinux;
 TrndiNative = TTrndiNativeLinux;
