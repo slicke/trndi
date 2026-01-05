@@ -315,7 +315,7 @@ type
   function ExtHTML(const dialogsize: TUXDialogSize;
                   const caption, html: string;
                   buttons: TUXMsgDlgBtns = [mbOK];
-                  const icon: UXImage = uxmtCog;
+                  const icon: UXImage = uxmtInformation;
                   scale: single = 1): TModalResult;
 
   {**
@@ -324,7 +324,7 @@ type
   function ExtText(const dialogsize: TUXDialogSize;
                   const caption, text: string;
                   buttons: TUXMsgDlgBtns = [mbOK];
-                  const icon: UXImage = uxmtCog;
+                  const icon: UXImage = uxmtInformation;
                   scale: single = 1): TModalResult;
 
   {**
@@ -1882,7 +1882,7 @@ end;
 function ExtText(const dialogsize: TUXDialogSize;
                 const caption, text: string;
                 buttons: TUXMsgDlgBtns = [mbOK];
-                const icon: UXImage = uxmtCog;
+                const icon: UXImage = uxmtInformation;
                 scale: single = 1): TModalResult;
 begin
   result := ExtMsg(dialogsize, 'Trndi', caption, text, '', uxclWhite, uxclRed, buttons,icon, scale);
@@ -1893,7 +1893,7 @@ function ExtHTML(
   const dialogsize: TUXDialogSize;
   const caption, html: string;
   buttons: TUXMsgDlgBtns = [mbOK];
-  const icon: UXImage = uxmtCog;
+  const icon: UXImage = uxmtInformation;
   scale: single = 1
 ): TModalResult;
 begin
