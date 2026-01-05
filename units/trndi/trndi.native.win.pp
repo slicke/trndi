@@ -96,6 +96,10 @@ type
   {** Identify the notification backend for Windows.
       Returns 'BurntToast' when the PowerShell module is available; otherwise 'none'. }
     class function getNotificationSystem: string; override;
+    {** Check whether platform TTS is available. }
+    class function SpeakAvailable: boolean; override;
+    {** Name of the software used for speech on Windows (e.g., 'SAPI'). }
+    class function SpeakSoftwareName: string; override;
     {** Best-effort window manager name for Windows. }
     class function GetWindowManagerName: string; override;
 
@@ -161,6 +165,26 @@ begin
 end;
 
 {------------------------------------------------------------------------------
+  SpeakAvailable (Windows)
+  ------------------------
+  Windows supports native TTS via SAPI; assume available.
+ ------------------------------------------------------------------------------}
+class function TTrndiNativeWindows.SpeakAvailable: boolean;
+begin
+  Result := true;
+end;
+
+{------------------------------------------------------------------------------
+  SpeakSoftwareName (Windows)
+  ---------------------------
+  Name of the speech backend used on Windows.
+ ------------------------------------------------------------------------------}
+class function TTrndiNativeWindows.SpeakSoftwareName: string;
+begin
+  Result := 'SAPI';
+end;
+
+{------------------------------------------------------------------------------
   GetWindowManagerName (Windows)
   ------------------------------
   Return a stable identifier for Windows. No separate window manager process
@@ -169,7 +193,7 @@ end;
 class function TTrndiNativeWindows.GetWindowManagerName: string;
 begin
   Result := 'Windows Desktop';
-end;
+end; 
 
 procedure TTrndiNativeWindows.FlashTimerTick(Sender: TObject);
 var

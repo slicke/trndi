@@ -83,6 +83,10 @@ type
     class function isNotificationSystemAvailable: boolean; override;
     {** Identify the notification backend on macOS ('NSUserNotification'). }
     class function getNotificationSystem: string; override;
+    {** Check whether platform TTS is available. }
+    class function SpeakAvailable: boolean; override;
+    {** Name of the software used for speech on macOS (e.g., 'say'). }
+    class function SpeakSoftwareName: string; override;
     {** Best-effort window manager name for macOS. }
     class function GetWindowManagerName: string; override;
   end;
@@ -107,6 +111,26 @@ begin
 end;
 
 {------------------------------------------------------------------------------
+  SpeakAvailable (macOS)
+  ----------------------
+  macOS provides native TTS; assume available.
+ ------------------------------------------------------------------------------}
+class function TTrndiNativeMac.SpeakAvailable: boolean;
+begin
+  Result := true;
+end;
+
+{------------------------------------------------------------------------------
+  SpeakSoftwareName (macOS)
+  -------------------------
+  Name of the speech tool used on macOS.
+ ------------------------------------------------------------------------------}
+class function TTrndiNativeMac.SpeakSoftwareName: string;
+begin
+  Result := 'say';
+end;
+
+{------------------------------------------------------------------------------
   GetWindowManagerName (macOS)
   -----------------------------
   Return the macOS window server identifier. Historically the macOS window
@@ -115,7 +139,7 @@ end;
 class function TTrndiNativeMac.GetWindowManagerName: string;
 begin
   Result := 'WindowServer';
-end;
+end; 
 
 {------------------------------------------------------------------------------
   getURL

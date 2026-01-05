@@ -1540,6 +1540,11 @@ msgstr ""
 msgid "Blood sugar low"
 msgstr ""
 
+#: trndi.strings.sannouncenotavailable
+#, object-pascal-format
+msgid "The text-to-speech (TTS) software \"%s\" is not available."
+msgstr ""
+
 #: trndi.strings.sannounceoff
 msgid "No longer announcing readings aloud"
 msgstr ""

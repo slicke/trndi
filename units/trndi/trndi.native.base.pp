@@ -173,6 +173,10 @@ class var touchOverride: TTrndiBool;
     // Theme/Env
     {** Determine if the OS/theme uses a dark appearance. Platforms override. }
   class function isDarkMode: boolean; virtual;
+  {** Check whether native text-to-speech is available on this platform. }
+  class function SpeakAvailable: boolean; virtual;
+  {** Returns the name of the software used for speech on this platform (e.g., 'spd-say', 'SAPI', 'say'). }
+  class function SpeakSoftwareName: string; virtual;
   {** Return a best-effort window manager name for the current platform.
       Examples: 'openbox', 'WindowServer', 'Windows Desktop', or empty string when unknown. }
   class function GetWindowManagerName: string; virtual;
@@ -475,6 +479,28 @@ begin
   else
     Result := DetectTouchScreen(mt);
   end;
+end;
+
+{------------------------------------------------------------------------------
+  SpeakAvailable
+  --------------
+  Default value: assume TTS is available. Platform units should override
+  when they need to perform a runtime check (e.g., Linux checks for spd-say).
+ ------------------------------------------------------------------------------}
+class function TTrndiNativeBase.SpeakAvailable: boolean;
+begin
+  Result := true;
+end;
+
+{------------------------------------------------------------------------------
+  SpeakSoftwareName
+  -----------------
+  Default implementation returns empty string. Platform units override to
+  provide the name of the TTS tool used (e.g., 'spd-say' on Linux).
+ ------------------------------------------------------------------------------}
+class function TTrndiNativeBase.SpeakSoftwareName: string;
+begin
+  Result := '';
 end;
 
 {------------------------------------------------------------------------------

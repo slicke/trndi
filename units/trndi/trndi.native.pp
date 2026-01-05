@@ -67,11 +67,20 @@ TrndiNative = TTrndiNativeLinux;
 // name via the platform class. This keeps existing call-sites that expect a
 // plain function working.
 function GetWindowManagerName: string;
+
+// Convenience: expose a helper returning the TTS software name used by the
+// current platform (e.g., 'spd-say', 'SAPI', 'say').
+function GetSpeakSoftwareName: string;
 implementation
 
 function GetWindowManagerName: string;
 begin
   Result := TrndiNative.GetWindowManagerName;
+end;
+
+function GetSpeakSoftwareName: string;
+begin
+  Result := TrndiNative.SpeakSoftwareName;
 end;
 
 end.

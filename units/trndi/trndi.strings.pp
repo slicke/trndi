@@ -185,6 +185,7 @@ sChangesRemember = 'Remember setting?';
 sChangesApply = 'Apply this value when Trndi starts?';
 
 sReadingHere = 'Reading here: %s at %.2d:%.2d';
+sAnnounceNotAvailable = 'The text-to-speech (TTS) software "%s" is not available.';
 
 implementation
 
