@@ -216,6 +216,18 @@ class var touchOverride: TTrndiBool;
     DurationMS: integer = 10000; CycleMS: integer = 400); virtual;
     {** Stop any active badge flashing and restore a static badge. Base no-op. }
   procedure StopBadgeFlash; virtual;
+
+    // Desktop-indicator cache helpers (GNOME/KDE)
+    {**
+      Write extra metadata for desktop indicators that read the cache file
+      (e.g. GNOME top-bar / KDE plasmoid). Platforms may override.
+
+      @param(Value) The display value (same as badge text).
+      @param(ReadingTime) Timestamp of the underlying reading.
+      @param(FreshMinutes) Max age (minutes) before data is considered stale.
+    }
+  procedure WriteCurrentIndicatorCache(const Value: string;
+    const ReadingTime: TDateTime; FreshMinutes: integer); virtual;
     {** Set native window titlebar colors if supported. }
   class function SetTitleColor(form: THandle; bg, Text: TColor): boolean; virtual;
     {** Play an audio file using native facilities (safe file check included). }
@@ -370,6 +382,12 @@ end;
 procedure TTrndiNativeBase.StopBadgeFlash;
 begin
   // Base: nothing to stop.
+end;
+
+procedure TTrndiNativeBase.WriteCurrentIndicatorCache(const Value: string;
+  const ReadingTime: TDateTime; FreshMinutes: integer);
+begin
+  // Base: no-op. Platforms that expose indicator cache files override.
 end;
 
 {------------------------------------------------------------------------------

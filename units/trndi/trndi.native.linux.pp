@@ -26,7 +26,7 @@ interface
 uses
 Classes, SysUtils, Graphics, IniFiles, Dialogs,
 ExtCtrls, Forms, Math, LCLIntf, KDEBadge, trndi.native.base, FileUtil, Menus,
-libpascurl;
+libpascurl, DateUtils;
 
 type
   {!
@@ -78,6 +78,8 @@ public
   procedure StartBadgeFlash(const Value: string; badgeColor: TColor;
     DurationMS: integer = 10000; CycleMS: integer = 400); override;
   procedure StopBadgeFlash; override;
+  procedure WriteCurrentIndicatorCache(const Value: string;
+    const ReadingTime: TDateTime; FreshMinutes: integer); override;
     {** Placeholder for desktop-specific dark mode. Return False for now. }
   class function setDarkMode: boolean; // no-op placeholder
 
@@ -129,6 +131,8 @@ Process, Types, LCLType;
 
 // Used by destructor; implemented later in this unit.
 procedure WriteTrndiCurrentValueCache(const Value: string); forward;
+procedure WriteTrndiCurrentStateCache(const Value: string; ReadingEpoch: int64;
+  FreshMinutes: integer); forward;
 
 {------------------------------------------------------------------------------
   IsNotifySendAvailable
@@ -870,6 +874,7 @@ var
   cacheDir, filePath, badgeText: string;
   dval: double;
   sl: TStringList;
+  existing: TStringList;
 begin
   cacheDir := GetUserCacheDirLinux;
   if cacheDir = '' then
@@ -897,9 +902,71 @@ begin
 
   try
     ForceDirectories(ExtractFileDir(filePath));
+    existing := TStringList.Create;
+    try
+      // Preserve metadata lines (timestamp/threshold) if present.
+      try
+        if FileExists(filePath) then
+          existing.LoadFromFile(filePath);
+      except
+        // Ignore read errors; we'll overwrite with just the value.
+      end;
+
+      sl := TStringList.Create;
+      try
+        sl.Add(badgeText);
+        if existing.Count > 1 then
+          sl.Add(existing[1]);
+        if existing.Count > 2 then
+          sl.Add(existing[2]);
+        sl.SaveToFile(filePath);
+      finally
+        sl.Free;
+      end;
+    finally
+      existing.Free;
+    end;
+  except
+  end;
+end;
+
+procedure WriteTrndiCurrentStateCache(const Value: string; ReadingEpoch: int64;
+  FreshMinutes: integer);
+var
+  cacheDir, filePath, badgeText: string;
+  dval: double;
+  sl: TStringList;
+begin
+  cacheDir := GetUserCacheDirLinux;
+  if cacheDir = '' then
+    Exit;
+
+  filePath := IncludeTrailingPathDelimiter(cacheDir) + 'trndi' + PathDelim + 'current.txt';
+
+  if Value = '' then
+  begin
+    try
+      DeleteFile(filePath);
+    except
+    end;
+    Exit;
+  end;
+
+  badgeText := Value;
+  try
+    if TryStrToFloat(Value, dval, DefaultFormatSettings) then
+      badgeText := FormatFloat('0.0', dval, DefaultFormatSettings);
+  except
+    badgeText := Value;
+  end;
+
+  try
+    ForceDirectories(ExtractFileDir(filePath));
     sl := TStringList.Create;
     try
       sl.Add(badgeText);
+      sl.Add(IntToStr(ReadingEpoch));
+      sl.Add(IntToStr(FreshMinutes));
       sl.SaveToFile(filePath);
     finally
       sl.Free;
@@ -1196,6 +1263,28 @@ begin
   WriteTrndiCurrentValueCache(Value);
   
   SetTray(Value, badgecolor, badge_size_ratio, min_font_size);
+end;
+
+procedure TTrndiNativeLinux.WriteCurrentIndicatorCache(const Value: string;
+  const ReadingTime: TDateTime; FreshMinutes: integer);
+var
+  epoch: int64;
+begin
+  // Convert to Unix epoch seconds; 0 means "unknown".
+  try
+    if ReadingTime > 0 then
+      // ReadingTime is a local TDateTime; convert to UTC epoch.
+      epoch := DateTimeToUnix(LocalTimeToUniversal(ReadingTime))
+    else
+      epoch := 0;
+  except
+    epoch := 0;
+  end;
+
+  if FreshMinutes < 0 then
+    FreshMinutes := 0;
+
+  WriteTrndiCurrentStateCache(Value, epoch, FreshMinutes);
 end;
 
 // Overload: delegate to the full implementation with default parameters

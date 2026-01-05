@@ -3968,6 +3968,10 @@ begin
     ,badge_width,badge_font
     {$endif}
     );
+  // Write reading timestamp + freshness threshold for desktop indicators
+  // (GNOME/KDE) so they can strike-through when data is old.
+  native.WriteCurrentIndicatorCache(lVal.Caption, lastReading.date,
+    DATA_FRESHNESS_THRESHOLD_MINUTES);
   native.done;
 
   if privacyMode then

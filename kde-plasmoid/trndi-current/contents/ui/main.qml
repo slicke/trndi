@@ -11,6 +11,7 @@ PlasmoidItem {
     property string lastErrorText: ""
     property string lastGoodText: ""
     property double lastGoodEpochMs: 0
+    property bool readingStale: false
     // If reads temporarily fail (file:// hiccup), keep last known value briefly.
     property int keepLastGoodForMs: 30000
 
@@ -23,6 +24,7 @@ PlasmoidItem {
         elide: Text.ElideNone
         minPointSize: 5
         maxPointSize: 48
+        strikeout: root.readingStale
     }
 
     fullRepresentation: FittedLabel {
@@ -32,6 +34,7 @@ PlasmoidItem {
         elide: Text.ElideNone
         minPointSize: 8
         maxPointSize: 72
+        strikeout: root.readingStale
     }
 
     toolTipMainText: "Trndi"
@@ -66,24 +69,51 @@ PlasmoidItem {
             out = out.trim();
             err = err.trim();
 
-            // Compact range formatting to improve fit in panel (e.g. "70 - 180" -> "70-180").
-            if (out.indexOf("-") !== -1) {
-                out = out.replace(/\s*-\s*/g, "-");
+            // Format: "<value>\t<epochSeconds>\t<freshMinutes>" (epoch/fresh may be empty).
+            var value = out;
+            var epoch = 0;
+            var freshMin = 0;
+            var parts = null;
+            if (out.indexOf("\t") !== -1) {
+                parts = out.split("\t");
+            } else if (out.indexOf("\\t") !== -1) {
+                // Fallback if the command produced literal "\t".
+                parts = out.split("\\t");
             }
 
-            if (out.length > 0) {
-                root.readingText = out;
-                root.lastGoodText = out;
+            if (parts !== null) {
+                value = (parts.length > 0 ? String(parts[0]) : "");
+                epoch = (parts.length > 1 ? parseInt(parts[1], 10) : 0);
+                freshMin = (parts.length > 2 ? parseInt(parts[2], 10) : 0);
+            }
+
+            value = value.trim();
+            if (isNaN(epoch)) epoch = 0;
+            if (isNaN(freshMin)) freshMin = 0;
+
+            root.readingStale = (epoch > 0 && freshMin > 0) ?
+                ((Math.floor(now / 1000) - epoch) > (freshMin * 60)) : false;
+
+            // Compact range formatting to improve fit in panel (e.g. "70 - 180" -> "70-180").
+            if (value.indexOf("-") !== -1) {
+                value = value.replace(/\s*-\s*/g, "-");
+            }
+
+            if (value.length > 0) {
+                root.readingText = value;
+                root.lastGoodText = value;
                 root.lastGoodEpochMs = now;
                 root.lastErrorText = "";
             } else if (err.length > 0) {
+                root.readingStale = false;
                 root.lastErrorText = err;
                 if (root.lastGoodText.length > 0 && (now - root.lastGoodEpochMs) <= root.keepLastGoodForMs)
                     root.readingText = root.lastGoodText;
                 else
                     root.readingText = "";
             } else {
-                // No output means "no value" (file missing/stale) => clear.
+                // No output means "no value" (file missing) => clear.
+                root.readingStale = false;
                 root.readingText = "";
                 root.lastGoodText = "";
                 root.lastGoodEpochMs = 0;
@@ -100,12 +130,23 @@ PlasmoidItem {
 
     function readCmd() {
         // Read the same cache file as GNOME extension.
-        // Hide value if missing or stale (>10 minutes).
+        // Trndi (newer versions) write:
+        //   line1: value
+        //   line2: reading epoch seconds
+        //   line3: freshness threshold minutes
+        // Output a single line with tab-separated fields for easy parsing.
         return "bash -lc '" +
                "f=\"${XDG_CACHE_HOME:-$HOME/.cache}/trndi/current.txt\"; " +
                "if [ -f \"$f\" ]; then " +
-               "now=$(date +%s); m=$(stat -c %Y \"$f\" 2>/dev/null || echo 0); " +
-               "if [ $((now-m)) -le 600 ]; then head -n1 \"$f\"; fi; " +
+             "now=$(date +%s); mt=$(stat -c %Y \"$f\" 2>/dev/null || echo 0); " +
+             "v=$(head -n1 \"$f\" 2>/dev/null); " +
+             "t=$(sed -n 2p \"$f\" 2>/dev/null); " +
+             "m=$(sed -n 3p \"$f\" 2>/dev/null); " +
+             // Hide if cache file is old (Trndi likely not running). Default 11 minutes.
+             "fm=${m:-11}; " +
+             "age=$((now-mt)); thr=$((fm*60)); " +
+             "if [ $mt -gt 0 ] && [ $age -gt $thr ]; then exit 0; fi; " +
+             "printf \"%s\\t%s\\t%s\\n\" \"$v\" \"$t\" \"$m\"; " +
                "fi'";
     }
 }

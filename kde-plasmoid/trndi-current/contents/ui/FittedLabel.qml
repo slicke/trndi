@@ -7,6 +7,9 @@ Item {
     property alias text: label.text
     property alias color: label.color
 
+    // Allow callers to strike through the label (used for stale readings).
+    property bool strikeout: false
+
     property int minPointSize: 7
     property int maxPointSize: 48
 
@@ -56,6 +59,8 @@ Item {
         verticalAlignment: root.verticalAlignment
         elide: root.elide
         wrapMode: Text.NoWrap
+
+        font.strikeout: root.strikeout
 
         onTextChanged: root.recompute()
     }
