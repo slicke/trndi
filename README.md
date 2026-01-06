@@ -18,6 +18,7 @@
 	- [Linux](#linux)
 	- [macOS](#macos)
   - [Haiku](#haiku)
+  - [BSD](#bsd)
 - [Setup](#setup)
 - [Support](#support)
 - [Development](#development)
@@ -176,6 +177,32 @@ lazbuild -B --widgetset=qt6 Trndi.lpi
 - Text-to-speech support (via `espeak` if available)
 - Settings stored in `~/config/settings/Trndi/trndi.ini`
 - HTTP/HTTPS support via FPC's TFPHTTPClient
+
+## BSD
+Trndi can be built for FreeBSD, OpenBSD, and NetBSD using Lazarus.
+
+**Requirements:**
+- Free Pascal Compiler
+- Lazarus build tools
+- libcurl for HTTP/HTTPS support
+- OpenSSL
+
+**Building from source:**
+```bash
+# Install dependencies (FreeBSD example)
+pkg install fpc lazarus curl openssl
+
+# Clone and build
+git clone https://github.com/slicke/trndi.git
+cd trndi
+lazbuild -B --widgetset=qt6 Trndi.lpi
+```
+
+**Features on BSD:**
+- Native notification support (via `notify-send` if available)
+- Text-to-speech support (via `espeak` if available)
+- Settings stored in `~/.config/trndi/trndi.ini`
+- HTTP/HTTPS support via libcurl
 
 # Setup
 Right click or click/hold the reading (or "Setup" text) and choose settings to access settings.
