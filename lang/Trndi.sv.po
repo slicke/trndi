@@ -481,6 +481,10 @@ msgstr "Kom ihåg fönsterstorlek"
 msgid "NightScout"
 msgstr "NightScout"
 
+#: tfconf.cbtimestamp.caption
+msgid "Show timestamp (instead of minutes ago)"
+msgstr "Visa tidpunkt (istället för minuter sedan)"
+
 #: tfconf.cbtir.caption
 msgid "Include full high/low in time-in-range, not just the custom range"
 msgstr "Inkludera hela hög/låg som tid-i-målområde, inte bara föredraget område"
@@ -731,6 +735,10 @@ msgstr "Enheterna kommer pulsera i rött vid högt och blått vid lågt"
 #: tfconf.label32.caption
 msgid "NOTE: Razer Synapse required on Windows; OpenRazer on Linux. No macOS support at this time."
 msgstr "OBS: Razer Synapse krävs på Windows; OpenRazer på Linux. Inget stöd för macOS just nu."
+
+#: tfconf.label33.caption
+msgid "Personalization"
+msgstr "Personalisering"
 
 #: tfconf.label4.caption
 msgid "Window start-up position"

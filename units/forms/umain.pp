@@ -2716,6 +2716,7 @@ procedure SetupExtensions(f: TfConf);
       eExt.Enabled := false;
       {$endif}
       cbPrivacy.Checked := GetBoolSetting('ext.privacy');
+      cbTimeStamp.Checked := GetBoolSetting('display.timestamp');
     end;
   end;
 
@@ -2770,6 +2771,7 @@ procedure SaveUserSettings(f: TfConf);
       SetSetting('remote.creds', ePass.Text);
       SetSetting('unit', IfThen(rbUnit.ItemIndex = 0, 'mmol', 'mgdl'));
       SetBoolSetting('ext.privacy', cbPrivacy.Checked);
+      SetBoolSetting('display.timestamp', cbTimeStamp.Checked);
 
       SetSetting('system.fresh_threshold', IntToStr(spTHRESHOLD.Value));
 
@@ -3189,6 +3191,8 @@ procedure TfBG.tAgoTimer(Sender: TObject);
 var
   d: TDateTime;
   min: int64;
+  showTimestamp: boolean;
+  timeStr: string;
 begin
   if firstboot then
     exit; // Dont run on first boot
@@ -3198,12 +3202,28 @@ begin
   else
   try
     d := lastReading.date; // Last reading time
-    min := MilliSecondsBetween(Now, d) div MILLIS_PER_MINUTE;  // Minutes since last
-    {$ifndef lclgtk2}// UTF support IS LIMITED
-    lAgo.Caption := '🕑 ' + Format(RS_LAST_UPDATE, [min]);
-    {$else}
-    lAgo.Caption := '⌚ ' + Format(RS_LAST_UPDATE, [min]);
-    {$endif}
+    showTimestamp := native.GetBoolSetting('display.timestamp');
+    
+    if showTimestamp then
+    begin
+      // Show timestamp in HH:MM format
+      timeStr := FormatDateTime('hh:nn', d);
+      {$ifndef lclgtk2}// UTF support IS LIMITED
+      lAgo.Caption := '🕑 ' + timeStr;
+      {$else}
+      lAgo.Caption := '⌚ ' + timeStr;
+      {$endif}
+    end
+    else
+    begin
+      // Show minutes ago
+      min := MilliSecondsBetween(Now, d) div MILLIS_PER_MINUTE;  // Minutes since last
+      {$ifndef lclgtk2}// UTF support IS LIMITED
+      lAgo.Caption := '🕑 ' + Format(RS_LAST_UPDATE, [min]);
+      {$else}
+      lAgo.Caption := '⌚ ' + Format(RS_LAST_UPDATE, [min]);
+      {$endif}
+    end;
   except
     lAgo.Caption := '🕑 ' + RS_COMPUTE_FAILED_AGO;
   end;
