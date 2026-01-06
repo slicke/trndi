@@ -69,6 +69,11 @@ kdebadge,
 Sockets,
 netdb,
 {$endif}
+{$ifdef BSD}
+kdebadge,
+Sockets,
+netdb,
+{$endif}
 {$ifdef HAIKU}
 Sockets,
 netdb,
