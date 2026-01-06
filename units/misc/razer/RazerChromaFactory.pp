@@ -59,6 +59,9 @@ uses
   {$IFDEF HAIKU}
   RazerChromaLinux;
   {$ENDIF}  
+  {$IFDEF BSD}
+  RazerChromaLinux;
+  {$ENDIF} 
 
 class function TRazerChromaFactory.CreateInstance: TRazerChromaBase;
 begin
