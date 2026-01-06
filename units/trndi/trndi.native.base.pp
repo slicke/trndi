@@ -982,7 +982,7 @@ procedure SendNotification(const title, msg: string);
       Notification);
     Notification.Release;
   end;
-  {$else}
+  {$elseif not (DEFINED(X_LINUXBSD) or DEFINED(BSD) or DEFINED(X_WIN))}
   // Fallback for platforms without specific notification implementation
   // (Haiku and other platforms should override the attention method)
 procedure SendNotification(const title, msg: string);
