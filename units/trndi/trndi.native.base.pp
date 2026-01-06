@@ -778,7 +778,7 @@ end;
  ------------------------------------------------------------------------------}
 
 procedure TTrndiNativeBase.attention(topic, message: string);
-{$if  DEFINED(X_LINUXBSD)}
+{$if  DEFINED(X_LINUXBSD) or DEFINED(BSD)}
 function RunAndCapture(const Exec: string; const Params: array of string;
   out StdoutS, StderrS: string; out ExitCode: integer): boolean;
   var
