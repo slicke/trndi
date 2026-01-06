@@ -465,6 +465,10 @@ msgstr ""
 msgid "NightScout"
 msgstr ""
 
+#: tfconf.cbtimestamp.caption
+msgid "Show timestamp (instead of minutes ago)"
+msgstr ""
+
 #: tfconf.cbtir.caption
 msgid "Include full high/low in time-in-range, not just the custom range"
 msgstr ""
@@ -713,6 +717,10 @@ msgstr ""
 
 #: tfconf.label32.caption
 msgid "NOTE: Razer Synapse required on Windows; OpenRazer on Linux. No macOS support at this time."
+msgstr ""
+
+#: tfconf.label33.caption
+msgid "Personalization"
 msgstr ""
 
 #: tfconf.label4.caption

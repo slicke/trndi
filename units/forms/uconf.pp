@@ -99,6 +99,7 @@ TfConf = class(TForm)
   cbPrivacy: TCheckBox;
   cbSize: TCheckBox;
   cbSys: TComboBox;
+  cbTimeStamp: TCheckBox;
   cbTIR: TCheckBox;
   cbTirColorBgCustom: TRadioButton;
   cbTirColor: TRadioButton;
@@ -176,6 +177,7 @@ TfConf = class(TForm)
   Label30: TLabel;
   Label31: TLabel;
   Label32: TLabel;
+  Label33: TLabel;
   lbExtensions: TListBox;
   lCopyright: TLabel;
   lExtCopyright: TLabel;

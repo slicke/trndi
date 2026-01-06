@@ -94,6 +94,8 @@
 {"hash":223767806,"name":"tfconf.label4.caption","sourcebytes":[87,105,110,100,111,119,32,115,116,97,114,116,45,117,112,32,112,111,115,105,116,105,111,110],"value":"Window start-up position"},
 {"hash":119927769,"name":"tfconf.cbprivacy.caption","sourcebytes":[80,114,105,118,97,99,121,32,77,111,100,101,32,40,72,105,100,101,32,110,117,109,98,101,114,41],"value":"Privacy Mode (Hide number)"},
 {"hash":63,"name":"tfconf.bprivacyhelp.caption","sourcebytes":[63],"value":"?"},
+{"hash":181247609,"name":"tfconf.cbtimestamp.caption","sourcebytes":[83,104,111,119,32,116,105,109,101,115,116,97,109,112,32,40,105,110,115,116,101,97,100,32,111,102,32,109,105,110,117,116,101,115,32,97,103,111,41],"value":"Show timestamp (instead of minutes ago)"},
+{"hash":179224238,"name":"tfconf.label33.caption","sourcebytes":[80,101,114,115,111,110,97,108,105,122,97,116,105,111,110],"value":"Personalization"},
 {"hash":139375349,"name":"tfconf.label6.caption","sourcebytes":[76,97,110,103,117,97,103,101],"value":"Language"},
 {"hash":248929013,"name":"tfconf.cbsize.caption","sourcebytes":[82,101,109,101,109,98,101,114,32,119,105,110,100,111,119,32,115,105,122,101],"value":"Remember window size"},
 {"hash":171377978,"name":"tfconf.label1.caption","sourcebytes":[82,101,97,100,105,110,103,115,32,97,114,101,32,111,117,116,100,97,116,101,100,32,97,102,116,101,114,32,40,109,105,110,117,116,101,115,41,58],"value":"Readings are outdated after (minutes):"},
