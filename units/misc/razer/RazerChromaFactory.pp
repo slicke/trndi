@@ -60,7 +60,7 @@ uses
   RazerChromaLinux;
   {$ENDIF}  
   {$IFDEF BSD}
-  RazerChromaLinux;
+  RazerChromaBSD;
   {$ENDIF} 
 
 class function TRazerChromaFactory.CreateInstance: TRazerChromaBase;
@@ -77,6 +77,9 @@ begin
   {$IFDEF DARWIN}
   result := TRazerChromaMac.Create;
   {$ENDIF}
+  {$IFDEF BSD}
+  Result := TRazerChromaBSD.Create;
+  {$ENDIF}
 end;
 
 class function TRazerChromaFactory.GetPlatformName: string;
@@ -89,6 +92,9 @@ begin
   {$ENDIF}
   {$IFDEF DARWIN}
   Result := 'macOS (Not Supported)';
+  {$ENDIF}
+  {$IFDEF BSD}
+  Result := 'BSD (Not Supported)';
   {$ENDIF}
 end;
 
