@@ -842,8 +842,8 @@ procedure SendNotification(Title, Message: string);
   var
     AProcess: TProcess;
   begin
-    {$IFDEF X_PC}
-  // Linux unit may override attention or provide notification availability
+    {$IF DEFINED(X_PC) or DEFINED(BSD)}
+  // Linux/BSD unit may override attention or provide notification availability
     if isNotificationSystemAvailable then
     begin
       AProcess := TProcess.Create(nil);
