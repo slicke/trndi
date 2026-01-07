@@ -154,7 +154,7 @@ xattr -c /path/to/Trndi.app
 ```
 
 ## Haiku
-Trndi can be built for Haiku OS using Lazarus. 
+Trndi can be built for Haiku OS using Lazarus. You can remove the mormot2 dependancy if compiling without extensions!
 
 **Requirements:**
 - Free Pascal Compiler: `pkgman install fpc`
@@ -179,7 +179,7 @@ lazbuild -B --widgetset=qt6 Trndi.lpi
 - HTTP/HTTPS support via FPC's TFPHTTPClient
 
 ## BSD
-Trndi can be built for FreeBSD, OpenBSD, and NetBSD using Lazarus.
+Trndi can be built for FreeBSD, OpenBSD, and NetBSD using Lazarus. 
 
 **Requirements:**
 - Free Pascal Compiler
