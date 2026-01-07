@@ -4600,8 +4600,9 @@ begin
   lDiff.Font.Color := GetTextColorForBackground(fBG.color, 0.6, 0.4);
   lAgo.Font.Color := GetTextColorForBackground(fBG.color, 0.6, 0.4);
   lTir.Font.Color := GetTextColorForBackground(fBG.color, 0.6, 0.4);
-  lPredict.Font.Color := GetTextColorForBackground(fBG.color, 0.6, 0.4);
-
+  //lPredict.Font.Color := GetTextColorForBackground(fBG.color, 0.6, 0.4);
+  //lPredict.Font.Color := LightenColor(fBG.color, 0.4);
+  lPredict.Font.Color := GetTextColorForBackground(fBG.color, 0.7, 0.4);
 
   if TryStrToInt(lTir.hint, r) then
     if r < bad_tir then // If the value is under the limit for "bad"

@@ -11661,7 +11661,9 @@ object fConf: TfConf
         Width = 639
         Align = alTop
         AutoSize = False
-        BorderSpacing.Around = 10
+        BorderSpacing.Left = 10
+        BorderSpacing.Top = 10
+        BorderSpacing.Right = 10
         ItemHeight = 22
         Items.Strings = (
           'AUTO'
