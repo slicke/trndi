@@ -164,7 +164,7 @@ public
       - Performs authentication sequence similar to Connect to validate credentials
       - Probes /General/SystemUtcTime to ensure server responds with time info
   }
-  class function testConnection(user, pass, extra: string): Byte; override;
+  class function testConnection(user, pass, extra: string): byte; override;
 
 published
     {** The effective base URL used for API requests. }
@@ -219,16 +219,16 @@ begin
   //   primarily used by integration tests that run against a local fake server.
   // - Otherwise, extra='usa' selects US endpoints; anything else uses WORLD.
   if (LeftStr(LowerCase(Trim(extra)), 7) = 'http://') or
-     (LeftStr(LowerCase(Trim(extra)), 8) = 'https://') then
-    begin
-      baseUrl := Trim(extra);
-      FBaseHost := '';
-    end
+    (LeftStr(LowerCase(Trim(extra)), 8) = 'https://') then
+  begin
+    baseUrl := Trim(extra);
+    FBaseHost := '';
+  end
   else
-    begin
-      baseUrl := DEXCOM_BASE_URLS[extra = 'usa'];
-      FBaseHost := DEXCOM_BASE_HOSTS[extra = 'usa'];
-    end;
+  begin
+    baseUrl := DEXCOM_BASE_URLS[extra = 'usa'];
+    FBaseHost := DEXCOM_BASE_HOSTS[extra = 'usa'];
+  end;
 
   // Store credentials and preferences
   FUserName := user;
@@ -568,7 +568,7 @@ end;
   - Performs authentication sequence similar to Connect to validate credentials
   - Probes /General/SystemUtcTime to ensure server responds with time info
  ------------------------------------------------------------------------------}
-class function Dexcom.testConnection(user, pass, extra: string): Byte;
+class function Dexcom.testConnection(user, pass, extra: string): byte;
 var
   tn: TrndiNative;
   base, body, resp, accountId, sessionId, timeResp, timeStr: string;
@@ -576,7 +576,7 @@ var
   useEmailAuth: boolean;
   LServerDateTime: TDateTime;
   i: integer;
-  function JSONEscape(const S: string): string;
+function JSONEscape(const S: string): string;
   var
     i: integer;
     c: char;
@@ -586,14 +586,22 @@ var
     begin
       c := S[i];
       case c of
-      '"': Result := Result + '\"';
-      '\': Result := Result + '\\';
-      #8: Result := Result + '\b';
-      #9: Result := Result + '\t';
-      #10: Result := Result + '\n';
-      #12: Result := Result + '\f';
-      #13: Result := Result + '\r';
-      else Result := Result + c;
+      '"':
+        Result := Result + '\"';
+      '\':
+        Result := Result + '\\';
+      #8:
+        Result := Result + '\b';
+      #9:
+        Result := Result + '\t';
+      #10:
+        Result := Result + '\n';
+      #12:
+        Result := Result + '\f';
+      #13:
+        Result := Result + '\r';
+      else
+        Result := Result + c;
       end;
     end;
   end;
@@ -654,24 +662,20 @@ begin
       timeStr := '';
       i := Pos('(', timeResp);
       if i > 0 then
-      begin
-        timeStr := Copy(timeResp, i + 1, Pos(')', timeResp) - i - 1);
-      end
+        timeStr := Copy(timeResp, i + 1, Pos(')', timeResp) - i - 1)
       else
-      begin
-        // Try a simple JSON parse for numeric ServerTime value
+      try
+        js := GetJSON(timeResp);
         try
-          js := GetJSON(timeResp);
-          try
-            if js.JSONType = jtObject then
-              timeStr := TJSONObject(js).Get('ServerTime', '');
-          finally
-            js.Free;
-          end;
-        except
-          timeStr := '';
+          if js.JSONType = jtObject then
+            timeStr := TJSONObject(js).Get('ServerTime', '');
+        finally
+          js.Free;
         end;
-      end;
+      except
+        timeStr := '';
+      end// Try a simple JSON parse for numeric ServerTime value
+      ;
 
       if timeStr = '' then
         Exit;

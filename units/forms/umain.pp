@@ -115,8 +115,8 @@ TrndiPosNames: TPONames = (RS_tpoCenter, RS_tpoBottomLeft,
   RS_tpoBottomRight, RS_tpoCustom, RS_tpoTopRight);
 const
   // Public timing constants used across the unit/interface
-  MILLIS_PER_MINUTE = 60000; // Milliseconds in a minute
-  CLOCK_INTERVAL_MS = 20000; // Default clock interval used for the clock tick
+MILLIS_PER_MINUTE = 60000; // Milliseconds in a minute
+CLOCK_INTERVAL_MS = 20000; // Default clock interval used for the clock tick
 
 type
   { TfBG }
@@ -130,7 +130,6 @@ public
   function applicationDockMenu(sender: NSApplication): NSMenu; message 'applicationDockMenu:';
     procedure miSettingsMacClick(sender: id); message 'miSettings:';
 end;
-
 {** Darwin-specific declarations above }
 {$endif}
 
@@ -240,8 +239,8 @@ TfBG = class(TForm)
       This adjusts trend dots, labels and other elements when the UI size or
       dot-count changes to keep everything visually aligned.
      }
-    procedure AdjustGraph;
-    procedure bMenuPanelCloseClick(Sender: TObject);
+  procedure AdjustGraph;
+  procedure bMenuPanelCloseClick(Sender: TObject);
   procedure bSettingsClick(Sender: TObject);
   procedure bTouchFullClick(Sender: TObject);
   procedure bTouchMenuClick(Sender: TObject);
@@ -605,16 +604,16 @@ public
     {** Generic application exception handler used for reporting unhandled
       exceptions during runtime to a unified error dialog.
      }
-    procedure AppExceptionHandler(Sender: TObject; {%H-}E: Exception);
-    procedure onGH({%H-}Sender: TObject);
+  procedure AppExceptionHandler(Sender: TObject; {%H-}E: Exception);
+  procedure onGH({%H-}Sender: TObject);
     {** Return the most recent reading (the newest element in `bgs`).
       Caller should ensure `bgs` is not empty (use `tryLastReading` first).
      }
-    function lastReading: BGReading;
+  function lastReading: BGReading;
     {** Safely get the most recent reading as an out parameter.
       @returns(True when a reading was present, False when `bgs` is empty.)
      }
-    function tryLastReading(out bg: BGReading): boolean;
+  function tryLastReading(out bg: BGReading): boolean;
 end;
 
 
@@ -734,14 +733,14 @@ implementation
 {$I ../../inc/umain_init.inc}
 
 const
-  MIN_REFRESH_INTERVAL_MS = 120000; // 2 minutes
-  REFRESH_RESYNC_BUFFER_MS = 15000; // Additional buffer to allow backend sync
-  BADGE_FLASH_DURATION_HIGH_MS = 15000;
-  BADGE_FLASH_REPEAT_DELAY_HIGH_MS = 450;
-  BADGE_FLASH_DURATION_LOW_MS = 20000;
-  BADGE_FLASH_REPEAT_DELAY_LOW_MS = 400;
-  BADGE_FLASH_DURATION_OK_MS = 6000;
-  BADGE_FLASH_REPEAT_DELAY_OK_MS = 500;
+MIN_REFRESH_INTERVAL_MS = 120000; // 2 minutes
+REFRESH_RESYNC_BUFFER_MS = 15000; // Additional buffer to allow backend sync
+BADGE_FLASH_DURATION_HIGH_MS = 15000;
+BADGE_FLASH_REPEAT_DELAY_HIGH_MS = 450;
+BADGE_FLASH_DURATION_LOW_MS = 20000;
+BADGE_FLASH_REPEAT_DELAY_LOW_MS = 400;
+BADGE_FLASH_DURATION_OK_MS = 6000;
+BADGE_FLASH_REPEAT_DELAY_OK_MS = 500;
 
 function CurrentHistoryGraphPalette: THistoryGraphPalette;
 begin
@@ -850,11 +849,11 @@ end;
 
 // NOTE (macOS/Cocoa): Historically, `TPaintBox.OnPaint` could fail under the
 // Cocoa widgetset with a CheckDC()/TCocoaContext error.
-//
+
 // Current workaround: on macOS we use `TLabel` for trend dots
 // (see `TDotControl = TLabel` under `{$ifdef DARWIN}`), so we avoid custom
 // canvas painting for that control.
-//
+
 // If you *do* use a `TPaintBox`-based implementation on macOS in the future and
 // run into Cocoa paint issues again, building with the Qt widgetset is an
 // alternative workaround.
@@ -1439,7 +1438,7 @@ var
   debugValue: single;
   debugText: string;
   i: integer;
-  {$ENDIF}
+{$ENDIF}
 // Helper to map a BG value in internal units to a Y coordinate matching SetPointHeight
 function ValueToY(const Value: single): integer;
   var
@@ -1627,8 +1626,8 @@ begin
       debugText := Format('%.0f', [debugValue]);
       // Draw text on right side, centered vertically on the line
       cnv.TextOut(Self.ClientWidth - cnv.TextWidth(debugText) - 5, 
-                  debugY - (cnv.TextHeight(debugText) div 2), 
-                  debugText);
+        debugY - (cnv.TextHeight(debugText) div 2),
+        debugText);
     end;
   end;
   {$ENDIF}
@@ -2864,20 +2863,18 @@ begin
         API_DEX_USA,
         API_DEX_EU,
         API_XDRIP
-      ]);
+        ]);
       {$ifdef DEBUG}
       fConf.cbSys.Items.AddStrings(API_DEBUG);
       {$endif}
     end;
 
-     fConf.chroma := TRazerChromaFactory.CreateInstance;
-     if not fconf.chroma.Initialize then
-       fConf.lbChroma.Items.Add('No Razer driver detected')
-     else begin
-       for i := 0 to fConf.Chroma.GetDeviceCount - 1 do
+    fConf.chroma := TRazerChromaFactory.CreateInstance;
+    if not fconf.chroma.Initialize then
+      fConf.lbChroma.Items.Add('No Razer driver detected')
+    else for i := 0 to fConf.Chroma.GetDeviceCount - 1 do
         fConf.lbChroma.Items.Add(fConf.Chroma.GetDevice(i).Name);
-     end;
-      fConf.Chroma.Free;
+    fConf.Chroma.Free;
 
     // Initialize form with user settings
     LoadUserSettings(fConf);
@@ -2892,13 +2889,13 @@ begin
     {$if defined(X_PC)}
     fConf.lOS.Caption := GetLinuxDistro(distro) + ' ' + distro;
 
-      {$if defined(LCLQt6)}
-      fConf.lWidgetset.Caption := 'QT6 ' + qtVersion;
-      {$elseif defined(LCLGTK2)}
-      fConf.lWidgetset.Caption := 'GTK2';
-      {$elseif defined(LCLGTK3)}
-      fConf.lWidgetset.Caption := 'GTK3';
-      {$endif}
+    {$if defined(LCLQt6)}
+    fConf.lWidgetset.Caption := 'QT6 ' + qtVersion;
+    {$elseif defined(LCLGTK2)}
+    fConf.lWidgetset.Caption := 'GTK2';
+    {$elseif defined(LCLGTK3)}
+    fConf.lWidgetset.Caption := 'GTK3';
+    {$endif}
     {$elseif defined(X_MAC)}
     fConf.lOS.Caption := 'macOS';
     fConf.lWidgetset.Caption := 'Native Apple Coca';
@@ -2945,7 +2942,8 @@ begin
     PredictShortSize := native.GetIntSetting('predictions.short.size', 1);
     if PredictShortSize < 1 then
       PredictShortSize := 1
-    else if PredictShortSize > 3 then
+    else
+    if PredictShortSize > 3 then
       PredictShortSize := 3;
     lPredict.Visible := PredictGlucoseReading;
     // Recalculate layout and scale to account for potential short-size change
@@ -3090,18 +3088,18 @@ function SafeQtStyle(Handle: QWidgetH; const Style: string): boolean;
   end;
 
 function ShiftKeyPressed: boolean;
-var
-  modifiers: QtKeyboardModifiers;
-begin
-  modifiers := QGuiApplication_keyboardModifiers;
-  Result := (modifiers and QtShiftModifier) <> 0;
-end;
-{$else}
+  var
+    modifiers: QtKeyboardModifiers;
+  begin
+    modifiers := QGuiApplication_keyboardModifiers;
+    Result := (modifiers and QtShiftModifier) <> 0;
+  end;
+  {$else}
 function ShiftKeyPressed: boolean;
-begin
-  Result := ssShift in GetKeyShiftState;
-end;
-{$endif}
+  begin
+    Result := ssShift in GetKeyShiftState;
+  end;
+  {$endif}
 var
   tpb: TDotControl;
   H, M: integer;
@@ -3276,104 +3274,103 @@ end;
 
 procedure TfBG.tPingTimer(Sender: TObject);
 {$ifdef Windows}
- function IsURLReachable(const URL: string; Port: Word = 80): Boolean;
-var
-  XSocket: TSocket;
-  Addr: TSockAddr;
-  HostEnt: PHostEnt;
-begin
-  Result := False;
+function IsURLReachable(const URL: string; Port: word = 80): boolean;
+  var
+    XSocket: TSocket;
+    Addr: TSockAddr;
+    HostEnt: PHostEnt;
+  begin
+    Result := false;
 
-  XSocket := socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-  if XSocket = INVALID_SOCKET then
-    Exit;
+    XSocket := socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    if XSocket = INVALID_SOCKET then
+      Exit;
 
-  try
     try
+      try
       // DNS resolution
-      HostEnt := gethostbyname(PChar(URL));
-      if HostEnt = nil then
-        Exit;
+        HostEnt := gethostbyname(pchar(URL));
+        if HostEnt = nil then
+          Exit;
 
       // Set up address
-      FillByte(Addr, SizeOf(Addr), 0);
-      PSockAddrIn(@Addr)^.sin_family := AF_INET;
-      PSockAddrIn(@Addr)^.sin_port := htons(Port);
-      PSockAddrIn(@Addr)^.sin_addr := PInAddr(HostEnt^.h_addr_list^)^;
+        FillByte(Addr, SizeOf(Addr), 0);
+        PSockAddrIn(@Addr)^.sin_family := AF_INET;
+        PSockAddrIn(@Addr)^.sin_port := htons(Port);
+        PSockAddrIn(@Addr)^.sin_addr := PInAddr(HostEnt^.h_addr_list^)^;
 
       // Try to connect
-      if connect(XSocket, Addr, SizeOf(Addr)) = 0 then
-        Result := True;
-    except
-      Result := False;
+        if connect(XSocket, Addr, SizeOf(Addr)) = 0 then
+          Result := true;
+      except
+        Result := false;
+      end;
+    finally
+      closesocket(XSocket);
     end;
-  finally
-    closesocket(XSocket);
   end;
-end;
-{$else}
-function IsURLReachable(const URL: string; Port: Word = 80): Boolean;
-var
-  Socket: Longint;
-  Addr: TInetSockAddr;
-  HostAddr: THostAddr;
-begin
-  Result := False;
-
-  Socket := fpSocket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-  if Socket < 0 then
-    Exit;
-
-  try
-    try
-      HostAddr := StrToHostAddr(URL);
-
-      if HostAddr.s_addr = 0 then
-        Exit;
-
-      FillByte(Addr, SizeOf(Addr), 0);
-      Addr.sin_family := AF_INET;
-      Addr.sin_port := htons(Port);
-      Addr.sin_addr := HostAddr;
-
-      if fpConnect(Socket, @Addr, SizeOf(Addr)) = 0 then
-        Result := True;
-    except
-      Result := False;
-    end;
-  finally
-    CloseSocket(Socket);
-  end;
-end;
-{$endif}
-function IsInternetOnline: Boolean;
-var
-  IPs: array of string;
-  i: Integer;
-begin
-  IPs := [
-    '8.8.8.8',       // Google DNS
-    '1.1.1.1',       // Cloudflare DNS
-    '208.67.222.222' // OpenDNS
-  ];
-
-  for i := Low(IPs) to High(IPs) do
+  {$else}
+function IsURLReachable(const URL: string; Port: word = 80): boolean;
+  var
+    Socket: longint;
+    Addr: TInetSockAddr;
+    HostAddr: THostAddr;
   begin
-    if IsURLReachable(IPs[i], 53) then
-    begin
-      Result := True;
+    Result := false;
+
+    Socket := fpSocket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    if Socket < 0 then
       Exit;
+
+    try
+      try
+        HostAddr := StrToHostAddr(URL);
+
+        if HostAddr.s_addr = 0 then
+          Exit;
+
+        FillByte(Addr, SizeOf(Addr), 0);
+        Addr.sin_family := AF_INET;
+        Addr.sin_port := htons(Port);
+        Addr.sin_addr := HostAddr;
+
+        if fpConnect(Socket, @Addr, SizeOf(Addr)) = 0 then
+          Result := true;
+      except
+        Result := false;
+      end;
+    finally
+      CloseSocket(Socket);
     end;
   end;
+  {$endif}
+function IsInternetOnline: boolean;
+  var
+    IPs: array of string;
+    i: integer;
+  begin
+    IPs := [
+      '8.8.8.8',       // Google DNS
+      '1.1.1.1',       // Cloudflare DNS
+      '208.67.222.222' // OpenDNS
+      ];
 
-  Result := False;
-end;
+    for i := Low(IPs) to High(IPs) do
+      if IsURLReachable(IPs[i], 53) then
+      begin
+        Result := true;
+        Exit;
+      end;
+
+    Result := false;
+  end;
 begin
   tPing.Enabled := false;
-if not IsInternetOnline then
-  ShowMessage(RS_NO_INTERNET)
-else if (sender = miDNS) then
-  ShowMessage(RS_DNS_INTERNET_OK);
+  if not IsInternetOnline then
+    ShowMessage(RS_NO_INTERNET)
+  else
+  if (sender = miDNS) then
+    ShowMessage(RS_DNS_INTERNET_OK);
 
   tPing.Enabled := true;
 end;
@@ -3745,12 +3742,14 @@ begin
       if SecondsBetween(Now, last_popup) > 2 then
       begin
         last_popup := now;
-        if ((not native.HasTouchScreen) or semiTouchMode) then begin
+        if ((not native.HasTouchScreen) or semiTouchMode) then
+        begin
           sleep(100); // Let getshiftstate catch up
           Application.ProcessMessages;
           pmSettings.PopUp(p.X, p.Y);
         end
-        else begin
+        else
+        begin
           pnTouchMenu.Width := Width;
           pnTouchMenu.Height := Height;
           pnTouchMenu.top := 0;
@@ -3906,12 +3905,18 @@ begin
     range := round((ok / (ok + no)) * 100);
     if tir_icon then
       case range of
-        100..MaxInt: lTir.Caption := '👌'; // MaxInt is unneeded really
-        80..99: lTir.Caption := '😃';
-        50..79: lTir.Caption := '😶';
-        30..49: lTir.Caption := '😥';
-        10..29: lTir.Caption := '😞';
-        0..9: lTir.Caption := '😓';
+      100..MaxInt:
+        lTir.Caption := '👌'; // MaxInt is unneeded really
+      80..99:
+        lTir.Caption := '😃';
+      50..79:
+        lTir.Caption := '😶';
+      30..49:
+        lTir.Caption := '😥';
+      10..29:
+        lTir.Caption := '😞';
+      0..9:
+        lTir.Caption := '😓';
       end
     else
       lTir.Caption := range.toString + '%';
@@ -4119,10 +4124,8 @@ begin
       trend := CalculateTrendFromDelta(delta);
       
       if PredictShortFullArrows then
-      begin
-        // Use full UTF arrow set
-        lPredict.Caption := BG_TREND_ARROWS_UTF[trend];
-      end
+        lPredict.Caption := BG_TREND_ARROWS_UTF[trend]// Use full UTF arrow set
+
       else
       begin
         // Map to simplified arrows: up=↗, flat=→, down=↘
@@ -4273,11 +4276,11 @@ begin
   end;
 
   if assigned(native) and assigned(chroma) then
-  if native.GetBoolSetting('razer.enabled', false) and chroma.Initialized then
-  {$ifdef Windows}
-    Chroma.SetStaticAll(clRazerRed);
+    if native.GetBoolSetting('razer.enabled', false) and chroma.Initialized then
+      {$ifdef Windows}
+      Chroma.SetStaticAll(clRazerRed);
   {$else}
-      Chroma.SetBreathDualAll(clRazerRed, clRazerBlack);
+  Chroma.SetBreathDualAll(clRazerRed, clRazerBlack);
   {$endif}
 
   doFlash := native.GetBoolSetting('alerts.flash.high', false);
@@ -4318,11 +4321,11 @@ begin
 
   if assigned(native) and assigned(chroma) then
     if native.GetBoolSetting('razer.enabled', false) and chroma.Initialized then
-    {$ifdef Windows}
+      {$ifdef Windows}
       Chroma.SetStaticAll(clRazerBlue);
-    {$else}
-      Chroma.SetBreathDualAll(clRazerBlue, clRazerBlack);
-    {$endif}
+  {$else}
+  Chroma.SetBreathDualAll(clRazerBlue, clRazerBlack);
+  {$endif}
 end;
 
 procedure TfBG.HandleNormalGlucose(const reading: BGReading);
@@ -4369,7 +4372,7 @@ begin
     // subtle celebratory pulse
   end;
 
- if assigned(native) and assigned(chroma) then
+  if assigned(native) and assigned(chroma) then
     if chroma.Initialized and native.GetBoolSetting('razer.enabled', false) and native.GetBoolSetting('razer.normal', false) then
       Chroma.SetStaticAll(clRazerGreen);
 
@@ -4473,10 +4476,10 @@ begin
 end;
 
 function TfBG.DoFetchAndValidateReadings(const ForceRefresh: boolean): boolean;
-{$ifdef DEBUG}
+  {$ifdef DEBUG}
 var
   res: string;
-{$endif}
+  {$endif}
 const
   API_CACHE_SECONDS = 10; // Don't call API more than once per 10 seconds
 begin

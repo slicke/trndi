@@ -32,57 +32,57 @@ unit RazerChroma;
 interface
 
 uses
-  SysUtils, Classes, contnrs;
+SysUtils, Classes, contnrs;
 
 type
   {** Packed RGB values used when issuing Chroma effects. }
-  TRGBColor = packed record
-    R, G, B: Byte;
-  end;
+TRGBColor = packed record
+  R, G, B: byte;
+end;
 
   {** Enumerates the Razer device categories exposed through the SDK/daemon. }
-  TRazerDeviceType = (
-    rdtUnknown,
-    rdtKeyboard,
-    rdtMouse,
-    rdtMousepad,
-    rdtHeadset,
-    rdtKeypad,
-    rdtChromaLink,
-    rdtLaptop
+TRazerDeviceType = (
+  rdtUnknown,
+  rdtKeyboard,
+  rdtMouse,
+  rdtMousepad,
+  rdtHeadset,
+  rdtKeypad,
+  rdtChromaLink,
+  rdtLaptop
   );
 
   {** Represents a Razer device entry discovered during enumeration. }
-  TRazerDevice = class
-  private
-    FSerial: string;
-    FName: string;
-    FDeviceType: TRazerDeviceType;
-  public
-    property Serial: string read FSerial write FSerial;
-    property Name: string read FName write FName;
-    property DeviceType: TRazerDeviceType read FDeviceType write FDeviceType;
-  end;
+TRazerDevice = class
+private
+  FSerial: string;
+  FName: string;
+  FDeviceType: TRazerDeviceType;
+public
+  property Serial: string read FSerial write FSerial;
+  property Name: string read FName write FName;
+  property DeviceType: TRazerDeviceType read FDeviceType write FDeviceType;
+end;
 
   {** Owned list of `TRazerDevice` instances, keyed by serial number. }
-  TRazerDeviceList = class(TObjectList)
-  private
-    function GetDevice(Index: Integer): TRazerDevice;
-  public
-    function Add(ADevice: TRazerDevice): Integer;
+TRazerDeviceList = class(TObjectList)
+private
+  function GetDevice(Index: integer): TRazerDevice;
+public
+  function Add(ADevice: TRazerDevice): integer;
     {** Returns the device matching `ASerial` or nil when the serial is unknown. }
-    function FindBySerial(const ASerial: string): TRazerDevice;
-    property Items[Index: Integer]: TRazerDevice read GetDevice; default;
-  end;
+  function FindBySerial(const ASerial: string): TRazerDevice;
+  property Items[Index: integer]: TRazerDevice read GetDevice; default;
+end;
 
   { ERazerException }
-  ERazerException = class(Exception);
-  ERazerNotInitialized = class(ERazerException);
-  ERazerDeviceNotFound = class(ERazerException);
-  ERazerEffectFailed = class(ERazerException);
+ERazerException = class(Exception);
+ERazerNotInitialized = class(ERazerException);
+ERazerDeviceNotFound = class(ERazerException);
+ERazerEffectFailed = class(ERazerException);
 
   { TRazerEffectSpeed }
-  TRazerEffectSpeed = (resSlow = 1, resMedium = 2, resFast = 3);
+TRazerEffectSpeed = (resSlow = 1, resMedium = 2, resFast = 3);
 
   {**
     @class TRazerChromaBase
@@ -92,74 +92,74 @@ type
       native Razer SDK or OpenRazer daemon. The base class exposes strongly typed `Set*` helpers along
       with `LastError` tracking so callers can react when an effect fails.
   }
-  TRazerChromaBase = class abstract
-  protected
-    FInitialized: Boolean;
-    FDevices: TRazerDeviceList;
-    FLastError: string;
+TRazerChromaBase = class abstract
+protected
+  FInitialized: boolean;
+  FDevices: TRazerDeviceList;
+  FLastError: string;
     
-    procedure CheckInitialized;
-    function DoInitialize: Boolean; virtual; abstract;
-    procedure DoFinalize; virtual; abstract;
-    procedure DoRefreshDevices; virtual; abstract;
+  procedure CheckInitialized;
+  function DoInitialize: boolean; virtual; abstract;
+  procedure DoFinalize; virtual; abstract;
+  procedure DoRefreshDevices; virtual; abstract;
     
     // Abstract effect methods
-    function DoSetStatic(const ADevice: TRazerDevice; const AColor: TRGBColor): Boolean; virtual; abstract;
-    function DoSetBreathSingle(const ADevice: TRazerDevice; const AColor: TRGBColor): Boolean; virtual; abstract;
-    function DoSetBreathDual(const ADevice: TRazerDevice; const AColor1, AColor2: TRGBColor): Boolean; virtual; abstract;
-    function DoSetBreathRandom(const ADevice: TRazerDevice): Boolean; virtual; abstract;
-    function DoSetSpectrum(const ADevice: TRazerDevice): Boolean; virtual; abstract;
-    function DoSetReactive(const ADevice: TRazerDevice; const AColor: TRGBColor; ASpeed: TRazerEffectSpeed): Boolean; virtual; abstract;
-    function DoSetWave(const ADevice: TRazerDevice; ADirection: Integer): Boolean; virtual; abstract;
-    function DoSetNone(const ADevice: TRazerDevice): Boolean; virtual; abstract;
-    function DoSetBrightness(const ADevice: TRazerDevice; ABrightness: Byte): Boolean; virtual; abstract;
-    function DoGetBrightness(const ADevice: TRazerDevice): Byte; virtual; abstract;
+  function DoSetStatic(const ADevice: TRazerDevice; const AColor: TRGBColor): boolean; virtual; abstract;
+  function DoSetBreathSingle(const ADevice: TRazerDevice; const AColor: TRGBColor): boolean; virtual; abstract;
+  function DoSetBreathDual(const ADevice: TRazerDevice; const AColor1, AColor2: TRGBColor): boolean; virtual; abstract;
+  function DoSetBreathRandom(const ADevice: TRazerDevice): boolean; virtual; abstract;
+  function DoSetSpectrum(const ADevice: TRazerDevice): boolean; virtual; abstract;
+  function DoSetReactive(const ADevice: TRazerDevice; const AColor: TRGBColor; ASpeed: TRazerEffectSpeed): boolean; virtual; abstract;
+  function DoSetWave(const ADevice: TRazerDevice; ADirection: integer): boolean; virtual; abstract;
+  function DoSetNone(const ADevice: TRazerDevice): boolean; virtual; abstract;
+  function DoSetBrightness(const ADevice: TRazerDevice; ABrightness: byte): boolean; virtual; abstract;
+  function DoGetBrightness(const ADevice: TRazerDevice): byte; virtual; abstract;
     
-  public
-    constructor Create; virtual;
-    destructor Destroy; override;
+public
+  constructor Create; virtual;
+  destructor Destroy; override;
     
     // Initialization
-    function Initialize: Boolean;
-    procedure Finalize;
-    procedure RefreshDevices;
+  function Initialize: boolean;
+  procedure Finalize;
+  procedure RefreshDevices;
     
     // Device access
-    function GetDeviceCount: Integer;
-    function GetDevice(Index: Integer): TRazerDevice;
-    function GetDeviceBySerial(const ASerial: string): TRazerDevice;
+  function GetDeviceCount: integer;
+  function GetDevice(Index: integer): TRazerDevice;
+  function GetDeviceBySerial(const ASerial: string): TRazerDevice;
     
     // Effects - Single device
-    procedure SetStatic(const ADevice: TRazerDevice; const AColor: TRGBColor);
-    procedure SetBreathSingle(const ADevice: TRazerDevice; const AColor: TRGBColor);
-    procedure SetBreathDual(const ADevice: TRazerDevice; const AColor1, AColor2: TRGBColor);
-    procedure SetBreathRandom(const ADevice: TRazerDevice);
-    procedure SetSpectrum(const ADevice: TRazerDevice);
-    procedure SetReactive(const ADevice: TRazerDevice; const AColor: TRGBColor; ASpeed: TRazerEffectSpeed = resMedium);
-    procedure SetWave(const ADevice: TRazerDevice; ADirection: Integer = 1);
-    procedure SetNone(const ADevice: TRazerDevice);
-    procedure SetBrightness(const ADevice: TRazerDevice; ABrightness: Byte);
-    function GetBrightness(const ADevice: TRazerDevice): Byte;
+  procedure SetStatic(const ADevice: TRazerDevice; const AColor: TRGBColor);
+  procedure SetBreathSingle(const ADevice: TRazerDevice; const AColor: TRGBColor);
+  procedure SetBreathDual(const ADevice: TRazerDevice; const AColor1, AColor2: TRGBColor);
+  procedure SetBreathRandom(const ADevice: TRazerDevice);
+  procedure SetSpectrum(const ADevice: TRazerDevice);
+  procedure SetReactive(const ADevice: TRazerDevice; const AColor: TRGBColor; ASpeed: TRazerEffectSpeed = resMedium);
+  procedure SetWave(const ADevice: TRazerDevice; ADirection: integer = 1);
+  procedure SetNone(const ADevice: TRazerDevice);
+  procedure SetBrightness(const ADevice: TRazerDevice; ABrightness: byte);
+  function GetBrightness(const ADevice: TRazerDevice): byte;
     
     // Effects - All devices
-    procedure SetStaticAll(const AColor: TRGBColor);
-    procedure SetBreathDualAll(const AColor1, AColor2: TRGBColor);
-    procedure SetBreathRandomAll;
-    procedure SetSpectrumAll;
-    procedure SetNoneAll;
-    procedure FlashAll(const AColor1, AColor2: TRGBColor);
+  procedure SetStaticAll(const AColor: TRGBColor);
+  procedure SetBreathDualAll(const AColor1, AColor2: TRGBColor);
+  procedure SetBreathRandomAll;
+  procedure SetSpectrumAll;
+  procedure SetNoneAll;
+  procedure FlashAll(const AColor1, AColor2: TRGBColor);
     
     // Convenience flash methods
-    procedure StrobeFlash(const ADevice: TRazerDevice; const AColor1, AColor2: TRGBColor; 
-      DurationMS: Integer = 3000; IntervalMS: Integer = 100);
-    procedure StrobeFlashAll(const AColor1, AColor2: TRGBColor;
-      DurationMS: Integer = 3000; IntervalMS: Integer = 100);
+  procedure StrobeFlash(const ADevice: TRazerDevice; const AColor1, AColor2: TRGBColor;
+    DurationMS: integer = 3000; IntervalMS: integer = 100);
+  procedure StrobeFlashAll(const AColor1, AColor2: TRGBColor;
+    DurationMS: integer = 3000; IntervalMS: integer = 100);
     
     // Properties
-    property Initialized: Boolean read FInitialized;
-    property Devices: TRazerDeviceList read FDevices;
-    property LastError: string read FLastError;
-  end;
+  property Initialized: boolean read FInitialized;
+  property Devices: TRazerDeviceList read FDevices;
+  property LastError: string read FLastError;
+end;
 
 {**
   @brief Create a `TRGBColor` from explicit channel components.
@@ -168,21 +168,21 @@ type
   @param B Blue channel in the range 0..255.
   @returns Constructed color record.
 }
-function RGB(R, G, B: Byte): TRGBColor;
+function RGB(R, G, B: byte): TRGBColor;
 
 {**
   @brief Convert a color record to a packed integer accepted by the SDK.
   @param AColor Color to convert.
   @returns Integer value with RGB channels packed as `$RRGGBB`.
 }
-function RGBToInt(const AColor: TRGBColor): Integer;
+function RGBToInt(const AColor: TRGBColor): integer;
 
 {**
   @brief Restore a `TRGBColor` from a packed integer value.
   @param AValue Packed `$RRGGBB` value.
   @returns Equivalent color record.
 }
-function IntToRGB(AValue: Integer): TRGBColor;
+function IntToRGB(AValue: integer): TRGBColor;
 
 {**
   @brief Human-readable name for a `TRazerDeviceType`.
@@ -193,34 +193,34 @@ function DeviceTypeToStr(AType: TRazerDeviceType): string;
 
 // Predefined colors
 const
-  clRazerRed: TRGBColor = (R: 255; G: 0; B: 0);
-  clRazerGreen: TRGBColor = (R: 0; G: 255; B: 0);
-  clRazerBlue: TRGBColor = (R: 0; G: 0; B: 255);
-  clRazerWhite: TRGBColor = (R: 255; G: 255; B: 255);
-  clRazerBlack: TRGBColor = (R: 0; G: 0; B: 0);
-  clRazerYellow: TRGBColor = (R: 255; G: 255; B: 0);
-  clRazerCyan: TRGBColor = (R: 0; G: 255; B: 255);
-  clRazerMagenta: TRGBColor = (R: 255; G: 0; B: 255);
-  clRazerOrange: TRGBColor = (R: 255; G: 128; B: 0);
-  clRazerPurple: TRGBColor = (R: 128; G: 0; B: 255);
+clRazerRed: TRGBColor = (R: 255; G: 0; B: 0);
+clRazerGreen: TRGBColor = (R: 0; G: 255; B: 0);
+clRazerBlue: TRGBColor = (R: 0; G: 0; B: 255);
+clRazerWhite: TRGBColor = (R: 255; G: 255; B: 255);
+clRazerBlack: TRGBColor = (R: 0; G: 0; B: 0);
+clRazerYellow: TRGBColor = (R: 255; G: 255; B: 0);
+clRazerCyan: TRGBColor = (R: 0; G: 255; B: 255);
+clRazerMagenta: TRGBColor = (R: 255; G: 0; B: 255);
+clRazerOrange: TRGBColor = (R: 255; G: 128; B: 0);
+clRazerPurple: TRGBColor = (R: 128; G: 0; B: 255);
 
 implementation
 
 { Helper functions }
 
-function RGB(R, G, B: Byte): TRGBColor;
+function RGB(R, G, B: byte): TRGBColor;
 begin
   Result.R := R;
   Result.G := G;
   Result.B := B;
 end;
 
-function RGBToInt(const AColor: TRGBColor): Integer;
+function RGBToInt(const AColor: TRGBColor): integer;
 begin
   Result := (AColor.R shl 16) or (AColor.G shl 8) or AColor.B;
 end;
 
-function IntToRGB(AValue: Integer): TRGBColor;
+function IntToRGB(AValue: integer): TRGBColor;
 begin
   Result.R := (AValue shr 16) and $FF;
   Result.G := (AValue shr 8) and $FF;
@@ -230,13 +230,20 @@ end;
 function DeviceTypeToStr(AType: TRazerDeviceType): string;
 begin
   case AType of
-    rdtKeyboard: Result := 'Keyboard';
-    rdtMouse: Result := 'Mouse';
-    rdtMousepad: Result := 'Mousepad';
-    rdtHeadset: Result := 'Headset';
-    rdtKeypad: Result := 'Keypad';
-    rdtChromaLink: Result := 'Chroma Link';
-    rdtLaptop: Result := 'Laptop';
+  rdtKeyboard:
+    Result := 'Keyboard';
+  rdtMouse:
+    Result := 'Mouse';
+  rdtMousepad:
+    Result := 'Mousepad';
+  rdtHeadset:
+    Result := 'Headset';
+  rdtKeypad:
+    Result := 'Keypad';
+  rdtChromaLink:
+    Result := 'Chroma Link';
+  rdtLaptop:
+    Result := 'Laptop';
   else
     Result := 'Unknown';
   end;
@@ -244,19 +251,19 @@ end;
 
 { TRazerDeviceList }
 
-function TRazerDeviceList.GetDevice(Index: Integer): TRazerDevice;
+function TRazerDeviceList.GetDevice(Index: integer): TRazerDevice;
 begin
   Result := TRazerDevice(inherited Items[Index]);
 end;
 
-function TRazerDeviceList.Add(ADevice: TRazerDevice): Integer;
+function TRazerDeviceList.Add(ADevice: TRazerDevice): integer;
 begin
   Result := inherited Add(ADevice);
 end;
 
 function TRazerDeviceList.FindBySerial(const ASerial: string): TRazerDevice;
 var
-  i: Integer;
+  i: integer;
 begin
   Result := nil;
   for i := 0 to Count - 1 do
@@ -269,8 +276,8 @@ end;
 constructor TRazerChromaBase.Create;
 begin
   inherited Create;
-  FDevices := TRazerDeviceList.Create(True); // Owns objects
-  FInitialized := False;
+  FDevices := TRazerDeviceList.Create(true); // Owns objects
+  FInitialized := false;
   FLastError := '';
 end;
 
@@ -288,10 +295,10 @@ begin
     raise ERazerNotInitialized.Create('Razer Chroma not initialized. Call Initialize first.');
 end;
 
-function TRazerChromaBase.Initialize: Boolean;
+function TRazerChromaBase.Initialize: boolean;
 begin
   if FInitialized then
-    Exit(True);
+    Exit(true);
     
   Result := DoInitialize;
   FInitialized := Result;
@@ -307,7 +314,7 @@ begin
     
   DoFinalize;
   FDevices.Clear;
-  FInitialized := False;
+  FInitialized := false;
 end;
 
 procedure TRazerChromaBase.RefreshDevices;
@@ -317,12 +324,12 @@ begin
   DoRefreshDevices;
 end;
 
-function TRazerChromaBase.GetDeviceCount: Integer;
+function TRazerChromaBase.GetDeviceCount: integer;
 begin
   Result := FDevices.Count;
 end;
 
-function TRazerChromaBase.GetDevice(Index: Integer): TRazerDevice;
+function TRazerChromaBase.GetDevice(Index: integer): TRazerDevice;
 begin
   if (Index < 0) or (Index >= FDevices.Count) then
     raise ERazerDeviceNotFound.CreateFmt('Device index %d out of range', [Index]);
@@ -380,7 +387,7 @@ begin
     raise ERazerEffectFailed.Create('Failed to set reactive effect: ' + FLastError);
 end;
 
-procedure TRazerChromaBase.SetWave(const ADevice: TRazerDevice; ADirection: Integer);
+procedure TRazerChromaBase.SetWave(const ADevice: TRazerDevice; ADirection: integer);
 begin
   CheckInitialized;
   if not DoSetWave(ADevice, ADirection) then
@@ -394,14 +401,14 @@ begin
     raise ERazerEffectFailed.Create('Failed to set none effect: ' + FLastError);
 end;
 
-procedure TRazerChromaBase.SetBrightness(const ADevice: TRazerDevice; ABrightness: Byte);
+procedure TRazerChromaBase.SetBrightness(const ADevice: TRazerDevice; ABrightness: byte);
 begin
   CheckInitialized;
   if not DoSetBrightness(ADevice, ABrightness) then
     raise ERazerEffectFailed.Create('Failed to set brightness: ' + FLastError);
 end;
 
-function TRazerChromaBase.GetBrightness(const ADevice: TRazerDevice): Byte;
+function TRazerChromaBase.GetBrightness(const ADevice: TRazerDevice): byte;
 begin
   CheckInitialized;
   Result := DoGetBrightness(ADevice);
@@ -411,7 +418,7 @@ end;
 
 procedure TRazerChromaBase.SetStaticAll(const AColor: TRGBColor);
 var
-  i: Integer;
+  i: integer;
 begin
   CheckInitialized;
   for i := 0 to FDevices.Count - 1 do
@@ -420,7 +427,7 @@ end;
 
 procedure TRazerChromaBase.SetBreathDualAll(const AColor1, AColor2: TRGBColor);
 var
-  i: Integer;
+  i: integer;
 begin
   CheckInitialized;
   for i := 0 to FDevices.Count - 1 do
@@ -429,7 +436,7 @@ end;
 
 procedure TRazerChromaBase.SetBreathRandomAll;
 var
-  i: Integer;
+  i: integer;
 begin
   CheckInitialized;
   for i := 0 to FDevices.Count - 1 do
@@ -438,7 +445,7 @@ end;
 
 procedure TRazerChromaBase.SetSpectrumAll;
 var
-  i: Integer;
+  i: integer;
 begin
   CheckInitialized;
   for i := 0 to FDevices.Count - 1 do
@@ -447,7 +454,7 @@ end;
 
 procedure TRazerChromaBase.SetNoneAll;
 var
-  i: Integer;
+  i: integer;
 begin
   CheckInitialized;
   for i := 0 to FDevices.Count - 1 do
@@ -460,14 +467,14 @@ begin
 end;
 
 procedure TRazerChromaBase.StrobeFlash(const ADevice: TRazerDevice; 
-  const AColor1, AColor2: TRGBColor; DurationMS, IntervalMS: Integer);
+const AColor1, AColor2: TRGBColor; DurationMS, IntervalMS: integer);
 var
-  Elapsed: Integer;
-  Toggle: Boolean;
+  Elapsed: integer;
+  Toggle: boolean;
 begin
   CheckInitialized;
   Elapsed := 0;
-  Toggle := True;
+  Toggle := true;
   
   while Elapsed < DurationMS do
   begin
@@ -483,14 +490,14 @@ begin
 end;
 
 procedure TRazerChromaBase.StrobeFlashAll(const AColor1, AColor2: TRGBColor;
-  DurationMS, IntervalMS: Integer);
+DurationMS, IntervalMS: integer);
 var
-  Elapsed: Integer;
-  Toggle: Boolean;
+  Elapsed: integer;
+  Toggle: boolean;
 begin
   CheckInitialized;
   Elapsed := 0;
-  Toggle := True;
+  Toggle := true;
   
   while Elapsed < DurationMS do
   begin

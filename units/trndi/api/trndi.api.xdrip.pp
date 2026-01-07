@@ -42,11 +42,11 @@ unit trndi.api.xdrip;
 interface
 
 uses
-  Classes, SysUtils, StrUtils, sha1,
+Classes, SysUtils, StrUtils, sha1,
   // Parent classes and modules
-  trndi.api.nightscout, trndi.native, trndi.types,
+trndi.api.nightscout, trndi.native, trndi.types,
   // FPC/Lazarus units
-  DateUtils, Dialogs;
+DateUtils, Dialogs;
 
 (*******************************************************************************
   Constants for xDrip endpoints
@@ -54,15 +54,15 @@ uses
 
 const
   {** Default endpoint path for SGV (sensor glucose value) entries in xDrip. }
-  XDRIP_READINGS = 'sgv.json';
+XDRIP_READINGS = 'sgv.json';
 
 const
   {** Endpoint used to fetch pebble-style status information (contains "now" timestamp). }
-  XDRIP_STATUS = 'pebble';
+XDRIP_STATUS = 'pebble';
 
 const
   {** Endpoint that may include current BG range settings (hi/lo targets). }
-  XDRIP_RANGES = 'status.json';
+XDRIP_RANGES = 'status.json';
 
 type
   {** xDrip client.
@@ -75,8 +75,8 @@ type
 
       @seealso(NightScout)
    }
-  xDrip = class(NightScout)
-  public
+xDrip = class(NightScout)
+public
     {** Create an xDrip API client.
 
         Initializes:
@@ -94,7 +94,7 @@ type
         @param(pass  xDrip API secret in plain text; hashed to SHA1 for header usage)
         @param(extra Reserved for future use)
      }
-    constructor Create(user, pass, extra: string); override;
+  constructor Create(user, pass, extra: string); override;
 
     {** Fetch BG readings from xDrip.
 
@@ -109,8 +109,8 @@ type
         @param(res     Out parameter receiving the raw JSON/text response)
         @returns(Array of @code(BGReading); may be empty on errors)
      }
-    function GetReadings(min, maxNum: integer; path: string;
-      out res: string): BGResults; override;
+  function GetReadings(min, maxNum: integer; path: string;
+    out res: string): BGResults; override;
 
     {** Connect to the xDrip server and initialize time offset and thresholds.
 
@@ -126,15 +126,15 @@ type
 
         @returns(True on success; otherwise False and @code(errormsg) is set)
      }
-    function Connect: boolean; override;
+  function Connect: boolean; override;
 
     {** UI parameter label provider (override).
         1: xDrip URL
         2: API Secret (plain text)
         3: (unused)
      }
-    class function ParamLabel(Index: integer): string; override;
-  protected
+  class function ParamLabel(Index: integer): string; override;
+protected
   {** Get the value which represents the maximum reading for the backend
   }
   function getLimitHigh: integer; override;
@@ -142,13 +142,13 @@ type
   {** Get the value which represents the minimum reading for the backend
   }
   function getLimitLow: integer; override;
-  end;
+end;
 
 implementation
 
 resourcestring
-  sParamUsername = 'xDrip URL';
-  sParamPassword = 'API Secret';
+sParamUsername = 'xDrip URL';
+sParamPassword = 'API Secret';
 {------------------------------------------------------------------------------
   Create an xDrip API client.
 
@@ -188,7 +188,7 @@ end;
   The NightScout implementation handles JSON parsing and mapping to BGResults.
 ------------------------------------------------------------------------------}
 function xDrip.GetReadings(min, maxNum: integer; path: string;
-  out res: string): BGResults;
+out res: string): BGResults;
 begin
   // If path is empty, default to the xDrip sgv.json endpoint
   if path = '' then
@@ -219,28 +219,28 @@ begin
   // Basic check for protocol correctness to catch obvious misconfiguration early
   if Copy(baseUrl, 1, 4) <> 'http' then
   begin
-    Result := False;
+    Result := false;
     lastErr := 'Invalid address. Must begin with http:// or https://!';
     Exit;
   end;
 
   // Fetch xDrip "pebble" info. If the secret fails, xDrip often replies with "Authentication failed"
   // Match a substring ("uthentication failed") to avoid case sensitivity issues.
-  LResponse := native.Request(False, XDRIP_STATUS, [], '', key);
+  LResponse := native.Request(false, XDRIP_STATUS, [], '', key);
   
   // Check if response is empty or contains connection errors
   if (LResponse = '') or (Pos('Could not connect', LResponse) > 0) or 
-     (Pos('Failed to connect', LResponse) > 0) then
+    (Pos('Failed to connect', LResponse) > 0) then
   begin
     lastErr := 'Cannot connect to xDrip server at ' + baseUrl + '. Check URL and network.';
-    Result := False;
+    Result := false;
     Exit;
   end;
   
   if Pos('uthentication failed', LResponse) > 0 then
   begin
     lastErr := 'Wrong API secret. xDrip rejected authentication.';
-    Result := False;
+    Result := false;
     Exit;
   end;
 
@@ -254,7 +254,7 @@ begin
       lastErr := 'Wrong response format from ' + XDRIP_STATUS + ' endpoint. Expected "now" timestamp. Got: ' + Copy(LResponse, 1, 200) + '...'
     else
       lastErr := 'Wrong response format from ' + XDRIP_STATUS + ' endpoint. Expected "now" timestamp. Got: ' + LResponse;
-    Result := False;
+    Result := false;
     Exit;
   end;
   
@@ -264,7 +264,7 @@ begin
   if not TryStrToInt64(LResponse, LTimeStamp) then
   begin
     lastErr := 'Wrong timestamp format in xDrip response. Expected numeric value, got: ' + LResponse;
-    Result := False;
+    Result := false;
     Exit;
   end;
 
@@ -278,7 +278,7 @@ begin
   timeDiff := -1 * timeDiff; // Negative to match the expected adjustment direction
 
   // Retrieve hi/lo ranges from xDrip (status.json); parse simple integers by slicing
-  LResponse := native.Request(False, XDRIP_RANGES, [], '', key);
+  LResponse := native.Request(false, XDRIP_RANGES, [], '', key);
 
   // Parse bgHigh, e.g. ..."bgHigh":160,...
   if TryStrToInt(TrimSet(Copy(LResponse, Pos('bgHigh', LResponse) + 8, 4),
@@ -298,7 +298,7 @@ begin
   cgmRangeHi := 500;
   cgmRangeLo := 0;
 
-  Result := True;
+  Result := true;
 end;
 
 {------------------------------------------------------------------------------
@@ -307,10 +307,12 @@ end;
 class function xDrip.ParamLabel(Index: integer): string;
 begin
   case Index of
-    1: Result := sParamUsername;
-    2: Result := sParamPassword;
-    else
-      Result := inherited ParamLabel(Index);
+  1:
+    Result := sParamUsername;
+  2:
+    Result := sParamPassword;
+  else
+    Result := inherited ParamLabel(Index);
   end;
 end;
 
