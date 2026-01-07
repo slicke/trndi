@@ -79,9 +79,6 @@ begin
   SetDefaultLang(lang, getLangPath);
 end;
 
-{$ifdef X_LINUXBSD}
-{$endif}
-
 {$ifdef DARWIN}
 procedure TfBG.InitializePlatformMenus;
 var

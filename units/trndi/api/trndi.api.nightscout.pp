@@ -122,7 +122,7 @@ public
   class function ParamLabel(Index: integer): string; override;
     {** Test NightScout credentials
     }
-  class function testConnection(user, pass, extra: string): Byte; override;
+  class function testConnection(user, pass, extra: string): byte; override;
 private
     // (no private members)
 
@@ -134,8 +134,8 @@ end;
 implementation
 
 resourcestring
- sParamUsername = 'NightScout URL';
- sParamPassword = 'API Secret';
+sParamUsername = 'NightScout URL';
+sParamPassword = 'API Secret';
 
 {------------------------------------------------------------------------------
   create (constructor)
@@ -339,19 +339,17 @@ begin
       if Assigned(deltaField) then
         deltaValue := single(deltaField.AsFloat)
       else
+      if i < js.Count - 1 then
       begin
-        // Calculate delta manually from previous reading
-        // Nightscout returns entries in reverse chronological order (newest first)
-        if i < js.Count - 1 then
-        begin
           // Get the previous (older) reading's SGV
-          prevSgv := js.FindPath(Format('[%d].sgv', [i + 1])).AsInteger;
-          deltaValue := single(currentSgv - prevSgv);
-        end
-        else
+        prevSgv := js.FindPath(Format('[%d].sgv', [i + 1])).AsInteger;
+        deltaValue := single(currentSgv - prevSgv);
+      end
+      else
           // Last (oldest) entry has no previous reading to compare
-          deltaValue := 0;
-      end;
+        deltaValue := 0// Calculate delta manually from previous reading
+// Nightscout returns entries in reverse chronological order (newest first)
+      ;
       Result[i].update(currentSgv, deltaValue);
 
       // Receiver environment details (optional fields in Nightscout).

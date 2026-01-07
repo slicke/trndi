@@ -47,7 +47,7 @@
     @returns         A new JS object with class @code(TrndiClassID)
 }
 function TrndiConstructor(ctx: JSContext; this_val: JSValueRaw;
-  argc: integer; argv: PJSValues): JSValueRaw; cdecl;
+argc: integer; argv: PJSValues): JSValueRaw; cdecl;
 begin
   // Create a new object of the Trndi class
   Result := JS_NewObjectClass(ctx, TrndiClassID);
@@ -65,7 +65,7 @@ end;
     @returns         @code(JS_UNDEFINED)
 }
 function JSDoLog(ctx: JSContext; this_val: JSValueRaw; argc: integer;
-  argv: PJSValues): JSValueRaw; cdecl;
+argv: PJSValues): JSValueRaw; cdecl;
 var
   i: integer;
   buffer: TSynTempBuffer;
@@ -85,7 +85,7 @@ end;
     @returns         @code(JS_UNDEFINED)
 }
 function JSDoAlert(ctx: JSContext; this_val: JSValueRaw; argc: integer;
-  argv: PJSValues): JSValueRaw; cdecl;
+argv: PJSValues): JSValueRaw; cdecl;
 var
   i: integer;
   output: rawutf8;
@@ -107,7 +107,7 @@ end;
     @returns         @code(JS_TRUE) on Yes; @code(JS_FALSE) on No
 }
 function JSDoYesNo(ctx: JSContext; this_val: JSValueRaw; argc: integer;
-  argv: PJSValues): JSValueRaw; cdecl;
+argv: PJSValues): JSValueRaw; cdecl;
 var
   i: integer;
   output: rawutf8;
@@ -134,7 +134,7 @@ end;
     @returns         JS string of user input (or empty on cancel)
 }
 function JSInput(ctx: JSContext; this_val: JSValueRaw; argc: integer;
-  argv: PJSValues): JSValueRaw; cdecl;
+argv: PJSValues): JSValueRaw; cdecl;
 var
   i: integer;
   Caption, desc, def: rawutf8;
@@ -145,7 +145,8 @@ begin
   desc := ctx^.ToUtf8(argv^[1]);
   def := ctx^.ToUtf8(argv^[2]);
   response := ExtInput(uxdAuto, sExtMsg, Caption, desc, def, x);
-  if x = mrCancel then response := '';
+  if x = mrCancel then
+    response := '';
   Result := JS_NewString(ctx, pansichar(Response));
 end;
 
@@ -163,7 +164,7 @@ end;
     @returns         BigInt index of selected option
 }
 function JSCombo(ctx: JSContext; this_val: JSValueRaw; argc: integer;
-  argv: PJSValues): JSValueRaw; cdecl;
+argv: PJSValues): JSValueRaw; cdecl;
 var
   i: integer;
   Caption, desc: rawutf8;
@@ -195,7 +196,7 @@ end;
     @returns         JS string with the HTTP response body or @code(JS_UNDEFINED)
 }
 function JSFetch(ctx: JSContext; this_val: JSValueRaw; argc: integer;
-  argv: PJSValues): JSValueRaw; cdecl;
+argv: PJSValues): JSValueRaw; cdecl;
 var
   URL, res: string;
   response: RawUtf8;
@@ -229,7 +230,7 @@ end;
     @returns         @code(JS_UNDEFINED)
 }
 function JSHandleError(ctx: JSContext; this_val: JSValueRaw; argc: integer;
-  argv: PJSValues): JSValueRaw; cdecl;
+argv: PJSValues): JSValueRaw; cdecl;
 var
   err: string;
 begin
@@ -254,7 +255,7 @@ end;
     @returns         JS string with file contents or @code(JS_UNDEFINED)
 }
 function JSReadFile(ctx: PJSContext; this_val: JSValueRaw; argc: integer;
-  argv: PJSValues): JSValueRaw; cdecl;
+argv: PJSValues): JSValueRaw; cdecl;
 var
   FileName, FileContent: RawUtf8;
 begin
@@ -284,7 +285,7 @@ end;
     @returns         JS boolean indicating write success
 }
 function JSWriteFile(ctx: PJSContext; this_val: JSValueRaw; argc: integer;
-  argv: PJSValues): JSValueRaw; cdecl;
+argv: PJSValues): JSValueRaw; cdecl;
 var
   FileName, FileContent: RawUtf8;
 begin
@@ -317,31 +318,29 @@ end;
     @param(opaque)      User data pointer passed when the tracker was registered
 }
 procedure PromiseRejectionTracker(ctx: PJSContext; promise, reason: JSValueConst;
-  is_handled: longbool; opaque: Pointer); cdecl;
+is_handled: longbool; opaque: Pointer); cdecl;
 var
   error_msg: RawUtf8;
 begin
   // Only act on genuinely unhandled rejections
   if not is_handled then
-  begin
-    try
+  try
       // Convert the JS 'reason' value to a string for display/logging
       // JSValueConstToUtf8 expects JSContext (not PJSContext), so we pass ctx^ 
-      error_msg := JSValueConstToUtf8(ctx^, reason);
+    error_msg := JSValueConstToUtf8(ctx^, reason);
 
       // Show a helpful alert message. Fall back to a generic message if no text was produced.
-      if error_msg <> '' then
-        TTrndiExtEngine.Instance.alert('Unhandled Promise rejection: ' +
-          string(error_msg))
-      else
-        TTrndiExtEngine.Instance.alert(
-          'Unhandled Promise rejection: [no error message]');
-    except
-      on E: Exception do
+    if error_msg <> '' then
+      TTrndiExtEngine.Instance.alert('Unhandled Promise rejection: ' +
+        string(error_msg))
+    else
+      TTrndiExtEngine.Instance.alert(
+        'Unhandled Promise rejection: [no error message]');
+  except
+    on E: Exception do
         // If conversion fails completely, show a generic error
-        TTrndiExtEngine.Instance.alert(
-          'Unhandled Promise rejection: [error retrieving message]');
-    end;
+      TTrndiExtEngine.Instance.alert(
+        'Unhandled Promise rejection: [error retrieving message]');
   end;
 end;
 
@@ -376,8 +375,8 @@ end;
       to reject the Promise immediately in that case.
 }
 function AsyncTask(ctx: JSContext; this_val: JSValueConst;
-  argc: integer; argv: PJSValueConst; magic: integer;
-  func_data: PJSValueRaw): JSValueRaw; cdecl;
+argc: integer; argv: PJSValueConst; magic: integer;
+func_data: PJSValueRaw): JSValueRaw; cdecl;
 var
   func: string;        // Name of the registered Pascal callback (bound via func_data)
   cb: PJSCallback;     // Pointer to the callback metadata (includes arity and handler)
@@ -411,15 +410,13 @@ begin
   // 4) Validate arity against min/max constraints (unless min=-1 which means “free-form”).
   if (not ((params >= cb^.params.min) and (params <= cb^.params.max))) and
     (cb^.params.min > -1) then
-  begin
-    // Inform the user about the mismatch. Consider rejecting the Promise immediately instead.
     if cb^.params.min = cb^.params.max then
       ExtError(uxdAuto, Format('[%s] Needs %d parameters, but we got %d',
         [func, cb^.params.min, params]))
     else
       ExtError(uxdAuto, Format('[%s] Needs %d - %d parameters, but we got %d',
-        [func, cb^.params.min, cb^.params.max, params]));
-  end;
+        [func, cb^.params.min, cb^.params.max, params]))// Inform the user about the mismatch. Consider rejecting the Promise immediately instead.
+  ;
 
   // 5) Create a Promise and capture its resolving functions.
   //    funcs[0] will be the resolve function, funcs[1] the reject function.
@@ -436,10 +433,9 @@ begin
 
   // Optional: handle error promises explicitly (currently no-op).
   if JS_IsError(ctx, promise) then
-  begin
-    // Consider: js_std_dump_error(ctx); or returning a rejected promise.
-    // Currently left as a no-op to preserve original behavior.
-  end;
+  // Consider: js_std_dump_error(ctx); or returning a rejected promise.
+// Currently left as a no-op to preserve original behavior.
+  ;
 
   // 6) Kick off the asynchronous work.
   //    The task is responsible for:

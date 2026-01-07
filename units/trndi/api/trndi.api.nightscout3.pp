@@ -77,7 +77,7 @@ public
     out res: string): BGResults; override;
     {** Test NightScout credentials
     }   
-  class function testConnection(user, pass, extra: string): Byte; override;
+  class function testConnection(user, pass, extra: string): byte; override;
     {** UI parameter label provider (override).
         1: NightScout URL
         2: Auth token suffix (v2)
@@ -102,8 +102,8 @@ end;
 implementation
 
 resourcestring
-  sParamUsername = 'NightScout URL';
-  sParamPassword = 'Auth token suffix';
+sParamUsername = 'NightScout URL';
+sParamPassword = 'Auth token suffix';
 
 {------------------------------------------------------------------------------
   Helper: Normalize and store site base and API base URL.
@@ -605,9 +605,7 @@ begin
 
   // Basic sanity checks for URL
   if (Copy(user, 1, 4) <> 'http') then
-  begin
     Exit;
-  end;
 
   base := TrimRightSet(user, ['/']);
 
@@ -651,14 +649,12 @@ begin
       resp := tn.Request(false, NS3_STATUS, [], '', '');
 
     if Trim(resp) = '' then
-    begin
-      // Try fallback to v1 absolute URL without auth
       if not TrndiNative.getURL(base + '/api/v1/status.json', resp) then
       begin
         Result := 1;
         Exit;
-      end;
-    end;
+      end// Try fallback to v1 absolute URL without auth
+    ;
 
     // Application-level errors prefixed with '+'
     if (resp <> '') and (resp[1] = '+') then
@@ -687,7 +683,7 @@ begin
         topObj := rootObj;
         // v3 may have a result wrapper
         if (rootObj.IndexOfName('result') <> -1) and
-           (rootObj.Find('result').JSONType = jtObject) then
+          (rootObj.Find('result').JSONType = jtObject) then
           topObj := TJSONObject(rootObj.Find('result'));
 
         serverEpoch := topObj.Get('srvDate', int64(0));

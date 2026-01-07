@@ -132,7 +132,7 @@ Process, Types, LCLType;
 // Used by destructor; implemented later in this unit.
 procedure WriteTrndiCurrentValueCache(const Value: string); forward;
 procedure WriteTrndiCurrentStateCache(const Value: string; ReadingEpoch: int64;
-  FreshMinutes: integer); forward;
+FreshMinutes: integer); forward;
 
 {------------------------------------------------------------------------------
   IsNotifySendAvailable
@@ -252,7 +252,6 @@ begin
   // Prefer the gnome-extensions CLI if present.
   gnomeExtensionsPath := FindInPath('gnome-extensions');
   if gnomeExtensionsPath <> '' then
-  begin
     if RunAndCaptureSimple(gnomeExtensionsPath, ['info', TRNDI_GNOME_EXT_UUID], outS,
       exitCode) and (exitCode = 0) then
     begin
@@ -262,7 +261,6 @@ begin
         ((Pos('ENABLED', outS) > 0) or (Pos('ACTIVE', outS) > 0)) then
         Exit(true);
     end;
-  end;
 
   // Fallback: inspect org.gnome.shell enabled-extensions list.
   gsettingsPath := FindInPath('gsettings');
@@ -272,10 +270,8 @@ begin
   if RunAndCaptureSimple(gsettingsPath,
     ['get', 'org.gnome.shell', 'enabled-extensions'], outS, exitCode) and
     (exitCode = 0) then
-  begin
-    // Example: "['uuid@domain', 'other@domain']" or "@as []"
-    Result := Pos('''' + TRNDI_GNOME_EXT_UUID + '''', outS) > 0;
-  end;
+    Result := Pos('''' + TRNDI_GNOME_EXT_UUID + '''', outS) > 0// Example: "['uuid@domain', 'other@domain']" or "@as []"
+  ;
 end;
 
 function GetUserConfigDirLinux: string;
@@ -876,7 +872,7 @@ var
   sl: TStringList;
   existing: TStringList;
 
-  procedure SaveStringListAtomic(const TargetPath: string; const Lines: TStringList);
+procedure SaveStringListAtomic(const TargetPath: string; const Lines: TStringList);
   var
     tmp: string;
   begin
@@ -957,13 +953,13 @@ begin
 end;
 
 procedure WriteTrndiCurrentStateCache(const Value: string; ReadingEpoch: int64;
-  FreshMinutes: integer);
+FreshMinutes: integer);
 var
   cacheDir, filePath, badgeText: string;
   dval: double;
   sl: TStringList;
 
-  procedure SaveStringListAtomic(const TargetPath: string; const Lines: TStringList);
+procedure SaveStringListAtomic(const TargetPath: string; const Lines: TStringList);
   var
     tmp: string;
   begin
@@ -1316,7 +1312,7 @@ begin
 end;
 
 procedure TTrndiNativeLinux.WriteCurrentIndicatorCache(const Value: string;
-  const ReadingTime: TDateTime; FreshMinutes: integer);
+const ReadingTime: TDateTime; FreshMinutes: integer);
 var
   epoch: int64;
 begin

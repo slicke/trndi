@@ -267,7 +267,7 @@ const
 
         @returns(0 if it works, 1 if it doesnt, 3 if not supported)
      }
-  class function testConnection(user, pass, extra: string): Byte; virtual;
+  class function testConnection(user, pass, extra: string): byte; virtual;
     // -------- Properties --------
 
   {** Backend's maximum reading. }
@@ -530,7 +530,7 @@ end;
   Returns True if prediction succeeded; False if insufficient data.
 ------------------------------------------------------------------------------}
 function TrndiAPI.predictReadings(numPredictions: integer; 
-  out predictions: BGResults): boolean;
+out predictions: BGResults): boolean;
 var
   historicalReadings: BGResults;
   n, i: integer;
@@ -546,7 +546,7 @@ var
   lastValue, prevValue, minutesDiff, maxDrop, maxRise: double;
   temp: BGReading;
 begin
-  Result := False;
+  Result := false;
   SetLength(predictions, 0);
   
   // Validate input
@@ -567,7 +567,7 @@ begin
   if n < minReadings then
   begin
     lastErr := 'Insufficient data for prediction (need at least ' + 
-               IntToStr(minReadings) + ' readings)';
+      IntToStr(minReadings) + ' readings)';
     Exit;
   end;
   
@@ -690,7 +690,7 @@ begin
     predictions[i].level := getLevel(predictedValue);
   end;
   
-  Result := True;
+  Result := true;
 end;
 
 {------------------------------------------------------------------------------
