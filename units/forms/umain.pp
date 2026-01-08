@@ -2825,10 +2825,7 @@ procedure SaveUserSettings(f: TfConf);
           lbUsers.items.Delete(i);
 
       // Handle user list changes
-      if lbUsers.Count > 0 then
-        SetSetting('users.names', lbUsers.Items.CommaText)
-      else
-        SetSetting('users.names', '');
+      native.SetCSVSetting('users.names', lbUsers.Items.toStringArray, true) ;
 
       native.SetRootSetting('users.colorbox', IfThen(cbUserColor.Checked,
         'true', 'false'));
