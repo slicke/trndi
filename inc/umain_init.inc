@@ -236,45 +236,35 @@ procedure TfBG.LoadUserProfile;
 var
   i: integer;
   userNick: string;
+  userList: TStringArray;
 begin
-  if username <> '' then
-  begin
-    with TStringList.Create do
-    begin
-      AddCommaText(username);
-      i := ExtList(uxdAuto, RS_MULTIUSER_BOX_TITLE, RS_MULTIUSER_BOX_TITLE,
-        RS_MULTIUSER_BOX, ToStringArray, true);
+  if native.TryGetCSVSetting('users.names', userList, true) then begin // We have more than 1 user
+    i := ExtList(uxdAuto, RS_MULTIUSER_BOX_TITLE, RS_MULTIUSER_BOX_TITLE, // Show a prompt to choose user
+      RS_MULTIUSER_BOX, userList, true);
 
-      if (i > -1) and (strings[i] <> '') then
-      begin
-        username := strings[i];
-        native.configUser := username;
-        userNick := native.GetSettingEx('user.nick', username);
+    if i > -1 then begin // We chose a user
+      username := userList[i]; // Set username
+      native.configUser := username; // Set settings main key
+      userNick := native.GetSettingEx('user.nick', username); // Load the user's nickname
 
-        fbg.Caption := Format(RS_USER_CAPTION, [userNick, fBG.Caption]);
-        multinick := userNick;
-      end
-      else
-      begin
-        username := '';
-        userNick := native.GetSettingEx('user.nick', RS_DEFAULT_ACCOUNT);
+      fbg.Caption := Format(RS_USER_CAPTION, [userNick, fBG.Caption]); // Set the main form title
+      multinick := userNick; // Set the multi user nickname
+    end else begin // Standard user
+      username := ''; // No username
+      userNick := native.GetSettingEx('user.nick', RS_DEFAULT_ACCOUNT); // Get the standard user's nick
+      multinick := userNick; // Set the multi user nickname
+      fbg.Caption := Format(RS_USER_CAPTION, [userNick, fBG.Caption]); // Set the main form title
+    end;
 
-        multinick := userNick;
-        fbg.Caption := Format(RS_USER_CAPTION, [userNick, fBG.Caption]);
-      end;
-      Free;
-    end;// Load possible other users
-    multi := true;
-    pnMultiUser.Color := native.GetColorSetting('user.color', clBlack);
-    if pnMultiUser.Color <> clBlack then
+    multi := true; // Enable multi user support
+    pnMultiUser.Color := native.GetColorSetting('user.color', clBlack); // Set user's color
+    if pnMultiUser.Color <> clBlack then // Act if the panel is not transparent (black)
     begin
       pnMultiUser.Visible := native.GetRootSetting('users.colorbox', 'true') = 'true';
-      customTitlebar := setColorMode;
-      // Set the custom title bar value depending if the panel is showing
+      customTitlebar := setColorMode; // Set the custom title bar value depending if the panel is showing
     end;
-  end
-  else
-    multi := false;
+  end else
+    multi := false; // No multi user
 end;
 
 procedure TfBG.CheckAndAcceptLicense;
@@ -513,8 +503,6 @@ begin
   begin
     SetLang;
     fSplash.linfo.Caption := RS_INIT_PROFILES;
-
-    username := GetRootSetting('users.names', '');
     LoadUserProfile;
 
     fSplash.linfo.Caption := RS_INIT_LOCALE;
