@@ -326,28 +326,39 @@ begin
   apiCreds := native.GetSetting('remote.creds');
 
   case native.GetSetting('remote.type') of
-   API_NS:
+   API_NS,
+   'API_NS':
     api := NightScout.Create(apiTarget, apiCreds, '');
-  API_NS3:
+   API_NS3,
+   'API_NS3':
     api := NightScout3.Create(apiTarget, apiCreds, '');
-  API_DEX_USA:
-    api := Dexcom.Create(apiTarget, apiCreds, 'usa');
-  API_DEX_EU:
-    api := Dexcom.Create(apiTarget, apiCreds, 'world');
-  API_XDRIP:
-    api := xDrip.Create(apiTarget, apiCreds, '');
+   API_DEX_USA,
+   'API_DEX_USA':
+     api := Dexcom.Create(apiTarget, apiCreds, 'usa');
+   API_DEX_EU,
+   'API_DEX_EU':
+     api := Dexcom.Create(apiTarget, apiCreds, 'world');
+   API_XDRIP,
+   'API_XDRIP':
+     api := xDrip.Create(apiTarget, apiCreds, '');
   {$ifdef DEBUG}
-   API_D_DEBUG:
+   API_D_DEBUG,
+   'API_D_DEBUG':
     api := DebugAPI.Create(apiTarget, apiCreds, '');
-   API_D_MISSING:
+   API_D_MISSING,
+   'API_D_MISSING':
     api := DebugMissingAPI.Create(apiTarget, apiCreds, '');
-   API_D_PERFECT:
+   API_D_PERFECT,
+   'API_D_PERFECT':
     api := DebugPerfectAPI.Create(apiTarget, apiCreds, '');
-   API_D_CUSTOM:
+   API_D_CUSTOM,
+   'API_D_CUSTOM':
     api := DebugCustomAPI.Create(apiTarget, apiCreds, '');
-   API_D_EDGE:
+   API_D_EDGE,
+   'API_D_EDGE':
     api := DebugEdgeAPI.Create(apiTarget, apiCreds, '');
-   API_D_FIRST:
+   API_D_FIRST,
+   'API_D_FIRST':
     api := DebugFirstMissingAPI.Create(apiTarget, apiCreds, '');
   {$endif}
   else
