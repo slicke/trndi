@@ -2489,7 +2489,8 @@ var
 procedure LoadUserSettings(f: TfConf);
   var
     remoteType: string;
-    userNamesCSV: string;
+    userNames: TStringArray;
+    hasUsers: boolean;
     posName: string;
     i: integer;
     posValue: integer;
@@ -2576,10 +2577,10 @@ procedure LoadUserSettings(f: TfConf);
       fsLoRange.Enabled := cbCustRange.Checked;
 
       // User customizations
-      userNamesCSV := GetRootSetting('users.names', '');
-      lbUsers.Clear;
-      lbUsers.Items.CommaText := userNamesCSV;
-      if lbUsers.Items.Count < 1 then
+      if TryGetCSVSetting('users.names', userNames, true) then begin
+        lbUsers.Clear;
+        lbUsers.Items.AddStrings(userNames);
+      end else
         lbUsers.Enabled := false;
 
       lbUsers.Items.Add('- ' + RS_DEFAULT_ACCOUNT + ' -');
