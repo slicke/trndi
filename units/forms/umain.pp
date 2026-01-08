@@ -987,7 +987,7 @@ begin
   dots := ExtNumericInput(uxdAuto,sDotSize,sCustomiseDotSize, sEnterDotSize,dotscale,true,mr);
   if mr = mrOk then
   begin
-    native.SetSetting('ux.dot_scale', dots.tostring);
+    native.SetFloatSetting('ux.dot_scale', dots);
     dotscale := dots;
   end;
 end;
@@ -1271,8 +1271,8 @@ begin
   // Save window position if using custom positioning
   if GetValidatedPosition = tpoCustom then
   begin
-    native.SetSetting('position.last.left', IntToStr(Left));
-    native.SetSetting('position.last.top', IntToStr(Top));
+    native.SetSetting('position.last.left', Left);
+    native.SetSetting('position.last.top', Top);
   end;
 
   {$ifdef Darwin}
@@ -2234,12 +2234,12 @@ begin
   if not native.SpeakAvailable then
   begin
     ShowMessage(Format(sAnnounceNotAvailable, [native.SpeakSoftwareName]));
-    native.SetBoolSetting('main.announce', false);
+    native.SetSetting('main.announce', false);
     miAnnounce.Checked := false;
     Exit;
   end;
   miAnnounce.Checked := not miAnnounce.Checked;
-  native.SetBoolSetting('main.announce', miAnnounce.Checked);
+  native.SetSetting('main.announce', miAnnounce.Checked);
   native.speak(IfThen(miAnnounce.Checked, sAnnounceOn, sAnnounceOff));
 end;
 
@@ -2253,7 +2253,7 @@ procedure TfBG.miClockClick(Sender: TObject);
 begin
   miClock.Checked := not miClock.Checked;
   tClock.Enabled := miClock.Checked;
-  native.SetBoolSetting('main.clock', tClock.Enabled);
+  native.SetSetting('main.clock', tClock.Enabled);
 end;
 
 procedure TfBG.miDotNormalClick(Sender: TObject);
@@ -2262,7 +2262,7 @@ var
 begin
   fmt.DecimalSeparator := '.';
   dotscale := StrToFloat((Sender as TMenuItem).Hint, fmt);
-  native.SetSetting('ux.dot_scale', dotscale.toString);
+  native.SetFloatSetting('ux.dot_scale', dotscale);
   FormResize(fBG);
 end;
 
@@ -2330,7 +2330,7 @@ procedure TfBG.miRangeColorClick(Sender: TObject);
 begin
   miRangeColor.Checked := not miRangeColor.Checked;
   miForce.Click;
-  native.SetBoolSetting('ux.range_color', miRangeColor.Checked);
+  native.SetSetting('ux.range_color', miRangeColor.Checked);
 end;
 
 procedure TfBG.miBordersClick(Sender: TObject);
@@ -2814,31 +2814,30 @@ procedure SaveUserSettings(f: TfConf);
       SetSetting('font.ago', lAgo.Font.Name);
       langCode := ExtractLangCode(cbLang.Items[cbLang.ItemIndex]);
       SetSetting('locale', langCode);
-      native.SetSetting('position.main', IntToStr(cbPos.ItemIndex));
-      native.setBoolSetting('size.main', cbSize.Checked);
-      native.setBoolSetting('alerts.flash.high', cbFlashHi.Checked);
-      native.setBoolSetting('alerts.flash.low', cbFlashLow.Checked);
-      native.setBoolSetting('alerts.flash.perfect', cbFlashPerfect.Checked);
+      native.SetSetting('position.main', cbPos.ItemIndex);
+      native.setSetting('size.main', cbSize.Checked);
+      native.setSetting('alerts.flash.high', cbFlashHi.Checked);
+      native.setSetting('alerts.flash.low', cbFlashLow.Checked);
+      native.setSetting('alerts.flash.perfect', cbFlashPerfect.Checked);
 
       for i := lbUsers.Items.Count - 1 downto 0 do
         if lbUsers.items[i][1] = '-' then
           lbUsers.items.Delete(i);
 
       // Handle user list changes
-      native.SetCSVSetting('users.names', lbUsers.Items.toStringArray, true) ;
+      SetCSVSetting('users.names', lbUsers.Items.toStringArray, true) ;
 
-      native.SetRootSetting('users.colorbox', IfThen(cbUserColor.Checked,
-        'true', 'false'));
+      SetSetting('users.colorbox', cbUserColor.Checked, true);
 
       // Save remote and override settings
       SetSetting('remote.type', APIToCode(cbSys.Text));
       SetSetting('remote.target', eAddr.Text);
       SetSetting('remote.creds', ePass.Text);
-      SetSetting('unit', IfThen(rbUnit.ItemIndex = 0, 'mmol', 'mgdl'));
-      SetBoolSetting('ext.privacy', cbPrivacy.Checked);
-      SetBoolSetting('display.timestamp', cbTimeStamp.Checked);
+      SetBoolSetting('unit', rbUnit.ItemIndex = 0, 'mmol', 'mgdl');
+      SetSetting('ext.privacy', cbPrivacy.Checked);
+      SetSetting('display.timestamp', cbTimeStamp.Checked);
 
-      SetSetting('system.fresh_threshold', IntToStr(spTHRESHOLD.Value));
+      SetSetting('system.fresh_threshold', spTHRESHOLD.Value);
 
       // Save unit-specific settings
       if rbUnit.ItemIndex = 0 then
@@ -2856,26 +2855,26 @@ procedure SaveUserSettings(f: TfConf);
         SetSetting('override.rangehi', Round(fsHiRange.Value).ToString);
       end;
 
-      native.SetBoolSetting('range.custom', cbTIR.Checked);
-      native.SetBoolSetting('range.tir_icon', cbTirIcon.checked);
+      native.SetSetting('range.custom', cbTIR.Checked);
+      native.SetSetting('range.tir_icon', cbTirIcon.checked);
 
-      native.SetSetting('range.time', IntToStr(seTir.Value));
-      native.SetBoolSetting('ux.off_bar', cbOffBar.Checked);
-      native.SetBoolSetting('ux.paint_range', cbPaintHiLo.Checked);
-      native.SetBoolSetting('ux.paint_range_lines', cbPaintLines.Checked);
-      native.SetBoolSetting('ux.paint_range_cgmrange', cbPaintHiLoRange.Checked);
+      native.SetSetting('range.time', seTir.Value);
+      native.SetSetting('ux.off_bar', cbOffBar.Checked);
+      native.SetSetting('ux.paint_range', cbPaintHiLo.Checked);
+      native.SetSetting('ux.paint_range_lines', cbPaintLines.Checked);
+      native.SetSetting('ux.paint_range_cgmrange', cbPaintHiLoRange.Checked);
       native.SetSetting('locale.separator', edCommaSep.Text);
       native.SetSetting('ux.badge_size', edTray.Value.ToString);
 
-      SetBoolSetting('override.enabled', cbCust.Checked);
-      SetBoolSetting('override.range', cbCustRange.Checked);
-      SetBoolSetting('predictions.enable', cbPredictions.Checked);
-      SetBoolSetting('webserver.enable', cbWebAPI.Checked);
-      SetBoolSetting('predictions.short', cbPredictShort.Checked);
-      SetBoolSetting('predictions.short.fullarrows', cbPredictShortFullArrows.Checked);
-      SetBoolSetting('predictions.short.showvalue', rbPredictShortShowValue.Checked);
+      SetSetting('override.enabled', cbCust.Checked);
+      SetSetting('override.range', cbCustRange.Checked);
+      SetSetting('predictions.enable', cbPredictions.Checked);
+      SetSetting('webserver.enable', cbWebAPI.Checked);
+      SetSetting('predictions.short', cbPredictShort.Checked);
+      SetSetting('predictions.short.fullarrows', cbPredictShortFullArrows.Checked);
+      SetSetting('predictions.short.showvalue', rbPredictShortShowValue.Checked);
       if cbPredictShortSize.ItemIndex >= 0 then
-        SetSetting('predictions.short.size', IntToStr(cbPredictShortSize.ItemIndex + 1));
+        SetSetting('predictions.short.size', cbPredictShortSize.ItemIndex + 1);
       SetSetting('media.url_high', edMusicHigh.Text);
       SetSetting('media.url_low', edMusicLow.Text);
       SetSetting('media.url_perfect', edMusicPerfect.Text);
@@ -2884,10 +2883,10 @@ procedure SaveUserSettings(f: TfConf);
       SetSetting('url_remote.url_low', edURLLow.Text);
       SetSetting('url_remote.url_perfect', edURLPerfect.Text);
 
-      SetBoolSetting('razer.enabled', cbChroma.Checked);
-      SetBoolSetting('razer.normal', cbChromaNormal.Checked);
+      SetSetting('razer.enabled', cbChroma.Checked);
+      SetSetting('razer.normal', cbChromaNormal.Checked);
 
-      SetBoolSetting('media.pause', cbMusicPause.Checked);
+      SetSetting('media.pause', cbMusicPause.Checked);
 
       SetColorSetting('ux.bg_color_ok', cl_ok_bg.ButtonColor);
       SetColorSetting('ux.bg_color_hi', cl_hi_bg.ButtonColor);
@@ -2903,10 +2902,10 @@ procedure SaveUserSettings(f: TfConf);
       SetColorSetting('ux.bg_rel_color_hi_txt', cl_hi_txt_cust.ButtonColor);
       SetColorSetting('ux.bg_rel_color_lo_txt', cl_lo_txt_cust.ButtonColor);
 
-      native.SetBoolSetting('ux.title_color', cbTitleColor.Checked);
+      native.SetSetting('ux.title_color', cbTitleColor.Checked);
 
-      native.SetBoolSetting('ux.tir_color_on', cbTirColor.Checked);
-      native.SetBoolSetting('ux.tir_color_custom_on', cbTirColorCustom.Checked);
+      native.SetSetting('ux.tir_color_on', cbTirColor.Checked);
+      native.SetSetting('ux.tir_color_custom_on', cbTirColorCustom.Checked);
 
       native.SetColorSetting('ux.tir_color', cbTirBar.ButtonColor);
       native.SetColorSetting('ux.tir_color_custom', cbTirBarCustom.ButtonColor);
