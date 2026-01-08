@@ -166,6 +166,9 @@ class var touchOverride: TTrndiBool;
   {** Read setting, return true/false if it exists. }
   function TryGetSetting(const keyname: string; out res: string;
   global: boolean = false): boolean;
+  {** Read settings list, return true/false if it exists. }
+  function TryGetCSVSetting(const keyname: string; out res: TStringArray;
+global: boolean = false): boolean;
     {** Compare a setting to a value. }
   function CheckSetting(const keyname: string; def: string; match: string;
     global: boolean = false): boolean; virtual;
@@ -1347,6 +1350,27 @@ begin
     Result := false
   else
     Result := true;
+end;
+
+{------------------------------------------------------------------------------
+  TryGetCSVSetting
+  -------------------------
+  Gets a list of settings, returns true if the reading is non-empty and the value in def
+  -----------------------------------------------------------------------------}
+function TTrndiNativeBase.TryGetCSVSetting(const keyname: string; out res: TStringArray;
+global: boolean = false): boolean;
+var
+  val: string;
+begin
+  if self.TryGetSetting(keyname, val, global) then begin
+    with TStringList.Create do begin
+      Clear;
+      CommaText := val;
+      res := ToStringArray;
+      Free;
+    end;
+  end else
+    result := false;
 end;
 
 {------------------------------------------------------------------------------
