@@ -646,6 +646,9 @@ PredictShortMode: boolean = false;
 PredictShortSize: integer = 1; // 1=small, 2=medium, 3=big
 PredictShortFullArrows: boolean = false; // Use full UTF arrow set in short mode
 PredictShortShowValue: boolean = false; // Show predicted value with clock icon in short mode
+// Cache for dynamic prediction time updates
+PredictionCache: BGResults; // Cached prediction readings
+PredictionLastReadingTime: TDateTime; // Time of the reading used for predictions
   // Show threshold lines (if false, only filled areas are drawn)
 semiTouchMode: boolean = false; // Disables some touch elements while on touch
 {$ifdef darwin}
@@ -3263,6 +3266,137 @@ var
   min: int64;
   showTimestamp: boolean;
   timeStr: string;
+  
+  // For prediction time updates
+  procedure UpdatePredictionTimes;
+  var
+    i, closest5, closest10, closest15: integer;
+    diff5, diff10, diff15, currentDiff: integer;
+    minutes: integer;
+    delta: single;
+    trend: BGTrend;
+    pred1, pred2, pred3: string;
+    lastReadingValue: single;
+    validCount: integer;
+  begin
+    if not (PredictGlucoseReading and lPredict.Visible and (Length(PredictionCache) > 0)) then
+      Exit;
+    
+    lastReadingValue := lastReading.convert(mgdl);
+    
+    // Find predictions closest to 5, 10, and 15 minutes from NOW
+    closest5 := -1;
+    closest10 := -1;
+    closest15 := -1;
+    diff5 := MaxInt;
+    diff10 := MaxInt;
+    diff15 := MaxInt;
+    
+    for i := 0 to High(PredictionCache) do
+    begin
+      // Calculate how many minutes from NOW this prediction is
+      currentDiff := Round(MinutesBetween(PredictionCache[i].date, Now));
+      
+      if (currentDiff >= 0) and (Abs(currentDiff - 5) < diff5) then
+      begin
+        diff5 := Abs(currentDiff - 5);
+        closest5 := i;
+      end;
+      
+      if (currentDiff >= 0) and (Abs(currentDiff - 10) < diff10) then
+      begin
+        diff10 := Abs(currentDiff - 10);
+        closest10 := i;
+      end;
+      
+      if (currentDiff >= 0) and (Abs(currentDiff - 15) < diff15) then
+      begin
+        diff15 := Abs(currentDiff - 15);
+        closest15 := i;
+      end;
+    end;
+    
+    // Check if we have at least one valid prediction
+    validCount := 0;
+    if closest5 >= 0 then
+      Inc(validCount);
+    if closest10 >= 0 then
+      Inc(validCount);
+    if closest15 >= 0 then
+      Inc(validCount);
+    
+    if validCount = 0 then
+      Exit;
+    
+    // Update prediction display with current times
+    if PredictShortMode then
+    begin
+      // Short mode: show only middle prediction with arrow
+      if closest10 >= 0 then
+      begin
+        delta := PredictionCache[closest10].convert(mgdl) - lastReadingValue;
+        trend := CalculateTrendFromDelta(delta);
+        minutes := Round(MinutesBetween(PredictionCache[closest10].date, Now));
+        
+        if PredictShortShowValue then
+        begin
+          // Show time and value with arrow
+          if PredictShortFullArrows then
+            lPredict.Caption := Format('⏱%d'' %s %.1f', [minutes, BG_TREND_ARROWS_UTF[trend], PredictionCache[closest10].convert(un)])
+          else
+          begin
+            case trend of
+            TdDoubleUp, TdSingleUp, TdFortyFiveUp:
+              lPredict.Caption := Format('⏱%d'' ↗ %.1f', [minutes, PredictionCache[closest10].convert(un)]);
+            TdFlat:
+              lPredict.Caption := Format('⏱%d'' → %.1f', [minutes, PredictionCache[closest10].convert(un)]);
+            TdFortyFiveDown, TdSingleDown, TdDoubleDown:
+              lPredict.Caption := Format('⏱%d'' ↘ %.1f', [minutes, PredictionCache[closest10].convert(un)]);
+            else
+              lPredict.Caption := '?';
+            end;
+          end;
+        end;
+        // Arrow-only mode doesn't show time, so no update needed
+      end;
+    end
+    else
+    begin
+      // Full mode: show time, trend, and value for all three
+      if closest5 >= 0 then
+      begin
+        minutes := Round(MinutesBetween(PredictionCache[closest5].date, Now));
+        delta := PredictionCache[closest5].convert(mgdl) - lastReadingValue;
+        trend := CalculateTrendFromDelta(delta);
+        pred1 := Format('⏱%d'' %s %.1f', [minutes, BG_TREND_ARROWS_UTF[trend], PredictionCache[closest5].convert(un)]);
+      end
+      else
+        pred1 := '?';
+
+      if closest10 >= 0 then
+      begin
+        minutes := Round(MinutesBetween(PredictionCache[closest10].date, Now));
+        delta := PredictionCache[closest10].convert(mgdl) - lastReadingValue;
+        trend := CalculateTrendFromDelta(delta);
+        pred2 := Format('⏱%d'' %s %.1f', [minutes, BG_TREND_ARROWS_UTF[trend], PredictionCache[closest10].convert(un)]);
+      end
+      else
+        pred2 := '?';
+
+      if closest15 >= 0 then
+      begin
+        minutes := Round(MinutesBetween(PredictionCache[closest15].date, Now));
+        delta := PredictionCache[closest15].convert(mgdl) - lastReadingValue;
+        trend := CalculateTrendFromDelta(delta);
+        pred3 := Format('⏱%d'' %s %.1f', [minutes, BG_TREND_ARROWS_UTF[trend], PredictionCache[closest15].convert(un)]);
+      end
+      else
+        pred3 := '?';
+
+      lPredict.Caption := pred1 + ' | ' + pred2 + ' | ' + pred3;
+    end;
+  end;
+  
 begin
   if firstboot then
     exit; // Dont run on first boot
@@ -3294,6 +3428,9 @@ begin
       lAgo.Caption := '⌚ ' + Format(RS_LAST_UPDATE, [min]);
       {$endif}
     end;
+    
+    // Update prediction times if predictions are visible
+    UpdatePredictionTimes;
   except
     lAgo.Caption := '🕑 ' + RS_COMPUTE_FAILED_AGO;
   end;
@@ -4143,6 +4280,10 @@ begin
   // Get the last reading time and value to calculate trend
   lastReadingTime := lastReading.date;
   lastReadingValue := lastReading.convert(mgdl);
+  
+  // Cache for dynamic time updates
+  PredictionCache := bgr;
+  PredictionLastReadingTime := lastReadingTime;
 
   // Find predictions closest to 5, 10, and 15 minutes
   // Ensure we pick different predictions for each slot
