@@ -67,10 +67,9 @@ out res: string): BGResults;
 var
   i: integer;
 begin
-    result := inherited getReadings(min, maxNum, extras, res);
-    for  i := Low(result) to High(result) do begin
-      result[i].date := result[i].date - EncodeTime(0, 10, 0, 0);
-    end;
+  result := inherited getReadings(min, maxNum, extras, res);
+  for  i := Low(result) to High(result) do
+    result[i].date := result[i].date - EncodeTime(0, 10, 0, 0);
 end;
 
 end.

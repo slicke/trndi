@@ -1261,7 +1261,7 @@ procedure TfBG.FormClose(Sender: TObject; var CloseAction: TCloseAction);
 {$ifdef Darwin}
 var
   mr: TModalResult;
-  {$endif}
+{$endif}
 begin
   // Prevent recursive shutdown calls
   if FShuttingDown then
@@ -1437,7 +1437,7 @@ var
   clientH: integer;
   dotHeight: integer;
   bmp: TBitmap;
-  {$IFDEF DEBUG}
+{$IFDEF DEBUG}
   debugY: integer;
   debugValue: single;
   debugText: string;
@@ -2343,10 +2343,10 @@ begin
   if miBorders.Checked then
     self.BorderStyle := bsNone
   else
-    {$ifdef DARWIN}
+  {$ifdef DARWIN}
     BorderStyle := bsSizeable;
-  {$else}
-  BorderStyle := bsSizeToolWin;
+    {$else}
+    BorderStyle := bsSizeToolWin;
   {$endif}
 
   setColorMode;
@@ -2415,18 +2415,12 @@ var
 const
   // Qt::WindowStaysOnTopHint (use numeric mask to avoid missing symbol on some setups)
   Qt_WindowStaysOnTopHint = $00008000;
-  {$endif}
+{$endif}
 begin
   miOnTop.Checked := not miOnTop.Checked;
   if miOnTop.Checked then
-  begin
-    {$ifdef LCLQt6}
-    // Use fsStayOnTop for Qt widgetset; it's better respected by some WMs.
-    self.FormStyle := fsStayOnTop;
-    {$else}
-    self.FormStyle := fsSystemStayOnTop;
-    {$endif}
-  end
+    self.FormStyle := fsStayOnTop{$ifdef LCLQt6}// Use fsStayOnTop for Qt widgetset; it's better respected by some WMs.
+    {$else}{$endif}
   else
     self.FormStyle := fsNormal;
 
@@ -2492,36 +2486,36 @@ var
 
 procedure LoadUserSettings(f: TfConf);
   function APIToName(const str: string): string;
-  begin
-    case str of
-   'API_NS':
-     result := API_NS;
-   'API_NS3':
-     result := API_NS3;
-    'API_DEX_USA':
-     result := API_DEX_USA;
-    'API_DEX_EU':
-     result := API_DEX_EU;
-    'API_XDRIP':
-     result := API_XDRIP;
-    {$ifdef DEBUG}
-     'API_D_DEBUG':
-      result := API_D_DEBUG;
-     'API_D_MISSING':
-      result := API_D_MISSING;
-     'API_D_PERFECT':
-      result := API_D_PERFECT;
-     'API_D_CUSTOM':
-      result := API_D_CUSTOM;
-     'API_D_EDGE':
-      result := API_D_EDGE;
-     'API_D_FIRST':
-      result := API_D_FIRST;
+    begin
+      case str of
+      'API_NS':
+        result := API_NS;
+      'API_NS3':
+        result := API_NS3;
+      'API_DEX_USA':
+        result := API_DEX_USA;
+      'API_DEX_EU':
+        result := API_DEX_EU;
+      'API_XDRIP':
+        result := API_XDRIP;
+      {$ifdef DEBUG}
+      'API_D_DEBUG':
+        result := API_D_DEBUG;
+      'API_D_MISSING':
+        result := API_D_MISSING;
+      'API_D_PERFECT':
+        result := API_D_PERFECT;
+      'API_D_CUSTOM':
+        result := API_D_CUSTOM;
+      'API_D_EDGE':
+        result := API_D_EDGE;
+      'API_D_FIRST':
+        result := API_D_FIRST;
     {$endif}
-    else
-      Result := 'API_NS';
+      else
+        Result := 'API_NS';
+      end;
     end;
-  end;
   var
     remoteType: string;
     userNames: TStringArray;
@@ -2617,10 +2611,12 @@ procedure LoadUserSettings(f: TfConf);
       fsLoRange.Enabled := cbCustRange.Checked;
 
       // User customizations
-      if TryGetCSVSetting('users.names', userNames, true) then begin
+      if TryGetCSVSetting('users.names', userNames, true) then
+      begin
         lbUsers.Clear;
         lbUsers.Items.AddStrings(userNames);
-      end else
+      end
+      else
         lbUsers.Enabled := false;
 
       lbUsers.Items.Add('- ' + RS_DEFAULT_ACCOUNT + ' -');
@@ -2751,10 +2747,10 @@ procedure SetupExtensions(f: TfConf);
     begin
       {$ifdef TrndiExt}
       eExt.Text := GetAppConfigDirUTF8(false, true) + 'extensions' + DirectorySeparator;
-      {$else}
+    {$else}
       eExt.Text := '- ' + RS_noPlugins + ' -';
       eExt.Enabled := false;
-      {$endif}
+    {$endif}
       cbPrivacy.Checked := GetBoolSetting('ext.privacy');
       cbTimeStamp.Checked := GetBoolSetting('display.timestamp');
     end;
@@ -2770,37 +2766,37 @@ procedure SetupTouchAndNotifications(f: TfConf);
   end;
 
 procedure SaveUserSettings(f: TfConf);
-function APIToCode(const str: string): string;
-begin
-  case str of
-   API_NS:
-    result := 'API_NS';
-   API_NS3:
-    result := 'API_NS3';
-  API_DEX_USA:
-   result := 'API_DEX_USA';
-  API_DEX_EU:
-   result := 'API_DEX_EU';
-  API_XDRIP:
-   result := 'API_XDRIP';
-  {$ifdef DEBUG}
-   API_D_DEBUG:
-    result := 'API_D_DEBUG';
-   API_D_MISSING:
-    result := 'API_D_MISSING';
-   API_D_PERFECT:
-    result := 'API_D_PERFECT';
-   API_D_CUSTOM:
-    result := 'API_D_CUSTOM';
-   API_D_EDGE:
-    result := 'API_D_EDGE';
-   API_D_FIRST:
-    result := 'API_D_FIRST';
-  {$endif}
-  else
-    Result := 'API_NS';
-  end;
-end;
+  function APIToCode(const str: string): string;
+    begin
+      case str of
+      API_NS:
+        result := 'API_NS';
+      API_NS3:
+        result := 'API_NS3';
+      API_DEX_USA:
+        result := 'API_DEX_USA';
+      API_DEX_EU:
+        result := 'API_DEX_EU';
+      API_XDRIP:
+        result := 'API_XDRIP';
+      {$ifdef DEBUG}
+      API_D_DEBUG:
+        result := 'API_D_DEBUG';
+      API_D_MISSING:
+        result := 'API_D_MISSING';
+      API_D_PERFECT:
+        result := 'API_D_PERFECT';
+      API_D_CUSTOM:
+        result := 'API_D_CUSTOM';
+      API_D_EDGE:
+        result := 'API_D_EDGE';
+      API_D_FIRST:
+        result := 'API_D_FIRST';
+    {$endif}
+      else
+        Result := 'API_NS';
+      end;
+    end;
 
   var
     langCode: string;
@@ -2940,7 +2936,7 @@ begin
         ]);
       {$ifdef DEBUG}
       fConf.cbSys.Items.AddStrings(API_DEBUG);
-      {$endif}
+    {$endif}
     end;
 
     fConf.chroma := TRazerChromaFactory.CreateInstance;
@@ -3169,12 +3165,12 @@ function ShiftKeyPressed: boolean;
     modifiers := QGuiApplication_keyboardModifiers;
     Result := (modifiers and QtShiftModifier) <> 0;
   end;
-  {$else}
+{$else}
 function ShiftKeyPressed: boolean;
   begin
     Result := ssShift in GetKeyShiftState;
   end;
-  {$endif}
+{$endif}
 var
   tpb: TDotControl;
   H, M: integer;
@@ -3268,7 +3264,7 @@ var
   timeStr: string;
   
   // For prediction time updates
-  procedure UpdatePredictionTimes;
+procedure UpdatePredictionTimes;
   var
     i, closest5, closest10, closest15: integer;
     diff5, diff10, diff15, currentDiff: integer;
@@ -3339,12 +3335,9 @@ var
         minutes := Round(MinutesBetween(PredictionCache[closest10].date, Now));
         
         if PredictShortShowValue then
-        begin
-          // Show time and value with arrow
           if PredictShortFullArrows then
             lPredict.Caption := Format('⏱%d'' %s %.1f', [minutes, BG_TREND_ARROWS_UTF[trend], PredictionCache[closest10].convert(un)])
           else
-          begin
             case trend of
             TdDoubleUp, TdSingleUp, TdFortyFiveUp:
               lPredict.Caption := Format('⏱%d'' ↗ %.1f', [minutes, PredictionCache[closest10].convert(un)]);
@@ -3354,9 +3347,8 @@ var
               lPredict.Caption := Format('⏱%d'' ↘ %.1f', [minutes, PredictionCache[closest10].convert(un)]);
             else
               lPredict.Caption := '?';
-            end;
-          end;
-        end;
+            end// Show time and value with arrow
+        ;
         // Arrow-only mode doesn't show time, so no update needed
       end;
     end
@@ -3518,7 +3510,7 @@ function IsURLReachable(const URL: string; Port: word = 80): boolean;
       closesocket(XSocket);
     end;
   end;
-  {$else}
+{$else}
 function IsURLReachable(const URL: string; Port: word = 80): boolean;
   var
     Socket: longint;
@@ -3552,7 +3544,7 @@ function IsURLReachable(const URL: string; Port: word = 80): boolean;
       CloseSocket(Socket);
     end;
   end;
-  {$endif}
+{$endif}
 function IsInternetOnline: boolean;
   var
     IPs: array of string;
@@ -3875,7 +3867,7 @@ procedure TfBG.tMainTimer(Sender: TObject);
 {$ifdef TrndiExt}
 var
   bgvals: JSValueRaw;
-  {$endif}
+{$endif}
 begin
   updateReading;
   {$ifdef TrndiExt}
@@ -4375,8 +4367,6 @@ begin
         if PredictShortFullArrows then
           lPredict.Caption := BG_TREND_ARROWS_UTF[trend]
         else
-        begin
-          // Map to simplified arrows: up=↗, flat=→, down=↘
           case trend of
           TdDoubleUp, TdSingleUp, TdFortyFiveUp:
             lPredict.Caption := '↗';
@@ -4386,8 +4376,8 @@ begin
             lPredict.Caption := '↘';
           else
             lPredict.Caption := '?';
-          end;
-        end;
+          end// Map to simplified arrows: up=↗, flat=→, down=↘
+        ;
       end;
     end
     else
@@ -4526,10 +4516,10 @@ begin
 
   if assigned(native) and assigned(chroma) then
     if native.GetBoolSetting('razer.enabled', false) and chroma.Initialized then
-      {$ifdef Windows}
+  {$ifdef Windows}
       Chroma.SetStaticAll(clRazerRed);
-  {$else}
-  Chroma.SetBreathDualAll(clRazerRed, clRazerBlack);
+      {$else}
+      Chroma.SetBreathDualAll(clRazerRed, clRazerBlack);
   {$endif}
 
   doFlash := native.GetBoolSetting('alerts.flash.high', false);
@@ -4570,10 +4560,10 @@ begin
 
   if assigned(native) and assigned(chroma) then
     if native.GetBoolSetting('razer.enabled', false) and chroma.Initialized then
-      {$ifdef Windows}
+  {$ifdef Windows}
       Chroma.SetStaticAll(clRazerBlue);
-  {$else}
-  Chroma.SetBreathDualAll(clRazerBlue, clRazerBlack);
+      {$else}
+      Chroma.SetBreathDualAll(clRazerBlue, clRazerBlack);
   {$endif}
 end;
 
@@ -5211,7 +5201,7 @@ begin
 
   if native.isDarkMode then
     native.setDarkMode
-    {$ifdef windows}
+  {$ifdef windows}
     (self.Handle)
   {$endif}
   ;

@@ -165,10 +165,10 @@ class var touchOverride: TTrndiBool;
     global: boolean = false): string;
   {** Read setting, return true/false if it exists. }
   function TryGetSetting(const keyname: string; out res: string;
-  global: boolean = false): boolean;
+    global: boolean = false): boolean;
   {** Read settings list, return true/false if it exists. }
   function TryGetCSVSetting(const keyname: string; out res: TStringArray;
-global: boolean = false): boolean;
+    global: boolean = false): boolean;
     {** Compare a setting to a value. }
   function CheckSetting(const keyname: string; def: string; match: string;
     global: boolean = false): boolean; virtual;
@@ -388,7 +388,7 @@ begin
 end;
 
 procedure TTrndiNativeBase.WriteCurrentIndicatorCache(const Value: string;
-  const ReadingTime: TDateTime; FreshMinutes: integer);
+const ReadingTime: TDateTime; FreshMinutes: integer);
 begin
   // Base: no-op. Platforms that expose indicator cache files override.
 end;
@@ -445,17 +445,17 @@ begin
     Process.Parameters.Add('/play');
     Process.Parameters.Add('/close');
     Process.Parameters.Add(FileName);
-    {$ENDIF}
+  {$ENDIF}
 
     {$IFDEF X_LINUXBSD}
     Process.Executable := 'aplay';
     Process.Parameters.Add(FileName);
-    {$ENDIF}
+  {$ENDIF}
 
     {$IFDEF X_MAC}
     Process.Executable := 'afplay';
     Process.Parameters.Add(FileName);
-    {$ENDIF}
+  {$ENDIF}
     Process.Execute;
   finally
     Process.Free;
@@ -729,7 +729,7 @@ end;
   - Linux/Unix: LANG environment variable
  ------------------------------------------------------------------------------}
 class function TTrndiNativeBase.GetOSLanguage: string;
-  function NormalizeLang(const s: string): string;
+function NormalizeLang(const s: string): string;
   var
     v: string;
     p: SizeInt;
@@ -762,9 +762,9 @@ begin
   // For UI language, prefer the system preferred language list.
   Result := '';
   if (NSLocale.preferredLanguages <> nil) and (NSLocale.preferredLanguages.count > 0) then
-    Result := UTF8Encode(NSString(NSLocale.preferredLanguages.objectAtIndex(0)).UTF8String);
+    Result := UTF8Encode(NSString(NSLocale.preferredLanguages.objectAtIndex(0)).utf8string);
   if Result = '' then
-    Result := UTF8Encode(NSLocale.currentLocale.localeIdentifier.UTF8String);
+    Result := UTF8Encode(NSLocale.currentLocale.localeIdentifier.utf8string);
   Result := NormalizeLang(Result);
   {$ELSE}
   Result := NormalizeLang(SysUtils.GetEnvironmentVariable('LANG'));
@@ -1362,14 +1362,15 @@ global: boolean = false): boolean;
 var
   val: string;
 begin
-  if self.TryGetSetting(keyname, val, global) then begin
-    with TStringList.Create do begin
+  if self.TryGetSetting(keyname, val, global) then
+    with TStringList.Create do
+    begin
       Clear;
       CommaText := val;
       res := ToStringArray;
       Free;
-    end;
-  end else
+    end
+  else
     result := false;
 end;
 
@@ -1379,14 +1380,14 @@ end;
   Compares a setting result to an expected value
  ------------------------------------------------------------------------------}
 function TTrndiNativeBase.CheckSetting(const keyname: string; def: string; match: string;
-  global: boolean = false): boolean;
+global: boolean = false): boolean;
 var
   val: string;
 begin
-   val := GetSetting(keyname, def, global);
-   val := Trim(val);
-   val := LowerCase(val);
-   result := SameText(val, LowerCase(match));
+  val := GetSetting(keyname, def, global);
+  val := Trim(val);
+  val := LowerCase(val);
+  result := SameText(val, LowerCase(match));
 end;
 
 {------------------------------------------------------------------------------

@@ -12,16 +12,16 @@ procedure EnableAppDarkMode;
 implementation
 
 uses
-  SysUtils;
+SysUtils;
 
 const
-  ObjCLib = '/usr/lib/libobjc.A.dylib';
-  CFLib   = '/System/Library/Frameworks/CoreFoundation.framework/CoreFoundation';
-  kCFStringEncodingUTF8 = $08000100;
+ObjCLib = '/usr/lib/libobjc.A.dylib';
+CFLib   = '/System/Library/Frameworks/CoreFoundation.framework/CoreFoundation';
+kCFStringEncodingUTF8 = $08000100;
 
 type
-  id  = Pointer;
-  SEL = Pointer;
+id  = Pointer;
+SEL = Pointer;
 
 //— Typed imports of objc_msgSend with different arities —//
 // 0-param (for –sharedApplication)
@@ -33,9 +33,9 @@ function objc_msgSend1(obj: id; sel: SEL; p1: id): id; cdecl; external ObjCLib n
 function objc_getClass(name: MarshaledAString): id;        cdecl; external ObjCLib;
 function sel_registerName(name: MarshaledAString): SEL;    cdecl; external ObjCLib;
 function CFStringCreateWithCString(
-  alloc: Pointer;
-  cStr: MarshaledAString;
-  encoding: LongWord
+alloc: Pointer;
+cStr: MarshaledAString;
+encoding: longword
 ): Pointer; cdecl; external CFLib;
 
 procedure EnableAppDarkMode;
@@ -74,4 +74,3 @@ begin
 end;
 
 end.
-

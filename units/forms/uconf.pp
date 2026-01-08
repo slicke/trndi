@@ -354,20 +354,20 @@ public
 end;
 
 const
-  API_NS = 'NightScout';
-  API_NS3 = 'NightScout v3';
-  API_DEX_USA = 'Dexcom (USA)';
-  API_DEX_EU = 'Dexcom (Outside USA)';
-  API_XDRIP = 'xDrip';
-  {$ifdef DEBUG}
-    API_D_DEBUG =  '* Debug Backend *';
-    API_D_MISSING = '* Debug Missing Backend *';
-    API_D_PERFECT = '* Debug Perfect Backend *';
-    API_D_CUSTOM = '* Debug Custom Backend *';
-    API_D_EDGE = '* Debug Edge Backend *';
-    API_D_FIRST = '* Debug First Reading Missing *';
+API_NS = 'NightScout';
+API_NS3 = 'NightScout v3';
+API_DEX_USA = 'Dexcom (USA)';
+API_DEX_EU = 'Dexcom (Outside USA)';
+API_XDRIP = 'xDrip';
+{$ifdef DEBUG}
+API_D_DEBUG =  '* Debug Backend *';
+API_D_MISSING = '* Debug Missing Backend *';
+API_D_PERFECT = '* Debug Perfect Backend *';
+API_D_CUSTOM = '* Debug Custom Backend *';
+API_D_EDGE = '* Debug Edge Backend *';
+API_D_FIRST = '* Debug First Reading Missing *';
 
-    API_DEBUG: array of string = (API_D_DEBUG, API_D_MISSING, API_D_PERFECT, API_D_CUSTOM, API_D_EDGE, API_D_FIRST);
+API_DEBUG: array of string = (API_D_DEBUG, API_D_MISSING, API_D_PERFECT, API_D_CUSTOM, API_D_EDGE, API_D_FIRST);
 {$endif}
 var
 tnative: TrndiNative;
@@ -518,30 +518,30 @@ var
 fConf: TfConf;
 
 const
-  GRAPH_ICONS: array[0..9] of UnicodeString = (
-    WideChar($2B24), // \u2b24 BLACK LARGE CIRCLE (default)
-    WideChar($25CF), // \u25cf BLACK CIRCLE
-    WideChar($26AB), // \u26ab MEDIUM BLACK CIRCLE
-    WideChar($25CB), // \u25cb WHITE CIRCLE
-    WideChar($26AA), // \u26aa MEDIUM WHITE CIRCLE
-    WideChar($2022), // \u2022 BULLET
-    WideChar($2219), // \u2219 BULLET OPERATOR (thinner)
-    WideChar($25AA), // \u25aa BLACK SMALL SQUARE
-    WideChar($25A0), // \u25a0 BLACK SQUARE
-    WideChar($25C6)  // \u25c6 BLACK DIAMOND
+GRAPH_ICONS: array[0..9] of unicodestring = (
+  widechar($2B24), // \u2b24 BLACK LARGE CIRCLE (default)
+  widechar($25CF), // \u25cf BLACK CIRCLE
+  widechar($26AB), // \u26ab MEDIUM BLACK CIRCLE
+  widechar($25CB), // \u25cb WHITE CIRCLE
+  widechar($26AA), // \u26aa MEDIUM WHITE CIRCLE
+  widechar($2022), // \u2022 BULLET
+  widechar($2219), // \u2219 BULLET OPERATOR (thinner)
+  widechar($25AA), // \u25aa BLACK SMALL SQUARE
+  widechar($25A0), // \u25a0 BLACK SQUARE
+  widechar($25C6)  // \u25c6 BLACK DIAMOND
   );
 
-  FRESH_ICONS: array[0..9] of UnicodeString = (
-    WideChar($2600), // \u2600 SUN (default)
-    WideChar($2605), // \u2605 BLACK STAR
-    WideChar($2606), // \u2606 WHITE STAR
-    WideChar($2736), // \u2736 SIX POINTED BLACK STAR
-    WideChar($272A), // \u272a CIRCLED WHITE STAR
-    WideChar($25B6), // \u25b6 BLACK RIGHT-POINTING TRIANGLE (\u201dnu\u201d-arrow)
-    WideChar($25C0), // \u25c0 BLACK LEFT-POINTING TRIANGLE
-    WideChar($25B2), // \u25b2 BLACK UP-POINTING TRIANGLE
-    WideChar($25BC), // \u25bc BLACK DOWN-POINTING TRIANGLE
-    WideChar($25CE)  // \u25ce BULLSEYE
+FRESH_ICONS: array[0..9] of unicodestring = (
+  widechar($2600), // \u2600 SUN (default)
+  widechar($2605), // \u2605 BLACK STAR
+  widechar($2606), // \u2606 WHITE STAR
+  widechar($2736), // \u2736 SIX POINTED BLACK STAR
+  widechar($272A), // \u272a CIRCLED WHITE STAR
+  widechar($25B6), // \u25b6 BLACK RIGHT-POINTING TRIANGLE (\u201dnu\u201d-arrow)
+  widechar($25C0), // \u25c0 BLACK LEFT-POINTING TRIANGLE
+  widechar($25B2), // \u25b2 BLACK UP-POINTING TRIANGLE
+  widechar($25BC), // \u25bc BLACK DOWN-POINTING TRIANGLE
+  widechar($25CE)  // \u25ce BULLSEYE
   );
 
 procedure ListLanguageFiles(list: TStrings; const Path: string);
@@ -570,9 +570,10 @@ begin
 end;
 
 
-function CodepointHex(const s: UnicodeString): string;
+function CodepointHex(const s: unicodestring): string;
 begin
-  if s = '' then Exit('');
+  if s = '' then
+    Exit('');
   Result := IntToHex(Ord(s[1]), 4);
 end;
 
@@ -1063,22 +1064,23 @@ begin
     pl1 := '<DEBUG IGNORED>';
     pl2   := '<DEBUG IGNORED>';
   end;
-   API_D_CUSTOM:
-   begin
-     pl1 := 'Show this Reading (mg/dL)';
-     pl2   := '<DEBUG IGNORED>';
-   end;
-    {$endif}
-  else begin
+  API_D_CUSTOM:
+  begin
+    pl1 := 'Show this Reading (mg/dL)';
+    pl2   := '<DEBUG IGNORED>';
+  end;
+  {$endif}
+  else
+  begin
     // Defaults from base class
     Label15.Caption := TrndiAPI.ParamLabel(1);
     lPass.Caption := TrndiAPI.ParamLabel(2);
-    end;
-   end;
+  end;
+  end;
 end;
 
 procedure TfConf.cbSysChange(Sender: TObject);
-  procedure WarnUnstableAPI;
+procedure WarnUnstableAPI;
   begin
     if (cbSys.Text = API_DEX_USA) or (cbSys.Text = API_DEX_EU) then
     begin
@@ -1350,13 +1352,17 @@ var
 begin
   if cbSys.Text = API_NS then
     res := NightScout.testConnection(eAddr.text,ePass.text,'')
-  else if cbSys.Text = API_NS3 then
+  else
+  if cbSys.Text = API_NS3 then
     res := NightScout3.testConnection(eAddr.text,ePass.text,'')
-  else if cbSys.Text = API_DEX_USA then
+  else
+  if cbSys.Text = API_DEX_USA then
     res := Dexcom.testConnection(eAddr.text,ePass.text,'usa')
-  else if cbSys.Text = API_DEX_EU then
+  else
+  if cbSys.Text = API_DEX_EU then
     res := Dexcom.testConnection(eAddr.text,ePass.text,'eu')
-  else begin
+  else
+  begin
     ShowMessage(RS_TEST_UNSUPPORTED);
     exit;
   end;
@@ -1596,7 +1602,7 @@ begin
   tnative.noFree := true;
   if tnative.isDarkMode then
     tnative.setDarkMode
-    {$ifdef X_WIN}
+  {$ifdef X_WIN}
     (self.Handle)
   {$endif}
   ;
@@ -1693,7 +1699,7 @@ begin
 end;
 
 procedure TfConf.rbUnitClick(Sender: TObject);
-  function RoundMMOL(const v: double): double;
+function RoundMMOL(const v: double): double;
   begin
     Result := round(v * TrndiAPI.toMMOL * 10) / 10;
   end;

@@ -3,20 +3,20 @@ unit winToast;
 interface
 
 uses
-  Windows, SysUtils, Classes, ComObj, ActiveX;
+Windows, SysUtils, Classes, ComObj, ActiveX;
 
 type
-  TToastNotification = class
-  private
-    FAppID: string;
-    FNotifier: IToastNotifier;
-    FFactory: IToastNotificationFactory;
-    procedure InitializeInterfaces;
-  public
-    constructor Create(const AppID: string);
-    destructor Destroy; override;
-    procedure ShowGlucoseNotification(GlucoseValue: Double);
-  end;
+TToastNotification = class
+private
+  FAppID: string;
+  FNotifier: IToastNotifier;
+  FFactory: IToastNotificationFactory;
+  procedure InitializeInterfaces;
+public
+  constructor Create(const AppID: string);
+  destructor Destroy; override;
+  procedure ShowGlucoseNotification(GlucoseValue: double);
+end;
 
 implementation
 
@@ -45,12 +45,12 @@ begin
     raise Exception.Create('Failed to get IToastNotificationFactory interface');
 end;
 
-procedure TToastNotification.ShowGlucoseNotification(GlucoseValue: Double);
+procedure TToastNotification.ShowGlucoseNotification(GlucoseValue: double);
 var
   Notification: IToastNotification;
   XMLDoc: string;
-  MmolValue: Double;
-  XMLContent: PWideChar;
+  MmolValue: double;
+  XMLContent: pwidechar;
 begin
   try
     // Convert mg/dL to mmol/L
@@ -60,10 +60,10 @@ begin
     XMLDoc := Format(TOAST_TEMPLATE, [
       FormatFloat('0.0', GlucoseValue),
       FormatFloat('0.1', MmolValue)
-    ]);
+      ]);
 
     // Convert to PWideChar for COM
-    XMLContent := PWideChar(WideString(XMLDoc));
+    XMLContent := pwidechar(widestring(XMLDoc));
 
     // Create notification from XML
     Notification := FFactory.CreateToastNotification(XMLContent);
@@ -86,4 +86,3 @@ begin
 end;
 
 end.
-
