@@ -734,7 +734,7 @@ function RunAndCapture(const Exec: string; const Params: array of string;
       ErrStr.Free; OutStr.Free; P.Free;
     end;
   end;
-  {$ENDIF}
+{$ENDIF}
   {$IFDEF LCLQt6}
 var
   Params: array of string;

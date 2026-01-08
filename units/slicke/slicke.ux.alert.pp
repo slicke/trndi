@@ -48,12 +48,12 @@ unit slicke.ux.alert;
 interface
 
 uses
-  Classes, SysUtils, Dialogs, Forms, ExtCtrls, StdCtrls, Controls, Graphics, Math,
-  IntfGraphics, FPImage, graphtype, lcltype, Trndi.Native, Grids, Spin, IpHtml, Iphttpbroker, slicke.ux.native, SpinEx, LCLIntf,
-  {$ifdef Windows}
+Classes, SysUtils, Dialogs, Forms, ExtCtrls, StdCtrls, Controls, Graphics, Math,
+IntfGraphics, FPImage, graphtype, lcltype, Trndi.Native, Grids, Spin, IpHtml, Iphttpbroker, slicke.ux.native, SpinEx, LCLIntf,
+{$ifdef Windows}
   DX12.D2D1, DX12.DXGI, DX12.DWrite, DX12.DCommon, DX12.WinCodec, Windows, Buttons, ActiveX, ComObj,
-  {$endif}
-  StrUtils;
+{$endif}
+StrUtils;
 
 {**
   @name Localizable strings
@@ -61,36 +61,36 @@ uses
   Localized captions used across dialogs. Override via Lazarus resource machinery if needed.
 }
 resourcestring
-  dlgErr      = 'An error occurred while creating a message dialog';
-  sMsgTitle   = 'Message';
-  sSuccTitle  = 'Information';
-  sExtTitle   = 'Extension error';
-  sExtErr     = 'Error occurred in extension';
-  sErr        = 'Script execution failed';
-  sURLTitle   = 'Open external link?';
-  sURL        = 'Leave the app and open your browser? The link may not be secure!';
+dlgErr      = 'An error occurred while creating a message dialog';
+sMsgTitle   = 'Message';
+sSuccTitle  = 'Information';
+sExtTitle   = 'Extension error';
+sExtErr     = 'Error occurred in extension';
+sErr        = 'Script execution failed';
+sURLTitle   = 'Open external link?';
+sURL        = 'Leave the app and open your browser? The link may not be secure!';
 
-  smbYes          = 'Yes';
-  smbUXNo         = 'No';
-  smbUXOK         = 'OK';
-  smbUXCancel     = 'Cancel';
-  smbUXAbort      = 'Abort';
-  smbUXRetry      = 'Retry';
-  smbUXIgnore     = 'Ignore';
-  smbUXAll        = 'All';
-  smbUXNoToAll    = 'No To All';
-  smbUXYesToAll   = 'Yes To All';
-  smbUXHelp       = 'Help';
-  smbUXClose      = 'Close';
-  smbUXOpenFile   = 'Open File';
-  smbUxMinimize   = 'Minimize';
-  smbSelect       = 'Select';
-  smbUxAgree      = 'Agree';
-  smbUxRead       = 'Read...';
-  smbUXDefault    = 'Default';
+smbYes          = 'Yes';
+smbUXNo         = 'No';
+smbUXOK         = 'OK';
+smbUXCancel     = 'Cancel';
+smbUXAbort      = 'Abort';
+smbUXRetry      = 'Retry';
+smbUXIgnore     = 'Ignore';
+smbUXAll        = 'All';
+smbUXNoToAll    = 'No To All';
+smbUXYesToAll   = 'Yes To All';
+smbUXHelp       = 'Help';
+smbUXClose      = 'Close';
+smbUXOpenFile   = 'Open File';
+smbUxMinimize   = 'Minimize';
+smbSelect       = 'Select';
+smbUxAgree      = 'Agree';
+smbUxRead       = 'Read...';
+smbUXDefault    = 'Default';
 
-  sKey   = 'Key';
-  sValue = 'Value';
+sKey   = 'Key';
+sValue = 'Value';
 
 const
   {**
@@ -99,68 +99,68 @@ const
     Unicode codepoints rendered as emoji or symbols on supported platforms.
     Fallbacks depend on available system fonts.
   }
-  uxmtOK            = widechar($2705); // ✅ Ticked box
-  uxmtWarning       = widechar($26A0); // ⚠️ Warning sign
-  uxmtError         = widechar($274C); // ❌ Cross mark
-  uxmtInformation   = widechar($2139); // ℹ️ Info symbol
-  uxmtConfirmatio   = widechar($2753); // ❓ Question mark
-  uxmtCog           = widechar($2699); // ⚙️ Gear
-  uxmtSquare        = widechar($274F); // ❏ Square
-  uxmtCustom        = uxmtCog;
+uxmtOK            = widechar($2705); // ✅ Ticked box
+uxmtWarning       = widechar($26A0); // ⚠️ Warning sign
+uxmtError         = widechar($274C); // ❌ Cross mark
+uxmtInformation   = widechar($2139); // ℹ️ Info symbol
+uxmtConfirmatio   = widechar($2753); // ❓ Question mark
+uxmtCog           = widechar($2699); // ⚙️ Gear
+uxmtSquare        = widechar($274F); // ❏ Square
+uxmtCustom        = uxmtCog;
 
   {**
     @name Dialog colors
     @desc
     Dialog colors presets
   }
-  uxclBlue = $00AA6004;
-  uxclLightBlue = $00FDD8AA;
-  uxclWhite = $00F5F2FD;
-  uxclRed = $003411A9;
-  uxclLightGreen = $0095EEC4;
-  uxclDarkGreen = $00147C4A;
-  uxclGray = $00322B27;
+uxclBlue = $00AA6004;
+uxclLightBlue = $00FDD8AA;
+uxclWhite = $00F5F2FD;
+uxclRed = $003411A9;
+uxclLightGreen = $0095EEC4;
+uxclDarkGreen = $00147C4A;
+uxclGray = $00322B27;
 
  {**
     @name Dialog Scales
     @desc
     Presets for dialog scales
   }
-  uxscSmall = 0.75;
-  uxscNormal = 1;
-  uxscBig = 5;
-  uxscBigger = 7.5;
-  uxscLarge = 10;
-  uxscHuge = 20;
-  uxscEnormous = 30;
+uxscSmall = 0.75;
+uxscNormal = 1;
+uxscBig = 5;
+uxscBigger = 7.5;
+uxscLarge = 10;
+uxscHuge = 20;
+uxscEnormous = 30;
 
   {**
     @name Dialog button aliases
     @desc
     Aliases mapping to Lazarus modal buttons for clarity and consistency with UX naming.
   }
-  mbUXYes       = mbYes;
-  mbUXNo        = mbNo;
-  mbUXOK        = mbOK;
-  mbUXCancel    = mbCancel;
-  mbUXAbort     = mbAbort;
-  mbUXRetry     = mbRetry;
-  mbUXIgnore    = mbIgnore;
-  mbUXAll       = mbAll;
-  mbUXNoToAll   = mbNoToAll;
-  mbUXYesToAll  = mbYesToAll;
-  mbUXHelp      = mbHelp;
-  mbUXClose     = mbClose;
+mbUXYes       = mbYes;
+mbUXNo        = mbNo;
+mbUXOK        = mbOK;
+mbUXCancel    = mbCancel;
+mbUXAbort     = mbAbort;
+mbUXRetry     = mbRetry;
+mbUXIgnore    = mbIgnore;
+mbUXAll       = mbAll;
+mbUXNoToAll   = mbNoToAll;
+mbUXYesToAll  = mbYesToAll;
+mbUXHelp      = mbHelp;
+mbUXClose     = mbClose;
 
   {**
     @name System constants
     @desc
     Constants used for system-related things
   }
-  sHTMLLineBreak = '<br>';
+sHTMLLineBreak = '<br>';
 type
   {** Emoji glyph used for icons. Typically a single widechar codepoint. }
-  UXImage = widechar;
+UXImage = widechar;
 
   {**
     Modal dialog form used internally by UX helpers.
@@ -169,31 +169,31 @@ type
       - Handles keyboard navigation (Enter/Escape) in @link(FormKeyDown).
       - On Windows can owner-draw buttons via @link(ButtonDrawItem).
   }
-  TDialogForm = class(TForm)
+TDialogForm = class(TForm)
     {** Keyboard shortcuts: Enter to confirm (when appropriate), Esc to cancel/No. }
-    procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
-  protected
+  procedure FormKeyDown(Sender: TObject; var Key: word; Shift: TShiftState);
+protected
     {** Finalizes platform window style, sets KeyPreview, and enables dark mode title bar where supported. }
-    procedure CreateWnd; override;
+  procedure CreateWnd; override;
   // Override DoShow instead of using an OnShow event method name.
   procedure DoShow; override;
-    {$ifdef windows}
+  {$ifdef windows}
   public
     {** Owner-draw routine for bit buttons on Windows to match dark mode styling. }
     procedure ButtonDrawItem(Sender: TObject;
       ACanvas: TCanvas; ARect: TRect; State: TButtonState);
-    {$endif}
+  {$endif}
     {** OnClick handler used by inline full-screen message overlays created via @link(UXMessage). }
-    procedure UXMessageOnClick(sender: TObject);
-  public
+  procedure UXMessageOnClick(sender: TObject);
+public
     {** Helper fields for font picker dialog. }
-    FontPickerPreview: TLabel;
+  FontPickerPreview: TLabel;
     {** OnChange handler for font combo box in ExtFontPicker. }
-    procedure FontComboChange(Sender: TObject);
-    procedure HTMLGetImageX(Sender: TIpHtmlNode; const URL: string; var Picture: TPicture);
-    procedure HTMLHotClick(Sender: TObject);
-    procedure ElementKeyDown(Sender: TObject; var Key: char);
-  end;
+  procedure FontComboChange(Sender: TObject);
+  procedure HTMLGetImageX(Sender: TIpHtmlNode; const URL: string; var Picture: TPicture);
+  procedure HTMLHotClick(Sender: TObject);
+  procedure ElementKeyDown(Sender: TObject; var Key: char);
+end;
 
   {**
     Size preset for dialog layout.
@@ -202,20 +202,20 @@ type
     @value uxdAuto Auto-detect (big if touch screen available).
     @value uxdOnForm Render message inline on an existing form (used by @link(UXMessage)).
   }
-  TUXDialogSize = (uxdNormal = 0, uxdBig = 1, uxdAuto = 3, uxdOnForm = 4, uxdMedium = 5);
+TUXDialogSize = (uxdNormal = 0, uxdBig = 1, uxdAuto = 3, uxdOnForm = 4, uxdMedium = 5);
 
   {**
     Available dialog buttons for UX helpers.
     @remarks Includes standard Lazarus modal buttons and a few custom labels (e.g. OpenFile, Minimize, Agree, Read, Default).
   }
-  TUXMsgDlgBtn     = (mbYes, mbNo, mbOK, mbCancel, mbAbort, mbRetry, mbIgnore,
-    mbAll, mbNoToAll, mbYesToAll, mbHelp, mbClose, mbUXOpenFile, mbUXMinimize, mbUXAgree, mbUXRead, mbUXDefault);
+TUXMsgDlgBtn     = (mbYes, mbNo, mbOK, mbCancel, mbAbort, mbRetry, mbIgnore,
+  mbAll, mbNoToAll, mbYesToAll, mbHelp, mbClose, mbUXOpenFile, mbUXMinimize, mbUXAgree, mbUXRead, mbUXDefault);
 
   {** A set of @link(TUXMsgDlgBtn) to specify multiple buttons. }
-  TUXMsgDlgBtns = set of TUXMsgDlgBtn;
+TUXMsgDlgBtns = set of TUXMsgDlgBtn;
 
   {** Mapping of @link(TUXMsgDlgBtn) to localized captions. }
-  ButtonLangs = array[TUXMsgDlgBtn] of string;
+ButtonLangs = array[TUXMsgDlgBtn] of string;
 
   {**
     Show a simple message dialog, optionally inline on a form in @code(uxdOnForm) mode.
@@ -225,7 +225,7 @@ type
     @param icon Emoji icon; defaults to @code(uxmtOK).
     @param sender Optional form used when @code(dialogsize = uxdOnForm) to render a full-screen overlay.
   }
-  procedure UXMessage(const dialogsize: TUXDialogSize; const title, message: string; const icon: uximage = uxmtOK; sender: TForm = nil);
+procedure UXMessage(const dialogsize: TUXDialogSize; const title, message: string; const icon: uximage = uxmtOK; sender: TForm = nil);
 
   {**
     Generic dialog with custom button set and emoji icon.
@@ -236,10 +236,10 @@ type
     @param icon Emoji icon; defaults to @code(uxmtOK).
     @returns Lazarus modal result corresponding to the button clicked.
   }
-  function UXDialog(const dialogsize: TUXDialogSize;
-                    const title, message: string;
-                    buttons: TUXMsgDlgBtns;
-                    const icon: UXImage = uxmtOK): TModalResult; overload;
+function UXDialog(const dialogsize: TUXDialogSize;
+const title, message: string;
+buttons: TUXMsgDlgBtns;
+const icon: UXImage = uxmtOK): TModalResult; overload;
 
   {**
     Generic dialog with custom button set and Lazarus message type mapped to a default icon.
@@ -250,10 +250,10 @@ type
     @param mtype Lazarus message dialog type; maps to a reasonable emoji icon.
     @returns Lazarus modal result corresponding to the button clicked.
   }
-  function UXDialog(const dialogsize: TUXDialogSize;
-                    const title, message: string;
-                    buttons: TUXMsgDlgBtns;
-                    const mtype: TMsgDlgType): TModalResult; overload;
+function UXDialog(const dialogsize: TUXDialogSize;
+const title, message: string;
+buttons: TUXMsgDlgBtns;
+const mtype: TMsgDlgType): TModalResult; overload;
 
   {**
     Generic dialog with custom header line (caption), title and message and TMsgDlgType mapping.
@@ -265,10 +265,10 @@ type
     @param mtype Lazarus message dialog type; maps to a reasonable emoji icon.
     @returns Lazarus modal result corresponding to the button clicked.
   }
-  function UXDialog(const dialogsize: TUXDialogSize;
-                    const header, title, message: string;
-                    buttons: TUXMsgDlgBtns;
-                    const mtype: TMsgDlgType): TModalResult; overload;
+function UXDialog(const dialogsize: TUXDialogSize;
+const header, title, message: string;
+buttons: TUXMsgDlgBtns;
+const mtype: TMsgDlgType): TModalResult; overload;
 
   {**
     Extended message dialog supporting an optional log/dump panel with custom colors.
@@ -284,13 +284,13 @@ type
     @param scale Optional log panel vertical scale multiplier (for big outputs).
     @returns Lazarus modal result corresponding to the button clicked.
   }
-  function ExtMsg(const dialogsize: TUXDialogSize;
-                  const caption, title, desc, logmsg: string;
-                  dumpbg: TColor = uxclWhite;
-                  dumptext: TColor = uxclRed;
-                  buttons: TUXMsgDlgBtns = [mbAbort];
-                  const icon: UXImage = uxmtCog;
-                  scale: single = 1): TModalResult;
+function ExtMsg(const dialogsize: TUXDialogSize;
+const caption, title, desc, logmsg: string;
+dumpbg: TColor = uxclWhite;
+dumptext: TColor = uxclRed;
+buttons: TUXMsgDlgBtns = [mbAbort];
+const icon: UXImage = uxmtCog;
+scale: single = 1): TModalResult;
 
   {**
     HTML-only dialog with buttons.
@@ -303,29 +303,29 @@ type
     @returns Modal result based on user button selection.
     @remarks This variant displays only HTML content without title/description sections.
   }
-  function ExtMsg(const dialogsize: TUXDialogSize;
-                  const caption, html: string;
-                  buttons: TUXMsgDlgBtns = [mbAbort];
-                  const icon: UXImage = uxmtCog;
-                  scale: single = 1): TModalResult; overload;
+function ExtMsg(const dialogsize: TUXDialogSize;
+const caption, html: string;
+buttons: TUXMsgDlgBtns = [mbAbort];
+const icon: UXImage = uxmtCog;
+scale: single = 1): TModalResult; overload;
 
   {**
     Alias for @lnk(ExtMsg) with HTML data
   }
-  function ExtHTML(const dialogsize: TUXDialogSize;
-                  const caption, html: string;
-                  buttons: TUXMsgDlgBtns = [mbOK];
-                  const icon: UXImage = uxmtInformation;
-                  scale: single = 1): TModalResult;
+function ExtHTML(const dialogsize: TUXDialogSize;
+const caption, html: string;
+buttons: TUXMsgDlgBtns = [mbOK];
+const icon: UXImage = uxmtInformation;
+scale: single = 1): TModalResult;
 
   {**
     Helper for @lnk(ExtMsg) with text data
   }
-  function ExtText(const dialogsize: TUXDialogSize;
-                  const caption, text: string;
-                  buttons: TUXMsgDlgBtns = [mbOK];
-                  const icon: UXImage = uxmtInformation;
-                  scale: single = 1): TModalResult;
+function ExtText(const dialogsize: TUXDialogSize;
+const caption, text: string;
+buttons: TUXMsgDlgBtns = [mbOK];
+const icon: UXImage = uxmtInformation;
+scale: single = 1): TModalResult;
 
   {**
     Extended message dialog with HTML support in log panel.
@@ -343,14 +343,14 @@ type
     @returns Modal result based on user button selection.
     @remarks HTML rendering is supported cross-platform via TIpHtmlPanel from IpHtml unit. Use standard HTML tags like &lt;b&gt;, &lt;i&gt;, &lt;font color="red"&gt;, etc.
   }
-  function ExtMessage(const dialogsize: TUXDialogSize;
-                      const caption, title, desc, logmsg: string;
-                      isHTML: boolean;
-                      dumpbg: TColor = uxclWhite;
-                      dumptext: TColor = uxclRed;
-                      buttons: TUXMsgDlgBtns = [mbAbort];
-                      const icon: UXImage = uxmtCog;
-                      scale: single = 1): TModalResult;
+function ExtMessage(const dialogsize: TUXDialogSize;
+const caption, title, desc, logmsg: string;
+isHTML: boolean;
+dumpbg: TColor = uxclWhite;
+dumptext: TColor = uxclRed;
+buttons: TUXMsgDlgBtns = [mbAbort];
+const icon: UXImage = uxmtCog;
+scale: single = 1): TModalResult;
 
   {**
     Convenience wrapper for @link(ExtMsg) that shows a message and a log/dump with an OK button.
@@ -362,10 +362,10 @@ type
     @param scale Log panel vertical scale multiplier.
     @returns @code(mrOK) if confirmed, otherwise the modal result selected by the user.
   }
-  function ExtLog(const dialogsize: TUXDialogSize;
-                  const caption, msg, log: string;
-                  const icon: UXImage = uxmtCog;
-                  scale: integer = 1): TModalResult;
+function ExtLog(const dialogsize: TUXDialogSize;
+const caption, msg, log: string;
+const icon: UXImage = uxmtCog;
+scale: integer = 1): TModalResult;
 
   {**
     Show an error dialog with a short message and an error dump in the log panel.
@@ -375,9 +375,9 @@ type
     @param icon Emoji icon (default gear).
     @returns Modal result (default is [mbAbort]).
   }
-  function ExtError(const dialogsize: TUXDialogSize;
-                    const msg, error: string;
-                    const icon: UXImage = uxmtCog): TModalResult; overload;
+function ExtError(const dialogsize: TUXDialogSize;
+const msg, error: string;
+const icon: UXImage = uxmtCog): TModalResult; overload;
 
   {**
     Show an error dialog with standard captions and the given error in the log panel.
@@ -386,9 +386,9 @@ type
     @param icon Emoji icon (default gear).
     @returns Modal result (default is [mbAbort]).
   }
-  function ExtError(const dialogsize: TUXDialogSize;
-                    const error: string;
-                    const icon: UXImage = uxmtCog): TModalResult; overload;
+function ExtError(const dialogsize: TUXDialogSize;
+const error: string;
+const icon: UXImage = uxmtCog): TModalResult; overload;
 
   {**
     Show a success/information dialog with a dump panel.
@@ -401,11 +401,11 @@ type
     @param icon Emoji icon (default @code(uxmtOK)).
     @returns Modal result (OK by default).
   }
-  function ExtSucc(const dialogsize: TUXDialogSize;
-                   const msg, desc, output: string;
-                   dumpbg: TColor = uxclLightGreen;
-                   dumptext: TColor = uxclDarkGreen;
-                   const icon: UXImage = uxmtOK): TModalResult;
+function ExtSucc(const dialogsize: TUXDialogSize;
+const msg, desc, output: string;
+dumpbg: TColor = uxclLightGreen;
+dumptext: TColor = uxclDarkGreen;
+const icon: UXImage = uxmtOK): TModalResult;
 
   {**
     Variant of @link(ExtSucc) that accepts a custom button set.
@@ -420,13 +420,13 @@ type
     @param scale The size of the text box (multiplyer)
     @returns Modal result.
   }
-  function ExtSuccEx(const dialogsize: TUXDialogSize;
-                     const msg, desc, output: string;
-                     btns: TUXMsgDlgBtns;
-                     dumpbg: TColor = uxclLightGreen;
-                     dumptext: TColor = uxclDarkGreen;
-                     const icon: UXImage = uxmtOK;
-                     const scale: integer = 1): TModalResult;
+function ExtSuccEx(const dialogsize: TUXDialogSize;
+const msg, desc, output: string;
+btns: TUXMsgDlgBtns;
+dumpbg: TColor = uxclLightGreen;
+dumptext: TColor = uxclDarkGreen;
+const icon: UXImage = uxmtOK;
+const scale: integer = 1): TModalResult;
 
   {**
     Show a selection dialog using a drop-down list.
@@ -439,17 +439,17 @@ type
     @param icon Emoji icon (default gear).
     @returns Selected index (0-based) on OK, or -1 on cancel.
   }
-  function ExtList(const dialogsize: TUXDialogSize;
-                   const ACaption, ATitle, ADesc: string;
-                   const Choices: array of UnicodeString;
-                   const Default: boolean = false;
-                   const icon: UXImage = uxmtCog): Integer; overload;
+function ExtList(const dialogsize: TUXDialogSize;
+const ACaption, ATitle, ADesc: string;
+const Choices: array of unicodestring;
+const Default: boolean = false;
+const icon: UXImage = uxmtCog): integer; overload;
 
-  function ExtList(const dialogsize: TUXDialogSize;
-                   const ACaption, ATitle, ADesc: string;
-                   const Choices: array of string;
-                   const Default: boolean = false;
-                   const icon: UXImage = uxmtCog): Integer; overload;
+function ExtList(const dialogsize: TUXDialogSize;
+const ACaption, ATitle, ADesc: string;
+const Choices: array of string;
+const Default: boolean = false;
+const icon: UXImage = uxmtCog): integer; overload;
   {**
     Show a single-line string input dialog.
     @param dialogsize Layout preset.
@@ -461,10 +461,10 @@ type
     @param icon Emoji icon (default gear).
     @returns The entered string when @code(ModalResult = mrOK); otherwise the previous/default content.
   }
-  function ExtInput(const dialogsize: TUXDialogSize;
-                    const ACaption, ATitle, ADesc, ADefault: string;
-                    var ModalResult: TModalResult;
-                    const icon: UXImage = uxmtCog): string;
+function ExtInput(const dialogsize: TUXDialogSize;
+const ACaption, ATitle, ADesc, ADefault: string;
+var ModalResult: TModalResult;
+const icon: UXImage = uxmtCog): string;
 
   {**
     Show a numeric input dialog using @code(TFloatSpinEditEx).
@@ -478,12 +478,12 @@ type
     @param icon Emoji icon (default gear).
     @returns Entered numeric value if OK; otherwise returns @code(ADefault).
   }
-  function ExtNumericInput(const dialogsize: TUXDialogSize;
-                   const ACaption, ATitle, ADesc: string;
-                   ADefault: double;
-                   float: boolean;
-                   var ModalResult: TModalResult;
-                   const icon: UXImage = uxmtCog): double;
+function ExtNumericInput(const dialogsize: TUXDialogSize;
+const ACaption, ATitle, ADesc: string;
+ADefault: double;
+float: boolean;
+var ModalResult: TModalResult;
+const icon: UXImage = uxmtCog): double;
 
   {**
     Convenience wrapper over @link(ExtNumericInput) for integer-only input.
@@ -496,13 +496,13 @@ type
     @param icon Emoji icon (default gear).
     @returns Entered integer value if OK; otherwise returns @code(ADefault).
   }
-  function ExtIntInput(
-                    const dialogsize: TUXDialogSize;
-                    const ACaption, ATitle, ADesc: string;
-                    ADefault: integer;
-                    var ModalResult: TModalResult;
-                    const icon: UXImage = uxmtCog
-                  ): integer;
+function ExtIntInput(
+const dialogsize: TUXDialogSize;
+const ACaption, ATitle, ADesc: string;
+ADefault: integer;
+var ModalResult: TModalResult;
+const icon: UXImage = uxmtCog
+): integer;
 
   {**
     Show a two-column table (key/value) dialog using @code(TStringGrid).
@@ -517,12 +517,12 @@ type
     @param value Column 1 header (defaults to localized @code(sValue)).
     @returns Selected row index on OK; -1 if canceled.
   }
-  function ExtTable(const dialogsize: TUXDialogSize;
-                    const ACaption, ATitle, ADesc: string;
-                    const Keys, Values: array of string;
-                    const icon: UXImage = uxmtCog;
-                    const key: string = '';
-                    const value: string = ''): Integer;
+function ExtTable(const dialogsize: TUXDialogSize;
+const ACaption, ATitle, ADesc: string;
+const Keys, Values: array of string;
+const icon: UXImage = uxmtCog;
+const key: string = '';
+const value: string = ''): integer;
 
   {**
     Show a font picker dialog.
@@ -537,18 +537,18 @@ type
     @returns The selected TFont object if OK; otherwise returns @code(ADefaultFont).
     @remarks The returned font is a new instance; caller is responsible for freeing it.
   }
-  function ExtFontPicker(const dialogsize: TUXDialogSize;
-                         const ACaption, ATitle, ADesc: string;
-                         ADefaultFont: TFont;
-                         const AFontSample: string;
-                         var ModalResult: TModalResult;
-                         const icon: UXImage = uxmtCog): TFont;
+function ExtFontPicker(const dialogsize: TUXDialogSize;
+const ACaption, ATitle, ADesc: string;
+ADefaultFont: TFont;
+const AFontSample: string;
+var ModalResult: TModalResult;
+const icon: UXImage = uxmtCog): TFont;
 
 var
   {** Localized captions for each @link(TUXMsgDlgBtn). Initialized from resource strings. }
-  langs : ButtonLangs = (smbYes, smbUXNo, smbUXOK, smbUXCancel, smbUXAbort, smbUXRetry, smbUXIgnore,
-                         smbUXAll, smbUXNoToAll, smbUXYesToAll, smbUXHelp, smbUXClose,
-                         smbUXOpenFile, smbUxMinimize, smbUxAgree, smbUxRead, smbUxDefault);
+langs : ButtonLangs = (smbYes, smbUXNo, smbUXOK, smbUXCancel, smbUXAbort, smbUXRetry, smbUXIgnore,
+  smbUXAll, smbUXNoToAll, smbUXYesToAll, smbUXHelp, smbUXClose,
+  smbUXOpenFile, smbUxMinimize, smbUxAgree, smbUxRead, smbUxDefault);
 
 implementation
 {$ifdef Windows}
@@ -567,8 +567,8 @@ begin
     light := GetSysColor(COLOR_WINDOWTEXT);
     dark := clWhite;
   {$else}
-    dark := clWindowText;
-    light := dark;
+  dark := clWindowText;
+  light := dark;
   {$endif}
 
   result := IfThen(TrndiNative.isDarkMode, dark, light);
@@ -586,8 +586,8 @@ begin
     dark := RGB(32, 32, 32);
 //    bg := IfThen(TrndiNative.isDarkMode, uxclGray, bg);
   {$else}
-    light := clBtnFace;
-    dark := light;
+  light := clBtnFace;
+  dark := light;
   {$endif}
 
   result := IfThen(TrndiNative.isDarkMode, dark, light);
@@ -601,16 +601,16 @@ end;
 function TColorToHTML(AColor: TColor): string;
 var
   rgb: TColor;
-  R, G, B: Byte;
+  R, G, B: byte;
 begin
   rgb := ColorToRGB(AColor);
   { Extract bytes: Windows provides GetRValue/GetGValue/GetBValue, but
     those are not available on Linux; use bit operations which are
     portable. ColorToRGB returns a COLORREF-like value where
     low byte = red, next = green, next = blue. }
-  R := Byte(rgb and $FF);
-  G := Byte((rgb shr 8) and $FF);
-  B := Byte((rgb shr 16) and $FF);
+  R := byte(rgb and $FF);
+  G := byte((rgb shr 8) and $FF);
+  B := byte((rgb shr 16) and $FF);
   Result := Format('#%.2x%.2x%.2x', [R, G, B]);
 end;
 
@@ -623,18 +623,17 @@ end;
 function GetUXDialogSize(dialogsize: TUXDialogSize): TUXDialogSize;
 begin
   case dialogsize of
-    uxdNormal,
-    uxdBig,
-    uxdMedium:
-      result := dialogsize;
-    uxdAuto: begin
-      if TrndiNative.HasTouchScreen then
-        result := uxdBig
-      else
-        result := uxdNormal;
-    end;
+  uxdNormal,
+  uxdBig,
+  uxdMedium:
+    result := dialogsize;
+  uxdAuto:
+    if TrndiNative.HasTouchScreen then
+      result := uxdBig
     else
-      result := GetUXDialogSize(uxdAuto);
+      result := uxdNormal;
+  else
+    result := GetUXDialogSize(uxdAuto);
   end;
 end;
 
@@ -643,14 +642,14 @@ end;
   @param ALabel Label with font and width already assigned.
   @returns Pixel height needed to display the caption.
 }
-function CalcWrappedHeight(ALabel: TLabel): Integer;
+function CalcWrappedHeight(ALabel: TLabel): integer;
 var
   bmp: Graphics.TBitmap;
   paragraphs, words: TStringList;
   para, token, currentLine: string;
-  i, p, totalLines, lineCount: Integer;
+  i, p, totalLines, lineCount: integer;
 
-  function NormalizeLineBreaks(const S: string): string;
+function NormalizeLineBreaks(const S: string): string;
   begin
     // Convert CRLF/CR to LF to simplify splitting
     Result := StringReplace(S, #13#10, #10, [rfReplaceAll]);
@@ -679,7 +678,7 @@ begin
 
       words.Clear;
       words.Delimiter := ' ';
-      words.StrictDelimiter := True;
+      words.StrictDelimiter := true;
       words.DelimitedText := para;
 
       currentLine := '';
@@ -713,11 +712,12 @@ end;
 {**
   Overloaded function from slicke.ux.native for our dialog form
 }
-function ShowModalSafe(aDialog: TDialogForm): Integer;
+function ShowModalSafe(aDialog: TDialogForm): integer;
 var
   oldStyle: TFormStyle;
 begin
-  if not Assigned(aDialog) then Exit(mrNone);
+  if not Assigned(aDialog) then
+    Exit(mrNone);
   {$ifndef Windows}
   // Only apply the aggressive fallback on known-bad/lightweight WMs.
   if IsProblematicWM then
@@ -728,7 +728,8 @@ begin
       Result := aDialog.ShowModal;
     finally
       try
-        if Assigned(aDialog) then aDialog.FormStyle := oldStyle;
+        if Assigned(aDialog) then
+          aDialog.FormStyle := oldStyle;
       except end;
     end;
     Exit;
@@ -749,17 +750,17 @@ end;
   @param DescLabel Out: created description label.
 }
 procedure CreateTitleAndDescription(
-  AOwner: TForm;
-  const DialogSize: TUXDialogSize;
-  const ATitle, ADesc: string;
-  IconBox: TImage;
-  out TitleLabel, DescLabel: TLabel
+AOwner: TForm;
+const DialogSize: TUXDialogSize;
+const ATitle, ADesc: string;
+IconBox: TImage;
+out TitleLabel, DescLabel: TLabel
 );
 const
   Padding = 16;
   MinDialogWidth = 650;
 var
-  RightContentLeft, AvailableWidth: Integer;
+  RightContentLeft, AvailableWidth: integer;
 begin
   // Minimum width for big mode
   if (dialogsize = uxdBig) and (AOwner.ClientWidth < MinDialogWidth) then
@@ -771,14 +772,16 @@ begin
   // --- Title ---
   TitleLabel := TLabel.Create(AOwner);
   TitleLabel.Parent := AOwner;
-  TitleLabel.WordWrap := True;
-  TitleLabel.AutoSize := False;   // lock width for wrapping
+  TitleLabel.WordWrap := true;
+  TitleLabel.AutoSize := false;   // lock width for wrapping
   TitleLabel.Font.Style := [fsBold];
   TitleLabel.Left := RightContentLeft;
   TitleLabel.Width := AvailableWidth;
   case DialogSize of
-    uxdBig: TitleLabel.Font.Size := 24;
-    uxdMedium: TitleLabel.Font.Size := 20;
+  uxdBig:
+    TitleLabel.Font.Size := 24;
+  uxdMedium:
+    TitleLabel.Font.Size := 20;
   end;
   TitleLabel.Top := Padding;
   TitleLabel.Caption := ATitle;
@@ -786,23 +789,25 @@ begin
   TitleLabel.AdjustSize;  // now calculates proper height for given width
 
  // Description
- DescLabel := TLabel.Create(AOwner);
- DescLabel.Parent := AOwner;
- DescLabel.WordWrap := True;
- DescLabel.AutoSize := False;
- DescLabel.Font.Style := [];
- DescLabel.Left := TitleLabel.Left;
- DescLabel.Width := AvailableWidth;
- case DialogSize of
-    uxdBig: DescLabel.Font.Size := 24;
-    uxdMedium: DescLabel.Font.Size := 20;
+  DescLabel := TLabel.Create(AOwner);
+  DescLabel.Parent := AOwner;
+  DescLabel.WordWrap := true;
+  DescLabel.AutoSize := false;
+  DescLabel.Font.Style := [];
+  DescLabel.Left := TitleLabel.Left;
+  DescLabel.Width := AvailableWidth;
+  case DialogSize of
+  uxdBig:
+    DescLabel.Font.Size := 24;
+  uxdMedium:
+    DescLabel.Font.Size := 20;
   end;
- DescLabel.Top := TitleLabel.Top + TitleLabel.Height + Padding;
- DescLabel.Caption := ADesc;
- DescLabel.Font.Color := getBaseColor;
+  DescLabel.Top := TitleLabel.Top + TitleLabel.Height + Padding;
+  DescLabel.Caption := ADesc;
+  DescLabel.Font.Color := getBaseColor;
 
  // ✅ Force correct height for wrapped text
- DescLabel.Height := CalcWrappedHeight(DescLabel);
+  DescLabel.Height := CalcWrappedHeight(DescLabel);
 end;
 
 {**
@@ -812,14 +817,14 @@ end;
   @param MaxWidth Maximum width in pixels before wrapping.
   @returns Required height in pixels.
 }
-function MeasureWrappedHeight(const AText: string; AFont: TFont; MaxWidth: Integer): Integer;
+function MeasureWrappedHeight(const AText: string; AFont: TFont; MaxWidth: integer): integer;
 var
   bmp: Graphics.TBitmap;
   paragraphs, words: TStringList;
   para, token, currentLine: string;
-  i, p, totalLines, lineCount: Integer;
+  i, p, totalLines, lineCount: integer;
 
-  function NormalizeLineBreaks(const S: string): string;
+function NormalizeLineBreaks(const S: string): string;
   begin
     Result := StringReplace(S, #13#10, #10, [rfReplaceAll]);
     Result := StringReplace(Result, #13, #10, [rfReplaceAll]);
@@ -845,7 +850,7 @@ begin
 
       words.Clear;
       words.Delimiter := ' ';
-      words.StrictDelimiter := True;
+      words.StrictDelimiter := true;
       words.DelimitedText := para;
 
       currentLine := '';
@@ -883,17 +888,28 @@ end;
 function UXButtonToModalResult(Btn: TUXMsgDlgBtn): TModalResult;
 begin
   case Btn of
-    mbYes:       Result := mrYes;
-    mbNo:        Result := mrNo;
-    mbOK:        Result := mrOk;
-    mbCancel:    Result := mrCancel;
-    mbAbort:     Result := mrAbort;
-    mbRetry:     Result := mrRetry;
-    mbIgnore:    Result := mrIgnore;
-    mbAll:       Result := mrAll;
-    mbNoToAll:   Result := mrNoToAll;
-    mbYesToAll:  Result := mrYesToAll;
-    mbClose:     Result := mrClose;
+  mbYes:
+    Result := mrYes;
+  mbNo:
+    Result := mrNo;
+  mbOK:
+    Result := mrOk;
+  mbCancel:
+    Result := mrCancel;
+  mbAbort:
+    Result := mrAbort;
+  mbRetry:
+    Result := mrRetry;
+  mbIgnore:
+    Result := mrIgnore;
+  mbAll:
+    Result := mrAll;
+  mbNoToAll:
+    Result := mrNoToAll;
+  mbYesToAll:
+    Result := mrYesToAll;
+  mbClose:
+    Result := mrClose;
   else
     // fallback / custom button
     Result := TModalResult(110);
@@ -1018,10 +1034,10 @@ end;
 }
 procedure AssignEmoji(Image: TImage; const Emoji: widestring; bgcol: TColor = clWhite);
 var
-  Inset: Integer;
+  Inset: integer;
 begin
   Image.Picture.Bitmap.SetSize(Image.Width, Image.Height);
-  Image.Transparent := True;
+  Image.Transparent := true;
 
   Image.Picture.Bitmap.Canvas.Brush.Color := bgcol;
   Image.Picture.Bitmap.Canvas.FillRect(0, 0, Image.Width, Image.Height);
@@ -1031,7 +1047,7 @@ begin
   {$ifdef Darwin}
     Image.Picture.Bitmap.Canvas.Font.Name := 'Apple Color Emoji';
   {$else}
-    Image.Picture.Bitmap.Canvas.Font.Name := 'Noto Color Emoji';
+  Image.Picture.Bitmap.Canvas.Font.Name := 'Noto Color Emoji';
   {$endif}
   Image.Picture.Bitmap.Canvas.Font.Size := Image.Height - (Inset * 2);
   Image.Picture.Bitmap.Canvas.Font.Color := clBlack;
@@ -1040,7 +1056,7 @@ begin
     (Image.Width - Image.Picture.Bitmap.Canvas.TextWidth(Emoji)) div 2,
     (Image.Height - Image.Picture.Bitmap.Canvas.TextHeight(Emoji)) div 2,
     Emoji
-  );
+    );
 end;
 {$endif}
 
@@ -1061,21 +1077,21 @@ end;
   @param Padding Inner spacing between controls.
 }
 procedure SetupDialogTitleDesc(
-  Dialog: TForm;
-  const size: TUXDialogSize;
-  const icon: UXImage;
-  const bgcol: TColor;
-  const ATitle, ADesc: string;
-  IconBox: TImage;
-  out TitleLabel, DescLabel: TLabel;
-  MinWidthNormal: Integer = 650;
-  MinWidthBig: Integer = 800;
-  IconSize: Integer = 48;
-  Padding: Integer = 16
+Dialog: TForm;
+const size: TUXDialogSize;
+const icon: UXImage;
+const bgcol: TColor;
+const ATitle, ADesc: string;
+IconBox: TImage;
+out TitleLabel, DescLabel: TLabel;
+MinWidthNormal: integer = 650;
+MinWidthBig: integer = 800;
+IconSize: integer = 48;
+Padding: integer = 16
 );
 var
-  availableWidth: Integer;
-  currentIconSize: Integer;
+  availableWidth: integer;
+  currentIconSize: integer;
 begin
   // --- Ensure minimum dialog width ---
   Dialog.ClientWidth := MinWidthNormal;
@@ -1103,14 +1119,16 @@ begin
 
   // --- Title label ---
   TitleLabel.Parent := Dialog;
-  TitleLabel.WordWrap := True;
-  TitleLabel.AutoSize := False;
+  TitleLabel.WordWrap := true;
+  TitleLabel.AutoSize := false;
   TitleLabel.Font.Style := [fsBold];
   TitleLabel.Left := IconBox.Left + IconBox.Width + Padding;
   availableWidth := Dialog.ClientWidth - TitleLabel.Left - Padding;
   TitleLabel.Width := availableWidth;
-  if (size = uxdBig) then TitleLabel.Font.Size := 26;
-  if (size = uxdMedium) then TitleLabel.Font.Size := 22;
+  if (size = uxdBig) then
+    TitleLabel.Font.Size := 26;
+  if (size = uxdMedium) then
+    TitleLabel.Font.Size := 22;
   TitleLabel.Top := IconBox.Top; // aligns with icon top
   TitleLabel.Caption := ATitle;
   TitleLabel.Font.Color := getBaseColor;
@@ -1118,14 +1136,16 @@ begin
 
   // --- Description label ---
   DescLabel.Parent := Dialog;
-  DescLabel.WordWrap := True;
-  DescLabel.AutoSize := False;
+  DescLabel.WordWrap := true;
+  DescLabel.AutoSize := false;
   DescLabel.Font.Style := [];
   DescLabel.Left := TitleLabel.Left;
   DescLabel.Width := availableWidth;
   case size of
-    uxdBig: DescLabel.Font.Size := 24;
-    uxdMedium: DescLabel.Font.Size := 20;
+  uxdBig:
+    DescLabel.Font.Size := 24;
+  uxdMedium:
+    DescLabel.Font.Size := 20;
   end;
   DescLabel.Top := TitleLabel.Top + TitleLabel.Height + Padding;
   DescLabel.Caption := ADesc;
@@ -1135,11 +1155,11 @@ end;
 
 {** See interface docs for behavior and parameters. }
 function ExtIntInput(
-  const dialogsize: TUXDialogSize;
-  const ACaption, ATitle, ADesc: string;
-  ADefault: integer;
-  var ModalResult: TModalResult;
-  const icon: UXImage = uxmtCog
+const dialogsize: TUXDialogSize;
+const ACaption, ATitle, ADesc: string;
+ADefault: integer;
+var ModalResult: TModalResult;
+const icon: UXImage = uxmtCog
 ): integer;
 begin
   result := round(ExtNumericInput(dialogsize,ACaption,ATitle,ADesc,ADefault, false, ModalResult, icon));
@@ -1147,12 +1167,12 @@ end;
 
 {** See interface docs for behavior and parameters. }
 function ExtNumericInput(
-  const dialogsize: TUXDialogSize;
-  const ACaption, ATitle, ADesc: string;
-  ADefault: double;
-  float: boolean;
-  var ModalResult: TModalResult;
-  const icon: UXImage = uxmtCog
+const dialogsize: TUXDialogSize;
+const ACaption, ATitle, ADesc: string;
+ADefault: double;
+float: boolean;
+var ModalResult: TModalResult;
+const icon: UXImage = uxmtCog
 ): double;
 const
   Padding = 16;
@@ -1164,7 +1184,7 @@ var
   OkButton, CancelButton: TButton;
   bgcol: TColor;
   size: TUXDialogSize;
-  totalButtonsWidth: Integer;
+  totalButtonsWidth: integer;
 begin
   size := GetUXDialogSize(dialogsize);
   Result := 0;
@@ -1172,7 +1192,7 @@ begin
   bgcol := getBackground;
 
   Dialog := TDialogForm.CreateNew(nil);
-  Dialog.KeyPreview := True;
+  Dialog.KeyPreview := true;
   Dialog.OnKeyDown := @Dialog.FormKeyDown;
   try
     Dialog.Caption := ACaption;
@@ -1193,17 +1213,15 @@ begin
     Edit.Width := DescLabel.Width;
     Edit.Top := DescLabel.Top + DescLabel.Height + ifthen(size = uxdBig, Padding * 2, Padding);
     Edit.Value := ADefault;
-    if float then begin
+    if float then
+    begin
       Edit.DecimalPlaces := 2;
       Edit.Increment := 0.01;
     end
     else
       Edit.DecimalPlaces := 0;
     if (size = uxdBig) then
-    begin
-      Edit.Font.Size := 20;
-      {$IFDEF Windows} Edit.Height := 42; {$ENDIF}
-    end;
+      Edit.Font.Size := 20{$IFDEF Windows}{$ENDIF};
 
     // --- OK Button ---
     OkButton := TButton.Create(Dialog);
@@ -1243,7 +1261,7 @@ begin
     Dialog.ClientHeight := OkButton.Top + OkButton.Height + Padding;
     Dialog.ActiveControl := Edit;
 
-  ModalResult := ShowModalSafe(Dialog);
+    ModalResult := ShowModalSafe(Dialog);
     if ModalResult = mrOk then
       Result := Edit.Value;
   finally
@@ -1253,58 +1271,64 @@ end;
 
 {** See interface docs for behavior and parameters. }
 function UXDialog(const dialogsize: TUXDialogSize;
-                  const title, message: string;
-                  buttons: TUXMsgDlgBtns;
-                  const icon: UXImage = uxmtOK): TModalResult;
+const title, message: string;
+buttons: TUXMsgDlgBtns;
+const icon: UXImage = uxmtOK): TModalResult;
 begin
   Result := ExtMsg(dialogsize, sMsgTitle, title, message, '',
-                   uxclBlue, uxclLightBlue, buttons, widechar(icon));
+    uxclBlue, uxclLightBlue, buttons, widechar(icon));
 end;
 
 {** See interface docs for behavior and parameters. }
 function UXDialog(const dialogsize: TUXDialogSize;
-                  const title, message: string;
-                  buttons: TUXMsgDlgBtns;
-                  const mtype: TMsgDlgType): TModalResult;
+const title, message: string;
+buttons: TUXMsgDlgBtns;
+const mtype: TMsgDlgType): TModalResult;
 begin
   Result := UXDialog(dialogsize, sMsgTitle, title, message, buttons, mtype);
 end;
 
 {** See interface docs for behavior and parameters. }
 function UXDialog(const dialogsize: TUXDialogSize;
-                  const header, title, message: string;
-                  buttons: TUXMsgDlgBtns;
-                  const mtype: TMsgDlgType): TModalResult;
+const header, title, message: string;
+buttons: TUXMsgDlgBtns;
+const mtype: TMsgDlgType): TModalResult;
 var
   icon: UXImage;
 begin
   case mtype of
-    mtWarning:      icon := widechar($26A0); // ⚠️ Warning sign
-    mtError:        icon := widechar($274C); // ❌ Cross mark
-    mtInformation:  icon := widechar($2139); // ℹ️ Info symbol
-    mtConfirmation: icon := widechar($2753); // ❓ Question mark
-    mtCustom:       icon := uxmtCog; // ⚙️ Gear
+  mtWarning:
+    icon := widechar($26A0); // ⚠️ Warning sign
+  mtError:
+    icon := widechar($274C); // ❌ Cross mark
+  mtInformation:
+    icon := widechar($2139); // ℹ️ Info symbol
+  mtConfirmation:
+    icon := widechar($2753); // ❓ Question mark
+  mtCustom:
+    icon := uxmtCog; // ⚙️ Gear
   else
     icon := uxmtCog;
   end;
 
   Result := ExtMsg(dialogsize, header, title, message, '',
-                   uxclBlue, uxclLightBlue, buttons, icon);
+    uxclBlue, uxclLightBlue, buttons, icon);
 end;
 
 {**
   See interface docs. Renders inline panel when @code(dialogsize = uxdOnForm) and a sender is available.
 }
 procedure UXMessage(const dialogsize: TUXDialogSize; const title, message: string;
-  const icon: UXImage = uxmtOK;
-  sender: TForm = nil);
+const icon: UXImage = uxmtOK;
+sender: TForm = nil);
 var
   tp: TPanel;
   tl: TLabel;
   tb: TButton;
   df: TDialogForm;
 begin
-  if (dialogsize = uxdOnForm) then begin
+  if (dialogsize = uxdOnForm) then
+  begin
 
     if (sender <> nil) and (sender.Showing) and (GetUXDialogSize(uxdAuto) = uxdBig) then
     begin
@@ -1324,7 +1348,7 @@ begin
       tl.Font.Color := uxclBlue;
       tl.Caption := message;
       tl.Font.Size := tp.Width div 20;
-      tl.WordWrap := True;
+      tl.WordWrap := true;
       tl.top := 5;
       tl.left := 5;
       tl.width := tp.width-10;
@@ -1335,12 +1359,12 @@ begin
 
       tb := TButton.Create(tp);
       tb.Parent := tp;
-      tb.AutoSize := True;
+      tb.AutoSize := true;
       tb.Caption := smbUXOK;
 
       if tb.Height < (tp.Height div 5) then
       begin
-        tb.AutoSize := False;
+        tb.AutoSize := false;
         tb.Height := tp.Height div 5;
       end;
 
@@ -1354,19 +1378,20 @@ begin
       tb.OnClick := @df.UXMessageOnClick;
     end
     else
-    ExtMsg(uxdAuto, sMsgTitle, title, message, '',
-           uxclBlue, uxclLightBlue, [mbOK], widechar(icon))
-  end else
+      ExtMsg(uxdAuto, sMsgTitle, title, message, '',
+        uxclBlue, uxclLightBlue, [mbOK], widechar(icon))
+  end
+  else
     ExtMsg(dialogsize, sMsgTitle, title, message, '',
-           uxclBlue, uxclLightBlue, [mbOK], widechar(icon))
+      uxclBlue, uxclLightBlue, [mbOK], widechar(icon))
 end;
 
 {** See interface docs for behavior and parameters. }
 function ExtInput(
-  const dialogsize: TUXDialogSize;
-  const ACaption, ATitle, ADesc, ADefault: string;
-  var ModalResult: TModalResult;
-  const icon: UXImage = uxmtCog
+const dialogsize: TUXDialogSize;
+const ACaption, ATitle, ADesc, ADefault: string;
+var ModalResult: TModalResult;
+const icon: UXImage = uxmtCog
 ): string;
 const
   Padding = 16;
@@ -1378,7 +1403,7 @@ var
   OkButton, CancelButton: TButton;
   bgcol: TColor;
   size: TUXDialogSize;
-  totalButtonsWidth: Integer;
+  totalButtonsWidth: integer;
 begin
   Result := '';
   ModalResult := mrCancel;
@@ -1386,7 +1411,7 @@ begin
   bgcol := getBackground;
 
   Dialog := TDialogForm.CreateNew(nil);
-  Dialog.KeyPreview := True;
+  Dialog.KeyPreview := true;
   Dialog.OnKeyDown := @Dialog.FormKeyDown;
   try
     Dialog.Caption := ACaption;
@@ -1408,10 +1433,7 @@ begin
     Edit.Top := DescLabel.Top + DescLabel.Height + ifthen((size = uxdBig), Padding * 2, Padding);
     Edit.Text := ADefault;
     if (size = uxdBig) then
-    begin
-      Edit.Font.Size := 20;
-      {$IFDEF Windows} Edit.Height := 42; {$ENDIF}
-    end;
+      Edit.Font.Size := 20{$IFDEF Windows}{$ENDIF};
 
     // --- OK Button ---
     OkButton := TButton.Create(Dialog);
@@ -1451,7 +1473,7 @@ begin
     Dialog.ClientHeight := OkButton.Top + OkButton.Height + Padding;
     Dialog.ActiveControl := Edit;
 
-  ModalResult := ShowModalSafe(Dialog);
+    ModalResult := ShowModalSafe(Dialog);
     if ModalResult = mrOk then
       Result := Edit.Text;
   finally
@@ -1460,29 +1482,29 @@ begin
 end;
 
 function ExtList(const dialogsize: TUXDialogSize;
-  const ACaption, ATitle, ADesc: string;
-  const Choices: array of string;
-  const Default: boolean = false;
-  const icon: UXImage = uxmtCog): Integer; overload;
+const ACaption, ATitle, ADesc: string;
+const Choices: array of string;
+const Default: boolean = false;
+const icon: UXImage = uxmtCog): integer; overload;
 var
-  UChoices: array of UnicodeString;
-  i: Integer;
+  UChoices: array of unicodestring;
+  i: integer;
 begin
   SetLength(UChoices, Length(Choices));
   for i := 0 to High(Choices) do
-    UChoices[i] := UnicodeString(Choices[i]);
+    UChoices[i] := unicodestring(Choices[i]);
 
   Result := ExtList(dialogsize, ACaption, ATitle, ADesc, UChoices, Default, icon);
 end;
 
 {** See interface docs for behavior and parameters. }
 function ExtList(
-  const dialogsize: TUXDialogSize;
-  const ACaption, ATitle, ADesc: string;
-  const Choices: array of unicodestring;
-  const Default: boolean = false;
-  const icon: UXImage = uxmtCog
-): Integer;
+const dialogsize: TUXDialogSize;
+const ACaption, ATitle, ADesc: string;
+const Choices: array of unicodestring;
+const Default: boolean = false;
+const icon: UXImage = uxmtCog
+): integer;
 const
   Padding = 16;
 var
@@ -1492,7 +1514,7 @@ var
   Combo: TComboBox;
   OkButton, CancelButton: TButton;
   bgcol: TColor;
-  i, totalButtonsWidth: Integer;
+  i, totalButtonsWidth: integer;
   size: TUXDialogSize;
 begin
   Result := -1;
@@ -1500,7 +1522,7 @@ begin
   bgcol := getBackground;
 
   Dialog := TDialogForm.CreateNew(nil);
-  Dialog.KeyPreview := True;
+  Dialog.KeyPreview := true;
   Dialog.OnKeyDown := @Dialog.FormKeyDown;
   try
     Dialog.Caption := ACaption;
@@ -1518,15 +1540,12 @@ begin
     Combo.Parent := Dialog;
     for i := 0 to High(Choices) do
       Combo.Items.Add(Choices[i]);
-    Combo.ReadOnly := True;
+    Combo.ReadOnly := true;
     Combo.Style := csDropDownList;
     Combo.Left := DescLabel.Left;
     Combo.Width := DescLabel.Width;
     if (size = uxdBig) then
-    begin
-      Combo.Font.Size := 20;
-      {$IFDEF Windows} Combo.Height := 42; {$ENDIF}
-    end;
+      Combo.Font.Size := 20{$IFDEF Windows}{$ENDIF};
     Combo.Top := DescLabel.Top + DescLabel.Height + ifthen((size = uxdBig) , Padding * 2, Padding);
     Combo.ItemIndex := 0;
 
@@ -1548,13 +1567,15 @@ begin
     // --- Cancel Button ---
     CancelButton := TButton.Create(Dialog);
     CancelButton.Parent := Dialog;
-    if default then begin
-       CancelButton.Caption := smbUXDefault;
-       CancelButton.ModalResult := mrCancel;
+    if default then
+    begin
+      CancelButton.Caption := smbUXDefault;
+      CancelButton.ModalResult := mrCancel;
     end
-    else begin
-       CancelButton.Caption := smbUXCancel;
-       CancelButton.ModalResult := mrCancel;
+    else
+    begin
+      CancelButton.Caption := smbUXCancel;
+      CancelButton.ModalResult := mrCancel;
     end;
 
     CancelButton.Width := 80;
@@ -1587,13 +1608,13 @@ end;
 
 {** See interface docs for behavior and parameters. }
 function ExtTable(
-  const dialogsize: TUXDialogSize;
-  const ACaption, ATitle, ADesc: string;
-  const Keys, Values: array of string;
-  const icon: UXImage = uxmtCog;
-  const key: string = '';
-  const value: string = ''
-): Integer;
+const dialogsize: TUXDialogSize;
+const ACaption, ATitle, ADesc: string;
+const Keys, Values: array of string;
+const icon: UXImage = uxmtCog;
+const key: string = '';
+const value: string = ''
+): integer;
 const
   Padding = 16;
   GridHeight = 200;
@@ -1604,7 +1625,7 @@ var
   Grid: TStringGrid;
   BgCol: TColor;
   OkButton, CancelButton: TButton;
-  totalButtonsWidth, i: Integer;
+  totalButtonsWidth, i: integer;
   size: TUXDialogSize;
 begin
   Result := -1;
@@ -1612,7 +1633,7 @@ begin
   BgCol := getBackground;
 
   Dialog := TDialogForm.CreateNew(nil);
-  Dialog.KeyPreview := True;
+  Dialog.KeyPreview := true;
   Dialog.OnKeyDown := @Dialog.FormKeyDown;
   try
     Dialog.Caption := ACaption;
@@ -1647,10 +1668,7 @@ begin
     end;
 
     if (size = uxdBig) then
-    begin
-      Grid.Font.Size := 14;
-      {$IFDEF Windows} Grid.DefaultRowHeight := 28; {$ENDIF}
-    end;
+      Grid.Font.Size := 14{$IFDEF Windows}{$ENDIF};
 
     // --- OK Button ---
     OkButton := TButton.Create(Dialog);
@@ -1697,12 +1715,12 @@ end;
 
 {** See interface docs for behavior and parameters. }
 function ExtFontPicker(
-  const dialogsize: TUXDialogSize;
-  const ACaption, ATitle, ADesc: string;
-  ADefaultFont: TFont;
-  const AFontSample: string;
-  var ModalResult: TModalResult;
-  const icon: UXImage = uxmtCog
+const dialogsize: TUXDialogSize;
+const ACaption, ATitle, ADesc: string;
+ADefaultFont: TFont;
+const AFontSample: string;
+var ModalResult: TModalResult;
+const icon: UXImage = uxmtCog
 ): TFont;
 const
   Padding = 16;
@@ -1715,9 +1733,9 @@ var
   OkButton, CancelButton: TButton;
   bgcol: TColor;
   size: TUXDialogSize;
-  totalButtonsWidth: Integer;
+  totalButtonsWidth: integer;
   SelectedFont: TFont;
-  i, initialIndex: Integer;
+  i, initialIndex: integer;
 
 begin
   Result := TFont.Create;
@@ -1727,7 +1745,7 @@ begin
   bgcol := getBackground;
 
   Dialog := TDialogForm.CreateNew(nil);
-  Dialog.KeyPreview := True;
+  Dialog.KeyPreview := true;
   Dialog.OnKeyDown := @Dialog.FormKeyDown;
   SelectedFont := TFont.Create;
   SelectedFont.Assign(ADefaultFont);
@@ -1750,7 +1768,7 @@ begin
     FontCombo.Width := DescLabel.Width;
     FontCombo.Top := DescLabel.Top + DescLabel.Height + ifthen((size = uxdBig) , Padding * 2, Padding);
     FontCombo.Style := csDropDownList;
-    FontCombo.Sorted := True;
+    FontCombo.Sorted := true;
     
     // Populate with system fonts
     FontCombo.Items.Assign(Screen.Fonts);
@@ -1759,14 +1777,12 @@ begin
     initialIndex := FontCombo.Items.IndexOf(ADefaultFont.Name);
     if initialIndex >= 0 then
       FontCombo.ItemIndex := initialIndex
-    else if FontCombo.Items.Count > 0 then
+    else
+    if FontCombo.Items.Count > 0 then
       FontCombo.ItemIndex := 0;
     
     if (size = uxdBig) then
-    begin
-      FontCombo.Font.Size := 16;
-      {$IFDEF Windows} FontCombo.Height := 42; {$ENDIF}
-    end;
+      FontCombo.Font.Size := 16{$IFDEF Windows}{$ENDIF};
 
     // --- Preview Label ---
     PreviewLabel := TLabel.Create(Dialog);
@@ -1775,22 +1791,25 @@ begin
     PreviewLabel.Width := DescLabel.Width;
     PreviewLabel.Top := FontCombo.Top + FontCombo.Height + ifthen((size = uxdBig) , Padding * 2, Padding);
     PreviewLabel.Caption := AFontSample;
-    PreviewLabel.AutoSize := False;
+    PreviewLabel.AutoSize := false;
     PreviewLabel.Alignment := taCenter;
     PreviewLabel.Font.Assign(SelectedFont);
     case size of
-      uxdBig: begin
-        PreviewLabel.Height := 80;
-        PreviewLabel.Font.Size := 24;
-      end;
-      uxdMedium: begin
-        PreviewLabel.Height := 65;
-        PreviewLabel.Font.Size := 20;
-      end
-      else begin
-        PreviewLabel.Height := 50;
-        PreviewLabel.Font.Size := 16;
-      end;
+    uxdBig:
+    begin
+      PreviewLabel.Height := 80;
+      PreviewLabel.Font.Size := 24;
+    end;
+    uxdMedium:
+    begin
+      PreviewLabel.Height := 65;
+      PreviewLabel.Font.Size := 20;
+    end
+    else
+    begin
+      PreviewLabel.Height := 50;
+      PreviewLabel.Font.Size := 16;
+    end;
 
     end;
 
@@ -1852,49 +1871,49 @@ end;
 
 {** See interface docs for behavior and parameters. }
 function ExtLog(
-  const dialogsize: TUXDialogSize;
-  const caption, msg, log: string;
-  const icon: UXImage = uxmtCog;
-  scale: integer = 1
+const dialogsize: TUXDialogSize;
+const caption, msg, log: string;
+const icon: UXImage = uxmtCog;
+scale: integer = 1
 ): TModalResult;
 begin
   Result := ExtMsg(dialogsize, sMsgTitle, caption, msg, log,
-                   uxclBlue, uxclLightBlue, [mbOK], icon, scale);
+    uxclBlue, uxclLightBlue, [mbOK], icon, scale);
 end;
 
 {** See interface docs for behavior and parameters. }
 function ExtMsg(
-  const dialogsize: TUXDialogSize;
-  const caption, title, desc, logmsg: string;
-  dumpbg: TColor = uxclWhite;
-  dumptext: TColor = uxclRed;
-  buttons: TUXMsgDlgBtns = [mbAbort];
-  const icon: UXImage = uxmtCog;
-  scale: single = 1
+const dialogsize: TUXDialogSize;
+const caption, title, desc, logmsg: string;
+dumpbg: TColor = uxclWhite;
+dumptext: TColor = uxclRed;
+buttons: TUXMsgDlgBtns = [mbAbort];
+const icon: UXImage = uxmtCog;
+scale: single = 1
 ): TModalResult;
 begin
   // Call ExtMessage with isHTML = false for backward compatibility
-  Result := ExtMessage(dialogsize, caption, title, desc, logmsg, False,
-                       dumpbg, dumptext, buttons, icon, scale);
+  Result := ExtMessage(dialogsize, caption, title, desc, logmsg, false,
+    dumpbg, dumptext, buttons, icon, scale);
 end;
 
 
 function ExtText(const dialogsize: TUXDialogSize;
-                const caption, text: string;
-                buttons: TUXMsgDlgBtns = [mbOK];
-                const icon: UXImage = uxmtInformation;
-                scale: single = 1): TModalResult;
+const caption, text: string;
+buttons: TUXMsgDlgBtns = [mbOK];
+const icon: UXImage = uxmtInformation;
+scale: single = 1): TModalResult;
 begin
   result := ExtMsg(dialogsize, 'Trndi', caption, text, '', uxclWhite, uxclRed, buttons,icon, scale);
 end;
 
 {** Alias for ExtMsg. }
 function ExtHTML(
-  const dialogsize: TUXDialogSize;
-  const caption, html: string;
-  buttons: TUXMsgDlgBtns = [mbOK];
-  const icon: UXImage = uxmtInformation;
-  scale: single = 1
+const dialogsize: TUXDialogSize;
+const caption, html: string;
+buttons: TUXMsgDlgBtns = [mbOK];
+const icon: UXImage = uxmtInformation;
+scale: single = 1
 ): TModalResult;
 begin
   result := ExtMsg(dialogsize,caption,html,buttons,icon,scale);
@@ -1902,11 +1921,11 @@ end;
 
 {** See interface docs for behavior and parameters. }
 function ExtMsg(
-  const dialogsize: TUXDialogSize;
-  const caption, html: string;
-  buttons: TUXMsgDlgBtns = [mbAbort];
-  const icon: UXImage = uxmtCog;
-  scale: single = 1
+const dialogsize: TUXDialogSize;
+const caption, html: string;
+buttons: TUXMsgDlgBtns = [mbAbort];
+const icon: UXImage = uxmtCog;
+scale: single = 1
 ): TModalResult;
 const
   btnWidth = 75;
@@ -1916,16 +1935,16 @@ var
   HtmlPanel: TPanel;
   IconBox: TImage;
   HtmlViewer: TIpHtmlPanel;
-  OkButton: {$ifdef Windows}TBitBtn{$else}TButton{$endif};
+  OkButton:{$ifdef Windows}TBitBtn{$else}TButton{$endif};
   mr: TUXMsgDlgBtn;
-  ButtonActualWidth, posX, ProposedWidth, btnCount, totalBtnWidth: Integer;
+  ButtonActualWidth, posX, ProposedWidth, btnCount, totalBtnWidth: integer;
   bgcol: TColor;
   size: TUXDialogSize;
   sysfont, htmlstr: string;
-  contentHeight, maxHeight, finalHeight: Integer;
+  contentHeight, maxHeight, finalHeight: integer;
   hpd: TIpHttpDataProvider;
 
-  function DecorateLinks(const Src, LinkColorHtml: string): string;
+function DecorateLinks(const Src, LinkColorHtml: string): string;
   var
     lower: string;
     searchPos, openPos, tagEndPos, closePos: SizeInt;
@@ -1933,7 +1952,7 @@ var
     Result := Src;
     lower := LowerCase(Result);
     searchPos := 1;
-    while True do
+    while true do
     begin
       openPos := PosEx('<a', lower, searchPos);
       if openPos = 0 then
@@ -1970,7 +1989,8 @@ begin
     Dialog.Color := bgcol;
 
     ProposedWidth := ifthen((size = uxdBig) , 650, 500);
-    if ProposedWidth > 900 then ProposedWidth := 900;
+    if ProposedWidth > 900 then
+      ProposedWidth := 900;
     Dialog.ClientWidth := ProposedWidth;
 
     // Icon at top
@@ -2008,9 +2028,9 @@ begin
     HtmlViewer.FixedTypeface := 'Courier New';
     HtmlViewer.DefaultTypeFace := ifthen((size = uxdBig) , 'Segoe UI', 'Tahoma');
     HtmlViewer.DefaultFontSize := ifthen((size = uxdBig) , 16, 12);
-    HtmlViewer.FlagErrors := False;
+    HtmlViewer.FlagErrors := false;
     HtmlViewer.Color := bgcol;
-    HtmlViewer.AllowTextSelect := False;  // Prevent text selection like TLabel
+    HtmlViewer.AllowTextSelect := false;  // Prevent text selection like TLabel
     
     // Load HTML content with system font and colors
     FontTXTInList(sysfont);
@@ -2019,20 +2039,23 @@ begin
       '<html><body bgcolor="' + TColorToHTML(bgcol) + '" text="' + TColorToHTML(getBaseColor) + '" style="font-family: ' + sysfont + ';">' +
       htmlstr +
       '</body></html>'
-    );
+      );
 
     // Calculate content height and adjust dialog
     maxHeight := Round(Screen.Height * 0.8);
     contentHeight := Round((HtmlViewer.GetContentSize.cy + 20) * scale);  // Apply scale multiplier to height
-    if contentHeight < 150 then contentHeight := 150;  // Minimum height
-    if contentHeight > (maxHeight - 200) then contentHeight := maxHeight - 200;  // Leave room for icon and buttons
+    if contentHeight < 150 then
+      contentHeight := 150;  // Minimum height
+    if contentHeight > (maxHeight - 200) then
+      contentHeight := maxHeight - 200;  // Leave room for icon and buttons
     
     HtmlViewer.Height := contentHeight;
     HtmlPanel.Height := contentHeight;
 
     // Count buttons
     btnCount := 0;
-    for mr in buttons do Inc(btnCount);
+    for mr in buttons do
+      Inc(btnCount);
 
     ButtonActualWidth := ifthen((size = uxdBig) , btnWidth * 2, btnWidth);
     totalBtnWidth := (btnCount * ButtonActualWidth) + ((btnCount - 1) * padding);
@@ -2065,24 +2088,24 @@ begin
 
     Result := ShowModalSafe(Dialog);
   finally
-  {$ifndef Darwin}
+    {$ifndef Darwin}
 //  if assigned(hpd) then
   //    hpd.Free;
-  {$endif}
+    {$endif}
     Dialog.Free;
   end;
 end;
 
 {** See interface docs for behavior and parameters. }
 function ExtMessage(
-  const dialogsize: TUXDialogSize;
-  const caption, title, desc, logmsg: string;
-  isHTML: boolean;
-  dumpbg: TColor = uxclWhite;
-  dumptext: TColor = uxclRed;
-  buttons: TUXMsgDlgBtns = [mbAbort];
-  const icon: UXImage = uxmtCog;
-  scale: single = 1
+const dialogsize: TUXDialogSize;
+const caption, title, desc, logmsg: string;
+isHTML: boolean;
+dumpbg: TColor = uxclWhite;
+dumptext: TColor = uxclRed;
+buttons: TUXMsgDlgBtns = [mbAbort];
+const icon: UXImage = uxmtCog;
+scale: single = 1
 ): TModalResult;
 const
   btnWidth = 75;
@@ -2097,11 +2120,11 @@ var
   MsgScroll: TScrollBox;
   LogMemo: TMemo;
   LogHtmlPanel: TIpHtmlPanel;
-  OkButton: {$ifdef Windows}TBitBtn{$else}TButton{$endif};
+  OkButton:{$ifdef Windows}TBitBtn{$else}TButton{$endif};
   mr: TUXMsgDlgBtn;
   ButtonActualWidth, MaxDialogHeight, MsgWidth, NeededHeight,
   TitlePixelWidth, DescPixelWidth, TextPixelWidth,
-  posX, ProposedWidth, btnCount, totalBtnWidth: Integer;
+  posX, ProposedWidth, btnCount, totalBtnWidth: integer;
   bgcol: TColor;
   TempFont: TFont;
   size: TUXDialogSize;
@@ -2119,7 +2142,7 @@ begin
     {$ifdef LCLGTK3}Dialog.BorderStyle := bsSizeable;{$endif}
     Dialog.Position := poWorkAreaCenter;
     Dialog.Color := bgcol;
-    Dialog.AutoSize := True;
+    Dialog.AutoSize := true;
     MaxDialogHeight := Round(Screen.Height * 0.8);
 
     // Main panel
@@ -2128,7 +2151,7 @@ begin
     MainPanel.Align := alClient;
     MainPanel.BevelOuter := bvNone;
     MainPanel.Color := bgcol;
-    MainPanel.AutoSize := True;
+    MainPanel.AutoSize := true;
 
     // Top panel
     TopPanel := TPanel.Create(MainPanel);
@@ -2136,15 +2159,17 @@ begin
     TopPanel.Align := alTop;
     TopPanel.BevelOuter := bvNone;
     TopPanel.Color := bgcol;
-    TopPanel.AutoSize := True;
+    TopPanel.AutoSize := true;
 
     // Icon
     IconBox := TImage.Create(TopPanel);
     IconBox.Parent := TopPanel;
     IconBox.Align := alLeft;
     case size of
-      uxdBig:     IconBox.Width := 100;
-      uxdMedium:     IconBox.Width :=75;
+    uxdBig:
+      IconBox.Width := 100;
+    uxdMedium:
+      IconBox.Width :=75;
     else
       IconBox.Width := 50;
     end;
@@ -2172,17 +2197,19 @@ begin
 
     if (size = uxdBig) then
     begin
-      if ProposedWidth < 650 then ProposedWidth := 650;
+      if ProposedWidth < 650 then
+        ProposedWidth := 650;
     end
     else
-    begin
-      if ProposedWidth < 400 then ProposedWidth := 400;
-    end;
+    if ProposedWidth < 400 then
+      ProposedWidth := 400;
 
     if logmsg <> '' then
-      if ProposedWidth < 500 then ProposedWidth := 500;
+      if ProposedWidth < 500 then
+        ProposedWidth := 500;
 
-    if ProposedWidth > 900 then ProposedWidth := 900;
+    if ProposedWidth > 900 then
+      ProposedWidth := 900;
 
     Dialog.ClientWidth := ProposedWidth;
     MsgWidth := Dialog.ClientWidth - (IconBox.Width + (padding * 3));
@@ -2191,8 +2218,10 @@ begin
     TempFont := TFont.Create;
     try
       case size of
-        uxdBig: TempFont.Size := 24;
-        uxdMedium: TempFont.Size := 20;
+      uxdBig:
+        TempFont.Size := 24;
+      uxdMedium:
+        TempFont.Size := 20;
       end;
       TempFont.Style := [];
       TempFont.Color := getBaseColor;
@@ -2214,13 +2243,13 @@ begin
         MsgScroll.BorderSpacing.Bottom := padding; // Padding toward log
         MsgScroll.Width := MsgWidth;
         MsgScroll.Height := MaxDialogHeight div 2;
-        MsgScroll.VertScrollBar.Visible := True;
+        MsgScroll.VertScrollBar.Visible := true;
         MsgScroll.BorderStyle := bsNone;
 
         MsgLabel := TLabel.Create(MsgScroll);
         MsgLabel.Parent := MsgScroll;
-        MsgLabel.WordWrap := True;
-        MsgLabel.AutoSize := True;
+        MsgLabel.WordWrap := true;
+        MsgLabel.AutoSize := true;
         MsgLabel.Font.Size := 24;
         MsgLabel.Font.Style := [];
         MsgLabel.Caption := desc;
@@ -2231,8 +2260,8 @@ begin
       begin
         MsgLabel := TLabel.Create(TextPanel);
         MsgLabel.Parent := TextPanel;
-        MsgLabel.WordWrap := True;
-        MsgLabel.AutoSize := True;
+        MsgLabel.WordWrap := true;
+        MsgLabel.AutoSize := true;
         MsgLabel.Font.Size := 24;
         MsgLabel.Font.Style := [];
         MsgLabel.Caption := desc;
@@ -2248,8 +2277,8 @@ begin
       begin
         TitleLabel := TLabel.Create(TextPanel);
         TitleLabel.Parent := TextPanel;
-        TitleLabel.WordWrap := True;
-        TitleLabel.AutoSize := True;
+        TitleLabel.WordWrap := true;
+        TitleLabel.AutoSize := true;
         TitleLabel.Font.Size := 24;
         TitleLabel.Font.Style := [fsBold];
         TitleLabel.Caption := title;
@@ -2266,8 +2295,8 @@ begin
       begin
         TitleLabel := TLabel.Create(TextPanel);
         TitleLabel.Parent := TextPanel;
-        TitleLabel.WordWrap := True;
-        TitleLabel.AutoSize := False;
+        TitleLabel.WordWrap := true;
+        TitleLabel.AutoSize := false;
         if size = uxdMedium then
           TitleLabel.Font.Size := 20;
         TitleLabel.Font.Style := [fsBold];
@@ -2293,14 +2322,14 @@ begin
         MsgScroll.Left := padding;
         MsgScroll.Width := MsgWidth;
         MsgScroll.Height := MaxDialogHeight div 2;
-        MsgScroll.VertScrollBar.Visible := True;
+        MsgScroll.VertScrollBar.Visible := true;
         MsgScroll.BorderStyle := bsNone;
         MsgScroll.BorderSpacing.Bottom := padding; // Padding to log panel
 
         MsgLabel := TLabel.Create(MsgScroll);
         MsgLabel.Parent := MsgScroll;
-        MsgLabel.WordWrap := True;
-        MsgLabel.AutoSize := False;
+        MsgLabel.WordWrap := true;
+        MsgLabel.AutoSize := false;
         MsgLabel.Caption := desc;
         MsgLabel.Font.Color := getBaseColor;
         MsgLabel.Width := MsgWidth;
@@ -2310,8 +2339,8 @@ begin
       begin
         MsgLabel := TLabel.Create(TextPanel);
         MsgLabel.Parent := TextPanel;
-        MsgLabel.WordWrap := True;
-        MsgLabel.AutoSize := False;
+        MsgLabel.WordWrap := true;
+        MsgLabel.AutoSize := false;
         MsgLabel.Caption := desc;
         MsgLabel.Font.Color := getBaseColor;
         if Assigned(TitleLabel) then
@@ -2358,7 +2387,7 @@ begin
       LogHtmlPanel.Anchors := [akLeft, akTop, akRight, akBottom];
       LogHtmlPanel.Color := dumpbg;
       LogHtmlPanel.BorderStyle := bsNone;
-      LogHtmlPanel.TabStop := False;  // Prevent focus
+      LogHtmlPanel.TabStop := false;  // Prevent focus
       LogHtmlPanel.OnKeyDown := @Dialog.FormKeyDown;
       LogHTMLPanel.MarginHeight:=0;
       LogHTMLPanel.MarginWidth:=0;
@@ -2367,22 +2396,22 @@ begin
         // Wrap content in HTML structure with background color from dumpbg
         FontTXTInList(sysfont);
         htmlstr := StringReplace(
-         logmsg,
+          logmsg,
           '">', '"><u><font color="' + TColorToHTML(getBaseColor) + '">',
           [rfReplaceAll]
-        );
+          );
 
-          htmlstr := StringReplace(
+        htmlstr := StringReplace(
           htmlstr,
           '</a>',
           '</font></u></a>',
           [rfReplaceAll]
-        );
+          );
         LogHtmlPanel.SetHtmlFromStr(
           '<html><body bgcolor="' + TColorToHTML(dumpbg) + '" text="' + TColorToHTML(dumptext) + '" style="font-family: ' + sysfont + ';">' +
           htmlstr +
           '</body></html>'
-        );
+          );
       except
         on E: Exception do
         begin
@@ -2391,7 +2420,7 @@ begin
             '<html><body bgcolor="' + TColorToHTML(dumpbg) + '" text="' + TColorToHTML(dumptext) + '" style="font-family: Verdana, Arial, sans-serif;"><pre>' +
             logmsg +
             '</pre></body></html>'
-          );
+            );
         end;
       end;
     end
@@ -2405,7 +2434,7 @@ begin
       LogMemo.Width := MemoWrapper.ClientWidth - MemoPadLeft;
       LogMemo.Height := MemoWrapper.ClientHeight - MemoPadTop;
       LogMemo.Anchors := [akLeft, akTop, akRight, akBottom];
-      LogMemo.ReadOnly := True;
+      LogMemo.ReadOnly := true;
       LogMemo.Color := dumpbg;
       LogMemo.Font.Color := dumptext;
       LogMemo.ScrollBars := ssAutoVertical;
@@ -2424,19 +2453,24 @@ begin
     ButtonPanel.Color := bgcol;
 
     case size of
-      uxdBig: ButtonActualWidth := btnWidth*2;
-      uxdMedium: ButtonActualWidth := ceil(btnWidth*1.5);
+    uxdBig:
+      ButtonActualWidth := btnWidth*2;
+    uxdMedium:
+      ButtonActualWidth := ceil(btnWidth*1.5);
     else
       ButtonActualWidth := btnWidth;
     end;
 
     btnCount := 0;
-    for mr in buttons do Inc(btnCount);
-    if btnCount = 0 then btnCount := 1;
+    for mr in buttons do
+      Inc(btnCount);
+    if btnCount = 0 then
+      btnCount := 1;
 
     totalBtnWidth := (ButtonActualWidth * btnCount) + (padding * (btnCount - 1));
     posX := (Dialog.ClientWidth - totalBtnWidth) div 2;
-    if posX < padding then posX := padding;
+    if posX < padding then
+      posX := padding;
 
     for mr in buttons do
     begin
@@ -2447,8 +2481,10 @@ begin
       OkButton.ModalResult := UXButtonToModalResult(mr);
       OkButton.Width := ButtonActualWidth;
       case size of
-        uxdBig: OkButton.Height := OkButton.Height * 2;
-        uxdMedium: OkButton.Height := ceil(OkButton.Height * 1.5);
+      uxdBig:
+        OkButton.Height := OkButton.Height * 2;
+      uxdMedium:
+        OkButton.Height := ceil(OkButton.Height * 1.5);
       end;
       OkButton.Top := padding;
       OkButton.Left := posX;
@@ -2460,8 +2496,8 @@ begin
     if Dialog.Height > MaxDialogHeight then
       Dialog.Height := MaxDialogHeight;
 
-  ShowModalSafe(Dialog);
-  Result := Dialog.ModalResult;
+    ShowModalSafe(Dialog);
+    Result := Dialog.ModalResult;
   finally
 //    hpd.free;
     Dialog.Free;
@@ -2470,73 +2506,73 @@ end;
 
 {** See interface docs for behavior and parameters. }
 function ExtError(const dialogsize: TUXDialogSize;
-                  const msg, error: string;
-                  const icon: UXImage = uxmtCog): TModalResult;
+const msg, error: string;
+const icon: UXImage = uxmtCog): TModalResult;
 begin
   Result := ExtMsg(dialogsize,
-                   sExtErr,  // caption
-                   sErr,     // title
-                   msg,      // description
-                   error,    // log/dump text
-                   uxclWhite, // dump background color
-                   uxclRed, // dump text color
-                   [mbAbort], // buttons
-                   icon);
+    sExtErr,  // caption
+    sErr,     // title
+    msg,      // description
+    error,    // log/dump text
+    uxclWhite, // dump background color
+    uxclRed, // dump text color
+    [mbAbort], // buttons
+    icon);
 end;
 
 {** See interface docs for behavior and parameters. }
 function ExtError(const dialogsize: TUXDialogSize;
-                  const error: string;
-                  const icon: UXImage = uxmtCog): TModalResult;
+const error: string;
+const icon: UXImage = uxmtCog): TModalResult;
 begin
   Result := ExtMsg(dialogsize,
-                   sExtErr,   // caption
-                   sExtTitle, // title
-                   sErr,      // description
-                   error,     // log
-                   uxclWhite,
-                   uxclRed,
-                   [mbAbort],
-                   icon);
+    sExtErr,   // caption
+    sExtTitle, // title
+    sErr,      // description
+    error,     // log
+    uxclWhite,
+    uxclRed,
+    [mbAbort],
+    icon);
 end;
 
 {** See interface docs for behavior and parameters. }
 function ExtSucc(const dialogsize: TUXDialogSize;
-                 const msg, desc, output: string;
-                 dumpbg: TColor = uxclLightGreen;
-                 dumptext: TColor = uxclDarkGreen;
-                 const icon: UXImage = uxmtOK): TModalResult;
+const msg, desc, output: string;
+dumpbg: TColor = uxclLightGreen;
+dumptext: TColor = uxclDarkGreen;
+const icon: UXImage = uxmtOK): TModalResult;
 begin
   Result := ExtMsg(dialogsize,
-                   sSuccTitle, // caption
-                   msg,        // title
-                   desc,       // description
-                   output,     // log/dump
-                   dumpbg,
-                   dumptext,
-                   [mbOK],
-                   widechar(icon));
+    sSuccTitle, // caption
+    msg,        // title
+    desc,       // description
+    output,     // log/dump
+    dumpbg,
+    dumptext,
+    [mbOK],
+    widechar(icon));
 end;
 
 {** See interface docs for behavior and parameters. }
 function ExtSuccEx(const dialogsize: TUXDialogSize;
-                   const msg, desc, output: string;
-                   btns: TUXMsgDlgBtns;
-                   dumpbg: TColor = uxclLightGreen;
-                   dumptext: TColor = uxclDarkGreen;
-                   const icon: UXImage = uxmtOK;
-                   const scale: integer = 1): TModalResult;
+const msg, desc, output: string;
+btns: TUXMsgDlgBtns;
+dumpbg: TColor = uxclLightGreen;
+dumptext: TColor = uxclDarkGreen;
+const icon: UXImage = uxmtOK;
+const scale: integer = 1): TModalResult;
 begin
   Result := ExtMsg(dialogsize,
-                   sSuccTitle,
-                   msg,
-                   desc,
-                   output,
-                   dumpbg,
-                   dumptext,
-                   btns,
-                   widechar(icon),
-                   scale);
+    sSuccTitle,
+    msg,
+    desc,
+    output,
+    dumpbg,
+    dumptext,
+    btns,
+    widechar(icon),
+    scale);
 end;
 
 procedure TDialogForm.DoShow;
@@ -2555,14 +2591,15 @@ end;
   @param Key Key code pressed.
   @param Shift Shift-state (unused).
 }
-procedure TDialogForm.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+procedure TDialogForm.FormKeyDown(Sender: TObject; var Key: word; Shift: TShiftState);
 var
   o: TCustomButton;
-  i, cancel, no, yes, ok, abort, ct: Integer;
+  i, cancel, no, yes, ok, abort, ct: integer;
   btns: TComponent;
   target: TWinControl;
 begin
-  if not (key in [VK_ESCAPE, VK_RETURN]) then Exit;
+  if not (key in [VK_ESCAPE, VK_RETURN]) then
+    Exit;
   cancel := -1;
   no := -1;
   yes := -1;
@@ -2576,39 +2613,45 @@ begin
     target := btns as TPanel;
 
   for i := 0 to target.ComponentCount - 1 do
-  begin
     if target.components[i] is TCustomButton then
     begin
       o := target.components[i] as TCustomButton;
-      if o.ModalResult = mrCancel then cancel := i;
-      if o.ModalResult = mrNo then no := i;
-      if o.ModalResult = mrYes then yes := i;
-      if (o.ModalResult = mrOk) or (o.ModalResult = mrClose) then ok := i;
-      if o.ModalResult = mrAbort then abort := i;
+      if o.ModalResult = mrCancel then
+        cancel := i;
+      if o.ModalResult = mrNo then
+        no := i;
+      if o.ModalResult = mrYes then
+        yes := i;
+      if (o.ModalResult = mrOk) or (o.ModalResult = mrClose) then
+        ok := i;
+      if o.ModalResult = mrAbort then
+        abort := i;
       Inc(ct);
     end;
-  end;
 
   if key = vk_escape then
   begin
     // ESC priority: Cancel > No > Abort > OK/Close (for single-button dialogs)
     if cancel >= 0 then
       (target.Components[cancel] as TCustomButton).Click
-    else if no >= 0 then
+    else
+    if no >= 0 then
       (target.Components[no] as TCustomButton).Click
-    else if abort >= 0 then
+    else
+    if abort >= 0 then
       (target.Components[abort] as TCustomButton).Click
-    else if (ct = 1) and (ok >= 0) then
+    else
+    if (ct = 1) and (ok >= 0) then
       (target.Components[ok] as TCustomButton).Click;
   end
-  else if key = VK_RETURN then
-  begin
-    // ENTER priority: OK > Yes > Close (affirmative actions)
+  else
+  if key = VK_RETURN then
     if ok >= 0 then
       (target.Components[ok] as TCustomButton).Click
-    else if yes >= 0 then
-      (target.Components[yes] as TCustomButton).Click;
-  end;
+    else
+    if yes >= 0 then
+      (target.Components[yes] as TCustomButton).Click// ENTER priority: OK > Yes > Close (affirmative actions)
+  ;
 end;
 
 {$ifndef Windows}
@@ -2616,7 +2659,7 @@ end;
 procedure TDialogForm.CreateWnd;
 begin
   inherited CreateWnd;
-  KeyPreview := True;
+  KeyPreview := true;
   // Ensure dialogs have an explicit popup owner so X11/Wayland window managers
   // can treat them as transient for the initiating window. Also provide a
   // conservative fallback on non-Windows systems by keeping the dialog on top
@@ -2630,12 +2673,14 @@ begin
       PopupMode := pmExplicit;
       PopupParent := Screen.ActiveForm;
     end
-    else if Assigned(Owner) and (Owner is TForm) then
+    else
+    if Assigned(Owner) and (Owner is TForm) then
     begin
       PopupMode := pmExplicit;
       PopupParent := TForm(Owner);
     end
-    else if Assigned(Application) and Assigned(Application.MainForm) then
+    else
+    if Assigned(Application) and Assigned(Application.MainForm) then
     begin
       PopupMode := pmExplicit;
       PopupParent := Application.MainForm;
@@ -2759,12 +2804,12 @@ end;
 
 procedure TDialogForm.HTMLHotClick(Sender: TObject);
 begin
- if ExtText(uxdAuto, sURLTitle, sURL,[mbYes, mbNo]) = mrYes then
-   OpenURL((sender as TIpHtmlPanel).HotURL);
+  if ExtText(uxdAuto, sURLTitle, sURL,[mbYes, mbNo]) = mrYes then
+    OpenURL((sender as TIpHtmlPanel).HotURL);
 end;
 
 procedure TDialogForm.HTMLGetImageX(Sender: TIpHtmlNode; const URL: string;
-  var Picture: TPicture);
+var Picture: TPicture);
 var
   res: string;
   ms: TStringStream;

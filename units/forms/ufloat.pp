@@ -217,7 +217,7 @@ procedure TfFloat.FormCreate(Sender: TObject);
 var
   QtWidget: TQtWidget;
   style: string;
-  {$endif}
+{$endif}
 begin
   {$IFDEF LCLQt6}
   if HandleAllocated then
@@ -310,7 +310,7 @@ end;
 procedure TfFloat.SetFormOpacity(Opacity: double);
 {$IF DEFINED(LCLQt6) OR DEFINED(DARWIN)}
 var
-  {$endif}
+{$endif}
   {$IFDEF DARWIN}
   NSViewHandle: NSView;
   NSWin: NSWindow;
@@ -479,14 +479,14 @@ procedure TfFloat.tTitlebarTimer(Sender: TObject);
 begin
   {$IF NOT DEFINED(DARWIN)}
   // On non-macOS, keep float always borderless; timer does nothing
-  tTitlebar.Enabled := False;
+  tTitlebar.Enabled := false;
   {$ENDIF}
 end;
 
 procedure TfFloat.FormMouseMove(Sender: TObject; Shift: TShiftState; X, Y: integer);
 var
   ScreenPt: TPoint;
-  DeltaX, DeltaY: Integer;
+  DeltaX, DeltaY: integer;
 begin
   if DraggingWin then
   begin
@@ -533,7 +533,7 @@ var
   BlackColor: QColorH;
   PaintDevice: QPaintDeviceH;
   bgcol: QtGlobalColor;
-  {$endif}
+{$endif}
 begin
   {$IFDEF LCLQt6_DISABLED}
   case lvl of

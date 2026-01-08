@@ -238,18 +238,22 @@ var
   userNick: string;
   userList: TStringArray;
 begin
-  if native.TryGetCSVSetting('users.names', userList, true) then begin // We have more than 1 user
+  if native.TryGetCSVSetting('users.names', userList, true) then
+  begin // We have more than 1 user
     i := ExtList(uxdAuto, RS_MULTIUSER_BOX_TITLE, RS_MULTIUSER_BOX_TITLE, // Show a prompt to choose user
       RS_MULTIUSER_BOX, userList, true);
 
-    if i > -1 then begin // We chose a user
+    if i > -1 then
+    begin // We chose a user
       username := userList[i]; // Set username
       native.configUser := username; // Set settings main key
       userNick := native.GetSettingEx('user.nick', username); // Load the user's nickname
 
       fbg.Caption := Format(RS_USER_CAPTION, [userNick, fBG.Caption]); // Set the main form title
       multinick := userNick; // Set the multi user nickname
-    end else begin // Standard user
+    end
+    else
+    begin // Standard user
       username := ''; // No username
       userNick := native.GetSettingEx('user.nick', RS_DEFAULT_ACCOUNT); // Get the standard user's nick
       multinick := userNick; // Set the multi user nickname
@@ -263,7 +267,8 @@ begin
       pnMultiUser.Visible := native.GetRootSetting('users.colorbox', 'true') = 'true';
       customTitlebar := setColorMode; // Set the custom title bar value depending if the panel is showing
     end;
-  end else
+  end
+  else
     multi := false; // No multi user
 end;
 
@@ -313,52 +318,51 @@ var
 begin
   Result := true;
 
-  if native.TryGetSetting('remote.max_min', maxmin) then begin
-    if native.TryGetSetting('remote.max_result', maxresult) then begin
-       if TryStrToInt(maxmin, minmax) and TryStrToInt(maxresult, resultmax) then begin
-            MAX_MIN := minmax;
-            MAX_RESULT := resultmax;
-       end;
-     end;
-  end;
+  if native.TryGetSetting('remote.max_min', maxmin) then
+    if native.TryGetSetting('remote.max_result', maxresult) then
+      if TryStrToInt(maxmin, minmax) and TryStrToInt(maxresult, resultmax) then
+      begin
+        MAX_MIN := minmax;
+        MAX_RESULT := resultmax;
+      end;
 
   apiTarget := native.GetSetting('remote.target');
   apiCreds := native.GetSetting('remote.creds');
 
   case native.GetSetting('remote.type') of
-   API_NS,
-   'API_NS':
+  API_NS,
+  'API_NS':
     api := NightScout.Create(apiTarget, apiCreds, '');
-   API_NS3,
-   'API_NS3':
+  API_NS3,
+  'API_NS3':
     api := NightScout3.Create(apiTarget, apiCreds, '');
-   API_DEX_USA,
-   'API_DEX_USA':
-     api := Dexcom.Create(apiTarget, apiCreds, 'usa');
-   API_DEX_EU,
-   'API_DEX_EU':
-     api := Dexcom.Create(apiTarget, apiCreds, 'world');
-   API_XDRIP,
-   'API_XDRIP':
-     api := xDrip.Create(apiTarget, apiCreds, '');
+  API_DEX_USA,
+  'API_DEX_USA':
+    api := Dexcom.Create(apiTarget, apiCreds, 'usa');
+  API_DEX_EU,
+  'API_DEX_EU':
+    api := Dexcom.Create(apiTarget, apiCreds, 'world');
+  API_XDRIP,
+  'API_XDRIP':
+    api := xDrip.Create(apiTarget, apiCreds, '');
   {$ifdef DEBUG}
-   API_D_DEBUG,
-   'API_D_DEBUG':
+  API_D_DEBUG,
+  'API_D_DEBUG':
     api := DebugAPI.Create(apiTarget, apiCreds, '');
-   API_D_MISSING,
-   'API_D_MISSING':
+  API_D_MISSING,
+  'API_D_MISSING':
     api := DebugMissingAPI.Create(apiTarget, apiCreds, '');
-   API_D_PERFECT,
-   'API_D_PERFECT':
+  API_D_PERFECT,
+  'API_D_PERFECT':
     api := DebugPerfectAPI.Create(apiTarget, apiCreds, '');
-   API_D_CUSTOM,
-   'API_D_CUSTOM':
+  API_D_CUSTOM,
+  'API_D_CUSTOM':
     api := DebugCustomAPI.Create(apiTarget, apiCreds, '');
-   API_D_EDGE,
-   'API_D_EDGE':
+  API_D_EDGE,
+  'API_D_EDGE':
     api := DebugEdgeAPI.Create(apiTarget, apiCreds, '');
-   API_D_FIRST,
-   'API_D_FIRST':
+  API_D_FIRST,
+  'API_D_FIRST':
     api := DebugFirstMissingAPI.Create(apiTarget, apiCreds, '');
   {$endif}
   else
@@ -374,7 +378,8 @@ var
 begin
   hasDefaultFont := FontTXTInList(fontName);
 
-  if not hasDefaultFont then begin
+  if not hasDefaultFont then
+  begin
     distroId := scanLinuxDistro(['fedora','ubuntu','debian']);
     case distroId of
     'fedora':
@@ -464,13 +469,12 @@ begin
 
   // Initialize native interface
   native := TrndiNative.Create;
-  if ssShift in GetKeyShiftState then begin
+  if ssShift in GetKeyShiftState then
     if ExtText(uxdAuto,'Override big screen?','Shift Pressed! Force Trndi to treat your system as ' + IfThen(native.DetectTouchScreen(fil), 'Small screen (non-touch)', 'Big screen (touch)')+'?',[MbYes, mbNo],uxmtWarning) = mrYes then
       if native.DetectTouchScreen(fil) then
         native.touchOverride := tbFalse
       else
         native.touchOverride := tbTrue;
-  end;
 
   setColorMode;
 
@@ -574,7 +578,7 @@ begin
 
     fSplash.linfo.Caption := RS_INIT_UX;
     // UI preferences
-    dotscale := GetFloatSetting('ux.dot_scale', {$ifdef DARWIN}0.7{$else}1{$endif});
+    dotscale := GetFloatSetting('ux.dot_scale',{$ifdef DARWIN}0.7{$else}1{$endif});
     DOT_ADJUST := GetFloatSetting('ux.dot_adjust', 0);
 
     DOT_OFFSET_RANGE := GetIntSetting('ux.dot_offset_range', DOT_OFFSET_RANGE);
@@ -605,7 +609,8 @@ begin
     PredictShortSize := native.GetIntSetting('predictions.short.size', 1);
     if PredictShortSize < 1 then
       PredictShortSize := 1
-    else if PredictShortSize > 3 then
+    else
+    if PredictShortSize > 3 then
       PredictShortSize := 3;
     lPredict.Visible := PredictGlucoseReading;
   end;
@@ -620,12 +625,11 @@ begin
   end;
 
   Chroma := TRazerChromaFactory.CreateInstance;
-  if native.GetBoolSetting('razer.enabled', false) then begin
+  if native.GetBoolSetting('razer.enabled', false) then
+  begin
     fSplash.linfo.Caption := RS_INIT_CHROMA;
     if not Chroma.Initialize then
-    begin
       Showmessage('❌ Failed to initialize Razer Chroma: ', Chroma.LastError);
-    end;
   end;
 
   // Cleanup splash screen
@@ -664,7 +668,7 @@ end;
 
 procedure TfBG.StartWebServer;
 var
-  Port: Integer;
+  Port: integer;
   Token: string;
 begin
   if Assigned(FWebServer) then
@@ -692,10 +696,8 @@ begin
   if Length(FCachedReadings) > 0 then
     Result := FCachedReadings
   else
-  begin
-    // Return an empty reading if no data is available - Init will set curr to BG_NO_VAL
-    result := [];
-  end;
+    result := []// Return an empty reading if no data is available - Init will set curr to BG_NO_VAL
+  ;
 end;
 
 function TfBG.GetPredictionsForWeb: BGResults;
@@ -705,7 +707,7 @@ begin
   SetLength(Result, 0);
 end;
 
-function TfBG.WebServerActive: Boolean;
+function TfBG.WebServerActive: boolean;
 begin
   Result := Assigned(FWebServer) and TTrndiWebServer(FWebServer).Active;
 end;

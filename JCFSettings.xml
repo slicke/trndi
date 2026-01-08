@@ -105,7 +105,7 @@
   <Comments>
       <RemoveEmptyDoubleSlashComments> True </RemoveEmptyDoubleSlashComments>
       <RemoveEmptyCurlyBraceComments> True </RemoveEmptyCurlyBraceComments>
-      <ImbalancedCommentAction> Error </ImbalancedCommentAction>
+      <ImbalancedCommentAction> Warn </ImbalancedCommentAction>
   </Comments>
   <Capitalisation>
       <Enabled> True </Enabled>
@@ -144,8 +144,8 @@
       <ParamsIndent> 0 </ParamsIndent>
   </Asm>
   <PreProcessor>
-      <Enabled> False </Enabled>
-      <DefinedSymbols>  </DefinedSymbols>
+      <Enabled> True </Enabled>
+      <DefinedSymbols> LCLQt6, lclqt6, LINUX, X_LINUXBSD, DEBUG, TrndiExt, CPU64, X_PC, X_PCX64 </DefinedSymbols>
       <DefinedOptions>  </DefinedOptions>
   </PreProcessor>
   <Align>
