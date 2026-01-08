@@ -58,7 +58,14 @@ type
 TfConf = class(TForm)
   bAdd: TButton;
   bBackendHelp: TButton;
+  bColorGraphHelp: TButton;
+  bMultiUserHelp: TButton;
+  bUseURLHelp: TButton;
+  bThreasholdLinesHelp: TButton;
+  bOutdatedHelp: TButton;
+  bBadgeFlashHelp: TButton;
   bPrivacyHelp: TButton;
+  bPredictHelp: TButton;
   bTemplateCurrent: TButton;
   bTest: TButton;
   bOverrideHelp: TButton;
@@ -66,6 +73,7 @@ TfConf = class(TForm)
   bSysNotice: TButton;
   bMinMinutesHelp: TButton;
   bTemplateTrend: TButton;
+  bCustomRangeHelp: TButton;
   bWebAPI: TButton;
   bSysTouch: TButton;
   bTestAnnounce: TButton;
@@ -172,7 +180,6 @@ TfConf = class(TForm)
   Label22: TLabel;
   Label23: TLabel;
   Label24: TLabel;
-  Label25: TLabel;
   Label26: TLabel;
   Label27: TLabel;
   Label28: TLabel;
@@ -279,9 +286,15 @@ TfConf = class(TForm)
   tsMulti: TTabSheet;
   tsSystem: TTabSheet;
   procedure bAddClick(Sender: TObject);
+  procedure bBadgeFlashHelpClick(Sender: TObject);
+  procedure bColorGraphHelpClick(Sender: TObject);
+  procedure bCustomRangeHelpClick(Sender: TObject);
   procedure bLimitsClick(Sender: TObject);
   procedure bMinMinutesHelpClick(Sender: TObject);
+  procedure bMultiUserHelpClick(Sender: TObject);
+  procedure bOutdatedHelpClick(Sender: TObject);
   procedure bOverrideHelpClick(Sender: TObject);
+  procedure bPredictHelpClick(Sender: TObject);
   procedure bPrivacyHelpClick(Sender: TObject);
   procedure bRemoveClick(Sender: TObject);
   procedure bBackendHelpClick(Sender: TObject);
@@ -292,8 +305,10 @@ TfConf = class(TForm)
   procedure bTestAnnounceClick(Sender: TObject);
   procedure bTestClick(Sender: TObject);
   procedure bTestSpeechClick(Sender: TObject);
+  procedure bThreasholdLinesHelpClick(Sender: TObject);
   procedure btResetClick(Sender: TObject);
   procedure btUserSaveClick(Sender: TObject);
+  procedure bUseURLHelpClick(Sender: TObject);
   procedure Button1Click(Sender: TObject);
   procedure Button2Click(Sender: TObject);
   procedure Button3Click(Sender: TObject);
@@ -358,6 +373,25 @@ var
 tnative: TrndiNative;
 
 resourcestring
+RS_Multi_User_Help =
+  'Trndi supports more than one user, this is called the multi user mode.'+LineEnding+'In this section you can add/remove accounts. There''s always a default account which cannot be deleted.'+LineEnding+
+  'Accounts have their own settings and remote servers, and are "sandboxed". Start a new instance of Trndi to log in to a given user account.';
+
+RS_Use_URL_Help =
+  'Trndi can load a URL when high or low in your default web browser.';
+
+RS_Custom_Range_Help =
+  'Override/set your own limits for the custom range. This is your personal ideal goal, within the high/low area.';
+
+RS_Threashold_Lines_Help =
+  'Trndi can draw a line on the graph''s background, to represent where your high/low limits are.';
+
+RS_BADGE_FLASH_HELP =
+  'This controls how Trndi''s icon in the status bar and/or tray will notify you visually.';
+
+RS_COLOR_BG =
+  'Trndi can draw a rectangle/background in the graph''s background, to visually represent your high and low limits.';
+
 RS_OVERRIDE_HELP =
   'Setting values here allows you to define your own high and low blood sugar limits in Trndi.'
   + #10 + #10 + 'NightScout:'#10 +
@@ -369,6 +403,12 @@ RS_OVERRIDE_NS =
 
 RS_PRIVACY_HELP =
   'When in Privacy Mode, the actual blood glucose value is hidden. Trndi will only tell the user if it''s good, high or low.';
+
+RS_PREDICTION_HELP =
+  'Trndi can predict/guess what your reading will be in the future. This will be shown in the lower right part of the screen.';
+
+RS_OUTDATED_HELP =
+  'This is the time after which Trndi will show the "no recent" readings overlay.';
 
 RS_DEX =
   'Dexcom servers do not provide custom high and low blood sugar values. Please set your own thresholds in the Customization tab.';
@@ -1129,6 +1169,16 @@ begin
   ShowMessage(Format(RS_MIN_MINUTES, [MAX_MIN]));
 end;
 
+procedure TfConf.bMultiUserHelpClick(Sender: TObject);
+begin
+  ShowMessage(RS_Multi_User_Help);
+end;
+
+procedure TfConf.bOutdatedHelpClick(Sender: TObject);
+begin
+  ShowMessage(RS_OUTDATED_HELP);
+end;
+
 procedure TfConf.bAddClick(Sender: TObject);
 var
   s, x: string;
@@ -1162,9 +1212,29 @@ begin
   end;
 end;
 
+procedure TfConf.bBadgeFlashHelpClick(Sender: TObject);
+begin
+  ShowMessage(RS_BADGE_FLASH_HELP);
+end;
+
+procedure TfConf.bColorGraphHelpClick(Sender: TObject);
+begin
+  ShowMessage(RS_COLOR_BG);
+end;
+
+procedure TfConf.bCustomRangeHelpClick(Sender: TObject);
+begin
+  ShowMessage(RS_Custom_Range_Help);
+end;
+
 procedure TfConf.bOverrideHelpClick(Sender: TObject);
 begin
   ShowMessage(RS_OVERRIDE_HELP);
+end;
+
+procedure TfConf.bPredictHelpClick(Sender: TObject);
+begin
+  ShowMessage(RS_PREDICTION_HELP);
 end;
 
 procedure TfConf.bPrivacyHelpClick(Sender: TObject);
@@ -1305,6 +1375,11 @@ begin
     tnative.speak('test 100');
 end;
 
+procedure TfConf.bThreasholdLinesHelpClick(Sender: TObject);
+begin
+  ShowMessage(RS_Threashold_Lines_Help);
+end;
+
 procedure TfConf.btResetClick(Sender: TObject);
 const
   bg_color_ok: TColor = $0000DC84;
@@ -1349,6 +1424,11 @@ begin
   tNative.SetSetting('user.nick', edNick.Text);
 
   btUserSave.Enabled := false;
+end;
+
+procedure TfConf.bUseURLHelpClick(Sender: TObject);
+begin
+  ShowMessage(RS_Use_URL_Help);
 end;
 
 procedure TfConf.Button1Click(Sender: TObject);

@@ -17,10 +17,10 @@ object fConf: TfConf
     Height = 518
     Top = 11
     Width = 665
-    ActivePage = tsAdvanced
+    ActivePage = tsExt
     Align = alClient
     BorderSpacing.Around = 5
-    TabIndex = 5
+    TabIndex = 10
     TabOrder = 0
     OnChange = pcMainChange
     object tsGeneral: TTabSheet
@@ -11306,6 +11306,24 @@ object fConf: TfConf
           Font.Style = [fsItalic]
           ParentFont = False
         end
+        object bColorGraphHelp: TButton
+          Left = 600
+          Height = 22
+          Top = 0
+          Width = 27
+          Caption = '?'
+          TabOrder = 5
+          OnClick = bColorGraphHelpClick
+        end
+        object bThreasholdLinesHelp: TButton
+          Left = 600
+          Height = 22
+          Top = 90
+          Width = 27
+          Caption = '?'
+          TabOrder = 6
+          OnClick = bThreasholdLinesHelpClick
+        end
       end
       object GroupBox7: TGroupBox
         Left = 10
@@ -11370,6 +11388,15 @@ object fConf: TfConf
             MaxValue = 600
             TabOrder = 1
           end
+        end
+        object bCustomRangeHelp: TButton
+          Left = 600
+          Height = 22
+          Top = 0
+          Width = 27
+          Caption = '?'
+          TabOrder = 2
+          OnClick = bCustomRangeHelpClick
         end
       end
       object Label20: TLabel
@@ -11567,6 +11594,15 @@ object fConf: TfConf
           TabOrder = 2
         end
       end
+      object bBadgeFlashHelp: TButton
+        Left = 622
+        Height = 22
+        Top = 224
+        Width = 27
+        Caption = '?'
+        TabOrder = 5
+        OnClick = bBadgeFlashHelpClick
+      end
     end
     object tsAdvanced: TTabSheet
       Caption = 'Advanced'
@@ -11604,6 +11640,15 @@ object fConf: TfConf
           Width = 644
           Align = alTop
           Caption = 'Readings are outdated after (minutes):'
+        end
+        object bOutdatedHelp: TButton
+          Left = 104
+          Height = 22
+          Top = 24
+          Width = 27
+          Caption = '?'
+          TabOrder = 1
+          OnClick = bOutdatedHelpClick
         end
       end
       object GroupBox8: TGroupBox
@@ -11727,6 +11772,15 @@ object fConf: TfConf
           Caption = 'Use full arrow set (↑↑, ↑, ↗, →, ↘, ↓, ↓↓)'
           TabOrder = 5
           OnChange = cbPredictShortFullArrowsChange
+        end
+        object bPredictHelp: TButton
+          Left = 384
+          Height = 22
+          Top = 0
+          Width = 27
+          Caption = '?'
+          TabOrder = 6
+          OnClick = bPredictHelpClick
         end
       end
       object GroupBox9: TGroupBox
@@ -11854,7 +11908,7 @@ object fConf: TfConf
           TabOrder = 2
         end
         object cbMusicPause: TCheckBox
-          Left = 449
+          Left = 448
           Height = 20
           Top = 0
           Width = 176
@@ -11875,19 +11929,10 @@ object fConf: TfConf
         ClientWidth = 635
         ParentBackground = False
         TabOrder = 1
-        object Label25: TLabel
-          Left = 5
-          Height = 16
-          Top = 0
-          Width = 630
-          Align = alTop
-          BorderSpacing.Left = 5
-          Caption = 'Trndi can load a URL when high/low'
-        end
         object Label28: TLabel
           Left = 10
           Height = 16
-          Top = 101
+          Top = 85
           Width = 615
           Align = alTop
           BorderSpacing.Around = 10
@@ -11897,7 +11942,7 @@ object fConf: TfConf
         object edURLPerfect: TEdit
           Left = 10
           Height = 30
-          Top = 127
+          Top = 111
           Width = 615
           Align = alTop
           BorderSpacing.Left = 10
@@ -11907,7 +11952,7 @@ object fConf: TfConf
         object Panel14: TPanel
           Left = 0
           Height = 75
-          Top = 16
+          Top = 0
           Width = 635
           Align = alTop
           BevelOuter = bvNone
@@ -11974,6 +12019,15 @@ object fConf: TfConf
               TabOrder = 0
             end
           end
+        end
+        object bUseURLHelp: TButton
+          Left = 598
+          Height = 22
+          Top = 0
+          Width = 27
+          Caption = '?'
+          TabOrder = 2
+          OnClick = bUseURLHelpClick
         end
       end
     end
@@ -12308,7 +12362,7 @@ object fConf: TfConf
         ClientWidth = 659
         TabOrder = 2
         object bRemove: TButton
-          Left = 499
+          Left = 457
           Height = 30
           Top = 0
           Width = 75
@@ -12319,7 +12373,7 @@ object fConf: TfConf
           OnClick = bRemoveClick
         end
         object bAdd: TButton
-          Left = 574
+          Left = 532
           Height = 30
           Top = 0
           Width = 75
@@ -12329,6 +12383,18 @@ object fConf: TfConf
           Constraints.MaxHeight = 30
           TabOrder = 1
           OnClick = bAddClick
+        end
+        object bMultiUserHelp: TButton
+          Left = 617
+          Height = 30
+          Top = 0
+          Width = 32
+          Align = alRight
+          BorderSpacing.Right = 10
+          Caption = '?'
+          Constraints.MaxHeight = 30
+          TabOrder = 2
+          OnClick = bMultiUserHelpClick
         end
       end
       object GroupBox4: TGroupBox

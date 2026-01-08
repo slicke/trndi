@@ -704,10 +704,6 @@ msgstr "Ändra Trndis standardfärger för text, beroende på glukosavläsning"
 msgid "Change Trndi's default background and colors, when in the custom range"
 msgstr "Ändra Trndis standardfärger för bakgrund och text, när du är i eget område"
 
-#: tfconf.label25.caption
-msgid "Trndi can load a URL when high/low"
-msgstr "Trndi kan ladda en URL vid högt/lågt"
-
 #: tfconf.label26.caption
 msgid "High (eg https://url.local/hi)"
 msgstr "Hög (tex https://url.local/hög)"
@@ -1819,6 +1815,10 @@ msgstr "Okänt fel"
 msgid "Auto-detect"
 msgstr "Automatisk"
 
+#: uconf.rs_badge_flash_help
+msgid "This controls how Trndi's icon in the status bar and/or tray will notify you visually."
+msgstr "Detta styr hur Trndi:s ikon visas i statusfältet och/eller klockkonen notifierar dig visuellt."
+
 #: uconf.rs_beta
 msgid "This backend is in a beta stage, it may not work as intended! If possible, choose another backend."
 msgstr "Denna datakälla är i betastadiet, den kanske inte fungerar korrekt! Om möjligt, välj en annan källa."
@@ -1826,6 +1826,10 @@ msgstr "Denna datakälla är i betastadiet, den kanske inte fungerar korrekt! Om
 #: uconf.rs_choose_system
 msgid "Select your CGM system in the list, then enter your credentials"
 msgstr "Välj ditt CGM-system, ange sedan dina uppgifter"
+
+#: uconf.rs_color_bg
+msgid "Trndi can draw a rectangle/background in the graph's background, to visually represent your high and low limits."
+msgstr "Trndi kan rita en rektangel/bakgrund i grafens bakgrund, för att visuellt representera dina gränser för högt och lågt."
 
 #: uconf.rs_current_acc
 #, object-pascal-format
@@ -1839,6 +1843,10 @@ msgstr "Inställningar för \"standard\" gäller endast medan flera konton finns
 #: uconf.rs_current_acc_no
 msgid "These settings are available when using a multi-account"
 msgstr "Dessa inställningar är tillgängliga när flera användare finns"
+
+#: uconf.rs_custom_range_help
+msgid "Override/set your own limits for the custom range. This is your personal ideal goal, within the high/low area."
+msgstr "Överskrid/sätt dina egna gränser för ditt föredragna område. Detta är ditt ideala mål, inom gränserna för högt/lågt."
 
 #: uconf.rs_default_account
 msgctxt "uconf.rs_default_account"
@@ -1993,6 +2001,16 @@ msgstr ""
 msgid "When calculatingg time-in-range, do so over this amount of minutes. If the number is higher than the data available, the max time will be used - this is currently %d minutes."
 msgstr "När tid-i-målområdet beräknas, gör det för detta antal minuter. Om numret är högre än tillgänglig data, visas maxtiden - vilket just nu är %d minuter."
 
+#: uconf.rs_multi_user_help
+msgid ""
+"Trndi supports more than one user, this is called the multi user mode.\n"
+"In this section you can add/remove accounts. There's always a default account which cannot be deleted.\n"
+"Accounts have their own settings and remote servers, and are \"sandboxed\". Start a new instance of Trndi to log in to a given user account."
+msgstr ""
+"Trndi stöder mer än en användare, detta kallas fleranvändarläge.\n"
+"I denna del kan du lägga till/ta bort konton. Det finns alltid ett standardkonto som inte kan raderas.\n"
+"Konton har sina egna inställningar och fjärrservrar samt är \"sandboxade\". Starta en ny instans av Trndi för att logga in på ett givet konto."
+
 #: uconf.rs_newver
 #, object-pascal-format
 msgid "Version %s is available, would you like to go to the downloads page?"
@@ -2027,6 +2045,10 @@ msgstr "Trndi använder systemet \"%s\" för att visa notiser, det måste vara i
 #: uconf.rs_no_copyright
 msgid "- Extension has no copyright info -"
 msgstr "- Tillägget saknar upphovsrättsinfo -"
+
+#: uconf.rs_outdated_help
+msgid "This is the time after which Trndi will show the \"no recent\" readings overlay."
+msgstr "Detta är den tid efter vilken Trndi visar \"inga färska avläsningar\"."
 
 #: uconf.rs_override_help
 msgid ""
@@ -2066,6 +2088,10 @@ msgstr "Denna funktion beror på din fönsterhanterare ((WM). Den kanske inte st
 #: uconf.rs_predictionwarn
 msgid "Trndi will try to predict future readings. This is experimental and potentially unsafe! Do not make any treatment decisions based on these values! This feature is used on your own risk and responsibility!"
 msgstr "Trndi kommer försöka att förutspå framtida värden. Detta är experimentellt och potentiellt osäkert! Gör inga behandlingar baserat på dessa värden! Du använder funktionen på egen risk och ansvar!"
+
+#: uconf.rs_prediction_help
+msgid "Trndi can predict/guess what your reading will be in the future. This will be shown in the lower right part of the screen."
+msgstr "Trndi kan förutspå/gissa vad avläsningen kommer visa i framtiden. Detta visas i skärmens nedre högra hörn."
 
 #: uconf.rs_privacy_help
 msgid "When in Privacy Mode, the actual blood glucose value is hidden. Trndi will only tell the user if it's good, high or low."
@@ -2119,9 +2145,17 @@ msgstr "Ansluten!"
 msgid "Sorry! Trndi does not (yet) support connection testing for this service!"
 msgstr "Ledsen! Trndi stöder (ännu) inte anslutningstest för denna tjänst!"
 
+#: uconf.rs_threashold_lines_help
+msgid "Trndi can draw a line on the graph's background, to represent where your high/low limits are."
+msgstr "Trndi kan rita en linje på grafens bakgrund, för att representera dina höga/låga gränser."
+
 #: uconf.rs_uptodate
 msgid "You are up to date"
 msgstr "Du är uppdaterad"
+
+#: uconf.rs_use_url_help
+msgid "Trndi can load a URL when high or low in your default web browser."
+msgstr "Trndi kan ladda en adress i din standardwebbläsare när du är hög eller låg."
 
 #: uconf.rs_wayland
 msgid ""
