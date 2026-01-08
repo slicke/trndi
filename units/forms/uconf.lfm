@@ -11608,12 +11608,12 @@ object fConf: TfConf
       end
       object GroupBox8: TGroupBox
         Left = 0
-        Height = 163
-        Top = 320
+        Height = 211
+        Top = 272
         Width = 659
         Align = alBottom
         Caption = 'Predictions'
-        ClientHeight = 136
+        ClientHeight = 184
         ClientWidth = 655
         TabOrder = 1
         object cbPredictions: TCheckBox
@@ -11630,7 +11630,7 @@ object fConf: TfConf
         object lWarnPredict: TLabel
           Left = 0
           Height = 16
-          Top = 120
+          Top = 168
           Width = 655
           Align = alBottom
           Alignment = taRightJustify
@@ -11640,18 +11640,18 @@ object fConf: TfConf
         end
         object Panel13: TPanel
           Left = 0
-          Height = 0
+          Height = 42
           Top = 126
           Width = 655
           Align = alClient
           BevelOuter = bvNone
-          ClientHeight = 0
+          ClientHeight = 42
           ClientWidth = 655
           TabOrder = 1
           object cbPredictShortSize: TComboBox
-            Left = 126
-            Height = 0
-            Top = -5
+            Left = 131
+            Height = 32
+            Top = 0
             Width = 120
             Align = alLeft
             BorderSpacing.Left = 10
@@ -11669,12 +11669,12 @@ object fConf: TfConf
             OnChange = cbPredictShortSizeChange
           end
           object lPredictShortSize: TLabel
-            Left = 25
-            Height = 0
-            Top = -5
+            Left = 30
+            Height = 32
+            Top = 0
             Width = 91
             Align = alLeft
-            BorderSpacing.Left = 25
+            BorderSpacing.Left = 30
             BorderSpacing.Bottom = 10
             Caption = 'Trend arrow size:'
             Layout = tlCenter
@@ -11732,7 +11732,7 @@ object fConf: TfConf
       object GroupBox9: TGroupBox
         Left = 0
         Height = 105
-        Top = 215
+        Top = 167
         Width = 659
         Align = alBottom
         Caption = 'Display'
