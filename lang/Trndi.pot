@@ -442,11 +442,11 @@ msgid "Show glucose predictions"
 msgstr ""
 
 #: tfconf.cbpredictshort.caption
-msgid "Show only trend arrows (short mode)"
+msgid "Show only trend arrows / 1 reading (short mode)"
 msgstr ""
 
 #: tfconf.cbpredictshortfullarrows.caption
-msgid "Use full arrow set (↑↑, ↑, ↗, →, ↘, ↓, ↓↓) in short mode"
+msgid "Use full arrow set (↑↑, ↑, ↗, →, ↘, ↓, ↓↓)"
 msgstr ""
 
 #: tfconf.cbpredictshortsize.text
@@ -865,6 +865,14 @@ msgstr ""
 
 #: tfconf.lwm.caption
 msgid "Unknown Window Manager"
+msgstr ""
+
+#: tfconf.rbpredictshortarrowonly.caption
+msgid "Arrow only"
+msgstr ""
+
+#: tfconf.rbpredictshortshowvalue.caption
+msgid "Show time and value (e.g., ⏱10' ↗ 5.5)"
 msgstr ""
 
 #: tfconf.rbunit.caption

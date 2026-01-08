@@ -91,6 +91,8 @@ TfConf = class(TForm)
   cbPredictShortFullArrows: TCheckBox;
   cbPredictShortSize: TComboBox;
   cbPrivacy: TCheckBox;
+  rbPredictShortArrowOnly: TRadioButton;
+  rbPredictShortShowValue: TRadioButton;
   cbTimeStamp: TCheckBox;
   cbTirIcon: TCheckBox;
   cbWebAPI: TCheckBox;
@@ -1450,11 +1452,14 @@ begin
 
   cbPredictShort.Enabled := cbPredictions.Checked;
   cbPredictShortFullArrows.Enabled := cbPredictShort.Enabled;
+
 end;
 
 procedure TfConf.cbPredictShortChange(Sender: TObject);
 begin
   cbPredictShortFullArrows.Enabled := cbPredictShort.Checked;
+  rbPredictShortShowValue.Enabled := cbPredictShort.Checked;
+  rbPredictShortArrowOnly.Enabled := cbPredictShort.Checked;
 end;
 
 procedure TfConf.cbPredictShortFullArrowsChange(Sender: TObject);
@@ -1630,6 +1635,8 @@ begin
     fsLo.MaxValue := 33.3;
     fsHiRange.MaxValue := 33.3;
     fsLoRange.MaxValue := 33.3;
+
+    rbPredictShortShowValue.Caption := StringReplace(rbPredictShortShowValue.Caption, '100', '5.5', [rfReplaceAll]);
   end
   else
   begin
@@ -1647,6 +1654,8 @@ begin
     fsLo.DecimalPlaces := 0;
     fsHiRange.DecimalPlaces := 0;
     fsLoRange.DecimalPlaces := 0;
+
+    rbPredictShortShowValue.Caption := StringReplace(rbPredictShortShowValue.Caption, '5.5', '100', [rfReplaceAll]);
   end;
 end;
 

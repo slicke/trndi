@@ -600,6 +600,7 @@ begin
     PredictGlucoseReading := GetBoolSetting('predictions.enable', false);
     PredictShortMode := GetBoolSetting('predictions.short', false);
     PredictShortFullArrows := GetBoolSetting('predictions.short.fullarrows', false);
+    PredictShortShowValue := GetBoolSetting('predictions.short.showvalue', false);
     // Read short mode size setting (small or big). Sanitize to 'small' otherwise.
     PredictShortSize := native.GetIntSetting('predictions.short.size', 1);
     if PredictShortSize < 1 then
