@@ -126,13 +126,19 @@ class var touchOverride: TTrndiBool;
   procedure SetRootSetting(keyname: string; const val: string);
     {** Store a string value under @param(keyname). @param(global) bypasses user scoping. }
   procedure SetSetting(const keyname: string; const val: string;
-    global: boolean = false); virtual; abstract;
-    {** Store a boolean setting (serialized as 'true'/'false'). }
-  procedure SetBoolSetting(const keyname: string; const val: boolean);
+    global: boolean = false); virtual; abstract; overload;
+    {** Store an integer value under @param(keyname). @param(global) bypasses user scoping. }
+  procedure SetSetting(const keyname: string; const val: integer;
+  global: boolean = false); overload;
+    {** Store a bool value, represented by @param(a)/@param(b), under @param(keyname). @param(global) bypasses user scoping. }
+  procedure SetSetting(const keyname: string; const val: boolean;
+  global: boolean = false); overload;
+    {** Store a float setting (using '.' decimal separator). }
+  procedure SetFloatSetting(const keyname: string; const val: single; const global: boolean = false); overload;
+    {** Store a boolean setting (serialized as a/b). }
+  procedure SetBoolSetting(const keyname: string; const val: boolean; const a,b: string; const global: boolean = false);
     {** Store an array as CSV. }
   procedure SetCSVSetting(const keyname: string; const val: TStringArray; const global: boolean = false);
-    {** Store a float setting (using '.' decimal separator). }
-  procedure SetFloatSetting(const keyname: string; const val: single);
     {** Store a color value (TColor serialized as integer). }
   procedure SetColorSetting(const keyname: string; val: TColor);
     {** Store a WideChar (WideChar serialized as string). }
@@ -1428,6 +1434,31 @@ begin
 end;
 
 {------------------------------------------------------------------------------
+  SetColorSetting
+  ----------------------
+  Overloaded function to save integers
+ ------------------------------------------------------------------------------}
+procedure TTrndiNativeBase.SetSetting(const keyname: string; const val: integer;
+global: boolean = false);
+begin
+  SetSetting(keyname, inttostr(val), global);
+end;
+
+{------------------------------------------------------------------------------
+  SetColorSetting
+  ----------------------
+  Overloaded function to save integers
+ ------------------------------------------------------------------------------}
+procedure TTrndiNativeBase.SetSetting(const keyname: string; const val: boolean;
+global: boolean = false); overload;
+begin
+  if val then
+    SetSetting(keyname, 'true', global)
+  else
+    SetSetting(keyname, 'false', global);
+end;
+
+{------------------------------------------------------------------------------
   SetWideCharSetting
   ----------------------
   Stores a WideChar value to platform-specific storage.
@@ -1486,14 +1517,14 @@ end;
 {------------------------------------------------------------------------------
   SetBoolSetting
   ----------------------
-  Stores a bool value to platform-specific storage.
+  Stores a bool value to platform-specific storage, with custom values.
  ------------------------------------------------------------------------------}
-procedure TTrndiNativeBase.SetBoolSetting(const keyname: string; const val: boolean);
+procedure TTrndiNativeBase.SetBoolSetting(const keyname: string; const val: boolean; const a,b: string; const global: boolean = false);
 begin
   if val then
-    SetSetting(keyname, 'true')
+    SetSetting(keyname, a, global)
   else
-    SetSetting(keyname, 'false');
+    SetSetting(keyname, b, global);
 end;
 
 {------------------------------------------------------------------------------
@@ -1520,13 +1551,13 @@ end;
   ----------------------
   Store a float value to platform-specific storage using '.' decimal separator.
  ------------------------------------------------------------------------------}
-procedure TTrndiNativeBase.SetFloatSetting(const keyname: string; const val: single);
+procedure TTrndiNativeBase.SetFloatSetting(const keyname: string; const val: single; const global: boolean = false);
 var
   f: TFormatSettings;
 begin
   f := DefaultFormatSettings;
   f.DecimalSeparator := '.';
-  SetSetting(keyname, FormatFloat('0.00', val, f));
+  SetSetting(keyname, FormatFloat('0.00', val, f), global);
 end;
 
 {------------------------------------------------------------------------------

@@ -294,7 +294,7 @@ begin
         'Do you agree to the terms and full license?', license,
         uxclWhite, uxclRed, [mbYes, mbCancel, mbUxRead], uxmtCustom, uxscLarge);
       if i = mrYes then
-        native.SetBoolSetting('license.250608', true)
+        native.SetSetting('license.250608', true)
       else
       if i = mrCancel then
       begin
