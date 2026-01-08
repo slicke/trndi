@@ -129,6 +129,8 @@ class var touchOverride: TTrndiBool;
     global: boolean = false); virtual; abstract;
     {** Store a boolean setting (serialized as 'true'/'false'). }
   procedure SetBoolSetting(const keyname: string; const val: boolean);
+    {** Store an array as CSV. }
+  procedure SetCSVSetting(const keyname: string; const val: TStringArray; const global: boolean = false);
     {** Store a float setting (using '.' decimal separator). }
   procedure SetFloatSetting(const keyname: string; const val: single);
     {** Store a color value (TColor serialized as integer). }
@@ -1492,6 +1494,25 @@ begin
     SetSetting(keyname, 'true')
   else
     SetSetting(keyname, 'false');
+end;
+
+{------------------------------------------------------------------------------
+  SetCSVSetting
+  ----------------------
+  Stores a bool value to platform-specific storage.
+ ------------------------------------------------------------------------------}
+procedure TTrndiNativeBase.SetCSVSetting(const keyname: string; const val: TStringArray; const global: boolean = false);
+var
+  s, res: string;
+begin
+  res := '';
+  for s in val do
+    res += s + ',';
+
+  if Length(res) > 0 then
+    Delete(res, Length(res), 1);
+
+  SetSetting(keyname, res, global);
 end;
 
 {------------------------------------------------------------------------------
