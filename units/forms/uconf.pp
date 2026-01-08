@@ -58,10 +58,10 @@ type
 TfConf = class(TForm)
   bAdd: TButton;
   bBackendHelp: TButton;
+  bPrivacyHelp: TButton;
   bTemplateCurrent: TButton;
   bTest: TButton;
   bOverrideHelp: TButton;
-  bPrivacyHelp: TButton;
   bRemove: TButton;
   bSysNotice: TButton;
   bMinMinutesHelp: TButton;
@@ -86,9 +86,12 @@ TfConf = class(TForm)
   cbMultiTouch: TCheckBox;
   cbMusicPause: TCheckBox;
   cbNotice: TCheckBox;
+  cbPredictions: TCheckBox;
   cbPredictShort: TCheckBox;
   cbPredictShortFullArrows: TCheckBox;
   cbPredictShortSize: TComboBox;
+  cbPrivacy: TCheckBox;
+  cbTimeStamp: TCheckBox;
   cbTirIcon: TCheckBox;
   cbWebAPI: TCheckBox;
   cbOffBar: TCheckBox;
@@ -96,10 +99,8 @@ TfConf = class(TForm)
   cbPaintHiLoRange: TCheckBox;
   cbPaintLines: TCheckBox;
   cbPos: TComboBox;
-  cbPrivacy: TCheckBox;
   cbSize: TCheckBox;
   cbSys: TComboBox;
-  cbTimeStamp: TCheckBox;
   cbTIR: TCheckBox;
   cbTirColorBgCustom: TRadioButton;
   cbTirColor: TRadioButton;
@@ -110,7 +111,6 @@ TfConf = class(TForm)
   cbUserColor: TCheckBox;
   cbFlash: TCheckGroup;
   cbFlashHi: TCheckBox;
-  cbPredictions: TCheckBox;
   cbTirBar: TColorButton;
   cbTirBarCustom: TColorButton;
   cbChroma: TCheckBox;
@@ -155,6 +155,7 @@ TfConf = class(TForm)
   GroupBox6: TGroupBox;
   GroupBox7: TGroupBox;
   GroupBox8: TGroupBox;
+  GroupBox9: TGroupBox;
   Image1: TImage;
   Label1: TLabel;
   Label13: TLabel;
@@ -177,7 +178,6 @@ TfConf = class(TForm)
   Label30: TLabel;
   Label31: TLabel;
   Label32: TLabel;
-  Label33: TLabel;
   lbExtensions: TListBox;
   lCopyright: TLabel;
   lExtCopyright: TLabel;
@@ -192,7 +192,6 @@ TfConf = class(TForm)
   lTestAnnounce: TLabel;
   lTestAnnounce1: TLabel;
   lTitle: TLabel;
-  lWarnPredict: TLabel;
   Label7: TLabel;
   Label8: TLabel;
   lDot: TLabel;
@@ -227,6 +226,7 @@ TfConf = class(TForm)
   lLounder: TLabel;
   lVal: TLabel;
   lVersion: TLabel;
+  lWarnPredict: TLabel;
   lWidgetset: TLabel;
   lWM: TLabel;
   Panel10: TPanel;
@@ -235,7 +235,7 @@ TfConf = class(TForm)
   Panel15: TPanel;
   Panel16: TPanel;
   Panel17: TPanel;
-  Panel18: TPanel;
+  pnMisc: TPanel;
   pnSysInfo: TPanel;
   pcColors: TPageControl;
   Panel1: TPanel;
@@ -244,7 +244,6 @@ TfConf = class(TForm)
   Panel11: TPanel;
   Panel12: TPanel;
   Panel2: TPanel;
-  Panel3: TPanel;
   Panel4: TPanel;
   Panel5: TPanel;
   Panel6: TPanel;
@@ -255,7 +254,6 @@ TfConf = class(TForm)
   pnHelp: TPanel;
   pTray: TPanel;
   pUserColor: TPanel;
-  pnMisc: TPanel;
   pcMain: TPageControl;
   pnDisplay: TPanel;
   pUserNick: TPanel;
@@ -264,6 +262,7 @@ TfConf = class(TForm)
   rbUnit: TRadioGroup;
   seTIR: TSpinEdit;
   spTHRESHOLD: TSpinEdit;
+  tsAdvanced: TTabSheet;
   tsTir: TTabSheet;
   tsChroma: TTabSheet;
   tsExt: TTabSheet;
@@ -302,6 +301,7 @@ TfConf = class(TForm)
   procedure cbCustRangeChange(Sender: TObject);
   procedure cbPosChange(Sender: TObject);
   procedure cbPredictionsChange(Sender: TObject);
+  procedure cbPredictShortChange(Sender: TObject);
   procedure cbPredictShortFullArrowsChange(Sender: TObject);
   procedure cbPredictShortSizeChange(Sender: TObject);
   procedure cbSysChange(Sender: TObject);
@@ -1447,6 +1447,14 @@ procedure TfConf.cbPredictionsChange(Sender: TObject);
 begin
   if (cbPredictions.Checked) and self.Showing then
     ShowMessage(RS_PredictionWarn);
+
+  cbPredictShort.Enabled := cbPredictions.Checked;
+  cbPredictShortFullArrows.Enabled := cbPredictShort.Enabled;
+end;
+
+procedure TfConf.cbPredictShortChange(Sender: TObject);
+begin
+  cbPredictShortFullArrows.Enabled := cbPredictShort.Checked;
 end;
 
 procedure TfConf.cbPredictShortFullArrowsChange(Sender: TObject);
