@@ -454,7 +454,7 @@ msgid "small"
 msgstr ""
 
 #: tfconf.cbprivacy.caption
-msgid "Privacy Mode (Hide number)"
+msgid "Privacy Mode (Hide glucose value)"
 msgstr ""
 
 #: tfconf.cbsize.caption
@@ -466,7 +466,7 @@ msgid "NightScout"
 msgstr ""
 
 #: tfconf.cbtimestamp.caption
-msgid "Show timestamp (instead of minutes ago)"
+msgid "Show reading time (instead of minutes ago)"
 msgstr ""
 
 #: tfconf.cbtir.caption
@@ -616,6 +616,11 @@ msgctxt "tfconf.groupbox8.caption"
 msgid "Predictions"
 msgstr ""
 
+#: tfconf.groupbox9.caption
+msgctxt "tfconf.groupbox9.caption"
+msgid "Display"
+msgstr ""
+
 #: tfconf.label1.caption
 msgid "Readings are outdated after (minutes):"
 msgstr ""
@@ -717,10 +722,6 @@ msgstr ""
 
 #: tfconf.label32.caption
 msgid "NOTE: Razer Synapse required on Windows; OpenRazer on Linux. No macOS support at this time."
-msgstr ""
-
-#: tfconf.label33.caption
-msgid "Personalization"
 msgstr ""
 
 #: tfconf.label4.caption
@@ -870,6 +871,10 @@ msgstr ""
 msgid "Display Unit"
 msgstr ""
 
+#: tfconf.tsadvanced.caption
+msgid "Advanced"
+msgstr ""
+
 #: tfconf.tsbackgrounds.caption
 msgid "Backgrounds"
 msgstr ""
@@ -891,6 +896,7 @@ msgid "Custom range"
 msgstr ""
 
 #: tfconf.tsdisplay.caption
+msgctxt "tfconf.tsdisplay.caption"
 msgid "Display"
 msgstr ""
 

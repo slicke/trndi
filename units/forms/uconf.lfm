@@ -17,10 +17,10 @@ object fConf: TfConf
     Height = 518
     Top = 11
     Width = 665
-    ActivePage = tsCustom
+    ActivePage = tsAdvanced
     Align = alClient
     BorderSpacing.Around = 5
-    TabIndex = 4
+    TabIndex = 5
     TabOrder = 0
     OnChange = pcMainChange
     object tsGeneral: TTabSheet
@@ -10991,7 +10991,7 @@ object fConf: TfConf
       object gbDisplayPrefs: TGroupBox
         Left = 0
         Height = 106
-        Top = 238
+        Top = 377
         Width = 659
         Align = alBottom
         Caption = 'Display Preferences'
@@ -11068,116 +11068,6 @@ object fConf: TfConf
         Top = 184
         Width = 261
         Caption = 'Click on a component to the left, to edit it''s font'
-      end
-      object GroupBox8: TGroupBox
-        Left = 0
-        Height = 139
-        Top = 344
-        Width = 659
-        Align = alBottom
-        Caption = 'Predictions'
-        ClientHeight = 112
-        ClientWidth = 655
-        TabOrder = 2
-        object cbPredictions: TCheckBox
-          Left = 5
-          Height = 20
-          Top = 5
-          Width = 645
-          Align = alTop
-          BorderSpacing.Around = 5
-          Caption = 'Show glucose predictions'
-          TabOrder = 0
-          OnChange = cbPredictionsChange
-        end
-        object lWarnPredict: TLabel
-          Left = 0
-          Height = 16
-          Top = 96
-          Width = 655
-          Align = alBottom
-          Alignment = taRightJustify
-          Caption = 'WARNING: This is a very experimental feature!. Do not depend on these readings!'
-          Font.Style = [fsItalic]
-          ParentFont = False
-        end
-        object Panel13: TPanel
-          Left = 0
-          Height = 66
-          Top = 30
-          Width = 655
-          Align = alClient
-          BevelOuter = bvNone
-          ClientHeight = 66
-          ClientWidth = 655
-          TabOrder = 1
-          object cbPredictShortSize: TComboBox
-            Left = 126
-            Height = 24
-            Top = 32
-            Width = 120
-            Align = alLeft
-            BorderSpacing.Left = 10
-            BorderSpacing.Bottom = 10
-            ItemHeight = 22
-            ItemIndex = 0
-            Items.Strings = (
-              'small'
-              'medium'
-              'big'
-            )
-            Style = csDropDownList
-            TabOrder = 0
-            Text = 'small'
-            OnChange = cbPredictShortSizeChange
-          end
-          object lPredictShortSize: TLabel
-            Left = 25
-            Height = 24
-            Top = 32
-            Width = 91
-            Align = alLeft
-            BorderSpacing.Left = 25
-            BorderSpacing.Bottom = 10
-            Caption = 'Trend arrow size:'
-            Layout = tlCenter
-            ParentFont = False
-          end
-          object Panel18: TPanel
-            Left = 0
-            Height = 32
-            Top = 0
-            Width = 655
-            Align = alTop
-            BevelOuter = bvNone
-            ClientHeight = 32
-            ClientWidth = 655
-            TabOrder = 1
-            object cbPredictShort: TCheckBox
-              Left = 15
-              Height = 27
-              Top = 0
-              Width = 227
-              Align = alLeft
-              BorderSpacing.Left = 15
-              BorderSpacing.Bottom = 5
-              Caption = 'Show only trend arrows (short mode)'
-              TabOrder = 0
-            end
-            object cbPredictShortFullArrows: TCheckBox
-              Left = 267
-              Height = 27
-              Top = 0
-              Width = 341
-              Align = alLeft
-              BorderSpacing.Left = 25
-              BorderSpacing.Bottom = 5
-              Caption = 'Use full arrow set (↑↑, ↑, ↗, →, ↘, ↓, ↓↓) in short mode'
-              TabOrder = 1
-              OnChange = cbPredictShortFullArrowsChange
-            end
-          end
-        end
       end
     end
     object tsTir: TTabSheet
@@ -11595,60 +11485,10 @@ object fConf: TfConf
         BorderSpacing.Around = 10
         Caption = 'Window start-up position'
       end
-      object Panel3: TPanel
-        Left = 0
-        Height = 62
-        Top = 421
-        Width = 659
-        Align = alBottom
-        BevelOuter = bvNone
-        ClientHeight = 62
-        ClientWidth = 659
-        TabOrder = 2
-        object cbPrivacy: TCheckBox
-          Left = 10
-          Height = 20
-          Top = 16
-          Width = 649
-          Align = alTop
-          BorderSpacing.Left = 10
-          Caption = 'Privacy Mode (Hide number)'
-          TabOrder = 0
-        end
-        object bPrivacyHelp: TButton
-          Left = 632
-          Height = 6
-          Top = 56
-          Width = 27
-          Align = alRight
-          Caption = '?'
-          TabOrder = 1
-          OnClick = bPrivacyHelpClick
-        end
-        object cbTimeStamp: TCheckBox
-          Left = 10
-          Height = 20
-          Top = 36
-          Width = 649
-          Align = alTop
-          BorderSpacing.Left = 10
-          Caption = 'Show timestamp (instead of minutes ago)'
-          TabOrder = 2
-        end
-        object Label33: TLabel
-          Left = 10
-          Height = 16
-          Top = 0
-          Width = 649
-          Align = alTop
-          BorderSpacing.Left = 10
-          Caption = 'Personalization'
-        end
-      end
       object Label6: TLabel
         Left = 10
         Height = 16
-        Top = 362
+        Top = 301
         Width = 639
         Align = alTop
         BorderSpacing.Around = 10
@@ -11657,7 +11497,7 @@ object fConf: TfConf
       object cbLang: TComboBox
         Left = 10
         Height = 23
-        Top = 388
+        Top = 327
         Width = 639
         Align = alTop
         AutoSize = False
@@ -11670,7 +11510,7 @@ object fConf: TfConf
           'en'
         )
         Style = csDropDownList
-        TabOrder = 3
+        TabOrder = 2
       end
       object cbSize: TCheckBox
         Left = 10
@@ -11680,45 +11520,12 @@ object fConf: TfConf
         Align = alTop
         BorderSpacing.Around = 10
         Caption = 'Remember window size'
-        TabOrder = 4
-      end
-      object pnMisc: TPanel
-        Left = 15
-        Height = 51
-        Top = 197
-        Width = 644
-        Align = alTop
-        BorderSpacing.Left = 15
-        BevelOuter = bvNone
-        ClientHeight = 51
-        ClientWidth = 644
-        TabOrder = 5
-        object spTHRESHOLD: TSpinEdit
-          Left = 0
-          Height = 30
-          Top = 21
-          Width = 82
-          Align = alLeft
-          BorderSpacing.Top = 5
-          MaxValue = 30
-          MinValue = 6
-          TabOrder = 0
-          Value = 6
-          OnChange = spTHRESHOLDChange
-        end
-        object Label1: TLabel
-          Left = 0
-          Height = 16
-          Top = 0
-          Width = 644
-          Align = alTop
-          Caption = 'Readings are outdated after (minutes):'
-        end
+        TabOrder = 3
       end
       object cbFlash: TCheckGroup
         Left = 0
         Height = 94
-        Top = 258
+        Top = 197
         Width = 659
         Align = alTop
         AutoFill = True
@@ -11734,7 +11541,7 @@ object fConf: TfConf
         ChildSizing.ControlsPerLine = 1
         ClientHeight = 67
         ClientWidth = 655
-        TabOrder = 6
+        TabOrder = 4
         object cbFlashHi: TCheckBox
           Left = 6
           Height = 18
@@ -11761,190 +11568,182 @@ object fConf: TfConf
         end
       end
     end
-    object tsMulti: TTabSheet
-      Caption = 'Multi User'
+    object tsAdvanced: TTabSheet
+      Caption = 'Advanced'
       ClientHeight = 483
       ClientWidth = 659
-      object lbUsers: TListBox
-        Left = 10
-        Height = 211
-        Top = 31
-        Width = 639
-        Align = alClient
-        BorderSpacing.Around = 10
-        ItemHeight = 0
-        TabOrder = 0
-        TopIndex = -1
-        OnEnter = lbUsersEnter
-        OnSelectionChange = lbUsersSelectionChange
-      end
-      object lUserTrack: TLabel
+      object pnMisc: TPanel
         Left = 15
-        Height = 16
-        Top = 5
-        Width = 629
+        Height = 51
+        Top = 15
+        Width = 644
         Align = alTop
-        Alignment = taCenter
-        BorderSpacing.Left = 10
-        BorderSpacing.Right = 10
-        BorderSpacing.Around = 5
-        Caption = 'Add users below, if you wish to track more than one person.'
-      end
-      object gbMulti: TGroupBox
-        Left = 10
-        Height = 101
-        Top = 252
-        Width = 639
-        Align = alBottom
-        BorderSpacing.Around = 10
-        Caption = 'Account Settings'
-        ClientHeight = 74
-        ClientWidth = 635
-        Enabled = False
-        TabOrder = 1
-        object pUserColor: TPanel
+        BorderSpacing.Left = 15
+        BorderSpacing.Top = 15
+        BevelOuter = bvNone
+        ClientHeight = 51
+        ClientWidth = 644
+        TabOrder = 0
+        object spTHRESHOLD: TSpinEdit
           Left = 0
-          Height = 74
-          Top = 0
-          Width = 170
+          Height = 30
+          Top = 21
+          Width = 82
           Align = alLeft
-          BevelOuter = bvNone
-          ClientHeight = 74
-          ClientWidth = 170
+          BorderSpacing.Top = 5
+          MaxValue = 30
+          MinValue = 6
           TabOrder = 0
-          object lUserName: TLabel
-            Left = 16
-            Height = 16
+          Value = 6
+          OnChange = spTHRESHOLDChange
+        end
+        object Label1: TLabel
+          Left = 0
+          Height = 16
+          Top = 0
+          Width = 644
+          Align = alTop
+          Caption = 'Readings are outdated after (minutes):'
+        end
+      end
+      object GroupBox8: TGroupBox
+        Left = 0
+        Height = 163
+        Top = 320
+        Width = 659
+        Align = alBottom
+        Caption = 'Predictions'
+        ClientHeight = 136
+        ClientWidth = 655
+        TabOrder = 1
+        object cbPredictions: TCheckBox
+          Left = 5
+          Height = 20
+          Top = 5
+          Width = 645
+          Align = alTop
+          BorderSpacing.Around = 5
+          Caption = 'Show glucose predictions'
+          TabOrder = 0
+          OnChange = cbPredictionsChange
+        end
+        object lWarnPredict: TLabel
+          Left = 0
+          Height = 16
+          Top = 120
+          Width = 655
+          Align = alBottom
+          Alignment = taRightJustify
+          Caption = 'WARNING: This is a very experimental feature!. Do not depend on these readings!'
+          Font.Style = [fsItalic]
+          ParentFont = False
+        end
+        object Panel13: TPanel
+          Left = 0
+          Height = 40
+          Top = 80
+          Width = 655
+          Align = alClient
+          BevelOuter = bvNone
+          ClientHeight = 40
+          ClientWidth = 655
+          TabOrder = 1
+          object cbPredictShortSize: TComboBox
+            Left = 126
+            Height = 30
             Top = 0
-            Width = 29
-            Caption = 'User:'
+            Width = 120
+            Align = alLeft
+            BorderSpacing.Left = 10
+            BorderSpacing.Bottom = 10
+            ItemHeight = 22
+            ItemIndex = 0
+            Items.Strings = (
+              'small'
+              'medium'
+              'big'
+            )
+            Style = csDropDownList
+            TabOrder = 0
+            Text = 'small'
+            OnChange = cbPredictShortSizeChange
           end
-          object cbUser: TColorButton
-            Left = 16
-            Height = 25
-            Top = 24
-            Width = 136
-            BorderWidth = 2
-            ButtonColorSize = 16
-            ButtonColor = clBlack
-            Caption = 'Account color'
-            OnColorChanged = cbUserColorChanged
-          end
-          object Label5: TLabel
-            Left = 16
-            Height = 16
-            Top = 48
-            Width = 101
-            Caption = 'Black = transparent'
-            Font.Style = [fsItalic]
+          object lPredictShortSize: TLabel
+            Left = 25
+            Height = 30
+            Top = 0
+            Width = 91
+            Align = alLeft
+            BorderSpacing.Left = 25
+            BorderSpacing.Bottom = 10
+            Caption = 'Trend arrow size:'
+            Layout = tlCenter
             ParentFont = False
           end
         end
-        object pUserNick: TPanel
-          Left = 170
-          Height = 74
-          Top = 0
-          Width = 295
-          Align = alClient
-          BevelOuter = bvNone
-          ClientHeight = 74
-          ClientWidth = 295
-          TabOrder = 1
-          object edNick: TEdit
-            Left = 78
-            Height = 25
-            Top = 24
-            Width = 217
-            Align = alClient
-            BorderSpacing.Top = 24
-            BorderSpacing.Bottom = 25
-            TabOrder = 0
-            OnChange = edNickChange
-          end
-          object Label3: TLabel
-            Left = 10
-            Height = 54
-            Top = 10
-            Width = 58
-            Align = alLeft
-            BorderSpacing.Around = 10
-            Caption = 'Nickname:'
-            Layout = tlCenter
-          end
-        end
-        object pUserSave2: TPanel
-          Left = 465
-          Height = 74
-          Top = 0
-          Width = 170
-          Align = alRight
-          BevelOuter = bvNone
-          ClientHeight = 74
-          ClientWidth = 170
+        object cbPredictShortFullArrows: TCheckBox
+          Left = 30
+          Height = 20
+          Top = 55
+          Width = 625
+          Align = alTop
+          BorderSpacing.Left = 30
+          BorderSpacing.Bottom = 5
+          Caption = 'Use full arrow set (↑↑, ↑, ↗, →, ↘, ↓, ↓↓) in short mode'
           TabOrder = 2
-          object btUserSave: TButton
-            Left = 24
-            Height = 25
-            Top = 24
-            Width = 112
-            Caption = 'Save'
-            TabOrder = 0
-            OnClick = btUserSaveClick
-          end
+          OnChange = cbPredictShortFullArrowsChange
+        end
+        object cbPredictShort: TCheckBox
+          Left = 15
+          Height = 20
+          Top = 30
+          Width = 640
+          Align = alTop
+          BorderSpacing.Left = 15
+          BorderSpacing.Bottom = 5
+          Caption = 'Show only trend arrows (short mode)'
+          TabOrder = 3
+          OnChange = cbPredictShortChange
         end
       end
-      object Panel1: TPanel
+      object GroupBox9: TGroupBox
         Left = 0
-        Height = 42
-        Top = 363
+        Height = 105
+        Top = 215
         Width = 659
         Align = alBottom
-        BevelOuter = bvNone
-        ClientHeight = 42
-        ClientWidth = 659
+        Caption = 'Display'
+        ClientHeight = 78
+        ClientWidth = 655
         TabOrder = 2
-        object bRemove: TButton
-          Left = 499
-          Height = 30
-          Top = 0
-          Width = 75
-          Align = alRight
-          Caption = '- Remove'
-          Constraints.MaxHeight = 30
-          TabOrder = 0
-          OnClick = bRemoveClick
-        end
-        object bAdd: TButton
-          Left = 574
-          Height = 30
-          Top = 0
-          Width = 75
-          Align = alRight
-          BorderSpacing.Right = 10
-          Caption = '+ Add'
-          Constraints.MaxHeight = 30
-          TabOrder = 1
-          OnClick = bAddClick
-        end
-      end
-      object GroupBox4: TGroupBox
-        Left = 10
-        Height = 58
-        Top = 415
-        Width = 639
-        Align = alBottom
-        BorderSpacing.Around = 10
-        Caption = 'All accounts'
-        ClientHeight = 31
-        ClientWidth = 635
-        TabOrder = 3
-        object cbUserColor: TCheckBox
-          Left = 16
+        object cbTimeStamp: TCheckBox
+          Left = 10
           Height = 20
-          Top = 8
-          Width = 323
-          Caption = 'Display users'' colors on the main and floating windows'
+          Top = 20
+          Width = 645
+          Align = alTop
+          BorderSpacing.Left = 10
+          Caption = 'Show reading time (instead of minutes ago)'
           TabOrder = 0
+        end
+        object cbPrivacy: TCheckBox
+          Left = 10
+          Height = 20
+          Top = 0
+          Width = 645
+          Align = alTop
+          BorderSpacing.Left = 10
+          Caption = 'Privacy Mode (Hide glucose value)'
+          TabOrder = 1
+        end
+        object bPrivacyHelp: TButton
+          Left = 384
+          Height = 22
+          Top = 0
+          Width = 27
+          Caption = '?'
+          TabOrder = 2
+          OnClick = bPrivacyHelpClick
         end
       end
     end
@@ -12155,75 +11954,6 @@ object fConf: TfConf
         end
       end
     end
-    object tsChroma: TTabSheet
-      Caption = 'Razer Chroma'
-      ClientHeight = 483
-      ClientWidth = 659
-      object Label29: TLabel
-        Left = 5
-        Height = 16
-        Top = 5
-        Width = 654
-        Align = alTop
-        Alignment = taCenter
-        BorderSpacing.Left = 5
-        BorderSpacing.Top = 5
-        Caption = 'Trndi can control the color of Razer keyboards, mouses and other devices'
-      end
-      object Label30: TLabel
-        Left = 5
-        Height = 16
-        Top = 26
-        Width = 654
-        Align = alTop
-        Alignment = taCenter
-        BorderSpacing.Left = 5
-        BorderSpacing.Top = 5
-        Caption = 'Trndi will control these devices:'
-      end
-      object lbChroma: TListBox
-        Left = 0
-        Height = 206
-        Top = 42
-        Width = 659
-        Align = alTop
-        ItemHeight = 0
-        TabOrder = 0
-        TopIndex = -1
-      end
-      object cbChroma: TCheckBox
-        Left = 8
-        Height = 20
-        Top = 288
-        Width = 204
-        Caption = 'Enable Razer Chroma integration'
-        TabOrder = 1
-      end
-      object Label31: TLabel
-        Left = 24
-        Height = 16
-        Top = 312
-        Width = 229
-        Caption = 'Units will pule in red on high and blue on low'
-        Font.Style = [fsItalic]
-        ParentFont = False
-      end
-      object Label32: TLabel
-        Left = 16
-        Height = 16
-        Top = 456
-        Width = 533
-        Caption = 'NOTE: Razer Synapse required on Windows; OpenRazer on Linux. No macOS support at this time.'
-      end
-      object cbChromaNormal: TCheckBox
-        Left = 8
-        Height = 20
-        Top = 336
-        Width = 247
-        Caption = 'Make units green when reading is normal'
-        TabOrder = 2
-      end
-    end
     object tsSystem: TTabSheet
       Caption = 'System'
       ClientHeight = 483
@@ -12410,6 +12140,262 @@ object fConf: TfConf
           Width = 154
           Caption = 'Unknown Window Manager'
         end
+      end
+    end
+    object tsMulti: TTabSheet
+      Caption = 'Multi User'
+      ClientHeight = 483
+      ClientWidth = 659
+      object lbUsers: TListBox
+        Left = 10
+        Height = 211
+        Top = 31
+        Width = 639
+        Align = alClient
+        BorderSpacing.Around = 10
+        ItemHeight = 0
+        TabOrder = 0
+        TopIndex = -1
+        OnEnter = lbUsersEnter
+        OnSelectionChange = lbUsersSelectionChange
+      end
+      object lUserTrack: TLabel
+        Left = 15
+        Height = 16
+        Top = 5
+        Width = 629
+        Align = alTop
+        Alignment = taCenter
+        BorderSpacing.Left = 10
+        BorderSpacing.Right = 10
+        BorderSpacing.Around = 5
+        Caption = 'Add users below, if you wish to track more than one person.'
+      end
+      object gbMulti: TGroupBox
+        Left = 10
+        Height = 101
+        Top = 252
+        Width = 639
+        Align = alBottom
+        BorderSpacing.Around = 10
+        Caption = 'Account Settings'
+        ClientHeight = 74
+        ClientWidth = 635
+        Enabled = False
+        TabOrder = 1
+        object pUserColor: TPanel
+          Left = 0
+          Height = 74
+          Top = 0
+          Width = 170
+          Align = alLeft
+          BevelOuter = bvNone
+          ClientHeight = 74
+          ClientWidth = 170
+          TabOrder = 0
+          object lUserName: TLabel
+            Left = 16
+            Height = 16
+            Top = 0
+            Width = 29
+            Caption = 'User:'
+          end
+          object cbUser: TColorButton
+            Left = 16
+            Height = 25
+            Top = 24
+            Width = 136
+            BorderWidth = 2
+            ButtonColorSize = 16
+            ButtonColor = clBlack
+            Caption = 'Account color'
+            OnColorChanged = cbUserColorChanged
+          end
+          object Label5: TLabel
+            Left = 16
+            Height = 16
+            Top = 48
+            Width = 101
+            Caption = 'Black = transparent'
+            Font.Style = [fsItalic]
+            ParentFont = False
+          end
+        end
+        object pUserNick: TPanel
+          Left = 170
+          Height = 74
+          Top = 0
+          Width = 295
+          Align = alClient
+          BevelOuter = bvNone
+          ClientHeight = 74
+          ClientWidth = 295
+          TabOrder = 1
+          object edNick: TEdit
+            Left = 78
+            Height = 25
+            Top = 24
+            Width = 217
+            Align = alClient
+            BorderSpacing.Top = 24
+            BorderSpacing.Bottom = 25
+            TabOrder = 0
+            OnChange = edNickChange
+          end
+          object Label3: TLabel
+            Left = 10
+            Height = 54
+            Top = 10
+            Width = 58
+            Align = alLeft
+            BorderSpacing.Around = 10
+            Caption = 'Nickname:'
+            Layout = tlCenter
+          end
+        end
+        object pUserSave2: TPanel
+          Left = 465
+          Height = 74
+          Top = 0
+          Width = 170
+          Align = alRight
+          BevelOuter = bvNone
+          ClientHeight = 74
+          ClientWidth = 170
+          TabOrder = 2
+          object btUserSave: TButton
+            Left = 24
+            Height = 25
+            Top = 24
+            Width = 112
+            Caption = 'Save'
+            TabOrder = 0
+            OnClick = btUserSaveClick
+          end
+        end
+      end
+      object Panel1: TPanel
+        Left = 0
+        Height = 42
+        Top = 363
+        Width = 659
+        Align = alBottom
+        BevelOuter = bvNone
+        ClientHeight = 42
+        ClientWidth = 659
+        TabOrder = 2
+        object bRemove: TButton
+          Left = 499
+          Height = 30
+          Top = 0
+          Width = 75
+          Align = alRight
+          Caption = '- Remove'
+          Constraints.MaxHeight = 30
+          TabOrder = 0
+          OnClick = bRemoveClick
+        end
+        object bAdd: TButton
+          Left = 574
+          Height = 30
+          Top = 0
+          Width = 75
+          Align = alRight
+          BorderSpacing.Right = 10
+          Caption = '+ Add'
+          Constraints.MaxHeight = 30
+          TabOrder = 1
+          OnClick = bAddClick
+        end
+      end
+      object GroupBox4: TGroupBox
+        Left = 10
+        Height = 58
+        Top = 415
+        Width = 639
+        Align = alBottom
+        BorderSpacing.Around = 10
+        Caption = 'All accounts'
+        ClientHeight = 31
+        ClientWidth = 635
+        TabOrder = 3
+        object cbUserColor: TCheckBox
+          Left = 16
+          Height = 20
+          Top = 8
+          Width = 323
+          Caption = 'Display users'' colors on the main and floating windows'
+          TabOrder = 0
+        end
+      end
+    end
+    object tsChroma: TTabSheet
+      Caption = 'Razer Chroma'
+      ClientHeight = 483
+      ClientWidth = 659
+      object Label29: TLabel
+        Left = 5
+        Height = 16
+        Top = 5
+        Width = 654
+        Align = alTop
+        Alignment = taCenter
+        BorderSpacing.Left = 5
+        BorderSpacing.Top = 5
+        Caption = 'Trndi can control the color of Razer keyboards, mouses and other devices'
+      end
+      object Label30: TLabel
+        Left = 5
+        Height = 16
+        Top = 26
+        Width = 654
+        Align = alTop
+        Alignment = taCenter
+        BorderSpacing.Left = 5
+        BorderSpacing.Top = 5
+        Caption = 'Trndi will control these devices:'
+      end
+      object lbChroma: TListBox
+        Left = 0
+        Height = 206
+        Top = 42
+        Width = 659
+        Align = alTop
+        ItemHeight = 0
+        TabOrder = 0
+        TopIndex = -1
+      end
+      object cbChroma: TCheckBox
+        Left = 8
+        Height = 20
+        Top = 288
+        Width = 204
+        Caption = 'Enable Razer Chroma integration'
+        TabOrder = 1
+      end
+      object Label31: TLabel
+        Left = 24
+        Height = 16
+        Top = 312
+        Width = 229
+        Caption = 'Units will pule in red on high and blue on low'
+        Font.Style = [fsItalic]
+        ParentFont = False
+      end
+      object Label32: TLabel
+        Left = 16
+        Height = 16
+        Top = 456
+        Width = 533
+        Caption = 'NOTE: Razer Synapse required on Windows; OpenRazer on Linux. No macOS support at this time.'
+      end
+      object cbChromaNormal: TCheckBox
+        Left = 8
+        Height = 20
+        Top = 336
+        Width = 247
+        Caption = 'Make units green when reading is normal'
+        TabOrder = 2
       end
     end
     object tsExt: TTabSheet

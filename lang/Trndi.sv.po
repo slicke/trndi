@@ -470,8 +470,8 @@ msgid "small"
 msgstr "liten"
 
 #: tfconf.cbprivacy.caption
-msgid "Privacy Mode (Hide number)"
-msgstr "Privat läget (dölj nummer)"
+msgid "Privacy Mode (Hide glucose value)"
+msgstr "Privat läge (dölj glukosvärde)"
 
 #: tfconf.cbsize.caption
 msgid "Remember window size"
@@ -482,8 +482,8 @@ msgid "NightScout"
 msgstr "NightScout"
 
 #: tfconf.cbtimestamp.caption
-msgid "Show timestamp (instead of minutes ago)"
-msgstr "Visa tidpunkt (istället för minuter sedan)"
+msgid "Show reading time (instead of minutes ago)"
+msgstr "Visa avläsningstid (istället för minuter sedan)"
 
 #: tfconf.cbtir.caption
 msgid "Include full high/low in time-in-range, not just the custom range"
@@ -633,6 +633,11 @@ msgctxt "tfconf.groupbox8.caption"
 msgid "Predictions"
 msgstr "Förutspåelser"
 
+#: tfconf.groupbox9.caption
+msgctxt "tfconf.groupbox9.caption"
+msgid "Display"
+msgstr "Visning"
+
 #: tfconf.label1.caption
 msgid "Readings are outdated after (minutes):"
 msgstr "Avläsningar anses gamla efter (minuter):"
@@ -735,10 +740,6 @@ msgstr "Enheterna kommer pulsera i rött vid högt och blått vid lågt"
 #: tfconf.label32.caption
 msgid "NOTE: Razer Synapse required on Windows; OpenRazer on Linux. No macOS support at this time."
 msgstr "OBS: Razer Synapse krävs på Windows; OpenRazer på Linux. Inget stöd för macOS just nu."
-
-#: tfconf.label33.caption
-msgid "Personalization"
-msgstr "Personalisering"
 
 #: tfconf.label4.caption
 msgid "Window start-up position"
@@ -887,6 +888,10 @@ msgstr "Okänd fönsterhanterare"
 msgid "Display Unit"
 msgstr "Enhetstyp"
 
+#: tfconf.tsadvanced.caption
+msgid "Advanced"
+msgstr "Avancerat"
+
 #: tfconf.tsbackgrounds.caption
 msgid "Backgrounds"
 msgstr "Bakgrunder"
@@ -908,6 +913,7 @@ msgid "Custom range"
 msgstr "Eget område"
 
 #: tfconf.tsdisplay.caption
+msgctxt "tfconf.tsdisplay.caption"
 msgid "Display"
 msgstr "Visning"
 
@@ -2189,4 +2195,3 @@ msgstr "Historikgraf"
 #, object-pascal-format
 msgid "Readings (%s)"
 msgstr "Avläsningar (%s)"
-
