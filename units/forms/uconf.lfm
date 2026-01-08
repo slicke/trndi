@@ -11640,18 +11640,18 @@ object fConf: TfConf
         end
         object Panel13: TPanel
           Left = 0
-          Height = 40
-          Top = 80
+          Height = 0
+          Top = 126
           Width = 655
           Align = alClient
           BevelOuter = bvNone
-          ClientHeight = 40
+          ClientHeight = 0
           ClientWidth = 655
           TabOrder = 1
           object cbPredictShortSize: TComboBox
             Left = 126
-            Height = 30
-            Top = 0
+            Height = 0
+            Top = -5
             Width = 120
             Align = alLeft
             BorderSpacing.Left = 10
@@ -11670,8 +11670,8 @@ object fConf: TfConf
           end
           object lPredictShortSize: TLabel
             Left = 25
-            Height = 30
-            Top = 0
+            Height = 0
+            Top = -5
             Width = 91
             Align = alLeft
             BorderSpacing.Left = 25
@@ -11681,18 +11681,6 @@ object fConf: TfConf
             ParentFont = False
           end
         end
-        object cbPredictShortFullArrows: TCheckBox
-          Left = 30
-          Height = 20
-          Top = 55
-          Width = 625
-          Align = alTop
-          BorderSpacing.Left = 30
-          BorderSpacing.Bottom = 5
-          Caption = 'Use full arrow set (↑↑, ↑, ↗, →, ↘, ↓, ↓↓) in short mode'
-          TabOrder = 2
-          OnChange = cbPredictShortFullArrowsChange
-        end
         object cbPredictShort: TCheckBox
           Left = 15
           Height = 20
@@ -11701,9 +11689,44 @@ object fConf: TfConf
           Align = alTop
           BorderSpacing.Left = 15
           BorderSpacing.Bottom = 5
-          Caption = 'Show only trend arrows (short mode)'
-          TabOrder = 3
+          Caption = 'Show only trend arrows / 1 reading (short mode)'
+          TabOrder = 2
           OnChange = cbPredictShortChange
+        end
+        object rbPredictShortArrowOnly: TRadioButton
+          Left = 30
+          Height = 20
+          Top = 55
+          Width = 625
+          Align = alTop
+          BorderSpacing.Left = 30
+          Caption = 'Arrow only'
+          Checked = True
+          TabOrder = 3
+          TabStop = True
+        end
+        object rbPredictShortShowValue: TRadioButton
+          Left = 30
+          Height = 21
+          Top = 75
+          Width = 625
+          Align = alTop
+          BorderSpacing.Left = 30
+          BorderSpacing.Bottom = 5
+          Caption = 'Show time and value (e.g., ⏱10'' ↗ 5.5)'
+          TabOrder = 4
+        end
+        object cbPredictShortFullArrows: TCheckBox
+          Left = 30
+          Height = 20
+          Top = 101
+          Width = 625
+          Align = alTop
+          BorderSpacing.Left = 30
+          BorderSpacing.Bottom = 5
+          Caption = 'Use full arrow set (↑↑, ↑, ↗, →, ↘, ↓, ↓↓)'
+          TabOrder = 5
+          OnChange = cbPredictShortFullArrowsChange
         end
       end
       object GroupBox9: TGroupBox

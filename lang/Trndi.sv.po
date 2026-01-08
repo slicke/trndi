@@ -458,12 +458,12 @@ msgid "Show glucose predictions"
 msgstr "Visa glukosförutspåelser"
 
 #: tfconf.cbpredictshort.caption
-msgid "Show only trend arrows (short mode)"
-msgstr "Visa endast trendpilar (short mode)"
+msgid "Show only trend arrows / 1 reading (short mode)"
+msgstr "Visa endast trendpilar / 1 avläsning (short mode)"
 
 #: tfconf.cbpredictshortfullarrows.caption
-msgid "Use full arrow set (↑↑, ↑, ↗, →, ↘, ↓, ↓↓) in short mode"
-msgstr "Visa alla pilar (↑↑, ↑, ↗, →, ↘, ↓, ↓↓) i short mode"
+msgid "Use full arrow set (↑↑, ↑, ↗, →, ↘, ↓, ↓↓)"
+msgstr "Visa alla pilar (↑↑, ↑, ↗, →, ↘, ↓, ↓↓)"
 
 #: tfconf.cbpredictshortsize.text
 msgid "small"
@@ -883,6 +883,14 @@ msgstr "Okänt grafiksystem"
 #: tfconf.lwm.caption
 msgid "Unknown Window Manager"
 msgstr "Okänd fönsterhanterare"
+
+#: tfconf.rbpredictshortarrowonly.caption
+msgid "Arrow only"
+msgstr "Endast pil"
+
+#: tfconf.rbpredictshortshowvalue.caption
+msgid "Show time and value (e.g., ⏱10' ↗ 5.5)"
+msgstr "Visa tid och värde (t.ex., ⏱10' ↗ 5.5)"
 
 #: tfconf.rbunit.caption
 msgid "Display Unit"

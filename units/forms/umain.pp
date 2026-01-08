@@ -645,6 +645,7 @@ PredictShortMode: boolean = false;
 // 'small' or 'big' to control single-arrow prediction size
 PredictShortSize: integer = 1; // 1=small, 2=medium, 3=big
 PredictShortFullArrows: boolean = false; // Use full UTF arrow set in short mode
+PredictShortShowValue: boolean = false; // Show predicted value with clock icon in short mode
   // Show threshold lines (if false, only filled areas are drawn)
 semiTouchMode: boolean = false; // Disables some touch elements while on touch
 {$ifdef darwin}
@@ -2581,6 +2582,11 @@ procedure LoadUserSettings(f: TfConf);
       cbWebAPI.Checked := GetBoolSetting('webserver.enable');
       cbPredictShort.Checked := GetBoolSetting('predictions.short');
       cbPredictShortFullArrows.Checked := GetBoolSetting('predictions.short.fullarrows');
+      // Load radio button state
+      if GetBoolSetting('predictions.short.showvalue') then
+        rbPredictShortShowValue.Checked := true
+      else
+        rbPredictShortArrowOnly.Checked := true;
       // Load short arrow size
       // Load and clamp numeric size setting, mapping to combobox index
       sizeVal := native.GetIntSetting('predictions.short.size', 1);
@@ -2871,6 +2877,7 @@ end;
       SetBoolSetting('webserver.enable', cbWebAPI.Checked);
       SetBoolSetting('predictions.short', cbPredictShort.Checked);
       SetBoolSetting('predictions.short.fullarrows', cbPredictShortFullArrows.Checked);
+      SetBoolSetting('predictions.short.showvalue', rbPredictShortShowValue.Checked);
       if cbPredictShortSize.ItemIndex >= 0 then
         SetSetting('predictions.short.size', IntToStr(cbPredictShortSize.ItemIndex + 1));
       SetSetting('media.url_high', edMusicHigh.Text);
@@ -3003,6 +3010,7 @@ begin
     PredictGlucoseReading := native.GetBoolSetting('predictions.enable', false);
     PredictShortMode := native.GetBoolSetting('predictions.short', false);
     PredictShortFullArrows := native.GetBoolSetting('predictions.short.fullarrows', false);
+    PredictShortShowValue := native.GetBoolSetting('predictions.short.showvalue', false);
     PredictShortSize := native.GetIntSetting('predictions.short.size', 1);
     if PredictShortSize < 1 then
       PredictShortSize := 1
@@ -3587,11 +3595,23 @@ begin
   begin
     if PredictShortMode then
     begin
-      // Short mode: change size depending on setting predictions.short.size (1..3)
-      wnum := PRED_WIDTH_NUM[Max(Min(PredictShortSize, 3), 1)];
-      hnum := PRED_HEIGHT_NUM[Max(Min(PredictShortSize, 3), 1)];
-      lPredict.Width := (ClientWidth * wnum) div 12;
-      lPredict.Height := (ClientHeight * hnum) div 12;
+      // Short mode: adjust size based on display mode
+      if PredictShortShowValue then
+      begin
+        // Showing time/value: use smaller dimensions (50% of arrow-only mode)
+        wnum := PRED_WIDTH_NUM[Max(Min(PredictShortSize, 3), 1)];
+        hnum := PRED_HEIGHT_NUM[Max(Min(PredictShortSize, 3), 1)];
+        lPredict.Width := ((ClientWidth * wnum) div 12) * 2; // Double width for text
+        lPredict.Height := ((ClientHeight * hnum) div 12) div 2; // Half height
+      end
+      else
+      begin
+        // Arrow only: use normal size based on setting
+        wnum := PRED_WIDTH_NUM[Max(Min(PredictShortSize, 3), 1)];
+        hnum := PRED_HEIGHT_NUM[Max(Min(PredictShortSize, 3), 1)];
+        lPredict.Width := (ClientWidth * wnum) div 12;
+        lPredict.Height := (ClientHeight * hnum) div 12;
+      end;
     end
     else
     begin
@@ -4186,22 +4206,46 @@ begin
     begin
       delta := bgr[closest10].convert(mgdl) - lastReadingValue;
       trend := CalculateTrendFromDelta(delta);
+      minutes := Round(MinutesBetween(bgr[closest10].date, lastReadingTime));
       
-      if PredictShortFullArrows then
-        lPredict.Caption := BG_TREND_ARROWS_UTF[trend]// Use full UTF arrow set
-
+      if PredictShortShowValue then
+      begin
+        // Show time and value with arrow
+        if PredictShortFullArrows then
+          lPredict.Caption := Format('⏱%d'' %s %.1f', [minutes, BG_TREND_ARROWS_UTF[trend], bgr[closest10].convert(un)])
+        else
+        begin
+          // Use simplified arrows with value
+          case trend of
+          TdDoubleUp, TdSingleUp, TdFortyFiveUp:
+            lPredict.Caption := Format('⏱%d'' ↗ %.1f', [minutes, bgr[closest10].convert(un)]);
+          TdFlat:
+            lPredict.Caption := Format('⏱%d'' → %.1f', [minutes, bgr[closest10].convert(un)]);
+          TdFortyFiveDown, TdSingleDown, TdDoubleDown:
+            lPredict.Caption := Format('⏱%d'' ↘ %.1f', [minutes, bgr[closest10].convert(un)]);
+          else
+            lPredict.Caption := '?';
+          end;
+        end;
+      end
       else
       begin
-        // Map to simplified arrows: up=↗, flat=→, down=↘
-        case trend of
-        TdDoubleUp, TdSingleUp, TdFortyFiveUp:
-          lPredict.Caption := '↗';
-        TdFlat:
-          lPredict.Caption := '→';
-        TdFortyFiveDown, TdSingleDown, TdDoubleDown:
-          lPredict.Caption := '↘';
+        // Show only arrow (no value)
+        if PredictShortFullArrows then
+          lPredict.Caption := BG_TREND_ARROWS_UTF[trend]
         else
-          lPredict.Caption := '?';
+        begin
+          // Map to simplified arrows: up=↗, flat=→, down=↘
+          case trend of
+          TdDoubleUp, TdSingleUp, TdFortyFiveUp:
+            lPredict.Caption := '↗';
+          TdFlat:
+            lPredict.Caption := '→';
+          TdFortyFiveDown, TdSingleDown, TdDoubleDown:
+            lPredict.Caption := '↘';
+          else
+            lPredict.Caption := '?';
+          end;
         end;
       end;
     end
