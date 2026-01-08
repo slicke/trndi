@@ -687,10 +687,6 @@ msgstr ""
 msgid "Change Trndi's default background and colors, when in the custom range"
 msgstr ""
 
-#: tfconf.label25.caption
-msgid "Trndi can load a URL when high/low"
-msgstr ""
-
 #: tfconf.label26.caption
 msgid "High (eg https://url.local/hi)"
 msgstr ""
@@ -1750,12 +1746,20 @@ msgstr ""
 msgid "Auto-detect"
 msgstr ""
 
+#: uconf.rs_badge_flash_help
+msgid "This controls how Trndi's icon in the status bar and/or tray will notify you visually."
+msgstr ""
+
 #: uconf.rs_beta
 msgid "This backend is in a beta stage, it may not work as intended! If possible, choose another backend."
 msgstr ""
 
 #: uconf.rs_choose_system
 msgid "Select your CGM system in the list, then enter your credentials"
+msgstr ""
+
+#: uconf.rs_color_bg
+msgid "Trndi can draw a rectangle/background in the graph's background, to visually represent your high and low limits."
 msgstr ""
 
 #: uconf.rs_current_acc
@@ -1769,6 +1773,10 @@ msgstr ""
 
 #: uconf.rs_current_acc_no
 msgid "These settings are available when using a multi-account"
+msgstr ""
+
+#: uconf.rs_custom_range_help
+msgid "Override/set your own limits for the custom range. This is your personal ideal goal, within the high/low area."
 msgstr ""
 
 #: uconf.rs_default_account
@@ -1883,6 +1891,13 @@ msgstr ""
 msgid "When calculatingg time-in-range, do so over this amount of minutes. If the number is higher than the data available, the max time will be used - this is currently %d minutes."
 msgstr ""
 
+#: uconf.rs_multi_user_help
+msgid ""
+"Trndi supports more than one user, this is called the multi user mode.\n"
+"In this section you can add/remove accounts. There's always a default account which cannot be deleted.\n"
+"Accounts have their own settings and remote servers, and are \"sandboxed\". Start a new instance of Trndi to log in to a given user account."
+msgstr ""
+
 #: uconf.rs_newver
 #, object-pascal-format
 msgid "Version %s is available, would you like to go to the downloads page?"
@@ -1918,6 +1933,10 @@ msgstr ""
 msgid "- Extension has no copyright info -"
 msgstr ""
 
+#: uconf.rs_outdated_help
+msgid "This is the time after which Trndi will show the \"no recent\" readings overlay."
+msgstr ""
+
 #: uconf.rs_override_help
 msgid ""
 "Setting values here allows you to define your own high and low blood sugar limits in Trndi.\n"
@@ -1948,6 +1967,10 @@ msgstr ""
 
 #: uconf.rs_predictionwarn
 msgid "Trndi will try to predict future readings. This is experimental and potentially unsafe! Do not make any treatment decisions based on these values! This feature is used on your own risk and responsibility!"
+msgstr ""
+
+#: uconf.rs_prediction_help
+msgid "Trndi can predict/guess what your reading will be in the future. This will be shown in the lower right part of the screen."
 msgstr ""
 
 #: uconf.rs_privacy_help
@@ -2002,8 +2025,16 @@ msgstr ""
 msgid "Sorry! Trndi does not (yet) support connection testing for this service!"
 msgstr ""
 
+#: uconf.rs_threashold_lines_help
+msgid "Trndi can draw a line on the graph's background, to represent where your high/low limits are."
+msgstr ""
+
 #: uconf.rs_uptodate
 msgid "You are up to date"
+msgstr ""
+
+#: uconf.rs_use_url_help
+msgid "Trndi can load a URL when high or low in your default web browser."
 msgstr ""
 
 #: uconf.rs_wayland
