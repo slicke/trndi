@@ -2487,6 +2487,37 @@ var
   lastUsers: integer;
 
 procedure LoadUserSettings(f: TfConf);
+  function APIToName(const str: string): string;
+  begin
+    case str of
+   'API_NS':
+     result := API_NS;
+   'API_NS3':
+     result := API_NS3;
+    'API_DEX_USA':
+     result := API_DEX_USA;
+    'API_DEX_EU':
+     result := API_DEX_EU;
+    'API_XDRIP':
+     result := API_XDRIP;
+    {$ifdef DEBUG}
+     'API_D_DEBUG':
+      result := API_D_DEBUG;
+     'API_D_MISSING':
+      result := API_D_MISSING;
+     'API_D_PERFECT':
+      result := API_D_PERFECT;
+     'API_D_CUSTOM':
+      result := API_D_CUSTOM;
+     'API_D_EDGE':
+      result := API_D_EDGE;
+     'API_D_FIRST':
+      result := API_D_FIRST;
+    {$endif}
+    else
+      Result := 'API_NS';
+    end;
+  end;
   var
     remoteType: string;
     userNames: TStringArray;
@@ -2500,7 +2531,7 @@ procedure LoadUserSettings(f: TfConf);
     with f, native do
     begin
       // Remote and user settings
-      remoteType := GetSetting('remote.type');
+      remoteType := APIToName(GetSetting('remote.type'));
       cbSys.ItemIndex := 0; // Default driver
       for i := 0 to cbSys.Items.Count - 1 do
         if cbSys.Items[i] = remoteType then
@@ -2730,6 +2761,38 @@ procedure SetupTouchAndNotifications(f: TfConf);
   end;
 
 procedure SaveUserSettings(f: TfConf);
+function APIToCode(const str: string): string;
+begin
+  case str of
+   API_NS:
+    result := 'API_NS';
+   API_NS3:
+    result := 'API_NS3';
+  API_DEX_USA:
+   result := 'API_DEX_USA';
+  API_DEX_EU:
+   result := 'API_DEX_EU';
+  API_XDRIP:
+   result := 'API_XDRIP';
+  {$ifdef DEBUG}
+   API_D_DEBUG:
+    result := 'API_D_DEBUG';
+   API_D_MISSING:
+    result := 'API_D_MISSING';
+   API_D_PERFECT:
+    result := 'API_D_PERFECT';
+   API_D_CUSTOM:
+    result := 'API_D_CUSTOM';
+   API_D_EDGE:
+    result := 'API_D_EDGE';
+   API_D_FIRST:
+    result := 'API_D_FIRST';
+  {$endif}
+  else
+    Result := 'API_NS';
+  end;
+end;
+
   var
     langCode: string;
     i: integer;
@@ -2766,7 +2829,7 @@ procedure SaveUserSettings(f: TfConf);
         'true', 'false'));
 
       // Save remote and override settings
-      SetSetting('remote.type', cbSys.Text);
+      SetSetting('remote.type', APIToCode(cbSys.Text));
       SetSetting('remote.target', eAddr.Text);
       SetSetting('remote.creds', ePass.Text);
       SetSetting('unit', IfThen(rbUnit.ItemIndex = 0, 'mmol', 'mgdl'));
