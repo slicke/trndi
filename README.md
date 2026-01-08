@@ -8,6 +8,7 @@
 ## <b> 🪟 Windows - 🍎 macOS - 🐧 Linux - 🥧 RaspberryPi/ARM Linux
 
 ## Index
+- [User Manual](MANUAL.md) - Complete guide for end users
 - [Screenshots](#screenshots)
 - [Introduction](#introduction)
 - [What differs Trndi from apps?](#what-differs-trndi-from-apps)
