@@ -314,6 +314,13 @@ body {
     margin-bottom: 20px;
 }
 
+.download-subtext {
+    margin-top: 12px;
+    margin-bottom: 0;
+    opacity: 0.85;
+    font-size: 0.95rem;
+}
+
 .download-note {
     margin-top: 40px;
     padding-top: 40px;
