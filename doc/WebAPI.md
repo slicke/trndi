@@ -275,7 +275,7 @@ sensor:
   - platform: rest
     name: "Trndi Glucose"
     resource: "http://localhost:8080/glucose"
-    value_template: "{{ value_json.current.mmol }}"
+    {% raw %}value_template: "{{ value_json.current.mmol }}"{% endraw %}
     unit_of_measurement: "mmol/L"
     json_attributes:
       - current
@@ -285,12 +285,12 @@ template:
   - sensor:
       - name: "Trndi Glucose Trend"
         state: >
-          {% set trend = state_attr('sensor.trndi_glucose', 'current').trend %}
+          {% raw %}{% set trend = state_attr('sensor.trndi_glucose', 'current').trend %}
           {% set arrows = {
             1: '⇈', 2: '↑', 3: '↗', 4: '→',
             5: '↘', 6: '↓', 7: '⇊'
           } %}
-          {{ arrows.get(trend, '?') }}
+          {{ arrows.get(trend, '?') }}{% endraw %}
 ```
 
 ## Security Considerations
