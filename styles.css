@@ -571,9 +571,17 @@ body {
     .screenshot-item {
         background: #222;
     }
+
+    .screenshot-item h3 {
+        color: #e5e5e5;
+    }
     
     .features {
         background: #1a1a1a;
+    }
+
+    .features h2 {
+        color: #e5e5e5;
     }
     
     .feature {
@@ -583,9 +591,17 @@ body {
     .feature h3 {
         color: #e5e5e5;
     }
+
+    .feature p {
+        color: #d1d5db;
+    }
     
     .setup {
         background: #1a1a1a;
+    }
+
+    .setup h2 {
+        color: #e5e5e5;
     }
     
     .setup-item {
