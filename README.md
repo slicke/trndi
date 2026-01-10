@@ -258,6 +258,9 @@ You can download them for any RPM/DEB distro in this [repo](https://github.com/d
 #### Debian / Raspbian
 You can install the ```libqt6pas6``` package on Debian-based distros via ```apt```.
 
+#### Ubuntu
+You can install the ```libqt6pas6``` package via ```apt```.
+
 #### Fedora
 You can install the ```qt6pas``` package in ```DNF```.
 
