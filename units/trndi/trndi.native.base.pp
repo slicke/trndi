@@ -789,91 +789,7 @@ end;
  ------------------------------------------------------------------------------}
 
 procedure TTrndiNativeBase.attention(topic, message: string);
-{$if  DEFINED(X_LINUXBSD) or DEFINED(BSD)}
-function RunAndCapture(const Exec: string; const Params: array of string;
-  out StdoutS, StderrS: string; out ExitCode: integer): boolean;
-  var
-    P: TProcess;
-    i: integer;
-    OutStr, ErrStr: TStringStream;
-    Buf: array[0..4095] of byte;
-    n: SizeInt;
-  begin
-    Result := false;
-    StdoutS := '';
-    StderrS := '';
-    ExitCode := -1;
-
-    P := TProcess.Create(nil);
-    OutStr := TStringStream.Create('');
-    ErrStr := TStringStream.Create('');
-    try
-      P.Executable := Exec;
-      for i := 0 to High(Params) do
-        P.Parameters.Add(Params[i]);
-      P.Options := [poUsePipes, poWaitOnExit];
-      P.ShowWindow := swoHIDE;
-      P.Execute;
-
-      // Drain stdout/stderr fully (works on Linux/Qt6)
-      repeat
-        while P.Output.NumBytesAvailable > 0 do
-        begin
-          n := P.Output.Read(Buf, SizeOf(Buf));
-          if n > 0 then
-            OutStr.WriteBuffer(Buf, n)
-          else
-            Break;
-        end;
-        while P.Stderr.NumBytesAvailable > 0 do
-        begin
-          n := P.Stderr.Read(Buf, SizeOf(Buf));
-          if n > 0 then
-            ErrStr.WriteBuffer(Buf, n)
-          else
-            Break;
-        end;
-        if not P.Running then
-          Break;
-        Sleep(5);
-      until false;
-
-      ExitCode := P.ExitStatus;
-      StdoutS := OutStr.DataString;
-      StderrS := ErrStr.DataString;
-      Result := ExitCode = 0;
-    finally
-      ErrStr.Free;
-      OutStr.Free;
-      P.Free;
-    end;
-  end;
-
-procedure SendNotification(Title, Message: string);
-  var
-    AProcess: TProcess;
-  begin
-    {$IF DEFINED(X_PC) or DEFINED(BSD)}
-  // Linux/BSD unit may override attention or provide notification availability
-    if isNotificationSystemAvailable then
-    begin
-      AProcess := TProcess.Create(nil);
-      try
-        AProcess.Executable := '/usr/bin/notify-send';
-        AProcess.Parameters.Add(Title);
-        AProcess.Parameters.Add(Message);
-        AProcess.Options := AProcess.Options + [poNoConsole];
-        AProcess.Execute;
-      finally
-        AProcess.Free;
-      end;
-    end
-    else
-   // ShowMessage('notify-send is required for Trndi to make notifications!');
-    {$ENDIF}
-  end;
-  {$endif}
-  {$if defined(X_WIN)}
+{$if defined(X_WIN)}
 
   {------------------------------------------------------------------------------
     PSQuote
@@ -980,27 +896,108 @@ procedure SendNotification(const Title, Msg: unicodestring);
     end;
   end;
 
-  {$endif}
-  {$IF DEFINED(X_MAC)}
-procedure SendNotification(const title, msg: string);
+{$elseif defined(X_MAC)}
+procedure SendNotification(const Title, Msg: string);
   var
     Notification: NSUserNotification;
   begin
     Notification := NSUserNotification.alloc.init;
     Notification.setTitle(NSSTR(Title));
-    Notification.setInformativeText(NSSTR(Message));
+    Notification.setInformativeText(NSSTR(Msg));
     NSUserNotificationCenter.defaultUserNotificationCenter.deliverNotification(
       Notification);
     Notification.Release;
   end;
-  {$elseif not (DEFINED(X_LINUXBSD) or DEFINED(BSD) or DEFINED(X_WIN))}
-  // Fallback for platforms without specific notification implementation
-  // (Haiku and other platforms should override the attention method)
-procedure SendNotification(const title, msg: string);
+
+{$elseif DEFINED(X_LINUXBSD) or DEFINED(BSD)}
+function RunAndCapture(const Exec: string; const Params: array of string;
+  out StdoutS, StderrS: string; out ExitCode: integer): boolean;
+  var
+    P: TProcess;
+    i: integer;
+    OutStr, ErrStr: TStringStream;
+    Buf: array[0..4095] of byte;
+    n: SizeInt;
+  begin
+    Result := false;
+    StdoutS := '';
+    StderrS := '';
+    ExitCode := -1;
+
+    P := TProcess.Create(nil);
+    OutStr := TStringStream.Create('');
+    ErrStr := TStringStream.Create('');
+    try
+      P.Executable := Exec;
+      for i := 0 to High(Params) do
+        P.Parameters.Add(Params[i]);
+      P.Options := [poUsePipes, poWaitOnExit];
+      P.ShowWindow := swoHIDE;
+      P.Execute;
+
+      // Drain stdout/stderr fully (works on Linux/Qt6)
+      repeat
+        while P.Output.NumBytesAvailable > 0 do
+        begin
+          n := P.Output.Read(Buf, SizeOf(Buf));
+          if n > 0 then
+            OutStr.WriteBuffer(Buf, n)
+          else
+            Break;
+        end;
+        while P.Stderr.NumBytesAvailable > 0 do
+        begin
+          n := P.Stderr.Read(Buf, SizeOf(Buf));
+          if n > 0 then
+            ErrStr.WriteBuffer(Buf, n)
+          else
+            Break;
+        end;
+        if not P.Running then
+          Break;
+        Sleep(5);
+      until false;
+
+      ExitCode := P.ExitStatus;
+      StdoutS := OutStr.DataString;
+      StderrS := ErrStr.DataString;
+      Result := ExitCode = 0;
+    finally
+      ErrStr.Free;
+      OutStr.Free;
+      P.Free;
+    end;
+  end;
+
+procedure SendNotification(const Title, Msg: string);
+  var
+    AProcess: TProcess;
+  begin
+    // Linux/BSD unit may override attention or provide notification availability
+    if isNotificationSystemAvailable then
+    begin
+      AProcess := TProcess.Create(nil);
+      try
+        AProcess.Executable := '/usr/bin/notify-send';
+        AProcess.Parameters.Add(Title);
+        AProcess.Parameters.Add(Msg);
+        AProcess.Options := AProcess.Options + [poNoConsole];
+        AProcess.Execute;
+      finally
+        AProcess.Free;
+      end;
+    end;
+  end;
+
+{$else}
+// Fallback for platforms without specific notification implementation
+// (Haiku and other platforms should override the attention method)
+procedure SendNotification(const Title, Msg: string);
   begin
     // No-op: notification system not available on this platform
   end;
-  {$endif}
+
+{$endif}
 begin
   SendNotification(topic, message);
 end;
