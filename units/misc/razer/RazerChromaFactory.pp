@@ -59,7 +59,7 @@ uses
   {$IFDEF HAIKU}
   RazerChromaLinux;
   {$ENDIF}  
-  {$IFDEF BSD}
+  {$IF DEFINED(BSD) AND NOT DEFINED(DARWIN)}
   RazerChromaBSD;
   {$ENDIF} 
 
@@ -77,7 +77,7 @@ begin
   {$IFDEF DARWIN}
   result := TRazerChromaMac.Create;
   {$ENDIF}
-  {$IFDEF BSD}
+  {$IF DEFINED(BSD) AND NOT DEFINED(DARWIN)}
   Result := TRazerChromaBSD.Create;
   {$ENDIF}
 end;
