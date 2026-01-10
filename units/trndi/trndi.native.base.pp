@@ -455,7 +455,7 @@ begin
     Process.Parameters.Add(FileName);
   {$ENDIF}
 
-    {$IFDEF X_LINUXBSD}
+    {$IFDEF X_LINUX}
     Process.Executable := 'aplay';
     Process.Parameters.Add(FileName);
   {$ENDIF}
@@ -899,17 +899,33 @@ procedure SendNotification(const Title, Msg: unicodestring);
 {$elseif defined(X_MAC)}
 procedure SendNotification(const Title, Msg: string);
   var
-    Notification: NSUserNotification;
+    P: TProcess;
+  function ASQuote(const S: string): string;
+    var
+      v: string;
+    begin
+      // AppleScript string literal (double-quoted). Escape backslash and quote.
+      v := StringReplace(S, '\\', '\\\\', [rfReplaceAll]);
+      v := StringReplace(v, '"', '\\"', [rfReplaceAll]);
+      v := StringReplace(v, LineEnding, ' ', [rfReplaceAll]);
+      Result := '"' + v + '"';
+    end;
   begin
-    Notification := NSUserNotification.alloc.init;
-    Notification.setTitle(NSSTR(Title));
-    Notification.setInformativeText(NSSTR(Msg));
-    NSUserNotificationCenter.defaultUserNotificationCenter.deliverNotification(
-      Notification);
-    Notification.Release;
+    // NSUserNotification is deprecated and may not show reliably on recent macOS.
+    // osascript works for bundled apps and CLI-like runs.
+    P := TProcess.Create(nil);
+    try
+      P.Executable := '/usr/bin/osascript';
+      P.Parameters.Add('-e');
+      P.Parameters.Add('display notification ' + ASQuote(Msg) + ' with title ' + ASQuote(Title));
+      P.Options := P.Options + [poNoConsole];
+      P.Execute;
+    finally
+      P.Free;
+    end;
   end;
 
-{$elseif DEFINED(X_LINUXBSD) or DEFINED(BSD)}
+{$elseif DEFINED(X_LINUX) or DEFINED(X_BSD)}
 function RunAndCapture(const Exec: string; const Params: array of string;
   out StdoutS, StderrS: string; out ExitCode: integer): boolean;
   var
