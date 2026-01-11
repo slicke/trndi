@@ -39,7 +39,8 @@ iconutil -c icns macos/Trndi.iconset
 cp macos/Trndi.icns macos/Trndi.app/Contents/Resources/
 
 # Create Info.plist
-cat > "macos/Trndi.app/Contents/Info.plist" << 'EOF'
+# Note: heredoc must be unquoted so ${VERSION} expands.
+cat > "macos/Trndi.app/Contents/Info.plist" << EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
    "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
