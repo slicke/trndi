@@ -1,5 +1,9 @@
 #!/bin/zsh
 
+set -e
+
+VERSION="${VERSION:-1.0.0}"
+
 rm -rf macos
 mkdir macos
 
@@ -8,19 +12,29 @@ cp -r ../Trndi.app macos/.
 rm -rf macos/Trndi.app/Contents/MacOS/Trndi
 cp ../Trndi macos/Trndi.app/Contents/MacOS/Trndi
 
-# Setup languages (put them in Resources, not MacOS)
-mkdir -p macos/Trndi.app/Contents/Resources
+# Setup languages
+# Trndi currently looks for translations in "appdir/lang".
+# In a .app bundle, appdir resolves to Contents/MacOS, so keep lang/ there.
+mkdir -p macos/Trndi.app/Contents/MacOS
 if [ -d "../lang" ]; then
   cp -r ../lang macos/Trndi.app/Contents/MacOS/
 fi
 
 # Create icons
 mkdir macos/Trndi.iconset
-sips -z 16 16  ../Trndi.png --out macos/Trndi.iconset/icon_16x16.png
-sips -z 24 24  ../Trndi.png --out macos/Trndi.iconset/icon_24x24.png
-sips -z 64 64  ../Trndi.png --out macos/Trndi.iconset/icon_64x64.png
+
+# Use Apple-standard iconset names so iconutil reliably produces a correct .icns
+sips -z 16 16    ../Trndi.png --out macos/Trndi.iconset/icon_16x16.png
+sips -z 32 32    ../Trndi.png --out macos/Trndi.iconset/icon_16x16@2x.png
+sips -z 32 32    ../Trndi.png --out macos/Trndi.iconset/icon_32x32.png
+sips -z 64 64    ../Trndi.png --out macos/Trndi.iconset/icon_32x32@2x.png
 sips -z 128 128  ../Trndi.png --out macos/Trndi.iconset/icon_128x128.png
+sips -z 256 256  ../Trndi.png --out macos/Trndi.iconset/icon_128x128@2x.png
 sips -z 256 256  ../Trndi.png --out macos/Trndi.iconset/icon_256x256.png
+sips -z 512 512  ../Trndi.png --out macos/Trndi.iconset/icon_256x256@2x.png
+sips -z 512 512  ../Trndi.png --out macos/Trndi.iconset/icon_512x512.png
+sips -z 1024 1024 ../Trndi.png --out macos/Trndi.iconset/icon_512x512@2x.png
+
 iconutil -c icns macos/Trndi.iconset
 cp macos/Trndi.icns macos/Trndi.app/Contents/Resources/
 
@@ -35,10 +49,14 @@ cat > "macos/Trndi.app/Contents/Info.plist" << 'EOF'
   <string>Trndi</string>
   <key>CFBundleIdentifier</key>
   <string>com.slicke.Trndi</string>
-  <key>CFBundleVersion</key>
-  <string>1.0</string>
-  <key>CFBundleIconFile</key>
+  <key>CFBundleExecutable</key>
   <string>Trndi</string>
+  <key>CFBundleVersion</key>
+  <string>${VERSION}</string>
+  <key>CFBundleShortVersionString</key>
+  <string>${VERSION}</string>
+  <key>CFBundleIconFile</key>
+  <string>Trndi.icns</string>
   <key>NSHighResolutionCapable</key>
   <true/>
   <key>CSResourcesFileMapped</key>
