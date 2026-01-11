@@ -17,10 +17,10 @@ object fConf: TfConf
     Height = 518
     Top = 11
     Width = 665
-    ActivePage = tsChroma
+    ActivePage = tsAdvanced
     Align = alClient
     BorderSpacing.Around = 5
-    TabIndex = 9
+    TabIndex = 5
     TabOrder = 0
     OnChange = pcMainChange
     object tsGeneral: TTabSheet
@@ -11724,6 +11724,38 @@ object fConf: TfConf
             Caption = 'Trend arrow size:'
             Layout = tlCenter
             ParentFont = False
+          end
+          object lPredictShortMinutes: TLabel
+            Left = 280
+            Height = 32
+            Top = 0
+            Width = 135
+            Align = alLeft
+            BorderSpacing.Left = 20
+            BorderSpacing.Bottom = 10
+            Caption = 'Prediction horizon:'
+            Layout = tlCenter
+            ParentFont = False
+          end
+          object cbPredictShortMinutes: TComboBox
+            Left = 415
+            Height = 32
+            Top = 0
+            Width = 120
+            Align = alLeft
+            BorderSpacing.Left = 10
+            BorderSpacing.Bottom = 10
+            ItemHeight = 22
+            ItemIndex = 1
+            Items.Strings = (
+              '5 minutes'
+              '10 minutes'
+              '15 minutes'
+            )
+            Style = csDropDownList
+            TabOrder = 1
+            Text = '10 minutes'
+            OnChange = cbPredictShortMinutesChange
           end
         end
         object cbPredictShort: TCheckBox
