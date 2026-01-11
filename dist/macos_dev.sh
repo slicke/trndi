@@ -132,15 +132,61 @@ mkdir -p macos/stage
 cp -R macos/Trndi.app macos/stage/
 rm -f Trndi.dmg
 
-create-dmg "Trndi.dmg" "macos/stage" --volname "Trndi" --format UDZO --icon-size 128 --icon "Trndi.app" 150 200 --app-drop-link 250 200
+# Track DMGs created during create-dmg run (some create-dmg variants may not
+# write exactly ./Trndi.dmg even if they succeed).
+MARKER_FILE="$(mktemp -t trndi_dmg_marker.XXXXXX)"
+touch "${MARKER_FILE}"
+CREATE_DMG_LOG="macos/create-dmg.log"
+rm -f "${CREATE_DMG_LOG}"
+
+set +e
+create-dmg "Trndi.dmg" "macos/stage" --volname "Trndi" --format UDZO --icon-size 128 --icon "Trndi.app" 150 200 --app-drop-link 250 200 >"${CREATE_DMG_LOG}" 2>&1
+CREATE_DMG_EXIT=$?
+set -e
+
+if [ ${CREATE_DMG_EXIT} -ne 0 ]; then
+  echo "ERROR: create-dmg failed (exit ${CREATE_DMG_EXIT})" >&2
+  echo "Working dir: $(pwd)" >&2
+  echo "---- create-dmg output ----" >&2
+  cat "${CREATE_DMG_LOG}" >&2 || true
+  echo "--------------------------" >&2
+  exit 1
+fi
 
 if [ ! -f "Trndi.dmg" ]; then
-  echo "ERROR: Trndi.dmg was not created (create-dmg failed)" >&2
+  # Look for any newly created DMGs near the working directory.
+  dmg_candidates=("${(@0)$(find . macos -maxdepth 4 -type f -name "*.dmg" -newer "${MARKER_FILE}" -print0 2>/dev/null)}")
+
+  # Prefer a DMG that contains "Trndi" in the name.
+  best_candidate=""
+  for f in "${dmg_candidates[@]}"; do
+    case "${f}" in
+      *Trndi*.dmg) best_candidate="${f}"; break ;;
+    esac
+  done
+
+  # If no Trndi-named DMG found but exactly one DMG was produced, use it.
+  if [ -z "${best_candidate}" ] && [ ${#dmg_candidates[@]} -eq 1 ]; then
+    best_candidate="${dmg_candidates[1]}"
+  fi
+
+  if [ -n "${best_candidate}" ] && [ -f "${best_candidate}" ]; then
+    mv -f "${best_candidate}" "Trndi.dmg"
+  fi
+fi
+
+rm -f "${MARKER_FILE}" 2>/dev/null || true
+
+if [ ! -f "Trndi.dmg" ]; then
+  echo "ERROR: Could not find Trndi.dmg after create-dmg succeeded." >&2
   echo "Working dir: $(pwd)" >&2
   echo "DMG candidates in $(pwd):" >&2
   ls -la ./*.dmg 2>/dev/null || true
-  echo "DMG candidates under $(pwd) (maxdepth 3):" >&2
-  find "$(pwd)" -maxdepth 3 -name "*.dmg" -print 2>/dev/null || true
+  echo "DMG candidates under $(pwd) (maxdepth 4):" >&2
+  find "$(pwd)" -maxdepth 4 -name "*.dmg" -print 2>/dev/null || true
+  echo "---- create-dmg output ----" >&2
+  cat "${CREATE_DMG_LOG}" >&2 || true
+  echo "--------------------------" >&2
   exit 1
 fi
 
