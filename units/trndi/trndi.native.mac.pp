@@ -208,7 +208,9 @@ end;
  ------------------------------------------------------------------------------}
 class function TTrndiNativeMac.isNotificationSystemAvailable: boolean;
 begin
-  Result := True; // NSUserNotificationCenter exists
+  // Trndi currently sends notifications via /usr/bin/osascript (see base impl).
+  // Prefer reporting availability based on that executable.
+  Result := FileExists('/usr/bin/osascript');
 end;
 
 {------------------------------------------------------------------------------
@@ -218,7 +220,8 @@ end;
  ------------------------------------------------------------------------------}
 class function TTrndiNativeMac.getNotificationSystem: string;
 begin
-  Result := 'NSUserNotification';
+  // NSUserNotification is deprecated; Trndi uses AppleScript via osascript.
+  Result := 'osascript';
 end;
 
 
