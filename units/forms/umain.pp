@@ -1970,17 +1970,25 @@ end;
 
 procedure TfBG.lAgoClick(Sender: TObject);
 var
-  displayMsg: string;
+  displayMsg, dm: string;
+  s: utf8char;
   i: integer;
 begin
   if firstboot then
     exit; // Dont trigger lastReading
 
   displayMsg := miRefresh.Caption + sHTMLLineBreak + sHTMLLineBreak;
+  for s in displayMsg do begin
+    if s in ['0'..'9']  then
+       dm += Format('<b>%s</b>', [s])
+    else
+      dm += s;
+  end;
+  displayMsg := dm;
 
-  if lastReading.getRSSI(i) then
+  if lastReading.TryGetRSSI(i) then
     displayMsg += sHTMLLineBreak + Format(sRSSI, [i]);
-  if lastReading.getNoise(i) then
+  if lastReading.TryGetNoise(i) then
     displayMsg += sHTMLLineBreak + Format(sNoise, [i]);
 
   displayMsg += sHTMLLineBreak + Format(sDevice, [lastReading.sensor]);
