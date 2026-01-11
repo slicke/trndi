@@ -17,10 +17,10 @@ object fConf: TfConf
     Height = 518
     Top = 11
     Width = 665
-    ActivePage = tsExt
+    ActivePage = tsChroma
     Align = alClient
     BorderSpacing.Around = 5
-    TabIndex = 10
+    TabIndex = 9
     TabOrder = 0
     OnChange = pcMainChange
     object tsGeneral: TTabSheet
@@ -52,8 +52,8 @@ object fConf: TfConf
         ChildSizing.ShrinkVertical = crsScaleChilds
         ChildSizing.Layout = cclLeftToRightThenTopToBottom
         ChildSizing.ControlsPerLine = 2
-        ClientHeight = 44
-        ClientWidth = 622
+        ClientHeight = 29
+        ClientWidth = 630
         Columns = 2
         ItemIndex = 0
         Items.Strings = (
@@ -10995,8 +10995,8 @@ object fConf: TfConf
         Width = 659
         Align = alBottom
         Caption = 'Display Preferences'
-        ClientHeight = 94
-        ClientWidth = 647
+        ClientHeight = 79
+        ClientWidth = 655
         TabOrder = 1
         object pTray: TPanel
           Left = 485
@@ -11092,8 +11092,8 @@ object fConf: TfConf
         Align = alTop
         BorderSpacing.Around = 10
         Caption = 'Extra Settings'
-        ClientHeight = 128
-        ClientWidth = 627
+        ClientHeight = 113
+        ClientWidth = 635
         TabOrder = 0
         object cbTIR: TCheckBox
           Left = 0
@@ -11179,8 +11179,8 @@ object fConf: TfConf
         Align = alTop
         BorderSpacing.Around = 10
         Caption = 'In-range coloring'
-        ClientHeight = 154
-        ClientWidth = 627
+        ClientHeight = 139
+        ClientWidth = 635
         TabOrder = 1
         object cbPaintLines: TCheckBox
           Left = 0
@@ -11333,8 +11333,8 @@ object fConf: TfConf
         Align = alTop
         BorderSpacing.Around = 10
         Caption = 'Override Custom Range'
-        ClientHeight = 68
-        ClientWidth = 627
+        ClientHeight = 53
+        ClientWidth = 635
         TabOrder = 2
         object cbCustRange: TCheckBox
           Left = 0
@@ -11422,8 +11422,8 @@ object fConf: TfConf
         Align = alTop
         BorderSpacing.Around = 10
         Caption = 'Override High / Low limits'
-        ClientHeight = 76
-        ClientWidth = 627
+        ClientHeight = 61
+        ClientWidth = 635
         ParentBackground = False
         TabOrder = 0
         object cbCust: TCheckBox
@@ -11566,8 +11566,8 @@ object fConf: TfConf
         ChildSizing.ShrinkVertical = crsScaleChilds
         ChildSizing.Layout = cclLeftToRightThenTopToBottom
         ChildSizing.ControlsPerLine = 1
-        ClientHeight = 82
-        ClientWidth = 647
+        ClientHeight = 67
+        ClientWidth = 655
         TabOrder = 4
         object cbFlashHi: TCheckBox
           Left = 6
@@ -11658,8 +11658,8 @@ object fConf: TfConf
         Width = 659
         Align = alBottom
         Caption = 'Predictions'
-        ClientHeight = 199
-        ClientWidth = 647
+        ClientHeight = 184
+        ClientWidth = 655
         TabOrder = 1
         object cbPredictions: TCheckBox
           Left = 5
@@ -11790,8 +11790,8 @@ object fConf: TfConf
         Width = 659
         Align = alBottom
         Caption = 'Display'
-        ClientHeight = 93
-        ClientWidth = 647
+        ClientHeight = 78
+        ClientWidth = 655
         TabOrder = 2
         object cbTimeStamp: TCheckBox
           Left = 10
@@ -11836,8 +11836,8 @@ object fConf: TfConf
         Align = alTop
         BorderSpacing.Around = 10
         Caption = 'Play Media'
-        ClientHeight = 234
-        ClientWidth = 627
+        ClientHeight = 219
+        ClientWidth = 635
         ParentBackground = False
         TabOrder = 0
         object Label9: TLabel
@@ -11925,8 +11925,8 @@ object fConf: TfConf
         Align = alTop
         BorderSpacing.Around = 10
         Caption = 'Use URL'
-        ClientHeight = 188
-        ClientWidth = 627
+        ClientHeight = 173
+        ClientWidth = 635
         ParentBackground = False
         TabOrder = 1
         object Label28: TLabel
@@ -12133,8 +12133,8 @@ object fConf: TfConf
           Align = alBottom
           BorderSpacing.Around = 10
           Caption = 'System Features'
-          ClientHeight = 125
-          ClientWidth = 627
+          ClientHeight = 110
+          ClientWidth = 635
           TabOrder = 2
           object cbTouch: TCheckBox
             Left = 8
@@ -12256,8 +12256,8 @@ object fConf: TfConf
         Align = alBottom
         BorderSpacing.Around = 10
         Caption = 'Account Settings'
-        ClientHeight = 89
-        ClientWidth = 627
+        ClientHeight = 74
+        ClientWidth = 635
         Enabled = False
         TabOrder = 1
         object pUserColor: TPanel
@@ -12405,8 +12405,8 @@ object fConf: TfConf
         Align = alBottom
         BorderSpacing.Around = 10
         Caption = 'All accounts'
-        ClientHeight = 46
-        ClientWidth = 627
+        ClientHeight = 31
+        ClientWidth = 635
         TabOrder = 3
         object cbUserColor: TCheckBox
           Left = 16
@@ -12466,25 +12466,73 @@ object fConf: TfConf
         Left = 24
         Height = 16
         Top = 312
-        Width = 229
-        Caption = 'Units will pule in red on high and blue on low'
+        Width = 234
+        Caption = 'Units will pulse in red on high and blue on low'
         Font.Style = [fsItalic]
         ParentFont = False
+      end
+      object lChromaHigh: TLabel
+        Left = 24
+        Height = 16
+        Top = 360
+        Width = 47
+        Caption = 'On high:'
+      end
+      object cbChromaHigh: TComboBox
+        Left = 112
+        Height = 32
+        Top = 356
+        Width = 220
+        ItemHeight = 22
+        ItemIndex = 0
+        Items.Strings = (
+          'Breath (pulse)'
+          'Static'
+          'Off'
+          'Ignore (do nothing)'
+        )
+        Style = csDropDownList
+        TabOrder = 2
+        Text = 'Breath (pulse)'
+      end
+      object lChromaLow: TLabel
+        Left = 24
+        Height = 16
+        Top = 392
+        Width = 43
+        Caption = 'On low:'
+      end
+      object cbChromaLow: TComboBox
+        Left = 112
+        Height = 32
+        Top = 388
+        Width = 220
+        ItemHeight = 22
+        ItemIndex = 0
+        Items.Strings = (
+          'Breath (pulse)'
+          'Static'
+          'Off'
+          'Ignore (do nothing)'
+        )
+        Style = csDropDownList
+        TabOrder = 3
+        Text = 'Breath (pulse)'
       end
       object Label32: TLabel
         Left = 16
         Height = 16
         Top = 456
-        Width = 533
-        Caption = 'NOTE: Razer Synapse required on Windows; OpenRazer on Linux. No macOS support at this time.'
+        Width = 557
+        Caption = 'Razer Synapse required on Windows. OpenRazer on Linux. No support for other platforms at this time.'
       end
       object cbChromaNormal: TCheckBox
         Left = 8
         Height = 20
-        Top = 336
+        Top = 424
         Width = 247
         Caption = 'Make units green when reading is normal'
-        TabOrder = 2
+        TabOrder = 4
       end
     end
     object tsExt: TTabSheet
@@ -12510,8 +12558,8 @@ object fConf: TfConf
         Align = alClient
         BorderSpacing.Around = 10
         Caption = 'Available Extensions'
-        ClientHeight = 339
-        ClientWidth = 627
+        ClientHeight = 324
+        ClientWidth = 635
         TabOrder = 0
         object lbExtensions: TListBox
           Left = 5
@@ -12534,8 +12582,8 @@ object fConf: TfConf
         Align = alBottom
         BorderSpacing.Around = 10
         Caption = 'Extension Info'
-        ClientHeight = 69
-        ClientWidth = 627
+        ClientHeight = 54
+        ClientWidth = 635
         TabOrder = 1
         object lExtName: TLabel
           Left = 8

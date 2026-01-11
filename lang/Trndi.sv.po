@@ -395,6 +395,16 @@ msgstr "Inställningar"
 msgid "Enable Razer Chroma integration"
 msgstr "Slå på Razer Chroma-integrationen"
 
+#: tfconf.cbchromahigh.text
+msgctxt "tfconf.cbchromahigh.text"
+msgid "Breath (pulse)"
+msgstr "Andas (puls)"
+
+#: tfconf.cbchromalow.text
+msgctxt "tfconf.cbchromalow.text"
+msgid "Breath (pulse)"
+msgstr "Andas (puls)"
+
 #: tfconf.cbchromanormal.caption
 msgid "Make units green when reading is normal"
 msgstr "Gör enheter gröna vid normalt värde"
@@ -730,11 +740,13 @@ msgid "Trndi will control these devices:"
 msgstr "Trndi kommer kontrollera dessa enheter:"
 
 #: tfconf.label31.caption
-msgid "Units will pule in red on high and blue on low"
+msgid "Units will pulse in red on high and blue on low"
 msgstr "Enheterna kommer pulsera i rött vid högt och blått vid lågt"
 
 #: tfconf.label32.caption
-msgid "NOTE: Razer Synapse required on Windows; OpenRazer on Linux. No macOS support at this time."
+#, fuzzy
+#| msgid "NOTE: Razer Synapse required on Windows; OpenRazer on Linux. No macOS support at this time."
+msgid "Razer Synapse required on Windows. OpenRazer on Linux. No support for other platforms at this time."
 msgstr "OBS: Razer Synapse krävs på Windows; OpenRazer på Linux. Inget stöd för macOS just nu."
 
 #: tfconf.label4.caption
@@ -772,6 +784,14 @@ msgstr "100 min"
 #: tfconf.larch.caption
 msgid "Unknown Architecture"
 msgstr "Okänd arkietektur"
+
+#: tfconf.lchromahigh.caption
+msgid "On high:"
+msgstr "Vid högt:"
+
+#: tfconf.lchromalow.caption
+msgid "On low:"
+msgstr "Vid lågt:"
 
 #: tfconf.ldot.caption
 msgctxt "tfconf.ldot.caption"
