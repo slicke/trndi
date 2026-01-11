@@ -5,6 +5,7 @@ interface
 resourcestring
   // Menu items
 RS_REFRESH = '⟳ Updated: <b>%s</b> <i>(Next update: %s)</i>';
+RS_REFRESH_PLAIN = '⟳ Updated: %s (Next update: %s)';
 RS_LIMIT_EXPLAIN_TITLE = 'Limit Explanation';
 RS_LIMIT_EXPLAIN_TEXT = 'Hi = When BG is considered high'#10 +
   'Lo = When BG is considered low'#10#10 +

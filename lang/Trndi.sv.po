@@ -1445,6 +1445,11 @@ msgstr "Lågt område stöds inte av källans gränssnitt"
 msgid "⟳ Updated: <b>%s</b> <i>(Next update: %s)</i>"
 msgstr "⟳ Uppdaterad: <b>%s</b> <i>(Nästa uppdatering: %s)</i>"
 
+#: trndi.strings.rs_refresh_plain
+#, object-pascal-format
+msgid "⟳ Updated: %s (Next update: %s)"
+msgstr ""
+
 #: trndi.strings.rs_restart_apply
 msgid "Trndi must be restarted for settings to take effect"
 msgstr "Trndi måste startas om innan ändringarna aktiveras"

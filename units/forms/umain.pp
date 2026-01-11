@@ -1976,7 +1976,7 @@ begin
   if firstboot then
     exit; // Dont trigger lastReading
 
-  displayMsg := miRefresh.Caption;
+  displayMsg := miRefresh.Caption + sHTMLLineBreak + sHTMLLineBreak;
 
   if lastReading.getRSSI(i) then
     displayMsg += sHTMLLineBreak + Format(sRSSI, [i]);
@@ -4139,7 +4139,7 @@ begin
   tMain.Interval := intervalMs + REFRESH_RESYNC_BUFFER_MS; // Add buffer to allow sync
   tMain.Enabled := true;
 
-  miRefresh.Caption := Format(RS_REFRESH, [TimeToStr(LastReadingTime),
+  miRefresh.Caption := Format(RS_REFRESH_PLAIN, [TimeToStr(LastReadingTime),
     TimeToStr(IncMilliSecond(Now, tMain.Interval))]);
   {$ifdef Darwin}
   upMenu.Caption:= miRefresh.Caption;
