@@ -296,7 +296,8 @@ var
   params: array[1..1] of string;
   deltaField, rssiField, noiseField: TJSONData;
   deltaValue: single;
-  rssiValue, noiseValue, currentSgv, prevSgv: integer;
+  currentSgv, prevSgv: integer;
+  rssivalue, noiseValue: MaybeInt;
 begin
   // Default to SGV endpoint if caller provided no override.
   if extras = '' then
@@ -355,14 +356,22 @@ begin
       // Receiver environment details (optional fields in Nightscout).
       rssiField := FindPath('rssi');
       noiseField := FindPath('noise');
-      if Assigned(rssiField) then
-        rssiValue := rssiField.AsInteger
-      else
-        rssiValue := 0;
-      if Assigned(noiseField) then
-        noiseValue := noiseField.AsInteger
-      else
-        noiseValue := 0;
+      if Assigned(rssiField) then begin
+        rssiValue.value := rssiField.AsInteger;
+        rssivalue.exists := rssivalue.value <> -1;
+      end
+      else begin
+        rssiValue.value := 0;
+        rssivalue.exists := true;
+      end;
+      if Assigned(noiseField) then begin
+        noiseValue.value := noiseField.AsInteger;
+        noiseValue.exists := noiseValue.value <> -1;
+      end
+      else begin
+        noiseValue.value := 0;
+        noisevalue.exists := true;
+      end;
       Result[i].updateEnv(dev, rssiValue, noiseValue);
 
       // Translate Nightscout 'direction' string to BGTrend enum.

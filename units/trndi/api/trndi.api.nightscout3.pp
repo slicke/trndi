@@ -376,9 +376,10 @@ var
   oldBase: string;
   deltaField, rssiField, noiseField: TJSONData;
   deltaValue: single;
-  rssiValue, noiseValue, currentSgv, prevSgv: integer;
+  currentSgv, prevSgv: integer;
   j: integer;
   tempReading: BGReading;
+  rssiValue, noiseValue: maybeInt;
 
 function ExtractArrayNode(const jd: TJSONData): TJSONData;
   var
@@ -510,14 +511,24 @@ begin
       // Receiver environment details (optional fields in Nightscout).
       rssiField := FindPath('rssi');
       noiseField := FindPath('noise');
-      if Assigned(rssiField) then
-        rssiValue := rssiField.AsInteger
-      else
-        rssiValue := 0;
-      if Assigned(noiseField) then
-        noiseValue := noiseField.AsInteger
-      else
-        noiseValue := 0;
+      if Assigned(rssiField) then begin
+        rssiValue.value := rssiField.AsInteger;
+        rssivalue.exists := rssiValue.value <> -1;
+      end
+      else begin
+        rssiValue.value := 0;
+        rssivalue.exists := true;
+      end;
+
+
+      if Assigned(noiseField) then begin
+        noiseValue.value := noiseField.AsInteger;
+        noiseValue.exists := noiseValue.value <> -1;
+      end
+      else begin
+        noiseValue.value := 0;
+        noiseValue.exists := true;
+      end;
 
       Result[i].update(currentSgv, deltaValue);
       Result[i].updateEnv(dev, rssiValue, noiseValue);
