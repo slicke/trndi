@@ -34,11 +34,16 @@ need_file() {
   [ -e "$1" ] || die "Missing required file: $1"
 }
 
-need_cmd create-dmg
 need_cmd sips
 need_cmd iconutil
 need_cmd hdiutil
 need_cmd osascript
+
+# create-dmg is optional for dev builds (there are multiple incompatible
+# implementations with the same name). We'll fall back to hdiutil if needed.
+if ! command -v create-dmg >/dev/null 2>&1; then
+  echo "WARN: 'create-dmg' not found; will use 'hdiutil create' fallback." >&2
+fi
 
 # Optional: create-dmg often uses SetFile (Xcode Command Line Tools)
 if ! command -v SetFile >/dev/null 2>&1; then
@@ -147,14 +152,18 @@ CREATE_DMG_LOG="macos/create-dmg.log"
 CREATE_DMG_HELP_LOG="macos/create-dmg.help.log"
 rm -f "${CREATE_DMG_LOG}"
 
-# Capture help text for variant detection / debugging.
-{
-  create-dmg --help
-} >"${CREATE_DMG_HELP_LOG}" 2>&1 || {
+# Capture help text for variant detection / debugging (only if create-dmg exists).
+if command -v create-dmg >/dev/null 2>&1; then
   {
-    create-dmg -h
-  } >"${CREATE_DMG_HELP_LOG}" 2>&1 || true
-}
+    create-dmg --help
+  } >"${CREATE_DMG_HELP_LOG}" 2>&1 || {
+    {
+      create-dmg -h
+    } >"${CREATE_DMG_HELP_LOG}" 2>&1 || true
+  }
+else
+  echo "create-dmg not installed" >"${CREATE_DMG_HELP_LOG}"
+fi
 
 run_create_dmg_attempt() {
   local attempt_name="$1"
@@ -174,43 +183,64 @@ run_create_dmg_attempt() {
 }
 
 
-# Try to accommodate different create-dmg variants.
-CREATE_DMG_EXIT=0
-if grep -q -- "--out" "${CREATE_DMG_HELP_LOG}" 2>/dev/null; then
-  # Matches CI script style.
-  run_create_dmg_attempt "with --out (CI style)" \
-    create-dmg Trndi.dmg "macos/stage" --volname "Trndi" --format UDZO --icon-size 128 --icon "Trndi.app" 150 200 --app-drop-link 250 200 --out "Trndi.dmg" || CREATE_DMG_EXIT=$?
-else
-  # Common upstream style.
-  run_create_dmg_attempt "without --out" \
-    create-dmg "Trndi.dmg" "macos/stage" --volname "Trndi" --format UDZO --icon-size 128 --icon "Trndi.app" 150 200 --app-drop-link 250 200 || CREATE_DMG_EXIT=$?
-fi
-
-# If the first attempt failed, try the other style as a fallback.
-if [ ${CREATE_DMG_EXIT} -ne 0 ]; then
+# Try to accommodate different create-dmg variants (if installed).
+CREATE_DMG_EXIT=127
+if command -v create-dmg >/dev/null 2>&1; then
+  CREATE_DMG_EXIT=0
   if grep -q -- "--out" "${CREATE_DMG_HELP_LOG}" 2>/dev/null; then
-    run_create_dmg_attempt "without --out (fallback)" \
-      create-dmg "Trndi.dmg" "macos/stage" --volname "Trndi" --format UDZO --icon-size 128 --icon "Trndi.app" 150 200 --app-drop-link 250 200 || CREATE_DMG_EXIT=$?
-  else
-    run_create_dmg_attempt "with --out (fallback)" \
+    # Matches CI script style.
+    run_create_dmg_attempt "with --out (CI style)" \
       create-dmg Trndi.dmg "macos/stage" --volname "Trndi" --format UDZO --icon-size 128 --icon "Trndi.app" 150 200 --app-drop-link 250 200 --out "Trndi.dmg" || CREATE_DMG_EXIT=$?
+  else
+    # Common upstream style.
+    run_create_dmg_attempt "without --out" \
+      create-dmg "Trndi.dmg" "macos/stage" --volname "Trndi" --format UDZO --icon-size 128 --icon "Trndi.app" 150 200 --app-drop-link 250 200 || CREATE_DMG_EXIT=$?
+  fi
+
+  # If the first attempt failed, try the other style as a fallback.
+  if [ ${CREATE_DMG_EXIT} -ne 0 ]; then
+    if grep -q -- "--out" "${CREATE_DMG_HELP_LOG}" 2>/dev/null; then
+      run_create_dmg_attempt "without --out (fallback)" \
+        create-dmg "Trndi.dmg" "macos/stage" --volname "Trndi" --format UDZO --icon-size 128 --icon "Trndi.app" 150 200 --app-drop-link 250 200 || CREATE_DMG_EXIT=$?
+    else
+      run_create_dmg_attempt "with --out (fallback)" \
+        create-dmg Trndi.dmg "macos/stage" --volname "Trndi" --format UDZO --icon-size 128 --icon "Trndi.app" 150 200 --app-drop-link 250 200 --out "Trndi.dmg" || CREATE_DMG_EXIT=$?
+    fi
   fi
 fi
 
 if [ ${CREATE_DMG_EXIT} -ne 0 ]; then
-  echo "ERROR: create-dmg failed (exit ${CREATE_DMG_EXIT})" >&2
-  echo "Working dir: $(pwd)" >&2
-  echo "create-dmg: $(command -v create-dmg)" >&2
-  echo "Help log: ${CREATE_DMG_HELP_LOG}" >&2
-  echo "Log file: ${CREATE_DMG_LOG}" >&2
-  echo "Stage dir contents:" >&2
-  ls -la "macos/stage" >&2 || true
-  echo "Stage app contents:" >&2
-  ls -la "macos/stage/Trndi.app" >&2 || true
-  echo "---- create-dmg output ----" >&2
-  cat "${CREATE_DMG_LOG}" >&2 || true
-  echo "--------------------------" >&2
-  exit 1
+  echo "WARN: create-dmg failed (exit ${CREATE_DMG_EXIT}); trying hdiutil fallback" >&2
+fi
+
+# If create-dmg is missing/incompatible OR it did not produce Trndi.dmg,
+# create the DMG directly using macOS's built-in tooling.
+if [ ${CREATE_DMG_EXIT} -ne 0 ] || [ ! -f "Trndi.dmg" ]; then
+  echo "Attempt: hdiutil create" >"${CREATE_DMG_LOG}"
+  echo "Working dir: $(pwd)" >>"${CREATE_DMG_LOG}"
+  echo "Command: hdiutil create -volname Trndi -srcfolder macos/stage -ov -format UDZO Trndi.dmg" >>"${CREATE_DMG_LOG}"
+  echo "---" >>"${CREATE_DMG_LOG}"
+
+  set +e
+  hdiutil create -volname "Trndi" -srcfolder "macos/stage" -ov -format UDZO "Trndi.dmg" >>"${CREATE_DMG_LOG}" 2>&1
+  HDIUTIL_EXIT=$?
+  set -e
+
+  if [ ${HDIUTIL_EXIT} -ne 0 ] || [ ! -f "Trndi.dmg" ]; then
+    echo "ERROR: DMG creation failed (create-dmg exit ${CREATE_DMG_EXIT}; hdiutil exit ${HDIUTIL_EXIT})" >&2
+    echo "Working dir: $(pwd)" >&2
+    echo "create-dmg: $(command -v create-dmg 2>/dev/null || echo 'not installed')" >&2
+    echo "Help log: ${CREATE_DMG_HELP_LOG}" >&2
+    echo "Log file: ${CREATE_DMG_LOG}" >&2
+    echo "Stage dir contents:" >&2
+    ls -la "macos/stage" >&2 || true
+    echo "Stage app contents:" >&2
+    ls -la "macos/stage/Trndi.app" >&2 || true
+    echo "---- dmg tool output ----" >&2
+    cat "${CREATE_DMG_LOG}" >&2 || true
+    echo "-------------------------" >&2
+    exit 1
+  fi
 fi
 
 if [ ! -f "Trndi.dmg" ]; then
