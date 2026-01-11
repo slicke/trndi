@@ -455,7 +455,7 @@ begin
     Process.Parameters.Add(FileName);
   {$ENDIF}
 
-    {$IFDEF X_LINUX}
+    {$IFDEF X_LINUXBSD}
     Process.Executable := 'aplay';
     Process.Parameters.Add(FileName);
   {$ENDIF}
@@ -900,32 +900,89 @@ procedure SendNotification(const Title, Msg: unicodestring);
 procedure SendNotification(const Title, Msg: string);
   var
     P: TProcess;
-  function ASQuote(const S: string): string;
-    var
-      v: string;
-    begin
-      // AppleScript string literal (double-quoted). Escape backslash and quote.
-      v := StringReplace(S, '\\', '\\\\', [rfReplaceAll]);
-      v := StringReplace(v, '"', '\\"', [rfReplaceAll]);
-      v := StringReplace(v, LineEnding, ' ', [rfReplaceAll]);
-      Result := '"' + v + '"';
-    end;
+    OutStr, ErrStr: TStringStream;
+    Buf: array[0..4095] of byte;
+    n: SizeInt;
+    ExitCode: integer;
+    LogPath: string;
+    SL: TStringList;
   begin
     // NSUserNotification is deprecated and may not show reliably on recent macOS.
-    // osascript works for bundled apps and CLI-like runs.
+    // We currently use AppleScript via /usr/bin/osascript.
+    // Use argv to avoid AppleScript quoting/escaping issues.
+    if not FileExists('/usr/bin/osascript') then
+      Exit;
+
     P := TProcess.Create(nil);
+    OutStr := TStringStream.Create('');
+    ErrStr := TStringStream.Create('');
     try
       P.Executable := '/usr/bin/osascript';
       P.Parameters.Add('-e');
-      P.Parameters.Add('display notification ' + ASQuote(Msg) + ' with title ' + ASQuote(Title));
-      P.Options := P.Options + [poNoConsole];
+      P.Parameters.Add('on run argv');
+      P.Parameters.Add('-e');
+      P.Parameters.Add('display notification (item 1 of argv) with title (item 2 of argv)');
+      P.Parameters.Add('-e');
+      P.Parameters.Add('end run');
+
+      // Pass message + title as argv items.
+      P.Parameters.Add(Msg);
+      P.Parameters.Add(Title);
+
+      P.Options := [poUsePipes, poWaitOnExit, poNoConsole];
       P.Execute;
+
+      // Drain pipes (even with poWaitOnExit, data may remain buffered)
+      while P.Output.NumBytesAvailable > 0 do
+      begin
+        n := P.Output.Read(Buf, SizeOf(Buf));
+        if n > 0 then
+          OutStr.WriteBuffer(Buf, n)
+        else
+          Break;
+      end;
+      while P.Stderr.NumBytesAvailable > 0 do
+      begin
+        n := P.Stderr.Read(Buf, SizeOf(Buf));
+        if n > 0 then
+          ErrStr.WriteBuffer(Buf, n)
+        else
+          Break;
+      end;
+
+      ExitCode := P.ExitStatus;
+      if ExitCode <> 0 then
+      begin
+        LogPath := GetTempDir(false) + 'trndi-notification-error.log';
+        SL := TStringList.Create;
+        try
+          SL.Add('osascript notification failed');
+          SL.Add('ExitStatus=' + IntToStr(ExitCode));
+          SL.Add('');
+          if OutStr.DataString <> '' then
+          begin
+            SL.Add('[stdout]');
+            SL.Add(OutStr.DataString);
+            SL.Add('');
+          end;
+          if ErrStr.DataString <> '' then
+          begin
+            SL.Add('[stderr]');
+            SL.Add(ErrStr.DataString);
+          end;
+          SL.SaveToFile(LogPath);
+        finally
+          SL.Free;
+        end;
+      end;
     finally
+      ErrStr.Free;
+      OutStr.Free;
       P.Free;
     end;
   end;
 
-{$elseif DEFINED(X_LINUX) or DEFINED(X_BSD)}
+{$elseif DEFINED(X_LINUXBSD) or DEFINED(BSD)}
 function RunAndCapture(const Exec: string; const Params: array of string;
   out StdoutS, StderrS: string; out ExitCode: integer): boolean;
   var
