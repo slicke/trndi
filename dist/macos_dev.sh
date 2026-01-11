@@ -111,3 +111,5 @@ fi
 
 rm -f rw*Trndi*.dmg
 rm -rf macos
+
+echo "Created: $(pwd)/Trndi.dmg"
