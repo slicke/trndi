@@ -46,6 +46,9 @@ type
   }
   TTrndiNativeMac = class(TTrndiNativeBase)
   public
+    {** Show a visual notification on macOS.
+      Prefer native NSUserNotificationCenter (app-attributed), fall back to base AppleScript impl. }
+    procedure attention(topic, message: string); override;
     {** Speak @param(Text) using the built-in 'say' command.
         Note: This call blocks until speech completes; dispatch from a
         background thread if you need non-blocking UI. }
@@ -95,6 +98,48 @@ implementation
 
 uses
   Process;
+
+{------------------------------------------------------------------------------
+  attention (macOS)
+  -----------------
+  Try to deliver a native notification attributed to the app.
+  Fallback to the base implementation (osascript) if anything fails.
+ ------------------------------------------------------------------------------}
+
+procedure TTrndiNativeMac.attention(topic, message: string);
+var
+  Center: NSUserNotificationCenter;
+  N: NSUserNotification;
+  TitleStr, MsgStr: NSString;
+begin
+  try
+    Center := NSUserNotificationCenter.defaultUserNotificationCenter;
+    if Center <> nil then
+    begin
+      N := NSUserNotification.alloc.init;
+      try
+        TitleStr := NSSTR(topic);
+        MsgStr := NSSTR(message);
+        try
+          N.setTitle(TitleStr);
+          N.setInformativeText(MsgStr);
+        finally
+          TitleStr.Release;
+          MsgStr.Release;
+        end;
+
+        Center.deliverNotification(N);
+        Exit;
+      finally
+        N.Release;
+      end;
+    end;
+  except
+    // Ignore and fall back.
+  end;
+
+  inherited attention(topic, message);
+end;
 {------------------------------------------------------------------------------
   Speak
   -----
@@ -208,9 +253,9 @@ end;
  ------------------------------------------------------------------------------}
 class function TTrndiNativeMac.isNotificationSystemAvailable: boolean;
 begin
-  // Trndi currently sends notifications via /usr/bin/osascript (see base impl).
-  // Prefer reporting availability based on that executable.
-  Result := FileExists('/usr/bin/osascript');
+  // The native notification center is present on macOS.
+  // Note: user-level notification permissions may still block delivery.
+  Result := true;
 end;
 
 {------------------------------------------------------------------------------
@@ -220,8 +265,8 @@ end;
  ------------------------------------------------------------------------------}
 class function TTrndiNativeMac.getNotificationSystem: string;
 begin
-  // NSUserNotification is deprecated; Trndi uses AppleScript via osascript.
-  Result := 'osascript';
+  // Prefer native notifications; fall back to osascript in the base class.
+  Result := 'NSUserNotification';
 end;
 
 
