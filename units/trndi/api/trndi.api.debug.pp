@@ -136,7 +136,11 @@ function getFakeVals(const min: integer; out reading, delta: integer): TDateTime
 var
   i: integer;
   val, diff: integer;
+  rssi, noise: maybeint;
 begin
+  noise.exists := true;
+  rssi.exists := true;
+
   SetLength(Result, 11);
   for i := 0 to 10 do
   begin
@@ -145,7 +149,9 @@ begin
     Result[i].update(val, diff);
     Result[i].trend := CalculateTrendFromDelta(diff);
     Result[i].level := getLevel(Result[i].val);
-    Result[i].updateEnv('Debug');
+    rssi.value := Random(100);
+    noise.value := random(25);
+    Result[i].updateEnv('Debug', rssi, noise);
   end;
 
 end;

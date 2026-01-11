@@ -108,7 +108,9 @@ var
   val, diff: integer;
   dbase: TDateTime;
   hi: boolean;
+  nodata: maybeint;
 begin
+  nodata.exists := false;
   res := '';
   SetLength(Result, 11);
   dbase := IncMinute(now, 5);
@@ -130,7 +132,7 @@ begin
       Result[i].trend := BGTrend.TdDoubleDown;
       Result[i].level := BGLOW;
     end;
-    Result[i].updateEnv('DebugEdge');
+    Result[i].updateEnv('DebugEdge', nodata, nodata);
   end;
 
 end;

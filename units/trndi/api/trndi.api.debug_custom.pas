@@ -92,8 +92,10 @@ function getFakeTime(const min: integer): TDateTime;
   end;
 
 var
+  nodata: maybeint;
   i: integer;
 begin
+  nodata.exists := false;
   SetLength(Result, 11);
   for i := 0 to 10 do
   begin
@@ -102,7 +104,7 @@ begin
     Result[i].update(setval, 0); // Set reading
     Result[i].trend := tdFlat;  // Always flat
     Result[i].level := BGRange;
-    Result[i].updateEnv('Debug');
+    Result[i].updateEnv('Debug', nodata, nodata);
   end;
 
 end;
