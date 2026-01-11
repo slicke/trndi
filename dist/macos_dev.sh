@@ -37,6 +37,13 @@ need_file() {
 need_cmd create-dmg
 need_cmd sips
 need_cmd iconutil
+need_cmd hdiutil
+need_cmd osascript
+
+# Optional: create-dmg often uses SetFile (Xcode Command Line Tools)
+if ! command -v SetFile >/dev/null 2>&1; then
+  echo "WARN: 'SetFile' not found. Install Xcode Command Line Tools: xcode-select --install" >&2
+fi
 
 need_file "${ROOT_DIR}/Trndi.app"
 need_file "${ROOT_DIR}/Trndi"
@@ -147,6 +154,12 @@ set -e
 if [ ${CREATE_DMG_EXIT} -ne 0 ]; then
   echo "ERROR: create-dmg failed (exit ${CREATE_DMG_EXIT})" >&2
   echo "Working dir: $(pwd)" >&2
+  echo "create-dmg: $(command -v create-dmg)" >&2
+  echo "Log file: ${CREATE_DMG_LOG}" >&2
+  echo "Stage dir contents:" >&2
+  ls -la "macos/stage" >&2 || true
+  echo "Stage app contents:" >&2
+  ls -la "macos/stage/Trndi.app" >&2 || true
   echo "---- create-dmg output ----" >&2
   cat "${CREATE_DMG_LOG}" >&2 || true
   echo "--------------------------" >&2
