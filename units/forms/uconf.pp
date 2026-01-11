@@ -37,6 +37,13 @@
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *)
 
+(*
+ * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-01-11: Added settings UI controls for configuring Razer Chroma behavior
+ *   separately for high/low alerts (dropdowns), in addition to the existing enable
+ *   + normal-state options.
+ *)
+
 unit uconf;
 
 {$I ../../inc/native.inc}
@@ -86,6 +93,8 @@ TfConf = class(TForm)
   bvExt: TBevel;
   bvExt1: TBevel;
   cbChromaNormal: TCheckBox;
+  cbChromaHigh: TComboBox;
+  cbChromaLow: TComboBox;
   cbCust: TCheckBox;
   cbCustRange: TCheckBox;
   cbFlashLow: TCheckBox;
@@ -187,6 +196,8 @@ TfConf = class(TForm)
   Label30: TLabel;
   Label31: TLabel;
   Label32: TLabel;
+  lChromaHigh: TLabel;
+  lChromaLow: TLabel;
   lbExtensions: TListBox;
   lCopyright: TLabel;
   lExtCopyright: TLabel;

@@ -449,6 +449,8 @@ private
   procedure HandleHighGlucose(const {%H-}reading: BGReading);
   procedure HandleLowGlucose(const {%H-}reading: BGReading);
   procedure HandleNormalGlucose(const reading: BGReading);
+  procedure ApplyChromaAlertAction(const ActionSettingKey: string;
+    const DefaultAction: string; const AColor: TRGBColor);
   procedure UpdateOffRangePanel(const Value: double);
   procedure DisplayLowRange;
   procedure DisplayHighRange;
@@ -2523,6 +2525,28 @@ procedure LoadUserSettings(f: TfConf);
     posValue: integer;
     po: TrndiPos;
     sizeVal: integer;
+    function DefaultChromaAlertAction: string;
+    begin
+      {$ifdef Windows}
+      Result := 'static';
+      {$else}
+      Result := 'breath';
+      {$endif}
+    end;
+
+    function ChromaActionToIndex(const Action: string): integer;
+    var
+      a: string;
+    begin
+      a := LowerCase(Trim(Action));
+      if a = 'static' then
+        Exit(1);
+      if (a = 'off') or (a = 'none') then
+        Exit(2);
+      if a = 'ignore' then
+        Exit(3);
+      Result := 0; // breath
+    end;
   begin
     with f, native do
     begin
@@ -2601,6 +2625,11 @@ procedure LoadUserSettings(f: TfConf);
 
       cbChroma.Checked := GetBoolSetting('razer.enabled', false);
       cbChromaNormal.Checked := GetBoolSetting('razer.normal', false);
+      // Per-alert behavior (defaults preserve historic behavior)
+      cbChromaHigh.ItemIndex := ChromaActionToIndex(
+        GetSetting('razer.high.action', DefaultChromaAlertAction));
+      cbChromaLow.ItemIndex := ChromaActionToIndex(
+        GetSetting('razer.low.action', DefaultChromaAlertAction));
 
       cbMusicPause.Checked := GetBoolSetting('media.pause');
       fsHi.Enabled := cbCust.Checked;
@@ -2799,6 +2828,19 @@ procedure SaveUserSettings(f: TfConf);
   var
     langCode: string;
     i: integer;
+    function IndexToChromaAction(const Index: integer): string;
+    begin
+      case Index of
+      1:
+        Result := 'static';
+      2:
+        Result := 'off';
+      3:
+        Result := 'ignore';
+      else
+        Result := 'breath';
+      end;
+    end;
   begin
     with f, native do
     begin
@@ -2883,6 +2925,8 @@ procedure SaveUserSettings(f: TfConf);
 
       SetSetting('razer.enabled', cbChroma.Checked);
       SetSetting('razer.normal', cbChromaNormal.Checked);
+      SetSetting('razer.high.action', IndexToChromaAction(cbChromaHigh.ItemIndex));
+      SetSetting('razer.low.action', IndexToChromaAction(cbChromaLow.ItemIndex));
 
       SetSetting('media.pause', cbMusicPause.Checked);
 
@@ -3025,6 +3069,27 @@ begin
   finally
     fConf.Free;
   end;
+end;
+
+procedure TfBG.ApplyChromaAlertAction(const ActionSettingKey: string;
+  const DefaultAction: string; const AColor: TRGBColor);
+var
+  chromaAction: string;
+begin
+  // Caller is responsible for checking Assigned(native/chroma) + enabled + initialized.
+  // This helper only interprets the configured action.
+  chromaAction := LowerCase(Trim(native.GetSetting(ActionSettingKey, DefaultAction)));
+
+  if chromaAction = 'ignore' then
+    Exit;
+
+  if (chromaAction = 'off') or (chromaAction = 'none') then
+    Chroma.SetNoneAll
+  else
+  if chromaAction = 'static' then
+    Chroma.SetStaticAll(AColor)
+  else
+    Chroma.SetBreathDualAll(AColor, clRazerBlack);
 end;
 
 // Swap dots with their readings
@@ -4484,6 +4549,7 @@ procedure TfBG.HandleHighGlucose(const reading: BGReading);
 var
   url: string;
   doFlash: boolean;
+  defaultAction: string;
 begin
   setColorMode(bg_color_hi);
 
@@ -4510,11 +4576,14 @@ begin
 
   if assigned(native) and assigned(chroma) then
     if native.GetBoolSetting('razer.enabled', false) and chroma.Initialized then
-  {$ifdef Windows}
-      Chroma.SetStaticAll(clRazerRed);
+    begin
+      {$ifdef Windows}
+      defaultAction := 'static';
       {$else}
-      Chroma.SetBreathDualAll(clRazerRed, clRazerBlack);
-  {$endif}
+      defaultAction := 'breath';
+      {$endif}
+      ApplyChromaAlertAction('razer.high.action', defaultAction, clRazerRed);
+    end;
 
   doFlash := native.GetBoolSetting('alerts.flash.high', false);
   if (not highAlerted) and doFlash then
@@ -4525,6 +4594,7 @@ procedure TfBG.HandleLowGlucose(const reading: BGReading);
 var
   url: string;
   doFlash: boolean;
+  defaultAction: string;
 begin
   SetColorMode(bg_color_lo);
 
@@ -4554,11 +4624,14 @@ begin
 
   if assigned(native) and assigned(chroma) then
     if native.GetBoolSetting('razer.enabled', false) and chroma.Initialized then
-  {$ifdef Windows}
-      Chroma.SetStaticAll(clRazerBlue);
+    begin
+      {$ifdef Windows}
+      defaultAction := 'static';
       {$else}
-      Chroma.SetBreathDualAll(clRazerBlue, clRazerBlack);
-  {$endif}
+      defaultAction := 'breath';
+      {$endif}
+      ApplyChromaAlertAction('razer.low.action', defaultAction, clRazerBlue);
+    end;
 end;
 
 procedure TfBG.HandleNormalGlucose(const reading: BGReading);

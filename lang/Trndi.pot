@@ -379,6 +379,16 @@ msgstr ""
 msgid "Enable Razer Chroma integration"
 msgstr ""
 
+#: tfconf.cbchromahigh.text
+msgctxt "tfconf.cbchromahigh.text"
+msgid "Breath (pulse)"
+msgstr ""
+
+#: tfconf.cbchromalow.text
+msgctxt "tfconf.cbchromalow.text"
+msgid "Breath (pulse)"
+msgstr ""
+
 #: tfconf.cbchromanormal.caption
 msgid "Make units green when reading is normal"
 msgstr ""
@@ -713,11 +723,11 @@ msgid "Trndi will control these devices:"
 msgstr ""
 
 #: tfconf.label31.caption
-msgid "Units will pule in red on high and blue on low"
+msgid "Units will pulse in red on high and blue on low"
 msgstr ""
 
 #: tfconf.label32.caption
-msgid "NOTE: Razer Synapse required on Windows; OpenRazer on Linux. No macOS support at this time."
+msgid "Razer Synapse required on Windows. OpenRazer on Linux. No support for other platforms at this time."
 msgstr ""
 
 #: tfconf.label4.caption
@@ -754,6 +764,14 @@ msgstr ""
 
 #: tfconf.larch.caption
 msgid "Unknown Architecture"
+msgstr ""
+
+#: tfconf.lchromahigh.caption
+msgid "On high:"
+msgstr ""
+
+#: tfconf.lchromalow.caption
+msgid "On low:"
 msgstr ""
 
 #: tfconf.ldot.caption
