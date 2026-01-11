@@ -438,6 +438,8 @@ var
   guifontName, txtfontName, apiTarget: string;
   fil: boolean;
   userlocale: TFormatSettings;
+  minutesStr: string;
+  minutesVal: integer;
 begin
   firstboot := false;
   
@@ -605,6 +607,15 @@ begin
     PredictShortMode := GetBoolSetting('predictions.short', false);
     PredictShortFullArrows := GetBoolSetting('predictions.short.fullarrows', false);
     PredictShortShowValue := GetBoolSetting('predictions.short.showvalue', false);
+    // Prefer user-scoped minutes only; do not fall back to global
+    minutesStr := '';
+    if not TryGetSetting('predictions.short.minutes', minutesStr) then
+      minutesStr := '';
+    minutesVal := StrToIntDef(minutesStr, 10);
+    if minutesVal in [5, 10, 15] then
+      PredictShortMinutes := minutesVal
+    else
+      PredictShortMinutes := 10;
     // Read short mode size setting (small or big). Sanitize to 'small' otherwise.
     PredictShortSize := native.GetIntSetting('predictions.short.size', 1);
     if PredictShortSize < 1 then

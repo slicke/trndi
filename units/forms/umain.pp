@@ -646,6 +646,7 @@ PredictShortMode: boolean = false;
 PredictShortSize: integer = 1; // 1=small, 2=medium, 3=big
 PredictShortFullArrows: boolean = false; // Use full UTF arrow set in short mode
 PredictShortShowValue: boolean = false; // Show predicted value with clock icon in short mode
+PredictShortMinutes: integer = 10; // Prediction horizon (5, 10, or 15 minutes)
 // Cache for dynamic prediction time updates
 PredictionCache: BGResults; // Cached prediction readings
 PredictionLastReadingTime: TDateTime; // Time of the reading used for predictions
@@ -2491,6 +2492,8 @@ procedure TfBG.miSettingsClick(Sender: TObject);
 var
   fConf: TfConf;
   lastUsers: integer;
+  minutesStr: string;
+  minutesVal: integer;
 
 procedure LoadUserSettings(f: TfConf);
   function APIToName(const str: string): string;
@@ -2533,6 +2536,7 @@ procedure LoadUserSettings(f: TfConf);
     posValue: integer;
     po: TrndiPos;
     sizeVal: integer;
+    minutesVal: integer;
     function DefaultChromaAlertAction: string;
     begin
       {$ifdef Windows}
@@ -2622,6 +2626,16 @@ procedure LoadUserSettings(f: TfConf);
       if sizeVal > 3 then
         sizeVal := 3;
       cbPredictShortSize.ItemIndex := sizeVal - 1;
+
+      minutesVal := native.GetIntSetting('predictions.short.minutes', 10);
+      if not (minutesVal in [5, 10, 15]) then
+        minutesVal := 10;
+      case minutesVal of
+        5: cbPredictShortMinutes.ItemIndex := 0;
+        15: cbPredictShortMinutes.ItemIndex := 2;
+      else
+        cbPredictShortMinutes.ItemIndex := 1;
+      end;
 
       edMusicHigh.Text := GetSetting('media.url_high', '');
       edMusicLow.Text := GetSetting('media.url_low', '');
@@ -2923,6 +2937,12 @@ procedure SaveUserSettings(f: TfConf);
       SetSetting('predictions.short.showvalue', rbPredictShortShowValue.Checked);
       if cbPredictShortSize.ItemIndex >= 0 then
         SetSetting('predictions.short.size', cbPredictShortSize.ItemIndex + 1);
+      case cbPredictShortMinutes.ItemIndex of
+        0: SetSetting('predictions.short.minutes', 5);
+        2: SetSetting('predictions.short.minutes', 15);
+      else
+        SetSetting('predictions.short.minutes', 10);
+      end;
       SetSetting('media.url_high', edMusicHigh.Text);
       SetSetting('media.url_low', edMusicLow.Text);
       SetSetting('media.url_perfect', edMusicPerfect.Text);
@@ -3056,6 +3076,14 @@ begin
     PredictShortMode := native.GetBoolSetting('predictions.short', false);
     PredictShortFullArrows := native.GetBoolSetting('predictions.short.fullarrows', false);
     PredictShortShowValue := native.GetBoolSetting('predictions.short.showvalue', false);
+    minutesStr := '';
+    if not native.TryGetSetting('predictions.short.minutes', minutesStr) then
+      minutesStr := '';
+    minutesVal := StrToIntDef(minutesStr, 10);
+    if minutesVal in [5, 10, 15] then
+      PredictShortMinutes := minutesVal
+    else
+      PredictShortMinutes := 10;
     PredictShortSize := native.GetIntSetting('predictions.short.size', 1);
     if PredictShortSize < 1 then
       PredictShortSize := 1
@@ -3333,9 +3361,9 @@ var
   // For prediction time updates
 procedure UpdatePredictionTimes;
   var
-    i, closest5, closest10, closest15: integer;
-    diff5, diff10, diff15, currentDiff: integer;
-    minutes: integer;
+    i, closest5, closest10, closest15, closestTarget: integer;
+    diff5, diff10, diff15, diffTarget, currentDiff: integer;
+    minutes, targetMinutes: integer;
     delta: single;
     trend: BGTrend;
     pred1, pred2, pred3: string;
@@ -3347,13 +3375,16 @@ procedure UpdatePredictionTimes;
     
     lastReadingValue := lastReading.convert(mgdl);
     
-    // Find predictions closest to 5, 10, and 15 minutes from NOW
+    // Find predictions closest to 5, 10, 15 and the configured short horizon from NOW
     closest5 := -1;
     closest10 := -1;
     closest15 := -1;
+    closestTarget := -1;
     diff5 := MaxInt;
     diff10 := MaxInt;
     diff15 := MaxInt;
+    diffTarget := MaxInt;
+    targetMinutes := PredictShortMinutes;
     
     for i := 0 to High(PredictionCache) do
     begin
@@ -3377,6 +3408,12 @@ procedure UpdatePredictionTimes;
         diff15 := Abs(currentDiff - 15);
         closest15 := i;
       end;
+
+      if (currentDiff >= 0) and (Abs(currentDiff - targetMinutes) < diffTarget) then
+      begin
+        diffTarget := Abs(currentDiff - targetMinutes);
+        closestTarget := i;
+      end;
     end;
     
     // Check if we have at least one valid prediction
@@ -3394,24 +3431,24 @@ procedure UpdatePredictionTimes;
     // Update prediction display with current times
     if PredictShortMode then
     begin
-      // Short mode: show only middle prediction with arrow
-      if closest10 >= 0 then
+      // Short mode: show only configured-horizon prediction with arrow
+      if closestTarget >= 0 then
       begin
-        delta := PredictionCache[closest10].convert(mgdl) - lastReadingValue;
+        delta := PredictionCache[closestTarget].convert(mgdl) - lastReadingValue;
         trend := CalculateTrendFromDelta(delta);
-        minutes := Round(MinutesBetween(PredictionCache[closest10].date, Now));
+        minutes := Round(MinutesBetween(PredictionCache[closestTarget].date, Now));
         
         if PredictShortShowValue then
           if PredictShortFullArrows then
-            lPredict.Caption := Format('⏱%d'' %s %.1f', [minutes, BG_TREND_ARROWS_UTF[trend], PredictionCache[closest10].convert(un)])
+            lPredict.Caption := Format('⏱%d'' %s %.1f', [minutes, BG_TREND_ARROWS_UTF[trend], PredictionCache[closestTarget].convert(un)])
           else
             case trend of
             TdDoubleUp, TdSingleUp, TdFortyFiveUp:
-              lPredict.Caption := Format('⏱%d'' ↗ %.1f', [minutes, PredictionCache[closest10].convert(un)]);
+              lPredict.Caption := Format('⏱%d'' ↗ %.1f', [minutes, PredictionCache[closestTarget].convert(un)]);
             TdFlat:
-              lPredict.Caption := Format('⏱%d'' → %.1f', [minutes, PredictionCache[closest10].convert(un)]);
+              lPredict.Caption := Format('⏱%d'' → %.1f', [minutes, PredictionCache[closestTarget].convert(un)]);
             TdFortyFiveDown, TdSingleDown, TdDoubleDown:
-              lPredict.Caption := Format('⏱%d'' ↘ %.1f', [minutes, PredictionCache[closest10].convert(un)]);
+              lPredict.Caption := Format('⏱%d'' ↘ %.1f', [minutes, PredictionCache[closestTarget].convert(un)]);
             else
               lPredict.Caption := '?';
             end// Show time and value with arrow
@@ -4307,11 +4344,11 @@ var
   pred1, pred2, pred3: string;
   lastReadingTime: TDateTime;
   lastReadingValue: single;
-  i, closest5, closest10, closest15: integer;
-  diff5, diff10, diff15, currentDiff: integer;
+  i, closest5, closest10, closest15, closestTarget: integer;
+  diff5, diff10, diff15, diffTarget, currentDiff: integer;
   delta: single;
   trend: BGTrend;
-  minutes: integer;
+  minutes, targetMinutes: integer;
   validCount: integer;
 begin
   // Safety check - api might not be initialized yet
@@ -4344,14 +4381,17 @@ begin
   PredictionCache := bgr;
   PredictionLastReadingTime := lastReadingTime;
 
-  // Find predictions closest to 5, 10, and 15 minutes
+  // Find predictions closest to 5, 10, 15 and the configured short horizon
   // Ensure we pick different predictions for each slot
   closest5 := -1;
   closest10 := -1;
   closest15 := -1;
+  closestTarget := -1;
   diff5 := MaxInt;
   diff10 := MaxInt;
   diff15 := MaxInt;
+  diffTarget := MaxInt;
+  targetMinutes := PredictShortMinutes;
 
   for i := 0 to High(bgr) do
   begin
@@ -4381,6 +4421,13 @@ begin
       diff15 := Abs(currentDiff - 15);
       closest15 := i;
     end;
+
+    // Track closest to configured short horizon
+    if Abs(currentDiff - targetMinutes) < diffTarget then
+    begin
+      diffTarget := Abs(currentDiff - targetMinutes);
+      closestTarget := i;
+    end;
   end;
 
   // Check if we have at least one valid prediction
@@ -4401,28 +4448,28 @@ begin
   // Format predictions with clock emoji, trend arrows, and values
   if PredictShortMode then
   begin
-    // Short mode: show only middle prediction with arrow
-    if closest10 >= 0 then
+    // Short mode: show only configured-horizon prediction with arrow
+    if closestTarget >= 0 then
     begin
-      delta := bgr[closest10].convert(mgdl) - lastReadingValue;
+      delta := bgr[closestTarget].convert(mgdl) - lastReadingValue;
       trend := CalculateTrendFromDelta(delta);
-      minutes := Round(MinutesBetween(bgr[closest10].date, lastReadingTime));
+      minutes := Round(MinutesBetween(bgr[closestTarget].date, lastReadingTime));
       
       if PredictShortShowValue then
       begin
         // Show time and value with arrow
         if PredictShortFullArrows then
-          lPredict.Caption := Format('⏱%d'' %s %.1f', [minutes, BG_TREND_ARROWS_UTF[trend], bgr[closest10].convert(un)])
+          lPredict.Caption := Format('⏱%d'' %s %.1f', [minutes, BG_TREND_ARROWS_UTF[trend], bgr[closestTarget].convert(un)])
         else
         begin
           // Use simplified arrows with value
           case trend of
           TdDoubleUp, TdSingleUp, TdFortyFiveUp:
-            lPredict.Caption := Format('⏱%d'' ↗ %.1f', [minutes, bgr[closest10].convert(un)]);
+            lPredict.Caption := Format('⏱%d'' ↗ %.1f', [minutes, bgr[closestTarget].convert(un)]);
           TdFlat:
-            lPredict.Caption := Format('⏱%d'' → %.1f', [minutes, bgr[closest10].convert(un)]);
+            lPredict.Caption := Format('⏱%d'' → %.1f', [minutes, bgr[closestTarget].convert(un)]);
           TdFortyFiveDown, TdSingleDown, TdDoubleDown:
-            lPredict.Caption := Format('⏱%d'' ↘ %.1f', [minutes, bgr[closest10].convert(un)]);
+            lPredict.Caption := Format('⏱%d'' ↘ %.1f', [minutes, bgr[closestTarget].convert(un)]);
           else
             lPredict.Caption := '?';
           end;

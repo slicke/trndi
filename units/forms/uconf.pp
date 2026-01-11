@@ -106,6 +106,7 @@ TfConf = class(TForm)
   cbPredictions: TCheckBox;
   cbPredictShort: TCheckBox;
   cbPredictShortFullArrows: TCheckBox;
+  cbPredictShortMinutes: TComboBox;
   cbPredictShortSize: TComboBox;
   cbPrivacy: TCheckBox;
   rbPredictShortArrowOnly: TRadioButton;
@@ -207,6 +208,7 @@ TfConf = class(TForm)
   lbChroma: TListBox;
   lHiOver2: TLabel;
   lOS: TLabel;
+  lPredictShortMinutes: TLabel;
   lPredictShortSize: TLabel;
   lProblematic: TLabel;
   lTestAnnounce: TLabel;
@@ -331,6 +333,7 @@ TfConf = class(TForm)
   procedure cbPredictionsChange(Sender: TObject);
   procedure cbPredictShortChange(Sender: TObject);
   procedure cbPredictShortFullArrowsChange(Sender: TObject);
+  procedure cbPredictShortMinutesChange(Sender: TObject);
   procedure cbPredictShortSizeChange(Sender: TObject);
   procedure cbSysChange(Sender: TObject);
   procedure cbUserClick(Sender: TObject);
@@ -1549,6 +1552,7 @@ begin
 
   cbPredictShort.Enabled := cbPredictions.Checked;
   cbPredictShortFullArrows.Enabled := cbPredictShort.Enabled;
+  cbPredictShortMinutes.Enabled := cbPredictShort.Enabled;
 
 end;
 
@@ -1557,12 +1561,25 @@ begin
   cbPredictShortFullArrows.Enabled := cbPredictShort.Checked;
   rbPredictShortShowValue.Enabled := cbPredictShort.Checked;
   rbPredictShortArrowOnly.Enabled := cbPredictShort.Checked;
+  cbPredictShortMinutes.Enabled := cbPredictShort.Checked;
 end;
 
 procedure TfConf.cbPredictShortFullArrowsChange(Sender: TObject);
 begin
   if cbPredictShortFullArrows.Checked and (self.Showing) then
     ShowMessage(RS_SHORTMODE_FULL);
+end;
+
+procedure TfConf.cbPredictShortMinutesChange(Sender: TObject);
+begin
+  // Persist short prediction horizon immediately so the main UI can reload it
+  if cbPredictShortMinutes.ItemIndex >= 0 then
+    case cbPredictShortMinutes.ItemIndex of
+      0: tNative.SetSetting('predictions.short.minutes', '5');
+      2: tNative.SetSetting('predictions.short.minutes', '15');
+    else
+      tNative.SetSetting('predictions.short.minutes', '10');
+    end;
 end;
 
 procedure TfConf.cbPredictShortSizeChange(Sender: TObject);
