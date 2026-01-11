@@ -81,7 +81,10 @@ function DebugPerfectAPI.getReadings(min, maxNum: integer; extras: string;
 
 var
   i: integer;
+  noise, rssi: maybeint;
 begin
+  noise.exists := true;
+  rssi.exists := true;
   SetLength(Result, 11);
   for i := 0 to 10 do
   begin
@@ -90,7 +93,9 @@ begin
     Result[i].update(99, 0); // Set reading
     Result[i].trend := tdFlat;  // Always flat
     Result[i].level := BGRange;
-    Result[i].updateEnv('Debug');
+    rssi.value := Random(100);
+    noise.value := random(25);
+    Result[i].updateEnv('Debug', rssi, noise);
   end;
 
 end;
