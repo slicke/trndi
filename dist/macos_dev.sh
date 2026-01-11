@@ -2,15 +2,45 @@
 
 set -e
 
+# If invoked with sh/bash (ignoring the shebang), re-exec under zsh so we can
+# rely on consistent behavior.
+if [ -z "${ZSH_VERSION:-}" ]; then
+  exec /bin/zsh "$0" "$@"
+fi
+
+set -u
+set -o pipefail
+
 VERSION="${VERSION:-1.0.0}"
 
 # Developer-friendly wrapper of macos.sh:
 # - Can be invoked from any working directory
 # - Avoids create-dmg --out (some create-dmg variants interpret it as an output dir)
 
-SCRIPT_DIR="${0:A:h}"
-ROOT_DIR="${SCRIPT_DIR}/.."
+SCRIPT_DIR="$(cd -- "$(dirname -- "$0")" && pwd)"
+ROOT_DIR="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
 cd "${SCRIPT_DIR}"
+
+die() {
+  echo "ERROR: $*" >&2
+  exit 1
+}
+
+need_cmd() {
+  command -v "$1" >/dev/null 2>&1 || die "Missing required command: $1"
+}
+
+need_file() {
+  [ -e "$1" ] || die "Missing required file: $1"
+}
+
+need_cmd create-dmg
+need_cmd sips
+need_cmd iconutil
+
+need_file "${ROOT_DIR}/Trndi.app"
+need_file "${ROOT_DIR}/Trndi"
+need_file "${ROOT_DIR}/Trndi.png"
 
 rm -rf macos
 mkdir macos
@@ -106,6 +136,11 @@ create-dmg "Trndi.dmg" "macos/stage" --volname "Trndi" --format UDZO --icon-size
 
 if [ ! -f "Trndi.dmg" ]; then
   echo "ERROR: Trndi.dmg was not created (create-dmg failed)" >&2
+  echo "Working dir: $(pwd)" >&2
+  echo "DMG candidates in $(pwd):" >&2
+  ls -la ./*.dmg 2>/dev/null || true
+  echo "DMG candidates under $(pwd) (maxdepth 3):" >&2
+  find "$(pwd)" -maxdepth 3 -name "*.dmg" -print 2>/dev/null || true
   exit 1
 fi
 
