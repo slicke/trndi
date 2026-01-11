@@ -660,12 +660,12 @@ var
 begin
   // Build the RSSI and noise fields for the popup; these use the same
   // getters and formatting as the main UI for consistency.
-  if Reading.getRSSI(xval) then
+  if Reading.TryGetRSSI(xval) then
     rssi := xval.ToString
   else
     rssi := RS_RH_UNKNOWN;
 
-  if Reading.getNoise(xval) then
+  if Reading.TryGetNoise(xval) then
     noise := xval.ToString
   else
     noise := RS_RH_UNKNOWN;

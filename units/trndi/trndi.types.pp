@@ -173,12 +173,12 @@ public
     {** Get RSSI value if present.
         @param(outval Receives RSSI)
         @returns True if RSSI is defined (>=0) }
-  function getRSSI(out outval: integer): boolean;
+  function TryGetRSSI(out outval: integer): boolean;
 
     {** Get noise value if present.
         @param(outval Receives noise)
         @returns True if noise is defined (>=0) }
-  function getNoise(out outval: integer): boolean;
+  function TryGetNoise(out outval: integer): boolean;
 end;
 
   {** Dynamic array of readings (timeline or batch). }
@@ -195,13 +195,13 @@ end;
 
 implementation
 
-function BGReading.getRSSI(out outval: integer): boolean;
+function BGReading.TryGetRSSI(out outval: integer): boolean;
 begin
   outval := self.rssi;
   Result := Self.rssi > -1;
 end;
 
-function BGReading.getNoise(out outval: integer): boolean;
+function BGReading.TryGetNoise(out outval: integer): boolean;
 begin
   outval := self.noise;
   Result := Self.noise > -1;
