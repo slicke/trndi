@@ -144,17 +144,64 @@ rm -f Trndi.dmg
 MARKER_FILE="$(mktemp -t trndi_dmg_marker.XXXXXX)"
 touch "${MARKER_FILE}"
 CREATE_DMG_LOG="macos/create-dmg.log"
+CREATE_DMG_HELP_LOG="macos/create-dmg.help.log"
 rm -f "${CREATE_DMG_LOG}"
 
-set +e
-create-dmg "Trndi.dmg" "macos/stage" --volname "Trndi" --format UDZO --icon-size 128 --icon "Trndi.app" 150 200 --app-drop-link 250 200 >"${CREATE_DMG_LOG}" 2>&1
-CREATE_DMG_EXIT=$?
-set -e
+# Capture help text for variant detection / debugging.
+{
+  create-dmg --help
+} >"${CREATE_DMG_HELP_LOG}" 2>&1 || {
+  {
+    create-dmg -h
+  } >"${CREATE_DMG_HELP_LOG}" 2>&1 || true
+}
+
+run_create_dmg_attempt() {
+  local attempt_name="$1"
+  shift
+
+  echo "Attempt: ${attempt_name}" >"${CREATE_DMG_LOG}"
+  echo "Working dir: $(pwd)" >>"${CREATE_DMG_LOG}"
+  echo "Command: $*" >>"${CREATE_DMG_LOG}"
+  echo "---" >>"${CREATE_DMG_LOG}"
+
+  set +e
+  "$@" >>"${CREATE_DMG_LOG}" 2>&1
+  local exit_code=$?
+  set -e
+
+  return ${exit_code}
+}
+
+
+# Try to accommodate different create-dmg variants.
+CREATE_DMG_EXIT=0
+if grep -q -- "--out" "${CREATE_DMG_HELP_LOG}" 2>/dev/null; then
+  # Matches CI script style.
+  run_create_dmg_attempt "with --out (CI style)" \
+    create-dmg Trndi.dmg "macos/stage" --volname "Trndi" --format UDZO --icon-size 128 --icon "Trndi.app" 150 200 --app-drop-link 250 200 --out "Trndi.dmg" || CREATE_DMG_EXIT=$?
+else
+  # Common upstream style.
+  run_create_dmg_attempt "without --out" \
+    create-dmg "Trndi.dmg" "macos/stage" --volname "Trndi" --format UDZO --icon-size 128 --icon "Trndi.app" 150 200 --app-drop-link 250 200 || CREATE_DMG_EXIT=$?
+fi
+
+# If the first attempt failed, try the other style as a fallback.
+if [ ${CREATE_DMG_EXIT} -ne 0 ]; then
+  if grep -q -- "--out" "${CREATE_DMG_HELP_LOG}" 2>/dev/null; then
+    run_create_dmg_attempt "without --out (fallback)" \
+      create-dmg "Trndi.dmg" "macos/stage" --volname "Trndi" --format UDZO --icon-size 128 --icon "Trndi.app" 150 200 --app-drop-link 250 200 || CREATE_DMG_EXIT=$?
+  else
+    run_create_dmg_attempt "with --out (fallback)" \
+      create-dmg Trndi.dmg "macos/stage" --volname "Trndi" --format UDZO --icon-size 128 --icon "Trndi.app" 150 200 --app-drop-link 250 200 --out "Trndi.dmg" || CREATE_DMG_EXIT=$?
+  fi
+fi
 
 if [ ${CREATE_DMG_EXIT} -ne 0 ]; then
   echo "ERROR: create-dmg failed (exit ${CREATE_DMG_EXIT})" >&2
   echo "Working dir: $(pwd)" >&2
   echo "create-dmg: $(command -v create-dmg)" >&2
+  echo "Help log: ${CREATE_DMG_HELP_LOG}" >&2
   echo "Log file: ${CREATE_DMG_LOG}" >&2
   echo "Stage dir contents:" >&2
   ls -la "macos/stage" >&2 || true
