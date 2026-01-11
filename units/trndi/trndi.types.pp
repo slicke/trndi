@@ -51,6 +51,12 @@ type
   {** Selects which BG value is referenced: the primary reading or its delta. }
 BGValType = (BGPrimary, BGDelta);
 
+  {** Unit that can exist or not}
+MaybeInt = record
+  value: integer;  //< The value
+  exists: boolean; //< If it exists
+end;
+
   {** A single blood glucose (BG) reading with metadata and helpers.
       Stores the current value, change (delta), units, level classification,
       and environment details such as device, signal, and noise. Provides
@@ -69,9 +75,9 @@ private
   retu: BGUnit;         //< Preferred output unit for property-based access
   lvl: BGValLevel;      //< Classification limits as provided by the API
   src: shortstring;     //< Source/API identifier that reported this value
-  rssi: integer;        //< Received Signal Strength Indicator (-1 if unknown)
+  rssi: MaybeInt;        //< Received Signal Strength Indicator
   device: shortstring;  //< Device name/identifier (may be empty)
-  noise: integer;       //< Noise indicator (-1 if unknown)
+  noise: MaybeInt;       //< Noise indicator
 
   function getCurr: double;
   function getChange: double;
@@ -117,10 +123,9 @@ public
 
     {** Populate environment metadata (device, rssi, noise).
         @param(valdevice Device name)
-        @param(valrssi   Signal indicator; -1 if unknown)
+        @param(valrssi   Signal indicator)
         @param(valnoise  Noise indicator; -1 if unknown) }
-  procedure updateEnv(valdevice: shortstring; valrssi: integer = -1;
-    valnoise: integer = -1);// NS specific stuff
+  procedure updateEnv(valdevice: shortstring; valrssi, valnoise: MaybeInt);// NS specific stuff
 
     {** Clear the numeric values (sets to @code(BG_NO_VAL)). }
   procedure Clear;
@@ -197,14 +202,16 @@ implementation
 
 function BGReading.TryGetRSSI(out outval: integer): boolean;
 begin
-  outval := self.rssi;
-  Result := Self.rssi > -1;
+ result := self.rssi.exists;
+ if result then
+   outval := self.rssi.value;
 end;
 
 function BGReading.TryGetNoise(out outval: integer): boolean;
 begin
-  outval := self.noise;
-  Result := Self.noise > -1;
+  result := self.noise.exists;
+  if result then
+    outval := self.noise.value;
 end;
 
 function BGReading.getDevice: string;
@@ -369,8 +376,7 @@ begin
   end;
 end;
 
-procedure BGReading.updateEnv(valdevice: shortstring; valrssi: integer = -1;
-valnoise: integer = -1);
+procedure BGReading.updateEnv(valdevice: shortstring; valrssi, valnoise: MaybeInt);
 begin
   self.rssi := valrssi;
   self.Noise := valnoise;

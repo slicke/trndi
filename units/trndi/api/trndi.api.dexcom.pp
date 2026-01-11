@@ -454,7 +454,10 @@ var
   LData: TJSONData;
   i, LTrendCode: integer;
   LTrendEnum: BGTrend;
+  noval: MaybeInt;
 begin
+  // Initialize the noval
+  noval.exists := false;
   // Guard input ranges based on common Share limits
   if (AMinutes < 1) or (AMinutes > 1440) then
     raise Exception.Create('GetReadings error: AMinutes out of valid range (1..1440)');
@@ -489,7 +492,7 @@ begin
     // Initialize reading (mg/dL units)
     Result[i].Init(mgdl);
     // Mark source for downstream consumers/debugging
-    Result[i].updateEnv('Dexcom');
+    Result[i].updateEnv('Dexcom', noval, noval);
 
     // Compute BG value and optional delta
     if (FCalcDiff) and (i > 0) then
