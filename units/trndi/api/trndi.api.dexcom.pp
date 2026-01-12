@@ -198,7 +198,7 @@ end;
    ******************************************************************************)
 DexcomUSA = class(Dexcom)
 protected
-  function getSystemName: string;
+  function getSystemName: string; reintroduce; override;
 public
   constructor Create(const AUser, APass: string); reintroduce; overload;
   constructor Create(const AUser, APass: string; ACalcDiff: boolean); reintroduce; overload;
@@ -206,7 +206,7 @@ end;
 
 DexcomWorld = class(Dexcom)
 protected
-  function getSystemName: string;
+  function getSystemName: string; reintroduce; override;
 public
   constructor Create(const AUser, APass: string); reintroduce; overload;
   constructor Create(const AUser, APass: string; ACalcDiff: boolean); reintroduce; overload;
@@ -573,7 +573,7 @@ begin
   for i := 0 to LData.Count - 1 do
   try
     // Initialize reading (mg/dL units)
-    Result[i].Init(mgdl);
+    Result[i].Init(mgdl, self.systemName);
     // Mark source for downstream consumers/debugging
     Result[i].updateEnv('Dexcom', noval, noval);
 

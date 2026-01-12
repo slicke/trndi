@@ -98,7 +98,7 @@ begin
   SetLength(Result, 11);
   for i := 0 to 10 do
   begin
-    Result[i].Init(mgdl);
+    Result[i].Init(mgdl, self.systemName);
     Result[i].date := getFakeTime(i * 5); // Get the time
     Result[i].update(99, 0); // Set reading
     Result[i].trend := tdFlat;  // Always flat

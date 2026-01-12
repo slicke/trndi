@@ -689,7 +689,7 @@ begin
       predictedValue := 600;
     
     // Create predicted reading
-    predictions[i].Init(BGUnit.mgdl, BGUnit.mgdl);
+    predictions[i].Init(BGUnit.mgdl, BGUnit.mgdl, 'PredictionAPI');
     predictions[i].update(predictedValue, BGPrimary, BGUnit.mgdl);
     predictions[i].date := predictedTime;
     predictions[i].trend := TdNotComputable;

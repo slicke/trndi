@@ -500,7 +500,7 @@ begin
     begin
       dev := FindPath('device').AsString;
 
-      Result[i].Init(mgdl, Self.ToString);
+      Result[i].Init(mgdl, Self.SystemName);
 
       // Get current SGV value
       currentSgv := FindPath('sgv').AsInteger;

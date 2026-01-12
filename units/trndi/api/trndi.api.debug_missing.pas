@@ -112,7 +112,7 @@ begin
   SetLength(Result, 11);
   for i := 0 to 10 do
   begin
-    Result[i].Init(mgdl);
+    Result[i].Init(mgdl, self.systemName);
     Result[i].date := getFakeVals(i * 5, val, diff);
     Result[i].update(val, diff);
     Result[i].trend := CalculateTrendFromDelta(diff);

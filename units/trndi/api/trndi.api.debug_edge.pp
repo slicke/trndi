@@ -130,7 +130,7 @@ begin
   begin
     hi := MinuteOf(dbase) mod 2 = 0;
     dbase := IncMinute(dbase, -5);
-    Result[i].Init(mgdl);
+    Result[i].Init(mgdl, self.systemName);
     Result[i].date := dbase;
     if hi then
     begin

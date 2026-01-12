@@ -1994,6 +1994,8 @@ begin
 
   displayMsg += sHTMLLineBreak + Format(sDevice, [lastReading.sensor]);
 
+  displayMsg += sHTMLLineBreak + Format(sAPI, [api.systemName]);
+
   ExtHTML(uxdAuto, sTransmitterInfo, displayMsg, [mbOK], uxmtInformation);
 
 end;
