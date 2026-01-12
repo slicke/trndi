@@ -5130,6 +5130,8 @@ var
   found: boolean;
   reading: BGReading;
   l: TDotControl;
+  const
+    TIME_EPSILON_DAYS = 10 / 86400; // 10 seconds
 begin
   if Length(SortedReadings) = 0 then
     Exit;
@@ -5175,9 +5177,13 @@ begin
     begin
       reading := SortedReadings[i];
 
+      // Skip placeholder/unset readings so they create visible gaps.
+      if reading.empty then
+        Continue;
+
       // For slot 0, be more lenient with the upper bound to catch the anchor reading
       // Use a 10 second epsilon to handle timing variations
-      if reading.date > slotEnd + (10 / 86400) then
+      if reading.date > slotEnd + TIME_EPSILON_DAYS then
       begin
         LogMessage(Format('  Reading at %s is too new (>%.3f sec after slot end), skipping', 
           [DateTimeToStr(reading.date), (reading.date - slotEnd) * 86400]));
@@ -5186,21 +5192,18 @@ begin
 
       // Check if reading falls within this interval BEFORE checking if it's too old
       // This ensures boundary readings (exactly at slotStart) get matched
-      if (reading.date >= slotStart - (10 / 86400)) and (reading.date <= slotEnd + (10 / 86400)) then
+      // Use a half-open interval (slotStart, slotEnd] so boundary readings
+      // (exactly on slotStart) fall into the *older* slot. This prevents a
+      // reading at e.g. 20:05 from filling the 20:10 slot and hiding a gap.
+      if (reading.date > slotStart) and (reading.date <= slotEnd + TIME_EPSILON_DAYS) then
       begin
         LogMessage(Format('  Found match at %s (value: %.1f, diff from slotEnd: %.1f sec)', 
           [DateTimeToStr(reading.date), reading.val, (slotEnd - reading.date) * 86400]));
         found := UpdateLabelForReading(slotIndex, reading);
         if found then
         begin
-          // Only advance searchStart if this reading is NOT on a slot boundary
-          // Boundary readings (at slotStart) should be available for the next slot too
-          if Abs(reading.date - slotStart) > (10 / 86400) then
-            searchStart := i + 1
-          else
-            LogMessage(Format('  Reading at boundary (%.2f sec from slotStart), not advancing searchStart',
-              [(reading.date - slotStart) * 86400]))// Reading is at the boundary - next slot should also check it
-          ;
+          // We've consumed this reading; later slots only consider older readings.
+          searchStart := i + 1;
           Break; // Move to next interval
         end;
         // If user selected largest size, make the font bold for better visibility

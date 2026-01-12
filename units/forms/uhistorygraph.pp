@@ -504,6 +504,7 @@ end;
 procedure TfHistoryGraph.DrawPolyline(ACanvas: TCanvas; const PlotRect: TRect);
 var
   i: integer;
+  gapMinutes: integer;
 begin
   if Length(FPoints) < 2 then
     Exit;
@@ -513,8 +514,18 @@ begin
   ACanvas.MoveTo(TimeToX(FPoints[0].Reading.date, PlotRect),
     ValueToY(FPoints[0].Value, PlotRect));
   for i := 1 to High(FPoints) do
-    ACanvas.LineTo(TimeToX(FPoints[i].Reading.date, PlotRect),
-      ValueToY(FPoints[i].Value, PlotRect));
+  begin
+    gapMinutes := MinutesBetween(FPoints[i].Reading.date, FPoints[i - 1].Reading.date);
+
+    // If the time gap is large, don't connect points with a line.
+    // This makes missing samples appear as a visual break.
+    if gapMinutes >= (INTERVAL_MINUTES * 2) then
+      ACanvas.MoveTo(TimeToX(FPoints[i].Reading.date, PlotRect),
+        ValueToY(FPoints[i].Value, PlotRect))
+    else
+      ACanvas.LineTo(TimeToX(FPoints[i].Reading.date, PlotRect),
+        ValueToY(FPoints[i].Value, PlotRect));
+  end;
 end;
 
 function TfHistoryGraph.GetPlotRect: TRect;
