@@ -56,7 +56,7 @@ public
   setval: integer;
   function getReadings({%H-}min, {%H-}maxNum: integer; {%H-}extras: string;
     out res: string): BGResults; override;
-  constructor Create(user, pass, extra: string); override;
+  constructor Create(user, pass: string); override;
 end;
 
 implementation
@@ -66,7 +66,7 @@ begin
   result := 'Debug Custom API';
 end;
 
-constructor DebugCustomAPI.Create(user, pass, extra: string);
+constructor DebugCustomAPI.Create(user, pass: string);
 begin
   ua := 'Mozilla/5.0 (compatible; trndi) TrndiAPI';
   baseUrl := user;

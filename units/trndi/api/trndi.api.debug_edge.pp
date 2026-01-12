@@ -52,7 +52,7 @@ type
 DebugEdgeAPI = class(TrndiAPI)
 protected
 public
-  constructor Create(user, pass, extra: string); override;
+  constructor Create(user, pass: string); override;
   function connect: boolean; override;
   function getReadings(min, maxNum: integer; extras: string; out res: string): BGResults;
     override;
@@ -88,7 +88,7 @@ end;
 {------------------------------------------------------------------------------
   Constructor
 ------------------------------------------------------------------------------}
-constructor DebugEdgeAPI.Create(user, pass, extra: string);
+constructor DebugEdgeAPI.Create(user, pass: string);
 begin
   ua := 'Mozilla/5.0 (compatible; trndi) TrndiAPI';
   baseUrl := user;
