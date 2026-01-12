@@ -37,7 +37,7 @@
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *)
 
-unit trndi.api.debug_firstmissing;
+unit trndi.api.debug_secondmissing;
 
 {$mode ObjFPC}{$H+}
 
@@ -49,7 +49,7 @@ fpjson, jsonparser, dateutils, trndi.api.debug;
 
 type
   // Main class
-DebugFirstMissingAPI = class(DebugAPI)
+DebugSecondMissingAPI = class(DebugAPI)
 protected
   function getSystemName: string; override;
 public
@@ -64,23 +64,22 @@ implementation
   --------------------
   Returns the name of this API
  ------------------------------------------------------------------------------}
-function DebugFirstMissingAPI.getSystemName: string;
+function DebugSecondMissingAPI.getSystemName: string;
 begin
-  result := 'Debug First Missing API';
+  result := 'Debug Second Missing API';
 end;
 
 {------------------------------------------------------------------------------
   Generate fake readings over the last 50 minutes at 5-minute intervals,
   with the first reading missing
 ------------------------------------------------------------------------------}
-function DebugFirstMissingAPI.getReadings(min, maxNum: integer; extras: string;
+function DebugSecondMissingAPI.getReadings(min, maxNum: integer; extras: string;
 out res: string): BGResults;
 var
   i: integer;
 begin
   result := inherited getReadings(min, maxNum, extras, res);
-  for  i := Low(result) to High(result) do
-    result[i].date := result[i].date - EncodeTime(0, 10, 0, 0);
+  result[1].init(mmol, 'No reading');
 end;
 
 end.

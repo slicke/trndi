@@ -44,18 +44,18 @@ unit trndi.api.debug_perfect; // 5.5 mmol/L
 interface
 
 uses
-  Classes, SysUtils, Dialogs, trndi.types,
-  trndi.api.debug, fpjson, jsonparser, dateutils;
+Classes, SysUtils, Dialogs, trndi.types,
+trndi.api.debug, fpjson, jsonparser, dateutils;
 
 type
   // Main class
-  DebugPerfectAPI = class(DebugAPI)
-  protected
-    function getSystemName: string;
-  public
-    function getReadings({%H-}min, {%H-}maxNum: integer; {%H-}extras: string;
-      out res: string): BGResults; override;
-  end;
+DebugPerfectAPI = class(DebugAPI)
+protected
+  function getSystemName: string;
+public
+  function getReadings({%H-}min, {%H-}maxNum: integer; {%H-}extras: string;
+    out res: string): BGResults; override;
+end;
 
 implementation
 
@@ -70,9 +70,9 @@ begin
 end;
 
 function DebugPerfectAPI.getReadings(min, maxNum: integer; extras: string;
-  out res: string): BGResults;
+out res: string): BGResults;
 
-  function getFakeTime(const min: integer): TDateTime;
+function getFakeTime(const min: integer): TDateTime;
   var
     currentTime: TDateTime;
     baseTime: TDateTime;
