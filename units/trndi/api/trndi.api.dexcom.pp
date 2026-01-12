@@ -94,13 +94,18 @@ DEXCOM_BASE_HOSTS: array[false..true] of string =
 
 type
   (*******************************************************************************
-    Dexcom class
+    Dexcom class (abstract base)
 
     Inherits from @code(TrndiAPI) and implements connectivity and reading
     retrieval for Dexcom Share. Responsible for session handling, time-sync,
     and mapping Share responses into @code(BGResults).
+
+    Concrete region-specific subclasses:
+    - @code(DexcomUSA)    -> US Share endpoints
+    - @code(DexcomWorld)  -> Worldwide Share endpoints
+    - @code(DexcomCustom) -> Explicit URL/region overrides (tests)
    ******************************************************************************)
-Dexcom = class(TrndiAPI)
+Dexcom = class abstract(TrndiAPI)
 private
   FBaseHost: string;   /// The chosen Dexcom host (USA or Worldwide)
   FUserName: string;   /// Dexcom Share account username
@@ -188,6 +193,27 @@ protected
   function getSystemName: string; override;
 end;
 
+  (*******************************************************************************
+    Region-specific concrete Dexcom implementations
+   ******************************************************************************)
+DexcomUSA = class(Dexcom)
+protected
+  function getSystemName: string;
+public
+  constructor Create(const AUser, APass: string); reintroduce; overload;
+  constructor Create(const AUser, APass: string; ACalcDiff: boolean); reintroduce; overload;
+end;
+
+DexcomWorld = class(Dexcom)
+protected
+  function getSystemName: string;
+public
+  constructor Create(const AUser, APass: string); reintroduce; overload;
+  constructor Create(const AUser, APass: string; ACalcDiff: boolean); reintroduce; overload;
+end;
+
+DexcomCustom = class(Dexcom);
+
 implementation
 
 resourcestring
@@ -206,6 +232,26 @@ sParamRegion = 'Region ("usa" or empty)';
 function Dexcom.getSystemName: string;
 begin
   result := 'Dexcom';
+end;
+
+{------------------------------------------------------------------------------
+  getSystemName
+  --------------------
+  Returns the name of this API
+ ------------------------------------------------------------------------------}
+function DexcomUSA.getSystemName: string;
+begin
+  result := 'Dexcom (USA)';
+end;
+
+{------------------------------------------------------------------------------
+  getSystemName
+  --------------------
+  Returns the name of this API
+ ------------------------------------------------------------------------------}
+function DexcomWorld.getSystemName: string;
+begin
+  result := 'Dexcom (Outide USA)';
 end;
 
 {------------------------------------------------------------------------------
@@ -251,6 +297,29 @@ begin
 
   // Parent ctor sets timezone, allocates native helper, and initializes thresholds
   inherited Create(user, pass, extra);
+end;
+
+{------------------------------------------------------------------------------
+  Concrete constructors for region-specific subclasses
+------------------------------------------------------------------------------}
+constructor DexcomUSA.Create(const AUser, APass: string);
+begin
+  inherited Create(AUser, APass, 'usa');
+end;
+
+constructor DexcomUSA.Create(const AUser, APass: string; ACalcDiff: boolean);
+begin
+  inherited Create(AUser, APass, 'usa', ACalcDiff);
+end;
+
+constructor DexcomWorld.Create(const AUser, APass: string);
+begin
+  inherited Create(AUser, APass, 'world');
+end;
+
+constructor DexcomWorld.Create(const AUser, APass: string; ACalcDiff: boolean);
+begin
+  inherited Create(AUser, APass, 'world', ACalcDiff);
 end;
 
 {------------------------------------------------------------------------------

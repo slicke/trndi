@@ -152,7 +152,7 @@ var
   api: TrndiAPI;
 begin
   // Can create
-  api := Dexcom.create('test','test','usa');
+  api := DexcomUSA.Create('test', 'test');
   // Test if the connect function runs
   AssertFalse('API Connect Fail', api.connect);
   asserttrue('Time correct', api.getBasetime > IncHour(DateTimeToUnix(now), -2));
@@ -181,7 +181,7 @@ begin
 
     try
       // Use the new "full URL" override for Dexcom baseUrl.
-      api := Dexcom.create('anyuser', 'anypass', 'http://localhost:8080/ShareWebServices/Services');
+      api := DexcomCustom.Create('anyuser', 'anypass', 'http://localhost:8080/ShareWebServices/Services');
       try
         AssertTrue('Dexcom connects to local fake server', api.connect);
         readings := api.getReadings(30, 3, '', res);
