@@ -526,21 +526,25 @@ begin
       // Receiver environment details (optional fields in Nightscout).
       rssiField := FindPath('rssi');
       noiseField := FindPath('noise');
-      if Assigned(rssiField) then begin
+      if Assigned(rssiField) then
+      begin
         rssiValue.value := rssiField.AsInteger;
         rssivalue.exists := rssiValue.value <> -1;
       end
-      else begin
+      else
+      begin
         rssiValue.value := 0;
         rssivalue.exists := true;
       end;
 
 
-      if Assigned(noiseField) then begin
+      if Assigned(noiseField) then
+      begin
         noiseValue.value := noiseField.AsInteger;
         noiseValue.exists := noiseValue.value <> -1;
       end
-      else begin
+      else
+      begin
         noiseValue.value := 0;
         noiseValue.exists := true;
       end;

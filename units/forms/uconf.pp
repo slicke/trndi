@@ -382,8 +382,9 @@ API_D_PERFECT = '* Debug Perfect Backend *';
 API_D_CUSTOM = '* Debug Custom Backend *';
 API_D_EDGE = '* Debug Edge Backend *';
 API_D_FIRST = '* Debug First Reading Missing *';
+API_D_SECOND = '* Debug Second Reading Missing *';
 
-API_DEBUG: array of string = (API_D_DEBUG, API_D_MISSING, API_D_PERFECT, API_D_CUSTOM, API_D_EDGE, API_D_FIRST);
+API_DEBUG: array of string = (API_D_DEBUG, API_D_MISSING, API_D_PERFECT, API_D_CUSTOM, API_D_EDGE, API_D_FIRST, API_D_SECOND);
 {$endif}
 var
 tnative: TrndiNative;
@@ -1078,7 +1079,8 @@ begin
   API_D_MISSING,
   API_D_PERFECT,
   API_D_EDGE,
-  API_D_FIRST:
+  API_D_FIRST,
+  API_D_SECOND:
   begin
     pl1 := '<DEBUG IGNORED>';
     pl2   := '<DEBUG IGNORED>';
@@ -1585,8 +1587,10 @@ begin
   // Persist short prediction horizon immediately so the main UI can reload it
   if cbPredictShortMinutes.ItemIndex >= 0 then
     case cbPredictShortMinutes.ItemIndex of
-      0: tNative.SetSetting('predictions.short.minutes', '5');
-      2: tNative.SetSetting('predictions.short.minutes', '15');
+    0:
+      tNative.SetSetting('predictions.short.minutes', '5');
+    2:
+      tNative.SetSetting('predictions.short.minutes', '15');
     else
       tNative.SetSetting('predictions.short.minutes', '10');
     end;

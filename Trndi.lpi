@@ -612,6 +612,10 @@
         <Filename Value="units\forms\uhistorygraph.pp"/>
         <IsPartOfProject Value="True"/>
       </Unit>
+      <Unit>
+        <Filename Value="units\trndi\api\trndi.api.debug_secondmissing.pp.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
