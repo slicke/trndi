@@ -338,10 +338,10 @@ begin
     api := NightScout3.Create(apiTarget, apiCreds, '');
   API_DEX_USA,
   'API_DEX_USA':
-    api := Dexcom.Create(apiTarget, apiCreds, 'usa');
+    api := DexcomUSA.Create(apiTarget, apiCreds);
   API_DEX_EU,
   'API_DEX_EU':
-    api := Dexcom.Create(apiTarget, apiCreds, 'world');
+    api := DexcomWorld.Create(apiTarget, apiCreds);
   API_XDRIP,
   'API_XDRIP':
     api := xDrip.Create(apiTarget, apiCreds, '');
