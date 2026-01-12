@@ -12,7 +12,7 @@
     <description>Trndi - Continuous Glucose Monitor (CGM) viewer for Windows. Monitor your blood glucose levels with support for Dexcom, Nightscout, and xDrip+ data sources.</description>
     <summary>CGM viewer for Windows with extension support</summary>
     <releaseNotes>Automated build from GitHub Actions</releaseNotes>
-    <copyright>Copyright 2025 Björn Lindh</copyright>
+    <copyright>Copyright 2026 Björn Lindh</copyright>
     <tags>diabetes glucose cgm dexcom nightscout xdrip monitoring health</tags>
   </metadata>
   <files>

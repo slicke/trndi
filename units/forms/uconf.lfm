@@ -10356,7 +10356,7 @@ object fConf: TfConf
             Width = 449
             Align = alTop
             BorderSpacing.Left = 15
-            Caption = 'Copyright (c) 2017-2025 Björn Lindh '#13#10'<github.com/slicke>'
+            Caption = 'Copyright (c) 2017-2026 Björn Lindh '#13#10'<github.com/slicke>'
             Font.Height = -11
             ParentFont = False
           end

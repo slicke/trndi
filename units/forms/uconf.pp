@@ -1676,7 +1676,7 @@ const
   txt = '<img src="https://trndi.app/doc/img/trndi-logo.png"><br>' +
     '<b>Trndi - CGM viewer</b><br>' +
     '<i>A re-imagination of TrayTrend by Björn Lindh</i><br>' +
-    'Copyright (C) 2017-2025 Björn Lindh<br><br>' +
+    'Copyright (C) 2017-2026 Björn Lindh<br><br>' +
     'This program is free software: you can redistribute it and/or modify it<br>' +
     'under the terms of the GNU General Public License version 3 as published<br>' +
     'by the Free Software Foundation.<br>' +
