@@ -187,7 +187,7 @@ const
         @param(pass   Implementation-defined (e.g., password or token))
         @param(extra  Implementation-defined extra parameter)
      }
-  constructor Create(user, pass, extra: string); virtual;
+  constructor Create(user, pass: string); virtual;
 
     {** Destructor; releases owned resources. }
   destructor Destroy; virtual;
@@ -342,7 +342,7 @@ end;
   Base constructor.
   Initializes timezone from the OS, sets up native interface, and default CGM thresholds.
 ------------------------------------------------------------------------------}
-constructor TrndiAPI.Create(user, pass, extra: string);
+constructor TrndiAPI.Create(user, pass: string);
 begin
   // Store local timezone offset (minutes) via property; internally becomes seconds.
   timezone := GetLocalTimeOffset;

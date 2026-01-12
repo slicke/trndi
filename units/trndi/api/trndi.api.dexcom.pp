@@ -124,18 +124,21 @@ public
 
         @param(user   Dexcom username)
         @param(pass   Dexcom password)
-        @param(extra  Region selector: use 'usa' for US servers; otherwise WORLD)
-     }
-  constructor Create(user, pass, extra: string); override;
+        @param(region  Region selector: use 'usa' for US servers; otherwise WORLD)
+    }
+
+  constructor Create(user, pass: string); overload;
+
+  constructor Create(user, pass, region: string); overload;
 
     {** Overloaded constructor that allows explicitly enabling/disabling delta calc.
 
         @param(user     Dexcom username)
         @param(pass     Dexcom password)
-        @param(extra    Region selector: use 'usa' for US servers; otherwise WORLD)
+        @param(region    Region selector: use 'usa' for US servers; otherwise WORLD)
         @param(ACalcDiff Whether to compute deltas between consecutive readings)
      }
-  constructor Create(user, pass, extra: string; ACalcDiff: boolean); overload;
+  constructor Create(user, pass, region: string; ACalcDiff: boolean); overload;
 
     {** Authenticate with Dexcom Share, establish a session, and synchronize time.
 
@@ -258,10 +261,15 @@ end;
   Constructor (override).
   Delegates to the overloaded constructor with ACalcDiff=True.
 ------------------------------------------------------------------------------}
-constructor Dexcom.Create(user, pass, extra: string);
+constructor Dexcom.Create(user, pass, region: string);
 begin
   // Call overloaded constructor with default: calculate deltas
-  Create(user, pass, extra, true);
+  Create(user, pass, region, true);
+end;
+
+constructor Dexcom.Create(user, pass: string);
+begin
+  raise Exception.Create('Cannot be called without region!');
 end;
 
 {------------------------------------------------------------------------------
@@ -269,7 +277,7 @@ end;
   Configure user-agent, region (base URL and host), credentials, and delta flag.
   Calls inherited base constructor to init common pieces (thresholds, native, tz).
 ------------------------------------------------------------------------------}
-constructor Dexcom.Create(user, pass, extra: string; ACalcDiff: boolean);
+constructor Dexcom.Create(user, pass, region: string; ACalcDiff: boolean);
 begin
   // Common Dexcom Share user-agent string observed in official apps
   ua := 'Dexcom Share/3.0.2.11 CFNetwork/711.2.23 Darwin/14.0.0';
@@ -278,16 +286,16 @@ begin
   // - If extra is a full URL (http/https), treat it as an override. This is
   //   primarily used by integration tests that run against a local fake server.
   // - Otherwise, extra='usa' selects US endpoints; anything else uses WORLD.
-  if (LeftStr(LowerCase(Trim(extra)), 7) = 'http://') or
-    (LeftStr(LowerCase(Trim(extra)), 8) = 'https://') then
+  if (LeftStr(LowerCase(Trim(region)), 7) = 'http://') or
+    (LeftStr(LowerCase(Trim(region)), 8) = 'https://') then
   begin
-    baseUrl := Trim(extra);
+    baseUrl := Trim(region);
     FBaseHost := '';
   end
   else
   begin
-    baseUrl := DEXCOM_BASE_URLS[extra = 'usa'];
-    FBaseHost := DEXCOM_BASE_HOSTS[extra = 'usa'];
+    baseUrl := DEXCOM_BASE_URLS[region = 'usa'];
+    FBaseHost := DEXCOM_BASE_HOSTS[region = 'usa'];
   end;
 
   // Store credentials and preferences
@@ -296,7 +304,7 @@ begin
   FCalcDiff := ACalcDiff;
 
   // Parent ctor sets timezone, allocates native helper, and initializes thresholds
-  inherited Create(user, pass, extra);
+  inherited Create(user, pass);
 end;
 
 {------------------------------------------------------------------------------

@@ -94,7 +94,7 @@ public
         @param(pass  xDrip API secret in plain text; hashed to SHA1 for header usage)
         @param(extra Reserved for future use)
      }
-  constructor Create(user, pass, extra: string); override;
+  constructor Create(user, pass: string); override;
 
     {** Fetch BG readings from xDrip.
 
@@ -174,7 +174,7 @@ end;
   - inherited Create is not called here; if base initialization (e.g. default
     thresholds) is needed, ensure it is handled elsewhere before use.
 ------------------------------------------------------------------------------}
-constructor xDrip.Create(user, pass, extra: string);
+constructor xDrip.Create(user, pass: string);
 begin
   // Use a standard user agent for server logs/diagnostics
   ua := 'Mozilla/5.0 (compatible; trndi) TrndiAPI';

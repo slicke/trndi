@@ -71,7 +71,7 @@ private
     // Fetch thresholds using legacy Nightscout status (v1) similar to the v2 controller
   function FetchLegacyThresholds: boolean;
 public
-  constructor Create(user, pass, extra: string); override;
+  constructor Create(user, pass: string); overload;
   function connect: boolean; override;
   function getReadings(minNum, maxNum: integer; extras: string;
     out res: string): BGResults; override;
@@ -123,7 +123,7 @@ end;
 {------------------------------------------------------------------------------
   Helper: Normalize and store site base and API base URL.
  ------------------------------------------------------------------------------}
-constructor NightScout3.Create(user, pass, extra: string);
+constructor NightScout3.Create(user, pass: string);
 begin
   // Normalize site base (no trailing slash)
   FSiteBase := TrimRightSet(user, ['/']);

@@ -93,7 +93,7 @@ public
         @param(pass  Nightscout API secret in plain text; hashed to SHA1 for header)
         @param(extra Reserved for future use)
      }
-  constructor Create(user, pass, extra: string); override;
+  constructor Create(user, pass: string); override;
 
     {** Connect to Nightscout, retrieve server status, thresholds, and set time offset.
         Requests @code(NS_STATUS), validates/handles errors, parses
@@ -156,7 +156,7 @@ end;
   Initialize UA, derive API base URL from user, compute API-SECRET if present,
   and call inherited base constructor.
  ------------------------------------------------------------------------------}
-constructor NightScout.Create(user, pass, extra: string);
+constructor NightScout.Create(user, pass: string);
 begin
   ua := 'Mozilla/5.0 (compatible; trndi) TrndiAPI';
   // Ensure no trailing slash before appending API base path.
