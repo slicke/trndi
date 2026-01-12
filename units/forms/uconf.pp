@@ -67,6 +67,7 @@ TfConf = class(TForm)
   bBackendHelp: TButton;
   bColorGraphHelp: TButton;
   bMultiUserHelp: TButton;
+  bPredictHorizon: TButton;
   bUseURLHelp: TButton;
   bThreasholdLinesHelp: TButton;
   bOutdatedHelp: TButton;
@@ -308,6 +309,7 @@ TfConf = class(TForm)
   procedure bOutdatedHelpClick(Sender: TObject);
   procedure bOverrideHelpClick(Sender: TObject);
   procedure bPredictHelpClick(Sender: TObject);
+  procedure bPredictHorizonClick(Sender: TObject);
   procedure bPrivacyHelpClick(Sender: TObject);
   procedure bRemoveClick(Sender: TObject);
   procedure bBackendHelpClick(Sender: TObject);
@@ -417,6 +419,9 @@ RS_OVERRIDE_NS =
 
 RS_PRIVACY_HELP =
   'When in Privacy Mode, the actual blood glucose value is hidden. Trndi will only tell the user if it''s good, high or low.';
+
+RS_PREDICTION_HORIZON =
+  'The prediction horizon is how far in the future Trndi will show predictions, when just showing one. This is not an exact time, it may vary, it''s just a target time.';
 
 RS_PREDICTION_HELP =
   'Trndi can predict/guess what your reading will be in the future. This will be shown in the lower right part of the screen.';
@@ -1251,6 +1256,11 @@ end;
 procedure TfConf.bPredictHelpClick(Sender: TObject);
 begin
   ShowMessage(RS_PREDICTION_HELP);
+end;
+
+procedure TfConf.bPredictHorizonClick(Sender: TObject);
+begin
+  ShowMessage(RS_PREDICTION_HORIZON);
 end;
 
 procedure TfConf.bPrivacyHelpClick(Sender: TObject);

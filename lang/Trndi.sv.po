@@ -475,6 +475,10 @@ msgstr "Visa endast trendpilar / 1 avläsning (short mode)"
 msgid "Use full arrow set (↑↑, ↑, ↗, →, ↘, ↓, ↓↓)"
 msgstr "Visa alla pilar (↑↑, ↑, ↗, →, ↘, ↓, ↓↓)"
 
+#: tfconf.cbpredictshortminutes.text
+msgid "10 minutes"
+msgstr "10 minuter"
+
 #: tfconf.cbpredictshortsize.text
 msgid "small"
 msgstr "liten"
@@ -744,10 +748,8 @@ msgid "Units will pulse in red on high and blue on low"
 msgstr "Enheterna kommer pulsera i rött vid högt och blått vid lågt"
 
 #: tfconf.label32.caption
-#, fuzzy
-#| msgid "NOTE: Razer Synapse required on Windows; OpenRazer on Linux. No macOS support at this time."
 msgid "Razer Synapse required on Windows. OpenRazer on Linux. No support for other platforms at this time."
-msgstr "OBS: Razer Synapse krävs på Windows; OpenRazer på Linux. Inget stöd för macOS just nu."
+msgstr "OBS: Razer Synapse krävs på Windows. OpenRazer på Linux. Inget stöd för andra plattformar just nu."
 
 #: tfconf.label4.caption
 msgid "Window start-up position"
@@ -855,6 +857,10 @@ msgstr "Okänt system"
 #: tfconf.lpass.caption
 msgid "API Key / Dexcom Password"
 msgstr "API-nyckel / Dexcom-lösenord"
+
+#: tfconf.lpredictshortminutes.caption
+msgid "Prediction horizon:"
+msgstr "Prognoshorisont:"
 
 #: tfconf.lpredictshortsize.caption
 msgid "Trend arrow size:"
@@ -1448,7 +1454,7 @@ msgstr "⟳ Uppdaterad: <b>%s</b> <i>(Nästa uppdatering: %s)</i>"
 #: trndi.strings.rs_refresh_plain
 #, object-pascal-format
 msgid "⟳ Updated: %s (Next update: %s)"
-msgstr ""
+msgstr "⟳ Uppdaterad: %s (Nästa uppdatering: %s)"
 
 #: trndi.strings.rs_restart_apply
 msgid "Trndi must be restarted for settings to take effect"
@@ -2118,6 +2124,10 @@ msgstr "Trndi kommer försöka att förutspå framtida värden. Detta är experi
 msgid "Trndi can predict/guess what your reading will be in the future. This will be shown in the lower right part of the screen."
 msgstr "Trndi kan förutspå/gissa vad avläsningen kommer visa i framtiden. Detta visas i skärmens nedre högra hörn."
 
+#: uconf.rs_prediction_horizon
+msgid "The prediction horizon is how far in the future Trndi will show predictions, when just showing one. This is not an exact time, it may vary, it's just a target time."
+msgstr "Prognoshorisonten är hur långt i framtiden Trndi förutspår avläsningar, när endast en visas. Tiden är inte exakt, den kan variera, utan är endast ett mål."
+
 #: uconf.rs_privacy_help
 msgid "When in Privacy Mode, the actual blood glucose value is hidden. Trndi will only tell the user if it's good, high or low."
 msgstr "När privat läge är aktiverat, visas inte avläsningar. Trndi visar istället bara om sockret är bra, högt eller lågt."
@@ -2262,4 +2272,3 @@ msgstr "Historikgraf"
 #, object-pascal-format
 msgid "Readings (%s)"
 msgstr "Avläsningar (%s)"
-

@@ -11726,10 +11726,10 @@ object fConf: TfConf
             ParentFont = False
           end
           object lPredictShortMinutes: TLabel
-            Left = 280
+            Left = 271
             Height = 32
             Top = 0
-            Width = 135
+            Width = 103
             Align = alLeft
             BorderSpacing.Left = 20
             BorderSpacing.Bottom = 10
@@ -11738,7 +11738,7 @@ object fConf: TfConf
             ParentFont = False
           end
           object cbPredictShortMinutes: TComboBox
-            Left = 415
+            Left = 384
             Height = 32
             Top = 0
             Width = 120
@@ -11756,6 +11756,19 @@ object fConf: TfConf
             TabOrder = 1
             Text = '10 minutes'
             OnChange = cbPredictShortMinutesChange
+          end
+          object bPredictHorizon: TButton
+            Left = 623
+            Height = 24
+            Top = 3
+            Width = 27
+            Align = alRight
+            BorderSpacing.Top = -2
+            BorderSpacing.Bottom = 10
+            BorderSpacing.Around = 5
+            Caption = '?'
+            TabOrder = 2
+            OnClick = bPredictHorizonClick
           end
         end
         object cbPredictShort: TCheckBox

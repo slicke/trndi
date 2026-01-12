@@ -459,6 +459,10 @@ msgstr ""
 msgid "Use full arrow set (↑↑, ↑, ↗, →, ↘, ↓, ↓↓)"
 msgstr ""
 
+#: tfconf.cbpredictshortminutes.text
+msgid "10 minutes"
+msgstr ""
+
 #: tfconf.cbpredictshortsize.text
 msgid "small"
 msgstr ""
@@ -835,6 +839,10 @@ msgstr ""
 
 #: tfconf.lpass.caption
 msgid "API Key / Dexcom Password"
+msgstr ""
+
+#: tfconf.lpredictshortminutes.caption
+msgid "Prediction horizon:"
 msgstr ""
 
 #: tfconf.lpredictshortsize.caption
@@ -1994,6 +2002,10 @@ msgstr ""
 
 #: uconf.rs_prediction_help
 msgid "Trndi can predict/guess what your reading will be in the future. This will be shown in the lower right part of the screen."
+msgstr ""
+
+#: uconf.rs_prediction_horizon
+msgid "The prediction horizon is how far in the future Trndi will show predictions, when just showing one. This is not an exact time, it may vary, it's just a target time."
 msgstr ""
 
 #: uconf.rs_privacy_help
