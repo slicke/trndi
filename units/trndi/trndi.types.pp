@@ -82,6 +82,7 @@ private
   function getCurr: double;
   function getChange: double;
   function checkEmpty: boolean;
+  function checkDeltaEmpty: boolean;
   function getSrc: shortstring;
   function GetLevel: BGValLevel;
   function getDevice: string;
@@ -165,6 +166,9 @@ public
 
     {** True if the primary BG value is unset (@code(BG_NO_VAL)). }
   property empty: boolean read CheckEmpty;
+
+    {** True if the delta (change) value is unset (@code(BG_NO_VAL)). }
+    property deltaEmpty: boolean read checkDeltaEmpty;
 
     {** Level classification as provided by the API or computed elsewhere. }
   property level: BGValLevel read GetLevel write SetLevel;
@@ -322,6 +326,11 @@ end;
 function BGReading.checkEmpty: boolean;
 begin
   Result := curr = BG_NO_VAL;
+end;
+
+function BGReading.checkDeltaEmpty: boolean;
+begin
+  Result := change = BG_NO_VAL;
 end;
 
 { Returns the API's native high/low

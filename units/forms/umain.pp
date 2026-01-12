@@ -4102,6 +4102,25 @@ end;
 procedure TfBG.ProcessCurrentReading;
 var
   reading: BGReading;
+  havePrev: boolean;
+  gapMin: integer;
+  deltaVal: double;
+
+  function FormatSigned(const Value: double): string;
+  var
+    signStr: string;
+    fmtStr: string;
+  begin
+    if Value = 0 then
+      signStr := '±'
+    else if Value > 0 then
+      signStr := '+'
+    else
+      signStr := '';
+
+    fmtStr := StringReplace(BG_MSG_SIG_SHORT[un], '%+', signStr, [rfReplaceAll]);
+    Result := SysUtils.Format(fmtStr, [Value]);
+  end;
 begin
   if firstboot then
     exit;
@@ -4124,7 +4143,27 @@ begin
   lval.hint := lval.Caption;
 
   // Update other UI elements
-  lDiff.Caption := reading.format(un, BG_MSG_SIG_SHORT, BGDelta);
+  havePrev := (Length(bgs) >= 2) and (not bgs[0].empty) and (not bgs[1].empty);
+  if havePrev then
+    gapMin := MinutesBetween(bgs[0].date, bgs[1].date)
+  else
+    gapMin := MaxInt;
+
+  // Only show a diff when the immediately previous reading exists and the
+  // time gap doesn't imply a missing 5-minute slot.
+  if (not havePrev) or (gapMin >= (INTERVAL_MINUTES * 2)) then
+    lDiff.Caption := '--'
+  else
+  begin
+    if reading.deltaEmpty then
+    begin
+      // Backend didn't provide delta; compute it from the previous reading.
+      deltaVal := bgs[0].convert(un) - bgs[1].convert(un);
+      lDiff.Caption := FormatSigned(deltaVal);
+    end
+    else
+      lDiff.Caption := reading.format(un, BG_MSG_SIG_SHORT, BGDelta);
+  end;
   lArrow.Caption := reading.trend.Img;
   lVal.Font.Style := [];
 
