@@ -52,6 +52,7 @@ msgid "Default"
 msgstr ""
 
 #: slicke.ux.alert.smbuxhelp
+msgctxt "slicke.ux.alert.smbuxhelp"
 msgid "Help"
 msgstr ""
 
@@ -1262,6 +1263,24 @@ msgstr ""
 #: trndi.strings.rs_lo_level
 #, object-pascal-format
 msgid "Lo < %.1f"
+msgstr ""
+
+#: trndi.strings.rs_menu_force
+msgid "Force update"
+msgstr ""
+
+#: trndi.strings.rs_menu_help
+msgctxt "trndi.strings.rs_menu_help"
+msgid "Help"
+msgstr ""
+
+#: trndi.strings.rs_menu_name
+msgid "Glucose"
+msgstr ""
+
+#: trndi.strings.rs_menu_settings
+msgctxt "trndi.strings.rs_menu_settings"
+msgid "Settings"
 msgstr ""
 
 #: trndi.strings.rs_missing_label

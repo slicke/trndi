@@ -118,6 +118,8 @@ public
   class function SpeakSoftwareName: string; override;
   {** Best-effort window manager name for Linux. }
   class function GetWindowManagerName: string; override;
+  {** True if a global/appmenu service is active; Linux override. }
+  class function HasGlobalMenu: boolean; override;
 
     {** Triggers when the tray icon is clicked }
   procedure trayClick(Sender: TObject);
@@ -340,6 +342,54 @@ begin
   finally
     sl.Free;
   end;
+end;
+
+{------------------------------------------------------------------------------
+  HasGlobalMenu (Linux)
+  ---------------------
+  Detect common global menu registrars/services (qdbus list) and related
+  hints (GTK_MODULES, KDE plasmoid presence). This is best-effort but
+  catches the common cases: com.canonical.AppMenu.Registrar and org.kde/appmenu.
+ ------------------------------------------------------------------------------}
+class function TTrndiNativeLinux.HasGlobalMenu: boolean;
+var
+  outS: string;
+  exitCode: integer;
+  qdbusPath: string;
+  gtkMods: string;
+begin
+  Result := False;
+
+  // Quick hint: desktop type may indicate the presence of a global menu
+  // but we still continue to look for services.
+  // Try qdbus and search for known AppMenu-related names
+  qdbusPath := FindInPath('qdbus');
+  if qdbusPath <> '' then
+  begin
+    if RunAndCaptureSimple(qdbusPath, [], outS, exitCode) and (exitCode = 0) then
+    begin
+      outS := LowerCase(outS);
+      if (Pos('com.canonical.appmenu.registrar', outS) > 0) or
+        (Pos('org.kde.appmenu', outS) > 0) or (Pos('appmenu', outS) > 0) then
+        Exit(True);
+    end;
+  end;
+
+  // GTK module hint
+  gtkMods := LowerCase(GetEnvironmentVariable('GTK_MODULES'));
+  if gtkMods <> '' then
+    if Pos('appmenu', gtkMods) > 0 then
+      Exit(True);
+
+  // KDE plasmoid presence may indicate the panel provides an appmenu
+  if IsTrndiKdePlasmoidVisible then
+    Exit(True);
+
+  // Look for appmenu helpers on PATH
+  if (FindInPath('appmenu-gtk-module') <> '') or (FindInPath('gtk3-module-appmenu') <> '') then
+    Exit(True);
+
+  Result := False;
 end;
 
 // C-compatible write callback for libcurl used in this unit

@@ -209,7 +209,8 @@ class var touchOverride: TTrndiBool;
   class function getNotificationSystem: string; virtual;
     {** Alias for readability: forwards to @link(isNotificationSystemAvailable). }
   class function HasNotifications: boolean;
-
+    {** Detect if a global menu exists (top bar). }
+  class function HasGlobalMenu: boolean; virtual;
     // Lifecycle and UI
   destructor Destroy; override;
     {** Optional startup hook; platform units may override. }
@@ -1683,6 +1684,17 @@ function Brightness(C: TColor): double;
 
 begin
   Result := (Brightness(ColorToRGB(clWindow)) < Brightness(ColorToRGB(clWindowText)));
+end;
+
+{------------------------------------------------------------------------------
+  HasGlobalMenu (class, virtual)
+  ------------------------------
+  Default: platform implementations can override to indicate whether a
+  global/appmenu service is available; base returns False.
+ ------------------------------------------------------------------------------}
+class function TTrndiNativeBase.HasGlobalMenu: boolean;
+begin
+  Result := False;
 end;
 
 {------------------------------------------------------------------------------

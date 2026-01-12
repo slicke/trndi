@@ -79,7 +79,7 @@ begin
   SetDefaultLang(lang, getLangPath);
 end;
 
-{$ifdef DARWIN}
+{$if DEFINED(DARWIN) OR DEFINED(X_LINUXBSD)}
 procedure TfBG.InitializePlatformMenus;
 var
   MainMenu: TMainMenu;
@@ -89,27 +89,35 @@ var
   HelpMenu,
   GithubMenu: TMenuItem;
 begin
+  MainMenu := TMainMenu.Create(self);
+  fBg.Menu := MainMenu;
+  {$ifdef X_MAC}
   MacAppDelegate := TMyAppDelegate.alloc.init;
   NSApp.setDelegate(NSObject(MacAppDelegate));
 
   Application.Title := 'Trndi';
-  MainMenu := TMainMenu.Create(self);
-  fBg.Menu := MainMenu;
+  {$ENDIF}
   AppMenu := TMenuItem.Create(Self); // Application menu
+
+  {$ifdef X_MAC}
   AppMenu.Caption := #$EF#$A3#$BF;   // Unicode Apple logo char
+  {$else}
+  AppMenu.Caption := RS_MENU_NAME;   // Unicode Apple logo char
+  {$endif}
   MainMenu.Items.Insert(0, AppMenu);
+
   SettingsMenu := TMenuitem.Create(self);
-  settingsmenu.Caption := miSettings.Caption;
+  settingsmenu.Caption := RS_MENU_SETTINGS;
   settingsmenu.OnClick := misettings.OnClick;
   AppMenu.Insert(0, SettingsMenu);
 
   forcemenu := TMenuItem.Create(self);
-  forcemenu.Caption := miForce.caption;
+  forcemenu.Caption := RS_MENU_FORCE;
   forcemenu.onclick := miForce.OnClick;
   AppMenu.Insert(1, forceMenu);
 
   helpmenu := TMenuItem.Create(self);
-  helpmenu.Caption := 'Help';
+  helpmenu.Caption := RS_MENU_HELP;
   MainMenu.Items.Insert(1, helpMenu);
 
   upmenu := TMenuItem.Create(self);
@@ -442,7 +450,11 @@ var
   minutesVal: integer;
 begin
   firstboot := false;
-  
+
+  // Initialize native interface
+  native := TrndiNative.Create;
+  SetLang;
+
   // Initialize splash screen first
   InitializeSplashScreen;
   Application.ProcessMessages;
@@ -468,9 +480,11 @@ begin
   {$ifdef DARWIN}
   InitializePlatformMenus;
   {$endif}
+  {$ifdef X_LINUXBSD}
+  if TrndiNative.HasGlobalMenu then
+    InitializePlatformMenus;
+  {$endif}
 
-  // Initialize native interface
-  native := TrndiNative.Create;
   if ssShift in GetKeyShiftState then
     if ExtText(uxdAuto,'Override big screen?','Shift Pressed! Force Trndi to treat your system as ' + IfThen(native.DetectTouchScreen(fil), 'Small screen (non-touch)', 'Big screen (touch)')+'?',[MbYes, mbNo],uxmtWarning) = mrYes then
       if native.DetectTouchScreen(fil) then
@@ -518,7 +532,6 @@ begin
   // Configuration and user setup
   with native do
   begin
-    SetLang;
     fSplash.linfo.Caption := RS_INIT_PROFILES;
     LoadUserProfile;
 

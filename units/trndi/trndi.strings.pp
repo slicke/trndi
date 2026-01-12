@@ -85,6 +85,11 @@ RS_MULTIUSER_BOX_TITLE = 'User select';
 RS_FONT_ERROR = 'You''re missing the standard font "%s". Trndi will work as intended, but some icons may be missing and/or distorted!';
 RS_TRNDI_GIHUB = 'Trndi on GitHub';
 
+RS_MENU_SETTINGS = 'Settings';
+RS_MENU_FORCE = 'Force update';
+RS_MENU_HELP = 'Help';
+RS_MENU_NAME = 'Glucose';
+
 RS_RHISTORY = 'Reading history';
 RS_RH_TITLE = 'Historical readings';
 RS_RH_INFO = 'These are the messages currently held in Trndi''s log';

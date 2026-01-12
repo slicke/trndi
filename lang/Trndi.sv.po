@@ -62,6 +62,7 @@ msgid "Default"
 msgstr "Standard"
 
 #: slicke.ux.alert.smbuxhelp
+msgctxt "slicke.ux.alert.smbuxhelp"
 msgid "Help"
 msgstr "Hjälp"
 
@@ -1310,6 +1311,24 @@ msgstr "LÅGT"
 #, object-pascal-format
 msgid "Lo < %.1f"
 msgstr "Låg < %.1f"
+
+#: trndi.strings.rs_menu_force
+msgid "Force update"
+msgstr "Tvinga uppdatering"
+
+#: trndi.strings.rs_menu_help
+msgctxt "trndi.strings.rs_menu_help"
+msgid "Help"
+msgstr "Hjälp"
+
+#: trndi.strings.rs_menu_name
+msgid "Glucose"
+msgstr "Blodsocker"
+
+#: trndi.strings.rs_menu_settings
+msgctxt "trndi.strings.rs_menu_settings"
+msgid "Settings"
+msgstr "Inställningar"
 
 #: trndi.strings.rs_missing_label
 #, object-pascal-format
