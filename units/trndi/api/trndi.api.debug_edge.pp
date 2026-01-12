@@ -69,9 +69,21 @@ protected
   {** Get the value which represents the minimum reading for the backend
   }
   function getLimitLow: integer; override;
+
+  function getSystemName: string; override;
 end;
 
 implementation
+
+{------------------------------------------------------------------------------
+  getSystemName
+  --------------------
+  Returns the name of this API
+ ------------------------------------------------------------------------------}
+function DebugEdgeAPI.getSystemName: string;
+begin
+  result := 'Debug Edge API';
+end;
 
 {------------------------------------------------------------------------------
   Constructor

@@ -78,6 +78,9 @@ protected
   {** Get the value which represents the minimum reading for the backend
    }
   function getLimitLow: integer; override;
+
+  {** Get the name of the system }
+  function getSystemName: string; override;
   
 
 public
@@ -136,6 +139,16 @@ implementation
 resourcestring
 sParamUsername = 'NightScout URL';
 sParamPassword = 'API Secret';
+
+{------------------------------------------------------------------------------
+  getSystemName
+  --------------------
+  Returns the name of this API
+ ------------------------------------------------------------------------------}
+function NightScout.getSystemName: string;
+begin
+  result := 'NightScout';
+end;
 
 {------------------------------------------------------------------------------
   create (constructor)

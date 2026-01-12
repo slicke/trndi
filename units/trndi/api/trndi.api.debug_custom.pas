@@ -51,6 +51,7 @@ type
   // Main class
 DebugCustomAPI = class(DebugAPI)
 protected
+  function getSystemName: string; override;
 public
   setval: integer;
   function getReadings({%H-}min, {%H-}maxNum: integer; {%H-}extras: string;
@@ -60,6 +61,10 @@ end;
 
 implementation
 
+function DebugCustomAPI.getSystemName: string;
+begin
+  result := 'Debug Custom API';
+end;
 
 constructor DebugCustomAPI.Create(user, pass, extra: string);
 begin

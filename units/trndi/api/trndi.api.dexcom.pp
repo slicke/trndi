@@ -183,6 +183,9 @@ protected
     {** Get the value which represents the minimum reading for the backend
      }
   function getLimitLow: integer; override;
+
+    {** Gets the API's name }
+  function getSystemName: string; override;
 end;
 
 implementation
@@ -193,6 +196,17 @@ sErrDexLogin = 'Login error: Could not establish a valid session';
 sParamUserName = 'Dexcom Username';
 sParamPassword = 'Dexcom Password';
 sParamRegion = 'Region ("usa" or empty)';
+
+
+{------------------------------------------------------------------------------
+  getSystemName
+  --------------------
+  Returns the name of this API
+ ------------------------------------------------------------------------------}
+function Dexcom.getSystemName: string;
+begin
+  result := 'Dexcom';
+end;
 
 {------------------------------------------------------------------------------
   Constructor (override).
