@@ -1606,6 +1606,11 @@ msgstr ""
 msgid "Announcing readings aloud"
 msgstr ""
 
+#: trndi.strings.sapi
+#, object-pascal-format
+msgid "⚙️ Trndi API Interface: %s"
+msgstr ""
+
 #: trndi.strings.schangesapply
 msgid "Apply this value when Trndi starts?"
 msgstr ""

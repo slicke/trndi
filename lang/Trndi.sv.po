@@ -1673,6 +1673,11 @@ msgstr "Läser inte upp värden"
 msgid "Announcing readings aloud"
 msgstr "Läser upp värden"
 
+#: trndi.strings.sapi
+#, object-pascal-format
+msgid "⚙️ Trndi API Interface: %s"
+msgstr "⚙️ Trndis API-gränssnitt: %s"
+
 #: trndi.strings.schangesapply
 msgid "Apply this value when Trndi starts?"
 msgstr "Läs in detta värde när Trndi startar?"

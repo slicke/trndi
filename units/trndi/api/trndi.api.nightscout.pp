@@ -342,7 +342,7 @@ begin
       dev := FindPath('device').AsString;
 
       // Initialize reading in mg/dL; source identifier uses class name.
-      Result[i].Init(mgdl, self.ToString);
+      Result[i].Init(mgdl, self.systemName);
 
       // Get current SGV value
       currentSgv := FindPath('sgv').AsInteger;

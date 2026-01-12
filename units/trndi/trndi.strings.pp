@@ -167,6 +167,7 @@ sDataTypeErrFunc = 'Datatype "%s" was not expected, in function "%s". Expected "
 sRSSI = '📻 RSSI (Signal Strength): %d%%';
 sNoise = '𐩘 Noise: %d';
 sDevice = '💻 Device: %s';
+sAPI = '⚙️ Trndi API Interface: %s';
 sTransmitterInfo = 'Transmitter information';
 
 sRefrshQ = 'Refresh?';
