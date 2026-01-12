@@ -74,7 +74,7 @@ if FileExists('heap.trc') then
 SetHeapTraceOutput('heap.trc');
 {$ENDIF DEBUG}
 RequireDerivedFormResource:=true;
-Application.Scaled:=true;
+  Application.Scaled:=True;
 Application.{%H-}MainFormOnTaskbar:=true;
 Application.Initialize;
 Application.CreateForm(TfBG, fBG);
