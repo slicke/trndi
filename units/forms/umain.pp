@@ -587,6 +587,7 @@ private
   procedure InitializePlatformMenus;
   {$endif}
   {$ifdef X_LINUXBSD}
+  procedure InitializePlatformMenus;
   procedure InitializeLinuxPlatform;
   {$endif}
   procedure InitializeUIComponents;
@@ -661,6 +662,7 @@ DOT_OFFSET_RANGE: integer = 0; // Fine-tune vertical alignment of threshold line
 DOT_OFFSET_RANGE: integer = 3; // Fine-tune vertical alignment of threshold lines with dots
 {$endif}
 {$ifdef X_LINUXBSD}
+upMenu: TMenuItem;
 DOT_OFFSET_RANGE: integer = -15; // Fine-tune vertical alignment of threshold lines with dots
 {$endif}
 {$ifdef HAIKU}
@@ -2430,10 +2432,14 @@ const
 begin
   miOnTop.Checked := not miOnTop.Checked;
   if miOnTop.Checked then
-    self.FormStyle := fsStayOnTop{$ifdef LCLQt6}// Use fsStayOnTop for Qt widgetset; it's better respected by some WMs.
-    {$else}{$endif}
+  begin
+    Self.FormStyle := fsStayOnTop;
+    {$ifdef LCLQt6}
+    // Use fsStayOnTop for Qt widgetset; it's better respected by some WMs.
+    {$endif}
+  end
   else
-    self.FormStyle := fsNormal;
+    Self.FormStyle := fsNormal;
 
   {$ifdef LCLQt6}
   // KDE/Qt may ignore LCL's FormStyle mapping; force Qt's WindowStaysOnTopHint.
@@ -4188,8 +4194,9 @@ begin
 
   miRefresh.Caption := Format(RS_REFRESH_PLAIN, [TimeToStr(LastReadingTime),
     TimeToStr(IncMilliSecond(Now, tMain.Interval))]);
-  {$ifdef Darwin}
-  upMenu.Caption:= miRefresh.Caption;
+  {$if DEFINED(X_MAC) OR DEFINED(X_LINUXBSD)}
+  if assigned(upmenu) then
+    upMenu.Caption:= miRefresh.Caption;
   {$endif}
 end;
 
