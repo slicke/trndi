@@ -142,6 +142,10 @@ protected
   {** Get the value which represents the minimum reading for the backend
   }
   function getLimitLow: integer; override;
+
+  {** Gets the name of this API
+  }
+  function getSystemName: string; override;
 end;
 
 implementation
@@ -149,6 +153,17 @@ implementation
 resourcestring
 sParamUsername = 'xDrip URL';
 sParamPassword = 'API Secret';
+
+{------------------------------------------------------------------------------
+  getSystemName
+  --------------------
+  Returns the name of this API
+ ------------------------------------------------------------------------------}
+function xDrip.getSystemName: string;
+begin
+  result := 'xDrip+';
+end;
+
 {------------------------------------------------------------------------------
   Create an xDrip API client.
 

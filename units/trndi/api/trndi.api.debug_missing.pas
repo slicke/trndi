@@ -51,6 +51,7 @@ type
   // Main class
 DebugMissingAPI = class(DebugAPI)
 protected
+  function  getSystemName: string; override;
 public
   function getReadings(min, maxNum: integer; extras: string; out res: string): BGResults;
     override;
@@ -58,6 +59,15 @@ end;
 
 implementation
 
+{------------------------------------------------------------------------------
+  getSystemName
+  --------------------
+  Returns the name of this API
+ ------------------------------------------------------------------------------}
+function DebugMissingAPI.getSystemName: string;
+begin
+  result := 'Debug Missing API';
+end;
 
 function DebugMissingAPI.getReadings(min, maxNum: integer; extras: string;
 out res: string): BGResults;

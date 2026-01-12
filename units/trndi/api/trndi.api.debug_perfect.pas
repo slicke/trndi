@@ -51,6 +51,7 @@ type
   // Main class
   DebugPerfectAPI = class(DebugAPI)
   protected
+    function getSystemName: string;
   public
     function getReadings({%H-}min, {%H-}maxNum: integer; {%H-}extras: string;
       out res: string): BGResults; override;
@@ -58,6 +59,15 @@ type
 
 implementation
 
+{------------------------------------------------------------------------------
+  getSystemName
+  --------------------
+  Returns the name of this API
+ ------------------------------------------------------------------------------}
+function DebugPerfectAPI.getSystemName: string;
+begin
+  result := 'NightScout';
+end;
 
 function DebugPerfectAPI.getReadings(min, maxNum: integer; extras: string;
   out res: string): BGResults;

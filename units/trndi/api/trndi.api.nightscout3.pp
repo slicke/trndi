@@ -97,6 +97,10 @@ protected
     {** Get the value which represents the minimum reading for the backend
      }
   function getLimitLow: integer; override;
+
+    {** gets the name of the API
+    }
+  function getSystemName: string; override;
 end;
 
 implementation
@@ -104,6 +108,17 @@ implementation
 resourcestring
 sParamUsername = 'NightScout URL';
 sParamPassword = 'Auth token suffix';
+
+
+{------------------------------------------------------------------------------
+  getSystemName
+  --------------------
+  Returns the name of this API
+ ------------------------------------------------------------------------------}
+function NightScout3.getSystemName: string;
+begin
+  result := 'NightScout v3';
+end;
 
 {------------------------------------------------------------------------------
   Helper: Normalize and store site base and API base URL.

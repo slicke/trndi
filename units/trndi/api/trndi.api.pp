@@ -127,6 +127,11 @@ protected
         @returns(@code(True) if a plausible current reading exists)
      }
   function checkActive: boolean;
+
+    {** Returns the name of the API
+        @returns(Name of the API)
+     }
+  function getSystemName: string; virtual; abstract;
 public
 const
   toMMOL = 0.05555555555555556; // Factor to multiply mg/dL by to get mmol/L
@@ -310,6 +315,9 @@ published
 
     {** The source URL for the API, useful for eg alive testing. }
   property source: string read getApiUrl;
+
+    {** The name of this API. }
+  property systemName: string read getSystemName;
 end;
 
 implementation
