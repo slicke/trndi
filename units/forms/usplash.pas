@@ -83,6 +83,9 @@ begin
   {$ifdef X_LINUXBSD}
      lSplashWarn.Font.Size := 8;
   {$endif}
+  {$ifdef HAIKU}
+     lSplashWarn.Font.Size := 8;
+  {$endif}
 end;
 
 procedure TfSplash.FormKeyDown(Sender: TObject; var Key: word; Shift: TShiftState);
