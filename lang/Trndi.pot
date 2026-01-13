@@ -376,6 +376,14 @@ msgctxt "tfconf.caption"
 msgid "Settings"
 msgstr ""
 
+#: tfconf.cbalerthilo.caption
+msgid "Alert me when blood sugar is high/low"
+msgstr ""
+
+#: tfconf.cbalertmissing.caption
+msgid "Alert me when readings are missing / not fresh"
+msgstr ""
+
 #: tfconf.cbchroma.caption
 msgid "Enable Razer Chroma integration"
 msgstr ""
@@ -530,6 +538,11 @@ msgstr ""
 
 #: tfconf.cbwebapi.caption
 msgid " Enable Web API"
+msgstr ""
+
+#: tfconf.cgnotifications.caption
+msgctxt "tfconf.cgnotifications.caption"
+msgid "Notifications"
 msgstr ""
 
 #: tfconf.cl_hi_bg.caption
@@ -1976,6 +1989,7 @@ msgid "A new pre-release for %s is available, would you like to go to the downlo
 msgstr ""
 
 #: uconf.rs_notifications
+msgctxt "uconf.rs_notifications"
 msgid "Notifications"
 msgstr ""
 

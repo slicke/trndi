@@ -2725,6 +2725,9 @@ procedure LoadUserSettings(f: TfConf);
       cbFlashHi.Checked := native.getBoolSetting('alerts.flash.high', false);
       cbFlashLow.Checked := native.getBoolSetting('alerts.flash.low', false);
       cbFlashPerfect.Checked := native.getBoolSetting('alerts.flash.perfect', false);
+
+      cbAlertHiLo.Checked := native.getBoolSetting('alerts.notice.hilo', true);
+      cbAlertMissing.Checked := native.getBoolSetting('alerts.notice.missing', true);
     end;
 
   end;
@@ -2918,6 +2921,9 @@ procedure SaveUserSettings(f: TfConf);
       native.setSetting('alerts.flash.high', cbFlashHi.Checked);
       native.setSetting('alerts.flash.low', cbFlashLow.Checked);
       native.setSetting('alerts.flash.perfect', cbFlashPerfect.Checked);
+
+      native.setSetting('alerts.notice.hilo', cbAlertHiLo.Checked);
+      native.setSetting('alerts.notice.missing', cbAlertMissing.Checked);
 
       for i := lbUsers.Items.Count - 1 downto 0 do
         if lbUsers.items[i][1] = '-' then
@@ -4690,8 +4696,9 @@ begin
   setColorMode(bg_color_hi);
 
   if not bg_alert then
-    native.attention(ifthen(multi, multinick, RS_WARN_BG_HI_TITLE),
-      Format(RS_WARN_BG_HI, [lVal.Caption]));
+    if native.getBoolSetting('alerts.notice.hilo', true) then
+      native.attention(ifthen(multi, multinick, RS_WARN_BG_HI_TITLE),
+        Format(RS_WARN_BG_HI, [lVal.Caption]));
 
   if highAlerted then
     Exit;
@@ -4735,8 +4742,9 @@ begin
   SetColorMode(bg_color_lo);
 
   if not bg_alert then
-    native.attention(ifthen(multi, multinick, RS_WARN_BG_LO_TITLE),
-      Format(RS_WARN_BG_LO, [lVal.Caption]));
+    if native.getBoolSetting('alerts.notice.hilo', true) then
+      native.attention(ifthen(multi, multinick, RS_WARN_BG_LO_TITLE),
+        Format(RS_WARN_BG_LO, [lVal.Caption]));
 
   if lowAlerted then
     exit;
@@ -4979,7 +4987,8 @@ begin
   if (Length(bgs) < 1) or (not IsDataFresh) then
   begin
     showWarningPanel(RS_NO_BACKEND, true);
-    native.attention(RS_ATTENTION_MISSING, RS_ATTENTION_MISSING_DESC);
+    if native.getBoolSetting('alerts.notice.missing', true) then
+      native.attention(RS_ATTENTION_MISSING, RS_ATTENTION_MISSING_DESC);
     Exit;
   end;
 

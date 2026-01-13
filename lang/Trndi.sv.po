@@ -392,6 +392,14 @@ msgctxt "tfconf.caption"
 msgid "Settings"
 msgstr "Inställningar"
 
+#: tfconf.cbalerthilo.caption
+msgid "Alert me when blood sugar is high/low"
+msgstr "Notifiera mig när blodsockret är högt/lågt"
+
+#: tfconf.cbalertmissing.caption
+msgid "Alert me when readings are missing / not fresh"
+msgstr "Notifiera mig när avläsningar saknas / inte är färska"
+
 #: tfconf.cbchroma.caption
 msgid "Enable Razer Chroma integration"
 msgstr "Slå på Razer Chroma-integrationen"
@@ -547,6 +555,11 @@ msgstr "Visa användares färger på huvud- och det flytande fönstret"
 #: tfconf.cbwebapi.caption
 msgid " Enable Web API"
 msgstr " Slå på Web-API:et"
+
+#: tfconf.cgnotifications.caption
+msgctxt "tfconf.cgnotifications.caption"
+msgid "Notifications"
+msgstr "Notiser"
 
 #: tfconf.cl_hi_bg.caption
 msgctxt "tfconf.cl_hi_bg.caption"
@@ -1134,11 +1147,11 @@ msgstr "xDrip-adress"
 
 #: trndi.strings.rs_attention_missing
 msgid "Outdated Readings!"
-msgstr ""
+msgstr "Utdaterade avläsningar!"
 
 #: trndi.strings.rs_attention_missing_desc
 msgid "Readings are not fresh, have your phone lost connection to the sensor?"
-msgstr ""
+msgstr "Avläsningarna är inte färska, har din telefon tappat kontakten med sensorn?"
 
 #: trndi.strings.rs_cleanup
 msgid "Wait. Shutting down extensions engine..."
@@ -2089,6 +2102,7 @@ msgid "A new pre-release for %s is available, would you like to go to the downlo
 msgstr "En förhandsversion av %s finns tillgänglig, vill du besöka nedladdningssidan?"
 
 #: uconf.rs_notifications
+msgctxt "uconf.rs_notifications"
 msgid "Notifications"
 msgstr "Notiser"
 
@@ -2317,4 +2331,3 @@ msgstr "Historikgraf"
 #, object-pascal-format
 msgid "Readings (%s)"
 msgstr "Avläsningar (%s)"
-

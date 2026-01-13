@@ -8,7 +8,6 @@ object fConf: TfConf
   ClientHeight = 534
   ClientWidth = 675
   Position = poDesktopCenter
-  LCLVersion = '4.2.0.0'
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   OnResize = FormResize
@@ -17,10 +16,10 @@ object fConf: TfConf
     Height = 518
     Top = 11
     Width = 665
-    ActivePage = tsExt
+    ActivePage = tsCustom
     Align = alClient
     BorderSpacing.Around = 5
-    TabIndex = 10
+    TabIndex = 4
     TabOrder = 0
     OnChange = pcMainChange
     object tsGeneral: TTabSheet
@@ -11515,7 +11514,7 @@ object fConf: TfConf
       object Label6: TLabel
         Left = 10
         Height = 15
-        Top = 299
+        Top = 371
         Width = 637
         Align = alTop
         BorderSpacing.Around = 10
@@ -11524,7 +11523,7 @@ object fConf: TfConf
       object cbLang: TComboBox
         Left = 10
         Height = 23
-        Top = 324
+        Top = 396
         Width = 637
         Align = alTop
         AutoSize = False
@@ -11602,6 +11601,43 @@ object fConf: TfConf
         Caption = '?'
         TabOrder = 5
         OnClick = bBadgeFlashHelpClick
+      end
+      object cgNotifications: TCheckGroup
+        Left = 0
+        Height = 62
+        Top = 299
+        Width = 657
+        Align = alTop
+        AutoFill = True
+        BorderSpacing.Top = 10
+        Caption = 'Notifications'
+        ChildSizing.LeftRightSpacing = 6
+        ChildSizing.TopBottomSpacing = 6
+        ChildSizing.EnlargeHorizontal = crsHomogenousChildResize
+        ChildSizing.EnlargeVertical = crsHomogenousChildResize
+        ChildSizing.ShrinkHorizontal = crsScaleChilds
+        ChildSizing.ShrinkVertical = crsScaleChilds
+        ChildSizing.Layout = cclLeftToRightThenTopToBottom
+        ChildSizing.ControlsPerLine = 1
+        ClientHeight = 42
+        ClientWidth = 653
+        TabOrder = 6
+        object cbAlertHiLo: TCheckBox
+          Left = 6
+          Height = 15
+          Top = 6
+          Width = 641
+          Caption = 'Alert me when blood sugar is high/low'
+          TabOrder = 0
+        end
+        object cbAlertMissing: TCheckBox
+          Left = 6
+          Height = 15
+          Top = 21
+          Width = 641
+          Caption = 'Alert me when readings are missing / not fresh'
+          TabOrder = 1
+        end
       end
     end
     object tsAdvanced: TTabSheet

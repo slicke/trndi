@@ -98,6 +98,9 @@ TfConf = class(TForm)
   cbChromaLow: TComboBox;
   cbCust: TCheckBox;
   cbCustRange: TCheckBox;
+  cbAlertMissing: TCheckBox;
+  cgNotifications: TCheckGroup;
+  cbAlertHiLo: TCheckBox;
   cbFlashLow: TCheckBox;
   cbFlashPerfect: TCheckBox;
   cbLang: TComboBox;
