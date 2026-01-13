@@ -616,6 +616,11 @@
         <Filename Value="units\trndi\api\trndi.api.debug_secondmissing.pp.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit>
+      <Unit>
+        <Filename Value="units\trndi\api\trndi.api.debug_firstxmissing.pp"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="trndi.api.debug_firstXmissing"/>
+      </Unit>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
