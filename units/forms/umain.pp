@@ -611,6 +611,12 @@ public
       Caller should ensure `bgs` is not empty (use `tryLastReading` first).
      }
   function lastReading: BGReading;
+
+  {** Return the most recent reading with data in it (the newest element in `bgs` that's not empty).
+      Caller should ensure `bgs` is not empty (use `tryLastReading` first).
+     }
+  function lastDataReading: BGReading;
+
     {** Safely get the most recent reading as an out parameter.
       @returns(True when a reading was present, False when `bgs` is empty.)
      }
@@ -776,6 +782,21 @@ function TfBG.lastReading: BGReading;
 begin
   try
     Result := bgs[Low(bgs)];
+  finally
+  end;
+end;
+
+function TfBG.lastDataReading: BGReading;
+var
+  i: integer;
+begin
+  result := lastReading;
+  try
+    for i := Low(bgs) to High(bgs) do
+      if not bgs[i].empty then begin
+          result := bgs[i];
+          Exit;
+      end;
   finally
   end;
 end;
@@ -4011,6 +4032,10 @@ begin
   d := lastReading.date; // Last reading time
 
   min := MilliSecondsBetween(Now, d) div MILLIS_PER_MINUTE;  // Minutes since last
+  if min > 60000000 then begin
+    d := lastDataReading.date;
+    min := MilliSecondsBetween(Now, d) div MILLIS_PER_MINUTE;  // Minutes since last
+  end;
   sec := (MilliSecondsBetween(Now, d) mod MILLIS_PER_MINUTE) div 1000; // Seconds since last
 
   lDiff.Caption := Format(RS_OUTDATED_TIME, [FormatDateTime('H:mm', d), min, sec]);
