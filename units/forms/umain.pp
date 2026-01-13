@@ -2422,9 +2422,11 @@ begin
     if Result = mrRetry then // mbRetry returns mrRetry
     begin
       // User chose to force - bypass cache completely
-      FetchAndValidateReadingsForced;
-      // Update the rest of the UI manually since we bypassed normal flow
-      CompleteUIUpdate;
+      if FetchAndValidateReadingsForced then
+      begin
+        // Update the rest of the UI manually since we bypassed normal flow
+        CompleteUIUpdate;
+      end;
     end;
     // If Cancel was chosen, do nothing - let user wait
   end
@@ -4664,6 +4666,10 @@ begin
   else
     HandleNormalGlucose(reading);
 
+  // Don't show pnOffReading when warning panel is displayed
+  if pnWarning.Visible then
+    Exit;
+
   pnOffReading.Visible := native.GetBoolSetting('ux.off_bar', false);
   case reading.level of
   trndi.types.BGHigh:
@@ -4876,6 +4882,11 @@ begin
   if tryLastReading(bg) then
   begin
     val := bg.format(un, BG_MSG_SHORT);
+    if val[1] = '-' then begin
+      bg := lastDataReading;
+      val := bg.format(un, BG_MSG_SHORT);
+    end;
+
     last := HourOf(bg.date).ToString + ':' + MinuteOf(bg.date).tostring;
     if DateOf(bg.date) <> Dateof(now) then
       last := last + ' ' + Format(RS_DAYS_AGO, [DaysBetween(now, bg.date)]);
