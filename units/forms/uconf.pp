@@ -1662,11 +1662,11 @@ begin
   // Initialize parameter labels for current backend selection
   cbSysChange(Self);
 
-  {$IFNDEF TRNDIEXT}
+  {$IFNDEF xTRNDIEXT}
     lExtName.Caption := RS_NO_EXTENSIONS;
 
 
-    {$IF DEFINED(XWINDOWS) OR DEFINED(LINUX) OR DEFINED(CPUAMD64)}
+    {$IF (DEFINED(WINDOWS) OR DEFINED(LINUX)) AND DEFINED(CPUAMD64)}
       lExtCopyright.Caption := RS_NO_EXTENSIONS_COPYRIGHT;
     {$ELSE}
       arch := {$I %FPCTARGETCPU%};
