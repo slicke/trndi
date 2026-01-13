@@ -1054,59 +1054,56 @@ begin
 end;
 
 procedure TfConf.getAPILabels(out pl1, pl2: string);
-var
-  api: TrndiAPI;
 begin
-  case cbSys.Text of
-  API_NS:
-  begin
-    pl1 := NightScout.ParamLabel(1);
-    pl2 := NightScout.ParamLabel(2);
-  end;
-  API_NS3:
-  begin
-    pl1 := NightScout3.ParamLabel(1);
-    pl2 := NightScout3.ParamLabel(2);
-  end;
-  API_DEX_USA:
-  begin
-    pl1 := Dexcom.ParamLabel(1);
-    pl2 := Dexcom.ParamLabel(2);
-  end;
-  API_DEX_EU:
-  begin
-    pl1 := Dexcom.ParamLabel(1);
-    pl2 := Dexcom.ParamLabel(2);
-  end;
-  API_XDRIP:
-  begin
-    pl1 := xDrip.ParamLabel(1);
-    pl2 := xDrip.ParamLabel(2);
-  end;
-  {$ifdef DEBUG}
-  API_D_DEBUG,
-  API_D_MISSING,
-  API_D_PERFECT,
-  API_D_EDGE,
-  API_D_FIRST,
-  API_D_FIRSTX,
-  API_D_SECOND:
-  begin
+  // Defaults from base class
+  pl1 := TrndiAPI.ParamLabel(1);
+  pl2 := TrndiAPI.ParamLabel(2);
+
+  {$ifdef TrndiExt}
+  if cbSys.Text in API_DEBUG then begin
     pl1 := '<DEBUG IGNORED>';
-    pl2   := '<DEBUG IGNORED>';
-  end;
-  API_D_CUSTOM:
-  begin
-    pl1 := 'Show this Reading (mg/dL)';
-    pl2   := '<DEBUG IGNORED>';
+    pl2 := '<DEBUG IGNORED>';
   end;
   {$endif}
-  else
-  begin
-    // Defaults from base class
-    Label15.Caption := TrndiAPI.ParamLabel(1);
-    lPass.Caption := TrndiAPI.ParamLabel(2);
-  end;
+
+  case cbSys.Text of
+    API_NS:
+    begin
+      pl1 := NightScout.ParamLabel(1);
+      pl2 := NightScout.ParamLabel(2);
+    end;
+    API_NS3:
+    begin
+      pl1 := NightScout3.ParamLabel(1);
+      pl2 := NightScout3.ParamLabel(2);
+    end;
+    API_DEX_USA:
+    begin
+      pl1 := Dexcom.ParamLabel(1);
+      pl2 := Dexcom.ParamLabel(2);
+    end;
+    API_DEX_EU:
+    begin
+      pl1 := Dexcom.ParamLabel(1);
+      pl2 := Dexcom.ParamLabel(2);
+    end;
+    API_XDRIP:
+    begin
+      pl1 := xDrip.ParamLabel(1);
+      pl2 := xDrip.ParamLabel(2);
+    end;
+    {$ifdef DEBUG}
+    API_D_CUSTOM:
+    begin
+      pl1 := 'Show this Reading (mg/dL)';
+      pl2 := '<DEBUG IGNORED>';
+    end;
+    API_D_FIRSTX:
+    begin
+      pl1 := 'Block this number of readings';
+      pl2 := '<DEBUG IGNORED>';
+    end;
+    {$endif}
   end;
 end;
 
@@ -1130,9 +1127,7 @@ begin
   // Update parameter labels above edits based on backend
   getAPILabels(p1, p2);
   label15.caption := p1;
-  lPass.Caption := p1;
-
-
+  lPass.Caption := p2;
 end;
 
 procedure TfConf.cbUserClick(Sender: TObject);

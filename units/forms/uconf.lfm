@@ -8,6 +8,7 @@ object fConf: TfConf
   ClientHeight = 534
   ClientWidth = 675
   Position = poDesktopCenter
+  LCLVersion = '4.4.0.0'
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   OnResize = FormResize
@@ -16,10 +17,10 @@ object fConf: TfConf
     Height = 518
     Top = 11
     Width = 665
-    ActivePage = tsCustom
+    ActivePage = tsGeneral
     Align = alClient
     BorderSpacing.Around = 5
-    TabIndex = 4
+    TabIndex = 0
     TabOrder = 0
     OnChange = pcMainChange
     object tsGeneral: TTabSheet
