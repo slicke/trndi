@@ -144,6 +144,9 @@ RS_PREDICT = 'These are your predicted readings; Time-difference: predicted-read
 RS_SAFEMODE = 'Safe Mode Enabled';
 RS_SAFEMODE_DESC = 'Trndi is running in <b>Safe Mode</b>!<ul><li>No start-up actions from extensions will run</li><li>You cannot use, and no actions will trigger from, extensions</li></ul><br>Extensions will load next run, unless you press <b>CTRL</b>!';
 
+RS_ATTENTION_MISSING = 'Outdated Readings!';
+RS_ATTENTION_MISSING_DESC = 'Readings are not fresh, have your phone lost connection to the sensor?';
+
 // EXT
 sExtErr = 'Extension Error';
 sExtMsg = 'Extension Message';

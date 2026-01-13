@@ -1096,6 +1096,14 @@ msgstr ""
 msgid "xDrip URL"
 msgstr ""
 
+#: trndi.strings.rs_attention_missing
+msgid "Outdated Readings!"
+msgstr ""
+
+#: trndi.strings.rs_attention_missing_desc
+msgid "Readings are not fresh, have your phone lost connection to the sensor?"
+msgstr ""
+
 #: trndi.strings.rs_cleanup
 msgid "Wait. Shutting down extensions engine..."
 msgstr ""
