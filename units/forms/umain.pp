@@ -4979,6 +4979,7 @@ begin
   if (Length(bgs) < 1) or (not IsDataFresh) then
   begin
     showWarningPanel(RS_NO_BACKEND, true);
+    native.attention(RS_ATTENTION_MISSING, RS_ATTENTION_MISSING_DESC);
     Exit;
   end;
 

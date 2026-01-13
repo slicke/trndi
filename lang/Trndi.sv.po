@@ -1132,6 +1132,14 @@ msgstr "API-hemlighet"
 msgid "xDrip URL"
 msgstr "xDrip-adress"
 
+#: trndi.strings.rs_attention_missing
+msgid "Outdated Readings!"
+msgstr ""
+
+#: trndi.strings.rs_attention_missing_desc
+msgid "Readings are not fresh, have your phone lost connection to the sensor?"
+msgstr ""
+
 #: trndi.strings.rs_cleanup
 msgid "Wait. Shutting down extensions engine..."
 msgstr "Vänta. Stänger tilläggsmotorn..."
@@ -2309,3 +2317,4 @@ msgstr "Historikgraf"
 #, object-pascal-format
 msgid "Readings (%s)"
 msgstr "Avläsningar (%s)"
+
