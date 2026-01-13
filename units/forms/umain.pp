@@ -80,7 +80,7 @@ netdb,
 winsock,
 {$endif}
 LazFileUtils, uconf, trndi.native, Trndi.API,
-trndi.api.xDrip,{$ifdef DEBUG} trndi.api.debug_custom, trndi.api.debug, trndi.api.debug_edge, trndi.api.debug_missing, trndi.api.debug_perfect, trndi.api.debug_firstmissing, trndi.api.debug_secondmissing,{$endif}
+trndi.api.xDrip,{$ifdef DEBUG} trndi.api.debug_custom, trndi.api.debug, trndi.api.debug_edge, trndi.api.debug_missing, trndi.api.debug_firstXmissing, trndi.api.debug_perfect, trndi.api.debug_firstmissing, trndi.api.debug_secondmissing,{$endif}
 {$ifdef LCLQt6}Qt6, QtWidgets,{$endif}
 StrUtils, TouchDetection, ufloat, uhistorygraph, LCLType, trndi.webserver.threaded, RazerChromaFactory, RazerChroma;
 
@@ -2530,6 +2530,8 @@ procedure LoadUserSettings(f: TfConf);
         result := API_D_EDGE;
       'API_D_FIRST':
         result := API_D_FIRST;
+      'API_D_FIRSTX':
+        result := API_D_FIRSTX;
       'API_D_SECOND':
         result := API_D_SECOND;
     {$endif}
@@ -2851,6 +2853,8 @@ procedure SaveUserSettings(f: TfConf);
         result := 'API_D_EDGE';
       API_D_FIRST:
         result := 'API_D_FIRST';
+      API_D_FIRSTX:
+        result := 'API_D_FIRSTX';
       API_D_SECOND:
         result := 'API_D_SECOND';
     {$endif}

@@ -383,8 +383,9 @@ API_D_CUSTOM = '* Debug Custom Backend *';
 API_D_EDGE = '* Debug Edge Backend *';
 API_D_FIRST = '* Debug First Reading Missing *';
 API_D_SECOND = '* Debug Second Reading Missing *';
+API_D_FIRSTX = '* Debug First X Readings Missing *';
 
-API_DEBUG: array of string = (API_D_DEBUG, API_D_MISSING, API_D_PERFECT, API_D_CUSTOM, API_D_EDGE, API_D_FIRST, API_D_SECOND);
+API_DEBUG: array of string = (API_D_DEBUG, API_D_MISSING, API_D_PERFECT, API_D_CUSTOM, API_D_EDGE, API_D_FIRST, API_D_SECOND, API_D_FIRSTX);
 {$endif}
 var
 tnative: TrndiNative;
@@ -1085,6 +1086,7 @@ begin
   API_D_PERFECT,
   API_D_EDGE,
   API_D_FIRST,
+  API_D_FIRSTX,
   API_D_SECOND:
   begin
     pl1 := '<DEBUG IGNORED>';

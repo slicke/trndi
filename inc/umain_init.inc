@@ -372,6 +372,9 @@ begin
   API_D_FIRST,
   'API_D_FIRST':
     api := DebugFirstMissingAPI.Create(apiTarget, apiCreds);
+  API_D_FIRSTX,
+  'API_D_FIRSTX':
+    api := DebugFirstXMissingAPI.Create(apiTarget, apiCreds);
   API_D_SECOND,
   'API_D_SECOND':
     api := DebugSecondMissingAPI.Create(apiTarget, apiCreds);
