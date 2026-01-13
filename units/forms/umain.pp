@@ -4695,13 +4695,13 @@ var
 begin
   setColorMode(bg_color_hi);
 
+  if highAlerted then
+    Exit;
+
   if not bg_alert then
     if native.getBoolSetting('alerts.notice.hilo', true) then
       native.attention(ifthen(multi, multinick, RS_WARN_BG_HI_TITLE),
         Format(RS_WARN_BG_HI, [lVal.Caption]));
-
-  if highAlerted then
-    Exit;
 
   if native.GetBoolSetting('media.pause') then
     MediaController.Pause;
@@ -4741,13 +4741,13 @@ var
 begin
   SetColorMode(bg_color_lo);
 
+  if lowAlerted then
+    exit;
+
   if not bg_alert then
     if native.getBoolSetting('alerts.notice.hilo', true) then
       native.attention(ifthen(multi, multinick, RS_WARN_BG_LO_TITLE),
         Format(RS_WARN_BG_LO, [lVal.Caption]));
-
-  if lowAlerted then
-    exit;
 
   if native.GetBoolSetting('media.pause') then
     MediaController.Pause;
