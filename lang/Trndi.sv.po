@@ -2101,6 +2101,19 @@ msgstr "Trndi använder systemet \"%s\" för att visa notiser, det måste vara i
 msgid "- Extension has no copyright info -"
 msgstr "- Tillägget saknar upphovsrättsinfo -"
 
+#: uconf.rs_no_extensions
+msgid "This version of Trndi does not support extensions"
+msgstr "Denna version av Trndi stöder inte tillägg"
+
+#: uconf.rs_no_extensions_copyright
+msgid "Please download a version of Trndi that supports extensions"
+msgstr "Vänligen ladda hem en version av Trndi som stöder tillägg"
+
+#: uconf.rs_no_extensions_system
+#, object-pascal-format
+msgid "Due to hardware limitations, %s on %s cannot support extensions"
+msgstr "P.g.a. hårdvarubegränsningar, kan %s på %s inte stöda tillägg"
+
 #: uconf.rs_outdated_help
 msgid "This is the time after which Trndi will show the \"no recent\" readings overlay."
 msgstr "Detta är den tid efter vilken Trndi visar \"inga färska avläsningar\"."
@@ -2296,4 +2309,3 @@ msgstr "Historikgraf"
 #, object-pascal-format
 msgid "Readings (%s)"
 msgstr "Avläsningar (%s)"
-

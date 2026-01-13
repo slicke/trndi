@@ -534,6 +534,11 @@ RS_POS = 'This feature depends on your Window Manager (WM). %s may not support t
 RS_POS_UNKNOWN = 'This feature depends on your Window Manager. It may not support this feature.';
 
 RS_SHORTMODE_FULL = 'By default, Trndi only shows up/down/straight. You can enable the full range of arrows here - however you must realize that this is very experimental and potentially less accurate!';
+
+RS_NO_EXTENSIONS = 'This version of Trndi does not support extensions';
+RS_NO_EXTENSIONS_COPYRIGHT = 'Please download a version of Trndi that supports extensions';
+RS_NO_EXTENSIONS_SYSTEM = 'Due to hardware limitations, %s on %s cannot support extensions';
+
 var
 fConf: TfConf;
 
@@ -1608,11 +1613,12 @@ begin
 end;
 
 procedure TfConf.FormCreate(Sender: TObject);
-{$ifdef LCLGtk2}
 var
+{$ifdef LCLGtk2}
   wc: TWinControl;
   wi: integer;
 {$endif}
+ os, arch: string;
 begin
   // Base app version + build date + widgetset + target CPU
   lVersion.Caption := GetProductVersionMajorMinor('2.x');
@@ -1655,6 +1661,19 @@ begin
 
   // Initialize parameter labels for current backend selection
   cbSysChange(Self);
+
+  {$IFNDEF TRNDIEXT}
+    lExtName.Caption := RS_NO_EXTENSIONS;
+
+
+    {$IF DEFINED(XWINDOWS) OR DEFINED(LINUX) OR DEFINED(CPUAMD64)}
+      lExtCopyright.Caption := RS_NO_EXTENSIONS_COPYRIGHT;
+    {$ELSE}
+      arch := {$I %FPCTARGETCPU%};
+      os := {$I %FPCTARGETOS%};
+      lExtCopyright.Caption := Format(RS_NO_EXTENSIONS_SYSTEM, [os, arch]);
+    {$ENDIF}
+  {$endif}
 end;
 
 procedure TfConf.FormDestroy(Sender: TObject);

@@ -1988,6 +1988,19 @@ msgstr ""
 msgid "- Extension has no copyright info -"
 msgstr ""
 
+#: uconf.rs_no_extensions
+msgid "This version of Trndi does not support extensions"
+msgstr ""
+
+#: uconf.rs_no_extensions_copyright
+msgid "Please download a version of Trndi that supports extensions"
+msgstr ""
+
+#: uconf.rs_no_extensions_system
+#, object-pascal-format
+msgid "Due to hardware limitations, %s on %s cannot support extensions"
+msgstr ""
+
 #: uconf.rs_outdated_help
 msgid "This is the time after which Trndi will show the \"no recent\" readings overlay."
 msgstr ""
