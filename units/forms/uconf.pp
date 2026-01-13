@@ -1667,7 +1667,7 @@ begin
   // Initialize parameter labels for current backend selection
   cbSysChange(Self);
 
-  {$IFNDEF xTRNDIEXT}
+  {$IFNDEF TRNDIEXT}
     lExtName.Caption := RS_NO_EXTENSIONS;
 
 
