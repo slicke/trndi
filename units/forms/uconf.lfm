@@ -17,10 +17,10 @@ object fConf: TfConf
     Height = 518
     Top = 11
     Width = 665
-    ActivePage = tsGeneral
+    ActivePage = tsDisplay
     Align = alClient
     BorderSpacing.Around = 5
-    TabIndex = 0
+    TabIndex = 2
     TabOrder = 0
     OnChange = pcMainChange
     object tsGeneral: TTabSheet
@@ -10577,17 +10577,17 @@ object fConf: TfConf
         Align = alClient
         TabIndex = 0
         TabOrder = 0
-        TabPosition = tpLeft
+        TabPosition = tpBottom
         OnChange = pcColorsChange
         object tsBackgrounds: TTabSheet
           Caption = 'Backgrounds'
-          ClientHeight = 444
-          ClientWidth = 626
+          ClientHeight = 424
+          ClientWidth = 649
           object cl_hi_bg: TColorButton
             Left = 5
             Height = 25
             Top = 20
-            Width = 616
+            Width = 639
             Align = alTop
             BorderSpacing.Around = 5
             BorderWidth = 2
@@ -10600,7 +10600,7 @@ object fConf: TfConf
             Left = 5
             Height = 25
             Top = 50
-            Width = 616
+            Width = 639
             Align = alTop
             BorderSpacing.Around = 5
             BorderWidth = 2
@@ -10613,7 +10613,7 @@ object fConf: TfConf
             Left = 5
             Height = 25
             Top = 80
-            Width = 616
+            Width = 639
             Align = alTop
             BorderSpacing.Around = 5
             BorderWidth = 2
@@ -10626,20 +10626,20 @@ object fConf: TfConf
             Left = 0
             Height = 15
             Top = 0
-            Width = 626
+            Width = 649
             Align = alTop
             Caption = 'Change Trndi''s default background colors, depending on glucose reading'
           end
         end
         object tsTexts: TTabSheet
           Caption = 'Texts'
-          ClientHeight = 444
-          ClientWidth = 626
+          ClientHeight = 424
+          ClientWidth = 649
           object cl_lo_txt: TColorButton
             Left = 5
             Height = 25
             Top = 20
-            Width = 616
+            Width = 639
             Align = alTop
             BorderSpacing.Around = 5
             BorderWidth = 2
@@ -10652,7 +10652,7 @@ object fConf: TfConf
             Left = 5
             Height = 25
             Top = 50
-            Width = 616
+            Width = 639
             Align = alTop
             BorderSpacing.Around = 5
             BorderWidth = 2
@@ -10665,7 +10665,7 @@ object fConf: TfConf
             Left = 5
             Height = 25
             Top = 80
-            Width = 616
+            Width = 639
             Align = alTop
             BorderSpacing.Around = 5
             BorderWidth = 2
@@ -10678,20 +10678,20 @@ object fConf: TfConf
             Left = 0
             Height = 15
             Top = 0
-            Width = 626
+            Width = 649
             Align = alTop
             Caption = 'Change Trndi''s default text colors, depending on glucose reading'
           end
         end
         object tsCustomRange: TTabSheet
           Caption = 'Custom range'
-          ClientHeight = 444
-          ClientWidth = 626
+          ClientHeight = 424
+          ClientWidth = 649
           object cl_hi_txt_cust: TColorButton
             Left = 5
             Height = 25
             Top = 20
-            Width = 616
+            Width = 639
             Align = alTop
             BorderSpacing.Around = 5
             BorderWidth = 2
@@ -10704,7 +10704,7 @@ object fConf: TfConf
             Left = 5
             Height = 25
             Top = 50
-            Width = 616
+            Width = 639
             Align = alTop
             BorderSpacing.Around = 5
             BorderWidth = 2
@@ -10717,7 +10717,7 @@ object fConf: TfConf
             Left = 5
             Height = 25
             Top = 80
-            Width = 616
+            Width = 639
             Align = alTop
             BorderSpacing.Around = 5
             BorderWidth = 2
@@ -10730,7 +10730,7 @@ object fConf: TfConf
             Left = 5
             Height = 25
             Top = 110
-            Width = 616
+            Width = 639
             Align = alTop
             BorderSpacing.Around = 5
             BorderWidth = 2
@@ -10742,8 +10742,8 @@ object fConf: TfConf
           object Label14: TLabel
             Left = 5
             Height = 15
-            Top = 424
-            Width = 616
+            Top = 404
+            Width = 639
             Align = alBottom
             BorderSpacing.Around = 5
             Caption = 'NOTE: Support depends on your data source '
@@ -10752,7 +10752,7 @@ object fConf: TfConf
             Left = 0
             Height = 15
             Top = 0
-            Width = 626
+            Width = 649
             Align = alTop
             Caption = 'Change Trndi''s default background and colors, when in the custom range'
           end

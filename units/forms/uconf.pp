@@ -1060,49 +1060,44 @@ begin
   pl2 := TrndiAPI.ParamLabel(2);
 
   {$ifdef TrndiExt}
-  if cbSys.Text in API_DEBUG then begin
+  if cbSys.Text in API_DEBUG then
+  begin
     pl1 := '<DEBUG IGNORED>';
     pl2 := '<DEBUG IGNORED>';
   end;
   {$endif}
 
   case cbSys.Text of
-    API_NS:
-    begin
-      pl1 := NightScout.ParamLabel(1);
-      pl2 := NightScout.ParamLabel(2);
-    end;
-    API_NS3:
-    begin
-      pl1 := NightScout3.ParamLabel(1);
-      pl2 := NightScout3.ParamLabel(2);
-    end;
-    API_DEX_USA:
-    begin
-      pl1 := Dexcom.ParamLabel(1);
-      pl2 := Dexcom.ParamLabel(2);
-    end;
-    API_DEX_EU:
-    begin
-      pl1 := Dexcom.ParamLabel(1);
-      pl2 := Dexcom.ParamLabel(2);
-    end;
-    API_XDRIP:
-    begin
-      pl1 := xDrip.ParamLabel(1);
-      pl2 := xDrip.ParamLabel(2);
-    end;
-    {$ifdef DEBUG}
-    API_D_CUSTOM:
-    begin
-      pl1 := 'Show this Reading (mg/dL)';
-      pl2 := '<DEBUG IGNORED>';
-    end;
-    API_D_FIRSTX:
-    begin
-      pl1 := 'Block this number of readings';
-      pl2 := '<DEBUG IGNORED>';
-    end;
+  API_NS:
+  begin
+    pl1 := NightScout.ParamLabel(1);
+    pl2 := NightScout.ParamLabel(2);
+  end;
+  API_NS3:
+  begin
+    pl1 := NightScout3.ParamLabel(1);
+    pl2 := NightScout3.ParamLabel(2);
+  end;
+  API_DEX_USA:
+  begin
+    pl1 := Dexcom.ParamLabel(1);
+    pl2 := Dexcom.ParamLabel(2);
+  end;
+  API_DEX_EU:
+  begin
+    pl1 := Dexcom.ParamLabel(1);
+    pl2 := Dexcom.ParamLabel(2);
+  end;
+  API_XDRIP:
+  begin
+    pl1 := xDrip.ParamLabel(1);
+    pl2 := xDrip.ParamLabel(2);
+  end;
+  {$ifdef DEBUG}
+  API_D_CUSTOM:
+    pl1 := 'Show this Reading (mg/dL)';
+  API_D_FIRSTX:
+    pl1 := 'Block this number of readings';
     {$endif}
   end;
 end;
@@ -1553,13 +1548,12 @@ procedure TfConf.cbPosChange(Sender: TObject);
 {$ifdef X_LINUXBSD}
 var
   s: string;
+  {$endif}
 begin
+  {$ifdef X_LINUXBSD}
   s := GetWindowManagerName;
   ExtHTML(uxdAuto, RS_POS_TITLE, IfThen(s = '', RS_POS_UNKNOWN, Format(RS_POS, [s])));
-
-{$else}
-begin
-{$endif}
+  {$endif}
 end;
 
 procedure TfConf.cbPredictionsChange(Sender: TObject);
@@ -1614,11 +1608,11 @@ end;
 
 procedure TfConf.FormCreate(Sender: TObject);
 var
-{$ifdef LCLGtk2}
+  {$ifdef LCLGtk2}
   wc: TWinControl;
   wi: integer;
-{$endif}
- os, arch: string;
+  {$endif}
+  os, arch: string;
 begin
   // Base app version + build date + widgetset + target CPU
   lVersion.Caption := GetProductVersionMajorMinor('2.x');
@@ -1640,7 +1634,8 @@ begin
   {$ifdef lclgtk2}
   self.font.size := 10;
   for wi := 0 to self.ComponentCount-1 do
-    if (self.components[wi] is TEdit) or (self.components[wi] is TSpinEdit) then begin
+    if (self.components[wi] is TEdit) or (self.components[wi] is TSpinEdit) then
+    begin
       wc := self.components[wi] as TWinControl;
       wc.Font.Color := clBlack;
     end;
@@ -1650,7 +1645,7 @@ begin
   tnative.noFree := true;
   if tnative.isDarkMode then
     tnative.setDarkMode
-  {$ifdef X_WIN}
+    {$ifdef X_WIN}
     (self.Handle)
   {$endif}
   ;
@@ -1663,16 +1658,16 @@ begin
   cbSysChange(Self);
 
   {$IFNDEF TRNDIEXT}
-    lExtName.Caption := RS_NO_EXTENSIONS;
+  lExtName.Caption := RS_NO_EXTENSIONS;
 
 
-    {$IF (DEFINED(WINDOWS) OR DEFINED(LINUX)) AND DEFINED(CPUAMD64)}
-      lExtCopyright.Caption := RS_NO_EXTENSIONS_COPYRIGHT;
-    {$ELSE}
-      arch := {$I %FPCTARGETCPU%};
-      os := {$I %FPCTARGETOS%};
-      lExtCopyright.Caption := Format(RS_NO_EXTENSIONS_SYSTEM, [os, arch]);
-    {$ENDIF}
+  {$IF (DEFINED(WINDOWS) OR DEFINED(LINUX)) AND DEFINED(CPUAMD64)}
+  lExtCopyright.Caption := RS_NO_EXTENSIONS_COPYRIGHT;
+  {$ELSE}
+  arch := {$I %FPCTARGETCPU%};
+  os := {$I %FPCTARGETOS%};
+  lExtCopyright.Caption := Format(RS_NO_EXTENSIONS_SYSTEM, [os, arch]);
+  {$ENDIF}
   {$endif}
 end;
 
