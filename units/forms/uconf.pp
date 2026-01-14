@@ -367,7 +367,7 @@ TfConf = class(TForm)
   procedure tsDisplayShow(Sender: TObject);
   procedure tsSystemShow(Sender: TObject);
 private
-  procedure getAPILabels(out pl1, pl2: string);
+  procedure getAPILabels(out user, pass: string);
 public
   chroma: TRazerChromaBase;
 end;
@@ -1053,51 +1053,51 @@ begin
   btUserSave.Enabled := false; // Twice as the fields change during update
 end;
 
-procedure TfConf.getAPILabels(out pl1, pl2: string);
+procedure TfConf.getAPILabels(out user, pass: string);
 begin
   // Defaults from base class
-  pl1 := TrndiAPI.ParamLabel(1);
-  pl2 := TrndiAPI.ParamLabel(2);
+  user := TrndiAPI.ParamLabel(APLUser);
+  pass := TrndiAPI.ParamLabel(APLPass);
 
   {$ifdef TrndiExt}
   if cbSys.Text in API_DEBUG then
   begin
-    pl1 := '<DEBUG IGNORED>';
-    pl2 := '<DEBUG IGNORED>';
+    user := '<DEBUG IGNORED>';
+    pass := '<DEBUG IGNORED>';
   end;
   {$endif}
 
   case cbSys.Text of
   API_NS:
   begin
-    pl1 := NightScout.ParamLabel(1);
-    pl2 := NightScout.ParamLabel(2);
+    user := NightScout.ParamLabel(APLUser);
+    pass := NightScout.ParamLabel(APLPass);
   end;
   API_NS3:
   begin
-    pl1 := NightScout3.ParamLabel(1);
-    pl2 := NightScout3.ParamLabel(2);
+    user := NightScout3.ParamLabel(APLUser);
+    pass := NightScout3.ParamLabel(APLPass);
   end;
   API_DEX_USA:
   begin
-    pl1 := Dexcom.ParamLabel(1);
-    pl2 := Dexcom.ParamLabel(2);
+    user := Dexcom.ParamLabel(APLUser);
+    pass := Dexcom.ParamLabel(APLPass);
   end;
   API_DEX_EU:
   begin
-    pl1 := Dexcom.ParamLabel(1);
-    pl2 := Dexcom.ParamLabel(2);
+    user := Dexcom.ParamLabel(APLUser);
+    pass := Dexcom.ParamLabel(APLPass);
   end;
   API_XDRIP:
   begin
-    pl1 := xDrip.ParamLabel(1);
-    pl2 := xDrip.ParamLabel(2);
+    user := xDrip.ParamLabel(APLUser);
+    pass := xDrip.ParamLabel(APLPass);
   end;
   {$ifdef DEBUG}
   API_D_CUSTOM:
-    pl1 := 'Show this Reading (mg/dL)';
+    user := 'Show this Reading (mg/dL)';
   API_D_FIRSTX:
-    pl1 := 'Block this number of readings';
+    user := 'Block this number of readings';
     {$endif}
   end;
 end;
@@ -1114,15 +1114,15 @@ procedure WarnUnstableAPI;
       ShowMessage(RS_BETA);
   end;
 
-var p1, p2: string;
+var user, pass: string;
 begin
   gbOverride.Color := clDefault;
   if not (sender is TfConf) then
     WarnUnstableAPI;
   // Update parameter labels above edits based on backend
-  getAPILabels(p1, p2);
-  label15.caption := p1;
-  lPass.Caption := p2;
+  getAPILabels(user, pass);
+  label15.caption := user;
+  lPass.Caption := pass;
 end;
 
 procedure TfConf.cbUserClick(Sender: TObject);
@@ -1691,31 +1691,31 @@ end;
 
 procedure TfConf.lLicenseClick(Sender: TObject);
 const
-  txt = '<img src="https://trndi.app/doc/img/trndi-logo.png"><br>' +
-    '<b>Trndi - CGM viewer</b><br>' +
-    '<i>A re-imagination of TrayTrend by Björn Lindh</i><br>' +
-    'Copyright (C) 2017-2026 Björn Lindh<br><br>' +
-    'This program is free software: you can redistribute it and/or modify it<br>' +
-    'under the terms of the GNU General Public License version 3 as published<br>' +
-    'by the Free Software Foundation.<br>' +
-    'For more information, refer to the accompanying license file or visit:<br>' +
-    'https://www.gnu.org/licenses/gpl-3.0<br>' +
-    'Trndi is hobby project, verify all data with an officially approved<br>' +
-    'medical app before acting on any shown data!<br>' +
-    'This app is NOT a medical device and is NOT intended for:<br>' +
-    '- Medical diagnosis, treatment, or prevention'#10 + '- Making medical decisions<br>' +
-    '- Replacing your CGM app or medical devices'#10 + '- Emergency medical situations<br><br>' +
-    '<b>### IMPORTANT WARNINGS ###</b><br>' +
+  txt = '<img src="https://trndi.app/doc/img/trndi-logo.png">' + sHTMLLineBreak +
+    '<b>Trndi - CGM viewer</b>' + sHTMLLineBreak +
+    '<i>A re-imagination of TrayTrend by Björn Lindh</i>' + sHTMLLineBreak +
+    'Copyright (C) 2017-2026 Björn Lindh' + sHTMLLineBreak + sHTMLLineBreak +
+    'This program is free software: you can redistribute it and/or modify it' + sHTMLLineBreak +
+    'under the terms of the GNU General Public License version 3 as published' + sHTMLLineBreak +
+    'by the Free Software Foundation.' + sHTMLLineBreak +
+    'For more information, refer to the accompanying license file or visit:' + sHTMLLineBreak +
+    'https://www.gnu.org/licenses/gpl-3.0' + sHTMLLineBreak +
+    'Trndi is hobby project, verify all data with an officially approved' + sHTMLLineBreak +
+    'medical app before acting on any shown data!' + sHTMLLineBreak +
+    'This app is NOT a medical device and is NOT intended for:' + sHTMLLineBreak +
+    '- Medical diagnosis, treatment, or prevention'#10 + '- Making medical decisions' + sHTMLLineBreak +
+    '- Replacing your CGM app or medical devices'#10 + '- Emergency medical situations' + sHTMLLineBreak + sHTMLLineBreak +
+    '<b>### IMPORTANT WARNINGS ###</b>' + sHTMLLineBreak +
     '<ul>'+
     '<li>Data displayed may be inaccurate, delayed, or unavailable</li>' +
     '<li> Always verify readings with your official CGM device</li>' +
     '<li> Never make medical decisions based solely on this app</li>' +
     '<li> Consult healthcare professionals for medical advice</li>'+
-    '</ul><br>' +
-    '<b>### BY USING THIS APP, YOU ACKNOWLEDGE THAT ###</b><br>' +
-    '- The developers assume NO LIABILITY for any harm, injury, or damages<br>' +
-    '- You use this app entirely at your own risk<br>' +
-    '- This app may contain bugs or errors that could display incorrect data<br><br>' +
+    '</ul>' + sHTMLLineBreak +
+    '<b>### BY USING THIS APP, YOU ACKNOWLEDGE THAT ###</b>' + sHTMLLineBreak +
+    '- The developers assume NO LIABILITY for any harm, injury, or damages' + sHTMLLineBreak +
+    '- You use this app entirely at your own risk' + sHTMLLineBreak +
+    '- This app may contain bugs or errors that could display incorrect data' + sHTMLLineBreak + sHTMLLineBreak +
     '<b><i>- IF YOU DO NOT AGREE WITH THESE TERMS, DO NOT USE THIS APP. -</i></b>';
 begin
   if ExtMsg(uxdAuto, 'License', txt, [mbOK, mbUxRead], uxmtOK, uxscHuge) <> mrOk then

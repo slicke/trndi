@@ -39,6 +39,8 @@ CGMCore = record
   hi, lo, top, bottom: integer;
 end;
 
+APIParamLabel = (APLUser, APLPass);
+
   {** TrndiAPI is the abstract base class for accessing CGM data sources.
       It defines common thresholds, time handling, and helper routines to read
       and classify BG readings. Subclasses implement connectivity and fetching.
@@ -148,7 +150,7 @@ const
         @param(Index 1..3 selecting which label to return)
         @returns(Caption text; empty string if not applicable)
      }
-  class function ParamLabel(Index: integer): string; virtual;
+  class function ParamLabel(LabelName: APIParamLabel): string; virtual;
     {** Retrieve BG readings with optional extras path/params.
         This overload captures the raw response in a string.
 
@@ -519,15 +521,13 @@ end;
   Default parameter label provider for Settings UI.
   Subclasses override to provide backend-specific captions.
 ------------------------------------------------------------------------------}
-class function TrndiAPI.ParamLabel(Index: integer): string;
+class function TrndiAPI.ParamLabel(LabelName: APIParamLabel): string;
 begin
-  case Index of
-  1:
+  case LabelName of
+  APLUser:
     Result := 'Server Address';
-  2:
+  APLPass:
     Result := 'API Key';
-  3:
-    Result := 'Extra (optional)';
   else
     Result := '';
   end;

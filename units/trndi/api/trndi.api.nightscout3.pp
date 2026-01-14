@@ -83,7 +83,7 @@ public
         2: Auth token suffix (v2)
         3: (unused)
      }
-  class function ParamLabel(Index: integer): string; override;
+  class function ParamLabel(LabelName: APIParamLabel): string; override;
 published
   property siteBase: string read FSiteBase;  // e.g. https://example.com
   property token: string read FToken;        // JWT when connected
@@ -605,15 +605,15 @@ end;
 {------------------------------------------------------------------------------
   Provide parameter label captions for Settings UI (NightScout v3 backend).
 ------------------------------------------------------------------------------}
-class function NightScout3.ParamLabel(Index: integer): string;
+class function NightScout3.ParamLabel(LabelName: APIParamLabel): string;
 begin
-  case Index of
-  1:
+  case LabelName of
+  APLUser:
     Result := sParamUsername;
-  2:
+  APLPass:
     Result := sParamPassword;
   else
-    Result := inherited ParamLabel(Index);
+    Result := inherited ParamLabel(LabelName);
   end;
 end;
 

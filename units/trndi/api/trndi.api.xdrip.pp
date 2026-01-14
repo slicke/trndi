@@ -44,7 +44,7 @@ interface
 uses
 Classes, SysUtils, StrUtils, sha1,
   // Parent classes and modules
-trndi.api.nightscout, trndi.native, trndi.types,
+trndi.api.nightscout, trndi.api, trndi.native, trndi.types,
   // FPC/Lazarus units
 DateUtils, Dialogs;
 
@@ -133,7 +133,7 @@ public
         2: API Secret (plain text)
         3: (unused)
      }
-  class function ParamLabel(Index: integer): string; override;
+  class function ParamLabel(LabelName: APIParamLabel): string; override;
 protected
   {** Get the value which represents the maximum reading for the backend
   }
@@ -319,15 +319,15 @@ end;
 {------------------------------------------------------------------------------
   Provide parameter label captions for Settings UI (xDrip backend).
 ------------------------------------------------------------------------------}
-class function xDrip.ParamLabel(Index: integer): string;
+class function xDrip.ParamLabel(LabelName: APIParamLabel): string;
 begin
-  case Index of
-  1:
+  case LabelName of
+  APLUser:
     Result := sParamUsername;
-  2:
+  APLPass:
     Result := sParamPassword;
   else
-    Result := inherited ParamLabel(Index);
+    Result := inherited ParamLabel(LabelName);
   end;
 end;
 

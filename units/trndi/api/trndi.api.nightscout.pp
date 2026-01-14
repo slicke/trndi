@@ -122,7 +122,7 @@ public
       2: API Secret (plain text)
       3: (unused)
      }
-  class function ParamLabel(Index: integer): string; override;
+  class function ParamLabel(LabelName: APIParamLabel): string; override;
     {** Test NightScout credentials
     }
   class function testConnection(user, pass, extra: string): byte; override;
@@ -415,15 +415,15 @@ end;
 {------------------------------------------------------------------------------
   Provide parameter label captions for Settings UI (NightScout backend).
 ------------------------------------------------------------------------------}
-class function NightScout.ParamLabel(Index: integer): string;
+class function NightScout.ParamLabel(LabelName: APIParamLabel): string;
 begin
-  case Index of
-  1:
+  case LabelName of
+  APLUser:
     Result := sParamUsername;
-  2:
+  APLPass:
     Result := sParamPassword;
   else
-    Result := inherited ParamLabel(Index);
+    Result := inherited ParamLabel(LabelName);
   end;
 end;
 
