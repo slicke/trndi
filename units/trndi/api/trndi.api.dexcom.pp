@@ -167,7 +167,7 @@ public
         2: Dexcom Password
         3: Region (use "usa" for US servers)
      }
-  class function ParamLabel(Index: integer): string; override;
+  class function ParamLabel(LabelName: APIParamLabel): string; override;
   {** Test connection for Dexcom Share API
       - Performs authentication sequence similar to Connect to validate credentials
       - Probes /General/SystemUtcTime to ensure server responds with time info
@@ -643,17 +643,15 @@ end;
 {------------------------------------------------------------------------------
   Provide parameter label captions for Settings UI (Dexcom backend).
 ------------------------------------------------------------------------------}
-class function Dexcom.ParamLabel(Index: integer): string;
+class function Dexcom.ParamLabel(LabelName: APIParamLabel): string;
 begin
-  case Index of
-  1:
+  case LabelName of
+  APLUser:
     Result := sParamUserName;
-  2:
+  APLPass:
     Result := sParamPassword;
-  3:
-    Result := sParamRegion;
   else
-    Result := inherited ParamLabel(Index);
+    Result := inherited ParamLabel(LabelName);
   end;
 end;
 
