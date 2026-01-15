@@ -1030,7 +1030,7 @@ begin
   user := TrndiAPI.ParamLabel(APLUser);
   pass := TrndiAPI.ParamLabel(APLPass);
 
-  {$ifdef TrndiExt}
+  {$ifdef DEBUG}
   if cbSys.Text in API_DEBUG then
   begin
     user := RS_DEBUG_BACKEND_LABEL;
@@ -1265,7 +1265,7 @@ begin
 
   s := '';
 
-  {$ifdef TrndiExt}
+  {$ifdef DEBUG}
   if cbSys.Text in API_DEBUG then
     s := DebugAPI.ParamLabel(APLDesc);
   {$endif}
