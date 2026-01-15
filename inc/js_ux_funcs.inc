@@ -74,6 +74,16 @@ begin
   TTrndiExtEngine.Instance.CallFunction('uxCallback', [comp, val]);
 end;
 
+//Post a notification
+function JSAttention(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw;
+var
+  s: string;
+begin
+  s := ctx^^.ToUtf8(argv^[0]);
+
+  native.attention('Trndi - Extension Message', s);
+end;
+
 // Display an HTML message dialog
 function JSHTMLMsg(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw;
 var

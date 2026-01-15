@@ -37,17 +37,62 @@
  *)
 // JavaScript API Bridge Functions - Expose app data to extensions
 
+
+// Returns a settings value
+function JSGetSetting(ctx: JSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw; cdecl;
+var
+  key, val: string;
+  res: JSValue;
+begin
+
+  key := ctx^.ToUtf8(argv^[0]);
+
+  if not native.TryGetSetting(key, val) then
+    result := JS_FALSE
+  else
+  begin
+    res := ctx^.From(val);
+    result := res.raw;
+  end;
+end;
+
+// Returns a settings value
+function JSSetSetting(ctx: JSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw; cdecl;
+var
+  sect, key, val, curr: string;
+  res: JSValue;
+begin
+  key := ctx^.ToUtf8(argv^[0]);
+  val := ctx^.ToUtf8(argv^[1]);
+  if not native.TryGetSetting(key, curr) then
+    curr := '<empty>';
+
+  sect := ExtractDelimited(1,key,['.']);
+
+  if sect <> 'extval' then
+  begin
+    if ExtMsg(uxdNormal, 'System setting change', '<b>ALERT</b><br>An extension is requesting permission to edit this settings value:'+sHTMLLineBreak+
+      '<i>'+key+'</i>'+sHTMLLineBreak+sHTMLLineBreak+'New value: ' + val + sHTMLLineBreak + 'Current Value: ' + curr + sHTMLLineBreak + sHTMLLineBreak +
+      'Allow this change?',[mbYes, mbNo],uxmtWarning) = mrYes then
+      native.SetSetting(key, val);
+  end
+  else
+    native.SetSetting(key, val);
+end;
+
 // Return the active username
 function JSActiveUser(ctx: JSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw; cdecl;
 var
   curr: rawbytestring;
   res: JSValue;
 begin
-  if username <> '' then begin
+  if username <> '' then
+  begin
     curr := username;
     res := ctx^.From(curr);
     result := res.raw;
-  end else
+  end
+  else
     // Return a JS boolean false when no user has been loaded
     result := JS_FALSE;
 end;
@@ -65,10 +110,8 @@ begin
     result := res.raw;
   end
   else
-  begin
-    // Return a real JS boolean false when not in multi-user mode
-    result := JS_FALSE;
-  end;
+    result := JS_FALSE// Return a real JS boolean false when not in multi-user mode
+  ;
 end;
 
 // Handle the active bg unit
@@ -96,7 +139,7 @@ end;
 // Predict future blood glucose readings
 function JSPredictReadings(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw;
 var
-  numPredictions: Variant;
+  numPredictions: variant;
   predictions: BGResults;
   success: boolean;
   i: integer;
@@ -128,107 +171,113 @@ begin
   // Build array of prediction arrays
   // Each prediction is: [value_in_current_unit, mgdl, mmol, timestamp]
   case Length(predictions) of
-    0: Result := TTrndiExtEngine.Instance.CreateJSArray([]);
-    1: Result := TTrndiExtEngine.Instance.CreateJSArray([
-         TTrndiExtEngine.Instance.CreateJSArray([
-           predictions[0].convert(un),
-           Round(predictions[0].convert(BGUnit.mgdl)),
-           predictions[0].convert(BGUnit.mmol),
-           predictions[0].date
-         ])
-       ]);
-    2: Result := TTrndiExtEngine.Instance.CreateJSArray([
-         TTrndiExtEngine.Instance.CreateJSArray([
-           predictions[0].convert(un),
-           Round(predictions[0].convert(BGUnit.mgdl)),
-           predictions[0].convert(BGUnit.mmol),
-           predictions[0].date
-         ]),
-         TTrndiExtEngine.Instance.CreateJSArray([
-           predictions[1].convert(un),
-           Round(predictions[1].convert(BGUnit.mgdl)),
-           predictions[1].convert(BGUnit.mmol),
-           predictions[1].date
-         ])
-       ]);
-    3: Result := TTrndiExtEngine.Instance.CreateJSArray([
-         TTrndiExtEngine.Instance.CreateJSArray([
-           predictions[0].convert(un),
-           Round(predictions[0].convert(BGUnit.mgdl)),
-           predictions[0].convert(BGUnit.mmol),
-           predictions[0].date
-         ]),
-         TTrndiExtEngine.Instance.CreateJSArray([
-           predictions[1].convert(un),
-           Round(predictions[1].convert(BGUnit.mgdl)),
-           predictions[1].convert(BGUnit.mmol),
-           predictions[1].date
-         ]),
-         TTrndiExtEngine.Instance.CreateJSArray([
-           predictions[2].convert(un),
-           Round(predictions[2].convert(BGUnit.mgdl)),
-           predictions[2].convert(BGUnit.mmol),
-           predictions[2].date
-         ])
-       ]);
-    4: Result := TTrndiExtEngine.Instance.CreateJSArray([
-         TTrndiExtEngine.Instance.CreateJSArray([
-           predictions[0].convert(un),
-           Round(predictions[0].convert(BGUnit.mgdl)),
-           predictions[0].convert(BGUnit.mmol),
-           predictions[0].date
-         ]),
-         TTrndiExtEngine.Instance.CreateJSArray([
-           predictions[1].convert(un),
-           Round(predictions[1].convert(BGUnit.mgdl)),
-           predictions[1].convert(BGUnit.mmol),
-           predictions[1].date
-         ]),
-         TTrndiExtEngine.Instance.CreateJSArray([
-           predictions[2].convert(un),
-           Round(predictions[2].convert(BGUnit.mgdl)),
-           predictions[2].convert(BGUnit.mmol),
-           predictions[2].date
-         ]),
-         TTrndiExtEngine.Instance.CreateJSArray([
-           predictions[3].convert(un),
-           Round(predictions[3].convert(BGUnit.mgdl)),
-           predictions[3].convert(BGUnit.mmol),
-           predictions[3].date
-         ])
-       ]);
-    5: Result := TTrndiExtEngine.Instance.CreateJSArray([
-         TTrndiExtEngine.Instance.CreateJSArray([
-           predictions[0].convert(un),
-           Round(predictions[0].convert(BGUnit.mgdl)),
-           predictions[0].convert(BGUnit.mmol),
-           predictions[0].date
-         ]),
-         TTrndiExtEngine.Instance.CreateJSArray([
-           predictions[1].convert(un),
-           Round(predictions[1].convert(BGUnit.mgdl)),
-           predictions[1].convert(BGUnit.mmol),
-           predictions[1].date
-         ]),
-         TTrndiExtEngine.Instance.CreateJSArray([
-           predictions[2].convert(un),
-           Round(predictions[2].convert(BGUnit.mgdl)),
-           predictions[2].convert(BGUnit.mmol),
-           predictions[2].date
-         ]),
-         TTrndiExtEngine.Instance.CreateJSArray([
-           predictions[3].convert(un),
-           Round(predictions[3].convert(BGUnit.mgdl)),
-           predictions[3].convert(BGUnit.mmol),
-           predictions[3].date
-         ]),
-         TTrndiExtEngine.Instance.CreateJSArray([
-           predictions[4].convert(un),
-           Round(predictions[4].convert(BGUnit.mgdl)),
-           predictions[4].convert(BGUnit.mmol),
-           predictions[4].date
-         ])
-       ]);
+  0:
+    Result := TTrndiExtEngine.Instance.CreateJSArray([]);
+  1:
+    Result := TTrndiExtEngine.Instance.CreateJSArray([
+      TTrndiExtEngine.Instance.CreateJSArray([
+      predictions[0].convert(un),
+      Round(predictions[0].convert(BGUnit.mgdl)),
+      predictions[0].convert(BGUnit.mmol),
+      predictions[0].date
+      ])
+      ]);
+  2:
+    Result := TTrndiExtEngine.Instance.CreateJSArray([
+      TTrndiExtEngine.Instance.CreateJSArray([
+      predictions[0].convert(un),
+      Round(predictions[0].convert(BGUnit.mgdl)),
+      predictions[0].convert(BGUnit.mmol),
+      predictions[0].date
+      ]),
+      TTrndiExtEngine.Instance.CreateJSArray([
+      predictions[1].convert(un),
+      Round(predictions[1].convert(BGUnit.mgdl)),
+      predictions[1].convert(BGUnit.mmol),
+      predictions[1].date
+      ])
+      ]);
+  3:
+    Result := TTrndiExtEngine.Instance.CreateJSArray([
+      TTrndiExtEngine.Instance.CreateJSArray([
+      predictions[0].convert(un),
+      Round(predictions[0].convert(BGUnit.mgdl)),
+      predictions[0].convert(BGUnit.mmol),
+      predictions[0].date
+      ]),
+      TTrndiExtEngine.Instance.CreateJSArray([
+      predictions[1].convert(un),
+      Round(predictions[1].convert(BGUnit.mgdl)),
+      predictions[1].convert(BGUnit.mmol),
+      predictions[1].date
+      ]),
+      TTrndiExtEngine.Instance.CreateJSArray([
+      predictions[2].convert(un),
+      Round(predictions[2].convert(BGUnit.mgdl)),
+      predictions[2].convert(BGUnit.mmol),
+      predictions[2].date
+      ])
+      ]);
+  4:
+    Result := TTrndiExtEngine.Instance.CreateJSArray([
+      TTrndiExtEngine.Instance.CreateJSArray([
+      predictions[0].convert(un),
+      Round(predictions[0].convert(BGUnit.mgdl)),
+      predictions[0].convert(BGUnit.mmol),
+      predictions[0].date
+      ]),
+      TTrndiExtEngine.Instance.CreateJSArray([
+      predictions[1].convert(un),
+      Round(predictions[1].convert(BGUnit.mgdl)),
+      predictions[1].convert(BGUnit.mmol),
+      predictions[1].date
+      ]),
+      TTrndiExtEngine.Instance.CreateJSArray([
+      predictions[2].convert(un),
+      Round(predictions[2].convert(BGUnit.mgdl)),
+      predictions[2].convert(BGUnit.mmol),
+      predictions[2].date
+      ]),
+      TTrndiExtEngine.Instance.CreateJSArray([
+      predictions[3].convert(un),
+      Round(predictions[3].convert(BGUnit.mgdl)),
+      predictions[3].convert(BGUnit.mmol),
+      predictions[3].date
+      ])
+      ]);
+  5:
+    Result := TTrndiExtEngine.Instance.CreateJSArray([
+      TTrndiExtEngine.Instance.CreateJSArray([
+      predictions[0].convert(un),
+      Round(predictions[0].convert(BGUnit.mgdl)),
+      predictions[0].convert(BGUnit.mmol),
+      predictions[0].date
+      ]),
+      TTrndiExtEngine.Instance.CreateJSArray([
+      predictions[1].convert(un),
+      Round(predictions[1].convert(BGUnit.mgdl)),
+      predictions[1].convert(BGUnit.mmol),
+      predictions[1].date
+      ]),
+      TTrndiExtEngine.Instance.CreateJSArray([
+      predictions[2].convert(un),
+      Round(predictions[2].convert(BGUnit.mgdl)),
+      predictions[2].convert(BGUnit.mmol),
+      predictions[2].date
+      ]),
+      TTrndiExtEngine.Instance.CreateJSArray([
+      predictions[3].convert(un),
+      Round(predictions[3].convert(BGUnit.mgdl)),
+      predictions[3].convert(BGUnit.mmol),
+      predictions[3].date
+      ]),
+      TTrndiExtEngine.Instance.CreateJSArray([
+      predictions[4].convert(un),
+      Round(predictions[4].convert(BGUnit.mgdl)),
+      predictions[4].convert(BGUnit.mmol),
+      predictions[4].date
+      ])
+      ]);
   else
     // For more than 5 predictions, return simpler format: just the values in current unit
     Result := TTrndiExtEngine.Instance.CreateJSArray([]);

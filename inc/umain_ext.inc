@@ -148,6 +148,10 @@ begin
     addClassFunction('htmlYesNo', ExtFunction(@JSHTMLYesNo), -1);    
     addClassFunction('setClockInterval', ExtFunction(@JSvar_ClockInterval), 1);
 
+    addClassFunction('attention', ExtFunction(@JSAttention), 1);
+    addClassFunction('getSetting', ExtFunction(@JSGetSetting), -1);
+    addClassFunction('setSetting', ExtFunction(@JSSetSetting), -1);
+
     // Add the UX modification function, as declared in this file
     if ssCtrl in GetKeyShiftState then
       ExtHTML(uxdAuto, RS_SAFEMODE, RS_SAFEMODE_DESC, [mbOK], uxmtInformation, uxscLarge)
