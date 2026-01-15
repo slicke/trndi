@@ -1995,7 +1995,7 @@ end;
 procedure TfBG.lAgoClick(Sender: TObject);
 var
   displayMsg, dm: string;
-  s: utf8char;
+  s: system.utf8char;
   i: integer;
 begin
   if firstboot then
