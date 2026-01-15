@@ -94,7 +94,7 @@ mkdir -p macos/stage
 cp -R macos/Trndi.app macos/stage/
 rm -f Trndi.dmg
 
-create-dmg Trndi.dmg "macos/stage" --volname "Trndi" --format UDZO --icon-size 128 --icon "Trndi.app" 150 200 --app-drop-link 250 200 --out "Trndi.dmg"
+create-dmg Trndi.dmg "macos/stage" --volname "Trndi" --format UDZO --icon-size 128 --icon "Trndi.app" 150 200 --app-drop-link 250 200 --out "Trndi.dmg" 2>&1 | grep -v "internet-enable"
 
-rm -f rw*Trndi*.dmg
+rm -f rw*Trndi*.dmg 2>/dev/null || true
 rm -rf macos
