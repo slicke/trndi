@@ -41,7 +41,7 @@
 function getBGResults: JSValueRaw;
 var
   bgnow: BGReading;
-  mmol, curr: single;
+  mmol, curr: glucose;
   mgdl: integer;
 begin
   bgnow := fBG.lastReading;

@@ -3409,7 +3409,7 @@ procedure UpdatePredictionTimes;
     i, closest5, closest10, closest15, closestTarget: integer;
     diff5, diff10, diff15, diffTarget, currentDiff: integer;
     minutes, targetMinutes: integer;
-    delta: single;
+    delta: glucose;
     trend: BGTrend;
     pred1, pred2, pred3: string;
     lastReadingValue: single;
@@ -3906,7 +3906,7 @@ end;
 procedure TfBG.UpdateTrendDots;
 var
   Dot: TDotControl;
-  Value: single; // Parsed from hint (user unit), then normalized to mmol/L
+  Value: glucose; // Parsed from hint (user unit), then normalized to mmol/L
   ok: boolean;
   wasVisible: boolean;
 begin
@@ -4432,10 +4432,10 @@ var
   bgr: BGResults;
   pred1, pred2, pred3: string;
   lastReadingTime: TDateTime;
-  lastReadingValue: single;
+  lastReadingValue: glucose;
   i, closest5, closest10, closest15, closestTarget: integer;
   diff5, diff10, diff15, diffTarget, currentDiff: integer;
-  delta: single;
+  delta: glucose;
   trend: BGTrend;
   minutes, targetMinutes: integer;
   validCount: integer;

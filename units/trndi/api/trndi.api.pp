@@ -39,6 +39,9 @@ CGMCore = record
   hi, lo, top, bottom: integer;
 end;
 
+  {** Unit for storing glucose values }
+glucose = single;
+
 APIParamLabel = (APLUser, APLPass);
 
   {** TrndiAPI is the abstract base class for accessing CGM data sources.
@@ -109,9 +112,9 @@ protected
         @code(BGLOW), @code(BGRangeHI), or @code(BGRangeLO).
 
         @param(v Level selector)
-        @returns(Threshold value as @code(single))
+        @returns(Threshold value as @code(glucose))
      }
-  function getLevel(v: BGValLevel): single; virtual;
+  function getLevel(v: BGValLevel): glucose; virtual;
 
     {** Retrieve the current @code(CGMCore) thresholds in one record. }
   function getCGMCore: CGMCore;
@@ -214,7 +217,7 @@ const
         @param(v BG value)
         @returns(BG level classification)
      }
-  function getLevel(v: single): BGValLevel; virtual;
+  function getLevel(v: glucose): BGValLevel; virtual;
 
     {** Get the last reading in a larger time window (e.g., 24 hours).
         Convenience that returns a single last sample.
@@ -284,7 +287,7 @@ const
   property limitLO: integer read getLimitLow;
 
     {** Indexed read-only access to thresholds by @code(BGValLevel). }
-  property threshold[lvl: BGValLevel]: single read getLevel;
+  property threshold[lvl: BGValLevel]: glucose read getLevel;
 
     {** Read-only access to the full threshold record. }
   property cgm: CGMCore read getCGMCore;
@@ -367,7 +370,7 @@ end;
 {------------------------------------------------------------------------------
   Resolve a threshold value by BGValLevel.
 ------------------------------------------------------------------------------}
-function TrndiAPI.getLevel(v: BGValLevel): single;
+function TrndiAPI.getLevel(v: BGValLevel): glucose;
 begin
   case v of
   BGHIGH:
@@ -384,7 +387,7 @@ end;
 {------------------------------------------------------------------------------
   Classify a numeric BG value into a BGValLevel.
 ------------------------------------------------------------------------------}
-function TrndiAPI.getLevel(v: single): BGValLevel;
+function TrndiAPI.getLevel(v: glucose): BGValLevel;
 begin
   if v >= core.hi then
     Result := BGHIGH

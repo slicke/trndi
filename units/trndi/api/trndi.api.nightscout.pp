@@ -308,7 +308,7 @@ var
   s, resp, dev: string;
   params: array[1..1] of string;
   deltaField, rssiField, noiseField: TJSONData;
-  deltaValue: single;
+  deltaValue: glucose;
   currentSgv, prevSgv: integer;
   rssivalue, noiseValue: MaybeInt;
 begin
