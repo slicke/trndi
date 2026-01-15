@@ -56,6 +56,7 @@ public
   function connect: boolean; override;
   function getReadings(min, maxNum: integer; extras: string; out res: string): BGResults;
     override;
+  class function ParamLabel(LabelName: APIParamLabel): string; override;
 private
 
 published
@@ -176,6 +177,17 @@ end;
 function DebugAPI.getLimitLow: integer;
 begin
   Result := 40; // Debug minimum low limit
+end;
+
+class function DebugAPI.ParamLabel(LabelName: APIParamLabel): string;
+begin
+  result := inherited ParamLabel(LabelName);
+  if LabelName = APLUser then
+    Result := '(ignored for debug backend)';
+  if LabelName = APLPass then
+    Result := '(ignored for debug backend)';
+  if LabelName = APLDesc then
+    Result := result + 'This is a special debug backend for testing purposes only. It does not connect to any real service.';
 end;
 
 end.

@@ -45,7 +45,7 @@ interface
 
 uses
 Classes, SysUtils, Dialogs, trndi.types,
-trndi.api.debug, fpjson, jsonparser, dateutils;
+trndi.api.debug, fpjson, jsonparser, dateutils, trndi.api;
 
 type
   // Main class
@@ -57,6 +57,8 @@ public
   function getReadings({%H-}min, {%H-}maxNum: integer; {%H-}extras: string;
     out res: string): BGResults; override;
   constructor Create(user, pass: string); override;
+
+  class function ParamLabel(LabelName: APIParamLabel): string; override;
 end;
 
 implementation
@@ -67,10 +69,20 @@ begin
 end;
 
 constructor DebugCustomAPI.Create(user, pass: string);
+var
+  mmol: glucose;
+  fs: TFormatSettings;
 begin
   ua := 'Mozilla/5.0 (compatible; trndi) TrndiAPI';
   baseUrl := user;
   //key     := pass;
+  if pass = 'mmol' then begin
+    fs.DecimalSeparator := '.';
+    if TryStrToFloat(user, mmol, fs) then
+      setval := round(mmol * TrndiAPI.toMGDL)
+    else
+      setval := 99;
+  end else
   if not TryStrToInt(user, setval) then
     setval := 99;
   inherited;
@@ -112,6 +124,17 @@ begin
     Result[i].updateEnv('Debug', nodata, nodata);
   end;
 
+end;
+
+class function DebugCustomAPI.ParamLabel(LabelName: APIParamLabel): string;
+begin
+  result := inherited ParamLabel(LabelName);
+  if LabelName = APLUser then
+    Result := 'Reading to fake in mg/DL';
+  if LabelName = APLPass  then
+    Result := 'Enter "mmol" exactly to provide a mmol/L reading above (no quotes; use . as separator)';
+  if LabelName = APLDesc then
+    Result := result + sLineBreak + sLineBreak + 'You can enter any reading (in mg/DL) as username, to have Trndi use that as reading';
 end;
 
 end.

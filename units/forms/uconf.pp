@@ -55,8 +55,8 @@ Classes, ComCtrls, ExtCtrls, Spin, StdCtrls, SysUtils, Forms, Controls,
 Graphics, Dialogs, LCLTranslator, trndi.native, lclintf,
 slicke.ux.alert, slicke.ux.native, VersionInfo, trndi.funcs, buildinfo, StrUtils,
   // Backend APIs for label captions
-trndi.api, trndi.api.nightscout, trndi.api.nightscout3, trndi.api.dexcom,
-trndi.api.xdrip, RazerChroma;
+trndi.api, trndi.api.nightscout, trndi.api.nightscout3, trndi.api.dexcom, trndi.api.debug_custom,
+trndi.api.debug, trndi.api.debug_firstXmissing, trndi.api.xdrip, RazerChroma;
 
 type
 
@@ -395,8 +395,6 @@ tnative: TrndiNative;
 
 resourcestring
 RS_DEBUG_BACKEND_LABEL = '(Ignored for debug backend)';
-
-RS_DEBUG_BACKEND_DESC = 'This is a special debug backend for testing purposes only. It does not connect to any real service.';
 
 RS_Multi_User_Help =
   'Trndi supports more than one user, this is called the multi user mode.'+LineEnding+'In this section you can add/remove accounts. There''s always a default account which cannot be deleted.'+LineEnding+
@@ -1068,9 +1066,12 @@ begin
   end;
   {$ifdef DEBUG}
   API_D_CUSTOM:
-    user := 'Show this Reading (mg/dL)';
+  begin
+    user := DebugCustomAPI.ParamLabel(APLUser);
+    pass := DebugCustomAPI.ParamLabel(APLPass);
+  end;
   API_D_FIRSTX:
-    user := 'Block this number of readings';
+    user := DebugFirstXMissingAPI.ParamLabel(APLUser);
     {$endif}
   end;
 end;
@@ -1266,7 +1267,7 @@ begin
 
   {$ifdef TrndiExt}
   if cbSys.Text in API_DEBUG then
-    s := RS_DEBUG_BACKEND_DESC;
+    s := DebugAPI.ParamLabel(APLDesc);
   {$endif}
 
   case cbSys.Text of
@@ -1280,8 +1281,14 @@ begin
     s := Dexcom.ParamLabel(APLDesc);
   API_XDRIP:
     s := xDrip.ParamLabel(APLDesc);
+  {$ifdef Debug}
+  API_D_FIRSTX:
+    s := DebugFirstXMissingAPI.ParamLabel(APLDesc);
+  API_D_CUSTOM:
+      s := DebugCustomAPI.ParamLabel(APLDesc);
+  {$endif}
   else
-  {$ifdef TrndiExt} if s = ''  then {$endif}
+  {$ifdef Debug} if s = ''  then {$endif}
       s := RS_CHOOSE_SYSTEM;
   end;
 
