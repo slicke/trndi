@@ -1069,6 +1069,19 @@ msgstr ""
 msgid "Invalid Dexcom password or account credentials"
 msgstr ""
 
+#: trndi.api.dexcom.sparamdesc
+msgctxt "trndi.api.dexcom.sparamdesc"
+msgid ""
+"Dexcom region selection:\n"
+"\n"
+"Choose the server based on your account region:\n"
+"• Dexcom (USA): for accounts served by share2.dexcom.com\n"
+"• Dexcom (Outside USA): for accounts served by shareous1.dexcom.com\n"
+"\n"
+"If you are unsure, try “Outside USA” first if you live outside the US.\n"
+"Your username and password are your Dexcom Account (not Share) credentials."
+msgstr ""
+
 #: trndi.api.dexcom.sparampassword
 msgid "Dexcom Password"
 msgstr ""
@@ -1081,6 +1094,23 @@ msgstr ""
 msgid "Dexcom Username"
 msgstr ""
 
+#: trndi.api.nightscout.sparamdesc
+msgctxt "trndi.api.nightscout.sparamdesc"
+msgid ""
+"NightScout v2 setup (use FULL access token):\n"
+"\n"
+"1) Open your NightScout site (e.g., https://your-site).\n"
+"2) Go to Admin -> Tokens — or API Secret.\n"
+"3) If you use Tokens:\n"
+"   - Create a token with at least READ scope.\n"
+"   - Copy the FULL access token value exactly as shown.\n"
+"4) In Trndi:\n"
+"   - Address: enter your NightScout URL\n"
+"   - Auth: paste the FULL access token (not just a suffix).\n"
+"\n"
+"Note: If you instead use the legacy API Secret, paste your API Secret value as-is."
+msgstr ""
+
 #: trndi.api.nightscout.sparampassword
 msgctxt "trndi.api.nightscout.sparampassword"
 msgid "API Secret"
@@ -1091,6 +1121,24 @@ msgctxt "trndi.api.nightscout.sparamusername"
 msgid "NightScout URL"
 msgstr ""
 
+#: trndi.api.nightscout3.sparamdesc
+msgctxt "trndi.api.nightscout3.sparamdesc"
+msgid ""
+"** ALPHA DRIVER - Please use \"NightScout\" for daily use! **\n"
+"NightScout v3 setup (use FULL access token):\n"
+"\n"
+"1) Open your NightScout site (e.g., https://your-site).\n"
+"2) Go to Admin -> Tokens — or API Secret.\n"
+"3) If you use Tokens:\n"
+"   - Create a token with at least READ scope.\n"
+"   - Copy the FULL access token value exactly as shown.\n"
+"4) In Trndi:\n"
+"   - Address: enter your NightScout URL\n"
+"   - Auth: paste the FULL access token.\n"
+"\n"
+"Note: If you instead use the legacy API Secret, paste your API Secret value as-is."
+msgstr ""
+
 #: trndi.api.nightscout3.sparampassword
 msgid "Auth token suffix"
 msgstr ""
@@ -1098,6 +1146,15 @@ msgstr ""
 #: trndi.api.nightscout3.sparamusername
 msgctxt "trndi.api.nightscout3.sparamusername"
 msgid "NightScout URL"
+msgstr ""
+
+#: trndi.api.xdrip.sparamdesc
+msgctxt "trndi.api.xdrip.sparamdesc"
+msgid ""
+"xDrip setup:\n"
+"\n"
+"Address: your xDrip REST endpoint (base URL).\n"
+"Auth: API secret (plain text; server hashes it)."
 msgstr ""
 
 #: trndi.api.xdrip.sparampassword
@@ -1855,6 +1912,14 @@ msgstr ""
 msgid "Override/set your own limits for the custom range. This is your personal ideal goal, within the high/low area."
 msgstr ""
 
+#: uconf.rs_debug_backend_desc
+msgid "This is a special debug backend for testing purposes only. It does not connect to any real service."
+msgstr ""
+
+#: uconf.rs_debug_backend_label
+msgid "(Ignored for debug backend)"
+msgstr ""
+
 #: uconf.rs_default_account
 msgctxt "uconf.rs_default_account"
 msgid "Default"
@@ -1907,59 +1972,6 @@ msgstr ""
 
 #: uconf.rs_hastouch
 msgid "Shows if Trndi detected a touch screen"
-msgstr ""
-
-#: uconf.rs_help_dex_region
-msgid ""
-"Dexcom region selection:\n"
-"\n"
-"Choose the server based on your account region:\n"
-"• Dexcom (USA): for accounts served by share2.dexcom.com\n"
-"• Dexcom (Outside USA): for accounts served by shareous1.dexcom.com\n"
-"\n"
-"If you are unsure, try “Outside USA” first if you live outside the US.\n"
-"Your username and password are your Dexcom Account (not Share) credentials."
-msgstr ""
-
-#: uconf.rs_help_ns_v2
-msgid ""
-"NightScout v2 setup (use FULL access token):\n"
-"\n"
-"1) Open your NightScout site (e.g., https://your-site).\n"
-"2) Go to Admin -> Tokens — or API Secret.\n"
-"3) If you use Tokens:\n"
-"   - Create a token with at least READ scope.\n"
-"   - Copy the FULL access token value exactly as shown.\n"
-"4) In Trndi:\n"
-"   - Address: enter your NightScout URL\n"
-"   - Auth: paste the FULL access token (not just a suffix).\n"
-"\n"
-"Note: If you instead use the legacy API Secret, paste your API Secret value as-is."
-msgstr ""
-
-#: uconf.rs_help_ns_v3
-msgid ""
-"** ALPHA DRIVER - Please use \"NightScout\" for daily use! **\n"
-"NightScout v3 setup (use FULL access token):\n"
-"\n"
-"1) Open your NightScout site (e.g., https://your-site).\n"
-"2) Go to Admin -> Tokens — or API Secret.\n"
-"3) If you use Tokens:\n"
-"   - Create a token with at least READ scope.\n"
-"   - Copy the FULL access token value exactly as shown.\n"
-"4) In Trndi:\n"
-"   - Address: enter your NightScout URL\n"
-"   - Auth: paste the FULL access token.\n"
-"\n"
-"Note: If you instead use the legacy API Secret, paste your API Secret value as-is."
-msgstr ""
-
-#: uconf.rs_help_xdrip
-msgid ""
-"xDrip setup:\n"
-"\n"
-"Address: your xDrip REST endpoint (base URL).\n"
-"Auth: API secret (plain text; server hashes it)."
 msgstr ""
 
 #: uconf.rs_min_minutes

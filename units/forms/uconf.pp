@@ -394,6 +394,10 @@ var
 tnative: TrndiNative;
 
 resourcestring
+RS_DEBUG_BACKEND_LABEL = '(Ignored for debug backend)';
+
+RS_DEBUG_BACKEND_DESC = 'This is a special debug backend for testing purposes only. It does not connect to any real service.';
+
 RS_Multi_User_Help =
   'Trndi supports more than one user, this is called the multi user mode.'+LineEnding+'In this section you can add/remove accounts. There''s always a default account which cannot be deleted.'+LineEnding+
   'Accounts have their own settings and remote servers, and are "sandboxed". Start a new instance of Trndi to log in to a given user account.';
@@ -478,38 +482,6 @@ RS_Saftey_Hi =
 RS_Saftey_Low =
   'Trndi won''t allow a lower limit, the backend system only reports values every 5 minutes. 6 = one reading missing.';
 
-  // Backend-specific help texts
-RS_HELP_NS_V2 =
-  'NightScout v2 setup (use FULL access token):' + #13#10#13#10 +
-  '1) Open your NightScout site (e.g., https://your-site).' + #13#10 +
-  '2) Go to Admin -> Tokens — or API Secret.' + #13#10 +
-  '3) If you use Tokens:' + #13#10 + '   - Create a token with at least READ scope.' +
-  #13#10 + '   - Copy the FULL access token value exactly as shown.' + #13#10 +
-  '4) In Trndi:' + #13#10 + '   - Address: enter your NightScout URL' + #13#10 +
-  '   - Auth: paste the FULL access token (not just a suffix).' + #13#10 + #13#10 +
-  'Note: If you instead use the legacy API Secret, paste your API Secret value as-is.';
-
-RS_HELP_NS_V3 =
-  '** ALPHA DRIVER - Please use "NightScout" for daily use! **' + #13#10 +
-  'NightScout v3 setup (use FULL access token):' + #13#10#13#10 +
-  '1) Open your NightScout site (e.g., https://your-site).' + #13#10 +
-  '2) Go to Admin -> Tokens — or API Secret.' + #13#10 +
-  '3) If you use Tokens:' + #13#10 + '   - Create a token with at least READ scope.' +
-  #13#10 + '   - Copy the FULL access token value exactly as shown.' + #13#10 +
-  '4) In Trndi:' + #13#10 + '   - Address: enter your NightScout URL' + #13#10 +
-  '   - Auth: paste the FULL access token.' + #13#10 + #13#10 +
-  'Note: If you instead use the legacy API Secret, paste your API Secret value as-is.';
-
-RS_HELP_DEX_REGION =
-  'Dexcom region selection:'#13#10''#13#10'' +
-  'Choose the server based on your account region:' + LineEnding +
-  '• Dexcom (USA): for accounts served by share2.dexcom.com' + LineEnding +
-  '• Dexcom (Outside USA): for accounts served by shareous1.dexcom.com' +
-  LineEnding + LineEnding +
-  'If you are unsure, try “Outside USA” first if you live outside the US.' +
-  LineEnding + 'Your username and password are your Dexcom Account (not Share) credentials.';
-
-RS_HELP_XDRIP = 'xDrip setup:'#13#10''#13#10'Address: your xDrip REST endpoint (base URL).'#13#10'Auth: API secret (plain text; server hashes it).';
 RS_DEFAULT_ACCOUNT = 'Default';
 RS_CHOOSE_SYSTEM = 'Select your CGM system in the list, then enter your credentials';
 
@@ -1055,6 +1027,7 @@ end;
 
 procedure TfConf.getAPILabels(out user, pass: string);
 begin
+
   // Defaults from base class
   user := TrndiAPI.ParamLabel(APLUser);
   pass := TrndiAPI.ParamLabel(APLPass);
@@ -1062,8 +1035,8 @@ begin
   {$ifdef TrndiExt}
   if cbSys.Text in API_DEBUG then
   begin
-    user := '<DEBUG IGNORED>';
-    pass := '<DEBUG IGNORED>';
+    user := RS_DEBUG_BACKEND_LABEL;
+    pass := RS_DEBUG_BACKEND_LABEL;
   end;
   {$endif}
 
@@ -1288,26 +1261,33 @@ procedure TfConf.bBackendHelpClick(Sender: TObject);
 var
   s: string;
 begin
+
   s := '';
-  if cbSys.Text = API_NS then
-    s := RS_HELP_NS_V2
+
+  {$ifdef TrndiExt}
+  if cbSys.Text in API_DEBUG then
+    s := RS_DEBUG_BACKEND_DESC;
+  {$endif}
+
+  case cbSys.Text of
+  API_NS:
+    s := NightScout.ParamLabel(APLDesc);
+  API_NS3:
+    s := NightScout3.ParamLabel(APLDesc);
+  API_DEX_USA:
+    s := Dexcom.ParamLabel(APLDesc);
+  API_DEX_EU:
+    s := Dexcom.ParamLabel(APLDesc);
+  API_XDRIP:
+    s := xDrip.ParamLabel(APLDesc);
   else
-  if cbSys.Text = API_NS3 then
-    s := RS_HELP_NS_V3
-  else
-  if Pos('Dexcom', cbSys.Text) > 0 then
-    s := RS_HELP_DEX_REGION
-  else
-  if cbSys.Text = API_XDRIP then
-    s := RS_HELP_XDRIP
-  else
-  if cbSys.Text[1] = '*' then
-    s := 'This is a debug backend, it''s used to test Trndi. It should not be used by non-developers!'
-  else
-    s := RS_CHOOSE_SYSTEM;
+  {$ifdef TrndiExt} if s = ''  then {$endif}
+      s := RS_CHOOSE_SYSTEM;
+  end;
 
   if s <> '' then
     ShowMessage(s);
+
 end;
 
 procedure TfConf.bSysNoticeClick(Sender: TObject);

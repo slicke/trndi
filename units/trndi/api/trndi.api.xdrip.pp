@@ -153,6 +153,7 @@ implementation
 resourcestring
 sParamUsername = 'xDrip URL';
 sParamPassword = 'API Secret';
+sParamDesc ='xDrip setup:'#13#10''#13#10'Address: your xDrip REST endpoint (base URL).'#13#10'Auth: API secret (plain text; server hashes it).';
 
 {------------------------------------------------------------------------------
   getSystemName
@@ -326,6 +327,8 @@ begin
     Result := sParamUsername;
   APLPass:
     Result := sParamPassword;
+  APLDesc:
+    Result := sParamDesc;
   else
     Result := inherited ParamLabel(LabelName);
   end;

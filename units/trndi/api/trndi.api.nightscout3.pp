@@ -108,6 +108,15 @@ implementation
 resourcestring
 sParamUsername = 'NightScout URL';
 sParamPassword = 'Auth token suffix';
+sParamDesc = '** ALPHA DRIVER - Please use "NightScout" for daily use! **' + #13#10 +
+  'NightScout v3 setup (use FULL access token):' + #13#10#13#10 +
+  '1) Open your NightScout site (e.g., https://your-site).' + #13#10 +
+  '2) Go to Admin -> Tokens — or API Secret.' + #13#10 +
+  '3) If you use Tokens:' + #13#10 + '   - Create a token with at least READ scope.' +
+  #13#10 + '   - Copy the FULL access token value exactly as shown.' + #13#10 +
+  '4) In Trndi:' + #13#10 + '   - Address: enter your NightScout URL' + #13#10 +
+  '   - Auth: paste the FULL access token.' + #13#10 + #13#10 +
+  'Note: If you instead use the legacy API Secret, paste your API Secret value as-is.';
 
 
 {------------------------------------------------------------------------------
@@ -612,6 +621,8 @@ begin
     Result := sParamUsername;
   APLPass:
     Result := sParamPassword;
+  APLDesc:
+    Result := sParamDesc;
   else
     Result := inherited ParamLabel(LabelName);
   end;

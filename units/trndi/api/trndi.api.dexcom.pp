@@ -225,6 +225,14 @@ sErrDexLogin = 'Login error: Could not establish a valid session';
 sParamUserName = 'Dexcom Username';
 sParamPassword = 'Dexcom Password';
 sParamRegion = 'Region ("usa" or empty)';
+sParamDesc =
+  'Dexcom region selection:'#13#10''#13#10'' +
+  'Choose the server based on your account region:' + LineEnding +
+  '• Dexcom (USA): for accounts served by share2.dexcom.com' + LineEnding +
+  '• Dexcom (Outside USA): for accounts served by shareous1.dexcom.com' +
+  LineEnding + LineEnding +
+  'If you are unsure, try “Outside USA” first if you live outside the US.' +
+  LineEnding + 'Your username and password are your Dexcom Account (not Share) credentials.';
 
 
 {------------------------------------------------------------------------------
@@ -650,6 +658,8 @@ begin
     Result := sParamUserName;
   APLPass:
     Result := sParamPassword;
+  APLDesc:
+    Result := sParamDesc;
   else
     Result := inherited ParamLabel(LabelName);
   end;
