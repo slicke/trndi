@@ -153,7 +153,7 @@ jobs:
           mkdir -p ./static
           curl -fsSL -o mormot2static.7z 'https://github.com/synopse/mORMot2/releases/download/2.3.stable/mormot2static.7z'
           7z x mormot2static.7z -o./static -y >/dev/null
-          git clone https://github.com/synopse/mORMot2.git externals/mORMot2
+          git clone --depth 1 --branch 2.3.stable https://github.com/synopse/mORMot2.git externals/mORMot2
           cp -r ./static/${{ matrix.qt6_arch_folder }}/* .
 
           # Write build metadata unit for CI (overrides dev stub)
@@ -371,7 +371,7 @@ jobs:
           curl -fsSL -o mormot2static.7z 'https://github.com/synopse/mORMot2/releases/download/2.3.stable/mormot2static.7z'
           mkdir -p ./static
           7z x mormot2static.7z -o./static -y >/dev/null
-          git clone https://github.com/synopse/mORMot2.git externals/mORMot2
+          git clone --depth 1 --branch 2.3.stable https://github.com/synopse/mORMot2.git externals/mORMot2
           cp -r ./static/aarch64-darwin/* .
           # Write build metadata unit for CI (overrides dev stub)
           BUILD_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
@@ -432,7 +432,7 @@ jobs:
           New-Item -ItemType Directory -Path .\static -Force | Out-Null
           curl -L --fail -o mormot2static.7z "https://github.com/synopse/mORMot2/releases/download/2.3.stable/mormot2static.7z"
           & 'C:\Program Files\7-Zip\7z.exe' x '.\mormot2static.7z' -o'.\static' -y | Out-Null
-          git clone https://github.com/synopse/mORMot2.git externals/mORMot2
+          git clone --depth 1 --branch 2.3.stable https://github.com/synopse/mORMot2.git externals/mORMot2
           xcopy .\static\x86_64-win64\*.* . /Y /E /I | Out-Null
           # Write build metadata unit for CI (overrides dev stub)
           $BUILD_DATE = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
