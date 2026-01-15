@@ -390,7 +390,7 @@ var
   fbparams: array of string;
   oldBase: string;
   deltaField, rssiField, noiseField: TJSONData;
-  deltaValue: single;
+  deltaValue: glucose;
   currentSgv, prevSgv: integer;
   j: integer;
   tempReading: BGReading;
