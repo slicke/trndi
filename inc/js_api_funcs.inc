@@ -37,6 +37,26 @@
  *)
 // JavaScript API Bridge Functions - Expose app data to extensions
 
+// Get the currently used backend
+function JSGetAPI(ctx: JSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw; cdecl;
+var
+  res: JSValue;
+begin
+  res := ctx^.From(api.systemName);
+  result := res.raw;
+end;
+
+// Get Trndi build
+function JSGetBuild(ctx: JSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw; cdecl;
+var
+  build: string;
+  res: JSValue;
+begin
+  build := BUILD_NUMBER;
+
+  res := ctx^.From(build);
+  result := res.raw;
+end;
 
 // Returns a settings value
 function JSGetSetting(ctx: JSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw; cdecl;

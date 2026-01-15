@@ -111,6 +111,7 @@ Multiplier on where the dots are drawn on screen up/down. Minus = up, plus = dow
 #### Get the current measure unit
 ```javascript
 Trndi.getUnit()
+-> "mmol/L"
 ```
 Returns the current unit: `"mg/dL"` or `"mmol/L"`.
 ### getLocale
@@ -120,6 +121,20 @@ Trndi.getLocale()
 -> "sv"
 ```
 Returns a language code (such as `sv` or `en`).
+
+### getBuild
+Returns Trndi's build number
+```javascript
+Trndi.getBuild()
+-> "200"
+```
+
+### getCurrentAPI
+Returns the active glucose source
+```javascript
+Trndi.getCurrentAPI()
+-> "NightScout v3"
+```
 
 ### Get a settings value
 Gets a settings file/registry value
