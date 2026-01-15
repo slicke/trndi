@@ -1912,10 +1912,6 @@ msgstr ""
 msgid "Override/set your own limits for the custom range. This is your personal ideal goal, within the high/low area."
 msgstr ""
 
-#: uconf.rs_debug_backend_desc
-msgid "This is a special debug backend for testing purposes only. It does not connect to any real service."
-msgstr ""
-
 #: uconf.rs_debug_backend_label
 msgid "(Ignored for debug backend)"
 msgstr ""

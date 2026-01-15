@@ -57,6 +57,8 @@ public
   constructor Create(user, pass: string); override;
   function getReadings(min, maxNum: integer; extras: string; out res: string): BGResults;
     override;
+  class function ParamLabel(LabelName: APIParamLabel): string; override;
+
 end;
 
 implementation
@@ -93,6 +95,15 @@ begin
   for i := Low(result) to missing-1 do begin
     result[i].init(mmol);
   end;
+end;
+
+class function DebugFirstXMissingAPI.ParamLabel(LabelName: APIParamLabel): string;
+begin
+  result := inherited ParamLabel(LabelName);
+  if LabelName = APLUser then
+    Result := 'Readings to remove, from the most recent';
+  if LabelName = APLDesc then
+    Result := result + sLineBreak + sLineBreak + 'You can enter any amount of readings, in the username field. That amount will be marked as missing (from most recent to oldest)';
 end;
 
 end.

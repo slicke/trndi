@@ -2022,10 +2022,6 @@ msgstr "Dessa inställningar är tillgängliga när flera användare finns"
 msgid "Override/set your own limits for the custom range. This is your personal ideal goal, within the high/low area."
 msgstr "Överskrid/sätt dina egna gränser för ditt föredragna område. Detta är ditt ideala mål, inom gränserna för högt/lågt."
 
-#: uconf.rs_debug_backend_desc
-msgid "This is a special debug backend for testing purposes only. It does not connect to any real service."
-msgstr "Detta är ett speciellt debug-backend, endast för testning. Ingen riktig tjänst kommer att anslutas till."
-
 #: uconf.rs_debug_backend_label
 msgid "(Ignored for debug backend)"
 msgstr "(Ignorerat i debugläge)"
@@ -2343,3 +2339,4 @@ msgstr "Historikgraf"
 #, object-pascal-format
 msgid "Readings (%s)"
 msgstr "Avläsningar (%s)"
+
