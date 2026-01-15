@@ -117,8 +117,28 @@ Returns the current unit: `"mg/dL"` or `"mmol/L"`.
 #### Get the current app language
 ```javascript
 Trndi.getLocale()
+-> "sv"
 ```
 Returns a language code (such as `sv` or `en`).
+
+### Get a settings value
+Gets a settings file/registry value
+```javascript
+Trndi.getSetting("font.arrow") // String
+-> "Segoe UI"
+Trndi.getSetting("webserver.enable") // Boolean
+-> "true"
+Trndi.getSetting("non.exsting.key") // Not found
+-> false
+```
+
+### Set a settings value
+Sets a settings file/registry value
+```javascript
+Trndi.setSetting("extval.myext.property", "true")
+```
+Stores a settings value, you can store anything under ```extval```.*, modifying other keys will cause Trndi to ask the user's approval before saving!
+
 ### setLevelColor
 #### Sets the UX colors
 ```javascript
@@ -141,6 +161,13 @@ Trndi.playSound('C:\\file.wav')
 ```javascript
 Trndi.sayText('High sugar!')
 ```
+
+### attention
+Displays a system notification
+```javascript
+Trndi.attention("Hello there!")
+```
+
 <a name="overridemins"></a>
 ### setOverrideThresholdMinutes
 #### Sets number of minutes before a reading is considered old
