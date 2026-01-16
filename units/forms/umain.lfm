@@ -485,6 +485,13 @@ object fBG: TfBG
         Caption = 'Run DNS Lookup Test'
         OnClick = miDNSClick
       end
+      object miSep1: TMenuItem
+        Caption = '-'
+      end
+      object miExtLog: TMenuItem
+        Caption = 'Extensions Log'
+        OnClick = miExtLogClick
+      end
       object Separator4: TMenuItem
         Caption = '-'
       end

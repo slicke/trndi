@@ -25,6 +25,10 @@ Trndi supports ES2023, and provides these functions in addition to it:
    - [setOverrideThresholdMinutes](#setoverridethresholdminutes)
    - [setClockInterval](#setclockinterval)
    - [predictReadings](#predictreadings)
+   - [setTimeout](#settimeout)
+   - [setInterval](#setinterval)
+   - [clearTimeout](#cleartimeout)
+   - [clearInterval](#clearinterval)
  - [Promises (global)](#promises-global)
    - [asyncGet](#asyncget)
    - [jsonGet](#jsonget)
@@ -249,6 +253,137 @@ function updateCallback(reading_system, reading_mgdl, reading_mmol, time) {
 - Predictions are based on linear trend and don't account for meals, insulin, or other factors
 - Accuracy decreases for predictions further into the future
 - Maximum 20 predictions can be requested
+
+### setTimeout
+#### Schedule a function to run once after a delay
+Executes a function after a specified delay in milliseconds.
+
+```javascript
+// Define a named function (required - anonymous functions are not supported)
+function showAlert() {
+  Trndi.alert("5 seconds have passed!");
+}
+
+// Schedule it to run after 5 seconds
+const timerId = setTimeout(showAlert, 5000);
+
+// Another example
+function logMessage() {
+  console.log("Timer executed!");
+}
+setTimeout(logMessage, 3000);
+```
+
+**Parameters:**
+- `callback`: **Named function** to execute (anonymous/arrow functions are not supported)
+- `delay`: Time in milliseconds to wait before execution
+
+**Returns:** Timer ID (BigInt) that can be used with `clearTimeout()`
+
+**Notes:**
+- **Important:** Only named functions are supported. Arrow functions and anonymous functions will be rejected
+- Pass the function name without parentheses: `setTimeout(myFunction, 1000)` not `setTimeout(myFunction(), 1000)`
+- The timer is automatically cleaned up after the function executes
+- Minimum delay is system-dependent but typically 1ms
+- Timer continues even if the extension is reloaded (cleanup required)
+
+### setInterval
+#### Schedule a function to run repeatedly at fixed intervals
+Executes a function repeatedly with a fixed delay between each execution.
+
+```javascript
+// Define a named function (required - anonymous functions are not supported)
+let count = 0;
+function updateCounter() {
+  count++;
+  console.log(`Count: ${count}`);
+  
+  // Stop after 10 iterations
+  if (count >= 10) {
+    clearInterval(intervalId);
+  }
+}
+
+// Start the interval
+const intervalId = setInterval(updateCounter, 1000);
+
+// Monitor glucose and alert on trends
+function checkGlucoseTrends() {
+  const predictions = Trndi.predictReadings(3);
+  if (predictions.some(pred => pred[2] < 4.0)) {
+    Trndi.alert("Low glucose predicted!");
+  }
+}
+setInterval(checkGlucoseTrends, 60000); // Check every minute
+```
+
+**Parameters:**
+- `callback`: **Named function** to execute (anonymous/arrow functions are not supported)
+- `interval`: Time in milliseconds between each execution
+
+**Returns:** Timer ID (BigInt) that can be used with `clearInterval()`
+
+**Notes:**
+- **Important:** Only named functions are supported. Arrow functions and anonymous functions will be rejected
+- Pass the function name without parentheses: `setInterval(myFunction, 1000)` not `setInterval(myFunction(), 1000)`
+- Function executes repeatedly until cleared with `clearInterval()`
+- The interval is the delay between executions, not including function runtime
+- Important: Always clear intervals when no longer needed to avoid memory leaks
+
+### clearTimeout
+#### Cancel a scheduled timeout
+Cancels a timer created with `setTimeout()` before it executes.
+
+```javascript
+// Define and schedule a timeout
+function showMessage() {
+  Trndi.alert("This will not show");
+}
+const timerId = setTimeout(showMessage, 5000);
+
+// Cancel it before it fires
+clearTimeout(timerId);
+```
+
+**Parameters:**
+- `timerId`: The timer ID returned by `setTimeout()`
+
+**Returns:** Nothing
+
+**Notes:**
+- Safe to call with an invalid or already-fired timer ID (no-op)
+- Has no effect on timers created with `setInterval()`
+
+### clearInterval
+#### Cancel a repeating interval
+Stops a timer created with `setInterval()` from executing further.
+
+```javascript
+let count = 0;
+function incrementCounter() {
+  count++;
+  if (count >= 5) {
+    clearInterval(intervalId); // Stop after 5 iterations
+  }
+}
+const intervalId = setInterval(incrementCounter, 1000);
+
+// Or cancel it externally
+function stopInterval() {
+  clearInterval(intervalId);
+}
+setTimeout(stopInterval, 10000); // Stop after 10 seconds maximum
+```
+
+**Parameters:**
+- `timerId`: The timer ID returned by `setInterval()`
+
+**Returns:** Nothing
+
+**Notes:**
+- Safe to call with an invalid timer ID (no-op)
+- Important: Always clear intervals to prevent resource leaks
+- Has no effect on timers created with `setTimeout()`
 
 ## Promises (global)
 These are global promises, not prefixed with `Trndi.`:

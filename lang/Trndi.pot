@@ -258,6 +258,10 @@ msgstr ""
 msgid "Exit Trndi"
 msgstr ""
 
+#: tfbg.miextlog.caption
+msgid "Extensions Log"
+msgstr ""
+
 #: tfbg.mifloaton.caption
 msgid "Show Floating Window"
 msgstr ""

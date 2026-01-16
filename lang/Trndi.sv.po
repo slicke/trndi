@@ -272,6 +272,10 @@ msgctxt "tfbg.miexit.caption"
 msgid "Exit Trndi"
 msgstr "Avsluta Trndi"
 
+#: tfbg.miextlog.caption
+msgid "Extensions Log"
+msgstr ""
+
 #: tfbg.mifloaton.caption
 msgid "Show Floating Window"
 msgstr "Visa flytande fönster"
