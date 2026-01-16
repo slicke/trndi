@@ -153,6 +153,7 @@ begin
     addClassFunction('setSetting', ExtFunction(@JSSetSetting), -1);
     addClassFunction('getBuild', ExtFunction(@JSGetBuild), -1);
     addClassFunction('getCurrentAPI', ExtFunction(@JSGetAPI), -1);
+    addClassFunction('getReading', ExtFunction(@JSGetReading), -1);
 
     // Add the UX modification function, as declared in this file
     if ssCtrl in GetKeyShiftState then
