@@ -434,7 +434,6 @@ end;
 
 // Initialize the TrendDots array in FormCreate
 procedure TfBG.FormCreate(Sender: TObject);
-
 procedure haltBoot;
   begin
     firstboot := true;
@@ -680,6 +679,10 @@ begin
     tWebServerStart.OnTimer := @tWebServerStartTimer;
     tWebServerStart.Enabled := true;
   end;
+
+  {$ifndef TrndiExt}
+  miExtLog.Enabled := false:
+  {$endif}
 end;
 
 // Web Server Methods

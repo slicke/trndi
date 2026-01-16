@@ -117,6 +117,28 @@ TCallbacks = specialize TFPGList<PJSCallback>;
   {** Alias: promises are managed as callbacks. }
 TPromises = TCallbacks;
 
+  {** Simple helper class to bridge timer events to JS function calls.
+      Each timer gets its own handler instance with the timer info in the Tag. }
+TJSTimerHandler = class
+public
+  procedure OnTimer(Sender: TObject);
+end;
+
+  {** Information for a registered JS timer (setTimeout/setInterval). }
+TJSTimerInfo = record
+  TimerID: Integer;           // Unique ID returned to JS
+  Timer: TFPTimer;            // The actual timer object
+  Handler: TJSTimerHandler;   // Handler object for timer events
+  FunctionName: RawUtf8;      // Name of JS function to call (must be global named function)
+  IsInterval: Boolean;        // True for setInterval, False for setTimeout
+  Context: JSContext;         // QuickJS context for calling the function
+end;
+
+PJSTimerInfo = ^TJSTimerInfo;
+
+  {** Map of timer ID to timer information. }
+TJSTimerMap = specialize TFPGMap<Integer, PJSTimerInfo>;
+
   {** Embedded JavaScript engine wrapper using QuickJS via mORMot bindings.
 
       Responsibilities:
@@ -155,6 +177,10 @@ private
   native: TrndiNative;
     {** Registered promises. }
   promises: TPromises;
+    {** Map of active JS timers (setTimeout/setInterval). }
+  FJSTimers: TJSTimerMap;
+    {** Counter for generating unique timer IDs. }
+  FNextTimerID: Integer;
 
   function GetOutput: RawUtf8;
   procedure SetOutput(const val: RawUtf8);
@@ -465,6 +491,74 @@ GlobalShutdownInProgress: boolean = false;
 implementation
 
 {$I trndi.ext.jsbase.inc }
+
+{******************************************************************************
+  TJSTimerHandler - Helper class for JS timer events
+  Modified: January 16, 2026
+******************************************************************************}
+
+procedure TJSTimerHandler.OnTimer(Sender: TObject);
+var
+  TimerInfo: PJSTimerInfo;
+  Engine: TTrndiExtEngine;
+  RetVal: JSValueRaw;
+  idx: Integer;
+  Timer: TFPTimer;
+  globalObj, funcVal: JSValueRaw;
+begin
+  if not (Sender is TFPTimer) then
+    Exit;
+
+  Timer := TFPTimer(Sender);
+  TimerInfo := PJSTimerInfo(Timer.Tag);
+  
+  if TimerInfo = nil then
+    Exit;
+
+  Engine := TTrndiExtEngine.Instance;
+  if (Engine = nil) or IsGlobalShutdown then
+    Exit;
+
+  // Debug output
+  Engine.SetOutput('Timer fired: ID=' + IntToStr(TimerInfo^.TimerID) + ', function: ' + TimerInfo^.FunctionName);
+
+  // Look up the named function from global scope
+  globalObj := JS_GetGlobalObject(TimerInfo^.Context);
+  funcVal := JS_GetPropertyStr(TimerInfo^.Context, globalObj, PAnsiChar(TimerInfo^.FunctionName));
+  
+  if JS_IsFunction(TimerInfo^.Context, funcVal) then
+  begin
+    Engine.SetOutput('Calling function: ' + TimerInfo^.FunctionName);
+    // Call the JS function
+    try
+      RetVal := JS_Call(TimerInfo^.Context, funcVal, JS_UNDEFINED, 0, nil);
+      Engine.SetOutput('Function called successfully');
+      // Note: QuickJS manages memory for return values
+    except on E: Exception do
+      begin
+        // Log exception for debugging
+        TTrndiExtEngine.Instance.SetOutput('Timer exception: ' + E.Message);
+      end;
+    end;
+  end
+  else
+    Engine.SetOutput('Function ' + TimerInfo^.FunctionName + ' not found or not a function');
+
+  // If this is a setTimeout (one-shot), clean it up
+  if not TimerInfo^.IsInterval then
+  begin
+    idx := Engine.FJSTimers.IndexOf(TimerInfo^.TimerID);
+    if idx >= 0 then
+    begin
+      Timer.Enabled := False;
+      Dispose(TimerInfo);
+      Engine.FJSTimers.Delete(idx);
+      // Free the timer and handler
+      Timer.Free;
+      Self.Free; // Free the handler (self)
+    end;
+  end;
+end;
 
 {******************************************************************************
   Global shutdown control functions
@@ -799,6 +893,10 @@ begin
   knownfunc := TExtFuncList.Create;
   native := TrndiNative.Create;
   callbacks := TCallbacks.Create;
+  
+  // Initialize timer tracking (Modified: January 16, 2026)
+  FJSTimers := TJSTimerMap.Create;
+  FNextTimerID := 0;
 
   // Register base UI/log functions as both class and globals
   addClassFunction('alert', @JSDoAlert, 1);
@@ -808,6 +906,12 @@ begin
   addClassFunction('log', ExtFunction(@JSDoLog), 1);
 
   addFunction('alert', ExtFunction(@JSDoAlert), 1);
+  
+  // Register timer functions (Modified: January 16, 2026)
+  addFunction('setTimeout', ExtFunction(@JSSetTimeout), 2);
+  addFunction('setInterval', ExtFunction(@JSSetInterval), 2);
+  addFunction('clearTimeout', ExtFunction(@JSClearTimer), 1);
+  addFunction('clearInterval', ExtFunction(@JSClearTimer), 1);
 
   // Provide a neutral console.log to avoid reference errors in scripts
   RegisterConsoleLog(@FContext);
@@ -819,6 +923,8 @@ var
   cb: PJSCallback;
   tmpCtx: JSContext;
   timeoutCounter: integer;
+  globalObj, timersObj: JSValueRaw;
+  i: Integer;
 begin
   // ULTRA-EARLY EXIT: If application is terminating or global shutdown flag is set,
   // skip ALL cleanup operations and let OS handle memory deallocation
@@ -850,6 +956,31 @@ begin
       FreeAndNil(eventTimer);
     end;
   except
+  end;
+
+  // Clean up all active JS timers (Modified: January 16, 2026)
+  if Assigned(FJSTimers) then
+  begin
+    try
+      while FJSTimers.Count > 0 do
+      begin
+        with FJSTimers.Data[0]^ do
+        begin
+          if Assigned(Timer) then
+          begin
+            Timer.Enabled := False;
+            Timer.Free;
+          end;
+          if Assigned(Handler) then
+            Handler.Free;
+        end;
+        Dispose(FJSTimers.Data[0]);
+        FJSTimers.Delete(0);
+      end;
+      FreeAndNil(FJSTimers);
+    except
+      // Silently handle any errors during timer cleanup
+    end;
   end;
 
   // Signal extension shutdown to background tasks

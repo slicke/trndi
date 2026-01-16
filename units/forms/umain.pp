@@ -146,6 +146,8 @@ TfBG = class(TForm)
   bMenuPanelClose: TButton;
   bTouchFull: TButton;
   lPredict: TLabel;
+  miExtLog: TMenuItem;
+  miSep1: TMenuItem;
   miDNS: TMenuItem;
   miDotSmall: TMenuItem;
   miPredict: TMenuItem;
@@ -280,6 +282,7 @@ TfBG = class(TForm)
   procedure miATouchNoClick(Sender: TObject);
   procedure miATouchYesClick(Sender: TObject);
   procedure miDebugBackendClick(Sender: TObject);
+  procedure miExtLogClick(Sender: TObject);
   procedure miPredictClick(Sender: TObject);
   procedure pmSettingsClose(Sender: TObject);
   procedure pnWarningClick(Sender: TObject);
@@ -1116,6 +1119,14 @@ end;
 procedure TfBG.miDebugBackendClick(Sender: TObject);
 begin
   miDebugBackend.Checked := not miDebugBackend.Checked;
+end;
+
+procedure TfBG.miExtLogClick(Sender: TObject);
+begin
+  with TTrndiExtEngine.Instance do begin
+     ShowMessage(Output);
+     ClearOutput;
+  end;
 end;
 
 procedure TfBG.miPredictClick(Sender: TObject);
