@@ -46,15 +46,47 @@ begin
   result := res.raw;
 end;
 
-// Get Trndi build
+// Get current reading
 function JSGetBuild(ctx: JSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw; cdecl;
 var
   build: string;
   res: JSValue;
 begin
-  build := BUILD_NUMBER;
-
   res := ctx^.From(build);
+  result := res.raw;
+end;
+
+// Get Trndi build
+function JSGetReading(ctx: JSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw; cdecl;
+var
+  mmol: boolean;
+  res: JSValue;
+  mmolval: variant;
+begin
+
+  ctx^.ToVariant(argv^[0], mmolval);
+
+ if not (VarType(mmolval) = varBoolean) then
+    begin
+      ExtError(uxdAuto, 'Unit type must be boolean');
+      Result := JS_FALSE;
+      Exit;
+    end;
+
+  mmol := mmolval;
+
+  // Return the cached current reading if available
+  if Length(bgs) > 0 then begin
+    if mmol then
+       res.FromFloat(bgs[0].convert(BGUnit.mmol))
+    else
+       res.From32(round(bgs[1].convert(BGUnit.mgdl)));
+  end
+  else begin
+    result := JS_FALSE;
+    Exit;
+  end;
+
   result := res.raw;
 end;
 

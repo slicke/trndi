@@ -114,6 +114,14 @@ Trndi.getUnit()
 -> "mmol/L"
 ```
 Returns the current unit: `"mg/dL"` or `"mmol/L"`.
+
+#### Get the current reading
+```javascript
+Trndi.getReading(true)
+-> 5.5
+```
+Returns the current reading, pass ```true``` for mmol/L or ```false``` for mg/dL. Returns ```false``` when no reading is available.
+
 ### getLocale
 #### Get the current app language
 ```javascript
