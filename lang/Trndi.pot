@@ -2005,6 +2005,10 @@ msgctxt "uconf.rs_notifications"
 msgid "Notifications"
 msgstr ""
 
+#: uconf.rs_notification_help
+msgid "Trndi will show a system notification (if available) when your reading is in a dangerous state. Alerts will trigger once when hi/low and every 15 minutes when readings are missing."
+msgstr ""
+
 #: uconf.rs_notify_system
 msgid "Notifications will appear where you normally get notification messages."
 msgstr ""

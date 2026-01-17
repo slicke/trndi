@@ -274,7 +274,7 @@ msgstr "Avsluta Trndi"
 
 #: tfbg.miextlog.caption
 msgid "Extensions Log"
-msgstr ""
+msgstr "Tilläggslogg"
 
 #: tfbg.mifloaton.caption
 msgid "Show Floating Window"
@@ -2118,6 +2118,10 @@ msgctxt "uconf.rs_notifications"
 msgid "Notifications"
 msgstr "Notiser"
 
+#: uconf.rs_notification_help
+msgid "Trndi will show a system notification (if available) when your reading is in a dangerous state. Alerts will trigger once when hi/low and every 15 minutes when readings are missing."
+msgstr "Trndi kommer visa en systemnotifikation (om möjligt) när dina avläsningar är farliga. Notifikationer kommer visas en gång när du är hög/låg och var 15 minut när avläsningar saknas."
+
 #: uconf.rs_notify_system
 msgid "Notifications will appear where you normally get notification messages."
 msgstr "Notiser visas där du brukar se notismeddelanden."
@@ -2343,4 +2347,3 @@ msgstr "Historikgraf"
 #, object-pascal-format
 msgid "Readings (%s)"
 msgstr "Avläsningar (%s)"
-

@@ -65,6 +65,7 @@ type
 TfConf = class(TForm)
   bAdd: TButton;
   bBackendHelp: TButton;
+  bNotificationHelp: TButton;
   bColorGraphHelp: TButton;
   bMultiUserHelp: TButton;
   bPredictHorizon: TButton;
@@ -309,6 +310,7 @@ TfConf = class(TForm)
   procedure bLimitsClick(Sender: TObject);
   procedure bMinMinutesHelpClick(Sender: TObject);
   procedure bMultiUserHelpClick(Sender: TObject);
+  procedure bNotificationHelpClick(Sender: TObject);
   procedure bOutdatedHelpClick(Sender: TObject);
   procedure bOverrideHelpClick(Sender: TObject);
   procedure bPredictHelpClick(Sender: TObject);
@@ -411,6 +413,9 @@ RS_Threashold_Lines_Help =
 
 RS_BADGE_FLASH_HELP =
   'This controls how Trndi''s icon in the status bar and/or tray will notify you visually.';
+
+RS_NOTIFICATION_HELP =
+  'Trndi will show a system notification (if available) when your reading is in a dangerous state. Alerts will trigger once when hi/low and every 15 minutes when readings are missing.';
 
 RS_COLOR_BG =
   'Trndi can draw a rectangle/background in the graph''s background, to visually represent your high and low limits.';
@@ -1169,6 +1174,11 @@ end;
 procedure TfConf.bMultiUserHelpClick(Sender: TObject);
 begin
   ShowMessage(RS_Multi_User_Help);
+end;
+
+procedure TfConf.bNotificationHelpClick(Sender: TObject);
+begin
+  ShowMessage(RS_NOTIFICATION_HELP);
 end;
 
 procedure TfConf.bOutdatedHelpClick(Sender: TObject);
