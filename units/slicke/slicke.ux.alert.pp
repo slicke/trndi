@@ -88,6 +88,7 @@ smbSelect       = 'Select';
 smbUxAgree      = 'Agree';
 smbUxRead       = 'Read...';
 smbUXDefault    = 'Default';
+smbUxSnooze     = 'Snooze';
 
 sKey   = 'Key';
 sValue = 'Value';
@@ -209,7 +210,7 @@ TUXDialogSize = (uxdNormal = 0, uxdBig = 1, uxdAuto = 3, uxdOnForm = 4, uxdMediu
     @remarks Includes standard Lazarus modal buttons and a few custom labels (e.g. OpenFile, Minimize, Agree, Read, Default).
   }
 TUXMsgDlgBtn     = (mbYes, mbNo, mbOK, mbCancel, mbAbort, mbRetry, mbIgnore,
-  mbAll, mbNoToAll, mbYesToAll, mbHelp, mbClose, mbUXOpenFile, mbUXMinimize, mbUXAgree, mbUXRead, mbUXDefault);
+  mbAll, mbNoToAll, mbYesToAll, mbHelp, mbClose, mbUXOpenFile, mbUXMinimize, mbUXAgree, mbUXRead, mbUXDefault, mbUXSnooze);
 
   {** A set of @link(TUXMsgDlgBtn) to specify multiple buttons. }
 TUXMsgDlgBtns = set of TUXMsgDlgBtn;
@@ -548,7 +549,7 @@ var
   {** Localized captions for each @link(TUXMsgDlgBtn). Initialized from resource strings. }
 langs : ButtonLangs = (smbYes, smbUXNo, smbUXOK, smbUXCancel, smbUXAbort, smbUXRetry, smbUXIgnore,
   smbUXAll, smbUXNoToAll, smbUXYesToAll, smbUXHelp, smbUXClose,
-  smbUXOpenFile, smbUxMinimize, smbUxAgree, smbUxRead, smbUxDefault);
+  smbUXOpenFile, smbUxMinimize, smbUxAgree, smbUxRead, smbUxDefault, smbuxSnooze);
 
 implementation
 {$ifdef Windows}

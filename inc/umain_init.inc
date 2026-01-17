@@ -458,6 +458,8 @@ begin
 
   // Initialize native interface
   native := TrndiNative.Create;
+    if (ssMeta in GetKeyShiftState) and (ExtMsg(uxdNormal,'Run Trndi in English?','Override language setting?','Run Trndi in English this once? You pressed the Windows/meta key, and can now choose to run Trndi in English. You can change the language in Settings.', '',uxClWhite,uxclRed,[mbYes, mbNo]) = mrYes) then begin
+  end else
   SetLang;
 
   // Initialize splash screen first

@@ -5501,8 +5501,28 @@ var
   JsonData: TJSONData;
   JsonObj: TJSONObject;
   latestRelease: string;
+  lastIgnoreDate: string;
+  ignoreDate: TDateTime;
+  daysSinceIgnore: Integer;
 begin
   try
+    // Check if updates are being ignored (unless this is a manual check)
+    if not ShowUpToDateMessage then
+    begin
+      lastIgnoreDate := native.GetSetting('update.ignore.date', '');
+      if lastIgnoreDate <> '' then
+      begin
+        try
+          ignoreDate := StrToDateTime(lastIgnoreDate);
+          daysSinceIgnore := DaysBetween(Now, ignoreDate);
+          if daysSinceIgnore < 14 then
+            Exit; // Suppress update check for 2 weeks
+        except
+          // Invalid date format, continue with update check
+        end;
+      end;
+    end;
+    
     // Fetch latest release info from GitHub
     TrndiNative.getURL('https://api.github.com/repos/slicke/trndi/releases/latest', res);
     
@@ -5532,8 +5552,14 @@ begin
       if r = '' then
         r := 'https://github.com/slicke/trndi/releases/latest';
       newVersionMessage := Format(RS_NEWVER, [rn]);
-      if UXDialog(uxdAuto, RS_NEWVER_CAPTION, newVersionMessage, [mbYes, mbNo], mtInformation) = mrYes then
+      case UXDialog(uxdAuto, RS_NEWVER_CAPTION, newVersionMessage, [mbYes, mbNo, mbIgnore], mtInformation) of
+      mrYes:
         OpenURL(r);
+      mrIgnore: begin
+          native.SetSetting('update.ignore.date', DateTimeToStr(Now));
+          ShowMessage(Format(RS_UPDATE_SNOOZE, [DateTimeToStr(IncDay(now, 14))]));
+        end;
+      end;
     end
     else
     if ShowUpToDateMessage then
