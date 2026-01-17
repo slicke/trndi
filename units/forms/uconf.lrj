@@ -98,6 +98,7 @@
 {"hash":216013555,"name":"tfconf.cgnotifications.caption","sourcebytes":[78,111,116,105,102,105,99,97,116,105,111,110,115],"value":"Notifications"},
 {"hash":115726535,"name":"tfconf.cbalerthilo.caption","sourcebytes":[65,108,101,114,116,32,109,101,32,119,104,101,110,32,98,108,111,111,100,32,115,117,103,97,114,32,105,115,32,104,105,103,104,47,108,111,119],"value":"Alert me when blood sugar is high/low"},
 {"hash":95268984,"name":"tfconf.cbalertmissing.caption","sourcebytes":[65,108,101,114,116,32,109,101,32,119,104,101,110,32,114,101,97,100,105,110,103,115,32,97,114,101,32,109,105,115,115,105,110,103,32,47,32,110,111,116,32,102,114,101,115,104],"value":"Alert me when readings are missing / not fresh"},
+{"hash":63,"name":"tfconf.bnotificationhelp.caption","sourcebytes":[63],"value":"?"},
 {"hash":197676484,"name":"tfconf.tsadvanced.caption","sourcebytes":[65,100,118,97,110,99,101,100],"value":"Advanced"},
 {"hash":171377978,"name":"tfconf.label1.caption","sourcebytes":[82,101,97,100,105,110,103,115,32,97,114,101,32,111,117,116,100,97,116,101,100,32,97,102,116,101,114,32,40,109,105,110,117,116,101,115,41,58],"value":"Readings are outdated after (minutes):"},
 {"hash":63,"name":"tfconf.boutdatedhelp.caption","sourcebytes":[63],"value":"?"},

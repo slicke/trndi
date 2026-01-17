@@ -646,6 +646,8 @@ badge_adjust: single = 0;
 tir_icon: boolean = true;
 highAlerted: boolean = false; // A high alert is active
 lowAlerted: boolean = false; // A low alert is active
+missingAlerted: boolean = false; // A missing reading alert is active
+lastMissingAlert: TDateTime = 0; // Last time missing reading alert was shown
 perfectTriggered: boolean = false; // A perfect reading is active
 PaintRange: boolean = true;
 PaintRangeCGMRange: boolean = true; // Show cgmRangeLo/cgmRangeHi inner threshold lines
@@ -5010,9 +5012,21 @@ begin
   begin
     showWarningPanel(RS_NO_BACKEND, true);
     if native.getBoolSetting('alerts.notice.missing', true) then
-      native.attention(RS_ATTENTION_MISSING, RS_ATTENTION_MISSING_DESC);
+    begin
+      // Only show notification if 15 minutes have passed since last alert
+      if (not missingAlerted) or (MinutesBetween(Now, lastMissingAlert) >= 15) then
+      begin
+        native.attention(RS_ATTENTION_MISSING, RS_ATTENTION_MISSING_DESC);
+        missingAlerted := true;
+        lastMissingAlert := Now;
+      end;
+    end;
     Exit;
   end;
+
+  // Reset missing alert flag when fresh readings are available again
+  missingAlerted := false;
+  lastMissingAlert := 0;
 
   LogMessage(Format('DoFetchAndValidateReadings: Got %d readings from API', [Length(bgs)]));
 
