@@ -99,6 +99,10 @@ msgstr "Läs..."
 msgid "Retry"
 msgstr "Försök igen"
 
+#: slicke.ux.alert.smbuxsnooze
+msgid "Snooze"
+msgstr "Snooza"
+
 #: slicke.ux.alert.smbuxyestoall
 msgid "Yes To All"
 msgstr "Ja till allt"
@@ -2101,8 +2105,8 @@ msgstr ""
 
 #: uconf.rs_newver
 #, object-pascal-format
-msgid "Version %s is available, would you like to go to the downloads page?"
-msgstr "Version %s finns tillgänglig, vill du besöka nedladdningssidan?"
+msgid "Version %s is available, would you like to go to the downloads page? You can also ignore this warning for 2 weeks."
+msgstr "Version %s finns tillgänglig, vill du besöka nedladdningssidan? Du kan också ignorera denna varning i 2 veckor."
 
 #: uconf.rs_newver_caption
 msgid "New version available"
@@ -2173,6 +2177,10 @@ msgstr ""
 "\n"
 "Dexcom:\n"
 "Dexcoms servrar tillhandahåller inte egna höga och låga gränsvärden. Genom att skriva in värdena här, ställer du in gränserna direkt i Trndi."
+
+#: uconf.rs_override_language
+msgid "Choose which language to run Trndi in. Should you choose the wrong one, you can press the Windows/\"meta\" button at start to force English!"
+msgstr "Välj vilket språk Trndi ska startas på. Om du väljer fel, kan du hålla ned Windows/\"meta\"-knappen vid start för att tvinga engelska!"
 
 #: uconf.rs_override_ns
 msgid "You are using the NightScout backend, you should set these values on your server (if possible), as Trndi uses your NightScout preferences by default"
@@ -2258,6 +2266,11 @@ msgstr "Ledsen! Trndi stöder (ännu) inte anslutningstest för denna tjänst!"
 #: uconf.rs_threashold_lines_help
 msgid "Trndi can draw a line on the graph's background, to represent where your high/low limits are."
 msgstr "Trndi kan rita en linje på grafens bakgrund, för att representera dina höga/låga gränser."
+
+#: uconf.rs_update_snooze
+#, object-pascal-format
+msgid "You will be alerted again after %s"
+msgstr "Du kommer att påminnas igen efter %s"
 
 #: uconf.rs_uptodate
 msgid "You are up to date"

@@ -68,6 +68,7 @@ TfConf = class(TForm)
   bNotificationHelp: TButton;
   bColorGraphHelp: TButton;
   bMultiUserHelp: TButton;
+  bLanguageHelp: TButton;
   bPredictHorizon: TButton;
   bUseURLHelp: TButton;
   bThreasholdLinesHelp: TButton;
@@ -307,6 +308,7 @@ TfConf = class(TForm)
   procedure bBadgeFlashHelpClick(Sender: TObject);
   procedure bColorGraphHelpClick(Sender: TObject);
   procedure bCustomRangeHelpClick(Sender: TObject);
+  procedure bLanguageHelpClick(Sender: TObject);
   procedure bLimitsClick(Sender: TObject);
   procedure bMinMinutesHelpClick(Sender: TObject);
   procedure bMultiUserHelpClick(Sender: TObject);
@@ -420,6 +422,9 @@ RS_NOTIFICATION_HELP =
 RS_COLOR_BG =
   'Trndi can draw a rectangle/background in the graph''s background, to visually represent your high and low limits.';
 
+RS_OVERRIDE_LANGUAGE =
+  'Choose which language to run Trndi in. Should you choose the wrong one, you can press the Windows/"meta" button at start to force English!';
+
 RS_OVERRIDE_HELP =
   'Setting values here allows you to define your own high and low blood sugar limits in Trndi.'
   + #10 + #10 + 'NightScout:'#10 +
@@ -458,7 +463,7 @@ RS_REMOVE_ACC =
   'Removed accounts are made inactive, and can be restored by adding the same name again';
 RS_AUTO = 'Auto-detect';
 RS_UPTODATE = 'You are up to date';
-RS_NEWVER = 'Version %s is available, would you like to go to the downloads page?';
+RS_NEWVER = 'Version %s is available, would you like to go to the downloads page? You can also ignore this warning for 2 weeks.';
 RS_NEWVER_PRE =
   'A new pre-release for %s is available, would you like to go to the downloads page?';
 RS_NEWVER_CAPTION = 'New version available';
@@ -467,6 +472,7 @@ RS_SELECT_FONT_DESC = 'Choose a font to use';
 RS_SELECT_FONT_ARROW = 'Select a font for the arrow';
 RS_SELECT_FONT_READING = 'Select a font for the reading';
 RS_SELECT_FONT_TIME = 'Select a font for the time';
+RS_UPDATE_SNOOZE = 'You will be alerted again after %s';
 
 RS_MIN_MINUTES = 'When calculatingg time-in-range, do so over this amount of minutes. If the number is higher than the data available, the max time will be used - this is currently %d minutes.';
 
@@ -1232,6 +1238,11 @@ end;
 procedure TfConf.bCustomRangeHelpClick(Sender: TObject);
 begin
   ShowMessage(RS_Custom_Range_Help);
+end;
+
+procedure TfConf.bLanguageHelpClick(Sender: TObject);
+begin
+  ShowMEssage(RS_OVERRIDE_LANGUAGE);
 end;
 
 procedure TfConf.bOverrideHelpClick(Sender: TObject);

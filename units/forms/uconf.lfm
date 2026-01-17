@@ -11649,6 +11649,15 @@ object fConf: TfConf
         TabOrder = 7
         OnClick = bNotificationHelpClick
       end
+      object bLanguageHelp: TButton
+        Left = 622
+        Height = 22
+        Top = 424
+        Width = 27
+        Caption = '?'
+        TabOrder = 8
+        OnClick = bLanguageHelpClick
+      end
     end
     object tsAdvanced: TTabSheet
       Caption = 'Advanced'

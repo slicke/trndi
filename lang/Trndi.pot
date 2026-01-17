@@ -89,6 +89,10 @@ msgstr ""
 msgid "Retry"
 msgstr ""
 
+#: slicke.ux.alert.smbuxsnooze
+msgid "Snooze"
+msgstr ""
+
 #: slicke.ux.alert.smbuxyestoall
 msgid "Yes To All"
 msgstr ""
@@ -1988,7 +1992,7 @@ msgstr ""
 
 #: uconf.rs_newver
 #, object-pascal-format
-msgid "Version %s is available, would you like to go to the downloads page?"
+msgid "Version %s is available, would you like to go to the downloads page? You can also ignore this warning for 2 weeks."
 msgstr ""
 
 #: uconf.rs_newver_caption
@@ -2052,6 +2056,10 @@ msgid ""
 "\n"
 "Dexcom:\n"
 "Dexcom servers do not provide custom high and low values. By setting them here, you can establish your own thresholds for Dexcom data."
+msgstr ""
+
+#: uconf.rs_override_language
+msgid "Choose which language to run Trndi in. Should you choose the wrong one, you can press the Windows/\"meta\" button at start to force English!"
 msgstr ""
 
 #: uconf.rs_override_ns
@@ -2137,6 +2145,11 @@ msgstr ""
 
 #: uconf.rs_threashold_lines_help
 msgid "Trndi can draw a line on the graph's background, to represent where your high/low limits are."
+msgstr ""
+
+#: uconf.rs_update_snooze
+#, object-pascal-format
+msgid "You will be alerted again after %s"
 msgstr ""
 
 #: uconf.rs_uptodate
