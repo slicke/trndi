@@ -116,7 +116,8 @@ sParamDesc = '** ALPHA DRIVER - Please use "NightScout" for daily use! **' + #13
   #13#10 + '   - Copy the FULL access token value exactly as shown.' + #13#10 +
   '4) In Trndi:' + #13#10 + '   - Address: enter your NightScout URL' + #13#10 +
   '   - Auth: paste the FULL access token.' + #13#10 + #13#10 +
-  'Note: If you instead use the legacy API Secret, paste your API Secret value as-is.';
+  'Note: If you instead use the legacy API Secret, paste your API Secret value as-is.' + #10#13 +
+  'Note 2: Your access token should look like: trndi-abc123 (or whatever name you chose)';
 
 
 {------------------------------------------------------------------------------
