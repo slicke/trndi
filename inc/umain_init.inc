@@ -683,7 +683,7 @@ begin
   end;
 
   {$ifndef TrndiExt}
-  miExtLog.Enabled := false:
+  miExtLog.Enabled := false;
   {$endif}
 end;
 

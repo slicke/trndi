@@ -1125,10 +1125,12 @@ end;
 
 procedure TfBG.miExtLogClick(Sender: TObject);
 begin
+  {$ifdef TrndiExt}
   with TTrndiExtEngine.Instance do begin
      ShowMessage(Output);
      ClearOutput;
   end;
+  {$endif}
 end;
 
 procedure TfBG.miPredictClick(Sender: TObject);
