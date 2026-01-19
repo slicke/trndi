@@ -109,7 +109,7 @@ procedure TfBG.LoadExtensions;
 
 var
   exts: TStringList;
-  extFile, extdir: string;
+  extFile, extdir, stmp: string;
 begin
   TTrndiExtEngine.Instance;
   // Creates the class, if it's not already
@@ -162,10 +162,12 @@ begin
       begin
         fSplash.incProgress(-1, RS_SPLASH_LOADING + ExtractFileName(extFile));
         // Run all found files
+        stmp := ExecuteFile(extFile);
+        if stmp <> '1' then
         {$ifdef debug}
-        ExtMessage(uxdAuto,'Extension Activated!','The ' + ExtractFileNameOnly(extFile) + ' extension was loaded', 'Output below', ExecuteFile(extFile), false);
+          ExtMessage(uxdAuto,'Extension Activation Failed!','The ' + ExtractFileNameOnly(extFile) + ' extension was loaded with an error', 'Output below', 'Return: ' + stmp + sLineBreak + sLineBreak + 'Log: ' + Output, false);
         {$else}
-        ExecuteFile(extFile);
+          ShowMessage(Format(RS_EXTFAILED, [extFile]));
         {$endif}
       end;
     exts.Free;

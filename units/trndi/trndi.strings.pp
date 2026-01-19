@@ -117,6 +117,8 @@ RS_MULTINAME_DEF_NAMED = 'Showing %s (standard user)';
 RS_SPLASH_LOADING = 'Loading Extension: ';
 RS_SPLASH_LOADING_INIT  = 'Loading Extensions...';
 
+RS_EXTFAILED = 'The following extension file returned an error while loading: %s';
+
 RS_INIT_MEDIA = 'Starting Media Backend...';
 RS_INIT_FONTS = 'Processing fonts...';
 RS_INIT_LINUX = 'Attempting to adjust Linux overrides...';
