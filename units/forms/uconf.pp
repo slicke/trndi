@@ -1037,56 +1037,42 @@ begin
 end;
 
 procedure TfConf.getAPILabels(out user, pass: string);
+var
+  sys: class of TrndiAPI;
 begin
 
-  // Defaults from base class
-  user := TrndiAPI.ParamLabel(APLUser);
-  pass := TrndiAPI.ParamLabel(APLPass);
+  sys := TrndiAPI;
 
-  {$ifdef DEBUG}
-  if cbSys.Text in API_DEBUG then
+    case cbSys.Text of
+  API_NS:
+    sys := NightScout;
+  API_NS3:
+    sys := NightScout3;
+  API_DEX_USA:
+    sys := Dexcom;
+  API_DEX_EU:
+    sys := Dexcom;
+  API_XDRIP:
+    sys := xDrip;
+  {$ifdef Debug}
+  API_D_FIRSTX:
+    sys := DebugFirstXMissingAPI;
+  API_D_CUSTOM:
+    sys := DebugCustomAPI;
+    {$endif}
+  end;
+
+ user := sys.ParamLabel(APLUser);
+ pass := sys.ParamLabel(APLPass);
+
+ {$ifdef DEBUG}
+  if (cbSys.Text in API_DEBUG) and (sys = TrndiAPI) then
   begin
     user := RS_DEBUG_BACKEND_LABEL;
     pass := RS_DEBUG_BACKEND_LABEL;
   end;
   {$endif}
 
-  case cbSys.Text of
-  API_NS:
-  begin
-    user := NightScout.ParamLabel(APLUser);
-    pass := NightScout.ParamLabel(APLPass);
-  end;
-  API_NS3:
-  begin
-    user := NightScout3.ParamLabel(APLUser);
-    pass := NightScout3.ParamLabel(APLPass);
-  end;
-  API_DEX_USA:
-  begin
-    user := Dexcom.ParamLabel(APLUser);
-    pass := Dexcom.ParamLabel(APLPass);
-  end;
-  API_DEX_EU:
-  begin
-    user := Dexcom.ParamLabel(APLUser);
-    pass := Dexcom.ParamLabel(APLPass);
-  end;
-  API_XDRIP:
-  begin
-    user := xDrip.ParamLabel(APLUser);
-    pass := xDrip.ParamLabel(APLPass);
-  end;
-  {$ifdef DEBUG}
-  API_D_CUSTOM:
-  begin
-    user := DebugCustomAPI.ParamLabel(APLUser);
-    pass := DebugCustomAPI.ParamLabel(APLPass);
-  end;
-  API_D_FIRSTX:
-    user := DebugFirstXMissingAPI.ParamLabel(APLUser);
-    {$endif}
-  end;
 end;
 
 procedure TfConf.cbSysChange(Sender: TObject);
@@ -1285,51 +1271,41 @@ procedure TfConf.bBackendHelpClick(Sender: TObject);
 var
   s, c, x: string;
   i: integer;
+  sys: class of TrndiAPI;
 begin
 
   s := '';
 
   {$ifdef DEBUG}
-  if cbSys.Text in API_DEBUG then begin
-    s := DebugAPI.ParamLabel(APLDesc);
-    c := DebugAPI.ParamLabel(APLCopyright);
-  end;
+  if cbSys.Text in API_DEBUG then
+    sys := DebugAPI;
   {$endif}
 
   case cbSys.Text of
-  API_NS: begin
-    s := NightScout.ParamLabel(APLDesc);
-    c := NightScout.ParamLabel(APLCopyright);
-  end;
-  API_NS3: begin
-    s := NightScout3.ParamLabel(APLDesc);
-    c := NightScout3.ParamLabel(APLCopyright);
-  end;
-  API_DEX_USA: begin
-    s := Dexcom.ParamLabel(APLDesc);
-    c := Dexcom.ParamLabel(APLCopyright);
-  end;
-  API_DEX_EU: begin
-    s := Dexcom.ParamLabel(APLDesc);
-    c := Dexcom.ParamLabel(APLCopyright);
-  end;
-  API_XDRIP: begin
-    s := xDrip.ParamLabel(APLDesc);
-    c := xDrip.ParamLabel(APLCopyright);
-  end;
+  API_NS:
+    sys := NightScout;
+  API_NS3:
+    sys := NightScout3;
+  API_DEX_USA:
+    sys := Dexcom;
+  API_DEX_EU:
+    sys := Dexcom;
+  API_XDRIP:
+    sys := xDrip;
   {$ifdef Debug}
-  API_D_FIRSTX: begin
-    s := DebugFirstXMissingAPI.ParamLabel(APLDesc);
-    c := DebugFirstXMissingAPI.ParamLabel(APLCopyright);
+  API_D_FIRSTX:
+    sys := DebugFirstXMissingAPI;
+  API_D_CUSTOM:
+    sys := DebugCustomAPI;
+    {$endif}
   end;
-  API_D_CUSTOM: begin
-      s := DebugCustomAPI.ParamLabel(APLDesc);
-      c := DebugCustomAPI.ParamLabel(APLCopyright);
-  end;
-  {$endif}
+
+  if not assigned(sys) then
+    s := RS_CHOOSE_SYSTEM
   else
-  {$ifdef Debug} if s = ''  then {$endif}
-      s := RS_CHOOSE_SYSTEM;
+  begin
+    s := sys.ParamLabel(APLDesc);
+    c := sys.ParamLabel(APLCopyright);
   end;
 
   for i := 0 to Length(RS_DRIVER_CONTRIBUTOR + c) do
