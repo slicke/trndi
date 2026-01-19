@@ -43,7 +43,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls,
-  LCLType, IpHtml;
+  LCLType, ComCtrls, IpHtml;
 
 type
 
@@ -51,9 +51,10 @@ type
 
   TfSplash = class(TForm)
     Image1: TImage;
-    Label1: TLabel;
+    lTrndi: TLabel;
     lInfo: TLabel;
     lSplashWarn: TLabel;
+    pInfo: TProgressBar;
     procedure FormCreate(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: word; Shift: TShiftState);
     procedure FormKeyPress(Sender: TObject; var Key: char);
@@ -61,7 +62,7 @@ type
   private
 
   public
-
+    public procedure incProgress(const proc: integer; const title: string);
   end;
 
 var
@@ -72,6 +73,16 @@ implementation
 {$R *.lfm}
 
 { TfSplash }
+
+procedure TfSplash.incProgress(const proc: integer; const title: string);
+begin
+  lInfo.Caption := title;
+  if proc < 1 then
+    pInfo.Position := pInfo.Position + (-1 * proc)
+  else
+    pInfo.Position := proc;
+  Application.ProcessMessages;
+end;
 
 procedure TfSplash.Image1Click(Sender: TObject);
 begin

@@ -1,11 +1,11 @@
 object fSplash: TfSplash
   Left = 664
-  Height = 331
+  Height = 349
   Top = 34
   Width = 622
   BorderStyle = bsNone
   Caption = 'Trndi'
-  ClientHeight = 331
+  ClientHeight = 349
   ClientWidth = 622
   Color = 2763306
   FormStyle = fsSystemStayOnTop
@@ -23,7 +23,7 @@ object fSplash: TfSplash
     Proportional = True
     OnClick = Image1Click
   end
-  object Label1: TLabel
+  object lTrndi: TLabel
     Left = 248
     Height = 41
     Top = 0
@@ -57,5 +57,14 @@ object fSplash: TfSplash
     Top = 311
     Width = 46
     Caption = 'Loading:'
+  end
+  object pInfo: TProgressBar
+    Left = 0
+    Height = 20
+    Top = 329
+    Width = 622
+    Align = alBottom
+    Step = 1
+    TabOrder = 0
   end
 end

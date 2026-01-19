@@ -123,10 +123,10 @@ begin
   exts := FindAllFiles(extdir, '*.js', false);
   // Find .js files
 
-  fSplash.lInfo.Caption := 'Initializing extensions backend..';
+  fSplash.incProgress(79, 'Initializing extensions backend..');
   with TTrndiExtEngine.Instance do
   begin
-    fSplash.lInfo.Caption := 'Registering Core functions...';
+    fSplash.incProgress(80, 'Registering Core functions...');
     addClassFunction('getLocale', ExtFunction(@JSLocale), 0);
     addClassFunction('getUnit', ExtFunction(@JSUnit), 0);
     addClassFunction('getCurrentUser', ExtFunction(@JSActiveUser), 0);
@@ -135,7 +135,7 @@ begin
     addClassFunction('setOverrideThresholdMinutes', ExtFunction(@JSvar_DATA_FRESHNESS_THRESHOLD_MINUTES), 1);
     addClassFunction('predictReadings', ExtFunction(@JSPredictReadings), -1);
 
-    fSplash.lInfo.Caption := 'Registering UX functions...';
+    fSplash.incProgress(85, 'Registering UX functions...');
     addClassFunction('uxProp', ExtFunction(@JSUX), 3);
     addClassFunction('setBadgeSize', ExtFunction(@JSBADGE), -1);
     addClassFunction('setDotSize', ExtFunction(@JSDotSize), -1);
@@ -160,7 +160,7 @@ begin
       ExtHTML(uxdAuto, RS_SAFEMODE, RS_SAFEMODE_DESC, [mbOK], uxmtInformation, uxscLarge)
     else for extFile in exts do
       begin
-        fSplash.lInfo.Caption := RS_SPLASH_LOADING + ExtractFileName(extFile);
+        fSplash.incProgress(-1, RS_SPLASH_LOADING + ExtractFileName(extFile));
         // Run all found files
         ExecuteFile(extFile);
       end;
