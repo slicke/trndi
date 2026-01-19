@@ -1213,6 +1213,11 @@ msgstr ""
 msgid "Your internet connection is working!"
 msgstr ""
 
+#: trndi.strings.rs_extfailed
+#, object-pascal-format
+msgid "The following extension file returned an error while loading: %s"
+msgstr ""
+
 #: trndi.strings.rs_font_error
 #, object-pascal-format
 msgid "You're missing the standard font \"%s\". Trndi will work as intended, but some icons may be missing and/or distorted!"

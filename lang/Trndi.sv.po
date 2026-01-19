@@ -1288,6 +1288,11 @@ msgstr "Detta är skillnaden från tidigare avläsning"
 msgid "Your internet connection is working!"
 msgstr "Din internetanslutning fungerar!"
 
+#: trndi.strings.rs_extfailed
+#, object-pascal-format
+msgid "The following extension file returned an error while loading: %s"
+msgstr ""
+
 #: trndi.strings.rs_font_error
 #, object-pascal-format
 msgid "You're missing the standard font \"%s\". Trndi will work as intended, but some icons may be missing and/or distorted!"
@@ -2044,7 +2049,7 @@ msgstr "Dexcom:s servrar tillhandahåller inte värden för vad som är högt oc
 
 #: uconf.rs_driver_contributor
 msgid "Driver contributor: "
-msgstr ""
+msgstr "Bidragen av: "
 
 #: uconf.rs_dupe_name
 msgid "Names must be unique"

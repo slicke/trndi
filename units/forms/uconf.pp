@@ -1043,7 +1043,7 @@ begin
 
   sys := TrndiAPI;
 
-    case cbSys.Text of
+  case cbSys.Text of
   API_NS:
     sys := NightScout;
   API_NS3:
@@ -1062,10 +1062,10 @@ begin
     {$endif}
   end;
 
- user := sys.ParamLabel(APLUser);
- pass := sys.ParamLabel(APLPass);
+  user := sys.ParamLabel(APLUser);
+  pass := sys.ParamLabel(APLPass);
 
- {$ifdef DEBUG}
+  {$ifdef DEBUG}
   if (cbSys.Text in API_DEBUG) and (sys = TrndiAPI) then
   begin
     user := RS_DEBUG_BACKEND_LABEL;
