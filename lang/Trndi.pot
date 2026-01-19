@@ -1934,6 +1934,10 @@ msgstr ""
 msgid "Dexcom servers do not provide custom high and low blood sugar values. Please set your own thresholds in the Customization tab."
 msgstr ""
 
+#: uconf.rs_driver_contributor
+msgid "Driver contributor: "
+msgstr ""
+
 #: uconf.rs_dupe_name
 msgid "Names must be unique"
 msgstr ""

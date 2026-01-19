@@ -104,6 +104,8 @@ begin
     Result := 'Readings to remove, from the most recent';
   if LabelName = APLDesc then
     Result := result + sLineBreak + sLineBreak + 'You can enter any amount of readings, in the username field. That amount will be marked as missing (from most recent to oldest)';
+  if LabelName = APLCopyright then
+    Result := 'Björn Lindh <github.com/slicke>';
 end;
 
 end.
