@@ -398,6 +398,8 @@ var
 tnative: TrndiNative;
 
 resourcestring
+RS_DRIVER_CONTRIBUTOR = 'Driver contributor: ';
+
 RS_DEBUG_BACKEND_LABEL = '(Ignored for debug backend)';
 
 RS_Multi_User_Help =
@@ -1281,40 +1283,60 @@ end;
 
 procedure TfConf.bBackendHelpClick(Sender: TObject);
 var
-  s: string;
+  s, c, x: string;
+  i: integer;
 begin
 
   s := '';
 
   {$ifdef DEBUG}
-  if cbSys.Text in API_DEBUG then
+  if cbSys.Text in API_DEBUG then begin
     s := DebugAPI.ParamLabel(APLDesc);
+    c := DebugAPI.ParamLabel(APLCopyright);
+  end;
   {$endif}
 
   case cbSys.Text of
-  API_NS:
+  API_NS: begin
     s := NightScout.ParamLabel(APLDesc);
-  API_NS3:
+    c := NightScout.ParamLabel(APLCopyright);
+  end;
+  API_NS3: begin
     s := NightScout3.ParamLabel(APLDesc);
-  API_DEX_USA:
+    c := NightScout3.ParamLabel(APLCopyright);
+  end;
+  API_DEX_USA: begin
     s := Dexcom.ParamLabel(APLDesc);
-  API_DEX_EU:
+    c := Dexcom.ParamLabel(APLCopyright);
+  end;
+  API_DEX_EU: begin
     s := Dexcom.ParamLabel(APLDesc);
-  API_XDRIP:
+    c := Dexcom.ParamLabel(APLCopyright);
+  end;
+  API_XDRIP: begin
     s := xDrip.ParamLabel(APLDesc);
+    c := xDrip.ParamLabel(APLCopyright);
+  end;
   {$ifdef Debug}
-  API_D_FIRSTX:
+  API_D_FIRSTX: begin
     s := DebugFirstXMissingAPI.ParamLabel(APLDesc);
-  API_D_CUSTOM:
+    c := DebugFirstXMissingAPI.ParamLabel(APLCopyright);
+  end;
+  API_D_CUSTOM: begin
       s := DebugCustomAPI.ParamLabel(APLDesc);
+      c := DebugCustomAPI.ParamLabel(APLCopyright);
+  end;
   {$endif}
   else
   {$ifdef Debug} if s = ''  then {$endif}
       s := RS_CHOOSE_SYSTEM;
   end;
 
+  for i := 0 to Length(RS_DRIVER_CONTRIBUTOR + c) do
+    x += '-';
+
   if s <> '' then
-    ShowMessage(s);
+    ShowMessage(s + sLineBreak + sLineBreak + x + sLineBreak + RS_DRIVER_CONTRIBUTOR + c);
 
 end;
 

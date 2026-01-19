@@ -2042,6 +2042,10 @@ msgstr "Standard"
 msgid "Dexcom servers do not provide custom high and low blood sugar values. Please set your own thresholds in the Customization tab."
 msgstr "Dexcom:s servrar tillhandahåller inte värden för vad som är högt och lågt. Vänligen ställ in dina egna gränser under fliken Personalisera."
 
+#: uconf.rs_driver_contributor
+msgid "Driver contributor: "
+msgstr ""
+
 #: uconf.rs_dupe_name
 msgid "Names must be unique"
 msgstr "Namn måste vara unika"
@@ -2359,3 +2363,4 @@ msgstr "Historikgraf"
 #, object-pascal-format
 msgid "Readings (%s)"
 msgstr "Avläsningar (%s)"
+

@@ -129,12 +129,16 @@ end;
 class function DebugCustomAPI.ParamLabel(LabelName: APIParamLabel): string;
 begin
   result := inherited ParamLabel(LabelName);
-  if LabelName = APLUser then
+  case LabelName of
+   APLUser:
     Result := 'Reading to fake in mg/DL';
-  if LabelName = APLPass  then
+   APLPass:
     Result := 'Enter "mmol" exactly to provide a mmol/L reading above (no quotes; use . as separator)';
-  if LabelName = APLDesc then
+   APLDesc:
     Result := result + sLineBreak + sLineBreak + 'You can enter any reading (in mg/DL) as username, to have Trndi use that as reading';
+   APLCopyright:
+    Result := 'Björn Lindh <github.com/slicke>';
+  end;
 end;
 
 end.

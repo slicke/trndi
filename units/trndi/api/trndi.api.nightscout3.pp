@@ -624,6 +624,8 @@ begin
     Result := sParamPassword;
   APLDesc:
     Result := sParamDesc;
+  APLCopyright:
+   Result := 'Björn Lindh <github.com/slicke>';
   else
     Result := inherited ParamLabel(LabelName);
   end;

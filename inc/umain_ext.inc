@@ -162,7 +162,11 @@ begin
       begin
         fSplash.incProgress(-1, RS_SPLASH_LOADING + ExtractFileName(extFile));
         // Run all found files
+        {$ifdef debug}
+        ExtMessage(uxdAuto,'Extension Activated!','The ' + ExtractFileNameOnly(extFile) + ' extension was loaded', 'Output below', ExecuteFile(extFile), false);
+        {$else}
         ExecuteFile(extFile);
+        {$endif}
       end;
     exts.Free;
   end;
