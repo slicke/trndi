@@ -214,22 +214,22 @@ begin
       begin
         fSplash.Image1.Hide;
         lSplashWarn.hide;
-        linfo.Caption := 'Trndi is loading...';
+        fSplash.incProgress(1, 'Trndi is loading...');
         linfo.top := 0;
         linfo.left := 400;
         Height := linfo.canvas.TextHeight('Pq') + 5;
 
-        label1.AutoSize := true;
-        label1.Caption := 'Trndi | You need to accept the license agreement! ';
-        label1.top := 0;
-        label1.left := 0;
-        label1.font := linfo.font;
-        label1.font.color := clWhite;
+        lTrndi.AutoSize := true;
+        fSplash.incProgress(5, 'Trndi | You need to accept the license agreement! ');
+        lTrndi.top := 0;
+        lTrndi.left := 0;
+        lTrndi.font := linfo.font;
+        lTrndi.font.color := clWhite;
         Application.ProcessMessages;
       end;
   FStoredWindowInfo.Initialized := false;
   fSplash.Image1.Picture.Icon := Application.Icon;
-  fSplash.lInfo.Caption := '';
+  fSplash.incProgress(7, '');
   fSplash.lInfo.Font.Color := fSplash.lSplashWarn.Font.color;
   {$ifdef X_WIN}
   fSplash.ShowInTaskBar := stAlways;
@@ -468,12 +468,12 @@ begin
   Application.OnException := @AppExceptionHandler;
 
   // Start media backend early
-  fSplash.lInfo.Caption := RS_INIT_MEDIA;
+  fSplash.incProgress(10, RS_INIT_MEDIA);
   MediaController := TSystemMediaController.Create(Self);
   MediaController.Initialize;
   Application.ProcessMessages;
 
-  fSplash.linfo.Caption := RS_INIT_FONTS;
+  fSplash.incProgress(15, RS_INIT_FONTS);
   // Font validation
   fil := FontGUIInList(guifontName);
   if not fil then
@@ -503,7 +503,7 @@ begin
 
   // Platform-specific initialization
   {$ifdef X_LINUXBSD}
-  fSplash.linfo.Caption := RS_INIT_LINUX;
+  fSplash.incProgress(20, RS_INIT_LINUX);
   InitializeLinuxPlatform;
   {$endif}
 
@@ -518,13 +518,13 @@ begin
 
   // Set fonts for non-Darwin platforms
   {$ifndef DARWIN}
-  fSplash.linfo.Caption := RS_INIT_MAC;
+  fSplash.incProgress(25, RS_INIT_MAC);
   fBG.font.Name := txtFontName;
   lArrow.Font.Name := guifontName;
   {$endif}
 
 
-  fSplash.linfo.Caption := RS_INIT_UI;
+  fSplash.incProgress(30, RS_INIT_UI);
   // Initialize UI components
   InitializeUIComponents;
   Application.ProcessMessages;
@@ -539,10 +539,10 @@ begin
   // Configuration and user setup
   with native do
   begin
-    fSplash.linfo.Caption := RS_INIT_PROFILES;
+    fSplash.incProgress(35, RS_INIT_PROFILES);
     LoadUserProfile;
 
-    fSplash.linfo.Caption := RS_INIT_LOCALE;
+    fSplash.incProgress(40, RS_INIT_LOCALE);
     // Locale setup
     userlocale := DefaultFormatSettings;
     userlocale.DecimalSeparator := GetCharSetting('locale.separator', '.');
@@ -550,12 +550,12 @@ begin
     native.locale := userlocale;
     semiTouchMode := GetBoolSetting('ux.semi_touch', false);
 
-    fSplash.linfo.Caption := RS_INIT_LICENSE;
+    fSplash.incProgress(45, RS_INIT_LICENSE);
     // License check
     CheckAndAcceptLicense;
     Application.ProcessMessages;
 
-    fSplash.linfo.Caption := RS_INIT_UNIT;
+    fSplash.incProgress(50, RS_INIT_UNIT);
     // Privacy and unit settings
     privacyMode := GetBoolSetting('ext.privacy');
     if CheckSetting('unit', 'mmol', 'mmol') then
@@ -568,7 +568,7 @@ begin
     apiTarget := GetSetting('remote.target');
     if apiTarget = '' then
     begin
-      fSplash.linfo.Caption := RS_INIT_INITIAL;
+      fSplash.incProgress(55, RS_INIT_INITIAL);
       tMain.Enabled := false;
       for i := 0 to fBG.ComponentCount - 1 do
         if (fbg.Components[i] is TLabel) and (fbg.Components[i] <> lval) then
@@ -579,7 +579,7 @@ begin
       Exit;
     end;
 
-    fSplash.linfo.Caption := RS_INIT_API;
+    fSplash.incProgress(60, RS_INIT_API);
     Application.ProcessMessages;
     if not InitializeAPI then
     begin
@@ -587,7 +587,7 @@ begin
       Exit;
     end;
 
-    fSplash.linfo.Caption := RS_INIT_CONNECT;
+    fSplash.incProgress(65, RS_INIT_CONNECT);
     Application.ProcessMessages;
     if not api.Connect then
     begin
@@ -598,7 +598,7 @@ begin
       Exit;
     end;
 
-    fSplash.linfo.Caption := RS_INIT_UX;
+    fSplash.incProgress(70, RS_INIT_UX);
     // UI preferences
     dotscale := GetFloatSetting('ux.dot_scale',{$ifdef DARWIN}0.7{$else}1{$endif});
     DOT_ADJUST := GetFloatSetting('ux.dot_adjust', 0);
@@ -611,11 +611,11 @@ begin
     PaintRangeCGMRange := native.GetBoolSetting('ux.paint_range_cgmrange', false);
     // Extensions
     {$ifdef TrndiExt}
-    fSplash.lInfo.Caption := RS_SPLASH_LOADING_INIT;
+    fSplash.incProgress(80, RS_SPLASH_LOADING_INIT);
     LoadExtensions;
     {$endif}
 
-    fSplash.linfo.Caption := RS_INIT_CUSTOM_OVERRIDES;
+    fSplash.incProgress(90, RS_INIT_CUSTOM_OVERRIDES);
     // Override settings - always apply if set, regardless of checkbox state
     // This allows extensions and manual config edits to work
     api.cgmLo := GetIntSetting('override.lo', api.cgmLo);
@@ -650,7 +650,7 @@ begin
   Application.ProcessMessages;
   if not updateReading(true) then
   begin
-    fSplash.linfo.Caption := RS_INIT_FIRST;
+    fSplash.incProgress(95, RS_INIT_FIRST);
     updateReading; // Second attempt for setup
     showWarningPanel(RS_NO_BOOT_READING);
   end;
@@ -658,7 +658,7 @@ begin
   Chroma := TRazerChromaFactory.CreateInstance;
   if native.GetBoolSetting('razer.enabled', false) then
   begin
-    fSplash.linfo.Caption := RS_INIT_CHROMA;
+    fSplash.incProgress(96, RS_INIT_CHROMA);
     if not Chroma.Initialize then
       Showmessage('❌ Failed to initialize Razer Chroma: ', Chroma.LastError);
   end;
