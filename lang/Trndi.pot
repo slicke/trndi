@@ -875,10 +875,6 @@ msgstr ""
 msgid "Compatibility mode: Your window manager does not support all features, please consider eg KDE"
 msgstr ""
 
-#: tfconf.lsyswarninfo.caption
-msgid "-"
-msgstr ""
-
 #: tfconf.ltestannounce.caption
 msgid "Test an announcement"
 msgstr ""

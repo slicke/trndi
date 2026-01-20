@@ -892,10 +892,6 @@ msgstr "Trendpilsstorlek:"
 msgid "Compatibility mode: Your window manager does not support all features, please consider eg KDE"
 msgstr "Kompatibilitetsläge: Din fönsterhanterare stöder inte alla funktioner, överväg t ex KDE"
 
-#: tfconf.lsyswarninfo.caption
-msgid "-"
-msgstr ""
-
 #: tfconf.ltestannounce.caption
 msgid "Test an announcement"
 msgstr "Testa en notis"
@@ -1295,7 +1291,7 @@ msgstr "Din internetanslutning fungerar!"
 #: trndi.strings.rs_extfailed
 #, object-pascal-format
 msgid "The following extension file returned an error while loading: %s"
-msgstr ""
+msgstr "Följande tilläggsfil returnerade ett fel när den laddades: %s"
 
 #: trndi.strings.rs_font_error
 #, object-pascal-format
@@ -2010,12 +2006,12 @@ msgid "This controls how Trndi's icon in the status bar and/or tray will notify 
 msgstr "Detta styr hur Trndi:s ikon visas i statusfältet och/eller klockkonen notifierar dig visuellt."
 
 #: uconf.rs_beta
-#, fuzzy
-#| msgid "This backend is in a beta stage, it may not work as intended! If possible, choose another backend."
 msgid ""
 "This backend is in a beta stage, it may not work as intended!\n"
 " If possible, choose another backend."
-msgstr "Denna datakälla är i betastadiet, den kanske inte fungerar korrekt! Om möjligt, välj en annan källa."
+msgstr ""
+"Denna datakälla är i betastadiet, den kanske inte fungerar korrekt!\n"
+"Om möjligt, välj en annan källa."
 
 #: uconf.rs_choose_system
 msgid "Select your CGM system in the list, then enter your credentials"
@@ -2051,6 +2047,8 @@ msgid ""
 "This is a debug backend. It's used for testing purposes only!\n"
 "No data will be sent to any remote server."
 msgstr ""
+"Detta är ett utvecklingsbackend. Det används bara för test!\n"
+"Ingen data kommer skickas till någon fjärrserver."
 
 #: uconf.rs_default_account
 msgctxt "uconf.rs_default_account"
@@ -2058,12 +2056,12 @@ msgid "Default"
 msgstr "Standard"
 
 #: uconf.rs_dex
-#, fuzzy
-#| msgid "Dexcom servers do not provide custom high and low blood sugar values. Please set your own thresholds in the Customization tab."
 msgid ""
 "Dexcom servers do not provide custom high and low blood sugar values.\n"
 "Please set your own thresholds in the Customization tab."
-msgstr "Dexcom:s servrar tillhandahåller inte värden för vad som är högt och lågt. Vänligen ställ in dina egna gränser under fliken Personalisera."
+msgstr ""
+"Dexcom:s servrar tillhandahåller inte värden för vad som är högt och lågt.\n"
+"Vänligen ställ in dina egna gränser under fliken Personalisera."
 
 #: uconf.rs_driver_contributor
 msgid "Driver contributor: "
@@ -2321,6 +2319,8 @@ msgid ""
 "Make sure you are on the same network as the xDrip app.\n"
 "Make sure that web access is turned on."
 msgstr ""
+"Se till att du är på samma nätverk som xDrip-appen.\n"
+"Säkerställ att webbtjänsten är påslagen."
 
 #: ufloat.rscustomop
 msgid "You can use shift+<number> to manually set visibility (0 = 100% visible)"
