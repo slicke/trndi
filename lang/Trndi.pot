@@ -875,6 +875,10 @@ msgstr ""
 msgid "Compatibility mode: Your window manager does not support all features, please consider eg KDE"
 msgstr ""
 
+#: tfconf.lsyswarninfo.caption
+msgid "-"
+msgstr ""
+
 #: tfconf.ltestannounce.caption
 msgid "Test an announcement"
 msgstr ""
@@ -1898,7 +1902,9 @@ msgid "This controls how Trndi's icon in the status bar and/or tray will notify 
 msgstr ""
 
 #: uconf.rs_beta
-msgid "This backend is in a beta stage, it may not work as intended! If possible, choose another backend."
+msgid ""
+"This backend is in a beta stage, it may not work as intended!\n"
+" If possible, choose another backend."
 msgstr ""
 
 #: uconf.rs_choose_system
@@ -1930,13 +1936,21 @@ msgstr ""
 msgid "(Ignored for debug backend)"
 msgstr ""
 
+#: uconf.rs_debug_warn
+msgid ""
+"This is a debug backend. It's used for testing purposes only!\n"
+"No data will be sent to any remote server."
+msgstr ""
+
 #: uconf.rs_default_account
 msgctxt "uconf.rs_default_account"
 msgid "Default"
 msgstr ""
 
 #: uconf.rs_dex
-msgid "Dexcom servers do not provide custom high and low blood sugar values. Please set your own thresholds in the Customization tab."
+msgid ""
+"Dexcom servers do not provide custom high and low blood sugar values.\n"
+"Please set your own thresholds in the Customization tab."
 msgstr ""
 
 #: uconf.rs_driver_contributor
@@ -2178,6 +2192,12 @@ msgstr ""
 
 #: uconf.rs_webapi
 msgid "Trndi can expose a <b>WebAPI</b> for use with <i>third-party systems</i>.<br><br>This is an advanced feature, you can safely disregard it if you don't know what it does!"
+msgstr ""
+
+#: uconf.rs_xdrip
+msgid ""
+"Make sure you are on the same network as the xDrip app.\n"
+"Make sure that web access is turned on."
 msgstr ""
 
 #: ufloat.rscustomop

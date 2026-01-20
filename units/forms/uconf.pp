@@ -115,6 +115,8 @@ TfConf = class(TForm)
   cbPredictShortMinutes: TComboBox;
   cbPredictShortSize: TComboBox;
   cbPrivacy: TCheckBox;
+  lSysWarnInfo: TLabel;
+  pnSysWarn: TPanel;
   rbPredictShortArrowOnly: TRadioButton;
   rbPredictShortShowValue: TRadioButton;
   cbTimeStamp: TCheckBox;
@@ -449,10 +451,16 @@ RS_OUTDATED_HELP =
   'This is the time after which Trndi will show the "no recent" readings overlay.';
 
 RS_DEX =
-  'Dexcom servers do not provide custom high and low blood sugar values. Please set your own thresholds in the Customization tab.';
+  'Dexcom servers do not provide custom high and low blood sugar values.'+sLineBreak+'Please set your own thresholds in the Customization tab.';
 
 RS_BETA =
-  'This backend is in a beta stage, it may not work as intended! If possible, choose another backend.';
+  'This backend is in a beta stage, it may not work as intended!'+sLineBreak+' If possible, choose another backend.';
+
+RS_XDRIP =
+  'Make sure you are on the same network as the xDrip app.'+sLineBreak+'Make sure that web access is turned on.';
+
+RS_DEBUG_WARN =
+  'This is a debug backend. It''s used for testing purposes only!'+sLineBreak+'No data will be sent to any remote server.';
 
 RS_ENTER_USER = 'Enter a username';
 RS_ENTER_NAME = 'Letters, space and numbers only';
@@ -1040,7 +1048,6 @@ procedure TfConf.getAPILabels(out user, pass: string);
 var
   sys: class of TrndiAPI;
 begin
-
   sys := TrndiAPI;
 
   case cbSys.Text of
@@ -1081,16 +1088,30 @@ procedure WarnUnstableAPI;
     if (cbSys.Text = API_DEX_USA) or (cbSys.Text = API_DEX_EU) then
     begin
       gbOverride.Color := $00D3D2EE;
-      ShowMessage(RS_DEX);
+      pnSysWarn.Show;
+      lSysWarnInfo.Caption := RS_DEX;
     end;
-    if cbSys.Text = API_NS3 then
-      ShowMessage(RS_BETA);
+    if cbSys.Text = API_NS3 then begin
+      pnSysWarn.Show;
+      lSysWarnInfo.Caption := RS_BETA;
+    end;
+    if cbSys.Text = API_XDRIP then begin
+      pnSysWarn.Show;
+      lSysWarnInfo.Caption := RS_XDRIP;
+    end;
+    {$ifdef DEBUG}
+    if cbSys.Text in API_DEBUG then begin
+      pnSysWarn.Show;
+      lSysWarnInfo.Caption := RS_DEBUG_WARN;
+    end;
+    {$endif}
   end;
 
 var user, pass: string;
 begin
+  pnSysWarn.Hide;
   gbOverride.Color := clDefault;
-  if not (sender is TfConf) then
+  //if not (sender is TfConf) then
     WarnUnstableAPI;
   // Update parameter labels above edits based on backend
   getAPILabels(user, pass);

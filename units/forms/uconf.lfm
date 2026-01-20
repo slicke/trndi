@@ -17,10 +17,10 @@ object fConf: TfConf
     Height = 518
     Top = 11
     Width = 665
-    ActivePage = tsTir
+    ActivePage = tsGeneral
     Align = alClient
     BorderSpacing.Around = 5
-    TabIndex = 3
+    TabIndex = 0
     TabOrder = 0
     OnChange = pcMainChange
     object tsGeneral: TTabSheet
@@ -10550,6 +10550,31 @@ object fConf: TfConf
             Caption = 'Check for update'
             TabOrder = 0
             OnClick = Button3Click
+          end
+        end
+        object pnSysWarn: TPanel
+          Left = 15
+          Height = 50
+          Top = 0
+          Width = 497
+          BevelOuter = bvNone
+          ClientHeight = 50
+          ClientWidth = 497
+          Color = 64500
+          ParentBackground = False
+          ParentColor = False
+          TabOrder = 1
+          Visible = False
+          object lSysWarnInfo: TLabel
+            Left = 8
+            Height = 35
+            Top = 8
+            Width = 950
+            AutoSize = False
+            Caption = '-'
+            Font.Color = clBlack
+            ParentFont = False
+            WordWrap = True
           end
         end
       end
