@@ -892,6 +892,10 @@ msgstr "Trendpilsstorlek:"
 msgid "Compatibility mode: Your window manager does not support all features, please consider eg KDE"
 msgstr "Kompatibilitetsläge: Din fönsterhanterare stöder inte alla funktioner, överväg t ex KDE"
 
+#: tfconf.lsyswarninfo.caption
+msgid "-"
+msgstr ""
+
 #: tfconf.ltestannounce.caption
 msgid "Test an announcement"
 msgstr "Testa en notis"
@@ -2006,7 +2010,11 @@ msgid "This controls how Trndi's icon in the status bar and/or tray will notify 
 msgstr "Detta styr hur Trndi:s ikon visas i statusfältet och/eller klockkonen notifierar dig visuellt."
 
 #: uconf.rs_beta
-msgid "This backend is in a beta stage, it may not work as intended! If possible, choose another backend."
+#, fuzzy
+#| msgid "This backend is in a beta stage, it may not work as intended! If possible, choose another backend."
+msgid ""
+"This backend is in a beta stage, it may not work as intended!\n"
+" If possible, choose another backend."
 msgstr "Denna datakälla är i betastadiet, den kanske inte fungerar korrekt! Om möjligt, välj en annan källa."
 
 #: uconf.rs_choose_system
@@ -2038,13 +2046,23 @@ msgstr "Överskrid/sätt dina egna gränser för ditt föredragna område. Detta
 msgid "(Ignored for debug backend)"
 msgstr "(Ignorerat i debugläge)"
 
+#: uconf.rs_debug_warn
+msgid ""
+"This is a debug backend. It's used for testing purposes only!\n"
+"No data will be sent to any remote server."
+msgstr ""
+
 #: uconf.rs_default_account
 msgctxt "uconf.rs_default_account"
 msgid "Default"
 msgstr "Standard"
 
 #: uconf.rs_dex
-msgid "Dexcom servers do not provide custom high and low blood sugar values. Please set your own thresholds in the Customization tab."
+#, fuzzy
+#| msgid "Dexcom servers do not provide custom high and low blood sugar values. Please set your own thresholds in the Customization tab."
+msgid ""
+"Dexcom servers do not provide custom high and low blood sugar values.\n"
+"Please set your own thresholds in the Customization tab."
 msgstr "Dexcom:s servrar tillhandahåller inte värden för vad som är högt och lågt. Vänligen ställ in dina egna gränser under fliken Personalisera."
 
 #: uconf.rs_driver_contributor
@@ -2297,6 +2315,12 @@ msgstr "Din skrivbordssession är Wayland. Wayland-kompositorer (inklusive KWin)
 #: uconf.rs_webapi
 msgid "Trndi can expose a <b>WebAPI</b> for use with <i>third-party systems</i>.<br><br>This is an advanced feature, you can safely disregard it if you don't know what it does!"
 msgstr "Trndi kan starta ett <b>Web-API</b> för att kommunicera med <i>tredjepartssystem</i>.<br><br>Detta är en avancerad funktion, du kan ignorera den säkert om du inte vet vad den gör!"
+
+#: uconf.rs_xdrip
+msgid ""
+"Make sure you are on the same network as the xDrip app.\n"
+"Make sure that web access is turned on."
+msgstr ""
 
 #: ufloat.rscustomop
 msgid "You can use shift+<number> to manually set visibility (0 = 100% visible)"

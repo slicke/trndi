@@ -14,6 +14,7 @@
 {"hash":63,"name":"tfconf.bbackendhelp.caption","sourcebytes":[63],"value":"?"},
 {"hash":371876,"name":"tfconf.btest.caption","sourcebytes":[84,101,115,116],"value":"Test"},
 {"hash":236240981,"name":"tfconf.button3.caption","sourcebytes":[67,104,101,99,107,32,102,111,114,32,117,112,100,97,116,101],"value":"Check for update"},
+{"hash":45,"name":"tfconf.lsyswarninfo.caption","sourcebytes":[45],"value":"-"},
 {"hash":79563278,"name":"tfconf.label18.caption","sourcebytes":[67,111,110,110,101,99,116,105,111,110],"value":"Connection"},
 {"hash":78001811,"name":"tfconf.tscolors.caption","sourcebytes":[67,111,108,111,114,115],"value":"Colors"},
 {"hash":249487011,"name":"tfconf.tsbackgrounds.caption","sourcebytes":[66,97,99,107,103,114,111,117,110,100,115],"value":"Backgrounds"},
