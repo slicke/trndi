@@ -1328,13 +1328,15 @@ var
   tb: TButton;
   df: TDialogForm;
 begin
-  if (dialogsize = uxdOnForm) then
+  if (dialogsize = uxdOnForm) and ((sender <> nil) and (sender.FindComponent('uxd_on_form') = nil)) then
   begin
 
     if (sender <> nil) and (sender.Showing) and (GetUXDialogSize(uxdAuto) = uxdBig) then
     begin
       // On e.g. touch screens display a full screen message
       tp := TPanel.Create(sender); // Create a panel to cover the screen
+      tp.Name := 'uxd_on_form';
+      tp.caption := '';
       tp.Parent := sender;
       tp.Top := 0;
       tp.Left := 0;
