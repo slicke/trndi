@@ -2466,7 +2466,7 @@ begin
   miOnTop.Checked := not miOnTop.Checked;
   if miOnTop.Checked then
     Self.FormStyle := fsStayOnTop{$ifdef LCLQt6}// Use fsStayOnTop for Qt widgetset; it's better respected by some WMs.
-    {$endif}
+  {$endif}
   else
     Self.FormStyle := fsNormal;
 
