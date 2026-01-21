@@ -875,8 +875,6 @@ begin
     miSettings.Click;
   'U', 'u':
     CheckForUpdates(true);
-  'x', 'X':
-    UXMessage(uxdOnForm,'sss','sdsds',uxmtOK,self);
   end;
 end;
 
