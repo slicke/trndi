@@ -51,7 +51,7 @@ uses
 Classes, SysUtils, Dialogs, Forms, ExtCtrls, StdCtrls, Controls, Graphics, Math,
 IntfGraphics, FPImage, graphtype, lcltype, Trndi.Native, Grids, Spin, IpHtml, Iphttpbroker, slicke.ux.native, SpinEx, LCLIntf,
 {$ifdef Windows}
-  DX12.D2D1, DX12.DXGI, DX12.DWrite, DX12.DCommon, DX12.WinCodec, Windows, Buttons, ActiveX, ComObj,
+DX12.D2D1, DX12.DXGI, DX12.DWrite, DX12.DCommon, DX12.WinCodec, Windows, Buttons, ActiveX, ComObj,
 {$endif}
 StrUtils;
 
@@ -178,11 +178,11 @@ protected
   procedure CreateWnd; override;
   // Override DoShow instead of using an OnShow event method name.
   procedure DoShow; override;
+public
   {$ifdef windows}
-  public
     {** Owner-draw routine for bit buttons on Windows to match dark mode styling. }
-    procedure ButtonDrawItem(Sender: TObject;
-      ACanvas: TCanvas; ARect: TRect; State: TButtonState);
+  procedure ButtonDrawItem(Sender: TObject;
+    ACanvas: TCanvas; ARect: TRect; State: TButtonState);
   {$endif}
     {** OnClick handler used by inline full-screen message overlays created via @link(UXMessage). }
   procedure UXMessageOnClick(sender: TObject);
@@ -565,8 +565,8 @@ var
   light, dark: TColor;
 begin
   {$ifdef Windows}
-    light := GetSysColor(COLOR_WINDOWTEXT);
-    dark := clWhite;
+  light := GetSysColor(COLOR_WINDOWTEXT);
+  dark := clWhite;
   {$else}
   dark := clWindowText;
   light := dark;
@@ -583,8 +583,8 @@ var
   light, dark: TColor;
 begin
   {$ifdef Windows}
-    light := GetSysColor(COLOR_BTNFACE);
-    dark := RGB(32, 32, 32);
+  light := GetSysColor(COLOR_BTNFACE);
+  dark := RGB(32, 32, 32);
 //    bg := IfThen(TrndiNative.isDarkMode, uxclGray, bg);
   {$else}
   light := clBtnFace;
@@ -924,17 +924,17 @@ end;
   @param Alpha Alpha in [0..1].
   @returns Direct2D color struct.
 }
-function TColorToColorF(const Col: TColor; Alpha: Single = 1.0): TD2D1_COLOR_F;
+function TColorToColorF(const Col: TColor; Alpha: single = 1.0): TD2D1_COLOR_F;
 var
- rgb: TColor;
+  rgb: TColor;
 begin
  // Ensure proper RGB order
- rgb := ColorToRGB(Col);
+  rgb := ColorToRGB(Col);
 
- Result.R := GetRValue(rgb) / 255.0;
- Result.G := GetGValue(rgb) / 255.0;
- Result.B := GetBValue(rgb) / 255.0;
- Result.A := Alpha;
+  Result.R := GetRValue(rgb) / 255.0;
+  Result.G := GetGValue(rgb) / 255.0;
+  Result.B := GetBValue(rgb) / 255.0;
+  Result.A := Alpha;
 end;
 
 {**
@@ -955,7 +955,7 @@ var
   TextRect: TD2D1_RECT_F;
   BG: TD2D1_COLOR_F;
   R: TRect;
-  Inset: Single;
+  Inset: single;
 begin
   CoInitialize(nil);
   try
@@ -991,12 +991,12 @@ begin
       Inset := Image.Width * 0.20;
 
       DWFactory.CreateTextFormat(
-        PWideChar('Segoe UI Emoji'), nil,
+        pwidechar('Segoe UI Emoji'), nil,
         DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL,
         DWRITE_FONT_STRETCH_NORMAL,
         Image.Height - Trunc(Inset * 2),
         'en-us', TextFormat
-      );
+        );
 
       // Brush for text rendering
       BG := TColorToColorF(bgcol, 1.0);
@@ -1008,15 +1008,15 @@ begin
       // Draw
       RT.BeginDraw;
       RT.Clear(BG);
-      RT.DrawText(PWideChar(Emoji), Length(Emoji), TextFormat,
-                  @TextRect, Brush,
-                  D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT,
-                  DWRITE_MEASURING_MODE_NATURAL);
+      RT.DrawText(pwidechar(Emoji), Length(Emoji), TextFormat,
+        @TextRect, Brush,
+        D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT,
+        DWRITE_MEASURING_MODE_NATURAL);
       RT.EndDraw;
 
       // Assign to TImage
       Image.Picture.Assign(Bitmap);
-      Image.Transparent := True;
+      Image.Transparent := true;
     finally
       Bitmap.Free;
     end;
@@ -1046,7 +1046,7 @@ begin
   Inset := Round(Image.Width * 0.15); // 15% padding around the emoji
 
   {$ifdef Darwin}
-    Image.Picture.Bitmap.Canvas.Font.Name := 'Apple Color Emoji';
+  Image.Picture.Bitmap.Canvas.Font.Name := 'Apple Color Emoji';
   {$else}
   Image.Picture.Bitmap.Canvas.Font.Name := 'Noto Color Emoji';
   {$endif}
@@ -1222,7 +1222,7 @@ begin
     else
       Edit.DecimalPlaces := 0;
     if (size = uxdBig) then
-      Edit.Font.Size := 20{$IFDEF Windows}{$ENDIF};
+      Edit.Font.Size := 20;
 
     // --- OK Button ---
     OkButton := TButton.Create(Dialog);
@@ -1320,22 +1320,25 @@ end;
   See interface docs. Renders inline panel when @code(dialogsize = uxdOnForm) and a sender is available.
 }
 procedure UXMessage(const dialogsize: TUXDialogSize; const title, message: string;
-const icon: UXImage = uxmtOK;
+const
+icon: UXImage = uxmtOK;
 sender: TForm = nil);
+const
+  onFormName: string = 'uxd_on_form';
 var
   tp: TPanel;
   tl: TLabel;
   tb: TButton;
   df: TDialogForm;
 begin
-  if (dialogsize = uxdOnForm) and ((sender <> nil) and (sender.FindComponent('uxd_on_form') = nil)) then
+  if (dialogsize = uxdOnForm) and ((sender <> nil) and (sender.FindComponent(onFormName) = nil)) then
   begin
 
     if (sender <> nil) and (sender.Showing) and (GetUXDialogSize(uxdAuto) = uxdBig) then
     begin
       // On e.g. touch screens display a full screen message
       tp := TPanel.Create(sender); // Create a panel to cover the screen
-      tp.Name := 'uxd_on_form';
+      tp.Name := onFormName;
       tp.caption := '';
       tp.Parent := sender;
       tp.Top := 0;
@@ -1436,7 +1439,7 @@ begin
     Edit.Top := DescLabel.Top + DescLabel.Height + ifthen((size = uxdBig), Padding * 2, Padding);
     Edit.Text := ADefault;
     if (size = uxdBig) then
-      Edit.Font.Size := 20{$IFDEF Windows}{$ENDIF};
+      Edit.Font.Size := 20;
 
     // --- OK Button ---
     OkButton := TButton.Create(Dialog);
@@ -1548,7 +1551,7 @@ begin
     Combo.Left := DescLabel.Left;
     Combo.Width := DescLabel.Width;
     if (size = uxdBig) then
-      Combo.Font.Size := 20{$IFDEF Windows}{$ENDIF};
+      Combo.Font.Size := 20;
     Combo.Top := DescLabel.Top + DescLabel.Height + ifthen((size = uxdBig) , Padding * 2, Padding);
     Combo.ItemIndex := 0;
 
@@ -1671,7 +1674,7 @@ begin
     end;
 
     if (size = uxdBig) then
-      Grid.Font.Size := 14{$IFDEF Windows}{$ENDIF};
+      Grid.Font.Size := 14;
 
     // --- OK Button ---
     OkButton := TButton.Create(Dialog);
@@ -1785,7 +1788,7 @@ begin
       FontCombo.ItemIndex := 0;
     
     if (size = uxdBig) then
-      FontCombo.Font.Size := 16{$IFDEF Windows}{$ENDIF};
+      FontCombo.Font.Size := 16;
 
     // --- Preview Label ---
     PreviewLabel := TLabel.Create(Dialog);
@@ -1938,7 +1941,11 @@ var
   HtmlPanel: TPanel;
   IconBox: TImage;
   HtmlViewer: TIpHtmlPanel;
-  OkButton:{$ifdef Windows}TBitBtn{$else}TButton{$endif};
+  {$ifdef Windows}
+  OkButton:TBitBtn;
+  {$else}
+  OkButton: TButton;
+  {$endif}
   mr: TUXMsgDlgBtn;
   ButtonActualWidth, posX, ProposedWidth, btnCount, totalBtnWidth: integer;
   bgcol: TColor;
@@ -2123,7 +2130,11 @@ var
   MsgScroll: TScrollBox;
   LogMemo: TMemo;
   LogHtmlPanel: TIpHtmlPanel;
-  OkButton:{$ifdef Windows}TBitBtn{$else}TButton{$endif};
+  {$ifdef Windows}
+  OkButton:TBitBtn;
+  {$else}
+  OkButton: TButton;
+  {$endif}
   mr: TUXMsgDlgBtn;
   ButtonActualWidth, MaxDialogHeight, MsgWidth, NeededHeight,
   TitlePixelWidth, DescPixelWidth, TextPixelWidth,
@@ -2702,14 +2713,14 @@ procedure TDialogForm.CreateWnd;
 const
   DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
 var
-  Value: Integer;
+  Value: integer;
 begin
   inherited CreateWnd;
   if HandleAllocated then
     SetWindowLong(Handle, GWL_STYLE,
       GetWindowLong(Handle, GWL_STYLE) or WS_SYSMENU);
 
-  KeyPreview := True;
+  KeyPreview := true;
   // As above, ensure PopupMode/PopupParent is set where possible.
   try
     if Assigned(Screen) and Assigned(Screen.ActiveForm) then
@@ -2717,20 +2728,23 @@ begin
       PopupMode := pmExplicit;
       PopupParent := Screen.ActiveForm;
     end
-    else if Assigned(Owner) and (Owner is TForm) then
+    else
+    if Assigned(Owner) and (Owner is TForm) then
     begin
       PopupMode := pmExplicit;
       PopupParent := TForm(Owner);
     end
-    else if Assigned(Application) and Assigned(Application.MainForm) then
+    else
+    if Assigned(Application) and Assigned(Application.MainForm) then
     begin
       PopupMode := pmExplicit;
       PopupParent := Application.MainForm;
     end;
   except end;
-  if not TrndiNative.isDarkMode then Exit;
+  if not TrndiNative.isDarkMode then
+    Exit;
   if (Win32MajorVersion < 10) or
-     ((Win32MajorVersion = 10) and (Win32BuildNumber < 17763)) then
+    ((Win32MajorVersion = 10) and (Win32BuildNumber < 17763)) then
     Exit; // Dark mode supported from Windows 10 1809 (build 17763)
 
   Value := 1;
@@ -2771,10 +2785,10 @@ end;
   @param State Button state (up/down/hot).
 }
 procedure TDialogForm.ButtonDrawItem(Sender: TObject;
-  ACanvas: TCanvas; ARect: TRect; State: TButtonState);
+ACanvas: TCanvas; ARect: TRect; State: TButtonState);
 var
   Btn: TBitBtn absolute Sender;
-  TxtFlags: Cardinal;
+  TxtFlags: cardinal;
 begin
   // 1) Background
   if bsDown = State then
@@ -2791,7 +2805,7 @@ begin
   ACanvas.Font.Assign(Btn.Font);
   ACanvas.Font.Color := clWhite;
   TxtFlags := DT_CENTER or  DT_VCENTER or DT_SINGLELINE;
-  DrawText(ACanvas.Handle, PChar(Btn.Caption), Length(Btn.Caption),
+  DrawText(ACanvas.Handle, pchar(Btn.Caption), Length(Btn.Caption),
     ARect, TxtFlags);
 
   // 4) Focus indicator
