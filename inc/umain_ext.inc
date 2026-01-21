@@ -164,10 +164,10 @@ begin
         // Run all found files
         stmp := ExecuteFile(extFile);
         if stmp <> '1' then
-        {$ifdef debug}
+          {$ifdef debug}
           ExtMessage(uxdAuto,'Extension Activation Failed!','The ' + ExtractFileNameOnly(extFile) + ' extension was loaded with an error', 'Output below', 'Return: ' + stmp + sLineBreak + sLineBreak + 'Log: ' + Output, false);
         {$else}
-          ShowMessage(Format(RS_EXTFAILED, [extFile]));
+        ShowMessage(Format(RS_EXTFAILED, [extFile]));
         {$endif}
       end;
     exts.Free;

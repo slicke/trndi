@@ -45,64 +45,64 @@ uses
 Windows, SysUtils, Classes, StrUtils, winhttp;
 
 type 
-  HINTERNET = Pointer;
-  INTERNET_PORT = Word;
+HINTERNET = Pointer;
+INTERNET_PORT = word;
 
-  HTTPPort = record
-    port: integer;
-    secure: boolean;
-  end;
+HTTPPort = record
+  port: integer;
+  secure: boolean;
+end;
 
-  TWinHTTPClient = class
-    private 
-      FUserAgent: string;
-      FHeaders: TStringList;
-      FRequestBody: string;
-    public 
-      constructor Create(const UserAgent: string = 'Pascal User Agent');
-      destructor Destroy;
-      override;
+TWinHTTPClient = class
+private
+  FUserAgent: string;
+  FHeaders: TStringList;
+  FRequestBody: string;
+public
+  constructor Create(const UserAgent: string = 'Pascal User Agent');
+  destructor Destroy;
+    override;
 
-      procedure AddHeader(const Name, Value: string);
-      procedure SetRequestBody(const Body: string);
+  procedure AddHeader(const Name, Value: string);
+  procedure SetRequestBody(const Body: string);
 
-      function Get(const URL: string; const Params: array of string): string;
-      function Post(const URL: string): string;
-  end;
+  function Get(const URL: string; const Params: array of string): string;
+  function Post(const URL: string): string;
+end;
 
 const 
-  winhttpdll = 'winhttp.dll';
+winhttpdll = 'winhttp.dll';
 
-function WinHttpOpen(pwszUserAgent: PWideChar; dwAccessType: DWORD;
-                     pwszProxyName, pwszProxyBypass: PWideChar; dwFlags: DWORD): HINTERNET;
+function WinHttpOpen(pwszUserAgent: pwidechar; dwAccessType: DWORD;
+pwszProxyName, pwszProxyBypass: pwidechar; dwFlags: DWORD): HINTERNET;
 stdcall;
 external winhttpdll;
 
-function WinHttpConnect(hSession: HINTERNET; pswzServerName: PWideChar;
-                        nServerPort: INTERNET_PORT; dwReserved: DWORD): HINTERNET;
+function WinHttpConnect(hSession: HINTERNET; pswzServerName: pwidechar;
+nServerPort: INTERNET_PORT; dwReserved: DWORD): HINTERNET;
 stdcall;
 external winhttpdll;
 
 function WinHttpSetOption(hInternet: HINTERNET; dwOption: DWORD;
-                          lpBuffer: Pointer; dwBufferLength: DWORD): BOOL;
+lpBuffer: Pointer; dwBufferLength: DWORD): BOOL;
 stdcall;
 external winhttpdll;
 
 function WinHttpOpenRequest(hConnect: HINTERNET; pwszVerb, pwszObjectName,
-                            pwszVersion: PWideChar; pwszReferrer: PWideChar; ppwszAcceptTypes:
-                            PPWideChar;
-                            dwFlags: DWORD): HINTERNET;
+pwszVersion: pwidechar; pwszReferrer: pwidechar; ppwszAcceptTypes:
+PPWideChar;
+dwFlags: DWORD): HINTERNET;
 stdcall;
 external winhttpdll;
 
-function WinHttpAddRequestHeaders(hRequest: HINTERNET; pwszHeaders: PWideChar;
-                                  dwHeadersLength: DWORD; dwModifiers: DWORD): BOOL;
+function WinHttpAddRequestHeaders(hRequest: HINTERNET; pwszHeaders: pwidechar;
+dwHeadersLength: DWORD; dwModifiers: DWORD): BOOL;
 stdcall;
 external winhttpdll;
 
-function WinHttpSendRequest(hRequest: HINTERNET; pwszHeaders: PWideChar;
-                            dwHeadersLength: DWORD; lpOptional: Pointer; dwOptionalLength: DWORD;
-                            dwTotalLength: DWORD; dwContext: DWORD_PTR): BOOL;
+function WinHttpSendRequest(hRequest: HINTERNET; pwszHeaders: pwidechar;
+dwHeadersLength: DWORD; lpOptional: Pointer; dwOptionalLength: DWORD;
+dwTotalLength: DWORD; dwContext: DWORD_PTR): BOOL;
 stdcall;
 external winhttpdll;
 
@@ -116,7 +116,7 @@ stdcall;
 external winhttpdll;
 
 function WinHttpReadData(hRequest: HINTERNET; lpBuffer: Pointer;
-                         dwNumberOfBytesToRead: DWORD; var lpdwNumberOfBytesRead: DWORD): BOOL;
+dwNumberOfBytesToRead: DWORD; var lpdwNumberOfBytesRead: DWORD): BOOL;
 stdcall;
 external winhttpdll;
 
@@ -126,30 +126,30 @@ external winhttpdll;
 
 const 
   // Proxy and referrer constants
-  WINHTTP_NO_PROXY_NAME = nil;
-  WINHTTP_NO_PROXY_BYPASS = nil;
-  WINHTTP_NO_REFERER = nil;
-  WINHTTP_DEFAULT_ACCEPT_TYPES: PPWideChar = nil;
+WINHTTP_NO_PROXY_NAME = nil;
+WINHTTP_NO_PROXY_BYPASS = nil;
+WINHTTP_NO_REFERER = nil;
+WINHTTP_DEFAULT_ACCEPT_TYPES: PPWideChar = nil;
 
   // Access type values
-  WINHTTP_ACCESS_TYPE_DEFAULT_PROXY = 0;
-  WINHTTP_ACCESS_TYPE_NO_PROXY = 1;
-  WINHTTP_ACCESS_TYPE_NAMED_PROXY = 3;
+WINHTTP_ACCESS_TYPE_DEFAULT_PROXY = 0;
+WINHTTP_ACCESS_TYPE_NO_PROXY = 1;
+WINHTTP_ACCESS_TYPE_NAMED_PROXY = 3;
 
   // SSL/TLS Protocol flags
-  WINHTTP_FLAG_SECURE_PROTOCOL_SSL2 = $00000008;
-  WINHTTP_FLAG_SECURE_PROTOCOL_SSL3 = $00000020;
-  WINHTTP_FLAG_SECURE_PROTOCOL_TLS1 = $00000080;
-  WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_1 = $00000200;
-  WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2 = $00000800;
-  WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_3 = $00002000;
+WINHTTP_FLAG_SECURE_PROTOCOL_SSL2 = $00000008;
+WINHTTP_FLAG_SECURE_PROTOCOL_SSL3 = $00000020;
+WINHTTP_FLAG_SECURE_PROTOCOL_TLS1 = $00000080;
+WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_1 = $00000200;
+WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2 = $00000800;
+WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_3 = $00002000;
 
-  WINHTTP_OPTION_SECURITY_FLAGS = $00000031;
-  WINHTTP_ADDREQ_FLAG_ADD = $20000000;
+WINHTTP_OPTION_SECURITY_FLAGS = $00000031;
+WINHTTP_ADDREQ_FLAG_ADD = $20000000;
 
-  WINHTTP_OPTION_CONNECT_TIMEOUT = 2;
-  WINHTTP_OPTION_SEND_TIMEOUT = 4;
-  WINHTTP_OPTION_RECEIVE_TIMEOUT = 5;
+WINHTTP_OPTION_CONNECT_TIMEOUT = 2;
+WINHTTP_OPTION_SEND_TIMEOUT = 4;
+WINHTTP_OPTION_RECEIVE_TIMEOUT = 5;
 
 
 implementation
@@ -180,7 +180,7 @@ end;
 procedure ParseURL(const URL: string; out ServerName, Path: string; out port: HTTPPort);
 
 var 
-  ProtocolPos, PathPos, PortPos: Integer;
+  ProtocolPos, PathPos, PortPos: integer;
   PortStr: string;
 begin
   // Find the position of "://"
@@ -190,13 +190,13 @@ begin
   port.port := 80;
 
   if ProtocolPos > 0 then
-    begin
-      port.secure := url[protocolpos-1] = 's';
-      if port.secure then
-        port.port := 443;
+  begin
+    port.secure := url[protocolpos-1] = 's';
+    if port.secure then
+      port.port := 443;
 
-      ProtocolPos := ProtocolPos + 3;
-    end
+    ProtocolPos := ProtocolPos + 3;
+  end
   else
     ProtocolPos := 1;
   // Start directly if no protocol is specified
@@ -207,22 +207,20 @@ begin
   PortPos := PosEx(':', URL, ProtocolPos);
 
   if (PortPos > 0) and ((PathPos = 0) or (PortPos < PathPos)) then
-    begin
+  begin
       // Extrahera servernamnet fram till portpositionen
-      ServerName := Copy(URL, ProtocolPos, PortPos - ProtocolPos);
+    ServerName := Copy(URL, ProtocolPos, PortPos - ProtocolPos);
       // Extrahera porten
-      PortStr := Copy(URL, PortPos + 1, PathPos - PortPos - 1);
-      Port.port := StrToIntDef(PortStr, Port.port);
+    PortStr := Copy(URL, PortPos + 1, PathPos - PortPos - 1);
+    Port.port := StrToIntDef(PortStr, Port.port);
       // Convert to integer, or keep default port if invalid
-    end
+  end
   else
-    begin
-      // If there is no port, extract the server name up to the path or end
-      if PathPos > 0 then
-        ServerName := Copy(URL, ProtocolPos, PathPos - ProtocolPos)
-      else
-        ServerName := Copy(URL, ProtocolPos, Length(URL) - ProtocolPos + 1);
-    end;
+  if PathPos > 0 then
+    ServerName := Copy(URL, ProtocolPos, PathPos - ProtocolPos)
+  else
+    ServerName := Copy(URL, ProtocolPos, Length(URL) - ProtocolPos + 1)// If there is no port, extract the server name up to the path or end
+  ;
 
   // Set the path, if none is found set to "/"
   if PathPos > 0 then
@@ -239,9 +237,9 @@ var
   Flags, i: DWORD;
   Port: HTTPPort;
   dwSize, dwDownloaded: DWORD;
-  Buffer: array[0..8192] of Byte;
+  Buffer: array[0..8192] of byte;
   ResponseStream: TStringStream;
-  Headers: WideString;
+  Headers: widestring;
   FullURL: string;
 begin
   Result := '';
@@ -249,27 +247,27 @@ begin
   // Bygg URL med GET-parametrar
   FullURL := URL;
   if Length(Params) > 0 then
+  begin
+    FullURL := FullURL + '?';
+    for i := Low(Params) to High(Params) do
     begin
-      FullURL := FullURL + '?';
-      for i := Low(Params) to High(Params) do
-        begin
-          if i > Low(Params) then
-            FullURL := FullURL + '&';
-          FullURL := FullURL + Params[i];
-        end;
+      if i > Low(Params) then
+        FullURL := FullURL + '&';
+      FullURL := FullURL + Params[i];
     end;
+  end;
 
 
   ParseURL(FullURL, ServerName, Path, Port);
 
   // Skapa WinHTTP-session
-  hSession := WinHttpOpen(PWideChar(WideString(FUserAgent)), WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
-              WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
+  hSession := WinHttpOpen(pwidechar(widestring(FUserAgent)), WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
+    WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
   if hSession = nil then
     raise Exception.Create('WinHttpOpen failed: ' + SysErrorMessage(GetLastError));
 
   try
-    hConnect := WinHttpConnect(hSession, PWideChar(WideString(ServerName)), Port.port, 0);
+    hConnect := WinHttpConnect(hSession, pwidechar(widestring(ServerName)), Port.port, 0);
     if hConnect = nil then
       raise Exception.Create('WinHttpConnect failed: ' + SysErrorMessage(GetLastError));
 
@@ -279,26 +277,26 @@ begin
       if Port.secure then
         Flags := WINHTTP_FLAG_SECURE;
 
-      hRequest := WinHttpOpenRequest(hConnect, 'GET', PWideChar(WideString(Path)),
-                  nil, WINHTTP_NO_REFERER, WINHTTP_DEFAULT_ACCEPT_TYPES, Flags);
+      hRequest := WinHttpOpenRequest(hConnect, 'GET', pwidechar(widestring(Path)),
+        nil, WINHTTP_NO_REFERER, WINHTTP_DEFAULT_ACCEPT_TYPES, Flags);
       if hRequest = nil then
         raise Exception.Create('WinHttpOpenRequest failed: ' + SysErrorMessage(GetLastError));
 
       try
         // Aktivera TLS 1.2 om anslutningen är säker
         if Port.secure then
-          begin
-            Flags := WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2 or WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_3;
-            WinHttpSetOption(hRequest, WINHTTP_OPTION_SECURITY_FLAGS, @Flags, SizeOf(Flags));
-          end;
+        begin
+          Flags := WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2 or WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_3;
+          WinHttpSetOption(hRequest, WINHTTP_OPTION_SECURITY_FLAGS, @Flags, SizeOf(Flags));
+        end;
 
         // Add headers
         if FHeaders.Count > 0 then
-          begin
-            Headers := WideString(FHeaders.Text);
-            WinHttpAddRequestHeaders(hRequest, PWideChar(Headers), Length(Headers),
+        begin
+          Headers := widestring(FHeaders.Text);
+          WinHttpAddRequestHeaders(hRequest, pwidechar(Headers), Length(Headers),
             WINHTTP_ADDREQ_FLAG_ADD);
-          end;
+        end;
 
         // Send request
         if not WinHttpSendRequest(hRequest, nil, 0, nil, 0, 0, 0) then
@@ -314,9 +312,10 @@ begin
             dwSize := 0;
             if not WinHttpQueryDataAvailable(hRequest, dwSize) then
               raise Exception.Create('WinHttpQueryDataAvailable failed: ' + SysErrorMessage(
-                                     GetLastError));
+                GetLastError));
 
-            if dwSize = 0 then Break;
+            if dwSize = 0 then
+              Break;
 
             if not WinHttpReadData(hRequest, @Buffer, dwSize, dwDownloaded) then
               raise Exception.Create('WinHttpReadData failed: ' + SysErrorMessage(GetLastError));
@@ -327,17 +326,17 @@ begin
           Result := ResponseStream.DataString;
         finally
           ResponseStream.Free;
-end;
+        end;
 
-finally
-  WinHttpCloseHandle(hRequest);
-end;
-finally
-  WinHttpCloseHandle(hConnect);
-end;
-finally
-  WinHttpCloseHandle(hSession);
-end;
+      finally
+        WinHttpCloseHandle(hRequest);
+      end;
+    finally
+      WinHttpCloseHandle(hConnect);
+    end;
+  finally
+    WinHttpCloseHandle(hSession);
+  end;
 end;
 
 
@@ -350,9 +349,9 @@ var
   Flags: DWORD;
   Port: HTTPPort;
   dwSize, dwDownloaded: DWORD;
-  Buffer: array[0..4095] of Byte;
+  Buffer: array[0..4095] of byte;
   ResponseStream: TStringStream;
-  Headers: WideString;
+  Headers: widestring;
 begin
   Result := '';
 
@@ -360,13 +359,13 @@ begin
   ParseURL(URL, ServerName, Path, Port);
 
   // Skapa WinHTTP-session
-  hSession := WinHttpOpen(PWideChar(WideString(FUserAgent)), WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
-              WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
+  hSession := WinHttpOpen(pwidechar(widestring(FUserAgent)), WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
+    WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
   if hSession = nil then
     raise Exception.Create('WinHttpOpen failed: ' + SysErrorMessage(GetLastError));
 
   try
-    hConnect := WinHttpConnect(hSession, PWideChar(WideString(ServerName)), Port.port, 0);
+    hConnect := WinHttpConnect(hSession, pwidechar(widestring(ServerName)), Port.port, 0);
     if hConnect = nil then
       raise Exception.Create('WinHttpConnect failed: ' + SysErrorMessage(GetLastError));
 
@@ -376,30 +375,30 @@ begin
       if Port.secure then
         Flags := WINHTTP_FLAG_SECURE;
 
-      hRequest := WinHttpOpenRequest(hConnect, 'POST', PWideChar(WideString(Path)),
-                  nil, WINHTTP_NO_REFERER, WINHTTP_DEFAULT_ACCEPT_TYPES, Flags);
+      hRequest := WinHttpOpenRequest(hConnect, 'POST', pwidechar(widestring(Path)),
+        nil, WINHTTP_NO_REFERER, WINHTTP_DEFAULT_ACCEPT_TYPES, Flags);
       if hRequest = nil then
         raise Exception.Create('WinHttpOpenRequest failed: ' + SysErrorMessage(GetLastError));
 
       try
         // Enable TLS 1.2 if the connection is secure
         if Port.secure then
-          begin
-            Flags := WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2 or WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_3;
-            WinHttpSetOption(hRequest, WINHTTP_OPTION_SECURITY_FLAGS, @Flags, SizeOf(Flags));
-          end;
+        begin
+          Flags := WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2 or WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_3;
+          WinHttpSetOption(hRequest, WINHTTP_OPTION_SECURITY_FLAGS, @Flags, SizeOf(Flags));
+        end;
 
         // Add headers
         if FHeaders.Count > 0 then
-          begin
-            Headers := WideString(FHeaders.Text);
-            WinHttpAddRequestHeaders(hRequest, PWideChar(Headers), Length(Headers),
+        begin
+          Headers := widestring(FHeaders.Text);
+          WinHttpAddRequestHeaders(hRequest, pwidechar(Headers), Length(Headers),
             WINHTTP_ADDREQ_FLAG_ADD);
-          end;
+        end;
 
         // Send POST request with body
-        if not WinHttpSendRequest(hRequest, nil, 0, PByte(FRequestBody), Length(FRequestBody),
-           Length(FRequestBody), 0) then
+        if not WinHttpSendRequest(hRequest, nil, 0, pbyte(FRequestBody), Length(FRequestBody),
+          Length(FRequestBody), 0) then
           raise Exception.Create('WinHttpSendRequest failed: ' + SysErrorMessage(GetLastError));
 
         if not WinHttpReceiveResponse(hRequest, nil) then
@@ -412,9 +411,10 @@ begin
             dwSize := 0;
             if not WinHttpQueryDataAvailable(hRequest, dwSize) then
               raise Exception.Create('WinHttpQueryDataAvailable failed: ' + SysErrorMessage(
-                                     GetLastError));
+                GetLastError));
 
-            if dwSize = 0 then Break;
+            if dwSize = 0 then
+              Break;
 
             if not WinHttpReadData(hRequest, @Buffer, dwSize, dwDownloaded) then
               raise Exception.Create('WinHttpReadData failed: ' + SysErrorMessage(GetLastError));
@@ -425,17 +425,17 @@ begin
           Result := ResponseStream.DataString;
         finally
           ResponseStream.Free;
-end;
+        end;
 
-finally
-  WinHttpCloseHandle(hRequest);
-end;
-finally
-  WinHttpCloseHandle(hConnect);
-end;
-finally
-  WinHttpCloseHandle(hSession);
-end;
+      finally
+        WinHttpCloseHandle(hRequest);
+      end;
+    finally
+      WinHttpCloseHandle(hConnect);
+    end;
+  finally
+    WinHttpCloseHandle(hSession);
+  end;
 end;
 
 

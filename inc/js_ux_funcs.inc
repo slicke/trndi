@@ -87,64 +87,64 @@ end;
 // Display an HTML message dialog
 function JSHTMLMsg(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw;
 var
- vbs: Variant; //Variant box size
+  vbs: variant; //Variant box size
 begin
-  if argc <> 5 then begin
-     ExtError(uxdAuto, '[htmlMsg] A dialog box could not be displayed, as the parameter count was wrong; got' + IntToStr(argc) + ', expected 5');
-  end;
+  if argc <> 5 then
+    ExtError(uxdAuto, '[htmlMsg] A dialog box could not be displayed, as the parameter count was wrong; got' + IntToStr(argc) + ', expected 5');
 
   ctx^^.ToVariant(argv^[4], vbs);
 
-  if not varType(vbs) = varSingle then begin
+  if not varType(vbs) = varSingle then
+  begin
     ExtError(uxdAuto, 'Box Size must be a float or integer');
     exit;
   end;
 
  // Title, Desc, html, size
-    ExtMessage(uxdAuto, ctx^^.ToUtf8(argv^[0]), ctx^^.ToUtf8(argv^[1]), ctx^^.ToUtf8(argv^[2]), ctx^^.ToUtf8(argv^[3]), true,
+  ExtMessage(uxdAuto, ctx^^.ToUtf8(argv^[0]), ctx^^.ToUtf8(argv^[1]), ctx^^.ToUtf8(argv^[2]), ctx^^.ToUtf8(argv^[3]), true,
     $00AA6004, $00FDD8AA,  [mbOK], uxmtOK, vbs);
 end;
 
 // Display an HTML message dialog
 function JSHTMLDlg(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw;
 var
- vbs: Variant; //Variant box size
+  vbs: variant; //Variant box size
 begin
-  if argc <> 3 then begin
-     ExtError(uxdAuto, '[htmlDlg] A dialog box could not be displayed, as the parameter count was wrong; got' + IntToStr(argc) + ', expected 3');
-  end;
+  if argc <> 3 then
+    ExtError(uxdAuto, '[htmlDlg] A dialog box could not be displayed, as the parameter count was wrong; got' + IntToStr(argc) + ', expected 3');
 
   ctx^^.ToVariant(argv^[2], vbs);
 
-  if not varType(vbs) = varSingle then begin
+  if not varType(vbs) = varSingle then
+  begin
     ExtError(uxdAuto, 'Box Size must be a float or integer');
     exit;
   end;
 
  // Title, Desc, html, size
- ExtMsg(uxdAuto, ctx^^.ToUtf8(argv^[0]), ctx^^.ToUtf8(argv^[1]), [mbOK], uxmtOk, vbs);
+  ExtMsg(uxdAuto, ctx^^.ToUtf8(argv^[0]), ctx^^.ToUtf8(argv^[1]), [mbOK], uxmtOk, vbs);
 end;
 
 function JSHTMLYesNo(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw;
 var
- vbs: Variant; //Variant box size
+  vbs: variant; //Variant box size
 begin
-  if argc <> 3 then begin
-     ExtError(uxdAuto, '[htmlYesNo] A dialog box could not be displayed, as the parameter count was wrong; got' + IntToStr(argc) + ', expected 3');
-  end;
+  if argc <> 3 then
+    ExtError(uxdAuto, '[htmlYesNo] A dialog box could not be displayed, as the parameter count was wrong; got' + IntToStr(argc) + ', expected 3');
 
   ctx^^.ToVariant(argv^[2], vbs);
 
-  if not varType(vbs) = varSingle then begin
+  if not varType(vbs) = varSingle then
+  begin
     ExtError(uxdAuto, 'Box Size must be a float or integer');
     exit;
   end;
 
  // Title, Desc, html, size
- if ExtMsg(uxdAuto, ctx^^.ToUtf8(argv^[0]), ctx^^.ToUtf8(argv^[1]), [mbYes, mbNo], uxmtOk, vbs) = mrYes then
-   Result := JS_TRUE
- else
-   Result := JS_FALSE;
+  if ExtMsg(uxdAuto, ctx^^.ToUtf8(argv^[0]), ctx^^.ToUtf8(argv^[1]), [mbYes, mbNo], uxmtOk, vbs) = mrYes then
+    Result := JS_TRUE
+  else
+    Result := JS_FALSE;
 end;
 
 // Set the UX colors for different BG levels
@@ -180,7 +180,7 @@ end;
 // Handle badge size, mainly on Windows
 function JSBadge(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw;
 var
- vbw, vbf: Variant;
+  vbw, vbf: variant;
 begin
   if not (argc in [1,2]) then
   begin
@@ -190,7 +190,8 @@ begin
 
   ctx^^.ToVariant(argv^[0], vbw);
 
-  if not varType(vbw) = varDecimal then begin
+  if not varType(vbw) = varDecimal then
+  begin
     ExtError(uxdAuto, 'Badge size must be percentage: 0.1-1.0');
     exit;
   end;
@@ -198,19 +199,20 @@ begin
 
   if argc <> 2 then
   begin
-     ctx^^.ToVariant(argv^[1], vbf);
-    if not VarType(vbf) = varInteger then begin
+    ctx^^.ToVariant(argv^[1], vbf);
+    if not VarType(vbf) = varInteger then
+    begin
       ExtError(uxdAuto, 'Badge font size must be an integer!');
       exit;
-      end;
-      badge_font := vbf;
+    end;
+    badge_font := vbf;
   end;
 end;
 
 // Set the dot size
 function JSDotSize(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw;
 var
- vds: Variant;
+  vds: variant;
 begin
   if argc <> 1 then
   begin
@@ -220,7 +222,8 @@ begin
 
   ctx^^.ToVariant(argv^[0], vds);
 
-  if not varType(vds) = varInteger then begin
+  if not varType(vds) = varInteger then
+  begin
     ExtError(uxdAuto, 'Dot size must be an integer');
     exit;
   end;
@@ -230,7 +233,7 @@ end;
 // Set the dot adjustment
 function JSDotAdjust(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw;
 var
- vda: Variant;
+  vda: variant;
 begin
   if argc <> 1 then
   begin
@@ -240,7 +243,8 @@ begin
 
   ctx^^.ToVariant(argv^[0], vda);
 
-  if not varType(vda) = varSingle then begin
+  if not varType(vda) = varSingle then
+  begin
     ExtError(uxdAuto, 'Dot size must be a floating number');
     exit;
   end;

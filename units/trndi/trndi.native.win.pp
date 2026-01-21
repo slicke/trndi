@@ -43,65 +43,65 @@ unit trndi.native.win;
 interface
 
 uses
-  Classes, SysUtils, Graphics, Windows, Registry, Dialogs, StrUtils,
-  winhttpclient, shellapi,
-  Forms, variants, dwmapi, trndi.native.base, ExtCtrls;
+Classes, SysUtils, Graphics, Windows, Registry, Dialogs, StrUtils,
+winhttpclient, shellapi,
+Forms, variants, dwmapi, trndi.native.base, ExtCtrls;
 
 type
   {**
     @abstract(Windows implementation of @link(TTrndiNativeBase).)
     Uses SAPI for speech and DWM for window appearance tweaks.
   }
-  TTrndiNativeWindows = class(TTrndiNativeBase)
-  private
-    FFlashTimer: TTimer;
-    FFlashEnd: TDateTime;
-    FFlashPhase: integer;
-    FFlashValue: string;
-    FFlashBaseColor: TColor;
-    FFlashCycleMS: integer;
-    procedure FlashTimerTick(Sender: TObject);
-  public
+TTrndiNativeWindows = class(TTrndiNativeBase)
+private
+  FFlashTimer: TTimer;
+  FFlashEnd: TDateTime;
+  FFlashPhase: integer;
+  FFlashValue: string;
+  FFlashBaseColor: TColor;
+  FFlashCycleMS: integer;
+  procedure FlashTimerTick(Sender: TObject);
+public
     {** Speaks @param(Text) using SAPI; falls back to default voice if a
         locale-matching voice is not found. }
-    procedure Speak(const Text: string); override;
+  procedure Speak(const Text: string); override;
     {** Toggles immersive dark mode for @param(win).
         Requires Windows 10 1809+ (build >= 17763).
         @returns(True if the DWM call succeeds) }
-    class function SetDarkMode(win: HWND; Enable: boolean = True): boolean;
+  class function SetDarkMode(win: HWND; Enable: boolean = true): boolean;
     {** Applies caption (@param(bg)) and text (@param(text)) colors via DWM.
         @returns(True if both attributes are set successfully) }
-    class function SetTitleColor(form: THandle; bg, Text: TColor): boolean; override;
+  class function SetTitleColor(form: THandle; bg, Text: TColor): boolean; override;
     {** Draw a badge with @param(Value) on the application icon.
         @param(BadgeColor Color of the badge circle/rounded rect)
         @param(badge_size_ratio Badge diameter relative to icon size)
         @param(min_font_size Minimum font size while fitting text) }
-    procedure SetBadge(const Value: string; BadgeColor: TColor;
-      badge_size_ratio: double; min_font_size: integer); override;
-    procedure StartBadgeFlash(const Value: string; badgeColor: TColor;
-      DurationMS: integer = 10000; CycleMS: integer = 400); override;
-    procedure StopBadgeFlash; override;
+  procedure SetBadge(const Value: string; BadgeColor: TColor;
+    badge_size_ratio: double; min_font_size: integer); override;
+  procedure StartBadgeFlash(const Value: string; badgeColor: TColor;
+    DurationMS: integer = 10000; CycleMS: integer = 400); override;
+  procedure StopBadgeFlash; override;
   {** Simple HTTP GET using WinHTTP client with default UA.
       @param(url URL to fetch)
       @param(res Out parameter receiving response body or error message)
       @returns(True on success) }
-    class function getURL(const url: string; out res: string): boolean; override;
+  class function getURL(const url: string; out res: string): boolean; override;
   {** Determine if Windows is using dark app theme (AppsUseLightTheme=0).
       @returns(True if dark mode is active) }
-    class function isDarkMode: boolean; override;
+  class function isDarkMode: boolean; override;
   {** Returns True if the BurntToast PowerShell module is available.
     This is used as a proxy for whether native toast notifications can be sent
     via PowerShell from this process. }
-    class function isNotificationSystemAvailable: boolean; override;
+  class function isNotificationSystemAvailable: boolean; override;
   {** Identify the notification backend for Windows.
       Returns 'BurntToast' when the PowerShell module is available; otherwise 'none'. }
-    class function getNotificationSystem: string; override;
+  class function getNotificationSystem: string; override;
     {** Check whether platform TTS is available. }
-    class function SpeakAvailable: boolean; override;
+  class function SpeakAvailable: boolean; override;
     {** Name of the software used for speech on Windows (e.g., 'SAPI'). }
-    class function SpeakSoftwareName: string; override;
+  class function SpeakSoftwareName: string; override;
     {** Best-effort window manager name for Windows. }
-    class function GetWindowManagerName: string; override;
+  class function GetWindowManagerName: string; override;
 
   {** Settings API overrides (Windows Registry)
     Keys are stored under HKCU\Software\Trndi\ with the same scoping rules
@@ -111,27 +111,27 @@ type
     @param(def Default value if not present)
     @param(global If True, use global scope; otherwise per-user)
     @returns(Value if present, otherwise def) }
-    function GetSetting(const keyname: string; def: string = '';
-      global: boolean = False): string; override;
+  function GetSetting(const keyname: string; def: string = '';
+    global: boolean = false): string; override;
   {** Persist a setting to HKCU\Software\Trndi\.
     @param(keyname Logical key name; base will prefix with scope)
     @param(val Value to write)
     @param(global If True, use global scope; otherwise per-user) }
-    procedure SetSetting(const keyname: string; const val: string;
-      global: boolean = False); override;
+  procedure SetSetting(const keyname: string; const val: string;
+    global: boolean = false); override;
   {** Delete a setting from HKCU\Software\Trndi\.
     @param(keyname Logical key name; base will prefix with scope)
     @param(global If True, use global scope; otherwise per-user) }
-    procedure DeleteSetting(const keyname: string; global: boolean = False); override;
+  procedure DeleteSetting(const keyname: string; global: boolean = false); override;
   {** Refresh settings cache, if any. Registry access is on-demand here,
     so nothing needs to be reloaded. }
-    procedure ReloadSettings; override;
-  end;
+  procedure ReloadSettings; override;
+end;
 
 implementation
 
 uses
-  ComObj, Process;
+ComObj, Process;
 {------------------------------------------------------------------------------
   IsBurntToastAvailable
   ---------------------
@@ -145,7 +145,7 @@ var
   Output: TStringList;
   AProcess: TProcess;
 begin
-  Result := False;
+  Result := false;
   Output := TStringList.Create;
   AProcess := TProcess.Create(nil);
   try
@@ -208,12 +208,16 @@ begin
 
   // Simple 4-phase pulse: normal -> lighter -> normal -> darker
   case FFlashPhase mod 4 of
-    0: factor := 1.0;   // base
-    1: factor := 1.35;  // brighten
-    2: factor := 1.0;   // base
-    3: factor := 0.70;  // darken
-    else
-      factor := 1.0;
+  0:
+    factor := 1.0;   // base
+  1:
+    factor := 1.35;  // brighten
+  2:
+    factor := 1.0;   // base
+  3:
+    factor := 0.70;  // darken
+  else
+    factor := 1.0;
   end;
 
   // Adjust color
@@ -228,7 +232,7 @@ begin
 end;
 
 procedure TTrndiNativeWindows.StartBadgeFlash(const Value: string;
-  badgeColor: TColor; DurationMS: integer; CycleMS: integer);
+badgeColor: TColor; DurationMS: integer; CycleMS: integer);
 begin
   // Initialize or update flashing parameters
   FFlashValue := Value;
@@ -243,7 +247,7 @@ begin
     FFlashTimer.OnTimer := @FlashTimerTick;
   end;
   FFlashTimer.Interval := CycleMS;
-  FFlashTimer.Enabled := True;
+  FFlashTimer.Enabled := true;
 
   // Immediate first frame
   FlashTimerTick(nil);
@@ -253,7 +257,7 @@ procedure TTrndiNativeWindows.StopBadgeFlash;
 begin
   if Assigned(FFlashTimer) then
   begin
-    FFlashTimer.Enabled := False;
+    FFlashTimer.Enabled := false;
     FreeAndNil(FFlashTimer);
   end;
   // Restore static badge with base color if we still have a value
@@ -299,11 +303,11 @@ const
 var
   reg: TRegistry;
 begin
-  Result := False;
+  Result := false;
   reg := TRegistry.Create(KEY_READ);
   try
     reg.RootKey := HKEY_CURRENT_USER;
-    if reg.KeyExists(regtheme) and reg.OpenKey(regtheme, False) then
+    if reg.KeyExists(regtheme) and reg.OpenKey(regtheme, false) then
     try
       // AppsUseLightTheme = 0 means dark mode for apps is enabled
       if reg.ValueExists(reglight) then
@@ -322,9 +326,9 @@ function DwmSetWindowAttribute(hwnd: HWND; dwAttribute: DWORD; pvAttribute: Poin
 
 { DWM attribute constants used for caption and text colors, and dark mode }
 const
-  DWMWA_CAPTION_COLOR = 35;
-  DWMWA_TEXT_COLOR = 36;
-  DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
+DWMWA_CAPTION_COLOR = 35;
+DWMWA_TEXT_COLOR = 36;
+DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
 
 {------------------------------------------------------------------------------
   Speak
@@ -374,12 +378,12 @@ begin
     try
       responseStr := client.Get(url, []);
       res := responseStr;
-      Result := True;
+      Result := true;
     except
       on E: Exception do
       begin
         res := E.Message;
-        Result := False;
+        Result := false;
       end;
     end;
   finally
@@ -393,11 +397,11 @@ end;
   Toggle immersive dark mode for a window (Windows 10 1809+ required).
  ------------------------------------------------------------------------------}
 class function TTrndiNativeWindows.SetDarkMode(win: HWND;
-  Enable: boolean = True): boolean;
+Enable: boolean = true): boolean;
 var
   Value: integer;
 begin
-  Result := False;
+  Result := false;
   // Check Windows version (Windows 10 1809+ required for immersive dark mode)
   if (Win32MajorVersion < 10) or ((Win32MajorVersion = 10) and
     (Win32BuildNumber < 17763)) then
@@ -424,7 +428,7 @@ end;
   Apply caption and text colors to a window using DWM attributes.
  ------------------------------------------------------------------------------}
 class function TTrndiNativeWindows.SetTitleColor(form: THandle;
-  bg, Text: TColor): boolean;
+bg, Text: TColor): boolean;
 const
   MIN_DWM_COLOR_BUILD = 17763; // Win10 1809 (2018-10)
 var
@@ -435,7 +439,7 @@ begin
   // Windows 10 1809 (build 17763, Oct 2018). Earlier versions will just fail.
   if (Win32MajorVersion < 10) or ((Win32MajorVersion = 10) and
     (Win32BuildNumber < MIN_DWM_COLOR_BUILD)) then
-    Exit(False);
+    Exit(false);
 
   // TColor and COLORREF share 0x00BBGGRR layout; no byte swap required.
   bgColor := COLORREF(ColorToRGB(bg));
@@ -453,7 +457,7 @@ end;
   Compose app icon with a badge showing Value; applies to taskbar icon.
  ------------------------------------------------------------------------------}
 procedure TTrndiNativeWindows.SetBadge(const Value: string; BadgeColor: TColor;
-  badge_size_ratio: double; min_font_size: integer);
+badge_size_ratio: double; min_font_size: integer);
 const
   INITIAL_FONT_SIZE_RATIO = 0.5;
   TEXT_PADDING = 4;
@@ -477,7 +481,7 @@ var
   t: double;
   lineColor: TColor;
 
-  function Luminance(c: TColor): double;
+function Luminance(c: TColor): double;
   var
     rc: longint;
     r, g, b: byte;
@@ -489,29 +493,35 @@ var
     Result := 0.299 * r + 0.587 * g + 0.114 * b;
   end;
 
-  function AdjustColor(c: TColor; factor: double): TColor;
+function AdjustColor(c: TColor; factor: double): TColor;
   var
     rc: longint;
     r, g, b: integer;
   begin
     rc := ColorToRGB(c);
     r := Round(GetRValue(rc) * factor);
-    if r > 255 then r := 255;
+    if r > 255 then
+      r := 255;
     g := Round(GetGValue(rc) * factor);
-    if g > 255 then g := 255;
+    if g > 255 then
+      g := 255;
     b := Round(GetBValue(rc) * factor);
-    if b > 255 then b := 255;
+    if b > 255 then
+      b := 255;
     Result := RGB(r, g, b);
   end;
 
-  function Blend(a, b: TColor; tt: double): TColor;
+function Blend(a, b: TColor; tt: double): TColor;
   var
     ar, ag, ab, br, bg, bb: byte;
     rc1, rc2: longint;
     r, g, _b: integer;
   begin
-    if tt < 0 then tt := 0
-    else if tt > 1 then tt := 1;
+    if tt < 0 then
+      tt := 0
+    else
+    if tt > 1 then
+      tt := 1;
     rc1 := ColorToRGB(a);
     rc2 := ColorToRGB(b);
     ar := GetRValue(rc1);
@@ -589,10 +599,9 @@ begin
     Bitmap.Canvas.Pen.Color := borderColor;
 
     if BadgeSize <= 12 then
-    begin
-      // Tiny badges: simple square for speed/stability
-      Bitmap.Canvas.FillRect(BadgeRect); // simple tiny badge (no extra effects)
-    end
+      Bitmap.Canvas.FillRect(BadgeRect)// Tiny badges: simple square for speed/stability
+// simple tiny badge (no extra effects)
+
     else
     begin
       Radius := Round(CORNER_RADIUS * BadgeSize / 32);
@@ -645,8 +654,10 @@ begin
           Radius * 2 - 2, Radius * 2 - 2);
         InflateRect(BadgeRect, 1, 1); // restore
       finally
-        if SquareRegion <> 0 then DeleteObject(SquareRegion);
-        if Region <> 0 then DeleteObject(Region);
+        if SquareRegion <> 0 then
+          DeleteObject(SquareRegion);
+        if Region <> 0 then
+          DeleteObject(Region);
         RestoreDC(Bitmap.Canvas.Handle, SavedDC);
       end;
     end;
@@ -657,7 +668,8 @@ begin
       Bitmap.Canvas.Pen.Color := borderColor;
       Bitmap.Canvas.Brush.Style := bsClear;
       Radius := Round(CORNER_RADIUS * BadgeSize / 32);
-      if Radius < 2 then Radius := 2;
+      if Radius < 2 then
+        Radius := 2;
       RoundRect(Bitmap.Canvas.Handle,
         BadgeRect.Left, BadgeRect.Top,
         BadgeRect.Right, BadgeRect.Bottom,
@@ -717,7 +729,7 @@ end;
   Read a value from HKCU\Software\Trndi\; returns def if not present.
  ------------------------------------------------------------------------------}
 function TTrndiNativeWindows.GetSetting(const keyname: string; def: string;
-  global: boolean): string;
+global: boolean): string;
 var
   reg: TRegistry;
   key: string;
@@ -728,12 +740,10 @@ begin
   try
     reg.RootKey := HKEY_CURRENT_USER;
     if reg.OpenKeyReadOnly('\SOFTWARE\Trndi\') then
-    begin
       if reg.ValueExists(key) then
         Result := reg.ReadString(key)
       else
         Result := def;
-    end;
   finally
     reg.Free;
   end;
@@ -745,7 +755,7 @@ end;
   Write a value to HKCU\Software\Trndi\.
  ------------------------------------------------------------------------------}
 procedure TTrndiNativeWindows.SetSetting(const keyname: string;
-  const val: string; global: boolean);
+const val: string; global: boolean);
 var
   reg: TRegistry;
   key: string;
@@ -754,7 +764,7 @@ begin
   reg := TRegistry.Create;
   try
     reg.RootKey := HKEY_CURRENT_USER;
-    if reg.OpenKey('\SOFTWARE\Trndi\', True) then
+    if reg.OpenKey('\SOFTWARE\Trndi\', true) then
       reg.WriteString(key, val)
     else
     ;
@@ -777,11 +787,9 @@ begin
   reg := TRegistry.Create;
   try
     reg.RootKey := HKEY_CURRENT_USER;
-    if reg.OpenKey('\SOFTWARE\Trndi\', False) then
-    begin
+    if reg.OpenKey('\SOFTWARE\Trndi\', false) then
       if reg.ValueExists(key) then
         reg.DeleteValue(key);
-    end;
   finally
     reg.Free;
   end;

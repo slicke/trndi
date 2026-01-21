@@ -32,36 +32,37 @@ unit RazerChromaFactory;
 interface
 
 uses
-  SysUtils, RazerChroma;
+SysUtils, RazerChroma;
 
 type
   {** Factory for creating and describing the available Razer Chroma driver. }
-  TRazerChromaFactory = class
-  public
+TRazerChromaFactory = class
+public
     {** Instantiate the driver for the current platform. }
-    class function CreateInstance: TRazerChromaBase;
+  class function CreateInstance: TRazerChromaBase;
     {** Human-friendly name for the loaded driver implementation. }
-    class function GetPlatformName: string;
-  end;
+  class function GetPlatformName: string;
+end;
 
 implementation
 
 uses
-  {$IFDEF LINUX}
-  RazerChromaLinux;
-  {$ENDIF}
-  {$IFDEF WINDOWS}
-  RazerChromaWindows;
-  {$ENDIF}
-  {$IFDEF DARWIN}
-  RazerChromaMac;
-  {$ENDIF}
-  {$IFDEF HAIKU}
-  RazerChromaLinux;
-  {$ENDIF}  
-  {$IF DEFINED(BSD) AND NOT DEFINED(DARWIN)}
-  RazerChromaBSD;
-  {$ENDIF} 
+{$IFDEF LINUX}
+RazerChromaLinux,
+{$ENDIF}
+{$IFDEF WINDOWS}
+RazerChromaWindows,
+{$ENDIF}
+{$IFDEF DARWIN}
+RazerChromaMac,
+{$ENDIF}
+{$IFDEF HAIKU}
+RazerChromaLinux,
+{$ENDIF}
+{$IF DEFINED(BSD) AND NOT DEFINED(DARWIN)}
+RazerChromaBSD,
+{$ENDIF}
+sysutils;
 
 class function TRazerChromaFactory.CreateInstance: TRazerChromaBase;
 begin
