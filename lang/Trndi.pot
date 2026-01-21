@@ -2064,7 +2064,7 @@ msgid "Due to hardware limitations, %s on %s cannot support extensions"
 msgstr ""
 
 #: uconf.rs_outdated_help
-msgid "This is the time after which Trndi will show the \"no recent\" readings overlay."
+msgid "This is the time after which Trndi will show the \"no recent\" readings overlay. Trndi checks this when updating from the remote server, not every minute."
 msgstr ""
 
 #: uconf.rs_override_help

@@ -2181,8 +2181,8 @@ msgid "Due to hardware limitations, %s on %s cannot support extensions"
 msgstr "P.g.a. hårdvarubegränsningar, kan %s på %s inte stöda tillägg"
 
 #: uconf.rs_outdated_help
-msgid "This is the time after which Trndi will show the \"no recent\" readings overlay."
-msgstr "Detta är den tid efter vilken Trndi visar \"inga färska avläsningar\"."
+msgid "This is the time after which Trndi will show the \"no recent\" readings overlay. Trndi checks this when updating from the remote server, not every minute."
+msgstr "Detta är den tid efter vilken Trndi visar \"inga färska avläsningar\". Trndi kontrollerar detta när en uppdatering sker från servern, inte varje minut."
 
 #: uconf.rs_override_help
 msgid ""
@@ -2392,4 +2392,3 @@ msgstr "Historikgraf"
 #, object-pascal-format
 msgid "Readings (%s)"
 msgstr "Avläsningar (%s)"
-
