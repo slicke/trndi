@@ -119,17 +119,10 @@ CLOCK_INTERVAL_MS = 20000; // Default clock interval used for the clock tick
 type
   { TfBG }
 
-{$ifdef Darwin}
-{ Custom NSApplicationDelegate class }
-TMyAppDelegate = objcclass(NSObject, NSApplicationDelegateProtocol)
-public
-  function applicationShouldHandleReopen_hasVisibleWindows(
-    sender: NSApplication; hasVisibleWindows: Boolean): Boolean; message 'applicationShouldHandleReopen:hasVisibleWindows:';
-  function applicationDockMenu(sender: NSApplication): NSMenu; message 'applicationDockMenu:';
-    procedure miSettingsMacClick(sender: id); message 'miSettings:';
-end;
-{** Darwin-specific declarations above }
+{$ifdef DARWIN}
+{$I ../../inc/mac/ns_app.inc}
 {$endif}
+
 
 {** Application main form.
   The `TfBG` class is responsible for the primary user interface: displaying
@@ -802,9 +795,10 @@ begin
   result := lastReading;
   try
     for i := Low(bgs) to High(bgs) do
-      if not bgs[i].empty then begin
-          result := bgs[i];
-          Exit;
+      if not bgs[i].empty then
+      begin
+        result := bgs[i];
+        Exit;
       end;
   finally
   end;
@@ -1130,9 +1124,10 @@ end;
 procedure TfBG.miExtLogClick(Sender: TObject);
 begin
   {$ifdef TrndiExt}
-  with TTrndiExtEngine.Instance do begin
-     ShowMessage(Output);
-     ClearOutput;
+  with TTrndiExtEngine.Instance do
+  begin
+    ShowMessage(Output);
+    ClearOutput;
   end;
   {$endif}
 end;
@@ -1304,7 +1299,7 @@ procedure TfBG.FormClose(Sender: TObject; var CloseAction: TCloseAction);
 {$ifdef Darwin}
 var
   mr: TModalResult;
-{$endif}
+  {$endif}
 begin
   // Prevent recursive shutdown calls
   if FShuttingDown then
@@ -1480,7 +1475,7 @@ var
   clientH: integer;
   dotHeight: integer;
   bmp: TBitmap;
-{$IFDEF DEBUG}
+  {$IFDEF DEBUG}
   debugY: integer;
   debugValue: single;
   debugText: string;
@@ -2021,12 +2016,11 @@ begin
     exit; // Dont trigger lastReading
 
   displayMsg := miRefresh.Caption + sHTMLLineBreak + sHTMLLineBreak;
-  for s in displayMsg do begin
+  for s in displayMsg do
     if s in ['0'..'9']  then
-       dm += Format('<b>%s</b>', [s])
+      dm += Format('<b>%s</b>', [s])
     else
       dm += s;
-  end;
   displayMsg := dm;
 
   if lastReading.TryGetRSSI(i) then
@@ -2396,10 +2390,10 @@ begin
   if miBorders.Checked then
     self.BorderStyle := bsNone
   else
-  {$ifdef DARWIN}
+    {$ifdef DARWIN}
     BorderStyle := bsSizeable;
-    {$else}
-    BorderStyle := bsSizeToolWin;
+  {$else}
+  BorderStyle := bsSizeToolWin;
   {$endif}
 
   setColorMode;
@@ -2439,14 +2433,10 @@ begin
       uxmtInformation);
 
     if Result = mrRetry then // mbRetry returns mrRetry
-    begin
-      // User chose to force - bypass cache completely
       if FetchAndValidateReadingsForced then
-      begin
-        // Update the rest of the UI manually since we bypassed normal flow
-        CompleteUIUpdate;
-      end;
-    end;
+        CompleteUIUpdate// Update the rest of the UI manually since we bypassed normal flow
+// User chose to force - bypass cache completely
+    ;
     // If Cancel was chosen, do nothing - let user wait
   end
   else
@@ -2470,16 +2460,12 @@ var
 const
   // Qt::WindowStaysOnTopHint (use numeric mask to avoid missing symbol on some setups)
   Qt_WindowStaysOnTopHint = $00008000;
-{$endif}
+  {$endif}
 begin
   miOnTop.Checked := not miOnTop.Checked;
   if miOnTop.Checked then
-  begin
-    Self.FormStyle := fsStayOnTop;
-    {$ifdef LCLQt6}
-    // Use fsStayOnTop for Qt widgetset; it's better respected by some WMs.
+    Self.FormStyle := fsStayOnTop{$ifdef LCLQt6}// Use fsStayOnTop for Qt widgetset; it's better respected by some WMs.
     {$endif}
-  end
   else
     Self.FormStyle := fsNormal;
 
@@ -2576,7 +2562,7 @@ procedure LoadUserSettings(f: TfConf);
         result := API_D_FIRSTX;
       'API_D_SECOND':
         result := API_D_SECOND;
-    {$endif}
+        {$endif}
       else
         Result := 'API_NS';
       end;
@@ -2591,7 +2577,7 @@ procedure LoadUserSettings(f: TfConf);
     po: TrndiPos;
     sizeVal: integer;
     minutesVal: integer;
-    function DefaultChromaAlertAction: string;
+  function DefaultChromaAlertAction: string;
     begin
       {$ifdef Windows}
       Result := 'static';
@@ -2600,7 +2586,7 @@ procedure LoadUserSettings(f: TfConf);
       {$endif}
     end;
 
-    function ChromaActionToIndex(const Action: string): integer;
+  function ChromaActionToIndex(const Action: string): integer;
     var
       a: string;
     begin
@@ -2685,8 +2671,10 @@ procedure LoadUserSettings(f: TfConf);
       if not (minutesVal in [5, 10, 15]) then
         minutesVal := 10;
       case minutesVal of
-        5: cbPredictShortMinutes.ItemIndex := 0;
-        15: cbPredictShortMinutes.ItemIndex := 2;
+      5:
+        cbPredictShortMinutes.ItemIndex := 0;
+      15:
+        cbPredictShortMinutes.ItemIndex := 2;
       else
         cbPredictShortMinutes.ItemIndex := 1;
       end;
@@ -2853,10 +2841,10 @@ procedure SetupExtensions(f: TfConf);
     begin
       {$ifdef TrndiExt}
       eExt.Text := GetAppConfigDirUTF8(false, true) + 'extensions' + DirectorySeparator;
-    {$else}
+      {$else}
       eExt.Text := '- ' + RS_noPlugins + ' -';
       eExt.Enabled := false;
-    {$endif}
+      {$endif}
       cbPrivacy.Checked := GetBoolSetting('ext.privacy');
       cbTimeStamp.Checked := GetBoolSetting('display.timestamp');
     end;
@@ -2902,7 +2890,7 @@ procedure SaveUserSettings(f: TfConf);
         result := 'API_D_FIRSTX';
       API_D_SECOND:
         result := 'API_D_SECOND';
-    {$endif}
+        {$endif}
       else
         Result := 'API_NS';
       end;
@@ -2911,7 +2899,7 @@ procedure SaveUserSettings(f: TfConf);
   var
     langCode: string;
     i: integer;
-    function IndexToChromaAction(const Index: integer): string;
+  function IndexToChromaAction(const Index: integer): string;
     begin
       case Index of
       1:
@@ -3002,8 +2990,10 @@ procedure SaveUserSettings(f: TfConf);
       if cbPredictShortSize.ItemIndex >= 0 then
         SetSetting('predictions.short.size', cbPredictShortSize.ItemIndex + 1);
       case cbPredictShortMinutes.ItemIndex of
-        0: SetSetting('predictions.short.minutes', 5);
-        2: SetSetting('predictions.short.minutes', 15);
+      0:
+        SetSetting('predictions.short.minutes', 5);
+      2:
+        SetSetting('predictions.short.minutes', 15);
       else
         SetSetting('predictions.short.minutes', 10);
       end;
@@ -3066,7 +3056,7 @@ begin
         ]);
       {$ifdef DEBUG}
       fConf.cbSys.Items.AddStrings(API_DEBUG);
-    {$endif}
+      {$endif}
     end;
 
     fConf.chroma := TRazerChromaFactory.CreateInstance;
@@ -3172,7 +3162,7 @@ begin
 end;
 
 procedure TfBG.ApplyChromaAlertAction(const ActionSettingKey: string;
-  const DefaultAction: string; const AColor: TRGBColor);
+const DefaultAction: string; const AColor: TRGBColor);
 var
   chromaAction: string;
 begin
@@ -3324,12 +3314,12 @@ function ShiftKeyPressed: boolean;
     modifiers := QGuiApplication_keyboardModifiers;
     Result := (modifiers and QtShiftModifier) <> 0;
   end;
-{$else}
+  {$else}
 function ShiftKeyPressed: boolean;
   begin
     Result := ssShift in GetKeyShiftState;
   end;
-{$endif}
+  {$endif}
 var
   tpb: TDotControl;
   H, M: integer;
@@ -3678,7 +3668,7 @@ function IsURLReachable(const URL: string; Port: word = 80): boolean;
       closesocket(XSocket);
     end;
   end;
-{$else}
+  {$else}
 function IsURLReachable(const URL: string; Port: word = 80): boolean;
   var
     Socket: longint;
@@ -3712,7 +3702,7 @@ function IsURLReachable(const URL: string; Port: word = 80): boolean;
       CloseSocket(Socket);
     end;
   end;
-{$endif}
+  {$endif}
 function IsInternetOnline: boolean;
   var
     IPs: array of string;
@@ -4049,7 +4039,7 @@ procedure TfBG.tMainTimer(Sender: TObject);
 {$ifdef TrndiExt}
 var
   bgvals: JSValueRaw;
-{$endif}
+  {$endif}
 begin
   updateReading;
   {$ifdef TrndiExt}
@@ -4073,7 +4063,8 @@ begin
   d := lastReading.date; // Last reading time
 
   min := MilliSecondsBetween(Now, d) div MILLIS_PER_MINUTE;  // Minutes since last
-  if min > 60000000 then begin
+  if min > 60000000 then
+  begin
     d := lastDataReading.date;
     min := MilliSecondsBetween(Now, d) div MILLIS_PER_MINUTE;  // Minutes since last
   end;
@@ -4176,14 +4167,15 @@ var
   gapMin: integer;
   deltaVal: double;
 
-  function FormatSigned(const Value: double): string;
+function FormatSigned(const Value: double): string;
   var
     signStr: string;
     fmtStr: string;
   begin
     if Value = 0 then
       signStr := '±'
-    else if Value > 0 then
+    else
+    if Value > 0 then
       signStr := '+'
     else
       signStr := '';
@@ -4224,16 +4216,14 @@ begin
   if (not havePrev) or (gapMin >= (INTERVAL_MINUTES * 2)) then
     lDiff.Caption := '--'
   else
+  if reading.deltaEmpty then
   begin
-    if reading.deltaEmpty then
-    begin
       // Backend didn't provide delta; compute it from the previous reading.
-      deltaVal := bgs[0].convert(un) - bgs[1].convert(un);
-      lDiff.Caption := FormatSigned(deltaVal);
-    end
-    else
-      lDiff.Caption := reading.format(un, BG_MSG_SIG_SHORT, BGDelta);
-  end;
+    deltaVal := bgs[0].convert(un) - bgs[1].convert(un);
+    lDiff.Caption := FormatSigned(deltaVal);
+  end
+  else
+    lDiff.Caption := reading.format(un, BG_MSG_SIG_SHORT, BGDelta);
   lArrow.Caption := reading.trend.Img;
   lVal.Font.Style := [];
 
@@ -4915,7 +4905,8 @@ begin
   if tryLastReading(bg) then
   begin
     val := bg.format(un, BG_MSG_SHORT);
-    if val[1] = '-' then begin
+    if val[1] = '-' then
+    begin
       bg := lastDataReading;
       val := bg.format(un, BG_MSG_SHORT);
     end;
@@ -5019,7 +5010,8 @@ begin
     tPing.Enabled := true;
     tPingTimer(nil);  // Check internet status immediately
   end
-  else if Length(bgs) > 0 then
+  else
+  if Length(bgs) > 0 then
   begin
     // Update cache with fresh data
     SetLength(FCachedReadings, Length(bgs));
@@ -5047,15 +5039,13 @@ begin
   begin
     showWarningPanel(RS_NO_BACKEND, true);
     if native.getBoolSetting('alerts.notice.missing', true) then
-    begin
-      // Only show notification if 15 minutes have passed since last alert
       if (not missingAlerted) or (MinutesBetween(Now, lastMissingAlert) >= 15) then
       begin
         native.attention(RS_ATTENTION_MISSING, RS_ATTENTION_MISSING_DESC);
         missingAlerted := true;
         lastMissingAlert := Now;
-      end;
-    end;
+      end// Only show notification if 15 minutes have passed since last alert
+    ;
     Exit;
   end;
 
@@ -5279,8 +5269,8 @@ var
   found: boolean;
   reading: BGReading;
   l: TDotControl;
-  const
-    TIME_EPSILON_DAYS = 10 / 86400; // 10 seconds
+const
+  TIME_EPSILON_DAYS = 10 / 86400; // 10 seconds
 begin
   if Length(SortedReadings) = 0 then
     Exit;
@@ -5488,7 +5478,7 @@ begin
 
   if native.isDarkMode then
     native.setDarkMode
-  {$ifdef windows}
+    {$ifdef windows}
     (self.Handle)
   {$endif}
   ;
@@ -5538,7 +5528,7 @@ var
   latestRelease: string;
   lastIgnoreDate: string;
   ignoreDate: TDateTime;
-  daysSinceIgnore: Integer;
+  daysSinceIgnore: integer;
 begin
   try
     // Check if updates are being ignored (unless this is a manual check)
@@ -5546,15 +5536,13 @@ begin
     begin
       lastIgnoreDate := native.GetSetting('update.ignore.date', '');
       if lastIgnoreDate <> '' then
-      begin
-        try
-          ignoreDate := StrToDateTime(lastIgnoreDate);
-          daysSinceIgnore := DaysBetween(Now, ignoreDate);
-          if daysSinceIgnore < 14 then
-            Exit; // Suppress update check for 2 weeks
-        except
+      try
+        ignoreDate := StrToDateTime(lastIgnoreDate);
+        daysSinceIgnore := DaysBetween(Now, ignoreDate);
+        if daysSinceIgnore < 14 then
+          Exit; // Suppress update check for 2 weeks
+      except
           // Invalid date format, continue with update check
-        end;
       end;
     end;
     
@@ -5590,10 +5578,11 @@ begin
       case UXDialog(uxdAuto, RS_NEWVER_CAPTION, newVersionMessage, [mbYes, mbNo, mbIgnore], mtInformation) of
       mrYes:
         OpenURL(r);
-      mrIgnore: begin
-          native.SetSetting('update.ignore.date', DateTimeToStr(Now));
-          ShowMessage(Format(RS_UPDATE_SNOOZE, [DateTimeToStr(IncDay(now, 14))]));
-        end;
+      mrIgnore:
+      begin
+        native.SetSetting('update.ignore.date', DateTimeToStr(Now));
+        ShowMessage(Format(RS_UPDATE_SNOOZE, [DateTimeToStr(IncDay(now, 14))]));
+      end;
       end;
     end
     else
