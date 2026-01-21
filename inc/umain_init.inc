@@ -432,6 +432,18 @@ begin
 end;
 {$endif}
 
+{$ifdef DEBUG}
+procedure TfBG.miDebugUXMsgClick(Sender: TObject);
+var
+  old: TTrndiBool;
+begin
+  old := TrndiNative.touchOverride;
+  TrndiNative.touchOverride := TTrndiBool.tbTrue;
+  UXMessage(uxdOnForm,'Test Message','This is a debug test',uxmtInformation,self);
+   TrndiNative.touchOverride := old;
+end;
+{$endif}
+
 // Initialize the TrendDots array in FormCreate
 procedure TfBG.FormCreate(Sender: TObject);
 procedure haltBoot;
@@ -453,6 +465,9 @@ var
   userlocale: TFormatSettings;
   minutesStr: string;
   minutesVal: integer;
+  {$ifdef DEBUG}
+   miDebugUXMsg: TMenuItem;
+  {$endif}
 begin
   firstboot := false;
 
@@ -688,6 +703,12 @@ begin
 
   {$ifndef TrndiExt}
   miExtLog.Enabled := false;
+  {$endif}
+  {$ifdef DEBUG}
+   miDebugUXMSg := TMenuItem.Create(miAdvanced);
+   miDebugUXMSg.Caption := '[debug] Trigger UX message';
+   miAdvanced.Insert(miAdvanced.Count, miDebugUXMSg);
+   miDebugUXMsg.OnClick := @miDebugUXMsgClick;
   {$endif}
 end;
 

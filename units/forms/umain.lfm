@@ -172,7 +172,6 @@ object fBG: TfBG
     Width = 300
     Alignment = taCenter
     AutoSize = False
-    Caption = ''
     Color = clYellow
     Font.Color = clRed
     Font.Height = -13

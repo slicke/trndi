@@ -343,6 +343,9 @@ TfBG = class(TForm)
   procedure tSwapTimer(Sender: TObject);
   procedure tTouchTimer(Sender: TObject);
   procedure TfFloatOnHide(Sender: TObject);
+  {$ifdef DEBUG}
+  procedure miDebugUXMsgClick(Sender: TObject);
+  {$endif}
 private
   FStoredWindowInfo: record // Saved geometry and window state for restore/toggle
     Left, Top, Width, Height: integer;
