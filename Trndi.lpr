@@ -61,7 +61,7 @@ trndi.ext.promise, trndi.ext.functions,trndi.ext.ext,
 sysutils,
 {$ENDIF}
 trndi.api.nightscout, trndi.api.dexcom, trndi.api, trndi.api.nightscout3, umain,
-uconf, ufloat, uhistorygraph, slicke.ux.alert, buildinfo, Unit1
+uconf, ufloat, uhistorygraph, slicke.ux.alert, buildinfo
 { you can add units after this };
 
 {$R *.res}
