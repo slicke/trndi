@@ -378,7 +378,7 @@ begin
   API_D_SECOND,
   'API_D_SECOND':
     api := DebugSecondMissingAPI.Create(apiTarget, apiCreds);
-  {$endif}
+    {$endif}
   else
     Result := false;
   end;
@@ -413,18 +413,18 @@ begin
 
   {$ifndef LCLQt6}
   case ExtText(uxdAuto, 'This version may not work as intended!',
-    'This release of Trndi was compiled for a non-supported platform ("widgetset")'#10#10+
-    'Performance might be bad, graphics might not work correctly and features might not work as intended!'#10+
-    'Please download the official release (Qt6) from github.com/slicke/trndi'#10#10+
-    'Continue Anyway?',
-  [MbYes, mbNo, mbUXRead],uxmtWarning) of
-    mrNo:
-      Application.Terminate;
-    mrYes:
-      Application.ProcessMessages;
-    else
-      OpenURL('https://github.com/slicke/trndi/blob/main/doc/Widgetsets.md');
-    end;
+      'This release of Trndi was compiled for a non-supported platform ("widgetset")'#10#10+
+      'Performance might be bad, graphics might not work correctly and features might not work as intended!'#10+
+      'Please download the official release (Qt6) from github.com/slicke/trndi'#10#10+
+      'Continue Anyway?',
+      [MbYes, mbNo, mbUXRead],uxmtWarning) of
+  mrNo:
+    Application.Terminate;
+  mrYes:
+    Application.ProcessMessages;
+  else
+    OpenURL('https://github.com/slicke/trndi/blob/main/doc/Widgetsets.md');
+  end;
   {$endif}
   isWSL := TrndiNative.DetectWSL.IsWSL;
   if isWSL then
@@ -458,9 +458,9 @@ begin
 
   // Initialize native interface
   native := TrndiNative.Create;
-    if (ssMeta in GetKeyShiftState) and (ExtMsg(uxdNormal,'Run Trndi in English?','Override language setting?','Run Trndi in English this once? You pressed the Windows/meta key, and can now choose to run Trndi in English. You can change the language in Settings.', '',uxClWhite,uxclRed,[mbYes, mbNo]) = mrYes) then begin
-  end else
-  SetLang;
+  if (ssMeta in GetKeyShiftState) and (ExtMsg(uxdNormal,'Run Trndi in English?','Override language setting?','Run Trndi in English this once? You pressed the Windows/meta key, and can now choose to run Trndi in English. You can change the language in Settings.', '',uxClWhite,uxclRed,[mbYes, mbNo]) = mrYes) then
+  else
+    SetLang;
 
   // Initialize splash screen first
   InitializeSplashScreen;
@@ -600,7 +600,11 @@ begin
 
     fSplash.incProgress(70, RS_INIT_UX);
     // UI preferences
-    dotscale := GetFloatSetting('ux.dot_scale',{$ifdef DARWIN}0.7{$else}1{$endif});
+    {$ifdef DARWIN}
+    dotscale := GetFloatSetting('ux.dot_scale', 0.7);
+    {$else}
+    dotscale := GetFloatSetting('ux.dot_scale', 1);
+    {$endif}
     DOT_ADJUST := GetFloatSetting('ux.dot_adjust', 0);
 
     DOT_OFFSET_RANGE := GetIntSetting('ux.dot_offset_range', DOT_OFFSET_RANGE);
