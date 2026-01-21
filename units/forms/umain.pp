@@ -3734,11 +3734,15 @@ begin
   tPing.Enabled := false;
   if not IsInternetOnline then
   begin
-    // Show internet offline status in the warning panel overlay
-    lInternet.Caption := RS_NO_INTERNET;
+    // Show internet offline status as an overlay at the top of the window
+    lInternet.Caption := '⚠️ ' + RS_NO_INTERNET;
+    lInternet.AutoSize := false;
+    lInternet.Width := ClientWidth - 20;
+    lInternet.Left := 10;
+    lInternet.Top := 10;
+    lInternet.Height := 40;
     lInternet.Visible := true;
-    if pnWarning.Visible then
-      fixWarningPanel;  // Update panel layout to show internet status
+    lInternet.BringToFront;
   end
   else
   begin
@@ -4934,17 +4938,6 @@ begin
     pnWarning.Canvas.TextWidth(pnWarnLast.Caption) + 10);
   pnWarnLast.left := 5;
   pnWarnLast.top := pnWarning.Height - pnWarnLast.Height - 5;
-
-  // Position and configure internet status overlay
-  if lInternet.Visible then
-  begin
-    lInternet.AutoSize := false;
-    lInternet.Width := pnWarning.Width - 10;
-    lInternet.Height := pnWarning.Canvas.TextHeight(lInternet.Caption) * 3;
-    lInternet.left := 5;
-    lInternet.top := pnWarnLast.top - lInternet.Height - 10;
-    lInternet.Font.Size := Max(8, Min(16, calculatedFontSize div 4));
-  end;
 end;
 
 procedure TfBG.showWarningPanel(const message: string;
@@ -5019,12 +5012,18 @@ begin
   begin
     bgs := FCachedReadings;
     LogMessage('DoFetchAndValidateReadings: API returned no data, using cached readings');
+    // Enable internet check and show indicator since API failed
+    tPing.Enabled := true;
+    tPingTimer(nil);  // Check internet status immediately
   end
   else if Length(bgs) > 0 then
   begin
     // Update cache with fresh data
     SetLength(FCachedReadings, Length(bgs));
     Move(bgs[0], FCachedReadings[0], Length(bgs) * SizeOf(BGReading));
+    // Disable ping timer when we successfully get fresh data
+    tPing.Enabled := false;
+    lInternet.Visible := false;  // Hide internet warning when fresh data received
   end;
 
   // Reapply override settings after API fetch (API may have set its own defaults)
@@ -5041,8 +5040,6 @@ begin
   end;
 
   pnWarning.Visible := false;
-  lInternet.Visible := false;  // Hide internet warning when data is available
-  tPing.Enabled := false;  // Disable network ping check when readings are available
   if (Length(bgs) < 1) or (not IsDataFresh) then
   begin
     showWarningPanel(RS_NO_BACKEND, true);
