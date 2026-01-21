@@ -1327,7 +1327,7 @@ const
   onFormName: string = 'uxd_on_form';
 var
   tp: TPanel;
-  tl: TLabel;
+  tl, tt: TLabel;
   tb: TButton;
   df: TDialogForm;
 begin
@@ -1348,6 +1348,22 @@ begin
       tp.BringToFront;
       tp.Color := uxclLightBlue;
 
+      tt := TLabel.Create(tp);
+      tt.parent := tp;
+      tt.autosize := true;
+      tt.Font.Color := uxclBlue;
+      tt.Caption := title;
+      tt.Font.Size := tp.Width div 20;
+      tt.WordWrap := false;
+      tt.left := 5;
+      tt.top := 1;
+      tt.width := tp.width-10;
+      tt.height := 25;
+      tt.WordWrap := true;
+      tt.Font.Style := [fsBold];
+  //    if IsProblematicWM then
+//        tl.Font.size := 38;
+
       tl := TLabel.Create(tp);
       tl.parent := tp;
       tl.autosize := false;
@@ -1355,7 +1371,7 @@ begin
       tl.Caption := message;
       tl.Font.Size := tp.Width div 20;
       tl.WordWrap := true;
-      tl.top := 5;
+      tl.top := 30;
       tl.left := 5;
       tl.width := tp.width-10;
       tl.height := tp.height;
