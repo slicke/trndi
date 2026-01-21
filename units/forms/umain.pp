@@ -165,6 +165,7 @@ TfBG = class(TForm)
   lDot8: TDotControl;
   lDot9: TDotControl;
   lMissing: TLabel;
+  lInternet: TLabel;
   lTir: TLabel;
   lAgo: TLabel;
   miADotAdjust: TMenuItem;
@@ -3732,10 +3733,20 @@ function IsInternetOnline: boolean;
 begin
   tPing.Enabled := false;
   if not IsInternetOnline then
-    ShowMessage(RS_NO_INTERNET)
+  begin
+    // Show internet offline status in the warning panel overlay
+    lInternet.Caption := RS_NO_INTERNET;
+    lInternet.Visible := true;
+    if pnWarning.Visible then
+      fixWarningPanel;  // Update panel layout to show internet status
+  end
   else
-  if (sender = miDNS) then
-    ShowMessage(RS_DNS_INTERNET_OK);
+  begin
+    // Clear internet offline status when connection restored
+    lInternet.Visible := false;
+    if (sender = miDNS) then
+      ShowMessage(RS_DNS_INTERNET_OK);
+  end;
 
   tPing.Enabled := true;
 end;
@@ -4923,6 +4934,17 @@ begin
     pnWarning.Canvas.TextWidth(pnWarnLast.Caption) + 10);
   pnWarnLast.left := 5;
   pnWarnLast.top := pnWarning.Height - pnWarnLast.Height - 5;
+
+  // Position and configure internet status overlay
+  if lInternet.Visible then
+  begin
+    lInternet.AutoSize := false;
+    lInternet.Width := pnWarning.Width - 10;
+    lInternet.Height := pnWarning.Canvas.TextHeight(lInternet.Caption) * 3;
+    lInternet.left := 5;
+    lInternet.top := pnWarnLast.top - lInternet.Height - 10;
+    lInternet.Font.Size := Max(8, Min(16, calculatedFontSize div 4));
+  end;
 end;
 
 procedure TfBG.showWarningPanel(const message: string;
@@ -4991,9 +5013,19 @@ begin
 
   // Cache the API call and results (used to reduce repeated calls when polling)
   FLastAPICall := Now;
-  SetLength(FCachedReadings, Length(bgs));
-  if Length(bgs) > 0 then
+  
+  // If API call failed (no readings) but we have fresh cached data, use it
+  if (Length(bgs) < 1) and (Length(FCachedReadings) > 0) then
+  begin
+    bgs := FCachedReadings;
+    LogMessage('DoFetchAndValidateReadings: API returned no data, using cached readings');
+  end
+  else if Length(bgs) > 0 then
+  begin
+    // Update cache with fresh data
+    SetLength(FCachedReadings, Length(bgs));
     Move(bgs[0], FCachedReadings[0], Length(bgs) * SizeOf(BGReading));
+  end;
 
   // Reapply override settings after API fetch (API may have set its own defaults)
   // These settings allow users to override server-provided thresholds locally.
@@ -5009,6 +5041,7 @@ begin
   end;
 
   pnWarning.Visible := false;
+  lInternet.Visible := false;  // Hide internet warning when data is available
   tPing.Enabled := false;  // Disable network ping check when readings are available
   if (Length(bgs) < 1) or (not IsDataFresh) then
   begin

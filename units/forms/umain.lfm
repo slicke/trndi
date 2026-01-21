@@ -164,6 +164,19 @@ object fBG: TfBG
       Caption = 'Last recieved reading:'
       WordWrap = True
     end
+    object lInternet: TLabel
+      Left = 5
+      Height = 15
+      Top = 25
+      Width = 200
+      Alignment = taCenter
+      Caption = ''
+      Font.Color = clRed
+      Font.Style = [fsBold]
+      ParentFont = False
+      Visible = False
+      WordWrap = True
+    end
   end
   object lArrow: TLabel
     Left = 0
