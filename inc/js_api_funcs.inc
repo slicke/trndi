@@ -66,23 +66,25 @@ begin
 
   ctx^.ToVariant(argv^[0], mmolval);
 
- if not (VarType(mmolval) = varBoolean) then
-    begin
-      ExtError(uxdAuto, 'Unit type must be boolean');
-      Result := JS_FALSE;
-      Exit;
-    end;
+  if not (VarType(mmolval) = varBoolean) then
+  begin
+    ExtError(uxdAuto, 'Unit type must be boolean');
+    Result := JS_FALSE;
+    Exit;
+  end;
 
   mmol := mmolval;
 
   // Return the cached current reading if available
-  if Length(bgs) > 0 then begin
+  if Length(bgs) > 0 then
+  begin
     if mmol then
-       res.FromFloat(bgs[0].convert(BGUnit.mmol))
+      res.FromFloat(bgs[0].convert(BGUnit.mmol))
     else
-       res.From32(round(bgs[1].convert(BGUnit.mgdl)));
+      res.From32(round(bgs[1].convert(BGUnit.mgdl)));
   end
-  else begin
+  else
+  begin
     result := JS_FALSE;
     Exit;
   end;

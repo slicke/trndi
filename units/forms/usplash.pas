@@ -42,31 +42,31 @@ unit usplash;
 interface
 
 uses
-  Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls,
-  LCLType, ComCtrls, IpHtml;
+Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls,
+LCLType, ComCtrls, IpHtml;
 
 type
 
   { TfSplash }
 
-  TfSplash = class(TForm)
-    Image1: TImage;
-    lTrndi: TLabel;
-    lInfo: TLabel;
-    lSplashWarn: TLabel;
-    pInfo: TProgressBar;
-    procedure FormCreate(Sender: TObject);
-    procedure FormKeyDown(Sender: TObject; var Key: word; Shift: TShiftState);
-    procedure FormKeyPress(Sender: TObject; var Key: char);
-    procedure Image1Click(Sender: TObject);
-  private
+TfSplash = class(TForm)
+  Image1: TImage;
+  lTrndi: TLabel;
+  lInfo: TLabel;
+  lSplashWarn: TLabel;
+  pInfo: TProgressBar;
+  procedure FormCreate(Sender: TObject);
+  procedure FormKeyDown(Sender: TObject; var Key: word; Shift: TShiftState);
+  procedure FormKeyPress(Sender: TObject; var Key: char);
+  procedure Image1Click(Sender: TObject);
+private
 
-  public
-    public procedure incProgress(const proc: integer; const title: string);
-  end;
+public
+public procedure incProgress(const proc: integer; const title: string);
+end;
 
 var
-  fSplash: TfSplash;
+fSplash: TfSplash;
 
 implementation
 
@@ -92,10 +92,10 @@ end;
 procedure TfSplash.FormCreate(Sender: TObject);
 begin
   {$ifdef X_LINUXBSD}
-     lSplashWarn.Font.Size := 8;
+  lSplashWarn.Font.Size := 8;
   {$endif}
   {$ifdef HAIKU}
-     lSplashWarn.Font.Size := 8;
+  lSplashWarn.Font.Size := 8;
   {$endif}
 end;
 

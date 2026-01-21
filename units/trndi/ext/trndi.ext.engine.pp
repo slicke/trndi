@@ -126,18 +126,18 @@ end;
 
   {** Information for a registered JS timer (setTimeout/setInterval). }
 TJSTimerInfo = record
-  TimerID: Integer;           // Unique ID returned to JS
+  TimerID: integer;           // Unique ID returned to JS
   Timer: TFPTimer;            // The actual timer object
   Handler: TJSTimerHandler;   // Handler object for timer events
   FunctionName: RawUtf8;      // Name of JS function to call (must be global named function)
-  IsInterval: Boolean;        // True for setInterval, False for setTimeout
+  IsInterval: boolean;        // True for setInterval, False for setTimeout
   Context: JSContext;         // QuickJS context for calling the function
 end;
 
 PJSTimerInfo = ^TJSTimerInfo;
 
   {** Map of timer ID to timer information. }
-TJSTimerMap = specialize TFPGMap<Integer, PJSTimerInfo>;
+TJSTimerMap = specialize TFPGMap<integer, PJSTimerInfo>;
 
   {** Embedded JavaScript engine wrapper using QuickJS via mORMot bindings.
 
@@ -180,7 +180,7 @@ private
     {** Map of active JS timers (setTimeout/setInterval). }
   FJSTimers: TJSTimerMap;
     {** Counter for generating unique timer IDs. }
-  FNextTimerID: Integer;
+  FNextTimerID: integer;
 
   function GetOutput: RawUtf8;
   procedure SetOutput(const val: RawUtf8);
@@ -502,7 +502,7 @@ var
   TimerInfo: PJSTimerInfo;
   Engine: TTrndiExtEngine;
   RetVal: JSValueRaw;
-  idx: Integer;
+  idx: integer;
   Timer: TFPTimer;
   globalObj, funcVal: JSValueRaw;
 begin
@@ -524,7 +524,7 @@ begin
 
   // Look up the named function from global scope
   globalObj := JS_GetGlobalObject(TimerInfo^.Context);
-  funcVal := JS_GetPropertyStr(TimerInfo^.Context, globalObj, PAnsiChar(TimerInfo^.FunctionName));
+  funcVal := JS_GetPropertyStr(TimerInfo^.Context, globalObj, pansichar(TimerInfo^.FunctionName));
   
   if JS_IsFunction(TimerInfo^.Context, funcVal) then
   begin
@@ -550,7 +550,7 @@ begin
     idx := Engine.FJSTimers.IndexOf(TimerInfo^.TimerID);
     if idx >= 0 then
     begin
-      Timer.Enabled := False;
+      Timer.Enabled := false;
       Dispose(TimerInfo);
       Engine.FJSTimers.Delete(idx);
       // Free the timer and handler
@@ -924,7 +924,7 @@ var
   tmpCtx: JSContext;
   timeoutCounter: integer;
   globalObj, timersObj: JSValueRaw;
-  i: Integer;
+  i: integer;
 begin
   // ULTRA-EARLY EXIT: If application is terminating or global shutdown flag is set,
   // skip ALL cleanup operations and let OS handle memory deallocation
@@ -960,27 +960,25 @@ begin
 
   // Clean up all active JS timers (Modified: January 16, 2026)
   if Assigned(FJSTimers) then
-  begin
-    try
-      while FJSTimers.Count > 0 do
+  try
+    while FJSTimers.Count > 0 do
+    begin
+      with FJSTimers.Data[0]^ do
       begin
-        with FJSTimers.Data[0]^ do
+        if Assigned(Timer) then
         begin
-          if Assigned(Timer) then
-          begin
-            Timer.Enabled := False;
-            Timer.Free;
-          end;
-          if Assigned(Handler) then
-            Handler.Free;
+          Timer.Enabled := false;
+          Timer.Free;
         end;
-        Dispose(FJSTimers.Data[0]);
-        FJSTimers.Delete(0);
+        if Assigned(Handler) then
+          Handler.Free;
       end;
-      FreeAndNil(FJSTimers);
-    except
-      // Silently handle any errors during timer cleanup
+      Dispose(FJSTimers.Data[0]);
+      FJSTimers.Delete(0);
     end;
+    FreeAndNil(FJSTimers);
+  except
+      // Silently handle any errors during timer cleanup
   end;
 
   // Signal extension shutdown to background tasks

@@ -1091,16 +1091,19 @@ procedure WarnUnstableAPI;
       pnSysWarn.Show;
       lSysWarnInfo.Caption := RS_DEX;
     end;
-    if cbSys.Text = API_NS3 then begin
+    if cbSys.Text = API_NS3 then
+    begin
       pnSysWarn.Show;
       lSysWarnInfo.Caption := RS_BETA;
     end;
-    if cbSys.Text = API_XDRIP then begin
+    if cbSys.Text = API_XDRIP then
+    begin
       pnSysWarn.Show;
       lSysWarnInfo.Caption := RS_XDRIP;
     end;
     {$ifdef DEBUG}
-    if cbSys.Text in API_DEBUG then begin
+    if cbSys.Text in API_DEBUG then
+    begin
       pnSysWarn.Show;
       lSysWarnInfo.Caption := RS_DEBUG_WARN;
     end;
@@ -1112,7 +1115,7 @@ begin
   pnSysWarn.Hide;
   gbOverride.Color := clDefault;
   //if not (sender is TfConf) then
-    WarnUnstableAPI;
+  WarnUnstableAPI;
   // Update parameter labels above edits based on backend
   getAPILabels(user, pass);
   label15.caption := user;

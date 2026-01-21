@@ -534,7 +534,7 @@ begin
   APLDesc:
     Result := '';
   APLCopyright:
-   Result := 'Trndi contributors';
+    Result := 'Trndi contributors';
   else
     Result := '';
   end;
