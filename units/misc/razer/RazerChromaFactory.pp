@@ -62,7 +62,7 @@ RazerChromaLinux,
 {$IF DEFINED(BSD) AND NOT DEFINED(DARWIN)}
 RazerChromaBSD,
 {$ENDIF}
-sysutils;
+StrUtils;
 
 class function TRazerChromaFactory.CreateInstance: TRazerChromaBase;
 begin
