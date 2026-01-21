@@ -48,7 +48,8 @@ uses
 Classes, SysUtils, Controls, ExtCtrls, StdCtrls, Graphics, trndi.types, Forms, Math,
 fpjson, jsonparser, dateutils, buildinfo
 {$ifdef TrndiExt},trndi.ext.engine, mormot.lib.quickjs, mormot.core.base{$endif}
-{$ifdef DARWIN}, CocoaAll{$endif};
+{$ifdef DARWIN}, CocoaAll{$endif}
+{$ifdef DEBUG}, slicke.ux.alert{$endif};
 
 procedure CenterPanelToCaption(Panel: TPanel; margin: integer = 10);
 function GetAppPath: string;
@@ -131,6 +132,10 @@ MAX_MIN: integer = 1440; // Max time to request
 MAX_RESULT: integer = 25; // Max results
 DATA_FRESHNESS_THRESHOLD_MINUTES: integer = 11; // Max minutes before data is considered outdated
 
+{$ifdef DEBUG}
+TrndiDebugLogAlert: boolean = false;
+TrndiDebugLogAlertSnooze: TDateTime;
+{$endif}
 implementation
 
 procedure CenterPanelToCaption(Panel: TPanel; margin: integer = 10);
@@ -244,9 +249,14 @@ const
 var
   LogLines: TStringList;
 begin
+  if (TrndiDebugLogAlert) and (SecondsBetween(Now, TrndiDebugLogAlertSnooze) > 5) then begin
+    if ExtMessage(uxdNormal, 'Log Output','Output from the logger','A message has been sent to the logger', msg, false, uxclWhite, uxclRed,[mbOK, mbUXSnooze]) <> mrOK then
+        TrndiDebugLogAlertSnooze := Now;
+  end;
   {$ifdef DARWIN}
   Exit; // Disable logging on macOS as it crashes due to file permission issues
   {$endif}
+
   LogLines := TStringList.Create;
   try
     // Load log if exists

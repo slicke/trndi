@@ -338,6 +338,7 @@ TfBG = class(TForm)
   procedure TfFloatOnHide(Sender: TObject);
   {$ifdef DEBUG}
   procedure miDebugUXMsgClick(Sender: TObject);
+  procedure miDebugLogClick(Sender: TObject);
   {$endif}
 private
   FStoredWindowInfo: record // Saved geometry and window state for restore/toggle
