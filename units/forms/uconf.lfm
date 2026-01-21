@@ -17,10 +17,10 @@ object fConf: TfConf
     Height = 518
     Top = 11
     Width = 665
-    ActivePage = tsAdvanced
+    ActivePage = tsColors
     Align = alClient
     BorderSpacing.Around = 5
-    TabIndex = 5
+    TabIndex = 1
     TabOrder = 0
     OnChange = pcMainChange
     object tsGeneral: TTabSheet
@@ -10602,7 +10602,6 @@ object fConf: TfConf
         Align = alClient
         TabIndex = 0
         TabOrder = 0
-        TabPosition = tpBottom
         OnChange = pcColorsChange
         object tsBackgrounds: TTabSheet
           Caption = 'Backgrounds'

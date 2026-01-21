@@ -1699,6 +1699,10 @@ begin
   lExtCopyright.Caption := Format(RS_NO_EXTENSIONS_SYSTEM, [os, arch]);
   {$ENDIF}
   {$endif}
+
+  {$ifdef X_WIN}
+    cbTitleColor.Visible := false;
+  {$endif}
 end;
 
 procedure TfConf.FormDestroy(Sender: TObject);

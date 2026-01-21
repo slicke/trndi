@@ -249,10 +249,9 @@ const
 var
   LogLines: TStringList;
 begin
-  if (TrndiDebugLogAlert) and (SecondsBetween(Now, TrndiDebugLogAlertSnooze) > 5) then begin
+  if (TrndiDebugLogAlert) and (SecondsBetween(Now, TrndiDebugLogAlertSnooze) > 5) then
     if ExtMessage(uxdNormal, 'Log Output','Output from the logger','A message has been sent to the logger', msg, false, uxclWhite, uxclRed,[mbOK, mbUXSnooze]) <> mrOK then
-        TrndiDebugLogAlertSnooze := Now;
-  end;
+      TrndiDebugLogAlertSnooze := Now;
   {$ifdef DARWIN}
   Exit; // Disable logging on macOS as it crashes due to file permission issues
   {$endif}
