@@ -183,13 +183,13 @@ class function DebugAPI.ParamLabel(LabelName: APIParamLabel): string;
 begin
   result := inherited ParamLabel(LabelName);
   case LabelName of
-   APLUser:
+  APLUser:
     Result := '(ignored for debug backend)';
-   APLPass:
+  APLPass:
     Result := '(ignored for debug backend)';
-   APLDesc:
+  APLDesc:
     Result := result + 'This is a special debug backend for testing purposes only. It does not connect to any real service.';
-   APLCopyright:
+  APLCopyright:
     Result := 'Björn Lindh <github.com/slicke>';
   end;
 end;
