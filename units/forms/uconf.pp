@@ -448,7 +448,7 @@ RS_PREDICTION_HELP =
   'Trndi can predict/guess what your reading will be in the future. This will be shown in the lower right part of the screen.';
 
 RS_OUTDATED_HELP =
-  'This is the time after which Trndi will show the "no recent" readings overlay.';
+  'This is the time after which Trndi will show the "no recent" readings overlay. Trndi checks this when updating from the remote server, not every minute.';
 
 RS_DEX =
   'Dexcom servers do not provide custom high and low blood sugar values.'+sLineBreak+'Please set your own thresholds in the Customization tab.';
