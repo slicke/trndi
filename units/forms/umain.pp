@@ -339,6 +339,7 @@ TfBG = class(TForm)
   {$ifdef DEBUG}
   procedure miDebugUXMsgClick(Sender: TObject);
   procedure miDebugLogClick(Sender: TObject);
+  procedure miDebugLinesClick(Sender: TObject);
   {$endif}
 private
   FStoredWindowInfo: record // Saved geometry and window state for restore/toggle
@@ -676,6 +677,9 @@ DOT_OFFSET_RANGE: integer = -15; // Fine-tune vertical alignment of threshold li
 {$endif}
 {$ifdef HAIKU}
 DOT_OFFSET_RANGE: integer = -15; // Fine-tune vertical alignment of threshold lines with dots
+{$endif}
+{$ifdef DEBUG}
+debug_draw: boolean = true;
 {$endif}
 
 
@@ -1649,6 +1653,7 @@ begin
   end;
 
   {$IFDEF DEBUG}
+  if debug_draw then begin
   // Draw debug gridlines showing mmol/L values (5, 10, 15, 20)
   cnv.Brush.Style := bsClear;
   cnv.Pen.Style := psDot;
@@ -1672,6 +1677,7 @@ begin
         debugY - (cnv.TextHeight(debugText) div 2),
         debugText);
     end;
+  end;
   end;
   {$ENDIF}
 end;
