@@ -2372,12 +2372,14 @@ begin
     Exit;
   end;
 
-  ShowHistoryGraph(readings, un, CurrentHistoryGraphPalette);
+  ShowHistoryGraph(readings, un, CurrentHistoryGraphPalette, 
+    api.cgmHi, api.cgmLo, api.cgmRangeHi, api.cgmRangeLo);
 end;
 
 procedure TfBG.miHistoryClick(Sender: TObject);
 begin
-  ShowHistoryGraph(bgs, un, CurrentHistoryGraphPalette);
+  ShowHistoryGraph(bgs, un, CurrentHistoryGraphPalette,
+    api.cgmHi, api.cgmLo, api.cgmRangeHi, api.cgmRangeLo);
 end;
 
 procedure TfBG.miRangeColorClick(Sender: TObject);
