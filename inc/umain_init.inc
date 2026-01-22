@@ -448,6 +448,12 @@ begin
   TrndiDebugLogAlert := not TrndiDebugLogAlert;
 end;
 
+procedure TfBG.miDebugLinesClick(Sender: TObject);
+begin
+  debug_draw := not debug_draw;
+  ShowMessage(Format('Now %s', [IfThen(debug_draw, 'showing', 'invisible')]));
+end;
+
 {$endif}
 
 // Initialize the TrendDots array in FormCreate
@@ -472,7 +478,7 @@ var
   minutesStr: string;
   minutesVal: integer;
   {$ifdef DEBUG}
-  miDebugUXMsg, miDebugLog: TMenuItem;
+  miDebugUXMsg, miDebugLog, miDebugLines: TMenuItem;
   {$endif}
 begin
   firstboot := false;
@@ -721,6 +727,11 @@ begin
   miDebugLog.Caption := '[debug] Toggle alert messages';
   miAdvanced.Insert(miAdvanced.Count, miDebugLog);
   miDebugLog.OnClick := @miDebugLogClick;
+
+  miDebugLines := TMenuItem.Create(miAdvanced);
+  miDebugLines.Caption := '[debug] Toggle lines';
+  miAdvanced.Insert(miAdvanced.Count, miDebugLines);
+  miDebugLines.OnClick := @miDebugLinesClick;
   {$endif}
 end;
 
