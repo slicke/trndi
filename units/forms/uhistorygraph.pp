@@ -71,7 +71,7 @@ interface
 
 uses
 Classes, SysUtils, Forms, Controls, Graphics, Dialogs, Math,
-trndi.types, trndi.strings, slicke.ux.alert, dateutils;
+trndi.types, trndi.strings, slicke.ux.alert, dateutils, Trndi.Native;
 
 type
   {** THistoryGraphPalette
@@ -810,8 +810,13 @@ end;
 procedure ShowHistoryGraph(const Readings: BGResults; const UnitPref: BGUnit;
 const Palette: THistoryGraphPalette);
 begin
-  if not Assigned(fHistoryGraph) then
+  if not Assigned(fHistoryGraph) then begin
     fHistoryGraph := TfHistoryGraph.Create(Application);
+    {$ifdef windows}
+    if TrndiNative.isDarkMode then
+      TrndiNative.setDarkMode(fHistoryGraph.Handle);
+    {$endif}
+  end;
 
   fHistoryGraph.SetPalette(Palette);
   fHistoryGraph.SetReadings(Readings, UnitPref);
