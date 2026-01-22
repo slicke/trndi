@@ -1244,6 +1244,13 @@ begin
     Edit.Width := DescLabel.Width;
     Edit.Top := DescLabel.Top + DescLabel.Height + ifthen(size = uxdBig, Padding * 2, Padding);
     Edit.Value := ADefault;
+    {$ifdef Windows}
+    if TrndiNative.isDarkMode then
+    begin
+      Edit.Color := RGBToColor(53, 53, 53);
+      Edit.Font.Color := RGBToColor(245, 245, 245);
+    end;
+    {$endif}
     if float then
     begin
       Edit.DecimalPlaces := 2;
@@ -1492,6 +1499,13 @@ begin
     Edit.Width := DescLabel.Width;
     Edit.Top := DescLabel.Top + DescLabel.Height + ifthen((size = uxdBig), Padding * 2, Padding);
     Edit.Text := ADefault;
+    {$ifdef Windows}
+    if TrndiNative.isDarkMode then
+    begin
+      Edit.Color := RGBToColor(53, 53, 53);
+      Edit.Font.Color := RGBToColor(245, 245, 245);
+    end;
+    {$endif}
     if (size = uxdBig) then
       Edit.Font.Size := 20;
 
@@ -1608,6 +1622,13 @@ begin
     Combo.Style := csDropDownList;
     Combo.Left := DescLabel.Left;
     Combo.Width := DescLabel.Width;
+    {$ifdef Windows}
+    if TrndiNative.isDarkMode then
+    begin
+      Combo.Color := RGBToColor(53, 53, 53);
+      Combo.Font.Color := RGBToColor(245, 245, 245);
+    end;
+    {$endif}
     if (size = uxdBig) then
       Combo.Font.Size := 20;
     Combo.Top := DescLabel.Top + DescLabel.Height + ifthen((size = uxdBig) , Padding * 2, Padding);
@@ -1722,6 +1743,14 @@ begin
     Grid.Top := DescLabel.Top + DescLabel.Height + Padding;
     Grid.Height := ifthen((size = uxdBig) , GridHeight + 80, GridHeight);
     Grid.Options := [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goColSizing];
+    {$ifdef Windows}
+    if TrndiNative.isDarkMode then
+    begin
+      Grid.Color := RGBToColor(53, 53, 53);
+      Grid.FixedColor := RGBToColor(35, 35, 35);
+      Grid.Font.Color := RGBToColor(245, 245, 245);
+    end;
+    {$endif}
     Grid.ColCount := 2;
     Grid.RowCount := Length(Keys) + 1;
     Grid.ColWidths[0] := 120;
@@ -1841,6 +1870,13 @@ begin
     FontCombo.Top := DescLabel.Top + DescLabel.Height + ifthen((size = uxdBig) , Padding * 2, Padding);
     FontCombo.Style := csDropDownList;
     FontCombo.Sorted := true;
+    {$ifdef Windows}
+    if TrndiNative.isDarkMode then
+    begin
+      FontCombo.Color := RGBToColor(53, 53, 53);
+      FontCombo.Font.Color := RGBToColor(245, 245, 245);
+    end;
+    {$endif}
     
     // Populate with system fonts
     FontCombo.Items.Assign(Screen.Fonts);
