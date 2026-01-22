@@ -196,6 +196,37 @@ public
   procedure ElementKeyDown(Sender: TObject; var Key: char);
 end;
 
+{$ifdef Windows}
+  {**
+    Custom button class for Windows that supports dark mode via owner-draw.
+    Automatically enables dark styling when TrndiNative.isDarkMode is true.
+  }
+  TDarkButton = class(TCustomControl)
+  private
+    FDarkMode: Boolean;
+    FCaption: string;
+    FModalResult: TModalResult;
+    FDown: Boolean;
+    FHot: Boolean;
+    procedure SetDarkMode(AValue: Boolean);
+    procedure SetCaption(const AValue: string);
+  protected
+    procedure Paint; override;
+    procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); override;
+    procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); override;
+    procedure MouseEnter; override;
+    procedure MouseLeave; override;
+    procedure MouseMove(Shift: TShiftState; X, Y: Integer); override;
+    procedure Click; override;
+    procedure CreateWnd; override;
+  public
+    constructor Create(AOwner: TComponent); override;
+    property Caption: string read FCaption write SetCaption;
+    property ModalResult: TModalResult read FModalResult write FModalResult;
+    property DarkMode: Boolean read FDarkMode write SetDarkMode;
+  end;
+{$endif}
+
   {**
     Size preset for dialog layout.
     @value uxdNormal Standard dialog layout.
@@ -1963,7 +1994,7 @@ var
   IconBox: TImage;
   HtmlViewer: TIpHtmlPanel;
   {$ifdef Windows}
-  OkButton:TBitBtn;
+  OkButton:TDarkButton;
   {$else}
   OkButton: TButton;
   {$endif}
@@ -2096,7 +2127,7 @@ begin
     for mr in buttons do
     begin
       {$ifdef Windows}
-      OkButton := TBitBtn.Create(Dialog);
+      OkButton := TDarkButton.Create(Dialog);
       {$else}
       OkButton := TButton.Create(Dialog);
       {$endif}
@@ -2152,7 +2183,7 @@ var
   LogMemo: TMemo;
   LogHtmlPanel: TIpHtmlPanel;
   {$ifdef Windows}
-  OkButton:TBitBtn;
+  OkButton:TDarkButton;
   {$else}
   OkButton: TButton;
   {$endif}
@@ -2509,7 +2540,7 @@ begin
 
     for mr in buttons do
     begin
-      {$ifdef Windows}OkButton := TBitBtn.Create(ButtonPanel);{$else}OkButton := TButton.Create(ButtonPanel);{$endif}
+      {$ifdef Windows}OkButton := TDarkButton.Create(ButtonPanel);{$else}OkButton := TButton.Create(ButtonPanel);{$endif}
       OkButton.Parent := ButtonPanel;
       {$ifdef LCLGTK2}OkButton.Font.Color := clBlack;{$endif}
       OkButton.Caption := langs[mr];
@@ -2779,6 +2810,160 @@ begin
 end;
 {$endif}
 
+{$ifdef Windows}
+{ TDarkButton }
+
+constructor TDarkButton.Create(AOwner: TComponent);
+begin
+  inherited Create(AOwner);
+  FDarkMode := TrndiNative.isDarkMode;
+  FCaption := '';
+  FModalResult := mrNone;
+  FDown := False;
+  FHot := False;
+  Width := 75;
+  Height := 25;
+  TabStop := True;
+  Enabled := True;
+  ControlStyle := ControlStyle + [csClickEvents, csCaptureMouse, csOpaque, csDoubleClicks];
+  SetBounds(0, 0, 75, 25);
+  Cursor := crHandPoint;
+  Color := clBlack;
+  ParentColor := False;
+end;
+
+procedure TDarkButton.CreateWnd;
+begin
+  inherited CreateWnd;
+  Cursor := crHandPoint;
+end;
+
+procedure TDarkButton.SetDarkMode(AValue: Boolean);
+begin
+  if FDarkMode <> AValue then
+  begin
+    FDarkMode := AValue;
+    Invalidate;
+  end;
+end;
+
+procedure TDarkButton.SetCaption(const AValue: string);
+begin
+  if FCaption <> AValue then
+  begin
+    FCaption := AValue;
+    Invalidate;
+  end;
+end;
+
+procedure TDarkButton.MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+begin
+  inherited MouseDown(Button, Shift, X, Y);
+  if Button = mbLeft then
+  begin
+    FDown := True;
+    Invalidate;
+  end;
+end;
+
+procedure TDarkButton.MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+var
+  WasDown: Boolean;
+begin
+  WasDown := FDown;
+  inherited MouseUp(Button, Shift, X, Y);
+  if WasDown and (Button = mbLeft) then
+  begin
+    FDown := False;
+    Invalidate;
+    // Trigger click if mouse is still over the button
+    if PtInRect(ClientRect, Classes.Point(X, Y)) then
+      Click;
+  end;
+end;
+
+procedure TDarkButton.MouseEnter;
+begin
+  inherited MouseEnter;
+  if not FHot then
+  begin
+    FHot := True;
+    Invalidate;
+  end;
+end;
+
+procedure TDarkButton.MouseLeave;
+begin
+  inherited MouseLeave;
+  if FHot then
+  begin
+    FHot := False;
+    FDown := False;
+    Invalidate;
+  end;
+end;
+
+procedure TDarkButton.MouseMove(Shift: TShiftState; X, Y: Integer);
+begin
+  inherited MouseMove(Shift, X, Y);
+  if not FHot then
+  begin
+    FHot := True;
+    Invalidate;
+  end;
+end;
+
+procedure TDarkButton.Click;
+var
+  Form: TCustomForm;
+begin
+  inherited Click;
+  if FModalResult <> mrNone then
+  begin
+    Form := GetParentForm(Self);
+    if Assigned(Form) then
+      Form.ModalResult := FModalResult;
+  end;
+end;
+
+procedure TDarkButton.Paint;
+var
+  R: TRect;
+  TxtFlags: Cardinal;
+begin
+  if not FDarkMode then
+  begin
+    inherited Paint;
+    Exit;
+  end;
+
+  R := ClientRect;
+
+  // Background
+  if FDown then
+    Canvas.Brush.Color := RGBToColor(30, 30, 30)
+  else if FHot then
+    Canvas.Brush.Color := RGBToColor(20, 20, 20)
+  else
+    Canvas.Brush.Color := clBlack;
+  Canvas.FillRect(R);
+
+  // Border
+  Canvas.Pen.Color := RGBToColor(80, 80, 80);
+  Canvas.Rectangle(R.Left, R.Top, R.Right, R.Bottom);
+
+  // Text
+  Canvas.Font.Assign(Font);
+  Canvas.Font.Color := clWhite;
+  TxtFlags := DT_CENTER or DT_VCENTER or DT_SINGLELINE;
+  DrawText(Canvas.Handle, PChar(FCaption), Length(FCaption), R, TxtFlags);
+
+  // Focus indicator
+  if Focused then
+    Canvas.DrawFocusRect(R);
+end;
+{$endif}
+
 {** Close handler for full-screen overlay messages created by @link(UXMessage). }
 procedure TDialogForm.UXMessageOnClick(sender: TObject);
 begin
@@ -2800,7 +2985,7 @@ end;
 {$ifdef Windows}
 {**
   Owner-draw for dark buttons on Windows.
-  @param Sender The @code(TBitBtn) being drawn.
+  @param Sender The @code(TDarkButton) being drawn.
   @param ACanvas Canvas to draw on.
   @param ARect Button rectangle.
   @param State Button state (up/down/hot).
@@ -2808,7 +2993,7 @@ end;
 procedure TDialogForm.ButtonDrawItem(Sender: TObject;
 ACanvas: TCanvas; ARect: TRect; State: TButtonState);
 var
-  Btn: TBitBtn absolute Sender;
+  Btn: TDarkButton absolute Sender;
   TxtFlags: cardinal;
 begin
   // 1) Background
