@@ -118,6 +118,10 @@ private
   FMaxTime: TDateTime;
   FDotRadius: integer; // Dot radius in pixels
   FPalette: THistoryGraphPalette; // Runtime palette supplied by main UI
+  FCgmHi: integer; // High threshold in mg/dL
+  FCgmLo: integer; // Low threshold in mg/dL
+  FCgmRangeHi: integer; // Range high threshold in mg/dL
+  FCgmRangeLo: integer; // Range low threshold in mg/dL
     {** GetPlotRect: Determine the plotting rectangle inside the form where
       dots and lines are drawn. Respects the margins defined above. }
   function GetPlotRect: TRect;
@@ -132,6 +136,9 @@ private
       (left) and time (bottom) axes. Uses the plot extents from
       UpdateExtents. }
   procedure DrawAxesAndGrid(ACanvas: TCanvas; const PlotRect: TRect);
+    {** DrawThresholdLines: Draws horizontal lines at each threshold level
+      using the corresponding level colors. }
+  procedure DrawThresholdLines(ACanvas: TCanvas; const PlotRect: TRect);
     {** DrawPolyline: Connects the chronological points with a thin
       line to indicate trend (optional visual aid). }
   procedure DrawPolyline(ACanvas: TCanvas; const PlotRect: TRect);
@@ -180,6 +187,8 @@ public
     {** SetPalette: Allow callers to inject the palette used when
       drawing level colors so the graph matches the main UI. }
   procedure SetPalette(const Palette: THistoryGraphPalette);
+    {** SetThresholds: Inject the CGM thresholds (in mg/dL) for display in the legend. }
+  procedure SetThresholds(const cgmHi, cgmLo, cgmRangeHi, cgmRangeLo: integer);
 end;
 
   {** Display a dot-based history plot for the supplied readings. Reuses the
@@ -187,6 +196,8 @@ end;
 procedure ShowHistoryGraph(const Readings: BGResults; const UnitPref: BGUnit); overload;
 procedure ShowHistoryGraph(const Readings: BGResults; const UnitPref: BGUnit;
 const Palette: THistoryGraphPalette); overload;
+procedure ShowHistoryGraph(const Readings: BGResults; const UnitPref: BGUnit;
+const Palette: THistoryGraphPalette; const cgmHi, cgmLo, cgmRangeHi, cgmRangeLo: integer); overload;
 
 var
   {** fHistoryGraph: A single, reusable instance of the history graph.
@@ -354,6 +365,63 @@ begin
   ACanvas.Font.Style := [];
 end;
 
+procedure TfHistoryGraph.DrawThresholdLines(ACanvas: TCanvas; const PlotRect: TRect);
+var
+  hiVal, loVal, rangeHiVal, rangeLoVal: double;
+  hiY, loY, rangeHiY, rangeLoY: integer;
+  lineColor: TColor;
+  alpha: byte;
+begin
+  // Convert thresholds from mg/dL to display unit
+  hiVal := FCgmHi * BG_CONVERTIONS[FUnit][mgdl];
+  loVal := FCgmLo * BG_CONVERTIONS[FUnit][mgdl];
+  rangeHiVal := FCgmRangeHi * BG_CONVERTIONS[FUnit][mgdl];
+  rangeLoVal := FCgmRangeLo * BG_CONVERTIONS[FUnit][mgdl];
+
+  // Calculate Y positions
+  hiY := ValueToY(hiVal, PlotRect);
+  loY := ValueToY(loVal, PlotRect);
+  rangeHiY := ValueToY(rangeHiVal, PlotRect);
+  rangeLoY := ValueToY(rangeLoVal, PlotRect);
+
+  ACanvas.Pen.Width := 2;
+  ACanvas.Pen.Style := psDash;
+
+  // Draw High threshold line
+  lineColor := LevelColor(BGHigh);
+  ACanvas.Pen.Color := lineColor;
+  ACanvas.MoveTo(PlotRect.Left, hiY);
+  ACanvas.LineTo(PlotRect.Right, hiY);
+
+  // Draw Low threshold line
+  lineColor := LevelColor(BGLOW);
+  ACanvas.Pen.Color := lineColor;
+  ACanvas.MoveTo(PlotRect.Left, loY);
+  ACanvas.LineTo(PlotRect.Right, loY);
+
+  // Draw Range High threshold line (if not disabled)
+  if FCgmRangeHi <> 500 then
+  begin
+    lineColor := LevelColor(BGRangeHI);
+    ACanvas.Pen.Color := lineColor;
+    ACanvas.MoveTo(PlotRect.Left, rangeHiY);
+    ACanvas.LineTo(PlotRect.Right, rangeHiY);
+  end;
+
+  // Draw Range Low threshold line (if not disabled)
+  if FCgmRangeLo <> 0 then
+  begin
+    lineColor := LevelColor(BGRangeLO);
+    ACanvas.Pen.Color := lineColor;
+    ACanvas.MoveTo(PlotRect.Left, rangeLoY);
+    ACanvas.LineTo(PlotRect.Right, rangeLoY);
+  end;
+
+  // Reset pen style
+  ACanvas.Pen.Width := 1;
+  ACanvas.Pen.Style := psSolid;
+end;
+
 procedure TfHistoryGraph.DrawLegend(ACanvas: TCanvas; const PlotRect: TRect);
 const
   INFO_PADDING = 6;
@@ -444,7 +512,40 @@ procedure DrawKeyEntry(const Caption: string; const Color: TColor);
       The panel is rendered to the right of the plot area to avoid covering
       the most recent readings. }
 procedure DrawKeyPanel;
+  var
+    unitStr, rangeStr, rangeHiStr, rangeLoStr, hiStr, loStr: string;
+    rangeHiVal, rangeLoVal, hiVal, loVal: double;
   begin
+    // Determine unit string
+    if FUnit = mmol then
+      unitStr := 'mmol/L'
+    else
+      unitStr := 'mg/dL';
+    
+    // Convert thresholds to display unit
+    hiVal := FCgmHi * BG_CONVERTIONS[FUnit][mgdl];
+    loVal := FCgmLo * BG_CONVERTIONS[FUnit][mgdl];
+    rangeHiVal := FCgmRangeHi * BG_CONVERTIONS[FUnit][mgdl];
+    rangeLoVal := FCgmRangeLo * BG_CONVERTIONS[FUnit][mgdl];
+    
+    // Format strings with threshold values
+    if FUnit = mmol then
+    begin
+      hiStr := Format('%s (%.1f %s+)', [RS_HISTORY_GRAPH_KEY_HIGH, hiVal, unitStr]);
+      loStr := Format('%s (%.1f %s−)', [RS_HISTORY_GRAPH_KEY_LOW, loVal, unitStr]);
+      rangeHiStr := Format('%s (%.1f %s+)', [RS_HISTORY_GRAPH_KEY_RANGE_HI, rangeHiVal, unitStr]);
+      rangeLoStr := Format('%s (%.1f %s−)', [RS_HISTORY_GRAPH_KEY_RANGE_LO, rangeLoVal, unitStr]);
+      rangeStr := Format('%s (%.1f - %.1f %s)', [RS_HISTORY_GRAPH_KEY_RANGE, rangeLoVal, rangeHiVal, unitStr]);
+    end
+    else
+    begin
+      hiStr := Format('%s (%d %s+)', [RS_HISTORY_GRAPH_KEY_HIGH, Round(hiVal), unitStr]);
+      loStr := Format('%s (%d %s−)', [RS_HISTORY_GRAPH_KEY_LOW, Round(loVal), unitStr]);
+      rangeHiStr := Format('%s (%d %s+)', [RS_HISTORY_GRAPH_KEY_RANGE_HI, Round(rangeHiVal), unitStr]);
+      rangeLoStr := Format('%s (%d %s−)', [RS_HISTORY_GRAPH_KEY_RANGE_LO, Round(rangeLoVal), unitStr]);
+      rangeStr := Format('%s (%d - %d %s)', [RS_HISTORY_GRAPH_KEY_RANGE, Round(rangeLoVal), Round(rangeHiVal), unitStr]);
+    end;
+    
     keyRect := Rect(PlotRect.Right + 12, PlotRect.Top,
       ClientWidth - 12,
       PlotRect.Top + (KEY_BOX + 6) * 6 + INFO_PADDING * 3 + lineHeight);
@@ -461,11 +562,11 @@ procedure DrawKeyPanel;
     ACanvas.Font.Style := [];
     keyX := keyRect.Left + INFO_PADDING;
     keyY := keyRect.Top + INFO_PADDING + lineHeight + 4;
-    DrawKeyEntry(RS_HISTORY_GRAPH_KEY_RANGE, LevelColor(BGRange));
-    DrawKeyEntry(RS_HISTORY_GRAPH_KEY_RANGE_HI, LevelColor(BGRangeHI));
-    DrawKeyEntry(RS_HISTORY_GRAPH_KEY_RANGE_LO, LevelColor(BGRangeLO));
-    DrawKeyEntry(RS_HISTORY_GRAPH_KEY_HIGH, LevelColor(BGHigh));
-    DrawKeyEntry(RS_HISTORY_GRAPH_KEY_LOW, LevelColor(BGLOW));
+    DrawKeyEntry(rangeStr, LevelColor(BGRange));
+    DrawKeyEntry(rangeHiStr, LevelColor(BGRangeHI));
+    DrawKeyEntry(rangeLoStr, LevelColor(BGRangeLO));
+    DrawKeyEntry(hiStr, LevelColor(BGHigh));
+    DrawKeyEntry(loStr, LevelColor(BGLOW));
     DrawKeyEntry(RS_HISTORY_GRAPH_KEY_UNKNOWN, FPalette.Unknown);
   end;
 
@@ -585,6 +686,7 @@ begin
 
   plotRect := GetPlotRect;
   DrawAxesAndGrid(Canvas, plotRect);
+  DrawThresholdLines(Canvas, plotRect);
   DrawPolyline(Canvas, plotRect);
   DrawPoints(Canvas, plotRect);
   DrawLegend(Canvas, plotRect);
@@ -662,6 +764,15 @@ end;
 procedure TfHistoryGraph.SetPalette(const Palette: THistoryGraphPalette);
 begin
   FPalette := Palette;
+end;
+
+procedure TfHistoryGraph.SetThresholds(const cgmHi, cgmLo, cgmRangeHi,
+  cgmRangeLo: integer);
+begin
+  FCgmHi := cgmHi;
+  FCgmLo := cgmLo;
+  FCgmRangeHi := cgmRangeHi;
+  FCgmRangeLo := cgmRangeLo;
 end;
 
 procedure TfHistoryGraph.ShowReadingDetails(const Reading: BGReading);
@@ -810,6 +921,12 @@ end;
 procedure ShowHistoryGraph(const Readings: BGResults; const UnitPref: BGUnit;
 const Palette: THistoryGraphPalette);
 begin
+  ShowHistoryGraph(Readings, UnitPref, Palette, 180, 60, 160, 80);
+end;
+
+procedure ShowHistoryGraph(const Readings: BGResults; const UnitPref: BGUnit;
+const Palette: THistoryGraphPalette; const cgmHi, cgmLo, cgmRangeHi, cgmRangeLo: integer);
+begin
   if not Assigned(fHistoryGraph) then begin
     fHistoryGraph := TfHistoryGraph.Create(Application);
     {$ifdef windows}
@@ -819,6 +936,7 @@ begin
   end;
 
   fHistoryGraph.SetPalette(Palette);
+  fHistoryGraph.SetThresholds(cgmHi, cgmLo, cgmRangeHi, cgmRangeLo);
   fHistoryGraph.SetReadings(Readings, UnitPref);
   fHistoryGraph.Show;
   fHistoryGraph.BringToFront;
@@ -826,7 +944,7 @@ end;
 
 procedure ShowHistoryGraph(const Readings: BGResults; const UnitPref: BGUnit);
 begin
-  ShowHistoryGraph(Readings, UnitPref, DefaultHistoryGraphPalette);
+  ShowHistoryGraph(Readings, UnitPref, DefaultHistoryGraphPalette, 180, 60, 160, 80);
 end;
 
 end.

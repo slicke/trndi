@@ -2355,7 +2355,7 @@ msgstr "Låg"
 
 #: uhistorygraph.rs_history_graph_key_range
 msgid "In range"
-msgstr "Inom område"
+msgstr "I område"
 
 #: uhistorygraph.rs_history_graph_key_range_hi
 msgid "Range high"
