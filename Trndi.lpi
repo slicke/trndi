@@ -625,7 +625,6 @@
       <Unit>
         <Filename Value="inc\mac\ns_app.inc"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="Unit1"/>
       </Unit>
     </Units>
   </ProjectOptions>
