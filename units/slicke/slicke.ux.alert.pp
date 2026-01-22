@@ -1816,6 +1816,11 @@ begin
     PreviewLabel.AutoSize := false;
     PreviewLabel.Alignment := taCenter;
     PreviewLabel.Font.Assign(SelectedFont);
+    if TrndiNative.isDarkMode then
+      PreviewLabel.Font.Color := clWhite
+    else
+      PreviewLabel.Font.Color := clBlack;
+
     case size of
     uxdBig:
     begin
