@@ -132,16 +132,6 @@ protected
         @returns(@code(True) if a plausible current reading exists)
      }
   function checkActive: boolean;
-
-    {** Returns the name of the API
-        @returns(Name of the API)
-     }
-  function getSystemName: string; virtual; abstract;
-
-{** Get the maximum age (in minutes) of readings provided by the backend
-        @returns(Maximum age in minutes)
-     }
-  function getMaxAge: integer; virtual;
 public
 const
   toMMOL = 0.05555555555555556; // Factor to multiply mg/dL by to get mmol/L
@@ -283,6 +273,17 @@ const
         @returns(0 if it works, 1 if it doesnt, 3 if not supported)
      }
   class function testConnection(user, pass, extra: string): byte; virtual;
+
+    {** Returns the name of the API
+        @returns(Name of the API)
+     }
+  function getSystemName: string; virtual; abstract;
+
+     {** Get the maximum age (in minutes) of readings provided by the backend
+          @returns(Maximum age in minutes)
+       }
+  function getMaxAge: integer; virtual;
+
     // -------- Properties --------
 
   {** Backend's maximum reading. }

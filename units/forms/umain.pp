@@ -139,6 +139,7 @@ TfBG = class(TForm)
   bMenuPanelClose: TButton;
   bTouchFull: TButton;
   lPredict: TLabel;
+  miReadingsSince: TMenuItem;
   miExtLog: TMenuItem;
   miSep1: TMenuItem;
   miDNS: TMenuItem;
@@ -278,6 +279,7 @@ TfBG = class(TForm)
   procedure miDebugBackendClick(Sender: TObject);
   procedure miExtLogClick(Sender: TObject);
   procedure miPredictClick(Sender: TObject);
+  procedure miReadingsSinceClick(Sender: TObject);
   procedure pmSettingsClose(Sender: TObject);
   procedure pnWarningClick(Sender: TObject);
   procedure pnWarningPaint(Sender: TObject);
@@ -1166,6 +1168,68 @@ begin
       ]) + LineEnding;
 
   ShowMessage(msg);
+end;
+
+procedure TfBG.miReadingsSinceClick(Sender: TObject);
+var
+  minDate, selectedDate: TDateTime;
+  mr: TModalResult;
+  minutesSince, maxReadings: integer;
+  readings: BGResults;
+  res: string;
+  maxAge, maxDays: integer;
+  description: string;
+begin
+  maxAge := api.getMaxAge;
+  
+  // Handle unlimited max age (-1)
+  if maxAge = -1 then
+  begin
+    minDate := EncodeDate(2000, 1, 1); // Arbitrary old date for unlimited
+    description := Format(RS_DATE_PICKER_DESC_UNLIMITED, [api.getSystemName]);
+  end
+  else
+  begin
+    maxDays := maxAge div 1440;
+    // Use date arithmetic to ensure different days (strip time component)
+    minDate := Trunc(Now) - maxDays;
+    description := Format(RS_DATE_PICKER_DESC_LIMITED, [api.getSystemName, maxDays]);
+  end;
+  
+  selectedDate := ExtDatePicker(
+    uxdAuto,
+    RS_DATE_PICKER_CAPTION,
+    RS_DATE_PICKER_TITLE,
+    description,
+    minDate,
+    minDate,
+    Trunc(Now), // Use date without time component
+    mr,
+    uxmtOK
+  );
+  
+  if mr = mrOk then begin
+    // Calculate minutes from selected date to now
+    minutesSince := MinutesBetween(Now, selectedDate);
+    
+    // Calculate max readings based on time range (readings every 5 minutes)
+    maxReadings := minutesSince div 5;
+    
+    // Fetch readings from the API
+    readings := api.getReadings(minutesSince, maxReadings, '', res);
+    
+    if Length(readings) = 0 then
+    begin
+      if res <> '' then
+        ShowMessage(Format(RS_DATE_PICKER_NO_READINGS_ERR, [res]))
+      else
+        ShowMessage(RS_DATE_PICKER_NO_READINGS);
+      Exit;
+    end;
+    
+    ShowHistoryGraph(readings, un, CurrentHistoryGraphPalette,
+      api.cgmHi, api.cgmLo, api.cgmRangeHi, api.cgmRangeLo);
+  end;
 end;
 
 procedure TfBG.pmSettingsClose(Sender: TObject);

@@ -306,6 +306,10 @@ msgstr ""
 msgid "Use range color for window"
 msgstr ""
 
+#: tfbg.mireadingssince.caption
+msgid "Show readings since.."
+msgstr ""
+
 #: tfbg.mirefresh.caption
 msgid "Refresh in:"
 msgstr ""
@@ -1198,6 +1202,33 @@ msgstr ""
 #: trndi.strings.rs_custom_dots
 #, object-pascal-format
 msgid "Custom Size [%.2f]"
+msgstr ""
+
+#: trndi.strings.rs_date_picker_caption
+msgid "Choose a date"
+msgstr ""
+
+#: trndi.strings.rs_date_picker_desc_limited
+#, object-pascal-format
+msgid "%s supports a max time of %d days"
+msgstr ""
+
+#: trndi.strings.rs_date_picker_desc_unlimited
+#, object-pascal-format
+msgid "%s time limit depends on server configuration"
+msgstr ""
+
+#: trndi.strings.rs_date_picker_no_readings
+msgid "No readings returned for the selected date range."
+msgstr ""
+
+#: trndi.strings.rs_date_picker_no_readings_err
+#, object-pascal-format
+msgid "No readings returned: %s"
+msgstr ""
+
+#: trndi.strings.rs_date_picker_title
+msgid "Choose a date to show readings from"
 msgstr ""
 
 #: trndi.strings.rs_days_ago

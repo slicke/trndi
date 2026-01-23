@@ -199,6 +199,13 @@ sChangesApply = 'Apply this value when Trndi starts?';
 sReadingHere = 'Reading here: %s at %.2d:%.2d';
 sAnnounceNotAvailable = 'The text-to-speech (TTS) software "%s" is not available.';
 
+RS_DATE_PICKER_CAPTION = 'Choose a date';
+RS_DATE_PICKER_TITLE = 'Choose a date to show readings from';
+RS_DATE_PICKER_DESC_LIMITED = '%s supports a max time of %d days';
+RS_DATE_PICKER_DESC_UNLIMITED = '%s time limit depends on server configuration';
+RS_DATE_PICKER_NO_READINGS = 'No readings returned for the selected date range.';
+RS_DATE_PICKER_NO_READINGS_ERR = 'No readings returned: %s';
+
 implementation
 
 end.
