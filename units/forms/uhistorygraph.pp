@@ -70,8 +70,9 @@ unit uhistorygraph;
 interface
 
 uses
-Classes, SysUtils, Forms, Controls, Graphics, Dialogs, Math,
-trndi.types, trndi.strings, slicke.ux.alert, dateutils, Trndi.Native;
+Classes, SysUtils, Forms, Controls, Graphics, Dialogs, Math, Menus,
+trndi.types, trndi.strings, slicke.ux.alert, dateutils, Trndi.Native,
+ExtDlgs, IntfGraphics, FPImage, FPWritePNG;
 
 type
   {** THistoryGraphPalette
@@ -122,6 +123,7 @@ private
   FCgmLo: integer; // Low threshold in mg/dL
   FCgmRangeHi: integer; // Range high threshold in mg/dL
   FCgmRangeLo: integer; // Range low threshold in mg/dL
+  FPopupMenu: TPopupMenu; // Context menu for right-click actions
     {** GetPlotRect: Determine the plotting rectangle inside the form where
       dots and lines are drawn. Respects the margins defined above. }
   function GetPlotRect: TRect;
@@ -169,6 +171,7 @@ protected
   procedure Resize; override;
   procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: integer);
     override;
+  procedure KeyDown(var Key: Word; Shift: TShiftState); override;
   procedure DoClose(var CloseAction: TCloseAction); override;
 public
     {** Create: Construct a new TfHistoryGraph instance. The form
@@ -189,6 +192,9 @@ public
   procedure SetPalette(const Palette: THistoryGraphPalette);
     {** SetThresholds: Inject the CGM thresholds (in mg/dL) for display in the legend. }
   procedure SetThresholds(const cgmHi, cgmLo, cgmRangeHi, cgmRangeLo: integer);
+    {** SaveAsPNG: Export the current graph to a PNG file. Shows a save dialog
+      and renders the full graph to the selected file. }
+  procedure SaveAsPNG(Sender: TObject);
 end;
 
   {** Display a dot-based history plot for the supplied readings. Reuses the
@@ -225,6 +231,10 @@ RS_HISTORY_GRAPH_KEY_RANGE_LO = 'Range low';
 RS_HISTORY_GRAPH_KEY_HIGH = 'High';
 RS_HISTORY_GRAPH_KEY_LOW = 'Low';
 RS_HISTORY_GRAPH_KEY_UNKNOWN = 'Unknown';
+RS_HISTORY_GRAPH_SAVE_TITLE = 'Save graph as PNG';
+RS_HISTORY_GRAPH_SAVE_SUCCESS = 'Graph saved successfully';
+RS_HISTORY_GRAPH_SAVE_ERROR = 'Failed to save graph: %s';
+RS_HISTORY_GRAPH_MENU_SAVE = 'Save as Image...';
 
 {** Constants used for layout and division handling in this graph unit.
   Changing these values will affect overall margins and grid density. }
@@ -248,6 +258,8 @@ end;
 { TfHistoryGraph }
 
 constructor TfHistoryGraph.Create(AOwner: TComponent);
+var
+  menuItem: TMenuItem;
 begin
   inherited CreateNew(AOwner, 0);
   Caption := RS_HISTORY_GRAPH_TITLE;
@@ -259,6 +271,14 @@ begin
   Color := clWhite;
   FDotRadius := 5;
   FPalette := DefaultHistoryGraphPalette;
+  
+  // Create context menu
+  FPopupMenu := TPopupMenu.Create(Self);
+  menuItem := TMenuItem.Create(FPopupMenu);
+  menuItem.Caption := RS_HISTORY_GRAPH_MENU_SAVE;
+  menuItem.OnClick := @SaveAsPNG;
+  FPopupMenu.Items.Add(menuItem);
+  PopupMenu := FPopupMenu;
 end;
 
 procedure TfHistoryGraph.DoClose(var CloseAction: TCloseAction);
@@ -652,15 +672,20 @@ X, Y: integer);
 var
   idx: integer;
 begin
-  // Forward mouse clicks to the base handler and check for dot clicks.
-  // If a dot is clicked, ShowReadingDetails displays the reading info dialog.
   inherited MouseDown(Button, Shift, X, Y);
-  if (Button <> mbLeft) or (not HasData) then
+  
+  if not HasData then
     Exit;
 
-  idx := PointAt(X, Y);
-  if idx > -1 then
-    ShowReadingDetails(FPoints[idx].Reading);
+  // Handle left-click on dots to show details
+  if Button = mbLeft then
+  begin
+    idx := PointAt(X, Y);
+    if idx > -1 then
+      ShowReadingDetails(FPoints[idx].Reading);
+  end;
+  
+  // Right-click shows context menu (handled automatically by PopupMenu property)
 end;
 
 procedure TfHistoryGraph.Paint;
@@ -721,6 +746,16 @@ begin
   Invalidate;
 end;
 
+procedure TfHistoryGraph.KeyDown(var Key: Word; Shift: TShiftState);
+begin
+  inherited KeyDown(Key, Shift);
+  if (Key = VK_S) and (Shift = [ssCtrl]) then
+  begin
+    SaveAsPNG(nil);
+    Key := 0;
+  end;
+end;
+
 procedure TfHistoryGraph.SetReadings(const Readings: BGResults;
 UnitPref: BGUnit);
 var
@@ -773,6 +808,68 @@ begin
   FCgmLo := cgmLo;
   FCgmRangeHi := cgmRangeHi;
   FCgmRangeLo := cgmRangeLo;
+end;
+
+procedure TfHistoryGraph.SaveAsPNG(Sender: TObject);
+var
+  saveDialog: TSavePictureDialog;
+  bmp: TBitmap;
+  intfImg: TLazIntfImage;
+  writer: TFPWriterPNG;
+  plotRect: TRect;
+begin
+  // Can be called from keyboard shortcut or context menu
+  if not HasData then
+    Exit;
+
+  saveDialog := TSavePictureDialog.Create(nil);
+  try
+    saveDialog.Title := RS_HISTORY_GRAPH_SAVE_TITLE;
+    saveDialog.Filter := 'PNG Images|*.png';
+    saveDialog.DefaultExt := 'png';
+    saveDialog.FileName := Format('trndi-history-%s.png',
+      [FormatDateTime('yyyy-mm-dd-hhnnss', Now)]);
+
+    if not saveDialog.Execute then
+      Exit;
+
+    bmp := TBitmap.Create;
+    try
+      bmp.SetSize(ClientWidth, ClientHeight);
+      bmp.Canvas.Brush.Color := Color;
+      bmp.Canvas.FillRect(Rect(0, 0, ClientWidth, ClientHeight));
+
+      plotRect := GetPlotRect;
+      DrawAxesAndGrid(bmp.Canvas, plotRect);
+      DrawThresholdLines(bmp.Canvas, plotRect);
+      DrawPolyline(bmp.Canvas, plotRect);
+      DrawPoints(bmp.Canvas, plotRect);
+      DrawLegend(bmp.Canvas, plotRect);
+
+      intfImg := TLazIntfImage.Create(0, 0);
+      try
+        intfImg.LoadFromBitmap(bmp.Handle, bmp.MaskHandle);
+        writer := TFPWriterPNG.Create;
+        try
+          writer.Indexed := false;
+          writer.WordSized := false;
+          writer.UseAlpha := false;
+          intfImg.SaveToFile(saveDialog.FileName, writer);
+        finally
+          writer.Free;
+        end;
+      finally
+        intfImg.Free;
+      end;
+    finally
+      bmp.Free;
+    end;
+  except
+    on E: Exception do
+      ExtHTML(uxdAuto, 'Error', Format(RS_HISTORY_GRAPH_SAVE_ERROR, [E.Message]),
+        [mbOK], uxmtError, 12.5);
+  end;
+  saveDialog.Free;
 end;
 
 procedure TfHistoryGraph.ShowReadingDetails(const Reading: BGReading);
