@@ -137,6 +137,11 @@ protected
         @returns(Name of the API)
      }
   function getSystemName: string; virtual; abstract;
+
+{** Get the maximum age (in minutes) of readings provided by the backend
+        @returns(Maximum age in minutes)
+     }
+  function getMaxAge: integer; virtual;
 public
 const
   toMMOL = 0.05555555555555556; // Factor to multiply mg/dL by to get mmol/L
@@ -326,6 +331,14 @@ published
 end;
 
 implementation
+
+  {------------------------------------------------------------------------------
+  Get the maximum age (in minutes) of readings provided by the backend
+  ------------------------------------------------------------------------------}
+function TrndiAPI.getMaxAge: integer;
+begin
+  result := 1440; // Default to 24 hours
+end;
 
 {------------------------------------------------------------------------------
   Determine whether the API appears to be active by fetching a current reading.
