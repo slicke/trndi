@@ -101,6 +101,11 @@ protected
     {** gets the name of the API
     }
   function getSystemName: string; override;
+
+{** Get the maximum age (in minutes) of readings provided by the backend
+        @returns(Maximum age in minutes)
+     }
+  function getMaxAge: integer; override;
 end;
 
 implementation
@@ -119,6 +124,15 @@ sParamDesc = '** ALPHA DRIVER - Please use "NightScout" for daily use! **' + #13
   'Note: If you instead use the legacy API Secret, paste your API Secret value as-is.' + #10#13 +
   'Note 2: Your access token should look like: trndi-abc123 (or whatever name you chose)';
 
+{------------------------------------------------------------------------------
+  getMaxAge
+  --------------------
+  Returns the maximum age (in minutes) of readings provided by the backend
+ ------------------------------------------------------------------------------}
+function NightScout3.getMaxAge: integer;
+begin
+  result := -1; // No specific maximum age enforced
+end;
 
 {------------------------------------------------------------------------------
   getSystemName

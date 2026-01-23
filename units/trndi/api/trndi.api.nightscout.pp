@@ -126,6 +126,8 @@ public
     {** Test NightScout credentials
     }
   class function testConnection(user, pass, extra: string): byte; override;
+
+  function getMaxAge: integer; override;
 private
     // (no private members)
 
@@ -147,6 +149,16 @@ sParamDesc = 'NightScout v2 setup (use FULL access token):' + #13#10#13#10 +
   '4) In Trndi:' + #13#10 + '   - Address: enter your NightScout URL' + #13#10 +
   '   - Auth: paste the FULL access token (not just a suffix).' + #13#10 + #13#10 +
   'Note: If you instead use the legacy API Secret, paste your API Secret value as-is.';
+
+{------------------------------------------------------------------------------
+  getMaxAge
+  --------------------
+  Returns the maximum age (in minutes) of readings provided by the backend
+ ------------------------------------------------------------------------------}
+function NightScout.getMaxAge: integer;
+begin 
+  result := -1; // No specific maximum age enforced
+end;
 
 {------------------------------------------------------------------------------
   getSystemName
