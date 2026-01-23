@@ -33,6 +33,7 @@
   - @link(UXDialog) overloads for message dialogs with button sets or Lazarus TMsgDlgType mapping.
   - @link(ExtMsg), @link(ExtLog), @link(ExtError), @link(ExtSucc), @link(ExtSuccEx) for rich dialogs with dumps/logs.
   - @link(ExtInput), @link(ExtNumericInput), @link(ExtIntInput), @link(ExtList), @link(ExtTable) for data entry.
+  - @link(ExtDatePicker) for date selection with optional min/max constraints.
 
   Platform support:
   - Windows: emoji rendering via Direct2D/DirectWrite; custom dark-titlebar opt-in where possible.
@@ -50,6 +51,7 @@ interface
 uses
 Classes, SysUtils, Dialogs, Forms, ExtCtrls, StdCtrls, Controls, Graphics, Math,
 IntfGraphics, FPImage, graphtype, lcltype, Trndi.Native, Grids, Spin, IpHtml, Iphttpbroker, slicke.ux.native, SpinEx, LCLIntf,
+EditBtn,
 {$ifdef Windows}
 DX12.D2D1, DX12.DXGI, DX12.DWrite, DX12.DCommon, DX12.WinCodec, Windows, Buttons, ActiveX, ComObj,
 {$endif}
@@ -570,6 +572,27 @@ ADefaultFont: TFont;
 const AFontSample: string;
 var ModalResult: TModalResult;
 const icon: UXImage = uxmtCog): TFont;
+
+  {**
+    Show a date picker dialog using @code(TDateEdit).
+    @param dialogsize Layout preset.
+    @param ACaption Window caption.
+    @param ATitle Title text.
+    @param ADesc Description text.
+    @param ADefault Initial date value.
+    @param AMinDate Minimum allowed date (pass 0 to disable minimum).
+    @param AMaxDate Maximum allowed date (pass 0 to disable maximum).
+    @param ModalResult Out parameter holding the modal result after closing.
+    @param icon Emoji icon (default gear).
+    @returns Selected date if OK; otherwise returns @code(ADefault).
+  }
+function ExtDatePicker(const dialogsize: TUXDialogSize;
+const ACaption, ATitle, ADesc: string;
+ADefault: TDateTime;
+AMinDate: TDateTime;
+AMaxDate: TDateTime;
+var ModalResult: TModalResult;
+const icon: UXImage = uxmtCog): TDateTime;
 
 var
   {** Localized captions for each @link(TUXMsgDlgBtn). Initialized from resource strings. }
@@ -1978,6 +2001,124 @@ begin
     end;
   finally
     SelectedFont.Free;
+    Dialog.Free;
+  end;
+end;
+
+function ExtDatePicker(
+const dialogsize: TUXDialogSize;
+const ACaption, ATitle, ADesc: string;
+ADefault: TDateTime;
+AMinDate: TDateTime;
+AMaxDate: TDateTime;
+var ModalResult: TModalResult;
+const icon: UXImage = uxmtCog
+): TDateTime;
+const
+  Padding = 16;
+var
+  Dialog: TDialogForm;
+  IconBox: TImage;
+  TitleLabel, DescLabel: TLabel;
+  DatePicker: TDateEdit;
+  {$ifdef Windows}
+  OkButton, CancelButton: TDarkButton;
+  {$else}
+  OkButton, CancelButton: TButton;
+  {$endif}
+  bgcol: TColor;
+  size: TUXDialogSize;
+  totalButtonsWidth: integer;
+begin
+  size := GetUXDialogSize(dialogsize);
+  Result := ADefault;
+  ModalResult := mrCancel;
+  bgcol := getBackground;
+
+  Dialog := TDialogForm.CreateNew(nil);
+  Dialog.KeyPreview := true;
+  Dialog.OnKeyDown := @Dialog.FormKeyDown;
+  try
+    Dialog.Caption := ACaption;
+    Dialog.BorderStyle := bsDialog;
+    Dialog.Position := poScreenCenter;
+
+    IconBox := TImage.Create(Dialog);
+    TitleLabel := TLabel.Create(Dialog);
+    DescLabel := TLabel.Create(Dialog);
+
+    // Use shared helper for title + description
+    SetupDialogTitleDesc(Dialog, size, icon, bgcol, ATitle, ADesc, IconBox, TitleLabel, DescLabel);
+
+    // --- Date picker ---
+    DatePicker := TDateEdit.Create(Dialog);
+    DatePicker.Parent := Dialog;
+    DatePicker.Left := DescLabel.Left;
+    DatePicker.Width := DescLabel.Width;
+    DatePicker.Top := DescLabel.Top + DescLabel.Height + ifthen(size = uxdBig, Padding * 2, Padding);
+    DatePicker.Date := ADefault;
+    
+    // Set min/max dates if specified (non-zero values)
+    if AMinDate <> 0 then
+      DatePicker.MinDate := AMinDate;
+    if AMaxDate <> 0 then
+      DatePicker.MaxDate := AMaxDate;
+    
+    {$ifdef Windows}
+    if TrndiNative.isDarkMode then
+    begin
+      DatePicker.Color := RGBToColor(53, 53, 53);
+      DatePicker.Font.Color := RGBToColor(245, 245, 245);
+    end;
+    {$endif}
+    if (size = uxdBig) then
+    begin
+      DatePicker.Font.Size := 20;
+      DatePicker.Height := DatePicker.Height * 2;
+    end;
+
+    // --- OK Button ---
+    {$ifdef Windows}OkButton := TDarkButton.Create(Dialog);{$else}OkButton := TButton.Create(Dialog);{$endif}
+    OkButton.Parent := Dialog;
+    {$ifdef LCLGTK2}OkButton.Font.Color := clBlack;{$endif}
+    OkButton.Caption := smbSelect;
+    OkButton.ModalResult := mrOk;
+    OkButton.Width := 80;
+    if (size = uxdBig) then
+    begin
+      OkButton.Width := OkButton.Width * 2;
+      OkButton.Height := OkButton.Height * 2;
+      OkButton.Font.Size := 12;
+    end;
+    Dialog.ActiveControl := OkButton;
+
+    // --- Cancel Button ---
+    {$ifdef Windows}CancelButton := TDarkButton.Create(Dialog);{$else}CancelButton := TButton.Create(Dialog);{$endif}
+    CancelButton.Parent := Dialog;
+    CancelButton.Caption := smbUXCancel;
+    CancelButton.ModalResult := mrCancel;
+    CancelButton.Width := 80;
+    if (size = uxdBig) then
+    begin
+      CancelButton.Width := CancelButton.Width * 2;
+      CancelButton.Height := CancelButton.Height * 2;
+      CancelButton.Font.Size := 12;
+    end;
+
+    // --- Center buttons ---
+    OkButton.Top := DatePicker.Top + DatePicker.Height + ifthen((size = uxdBig), Padding * 3, Padding * 2);
+    CancelButton.Top := OkButton.Top;
+    totalButtonsWidth := OkButton.Width + Padding + CancelButton.Width;
+    OkButton.Left := (Dialog.ClientWidth - totalButtonsWidth) div 2;
+    CancelButton.Left := OkButton.Left + OkButton.Width + Padding;
+
+    Dialog.ClientHeight := OkButton.Top + OkButton.Height + Padding;
+    Dialog.ActiveControl := DatePicker;
+
+    ModalResult := ShowModalSafe(Dialog);
+    if ModalResult = mrOk then
+      Result := DatePicker.Date;
+  finally
     Dialog.Free;
   end;
 end;
