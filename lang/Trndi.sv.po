@@ -2374,6 +2374,10 @@ msgctxt "uhistorygraph.rs_history_graph_key_unknown"
 msgid "Unknown"
 msgstr "Okänd"
 
+#: uhistorygraph.rs_history_graph_menu_save
+msgid "Save as Image..."
+msgstr ""
+
 #: uhistorygraph.rs_history_graph_point_count
 #, object-pascal-format
 msgid "%d readings"
@@ -2384,6 +2388,19 @@ msgstr "%d avläsningar"
 msgid "%s – %s"
 msgstr "%s - %s"
 
+#: uhistorygraph.rs_history_graph_save_error
+#, object-pascal-format
+msgid "Failed to save graph: %s"
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_save_success
+msgid "Graph saved successfully"
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_save_title
+msgid "Save graph as PNG"
+msgstr ""
+
 #: uhistorygraph.rs_history_graph_title
 msgid "History graph"
 msgstr "Historikgraf"
@@ -2392,3 +2409,4 @@ msgstr "Historikgraf"
 #, object-pascal-format
 msgid "Readings (%s)"
 msgstr "Avläsningar (%s)"
+
