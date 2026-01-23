@@ -2209,6 +2209,10 @@ msgctxt "uhistorygraph.rs_history_graph_axis_time"
 msgid "Time"
 msgstr ""
 
+#: uhistorygraph.rs_history_graph_csv_title
+msgid "Save readings as CSV"
+msgstr ""
+
 #: uhistorygraph.rs_history_graph_empty
 msgid "No history data to plot"
 msgstr ""
@@ -2250,6 +2254,10 @@ msgstr ""
 
 #: uhistorygraph.rs_history_graph_menu_save
 msgid "Save as Image..."
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_menu_save_csv
+msgid "Save as CSV..."
 msgstr ""
 
 #: uhistorygraph.rs_history_graph_point_count

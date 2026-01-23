@@ -195,6 +195,9 @@ public
     {** SaveAsPNG: Export the current graph to a PNG file. Shows a save dialog
       and renders the full graph to the selected file. }
   procedure SaveAsPNG(Sender: TObject);
+    {** SaveAsCSV: Export the readings data to a CSV file for analysis in
+      spreadsheet applications. }
+  procedure SaveAsCSV(Sender: TObject);
 end;
 
   {** Display a dot-based history plot for the supplied readings. Reuses the
@@ -235,6 +238,8 @@ RS_HISTORY_GRAPH_SAVE_TITLE = 'Save graph as PNG';
 RS_HISTORY_GRAPH_SAVE_SUCCESS = 'Graph saved successfully';
 RS_HISTORY_GRAPH_SAVE_ERROR = 'Failed to save graph: %s';
 RS_HISTORY_GRAPH_MENU_SAVE = 'Save as Image...';
+RS_HISTORY_GRAPH_MENU_SAVE_CSV = 'Save as CSV...';
+RS_HISTORY_GRAPH_CSV_TITLE = 'Save readings as CSV';
 
 {** Constants used for layout and division handling in this graph unit.
   Changing these values will affect overall margins and grid density. }
@@ -277,6 +282,10 @@ begin
   menuItem := TMenuItem.Create(FPopupMenu);
   menuItem.Caption := RS_HISTORY_GRAPH_MENU_SAVE;
   menuItem.OnClick := @SaveAsPNG;
+  FPopupMenu.Items.Add(menuItem);
+  menuItem := TMenuItem.Create(FPopupMenu);
+  menuItem.Caption := RS_HISTORY_GRAPH_MENU_SAVE_CSV;
+  menuItem.OnClick := @SaveAsCSV;
   FPopupMenu.Items.Add(menuItem);
   PopupMenu := FPopupMenu;
 end;
@@ -870,6 +879,87 @@ begin
         [mbOK], uxmtError, 12.5);
   end;
   saveDialog.Free;
+end;
+
+procedure TfHistoryGraph.SaveAsCSV(Sender: TObject);
+var
+  saveDialog: TSaveDialog;
+  csvFile: TextFile;
+  i: integer;
+  line: string;
+  dateStr, timeStr, valueStr, deltaStr, trendStr, levelStr: string;
+  rssi, noise: integer;
+  rssiStr, noiseStr: string;
+begin
+  if not HasData then
+    Exit;
+
+  saveDialog := TSaveDialog.Create(nil);
+  try
+    saveDialog.Title := RS_HISTORY_GRAPH_CSV_TITLE;
+    saveDialog.Filter := 'CSV Files|*.csv|All Files|*.*';
+    saveDialog.DefaultExt := 'csv';
+    saveDialog.FileName := Format('trndi-history-%s.csv',
+      [FormatDateTime('yyyy-mm-dd-hhnnss', Now)]);
+
+    if not saveDialog.Execute then
+      Exit;
+
+    AssignFile(csvFile, saveDialog.FileName);
+    try
+      Rewrite(csvFile);
+      
+      // Write CSV header
+      WriteLn(csvFile, 'Date,Time,Value,Unit,Delta,Trend,Level,RSSI,Noise,Source,Sensor');
+      
+      // Write data rows
+      for i := 0 to High(FPoints) do
+      begin
+        dateStr := FormatDateTime('yyyy-mm-dd', FPoints[i].Reading.date);
+        timeStr := FormatDateTime('hh:nn:ss', FPoints[i].Reading.date);
+        valueStr := Format(BG_MSG_SHORT[FUnit], [FPoints[i].Value]);
+        deltaStr := FPoints[i].Reading.format(FUnit, BG_MSG_SIG_SHORT, BGDelta);
+        trendStr := BG_TRENDS[FPoints[i].Reading.trend];
+        
+        case FPoints[i].Reading.level of
+          BGRange: levelStr := 'In Range';
+          BGRangeHI: levelStr := 'Range High';
+          BGRangeLO: levelStr := 'Range Low';
+          BGHigh: levelStr := 'High';
+          BGLOW: levelStr := 'Low';
+        else
+          levelStr := 'Unknown';
+        end;
+        
+        if FPoints[i].Reading.TryGetRSSI(rssi) then
+          rssiStr := IntToStr(rssi)
+        else
+          rssiStr := '';
+          
+        if FPoints[i].Reading.TryGetNoise(noise) then
+          noiseStr := IntToStr(noise)
+        else
+          noiseStr := '';
+        
+        line := Format('%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s',
+          [dateStr, timeStr, valueStr, BG_UNIT_NAMES[FUnit], deltaStr, 
+           trendStr, levelStr, rssiStr, noiseStr, 
+           FPoints[i].Reading.Source, FPoints[i].Reading.sensor]);
+        WriteLn(csvFile, line);
+      end;
+      
+      CloseFile(csvFile);
+    except
+      on E: Exception do
+      begin
+        CloseFile(csvFile);
+        ExtHTML(uxdAuto, 'Error', Format(RS_HISTORY_GRAPH_SAVE_ERROR, [E.Message]),
+          [mbOK], uxmtError, 12.5);
+      end;
+    end;
+  finally
+    saveDialog.Free;
+  end;
 end;
 
 procedure TfHistoryGraph.ShowReadingDetails(const Reading: BGReading);
