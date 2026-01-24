@@ -173,7 +173,15 @@ UXImage = widechar;
       - On Windows can owner-draw buttons via @link(ButtonDrawItem).
   }
 TDialogForm = class(TForm)
-    {** Keyboard shortcuts: Enter to confirm (when appropriate), Esc to cancel/No. }
+public
+  // For log message expansion
+  LogExpandWrapper: TPanel;
+  LogExpandMemo: TMemo;
+  LogExpandHtmlPanel: TIpHtmlPanel;
+  LogExpandButton: TControl;
+  LogIsHTML: boolean;
+  procedure ExpandLogDialog(Sender: TObject);
+  {** Keyboard shortcuts: Enter to confirm (when appropriate), Esc to cancel/No. }
   procedure FormKeyDown(Sender: TObject; var Key: word; Shift: TShiftState);
 protected
     {** Finalizes platform window style, sets KeyPreview, and enables dark mode title bar where supported. }
@@ -2739,9 +2747,40 @@ begin
       btnCount := 1;
 
     totalBtnWidth := (ButtonActualWidth * btnCount) + (padding * (btnCount - 1));
+    
+    // Always center the action buttons
     posX := (Dialog.ClientWidth - totalBtnWidth) div 2;
     if posX < padding then
       posX := padding;
+    
+    // Add expand button only if log content is truncated/needs scrolling
+    // Position it independently on the left side
+    if (logmsg <> '') and 
+       ((not isHTML and (LogMemo.Lines.Count > 3)) or 
+        (isHTML and (LogHtmlPanel.GetContentSize.cy > LogPanel.Height))) then
+    begin
+      {$ifdef X_WIN}
+      OkButton := TDarkButton.Create(ButtonPanel);
+      {$else}
+      OkButton := TButton.Create(ButtonPanel);
+      {$endif}
+      OkButton.Parent := ButtonPanel;
+      {$ifdef LCLGTK2}OkButton.Font.Color := clBlack;{$endif}
+      OkButton.Caption := '⛶';  // Maximize symbol
+      OkButton.Width := ifthen((size = uxdBig), 50, 30);
+      OkButton.Height := ifthen((size = uxdBig), 50, 25);
+      OkButton.Left := padding;
+      OkButton.Top := padding;
+      OkButton.OnClick := @Dialog.ExpandLogDialog;
+      OkButton.TabStop := false;
+      
+      // Store references for expand method
+      Dialog.LogExpandWrapper := LogPanel;
+      Dialog.LogExpandMemo := LogMemo;
+      Dialog.LogExpandHtmlPanel := LogHtmlPanel;
+      Dialog.LogExpandButton := OkButton;
+      Dialog.LogIsHTML := isHTML;
+    end;
 
     for mr in buttons do
     begin
@@ -2961,6 +3000,36 @@ begin
           ClickButton(firstBtn);
       end;
   end;
+end;
+
+{** Expand log message area to 3/4 screen size }
+procedure TDialogForm.ExpandLogDialog(Sender: TObject);
+var
+  newHeight, newWidth: integer;
+begin
+  newHeight := Round(Screen.Height * 0.75);
+  newWidth := Round(Screen.Width * 0.75);
+  
+  // Resize the entire dialog
+  Self.ClientWidth := newWidth;
+  Self.ClientHeight := newHeight;
+  
+  // Manually center the dialog
+  Self.Left := (Screen.Width - Self.Width) div 2;
+  Self.Top := (Screen.Height - Self.Height) div 2;
+  
+  if Assigned(LogExpandWrapper) then
+  begin
+    // LogExpandWrapper is the LogPanel - expand it to fill available space
+    // Leave room for button panel at bottom (which is alBottom, so it auto-positions)
+    LogExpandWrapper.Height := Round(newHeight * 0.7);
+  end;
+  
+  // Hide expand button after expansion
+  if Assigned(LogExpandButton) then
+    LogExpandButton.Visible := false;
+  
+  // No need to recenter action buttons - they're already centered
 end;
 
 {$ifndef Windows}
