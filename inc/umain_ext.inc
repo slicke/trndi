@@ -163,7 +163,8 @@ begin
         fSplash.incProgress(-1, RS_SPLASH_LOADING + ExtractFileName(extFile));
         // Run all found files
         stmp := ExecuteFile(extFile);
-        if stmp <> '1' then
+        // Only show error if execution actually failed (starts with 'Error:')
+        if Pos('Error:', stmp) = 1 then
           {$ifdef debug}
           ExtMessage(uxdAuto,'Extension Activation Failed!','The ' + ExtractFileNameOnly(extFile) + ' extension was loaded with an error', 'Output below', 'Return: ' + stmp + sLineBreak + sLineBreak + 'Log: ' + Output, false);
         {$else}
