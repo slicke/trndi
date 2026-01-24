@@ -941,6 +941,7 @@ end;
 function UXButtonToModalResult(Btn: TUXMsgDlgBtn): TModalResult;
 begin
   case Btn of
+  mbUXAgree,
   mbYes:
     Result := mrYes;
   mbNo:
