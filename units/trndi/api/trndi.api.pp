@@ -42,7 +42,7 @@ end;
   {** Unit for storing glucose values }
 glucose = single;
 
-APIParamLabel = (APLUser, APLPass, APLDesc, APLCopyright);
+APIParamLabel = (APLUser, APLPass, APLDesc, APLDescHTML, APLCopyright);
 
   {** TrndiAPI is the abstract base class for accessing CGM data sources.
       It defines common thresholds, time handling, and helper routines to read
@@ -546,6 +546,8 @@ begin
   APLPass:
     Result := 'API Key';
   APLDesc:
+    Result := '';
+  APLDescHTML:
     Result := '';
   APLCopyright:
     Result := 'Trndi contributors';

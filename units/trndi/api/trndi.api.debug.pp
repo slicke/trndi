@@ -189,6 +189,8 @@ begin
     Result := '(ignored for debug backend)';
   APLDesc:
     Result := result + 'This is a special debug backend for testing purposes only. It does not connect to any real service.';
+  APLDescHTML:
+    Result := result + 'This is a special <b>debug backend</b> for testing purposes <u>only</u>. It does <i>not</i> connect to any real service.';
   APLCopyright:
     Result := 'Björn Lindh <github.com/slicke>';
   end;

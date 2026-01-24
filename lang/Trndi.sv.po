@@ -322,7 +322,7 @@ msgstr "Färga fönstret med områdesfärg"
 
 #: tfbg.mireadingssince.caption
 msgid "Show readings since.."
-msgstr ""
+msgstr "Visa avläsningar sedan..."
 
 #: tfbg.mirefresh.caption
 msgid "Refresh in:"
@@ -1138,6 +1138,14 @@ msgstr ""
 "Om du är osäker, testa “Outside USA” först om du inte bor i USA.\n"
 "Ditt användarnamn och lösenord är dina Dexcom-uppgifter (inte Share)."
 
+#: trndi.api.dexcom.sparamdeschtml
+msgid ""
+"<b>Dexcom</b> region selection:<br><br>Choose the server based on your <u>account region</u>:<br>• Dexcom (USA): for accounts <i>(served by share2.dexcom.com)</i><br>• Dexcom (Outside USA): for accounts <i>(served by shareous1.dexcom.com)</i><br><br>If you are unsure, try <b>Outside USA</b> first, if you live outside the US.\n"
+"Your username and password are your Dexcom Account (not Share) credentials."
+msgstr ""
+"<b>Dexcom</b>regionval:<br><br>Välj en server baserat på din <u>kontoregion</u>:<br>• Dexcom (USA): för konton <i>(hanterade av by share2.dexcom.com)</i><br>• Dexcom (Utanför USA): för konton <i>(hanterade av shareous1.dexcom.com)</i><br><br>If you are unsure, try <b>Outside USA</b> first, if you live outside the US.\n"
+"Your username and password are your Dexcom Account (not Share) credentials."
+
 #: trndi.api.dexcom.sparampassword
 msgid "Dexcom Password"
 msgstr "Dexcom-lösenord"
@@ -1179,6 +1187,10 @@ msgstr ""
 "   - Hemlighet: klistra in HELA åtkomstnyckeln (inte bara suffixet).\n"
 "\n"
 "vOBS: Om din installation använder API-hemligheter, klistra in den som den är."
+
+#: trndi.api.nightscout.sparamdeschtml
+msgid "<div style=\"font-family: Arial, sans-serif; line-height: 1.6;\"><h2 style=\"margin-bottom: 10px;\">🌙 NightScout v2 Setup</h2><p style=\"color: #7f8c8d; font-style: italic; margin-bottom: 15px;\">(use FULL access token)</p><ol style=\"padding-left: 20px;\"><li style=\"margin-bottom: 10px;\">Open your NightScout site (e.g., <code style=\"background: #6495ED; padding: 2px 6px; border-radius: 3px;\">https://your-site</code>).</li><li style=\"margin-bottom: 10px;\">Go to <strong>Admin → Tokens</strong> — or <strong>API Secret</strong>.</li><li style=\"margin-bottom: 10px;\">If you use Tokens:<ul style=\"margin-top: 5px; padding-left: 20px;\"><li>Create a token with at least <strong>READ</strong> scope.</li><li>Copy the <strong>FULL</strong> access token value exactly as shown.</li></ul></li><li style=\"margin-bottom: 10px;\">In Trndi:<ul style=\"margin-top: 5px; padding-left: 20px;\"><li><strong>Address:</strong> enter your NightScout URL</li><li><strong>Auth:</strong> paste the FULL access token (not just a suffix).</li></ul></li></ol><p style=\"border-left: 4px solid #ffc107; padding: 10px; margin-top: 15px;\"><strong>⚠️ Note:</strong> If you instead use the legacy API Secret, paste your API Secret value as-is.</p></div>"
+msgstr "<div style=\"font-family: Arial, sans-serif; line-height: 1.6;\"><h2 style=\"margin-bottom: 10px;\">🌙 NightScout v2-inställning</h2><p style=\"color: #7f8c8d; font-style: italic; margin-bottom: 15px;\">(använd HELA access token:et)</p><ol style=\"padding-left: 20px;\"><li style=\"margin-bottom: 10px;\">Öppna din NightScout-sajt (t. ex., <code style=\"background: #6495ED; padding: 2px 6px; border-radius: 3px;\">https://din-sajt</code>).</li><li style=\"margin-bottom: 10px;\">Gå till <strong>Admin → Tokens</strong> — eller <strong>API Secret</strong>.</li><li style=\"margin-bottom: 10px;\">Om du använder Tokens:<ul style=\"margin-top: 5px; padding-left: 20px;\"><li>Skapa ett token med minst <strong>READ</strong> scope.</li><li>Kopiera <strong>HELA</strong> access token-v'rdet som det visas.</li></ul></li><li style=\"margin-bottom: 10px;\">I Trndi:<ul style=\"margin-top: 5px; padding-left: 20px;\"><li><strong>Adress:</strong> ange din NightScout URL</li><li><strong>Autensiering:</strong> klistra in HELA token:et (inte bara suffixet).</li></ul></li></ol><p style=\"border-left: 4px solid #ffc107; padding: 10px; margin-top: 15px;\"><strong>⚠️ Note:</strong> Om du använder det föråldrade API Secret, klistra in din API Secret så som den är.</p></div>"
 
 #: trndi.api.nightscout.sparampassword
 msgctxt "trndi.api.nightscout.sparampassword"
@@ -1223,6 +1235,10 @@ msgstr ""
 "OBS Om du använder en äldre version, med API Secret, klistra in hela hemligheten som den är.\n"
 "OBS 2: Din åtkomstnyckel ska se ut som: trndi-abc123 (eller det namn du valt)"
 
+#: trndi.api.nightscout3.sparamdeschtml
+msgid "<div style=\"font-family: Arial, sans-serif; line-height: 1.6;\"><div style=\"background: #dc3545; color: white; padding: 15px; border-radius: 6px; margin-bottom: 20px; font-weight: bold; text-align: center; border: 2px solid #c82333;\">⚠️ ALPHA DRIVER - Please use \"NightScout\" for daily use! ⚠️</div><h2 style=\"margin-bottom: 10px;\">🌙 NightScout v3 Setup</h2><p style=\"color: #7f8c8d; font-style: italic; margin-bottom: 15px;\">(use FULL access token)</p><ol style=\"padding-left: 20px;\"><li style=\"margin-bottom: 10px;\">Open your NightScout site (e.g., <code style=\"background: #6495ED; padding: 2px 6px; border-radius: 3px;\">https://your-site</code>).</li><li style=\"margin-bottom: 10px;\">Go to <strong>Admin → Tokens</strong> — or <strong>API Secret</strong>.</li><li style=\"margin-bottom: 10px;\">If you use Tokens:<ul style=\"margin-top: 5px; padding-left: 20px;\"><li>Create a token with at least <strong>READ</strong> scope.</li><li>Copy the <strong>FULL</strong> access token value exactly as shown.</li></ul></li><li style=\"margin-bottom: 10px;\">In Trndi:<ul style=\"margin-top: 5px; padding-left: 20px;\"><li><strong>Address:</strong> enter your NightScout URL</li><li><strong>Auth:</strong> paste the FULL access token.</li></ul></li></ol><div style=\"border-left: 4px solid #ffc107; padding: 12px; margin-top: 15px; border-radius: 4px;\"><p style=\"margin: 0 0 8px 0;\"><strong>📝 Note:</strong> If you instead use the legacy API Secret, paste your API Secret value as-is.</p><p style=\"margin: 0;\"><strong>📝 Note 2:</strong> Your access token should look like: <code style=\"background: #6F8FAF; padding: 2px 6px; border-radius: 3px;\">trndi-abc123</code> (or whatever name you chose).</p></div></div>"
+msgstr "<div style=\"font-family: Arial, sans-serif; line-height: 1.6;\"><div style=\"background: #dc3545; color: white; padding: 15px; border-radius: 6px; margin-bottom: 20px; font-weight: bold; text-align: center; border: 2px solid #c82333;\">⚠️ ALFADRIVRUTIN- Vänligen välj \"NightScout\" för dagligt bruk! ⚠️</div><h2 style=\"margin-bottom: 10px;\">🌙 NightScout v3-inställning</h2><p style=\"color: #7f8c8d; font-style: italic; margin-bottom: 15px;\">(använd HELA access token:et)</p><ol style=\"padding-left: 20px;\"><li style=\"margin-bottom: 10px;\">Öppna din NightScout-sajt (t. ex., <code style=\"background: #6495ED; padding: 2px 6px; border-radius: 3px;\">https://din-sajt</code>).</li><li style=\"margin-bottom: 10px;\">Gå till <strong>Admin → Tokens</strong> — eller <strong>API Secret</strong>.</li><li style=\"margin-bottom: 10px;\">Om du använder Tokens:<ul style=\"margin-top: 5px; padding-left: 20px;\"><li>Skapa ett token med minst <strong>READ</strong> scope.</li><li>Kopiera <strong>HELA</strong> access token:ets värde så som det visas.</li></ul></li><li style=\"margin-bottom: 10px;\">I Trndi:<ul style=\"margin-top: 5px; padding-left: 20px;\"><li><strong>Adress:</strong> ange din NightScout-URL</li><li><strong>Autensiering:</strong> klistra in HELA access token:et.</li></ul></li></ol><div style=\"border-left: 4px solid #ffc107; padding: 12px; margin-top: 15px; border-radius: 4px;\"><p style=\"margin: 0 0 8px 0;\"><strong>📝 OBS:</strong> Om du använder det föråldrade API Secret, klistra in din API Secret så som den visas.</p><p style=\"margin: 0;\"><strong>📝 OBS 2:</strong> Ditt access token ska se ut enligt följande: <code style=\"background: #6F8FAF; padding: 2px 6px; border-radius: 3px;\">trndi-abc123</code> (eller det namn du valt).</p></div></div>"
+
 #: trndi.api.nightscout3.sparampassword
 msgid "Auth token suffix"
 msgstr "Tokensuffix för autensiering"
@@ -1244,6 +1260,10 @@ msgstr ""
 "r\n"
 "Adress: din xDrip REST-slutpunkt (base URL).r\n"
 "Auth: API-hemlighet (ren text; inte hashad)."
+
+#: trndi.api.xdrip.sparamdeschtml
+msgid "<b>xDrip setup:</b><br><br>Address: your xDrip REST endpoint (base URL).<br>Auth: API secret (plain text; server hashes it)."
+msgstr "<b>xDrip-inställning:</b><br><br>Adress: din xDrip REST-endpoint (bas-URL).<br>Auth: API secret (ren text; servern hashar den)."
 
 #: trndi.api.xdrip.sparampassword
 msgctxt "trndi.api.xdrip.sparampassword"
@@ -1281,30 +1301,30 @@ msgstr "Egen storlek [%.2f]"
 
 #: trndi.strings.rs_date_picker_caption
 msgid "Choose a date"
-msgstr ""
+msgstr "Välj ett datum"
 
 #: trndi.strings.rs_date_picker_desc_limited
 #, object-pascal-format
 msgid "%s supports a max time of %d days"
-msgstr ""
+msgstr "%s stöder max %d dagar"
 
 #: trndi.strings.rs_date_picker_desc_unlimited
 #, object-pascal-format
 msgid "%s time limit depends on server configuration"
-msgstr ""
+msgstr "%s tidsgräns beror på serverkonfigurationen"
 
 #: trndi.strings.rs_date_picker_no_readings
 msgid "No readings returned for the selected date range."
-msgstr ""
+msgstr "Inga avläsningar returnerades för valt datumspann."
 
 #: trndi.strings.rs_date_picker_no_readings_err
 #, object-pascal-format
 msgid "No readings returned: %s"
-msgstr ""
+msgstr "Inga avläsningar returnerades: %s"
 
 #: trndi.strings.rs_date_picker_title
 msgid "Choose a date to show readings from"
-msgstr ""
+msgstr "Välj ett datum att visa avläsningar från"
 
 #: trndi.strings.rs_days_ago
 #, object-pascal-format
@@ -2368,7 +2388,7 @@ msgstr "Tidpunkt"
 
 #: uhistorygraph.rs_history_graph_csv_title
 msgid "Save readings as CSV"
-msgstr ""
+msgstr "Spara avläsningar som CSV"
 
 #: uhistorygraph.rs_history_graph_empty
 msgid "No history data to plot"
@@ -2411,11 +2431,11 @@ msgstr "Okänd"
 
 #: uhistorygraph.rs_history_graph_menu_save
 msgid "Save as Image..."
-msgstr ""
+msgstr "Spara som bild..."
 
 #: uhistorygraph.rs_history_graph_menu_save_csv
 msgid "Save as CSV..."
-msgstr ""
+msgstr "Spara som CSV..."
 
 #: uhistorygraph.rs_history_graph_point_count
 #, object-pascal-format
@@ -2430,15 +2450,15 @@ msgstr "%s - %s"
 #: uhistorygraph.rs_history_graph_save_error
 #, object-pascal-format
 msgid "Failed to save graph: %s"
-msgstr ""
+msgstr "Misslyckades att spara grafen: %s"
 
 #: uhistorygraph.rs_history_graph_save_success
 msgid "Graph saved successfully"
-msgstr ""
+msgstr "Grafen sparades"
 
 #: uhistorygraph.rs_history_graph_save_title
 msgid "Save graph as PNG"
-msgstr ""
+msgstr "Spara graf som PNG"
 
 #: uhistorygraph.rs_history_graph_title
 msgid "History graph"
@@ -2448,4 +2468,3 @@ msgstr "Historikgraf"
 #, object-pascal-format
 msgid "Readings (%s)"
 msgstr "Avläsningar (%s)"
-

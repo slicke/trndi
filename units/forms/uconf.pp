@@ -1328,15 +1328,17 @@ begin
     s := RS_CHOOSE_SYSTEM
   else
   begin
-    s := sys.ParamLabel(APLDesc);
+    s := sys.ParamLabel(APLDescHTML);
     c := sys.ParamLabel(APLCopyright);
   end;
 
   for i := 0 to Length(RS_DRIVER_CONTRIBUTOR + c) do
     x += '-';
 
-  if s <> '' then
-    ShowMessage(s + sLineBreak + sLineBreak + x + sLineBreak + RS_DRIVER_CONTRIBUTOR + c);
+  if s <> '' then begin
+    s := s + sHTMLLineBreak + sHTMLLineBreak + x + sHTMLLineBreak + RS_DRIVER_CONTRIBUTOR + c;
+    ExtMsg(uxdAuto, 'API', s, [mbClose],uxmtInformation,20);
+  end;
 
 end;
 
