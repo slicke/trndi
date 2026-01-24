@@ -1167,7 +1167,7 @@ msgid "<div style=\"font-family: Arial, sans-serif; line-height: 1.6;\"><div sty
 msgstr ""
 
 #: trndi.api.nightscout3.sparampassword
-msgid "Auth token suffix"
+msgid "Auth token"
 msgstr ""
 
 #: trndi.api.nightscout3.sparamusername
