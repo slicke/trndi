@@ -233,7 +233,14 @@ sParamDesc =
   LineEnding + LineEnding +
   'If you are unsure, try “Outside USA” first if you live outside the US.' +
   LineEnding + 'Your username and password are your Dexcom Account (not Share) credentials.';
-
+sParamDescHTML =
+  '<b>Dexcom</b> region selection:<br><br>'+
+  'Choose the server based on your <u>account region</u>:<br>' +
+  '• Dexcom (USA): for accounts <i>(served by share2.dexcom.com)</i><br>' +
+  '• Dexcom (Outside USA): for accounts <i>(served by shareous1.dexcom.com)</i>' +
+  '<br><br>' +
+  'If you are unsure, try <b>Outside USA</b> first, if you live outside the US.' +
+  LineEnding + 'Your username and password are your Dexcom Account (not Share) credentials.';
 
 {------------------------------------------------------------------------------
   getSystemName
@@ -660,6 +667,8 @@ begin
     Result := sParamPassword;
   APLDesc:
     Result := sParamDesc;
+  APLDescHTML:
+    Result := sParamDescHTML;
   APLCopyright:
     Result := 'Björn Lindh <github.com/slicke>';
   else

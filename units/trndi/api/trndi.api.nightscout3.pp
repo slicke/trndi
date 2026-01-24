@@ -112,7 +112,7 @@ implementation
 
 resourcestring
 sParamUsername = 'NightScout URL';
-sParamPassword = 'Auth token suffix';
+sParamPassword = 'Auth token';
 sParamDesc = '** ALPHA DRIVER - Please use "NightScout" for daily use! **' + #13#10 +
   'NightScout v3 setup (use FULL access token):' + #13#10#13#10 +
   '1) Open your NightScout site (e.g., https://your-site).' + #13#10 +
@@ -123,6 +123,34 @@ sParamDesc = '** ALPHA DRIVER - Please use "NightScout" for daily use! **' + #13
   '   - Auth: paste the FULL access token.' + #13#10 + #13#10 +
   'Note: If you instead use the legacy API Secret, paste your API Secret value as-is.' + #10#13 +
   'Note 2: Your access token should look like: trndi-abc123 (or whatever name you chose)';
+sParamDescHTML =
+  '<div style="font-family: Arial, sans-serif; line-height: 1.6;">' +
+  '<div style="background: #dc3545; color: white; padding: 15px; border-radius: 6px; margin-bottom: 20px; font-weight: bold; text-align: center; border: 2px solid #c82333;">' +
+  '⚠️ ALPHA DRIVER - Please use "NightScout" for daily use! ⚠️' +
+  '</div>' +
+  '<h2 style="margin-bottom: 10px;">🌙 NightScout v3 Setup</h2>' +
+  '<p style="color: #7f8c8d; font-style: italic; margin-bottom: 15px;">(use FULL access token)</p>' +
+  '<ol style="padding-left: 20px;">' +
+  '<li style="margin-bottom: 10px;">Open your NightScout site (e.g., <code style="background: #6495ED; padding: 2px 6px; border-radius: 3px;">https://your-site</code>).</li>' +
+  '<li style="margin-bottom: 10px;">Go to <strong>Admin → Tokens</strong> — or <strong>API Secret</strong>.</li>' +
+  '<li style="margin-bottom: 10px;">If you use Tokens:' +
+  '<ul style="margin-top: 5px; padding-left: 20px;">' +
+  '<li>Create a token with at least <strong>READ</strong> scope.</li>' +
+  '<li>Copy the <strong>FULL</strong> access token value exactly as shown.</li>' +
+  '</ul>' +
+  '</li>' +
+  '<li style="margin-bottom: 10px;">In Trndi:' +
+  '<ul style="margin-top: 5px; padding-left: 20px;">' +
+  '<li><strong>Address:</strong> enter your NightScout URL</li>' +
+  '<li><strong>Auth:</strong> paste the FULL access token.</li>' +
+  '</ul>' +
+  '</li>' +
+  '</ol>' +
+  '<div style="border-left: 4px solid #ffc107; padding: 12px; margin-top: 15px; border-radius: 4px;">' +
+  '<p style="margin: 0 0 8px 0;"><strong>📝 Note:</strong> If you instead use the legacy API Secret, paste your API Secret value as-is.</p>' +
+  '<p style="margin: 0;"><strong>📝 Note 2:</strong> Your access token should look like: <code style="background: #6F8FAF; padding: 2px 6px; border-radius: 3px;">trndi-abc123</code> (or whatever name you chose).</p>' +
+  '</div>' +
+  '</div>';
 
 {------------------------------------------------------------------------------
   getMaxAge
@@ -638,6 +666,8 @@ begin
     Result := sParamPassword;
   APLDesc:
     Result := sParamDesc;
+  APLDescHTML:
+    Result := sParamDescHTML;
   APLCopyright:
     Result := 'Björn Lindh <github.com/slicke>';
   else

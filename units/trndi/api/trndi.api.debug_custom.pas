@@ -135,7 +135,9 @@ begin
    APLPass:
     Result := 'Enter "mmol" exactly to provide a mmol/L reading above (no quotes; use . as separator)';
    APLDesc:
-    Result := result + sLineBreak + sLineBreak + 'You can enter any reading (in mg/DL) as username, to have Trndi use that as reading';
+    Result := result + sLineBreak + sLineBreak + 'You can enter any reading (in mg/dL) as username, to have Trndi use that as reading';
+   APLDescHTML:
+    Result := result + '<br><br>You can enter <b>any</b> reading <i>(in mg/dL)</i> as <u>username</u>, to have Trndi use that as reading';
    APLCopyright:
     Result := 'Björn Lindh <github.com/slicke>';
   end;
