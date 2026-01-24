@@ -456,6 +456,8 @@ begin
   Result := Trim(EnvValue('WINDOW_MANAGER'));
   if Result = '' then
     Result := Trim(DesktopHint);
+  if (Result = '') and (TTrndiNativeBase.DetectWSL.IsWSL) then
+    REsult := 'Windows Subsystem For Linux';
 end;
 
 // True if S contains the substring "dark" (case-insensitive)
