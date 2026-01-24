@@ -465,6 +465,11 @@ private
   procedure FinalizeUpdate;
   procedure UpdateFloatingWindow;
   procedure UpdateUIColors;
+  {** Apply configuration changes that can take effect immediately without restart.
+      This includes fonts, colors, display options, predictions, and UI preferences.
+      Called after saving settings to provide instant feedback to the user.
+   }
+  procedure ApplySettingsInstantly;
   {** Compute an appropriate foreground (text) color for the provided background.
       Uses lightness heuristics to choose whether to darken or lighten the
       base color and returns a safe contrasting foreground color.
@@ -2596,6 +2601,99 @@ begin
   setColorMode;
 end;
 
+{------------------------------------------------------------------------------
+  Apply configuration changes that can take effect immediately without restart.
+  This includes fonts, colors, display options, predictions, and UI preferences.
+  Called after saving settings to provide instant feedback to the user.
+------------------------------------------------------------------------------}
+procedure TfBG.ApplySettingsInstantly;
+var
+  fontName: string;
+  minutesStr: string;
+  minutesVal: integer;
+  i: integer;
+  dotChar: widechar;
+begin
+  // Reload native settings to ensure we have latest values
+  native.ReloadSettings;
+  
+  // Apply font changes
+  fontName := native.GetSetting('font.val', 'default');
+  if fontName <> 'default' then
+    lVal.Font.Name := fontName;
+    
+  fontName := native.GetSetting('font.arrow', 'default');
+  if fontName <> 'default' then
+    lArrow.Font.Name := fontName;
+    
+  fontName := native.GetSetting('font.ago', 'default');
+  if fontName <> 'default' then
+  begin
+    lAgo.Font.Name := fontName;
+    lTir.Font.Name := fontName;
+  end;
+  
+  // Apply dot character changes
+  dotChar := native.GetWideCharSetting('font.dot', widechar($2B24));
+  for i := 1 to 10 do
+    if TrendDots[i] <> nil then
+      TrendDots[i].Caption := dotChar;
+  
+  // Reload color settings from config
+  bg_color_ok := native.GetColorSetting('ux.bg_color_ok', bg_color_ok);
+  bg_color_hi := native.GetColorSetting('ux.bg_color_hi', bg_color_hi);
+  bg_color_lo := native.GetColorSetting('ux.bg_color_lo', bg_color_lo);
+  bg_color_ok_txt := native.GetColorSetting('ux.bg_color_ok_txt', bg_color_ok_txt);
+  bg_color_hi_txt := native.GetColorSetting('ux.bg_color_hi_txt', bg_color_hi_txt);
+  bg_color_lo_txt := native.GetColorSetting('ux.bg_color_lo_txt', bg_color_lo_txt);
+  bg_rel_color_hi := native.GetColorSetting('ux.bg_rel_color_hi', bg_rel_color_hi);
+  bg_rel_color_lo := native.GetColorSetting('ux.bg_rel_color_lo', bg_rel_color_lo);
+  bg_rel_color_hi_txt := native.GetColorSetting('ux.bg_rel_color_hi_txt', bg_rel_color_hi_txt);
+  bg_rel_color_lo_txt := native.GetColorSetting('ux.bg_rel_color_lo_txt', bg_rel_color_lo_txt);
+  
+  // Apply TIR color settings
+  tir_bg := native.GetColorSetting('ux.tir_color', tir_bg);
+  tir_custom_bg := native.GetColorSetting('ux.tir_color_custom', tir_custom_bg);
+  titlecolor := native.GetBoolSetting('ux.title_color', true);
+  
+  // Reload prediction settings
+  PredictGlucoseReading := native.GetBoolSetting('predictions.enable', false);
+  PredictShortMode := native.GetBoolSetting('predictions.short', false);
+  PredictShortFullArrows := native.GetBoolSetting('predictions.short.fullarrows', false);
+  PredictShortShowValue := native.GetBoolSetting('predictions.short.showvalue', false);
+  minutesStr := '';
+  if not native.TryGetSetting('predictions.short.minutes', minutesStr) then
+    minutesStr := '';
+  minutesVal := StrToIntDef(minutesStr, 10);
+  if minutesVal in [5, 10, 15] then
+    PredictShortMinutes := minutesVal
+  else
+    PredictShortMinutes := 10;
+  PredictShortSize := native.GetIntSetting('predictions.short.size', 1);
+  if PredictShortSize < 1 then
+    PredictShortSize := 1
+  else if PredictShortSize > 3 then
+    PredictShortSize := 3;
+  lPredict.Visible := PredictGlucoseReading;
+  
+  // Apply display preferences
+  DATA_FRESHNESS_THRESHOLD_MINUTES := 
+    native.GetIntSetting('system.fresh_threshold', DATA_FRESHNESS_THRESHOLD_MINUTES);
+  tir_icon := native.GetBoolSetting('range.tir_icon', false);
+  
+  // Recalculate layout and scale to account for potential changes
+  Self.OnResize(nil);
+  
+  // Force UI update with current reading to apply new colors/fonts
+  UpdateUIColors;
+  UpdateUIBasedOnGlucose;
+  if Assigned(fFloat) then
+    UpdateFloatingWindow;
+    
+  // Invalidate to trigger repaint
+  Self.Invalidate;
+end;
+
 // Handle settings menu click
 procedure TfBG.miSettingsClick(Sender: TObject);
 var
@@ -3113,7 +3211,14 @@ var
   extensionsPath: string;
   i: integer;
   distro: string;
+  needsRestart: boolean;
+  origAPI, origTarget, origCreds: string;
 begin
+  // Store original backend settings to detect if restart is needed
+  origAPI := native.GetSetting('remote.type');
+  origTarget := native.GetSetting('remote.target');
+  origCreds := native.GetSetting('remote.creds');
+  
   fConf := TfConf.Create(Self);
   try
     with native do
@@ -3198,32 +3303,22 @@ begin
     // Reload settings, needed on X_PC
     native.ReloadSettings;
 
-    // Reload prediction settings
-    PredictGlucoseReading := native.GetBoolSetting('predictions.enable', false);
-    PredictShortMode := native.GetBoolSetting('predictions.short', false);
-    PredictShortFullArrows := native.GetBoolSetting('predictions.short.fullarrows', false);
-    PredictShortShowValue := native.GetBoolSetting('predictions.short.showvalue', false);
-    minutesStr := '';
-    if not native.TryGetSetting('predictions.short.minutes', minutesStr) then
-      minutesStr := '';
-    minutesVal := StrToIntDef(minutesStr, 10);
-    if minutesVal in [5, 10, 15] then
-      PredictShortMinutes := minutesVal
-    else
-      PredictShortMinutes := 10;
-    PredictShortSize := native.GetIntSetting('predictions.short.size', 1);
-    if PredictShortSize < 1 then
-      PredictShortSize := 1
-    else
-    if PredictShortSize > 3 then
-      PredictShortSize := 3;
-    lPredict.Visible := PredictGlucoseReading;
-    // Recalculate layout and scale to account for potential short-size change
-    Self.OnResize(nil);
-
     // Save settings when dialog closes
     SaveUserSettings(fConf);
-    ShowMessage(RS_RESTART_APPLY);
+    
+    // Apply settings that can take effect immediately without restart
+    ApplySettingsInstantly;
+    
+    // Check if backend/API settings changed - those require restart
+    needsRestart := (origAPI <> native.GetSetting('remote.type')) or
+                    (origTarget <> native.GetSetting('remote.target')) or
+                    (origCreds <> native.GetSetting('remote.creds'));
+    
+    // Show appropriate message
+    if needsRestart then
+      ShowMessage(RS_RESTART_APPLY)
+    else
+      ShowMessage(RS_SETTINGS_SAVED);
 
     if firstboot then
       exit;
