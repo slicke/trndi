@@ -614,8 +614,11 @@ end;
 class function TTrndiNativeBase.DetectTouchScreen(out multi: boolean): boolean;
 var
   SL, Block: TStringList;
-  i: integer;
+  i, j: integer;
   inBlock: boolean;
+  Line, Handler, DevPath: string;
+  HasAccessibleDevice: boolean;
+  F: Integer;
 begin
   Result := false;
   multi := false;
@@ -637,12 +640,47 @@ begin
             // Look for touch capability markers in this block
             if (Block.Text.ToLower.Contains('touch')) then
             begin
-              Result := true;
-              // Look for multi-touch markers in this block
-              if (Block.Text.Contains('ABS_MT_POSITION')) or
-                (Block.Text.Contains('ABS_MT_SLOT')) or
-                (Block.Text.Contains('ABS_MT_TRACKING_ID')) then
-                multi := true;
+              // Verify device handlers are actually accessible
+              HasAccessibleDevice := false;
+              for j := 0 to Block.Count - 1 do
+              begin
+                Line := Block[j];
+                if (Pos('H: Handlers=', Line) = 1) or (Pos('H: ', Line) = 1) then
+                begin
+                  // Extract event handlers (e.g., "event0", "event3")
+                  if Pos('event', LowerCase(Line)) > 0 then
+                  begin
+                    // Try to actually open /dev/input/eventX device for reading
+                    for Handler in Line.Split([' ', '=']) do
+                      if (Pos('event', LowerCase(Handler)) > 0) then
+                      begin
+                        DevPath := '/dev/input/' + Handler;
+                        if FileExists(DevPath) then
+                        begin
+                          F := FileOpen(DevPath, fmOpenRead);
+                          if F <> -1 then
+                          begin
+                            FileClose(F);
+                            HasAccessibleDevice := true;
+                            Break;
+                          end;
+                        end;
+                      end;
+                  end;
+                  if HasAccessibleDevice then
+                    Break;
+                end;
+              end;
+              
+              if HasAccessibleDevice then
+              begin
+                Result := true;
+                // Look for multi-touch markers in this block
+                if (Block.Text.Contains('ABS_MT_POSITION')) or
+                  (Block.Text.Contains('ABS_MT_SLOT')) or
+                  (Block.Text.Contains('ABS_MT_TRACKING_ID')) then
+                  multi := true;
+              end;
             end;
             Block.Clear;
           end;
@@ -653,11 +691,46 @@ begin
       if Block.Count > 0 then
         if (Block.Text.ToLower.Contains('touch')) then
         begin
-          Result := true;
-          if (Block.Text.Contains('ABS_MT_POSITION')) or
-            (Block.Text.Contains('ABS_MT_SLOT')) or
-            (Block.Text.Contains('ABS_MT_TRACKING_ID')) then
-            multi := true;
+          // Verify device handlers are actually accessible
+          HasAccessibleDevice := false;
+          for j := 0 to Block.Count - 1 do
+          begin
+            Line := Block[j];
+            if (Pos('H: Handlers=', Line) = 1) or (Pos('H: ', Line) = 1) then
+            begin
+              // Extract event handlers (e.g., "event0", "event3")
+              if Pos('event', LowerCase(Line)) > 0 then
+              begin
+                // Try to actually open /dev/input/eventX device for reading
+                for Handler in Line.Split([' ', '=']) do
+                  if (Pos('event', LowerCase(Handler)) > 0) then
+                  begin
+                    DevPath := '/dev/input/' + Handler;
+                    if FileExists(DevPath) then
+                    begin
+                      F := FileOpen(DevPath, fmOpenRead);
+                      if F <> -1 then
+                      begin
+                        FileClose(F);
+                        HasAccessibleDevice := true;
+                        Break;
+                      end;
+                    end;
+                  end;
+              end;
+              if HasAccessibleDevice then
+                Break;
+            end;
+          end;
+          
+          if HasAccessibleDevice then
+          begin
+            Result := true;
+            if (Block.Text.Contains('ABS_MT_POSITION')) or
+              (Block.Text.Contains('ABS_MT_SLOT')) or
+              (Block.Text.Contains('ABS_MT_TRACKING_ID')) then
+              multi := true;
+          end;
         end;
     end;
   finally
