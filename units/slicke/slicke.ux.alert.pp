@@ -2250,6 +2250,8 @@ begin
     {$ifdef LCLGTK3}Dialog.BorderStyle := bsSizeable;{$endif}
     Dialog.Position := poWorkAreaCenter;
     Dialog.Color := bgcol;
+    Dialog.KeyPreview := true;
+    Dialog.OnKeyDown := @Dialog.FormKeyDown;
 
     ProposedWidth := ifthen((size = uxdBig) , 650, 500);
     if ProposedWidth > 900 then
@@ -2410,6 +2412,8 @@ begin
     Dialog.Position := poWorkAreaCenter;
     Dialog.Color := bgcol;
     Dialog.AutoSize := true;
+    Dialog.KeyPreview := true;
+    Dialog.OnKeyDown := @Dialog.FormKeyDown;
     MaxDialogHeight := Round(Screen.Height * 0.8);
 
     // Main panel
