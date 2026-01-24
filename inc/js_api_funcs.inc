@@ -619,3 +619,24 @@ begin
     Result := TTrndiExtEngine.Instance.CreateJSArray([]);
   end;
 end;
+
+// Get current basal rate from the backend
+function JSGetBasalRate(ctx: JSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw; cdecl;
+var
+  res: JSValue;
+  basalRate: single;
+begin
+  // Get basal rate from API (returns 0 if unavailable or not supported)
+  basalRate := api.getBasalRate;
+  
+  // Return false if basal rate is 0 (unavailable)
+  if basalRate = 0 then
+  begin
+    result := JS_FALSE;
+    Exit;
+  end;
+  
+  // Return the basal rate value
+  res.FromFloat(basalRate);
+  result := res.raw;
+end;

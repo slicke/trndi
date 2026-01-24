@@ -128,6 +128,12 @@ public
   class function testConnection(user, pass, extra: string): byte; override;
 
   function getMaxAge: integer; override;
+
+    {** Retrieve the current basal rate from the Nightscout server.
+        Fetches basal rate data from the server's profile/basal endpoints.
+        @returns(Current basal rate in U/hr, or 0 if unavailable)
+     }
+  function getBasalRate: single; override;
 private
     // (no private members)
 
@@ -577,6 +583,96 @@ end;
 function NightScout.getLimitLow: integer;
 begin
   result := 40;
+end;
+
+{------------------------------------------------------------------------------
+  getBasalRate
+  ------------
+  Retrieve the current basal rate from the Nightscout server.
+  This fetches basal rate data from the server's profile endpoints.
+ ------------------------------------------------------------------------------}
+function NightScout.getBasalRate: single;
+var
+  ResponseStr: string;
+  JSONParser: TJSONParser;
+  JSONData: TJSONData;
+  RootObject: TJSONObject;
+  StoreArray: TJSONArray;
+  DefaultProfile: TJSONObject;
+  BasalArray: TJSONArray;
+  BasalEntry: TJSONObject;
+  CurrentTime: TDateTime;
+  CurrentMinutes: integer;
+  i: integer;
+begin
+  result := 0;
+  
+  // Fetch basal rate from Nightscout API
+  try
+    ResponseStr := Native.Request(false, 'profile.json', [], '', Key);
+    
+    if Trim(ResponseStr) = '' then
+    begin
+      lastErr := 'No basal rate data received from server';
+      Exit;
+    end;
+
+    // Parse JSON response
+    JSONParser := TJSONParser.Create(ResponseStr, [joUTF8, joIgnoreTrailingComma]);
+    try
+      JSONData := JSONParser.Parse;
+      
+      if not (JSONData is TJSONObject) then
+      begin
+        JSONData.Free;
+        Exit;
+      end;
+      
+      RootObject := TJSONObject(JSONData);
+      
+      // Navigate to store array -> default profile -> basal array
+      StoreArray := RootObject.FindPath('store') as TJSONArray;
+      if Assigned(StoreArray) and (StoreArray.Count > 0) then
+      begin
+        DefaultProfile := StoreArray.Objects[0].FindPath('defaultProfile') as TJSONObject;
+        if not Assigned(DefaultProfile) then
+          DefaultProfile := StoreArray.Objects[0].FindPath('Default') as TJSONObject;
+          
+        if Assigned(DefaultProfile) then
+        begin
+          BasalArray := DefaultProfile.FindPath('basal') as TJSONArray;
+          if Assigned(BasalArray) and (BasalArray.Count > 0) then
+          begin
+            // Get current time in minutes since midnight
+            CurrentTime := Now;
+            CurrentMinutes := HourOf(CurrentTime) * 60 + MinuteOf(CurrentTime);
+            
+            // Find the applicable basal rate for current time
+            for i := BasalArray.Count - 1 downto 0 do
+            begin
+              BasalEntry := BasalArray.Objects[i];
+              if Assigned(BasalEntry) then
+              begin
+                // Basal entries have 'time' and 'value' fields
+                result := BasalEntry.Get('value', single(0));
+                break;
+              end;
+            end;
+          end;
+        end;
+      end;
+      
+      JSONData.Free;
+    finally
+      JSONParser.Free;
+    end;
+  except
+    on E: Exception do
+    begin
+      lastErr := 'Error fetching basal rate: ' + E.Message;
+      result := 0;
+    end;
+  end;
 end;
 
 end.

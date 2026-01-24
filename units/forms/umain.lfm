@@ -502,6 +502,10 @@ object fBG: TfBG
         Caption = 'Prediction...'
         OnClick = miPredictClick
       end
+      object miBasalRate: TMenuItem
+        Caption = 'Current Basal'
+        OnClick = miBasalRateClick
+      end
       object miDNS: TMenuItem
         Caption = 'Run DNS Lookup Test'
         OnClick = miDNSClick

@@ -206,6 +206,10 @@ msgstr ""
 msgid "Force Yes"
 msgstr ""
 
+#: tfbg.mibasalrate.caption
+msgid "Current Basal"
+msgstr ""
+
 #: tfbg.miborders.caption
 msgid "No borders"
 msgstr ""

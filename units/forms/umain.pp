@@ -139,6 +139,7 @@ TfBG = class(TForm)
   bMenuPanelClose: TButton;
   bTouchFull: TButton;
   lPredict: TLabel;
+  miBasalRate: TMenuItem;
   miReadingsSince: TMenuItem;
   miExtLog: TMenuItem;
   miSep1: TMenuItem;
@@ -259,6 +260,7 @@ TfBG = class(TForm)
   procedure DotPaint(Sender: TObject);
   procedure lDiffClick(Sender: TObject);
   procedure lPredictClick(Sender: TObject);
+  procedure miBasalRateClick(Sender: TObject);
   procedure miDNSClick(Sender: TObject);
   procedure miDotNormalDrawItem(Sender: TObject; ACanvas: TCanvas;
     ARect: TRect; AState: TOwnerDrawState);
@@ -981,6 +983,19 @@ end;
 procedure TfBG.lPredictClick(Sender: TObject);
 begin
   SHowMessage(RS_PREDICT);
+end;
+
+procedure TfBG.miBasalRateClick(Sender: TObject);
+var
+  res: single;
+  err: string;
+begin
+  res := api.getBasalRate;
+  err := api.errormsg;
+  if res = 0 then
+    ShowMessage('No data, error(?):' + IfThen(err <> '', err, '<none>'))
+  else
+    ShowMessage(res.toString);
 end;
 
 procedure TfBG.miDNSClick(Sender: TObject);

@@ -284,6 +284,13 @@ const
        }
   function getMaxAge: integer; virtual;
 
+    {** Retrieve the current basal rate from the backend.
+        Base implementation returns 0. Subclasses may override to fetch
+        basal rate information from the data source.
+        @returns(Current basal rate in U/hr, or 0 if unavailable)
+     }
+  function getBasalRate: single; virtual;
+
     // -------- Properties --------
 
   {** Backend's maximum reading. }
@@ -732,6 +739,15 @@ begin
   result := 3; // Not supported
 end;
 
+{------------------------------------------------------------------------------
+  Retrieve the current basal rate from the backend.
+  Base implementation returns 0.
+------------------------------------------------------------------------------}
+function TrndiAPI.getBasalRate: single;
+begin
+  result := 0; // Base implementation returns 0
+  // Subclasses may override to fetch basal rate from their data source
+end;
 
 function TrndiAPI.getAPIUrl: string;
 begin
