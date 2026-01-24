@@ -1,0 +1,241 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Trndi\n"
+"POT-Creation-Date: 2026-01-24 00:00+0000\n"
+"PO-Revision-Date: 2026-01-24 00:00+0000\n"
+"Last-Translator: Machine translation (please review)\n"
+"Language-Team: German\n"
+"Language: de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Machine translation by GitHub Copilot\n"
+
+#: slicke.ux.alert.dlgerr
+msgid "An error occurred while creating a message dialog"
+msgstr "Beim Erstellen eines Meldungsdialogs ist ein Fehler aufgetreten"
+
+#: slicke.ux.alert.serr
+msgid "Script execution failed"
+msgstr "Skriptausführung fehlgeschlagen"
+
+#: slicke.ux.alert.sexterr
+msgid "Error occurred in extension"
+msgstr "Fehler in Erweiterung aufgetreten"
+
+#: slicke.ux.alert.sexttitle
+msgid "Extension error"
+msgstr "Erweiterungsfehler"
+
+#: slicke.ux.alert.skey
+msgid "Key"
+msgstr "Schlüssel"
+
+#: slicke.ux.alert.smbselect
+msgid "Select"
+msgstr "Auswählen"
+
+#: slicke.ux.alert.smbuxabort
+msgid "Abort"
+msgstr "Abbrechen"
+
+#: slicke.ux.alert.smbuxagree
+msgid "Agree"
+msgstr "Zustimmen"
+
+#: slicke.ux.alert.smbuxall
+msgid "All"
+msgstr "Alle"
+
+#: slicke.ux.alert.smbuxcancel
+msgid "Cancel"
+msgstr "Abbrechen"
+
+#: slicke.ux.alert.smbuxclose
+msgctxt "slicke.ux.alert.smbuxclose"
+msgid "Close"
+msgstr "Schließen"
+
+#: slicke.ux.alert.smbuxdefault
+msgctxt "slicke.ux.alert.smbuxdefault"
+msgid "Default"
+msgstr "Standard"
+
+#: slicke.ux.alert.smbuxhelp
+msgctxt "slicke.ux.alert.smbuxhelp"
+msgid "Help"
+msgstr "Hilfe"
+
+#: slicke.ux.alert.smbuxignore
+msgid "Ignore"
+msgstr "Ignorieren"
+
+#: slicke.ux.alert.smbuxminimize
+msgid "Minimize"
+msgstr "Minimieren"
+
+#: slicke.ux.alert.smbuxno
+msgid "No"
+msgstr "Nein"
+
+#: slicke.ux.alert.smbuxnotoall
+msgid "No To All"
+msgstr "Alle Ablehnen"
+
+#: slicke.ux.alert.smbuxok
+msgctxt "slicke.ux.alert.smbuxok"
+msgid "OK"
+msgstr "OK"
+
+#: slicke.ux.alert.smbuxopenfile
+msgid "Open File"
+msgstr "Datei öffnen"
+
+#: slicke.ux.alert.smbuxread
+msgid "Read..."
+msgstr "Lesen..."
+
+#: slicke.ux.alert.smbuxretry
+msgid "Retry"
+msgstr "Erneut versuchen"
+
+#: slicke.ux.alert.smbuxsnooze
+msgid "Snooze"
+msgstr "Schlummern"
+
+#: slicke.ux.alert.smbuxyestoall
+msgid "Yes To All"
+msgstr "Allen zustimmen"
+
+#: slicke.ux.alert.smbyes
+msgid "Yes"
+msgstr "Ja"
+
+#: slicke.ux.alert.smsgtitle
+msgid "Message"
+msgstr "Nachricht"
+
+#: slicke.ux.alert.ssucctitle
+msgid "Information"
+msgstr "Information"
+
+#: slicke.ux.alert.surl
+msgid "Leave the app and open your browser? The link may not be secure!"
+msgstr "App verlassen und den Browser öffnen? Der Link ist möglicherweise nicht sicher!"
+
+#: slicke.ux.alert.surltitle
+msgid "Open external link?"
+msgstr "Externen Link öffnen?"
+
+#: slicke.ux.alert.svalue
+msgid "Value"
+msgstr "Wert"
+
+#: tfbg.bmenupanelclose.caption
+msgctxt "tfbg.bmenupanelclose.caption"
+msgid "✖ Close"
+msgstr "✖ Schließen"
+
+#: tfbg.bsettings.caption
+msgctxt "tfbg.bsettings.caption"
+msgid "Settings"
+msgstr "Einstellungen"
+
+#: tfbg.btouchfull.caption
+msgid "⇱ Full screen"
+msgstr "⇱ Vollbild"
+
+#: tfbg.btouchmenu.caption
+msgid "☰ Menu"
+msgstr "☰ Menü"
+
+#: tfbg.btouchsettings.caption
+msgctxt "tfbg.btouchsettings.caption"
+msgid "⚙ Settings"
+msgstr "⚙ Einstellungen"
+
+#: tfbg.lmissing.caption
+msgid "No recent readings!"
+msgstr "Keine aktuellen Messwerte!"
+
+#: tfbg.lpredict.caption
+msgctxt "tfbg.lpredict.caption"
+msgid "Predictions"
+msgstr "Vorhersagen"
+
+#: tfbg.ltir.caption
+msgid "Time In Range"
+msgstr "Zeit im Bereich"
+
+#: tfbg.lval.caption
+msgctxt "tfbg.lval.caption"
+msgid "Setup"
+msgstr "Einrichtung"
+
+#: tfbg.mi24h.caption
+msgid "Show last-day readings"
+msgstr "Letzte Tageswerte anzeigen"
+
+#: tfbg.miadotadjust.caption
+msgid "Adjust Dot Positions"
+msgstr "Punktpositionen anpassen"
+
+#: tfbg.miadots.caption
+msgid "Dot stats"
+msgstr "Punktstatistiken"
+
+#: tfbg.miadvanced.caption
+msgid "> Service Menu"
+msgstr "> Service-Menü"
+
+#: tfbg.mialternate.caption
+msgid "Alterante arrow and reading"
+msgstr "Pfeil und Messwert wechseln"
+
+#: tfbg.miannounce.caption
+msgid "Announce readings"
+msgstr "Messwerte ansagen"
+
+#: tfbg.miasysteminfo.caption
+msgid "System Info"
+msgstr "Systeminfo"
+
+#: tfbg.miatouch.caption
+msgid "Force Touchscreen"
+msgstr "Touchscreen erzwingen"
+
+#: tfbg.miatouchauto.caption
+msgctxt "tfbg.miatouchauto.caption"
+msgid "Auto"
+msgstr "Automatisch"
+
+#: tfbg.miatouchno.caption
+msgid "Force No"
+msgstr "Nein erzwingen"
+
+#: tfbg.miatouchyes.caption
+msgid "Force Yes"
+msgstr "Ja erzwingen"
+
+#: tfbg.mibasalrate.caption
+msgid "Current Basal"
+msgstr "Aktueller Basalwert"
+
+#: tfbg.miborders.caption
+msgid "No borders"
+msgstr "Keine Ränder"
+
+#: tfbg.miclock.caption
+msgid "Show clock every 20 sec"
+msgstr "Uhr alle 20 Sek. anzeigen"
+
+#: tfbg.micustomdots.caption
+msgctxt "tfbg.micustomdots.caption"
+msgid "Custom Size"
+msgstr "Benutzerdefinierte Größe"
+
+#: tfbg.midebugbackend.caption
+msgid "Announce raw backend data"
+msgstr "Rohdaten des Backends ausgeben"
+
+# NOTE: This file was machine-translated from English/Swedish. Please review translations for accuracy and context.

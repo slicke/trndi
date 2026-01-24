@@ -220,7 +220,7 @@ msgstr "Tvinga Ja"
 
 #: tfbg.mibasalrate.caption
 msgid "Current Basal"
-msgstr ""
+msgstr "Nuvarande basal"
 
 #: tfbg.miborders.caption
 msgid "No borders"
@@ -356,7 +356,7 @@ msgstr "+ Ny"
 
 #: tfconf.bextopen.caption
 msgid "Show Folder"
-msgstr ""
+msgstr "Visa mapp"
 
 #: tfconf.bremove.caption
 msgid "- Remove"
@@ -1755,7 +1755,7 @@ msgstr "Spara inställningarna?"
 
 #: trndi.strings.rs_settings_saved
 msgid "Settings saved and applied. Some settings may require a restart"
-msgstr ""
+msgstr "Inställningarna sparades och applicerades. Vissa inställningar kan kräva en omstart"
 
 #: trndi.strings.rs_settings_save_desc
 msgid "Would you like to save any changes made?"
@@ -2488,4 +2488,3 @@ msgstr "Historikgraf"
 #, object-pascal-format
 msgid "Readings (%s)"
 msgstr "Avläsningar (%s)"
-
