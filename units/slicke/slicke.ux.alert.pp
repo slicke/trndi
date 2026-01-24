@@ -2860,10 +2860,10 @@ end;
 }
 procedure TDialogForm.FormKeyDown(Sender: TObject; var Key: word; Shift: TShiftState);
 var
-  i, cancel, no, yes, ok, abort, ct: integer;
+  i, cancel, no, yes, ok, abort, ct, firstBtn: integer;
   btns: TComponent;
   target: TWinControl;
-  modalRes: TModalResult;
+  modalRes, firstBtnResult: TModalResult;
 
   function GetModalResult(comp: TComponent): TModalResult;
   begin
@@ -2900,6 +2900,8 @@ begin
   ok := -1;
   abort := -1;
   ct := 0;
+  firstBtn := -1;
+  firstBtnResult := mrNone;
 
   btns := Self.FindComponent('pnButtons');
   if btns = nil then
@@ -2913,6 +2915,12 @@ begin
     modalRes := GetModalResult(target.Components[i]);
     if modalRes = mrNone then
       Continue;
+
+    if firstBtn < 0 then
+    begin
+      firstBtn := i;
+      firstBtnResult := modalRes;
+    end;
 
     case modalRes of
       mrCancel: cancel := i;
@@ -2940,11 +2948,13 @@ begin
       end;
     VK_RETURN:
       begin
-        // ENTER priority: OK > Yes
+        // ENTER priority: OK > Yes > Close/Ignore/Retry (single-button only)
         if ok >= 0 then
           ClickButton(ok)
         else if yes >= 0 then
-          ClickButton(yes);
+          ClickButton(yes)
+        else if (ct = 1) and (firstBtnResult in [mrClose, mrIgnore, mrRetry]) then
+          ClickButton(firstBtn);
       end;
   end;
 end;
