@@ -52,7 +52,7 @@ uses
 Classes, SysUtils, Dialogs, Forms, ExtCtrls, StdCtrls, Controls, Graphics, Math,
 IntfGraphics, FPImage, graphtype, lcltype, Trndi.Native, Grids, Spin, IpHtml, Iphttpbroker, slicke.ux.native, SpinEx, LCLIntf,
 EditBtn,
-{$ifdef Windows}
+{$ifdef X_WIN}
 DX12.D2D1, DX12.DXGI, DX12.DWrite, DX12.DCommon, DX12.WinCodec, Windows, Buttons, ActiveX, ComObj,
 {$endif}
 StrUtils;
@@ -102,14 +102,14 @@ const
     Unicode codepoints rendered as emoji or symbols on supported platforms.
     Fallbacks depend on available system fonts.
   }
-uxmtOK            = widechar($2705); // ✅ Ticked box
-uxmtWarning       = widechar($26A0); // ⚠️ Warning sign
-uxmtError         = widechar($274C); // ❌ Cross mark
-uxmtInformation   = widechar($2139); // ℹ️ Info symbol
-uxmtConfirmatio   = widechar($2753); // ❓ Question mark
-uxmtCog           = widechar($2699); // ⚙️ Gear
-uxmtSquare        = widechar($274F); // ❏ Square
-uxmtCustom        = uxmtCog;
+uxmtOK             = widechar($2705); // ✅ Ticked box
+uxmtWarning        = widechar($26A0); // ⚠️ Warning sign
+uxmtError          = widechar($274C); // ❌ Cross mark
+uxmtInformation    = widechar($2139); // ℹ️ Info symbol
+uxmtConfirmation   = widechar($2753); // ❓ Question mark
+uxmtCog            = widechar($2699); // ⚙️ Gear
+uxmtSquare         = widechar($274F); // ❏ Square
+uxmtCustom         = uxmtCog;
 
   {**
     @name Dialog colors
@@ -181,7 +181,7 @@ protected
   // Override DoShow instead of using an OnShow event method name.
   procedure DoShow; override;
 public
-  {$ifdef windows}
+  {$ifdef X_WIN}
     {** Owner-draw routine for bit buttons on Windows to match dark mode styling. }
   procedure ButtonDrawItem(Sender: TObject;
     ACanvas: TCanvas; ARect: TRect; State: TButtonState);
@@ -198,30 +198,30 @@ public
   procedure ElementKeyDown(Sender: TObject; var Key: char);
 end;
 
-{$ifdef Windows}
+{$ifdef X_WIN}
   {**
     Uses TCustomControl for full custom painting and TWinControl capabilities.
   }
-  TDarkButton = class(TCustomControl)
-  private
-    FModalResult: TModalResult;
-    FDown: Boolean;
-    FHot: Boolean;
-    FCaption: string;
-    procedure SetCaption(const AValue: string);
-  protected
-    procedure Paint; override;
-    procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); override;
-    procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); override;
-    procedure MouseEnter; override;
-    procedure MouseLeave; override;
-    procedure Click; override;
-    procedure KeyDown(var Key: Word; Shift: TShiftState); override;
-  public
-    constructor Create(AOwner: TComponent); override;
-    property Caption: string read FCaption write SetCaption;
-    property ModalResult: TModalResult read FModalResult write FModalResult;
-  end;
+TDarkButton = class(TCustomControl)
+private
+  FModalResult: TModalResult;
+  FDown: boolean;
+  FHot: boolean;
+  FCaption: string;
+  procedure SetCaption(const AValue: string);
+protected
+  procedure Paint; override;
+  procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: integer); override;
+  procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: integer); override;
+  procedure MouseEnter; override;
+  procedure MouseLeave; override;
+  procedure Click; override;
+  procedure KeyDown(var Key: word; Shift: TShiftState); override;
+public
+  constructor Create(AOwner: TComponent); override;
+  property Caption: string read FCaption write SetCaption;
+  property ModalResult: TModalResult read FModalResult write FModalResult;
+end;
 {$endif}
 
   {**
@@ -601,7 +601,7 @@ langs : ButtonLangs = (smbYes, smbUXNo, smbUXOK, smbUXCancel, smbUXAbort, smbUXR
   smbUXOpenFile, smbUxMinimize, smbUxAgree, smbUxRead, smbUxDefault, smbuxSnooze);
 
 implementation
-{$ifdef Windows}
+{$ifdef X_WIN}
 function DwmSetWindowAttribute(hwnd: HWND; dwAttribute: DWORD; pvAttribute: Pointer; cbAttribute: DWORD): HRESULT; stdcall; external 'dwmapi.dll';
 {$endif}
 
@@ -613,7 +613,7 @@ function getBaseColor: TColor;
 var
   light, dark: TColor;
 begin
-  {$ifdef Windows}
+  {$ifdef X_WIN}
   light := GetSysColor(COLOR_WINDOWTEXT);
   dark := clWhite;
   {$else}
@@ -631,7 +631,7 @@ function getBackground: TColor;
 var
   light, dark: TColor;
 begin
-  {$ifdef Windows}
+  {$ifdef X_WIN}
   light := GetSysColor(COLOR_BTNFACE);
   dark := RGB(32, 32, 32);
 //    bg := IfThen(TrndiNative.isDarkMode, uxclGray, bg);
@@ -966,7 +966,7 @@ begin
   end;
 end;
 
-{$ifdef Windows}
+{$ifdef X_WIN}
 {**
   Convert a Lazarus @code(TColor) to a Direct2D color with alpha.
   @param Col Lazarus color.
@@ -1231,7 +1231,7 @@ var
   IconBox: TImage;
   TitleLabel, DescLabel: TLabel;
   Edit: TFloatSpinEditEx;
-  {$ifdef Windows}
+  {$ifdef X_WIN}
   OkButton, CancelButton: TDarkButton;
   {$else}
   OkButton, CancelButton: TButton;
@@ -1267,7 +1267,7 @@ begin
     Edit.Width := DescLabel.Width;
     Edit.Top := DescLabel.Top + DescLabel.Height + ifthen(size = uxdBig, Padding * 2, Padding);
     Edit.Value := ADefault;
-    {$ifdef Windows}
+    {$ifdef X_WIN}
     if TrndiNative.isDarkMode then
     begin
       Edit.Color := RGBToColor(53, 53, 53);
@@ -1285,7 +1285,7 @@ begin
       Edit.Font.Size := 20;
 
     // --- OK Button ---
-    {$ifdef Windows}OkButton := TDarkButton.Create(Dialog);{$else}OkButton := TButton.Create(Dialog);{$endif}
+    {$ifdef X_WIN}OkButton := TDarkButton.Create(Dialog);{$else}OkButton := TButton.Create(Dialog);{$endif}
     OkButton.Parent := Dialog;
     {$ifdef LCLGTK2}OkButton.Font.Color := clBlack;{$endif}
     OkButton.Caption := smbSelect;
@@ -1300,7 +1300,7 @@ begin
     Dialog.ActiveControl := OkButton;
 
     // --- Cancel Button ---
-    {$ifdef Windows}CancelButton := TDarkButton.Create(Dialog);{$else}CancelButton := TButton.Create(Dialog);{$endif}
+    {$ifdef X_WIN}CancelButton := TDarkButton.Create(Dialog);{$else}CancelButton := TButton.Create(Dialog);{$endif}
     CancelButton.Parent := Dialog;
     CancelButton.Caption := smbUXCancel;
     CancelButton.ModalResult := mrCancel;
@@ -1359,13 +1359,13 @@ var
 begin
   case mtype of
   mtWarning:
-    icon := widechar($26A0); // ⚠️ Warning sign
+    icon := uxmtWarning; // ⚠️ Warning sign
   mtError:
-    icon := widechar($274C); // ❌ Cross mark
+    icon := uxmtError; // ❌ Cross mark
   mtInformation:
-    icon := widechar($2139); // ℹ️ Info symbol
+    icon := uxmtInformation; // ℹ️ Info symbol
   mtConfirmation:
-    icon := widechar($2753); // ❓ Question mark
+    icon := uxmtConfirmation; // ❓ Question mark
   mtCustom:
     icon := uxmtCog; // ⚙️ Gear
   else
@@ -1388,10 +1388,10 @@ const
 var
   tp: TPanel;
   tl, tt: TLabel;
-  {$ifdef Windows}
-   tb: TDarkButton;
+  {$ifdef X_WIN}
+  tb: TDarkButton;
   {$else}
-   tb: TButton;
+  tb: TButton;
   {$endif}
   df: TDialogForm;
 begin
@@ -1443,7 +1443,7 @@ begin
       if IsProblematicWM then
         tl.Font.size := 38;
 
-      {$ifdef Windows}tb := TDarkButton.Create(tp);{$else}tb := TButton.Create(tp);{$endif}
+      {$ifdef X_WIN}tb := TDarkButton.Create(tp);{$else}tb := TButton.Create(tp);{$endif}
       tb.Parent := tp;
       tb.AutoSize := true;
       tb.Caption := smbUXOK;
@@ -1486,7 +1486,7 @@ var
   IconBox: TImage;
   TitleLabel, DescLabel: TLabel;
   Edit: TEdit;
-  {$ifdef Windows}
+  {$ifdef X_WIN}
   OkButton, CancelButton: TDarkButton;
   {$else}
   OkButton, CancelButton: TButton;
@@ -1522,7 +1522,7 @@ begin
     Edit.Width := DescLabel.Width;
     Edit.Top := DescLabel.Top + DescLabel.Height + ifthen((size = uxdBig), Padding * 2, Padding);
     Edit.Text := ADefault;
-    {$ifdef Windows}
+    {$ifdef X_WIN}
     if TrndiNative.isDarkMode then
     begin
       Edit.Color := RGBToColor(53, 53, 53);
@@ -1533,7 +1533,7 @@ begin
       Edit.Font.Size := 20;
 
     // --- OK Button ---
-    {$ifdef Windows}OkButton := TDarkButton.Create(Dialog);{$else}OkButton := TButton.Create(Dialog);{$endif}
+    {$ifdef X_WIN}OkButton := TDarkButton.Create(Dialog);{$else}OkButton := TButton.Create(Dialog);{$endif}
     OkButton.Parent := Dialog;
     {$ifdef LCLGTK2}OkButton.Font.Color := clBlack;{$endif}
     OkButton.Caption := smbSelect;
@@ -1548,7 +1548,7 @@ begin
     Dialog.ActiveControl := OkButton;
 
     // --- Cancel Button ---
-    {$ifdef Windows}CancelButton := TDarkButton.Create(Dialog);{$else}CancelButton := TButton.Create(Dialog);{$endif}
+    {$ifdef X_WIN}CancelButton := TDarkButton.Create(Dialog);{$else}CancelButton := TButton.Create(Dialog);{$endif}
     CancelButton.Parent := Dialog;
     CancelButton.Caption := smbUXCancel;
     CancelButton.ModalResult := mrCancel;
@@ -1609,7 +1609,7 @@ var
   IconBox: TImage;
   TitleLabel, DescLabel: TLabel;
   Combo: TComboBox;
-  {$ifdef Windows}
+  {$ifdef X_WIN}
   OkButton, CancelButton: TDarkButton;
   {$else}
   OkButton, CancelButton: TButton;
@@ -1645,7 +1645,7 @@ begin
     Combo.Style := csDropDownList;
     Combo.Left := DescLabel.Left;
     Combo.Width := DescLabel.Width;
-    {$ifdef Windows}
+    {$ifdef X_WIN}
     if TrndiNative.isDarkMode then
     begin
       Combo.Color := RGBToColor(53, 53, 53);
@@ -1658,7 +1658,7 @@ begin
     Combo.ItemIndex := 0;
 
     // --- OK Button ---
-    {$ifdef Windows}OkButton := TDarkButton.Create(Dialog);{$else}OkButton := TButton.Create(Dialog);{$endif}
+    {$ifdef X_WIN}OkButton := TDarkButton.Create(Dialog);{$else}OkButton := TButton.Create(Dialog);{$endif}
     OkButton.Parent := Dialog;
     {$ifdef LCLGTK2}OkButton.Font.Color := clBlack;{$endif}
     OkButton.Caption := smbSelect;
@@ -1673,7 +1673,7 @@ begin
     Dialog.ActiveControl := OkButton;
 
     // --- Cancel Button ---
-    {$ifdef Windows}CancelButton := TDarkButton.Create(Dialog);{$else}CancelButton := TButton.Create(Dialog);{$endif}
+    {$ifdef X_WIN}CancelButton := TDarkButton.Create(Dialog);{$else}CancelButton := TButton.Create(Dialog);{$endif}
     CancelButton.Parent := Dialog;
     if default then
     begin
@@ -1732,7 +1732,7 @@ var
   TitleLabel, DescLabel: TLabel;
   Grid: TStringGrid;
   BgCol: TColor;
-  {$ifdef Windows}
+  {$ifdef X_WIN}
   OkButton, CancelButton: TDarkButton;
   {$else}
   OkButton, CancelButton: TButton;
@@ -1766,7 +1766,7 @@ begin
     Grid.Top := DescLabel.Top + DescLabel.Height + Padding;
     Grid.Height := ifthen((size = uxdBig) , GridHeight + 80, GridHeight);
     Grid.Options := [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goColSizing];
-    {$ifdef Windows}
+    {$ifdef X_WIN}
     if TrndiNative.isDarkMode then
     begin
       Grid.Color := RGBToColor(53, 53, 53);
@@ -1791,7 +1791,7 @@ begin
       Grid.Font.Size := 14;
 
     // --- OK Button ---
-    {$ifdef Windows}OkButton := TDarkButton.Create(Dialog);{$else}OkButton := TButton.Create(Dialog);{$endif}
+    {$ifdef X_WIN}OkButton := TDarkButton.Create(Dialog);{$else}OkButton := TButton.Create(Dialog);{$endif}
     OkButton.Parent := Dialog;
     {$ifdef LCLGTK2}OkButton.Font.Color := clBlack;{$endif}
     OkButton.Caption := smbSelect;
@@ -1805,7 +1805,7 @@ begin
     end;
 
     // --- Cancel Button ---
-    {$ifdef Windows}CancelButton := TDarkButton.Create(Dialog);{$else}CancelButton := TButton.Create(Dialog);{$endif}
+    {$ifdef X_WIN}CancelButton := TDarkButton.Create(Dialog);{$else}CancelButton := TButton.Create(Dialog);{$endif}
     CancelButton.Parent := Dialog;
     CancelButton.Caption := smbUXCancel;
     CancelButton.ModalResult := mrCancel;
@@ -1850,7 +1850,7 @@ var
   TitleLabel, DescLabel: TLabel;
   PreviewLabel: TLabel;
   FontCombo: TComboBox;
-  {$ifdef Windows}
+  {$ifdef X_WIN}
   OkButton, CancelButton: TDarkButton;
   {$else}
   OkButton, CancelButton: TButton;
@@ -1893,7 +1893,7 @@ begin
     FontCombo.Top := DescLabel.Top + DescLabel.Height + ifthen((size = uxdBig) , Padding * 2, Padding);
     FontCombo.Style := csDropDownList;
     FontCombo.Sorted := true;
-    {$ifdef Windows}
+    {$ifdef X_WIN}
     if TrndiNative.isDarkMode then
     begin
       FontCombo.Color := RGBToColor(53, 53, 53);
@@ -1955,7 +1955,7 @@ begin
     FontCombo.OnChange := @Dialog.FontComboChange;
 
     // --- OK Button ---
-    {$ifdef Windows}OkButton := TDarkButton.Create(Dialog);{$else}OkButton := TButton.Create(Dialog);{$endif}
+    {$ifdef X_WIN}OkButton := TDarkButton.Create(Dialog);{$else}OkButton := TButton.Create(Dialog);{$endif}
     OkButton.Parent := Dialog;
     {$ifdef LCLGTK2}OkButton.Font.Color := clBlack;{$endif}
     OkButton.Caption := smbUXOK;
@@ -1970,7 +1970,7 @@ begin
     Dialog.ActiveControl := OkButton;
 
     // --- Cancel Button ---
-    {$ifdef Windows}CancelButton := TDarkButton.Create(Dialog);{$else}CancelButton := TButton.Create(Dialog);{$endif}
+    {$ifdef X_WIN}CancelButton := TDarkButton.Create(Dialog);{$else}CancelButton := TButton.Create(Dialog);{$endif}
     CancelButton.Parent := Dialog;
     CancelButton.Caption := smbUXCancel;
     CancelButton.ModalResult := mrCancel;
@@ -2021,7 +2021,7 @@ var
   IconBox: TImage;
   TitleLabel, DescLabel: TLabel;
   DatePicker: TDateEdit;
-  {$ifdef Windows}
+  {$ifdef X_WIN}
   OkButton, CancelButton: TDarkButton;
   {$else}
   OkButton, CancelButton: TButton;
@@ -2064,7 +2064,7 @@ begin
     if AMaxDate <> 0 then
       DatePicker.MaxDate := AMaxDate;
     
-    {$ifdef Windows}
+    {$ifdef X_WIN}
     if TrndiNative.isDarkMode then
     begin
       DatePicker.Color := RGBToColor(53, 53, 53);
@@ -2078,7 +2078,7 @@ begin
     end;
 
     // --- OK Button ---
-    {$ifdef Windows}OkButton := TDarkButton.Create(Dialog);{$else}OkButton := TButton.Create(Dialog);{$endif}
+    {$ifdef X_WIN}OkButton := TDarkButton.Create(Dialog);{$else}OkButton := TButton.Create(Dialog);{$endif}
     OkButton.Parent := Dialog;
     {$ifdef LCLGTK2}OkButton.Font.Color := clBlack;{$endif}
     OkButton.Caption := smbSelect;
@@ -2093,7 +2093,7 @@ begin
     Dialog.ActiveControl := OkButton;
 
     // --- Cancel Button ---
-    {$ifdef Windows}CancelButton := TDarkButton.Create(Dialog);{$else}CancelButton := TButton.Create(Dialog);{$endif}
+    {$ifdef X_WIN}CancelButton := TDarkButton.Create(Dialog);{$else}CancelButton := TButton.Create(Dialog);{$endif}
     CancelButton.Parent := Dialog;
     CancelButton.Caption := smbUXCancel;
     CancelButton.ModalResult := mrCancel;
@@ -2189,7 +2189,7 @@ var
   HtmlPanel: TPanel;
   IconBox: TImage;
   HtmlViewer: TIpHtmlPanel;
-  {$ifdef Windows}
+  {$ifdef X_WIN}
   OkButton:TDarkButton;
   {$else}
   OkButton: TButton;
@@ -2258,7 +2258,7 @@ begin
     IconBox.Top := padding;
     IconBox.Width := ifthen((size = uxdBig) , 80, 48);
     IconBox.Height := IconBox.Width;
-    {$ifdef Windows}IconBox.Font.Name := 'Segoe UI Emoji';{$endif}
+    {$ifdef X_WIN}IconBox.Font.Name := 'Segoe UI Emoji';{$endif}
     {$ifdef Darwin}IconBox.Font.Name := 'Apple Color Emoji';{$endif}
     AssignEmoji(IconBox, icon, bgcol);
 
@@ -2322,7 +2322,7 @@ begin
     // Create buttons
     for mr in buttons do
     begin
-      {$ifdef Windows}
+      {$ifdef X_WIN}
       OkButton := TDarkButton.Create(Dialog);
       {$else}
       OkButton := TButton.Create(Dialog);
@@ -2378,7 +2378,7 @@ var
   MsgScroll: TScrollBox;
   LogMemo: TMemo;
   LogHtmlPanel: TIpHtmlPanel;
-  {$ifdef Windows}
+  {$ifdef X_WIN}
   OkButton:TDarkButton;
   {$else}
   OkButton: TButton;
@@ -2436,7 +2436,7 @@ begin
       IconBox.Width := 50;
     end;
     IconBox.Height := IconBox.Width;
-    {$ifdef Windows}IconBox.Font.Name := 'Segoe UI Emoji';{$endif}
+    {$ifdef X_WIN}IconBox.Font.Name := 'Segoe UI Emoji';{$endif}
     {$ifdef Darwin}IconBox.Font.Name := 'Apple Color Emoji';{$endif}
     Dialog.HandleNeeded;
     AssignEmoji(IconBox, icon, bgcol);
@@ -2736,7 +2736,7 @@ begin
 
     for mr in buttons do
     begin
-      {$ifdef Windows}OkButton := TDarkButton.Create(ButtonPanel);{$else}OkButton := TButton.Create(ButtonPanel);{$endif}
+      {$ifdef X_WIN}OkButton := TDarkButton.Create(ButtonPanel);{$else}OkButton := TButton.Create(ButtonPanel);{$endif}
       OkButton.Parent := ButtonPanel;
       {$ifdef LCLGTK2}OkButton.Font.Color := clBlack;{$endif}
       OkButton.Caption := langs[mr];
@@ -2953,7 +2953,7 @@ begin
 end;
 {$endif}
 
-{$ifdef Windows}
+{$ifdef X_WIN}
 {**
   Set system menu style, apply immersive dark titlebar when available, and refresh frame.
 }
@@ -3006,20 +3006,20 @@ begin
 end;
 {$endif}
 
-{$ifdef Windows}
+{$ifdef X_WIN}
 { TDarkButton - Adapted from metadarkstyle's DrawPushButton }
 
 constructor TDarkButton.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
   FModalResult := mrNone;
-  FDown := False;
-  FHot := False;
+  FDown := false;
+  FHot := false;
   FCaption := '';
   Width := 75;
   Height := 25;
   Cursor := crDefault;
-  TabStop := True;
+  TabStop := true;
   ControlStyle := ControlStyle + [csClickEvents, csCaptureMouse, csOpaque];
 end;
 
@@ -3054,7 +3054,8 @@ begin
     Canvas.Brush.Color := RGBToColor(30, 30, 30);  // Darker when pressed
     Canvas.Pen.Color := RGBToColor(80, 80, 80);
   end
-  else if FHot then
+  else
+  if FHot then
   begin
     Canvas.Brush.Color := RGBToColor(80, 80, 80);  // Lighter on hover
     Canvas.Pen.Color := RGBToColor(80, 80, 80);
@@ -3076,28 +3077,28 @@ begin
   TextStyle := Canvas.TextStyle;
   TextStyle.Alignment := taCenter;
   TextStyle.Layout := tlCenter;
-  TextStyle.Opaque := False;
-  TextStyle.Clipping := True;
+  TextStyle.Opaque := false;
+  TextStyle.Clipping := true;
   
   Canvas.TextRect(BtnRect, 0, 0, FCaption, TextStyle);
 end;
 
-procedure TDarkButton.MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+procedure TDarkButton.MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: integer);
 begin
   inherited MouseDown(Button, Shift, X, Y);
   if Button = mbLeft then
   begin
-    FDown := True;
+    FDown := true;
     Invalidate;
   end;
 end;
 
-procedure TDarkButton.MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+procedure TDarkButton.MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: integer);
 var
-  WasDown: Boolean;
+  WasDown: boolean;
 begin
   WasDown := FDown;
-  FDown := False;
+  FDown := false;
   inherited MouseUp(Button, Shift, X, Y);
   Invalidate;
   
@@ -3108,15 +3109,15 @@ end;
 procedure TDarkButton.MouseEnter;
 begin
   inherited MouseEnter;
-  FHot := True;
+  FHot := true;
   Invalidate;
 end;
 
 procedure TDarkButton.MouseLeave;
 begin
   inherited MouseLeave;
-  FHot := False;
-  FDown := False;
+  FHot := false;
+  FDown := false;
   Invalidate;
 end;
 
@@ -3133,7 +3134,7 @@ begin
   end;
 end;
 
-procedure TDarkButton.KeyDown(var Key: Word; Shift: TShiftState);
+procedure TDarkButton.KeyDown(var Key: word; Shift: TShiftState);
 begin
   inherited KeyDown(Key, Shift);
   // Handle Enter and Space keys to activate button
@@ -3163,7 +3164,7 @@ begin
     FontPickerPreview.Font.Name := Combo.Items[Combo.ItemIndex];
 end;
 
-{$ifdef Windows}
+{$ifdef X_WIN}
 {**
   Owner-draw for dark buttons on Windows.
   @param Sender The @code(TDarkButton) being drawn.
