@@ -334,6 +334,10 @@ msgstr ""
 msgid "+ Add"
 msgstr ""
 
+#: tfconf.bextopen.caption
+msgid "Show Folder"
+msgstr ""
+
 #: tfconf.bremove.caption
 msgid "- Remove"
 msgstr ""

@@ -84,6 +84,7 @@ TfConf = class(TForm)
   bMinMinutesHelp: TButton;
   bTemplateTrend: TButton;
   bCustomRangeHelp: TButton;
+  bExtOpen: TButton;
   bWebAPI: TButton;
   bSysTouch: TButton;
   bTestAnnounce: TButton;
@@ -115,7 +116,11 @@ TfConf = class(TForm)
   cbPredictShortMinutes: TComboBox;
   cbPredictShortSize: TComboBox;
   cbPrivacy: TCheckBox;
+  eExt: TEdit;
+  lExt: TLabel;
   lSysWarnInfo: TLabel;
+  Panel18: TPanel;
+  Panel3: TPanel;
   pnSysWarn: TPanel;
   rbPredictShortArrowOnly: TRadioButton;
   rbPredictShortShowValue: TRadioButton;
@@ -162,7 +167,6 @@ TfConf = class(TForm)
   eDotNow: TEdit;
   edTray: TSpinEdit;
   ePass: TEdit;
-  eExt: TEdit;
   edMusicHigh: TEdit;
   edMusicLow: TEdit;
   edMusicPerfect: TEdit;
@@ -242,7 +246,6 @@ TfConf = class(TForm)
   Label12: TLabel;
   Label15: TLabel;
   lPass: TLabel;
-  lExt: TLabel;
   lUserTrack: TLabel;
   Label4: TLabel;
   Label6: TLabel;
@@ -310,6 +313,7 @@ TfConf = class(TForm)
   procedure bBadgeFlashHelpClick(Sender: TObject);
   procedure bColorGraphHelpClick(Sender: TObject);
   procedure bCustomRangeHelpClick(Sender: TObject);
+  procedure bExtOpenClick(Sender: TObject);
   procedure bLanguageHelpClick(Sender: TObject);
   procedure bLimitsClick(Sender: TObject);
   procedure bMinMinutesHelpClick(Sender: TObject);
@@ -1250,6 +1254,11 @@ end;
 procedure TfConf.bCustomRangeHelpClick(Sender: TObject);
 begin
   ShowMessage(RS_Custom_Range_Help);
+end;
+
+procedure TfConf.bExtOpenClick(Sender: TObject);
+begin
+  OpenDocument(eExt.Text);
 end;
 
 procedure TfConf.bLanguageHelpClick(Sender: TObject);
