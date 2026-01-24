@@ -3042,51 +3042,81 @@ var
   TextStyle: TTextStyle;
   i: integer;
 begin
-  if not TrndiNative.isDarkMode then
-  begin
-    inherited Paint;
-    Exit;
-  end;
-
   BtnRect := ClientRect;
-  
-  // Metadarkstyle approach: Canvas drawing with system colors
   Canvas.Brush.Style := bsSolid;
   
-  // Background color based on state (like metadarkstyle DrawPushButton)
-  if FDown then
+  if not TrndiNative.isDarkMode then
   begin
-    Canvas.Brush.Color := RGBToColor(30, 30, 30);  // Darker when pressed
-    Canvas.Pen.Color := RGBToColor(80, 80, 80);
+    // Light mode - draw standard button appearance
+    if FDown then
+    begin
+      Canvas.Brush.Color := RGBToColor(200, 200, 200);  // Pressed
+      Canvas.Pen.Color := RGBToColor(112, 112, 112);
+    end
+    else if FHot then
+    begin
+      Canvas.Brush.Color := RGBToColor(229, 241, 251);  // Hover
+      Canvas.Pen.Color := RGBToColor(0, 120, 215);
+    end
+    else
+    begin
+      Canvas.Brush.Color := RGBToColor(225, 225, 225);  // Normal
+      Canvas.Pen.Color := RGBToColor(173, 173, 173);
+    end;
+    
+    Canvas.RoundRect(BtnRect, 2, 2);
+    
+    // Focus indicator in light mode
+    if FFocused then
+    begin
+      Canvas.Pen.Color := RGBToColor(0, 120, 215);  // Blue focus
+      Canvas.Pen.Width := 1;
+      Canvas.Brush.Style := bsClear;
+      Canvas.RoundRect(BtnRect.Left + 2, BtnRect.Top + 2, 
+                       BtnRect.Right - 2, BtnRect.Bottom - 2, 2, 2);
+      Canvas.Brush.Style := bsSolid;
+    end;
+    
+    // Text in dark color for light mode
+    Canvas.Font.Color := clBlack;
   end
   else
-  if FHot then
   begin
-    Canvas.Brush.Color := RGBToColor(80, 80, 80);  // Lighter on hover
-    Canvas.Pen.Color := RGBToColor(80, 80, 80);
-  end
-  else
-  begin
-    Canvas.Brush.Color := RGBToColor(53, 53, 53);  // Normal state
-    Canvas.Pen.Color := RGBToColor(80, 80, 80);
+    // Dark mode
+    if FDown then
+    begin
+      Canvas.Brush.Color := RGBToColor(30, 30, 30);  // Darker when pressed
+      Canvas.Pen.Color := RGBToColor(80, 80, 80);
+    end
+    else if FHot then
+    begin
+      Canvas.Brush.Color := RGBToColor(80, 80, 80);  // Lighter on hover
+      Canvas.Pen.Color := RGBToColor(80, 80, 80);
+    end
+    else
+    begin
+      Canvas.Brush.Color := RGBToColor(53, 53, 53);  // Normal state
+      Canvas.Pen.Color := RGBToColor(80, 80, 80);
+    end;
+    
+    Canvas.RoundRect(BtnRect, 4, 4);
+    
+    // Focus indicator in dark mode
+    if FFocused then
+    begin
+      Canvas.Pen.Color := RGBToColor(160, 160, 160);  // Subtle light gray
+      Canvas.Pen.Width := 1;
+      Canvas.Brush.Style := bsClear;
+      Canvas.RoundRect(BtnRect.Left + 2, BtnRect.Top + 2, 
+                       BtnRect.Right - 2, BtnRect.Bottom - 2, 3, 3);
+      Canvas.Brush.Style := bsSolid;
+    end;
+    
+    // Text in light color for dark mode
+    Canvas.Font.Color := RGBToColor(245, 245, 245);
   end;
   
-  // Draw button with rounded corners (metadarkstyle uses RoundRect)
-  Canvas.RoundRect(BtnRect, 4, 4);
-  
-  // Draw focus indicator - subtle light gray outline when focused
-  if FFocused then
-  begin
-    Canvas.Pen.Color := RGBToColor(160, 160, 160);  // Subtle light gray
-    Canvas.Pen.Width := 1;
-    Canvas.Brush.Style := bsClear;
-    Canvas.RoundRect(BtnRect.Left + 2, BtnRect.Top + 2, 
-                     BtnRect.Right - 2, BtnRect.Bottom - 2, 3, 3);
-    Canvas.Brush.Style := bsSolid;
-  end;
-  
-  // Draw text centered (metadarkstyle approach)
-  Canvas.Font.Color := RGBToColor(245, 245, 245);  // Light text
+  // Draw text centered
   Canvas.Font.Size := Font.Size;
   Canvas.Font.Name := Font.Name;
   
