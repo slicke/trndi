@@ -10,6 +10,8 @@ Trndi supports ES2023, and provides these functions in addition to it:
    - [select](#select)
    - [log](#log)
    - [console.log](#consolelog)
+   - [console.push](#consolepush)
+   - [console.logs](#consolelogs)
    - [htmlMsg](#htmlmsg)
    - [htmlDlg](#htmldlg)   
    - [htmlYesNo](#htmlyesno)      
@@ -82,6 +84,38 @@ _See `console.log`_
 console.log(something);
 ```
 Prints out data to the user
+### console.push
+```javascript
+console.push("message 1");
+console.push("message 2");
+```
+Accumulates messages in an internal buffer without showing a popup. Use this when you want to collect multiple log messages and display them all at once with `console.logs()`.
+
+**Parameters:**
+- Message(s) to add to the buffer (same as `console.log`)
+
+**Returns:** none
+
+**Example:**
+```javascript
+console.push("Starting process...");
+console.push("Step 1 complete");
+console.push("Step 2 complete");
+console.logs();  // Shows all 3 messages in one popup
+```
+
+### console.logs
+```javascript
+console.logs();
+```
+Displays all buffered messages (accumulated via `console.push()`) in a single popup, then clears the buffer. If no messages are buffered, displays "(no messages buffered)".
+
+**Parameters:** none
+
+**Returns:** none
+
+**Use case:** Avoids multiple popups when logging multiple messages during extension execution.
+
 ### htmlMsg
 ```javascript
 Trndi.htmlMsg('Window Title', 'Title', 'Description', '<b>HTML</b> box content', 1)
