@@ -30,6 +30,7 @@ Trndi supports ES2023, and provides these functions in addition to it:
    - [setOverrideThresholdMinutes](#setoverridethresholdminutes)
    - [setClockInterval](#setclockinterval)
    - [predictReadings](#predictreadings)
+   - [getBasalRate](#getbasalrate)
    - [setTimeout](#settimeout)
    - [setInterval](#setinterval)
    - [clearTimeout](#cleartimeout)
@@ -376,6 +377,37 @@ Sets the interval when the clock is shown (if enabled), and for how long.
 ```javascript
 Trndi.setClockInterval(100000,10000); // Show clock every 100 sec and for 10 sec. NOTE the values cannot be the same or the clock will always show
 ```
+
+### getBasalRate
+#### Get current basal rate from the CGM backend
+Retrieves the current basal insulin rate from the backend server (e.g., Nightscout).
+
+```javascript
+const basal = Trndi.getBasalRate();
+if (basal === false) {
+  console.log("Basal rate not available");
+} else {
+  console.log(`Current basal rate: ${basal} U/hr`);
+}
+```
+
+**Returns:** 
+- Float value representing current basal rate in U/hr (units per hour)
+- `false` if basal rate is unavailable or not supported by the backend
+
+**Backend Support:**
+- **Nightscout/Nightscout v3**: Fetches from profile.json endpoint ✅
+- **Other backends**: Returns `false` (not implemented)
+
+**Example - Display basal with insulin on board:**
+```javascript
+const basal = Trndi.getBasalRate();
+if (basal !== false) {
+  Trndi.alert(`Current basal: ${basal.toFixed(2)} U/hr`);
+}
+```
+
+**Note:** The function returns the basal rate defined in the active profile at the current time. For pump users with temp basals, this shows the scheduled rate, not the active temporary rate.
 
 ### predictReadings
 #### Predict future blood glucose readings

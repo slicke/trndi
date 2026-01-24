@@ -218,6 +218,10 @@ msgstr "Tvinga Nej"
 msgid "Force Yes"
 msgstr "Tvinga Ja"
 
+#: tfbg.mibasalrate.caption
+msgid "Current Basal"
+msgstr ""
+
 #: tfbg.miborders.caption
 msgid "No borders"
 msgstr "Inga kanter"
