@@ -1010,7 +1010,7 @@ begin
   end
   else
   begin
-    ExtLog(uxdAuto, sLogRecevive, sLogDesc, '(no messages buffered)');
+    ShowMessage(sLogNoBuffered);
   end;
 
   // Return undefined

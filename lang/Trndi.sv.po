@@ -1240,10 +1240,8 @@ msgid "<div style=\"font-family: Arial, sans-serif; line-height: 1.6;\"><div sty
 msgstr "<div style=\"font-family: Arial, sans-serif; line-height: 1.6;\"><div style=\"background: #dc3545; color: white; padding: 15px; border-radius: 6px; margin-bottom: 20px; font-weight: bold; text-align: center; border: 2px solid #c82333;\">⚠️ ALFADRIVRUTIN- Vänligen välj \"NightScout\" för dagligt bruk! ⚠️</div><h2 style=\"margin-bottom: 10px;\">🌙 NightScout v3-inställning</h2><p style=\"color: #7f8c8d; font-style: italic; margin-bottom: 15px;\">(använd HELA access token:et)</p><ol style=\"padding-left: 20px;\"><li style=\"margin-bottom: 10px;\">Öppna din NightScout-sajt (t. ex., <code style=\"background: #6495ED; padding: 2px 6px; border-radius: 3px;\">https://din-sajt</code>).</li><li style=\"margin-bottom: 10px;\">Gå till <strong>Admin → Tokens</strong> — eller <strong>API Secret</strong>.</li><li style=\"margin-bottom: 10px;\">Om du använder Tokens:<ul style=\"margin-top: 5px; padding-left: 20px;\"><li>Skapa ett token med minst <strong>READ</strong> scope.</li><li>Kopiera <strong>HELA</strong> access token:ets värde så som det visas.</li></ul></li><li style=\"margin-bottom: 10px;\">I Trndi:<ul style=\"margin-top: 5px; padding-left: 20px;\"><li><strong>Adress:</strong> ange din NightScout-URL</li><li><strong>Autensiering:</strong> klistra in HELA access token:et.</li></ul></li></ol><div style=\"border-left: 4px solid #ffc107; padding: 12px; margin-top: 15px; border-radius: 4px;\"><p style=\"margin: 0 0 8px 0;\"><strong>📝 OBS:</strong> Om du använder det föråldrade API Secret, klistra in din API Secret så som den visas.</p><p style=\"margin: 0;\"><strong>📝 OBS 2:</strong> Ditt access token ska se ut enligt följande: <code style=\"background: #6F8FAF; padding: 2px 6px; border-radius: 3px;\">trndi-abc123</code> (eller det namn du valt).</p></div></div>"
 
 #: trndi.api.nightscout3.sparampassword
-#, fuzzy
-#| msgid "Auth token suffix"
 msgid "Auth token"
-msgstr "Tokensuffix för autensiering"
+msgstr "Auth-token"
 
 #: trndi.api.nightscout3.sparamusername
 msgctxt "trndi.api.nightscout3.sparamusername"
@@ -1978,11 +1976,11 @@ msgstr "Trndi har fångat utdata från console.log i ett JavaScript-tillägg"
 
 #: trndi.strings.slogemptymsg
 msgid "<No message provided>"
-msgstr ""
+msgstr "<Inga meddelanden finns>"
 
 #: trndi.strings.slognobuffered
 msgid "No buffered console messages to show."
-msgstr ""
+msgstr "Inga buffrade konsolmeddelanden att visa."
 
 #: trndi.strings.slogrecevive
 msgctxt "trndi.strings.slogrecevive"
@@ -2478,4 +2476,3 @@ msgstr "Historikgraf"
 #, object-pascal-format
 msgid "Readings (%s)"
 msgstr "Avläsningar (%s)"
-

@@ -2860,65 +2860,93 @@ end;
 }
 procedure TDialogForm.FormKeyDown(Sender: TObject; var Key: word; Shift: TShiftState);
 var
-  o: TCustomButton;
   i, cancel, no, yes, ok, abort, ct: integer;
   btns: TComponent;
   target: TWinControl;
+  modalRes: TModalResult;
+
+  function GetModalResult(comp: TComponent): TModalResult;
+  begin
+    Result := mrNone;
+    if comp is TCustomButton then
+      Result := (comp as TCustomButton).ModalResult
+    {$ifdef Windows}
+    else if comp is TDarkButton then
+      Result := (comp as TDarkButton).ModalResult
+    {$endif};
+  end;
+
+  procedure ClickButton(idx: integer);
+  var
+    comp: TComponent;
+  begin
+    if idx < 0 then Exit;
+    comp := target.Components[idx];
+    if comp is TCustomButton then
+      (comp as TCustomButton).Click
+    {$ifdef Windows}
+    else if comp is TDarkButton then
+      (comp as TDarkButton).Click
+    {$endif};
+  end;
+
 begin
   if not (key in [VK_ESCAPE, VK_RETURN]) then
     Exit;
+
   cancel := -1;
   no := -1;
   yes := -1;
   ok := -1;
   abort := -1;
   ct := 0;
+
   btns := Self.FindComponent('pnButtons');
   if btns = nil then
     target := Self
   else
     target := btns as TPanel;
 
+  // Scan for buttons and their modal results
   for i := 0 to target.ComponentCount - 1 do
-    if target.components[i] is TCustomButton then
-    begin
-      o := target.components[i] as TCustomButton;
-      if o.ModalResult = mrCancel then
-        cancel := i;
-      if o.ModalResult = mrNo then
-        no := i;
-      if o.ModalResult = mrYes then
-        yes := i;
-      if (o.ModalResult = mrOk) or (o.ModalResult = mrClose) then
-        ok := i;
-      if o.ModalResult = mrAbort then
-        abort := i;
-      Inc(ct);
-    end;
-
-  if key = vk_escape then
   begin
-    // ESC priority: Cancel > No > Abort > OK/Close (for single-button dialogs)
-    if cancel >= 0 then
-      (target.Components[cancel] as TCustomButton).Click
-    else
-    if no >= 0 then
-      (target.Components[no] as TCustomButton).Click
-    else
-    if abort >= 0 then
-      (target.Components[abort] as TCustomButton).Click
-    else
-    if (ct = 1) and (ok >= 0) then
-      (target.Components[ok] as TCustomButton).Click;
-  end
-  else
-  if key = VK_RETURN then
-    if ok >= 0 then
-      (target.Components[ok] as TCustomButton).Click
-    else
-    if yes >= 0 then
-      (target.Components[yes] as TCustomButton).Click// ENTER priority: OK > Yes > Close (affirmative actions)
-  ;
+    modalRes := GetModalResult(target.Components[i]);
+    if modalRes = mrNone then
+      Continue;
+
+    case modalRes of
+      mrCancel: cancel := i;
+      mrNo: no := i;
+      mrYes: yes := i;
+      mrOk, mrClose: ok := i;
+      mrAbort: abort := i;
+    end;
+    Inc(ct);
+  end;
+
+  // Handle key presses
+  case key of
+    VK_ESCAPE:
+      begin
+        // ESC priority: Cancel > No > Abort > OK/Close (single-button only)
+        if cancel >= 0 then
+          ClickButton(cancel)
+        else if no >= 0 then
+          ClickButton(no)
+        else if abort >= 0 then
+          ClickButton(abort)
+        else if (ct = 1) and (ok >= 0) then
+          ClickButton(ok);
+      end;
+    VK_RETURN:
+      begin
+        // ENTER priority: OK > Yes
+        if ok >= 0 then
+          ClickButton(ok)
+        else if yes >= 0 then
+          ClickButton(yes);
+      end;
+  end;
 end;
 
 {$ifndef Windows}
