@@ -3015,6 +3015,7 @@ procedure SetupExtensions(f: TfConf);
       {$else}
       eExt.Text := '- ' + RS_noPlugins + ' -';
       eExt.Enabled := false;
+      bExtOpen.Enabled := false;
       {$endif}
       cbPrivacy.Checked := GetBoolSetting('ext.privacy');
       cbTimeStamp.Checked := GetBoolSetting('display.timestamp');
