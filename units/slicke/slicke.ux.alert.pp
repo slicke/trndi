@@ -3048,20 +3048,19 @@ begin
   if not TrndiNative.isDarkMode then
   begin
     // Light mode - draw standard button appearance
+    Canvas.Pen.Color := GetSysColor(COLOR_BTNFACE);  // Match form background
+    
     if FDown then
     begin
       Canvas.Brush.Color := RGBToColor(200, 200, 200);  // Pressed
-      Canvas.Pen.Color := RGBToColor(112, 112, 112);
     end
     else if FHot then
     begin
       Canvas.Brush.Color := RGBToColor(229, 241, 251);  // Hover
-      Canvas.Pen.Color := RGBToColor(0, 120, 215);
     end
     else
     begin
       Canvas.Brush.Color := RGBToColor(225, 225, 225);  // Normal
-      Canvas.Pen.Color := RGBToColor(173, 173, 173);
     end;
     
     Canvas.RoundRect(BtnRect, 2, 2);
@@ -3083,20 +3082,19 @@ begin
   else
   begin
     // Dark mode
+    Canvas.Pen.Color := RGBToColor(32, 32, 32);  // Match form background
+    
     if FDown then
     begin
       Canvas.Brush.Color := RGBToColor(30, 30, 30);  // Darker when pressed
-      Canvas.Pen.Color := RGBToColor(80, 80, 80);
     end
     else if FHot then
     begin
       Canvas.Brush.Color := RGBToColor(80, 80, 80);  // Lighter on hover
-      Canvas.Pen.Color := RGBToColor(80, 80, 80);
     end
     else
     begin
       Canvas.Brush.Color := RGBToColor(53, 53, 53);  // Normal state
-      Canvas.Pen.Color := RGBToColor(80, 80, 80);
     end;
     
     Canvas.RoundRect(BtnRect, 4, 4);
