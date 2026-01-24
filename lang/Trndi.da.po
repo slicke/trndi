@@ -1,0 +1,241 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Trndi\n"
+"POT-Creation-Date: 2026-01-24 00:00+0000\n"
+"PO-Revision-Date: 2026-01-24 00:00+0000\n"
+"Last-Translator: Machine translation (please review)\n"
+"Language-Team: Danish\n"
+"Language: da\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Machine translation by GitHub Copilot\n"
+
+#: slicke.ux.alert.dlgerr
+msgid "An error occurred while creating a message dialog"
+msgstr "Der opstod en fejl under oprettelsen af en meddelelsesdialog"
+
+#: slicke.ux.alert.serr
+msgid "Script execution failed"
+msgstr "Scriptkørsel mislykkedes"
+
+#: slicke.ux.alert.sexterr
+msgid "Error occurred in extension"
+msgstr "Fejl i udvidelsen"
+
+#: slicke.ux.alert.sexttitle
+msgid "Extension error"
+msgstr "Udvidelsesfejl"
+
+#: slicke.ux.alert.skey
+msgid "Key"
+msgstr "Nøgle"
+
+#: slicke.ux.alert.smbselect
+msgid "Select"
+msgstr "Vælg"
+
+#: slicke.ux.alert.smbuxabort
+msgid "Abort"
+msgstr "Afbryd"
+
+#: slicke.ux.alert.smbuxagree
+msgid "Agree"
+msgstr "Accepter"
+
+#: slicke.ux.alert.smbuxall
+msgid "All"
+msgstr "Alle"
+
+#: slicke.ux.alert.smbuxcancel
+msgid "Cancel"
+msgstr "Annuller"
+
+#: slicke.ux.alert.smbuxclose
+msgctxt "slicke.ux.alert.smbuxclose"
+msgid "Close"
+msgstr "Luk"
+
+#: slicke.ux.alert.smbuxdefault
+msgctxt "slicke.ux.alert.smbuxdefault"
+msgid "Default"
+msgstr "Standard"
+
+#: slicke.ux.alert.smbuxhelp
+msgctxt "slicke.ux.alert.smbuxhelp"
+msgid "Help"
+msgstr "Hjælp"
+
+#: slicke.ux.alert.smbuxignore
+msgid "Ignore"
+msgstr "Ignorer"
+
+#: slicke.ux.alert.smbuxminimize
+msgid "Minimize"
+msgstr "Minimer"
+
+#: slicke.ux.alert.smbuxno
+msgid "No"
+msgstr "Nej"
+
+#: slicke.ux.alert.smbuxnotoall
+msgid "No To All"
+msgstr "Nej til alle"
+
+#: slicke.ux.alert.smbuxok
+msgctxt "slicke.ux.alert.smbuxok"
+msgid "OK"
+msgstr "OK"
+
+#: slicke.ux.alert.smbuxopenfile
+msgid "Open File"
+msgstr "Åbn fil"
+
+#: slicke.ux.alert.smbuxread
+msgid "Read..."
+msgstr "Læs..."
+
+#: slicke.ux.alert.smbuxretry
+msgid "Retry"
+msgstr "Prøv igen"
+
+#: slicke.ux.alert.smbuxsnooze
+msgid "Snooze"
+msgstr "Slumre"
+
+#: slicke.ux.alert.smbuxyestoall
+msgid "Yes To All"
+msgstr "Ja til alle"
+
+#: slicke.ux.alert.smbyes
+msgid "Yes"
+msgstr "Ja"
+
+#: slicke.ux.alert.smsgtitle
+msgid "Message"
+msgstr "Besked"
+
+#: slicke.ux.alert.ssucctitle
+msgid "Information"
+msgstr "Information"
+
+#: slicke.ux.alert.surl
+msgid "Leave the app and open your browser? The link may not be secure!"
+msgstr "Forlade appen og åbne din browser? Linket er muligvis ikke sikkert!"
+
+#: slicke.ux.alert.surltitle
+msgid "Open external link?"
+msgstr "Åbn ekstern link?"
+
+#: slicke.ux.alert.svalue
+msgid "Value"
+msgstr "Værdi"
+
+#: tfbg.bmenupanelclose.caption
+msgctxt "tfbg.bmenupanelclose.caption"
+msgid "✖ Close"
+msgstr "✖ Luk"
+
+#: tfbg.bsettings.caption
+msgctxt "tfbg.bsettings.caption"
+msgid "Settings"
+msgstr "Indstillinger"
+
+#: tfbg.btouchfull.caption
+msgid "⇱ Full screen"
+msgstr "⇱ Fuld skærm"
+
+#: tfbg.btouchmenu.caption
+msgid "☰ Menu"
+msgstr "☰ Menu"
+
+#: tfbg.btouchsettings.caption
+msgctxt "tfbg.btouchsettings.caption"
+msgid "⚙ Settings"
+msgstr "⚙ Indstillinger"
+
+#: tfbg.lmissing.caption
+msgid "No recent readings!"
+msgstr "Ingen nylige aflæsninger!"
+
+#: tfbg.lpredict.caption
+msgctxt "tfbg.lpredict.caption"
+msgid "Predictions"
+msgstr "Forudsigelser"
+
+#: tfbg.ltir.caption
+msgid "Time In Range"
+msgstr "Tid i området"
+
+#: tfbg.lval.caption
+msgctxt "tfbg.lval.caption"
+msgid "Setup"
+msgstr "Opsætning"
+
+#: tfbg.mi24h.caption
+msgid "Show last-day readings"
+msgstr "Vis sidste døgns aflæsninger"
+
+#: tfbg.miadotadjust.caption
+msgid "Adjust Dot Positions"
+msgstr "Juster prikpositioner"
+
+#: tfbg.miadots.caption
+msgid "Dot stats"
+msgstr "Prikstatistik"
+
+#: tfbg.miadvanced.caption
+msgid "> Service Menu"
+msgstr "> Servicemenu"
+
+#: tfbg.mialternate.caption
+msgid "Alterante arrow and reading"
+msgstr "Skift pil og aflæsning"
+
+#: tfbg.miannounce.caption
+msgid "Announce readings"
+msgstr "Oplist aflæsninger"
+
+#: tfbg.miasysteminfo.caption
+msgid "System Info"
+msgstr "Systeminfo"
+
+#: tfbg.miatouch.caption
+msgid "Force Touchscreen"
+msgstr "Tving touchskærm"
+
+#: tfbg.miatouchauto.caption
+msgctxt "tfbg.miatouchauto.caption"
+msgid "Auto"
+msgstr "Auto"
+
+#: tfbg.miatouchno.caption
+msgid "Force No"
+msgstr "Tving Nej"
+
+#: tfbg.miatouchyes.caption
+msgid "Force Yes"
+msgstr "Tving Ja"
+
+#: tfbg.mibasalrate.caption
+msgid "Current Basal"
+msgstr "Aktuel basal"
+
+#: tfbg.miborders.caption
+msgid "No borders"
+msgstr "Ingen rammer"
+
+#: tfbg.miclock.caption
+msgid "Show clock every 20 sec"
+msgstr "Vis ur hvert 20. sekund"
+
+#: tfbg.micustomdots.caption
+msgctxt "tfbg.micustomdots.caption"
+msgid "Custom Size"
+msgstr "Brugerdefineret størrelse"
+
+#: tfbg.midebugbackend.caption
+msgid "Announce raw backend data"
+msgstr "Annoncer rå backend-data"
+
+# NOTE: This file was machine-translated from English/Swedish. Please review translations for accuracy and context.
