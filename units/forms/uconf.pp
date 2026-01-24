@@ -1337,7 +1337,7 @@ begin
 
   if s <> '' then begin
     s := s + sHTMLLineBreak + sHTMLLineBreak + x + sHTMLLineBreak + RS_DRIVER_CONTRIBUTOR + c;
-    ExtMsg(uxdAuto, 'API', s, [mbClose],uxmtInformation,20);
+    ExtMsg(uxdAuto, 'API', s, [mbClose],uxmtInformation,20, 1.2);
   end;
 
 end;

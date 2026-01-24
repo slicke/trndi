@@ -339,7 +339,7 @@ function ExtMsg(const dialogsize: TUXDialogSize;
 const caption, html: string;
 buttons: TUXMsgDlgBtns = [mbAbort];
 const icon: UXImage = uxmtCog;
-scale: single = 1): TModalResult; overload;
+scale: single = 1; hpadding: single = 1): TModalResult; overload;
 
   {**
     Alias for @lnk(ExtMsg) with HTML data
@@ -2182,7 +2182,8 @@ const dialogsize: TUXDialogSize;
 const caption, html: string;
 buttons: TUXMsgDlgBtns = [mbAbort];
 const icon: UXImage = uxmtCog;
-scale: single = 1
+scale: single = 1;
+hpadding: single = 1
 ): TModalResult;
 const
   btnWidth = 75;
@@ -2252,7 +2253,7 @@ begin
     ProposedWidth := ifthen((size = uxdBig) , 650, 500);
     if ProposedWidth > 900 then
       ProposedWidth := 900;
-    Dialog.ClientWidth := ProposedWidth;
+    Dialog.ClientWidth := floor(ProposedWidth * hpadding);
 
     // Icon at top
     IconBox := TImage.Create(Dialog);
