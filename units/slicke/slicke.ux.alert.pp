@@ -207,6 +207,7 @@ private
   FModalResult: TModalResult;
   FDown: boolean;
   FHot: boolean;
+  FFocused: boolean;
   FCaption: string;
   procedure SetCaption(const AValue: string);
 protected
@@ -217,6 +218,8 @@ protected
   procedure MouseLeave; override;
   procedure Click; override;
   procedure KeyDown(var Key: word; Shift: TShiftState); override;
+  procedure DoEnter; override;
+  procedure DoExit; override;
 public
   constructor Create(AOwner: TComponent); override;
   property Caption: string read FCaption write SetCaption;
@@ -3015,6 +3018,7 @@ begin
   FModalResult := mrNone;
   FDown := false;
   FHot := false;
+  FFocused := false;
   FCaption := '';
   Width := 75;
   Height := 25;
@@ -3036,6 +3040,7 @@ procedure TDarkButton.Paint;
 var
   BtnRect: TRect;
   TextStyle: TTextStyle;
+  i: integer;
 begin
   if not TrndiNative.isDarkMode then
   begin
@@ -3068,6 +3073,17 @@ begin
   
   // Draw button with rounded corners (metadarkstyle uses RoundRect)
   Canvas.RoundRect(BtnRect, 4, 4);
+  
+  // Draw focus indicator - subtle light gray outline when focused
+  if FFocused then
+  begin
+    Canvas.Pen.Color := RGBToColor(160, 160, 160);  // Subtle light gray
+    Canvas.Pen.Width := 1;
+    Canvas.Brush.Style := bsClear;
+    Canvas.RoundRect(BtnRect.Left + 2, BtnRect.Top + 2, 
+                     BtnRect.Right - 2, BtnRect.Bottom - 2, 3, 3);
+    Canvas.Brush.Style := bsSolid;
+  end;
   
   // Draw text centered (metadarkstyle approach)
   Canvas.Font.Color := RGBToColor(245, 245, 245);  // Light text
@@ -3143,6 +3159,20 @@ begin
     Click;
     Key := 0; // Mark as handled
   end;
+end;
+
+procedure TDarkButton.DoEnter;
+begin
+  inherited DoEnter;
+  FFocused := true;
+  Invalidate;
+end;
+
+procedure TDarkButton.DoExit;
+begin
+  inherited DoExit;
+  FFocused := false;
+  Invalidate;
 end;
 {$endif}
 
