@@ -644,6 +644,11 @@ end;
  ------------------------------------------------------------------------------}
 class function TTrndiNativeLinux.isNotificationSystemAvailable: boolean;
 begin
+  // Notifications require a display server (X11 or Wayland)
+  if (GetEnvironmentVariable('DISPLAY') = '') and 
+     (GetEnvironmentVariable('WAYLAND_DISPLAY') = '') then
+    Exit(false);
+  
   // Only treat gdbus as available when on KDE/GNOME-like desktops under Qt6
   if UseGDBusForNotifications then
     Exit(true);
@@ -1348,7 +1353,7 @@ var
   f: double;
 begin
   if KDEBadge.GDesktopId = '' then
-    InitializeBadge('com.slicke.trndi.desktop', 150, nil);
+    InitializeBadge('com.slicke.trndi.desktop', 150, nil, UseGDBusForNotifications);
   ClearBadge;
   
   // Only set numeric badge if value can be parsed as a number
