@@ -154,6 +154,9 @@ begin
     addClassFunction('getBuild', ExtFunction(@JSGetBuild), -1);
     addClassFunction('getCurrentAPI', ExtFunction(@JSGetAPI), -1);
     addClassFunction('getReading', ExtFunction(@JSGetReading), -1);
+    addClassFunction('getCurrentReading', ExtFunction(@JSGetCurrentReading), 0);
+    addClassFunction('getLimits', ExtFunction(@JSGetLimits), 0);
+    addClassFunction('getStatistics', ExtFunction(@JSGetStatistics), -1);
 
     // Add the UX modification function, as declared in this file
     if ssCtrl in GetKeyShiftState then
