@@ -1684,6 +1684,9 @@ begin
     end;
 
   {$endif}
+  {$ifdef lclqt6}
+    self.height := self.height + 20;
+  {$endif}
   tnative := TrndiNative.Create;
   tnative.noFree := true;
   if tnative.isDarkMode then
