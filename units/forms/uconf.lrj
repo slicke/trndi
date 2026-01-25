@@ -151,7 +151,7 @@
 {"hash":63,"name":"tfconf.bsystouch.caption","sourcebytes":[63],"value":"?"},
 {"hash":63,"name":"tfconf.bsysnotice.caption","sourcebytes":[63],"value":"?"},
 {"hash":63,"name":"tfconf.bwebapi.caption","sourcebytes":[63],"value":"?"},
-{"hash":164447705,"name":"tfconf.cbwebapi.caption","sourcebytes":[32,69,110,97,98,108,101,32,87,101,98,32,65,80,73],"value":" Enable Web API"},
+{"hash":164455897,"name":"tfconf.cbwebapi.caption","sourcebytes":[69,110,97,98,108,101,32,87,101,98,32,65,80,73],"value":"Enable Web API"},
 {"hash":140563458,"name":"tfconf.lwm.caption","sourcebytes":[85,110,107,110,111,119,110,32,87,105,110,100,111,119,32,77,97,110,97,103,101,114],"value":"Unknown Window Manager"},
 {"hash":179340786,"name":"tfconf.tsmulti.caption","sourcebytes":[77,117,108,116,105,32,85,115,101,114],"value":"Multi User"},
 {"hash":143017422,"name":"tfconf.lusertrack.caption","sourcebytes":[65,100,100,32,117,115,101,114,115,32,98,101,108,111,119,44,32,105,102,32,121,111,117,32,119,105,115,104,32,116,111,32,116,114,97,99,107,32,109,111,114,101,32,116,104,97,110,32,111,110,101,32,112,101,114,115,111,110,46],"value":"Add users below, if you wish to track more than one person."},

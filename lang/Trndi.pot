@@ -561,7 +561,7 @@ msgid "Display users' colors on the main and floating windows"
 msgstr ""
 
 #: tfconf.cbwebapi.caption
-msgid " Enable Web API"
+msgid "Enable Web API"
 msgstr ""
 
 #: tfconf.cgnotifications.caption
