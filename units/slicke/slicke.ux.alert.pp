@@ -102,13 +102,13 @@ const
     Unicode codepoints rendered as emoji or symbols on supported platforms.
     Fallbacks depend on available system fonts.
   }
-uxmtOK             = widechar($2705); // ✅ Ticked box
-uxmtWarning        = widechar($26A0); // ⚠️ Warning sign
-uxmtError          = widechar($274C); // ❌ Cross mark
-uxmtInformation    = widechar($2139); // ℹ️ Info symbol
-uxmtConfirmation   = widechar($2753); // ❓ Question mark
-uxmtCog            = widechar($2699); // ⚙️ Gear
-uxmtSquare         = widechar($274F); // ❏ Square
+uxmtOK             = system.widechar($2705); // ✅ Ticked box
+uxmtWarning        = system.widechar($26A0); // ⚠️ Warning sign
+uxmtError          = system.widechar($274C); // ❌ Cross mark
+uxmtInformation    = system.widechar($2139); // ℹ️ Info symbol
+uxmtConfirmation   = system.widechar($2753); // ❓ Question mark
+uxmtCog            = system.widechar($2699); // ⚙️ Gear
+uxmtSquare         = system.widechar($274F); // ❏ Square
 uxmtCustom         = uxmtCog;
 
   {**
@@ -162,8 +162,8 @@ mbUXClose     = mbClose;
   }
 sHTMLLineBreak = '<br>';
 type
-  {** Emoji glyph used for icons. Typically a single widechar codepoint. }
-UXImage = widechar;
+  {** Emoji glyph used for icons. Typically a single system.widechar codepoint. }
+UXImage = system.widechar;
 
   {**
     Modal dialog form used internally by UX helpers.
@@ -1405,7 +1405,7 @@ buttons: TUXMsgDlgBtns;
 const icon: UXImage = uxmtOK): TModalResult;
 begin
   Result := ExtMsg(dialogsize, sMsgTitle, title, message, '',
-    uxclBlue, uxclLightBlue, buttons, widechar(icon));
+    uxclBlue, uxclLightBlue, buttons, system.widechar(icon));
 end;
 
 {** See interface docs for behavior and parameters. }
@@ -1539,11 +1539,11 @@ begin
     end
     else
       ExtMsg(uxdAuto, sMsgTitle, title, message, '',
-        uxclBlue, uxclLightBlue, [mbOK], widechar(icon))
+        uxclBlue, uxclLightBlue, [mbOK], system.widechar(icon))
   end
   else
     ExtMsg(dialogsize, sMsgTitle, title, message, '',
-      uxclBlue, uxclLightBlue, [mbOK], widechar(icon))
+      uxclBlue, uxclLightBlue, [mbOK], system.widechar(icon))
 end;
 
 {** See interface docs for behavior and parameters. }
@@ -2949,7 +2949,7 @@ begin
     dumpbg,
     dumptext,
     [mbOK],
-    widechar(icon));
+    system.widechar(icon));
 end;
 
 {** See interface docs for behavior and parameters. }
@@ -2969,7 +2969,7 @@ begin
     dumpbg,
     dumptext,
     btns,
-    widechar(icon),
+    system.widechar(icon),
     scale);
 end;
 

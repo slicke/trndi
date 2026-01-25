@@ -478,7 +478,7 @@ type
 
 
   TDXGI_ADAPTER_DESC = record
-    Description: array [0.. 127] of widechar;
+    Description: array [0.. 127] of system.widechar;
     VendorId: UINT;
     DeviceId: UINT;
     SubSysId: UINT;
@@ -494,7 +494,7 @@ type
 
 
   TDXGI_OUTPUT_DESC = record
-    DeviceName: array [0.. 31] of widechar;
+    DeviceName: array [0.. 31] of system.widechar;
     DesktopCoordinates: TRECT;
     AttachedToDesktop: longbool;
     Rotation: TDXGI_MODE_ROTATION;
@@ -689,7 +689,7 @@ type
     );
 
   TDXGI_ADAPTER_DESC1 = record
-    Description: array [0.. 127] of widechar;
+    Description: array [0.. 127] of system.widechar;
     VendorId: UINT;
     DeviceId: UINT;
     SubSysId: UINT;

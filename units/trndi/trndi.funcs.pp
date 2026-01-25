@@ -123,8 +123,8 @@ APP_BUILD_DATE = {$I %DATE%}; // Returns "2025/07/21"
 APP_BUILD_TIME = {$I %TIME%}; // Returns "14:30:25"
 
 var
-DOT_GRAPH: unicodestring = widechar($2B24);  // Circle
-DOT_FRESH: unicodestring = widechar($2600);  // Sun
+DOT_GRAPH: unicodestring = system.widechar($2B24);  // Circle
+DOT_FRESH: unicodestring = system.widechar($2600);  // Sun
 DOT_ADJUST: single = 0; // Multiplyer where dots appear
 DOT_VISUAL_OFFSET: integer = 0;
   // Vertical offset to align limit lines with visual center of dot (compensates for internal whitespace in dot character)
