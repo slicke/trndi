@@ -267,6 +267,15 @@ ButtonLangs = array[TUXMsgDlgBtn] of string;
   }
 procedure UXMessage(const dialogsize: TUXDialogSize; const title, message: string; const icon: uximage = uxmtOK; sender: TForm = nil);
 
+{**
+  Show a simple message dialog, optionally inline on a form in @code(uxdOnForm) mode.
+  @param title Dialog title text (top label).
+  @param message Main message body.
+  @param icon Emoji icon; defaults to @code(uxmtOK).
+  @param sender Optional form used when @code(dialogsize = uxdOnForm) to render a full-screen overlay.
+}
+procedure UXMessage(const title, message: string; const icon: uximage = uxmtOK; sender: TForm = nil);
+
   {**
     Generic dialog with custom button set and emoji icon.
     @param dialogsize Layout preset; @seealso(TUXDialogSize)
@@ -321,8 +330,41 @@ const mtype: TMsgDlgType): TModalResult; overload;
 }
 function ExtMsgYesNo(
 const dialogsize: TUXDialogSize;
-const caption, title, desc: string;
+const caption, desc: string;
 const micon: UXImage = uxmtConfirmation): boolean;
+
+{**
+  Simplified Extended message dialog for displaying yes/no dialogs
+  @param caption Window caption.
+  @param title Title text.
+  @param desc Description of dialog.
+  @param micon Icon for the dialog
+  @returns Lazarus modal result corresponding to the button clicked.
+}
+function ExtMsgYesNo(
+const caption, desc: string;
+const micon: UXImage = uxmtConfirmation): boolean;
+
+{**
+  Extended message dialog supporting an optional log/dump panel with custom colors.
+  @param caption Window caption.
+  @param title Title text.
+  @param desc Description/body text (supports wrapping and scrolling in big mode).
+  @param logmsg Optional log/dump text displayed in a fixed panel at the bottom; pass empty to hide.
+  @param dumpbg Background color for log/dump panel (ARGB).
+  @param dumptext Text color for log/dump panel (ARGB).
+  @param buttons Button set to display (default [mbAbort]).
+  @param icon Emoji icon to render.
+  @param scale Optional log panel vertical scale multiplier (for big outputs).
+  @returns Lazarus modal result corresponding to the button clicked.
+}
+function ExtMsg(
+const caption, title, desc, logmsg: string;
+dumpbg: TColor = uxclWhite;
+dumptext: TColor = uxclRed;
+buttons: TUXMsgDlgBtns = [mbAbort];
+const icon: UXImage = uxmtCog;
+scale: single = 1): TModalResult;
 
   {**
     Extended message dialog supporting an optional log/dump panel with custom colors.
@@ -1402,6 +1444,12 @@ begin
     uxclBlue, uxclLightBlue, buttons, icon);
 end;
 
+
+procedure UXMessage(const title, message: string; const icon: uximage = uxmtOK; sender: TForm = nil);
+begin
+  UXMessage(uxdAuto, title, message, icon, sender);
+end;
+
 {**
   See interface docs. Renders inline panel when @code(dialogsize = uxdOnForm) and a sender is available.
 }
@@ -2162,11 +2210,29 @@ begin
 end;
 
 function ExtMsgYesNo(
-const dialogsize: TUXDialogSize;
-const caption, title, desc: string;
+const caption, desc: string;
 const micon: UXImage = uxmtConfirmation): boolean;
 begin
-result := ExtMsg(dialogsize,caption,title, [mbYes, mbNo], micon) = mrYes;
+  result :=ExtMsgYesNo(uxdAuto, caption, desc, micon);
+end;
+
+function ExtMsgYesNo(
+const dialogsize: TUXDialogSize;
+const caption, desc: string;
+const micon: UXImage = uxmtConfirmation): boolean;
+begin
+result := ExtMsg(dialogsize,caption, desc, [mbYes, mbNo], micon) = mrYes;
+end;
+
+function ExtMsg(
+const caption, title, desc, logmsg: string;
+dumpbg: TColor = uxclWhite;
+dumptext: TColor = uxclRed;
+buttons: TUXMsgDlgBtns = [mbAbort];
+const icon: UXImage = uxmtCog;
+scale: single = 1): TModalResult;
+begin
+result := ExtMsg(uxdAuto, caption, title, desc, logmsg, dumpbg, dumptext, buttons, icon, scale);
 end;
 
 {** See interface docs for behavior and parameters. }

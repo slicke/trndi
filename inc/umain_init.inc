@@ -485,7 +485,7 @@ begin
 
   // Initialize native interface
   native := TrndiNative.Create;
-  if (ssMeta in GetKeyShiftState) and (ExtMsg(uxdNormal,'Run Trndi in English?','Override language setting?','Run Trndi in English this once? You pressed the Windows/meta key, and can now choose to run Trndi in English. You can change the language in Settings.', '',uxClWhite, uxclRed,[mbYes, mbNo]) = mrYes) then
+  if (ssMeta in GetKeyShiftState) and ExtMsgYesNo(uxdNormal,'Run Trndi in English?', 'Run Trndi in English this once? You pressed the Windows/meta key, and can now choose to run Trndi in English. You can change the language in Settings.') then
   else
     SetLang;
 
@@ -520,7 +520,7 @@ begin
   {$endif}
 
   if ssShift in GetKeyShiftState then
-    if ExtMsgYesNo(uxdAuto, 'Override big screen?', 'Shift Pressed! Force Trndi to treat your system as ' + IfThen(native.DetectTouchScreen(fil), 'Small screen (non-touch)', 'Big screen (touch)')+'?', uxmtWarning) then
+    if ExtMsgYesNo('Override big screen?', 'Shift Pressed! Force Trndi to treat your system as ' + IfThen(native.DetectTouchScreen(fil), 'Small screen (non-touch)', 'Big screen (touch)')+'?', uxmtWarning) then
       if native.DetectTouchScreen(fil) then
         native.touchOverride := tbFalse
       else

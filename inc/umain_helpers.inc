@@ -159,7 +159,7 @@ end;
 procedure ShowMessage(const str: string);
 begin
   if semiTouchMode then
-    UXMessage(uxdAuto, sSuccTitle, str, uxmtInformation, fBG)
+    UXMessage(sSuccTitle, str, uxmtInformation, fBG)
   else
     UXMessage(uxdOnForm, sSuccTitle, str, uxmtInformation, fBG);
 end;
@@ -167,7 +167,7 @@ end;
 procedure ShowMessage(const title, str: string);
 begin
   if semiTouchMode then
-    UXMessage(uxdAuto, title, str, uxmtInformation, fBG)
+    UXMessage(title, str, uxmtInformation, fBG)
   else
     UXMessage(uxdOnForm, title, str, uxmtInformation, fBG);
 end;
