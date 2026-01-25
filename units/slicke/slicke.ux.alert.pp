@@ -1415,7 +1415,7 @@ var
   tp: TPanel;
   tl, tt: TLabel;
   {$ifdef X_WIN}
-  tb: TDarkButton;
+  tb: TButton; // TDarkButton;
   {$else}
   tb: TButton;
   {$endif}
@@ -1469,7 +1469,7 @@ begin
       if IsProblematicWM then
         tl.Font.size := 38;
 
-      {$ifdef X_WIN}tb := TDarkButton.Create(tp);{$else}tb := TButton.Create(tp);{$endif}
+      {$ifdef X_WIN}tb := TBUtton.Create(tp);{$else}tb := TButton.Create(tp);{$endif}
       tb.Parent := tp;
       tb.AutoSize := true;
       tb.Caption := smbUXOK;
@@ -3342,8 +3342,12 @@ end;
 {** Close handler for full-screen overlay messages created by @link(UXMessage). }
 procedure TDialogForm.UXMessageOnClick(sender: TObject);
 begin
-  ((sender as TButton).Parent as TPanel).Hide;
-  ((sender as TButton).Parent as TPanel).Free;
+  //.$ifdef Windows}
+//   ((sender as TDarkButton).parent as TPanel).Free;
+  //$else}
+  ((sender as TButton).parent as TPanel).Free;
+  //$endif}
+
   Self.Free;
 end;
 
