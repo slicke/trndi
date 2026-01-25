@@ -310,6 +310,20 @@ const header, title, message: string;
 buttons: TUXMsgDlgBtns;
 const mtype: TMsgDlgType): TModalResult; overload;
 
+{**
+  Simplified Extended message dialog for displaying yes/no dialogs
+  @param dialogsize Layout preset; @seealso(TUXDialogSize)
+  @param caption Window caption.
+  @param title Title text.
+  @param desc Description of dialog.
+  @param micon Icon for the dialog
+  @returns Lazarus modal result corresponding to the button clicked.
+}
+function ExtMsgYesNo(
+const dialogsize: TUXDialogSize;
+const caption, title, desc: string;
+const micon: UXImage = uxmtConfirmation): boolean;
+
   {**
     Extended message dialog supporting an optional log/dump panel with custom colors.
     @param dialogsize Layout preset; @seealso(TUXDialogSize)
@@ -2145,6 +2159,14 @@ scale: integer = 1
 begin
   Result := ExtMsg(dialogsize, sMsgTitle, caption, msg, log,
     uxclBlue, uxclLightBlue, [mbOK], icon, scale);
+end;
+
+function ExtMsgYesNo(
+const dialogsize: TUXDialogSize;
+const caption, title, desc: string;
+const micon: UXImage = uxmtConfirmation): boolean;
+begin
+result := ExtMsg(dialogsize,caption,title, [mbYes, mbNo], micon) = mrYes;
 end;
 
 {** See interface docs for behavior and parameters. }
