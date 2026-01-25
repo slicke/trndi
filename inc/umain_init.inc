@@ -457,12 +457,6 @@ begin
   TrndiDebugLogAlert := not TrndiDebugLogAlert;
 end;
 
-procedure TfBG.miDebugLinesClick(Sender: TObject);
-begin
-  debug_draw := not debug_draw;
-  ShowMessage(Format('Now %s', [IfThen(debug_draw, 'showing', 'invisible')]));
-end;
-
 procedure TfBG.miDebugLoadTextClick(Sender: TObject);
 begin
   debug_load_text := not debug_load_text;
@@ -493,7 +487,7 @@ var
   minutesStr: string;
   minutesVal: integer;
   {$ifdef DEBUG}
-  miDebugUXMsg, miDebugLog, miDebugLines, miDebugLoadText: TMenuItem;
+  miDebugUXMsg, miDebugLog, miDebugLoadText: TMenuItem;
   {$endif}
 begin
   firstboot := false;
@@ -742,11 +736,6 @@ begin
   miDebugLog.Caption := '[debug] Toggle alert messages';
   miAdvanced.Insert(miAdvanced.Count, miDebugLog);
   miDebugLog.OnClick := @miDebugLogClick;
-
-  miDebugLines := TMenuItem.Create(miAdvanced);
-  miDebugLines.Caption := '[debug] Toggle lines';
-  miAdvanced.Insert(miAdvanced.Count, miDebugLines);
-  miDebugLines.OnClick := @miDebugLinesClick;
 
   miDebugLoadText := TMenuItem.Create(miAdvanced);
   miDebugLoadText.Caption := '[debug] Show load indication';

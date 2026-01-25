@@ -296,6 +296,10 @@ msgstr "Tvinga uppdatering"
 msgid "Toggle Fullscreen"
 msgstr "Vexla fullskerm"
 
+#: tfbg.miguidelines.caption
+msgid "Show Guide Lines"
+msgstr ""
+
 #: tfbg.mihistory.caption
 msgid "Show history"
 msgstr "Visa historik"

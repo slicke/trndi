@@ -282,6 +282,10 @@ msgstr ""
 msgid "Toggle Fullscreen"
 msgstr ""
 
+#: tfbg.miguidelines.caption
+msgid "Show Guide Lines"
+msgstr ""
+
 #: tfbg.mihistory.caption
 msgid "Show history"
 msgstr ""

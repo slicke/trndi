@@ -23,8 +23,7 @@ sudo apt install -y \
   libxcb1 libx11-6 libxext6 libxrender1 libxrandr2 \
   libfontconfig1 libfreetype6 libdbus-1-3
   ```
-4. Install the Qt6Pas library with ```apt install libqt6pas6`
-``
+4. Install the Qt6Pas library with ```apt install libqt6pas6```
   ## Install Trndi
 
   1. In this repo, visit the [latest release](https://github.com/slicke/trndi/releases/latest), and down load the _arm64_ package: ```trndi_X.Y.Z_arm64.deb```
