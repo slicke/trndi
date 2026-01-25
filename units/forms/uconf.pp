@@ -887,6 +887,8 @@ begin
     Result := 'Swati';
   'sv':
     Result := 'Swedish';
+  'jm':
+    Result := 'Jämtländska (Jamska)';
   'tl':
     Result := 'Tagalog';
   'ty':

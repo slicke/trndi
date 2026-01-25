@@ -174,12 +174,19 @@ end;
 function getLangPath: string;
 var
   bin: string;
+  parent: string;
 begin
   bin := ExtractFilePath(Application.ExeName);
   if DirectoryExists(bin + 'lang') then
     result := bin + 'lang/'
   else
-    result := GetAppPath + 'lang/';
+  begin
+    parent := ExtractFilePath(ExcludeTrailingPathDelimiter(bin));
+    if DirectoryExists(parent + 'lang') then
+      result := parent + 'lang/'
+    else
+      result := GetAppPath + 'lang/';
+  end;
 end;
 
 {$else}
@@ -192,6 +199,12 @@ end;
 function getLangPath: string;
 begin
   Result := GetAppPath + 'lang/';
+  if not DirectoryExists(Result) then
+  begin
+    Result := ExtractFilePath(ExcludeTrailingPathDelimiter(GetAppPath)) + 'lang/';
+    if not DirectoryExists(Result) then
+      Result := GetAppPath + 'lang/';
+  end;
 end;
 {$endif}
 
