@@ -554,6 +554,24 @@ function DexTimeToTDateTime(const S: string): TDateTime;
     Result := UnixToDateTime(LMs div 1000, false);     // milliseconds -> seconds
   end;
 
+  // Helper: safely extract numeric 'Value' from a JSON item (handles null/missing)
+  function SafeValue(Item: TJSONData; out Ok: boolean): Double;
+  var
+    VData: TJSONData;
+  begin
+    Ok := false;
+    Result := 0;
+    if Item = nil then Exit;
+    VData := Item.FindPath('Value');
+    if VData = nil then Exit;
+    try
+      Result := VData.AsFloat;
+      Ok := true;
+    except
+      Ok := false;
+    end;
+  end;
+
 var
   LParams: array[1..3] of string;
   LGlucoseJSON, LAlertJSON, LTrendStr: string;
@@ -561,6 +579,8 @@ var
   i, LTrendCode: integer;
   LTrendEnum: BGTrend;
   noval: MaybeInt;
+  CurVal, PrevVal: Double;
+  CurOk, PrevOk: Boolean;
 begin
   // Initialize the noval
   noval.exists := false;
@@ -611,20 +631,36 @@ begin
       // Mark source for downstream consumers/debugging
       Result[i].updateEnv('Dexcom', noval, noval);
 
-      // Compute BG value and optional delta
-      if (FCalcDiff) and (i > 0) then
-        Result[i].Update(
-          LData.Items[i].FindPath('Value').AsFloat,
-          LData.Items[i].FindPath('Value').AsFloat -
-          LData.Items[i - 1].FindPath('Value').AsFloat
-          )
+      // Compute BG value and optional delta, handling missing/null 'Value' gracefully
+      CurVal := SafeValue(LData.Items[i], CurOk);
+      if FCalcDiff and (i > 0) then
+      begin
+        PrevVal := SafeValue(LData.Items[i - 1], PrevOk);
+        if CurOk and PrevOk then
+          Result[i].Update(CurVal, CurVal - PrevVal)
+        else if CurOk then
+          // No valid previous value -> cannot compute delta, store sentinel
+          Result[i].Update(CurVal, BG_NO_VAL)
+        else
+          // No current value -> mark reading as empty
+          Result[i].Clear;
+      end
+      else if FCalcDiff then
+      begin
+        // First item: delta not computable; use 0 if we have a value
+        if CurOk then
+          Result[i].Update(CurVal, 0)
+        else
+          Result[i].Clear;
+      end
       else
-      if FCalcDiff then
-        // First item: delta not computable; use 0
-        Result[i].Update(LData.Items[i].FindPath('Value').AsFloat, 0)
-      else
-        // Delta not requested; store only BG value (using sentinel)
-        Result[i].Update(LData.Items[i].FindPath('Value').AsFloat, BG_NO_VAL);
+      begin
+        // Delta not requested; store only BG value (using sentinel) if we have a value
+        if CurOk then
+          Result[i].Update(CurVal, BG_NO_VAL)
+        else
+          Result[i].Clear;
+      end;
 
       // Interpret "Trend" (may be numeric code or string)
       LTrendStr := LData.Items[i].FindPath('Trend').AsString;
