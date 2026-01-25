@@ -578,7 +578,7 @@ implementation
 
 procedure ShowMessage(const str: string);
 begin
-  UXMessage(uxdAuto, sSuccTitle, str, uxmtInformation);
+  UXMessage(sSuccTitle, str, uxmtInformation);
 end;
 
 function ExtractLangCode(const AText: string): string;
@@ -1376,7 +1376,7 @@ begin
       OpenURL(url);
   end
   else
-    UXMessage(uxdAuto, RS_NOTIFICATIONS, RS_NOTIFY_SYSTEM);
+    UXMessage(RS_NOTIFICATIONS, RS_NOTIFY_SYSTEM);
 
 end;
 
