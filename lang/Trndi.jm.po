@@ -1,0 +1,2198 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: jm\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.8\n"
+
+msgid " Enable Web API"
+msgstr " Slå på Web-API:et"
+
+msgid "%d days ago"
+msgstr "%d dagar sedan"
+
+msgid "%d min"
+msgstr "%d min"
+
+msgid "%d readings"
+msgstr "%d avläsningar"
+
+msgid "%s (%d.%.2d min ago)"
+msgstr "%s (%d.%.2d min sedan)"
+
+msgid ""
+"%s (%s)\n"
+"%s\n"
+"Default Separator: %s"
+msgstr ""
+"%s (%s)r\n"
+"%sr\n"
+"Standardsavgränsare: %s"
+
+msgid "%s supports a max time of %d days"
+msgstr "%s stöder max %d dagar"
+
+msgid "%s time limit depends on server configuration"
+msgstr "%s tidsgräns beror på serverkonfigurationen"
+
+msgid "%s – %s"
+msgstr "%s - %s"
+
+msgid "&Hide"
+msgstr "&Göm"
+
+msgid "&Settings"
+msgstr "&Inställningar"
+
+msgid "(Ignored for debug backend)"
+msgstr "(Ignorerat i debugläge)"
+
+msgid "+ Add"
+msgstr "+ Ny"
+
+msgid "- Extension has no copyright info -"
+msgstr "- Tillägget saknar upphovsrättsinfo -"
+
+msgid "- Remove"
+msgstr "- Radera"
+
+msgid "00:00"
+msgstr "00:00"
+
+msgid "10 minutes"
+msgstr "10 minuter"
+
+msgid "100 min"
+msgstr "100 min"
+
+msgid "<No message provided>"
+msgstr "<Inga meddelanden finns>"
+
+msgid ""
+"<b>Dexcom</b> region selection:<br><br>Choose the server based on your "
+"<u>account region</u>:<br>• Dexcom (USA): for accounts <i>(served by share2."
+"dexcom.com)</i><br>• Dexcom (Outside USA): for accounts <i>(served by "
+"shareous1.dexcom.com)</i><br><br>If you are unsure, try <b>Outside USA</b> "
+"first, if you live outside the US.\n"
+"Your username and password are your Dexcom Account (not Share) credentials."
+msgstr ""
+"<b>Dexcom</b>regionval:<br><br>Välj en server baserat på din <u>kontoregion</"
+"u>:<br>• Dexcom (USA): för konton <i>(hanterade av by share2.dexcom.com)</"
+"i><br>• Dexcom (Utanför USA): för konton <i>(hanterade av shareous1.dexcom."
+"com)</i><br><br>If you are unsure, try <b>Outside USA</b> first, if you live "
+"outside the US.\n"
+"Your username and password are your Dexcom Account (not Share) credentials."
+
+msgid ""
+"<b>xDrip setup:</b><br><br>Address: your xDrip REST endpoint (base URL)."
+"<br>Auth: API secret (plain text; server hashes it)."
+msgstr ""
+"<b>xDrip-inställning:</b><br><br>Adress: din xDrip REST-endpoint (bas-URL)."
+"<br>Auth: API secret (ren text; servern hashar den)."
+
+msgid ""
+"<div style=\"font-family: Arial, sans-serif; line-height: 1.6;\"><div "
+"style=\"background: #dc3545; color: white; padding: 15px; border-radius: "
+"6px; margin-bottom: 20px; font-weight: bold; text-align: center; border: 2px "
+"solid #c82333;\">⚠️ ALPHA DRIVER - Please use \"NightScout\" for daily use! "
+"⚠️</div><h2 style=\"margin-bottom: 10px;\">🌙 NightScout v3 Setup</h2><p "
+"style=\"color: #7f8c8d; font-style: italic; margin-bottom: 15px;\">(use FULL "
+"access token)</p><ol style=\"padding-left: 20px;\"><li style=\"margin-"
+"bottom: 10px;\">Open your NightScout site (e.g., <code style=\"background: "
+"#6495ED; padding: 2px 6px; border-radius: 3px;\">https://your-site</code>).</"
+"li><li style=\"margin-bottom: 10px;\">Go to <strong>Admin → Tokens</strong> "
+"— or <strong>API Secret</strong>.</li><li style=\"margin-bottom: 10px;\">If "
+"you use Tokens:<ul style=\"margin-top: 5px; padding-left: 20px;\"><li>Create "
+"a token with at least <strong>READ</strong> scope.</li><li>Copy the "
+"<strong>FULL</strong> access token value exactly as shown.</li></ul></li><li "
+"style=\"margin-bottom: 10px;\">In Trndi:<ul style=\"margin-top: 5px; padding-"
+"left: 20px;\"><li><strong>Address:</strong> enter your NightScout URL</"
+"li><li><strong>Auth:</strong> paste the FULL access token.</li></ul></li></"
+"ol><div style=\"border-left: 4px solid #ffc107; padding: 12px; margin-top: "
+"15px; border-radius: 4px;\"><p style=\"margin: 0 0 8px 0;\"><strong>📝 Note:"
+"</strong> If you instead use the legacy API Secret, paste your API Secret "
+"value as-is.</p><p style=\"margin: 0;\"><strong>📝 Note 2:</strong> Your "
+"access token should look like: <code style=\"background: #6F8FAF; padding: "
+"2px 6px; border-radius: 3px;\">trndi-abc123</code> (or whatever name you "
+"chose).</p></div></div>"
+msgstr ""
+"<div style=\"font-family: Arial, sans-serif; line-height: 1.6;\"><div "
+"style=\"background: #dc3545; color: white; padding: 15px; border-radius: "
+"6px; margin-bottom: 20px; font-weight: bold; text-align: center; border: 2px "
+"solid #c82333;\">⚠️ ALFADRIVRUTIN- Vänligen välj \"NightScout\" för dagligt "
+"bruk! ⚠️</div><h2 style=\"margin-bottom: 10px;\">🌙 NightScout v3-"
+"inställning</h2><p style=\"color: #7f8c8d; font-style: italic; margin-"
+"bottom: 15px;\">(använd HELA access token:et)</p><ol style=\"padding-left: "
+"20px;\"><li style=\"margin-bottom: 10px;\">Öppna din NightScout-sajt (t. "
+"ex., <code style=\"background: #6495ED; padding: 2px 6px; border-radius: 3px;"
+"\">https://din-sajt</code>).</li><li style=\"margin-bottom: 10px;\">Gå till "
+"<strong>Admin → Tokens</strong> — eller <strong>API Secret</strong>.</li><li "
+"style=\"margin-bottom: 10px;\">Om du använder Tokens:<ul style=\"margin-top: "
+"5px; padding-left: 20px;\"><li>Skapa ett token med minst <strong>READ</"
+"strong> scope.</li><li>Kopiera <strong>HELA</strong> access token:ets värde "
+"så som det visas.</li></ul></li><li style=\"margin-bottom: 10px;\">I Trndi:"
+"<ul style=\"margin-top: 5px; padding-left: 20px;\"><li><strong>Adress:</"
+"strong> ange din NightScout-URL</li><li><strong>Autensiering:</strong> "
+"klistra in HELA access token:et.</li></ul></li></ol><div style=\"border-"
+"left: 4px solid #ffc107; padding: 12px; margin-top: 15px; border-radius: 4px;"
+"\"><p style=\"margin: 0 0 8px 0;\"><strong>📝 OBS:</strong> Om du använder "
+"det föråldrade API Secret, klistra in din API Secret så som den visas.</p><p "
+"style=\"margin: 0;\"><strong>📝 OBS 2:</strong> Ditt access token ska se ut "
+"enligt följande: <code style=\"background: #6F8FAF; padding: 2px 6px; border-"
+"radius: 3px;\">trndi-abc123</code> (eller det namn du valt).</p></div></div>"
+
+msgid ""
+"<div style=\"font-family: Arial, sans-serif; line-height: 1.6;\"><h2 "
+"style=\"margin-bottom: 10px;\">🌙 NightScout v2 Setup</h2><p style=\"color: "
+"#7f8c8d; font-style: italic; margin-bottom: 15px;\">(use FULL access token)</"
+"p><ol style=\"padding-left: 20px;\"><li style=\"margin-bottom: 10px;\">Open "
+"your NightScout site (e.g., <code style=\"background: #6495ED; padding: 2px "
+"6px; border-radius: 3px;\">https://your-site</code>).</li><li style=\"margin-"
+"bottom: 10px;\">Go to <strong>Admin → Tokens</strong> — or <strong>API "
+"Secret</strong>.</li><li style=\"margin-bottom: 10px;\">If you use Tokens:"
+"<ul style=\"margin-top: 5px; padding-left: 20px;\"><li>Create a token with "
+"at least <strong>READ</strong> scope.</li><li>Copy the <strong>FULL</strong> "
+"access token value exactly as shown.</li></ul></li><li style=\"margin-"
+"bottom: 10px;\">In Trndi:<ul style=\"margin-top: 5px; padding-left: 20px;"
+"\"><li><strong>Address:</strong> enter your NightScout URL</"
+"li><li><strong>Auth:</strong> paste the FULL access token (not just a "
+"suffix).</li></ul></li></ol><p style=\"border-left: 4px solid #ffc107; "
+"padding: 10px; margin-top: 15px;\"><strong>⚠️ Note:</strong> If you instead "
+"use the legacy API Secret, paste your API Secret value as-is.</p></div>"
+msgstr ""
+"<div style=\"font-family: Arial, sans-serif; line-height: 1.6;\"><h2 "
+"style=\"margin-bottom: 10px;\">🌙 NightScout v2-inställning</h2><p "
+"style=\"color: #7f8c8d; font-style: italic; margin-bottom: 15px;\">(använd "
+"HELA access token:et)</p><ol style=\"padding-left: 20px;\"><li "
+"style=\"margin-bottom: 10px;\">Öppna din NightScout-sajt (t. ex., <code "
+"style=\"background: #6495ED; padding: 2px 6px; border-radius: 3px;\">https://"
+"din-sajt</code>).</li><li style=\"margin-bottom: 10px;\">Gå till "
+"<strong>Admin → Tokens</strong> — eller <strong>API Secret</strong>.</li><li "
+"style=\"margin-bottom: 10px;\">Om du använder Tokens:<ul style=\"margin-top: "
+"5px; padding-left: 20px;\"><li>Skapa ett token med minst <strong>READ</"
+"strong> scope.</li><li>Kopiera <strong>HELA</strong> access token-v'rdet som "
+"det visas.</li></ul></li><li style=\"margin-bottom: 10px;\">I Trndi:<ul "
+"style=\"margin-top: 5px; padding-left: 20px;\"><li><strong>Adress:</strong> "
+"ange din NightScout URL</li><li><strong>Autensiering:</strong> klistra in "
+"HELA token:et (inte bara suffixet).</li></ul></li></ol><p style=\"border-"
+"left: 4px solid #ffc107; padding: 10px; margin-top: 15px;\"><strong>⚠️ Note:</"
+"strong> Om du använder det föråldrade API Secret, klistra in din API Secret "
+"så som den är.</p></div>"
+
+msgid "> Service Menu"
+msgstr "> Servicemeny"
+
+msgid ""
+"A new pre-release for %s is available, would you like to go to the downloads "
+"page?"
+msgstr ""
+"En förhandsversion av %s finns tillgänglig, vill du besöka nedladdningssidan?"
+
+msgid "A notification system is required"
+msgstr "Ett notissystem krävs"
+
+msgid "API Key / Dexcom Password"
+msgstr "API-nyckel / Dexcom-lösenord"
+
+msgid "Abort"
+msgstr "Avsluta"
+
+msgid "Account Settings"
+msgstr "Kontoinställningar"
+
+msgid "Account color"
+msgstr "Kontofärg"
+
+msgid "Add dot adjustment"
+msgstr "Lägg till punktjustering"
+
+msgid "Add users below, if you wish to track more than one person."
+msgstr "Lägg till användare nedan, om du vill spåra fler än en person."
+
+msgid "Adjust Dot Positions"
+msgstr "Justera punktpositioner"
+
+msgid "Adjust: %.2f / Scale: %.2fx"
+msgstr "Justering: %.2f / Skala: %.2fx"
+
+msgid "Advanced"
+msgstr "Avancerat"
+
+msgid "Agree"
+msgstr "Accepterar"
+
+msgid "Alert me when blood sugar is high/low"
+msgstr "Notifiera mig när blodsockret är högt/lågt"
+
+msgid "Alert me when readings are missing / not fresh"
+msgstr "Notifiera mig när avläsningar saknas / inte är färska"
+
+msgid "All"
+msgstr "Alla"
+
+msgid "All accounts"
+msgstr "Alla konton"
+
+msgid "Alterante arrow and reading"
+msgstr "Växla pil och värde"
+
+msgid "An error occurred while creating a message dialog"
+msgstr "Ett fel uppstod medan en meddelanderuta skulle skapas"
+
+msgid "Announce raw backend data"
+msgstr "Annonsera rådata från backendet"
+
+msgid "Announcing readings aloud"
+msgstr "Läser upp värden"
+
+msgid "Apply this value when Trndi starts?"
+msgstr "Läs in detta värde när Trndi startar?"
+
+msgid "Are dots in view?"
+msgstr "Syns punkterna?"
+
+msgid "Arrow only"
+msgstr "Endast pil"
+
+msgid "Attempting to adjust Linux overrides..."
+msgstr "Försöker att justera Linux-åtidosättanden..."
+
+msgid "Attempting to adjust macOS overrides..."
+msgstr "Försöker att justera macOS-åsidosättanden..."
+
+msgid "Attempting to connect..."
+msgstr "Försöker ansluta..."
+
+msgid "Auth token"
+msgstr "Auth-token"
+
+msgid "Auto-detect"
+msgstr "Automatisk"
+
+msgid "Available Extensions"
+msgstr "Tillgängliga tillägg"
+
+msgid "Backgrounds"
+msgstr "Bakgrunder"
+
+msgid "Badge Flashing"
+msgstr "Brickflashning"
+
+msgid "Black = transparent"
+msgstr "Svart = genomskinlig"
+
+msgid "Blood sugar high"
+msgstr "Högt blodsocker"
+
+msgid "Blood sugar low"
+msgstr "Lågt blodsocker"
+
+msgid ""
+"By default, Trndi only shows up/down/straight. You can enable the full range "
+"of arrows here - however you must realize that this is very experimental and "
+"potentially less accurate!"
+msgstr ""
+"Som standard visar Trndi bara upp/ned/rakt. Du kan aktivera att hela mängden "
+"av pilar ska visas - dock måste du vara medveten om att detta är mycket "
+"experimentfullt och kan potentiellt vara mindre exakt!"
+
+msgid "Cancel"
+msgstr "Avbryt"
+
+msgid "Change Trndi's default background and colors, when in the custom range"
+msgstr ""
+"Ändra Trndis standardfärger för bakgrund och text, när du är i eget område"
+
+msgid "Change Trndi's default background colors, depending on glucose reading"
+msgstr "Ändra Trndis standardfärger för bakgrund, beroende på glukosavläsning"
+
+msgid "Change Trndi's default text colors, depending on glucose reading"
+msgstr "Ändra Trndis standardfärger för text, beroende på glukosavläsning"
+
+msgid "Check for update"
+msgstr "Kolla uppdatering"
+
+msgid "Choose a date"
+msgstr "Välj ett datum"
+
+msgid "Choose a date to show readings from"
+msgstr "Välj ett datum att visa avläsningar från"
+
+msgid "Choose a font to use"
+msgstr "Välj ett typsnitt"
+
+msgid "Choose an extension"
+msgstr "Välj ett tillägg"
+
+msgid "Choose an icon for points in the graph"
+msgstr "Välj en ikon för punkterna i grafen"
+
+msgid "Choose an icon for the current point in the graph"
+msgstr "Välj en ikon för den nuvarande punkten i grafen"
+
+msgid "Choose icon"
+msgstr "Välj ikon"
+
+msgid ""
+"Choose which language to run Trndi in. Should you choose the wrong one, you "
+"can press the Windows/\"meta\" button at start to force English!"
+msgstr ""
+"Välj vilket språk Trndi ska startas på. Om du väljer fel, kan du hålla ned "
+"Windows/\"meta\"-knappen vid start för att tvinga engelska!"
+
+msgid "Click a dot to see the full reading details"
+msgstr "Klicka på en punkt för att se detaljer om avläsningen"
+
+msgid "Click on a component to the left, to edit it's font"
+msgstr "Klicka på en komponent till vänster, för att ändra typsnittet"
+
+msgid "Color the graph's background with your custom range"
+msgstr "Rita grafens bakgrund med ditt föredragna område"
+
+msgid "Color the graph's background with your range"
+msgstr "Rita grafens bakgrund med ditt målområde"
+
+msgid "Color the title bar with glucose color (Windows only)"
+msgstr "Färga titeln med blodsockerfärgen (endast Windows)"
+
+msgid "Colors"
+msgstr "Färger"
+
+msgid ""
+"Compatibility mode: Your window manager does not support all features, "
+"please consider eg KDE"
+msgstr ""
+"Kompatibilitetsläge: Din fönsterhanterare stöder inte alla funktioner, "
+"överväg t ex KDE"
+
+msgid "Connection"
+msgstr "Anslutning"
+
+msgid "Could not connect!"
+msgstr "Kunde inte ansluta!"
+
+msgid "Current Basal"
+msgstr "Nuvarande basal"
+
+msgid "Current dot:"
+msgstr "Nuvarande punkt:"
+
+msgid "Custom Size [%.2f]"
+msgstr "Egen storlek [%.2f]"
+
+msgid "Custom range"
+msgstr "Eget område"
+
+msgid "Customization"
+msgstr "Personalisera"
+
+msgid "Customize dot size"
+msgstr "Anpassa punktstorlek"
+
+msgid "Decimal separator:"
+msgstr "Decimalseparator:"
+
+msgid "Determining glucose unit..."
+msgstr "Bedömmer glukosenhet..."
+
+msgid "Dexcom Password"
+msgstr "Dexcom-lösenord"
+
+msgid "Dexcom Username"
+msgstr "Dexcom-användarnamn"
+
+msgid ""
+"Dexcom servers do not provide custom high and low blood sugar values.\n"
+"Please set your own thresholds in the Customization tab."
+msgstr ""
+"Dexcom:s servrar tillhandahåller inte värden för vad som är högt och lågt.\n"
+"Vänligen ställ in dina egna gränser under fliken Personalisera."
+
+msgid "Display Preferences"
+msgstr "Visningsval"
+
+msgid "Display Unit"
+msgstr "Enhetstyp"
+
+msgid "Display users' colors on the main and floating windows"
+msgstr "Visa användares färger på huvud- och det flytande fönstret"
+
+msgid "Dot Adjustment"
+msgstr "Punktjustering"
+
+msgid "Dot stats"
+msgstr "Punktstatistik"
+
+msgid "Dots: Enter the Unicode code for a character, or use a template"
+msgstr "Punkter: Ange Unicode-koden för ett tecken, eller använd mallarna"
+
+msgid "Driver contributor: "
+msgstr "Bidragen av: "
+
+msgid "Due to hardware limitations, %s on %s cannot support extensions"
+msgstr "P.g.a. hårdvarubegränsningar, kan %s på %s inte stöda tillägg"
+
+msgid "Enable Razer Chroma integration"
+msgstr "Slå på Razer Chroma-integrationen"
+
+msgid "Enter a username"
+msgstr "Ange ett användarnamn"
+
+msgid "Enter a value, the dot size will multiply by this"
+msgstr "Skriv in ett värde, punktstorleken kommer att gångras med detta"
+
+msgid "Enter the amount of readings to predict (1-20)"
+msgstr "Ange antalet avläsningar att förutspå (1-20)"
+
+msgid "Error occurred in extension"
+msgstr "Fel i ett tillägg"
+
+msgid "Exit Trndi?"
+msgstr "Avsluta Trndi?"
+
+msgid "Explain"
+msgstr "Förklara"
+
+msgid "Extension Confirmation"
+msgstr "Tilläggsbekräftelse"
+
+msgid "Extension Error"
+msgstr "Fel i tillägg"
+
+msgid "Extension Event"
+msgstr "Tilläggshändelse"
+
+msgid "Extension Info"
+msgstr "Tilläggsinfo"
+
+msgid "Extension Message"
+msgstr "Tilläggsmeddelande"
+
+msgid "Extension Warning"
+msgstr "Tilläggsvarning"
+
+msgid "Extension error"
+msgstr "Tilläggsfel"
+
+msgid "Extensions"
+msgstr "Tillägg"
+
+msgid "Extensions Log"
+msgstr "Tilläggslogg"
+
+msgid "Extensions count:"
+msgstr "Tilläggsantal:"
+
+msgid "Extensions count: %d"
+msgstr "Tilläggsantal: %d"
+
+msgid "Extra Settings"
+msgstr "Extrainställningar"
+
+msgid "Failed to save graph: %s"
+msgstr "Misslyckades att spara grafen: %s"
+
+msgid "Fetching first reading..."
+msgstr "Hämta första avläsning..."
+
+msgid "File \"%s\" not found"
+msgstr "Filen \"%s\" hittades inte"
+
+msgid "Flash on high blood sugar"
+msgstr "Blixtra vid högt blodsocker"
+
+msgid "Flash on low blood sugar"
+msgstr "Blixtra vid lågt blodsocker"
+
+msgid "Flash on perfect reading (5.5mmol/L / 100mg/dL)"
+msgstr "Blixtra vid perfekt värde (5,5mmol/L / 100mg/dL)"
+
+msgid "Floating Display"
+msgstr "Flytande visning"
+
+msgid "Force No"
+msgstr "Tvinga Nej"
+
+msgid "Force Touchscreen"
+msgstr "Tvinga pekskärm"
+
+msgid "Force Update"
+msgstr "Tvinga uppdatering"
+
+msgid "Force Yes"
+msgstr "Tvinga Ja"
+
+msgid "Force a prediction"
+msgstr "Tvinga en förutspåelse"
+
+msgid "Force predictions"
+msgstr "Tvinga förutspåelser"
+
+msgid ""
+"Force refresh will bypass the cache and make an immediate API call. Waiting "
+"allows the system to use cached data efficiently."
+msgstr ""
+"Tvingad uppdatering kommer att förbigå cachen och uppdatera omedelbart. Om "
+"du väntar kan systemet använda cachead data effektivt."
+
+msgid "Force update"
+msgstr "Tvinga uppdatering"
+
+msgid "Forcefully refresh the reading?"
+msgstr "Tvinga uppdatering av avläsning?"
+
+msgid "General"
+msgstr "Allmänt"
+
+msgid "Glucose"
+msgstr "Blodsocker"
+
+msgid "Graph saved successfully"
+msgstr "Grafen sparades"
+
+msgid "HIGH"
+msgstr "HÖGT"
+
+msgid ""
+"Hi = When BG is considered high\n"
+"Lo = When BG is considered low\n"
+"\n"
+"Ranges: Defines \"desirable\" levels within normal. Not supported by all "
+"backends"
+msgstr ""
+"Hög = När BS anses högt\n"
+"Lo = När BS anses lågt\n"
+"\n"
+"Områden: Satta \"önskvärda\" nivåer, inom normalområdet. Stöds inte av alla "
+"system"
+
+msgid "Hi > %.1f"
+msgstr "Hög > %.1f"
+
+msgid "Hi range not supported by API"
+msgstr "Högt område stöds inte av källans gränssnitt"
+
+msgid "High (eg https://open.spotify.com/... or spotify:track:...)"
+msgstr "Hög (t ex https://open.spotify.com/... eller spotify:track:...)"
+
+msgid "High (eg https://url.local/hi)"
+msgstr "Hög (tex https://url.local/hög)"
+
+msgid "High Background"
+msgstr "Bakgrund hög"
+
+msgid "High Text"
+msgstr "Text hög"
+
+msgid "High blood sugar! Currently: %s"
+msgstr "Högt blodsocker! Nuvarande: %s"
+
+msgid "Historical readings"
+msgstr "Historiska värden"
+
+msgid "History graph"
+msgstr "Historikgraf"
+
+msgid "Huge"
+msgstr "Enorm"
+
+msgid "Ignore"
+msgstr "Ignorera"
+
+msgid ""
+"In addition to high and low levels, you have set a personal range within "
+"\"OK\". You are now %s that range"
+msgstr ""
+"Utöver höga och låga nivåer, har ett personligt område inom \"Okej\" satts. "
+"Du är nu %s det området"
+
+msgid "In range"
+msgstr "I område"
+
+msgid "In-range coloring"
+msgstr "Färglägg gränser"
+
+msgid "Include full high/low in time-in-range, not just the custom range"
+msgstr ""
+"Inkludera hela hög/låg som tid-i-målområde, inte bara föredraget område"
+
+msgid "Information"
+msgstr "Information"
+
+msgid "Initializing API..."
+msgstr "Initierar API..."
+
+msgid "Initializing Chroma..."
+msgstr "Initierar Chroma..."
+
+msgid "Initializing UI..."
+msgstr "Initierar gränssnittet..."
+
+msgid "Initializing UX..."
+msgstr "Initierar användarupplevelsen..."
+
+msgid "Initializing custom overrides..."
+msgstr "Initierar personliga åsidosättanden..."
+
+msgid "Integrations"
+msgstr "Integrationer"
+
+msgid "Invalid Dexcom password or account credentials"
+msgstr "Felaktigt Dexcom-lösenord eller kontoinformation"
+
+msgid "Key"
+msgstr "Nyckel"
+
+msgid "LOW"
+msgstr "LÅGT"
+
+msgid "Label %s is missing!"
+msgstr "Etikett %s saknas!"
+
+msgid "Language"
+msgstr "Språk"
+
+msgid "Last reading was %s (%s)"
+msgstr "Senaste värde var %s (%s)"
+
+msgid "Last recieved reading:"
+msgstr "Senast mottagna värde:"
+
+msgid ""
+"Last update was %d seconds ago. Wait %d more seconds for fresh data, or "
+"force refresh now?"
+msgstr ""
+"Senaste uppdateringen var %d sekunder sedan. Vänta %d sekunder för att få "
+"färsk data, eller tvinga en uppdatering?"
+
+msgid "Latest Reading: Value = %.2f, Date = %s"
+msgstr "Senaste avläsning: Värde = %.2f, tidpunkt = %s"
+
+msgid "Leave the app and open your browser? The link may not be secure!"
+msgstr "Lämna appen och öppna din webbläsare? Länken kanske inte är säker!"
+
+msgid "Legend"
+msgstr "Förklaring"
+
+msgid "Letters, space and numbers only"
+msgstr "Endast bokstäver, mellanslag och nummer"
+
+msgid "Libraries"
+msgstr "Bibliotek"
+
+msgid "License"
+msgstr "Licens"
+
+msgid "Limit Explanation"
+msgstr "Begränsa förklaring"
+
+msgid "Limits"
+msgstr "Gränser"
+
+msgid "Lo < %.1f"
+msgstr "Låg < %.1f"
+
+msgid "Lo range not supported by API"
+msgstr "Lågt område stöds inte av källans gränssnitt"
+
+msgid "Loading"
+msgstr "Laddar"
+
+msgid "Loading Extension: "
+msgstr "Laddar tillägg: "
+
+msgid "Loading Extensions..."
+msgstr "Laddar tillägg..."
+
+msgid "Loading:"
+msgstr "Laddar:"
+
+msgid "Login error: Could not establish a valid session"
+msgstr "Inloggningsfel: Kunde inte etablera en giltig session"
+
+msgid "Long ago"
+msgstr "Länge sedan"
+
+msgid "Low (eg https://open.spotify.com/... or spotify:track:...)"
+msgstr "Låg (t ex https://open.spotify.com/... eller spotify:track:...)"
+
+msgid "Low (eg https://url.local/lo)"
+msgstr "Låg (t ex http://url.local/låg)"
+
+msgid "Low Background"
+msgstr "Bakgrund låg"
+
+msgid "Low Text"
+msgstr "Text låg"
+
+msgid "Low blood sugar! Currently: %s"
+msgstr "Lågt blodsocker! Nuvarande: %s"
+
+msgid ""
+"Make sure you are on the same network as the xDrip app.\n"
+"Make sure that web access is turned on."
+msgstr ""
+"Se till att du är på samma nätverk som xDrip-appen.\n"
+"Säkerställ att webbtjänsten är påslagen."
+
+msgid "Make units green when reading is normal"
+msgstr "Gör enheter gröna vid normalt värde"
+
+msgid ""
+"Maximum minutes to count time in range on (depending on source data "
+"availability):"
+msgstr "Max minuter att räkna tid-i-målområde på (beror på tillgänglig data):"
+
+msgid "Message"
+msgstr "Meddelande"
+
+msgid "Minimize"
+msgstr "Minimera"
+
+msgid "More options"
+msgstr "Ytterligare val"
+
+msgid "Multi User"
+msgstr "Fler användare"
+
+msgid "Multi-touch"
+msgstr "Multipek"
+
+msgid "NOTE: Colors will be blended with Trndi's background"
+msgstr "OBS: Färgerna kommer att blandas med Trndis bakgrund"
+
+msgid "NOTE: Support depends on your data source "
+msgstr "OBS: Stöds inte av alla datakällor "
+
+msgid "Names must be unique"
+msgstr "Namn måste vara unika"
+
+msgid "New version available"
+msgstr "Ny version tillgänglig"
+
+msgid "Nickname:"
+msgstr "Smeknamn:"
+
+msgid "NightScout"
+msgstr "NightScout"
+
+msgid "No"
+msgstr "Nej"
+
+msgid "No To All"
+msgstr "Nej till allt"
+
+msgid "No borders"
+msgstr "Inga kanter"
+
+msgid "No buffered console messages to show."
+msgstr "Inga buffrade konsolmeddelanden att visa."
+
+msgid ""
+"No fresh data is available.\n"
+"Trndi will attemp to fetch data until recent values are available"
+msgstr ""
+"Ingen färsk data finns att tillgå\n"
+"Trndi kommer försöka hämta data tills dess nyliga värden finns"
+
+msgid "No history data to plot"
+msgstr "Ingen historisk data att rita ut"
+
+msgid "No longer announcing readings aloud"
+msgstr "Läser inte upp värden"
+
+msgid ""
+"No readings recieved. \n"
+"Has your CGM synced recently? \n"
+"Is the remote server working?"
+msgstr ""
+"Inga avläsningar mottogs. \n"
+"Har din CGM synkat nyligen? \n"
+"Fungerar servern?"
+
+msgid "No readings returned for the selected date range."
+msgstr "Inga avläsningar returnerades för valt datumspann."
+
+msgid "No readings returned: %s"
+msgstr "Inga avläsningar returnerades: %s"
+
+msgid "No recent readings!"
+msgstr "Inga färska avläsningar!"
+
+msgid "Notifications will appear where you normally get notification messages."
+msgstr "Notiser visas där du brukar se notismeddelanden."
+
+msgid "On high:"
+msgstr "Vid högt:"
+
+msgid "On low:"
+msgstr "Vid lågt:"
+
+msgid "On top"
+msgstr "Överst"
+
+msgid "Open File"
+msgstr "Öppna fil"
+
+msgid "Open external link?"
+msgstr "Öppna extern länk?"
+
+msgid "Outdated Readings!"
+msgstr "Utdaterade avläsningar!"
+
+msgid "Over range"
+msgstr "Över område"
+
+msgid "Override Custom Range"
+msgstr "Överskrid föredraget område"
+
+msgid ""
+"Override/set your own limits for the custom range. This is your personal "
+"ideal goal, within the high/low area."
+msgstr ""
+"Överskrid/sätt dina egna gränser för ditt föredragna område. Detta är ditt "
+"ideala mål, inom gränserna för högt/lågt."
+
+msgid "Pause music when high/low"
+msgstr "Pausa musiken vid hög/låg"
+
+msgid "Play Media"
+msgstr "Spela Media"
+
+msgid "Please download a version of Trndi that supports extensions"
+msgstr "Vänligen ladda hem en version av Trndi som stöder tillägg"
+
+msgid "Please enter a name"
+msgstr "Vänligen ange ett namn"
+
+msgid "Please wait up to 20 seconds..."
+msgstr "Vänligen dröj upp till 20 sekunder..."
+
+msgid "Please wait..."
+msgstr "Var god dröj..."
+
+msgid "Prediction horizon:"
+msgstr "Prognoshorisont:"
+
+msgid "Prediction..."
+msgstr "Förutsägelse..."
+
+msgid "Predictions unavailable"
+msgstr "Förutspåelser otillgängliga"
+
+msgid "Predictions:"
+msgstr "Förutspåelser:"
+
+msgid "Preparing initial setup..."
+msgstr "Förbereder initiala inställningar..."
+
+msgid "Privacy Mode (Hide glucose value)"
+msgstr "Privat läge (dölj glukosvärde)"
+
+msgid "Processing fonts..."
+msgstr "Bearbetar typsnitt..."
+
+msgid "Processing user profiles..."
+msgstr "Bearbetar användarprofiler..."
+
+msgid "Quit the app?"
+msgstr "Avsluta appen?"
+
+msgid "Range Hi > %.1f"
+msgstr "Område Högt > %.1f"
+
+msgid "Range Lo < %.1f"
+msgstr "Lmråde lågt < %.1f"
+
+msgid "Range high"
+msgstr "Högt område"
+
+msgid "Range low"
+msgstr "Lågt område"
+
+msgid "Razer Chroma"
+msgstr "Razer Chroma"
+
+msgid ""
+"Razer Synapse required on Windows. OpenRazer on Linux. No support for other "
+"platforms at this time."
+msgstr ""
+"OBS: Razer Synapse krävs på Windows. OpenRazer på Linux. Inget stöd för "
+"andra plattformar just nu."
+
+msgid "Read..."
+msgstr "Läs..."
+
+msgid "Reading"
+msgstr "Avläsning"
+
+msgid "Reading %d: %.1f %s at %s"
+msgstr "Avläsning %d: %.1f %s vid %s"
+
+msgid "Reading here: %s at %.2d:%.2d"
+msgstr "Avläsning här: %s kl %.2d:%.2d"
+
+msgid "Reading history"
+msgstr "Avläsningshistorik"
+
+msgid "Reading: ?"
+msgstr "Avläsning: ?"
+
+msgid "Readings (%s)"
+msgstr "Avläsningar (%s)"
+
+msgid "Readings are not fresh, have your phone lost connection to the sensor?"
+msgstr ""
+"Avläsningarna är inte färska, har din telefon tappat kontakten med sensorn?"
+
+msgid "Readings are outdated after (minutes):"
+msgstr "Avläsningar anses gamla efter (minuter):"
+
+msgid "Refresh in:"
+msgstr "Uppdaterar om:"
+
+msgid "Refresh?"
+msgstr "Läs om?"
+
+msgid "Region (\"usa\" or empty)"
+msgstr "Region (\"usa\" eller tom)"
+
+msgid "Remember setting?"
+msgstr "Kom ihåg inställning?"
+
+msgid "Remember window size"
+msgstr "Kom ihåg fönsterstorlek"
+
+msgid ""
+"Removed accounts are made inactive, and can be restored by adding the same "
+"name again"
+msgstr ""
+"Borttagna konton blir inaktiva, de kan återställas genom att skapa om "
+"användaren med sanna namn"
+
+msgid "Reset"
+msgstr "Återställ"
+
+msgid "Restricted Feature"
+msgstr "Begränsad funktion"
+
+msgid "Retry"
+msgstr "Försök igen"
+
+msgid "Run DNS Lookup Test"
+msgstr "Kär DNS-kontrolltest"
+
+msgid "Safe Mode Enabled"
+msgstr "Felsäkert läge aktiverat"
+
+msgid "Save as CSV..."
+msgstr "Spara som CSV..."
+
+msgid "Save as Image..."
+msgstr "Spara som bild..."
+
+msgid "Save graph as PNG"
+msgstr "Spara graf som PNG"
+
+msgid "Save readings as CSV"
+msgstr "Spara avläsningar som CSV"
+
+msgid "Save settings?"
+msgstr "Spara inställningarna?"
+
+msgid "Save?"
+msgstr "Spara?"
+
+msgid "Script execution failed"
+msgstr "Skriptkörning misslyckades"
+
+msgid "Select"
+msgstr "Välj"
+
+msgid "Select a font"
+msgstr "Välj ett typsnitt"
+
+msgid "Select a font for the arrow"
+msgstr "Välj ett typsnitt för pilen"
+
+msgid "Select a font for the reading"
+msgstr "Välj ett typsnitt för avläsningen"
+
+msgid "Select a font for the time"
+msgstr "Välj ett typsnitt för tiden"
+
+msgid "Select your CGM system in the list, then enter your credentials"
+msgstr "Välj ditt CGM-system, ange sedan dina uppgifter"
+
+msgid "Setting up locale settings..."
+msgstr "Ställer in lokalisering..."
+
+msgid ""
+"Setting values here allows you to define your own high and low blood sugar "
+"limits in Trndi.\n"
+"\n"
+"NightScout:\n"
+"Trndi automatically retrieves your custom high and low settings from "
+"NightScout, so manually setting them here is usually unnecessary.\n"
+"\n"
+"Dexcom:\n"
+"Dexcom servers do not provide custom high and low values. By setting them "
+"here, you can establish your own thresholds for Dexcom data."
+msgstr ""
+"Om du ställer in dessa värden, kan du ställa in egna gränser för höga och "
+"låga blodsockernivåer i Trndi.\n"
+"\n"
+"NightScout:\n"
+"Trndi hämtar automatiskt dina satta höga och låga nivåer från NightScout, "
+"att manuellt ställa in dem här är normalt sätt inte nödvändigt.\n"
+"\n"
+"Dexcom:\n"
+"Dexcoms servrar tillhandahåller inte egna höga och låga gränsvärden. Genom "
+"att skriva in värdena här, ställer du in gränserna direkt i Trndi."
+
+msgid "Settings for \"default\" only apply while multi-user is active"
+msgstr "Inställningar för \"standard\" gäller endast medan flera konton finns"
+
+msgid "Settings saved and applied. Some settings may require a restart"
+msgstr ""
+"Inställningarna sparades och applicerades. Vissa inställningar kan kräva en "
+"omstart"
+
+msgid "Show Floating Window"
+msgstr "Visa flytande fönster"
+
+msgid "Show Folder"
+msgstr "Visa mapp"
+
+msgid "Show a sidebar when value is not in range"
+msgstr "Visa en sidopanel när värdet inte är i målområdet"
+
+msgid "Show a smiley instead of percentage"
+msgstr "Visa en smiley istället för procent"
+
+msgid "Show clock"
+msgstr "Visa klocka"
+
+msgid "Show clock every 20 sec"
+msgstr "Visa klockan var 20 sek"
+
+msgid "Show glucose predictions"
+msgstr "Visa glukosförutspåelser"
+
+msgid "Show history"
+msgstr "Visa historik"
+
+msgid "Show last-day readings"
+msgstr "Visa dygnsavläsningar"
+
+msgid "Show only trend arrows / 1 reading (short mode)"
+msgstr "Visa endast trendpilar / 1 avläsning (short mode)"
+
+msgid "Show reading time (instead of minutes ago)"
+msgstr "Visa avläsningstid (istället för minuter sedan)"
+
+msgid "Show readings since.."
+msgstr "Visa avläsningar sedan..."
+
+msgid "Show threshold lines"
+msgstr "Visa gränslinjer"
+
+msgid "Show time and value (e.g., ⏱10' ↗ 5.5)"
+msgstr "Visa tid och värde (t.ex., ⏱10' ↗ 5.5)"
+
+msgid "Show/Hide Main Window"
+msgstr "Visa/göm huvudfönstret"
+
+msgid "Showing %s (standard user)"
+msgstr "Visar %s (standardanvändaren)"
+
+msgid "Showing data for: \"%s\""
+msgstr "Visar data för: \"%s\""
+
+msgid "Showing data for: %s (username \"%s\")"
+msgstr "Visar data för: %s (användarnamn \"%s\")"
+
+msgid "Showing the standard user"
+msgstr "Visar standardanvändaren"
+
+msgid "Shows if Trndi detected a touch screen"
+msgstr "Visar om Trndi upptäckt en pekskärm"
+
+msgid "Size"
+msgstr "Storlek"
+
+msgid "Snooze"
+msgstr "Snooza"
+
+msgid ""
+"Sorry! Trndi does not (yet) support connection testing for this service!"
+msgstr "Ledsen! Trndi stöder (ännu) inte anslutningstest för denna tjänst!"
+
+msgid "Starting Media Backend..."
+msgstr "Startar mediasystemet..."
+
+msgid "Successfully connected!"
+msgstr "Ansluten!"
+
+msgid "System"
+msgstr "System"
+
+msgid "System Features"
+msgstr "Systemfunktioner"
+
+msgid "System Info"
+msgstr "Systeminfo"
+
+msgid "System notifications"
+msgstr "Systemmeddelanden"
+
+msgid "Test"
+msgstr "Testa"
+
+msgid "Test Announce"
+msgstr "Testa notis"
+
+msgid "Test Speech"
+msgstr "Testa tal"
+
+msgid "Test a spoken string"
+msgstr "Testa en talad sträng"
+
+msgid "Test an announcement"
+msgstr "Testa en notis"
+
+msgid "The custom range is a subrange with your ideal goal."
+msgstr "Föredraget område är ett inre område med ditt ideala mål."
+
+msgid ""
+"The entire window will now change color when out of range, instead of just "
+"displaying a colored notification in the top. Applies after the next sync."
+msgstr ""
+"Hela fönstret kommer hädanefter att färgas när blodsockret är utanför "
+"området, istället för att endast meddelandet högst upp färgas. Verkställs "
+"efter nästa synkronosering."
+
+msgid "The following extension file returned an error while loading: %s"
+msgstr "Följande tilläggsfil returnerade ett fel när den laddades: %s"
+
+msgid ""
+"The prediction horizon is how far in the future Trndi will show predictions, "
+"when just showing one. This is not an exact time, it may vary, it's just a "
+"target time."
+msgstr ""
+"Prognoshorisonten är hur långt i framtiden Trndi förutspår avläsningar, när "
+"endast en visas. Tiden är inte exakt, den kan variera, utan är endast ett "
+"mål."
+
+msgid ""
+"The settings dialog will now open, in the future please right-click the "
+"reading to open the menu."
+msgstr ""
+"Inställningarna kommer nu att öppnas, i framtiden vänligen höger-klicka för "
+"att öppna menyn."
+
+msgid "The text-to-speech (TTS) software \"%s\" is not available."
+msgstr "Text-till-tal (TTS-mjukvaran) \"%s\" är inte tillgänglig."
+
+msgid "There's no last reading to show"
+msgstr "Det finns inget senaste värde att visa"
+
+msgid "These are the messages currently held in Trndi's log"
+msgstr "Dessa är meddelandena som finns i Trndis log"
+
+msgid "These are your predicted readings; Time-difference: predicted-reading"
+msgstr ""
+"Detta är dina förutspådda avläsningar; Tidsskillnad: förutspådd-avläsning"
+
+msgid "These settings are available when using a multi-account"
+msgstr "Dessa inställningar är tillgängliga när flera användare finns"
+
+msgid ""
+"This backend is in a beta stage, it may not work as intended!\n"
+" If possible, choose another backend."
+msgstr ""
+"Denna datakälla är i betastadiet, den kanske inte fungerar korrekt!\n"
+"Om möjligt, välj en annan källa."
+
+msgid ""
+"This controls how Trndi's icon in the status bar and/or tray will notify you "
+"visually."
+msgstr ""
+"Detta styr hur Trndi:s ikon visas i statusfältet och/eller klockkonen "
+"notifierar dig visuellt."
+
+msgid ""
+"This feature depends on your Window Manager (WM). %s may not support this "
+"feature."
+msgstr ""
+"Denna funktion beror på din fönsterhanterare ((WM). %s kanske inte stöder "
+"denna funktion."
+
+msgid ""
+"This feature depends on your Window Manager. It may not support this feature."
+msgstr ""
+"Denna funktion beror på din fönsterhanterare ((WM). Den kanske inte stöder "
+"denna funktion."
+
+msgid ""
+"This is a debug backend. It's used for testing purposes only!\n"
+"No data will be sent to any remote server."
+msgstr ""
+"Detta är ett utvecklingsbackend. Det används bara för test!\n"
+"Ingen data kommer skickas till någon fjärrserver."
+
+msgid "This is the change from the latest reading"
+msgstr "Detta är skillnaden från tidigare avläsning"
+
+msgid ""
+"This is the time after which Trndi will show the \"no recent\" readings "
+"overlay. Trndi checks this when updating from the remote server, not every "
+"minute."
+msgstr ""
+"Detta är den tid efter vilken Trndi visar \"inga färska avläsningar\". Trndi "
+"kontrollerar detta när en uppdatering sker från servern, inte varje minut."
+
+msgid ""
+"This is your time in range for the last %d hours and %d minutes\n"
+"\n"
+"Your low limit is %.1f, high is %.1f\n"
+"Your low range is %.1f, high is %.1f"
+msgstr ""
+"Detta är din tid i målområdet under de senaste %d timmarna och %d minuterna\n"
+"\n"
+"Din låga gräns är %.1f, hög är %.1f.\n"
+"Ditt låga område är %.1f, hög är %.1f"
+
+msgid ""
+"This is your time in range for the last %d minutes\n"
+"\n"
+"Your low limit is %.1f, high is %.1f\n"
+"Your low range is %.1f, high is %.1f"
+msgstr ""
+"Detta är din tid i målområdet under de senaste %d minuterna\n"
+"\n"
+"Din låga gräns är %.1f, hög är %.1f\n"
+"Ditt låga område är %.1f, hög är %.1f"
+
+msgid ""
+"This is your time in range for the last hour and %d minutes\n"
+"\n"
+"Your low limit is %.1f, high is %.1f\n"
+"Your low range is %.1f, high is %.1f"
+msgstr ""
+"Detta är din tid i målområdet under den senaste timmen och %d minuterna\n"
+"\n"
+"Din låga gräns är %.1f, hög är %.1f\n"
+"Ditt låga område är %.1f, hög är %.1f"
+
+msgid "This only applies for the current loaded account:  %s"
+msgstr "Detta gäller endast det nuvarande kontot: %s"
+
+msgid "This version of Trndi does not support extensions"
+msgstr "Denna version av Trndi stöder inte tillägg"
+
+msgid "This will be used for curent graph point"
+msgstr "Denna kommer användas för den nuvarande grafpunkten"
+
+msgid "This will be used for graph points"
+msgstr "Denna kommer att användas för grafpunkterna"
+
+msgid "Threshold: %d minutes"
+msgstr "Gräns: %d minuter"
+
+msgid "Time In Range"
+msgstr "Tid i område"
+
+msgid ""
+"Time-in-range (TIR) is the amount of time you are within your high/low goal."
+msgstr ""
+"Tid i målområdet (TIR) är den tid du varit inom ditt mål för höga/låga "
+"värden."
+
+msgid "Toggle Fullscreen"
+msgstr "Växla fullskärm"
+
+msgid "Touch screen"
+msgstr "Pekskärm"
+
+msgid "Transmitter information"
+msgstr "Sändarinformation"
+
+msgid "Tray icon size:"
+msgstr "Panelikonstorlek:"
+
+msgid "Trend arrow size:"
+msgstr "Trendpilsstorlek:"
+
+msgid "Trend dot:"
+msgstr "Punktsymbol:"
+
+msgid ""
+"Trndi can control the color of Razer keyboards, mouses and other devices"
+msgstr ""
+"Trndi kan kontrollera färgen på Razertangentbord, möss och andra enheter"
+
+msgid ""
+"Trndi can draw a line on the graph's background, to represent where your "
+"high/low limits are."
+msgstr ""
+"Trndi kan rita en linje på grafens bakgrund, för att representera dina höga/"
+"låga gränser."
+
+msgid ""
+"Trndi can draw a rectangle/background in the graph's background, to visually "
+"represent your high and low limits."
+msgstr ""
+"Trndi kan rita en rektangel/bakgrund i grafens bakgrund, för att visuellt "
+"representera dina gränser för högt och lågt."
+
+msgid ""
+"Trndi can expose a <b>WebAPI</b> for use with <i>third-party systems</i>."
+"<br><br>This is an advanced feature, you can safely disregard it if you "
+"don't know what it does!"
+msgstr ""
+"Trndi kan starta ett <b>Web-API</b> för att kommunicera med "
+"<i>tredjepartssystem</i>.<br><br>Detta är en avancerad funktion, du kan "
+"ignorera den säkert om du inte vet vad den gör!"
+
+msgid "Trndi can load a URL when high or low in your default web browser."
+msgstr ""
+"Trndi kan ladda en adress i din standardwebbläsare när du är hög eller låg."
+
+msgid ""
+"Trndi can predict/guess what your reading will be in the future. This will "
+"be shown in the lower right part of the screen."
+msgstr ""
+"Trndi kan förutspå/gissa vad avläsningen kommer visa i framtiden. Detta "
+"visas i skärmens nedre högra hörn."
+
+msgid "Trndi can trigger Spotify or Deezer to play a song when low/high"
+msgstr "Trndi kan spela en låt på Spotify eller Deezer när du är hög/låg"
+
+msgid "Trndi found multiple accounts. Please choose one for this instance"
+msgstr "Trndi hittade fler konton. Vänligen välj ett för denna instans"
+
+msgid ""
+"Trndi found multiple accounts. Please choose one for this instance, or "
+"continue with the default account"
+msgstr ""
+"Trndi hittade flera konton. Välj ett för denna session, eller fortsätt med "
+"standardkontot"
+
+msgid ""
+"Trndi is running in <b>Safe Mode</b>!<ul><li>No start-up actions from "
+"extensions will run</li><li>You cannot use, and no actions will trigger "
+"from, extensions</li></ul><br>Extensions will load next run, unless you "
+"press <b>CTRL</b>!"
+msgstr ""
+"Trndi körs i <b>felsäkertläge</b>!<ul><li>Inga startåtgärder från tillägg "
+"körs</li><li>Du kan inte använda, och inga åtgärder kommer att köras från, "
+"tillägg</li></ul><br>Tillägg kommer att köras nästa start, såvida du inte "
+"trycker <b>CTRL</b>!"
+
+msgid "Trndi must be restarted for settings to take effect"
+msgstr "Trndi måste startas om innan ändringarna aktiveras"
+
+msgid "Trndi on GitHub"
+msgstr "Trndi på GitHub"
+
+msgid ""
+"Trndi supports more than one user, this is called the multi user mode.\n"
+"In this section you can add/remove accounts. There's always a default "
+"account which cannot be deleted.\n"
+"Accounts have their own settings and remote servers, and are \"sandboxed\". "
+"Start a new instance of Trndi to log in to a given user account."
+msgstr ""
+"Trndi stöder mer än en användare, detta kallas fleranvändarläge.\n"
+"I denna del kan du lägga till/ta bort konton. Det finns alltid ett "
+"standardkonto som inte kan raderas.\n"
+"Konton har sina egna inställningar och fjärrservrar samt är \"sandboxade\". "
+"Starta en ny instans av Trndi för att logga in på ett givet konto."
+
+msgid ""
+"Trndi uses a system called \"%s\" to send desktop notices, you need to have "
+"this system installed in order to recieve notices."
+msgstr ""
+"Trndi använder systemet \"%s\" för att visa notiser, det måste vara "
+"installerat för att dessa ska visas."
+
+msgid "Trndi will control these devices:"
+msgstr "Trndi kommer kontrollera dessa enheter:"
+
+msgid ""
+"Trndi will now shut down to apply settings, please re-start it manually!"
+msgstr ""
+"Trndi stängs nu ned för att aktivera inställningarna, vänligen starta om "
+"appen manuellt!"
+
+msgid ""
+"Trndi will show a system notification (if available) when your reading is in "
+"a dangerous state. Alerts will trigger once when hi/low and every 15 minutes "
+"when readings are missing."
+msgstr ""
+"Trndi kommer visa en systemnotifikation (om möjligt) när dina avläsningar är "
+"farliga. Notifikationer kommer visas en gång när du är hög/låg och var 15 "
+"minut när avläsningar saknas."
+
+msgid ""
+"Trndi will try to predict future readings. This is experimental and "
+"potentially unsafe! Do not make any treatment decisions based on these "
+"values! This feature is used on your own risk and responsibility!"
+msgstr ""
+"Trndi kommer försöka att förutspå framtida värden. Detta är experimentellt "
+"och potentiellt osäkert! Gör inga behandlingar baserat på dessa värden! Du "
+"använder funktionen på egen risk och ansvar!"
+
+msgid ""
+"Trndi won't allow a larger limit, for your own saftey. This can be "
+"overridden manually/via plugin"
+msgstr ""
+"Trndi tillåter inte en större gräns, för din egen säkerhet. Detta kan "
+"överskrivas manuellt/via plugin"
+
+msgid ""
+"Trndi won't allow a lower limit, the backend system only reports values "
+"every 5 minutes. 6 = one reading missing."
+msgstr ""
+"Trndi tillåter inte en lägre gräns, backendsystemet rapporterar bara värden "
+"var 5:e minut. 6 = en missad avläsning."
+
+msgid "Unable to predict: %s"
+msgstr "Kunde inte förutspå: %s"
+
+msgid "Under range"
+msgstr "Under område"
+
+msgid "Units will pulse in red on high and blue on low"
+msgstr "Enheterna kommer pulsera i rött vid högt och blått vid lågt"
+
+msgid "Unknown Architecture"
+msgstr "Okänd arkietektur"
+
+msgid "Unknown System"
+msgstr "Okänt system"
+
+msgid "Unknown Widgetset"
+msgstr "Okänt grafiksystem"
+
+msgid "Unknown Window Manager"
+msgstr "Okänd fönsterhanterare"
+
+msgid "Use URL"
+msgstr "Använd URL"
+
+msgid "Use full arrow set (↑↑, ↑, ↗, →, ↘, ↓, ↓↓)"
+msgstr "Visa alla pilar (↑↑, ↑, ↗, →, ↘, ↓, ↓↓)"
+
+msgid "Use range color for window"
+msgstr "Färga fönstret med områdesfärg"
+
+msgid "User Information"
+msgstr "Användarinformation"
+
+msgid "User select"
+msgstr "Kontoval"
+
+msgid "User:"
+msgstr "Användare:"
+
+msgid "Value"
+msgstr "Värde"
+
+msgid "Verifying license..."
+msgstr "Verifierar licens..."
+
+msgid ""
+"Version %s is available, would you like to go to the downloads page? You can "
+"also ignore this warning for 2 weeks."
+msgstr ""
+"Version %s finns tillgänglig, vill du besöka nedladdningssidan? Du kan också "
+"ignorera denna varning i 2 veckor."
+
+msgid "Very Big"
+msgstr "Mycket stor"
+
+msgid ""
+"WARNING: This is a very experimental feature!. Do not depend on these "
+"readings!"
+msgstr ""
+"VARNING: Detta är en experimentell funktion! Lita inte på dessa värden!"
+
+msgid "Wait. Shutting down extensions engine..."
+msgstr "Vänta. Stänger tilläggsmotorn..."
+
+msgid ""
+"When calculatingg time-in-range, do so over this amount of minutes. If the "
+"number is higher than the data available, the max time will be used - this "
+"is currently %d minutes."
+msgstr ""
+"När tid-i-målområdet beräknas, gör det för detta antal minuter. Om numret är "
+"högre än tillgänglig data, visas maxtiden - vilket just nu är %d minuter."
+
+msgid ""
+"When in Privacy Mode, the actual blood glucose value is hidden. Trndi will "
+"only tell the user if it's good, high or low."
+msgstr ""
+"När privat läge är aktiverat, visas inte avläsningar. Trndi visar istället "
+"bara om sockret är bra, högt eller lågt."
+
+msgid "Window start-up position"
+msgstr "Position av fönster vid start"
+
+msgid "Would you like to save any changes made?"
+msgstr "Vill du spara eventuella ändringar?"
+
+msgid "Yes"
+msgstr "Ja"
+
+msgid "Yes To All"
+msgstr "Ja till allt"
+
+msgid "You are up to date"
+msgstr "Du är uppdaterad"
+
+msgid ""
+"You are using the NightScout backend, you should set these values on your "
+"server (if possible), as Trndi uses your NightScout preferences by default"
+msgstr ""
+"Du använder NightScout, du bör sätta dessa värden på din server (om "
+"möjligt), eftersom Trndi plockar upp värdena som standard"
+
+msgid "You can enter plus or minus. Plus = down. 0 = neutral"
+msgstr "Du kan ange plus eller minus. Plus = ned, 0 = neutral"
+
+msgid ""
+"You can hold down shift and plus (+) or minus (-) to change the window size"
+msgstr ""
+"Du kan hålla ned skift och plus (+) eller minus (-) för att justera "
+"fönstrets storlek"
+
+msgid ""
+"You can use shift+<number> to manually set visibility (0 = 100% visible)"
+msgstr ""
+"Du kan använda skift+<nummerr> för att manuellt sätta synligheten (0 = 100% "
+"synlig)"
+
+msgid "You will be alerted again after %s"
+msgstr "Du kommer att påminnas igen efter %s"
+
+msgid ""
+"You're missing the standard font \"%s\". Trndi will work as intended, but "
+"some icons may be missing and/or distorted!"
+msgstr ""
+"Du saknar standardtypsnittet \"%s\". Trndi kommer fungera som det ska, men "
+"vissa ikoner kan saknas och/eller se fel ut!"
+
+msgid ""
+"Your desktop session is Wayland. Wayland compositors (including KWin) "
+"restrict third-party apps from forcing windows above others.\n"
+"Right-click the title bar, select more options and check the always-on-top "
+"option (or similar)"
+msgstr ""
+"Din skrivbordssession är Wayland. Wayland-kompositorer (inklusive KWin) "
+"begränsar tredjepartsappar från att tvinga sig överst. Högerklicka på "
+"titelraden, välj fler alternativ och klicka på alltid överst (eller liknande)"
+
+msgid "Your internet connection is not working, Trndi cannot fetch readings!"
+msgstr ""
+"Din internetanslutning fungerar inte. Trndi kan inte hämta avläsningar!"
+
+msgid "Your internet connection is working!"
+msgstr "Din internetanslutning fungerar!"
+
+msgid "[%s] %s"
+msgstr "[%s] %s"
+
+msgid "for more info"
+msgstr "för mer information"
+
+msgid "over"
+msgstr "över"
+
+msgctxt "slicke.ux.alert.smbuxclose"
+msgid "Close"
+msgstr "Stäng"
+
+msgctxt "slicke.ux.alert.smbuxdefault"
+msgid "Default"
+msgstr "Standard"
+
+msgctxt "slicke.ux.alert.smbuxhelp"
+msgid "Help"
+msgstr "Hjälp"
+
+msgctxt "slicke.ux.alert.smbuxok"
+msgid "OK"
+msgstr "OK"
+
+msgid "small"
+msgstr "liten"
+
+msgctxt "tfbg.bmenupanelclose.caption"
+msgid "✖ Close"
+msgstr "✖ Stäng"
+
+msgctxt "tfbg.bsettings.caption"
+msgid "Settings"
+msgstr "Inställningar"
+
+msgctxt "tfbg.btouchsettings.caption"
+msgid "⚙ Settings"
+msgstr "⚙ Inställningar"
+
+msgctxt "tfbg.lpredict.caption"
+msgid "Predictions"
+msgstr "Förutspåelser"
+
+msgctxt "tfbg.lval.caption"
+msgid "Setup"
+msgstr "Konfig"
+
+msgctxt "tfbg.miannounce.caption"
+msgid "Announce readings"
+msgstr "Läs ut avläsningar"
+
+msgctxt "tfbg.miatouchauto.caption"
+msgid "Auto"
+msgstr "Auto"
+
+msgctxt "tfbg.micustomdots.caption"
+msgid "Custom Size"
+msgstr "Egen storlek"
+
+msgctxt "tfbg.midotbig.caption"
+msgid "Big"
+msgstr "Stor"
+
+msgctxt "tfbg.midotnormal.caption"
+msgid "Normal"
+msgstr "Normal"
+
+msgctxt "tfbg.midotsize.caption"
+msgid "Dot Size"
+msgstr "Punktstorlek"
+
+msgctxt "tfbg.midotsmall.caption"
+msgid "Small"
+msgstr "Liten"
+
+msgctxt "tfbg.miexit.caption"
+msgid "Exit Trndi"
+msgstr "Avsluta Trndi"
+
+msgctxt "tfbg.pnoffrange.caption"
+msgid "- Off Range -"
+msgstr "- Utanför område -"
+
+msgctxt "tfbg.pnoffreading.caption"
+msgid "Off Reading"
+msgstr "Värde utanför"
+
+msgctxt "tfconf.btemplatecurrent.caption"
+msgid "Template"
+msgstr "Mallar"
+
+msgctxt "tfconf.btemplatetrend.caption"
+msgid "Template"
+msgstr "Mallar"
+
+msgctxt "tfconf.btusersave.caption"
+msgid "Save"
+msgstr "Spara"
+
+msgctxt "tfconf.button2.caption"
+msgid "Reset Fonts"
+msgstr "Återställ typsnitt"
+
+msgctxt "tfconf.button4.caption"
+msgid "Reset Dots"
+msgstr "Återställ punkter"
+
+msgctxt "tfconf.caption"
+msgid "Settings"
+msgstr "Inställningar"
+
+msgctxt "tfconf.cbchromahigh.text"
+msgid "Breath (pulse)"
+msgstr "Andas (puls)"
+
+msgctxt "tfconf.cbchromalow.text"
+msgid "Breath (pulse)"
+msgstr "Andas (puls)"
+
+msgctxt "tfconf.cbcust.caption"
+msgid "Use custom values"
+msgstr "Använd egna värden"
+
+msgctxt "tfconf.cbcustrange.caption"
+msgid "Use custom values"
+msgstr "Använd egna värden"
+
+msgctxt "tfconf.cbtircolor.caption"
+msgid "Use this color:"
+msgstr "Med denna färg:"
+
+msgctxt "tfconf.cbtircolorbg.caption"
+msgid "Adjust color based on background"
+msgstr "Justera färg baserat på bakgrund"
+
+msgctxt "tfconf.cbtircolorbgcustom.caption"
+msgid "Adjust color based on background"
+msgstr "Justera färg baserat på bakgrund"
+
+msgctxt "tfconf.cbtircolorcustom.caption"
+msgid "Use this color:"
+msgstr "Med denna färg:"
+
+msgctxt "tfconf.cgnotifications.caption"
+msgid "Notifications"
+msgstr "Notiser"
+
+msgctxt "tfconf.cl_hi_bg.caption"
+msgid "High"
+msgstr "Hög"
+
+msgctxt "tfconf.cl_hi_txt.caption"
+msgid "High"
+msgstr "Hög"
+
+msgctxt "tfconf.cl_lo_bg.caption"
+msgid "Low"
+msgstr "Låg"
+
+msgctxt "tfconf.cl_lo_txt.caption"
+msgid "Low"
+msgstr "Låg"
+
+msgctxt "tfconf.cl_ok_bg.caption"
+msgid "OK"
+msgstr "OK"
+
+msgctxt "tfconf.cl_ok_txt.caption"
+msgid "OK"
+msgstr "OK"
+
+msgctxt "tfconf.gboverride.caption"
+msgid "Override High / Low limits"
+msgstr "Åsidosätt höga / låga gränser"
+
+msgctxt "tfconf.groupbox8.caption"
+msgid "Predictions"
+msgstr "Förutspåelser"
+
+msgctxt "tfconf.groupbox9.caption"
+msgid "Display"
+msgstr "Visning"
+
+msgctxt "tfconf.label12.caption"
+msgid "Perfect Reading (5.5mmol/L or 100 mg/dL)"
+msgstr "Perfekt avläsning (5,5mmol/L eller 100 mg/dL)"
+
+msgctxt "tfconf.label15.caption"
+msgid "Server Address / Dexcom Username"
+msgstr "Serveradress / Användare Dexcom"
+
+msgctxt "tfconf.label28.caption"
+msgid "Perfect Reading (5.5mmol/L or 100 mg/dL)"
+msgstr "Perfekt avläsning (5,5mmol/L eller 100 mg/dL)"
+
+msgctxt "tfconf.ldot.caption"
+msgid "PREVIEW"
+msgstr "FÖRHANDSVISNING"
+
+msgctxt "tfconf.ldotnow.caption"
+msgid "PREVIEW"
+msgstr "FÖRHANDSVISNING"
+
+msgctxt "tfconf.lext.caption"
+msgid "Plugin Folder"
+msgstr "Pluginmapp"
+
+msgctxt "tfconf.lhiover.caption"
+msgid "High over"
+msgstr "Högt över"
+
+msgctxt "tfconf.lhiover1.caption"
+msgid "High over"
+msgstr "Högt över"
+
+msgctxt "tfconf.llounder.caption"
+msgid "Low under"
+msgstr "Lågt under"
+
+msgctxt "tfconf.llounder1.caption"
+msgid "Low under"
+msgstr "Lågt under"
+
+msgctxt "tfconf.tsdisplay.caption"
+msgid "Display"
+msgstr "Visning"
+
+msgctxt "tfconf.tstexts.caption"
+msgid "Texts"
+msgstr "Texter"
+
+msgctxt "tfconf.tstir.caption"
+msgid "Time-in-range"
+msgstr "Tid-i-målområde"
+
+msgctxt "tffloat.lval.caption"
+msgid "Setup"
+msgstr "Konfig"
+
+msgctxt "tffloat.mibig.caption"
+msgid "Big"
+msgstr "Stor"
+
+msgctxt "tffloat.micustomsize.caption"
+msgid "Custom"
+msgstr "Egen"
+
+msgctxt "tffloat.micustomvisible.caption"
+msgid "Custom"
+msgstr "Egen"
+
+msgctxt "tffloat.minormal.caption"
+msgid "Normal"
+msgstr "Normal"
+
+msgctxt "tffloat.mismall.caption"
+msgid "Small"
+msgstr "Liten"
+
+msgctxt "tffloat.mivisible.caption"
+msgid "Visibility"
+msgstr "Synlighet"
+
+msgctxt "tfsplash.lsplashwarn.caption"
+msgid ""
+"⚠️ IMPORTANT MEDICAL WARNING ⚠️\n"
+"\n"
+"This app is NOT a medical device.\n"
+"• Do NOT make medical decisions based on this data\n"
+"• Data may be WRONG, delayed, or unavailable  \n"
+"• Always verify with your official CGM device\n"
+"• For emergencies, contact medical professionals\n"
+"\n"
+"By continuing, you acknowledge that:\n"
+"• You use this app at your own risk\n"
+"• The developers have NO LIABILITY\n"
+"• You have read and agree to the full terms\n"
+"\n"
+"This app is licensed under the \n"
+"GNU General Public License version 3 with \n"
+"an additional medical disclaimer.\n"
+"See https://github.com/slicke/trndi/LICENSE.md"
+msgstr ""
+"⚠️ VIKTIG MEDICINSK VARNING ⚠️\n"
+"\n"
+"Denna app är INTE en medicinsk enhet.\n"
+"• Ta INTE medicinska beslut baserat på denna data\n"
+"• Data kan vara FEL, fördröjd, eller otillgänglig  \n"
+"• Verifiera alltid med din officiella CGM-enhet\n"
+"• Vid akutsituationer, kontakta sjukhus\n"
+"\n"
+"Genom att fortsätta accepterar du att:\n"
+"• Du använder appen på egen risk\n"
+"• Utvecklarna inte har NÅGOT ANSVAR\n"
+"• Du måste acceptera den kompletta licensen och villkoren\n"
+"\n"
+"App är licenserad under licensen\n"
+"GNU General Public License version 3 med ett tillägg \n"
+"kring medicinsk användning.\n"
+"Se https://github.com/slicke/trndi/LICENSE.md"
+
+msgctxt "trndi.api.dexcom.sparamdesc"
+msgid ""
+"Dexcom region selection:\n"
+"\n"
+"Choose the server based on your account region:\n"
+"• Dexcom (USA): for accounts served by share2.dexcom.com\n"
+"• Dexcom (Outside USA): for accounts served by shareous1.dexcom.com\n"
+"\n"
+"If you are unsure, try “Outside USA” first if you live outside the US.\n"
+"Your username and password are your Dexcom Account (not Share) credentials."
+msgstr ""
+"Dexcom regionval:\n"
+"\n"
+"Vällj serverregionen dä ditt konto e registrert i:\n"
+"• Dexcom (USA): för konton registrerade på share2.dexcom.com\n"
+"• Dexcom (Outside USA): för konton registrerade på shareous1.dexcom.com\n"
+"\n"
+"Om du int vet, testa \"Outside USA\" först om du int bor i USA.\n"
+"Ditt användarnamn å lösenord e dina Dexcom-uppgifter (int Share)."
+
+
+msgctxt "trndi.api.nightscout.sparamdesc"
+msgid ""
+"NightScout v2 setup (use FULL access token):\n"
+"\n"
+"1) Open your NightScout site (e.g., https://your-site).\n"
+"2) Go to Admin -> Tokens — or API Secret.\n"
+"3) If you use Tokens:\n"
+"   - Create a token with at least READ scope.\n"
+"   - Copy the FULL access token value exactly as shown.\n"
+"4) In Trndi:\n"
+"   - Address: enter your NightScout URL\n"
+"   - Auth: paste the FULL access token (not just a suffix).\n"
+"\n"
+"Note: If you instead use the legacy API Secret, paste your API Secret value "
+"as-is."
+msgstr ""
+"NightScout v2-inställning (använd HELA access-tokenet):\n"
+"\n"
+"1) Öppna din NightScout-sajt (t.ex. https://din-sajt).\n"
+"2) Gå till Admin -> Tokens — eller API Secret.\n"
+"3) Om du använder Tokens:\n"
+"   - Skapa ett token med minst READ-åtkomst.\n"
+"   - Kopiera HELA access-tokenets värde exakt som visas.\n"
+"4) I Trndi:\n"
+"   - Adress: ange din NightScout-URL\n"
+"   - Auth: klistra in HELA access-tokenet (inte bara suffixet).\n"
+"\n"
+"OBS: Om du använder den äldre API-hemligheten, klistra in den som den är."
+msgctxt "trndi.api.nightscout.sparampassword"
+msgid "API Secret"
+msgstr "API-hemlighet"
+
+msgctxt "trndi.api.nightscout.sparamusername"
+msgid "NightScout URL"
+msgstr "NightScout-adress"
+
+msgctxt "trndi.api.nightscout3.sparamdesc"
+msgid ""
+"** ALPHA DRIVER - Please use \"NightScout\" for daily use! **\n"
+"NightScout v3 setup (use FULL access token):\n"
+"\n"
+"1) Open your NightScout site (e.g., https://your-site).\n"
+"2) Go to Admin -> Tokens — or API Secret.\n"
+"3) If you use Tokens:\n"
+"   - Create a token with at least READ scope.\n"
+"   - Copy the FULL access token value exactly as shown.\n"
+"4) In Trndi:\n"
+"   - Address: enter your NightScout URL\n"
+"   - Auth: paste the FULL access token.\n"
+"\n"
+"Note: If you instead use the legacy API Secret, paste your API Secret value "
+"as-is.\n"
+"Note 2: Your access token should look like: trndi-abc123 (or whatever name "
+"you chose)"
+msgstr ""
+"** ALFADRIVRUTIN - Använd \"NightScout\" för dagligt bruk! **\n"
+"NightScout v3 inställning (använd HELA access token):\n"
+"\n"
+"1) Öppna din  NightScout-sajt (t ex, https://din-sajt).\n"
+"2) Gå till Admin -> Tokens — eller API Secret.\n"
+"3) Om du använder Tokens:\n"
+"   - Skapa ett token med åtminstone \"READ scope\".\n"
+"   - Kopiera hela nyckeln, exakt som den visas.\n"
+"4) I Trndi:\n"
+"   - Adress: ange din NightScout-adress.\n"
+"   - Auth: klistra in HELA ditt \"access token\".\n"
+"\n"
+"OBS Om du använder en äldre version, med API Secret, klistra in hela "
+"hemligheten som den är.\n"
+"OBS 2: Din åtkomstnyckel ska se ut som: trndi-abc123 (eller det namn du valt)"
+
+msgctxt "trndi.api.nightscout3.sparamusername"
+msgid "NightScout URL"
+msgstr "NightScout-adress"
+
+msgctxt "trndi.api.xdrip.sparamdesc"
+msgid ""
+"xDrip setup:\n"
+"\n"
+"Address: your xDrip REST endpoint (base URL).\n"
+"Auth: API secret (plain text; server hashes it)."
+msgstr ""
+"xDrip-inställningar:r\n"
+"r\n"
+"Adress: din xDrip REST-slutpunkt (base URL).r\n"
+"Auth: API-hemlighet (ren text; inte hashad)."
+
+msgctxt "trndi.api.xdrip.sparampassword"
+msgid "API Secret"
+msgstr "API-hemlighet"
+
+msgctxt "trndi.strings.rs_menu_help"
+msgid "Help"
+msgstr "Hjälp"
+
+msgctxt "trndi.strings.rs_menu_settings"
+msgid "Settings"
+msgstr "Inställningar"
+
+msgctxt "trndi.strings.rs_noplugins"
+msgid "Built Without Support"
+msgstr "Byggd utan stöd"
+
+msgctxt "trndi.strings.rs_rh_time"
+msgid "Time"
+msgstr "Tidpunkt"
+
+msgctxt "trndi.strings.rs_rh_unknown"
+msgid "Unknown"
+msgstr "Okänd"
+
+msgctxt "trndi.strings.rs_setup"
+msgid "Setup"
+msgstr "Konfig"
+
+msgctxt "trndi.strings.rs_tpobottomleft"
+msgid "Bottom Left"
+msgstr "Nere till vänster"
+
+msgctxt "trndi.strings.rs_tpobottomright"
+msgid "Bottom Right"
+msgstr "Nere till höger"
+
+msgctxt "trndi.strings.rs_tpocenter"
+msgid "Desktop Center"
+msgstr "Mitten av skrivbordet"
+
+msgctxt "trndi.strings.rs_tpocustom"
+msgid "Last position"
+msgstr "Senaste position"
+
+msgctxt "trndi.strings.rs_tpotopright"
+msgid "Top Right"
+msgstr "Höger topp"
+
+msgctxt "trndi.strings.sdatatypeerr"
+msgid "Datatype %s was not expected, expected in function %s"
+msgstr "Datatypen %s förväntades inte, förväntad i funktionen %s"
+
+msgctxt "trndi.strings.sdatatypeerrfunc"
+msgid "Datatype \"%s\" was not expected, in function \"%s\". Expected \"%s\""
+msgstr "Datatypen ”%s” förväntades inte, i funktionen ”%s”. Förväntade ”%s”"
+
+msgctxt "trndi.strings.sdatatypeerrpos"
+msgid "Datatype %s was not expected, expected in function %s, parameter %d"
+msgstr ""
+"Datatypen ”%s” förväntades inte, förväntad i funktionen %s, parameter %d"
+
+msgctxt "trndi.strings.sdotsize"
+msgid "Dot Size"
+msgstr "Punktstorlek"
+
+msgctxt "trndi.strings.slogdesc"
+msgid "Trndi has captured data sent to console.log in a JavaScript extension"
+msgstr "Trndi har fångat utdata från console.log i ett JavaScript-tillägg"
+
+msgctxt "trndi.strings.slogrecevive"
+msgid "Output through console.log has been received"
+msgstr "Utmatning genom console.log har mottagits"
+
+msgctxt "trndi.strings.snotrace"
+msgid "No stack trace available"
+msgstr "Ingen stackspårning finns"
+
+msgctxt "trndi.strings.spromerrcapt"
+msgid "The asyncronous function %s failed to complete"
+msgstr "Den asynkrona funktionen %s misslyckades"
+
+msgctxt "trndi.strings.sstackerrmsg"
+msgid ""
+"Error: %s \n"
+"Stack: %s %s"
+msgstr ""
+"Fel: %s \n"
+"Stack: %s %s"
+
+msgctxt "trndi.strings.sstackfailed"
+msgid ""
+"An error occurred, and the stacktrace could not be loaded. Showing backtrace."
+msgstr ""
+"Ett fel uppstod och stackspårningen kunde inte laddas. Visar bakåtspårning."
+
+msgctxt "trndi.strings.stypeerrcapt"
+msgid "A data type differes from what was expected"
+msgstr "En datatyp skiljer sig från vad som förväntats"
+
+msgctxt "trndi.strings.stypeerrdesc"
+msgid "The extension was stopped"
+msgstr "Tillägget stoppades"
+
+msgctxt "trndi.strings.stypeerrmsg"
+msgid "A data type was expected, but another was found"
+msgstr "En datatyp förväntades, men en annan påträffades"
+
+msgctxt "trndi.strings.sunknownerr"
+msgid "Unknown error"
+msgstr "Okänt fel"
+
+msgctxt "uconf.rs_default_account"
+msgid "Default"
+msgstr "Standard"
+
+msgctxt "uconf.rs_notifications"
+msgid "Notifications"
+msgstr "Notiser"
+
+msgctxt "uhistorygraph.rs_history_graph_axis_time"
+msgid "Time"
+msgstr "Tidpunkt"
+
+msgctxt "uhistorygraph.rs_history_graph_key_high"
+msgid "High"
+msgstr "Hög"
+
+msgctxt "uhistorygraph.rs_history_graph_key_low"
+msgid "Low"
+msgstr "Låg"
+
+msgctxt "uhistorygraph.rs_history_graph_key_unknown"
+msgid "Unknown"
+msgstr "Okänd"
+
+msgid "under"
+msgstr "under"
+
+msgid "xDrip URL"
+msgstr "xDrip-adress"
+
+msgid ""
+"» Selected Reading: %s\n"
+"Δ Difference: %s\n"
+"↔ Trend: %s\n"
+"📻 RSSI: %s\n"
+"𐩘 Noise: %s\n"
+"ℹ Source: %s\n"
+"💻 Device: %s"
+msgstr ""
+"» Vald Avläsning: %s\n"
+"Δ Skillnad: %s\n"
+"↔ Trend: %s\n"
+"📻 Signalstyrka (RSSI): %s\n"
+"𐩘 Brus: %s\n"
+"ℹ Källa: %s\n"
+"💻 Enhet: %s"
+
+msgid "⇱ Full screen"
+msgstr "⇱ Fullskärm"
+
+msgid "☰ Menu"
+msgstr "☰ Meny"
+
+msgid "⚙️ Trndi API Interface: %s"
+msgstr "⚙️ Trndis API-gränssnitt: %s"
+
+msgid "⟳ Updated: %s (Next update: %s)"
+msgstr "⟳ Uppdaterad: %s (Nästa uppdatering: %s)"
+
+msgid "⟳ Updated: <b>%s</b> <i>(Next update: %s)</i>"
+msgstr "⟳ Uppdaterad: <b>%s</b> <i>(Nästa uppdatering: %s)</i>"
+
+msgid "𐩘 Noise: %d"
+msgstr "𐩘 Brus: %d"
+
+msgid "💻 Device: %s"
+msgstr "💻 Enhet: %s"
+
+msgid "📻 RSSI (Signal Strength): %d%%"
+msgstr "📻 RSSI (signalstyrka): %d%%"
