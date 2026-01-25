@@ -2636,9 +2636,19 @@ var
   minutesVal: integer;
   i: integer;
   dotChar: WChar;
+  langCode: string;
 begin
-  // Reload native settings to ensure we have latest values
-  native.ReloadSettings;
+  // Settings already written to disk by SaveUserSettings and are in native's memory
+  // No need to reload from disk - just read from current native instance
+  
+  // Apply language setting immediately
+  langCode := native.GetSetting('locale', 'en');
+  if applocale <> langCode then
+  begin
+    applocale := langCode;
+    SetDefaultLang(langCode, getLangPath);
+    Application.ProcessMessages;
+  end;
   
   // Apply font changes
   fontName := native.GetSetting('font.val', 'default');
@@ -3118,15 +3128,22 @@ procedure SaveUserSettings(f: TfConf);
       SetSetting('font.val', lVal.Font.Name);
       SetSetting('font.arrow', lArrow.Font.Name);
       SetSetting('font.ago', lAgo.Font.Name);
+      
+      // IMPORTANT: Save API settings BEFORE language change to prevent combo box reset
+      // Save remote and override settings - these should NOT be global (user-specific)
+      SetSetting('remote.type', APIToCode(cbSys.Text), false);
+      SetSetting('remote.target', eAddr.Text, false);
+      SetSetting('remote.creds', ePass.Text, false);
+      
+      // Save locale setting to config, but don't apply yet
       langCode := ExtractLangCode(cbLang.Items[cbLang.ItemIndex]);
+      
+      // If "auto" or empty, detect OS language
+      if (langCode = '') or (LowerCase(langCode) = 'auto') then
+        langCode := TrndiNative.GetOSLanguage;
+      
       SetSetting('locale', langCode);
-      // Apply selected language immediately so the UI updates without restart
-      if applocale <> langCode then
-      begin
-        applocale := langCode;
-        SetDefaultLang(langCode, getLangPath);
-        Application.ProcessMessages;
-      end;
+      
       native.SetSetting('position.main', cbPos.ItemIndex);
       native.setSetting('size.main', cbSize.Checked);
       native.setSetting('alerts.flash.high', cbFlashHi.Checked);
@@ -3145,10 +3162,8 @@ procedure SaveUserSettings(f: TfConf);
 
       SetSetting('users.colorbox', cbUserColor.Checked, true);
 
-      // Save remote and override settings
-      SetSetting('remote.type', APIToCode(cbSys.Text));
-      SetSetting('remote.target', eAddr.Text);
-      SetSetting('remote.creds', ePass.Text);
+      // API settings already saved above (before language change)
+      
       SetBoolSetting('unit', rbUnit.ItemIndex = 0, 'mmol', 'mgdl');
       SetSetting('ext.privacy', cbPrivacy.Checked);
       SetSetting('display.timestamp', cbTimeStamp.Checked);
@@ -3235,6 +3250,15 @@ procedure SaveUserSettings(f: TfConf);
 
       native.SetColorSetting('ux.tir_color', cbTirBar.ButtonColor);
       native.SetColorSetting('ux.tir_color_custom', cbTirBarCustom.ButtonColor);
+      
+      // Apply language change LAST after all settings are saved
+      // This prevents Application.ProcessMessages from resetting UI controls
+      if applocale <> langCode then
+      begin
+        applocale := langCode;
+        SetDefaultLang(langCode, getLangPath);
+        Application.ProcessMessages;
+      end;
     end;
   end;
 
@@ -3325,18 +3349,18 @@ begin
       if IsProblematicWM then
         fBG.Hide;
       if ExtText(uxdAuto, RS_SETTINGS_SAVE,RS_SETTINGS_SAVE_DESC,[mbYes, mbNo]) <> mrYes then
-
-    // Save settings when dialog closes FIRST, before reloading
-    SaveUserSettings(fConf);
-    
-    // Now reload settings from disk, needed on X_PC
-    native.ReloadSettings
+      begin
+        fBG.Show;
+        Exit; // FConf.Free will run later
+      end;
+      fBG.Show;
     end;
-    // Reload settings, needed on X_PC
-    native.ReloadSettings;
 
     // Save settings when dialog closes
     SaveUserSettings(fConf);
+    
+    // Don't call native.ReloadSettings here - it can cause race conditions
+    // The settings are already in memory after SaveUserSettings writes them
     
     // Apply settings that can take effect immediately without restart
     ApplySettingsInstantly;
@@ -3354,8 +3378,9 @@ begin
 
     if firstboot then
       exit;
-    //    SetLang;
-    miForce.Click;
+    
+    // Don't call miForce.Click here - it can cause API to reload with stale settings
+    // If restart is needed, user will restart. If not, ApplySettingsInstantly already updated UI.
   finally
     fConf.Free;
   end;
