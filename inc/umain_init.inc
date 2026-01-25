@@ -72,8 +72,6 @@ var
   langPath: string;
   moPath: string;
   langLoaded: string;
-  poPath: string;
-  poFile: TPOFile;
 begin
   lang := native.GetSetting('locale', '');
   if (lang = 'auto') or (lang = '') then
@@ -85,18 +83,6 @@ begin
   moPath := langPath + 'Trndi.' + lang + '.mo';
   LogMessage('Lang select: setting=' + native.GetSetting('locale', '') + ' resolved=' + lang + ' path=' + langPath + ' mo=' + moPath);
   langLoaded := SetDefaultLang(lang, langPath, 'Trndi');
-  poPath := langPath + 'Trndi.' + lang + '.po';
-  if FileExists(poPath) then
-  begin
-    poFile := ReadPOFile(poPath);
-    try
-      TranslateUnitResourceStrings('trndi.strings', poFile);
-    finally
-      poFile.Free;
-    end;
-  end
-  else
-    LogMessage('Lang PO missing: ' + poPath);
   LogMessage('Lang loaded=' + langLoaded + ' RS_INIT_UI=' + RS_INIT_UI);
   if not FileExists(moPath) then
     LogMessage('Lang MO missing: ' + lang + ' path=' + langPath + ' mo=' + moPath);
