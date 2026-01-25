@@ -296,6 +296,10 @@ msgstr "Tvinga uppdatering"
 msgid "Toggle Fullscreen"
 msgstr "Växla fullskärm"
 
+#: tfbg.miguidelines.caption
+msgid "Show Guide Lines"
+msgstr "Visa stödlinjer"
+
 #: tfbg.mihistory.caption
 msgid "Show history"
 msgstr "Visa historik"
@@ -2488,4 +2492,3 @@ msgstr "Historikgraf"
 #, object-pascal-format
 msgid "Readings (%s)"
 msgstr "Avläsningar (%s)"
-

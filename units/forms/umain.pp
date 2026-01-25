@@ -139,6 +139,7 @@ TfBG = class(TForm)
   bMenuPanelClose: TButton;
   bTouchFull: TButton;
   lPredict: TLabel;
+  miGuidelines: TMenuItem;
   miBasalRate: TMenuItem;
   miReadingsSince: TMenuItem;
   miExtLog: TMenuItem;
@@ -280,6 +281,7 @@ TfBG = class(TForm)
   procedure miATouchYesClick(Sender: TObject);
   procedure miDebugBackendClick(Sender: TObject);
   procedure miExtLogClick(Sender: TObject);
+  procedure miGuidelinesClick(Sender: TObject);
   procedure miPredictClick(Sender: TObject);
   procedure miReadingsSinceClick(Sender: TObject);
   procedure pmSettingsClose(Sender: TObject);
@@ -343,7 +345,6 @@ TfBG = class(TForm)
   {$ifdef DEBUG}
   procedure miDebugUXMsgClick(Sender: TObject);
   procedure miDebugLogClick(Sender: TObject);
-  procedure miDebugLinesClick(Sender: TObject);
   procedure miDebugLoadTextClick(Sender: TObject);
   {$endif}
 private
@@ -688,8 +689,8 @@ DOT_OFFSET_RANGE: integer = -15; // Fine-tune vertical alignment of threshold li
 {$ifdef HAIKU}
 DOT_OFFSET_RANGE: integer = -15; // Fine-tune vertical alignment of threshold lines with dots
 {$endif}
+DOT_LINES: boolean = true;
 {$ifdef DEBUG}
-debug_draw: boolean = true;
 debug_load_text: boolean = false;
 {$endif}
 
@@ -1159,6 +1160,12 @@ begin
     ClearOutput;
   end;
   {$endif}
+end;
+
+procedure TfBG.miGuidelinesClick(Sender: TObject);
+begin
+  miGuidelines.Checked := not miGuidelines.Checked;
+  DOT_LINES := miGuidelines.Checked;
 end;
 
 procedure TfBG.miPredictClick(Sender: TObject);
@@ -1738,8 +1745,7 @@ begin
     end;
   end;
 
-  {$IFDEF DEBUG}
-  if debug_draw then begin
+  if DOT_LINES then begin
   // Draw debug gridlines showing mmol/L values (5, 10, 15, 20)
   cnv.Brush.Style := bsClear;
   cnv.Pen.Style := psDot;
@@ -1765,7 +1771,7 @@ begin
     end;
   end;
   end;
-  {$ENDIF}
+
 end;
 
 procedure TfBG.bSettingsClick(Sender: TObject);

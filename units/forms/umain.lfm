@@ -510,6 +510,10 @@ object fBG: TfBG
         Caption = 'Run DNS Lookup Test'
         OnClick = miDNSClick
       end
+      object miGuidelines: TMenuItem
+        Caption = 'Show Guide Lines'
+        OnClick = miGuidelinesClick
+      end
       object miSep1: TMenuItem
         Caption = '-'
       end
