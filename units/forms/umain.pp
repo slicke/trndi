@@ -2629,7 +2629,7 @@ var
   minutesStr: string;
   minutesVal: integer;
   i: integer;
-  dotChar: system.widechar;
+  dotChar: WChar;
 begin
   // Reload native settings to ensure we have latest values
   native.ReloadSettings;
@@ -2651,7 +2651,7 @@ begin
   end;
   
   // Apply dot character changes
-  dotChar := native.GetWideCharSetting('font.dot', system.widechar($2B24));
+  dotChar := native.GetWideCharSetting('font.dot', WChar($2B24));
   for i := 1 to 10 do
     if TrendDots[i] <> nil then
       TrendDots[i].Caption := dotChar;
@@ -2960,10 +2960,10 @@ procedure SetupUIElements(f: TfConf);
   begin
     with f do
     begin
-      f.lDot.Caption := native.GetWideCharSetting('font.dot', System.widechar(dotdef));
+      f.lDot.Caption := native.GetWideCharSetting('font.dot', WChar(dotdef));
       eDot.Text := native.GetSetting('font.dot', '2B24');
       lDotNow.Caption := native.GetWideCharSetting('font.dot_fresh',
-        System.widechar(dotdef));
+        WChar(dotdef));
       eDotNow.Text := native.GetSetting('font.dot_fresh', '2600');
       f.lDot1.Caption := f.lDot.Caption;
       f.lDot2.Caption := f.lDot.Caption;
@@ -3105,9 +3105,9 @@ procedure SaveUserSettings(f: TfConf);
     with f, native do
     begin
       if TryStrToInt('$' + eDot.Text, i) then
-        SetWideCharSetting('font.dot', System.widechar(i));
+        SetWideCharSetting('font.dot', WChar(i));
       if TryStrToInt('$' + eDotNow.Text, i) then
-        SetWideCharSetting('font.dot_fresh', System.widechar(i));
+        SetWideCharSetting('font.dot_fresh', WChar(i));
 
       SetSetting('font.val', lVal.Font.Name);
       SetSetting('font.arrow', lArrow.Font.Name);

@@ -141,13 +141,13 @@ class var touchOverride: TTrndiBool;
   procedure SetCSVSetting(const keyname: string; const val: TStringArray; const global: boolean = false);
     {** Store a color value (TColor serialized as integer). }
   procedure SetColorSetting(const keyname: string; val: TColor);
-    {** Store a system.widechar (WideChar serialized as string). }
-  procedure SetWideCharSetting(const keyname: string; val: system.widechar);
+    {** Store a WChar (WideChar serialized as string). }
+  procedure SetWideCharSetting(const keyname: string; val: WChar);
     {** Retrieve a stored color or @param(def) if missing. }
   function GetColorSetting(const keyname: string; const def: TColor = $000000): TColor;
-    {** Retrieve a stored system.widechar or @param(def) if missing. }
+    {** Retrieve a stored WChar or @param(def) if missing. }
   function GetWideCharSetting(const keyname: string;
-    const def: system.widechar = system.widechar($2B24)): system.widechar;
+    const def: WChar = WChar($2B24)): WChar;
     {** Delete a key (optionally global) from storage. }
   procedure DeleteSetting(const keyname: string; global: boolean = false);
     virtual; abstract;
@@ -790,7 +790,7 @@ end;
  ------------------------------------------------------------------------------}
 function GetLocaleInformation(Flag: integer): string;
 var
-  wbuf: array[0..9] of system.widechar;
+  wbuf: array[0..9] of WChar;
 begin
   if GetLocaleInfoW(LOCALE_USER_DEFAULT,
     LOCALE_SISO639LANGNAME,
@@ -883,7 +883,7 @@ function PSQuote(const S: unicodestring): unicodestring;
  ------------------------------------------------------------------------------}
 function GetExePathW: unicodestring;
   var
-    Buf: array[0..32767] of system.widechar;
+    Buf: array[0..32767] of WChar;
     Len: DWORD;
   begin
     Len := GetModuleFileNameW(0, @Buf[0], Length(Buf));
@@ -897,7 +897,7 @@ function GetExePathW: unicodestring;
  ------------------------------------------------------------------------------}
 function GetEnvVarW(const Name: unicodestring): unicodestring;
   var
-    Buf: array[0..32767] of system.widechar;
+    Buf: array[0..32767] of WChar;
     Len: DWORD;
   begin
     Len := GetEnvironmentVariableW(pwidechar(Name), @Buf[0], Length(Buf));
@@ -1605,9 +1605,9 @@ end;
 {------------------------------------------------------------------------------
   SetWideCharSetting
   ----------------------
-  Stores a system.widechar value to platform-specific storage.
+  Stores a WChar value to platform-specific storage.
  ------------------------------------------------------------------------------}
-procedure TTrndiNativeBase.SetWideCharSetting(const keyname: string; val: system.widechar);
+procedure TTrndiNativeBase.SetWideCharSetting(const keyname: string; val: WChar);
 var
   code: string;
 begin
@@ -1618,10 +1618,10 @@ end;
 {------------------------------------------------------------------------------
   GetWideCharSetting
   -------------------------
-  Returns a system.widechar from settings if parseable, else returns `def`.
+  Returns a WChar from settings if parseable, else returns `def`.
  ------------------------------------------------------------------------------}
 function TTrndiNativeBase.GetWideCharSetting(const keyname: string;
-const def: system.widechar = system.widechar($2B24)): system.widechar;
+const def: WChar = WChar($2B24)): WChar;
 var
   code: integer;
   s: string;
@@ -1633,7 +1633,7 @@ begin
 
   code := StrToInt('$' + s);
 
-  Result := system.widechar(code);
+  Result := WChar(code);
 end;
 
 {------------------------------------------------------------------------------
