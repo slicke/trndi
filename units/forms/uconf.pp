@@ -543,29 +543,29 @@ fConf: TfConf;
 
 const
 GRAPH_ICONS: array[0..9] of unicodestring = (
-  system.widechar($2B24), // \u2b24 BLACK LARGE CIRCLE (default)
-  system.widechar($25CF), // \u25cf BLACK CIRCLE
-  system.widechar($26AB), // \u26ab MEDIUM BLACK CIRCLE
-  system.widechar($25CB), // \u25cb WHITE CIRCLE
-  system.widechar($26AA), // \u26aa MEDIUM WHITE CIRCLE
-  system.widechar($2022), // \u2022 BULLET
-  system.widechar($2219), // \u2219 BULLET OPERATOR (thinner)
-  system.widechar($25AA), // \u25aa BLACK SMALL SQUARE
-  system.widechar($25A0), // \u25a0 BLACK SQUARE
-  system.widechar($25C6)  // \u25c6 BLACK DIAMOND
+  WChar($2B24), // \u2b24 BLACK LARGE CIRCLE (default)
+  WChar($25CF), // \u25cf BLACK CIRCLE
+  WChar($26AB), // \u26ab MEDIUM BLACK CIRCLE
+  WChar($25CB), // \u25cb WHITE CIRCLE
+  WChar($26AA), // \u26aa MEDIUM WHITE CIRCLE
+  WChar($2022), // \u2022 BULLET
+  WChar($2219), // \u2219 BULLET OPERATOR (thinner)
+  WChar($25AA), // \u25aa BLACK SMALL SQUARE
+  WChar($25A0), // \u25a0 BLACK SQUARE
+  WChar($25C6)  // \u25c6 BLACK DIAMOND
   );
 
 FRESH_ICONS: array[0..9] of unicodestring = (
-  system.widechar($2600), // \u2600 SUN (default)
-  system.widechar($2605), // \u2605 BLACK STAR
-  system.widechar($2606), // \u2606 WHITE STAR
-  system.widechar($2736), // \u2736 SIX POINTED BLACK STAR
-  system.widechar($272A), // \u272a CIRCLED WHITE STAR
-  system.widechar($25B6), // \u25b6 BLACK RIGHT-POINTING TRIANGLE (\u201dnu\u201d-arrow)
-  system.widechar($25C0), // \u25c0 BLACK LEFT-POINTING TRIANGLE
-  system.widechar($25B2), // \u25b2 BLACK UP-POINTING TRIANGLE
-  system.widechar($25BC), // \u25bc BLACK DOWN-POINTING TRIANGLE
-  system.widechar($25CE)  // \u25ce BULLSEYE
+  WChar($2600), // \u2600 SUN (default)
+  WChar($2605), // \u2605 BLACK STAR
+  WChar($2606), // \u2606 WHITE STAR
+  WChar($2736), // \u2736 SIX POINTED BLACK STAR
+  WChar($272A), // \u272a CIRCLED WHITE STAR
+  WChar($25B6), // \u25b6 BLACK RIGHT-POINTING TRIANGLE (\u201dnu\u201d-arrow)
+  WChar($25C0), // \u25c0 BLACK LEFT-POINTING TRIANGLE
+  WChar($25B2), // \u25b2 BLACK UP-POINTING TRIANGLE
+  WChar($25BC), // \u25bc BLACK DOWN-POINTING TRIANGLE
+  WChar($25CE)  // \u25ce BULLSEYE
   );
 
 procedure ListLanguageFiles(list: TStrings; const Path: string);
@@ -1162,7 +1162,7 @@ begin
 
   if tryStrToInt('$' + (Sender as TEdit).Text, i) then
   begin
-    lbl.Caption := system.widechar(i);
+    lbl.Caption := WChar(i);
     if Sender = eDot then
     begin
       lDot1.Caption := lbl.Caption;

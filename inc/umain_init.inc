@@ -148,8 +148,8 @@ var
   fontName: string;
 begin
   // Set dots
-  DOT_GRAPH := native.GetWideCharSetting('font.dot', System.widechar($2B24));
-  DOT_FRESH := native.GetWideCharSetting('font.dot_fresh', System.widechar($2600));
+  DOT_GRAPH := native.GetWideCharSetting('font.dot', WChar($2B24));
+  DOT_FRESH := native.GetWideCharSetting('font.dot_fresh', WChar($2600));
 
   // Load fonts
   fontName := native.GetSetting('font.val', 'default');
