@@ -463,6 +463,12 @@ begin
   ShowMessage(Format('Now %s', [IfThen(debug_draw, 'showing', 'invisible')]));
 end;
 
+procedure TfBG.miDebugLoadTextClick(Sender: TObject);
+begin
+  debug_load_text := not debug_load_text;
+  ShowMessage(Format('Now %s', [IfThen(debug_load_text, 'showing', 'not showing')]));
+end;
+
 {$endif}
 
 // Initialize the TrendDots array in FormCreate
@@ -487,7 +493,7 @@ var
   minutesStr: string;
   minutesVal: integer;
   {$ifdef DEBUG}
-  miDebugUXMsg, miDebugLog, miDebugLines: TMenuItem;
+  miDebugUXMsg, miDebugLog, miDebugLines, miDebugLoadText: TMenuItem;
   {$endif}
 begin
   firstboot := false;
@@ -741,6 +747,11 @@ begin
   miDebugLines.Caption := '[debug] Toggle lines';
   miAdvanced.Insert(miAdvanced.Count, miDebugLines);
   miDebugLines.OnClick := @miDebugLinesClick;
+
+  miDebugLoadText := TMenuItem.Create(miAdvanced);
+  miDebugLoadText.Caption := '[debug] Show load indication';
+  miAdvanced.Insert(miAdvanced.count, miDebugLoadText);
+  miDebugLoadText.onClick := @miDebugLoadTextClick;
   {$endif}
 end;
 

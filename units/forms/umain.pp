@@ -344,6 +344,7 @@ TfBG = class(TForm)
   procedure miDebugUXMsgClick(Sender: TObject);
   procedure miDebugLogClick(Sender: TObject);
   procedure miDebugLinesClick(Sender: TObject);
+  procedure miDebugLoadTextClick(Sender: TObject);
   {$endif}
 private
   FStoredWindowInfo: record // Saved geometry and window state for restore/toggle
@@ -689,6 +690,7 @@ DOT_OFFSET_RANGE: integer = -15; // Fine-tune vertical alignment of threshold li
 {$endif}
 {$ifdef DEBUG}
 debug_draw: boolean = true;
+debug_load_text: boolean = false;
 {$endif}
 
 
@@ -4554,6 +4556,12 @@ end;
 
 function TfBG.updateReading(boot: boolean = false): boolean;
 begin
+ {$ifdef DEBUG}
+  if debug_load_text then begin
+    lVal.Caption := '<Updating>';
+    Application.ProcessMessages;
+  end;
+  {$endif}
   Result := false;
   lAgo.Caption := '⟳' + lAgo.Caption;
 
@@ -4564,10 +4572,22 @@ begin
     lAgo.Caption := '🕑 ' + RS_UNKNOWN_TIME;
 
 
+    {$ifdef DEBUG}
+  if debug_load_text then begin
+    lVal.Caption := '<Fetching>';
+    Application.ProcessMessages;
+  end;
+  {$endif}
   // Fetch readings and exit if no data
   if not FetchAndValidateReadings then
     Exit;
 
+  {$ifdef DEBUG}
+  if debug_load_text then begin
+    lVal.Caption := '<Processing>';
+    Application.ProcessMessages;
+  end;
+  {$endif}
   // Process the newest reading
   ProcessCurrentReading;
 
