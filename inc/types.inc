@@ -38,9 +38,9 @@
 type
 
 {$ifdef DARWIN}
-WChar = System.WideChar; // < To avoid writing system. for macOS all the time
+WChar = System.WideChar; // < To avoid writing system.widechar for macOS all the time
 {$else}
-WChar = WideChar;
+WChar = WideChar; // < Use system's native widechar
 {$endif}
 
 BGTrend = (TdDoubleUp = 0, TdSingleUp = 1, TdFortyFiveUp = 2, TdFlat =
