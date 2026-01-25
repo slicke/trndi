@@ -577,8 +577,8 @@ msgid "Display users' colors on the main and floating windows"
 msgstr "Visa användares färger på huvud- och det flytande fönstret"
 
 #: tfconf.cbwebapi.caption
-msgid " Enable Web API"
-msgstr " Slå på Web-API:et"
+msgid "Enable Web API"
+msgstr "Slå på Web-API:et"
 
 #: tfconf.cgnotifications.caption
 msgctxt "tfconf.cgnotifications.caption"
@@ -2492,3 +2492,4 @@ msgstr "Historikgraf"
 #, object-pascal-format
 msgid "Readings (%s)"
 msgstr "Avläsningar (%s)"
+

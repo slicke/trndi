@@ -3325,11 +3325,12 @@ begin
       if IsProblematicWM then
         fBG.Hide;
       if ExtText(uxdAuto, RS_SETTINGS_SAVE,RS_SETTINGS_SAVE_DESC,[mbYes, mbNo]) <> mrYes then
-      begin
-        fBG.Show;
-        Exit; // FConf.Free will run later
-      end;
-      fBG.Show;
+
+    // Save settings when dialog closes FIRST, before reloading
+    SaveUserSettings(fConf);
+    
+    // Now reload settings from disk, needed on X_PC
+    native.ReloadSettings
     end;
     // Reload settings, needed on X_PC
     native.ReloadSettings;
