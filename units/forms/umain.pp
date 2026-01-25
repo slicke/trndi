@@ -2647,7 +2647,6 @@ begin
   begin
     applocale := langCode;
     SetDefaultLang(langCode, getLangPath);
-    Application.ProcessMessages;
   end;
   
   // Apply font changes
@@ -3252,12 +3251,12 @@ procedure SaveUserSettings(f: TfConf);
       native.SetColorSetting('ux.tir_color_custom', cbTirBarCustom.ButtonColor);
       
       // Apply language change LAST after all settings are saved
-      // This prevents Application.ProcessMessages from resetting UI controls
+      // Don't call Application.ProcessMessages here - it causes visual glitches
+      // The UI will update naturally after the dialog closes
       if applocale <> langCode then
       begin
         applocale := langCode;
         SetDefaultLang(langCode, getLangPath);
-        Application.ProcessMessages;
       end;
     end;
   end;
@@ -3359,22 +3358,10 @@ begin
     // Save settings when dialog closes
     SaveUserSettings(fConf);
     
-    // Don't call native.ReloadSettings here - it can cause race conditions
-    // The settings are already in memory after SaveUserSettings writes them
-    
-    // Apply settings that can take effect immediately without restart
-    ApplySettingsInstantly;
-    
     // Check if backend/API settings changed - those require restart
     needsRestart := (origAPI <> native.GetSetting('remote.type')) or
                     (origTarget <> native.GetSetting('remote.target')) or
                     (origCreds <> native.GetSetting('remote.creds'));
-    
-    // Show appropriate message
-    if needsRestart then
-      ShowMessage(RS_RESTART_APPLY)
-    else
-      ShowMessage(RS_SETTINGS_SAVED);
 
     if firstboot then
       exit;
@@ -3384,6 +3371,16 @@ begin
   finally
     fConf.Free;
   end;
+  
+  // Apply settings that can take effect immediately without restart
+  // Done after dialog is freed to prevent visual glitches
+  ApplySettingsInstantly;
+    
+  // Show message after all UI updates are complete
+  if needsRestart then
+    ShowMessage(RS_RESTART_APPLY)
+  else
+    ShowMessage(RS_SETTINGS_SAVED);
 end;
 
 procedure TfBG.ApplyChromaAlertAction(const ActionSettingKey: string;
