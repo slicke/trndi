@@ -3112,6 +3112,13 @@ procedure SaveUserSettings(f: TfConf);
       SetSetting('font.ago', lAgo.Font.Name);
       langCode := ExtractLangCode(cbLang.Items[cbLang.ItemIndex]);
       SetSetting('locale', langCode);
+      // Apply selected language immediately so the UI updates without restart
+      if applocale <> langCode then
+      begin
+        applocale := langCode;
+        SetDefaultLang(langCode, getLangPath);
+        Application.ProcessMessages;
+      end;
       native.SetSetting('position.main', cbPos.ItemIndex);
       native.setSetting('size.main', cbSize.Checked);
       native.setSetting('alerts.flash.high', cbFlashHi.Checked);
