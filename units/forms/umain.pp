@@ -2629,7 +2629,7 @@ var
   minutesStr: string;
   minutesVal: integer;
   i: integer;
-  dotChar: widechar;
+  dotChar: system.widechar;
 begin
   // Reload native settings to ensure we have latest values
   native.ReloadSettings;
@@ -2651,7 +2651,7 @@ begin
   end;
   
   // Apply dot character changes
-  dotChar := native.GetWideCharSetting('font.dot', widechar($2B24));
+  dotChar := native.GetWideCharSetting('font.dot', system.widechar($2B24));
   for i := 1 to 10 do
     if TrendDots[i] <> nil then
       TrendDots[i].Caption := dotChar;
