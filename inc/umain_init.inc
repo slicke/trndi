@@ -69,6 +69,9 @@ end;
 procedure tfBG.SetLang;
 var
   lang: string;
+  langPath: string;
+  moPath: string;
+  langLoaded: string;
 begin
   lang := native.GetSetting('locale', '');
   if (lang = 'auto') or (lang = '') then
@@ -76,7 +79,13 @@ begin
   applocale := lang;
   Application.ProcessMessages;
 
-  SetDefaultLang(lang, getLangPath);
+  langPath := getLangPath;
+  moPath := langPath + 'Trndi.' + lang + '.mo';
+  LogMessage('Lang select: setting=' + native.GetSetting('locale', '') + ' resolved=' + lang + ' path=' + langPath + ' mo=' + moPath);
+  langLoaded := SetDefaultLang(lang, langPath, 'Trndi');
+  LogMessage('Lang loaded=' + langLoaded + ' RS_INIT_UI=' + RS_INIT_UI);
+  if not FileExists(moPath) then
+    LogMessage('Lang MO missing: ' + lang + ' path=' + langPath + ' mo=' + moPath);
 end;
 
 {$if DEFINED(DARWIN) OR DEFINED(X_LINUXBSD)}

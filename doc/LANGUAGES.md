@@ -11,6 +11,9 @@ Find out which code to use in the
 
 In order for a language to exists, __someone must translate it first__. I welcome any one to participate in translating! Simply submit a pull request with a translated file.
 
+## New additions
+- Jämtländska (Jamska) — `jm` (seeded file added; please review and improve dialect translations)
+
 ## Translating
 Simply open ```lang/Trndi.pot``` in [PoEdit](https://poedit.net/download), translate it and export a _.po file_!
 The po file is used by Trndi to process the translations.
