@@ -999,9 +999,9 @@ procedure SendNotification(const Title, Msg: string);
       P.Parameters.Add('-e');
       P.Parameters.Add('end run');
 
-      // Pass message + title as argv items.
-      P.Parameters.Add(Msg);
-      P.Parameters.Add(Title);
+      // Pass message + title as argv items (ensure UTF-8).
+      P.Parameters.Add(UTF8Encode(Msg));
+      P.Parameters.Add(UTF8Encode(Title));
 
       P.Options := [poUsePipes, poWaitOnExit, poNoConsole];
       P.Execute;
