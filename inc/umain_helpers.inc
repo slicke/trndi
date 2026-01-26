@@ -236,7 +236,7 @@ begin
       jo.Add('value_mmol', FormatFloat('0.00', bg.convert(mmol, BGPrimary), fs));
       jo.Add('delta_mgdl', Round(bg.delta));
       jo.Add('delta_mmol', FormatFloat('0.00', bg.convert(mmol, BGDelta), fs));
-      jo.Add('direction', bg.direction);
+      jo.Add('trend', integer(bg.trend));
       jo.Add('timestamp', DateTimeToStr(bg.date));
       jo.Add('age_seconds', SecondsBetween(Now, bg.date));
       payload := jo.AsJSON;
@@ -299,7 +299,6 @@ begin
   selSetDesc := sel_registerName('setDescriptor:forKeyword:');
   objc_msgSend2(replyEvent, selSetDesc, desc, FourCharCode('----'));
   CFRelease(cfStr);
-end;
 end;
 
 {$ENDIF}
