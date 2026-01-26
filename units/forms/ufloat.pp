@@ -279,8 +279,8 @@ begin
   end;
   {$ELSEIF DEFINED(LCLQT6)}
   StyleStr := 'border-radius: 10px; background-color: rgba(240, 240, 240, 255);';
-//  Self.BorderStyle := bsNone; // Remove border
-  self.borderstyle := bsToolWindow;
+  Self.BorderStyle := bsNone; // Remove border
+  //self.borderstyle := bsToolWindow;
   if HandleAllocated then
     QWidget_setStyleSheet(TQtWidget(Handle).Widget, @stylestr);
   CreateRoundedCorners;
@@ -620,9 +620,34 @@ procedure TfFloat.FormMouseDown(Sender: TObject; Button: TMouseButton;
 Shift: TShiftState; X, Y: integer);
 var
   ScreenPt: TPoint;
+  {$IFDEF LCLQt6}
+  QtWidget: TQtWidget;
+  sessionType: string;
+  qwin: QWindowH;
+  {$ENDIF}
 begin
   if Button = mbLeft then
   begin
+    {$IFDEF LCLQt6}
+    sessionType := GetEnvironmentVariable('XDG_SESSION_TYPE');
+    if LowerCase(sessionType) = 'wayland' then
+    begin
+      // Try to trigger a compositor move using native Qt binding; if it
+      // succeeds, let the compositor handle dragging and exit.
+      if HandleAllocated then
+      begin
+        QtWidget := TQtWidget(Handle);
+        if Assigned(QtWidget) and Assigned(QtWidget.Widget) then
+        begin
+          qwin := QWidget_windowHandle(QtWidget.Widget);
+          if qwin <> nil then
+            if QWindow_startSystemMove(qwin) then
+              Exit;
+        end;
+      end;
+    end;
+    {$ENDIF}
+
     DraggingWin := true;
     
     // Convert to screen coordinates to handle clicks from child controls
