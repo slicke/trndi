@@ -243,7 +243,7 @@ jobs:
             Exec=/usr/local/trndi/Trndi %U
             Icon=${ICON}
             Type=Application
-            Categories=Utility;" > "$PKG_DIR/usr/share/applications/trindi.desktop"
+            Categories=Utility;" > "$PKG_DIR/usr/share/applications/trndi.desktop"
             # Determine package version from Trndi.lpi (Major.Minor.<build>)
             MAJOR=$(sed -n -E 's/.*<MajorVersionNr[^>]*Value="([0-9]+)".*/\1/p' Trndi.lpi | head -n1)
             MINOR=$(sed -n -E 's/.*<MinorVersionNr[^>]*Value="([0-9]+)".*/\1/p' Trndi.lpi | head -n1)
