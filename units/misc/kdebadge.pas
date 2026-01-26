@@ -47,7 +47,8 @@ TBadgeLogProc = procedure(const Msg: string);
 
 procedure InitializeBadge(const DesktopIdWithDotDesktop: string;
 const DebounceMs: cardinal = 150;
-const LogProc: TBadgeLogProc = nil);
+const LogProc: TBadgeLogProc = nil;
+const GDBusAvailable: boolean = true);
 procedure ShutdownBadge;
 
 procedure SetDesktopId(const DesktopIdWithDotDesktop: string);
@@ -74,6 +75,7 @@ Process, SyncObjs;
 var
 GDebounceMs: QWord = 150;
 GLog: TBadgeLogProc = nil;
+GDBusEnabled: Boolean = true;
 
 type
 TBadgeWorker = class(TThread)
@@ -165,6 +167,12 @@ begin
   if DesktopIdWithDotDesktop = '' then
   begin
     Log('Emit skipped: desktop id not set');
+    Exit;
+  end;
+
+  if not GDBusEnabled then
+  begin
+    Log('Emit skipped: gdbus not available');
     Exit;
   end;
 
@@ -323,13 +331,18 @@ end;
 
 procedure InitializeBadge(const DesktopIdWithDotDesktop: string;
 const DebounceMs: cardinal;
-const LogProc: TBadgeLogProc);
+const LogProc: TBadgeLogProc;
+const GDBusAvailable: boolean);
 begin
   GDesktopId := EnsureDotDesktop(DesktopIdWithDotDesktop);
   GDebounceMs := DebounceMs;
   GLog := LogProc;
+  GDBusEnabled := GDBusAvailable;
   EnsureWorker;
-  Log(Format('KDEBadge initialized (id=%s, debounce=%d ms)', [GDesktopId, DebounceMs]));
+  if GDBusEnabled then
+    Log(Format('KDEBadge initialized (id=%s, debounce=%d ms)', [GDesktopId, DebounceMs]))
+  else
+    Log(Format('KDEBadge initialized but disabled (gdbus not available, id=%s)', [GDesktopId]));
 end;
 
 procedure ShutdownBadge;
@@ -366,6 +379,8 @@ procedure SubmitDict(const Dict: string);
 begin
   if Dict = '' then
     Exit;
+  if not GDBusEnabled then
+    Exit;
   EnsureWorker;
   if GDebounceMs = 0 then
   try
@@ -385,6 +400,8 @@ var
   FracPart: double;
   Dict: string;
 begin
+  if not GDBusEnabled then
+    Exit;
   Count := ClampInt32(Trunc(Value));
   FracPart := Frac(Value);
   // Show count; progress only if > 0
@@ -422,6 +439,8 @@ procedure ClearBadge;
 var
   Dict: string;
 begin
+  if not GDBusEnabled then
+    Exit;
   // Safe "clear": zero values and both visibility flags false
   Dict := BuildDict(0, false, 0.0, false);
   SubmitDict(Dict);

@@ -612,6 +612,11 @@ var
   FullCommand: string;
 begin
   Result := '';
+  // Check if dbus-send is available
+  {$IFDEF UNIX}
+  if ExeSearch('dbus-send', '') = '' then
+    Exit;
+  {$ENDIF}
   PlayerName := GetMPRISPlayerName(Player);
   if PlayerName = '' then Exit;
 
@@ -1019,6 +1024,14 @@ begin
   PlayerName := GetMPRISPlayerName(Player);
   if PlayerName <> '' then
   begin
+    // Check if dbus-send is available
+    {$IFDEF UNIX}
+    if ExeSearch('dbus-send', '') = '' then
+    begin
+      Result := ExecuteCommand('xdg-open "' + URL + '"') <> '';
+      Exit;
+    end;
+    {$ENDIF}
     try
       // Try D-Bus first
       Command := Format('dbus-send --type=method_call --dest=%s /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.OpenUri string:"%s"',

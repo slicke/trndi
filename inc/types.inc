@@ -36,6 +36,13 @@
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *)
 type
+
+{$ifdef DARWIN}
+WChar = System.WideChar; // < To avoid writing system.widechar for macOS all the time
+{$else}
+WChar = WideChar; // < Use system's native widechar
+{$endif}
+
 BGTrend = (TdDoubleUp = 0, TdSingleUp = 1, TdFortyFiveUp = 2, TdFlat =
   3, TdFortyFiveDown = 4,
   TdSingleDown = 5, TdDoubleDown = 6, TdNotComputable = 7, TdPlaceholder);

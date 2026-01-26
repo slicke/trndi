@@ -111,13 +111,25 @@ argv: PJSValues): JSValueRaw; cdecl;
 var
   i: integer;
   output: rawutf8;
+  dialogResult: TModalResult;
 begin
-  for i := 0 to argc - 1 do
-    output := output + ctx^.ToUtf8(argv^[i]);
-  if UXDialog(uxdAuto, sExtMsg, '', output, [mbYes, mbNo], mtConfirmation) = mrYes then
-    Result := JS_TRUE
-  else
-    Result := JS_FALSE;
+  try
+    for i := 0 to argc - 1 do
+      output := output + ctx^.ToUtf8(argv^[i]);
+    
+    dialogResult := UXDialog(uxdAuto, sExtMsg, '', output, [mbYes, mbNo], mtConfirmation);
+    
+    if dialogResult = mrYes then
+      Result := JS_TRUE
+    else
+      Result := JS_FALSE;
+  except
+    on E: Exception do
+    begin
+      ExtError(uxdAuto, 'Error in confirm dialog: ' + E.Message);
+      Result := JS_FALSE;
+    end;
+  end;
 end;
 
 {** Prompt (input) dialog returning the user input as a JS string.

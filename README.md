@@ -139,11 +139,19 @@ Both indicators read the same cache file: `${XDG_CACHE_HOME:-$HOME/.cache}/trndi
   mkdir -p ~/.local/share/gnome-shell/extensions
   cp -r squashfs-root/usr/share/trndi/gnome-shell-extension/trndi-current@slicke.com \
     ~/.local/share/gnome-shell/extensions/
+  # GNOME: enable / reload the extension
+  # - Use the Extensions app or run:
+  #   gnome-extensions enable trndi-current@slicke.com
+  # - If using Xorg: press Alt+F2, type r and Enter to reload GNOME Shell
+  # - If using Wayland: log out and log in to apply the extension
   
   # KDE: Copy to plasmoids directory
   mkdir -p ~/.local/share/plasma/plasmoids
   cp -r squashfs-root/usr/share/trndi/kde-plasmoid/com.slicke.trndi.current \
     ~/.local/share/plasma/plasmoids/
+  # KDE: restart Plasma and add widget
+  # - Restart (optional): kquitapp6 plasmashell &&  plasmashell (Plasma 5) or log out/in
+  # - Add the "Trndi Current" widget via *Add Widgets*
   ```
 
 ## macOS

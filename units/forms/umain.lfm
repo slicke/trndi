@@ -147,9 +147,9 @@ object fBG: TfBG
     OnPaint = pnWarningPaint
     object lMissing: TLabel
       Left = 45
-      Height = 15
+      Height = 16
       Top = 7
-      Width = 110
+      Width = 108
       Alignment = taCenter
       Caption = 'No recent readings!'
       Font.Color = clBlack
@@ -158,9 +158,9 @@ object fBG: TfBG
     end
     object pnWarnlast: TLabel
       Left = 0
-      Height = 15
+      Height = 16
       Top = 0
-      Width = 114
+      Width = 118
       Caption = 'Last recieved reading:'
       WordWrap = True
     end
@@ -223,9 +223,9 @@ object fBG: TfBG
     OnPaint = pnOffReadingPaint
     object lRef: TLabel
       Left = 0
-      Height = 15
+      Height = 16
       Top = 172
-      Width = 14
+      Width = 18
       Caption = '0,?'
     end
   end
@@ -241,9 +241,9 @@ object fBG: TfBG
   end
   object lPredict: TLabel
     Left = 224
-    Height = 15
+    Height = 16
     Top = 214
-    Width = 59
+    Width = 62
     Caption = 'Predictions'
     OnClick = lPredictClick
   end
@@ -376,6 +376,10 @@ object fBG: TfBG
         Caption = 'Show last-day readings'
         OnClick = mi24hClick
       end
+      object miReadingsSince: TMenuItem
+        Caption = 'Show readings since..'
+        OnClick = miReadingsSinceClick
+      end
       object Separator2: TMenuItem
         Caption = '-'
       end
@@ -498,9 +502,17 @@ object fBG: TfBG
         Caption = 'Prediction...'
         OnClick = miPredictClick
       end
+      object miBasalRate: TMenuItem
+        Caption = 'Current Basal'
+        OnClick = miBasalRateClick
+      end
       object miDNS: TMenuItem
         Caption = 'Run DNS Lookup Test'
         OnClick = miDNSClick
+      end
+      object miGuidelines: TMenuItem
+        Caption = 'Show Guide Lines'
+        OnClick = miGuidelinesClick
       end
       object miSep1: TMenuItem
         Caption = '-'

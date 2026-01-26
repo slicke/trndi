@@ -123,8 +123,8 @@ APP_BUILD_DATE = {$I %DATE%}; // Returns "2025/07/21"
 APP_BUILD_TIME = {$I %TIME%}; // Returns "14:30:25"
 
 var
-DOT_GRAPH: unicodestring = widechar($2B24);  // Circle
-DOT_FRESH: unicodestring = widechar($2600);  // Sun
+DOT_GRAPH: unicodestring = WChar($2B24);  // Circle
+DOT_FRESH: unicodestring = WChar($2600);  // Sun
 DOT_ADJUST: single = 0; // Multiplyer where dots appear
 DOT_VISUAL_OFFSET: integer = 0;
   // Vertical offset to align limit lines with visual center of dot (compensates for internal whitespace in dot character)
@@ -174,12 +174,19 @@ end;
 function getLangPath: string;
 var
   bin: string;
+  parent: string;
 begin
   bin := ExtractFilePath(Application.ExeName);
   if DirectoryExists(bin + 'lang') then
     result := bin + 'lang/'
   else
-    result := GetAppPath + 'lang/';
+  begin
+    parent := ExtractFilePath(ExcludeTrailingPathDelimiter(bin));
+    if DirectoryExists(parent + 'lang') then
+      result := parent + 'lang/'
+    else
+      result := GetAppPath + 'lang/';
+  end;
 end;
 
 {$else}
@@ -192,6 +199,12 @@ end;
 function getLangPath: string;
 begin
   Result := GetAppPath + 'lang/';
+  if not DirectoryExists(Result) then
+  begin
+    Result := ExtractFilePath(ExcludeTrailingPathDelimiter(GetAppPath)) + 'lang/';
+    if not DirectoryExists(Result) then
+      Result := GetAppPath + 'lang/';
+  end;
 end;
 {$endif}
 

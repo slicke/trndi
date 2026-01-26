@@ -42,7 +42,7 @@ end;
   {** Unit for storing glucose values }
 glucose = single;
 
-APIParamLabel = (APLUser, APLPass, APLDesc, APLCopyright);
+APIParamLabel = (APLUser, APLPass, APLDesc, APLDescHTML, APLCopyright);
 
   {** TrndiAPI is the abstract base class for accessing CGM data sources.
       It defines common thresholds, time handling, and helper routines to read
@@ -132,11 +132,6 @@ protected
         @returns(@code(True) if a plausible current reading exists)
      }
   function checkActive: boolean;
-
-    {** Returns the name of the API
-        @returns(Name of the API)
-     }
-  function getSystemName: string; virtual; abstract;
 public
 const
   toMMOL = 0.05555555555555556; // Factor to multiply mg/dL by to get mmol/L
@@ -278,6 +273,24 @@ const
         @returns(0 if it works, 1 if it doesnt, 3 if not supported)
      }
   class function testConnection(user, pass, extra: string): byte; virtual;
+
+    {** Returns the name of the API
+        @returns(Name of the API)
+     }
+  function getSystemName: string; virtual; abstract;
+
+     {** Get the maximum age (in minutes) of readings provided by the backend
+          @returns(Maximum age in minutes)
+       }
+  function getMaxAge: integer; virtual;
+
+    {** Retrieve the current basal rate from the backend.
+        Base implementation returns 0. Subclasses may override to fetch
+        basal rate information from the data source.
+        @returns(Current basal rate in U/hr, or 0 if unavailable)
+     }
+  function getBasalRate: single; virtual;
+
     // -------- Properties --------
 
   {** Backend's maximum reading. }
@@ -326,6 +339,14 @@ published
 end;
 
 implementation
+
+  {------------------------------------------------------------------------------
+  Get the maximum age (in minutes) of readings provided by the backend
+  ------------------------------------------------------------------------------}
+function TrndiAPI.getMaxAge: integer;
+begin
+  result := 1440; // Default to 24 hours
+end;
 
 {------------------------------------------------------------------------------
   Determine whether the API appears to be active by fetching a current reading.
@@ -533,6 +554,8 @@ begin
     Result := 'API Key';
   APLDesc:
     Result := '';
+  APLDescHTML:
+    Result := '';
   APLCopyright:
     Result := 'Trndi contributors';
   else
@@ -716,6 +739,15 @@ begin
   result := 3; // Not supported
 end;
 
+{------------------------------------------------------------------------------
+  Retrieve the current basal rate from the backend.
+  Base implementation returns 0.
+------------------------------------------------------------------------------}
+function TrndiAPI.getBasalRate: single;
+begin
+  result := 0; // Base implementation returns 0
+  // Subclasses may override to fetch basal rate from their data source
+end;
 
 function TrndiAPI.getAPIUrl: string;
 begin

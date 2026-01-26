@@ -154,6 +154,7 @@ resourcestring
 sParamUsername = 'xDrip URL';
 sParamPassword = 'API Secret';
 sParamDesc ='xDrip setup:'#13#10''#13#10'Address: your xDrip REST endpoint (base URL).'#13#10'Auth: API secret (plain text; server hashes it).';
+sParamDescHTML ='<b>xDrip setup:</b><br><br>Address: your xDrip REST endpoint (base URL).<br>Auth: API secret (plain text; server hashes it).';
 
 {------------------------------------------------------------------------------
   getSystemName
@@ -329,6 +330,8 @@ begin
     Result := sParamPassword;
   APLDesc:
     Result := sParamDesc;
+  APLDescHTML:
+    Result := sParamDescHTML;
   APLCopyright:
     Result := 'Björn Lindh <github.com/slicke>';
   else

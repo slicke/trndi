@@ -70,8 +70,9 @@ unit uhistorygraph;
 interface
 
 uses
-Classes, SysUtils, Forms, Controls, Graphics, Dialogs, Math,
-trndi.types, trndi.strings, slicke.ux.alert, dateutils;
+Classes, SysUtils, Forms, Controls, Graphics, Dialogs, Math, Menus,
+trndi.types, trndi.strings, slicke.ux.alert, dateutils, Trndi.Native,
+ExtDlgs, IntfGraphics, FPImage, FPWritePNG;
 
 type
   {** THistoryGraphPalette
@@ -118,6 +119,11 @@ private
   FMaxTime: TDateTime;
   FDotRadius: integer; // Dot radius in pixels
   FPalette: THistoryGraphPalette; // Runtime palette supplied by main UI
+  FCgmHi: integer; // High threshold in mg/dL
+  FCgmLo: integer; // Low threshold in mg/dL
+  FCgmRangeHi: integer; // Range high threshold in mg/dL
+  FCgmRangeLo: integer; // Range low threshold in mg/dL
+  FPopupMenu: TPopupMenu; // Context menu for right-click actions
     {** GetPlotRect: Determine the plotting rectangle inside the form where
       dots and lines are drawn. Respects the margins defined above. }
   function GetPlotRect: TRect;
@@ -132,6 +138,9 @@ private
       (left) and time (bottom) axes. Uses the plot extents from
       UpdateExtents. }
   procedure DrawAxesAndGrid(ACanvas: TCanvas; const PlotRect: TRect);
+    {** DrawThresholdLines: Draws horizontal lines at each threshold level
+      using the corresponding level colors. }
+  procedure DrawThresholdLines(ACanvas: TCanvas; const PlotRect: TRect);
     {** DrawPolyline: Connects the chronological points with a thin
       line to indicate trend (optional visual aid). }
   procedure DrawPolyline(ACanvas: TCanvas; const PlotRect: TRect);
@@ -162,6 +171,7 @@ protected
   procedure Resize; override;
   procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: integer);
     override;
+  procedure KeyDown(var Key: Word; Shift: TShiftState); override;
   procedure DoClose(var CloseAction: TCloseAction); override;
 public
     {** Create: Construct a new TfHistoryGraph instance. The form
@@ -180,6 +190,14 @@ public
     {** SetPalette: Allow callers to inject the palette used when
       drawing level colors so the graph matches the main UI. }
   procedure SetPalette(const Palette: THistoryGraphPalette);
+    {** SetThresholds: Inject the CGM thresholds (in mg/dL) for display in the legend. }
+  procedure SetThresholds(const cgmHi, cgmLo, cgmRangeHi, cgmRangeLo: integer);
+    {** SaveAsPNG: Export the current graph to a PNG file. Shows a save dialog
+      and renders the full graph to the selected file. }
+  procedure SaveAsPNG(Sender: TObject);
+    {** SaveAsCSV: Export the readings data to a CSV file for analysis in
+      spreadsheet applications. }
+  procedure SaveAsCSV(Sender: TObject);
 end;
 
   {** Display a dot-based history plot for the supplied readings. Reuses the
@@ -187,6 +205,8 @@ end;
 procedure ShowHistoryGraph(const Readings: BGResults; const UnitPref: BGUnit); overload;
 procedure ShowHistoryGraph(const Readings: BGResults; const UnitPref: BGUnit;
 const Palette: THistoryGraphPalette); overload;
+procedure ShowHistoryGraph(const Readings: BGResults; const UnitPref: BGUnit;
+const Palette: THistoryGraphPalette; const cgmHi, cgmLo, cgmRangeHi, cgmRangeLo: integer); overload;
 
 var
   {** fHistoryGraph: A single, reusable instance of the history graph.
@@ -214,6 +234,12 @@ RS_HISTORY_GRAPH_KEY_RANGE_LO = 'Range low';
 RS_HISTORY_GRAPH_KEY_HIGH = 'High';
 RS_HISTORY_GRAPH_KEY_LOW = 'Low';
 RS_HISTORY_GRAPH_KEY_UNKNOWN = 'Unknown';
+RS_HISTORY_GRAPH_SAVE_TITLE = 'Save graph as PNG';
+RS_HISTORY_GRAPH_SAVE_SUCCESS = 'Graph saved successfully';
+RS_HISTORY_GRAPH_SAVE_ERROR = 'Failed to save graph: %s';
+RS_HISTORY_GRAPH_MENU_SAVE = 'Save as Image...';
+RS_HISTORY_GRAPH_MENU_SAVE_CSV = 'Save as CSV...';
+RS_HISTORY_GRAPH_CSV_TITLE = 'Save readings as CSV';
 
 {** Constants used for layout and division handling in this graph unit.
   Changing these values will affect overall margins and grid density. }
@@ -237,6 +263,8 @@ end;
 { TfHistoryGraph }
 
 constructor TfHistoryGraph.Create(AOwner: TComponent);
+var
+  menuItem: TMenuItem;
 begin
   inherited CreateNew(AOwner, 0);
   Caption := RS_HISTORY_GRAPH_TITLE;
@@ -248,6 +276,18 @@ begin
   Color := clWhite;
   FDotRadius := 5;
   FPalette := DefaultHistoryGraphPalette;
+  
+  // Create context menu
+  FPopupMenu := TPopupMenu.Create(Self);
+  menuItem := TMenuItem.Create(FPopupMenu);
+  menuItem.Caption := RS_HISTORY_GRAPH_MENU_SAVE;
+  menuItem.OnClick := @SaveAsPNG;
+  FPopupMenu.Items.Add(menuItem);
+  menuItem := TMenuItem.Create(FPopupMenu);
+  menuItem.Caption := RS_HISTORY_GRAPH_MENU_SAVE_CSV;
+  menuItem.OnClick := @SaveAsCSV;
+  FPopupMenu.Items.Add(menuItem);
+  PopupMenu := FPopupMenu;
 end;
 
 procedure TfHistoryGraph.DoClose(var CloseAction: TCloseAction);
@@ -354,6 +394,63 @@ begin
   ACanvas.Font.Style := [];
 end;
 
+procedure TfHistoryGraph.DrawThresholdLines(ACanvas: TCanvas; const PlotRect: TRect);
+var
+  hiVal, loVal, rangeHiVal, rangeLoVal: double;
+  hiY, loY, rangeHiY, rangeLoY: integer;
+  lineColor: TColor;
+  alpha: byte;
+begin
+  // Convert thresholds from mg/dL to display unit
+  hiVal := FCgmHi * BG_CONVERTIONS[FUnit][mgdl];
+  loVal := FCgmLo * BG_CONVERTIONS[FUnit][mgdl];
+  rangeHiVal := FCgmRangeHi * BG_CONVERTIONS[FUnit][mgdl];
+  rangeLoVal := FCgmRangeLo * BG_CONVERTIONS[FUnit][mgdl];
+
+  // Calculate Y positions
+  hiY := ValueToY(hiVal, PlotRect);
+  loY := ValueToY(loVal, PlotRect);
+  rangeHiY := ValueToY(rangeHiVal, PlotRect);
+  rangeLoY := ValueToY(rangeLoVal, PlotRect);
+
+  ACanvas.Pen.Width := 2;
+  ACanvas.Pen.Style := psDash;
+
+  // Draw High threshold line
+  lineColor := LevelColor(BGHigh);
+  ACanvas.Pen.Color := lineColor;
+  ACanvas.MoveTo(PlotRect.Left, hiY);
+  ACanvas.LineTo(PlotRect.Right, hiY);
+
+  // Draw Low threshold line
+  lineColor := LevelColor(BGLOW);
+  ACanvas.Pen.Color := lineColor;
+  ACanvas.MoveTo(PlotRect.Left, loY);
+  ACanvas.LineTo(PlotRect.Right, loY);
+
+  // Draw Range High threshold line (if not disabled)
+  if FCgmRangeHi <> 500 then
+  begin
+    lineColor := LevelColor(BGRangeHI);
+    ACanvas.Pen.Color := lineColor;
+    ACanvas.MoveTo(PlotRect.Left, rangeHiY);
+    ACanvas.LineTo(PlotRect.Right, rangeHiY);
+  end;
+
+  // Draw Range Low threshold line (if not disabled)
+  if FCgmRangeLo <> 0 then
+  begin
+    lineColor := LevelColor(BGRangeLO);
+    ACanvas.Pen.Color := lineColor;
+    ACanvas.MoveTo(PlotRect.Left, rangeLoY);
+    ACanvas.LineTo(PlotRect.Right, rangeLoY);
+  end;
+
+  // Reset pen style
+  ACanvas.Pen.Width := 1;
+  ACanvas.Pen.Style := psSolid;
+end;
+
 procedure TfHistoryGraph.DrawLegend(ACanvas: TCanvas; const PlotRect: TRect);
 const
   INFO_PADDING = 6;
@@ -444,7 +541,40 @@ procedure DrawKeyEntry(const Caption: string; const Color: TColor);
       The panel is rendered to the right of the plot area to avoid covering
       the most recent readings. }
 procedure DrawKeyPanel;
+  var
+    unitStr, rangeStr, rangeHiStr, rangeLoStr, hiStr, loStr: string;
+    rangeHiVal, rangeLoVal, hiVal, loVal: double;
   begin
+    // Determine unit string
+    if FUnit = mmol then
+      unitStr := 'mmol/L'
+    else
+      unitStr := 'mg/dL';
+    
+    // Convert thresholds to display unit
+    hiVal := FCgmHi * BG_CONVERTIONS[FUnit][mgdl];
+    loVal := FCgmLo * BG_CONVERTIONS[FUnit][mgdl];
+    rangeHiVal := FCgmRangeHi * BG_CONVERTIONS[FUnit][mgdl];
+    rangeLoVal := FCgmRangeLo * BG_CONVERTIONS[FUnit][mgdl];
+    
+    // Format strings with threshold values
+    if FUnit = mmol then
+    begin
+      hiStr := Format('%s (%.1f %s+)', [RS_HISTORY_GRAPH_KEY_HIGH, hiVal, unitStr]);
+      loStr := Format('%s (%.1f %s−)', [RS_HISTORY_GRAPH_KEY_LOW, loVal, unitStr]);
+      rangeHiStr := Format('%s (%.1f %s+)', [RS_HISTORY_GRAPH_KEY_RANGE_HI, rangeHiVal, unitStr]);
+      rangeLoStr := Format('%s (%.1f %s−)', [RS_HISTORY_GRAPH_KEY_RANGE_LO, rangeLoVal, unitStr]);
+      rangeStr := Format('%s (%.1f - %.1f %s)', [RS_HISTORY_GRAPH_KEY_RANGE, rangeLoVal, rangeHiVal, unitStr]);
+    end
+    else
+    begin
+      hiStr := Format('%s (%d %s+)', [RS_HISTORY_GRAPH_KEY_HIGH, Round(hiVal), unitStr]);
+      loStr := Format('%s (%d %s−)', [RS_HISTORY_GRAPH_KEY_LOW, Round(loVal), unitStr]);
+      rangeHiStr := Format('%s (%d %s+)', [RS_HISTORY_GRAPH_KEY_RANGE_HI, Round(rangeHiVal), unitStr]);
+      rangeLoStr := Format('%s (%d %s−)', [RS_HISTORY_GRAPH_KEY_RANGE_LO, Round(rangeLoVal), unitStr]);
+      rangeStr := Format('%s (%d - %d %s)', [RS_HISTORY_GRAPH_KEY_RANGE, Round(rangeLoVal), Round(rangeHiVal), unitStr]);
+    end;
+    
     keyRect := Rect(PlotRect.Right + 12, PlotRect.Top,
       ClientWidth - 12,
       PlotRect.Top + (KEY_BOX + 6) * 6 + INFO_PADDING * 3 + lineHeight);
@@ -461,11 +591,11 @@ procedure DrawKeyPanel;
     ACanvas.Font.Style := [];
     keyX := keyRect.Left + INFO_PADDING;
     keyY := keyRect.Top + INFO_PADDING + lineHeight + 4;
-    DrawKeyEntry(RS_HISTORY_GRAPH_KEY_RANGE, LevelColor(BGRange));
-    DrawKeyEntry(RS_HISTORY_GRAPH_KEY_RANGE_HI, LevelColor(BGRangeHI));
-    DrawKeyEntry(RS_HISTORY_GRAPH_KEY_RANGE_LO, LevelColor(BGRangeLO));
-    DrawKeyEntry(RS_HISTORY_GRAPH_KEY_HIGH, LevelColor(BGHigh));
-    DrawKeyEntry(RS_HISTORY_GRAPH_KEY_LOW, LevelColor(BGLOW));
+    DrawKeyEntry(rangeStr, LevelColor(BGRange));
+    DrawKeyEntry(rangeHiStr, LevelColor(BGRangeHI));
+    DrawKeyEntry(rangeLoStr, LevelColor(BGRangeLO));
+    DrawKeyEntry(hiStr, LevelColor(BGHigh));
+    DrawKeyEntry(loStr, LevelColor(BGLOW));
     DrawKeyEntry(RS_HISTORY_GRAPH_KEY_UNKNOWN, FPalette.Unknown);
   end;
 
@@ -551,15 +681,20 @@ X, Y: integer);
 var
   idx: integer;
 begin
-  // Forward mouse clicks to the base handler and check for dot clicks.
-  // If a dot is clicked, ShowReadingDetails displays the reading info dialog.
   inherited MouseDown(Button, Shift, X, Y);
-  if (Button <> mbLeft) or (not HasData) then
+  
+  if not HasData then
     Exit;
 
-  idx := PointAt(X, Y);
-  if idx > -1 then
-    ShowReadingDetails(FPoints[idx].Reading);
+  // Handle left-click on dots to show details
+  if Button = mbLeft then
+  begin
+    idx := PointAt(X, Y);
+    if idx > -1 then
+      ShowReadingDetails(FPoints[idx].Reading);
+  end;
+  
+  // Right-click shows context menu (handled automatically by PopupMenu property)
 end;
 
 procedure TfHistoryGraph.Paint;
@@ -585,6 +720,7 @@ begin
 
   plotRect := GetPlotRect;
   DrawAxesAndGrid(Canvas, plotRect);
+  DrawThresholdLines(Canvas, plotRect);
   DrawPolyline(Canvas, plotRect);
   DrawPoints(Canvas, plotRect);
   DrawLegend(Canvas, plotRect);
@@ -617,6 +753,16 @@ procedure TfHistoryGraph.Resize;
 begin
   inherited Resize;
   Invalidate;
+end;
+
+procedure TfHistoryGraph.KeyDown(var Key: Word; Shift: TShiftState);
+begin
+  inherited KeyDown(Key, Shift);
+  if (Key = VK_S) and (Shift = [ssCtrl]) then
+  begin
+    SaveAsPNG(nil);
+    Key := 0;
+  end;
 end;
 
 procedure TfHistoryGraph.SetReadings(const Readings: BGResults;
@@ -662,6 +808,158 @@ end;
 procedure TfHistoryGraph.SetPalette(const Palette: THistoryGraphPalette);
 begin
   FPalette := Palette;
+end;
+
+procedure TfHistoryGraph.SetThresholds(const cgmHi, cgmLo, cgmRangeHi,
+  cgmRangeLo: integer);
+begin
+  FCgmHi := cgmHi;
+  FCgmLo := cgmLo;
+  FCgmRangeHi := cgmRangeHi;
+  FCgmRangeLo := cgmRangeLo;
+end;
+
+procedure TfHistoryGraph.SaveAsPNG(Sender: TObject);
+var
+  saveDialog: TSavePictureDialog;
+  bmp: TBitmap;
+  intfImg: TLazIntfImage;
+  writer: TFPWriterPNG;
+  plotRect: TRect;
+begin
+  // Can be called from keyboard shortcut or context menu
+  if not HasData then
+    Exit;
+
+  saveDialog := TSavePictureDialog.Create(nil);
+  try
+    saveDialog.Title := RS_HISTORY_GRAPH_SAVE_TITLE;
+    saveDialog.Filter := 'PNG Images|*.png';
+    saveDialog.DefaultExt := 'png';
+    saveDialog.FileName := Format('trndi-history-%s.png',
+      [FormatDateTime('yyyy-mm-dd-hhnnss', Now)]);
+
+    if not saveDialog.Execute then
+      Exit;
+
+    bmp := TBitmap.Create;
+    try
+      bmp.SetSize(ClientWidth, ClientHeight);
+      bmp.Canvas.Brush.Color := Color;
+      bmp.Canvas.FillRect(Rect(0, 0, ClientWidth, ClientHeight));
+
+      plotRect := GetPlotRect;
+      DrawAxesAndGrid(bmp.Canvas, plotRect);
+      DrawThresholdLines(bmp.Canvas, plotRect);
+      DrawPolyline(bmp.Canvas, plotRect);
+      DrawPoints(bmp.Canvas, plotRect);
+      DrawLegend(bmp.Canvas, plotRect);
+
+      intfImg := TLazIntfImage.Create(0, 0);
+      try
+        intfImg.LoadFromBitmap(bmp.Handle, bmp.MaskHandle);
+        writer := TFPWriterPNG.Create;
+        try
+          writer.Indexed := false;
+          writer.WordSized := false;
+          writer.UseAlpha := false;
+          intfImg.SaveToFile(saveDialog.FileName, writer);
+        finally
+          writer.Free;
+        end;
+      finally
+        intfImg.Free;
+      end;
+    finally
+      bmp.Free;
+    end;
+  except
+    on E: Exception do
+      ExtHTML(uxdAuto, 'Error', Format(RS_HISTORY_GRAPH_SAVE_ERROR, [E.Message]),
+        [mbOK], uxmtError, 12.5);
+  end;
+  saveDialog.Free;
+end;
+
+procedure TfHistoryGraph.SaveAsCSV(Sender: TObject);
+var
+  saveDialog: TSaveDialog;
+  csvFile: TextFile;
+  i: integer;
+  line: string;
+  dateStr, timeStr, valueStr, deltaStr, trendStr, levelStr: string;
+  rssi, noise: integer;
+  rssiStr, noiseStr: string;
+begin
+  if not HasData then
+    Exit;
+
+  saveDialog := TSaveDialog.Create(nil);
+  try
+    saveDialog.Title := RS_HISTORY_GRAPH_CSV_TITLE;
+    saveDialog.Filter := 'CSV Files|*.csv|All Files|*.*';
+    saveDialog.DefaultExt := 'csv';
+    saveDialog.FileName := Format('trndi-history-%s.csv',
+      [FormatDateTime('yyyy-mm-dd-hhnnss', Now)]);
+
+    if not saveDialog.Execute then
+      Exit;
+
+    AssignFile(csvFile, saveDialog.FileName);
+    try
+      Rewrite(csvFile);
+      
+      // Write CSV header
+      WriteLn(csvFile, 'Date,Time,Value,Unit,Delta,Trend,Level,RSSI,Noise,Source,Sensor');
+      
+      // Write data rows
+      for i := 0 to High(FPoints) do
+      begin
+        dateStr := FormatDateTime('yyyy-mm-dd', FPoints[i].Reading.date);
+        timeStr := FormatDateTime('hh:nn:ss', FPoints[i].Reading.date);
+        valueStr := Format(BG_MSG_SHORT[FUnit], [FPoints[i].Value]);
+        deltaStr := FPoints[i].Reading.format(FUnit, BG_MSG_SIG_SHORT, BGDelta);
+        trendStr := BG_TRENDS[FPoints[i].Reading.trend];
+        
+        case FPoints[i].Reading.level of
+          BGRange: levelStr := 'In Range';
+          BGRangeHI: levelStr := 'Range High';
+          BGRangeLO: levelStr := 'Range Low';
+          BGHigh: levelStr := 'High';
+          BGLOW: levelStr := 'Low';
+        else
+          levelStr := 'Unknown';
+        end;
+        
+        if FPoints[i].Reading.TryGetRSSI(rssi) then
+          rssiStr := IntToStr(rssi)
+        else
+          rssiStr := '';
+          
+        if FPoints[i].Reading.TryGetNoise(noise) then
+          noiseStr := IntToStr(noise)
+        else
+          noiseStr := '';
+        
+        line := Format('%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s',
+          [dateStr, timeStr, valueStr, BG_UNIT_NAMES[FUnit], deltaStr, 
+           trendStr, levelStr, rssiStr, noiseStr, 
+           FPoints[i].Reading.Source, FPoints[i].Reading.sensor]);
+        WriteLn(csvFile, line);
+      end;
+      
+      CloseFile(csvFile);
+    except
+      on E: Exception do
+      begin
+        CloseFile(csvFile);
+        ExtHTML(uxdAuto, 'Error', Format(RS_HISTORY_GRAPH_SAVE_ERROR, [E.Message]),
+          [mbOK], uxmtError, 12.5);
+      end;
+    end;
+  finally
+    saveDialog.Free;
+  end;
 end;
 
 procedure TfHistoryGraph.ShowReadingDetails(const Reading: BGReading);
@@ -810,10 +1108,22 @@ end;
 procedure ShowHistoryGraph(const Readings: BGResults; const UnitPref: BGUnit;
 const Palette: THistoryGraphPalette);
 begin
-  if not Assigned(fHistoryGraph) then
+  ShowHistoryGraph(Readings, UnitPref, Palette, 180, 60, 160, 80);
+end;
+
+procedure ShowHistoryGraph(const Readings: BGResults; const UnitPref: BGUnit;
+const Palette: THistoryGraphPalette; const cgmHi, cgmLo, cgmRangeHi, cgmRangeLo: integer);
+begin
+  if not Assigned(fHistoryGraph) then begin
     fHistoryGraph := TfHistoryGraph.Create(Application);
+    {$ifdef windows}
+    if TrndiNative.isDarkMode then
+      TrndiNative.setDarkMode(fHistoryGraph.Handle);
+    {$endif}
+  end;
 
   fHistoryGraph.SetPalette(Palette);
+  fHistoryGraph.SetThresholds(cgmHi, cgmLo, cgmRangeHi, cgmRangeLo);
   fHistoryGraph.SetReadings(Readings, UnitPref);
   fHistoryGraph.Show;
   fHistoryGraph.BringToFront;
@@ -821,7 +1131,7 @@ end;
 
 procedure ShowHistoryGraph(const Readings: BGResults; const UnitPref: BGUnit);
 begin
-  ShowHistoryGraph(Readings, UnitPref, DefaultHistoryGraphPalette);
+  ShowHistoryGraph(Readings, UnitPref, DefaultHistoryGraphPalette, 180, 60, 160, 80);
 end;
 
 end.

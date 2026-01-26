@@ -90,13 +90,19 @@
       <UseVersionInfo Value="True"/>
       <AutoIncrementBuild Value="True"/>
       <MajorVersionNr Value="4"/>
-      <MinorVersionNr Value="5"/>
+      <MinorVersionNr Value="6"/>
       <BuildNr Value="122"/>
       <StringTable CompanyName="Slicke" FileDescription="Trndi - CGM trend monitor" LegalCopyright="Björn Lindh" ProductName="Trndi"/>
     </VersionInfo>
     <BuildModes>
       <Item Name="No Ext (Release)" Default="True"/>
       <Item Name="Extensions (Debug)">
+        <MacroValues Count="4">
+          <Macro1 Name="LCLWidgetType" Value="qt6"/>
+          <Macro2 Name="LCLWidgetType" Value="qt6"/>
+          <Macro3 Name="LCLWidgetType" Value="qt6"/>
+          <Macro4 Name="LCLWidgetType" Value="qt6"/>
+        </MacroValues>
         <CompilerOptions>
           <Version Value="11"/>
           <PathDelim Value="\"/>
@@ -625,7 +631,6 @@
       <Unit>
         <Filename Value="inc\mac\ns_app.inc"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="Unit1"/>
       </Unit>
     </Units>
   </ProjectOptions>

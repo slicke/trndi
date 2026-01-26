@@ -206,6 +206,10 @@ msgstr ""
 msgid "Force Yes"
 msgstr ""
 
+#: tfbg.mibasalrate.caption
+msgid "Current Basal"
+msgstr ""
+
 #: tfbg.miborders.caption
 msgid "No borders"
 msgstr ""
@@ -278,6 +282,10 @@ msgstr ""
 msgid "Toggle Fullscreen"
 msgstr ""
 
+#: tfbg.miguidelines.caption
+msgid "Show Guide Lines"
+msgstr ""
+
 #: tfbg.mihistory.caption
 msgid "Show history"
 msgstr ""
@@ -306,6 +314,10 @@ msgstr ""
 msgid "Use range color for window"
 msgstr ""
 
+#: tfbg.mireadingssince.caption
+msgid "Show readings since.."
+msgstr ""
+
 #: tfbg.mirefresh.caption
 msgid "Refresh in:"
 msgstr ""
@@ -328,6 +340,10 @@ msgstr ""
 
 #: tfconf.badd.caption
 msgid "+ Add"
+msgstr ""
+
+#: tfconf.bextopen.caption
+msgid "Show Folder"
 msgstr ""
 
 #: tfconf.bremove.caption
@@ -545,7 +561,7 @@ msgid "Display users' colors on the main and floating windows"
 msgstr ""
 
 #: tfconf.cbwebapi.caption
-msgid " Enable Web API"
+msgid "Enable Web API"
 msgstr ""
 
 #: tfconf.cgnotifications.caption
@@ -721,6 +737,10 @@ msgstr ""
 
 #: tfconf.label24.caption
 msgid "Change Trndi's default background and colors, when in the custom range"
+msgstr ""
+
+#: tfconf.label25.caption
+msgid "Maximum delta slots"
 msgstr ""
 
 #: tfconf.label26.caption
@@ -1090,6 +1110,12 @@ msgid ""
 "Your username and password are your Dexcom Account (not Share) credentials."
 msgstr ""
 
+#: trndi.api.dexcom.sparamdeschtml
+msgid ""
+"<b>Dexcom</b> region selection:<br><br>Choose the server based on your <u>account region</u>:<br>• Dexcom (USA): for accounts <i>(served by share2.dexcom.com)</i><br>• Dexcom (Outside USA): for accounts <i>(served by shareous1.dexcom.com)</i><br><br>If you are unsure, try <b>Outside USA</b> first, if you live outside the US.\n"
+"Your username and password are your Dexcom Account (not Share) credentials."
+msgstr ""
+
 #: trndi.api.dexcom.sparampassword
 msgid "Dexcom Password"
 msgstr ""
@@ -1117,6 +1143,10 @@ msgid ""
 "   - Auth: paste the FULL access token (not just a suffix).\n"
 "\n"
 "Note: If you instead use the legacy API Secret, paste your API Secret value as-is."
+msgstr ""
+
+#: trndi.api.nightscout.sparamdeschtml
+msgid "<div style=\"font-family: Arial, sans-serif; line-height: 1.6;\"><h2 style=\"margin-bottom: 10px;\">🌙 NightScout v2 Setup</h2><p style=\"color: #7f8c8d; font-style: italic; margin-bottom: 15px;\">(use FULL access token)</p><ol style=\"padding-left: 20px;\"><li style=\"margin-bottom: 10px;\">Open your NightScout site (e.g., <code style=\"background: #6495ED; padding: 2px 6px; border-radius: 3px;\">https://your-site</code>).</li><li style=\"margin-bottom: 10px;\">Go to <strong>Admin → Tokens</strong> — or <strong>API Secret</strong>.</li><li style=\"margin-bottom: 10px;\">If you use Tokens:<ul style=\"margin-top: 5px; padding-left: 20px;\"><li>Create a token with at least <strong>READ</strong> scope.</li><li>Copy the <strong>FULL</strong> access token value exactly as shown.</li></ul></li><li style=\"margin-bottom: 10px;\">In Trndi:<ul style=\"margin-top: 5px; padding-left: 20px;\"><li><strong>Address:</strong> enter your NightScout URL</li><li><strong>Auth:</strong> paste the FULL access token (not just a suffix).</li></ul></li></ol><p style=\"border-left: 4px solid #ffc107; padding: 10px; margin-top: 15px;\"><strong>⚠️ Note:</strong> If you instead use the legacy API Secret, paste your API Secret value as-is.</p></div>"
 msgstr ""
 
 #: trndi.api.nightscout.sparampassword
@@ -1148,8 +1178,12 @@ msgid ""
 "Note 2: Your access token should look like: trndi-abc123 (or whatever name you chose)"
 msgstr ""
 
+#: trndi.api.nightscout3.sparamdeschtml
+msgid "<div style=\"font-family: Arial, sans-serif; line-height: 1.6;\"><div style=\"background: #dc3545; color: white; padding: 15px; border-radius: 6px; margin-bottom: 20px; font-weight: bold; text-align: center; border: 2px solid #c82333;\">⚠️ ALPHA DRIVER - Please use \"NightScout\" for daily use! ⚠️</div><h2 style=\"margin-bottom: 10px;\">🌙 NightScout v3 Setup</h2><p style=\"color: #7f8c8d; font-style: italic; margin-bottom: 15px;\">(use FULL access token)</p><ol style=\"padding-left: 20px;\"><li style=\"margin-bottom: 10px;\">Open your NightScout site (e.g., <code style=\"background: #6495ED; padding: 2px 6px; border-radius: 3px;\">https://your-site</code>).</li><li style=\"margin-bottom: 10px;\">Go to <strong>Admin → Tokens</strong> — or <strong>API Secret</strong>.</li><li style=\"margin-bottom: 10px;\">If you use Tokens:<ul style=\"margin-top: 5px; padding-left: 20px;\"><li>Create a token with at least <strong>READ</strong> scope.</li><li>Copy the <strong>FULL</strong> access token value exactly as shown.</li></ul></li><li style=\"margin-bottom: 10px;\">In Trndi:<ul style=\"margin-top: 5px; padding-left: 20px;\"><li><strong>Address:</strong> enter your NightScout URL</li><li><strong>Auth:</strong> paste the FULL access token.</li></ul></li></ol><div style=\"border-left: 4px solid #ffc107; padding: 12px; margin-top: 15px; border-radius: 4px;\"><p style=\"margin: 0 0 8px 0;\"><strong>📝 Note:</strong> If you instead use the legacy API Secret, paste your API Secret value as-is.</p><p style=\"margin: 0;\"><strong>📝 Note 2:</strong> Your access token should look like: <code style=\"background: #6F8FAF; padding: 2px 6px; border-radius: 3px;\">trndi-abc123</code> (or whatever name you chose).</p></div></div>"
+msgstr ""
+
 #: trndi.api.nightscout3.sparampassword
-msgid "Auth token suffix"
+msgid "Auth token"
 msgstr ""
 
 #: trndi.api.nightscout3.sparamusername
@@ -1164,6 +1198,10 @@ msgid ""
 "\n"
 "Address: your xDrip REST endpoint (base URL).\n"
 "Auth: API secret (plain text; server hashes it)."
+msgstr ""
+
+#: trndi.api.xdrip.sparamdeschtml
+msgid "<b>xDrip setup:</b><br><br>Address: your xDrip REST endpoint (base URL).<br>Auth: API secret (plain text; server hashes it)."
 msgstr ""
 
 #: trndi.api.xdrip.sparampassword
@@ -1188,7 +1226,8 @@ msgid "Wait. Shutting down extensions engine..."
 msgstr ""
 
 #: trndi.strings.rs_cleanup_wait
-msgid "Please wait up to 20 seconds..."
+#, object-pascal-format
+msgid "Please wait up to %d seconds..."
 msgstr ""
 
 #: trndi.strings.rs_compute_failed_ago
@@ -1198,6 +1237,33 @@ msgstr ""
 #: trndi.strings.rs_custom_dots
 #, object-pascal-format
 msgid "Custom Size [%.2f]"
+msgstr ""
+
+#: trndi.strings.rs_date_picker_caption
+msgid "Choose a date"
+msgstr ""
+
+#: trndi.strings.rs_date_picker_desc_limited
+#, object-pascal-format
+msgid "%s supports a max time of %d days"
+msgstr ""
+
+#: trndi.strings.rs_date_picker_desc_unlimited
+#, object-pascal-format
+msgid "%s time limit depends on server configuration"
+msgstr ""
+
+#: trndi.strings.rs_date_picker_no_readings
+msgid "No readings returned for the selected date range."
+msgstr ""
+
+#: trndi.strings.rs_date_picker_no_readings_err
+#, object-pascal-format
+msgid "No readings returned: %s"
+msgstr ""
+
+#: trndi.strings.rs_date_picker_title
+msgid "Choose a date to show readings from"
 msgstr ""
 
 #: trndi.strings.rs_days_ago
@@ -1451,7 +1517,7 @@ msgid "over"
 msgstr ""
 
 #: trndi.strings.rs_predict
-msgid "These are your predicted readings; Time-difference: predicted-reading"
+msgid "Your predicted future readings are shown on the lower-right-hand-side of the window; the difference from the last reading is shown in the middle"
 msgstr ""
 
 #: trndi.strings.rs_predictions_unavailable
@@ -1598,6 +1664,10 @@ msgstr ""
 
 #: trndi.strings.rs_settings_save
 msgid "Save settings?"
+msgstr ""
+
+#: trndi.strings.rs_settings_saved
+msgid "Settings saved and applied. Some settings may require a restart"
 msgstr ""
 
 #: trndi.strings.rs_settings_save_desc
@@ -1817,6 +1887,14 @@ msgctxt "trndi.strings.slogdesc"
 msgid "Trndi has captured data sent to console.log in a JavaScript extension"
 msgstr ""
 
+#: trndi.strings.slogemptymsg
+msgid "<No message provided>"
+msgstr ""
+
+#: trndi.strings.slognobuffered
+msgid "No buffered console messages to show."
+msgstr ""
+
 #: trndi.strings.slogrecevive
 msgctxt "trndi.strings.slogrecevive"
 msgid "Output through console.log has been received"
@@ -1941,6 +2019,10 @@ msgstr ""
 #: uconf.rs_default_account
 msgctxt "uconf.rs_default_account"
 msgid "Default"
+msgstr ""
+
+#: uconf.rs_delta_max
+msgid "When the previous reading is missing, use the next available reading within this many 5-minute-intervals to calculate delta."
 msgstr ""
 
 #: uconf.rs_dex
@@ -2167,6 +2249,10 @@ msgstr ""
 msgid "Trndi can draw a line on the graph's background, to represent where your high/low limits are."
 msgstr ""
 
+#: uconf.rs_timestamp_help
+msgid "By default Trndi shows the amount of minutes since the last reading, this setting allows you to display the time of the last reading instead."
+msgstr ""
+
 #: uconf.rs_update_snooze
 #, object-pascal-format
 msgid "You will be alerted again after %s"
@@ -2209,6 +2295,10 @@ msgctxt "uhistorygraph.rs_history_graph_axis_time"
 msgid "Time"
 msgstr ""
 
+#: uhistorygraph.rs_history_graph_csv_title
+msgid "Save readings as CSV"
+msgstr ""
+
 #: uhistorygraph.rs_history_graph_empty
 msgid "No history data to plot"
 msgstr ""
@@ -2248,6 +2338,14 @@ msgctxt "uhistorygraph.rs_history_graph_key_unknown"
 msgid "Unknown"
 msgstr ""
 
+#: uhistorygraph.rs_history_graph_menu_save
+msgid "Save as Image..."
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_menu_save_csv
+msgid "Save as CSV..."
+msgstr ""
+
 #: uhistorygraph.rs_history_graph_point_count
 #, object-pascal-format
 msgid "%d readings"
@@ -2256,6 +2354,19 @@ msgstr ""
 #: uhistorygraph.rs_history_graph_range
 #, object-pascal-format
 msgid "%s – %s"
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_save_error
+#, object-pascal-format
+msgid "Failed to save graph: %s"
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_save_success
+msgid "Graph saved successfully"
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_save_title
+msgid "Save graph as PNG"
 msgstr ""
 
 #: uhistorygraph.rs_history_graph_title

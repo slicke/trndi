@@ -65,6 +65,7 @@ RS_OUTDATED_TIME = '%s (%d.%.2d min ago)';
 RS_LATEST_READING = 'Latest Reading: Value = %.2f, Date = %s';
 
 RS_RESTART_APPLY = 'Trndi must be restarted for settings to take effect';
+RS_SETTINGS_SAVED = 'Settings saved and applied. Some settings may require a restart';
 RS_QUIT_CAPTION =  'Exit Trndi?';
 RS_QUIT_MSG = 'Quit the app?';
 RS_LAST_UPDATE = '%d min';
@@ -137,11 +138,11 @@ RS_INIT_FIRST = 'Fetching first reading...';
 RS_INIT_CHROMA = 'Initializing Chroma...';
 
 RS_CLEANUP = 'Wait. Shutting down extensions engine...';
-RS_CLEANUP_WAIT = 'Please wait up to 20 seconds...';
+RS_CLEANUP_WAIT = 'Please wait up to %d seconds...';
 
 RS_RIGHT_CLICK = 'The settings dialog will now open, in the future please right-click the reading to open the menu.';
 
-RS_PREDICT = 'These are your predicted readings; Time-difference: predicted-reading';
+RS_PREDICT = 'Your predicted future readings are shown on the lower-right-hand-side of the window; the difference from the last reading is shown in the middle';
 
 RS_SAFEMODE = 'Safe Mode Enabled';
 RS_SAFEMODE_DESC = 'Trndi is running in <b>Safe Mode</b>!<ul><li>No start-up actions from extensions will run</li><li>You cannot use, and no actions will trigger from, extensions</li></ul><br>Extensions will load next run, unless you press <b>CTRL</b>!';
@@ -169,6 +170,8 @@ sUnknownErr   = 'Unknown error';
 sStackErrMsg  = 'Error: %s '#13#10'Stack: %s %s';
 sLogRecevive  = 'Output through console.log has been received';
 sLogDesc      = 'Trndi has captured data sent to console.log in a JavaScript extension';
+sLogEmptyMsg  = '<No message provided>';
+sLogNoBuffered= 'No buffered console messages to show.';
 sStackFailed  = 'An error occurred, and the stacktrace could not be loaded. Showing backtrace.';
 sDataTypeErr  = 'Datatype %s was not expected, expected in function %s';
 sDataTypeErrPos = 'Datatype %s was not expected, expected in function %s, parameter %d';
@@ -198,6 +201,13 @@ sChangesApply = 'Apply this value when Trndi starts?';
 
 sReadingHere = 'Reading here: %s at %.2d:%.2d';
 sAnnounceNotAvailable = 'The text-to-speech (TTS) software "%s" is not available.';
+
+RS_DATE_PICKER_CAPTION = 'Choose a date';
+RS_DATE_PICKER_TITLE = 'Choose a date to show readings from';
+RS_DATE_PICKER_DESC_LIMITED = '%s supports a max time of %d days';
+RS_DATE_PICKER_DESC_UNLIMITED = '%s time limit depends on server configuration';
+RS_DATE_PICKER_NO_READINGS = 'No readings returned for the selected date range.';
+RS_DATE_PICKER_NO_READINGS_ERR = 'No readings returned: %s';
 
 implementation
 

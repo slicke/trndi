@@ -79,6 +79,12 @@ var
   i: Integer;
 begin
   Result := '';
+  // Check if dbus-send is available
+  if ExeSearch('dbus-send', '') = '' then
+  begin
+    FLastError := 'dbus-send not found in PATH';
+    Exit;
+  end;
   AProcess := TProcess.Create(nil);
   Output := TStringList.Create;
   try

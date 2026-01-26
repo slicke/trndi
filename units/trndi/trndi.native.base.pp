@@ -141,13 +141,13 @@ class var touchOverride: TTrndiBool;
   procedure SetCSVSetting(const keyname: string; const val: TStringArray; const global: boolean = false);
     {** Store a color value (TColor serialized as integer). }
   procedure SetColorSetting(const keyname: string; val: TColor);
-    {** Store a WideChar (WideChar serialized as string). }
-  procedure SetWideCharSetting(const keyname: string; val: widechar);
+    {** Store a WChar (WideChar serialized as string). }
+  procedure SetWideCharSetting(const keyname: string; val: WChar);
     {** Retrieve a stored color or @param(def) if missing. }
   function GetColorSetting(const keyname: string; const def: TColor = $000000): TColor;
-    {** Retrieve a stored WideChar or @param(def) if missing. }
+    {** Retrieve a stored WChar or @param(def) if missing. }
   function GetWideCharSetting(const keyname: string;
-    const def: widechar = widechar($2B24)): widechar;
+    const def: WChar = WChar($2B24)): WChar;
     {** Delete a key (optionally global) from storage. }
   procedure DeleteSetting(const keyname: string; global: boolean = false);
     virtual; abstract;
@@ -614,8 +614,11 @@ end;
 class function TTrndiNativeBase.DetectTouchScreen(out multi: boolean): boolean;
 var
   SL, Block: TStringList;
-  i: integer;
+  i, j: integer;
   inBlock: boolean;
+  Line, Handler, DevPath: string;
+  HasAccessibleDevice: boolean;
+  F: Integer;
 begin
   Result := false;
   multi := false;
@@ -637,12 +640,47 @@ begin
             // Look for touch capability markers in this block
             if (Block.Text.ToLower.Contains('touch')) then
             begin
-              Result := true;
-              // Look for multi-touch markers in this block
-              if (Block.Text.Contains('ABS_MT_POSITION')) or
-                (Block.Text.Contains('ABS_MT_SLOT')) or
-                (Block.Text.Contains('ABS_MT_TRACKING_ID')) then
-                multi := true;
+              // Verify device handlers are actually accessible
+              HasAccessibleDevice := false;
+              for j := 0 to Block.Count - 1 do
+              begin
+                Line := Block[j];
+                if (Pos('H: Handlers=', Line) = 1) or (Pos('H: ', Line) = 1) then
+                begin
+                  // Extract event handlers (e.g., "event0", "event3")
+                  if Pos('event', LowerCase(Line)) > 0 then
+                  begin
+                    // Try to actually open /dev/input/eventX device for reading
+                    for Handler in Line.Split([' ', '=']) do
+                      if (Pos('event', LowerCase(Handler)) > 0) then
+                      begin
+                        DevPath := '/dev/input/' + Handler;
+                        if FileExists(DevPath) then
+                        begin
+                          F := FileOpen(DevPath, fmOpenRead);
+                          if F <> -1 then
+                          begin
+                            FileClose(F);
+                            HasAccessibleDevice := true;
+                            Break;
+                          end;
+                        end;
+                      end;
+                  end;
+                  if HasAccessibleDevice then
+                    Break;
+                end;
+              end;
+              
+              if HasAccessibleDevice then
+              begin
+                Result := true;
+                // Look for multi-touch markers in this block
+                if (Block.Text.Contains('ABS_MT_POSITION')) or
+                  (Block.Text.Contains('ABS_MT_SLOT')) or
+                  (Block.Text.Contains('ABS_MT_TRACKING_ID')) then
+                  multi := true;
+              end;
             end;
             Block.Clear;
           end;
@@ -653,11 +691,46 @@ begin
       if Block.Count > 0 then
         if (Block.Text.ToLower.Contains('touch')) then
         begin
-          Result := true;
-          if (Block.Text.Contains('ABS_MT_POSITION')) or
-            (Block.Text.Contains('ABS_MT_SLOT')) or
-            (Block.Text.Contains('ABS_MT_TRACKING_ID')) then
-            multi := true;
+          // Verify device handlers are actually accessible
+          HasAccessibleDevice := false;
+          for j := 0 to Block.Count - 1 do
+          begin
+            Line := Block[j];
+            if (Pos('H: Handlers=', Line) = 1) or (Pos('H: ', Line) = 1) then
+            begin
+              // Extract event handlers (e.g., "event0", "event3")
+              if Pos('event', LowerCase(Line)) > 0 then
+              begin
+                // Try to actually open /dev/input/eventX device for reading
+                for Handler in Line.Split([' ', '=']) do
+                  if (Pos('event', LowerCase(Handler)) > 0) then
+                  begin
+                    DevPath := '/dev/input/' + Handler;
+                    if FileExists(DevPath) then
+                    begin
+                      F := FileOpen(DevPath, fmOpenRead);
+                      if F <> -1 then
+                      begin
+                        FileClose(F);
+                        HasAccessibleDevice := true;
+                        Break;
+                      end;
+                    end;
+                  end;
+              end;
+              if HasAccessibleDevice then
+                Break;
+            end;
+          end;
+          
+          if HasAccessibleDevice then
+          begin
+            Result := true;
+            if (Block.Text.Contains('ABS_MT_POSITION')) or
+              (Block.Text.Contains('ABS_MT_SLOT')) or
+              (Block.Text.Contains('ABS_MT_TRACKING_ID')) then
+              multi := true;
+          end;
         end;
     end;
   finally
@@ -717,7 +790,7 @@ end;
  ------------------------------------------------------------------------------}
 function GetLocaleInformation(Flag: integer): string;
 var
-  wbuf: array[0..9] of widechar;
+  wbuf: array[0..9] of WChar;
 begin
   if GetLocaleInfoW(LOCALE_USER_DEFAULT,
     LOCALE_SISO639LANGNAME,
@@ -810,7 +883,7 @@ function PSQuote(const S: unicodestring): unicodestring;
  ------------------------------------------------------------------------------}
 function GetExePathW: unicodestring;
   var
-    Buf: array[0..32767] of widechar;
+    Buf: array[0..32767] of WChar;
     Len: DWORD;
   begin
     Len := GetModuleFileNameW(0, @Buf[0], Length(Buf));
@@ -824,7 +897,7 @@ function GetExePathW: unicodestring;
  ------------------------------------------------------------------------------}
 function GetEnvVarW(const Name: unicodestring): unicodestring;
   var
-    Buf: array[0..32767] of widechar;
+    Buf: array[0..32767] of WChar;
     Len: DWORD;
   begin
     Len := GetEnvironmentVariableW(pwidechar(Name), @Buf[0], Length(Buf));
@@ -926,9 +999,9 @@ procedure SendNotification(const Title, Msg: string);
       P.Parameters.Add('-e');
       P.Parameters.Add('end run');
 
-      // Pass message + title as argv items.
-      P.Parameters.Add(Msg);
-      P.Parameters.Add(Title);
+      // Pass message + title as argv items (ensure UTF-8).
+      P.Parameters.Add(UTF8Encode(Msg));
+      P.Parameters.Add(UTF8Encode(Title));
 
       P.Options := [poUsePipes, poWaitOnExit, poNoConsole];
       P.Execute;
@@ -1532,9 +1605,9 @@ end;
 {------------------------------------------------------------------------------
   SetWideCharSetting
   ----------------------
-  Stores a WideChar value to platform-specific storage.
+  Stores a WChar value to platform-specific storage.
  ------------------------------------------------------------------------------}
-procedure TTrndiNativeBase.SetWideCharSetting(const keyname: string; val: widechar);
+procedure TTrndiNativeBase.SetWideCharSetting(const keyname: string; val: WChar);
 var
   code: string;
 begin
@@ -1545,10 +1618,10 @@ end;
 {------------------------------------------------------------------------------
   GetWideCharSetting
   -------------------------
-  Returns a WideChar from settings if parseable, else returns `def`.
+  Returns a WChar from settings if parseable, else returns `def`.
  ------------------------------------------------------------------------------}
 function TTrndiNativeBase.GetWideCharSetting(const keyname: string;
-const def: widechar = widechar($2B24)): widechar;
+const def: WChar = WChar($2B24)): WChar;
 var
   code: integer;
   s: string;
@@ -1560,7 +1633,7 @@ begin
 
   code := StrToInt('$' + s);
 
-  Result := widechar(code);
+  Result := WChar(code);
 end;
 
 {------------------------------------------------------------------------------

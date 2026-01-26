@@ -69,6 +69,9 @@ end;
 procedure tfBG.SetLang;
 var
   lang: string;
+  langPath: string;
+  moPath: string;
+  langLoaded: string;
 begin
   lang := native.GetSetting('locale', '');
   if (lang = 'auto') or (lang = '') then
@@ -76,7 +79,13 @@ begin
   applocale := lang;
   Application.ProcessMessages;
 
-  SetDefaultLang(lang, getLangPath);
+  langPath := getLangPath;
+  moPath := langPath + 'Trndi.' + lang + '.mo';
+  LogMessage('Lang select: setting=' + native.GetSetting('locale', '') + ' resolved=' + lang + ' path=' + langPath + ' mo=' + moPath);
+  langLoaded := SetDefaultLang(lang, langPath, 'Trndi');
+  LogMessage('Lang loaded=' + langLoaded + ' RS_INIT_UI=' + RS_INIT_UI);
+  if not FileExists(moPath) then
+    LogMessage('Lang MO missing: ' + lang + ' path=' + langPath + ' mo=' + moPath);
 end;
 
 {$if DEFINED(DARWIN) OR DEFINED(X_LINUXBSD)}
@@ -139,8 +148,8 @@ var
   fontName: string;
 begin
   // Set dots
-  DOT_GRAPH := native.GetWideCharSetting('font.dot', System.widechar($2B24));
-  DOT_FRESH := native.GetWideCharSetting('font.dot_fresh', System.widechar($2600));
+  DOT_GRAPH := native.GetWideCharSetting('font.dot', WChar($2B24));
+  DOT_FRESH := native.GetWideCharSetting('font.dot_fresh', WChar($2600));
 
   // Load fonts
   fontName := native.GetSetting('font.val', 'default');
@@ -448,6 +457,12 @@ begin
   TrndiDebugLogAlert := not TrndiDebugLogAlert;
 end;
 
+procedure TfBG.miDebugLoadTextClick(Sender: TObject);
+begin
+  debug_load_text := not debug_load_text;
+  ShowMessage(Format('Now %s', [IfThen(debug_load_text, 'showing', 'not showing')]));
+end;
+
 {$endif}
 
 // Initialize the TrendDots array in FormCreate
@@ -472,14 +487,14 @@ var
   minutesStr: string;
   minutesVal: integer;
   {$ifdef DEBUG}
-  miDebugUXMsg, miDebugLog: TMenuItem;
+  miDebugUXMsg, miDebugLog, miDebugLoadText: TMenuItem;
   {$endif}
 begin
   firstboot := false;
 
   // Initialize native interface
   native := TrndiNative.Create;
-  if (ssMeta in GetKeyShiftState) and (ExtMsg(uxdNormal,'Run Trndi in English?','Override language setting?','Run Trndi in English this once? You pressed the Windows/meta key, and can now choose to run Trndi in English. You can change the language in Settings.', '',uxClWhite,uxclRed,[mbYes, mbNo]) = mrYes) then
+  if (ssMeta in GetKeyShiftState) and ExtMsgYesNo(uxdNormal,'Run Trndi in English?', 'Run Trndi in English this once? You pressed the Windows/meta key, and can now choose to run Trndi in English. You can change the language in Settings.') then
   else
     SetLang;
 
@@ -514,7 +529,7 @@ begin
   {$endif}
 
   if ssShift in GetKeyShiftState then
-    if ExtText(uxdAuto,'Override big screen?','Shift Pressed! Force Trndi to treat your system as ' + IfThen(native.DetectTouchScreen(fil), 'Small screen (non-touch)', 'Big screen (touch)')+'?',[MbYes, mbNo],uxmtWarning) = mrYes then
+    if ExtMsgYesNo('Override big screen?', 'Shift Pressed! Force Trndi to treat your system as ' + IfThen(native.DetectTouchScreen(fil), 'Small screen (non-touch)', 'Big screen (touch)')+'?', uxmtWarning) then
       if native.DetectTouchScreen(fil) then
         native.touchOverride := tbFalse
       else
@@ -629,6 +644,7 @@ begin
     DOT_ADJUST := GetFloatSetting('ux.dot_adjust', 0);
 
     DOT_OFFSET_RANGE := GetIntSetting('ux.dot_offset_range', DOT_OFFSET_RANGE);
+    DELTA_MAX := GetIntSetting('ux.delta_max', DELTA_MAX);
     // DOT_VISUAL_OFFSET := CalculateDotVisualOffset;  // No longer needed - centering uses half dot height
     miRangeColor.Checked := GetBoolSetting('ux.range_color', true);
     PaintRange := native.GetBoolSetting('ux.paint_range', true);
@@ -721,6 +737,11 @@ begin
   miDebugLog.Caption := '[debug] Toggle alert messages';
   miAdvanced.Insert(miAdvanced.Count, miDebugLog);
   miDebugLog.OnClick := @miDebugLogClick;
+
+  miDebugLoadText := TMenuItem.Create(miAdvanced);
+  miDebugLoadText.Caption := '[debug] Show load indication';
+  miAdvanced.Insert(miAdvanced.count, miDebugLoadText);
+  miDebugLoadText.onClick := @miDebugLoadTextClick;
   {$endif}
 end;
 

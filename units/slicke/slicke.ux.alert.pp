@@ -33,6 +33,7 @@
   - @link(UXDialog) overloads for message dialogs with button sets or Lazarus TMsgDlgType mapping.
   - @link(ExtMsg), @link(ExtLog), @link(ExtError), @link(ExtSucc), @link(ExtSuccEx) for rich dialogs with dumps/logs.
   - @link(ExtInput), @link(ExtNumericInput), @link(ExtIntInput), @link(ExtList), @link(ExtTable) for data entry.
+  - @link(ExtDatePicker) for date selection with optional min/max constraints.
 
   Platform support:
   - Windows: emoji rendering via Direct2D/DirectWrite; custom dark-titlebar opt-in where possible.
@@ -50,7 +51,8 @@ interface
 uses
 Classes, SysUtils, Dialogs, Forms, ExtCtrls, StdCtrls, Controls, Graphics, Math,
 IntfGraphics, FPImage, graphtype, lcltype, Trndi.Native, Grids, Spin, IpHtml, Iphttpbroker, slicke.ux.native, SpinEx, LCLIntf,
-{$ifdef Windows}
+EditBtn,
+{$ifdef X_WIN}
 DX12.D2D1, DX12.DXGI, DX12.DWrite, DX12.DCommon, DX12.WinCodec, Windows, Buttons, ActiveX, ComObj,
 {$endif}
 StrUtils;
@@ -100,14 +102,14 @@ const
     Unicode codepoints rendered as emoji or symbols on supported platforms.
     Fallbacks depend on available system fonts.
   }
-uxmtOK            = widechar($2705); // ✅ Ticked box
-uxmtWarning       = widechar($26A0); // ⚠️ Warning sign
-uxmtError         = widechar($274C); // ❌ Cross mark
-uxmtInformation   = widechar($2139); // ℹ️ Info symbol
-uxmtConfirmatio   = widechar($2753); // ❓ Question mark
-uxmtCog           = widechar($2699); // ⚙️ Gear
-uxmtSquare        = widechar($274F); // ❏ Square
-uxmtCustom        = uxmtCog;
+uxmtOK             = WChar($2705); // ✅ Ticked box
+uxmtWarning        = WChar($26A0); // ⚠️ Warning sign
+uxmtError          = WChar($274C); // ❌ Cross mark
+uxmtInformation    = WChar($2139); // ℹ️ Info symbol
+uxmtConfirmation   = WChar($2753); // ❓ Question mark
+uxmtCog            = WChar($2699); // ⚙️ Gear
+uxmtSquare         = WChar($274F); // ❏ Square
+uxmtCustom         = uxmtCog;
 
   {**
     @name Dialog colors
@@ -160,8 +162,8 @@ mbUXClose     = mbClose;
   }
 sHTMLLineBreak = '<br>';
 type
-  {** Emoji glyph used for icons. Typically a single widechar codepoint. }
-UXImage = widechar;
+  {** Emoji glyph used for icons. Typically a single WChar codepoint. }
+UXImage = WChar;
 
   {**
     Modal dialog form used internally by UX helpers.
@@ -171,7 +173,15 @@ UXImage = widechar;
       - On Windows can owner-draw buttons via @link(ButtonDrawItem).
   }
 TDialogForm = class(TForm)
-    {** Keyboard shortcuts: Enter to confirm (when appropriate), Esc to cancel/No. }
+public
+  // For log message expansion
+  LogExpandWrapper: TPanel;
+  LogExpandMemo: TMemo;
+  LogExpandHtmlPanel: TIpHtmlPanel;
+  LogExpandButton: TControl;
+  LogIsHTML: boolean;
+  procedure ExpandLogDialog(Sender: TObject);
+  {** Keyboard shortcuts: Enter to confirm (when appropriate), Esc to cancel/No. }
   procedure FormKeyDown(Sender: TObject; var Key: word; Shift: TShiftState);
 protected
     {** Finalizes platform window style, sets KeyPreview, and enables dark mode title bar where supported. }
@@ -179,7 +189,7 @@ protected
   // Override DoShow instead of using an OnShow event method name.
   procedure DoShow; override;
 public
-  {$ifdef windows}
+  {$ifdef X_WIN}
     {** Owner-draw routine for bit buttons on Windows to match dark mode styling. }
   procedure ButtonDrawItem(Sender: TObject;
     ACanvas: TCanvas; ARect: TRect; State: TButtonState);
@@ -195,6 +205,35 @@ public
   procedure HTMLHotClick(Sender: TObject);
   procedure ElementKeyDown(Sender: TObject; var Key: char);
 end;
+
+{$ifdef X_WIN}
+  {**
+    Uses TCustomControl for full custom painting and TWinControl capabilities.
+  }
+TDarkButton = class(TCustomControl)
+private
+  FModalResult: TModalResult;
+  FDown: boolean;
+  FHot: boolean;
+  FFocused: boolean;
+  FCaption: string;
+  procedure SetCaption(const AValue: string);
+protected
+  procedure Paint; override;
+  procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: integer); override;
+  procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: integer); override;
+  procedure MouseEnter; override;
+  procedure MouseLeave; override;
+  procedure Click; override;
+  procedure KeyDown(var Key: word; Shift: TShiftState); override;
+  procedure DoEnter; override;
+  procedure DoExit; override;
+public
+  constructor Create(AOwner: TComponent); override;
+  property Caption: string read FCaption write SetCaption;
+  property ModalResult: TModalResult read FModalResult write FModalResult;
+end;
+{$endif}
 
   {**
     Size preset for dialog layout.
@@ -227,6 +266,15 @@ ButtonLangs = array[TUXMsgDlgBtn] of string;
     @param sender Optional form used when @code(dialogsize = uxdOnForm) to render a full-screen overlay.
   }
 procedure UXMessage(const dialogsize: TUXDialogSize; const title, message: string; const icon: uximage = uxmtOK; sender: TForm = nil);
+
+{**
+  Show a simple message dialog, optionally inline on a form in @code(uxdOnForm) mode.
+  @param title Dialog title text (top label).
+  @param message Main message body.
+  @param icon Emoji icon; defaults to @code(uxmtOK).
+  @param sender Optional form used when @code(dialogsize = uxdOnForm) to render a full-screen overlay.
+}
+procedure UXMessage(const title, message: string; const icon: uximage = uxmtOK; sender: TForm = nil);
 
   {**
     Generic dialog with custom button set and emoji icon.
@@ -271,6 +319,53 @@ const header, title, message: string;
 buttons: TUXMsgDlgBtns;
 const mtype: TMsgDlgType): TModalResult; overload;
 
+{**
+  Simplified Extended message dialog for displaying yes/no dialogs
+  @param dialogsize Layout preset; @seealso(TUXDialogSize)
+  @param caption Window caption.
+  @param title Title text.
+  @param desc Description of dialog.
+  @param micon Icon for the dialog
+  @returns Lazarus modal result corresponding to the button clicked.
+}
+function ExtMsgYesNo(
+const dialogsize: TUXDialogSize;
+const caption, desc: string;
+const micon: UXImage = uxmtConfirmation): boolean;
+
+{**
+  Simplified Extended message dialog for displaying yes/no dialogs
+  @param caption Window caption.
+  @param title Title text.
+  @param desc Description of dialog.
+  @param micon Icon for the dialog
+  @returns Lazarus modal result corresponding to the button clicked.
+}
+function ExtMsgYesNo(
+const caption, desc: string;
+const micon: UXImage = uxmtConfirmation): boolean;
+
+{**
+  Extended message dialog supporting an optional log/dump panel with custom colors.
+  @param caption Window caption.
+  @param title Title text.
+  @param desc Description/body text (supports wrapping and scrolling in big mode).
+  @param logmsg Optional log/dump text displayed in a fixed panel at the bottom; pass empty to hide.
+  @param dumpbg Background color for log/dump panel (ARGB).
+  @param dumptext Text color for log/dump panel (ARGB).
+  @param buttons Button set to display (default [mbAbort]).
+  @param icon Emoji icon to render.
+  @param scale Optional log panel vertical scale multiplier (for big outputs).
+  @returns Lazarus modal result corresponding to the button clicked.
+}
+function ExtMsg(
+const caption, title, desc, logmsg: string;
+dumpbg: TColor = uxclWhite;
+dumptext: TColor = uxclRed;
+buttons: TUXMsgDlgBtns = [mbAbort];
+const icon: UXImage = uxmtCog;
+scale: single = 1): TModalResult;
+
   {**
     Extended message dialog supporting an optional log/dump panel with custom colors.
     @param dialogsize Layout preset; @seealso(TUXDialogSize)
@@ -308,7 +403,7 @@ function ExtMsg(const dialogsize: TUXDialogSize;
 const caption, html: string;
 buttons: TUXMsgDlgBtns = [mbAbort];
 const icon: UXImage = uxmtCog;
-scale: single = 1): TModalResult; overload;
+scale: single = 1; hpadding: single = 1): TModalResult; overload;
 
   {**
     Alias for @lnk(ExtMsg) with HTML data
@@ -545,6 +640,27 @@ const AFontSample: string;
 var ModalResult: TModalResult;
 const icon: UXImage = uxmtCog): TFont;
 
+  {**
+    Show a date picker dialog using @code(TDateEdit).
+    @param dialogsize Layout preset.
+    @param ACaption Window caption.
+    @param ATitle Title text.
+    @param ADesc Description text.
+    @param ADefault Initial date value.
+    @param AMinDate Minimum allowed date (pass 0 to disable minimum).
+    @param AMaxDate Maximum allowed date (pass 0 to disable maximum).
+    @param ModalResult Out parameter holding the modal result after closing.
+    @param icon Emoji icon (default gear).
+    @returns Selected date if OK; otherwise returns @code(ADefault).
+  }
+function ExtDatePicker(const dialogsize: TUXDialogSize;
+const ACaption, ATitle, ADesc: string;
+ADefault: TDateTime;
+AMinDate: TDateTime;
+AMaxDate: TDateTime;
+var ModalResult: TModalResult;
+const icon: UXImage = uxmtCog): TDateTime;
+
 var
   {** Localized captions for each @link(TUXMsgDlgBtn). Initialized from resource strings. }
 langs : ButtonLangs = (smbYes, smbUXNo, smbUXOK, smbUXCancel, smbUXAbort, smbUXRetry, smbUXIgnore,
@@ -552,7 +668,7 @@ langs : ButtonLangs = (smbYes, smbUXNo, smbUXOK, smbUXCancel, smbUXAbort, smbUXR
   smbUXOpenFile, smbUxMinimize, smbUxAgree, smbUxRead, smbUxDefault, smbuxSnooze);
 
 implementation
-{$ifdef Windows}
+{$ifdef X_WIN}
 function DwmSetWindowAttribute(hwnd: HWND; dwAttribute: DWORD; pvAttribute: Pointer; cbAttribute: DWORD): HRESULT; stdcall; external 'dwmapi.dll';
 {$endif}
 
@@ -564,7 +680,7 @@ function getBaseColor: TColor;
 var
   light, dark: TColor;
 begin
-  {$ifdef Windows}
+  {$ifdef X_WIN}
   light := GetSysColor(COLOR_WINDOWTEXT);
   dark := clWhite;
   {$else}
@@ -582,7 +698,7 @@ function getBackground: TColor;
 var
   light, dark: TColor;
 begin
-  {$ifdef Windows}
+  {$ifdef X_WIN}
   light := GetSysColor(COLOR_BTNFACE);
   dark := RGB(32, 32, 32);
 //    bg := IfThen(TrndiNative.isDarkMode, uxclGray, bg);
@@ -889,6 +1005,7 @@ end;
 function UXButtonToModalResult(Btn: TUXMsgDlgBtn): TModalResult;
 begin
   case Btn of
+  mbUXAgree,
   mbYes:
     Result := mrYes;
   mbNo:
@@ -917,7 +1034,7 @@ begin
   end;
 end;
 
-{$ifdef Windows}
+{$ifdef X_WIN}
 {**
   Convert a Lazarus @code(TColor) to a Direct2D color with alpha.
   @param Col Lazarus color.
@@ -1182,7 +1299,11 @@ var
   IconBox: TImage;
   TitleLabel, DescLabel: TLabel;
   Edit: TFloatSpinEditEx;
+  {$ifdef X_WIN}
+  OkButton, CancelButton: TDarkButton;
+  {$else}
   OkButton, CancelButton: TButton;
+  {$endif}
   bgcol: TColor;
   size: TUXDialogSize;
   totalButtonsWidth: integer;
@@ -1214,6 +1335,13 @@ begin
     Edit.Width := DescLabel.Width;
     Edit.Top := DescLabel.Top + DescLabel.Height + ifthen(size = uxdBig, Padding * 2, Padding);
     Edit.Value := ADefault;
+    {$ifdef X_WIN}
+    if TrndiNative.isDarkMode then
+    begin
+      Edit.Color := RGBToColor(53, 53, 53);
+      Edit.Font.Color := RGBToColor(245, 245, 245);
+    end;
+    {$endif}
     if float then
     begin
       Edit.DecimalPlaces := 2;
@@ -1225,7 +1353,7 @@ begin
       Edit.Font.Size := 20;
 
     // --- OK Button ---
-    OkButton := TButton.Create(Dialog);
+    {$ifdef X_WIN}OkButton := TDarkButton.Create(Dialog);{$else}OkButton := TButton.Create(Dialog);{$endif}
     OkButton.Parent := Dialog;
     {$ifdef LCLGTK2}OkButton.Font.Color := clBlack;{$endif}
     OkButton.Caption := smbSelect;
@@ -1240,7 +1368,7 @@ begin
     Dialog.ActiveControl := OkButton;
 
     // --- Cancel Button ---
-    CancelButton := TButton.Create(Dialog);
+    {$ifdef X_WIN}CancelButton := TDarkButton.Create(Dialog);{$else}CancelButton := TButton.Create(Dialog);{$endif}
     CancelButton.Parent := Dialog;
     CancelButton.Caption := smbUXCancel;
     CancelButton.ModalResult := mrCancel;
@@ -1277,7 +1405,7 @@ buttons: TUXMsgDlgBtns;
 const icon: UXImage = uxmtOK): TModalResult;
 begin
   Result := ExtMsg(dialogsize, sMsgTitle, title, message, '',
-    uxclBlue, uxclLightBlue, buttons, widechar(icon));
+    uxclBlue, uxclLightBlue, buttons, WChar(icon));
 end;
 
 {** See interface docs for behavior and parameters. }
@@ -1299,13 +1427,13 @@ var
 begin
   case mtype of
   mtWarning:
-    icon := widechar($26A0); // ⚠️ Warning sign
+    icon := uxmtWarning; // ⚠️ Warning sign
   mtError:
-    icon := widechar($274C); // ❌ Cross mark
+    icon := uxmtError; // ❌ Cross mark
   mtInformation:
-    icon := widechar($2139); // ℹ️ Info symbol
+    icon := uxmtInformation; // ℹ️ Info symbol
   mtConfirmation:
-    icon := widechar($2753); // ❓ Question mark
+    icon := uxmtConfirmation; // ❓ Question mark
   mtCustom:
     icon := uxmtCog; // ⚙️ Gear
   else
@@ -1314,6 +1442,12 @@ begin
 
   Result := ExtMsg(dialogsize, header, title, message, '',
     uxclBlue, uxclLightBlue, buttons, icon);
+end;
+
+
+procedure UXMessage(const title, message: string; const icon: uximage = uxmtOK; sender: TForm = nil);
+begin
+  UXMessage(uxdAuto, title, message, icon, sender);
 end;
 
 {**
@@ -1328,7 +1462,11 @@ const
 var
   tp: TPanel;
   tl, tt: TLabel;
+  {$ifdef X_WIN}
+  tb: TButton; // TDarkButton;
+  {$else}
   tb: TButton;
+  {$endif}
   df: TDialogForm;
 begin
   if (dialogsize = uxdOnForm) and ((sender <> nil) and (sender.FindComponent(onFormName) = nil)) then
@@ -1379,7 +1517,7 @@ begin
       if IsProblematicWM then
         tl.Font.size := 38;
 
-      tb := TButton.Create(tp);
+      {$ifdef X_WIN}tb := TBUtton.Create(tp);{$else}tb := TButton.Create(tp);{$endif}
       tb.Parent := tp;
       tb.AutoSize := true;
       tb.Caption := smbUXOK;
@@ -1401,11 +1539,11 @@ begin
     end
     else
       ExtMsg(uxdAuto, sMsgTitle, title, message, '',
-        uxclBlue, uxclLightBlue, [mbOK], widechar(icon))
+        uxclBlue, uxclLightBlue, [mbOK], WChar(icon))
   end
   else
     ExtMsg(dialogsize, sMsgTitle, title, message, '',
-      uxclBlue, uxclLightBlue, [mbOK], widechar(icon))
+      uxclBlue, uxclLightBlue, [mbOK], WChar(icon))
 end;
 
 {** See interface docs for behavior and parameters. }
@@ -1422,7 +1560,11 @@ var
   IconBox: TImage;
   TitleLabel, DescLabel: TLabel;
   Edit: TEdit;
+  {$ifdef X_WIN}
+  OkButton, CancelButton: TDarkButton;
+  {$else}
   OkButton, CancelButton: TButton;
+  {$endif}
   bgcol: TColor;
   size: TUXDialogSize;
   totalButtonsWidth: integer;
@@ -1454,11 +1596,18 @@ begin
     Edit.Width := DescLabel.Width;
     Edit.Top := DescLabel.Top + DescLabel.Height + ifthen((size = uxdBig), Padding * 2, Padding);
     Edit.Text := ADefault;
+    {$ifdef X_WIN}
+    if TrndiNative.isDarkMode then
+    begin
+      Edit.Color := RGBToColor(53, 53, 53);
+      Edit.Font.Color := RGBToColor(245, 245, 245);
+    end;
+    {$endif}
     if (size = uxdBig) then
       Edit.Font.Size := 20;
 
     // --- OK Button ---
-    OkButton := TButton.Create(Dialog);
+    {$ifdef X_WIN}OkButton := TDarkButton.Create(Dialog);{$else}OkButton := TButton.Create(Dialog);{$endif}
     OkButton.Parent := Dialog;
     {$ifdef LCLGTK2}OkButton.Font.Color := clBlack;{$endif}
     OkButton.Caption := smbSelect;
@@ -1473,7 +1622,7 @@ begin
     Dialog.ActiveControl := OkButton;
 
     // --- Cancel Button ---
-    CancelButton := TButton.Create(Dialog);
+    {$ifdef X_WIN}CancelButton := TDarkButton.Create(Dialog);{$else}CancelButton := TButton.Create(Dialog);{$endif}
     CancelButton.Parent := Dialog;
     CancelButton.Caption := smbUXCancel;
     CancelButton.ModalResult := mrCancel;
@@ -1534,7 +1683,11 @@ var
   IconBox: TImage;
   TitleLabel, DescLabel: TLabel;
   Combo: TComboBox;
+  {$ifdef X_WIN}
+  OkButton, CancelButton: TDarkButton;
+  {$else}
   OkButton, CancelButton: TButton;
+  {$endif}
   bgcol: TColor;
   i, totalButtonsWidth: integer;
   size: TUXDialogSize;
@@ -1566,13 +1719,20 @@ begin
     Combo.Style := csDropDownList;
     Combo.Left := DescLabel.Left;
     Combo.Width := DescLabel.Width;
+    {$ifdef X_WIN}
+    if TrndiNative.isDarkMode then
+    begin
+      Combo.Color := RGBToColor(53, 53, 53);
+      Combo.Font.Color := RGBToColor(245, 245, 245);
+    end;
+    {$endif}
     if (size = uxdBig) then
       Combo.Font.Size := 20;
     Combo.Top := DescLabel.Top + DescLabel.Height + ifthen((size = uxdBig) , Padding * 2, Padding);
     Combo.ItemIndex := 0;
 
     // --- OK Button ---
-    OkButton := TButton.Create(Dialog);
+    {$ifdef X_WIN}OkButton := TDarkButton.Create(Dialog);{$else}OkButton := TButton.Create(Dialog);{$endif}
     OkButton.Parent := Dialog;
     {$ifdef LCLGTK2}OkButton.Font.Color := clBlack;{$endif}
     OkButton.Caption := smbSelect;
@@ -1587,7 +1747,7 @@ begin
     Dialog.ActiveControl := OkButton;
 
     // --- Cancel Button ---
-    CancelButton := TButton.Create(Dialog);
+    {$ifdef X_WIN}CancelButton := TDarkButton.Create(Dialog);{$else}CancelButton := TButton.Create(Dialog);{$endif}
     CancelButton.Parent := Dialog;
     if default then
     begin
@@ -1646,7 +1806,11 @@ var
   TitleLabel, DescLabel: TLabel;
   Grid: TStringGrid;
   BgCol: TColor;
+  {$ifdef X_WIN}
+  OkButton, CancelButton: TDarkButton;
+  {$else}
   OkButton, CancelButton: TButton;
+  {$endif}
   totalButtonsWidth, i: integer;
   size: TUXDialogSize;
 begin
@@ -1676,6 +1840,14 @@ begin
     Grid.Top := DescLabel.Top + DescLabel.Height + Padding;
     Grid.Height := ifthen((size = uxdBig) , GridHeight + 80, GridHeight);
     Grid.Options := [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goColSizing];
+    {$ifdef X_WIN}
+    if TrndiNative.isDarkMode then
+    begin
+      Grid.Color := RGBToColor(53, 53, 53);
+      Grid.FixedColor := RGBToColor(35, 35, 35);
+      Grid.Font.Color := RGBToColor(245, 245, 245);
+    end;
+    {$endif}
     Grid.ColCount := 2;
     Grid.RowCount := Length(Keys) + 1;
     Grid.ColWidths[0] := 120;
@@ -1693,7 +1865,7 @@ begin
       Grid.Font.Size := 14;
 
     // --- OK Button ---
-    OkButton := TButton.Create(Dialog);
+    {$ifdef X_WIN}OkButton := TDarkButton.Create(Dialog);{$else}OkButton := TButton.Create(Dialog);{$endif}
     OkButton.Parent := Dialog;
     {$ifdef LCLGTK2}OkButton.Font.Color := clBlack;{$endif}
     OkButton.Caption := smbSelect;
@@ -1707,7 +1879,7 @@ begin
     end;
 
     // --- Cancel Button ---
-    CancelButton := TButton.Create(Dialog);
+    {$ifdef X_WIN}CancelButton := TDarkButton.Create(Dialog);{$else}CancelButton := TButton.Create(Dialog);{$endif}
     CancelButton.Parent := Dialog;
     CancelButton.Caption := smbUXCancel;
     CancelButton.ModalResult := mrCancel;
@@ -1752,7 +1924,11 @@ var
   TitleLabel, DescLabel: TLabel;
   PreviewLabel: TLabel;
   FontCombo: TComboBox;
+  {$ifdef X_WIN}
+  OkButton, CancelButton: TDarkButton;
+  {$else}
   OkButton, CancelButton: TButton;
+  {$endif}
   bgcol: TColor;
   size: TUXDialogSize;
   totalButtonsWidth: integer;
@@ -1791,6 +1967,13 @@ begin
     FontCombo.Top := DescLabel.Top + DescLabel.Height + ifthen((size = uxdBig) , Padding * 2, Padding);
     FontCombo.Style := csDropDownList;
     FontCombo.Sorted := true;
+    {$ifdef X_WIN}
+    if TrndiNative.isDarkMode then
+    begin
+      FontCombo.Color := RGBToColor(53, 53, 53);
+      FontCombo.Font.Color := RGBToColor(245, 245, 245);
+    end;
+    {$endif}
     
     // Populate with system fonts
     FontCombo.Items.Assign(Screen.Fonts);
@@ -1816,6 +1999,11 @@ begin
     PreviewLabel.AutoSize := false;
     PreviewLabel.Alignment := taCenter;
     PreviewLabel.Font.Assign(SelectedFont);
+    if TrndiNative.isDarkMode then
+      PreviewLabel.Font.Color := clWhite
+    else
+      PreviewLabel.Font.Color := clBlack;
+
     case size of
     uxdBig:
     begin
@@ -1841,7 +2029,7 @@ begin
     FontCombo.OnChange := @Dialog.FontComboChange;
 
     // --- OK Button ---
-    OkButton := TButton.Create(Dialog);
+    {$ifdef X_WIN}OkButton := TDarkButton.Create(Dialog);{$else}OkButton := TButton.Create(Dialog);{$endif}
     OkButton.Parent := Dialog;
     {$ifdef LCLGTK2}OkButton.Font.Color := clBlack;{$endif}
     OkButton.Caption := smbUXOK;
@@ -1856,7 +2044,7 @@ begin
     Dialog.ActiveControl := OkButton;
 
     // --- Cancel Button ---
-    CancelButton := TButton.Create(Dialog);
+    {$ifdef X_WIN}CancelButton := TDarkButton.Create(Dialog);{$else}CancelButton := TButton.Create(Dialog);{$endif}
     CancelButton.Parent := Dialog;
     CancelButton.Caption := smbUXCancel;
     CancelButton.ModalResult := mrCancel;
@@ -1891,6 +2079,124 @@ begin
   end;
 end;
 
+function ExtDatePicker(
+const dialogsize: TUXDialogSize;
+const ACaption, ATitle, ADesc: string;
+ADefault: TDateTime;
+AMinDate: TDateTime;
+AMaxDate: TDateTime;
+var ModalResult: TModalResult;
+const icon: UXImage = uxmtCog
+): TDateTime;
+const
+  Padding = 16;
+var
+  Dialog: TDialogForm;
+  IconBox: TImage;
+  TitleLabel, DescLabel: TLabel;
+  DatePicker: TDateEdit;
+  {$ifdef X_WIN}
+  OkButton, CancelButton: TDarkButton;
+  {$else}
+  OkButton, CancelButton: TButton;
+  {$endif}
+  bgcol: TColor;
+  size: TUXDialogSize;
+  totalButtonsWidth: integer;
+begin
+  size := GetUXDialogSize(dialogsize);
+  Result := ADefault;
+  ModalResult := mrCancel;
+  bgcol := getBackground;
+
+  Dialog := TDialogForm.CreateNew(nil);
+  Dialog.KeyPreview := true;
+  Dialog.OnKeyDown := @Dialog.FormKeyDown;
+  try
+    Dialog.Caption := ACaption;
+    Dialog.BorderStyle := bsDialog;
+    Dialog.Position := poScreenCenter;
+
+    IconBox := TImage.Create(Dialog);
+    TitleLabel := TLabel.Create(Dialog);
+    DescLabel := TLabel.Create(Dialog);
+
+    // Use shared helper for title + description
+    SetupDialogTitleDesc(Dialog, size, icon, bgcol, ATitle, ADesc, IconBox, TitleLabel, DescLabel);
+
+    // --- Date picker ---
+    DatePicker := TDateEdit.Create(Dialog);
+    DatePicker.Parent := Dialog;
+    DatePicker.Left := DescLabel.Left;
+    DatePicker.Width := DescLabel.Width;
+    DatePicker.Top := DescLabel.Top + DescLabel.Height + ifthen(size = uxdBig, Padding * 2, Padding);
+    DatePicker.Date := ADefault;
+    
+    // Set min/max dates if specified (non-zero values)
+    if AMinDate <> 0 then
+      DatePicker.MinDate := AMinDate;
+    if AMaxDate <> 0 then
+      DatePicker.MaxDate := AMaxDate;
+    
+    {$ifdef X_WIN}
+    if TrndiNative.isDarkMode then
+    begin
+      DatePicker.Color := RGBToColor(53, 53, 53);
+      DatePicker.Font.Color := RGBToColor(245, 245, 245);
+    end;
+    {$endif}
+    if (size = uxdBig) then
+    begin
+      DatePicker.Font.Size := 20;
+      DatePicker.Height := DatePicker.Height * 2;
+    end;
+
+    // --- OK Button ---
+    {$ifdef X_WIN}OkButton := TDarkButton.Create(Dialog);{$else}OkButton := TButton.Create(Dialog);{$endif}
+    OkButton.Parent := Dialog;
+    {$ifdef LCLGTK2}OkButton.Font.Color := clBlack;{$endif}
+    OkButton.Caption := smbSelect;
+    OkButton.ModalResult := mrOk;
+    OkButton.Width := 80;
+    if (size = uxdBig) then
+    begin
+      OkButton.Width := OkButton.Width * 2;
+      OkButton.Height := OkButton.Height * 2;
+      OkButton.Font.Size := 12;
+    end;
+    Dialog.ActiveControl := OkButton;
+
+    // --- Cancel Button ---
+    {$ifdef X_WIN}CancelButton := TDarkButton.Create(Dialog);{$else}CancelButton := TButton.Create(Dialog);{$endif}
+    CancelButton.Parent := Dialog;
+    CancelButton.Caption := smbUXCancel;
+    CancelButton.ModalResult := mrCancel;
+    CancelButton.Width := 80;
+    if (size = uxdBig) then
+    begin
+      CancelButton.Width := CancelButton.Width * 2;
+      CancelButton.Height := CancelButton.Height * 2;
+      CancelButton.Font.Size := 12;
+    end;
+
+    // --- Center buttons ---
+    OkButton.Top := DatePicker.Top + DatePicker.Height + ifthen((size = uxdBig), Padding * 3, Padding * 2);
+    CancelButton.Top := OkButton.Top;
+    totalButtonsWidth := OkButton.Width + Padding + CancelButton.Width;
+    OkButton.Left := (Dialog.ClientWidth - totalButtonsWidth) div 2;
+    CancelButton.Left := OkButton.Left + OkButton.Width + Padding;
+
+    Dialog.ClientHeight := OkButton.Top + OkButton.Height + Padding;
+    Dialog.ActiveControl := DatePicker;
+
+    ModalResult := ShowModalSafe(Dialog);
+    if ModalResult = mrOk then
+      Result := DatePicker.Date;
+  finally
+    Dialog.Free;
+  end;
+end;
+
 {** See interface docs for behavior and parameters. }
 function ExtLog(
 const dialogsize: TUXDialogSize;
@@ -1901,6 +2207,32 @@ scale: integer = 1
 begin
   Result := ExtMsg(dialogsize, sMsgTitle, caption, msg, log,
     uxclBlue, uxclLightBlue, [mbOK], icon, scale);
+end;
+
+function ExtMsgYesNo(
+const caption, desc: string;
+const micon: UXImage = uxmtConfirmation): boolean;
+begin
+  result :=ExtMsgYesNo(uxdAuto, caption, desc, micon);
+end;
+
+function ExtMsgYesNo(
+const dialogsize: TUXDialogSize;
+const caption, desc: string;
+const micon: UXImage = uxmtConfirmation): boolean;
+begin
+result := ExtMsg(dialogsize,caption, desc, [mbYes, mbNo], micon) = mrYes;
+end;
+
+function ExtMsg(
+const caption, title, desc, logmsg: string;
+dumpbg: TColor = uxclWhite;
+dumptext: TColor = uxclRed;
+buttons: TUXMsgDlgBtns = [mbAbort];
+const icon: UXImage = uxmtCog;
+scale: single = 1): TModalResult;
+begin
+result := ExtMsg(uxdAuto, caption, title, desc, logmsg, dumpbg, dumptext, buttons, icon, scale);
 end;
 
 {** See interface docs for behavior and parameters. }
@@ -1947,7 +2279,8 @@ const dialogsize: TUXDialogSize;
 const caption, html: string;
 buttons: TUXMsgDlgBtns = [mbAbort];
 const icon: UXImage = uxmtCog;
-scale: single = 1
+scale: single = 1;
+hpadding: single = 1
 ): TModalResult;
 const
   btnWidth = 75;
@@ -1957,8 +2290,8 @@ var
   HtmlPanel: TPanel;
   IconBox: TImage;
   HtmlViewer: TIpHtmlPanel;
-  {$ifdef Windows}
-  OkButton:TBitBtn;
+  {$ifdef X_WIN}
+  OkButton:TDarkButton;
   {$else}
   OkButton: TButton;
   {$endif}
@@ -2013,11 +2346,13 @@ begin
     {$ifdef LCLGTK3}Dialog.BorderStyle := bsSizeable;{$endif}
     Dialog.Position := poWorkAreaCenter;
     Dialog.Color := bgcol;
+    Dialog.KeyPreview := true;
+    Dialog.OnKeyDown := @Dialog.FormKeyDown;
 
     ProposedWidth := ifthen((size = uxdBig) , 650, 500);
     if ProposedWidth > 900 then
       ProposedWidth := 900;
-    Dialog.ClientWidth := ProposedWidth;
+    Dialog.ClientWidth := floor(ProposedWidth * hpadding);
 
     // Icon at top
     IconBox := TImage.Create(Dialog);
@@ -2026,7 +2361,7 @@ begin
     IconBox.Top := padding;
     IconBox.Width := ifthen((size = uxdBig) , 80, 48);
     IconBox.Height := IconBox.Width;
-    {$ifdef Windows}IconBox.Font.Name := 'Segoe UI Emoji';{$endif}
+    {$ifdef X_WIN}IconBox.Font.Name := 'Segoe UI Emoji';{$endif}
     {$ifdef Darwin}IconBox.Font.Name := 'Apple Color Emoji';{$endif}
     AssignEmoji(IconBox, icon, bgcol);
 
@@ -2090,8 +2425,8 @@ begin
     // Create buttons
     for mr in buttons do
     begin
-      {$ifdef Windows}
-      OkButton := TBitBtn.Create(Dialog);
+      {$ifdef X_WIN}
+      OkButton := TDarkButton.Create(Dialog);
       {$else}
       OkButton := TButton.Create(Dialog);
       {$endif}
@@ -2146,8 +2481,8 @@ var
   MsgScroll: TScrollBox;
   LogMemo: TMemo;
   LogHtmlPanel: TIpHtmlPanel;
-  {$ifdef Windows}
-  OkButton:TBitBtn;
+  {$ifdef X_WIN}
+  OkButton:TDarkButton;
   {$else}
   OkButton: TButton;
   {$endif}
@@ -2173,6 +2508,8 @@ begin
     Dialog.Position := poWorkAreaCenter;
     Dialog.Color := bgcol;
     Dialog.AutoSize := true;
+    Dialog.KeyPreview := true;
+    Dialog.OnKeyDown := @Dialog.FormKeyDown;
     MaxDialogHeight := Round(Screen.Height * 0.8);
 
     // Main panel
@@ -2204,7 +2541,7 @@ begin
       IconBox.Width := 50;
     end;
     IconBox.Height := IconBox.Width;
-    {$ifdef Windows}IconBox.Font.Name := 'Segoe UI Emoji';{$endif}
+    {$ifdef X_WIN}IconBox.Font.Name := 'Segoe UI Emoji';{$endif}
     {$ifdef Darwin}IconBox.Font.Name := 'Apple Color Emoji';{$endif}
     Dialog.HandleNeeded;
     AssignEmoji(IconBox, icon, bgcol);
@@ -2498,13 +2835,44 @@ begin
       btnCount := 1;
 
     totalBtnWidth := (ButtonActualWidth * btnCount) + (padding * (btnCount - 1));
+    
+    // Always center the action buttons
     posX := (Dialog.ClientWidth - totalBtnWidth) div 2;
     if posX < padding then
       posX := padding;
+    
+    // Add expand button only if log content is truncated/needs scrolling
+    // Position it independently on the left side
+    if (logmsg <> '') and 
+       ((not isHTML and (LogMemo.Lines.Count > 3)) or 
+        (isHTML and (LogHtmlPanel.GetContentSize.cy > LogPanel.Height))) then
+    begin
+      {$ifdef X_WIN}
+      OkButton := TDarkButton.Create(ButtonPanel);
+      {$else}
+      OkButton := TButton.Create(ButtonPanel);
+      {$endif}
+      OkButton.Parent := ButtonPanel;
+      {$ifdef LCLGTK2}OkButton.Font.Color := clBlack;{$endif}
+      OkButton.Caption := '⛶';  // Maximize symbol
+      OkButton.Width := ifthen((size = uxdBig), 50, 30);
+      OkButton.Height := ifthen((size = uxdBig), 50, 25);
+      OkButton.Left := padding;
+      OkButton.Top := padding;
+      OkButton.OnClick := @Dialog.ExpandLogDialog;
+      OkButton.TabStop := false;
+      
+      // Store references for expand method
+      Dialog.LogExpandWrapper := LogPanel;
+      Dialog.LogExpandMemo := LogMemo;
+      Dialog.LogExpandHtmlPanel := LogHtmlPanel;
+      Dialog.LogExpandButton := OkButton;
+      Dialog.LogIsHTML := isHTML;
+    end;
 
     for mr in buttons do
     begin
-      {$ifdef Windows}OkButton := TBitBtn.Create(ButtonPanel);{$else}OkButton := TButton.Create(ButtonPanel);{$endif}
+      {$ifdef X_WIN}OkButton := TDarkButton.Create(ButtonPanel);{$else}OkButton := TButton.Create(ButtonPanel);{$endif}
       OkButton.Parent := ButtonPanel;
       {$ifdef LCLGTK2}OkButton.Font.Color := clBlack;{$endif}
       OkButton.Caption := langs[mr];
@@ -2581,7 +2949,7 @@ begin
     dumpbg,
     dumptext,
     [mbOK],
-    widechar(icon));
+    WChar(icon));
 end;
 
 {** See interface docs for behavior and parameters. }
@@ -2601,7 +2969,7 @@ begin
     dumpbg,
     dumptext,
     btns,
-    widechar(icon),
+    WChar(icon),
     scale);
 end;
 
@@ -2623,65 +2991,133 @@ end;
 }
 procedure TDialogForm.FormKeyDown(Sender: TObject; var Key: word; Shift: TShiftState);
 var
-  o: TCustomButton;
-  i, cancel, no, yes, ok, abort, ct: integer;
+  i, cancel, no, yes, ok, abort, ct, firstBtn: integer;
   btns: TComponent;
   target: TWinControl;
+  modalRes, firstBtnResult: TModalResult;
+
+  function GetModalResult(comp: TComponent): TModalResult;
+  begin
+    Result := mrNone;
+    if comp is TCustomButton then
+      Result := (comp as TCustomButton).ModalResult
+    {$ifdef Windows}
+    else if comp is TDarkButton then
+      Result := (comp as TDarkButton).ModalResult
+    {$endif};
+  end;
+
+  procedure ClickButton(idx: integer);
+  var
+    comp: TComponent;
+  begin
+    if idx < 0 then Exit;
+    comp := target.Components[idx];
+    if comp is TCustomButton then
+      (comp as TCustomButton).Click
+    {$ifdef Windows}
+    else if comp is TDarkButton then
+      (comp as TDarkButton).Click
+    {$endif};
+  end;
+
 begin
   if not (key in [VK_ESCAPE, VK_RETURN]) then
     Exit;
+
   cancel := -1;
   no := -1;
   yes := -1;
   ok := -1;
   abort := -1;
   ct := 0;
+  firstBtn := -1;
+  firstBtnResult := mrNone;
+
   btns := Self.FindComponent('pnButtons');
   if btns = nil then
     target := Self
   else
     target := btns as TPanel;
 
+  // Scan for buttons and their modal results
   for i := 0 to target.ComponentCount - 1 do
-    if target.components[i] is TCustomButton then
+  begin
+    modalRes := GetModalResult(target.Components[i]);
+    if modalRes = mrNone then
+      Continue;
+
+    if firstBtn < 0 then
     begin
-      o := target.components[i] as TCustomButton;
-      if o.ModalResult = mrCancel then
-        cancel := i;
-      if o.ModalResult = mrNo then
-        no := i;
-      if o.ModalResult = mrYes then
-        yes := i;
-      if (o.ModalResult = mrOk) or (o.ModalResult = mrClose) then
-        ok := i;
-      if o.ModalResult = mrAbort then
-        abort := i;
-      Inc(ct);
+      firstBtn := i;
+      firstBtnResult := modalRes;
     end;
 
-  if key = vk_escape then
+    case modalRes of
+      mrCancel: cancel := i;
+      mrNo: no := i;
+      mrYes: yes := i;
+      mrOk, mrClose: ok := i;
+      mrAbort: abort := i;
+    end;
+    Inc(ct);
+  end;
+
+  // Handle key presses
+  case key of
+    VK_ESCAPE:
+      begin
+        // ESC priority: Cancel > No > Abort > OK/Close (single-button only)
+        if cancel >= 0 then
+          ClickButton(cancel)
+        else if no >= 0 then
+          ClickButton(no)
+        else if abort >= 0 then
+          ClickButton(abort)
+        else if (ct = 1) and (ok >= 0) then
+          ClickButton(ok);
+      end;
+    VK_RETURN:
+      begin
+        // ENTER priority: OK > Yes > Close/Ignore/Retry (single-button only)
+        if ok >= 0 then
+          ClickButton(ok)
+        else if yes >= 0 then
+          ClickButton(yes)
+        else if (ct = 1) and (firstBtnResult in [mrClose, mrIgnore, mrRetry]) then
+          ClickButton(firstBtn);
+      end;
+  end;
+end;
+
+{** Expand log message area to 3/4 screen size }
+procedure TDialogForm.ExpandLogDialog(Sender: TObject);
+var
+  newHeight, newWidth: integer;
+begin
+  newHeight := Round(Screen.Height * 0.75);
+  newWidth := Round(Screen.Width * 0.75);
+  
+  // Resize the entire dialog
+  Self.ClientWidth := newWidth;
+  Self.ClientHeight := newHeight;
+  
+  // Manually center the dialog
+  Self.Left := (Screen.Width - Self.Width) div 2;
+  Self.Top := (Screen.Height - Self.Height) div 2;
+  
+  if Assigned(LogExpandWrapper) then
   begin
-    // ESC priority: Cancel > No > Abort > OK/Close (for single-button dialogs)
-    if cancel >= 0 then
-      (target.Components[cancel] as TCustomButton).Click
-    else
-    if no >= 0 then
-      (target.Components[no] as TCustomButton).Click
-    else
-    if abort >= 0 then
-      (target.Components[abort] as TCustomButton).Click
-    else
-    if (ct = 1) and (ok >= 0) then
-      (target.Components[ok] as TCustomButton).Click;
-  end
-  else
-  if key = VK_RETURN then
-    if ok >= 0 then
-      (target.Components[ok] as TCustomButton).Click
-    else
-    if yes >= 0 then
-      (target.Components[yes] as TCustomButton).Click// ENTER priority: OK > Yes > Close (affirmative actions)
-  ;
+    // LogExpandWrapper is the LogPanel - expand it to fill available space
+    // Leave room for button panel at bottom (which is alBottom, so it auto-positions)
+    LogExpandWrapper.Height := Round(newHeight * 0.7);
+  end;
+  
+  // Hide expand button after expansion
+  if Assigned(LogExpandButton) then
+    LogExpandButton.Visible := false;
+  
+  // No need to recenter action buttons - they're already centered
 end;
 
 {$ifndef Windows}
@@ -2721,7 +3157,7 @@ begin
 end;
 {$endif}
 
-{$ifdef Windows}
+{$ifdef X_WIN}
 {**
   Set system menu style, apply immersive dark titlebar when available, and refresh frame.
 }
@@ -2774,11 +3210,210 @@ begin
 end;
 {$endif}
 
+{$ifdef X_WIN}
+{ TDarkButton - Adapted from metadarkstyle's DrawPushButton }
+
+constructor TDarkButton.Create(AOwner: TComponent);
+begin
+  inherited Create(AOwner);
+  FModalResult := mrNone;
+  FDown := false;
+  FHot := false;
+  FFocused := false;
+  FCaption := '';
+  Width := 75;
+  Height := 25;
+  Cursor := crDefault;
+  TabStop := true;
+  ControlStyle := ControlStyle + [csClickEvents, csCaptureMouse, csOpaque];
+end;
+
+procedure TDarkButton.SetCaption(const AValue: string);
+begin
+  if FCaption <> AValue then
+  begin
+    FCaption := AValue;
+    Invalidate;
+  end;
+end;
+
+procedure TDarkButton.Paint;
+var
+  BtnRect: TRect;
+  TextStyle: TTextStyle;
+  i: integer;
+begin
+  BtnRect := ClientRect;
+  Canvas.Brush.Style := bsSolid;
+  
+  if not TrndiNative.isDarkMode then
+  begin
+    // Light mode - draw standard button appearance
+    Canvas.Pen.Color := GetSysColor(COLOR_BTNFACE);  // Match form background
+    
+    if FDown then
+    begin
+      Canvas.Brush.Color := RGBToColor(200, 200, 200);  // Pressed
+    end
+    else if FHot then
+    begin
+      Canvas.Brush.Color := RGBToColor(229, 241, 251);  // Hover
+    end
+    else
+    begin
+      Canvas.Brush.Color := RGBToColor(225, 225, 225);  // Normal
+    end;
+    
+    Canvas.RoundRect(BtnRect, 2, 2);
+    
+    // Focus indicator in light mode
+    if FFocused then
+    begin
+      Canvas.Pen.Color := RGBToColor(0, 120, 215);  // Blue focus
+      Canvas.Pen.Width := 1;
+      Canvas.Brush.Style := bsClear;
+      Canvas.RoundRect(BtnRect.Left + 2, BtnRect.Top + 2, 
+                       BtnRect.Right - 2, BtnRect.Bottom - 2, 2, 2);
+      Canvas.Brush.Style := bsSolid;
+    end;
+    
+    // Text in dark color for light mode
+    Canvas.Font.Color := clBlack;
+  end
+  else
+  begin
+    // Dark mode
+    Canvas.Pen.Color := RGBToColor(32, 32, 32);  // Match form background
+    
+    if FDown then
+    begin
+      Canvas.Brush.Color := RGBToColor(30, 30, 30);  // Darker when pressed
+    end
+    else if FHot then
+    begin
+      Canvas.Brush.Color := RGBToColor(80, 80, 80);  // Lighter on hover
+    end
+    else
+    begin
+      Canvas.Brush.Color := RGBToColor(53, 53, 53);  // Normal state
+    end;
+    
+    Canvas.RoundRect(BtnRect, 4, 4);
+    
+    // Focus indicator in dark mode
+    if FFocused then
+    begin
+      Canvas.Pen.Color := RGBToColor(160, 160, 160);  // Subtle light gray
+      Canvas.Pen.Width := 1;
+      Canvas.Brush.Style := bsClear;
+      Canvas.RoundRect(BtnRect.Left + 2, BtnRect.Top + 2, 
+                       BtnRect.Right - 2, BtnRect.Bottom - 2, 3, 3);
+      Canvas.Brush.Style := bsSolid;
+    end;
+    
+    // Text in light color for dark mode
+    Canvas.Font.Color := RGBToColor(245, 245, 245);
+  end;
+  
+  // Draw text centered
+  Canvas.Font.Size := Font.Size;
+  Canvas.Font.Name := Font.Name;
+  
+  TextStyle := Canvas.TextStyle;
+  TextStyle.Alignment := taCenter;
+  TextStyle.Layout := tlCenter;
+  TextStyle.Opaque := false;
+  TextStyle.Clipping := true;
+  
+  Canvas.TextRect(BtnRect, 0, 0, FCaption, TextStyle);
+end;
+
+procedure TDarkButton.MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: integer);
+begin
+  inherited MouseDown(Button, Shift, X, Y);
+  if Button = mbLeft then
+  begin
+    FDown := true;
+    Invalidate;
+  end;
+end;
+
+procedure TDarkButton.MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: integer);
+var
+  WasDown: boolean;
+begin
+  WasDown := FDown;
+  FDown := false;
+  inherited MouseUp(Button, Shift, X, Y);
+  Invalidate;
+  
+  if WasDown and (Button = mbLeft) and PtInRect(ClientRect, Classes.Point(X, Y)) then
+    Click;
+end;
+
+procedure TDarkButton.MouseEnter;
+begin
+  inherited MouseEnter;
+  FHot := true;
+  Invalidate;
+end;
+
+procedure TDarkButton.MouseLeave;
+begin
+  inherited MouseLeave;
+  FHot := false;
+  FDown := false;
+  Invalidate;
+end;
+
+procedure TDarkButton.Click;
+var
+  Form: TCustomForm;
+begin
+  inherited Click;
+  if FModalResult <> mrNone then
+  begin
+    Form := GetParentForm(Self);
+    if Assigned(Form) then
+      Form.ModalResult := FModalResult;
+  end;
+end;
+
+procedure TDarkButton.KeyDown(var Key: word; Shift: TShiftState);
+begin
+  inherited KeyDown(Key, Shift);
+  // Handle Enter and Space keys to activate button
+  if (Key = VK_RETURN) or (Key = VK_SPACE) then
+  begin
+    Click;
+    Key := 0; // Mark as handled
+  end;
+end;
+
+procedure TDarkButton.DoEnter;
+begin
+  inherited DoEnter;
+  FFocused := true;
+  Invalidate;
+end;
+
+procedure TDarkButton.DoExit;
+begin
+  inherited DoExit;
+  FFocused := false;
+  Invalidate;
+end;
+{$endif}
+
 {** Close handler for full-screen overlay messages created by @link(UXMessage). }
 procedure TDialogForm.UXMessageOnClick(sender: TObject);
 begin
-  ((sender as TButton).Parent as TPanel).Hide;
-  ((sender as TButton).Parent as TPanel).Free;
+  //.$ifdef Windows}
+//   ((sender as TDarkButton).parent as TPanel).Free;
+  //$else}
+  ((sender as TButton).parent as TPanel).Free;
+  //$endif}
+
   Self.Free;
 end;
 
@@ -2792,10 +3427,10 @@ begin
     FontPickerPreview.Font.Name := Combo.Items[Combo.ItemIndex];
 end;
 
-{$ifdef Windows}
+{$ifdef X_WIN}
 {**
   Owner-draw for dark buttons on Windows.
-  @param Sender The @code(TBitBtn) being drawn.
+  @param Sender The @code(TDarkButton) being drawn.
   @param ACanvas Canvas to draw on.
   @param ARect Button rectangle.
   @param State Button state (up/down/hot).
@@ -2803,7 +3438,7 @@ end;
 procedure TDialogForm.ButtonDrawItem(Sender: TObject;
 ACanvas: TCanvas; ARect: TRect; State: TButtonState);
 var
-  Btn: TBitBtn absolute Sender;
+  Btn: TDarkButton absolute Sender;
   TxtFlags: cardinal;
 begin
   // 1) Background
