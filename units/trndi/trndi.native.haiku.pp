@@ -420,11 +420,11 @@ end;
 {------------------------------------------------------------------------------
   isNotificationSystemAvailable
   ------------------------------
-  Check if notify-send is available.
+  Check if a notification helper is available (notify or notify-send).
  ------------------------------------------------------------------------------}
 class function TTrndiNativeHaiku.isNotificationSystemAvailable: boolean;
 begin
-  Result := IsNotifySendAvailable;
+  Result := IsNotifyAvailable;
 end;
 
 {------------------------------------------------------------------------------
