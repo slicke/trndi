@@ -126,7 +126,8 @@ function sel_registerName(name: MarshaledAString): SEL;    cdecl; external ObjCL
 
 procedure TTrndiNativeMac.attention(topic, message: string);
 var
-  UNClass, Center, ContentClass, Content, TriggerClass, Trigger, ReqClass, Req: id;
+  UNClass, Center, ContentClass, Content, TriggerClass, Trigger, ReqClass, UNReq: id;
+  NSReq: NSUserNotification;
   IdStr, TitleStr, BodyStr: NSString;
   selCurrent, selAddReq, selNew, selSetTitle, selSetBody: SEL;
   ok: Boolean;
@@ -166,11 +167,14 @@ begin
 
         // Create request
         ReqClass := objc_getClass('UNNotificationRequest');
-        Req := objc_msgSend3(ReqClass, sel_registerName('requestWithIdentifier:content:trigger:'), IdStr, Content, Trigger);
+        UNReq := objc_msgSend3(ReqClass, sel_registerName('requestWithIdentifier:content:trigger:'), IdStr, Content, Trigger);
+
+        // Release the identifier NSString we created earlier
+        IdStr.Release;
 
         // Add request (no completion handler)
         selAddReq := sel_registerName('addNotificationRequest:withCompletionHandler:');
-        objc_msgSend2_id_id(Center, selAddReq, Req, nil);
+        objc_msgSend2_id_id(Center, selAddReq, UNReq, nil);
 
         // Best-effort; do not raise on failures
         ok := True;
@@ -187,22 +191,22 @@ begin
     Center := NSUserNotificationCenter.defaultUserNotificationCenter;
     if Center <> nil then
     begin
-      Req := NSUserNotification.alloc.init;
+      NSReq := NSUserNotification.alloc.init;
       try
         TitleStr := NSSTR(topic);
         BodyStr := NSSTR(message);
         try
-          Req.setTitle(TitleStr);
-          Req.setInformativeText(BodyStr);
+          NSReq.setTitle(TitleStr);
+          NSReq.setInformativeText(BodyStr);
         finally
           TitleStr.Release;
           BodyStr.Release;
         end;
 
-        Center.deliverNotification(Req);
+        Center.deliverNotification(NSReq);
         Exit;
       finally
-        Req.Release;
+        NSReq.Release;
       end;
     end;
   except
