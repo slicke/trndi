@@ -465,6 +465,8 @@ begin
 
   try
     PublishedAt := EncodeDateTime(Year, Month, Day, Hour, Min, Sec, 0);
+    // GitHub `published_at` is in UTC — convert to local time for comparisons
+    PublishedAt := UniversalTimeToLocal(PublishedAt);
     Result := true;
   except
     Result := false;
