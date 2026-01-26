@@ -121,7 +121,7 @@ type
 function objc_getClass(name: MarshaledAString): id;        cdecl; external ObjCLib;
 function sel_registerName(name: MarshaledAString): SEL;    cdecl; external ObjCLib;
 function CFStringCreateWithCString(alloc: Pointer; cStr: MarshaledAString; encoding: longword): Pointer; cdecl; external CFLib;
-function CFRelease(cf: Pointer); cdecl; external CFLib;
+procedure CFRelease(cf: Pointer); cdecl; external CFLib;
 
 function objc_msgSend0(obj: id; sel: SEL): id; cdecl; external ObjCLib name 'objc_msgSend';
 function objc_msgSend1(obj: id; sel: SEL; p1: id): id; cdecl; external ObjCLib name 'objc_msgSend';
