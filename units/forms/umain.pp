@@ -4445,7 +4445,9 @@ begin
     lDiff.Caption := FormatSigned(deltaVal);
   end
   else
+  begin
     lDiff.Caption := reading.format(un, BG_MSG_SIG_SHORT, BGDelta);
+  end;
   lArrow.Caption := reading.trend.Img;
   lVal.Font.Style := [];
 
