@@ -1772,7 +1772,7 @@ end;
 
 procedure TfConf.lLicenseClick(Sender: TObject);
 const
-  txt = '<img src="https://trndi.app/doc/img/trndi-logo.png">' + sHTMLLineBreak +
+  txt = {$ifndef HAIKU}'<img src="https://trndi.app/doc/img/trndi-logo.png">' + sHTMLLineBreak + {$endif}
     '<b>Trndi - CGM viewer</b>' + sHTMLLineBreak +
     '<i>A re-imagination of TrayTrend by Björn Lindh</i>' + sHTMLLineBreak +
     'Copyright (C) 2017-2026 Björn Lindh' + sHTMLLineBreak + sHTMLLineBreak +
