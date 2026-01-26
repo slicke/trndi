@@ -44,7 +44,7 @@ interface
 uses
 Classes, SysUtils, Dialogs,
   // Trndi units
-trndi.types, trndi.api, trndi.native,
+trndi.types, trndi.api, trndi.native, trndi.funcs,
   // FPC units
 fpjson, jsonparser, dateutils, StrUtils;
 
@@ -633,25 +633,29 @@ begin
 
       // Compute BG value and optional delta, handling missing/null 'Value' gracefully
       CurVal := SafeValue(LData.Items[i], CurOk);
-      if FCalcDiff and (i > 0) then
+      if FCalcDiff then
       begin
-        PrevVal := SafeValue(LData.Items[i - 1], PrevOk);
-        if CurOk and PrevOk then
-          Result[i].Update(CurVal, CurVal - PrevVal)
-        else if CurOk then
-          // No valid previous value -> cannot compute delta, store sentinel
-          Result[i].Update(CurVal, BG_NO_VAL)
+        // Dexcom returns newest-first. Compute delta as current - next (i.e., newest - previous reading)
+        if (i < LData.Count - 1) then
+        begin
+          PrevVal := SafeValue(LData.Items[i + 1], PrevOk); // 'PrevVal' is the next item chronologically
+          if CurOk and PrevOk then
+            Result[i].Update(CurVal, CurVal - PrevVal)
+          else if CurOk then
+            // No valid next value -> cannot compute delta, store sentinel
+            Result[i].Update(CurVal, BG_NO_VAL)
+          else
+            // No current value -> mark reading as empty
+            Result[i].Clear;
+        end
         else
-          // No current value -> mark reading as empty
-          Result[i].Clear;
-      end
-      else if FCalcDiff then
-      begin
-        // First item: delta not computable; use 0 if we have a value
-        if CurOk then
-          Result[i].Update(CurVal, 0)
-        else
-          Result[i].Clear;
+        begin
+          // Oldest item: delta not available
+          if CurOk then
+            Result[i].Update(CurVal, BG_NO_VAL)
+          else
+            Result[i].Clear;
+        end;
       end
       else
       begin
@@ -661,6 +665,8 @@ begin
         else
           Result[i].Clear;
       end;
+
+
 
       // Interpret "Trend" (may be numeric code or string)
       LTrendStr := LData.Items[i].FindPath('Trend').AsString;
