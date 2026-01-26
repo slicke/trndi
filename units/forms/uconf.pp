@@ -120,6 +120,8 @@ TfConf = class(TForm)
   cbPrivacy: TCheckBox;
   eExt: TEdit;
   Label25: TLabel;
+  lDot: TLabel;
+  lDotNow: TLabel;
   lExt: TLabel;
   lSysWarnInfo: TLabel;
   Panel18: TPanel;
@@ -232,12 +234,10 @@ TfConf = class(TForm)
   lTitle: TLabel;
   Label7: TLabel;
   Label8: TLabel;
-  lDot: TLabel;
   lDot1: TLabel;
   lDot2: TLabel;
   lDot3: TLabel;
   lDotCurr: TLabel;
-  lDotNow: TLabel;
   lHiOver1: TLabel;
   lLounder1: TLabel;
   lTray: TLabel;

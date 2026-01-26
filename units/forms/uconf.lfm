@@ -17,10 +17,10 @@ object fConf: TfConf
     Height = 518
     Top = 11
     Width = 665
-    ActivePage = tsGeneral
+    ActivePage = tsDisplay
     Align = alClient
     BorderSpacing.Around = 5
-    TabIndex = 0
+    TabIndex = 2
     TabOrder = 0
     OnChange = pcMainChange
     object tsGeneral: TTabSheet
@@ -10928,15 +10928,6 @@ object fConf: TfConf
             TabOrder = 0
             OnChange = eDotChange
           end
-          object lDot: TLabel
-            Left = 104
-            Height = 16
-            Top = 32
-            Width = 55
-            Caption = 'PREVIEW'
-            Font.Color = clWhite
-            ParentFont = False
-          end
           object Label17: TLabel
             Left = 20
             Height = 16
@@ -10945,15 +10936,6 @@ object fConf: TfConf
             Caption = 'Dots: Enter the Unicode code for a character, or use a template'
             Font.Color = clWhite
             Font.Style = [fsItalic]
-            ParentFont = False
-          end
-          object lDotNow: TLabel
-            Left = 104
-            Height = 16
-            Top = 88
-            Width = 55
-            Caption = 'PREVIEW'
-            Font.Color = clWhite
             ParentFont = False
           end
           object eDotNow: TEdit
@@ -11009,6 +10991,24 @@ object fConf: TfConf
             Caption = 'Template'
             TabOrder = 5
             OnClick = bTemplateCurrentClick
+          end
+          object lDot: TLabel
+            Left = 104
+            Height = 16
+            Top = 32
+            Width = 55
+            Caption = 'PREVIEW'
+            Font.Color = clWhite
+            ParentFont = False
+          end
+          object lDotNow: TLabel
+            Left = 104
+            Height = 16
+            Top = 88
+            Width = 55
+            Caption = 'PREVIEW'
+            Font.Color = clWhite
+            ParentFont = False
           end
         end
         object lVal: TLabel
