@@ -758,6 +758,10 @@ msgstr "endra Trndis standardferger fôr text, beroende po glukosavlesning"
 msgid "Change Trndi's default background and colors, when in the custom range"
 msgstr "endra Trndis standardferger fôr bakgrund och text, ner du er i eget omrode"
 
+#: tfconf.label25.caption
+msgid "Maximum delta slots"
+msgstr ""
+
 #: tfconf.label26.caption
 msgid "High (eg https://url.local/hi)"
 msgstr "Hôg (tex https://url.local/hôg)"
@@ -2131,6 +2135,10 @@ msgstr ""
 msgctxt "uconf.rs_default_account"
 msgid "Default"
 msgstr "Standard"
+
+#: uconf.rs_delta_max
+msgid "When the previous reading is missing, use the next available reading within this many 5-minute-intervals to calculate delta."
+msgstr ""
 
 #: uconf.rs_dex
 msgid ""

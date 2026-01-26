@@ -122,6 +122,8 @@
 {"hash":11447257,"name":"tfconf.cbtimestamp.caption","sourcebytes":[83,104,111,119,32,114,101,97,100,105,110,103,32,116,105,109,101,32,40,105,110,115,116,101,97,100,32,111,102,32,109,105,110,117,116,101,115,32,97,103,111,41],"value":"Show reading time (instead of minutes ago)"},
 {"hash":236563209,"name":"tfconf.cbprivacy.caption","sourcebytes":[80,114,105,118,97,99,121,32,77,111,100,101,32,40,72,105,100,101,32,103,108,117,99,111,115,101,32,118,97,108,117,101,41],"value":"Privacy Mode (Hide glucose value)"},
 {"hash":63,"name":"tfconf.bprivacyhelp.caption","sourcebytes":[63],"value":"?"},
+{"hash":262009331,"name":"tfconf.label25.caption","sourcebytes":[77,97,120,105,109,117,109,32,100,101,108,116,97,32,115,108,111,116,115],"value":"Maximum delta slots"},
+{"hash":63,"name":"tfconf.boutdatedhelp1.caption","sourcebytes":[63],"value":"?"},
 {"hash":227504051,"name":"tfconf.tsintegration.caption","sourcebytes":[73,110,116,101,103,114,97,116,105,111,110,115],"value":"Integrations"},
 {"hash":190236785,"name":"tfconf.gboverride2.caption","sourcebytes":[80,108,97,121,32,77,101,100,105,97],"value":"Play Media"},
 {"hash":195427656,"name":"tfconf.label9.caption","sourcebytes":[84,114,110,100,105,32,99,97,110,32,116,114,105,103,103,101,114,32,83,112,111,116,105,102,121,32,111,114,32,68,101,101,122,101,114,32,116,111,32,112,108,97,121,32,97,32,115,111,110,103,32,119,104,101,110,32,108,111,119,47,104,105,103,104],"value":"Trndi can trigger Spotify or Deezer to play a song when low/high"},
