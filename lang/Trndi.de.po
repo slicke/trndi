@@ -2239,6 +2239,10 @@ msgstr ""
 msgid "Trndi can draw a line on the graph's background, to represent where your high/low limits are."
 msgstr ""
 
+#: uconf.rs_timestamp_help
+msgid "By default Trndi shows the amount of minutes since the last reading, this setting allows you to display the time of the last reading instead."
+msgstr ""
+
 #: uconf.rs_update_snooze
 #, object-pascal-format
 msgid "You will be alerted again after %s"

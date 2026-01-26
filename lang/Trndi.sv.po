@@ -2374,6 +2374,10 @@ msgstr "Ledsen! Trndi stöder (ännu) inte anslutningstest för denna tjänst!"
 msgid "Trndi can draw a line on the graph's background, to represent where your high/low limits are."
 msgstr "Trndi kan rita en linje på grafens bakgrund, för att representera dina höga/låga gränser."
 
+#: uconf.rs_timestamp_help
+msgid "By default Trndi shows the amount of minutes since the last reading, this setting allows you to display the time of the last reading instead."
+msgstr "Som standard visar Trndi antalet minuter sedan senaste avläsning, denna inställning gör att tiden för avläsningen visas istället."
+
 #: uconf.rs_update_snooze
 #, object-pascal-format
 msgid "You will be alerted again after %s"
