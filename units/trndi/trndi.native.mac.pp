@@ -99,7 +99,7 @@ type
 implementation
 
 uses
-  Process, SysUtils, DateUtils;
+  Process, DateUtils;
 
 const
   ObjCLib = '/usr/lib/libobjc.A.dylib';
@@ -126,7 +126,8 @@ function sel_registerName(name: MarshaledAString): SEL;    cdecl; external ObjCL
 
 procedure TTrndiNativeMac.attention(topic, message: string);
 var
-  UNClass, Center, ContentClass, Content, TriggerClass, Trigger, ReqClass, Req, IdStr, TitleStr, BodyStr: id;
+  UNClass, Center, ContentClass, Content, TriggerClass, Trigger, ReqClass, Req: id;
+  IdStr, TitleStr, BodyStr: NSString;
   selCurrent, selAddReq, selNew, selSetTitle, selSetBody: SEL;
   ok: Boolean;
   sId: string;
