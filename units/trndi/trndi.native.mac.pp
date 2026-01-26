@@ -203,7 +203,7 @@ begin
           BodyStr.Release;
         end;
 
-        Center.deliverNotification(NSReq);
+        objc_msgSend1(Center, sel_registerName('deliverNotification:'), NSReq);
         Exit;
       finally
         NSReq.Release;
