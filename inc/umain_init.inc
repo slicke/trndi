@@ -104,6 +104,30 @@ begin
   MacAppDelegate := TMyAppDelegate.alloc.init;
   NSApp.setDelegate(NSObject(MacAppDelegate));
 
+  // Register Apple Event handlers (AppleScript PoC)
+  try
+    var mgrClass := objc_getClass('NSAppleEventManager');
+    var mgr := objc_msgSend0(mgrClass, sel_registerName('sharedAppleEventManager'));
+    if mgr <> nil then
+    begin
+      var selSet := sel_registerName('setEventHandler:andSelector:forEventClass:andEventID:');
+      objc_msgSend4(mgr, selSet, MacAppDelegate,
+        sel_registerName('handleGetCurrentUser:withReplyEvent:'),
+        FourCharCode('Trnd'), FourCharCode('gcur'));
+      objc_msgSend4(mgr, selSet, MacAppDelegate,
+        sel_registerName('handleGetCurrentNickname:withReplyEvent:'),
+        FourCharCode('Trnd'), FourCharCode('gnic'));
+      objc_msgSend4(mgr, selSet, MacAppDelegate,
+        sel_registerName('handleGetCurrentReading:withReplyEvent:'),
+        FourCharCode('Trnd'), FourCharCode('grea'));
+      objc_msgSend4(mgr, selSet, MacAppDelegate,
+        sel_registerName('handlePredictReadings:withReplyEvent:'),
+        FourCharCode('Trnd'), FourCharCode('pred'));
+    end;
+  except
+    // Ignore registration errors in PoC
+  end;
+
   Application.Title := 'Trndi';
   {$ENDIF}
   AppMenu := TMenuItem.Create(Self); // Application menu

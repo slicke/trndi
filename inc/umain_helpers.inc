@@ -107,6 +107,34 @@ end;
 
 {$IFDEF DARWIN}
 
+// ObjC runtime / CoreFoundation imports for Apple Event handling
+const
+  ObjCLib = '/usr/lib/libobjc.A.dylib';
+  CFLib   = '/System/Library/Frameworks/CoreFoundation.framework/CoreFoundation';
+  kCFStringEncodingUTF8 = $08000100;
+
+type
+  id  = Pointer;
+  SEL = Pointer;
+
+// ObjC runtime helpers
+function objc_getClass(name: MarshaledAString): id;        cdecl; external ObjCLib;
+function sel_registerName(name: MarshaledAString): SEL;    cdecl; external ObjCLib;
+function CFStringCreateWithCString(alloc: Pointer; cStr: MarshaledAString; encoding: longword): Pointer; cdecl; external CFLib;
+function CFRelease(cf: Pointer); cdecl; external CFLib;
+
+function objc_msgSend0(obj: id; sel: SEL): id; cdecl; external ObjCLib name 'objc_msgSend';
+function objc_msgSend1(obj: id; sel: SEL; p1: id): id; cdecl; external ObjCLib name 'objc_msgSend';
+function objc_msgSend2(obj: id; sel: SEL; p1: id; p2: UInt32): id; cdecl; external ObjCLib name 'objc_msgSend';
+function objc_msgSend4(obj: id; sel: SEL; p1: id; p2: SEL; p3: UInt32; p4: UInt32): id; cdecl; external ObjCLib name 'objc_msgSend';
+
+// Helper to encode four-char OSType codes
+function FourCharCode(const s: string): UInt32;
+begin
+  if Length(s) <> 4 then Exit(0);
+  Result := (Ord(s[1]) shl 24) or (Ord(s[2]) shl 16) or (Ord(s[3]) shl 8) or Ord(s[4]);
+end;
+
 procedure TMyAppDelegate.miSettingsMacClick(sender: id);
 begin
   (Application.MainForm as TfBG).miSettingsClick(nil);
@@ -147,8 +175,133 @@ begin
   Application.MainForm.Show;
   Application.MainForm.BringToFront;
   Result := true;
-
 end;
+
+// ---------------- AppleScript handlers ----------------
+// These handlers set a string result into the reply event (as a simple PoC).
+procedure TMyAppDelegate.handleGetCurrentUser_withReplyEvent_(command: id; replyEvent: id);
+var
+  userName: string;
+  cfStr: Pointer;
+  desc: id;
+  selSetDesc: SEL;
+begin
+  userName := (Application.MainForm as TfBG).multinick;
+  cfStr := CFStringCreateWithCString(nil, pchar(userName), kCFStringEncodingUTF8);
+  desc := objc_msgSend1(objc_getClass('NSAppleEventDescriptor'), sel_registerName('descriptorWithString:'), cfStr);
+  selSetDesc := sel_registerName('setDescriptor:forKeyword:');
+  objc_msgSend2(replyEvent, selSetDesc, desc, FourCharCode('----'));
+  CFRelease(cfStr);
+end;
+
+procedure TMyAppDelegate.handleGetCurrentNickname_withReplyEvent_(command: id; replyEvent: id);
+var
+  nick: string;
+  cfStr: Pointer;
+  desc: id;
+  selSetDesc: SEL;
+begin
+  nick := (Application.MainForm as TfBG).multinick;
+  cfStr := CFStringCreateWithCString(nil, pchar(nick), kCFStringEncodingUTF8);
+  desc := objc_msgSend1(objc_getClass('NSAppleEventDescriptor'), sel_registerName('descriptorWithString:'), cfStr);
+  selSetDesc := sel_registerName('setDescriptor:forKeyword:');
+  objc_msgSend2(replyEvent, selSetDesc, desc, FourCharCode('----'));
+  CFRelease(cfStr);
+end;
+
+procedure TMyAppDelegate.handleGetCurrentReading_withReplyEvent_(command: id; replyEvent: id);
+var
+  bg: BGReading;
+  ok: boolean;
+  payload: string;
+  cfStr: Pointer;
+  desc: id;
+  selSetDesc: SEL;
+  jo: TJSONObject;
+  fs: TFormatSettings;
+begin
+  ok := (Application.MainForm as TfBG).tryLastReading(bg);
+  if not ok then
+  begin
+    // No reading available — keep legacy behaviour
+    payload := 'false';
+  end
+  else
+  begin
+    fs.DecimalSeparator := '.';
+    jo := TJSONObject.Create;
+    try
+      jo.Add('value_system', FormatFloat('0.0', bg.convert(mmol, BGPrimary), fs));
+      jo.Add('value_mgdl', Round(bg.val));
+      jo.Add('value_mmol', FormatFloat('0.00', bg.convert(mmol, BGPrimary), fs));
+      jo.Add('delta_mgdl', Round(bg.delta));
+      jo.Add('delta_mmol', FormatFloat('0.00', bg.convert(mmol, BGDelta), fs));
+      jo.Add('direction', bg.direction);
+      jo.Add('timestamp', DateTimeToStr(bg.date));
+      jo.Add('age_seconds', SecondsBetween(Now, bg.date));
+      payload := jo.AsJSON;
+    finally
+      jo.Free;
+    end;
+  end;
+
+  cfStr := CFStringCreateWithCString(nil, pchar(payload), kCFStringEncodingUTF8);
+  desc := objc_msgSend1(objc_getClass('NSAppleEventDescriptor'), sel_registerName('descriptorWithString:'), cfStr);
+  selSetDesc := sel_registerName('setDescriptor:forKeyword:');
+  objc_msgSend2(replyEvent, selSetDesc, desc, FourCharCode('----'));
+  CFRelease(cfStr);
+end;
+
+procedure TMyAppDelegate.handlePredictReadings_withReplyEvent_(command: id; replyEvent: id);
+var
+  preds: BGResults;
+  payload: string;
+  cfStr: Pointer;
+  desc: id;
+  selSetDesc: SEL;
+  ja: TJSONArray;
+  jo: TJSONObject;
+  fs: TFormatSettings;
+  i: integer;
+begin
+  preds := (Application.MainForm as TfBG).GetPredictionsForWeb();
+  if (Length(preds) = 0) then
+  begin
+    jo := TJSONObject.Create;
+    try
+      jo.Add('status', 'not available');
+      payload := jo.AsJSON;
+    finally
+      jo.Free;
+    end;
+  end
+  else
+  begin
+    fs.DecimalSeparator := '.';
+    ja := TJSONArray.Create;
+    try
+      for i := Low(preds) to High(preds) do
+      begin
+        jo := TJSONObject.Create;
+        jo.Add('mgdl', round(preds[i].val));
+        jo.Add('mmol', FormatFloat('0.00', preds[i].convert(mmol, BGPrimary), fs));
+        jo.Add('timestamp', DateTimeToStr(preds[i].date));
+        ja.Add(jo);
+      end;
+      payload := ja.AsJSON;
+    finally
+      ja.Free;
+    end;
+  end;
+
+  cfStr := CFStringCreateWithCString(nil, pchar(payload), kCFStringEncodingUTF8);
+  desc := objc_msgSend1(objc_getClass('NSAppleEventDescriptor'), sel_registerName('descriptorWithString:'), cfStr);
+  selSetDesc := sel_registerName('setDescriptor:forKeyword:');
+  objc_msgSend2(replyEvent, selSetDesc, desc, FourCharCode('----'));
+  CFRelease(cfStr);
+end;
+end;
+
 {$ENDIF}
 
 procedure TfBG.AppExceptionHandler(Sender: TObject; E: Exception);

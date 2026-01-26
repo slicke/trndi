@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE dictionary SYSTEM "file://localhost/System/Library/DTDs/sdef.dtd">
+<dictionary title="Trndi">
+  <suite name="Trndi Suite" code="Trnd">
+    <command name="getCurrentUser" code="gcur">
+      <result type="text">Current user id</result>
+    </command>
+    <command name="getCurrentNickname" code="gnic">
+      <result type="text">Current user display nickname</result>
+    </command>
+    <command name="getCurrentReading" code="grea">
+      <result type="text">Current reading as JSON</result>
+    </command>
+    <command name="predictReadings" code="pred">
+      <result type="text">Predicted readings or status</result>
+    </command>
+  </suite>
+</dictionary>

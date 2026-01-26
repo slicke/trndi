@@ -70,6 +70,13 @@ if [ -d "${ROOT_DIR}/lang" ]; then
   cp -r "${ROOT_DIR}/lang" macos/Trndi.app/Contents/MacOS/
 fi
 
+# Install AppleScript dictionary if provided (PoC)
+if [ -f "${ROOT_DIR}/mac/Trndi.sdef" ]; then
+  mkdir -p macos/Trndi.app/Contents/Resources
+  cp "${ROOT_DIR}/mac/Trndi.sdef" macos/Trndi.app/Contents/Resources/Trndi.sdef
+  chmod 644 macos/Trndi.app/Contents/Resources/Trndi.sdef
+fi
+
 # Create icons
 mkdir macos/Trndi.iconset
 

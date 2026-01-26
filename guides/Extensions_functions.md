@@ -213,6 +213,27 @@ function updateCallback() {
 }
 ```
 
+### AppleScript (macOS)
+If you build Trndi for macOS with AppleScript support enabled (PoC), a minimal AppleScript dictionary is added and the following commands become available to Script Editor or other automation tools. Results are returned as simple text (JSON for `getCurrentReading()` in the PoC).
+
+```applescript
+-- Get current user id
+tell application "Trndi" to getCurrentUser
+
+-- Get current display nickname
+tell application "Trndi" to getCurrentNickname
+
+-- Get current reading (PoC returns a small JSON string or "false" if no reading available)
+tell application "Trndi" to getCurrentReading
+
+-- Get predictions (PoC returns "not available" when engine is missing)
+tell application "Trndi" to predictReadings
+```
+
+> Note: this PoC is guarded by conditional compilation (`{$IFDEF DARWIN}`) and `predictReadings` may return `"not available"` on macOS until the extensions engine is available.
+
+**Packaging note:** When building the macOS app bundle, include `mac/Trndi.sdef` in the app's `Contents/Resources/` directory (as `Trndi.sdef`) so Script Editor and other tools can discover the AppleScript dictionary. The provided `dist/macos.sh` and `dist/macos_dev.sh` scripts will copy this file into the bundle when present.
+
 ### getLimits
 #### Get current CGM threshold limits
 Returns the configured high/low limits and target ranges.
