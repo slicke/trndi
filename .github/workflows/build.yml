@@ -198,152 +198,157 @@ jobs:
           [ -d "lang" ] && cp -r lang artifacts/
           7z a -tzip Trndi-linux-${{ matrix.arch }}.zip ./artifacts/* >/dev/null
 
-          # Create DEB & RPM installers (with icon inside system paths)
-          sudo apt-get install -y ruby ruby-dev build-essential rpm
-          sudo gem install --no-document fpm
+          # If this is a pull request build, skip packaging, signing and AppImage creation
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "PR build detected: skipping DEB/RPM packaging, signing and AppImage (post-lazbuild steps)"
+          else
+            # Create DEB & RPM installers (with icon inside system paths)
+            sudo apt-get install -y ruby ruby-dev build-essential rpm
+            sudo gem install --no-document fpm
 
-          # fpm maintainer scripts (optional)
-          chmod +x dist/linux/after-install.sh dist/linux/after-remove.sh || true
-          PKG_DIR="pkgroot"
-          mkdir -p "$PKG_DIR/usr/local/trndi"
-          cp Trndi "$PKG_DIR/usr/local/trndi/"
-          [ -d "lang" ] && cp -r lang "$PKG_DIR/usr/local/trndi/"
+            # fpm maintainer scripts (optional)
+            chmod +x dist/linux/after-install.sh dist/linux/after-remove.sh || true
+            PKG_DIR="pkgroot"
+            mkdir -p "$PKG_DIR/usr/local/trndi"
+            cp Trndi "$PKG_DIR/usr/local/trndi/"
+            [ -d "lang" ] && cp -r lang "$PKG_DIR/usr/local/trndi/"
 
-          # Optional GNOME Shell top-bar indicator extension source
-          if [ -d "gnome-shell-extension/trndi-current" ]; then
-            mkdir -p "$PKG_DIR/usr/local/share/trndi/gnome-shell-extension"
-            cp -r "gnome-shell-extension/trndi-current" \
-              "$PKG_DIR/usr/local/share/trndi/gnome-shell-extension/trndi-current@slicke.com"
-          fi
+            # Optional GNOME Shell top-bar indicator extension source
+            if [ -d "gnome-shell-extension/trndi-current" ]; then
+              mkdir -p "$PKG_DIR/usr/local/share/trndi/gnome-shell-extension"
+              cp -r "gnome-shell-extension/trndi-current" \
+                "$PKG_DIR/usr/local/share/trndi/gnome-shell-extension/trndi-current@slicke.com"
+            fi
 
-          # Optional KDE Plasma plasmoid (panel widget) source
-          if [ -d "kde-plasmoid/trndi-current" ]; then
-            mkdir -p "$PKG_DIR/usr/local/share/trndi/kde-plasmoid"
-            cp -r "kde-plasmoid/trndi-current" \
-              "$PKG_DIR/usr/local/share/trndi/kde-plasmoid/com.slicke.trndi.current"
-          fi
-          mkdir -p "$PKG_DIR/usr/share/pixmaps"
-          [ -f "Trndi.png" ] && cp Trndi.png "$PKG_DIR/usr/share/pixmaps/"
-          ICON=Trndi
-          mkdir -p "$PKG_DIR/usr/share/applications"
-          echo "[Desktop Entry]
-          Name=Trndi
-          GenericName=GCM Viewer
-          X-GNOME-FullName=Trndi
-          X-KDE-FullName=Trndi
-          X-Unity-FullName=Trndi
-          X-KDE-Keywords=trndi;gcm;glucose;monitoring;
-          X-DBUS-ServiceName=com.slicke.trndi
-          X-DBUS-StartupType=Multi
-          Comment=Blood glucose monitoring application
-          Exec=/usr/local/trndi/Trndi %U
-          Icon=${ICON}
-          Type=Application
-          Categories=Utility;" > "$PKG_DIR/usr/share/applications/trndi.desktop"
-          # Determine package version from Trndi.lpi (Major.Minor.<build>)
-          MAJOR=$(sed -n -E 's/.*<MajorVersionNr[^>]*Value="([0-9]+)".*/\1/p' Trndi.lpi | head -n1)
-          MINOR=$(sed -n -E 's/.*<MinorVersionNr[^>]*Value="([0-9]+)".*/\1/p' Trndi.lpi | head -n1)
-          MAJOR=${MAJOR:-0}
-          MINOR=${MINOR:-0}
-          PKG_VERSION="${MAJOR}.${MINOR}.${{ needs.version.outputs.build_number }}"
-          echo "Packaging version: ${PKG_VERSION}"
+            # Optional KDE Plasma plasmoid (panel widget) source
+            if [ -d "kde-plasmoid/trndi-current" ]; then
+              mkdir -p "$PKG_DIR/usr/local/share/trndi/kde-plasmoid"
+              cp -r "kde-plasmoid/trndi-current" \
+                "$PKG_DIR/usr/local/share/trndi/kde-plasmoid/com.slicke.trndi.current"
+            fi
+            mkdir -p "$PKG_DIR/usr/share/pixmaps"
+            [ -f "Trndi.png" ] && cp Trndi.png "$PKG_DIR/usr/share/pixmaps/"
+            ICON=Trndi
+            mkdir -p "$PKG_DIR/usr/share/applications"
+            echo "[Desktop Entry]
+            Name=Trndi
+            GenericName=GCM Viewer
+            X-GNOME-FullName=Trndi
+            X-KDE-FullName=Trndi
+            X-Unity-FullName=Trndi
+            X-KDE-Keywords=trndi;gcm;glucose;monitoring;
+            X-DBUS-ServiceName=com.slicke.trndi
+            X-DBUS-StartupType=Multi
+            Comment=Blood glucose monitoring application
+            Exec=/usr/local/trndi/Trndi %U
+            Icon=${ICON}
+            Type=Application
+            Categories=Utility;" > "$PKG_DIR/usr/share/applications/trindi.desktop"
+            # Determine package version from Trndi.lpi (Major.Minor.<build>)
+            MAJOR=$(sed -n -E 's/.*<MajorVersionNr[^>]*Value="([0-9]+)".*/\1/p' Trndi.lpi | head -n1)
+            MINOR=$(sed -n -E 's/.*<MinorVersionNr[^>]*Value="([0-9]+)".*/\1/p' Trndi.lpi | head -n1)
+            MAJOR=${MAJOR:-0}
+            MINOR=${MINOR:-0}
+            PKG_VERSION="${MAJOR}.${MINOR}.${{ needs.version.outputs.build_number }}"
+            echo "Packaging version: ${PKG_VERSION}"
 
-          FPM_SCRIPTS=()
-          [ -f dist/linux/after-install.sh ] && FPM_SCRIPTS+=(--after-install dist/linux/after-install.sh)
-          [ -f dist/linux/after-remove.sh ] && FPM_SCRIPTS+=(--after-remove dist/linux/after-remove.sh)
+            FPM_SCRIPTS=()
+            [ -f dist/linux/after-install.sh ] && FPM_SCRIPTS+=(--after-install dist/linux/after-install.sh)
+            [ -f dist/linux/after-remove.sh ] && FPM_SCRIPTS+=(--after-remove dist/linux/after-remove.sh)
 
-          fpm -s dir -t deb -n trndi -v "${PKG_VERSION}" --architecture ${{ matrix.deb_arch }} --license "GPLv3" --description "Trndi CGM Viewer" "${FPM_SCRIPTS[@]}" -C "$PKG_DIR" .
-          fpm -s dir -t rpm -n trndi -v "${PKG_VERSION}" --architecture ${{ matrix.rpm_arch }} --license "GPLv3" --description "Trndi CGM Viewer" "${FPM_SCRIPTS[@]}" -C "$PKG_DIR" .
-          
-          # Sign packages if GPG key is available
-          if [ -n "${{ secrets.GPG_PRIVATE_KEY }}" ]; then
-            echo "GPG key available, signing packages..."
-            sudo apt-get update
-            sudo apt-get install -y debsigs rpm
+            fpm -s dir -t deb -n trndi -v "${PKG_VERSION}" --architecture ${{ matrix.deb_arch }} --license "GPLv3" --description "Trndi CGM Viewer" "${FPM_SCRIPTS[@]}" -C "$PKG_DIR" .
+            fpm -s dir -t rpm -n trndi -v "${PKG_VERSION}" --architecture ${{ matrix.rpm_arch }} --license "GPLv3" --description "Trndi CGM Viewer" "${FPM_SCRIPTS[@]}" -C "$PKG_DIR" .
             
-            # Import GPG key and extract key ID
-            echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import 2>&1
-            GPG_KEY_ID=$(gpg --list-secret-keys --keyid-format=long | grep -A 1 "^sec" | grep -oP '[A-F0-9]{16}' | head -1)
-            echo "Using GPG key: ${GPG_KEY_ID}"
-            
-            # Verify key was imported
-            if [ -z "${GPG_KEY_ID}" ]; then
-              echo "Error: Failed to extract GPG key ID"
-              exit 1
+            # Sign packages if GPG key is available
+            if [ -n "${{ secrets.GPG_PRIVATE_KEY }}" ]; then
+              echo "GPG key available, signing packages..."
+              sudo apt-get update
+              sudo apt-get install -y debsigs rpm
+              
+              # Import GPG key and extract key ID
+              echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import 2>&1
+              GPG_KEY_ID=$(gpg --list-secret-keys --keyid-format=long | grep -A 1 "^sec" | grep -oP '[A-F0-9]{16}' | head -1)
+              echo "Using GPG key: ${GPG_KEY_ID}"
+              
+              # Verify key was imported
+              if [ -z "${GPG_KEY_ID}" ]; then
+                echo "Error: Failed to extract GPG key ID"
+                exit 1
+              fi
+              
+              # Configure RPM macros for signing (create file, not directory)
+              echo "%_gpg_name ${GPG_KEY_ID}" > ~/.rpmmacros
+              echo "%__gpg /usr/bin/gpg" >> ~/.rpmmacros
+              echo "%_gpg_digest_algo sha256" >> ~/.rpmmacros
+              echo "%__gpg_sign_cmd %{__gpg} --batch --pinentry-mode loopback --passphrase '${{ secrets.GPG_PASSPHRASE }}' --no-verbose --no-armor --no-secmem-warning -u %{_gpg_name} -sbo %{__signature_filename} %{__plaintext_filename}" >> ~/.rpmmacros
+              
+              # Configure GPG for batch mode with passphrase
+              mkdir -p ~/.gnupg
+              chmod 700 ~/.gnupg
+              echo "use-agent" > ~/.gnupg/gpg.conf
+              echo "pinentry-mode loopback" >> ~/.gnupg/gpg.conf
+              echo "allow-loopback-pinentry" > ~/.gnupg/gpg-agent.conf
+              
+              # Restart gpg-agent
+              gpgconf --kill gpg-agent 2>/dev/null || true
+              gpgconf --launch gpg-agent
+              
+              # Sign DEB package manually (ar-sig format)
+              DEB_FILE=$(ls trndi_*${{ matrix.deb_arch }}.deb)
+              echo "Signing DEB: ${DEB_FILE}"
+              
+              # Create detached signature for the DEB
+              cat "${DEB_FILE}" | gpg --batch --yes --pinentry-mode loopback --passphrase "${{ secrets.GPG_PASSPHRASE }}" --armor --detach-sign --default-key "${GPG_KEY_ID}" > "${DEB_FILE}.asc"
+              echo "DEB signature created: ${DEB_FILE}.asc"
+              
+              # Sign RPM package
+              RPM_FILE=$(ls trndi-*.${{ matrix.rpm_arch }}.rpm)
+              echo "Signing RPM: ${RPM_FILE}"
+              rpm --addsign "${RPM_FILE}"
+              
+              # Verify signatures were created
+              echo "Verifying signatures..."
+              gpg --verify "${DEB_FILE}.asc" "${DEB_FILE}" && echo "✓ DEB signature verified" || echo "✗ DEB signature verification failed"
+              
+              # Import public key to RPM for verification
+              gpg --armor --export "${GPG_KEY_ID}" > /tmp/rpm-public-key.asc
+              rpm --import /tmp/rpm-public-key.asc
+              rpm --checksig "${RPM_FILE}" && echo "✓ RPM signature verified" || echo "✗ RPM signature verification failed"
+              
+              echo "Packages signed successfully"
+            else
+              echo "No GPG key configured, skipping package signing"
             fi
             
-            # Configure RPM macros for signing (create file, not directory)
-            echo "%_gpg_name ${GPG_KEY_ID}" > ~/.rpmmacros
-            echo "%__gpg /usr/bin/gpg" >> ~/.rpmmacros
-            echo "%_gpg_digest_algo sha256" >> ~/.rpmmacros
-            echo "%__gpg_sign_cmd %{__gpg} --batch --pinentry-mode loopback --passphrase '${{ secrets.GPG_PASSPHRASE }}' --no-verbose --no-armor --no-secmem-warning -u %{_gpg_name} -sbo %{__signature_filename} %{__plaintext_filename}" >> ~/.rpmmacros
+            mv trndi_*${{ matrix.deb_arch }}.deb artifacts/
+            mv trndi-*.${{ matrix.rpm_arch }}.rpm artifacts/
+            # Move signature files if they exist
+            [ -f trndi_*${{ matrix.deb_arch }}.deb.asc ] && mv trndi_*${{ matrix.deb_arch }}.deb.asc artifacts/ || true
             
-            # Configure GPG for batch mode with passphrase
-            mkdir -p ~/.gnupg
-            chmod 700 ~/.gnupg
-            echo "use-agent" > ~/.gnupg/gpg.conf
-            echo "pinentry-mode loopback" >> ~/.gnupg/gpg.conf
-            echo "allow-loopback-pinentry" > ~/.gnupg/gpg-agent.conf
-            
-            # Restart gpg-agent
-            gpgconf --kill gpg-agent 2>/dev/null || true
-            gpgconf --launch gpg-agent
-            
-            # Sign DEB package manually (ar-sig format)
-            DEB_FILE=$(ls trndi_*${{ matrix.deb_arch }}.deb)
-            echo "Signing DEB: ${DEB_FILE}"
-            
-            # Create detached signature for the DEB
-            cat "${DEB_FILE}" | gpg --batch --yes --pinentry-mode loopback --passphrase "${{ secrets.GPG_PASSPHRASE }}" --armor --detach-sign --default-key "${GPG_KEY_ID}" > "${DEB_FILE}.asc"
-            echo "DEB signature created: ${DEB_FILE}.asc"
-            
-            # Sign RPM package
-            RPM_FILE=$(ls trndi-*.${{ matrix.rpm_arch }}.rpm)
-            echo "Signing RPM: ${RPM_FILE}"
-            rpm --addsign "${RPM_FILE}"
-            
-            # Verify signatures were created
-            echo "Verifying signatures..."
-            gpg --verify "${DEB_FILE}.asc" "${DEB_FILE}" && echo "✓ DEB signature verified" || echo "✗ DEB signature verification failed"
-            
-            # Import public key to RPM for verification
-            gpg --armor --export "${GPG_KEY_ID}" > /tmp/rpm-public-key.asc
-            rpm --import /tmp/rpm-public-key.asc
-            rpm --checksig "${RPM_FILE}" && echo "✓ RPM signature verified" || echo "✗ RPM signature verification failed"
-            
-            echo "Packages signed successfully"
-          else
-            echo "No GPG key configured, skipping package signing"
-          fi
-          
-          mv trndi_*${{ matrix.deb_arch }}.deb artifacts/
-          mv trndi-*.${{ matrix.rpm_arch }}.rpm artifacts/
-          # Move signature files if they exist
-          [ -f trndi_*${{ matrix.deb_arch }}.deb.asc ] && mv trndi_*${{ matrix.deb_arch }}.deb.asc artifacts/ || true
-          
-          # Include public signing key if available (for users to verify signatures)
-          if [ -f "doc/trndi-signing-key.asc" ]; then
-            cp doc/trndi-signing-key.asc artifacts/
-            echo "Included public signing key in artifacts"
-          fi
+            # Include public signing key if available (for users to verify signatures)
+            if [ -f "doc/trndi-signing-key.asc" ]; then
+              cp doc/trndi-signing-key.asc artifacts/
+              echo "Included public signing key in artifacts"
+            fi
 
-          # ===================== BUILD APPIMAGE =====================
-          echo "Building AppImage..."
-          chmod +x dist/linux/build-appimage.sh
-          
-          # Set version for AppImage
-          export VERSION="${PKG_VERSION}"
-          
-          # Build AppImage (script handles architecture detection)
-          if [ "${{ matrix.arch }}" = "amd64" ]; then
-            dist/linux/build-appimage.sh x86_64
-            mv Trndi-x86_64.AppImage artifacts/
-          else
-            dist/linux/build-appimage.sh aarch64
-            mv Trndi-aarch64.AppImage artifacts/
+            # ===================== BUILD APPIMAGE =====================
+            echo "Building AppImage..."
+            chmod +x dist/linux/build-appimage.sh
+            
+            # Set version for AppImage
+            export VERSION="${PKG_VERSION}"
+            
+            # Build AppImage (script handles architecture detection)
+            if [ "${{ matrix.arch }}" = "amd64" ]; then
+              dist/linux/build-appimage.sh x86_64
+              mv Trndi-x86_64.AppImage artifacts/
+            else
+              dist/linux/build-appimage.sh aarch64
+              mv Trndi-aarch64.AppImage artifacts/
+            fi
+            
+            echo "✓ AppImage build complete"
           fi
-          
-          echo "✓ AppImage build complete"
 
       # ===================== MACOS BUILDER =====================
       - name: Build on macOS
@@ -407,15 +412,20 @@ jobs:
           # Build Trndi
           lazbuild externals/mORMot2/packages/lazarus/mormot2.lpk
           lazbuild --build-mode="No Ext (Release)" --ws=cocoa --cpu=aarch64 --os=darwin Trndi.lpi
-          # Package zip & dmg
-          mkdir -p artifacts
-          cp Trndi artifacts/
-          [ -d "lang" ] && cp -r lang artifacts/
-          7z a -tzip Trndi-macos-silicon.zip ./artifacts/* >/dev/null
-          chmod +x dist/macos.sh
-          if [ -d "lang" ]; then cp -r lang dist/; fi
-          (cd dist && ./macos.sh)
-          mv dist/Trndi.dmg Trndi-macos-silicon.dmg
+          # If this is a pull request build, skip packaging (zip & dmg)
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "PR build detected: skipping macOS packaging (zip & dmg)"
+          else
+            # Package zip & dmg
+            mkdir -p artifacts
+            cp Trndi artifacts/
+            [ -d "lang" ] && cp -r lang artifacts/
+            7z a -tzip Trndi-macos-silicon.zip ./artifacts/* >/dev/null
+            chmod +x dist/macos.sh
+            if [ -d "lang" ]; then cp -r lang dist/; fi
+            (cd dist && ./macos.sh)
+            mv dist/Trndi.dmg Trndi-macos-silicon.dmg
+          fi
 
       # ===================== WINDOWS BUILDER =====================
       - name: Build on Windows
@@ -473,30 +483,35 @@ jobs:
           Copy-Item '.\Trndi.exe' -Destination '.\artifacts\'
           if (Test-Path '.\lang') { Copy-Item '.\lang' -Destination '.\artifacts\lang' -Recurse }
           & 'C:\Program Files\7-Zip\7z.exe' a -tzip 'Trndi-windows-x64.zip' .\artifacts\* | Out-Null
-          # Build Inno Setup installer
-          choco install innosetup -y
-          & 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe' '.\dist\windows_setup.iss'
-          # Move the generated installer to the root for easier artifact upload
-          Move-Item '.\dist\Output\TrndiSetup.exe' '.\TrndiSetup.exe'
-          # Build NuGet package
-          choco install nuget.commandline -y
-          # Determine package version from Trndi.lpi (Major.Minor.<build>)
-          [xml]$lpi = Get-Content 'Trndi.lpi'
-          $MAJOR = $lpi.CONFIG.ProjectOptions.VersionInfo.MajorVersionNr.Value
-          $MINOR = $lpi.CONFIG.ProjectOptions.VersionInfo.MinorVersionNr.Value
-          if ([string]::IsNullOrEmpty($MAJOR)) { $MAJOR = "0" }
-          if ([string]::IsNullOrEmpty($MINOR)) { $MINOR = "0" }
-          $PKG_VERSION = "$MAJOR.$MINOR.${{ needs.version.outputs.build_number }}"
-          Write-Host "Packaging version: $PKG_VERSION"
-          # Update nuspec with actual version
-          $nuspecContent = Get-Content 'dist\trndi.nuspec' -Raw
-          $nuspecContent = $nuspecContent -replace 'VERSION_PLACEHOLDER', $PKG_VERSION
-          $nuspecContent | Set-Content 'dist\trndi.nuspec' -Encoding UTF8
-          # Pack the NuGet package
-          & nuget pack 'dist\trndi.nuspec' -OutputDirectory '.'
-          # Publish to GitHub Packages
-          & nuget sources Add -Name "GitHub" -Source "https://nuget.pkg.github.com/slicke/index.json" -UserName slicke -Password ${{ secrets.GITHUB_TOKEN }}
-          & nuget push trndi.*.nupkg -Source "GitHub" -SkipDuplicate
+          # If this is a pull request build, skip Windows installers and NuGet publish
+          if ("${{ github.event_name }}" -eq "pull_request") {
+            Write-Host "PR build detected: skipping Inno Setup installer and NuGet packaging/publish"
+          } else {
+            # Build Inno Setup installer
+            choco install innosetup -y
+            & 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe' '.\dist\windows_setup.iss'
+            # Move the generated installer to the root for easier artifact upload
+            Move-Item '.\dist\Output\TrndiSetup.exe' '.\TrndiSetup.exe'
+            # Build NuGet package
+            choco install nuget.commandline -y
+            # Determine package version from Trndi.lpi (Major.Minor.<build>)
+            [xml]$lpi = Get-Content 'Trndi.lpi'
+            $MAJOR = $lpi.CONFIG.ProjectOptions.VersionInfo.MajorVersionNr.Value
+            $MINOR = $lpi.CONFIG.ProjectOptions.VersionInfo.MinorVersionNr.Value
+            if ([string]::IsNullOrEmpty($MAJOR)) { $MAJOR = "0" }
+            if ([string]::IsNullOrEmpty($MINOR)) { $MINOR = "0" }
+            $PKG_VERSION = "$MAJOR.$MINOR.${{ needs.version.outputs.build_number }}"
+            Write-Host "Packaging version: $PKG_VERSION"
+            # Update nuspec with actual version
+            $nuspecContent = Get-Content 'dist\trndi.nuspec' -Raw
+            $nuspecContent = $nuspecContent -replace 'VERSION_PLACEHOLDER', $PKG_VERSION
+            $nuspecContent | Set-Content 'dist\trndi.nuspec' -Encoding UTF8
+            # Pack the NuGet package
+            & nuget pack 'dist\trndi.nuspec' -OutputDirectory '.'
+            # Publish to GitHub Packages
+            & nuget sources Add -Name "GitHub" -Source "https://nuget.pkg.github.com/slicke/index.json" -UserName slicke -Password ${{ secrets.GITHUB_TOKEN }}
+            & nuget push trndi.*.nupkg -Source "GitHub" -SkipDuplicate
+          }
 
       # ===================== UPLOAD ARTIFACTS =====================
       - name: Upload Actions artifact
