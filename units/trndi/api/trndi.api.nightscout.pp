@@ -126,6 +126,14 @@ public
     {** Test NightScout credentials
     }
   class function testConnection(user, pass, extra: string): byte; override;
+
+  function getMaxAge: integer; override;
+
+    {** Retrieve the current basal rate from the Nightscout server.
+        Fetches basal rate data from the server's profile/basal endpoints.
+        @returns(Current basal rate in U/hr, or 0 if unavailable)
+     }
+  function getBasalRate: single; override;
 private
     // (no private members)
 
@@ -147,6 +155,40 @@ sParamDesc = 'NightScout v2 setup (use FULL access token):' + #13#10#13#10 +
   '4) In Trndi:' + #13#10 + '   - Address: enter your NightScout URL' + #13#10 +
   '   - Auth: paste the FULL access token (not just a suffix).' + #13#10 + #13#10 +
   'Note: If you instead use the legacy API Secret, paste your API Secret value as-is.';
+sParamDescHTML =
+  '<div style="font-family: Arial, sans-serif; line-height: 1.6;">' +
+  '<h2 style="margin-bottom: 10px;">🌙 NightScout v2 Setup</h2>' +
+  '<p style="color: #7f8c8d; font-style: italic; margin-bottom: 15px;">(use FULL access token)</p>' +
+  '<ol style="padding-left: 20px;">' +
+  '<li style="margin-bottom: 10px;">Open your NightScout site (e.g., <code style="background: #6495ED; padding: 2px 6px; border-radius: 3px;">https://your-site</code>).</li>' +
+  '<li style="margin-bottom: 10px;">Go to <strong>Admin → Tokens</strong> — or <strong>API Secret</strong>.</li>' +
+  '<li style="margin-bottom: 10px;">If you use Tokens:' +
+  '<ul style="margin-top: 5px; padding-left: 20px;">' +
+  '<li>Create a token with at least <strong>READ</strong> scope.</li>' +
+  '<li>Copy the <strong>FULL</strong> access token value exactly as shown.</li>' +
+  '</ul>' +
+  '</li>' +
+  '<li style="margin-bottom: 10px;">In Trndi:' +
+  '<ul style="margin-top: 5px; padding-left: 20px;">' +
+  '<li><strong>Address:</strong> enter your NightScout URL</li>' +
+  '<li><strong>Auth:</strong> paste the FULL access token (not just a suffix).</li>' +
+  '</ul>' +
+  '</li>' +
+  '</ol>' +
+  '<p style="border-left: 4px solid #ffc107; padding: 10px; margin-top: 15px;">' +
+  '<strong>⚠️ Note:</strong> If you instead use the legacy API Secret, paste your API Secret value as-is.</p>' +
+  '</div>';
+
+
+{------------------------------------------------------------------------------
+  getMaxAge
+  --------------------
+  Returns the maximum age (in minutes) of readings provided by the backend
+ ------------------------------------------------------------------------------}
+function NightScout.getMaxAge: integer;
+begin 
+  result := -1; // No specific maximum age enforced
+end;
 
 {------------------------------------------------------------------------------
   getSystemName
@@ -432,6 +474,8 @@ begin
     Result := sParamPassword;
   APLDesc:
     Result := sParamDesc;
+  APLDescHTML:
+    Result := sParamDescHTML;
   APLCopyright:
     Result := 'Björn Lindh <github.com/slicke>';
   else
@@ -539,6 +583,96 @@ end;
 function NightScout.getLimitLow: integer;
 begin
   result := 40;
+end;
+
+{------------------------------------------------------------------------------
+  getBasalRate
+  ------------
+  Retrieve the current basal rate from the Nightscout server.
+  This fetches basal rate data from the server's profile endpoints.
+ ------------------------------------------------------------------------------}
+function NightScout.getBasalRate: single;
+var
+  ResponseStr: string;
+  JSONParser: TJSONParser;
+  JSONData: TJSONData;
+  RootObject: TJSONObject;
+  StoreArray: TJSONArray;
+  DefaultProfile: TJSONObject;
+  BasalArray: TJSONArray;
+  BasalEntry: TJSONObject;
+  CurrentTime: TDateTime;
+  CurrentMinutes: integer;
+  i: integer;
+begin
+  result := 0;
+  
+  // Fetch basal rate from Nightscout API
+  try
+    ResponseStr := Native.Request(false, 'profile.json', [], '', Key);
+    
+    if Trim(ResponseStr) = '' then
+    begin
+      lastErr := 'No basal rate data received from server';
+      Exit;
+    end;
+
+    // Parse JSON response
+    JSONParser := TJSONParser.Create(ResponseStr, [joUTF8, joIgnoreTrailingComma]);
+    try
+      JSONData := JSONParser.Parse;
+      
+      if not (JSONData is TJSONObject) then
+      begin
+        JSONData.Free;
+        Exit;
+      end;
+      
+      RootObject := TJSONObject(JSONData);
+      
+      // Navigate to store array -> default profile -> basal array
+      StoreArray := RootObject.FindPath('store') as TJSONArray;
+      if Assigned(StoreArray) and (StoreArray.Count > 0) then
+      begin
+        DefaultProfile := StoreArray.Objects[0].FindPath('defaultProfile') as TJSONObject;
+        if not Assigned(DefaultProfile) then
+          DefaultProfile := StoreArray.Objects[0].FindPath('Default') as TJSONObject;
+          
+        if Assigned(DefaultProfile) then
+        begin
+          BasalArray := DefaultProfile.FindPath('basal') as TJSONArray;
+          if Assigned(BasalArray) and (BasalArray.Count > 0) then
+          begin
+            // Get current time in minutes since midnight
+            CurrentTime := Now;
+            CurrentMinutes := HourOf(CurrentTime) * 60 + MinuteOf(CurrentTime);
+            
+            // Find the applicable basal rate for current time
+            for i := BasalArray.Count - 1 downto 0 do
+            begin
+              BasalEntry := BasalArray.Objects[i];
+              if Assigned(BasalEntry) then
+              begin
+                // Basal entries have 'time' and 'value' fields
+                result := BasalEntry.Get('value', single(0));
+                break;
+              end;
+            end;
+          end;
+        end;
+      end;
+      
+      JSONData.Free;
+    finally
+      JSONParser.Free;
+    end;
+  except
+    on E: Exception do
+    begin
+      lastErr := 'Error fetching basal rate: ' + E.Message;
+      result := 0;
+    end;
+  end;
 end;
 
 end.

@@ -69,7 +69,9 @@ TfConf = class(TForm)
   bColorGraphHelp: TButton;
   bMultiUserHelp: TButton;
   bLanguageHelp: TButton;
+  bDeltaMaxHelp: TButton;
   bPredictHorizon: TButton;
+  bTimeStampHelp: TButton;
   bUseURLHelp: TButton;
   bThreasholdLinesHelp: TButton;
   bOutdatedHelp: TButton;
@@ -84,6 +86,7 @@ TfConf = class(TForm)
   bMinMinutesHelp: TButton;
   bTemplateTrend: TButton;
   bCustomRangeHelp: TButton;
+  bExtOpen: TButton;
   bWebAPI: TButton;
   bSysTouch: TButton;
   bTestAnnounce: TButton;
@@ -115,7 +118,13 @@ TfConf = class(TForm)
   cbPredictShortMinutes: TComboBox;
   cbPredictShortSize: TComboBox;
   cbPrivacy: TCheckBox;
+  eExt: TEdit;
+  Label25: TLabel;
+  lExt: TLabel;
   lSysWarnInfo: TLabel;
+  Panel18: TPanel;
+  Panel3: TPanel;
+  pnDeltaMax: TPanel;
   pnSysWarn: TPanel;
   rbPredictShortArrowOnly: TRadioButton;
   rbPredictShortShowValue: TRadioButton;
@@ -162,7 +171,6 @@ TfConf = class(TForm)
   eDotNow: TEdit;
   edTray: TSpinEdit;
   ePass: TEdit;
-  eExt: TEdit;
   edMusicHigh: TEdit;
   edMusicLow: TEdit;
   edMusicPerfect: TEdit;
@@ -242,7 +250,6 @@ TfConf = class(TForm)
   Label12: TLabel;
   Label15: TLabel;
   lPass: TLabel;
-  lExt: TLabel;
   lUserTrack: TLabel;
   Label4: TLabel;
   Label6: TLabel;
@@ -292,6 +299,7 @@ TfConf = class(TForm)
   rbUnit: TRadioGroup;
   seTIR: TSpinEdit;
   spTHRESHOLD: TSpinEdit;
+  spDeltaMax: TSpinEdit;
   tsAdvanced: TTabSheet;
   tsTir: TTabSheet;
   tsChroma: TTabSheet;
@@ -310,11 +318,13 @@ TfConf = class(TForm)
   procedure bBadgeFlashHelpClick(Sender: TObject);
   procedure bColorGraphHelpClick(Sender: TObject);
   procedure bCustomRangeHelpClick(Sender: TObject);
+  procedure bExtOpenClick(Sender: TObject);
   procedure bLanguageHelpClick(Sender: TObject);
   procedure bLimitsClick(Sender: TObject);
   procedure bMinMinutesHelpClick(Sender: TObject);
   procedure bMultiUserHelpClick(Sender: TObject);
   procedure bNotificationHelpClick(Sender: TObject);
+  procedure bDeltaMaxHelpClick(Sender: TObject);
   procedure bOutdatedHelpClick(Sender: TObject);
   procedure bOverrideHelpClick(Sender: TObject);
   procedure bPredictHelpClick(Sender: TObject);
@@ -330,6 +340,7 @@ TfConf = class(TForm)
   procedure bTestClick(Sender: TObject);
   procedure bTestSpeechClick(Sender: TObject);
   procedure bThreasholdLinesHelpClick(Sender: TObject);
+  procedure bTimeStampHelpClick(Sender: TObject);
   procedure btResetClick(Sender: TObject);
   procedure btUserSaveClick(Sender: TObject);
   procedure bUseURLHelpClick(Sender: TObject);
@@ -363,6 +374,7 @@ TfConf = class(TForm)
   procedure lbUsersEnter(Sender: TObject);
   procedure lbUsersSelectionChange(Sender: TObject; User: boolean);
   procedure lLicenseClick(Sender: TObject);
+  procedure lSysWarnInfoClick(Sender: TObject);
   procedure lValClick(Sender: TObject);
   procedure pcColorsChange(Sender: TObject);
   procedure pcMainChange(Sender: TObject);
@@ -449,6 +461,12 @@ RS_PREDICTION_HELP =
 
 RS_OUTDATED_HELP =
   'This is the time after which Trndi will show the "no recent" readings overlay. Trndi checks this when updating from the remote server, not every minute.';
+
+RS_DELTA_MAX =
+  'When the previous reading is missing, use the next available reading within this many 5-minute-intervals to calculate delta.';
+
+RS_TIMESTAMP_HELP =
+  'By default Trndi shows the amount of minutes since the last reading, this setting allows you to display the time of the last reading instead.';
 
 RS_DEX =
   'Dexcom servers do not provide custom high and low blood sugar values.'+sLineBreak+'Please set your own thresholds in the Customization tab.';
@@ -539,29 +557,29 @@ fConf: TfConf;
 
 const
 GRAPH_ICONS: array[0..9] of unicodestring = (
-  widechar($2B24), // \u2b24 BLACK LARGE CIRCLE (default)
-  widechar($25CF), // \u25cf BLACK CIRCLE
-  widechar($26AB), // \u26ab MEDIUM BLACK CIRCLE
-  widechar($25CB), // \u25cb WHITE CIRCLE
-  widechar($26AA), // \u26aa MEDIUM WHITE CIRCLE
-  widechar($2022), // \u2022 BULLET
-  widechar($2219), // \u2219 BULLET OPERATOR (thinner)
-  widechar($25AA), // \u25aa BLACK SMALL SQUARE
-  widechar($25A0), // \u25a0 BLACK SQUARE
-  widechar($25C6)  // \u25c6 BLACK DIAMOND
+  WChar($2B24), // \u2b24 BLACK LARGE CIRCLE (default)
+  WChar($25CF), // \u25cf BLACK CIRCLE
+  WChar($26AB), // \u26ab MEDIUM BLACK CIRCLE
+  WChar($25CB), // \u25cb WHITE CIRCLE
+  WChar($26AA), // \u26aa MEDIUM WHITE CIRCLE
+  WChar($2022), // \u2022 BULLET
+  WChar($2219), // \u2219 BULLET OPERATOR (thinner)
+  WChar($25AA), // \u25aa BLACK SMALL SQUARE
+  WChar($25A0), // \u25a0 BLACK SQUARE
+  WChar($25C6)  // \u25c6 BLACK DIAMOND
   );
 
 FRESH_ICONS: array[0..9] of unicodestring = (
-  widechar($2600), // \u2600 SUN (default)
-  widechar($2605), // \u2605 BLACK STAR
-  widechar($2606), // \u2606 WHITE STAR
-  widechar($2736), // \u2736 SIX POINTED BLACK STAR
-  widechar($272A), // \u272a CIRCLED WHITE STAR
-  widechar($25B6), // \u25b6 BLACK RIGHT-POINTING TRIANGLE (\u201dnu\u201d-arrow)
-  widechar($25C0), // \u25c0 BLACK LEFT-POINTING TRIANGLE
-  widechar($25B2), // \u25b2 BLACK UP-POINTING TRIANGLE
-  widechar($25BC), // \u25bc BLACK DOWN-POINTING TRIANGLE
-  widechar($25CE)  // \u25ce BULLSEYE
+  WChar($2600), // \u2600 SUN (default)
+  WChar($2605), // \u2605 BLACK STAR
+  WChar($2606), // \u2606 WHITE STAR
+  WChar($2736), // \u2736 SIX POINTED BLACK STAR
+  WChar($272A), // \u272a CIRCLED WHITE STAR
+  WChar($25B6), // \u25b6 BLACK RIGHT-POINTING TRIANGLE (\u201dnu\u201d-arrow)
+  WChar($25C0), // \u25c0 BLACK LEFT-POINTING TRIANGLE
+  WChar($25B2), // \u25b2 BLACK UP-POINTING TRIANGLE
+  WChar($25BC), // \u25bc BLACK DOWN-POINTING TRIANGLE
+  WChar($25CE)  // \u25ce BULLSEYE
   );
 
 procedure ListLanguageFiles(list: TStrings; const Path: string);
@@ -574,7 +592,7 @@ implementation
 
 procedure ShowMessage(const str: string);
 begin
-  UXMessage(uxdAuto, sSuccTitle, str, uxmtInformation);
+  UXMessage(sSuccTitle, str, uxmtInformation);
 end;
 
 function ExtractLangCode(const AText: string): string;
@@ -883,6 +901,8 @@ begin
     Result := 'Swati';
   'sv':
     Result := 'Swedish';
+  'jm':
+    Result := 'Jämtländska (Jamska)';
   'tl':
     Result := 'Tagalog';
   'ty':
@@ -1084,10 +1104,16 @@ end;
 
 procedure TfConf.cbSysChange(Sender: TObject);
 procedure WarnUnstableAPI;
+  var
+    i : integer;
   begin
     if (cbSys.Text = API_DEX_USA) or (cbSys.Text = API_DEX_EU) then
     begin
-      gbOverride.Color := $00D3D2EE;
+      gbOverride.Color := uxclLightBlue;
+       lLoUnder.Font.Color := clBlack;
+       lHiOver.Font.Color := clBlack;
+       cbCust.Font.Color := clBlack;
+
       pnSysWarn.Show;
       lSysWarnInfo.Caption := RS_DEX;
     end;
@@ -1156,7 +1182,7 @@ begin
 
   if tryStrToInt('$' + (Sender as TEdit).Text, i) then
   begin
-    lbl.Caption := widechar(i);
+    lbl.Caption := WChar(i);
     if Sender = eDot then
     begin
       lDot1.Caption := lbl.Caption;
@@ -1197,6 +1223,12 @@ end;
 procedure TfConf.bNotificationHelpClick(Sender: TObject);
 begin
   ShowMessage(RS_NOTIFICATION_HELP);
+end;
+
+procedure TfConf.bDeltaMaxHelpClick(Sender: TObject);
+begin
+  if UXDialog(uxdAuto,'Delta', RS_DELTA_MAX,[mbOK, mbUxRead]) <> mrOK then
+    OpenURL('https://github.com/slicke/trndi/blob/main/doc/DeltaMax.md');
 end;
 
 procedure TfConf.bOutdatedHelpClick(Sender: TObject);
@@ -1250,6 +1282,11 @@ end;
 procedure TfConf.bCustomRangeHelpClick(Sender: TObject);
 begin
   ShowMessage(RS_Custom_Range_Help);
+end;
+
+procedure TfConf.bExtOpenClick(Sender: TObject);
+begin
+  OpenDocument(eExt.Text);
 end;
 
 procedure TfConf.bLanguageHelpClick(Sender: TObject);
@@ -1328,15 +1365,17 @@ begin
     s := RS_CHOOSE_SYSTEM
   else
   begin
-    s := sys.ParamLabel(APLDesc);
+    s := sys.ParamLabel(APLDescHTML);
     c := sys.ParamLabel(APLCopyright);
   end;
 
   for i := 0 to Length(RS_DRIVER_CONTRIBUTOR + c) do
     x += '-';
 
-  if s <> '' then
-    ShowMessage(s + sLineBreak + sLineBreak + x + sLineBreak + RS_DRIVER_CONTRIBUTOR + c);
+  if s <> '' then begin
+    s := s + sHTMLLineBreak + sHTMLLineBreak + x + sHTMLLineBreak + RS_DRIVER_CONTRIBUTOR + c;
+    ExtMsg(uxdAuto, 'API', s, [mbClose],uxmtInformation,20, 1.2);
+  end;
 
 end;
 
@@ -1365,7 +1404,7 @@ begin
       OpenURL(url);
   end
   else
-    UXMessage(uxdAuto, RS_NOTIFICATIONS, RS_NOTIFY_SYSTEM);
+    UXMessage(RS_NOTIFICATIONS, RS_NOTIFY_SYSTEM);
 
 end;
 
@@ -1440,6 +1479,11 @@ end;
 procedure TfConf.bThreasholdLinesHelpClick(Sender: TObject);
 begin
   ShowMessage(RS_Threashold_Lines_Help);
+end;
+
+procedure TfConf.bTimeStampHelpClick(Sender: TObject);
+begin
+  ShowMessage(RS_TIMESTAMP_HELP);
 end;
 
 procedure TfConf.btResetClick(Sender: TObject);
@@ -1671,6 +1715,9 @@ begin
     end;
 
   {$endif}
+  {$ifdef lclqt6}
+    self.height := self.height + 20;
+  {$endif}
   tnative := TrndiNative.Create;
   tnative.noFree := true;
   if tnative.isDarkMode then
@@ -1754,6 +1801,14 @@ const
 begin
   if ExtMsg(uxdAuto, 'License', txt, [mbOK, mbUxRead], uxmtOK, uxscHuge) <> mrOk then
     OpenURL('https://github.com/slicke/trndi/blob/main/LICENSE.md');
+end;
+
+procedure TfConf.lSysWarnInfoClick(Sender: TObject);
+begin
+  case cbSys.Text of
+    API_DEX_USA, API_DEX_EU:
+    pcMain.ActivePage := tsCustom;
+  end;
 end;
 
 procedure TfConf.lValClick(Sender: TObject);

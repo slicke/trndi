@@ -139,6 +139,9 @@ TfBG = class(TForm)
   bMenuPanelClose: TButton;
   bTouchFull: TButton;
   lPredict: TLabel;
+  miGuidelines: TMenuItem;
+  miBasalRate: TMenuItem;
+  miReadingsSince: TMenuItem;
   miExtLog: TMenuItem;
   miSep1: TMenuItem;
   miDNS: TMenuItem;
@@ -258,6 +261,7 @@ TfBG = class(TForm)
   procedure DotPaint(Sender: TObject);
   procedure lDiffClick(Sender: TObject);
   procedure lPredictClick(Sender: TObject);
+  procedure miBasalRateClick(Sender: TObject);
   procedure miDNSClick(Sender: TObject);
   procedure miDotNormalDrawItem(Sender: TObject; ACanvas: TCanvas;
     ARect: TRect; AState: TOwnerDrawState);
@@ -277,7 +281,9 @@ TfBG = class(TForm)
   procedure miATouchYesClick(Sender: TObject);
   procedure miDebugBackendClick(Sender: TObject);
   procedure miExtLogClick(Sender: TObject);
+  procedure miGuidelinesClick(Sender: TObject);
   procedure miPredictClick(Sender: TObject);
+  procedure miReadingsSinceClick(Sender: TObject);
   procedure pmSettingsClose(Sender: TObject);
   procedure pnWarningClick(Sender: TObject);
   procedure pnWarningPaint(Sender: TObject);
@@ -339,6 +345,7 @@ TfBG = class(TForm)
   {$ifdef DEBUG}
   procedure miDebugUXMsgClick(Sender: TObject);
   procedure miDebugLogClick(Sender: TObject);
+  procedure miDebugLoadTextClick(Sender: TObject);
   {$endif}
 private
   FStoredWindowInfo: record // Saved geometry and window state for restore/toggle
@@ -462,6 +469,11 @@ private
   procedure FinalizeUpdate;
   procedure UpdateFloatingWindow;
   procedure UpdateUIColors;
+  {** Apply configuration changes that can take effect immediately without restart.
+      This includes fonts, colors, display options, predictions, and UI preferences.
+      Called after saving settings to provide instant feedback to the user.
+   }
+  procedure ApplySettingsInstantly;
   {** Compute an appropriate foreground (text) color for the provided background.
       Uses lightness heuristics to choose whether to darken or lighten the
       base color and returns a safe contrasting foreground color.
@@ -677,6 +689,12 @@ DOT_OFFSET_RANGE: integer = -15; // Fine-tune vertical alignment of threshold li
 {$ifdef HAIKU}
 DOT_OFFSET_RANGE: integer = -15; // Fine-tune vertical alignment of threshold lines with dots
 {$endif}
+DOT_LINES: boolean = false;  // Guidelines what value is where
+DELTA_MAX: integer = 2;
+{$ifdef DEBUG}
+debug_load_text: boolean = false;
+{$endif}
+
 
 
 var
@@ -972,6 +990,19 @@ begin
   SHowMessage(RS_PREDICT);
 end;
 
+procedure TfBG.miBasalRateClick(Sender: TObject);
+var
+  res: single;
+  err: string;
+begin
+  res := api.getBasalRate;
+  err := api.errormsg;
+  if res = 0 then
+    ShowMessage('No data, error(?):' + IfThen(err <> '', err, '<none>'))
+  else
+    ShowMessage(res.toString);
+end;
+
 procedure TfBG.miDNSClick(Sender: TObject);
 begin
   tPingTimer(miDNS);
@@ -1133,6 +1164,12 @@ begin
   {$endif}
 end;
 
+procedure TfBG.miGuidelinesClick(Sender: TObject);
+begin
+  miGuidelines.Checked := not miGuidelines.Checked;
+  DOT_LINES := miGuidelines.Checked;
+end;
+
 procedure TfBG.miPredictClick(Sender: TObject);
 var
   bgr: BGResults;
@@ -1162,6 +1199,68 @@ begin
       ]) + LineEnding;
 
   ShowMessage(msg);
+end;
+
+procedure TfBG.miReadingsSinceClick(Sender: TObject);
+var
+  minDate, selectedDate: TDateTime;
+  mr: TModalResult;
+  minutesSince, maxReadings: integer;
+  readings: BGResults;
+  res: string;
+  maxAge, maxDays: integer;
+  description: string;
+begin
+  maxAge := api.getMaxAge;
+  
+  // Handle unlimited max age (-1)
+  if maxAge = -1 then
+  begin
+    minDate := EncodeDate(2000, 1, 1); // Arbitrary old date for unlimited
+    description := Format(RS_DATE_PICKER_DESC_UNLIMITED, [api.getSystemName]);
+  end
+  else
+  begin
+    maxDays := maxAge div 1440;
+    // Use date arithmetic to ensure different days (strip time component)
+    minDate := Trunc(Now) - maxDays;
+    description := Format(RS_DATE_PICKER_DESC_LIMITED, [api.getSystemName, maxDays]);
+  end;
+  
+  selectedDate := ExtDatePicker(
+    uxdAuto,
+    RS_DATE_PICKER_CAPTION,
+    RS_DATE_PICKER_TITLE,
+    description,
+    minDate,
+    minDate,
+    Trunc(Now), // Use date without time component
+    mr,
+    uxmtOK
+  );
+  
+  if mr = mrOk then begin
+    // Calculate minutes from selected date to now
+    minutesSince := MinutesBetween(Now, selectedDate);
+    
+    // Calculate max readings based on time range (readings every 5 minutes)
+    maxReadings := minutesSince div 5;
+    
+    // Fetch readings from the API
+    readings := api.getReadings(minutesSince, maxReadings, '', res);
+    
+    if Length(readings) = 0 then
+    begin
+      if res <> '' then
+        ShowMessage(Format(RS_DATE_PICKER_NO_READINGS_ERR, [res]))
+      else
+        ShowMessage(RS_DATE_PICKER_NO_READINGS);
+      Exit;
+    end;
+    
+    ShowHistoryGraph(readings, un, CurrentHistoryGraphPalette,
+      api.cgmHi, api.cgmLo, api.cgmRangeHi, api.cgmRangeLo);
+  end;
 end;
 
 procedure TfBG.pmSettingsClose(Sender: TObject);
@@ -1393,7 +1492,7 @@ begin
     lTir.Hide;
     lArrow.hide;
 //    lDiff.Hide;
-    lDiff.Caption := RS_CLEANUP_WAIT;
+    lDiff.Caption := Format(RS_CLEANUP_WAIT, [20]);
     lAgo.hide;
     lPredict.hide;
     Application.ProcessMessages;
@@ -1476,12 +1575,12 @@ var
   clientH: integer;
   dotHeight: integer;
   bmp: TBitmap;
-  {$IFDEF DEBUG}
+
   debugY: integer;
   debugValue: single;
   debugText: string;
   i: integer;
-{$ENDIF}
+
 // Helper to map a BG value in internal units to a Y coordinate matching SetPointHeight
 function ValueToY(const Value: single): integer;
   var
@@ -1648,7 +1747,7 @@ begin
     end;
   end;
 
-  {$IFDEF DEBUG}
+  if DOT_LINES then begin
   // Draw debug gridlines showing mmol/L values (5, 10, 15, 20)
   cnv.Brush.Style := bsClear;
   cnv.Pen.Style := psDot;
@@ -1673,7 +1772,8 @@ begin
         debugText);
     end;
   end;
-  {$ENDIF}
+  end;
+
 end;
 
 procedure TfBG.bSettingsClick(Sender: TObject);
@@ -2366,12 +2466,14 @@ begin
     Exit;
   end;
 
-  ShowHistoryGraph(readings, un, CurrentHistoryGraphPalette);
+  ShowHistoryGraph(readings, un, CurrentHistoryGraphPalette, 
+    api.cgmHi, api.cgmLo, api.cgmRangeHi, api.cgmRangeLo);
 end;
 
 procedure TfBG.miHistoryClick(Sender: TObject);
 begin
-  ShowHistoryGraph(bgs, un, CurrentHistoryGraphPalette);
+  ShowHistoryGraph(bgs, un, CurrentHistoryGraphPalette,
+    api.cgmHi, api.cgmLo, api.cgmRangeHi, api.cgmRangeLo);
 end;
 
 procedure TfBG.miRangeColorClick(Sender: TObject);
@@ -2524,6 +2626,108 @@ begin
   setColorMode;
 end;
 
+{------------------------------------------------------------------------------
+  Apply configuration changes that can take effect immediately without restart.
+  This includes fonts, colors, display options, predictions, and UI preferences.
+  Called after saving settings to provide instant feedback to the user.
+------------------------------------------------------------------------------}
+procedure TfBG.ApplySettingsInstantly;
+var
+  fontName: string;
+  minutesStr: string;
+  minutesVal: integer;
+  i: integer;
+  dotChar: WChar;
+  langCode: string;
+begin
+  // Settings already written to disk by SaveUserSettings and are in native's memory
+  // No need to reload from disk - just read from current native instance
+  
+  // Apply language setting immediately
+  langCode := native.GetSetting('locale', 'en');
+  if applocale <> langCode then
+  begin
+    applocale := langCode;
+    SetDefaultLang(langCode, getLangPath);
+  end;
+  
+  // Apply font changes
+  fontName := native.GetSetting('font.val', 'default');
+  if fontName <> 'default' then
+    lVal.Font.Name := fontName;
+    
+  fontName := native.GetSetting('font.arrow', 'default');
+  if fontName <> 'default' then
+    lArrow.Font.Name := fontName;
+    
+  fontName := native.GetSetting('font.ago', 'default');
+  if fontName <> 'default' then
+  begin
+    lAgo.Font.Name := fontName;
+    lTir.Font.Name := fontName;
+  end;
+  
+  // Apply dot character changes
+  dotChar := native.GetWideCharSetting('font.dot', WChar($2B24));
+  for i := 1 to 10 do
+    if TrendDots[i] <> nil then
+      TrendDots[i].Caption := dotChar;
+  
+  // Reload color settings from config
+  bg_color_ok := native.GetColorSetting('ux.bg_color_ok', bg_color_ok);
+  bg_color_hi := native.GetColorSetting('ux.bg_color_hi', bg_color_hi);
+  bg_color_lo := native.GetColorSetting('ux.bg_color_lo', bg_color_lo);
+  bg_color_ok_txt := native.GetColorSetting('ux.bg_color_ok_txt', bg_color_ok_txt);
+  bg_color_hi_txt := native.GetColorSetting('ux.bg_color_hi_txt', bg_color_hi_txt);
+  bg_color_lo_txt := native.GetColorSetting('ux.bg_color_lo_txt', bg_color_lo_txt);
+  bg_rel_color_hi := native.GetColorSetting('ux.bg_rel_color_hi', bg_rel_color_hi);
+  bg_rel_color_lo := native.GetColorSetting('ux.bg_rel_color_lo', bg_rel_color_lo);
+  bg_rel_color_hi_txt := native.GetColorSetting('ux.bg_rel_color_hi_txt', bg_rel_color_hi_txt);
+  bg_rel_color_lo_txt := native.GetColorSetting('ux.bg_rel_color_lo_txt', bg_rel_color_lo_txt);
+  
+  // Apply TIR color settings
+  tir_bg := native.GetColorSetting('ux.tir_color', tir_bg);
+  tir_custom_bg := native.GetColorSetting('ux.tir_color_custom', tir_custom_bg);
+  titlecolor := native.GetBoolSetting('ux.title_color', true);
+  
+  // Reload prediction settings
+  PredictGlucoseReading := native.GetBoolSetting('predictions.enable', false);
+  PredictShortMode := native.GetBoolSetting('predictions.short', false);
+  PredictShortFullArrows := native.GetBoolSetting('predictions.short.fullarrows', false);
+  PredictShortShowValue := native.GetBoolSetting('predictions.short.showvalue', false);
+  minutesStr := '';
+  if not native.TryGetSetting('predictions.short.minutes', minutesStr) then
+    minutesStr := '';
+  minutesVal := StrToIntDef(minutesStr, 10);
+  if minutesVal in [5, 10, 15] then
+    PredictShortMinutes := minutesVal
+  else
+    PredictShortMinutes := 10;
+  PredictShortSize := native.GetIntSetting('predictions.short.size', 1);
+  if PredictShortSize < 1 then
+    PredictShortSize := 1
+  else if PredictShortSize > 3 then
+    PredictShortSize := 3;
+  lPredict.Visible := PredictGlucoseReading;
+  
+  // Apply display preferences
+  DATA_FRESHNESS_THRESHOLD_MINUTES := 
+    native.GetIntSetting('system.fresh_threshold', DATA_FRESHNESS_THRESHOLD_MINUTES);
+  tir_icon := native.GetBoolSetting('range.tir_icon', false);
+  
+  // Recalculate layout and scale to account for potential changes
+  Self.OnResize(nil);
+  
+  // Force UI update with current reading to apply new colors/fonts
+  UpdateUIColors;
+  UpdateUIBasedOnGlucose;
+  if Assigned(fFloat) then
+    UpdateFloatingWindow;
+    
+  // Invalidate to trigger repaint
+  Self.Invalidate;
+end;
+
 // Handle settings menu click
 procedure TfBG.miSettingsClick(Sender: TObject);
 var
@@ -2614,6 +2818,8 @@ procedure LoadUserSettings(f: TfConf);
       ePass.Text := GetSetting('remote.creds');
       rbUnit.ItemIndex := IfThen(GetSetting('unit', 'mmol') = 'mmol', 0, 1);
       spTHRESHOLD.Value := native.GetIntSetting('system.fresh_threshold',
+        DATA_FRESHNESS_THRESHOLD_MINUTES);
+      spDeltaMax.Value := native.GetIntSetting('ux.delta_max',
         DATA_FRESHNESS_THRESHOLD_MINUTES);
 
       // Override range settings
@@ -2773,10 +2979,10 @@ procedure SetupUIElements(f: TfConf);
   begin
     with f do
     begin
-      f.lDot.Caption := native.GetWideCharSetting('font.dot', System.widechar(dotdef));
+      f.lDot.Caption := native.GetWideCharSetting('font.dot', WChar(dotdef));
       eDot.Text := native.GetSetting('font.dot', '2B24');
       lDotNow.Caption := native.GetWideCharSetting('font.dot_fresh',
-        System.widechar(dotdef));
+        WChar(dotdef));
       eDotNow.Text := native.GetSetting('font.dot_fresh', '2600');
       f.lDot1.Caption := f.lDot.Caption;
       f.lDot2.Caption := f.lDot.Caption;
@@ -2845,6 +3051,7 @@ procedure SetupExtensions(f: TfConf);
       {$else}
       eExt.Text := '- ' + RS_noPlugins + ' -';
       eExt.Enabled := false;
+      bExtOpen.Enabled := false;
       {$endif}
       cbPrivacy.Checked := GetBoolSetting('ext.privacy');
       cbTimeStamp.Checked := GetBoolSetting('display.timestamp');
@@ -2917,15 +3124,29 @@ procedure SaveUserSettings(f: TfConf);
     with f, native do
     begin
       if TryStrToInt('$' + eDot.Text, i) then
-        SetWideCharSetting('font.dot', System.widechar(i));
+        SetWideCharSetting('font.dot', WChar(i));
       if TryStrToInt('$' + eDotNow.Text, i) then
-        SetWideCharSetting('font.dot_fresh', System.widechar(i));
+        SetWideCharSetting('font.dot_fresh', WChar(i));
 
       SetSetting('font.val', lVal.Font.Name);
       SetSetting('font.arrow', lArrow.Font.Name);
       SetSetting('font.ago', lAgo.Font.Name);
+      
+      // IMPORTANT: Save API settings BEFORE language change to prevent combo box reset
+      // Save remote and override settings - these should NOT be global (user-specific)
+      SetSetting('remote.type', APIToCode(cbSys.Text), false);
+      SetSetting('remote.target', eAddr.Text, false);
+      SetSetting('remote.creds', ePass.Text, false);
+      
+      // Save locale setting to config, but don't apply yet
       langCode := ExtractLangCode(cbLang.Items[cbLang.ItemIndex]);
+      
+      // If "auto" or empty, detect OS language
+      if (langCode = '') or (LowerCase(langCode) = 'auto') then
+        langCode := TrndiNative.GetOSLanguage;
+      
       SetSetting('locale', langCode);
+      
       native.SetSetting('position.main', cbPos.ItemIndex);
       native.setSetting('size.main', cbSize.Checked);
       native.setSetting('alerts.flash.high', cbFlashHi.Checked);
@@ -2944,15 +3165,14 @@ procedure SaveUserSettings(f: TfConf);
 
       SetSetting('users.colorbox', cbUserColor.Checked, true);
 
-      // Save remote and override settings
-      SetSetting('remote.type', APIToCode(cbSys.Text));
-      SetSetting('remote.target', eAddr.Text);
-      SetSetting('remote.creds', ePass.Text);
+      // API settings already saved above (before language change)
+      
       SetBoolSetting('unit', rbUnit.ItemIndex = 0, 'mmol', 'mgdl');
       SetSetting('ext.privacy', cbPrivacy.Checked);
       SetSetting('display.timestamp', cbTimeStamp.Checked);
 
       SetSetting('system.fresh_threshold', spTHRESHOLD.Value);
+      SetSetting('ux.delta_max', spDeltaMax.Value);
 
       // Save unit-specific settings
       if rbUnit.ItemIndex = 0 then
@@ -3034,6 +3254,15 @@ procedure SaveUserSettings(f: TfConf);
 
       native.SetColorSetting('ux.tir_color', cbTirBar.ButtonColor);
       native.SetColorSetting('ux.tir_color_custom', cbTirBarCustom.ButtonColor);
+      
+      // Apply language change LAST after all settings are saved
+      // Don't call Application.ProcessMessages here - it causes visual glitches
+      // The UI will update naturally after the dialog closes
+      if applocale <> langCode then
+      begin
+        applocale := langCode;
+        SetDefaultLang(langCode, getLangPath);
+      end;
     end;
   end;
 
@@ -3041,7 +3270,14 @@ var
   extensionsPath: string;
   i: integer;
   distro: string;
+  needsRestart: boolean;
+  origAPI, origTarget, origCreds: string;
 begin
+  // Store original backend settings to detect if restart is needed
+  origAPI := native.GetSetting('remote.type');
+  origTarget := native.GetSetting('remote.target');
+  origCreds := native.GetSetting('remote.creds');
+  
   fConf := TfConf.Create(Self);
   try
     with native do
@@ -3123,43 +3359,33 @@ begin
       end;
       fBG.Show;
     end;
-    // Reload settings, needed on X_PC
-    native.ReloadSettings;
-
-    // Reload prediction settings
-    PredictGlucoseReading := native.GetBoolSetting('predictions.enable', false);
-    PredictShortMode := native.GetBoolSetting('predictions.short', false);
-    PredictShortFullArrows := native.GetBoolSetting('predictions.short.fullarrows', false);
-    PredictShortShowValue := native.GetBoolSetting('predictions.short.showvalue', false);
-    minutesStr := '';
-    if not native.TryGetSetting('predictions.short.minutes', minutesStr) then
-      minutesStr := '';
-    minutesVal := StrToIntDef(minutesStr, 10);
-    if minutesVal in [5, 10, 15] then
-      PredictShortMinutes := minutesVal
-    else
-      PredictShortMinutes := 10;
-    PredictShortSize := native.GetIntSetting('predictions.short.size', 1);
-    if PredictShortSize < 1 then
-      PredictShortSize := 1
-    else
-    if PredictShortSize > 3 then
-      PredictShortSize := 3;
-    lPredict.Visible := PredictGlucoseReading;
-    // Recalculate layout and scale to account for potential short-size change
-    Self.OnResize(nil);
 
     // Save settings when dialog closes
     SaveUserSettings(fConf);
-    ShowMessage(RS_RESTART_APPLY);
+    
+    // Check if backend/API settings changed - those require restart
+    needsRestart := (origAPI <> native.GetSetting('remote.type')) or
+                    (origTarget <> native.GetSetting('remote.target')) or
+                    (origCreds <> native.GetSetting('remote.creds'));
 
     if firstboot then
       exit;
-    //    SetLang;
-    miForce.Click;
+    
+    // Don't call miForce.Click here - it can cause API to reload with stale settings
+    // If restart is needed, user will restart. If not, ApplySettingsInstantly already updated UI.
   finally
     fConf.Free;
   end;
+  
+  // Apply settings that can take effect immediately without restart
+  // Done after dialog is freed to prevent visual glitches
+  ApplySettingsInstantly;
+    
+  // Show message after all UI updates are complete
+  if needsRestart then
+    ShowMessage(RS_RESTART_APPLY)
+  else
+    ShowMessage(RS_SETTINGS_SAVED);
 end;
 
 procedure TfBG.ApplyChromaAlertAction(const ActionSettingKey: string;
@@ -4214,7 +4440,7 @@ begin
 
   // Only show a diff when the immediately previous reading exists and the
   // time gap doesn't imply a missing 5-minute slot.
-  if (not havePrev) or (gapMin >= (INTERVAL_MINUTES * 2)) then
+  if (not havePrev) or (gapMin >= (INTERVAL_MINUTES * DELTA_MAX)) then
     lDiff.Caption := '--'
   else
   if reading.deltaEmpty then
@@ -4224,7 +4450,9 @@ begin
     lDiff.Caption := FormatSigned(deltaVal);
   end
   else
+  begin
     lDiff.Caption := reading.format(un, BG_MSG_SIG_SHORT, BGDelta);
+  end;
   lArrow.Caption := reading.trend.Img;
   lVal.Font.Style := [];
 
@@ -4364,6 +4592,12 @@ end;
 
 function TfBG.updateReading(boot: boolean = false): boolean;
 begin
+ {$ifdef DEBUG}
+  if debug_load_text then begin
+    lVal.Caption := '<Updating>';
+    Application.ProcessMessages;
+  end;
+  {$endif}
   Result := false;
   lAgo.Caption := '⟳' + lAgo.Caption;
 
@@ -4374,10 +4608,22 @@ begin
     lAgo.Caption := '🕑 ' + RS_UNKNOWN_TIME;
 
 
+    {$ifdef DEBUG}
+  if debug_load_text then begin
+    lVal.Caption := '<Fetching>';
+    Application.ProcessMessages;
+  end;
+  {$endif}
   // Fetch readings and exit if no data
   if not FetchAndValidateReadings then
     Exit;
 
+  {$ifdef DEBUG}
+  if debug_load_text then begin
+    lVal.Caption := '<Processing>';
+    Application.ProcessMessages;
+  end;
+  {$endif}
   // Process the newest reading
   ProcessCurrentReading;
 

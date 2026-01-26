@@ -110,6 +110,288 @@ begin
   end;
 end;
 
+// Get comprehensive current reading with metadata
+function JSGetCurrentReading(ctx: JSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw; cdecl;
+var
+  reading: BGReading;
+  ageSeconds: Int64;
+  trendStr: string;
+  obj, propVal: JSValueRaw;
+  jsVal: JSValue;
+begin
+  // Return false if no readings available
+  if Length(bgs) < 1 then
+  begin
+    Result := JS_FALSE;
+    Exit;
+  end;
+
+  reading := bgs[0];
+  
+  // Calculate age in seconds
+  ageSeconds := SecondsBetween(Now, reading.date);
+  
+  // Get trend direction as string
+  trendStr := reading.trend.Img;
+  
+  // Create new JavaScript object
+  obj := JS_NewObject(ctx);
+  
+  // Set properties: value_system
+  jsVal.FromFloat(reading.convert(un));
+  JS_SetPropertyStr(ctx, obj, 'value_system', jsVal.Raw);
+  
+  // value_mgdl
+  jsVal.From32(Round(reading.convert(BGUnit.mgdl)));
+  JS_SetPropertyStr(ctx, obj, 'value_mgdl', jsVal.Raw);
+  
+  // value_mmol
+  jsVal.FromFloat(reading.convert(BGUnit.mmol));
+  JS_SetPropertyStr(ctx, obj, 'value_mmol', jsVal.Raw);
+  
+  // delta_mgdl
+  jsVal.From32(Round(reading.convert(BGUnit.mgdl, BGDelta)));
+  JS_SetPropertyStr(ctx, obj, 'delta_mgdl', jsVal.Raw);
+  
+  // delta_mmol
+  jsVal.FromFloat(reading.convert(BGUnit.mmol, BGDelta));
+  JS_SetPropertyStr(ctx, obj, 'delta_mmol', jsVal.Raw);
+  
+  // direction
+  propVal := JS_NewString(ctx, pansichar(RawUtf8(trendStr)));
+  JS_SetPropertyStr(ctx, obj, 'direction', propVal);
+  
+  // timestamp
+  jsVal.FromFloat(reading.date);
+  JS_SetPropertyStr(ctx, obj, 'timestamp', jsVal.Raw);
+  
+  // age_seconds
+  jsVal.From64(ageSeconds);
+  JS_SetPropertyStr(ctx, obj, 'age_seconds', jsVal.Raw);
+  
+  Result := obj;
+end;
+
+// Get current CGM limits
+function JSGetLimits(ctx: JSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw; cdecl;
+var
+  lowMmol, highMmol, lowRangeMmol, highRangeMmol: double;
+  obj: JSValueRaw;
+  jsVal: JSValue;
+begin
+  // Convert limits from mg/dL to mmol/L
+  lowMmol := api.cgmLo * BG_CONVERTIONS[BGUnit.mmol][BGUnit.mgdl];
+  highMmol := api.cgmHi * BG_CONVERTIONS[BGUnit.mmol][BGUnit.mgdl];
+  lowRangeMmol := api.cgmRangeLo * BG_CONVERTIONS[BGUnit.mmol][BGUnit.mgdl];
+  highRangeMmol := api.cgmRangeHi * BG_CONVERTIONS[BGUnit.mmol][BGUnit.mgdl];
+  
+  // Create new JavaScript object
+  obj := JS_NewObject(ctx);
+  
+  // Set properties
+  jsVal.From32(api.cgmLo);
+  JS_SetPropertyStr(ctx, obj, 'low_mgdl', jsVal.Raw);
+  
+  jsVal.From32(api.cgmHi);
+  JS_SetPropertyStr(ctx, obj, 'high_mgdl', jsVal.Raw);
+  
+  jsVal.FromFloat(lowMmol);
+  JS_SetPropertyStr(ctx, obj, 'low_mmol', jsVal.Raw);
+  
+  jsVal.FromFloat(highMmol);
+  JS_SetPropertyStr(ctx, obj, 'high_mmol', jsVal.Raw);
+  
+  jsVal.From32(api.cgmRangeLo);
+  JS_SetPropertyStr(ctx, obj, 'low_range_mgdl', jsVal.Raw);
+  
+  jsVal.From32(api.cgmRangeHi);
+  JS_SetPropertyStr(ctx, obj, 'high_range_mgdl', jsVal.Raw);
+  
+  jsVal.FromFloat(lowRangeMmol);
+  JS_SetPropertyStr(ctx, obj, 'low_range_mmol', jsVal.Raw);
+  
+  jsVal.FromFloat(highRangeMmol);
+  JS_SetPropertyStr(ctx, obj, 'high_range_mmol', jsVal.Raw);
+  
+  Result := obj;
+end;
+
+// Get statistics from recent readings
+function JSGetStatistics(ctx: JSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw; cdecl;
+var
+  minutes: integer;
+  minutesVar: variant;
+  i, count: integer;
+  cutoffTime: TDateTime;
+  sum, mean, median, variance, stdDev, cv: double;
+  values: array of double;
+  inRange, above, below: integer;
+  percentInRange, percentAbove, percentBelow: double;
+  temp: double;
+  j: integer;
+  obj: JSValueRaw;
+  jsVal: JSValue;
+begin
+  // Default to 1440 minutes (24 hours) if no parameter
+  minutes := 1440;
+  
+  if argc > 0 then
+  begin
+    ctx^.ToVariant(argv^[0], minutesVar);
+    if VarType(minutesVar) = varInteger then
+      minutes := minutesVar;
+  end;
+  
+  // Create return object
+  obj := JS_NewObject(ctx);
+  
+  // Return empty stats if no readings
+  if Length(bgs) < 1 then
+  begin
+    jsVal.FromFloat(0.0);
+    JS_SetPropertyStr(ctx, obj, 'mean', jsVal.Raw);
+    JS_SetPropertyStr(ctx, obj, 'median', jsVal.Raw);
+    JS_SetPropertyStr(ctx, obj, 'stdDev', jsVal.Raw);
+    JS_SetPropertyStr(ctx, obj, 'cv', jsVal.Raw);
+    JS_SetPropertyStr(ctx, obj, 'timeInRange', jsVal.Raw);
+    JS_SetPropertyStr(ctx, obj, 'timeAbove', jsVal.Raw);
+    JS_SetPropertyStr(ctx, obj, 'timeBelow', jsVal.Raw);
+    jsVal.From32(0);
+    JS_SetPropertyStr(ctx, obj, 'readingCount', jsVal.Raw);
+    Result := obj;
+    Exit;
+  end;
+  
+  // Calculate cutoff time
+  cutoffTime := IncMinute(Now, -minutes);
+  
+  // Count readings within time range and collect values
+  count := 0;
+  for i := Low(bgs) to High(bgs) do
+  begin
+    if (not bgs[i].empty) and (bgs[i].date >= cutoffTime) then
+      Inc(count);
+  end;
+  
+  // Need at least one reading
+  if count < 1 then
+  begin
+    jsVal.FromFloat(0.0);
+    JS_SetPropertyStr(ctx, obj, 'mean', jsVal.Raw);
+    JS_SetPropertyStr(ctx, obj, 'median', jsVal.Raw);
+    JS_SetPropertyStr(ctx, obj, 'stdDev', jsVal.Raw);
+    JS_SetPropertyStr(ctx, obj, 'cv', jsVal.Raw);
+    JS_SetPropertyStr(ctx, obj, 'timeInRange', jsVal.Raw);
+    JS_SetPropertyStr(ctx, obj, 'timeAbove', jsVal.Raw);
+    JS_SetPropertyStr(ctx, obj, 'timeBelow', jsVal.Raw);
+    jsVal.From32(0);
+    JS_SetPropertyStr(ctx, obj, 'readingCount', jsVal.Raw);
+    Result := obj;
+    Exit;
+  end;
+  
+  // Allocate array for values
+  SetLength(values, count);
+  
+  // Collect values in current unit and calculate time in range stats
+  count := 0;
+  inRange := 0;
+  above := 0;
+  below := 0;
+  
+  for i := Low(bgs) to High(bgs) do
+  begin
+    if (not bgs[i].empty) and (bgs[i].date >= cutoffTime) then
+    begin
+      values[count] := bgs[i].convert(un);
+      Inc(count);
+      
+      // Check if in range (using mg/dL for comparison)
+      if bgs[i].convert(BGUnit.mgdl) >= api.cgmHi then
+        Inc(above)
+      else if bgs[i].convert(BGUnit.mgdl) <= api.cgmLo then
+        Inc(below)
+      else
+        Inc(inRange);
+    end;
+  end;
+  
+  // Calculate mean
+  sum := 0;
+  for i := 0 to count - 1 do
+    sum := sum + values[i];
+  mean := sum / count;
+  
+  // Calculate median (sort array first)
+  for i := 0 to count - 2 do
+    for j := i + 1 to count - 1 do
+      if values[j] < values[i] then
+      begin
+        temp := values[i];
+        values[i] := values[j];
+        values[j] := temp;
+      end;
+  
+  if count mod 2 = 0 then
+    median := (values[count div 2 - 1] + values[count div 2]) / 2
+  else
+    median := values[count div 2];
+  
+  // Calculate standard deviation
+  variance := 0;
+  for i := 0 to count - 1 do
+    variance := variance + Sqr(values[i] - mean);
+  variance := variance / count;
+  stdDev := Sqrt(variance);
+  
+  // Calculate coefficient of variation (CV%)
+  if mean > 0 then
+    cv := (stdDev / mean) * 100
+  else
+    cv := 0;
+  
+  // Calculate time percentages
+  if count > 0 then
+  begin
+    percentInRange := (inRange / count) * 100;
+    percentAbove := (above / count) * 100;
+    percentBelow := (below / count) * 100;
+  end
+  else
+  begin
+    percentInRange := 0;
+    percentAbove := 0;
+    percentBelow := 0;
+  end;
+  
+  // Set properties on return object
+  jsVal.FromFloat(mean);
+  JS_SetPropertyStr(ctx, obj, 'mean', jsVal.Raw);
+  
+  jsVal.FromFloat(median);
+  JS_SetPropertyStr(ctx, obj, 'median', jsVal.Raw);
+  
+  jsVal.FromFloat(stdDev);
+  JS_SetPropertyStr(ctx, obj, 'stdDev', jsVal.Raw);
+  
+  jsVal.FromFloat(cv);
+  JS_SetPropertyStr(ctx, obj, 'cv', jsVal.Raw);
+  
+  jsVal.FromFloat(percentInRange);
+  JS_SetPropertyStr(ctx, obj, 'timeInRange', jsVal.Raw);
+  
+  jsVal.FromFloat(percentAbove);
+  JS_SetPropertyStr(ctx, obj, 'timeAbove', jsVal.Raw);
+  
+  jsVal.FromFloat(percentBelow);
+  JS_SetPropertyStr(ctx, obj, 'timeBelow', jsVal.Raw);
+  
+  jsVal.From32(count);
+  JS_SetPropertyStr(ctx, obj, 'readingCount', jsVal.Raw);
+  
+  Result := obj;
+end;
+
 // Returns a settings value
 function JSSetSetting(ctx: JSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw; cdecl;
 var
@@ -336,4 +618,25 @@ begin
     // For more than 5 predictions, return simpler format: just the values in current unit
     Result := TTrndiExtEngine.Instance.CreateJSArray([]);
   end;
+end;
+
+// Get current basal rate from the backend
+function JSGetBasalRate(ctx: JSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw; cdecl;
+var
+  res: JSValue;
+  basalRate: single;
+begin
+  // Get basal rate from API (returns 0 if unavailable or not supported)
+  basalRate := api.getBasalRate;
+  
+  // Return false if basal rate is 0 (unavailable)
+  if basalRate = 0 then
+  begin
+    result := JS_FALSE;
+    Exit;
+  end;
+  
+  // Return the basal rate value
+  res.FromFloat(basalRate);
+  result := res.raw;
 end;

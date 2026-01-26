@@ -37,6 +37,9 @@ uses
 Classes, SysUtils, mormot.lib.quickjs, mormot.core.base, strutils, fgl,
 Dialogs, slicke.ux.alert, Math, types, trndi.strings, trndi.native;
 
+var
+  ConsoleBuffer: TStringList;
+
 (*
   Resource strings (can be translated if needed):
     - sNoTrace, sUnknownErr, sStackErrMsg, etc.
@@ -229,6 +232,10 @@ function JSTryToString(ctx: JSContext; Data: JSValue; out str: string): boolean;
 function JSStringifyValue(val: JSValueVal): string;
 function analyze(ctx: JSContext; EvalResult: PJSValue; loop: boolean = false): string;
 function JSConsoleLog(ctx: JSContext; this_val: JSValueConst;
+argc: integer; argv: PJSValueConstArr): JSValueRaw; cdecl;
+function JSConsolePush(ctx: JSContext; this_val: JSValueConst;
+argc: integer; argv: PJSValueConstArr): JSValueRaw; cdecl;
+function JSConsoleLogs(ctx: JSContext; this_val: JSValueConst;
 argc: integer; argv: PJSValueConstArr): JSValueRaw; cdecl;
 procedure RegisterConsoleLog(ctx: PJSContext);
 function JSValueValToValue(ctx: JSContext; val: JSValueVal): JSValue;
@@ -947,7 +954,64 @@ begin
   end;
 
   // Log via external logging function
+  if fullMsg = '' then
+    fullMsg := sLogEmptyMsg;
   ExtLog(uxdAuto, sLogRecevive, sLogDesc, fullMsg);
+
+  // Return undefined
+  Result := JS_UNDEFINED;
+end;
+
+function JSConsolePush(ctx: JSContext; this_val: JSValueConst;
+argc: integer; argv: PJSValueConstArr): JSValueRaw; cdecl;
+var
+  msg: pchar;
+  i: integer;
+  fullMsg: string;
+begin
+  // Concatenate all arguments into a single string
+  fullMsg := '';
+  for i := 0 to argc - 1 do
+  begin
+    msg := JS_ToCString(ctx, argv^[i]);
+    try
+      if i > 0 then
+        fullMsg := fullMsg + ' ';
+      fullMsg := fullMsg + string(msg);
+    finally
+      JS_FreeCString(ctx, msg);
+    end;
+  end;
+
+  // Add to buffer
+  if fullMsg = '' then
+    fullMsg := sLogEmptyMsg;
+  
+  if ConsoleBuffer = nil then
+    ConsoleBuffer := TStringList.Create;
+  
+  ConsoleBuffer.Add(fullMsg);
+
+  // Return undefined
+  Result := JS_UNDEFINED;
+end;
+
+function JSConsoleLogs(ctx: JSContext; this_val: JSValueConst;
+argc: integer; argv: PJSValueConstArr): JSValueRaw; cdecl;
+var
+  fullMsg: string;
+begin
+  // Display all buffered messages
+  if (ConsoleBuffer <> nil) and (ConsoleBuffer.Count > 0) then
+  begin
+    fullMsg := ConsoleBuffer.Text;
+    ExtLog(uxdAuto, sLogRecevive, sLogDesc, fullMsg);
+    ConsoleBuffer.Clear;
+  end
+  else
+  begin
+    ShowMessage(sLogNoBuffered);
+  end;
 
   // Return undefined
   Result := JS_UNDEFINED;
@@ -955,7 +1019,7 @@ end;
 
 procedure RegisterConsoleLog(ctx: PJSContext);
 var
-  consoleObj, logFunc: JSValueRaw;
+  consoleObj, logFunc, pushFunc, logsFunc: JSValueRaw;
 begin
   // Create or retrieve the "console" object in the global scope
   consoleObj := JS_GetPropertyStr(ctx^, JS_GetGlobalObject(ctx^), 'console');
@@ -968,6 +1032,14 @@ begin
   // Create a new log function and attach it to "console.log"
   logFunc := JS_NewCFunction(ctx^, PJSCFunction(@JSConsoleLog), 'log', 1);
   JS_SetPropertyStr(ctx^, consoleObj, 'log', logFunc);
+
+  // Create console.push function
+  pushFunc := JS_NewCFunction(ctx^, PJSCFunction(@JSConsolePush), 'push', 1);
+  JS_SetPropertyStr(ctx^, consoleObj, 'push', pushFunc);
+
+  // Create console.logs function
+  logsFunc := JS_NewCFunction(ctx^, PJSCFunction(@JSConsoleLogs), 'logs', 0);
+  JS_SetPropertyStr(ctx^, consoleObj, 'logs', logsFunc);
 
   // Optionally free consoleObj if the QuickJS binding requires it
   // (Commented out as usage may vary depending on the QuickJS binding)
@@ -1008,5 +1080,12 @@ begin
   Result.Data.match := JD_STR;
   Result.Data.StrVal := s;
 end;
+
+initialization
+  ConsoleBuffer := nil;
+
+finalization
+  if ConsoleBuffer <> nil then
+    ConsoleBuffer.Free;
 
 end.

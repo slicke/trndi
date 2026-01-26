@@ -899,10 +899,10 @@ begin
   FNextTimerID := 0;
 
   // Register base UI/log functions as both class and globals
-  addClassFunction('alert', @JSDoAlert, 1);
-  addClassFunction('confirm', @JSDoYesNo, 1);
-  addClassFunction('prompt', @JSInput, 4);
-  addClassFunction('select', @JSCombo, -1);
+  addClassFunction('alert', ExtFunction(@JSDoAlert), 1);
+  addClassFunction('confirm', ExtFunction(@JSDoYesNo), 1);
+  addClassFunction('prompt', ExtFunction(@JSInput), 4);
+  addClassFunction('select', ExtFunction(@JSCombo), -1);
   addClassFunction('log', ExtFunction(@JSDoLog), 1);
 
   addFunction('alert', ExtFunction(@JSDoAlert), 1);

@@ -44,7 +44,7 @@ interface
 uses
 Classes, SysUtils, Dialogs,
   // Trndi units
-trndi.types, trndi.api, trndi.native,
+trndi.types, trndi.api, trndi.native, trndi.funcs,
   // FPC units
 fpjson, jsonparser, dateutils, StrUtils;
 
@@ -233,7 +233,14 @@ sParamDesc =
   LineEnding + LineEnding +
   'If you are unsure, try “Outside USA” first if you live outside the US.' +
   LineEnding + 'Your username and password are your Dexcom Account (not Share) credentials.';
-
+sParamDescHTML =
+  '<b>Dexcom</b> region selection:<br><br>'+
+  'Choose the server based on your <u>account region</u>:<br>' +
+  '• Dexcom (USA): for accounts <i>(served by share2.dexcom.com)</i><br>' +
+  '• Dexcom (Outside USA): for accounts <i>(served by shareous1.dexcom.com)</i>' +
+  '<br><br>' +
+  'If you are unsure, try <b>Outside USA</b> first, if you live outside the US.' +
+  LineEnding + 'Your username and password are your Dexcom Account (not Share) credentials.';
 
 {------------------------------------------------------------------------------
   getSystemName
@@ -547,6 +554,24 @@ function DexTimeToTDateTime(const S: string): TDateTime;
     Result := UnixToDateTime(LMs div 1000, false);     // milliseconds -> seconds
   end;
 
+  // Helper: safely extract numeric 'Value' from a JSON item (handles null/missing)
+  function SafeValue(Item: TJSONData; out Ok: boolean): Double;
+  var
+    VData: TJSONData;
+  begin
+    Ok := false;
+    Result := 0;
+    if Item = nil then Exit;
+    VData := Item.FindPath('Value');
+    if VData = nil then Exit;
+    try
+      Result := VData.AsFloat;
+      Ok := true;
+    except
+      Ok := false;
+    end;
+  end;
+
 var
   LParams: array[1..3] of string;
   LGlucoseJSON, LAlertJSON, LTrendStr: string;
@@ -554,6 +579,8 @@ var
   i, LTrendCode: integer;
   LTrendEnum: BGTrend;
   noval: MaybeInt;
+  CurVal, PrevVal: Double;
+  CurOk, PrevOk: Boolean;
 begin
   // Initialize the noval
   noval.exists := false;
@@ -581,67 +608,103 @@ begin
     Exit;
   end;
 
-  // Parse JSON array
-  LData := GetJSON(LGlucoseJSON);
-  SetLength(Result, LData.Count);
-
-  // Iterate items and map to BGReading
-  for i := 0 to LData.Count - 1 do
+  // Parse JSON array with error handling for malformed responses
   try
-    // Initialize reading (mg/dL units)
-    Result[i].Init(mgdl, self.systemName);
-    // Mark source for downstream consumers/debugging
-    Result[i].updateEnv('Dexcom', noval, noval);
-
-    // Compute BG value and optional delta
-    if (FCalcDiff) and (i > 0) then
-      Result[i].Update(
-        LData.Items[i].FindPath('Value').AsFloat,
-        LData.Items[i].FindPath('Value').AsFloat -
-        LData.Items[i - 1].FindPath('Value').AsFloat
-        )
-    else
-    if FCalcDiff then
-      // First item: delta not computable; use 0
-      Result[i].Update(LData.Items[i].FindPath('Value').AsFloat, 0)
-    else
-      // Delta not requested; store only BG value (using sentinel)
-      Result[i].Update(LData.Items[i].FindPath('Value').AsFloat, BG_NO_VAL);
-
-    // Interpret "Trend" (may be numeric code or string)
-    LTrendStr := LData.Items[i].FindPath('Trend').AsString;
-
-    // If Trend could be a numeric code, you can map codes as needed here.
-    if not TryStrToInt(LTrendStr, LTrendCode) then
-    begin
-      // Treat as text; map to enum via lookup table
-      for LTrendEnum in BGTrend do
-      begin
-        if BG_TRENDS_STRING[LTrendEnum] = LTrendStr then
-        begin
-          Result[i].trend := LTrendEnum;
-          Break;
-        end;
-        // Default until proven otherwise in this loop iteration
-        Result[i].trend := TdPlaceholder;
-      end;
-    end
-    else
-      Result[i].trend := TdPlaceholder// Numeric mapping not defined; keep placeholder unless you add a map
-    ;
-
-    // Convert Dexcom timestamp "/Date(ms)/" to TDateTime
-    Result[i].date := DexTimeToTDateTime(LData.Items[i].FindPath('ST').AsString);
-
-    // Classify level per thresholds
-    Result[i].level := getLevel(Result[i].val);
-
+    LData := GetJSON(LGlucoseJSON);
   except
     on E: Exception do
     begin
-      // If parsing fails for an item, clear that reading to keep array shape
-      Result[i].Clear;
+      // Handle JSONDecodeError - return empty array if JSON parsing fails
+      SetLength(Result, 0);
+      Exit;
     end;
+  end;
+
+  try
+    SetLength(Result, LData.Count);
+
+    // Iterate items and map to BGReading
+    for i := 0 to LData.Count - 1 do
+    try
+      // Initialize reading (mg/dL units)
+      Result[i].Init(mgdl, self.systemName);
+      // Mark source for downstream consumers/debugging
+      Result[i].updateEnv('Dexcom', noval, noval);
+
+      // Compute BG value and optional delta, handling missing/null 'Value' gracefully
+      CurVal := SafeValue(LData.Items[i], CurOk);
+      if FCalcDiff then
+      begin
+        // Dexcom returns newest-first. Compute delta as current - next (i.e., newest - previous reading)
+        if (i < LData.Count - 1) then
+        begin
+          PrevVal := SafeValue(LData.Items[i + 1], PrevOk); // 'PrevVal' is the next item chronologically
+          if CurOk and PrevOk then
+            Result[i].Update(CurVal, CurVal - PrevVal)
+          else if CurOk then
+            // No valid next value -> cannot compute delta, store sentinel
+            Result[i].Update(CurVal, BG_NO_VAL)
+          else
+            // No current value -> mark reading as empty
+            Result[i].Clear;
+        end
+        else
+        begin
+          // Oldest item: delta not available
+          if CurOk then
+            Result[i].Update(CurVal, BG_NO_VAL)
+          else
+            Result[i].Clear;
+        end;
+      end
+      else
+      begin
+        // Delta not requested; store only BG value (using sentinel) if we have a value
+        if CurOk then
+          Result[i].Update(CurVal, BG_NO_VAL)
+        else
+          Result[i].Clear;
+      end;
+
+
+
+      // Interpret "Trend" (may be numeric code or string)
+      LTrendStr := LData.Items[i].FindPath('Trend').AsString;
+
+      // If Trend could be a numeric code, you can map codes as needed here.
+      if not TryStrToInt(LTrendStr, LTrendCode) then
+      begin
+        // Treat as text; map to enum via lookup table
+        for LTrendEnum in BGTrend do
+        begin
+          if BG_TRENDS_STRING[LTrendEnum] = LTrendStr then
+          begin
+            Result[i].trend := LTrendEnum;
+            Break;
+          end;
+          // Default until proven otherwise in this loop iteration
+          Result[i].trend := TdPlaceholder;
+        end;
+      end
+      else
+        Result[i].trend := TdPlaceholder// Numeric mapping not defined; keep placeholder unless you add a map
+      ;
+
+      // Convert Dexcom timestamp "/Date(ms)/" to TDateTime
+      Result[i].date := DexTimeToTDateTime(LData.Items[i].FindPath('ST').AsString);
+
+      // Classify level per thresholds
+      Result[i].level := getLevel(Result[i].val);
+
+    except
+      on E: Exception do
+      begin
+        // If parsing fails for an item, clear that reading to keep array shape
+        Result[i].Clear;
+      end;
+    end;
+  finally
+    LData.Free;
   end;
 
   // Note: Dexcom API does not provide threshold information
@@ -660,6 +723,8 @@ begin
     Result := sParamPassword;
   APLDesc:
     Result := sParamDesc;
+  APLDescHTML:
+    Result := sParamDescHTML;
   APLCopyright:
     Result := 'Björn Lindh <github.com/slicke>';
   else
@@ -777,7 +842,9 @@ begin
           js.Free;
         end;
       except
-        timeStr := '';
+        on E: Exception do
+          // Handle JSONDecodeError - malformed JSON from time endpoint
+          timeStr := '';
       end// Try a simple JSON parse for numeric ServerTime value
       ;
 

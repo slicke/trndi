@@ -154,6 +154,10 @@ begin
     addClassFunction('getBuild', ExtFunction(@JSGetBuild), -1);
     addClassFunction('getCurrentAPI', ExtFunction(@JSGetAPI), -1);
     addClassFunction('getReading', ExtFunction(@JSGetReading), -1);
+    addClassFunction('getCurrentReading', ExtFunction(@JSGetCurrentReading), 0);
+    addClassFunction('getLimits', ExtFunction(@JSGetLimits), 0);
+    addClassFunction('getStatistics', ExtFunction(@JSGetStatistics), -1);
+    addClassFunction('getBasalRate', ExtFunction(@JSGetBasalRate), 0);
 
     // Add the UX modification function, as declared in this file
     if ssCtrl in GetKeyShiftState then
@@ -163,7 +167,8 @@ begin
         fSplash.incProgress(-1, RS_SPLASH_LOADING + ExtractFileName(extFile));
         // Run all found files
         stmp := ExecuteFile(extFile);
-        if stmp <> '1' then
+        // Only show error if execution actually failed (starts with 'Error:')
+        if Pos('Error:', stmp) = 1 then
           {$ifdef debug}
           ExtMessage(uxdAuto,'Extension Activation Failed!','The ' + ExtractFileNameOnly(extFile) + ' extension was loaded with an error', 'Output below', 'Return: ' + stmp + sLineBreak + sLineBreak + 'Log: ' + Output, false);
         {$else}
