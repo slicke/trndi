@@ -90,7 +90,7 @@ type
     {** Check whether platform TTS is available. }
     class function SpeakAvailable: boolean; override;
     {** Request notification authorization and perform other per-launch setup. }
-    procedure start; override;    {** Name of the software used for speech on macOS (e.g., 'say'). }
+    procedure start;    {** Name of the software used for speech on macOS (e.g., 'say'). }
     class function SpeakSoftwareName: string; override;
     {** Best-effort window manager name for macOS. }
     class function GetWindowManagerName: string; override;
