@@ -97,6 +97,10 @@ var
   SettingsMenu,
   HelpMenu,
   GithubMenu: TMenuItem;
+  // ObjC AppleEvent helper pointers (Darwin)
+  mgrClass: Pointer;
+  mgr: Pointer;
+  selSet: Pointer;
 begin
   MainMenu := TMainMenu.Create(self);
   fBg.Menu := MainMenu;
@@ -106,11 +110,11 @@ begin
 
   // Register Apple Event handlers (AppleScript PoC)
   try
-    var mgrClass := objc_getClass('NSAppleEventManager');
-    var mgr := objc_msgSend0(mgrClass, sel_registerName('sharedAppleEventManager'));
+    mgrClass := objc_getClass('NSAppleEventManager');
+    mgr := objc_msgSend0(mgrClass, sel_registerName('sharedAppleEventManager'));
     if mgr <> nil then
     begin
-      var selSet := sel_registerName('setEventHandler:andSelector:forEventClass:andEventID:');
+      selSet := sel_registerName('setEventHandler:andSelector:forEventClass:andEventID:');
       objc_msgSend4(mgr, selSet, MacAppDelegate,
         sel_registerName('handleGetCurrentUser:withReplyEvent:'),
         FourCharCode('Trnd'), FourCharCode('gcur'));
