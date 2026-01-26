@@ -3853,6 +3853,7 @@ begin
     begin
       // Show minutes ago
       min := MilliSecondsBetween(Now, d) div MILLIS_PER_MINUTE;  // Minutes since last
+      if min < 0 then min := 0;
       {$ifndef lclgtk2}// UTF support IS LIMITED
       lAgo.Caption := '🕑 ' + Format(RS_LAST_UPDATE, [min]);
       {$else}
@@ -4344,12 +4345,15 @@ begin
   d := lastReading.date; // Last reading time
 
   min := MilliSecondsBetween(Now, d) div MILLIS_PER_MINUTE;  // Minutes since last
+  if min < 0 then min := 0;
   if min > 60000000 then
   begin
     d := lastDataReading.date;
     min := MilliSecondsBetween(Now, d) div MILLIS_PER_MINUTE;  // Minutes since last
+    if min < 0 then min := 0;
   end;
   sec := (MilliSecondsBetween(Now, d) mod MILLIS_PER_MINUTE) div 1000; // Seconds since last
+  if sec < 0 then sec := 0;
 
   lDiff.Caption := Format(RS_OUTDATED_TIME, [FormatDateTime('H:mm', d), min, sec]);
 end;
