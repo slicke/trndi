@@ -1,5 +1,5 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/bin/sh
+set -eu
 
 GNOME_EXT_UUID='trndi-current@slicke.com'
 GNOME_DST="/usr/share/gnome-shell/extensions/${GNOME_EXT_UUID}"
@@ -12,13 +12,13 @@ KDE_DST="/usr/share/plasma/plasmoids/${KDE_PLASMOID_ID}"
 mode="${1:-}"
 
 should_remove=false
-if [[ "$mode" == "remove" || "$mode" == "purge" || "$mode" == "" ]]; then
+if [ "${mode}" = "remove" ] || [ "${mode}" = "purge" ] || [ -z "${mode}" ]; then
   should_remove=true
-elif [[ "$mode" == "0" ]]; then
+elif [ "${mode}" = "0" ]; then
   should_remove=true
 fi
 
-if [[ "$should_remove" == true ]]; then
+if [ "${should_remove}" = true ]; then
   rm -rf "$GNOME_DST" || true
   rm -rf "$KDE_DST" || true
 fi
