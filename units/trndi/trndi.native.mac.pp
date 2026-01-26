@@ -115,6 +115,8 @@ function objc_msgSend1(obj: id; sel: SEL; p1: id): id; cdecl; external ObjCLib n
 function objc_msgSend2_d_b(obj: id; sel: SEL; p1: double; p2: boolean): id; cdecl; external ObjCLib name 'objc_msgSend';
 function objc_msgSend3(obj: id; sel: SEL; p1: id; p2: id; p3: id): id; cdecl; external ObjCLib name 'objc_msgSend';
 function objc_msgSend2_id_id(obj: id; sel: SEL; p1: id; p2: id): id; cdecl; external ObjCLib name 'objc_msgSend';
+// typed helper for sending a uint + id (used for requestAuthorizationWithOptions:completionHandler:)
+function objc_msgSend_uint_id(obj: id; sel: SEL; p1: NativeUInt; p2: id): id; cdecl; external ObjCLib name 'objc_msgSend';
 function objc_getClass(name: MarshaledAString): id;        cdecl; external ObjCLib;
 function sel_registerName(name: MarshaledAString): SEL;    cdecl; external ObjCLib;
 
@@ -369,8 +371,6 @@ procedure TTrndiNativeMac.start;
 var
   UNClass, Center: id;
   selRequest: SEL;
-  // declare a typed call that accepts an options mask and an object (block)
-  function objc_msgSend_uint_id(obj: id; sel: SEL; p1: NativeUInt; p2: id): id; cdecl; external ObjCLib name 'objc_msgSend';
 begin
   inherited start;
   try
