@@ -2329,14 +2329,35 @@ begin
 end;
 
 // Handle mouse down on lVal
+{$ifdef LCLQt6}
+function TryQtStartSystemMove(AHandle: THandle): boolean; forward;
+{$endif}
 procedure TfBG.lValMouseDown(Sender: TObject; Button: TMouseButton;
 Shift: TShiftState; X, Y: integer);
+{$ifdef LCLQt6}
+var
+  QtWidget: TQtWidget;
+  sessionType: string;
+{$endif}
 begin
   if ((Button = mbLeft) and (self.BorderStyle = bsNone)) or (Button = mbMiddle) then
   begin   // Handle window moving
-    DraggingWin := true;
     PX := X;
     PY := Y;
+
+    {$ifdef LCLQt6}
+    sessionType := GetEnvironmentVariable('XDG_SESSION_TYPE');
+    if LowerCase(sessionType) = 'wayland' then
+    begin
+      // Try a safe helper that attempts to trigger a compositor move.
+      // The real implementation may require a small native wrapper; this stub
+      // avoids compile errors on older LCLs and returns false when not supported.
+      if TryQtStartSystemMove(Handle) then
+        Exit; // compositor will handle moving
+    end;
+    {$endif}
+
+    DraggingWin := true;
     if not hasTouch then
       Exit;
   end;
@@ -2370,6 +2391,39 @@ begin
     FormResize(Self);
   end;
 end;
+
+{$ifdef LCLQt6}
+// Attempt to initiate a Wayland system move. This calls the Qt6 binding
+// `QWindow_startSystemMove` if available. Returns TRUE when the compositor
+// move was triggered; otherwise FALSE to fall back to manual dragging.
+function TryQtStartSystemMove(AHandle: THandle): boolean;
+var
+  QtWidget: TQtWidget;
+  sessionType: string;
+  qwin: QWindowH;
+begin
+  Result := False;
+  sessionType := GetEnvironmentVariable('XDG_SESSION_TYPE');
+  if LowerCase(sessionType) <> 'wayland' then
+    Exit;
+
+  if AHandle = 0 then
+    Exit;
+
+  QtWidget := TQtWidget(AHandle);
+  if not Assigned(QtWidget) or not Assigned(QtWidget.Widget) then
+    Exit;
+
+  // Get the QWindow handle from the QWidget and call the binding.
+  qwin := QWidget_windowHandle(QtWidget.Widget);
+  if qwin = nil then
+    Exit;
+
+  // QWindow_startSystemMove is declared in the Qt6 interface (qt62.pas)
+  // and returns a boolean indicating whether the call succeeded.
+  Result := QWindow_startSystemMove(qwin);
+end;
+{$endif}
 
 // Empty drag event handler
 procedure TfBG.lValStartDrag(Sender: TObject; var DragObject: TDragObject);
