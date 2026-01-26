@@ -689,7 +689,7 @@ DOT_OFFSET_RANGE: integer = -15; // Fine-tune vertical alignment of threshold li
 {$ifdef HAIKU}
 DOT_OFFSET_RANGE: integer = -15; // Fine-tune vertical alignment of threshold lines with dots
 {$endif}
-DOT_LINES: boolean = true;
+DOT_LINES: boolean = false;  // Guidelines what value is where
 DELTA_MAX: integer = 2;
 {$ifdef DEBUG}
 debug_load_text: boolean = false;
@@ -1575,12 +1575,12 @@ var
   clientH: integer;
   dotHeight: integer;
   bmp: TBitmap;
-  {$IFDEF DEBUG}
+
   debugY: integer;
   debugValue: single;
   debugText: string;
   i: integer;
-{$ENDIF}
+
 // Helper to map a BG value in internal units to a Y coordinate matching SetPointHeight
 function ValueToY(const Value: single): integer;
   var
