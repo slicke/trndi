@@ -88,32 +88,55 @@ uses
 Process, LCLType;
 
 {------------------------------------------------------------------------------
-  IsNotifySendAvailable
-  ---------------------
-  Check PATH for the 'notify-send' tool. Returns True if found.
+  FindNotifyCmd / IsNotifyAvailable
+  ---------------------------------
+  Probe PATH for a notification helper. Prefer 'notify' (Haiku) then
+  'notify-send' (common on Linux). Returns the executable name or '' if none.
  ------------------------------------------------------------------------------}
-function IsNotifySendAvailable: boolean;
+function FindNotifyCmd: string;
 var
   AProcess: TProcess;
-  OutputLines: TStringList;
 begin
-  Result := false;
+  Result := '';
+
+  // Check for 'notify' first (Haiku style)
   AProcess := TProcess.Create(nil);
-  OutputLines := TStringList.Create;
+  try
+    AProcess.Executable := 'which';
+    AProcess.Parameters.Add('notify');
+    AProcess.Options := [poUsePipes, poWaitOnExit, poNoConsole];
+    try
+      AProcess.Execute;
+      if AProcess.ExitStatus = 0 then
+        Exit('notify');
+    except
+      // ignore
+    end;
+  finally
+    AProcess.Free;
+  end;
+
+  // Fallback to notify-send
+  AProcess := TProcess.Create(nil);
   try
     AProcess.Executable := 'which';
     AProcess.Parameters.Add('notify-send');
     AProcess.Options := [poUsePipes, poWaitOnExit, poNoConsole];
     try
       AProcess.Execute;
-      Result := AProcess.ExitStatus = 0;
+      if AProcess.ExitStatus = 0 then
+        Exit('notify-send');
     except
-      Result := false;
+      // ignore
     end;
   finally
-    OutputLines.Free;
     AProcess.Free;
   end;
+end;
+
+function IsNotifyAvailable: boolean;
+begin
+  Result := FindNotifyCmd <> '';
 end;
 
 {------------------------------------------------------------------------------
@@ -190,28 +213,72 @@ end;
 {------------------------------------------------------------------------------
   attention
   ---------
-  Show a notification using notify-send if available.
+  Use the detected notifier. Supports Haiku's `notify --title` syntax and
+  `notify-send`. The icon parameter is optional and will be used if an icon
+  file is found in common locations. Falls back to TTS or dialog when no
+  notifier is available.
  ------------------------------------------------------------------------------}
 procedure TTrndiNativeHaiku.attention(topic, message: string);
 var
   AProcess: TProcess;
+  cmd: string;
+  iconPath: string;
+  cfgDir: string;
 begin
-  if isNotificationSystemAvailable then
-  begin
-    AProcess := TProcess.Create(nil);
-    try
-      AProcess.Executable := 'notify-send';
+  cmd := FindNotifyCmd;
+
+  // If no notifier exists, do nothing (Haiku systems have 'notify')
+  if cmd = '' then
+    Exit;
+
+  // Try to locate an optional icon in common locations
+  iconPath := '';
+  cfgDir := ExtractFileDir(ResolveIniPath);
+  if FileExists(IncludeTrailingPathDelimiter(cfgDir) + 'trndi.png') then
+    iconPath := IncludeTrailingPathDelimiter(cfgDir) + 'trndi.png'
+  else if FileExists(IncludeTrailingPathDelimiter(cfgDir) + 'trndi-icon.png') then
+    iconPath := IncludeTrailingPathDelimiter(cfgDir) + 'trndi-icon.png'
+  else if FileExists(ExtractFileDir(ParamStr(0)) + PathDelim + 'trndi.png') then
+    iconPath := ExtractFileDir(ParamStr(0)) + PathDelim + 'trndi.png'
+  else if FileExists('/boot/system/apps/Trndi/icon.png') then
+    iconPath := '/boot/system/apps/Trndi/icon.png';
+
+  AProcess := TProcess.Create(nil);
+  try
+    AProcess.Executable := cmd;
+
+    if cmd = 'notify' then
+    begin
+      // Haiku syntax: notify --icon icon.png --title "Title" "Message"
+      if iconPath <> '' then
+      begin
+        AProcess.Parameters.Add('--icon');
+        AProcess.Parameters.Add(iconPath);
+      end;
+      AProcess.Parameters.Add('--title');
       AProcess.Parameters.Add(topic);
       AProcess.Parameters.Add(message);
-      AProcess.Options := [poNoConsole];
-      try
-        AProcess.Execute;
-      except
-        // Silently fail if notification doesn't work
+    end
+    else // notify-send
+    begin
+      if iconPath <> '' then
+      begin
+        AProcess.Parameters.Add('--icon');
+        AProcess.Parameters.Add(iconPath);
       end;
-    finally
-      AProcess.Free;
+      // notify-send <summary> <body>
+      AProcess.Parameters.Add(topic);
+      AProcess.Parameters.Add(message);
     end;
+
+    AProcess.Options := [poNoConsole];
+    try
+      AProcess.Execute;
+    except
+      // Silently fail if notification doesn't work
+    end;
+  finally
+    AProcess.Free;
   end;
 end;
 
@@ -366,9 +433,12 @@ end;
   Return the notification system in use.
  ------------------------------------------------------------------------------}
 class function TTrndiNativeHaiku.getNotificationSystem: string;
+var
+  cmd: string;
 begin
-  if IsNotifySendAvailable then
-    Result := 'notify-send'
+  cmd := FindNotifyCmd;
+  if cmd <> '' then
+    Result := cmd
   else
     Result := 'none';
 end;
