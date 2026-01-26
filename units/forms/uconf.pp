@@ -69,6 +69,7 @@ TfConf = class(TForm)
   bColorGraphHelp: TButton;
   bMultiUserHelp: TButton;
   bLanguageHelp: TButton;
+  bOutdatedHelp1: TButton;
   bPredictHorizon: TButton;
   bUseURLHelp: TButton;
   bThreasholdLinesHelp: TButton;
@@ -117,10 +118,12 @@ TfConf = class(TForm)
   cbPredictShortSize: TComboBox;
   cbPrivacy: TCheckBox;
   eExt: TEdit;
+  Label25: TLabel;
   lExt: TLabel;
   lSysWarnInfo: TLabel;
   Panel18: TPanel;
   Panel3: TPanel;
+  pnDeltaMax: TPanel;
   pnSysWarn: TPanel;
   rbPredictShortArrowOnly: TRadioButton;
   rbPredictShortShowValue: TRadioButton;
@@ -295,6 +298,7 @@ TfConf = class(TForm)
   rbUnit: TRadioGroup;
   seTIR: TSpinEdit;
   spTHRESHOLD: TSpinEdit;
+  spDeltaMax: TSpinEdit;
   tsAdvanced: TTabSheet;
   tsTir: TTabSheet;
   tsChroma: TTabSheet;
@@ -319,6 +323,7 @@ TfConf = class(TForm)
   procedure bMinMinutesHelpClick(Sender: TObject);
   procedure bMultiUserHelpClick(Sender: TObject);
   procedure bNotificationHelpClick(Sender: TObject);
+  procedure bOutdatedHelp1Click(Sender: TObject);
   procedure bOutdatedHelpClick(Sender: TObject);
   procedure bOverrideHelpClick(Sender: TObject);
   procedure bPredictHelpClick(Sender: TObject);
@@ -453,6 +458,9 @@ RS_PREDICTION_HELP =
 
 RS_OUTDATED_HELP =
   'This is the time after which Trndi will show the "no recent" readings overlay. Trndi checks this when updating from the remote server, not every minute.';
+
+RS_DELTA_MAX =
+  'When the previous reading is missing, use the next available reading within this many 5-minute-intervals to calculate delta.';
 
 RS_DEX =
   'Dexcom servers do not provide custom high and low blood sugar values.'+sLineBreak+'Please set your own thresholds in the Customization tab.';
@@ -1203,6 +1211,12 @@ end;
 procedure TfConf.bNotificationHelpClick(Sender: TObject);
 begin
   ShowMessage(RS_NOTIFICATION_HELP);
+end;
+
+procedure TfConf.bOutdatedHelp1Click(Sender: TObject);
+begin
+  if UXDialog(uxdAuto,'Delta', RS_DELTA_MAX,[mbOK, mbUxRead]) <> mrOK then
+    OpenURL('https://github.com/slicke/trndi/blob/main/doc/DeltaMax.md');
 end;
 
 procedure TfConf.bOutdatedHelpClick(Sender: TObject);

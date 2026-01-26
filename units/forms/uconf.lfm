@@ -17,10 +17,10 @@ object fConf: TfConf
     Height = 518
     Top = 11
     Width = 665
-    ActivePage = tsExt
+    ActivePage = tsAdvanced
     Align = alClient
     BorderSpacing.Around = 5
-    TabIndex = 10
+    TabIndex = 5
     TabOrder = 0
     OnChange = pcMainChange
     object tsGeneral: TTabSheet
@@ -11980,6 +11980,49 @@ object fConf: TfConf
           Caption = '?'
           TabOrder = 2
           OnClick = bPrivacyHelpClick
+        end
+      end
+      object pnDeltaMax: TPanel
+        Left = 15
+        Height = 51
+        Top = 81
+        Width = 644
+        Align = alTop
+        BorderSpacing.Left = 15
+        BorderSpacing.Top = 15
+        BevelOuter = bvNone
+        ClientHeight = 51
+        ClientWidth = 644
+        TabOrder = 3
+        object spDeltaMax: TSpinEdit
+          Left = 0
+          Height = 30
+          Top = 21
+          Width = 82
+          Align = alLeft
+          BorderSpacing.Top = 5
+          MaxValue = 5
+          MinValue = 2
+          TabOrder = 0
+          Value = 2
+          OnChange = spTHRESHOLDChange
+        end
+        object Label25: TLabel
+          Left = 0
+          Height = 16
+          Top = 0
+          Width = 644
+          Align = alTop
+          Caption = 'Maximum delta slots'
+        end
+        object bOutdatedHelp1: TButton
+          Left = 104
+          Height = 22
+          Top = 24
+          Width = 27
+          Caption = '?'
+          TabOrder = 1
+          OnClick = bOutdatedHelp1Click
         end
       end
     end

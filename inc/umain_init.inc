@@ -644,6 +644,7 @@ begin
     DOT_ADJUST := GetFloatSetting('ux.dot_adjust', 0);
 
     DOT_OFFSET_RANGE := GetIntSetting('ux.dot_offset_range', DOT_OFFSET_RANGE);
+    DELTA_MAX := GetIntSetting('ux.delta_max', DELTA_MAX);
     // DOT_VISUAL_OFFSET := CalculateDotVisualOffset;  // No longer needed - centering uses half dot height
     miRangeColor.Checked := GetBoolSetting('ux.range_color', true);
     PaintRange := native.GetBoolSetting('ux.paint_range', true);

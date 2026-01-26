@@ -690,9 +690,11 @@ DOT_OFFSET_RANGE: integer = -15; // Fine-tune vertical alignment of threshold li
 DOT_OFFSET_RANGE: integer = -15; // Fine-tune vertical alignment of threshold lines with dots
 {$endif}
 DOT_LINES: boolean = true;
+DELTA_MAX: integer = 2;
 {$ifdef DEBUG}
 debug_load_text: boolean = false;
 {$endif}
+
 
 
 var
@@ -2817,6 +2819,8 @@ procedure LoadUserSettings(f: TfConf);
       rbUnit.ItemIndex := IfThen(GetSetting('unit', 'mmol') = 'mmol', 0, 1);
       spTHRESHOLD.Value := native.GetIntSetting('system.fresh_threshold',
         DATA_FRESHNESS_THRESHOLD_MINUTES);
+      spDeltaMax.Value := native.GetIntSetting('ux.delta_max',
+        DATA_FRESHNESS_THRESHOLD_MINUTES);
 
       // Override range settings
       if api = nil then
@@ -3168,6 +3172,7 @@ procedure SaveUserSettings(f: TfConf);
       SetSetting('display.timestamp', cbTimeStamp.Checked);
 
       SetSetting('system.fresh_threshold', spTHRESHOLD.Value);
+      SetSetting('ux.delta_max', spDeltaMax.Value);
 
       // Save unit-specific settings
       if rbUnit.ItemIndex = 0 then
@@ -4435,7 +4440,7 @@ begin
 
   // Only show a diff when the immediately previous reading exists and the
   // time gap doesn't imply a missing 5-minute slot.
-  if (not havePrev) or (gapMin >= (INTERVAL_MINUTES * 2)) then
+  if (not havePrev) or (gapMin >= (INTERVAL_MINUTES * DELTA_MAX)) then
     lDiff.Caption := '--'
   else
   if reading.deltaEmpty then
