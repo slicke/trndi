@@ -1,5 +1,5 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/bin/sh
+set -eu
 
 GNOME_EXT_UUID='trndi-current@slicke.com'
 GNOME_SRC="/usr/local/share/trndi/gnome-shell-extension/${GNOME_EXT_UUID}"
@@ -10,7 +10,7 @@ KDE_SRC="/usr/local/share/trndi/kde-plasmoid/${KDE_PLASMOID_ID}"
 KDE_DST="/usr/share/plasma/plasmoids/${KDE_PLASMOID_ID}"
 
 # --- GNOME Shell extension (system-wide install) ---
-if [[ -d "$GNOME_SRC" && -d "/usr/share/gnome-shell" ]]; then
+if [ -d "$GNOME_SRC" ] && [ -d "/usr/share/gnome-shell" ]; then
   mkdir -p "$(dirname "$GNOME_DST")"
   rm -rf "$GNOME_DST"
   cp -a "$GNOME_SRC" "$GNOME_DST"
@@ -20,7 +20,7 @@ if [[ -d "$GNOME_SRC" && -d "/usr/share/gnome-shell" ]]; then
   if command -v gnome-shell >/dev/null 2>&1; then
     ver="$(gnome-shell --version 2>/dev/null | grep -Eo '[0-9]+' | head -n1 || true)"
     meta="$GNOME_DST/metadata.json"
-    if [[ -n "$ver" && -f "$meta" ]]; then
+    if [ -n "$ver" ] && [ -f "$meta" ]; then
       python3 - <<'PY' "$meta" "$ver" || true
 import json, sys
 path, ver = sys.argv[1], sys.argv[2]
@@ -52,9 +52,9 @@ fi
 
 # --- KDE Plasma plasmoid (system-wide install) ---
 # Plasma discovers widgets placed under /usr/share/plasma/plasmoids/<id>
-if [[ -d "$KDE_SRC" ]]; then
+if [ -d "$KDE_SRC" ]; then
   # Check if KDE Plasma is installed by looking for common KDE components
-  if command -v plasmashell >/dev/null 2>&1 || [[ -d "/usr/share/plasma" ]] || [[ -d "/usr/share/kservices5" ]]; then
+  if command -v plasmashell >/dev/null 2>&1 || [ -d "/usr/share/plasma" ] || [ -d "/usr/share/kservices5" ]; then
     mkdir -p "$(dirname "$KDE_DST")"
     rm -rf "$KDE_DST"
     cp -a "$KDE_SRC" "$KDE_DST"
