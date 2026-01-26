@@ -1303,8 +1303,9 @@ msgid "Wait. Shutting down extensions engine..."
 msgstr "Vänta. Stänger tilläggsmotorn..."
 
 #: trndi.strings.rs_cleanup_wait
-msgid "Please wait up to 20 seconds..."
-msgstr "Vänligen dröj upp till 20 sekunder..."
+#, object-pascal-format
+msgid "Please wait up to %d seconds..."
+msgstr "Vänligen dröj upp till %d sekunder..."
 
 #: trndi.strings.rs_compute_failed_ago
 msgid "Long ago"
@@ -1609,8 +1610,8 @@ msgid "over"
 msgstr "över"
 
 #: trndi.strings.rs_predict
-msgid "These are your predicted readings; Time-difference: predicted-reading"
-msgstr "Detta är dina förutspådda avläsningar; Tidsskillnad: förutspådd-avläsning"
+msgid "Your predicted future readings are shown on the lower-right-hand-side of the window; the difference from the last reading is shown in the middle"
+msgstr "Dina förutspådda avläsningar visas i det nedra högra hörnet; skillnaden från senaste avläsning visas i mitten"
 
 #: trndi.strings.rs_predictions_unavailable
 msgid "Predictions unavailable"
@@ -2324,7 +2325,7 @@ msgstr "När privat läge är aktiverat, visas inte avläsningar. Trndi visar is
 
 #: uconf.rs_remove_acc
 msgid "Removed accounts are made inactive, and can be restored by adding the same name again"
-msgstr "Borttagna konton blir inaktiva, de kan återställas genom att skapa om användaren med sanna namn"
+msgstr "Borttagna konton blir inaktiva, de kan återställas genom att skapa om användaren med samma namn"
 
 #: uconf.rs_saftey_hi
 msgid "Trndi won't allow a larger limit, for your own saftey. This can be overridden manually/via plugin"

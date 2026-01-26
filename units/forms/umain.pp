@@ -1492,7 +1492,7 @@ begin
     lTir.Hide;
     lArrow.hide;
 //    lDiff.Hide;
-    lDiff.Caption := RS_CLEANUP_WAIT;
+    lDiff.Caption := Format(RS_CLEANUP_WAIT, [20]);
     lAgo.hide;
     lPredict.hide;
     Application.ProcessMessages;

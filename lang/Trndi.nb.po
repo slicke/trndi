@@ -1232,7 +1232,8 @@ msgid "Wait. Shutting down extensions engine..."
 msgstr ""
 
 #: trndi.strings.rs_cleanup_wait
-msgid "Please wait up to 20 seconds..."
+#, object-pascal-format
+msgid "Please wait up to %d seconds..."
 msgstr ""
 
 #: trndi.strings.rs_compute_failed_ago
@@ -1523,7 +1524,7 @@ msgid "over"
 msgstr ""
 
 #: trndi.strings.rs_predict
-msgid "These are your predicted readings; Time-difference: predicted-reading"
+msgid "Your predicted future readings are shown on the lower-right-hand-side of the window; the difference from the last reading is shown in the middle"
 msgstr ""
 
 #: trndi.strings.rs_predictions_unavailable

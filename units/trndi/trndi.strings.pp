@@ -138,11 +138,11 @@ RS_INIT_FIRST = 'Fetching first reading...';
 RS_INIT_CHROMA = 'Initializing Chroma...';
 
 RS_CLEANUP = 'Wait. Shutting down extensions engine...';
-RS_CLEANUP_WAIT = 'Please wait up to 20 seconds...';
+RS_CLEANUP_WAIT = 'Please wait up to %d seconds...';
 
 RS_RIGHT_CLICK = 'The settings dialog will now open, in the future please right-click the reading to open the menu.';
 
-RS_PREDICT = 'These are your predicted readings; Time-difference: predicted-reading';
+RS_PREDICT = 'Your predicted future readings are shown on the lower-right-hand-side of the window; the difference from the last reading is shown in the middle';
 
 RS_SAFEMODE = 'Safe Mode Enabled';
 RS_SAFEMODE_DESC = 'Trndi is running in <b>Safe Mode</b>!<ul><li>No start-up actions from extensions will run</li><li>You cannot use, and no actions will trigger from, extensions</li></ul><br>Extensions will load next run, unless you press <b>CTRL</b>!';
