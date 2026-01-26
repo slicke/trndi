@@ -32,6 +32,7 @@ unit trndi.native.mac;
 }
 
 {$I ../../inc/native.inc}
+{$linkframework UserNotifications}
 
 interface
 
@@ -88,7 +89,8 @@ type
     class function getNotificationSystem: string; override;
     {** Check whether platform TTS is available. }
     class function SpeakAvailable: boolean; override;
-    {** Name of the software used for speech on macOS (e.g., 'say'). }
+    {** Request notification authorization and perform other per-launch setup. }
+    procedure start; override;    {** Name of the software used for speech on macOS (e.g., 'say'). }
     class function SpeakSoftwareName: string; override;
     {** Best-effort window manager name for macOS. }
     class function GetWindowManagerName: string; override;
@@ -97,41 +99,109 @@ type
 implementation
 
 uses
-  Process;
+  Process, SysUtils, DateUtils;
+
+const
+  ObjCLib = '/usr/lib/libobjc.A.dylib';
+  CFLib   = '/System/Library/Frameworks/CoreFoundation.framework/CoreFoundation';
+
+type
+  id  = Pointer;
+  SEL = Pointer;
+
+// Typed imports of objc_msgSend with a few arities we need
+function objc_msgSend0(obj: id; sel: SEL): id; cdecl; external ObjCLib name 'objc_msgSend';
+function objc_msgSend1(obj: id; sel: SEL; p1: id): id; cdecl; external ObjCLib name 'objc_msgSend';
+function objc_msgSend2_d_b(obj: id; sel: SEL; p1: double; p2: boolean): id; cdecl; external ObjCLib name 'objc_msgSend';
+function objc_msgSend3(obj: id; sel: SEL; p1: id; p2: id; p3: id): id; cdecl; external ObjCLib name 'objc_msgSend';
+function objc_msgSend2_id_id(obj: id; sel: SEL; p1: id; p2: id): id; cdecl; external ObjCLib name 'objc_msgSend';
+function objc_getClass(name: MarshaledAString): id;        cdecl; external ObjCLib;
+function sel_registerName(name: MarshaledAString): SEL;    cdecl; external ObjCLib;
 
 {------------------------------------------------------------------------------
   attention (macOS)
   -----------------
-  Try to deliver a native notification attributed to the app.
-  Fallback to the base implementation (osascript) if anything fails.
+  Try UNUserNotificationCenter -> NSUserNotification -> osascript.
  ------------------------------------------------------------------------------}
 
 procedure TTrndiNativeMac.attention(topic, message: string);
 var
-  Center: NSUserNotificationCenter;
-  N: NSUserNotification;
-  TitleStr, MsgStr: NSString;
+  UNClass, Center, ContentClass, Content, TriggerClass, Trigger, ReqClass, Req, IdStr, TitleStr, BodyStr: id;
+  selCurrent, selAddReq, selNew, selSetTitle, selSetBody: SEL;
+  ok: Boolean;
+  sId: string;
 begin
+  ok := False;
+  try
+    // Use UNUserNotificationCenter when available (modern API).
+    UNClass := objc_getClass('UNUserNotificationCenter');
+    if UNClass <> nil then
+    begin
+      selCurrent := sel_registerName('currentNotificationCenter');
+      Center := objc_msgSend0(UNClass, selCurrent);
+      if Center <> nil then
+      begin
+        // Create content
+        ContentClass := objc_getClass('UNMutableNotificationContent');
+        selNew := sel_registerName('new');
+        Content := objc_msgSend0(ContentClass, selNew);
+
+        TitleStr := NSSTR(topic);
+        BodyStr := NSSTR(message);
+        selSetTitle := sel_registerName('setTitle:');
+        selSetBody := sel_registerName('setBody:');
+        objc_msgSend1(Content, selSetTitle, TitleStr);
+        objc_msgSend1(Content, selSetBody, BodyStr);
+        TitleStr.Release;
+        BodyStr.Release;
+
+        // Create a trigger to fire almost immediately
+        TriggerClass := objc_getClass('UNTimeIntervalNotificationTrigger');
+        Trigger := objc_msgSend2_d_b(TriggerClass, sel_registerName('triggerWithTimeInterval:repeats:'), 1.0, False);
+
+        // Create a unique identifier for the request
+        sId := Format('trndi-%d', [DateTimeToUnix(Now)]);
+        IdStr := NSSTR(sId);
+
+        // Create request
+        ReqClass := objc_getClass('UNNotificationRequest');
+        Req := objc_msgSend3(ReqClass, sel_registerName('requestWithIdentifier:content:trigger:'), IdStr, Content, Trigger);
+
+        // Add request (no completion handler)
+        selAddReq := sel_registerName('addNotificationRequest:withCompletionHandler:');
+        objc_msgSend2_id_id(Center, selAddReq, Req, nil);
+
+        // Best-effort; do not raise on failures
+        ok := True;
+      end;
+    end;
+  except
+    // Ignore and fall back.
+  end;
+
+  if ok then Exit;
+
+  // Fallback to deprecated NSUserNotification implementation
   try
     Center := NSUserNotificationCenter.defaultUserNotificationCenter;
     if Center <> nil then
     begin
-      N := NSUserNotification.alloc.init;
+      Req := NSUserNotification.alloc.init;
       try
         TitleStr := NSSTR(topic);
-        MsgStr := NSSTR(message);
+        BodyStr := NSSTR(message);
         try
-          N.setTitle(TitleStr);
-          N.setInformativeText(MsgStr);
+          Req.setTitle(TitleStr);
+          Req.setInformativeText(BodyStr);
         finally
           TitleStr.Release;
-          MsgStr.Release;
+          BodyStr.Release;
         end;
 
-        Center.deliverNotification(N);
+        Center.deliverNotification(Req);
         Exit;
       finally
-        N.Release;
+        Req.Release;
       end;
     end;
   except
@@ -280,6 +350,37 @@ begin
   // Enable dark appearance for the app's UI via SimpleDarkMode
   SimpleDarkMode.EnableAppDarkMode;
   Result := True;
+end;
+
+{------------------------------------------------------------------------------
+  start
+  -----
+  Best-effort request for notification authorization on startup (no-op if
+  UserNotifications framework is not present). We don't wait for the
+  completion handler to avoid blocking startup; this is a prompt-triggering
+  best-effort call.
+ ------------------------------------------------------------------------------}
+procedure TTrndiNativeMac.start;
+var
+  UNClass, Center: id;
+  selRequest: SEL;
+  // declare a typed call that accepts an options mask and an object (block)
+  function objc_msgSend_uint_id(obj: id; sel: SEL; p1: NativeUInt; p2: id): id; cdecl; external ObjCLib name 'objc_msgSend';
+begin
+  inherited start;
+  try
+    UNClass := objc_getClass('UNUserNotificationCenter');
+    if UNClass = nil then Exit;
+    Center := objc_msgSend0(UNClass, sel_registerName('currentNotificationCenter'));
+    if Center = nil then Exit;
+
+    selRequest := sel_registerName('requestAuthorizationWithOptions:completionHandler:');
+    // UNAuthorizationOptionAlert|Badge|Sound is (1<<0)|(1<<1)|(1<<2) == 7
+    // We pass nil for completion handler (best-effort)
+    objc_msgSend_uint_id(Center, selRequest, 7, nil);
+  except
+    // ignore
+  end;
 end;
 
 {------------------------------------------------------------------------------
