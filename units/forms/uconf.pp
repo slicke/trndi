@@ -69,8 +69,9 @@ TfConf = class(TForm)
   bColorGraphHelp: TButton;
   bMultiUserHelp: TButton;
   bLanguageHelp: TButton;
-  bOutdatedHelp1: TButton;
+  bDeltaMaxHelp: TButton;
   bPredictHorizon: TButton;
+  bTimeStampHelp: TButton;
   bUseURLHelp: TButton;
   bThreasholdLinesHelp: TButton;
   bOutdatedHelp: TButton;
@@ -323,7 +324,7 @@ TfConf = class(TForm)
   procedure bMinMinutesHelpClick(Sender: TObject);
   procedure bMultiUserHelpClick(Sender: TObject);
   procedure bNotificationHelpClick(Sender: TObject);
-  procedure bOutdatedHelp1Click(Sender: TObject);
+  procedure bDeltaMaxHelpClick(Sender: TObject);
   procedure bOutdatedHelpClick(Sender: TObject);
   procedure bOverrideHelpClick(Sender: TObject);
   procedure bPredictHelpClick(Sender: TObject);
@@ -339,6 +340,7 @@ TfConf = class(TForm)
   procedure bTestClick(Sender: TObject);
   procedure bTestSpeechClick(Sender: TObject);
   procedure bThreasholdLinesHelpClick(Sender: TObject);
+  procedure bTimeStampHelpClick(Sender: TObject);
   procedure btResetClick(Sender: TObject);
   procedure btUserSaveClick(Sender: TObject);
   procedure bUseURLHelpClick(Sender: TObject);
@@ -372,6 +374,7 @@ TfConf = class(TForm)
   procedure lbUsersEnter(Sender: TObject);
   procedure lbUsersSelectionChange(Sender: TObject; User: boolean);
   procedure lLicenseClick(Sender: TObject);
+  procedure lSysWarnInfoClick(Sender: TObject);
   procedure lValClick(Sender: TObject);
   procedure pcColorsChange(Sender: TObject);
   procedure pcMainChange(Sender: TObject);
@@ -461,6 +464,9 @@ RS_OUTDATED_HELP =
 
 RS_DELTA_MAX =
   'When the previous reading is missing, use the next available reading within this many 5-minute-intervals to calculate delta.';
+
+RS_TIMESTAMP_HELP =
+  'By default Trndi shows the amount of minutes since the last reading, this setting allows you to display the time of the last reading instead.';
 
 RS_DEX =
   'Dexcom servers do not provide custom high and low blood sugar values.'+sLineBreak+'Please set your own thresholds in the Customization tab.';
@@ -1098,10 +1104,16 @@ end;
 
 procedure TfConf.cbSysChange(Sender: TObject);
 procedure WarnUnstableAPI;
+  var
+    i : integer;
   begin
     if (cbSys.Text = API_DEX_USA) or (cbSys.Text = API_DEX_EU) then
     begin
-      gbOverride.Color := $00D3D2EE;
+      gbOverride.Color := uxclLightBlue;
+       lLoUnder.Font.Color := clBlack;
+       lHiOver.Font.Color := clBlack;
+       cbCust.Font.Color := clBlack;
+
       pnSysWarn.Show;
       lSysWarnInfo.Caption := RS_DEX;
     end;
@@ -1213,7 +1225,7 @@ begin
   ShowMessage(RS_NOTIFICATION_HELP);
 end;
 
-procedure TfConf.bOutdatedHelp1Click(Sender: TObject);
+procedure TfConf.bDeltaMaxHelpClick(Sender: TObject);
 begin
   if UXDialog(uxdAuto,'Delta', RS_DELTA_MAX,[mbOK, mbUxRead]) <> mrOK then
     OpenURL('https://github.com/slicke/trndi/blob/main/doc/DeltaMax.md');
@@ -1467,6 +1479,11 @@ end;
 procedure TfConf.bThreasholdLinesHelpClick(Sender: TObject);
 begin
   ShowMessage(RS_Threashold_Lines_Help);
+end;
+
+procedure TfConf.bTimeStampHelpClick(Sender: TObject);
+begin
+  ShowMessage(RS_TIMESTAMP_HELP);
 end;
 
 procedure TfConf.btResetClick(Sender: TObject);
@@ -1784,6 +1801,14 @@ const
 begin
   if ExtMsg(uxdAuto, 'License', txt, [mbOK, mbUxRead], uxmtOK, uxscHuge) <> mrOk then
     OpenURL('https://github.com/slicke/trndi/blob/main/LICENSE.md');
+end;
+
+procedure TfConf.lSysWarnInfoClick(Sender: TObject);
+begin
+  case cbSys.Text of
+    API_DEX_USA, API_DEX_EU:
+    pcMain.ActivePage := tsCustom;
+  end;
 end;
 
 procedure TfConf.lValClick(Sender: TObject);
