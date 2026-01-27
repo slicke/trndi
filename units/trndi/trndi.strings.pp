@@ -67,6 +67,8 @@ RS_LATEST_READING = 'Latest Reading: Value = %.2f, Date = %s';
 RS_RESTART_APPLY = 'Trndi must be restarted for settings to take effect';
 RS_SETTINGS_SAVED = 'Settings saved and applied. Some settings may require a restart';
 RS_QUIT_CAPTION =  'Exit Trndi?';
+RS_QUIT_MINIMIZE_TITLE = 'Quit or Minimize?';
+RS_QUIT_MINIMIZE = 'Would you like to minimize to the Dock, or close Trndi?';
 RS_QUIT_MSG = 'Quit the app?';
 RS_LAST_UPDATE = '%d min';
 RS_COMPUTE_FAILED_AGO = 'Long ago';

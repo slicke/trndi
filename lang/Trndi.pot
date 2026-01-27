@@ -1540,6 +1540,14 @@ msgstr ""
 msgid "Exit Trndi?"
 msgstr ""
 
+#: trndi.strings.rs_quit_minimize
+msgid "Would you like to minimize to the Dock, or close Trndi?"
+msgstr ""
+
+#: trndi.strings.rs_quit_minimize_title
+msgid "Quit or Minimize?"
+msgstr ""
+
 #: trndi.strings.rs_quit_msg
 msgid "Quit the app?"
 msgstr ""
