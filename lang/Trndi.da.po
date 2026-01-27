@@ -462,6 +462,10 @@ msgstr ""
 msgid "Flash on perfect reading (5.5mmol/L / 100mg/dL)"
 msgstr ""
 
+#: tfconf.cbfonts.caption
+msgid "Trend Dots"
+msgstr ""
+
 #: tfconf.cbmultitouch.caption
 msgid "Multi-touch"
 msgstr ""
@@ -719,10 +723,6 @@ msgstr ""
 msgid "Current dot:"
 msgstr ""
 
-#: tfconf.label17.caption
-msgid "Dots: Enter the Unicode code for a character, or use a template"
-msgstr ""
-
 #: tfconf.label18.caption
 msgid "Connection"
 msgstr ""
@@ -805,7 +805,7 @@ msgid "Time-in-range (TIR) is the amount of time you are within your high/low go
 msgstr ""
 
 #: tfconf.label8.caption
-msgid "Click on a component to the left, to edit it's font"
+msgid "Click on the time, reading or arrow to change it's font"
 msgstr ""
 
 #: tfconf.label9.caption
@@ -2022,6 +2022,16 @@ msgid ""
 "Please set your own thresholds in the Customization tab."
 msgstr ""
 
+#: uconf.rs_dot_help
+msgid ""
+"You can change the design of the trend dots here, by using Unicode characters. Enter the Unicode, or use a template.\n"
+"There are two dots, the normal dot and the current reading (when the dots are expanded/clicked)"
+msgstr ""
+
+#: uconf.rs_dot_help_title
+msgid "Changing the trend dots"
+msgstr ""
+
 #: uconf.rs_driver_contributor
 msgid "Driver contributor: "
 msgstr ""
@@ -2045,6 +2055,10 @@ msgstr ""
 #: uconf.rs_extcount
 #, object-pascal-format
 msgid "Extensions count: %d"
+msgstr ""
+
+#: uconf.rs_font_help
+msgid "You can change the font of the reading, time and arrow. Click on the respective item here to change the font"
 msgstr ""
 
 #: uconf.rs_graph_icon_current

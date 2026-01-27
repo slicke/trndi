@@ -3056,7 +3056,7 @@ procedure SetupUIElements(f: TfConf);
       lAgo.Caption := Self.lAgo.Caption;
       pnDisplay.Color := Self.Color;
       pnDisplay.Font := fBG.Font;
-      pnFonts.Font := eAddr.Font; // Override fBG.font for the panel
+      cbFonts.Font := eAddr.Font; // Override fBG.font for the panel
 
       lDot1.Font.Color := self.lDot1.Font.Color;
       lDot2.Font.Color := self.lDot1.Font.Color;

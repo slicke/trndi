@@ -468,6 +468,10 @@ msgstr "Blixtra vid logt blodsocker"
 msgid "Flash on perfect reading (5.5mmol/L / 100mg/dL)"
 msgstr "Blixtra vid perfekt verde (5,5mmol/L / 100mg/dL)"
 
+#: tfconf.cbfonts.caption
+msgid "Trend Dots"
+msgstr ""
+
 #: tfconf.cbmultitouch.caption
 msgid "Multi-touch"
 msgstr "Multipek"
@@ -726,10 +730,6 @@ msgstr "Serveradress / Anvendare Dexcom"
 msgid "Current dot:"
 msgstr "Nuvarande punkt:"
 
-#: tfconf.label17.caption
-msgid "Dots: Enter the Unicode code for a character, or use a template"
-msgstr "Punkter: Ange Unicode-koden fôr ett tecken, eller anvend mallarna"
-
 #: tfconf.label18.caption
 msgid "Connection"
 msgstr "Anslutning"
@@ -812,7 +812,9 @@ msgid "Time-in-range (TIR) is the amount of time you are within your high/low go
 msgstr "Tid i molomrodet (TIR) er den tid du varit inom ditt mol fôr hôga/loga verden."
 
 #: tfconf.label8.caption
-msgid "Click on a component to the left, to edit it's font"
+#, fuzzy
+#| msgid "Click on a component to the left, to edit it's font"
+msgid "Click on the time, reading or arrow to change it's font"
 msgstr "Klicka po en komponent till venster, fôr att endra typsnittet"
 
 #: tfconf.label9.caption
@@ -2152,6 +2154,16 @@ msgstr ""
 "Dexcom:s servrar tillhandahåller inte värden för vad som är högt och lågt.\n"
 "Vänligen ställ in dina egna gränser under fliken Personalisera."
 
+#: uconf.rs_dot_help
+msgid ""
+"You can change the design of the trend dots here, by using Unicode characters. Enter the Unicode, or use a template.\n"
+"There are two dots, the normal dot and the current reading (when the dots are expanded/clicked)"
+msgstr ""
+
+#: uconf.rs_dot_help_title
+msgid "Changing the trend dots"
+msgstr ""
+
 #: uconf.rs_driver_contributor
 msgid "Driver contributor: "
 msgstr "Bidragen av: "
@@ -2176,6 +2188,10 @@ msgstr "Ange ett anvendarnamn"
 #, object-pascal-format, fuzzy, badformat
 msgid "Extensions count: %d"
 msgstr "Tilleggsantal: __PHad46520b-c2bd-41d2-93e4-f69806e260c7__"
+
+#: uconf.rs_font_help
+msgid "You can change the font of the reading, time and arrow. Click on the respective item here to change the font"
+msgstr ""
 
 #: uconf.rs_graph_icon_current
 msgid "Choose an icon for the current point in the graph"
