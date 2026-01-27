@@ -11070,8 +11070,6 @@ object fConf: TfConf
           Top = 32
           Width = 55
           Caption = 'PREVIEW'
-          Font.Color = clWhite
-          ParentFont = False
         end
         object bTemplateTrend: TButton
           Left = 128
@@ -11106,8 +11104,6 @@ object fConf: TfConf
           Top = 38
           Width = 55
           Caption = 'PREVIEW'
-          Font.Color = clWhite
-          ParentFont = False
         end
         object bTemplateCurrent: TButton
           Left = 360
