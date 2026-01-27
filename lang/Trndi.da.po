@@ -2022,6 +2022,10 @@ msgid ""
 "Please set your own thresholds in the Customization tab."
 msgstr ""
 
+#: uconf.rs_dot_click
+msgid "Dot appearance is modified below!"
+msgstr ""
+
 #: uconf.rs_dot_help
 msgid ""
 "You can change the design of the trend dots here, by using Unicode characters. Enter the Unicode, or use a template.\n"

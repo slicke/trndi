@@ -376,6 +376,7 @@ TfConf = class(TForm)
   procedure lbExtensionsSelectionChange(Sender: TObject; User: boolean);
   procedure lbUsersEnter(Sender: TObject);
   procedure lbUsersSelectionChange(Sender: TObject; User: boolean);
+  procedure lDot1Click(Sender: TObject);
   procedure lLicenseClick(Sender: TObject);
   procedure lSysWarnInfoClick(Sender: TObject);
   procedure lValClick(Sender: TObject);
@@ -443,6 +444,9 @@ RS_COLOR_BG =
 
 RS_OVERRIDE_LANGUAGE =
   'Choose which language to run Trndi in. Should you choose the wrong one, you can press the Windows/"meta" button at start to force English!';
+
+RS_DOT_CLICK =
+  'Dot appearance is modified below!';
 
 RS_DOT_HELP_TITLE =
   'Changing the trend dots';
@@ -1074,6 +1078,11 @@ begin
 
   gbMulti.Enabled := true;
   btUserSave.Enabled := false; // Twice as the fields change during update
+end;
+
+procedure TfConf.lDot1Click(Sender: TObject);
+begin
+  ShowMessage(RS_DOT_CLICK);
 end;
 
 procedure TfConf.getAPILabels(out user, pass: string);
@@ -1942,11 +1951,12 @@ procedure TfConf.tsDisplayShow(Sender: TObject);
 var
   l: tlabel;
 begin
-  // The label caption looks ugly and invalidate doesnt help. Neiter does redraw at this stage
+  // The label caption looks ugly and invalidate doesnt help. Neither does redraw at this stage
   for l in [lDot1, lDot2, lDot3, lDotCurr] do
     l.Caption := '';
-  //  eDot.OnChange(eDot);
-  //  eDotNow.OnChange(eDotNow);
+  // Update preview glyphs from current edit values so they appear when the tab is shown
+  eDot.OnChange(eDot);
+  eDotNow.OnChange(eDotNow);
 end;
 
 procedure TfConf.tsSystemShow(Sender: TObject);

@@ -10918,6 +10918,7 @@ object fConf: TfConf
           Top = 144
           Width = 28
           Caption = 'lDot1'
+          OnClick = lDot1Click
         end
         object lDot2: TLabel
           Left = 325
@@ -10925,6 +10926,7 @@ object fConf: TfConf
           Top = 168
           Width = 28
           Caption = 'lDot1'
+          OnClick = lDot1Click
         end
         object lDot1: TLabel
           Left = 284
@@ -10932,6 +10934,7 @@ object fConf: TfConf
           Top = 152
           Width = 28
           Caption = 'lDot1'
+          OnClick = lDot1Click
         end
         object bFontHelp: TButton
           Left = 624
