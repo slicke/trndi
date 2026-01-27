@@ -65,12 +65,16 @@ type
 TfConf = class(TForm)
   bAdd: TButton;
   bBackendHelp: TButton;
+  bDotHelp: TButton;
+  bFontHelp: TButton;
   bNotificationHelp: TButton;
   bColorGraphHelp: TButton;
   bMultiUserHelp: TButton;
   bLanguageHelp: TButton;
   bDeltaMaxHelp: TButton;
   bPredictHorizon: TButton;
+  bTemplateCurrent: TButton;
+  bTemplateTrend: TButton;
   bTimeStampHelp: TButton;
   bUseURLHelp: TButton;
   bThreasholdLinesHelp: TButton;
@@ -78,24 +82,22 @@ TfConf = class(TForm)
   bBadgeFlashHelp: TButton;
   bPrivacyHelp: TButton;
   bPredictHelp: TButton;
-  bTemplateCurrent: TButton;
   bTest: TButton;
   bOverrideHelp: TButton;
   bRemove: TButton;
   bSysNotice: TButton;
   bMinMinutesHelp: TButton;
-  bTemplateTrend: TButton;
   bCustomRangeHelp: TButton;
   bExtOpen: TButton;
+  Button2: TButton;
+  Button4: TButton;
   bWebAPI: TButton;
   bSysTouch: TButton;
   bTestAnnounce: TButton;
   bTestSpeech: TButton;
   btReset: TButton;
   btUserSave: TButton;
-  Button2: TButton;
   Button3: TButton;
-  Button4: TButton;
   bvExt: TBevel;
   bvExt1: TBevel;
   cbChromaNormal: TCheckBox;
@@ -118,9 +120,17 @@ TfConf = class(TForm)
   cbPredictShortMinutes: TComboBox;
   cbPredictShortSize: TComboBox;
   cbPrivacy: TCheckBox;
+  eDot: TEdit;
+  eDotNow: TEdit;
   eExt: TEdit;
+  cbFonts: TGroupBox;
+  Label16: TLabel;
+  Label2: TLabel;
   Label25: TLabel;
   lDot: TLabel;
+  lDot1: TLabel;
+  lDot2: TLabel;
+  lDot3: TLabel;
   lDotNow: TLabel;
   lExt: TLabel;
   lSysWarnInfo: TLabel;
@@ -169,8 +179,6 @@ TfConf = class(TForm)
   edURLLow: TEdit;
   edURLPerfect: TEdit;
   edNick: TEdit;
-  eDot: TEdit;
-  eDotNow: TEdit;
   edTray: TSpinEdit;
   ePass: TEdit;
   edMusicHigh: TEdit;
@@ -198,11 +206,8 @@ TfConf = class(TForm)
   Label1: TLabel;
   Label13: TLabel;
   Label14: TLabel;
-  Label16: TLabel;
-  Label17: TLabel;
   Label18: TLabel;
   Label19: TLabel;
-  Label2: TLabel;
   Label20: TLabel;
   Label21: TLabel;
   Label22: TLabel;
@@ -234,9 +239,6 @@ TfConf = class(TForm)
   lTitle: TLabel;
   Label7: TLabel;
   Label8: TLabel;
-  lDot1: TLabel;
-  lDot2: TLabel;
-  lDot3: TLabel;
   lDotCurr: TLabel;
   lHiOver1: TLabel;
   lLounder1: TLabel;
@@ -277,7 +279,6 @@ TfConf = class(TForm)
   pcColors: TPageControl;
   Panel1: TPanel;
   Panel7: TPanel;
-  pnFonts: TPanel;
   Panel11: TPanel;
   Panel12: TPanel;
   Panel2: TPanel;
@@ -318,7 +319,9 @@ TfConf = class(TForm)
   procedure bBadgeFlashHelpClick(Sender: TObject);
   procedure bColorGraphHelpClick(Sender: TObject);
   procedure bCustomRangeHelpClick(Sender: TObject);
+  procedure bDotHelpClick(Sender: TObject);
   procedure bExtOpenClick(Sender: TObject);
+  procedure bFontHelpClick(Sender: TObject);
   procedure bLanguageHelpClick(Sender: TObject);
   procedure bLimitsClick(Sender: TObject);
   procedure bMinMinutesHelpClick(Sender: TObject);
@@ -440,6 +443,15 @@ RS_COLOR_BG =
 
 RS_OVERRIDE_LANGUAGE =
   'Choose which language to run Trndi in. Should you choose the wrong one, you can press the Windows/"meta" button at start to force English!';
+
+RS_DOT_HELP_TITLE =
+  'Changing the trend dots';
+
+RS_DOT_HELP =
+  'You can change the design of the trend dots here, by using Unicode characters. Enter the Unicode, or use a template.'+sLineBreak+'There are two dots, the normal dot and the current reading (when the dots are expanded/clicked)';
+
+RS_FONT_HELP =
+  'You can change the font of the reading, time and arrow. Click on the respective item here to change the font';
 
 RS_OVERRIDE_HELP =
   'Setting values here allows you to define your own high and low blood sugar limits in Trndi.'
@@ -1284,9 +1296,20 @@ begin
   ShowMessage(RS_Custom_Range_Help);
 end;
 
+procedure TfConf.bDotHelpClick(Sender: TObject);
+begin
+  if ExtText(uxdAuto, RS_DOT_HELP_TITLE, RS_DOT_HELP, [mbOK, mbUXRead]) <> mrOK then
+    OpenURL('https://www.compart.com/en/unicode/U+2B24');
+end;
+
 procedure TfConf.bExtOpenClick(Sender: TObject);
 begin
   OpenDocument(eExt.Text);
+end;
+
+procedure TfConf.bFontHelpClick(Sender: TObject);
+begin
+    ShowMessage(RS_FONT_HELP);
 end;
 
 procedure TfConf.bLanguageHelpClick(Sender: TObject);

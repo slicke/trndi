@@ -468,6 +468,10 @@ msgstr "Blixtra vid lågt blodsocker"
 msgid "Flash on perfect reading (5.5mmol/L / 100mg/dL)"
 msgstr "Blixtra vid perfekt värde (5,5mmol/L / 100mg/dL)"
 
+#: tfconf.cbfonts.caption
+msgid "Trend Dots"
+msgstr "Trendpunkter"
+
 #: tfconf.cbmultitouch.caption
 msgid "Multi-touch"
 msgstr "Multipek"
@@ -724,10 +728,6 @@ msgstr "Serveradress / Användare Dexcom"
 msgid "Current dot:"
 msgstr "Nuvarande punkt:"
 
-#: tfconf.label17.caption
-msgid "Dots: Enter the Unicode code for a character, or use a template"
-msgstr "Punkter: Ange Unicode-koden för ett tecken, eller använd mallarna"
-
 #: tfconf.label18.caption
 msgid "Connection"
 msgstr "Anslutning"
@@ -810,8 +810,8 @@ msgid "Time-in-range (TIR) is the amount of time you are within your high/low go
 msgstr "Tid i målområdet (TIR) är den tid du varit inom ditt mål för höga/låga värden."
 
 #: tfconf.label8.caption
-msgid "Click on a component to the left, to edit it's font"
-msgstr "Klicka på en komponent till vänster, för att ändra typsnittet"
+msgid "Click on the time, reading or arrow to change it's font"
+msgstr "Klicka på tiden, avläsningen eller pilen för att ändra dess typsnitt"
 
 #: tfconf.label9.caption
 msgid "Trndi can trigger Spotify or Deezer to play a song when low/high"
@@ -2147,6 +2147,18 @@ msgstr ""
 "Dexcom:s servrar tillhandahåller inte värden för vad som är högt och lågt.\n"
 "Vänligen ställ in dina egna gränser under fliken Personalisera."
 
+#: uconf.rs_dot_help
+msgid ""
+"You can change the design of the trend dots here, by using Unicode characters. Enter the Unicode, or use a template.\n"
+"There are two dots, the normal dot and the current reading (when the dots are expanded/clicked)"
+msgstr ""
+"Du kan ändra formen på trendpunkterna hör, genom att använd Unicode-tecken. Ange Unicode, eller använd en mall.\n"
+"Det finns två punkter, den vanliga och den som visas som nuvarande avläsning (när punkterna expanderar/klickas)"
+
+#: uconf.rs_dot_help_title
+msgid "Changing the trend dots"
+msgstr "Ändrar trendpunkterna"
+
 #: uconf.rs_driver_contributor
 msgid "Driver contributor: "
 msgstr "Bidragen av: "
@@ -2171,6 +2183,10 @@ msgstr "Ange ett användarnamn"
 #, object-pascal-format
 msgid "Extensions count: %d"
 msgstr "Tilläggsantal: %d"
+
+#: uconf.rs_font_help
+msgid "You can change the font of the reading, time and arrow. Click on the respective item here to change the font"
+msgstr "Du kan ändra typsnittet på avläsning, tid och pil. Klicka på respektive här för att ändra typsnittet"
 
 #: uconf.rs_graph_icon_current
 msgid "Choose an icon for the current point in the graph"
@@ -2412,7 +2428,7 @@ msgstr ""
 
 #: ufloat.rscustomop
 msgid "You can use shift+<number> to manually set visibility (0 = 100% visible)"
-msgstr "Du kan använda skift+<nummerr> för att manuellt sätta synligheten (0 = 100% synlig)"
+msgstr "Du kan använda skift+<nummer> för att manuellt sätta synligheten (0 = 100% synlig)"
 
 #: ufloat.rscustomsize
 msgid "You can hold down shift and plus (+) or minus (-) to change the window size"
@@ -2505,4 +2521,3 @@ msgstr "Historikgraf"
 #, object-pascal-format
 msgid "Readings (%s)"
 msgstr "Avläsningar (%s)"
-
