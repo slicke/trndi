@@ -1417,7 +1417,7 @@ begin
   if not firstboot then
     if self.Showing then
     begin
-      mr := UXDialog(uxdAuto, 'Quit or Minimize?', 'Would you like to minimize to the Dock, or close Trndi?',
+      mr := UXDialog(uxdAuto, RS_QUIT_MINIMIZE_TITLE, RS_QUIT_MINIMIZE,
         [mbClose, mbUXMinimize, mbCancel]);
       case mr of
       mrClose:
