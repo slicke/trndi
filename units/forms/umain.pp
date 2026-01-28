@@ -5283,10 +5283,11 @@ begin
 end;
 
 function TfBG.DoFetchAndValidateReadings(const ForceRefresh: boolean): boolean;
-  {$ifdef DEBUG}
 var
+  {$ifdef DEBUG}
   res: string;
   {$endif}
+  msg: string;
 const
   API_CACHE_SECONDS = 10; // Don't call API more than once per 10 seconds
 begin
@@ -5359,7 +5360,16 @@ begin
   pnWarning.Visible := false;
   if (Length(bgs) < 1) or (not IsDataFresh) then
   begin
-    showWarningPanel(RS_NO_BACKEND, true);
+    // Show backend error details when available (e.g., invalid URL or auth)
+    msg := RS_NO_BACKEND;
+    if Assigned(api) and (Trim(api.errormsg) <> '') then
+    begin
+      msg := msg + sLineBreak + api.errormsg;
+      LogMessage('Backend error: ' + api.errormsg);
+    end;
+
+    showWarningPanel(msg, true);
+
     if native.getBoolSetting('alerts.notice.missing', true) then
       if (not missingAlerted) or (MinutesBetween(Now, lastMissingAlert) >= 15) then
       begin
