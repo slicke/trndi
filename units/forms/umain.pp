@@ -2770,14 +2770,28 @@ begin
   tir_icon := native.GetBoolSetting('range.tir_icon', false);
   
   // Recalculate layout and scale to account for potential changes
-  Self.OnResize(nil);
-  
+  // Perform an immediate (synchronous) relayout and scaling to avoid
+  // timer-based reflow which can cause visual glitches after font changes
+  ResizeUIElements;
+  // Ensure main labels are scaled to their new fonts immediately
+  ScaleLbl(lVal);
+  ScaleLbl(lArrow);
+  ScaleLbl(lAgo, taLeftJustify);
+  if Assigned(lPredict) and lPredict.Visible then
+    ScaleLbl(lPredict, taRightJustify, tlBottom);
+
+  // Recalculate trend dots geometry and redraw
+  UpdateTrendDots;
+  for i := 1 to Length(TrendDots) do
+    if (i <= High(TrendDots)) and (TrendDots[i] <> nil) then
+      TrendDots[i].Invalidate;
+
   // Force UI update with current reading to apply new colors/fonts
   UpdateUIColors;
   UpdateUIBasedOnGlucose;
   if Assigned(fFloat) then
     UpdateFloatingWindow;
-    
+
   // Invalidate to trigger repaint
   Self.Invalidate;
 end;
@@ -3314,11 +3328,11 @@ procedure SaveUserSettings(f: TfConf);
       
       // Apply language change LAST after all settings are saved
       // Don't call Application.ProcessMessages here - it causes visual glitches
-      // The UI will update naturally after the dialog closes
+      // Defer actual language loading until ApplySettingsInstantly to avoid mid-dialog UI reflow
       if applocale <> langCode then
       begin
         applocale := langCode;
-        SetDefaultLang(langCode, getLangPath);
+        // SetDefaultLang will be called by ApplySettingsInstantly after the dialog closes
       end;
     end;
   end;
