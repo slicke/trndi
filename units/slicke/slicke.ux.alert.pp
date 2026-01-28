@@ -180,10 +180,20 @@ public
   LogExpandHtmlPanel: TIpHtmlPanel;
   LogExpandButton: TControl;
   LogIsHTML: boolean;
+
+  procedure addButton(const btnName: string);
+  {** Sets the title and content text for the dialog. }
+  procedure setContent(const titleValue, value: string; const extraValue: string = '');
+  {** Expands/collapses the log/dump panel. }
   procedure ExpandLogDialog(Sender: TObject);
   {** Keyboard shortcuts: Enter to confirm (when appropriate), Esc to cancel/No. }
   procedure FormKeyDown(Sender: TObject; var Key: word; Shift: TShiftState);
 protected
+  title, content, extra: string;
+  hasHTML: boolean;
+  buttons: TStringArray;
+
+  function getContent: string;
     {** Finalizes platform window style, sets KeyPreview, and enables dark mode title bar where supported. }
   procedure CreateWnd; override;
   // Override DoShow instead of using an OnShow event method name.
@@ -199,6 +209,11 @@ public
 public
     {** Helper fields for font picker dialog. }
   FontPickerPreview: TLabel;
+
+    property contents: string read getContent;
+  property titleText: string write title;
+  property contentText: string write content;
+  property extraText: string write extra;
     {** OnChange handler for font combo box in ExtFontPicker. }
   procedure FontComboChange(Sender: TObject);
   procedure HTMLGetImageX(Sender: TIpHtmlNode; const URL: string; var Picture: TPicture);
@@ -1371,6 +1386,7 @@ begin
     {$ifdef X_WIN}CancelButton := TDarkButton.Create(Dialog);{$else}CancelButton := TButton.Create(Dialog);{$endif}
     CancelButton.Parent := Dialog;
     CancelButton.Caption := smbUXCancel;
+    dialog.addButton(cancelbutton.Caption);
     CancelButton.ModalResult := mrCancel;
     CancelButton.Width := 80;
     if (size = uxdBig) then
@@ -1611,6 +1627,7 @@ begin
     OkButton.Parent := Dialog;
     {$ifdef LCLGTK2}OkButton.Font.Color := clBlack;{$endif}
     OkButton.Caption := smbSelect;
+    dialog.addButton(okbutton.caption);
     OkButton.ModalResult := mrOk;
     OkButton.Width := 80;
     if (size = uxdBig) then
@@ -1625,6 +1642,7 @@ begin
     {$ifdef X_WIN}CancelButton := TDarkButton.Create(Dialog);{$else}CancelButton := TButton.Create(Dialog);{$endif}
     CancelButton.Parent := Dialog;
     CancelButton.Caption := smbUXCancel;
+    dialog.addButton(cancelbutton.caption);
     CancelButton.ModalResult := mrCancel;
     CancelButton.Width := 80;
     if (size = uxdBig) then
@@ -1736,6 +1754,7 @@ begin
     OkButton.Parent := Dialog;
     {$ifdef LCLGTK2}OkButton.Font.Color := clBlack;{$endif}
     OkButton.Caption := smbSelect;
+    dialog.addButton(okbutton.caption);
     OkButton.ModalResult := mrOk;
     OkButton.Width := 80;
     if (size = uxdBig) then
@@ -1759,6 +1778,7 @@ begin
       CancelButton.Caption := smbUXCancel;
       CancelButton.ModalResult := mrCancel;
     end;
+    dialog.addButton(cancelbutton.caption);
 
     CancelButton.Width := 80;
     if (size = uxdBig) then
@@ -1869,6 +1889,7 @@ begin
     OkButton.Parent := Dialog;
     {$ifdef LCLGTK2}OkButton.Font.Color := clBlack;{$endif}
     OkButton.Caption := smbSelect;
+    dialog.addButton(okbutton.caption);
     OkButton.ModalResult := mrOk;
     OkButton.Width := 80;
     if (size = uxdBig) then
@@ -1882,6 +1903,7 @@ begin
     {$ifdef X_WIN}CancelButton := TDarkButton.Create(Dialog);{$else}CancelButton := TButton.Create(Dialog);{$endif}
     CancelButton.Parent := Dialog;
     CancelButton.Caption := smbUXCancel;
+    dialog.addButton(cancelbutton.caption);
     CancelButton.ModalResult := mrCancel;
     CancelButton.Width := 80;
     if (size = uxdBig) then
@@ -2033,6 +2055,7 @@ begin
     OkButton.Parent := Dialog;
     {$ifdef LCLGTK2}OkButton.Font.Color := clBlack;{$endif}
     OkButton.Caption := smbUXOK;
+    dialog.addButton(okbutton.caption);
     OkButton.ModalResult := mrOk;
     OkButton.Width := 80;
     if (size = uxdBig) then
@@ -2047,6 +2070,7 @@ begin
     {$ifdef X_WIN}CancelButton := TDarkButton.Create(Dialog);{$else}CancelButton := TButton.Create(Dialog);{$endif}
     CancelButton.Parent := Dialog;
     CancelButton.Caption := smbUXCancel;
+    dialog.addButton(cancelbutton.caption);
     CancelButton.ModalResult := mrCancel;
     CancelButton.Width := 80;
     if (size = uxdBig) then
@@ -2156,6 +2180,7 @@ begin
     OkButton.Parent := Dialog;
     {$ifdef LCLGTK2}OkButton.Font.Color := clBlack;{$endif}
     OkButton.Caption := smbSelect;
+    dialog.addButton(okbutton.caption);
     OkButton.ModalResult := mrOk;
     OkButton.Width := 80;
     if (size = uxdBig) then
@@ -2170,6 +2195,7 @@ begin
     {$ifdef X_WIN}CancelButton := TDarkButton.Create(Dialog);{$else}CancelButton := TButton.Create(Dialog);{$endif}
     CancelButton.Parent := Dialog;
     CancelButton.Caption := smbUXCancel;
+    dialog.addButton(cancelbutton.caption);
     CancelButton.ModalResult := mrCancel;
     CancelButton.Width := 80;
     if (size = uxdBig) then
@@ -2302,6 +2328,7 @@ var
   sysfont, htmlstr: string;
   contentHeight, maxHeight, finalHeight: integer;
   hpd: TIpHttpDataProvider;
+  htmldata: string;
 
 function DecorateLinks(const Src, LinkColorHtml: string): string;
   var
@@ -2398,10 +2425,11 @@ begin
     // Load HTML content with system font and colors
     FontTXTInList(sysfont);
     htmlstr := DecorateLinks(html, TColorToHTML(getBaseColor));
-    HtmlViewer.SetHtmlFromStr(
-      '<html><body bgcolor="' + TColorToHTML(bgcol) + '" text="' + TColorToHTML(getBaseColor) + '" style="font-family: ' + sysfont + ';">' +
+    htmldata := '<html><body bgcolor="' + TColorToHTML(bgcol) + '" text="' + TColorToHTML(getBaseColor) + '" style="font-family: ' + sysfont + ';">' +
       htmlstr +
-      '</body></html>'
+      '</body></html>';
+    HtmlViewer.SetHtmlFromStr(
+      htmldata
       );
 
     // Calculate content height and adjust dialog
@@ -2435,6 +2463,7 @@ begin
       OkButton.Parent := Dialog;
       {$ifdef LCLGTK2}OkButton.Font.Color := clBlack;{$endif}
       OkButton.Caption := langs[mr];
+      dialog.addButton(okbutton.caption);
       OkButton.Width := ButtonActualWidth;
       OkButton.Height := ifthen((size = uxdBig) , 50, 25);
       if (size = uxdBig) then
@@ -2448,6 +2477,9 @@ begin
     // Set final dialog height based on content
     finalHeight := OkButton.Top + OkButton.Height + padding;
     Dialog.ClientHeight := finalHeight;
+
+    dialog.setContent(caption, htmldata);
+    dialog.hasHTML := true;
 
     Result := ShowModalSafe(Dialog);
   finally
@@ -2658,6 +2690,7 @@ begin
         TitleLabel.Align := alTop;
         TitleLabel.BorderSpacing.Left := padding;
         TitleLabel.BorderSpacing.Right := padding;
+        dialog.titleText := titlelabel.caption;
       end;
     end
     else
@@ -2679,6 +2712,7 @@ begin
         TitleLabel.Left := padding;
         TitleLabel.Width := MsgWidth;
         TitleLabel.Height := TitleLabel.Canvas.TextHeight(TitleLabel.Caption);
+        dialog.titleText := titlelabel.caption;
       end
       else
         TitleLabel := nil;
@@ -2708,6 +2742,7 @@ begin
         MsgLabel.Font.Color := getBaseColor;
         MsgLabel.Width := MsgWidth;
         MsgLabel.Height := NeededHeight;
+        dialog.contentText := msglabel.Caption;
       end
       else
       begin
@@ -2726,6 +2761,7 @@ begin
         MsgLabel.Width := MsgWidth;
         MsgLabel.Height := NeededHeight;
         MsgLabel.BorderSpacing.Bottom := padding; // Padding towards log panel
+        dialog.contentText := msglabel.Caption;
       end;
     end;
 
@@ -2783,11 +2819,14 @@ begin
           '</font></u></a>',
           [rfReplaceAll]
           );
-        LogHtmlPanel.SetHtmlFromStr(
-          '<html><body bgcolor="' + TColorToHTML(dumpbg) + '" text="' + TColorToHTML(dumptext) + '" style="font-family: ' + sysfont + ';">' +
+        htmlstr :=           '<html><body bgcolor="' + TColorToHTML(dumpbg) + '" text="' + TColorToHTML(dumptext) + '" style="font-family: ' + sysfont + ';">' +
           htmlstr +
-          '</body></html>'
+          '</body></html>';
+        LogHtmlPanel.SetHtmlFromStr(
+        htmlstr
           );
+        dialog.contentText := htmlstr;
+        dialog.hasHTML := true;
       except
         on E: Exception do
         begin
@@ -2818,6 +2857,7 @@ begin
       LogMemo.BorderStyle := bsNone;
       LogMemo.Text := TrimSet(logmsg, [#10, #13]);
       LogMemo.OnKeyDown := @Dialog.FormKeyDown;
+      dialog.extraText := LOgMemo.Text;
     end;
 
     // BUTTON PANEL
@@ -2865,6 +2905,7 @@ begin
       OkButton.Parent := ButtonPanel;
       {$ifdef LCLGTK2}OkButton.Font.Color := clBlack;{$endif}
       OkButton.Caption := '⛶';  // Maximize symbol
+// No dialog add here
       OkButton.Width := ifthen((size = uxdBig), 50, 30);
       OkButton.Height := ifthen((size = uxdBig), 50, 25);
       OkButton.Left := padding;
@@ -2886,6 +2927,7 @@ begin
       OkButton.Parent := ButtonPanel;
       {$ifdef LCLGTK2}OkButton.Font.Color := clBlack;{$endif}
       OkButton.Caption := langs[mr];
+      dialog.addButton(okbutton.caption);
       OkButton.ModalResult := UXButtonToModalResult(mr);
       OkButton.Width := ButtonActualWidth;
       case size of
@@ -2983,6 +3025,34 @@ begin
     scale);
 end;
 
+procedure TDialogForm.addButton(const btnName: string);
+begin
+  SetLength(buttons, Length(buttons) + 1);
+  buttons[High(buttons)] := btnName;
+end;
+
+function TDialogForm.getContent: string;
+var
+  s: string;
+begin
+  Result := Format('[%s]'+LineEnding+'%s', [title, content]);
+  if extra <> '' then
+    Result := Result + LineEnding + '------' + LineEnding + extra;
+  result := result + LineEnding;
+  for s in buttons do
+    Result := Result + '[' + s + '] ';
+end;
+
+
+procedure TDialogForm.setContent(const titleValue, value: string; const extraValue: string = '');
+begin
+  title := titleValue;
+  content := value;
+  extra := extraValue;
+end;
+
+{** Override to apply custom title bar colors on show. }
+
 procedure TDialogForm.DoShow;
 begin
   inherited DoShow;
@@ -3031,48 +3101,10 @@ var
     {$endif};
   end;
 
-  function FindComponentRecursive(AComp: TComponent; const AName: string): TComponent;
-  var i: Integer; c: TComponent;
-  begin
-    Result := AComp.FindComponent(AName);
-    if Result <> nil then Exit;
-    for i := 0 to AComp.ComponentCount-1 do
-    begin
-      c := FindComponentRecursive(AComp.Components[i], AName);
-      if c <> nil then Exit(c);
-    end;
-  end;
-
-var tc: TComponent;
-
 begin
   if (ssCtrl in Shift) and (Key = Ord('C')) then begin
-
-    tc := FindComponentRecursive(Self, 'HtmlViewer');   // HTML dialog
-    if tc <> nil then
-      Exit;
-
-    tc := FindComponentRecursive(Self, 'LogMemo');   // Ext dialog, should always be true here
-    if (tc <> nil) and ((tc as TMemo).Text <> '') then begin
-      Clipboard.AsText := (tc as TMemo).Text;
-      Exit;
-    end;
-
-    tc := FindComponentRecursive(Self, 'MsgLabel'); // No log
-    if (tc <> nil) and ((tc as TLabel).Caption <> '') then begin
-      Clipboard.AsText := (tc as TLabel).Caption;
-      tc := FindComponentRecursive(Self, 'TitleLabel'); // No log
-      if tc <> nil then
-        Clipboard.AsText := Format('[%s]'#10'%s', [(tc as TLabel).Caption, Clipboard.AsText]);
-      Exit;
-    end;
-
-    tc := FindComponentRecursive(Self, 'TitleLabel'); // No log
-    if tc <> nil then begin
-      Clipboard.AsText := (tc as TLabel).Caption;
-      Exit;
-    end;
-
+   Clipboard.AsText := getContent;
+   Exit;
   end;
 
   if not (key in [VK_ESCAPE, VK_RETURN]) then
@@ -3178,6 +3210,7 @@ end;
 procedure TDialogForm.CreateWnd;
 begin
   inherited CreateWnd;
+  hasHTML := false;
   KeyPreview := true;
   // Ensure dialogs have an explicit popup owner so X11/Wayland window managers
   // can treat them as transient for the initiating window. Also provide a
@@ -3221,6 +3254,7 @@ var
   Value: integer;
 begin
   inherited CreateWnd;
+  hasHTML := false;
   if HandleAllocated then
     SetWindowLong(Handle, GWL_STYLE,
       GetWindowLong(Handle, GWL_STYLE) or WS_SYSMENU);
