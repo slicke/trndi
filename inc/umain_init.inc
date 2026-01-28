@@ -630,7 +630,8 @@ begin
       haltBoot;
       ShowMessage(api.ErrorMsg);
       miSettings.Click;
-      self.Close;
+      // Ensure the application exits so the user can restart with new settings
+      Application.Terminate;
       Exit;
     end;
 
