@@ -51,7 +51,7 @@ interface
 uses
 Classes, SysUtils, Dialogs, Forms, ExtCtrls, StdCtrls, Controls, Graphics, Math,
 IntfGraphics, FPImage, graphtype, lcltype, Trndi.Native, Grids, Spin, IpHtml, Iphttpbroker, slicke.ux.native, SpinEx, LCLIntf,
-EditBtn,
+EditBtn, Clipbrd,
 {$ifdef X_WIN}
 DX12.D2D1, DX12.DXGI, DX12.DWrite, DX12.DCommon, DX12.WinCodec, Windows, Buttons, ActiveX, ComObj,
 {$endif}
@@ -2367,6 +2367,7 @@ begin
 
     // HTML panel
     HtmlPanel := TPanel.Create(Dialog);
+    HtmlPanel.Name := 'HtmlPanel';
     HtmlPanel.Parent := Dialog;
     HtmlPanel.Left := IconBox.Left + IconBox.Width + padding;
     HtmlPanel.Top := padding;
@@ -2375,6 +2376,7 @@ begin
     HtmlPanel.BevelOuter := bvNone;
 
     HtmlViewer := TIpHtmlPanel.Create(HtmlPanel);
+    HtmlViewer.Name := 'HtmlViewer';
 
     hpd := TIpHttpDataProvider.Create(nil);
     HtmlViewer.DataProvider := hpd;
@@ -2614,6 +2616,7 @@ begin
         MsgScroll.BorderStyle := bsNone;
 
         MsgLabel := TLabel.Create(MsgScroll);
+        MsgLabel.Name := 'MsgLabel';
         MsgLabel.Parent := MsgScroll;
         MsgLabel.WordWrap := true;
         MsgLabel.AutoSize := true;
@@ -2627,6 +2630,7 @@ begin
       begin
         MsgLabel := TLabel.Create(TextPanel);
         MsgLabel.Parent := TextPanel;
+        MsgLabel.Name := 'MsgLabel';
         MsgLabel.WordWrap := true;
         MsgLabel.AutoSize := true;
         MsgLabel.Font.Size := 24;
@@ -2643,6 +2647,7 @@ begin
       if Trim(title) <> '' then
       begin
         TitleLabel := TLabel.Create(TextPanel);
+        TitleLabel.name := 'TitleLabel';
         TitleLabel.Parent := TextPanel;
         TitleLabel.WordWrap := true;
         TitleLabel.AutoSize := true;
@@ -2661,6 +2666,7 @@ begin
       if Trim(title) <> '' then
       begin
         TitleLabel := TLabel.Create(TextPanel);
+        TitleLabel.Name := 'TitleLabel';
         TitleLabel.Parent := TextPanel;
         TitleLabel.WordWrap := true;
         TitleLabel.AutoSize := false;
@@ -2694,6 +2700,7 @@ begin
         MsgScroll.BorderSpacing.Bottom := padding; // Padding to log panel
 
         MsgLabel := TLabel.Create(MsgScroll);
+        MsgLabel.Name := 'MsgLabel';
         MsgLabel.Parent := MsgScroll;
         MsgLabel.WordWrap := true;
         MsgLabel.AutoSize := false;
@@ -2705,6 +2712,7 @@ begin
       else
       begin
         MsgLabel := TLabel.Create(TextPanel);
+        MsgLabel.Name := 'MsgLabel';
         MsgLabel.Parent := TextPanel;
         MsgLabel.WordWrap := true;
         MsgLabel.AutoSize := false;
@@ -2741,6 +2749,7 @@ begin
     begin
       // Use TIpHtmlPanel for HTML content (cross-platform)
       LogHtmlPanel := TIpHtmlPanel.Create(MemoWrapper);
+      LogHtmlPanel.Name := 'HtmlViewer';
       hpd := TIpHttpDataProvider.Create(nil);
       LogHtmlPanel.DataProvider := hpd;
       hpd.OnGetImage := @dialog.HTMLGetImageX;
@@ -2795,6 +2804,7 @@ begin
     begin
       // Use TMemo for plain text
       LogMemo := TMemo.Create(MemoWrapper);
+      LogMemo.Name := 'LogMemo';
       LogMemo.Parent := MemoWrapper;
       LogMemo.Left := MemoPadLeft;
       LogMemo.Top := MemoPadTop;
@@ -3021,7 +3031,50 @@ var
     {$endif};
   end;
 
+  function FindComponentRecursive(AComp: TComponent; const AName: string): TComponent;
+  var i: Integer; c: TComponent;
+  begin
+    Result := AComp.FindComponent(AName);
+    if Result <> nil then Exit;
+    for i := 0 to AComp.ComponentCount-1 do
+    begin
+      c := FindComponentRecursive(AComp.Components[i], AName);
+      if c <> nil then Exit(c);
+    end;
+  end;
+
+var tc: TComponent;
+
 begin
+  if (ssCtrl in Shift) and (Key = Ord('C')) then begin
+
+    tc := FindComponentRecursive(Self, 'HtmlViewer');   // HTML dialog
+    if tc <> nil then
+      Exit;
+
+    tc := FindComponentRecursive(Self, 'LogMemo');   // Ext dialog, should always be true here
+    if (tc <> nil) and ((tc as TMemo).Text <> '') then begin
+      Clipboard.AsText := (tc as TMemo).Text;
+      Exit;
+    end;
+
+    tc := FindComponentRecursive(Self, 'MsgLabel'); // No log
+    if (tc <> nil) and ((tc as TLabel).Caption <> '') then begin
+      Clipboard.AsText := (tc as TLabel).Caption;
+      tc := FindComponentRecursive(Self, 'TitleLabel'); // No log
+      if tc <> nil then
+        Clipboard.AsText := Format('[%s]'#10'%s', [(tc as TLabel).Caption, Clipboard.AsText]);
+      Exit;
+    end;
+
+    tc := FindComponentRecursive(Self, 'TitleLabel'); // No log
+    if tc <> nil then begin
+      Clipboard.AsText := (tc as TLabel).Caption;
+      Exit;
+    end;
+
+  end;
+
   if not (key in [VK_ESCAPE, VK_RETURN]) then
     Exit;
 
