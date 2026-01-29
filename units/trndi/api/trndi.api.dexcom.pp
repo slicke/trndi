@@ -584,6 +584,7 @@ var
 begin
   // Initialize the noval
   noval.exists := false;
+  PrevVal := BG_NO_VAL;
   // Guard input ranges based on common Share limits
   if (AMinutes < 1) or (AMinutes > 1440) then
     raise Exception.Create('GetReadings error: AMinutes out of valid range (1..1440)');
@@ -621,8 +622,8 @@ begin
   end;
 
   try
+    // Set result length to match JSON count
     SetLength(Result, LData.Count);
-
     // Iterate items and map to BGReading
     for i := 0 to LData.Count - 1 do
     try
@@ -633,45 +634,10 @@ begin
 
       // Compute BG value and optional delta, handling missing/null 'Value' gracefully
       CurVal := SafeValue(LData.Items[i], CurOk);
-      if FCalcDiff then
-      begin
-        // Dexcom returns newest-first. Compute delta as current - next (i.e., newest - previous reading)
-        if (i < LData.Count - 1) then
-        begin
-          PrevVal := SafeValue(LData.Items[i + 1], PrevOk); // 'PrevVal' is the next item chronologically
-          if CurOk and PrevOk then
-            Result[i].Update(CurVal, CurVal - PrevVal)
-          else if CurOk then
-            // No valid next value -> cannot compute delta, store sentinel
-            Result[i].Update(CurVal, BG_NO_VAL)
-          else
-            // No current value -> mark reading as empty
-            Result[i].Clear;
-        end
-        else
-        begin
-          // Oldest item: delta not available
-          if CurOk then
-            Result[i].Update(CurVal, BG_NO_VAL)
-          else
-            Result[i].Clear;
-        end;
-      end
-      else
-      begin
-        // Delta not requested; store only BG value (using sentinel) if we have a value
-        if CurOk then
-          Result[i].Update(CurVal, BG_NO_VAL)
-        else
-          Result[i].Clear;
-      end;
 
-
-
-      // Interpret "Trend" (may be numeric code or string)
+      // Parse trend and date for all entries
       LTrendStr := LData.Items[i].FindPath('Trend').AsString;
-
-      // If Trend could be a numeric code, you can map codes as needed here.
+      // Map trend string to enum
       if not TryStrToInt(LTrendStr, LTrendCode) then
       begin
         // Treat as text; map to enum via lookup table
@@ -687,19 +653,34 @@ begin
         end;
       end
       else
-        Result[i].trend := TdPlaceholder// Numeric mapping not defined; keep placeholder unless you add a map
-      ;
+        Result[i].trend := TdPlaceholder; // Numeric mapping not defined; keep placeholder unless you add a map
 
       // Convert Dexcom timestamp "/Date(ms)/" to TDateTime
       Result[i].date := DexTimeToTDateTime(LData.Items[i].FindPath('ST').AsString);
 
-      // Classify level per thresholds
-      Result[i].level := getLevel(Result[i].val);
+      if CurOk then
+      begin
+        // Compute delta as current - previous valid reading
+        if FCalcDiff and (PrevVal <> BG_NO_VAL) then
+          Result[i].update(CurVal, CurVal - PrevVal)
+        else
+          Result[i].update(CurVal, 0);
 
+        // Classify level per thresholds
+        Result[i].level := getLevel(Result[i].val);
+
+        // Update PrevVal for next delta
+        PrevVal := CurVal;
+      end
+      else
+      begin
+        // Missing value: clear the reading
+        Result[i].Clear;
+      end;
     except
       on E: Exception do
       begin
-        // If parsing fails for an item, clear that reading to keep array shape
+        // If parsing fails for an item, clear it
         Result[i].Clear;
       end;
     end;
