@@ -72,6 +72,8 @@ TfConf = class(TForm)
   bColorGraphHelp: TButton;
   bMultiUserHelp: TButton;
   bDeltaMaxHelp: TButton;
+  bOutdatedHelp1: TButton;
+  bOverrideHelp1: TButton;
   bPredictHorizon: TButton;
   bTemplateCurrent: TButton;
   bTemplateTrend: TButton;
@@ -89,6 +91,7 @@ TfConf = class(TForm)
   bMinMinutesHelp: TButton;
   bCustomRangeHelp: TButton;
   bExtOpen: TButton;
+  bCommon: TButton;
   Button2: TButton;
   Button4: TButton;
   bWebAPI: TButton;
@@ -104,6 +107,7 @@ TfConf = class(TForm)
   cbChromaHigh: TComboBox;
   cbChromaLow: TComboBox;
   cbCust: TCheckBox;
+  cbCust1: TCheckBox;
   cbCustRange: TCheckBox;
   cbAlertMissing: TCheckBox;
   cbLang: TComboBox;
@@ -120,24 +124,36 @@ TfConf = class(TForm)
   cbPredictShortMinutes: TComboBox;
   cbPredictShortSize: TComboBox;
   cbPrivacy: TCheckBox;
+  edCommaSep1: TEdit;
   eDot: TEdit;
   eDotNow: TEdit;
   eExt: TEdit;
   cbFonts: TGroupBox;
+  fsHi1: TFloatSpinEdit;
+  fsLo1: TFloatSpinEdit;
+  gbOverride1: TGroupBox;
   Label16: TLabel;
+  Label17: TLabel;
   Label2: TLabel;
   Label25: TLabel;
+  Label33: TLabel;
+  Label34: TLabel;
+  lConfigPredict: TLabel;
   lDot: TLabel;
   lDot1: TLabel;
   lDot2: TLabel;
   lDot3: TLabel;
   lDotNow: TLabel;
   lExt: TLabel;
+  lHiOver3: TLabel;
+  lLounder2: TLabel;
   lSysWarnInfo: TLabel;
   Panel18: TPanel;
   Panel19: TPanel;
+  Panel20: TPanel;
   Panel3: TPanel;
   pnDeltaMax: TPanel;
+  pnMisc1: TPanel;
   pnSysWarn: TPanel;
   rbPredictShortArrowOnly: TRadioButton;
   rbPredictShortShowValue: TRadioButton;
@@ -302,6 +318,8 @@ TfConf = class(TForm)
   seTIR: TSpinEdit;
   spTHRESHOLD: TSpinEdit;
   spDeltaMax: TSpinEdit;
+  spTHRESHOLD1: TSpinEdit;
+  tsCommon: TTabSheet;
   tsAdvanced: TTabSheet;
   tsTir: TTabSheet;
   tsChroma: TTabSheet;
@@ -319,6 +337,7 @@ TfConf = class(TForm)
   procedure bAddClick(Sender: TObject);
   procedure bBadgeFlashHelpClick(Sender: TObject);
   procedure bColorGraphHelpClick(Sender: TObject);
+  procedure bCommonClick(Sender: TObject);
   procedure bCustomRangeHelpClick(Sender: TObject);
   procedure bDotHelpClick(Sender: TObject);
   procedure bExtOpenClick(Sender: TObject);
@@ -353,6 +372,7 @@ TfConf = class(TForm)
   procedure Button3Click(Sender: TObject);
   procedure Button4Click(Sender: TObject);
   procedure bWebAPIClick(Sender: TObject);
+  procedure cbCust1Change(Sender: TObject);
   procedure cbCustChange(Sender: TObject);
   procedure cbCustRangeChange(Sender: TObject);
   procedure cbPosChange(Sender: TObject);
@@ -365,6 +385,8 @@ TfConf = class(TForm)
   procedure cbUserClick(Sender: TObject);
   procedure cbUserColorChanged(Sender: TObject);
   procedure dotClick(Sender: TObject);
+  procedure edCommaSep1Change(Sender: TObject);
+  procedure edCommaSepChange(Sender: TObject);
   procedure edNickChange(Sender: TObject);
   procedure eDotChange(Sender: TObject);
   procedure ePassEnter(Sender: TObject);
@@ -372,11 +394,16 @@ TfConf = class(TForm)
   procedure FormCreate(Sender: TObject);
   procedure FormDestroy(Sender: TObject);
   procedure FormResize(Sender: TObject);
+  procedure fsHi1Change(Sender: TObject);
+  procedure fsHiChange(Sender: TObject);
+  procedure fsLo1Change(Sender: TObject);
+  procedure fsLoChange(Sender: TObject);
   procedure Label12Click(Sender: TObject);
   procedure lAckClick(Sender: TObject);
   procedure lbExtensionsSelectionChange(Sender: TObject; User: boolean);
   procedure lbUsersEnter(Sender: TObject);
   procedure lbUsersSelectionChange(Sender: TObject; User: boolean);
+  procedure lConfigPredictClick(Sender: TObject);
   procedure lDot1Click(Sender: TObject);
   procedure lLicenseClick(Sender: TObject);
   procedure lSysWarnInfoClick(Sender: TObject);
@@ -384,9 +411,11 @@ TfConf = class(TForm)
   procedure pcColorsChange(Sender: TObject);
   procedure pcMainChange(Sender: TObject);
   procedure rbUnitClick(Sender: TObject);
+  procedure spTHRESHOLD1Change(Sender: TObject);
   procedure spTHRESHOLDChange(Sender: TObject);
   procedure tbAdvancedChange(Sender: TObject);
   procedure ToggleBox1Change(Sender: TObject);
+  procedure tsCommonShow(Sender: TObject);
   procedure tsDisplayShow(Sender: TObject);
   procedure tsSystemShow(Sender: TObject);
 private
@@ -1081,6 +1110,11 @@ begin
   btUserSave.Enabled := false; // Twice as the fields change during update
 end;
 
+procedure TfConf.lConfigPredictClick(Sender: TObject);
+begin
+  pcMain.ActivePage := tsAdvanced;
+end;
+
 procedure TfConf.lDot1Click(Sender: TObject);
 begin
   ShowMessage(RS_DOT_CLICK);
@@ -1185,6 +1219,16 @@ var
   bg: tcolor;
 begin
   eDot.SetFocus;
+end;
+
+procedure TfConf.edCommaSep1Change(Sender: TObject);
+begin
+  edCommaSep.Text := edCommaSep1.Text;
+end;
+
+procedure TfConf.edCommaSepChange(Sender: TObject);
+begin
+  edCommaSep1.Text := edCommaSep.Text;
 end;
 
 procedure TfConf.edNickChange(Sender: TObject);
@@ -1299,6 +1343,11 @@ end;
 procedure TfConf.bColorGraphHelpClick(Sender: TObject);
 begin
   ShowMessage(RS_COLOR_BG);
+end;
+
+procedure TfConf.bCommonClick(Sender: TObject);
+begin
+  pcMain.ActivePage := tsCommon;
 end;
 
 procedure TfConf.bCustomRangeHelpClick(Sender: TObject);
@@ -1635,12 +1684,20 @@ begin
     OpenURL('https://github.com/slicke/trndi/blob/main/doc/WebAPI.md');
 end;
 
+procedure TfConf.cbCust1Change(Sender: TObject);
+begin
+  cbCust.Checked := cbCust1.Checked;
+  fsHi1.Enabled := fsHi.Enabled;
+  fsLo1.Enabled := fsLo.Enabled;
+end;
+
 procedure TfConf.cbCustChange(Sender: TObject);
 begin
   fsHi.Enabled := cbCust.Checked;
   fsLo.Enabled := cbCust.Checked;
   if (cbCust.Checked) and (cbSys.Text = 'NightScout') then
     ShowMessage(RS_OVERRIDE_NS);
+  cbCust1.Checked := cbCust.Checked;
 end;
 
 procedure TfConf.cbCustRangeChange(Sender: TObject);
@@ -1798,6 +1855,28 @@ begin
   eExt.Width := cbSys.Width;
 end;
 
+procedure TfConf.fsHi1Change(Sender: TObject);
+begin
+  fsHi.Value := fsHi1.Value;
+end;
+
+procedure TfConf.fsHiChange(Sender: TObject);
+begin
+  fsHi1.DecimalPlaces := fsHi.DecimalPlaces;
+  fsHi1.Value := fsHi.Value;
+end;
+
+procedure TfConf.fsLo1Change(Sender: TObject);
+begin
+  fsLo.Value := fsLo1.Value;
+end;
+
+procedure TfConf.fsLoChange(Sender: TObject);
+begin
+  fsLo1.DecimalPlaces := fsLo.DecimalPlaces;
+  fsLo1.Value := fsLo.Value;
+end;
+
 procedure TfConf.Label12Click(Sender: TObject);
 begin
 
@@ -1923,6 +2002,11 @@ begin
   end;
 end;
 
+procedure TfConf.spTHRESHOLD1Change(Sender: TObject);
+begin
+  spTHRESHOLD.Value := spTHRESHOLD1.value;
+end;
+
 procedure TfConf.spTHRESHOLDChange(Sender: TObject);
 begin
   if spTHRESHOLD.Value > 30 then
@@ -1936,6 +2020,8 @@ begin
     spTHRESHOLD.Value := 6;
     ShowMessage(RS_Saftey_Low);
   end;
+
+  spTHRESHOLD1.Value := spTHRESHOLD.value;
 end;
 
 procedure TfConf.tbAdvancedChange(Sender: TObject);
@@ -1946,6 +2032,12 @@ end;
 procedure TfConf.ToggleBox1Change(Sender: TObject);
 begin
 
+end;
+
+procedure TfConf.tsCommonShow(Sender: TObject);
+begin
+  fsHi1.Enabled := fsHi.Enabled;
+  fsLo1.Enabled := fsLo.Enabled;
 end;
 
 procedure TfConf.tsDisplayShow(Sender: TObject);

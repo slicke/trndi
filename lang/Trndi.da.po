@@ -354,6 +354,10 @@ msgstr ""
 msgid "+ Add"
 msgstr ""
 
+#: tfconf.bcommon.caption
+msgid "Go to Quick Settings"
+msgstr ""
+
 #: tfconf.bextopen.caption
 msgid "Show Folder"
 msgstr ""
@@ -438,6 +442,11 @@ msgstr ""
 
 #: tfconf.cbcust.caption
 msgctxt "tfconf.cbcust.caption"
+msgid "Use custom values"
+msgstr ""
+
+#: tfconf.cbcust1.caption
+msgctxt "tfconf.cbcust1.caption"
 msgid "Use custom values"
 msgstr ""
 
@@ -640,6 +649,12 @@ msgid "Account Settings"
 msgstr ""
 
 #: tfconf.gboverride.caption
+msgctxt "tfconf.gboverride.caption"
+msgid "Override High / Low limits"
+msgstr ""
+
+#: tfconf.gboverride1.caption
+msgctxt "tfconf.gboverride1.caption"
 msgid "Override High / Low limits"
 msgstr ""
 
@@ -691,6 +706,7 @@ msgid "Display"
 msgstr ""
 
 #: tfconf.label1.caption
+msgctxt "tfconf.label1.caption"
 msgid "Readings are outdated after (minutes):"
 msgstr ""
 
@@ -708,6 +724,7 @@ msgid "Perfect Reading (5.5mmol/L or 100 mg/dL)"
 msgstr ""
 
 #: tfconf.label13.caption
+msgctxt "tfconf.label13.caption"
 msgid "Decimal separator:"
 msgstr ""
 
@@ -721,6 +738,10 @@ msgstr ""
 
 #: tfconf.label16.caption
 msgid "Current dot:"
+msgstr ""
+
+#: tfconf.label17.caption
+msgid "These settings reside in different parts of the settings dialog, but has been collected here for your convinience!"
 msgstr ""
 
 #: tfconf.label18.caption
@@ -788,6 +809,16 @@ msgstr ""
 msgid "Razer Synapse required on Windows. OpenRazer on Linux. No support for other platforms at this time."
 msgstr ""
 
+#: tfconf.label33.caption
+msgctxt "tfconf.label33.caption"
+msgid "Decimal separator:"
+msgstr ""
+
+#: tfconf.label34.caption
+msgctxt "tfconf.label34.caption"
+msgid "Readings are outdated after (minutes):"
+msgstr ""
+
 #: tfconf.label4.caption
 msgid "Window start-up position"
 msgstr ""
@@ -832,6 +863,10 @@ msgstr ""
 msgid "On low:"
 msgstr ""
 
+#: tfconf.lconfigpredict.caption
+msgid "Glucose Predictions Settings"
+msgstr ""
+
 #: tfconf.ldot.caption
 msgctxt "tfconf.ldot.caption"
 msgid "PREVIEW"
@@ -872,6 +907,11 @@ msgstr ""
 msgid "Maximum minutes to count time in range on (depending on source data availability):"
 msgstr ""
 
+#: tfconf.lhiover3.caption
+msgctxt "tfconf.lhiover3.caption"
+msgid "High over"
+msgstr ""
+
 #: tfconf.llicense.caption
 msgid "License"
 msgstr ""
@@ -883,6 +923,11 @@ msgstr ""
 
 #: tfconf.llounder1.caption
 msgctxt "tfconf.llounder1.caption"
+msgid "Low under"
+msgstr ""
+
+#: tfconf.llounder2.caption
+msgctxt "tfconf.llounder2.caption"
 msgid "Low under"
 msgstr ""
 
@@ -968,6 +1013,10 @@ msgstr ""
 
 #: tfconf.tscolors.caption
 msgid "Colors"
+msgstr ""
+
+#: tfconf.tscommon.caption
+msgid "Quick Settings"
 msgstr ""
 
 #: tfconf.tscustom.caption

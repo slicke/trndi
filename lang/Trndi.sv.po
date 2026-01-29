@@ -358,6 +358,10 @@ msgstr "Senast mottagna värde:"
 msgid "+ Add"
 msgstr "+ Ny"
 
+#: tfconf.bcommon.caption
+msgid "Go to Quick Settings"
+msgstr "Gå till Snabbinställningar"
+
 #: tfconf.bextopen.caption
 msgid "Show Folder"
 msgstr "Visa mapp"
@@ -444,6 +448,11 @@ msgstr "Gör enheter gröna vid normalt värde"
 
 #: tfconf.cbcust.caption
 msgctxt "tfconf.cbcust.caption"
+msgid "Use custom values"
+msgstr "Använd egna värden"
+
+#: tfconf.cbcust1.caption
+msgctxt "tfconf.cbcust1.caption"
 msgid "Use custom values"
 msgstr "Använd egna värden"
 
@@ -648,6 +657,11 @@ msgctxt "tfconf.gboverride.caption"
 msgid "Override High / Low limits"
 msgstr "Åsidosätt höga / låga gränser"
 
+#: tfconf.gboverride1.caption
+msgctxt "tfconf.gboverride1.caption"
+msgid "Override High / Low limits"
+msgstr "Åsidosätt höga / låga gränser"
+
 #: tfconf.gboverride2.caption
 msgid "Play Media"
 msgstr "Spela Media"
@@ -695,6 +709,7 @@ msgid "Display"
 msgstr "Visning"
 
 #: tfconf.label1.caption
+msgctxt "tfconf.label1.caption"
 msgid "Readings are outdated after (minutes):"
 msgstr "Avläsningar anses gamla efter (minuter):"
 
@@ -712,6 +727,7 @@ msgid "Perfect Reading (5.5mmol/L or 100 mg/dL)"
 msgstr "Perfekt avläsning (5,5mmol/L eller 100 mg/dL)"
 
 #: tfconf.label13.caption
+msgctxt "tfconf.label13.caption"
 msgid "Decimal separator:"
 msgstr "Decimalseparator:"
 
@@ -727,6 +743,10 @@ msgstr "Serveradress / Användare Dexcom"
 #: tfconf.label16.caption
 msgid "Current dot:"
 msgstr "Nuvarande punkt:"
+
+#: tfconf.label17.caption
+msgid "These settings reside in different parts of the settings dialog, but has been collected here for your convinience!"
+msgstr "Dessa inställningar finns på diverse platser i inställningarna, men har samlats här för din bekvämlighet!"
 
 #: tfconf.label18.caption
 msgid "Connection"
@@ -793,6 +813,16 @@ msgstr "Enheterna kommer pulsera i rött vid högt och blått vid lågt"
 msgid "Razer Synapse required on Windows. OpenRazer on Linux. No support for other platforms at this time."
 msgstr "OBS: Razer Synapse krävs på Windows. OpenRazer på Linux. Inget stöd för andra plattformar just nu."
 
+#: tfconf.label33.caption
+msgctxt "tfconf.label33.caption"
+msgid "Decimal separator:"
+msgstr "Decimalseparator:"
+
+#: tfconf.label34.caption
+msgctxt "tfconf.label34.caption"
+msgid "Readings are outdated after (minutes):"
+msgstr "Avläsningar anses gamla efter (minuter):"
+
 #: tfconf.label4.caption
 msgid "Window start-up position"
 msgstr "Position av fönster vid start"
@@ -837,6 +867,10 @@ msgstr "Vid högt:"
 msgid "On low:"
 msgstr "Vid lågt:"
 
+#: tfconf.lconfigpredict.caption
+msgid "Glucose Predictions Settings"
+msgstr "Inställningar för glukosförutspåelse"
+
 #: tfconf.ldot.caption
 msgctxt "tfconf.ldot.caption"
 msgid "PREVIEW"
@@ -878,6 +912,11 @@ msgstr "Högt över"
 msgid "Maximum minutes to count time in range on (depending on source data availability):"
 msgstr "Max minuter att räkna tid-i-målområde på (beror på tillgänglig data):"
 
+#: tfconf.lhiover3.caption
+msgctxt "tfconf.lhiover3.caption"
+msgid "High over"
+msgstr "Högt över"
+
 #: tfconf.llicense.caption
 msgid "License"
 msgstr "Licens"
@@ -889,6 +928,11 @@ msgstr "Lågt under"
 
 #: tfconf.llounder1.caption
 msgctxt "tfconf.llounder1.caption"
+msgid "Low under"
+msgstr "Lågt under"
+
+#: tfconf.llounder2.caption
+msgctxt "tfconf.llounder2.caption"
 msgid "Low under"
 msgstr "Lågt under"
 
@@ -976,6 +1020,10 @@ msgstr "Razer Chroma"
 msgid "Colors"
 msgstr "Färger"
 
+#: tfconf.tscommon.caption
+msgid "Quick Settings"
+msgstr "Snabbinställningar"
+
 #: tfconf.tscustom.caption
 msgid "Customization"
 msgstr "Personalisera"
@@ -1057,19 +1105,19 @@ msgstr "Egen"
 
 #: tffloat.mifontblack.caption
 msgid "Black"
-msgstr ""
+msgstr "Svart"
 
 #: tffloat.mifontcolor.caption
 msgid "Font Color"
-msgstr ""
+msgstr "Typsnittsfärg"
 
 #: tffloat.mifontmain.caption
 msgid "Main Window Color"
-msgstr ""
+msgstr "Huvudfönstrets färg"
 
 #: tffloat.mifontwhite.caption
 msgid "White"
-msgstr ""
+msgstr "Vit"
 
 #: tffloat.mimain.caption
 msgid "Show/Hide Main Window"
@@ -2549,4 +2597,3 @@ msgstr "Historikgraf"
 #, object-pascal-format
 msgid "Readings (%s)"
 msgstr "Avläsningar (%s)"
-
