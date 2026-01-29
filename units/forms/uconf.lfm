@@ -17,10 +17,10 @@ object fConf: TfConf
     Height = 518
     Top = 11
     Width = 665
-    ActivePage = tsDisplay
+    ActivePage = tsCustom
     Align = alClient
     BorderSpacing.Around = 5
-    TabIndex = 2
+    TabIndex = 4
     TabOrder = 0
     OnChange = pcMainChange
     object tsGeneral: TTabSheet
@@ -11585,24 +11585,6 @@ object fConf: TfConf
         BorderSpacing.Around = 10
         Caption = 'Language'
       end
-      object cbLang: TComboBox
-        Left = 10
-        Height = 23
-        Top = 420
-        Width = 639
-        Align = alTop
-        AutoSize = False
-        BorderSpacing.Left = 10
-        BorderSpacing.Top = 10
-        BorderSpacing.Right = 10
-        ItemHeight = 22
-        Items.Strings = (
-          'AUTO'
-          'en'
-        )
-        Style = csDropDownList
-        TabOrder = 2
-      end
       object cbSize: TCheckBox
         Left = 10
         Height = 20
@@ -11611,7 +11593,7 @@ object fConf: TfConf
         Align = alTop
         BorderSpacing.Around = 10
         Caption = 'Remember window size'
-        TabOrder = 3
+        TabOrder = 2
       end
       object cbFlash: TCheckGroup
         Left = 0
@@ -11632,7 +11614,7 @@ object fConf: TfConf
         ChildSizing.ControlsPerLine = 1
         ClientHeight = 67
         ClientWidth = 655
-        TabOrder = 4
+        TabOrder = 3
         object cbFlashHi: TCheckBox
           Left = 6
           Height = 18
@@ -11664,7 +11646,7 @@ object fConf: TfConf
         Top = 224
         Width = 27
         Caption = '?'
-        TabOrder = 5
+        TabOrder = 4
         OnClick = bBadgeFlashHelpClick
       end
       object cgNotifications: TCheckGroup
@@ -11686,7 +11668,7 @@ object fConf: TfConf
         ChildSizing.ControlsPerLine = 1
         ClientHeight = 56
         ClientWidth = 655
-        TabOrder = 6
+        TabOrder = 5
         object cbAlertHiLo: TCheckBox
           Left = 6
           Height = 22
@@ -11710,17 +11692,50 @@ object fConf: TfConf
         Top = 312
         Width = 27
         Caption = '?'
-        TabOrder = 7
+        TabOrder = 6
         OnClick = bNotificationHelpClick
       end
-      object bLanguageHelp: TButton
-        Left = 622
-        Height = 22
-        Top = 424
-        Width = 27
-        Caption = '?'
-        TabOrder = 8
-        OnClick = bLanguageHelpClick
+      object Panel19: TPanel
+        Left = 0
+        Height = 36
+        Top = 420
+        Width = 659
+        Align = alTop
+        BevelOuter = bvNone
+        ClientHeight = 36
+        ClientWidth = 659
+        TabOrder = 7
+        object cbLang: TComboBox
+          Left = 10
+          Height = 26
+          Top = 10
+          Width = 600
+          Align = alClient
+          AutoSize = False
+          BorderSpacing.Left = 10
+          BorderSpacing.Top = 10
+          BorderSpacing.Right = 10
+          ItemHeight = 22
+          Items.Strings = (
+            'AUTO'
+            'en'
+          )
+          Style = csDropDownList
+          TabOrder = 0
+        end
+        object bLanguageHelp: TButton
+          Left = 620
+          Height = 26
+          Top = 10
+          Width = 29
+          Align = alRight
+          BorderSpacing.Left = 10
+          BorderSpacing.Top = 10
+          BorderSpacing.Right = 10
+          Caption = '?'
+          TabOrder = 1
+          OnClick = bLanguageHelpClick
+        end
       end
     end
     object tsAdvanced: TTabSheet

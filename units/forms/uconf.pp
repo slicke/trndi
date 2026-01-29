@@ -67,10 +67,10 @@ TfConf = class(TForm)
   bBackendHelp: TButton;
   bDotHelp: TButton;
   bFontHelp: TButton;
+  bLanguageHelp: TButton;
   bNotificationHelp: TButton;
   bColorGraphHelp: TButton;
   bMultiUserHelp: TButton;
-  bLanguageHelp: TButton;
   bDeltaMaxHelp: TButton;
   bPredictHorizon: TButton;
   bTemplateCurrent: TButton;
@@ -106,11 +106,11 @@ TfConf = class(TForm)
   cbCust: TCheckBox;
   cbCustRange: TCheckBox;
   cbAlertMissing: TCheckBox;
+  cbLang: TComboBox;
   cgNotifications: TCheckGroup;
   cbAlertHiLo: TCheckBox;
   cbFlashLow: TCheckBox;
   cbFlashPerfect: TCheckBox;
-  cbLang: TComboBox;
   cbMultiTouch: TCheckBox;
   cbMusicPause: TCheckBox;
   cbNotice: TCheckBox;
@@ -135,6 +135,7 @@ TfConf = class(TForm)
   lExt: TLabel;
   lSysWarnInfo: TLabel;
   Panel18: TPanel;
+  Panel19: TPanel;
   Panel3: TPanel;
   pnDeltaMax: TPanel;
   pnSysWarn: TPanel;
