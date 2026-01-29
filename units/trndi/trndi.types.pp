@@ -202,7 +202,27 @@ BGTrendHelper =
   function Text: string;
 end;
 
+operator = (const a, b: BGReading): Boolean;
+operator = (const a, b: MaybeInt): Boolean;
+
 implementation
+
+operator = (const a, b: BGReading): Boolean;
+begin
+  Result := (a.curr = b.curr) and (a.change = b.change) and (a.trend = b.trend) and (a.date = b.date) and
+            (a.valu = b.valu) and (a.retu = b.retu) and (a.lvl = b.lvl) and (a.src = b.src) and
+            (a.rssi = b.rssi) and (a.device = b.device) and (a.noise = b.noise);
+end;
+
+operator = (const a, b: MaybeInt): Boolean;
+begin
+  if a.exists <> b.exists then
+    Result := False
+  else if not a.exists then
+    Result := True
+  else
+    Result := a.value = b.value;
+end;
 
 function BGReading.TryGetRSSI(out outval: integer): boolean;
 begin
