@@ -676,6 +676,13 @@ AMaxDate: TDateTime;
 var ModalResult: TModalResult;
 const icon: UXImage = uxmtCog): TDateTime;
 
+{**
+ Gets the current color scheme
+ @param bg Background
+ @param fg Foreground
+ }
+procedure getColorScheme(var bg, fg: string);
+
 var
   {** Localized captions for each @link(TUXMsgDlgBtn). Initialized from resource strings. }
 langs : ButtonLangs = (smbYes, smbUXNo, smbUXOK, smbUXCancel, smbUXAbort, smbUXRetry, smbUXIgnore,
@@ -3576,6 +3583,10 @@ begin
   ms.Free;
 end;
 
-
+procedure getColorScheme(var bg, fg: string);
+begin
+  bg := TColorToHTML(getBackground);
+  fg := TColorToHTML(getBaseColor);
+end;
 
 end.

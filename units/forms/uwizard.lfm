@@ -1,0 +1,86 @@
+object fWizard: TfWizard
+  Left = 378
+  Height = 421
+  Top = 250
+  Width = 586
+  Caption = 'fWizard'
+  ClientHeight = 421
+  ClientWidth = 586
+  LCLVersion = '4.4.0.0'
+  OnCreate = FormCreate
+  OnShow = FormShow
+  object pnCtrl: TPanel
+    Left = 0
+    Height = 37
+    Top = 384
+    Width = 586
+    Align = alBottom
+    BevelOuter = bvNone
+    ClientHeight = 37
+    ClientWidth = 586
+    TabOrder = 0
+    object pnPrev: TPanel
+      Left = 422
+      Height = 37
+      Top = 0
+      Width = 82
+      Align = alRight
+      BevelOuter = bvNone
+      ClientHeight = 37
+      ClientWidth = 82
+      TabOrder = 0
+      object bPrev: TButton
+        Left = 0
+        Height = 25
+        Top = 5
+        Width = 75
+        Caption = 'Previous'
+        Enabled = False
+        TabOrder = 0
+        OnClick = bPrevClick
+      end
+    end
+    object pnNext: TPanel
+      Left = 504
+      Height = 37
+      Top = 0
+      Width = 82
+      Align = alRight
+      BevelOuter = bvNone
+      ClientHeight = 37
+      ClientWidth = 82
+      TabOrder = 1
+      object bNext: TButton
+        Left = 0
+        Height = 25
+        Top = 5
+        Width = 75
+        Caption = 'Next'
+        TabOrder = 0
+        OnClick = bNextClick
+      end
+    end
+  end
+  object hMain: TIpHtmlPanel
+    Left = 0
+    Height = 384
+    Top = 0
+    Width = 586
+    Align = alClient
+    FixedTypeface = 'Courier New'
+    DefaultTypeFace = 'default'
+    DefaultFontSize = 12
+    FlagErrors = False
+    LinksUnderlined = True
+    PrintSettings.MarginLeft = 0.5
+    PrintSettings.MarginTop = 0.5
+    PrintSettings.MarginRight = 0.5
+    PrintSettings.MarginBottom = 0.5
+    PrintSettings.Preview.Left = 860
+    PrintSettings.Preview.Top = 360
+    PrintSettings.Preview.Width = 2580
+    PrintSettings.Preview.Height = 1080
+    TabOrder = 1
+    OnHotClick = HTMLHotClick
+  end
+end

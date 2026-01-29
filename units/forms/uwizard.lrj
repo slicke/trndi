@@ -1,0 +1,5 @@
+{"version":1,"strings":[
+{"hash":199297252,"name":"tfwizard.caption","sourcebytes":[102,87,105,122,97,114,100],"value":"fWizard"},
+{"hash":147653555,"name":"tfwizard.bprev.caption","sourcebytes":[80,114,101,118,105,111,117,115],"value":"Previous"},
+{"hash":347380,"name":"tfwizard.bnext.caption","sourcebytes":[78,101,120,116],"value":"Next"}
+]}

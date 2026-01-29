@@ -53,7 +53,7 @@ Graphics, Dialogs, StdCtrls, ExtCtrls,
 trndi.api.dexcom, trndi.api.nightscout, trndi.api.nightscout3, trndi.types,
 Math, DateUtils, FileUtil, LclIntf, TypInfo, LResources,
 slicke.ux.alert, slicke.ux.native, usplash, Generics.Collections, trndi.funcs,
-Trndi.native.base, trndi.shared, buildinfo, fpjson, jsonparser,
+Trndi.native.base, trndi.shared, buildinfo, fpjson, jsonparser, uwizard,
 SystemMediaController,
 {$ifdef TrndiExt}
 trndi.Ext.Engine, trndi.Ext.jsfuncs, trndi.ext.promise, mormot.core.base,

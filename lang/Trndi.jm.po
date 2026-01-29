@@ -1129,6 +1129,19 @@ msgstr ""
 "kring medicinsk användning.\n"
 "Se https://github.com/slicke/trndi/LICENSE.md"
 
+#: tfwizard.bnext.caption
+msgctxt "tfwizard.bnext.caption"
+msgid "Next"
+msgstr ""
+
+#: tfwizard.bprev.caption
+msgid "Previous"
+msgstr ""
+
+#: tfwizard.caption
+msgid "fWizard"
+msgstr ""
+
 #: trndi.api.dexcom.serrdexlogin
 msgid "Login error: Could not establish a valid session"
 msgstr "Inloggningsfel: Kunde inte etablera en giltig session"
@@ -2538,4 +2551,59 @@ msgstr "Historikgraf"
 #, object-pascal-format, fuzzy, badformat
 msgid "Readings (%s)"
 msgstr "Avlesningar (__PH9b11c7d9-566c-427a-900c-1cb2adb6fc93__)"
+
+#: uwizard.rs_btn_next
+msgctxt "uwizard.rs_btn_next"
+msgid "Next"
+msgstr ""
+
+#: uwizard.rs_w3_close
+msgid "You may now close this guide"
+msgstr ""
+
+#: uwizard.rs_w3_complete
+msgid "Everything's ready! Welcome to Trndi!"
+msgstr ""
+
+#: uwizard.rs_w3_title
+msgid "Good to go!"
+msgstr ""
+
+#: uwizard.rs_welcome_1
+msgid "Right-click Trndi to open the menu"
+msgstr ""
+
+#: uwizard.rs_welcome_2
+msgid "You can change your time-in-range in settings"
+msgstr ""
+
+#: uwizard.rs_welcome_3
+msgid "You can activate predictions in settings"
+msgstr ""
+
+#: uwizard.rs_welcome_4
+#, object-pascal-format
+msgid "Questions? Contact us at %s"
+msgstr ""
+
+#: uwizard.rs_welcome_5
+#, object-pascal-format
+msgid "Bugs? Report them at %s"
+msgstr ""
+
+#: uwizard.rs_welcome_desc
+msgid "This dialog shows at first start, and when there have been major changes made"
+msgstr ""
+
+#: uwizard.rs_welcome_thnx
+msgid "Thank you for choosing Trndi! Trndi is a non-profit open source project and contributions are welcome."
+msgstr ""
+
+#: uwizard.rs_welcome_title1
+msgid "Quick Guide:"
+msgstr ""
+
+#: uwizard.rs_welcome_top
+msgid "Welcome to Trndi!"
+msgstr ""
 

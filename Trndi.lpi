@@ -626,6 +626,13 @@
         <Filename Value="inc\mac\ns_app.inc"/>
         <IsPartOfProject Value="True"/>
       </Unit>
+      <Unit>
+        <Filename Value="units\forms\uwizard.pp"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="fWizard"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

@@ -503,6 +503,11 @@ begin
   Application.ProcessMessages;
   Application.OnException := @AppExceptionHandler;
 
+  with TfWizard.Create(self) do begin
+    ShowModal;
+    Free;
+  end;
+
   // Start media backend early
   fSplash.incProgress(10, RS_INIT_MEDIA);
   MediaController := TSystemMediaController.Create(Self);
