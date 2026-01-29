@@ -56,7 +56,7 @@ Graphics, Dialogs, LCLTranslator, trndi.native, lclintf,
 slicke.ux.alert, slicke.ux.native, VersionInfo, trndi.funcs, buildinfo, StrUtils,
   // Backend APIs for label captions
 trndi.api, trndi.api.nightscout, trndi.api.nightscout3, trndi.api.dexcom, trndi.api.debug_custom,
-trndi.api.debug, trndi.api.debug_firstXmissing, trndi.api.xdrip, RazerChroma;
+trndi.api.debug, trndi.api.debug_firstXmissing, trndi.api.xdrip, RazerChroma, math;
 
 type
 
@@ -2055,6 +2055,18 @@ begin
   // Update preview glyphs from current edit values so they appear when the tab is shown
   eDot.OnChange(eDot);
   eDotNow.OnChange(eDotNow);
+
+  if lVal.Font.color = lVal.Parent.Color then
+    lVal.Font.color := IfThen(lVal.Parent.Color = clBlack, clWhite, clBlack);
+  if lArrow.Font.color = lArrow.Parent.Color then
+    lArrow.Font.color := IfThen(lArrow.Parent.Color = clBlack, clWhite, clBlack);
+  if lAgo.Font.color = lAgo.Parent.Color then
+    lAgo.Font.color := IfThen(lAgo.Parent.Color = clBlack, clWhite, clBlack);
+  if lDot1.font.color = lDot1.Parent.color then begin
+    lDot1.Font.color := IfThen(lDot1.Parent.Color = clBlack, clWhite, clBlack);
+    lDot2.Font.color := ldot1.font.color;
+    lDot3.Font.color := ldot1.font.color;
+  end;
 end;
 
 procedure TfConf.tsSystemShow(Sender: TObject);
