@@ -358,6 +358,10 @@ msgstr "Senast mottagna verde:"
 msgid "+ Add"
 msgstr "+ Ny"
 
+#: tfconf.bcommon.caption
+msgid "Go to Quick Settings"
+msgstr ""
+
 #: tfconf.bextopen.caption
 msgid "Show Folder"
 msgstr "Visa mapp"
@@ -444,6 +448,12 @@ msgstr "Gôr enheter grôna vid normalt verde"
 
 #: tfconf.cbcust.caption
 msgctxt "tfconf.cbcust.caption"
+msgid "Use custom values"
+msgstr "Anvend egna verden"
+
+#: tfconf.cbcust1.caption
+#, fuzzy
+msgctxt "tfconf.cbcust1.caption"
 msgid "Use custom values"
 msgstr "Anvend egna verden"
 
@@ -650,6 +660,12 @@ msgctxt "tfconf.gboverride.caption"
 msgid "Override High / Low limits"
 msgstr "osidosett hôga / loga grenser"
 
+#: tfconf.gboverride1.caption
+#, fuzzy
+msgctxt "tfconf.gboverride1.caption"
+msgid "Override High / Low limits"
+msgstr "osidosett hôga / loga grenser"
+
 #: tfconf.gboverride2.caption
 msgid "Play Media"
 msgstr "Spela Media"
@@ -697,6 +713,7 @@ msgid "Display"
 msgstr "Visning"
 
 #: tfconf.label1.caption
+msgctxt "tfconf.label1.caption"
 msgid "Readings are outdated after (minutes):"
 msgstr "Avlesningar anses gamla efter (minuter):"
 
@@ -714,6 +731,7 @@ msgid "Perfect Reading (5.5mmol/L or 100 mg/dL)"
 msgstr "Perfekt avlesning (5,5mmol/L eller 100 mg/dL)"
 
 #: tfconf.label13.caption
+msgctxt "tfconf.label13.caption"
 msgid "Decimal separator:"
 msgstr "Decimalseparator:"
 
@@ -729,6 +747,10 @@ msgstr "Serveradress / Anvendare Dexcom"
 #: tfconf.label16.caption
 msgid "Current dot:"
 msgstr "Nuvarande punkt:"
+
+#: tfconf.label17.caption
+msgid "These settings reside in different parts of the settings dialog, but has been collected here for your convinience!"
+msgstr ""
 
 #: tfconf.label18.caption
 msgid "Connection"
@@ -795,6 +817,18 @@ msgstr "Enheterna kommer pulsera i rôtt vid hôgt och blott vid logt"
 msgid "Razer Synapse required on Windows. OpenRazer on Linux. No support for other platforms at this time."
 msgstr "OBS: Razer Synapse krevs po Windows. OpenRazer po Linux. Inget stôd fôr andra plattformar just nu."
 
+#: tfconf.label33.caption
+#, fuzzy
+msgctxt "tfconf.label33.caption"
+msgid "Decimal separator:"
+msgstr "Decimalseparator:"
+
+#: tfconf.label34.caption
+#, fuzzy
+msgctxt "tfconf.label34.caption"
+msgid "Readings are outdated after (minutes):"
+msgstr "Avlesningar anses gamla efter (minuter):"
+
 #: tfconf.label4.caption
 msgid "Window start-up position"
 msgstr "Posisjon av fônster vid start"
@@ -841,6 +875,10 @@ msgstr "Vid hôgt:"
 msgid "On low:"
 msgstr "Vid logt:"
 
+#: tfconf.lconfigpredict.caption
+msgid "Glucose Predictions Settings"
+msgstr ""
+
 #: tfconf.ldot.caption
 msgctxt "tfconf.ldot.caption"
 msgid "PREVIEW"
@@ -882,6 +920,12 @@ msgstr "Hôgt ôver"
 msgid "Maximum minutes to count time in range on (depending on source data availability):"
 msgstr "Max minuter att rekna tid-i-molomrode po (beror po tillgenglig data):"
 
+#: tfconf.lhiover3.caption
+#, fuzzy
+msgctxt "tfconf.lhiover3.caption"
+msgid "High over"
+msgstr "Hôgt ôver"
+
 #: tfconf.llicense.caption
 msgid "License"
 msgstr "Licens"
@@ -893,6 +937,12 @@ msgstr "Logt under"
 
 #: tfconf.llounder1.caption
 msgctxt "tfconf.llounder1.caption"
+msgid "Low under"
+msgstr "Logt under"
+
+#: tfconf.llounder2.caption
+#, fuzzy
+msgctxt "tfconf.llounder2.caption"
 msgid "Low under"
 msgstr "Logt under"
 
@@ -979,6 +1029,10 @@ msgstr "Razer Chroma"
 #: tfconf.tscolors.caption
 msgid "Colors"
 msgstr "Ferger"
+
+#: tfconf.tscommon.caption
+msgid "Quick Settings"
+msgstr ""
 
 #: tfconf.tscustom.caption
 msgid "Customization"
