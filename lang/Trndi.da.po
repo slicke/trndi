@@ -1048,6 +1048,22 @@ msgctxt "tffloat.micustomvisible.caption"
 msgid "Custom"
 msgstr ""
 
+#: tffloat.mifontblack.caption
+msgid "Black"
+msgstr ""
+
+#: tffloat.mifontcolor.caption
+msgid "Font Color"
+msgstr ""
+
+#: tffloat.mifontmain.caption
+msgid "Main Window Color"
+msgstr ""
+
+#: tffloat.mifontwhite.caption
+msgid "White"
+msgstr ""
+
 #: tffloat.mimain.caption
 msgid "Show/Hide Main Window"
 msgstr ""

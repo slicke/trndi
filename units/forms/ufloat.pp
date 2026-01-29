@@ -74,6 +74,11 @@ TfFloat = class(TForm)
   lRangeUp: TLabel;
   lVal: TLabel;
   MenuItem1: TMenuItem;
+  miFontMain: TMenuItem;
+  miSep: TMenuItem;
+  miFontBlack: TMenuItem;
+  miFontWhite: TMenuItem;
+  miFontColor: TMenuItem;
   miMain: TMenuItem;
   miClock: TMenuItem;
   miCustomSize: TMenuItem;
@@ -115,6 +120,8 @@ TfFloat = class(TForm)
   procedure miClockClick(Sender: TObject);
   procedure miCustomSizeClick(Sender: TObject);
   procedure miCustomVisibleClick(Sender: TObject);
+  procedure miFontBlackClick(Sender: TObject);
+  procedure miFontWhiteClick(Sender: TObject);
   procedure miHideTitleClick(Sender: TObject);
   procedure miMainClick(Sender: TObject);
   procedure miNormalClick(Sender: TMenuItem);
@@ -391,6 +398,18 @@ end;
 procedure TfFloat.miCustomVisibleClick(Sender: TObject);
 begin
   ShowMessage(rsCustomOp);
+end;
+
+procedure TfFloat.miFontBlackClick(Sender: TObject);
+begin
+  lVal.font.color := clBlack;
+  lArrow.font.color := clBlack;
+end;
+
+procedure TfFloat.miFontWhiteClick(Sender: TObject);
+begin
+  lVal.font.color := clwhite;
+ lArrow.font.color := clWhite;
 end;
 
 procedure TfFloat.miHideTitleClick(Sender: TObject);
