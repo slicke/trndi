@@ -1347,6 +1347,9 @@ end;
 
 procedure TfConf.bCommonClick(Sender: TObject);
 begin
+  {$ifdef x_mac}
+    tsCommon.tabvisible := true;
+  {$endif}
   pcMain.ActivePage := tsCommon;
 end;
 
@@ -1952,7 +1955,9 @@ end;
 
 procedure TfConf.pcMainChange(Sender: TObject);
 begin
-
+  {$ifdef x_mac}
+    tsCommon.tabvisible := false;
+  {$endif}
 end;
 
 procedure TfConf.rbUnitClick(Sender: TObject);
