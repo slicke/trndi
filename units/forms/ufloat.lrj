@@ -21,6 +21,10 @@
 {"hash":89559932,"name":"tffloat.minormal.caption","sourcebytes":[78,111,114,109,97,108],"value":"Normal"},
 {"hash":5912620,"name":"tffloat.mismall.caption","sourcebytes":[83,109,97,108,108],"value":"Small"},
 {"hash":78424925,"name":"tffloat.micustomsize.caption","sourcebytes":[67,117,115,116,111,109],"value":"Custom"},
+{"hash":105813298,"name":"tffloat.mifontcolor.caption","sourcebytes":[70,111,110,116,32,67,111,108,111,114],"value":"Font Color"},
+{"hash":4794267,"name":"tffloat.mifontblack.caption","sourcebytes":[66,108,97,99,107],"value":"Black"},
+{"hash":6156453,"name":"tffloat.mifontwhite.caption","sourcebytes":[87,104,105,116,101],"value":"White"},
+{"hash":214280706,"name":"tffloat.mifontmain.caption","sourcebytes":[77,97,105,110,32,87,105,110,100,111,119,32,67,111,108,111,114],"value":"Main Window Color"},
 {"hash":158190331,"name":"tffloat.miclock.caption","sourcebytes":[83,104,111,119,32,99,108,111,99,107],"value":"Show clock"},
 {"hash":70287671,"name":"tffloat.mimain.caption","sourcebytes":[83,104,111,119,47,72,105,100,101,32,77,97,105,110,32,87,105,110,100,111,119],"value":"Show/Hide Main Window"},
 {"hash":2813861,"name":"tffloat.menuitem1.caption","sourcebytes":[38,72,105,100,101],"value":"&Hide"}

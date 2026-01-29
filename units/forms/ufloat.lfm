@@ -8,6 +8,7 @@ object fFloat: TfFloat
   ClientWidth = 218
   FormStyle = fsSystemStayOnTop
   PopupMenu = pMain
+  Position = poMainFormCenter
   SnapOptions.SnapToMonitor = True
   LCLVersion = '4.4.0.0'
   OnKeyDown = FormKeyDown
@@ -43,17 +44,17 @@ object fFloat: TfFloat
   end
   object lRangeDown: TLabel
     Left = 0
-    Height = 16
+    Height = 15
     Top = 0
-    Width = 14
+    Width = 10
     Caption = '▼'
     Visible = False
   end
   object lRangeUp: TLabel
     Left = 0
-    Height = 16
+    Height = 15
     Top = 0
-    Width = 14
+    Width = 10
     Caption = '▲'
     Visible = False
   end
@@ -92,9 +93,9 @@ object fFloat: TfFloat
   end
   object lTime: TLabel
     Left = 167
-    Height = 16
+    Height = 15
     Top = 0
-    Width = 39
+    Width = 27
     Caption = '00:00'
     Visible = False
   end
@@ -166,6 +167,30 @@ object fFloat: TfFloat
       object miCustomSize: TMenuItem
         Caption = 'Custom'
         OnClick = miCustomSizeClick
+      end
+    end
+    object miFontColor: TMenuItem
+      Caption = 'Font Color'
+      object miFontBlack: TMenuItem
+        AutoCheck = True
+        Caption = 'Black'
+        Checked = True
+        RadioItem = True
+        OnClick = miFontBlackClick
+      end
+      object miFontWhite: TMenuItem
+        AutoCheck = True
+        Caption = 'White'
+        RadioItem = True
+        OnClick = miFontWhiteClick
+      end
+      object miSep: TMenuItem
+        Caption = '-'
+      end
+      object miFontMain: TMenuItem
+        AutoCheck = True
+        Caption = 'Main Window Color'
+        RadioItem = True
       end
     end
     object miSplit: TMenuItem

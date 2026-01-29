@@ -2488,6 +2488,10 @@ begin
       ffloat.OnHide := @TfFloatOnHide;
     fFloat.Color := fBg.Color;
     fFloat.lVal.Caption := lval.Caption;
+    if fFloat.miFontMain.Checked then begin
+      fFloat.lVal.font.color := lval.font.color;
+      fFloat.larrow.font.color := fFloat.lVal.font.color;
+    end;
     fFloat.lArrow.Caption := lArrow.Caption;
     if pnMultiUser.Visible then
     begin
@@ -4992,6 +4996,10 @@ begin
     fFloat.Color := fBg.Color;
     fFloat.lVal.Caption := lval.Caption;
     fFloat.lArrow.Caption := lArrow.Caption;
+    if fFloat.miFontMain.Checked then begin
+      fFloat.lVal.font.color := lval.font.color;
+      fFloat.larrow.font.color := fFloat.lVal.font.color;
+    end;
   end;
 end;
 
