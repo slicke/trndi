@@ -92,9 +92,21 @@ var
   i: integer;
 begin
   result := inherited getReadings(min, maxNum, extras, res);
-  for i := Low(result) to missing-1 do begin
-    result[i].init(mmol);
-  end;
+  // Clamp requested missing count to available results and ensure non-negative
+  if missing <= 0 then
+    missing := 0
+  else if missing > Length(Result) then
+    missing := Length(Result);
+
+  // Mark the first N readings as missing (clear numeric values)
+  for i := Low(Result) to missing-1 do
+    Result[i].Clear;
+
+  // Short debug trace to help when testing the provider
+  if missing < Length(Result) then
+    LogMessage(Format('DebugFirstXMissing: Cleared %d readings; newest remaining at %s', [missing, DateTimeToStr(Result[missing].date)]))
+  else
+    LogMessage(Format('DebugFirstXMissing: Cleared all %d readings', [missing]));
 end;
 
 class function DebugFirstXMissingAPI.ParamLabel(LabelName: APIParamLabel): string;
