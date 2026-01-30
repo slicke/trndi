@@ -77,7 +77,7 @@ public
     out res: string): BGResults; override;
     {** Test NightScout credentials
     }   
-  class function testConnection(user, pass, extra: string): byte; override;
+  class function testConnection(user, pass: string): byte; override;
     {** UI parameter label provider (override).
         1: NightScout URL
         2: Auth token suffix (v2)
@@ -687,7 +687,7 @@ end;
   - Probes v3 status.json using the retrieved bearer token (if available),
     falling back to a public v3 or v1 status endpoint where applicable.
  ------------------------------------------------------------------------------}
-class function NightScout3.testConnection(user, pass, extra: string): byte;
+class function NightScout3.testConnection(user, pass: string): byte;
 var
   tn: TrndiNative;
   base, authURL, resp, localToken, res: string;

@@ -187,7 +187,7 @@ public
       - Performs authentication sequence similar to Connect to validate credentials
       - Probes /General/SystemUtcTime to ensure server responds with time info
   }
-  class function testConnection(user, pass, extra: string): byte; override;
+  class function testConnection(user, pass, extra: string): byte; overload;
 
 published
     {** The effective base URL used for API requests. }
@@ -220,6 +220,7 @@ protected
 public
   constructor Create(const AUser, APass: string); reintroduce; overload;
   constructor Create(const AUser, APass: string; ACalcDiff: boolean); reintroduce; overload;
+  class function testConnection(username, pass: string): byte; override; overload;
 end;
 
 DexcomWorldNew = class(DexcomNew)
@@ -228,6 +229,7 @@ protected
 public
   constructor Create(const AUser, APass: string); reintroduce; overload;
   constructor Create(const AUser, APass: string; ACalcDiff: boolean); reintroduce; overload;
+  class function testConnection(username, pass: string): byte; override; overload;
 end;
 
 DexcomJapanNew = class(DexcomNew)
@@ -236,6 +238,7 @@ protected
 public
   constructor Create(const AUser, APass: string); reintroduce; overload;
   constructor Create(const AUser, APass: string; ACalcDiff: boolean); reintroduce; overload;
+  class function testConnection(username, pass: string): byte; override; overload;
 end;
 
 DexcomCustomNew = class(DexcomNew);
@@ -388,6 +391,11 @@ begin
   inherited Create(AUser, APass, 'usa', ACalcDiff);
 end;
 
+class function DexcomUSANew.testConnection(username, pass: string): byte;
+begin
+  result := inherited testConnection(username, pass, 'usa');
+end;
+
 constructor DexcomWorldNew.Create(const AUser, APass: string);
 begin
   inherited Create(AUser, APass, 'world');
@@ -398,6 +406,11 @@ begin
   inherited Create(AUser, APass, 'world', ACalcDiff);
 end;
 
+class function DexcomWorldNew.testConnection(username, pass: string): byte;
+begin
+  result := inherited testConnection(username, pass, 'world');
+end;
+
 constructor DexcomJapanNew.Create(const AUser, APass: string);
 begin
   inherited Create(AUser, APass, 'japan');
@@ -406,6 +419,11 @@ end;
 constructor DexcomJapanNew.Create(const AUser, APass: string; ACalcDiff: boolean);
 begin
   inherited Create(AUser, APass, 'japan', ACalcDiff);
+end;
+
+class function DexcomJapanNew.testConnection(username, pass: string): byte;
+begin
+  result := inherited testConnection(username, pass, 'japan');
 end;
 
 {------------------------------------------------------------------------------

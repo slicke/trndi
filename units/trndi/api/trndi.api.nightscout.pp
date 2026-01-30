@@ -125,7 +125,7 @@ public
   class function ParamLabel(LabelName: APIParamLabel): string; override;
     {** Test NightScout credentials
     }
-  class function testConnection(user, pass, extra: string): byte; override;
+  class function testConnection(user, pass: string): byte; override;
 
   function getMaxAge: integer; override;
 
@@ -486,7 +486,7 @@ end;
 {------------------------------------------------------------------------------
   Test if the connection data is correct
 ------------------------------------------------------------------------------}
-class function NightScout.testConnection(user, pass, extra: string): byte;
+class function NightScout.testConnection(user, pass: string): byte;
 var
   password, responseStr: string;
   tn: TrndiNative;

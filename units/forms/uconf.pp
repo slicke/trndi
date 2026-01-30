@@ -775,7 +775,7 @@ end;
 
 procedure TfConf.getAPILabels(out user, pass: string);
 var
-  sys: class of TrndiAPI;
+ sys: class of TrndiAPI;
 begin
   sys := TrndiAPI;
 
@@ -788,6 +788,12 @@ begin
     sys := Dexcom;
   API_DEX_EU:
     sys := Dexcom;
+  API_DEX_NEW_USA:
+    sys := DexcomNew;
+  API_DEX_NEW_EU:
+    sys := DexcomNew;
+  API_DEX_NEW_JP:
+    sys := DexcomNew;
   API_XDRIP:
     sys := xDrip;
   {$ifdef Debug}
@@ -1090,10 +1096,13 @@ begin
     sys := NightScout;
   API_NS3:
     sys := NightScout3;
-  API_DEX_USA:
-    sys := Dexcom;
+  API_DEX_USA,
   API_DEX_EU:
     sys := Dexcom;
+  API_DEX_NEW_USA,
+  API_DEX_NEW_EU,
+  API_DEX_NEW_JP:
+    sys := DexcomNew;
   API_XDRIP:
     sys := xDrip;
   {$ifdef Debug}
@@ -1190,25 +1199,25 @@ var
   res: integer;
 begin
   if cbSys.Text = API_NS then
-    res := NightScout.testConnection(eAddr.text,ePass.text,'')
+    res := NightScout.testConnection(eAddr.text,ePass.text)
   else
   if cbSys.Text = API_NS3 then
-    res := NightScout3.testConnection(eAddr.text,ePass.text,'')
+    res := NightScout3.testConnection(eAddr.text,ePass.text)
   else
   if cbSys.Text = API_DEX_USA then
-    res := Dexcom.testConnection(eAddr.text,ePass.text,'usa')
+    res := DexcomUSA.testConnection(eAddr.text,ePass.text)
   else
   if cbSys.Text = API_DEX_EU then
-    res := Dexcom.testConnection(eAddr.text,ePass.text,'eu')
+    res := DexcomWorld.testConnection(eAddr.text,ePass.text)
   else
   if cbSys.Text = API_DEX_NEW_USA then
-    res := DexcomNew.testConnection(eAddr.text,ePass.text,'usa')
+    res := DexcomUSANew.testConnection(eAddr.text,ePass.text)
   else
   if cbSys.Text = API_DEX_NEW_EU then
-    res := DexcomNew.testConnection(eAddr.text,ePass.text,'eu')    
+    res := DexcomWorldNew.testConnection(eAddr.text,ePass.text)
   else
   if cbSys.Text = API_DEX_NEW_JP then
-    res := DexcomNew.testConnection(eAddr.text,ePass.text,'japan')
+    res := DexcomNew.testConnection(eAddr.text,ePass.text)
   else
   begin
     ShowMessage(RS_TEST_UNSUPPORTED);
