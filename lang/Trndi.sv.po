@@ -1261,8 +1261,8 @@ msgstr ""
 "Välj serverregionen där ditt konto är registrerat i:\n"
 "• Dexcom (USA): för konton registrerade på share2.dexcom.com\n"
 "• Dexcom (Outside USA): för konton registrerade på shareous1.dexcom.com\n"
-"\r\n"
-"Om du är osäker, testa “Outside USA” först om du inte bor i USA.\r\n"
+"r\n"
+"Om du är osäker, testa “Outside USA” först om du inte bor i USA.r\n"
 "Ditt användarnamn och lösenord är dina Dexcom-uppgifter (inte Share)."
 
 #: trndi.api.dexcomnew.sdexnewparamdeschtml
@@ -1270,7 +1270,7 @@ msgid ""
 "<b>Dexcom</b> region selection:<br><br>Choose the server based on your <u>account region</u>:<br>• Dexcom (USA): for accounts <i>(served by share2.dexcom.com)</i><br>• Dexcom (Outside USA): for accounts <i>(served by shareous1.dexcom.com)</i><br>• Dexcom (Japan): for accounts <i>(served by share.dexcom.jp)</i><br><br>If you are unsure, try <b>Outside USA</b> first, if you live outside the US.\n"
 "Your username and password are your Dexcom Account (not Share) credentials."
 msgstr ""
-"<b>Dexcom</b>regionval:<br><br>Välj en server baserat på din <u>kontoregion</u>:<br>• Dexcom (USA): för konton <i>(hanterade av by share2.dexcom.com)</i><br>• Dexcom (Utanför USA): för konton <i>(hanterade av shareous1.dexcom.com)</i><br><br>If you are unsure, try <b>Outside USA</b> first, if you live outside the US.\r\n"
+"<b>Dexcom</b>regionval:<br><br>Välj en server baserat på din <u>kontoregion</u>:<br>• Dexcom (USA): för konton <i>(hanterade av by share2.dexcom.com)</i><br>• Dexcom (Utanför USA): för konton <i>(hanterade av shareous1.dexcom.com)</i><br><br>If you are unsure, try <b>Outside USA</b> first, if you live outside the US.r\n"
 "Your username and password are your Dexcom Account (not Share) credentials."
 
 #: trndi.api.dexcomnew.sdexnewparampassword
@@ -2638,3 +2638,4 @@ msgstr "Historikgraf"
 #, object-pascal-format
 msgid "Readings (%s)"
 msgstr "Avläsningar (%s)"
+

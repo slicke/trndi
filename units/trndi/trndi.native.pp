@@ -76,6 +76,9 @@ TrndiNative = TTrndiNativeLinux;
 // plain function working.
 function GetWindowManagerName: string;
 
+// Convenience: expose a helper returning whether the window manager is Sway.
+function nobuttonsVM: boolean;
+
 // Convenience: expose a helper returning the TTS software name used by the
 // current platform (e.g., 'spd-say', 'SAPI', 'say').
 function GetSpeakSoftwareName: string;
@@ -84,6 +87,11 @@ implementation
 function GetWindowManagerName: string;
 begin
   Result := TrndiNative.GetWindowManagerName;
+end;
+
+function nobuttonsVM: boolean;
+begin
+  Result := TrndiNative.nobuttonsVM;
 end;
 
 function GetSpeakSoftwareName: string;

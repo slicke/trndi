@@ -418,6 +418,7 @@ TfConf = class(TForm)
   procedure tsCommonShow(Sender: TObject);
   procedure tsDisplayShow(Sender: TObject);
   procedure tsSystemShow(Sender: TObject);
+  procedure closeClick(Sender: TObject);
 private
   procedure getAPILabels(out user, pass: string);
 public
@@ -687,6 +688,11 @@ begin
     until FindNext(sr) <> 0;
     FindClose(sr);
   end;
+end;
+
+procedure TfConf.CloseClick(Sender: TObject);
+begin
+  Close;
 end;
 
 procedure TfConf.lAckClick(Sender: TObject);
@@ -1466,6 +1472,8 @@ var
   wi: integer;
   {$endif}
   os, arch: string;
+  bottombar: tpanel;
+  bottomclose: tbutton;
 begin
   // Base app version + build date + widgetset + target CPU
   lVersion.Caption := GetProductVersionMajorMinor('2.x');
@@ -1531,6 +1539,20 @@ begin
   {$ifdef X_WIN}
     cbTitleColor.Visible := false;
   {$endif}
+  if tnative.nobuttonsVM then begin
+    bottombar := TPanel.Create(self);
+    bottombar.Align:=alBottom;
+    bottombar.height := 30;
+    bottombar.parent := self;
+
+    bottomclose := TButton.Create(bottombar);
+    bottomclose.Caption := 'Close';
+    bottomclose.parent := bottombar;
+    bottomclose.left := 5;
+    bottomclose.onclick := @CloseClick;
+
+    self.height := self.height + 30;
+  end;
 end;
 
 procedure TfConf.FormDestroy(Sender: TObject);
