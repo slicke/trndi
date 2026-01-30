@@ -371,6 +371,9 @@ begin
   API_XDRIP,
   'API_XDRIP':
     api := xDrip.Create(apiTarget, apiCreds);
+  API_CA_REL_INSTINCT,
+  'API_CA_REL_INSTINCT':
+    api := CareLinkInstinct.Create(apiTarget, apiCreds);
   {$ifdef DEBUG}
   API_D_DEBUG,
   'API_D_DEBUG':

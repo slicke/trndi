@@ -56,7 +56,7 @@ Graphics, Dialogs, LCLTranslator, trndi.native, lclintf,
 slicke.ux.alert, slicke.ux.native, VersionInfo, trndi.funcs, buildinfo, StrUtils,
   // Backend APIs for label captions
 trndi.api, trndi.api.nightscout, trndi.api.nightscout3, trndi.api.dexcom, trndi.api.dexcomNew, trndi.api.debug_custom,
-trndi.api.debug, trndi.api.debug_firstXmissing, trndi.api.xdrip, RazerChroma, math, trndi.types;
+trndi.api.debug, trndi.api.debug_firstXmissing, trndi.api.xdrip, trndi.api.carelink_instinct, RazerChroma, math, trndi.types;
 
 type
 
@@ -433,6 +433,7 @@ API_DEX_NEW_USA = 'Dexcom New (USA)';
 API_DEX_NEW_EU = 'Dexcom New (Outside USA)';
 API_DEX_NEW_JP = 'Dexcom New (Japan)';
 API_XDRIP = 'xDrip';
+API_CA_REL_INSTINCT = 'CareLink Instinct';
 {$ifdef DEBUG}
 API_D_DEBUG =  '* Debug Backend *';
 API_D_MISSING = '* Debug Missing Backend *';
@@ -796,6 +797,8 @@ begin
     sys := DexcomNew;
   API_XDRIP:
     sys := xDrip;
+  API_CA_REL_INSTINCT:
+    sys := CareLinkInstinct;
   {$ifdef Debug}
   API_D_FIRSTX:
     sys := DebugFirstXMissingAPI;
@@ -846,6 +849,11 @@ procedure WarnUnstableAPI;
     begin
       pnSysWarn.Show;
       lSysWarnInfo.Caption := RS_XDRIP;
+    end;
+    if cbSys.Text = API_CA_REL_INSTINCT then
+    begin
+      pnSysWarn.Show;
+      lSysWarnInfo.Caption := '⚠️ ALPHA DRIVER - CareLink Instinct support is experimental.'+LineEnding+'Verify all data with official Medtronic sources.';
     end;
     {$ifdef DEBUG}
     if cbSys.Text in API_DEBUG then
@@ -1105,6 +1113,8 @@ begin
     sys := DexcomNew;
   API_XDRIP:
     sys := xDrip;
+  API_CA_REL_INSTINCT:
+    sys := CareLinkInstinct;
   {$ifdef Debug}
   API_D_FIRSTX:
     sys := DebugFirstXMissingAPI;
@@ -1219,6 +1229,9 @@ begin
   else
   if cbSys.Text = API_DEX_NEW_JP then
     res := DexcomNew.testConnection(eAddr.text,ePass.text,err)
+  else
+  if cbSys.Text = API_CA_REL_INSTINCT then
+    res := CareLinkInstinct.testConnection(eAddr.text,ePass.text,err)
   else
   begin
     ShowMessage(RS_TEST_UNSUPPORTED);

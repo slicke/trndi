@@ -80,7 +80,7 @@ netdb,
 winsock,
 {$endif}
 LazFileUtils, uconf, trndi.native, Trndi.API,
-trndi.api.xDrip,{$ifdef DEBUG} trndi.api.debug_custom, trndi.api.debug, trndi.api.debug_edge, trndi.api.debug_missing, trndi.api.debug_firstXmissing, trndi.api.debug_perfect, trndi.api.debug_firstmissing, trndi.api.debug_secondmissing,{$endif}
+trndi.api.xDrip, trndi.api.carelink_instinct,{$ifdef DEBUG} trndi.api.debug_custom, trndi.api.debug, trndi.api.debug_edge, trndi.api.debug_missing, trndi.api.debug_firstXmissing, trndi.api.debug_perfect, trndi.api.debug_firstmissing, trndi.api.debug_secondmissing,{$endif}
 {$ifdef LCLQt6}Qt6, QtWidgets,{$endif}
 StrUtils, TouchDetection, ufloat, uhistorygraph, LCLType, trndi.webserver.threaded, RazerChromaFactory, RazerChroma;
 
@@ -2833,6 +2833,8 @@ procedure LoadUserSettings(f: TfConf);
         result := API_DEX_NEW_JP;
       'API_XDRIP':
         result := API_XDRIP;
+      'API_CA_REL_INSTINCT':
+        result := API_CA_REL_INSTINCT;
       {$ifdef DEBUG}
       'API_D_DEBUG':
         result := API_D_DEBUG;
@@ -3173,6 +3175,8 @@ procedure SaveUserSettings(f: TfConf);
         result := 'API_DEX_NEW_JP';        
       API_XDRIP:
         result := 'API_XDRIP';
+      API_CA_REL_INSTINCT:
+        result := 'API_CA_REL_INSTINCT';
       {$ifdef DEBUG}
       API_D_DEBUG:
         result := 'API_D_DEBUG';
@@ -3382,7 +3386,8 @@ begin
         API_DEX_NEW_USA,
         API_DEX_NEW_EU,
         API_DEX_NEW_JP,
-        API_XDRIP
+        API_XDRIP,
+        API_CA_REL_INSTINCT
         ]);
       {$ifdef DEBUG}
       fConf.cbSys.Items.AddStrings(API_DEBUG);
