@@ -118,6 +118,8 @@ public
   class function SpeakSoftwareName: string; override;
   {** Best-effort window manager name for Linux. }
   class function GetWindowManagerName: string; override;
+  {** Check if the window manager is Sway. }
+  class function nobuttonsVM: boolean; override;
   {** True if a global/appmenu service is active; Linux override. }
   class function HasGlobalMenu: boolean; override;
 
@@ -458,6 +460,16 @@ begin
     Result := Trim(DesktopHint);
   if (Result = '') and (TTrndiNativeBase.DetectWSL.IsWSL) then
     REsult := 'Windows Subsystem For Linux';
+end;
+
+{------------------------------------------------------------------------------
+  nobuttonsVM (Linux)
+  -------------------
+  Returns true if the window manager is Sway.
+ ------------------------------------------------------------------------------}
+class function TTrndiNativeLinux.nobuttonsVM: boolean;
+begin
+  Result := LowerCase(GetWindowManagerName) = 'sway';
 end;
 
 // True if S contains the substring "dark" (case-insensitive)
