@@ -624,59 +624,62 @@ begin
   end;
 
   try
-    // Iterate items and collect only valid readings (like Nightscout)
-    SetLength(Result, 0);
+    // Set result length to match JSON count
+    SetLength(Result, LData.Count);
+    // Iterate items and map to BGReading
     for i := 0 to LData.Count - 1 do
     try
-      // Compute BG value, skip if missing/null
+      // Initialize reading (mg/dL units)
+      Result[i].Init(mgdl, self.systemName);
+      // Mark source for downstream consumers/debugging
+      Result[i].updateEnv('Dexcom', noval, noval);
+
+      // Compute BG value
       CurVal := SafeValue(LData.Items[i], CurOk);
-      if not CurOk then
-        Continue; // Skip missing readings, like Nightscout
-
-      // Add new reading to result array
-      SetLength(Result, Length(Result) + 1);
-      Result[High(Result)].Init(mgdl, self.systemName);
-      Result[High(Result)].updateEnv('Dexcom', noval, noval);
-
-      // Parse trend
-      LTrendStr := LData.Items[i].FindPath('Trend').AsString;
-      // Map trend string to enum
-      if not TryStrToInt(LTrendStr, LTrendCode) then
+      if CurOk then
       begin
-        // Treat as text; map to enum via lookup table
-        for LTrendEnum in BGTrend do
+        // Parse trend
+        LTrendStr := LData.Items[i].FindPath('Trend').AsString;
+        // Map trend string to enum
+        if not TryStrToInt(LTrendStr, LTrendCode) then
         begin
-          if BG_TRENDS_STRING[LTrendEnum] = LTrendStr then
+          // Treat as text; map to enum via lookup table
+          for LTrendEnum in BGTrend do
           begin
-            Result[High(Result)].trend := LTrendEnum;
-            Break;
+            if BG_TRENDS_STRING[LTrendEnum] = LTrendStr then
+            begin
+              Result[i].trend := LTrendEnum;
+              Break;
+            end;
+            // Default until proven otherwise in this loop iteration
+            Result[i].trend := TdPlaceholder;
           end;
-          // Default until proven otherwise in this loop iteration
-          Result[High(Result)].trend := TdPlaceholder;
-        end;
+        end
+        else
+          Result[i].trend := TdPlaceholder; // Numeric mapping not defined
+
+        // Convert Dexcom timestamp "/Date(ms)/" to TDateTime
+        Result[i].date := DexTimeToTDateTime(LData.Items[i].FindPath('ST').AsString);
+
+        // Compute delta as current - previous valid reading
+        if FCalcDiff and (PrevVal <> BG_NO_VAL) then
+          Result[i].update(CurVal, CurVal - PrevVal)
+        else
+          Result[i].update(CurVal, 0);
+
+        // Classify level per thresholds
+        Result[i].level := getLevel(Result[i].val);
+
+        // Update PrevVal for next delta
+        PrevVal := CurVal;
       end
       else
-        Result[High(Result)].trend := TdPlaceholder; // Numeric mapping not defined
-
-      // Convert Dexcom timestamp "/Date(ms)/" to TDateTime
-      Result[High(Result)].date := DexTimeToTDateTime(LData.Items[i].FindPath('ST').AsString);
-
-      // Compute delta as current - previous valid reading
-      if FCalcDiff and (PrevVal <> BG_NO_VAL) then
-        Result[High(Result)].update(CurVal, CurVal - PrevVal)
-      else
-        Result[High(Result)].update(CurVal, 0);
-
-      // Classify level per thresholds
-      Result[High(Result)].level := getLevel(Result[High(Result)].val);
-
-      // Update PrevVal for next delta
-      PrevVal := CurVal;
+        Result[i].Clear;
     except
       on E: Exception do
       begin
-        // Skip invalid items
-        Continue;
+        // If parsing fails for an item, clear it
+        Result[i].Clear;
       end;
     end;
   finally
