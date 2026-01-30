@@ -1198,13 +1198,13 @@ begin
     res := Dexcom.testConnection(eAddr.text,ePass.text,'usa')
   else
   if cbSys.Text = API_DEX_EU then
-    res := DexcomNew.testConnection(eAddr.text,ePass.text,'eu')
+    res := Dexcom.testConnection(eAddr.text,ePass.text,'eu')
   else
   if cbSys.Text = API_DEX_NEW_USA then
     res := DexcomNew.testConnection(eAddr.text,ePass.text,'usa')
   else
   if cbSys.Text = API_DEX_NEW_EU then
-    res := Dexcom.testConnection(eAddr.text,ePass.text,'eu')    
+    res := DexcomNew.testConnection(eAddr.text,ePass.text,'eu')    
   else
   begin
     ShowMessage(RS_TEST_UNSUPPORTED);
