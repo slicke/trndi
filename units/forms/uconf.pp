@@ -1197,27 +1197,28 @@ end;
 procedure TfConf.bTestClick(Sender: TObject);
 var
   res: maybeBool;
+  err: string;
 begin
   if cbSys.Text = API_NS then
-    res := NightScout.testConnection(eAddr.text,ePass.text)
+    res := NightScout.testConnection(eAddr.text,ePass.text,err)
   else
   if cbSys.Text = API_NS3 then
-    res := NightScout3.testConnection(eAddr.text,ePass.text)
+    res := NightScout3.testConnection(eAddr.text,ePass.text,err)
   else
   if cbSys.Text = API_DEX_USA then
-    res := DexcomUSA.testConnection(eAddr.text,ePass.text)
+    res := DexcomUSA.testConnection(eAddr.text,ePass.text,err)
   else
   if cbSys.Text = API_DEX_EU then
-    res := DexcomWorld.testConnection(eAddr.text,ePass.text)
+    res := DexcomWorld.testConnection(eAddr.text,ePass.text,err)
   else
   if cbSys.Text = API_DEX_NEW_USA then
-    res := DexcomUSANew.testConnection(eAddr.text,ePass.text)
+    res := DexcomUSANew.testConnection(eAddr.text,ePass.text,err)
   else
   if cbSys.Text = API_DEX_NEW_EU then
-    res := DexcomWorldNew.testConnection(eAddr.text,ePass.text)
+    res := DexcomWorldNew.testConnection(eAddr.text,ePass.text,err)
   else
   if cbSys.Text = API_DEX_NEW_JP then
-    res := DexcomNew.testConnection(eAddr.text,ePass.text)
+    res := DexcomNew.testConnection(eAddr.text,ePass.text,err)
   else
   begin
     ShowMessage(RS_TEST_UNSUPPORTED);
@@ -1225,8 +1226,11 @@ begin
   end;
 
   case res of
-    MaybeBool.False:
+    MaybeBool.False: begin
       ShowMessage(RS_TEST_FAIL);
+      if ssShift in getKeyShiftState then
+        ShowMessage(err);
+    end;
     MaybeBool.True:
     ShowMessage(RS_TEST_SUCCESS);
   else

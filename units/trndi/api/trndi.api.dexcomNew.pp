@@ -187,7 +187,7 @@ public
       - Performs authentication sequence similar to Connect to validate credentials
       - Probes /General/SystemUtcTime to ensure server responds with time info
   }
-  class function testConnection(user, pass, extra: string): maybebool; overload;
+  class function testConnection(user, pass: string; var res: string; extra: string): maybebool; overload;
 
 published
     {** The effective base URL used for API requests. }
@@ -220,7 +220,7 @@ protected
 public
   constructor Create(const AUser, APass: string); reintroduce; overload;
   constructor Create(const AUser, APass: string; ACalcDiff: boolean); reintroduce; overload;
-  class function testConnection(username, pass: string): MaybeBool; override; overload;
+  class function testConnection(username, pass: string; var res: string): MaybeBool; override; overload;
 end;
 
 DexcomWorldNew = class(DexcomNew)
@@ -229,7 +229,7 @@ protected
 public
   constructor Create(const AUser, APass: string); reintroduce; overload;
   constructor Create(const AUser, APass: string; ACalcDiff: boolean); reintroduce; overload;
-  class function testConnection(username, pass: string): MaybeBool; override; overload;
+  class function testConnection(username, pass: string; var res: string): MaybeBool; override; overload;
 end;
 
 DexcomJapanNew = class(DexcomNew)
@@ -238,7 +238,7 @@ protected
 public
   constructor Create(const AUser, APass: string); reintroduce; overload;
   constructor Create(const AUser, APass: string; ACalcDiff: boolean); reintroduce; overload;
-  class function testConnection(username, pass: string): MaybeBool; override; overload;
+  class function testConnection(username, pass: string; var res: string): MaybeBool; override; overload;
 end;
 
 DexcomCustomNew = class(DexcomNew);
@@ -389,9 +389,9 @@ begin
   inherited Create(AUser, APass, 'usa', ACalcDiff);
 end;
 
-class function DexcomUSANew.testConnection(username, pass: string): MaybeBool;
+class function DexcomUSANew.testConnection(username, pass: string; var res: string): MaybeBool;
 begin
-  result := inherited testConnection(username, pass, 'usa');
+  result := inherited testConnection(username, pass, res, 'usa');
 end;
 
 constructor DexcomWorldNew.Create(const AUser, APass: string);
@@ -404,9 +404,9 @@ begin
   inherited Create(AUser, APass, 'world', ACalcDiff);
 end;
 
-class function DexcomWorldNew.testConnection(username, pass: string): MaybeBool;
+class function DexcomWorldNew.testConnection(username, pass: string; var res: string): MaybeBool;
 begin
-  result := inherited testConnection(username, pass, 'world');
+  result := inherited testConnection(username, pass, res, 'world');
 end;
 
 constructor DexcomJapanNew.Create(const AUser, APass: string);
@@ -419,9 +419,9 @@ begin
   inherited Create(AUser, APass, 'japan', ACalcDiff);
 end;
 
-class function DexcomJapanNew.testConnection(username, pass: string): MaybeBool;
+class function DexcomJapanNew.testConnection(username, pass: string; var res: string): MaybeBool;
 begin
-  result := inherited testConnection(username, pass, 'japan');
+  result := inherited testConnection(username, pass, res, 'japan');
 end;
 
 {------------------------------------------------------------------------------
@@ -794,7 +794,7 @@ end;
   - Performs authentication sequence similar to Connect to validate credentials
   - Probes /General/SystemUtcTime to ensure server responds with time info
  ------------------------------------------------------------------------------}
-class function DexcomNew.testConnection(user, pass, extra: string): MaybeBool;
+class function DexcomNew.testConnection(user, pass: string; var res: string; extra: string): MaybeBool;
 var
   tn: TrndiNative;
   base, body, resp, accountId, sessionId, timeResp, timeStr: string;
@@ -866,8 +866,10 @@ begin
     if useEmailAuth then
     begin
       accountId := StringReplace(tn.Request(true, DEXCOM_AUTHENTICATE_ENDPOINT, [], body), '"', '', [rfReplaceAll]);
-      if (accountId = '') or (Pos('error', LowerCase(accountId)) > 0) or (Pos('invalid', LowerCase(accountId)) > 0) then
+      if (accountId = '') or (Pos('error', LowerCase(accountId)) > 0) or (Pos('invalid', LowerCase(accountId)) > 0) then begin
+        res := 'An error occured with your email address';
         Exit;
+      end;
 
       body := Format('{"accountId":"%s","password":"%s","applicationId":"%s"}',
         [accountId, JSONEscape(pass), DEXCOM_APPLICATION_IDS[regionEnum]]);
@@ -878,24 +880,31 @@ begin
       sessionId := StringReplace(tn.Request(true, DEXCOM_LOGIN_BY_NAME_ENDPOINT, [], body), '"', '', [rfReplaceAll]);
 
     // 2) Basic checks on session token
-    if (sessionId = '') or (Pos('error', LowerCase(sessionId)) > 0) or (Pos('invalid', LowerCase(sessionId)) > 0) or (Pos('AccountPassword', sessionId) > 0) then
+    if (sessionId = '') or (Pos('error', LowerCase(sessionId)) > 0) or (Pos('invalid', LowerCase(sessionId)) > 0) or (Pos('AccountPassword', sessionId) > 0) then begin
+      res := 'Count not establish a session, is your password wrong?';
       Exit;
+    end;
 
     // 3) Time probe
     timeResp := tn.Request(false, DEXCOM_TIME_ENDPOINT, [], '', 'Accept=application/json');
-    if Trim(timeResp) = '' then
+    if Trim(timeResp) = '' then begin
+      res := 'The time was not recieved in a parsable manner';
       Exit;
+    end;
 
     // Parse time response: try '<SystemTime>...' or '/Date(ms)/' or JSON object
     if Pos('>', timeResp) > 0 then
     begin
       // Example: <SystemTime>YYYY-MM-DDTHH:mm:ss</SystemTime>
       timeStr := ExtractDelimited(2, timeResp, ['>', '<']);
-      if timeStr = '' then
+      if timeStr = '' then begin
+        res := 'Could not parse the server timestamp';
         Exit;
+      end;
       try
         LServerDateTime := ScanDateTime('YYYY-MM-DD"T"hh:nn:ss', Copy(timeStr, 1, 19));
       except
+        res := 'An internal error occured parsing the timestamp:'#10+timeStr;
         Exit;
       end;
     end
@@ -922,11 +931,14 @@ begin
       end// Try a simple JSON parse for numeric ServerTime value
       ;
 
-      if timeStr = '' then
+      if timeStr = '' then begin
+        res := 'No timestamp was provided';
         Exit;
+      end;
       try
         LServerDateTime := UnixToDateTime(StrToInt64(timeStr) div 1000, false);
       except
+        res := 'Timestamp data was not interpretable:'#10+timestr;
         Exit;
       end;
     end;

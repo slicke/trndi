@@ -125,7 +125,7 @@ public
   class function ParamLabel(LabelName: APIParamLabel): string; override;
     {** Test NightScout credentials
     }
-  class function testConnection(user, pass: string): maybebool; override;
+  class function testConnection(user, pass: string; var res: string): maybebool; override;
 
   function getMaxAge: integer; override;
 
@@ -486,7 +486,7 @@ end;
 {------------------------------------------------------------------------------
   Test if the connection data is correct
 ------------------------------------------------------------------------------}
-class function NightScout.testConnection(user, pass: string): MaybeBool ;
+class function NightScout.testConnection(user, pass: string; var res: string): MaybeBool ;
 var
   password, responseStr: string;
   tn: TrndiNative;
@@ -501,6 +501,7 @@ begin
     // 1) Quick sanity check on URL; avoids obvious mistakes early.
   if (Copy(user, 1, 4) <> 'http') then
   begin
+    res := 'The protocol is invalid, required: http or https';
     Result := MaybeBool.False;
     tn.Free;
     Exit;
@@ -514,6 +515,7 @@ begin
   // 3) Basic validation for empty payloads.
   if Trim(ResponseStr) = '' then
   begin
+    res := 'No data was returned from the server';
     Result := MaybeBool.False;
     tn.Free;
     Exit;
@@ -522,6 +524,7 @@ begin
   // 4) Some backends may prefix '+' to indicate application-level errors.
   if (ResponseStr[1] = '+') then
   begin
+    res := 'An application-level error occured: '#10+responsestr;
     Result := MaybeBool.False;
     tn.Free;
     Exit;
@@ -530,6 +533,7 @@ begin
   // 5) Coarse unauthorized detection (Nightscout messages vary by version).
   if Pos('Unau', ResponseStr) > 0 then
   begin
+    res := 'The key is wrong, or the access right is too low';
     Result := MaybeBool.False;
     tn.Free;
     Exit;
@@ -550,6 +554,7 @@ begin
       JSONData.Free;
       if ServerEpoch <= 0 then
       begin
+        res := 'The system clock did not report a valid response';
         Result := MaybeBool.False; // No server epoch values: treat as failure for probing
         tn.Free;
         Exit;
@@ -557,6 +562,7 @@ begin
     end
     else
     begin
+      res := 'The server did not return any readable data';
       Result := MaybeBool.False;
       JSONData.Free;
       tn.Free;
@@ -565,6 +571,7 @@ begin
   except
     on E: Exception do
     begin
+      res := 'An internal error occured trying to contact the server';
       Result := MaybeBool.False;
       tn.Free;
       Exit;
