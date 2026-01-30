@@ -1857,42 +1857,28 @@ msgstr "Laddar tillägg..."
 
 #: trndi.strings.rs_tir_h
 #, object-pascal-format
-msgid ""
-"This is your time in range for the last %d hours and %d minutes\n"
-"\n"
-"Your low limit is %.1f, high is %.1f\n"
-"Your low range is %.1f, high is %.1f"
-msgstr ""
-"Detta är din tid i målområdet under de senaste %d timmarna och %d minuterna\n"
-"\n"
-"Din låga gräns är %.1f, hög är %.1f.\n"
-"Ditt låga område är %.1f, hög är %.1f"
+msgid "This is your time in range for the last %s hours and %s minutes"
+msgstr "Detta är din tid i målområdet under de senaste %s timmarna och %s minuterna"
 
 #: trndi.strings.rs_tir_h1
 #, object-pascal-format
-msgid ""
-"This is your time in range for the last hour and %d minutes\n"
-"\n"
-"Your low limit is %.1f, high is %.1f\n"
-"Your low range is %.1f, high is %.1f"
-msgstr ""
-"Detta är din tid i målområdet under den senaste timmen och %d minuterna\n"
-"\n"
-"Din låga gräns är %.1f, hög är %.1f\n"
-"Ditt låga område är %.1f, hög är %.1f"
+msgid "This is your time in range for the last hour and %s minutes"
+msgstr "Detta är din tid i målområdet under den senaste timmen och %s minuterna"
 
 #: trndi.strings.rs_tir_m
 #, object-pascal-format
-msgid ""
-"This is your time in range for the last %d minutes\n"
-"\n"
-"Your low limit is %.1f, high is %.1f\n"
-"Your low range is %.1f, high is %.1f"
-msgstr ""
-"Detta är din tid i målområdet under de senaste %d minuterna\n"
-"\n"
-"Din låga gräns är %.1f, hög är %.1f\n"
-"Ditt låga område är %.1f, hög är %.1f"
+msgid "This is your time in range for the last %s minutes"
+msgstr "Detta är din tid i målområdet under de senaste %s minuterna"
+
+#: trndi.strings.rs_tir_row2
+#, object-pascal-format
+msgid "Your low limit is %.1f, high is %.1f"
+msgstr "Din låga gräns är %.1f, hög är %.1f"
+
+#: trndi.strings.rs_tir_row3
+#, object-pascal-format
+msgid "Your low range is %.1f, high is %.1f"
+msgstr "Ditt låga område är %.1f, hög är %.1f"
 
 #: trndi.strings.rs_tpobottomleft
 msgctxt "trndi.strings.rs_tpobottomleft"
@@ -2164,6 +2150,14 @@ msgid ""
 msgstr ""
 "Denna datakälla är i betastadiet, den kanske inte fungerar korrekt!\n"
 "Om möjligt, välj en annan källa."
+
+#: uconf.rs_beta_dex
+msgid ""
+"This is a new Deccom backend, it's in a beta stage! If possible, choose the old backend.\n"
+"Please set your own thresholds in the Customization tab."
+msgstr ""
+"Detta är ett nytt Dexcomstöd, det är i betastadiet! Om möjligt, välj det gamla.\n"
+"Vanligen sätt dina egna gränser på tabben Personalisera."
 
 #: uconf.rs_choose_system
 msgid "Select your CGM system in the list, then enter your credentials"
@@ -2597,4 +2591,3 @@ msgstr "Historikgraf"
 #, object-pascal-format
 msgid "Readings (%s)"
 msgstr "Avläsningar (%s)"
-

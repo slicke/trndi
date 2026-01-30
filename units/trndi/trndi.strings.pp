@@ -39,9 +39,11 @@ RS_LOW = 'LOW';
 RS_OFF_HI = 'Over range';
 RS_OFF_LO = 'Under range';
 RS_RANGE_COLOR = 'The entire window will now change color when out of range, instead of just displaying a colored notification in the top. Applies after the next sync.';
-RS_TIR_M = 'This is your time in range for the last %d minutes'+#10+#10+'Your low limit is %.1f, high is %.1f'+#10+'Your low range is %.1f, high is %.1f';
-RS_TIR_H1 = 'This is your time in range for the last hour and %d minutes'+#10+#10+'Your low limit is %.1f, high is %.1f'+#10+'Your low range is %.1f, high is %.1f';
-RS_TIR_H = 'This is your time in range for the last %d hours and %d minutes'+#10+#10+'Your low limit is %.1f, high is %.1f'+#10+'Your low range is %.1f, high is %.1f';
+RS_TIR_M = 'This is your time in range for the last %s minutes';
+RS_TIR_H1 = 'This is your time in range for the last hour and %s minutes';
+RS_TIR_H = 'This is your time in range for the last %s hours and %s minutes';
+RS_TIR_ROW2 = 'Your low limit is %.1f, high is %.1f';
+RS_TIR_ROW3 = 'Your low range is %.1f, high is %.1f';
 RS_DIFF = 'This is the change from the latest reading';
 
 RS_NO_BOOT_READING = 'No fresh data is available.'#10'Trndi will attemp to fetch data until recent values are available';

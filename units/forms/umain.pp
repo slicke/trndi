@@ -2276,7 +2276,7 @@ end;
 procedure TfBG.lTirClick(Sender: TObject);
 var
   minTotal, hours, mins, rangeMinutes: integer;
-  msg: string;
+  msg, row2, row3: string;
   hi, lo, rhi, rlo: double;
 begin
   minTotal := MinutesBetween(now, bgs[High(bgs)].date);
@@ -2299,19 +2299,21 @@ begin
   rhi := api.cgmRangeHi * BG_CONVERTIONS[un][mgdl];
   rlo := api.cgmRangeLo * BG_CONVERTIONS[un][mgdl];
 
+  row2 := Format(RS_TIR_ROW2, [lo, hi]);
+  row3 := Format(RS_TIR_ROW3, [rlo, rhi]);
   if minTotal < 60 then
-    msg := Format(RS_TIR_M, [minTotal, lo, hi, rlo, rhi])
+    msg := Format(RS_TIR_M, ['<b>'+minTotal.toString+'</b>'])
   else
   begin
     hours := minTotal div 60;
     mins := minTotal mod 60;
     if hours < 2 then
-      msg := Format(RS_TIR_H1, [mins, lo, hi, rlo, rhi])
+      msg := Format(RS_TIR_H1, ['<b>'+mins.toString+'</b>'])
     else
-      msg := Format(RS_TIR_H, [hours, mins, lo, hi, rlo, rhi]);
+      msg := Format(RS_TIR_H, ['<b>'+hours.toString+'</b>', '<b>'+mins.toString+'</b>']);
   end;
 
-  ShowMessage(msg + LineEnding);
+  ExtHTML(uxdAuto, 'Trndi', msg+'<br><br><i>'+row2+'<br>'+row3+'</i>');
 end;
 
 // Handle lVal click
