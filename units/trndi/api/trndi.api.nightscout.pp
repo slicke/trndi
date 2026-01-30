@@ -125,7 +125,7 @@ public
   class function ParamLabel(LabelName: APIParamLabel): string; override;
     {** Test NightScout credentials
     }
-  class function testConnection(user, pass: string): byte; override;
+  class function testConnection(user, pass: string): maybebool; override;
 
   function getMaxAge: integer; override;
 
@@ -486,7 +486,7 @@ end;
 {------------------------------------------------------------------------------
   Test if the connection data is correct
 ------------------------------------------------------------------------------}
-class function NightScout.testConnection(user, pass: string): byte;
+class function NightScout.testConnection(user, pass: string): MaybeBool ;
 var
   password, responseStr: string;
   tn: TrndiNative;
@@ -501,7 +501,7 @@ begin
     // 1) Quick sanity check on URL; avoids obvious mistakes early.
   if (Copy(user, 1, 4) <> 'http') then
   begin
-    Result := 1;
+    Result := MaybeBool.False;
     tn.Free;
     Exit;
   end;
@@ -514,7 +514,7 @@ begin
   // 3) Basic validation for empty payloads.
   if Trim(ResponseStr) = '' then
   begin
-    Result := 1;
+    Result := MaybeBool.False;
     tn.Free;
     Exit;
   end;
@@ -522,7 +522,7 @@ begin
   // 4) Some backends may prefix '+' to indicate application-level errors.
   if (ResponseStr[1] = '+') then
   begin
-    Result := 1;
+    Result := MaybeBool.False;
     tn.Free;
     Exit;
   end;
@@ -530,7 +530,7 @@ begin
   // 5) Coarse unauthorized detection (Nightscout messages vary by version).
   if Pos('Unau', ResponseStr) > 0 then
   begin
-    Result := 1;
+    Result := MaybeBool.False;
     tn.Free;
     Exit;
   end;
@@ -550,14 +550,14 @@ begin
       JSONData.Free;
       if ServerEpoch <= 0 then
       begin
-        Result := 1; // No server epoch values: treat as failure for probing
+        Result := MaybeBool.False; // No server epoch values: treat as failure for probing
         tn.Free;
         Exit;
       end;
     end
     else
     begin
-      Result := 1;
+      Result := MaybeBool.False;
       JSONData.Free;
       tn.Free;
       Exit;
@@ -565,13 +565,13 @@ begin
   except
     on E: Exception do
     begin
-      Result := 1;
+      Result := MaybeBool.False;
       tn.Free;
       Exit;
     end;
   end;
 
-  Result := 0; // success
+  Result := MaybeBool.True; // success
   tn.Free;
 end;
 

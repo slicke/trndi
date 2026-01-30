@@ -51,6 +51,10 @@ type
   {** Selects which BG value is referenced: the primary reading or its delta. }
 BGValType = (BGPrimary, BGDelta);
 
+{$scopedenums on}
+MaybeBool = (true, false, none);
+{$scopedenums off}
+
   {** Unit that can exist or not}
 MaybeInt = record
   value: integer;  //< The value

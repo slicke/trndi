@@ -77,7 +77,7 @@ public
     out res: string): BGResults; override;
     {** Test NightScout credentials
     }   
-  class function testConnection(user, pass: string): byte; override;
+  class function testConnection(user, pass: string): maybebool; override;
     {** UI parameter label provider (override).
         1: NightScout URL
         2: Auth token suffix (v2)
@@ -687,7 +687,7 @@ end;
   - Probes v3 status.json using the retrieved bearer token (if available),
     falling back to a public v3 or v1 status endpoint where applicable.
  ------------------------------------------------------------------------------}
-class function NightScout3.testConnection(user, pass: string): byte;
+class function NightScout3.testConnection(user, pass: string): MaybeBool;
 var
   tn: TrndiNative;
   base, authURL, resp, localToken, res: string;
@@ -695,7 +695,7 @@ var
   rootObj, topObj: TJSONObject;
   serverEpoch: int64;
 begin
-  Result := 1; // default to failure
+  Result := MaybeBool.False; // default to failure
 
   // Basic sanity checks for URL
   if (Copy(user, 1, 4) <> 'http') then
@@ -721,14 +721,14 @@ begin
         end;
       except
         // JSON parse error -> treat as failure
-        Result := 1;
+        Result := MaybeBool.False;
         Exit;
       end;
     end
     else
     begin
       // Couldn't contact auth endpoint
-      Result := 1;
+      Result := MaybeBool.False;
       Exit;
     end;
   end;
@@ -745,7 +745,7 @@ begin
     if Trim(resp) = '' then
       if not TrndiNative.getURL(base + '/api/v1/status.json', resp) then
       begin
-        Result := 1;
+        Result := MaybeBool.False;
         Exit;
       end// Try fallback to v1 absolute URL without auth
     ;
@@ -753,14 +753,14 @@ begin
     // Application-level errors prefixed with '+'
     if (resp <> '') and (resp[1] = '+') then
     begin
-      Result := 1;
+      Result := MaybeBool.False;
       Exit;
     end;
 
     // Basic unauthorized check
     if Pos('Unau', resp) > 0 then
     begin
-      Result := 1;
+      Result := MaybeBool.False;
       Exit;
     end;
 
@@ -770,7 +770,7 @@ begin
       try
         if js.JSONType <> jtObject then
         begin
-          Result := 1;
+          Result := MaybeBool.False;
           Exit;
         end;
         rootObj := TJSONObject(js);
@@ -785,7 +785,7 @@ begin
           serverEpoch := topObj.Get('serverTimeEpoch', int64(0));
         if serverEpoch <= 0 then
         begin
-          Result := 1;
+          Result := MaybeBool.False;
           Exit;
         end;
       finally
@@ -794,12 +794,12 @@ begin
     except
       on E: Exception do
       begin
-        Result := 1;
+        Result := MaybeBool.False;
         Exit;
       end;
     end;
 
-    Result := 0; // success
+    Result := MaybeBool.True; // success
   finally
     tn.Free;
   end;

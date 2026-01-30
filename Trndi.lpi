@@ -637,6 +637,10 @@
         <Filename Value="inc\languages.inc.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit>
+      <Unit>
+        <Filename Value="units\trndi\api\trndi.api.dexcomNew.pp"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
