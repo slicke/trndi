@@ -172,7 +172,7 @@ public
       - Performs authentication sequence similar to Connect to validate credentials
       - Probes /General/SystemUtcTime to ensure server responds with time info
   }
-  class function testConnection(user, pass, extra: string): byte; overload;
+  class function testConnection(user, pass: string; var res: string; extra: string): MaybeBool; overload;
 
 published
     {** The effective base URL used for API requests. }
@@ -205,6 +205,7 @@ protected
 public
   constructor Create(const AUser, APass: string); reintroduce; overload;
   constructor Create(const AUser, APass: string; ACalcDiff: boolean); reintroduce; overload;
+  class function testConnection(username, pass: string; var res: string): MaybeBool; overload;
 end;
 
 DexcomWorld = class(Dexcom)
@@ -213,6 +214,7 @@ protected
 public
   constructor Create(const AUser, APass: string); reintroduce; overload;
   constructor Create(const AUser, APass: string; ACalcDiff: boolean); reintroduce; overload;
+  class function testConnection(username, pass: string; var res: string): MaybeBool; overload;
 end;
 
 DexcomCustom = class(Dexcom);
@@ -335,6 +337,11 @@ begin
   inherited Create(AUser, APass, 'usa', ACalcDiff);
 end;
 
+class function DexcomUSA.testConnection(username, pass: string; var res: string): MaybeBool;
+begin
+  result := inherited testConnection(username, pass, res, 'usa');
+end;
+
 constructor DexcomWorld.Create(const AUser, APass: string);
 begin
   inherited Create(AUser, APass, 'world');
@@ -343,6 +350,11 @@ end;
 constructor DexcomWorld.Create(const AUser, APass: string; ACalcDiff: boolean);
 begin
   inherited Create(AUser, APass, 'world', ACalcDiff);
+end;
+
+class function DexcomWorld.testConnection(username, pass: string; var res: string): MaybeBool;
+begin
+  result := inherited testConnection(username, pass, res, 'world');
 end;
 
 {------------------------------------------------------------------------------
@@ -718,7 +730,7 @@ end;
   - Performs authentication sequence similar to Connect to validate credentials
   - Probes /General/SystemUtcTime to ensure server responds with time info
  ------------------------------------------------------------------------------}
-class function Dexcom.testConnection(user, pass, extra: string): byte;
+class function Dexcom.testConnection(user, pass: string; var res: string; extra: string): MaybeBool;
 var
   tn: TrndiNative;
   base, body, resp, accountId, sessionId, timeResp, timeStr: string;
@@ -756,7 +768,8 @@ function JSONEscape(const S: string): string;
     end;
   end;
 begin
-  Result := 1; // default failure
+  Result := maybebool.false; // default failure
+  res := 'An unknown error occured'; // @see DexcomNew
   // Basic parameter checks
   if Trim(user) = '' then
     Exit;
@@ -839,7 +852,7 @@ begin
     end;
 
     // If all above succeeded, we consider this a success
-    Result := 0;
+    Result := MaybeBool.true;
   finally
     tn.Free;
   end;

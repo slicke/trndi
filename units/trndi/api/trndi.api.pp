@@ -272,7 +272,7 @@ const
 
         @returns(0 if it works, 1 if it doesnt, 3 if not supported)
      }
-  class function testConnection(user, pass: string): MaybeBool; virtual;
+  class function testConnection(user, pass: string; var res: string): MaybeBool; virtual;
 
     {** Returns the name of the API
         @returns(Name of the API)
@@ -734,8 +734,9 @@ end;
 {------------------------------------------------------------------------------
   Test connection details
 ------------------------------------------------------------------------------}
-class function TrndiAPI.testConnection(user, pass: string): maybeBool;
+class function TrndiAPI.testConnection(user, pass: string; var res: string): maybeBool;
 begin
+  res := 'This API has no implemented test function';
   result := maybebool.none; // Not supported
 end;
 

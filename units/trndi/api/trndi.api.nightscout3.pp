@@ -77,7 +77,7 @@ public
     out res: string): BGResults; override;
     {** Test NightScout credentials
     }   
-  class function testConnection(user, pass: string): maybebool; override;
+  class function testConnection(user, pass: string; var res: string): maybebool; override;
     {** UI parameter label provider (override).
         1: NightScout URL
         2: Auth token suffix (v2)
@@ -687,14 +687,15 @@ end;
   - Probes v3 status.json using the retrieved bearer token (if available),
     falling back to a public v3 or v1 status endpoint where applicable.
  ------------------------------------------------------------------------------}
-class function NightScout3.testConnection(user, pass: string): MaybeBool;
+class function NightScout3.testConnection(user, pass: string; var res: string): MaybeBool;
 var
   tn: TrndiNative;
-  base, authURL, resp, localToken, res: string;
+  base, authURL, resp, localToken, xres: string;
   js: TJSONData;
   rootObj, topObj: TJSONObject;
   serverEpoch: int64;
 begin
+  res := 'An unknown error occured';
   Result := MaybeBool.False; // default to failure
 
   // Basic sanity checks for URL
@@ -708,11 +709,11 @@ begin
   if (Trim(pass) <> '') then
   begin
     authURL := base + '/api/v2/authorization/request/' + pass;
-    if TrndiNative.getURL(authURL, res) then
+    if TrndiNative.getURL(authURL, xres) then
     begin
       // parse JSON and extract token
       try
-        js := GetJSON(res);
+        js := GetJSON(xres);
         try
           if (js.JSONType = jtObject) and (TJSONObject(js).IndexOfName('token') <> -1) then
             localToken := TJSONObject(js).Get('token');
@@ -721,6 +722,7 @@ begin
         end;
       except
         // JSON parse error -> treat as failure
+        res := 'Could not read the response from the server';
         Result := MaybeBool.False;
         Exit;
       end;
@@ -728,6 +730,7 @@ begin
     else
     begin
       // Couldn't contact auth endpoint
+      res := 'Could not connect to the authentication endpoint';
       Result := MaybeBool.False;
       Exit;
     end;
@@ -745,6 +748,7 @@ begin
     if Trim(resp) = '' then
       if not TrndiNative.getURL(base + '/api/v1/status.json', resp) then
       begin
+        res := 'Could not fetch the glucose data endpoint';
         Result := MaybeBool.False;
         Exit;
       end// Try fallback to v1 absolute URL without auth
@@ -753,6 +757,7 @@ begin
     // Application-level errors prefixed with '+'
     if (resp <> '') and (resp[1] = '+') then
     begin
+      res := 'An application-level error occured: ' + resp;
       Result := MaybeBool.False;
       Exit;
     end;
@@ -760,6 +765,7 @@ begin
     // Basic unauthorized check
     if Pos('Unau', resp) > 0 then
     begin
+      res := 'The api key is wrong, or Trndi does not have enough access rights';
       Result := MaybeBool.False;
       Exit;
     end;
@@ -770,6 +776,7 @@ begin
       try
         if js.JSONType <> jtObject then
         begin
+          res := 'The response could not be parsed';
           Result := MaybeBool.False;
           Exit;
         end;
@@ -785,6 +792,7 @@ begin
           serverEpoch := topObj.Get('serverTimeEpoch', int64(0));
         if serverEpoch <= 0 then
         begin
+          res := 'The server time is not correct';
           Result := MaybeBool.False;
           Exit;
         end;
@@ -794,6 +802,7 @@ begin
     except
       on E: Exception do
       begin
+        res := 'An error occured trying to contact the server: '#10 + E.Message;
         Result := MaybeBool.False;
         Exit;
       end;
