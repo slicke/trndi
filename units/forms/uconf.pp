@@ -55,7 +55,7 @@ Classes, ComCtrls, ExtCtrls, Spin, StdCtrls, SysUtils, Forms, Controls,
 Graphics, Dialogs, LCLTranslator, trndi.native, lclintf,
 slicke.ux.alert, slicke.ux.native, VersionInfo, trndi.funcs, buildinfo, StrUtils,
   // Backend APIs for label captions
-trndi.api, trndi.api.nightscout, trndi.api.nightscout3, trndi.api.dexcom, trndi.api.debug_custom,
+trndi.api, trndi.api.nightscout, trndi.api.nightscout3, trndi.api.dexcom, trndi.api.dexcomNew, trndi.api.debug_custom,
 trndi.api.debug, trndi.api.debug_firstXmissing, trndi.api.xdrip, RazerChroma, math;
 
 type
@@ -429,6 +429,8 @@ API_NS = 'NightScout';
 API_NS3 = 'NightScout v3';
 API_DEX_USA = 'Dexcom (USA)';
 API_DEX_EU = 'Dexcom (Outside USA)';
+API_DEX_NEW_USA = 'Dexcom New (USA)';
+API_DEX_NEW_EU = 'Dexcom New (Outside USA)';
 API_XDRIP = 'xDrip';
 {$ifdef DEBUG}
 API_D_DEBUG =  '* Debug Backend *';
@@ -1173,7 +1175,8 @@ procedure WarnUnstableAPI;
       pnSysWarn.Show;
       lSysWarnInfo.Caption := RS_DEX;
     end;
-    if cbSys.Text = API_NS3 then
+
+    if (cbSys.Text = API_NS3) or (cbSys.Text = API_DEX_NEW_EU) or (cbSys.Text = API_DEX_NEW_USA) then
     begin
       pnSysWarn.Show;
       lSysWarnInfo.Caption := RS_BETA;
@@ -1541,7 +1544,13 @@ begin
     res := Dexcom.testConnection(eAddr.text,ePass.text,'usa')
   else
   if cbSys.Text = API_DEX_EU then
-    res := Dexcom.testConnection(eAddr.text,ePass.text,'eu')
+    res := DexcomNew.testConnection(eAddr.text,ePass.text,'eu')
+  else
+  if cbSys.Text = API_DEX_NEW_USA then
+    res := DexcomNew.testConnection(eAddr.text,ePass.text,'usa')
+  else
+  if cbSys.Text = API_DEX_NEW_EU then
+    res := Dexcom.testConnection(eAddr.text,ePass.text,'eu')    
   else
   begin
     ShowMessage(RS_TEST_UNSUPPORTED);
@@ -1922,7 +1931,7 @@ end;
 procedure TfConf.lSysWarnInfoClick(Sender: TObject);
 begin
   case cbSys.Text of
-  API_DEX_USA, API_DEX_EU:
+  API_DEX_NEW_USA, API_DEX_NEW_EU:
     pcMain.ActivePage := tsCustom;
   end;
 end;

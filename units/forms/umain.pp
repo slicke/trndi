@@ -50,7 +50,7 @@ interface
 uses
 trndi.strings, LCLTranslator, Classes, Menus, SysUtils, Forms, Controls,
 Graphics, Dialogs, StdCtrls, ExtCtrls,
-trndi.api.dexcom, trndi.api.nightscout, trndi.api.nightscout3, trndi.types,
+trndi.api.dexcom, trndi.api.dexcomNew, trndi.api.nightscout, trndi.api.nightscout3, trndi.types,
 Math, DateUtils, FileUtil, LclIntf, TypInfo, LResources,
 slicke.ux.alert, slicke.ux.native, usplash, Generics.Collections, trndi.funcs,
 Trndi.native.base, trndi.shared, buildinfo, fpjson, jsonparser,
@@ -2823,6 +2823,10 @@ procedure LoadUserSettings(f: TfConf);
         result := API_DEX_USA;
       'API_DEX_EU':
         result := API_DEX_EU;
+      'API_DEX_NEW_USA':
+        result := API_DEX_NEW_USA;
+      'API_DEX_NEW_EU':
+        result := API_DEX_NEW_EU;        
       'API_XDRIP':
         result := API_XDRIP;
       {$ifdef DEBUG}
@@ -3157,6 +3161,10 @@ procedure SaveUserSettings(f: TfConf);
         result := 'API_DEX_USA';
       API_DEX_EU:
         result := 'API_DEX_EU';
+      API_DEX_NEW_USA:
+        result := 'API_DEX_NEW_USA';
+      API_DEX_NEW_EU:
+        result := 'API_DEX_NEW_EU';
       API_XDRIP:
         result := 'API_XDRIP';
       {$ifdef DEBUG}
@@ -3365,6 +3373,8 @@ begin
         API_NS3,
         API_DEX_USA,
         API_DEX_EU,
+        API_DEX_NEW_USA,
+        API_DEX_NEW_EU,
         API_XDRIP
         ]);
       {$ifdef DEBUG}
