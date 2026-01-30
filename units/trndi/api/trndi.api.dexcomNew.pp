@@ -245,6 +245,8 @@ DexcomCustomNew = class(DexcomNew);
 
 implementation
 
+uses trndi.api.dexcom_time;
+
 resourcestring
 sDexNewErrPass = 'Incorrect username or password combination';
 sDexNewErrLogin = 'Login error: Could not establish a valid session';
@@ -546,27 +548,8 @@ begin
 
   // 3) Retrieve system UTC time for time-diff calibration
   LTimeResponse := native.Request(false, DEXCOM_TIME_ENDPOINT, [], '', 'Accept=application/json');
-
-  // Dexcom may respond as XML-like <SystemTime> or JSON-ish /Date(ms)/ format
-  if Pos('>', LTimeResponse) > 0 then
-  begin
-    // Example: <SystemTime>YYYY-MM-DDTHH:mm:ss</SystemTime>
-    LTimeString := ExtractDelimited(5, LTimeResponse, ['>', '<']);
-    if LTimeString <> '' then
-      // Parse the ISO-like timestamp (truncate to 19 chars to ignore fractions/timezone)
-      LServerDateTime := ScanDateTime('YYYY-MM-DD"T"hh:nn:ss', Copy(LTimeString, 1, 19));
-  end
-  else
-  begin
-    // Example: {"ServerTime":"/Date(1610464324000)/"} or similar payload
-    LTimeString := ExtractDelimited(2, LTimeResponse, ['(', ')']);
-    if LTimeString <> '' then
-      // LTimeString in ms; JSToDateTime expects milliseconds when correct=false path used
-      LServerDateTime := JSToDateTime(StrToInt64(LTimeString), false);
-  end;
-
-  // If we failed to parse any time value, abort with error
-  if LTimeString = '' then
+  // Parse server time using centralized helper (handles XML, /Date(ms)/, JSON ServerTime, ISO)
+  if not ParseDexcomTime(LTimeResponse, LServerDateTime) then
   begin
     lastErr := 'Cannot parse Dexcom time/zone data';
     Result := false;
@@ -892,55 +875,11 @@ begin
       Exit;
     end;
 
-    // Parse time response: try '<SystemTime>...' or '/Date(ms)/' or JSON object
-    if Pos('>', timeResp) > 0 then
+    // Parse server time using centralized helper (handles XML, /Date(ms)/, JSON ServerTime, ISO)
+    if not ParseDexcomTime(timeResp, LServerDateTime) then
     begin
-      // Example: <SystemTime>YYYY-MM-DDTHH:mm:ss</SystemTime>
-      timeStr := ExtractDelimited(2, timeResp, ['>', '<']);
-      if timeStr = '' then begin
-        res := 'Could not parse the server timestamp';
-        Exit;
-      end;
-      try
-        LServerDateTime := ScanDateTime('YYYY-MM-DD"T"hh:nn:ss', Copy(timeStr, 1, 19));
-      except
-        res := 'An internal error occured parsing the timestamp:'#10+timeStr;
-        Exit;
-      end;
-    end
-    else
-    begin
-      // JSON or /Date(ms)/ format. Find digits between '(' and ')'
-      timeStr := '';
-      i := Pos('(', timeResp);
-      if i > 0 then
-        timeStr := Copy(timeResp, i + 1, Pos(')', timeResp) - i - 1)
-      else
-      try
-        js := GetJSON(timeResp);
-        try
-          if js.JSONType = jtObject then
-            timeStr := TJSONObject(js).Get('ServerTime', '');
-        finally
-          js.Free;
-        end;
-      except
-        on E: Exception do
-          // Handle JSONDecodeError - malformed JSON from time endpoint
-          timeStr := '';
-      end// Try a simple JSON parse for numeric ServerTime value
-      ;
-
-      if timeStr = '' then begin
-        res := 'No timestamp was provided';
-        Exit;
-      end;
-      try
-        LServerDateTime := UnixToDateTime(StrToInt64(timeStr) div 1000, false);
-      except
-        res := 'Timestamp data was not interpretable:'#10+timestr;
-        Exit;
-      end;
+      res := 'Could not parse the server timestamp';
+      Exit;
     end;
 
     // If all above succeeded, we consider this a success
