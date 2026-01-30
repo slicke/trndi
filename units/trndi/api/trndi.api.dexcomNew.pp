@@ -576,7 +576,7 @@ function SafeValue(Item: TJSONData; out Ok: boolean): double;
 
 var
   LParams: array[1..3] of string;
-  LGlucoseJSON, LAlertJSON, LTrendStr: string;
+  LGlucoseJSON, LTrendStr: string;
   LData: TJSONData;
   i, LTrendCode: integer;
   LTrendEnum: BGTrend;
@@ -598,9 +598,8 @@ begin
   LParams[2] := 'minutes=' + IntToStr(AMinutes);
   LParams[3] := 'maxCount=' + IntToStr(AMaxCount);
 
-  // Fetch glucose values; some deployments also allow reading alert settings
+  // Fetch glucose values
   LGlucoseJSON := native.Request(true, DEXCOM_GLUCOSE_READINGS_ENDPOINT, LParams, '', 'Accept=application/json');
-  LAlertJSON := native.Request(true, DEXCOM_ALERT_ENDPOINT, LParams, '', 'Accept=application/json');
 
   res := LGlucoseJSON;
 
