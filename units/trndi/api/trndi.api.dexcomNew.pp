@@ -71,29 +71,39 @@ DEXCOM_ALERT_ENDPOINT = 'Publisher/ReadSubscriberAlertSettings';
 
   {** Dexcom Share application ID used by mobile apps (commonly reused). }
 DEXCOM_APPLICATION_ID = 'd89443d2-327c-4a6f-89e5-496bbb0317db';
+  {** Dexcom Share application ID for Japan. }
+DEXCOM_APPLICATION_ID_JAPAN = 'd8665ade-9673-4e27-9ff6-92db4ce13d13';
 
   {** Base URL (US region) for Dexcom Share services. }
 DEXCOM_BASE_URL_US = 'https://share2.dexcom.com/ShareWebServices/Services';
   {** Base URL (Worldwide) for Dexcom Share services. }
 DEXCOM_BASE_URL_WORLD = 'https://shareous1.dexcom.com/ShareWebServices/Services';
+  {** Base URL (Japan) for Dexcom Share services. }
+DEXCOM_BASE_URL_JAPAN = 'https://share.dexcom.jp/ShareWebServices/Services';
 
   {** Host (US region) for Dexcom Share. }
 DEXCOM_HOST_US = 'share2.dexcom.com';
   {** Host (Worldwide) for Dexcom Share. }
 DEXCOM_HOST_WORLD = 'shareous1.dexcom.com';
+  {** Host (Japan) for Dexcom Share. }
+DEXCOM_HOST_JAPAN = 'share.dexcom.jp';
 
 type
   {** Enum for Dexcom regions to allow easy extension. }
-  TDexcomRegion = (drWorld, drUS);
+  TDexcomRegion = (drWorld, drUS, drJapan);
 
 const
   {** Helper array mapping region enum to base URL. }
 DEXCOM_BASE_URLS: array[TDexcomRegion] of string =
-  (DEXCOM_BASE_URL_WORLD, DEXCOM_BASE_URL_US);
+  (DEXCOM_BASE_URL_WORLD, DEXCOM_BASE_URL_US, DEXCOM_BASE_URL_JAPAN);
 
   {** Helper array mapping region enum to base host. }
 DEXCOM_BASE_HOSTS: array[TDexcomRegion] of string =
-  (DEXCOM_HOST_WORLD, DEXCOM_HOST_US);
+  (DEXCOM_HOST_WORLD, DEXCOM_HOST_US, DEXCOM_HOST_JAPAN);
+
+  {** Helper array mapping region enum to application ID. }
+DEXCOM_APPLICATION_IDS: array[TDexcomRegion] of string =
+  (DEXCOM_APPLICATION_ID, DEXCOM_APPLICATION_ID, DEXCOM_APPLICATION_ID_JAPAN);
 
 type
   (*******************************************************************************
@@ -106,6 +116,7 @@ type
     Concrete region-specific subclasses:
     - @code(DexcomUSANew)    -> US Share endpoints
     - @code(DexcomWorldNew)  -> Worldwide Share endpoints
+    - @code(DexcomJapanNew)  -> Japan Share endpoints
     - @code(DexcomCustomNew) -> Explicit URL/region overrides (tests)
    *******************************************************************************)
 DexcomNew = class abstract(TrndiAPI)
@@ -115,6 +126,7 @@ private
   FPassword: string;   /// Dexcom Share account password
   FSessionID: string;   /// Session ID returned by Dexcom after authentication
   FCalcDiff: boolean;  /// If True, compute deltas between consecutive readings
+  FRegion: TDexcomRegion; /// The selected region enum
 
     {** Check that the current session token looks valid (non-empty and not dummy). }
   function CheckSession: boolean;
@@ -218,6 +230,14 @@ public
   constructor Create(const AUser, APass: string; ACalcDiff: boolean); reintroduce; overload;
 end;
 
+DexcomJapanNew = class(DexcomNew)
+protected
+  function getSystemName: string; reintroduce; override;
+public
+  constructor Create(const AUser, APass: string); reintroduce; overload;
+  constructor Create(const AUser, APass: string; ACalcDiff: boolean); reintroduce; overload;
+end;
+
 DexcomCustomNew = class(DexcomNew);
 
 implementation
@@ -227,20 +247,22 @@ sErrDexPass = 'Invalid Dexcom password or account credentials';
 sErrDexLogin = 'Login error: Could not establish a valid session';
 sParamUserName = 'Dexcom Username';
 sParamPassword = 'Dexcom Password';
-sParamRegion = 'Region ("usa" or empty)';
+sParamRegion = 'Region ("usa", "japan"/"jp", or empty)';
 sParamDesc =
   'Dexcom region selection:'#13#10''#13#10'' +
   'Choose the server based on your account region:' + LineEnding +
   '• Dexcom (USA): for accounts served by share2.dexcom.com' + LineEnding +
-  '• Dexcom (Outside USA): for accounts served by shareous1.dexcom.com' +
+  '• Dexcom (Outside USA): for accounts served by shareous1.dexcom.com' + LineEnding +
+  '• Dexcom (Japan): for accounts served by share.dexcom.jp' +
   LineEnding + LineEnding +
-  'If you are unsure, try “Outside USA” first if you live outside the US.' +
+  'If you are unsure, try "Outside USA" first if you live outside the US.' +
   LineEnding + 'Your username and password are your Dexcom Account (not Share) credentials.';
 sParamDescHTML =
   '<b>Dexcom</b> region selection:<br><br>'+
   'Choose the server based on your <u>account region</u>:<br>' +
   '• Dexcom (USA): for accounts <i>(served by share2.dexcom.com)</i><br>' +
-  '• Dexcom (Outside USA): for accounts <i>(served by shareous1.dexcom.com)</i>' +
+  '• Dexcom (Outside USA): for accounts <i>(served by shareous1.dexcom.com)</i><br>' +
+  '• Dexcom (Japan): for accounts <i>(served by share.dexcom.jp)</i>' +
   '<br><br>' +
   'If you are unsure, try <b>Outside USA</b> first, if you live outside the US.' +
   LineEnding + 'Your username and password are your Dexcom Account (not Share) credentials.';
@@ -273,6 +295,16 @@ end;
 function DexcomWorldNew.getSystemName: string;
 begin
   result := 'Dexcom (Outide USA)';
+end;
+
+{------------------------------------------------------------------------------
+  getSystemName
+  --------------------
+  Returns the name of this API
+ ------------------------------------------------------------------------------}
+function DexcomJapanNew.getSystemName: string;
+begin
+  result := 'Dexcom (Japan)';
 end;
 
 {------------------------------------------------------------------------------
@@ -315,11 +347,19 @@ begin
     case region of
       'usa':
         begin
+          FRegion := drUS;
           baseUrl := DEXCOM_BASE_URLS[drUS];
           FBaseHost := DEXCOM_BASE_HOSTS[drUS];
         end;
+      'japan', 'jp':
+        begin
+          FRegion := drJapan;
+          baseUrl := DEXCOM_BASE_URLS[drJapan];
+          FBaseHost := DEXCOM_BASE_HOSTS[drJapan];
+        end;
     else
       begin
+        FRegion := drWorld;
         baseUrl := DEXCOM_BASE_URLS[drWorld];
         FBaseHost := DEXCOM_BASE_HOSTS[drWorld];
       end;
@@ -356,6 +396,16 @@ end;
 constructor DexcomWorldNew.Create(const AUser, APass: string; ACalcDiff: boolean);
 begin
   inherited Create(AUser, APass, 'world', ACalcDiff);
+end;
+
+constructor DexcomJapanNew.Create(const AUser, APass: string);
+begin
+  inherited Create(AUser, APass, 'japan');
+end;
+
+constructor DexcomJapanNew.Create(const AUser, APass: string; ACalcDiff: boolean);
+begin
+  inherited Create(AUser, APass, 'japan', ACalcDiff);
 end;
 
 {------------------------------------------------------------------------------
@@ -406,7 +456,7 @@ begin
 
   // Prepare JSON payload for authentication with properly escaped credentials
   LBody := Format('{ "accountName": "%s", "password": "%s", "applicationId": "%s" }',
-    [JSONEscape(FUserName), JSONEscape(FPassword), DEXCOM_APPLICATION_ID]);
+    [JSONEscape(FUserName), JSONEscape(FPassword), DEXCOM_APPLICATION_IDS[FRegion]]);
 
   // 1) Authenticate to obtain session token
   // Note: native.Request automatically adds Content-Type and Accept headers when jsondata is provided
@@ -434,7 +484,7 @@ begin
     
     // Step 2: Use account ID to get session ID
     LBody := Format('{ "accountId": "%s", "password": "%s", "applicationId": "%s" }',
-      [LAccountID, JSONEscape(FPassword), DEXCOM_APPLICATION_ID]);
+      [LAccountID, JSONEscape(FPassword), DEXCOM_APPLICATION_IDS[FRegion]]);
     
     FSessionID := StringReplace(
       native.Request(true, DEXCOM_LOGIN_BY_ID_ENDPOINT, [], LBody),
@@ -736,6 +786,7 @@ var
   useEmailAuth: boolean;
   LServerDateTime: TDateTime;
   i: integer;
+  regionEnum: TDexcomRegion;
 function JSONEscape(const S: string): string;
   var
     i: integer;
@@ -773,16 +824,27 @@ begin
 
 case extra of
   'usa':  
-    base := DEXCOM_BASE_URLS[drUS];
+    begin
+      regionEnum := drUS;
+      base := DEXCOM_BASE_URLS[drUS];
+    end;
+  'japan', 'jp':
+    begin
+      regionEnum := drJapan;
+      base := DEXCOM_BASE_URLS[drJapan];
+    end;
 else
-    base := DEXCOM_BASE_URLS[drWorld];
+    begin
+      regionEnum := drWorld;
+      base := DEXCOM_BASE_URLS[drWorld];
+    end;
 end;
   // Create native with same UA as client
   tn := TrndiNative.Create('Dexcom Share/3.0.2.11 CFNetwork/711.2.23 Darwin/14.0.0', base);
   try
     useEmailAuth := (Pos('@', user) > 0) or (Pos('+', user) = 1);
     body := Format('{"accountName":"%s","password":"%s","applicationId":"%s"}',
-      [JSONEscape(user), JSONEscape(pass), DEXCOM_APPLICATION_ID]);
+      [JSONEscape(user), JSONEscape(pass), DEXCOM_APPLICATION_IDS[regionEnum]]);
 
     // 1) Authenticate
     if useEmailAuth then
@@ -792,7 +854,7 @@ end;
         Exit;
 
       body := Format('{"accountId":"%s","password":"%s","applicationId":"%s"}',
-        [accountId, JSONEscape(pass), DEXCOM_APPLICATION_ID]);
+        [accountId, JSONEscape(pass), DEXCOM_APPLICATION_IDS[regionEnum]]);
 
       sessionId := StringReplace(tn.Request(true, DEXCOM_LOGIN_BY_ID_ENDPOINT, [], body), '"', '', [rfReplaceAll]);
     end

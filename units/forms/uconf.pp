@@ -431,6 +431,7 @@ API_DEX_USA = 'Dexcom (USA)';
 API_DEX_EU = 'Dexcom (Outside USA)';
 API_DEX_NEW_USA = 'Dexcom New (USA)';
 API_DEX_NEW_EU = 'Dexcom New (Outside USA)';
+API_DEX_NEW_JP = 'Dexcom New (Japan)';
 API_XDRIP = 'xDrip';
 {$ifdef DEBUG}
 API_D_DEBUG =  '* Debug Backend *';
@@ -831,7 +832,7 @@ procedure WarnUnstableAPI;
       pnSysWarn.Show;
       lSysWarnInfo.Caption := RS_BETA;
     end;
-    if (cbSys.Text = API_DEX_NEW_EU) or (cbSys.Text = API_DEX_NEW_USA) then begin
+    if (cbSys.Text = API_DEX_NEW_EU) or (cbSys.Text = API_DEX_NEW_USA) or (cbSys.Text = API_DEX_NEW_JP) then begin
       pnSysWarn.Show;
       lSysWarnInfo.Caption := RS_BETA_DEX;
     end;
@@ -1205,6 +1206,9 @@ begin
   else
   if cbSys.Text = API_DEX_NEW_EU then
     res := DexcomNew.testConnection(eAddr.text,ePass.text,'eu')    
+  else
+  if cbSys.Text = API_DEX_NEW_JP then
+    res := DexcomNew.testConnection(eAddr.text,ePass.text,'japan')
   else
   begin
     ShowMessage(RS_TEST_UNSUPPORTED);
@@ -1586,7 +1590,7 @@ procedure TfConf.lSysWarnInfoClick(Sender: TObject);
 begin
   case cbSys.Text of
   API_DEX_USA, API_DEX_EU,
-  API_DEX_NEW_USA, API_DEX_NEW_EU:
+  API_DEX_NEW_USA, API_DEX_NEW_EU, API_DEX_NEW_JP:
     pcMain.ActivePage := tsCustom;
   end;
 end;
