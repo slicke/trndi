@@ -247,6 +247,110 @@ implementation
 
 uses trndi.api.dexcom_time;
 
+{** Try to extract a token (AccountId/SessionId) or return an explicit error message.
+    Returns True and sets OutToken when a token was found. Returns False and sets
+    OutErr when an error/message field was found or parsing failed. }
+function TryGetTokenOrError(const S: string; out OutToken, OutErr: string): boolean;
+var
+  js: TJSONData;
+  v: string;
+  i, j: integer;
+begin
+  OutToken := '';
+  OutErr := '';
+  Result := False;
+  if Trim(S) = '' then
+  begin
+    OutErr := 'Empty response from server';
+    Exit;
+  end;
+
+  // If it looks like XML, try extracting inner text: <...>TOKEN</...>
+  if TrimLeft(S).StartsWith('<') then
+  begin
+    try
+      // Extract between first '>' and next '<'
+      i := Pos('>', S);
+      j := PosEx('<', S, i + 1);
+      if (i > 0) and (j > i) then
+      begin
+        v := Trim(Copy(S, i + 1, j - i - 1));
+        v := StringReplace(v, '"', '', [rfReplaceAll]);
+        if v <> '' then
+        begin
+          OutToken := v;
+          Result := True;
+          Exit;
+        end;
+      end;
+    except
+      // fallthrough to other attempts
+    end;
+  end;
+
+  // If it looks like JSON, attempt to parse and look for known fields
+  if TrimLeft(S).StartsWith('{') then
+  begin
+    js := nil;
+    try
+      try
+        js := GetJSON(S);
+      except
+        js := nil; // malformed JSON - we'll fall back
+      end;
+      if js <> nil then
+      begin
+        if js.JSONType = jtObject then
+        begin
+          // Check for explicit error/message fields first
+          v := TJSONObject(js).Get('Message', '');
+          if v = '' then
+            v := TJSONObject(js).Get('Error', '');
+          if v = '' then
+            v := TJSONObject(js).Get('error', '');
+          if v <> '' then
+          begin
+            OutErr := v;
+            js.Free;
+            Exit;
+          end;
+
+          // Try common token fields
+          v := TJSONObject(js).Get('sessionId', '');
+          if v = '' then
+            v := TJSONObject(js).Get('SessionId', '');
+          if v = '' then
+            v := TJSONObject(js).Get('accountId', '');
+          if v = '' then
+            v := TJSONObject(js).Get('AccountId', '');
+
+          if v <> '' then
+          begin
+            OutToken := v;
+            Result := True;
+            js.Free;
+            Exit;
+          end;
+        end;
+        js.Free;
+      end;
+    finally
+      // continue to fallback extraction if JSON parse failed or no fields present
+    end;
+  end;
+
+  // Fallback: strip quotes and whitespace and treat as token (GUID string common)
+  v := Trim(StringReplace(S, '"', '', [rfReplaceAll]));
+  if v <> '' then
+  begin
+    OutToken := v;
+    Result := True;
+    Exit;
+  end;
+
+  OutErr := 'No token or error message found';
+end;
+
 resourcestring
 sDexNewErrPass = 'Incorrect username or password combination';
 sDexNewErrLogin = 'Login error: Could not establish a valid session';
@@ -483,9 +587,20 @@ begin
   begin
     // Two-step authentication for email/phone:
     // Step 1: Get account ID from email/phone
-    LAccountID := StringReplace(
-      native.Request(true, DEXCOM_AUTHENTICATE_ENDPOINT, [], LBody),
-      '"', '', [rfReplaceAll]);
+    // Request account id (may return JSON or plain quoted string)
+    LResponse := native.Request(true, DEXCOM_AUTHENTICATE_ENDPOINT, [], LBody);
+    if not TryGetTokenOrError(LResponse, LAccountID, LResponse) then
+    begin
+      // Fallback: some servers return a plain quoted accountId; strip quotes
+      LAccountID := StringReplace(LResponse, '"', '', [rfReplaceAll]);
+      LAccountID := Trim(LAccountID);
+      if LAccountID = '' then
+      begin
+        Result := false;
+        lastErr := sDexNewErrLogin + ' (Dex1a): ' + LResponse;
+        Exit;
+      end;
+    end;
     
     // Check for authentication errors
     if (LAccountID = '') or (Pos('error', LowerCase(LAccountID)) > 0) or
@@ -504,14 +619,38 @@ begin
     LBody := Format('{ "accountId": "%s", "password": "%s", "applicationId": "%s" }',
       [LAccountID, JSONEscape(FPassword), DEXCOM_APPLICATION_IDS[FRegion]]);
     
-    FSessionID := StringReplace(
-      native.Request(true, DEXCOM_LOGIN_BY_ID_ENDPOINT, [], LBody),
-      '"', '', [rfReplaceAll]);
+    LResponse := native.Request(true, DEXCOM_LOGIN_BY_ID_ENDPOINT, [], LBody);
+    if not TryGetTokenOrError(LResponse, FSessionID, LResponse) then
+    begin
+      // Fallback: some servers reply with a plain quoted session token
+      FSessionID := StringReplace(LResponse, '"', '', [rfReplaceAll]);
+      FSessionID := Trim(FSessionID);
+      if FSessionID = '' then
+      begin
+        // As a last resort, try single-step login by account name (nickname)
+        var LNameBody := Format('{ "accountName": "%s", "password": "%s", "applicationId": "%s" }',
+          [JSONEscape(FUserName), JSONEscape(FPassword), DEXCOM_APPLICATION_IDS[FRegion]]);
+        var LNameResp := native.Request(true, DEXCOM_LOGIN_BY_NAME_ENDPOINT, [], LNameBody);
+        // Try parse or strip quoted token
+        if not TryGetTokenOrError(LNameResp, FSessionID, LNameResp) then
+          FSessionID := StringReplace(LNameResp, '"', '', [rfReplaceAll]);
+        FSessionID := Trim(FSessionID);
+        if FSessionID = '' then
+        begin
+          Result := false;
+          lastErr := sDexNewErrLogin + ' (Dex1b): ' + LResponse + ' / fallback: ' + LNameResp;
+          Exit;
+        end;
+      end;
+    end;
   end
   else
+  begin
+    // Restore legacy behavior: some servers return a plain quoted GUID/token.
     FSessionID := StringReplace(
       native.Request(true, DEXCOM_LOGIN_BY_NAME_ENDPOINT, [], LBody),
-      '"', '', [rfReplaceAll])// Single-step authentication for plain usernames
+      '"', '', [rfReplaceAll]);
+  end;// Single-step authentication for plain usernames
   ;
 
   // Check for various error responses before validation
@@ -645,6 +784,7 @@ var
   noval: MaybeInt;
   CurVal, PrevVal: double;
   CurOk, PrevOk: boolean;
+  LTimeProbe, LAlertProbe: string;
 begin
   // Initialize the noval
   noval.exists := false;
@@ -665,12 +805,27 @@ begin
 
   res := LGlucoseJSON;
 
-  // Return empty result on empty payload
-  if LGlucoseJSON = '' then
+  // Defensive: ensure we received JSON (Dexcom sometimes returns HTML/redirects on auth errors)
+  if Trim(LGlucoseJSON) = '' then
   begin
+    // Collect diagnostic responses to help debug email-authenticated accounts
+    LTimeProbe := native.Request(false, DEXCOM_TIME_ENDPOINT, ['sessionId=' + FSessionID], '', 'Accept=application/json');
+    LAlertProbe := native.Request(true, DEXCOM_ALERT_ENDPOINT, LParams, '', 'Accept=application/json');
     SetLength(Result, 0);
+    lastErr := 'Empty payload from Dexcom glucose endpoint.' + LineEnding +
+      'GlucoseResp: ' + Copy(LGlucoseJSON, 1, 400) + LineEnding +
+      'TimeProbe: ' + Copy(LTimeProbe, 1, 400) + LineEnding +
+      'AlertProbe: ' + Copy(LAlertProbe, 1, 400);
     Exit;
   end;
+  // Expect an array; if not JSON array/object, abort with diagnostic
+  if not (TrimLeft(LGlucoseJSON).StartsWith('[') or TrimLeft(LGlucoseJSON).StartsWith('{')) then
+  begin
+    SetLength(Result, 0);
+    lastErr := 'Unexpected non-JSON response from Dexcom: ' + Copy(LGlucoseJSON, 1, 400);
+    Exit;
+  end;
+  
 
   // Parse JSON array with error handling for malformed responses
   try
@@ -853,19 +1008,51 @@ begin
     // 1) Authenticate
     if useEmailAuth then
     begin
-      accountId := StringReplace(tn.Request(true, DEXCOM_AUTHENTICATE_ENDPOINT, [], body), '"', '', [rfReplaceAll]);
-      if (accountId = '') or (Pos('error', LowerCase(accountId)) > 0) or (Pos('invalid', LowerCase(accountId)) > 0) then begin
-        res := 'An error occured with your email address';
-        Exit;
-      end;
+        // Authenticate -> extract account id or error
+        resp := tn.Request(true, DEXCOM_AUTHENTICATE_ENDPOINT, [], body);
+        if not TryGetTokenOrError(resp, accountId, resp) then
+        begin
+          // Fallback to legacy behavior: strip quotes if present
+          accountId := StringReplace(resp, '"', '', [rfReplaceAll]);
+          accountId := Trim(accountId);
+          if accountId = '' then
+          begin
+            res := 'An error occured with your email address: ' + resp;
+            Exit;
+          end;
+        end;
 
-      body := Format('{"accountId":"%s","password":"%s","applicationId":"%s"}',
-        [accountId, JSONEscape(pass), DEXCOM_APPLICATION_IDS[regionEnum]]);
+        body := Format('{"accountId":"%s","password":"%s","applicationId":"%s"}',
+          [accountId, JSONEscape(pass), DEXCOM_APPLICATION_IDS[regionEnum]]);
 
-      sessionId := StringReplace(tn.Request(true, DEXCOM_LOGIN_BY_ID_ENDPOINT, [], body), '"', '', [rfReplaceAll]);
+        resp := tn.Request(true, DEXCOM_LOGIN_BY_ID_ENDPOINT, [], body);
+        if not TryGetTokenOrError(resp, sessionId, resp) then
+        begin
+          // Fallback to legacy behavior: strip quotes if present
+          sessionId := StringReplace(resp, '"', '', [rfReplaceAll]);
+          sessionId := Trim(sessionId);
+          if sessionId = '' then
+          begin
+            // Try single-step login by account name (nickname)
+            var nameBody := Format('{"accountName":"%s","password":"%s","applicationId":"%s"}',
+              [JSONEscape(user), JSONEscape(pass), DEXCOM_APPLICATION_IDS[regionEnum]]);
+            var nameResp := tn.Request(true, DEXCOM_LOGIN_BY_NAME_ENDPOINT, [], nameBody);
+            if not TryGetTokenOrError(nameResp, sessionId, nameResp) then
+              sessionId := StringReplace(nameResp, '"', '', [rfReplaceAll]);
+            sessionId := Trim(sessionId);
+            if sessionId = '' then
+            begin
+              res := 'Login failed: ' + resp + ' (fallback: ' + nameResp + ')';
+              Exit;
+            end;
+          end;
+        end;
     end
     else
+    begin
+      // Legacy behaviour: some servers return plain quoted session token
       sessionId := StringReplace(tn.Request(true, DEXCOM_LOGIN_BY_NAME_ENDPOINT, [], body), '"', '', [rfReplaceAll]);
+    end;
 
     // 2) Basic checks on session token
     if (sessionId = '') or (Pos('error', LowerCase(sessionId)) > 0) or (Pos('invalid', LowerCase(sessionId)) > 0) or (Pos('AccountPassword', sessionId) > 0) then begin
