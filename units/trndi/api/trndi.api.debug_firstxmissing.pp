@@ -95,7 +95,8 @@ begin
   // Clamp requested missing count to available results and ensure non-negative
   if missing <= 0 then
     missing := 0
-  else if missing > Length(Result) then
+  else
+  if missing > Length(Result) then
     missing := Length(Result);
 
   // Mark the first N readings as missing (clear numeric values)

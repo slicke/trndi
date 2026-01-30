@@ -1142,7 +1142,7 @@ begin
     sys := DebugFirstXMissingAPI;
   API_D_CUSTOM:
     sys := DebugCustomAPI;
-    {$endif}
+  {$endif}
   end;
 
   user := sys.ParamLabel(APLUser);
@@ -1166,9 +1166,9 @@ procedure WarnUnstableAPI;
     if (cbSys.Text = API_DEX_USA) or (cbSys.Text = API_DEX_EU) then
     begin
       gbOverride.Color := uxclLightBlue;
-       lLoUnder.Font.Color := clBlack;
-       lHiOver.Font.Color := clBlack;
-       cbCust.Font.Color := clBlack;
+      lLoUnder.Font.Color := clBlack;
+      lHiOver.Font.Color := clBlack;
+      cbCust.Font.Color := clBlack;
 
       pnSysWarn.Show;
       lSysWarnInfo.Caption := RS_DEX;
@@ -1371,7 +1371,7 @@ end;
 
 procedure TfConf.bFontHelpClick(Sender: TObject);
 begin
-    ShowMessage(RS_FONT_HELP);
+  ShowMessage(RS_FONT_HELP);
 end;
 
 procedure TfConf.bLanguageHelpClick(Sender: TObject);
@@ -1443,7 +1443,7 @@ begin
     sys := DebugFirstXMissingAPI;
   API_D_CUSTOM:
     sys := DebugCustomAPI;
-    {$endif}
+  {$endif}
   end;
 
   if not assigned(sys) then
@@ -1457,7 +1457,8 @@ begin
   for i := 0 to Length(RS_DRIVER_CONTRIBUTOR + c) do
     x += '-';
 
-  if s <> '' then begin
+  if s <> '' then
+  begin
     s := s + sHTMLLineBreak + sHTMLLineBreak + x + sHTMLLineBreak + RS_DRIVER_CONTRIBUTOR + c;
     ExtMsg(uxdAuto, 'API', s, [mbClose],uxmtInformation,20, 1.2);
   end;
@@ -1715,7 +1716,7 @@ procedure TfConf.cbPosChange(Sender: TObject);
 {$ifdef X_LINUXBSD}
 var
   s: string;
-  {$endif}
+{$endif}
 begin
   {$ifdef X_LINUXBSD}
   s := GetWindowManagerName;
@@ -1809,13 +1810,13 @@ begin
 
   {$endif}
   {$ifdef lclqt6}
-    self.height := self.height + 20;
+  self.height := self.height + 20;
   {$endif}
   tnative := TrndiNative.Create;
   tnative.noFree := true;
   if tnative.isDarkMode then
     tnative.setDarkMode
-    {$ifdef X_WIN}
+  {$ifdef X_WIN}
     (self.Handle)
   {$endif}
   ;
@@ -1887,7 +1888,7 @@ end;
 
 procedure TfConf.lLicenseClick(Sender: TObject);
 const
-  txt = {$ifndef HAIKU}'<img src="https://trndi.app/doc/img/trndi-logo.png">' + sHTMLLineBreak + {$endif}
+  txt ={$ifndef HAIKU}'<img src="https://trndi.app/doc/img/trndi-logo.png">' + sHTMLLineBreak +{$endif}
     '<b>Trndi - CGM viewer</b>' + sHTMLLineBreak +
     '<i>A re-imagination of TrayTrend by Björn Lindh</i>' + sHTMLLineBreak +
     'Copyright (C) 2017-2026 Björn Lindh' + sHTMLLineBreak + sHTMLLineBreak +
@@ -1921,7 +1922,7 @@ end;
 procedure TfConf.lSysWarnInfoClick(Sender: TObject);
 begin
   case cbSys.Text of
-    API_DEX_USA, API_DEX_EU:
+  API_DEX_USA, API_DEX_EU:
     pcMain.ActivePage := tsCustom;
   end;
 end;
@@ -2058,11 +2059,15 @@ begin
 
   if lVal.Font.color = lVal.Parent.Color then
     lVal.Font.color := IfThen(lVal.Parent.Color = clBlack, clWhite, clBlack);
+
   if lArrow.Font.color = lArrow.Parent.Color then
     lArrow.Font.color := IfThen(lArrow.Parent.Color = clBlack, clWhite, clBlack);
+
   if lAgo.Font.color = lAgo.Parent.Color then
     lAgo.Font.color := IfThen(lAgo.Parent.Color = clBlack, clWhite, clBlack);
-  if lDot1.font.color = lDot1.Parent.color then begin
+
+  if lDot1.font.color = lDot1.Parent.color then
+  begin
     lDot1.Font.color := IfThen(lDot1.Parent.Color = clBlack, clWhite, clBlack);
     lDot2.Font.color := ldot1.font.color;
     lDot3.Font.color := ldot1.font.color;
