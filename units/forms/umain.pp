@@ -2828,7 +2828,9 @@ procedure LoadUserSettings(f: TfConf);
       'API_DEX_NEW_USA':
         result := API_DEX_NEW_USA;
       'API_DEX_NEW_EU':
-        result := API_DEX_NEW_EU;        
+        result := API_DEX_NEW_EU;  
+      'API_DEX_NEW_JP':
+        result := API_DEX_NEW_JP;
       'API_XDRIP':
         result := API_XDRIP;
       {$ifdef DEBUG}
@@ -3167,6 +3169,8 @@ procedure SaveUserSettings(f: TfConf);
         result := 'API_DEX_NEW_USA';
       API_DEX_NEW_EU:
         result := 'API_DEX_NEW_EU';
+      API_DEX_NEW_JP:
+        result := 'API_DEX_NEW_JP';        
       API_XDRIP:
         result := 'API_XDRIP';
       {$ifdef DEBUG}
@@ -3377,6 +3381,7 @@ begin
         API_DEX_EU,
         API_DEX_NEW_USA,
         API_DEX_NEW_EU,
+        API_DEX_NEW_JP,
         API_XDRIP
         ]);
       {$ifdef DEBUG}

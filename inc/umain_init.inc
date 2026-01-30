@@ -365,6 +365,9 @@ begin
   API_DEX_NEW_EU,
   'API_DEX_NEW_EU':
     api := DexcomWorldNew.Create(apiTarget, apiCreds);
+  API_DEX_NEW_JP,
+  'API_DEX_NEW_JP':
+    api := DexcomJapanNew.Create(apiTarget, apiCreds);
   API_XDRIP,
   'API_XDRIP':
     api := xDrip.Create(apiTarget, apiCreds);
