@@ -191,6 +191,8 @@ class var touchOverride: TTrndiBool;
   {** Return a best-effort window manager name for the current platform.
       Examples: 'openbox', 'WindowServer', 'Windows Desktop', or empty string when unknown. }
   class function GetWindowManagerName: string; virtual;
+  {** Check if the window manager is Sway (Wayland compositor). }
+  class function nobuttonsVM: boolean; virtual;
   class function DetectTouchScreen(out multi: boolean): boolean;
     {** Detect if the device has a touchscreen and whether it's multi-touch. }
   class function HasTouchScreen(out multi: boolean): boolean;
@@ -543,6 +545,16 @@ end;
 class function TTrndiNativeBase.GetWindowManagerName: string;
 begin
   Result := '';
+end;
+
+{------------------------------------------------------------------------------
+  nobuttonsVM (base)
+  ------------------
+  Default implementation returns false. Platform units override to detect Sway.
+ ------------------------------------------------------------------------------}
+class function TTrndiNativeBase.nobuttonsVM: boolean;
+begin
+  Result := false;
 end;
 
 {------------------------------------------------------------------------------
