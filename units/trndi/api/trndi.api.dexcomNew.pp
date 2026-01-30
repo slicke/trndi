@@ -699,10 +699,19 @@ begin
       CurVal := SafeValue(LData.Items[i], CurOk);
       if CurOk then
       begin
-        // Parse trend
+        // Parse trend (Dexcom may return numeric code or textual string)
         LTrendStr := LData.Items[i].FindPath('Trend').AsString;
-        // Map trend string to enum
-        if not TryStrToInt(LTrendStr, LTrendCode) then
+        // Default
+        Result[i].trend := TdPlaceholder;
+        // Try numeric mapping first
+        if TryStrToInt(LTrendStr, LTrendCode) then
+        begin
+          if (LTrendCode >= Ord(Low(BGTrend))) and (LTrendCode <= Ord(High(BGTrend))) then
+            Result[i].trend := BGTrend(LTrendCode)
+          else
+            Result[i].trend := TdPlaceholder;
+        end
+        else
         begin
           // Treat as text; map to enum via lookup table
           for LTrendEnum in BGTrend do
@@ -712,12 +721,8 @@ begin
               Result[i].trend := LTrendEnum;
               Break;
             end;
-            // Default until proven otherwise in this loop iteration
-            Result[i].trend := TdPlaceholder;
           end;
-        end
-        else
-          Result[i].trend := TdPlaceholder; // Numeric mapping not defined
+        end;
 
         // Convert Dexcom timestamp "/Date(ms)/" to TDateTime
         Result[i].date := DexTimeToTDateTime(LData.Items[i].FindPath('ST').AsString);
