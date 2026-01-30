@@ -210,7 +210,7 @@ public
     {** Helper fields for font picker dialog. }
   FontPickerPreview: TLabel;
 
-    property contents: string read getContent;
+  property contents: string read getContent;
   property titleText: string write title;
   property contentText: string write content;
   property extraText: string write extra;
@@ -2247,7 +2247,7 @@ const dialogsize: TUXDialogSize;
 const caption, desc: string;
 const micon: UXImage = uxmtConfirmation): boolean;
 begin
-result := ExtMsg(dialogsize,caption, desc, [mbYes, mbNo], micon) = mrYes;
+  result := ExtMsg(dialogsize,caption, desc, [mbYes, mbNo], micon) = mrYes;
 end;
 
 function ExtMsg(
@@ -2258,7 +2258,7 @@ buttons: TUXMsgDlgBtns = [mbAbort];
 const icon: UXImage = uxmtCog;
 scale: single = 1): TModalResult;
 begin
-result := ExtMsg(uxdAuto, caption, title, desc, logmsg, dumpbg, dumptext, buttons, icon, scale);
+  result := ExtMsg(uxdAuto, caption, title, desc, logmsg, dumpbg, dumptext, buttons, icon, scale);
 end;
 
 {** See interface docs for behavior and parameters. }
@@ -2823,7 +2823,7 @@ begin
           htmlstr +
           '</body></html>';
         LogHtmlPanel.SetHtmlFromStr(
-        htmlstr
+          htmlstr
           );
         dialog.contentText := htmlstr;
         dialog.hasHTML := true;
@@ -2894,8 +2894,8 @@ begin
     // Add expand button only if log content is truncated/needs scrolling
     // Position it independently on the left side
     if (logmsg <> '') and 
-       ((not isHTML and (LogMemo.Lines.Count > 3)) or 
-        (isHTML and (LogHtmlPanel.GetContentSize.cy > LogPanel.Height))) then
+      ((not isHTML and (LogMemo.Lines.Count > 3)) or
+      (isHTML and (LogHtmlPanel.GetContentSize.cy > LogPanel.Height))) then
     begin
       {$ifdef X_WIN}
       OkButton := TDarkButton.Create(ButtonPanel);
@@ -3076,7 +3076,7 @@ var
   target: TWinControl;
   modalRes, firstBtnResult: TModalResult;
 
-  function GetModalResult(comp: TComponent): TModalResult;
+function GetModalResult(comp: TComponent): TModalResult;
   begin
     Result := mrNone;
     if comp is TCustomButton then
@@ -3087,11 +3087,12 @@ var
     {$endif};
   end;
 
-  procedure ClickButton(idx: integer);
+procedure ClickButton(idx: integer);
   var
     comp: TComponent;
   begin
-    if idx < 0 then Exit;
+    if idx < 0 then
+      Exit;
     comp := target.Components[idx];
     if comp is TCustomButton then
       (comp as TCustomButton).Click
@@ -3102,9 +3103,10 @@ var
   end;
 
 begin
-  if (ssCtrl in Shift) and (Key = Ord('C')) then begin
-   Clipboard.AsText := getContent;
-   Exit;
+  if (ssCtrl in Shift) and (Key = Ord('C')) then
+  begin
+    Clipboard.AsText := getContent;
+    Exit;
   end;
 
   if not (key in [VK_ESCAPE, VK_RETURN]) then
@@ -3139,39 +3141,45 @@ begin
     end;
 
     case modalRes of
-      mrCancel: cancel := i;
-      mrNo: no := i;
-      mrYes: yes := i;
-      mrOk, mrClose: ok := i;
-      mrAbort: abort := i;
+    mrCancel:
+      cancel := i;
+    mrNo:
+      no := i;
+    mrYes:
+      yes := i;
+    mrOk, mrClose:
+      ok := i;
+    mrAbort:
+      abort := i;
     end;
     Inc(ct);
   end;
 
   // Handle key presses
   case key of
-    VK_ESCAPE:
-      begin
-        // ESC priority: Cancel > No > Abort > OK/Close (single-button only)
-        if cancel >= 0 then
-          ClickButton(cancel)
-        else if no >= 0 then
-          ClickButton(no)
-        else if abort >= 0 then
-          ClickButton(abort)
-        else if (ct = 1) and (ok >= 0) then
-          ClickButton(ok);
-      end;
-    VK_RETURN:
-      begin
-        // ENTER priority: OK > Yes > Close/Ignore/Retry (single-button only)
-        if ok >= 0 then
-          ClickButton(ok)
-        else if yes >= 0 then
-          ClickButton(yes)
-        else if (ct = 1) and (firstBtnResult in [mrClose, mrIgnore, mrRetry]) then
-          ClickButton(firstBtn);
-      end;
+  VK_ESCAPE:
+    if cancel >= 0 then
+      ClickButton(cancel)
+    else
+    if no >= 0 then
+      ClickButton(no)
+    else
+    if abort >= 0 then
+      ClickButton(abort)
+    else
+    if (ct = 1) and (ok >= 0) then
+      ClickButton(ok);// ESC priority: Cancel > No > Abort > OK/Close (single-button only)
+
+  VK_RETURN:
+    if ok >= 0 then
+      ClickButton(ok)
+    else
+    if yes >= 0 then
+      ClickButton(yes)
+    else
+    if (ct = 1) and (firstBtnResult in [mrClose, mrIgnore, mrRetry]) then
+      ClickButton(firstBtn);// ENTER priority: OK > Yes > Close/Ignore/Retry (single-button only)
+
   end;
 end;
 
@@ -3192,12 +3200,10 @@ begin
   Self.Top := (Screen.Height - Self.Height) div 2;
   
   if Assigned(LogExpandWrapper) then
-  begin
-    // LogExpandWrapper is the LogPanel - expand it to fill available space
-    // Leave room for button panel at bottom (which is alBottom, so it auto-positions)
-    LogExpandWrapper.Height := Round(newHeight * 0.7);
-  end;
-  
+    LogExpandWrapper.Height := Round(newHeight * 0.7)// LogExpandWrapper is the LogPanel - expand it to fill available space
+// Leave room for button panel at bottom (which is alBottom, so it auto-positions)
+  ;
+
   // Hide expand button after expansion
   if Assigned(LogExpandButton) then
     LogExpandButton.Visible := false;

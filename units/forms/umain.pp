@@ -1237,9 +1237,10 @@ begin
     Trunc(Now), // Use date without time component
     mr,
     uxmtOK
-  );
+    );
   
-  if mr = mrOk then begin
+  if mr = mrOk then
+  begin
     // Calculate minutes from selected date to now
     minutesSince := MinutesBetween(Now, selectedDate);
     
@@ -1399,7 +1400,7 @@ procedure TfBG.FormClose(Sender: TObject; var CloseAction: TCloseAction);
 {$ifdef Darwin}
 var
   mr: TModalResult;
-  {$endif}
+{$endif}
 begin
   // Prevent recursive shutdown calls
   if FShuttingDown then
@@ -1747,31 +1748,32 @@ begin
     end;
   end;
 
-  if DOT_LINES then begin
-  // Draw debug gridlines showing mmol/L values (5, 10, 15, 20)
-  cnv.Brush.Style := bsClear;
-  cnv.Pen.Style := psDot;
-  cnv.Pen.Width := 1;
-  cnv.Pen.Color := LightenColor(fBG.Color, 0.3);
-  cnv.Font.Size := 8;
-  cnv.Font.Color := LightenColor(fBG.Color, 0.4);
-  
-  for i := 1 to 4 do
+  if DOT_LINES then
   begin
-    debugValue := i * 5.0; // 5, 10, 15, 20 mmol/L
-    if (debugValue >= BG_API_MIN) and (debugValue <= BG_API_MAX) then
+  // Draw debug gridlines showing mmol/L values (5, 10, 15, 20)
+    cnv.Brush.Style := bsClear;
+    cnv.Pen.Style := psDot;
+    cnv.Pen.Width := 1;
+    cnv.Pen.Color := LightenColor(fBG.Color, 0.3);
+    cnv.Font.Size := 8;
+    cnv.Font.Color := LightenColor(fBG.Color, 0.4);
+  
+    for i := 1 to 4 do
     begin
+      debugValue := i * 5.0; // 5, 10, 15, 20 mmol/L
+      if (debugValue >= BG_API_MIN) and (debugValue <= BG_API_MAX) then
+      begin
       // debugValue is already in mmol, which is the internal API unit, so no conversion needed
-      debugY := ValueToY(debugValue) + Round(dotHeight / 2.0) + DOT_OFFSET_RANGE;
-      cnv.MoveTo(0, debugY);
-      cnv.LineTo(Self.ClientWidth, debugY);
-      debugText := Format('%.0f', [debugValue]);
+        debugY := ValueToY(debugValue) + Round(dotHeight / 2.0) + DOT_OFFSET_RANGE;
+        cnv.MoveTo(0, debugY);
+        cnv.LineTo(Self.ClientWidth, debugY);
+        debugText := Format('%.0f', [debugValue]);
       // Draw text on right side, centered vertically on the line
-      cnv.TextOut(Self.ClientWidth - cnv.TextWidth(debugText) - 5, 
-        debugY - (cnv.TextHeight(debugText) div 2),
-        debugText);
+        cnv.TextOut(Self.ClientWidth - cnv.TextWidth(debugText) - 5,
+          debugY - (cnv.TextHeight(debugText) div 2),
+          debugText);
+      end;
     end;
-  end;
   end;
 
 end;
@@ -2348,13 +2350,12 @@ begin
     {$ifdef LCLQt6}
     sessionType := GetEnvironmentVariable('XDG_SESSION_TYPE');
     if LowerCase(sessionType) = 'wayland' then
-    begin
-      // Try a safe helper that attempts to trigger a compositor move.
-      // The real implementation may require a small native wrapper; this stub
-      // avoids compile errors on older LCLs and returns false when not supported.
       if TryQtStartSystemMove(Handle) then
-        Exit; // compositor will handle moving
-    end;
+        Exit// Try a safe helper that attempts to trigger a compositor move.
+// The real implementation may require a small native wrapper; this stub
+// avoids compile errors on older LCLs and returns false when not supported.
+// compositor will handle moving
+    ;
     {$endif}
 
     DraggingWin := true;
@@ -2402,7 +2403,7 @@ var
   sessionType: string;
   qwin: QWindowH;
 begin
-  Result := False;
+  Result := false;
   sessionType := GetEnvironmentVariable('XDG_SESSION_TYPE');
   if LowerCase(sessionType) <> 'wayland' then
     Exit;
@@ -2488,7 +2489,8 @@ begin
       ffloat.OnHide := @TfFloatOnHide;
     fFloat.Color := fBg.Color;
     fFloat.lVal.Caption := lval.Caption;
-    if fFloat.miFontMain.Checked then begin
+    if fFloat.miFontMain.Checked then
+    begin
       fFloat.lVal.font.color := lval.font.color;
       fFloat.larrow.font.color := fFloat.lVal.font.color;
     end;
@@ -2551,10 +2553,10 @@ begin
   if miBorders.Checked then
     self.BorderStyle := bsNone
   else
-    {$ifdef DARWIN}
+  {$ifdef DARWIN}
     BorderStyle := bsSizeable;
-  {$else}
-  BorderStyle := bsSizeToolWin;
+    {$else}
+    BorderStyle := bsSizeToolWin;
   {$endif}
 
   setColorMode;
@@ -2621,7 +2623,7 @@ var
 const
   // Qt::WindowStaysOnTopHint (use numeric mask to avoid missing symbol on some setups)
   Qt_WindowStaysOnTopHint = $00008000;
-  {$endif}
+{$endif}
 begin
   miOnTop.Checked := not miOnTop.Checked;
   if miOnTop.Checked then
@@ -2764,7 +2766,8 @@ begin
   PredictShortSize := native.GetIntSetting('predictions.short.size', 1);
   if PredictShortSize < 1 then
     PredictShortSize := 1
-  else if PredictShortSize > 3 then
+  else
+  if PredictShortSize > 3 then
     PredictShortSize := 3;
   lPredict.Visible := PredictGlucoseReading;
   
@@ -2839,7 +2842,7 @@ procedure LoadUserSettings(f: TfConf);
         result := API_D_FIRSTX;
       'API_D_SECOND':
         result := API_D_SECOND;
-        {$endif}
+    {$endif}
       else
         Result := 'API_NS';
       end;
@@ -2858,9 +2861,9 @@ procedure LoadUserSettings(f: TfConf);
     begin
       {$ifdef Windows}
       Result := 'static';
-      {$else}
+    {$else}
       Result := 'breath';
-      {$endif}
+    {$endif}
     end;
 
   function ChromaActionToIndex(const Action: string): integer;
@@ -3123,11 +3126,11 @@ procedure SetupExtensions(f: TfConf);
     begin
       {$ifdef TrndiExt}
       eExt.Text := GetAppConfigDirUTF8(false, true) + 'extensions' + DirectorySeparator;
-      {$else}
+    {$else}
       eExt.Text := '- ' + RS_noPlugins + ' -';
       eExt.Enabled := false;
       bExtOpen.Enabled := false;
-      {$endif}
+    {$endif}
       cbPrivacy.Checked := GetBoolSetting('ext.privacy');
       cbTimeStamp.Checked := GetBoolSetting('display.timestamp');
     end;
@@ -3173,7 +3176,7 @@ procedure SaveUserSettings(f: TfConf);
         result := 'API_D_FIRSTX';
       API_D_SECOND:
         result := 'API_D_SECOND';
-        {$endif}
+    {$endif}
       else
         Result := 'API_NS';
       end;
@@ -3334,10 +3337,8 @@ procedure SaveUserSettings(f: TfConf);
       // Don't call Application.ProcessMessages here - it causes visual glitches
       // Defer actual language loading until ApplySettingsInstantly to avoid mid-dialog UI reflow
       if applocale <> langCode then
-      begin
-        applocale := langCode;
-        // SetDefaultLang will be called by ApplySettingsInstantly after the dialog closes
-      end;
+        applocale := langCode// SetDefaultLang will be called by ApplySettingsInstantly after the dialog closes
+      ;
     end;
   end;
 
@@ -3368,7 +3369,7 @@ begin
         ]);
       {$ifdef DEBUG}
       fConf.cbSys.Items.AddStrings(API_DEBUG);
-      {$endif}
+    {$endif}
     end;
 
     fConf.chroma := TRazerChromaFactory.CreateInstance;
@@ -3440,8 +3441,8 @@ begin
     
     // Check if backend/API settings changed - those require restart
     needsRestart := (origAPI <> native.GetSetting('remote.type')) or
-                    (origTarget <> native.GetSetting('remote.target')) or
-                    (origCreds <> native.GetSetting('remote.creds'));
+      (origTarget <> native.GetSetting('remote.target')) or
+      (origCreds <> native.GetSetting('remote.creds'));
 
     if firstboot then
       exit;
@@ -3616,12 +3617,12 @@ function ShiftKeyPressed: boolean;
     modifiers := QGuiApplication_keyboardModifiers;
     Result := (modifiers and QtShiftModifier) <> 0;
   end;
-  {$else}
+{$else}
 function ShiftKeyPressed: boolean;
   begin
     Result := ssShift in GetKeyShiftState;
   end;
-  {$endif}
+{$endif}
 var
   tpb: TDotControl;
   H, M: integer;
@@ -3874,7 +3875,8 @@ begin
     begin
       // Show minutes ago
       min := MilliSecondsBetween(Now, d) div MILLIS_PER_MINUTE;  // Minutes since last
-      if min < 0 then min := 0;
+      if min < 0 then
+        min := 0;
       {$ifndef lclgtk2}// UTF support IS LIMITED
       lAgo.Caption := '🕑 ' + Format(RS_LAST_UPDATE, [min]);
       {$else}
@@ -3971,7 +3973,7 @@ function IsURLReachable(const URL: string; Port: word = 80): boolean;
       closesocket(XSocket);
     end;
   end;
-  {$else}
+{$else}
 function IsURLReachable(const URL: string; Port: word = 80): boolean;
   var
     Socket: longint;
@@ -4005,7 +4007,7 @@ function IsURLReachable(const URL: string; Port: word = 80): boolean;
       CloseSocket(Socket);
     end;
   end;
-  {$endif}
+{$endif}
 function IsInternetOnline: boolean;
   var
     IPs: array of string;
@@ -4342,7 +4344,7 @@ procedure TfBG.tMainTimer(Sender: TObject);
 {$ifdef TrndiExt}
 var
   bgvals: JSValueRaw;
-  {$endif}
+{$endif}
 begin
   updateReading;
   {$ifdef TrndiExt}
@@ -4366,15 +4368,18 @@ begin
   d := lastReading.date; // Last reading time
 
   min := MilliSecondsBetween(Now, d) div MILLIS_PER_MINUTE;  // Minutes since last
-  if min < 0 then min := 0;
+  if min < 0 then
+    min := 0;
   if min > 60000000 then
   begin
     d := lastDataReading.date;
     min := MilliSecondsBetween(Now, d) div MILLIS_PER_MINUTE;  // Minutes since last
-    if min < 0 then min := 0;
+    if min < 0 then
+      min := 0;
   end;
   sec := (MilliSecondsBetween(Now, d) mod MILLIS_PER_MINUTE) div 1000; // Seconds since last
-  if sec < 0 then sec := 0;
+  if sec < 0 then
+    sec := 0;
 
   lDiff.Caption := Format(RS_OUTDATED_TIME, [FormatDateTime('H:mm', d), min, sec]);
 end;
@@ -4529,9 +4534,7 @@ begin
     lDiff.Caption := FormatSigned(deltaVal);
   end
   else
-  begin
     lDiff.Caption := reading.format(un, BG_MSG_SIG_SHORT, BGDelta);
-  end;
   lArrow.Caption := reading.trend.Img;
   lVal.Font.Style := [];
 
@@ -4671,8 +4674,9 @@ end;
 
 function TfBG.updateReading(boot: boolean = false): boolean;
 begin
- {$ifdef DEBUG}
-  if debug_load_text then begin
+  {$ifdef DEBUG}
+  if debug_load_text then
+  begin
     lVal.Caption := '<Updating>';
     Application.ProcessMessages;
   end;
@@ -4687,8 +4691,9 @@ begin
     lAgo.Caption := '🕑 ' + RS_UNKNOWN_TIME;
 
 
-    {$ifdef DEBUG}
-  if debug_load_text then begin
+  {$ifdef DEBUG}
+  if debug_load_text then
+  begin
     lVal.Caption := '<Fetching>';
     Application.ProcessMessages;
   end;
@@ -4698,7 +4703,8 @@ begin
     Exit;
 
   {$ifdef DEBUG}
-  if debug_load_text then begin
+  if debug_load_text then
+  begin
     lVal.Caption := '<Processing>';
     Application.ProcessMessages;
   end;
@@ -4996,7 +5002,8 @@ begin
     fFloat.Color := fBg.Color;
     fFloat.lVal.Caption := lval.Caption;
     fFloat.lArrow.Caption := lArrow.Caption;
-    if fFloat.miFontMain.Checked then begin
+    if fFloat.miFontMain.Checked then
+    begin
       fFloat.lVal.font.color := lval.font.color;
       fFloat.larrow.font.color := fFloat.lVal.font.color;
     end;
@@ -5818,7 +5825,7 @@ begin
 
   if native.isDarkMode then
     native.setDarkMode
-    {$ifdef windows}
+  {$ifdef windows}
     (self.Handle)
   {$endif}
   ;

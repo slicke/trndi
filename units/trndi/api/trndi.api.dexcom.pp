@@ -555,15 +555,17 @@ function DexTimeToTDateTime(const S: string): TDateTime;
   end;
 
   // Helper: safely extract numeric 'Value' from a JSON item (handles null/missing)
-  function SafeValue(Item: TJSONData; out Ok: boolean): Double;
+function SafeValue(Item: TJSONData; out Ok: boolean): double;
   var
     VData: TJSONData;
   begin
     Ok := false;
     Result := 0;
-    if Item = nil then Exit;
+    if Item = nil then
+      Exit;
     VData := Item.FindPath('Value');
-    if VData = nil then Exit;
+    if VData = nil then
+      Exit;
     try
       Result := VData.AsFloat;
       Ok := true;
@@ -579,8 +581,8 @@ var
   i, LTrendCode: integer;
   LTrendEnum: BGTrend;
   noval: MaybeInt;
-  CurVal, PrevVal: Double;
-  CurOk, PrevOk: Boolean;
+  CurVal, PrevVal: double;
+  CurOk, PrevOk: boolean;
 begin
   // Initialize the noval
   noval.exists := false;
@@ -673,10 +675,8 @@ begin
         PrevVal := CurVal;
       end
       else
-      begin
-        // Missing value: clear the reading
-        Result[i].Clear;
-      end;
+        Result[i].Clear// Missing value: clear the reading
+      ;
     except
       on E: Exception do
       begin

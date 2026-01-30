@@ -409,7 +409,7 @@ end;
 procedure TfFloat.miFontWhiteClick(Sender: TObject);
 begin
   lVal.font.color := clwhite;
- lArrow.font.color := clWhite;
+  lArrow.font.color := clWhite;
 end;
 
 procedure TfFloat.miHideTitleClick(Sender: TObject);
@@ -650,9 +650,6 @@ begin
     {$IFDEF LCLQt6}
     sessionType := GetEnvironmentVariable('XDG_SESSION_TYPE');
     if LowerCase(sessionType) = 'wayland' then
-    begin
-      // Try to trigger a compositor move using native Qt binding; if it
-      // succeeds, let the compositor handle dragging and exit.
       if HandleAllocated then
       begin
         QtWidget := TQtWidget(Handle);
@@ -663,8 +660,9 @@ begin
             if QWindow_startSystemMove(qwin) then
               Exit;
         end;
-      end;
-    end;
+      end// Try to trigger a compositor move using native Qt binding; if it
+// succeeds, let the compositor handle dragging and exit.
+    ;
     {$ENDIF}
 
     DraggingWin := true;
