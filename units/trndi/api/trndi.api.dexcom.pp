@@ -172,7 +172,7 @@ public
       - Performs authentication sequence similar to Connect to validate credentials
       - Probes /General/SystemUtcTime to ensure server responds with time info
   }
-  class function testConnection(user, pass, extra: string): byte; override;
+  class function testConnection(user, pass, extra: string): byte; overload;
 
 published
     {** The effective base URL used for API requests. }
