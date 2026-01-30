@@ -82,14 +82,17 @@ DEXCOM_HOST_US = 'share2.dexcom.com';
   {** Host (Worldwide) for Dexcom Share. }
 DEXCOM_HOST_WORLD = 'shareous1.dexcom.com';
 
-  {** Helper array mapping region selector to base URL.
-      Index: False = WORLD, True = USA (when extra = 'usa'). }
-DEXCOM_BASE_URLS: array[false..true] of string =
+type
+  {** Enum for Dexcom regions to allow easy extension. }
+  TDexcomRegion = (drWorld, drUS);
+
+const
+  {** Helper array mapping region enum to base URL. }
+DEXCOM_BASE_URLS: array[TDexcomRegion] of string =
   (DEXCOM_BASE_URL_WORLD, DEXCOM_BASE_URL_US);
 
-  {** Helper array mapping region selector to base host.
-      Index: False = WORLD, True = USA (when extra = 'usa'). }
-DEXCOM_BASE_HOSTS: array[false..true] of string =
+  {** Helper array mapping region enum to base host. }
+DEXCOM_BASE_HOSTS: array[TDexcomRegion] of string =
   (DEXCOM_HOST_WORLD, DEXCOM_HOST_US);
 
 type
@@ -309,8 +312,18 @@ begin
   end
   else
   begin
-    baseUrl := DEXCOM_BASE_URLS[region = 'usa'];
-    FBaseHost := DEXCOM_BASE_HOSTS[region = 'usa'];
+    case region of
+      'usa':
+        begin
+          baseUrl := DEXCOM_BASE_URLS[drUS];
+          FBaseHost := DEXCOM_BASE_HOSTS[drUS];
+        end;
+    else
+      begin
+        baseUrl := DEXCOM_BASE_URLS[drWorld];
+        FBaseHost := DEXCOM_BASE_HOSTS[drWorld];
+      end;
+    end;
   end;
 
   // Store credentials and preferences
@@ -758,7 +771,12 @@ begin
   if Trim(user) = '' then
     Exit;
 
-  base := DEXCOM_BASE_URLS[extra = 'usa'];
+case extra of
+  'usa':  
+    base := DEXCOM_BASE_URLS[drUS];
+else
+    base := DEXCOM_BASE_URLS[drWorld];
+end;
   // Create native with same UA as client
   tn := TrndiNative.Create('Dexcom Share/3.0.2.11 CFNetwork/711.2.23 Darwin/14.0.0', base);
   try
