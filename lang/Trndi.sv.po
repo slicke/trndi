@@ -1190,6 +1190,7 @@ msgstr ""
 "Se https://github.com/slicke/trndi/LICENSE.md"
 
 #: trndi.api.dexcom.serrdexlogin
+msgctxt "trndi.api.dexcom.serrdexlogin"
 msgid "Login error: Could not establish a valid session"
 msgstr "Inloggningsfel: Kunde inte etablera en giltig session"
 
@@ -1230,13 +1231,59 @@ msgstr ""
 msgid "Dexcom Password"
 msgstr "Dexcom-lösenord"
 
-#: trndi.api.dexcom.sparamregion
-msgid "Region (\"usa\" or empty)"
-msgstr "Region (\"usa\" eller tom)"
-
 #: trndi.api.dexcom.sparamusername
 msgid "Dexcom Username"
 msgstr "Dexcom-användarnamn"
+
+#: trndi.api.dexcomnew.sdexnewerrlogin
+msgctxt "trndi.api.dexcomnew.sdexnewerrlogin"
+msgid "Login error: Could not establish a valid session"
+msgstr "Inloggningsfel: Kunde inte etablera en giltig session"
+
+#: trndi.api.dexcomnew.sdexnewerrpass
+msgid "Incorrect username or password combination"
+msgstr "Fel användarnamn eller lösenord"
+
+#: trndi.api.dexcomnew.sdexnewparamdesc
+msgid ""
+"Dexcom region selection:\n"
+"\n"
+"Choose the server based on your account region:\n"
+"• Dexcom (USA): for accounts served by share2.dexcom.com\n"
+"• Dexcom (Outside USA): for accounts served by shareous1.dexcom.com\n"
+"• Dexcom (Japan): for accounts served by share.dexcom.jp\n"
+"\n"
+"If you are unsure, try \"Outside USA\" first if you live outside the US.\n"
+"Your username and password are your Dexcom Account (not Share) credentials."
+msgstr ""
+"Dexcom regionval:\n"
+"\n"
+"Välj serverregionen där ditt konto är registrerat i:\n"
+"• Dexcom (USA): för konton registrerade på share2.dexcom.com\n"
+"• Dexcom (Outside USA): för konton registrerade på shareous1.dexcom.com\n"
+"\r\n"
+"Om du är osäker, testa “Outside USA” först om du inte bor i USA.\r\n"
+"Ditt användarnamn och lösenord är dina Dexcom-uppgifter (inte Share)."
+
+#: trndi.api.dexcomnew.sdexnewparamdeschtml
+msgid ""
+"<b>Dexcom</b> region selection:<br><br>Choose the server based on your <u>account region</u>:<br>• Dexcom (USA): for accounts <i>(served by share2.dexcom.com)</i><br>• Dexcom (Outside USA): for accounts <i>(served by shareous1.dexcom.com)</i><br>• Dexcom (Japan): for accounts <i>(served by share.dexcom.jp)</i><br><br>If you are unsure, try <b>Outside USA</b> first, if you live outside the US.\n"
+"Your username and password are your Dexcom Account (not Share) credentials."
+msgstr ""
+"<b>Dexcom</b>regionval:<br><br>Välj en server baserat på din <u>kontoregion</u>:<br>• Dexcom (USA): för konton <i>(hanterade av by share2.dexcom.com)</i><br>• Dexcom (Utanför USA): för konton <i>(hanterade av shareous1.dexcom.com)</i><br><br>If you are unsure, try <b>Outside USA</b> first, if you live outside the US.\r\n"
+"Your username and password are your Dexcom Account (not Share) credentials."
+
+#: trndi.api.dexcomnew.sdexnewparampassword
+msgid "Password"
+msgstr "Lösenord"
+
+#: trndi.api.dexcomnew.sdexnewparamregion
+msgid "Region (\"usa\", \"japan\"/\"jp\", or empty)"
+msgstr "Region (\"usa\", \"japan\"/\"jp\", eller tom)"
+
+#: trndi.api.dexcomnew.sdexnewparamusername
+msgid "Dexcom Account Username"
+msgstr "Användarnamn, Dexcom-konto"
 
 #: trndi.api.nightscout.sparamdesc
 msgctxt "trndi.api.nightscout.sparamdesc"
@@ -2591,4 +2638,3 @@ msgstr "Historikgraf"
 #, object-pascal-format
 msgid "Readings (%s)"
 msgstr "Avläsningar (%s)"
-

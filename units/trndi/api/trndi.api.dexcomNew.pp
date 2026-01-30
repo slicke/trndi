@@ -90,7 +90,7 @@ DEXCOM_HOST_JAPAN = 'share.dexcom.jp';
 
 type
   {** Enum for Dexcom regions to allow easy extension. }
-  TDexcomRegion = (drWorld, drUS, drJapan);
+TDexcomRegion = (drWorld, drUS, drJapan);
 
 const
   {** Helper array mapping region enum to base URL. }
@@ -187,7 +187,7 @@ public
       - Performs authentication sequence similar to Connect to validate credentials
       - Probes /General/SystemUtcTime to ensure server responds with time info
   }
-  class function testConnection(user, pass, extra: string): byte; overload;
+  class function testConnection(user, pass, extra: string): maybebool; overload;
 
 published
     {** The effective base URL used for API requests. }
@@ -220,7 +220,7 @@ protected
 public
   constructor Create(const AUser, APass: string); reintroduce; overload;
   constructor Create(const AUser, APass: string; ACalcDiff: boolean); reintroduce; overload;
-  class function testConnection(username, pass: string): byte; override; overload;
+  class function testConnection(username, pass: string): MaybeBool; override; overload;
 end;
 
 DexcomWorldNew = class(DexcomNew)
@@ -229,7 +229,7 @@ protected
 public
   constructor Create(const AUser, APass: string); reintroduce; overload;
   constructor Create(const AUser, APass: string; ACalcDiff: boolean); reintroduce; overload;
-  class function testConnection(username, pass: string): byte; override; overload;
+  class function testConnection(username, pass: string): MaybeBool; override; overload;
 end;
 
 DexcomJapanNew = class(DexcomNew)
@@ -238,7 +238,7 @@ protected
 public
   constructor Create(const AUser, APass: string); reintroduce; overload;
   constructor Create(const AUser, APass: string; ACalcDiff: boolean); reintroduce; overload;
-  class function testConnection(username, pass: string): byte; override; overload;
+  class function testConnection(username, pass: string): MaybeBool; override; overload;
 end;
 
 DexcomCustomNew = class(DexcomNew);
@@ -246,12 +246,12 @@ DexcomCustomNew = class(DexcomNew);
 implementation
 
 resourcestring
-sErrDexPass = 'Invalid Dexcom password or account credentials';
-sErrDexLogin = 'Login error: Could not establish a valid session';
-sParamUserName = 'Dexcom Username';
-sParamPassword = 'Dexcom Password';
-sParamRegion = 'Region ("usa", "japan"/"jp", or empty)';
-sParamDesc =
+sDexNewErrPass = 'Incorrect username or password combination';
+sDexNewErrLogin = 'Login error: Could not establish a valid session';
+sDexNewParamUserName = 'Dexcom Account Username';
+sDexNewParamPassword = 'Password';
+sDexNewParamRegion = 'Region ("usa", "japan"/"jp", or empty)';
+sDexNewParamDesc =
   'Dexcom region selection:'#13#10''#13#10'' +
   'Choose the server based on your account region:' + LineEnding +
   '• Dexcom (USA): for accounts served by share2.dexcom.com' + LineEnding +
@@ -260,7 +260,7 @@ sParamDesc =
   LineEnding + LineEnding +
   'If you are unsure, try "Outside USA" first if you live outside the US.' +
   LineEnding + 'Your username and password are your Dexcom Account (not Share) credentials.';
-sParamDescHTML =
+sDexNewParamDescHTML =
   '<b>Dexcom</b> region selection:<br><br>'+
   'Choose the server based on your <u>account region</u>:<br>' +
   '• Dexcom (USA): for accounts <i>(served by share2.dexcom.com)</i><br>' +
@@ -346,28 +346,26 @@ begin
     FBaseHost := '';
   end
   else
-  begin
     case region of
-      'usa':
-        begin
-          FRegion := drUS;
-          baseUrl := DEXCOM_BASE_URLS[drUS];
-          FBaseHost := DEXCOM_BASE_HOSTS[drUS];
-        end;
-      'japan', 'jp':
-        begin
-          FRegion := drJapan;
-          baseUrl := DEXCOM_BASE_URLS[drJapan];
-          FBaseHost := DEXCOM_BASE_HOSTS[drJapan];
-        end;
-    else
-      begin
-        FRegion := drWorld;
-        baseUrl := DEXCOM_BASE_URLS[drWorld];
-        FBaseHost := DEXCOM_BASE_HOSTS[drWorld];
-      end;
+    'usa':
+    begin
+      FRegion := drUS;
+      baseUrl := DEXCOM_BASE_URLS[drUS];
+      FBaseHost := DEXCOM_BASE_HOSTS[drUS];
     end;
-  end;
+    'japan', 'jp':
+    begin
+      FRegion := drJapan;
+      baseUrl := DEXCOM_BASE_URLS[drJapan];
+      FBaseHost := DEXCOM_BASE_HOSTS[drJapan];
+    end;
+    else
+    begin
+      FRegion := drWorld;
+      baseUrl := DEXCOM_BASE_URLS[drWorld];
+      FBaseHost := DEXCOM_BASE_HOSTS[drWorld];
+    end;
+    end;
 
   // Store credentials and preferences
   FUserName := user;
@@ -391,7 +389,7 @@ begin
   inherited Create(AUser, APass, 'usa', ACalcDiff);
 end;
 
-class function DexcomUSANew.testConnection(username, pass: string): byte;
+class function DexcomUSANew.testConnection(username, pass: string): MaybeBool;
 begin
   result := inherited testConnection(username, pass, 'usa');
 end;
@@ -406,7 +404,7 @@ begin
   inherited Create(AUser, APass, 'world', ACalcDiff);
 end;
 
-class function DexcomWorldNew.testConnection(username, pass: string): byte;
+class function DexcomWorldNew.testConnection(username, pass: string): MaybeBool;
 begin
   result := inherited testConnection(username, pass, 'world');
 end;
@@ -421,7 +419,7 @@ begin
   inherited Create(AUser, APass, 'japan', ACalcDiff);
 end;
 
-class function DexcomJapanNew.testConnection(username, pass: string): byte;
+class function DexcomJapanNew.testConnection(username, pass: string): MaybeBool;
 begin
   result := inherited testConnection(username, pass, 'japan');
 end;
@@ -494,9 +492,9 @@ begin
     begin
       Result := false;
       if Pos('AccountPassword', LAccountID) > 0 then
-        lastErr := sErrDexPass + ' (Dex1)'
+        lastErr := sDexNewErrPass + ' (Dex1)'
       else
-        lastErr := sErrDexLogin + ' (Dex1a): ' + LAccountID;
+        lastErr := sDexNewErrLogin + ' (Dex1a): ' + LAccountID;
       Exit;
     end;
     
@@ -519,7 +517,7 @@ begin
     (Pos('invalid', LowerCase(FSessionID)) > 0) then
   begin
     Result := false;
-    lastErr := sErrDexLogin + ' (Dex1a): ' + FSessionID;
+    lastErr := sDexNewErrLogin + ' (Dex1a): ' + FSessionID;
     Exit;
   end;
 
@@ -527,7 +525,7 @@ begin
   if Pos('AccountPassword', FSessionID) > 0 then
   begin
     Result := false;
-    lastErr := sErrDexPass + ' (Dex1)';
+    lastErr := sDexNewErrPass + ' (Dex1)';
     Exit;
   end;
 
@@ -542,7 +540,7 @@ begin
         '2) Dexcom Share not enabled in official app, ' +
         '3) Account requires action in official Dexcom app. (Dex2)'
     else
-      lastErr := sErrDexLogin + ' (Dex2): Received invalid session ID: ' + FSessionID;
+      lastErr := sDexNewErrLogin + ' (Dex2): Received invalid session ID: ' + FSessionID;
     Exit;
   end;
 
@@ -777,13 +775,13 @@ class function DexcomNew.ParamLabel(LabelName: APIParamLabel): string;
 begin
   case LabelName of
   APLUser:
-    Result := sParamUserName;
+    Result := sDexNewParamUserName;
   APLPass:
-    Result := sParamPassword;
+    Result := sDexNewParamPassword;
   APLDesc:
-    Result := sParamDesc;
+    Result := sDexNewParamDesc;
   APLDescHTML:
-    Result := sParamDescHTML;
+    Result := sDexNewParamDescHTML;
   APLCopyright:
     Result := 'Björn Lindh <github.com/slicke>';
   else
@@ -796,7 +794,7 @@ end;
   - Performs authentication sequence similar to Connect to validate credentials
   - Probes /General/SystemUtcTime to ensure server responds with time info
  ------------------------------------------------------------------------------}
-class function DexcomNew.testConnection(user, pass, extra: string): byte;
+class function DexcomNew.testConnection(user, pass, extra: string): MaybeBool;
 var
   tn: TrndiNative;
   base, body, resp, accountId, sessionId, timeResp, timeStr: string;
@@ -835,28 +833,28 @@ function JSONEscape(const S: string): string;
     end;
   end;
 begin
-  Result := 1; // default failure
+  Result := MaybeBool.False; // default failure
   // Basic parameter checks
   if Trim(user) = '' then
     Exit;
 
-case extra of
+  case extra of
   'usa':  
-    begin
-      regionEnum := drUS;
-      base := DEXCOM_BASE_URLS[drUS];
-    end;
+  begin
+    regionEnum := drUS;
+    base := DEXCOM_BASE_URLS[drUS];
+  end;
   'japan', 'jp':
-    begin
-      regionEnum := drJapan;
-      base := DEXCOM_BASE_URLS[drJapan];
-    end;
-else
-    begin
-      regionEnum := drWorld;
-      base := DEXCOM_BASE_URLS[drWorld];
-    end;
-end;
+  begin
+    regionEnum := drJapan;
+    base := DEXCOM_BASE_URLS[drJapan];
+  end;
+  else
+  begin
+    regionEnum := drWorld;
+    base := DEXCOM_BASE_URLS[drWorld];
+  end;
+  end;
   // Create native with same UA as client
   tn := TrndiNative.Create('Dexcom Share/3.0.2.11 CFNetwork/711.2.23 Darwin/14.0.0', base);
   try
@@ -934,7 +932,7 @@ end;
     end;
 
     // If all above succeeded, we consider this a success
-    Result := 0;
+    Result := MaybeBool.True;
   finally
     tn.Free;
   end;

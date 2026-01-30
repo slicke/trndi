@@ -1155,6 +1155,7 @@ msgid ""
 msgstr ""
 
 #: trndi.api.dexcom.serrdexlogin
+msgctxt "trndi.api.dexcom.serrdexlogin"
 msgid "Login error: Could not establish a valid session"
 msgstr ""
 
@@ -1185,12 +1186,48 @@ msgstr ""
 msgid "Dexcom Password"
 msgstr ""
 
-#: trndi.api.dexcom.sparamregion
-msgid "Region (\"usa\" or empty)"
-msgstr ""
-
 #: trndi.api.dexcom.sparamusername
 msgid "Dexcom Username"
+msgstr ""
+
+#: trndi.api.dexcomnew.sdexnewerrlogin
+msgctxt "trndi.api.dexcomnew.sdexnewerrlogin"
+msgid "Login error: Could not establish a valid session"
+msgstr ""
+
+#: trndi.api.dexcomnew.sdexnewerrpass
+msgid "Incorrect username or password combination"
+msgstr ""
+
+#: trndi.api.dexcomnew.sdexnewparamdesc
+msgid ""
+"Dexcom region selection:\n"
+"\n"
+"Choose the server based on your account region:\n"
+"• Dexcom (USA): for accounts served by share2.dexcom.com\n"
+"• Dexcom (Outside USA): for accounts served by shareous1.dexcom.com\n"
+"• Dexcom (Japan): for accounts served by share.dexcom.jp\n"
+"\n"
+"If you are unsure, try \"Outside USA\" first if you live outside the US.\n"
+"Your username and password are your Dexcom Account (not Share) credentials."
+msgstr ""
+
+#: trndi.api.dexcomnew.sdexnewparamdeschtml
+msgid ""
+"<b>Dexcom</b> region selection:<br><br>Choose the server based on your <u>account region</u>:<br>• Dexcom (USA): for accounts <i>(served by share2.dexcom.com)</i><br>• Dexcom (Outside USA): for accounts <i>(served by shareous1.dexcom.com)</i><br>• Dexcom (Japan): for accounts <i>(served by share.dexcom.jp)</i><br><br>If you are unsure, try <b>Outside USA</b> first, if you live outside the US.\n"
+"Your username and password are your Dexcom Account (not Share) credentials."
+msgstr ""
+
+#: trndi.api.dexcomnew.sdexnewparampassword
+msgid "Password"
+msgstr ""
+
+#: trndi.api.dexcomnew.sdexnewparamregion
+msgid "Region (\"usa\", \"japan\"/\"jp\", or empty)"
+msgstr ""
+
+#: trndi.api.dexcomnew.sdexnewparamusername
+msgid "Dexcom Account Username"
 msgstr ""
 
 #: trndi.api.nightscout.sparamdesc

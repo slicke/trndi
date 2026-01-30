@@ -224,7 +224,7 @@ sErrDexPass = 'Invalid Dexcom password or account credentials';
 sErrDexLogin = 'Login error: Could not establish a valid session';
 sParamUserName = 'Dexcom Username';
 sParamPassword = 'Dexcom Password';
-sParamRegion = 'Region ("usa" or empty)';
+
 sParamDesc =
   'Dexcom region selection:'#13#10''#13#10'' +
   'Choose the server based on your account region:' + LineEnding +
