@@ -1726,6 +1726,8 @@ begin
 
   if lArrow.Font.color = lArrow.Parent.Color then
     lArrow.Font.color := IfThen(lArrow.Parent.Color = clBlack, clWhite, clBlack);
+  if lArrow.Caption = '' then
+    lArrow.caption := '→';
 
   if lAgo.Font.color = lAgo.Parent.Color then
     lAgo.Font.color := IfThen(lAgo.Parent.Color = clBlack, clWhite, clBlack);
