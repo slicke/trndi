@@ -75,6 +75,8 @@ public
   function connect: boolean; override;
   function getReadings(minNum, maxNum: integer; extras: string;
     out res: string): BGResults; override;
+  function supportsBasal: boolean; override;
+  function getBasalProfile(out profile: TBasalProfile): boolean; override;
     {** Test NightScout credentials
     }   
   class function testConnection(user, pass: string; var res: string): maybebool; override;
@@ -825,6 +827,11 @@ begin
   result := 40;
 end;
 
+function NightScout3.supportsBasal: boolean;
+begin
+  Result := True;
+end;
+
 {------------------------------------------------------------------------------
   getBasalRate
   ------------
@@ -914,6 +921,83 @@ begin
       lastErr := 'Error fetching basal rate: ' + E.Message;
       result := 0;
     end;
+  end;
+end;
+
+function NightScout3.getBasalProfile(out profile: TBasalProfile): boolean;
+var
+  ResponseStr: string;
+  JSONData: TJSONData;
+  RootObject: TJSONObject;
+  StoreArray: TJSONArray;
+  DefaultProfile: TJSONObject;
+  BasalArray: TJSONArray;
+  BasalObj: TJSONObject;
+  i: integer;
+  tstr: string;
+  h, m: integer;
+  be: TBasalEntry;
+begin
+  Result := False;
+  SetLength(profile, 0);
+  try
+    ResponseStr := Native.Request(false, 'profile.json', [], '', BearerHeader);
+  except
+    Exit;
+  end;
+
+  if Trim(ResponseStr) = '' then
+    Exit;
+
+  try
+    JSONData := GetJSON(ResponseStr);
+  except
+    Exit;
+  end;
+
+  try
+    if not (JSONData is TJSONObject) then
+      Exit;
+    RootObject := TJSONObject(JSONData);
+    StoreArray := RootObject.FindPath('store') as TJSONArray;
+    if not Assigned(StoreArray) or (StoreArray.Count = 0) then
+      Exit;
+    DefaultProfile := StoreArray.Objects[0].FindPath('defaultProfile') as TJSONObject;
+    if not Assigned(DefaultProfile) then
+      DefaultProfile := StoreArray.Objects[0].FindPath('Default') as TJSONObject;
+    if not Assigned(DefaultProfile) then
+      Exit;
+    BasalArray := DefaultProfile.FindPath('basal') as TJSONArray;
+    if not Assigned(BasalArray) then
+      Exit;
+
+    SetLength(profile, BasalArray.Count);
+    for i := 0 to BasalArray.Count - 1 do
+    begin
+      BasalObj := BasalArray.Objects[i];
+      tstr := BasalObj.Get('time', '00:00');
+      h := 0; m := 0;
+      if Pos(':', tstr) > 0 then
+      begin
+        h := StrToIntDef(Copy(tstr, 1, Pos(':', tstr) - 1), 0);
+        m := StrToIntDef(Copy(tstr, Pos(':', tstr) + 1, 2), 0);
+      end
+      else
+      begin
+        // If time is numeric (minutes), try parse as integer
+        h := StrToIntDef(tstr, 0) div 60;
+        m := StrToIntDef(tstr, 0) mod 60;
+      end;
+
+      be.startMin := (h * 60) + m;
+      be.value := BasalObj.Get('value', single(0));
+      be.name := BasalObj.Get('name', '');
+      profile[i] := be;
+    end;
+
+    Result := True;
+  finally
+    JSONData.Free;
   end;
 end;
 
