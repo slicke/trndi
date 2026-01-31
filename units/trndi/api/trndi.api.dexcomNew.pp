@@ -376,6 +376,73 @@ sDexNewParamDescHTML =
   'If you are unsure, try <b>Outside USA</b> first, if you live outside the US.' +
   LineEnding + 'Your username and password are your Dexcom Account (not Share) credentials.';
 
+{** Map Dexcom trend representation (string or numeric) into internal `BGTrend`.
+    This function prefers textual mapping via `BG_TRENDS_STRING`. If the value
+    is numeric it accepts both 0-based codes and pydexcom-style 1-based codes.
+    As a final fallback it recognizes common Dexcom textual names used by
+    pydexcom and converts them to the corresponding enum.
+}
+function MapDexcomTrendToEnum(const S: string): BGTrend;
+var
+  code: integer;
+  L: string;
+begin
+  L := Trim(S);
+  // Prefer textual mapping first
+  for Result := Low(BGTrend) to High(BGTrend) do
+    if BG_TRENDS_STRING[Result] = L then
+      Exit;
+
+  // If numeric, accept either 0-based or 1-based (pydexcom) codes
+  if TryStrToInt(L, code) then
+  begin
+    if (code >= Ord(Low(BGTrend))) and (code <= Ord(High(BGTrend))) then
+    begin
+      Result := BGTrend(code);
+      Exit;
+    end;
+    if (code - 1 >= Ord(Low(BGTrend))) and (code - 1 <= Ord(High(BGTrend))) then
+    begin
+      Result := BGTrend(code - 1);
+      Exit;
+    end;
+    Result := TdPlaceholder;
+    Exit;
+  end;
+
+  // Handle common pydexcom textual names (1-based mapping semantics)
+  code := -1;
+  if L = 'DoubleUp' then
+    code := 1
+  else if L = 'SingleUp' then
+    code := 2
+  else if L = 'FortyFiveUp' then
+    code := 3
+  else if L = 'Flat' then
+    code := 4
+  else if L = 'FortyFiveDown' then
+    code := 5
+  else if L = 'SingleDown' then
+    code := 6
+  else if L = 'DoubleDown' then
+    code := 7
+  else if (L = 'NotComputable') or (L = 'RateOutOfRange') then
+    code := 8
+  else
+    code := -1;
+
+  if code > 0 then
+  begin
+    if (code - 1 >= Ord(Low(BGTrend))) and (code - 1 <= Ord(High(BGTrend))) then
+      Result := BGTrend(code - 1)
+    else
+      Result := TdPlaceholder;
+    Exit;
+  end;
+
+  Result := TdPlaceholder;
+end;
+
 {------------------------------------------------------------------------------
   getSystemName
   --------------------
@@ -568,7 +635,7 @@ function JSONEscape(const S: string): string;
   end;
 
 var
-  LBody, LResponse, LTimeResponse, LTimeString, LAccountID: string;
+  LBody, LResponse, LTimeResponse, LTimeString, LAccountID, LNameBody, LNameResp: string;
   LServerDateTime: TDateTime;
   LUseEmailAuth: boolean;
 begin
@@ -628,9 +695,9 @@ begin
       if FSessionID = '' then
       begin
         // As a last resort, try single-step login by account name (nickname)
-        var LNameBody := Format('{ "accountName": "%s", "password": "%s", "applicationId": "%s" }',
+        LNameBody := Format('{ "accountName": "%s", "password": "%s", "applicationId": "%s" }',
           [JSONEscape(FUserName), JSONEscape(FPassword), DEXCOM_APPLICATION_IDS[FRegion]]);
-        var LNameResp := native.Request(true, DEXCOM_LOGIN_BY_NAME_ENDPOINT, [], LNameBody);
+        LNameResp := native.Request(true, DEXCOM_LOGIN_BY_NAME_ENDPOINT, [], LNameBody);
         // Try parse or strip quoted token
         if not TryGetTokenOrError(LNameResp, FSessionID, LNameResp) then
           FSessionID := StringReplace(LNameResp, '"', '', [rfReplaceAll]);
@@ -858,26 +925,8 @@ begin
         LTrendStr := LData.Items[i].FindPath('Trend').AsString;
         // Default
         Result[i].trend := TdPlaceholder;
-        // Try numeric mapping first
-        if TryStrToInt(LTrendStr, LTrendCode) then
-        begin
-          if (LTrendCode >= Ord(Low(BGTrend))) and (LTrendCode <= Ord(High(BGTrend))) then
-            Result[i].trend := BGTrend(LTrendCode)
-          else
-            Result[i].trend := TdPlaceholder;
-        end
-        else
-        begin
-          // Treat as text; map to enum via lookup table
-          for LTrendEnum in BGTrend do
-          begin
-            if BG_TRENDS_STRING[LTrendEnum] = LTrendStr then
-            begin
-              Result[i].trend := LTrendEnum;
-              Break;
-            end;
-          end;
-        end;
+        // Use dedicated mapper which handles textual names and numeric codes
+        Result[i].trend := MapDexcomTrendToEnum(LTrendStr);
 
         // Convert Dexcom timestamp "/Date(ms)/" to TDateTime
         Result[i].date := DexTimeToTDateTime(LData.Items[i].FindPath('ST').AsString);
@@ -940,7 +989,7 @@ end;
 class function DexcomNew.testConnection(user, pass: string; var res: string; extra: string): MaybeBool;
 var
   tn: TrndiNative;
-  base, body, resp, accountId, sessionId, timeResp, timeStr: string;
+  base, body, resp, accountId, sessionId, timeResp, timeStr, nameBody, nameResp: string;
   js: TJSONData;
   useEmailAuth: boolean;
   LServerDateTime: TDateTime;
@@ -1034,9 +1083,9 @@ begin
           if sessionId = '' then
           begin
             // Try single-step login by account name (nickname)
-            var nameBody := Format('{"accountName":"%s","password":"%s","applicationId":"%s"}',
+            nameBody := Format('{"accountName":"%s","password":"%s","applicationId":"%s"}',
               [JSONEscape(user), JSONEscape(pass), DEXCOM_APPLICATION_IDS[regionEnum]]);
-            var nameResp := tn.Request(true, DEXCOM_LOGIN_BY_NAME_ENDPOINT, [], nameBody);
+            nameResp := tn.Request(true, DEXCOM_LOGIN_BY_NAME_ENDPOINT, [], nameBody);
             if not TryGetTokenOrError(nameResp, sessionId, nameResp) then
               sessionId := StringReplace(nameResp, '"', '', [rfReplaceAll]);
             sessionId := Trim(sessionId);
