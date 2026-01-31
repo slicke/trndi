@@ -37,6 +37,8 @@ begin
   RunCase('Numeric 0', '0');
   RunCase('Numeric 3', '3');
   RunCase('Numeric 7', '7');
+  RunCase('Numeric 1-based 1', '1');
+  RunCase('Numeric 1-based 4', '4');
   RunCase('Text Flat', 'Flat');
   RunCase('Unknown', 'Banana');
 end.
