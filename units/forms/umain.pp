@@ -141,6 +141,7 @@ TfBG = class(TForm)
   lPredict: TLabel;
   miGuidelines: TMenuItem;
   miBasalRate: TMenuItem;
+  miShowBasalOverlay: TMenuItem;
   miReadingsSince: TMenuItem;
   miExtLog: TMenuItem;
   miSep1: TMenuItem;
@@ -262,6 +263,7 @@ TfBG = class(TForm)
   procedure lDiffClick(Sender: TObject);
   procedure lPredictClick(Sender: TObject);
   procedure miBasalRateClick(Sender: TObject);
+  procedure miShowBasalOverlayClick(Sender: TObject);
   procedure miDNSClick(Sender: TObject);
   procedure miDotNormalDrawItem(Sender: TObject; ACanvas: TCanvas;
     ARect: TRect; AState: TOwnerDrawState);
@@ -1001,6 +1003,61 @@ begin
     ShowMessage('No data, error(?):' + IfThen(err <> '', err, '<none>'))
   else
     ShowMessage(res.toString);
+end;
+
+procedure TfBG.miShowBasalOverlayClick(Sender: TObject);
+var
+  profile: TBasalProfile;
+  ok: boolean;
+  i: integer;
+  s: string;
+  h, m: integer;
+begin
+  miShowBasalOverlay.Checked := not miShowBasalOverlay.Checked;
+  if miShowBasalOverlay.Checked then
+  begin
+    if not api.supportsBasal then
+    begin
+      ShowMessage('Backend does not support basal profiles');
+      miShowBasalOverlay.Checked := False;
+      Exit;
+    end;
+
+    ok := api.getBasalProfile(profile);
+    if not ok then
+    begin
+      ShowMessage('Failed to fetch basal profile: ' + api.errormsg);
+      miShowBasalOverlay.Checked := False;
+      Exit;
+    end;
+
+    { Debug: show textual list of profile entries like "00:00 1.2" }
+    s := '';
+    for i := 0 to Length(profile) - 1 do
+    begin
+      h := profile[i].startMin div 60;
+      m := profile[i].startMin mod 60;
+      if s <> '' then
+        s := s + sLineBreak;
+      s := s + Format('%.2d:%.2d %.1f', [h, m, profile[i].value]);
+    end;
+    ShowMessage(s);
+
+    if fHistoryGraph = nil then
+      ShowHistoryGraph(bgs, un, CurrentHistoryGraphPalette,
+        api.cgmHi, api.cgmLo, api.cgmRangeHi, api.cgmRangeLo);
+
+    if fHistoryGraph <> nil then
+    begin
+      fHistoryGraph.SetBasalProfile(profile);
+      fHistoryGraph.SetBasalOverlayEnabled(True);
+    end;
+  end
+  else
+  begin
+    if fHistoryGraph <> nil then
+      fHistoryGraph.SetBasalOverlayEnabled(False);
+  end;
 end;
 
 procedure TfBG.miDNSClick(Sender: TObject);

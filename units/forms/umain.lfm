@@ -463,7 +463,6 @@ object fBG: TfBG
     end
     object miAdvanced: TMenuItem
       Caption = '> Service Menu'
-      Visible = False
       object miATouch: TMenuItem
         Caption = 'Force Touchscreen'
         OnClick = miATouchClick
@@ -505,6 +504,10 @@ object fBG: TfBG
       object miBasalRate: TMenuItem
         Caption = 'Current Basal'
         OnClick = miBasalRateClick
+      end
+      object miShowBasalOverlay: TMenuItem
+        Caption = 'Show Basal on Graph'
+        OnClick = miShowBasalOverlayClick
       end
       object miDNS: TMenuItem
         Caption = 'Run DNS Lookup Test'
