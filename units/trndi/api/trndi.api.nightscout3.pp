@@ -612,14 +612,15 @@ begin
 
       // Trend mapping by name
       s := FindPath('direction').AsString;
-      for t in BGTrend do
+      // Default to not computable, then try to find a matching textual mapping
+      Result[i].trend := TdNotComputable;
+      for t := Low(BGTrend) to High(BGTrend) do
       begin
         if BG_TRENDS_STRING[t] = s then
         begin
           Result[i].trend := t;
-          break;
+          Break;
         end;
-        Result[i].trend := TdNotComputable;
       end;
 
       // Use ms epoch when available
