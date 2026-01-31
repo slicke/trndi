@@ -71,7 +71,7 @@ interface
 
 uses
 Classes, SysUtils, Forms, Controls, Graphics, Dialogs, Math, Menus,
-trndi.types, trndi.strings, slicke.ux.alert, dateutils, Trndi.Native,
+trndi.types, trndi.api, trndi.strings, slicke.ux.alert, dateutils, Trndi.Native,
 ExtDlgs, IntfGraphics, FPImage, FPWritePNG;
 
 type
@@ -124,6 +124,9 @@ private
   FCgmRangeHi: integer; // Range high threshold in mg/dL
   FCgmRangeLo: integer; // Range low threshold in mg/dL
   FPopupMenu: TPopupMenu; // Context menu for right-click actions
+  FBasalProfile: TBasalProfile; // Optional basal profile to draw as overlay
+  FShowBasal: boolean; // Whether to render basal overlay
+  FMaxBasal: single; // Maximum basal rate for scaling (U/hr)
     {** GetPlotRect: Determine the plotting rectangle inside the form where
       dots and lines are drawn. Respects the margins defined above. }
   function GetPlotRect: TRect;
@@ -141,6 +144,10 @@ private
     {** DrawThresholdLines: Draws horizontal lines at each threshold level
       using the corresponding level colors. }
   procedure DrawThresholdLines(ACanvas: TCanvas; const PlotRect: TRect);
+    {** DrawBasalOverlay: Renders daily repeating basal schedule as a small
+      area strip at the bottom of the plot. Values are scaled to
+      `FMaxBasal` and clipped to the plot range. }
+    procedure DrawBasalOverlay(ACanvas: TCanvas; const PlotRect: TRect);
     {** DrawPolyline: Connects the chronological points with a thin
       line to indicate trend (optional visual aid). }
   procedure DrawPolyline(ACanvas: TCanvas; const PlotRect: TRect);
@@ -198,6 +205,12 @@ public
     {** SaveAsCSV: Export the readings data to a CSV file for analysis in
       spreadsheet applications. }
   procedure SaveAsCSV(Sender: TObject);
+    {** SetBasalProfile: Provide a repeating daily basal profile to be drawn
+      on the graph. The profile repeats every 24h. @param(maxBasal) is the
+      maximum expected basal used to scale the overlay height in pixels. }
+  procedure SetBasalProfile(const profile: TBasalProfile; const maxBasal: single = 3.0);
+    {** Enable or disable basal overlay rendering. } 
+  procedure SetBasalOverlayEnabled(aEnabled: boolean);
 end;
 
   {** Display a dot-based history plot for the supplied readings. Reuses the
@@ -234,6 +247,7 @@ RS_HISTORY_GRAPH_KEY_RANGE_LO = 'Range low';
 RS_HISTORY_GRAPH_KEY_HIGH = 'High';
 RS_HISTORY_GRAPH_KEY_LOW = 'Low';
 RS_HISTORY_GRAPH_KEY_UNKNOWN = 'Unknown';
+RS_HISTORY_GRAPH_KEY_BASAL = 'Basal';
 RS_HISTORY_GRAPH_SAVE_TITLE = 'Save graph as PNG';
 RS_HISTORY_GRAPH_SAVE_SUCCESS = 'Graph saved successfully';
 RS_HISTORY_GRAPH_SAVE_ERROR = 'Failed to save graph: %s';
@@ -451,6 +465,66 @@ begin
   ACanvas.Pen.Style := psSolid;
 end;
 
+procedure TfHistoryGraph.DrawBasalOverlay(ACanvas: TCanvas; const PlotRect: TRect);
+var
+  dayStart, dayEnd: TDateTime;
+  d, j: integer;
+  startMin, endMin: integer;
+  startDT, endDT, s, e: TDateTime;
+  x1, x2: integer;
+  basalHeight, h: integer;
+  rateFrac: double;
+  basalColor: TColor;
+  nextIdx: integer;
+begin
+  if (not FShowBasal) or (Length(FBasalProfile) = 0) then
+    Exit;
+
+  // Determine basal strip height (small fraction of plot height)
+  basalHeight := Min(Max(24, (PlotRect.Bottom - PlotRect.Top) div 8), 80);
+  basalColor := RGBToColor(120, 170, 255);
+
+  // Iterate each day in the plot range; basal profile repeats daily
+  for d := Trunc(FMinTime) to Trunc(FMaxTime) do
+  begin
+    for j := 0 to High(FBasalProfile) do
+    begin
+      startMin := FBasalProfile[j].startMin;
+      // Determine end minute (next entry or end of day)
+      if j < High(FBasalProfile) then
+        endMin := FBasalProfile[j + 1].startMin
+      else
+        endMin := 24 * 60;
+
+      startDT := d + (startMin / 1440);
+      endDT := d + (endMin / 1440);
+
+      // Clip to visible plot range
+      if (endDT <= FMinTime) or (startDT >= FMaxTime) then
+        Continue;
+
+      s := Max(startDT, FMinTime);
+      e := Min(endDT, FMaxTime);
+      x1 := TimeToX(s, PlotRect);
+      x2 := TimeToX(e, PlotRect);
+
+      // Height scaled by FMaxBasal
+      rateFrac := FBasalProfile[j].value / Max(0.001, FMaxBasal);
+      rateFrac := EnsureRange(rateFrac, 0, 1);
+      h := Round(rateFrac * basalHeight);
+      // Draw from PlotRect.Bottom - h up to bottom
+      ACanvas.Brush.Style := bsSolid;
+      ACanvas.Pen.Style := psClear;
+      ACanvas.Brush.Color := basalColor;
+      ACanvas.Rectangle(x1, PlotRect.Bottom - h, x2, PlotRect.Bottom);
+    end;
+  end;
+
+  // Restore styles
+  ACanvas.Pen.Style := psSolid;
+  ACanvas.Brush.Style := bsClear;
+end;
+
 procedure TfHistoryGraph.DrawLegend(ACanvas: TCanvas; const PlotRect: TRect);
 const
   INFO_PADDING = 6;
@@ -596,6 +670,7 @@ procedure DrawKeyPanel;
     DrawKeyEntry(rangeLoStr, LevelColor(BGRangeLO));
     DrawKeyEntry(hiStr, LevelColor(BGHigh));
     DrawKeyEntry(loStr, LevelColor(BGLOW));
+    DrawKeyEntry(RS_HISTORY_GRAPH_KEY_BASAL, RGBToColor(120,170,255));
     DrawKeyEntry(RS_HISTORY_GRAPH_KEY_UNKNOWN, FPalette.Unknown);
   end;
 
@@ -721,6 +796,7 @@ begin
   plotRect := GetPlotRect;
   DrawAxesAndGrid(Canvas, plotRect);
   DrawThresholdLines(Canvas, plotRect);
+  DrawBasalOverlay(Canvas, plotRect);
   DrawPolyline(Canvas, plotRect);
   DrawPoints(Canvas, plotRect);
   DrawLegend(Canvas, plotRect);
@@ -819,6 +895,19 @@ begin
   FCgmRangeLo := cgmRangeLo;
 end;
 
+procedure TfHistoryGraph.SetBasalProfile(const profile: TBasalProfile; const maxBasal: single = 3.0);
+begin
+  FBasalProfile := Copy(profile);
+  FMaxBasal := maxBasal;
+  Invalidate;
+end;
+
+procedure TfHistoryGraph.SetBasalOverlayEnabled(aEnabled: boolean);
+begin
+  FShowBasal := aEnabled;
+  Invalidate;
+end;
+
 procedure TfHistoryGraph.SaveAsPNG(Sender: TObject);
 var
   saveDialog: TSavePictureDialog;
@@ -851,6 +940,7 @@ begin
       plotRect := GetPlotRect;
       DrawAxesAndGrid(bmp.Canvas, plotRect);
       DrawThresholdLines(bmp.Canvas, plotRect);
+      DrawBasalOverlay(bmp.Canvas, plotRect);
       DrawPolyline(bmp.Canvas, plotRect);
       DrawPoints(bmp.Canvas, plotRect);
       DrawLegend(bmp.Canvas, plotRect);

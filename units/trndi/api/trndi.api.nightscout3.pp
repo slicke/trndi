@@ -926,13 +926,14 @@ end;
 
 function NightScout3.getBasalProfile(out profile: TBasalProfile): boolean;
 var
-  ResponseStr: string;
+  ResponseStr, defName: string;
   JSONData: TJSONData;
-  RootObject: TJSONObject;
+  RootObject, StoreObj: TJSONObject;
   StoreArray: TJSONArray;
   DefaultProfile: TJSONObject;
   BasalArray: TJSONArray;
   BasalObj: TJSONObject;
+  ResNode, StoreNode: TJSONData;
   i: integer;
   tstr: string;
   h, m: integer;
@@ -943,33 +944,105 @@ begin
   try
     ResponseStr := Native.Request(false, 'profile.json', [], '', BearerHeader);
   except
+    lastErr := 'HTTP request failed while fetching profile.json';
     Exit;
   end;
 
   if Trim(ResponseStr) = '' then
+  begin
+    lastErr := 'Empty response from profile.json';
     Exit;
+  end;
 
   try
     JSONData := GetJSON(ResponseStr);
   except
+    lastErr := 'Failed to parse JSON from profile.json';
     Exit;
   end;
 
   try
     if not (JSONData is TJSONObject) then
+    begin
+      lastErr := 'profile.json is not a JSON object';
       Exit;
+    end;
     RootObject := TJSONObject(JSONData);
-    StoreArray := RootObject.FindPath('store') as TJSONArray;
-    if not Assigned(StoreArray) or (StoreArray.Count = 0) then
+    // Some Nightscout instances wrap payloads in {"status":..,"result":[{...}]}
+   ResNode := RootObject.FindPath('result');
+    if Assigned(ResNode) and (ResNode.InheritsFrom(TJSONArray)) and (TJSONArray(ResNode).Count > 0) and (TJSONArray(ResNode).Items[0] is TJSONObject) then
+      RootObject := TJSONObject(TJSONArray(ResNode).Items[0]);
+
+    // `store` can be an array (old shape) or an object keyed by profile id (observed)
+    StoreNode := RootObject.FindPath('store');
+    if Assigned(StoreNode) then
+    begin
+      if StoreNode.InheritsFrom(TJSONArray) then
+      begin
+        StoreArray := TJSONArray(StoreNode);
+        if StoreArray.Count = 0 then
+        begin
+          try
+            with TStringList.Create do
+            try
+              Text := ResponseStr;
+              SaveToFile('/tmp/trndi_profile_debug.json');
+            finally
+              Free;
+            end;
+            lastErr := 'Empty "store" array in profile.json (raw saved to /tmp/trndi_profile_debug.json)';
+          except
+            lastErr := 'Empty "store" array in profile.json (failed to save raw JSON)';
+          end;
+          Exit;
+        end;
+        DefaultProfile := StoreArray.Objects[0];
+      end
+      else if StoreNode.InheritsFrom(TJSONObject) then
+      begin
+        StoreObj := TJSONObject(StoreNode);
+        defName := RootObject.Get('defaultProfile', '');
+        if defName = '' then
+          defName := RootObject.Get('Default', '');
+        if defName <> '' then
+          DefaultProfile := StoreObj.FindPath(defName) as TJSONObject
+        else
+        begin
+          // fallback: take the first property object found inside store
+          if StoreObj.Count > 0 then
+            DefaultProfile := StoreObj.Items[0] as TJSONObject;
+        end;
+      end;
+    end
+    else
+    begin
+      try
+        with TStringList.Create do
+        try
+          Text := ResponseStr;
+          SaveToFile('/tmp/trndi_profile_debug.json');
+        finally
+          Free;
+        end;
+        lastErr := 'No "store" element in profile.json (raw saved to /tmp/trndi_profile_debug.json)';
+      except
+        lastErr := 'No "store" element in profile.json (failed to save raw JSON)';
+      end;
       Exit;
-    DefaultProfile := StoreArray.Objects[0].FindPath('defaultProfile') as TJSONObject;
+    end;
+
     if not Assigned(DefaultProfile) then
-      DefaultProfile := StoreArray.Objects[0].FindPath('Default') as TJSONObject;
-    if not Assigned(DefaultProfile) then
+    begin
+      lastErr := 'No default profile found in profile.json store';
       Exit;
+    end;
+
     BasalArray := DefaultProfile.FindPath('basal') as TJSONArray;
     if not Assigned(BasalArray) then
+    begin
+      lastErr := 'No "basal" array in default profile';
       Exit;
+    end;
 
     SetLength(profile, BasalArray.Count);
     for i := 0 to BasalArray.Count - 1 do
