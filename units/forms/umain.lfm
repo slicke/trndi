@@ -505,10 +505,6 @@ object fBG: TfBG
         Caption = 'Current Basal'
         OnClick = miBasalRateClick
       end
-      object miShowBasalOverlay: TMenuItem
-        Caption = 'Show Basal on Graph'
-        OnClick = miShowBasalOverlayClick
-      end
       object miDNS: TMenuItem
         Caption = 'Run DNS Lookup Test'
         OnClick = miDNSClick
