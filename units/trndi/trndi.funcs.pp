@@ -111,7 +111,8 @@ function JSValueRawArray(const values: array of const): JSValueRaw;
 procedure ConvertVarRecsToJSValueRaw(const params: array of const; var jsValues: array of JSValueRaw);
 {$endif}
 {$ifdef DEBUG}
-function debugParams(arr: TStringArray): string;
+function debugParams(arr: TStringArray): string; overload;
+function debugParams(arr: TStringList): string; overload;
 {$endif}
 
 const
@@ -152,9 +153,19 @@ var
 s: string;
 begin
   for s in arr do
-    result := result.join(' > ', s);
+    result := result.join(' :: ', s);
 end;
 
+function debugParams(arr: TStringList): string;
+var
+s: TStringList;
+begin
+  s := TStringList.Create;
+  s.AddDelimitedText(arr.DelimitedText, arr.Delimiter, true);
+  s.Delimiter := '`';
+  result := StringReplace(s.DelimitedText, '`', ' :: ', [rfReplaceAll]);
+  s.free;
+end;
 {$endif}
 
 procedure CenterPanelToCaption(Panel: TPanel; margin: integer = 10);
