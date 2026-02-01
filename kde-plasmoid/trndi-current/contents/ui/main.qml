@@ -1,5 +1,6 @@
 import QtCore
 import QtQuick 2.15
+import QtQuick.Layouts 1.15
 import org.kde.plasma.plasmoid 2.0
 import org.kde.plasma.components 3.0 as PlasmaComponents3
 import org.kde.plasma.plasma5support 2.0 as Plasma5Support
@@ -11,30 +12,78 @@ PlasmoidItem {
     property string lastErrorText: ""
     property string lastGoodText: ""
     property double lastGoodEpochMs: 0
+    property int lastReadingEpochSec: 0
     property bool readingStale: false
+    property string ageText: ""
+    property bool showAgeRow: plasmoid.configuration.ShowAgeRow
     // If reads temporarily fail (file:// hiccup), keep last known value briefly.
     property int keepLastGoodForMs: 30000
 
     preferredRepresentation: compactRepresentation
 
-    compactRepresentation: FittedLabel {
-        text: root.readingText.length > 0 ? root.readingText
-                                          : (root.lastErrorText.length > 0 ? "!" : "")
-        visible: text.length > 0
-        elide: Text.ElideNone
-        minPointSize: 5
-        maxPointSize: 48
-        strikeout: root.readingStale
+    compactRepresentation: ColumnLayout {
+        anchors.fill: parent
+        spacing: 0
+
+        FittedLabel {
+            id: compactReading
+            text: root.readingText.length > 0 ? root.readingText
+                                              : (root.lastErrorText.length > 0 ? "!" : "")
+            visible: text.length > 0
+            elide: Text.ElideNone
+            minPointSize: 5
+            maxPointSize: 48
+            strikeout: root.readingStale
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            Layout.preferredHeight: root.showAgeRow && compactAge.visible ? root.height * 0.65 : root.height
+        }
+
+        PlasmaComponents3.Label {
+            id: compactAge
+            text: root.ageText
+            visible: root.showAgeRow && root.ageText.length > 0
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
+            elide: Text.ElideNone
+            wrapMode: Text.NoWrap
+            Layout.fillWidth: true
+            Layout.preferredHeight: root.height * 0.35
+            font.pointSize: Math.max(7, Math.floor(root.height * 0.22))
+            opacity: 0.8
+        }
     }
 
-    fullRepresentation: FittedLabel {
-        text: root.readingText.length > 0 ? root.readingText : root.lastErrorText
-        horizontalAlignment: Text.AlignHCenter
-        verticalAlignment: Text.AlignVCenter
-        elide: Text.ElideNone
-        minPointSize: 8
-        maxPointSize: 72
-        strikeout: root.readingStale
+    fullRepresentation: ColumnLayout {
+        anchors.fill: parent
+        spacing: 2
+
+        FittedLabel {
+            text: root.readingText.length > 0 ? root.readingText : root.lastErrorText
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
+            elide: Text.ElideNone
+            minPointSize: 8
+            maxPointSize: 72
+            strikeout: root.readingStale
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            Layout.preferredHeight: root.showAgeRow && fullAge.visible ? root.height * 0.75 : root.height
+        }
+
+        PlasmaComponents3.Label {
+            id: fullAge
+            text: root.ageText
+            visible: root.showAgeRow && root.ageText.length > 0
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
+            elide: Text.ElideNone
+            wrapMode: Text.NoWrap
+            Layout.fillWidth: true
+            Layout.preferredHeight: root.height * 0.25
+            font.pointSize: Math.max(9, Math.floor(root.height * 0.16))
+            opacity: 0.8
+        }
     }
 
     toolTipMainText: "Trndi"
@@ -69,10 +118,11 @@ PlasmoidItem {
             out = out.trim();
             err = err.trim();
 
-            // Format: "<value>\t<epochSeconds>\t<freshMinutes>" (epoch/fresh may be empty).
+            // Format: "<value>\t<epochSeconds>\t<freshMinutes>\t<mtimeSeconds>" (epoch/fresh/mtime may be empty).
             var value = out;
             var epoch = 0;
             var freshMin = 0;
+            var mtimeSec = 0;
             var parts = null;
             if (out.indexOf("\t") !== -1) {
                 parts = out.split("\t");
@@ -85,11 +135,13 @@ PlasmoidItem {
                 value = (parts.length > 0 ? String(parts[0]) : "");
                 epoch = (parts.length > 1 ? parseInt(parts[1], 10) : 0);
                 freshMin = (parts.length > 2 ? parseInt(parts[2], 10) : 0);
+                mtimeSec = (parts.length > 3 ? parseInt(parts[3], 10) : 0);
             }
 
             value = value.trim();
             if (isNaN(epoch)) epoch = 0;
             if (isNaN(freshMin)) freshMin = 0;
+            if (isNaN(mtimeSec)) mtimeSec = 0;
 
             // Accept seconds or milliseconds epoch; correct future timestamps
             // from older writers by subtracting a rounded hour offset.
@@ -116,6 +168,7 @@ PlasmoidItem {
                 root.lastGoodText = value;
                 root.lastGoodEpochMs = now;
                 root.lastErrorText = "";
+                root.lastReadingEpochSec = epoch > 0 ? epoch : (mtimeSec > 0 ? mtimeSec : 0);
             } else if (err.length > 0) {
                 root.readingStale = false;
                 root.lastErrorText = err;
@@ -130,6 +183,14 @@ PlasmoidItem {
                 root.lastGoodText = "";
                 root.lastGoodEpochMs = 0;
                 root.lastErrorText = "";
+                root.lastReadingEpochSec = 0;
+            }
+
+            if (root.lastReadingEpochSec > 0 && root.readingText.length > 0) {
+                var ageMinutes = Math.max(0, Math.floor((nowS - root.lastReadingEpochSec) / 60));
+                root.ageText = ageMinutes + " min ago";
+            } else {
+                root.ageText = "";
             }
 
             disconnectSource(sourceName);
@@ -146,7 +207,7 @@ PlasmoidItem {
         //   line1: value
         //   line2: reading epoch seconds
         //   line3: freshness threshold minutes
-        // Output a single line with tab-separated fields for easy parsing.
+                // Output a single line with tab-separated fields for easy parsing.
         return "bash -lc '" +
                "f=\"${XDG_CACHE_HOME:-$HOME/.cache}/trndi/current.txt\"; " +
                "if [ -f \"$f\" ]; then " +
@@ -157,7 +218,7 @@ PlasmoidItem {
              // Hide if cache file is old (Trndi likely not running). Fixed 11 minutes.
              "age=$((now-mt)); thr=$((11*60)); " +
              "if [ $mt -gt 0 ] && [ $age -gt $thr ]; then exit 0; fi; " +
-             "printf \"%s\\t%s\\t%s\\n\" \"$v\" \"$t\" \"$m\"; " +
+                         "printf \"%s\\t%s\\t%s\\t%s\\n\" \"$v\" \"$t\" \"$m\" \"$mt\"; " +
                "fi'";
     }
 }
