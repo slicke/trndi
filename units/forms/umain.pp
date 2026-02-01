@@ -5909,13 +5909,14 @@ end;
 procedure TfBG.CheckForUpdates(ShowUpToDateMessage: boolean = false);
 var
   res, rn, r, newVersionMessage: string;
-  rok: boolean;
+  rok, parsed: boolean;
   JsonData: TJSONData;
   JsonObj: TJSONObject;
   latestRelease: string;
   lastIgnoreDate: string;
   ignoreDate: TDateTime;
   daysSinceIgnore: integer;
+  fmt: TFormatSettings;
 begin
   try
     // Check if updates are being ignored (unless this is a manual check)
@@ -5923,13 +5924,35 @@ begin
     begin
       lastIgnoreDate := native.GetSetting('update.ignore.date', '');
       if lastIgnoreDate <> '' then
-      try
-        ignoreDate := StrToDateTime(lastIgnoreDate);
-        daysSinceIgnore := DaysBetween(Now, ignoreDate);
-        if daysSinceIgnore < 14 then
-          Exit; // Suppress update check for 2 weeks
-      except
-          // Invalid date format, continue with update check
+      begin
+        // Try robust parsing: accept localized DateTime formats, or ISO 8601 (YYYY-MM-DD"T"hh:nn:ss)
+        parsed := false;
+        // Try locale-aware parse first
+        if TryStrToDateTime(lastIgnoreDate, ignoreDate) then
+          parsed := true
+        else
+        begin
+          // Try ISO 8601 (truncate to 19 chars to ignore timezone/fractional seconds)
+          if Length(Trim(lastIgnoreDate)) >= 19 then
+          try
+            ignoreDate := ScanDateTime('YYYY-MM-DD"T"hh:nn:ss', Copy(Trim(lastIgnoreDate), 1, 19));
+            parsed := true;
+          except
+            parsed := false;
+          end;
+        end;
+
+        if parsed then
+        begin
+          daysSinceIgnore := DaysBetween(Now, ignoreDate);
+          if daysSinceIgnore < 14 then
+            Exit; // Suppress update check for 2 weeks
+        end
+        else
+        begin
+          // Could not parse stored ignore date; log for debugging
+          LogMessage(Format('CheckForUpdates: failed to parse update.ignore.date: %s', [lastIgnoreDate]));
+        end;
       end;
     end;
     
@@ -5967,8 +5990,9 @@ begin
         OpenURL(r);
       mrIgnore:
       begin
-        native.SetSetting('update.ignore.date', DateTimeToStr(Now));
-        ShowMessage(Format(RS_UPDATE_SNOOZE, [DateTimeToStr(IncDay(now, 14))]));
+        // Store in a locale-independent ISO 8601 format for robust parsing
+        native.SetSetting('update.ignore.date', FormatDateTime('yyyy-mm-dd"T"hh:nn:ss', Now));
+        ShowMessage(Format(RS_UPDATE_SNOOZE, [DateTimeToStr(IncDay(Now, 14))]));
       end;
       end;
     end
