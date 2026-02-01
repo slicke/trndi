@@ -84,6 +84,26 @@ endif
 
 LAZBUILD_FLAGS ?= --widgetset=$(WIDGETSET) --build-mode="$(BUILD_MODE_NAME)" $(CPU_FLAG)
 
+# Determine a build-mode suitable for 'noext' (prefer Qt6 No Extensions or No Ext)
+ifeq ($(BUILD_MODE),Debug)
+  NOEXT_BUILD_MODE_NAME := $(shell perl -0777 -ne 'while(/<Item Name="([^\"]+)"/g){print "$$1\n"}' $(LPI) | grep -E "No Ext \(Debug\)" | head -n1)
+  ifeq ($(NOEXT_BUILD_MODE_NAME),)
+    NOEXT_BUILD_MODE_NAME := No Ext (Debug)
+  endif
+else
+  ifeq ($(WIDGETSET),qt6)
+    NOEXT_BUILD_MODE_NAME := $(shell perl -0777 -ne 'while(/<Item Name="([^\"]+)"/g){print "$$1\n"}' $(LPI) | grep -E "Qt6 \(Release; No Extensions\)|Qt6 \(Release: No Extensions\)" | head -n1)
+  endif
+  ifeq ($(NOEXT_BUILD_MODE_NAME),)
+    NOEXT_BUILD_MODE_NAME := $(shell perl -0777 -ne 'while(/<Item Name="([^\"]+)"/g){print "$$1\n"}' $(LPI) | grep -E "No Ext \(Release\)" | head -n1)
+  endif
+  ifeq ($(NOEXT_BUILD_MODE_NAME),)
+    NOEXT_BUILD_MODE_NAME := No Ext (Release)
+  endif
+endif
+
+NOEXT_LAZBUILD_FLAGS ?= --widgetset=$(WIDGETSET) --build-mode="$(NOEXT_BUILD_MODE_NAME)" $(CPU_FLAG)
+
 .PHONY: all help check build release debug test clean dist install run
 
 all: release
@@ -161,20 +181,28 @@ run: build
 # Build without extensions (use a temporary copy of the .lpi so original is untouched)
 noext: check
 	@echo "Building without extensions (using temporary project, mormot2 removed)"
-	@STAMP=$$(date +%s) && \
-	 cp $(LPI) $(LPI).noext-$$STAMP && \
-	 # Remove the mormot2 package entry from the temporary project
-	 perl -0777 -pe 's/\s*<Item>\s*<PackageName Value="mormot2"\/?>\s*<\/Item>\s*//s' $(LPI).noext-$$STAMP > $(LPI).noext-$$STAMP.tmp && \
-	 mv $(LPI).noext-$$STAMP.tmp $(LPI).noext-$$STAMP && \
-	 echo "Using temporary project: $(LPI).noext-$$STAMP" && \
-	 $(LAZBUILD) $(LAZBUILD_FLAGS) $(LPI).noext-$$STAMP; \
+	@STAMP=$$(date +%s); \
+	 cp $(LPI) $(LPI).noext-$$STAMP.lpi; \
+	 perl -0777 -pe 's/\s*<Item>\s*<PackageName Value="mormot2"\/?>(\s*)<\/Item>\s*//s' $(LPI).noext-$$STAMP.lpi > $(LPI).noext-$$STAMP.lpi.tmp; \
+	 mv $(LPI).noext-$$STAMP.lpi.tmp $(LPI).noext-$$STAMP.lpi; \
+	 echo "Using temporary project: $(LPI).noext-$$STAMP.lpi"; \
+	 $(LAZBUILD) $(NOEXT_LAZBUILD_FLAGS) $(LPI).noext-$$STAMP.lpi; \
 	 RET=$$?; \
 	 if [ $$RET -ne 0 ]; then \
-	  echo "Build failed (status $$RET). The temporary project is kept at $(LPI).noext-$$STAMP for inspection."; \
+	  echo "Build failed (status $$RET). The temporary project is kept at $(LPI).noext-$$STAMP.lpi for inspection."; \
 	  exit $$RET; \
 	 else \
-	  echo "Build complete (without mORMot2). Removing temporary project $(LPI).noext-$$STAMP"; \
-	  rm -f $(LPI).noext-$$STAMP; \
+	  echo "Build complete (without mORMot2). Copying artifacts to $(OUTDIR)"; \
+	  mkdir -p $(OUTDIR); \
+	  for f in "$(basename $(LPI))" "$(basename $(LPI)).exe" "$(basename $(LPI)).app"; do \
+	    if [ -e "$$f" ]; then cp -r "$$f" "$(OUTDIR)/" && echo "Copied $$f to $(OUTDIR)"; fi; \
+	  done; \
+	  if [ -f "$(OUTDIR)/$(basename $(LPI))" ] || [ -f "$(OUTDIR)/$(basename $(LPI)).exe" ] || [ -d "$(OUTDIR)/$(basename $(LPI)).app" ]; then \
+	    echo "Found in $(OUTDIR)"; \
+	  else \
+	    echo "Warning: no executable found in project dir or $(OUTDIR)"; \
+	  fi; \
+	  rm -f $(LPI).noext-$$STAMP.lpi; \
 	 fi
 
 noext-release: BUILD_MODE := Release
@@ -185,8 +213,8 @@ noext-debug: noext
 
 clean:
 	@echo "Cleaning common products..."
-	@find . -maxdepth 3 -type f \( -name '*.o' -o -name '*.ppu' -o -name '*.compiled' -o -name '*.a' -o -name '*.so' -o -name '*.dll' -o -name '*.exe' -o -name '*.app' \) -print0 | xargs -0 -r rm -f || true
-	@echo "(Note: Lazarus project files, .lpi, and sources are not removed.)"
+	@find . -maxdepth 3 -type f \( -name '*.o' -o -name '*.ppu' -o -name '*.compiled' -o -name '*.a' -o -name '*.so' -o -name '*.dll' -o -name '*.exe' -o -name '*.app' -o -name '$(LPI).noext-*' -o -name '*.noext-*.lpi' \) -print0 | xargs -0 -r rm -f || true
+	@echo "(Note: Lazarus project files and sources are not removed, but temporary noext project files (e.g. $(LPI).noext-*) are cleaned.)"
 
 dist: build
 	@mkdir -p $(OUTDIR)
