@@ -268,11 +268,13 @@ Defaults by platform:
 
 Examples:
 ```bash
-make            # on Linux -> Qt6 (Release)
+make            # on Linux -> Qt6 (Release) (artifacts placed in the 'build/' directory)
 make noext      # on Linux -> Qt6 (Release) using temporary project copy
 make BUILD_MODE=Debug    # chooses Qt6 (Debug) on Linux, Extensions (Debug) on macOS/Windows
 make list-modes # show exact LPI targets if you want to pick one explicitly
 ```
+
+Note: By default `make build` writes build artifacts into `$(OUTDIR)` (default: `build/`). You can override this by setting `OUTDIR=...` on the make command line if you prefer a different location.
 
 
 ### History
