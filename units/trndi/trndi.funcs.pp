@@ -48,7 +48,7 @@ uses
 Classes, SysUtils, Controls, ExtCtrls, StdCtrls, Graphics, trndi.types, Forms, Math,
 fpjson, jsonparser, dateutils, buildinfo
 {$ifdef TrndiExt},trndi.ext.engine, mormot.lib.quickjs, mormot.core.base{$endif}
-{$ifdef DARWIN}, CocoaAll{$endif}
+{$ifdef DARWIN}, CocoaAll, NSHelpers{$endif}
 {$ifdef DEBUG}, slicke.ux.alert{$endif};
 
 {$ifdef DEBUG}
@@ -321,8 +321,9 @@ begin
   try
     LogFilePath := NSStrToStr(NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, True).objectAtIndex(0));
     BundleID := NSStrToStr(NSBundle.mainBundle.objectForInfoDictionaryKey(StrToNSStr('CFBundleIdentifier')));
-    if BundleID = '' then
-      BundleID := 'trndi';
+    // Prefer the canonical app identifier used across platforms. Map legacy/company id if encountered.
+    if (BundleID = '') or SameText(BundleID, 'com.company.trndi') then
+      BundleID := 'com.slicke.trndi';
     LogFilePath := IncludeTrailingPathDelimiter(LogFilePath) + BundleID + PathDelim + 'trndi.log';
     if not DirectoryExists(ExtractFilePath(LogFilePath)) then
       ForceDirectories(ExtractFilePath(LogFilePath));
