@@ -568,7 +568,7 @@ object fBG: TfBG
   end
   object tAgo: TTimer
     Enabled = False
-    Interval = 30000
+    Interval = 15000
     OnTimer = tAgoTimer
     Left = 48
     Top = 176
