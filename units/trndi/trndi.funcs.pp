@@ -513,7 +513,7 @@ end;
 function TryExtractPublishedAt(const JsonObj: TJSONObject; out PublishedAt: TDateTime): boolean;
 var
   ReleaseDateStr: string;
-  Year, Month, Day, Hour, Min, Sec: word;
+  Year, Month, Day, Hour, Min, Sec: integer;
 begin
   ReleaseDateStr := JsonObj.Get('published_at', '');
   if Length(ReleaseDateStr) < 19 then
