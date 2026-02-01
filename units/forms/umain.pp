@@ -372,6 +372,8 @@ private
   FLastUICaption: string;
   FLastTir: string;
   FLastTirColor: TColor;
+  FLastTimerTick: TDateTime; // Last timer tick for wake detection
+  FForceRefresh: boolean; // Force bypass of cached API reads on wake
 
     // Array to hold references to lDot1 - lDot10
   TrendDots: array[1..10] of TDotControl;
@@ -4386,7 +4388,25 @@ procedure TfBG.tMainTimer(Sender: TObject);
 var
   bgvals: JSValueRaw;
 {$endif}
+var
+  nowTick: TDateTime;
+  gapSeconds: int64;
+  expectedSeconds: int64;
 begin
+  nowTick := Now;
+  if FLastTimerTick > 0 then
+  begin
+    gapSeconds := SecondsBetween(nowTick, FLastTimerTick);
+    expectedSeconds := Max(1, tMain.Interval div 1000);
+    if gapSeconds > (expectedSeconds * 2) then
+    begin
+      FForceRefresh := true;
+      LogMessage(Format('Wake detected: timer gap %d sec (expected ~%d sec). Forcing refresh.',
+        [gapSeconds, expectedSeconds]));
+    end;
+  end;
+  FLastTimerTick := nowTick;
+
   updateReading;
   {$ifdef TrndiExt}
   try
@@ -4740,6 +4760,13 @@ begin
   end;
   {$endif}
   // Fetch readings and exit if no data
+  if FForceRefresh then
+  begin
+    if not FetchAndValidateReadingsForced then
+      Exit;
+    FForceRefresh := false;
+  end
+  else
   if not FetchAndValidateReadings then
     Exit;
 
