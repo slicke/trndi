@@ -340,10 +340,6 @@ msgstr "Uppdaterar om:"
 msgid "&Settings"
 msgstr "&Inställningar"
 
-#: tfbg.mishowbasaloverlay.caption
-msgid "Show Basal on Graph"
-msgstr ""
-
 #: tfbg.pnoffrange.caption
 msgctxt "tfbg.pnoffrange.caption"
 msgid "- Off Range -"
