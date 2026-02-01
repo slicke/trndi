@@ -146,7 +146,9 @@ build: check
 	  echo "Found in $(OUTDIR)"; \
 	else \
 	  echo "Warning: no executable found in project dir or $(OUTDIR)"; \
-	fi
+	fi; \
+	# Copy translations into build dir for packaging/runtime
+	if [ -d "lang" ]; then mkdir -p "$(OUTDIR)/lang" && cp -r lang/* "$(OUTDIR)/lang/" && echo "Copied translations to $(OUTDIR)/lang"; fi
 
 release: BUILD_MODE := Release
 release: build
@@ -202,6 +204,7 @@ noext: check
 	  else \
 	    echo "Warning: no executable found in project dir or $(OUTDIR)"; \
 	  fi; \
+	  if [ -d "lang" ]; then mkdir -p "$(OUTDIR)/lang" && cp -r lang/* "$(OUTDIR)/lang/" && echo "Copied translations to $(OUTDIR)/lang"; fi; \
 	  rm -f $(LPI).noext-$$STAMP.lpi; \
 	 fi
 
