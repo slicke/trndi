@@ -861,7 +861,7 @@ begin
   // Fetch basal rate from Nightscout v3 API
   try
     ResponseStr := Native.Request(false, 'profile.json', [], '', BearerHeader);
-    {$ifdef DEBUG} if debug_log_api then LogMessage(Format('[%s:%s]'#10'%s', [{$i %file%}, {$i %Line%}, ResponseStr]));{$endif}
+    {$ifdef DEBUG} if debug_log_api then LogMessage(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, 'profile.json', responsestr, debugParams([])]));{$endif}
     
     if Trim(ResponseStr) = '' then
     begin
@@ -949,7 +949,7 @@ begin
   SetLength(profile, 0);
   try
     ResponseStr := Native.Request(false, 'profile.json', [], '', BearerHeader);
-   {$ifdef DEBUG} if debug_log_api then LogMessage(Format('[%s:%s]'#10'%s', [{$i %file%}, {$i %Line%}, ResponseStr]));{$endif}
+   {$ifdef DEBUG} if debug_log_api then LogMessage(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, 'profile.json', responseStr, debugParams([])]));{$endif}
   except
     lastErr := 'HTTP request failed while fetching profile.json';
     Exit;

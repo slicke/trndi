@@ -51,6 +51,12 @@ fpjson, jsonparser, dateutils, buildinfo
 {$ifdef DARWIN}, CocoaAll{$endif}
 {$ifdef DEBUG}, slicke.ux.alert{$endif};
 
+{$ifdef DEBUG}
+type
+  _arr2 = array[1..2] of string;
+  _arr3 = array[1..3] of string;
+{$endif}
+
 procedure CenterPanelToCaption(Panel: TPanel; margin: integer = 10);
 function GetAppPath: string;
 function GetLangPath: string;
@@ -113,6 +119,8 @@ procedure ConvertVarRecsToJSValueRaw(const params: array of const; var jsValues:
 {$ifdef DEBUG}
 function debugParams(arr: TStringArray): string; overload;
 function debugParams(arr: TStringList): string; overload;
+function debugParams(arr: _arr2): string; overload;
+function debugParams(arr: _arr3): string; overload;
 {$endif}
 
 const
@@ -148,6 +156,14 @@ implementation
 
 
 {$ifdef DEBUG}
+function debugParams(arr: _arr2): string;
+begin
+  result := Format('%s :: %s', [arr[1], arr[2]]);
+end;
+function debugParams(arr: _arr3): string;
+begin
+  result := Format('%s :: %s :: %s', [arr[1], arr[2], arr[3]]);
+end;
 function debugParams(arr: TStringArray): string;
 var
 s: string;
