@@ -110,6 +110,9 @@ function JSValueRawArray(const values: array of const): JSValueRaw;
 // Convert array of const to array of JSValueRaw with proper type matching
 procedure ConvertVarRecsToJSValueRaw(const params: array of const; var jsValues: array of JSValueRaw);
 {$endif}
+{$ifdef DEBUG}
+function debugParams(arr: TStringArray): string;
+{$endif}
 
 const
 INTERVAL_MINUTES = 5; // Each time interval is 5 minutes
@@ -141,6 +144,18 @@ TrndiDebugLogAlert: boolean = false;
 TrndiDebugLogAlertSnooze: TDateTime;
 {$endif}
 implementation
+
+
+{$ifdef DEBUG}
+function debugParams(arr: TStringArray): string;
+var
+s: string;
+begin
+  for s in arr do
+    result := result.join(' > ', s);
+end;
+
+{$endif}
 
 procedure CenterPanelToCaption(Panel: TPanel; margin: integer = 10);
 var
