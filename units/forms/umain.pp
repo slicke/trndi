@@ -347,6 +347,7 @@ TfBG = class(TForm)
   procedure miDebugUXMsgClick(Sender: TObject);
   procedure miDebugLogClick(Sender: TObject);
   procedure miDebugLoadTextClick(Sender: TObject);
+  procedure miDebugLogAPIClick(Sender: TObject);
   {$endif}
 private
   FStoredWindowInfo: record // Saved geometry and window state for restore/toggle
