@@ -307,19 +307,38 @@ const
   MaxLines = 500; // Max lines in file
 var
   LogLines: TStringList;
+  LogFilePath: string;
+  {$ifdef DARWIN}
+  BundleID: string;
+  {$endif}
 begin
   if (TrndiDebugLogAlert) and (SecondsBetween(Now, TrndiDebugLogAlertSnooze) > 5) then
     if ExtMessage(uxdNormal, 'Log Output','Output from the logger','A message has been sent to the logger', msg, false, uxclWhite, uxclRed,[mbOK, mbUXSnooze]) <> mrOK then
       TrndiDebugLogAlertSnooze := Now;
+
+  // Determine a writable log file path. On macOS we prefer Application Support to avoid permission issues.
   {$ifdef DARWIN}
-  Exit; // Disable logging on macOS as it crashes due to file permission issues
+  try
+    LogFilePath := NSStrToStr(NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, True).objectAtIndex(0));
+    BundleID := NSStrToStr(NSBundle.mainBundle.objectForInfoDictionaryKey(StrToNSStr('CFBundleIdentifier')));
+    if BundleID = '' then
+      BundleID := 'trndi';
+    LogFilePath := IncludeTrailingPathDelimiter(LogFilePath) + BundleID + PathDelim + 'trndi.log';
+    if not DirectoryExists(ExtractFilePath(LogFilePath)) then
+      ForceDirectories(ExtractFilePath(LogFilePath));
+  except
+    // Fallback to application path if anything goes wrong
+    LogFilePath := GetAppPath + 'trndi.log';
+  end;
+  {$else}
+  LogFilePath := 'trndi.log';
   {$endif}
 
   LogLines := TStringList.Create;
   try
     // Load log if exists
-    if FileExists('trndi.log') then
-      LogLines.LoadFromFile('trndi.log');
+    if FileExists(LogFilePath) then
+      LogLines.LoadFromFile(LogFilePath);
 
     // Delete overflowing lines
     while LogLines.Count >= MaxLines do
@@ -329,7 +348,7 @@ begin
     LogLines.Add('['+DateTimeToStr(Now) + '] ' + Msg);
 
     // Save
-    LogLines.SaveToFile('trndi.log');
+    LogLines.SaveToFile(LogFilePath);
   finally
     LogLines.Free;
   end;
