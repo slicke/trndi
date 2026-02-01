@@ -91,7 +91,7 @@
       <AutoIncrementBuild Value="True"/>
       <MajorVersionNr Value="4"/>
       <MinorVersionNr Value="6"/>
-      <BuildNr Value="122"/>
+      <BuildNr Value="123"/>
       <StringTable CompanyName="Slicke" FileDescription="Trndi - CGM trend monitor" LegalCopyright="Björn Lindh" ProductName="Trndi"/>
     </VersionInfo>
     <BuildModes>
@@ -369,7 +369,8 @@
         </CompilerOptions>
       </Item>
       <Item Name="Qt6 (Release)">
-        <MacroValues Count="1">
+        <MacroValues Count="2">
+          <Macro6 Name="LCLWidgetType" Value="qt6"/>
           <Macro2 Name="LCLWidgetType" Value="qt6"/>
         </MacroValues>
         <CompilerOptions>
