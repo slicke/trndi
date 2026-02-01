@@ -43,12 +43,14 @@ GTAGS
 
 # Dist
 dist/lang
+/build/
 dist/*.zip
 Trndi-arm64
 Trndi-arm
 Trndi-amd64
 Trndi-linux
 *.trc
+/Trndi.lpi.noext*
 
 # In case someone downloads it locally
 /mORMot
