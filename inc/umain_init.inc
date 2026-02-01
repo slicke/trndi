@@ -472,6 +472,12 @@ begin
   ShowMessage(Format('Now %s', [IfThen(debug_load_text, 'showing', 'not showing')]));
 end;
 
+procedure TfBG.miDebugLogAPIClick(Sender: TObject);
+begin
+  debug_log_api := true;
+  (sender as TMenuItem).Enabled := false;
+end;
+
 {$endif}
 
 // Initialize the TrendDots array in FormCreate
@@ -496,7 +502,7 @@ var
   minutesStr: string;
   minutesVal: integer;
   {$ifdef DEBUG}
-  miDebugUXMsg, miDebugLog, miDebugLoadText: TMenuItem;
+  miDebugUXMsg, miDebugLog, miDebugLoadText, miDebugLogAPI: TMenuItem;
   {$endif}
 begin
   firstboot := false;
@@ -744,7 +750,7 @@ begin
   miDebugUXMsg.OnClick := @miDebugUXMsgClick;
 
   miDebugLog := TMenuItem.Create(miAdvanced);
-  miDebugLog.Caption := '[debug] Toggle alert messages';
+  miDebugLog.Caption := '[debug] Log API calls';
   miAdvanced.Insert(miAdvanced.Count, miDebugLog);
   miDebugLog.OnClick := @miDebugLogClick;
 
@@ -752,6 +758,11 @@ begin
   miDebugLoadText.Caption := '[debug] Show load indication';
   miAdvanced.Insert(miAdvanced.count, miDebugLoadText);
   miDebugLoadText.onClick := @miDebugLoadTextClick;
+
+  miDebugLogAPI := TMenuItem.Create(miAdvanced);
+  miDebugLogAPI.Caption := '[debug] Show load indication';
+  miAdvanced.Insert(miAdvanced.count, miDebugLogAPI);
+  miDebugLogAPI.onClick := @miDebugLogAPIClick;
   {$endif}
 end;
 

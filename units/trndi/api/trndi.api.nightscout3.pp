@@ -42,7 +42,7 @@ unit trndi.api.nightscout3;
 interface
 
 uses
-Classes, SysUtils, trndi.types, trndi.api, trndi.native,
+Classes, SysUtils, trndi.types, trndi.api, trndi.native, trndi.funcs,
 fpjson, jsonparser, jsonscanner, dateutils, StrUtils;
 
 const
@@ -293,6 +293,7 @@ begin
 
   // 2) Fetch v3 status (bearer)
   resp := native.request(false, NS3_STATUS, [], '', BearerHeader);
+  {$ifdef DEBUG} if debug_log_api then LogMessage(Format('[%s:%s]'#10'%s', [{$i %file%}, {$i %Line%}, resp]));{$endif}
 
   if Trim(resp) = '' then
     if not TrndiNative.getURL(FSiteBase + '/api/v1/status.json', resp) then
@@ -397,6 +398,7 @@ begin
   // Attempt via native.request using absolute v1 URL and bearer header (no prefix)
   resp := native.request(false, FSiteBase + '/api/v1/status.json',
     [], '', BearerHeader, false {no prefix});
+  {$ifdef DEBUG} if debug_log_api then LogMessage(Format('[%s:%s]'#10'%s', [{$i %file%}, {$i %Line%}, resp]));{$endif}
 
   // If empty or app-level error, try plain GET
   if (Trim(resp) = '') or ((resp <> '') and (resp[1] = '+')) then
@@ -494,6 +496,7 @@ begin
 
   try
     resp := native.request(false, extras, params, '', BearerHeader);
+    {$ifdef DEBUG} if debug_log_api then LogMessage(Format('[%s:%s]'#10'%s', [{$i %file%}, {$i %Line%}, resp]));{$endif}
   except
     Exit; // return empty set
   end;
@@ -509,6 +512,7 @@ begin
     fbparams[0] := 'count=' + IntToStr(maxNum);
     resp := native.request(false, FSiteBase + '/api/v1/entries.json',
       fbparams, '', BearerHeader, false {no prefix});
+    {$ifdef DEBUG} if debug_log_api then LogMessage(Format('[%s:%s]'#10'%s', [{$i %file%}, {$i %Line%}, resp]));{$endif}
     if Trim(resp) = '' then
       Exit;
     res := resp;
@@ -531,6 +535,7 @@ begin
     fbparams[0] := 'count=' + IntToStr(maxNum);
     resp := native.request(false, FSiteBase + '/api/v1/entries.json',
       fbparams, '', BearerHeader, false {no prefix});
+      {$ifdef DEBUG} if debug_log_api then LogMessage(Format('[%s:%s]'#10'%s', [{$i %file%}, {$i %Line%}, resp]));{$endif}
     if Trim(resp) = '' then
     begin
       js.Free;
@@ -856,6 +861,7 @@ begin
   // Fetch basal rate from Nightscout v3 API
   try
     ResponseStr := Native.Request(false, 'profile.json', [], '', BearerHeader);
+    {$ifdef DEBUG} if debug_log_api then LogMessage(Format('[%s:%s]'#10'%s', [{$i %file%}, {$i %Line%}, ResponseStr]));{$endif}
     
     if Trim(ResponseStr) = '' then
     begin
@@ -943,6 +949,7 @@ begin
   SetLength(profile, 0);
   try
     ResponseStr := Native.Request(false, 'profile.json', [], '', BearerHeader);
+   {$ifdef DEBUG} if debug_log_api then LogMessage(Format('[%s:%s]'#10'%s', [{$i %file%}, {$i %Line%}, ResponseStr]));{$endif}
   except
     lastErr := 'HTTP request failed while fetching profile.json';
     Exit;

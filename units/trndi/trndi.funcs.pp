@@ -123,6 +123,10 @@ APP_BUILD_DATE = {$I %DATE%}; // Returns "2025/07/21"
 APP_BUILD_TIME = {$I %TIME%}; // Returns "14:30:25"
 
 var
+{$ifdef DEBUG}
+debug_log_api: boolean = false;
+{$endif}
+
 DOT_GRAPH: unicodestring = WChar($2B24);  // Circle
 DOT_FRESH: unicodestring = WChar($2600);  // Sun
 DOT_ADJUST: single = 0; // Multiplyer where dots appear
