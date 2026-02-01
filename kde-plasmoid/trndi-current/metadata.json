@@ -5,7 +5,7 @@
     "Name": "Trndi Current",
     "Description": "Shows Trndi's current reading in the panel",
     "Icon": "view-statistics",
-    "Version": "1.0",
+    "Version": "1.1",
     "Website": "https://github.com/slicke/trndi",
     "Category": "System Information",
     "Authors": [
@@ -16,5 +16,6 @@
   },
   "X-Plasma-API-Minimum-Version": "6.0",
   "X-Plasma-API": "declarativeappletscript",
-  "X-Plasma-MainScript": "ui/main.qml"
+  "X-Plasma-MainScript": "ui/main.qml",
+  "X-Plasma-ConfigDialog": "config"
 }
