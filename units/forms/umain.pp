@@ -262,6 +262,7 @@ TfBG = class(TForm)
   procedure lDiffClick(Sender: TObject);
   procedure lPredictClick(Sender: TObject);
   procedure miBasalRateClick(Sender: TObject);
+  procedure AutoEnableBasalOverlay;
   procedure miDNSClick(Sender: TObject);
   procedure miDotNormalDrawItem(Sender: TObject; ACanvas: TCanvas;
     ARect: TRect; AState: TOwnerDrawState);
@@ -1003,6 +1004,25 @@ begin
     ShowMessage(res.toString);
 end;
 
+procedure TfBG.AutoEnableBasalOverlay;
+var
+  profile: TBasalProfile;
+  ok: boolean;
+begin
+  if not api.supportsBasal then
+    Exit;
+
+  ok := api.getBasalProfile(profile);
+  if not ok then
+    Exit;
+
+  if fHistoryGraph <> nil then
+  begin
+    fHistoryGraph.SetBasalProfile(profile);
+    fHistoryGraph.SetBasalOverlayEnabled(True);
+  end;
+end;
+
 procedure TfBG.miDNSClick(Sender: TObject);
 begin
   tPingTimer(miDNS);
@@ -1261,6 +1281,7 @@ begin
     
     ShowHistoryGraph(readings, un, CurrentHistoryGraphPalette,
       api.cgmHi, api.cgmLo, api.cgmRangeHi, api.cgmRangeLo);
+    AutoEnableBasalOverlay;
   end;
 end;
 
@@ -2530,12 +2551,14 @@ begin
 
   ShowHistoryGraph(readings, un, CurrentHistoryGraphPalette, 
     api.cgmHi, api.cgmLo, api.cgmRangeHi, api.cgmRangeLo);
+  AutoEnableBasalOverlay;
 end;
 
 procedure TfBG.miHistoryClick(Sender: TObject);
 begin
   ShowHistoryGraph(bgs, un, CurrentHistoryGraphPalette,
     api.cgmHi, api.cgmLo, api.cgmRangeHi, api.cgmRangeLo);
+  AutoEnableBasalOverlay;
 end;
 
 procedure TfBG.miRangeColorClick(Sender: TObject);

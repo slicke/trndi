@@ -369,9 +369,10 @@ begin
   // Nightscout supports a 'count' param to limit the number of returned entries.
   params[1] := 'count=' + IntToStr(maxNum);
 
+
   try
     resp := native.request(false, extras, params, '', key);
-    js := GETJSON(resp); // Expecting an array of entries
+    js := GetJSON(resp); // Expecting an array of entries
   except
     // Any exception during request/parse yields an empty result.
     Exit;
@@ -386,9 +387,10 @@ begin
   // Pre-size the results array to the number of JSON items.
   SetLength(Result, js.Count);
 
-  for i := 0 to js.Count - 1 do
-    with js.FindPath(Format('[%d]', [i])) do
-    begin
+  try
+    for i := 0 to js.Count - 1 do
+      with js.FindPath(Format('[%d]', [i])) do
+      begin
       dev := FindPath('device').AsString;
 
       // Initialize reading in mg/dL; source identifier uses class name.
@@ -443,15 +445,15 @@ begin
 
       // Translate Nightscout 'direction' string to BGTrend enum.
       s := FindPath('direction').AsString;
-      for t in BGTrend do
+      // Default to not computable, then try to find a matching textual mapping
+      Result[i].trend := TdNotComputable;
+      for t := Low(BGTrend) to High(BGTrend) do
       begin
         if BG_TRENDS_STRING[t] = s then
         begin
           Result[i].trend := t;
-          break;
+          Break;
         end;
-        // Default if no mapping matched this iteration (will be overwritten if matched later)
-        Result[i].trend := TdNotComputable;
       end;
 
       // Nightscout dates are ms since epoch; JSToDateTime will apply tz correction if configured.
@@ -460,6 +462,9 @@ begin
       // Classify reading level relative to configured thresholds.
       Result[i].level := getLevel(Result[i].val);
     end;
+  finally
+    js.Free;
+  end;
 end;
 
 {------------------------------------------------------------------------------

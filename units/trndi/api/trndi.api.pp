@@ -39,6 +39,15 @@ CGMCore = record
   hi, lo, top, bottom: integer;
 end;
 
+  {** Basal profile entry: start minute (minutes since midnight) and rate U/hr }
+TBasalEntry = record
+  startMin: integer; { minutes since midnight }
+  value: single;     { U/hr }
+  name: string;      { optional label }
+end;
+
+TBasalProfile = array of TBasalEntry;
+
   {** Unit for storing glucose values }
 glucose = single;
 
@@ -290,6 +299,15 @@ const
         @returns(Current basal rate in U/hr, or 0 if unavailable)
      }
   function getBasalRate: single; virtual;
+  {** Report whether this backend supports fetching basal rates.
+      Default: False. Backends that implement reliable basal retrieval
+      (e.g., NightScout v3) should override to return True. }
+  function supportsBasal: boolean; virtual;
+  {** Fetch the basal profile/schedule from the backend.
+      @param(profile Out parameter receiving an array of basal entries)
+      @returns(True if a profile was obtained; False otherwise)
+}
+  function getBasalProfile(out profile: TBasalProfile): boolean; virtual;
 
     // -------- Properties --------
 
@@ -479,6 +497,24 @@ end;
 function TrndiAPI.getBasetime: int64;
 begin
   Result := DateTimeToUnix(IncSecond(Now, timeDiff));
+end;
+
+{------------------------------------------------------------------------------
+  Whether this backend supports fetching basal rates.
+  Default implementation returns False; subclasses may override.
+------------------------------------------------------------------------------}
+function TrndiAPI.supportsBasal: boolean;
+begin
+  Result := False;
+end;
+
+{------------------------------------------------------------------------------
+  Default implementation: no basal profile support.
+------------------------------------------------------------------------------}
+function TrndiAPI.getBasalProfile(out profile: TBasalProfile): boolean;
+begin
+  SetLength(profile, 0);
+  Result := False;
 end;
 
 {------------------------------------------------------------------------------

@@ -50,7 +50,7 @@ interface
 
 uses
 Classes, ExtCtrls, Menus, StdCtrls, SysUtils, Forms, Controls, Graphics, Dialogs,
-LCLIntf, LCLType, InterfaceBase
+LCLIntf, LCLType, InterfaceBase, trndi.native
 {$IFDEF DARWIN},
 CocoaAll
 {$ENDIF}
@@ -219,6 +219,61 @@ begin
   ALabel.Refresh;
 end;
 
+// Local helpers to read/write Trndi settings without referencing the global
+// `native` variable (which isn't visible in this unit). These create a
+// short-lived TrndiNative instance and free it immediately.
+function ReadIntSetting(const key: string; def: integer): integer;
+var
+  t: TrndiNative;
+begin
+  t := TrndiNative.Create;
+  try
+    t.noFree := true;
+    Result := t.GetIntSetting(key, def);
+  finally
+    t.Free;
+  end;
+end;
+
+function ReadFloatSetting(const key: string; def: single): single;
+var
+  t: TrndiNative;
+begin
+  t := TrndiNative.Create;
+  try
+    t.noFree := true;
+    Result := t.GetFloatSetting(key, def);
+  finally
+    t.Free;
+  end;
+end;
+
+procedure SaveSetting(const key: string; val: integer);
+var
+  t: TrndiNative;
+begin
+  t := TrndiNative.Create;
+  try
+    t.noFree := true;
+    t.SetSetting(key, val);
+  finally
+    t.Free;
+  end;
+end;
+
+procedure SaveFloatSetting(const key: string; val: single);
+var
+  t: TrndiNative;
+begin
+  t := TrndiNative.Create;
+  try
+    t.noFree := true;
+    t.SetFloatSetting(key, val, false);
+  finally
+    t.Free;
+  end;
+end;
+
 procedure TfFloat.FormCreate(Sender: TObject);
 {$IFDEF LCLQt6}
 var
@@ -352,16 +407,35 @@ begin
   AlphaBlend := Opacity < 1.0;
   AlphaBlendValue := Round(Opacity * 255);
   {$ENDIF}
+  // Persist opacity for next run
+  SaveFloatSetting('ux.float.opacity', Opacity);
 end;
 
 procedure TfFloat.FormShow(Sender: TObject);
+var
+  storedH, storedW, storedLeft, storedTop: integer;
+  storedOp: single;
 begin
   // Do not auto-center here; respect current position so user dragging stays stable
   ApplyRoundedCorners;
 
-  miNormal.Click;
-  // Set the opacity
-  SetFormOpacity(0.5);
+  // Restore size & position if available (do this BEFORE any default size code)
+  storedH := ReadIntSetting('size.float.height', Height);
+  storedW := ReadIntSetting('size.float.width', Width);
+  storedLeft := ReadIntSetting('position.float.left', Left);
+  storedTop := ReadIntSetting('position.float.top', Top);
+
+  Height := storedH;
+  Width := storedW;
+  Left := storedLeft;
+  Top := storedTop;
+
+  // Ensure labels/fonts are scaled for the restored size
+  FormResize(Self);
+
+  // Set the opacity (persisted or default)
+  storedOp := ReadFloatSetting('ux.float.opacity', 0.5);
+  SetFormOpacity(storedOp);
 end;
 
 procedure TfFloat.lValMouseUp(Sender: TObject; Button: TMouseButton;
@@ -467,6 +541,9 @@ begin
   lArrow.Width := round(clientwidth * 0.25);
   //---
   ApplyRoundedCorners;
+  // Persist selected size
+  SaveSetting('size.float.height', Height);
+  SaveSetting('size.float.width', Width);
 end;
 
 procedure TfFloat.miNormalClick(Sender: TObject);
@@ -533,6 +610,9 @@ procedure TfFloat.FormMouseUp(Sender: TObject; Button: TMouseButton;
 Shift: TShiftState; X, Y: integer);
 begin
   DraggingWin := false;
+  // Persist current position
+  SaveSetting('position.float.left', Left);
+  SaveSetting('position.float.top', Top);
   {$IFDEF DARWIN}
   // On macOS, restore borderless immediately after dragging
   BorderStyle := bsNone;
