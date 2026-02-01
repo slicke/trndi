@@ -42,7 +42,7 @@ unit trndi.api.nightscout;
 interface
 
 uses
-Classes, SysUtils, Dialogs, trndi.types, trndi.api, trndi.native,
+Classes, SysUtils, Dialogs, trndi.types, trndi.api, trndi.native, trndi.funcs,
 fpjson, jsonparser, dateutils, StrUtils, sha1, Math, jsonscanner;
 
 const
@@ -248,6 +248,7 @@ begin
   // 2) Probe server status and settings.
   //    Native.Request(signature): (useGet, path, params, body, header)
   ResponseStr := Native.Request(false, NS_STATUS, [], '', Key);
+  {$ifdef DEBUG} if debug_log_api then LogMessage(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, NS_STATUS, responseStr, debugParams([])]));{$endif}
 
   // 3) Basic validation for empty payloads.
   if Trim(ResponseStr) = '' then
@@ -372,6 +373,7 @@ begin
 
   try
     resp := native.request(false, extras, params, '', key);
+    {$ifdef DEBUG} if debug_log_api then LogMessage(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, extras, resp, params[1]]));{$endif}
     js := GetJSON(resp); // Expecting an array of entries
   except
     // Any exception during request/parse yields an empty result.
@@ -622,7 +624,8 @@ begin
   // Fetch basal rate from Nightscout API
   try
     ResponseStr := Native.Request(false, 'profile.json', [], '', Key);
-    
+
+    {$ifdef DEBUG} if debug_log_api then LogMessage(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, 'profile.json', responseStr, debugParams([])]));{$endif}
     if Trim(ResponseStr) = '' then
     begin
       lastErr := 'No basal rate data received from server';
