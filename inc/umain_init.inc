@@ -750,7 +750,7 @@ begin
   miDebugUXMsg.OnClick := @miDebugUXMsgClick;
 
   miDebugLog := TMenuItem.Create(miAdvanced);
-  miDebugLog.Caption := '[debug] Log API calls';
+  miDebugLog.Caption := '[debug] Toggle alert messages';
   miAdvanced.Insert(miAdvanced.Count, miDebugLog);
   miDebugLog.OnClick := @miDebugLogClick;
 
@@ -760,7 +760,7 @@ begin
   miDebugLoadText.onClick := @miDebugLoadTextClick;
 
   miDebugLogAPI := TMenuItem.Create(miAdvanced);
-  miDebugLogAPI.Caption := '[debug] Show load indication';
+  miDebugLogAPI.Caption := '[debug] Log API calls';
   miAdvanced.Insert(miAdvanced.count, miDebugLogAPI);
   miDebugLogAPI.onClick := @miDebugLogAPIClick;
   {$endif}
