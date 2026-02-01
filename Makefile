@@ -23,13 +23,24 @@ UNAME_S := $(shell uname -s)
 IS_MINGW := $(findstring MINGW,$(UNAME_S))
 IS_CYGWIN := $(findstring CYGWIN,$(UNAME_S))
 
-# Linux: prefer Qt6 builds
+# Linux: prefer Qt6 builds; when multiple Qt6 release modes exist prefer the Extensions variant
 ifeq ($(UNAME_S),Linux)
   WIDGETSET ?= qt6
   ifeq ($(BUILD_MODE),Debug)
     BUILD_MODE_NAME := Qt6 (Debug)
   else
-    BUILD_MODE_NAME := Qt6 (Release)
+    # Try to pick the best Qt6 Release mode available in Trndi.lpi
+    BUILD_MODE_NAME := $(shell perl -0777 -ne 'while(/<Item Name="([^"]+)"/g){print "$$1\n"}' Trndi.lpi | grep -E "Qt6 \(Release: Extensions\)" | head -n1)
+    ifeq ($(BUILD_MODE_NAME),)
+      BUILD_MODE_NAME := $(shell perl -0777 -ne 'while(/<Item Name="([^"]+)"/g){print "$$1\n"}' Trndi.lpi | grep -E "Qt6 \(Release; No Extensions\)" | head -n1)
+    endif
+    ifeq ($(BUILD_MODE_NAME),)
+      BUILD_MODE_NAME := $(shell perl -0777 -ne 'while(/<Item Name="([^"]+)"/g){print "$$1\n"}' Trndi.lpi | grep -E "Qt6 \(Release\)" | head -n1)
+    endif
+    # Fallback
+    ifeq ($(BUILD_MODE_NAME),)
+      BUILD_MODE_NAME := Qt6 (Release)
+    endif
   endif
 
 # macOS: prefer native Release builds (Extensions)
@@ -73,7 +84,7 @@ endif
 
 LAZBUILD_FLAGS ?= --widgetset=$(WIDGETSET) --build-mode="$(BUILD_MODE_NAME)" $(CPU_FLAG)
 
-.PHONY: all help check build release debug test clean dist install
+.PHONY: all help check build release debug test clean dist install run
 
 all: release
 
@@ -86,9 +97,11 @@ help:
 	@echo "  build      Generic build (honors BUILD_MODE and WIDGETSET)"
 	@echo "  test       Build tests"
 	@echo "  list-modes Show available project build modes from $(LPI)"
+	@echo "  show-mode  Show resolved build-mode and lazbuild flags"
 	@echo "  noext      Build without mORMot2 (temporary project) - use noext-release/noext-debug to override mode"
 	@echo "  clean      Remove common build artifacts (*.o, *.ppu, *.compiled, executables)"
 	@echo "  dist       Create a minimal tarball in $(OUTDIR)"
+	@echo "  run        Build (if needed) and run the built binary (use RUN_ARGS to pass args)"
 	@echo "  install    Install built binary to /usr/local/bin (requires sudo)"
 	@echo "Variables:" 
 	@echo "  LAZBUILD (default: lazbuild)"
@@ -101,11 +114,19 @@ check:
 
 build: check
 	@mkdir -p $(OUTDIR)
-	@echo "Building $(LPI) (mode=$(BUILD_MODE), widgetset=$(WIDGETSET))"
-	@$(LAZBUILD) $(LAZBUILD_FLAGS) -B $(LPI)
-	@echo "Build finished. You should find the built binary next to the project or in Lazarus' default output location."
-	@echo "(Optional) Copying any found executable to $(OUTDIR)"
-	@for f in $(basename $(LPI)); do if [ -f "$$f" ]; then cp "$$f" "$(OUTDIR)/"; fi; done || true
+	@echo "Building $(LPI) (mode=$(BUILD_MODE_NAME), widgetset=$(WIDGETSET)) -> $(OUTDIR)"
+	@# Note: avoid passing -B <outdir> to lazbuild — some lazbuild versions misinterpret it as a package name.
+	@$(LAZBUILD) $(LAZBUILD_FLAGS) $(LPI)
+	@echo "Build finished. Artifacts are in $(OUTDIR)"
+	@# Ensure that if lazbuild produced the executable in the project dir we copy it into $(OUTDIR) (overwrite if present)
+	@for f in "$(basename $(LPI))" "$(basename $(LPI)).exe" "$(basename $(LPI)).app"; do \
+	  if [ -e "$$f" ]; then cp -r "$$f" "$(OUTDIR)/" && echo "Copied $$f to $(OUTDIR)"; fi; \
+	done;
+	@if [ -f "$(OUTDIR)/$(basename $(LPI))" ] || [ -f "$(OUTDIR)/$(basename $(LPI)).exe" ] || [ -d "$(OUTDIR)/$(basename $(LPI)).app" ]; then \
+	  echo "Found in $(OUTDIR)"; \
+	else \
+	  echo "Warning: no executable found in project dir or $(OUTDIR)"; \
+	fi
 
 release: BUILD_MODE := Release
 release: build
@@ -121,6 +142,22 @@ list-modes:
 	@echo "Available build modes in $(LPI):"
 	@perl -0777 -ne 'while (/<Item\s+Name\s*=\s*"([^"]+)"/g) { print "  - $$1\n" }' $(LPI) || true
 
+show-mode:
+	@echo "Resolved build mode: $(BUILD_MODE_NAME)"
+	@echo lazbuild flags: $(LAZBUILD_FLAGS)
+	@echo "(WIDGETSET=$(WIDGETSET), BUILD_MODE=$(BUILD_MODE))"
+
+# Run the built binary (build first). Use RUN_ARGS to forward arguments to the program.
+run: build
+	@echo "Running Trndi from $(OUTDIR)"
+	@set -e; \
+	if [ -x "$(OUTDIR)/Trndi" ]; then "$(OUTDIR)/Trndi" $(RUN_ARGS); \
+	elif [ -x "$(OUTDIR)/Trndi.app/Contents/MacOS/Trndi" ]; then "$(OUTDIR)/Trndi.app/Contents/MacOS/Trndi" $(RUN_ARGS); \
+	elif [ -f "$(OUTDIR)/Trndi.exe" ]; then "$(OUTDIR)/Trndi.exe" $(RUN_ARGS); \
+	elif [ -x "./Trndi" ]; then ./Trndi $(RUN_ARGS); \
+	elif [ -f "./Trndi.exe" ]; then ./Trndi.exe $(RUN_ARGS); \
+	else echo "Executable not found in $(OUTDIR) or project dir; build first"; exit 1; fi
+
 # Build without extensions (use a temporary copy of the .lpi so original is untouched)
 noext: check
 	@echo "Building without extensions (using temporary project, mormot2 removed)"
@@ -130,7 +167,7 @@ noext: check
 	 perl -0777 -pe 's/\s*<Item>\s*<PackageName Value="mormot2"\/?>\s*<\/Item>\s*//s' $(LPI).noext-$$STAMP > $(LPI).noext-$$STAMP.tmp && \
 	 mv $(LPI).noext-$$STAMP.tmp $(LPI).noext-$$STAMP && \
 	 echo "Using temporary project: $(LPI).noext-$$STAMP" && \
-	 $(LAZBUILD) $(LAZBUILD_FLAGS) -B $(LPI).noext-$$STAMP; \
+	 $(LAZBUILD) $(LAZBUILD_FLAGS) $(LPI).noext-$$STAMP; \
 	 RET=$$?; \
 	 if [ $$RET -ne 0 ]; then \
 	  echo "Build failed (status $$RET). The temporary project is kept at $(LPI).noext-$$STAMP for inspection."; \
