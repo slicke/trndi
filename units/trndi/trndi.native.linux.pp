@@ -467,10 +467,21 @@ end;
   -------------------
   Returns true if the window manager is Sway.
  ------------------------------------------------------------------------------}
-class function TTrndiNativeLinux.nobuttonsVM: boolean;
-begin
-  Result := LowerCase(GetWindowManagerName) = 'sway';
-end;
+ class function TTrndiNativeLinux.nobuttonsVM: boolean;
+ var
+   wm: string;
+ begin
+   wm := LowerCase(GetWindowManagerName);
+
+   Result :=
+     (wm.Contains('sway')) or
+     (wm.Contains('i3')) or
+     (wm.Contains('bspwm')) or
+     (wm.Contains('dwm')) or
+     (wm.Contains('xmonad')) or
+     (wm.Contains('river')) or
+     (wm.Contains('hyprland'));
+ end;
 
 // True if S contains the substring "dark" (case-insensitive)
 function ContainsDark(const S: string): boolean; inline;
