@@ -382,12 +382,22 @@ begin
         raise Exception.Create('WinHttpOpenRequest failed: ' + SysErrorMessage(GetLastError));
 
       try
-        // For HTTPS, ensure WinHTTP can complete the TLS handshake properly
+        // For HTTPS, configure certificate validation based on proxy usage
         if Port.secure then
         begin
-          // Don't set ignore flags in production; just ensure no blocking cert issues
-          Flags := 0;
-          WinHttpSetOption(hRequest, WINHTTP_OPTION_SECURITY_FLAGS, @Flags, SizeOf(Flags));
+          if FProxyHost <> '' then
+          begin
+            // Proxy: ignore cert errors (proxies intercept HTTPS with their own certs)
+            Flags := SECURITY_FLAG_IGNORE_UNKNOWN_CA or SECURITY_FLAG_IGNORE_CERT_DATE_INVALID or
+                     SECURITY_FLAG_IGNORE_CERT_CN_INVALID or SECURITY_FLAG_IGNORE_CERT_WRONG_USAGE;
+            WinHttpSetOption(hRequest, WINHTTP_OPTION_SECURITY_FLAGS, @Flags, SizeOf(Flags));
+          end
+          else
+          begin
+            // Direct: enforce strict validation
+            Flags := 0;
+            WinHttpSetOption(hRequest, WINHTTP_OPTION_SECURITY_FLAGS, @Flags, SizeOf(Flags));
+          end;
         end;
 
         // Set proxy credentials (proxy auth) when using a named proxy
@@ -541,12 +551,22 @@ begin
         raise Exception.Create('WinHttpOpenRequest failed: ' + SysErrorMessage(GetLastError));
 
       try
-        // For HTTPS, ensure WinHTTP can complete the TLS handshake properly
+        // For HTTPS, configure certificate validation based on proxy usage
         if Port.secure then
         begin
-          // Don't set ignore flags in production; just ensure no blocking cert issues
-          Flags := 0;
-          WinHttpSetOption(hRequest, WINHTTP_OPTION_SECURITY_FLAGS, @Flags, SizeOf(Flags));
+          if FProxyHost <> '' then
+          begin
+            // Proxy: ignore cert errors (proxies intercept HTTPS with their own certs)
+            Flags := SECURITY_FLAG_IGNORE_UNKNOWN_CA or SECURITY_FLAG_IGNORE_CERT_DATE_INVALID or
+                     SECURITY_FLAG_IGNORE_CERT_CN_INVALID or SECURITY_FLAG_IGNORE_CERT_WRONG_USAGE;
+            WinHttpSetOption(hRequest, WINHTTP_OPTION_SECURITY_FLAGS, @Flags, SizeOf(Flags));
+          end
+          else
+          begin
+            // Direct: enforce strict validation
+            Flags := 0;
+            WinHttpSetOption(hRequest, WINHTTP_OPTION_SECURITY_FLAGS, @Flags, SizeOf(Flags));
+          end;
         end;
 
         // Set proxy credentials (proxy auth) when using a named proxy
