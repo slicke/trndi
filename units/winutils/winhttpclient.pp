@@ -158,6 +158,13 @@ WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2 = $00000800;
 WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_3 = $00002000;
 
 WINHTTP_OPTION_SECURITY_FLAGS = $00000031;
+
+// Security flags for WINHTTP_OPTION_SECURITY_FLAGS
+SECURITY_FLAG_IGNORE_UNKNOWN_CA = $00000100;
+SECURITY_FLAG_IGNORE_CERT_DATE_INVALID = $00002000;
+SECURITY_FLAG_IGNORE_CERT_CN_INVALID = $00001000;
+SECURITY_FLAG_IGNORE_CERT_WRONG_USAGE = $00000200;
+
 WINHTTP_ADDREQ_FLAG_ADD = $20000000;
 
 // Select allowed SSL/TLS protocols for the session.
@@ -375,6 +382,14 @@ begin
         raise Exception.Create('WinHttpOpenRequest failed: ' + SysErrorMessage(GetLastError));
 
       try
+        // For HTTPS, ensure WinHTTP can complete the TLS handshake properly
+        if Port.secure then
+        begin
+          // Don't set ignore flags in production; just ensure no blocking cert issues
+          Flags := 0;
+          WinHttpSetOption(hRequest, WINHTTP_OPTION_SECURITY_FLAGS, @Flags, SizeOf(Flags));
+        end;
+
         // Set proxy credentials (proxy auth) when using a named proxy
         if (FProxyHost <> '') and ((FProxyUser <> '') or (FProxyPass <> '')) then
         begin
@@ -523,6 +538,14 @@ begin
         raise Exception.Create('WinHttpOpenRequest failed: ' + SysErrorMessage(GetLastError));
 
       try
+        // For HTTPS, ensure WinHTTP can complete the TLS handshake properly
+        if Port.secure then
+        begin
+          // Don't set ignore flags in production; just ensure no blocking cert issues
+          Flags := 0;
+          WinHttpSetOption(hRequest, WINHTTP_OPTION_SECURITY_FLAGS, @Flags, SizeOf(Flags));
+        end;
+
         // Set proxy credentials (proxy auth) when using a named proxy
         if (FProxyHost <> '') and ((FProxyUser <> '') or (FProxyPass <> '')) then
         begin
