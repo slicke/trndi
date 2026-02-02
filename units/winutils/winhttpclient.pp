@@ -390,7 +390,9 @@ begin
             // Proxy: ignore cert errors (proxies intercept HTTPS with their own certs)
             Flags := SECURITY_FLAG_IGNORE_UNKNOWN_CA or SECURITY_FLAG_IGNORE_CERT_DATE_INVALID or
                      SECURITY_FLAG_IGNORE_CERT_CN_INVALID or SECURITY_FLAG_IGNORE_CERT_WRONG_USAGE;
-            WinHttpSetOption(hRequest, WINHTTP_OPTION_SECURITY_FLAGS, @Flags, SizeOf(Flags));
+            LogMessageToFile('WinHTTP GET: Setting security flags for proxy (' + FProxyHost + '): ' + IntToStr(Flags));
+            if not WinHttpSetOption(hRequest, WINHTTP_OPTION_SECURITY_FLAGS, @Flags, SizeOf(Flags)) then
+              LogMessageToFile('WinHTTP GET: Failed to set security flags: ' + IntToStr(GetLastError));
           end
           else
           begin
@@ -559,7 +561,9 @@ begin
             // Proxy: ignore cert errors (proxies intercept HTTPS with their own certs)
             Flags := SECURITY_FLAG_IGNORE_UNKNOWN_CA or SECURITY_FLAG_IGNORE_CERT_DATE_INVALID or
                      SECURITY_FLAG_IGNORE_CERT_CN_INVALID or SECURITY_FLAG_IGNORE_CERT_WRONG_USAGE;
-            WinHttpSetOption(hRequest, WINHTTP_OPTION_SECURITY_FLAGS, @Flags, SizeOf(Flags));
+            LogMessageToFile('WinHTTP POST: Setting security flags for proxy (' + FProxyHost + '): ' + IntToStr(Flags));
+            if not WinHttpSetOption(hRequest, WINHTTP_OPTION_SECURITY_FLAGS, @Flags, SizeOf(Flags)) then
+              LogMessageToFile('WinHTTP POST: Failed to set security flags: ' + IntToStr(GetLastError));
           end
           else
           begin
