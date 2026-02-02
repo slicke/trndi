@@ -38,7 +38,7 @@ interface
 
 uses
   Classes, SysUtils, Graphics, NSMisc, ns_url_request, CocoaAll, SimpleDarkMode,
-  trndi.native.base, trndi.api;
+  trndi.native.base;
 
 type
   {!
@@ -275,7 +275,7 @@ var
   send, response: TStringStream;
   headers: TStringList;
   httpClient: TNSHTTPSendAndReceive;
-  tempInstance: TrndiAPI;
+  tempInstance: TTrndiNativeMac;
   proxyHost, proxyPort, proxyUser, proxyPass: string;
 begin
   res := '';
@@ -283,7 +283,7 @@ begin
   response := TStringStream.Create('');
   headers := TStringList.Create;
   httpClient := TNSHTTPSendAndReceive.Create;
-  tempInstance := TrndiAPI.Create('', '');
+  tempInstance := TTrndiNativeMac.Create;
   try
     try
       httpClient.address := url;
