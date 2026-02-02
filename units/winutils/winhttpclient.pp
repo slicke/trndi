@@ -603,15 +603,22 @@ begin
         begin
           dwSize := GetLastError;
           LogMessageToFile('WinHTTP POST: ReceiveResponse failed with error: ' + IntToStr(dwSize));
-          // If cert error with proxy, set ignore flags and RESEND request
+          // If cert error with proxy, query and set ignore flags, then RESEND request
           if (dwSize = 12152) and Port.secure and (FProxyHost <> '') then
           begin
-            LogMessageToFile('WinHTTP POST: Cert error with proxy, setting flags and resending');
+            LogMessageToFile('WinHTTP POST: Cert error with proxy, querying and setting flags');
+            // Query the current security flags to get handle state right
+            dwDownloaded := SizeOf(Flags);
+            if WinHttpQueryOption(hRequest, WINHTTP_OPTION_SECURITY_FLAGS, @Flags, dwDownloaded) then
+              LogMessageToFile('WinHTTP POST: Current flags: ' + IntToStr(Flags));
+            // Set ignore flags
             Flags := SECURITY_FLAG_IGNORE_UNKNOWN_CA or SECURITY_FLAG_IGNORE_CERT_DATE_INVALID or
                      SECURITY_FLAG_IGNORE_CERT_CN_INVALID or SECURITY_FLAG_IGNORE_CERT_WRONG_USAGE;
-            if not WinHttpSetOption(hRequest, WINHTTP_OPTION_SECURITY_FLAGS, @Flags, SizeOf(Flags)) then
-              LogMessageToFile('WinHTTP POST: Failed to set flags on retry: ' + IntToStr(GetLastError));
-            // RESEND the request, not just receive response
+            if WinHttpSetOption(hRequest, WINHTTP_OPTION_SECURITY_FLAGS, @Flags, SizeOf(Flags)) then
+              LogMessageToFile('WinHTTP POST: Set flags successfully')
+            else
+              LogMessageToFile('WinHTTP POST: Failed to set flags: ' + IntToStr(GetLastError));
+            // RESEND the request
             if not WinHttpSendRequest(hRequest, nil, 0, bodyPtr, bodyLen, bodyLen, 0) then
               raise Exception.Create('WinHttpSendRequest retry failed (' + IntToStr(GetLastError) + '): ' +
                 SysErrorMessage(GetLastError));
