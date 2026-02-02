@@ -284,11 +284,14 @@ begin
   Result := false;
   lastErr := '';
 
-  // 1) Acquire JWT via v2 authorization flow
-  if not GetAuthToken(authErr) then
+  // 1) Acquire JWT via v2 authorization flow (only if a token suffix is configured)
+  if FTokenSuffix <> '' then
   begin
-    lastErr := authErr;
-    Exit;
+    if not GetAuthToken(authErr) then
+    begin
+      lastErr := authErr;
+      Exit;
+    end;
   end;
 
   // 2) Fetch v3 status (bearer)
@@ -481,6 +484,15 @@ function ExtractArrayNode(const jd: TJSONData): TJSONData;
       Exit(nil);
   end;
 
+var ts, ts2: int64;
+LDateMs: int64;
+LDateStr: string ;
+LUtcOffset: integer;
+LMethod: string;
+LUnixTrue, LUnixFalse: TDateTime;
+LLocalOffsetMin: integer;
+
+
 begin
   // Default endpoint
   if extras = '' then
@@ -498,12 +510,22 @@ begin
     resp := native.request(false, extras, params, '', BearerHeader);
     {$ifdef DEBUG} if debug_log_api then LogMessage(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, NS3_STATUS, resp, debugParams(params)]));{$endif}
   except
+    lastErr := 'Could not contact Nightscout entries endpoint (request failed)';
     Exit; // return empty set
   end;
 
   res := resp;
 
   // If v3 denied or errored, fall back to v1 entries
+  if Trim(resp) = '' then
+  begin
+    lastErr := 'Empty response from Nightscout v3 entries endpoint (auth may be required)';
+  end
+  else if Pos('Unauthorized', resp) > 0 then
+  begin
+    lastErr := 'Unauthorized accessing Nightscout v3 entries (invalid or missing token)';
+  end;
+
   if (Trim(resp) = '') or (Pos('Unauthorized', resp) > 0) or
     ((resp <> '') and (resp[1] = '+')) then
   begin
@@ -514,7 +536,10 @@ begin
       fbparams, '', BearerHeader, false {no prefix});
     {$ifdef DEBUG} if debug_log_api then LogMessage(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, NS3_STATUS, resp, debugParams(fbParams)]));{$endif}
     if Trim(resp) = '' then
+    begin
+      lastErr := 'Empty response from Nightscout v1 entries endpoint (fallback failed)';
       Exit;
+    end;
     res := resp;
   end;
 
@@ -630,14 +655,98 @@ begin
         end;
       end;
 
-      // Use ms epoch when available
+      // Use ms epoch when available. Prefer explicit utcOffset when provided
+      LDateMs := 0;
+      LDateStr := '';
+      LUtcOffset := 0;
+
       if Assigned(FindPath('date')) then
-        Result[i].date := JSToDateTime(FindPath('date').AsInt64)
+        LDateMs := FindPath('date').AsInt64;
+      if Assigned(FindPath('dateString')) then
+        LDateStr := FindPath('dateString').AsString;
+      if Assigned(FindPath('utcOffset')) then
+        LUtcOffset := FindPath('utcOffset').AsInteger;
+
+      if LDateMs <> 0 then
+      begin
+        // Timestamp in ms since epoch
+        ts := LDateMs div 1000;
+        // Prefer explicit ISO date string (UTC) when available to avoid double-applying UTC offsets.
+        if LDateStr <> '' then
+        begin
+          // dateString is ISO 8601 with Z (UTC).
+          // If we have a tz calibration, apply it (JSToDateTime) so we correct for server clock skew.
+          // If tz is zero (no calibration), convert to system local time using UnixToDateTime(ts, True).
+          if tz <> 0 then
+          begin
+            Result[i].date := JSToDateTime(LDateMs, True);
+            LMethod := 'dateString';
+          end
+          else
+          begin
+            Result[i].date := UnixToDateTime(ts, False); // system-local conversion (UseUTC=false gives local time on this platform)
+            LMethod := 'dateString+local';
+          end;
+        end
+        else if LUtcOffset <> 0 then
+        begin
+          // No dateString available: apply server-provided utcOffset to UTC epoch
+          Result[i].date := UnixToDateTime(ts, False) + (LUtcOffset / 1440); // minutes -> days
+          LMethod := 'utcOffset';
+        end
+        else
+        begin
+          Result[i].date := JSToDateTime(LDateMs, True);
+          LMethod := 'JSTo';
+        end;
+      end
+      else if Assigned(FindPath('srvModified')) then
+      begin
+        LDateMs := FindPath('srvModified').AsInt64;
+        ts2 := LDateMs div 1000;
+        if LDateStr <> '' then
+        begin
+          Result[i].date := UnixToDateTime(ts2, False);
+          LMethod := 'dateString';
+        end
+        else if Assigned(FindPath('utcOffset')) then
+        begin
+          Result[i].date := UnixToDateTime(ts2, False) + (FindPath('utcOffset').AsInteger / 1440);
+          LMethod := 'utcOffset';
+        end
+        else
+        begin
+          Result[i].date := JSToDateTime(LDateMs, True);
+          LMethod := 'JSTo';
+        end;
+      end
       else
-      if Assigned(FindPath('srvModified')) then
-        Result[i].date := JSToDateTime(FindPath('srvModified').AsInt64)
-      else
+      begin
         Result[i].date := Now; // fallback
+        LMethod := 'Now';
+      end;
+
+      // Extra diagnostics: compare UnixToDateTime(true/false) and show system local offset
+      try
+        LUnixTrue := UnixToDateTime(ts, True);
+        LUnixFalse := UnixToDateTime(ts, False);
+        LLocalOffsetMin := Round((Now - LocalTimeToUniversal(Now)) * 1440); // minutes
+        LogMessage('[' + {$i %file%} + ':' + {$i %Line%} + '] debug: unixTrue=' + FormatDateTime('yyyy-mm-dd hh:nn:ss', LUnixTrue) +
+          ' unixFalse=' + FormatDateTime('yyyy-mm-dd hh:nn:ss', LUnixFalse) + ' localOffsetMin=' + IntToStr(LLocalOffsetMin));
+      except
+        // ignore diagnostics failure
+      end;
+
+      // Diagnostic log to help debug timezone/timestamp issues
+      try
+        // Use simple concatenation to avoid Format exceptions while debugging
+        LogMessage('[' + {$i %file%} + ':' + {$i %Line%} + '] NightScout entry ' + IntToStr(i) +
+          ': dateMs=' + IntToStr(LDateMs) + ' dateString="' + LDateStr + '" utcOffset=' + IntToStr(LUtcOffset) + ' method=' + LMethod + ' tz=' + IntToStr(tz) +
+          ' computed=' + FormatDateTime('yyyy-mm-dd hh:nn:ss', Result[i].date));
+      except
+        on E: Exception do
+          LogMessage('[' + {$i %file%} + ':' + {$i %Line%} + '] NightScout entry ' + IntToStr(i) + ': diagnostic log failed: ' + E.Message);
+      end;
 
       Result[i].level := getLevel(Result[i].val);
     end;

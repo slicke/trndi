@@ -5451,6 +5451,17 @@ begin
       LogMessage('Backend error: ' + api.errormsg);
     end;
 
+    // Append latest-reading age details to help diagnose stale data cases
+    if (Length(bgs) > 0) then
+    begin
+      try
+        msg := msg + sLineBreak + Format('Latest reading: %d minute(s) ago (%s)',
+          [MinutesBetween(Now, bgs[0].date), FormatDateTime('yyyy-mm-dd hh:nn', bgs[0].date)]);
+      except
+        // Ignore formatting errors
+      end;
+    end;
+
     showWarningPanel(msg, true);
 
     if native.getBoolSetting('alerts.notice.missing', true) then
