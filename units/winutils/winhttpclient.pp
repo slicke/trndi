@@ -387,26 +387,6 @@ begin
         raise Exception.Create('WinHttpOpenRequest failed: ' + SysErrorMessage(GetLastError));
 
       try
-        // For HTTPS, configure certificate validation based on proxy usage
-        if Port.secure then
-        begin
-          if FProxyHost <> '' then
-          begin
-            // Proxy: ignore cert errors (proxies intercept HTTPS with their own certs)
-            Flags := SECURITY_FLAG_IGNORE_UNKNOWN_CA or SECURITY_FLAG_IGNORE_CERT_DATE_INVALID or
-                     SECURITY_FLAG_IGNORE_CERT_CN_INVALID or SECURITY_FLAG_IGNORE_CERT_WRONG_USAGE;
-            LogMessageToFile('WinHTTP GET: Setting security flags for proxy (' + FProxyHost + '): ' + IntToStr(Flags));
-            if not WinHttpSetOption(hRequest, WINHTTP_OPTION_SECURITY_FLAGS, @Flags, SizeOf(Flags)) then
-              LogMessageToFile('WinHTTP GET: Failed to set security flags: ' + IntToStr(GetLastError));
-          end
-          else
-          begin
-            // Direct: enforce strict validation
-            Flags := 0;
-            WinHttpSetOption(hRequest, WINHTTP_OPTION_SECURITY_FLAGS, @Flags, SizeOf(Flags));
-          end;
-        end;
-
         // Set proxy credentials (proxy auth) when using a named proxy
         if (FProxyHost <> '') and ((FProxyUser <> '') or (FProxyPass <> '')) then
         begin
@@ -582,26 +562,6 @@ begin
         raise Exception.Create('WinHttpOpenRequest failed: ' + SysErrorMessage(GetLastError));
 
       try
-        // For HTTPS, configure certificate validation based on proxy usage
-        if Port.secure then
-        begin
-          if FProxyHost <> '' then
-          begin
-            // Proxy: ignore cert errors (proxies intercept HTTPS with their own certs)
-            Flags := SECURITY_FLAG_IGNORE_UNKNOWN_CA or SECURITY_FLAG_IGNORE_CERT_DATE_INVALID or
-                     SECURITY_FLAG_IGNORE_CERT_CN_INVALID or SECURITY_FLAG_IGNORE_CERT_WRONG_USAGE;
-            LogMessageToFile('WinHTTP POST: Setting security flags for proxy (' + FProxyHost + '): ' + IntToStr(Flags));
-            if not WinHttpSetOption(hRequest, WINHTTP_OPTION_SECURITY_FLAGS, @Flags, SizeOf(Flags)) then
-              LogMessageToFile('WinHTTP POST: Failed to set security flags: ' + IntToStr(GetLastError));
-          end
-          else
-          begin
-            // Direct: enforce strict validation
-            Flags := 0;
-            WinHttpSetOption(hRequest, WINHTTP_OPTION_SECURITY_FLAGS, @Flags, SizeOf(Flags));
-          end;
-        end;
-
         // Set proxy credentials (proxy auth) when using a named proxy
         if (FProxyHost <> '') and ((FProxyUser <> '') or (FProxyPass <> '')) then
         begin
