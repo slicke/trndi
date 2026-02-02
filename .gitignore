@@ -39,7 +39,8 @@ GTAGS
 *.fpc
 *.dmg
 *.zip
-
+*.tmp
+.tmp
 
 # Dist
 dist/lang
