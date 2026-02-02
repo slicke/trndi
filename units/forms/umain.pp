@@ -78,6 +78,7 @@ netdb,
 {$endif}
 {$ifdef Windows}
 winsock,
+Windows,
 {$endif}
 LazFileUtils, uconf, trndi.native, Trndi.API,
 trndi.api.xDrip,{$ifdef DEBUG} trndi.api.debug_custom, trndi.api.debug, trndi.api.debug_edge, trndi.api.debug_missing, trndi.api.debug_firstXmissing, trndi.api.debug_perfect, trndi.api.debug_firstmissing, trndi.api.debug_secondmissing,{$endif}

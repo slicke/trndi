@@ -1352,9 +1352,12 @@ begin
   try
     if TryRequest(client, ResStr) then
     begin
+      LogMessageToFile('Windows: Direct connection SUCCESS - using this response');
       Result := ResStr;
       Exit;  // Success - don't try system proxy
-    end;
+    end
+    else
+      LogMessageToFile('Windows: Direct connection FAILED - will try system proxy fallback');
   finally
     client.Free;
   end;

@@ -724,6 +724,16 @@ begin
   // Cleanup splash screen
   fSplash.Close;
   fSplash.Free;
+  
+  // Bring main window to front after splash closes
+  Self.Show;
+  Self.BringToFront;
+  Application.BringToFront;
+  {$ifdef windows}
+  // Force window to foreground on Windows
+  Windows.SetForegroundWindow(Self.Handle);
+  {$endif}
+  
   tmain.Enabled := true;
   tsetup.Enabled := true;
   
