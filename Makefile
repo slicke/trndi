@@ -18,6 +18,11 @@ BUILD_MODE ?= Release
 BUILD_MODE_NAME ?= No Ext (Release)
 CPU_FLAG ?=
 
+# Optional binary stripping (primarily for Linux release builds).
+# Lazarus/FPC build-modes sometimes embed debug info; stripping makes binaries much smaller.
+STRIP ?= strip
+STRIP_RELEASE ?=
+
 # Auto-detect OS and pick appropriate default build-mode
 UNAME_S := $(shell uname -s)
 IS_MINGW := $(findstring MINGW,$(UNAME_S))
@@ -26,16 +31,23 @@ IS_CYGWIN := $(findstring CYGWIN,$(UNAME_S))
 # Linux: prefer Qt6 builds; when multiple Qt6 release modes exist prefer the Extensions variant
 ifeq ($(UNAME_S),Linux)
   WIDGETSET ?= qt6
+	# On Linux, prefer the generic project modes if they exist; --widgetset=qt6 controls the LCL backend.
+	# This avoids having to maintain widgetset-specific modes just to get correct Release flags.
+	STRIP_RELEASE ?= 1
   ifeq ($(BUILD_MODE),Debug)
-    BUILD_MODE_NAME := Qt6 (Debug)
+		BUILD_MODE_NAME := $(shell perl -0777 -ne 'while(/<Item Name="([^"]+)"/g){print "$$1\n"}' $(LPI) | grep -Fx "Extensions (Debug)" | head -n1)
+		ifeq ($(BUILD_MODE_NAME),)
+			BUILD_MODE_NAME := Qt6 (Debug)
+		endif
   else
-    # Try to pick the best Qt6 Release mode available in Trndi.lpi
-    BUILD_MODE_NAME := $(shell perl -0777 -ne 'while(/<Item Name="([^"]+)"/g){print "$$1\n"}' Trndi.lpi | grep -E "Qt6 \(Release: Extensions\)" | head -n1)
+		# Prefer generic Extensions (Release) if present; otherwise fall back to Qt6-specific ones.
+		BUILD_MODE_NAME := $(shell perl -0777 -ne 'while(/<Item Name="([^"]+)"/g){print "$$1\n"}' $(LPI) | grep -Fx "Extensions (Release)" | head -n1)
     ifeq ($(BUILD_MODE_NAME),)
-      BUILD_MODE_NAME := $(shell perl -0777 -ne 'while(/<Item Name="([^"]+)"/g){print "$$1\n"}' Trndi.lpi | grep -E "Qt6 \(Release; No Extensions\)" | head -n1)
+			# Try to pick the best Qt6 Release mode available in Trndi.lpi
+			BUILD_MODE_NAME := $(shell perl -0777 -ne 'while(/<Item Name="([^"]+)"/g){print "$$1\n"}' $(LPI) | grep -E "Qt6 \(Release: Extensions\)" | head -n1)
     endif
     ifeq ($(BUILD_MODE_NAME),)
-      BUILD_MODE_NAME := $(shell perl -0777 -ne 'while(/<Item Name="([^"]+)"/g){print "$$1\n"}' Trndi.lpi | grep -E "Qt6 \(Release\)" | head -n1)
+			BUILD_MODE_NAME := $(shell perl -0777 -ne 'while(/<Item Name="([^"]+)"/g){print "$$1\n"}' $(LPI) | grep -E "Qt6 \(Release\)" | head -n1)
     endif
     # Fallback
     ifeq ($(BUILD_MODE_NAME),)
@@ -86,16 +98,20 @@ LAZBUILD_FLAGS ?= --widgetset=$(WIDGETSET) --build-mode="$(BUILD_MODE_NAME)" $(C
 
 # Determine a build-mode suitable for 'noext' (prefer Qt6 No Extensions or No Ext)
 ifeq ($(BUILD_MODE),Debug)
-  NOEXT_BUILD_MODE_NAME := $(shell perl -0777 -ne 'while(/<Item Name="([^\"]+)"/g){print "$$1\n"}' $(LPI) | grep -E "No Ext \(Debug\)" | head -n1)
+	NOEXT_BUILD_MODE_NAME := $(shell perl -0777 -ne 'while(/<Item Name="([^"]+)"/g){print "$$1\n"}' $(LPI) | grep -Fx "No Ext (Debug)" | head -n1)
   ifeq ($(NOEXT_BUILD_MODE_NAME),)
     NOEXT_BUILD_MODE_NAME := No Ext (Debug)
   endif
 else
+	# Prefer generic No Ext (Release) if present; otherwise fall back to Qt6-specific no-extension modes.
+	NOEXT_BUILD_MODE_NAME := $(shell perl -0777 -ne 'while(/<Item Name="([^"]+)"/g){print "$$1\n"}' $(LPI) | grep -Fx "No Ext (Release)" | head -n1)
   ifeq ($(WIDGETSET),qt6)
-    NOEXT_BUILD_MODE_NAME := $(shell perl -0777 -ne 'while(/<Item Name="([^\"]+)"/g){print "$$1\n"}' $(LPI) | grep -E "Qt6 \(Release; No Extensions\)|Qt6 \(Release: No Extensions\)" | head -n1)
+		ifeq ($(NOEXT_BUILD_MODE_NAME),)
+			NOEXT_BUILD_MODE_NAME := $(shell perl -0777 -ne 'while(/<Item Name="([^"]+)"/g){print "$$1\n"}' $(LPI) | grep -E "Qt6 \(Release; No Extensions\)|Qt6 \(Release: No Extensions\)" | head -n1)
+		endif
   endif
   ifeq ($(NOEXT_BUILD_MODE_NAME),)
-    NOEXT_BUILD_MODE_NAME := $(shell perl -0777 -ne 'while(/<Item Name="([^\"]+)"/g){print "$$1\n"}' $(LPI) | grep -E "No Ext \(Release\)" | head -n1)
+		NOEXT_BUILD_MODE_NAME := $(shell perl -0777 -ne 'while(/<Item Name="([^"]+)"/g){print "$$1\n"}' $(LPI) | grep -E "No Ext \(Release\)" | head -n1)
   endif
   ifeq ($(NOEXT_BUILD_MODE_NAME),)
     NOEXT_BUILD_MODE_NAME := No Ext (Release)
@@ -149,6 +165,17 @@ build: check
 	fi; \
 	# Copy translations into build dir for packaging/runtime
 	if [ -d "lang" ]; then mkdir -p "$(OUTDIR)/lang" && cp -r lang/* "$(OUTDIR)/lang/" && echo "Copied translations to $(OUTDIR)/lang"; fi
+	@# Strip embedded debug info for smaller Release binaries (Linux default; override STRIP_RELEASE=0)
+	@if [ "$(BUILD_MODE)" = "Release" ] && [ "$(STRIP_RELEASE)" = "1" ]; then \
+	  if [ -f "$(OUTDIR)/Trndi" ]; then \
+	    if command -v "$(STRIP)" >/dev/null 2>&1; then \
+	      echo "Stripping $(OUTDIR)/Trndi"; \
+	      "$(STRIP)" --strip-unneeded "$(OUTDIR)/Trndi" 2>/dev/null || "$(STRIP)" "$(OUTDIR)/Trndi" || true; \
+	    else \
+	      echo "strip not found; skipping strip step"; \
+	    fi; \
+	  fi; \
+	fi
 
 release: BUILD_MODE := Release
 release: build
@@ -205,6 +232,14 @@ noext: check
 	    echo "Warning: no executable found in project dir or $(OUTDIR)"; \
 	  fi; \
 	  if [ -d "lang" ]; then mkdir -p "$(OUTDIR)/lang" && cp -r lang/* "$(OUTDIR)/lang/" && echo "Copied translations to $(OUTDIR)/lang"; fi; \
+	  if [ "$(BUILD_MODE)" = "Release" ] && [ "$(STRIP_RELEASE)" = "1" ]; then \
+	    if [ -f "$(OUTDIR)/Trndi" ]; then \
+	      if command -v "$(STRIP)" >/dev/null 2>&1; then \
+	        echo "Stripping $(OUTDIR)/Trndi"; \
+	        "$(STRIP)" --strip-unneeded "$(OUTDIR)/Trndi" 2>/dev/null || "$(STRIP)" "$(OUTDIR)/Trndi" || true; \
+	      fi; \
+	    fi; \
+	  fi; \
 	  rm -f $(LPI).noext-$$STAMP.lpi; \
 	 fi
 
