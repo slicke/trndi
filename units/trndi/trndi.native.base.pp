@@ -1300,6 +1300,14 @@ begin
   else
     address := endpoint;
 
+  // If no JSON body but params present, append as query string
+  if (jsondata = '') and hasParams then
+  begin
+    address := address + '?';
+    for sx in params do
+      address := address + '&' + sx;
+  end;
+
   // Read proxy settings (global)
   proxyHost := Trim(GetRootSetting('proxy.host', ''));
   proxyPortS := Trim(GetRootSetting('proxy.port', ''));
@@ -1343,9 +1351,10 @@ begin
   client := TWinHTTPClient.Create(useragent, true);
   try
     if TryRequest(client, ResStr) then
-      Result := ResStr
-    else
+    begin
       Result := ResStr;
+      Exit;  // Success - don't try system proxy
+    end;
   finally
     client.Free;
   end;
