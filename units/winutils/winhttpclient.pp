@@ -353,8 +353,8 @@ begin
     end;
   end;
 
-  // Set timeouts (10 seconds connect, 30 seconds send/receive)
-  if not WinHttpSetTimeouts(hSession, 10000, 10000, 30000, 30000) then
+  // Set timeouts (DNS/Connect 15s, send 30s, receive 60s)
+  if not WinHttpSetTimeouts(hSession, 15000, 15000, 30000, 60000) then
     raise Exception.Create('WinHttpSetTimeouts failed (' + IntToStr(GetLastError) + '): ' +
       SysErrorMessage(GetLastError));
 
@@ -490,8 +490,8 @@ begin
   if hSession = nil then
     raise Exception.Create('WinHttpOpen failed: ' + SysErrorMessage(GetLastError));
 
-  // Set timeouts (10 seconds connect, 30 seconds send/receive)
-  if not WinHttpSetTimeouts(hSession, 10000, 10000, 30000, 30000) then
+  // Set timeouts (DNS/Connect 15s, send 30s, receive 60s)
+  if not WinHttpSetTimeouts(hSession, 15000, 15000, 30000, 60000) then
     raise Exception.Create('WinHttpSetTimeouts failed (' + IntToStr(GetLastError) + '): ' +
       SysErrorMessage(GetLastError));
 
