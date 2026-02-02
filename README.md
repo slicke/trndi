@@ -67,6 +67,7 @@ It also supports the _xDrip_ app, connecting over the local network/WiFi.
 * Offers a [WebAPI](doc/WebAPI.md) for other clients to access glucose data
 * Supports experimental [predictions](guides/Predictions.md)
 * Supports Razer Chroma on Windows and Linux
+* Native proxy support on Windows and Linux (uses system proxy on macOS)
 
 ### Multi-user support
 Need to see more than one person? Trndi supports [parallel users](guides/Multiuser.md).
