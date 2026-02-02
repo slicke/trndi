@@ -101,9 +101,6 @@ public
 class var touchOverride: TTrndiBool;
     // Indicates if the user system is in a "dark mode" theme
   dark: boolean;
-  {$IFDEF X_WIN}
-  class var WinHttpUseSystemProxy: boolean;  // Remember if system proxy is needed
-  {$ENDIF}
 
     // Core actions
     {** Speak text using native TTS on the current platform. }
@@ -1348,30 +1345,9 @@ begin
     Exit;
   end;
 
-  // No custom proxy configured - use cached preference if available
-  if not WinHttpUseSystemProxy then
-  begin
-    // Try direct connection first
-    LogMessageToFile('Windows: Trying direct connection (ForceNoProxy=true) to: ' + address);
-    client := TWinHTTPClient.Create(useragent, true);
-    try
-      if TryRequest(client, ResStr) then
-      begin
-        LogMessageToFile('Windows: Direct connection SUCCESS - will use direct for future requests');
-        Result := ResStr;
-        Exit;  // Success - remember this works
-      end
-      else
-        LogMessageToFile('Windows: Direct connection FAILED - will try system proxy and remember that');
-    finally
-      client.Free;
-    end;
-  end;
-
-  // Use system proxy (either because direct failed or we already know we need it)
-  LogMessageToFile('Windows: Using system proxy settings for: ' + address);
-  WinHttpUseSystemProxy := true;  // Remember for next time
-  client := TWinHTTPClient.Create(useragent);
+  // No custom proxy configured - use direct connection only (match other platforms)
+  LogMessageToFile('Windows: Using direct connection (no proxy configured) to: ' + address);
+  client := TWinHTTPClient.Create(useragent, true);
   try
     if TryRequest(client, ResStr) then
       Result := ResStr
