@@ -416,14 +416,6 @@ begin
         if not WinHttpSendRequest(hRequest, nil, 0, nil, 0, 0, 0) then
           raise Exception.Create('WinHttpSendRequest failed: ' + SysErrorMessage(GetLastError));
 
-        // For proxy HTTPS, reapply security flags before receiving response
-        if Port.secure and (FProxyHost <> '') then
-        begin
-          Flags := SECURITY_FLAG_IGNORE_UNKNOWN_CA or SECURITY_FLAG_IGNORE_CERT_DATE_INVALID or
-                   SECURITY_FLAG_IGNORE_CERT_CN_INVALID or SECURITY_FLAG_IGNORE_CERT_WRONG_USAGE;
-          WinHttpSetOption(hRequest, WINHTTP_OPTION_SECURITY_FLAGS, @Flags, SizeOf(Flags));
-        end;
-
         if not WinHttpReceiveResponse(hRequest, nil) then
         begin
           // If cert error with proxy, set ignore flags and retry
@@ -602,14 +594,6 @@ begin
         if not WinHttpSendRequest(hRequest, nil, 0, bodyPtr, bodyLen, bodyLen, 0) then
           raise Exception.Create('WinHttpSendRequest failed (' + IntToStr(GetLastError) + '): ' +
             SysErrorMessage(GetLastError));
-
-        // For proxy HTTPS, reapply security flags before receiving response
-        if Port.secure and (FProxyHost <> '') then
-        begin
-          Flags := SECURITY_FLAG_IGNORE_UNKNOWN_CA or SECURITY_FLAG_IGNORE_CERT_DATE_INVALID or
-                   SECURITY_FLAG_IGNORE_CERT_CN_INVALID or SECURITY_FLAG_IGNORE_CERT_WRONG_USAGE;
-          WinHttpSetOption(hRequest, WINHTTP_OPTION_SECURITY_FLAGS, @Flags, SizeOf(Flags));
-        end;
 
         if not WinHttpReceiveResponse(hRequest, nil) then
         begin
