@@ -1420,6 +1420,10 @@ msgstr ""
 msgid "The following extension file returned an error while loading: %s"
 msgstr ""
 
+#: trndi.strings.rs_ext_shutdown
+msgid "Shutting down extensions..."
+msgstr ""
+
 #: trndi.strings.rs_font_error
 #, object-pascal-format
 msgid "You're missing the standard font \"%s\". Trndi will work as intended, but some icons may be missing and/or distorted!"
@@ -1613,6 +1617,14 @@ msgstr ""
 
 #: trndi.strings.rs_multiuser_box_title
 msgid "User select"
+msgstr ""
+
+#: trndi.strings.rs_nodata_error
+msgid "No data, error(?):"
+msgstr ""
+
+#: trndi.strings.rs_nodata_none
+msgid "<none>"
 msgstr ""
 
 #: trndi.strings.rs_noplugins
@@ -1824,6 +1836,28 @@ msgstr ""
 msgctxt "trndi.strings.rs_setup"
 msgid "Setup"
 msgstr "Einrichtung"
+
+#: trndi.strings.rs_speak_ghigh
+msgid "Going high"
+msgstr ""
+
+#: trndi.strings.rs_speak_glow
+msgid "Going low"
+msgstr ""
+
+#: trndi.strings.rs_speak_good
+msgid "Good"
+msgstr ""
+
+#: trndi.strings.rs_speak_high
+msgctxt "trndi.strings.rs_speak_high"
+msgid "High"
+msgstr ""
+
+#: trndi.strings.rs_speak_low
+msgctxt "trndi.strings.rs_speak_low"
+msgid "Low"
+msgstr ""
 
 #: trndi.strings.rs_splash_loading
 msgid "Loading Extension: "

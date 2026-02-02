@@ -862,15 +862,15 @@ begin
   else
     case lastReading.level of
     trndi.types.BGHigh:
-      native.speak('High');
+      native.speak(RS_SPEAK_HIGH);
     trndi.types.BGLOW:
-      native.speak('Low');
+      native.speak(RS_SPEAK_LOW);
     trndi.types.BGRange:
-      native.speak('Good');
+      native.speak(RS_SPEAK_GOOD);
     trndi.types.BGRangeHI:
-      native.speak('Going high');
+      native.speak(RS_SPEAK_GHIGH);
     trndi.types.BGRangeLO:
-      native.speak('Going low');
+      native.speak(RS_SPEAK_GLOW);
     end;
 end;
 
@@ -1002,7 +1002,7 @@ begin
   res := api.getBasalRate;
   err := api.errormsg;
   if res = 0 then
-    ShowMessage('No data, error(?):' + IfThen(err <> '', err, '<none>'))
+    ShowMessage(Format('%s: %s', [RS_NODATA_ERROR, IfThen(err <> '', err, RS_NODATA_NONE)]))
   else
     ShowMessage(res.toString);
 end;
@@ -1022,7 +1022,7 @@ begin
   if fHistoryGraph <> nil then
   begin
     fHistoryGraph.SetBasalProfile(profile);
-    fHistoryGraph.SetBasalOverlayEnabled(True);
+    fHistoryGraph.SetBasalOverlayEnabled(true);
   end;
 end;
 
@@ -1399,7 +1399,7 @@ procedure TfBG.FormCloseQuery(Sender: TObject; var CanClose: boolean);
 begin
   {$ifdef TrndiExt}
   // Show immediate user feedback for shutdown process using big lVal text
-  lVal.Caption := 'Shutting down extensions...';
+  lVal.Caption := RS_EXT_SHUTDOWN;
   lVal.Visible := true;
   Application.ProcessMessages; // Ensure caption is updated immediately
   
@@ -5465,13 +5465,11 @@ begin
 
     // Append latest-reading age details to help diagnose stale data cases
     if (Length(bgs) > 0) then
-    begin
-      try
-        msg := msg + sLineBreak + Format('Latest reading: %d minute(s) ago (%s)',
-          [MinutesBetween(Now, bgs[0].date), FormatDateTime('yyyy-mm-dd hh:nn', bgs[0].date)]);
-      except
+    try
+      msg := msg + sLineBreak + Format('Latest reading: %d minute(s) ago (%s)',
+        [MinutesBetween(Now, bgs[0].date), FormatDateTime('yyyy-mm-dd hh:nn', bgs[0].date)]);
+    except
         // Ignore formatting errors
-      end;
     end;
 
     showWarningPanel(msg, true);
@@ -5982,16 +5980,14 @@ begin
         if TryStrToDateTime(lastIgnoreDate, ignoreDate) then
           parsed := true
         else
-        begin
-          // Try ISO 8601 (truncate to 19 chars to ignore timezone/fractional seconds)
-          if Length(Trim(lastIgnoreDate)) >= 19 then
-          try
-            ignoreDate := ScanDateTime('YYYY-MM-DD"T"hh:nn:ss', Copy(Trim(lastIgnoreDate), 1, 19));
-            parsed := true;
-          except
-            parsed := false;
-          end;
-        end;
+        if Length(Trim(lastIgnoreDate)) >= 19 then
+        try
+          ignoreDate := ScanDateTime('YYYY-MM-DD"T"hh:nn:ss', Copy(Trim(lastIgnoreDate), 1, 19));
+          parsed := true;
+        except
+          parsed := false;
+        end// Try ISO 8601 (truncate to 19 chars to ignore timezone/fractional seconds)
+        ;
 
         if parsed then
         begin
@@ -6000,10 +5996,8 @@ begin
             Exit; // Suppress update check for 2 weeks
         end
         else
-        begin
-          // Could not parse stored ignore date; log for debugging
-          LogMessageToFile(Format('CheckForUpdates: failed to parse update.ignore.date: %s', [lastIgnoreDate]));
-        end;
+          LogMessageToFile(Format('CheckForUpdates: failed to parse update.ignore.date: %s', [lastIgnoreDate]))// Could not parse stored ignore date; log for debugging
+        ;
       end;
     end;
     

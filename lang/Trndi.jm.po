@@ -1502,6 +1502,10 @@ msgstr "Din internetanslutning fungerar!"
 msgid "The following extension file returned an error while loading: %s"
 msgstr "Fôljande tilleggsfil returnerade ett fel ner den laddades: __PH9c3509d5-301d-47d0-a140-39da51a88054__"
 
+#: trndi.strings.rs_ext_shutdown
+msgid "Shutting down extensions..."
+msgstr ""
+
 #: trndi.strings.rs_font_error
 #, object-pascal-format, fuzzy, badformat
 msgid "You're missing the standard font \"%s\". Trndi will work as intended, but some icons may be missing and/or distorted!"
@@ -1705,6 +1709,14 @@ msgstr "Trndi hittade flera konton. Velj ett fôr denna session, eller fortsett 
 #: trndi.strings.rs_multiuser_box_title
 msgid "User select"
 msgstr "Kontoval"
+
+#: trndi.strings.rs_nodata_error
+msgid "No data, error(?):"
+msgstr ""
+
+#: trndi.strings.rs_nodata_none
+msgid "<none>"
+msgstr ""
 
 #: trndi.strings.rs_noplugins
 msgctxt "trndi.strings.rs_noplugins"
@@ -1925,6 +1937,30 @@ msgstr "Vill du spara eventuella endringar?"
 msgctxt "trndi.strings.rs_setup"
 msgid "Setup"
 msgstr "Konfig"
+
+#: trndi.strings.rs_speak_ghigh
+msgid "Going high"
+msgstr ""
+
+#: trndi.strings.rs_speak_glow
+msgid "Going low"
+msgstr ""
+
+#: trndi.strings.rs_speak_good
+msgid "Good"
+msgstr ""
+
+#: trndi.strings.rs_speak_high
+#, fuzzy
+msgctxt "trndi.strings.rs_speak_high"
+msgid "High"
+msgstr "Hôg"
+
+#: trndi.strings.rs_speak_low
+#, fuzzy
+msgctxt "trndi.strings.rs_speak_low"
+msgid "Low"
+msgstr "Log"
 
 #: trndi.strings.rs_splash_loading
 msgid "Loading Extension: "
