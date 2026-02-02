@@ -388,34 +388,69 @@ var
   HTTP: TFPHTTPClient;
   tempInstance: TTrndiNativeHaiku;
   proxyHost, proxyPort: string;
+
+  function PerformRequest(withProxy: boolean): boolean;
+  begin
+    Result := false;
+    HTTP := TFPHTTPClient.Create(nil);
+    try
+      HTTP.AllowRedirect := true;
+      HTTP.IOTimeout := 30000; // 30 seconds timeout
+
+      // Set proxy if configured and requested
+      if withProxy and (proxyHost <> '') then
+      begin
+        HTTP.Proxy.Host := proxyHost;
+        HTTP.Proxy.Port := StrToIntDef(proxyPort, 8080);
+      end;
+
+      try
+        res := HTTP.Get(url);
+        Result := true;
+      except
+        on E: Exception do
+        begin
+          res := 'Error: ' + E.Message;
+          Result := false;
+        end;
+      end;
+    finally
+      HTTP.Free;
+    end;
+  end;
+
 begin
   Result := false;
-  HTTP := TFPHTTPClient.Create(nil);
   tempInstance := TTrndiNativeHaiku.Create;
   try
-    HTTP.AllowRedirect := true;
-    
     // Check for proxy settings
     proxyHost := tempInstance.GetSetting('proxy.host', '', true);
     if proxyHost <> '' then
     begin
       proxyPort := tempInstance.GetSetting('proxy.port', '8080', true);
-      HTTP.Proxy.Host := proxyHost;
-      HTTP.Proxy.Port := StrToIntDef(proxyPort, 8080);
     end;
-    
-    try
-      res := HTTP.Get(url);
-      Result := true;
-    except
-      on E: Exception do
+
+    // Try with proxy first if configured
+    if proxyHost <> '' then
+    begin
+      if PerformRequest(true) then
       begin
-        res := 'Error: ' + E.Message;
-        Result := false;
+        Result := true;
+        Exit;
       end;
     end;
+
+    // Fallback: try without proxy
+    if PerformRequest(false) then
+    begin
+      Result := true;
+    end
+    else
+    begin
+      Result := false;
+    end;
+
   finally
-    HTTP.Free;
     tempInstance.Free;
   end;
 end;

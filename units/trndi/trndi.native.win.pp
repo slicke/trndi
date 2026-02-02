@@ -373,25 +373,19 @@ var
   responseStr: string;
   proxyHost, proxyPort: string;
   tempInstance: TTrndiNativeWindows;
-begin
-  res := '';
-  
-  tempInstance := TTrndiNativeWindows.Create;
-  try
-    // Check for custom proxy settings
-    proxyHost := tempInstance.GetSetting('proxy.host', '', true);
-    if proxyHost <> '' then
+
+  function PerformRequest(withProxy: boolean): boolean;
+  begin
+    Result := false;
+    if withProxy and (proxyHost <> '') then
     begin
-      proxyPort := tempInstance.GetSetting('proxy.port', '8080', true);
-      // Create client with custom proxy
       client := TWinHTTPClient.Create(DEFAULT_USER_AGENT, proxyHost, StrToIntDef(proxyPort, 8080));
     end
     else
     begin
-      // Use system default proxy
       client := TWinHTTPClient.Create(DEFAULT_USER_AGENT);
     end;
-    
+
     try
       responseStr := client.Get(url, []);
       res := responseStr;
@@ -403,8 +397,42 @@ begin
         Result := false;
       end;
     end;
-  finally
     client.Free;
+  end;
+
+begin
+  res := '';
+
+  tempInstance := TTrndiNativeWindows.Create;
+  try
+    // Check for custom proxy settings
+    proxyHost := tempInstance.GetSetting('proxy.host', '', true);
+    if proxyHost <> '' then
+    begin
+      proxyPort := tempInstance.GetSetting('proxy.port', '8080', true);
+    end;
+
+    // Try with proxy first if configured
+    if proxyHost <> '' then
+    begin
+      if PerformRequest(true) then
+      begin
+        Result := true;
+        Exit;
+      end;
+    end;
+
+    // Fallback: try without proxy
+    if PerformRequest(false) then
+    begin
+      Result := true;
+    end
+    else
+    begin
+      Result := false;
+    end;
+
+  finally
     tempInstance.Free;
   end;
 end;

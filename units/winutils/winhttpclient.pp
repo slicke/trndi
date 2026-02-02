@@ -288,6 +288,13 @@ begin
   if hSession = nil then
     raise Exception.Create('WinHttpOpen failed: ' + SysErrorMessage(GetLastError));
 
+  // Set timeouts (10 seconds connect, 30 seconds send/receive)
+  dwSize := 10000; // 10 seconds
+  WinHttpSetOption(hSession, WINHTTP_OPTION_CONNECT_TIMEOUT, @dwSize, SizeOf(DWORD));
+  dwSize := 30000; // 30 seconds
+  WinHttpSetOption(hSession, WINHTTP_OPTION_SEND_TIMEOUT, @dwSize, SizeOf(DWORD));
+  WinHttpSetOption(hSession, WINHTTP_OPTION_RECEIVE_TIMEOUT, @dwSize, SizeOf(DWORD));
+
   try
     hConnect := WinHttpConnect(hSession, pwidechar(widestring(ServerName)), Port.port, 0);
     if hConnect = nil then

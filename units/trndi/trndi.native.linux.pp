@@ -619,27 +619,16 @@ var
   responseStream: TStringStream;
   proxyHost, proxyPort, proxyUser, proxyPass: string;
   tempInstance: TTrndiNativeLinux;
-begin
-  res := '';
-  headers := nil;
-  responseStream := TStringStream.Create('');
-  tempInstance := TTrndiNativeLinux.Create;
-  try
-    // Get proxy settings
-    proxyHost := tempInstance.GetSetting('proxy.host', '', true);
-    if proxyHost <> '' then
-    begin
-      proxyPort := tempInstance.GetSetting('proxy.port', '', true);
-      proxyUser := tempInstance.GetSetting('proxy.user', '', true);
-      proxyPass := tempInstance.GetSetting('proxy.pass', '', true);
-    end;
-    
+  useProxy: boolean;
+
+  function PerformRequest(withProxy: boolean): boolean;
+  begin
+    Result := false;
     curl_global_init(CURL_GLOBAL_DEFAULT);
     handle := curl_easy_init();
     if handle = nil then
     begin
       res := 'curl: failed to init';
-      Result := false;
       Exit;
     end;
 
@@ -647,9 +636,11 @@ begin
     curl_easy_setopt(handle, CURLOPT_URL, pchar(url));
     curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, longint(1));
     curl_easy_setopt(handle, CURLOPT_USERAGENT, pchar(DEFAULT_USER_AGENT));
+    curl_easy_setopt(handle, CURLOPT_CONNECTTIMEOUT, 10);
+    curl_easy_setopt(handle, CURLOPT_TIMEOUT, 30);
 
-    // Set proxy if configured
-    if proxyHost <> '' then
+    // Set proxy if configured and requested
+    if withProxy and (proxyHost <> '') then
     begin
       curl_easy_setopt(handle, CURLOPT_PROXY, pchar(proxyHost));
       if proxyPort <> '' then
@@ -675,6 +666,43 @@ begin
     end;
 
     curl_easy_cleanup(handle);
+  end;
+
+begin
+  res := '';
+  headers := nil;
+  responseStream := TStringStream.Create('');
+  tempInstance := TTrndiNativeLinux.Create;
+  try
+    // Get proxy settings
+    proxyHost := tempInstance.GetSetting('proxy.host', '', true);
+    if proxyHost <> '' then
+    begin
+      proxyPort := tempInstance.GetSetting('proxy.port', '', true);
+      proxyUser := tempInstance.GetSetting('proxy.user', '', true);
+      proxyPass := tempInstance.GetSetting('proxy.pass', '', true);
+    end;
+
+    // Try with proxy first if configured
+    if proxyHost <> '' then
+    begin
+      if PerformRequest(true) then
+      begin
+        Result := true;
+        Exit;
+      end;
+    end;
+
+    // Fallback: try without proxy
+    if PerformRequest(false) then
+    begin
+      Result := true;
+    end
+    else
+    begin
+      Result := false;
+    end;
+
   finally
     if headers <> nil then
       curl_slist_free_all(headers);
