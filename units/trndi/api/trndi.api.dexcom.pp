@@ -515,10 +515,12 @@ begin
     Exit;
   end;
 
-  // Compute time difference between server UTC and local wall-clock time (seconds).
-  // Prefer direct subtraction of TDateTime values to avoid platform-specific issues
-  // where LocalTimeToUniversal may mis-handle DST on some systems (e.g., Haiku).
-  timeDiff := Round((LServerDateTime - Now) * 86400); // serverUTC - localNow (seconds)
+  // Compute time difference between server UTC and local UTC
+  timeDiff := SecondsBetween(LServerDateTime, LocalTimeToUniversal(Now));
+  if timeDiff < 0 then
+    timeDiff := 0;
+  // Store negative offset to match consumer logic elsewhere in the codebase
+  timeDiff := -1 * timeDiff;
 
   Result := true;
 end;
