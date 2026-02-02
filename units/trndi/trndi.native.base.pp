@@ -49,7 +49,7 @@ interface
 }
 
 uses
-Classes, SysUtils, Graphics
+Classes, SysUtils, Graphics, trndi.log
 {$IF DEFINED(X_MAC)}
 , NSMisc, ns_url_request, CocoaAll, LCLType
 {$ELSEIF DEFINED(X_WIN)}
@@ -1281,10 +1281,12 @@ var
       else
         outRes := aClient.Get(address, params);
       Result := true;
+      LogMessageToFile('Windows: Request succeeded');
     except
       on E: Exception do
       begin
         outRes := E.Message;
+        LogMessageToFile('Windows: Request failed with exception: ' + E.Message);
         Result := false;
       end;
     end;

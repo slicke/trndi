@@ -42,7 +42,7 @@ unit winhttpclient;
 interface
 
 uses 
-Windows, SysUtils, Classes, StrUtils, winhttp;
+Windows, SysUtils, Classes, StrUtils, winhttp, trndi.log;
 
 type 
 HINTERNET = Pointer;
@@ -450,9 +450,8 @@ begin
           Result := ResponseStream.DataString;
           LogMessageToFile('WinHTTP GET response length: ' + IntToStr(Length(Result)));
           if Length(Result) > 0 then
-            LogMessageToFile('WinHTTP GET response preview: ' + Copy(Result, 1, 200));          LogMessageToFile('WinHTTP GET response length: ' + IntToStr(Length(Result)));
-          if Length(Result) > 0 then
-            LogMessageToFile('WinHTTP GET response preview: ' + Copy(Result, 1, 200));        finally
+            LogMessageToFile('WinHTTP GET response preview: ' + Copy(Result, 1, 200));
+        finally
           ResponseStream.Free;
         end;
 
