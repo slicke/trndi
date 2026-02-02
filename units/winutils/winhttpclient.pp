@@ -96,6 +96,11 @@ lpBuffer: Pointer; dwBufferLength: DWORD): BOOL;
 stdcall;
 external winhttpdll;
 
+function WinHttpSetTimeouts(hInternet: HINTERNET; dwResolveTimeout: Integer;
+  dwConnectTimeout: Integer; dwSendTimeout: Integer; dwReceiveTimeout: Integer): BOOL;
+stdcall;
+external winhttpdll;
+
 function WinHttpOpenRequest(hConnect: HINTERNET; pwszVerb, pwszObjectName,
 pwszVersion: pwidechar; pwszReferrer: pwidechar; ppwszAcceptTypes:
 PPWideChar;
@@ -159,9 +164,8 @@ WINHTTP_ADDREQ_FLAG_ADD = $20000000;
 // (Do NOT confuse with WINHTTP_OPTION_SECURITY_FLAGS which is for cert validation flags.)
 WINHTTP_OPTION_SECURE_PROTOCOLS = 84;
 
-WINHTTP_OPTION_CONNECT_TIMEOUT = 2;
-WINHTTP_OPTION_SEND_TIMEOUT = 4;
-WINHTTP_OPTION_RECEIVE_TIMEOUT = 5;
+// NOTE: Prefer WinHttpSetTimeouts() over per-option timeouts; option IDs vary between
+// headers/implementations and are easy to get wrong.
 
 // WinHTTP option constants not always present in older Pascal headers
 WINHTTP_OPTION_PROXY_USERNAME = 43;
@@ -350,11 +354,9 @@ begin
   end;
 
   // Set timeouts (10 seconds connect, 30 seconds send/receive)
-  dwSize := 10000; // 10 seconds
-  WinHttpSetOption(hSession, WINHTTP_OPTION_CONNECT_TIMEOUT, @dwSize, SizeOf(DWORD));
-  dwSize := 30000; // 30 seconds
-  WinHttpSetOption(hSession, WINHTTP_OPTION_SEND_TIMEOUT, @dwSize, SizeOf(DWORD));
-  WinHttpSetOption(hSession, WINHTTP_OPTION_RECEIVE_TIMEOUT, @dwSize, SizeOf(DWORD));
+  if not WinHttpSetTimeouts(hSession, 10000, 10000, 30000, 30000) then
+    raise Exception.Create('WinHttpSetTimeouts failed (' + IntToStr(GetLastError) + '): ' +
+      SysErrorMessage(GetLastError));
 
   try
     hConnect := WinHttpConnect(hSession, pwidechar(widestring(ServerName)), Port.port, 0);
@@ -488,11 +490,9 @@ begin
     raise Exception.Create('WinHttpOpen failed: ' + SysErrorMessage(GetLastError));
 
   // Set timeouts (10 seconds connect, 30 seconds send/receive)
-  dwSize := 10000; // 10 seconds
-  WinHttpSetOption(hSession, WINHTTP_OPTION_CONNECT_TIMEOUT, @dwSize, SizeOf(DWORD));
-  dwSize := 30000; // 30 seconds
-  WinHttpSetOption(hSession, WINHTTP_OPTION_SEND_TIMEOUT, @dwSize, SizeOf(DWORD));
-  WinHttpSetOption(hSession, WINHTTP_OPTION_RECEIVE_TIMEOUT, @dwSize, SizeOf(DWORD));
+  if not WinHttpSetTimeouts(hSession, 10000, 10000, 30000, 30000) then
+    raise Exception.Create('WinHttpSetTimeouts failed (' + IntToStr(GetLastError) + '): ' +
+      SysErrorMessage(GetLastError));
 
   // Configure TLS protocols for HTTPS on the session handle
   if Port.secure then
