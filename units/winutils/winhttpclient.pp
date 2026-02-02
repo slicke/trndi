@@ -294,6 +294,7 @@ var
   Flags, i: DWORD;
   Port: HTTPPort;
   dwSize, dwDownloaded: DWORD;
+  dwToRead: DWORD;
   Buffer: array[0..8192] of byte;
   ResponseStream: TStringStream;
   Headers: widestring;
@@ -416,8 +417,14 @@ begin
             if dwSize = 0 then
               Break;
 
-            if not WinHttpReadData(hRequest, @Buffer, dwSize, dwDownloaded) then
-              raise Exception.Create('WinHttpReadData failed: ' + SysErrorMessage(GetLastError));
+            // Never read more than our fixed buffer size
+            dwToRead := dwSize;
+            if dwToRead > SizeOf(Buffer) then
+              dwToRead := SizeOf(Buffer);
+
+            if not WinHttpReadData(hRequest, @Buffer, dwToRead, dwDownloaded) then
+              raise Exception.Create('WinHttpReadData failed (' + IntToStr(GetLastError) + '): ' +
+                SysErrorMessage(GetLastError));
 
             ResponseStream.WriteBuffer(Buffer, dwDownloaded);
           until dwSize = 0;
@@ -448,6 +455,9 @@ var
   Flags: DWORD;
   Port: HTTPPort;
   dwSize, dwDownloaded: DWORD;
+  dwToRead: DWORD;
+  bodyPtr: Pointer;
+  bodyLen: DWORD;
   Buffer: array[0..4095] of byte;
   ResponseStream: TStringStream;
   Headers: widestring;
@@ -538,9 +548,20 @@ begin
         end;
 
         // Send POST request with body
-        if not WinHttpSendRequest(hRequest, nil, 0, pbyte(FRequestBody), Length(FRequestBody),
-          Length(FRequestBody), 0) then
-          raise Exception.Create('WinHttpSendRequest failed: ' + SysErrorMessage(GetLastError));
+        if Length(FRequestBody) > 0 then
+        begin
+          bodyPtr := @FRequestBody[1];
+          bodyLen := Length(FRequestBody);
+        end
+        else
+        begin
+          bodyPtr := nil;
+          bodyLen := 0;
+        end;
+
+        if not WinHttpSendRequest(hRequest, nil, 0, bodyPtr, bodyLen, bodyLen, 0) then
+          raise Exception.Create('WinHttpSendRequest failed (' + IntToStr(GetLastError) + '): ' +
+            SysErrorMessage(GetLastError));
 
         if not WinHttpReceiveResponse(hRequest, nil) then
           raise Exception.Create('WinHttpReceiveResponse failed: ' + SysErrorMessage(GetLastError));
@@ -557,8 +578,14 @@ begin
             if dwSize = 0 then
               Break;
 
-            if not WinHttpReadData(hRequest, @Buffer, dwSize, dwDownloaded) then
-              raise Exception.Create('WinHttpReadData failed: ' + SysErrorMessage(GetLastError));
+            // Never read more than our fixed buffer size
+            dwToRead := dwSize;
+            if dwToRead > SizeOf(Buffer) then
+              dwToRead := SizeOf(Buffer);
+
+            if not WinHttpReadData(hRequest, @Buffer, dwToRead, dwDownloaded) then
+              raise Exception.Create('WinHttpReadData failed (' + IntToStr(GetLastError) + '): ' +
+                SysErrorMessage(GetLastError));
 
             ResponseStream.WriteBuffer(Buffer, dwDownloaded);
           until dwSize = 0;
