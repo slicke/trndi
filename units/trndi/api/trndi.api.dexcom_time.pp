@@ -52,21 +52,26 @@ var
   LTimeStr: string;
   i, j: integer;
   serverTimeData, js: TJSONData;
+  NormalizedS: string;
 
 begin
   Result := False;
   DT := 0;
   if Trim(S) = '' then Exit;
 
+  // Normalize quotes to standard ASCII quotes (in case smart quotes are present)
+  NormalizedS := StringReplace(S, '"', '"', [rfReplaceAll]);
+  NormalizedS := StringReplace(NormalizedS, '"', '"', [rfReplaceAll]);
+
   // 1) XML-like: <SystemTime>YYYY-MM-DDTHH:mm:ss</SystemTime>
-  if Pos('<', S) > 0 then
+  if Pos('<', NormalizedS) > 0 then
   begin
     // Extract between first '>' and next '<' after it
-    i := Pos('>', S);
-    j := PosEx('<', S, i + 1);
+    i := Pos('>', NormalizedS);
+    j := PosEx('<', NormalizedS, i + 1);
     if (i > 0) and (j > i) then
     begin
-      LTimeStr := Copy(S, i + 1, j - i - 1);
+      LTimeStr := Copy(NormalizedS, i + 1, j - i - 1);
       if TryParseISODateTime(LTimeStr, DT) then
       begin
         Result := True;
@@ -76,13 +81,13 @@ begin
   end;
 
   // 2) /Date(1610464324000)/ or digits in parentheses
-  i := Pos('(', S);
+  i := Pos('(', NormalizedS);
   if i > 0 then
   begin
-    j := Pos(')', S, i + 1);
+    j := Pos(')', NormalizedS, i + 1);
     if j > i then
     begin
-      LTimeStr := Copy(S, i + 1, j - i - 1);
+      LTimeStr := Copy(NormalizedS, i + 1, j - i - 1);
       // Trim any non-digit chars
       LTimeStr := StringReplace(LTimeStr, '"', '', [rfReplaceAll]);
       LTimeStr := Trim(LTimeStr);
@@ -102,9 +107,10 @@ begin
   // 3) JSON object with ServerTime (could be "/Date(ms)/", numeric ms or ISO string)
   try
     // Only try JSON parsing if it looks like JSON
-    if (Pos('{', S) > 0) or (Pos('[', S) > 0) then
+
+    if (Pos('{', NormalizedS) > 0) or (Pos('[', NormalizedS) > 0) then
     begin
-      js := GetJSON(S);
+      js := GetJSON(NormalizedS);
       try
         if js.JSONType = jtObject then
         begin
@@ -171,7 +177,7 @@ begin
   end;
 
   // 4) Try to parse bare ISO-like strings directly
-  if TryParseISODateTime(Trim(S), DT) then
+  if TryParseISODateTime(Trim(NormalizedS), DT) then
   begin
     Result := True;
     Exit;
