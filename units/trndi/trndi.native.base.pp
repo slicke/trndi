@@ -1339,6 +1339,18 @@ begin
   client := TWinHTTPClient.Create(useragent);
   try
     if TryRequest(client, ResStr) then
+    begin
+      Result := ResStr;
+      Exit;
+    end;
+  finally
+    client.Free;
+  end;
+
+  // Fallback: if system proxy settings are misconfigured, retry a true direct connection
+  client := TWinHTTPClient.Create(useragent, true);
+  try
+    if TryRequest(client, ResStr) then
       Result := ResStr
     else
       Result := ResStr;
