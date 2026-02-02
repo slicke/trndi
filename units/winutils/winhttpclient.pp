@@ -165,6 +165,10 @@ SECURITY_FLAG_IGNORE_CERT_DATE_INVALID = $00002000;
 SECURITY_FLAG_IGNORE_CERT_CN_INVALID = $00001000;
 SECURITY_FLAG_IGNORE_CERT_WRONG_USAGE = $00000200;
 
+// Disable features
+WINHTTP_OPTION_DISABLE_FEATURE = 63;
+WINHTTP_DISABLE_SSL_CERT_REV_CHECK = $00000001;
+
 WINHTTP_ADDREQ_FLAG_ADD = $20000000;
 
 // Select allowed SSL/TLS protocols for the session.
@@ -358,15 +362,6 @@ begin
       Flags := WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2;
       WinHttpSetOption(hSession, WINHTTP_OPTION_SECURE_PROTOCOLS, @Flags, SizeOf(Flags));
     end;
-    
-    // If using proxy, ignore certificate errors on session level
-    if FProxyHost <> '' then
-    begin
-      Flags := SECURITY_FLAG_IGNORE_UNKNOWN_CA or SECURITY_FLAG_IGNORE_CERT_DATE_INVALID or
-               SECURITY_FLAG_IGNORE_CERT_CN_INVALID or SECURITY_FLAG_IGNORE_CERT_WRONG_USAGE;
-      LogMessageToFile('WinHTTP GET session: Setting security flags for proxy: ' + IntToStr(Flags));
-      WinHttpSetOption(hSession, WINHTTP_OPTION_SECURITY_FLAGS, @Flags, SizeOf(Flags));
-    end;
   end;
 
   // Set timeouts (DNS/Connect 15s, send 30s, receive 60s)
@@ -436,7 +431,7 @@ begin
             WINHTTP_ADDREQ_FLAG_ADD);
         end;
 
-        // Send request
+        //Send request
         if not WinHttpSendRequest(hRequest, nil, 0, nil, 0, 0, 0) then
           raise Exception.Create('WinHttpSendRequest failed: ' + SysErrorMessage(GetLastError));
 
@@ -449,8 +444,22 @@ begin
         end;
 
         if not WinHttpReceiveResponse(hRequest, nil) then
-          raise Exception.Create('WinHttpReceiveResponse failed (' + IntToStr(GetLastError) + '): ' +
-            SysErrorMessage(GetLastError));
+        begin
+          // If cert error with proxy, set ignore flags and retry
+          if (GetLastError = 12152) and Port.secure and (FProxyHost <> '') then
+          begin
+            LogMessageToFile('WinHTTP GET: Cert error with proxy, setting flags and retrying');
+            Flags := SECURITY_FLAG_IGNORE_UNKNOWN_CA or SECURITY_FLAG_IGNORE_CERT_DATE_INVALID or
+                     SECURITY_FLAG_IGNORE_CERT_CN_INVALID or SECURITY_FLAG_IGNORE_CERT_WRONG_USAGE;
+            WinHttpSetOption(hRequest, WINHTTP_OPTION_SECURITY_FLAGS, @Flags, SizeOf(Flags));
+            if not WinHttpReceiveResponse(hRequest, nil) then
+              raise Exception.Create('WinHttpReceiveResponse failed (' + IntToStr(GetLastError) + '): ' +
+                SysErrorMessage(GetLastError));
+          end
+          else
+            raise Exception.Create('WinHttpReceiveResponse failed (' + IntToStr(GetLastError) + '): ' +
+              SysErrorMessage(GetLastError));
+        end;
 
         // Läs svar
         ResponseStream := TStringStream.Create;
@@ -551,15 +560,6 @@ begin
       Flags := WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2;
       WinHttpSetOption(hSession, WINHTTP_OPTION_SECURE_PROTOCOLS, @Flags, SizeOf(Flags));
     end;
-    
-    // If using proxy, ignore certificate errors on session level
-    if FProxyHost <> '' then
-    begin
-      Flags := SECURITY_FLAG_IGNORE_UNKNOWN_CA or SECURITY_FLAG_IGNORE_CERT_DATE_INVALID or
-               SECURITY_FLAG_IGNORE_CERT_CN_INVALID or SECURITY_FLAG_IGNORE_CERT_WRONG_USAGE;
-      LogMessageToFile('WinHTTP POST session: Setting security flags for proxy: ' + IntToStr(Flags));
-      WinHttpSetOption(hSession, WINHTTP_OPTION_SECURITY_FLAGS, @Flags, SizeOf(Flags));
-    end;
   end;
 
   try
@@ -649,8 +649,22 @@ begin
         end;
 
         if not WinHttpReceiveResponse(hRequest, nil) then
-          raise Exception.Create('WinHttpReceiveResponse failed (' + IntToStr(GetLastError) + '): ' +
-            SysErrorMessage(GetLastError));
+        begin
+          // If cert error with proxy, set ignore flags and retry
+          if (GetLastError = 12152) and Port.secure and (FProxyHost <> '') then
+          begin
+            LogMessageToFile('WinHTTP POST: Cert error with proxy, setting flags and retrying');
+            Flags := SECURITY_FLAG_IGNORE_UNKNOWN_CA or SECURITY_FLAG_IGNORE_CERT_DATE_INVALID or
+                     SECURITY_FLAG_IGNORE_CERT_CN_INVALID or SECURITY_FLAG_IGNORE_CERT_WRONG_USAGE;
+            WinHttpSetOption(hRequest, WINHTTP_OPTION_SECURITY_FLAGS, @Flags, SizeOf(Flags));
+            if not WinHttpReceiveResponse(hRequest, nil) then
+              raise Exception.Create('WinHttpReceiveResponse failed (' + IntToStr(GetLastError) + '): ' +
+                SysErrorMessage(GetLastError));
+          end
+          else
+            raise Exception.Create('WinHttpReceiveResponse failed (' + IntToStr(GetLastError) + '): ' +
+              SysErrorMessage(GetLastError));
+        end;
 
         // Read response
         ResponseStream := TStringStream.Create;
