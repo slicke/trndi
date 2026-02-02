@@ -60,9 +60,14 @@ private
   FRequestBody: string;
   FProxyHost: string;
   FProxyPort: integer;
+  FProxyUser: string;
+  FProxyPass: string;
+  FForceNoProxy: boolean;
 public
   constructor Create(const UserAgent: string = 'Pascal User Agent'); overload;
+  constructor Create(const UserAgent: string; ForceNoProxy: boolean); overload;
   constructor Create(const UserAgent: string; const ProxyHost: string; ProxyPort: integer = 8080); overload;
+  constructor Create(const UserAgent: string; const ProxyHost: string; ProxyPort: integer; const ProxyUser: string; const ProxyPass: string); overload;
   destructor Destroy;
     override;
 
@@ -154,6 +159,10 @@ WINHTTP_OPTION_CONNECT_TIMEOUT = 2;
 WINHTTP_OPTION_SEND_TIMEOUT = 4;
 WINHTTP_OPTION_RECEIVE_TIMEOUT = 5;
 
+// WinHTTP option constants not always present in older Pascal headers
+WINHTTP_OPTION_PROXY_USERNAME = 43;
+WINHTTP_OPTION_PROXY_PASSWORD = 44;
+
 
 implementation
 
@@ -164,6 +173,21 @@ begin
   FHeaders.TextLineBreakStyle := tlbsCRLF;
   FProxyHost := '';
   FProxyPort := 0;
+  FProxyUser := '';
+  FProxyPass := '';
+  FForceNoProxy := false;
+end;
+
+constructor TWinHTTPClient.Create(const UserAgent: string; ForceNoProxy: boolean);
+begin
+  FUserAgent := UserAgent;
+  FHeaders := TStringList.Create;
+  FHeaders.TextLineBreakStyle := tlbsCRLF;
+  FProxyHost := '';
+  FProxyPort := 0;
+  FProxyUser := '';
+  FProxyPass := '';
+  FForceNoProxy := ForceNoProxy;
 end;
 
 constructor TWinHTTPClient.Create(const UserAgent: string; const ProxyHost: string; ProxyPort: integer = 8080);
@@ -173,6 +197,21 @@ begin
   FHeaders.TextLineBreakStyle := tlbsCRLF;
   FProxyHost := ProxyHost;
   FProxyPort := ProxyPort;
+  FProxyUser := '';
+  FProxyPass := '';
+  FForceNoProxy := false;
+end;
+
+constructor TWinHTTPClient.Create(const UserAgent: string; const ProxyHost: string; ProxyPort: integer; const ProxyUser: string; const ProxyPass: string);
+begin
+  FUserAgent := UserAgent;
+  FHeaders := TStringList.Create;
+  FHeaders.TextLineBreakStyle := tlbsCRLF;
+  FProxyHost := ProxyHost;
+  FProxyPort := ProxyPort;
+  FProxyUser := ProxyUser;
+  FProxyPass := ProxyPass;
+  FForceNoProxy := false;
 end;
 
 destructor TWinHTTPClient.Destroy;
@@ -255,6 +294,7 @@ var
   ResponseStream: TStringStream;
   Headers: widestring;
   FullURL: string;
+  proxyUserWS, proxyPassWS: WideString;
 begin
   Result := '';
 
@@ -279,6 +319,11 @@ begin
   begin
     hSession := WinHttpOpen(pwidechar(widestring(FUserAgent)), WINHTTP_ACCESS_TYPE_NAMED_PROXY,
       pwidechar(widestring(FProxyHost + ':' + IntToStr(FProxyPort))), WINHTTP_NO_PROXY_BYPASS, 0);
+  end
+  else if FForceNoProxy then
+  begin
+    hSession := WinHttpOpen(pwidechar(widestring(FUserAgent)), WINHTTP_ACCESS_TYPE_NO_PROXY,
+      WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
   end
   else
   begin
@@ -317,6 +362,23 @@ begin
         begin
           Flags := WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2 or WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_3;
           WinHttpSetOption(hRequest, WINHTTP_OPTION_SECURITY_FLAGS, @Flags, SizeOf(Flags));
+        end;
+
+        // Set proxy credentials (proxy auth) when using a named proxy
+        if (FProxyHost <> '') and ((FProxyUser <> '') or (FProxyPass <> '')) then
+        begin
+          if FProxyUser <> '' then
+          begin
+            proxyUserWS := WideString(FProxyUser);
+            dwSize := (Length(proxyUserWS) + 1) * SizeOf(WideChar);
+            WinHttpSetOption(hRequest, WINHTTP_OPTION_PROXY_USERNAME, PWideChar(proxyUserWS), dwSize);
+          end;
+          if FProxyPass <> '' then
+          begin
+            proxyPassWS := WideString(FProxyPass);
+            dwSize := (Length(proxyPassWS) + 1) * SizeOf(WideChar);
+            WinHttpSetOption(hRequest, WINHTTP_OPTION_PROXY_PASSWORD, PWideChar(proxyPassWS), dwSize);
+          end;
         end;
 
         // Add headers
@@ -381,6 +443,7 @@ var
   Buffer: array[0..4095] of byte;
   ResponseStream: TStringStream;
   Headers: widestring;
+  proxyUserWS, proxyPassWS: WideString;
 begin
   Result := '';
 
@@ -388,8 +451,21 @@ begin
   ParseURL(URL, ServerName, Path, Port);
 
   // Skapa WinHTTP-session
-  hSession := WinHttpOpen(pwidechar(widestring(FUserAgent)), WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
-    WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
+  if FProxyHost <> '' then
+  begin
+    hSession := WinHttpOpen(pwidechar(widestring(FUserAgent)), WINHTTP_ACCESS_TYPE_NAMED_PROXY,
+      pwidechar(widestring(FProxyHost + ':' + IntToStr(FProxyPort))), WINHTTP_NO_PROXY_BYPASS, 0);
+  end
+  else if FForceNoProxy then
+  begin
+    hSession := WinHttpOpen(pwidechar(widestring(FUserAgent)), WINHTTP_ACCESS_TYPE_NO_PROXY,
+      WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
+  end
+  else
+  begin
+    hSession := WinHttpOpen(pwidechar(widestring(FUserAgent)), WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
+      WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
+  end;
   if hSession = nil then
     raise Exception.Create('WinHttpOpen failed: ' + SysErrorMessage(GetLastError));
 
@@ -415,6 +491,23 @@ begin
         begin
           Flags := WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2 or WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_3;
           WinHttpSetOption(hRequest, WINHTTP_OPTION_SECURITY_FLAGS, @Flags, SizeOf(Flags));
+        end;
+
+        // Set proxy credentials (proxy auth) when using a named proxy
+        if (FProxyHost <> '') and ((FProxyUser <> '') or (FProxyPass <> '')) then
+        begin
+          if FProxyUser <> '' then
+          begin
+            proxyUserWS := WideString(FProxyUser);
+            dwSize := (Length(proxyUserWS) + 1) * SizeOf(WideChar);
+            WinHttpSetOption(hRequest, WINHTTP_OPTION_PROXY_USERNAME, PWideChar(proxyUserWS), dwSize);
+          end;
+          if FProxyPass <> '' then
+          begin
+            proxyPassWS := WideString(FProxyPass);
+            dwSize := (Length(proxyPassWS) + 1) * SizeOf(WideChar);
+            WinHttpSetOption(hRequest, WINHTTP_OPTION_PROXY_PASSWORD, PWideChar(proxyPassWS), dwSize);
+          end;
         end;
 
         // Add headers
