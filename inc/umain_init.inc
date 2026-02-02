@@ -726,13 +726,10 @@ begin
   fSplash.Free;
   
   // Bring main window to front after splash closes
+  Application.BringToFront;
   Self.Show;
   Self.BringToFront;
-  Application.BringToFront;
-  {$ifdef windows}
-  // Force window to foreground on Windows
-  Windows.SetForegroundWindow(Self.Handle);
-  {$endif}
+  Self.SetFocus;
   
   tmain.Enabled := true;
   tsetup.Enabled := true;
