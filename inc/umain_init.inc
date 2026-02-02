@@ -724,6 +724,13 @@ begin
   // Cleanup splash screen
   fSplash.Close;
   fSplash.Free;
+  
+  // Bring main window to front after splash closes
+  Application.BringToFront;
+  Self.Show;
+  Self.BringToFront;
+  Self.SetFocus;
+  
   tmain.Enabled := true;
   tsetup.Enabled := true;
   

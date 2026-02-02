@@ -42,7 +42,7 @@ unit winhttpclient;
 interface
 
 uses 
-Windows, SysUtils, Classes, StrUtils, winhttp;
+Windows, SysUtils, Classes, StrUtils, winhttp, trndi.log;
 
 type 
 HINTERNET = Pointer;
@@ -58,8 +58,16 @@ private
   FUserAgent: string;
   FHeaders: TStringList;
   FRequestBody: string;
+  FProxyHost: string;
+  FProxyPort: integer;
+  FProxyUser: string;
+  FProxyPass: string;
+  FForceNoProxy: boolean;
 public
-  constructor Create(const UserAgent: string = 'Pascal User Agent');
+  constructor Create(const UserAgent: string = 'Pascal User Agent'); overload;
+  constructor Create(const UserAgent: string; ForceNoProxy: boolean); overload;
+  constructor Create(const UserAgent: string; const ProxyHost: string; ProxyPort: integer = 8080); overload;
+  constructor Create(const UserAgent: string; const ProxyHost: string; ProxyPort: integer; const ProxyUser: string; const ProxyPass: string); overload;
   destructor Destroy;
     override;
 
@@ -85,6 +93,11 @@ external winhttpdll;
 
 function WinHttpSetOption(hInternet: HINTERNET; dwOption: DWORD;
 lpBuffer: Pointer; dwBufferLength: DWORD): BOOL;
+stdcall;
+external winhttpdll;
+
+function WinHttpSetTimeouts(hInternet: HINTERNET; dwResolveTimeout: Integer;
+  dwConnectTimeout: Integer; dwSendTimeout: Integer; dwReceiveTimeout: Integer): BOOL;
 stdcall;
 external winhttpdll;
 
@@ -145,11 +158,29 @@ WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2 = $00000800;
 WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_3 = $00002000;
 
 WINHTTP_OPTION_SECURITY_FLAGS = $00000031;
+
+// Security flags for WINHTTP_OPTION_SECURITY_FLAGS
+SECURITY_FLAG_IGNORE_UNKNOWN_CA = $00000100;
+SECURITY_FLAG_IGNORE_CERT_DATE_INVALID = $00002000;
+SECURITY_FLAG_IGNORE_CERT_CN_INVALID = $00001000;
+SECURITY_FLAG_IGNORE_CERT_WRONG_USAGE = $00000200;
+
+// Disable features
+WINHTTP_OPTION_DISABLE_FEATURE = 63;
+WINHTTP_DISABLE_SSL_CERT_REV_CHECK = $00000001;
+
 WINHTTP_ADDREQ_FLAG_ADD = $20000000;
 
-WINHTTP_OPTION_CONNECT_TIMEOUT = 2;
-WINHTTP_OPTION_SEND_TIMEOUT = 4;
-WINHTTP_OPTION_RECEIVE_TIMEOUT = 5;
+// Select allowed SSL/TLS protocols for the session.
+// (Do NOT confuse with WINHTTP_OPTION_SECURITY_FLAGS which is for cert validation flags.)
+WINHTTP_OPTION_SECURE_PROTOCOLS = 84;
+
+// NOTE: Prefer WinHttpSetTimeouts() over per-option timeouts; option IDs vary between
+// headers/implementations and are easy to get wrong.
+
+// WinHTTP option constants not always present in older Pascal headers
+WINHTTP_OPTION_PROXY_USERNAME = 43;
+WINHTTP_OPTION_PROXY_PASSWORD = 44;
 
 
 implementation
@@ -159,6 +190,47 @@ begin
   FUserAgent := UserAgent;
   FHeaders := TStringList.Create;
   FHeaders.TextLineBreakStyle := tlbsCRLF;
+  FProxyHost := '';
+  FProxyPort := 0;
+  FProxyUser := '';
+  FProxyPass := '';
+  FForceNoProxy := false;
+end;
+
+constructor TWinHTTPClient.Create(const UserAgent: string; ForceNoProxy: boolean);
+begin
+  FUserAgent := UserAgent;
+  FHeaders := TStringList.Create;
+  FHeaders.TextLineBreakStyle := tlbsCRLF;
+  FProxyHost := '';
+  FProxyPort := 0;
+  FProxyUser := '';
+  FProxyPass := '';
+  FForceNoProxy := ForceNoProxy;
+end;
+
+constructor TWinHTTPClient.Create(const UserAgent: string; const ProxyHost: string; ProxyPort: integer = 8080);
+begin
+  FUserAgent := UserAgent;
+  FHeaders := TStringList.Create;
+  FHeaders.TextLineBreakStyle := tlbsCRLF;
+  FProxyHost := ProxyHost;
+  FProxyPort := ProxyPort;
+  FProxyUser := '';
+  FProxyPass := '';
+  FForceNoProxy := false;
+end;
+
+constructor TWinHTTPClient.Create(const UserAgent: string; const ProxyHost: string; ProxyPort: integer; const ProxyUser: string; const ProxyPass: string);
+begin
+  FUserAgent := UserAgent;
+  FHeaders := TStringList.Create;
+  FHeaders.TextLineBreakStyle := tlbsCRLF;
+  FProxyHost := ProxyHost;
+  FProxyPort := ProxyPort;
+  FProxyUser := ProxyUser;
+  FProxyPass := ProxyPass;
+  FForceNoProxy := false;
 end;
 
 destructor TWinHTTPClient.Destroy;
@@ -237,10 +309,12 @@ var
   Flags, i: DWORD;
   Port: HTTPPort;
   dwSize, dwDownloaded: DWORD;
+  dwToRead: DWORD;
   Buffer: array[0..8192] of byte;
   ResponseStream: TStringStream;
   Headers: widestring;
   FullURL: string;
+  proxyUserWS, proxyPassWS: WideString;
 begin
   Result := '';
 
@@ -261,10 +335,40 @@ begin
   ParseURL(FullURL, ServerName, Path, Port);
 
   // Skapa WinHTTP-session
-  hSession := WinHttpOpen(pwidechar(widestring(FUserAgent)), WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
-    WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
+  if FProxyHost <> '' then
+  begin
+    LogMessageToFile('WinHTTP GET: Using named proxy: ' + FProxyHost + ':' + IntToStr(FProxyPort));
+    hSession := WinHttpOpen(pwidechar(widestring(FUserAgent)), WINHTTP_ACCESS_TYPE_NAMED_PROXY,
+      pwidechar(widestring(FProxyHost + ':' + IntToStr(FProxyPort))), WINHTTP_NO_PROXY_BYPASS, 0);
+  end
+  else if FForceNoProxy then
+  begin
+    hSession := WinHttpOpen(pwidechar(widestring(FUserAgent)), WINHTTP_ACCESS_TYPE_NO_PROXY,
+      WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
+  end
+  else
+  begin
+    hSession := WinHttpOpen(pwidechar(widestring(FUserAgent)), WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
+      WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
+  end;
   if hSession = nil then
     raise Exception.Create('WinHttpOpen failed: ' + SysErrorMessage(GetLastError));
+
+  // Configure TLS protocols for HTTPS on the session handle
+  if Port.secure then
+  begin
+    Flags := WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2 or WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_3;
+    if not WinHttpSetOption(hSession, WINHTTP_OPTION_SECURE_PROTOCOLS, @Flags, SizeOf(Flags)) then
+    begin
+      Flags := WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2;
+      WinHttpSetOption(hSession, WINHTTP_OPTION_SECURE_PROTOCOLS, @Flags, SizeOf(Flags));
+    end;
+  end;
+
+  // Set timeouts (DNS/Connect 15s, send 30s, receive 60s)
+  if not WinHttpSetTimeouts(hSession, 15000, 15000, 30000, 60000) then
+    raise Exception.Create('WinHttpSetTimeouts failed (' + IntToStr(GetLastError) + '): ' +
+      SysErrorMessage(GetLastError));
 
   try
     hConnect := WinHttpConnect(hSession, pwidechar(widestring(ServerName)), Port.port, 0);
@@ -283,11 +387,21 @@ begin
         raise Exception.Create('WinHttpOpenRequest failed: ' + SysErrorMessage(GetLastError));
 
       try
-        // Aktivera TLS 1.2 om anslutningen är säker
-        if Port.secure then
+        // Set proxy credentials (proxy auth) when using a named proxy
+        if (FProxyHost <> '') and ((FProxyUser <> '') or (FProxyPass <> '')) then
         begin
-          Flags := WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2 or WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_3;
-          WinHttpSetOption(hRequest, WINHTTP_OPTION_SECURITY_FLAGS, @Flags, SizeOf(Flags));
+          if FProxyUser <> '' then
+          begin
+            proxyUserWS := WideString(FProxyUser);
+            dwSize := (Length(proxyUserWS) + 1) * SizeOf(WideChar);
+            WinHttpSetOption(hRequest, WINHTTP_OPTION_PROXY_USERNAME, PWideChar(proxyUserWS), dwSize);
+          end;
+          if FProxyPass <> '' then
+          begin
+            proxyPassWS := WideString(FProxyPass);
+            dwSize := (Length(proxyPassWS) + 1) * SizeOf(WideChar);
+            WinHttpSetOption(hRequest, WINHTTP_OPTION_PROXY_PASSWORD, PWideChar(proxyPassWS), dwSize);
+          end;
         end;
 
         // Add headers
@@ -298,12 +412,19 @@ begin
             WINHTTP_ADDREQ_FLAG_ADD);
         end;
 
-        // Send request
+        //Send request
         if not WinHttpSendRequest(hRequest, nil, 0, nil, 0, 0, 0) then
           raise Exception.Create('WinHttpSendRequest failed: ' + SysErrorMessage(GetLastError));
 
         if not WinHttpReceiveResponse(hRequest, nil) then
-          raise Exception.Create('WinHttpReceiveResponse failed: ' + SysErrorMessage(GetLastError));
+        begin
+          dwSize := GetLastError;
+          if (dwSize = 12152) and (FProxyHost <> '') then
+            raise Exception.Create('Certificate validation failed with HTTP proxy. HTTP proxies intercepting HTTPS are not fully supported by WinHTTP. Please use direct connection (clear proxy.host) or use an HTTPS proxy.')
+          else
+            raise Exception.Create('WinHttpReceiveResponse failed (' + IntToStr(dwSize) + '): ' +
+              SysErrorMessage(dwSize));
+        end;
 
         // Läs svar
         ResponseStream := TStringStream.Create;
@@ -311,19 +432,30 @@ begin
           repeat
             dwSize := 0;
             if not WinHttpQueryDataAvailable(hRequest, dwSize) then
-              raise Exception.Create('WinHttpQueryDataAvailable failed: ' + SysErrorMessage(
-                GetLastError));
+              raise Exception.Create('WinHttpQueryDataAvailable failed (' + IntToStr(GetLastError) + '): ' +
+                SysErrorMessage(GetLastError));
 
             if dwSize = 0 then
               Break;
 
-            if not WinHttpReadData(hRequest, @Buffer, dwSize, dwDownloaded) then
-              raise Exception.Create('WinHttpReadData failed: ' + SysErrorMessage(GetLastError));
+            // Never read more than our fixed buffer size
+            dwToRead := dwSize;
+            if dwToRead > SizeOf(Buffer) then
+              dwToRead := SizeOf(Buffer);
+
+            if not WinHttpReadData(hRequest, @Buffer, dwToRead, dwDownloaded) then
+              raise Exception.Create('WinHttpReadData failed (' + IntToStr(GetLastError) + '): ' +
+                SysErrorMessage(GetLastError));
 
             ResponseStream.WriteBuffer(Buffer, dwDownloaded);
           until dwSize = 0;
 
           Result := ResponseStream.DataString;
+          LogMessageToFile('WinHTTP GET response length: ' + IntToStr(Length(Result)));
+          {$IFDEF DEBUG}
+          if Length(Result) > 0 then
+            LogMessageToFile('WinHTTP GET response preview: ' + Copy(Result, 1, 200));
+          {$ENDIF}
         finally
           ResponseStream.Free;
         end;
@@ -349,9 +481,13 @@ var
   Flags: DWORD;
   Port: HTTPPort;
   dwSize, dwDownloaded: DWORD;
+  dwToRead: DWORD;
+  bodyPtr: Pointer;
+  bodyLen: DWORD;
   Buffer: array[0..4095] of byte;
   ResponseStream: TStringStream;
   Headers: widestring;
+  proxyUserWS, proxyPassWS: WideString;
 begin
   Result := '';
 
@@ -359,10 +495,41 @@ begin
   ParseURL(URL, ServerName, Path, Port);
 
   // Skapa WinHTTP-session
-  hSession := WinHttpOpen(pwidechar(widestring(FUserAgent)), WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
-    WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
+  if FProxyHost <> '' then
+  begin
+    LogMessageToFile('WinHTTP POST: Using named proxy: ' + FProxyHost + ':' + IntToStr(FProxyPort));
+    hSession := WinHttpOpen(pwidechar(widestring(FUserAgent)), WINHTTP_ACCESS_TYPE_NAMED_PROXY,
+      pwidechar(widestring(FProxyHost + ':' + IntToStr(FProxyPort))), WINHTTP_NO_PROXY_BYPASS, 0);
+  end
+  else if FForceNoProxy then
+  begin
+    LogMessageToFile('WinHTTP POST: Using ForceNoProxy (direct)');
+    hSession := WinHttpOpen(pwidechar(widestring(FUserAgent)), WINHTTP_ACCESS_TYPE_NO_PROXY,
+      WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
+  end
+  else
+  begin
+    hSession := WinHttpOpen(pwidechar(widestring(FUserAgent)), WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
+      WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
+  end;
   if hSession = nil then
     raise Exception.Create('WinHttpOpen failed: ' + SysErrorMessage(GetLastError));
+
+  // Set timeouts (DNS/Connect 15s, send 30s, receive 60s)
+  if not WinHttpSetTimeouts(hSession, 15000, 15000, 30000, 60000) then
+    raise Exception.Create('WinHttpSetTimeouts failed (' + IntToStr(GetLastError) + '): ' +
+      SysErrorMessage(GetLastError));
+
+  // Configure TLS protocols for HTTPS on the session handle
+  if Port.secure then
+  begin
+    Flags := WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2 or WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_3;
+    if not WinHttpSetOption(hSession, WINHTTP_OPTION_SECURE_PROTOCOLS, @Flags, SizeOf(Flags)) then
+    begin
+      Flags := WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2;
+      WinHttpSetOption(hSession, WINHTTP_OPTION_SECURE_PROTOCOLS, @Flags, SizeOf(Flags));
+    end;
+  end;
 
   try
     hConnect := WinHttpConnect(hSession, pwidechar(widestring(ServerName)), Port.port, 0);
@@ -381,11 +548,21 @@ begin
         raise Exception.Create('WinHttpOpenRequest failed: ' + SysErrorMessage(GetLastError));
 
       try
-        // Enable TLS 1.2 if the connection is secure
-        if Port.secure then
+        // Set proxy credentials (proxy auth) when using a named proxy
+        if (FProxyHost <> '') and ((FProxyUser <> '') or (FProxyPass <> '')) then
         begin
-          Flags := WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2 or WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_3;
-          WinHttpSetOption(hRequest, WINHTTP_OPTION_SECURITY_FLAGS, @Flags, SizeOf(Flags));
+          if FProxyUser <> '' then
+          begin
+            proxyUserWS := WideString(FProxyUser);
+            dwSize := (Length(proxyUserWS) + 1) * SizeOf(WideChar);
+            WinHttpSetOption(hRequest, WINHTTP_OPTION_PROXY_USERNAME, PWideChar(proxyUserWS), dwSize);
+          end;
+          if FProxyPass <> '' then
+          begin
+            proxyPassWS := WideString(FProxyPass);
+            dwSize := (Length(proxyPassWS) + 1) * SizeOf(WideChar);
+            WinHttpSetOption(hRequest, WINHTTP_OPTION_PROXY_PASSWORD, PWideChar(proxyPassWS), dwSize);
+          end;
         end;
 
         // Add headers
@@ -397,12 +574,30 @@ begin
         end;
 
         // Send POST request with body
-        if not WinHttpSendRequest(hRequest, nil, 0, pbyte(FRequestBody), Length(FRequestBody),
-          Length(FRequestBody), 0) then
-          raise Exception.Create('WinHttpSendRequest failed: ' + SysErrorMessage(GetLastError));
+        if Length(FRequestBody) > 0 then
+        begin
+          bodyPtr := @FRequestBody[1];
+          bodyLen := Length(FRequestBody);
+        end
+        else
+        begin
+          bodyPtr := nil;
+          bodyLen := 0;
+        end;
+
+        if not WinHttpSendRequest(hRequest, nil, 0, bodyPtr, bodyLen, bodyLen, 0) then
+          raise Exception.Create('WinHttpSendRequest failed (' + IntToStr(GetLastError) + '): ' +
+            SysErrorMessage(GetLastError));
 
         if not WinHttpReceiveResponse(hRequest, nil) then
-          raise Exception.Create('WinHttpReceiveResponse failed: ' + SysErrorMessage(GetLastError));
+        begin
+          dwSize := GetLastError;
+          if (dwSize = 12152) and (FProxyHost <> '') then
+            raise Exception.Create('Certificate validation failed with HTTP proxy. HTTP proxies intercepting HTTPS are not fully supported by WinHTTP. Please use direct connection (clear proxy.host) or use an HTTPS proxy.')
+          else
+            raise Exception.Create('WinHttpReceiveResponse failed (' + IntToStr(dwSize) + '): ' +
+              SysErrorMessage(dwSize));
+        end;
 
         // Read response
         ResponseStream := TStringStream.Create;
@@ -410,19 +605,30 @@ begin
           repeat
             dwSize := 0;
             if not WinHttpQueryDataAvailable(hRequest, dwSize) then
-              raise Exception.Create('WinHttpQueryDataAvailable failed: ' + SysErrorMessage(
-                GetLastError));
+              raise Exception.Create('WinHttpQueryDataAvailable failed (' + IntToStr(GetLastError) + '): ' +
+                SysErrorMessage(GetLastError));
 
             if dwSize = 0 then
               Break;
 
-            if not WinHttpReadData(hRequest, @Buffer, dwSize, dwDownloaded) then
-              raise Exception.Create('WinHttpReadData failed: ' + SysErrorMessage(GetLastError));
+            // Never read more than our fixed buffer size
+            dwToRead := dwSize;
+            if dwToRead > SizeOf(Buffer) then
+              dwToRead := SizeOf(Buffer);
+
+            if not WinHttpReadData(hRequest, @Buffer, dwToRead, dwDownloaded) then
+              raise Exception.Create('WinHttpReadData failed (' + IntToStr(GetLastError) + '): ' +
+                SysErrorMessage(GetLastError));
 
             ResponseStream.WriteBuffer(Buffer, dwDownloaded);
           until dwSize = 0;
 
           Result := ResponseStream.DataString;
+          LogMessageToFile('WinHTTP POST response length: ' + IntToStr(Length(Result)));
+          {$IFDEF DEBUG}
+          if Length(Result) > 0 then
+            LogMessageToFile('WinHTTP POST response preview: ' + Copy(Result, 1, 200));
+          {$ENDIF}
         finally
           ResponseStream.Free;
         end;

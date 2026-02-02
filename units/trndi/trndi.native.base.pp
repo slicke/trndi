@@ -49,14 +49,14 @@ interface
 }
 
 uses
-Classes, SysUtils, Graphics
+Classes, SysUtils, Graphics, trndi.log
 {$IF DEFINED(X_MAC)}
 , NSMisc, ns_url_request, CocoaAll, LCLType
 {$ELSEIF DEFINED(X_WIN)}
 , Windows, Registry, Dialogs, StrUtils, winhttpclient, shellapi, comobj,
 Forms, variants, dwmapi
 {$ELSEIF DEFINED(X_PC)}
-, libpascurl, Dialogs, LCLType
+, libpascurl, Dialogs, LCLType, ctypes
 {$ENDIF}
 , process;
 
@@ -1244,57 +1244,121 @@ var
   headers: array of string;
   hasParams: boolean;
   ResStr: string;
-begin
-  hasParams := (Length(params) > 0);
-  client := TWinHTTPClient.Create(useragent);
-  try
-    if prefix then
-  // Construct the full URL with normalized slashes (avoid '//' or missing '/')
-      address := Format('%s/%s', [TrimRightSet(baseurl, ['/']), TrimLeftSet(endpoint, ['/'])])
-    else
-      address := endpoint;
+  proxyHost: string;
+  proxyPortS: string;
+  proxyPort: integer;
+  proxyUser: string;
+  proxyPass: string;
 
+  procedure ConfigureClient(aClient: TWinHTTPClient);
+  begin
     // Add default required headers
-    client.AddHeader('User-Agent', useragent);
+    aClient.AddHeader('User-Agent', useragent);
 
     // Add optional custom header
     if header <> '' then
     begin
       headers := header.Split(['=']);
       if Length(headers) = 2 then
-        client.AddHeader(headers[0], headers[1]);
+        aClient.AddHeader(headers[0], headers[1]);
     end;
 
-  // Handle JSON data (POST body) or query params
+    // Handle JSON data (POST body)
     if jsondata <> '' then
     begin
-      client.AddHeader('Content-Type', 'application/json; charset=UTF-8');
-      client.AddHeader('Accept', 'application/json');
-      client.SetRequestBody(jsondata);
-    end
-    else
-    if hasParams then
-    begin
-      address := address + '?';
-      for sx in params do
-        address := address + '&' + sx;
+      aClient.AddHeader('Content-Type', 'application/json; charset=UTF-8');
+      aClient.AddHeader('Accept', 'application/json');
+      aClient.SetRequestBody(jsondata);
     end;
+  end;
 
-    // Perform the request (GET or POST)
+  function TryRequest(aClient: TWinHTTPClient; out outRes: string): boolean;
+  begin
     try
+      ConfigureClient(aClient);
       if post then
-        ResStr := client.Post(address)
+        outRes := aClient.Post(address)
       else
-        ResStr := client.Get(address, params); // TWinHTTPClient supports passing params to Get
+      begin
+        // Don't pass params to Get() if already appended to URL
+        if (jsondata = '') and hasParams then
+          outRes := aClient.Get(address, [])
+        else
+          outRes := aClient.Get(address, params);
+      end;
+      Result := true;
+      LogMessageToFile('Windows: Request succeeded');
     except
       on E: Exception do
       begin
-        Result := E.Message;
-        Exit;
+        outRes := E.Message;
+        LogMessageToFile('Windows: Request failed with exception: ' + E.Message);
+        Result := false;
       end;
     end;
+  end;
+begin
+  hasParams := (Length(params) > 0);
 
-    Result := ResStr;
+  if prefix then
+    // Construct the full URL with normalized slashes (avoid '//' or missing '/')
+    address := Format('%s/%s', [TrimRightSet(baseurl, ['/']), TrimLeftSet(endpoint, ['/'])])
+  else
+    address := endpoint;
+
+  // If no JSON body but params present, append as query string
+  if (jsondata = '') and hasParams then
+  begin
+    address := address + '?';
+    for sx in params do
+      address := address + '&' + sx;
+  end;
+
+  // Read proxy settings (global)
+  proxyHost := Trim(GetRootSetting('proxy.host', ''));
+  proxyPortS := Trim(GetRootSetting('proxy.port', ''));
+  proxyPort := StrToIntDef(proxyPortS, 8080);
+  proxyUser := GetRootSetting('proxy.user', '');
+  proxyPass := GetRootSetting('proxy.pass', '');
+
+  // If custom proxy configured: proxy-first, then forced-direct fallback
+  if proxyHost <> '' then
+  begin
+    if (proxyUser <> '') or (proxyPass <> '') then
+      client := TWinHTTPClient.Create(useragent, proxyHost, proxyPort, proxyUser, proxyPass)
+    else
+      client := TWinHTTPClient.Create(useragent, proxyHost, proxyPort);
+    try
+      if TryRequest(client, ResStr) then
+      begin
+        Result := ResStr;
+        Exit;
+      end;
+    finally
+      client.Free;
+    end;
+
+    // Direct fallback must not use system proxy
+    client := TWinHTTPClient.Create(useragent, true);
+    try
+      if TryRequest(client, ResStr) then
+        Result := ResStr
+      else
+        Result := ResStr;
+    finally
+      client.Free;
+    end;
+    Exit;
+  end;
+
+  // No custom proxy configured - use direct connection only (match other platforms)
+  LogMessageToFile('Windows: Using direct connection (no proxy configured) to: ' + address);
+  client := TWinHTTPClient.Create(useragent, true);
+  try
+    if TryRequest(client, ResStr) then
+      Result := ResStr
+    else
+      Result := ResStr;
   finally
     client.Free;
   end;
@@ -1313,6 +1377,86 @@ var
   p, i: integer;
   key, val: string;
   responseStream: TStringStream;
+  proxyHost: string;
+  proxyPortS: string;
+  proxyUser: string;
+  proxyPass: string;
+
+  function PerformRequest(withProxy: boolean): boolean;
+  var
+    j: integer;
+  begin
+    Result := false;
+    responseStream.Size := 0;
+    responseStream.Position := 0;
+
+    handle := curl_easy_init();
+    if handle = nil then
+    begin
+      errCode := CURLE_FAILED_INIT;
+      Exit(false);
+    end;
+
+    // Set URL + common options
+    curl_easy_setopt(handle, CURLOPT_URL, pchar(address));
+    curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, clong(1));
+    curl_easy_setopt(handle, CURLOPT_CONNECTTIMEOUT, clong(10));
+    curl_easy_setopt(handle, CURLOPT_TIMEOUT, clong(30));
+
+    if useragent <> '' then
+      curl_easy_setopt(handle, CURLOPT_USERAGENT, pchar(useragent));
+
+    // Proxy handling (proxy-first / forced-direct fallback)
+    if withProxy and (proxyHost <> '') then
+    begin
+      curl_easy_setopt(handle, CURLOPT_PROXY, pchar(proxyHost));
+      if proxyPortS <> '' then
+        curl_easy_setopt(handle, CURLOPT_PROXYPORT, clong(StrToIntDef(proxyPortS, 8080)));
+      if (proxyUser <> '') and (proxyPass <> '') then
+        curl_easy_setopt(handle, CURLOPT_PROXYUSERPWD, pchar(proxyUser + ':' + proxyPass));
+    end
+    else
+    if (not withProxy) and (proxyHost <> '') then
+      curl_easy_setopt(handle, CURLOPT_PROXY, pchar(''));
+
+    // Attach headers list if present
+    if headers <> nil then
+      curl_easy_setopt(handle, CURLOPT_HTTPHEADER, headers);
+
+    // POST bodies
+    if jsondata <> '' then
+    begin
+      curl_easy_setopt(handle, CURLOPT_POST, clong(1));
+      curl_easy_setopt(handle, CURLOPT_POSTFIELDS, pchar(jsondata));
+      curl_easy_setopt(handle, CURLOPT_POSTFIELDSIZE, clong(Length(jsondata)));
+    end
+    else
+    if post then
+    begin
+      if Length(params) > 0 then
+      begin
+        sx := '';
+        for j := 0 to High(params) do
+        begin
+          if j > 0 then
+            sx := sx + '&';
+          sx := sx + params[j];
+        end;
+        curl_easy_setopt(handle, CURLOPT_POST, clong(1));
+        curl_easy_setopt(handle, CURLOPT_POSTFIELDS, pchar(sx));
+      end
+      else
+        curl_easy_setopt(handle, CURLOPT_POST, clong(1));
+    end;
+
+    // Capture response
+    curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, Pointer(@CurlWriteCallback));
+    curl_easy_setopt(handle, CURLOPT_WRITEDATA, Pointer(responseStream));
+
+    errCode := curl_easy_perform(handle);
+    curl_easy_cleanup(handle);
+    Result := (errCode = CURLE_OK);
+  end;
 begin
   Result := '';
 
@@ -1335,22 +1479,11 @@ begin
   headers := nil;
   responseStream := TStringStream.Create('');
   try
-    handle := curl_easy_init();
-    if handle = nil then
-    begin
-      Result := 'curl: failed to init';
-      Exit;
-    end;
-
-    // Set URL
-    curl_easy_setopt(handle, CURLOPT_URL, pchar(address));
-
-    // Follow redirects
-    curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, longint(1));
-
-    // Set user agent if provided
-    if useragent <> '' then
-      curl_easy_setopt(handle, CURLOPT_USERAGENT, pchar(useragent));
+    // Read proxy settings (global)
+    proxyHost := Trim(GetRootSetting('proxy.host', ''));
+    proxyPortS := Trim(GetRootSetting('proxy.port', ''));
+    proxyUser := GetRootSetting('proxy.user', '');
+    proxyPass := GetRootSetting('proxy.pass', '');
 
     // Optional custom header "Key=Value" -> "Key: Value"
     if header <> '' then
@@ -1370,45 +1503,28 @@ begin
     begin
       headers := curl_slist_append(headers, pchar('Content-Type: application/json; charset=UTF-8'));
       headers := curl_slist_append(headers, pchar('Accept: application/json'));
-      curl_easy_setopt(handle, CURLOPT_POST, longint(1));
-      curl_easy_setopt(handle, CURLOPT_POSTFIELDS, pchar(jsondata));
-      curl_easy_setopt(handle, CURLOPT_POSTFIELDSIZE, longint(Length(jsondata)));
     end
-    else
-    if post then
-      if Length(params) > 0 then
-      begin
-        sx := '';
-        for i := 0 to High(params) do
-        begin
-          if i > 0 then
-            sx := sx + '&';
-          sx := sx + params[i];
-        end;
-        curl_easy_setopt(handle, CURLOPT_POST, longint(1));
-        curl_easy_setopt(handle, CURLOPT_POSTFIELDS, pchar(sx));
-      end
-      else
-        curl_easy_setopt(handle, CURLOPT_POST, longint(1))// If POST with params but no json, send as form-urlencoded
     ;
 
     // Attach headers list if present
-    if headers <> nil then
-      curl_easy_setopt(handle, CURLOPT_HTTPHEADER, headers);
-
-  // Set up write callback to capture response (use a C-compatible top-level function)
-    curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, Pointer(@CurlWriteCallback));
-    curl_easy_setopt(handle, CURLOPT_WRITEDATA, Pointer(responseStream));
-
-    // Perform the request
-    errCode := curl_easy_perform(handle);
-    if errCode <> CURLE_OK then
-      Result := string(curl_easy_strerror(errCode))
+    // If proxy configured: try via proxy first, then forced-direct fallback
+    if proxyHost <> '' then
+    begin
+      if PerformRequest(true) then
+        Result := responseStream.DataString
+      else
+      if PerformRequest(false) then
+        Result := responseStream.DataString
+      else
+        Result := string(curl_easy_strerror(errCode));
+    end
     else
-      Result := responseStream.DataString;
-
-    // Cleanup
-    curl_easy_cleanup(handle);
+    begin
+      if PerformRequest(false) then
+        Result := responseStream.DataString
+      else
+        Result := string(curl_easy_strerror(errCode));
+    end;
   finally
     if headers <> nil then
       curl_slist_free_all(headers);

@@ -45,7 +45,7 @@ interface
 uses
 Classes, SysUtils, Graphics, Windows, Registry, Dialogs, StrUtils,
 winhttpclient, shellapi,
-Forms, variants, dwmapi, trndi.native.base, ExtCtrls;
+Forms, variants, dwmapi, trndi.native.base, ExtCtrls{$ifdef DEBUG}, trndi.log{$endif};
 
 type
   {**
@@ -371,10 +371,79 @@ const
 var
   client: TWinHTTPClient;
   responseStr: string;
-begin
-  res := '';
-  client := TWinHTTPClient.Create(DEFAULT_USER_AGENT);
-  try
+  proxyHost, proxyPort, proxyUser, proxyPass: string;
+  tempInstance: TTrndiNativeWindows;
+
+  function SafeUrlForLog(const s: string): string;
+  var
+    cut: integer;
+  begin
+    Result := s;
+    cut := Pos('#', Result);
+    if cut > 0 then
+      Result := Copy(Result, 1, cut - 1);
+    cut := Pos('?', Result);
+    if cut > 0 then
+      Result := Copy(Result, 1, cut - 1);
+    if Length(Result) > 180 then
+      Result := Copy(Result, 1, 180) + '...';
+  end;
+
+  procedure NormalizeProxyHostPort(var host: string; var port: string);
+  var
+    s: string;
+    p: integer;
+    hostPart, portPart: string;
+  begin
+    s := Trim(host);
+
+    // Strip scheme if provided (e.g. http://proxy:3128)
+    p := Pos('://', s);
+    if p > 0 then
+      s := Copy(s, p + 3, MaxInt);
+
+    // Strip any path
+    p := Pos('/', s);
+    if p > 0 then
+      s := Copy(s, 1, p - 1);
+
+    // If host contains an explicit port, split it out
+    p := LastDelimiter(':', s);
+    if (p > 0) and (p < Length(s)) then
+    begin
+      hostPart := Copy(s, 1, p - 1);
+      portPart := Copy(s, p + 1, MaxInt);
+      if (hostPart <> '') and (StrToIntDef(portPart, -1) > 0) then
+      begin
+        s := hostPart;
+        if port = '' then
+          port := portPart;
+      end;
+    end;
+
+    host := s;
+    port := Trim(port);
+  end;
+
+  function PerformRequest(withProxy: boolean; forceNoProxy: boolean): boolean;
+  begin
+    Result := false;
+    if withProxy and (proxyHost <> '') then
+    begin
+      if (proxyUser <> '') or (proxyPass <> '') then
+        client := TWinHTTPClient.Create(DEFAULT_USER_AGENT, proxyHost, StrToIntDef(proxyPort, 8080), proxyUser, proxyPass)
+      else
+        client := TWinHTTPClient.Create(DEFAULT_USER_AGENT, proxyHost, StrToIntDef(proxyPort, 8080));
+    end
+    else if forceNoProxy then
+    begin
+      client := TWinHTTPClient.Create(DEFAULT_USER_AGENT, true);
+    end
+    else
+    begin
+      client := TWinHTTPClient.Create(DEFAULT_USER_AGENT);
+    end;
+
     try
       responseStr := client.Get(url, []);
       res := responseStr;
@@ -386,8 +455,77 @@ begin
         Result := false;
       end;
     end;
-  finally
     client.Free;
+  end;
+
+begin
+  res := '';
+
+  tempInstance := TTrndiNativeWindows.Create;
+  try
+    // Check for custom proxy settings
+    proxyHost := tempInstance.GetSetting('proxy.host', '', true);
+    if proxyHost <> '' then
+    begin
+      proxyPort := tempInstance.GetSetting('proxy.port', '', true);
+      proxyUser := tempInstance.GetSetting('proxy.user', '', true);
+      proxyPass := tempInstance.GetSetting('proxy.pass', '', true);
+      NormalizeProxyHostPort(proxyHost, proxyPort);
+      if proxyPort = '' then
+        proxyPort := '8080';
+    end;
+
+    {$ifdef DEBUG}
+    if proxyHost <> '' then
+      LogMessageToFile(Format('HTTP GET: proxy configured (%s:%s); url=%s', [proxyHost, proxyPort, SafeUrlForLog(url)]))
+    else
+      LogMessageToFile(Format('HTTP GET: no proxy configured; url=%s', [SafeUrlForLog(url)]));
+    {$endif}
+
+    // Try with proxy first if configured
+    if proxyHost <> '' then
+    begin
+      {$ifdef DEBUG}
+      LogMessageToFile(Format('HTTP GET: attempting via proxy %s:%s', [proxyHost, proxyPort]));
+      {$endif}
+      if PerformRequest(true, false) then
+      begin
+        {$ifdef DEBUG}
+        LogMessageToFile('HTTP GET: proxy attempt succeeded');
+        {$endif}
+        Result := true;
+        Exit;
+      end;
+
+      {$ifdef DEBUG}
+      LogMessageToFile('HTTP GET: proxy attempt failed: ' + res + ' ; retrying direct');
+      {$endif}
+    end;
+
+    // Fallback: try without proxy
+    {$ifdef DEBUG}
+    if proxyHost <> '' then
+      LogMessageToFile('HTTP GET: attempting direct (forcing no-proxy on WinHTTP)')
+    else
+      LogMessageToFile('HTTP GET: attempting direct');
+    {$endif}
+    if PerformRequest(false, proxyHost <> '') then
+    begin
+      {$ifdef DEBUG}
+      LogMessageToFile('HTTP GET: direct attempt succeeded');
+      {$endif}
+      Result := true;
+    end
+    else
+    begin
+      {$ifdef DEBUG}
+      LogMessageToFile('HTTP GET: direct attempt failed: ' + res);
+      {$endif}
+      Result := false;
+    end;
+
+  finally
+    tempInstance.Free;
   end;
 end;
 

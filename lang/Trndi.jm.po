@@ -647,6 +647,10 @@ msgctxt "tfconf.cl_ok_txt.caption"
 msgid "OK"
 msgstr "ok"
 
+#: tfconf.edproxyport.text
+msgid "8080"
+msgstr ""
+
 #: tfconf.gbdisplayprefs.caption
 msgid "Display Preferences"
 msgstr "Visningsval"
@@ -654,6 +658,10 @@ msgstr "Visningsval"
 #: tfconf.gbmulti.caption
 msgid "Account Settings"
 msgstr "Kontoinstellningar"
+
+#: tfconf.gbnetwork.caption
+msgid "Network"
+msgstr ""
 
 #: tfconf.gboverride.caption
 msgctxt "tfconf.gboverride.caption"
@@ -854,6 +862,22 @@ msgstr "Klicka po en komponent till venster, fôr att endra typsnittet"
 #: tfconf.label9.caption
 msgid "Trndi can trigger Spotify or Deezer to play a song when low/high"
 msgstr "Trndi kan spela en lot po Spotify eller Deezer ner du er hôg/log"
+
+#: tfconf.labelproxyhost.caption
+msgid "Proxy Host:"
+msgstr ""
+
+#: tfconf.labelproxypass.caption
+msgid "Proxy Pass:"
+msgstr ""
+
+#: tfconf.labelproxyport.caption
+msgid "Proxy Port:"
+msgstr ""
+
+#: tfconf.labelproxyuser.caption
+msgid "Proxy User:"
+msgstr ""
 
 #: tfconf.lack.caption
 msgid "Libraries"
@@ -1062,6 +1086,10 @@ msgstr "Integrasjoner"
 #: tfconf.tsmulti.caption
 msgid "Multi User"
 msgstr "Fler anvendare"
+
+#: tfconf.tsproxy.caption
+msgid "Proxy"
+msgstr ""
 
 #: tfconf.tssystem.caption
 msgid "System"

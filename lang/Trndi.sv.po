@@ -644,6 +644,10 @@ msgctxt "tfconf.cl_ok_txt.caption"
 msgid "OK"
 msgstr "OK"
 
+#: tfconf.edproxyport.text
+msgid "8080"
+msgstr "8080"
+
 #: tfconf.gbdisplayprefs.caption
 msgid "Display Preferences"
 msgstr "Visningsval"
@@ -651,6 +655,10 @@ msgstr "Visningsval"
 #: tfconf.gbmulti.caption
 msgid "Account Settings"
 msgstr "Kontoinställningar"
+
+#: tfconf.gbnetwork.caption
+msgid "Network"
+msgstr "Nätverk"
 
 #: tfconf.gboverride.caption
 msgctxt "tfconf.gboverride.caption"
@@ -846,6 +854,22 @@ msgstr "Klicka på tiden, avläsningen eller pilen för att ändra dess typsnitt
 #: tfconf.label9.caption
 msgid "Trndi can trigger Spotify or Deezer to play a song when low/high"
 msgstr "Trndi kan spela en låt på Spotify eller Deezer när du är hög/låg"
+
+#: tfconf.labelproxyhost.caption
+msgid "Proxy Host:"
+msgstr "Proxyvärd:"
+
+#: tfconf.labelproxypass.caption
+msgid "Proxy Pass:"
+msgstr "Proxylösen:"
+
+#: tfconf.labelproxyport.caption
+msgid "Proxy Port:"
+msgstr "Proxyport:"
+
+#: tfconf.labelproxyuser.caption
+msgid "Proxy User:"
+msgstr "Proxyanvändare:"
 
 #: tfconf.lack.caption
 msgid "Libraries"
@@ -1052,6 +1076,10 @@ msgstr "Integrationer"
 #: tfconf.tsmulti.caption
 msgid "Multi User"
 msgstr "Fler användare"
+
+#: tfconf.tsproxy.caption
+msgid "Proxy"
+msgstr "Proxy"
 
 #: tfconf.tssystem.caption
 msgid "System"
@@ -2570,7 +2598,7 @@ msgstr "Klicka på en punkt för att se detaljer om avläsningen"
 
 #: uhistorygraph.rs_history_graph_key_basal
 msgid "Basal"
-msgstr ""
+msgstr "Basal"
 
 #: uhistorygraph.rs_history_graph_key_high
 msgctxt "uhistorygraph.rs_history_graph_key_high"

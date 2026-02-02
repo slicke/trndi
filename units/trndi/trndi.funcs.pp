@@ -47,6 +47,7 @@ interface
 uses
 Classes, SysUtils, Controls, ExtCtrls, StdCtrls, Graphics, trndi.types, Forms, Math,
 fpjson, jsonparser, dateutils, buildinfo
+{$ifdef DEBUG} , trndi.log{$endif}
 {$ifdef TrndiExt},trndi.ext.engine, mormot.lib.quickjs, mormot.core.base{$endif}
 {$ifdef DARWIN}, CocoaAll, NSHelpers{$endif}
 {$ifdef DEBUG}, slicke.ux.alert{$endif};
@@ -303,56 +304,12 @@ end;
 
 {$ifdef DEBUG}
 procedure LogMessage(const Msg: string);
-const
-  MaxLines = 500; // Max lines in file
-var
-  LogLines: TStringList;
-  LogFilePath: string;
-  {$ifdef DARWIN}
-  BundleID: string;
-  {$endif}
 begin
   if (TrndiDebugLogAlert) and (SecondsBetween(Now, TrndiDebugLogAlertSnooze) > 5) then
     if ExtMessage(uxdNormal, 'Log Output','Output from the logger','A message has been sent to the logger', msg, false, uxclWhite, uxclRed,[mbOK, mbUXSnooze]) <> mrOK then
       TrndiDebugLogAlertSnooze := Now;
 
-  // Determine a writable log file path. On macOS we prefer Application Support to avoid permission issues.
-  {$ifdef DARWIN}
-  try
-    LogFilePath := NSStrToStr(NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, True).objectAtIndex(0));
-    BundleID := NSStrToStr(NSBundle.mainBundle.objectForInfoDictionaryKey(StrToNSStr('CFBundleIdentifier')));
-    // Prefer the canonical app identifier used across platforms. Map legacy/company id if encountered.
-    if (BundleID = '') or SameText(BundleID, 'com.company.trndi') then
-      BundleID := 'com.slicke.trndi';
-    LogFilePath := IncludeTrailingPathDelimiter(LogFilePath) + BundleID + PathDelim + 'trndi.log';
-    if not DirectoryExists(ExtractFilePath(LogFilePath)) then
-      ForceDirectories(ExtractFilePath(LogFilePath));
-  except
-    // Fallback to application path if anything goes wrong
-    LogFilePath := GetAppPath + 'trndi.log';
-  end;
-  {$else}
-  LogFilePath := 'trndi.log';
-  {$endif}
-
-  LogLines := TStringList.Create;
-  try
-    // Load log if exists
-    if FileExists(LogFilePath) then
-      LogLines.LoadFromFile(LogFilePath);
-
-    // Delete overflowing lines
-    while LogLines.Count >= MaxLines do
-      LogLines.Delete(0);
-
-    // Add new message
-    LogLines.Add('['+DateTimeToStr(Now) + '] ' + Msg);
-
-    // Save
-    LogLines.SaveToFile(LogFilePath);
-  finally
-    LogLines.Free;
-  end;
+  LogMessageToFile(Msg);
 end;
 {$else}
 // Remove when launching

@@ -26,7 +26,7 @@ interface
 uses
 Classes, SysUtils, Graphics, IniFiles, Dialogs,
 ExtCtrls, Forms, Math, LCLIntf, KDEBadge, trndi.native.base, FileUtil, Menus,
-libpascurl, DateUtils;
+libpascurl, DateUtils, ctypes{$ifdef DEBUG}, trndi.log{$endif};
 
 type
   {!
@@ -617,24 +617,95 @@ var
   headers: pcurl_slist;
   errCode: CURLcode;
   responseStream: TStringStream;
-begin
-  res := '';
-  headers := nil;
-  responseStream := TStringStream.Create('');
-  try
-    curl_global_init(CURL_GLOBAL_DEFAULT);
+  proxyHost, proxyPort, proxyUser, proxyPass: string;
+  tempInstance: TTrndiNativeLinux;
+
+  function SafeUrlForLog(const s: string): string;
+  var
+    cut: integer;
+  begin
+    Result := s;
+    cut := Pos('#', Result);
+    if cut > 0 then
+      Result := Copy(Result, 1, cut - 1);
+    cut := Pos('?', Result);
+    if cut > 0 then
+      Result := Copy(Result, 1, cut - 1);
+    if Length(Result) > 180 then
+      Result := Copy(Result, 1, 180) + '...';
+  end;
+
+  procedure NormalizeProxyHostPort(var host: string; var port: string);
+  var
+    s: string;
+    p: integer;
+    hostPart, portPart: string;
+  begin
+    s := Trim(host);
+
+    // Strip scheme if provided (e.g. http://proxy:3128)
+    p := Pos('://', s);
+    if p > 0 then
+      s := Copy(s, p + 3, MaxInt);
+
+    // Strip any path
+    p := Pos('/', s);
+    if p > 0 then
+      s := Copy(s, 1, p - 1);
+
+    // If host contains an explicit port, split it out
+    p := LastDelimiter(':', s);
+    if (p > 0) and (p < Length(s)) then
+    begin
+      hostPart := Copy(s, 1, p - 1);
+      portPart := Copy(s, p + 1, MaxInt);
+      if (hostPart <> '') and (StrToIntDef(portPart, -1) > 0) then
+      begin
+        s := hostPart;
+        if port = '' then
+          port := portPart;
+      end;
+    end;
+
+    host := s;
+    port := Trim(port);
+  end;
+
+  function PerformRequest(withProxy: boolean): boolean;
+  begin
+    Result := false;
+
+    // Clear any prior attempt's response (proxy attempt may have written partial data)
+    responseStream.Size := 0;
+    responseStream.Position := 0;
+
     handle := curl_easy_init();
     if handle = nil then
     begin
       res := 'curl: failed to init';
-      Result := false;
       Exit;
     end;
 
     // Set URL and options
     curl_easy_setopt(handle, CURLOPT_URL, pchar(url));
-    curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, longint(1));
+    curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, clong(1));
     curl_easy_setopt(handle, CURLOPT_USERAGENT, pchar(DEFAULT_USER_AGENT));
+    curl_easy_setopt(handle, CURLOPT_CONNECTTIMEOUT, clong(10));
+    curl_easy_setopt(handle, CURLOPT_TIMEOUT, clong(30));
+
+    // Set proxy if configured and requested
+    if withProxy and (proxyHost <> '') then
+    begin
+      curl_easy_setopt(handle, CURLOPT_PROXY, pchar(proxyHost));
+      if proxyPort <> '' then
+        curl_easy_setopt(handle, CURLOPT_PROXYPORT, clong(StrToIntDef(proxyPort, 8080)));
+      if (proxyUser <> '') and (proxyPass <> '') then
+        curl_easy_setopt(handle, CURLOPT_PROXYUSERPWD, pchar(proxyUser + ':' + proxyPass));
+    end;
+
+    // Ensure a true direct attempt (don't fall back to environment proxies)
+    if (not withProxy) and (proxyHost <> '') then
+      curl_easy_setopt(handle, CURLOPT_PROXY, pchar(''));
 
     // Write callback
     curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, Pointer(@CurlWriteCallback_Linux));
@@ -653,10 +724,85 @@ begin
     end;
 
     curl_easy_cleanup(handle);
+  end;
+
+begin
+  res := '';
+  headers := nil;
+  responseStream := TStringStream.Create('');
+  tempInstance := TTrndiNativeLinux.Create;
+  try
+    // Get proxy settings
+    proxyHost := tempInstance.GetSetting('proxy.host', '', true);
+    if proxyHost <> '' then
+    begin
+      proxyPort := tempInstance.GetSetting('proxy.port', '', true);
+      proxyUser := tempInstance.GetSetting('proxy.user', '', true);
+      proxyPass := tempInstance.GetSetting('proxy.pass', '', true);
+      NormalizeProxyHostPort(proxyHost, proxyPort);
+    end;
+
+    {$ifdef DEBUG}
+    if proxyHost <> '' then
+    begin
+      if (proxyUser <> '') and (proxyPass <> '') then
+        LogMessageToFile(Format('HTTP GET: proxy configured (%s:%s) with auth; url=%s', [proxyHost, proxyPort, SafeUrlForLog(url)]))
+      else
+        LogMessageToFile(Format('HTTP GET: proxy configured (%s:%s) no auth; url=%s', [proxyHost, proxyPort, SafeUrlForLog(url)]));
+    end
+    else
+      LogMessageToFile(Format('HTTP GET: no proxy configured; url=%s', [SafeUrlForLog(url)]));
+    {$endif}
+
+    curl_global_init(CURL_GLOBAL_DEFAULT);
+
+    // Try with proxy first if configured
+    if proxyHost <> '' then
+    begin
+      {$ifdef DEBUG}
+      LogMessageToFile(Format('HTTP GET: attempting via proxy %s:%s', [proxyHost, proxyPort]));
+      {$endif}
+      if PerformRequest(true) then
+      begin
+        {$ifdef DEBUG}
+        LogMessageToFile('HTTP GET: proxy attempt succeeded');
+        {$endif}
+        Result := true;
+        Exit;
+      end;
+
+      {$ifdef DEBUG}
+      LogMessageToFile('HTTP GET: proxy attempt failed: ' + res + ' ; retrying direct');
+      {$endif}
+    end;
+
+    // Fallback: try without proxy
+    {$ifdef DEBUG}
+    if proxyHost <> '' then
+      LogMessageToFile('HTTP GET: attempting direct (explicitly disabling proxy/env proxy)')
+    else
+      LogMessageToFile('HTTP GET: attempting direct');
+    {$endif}
+    if PerformRequest(false) then
+    begin
+      {$ifdef DEBUG}
+      LogMessageToFile('HTTP GET: direct attempt succeeded');
+      {$endif}
+      Result := true;
+    end
+    else
+    begin
+      {$ifdef DEBUG}
+      LogMessageToFile('HTTP GET: direct attempt failed: ' + res);
+      {$endif}
+      Result := false;
+    end;
+
   finally
     if headers <> nil then
       curl_slist_free_all(headers);
     responseStream.Free;
+    tempInstance.Free;
   end;
 end;
 
