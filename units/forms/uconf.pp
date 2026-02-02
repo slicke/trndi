@@ -127,10 +127,15 @@ TfConf = class(TForm)
   edCommaSep1: TEdit;
   eDot: TEdit;
   eDotNow: TEdit;
+  edProxyHost: TEdit;
+  edProxyPass: TEdit;
+  edProxyPort: TEdit;
+  edProxyUser: TEdit;
   eExt: TEdit;
   cbFonts: TGroupBox;
   fsHi1: TFloatSpinEdit;
   fsLo1: TFloatSpinEdit;
+  gbNetwork: TGroupBox;
   gbOverride1: TGroupBox;
   Label16: TLabel;
   Label17: TLabel;
@@ -138,6 +143,10 @@ TfConf = class(TForm)
   Label25: TLabel;
   Label33: TLabel;
   Label34: TLabel;
+  LabelProxyHost: TLabel;
+  LabelProxyPass: TLabel;
+  LabelProxyPort: TLabel;
+  LabelProxyUser: TLabel;
   lConfigPredict: TLabel;
   lDot: TLabel;
   lDot1: TLabel;
@@ -319,6 +328,7 @@ TfConf = class(TForm)
   spTHRESHOLD: TSpinEdit;
   spDeltaMax: TSpinEdit;
   spTHRESHOLD1: TSpinEdit;
+  tsProxy: TTabSheet;
   tsCommon: TTabSheet;
   tsAdvanced: TTabSheet;
   tsTir: TTabSheet;
@@ -781,7 +791,7 @@ end;
 
 procedure TfConf.getAPILabels(out user, pass: string);
 var
- sys: class of TrndiAPI;
+  sys: class of TrndiAPI;
 begin
   sys := TrndiAPI;
 

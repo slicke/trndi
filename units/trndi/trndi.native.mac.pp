@@ -275,17 +275,37 @@ var
   send, response: TStringStream;
   headers: TStringList;
   httpClient: TNSHTTPSendAndReceive;
+  tempInstance: TrndiAPI;
+  proxyHost, proxyPort, proxyUser, proxyPass: string;
 begin
   res := '';
   send := TStringStream.Create('');
   response := TStringStream.Create('');
   headers := TStringList.Create;
   httpClient := TNSHTTPSendAndReceive.Create;
+  tempInstance := TrndiAPI.Create('', '');
   try
     try
       httpClient.address := url;
       httpClient.method := 'GET';
       headers.Add('User-Agent=' + DEFAULT_USER_AGENT);
+
+      // Proxy settings
+      proxyHost := tempInstance.GetSetting('proxy.host', '', true);
+      proxyPort := tempInstance.GetSetting('proxy.port', '8080', true);
+      proxyUser := tempInstance.GetSetting('proxy.user', '', true);
+      proxyPass := tempInstance.GetSetting('proxy.pass', '', true);
+
+      if proxyHost <> '' then
+      begin
+        httpClient.Proxy.Host := proxyHost;
+        httpClient.Proxy.Port := StrToIntDef(proxyPort, 8080);
+        if proxyUser <> '' then
+        begin
+          httpClient.Proxy.UserName := proxyUser;
+          httpClient.Proxy.Password := proxyPass;
+        end;
+      end;
 
       if httpClient.SendAndReceive(send, response, headers) then
       begin
@@ -310,6 +330,7 @@ begin
     send.Free;
     response.Free;
     headers.Free;
+    tempInstance.Free;
   end;
 end;
 

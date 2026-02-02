@@ -617,11 +617,23 @@ var
   headers: pcurl_slist;
   errCode: CURLcode;
   responseStream: TStringStream;
+  proxyHost, proxyPort, proxyUser, proxyPass: string;
+  tempInstance: TTrndiNativeLinux;
 begin
   res := '';
   headers := nil;
   responseStream := TStringStream.Create('');
+  tempInstance := TTrndiNativeLinux.Create;
   try
+    // Get proxy settings
+    proxyHost := tempInstance.GetSetting('proxy.host', '', true);
+    if proxyHost <> '' then
+    begin
+      proxyPort := tempInstance.GetSetting('proxy.port', '', true);
+      proxyUser := tempInstance.GetSetting('proxy.user', '', true);
+      proxyPass := tempInstance.GetSetting('proxy.pass', '', true);
+    end;
+    
     curl_global_init(CURL_GLOBAL_DEFAULT);
     handle := curl_easy_init();
     if handle = nil then
@@ -635,6 +647,16 @@ begin
     curl_easy_setopt(handle, CURLOPT_URL, pchar(url));
     curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, longint(1));
     curl_easy_setopt(handle, CURLOPT_USERAGENT, pchar(DEFAULT_USER_AGENT));
+
+    // Set proxy if configured
+    if proxyHost <> '' then
+    begin
+      curl_easy_setopt(handle, CURLOPT_PROXY, pchar(proxyHost));
+      if proxyPort <> '' then
+        curl_easy_setopt(handle, CURLOPT_PROXYPORT, StrToIntDef(proxyPort, 8080));
+      if (proxyUser <> '') and (proxyPass <> '') then
+        curl_easy_setopt(handle, CURLOPT_PROXYUSERPWD, pchar(proxyUser + ':' + proxyPass));
+    end;
 
     // Write callback
     curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, Pointer(@CurlWriteCallback_Linux));
@@ -657,6 +679,7 @@ begin
     if headers <> nil then
       curl_slist_free_all(headers);
     responseStream.Free;
+    tempInstance.Free;
   end;
 end;
 

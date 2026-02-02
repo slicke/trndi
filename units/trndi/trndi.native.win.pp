@@ -371,10 +371,27 @@ const
 var
   client: TWinHTTPClient;
   responseStr: string;
+  proxyHost, proxyPort: string;
+  tempInstance: TTrndiNativeWindows;
 begin
   res := '';
-  client := TWinHTTPClient.Create(DEFAULT_USER_AGENT);
+  
+  tempInstance := TTrndiNativeWindows.Create;
   try
+    // Check for custom proxy settings
+    proxyHost := tempInstance.GetSetting('proxy.host', '', true);
+    if proxyHost <> '' then
+    begin
+      proxyPort := tempInstance.GetSetting('proxy.port', '8080', true);
+      // Create client with custom proxy
+      client := TWinHTTPClient.Create(DEFAULT_USER_AGENT, proxyHost, StrToIntDef(proxyPort, 8080));
+    end
+    else
+    begin
+      // Use system default proxy
+      client := TWinHTTPClient.Create(DEFAULT_USER_AGENT);
+    end;
+    
     try
       responseStr := client.Get(url, []);
       res := responseStr;
@@ -388,6 +405,7 @@ begin
     end;
   finally
     client.Free;
+    tempInstance.Free;
   end;
 end;
 

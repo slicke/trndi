@@ -58,8 +58,11 @@ private
   FUserAgent: string;
   FHeaders: TStringList;
   FRequestBody: string;
+  FProxyHost: string;
+  FProxyPort: integer;
 public
-  constructor Create(const UserAgent: string = 'Pascal User Agent');
+  constructor Create(const UserAgent: string = 'Pascal User Agent'); overload;
+  constructor Create(const UserAgent: string; const ProxyHost: string; ProxyPort: integer = 8080); overload;
   destructor Destroy;
     override;
 
@@ -159,6 +162,17 @@ begin
   FUserAgent := UserAgent;
   FHeaders := TStringList.Create;
   FHeaders.TextLineBreakStyle := tlbsCRLF;
+  FProxyHost := '';
+  FProxyPort := 0;
+end;
+
+constructor TWinHTTPClient.Create(const UserAgent: string; const ProxyHost: string; ProxyPort: integer = 8080);
+begin
+  FUserAgent := UserAgent;
+  FHeaders := TStringList.Create;
+  FHeaders.TextLineBreakStyle := tlbsCRLF;
+  FProxyHost := ProxyHost;
+  FProxyPort := ProxyPort;
 end;
 
 destructor TWinHTTPClient.Destroy;
@@ -261,8 +275,16 @@ begin
   ParseURL(FullURL, ServerName, Path, Port);
 
   // Skapa WinHTTP-session
-  hSession := WinHttpOpen(pwidechar(widestring(FUserAgent)), WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
-    WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
+  if FProxyHost <> '' then
+  begin
+    hSession := WinHttpOpen(pwidechar(widestring(FUserAgent)), WINHTTP_ACCESS_TYPE_NAMED_PROXY,
+      pwidechar(widestring(FProxyHost + ':' + IntToStr(FProxyPort))), WINHTTP_NO_PROXY_BYPASS, 0);
+  end
+  else
+  begin
+    hSession := WinHttpOpen(pwidechar(widestring(FUserAgent)), WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
+      WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
+  end;
   if hSession = nil then
     raise Exception.Create('WinHttpOpen failed: ' + SysErrorMessage(GetLastError));
 

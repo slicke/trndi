@@ -386,11 +386,24 @@ end;
 class function TTrndiNativeHaiku.getURL(const url: string; out res: string): boolean;
 var
   HTTP: TFPHTTPClient;
+  tempInstance: TTrndiNativeHaiku;
+  proxyHost, proxyPort: string;
 begin
   Result := false;
   HTTP := TFPHTTPClient.Create(nil);
+  tempInstance := TTrndiNativeHaiku.Create;
   try
     HTTP.AllowRedirect := true;
+    
+    // Check for proxy settings
+    proxyHost := tempInstance.GetSetting('proxy.host', '', true);
+    if proxyHost <> '' then
+    begin
+      proxyPort := tempInstance.GetSetting('proxy.port', '8080', true);
+      HTTP.Proxy.Host := proxyHost;
+      HTTP.Proxy.Port := StrToIntDef(proxyPort, 8080);
+    end;
+    
     try
       res := HTTP.Get(url);
       Result := true;
@@ -403,6 +416,7 @@ begin
     end;
   finally
     HTTP.Free;
+    tempInstance.Free;
   end;
 end;
 
