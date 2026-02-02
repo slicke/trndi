@@ -337,6 +337,7 @@ begin
   // Skapa WinHTTP-session
   if FProxyHost <> '' then
   begin
+    LogMessageToFile('WinHTTP GET: Using named proxy: ' + FProxyHost + ':' + IntToStr(FProxyPort));
     hSession := WinHttpOpen(pwidechar(widestring(FUserAgent)), WINHTTP_ACCESS_TYPE_NAMED_PROXY,
       pwidechar(widestring(FProxyHost + ':' + IntToStr(FProxyPort))), WINHTTP_NO_PROXY_BYPASS, 0);
   end
@@ -530,11 +531,13 @@ begin
   // Skapa WinHTTP-session
   if FProxyHost <> '' then
   begin
+    LogMessageToFile('WinHTTP POST: Using named proxy: ' + FProxyHost + ':' + IntToStr(FProxyPort));
     hSession := WinHttpOpen(pwidechar(widestring(FUserAgent)), WINHTTP_ACCESS_TYPE_NAMED_PROXY,
       pwidechar(widestring(FProxyHost + ':' + IntToStr(FProxyPort))), WINHTTP_NO_PROXY_BYPASS, 0);
   end
   else if FForceNoProxy then
   begin
+    LogMessageToFile('WinHTTP POST: Using ForceNoProxy (direct)');
     hSession := WinHttpOpen(pwidechar(widestring(FUserAgent)), WINHTTP_ACCESS_TYPE_NO_PROXY,
       WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
   end
