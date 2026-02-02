@@ -358,6 +358,15 @@ begin
       Flags := WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2;
       WinHttpSetOption(hSession, WINHTTP_OPTION_SECURE_PROTOCOLS, @Flags, SizeOf(Flags));
     end;
+    
+    // If using proxy, ignore certificate errors on session level
+    if FProxyHost <> '' then
+    begin
+      Flags := SECURITY_FLAG_IGNORE_UNKNOWN_CA or SECURITY_FLAG_IGNORE_CERT_DATE_INVALID or
+               SECURITY_FLAG_IGNORE_CERT_CN_INVALID or SECURITY_FLAG_IGNORE_CERT_WRONG_USAGE;
+      LogMessageToFile('WinHTTP GET session: Setting security flags for proxy: ' + IntToStr(Flags));
+      WinHttpSetOption(hSession, WINHTTP_OPTION_SECURITY_FLAGS, @Flags, SizeOf(Flags));
+    end;
   end;
 
   // Set timeouts (DNS/Connect 15s, send 30s, receive 60s)
@@ -541,6 +550,15 @@ begin
     begin
       Flags := WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2;
       WinHttpSetOption(hSession, WINHTTP_OPTION_SECURE_PROTOCOLS, @Flags, SizeOf(Flags));
+    end;
+    
+    // If using proxy, ignore certificate errors on session level
+    if FProxyHost <> '' then
+    begin
+      Flags := SECURITY_FLAG_IGNORE_UNKNOWN_CA or SECURITY_FLAG_IGNORE_CERT_DATE_INVALID or
+               SECURITY_FLAG_IGNORE_CERT_CN_INVALID or SECURITY_FLAG_IGNORE_CERT_WRONG_USAGE;
+      LogMessageToFile('WinHTTP POST session: Setting security flags for proxy: ' + IntToStr(Flags));
+      WinHttpSetOption(hSession, WINHTTP_OPTION_SECURITY_FLAGS, @Flags, SizeOf(Flags));
     end;
   end;
 
