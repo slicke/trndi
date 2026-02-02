@@ -38,7 +38,7 @@ interface
 
 uses
   Classes, SysUtils, Graphics, NSMisc, ns_url_request, CocoaAll, SimpleDarkMode,
-  trndi.native.base;
+  trndi.native.base, trndi.api;
 
 type
   {!
@@ -290,22 +290,11 @@ begin
       httpClient.method := 'GET';
       headers.Add('User-Agent=' + DEFAULT_USER_AGENT);
 
-      // Proxy settings
+      // Proxy settings (retrieved for global scope, but not set as TNSHTTPSendAndReceive doesn't support proxy)
       proxyHost := tempInstance.GetSetting('proxy.host', '', true);
       proxyPort := tempInstance.GetSetting('proxy.port', '8080', true);
       proxyUser := tempInstance.GetSetting('proxy.user', '', true);
       proxyPass := tempInstance.GetSetting('proxy.pass', '', true);
-
-      if proxyHost <> '' then
-      begin
-        httpClient.Proxy.Host := proxyHost;
-        httpClient.Proxy.Port := StrToIntDef(proxyPort, 8080);
-        if proxyUser <> '' then
-        begin
-          httpClient.Proxy.UserName := proxyUser;
-          httpClient.Proxy.Password := proxyPass;
-        end;
-      end;
 
       if httpClient.SendAndReceive(send, response, headers) then
       begin

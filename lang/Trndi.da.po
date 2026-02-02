@@ -640,12 +640,20 @@ msgctxt "tfconf.cl_ok_txt.caption"
 msgid "OK"
 msgstr "OK"
 
+#: tfconf.edproxyport.text
+msgid "8080"
+msgstr ""
+
 #: tfconf.gbdisplayprefs.caption
 msgid "Display Preferences"
 msgstr ""
 
 #: tfconf.gbmulti.caption
 msgid "Account Settings"
+msgstr ""
+
+#: tfconf.gbnetwork.caption
+msgid "Network"
 msgstr ""
 
 #: tfconf.gboverride.caption
@@ -841,6 +849,22 @@ msgstr ""
 
 #: tfconf.label9.caption
 msgid "Trndi can trigger Spotify or Deezer to play a song when low/high"
+msgstr ""
+
+#: tfconf.labelproxyhost.caption
+msgid "Proxy Host:"
+msgstr ""
+
+#: tfconf.labelproxypass.caption
+msgid "Proxy Pass:"
+msgstr ""
+
+#: tfconf.labelproxyport.caption
+msgid "Proxy Port:"
+msgstr ""
+
+#: tfconf.labelproxyuser.caption
+msgid "Proxy User:"
 msgstr ""
 
 #: tfconf.lack.caption
@@ -1046,6 +1070,10 @@ msgstr ""
 
 #: tfconf.tsmulti.caption
 msgid "Multi User"
+msgstr ""
+
+#: tfconf.tsproxy.caption
+msgid "Proxy"
 msgstr ""
 
 #: tfconf.tssystem.caption
