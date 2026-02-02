@@ -41,6 +41,14 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="trndiTestCase1"/>
       </Unit>
+      <Unit>
+        <Filename Value="dexcom_time_tests.pp"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="dexcom_trend_tests.pp"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

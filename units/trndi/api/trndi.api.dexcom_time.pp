@@ -14,13 +14,31 @@ implementation
 function TryParseISODateTime(const S: string; out DT: TDateTime): boolean;
 var
   L: string;
+  Year, Month, Day, Hour, Min, Sec: integer;
 begin
   Result := False;
   L := Trim(S);
+  
+  // Strip surrounding quotes (may be multiple layers)
+  while (Length(L) > 1) and (L[1] = '"') and (L[Length(L)] = '"') do
+    L := Trim(Copy(L, 2, Length(L) - 2));
+  
+  // Skip if it starts with { (JSON object)
+  if (Length(L) > 0) and (L[1] = '{') then
+    Exit;
+  
   if Length(L) >= 19 then
   begin
     try
-      DT := ScanDateTime('YYYY-MM-DD"T"hh:nn:ss', Copy(L, 1, 19));
+      // Parse YYYY-MM-DDTHH:nn:ss
+      Year := StrToInt(Copy(L, 1, 4));
+      Month := StrToInt(Copy(L, 6, 2));
+      Day := StrToInt(Copy(L, 9, 2));
+      Hour := StrToInt(Copy(L, 12, 2));
+      Min := StrToInt(Copy(L, 15, 2));
+      Sec := StrToInt(Copy(L, 18, 2));
+      
+      DT := EncodeDateTime(Year, Month, Day, Hour, Min, Sec, 0);
       Result := True;
       Exit;
     except
@@ -33,7 +51,8 @@ function ParseDexcomTime(const S: string; out DT: TDateTime): boolean;
 var
   LTimeStr: string;
   i, j: integer;
-  js: TJSONData;
+  serverTimeData, js: TJSONData;
+
 begin
   Result := False;
   DT := 0;
@@ -82,47 +101,70 @@ begin
 
   // 3) JSON object with ServerTime (could be "/Date(ms)/", numeric ms or ISO string)
   try
-    js := GetJSON(S);
-    try
-      if js.JSONType = jtObject then
-      begin
-        LTimeStr := TJSONObject(js).Get('ServerTime', '');
-        LTimeStr := Trim(LTimeStr);
-        if LTimeStr <> '' then
+    // Only try JSON parsing if it looks like JSON
+    if (Pos('{', S) > 0) or (Pos('[', S) > 0) then
+    begin
+      js := GetJSON(S);
+      try
+        if js.JSONType = jtObject then
         begin
-          // If value like /Date(.....)/, extract digits
-          i := Pos('(', LTimeStr);
-          if i > 0 then
+          // Try to get ServerTime field
+          if TJSONObject(js).Find('ServerTime') <> nil then
           begin
-            j := Pos(')', LTimeStr, i + 1);
-            if (j > i) then
+            serverTimeData := TJSONObject(js).Find('ServerTime');
+            if serverTimeData <> nil then
             begin
-              LTimeStr := Copy(LTimeStr, i + 1, j - i - 1);
-              try
-                DT := UnixToDateTime(StrToInt64(LTimeStr) div 1000, False);
-                Result := True;
-                Exit;
-              except
+              // Handle numeric milliseconds
+              if serverTimeData.JSONType = jtNumber then
+              begin
+                try
+                  DT := UnixToDateTime(Trunc(serverTimeData.AsFloat / 1000), False);
+                  Result := True;
+                  Exit;
+                except
+                end;
+              end;
+              
+              LTimeStr := serverTimeData.AsString;
+              LTimeStr := Trim(LTimeStr);
+              if LTimeStr <> '' then
+              begin
+                // If value like /Date(.....)/, extract digits
+                i := Pos('(', LTimeStr);
+                if i > 0 then
+                begin
+                  j := Pos(')', LTimeStr, i + 1);
+                  if (j > i) then
+                  begin
+                    LTimeStr := Copy(LTimeStr, i + 1, j - i - 1);
+                    try
+                      DT := UnixToDateTime(StrToInt64(LTimeStr) div 1000, False);
+                      Result := True;
+                      Exit;
+                    except
+                    end;
+                  end;
+                end;
+                // Try numeric ms (string representation)
+                try
+                  DT := UnixToDateTime(StrToInt64(LTimeStr) div 1000, False);
+                  Result := True;
+                  Exit;
+                except
+                end;
+                // Try ISO parse
+                if TryParseISODateTime(LTimeStr, DT) then
+                begin
+                  Result := True;
+                  Exit;
+                end;
               end;
             end;
           end;
-          // Try numeric ms
-          try
-            DT := UnixToDateTime(StrToInt64(LTimeStr) div 1000, False);
-            Result := True;
-            Exit;
-          except
-          end;
-          // Try ISO parse
-          if TryParseISODateTime(LTimeStr, DT) then
-          begin
-            Result := True;
-            Exit;
-          end;
         end;
+      finally
+        js.Free;
       end;
-    finally
-      js.Free;
     end;
   except
     // ignore JSON parse errors and fallthrough
