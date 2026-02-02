@@ -697,7 +697,7 @@ begin
   intercept := meanY - (slope * meanX);
   
   // Add diagnostic output for debugging steep predictions
-  // LogMessage(Format('Prediction: n=%d, slope=%.2f mg/dL/min, intercept=%.2f', 
+  // LogMessageToFile(Format('Prediction: n=%d, slope=%.2f mg/dL/min, intercept=%.2f', 
   //   [n, slope, intercept]));
   
   // Calculate average interval between readings

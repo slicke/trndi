@@ -419,7 +419,7 @@ begin
     LAccountID := StringReplace(
       resp,
       '"', '', [rfReplaceAll]);
-    {$ifdef DEBUG} if debug_log_api then LogMessage(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, DEXCOM_AUTHENTICATE_ENDPOINT, resp, '']));{$endif}
+    {$ifdef DEBUG} if debug_log_api then LogMessageToFile(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, DEXCOM_AUTHENTICATE_ENDPOINT, resp, '']));{$endif}
     
     // Check for authentication errors
     if (LAccountID = '') or (Pos('error', LowerCase(LAccountID)) > 0) or
@@ -442,7 +442,7 @@ begin
     FSessionID := StringReplace(
       resp,
       '"', '', [rfReplaceAll]);
-        {$ifdef DEBUG} if debug_log_api then LogMessage(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, DEXCOM_LOGIN_BY_ID_ENDPOINT, resp, '']));{$endif}
+        {$ifdef DEBUG} if debug_log_api then LogMessageToFile(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, DEXCOM_LOGIN_BY_ID_ENDPOINT, resp, '']));{$endif}
   end
   else begin
     resp := native.Request(true, DEXCOM_LOGIN_BY_NAME_ENDPOINT, [], LBody);
@@ -450,7 +450,7 @@ begin
     resp,
       '"', '', [rfReplaceAll]);// Single-step authentication for plain usernames
 
-    {$ifdef DEBUG} if debug_log_api then LogMessage(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, DEXCOM_LOGIN_BY_NAME_ENDPOINT, resp, '']));{$endif}
+    {$ifdef DEBUG} if debug_log_api then LogMessageToFile(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, DEXCOM_LOGIN_BY_NAME_ENDPOINT, resp, '']));{$endif}
   end;
 
   // Check for various error responses before validation
@@ -487,7 +487,7 @@ begin
 
   // 3) Retrieve system UTC time for time-diff calibration
   LTimeResponse := native.Request(false, DEXCOM_TIME_ENDPOINT, [], '', 'Accept=application/json');
-  {$ifdef DEBUG} if debug_log_api then LogMessage(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, DEXCOM_TIME_ENDPOINT, LTimeResponse, '']));{$endif}
+  {$ifdef DEBUG} if debug_log_api then LogMessageToFile(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, DEXCOM_TIME_ENDPOINT, LTimeResponse, '']));{$endif}
 
   // Dexcom may respond as XML-like <SystemTime> or JSON-ish /Date(ms)/ format
   if Pos('>', LTimeResponse) > 0 then
@@ -551,7 +551,7 @@ begin
 
   // Dexcom returns 'AssignedToYou' when serial number is associated
   LResponse := native.Request(true, DEXCOM_VERIFY_SERIAL_NUMBER_ENDPOINT, LParams, '', 'Accept=application/json');
-  {$ifdef DEBUG} if debug_log_api then LogMessage(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, DEXCOM_VERIFY_SERIAL_NUMBER_ENDPOINT, LResponse, debugParams(LParams)]));{$endif}
+  {$ifdef DEBUG} if debug_log_api then LogMessageToFile(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, DEXCOM_VERIFY_SERIAL_NUMBER_ENDPOINT, LResponse, debugParams(LParams)]));{$endif}
   if LResponse = 'AssignedToYou' then
     Result := true;
 end;
@@ -640,9 +640,9 @@ begin
 
   // Fetch glucose values; some deployments also allow reading alert settings
   LGlucoseJSON := native.Request(true, DEXCOM_GLUCOSE_READINGS_ENDPOINT, LParams, '', 'Accept=application/json');
-  {$ifdef DEBUG} if debug_log_api then LogMessage(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, DEXCOM_GLUCOSE_READINGS_ENDPOINT, LGlucoseJSON, debugParams(lparams)]));{$endif}
+  {$ifdef DEBUG} if debug_log_api then LogMessageToFile(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, DEXCOM_GLUCOSE_READINGS_ENDPOINT, LGlucoseJSON, debugParams(lparams)]));{$endif}
   LAlertJSON := native.Request(true, DEXCOM_ALERT_ENDPOINT, LParams, '', 'Accept=application/json');
-  {$ifdef DEBUG} if debug_log_api then LogMessage(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, DEXCOM_ALERT_ENDPOINT, LAlertJSON, debugParams(LPARAMS)]));{$endif}
+  {$ifdef DEBUG} if debug_log_api then LogMessageToFile(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, DEXCOM_ALERT_ENDPOINT, LAlertJSON, debugParams(LPARAMS)]));{$endif}
 
   res := LGlucoseJSON;
 

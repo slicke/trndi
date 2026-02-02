@@ -52,7 +52,7 @@ trndi.strings, LCLTranslator, Classes, Menus, SysUtils, Forms, Controls,
 Graphics, Dialogs, StdCtrls, ExtCtrls,
 trndi.api.dexcom, trndi.api.dexcomNew, trndi.api.nightscout, trndi.api.nightscout3, trndi.types,
 Math, DateUtils, FileUtil, LclIntf, TypInfo, LResources,
-slicke.ux.alert, slicke.ux.native, usplash, Generics.Collections, trndi.funcs,
+slicke.ux.alert, slicke.ux.native, usplash, Generics.Collections, trndi.funcs, trndi.log,
 Trndi.native.base, trndi.shared, buildinfo, fpjson, jsonparser,
 SystemMediaController,
 {$ifdef TrndiExt}
@@ -1887,7 +1887,7 @@ begin
     TrendDots[i] := dotArray[i]^;
   end;
   
-  LogMessage('Trend dots created dynamically');
+  LogMessageToFile('Trend dots created dynamically');
 end;
 
 procedure TfBG.initDot(l: TDotControl; c, ix: integer);
@@ -1969,7 +1969,7 @@ begin
         // If first pixel is below center, offset is positive (move lines down)
         // If first pixel is above center, offset is negative (move lines up)
         Result := firstPixelY - halfHeight;
-        LogMessage(Format(
+        LogMessageToFile(Format(
           'DOT_VISUAL_OFFSET calculated: font=%s, firstPixel=%d, halfHeight=%d, offset=%d',
           [
           fontName, firstPixelY, halfHeight, Result]));
@@ -1979,7 +1979,7 @@ begin
       begin
         {$ifdef DARWIN}
         // On macOS, log canvas errors but don't crash
-        LogMessage('CalculateDotVisualOffset error on macOS: ' + E.Message);
+        LogMessageToFile('CalculateDotVisualOffset error on macOS: ' + E.Message);
         Result := 0; // Use default offset
         {$else}
         raise; // Re-raise on other platforms
@@ -2062,7 +2062,7 @@ begin
   l.Font.Size := round(Max((lVal.Font.Size div 8) * dotscale, 28)); // Ensure minimum font size
   // Force immediate size calculation by triggering a layout update
   l.AdjustSize;
-  LogMessage(Format('TrendDots[%d] resized with Font Size = %d, Height=%d (AutoSize).',
+  LogMessageToFile(Format('TrendDots[%d] resized with Font Size = %d, Height=%d (AutoSize).',
     [ix, l.Font.Size, l.Height]));
   {$else}
   l.AutoSize := false;
@@ -2073,7 +2073,7 @@ begin
   minSize := Max(th, l.Font.Size);
   l.Width := tw;
   l.Height := minSize;
-  LogMessage(Format('TrendDots[%d] resized with Font Size = %d, W=%d, H=%d.',
+  LogMessageToFile(Format('TrendDots[%d] resized with Font Size = %d, W=%d, H=%d.',
     [ix, l.Font.Size, l.Width, l.Height]));
   {$endif}
 end;
@@ -2088,7 +2088,7 @@ begin
 
   // Position each label with equal spacing from the left
   l.Left := spacing + (spacing + l.Width) * (ix - 1);
-  LogMessage(Format('TrendDots[%d] positioned at Left = %d.', [ix, l.Left]));
+  LogMessageToFile(Format('TrendDots[%d] positioned at Left = %d.', [ix, l.Left]));
 end;
 
 // FormResize event handler
@@ -2667,7 +2667,7 @@ begin
   sessionType := GetEnvironmentVariable('XDG_SESSION_TYPE');
   if LowerCase(sessionType) = 'wayland' then
   begin
-    LogMessage('OnTop requested but session is Wayland; compositor may ignore programmatic hints.');
+    LogMessageToFile('OnTop requested but session is Wayland; compositor may ignore programmatic hints.');
     // Friendly guidance for users running KDE/Wayland
     if miOnTop.Checked then
       ShowMessage(RS_WAYLAND);
@@ -4321,7 +4321,7 @@ begin
     begin
       // Hint is set but can't be parsed - this is a problem
       // Keep visibility as it was set by PlaceTrendDots, but log the issue
-      LogMessage(Format('Warning: Could not parse Hint "%s" for dot. Keeping visibility=%s',
+      LogMessageToFile(Format('Warning: Could not parse Hint "%s" for dot. Keeping visibility=%s',
         [Dot.Hint, BoolToStr(wasVisible, true)]));
       Dot.Visible := wasVisible;
     end
@@ -4413,7 +4413,7 @@ begin
     if gapSeconds > (expectedSeconds * 2) then
     begin
       FForceRefresh := true;
-      LogMessage(Format('Wake detected: timer gap %d sec (expected ~%d sec). Forcing refresh.',
+      LogMessageToFile(Format('Wake detected: timer gap %d sec (expected ~%d sec). Forcing refresh.',
         [gapSeconds, expectedSeconds]));
     end;
   end;
@@ -4612,7 +4612,7 @@ begin
   lVal.Font.Style := [];
 
   // Log latest reading
-  LogMessage(Format(RS_LATEST_READING, [reading.val, DateTimeToStr(reading.date)]));
+  LogMessageToFile(Format(RS_LATEST_READING, [reading.val, DateTimeToStr(reading.date)]));
 
   // Announce
   if miAnnounce.Checked then
@@ -5423,7 +5423,7 @@ begin
   if (Length(bgs) < 1) and (Length(FCachedReadings) > 0) then
   begin
     bgs := FCachedReadings;
-    LogMessage('DoFetchAndValidateReadings: API returned no data, using cached readings');
+    LogMessageToFile('DoFetchAndValidateReadings: API returned no data, using cached readings');
     // Enable internet check and show indicator since API failed
     tPing.Enabled := true;
     tPingTimer(nil);  // Check internet status immediately
@@ -5460,7 +5460,7 @@ begin
     if Assigned(api) and (Trim(api.errormsg) <> '') then
     begin
       msg := msg + sLineBreak + api.errormsg;
-      LogMessage('Backend error: ' + api.errormsg);
+      LogMessageToFile('Backend error: ' + api.errormsg);
     end;
 
     // Append latest-reading age details to help diagnose stale data cases
@@ -5491,7 +5491,7 @@ begin
   missingAlerted := false;
   lastMissingAlert := 0;
 
-  LogMessage(Format('DoFetchAndValidateReadings: Got %d readings from API', [Length(bgs)]));
+  LogMessageToFile(Format('DoFetchAndValidateReadings: Got %d readings from API', [Length(bgs)]));
 
   // Call the method to place the points
   PlaceTrendDots(bgs);
@@ -5693,9 +5693,9 @@ begin
     TrendDots[10].Visible := isFresh;
 
     if isFresh then
-      LogMessage('TrendDots[10] shown as latest reading is fresh.')
+      LogMessageToFile('TrendDots[10] shown as latest reading is fresh.')
     else
-      LogMessage('TrendDots[10] hidden due to outdated reading.');
+      LogMessageToFile('TrendDots[10] hidden due to outdated reading.');
   end;
 end;
 
@@ -5733,7 +5733,7 @@ begin
   anchorTime := RecodeSecond(anchorTime, 0);
   anchorTime := RecodeMilliSecond(anchorTime, 0);
   
-  LogMessage(Format('PlaceTrendDots: Processing %d readings, anchor=%s (latest=%s)', 
+  LogMessageToFile(Format('PlaceTrendDots: Processing %d readings, anchor=%s (latest=%s)', 
     [Length(SortedReadings), DateTimeToStr(anchorTime), DateTimeToStr(SortedReadings[0].date)]));
 
   for slotIndex := 0 to NUM_DOTS - 1 do
@@ -5746,7 +5746,7 @@ begin
 
     found := false;
 
-    LogMessage(Format('Searching slot %d (TrendDots[%d]): %s to %s', 
+    LogMessageToFile(Format('Searching slot %d (TrendDots[%d]): %s to %s', 
       [slotIndex, NUM_DOTS - slotIndex, DateTimeToStr(slotStart), DateTimeToStr(slotEnd)]));
 
     // Search for the most recent reading within this interval
@@ -5762,7 +5762,7 @@ begin
       // Use a 10 second epsilon to handle timing variations
       if reading.date > slotEnd + TIME_EPSILON_DAYS then
       begin
-        LogMessage(Format('  Reading at %s is too new (>%.3f sec after slot end), skipping', 
+        LogMessageToFile(Format('  Reading at %s is too new (>%.3f sec after slot end), skipping', 
           [DateTimeToStr(reading.date), (reading.date - slotEnd) * 86400]));
         Continue;
       end;
@@ -5774,7 +5774,7 @@ begin
       // reading at e.g. 20:05 from filling the 20:10 slot and hiding a gap.
       if (reading.date > slotStart) and (reading.date <= slotEnd + TIME_EPSILON_DAYS) then
       begin
-        LogMessage(Format('  Found match at %s (value: %.1f, diff from slotEnd: %.1f sec)', 
+        LogMessageToFile(Format('  Found match at %s (value: %.1f, diff from slotEnd: %.1f sec)', 
           [DateTimeToStr(reading.date), reading.val, (slotEnd - reading.date) * 86400]));
         found := UpdateLabelForReading(slotIndex, reading);
         if found then
@@ -5793,7 +5793,7 @@ begin
       if reading.date < slotStart - (10 / 86400) then
       begin
         // Stop if we've gone past this interval into older readings
-        LogMessage(Format('  Reading at %s is too old (%.3f sec before slot start), stopping', 
+        LogMessageToFile(Format('  Reading at %s is too old (%.3f sec before slot start), stopping', 
           [DateTimeToStr(reading.date), (slotStart - reading.date) * 86400]));
         Break;
       end;
@@ -5809,14 +5809,14 @@ begin
       begin
         l.Visible := false;
         l.Hint := '';  // Clear hint to prevent UpdateTrendDots from re-showing stale data
-        LogMessage(Format('TrendDots[%d] hidden as no reading found in interval.',
+        LogMessageToFile(Format('TrendDots[%d] hidden as no reading found in interval.',
           [labelNumber]));
       end;
     end;
   end;
   
   // Summary log
-  LogMessage(Format('PlaceTrendDots complete: anchor=%s', [DateTimeToStr(anchorTime)]));
+  LogMessageToFile(Format('PlaceTrendDots complete: anchor=%s', [DateTimeToStr(anchorTime)]));
 end;
 
 function TfBG.UpdateLabelForReading(SlotIndex: integer;
@@ -5856,7 +5856,7 @@ begin
     // Sätt färger baserat på värdet
     l.Font.Color := DetermineColorForReading(Reading);
 
-    LogMessage(Format('TrendDots[%d] updated with reading at %s (Value: %.2f).',
+    LogMessageToFile(Format('TrendDots[%d] updated with reading at %s (Value: %.2f).',
       [labelNumber, DateTimeToStr(Reading.date), Reading.val]));
     l.BringToFront;
     Result := true;
@@ -6002,7 +6002,7 @@ begin
         else
         begin
           // Could not parse stored ignore date; log for debugging
-          LogMessage(Format('CheckForUpdates: failed to parse update.ignore.date: %s', [lastIgnoreDate]));
+          LogMessageToFile(Format('CheckForUpdates: failed to parse update.ignore.date: %s', [lastIgnoreDate]));
         end;
       end;
     end;
