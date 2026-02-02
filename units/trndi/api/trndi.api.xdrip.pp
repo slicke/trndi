@@ -288,10 +288,11 @@ begin
   // Convert milliseconds to seconds, then to TDateTime (UTC)
   LDateTime := UnixToDateTime(LTimeStamp div 1000);
 
-  // Compute time difference between server UTC and local wall-clock time (seconds).
-  // Prefer direct subtraction of TDateTime values to avoid platform-specific issues
-  // where LocalTimeToUniversal may mis-handle DST on some systems (e.g., Haiku).
-  timeDiff := Round((LDateTime - Now) * 86400); // serverUTC - localNow (seconds)
+  // Compute timeDiff between server UTC and local UTC
+  timeDiff := SecondsBetween(LDateTime, LocalTimeToUniversal(Now));
+  if timeDiff < 0 then
+    timeDiff := 0;
+  timeDiff := -1 * timeDiff; // Negative to match the expected adjustment direction
 
   // Retrieve hi/lo ranges from xDrip (status.json); parse simple integers by slicing
   LResponse := native.Request(false, XDRIP_RANGES, [], '', key);
