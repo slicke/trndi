@@ -43,7 +43,7 @@ interface
 
 uses
 Classes, SysUtils, Dialogs, trndi.types, trndi.api, trndi.native, trndi.funcs,
-fpjson, jsonparser, dateutils, StrUtils, sha1, Math, jsonscanner;
+fpjson, jsonparser, dateutils, StrUtils, sha1, Math, jsonscanner, trndi.log;
 
 const
   {** Relative filename for the Nightscout status endpoint used to probe
