@@ -46,7 +46,7 @@ interface
 
 uses
 Classes, SysUtils, Controls, ExtCtrls, StdCtrls, Graphics, trndi.types, Forms, Math,
-fpjson, jsonparser, dateutils, buildinfo
+fpjson, jsonparser, dateutils, buildinfo, trndi.log
 {$ifdef DEBUG} , trndi.log{$endif}
 {$ifdef TrndiExt},trndi.ext.engine, mormot.lib.quickjs, mormot.core.base{$endif}
 {$ifdef DARWIN}, CocoaAll, NSHelpers{$endif}
@@ -63,7 +63,6 @@ function GetAppPath: string;
 function GetLangPath: string;
 procedure PaintLbl(Sender: TLabel; OutlineWidth: integer = 1;
 OutlineColor: TColor = clBlack);
-procedure LogMessage(const Msg: string);
 procedure SortReadingsDescending(var Readings: array of BGReading);
 procedure SetPointHeight(l: TControl; Value: single; clientHeight: integer);
 function CalculateTrendFromDelta(delta: single): BGTrend;
@@ -302,23 +301,6 @@ begin
   end;
 end;
 
-{$ifdef DEBUG}
-procedure LogMessage(const Msg: string);
-begin
-  if (TrndiDebugLogAlert) and (SecondsBetween(Now, TrndiDebugLogAlertSnooze) > 5) then
-    if ExtMessage(uxdNormal, 'Log Output','Output from the logger','A message has been sent to the logger', msg, false, uxclWhite, uxclRed,[mbOK, mbUXSnooze]) <> mrOK then
-      TrndiDebugLogAlertSnooze := Now;
-
-  LogMessageToFile(Msg);
-end;
-{$else}
-// Remove when launching
-procedure LogMessage(const Msg: string);
-begin
-
-end;
-{$endif}
-
 // Implement a simple insertion sort for BGReading
 procedure SortReadingsDescending(var Readings: array of BGReading);
 var
@@ -387,11 +369,11 @@ begin
   if (L.Top + EstimatedHeight) > (clientHeight - BottomPadding) then
     L.Top := clientHeight - BottomPadding - EstimatedHeight;
   
-  LogMessage(Format('Label %s: Value=%.2f, Top=%d, Height=%d (est=%d), BottomPad=%d',
+  LogMessageToFile(Format('Label %s: Value=%.2f, Top=%d, Height=%d (est=%d), BottomPad=%d',
     [L.Name, Value, L.Top, L.Height, EstimatedHeight, BottomPadding]));
   {$else}
   L.Top := (clientHeight - Position) - 1;
-  LogMessage(Format('Label %s: Value=%.2f, Top=%d, Height=%d', [L.Name, Value, L.Top, L.Height]));
+  LogMessageToFile(Format('Label %s: Value=%.2f, Top=%d, Height=%d', [L.Name, Value, L.Top, L.Height]));
   {$endif}
 end;
 

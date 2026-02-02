@@ -43,7 +43,7 @@ interface
 
 uses
 Classes, SysUtils, trndi.types, trndi.api, trndi.native, trndi.funcs,
-fpjson, jsonparser, jsonscanner, dateutils, StrUtils;
+fpjson, jsonparser, jsonscanner, dateutils, StrUtils, trndi.log;
 
 const
   {** Base path for Nightscout v3 API endpoints (appended to the provided base URL). }
@@ -296,7 +296,7 @@ begin
 
   // 2) Fetch v3 status (bearer)
   resp := native.request(false, NS3_STATUS, [], '', BearerHeader);
-  {$ifdef DEBUG} if debug_log_api then LogMessage(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, NS3_STATUS, resp, debugParams([])]));{$endif}
+  {$ifdef DEBUG} if debug_log_api then LogMessageToFile(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, NS3_STATUS, resp, debugParams([])]));{$endif}
 
   if Trim(resp) = '' then
     if not TrndiNative.getURL(FSiteBase + '/api/v1/status.json', resp) then
@@ -401,7 +401,7 @@ begin
   // Attempt via native.request using absolute v1 URL and bearer header (no prefix)
   resp := native.request(false, FSiteBase + '/api/v1/status.json',
     [], '', BearerHeader, false {no prefix});
-  {$ifdef DEBUG} if debug_log_api then LogMessage(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, NS3_STATUS, resp, debugParams([])]));{$endif}
+  {$ifdef DEBUG} if debug_log_api then LogMessageToFile(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, NS3_STATUS, resp, debugParams([])]));{$endif}
 
   // If empty or app-level error, try plain GET
   if (Trim(resp) = '') or ((resp <> '') and (resp[1] = '+')) then
@@ -508,7 +508,7 @@ begin
 
   try
     resp := native.request(false, extras, params, '', BearerHeader);
-    {$ifdef DEBUG} if debug_log_api then LogMessage(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, NS3_STATUS, resp, debugParams(params)]));{$endif}
+    {$ifdef DEBUG} if debug_log_api then LogMessageToFile(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, NS3_STATUS, resp, debugParams(params)]));{$endif}
   except
     lastErr := 'Could not contact Nightscout entries endpoint (request failed)';
     Exit; // return empty set
@@ -534,7 +534,7 @@ begin
     fbparams[0] := 'count=' + IntToStr(maxNum);
     resp := native.request(false, FSiteBase + '/api/v1/entries.json',
       fbparams, '', BearerHeader, false {no prefix});
-    {$ifdef DEBUG} if debug_log_api then LogMessage(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, NS3_STATUS, resp, debugParams(fbParams)]));{$endif}
+    {$ifdef DEBUG} if debug_log_api then LogMessageToFile(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, NS3_STATUS, resp, debugParams(fbParams)]));{$endif}
     if Trim(resp) = '' then
     begin
       lastErr := 'Empty response from Nightscout v1 entries endpoint (fallback failed)';
@@ -560,7 +560,7 @@ begin
     fbparams[0] := 'count=' + IntToStr(maxNum);
     resp := native.request(false, FSiteBase + '/api/v1/entries.json',
       fbparams, '', BearerHeader, false {no prefix});
-    {$ifdef DEBUG} if debug_log_api then LogMessage(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, NS3_STATUS, resp, debugParams(fbparams)]));{$endif}
+    {$ifdef DEBUG} if debug_log_api then LogMessageToFile(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, NS3_STATUS, resp, debugParams(fbparams)]));{$endif}
     if Trim(resp) = '' then
     begin
       js.Free;
@@ -731,7 +731,7 @@ begin
         LUnixTrue := UnixToDateTime(ts, True);
         LUnixFalse := UnixToDateTime(ts, False);
         LLocalOffsetMin := Round((Now - LocalTimeToUniversal(Now)) * 1440); // minutes
-        LogMessage('[' + {$i %file%} + ':' + {$i %Line%} + '] debug: unixTrue=' + FormatDateTime('yyyy-mm-dd hh:nn:ss', LUnixTrue) +
+        LogMessageToFile('[' + {$i %file%} + ':' + {$i %Line%} + '] debug: unixTrue=' + FormatDateTime('yyyy-mm-dd hh:nn:ss', LUnixTrue) +
           ' unixFalse=' + FormatDateTime('yyyy-mm-dd hh:nn:ss', LUnixFalse) + ' localOffsetMin=' + IntToStr(LLocalOffsetMin));
       except
         // ignore diagnostics failure
@@ -740,12 +740,12 @@ begin
       // Diagnostic log to help debug timezone/timestamp issues
       try
         // Use simple concatenation to avoid Format exceptions while debugging
-        LogMessage('[' + {$i %file%} + ':' + {$i %Line%} + '] NightScout entry ' + IntToStr(i) +
+        LogMessageToFile('[' + {$i %file%} + ':' + {$i %Line%} + '] NightScout entry ' + IntToStr(i) +
           ': dateMs=' + IntToStr(LDateMs) + ' dateString="' + LDateStr + '" utcOffset=' + IntToStr(LUtcOffset) + ' method=' + LMethod + ' tz=' + IntToStr(tz) +
           ' computed=' + FormatDateTime('yyyy-mm-dd hh:nn:ss', Result[i].date));
       except
         on E: Exception do
-          LogMessage('[' + {$i %file%} + ':' + {$i %Line%} + '] NightScout entry ' + IntToStr(i) + ': diagnostic log failed: ' + E.Message);
+          LogMessageToFile('[' + {$i %file%} + ':' + {$i %Line%} + '] NightScout entry ' + IntToStr(i) + ': diagnostic log failed: ' + E.Message);
       end;
 
       Result[i].level := getLevel(Result[i].val);
@@ -970,7 +970,7 @@ begin
   // Fetch basal rate from Nightscout v3 API
   try
     ResponseStr := Native.Request(false, 'profile.json', [], '', BearerHeader);
-    {$ifdef DEBUG} if debug_log_api then LogMessage(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, 'profile.json', responsestr, debugParams([])]));{$endif}
+    {$ifdef DEBUG} if debug_log_api then LogMessageToFile(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, 'profile.json', responsestr, debugParams([])]));{$endif}
     
     if Trim(ResponseStr) = '' then
     begin
@@ -1058,7 +1058,7 @@ begin
   SetLength(profile, 0);
   try
     ResponseStr := Native.Request(false, 'profile.json', [], '', BearerHeader);
-   {$ifdef DEBUG} if debug_log_api then LogMessage(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, 'profile.json', responseStr, debugParams([])]));{$endif}
+   {$ifdef DEBUG} if debug_log_api then LogMessageToFile(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, 'profile.json', responseStr, debugParams([])]));{$endif}
   except
     lastErr := 'HTTP request failed while fetching profile.json';
     Exit;

@@ -81,11 +81,11 @@ begin
 
   langPath := getLangPath;
   moPath := langPath + 'Trndi.' + lang + '.mo';
-  LogMessage('Lang select: setting=' + native.GetSetting('locale', '') + ' resolved=' + lang + ' path=' + langPath + ' mo=' + moPath);
+  LogMessageToFile('Lang select: setting=' + native.GetSetting('locale', '') + ' resolved=' + lang + ' path=' + langPath + ' mo=' + moPath);
   langLoaded := SetDefaultLang(lang, langPath, 'Trndi');
-  LogMessage('Lang loaded=' + langLoaded + ' RS_INIT_UI=' + RS_INIT_UI);
+  LogMessageToFile('Lang loaded=' + langLoaded + ' RS_INIT_UI=' + RS_INIT_UI);
   if not FileExists(moPath) then
-    LogMessage('Lang MO missing: ' + lang + ' path=' + langPath + ' mo=' + moPath);
+    LogMessageToFile('Lang MO missing: ' + lang + ' path=' + langPath + ' mo=' + moPath);
 end;
 
 {$if DEFINED(DARWIN) OR DEFINED(X_LINUXBSD)}
@@ -505,7 +505,7 @@ var
   miDebugUXMsg, miDebugLog, miDebugLoadText, miDebugLogAPI: TMenuItem;
   {$endif}
 begin
-  LogMessage(Format(#10'=== Trndi started at %s ===', [DateTimeToStr(Now)]));
+  LogMessageToFile(Format(#10'=== Trndi started at %s ===', [DateTimeToStr(Now)]));
   firstboot := false;
 
   // Initialize native interface

@@ -45,7 +45,7 @@ interface
 
 uses
 Classes, SysUtils, Dialogs, trndi.types, trndi.api, trndi.native, trndi.funcs,
-fpjson, jsonparser, dateutils, trndi.api.debug;
+fpjson, jsonparser, dateutils, trndi.api.debug, trndi.log;
 
 type
   // Main class
@@ -105,9 +105,9 @@ begin
 
   // Short debug trace to help when testing the provider
   if missing < Length(Result) then
-    LogMessage(Format('DebugFirstXMissing: Cleared %d readings; newest remaining at %s', [missing, DateTimeToStr(Result[missing].date)]))
+    LogMessageToFile(Format('DebugFirstXMissing: Cleared %d readings; newest remaining at %s', [missing, DateTimeToStr(Result[missing].date)]))
   else
-    LogMessage(Format('DebugFirstXMissing: Cleared all %d readings', [missing]));
+    LogMessageToFile(Format('DebugFirstXMissing: Cleared all %d readings', [missing]));
 end;
 
 class function DebugFirstXMissingAPI.ParamLabel(LabelName: APIParamLabel): string;

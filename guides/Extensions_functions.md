@@ -468,7 +468,7 @@ function showAlert() {
 const timerId = setTimeout(showAlert, 5000);
 
 // Another example
-function logMessage() {
+function LogMessageToFile() {
   console.log("Timer executed!");
 }
 setTimeout(logMessage, 3000);
