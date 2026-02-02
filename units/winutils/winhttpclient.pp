@@ -448,7 +448,11 @@ begin
           until dwSize = 0;
 
           Result := ResponseStream.DataString;
-        finally
+          LogMessageToFile('WinHTTP GET response length: ' + IntToStr(Length(Result)));
+          if Length(Result) > 0 then
+            LogMessageToFile('WinHTTP GET response preview: ' + Copy(Result, 1, 200));          LogMessageToFile('WinHTTP GET response length: ' + IntToStr(Length(Result)));
+          if Length(Result) > 0 then
+            LogMessageToFile('WinHTTP GET response preview: ' + Copy(Result, 1, 200));        finally
           ResponseStream.Free;
         end;
 
@@ -616,6 +620,9 @@ begin
           until dwSize = 0;
 
           Result := ResponseStream.DataString;
+          LogMessageToFile('WinHTTP POST response length: ' + IntToStr(Length(Result)));
+          if Length(Result) > 0 then
+            LogMessageToFile('WinHTTP POST response preview: ' + Copy(Result, 1, 200));
         finally
           ResponseStream.Free;
         end;

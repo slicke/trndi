@@ -1337,7 +1337,7 @@ begin
 
   // No custom proxy configured
   // Prefer a true direct connection first to avoid WPAD/system proxy stalls.
-  DebugOut('Windows: Trying direct connection (ForceNoProxy=true) to: ' + address);
+  LogMessageToFile('Windows: Trying direct connection (ForceNoProxy=true) to: ' + address);
   client := TWinHTTPClient.Create(useragent, true);
   try
     if TryRequest(client, ResStr) then
@@ -1349,7 +1349,7 @@ begin
   end;
 
   // Fallback: retry using system proxy settings (default WinHTTP behavior)
-  DebugOut('Windows: Trying with system proxy settings to: ' + address);
+  LogMessageToFile('Windows: Trying with system proxy settings to: ' + address);
   client := TWinHTTPClient.Create(useragent);
   try
     if TryRequest(client, ResStr) then
