@@ -13021,6 +13021,7 @@ object fConf: TfConf
       Caption = 'Proxy'
       ClientHeight = 483
       ClientWidth = 659
+      OnShow = tsProxyShow
       object gbNetwork: TGroupBox
         Left = 0
         Height = 147

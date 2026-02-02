@@ -427,6 +427,7 @@ TfConf = class(TForm)
   procedure ToggleBox1Change(Sender: TObject);
   procedure tsCommonShow(Sender: TObject);
   procedure tsDisplayShow(Sender: TObject);
+  procedure tsProxyShow(Sender: TObject);
   procedure tsSystemShow(Sender: TObject);
   procedure closeClick(Sender: TObject);
 private
@@ -1794,6 +1795,13 @@ begin
     lDot2.Font.color := ldot1.font.color;
     lDot3.Font.color := ldot1.font.color;
   end;
+end;
+
+procedure TfConf.tsProxyShow(Sender: TObject);
+begin
+  {$ifdef X_MAC}
+     gbNetwork.Enabled := false;
+  {$endif}
 end;
 
 procedure TfConf.tsSystemShow(Sender: TObject);
