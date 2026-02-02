@@ -243,6 +243,14 @@ end;
 
 DexcomCustomNew = class(DexcomNew);
 
+{** Map Dexcom trend representation (string or numeric) into internal `BGTrend`.
+    This function prefers textual mapping via `BG_TRENDS_STRING`. If the value
+    is numeric it accepts both 0-based codes and pydexcom-style 1-based codes.
+    As a final fallback it recognizes common Dexcom textual names used by
+    pydexcom and converts them to the corresponding enum.
+}
+function MapDexcomTrendToEnum(const S: string): BGTrend;
+
 implementation
 
 uses trndi.api.dexcom_time;
@@ -376,12 +384,6 @@ sDexNewParamDescHTML =
   'If you are unsure, try <b>Outside USA</b> first, if you live outside the US.' +
   LineEnding + 'Your username and password are your Dexcom Account (not Share) credentials.';
 
-{** Map Dexcom trend representation (string or numeric) into internal `BGTrend`.
-    This function prefers textual mapping via `BG_TRENDS_STRING`. If the value
-    is numeric it accepts both 0-based codes and pydexcom-style 1-based codes.
-    As a final fallback it recognizes common Dexcom textual names used by
-    pydexcom and converts them to the corresponding enum.
-}
 function MapDexcomTrendToEnum(const S: string): BGTrend;
 var
   code: integer;
