@@ -418,20 +418,24 @@ begin
 
         if not WinHttpReceiveResponse(hRequest, nil) then
         begin
-          // If cert error with proxy, set ignore flags and retry
-          if (GetLastError = 12152) and Port.secure and (FProxyHost <> '') then
+          dwSize := GetLastError;
+          // If cert error with proxy, set ignore flags and RESEND request
+          if (dwSize = 12152) and Port.secure and (FProxyHost <> '') then
           begin
-            LogMessageToFile('WinHTTP GET: Cert error with proxy, setting flags and retrying');
+            LogMessageToFile('WinHTTP GET: Cert error with proxy, setting flags and resending');
             Flags := SECURITY_FLAG_IGNORE_UNKNOWN_CA or SECURITY_FLAG_IGNORE_CERT_DATE_INVALID or
                      SECURITY_FLAG_IGNORE_CERT_CN_INVALID or SECURITY_FLAG_IGNORE_CERT_WRONG_USAGE;
             WinHttpSetOption(hRequest, WINHTTP_OPTION_SECURITY_FLAGS, @Flags, SizeOf(Flags));
+            // RESEND the request, not just receive response
+            if not WinHttpSendRequest(hRequest, nil, 0, nil, 0, 0, 0) then
+              raise Exception.Create('WinHttpSendRequest retry failed: ' + SysErrorMessage(GetLastError));
             if not WinHttpReceiveResponse(hRequest, nil) then
-              raise Exception.Create('WinHttpReceiveResponse failed (' + IntToStr(GetLastError) + '): ' +
+              raise Exception.Create('WinHttpReceiveResponse retry failed (' + IntToStr(GetLastError) + '): ' +
                 SysErrorMessage(GetLastError));
           end
           else
-            raise Exception.Create('WinHttpReceiveResponse failed (' + IntToStr(GetLastError) + '): ' +
-              SysErrorMessage(GetLastError));
+            raise Exception.Create('WinHttpReceiveResponse failed (' + IntToStr(dwSize) + '): ' +
+              SysErrorMessage(dwSize));
         end;
 
         // Läs svar
@@ -599,14 +603,18 @@ begin
         begin
           dwSize := GetLastError;
           LogMessageToFile('WinHTTP POST: ReceiveResponse failed with error: ' + IntToStr(dwSize));
-          // If cert error with proxy, set ignore flags and retry
+          // If cert error with proxy, set ignore flags and RESEND request
           if (dwSize = 12152) and Port.secure and (FProxyHost <> '') then
           begin
-            LogMessageToFile('WinHTTP POST: Cert error with proxy, setting flags and retrying');
+            LogMessageToFile('WinHTTP POST: Cert error with proxy, setting flags and resending');
             Flags := SECURITY_FLAG_IGNORE_UNKNOWN_CA or SECURITY_FLAG_IGNORE_CERT_DATE_INVALID or
                      SECURITY_FLAG_IGNORE_CERT_CN_INVALID or SECURITY_FLAG_IGNORE_CERT_WRONG_USAGE;
             if not WinHttpSetOption(hRequest, WINHTTP_OPTION_SECURITY_FLAGS, @Flags, SizeOf(Flags)) then
               LogMessageToFile('WinHTTP POST: Failed to set flags on retry: ' + IntToStr(GetLastError));
+            // RESEND the request, not just receive response
+            if not WinHttpSendRequest(hRequest, nil, 0, bodyPtr, bodyLen, bodyLen, 0) then
+              raise Exception.Create('WinHttpSendRequest retry failed (' + IntToStr(GetLastError) + '): ' +
+                SysErrorMessage(GetLastError));
             if not WinHttpReceiveResponse(hRequest, nil) then
               raise Exception.Create('WinHttpReceiveResponse retry failed (' + IntToStr(GetLastError) + '): ' +
                 SysErrorMessage(GetLastError))
