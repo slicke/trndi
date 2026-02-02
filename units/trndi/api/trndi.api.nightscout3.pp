@@ -34,6 +34,11 @@
  *   license terms.
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
+ *
+ * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-02-03: Nightscout v3 driver now prefers APIv3 endpoints without the
+ *   legacy ".json" suffix (with automatic fallback), and normalizes the v2
+ *   access token so both "abc123" and "token=abc123" work.
  *)
 unit trndi.api.nightscout3;
 
@@ -50,9 +55,14 @@ const
 NS3_URL_BASE = '/api/v3/';
 
   {** Default paths/endpoints. }
-NS3_STATUS = 'status.json';
-NS3_ENTRIES = 'entries.json';
-NS3_SETTINGS = 'settings.json';
+// APIv3 tutorial uses endpoints without the legacy ".json" suffix.
+// Keep ".json" variants for compatibility with older deployments.
+NS3_STATUS = 'status';
+NS3_STATUS_JSON = 'status.json';
+NS3_ENTRIES = 'entries';
+NS3_ENTRIES_JSON = 'entries.json';
+NS3_SETTINGS = 'settings';
+NS3_SETTINGS_JSON = 'settings.json';
 
 type
   {** NightScout v3 API client with bearer authorization.
@@ -64,6 +74,10 @@ private
   FSiteBase: string;    // Base site URL (no trailing slash), e.g. https://example.com
   FToken: string;       // Bearer JWT token (obtained via v2 authorization)
   FTokenSuffix: string; // Token suffix used in v2 authorization
+
+  class function NormalizeV2AccessToken(const AccessToken: string): string;
+  function TryRequestV3(const PathPreferred, PathLegacyJson: string;
+    const Params: array of string; out Resp: string): boolean;
 
   function BuildAuthURL: string;
   function GetAuthToken(out Err: string): boolean;
@@ -129,6 +143,7 @@ sParamDesc = '** ALPHA DRIVER - Please use "NightScout" for daily use! **' + #13
   #13#10 + '   - Copy the FULL access token value exactly as shown.' + #13#10 +
   '4) In Trndi:' + #13#10 + '   - Address: enter your NightScout URL' + #13#10 +
   '   - Auth: paste the FULL access token.' + #13#10 + #13#10 +
+  'Tip: Both "abc123" and "token=abc123" formats are accepted.' + #13#10 +
   'Note: If you instead use the legacy API Secret, paste your API Secret value as-is.' + #10#13 +
   'Note 2: Your access token should look like: trndi-abc123 (or whatever name you chose)';
 sParamDescHTML =
@@ -154,11 +169,41 @@ sParamDescHTML =
   '</ul>' +
   '</li>' +
   '</ol>' +
+  '<div style="border-left: 4px solid #0d6efd; padding: 12px; margin-top: 15px; border-radius: 4px;">' +
+  '<p style="margin: 0;"><strong>💡 Tip:</strong> Both <code style="background: #6F8FAF; padding: 2px 6px; border-radius: 3px;">abc123</code> and <code style="background: #6F8FAF; padding: 2px 6px; border-radius: 3px;">token=abc123</code> are accepted.</p>' +
+  '</div>' +
   '<div style="border-left: 4px solid #ffc107; padding: 12px; margin-top: 15px; border-radius: 4px;">' +
   '<p style="margin: 0 0 8px 0;"><strong>📝 Note:</strong> If you instead use the legacy API Secret, paste your API Secret value as-is.</p>' +
   '<p style="margin: 0;"><strong>📝 Note 2:</strong> Your access token should look like: <code style="background: #6F8FAF; padding: 2px 6px; border-radius: 3px;">trndi-abc123</code> (or whatever name you chose).</p>' +
   '</div>' +
   '</div>';
+
+class function NightScout3.NormalizeV2AccessToken(const AccessToken: string): string;
+var
+  t: string;
+begin
+  t := Trim(AccessToken);
+  if t = '' then
+    Exit('');
+
+  // Nightscout's v2 auth request expects a path segment like "token=<name>-<secret>".
+  // Accept both raw token value and already-prefixed input.
+  if (Length(t) >= 6) and (LowerCase(Copy(t, 1, 6)) = 'token=') then
+    Exit(t);
+
+  Exit('token=' + t);
+end;
+
+function NightScout3.TryRequestV3(const PathPreferred, PathLegacyJson: string;
+  const Params: array of string; out Resp: string): boolean;
+begin
+  Resp := native.request(false, PathPreferred, Params, '', BearerHeader);
+  if (Trim(Resp) <> '') and not ((Resp <> '') and (Resp[1] = '+')) then
+    Exit(true);
+
+  Resp := native.request(false, PathLegacyJson, Params, '', BearerHeader);
+  Result := (Trim(Resp) <> '') and not ((Resp <> '') and (Resp[1] = '+'));
+end;
 
 {------------------------------------------------------------------------------
   getMaxAge
@@ -187,7 +232,9 @@ constructor NightScout3.Create(user, pass: string);
 begin
   // Normalize site base (no trailing slash)
   FSiteBase := TrimRightSet(user, ['/']);
-  FTokenSuffix := pass; // In v3, we expect 'pass' to be the token suffix for v2 auth
+  // Nightscout v3 uses v2 auth request flow, which expects a path segment
+  // like "token=<accessToken>".
+  FTokenSuffix := NormalizeV2AccessToken(pass);
 
   // Set UA and API base URL before inherited (so native is initialized correctly)
   ua := 'Mozilla/5.0 (compatible; trndi) TrndiAPI';
@@ -225,7 +272,7 @@ begin
 
   if FTokenSuffix = '' then
   begin
-    Err := 'Missing token suffix for Nightscout v2 authorization.';
+    Err := 'Missing access token for Nightscout v2 authorization.';
     Exit;
   end;
 
@@ -294,8 +341,8 @@ begin
     end;
   end;
 
-  // 2) Fetch v3 status (bearer)
-  resp := native.request(false, NS3_STATUS, [], '', BearerHeader);
+  // 2) Fetch v3 status (bearer). Prefer /api/v3/status, fall back to status.json.
+  TryRequestV3(NS3_STATUS, NS3_STATUS_JSON, [], resp);
   {$ifdef DEBUG} if debug_log_api then LogMessageToFile(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, NS3_STATUS, resp, debugParams([])]));{$endif}
 
   if Trim(resp) = '' then
@@ -507,7 +554,14 @@ begin
   params[2] := 'fields=date,sgv,delta,direction,device,rssi,noise';
 
   try
-    resp := native.request(false, extras, params, '', BearerHeader);
+    // Prefer /api/v3/entries and fall back to entries.json when using default.
+    if extras = NS3_ENTRIES then
+    begin
+      if not TryRequestV3(NS3_ENTRIES, NS3_ENTRIES_JSON, params, resp) then
+        resp := '';
+    end
+    else
+      resp := native.request(false, extras, params, '', BearerHeader);
     {$ifdef DEBUG} if debug_log_api then LogMessageToFile(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, NS3_STATUS, resp, debugParams(params)]));{$endif}
   except
     lastErr := 'Could not contact Nightscout entries endpoint (request failed)';
@@ -825,7 +879,7 @@ begin
   localToken := '';
   if (Trim(pass) <> '') then
   begin
-    authURL := base + '/api/v2/authorization/request/' + pass;
+    authURL := base + '/api/v2/authorization/request/' + NightScout3.NormalizeV2AccessToken(pass);
     if TrndiNative.getURL(authURL, xres) then
     begin
       // parse JSON and extract token
@@ -858,9 +912,17 @@ begin
     base + NS3_URL_BASE);
   try
     if localToken <> '' then
-      resp := tn.Request(false, NS3_STATUS, [], '', 'Authorization=Bearer ' + localToken)
+    begin
+      resp := tn.Request(false, NS3_STATUS, [], '', 'Authorization=Bearer ' + localToken);
+      if (Trim(resp) = '') or ((resp <> '') and (resp[1] = '+')) then
+        resp := tn.Request(false, NS3_STATUS_JSON, [], '', 'Authorization=Bearer ' + localToken);
+    end
     else
+    begin
       resp := tn.Request(false, NS3_STATUS, [], '', '');
+      if (Trim(resp) = '') or ((resp <> '') and (resp[1] = '+')) then
+        resp := tn.Request(false, NS3_STATUS_JSON, [], '', '');
+    end;
 
     if Trim(resp) = '' then
       if not TrndiNative.getURL(base + '/api/v1/status.json', resp) then
