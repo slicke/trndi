@@ -63,6 +63,10 @@ NS3_ENTRIES = 'entries';
 NS3_ENTRIES_JSON = 'entries.json';
 NS3_SETTINGS = 'settings';
 NS3_SETTINGS_JSON = 'settings.json';
+NS3_PROFILE = 'profile';
+NS3_PROFILE_JSON = 'profile.json';
+NS3_VERSION = 'version';
+NS3_VERSION_JSON = 'version.json';
 
 type
   {** NightScout v3 API client with bearer authorization.
@@ -1031,8 +1035,9 @@ begin
   
   // Fetch basal rate from Nightscout v3 API
   try
-    ResponseStr := Native.Request(false, 'profile.json', [], '', BearerHeader);
-    {$ifdef DEBUG} if debug_log_api then LogMessageToFile(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, 'profile.json', responsestr, debugParams([])]));{$endif}
+    if not TryRequestV3(NS3_PROFILE, NS3_PROFILE_JSON, [], ResponseStr) then
+      ResponseStr := '';
+    {$ifdef DEBUG} if debug_log_api then LogMessageToFile(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, NS3_PROFILE, responsestr, debugParams([])]));{$endif}
     
     if Trim(ResponseStr) = '' then
     begin
@@ -1119,30 +1124,31 @@ begin
   Result := False;
   SetLength(profile, 0);
   try
-    ResponseStr := Native.Request(false, 'profile.json', [], '', BearerHeader);
-   {$ifdef DEBUG} if debug_log_api then LogMessageToFile(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, 'profile.json', responseStr, debugParams([])]));{$endif}
+    if not TryRequestV3(NS3_PROFILE, NS3_PROFILE_JSON, [], ResponseStr) then
+      ResponseStr := '';
+   {$ifdef DEBUG} if debug_log_api then LogMessageToFile(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, NS3_PROFILE, responseStr, debugParams([])]));{$endif}
   except
-    lastErr := 'HTTP request failed while fetching profile.json';
+    lastErr := 'HTTP request failed while fetching profile endpoint';
     Exit;
   end;
 
   if Trim(ResponseStr) = '' then
   begin
-    lastErr := 'Empty response from profile.json';
+    lastErr := 'Empty response from profile endpoint';
     Exit;
   end;
 
   try
     JSONData := GetJSON(ResponseStr);
   except
-    lastErr := 'Failed to parse JSON from profile.json';
+    lastErr := 'Failed to parse JSON from profile endpoint';
     Exit;
   end;
 
   try
     if not (JSONData is TJSONObject) then
     begin
-      lastErr := 'profile.json is not a JSON object';
+      lastErr := 'Profile response is not a JSON object';
       Exit;
     end;
     RootObject := TJSONObject(JSONData);
