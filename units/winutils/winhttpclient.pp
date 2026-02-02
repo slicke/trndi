@@ -155,6 +155,10 @@ WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_3 = $00002000;
 WINHTTP_OPTION_SECURITY_FLAGS = $00000031;
 WINHTTP_ADDREQ_FLAG_ADD = $20000000;
 
+// Select allowed SSL/TLS protocols for the session.
+// (Do NOT confuse with WINHTTP_OPTION_SECURITY_FLAGS which is for cert validation flags.)
+WINHTTP_OPTION_SECURE_PROTOCOLS = 84;
+
 WINHTTP_OPTION_CONNECT_TIMEOUT = 2;
 WINHTTP_OPTION_SEND_TIMEOUT = 4;
 WINHTTP_OPTION_RECEIVE_TIMEOUT = 5;
@@ -333,6 +337,17 @@ begin
   if hSession = nil then
     raise Exception.Create('WinHttpOpen failed: ' + SysErrorMessage(GetLastError));
 
+  // Configure TLS protocols for HTTPS on the session handle
+  if Port.secure then
+  begin
+    Flags := WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2 or WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_3;
+    if not WinHttpSetOption(hSession, WINHTTP_OPTION_SECURE_PROTOCOLS, @Flags, SizeOf(Flags)) then
+    begin
+      Flags := WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2;
+      WinHttpSetOption(hSession, WINHTTP_OPTION_SECURE_PROTOCOLS, @Flags, SizeOf(Flags));
+    end;
+  end;
+
   // Set timeouts (10 seconds connect, 30 seconds send/receive)
   dwSize := 10000; // 10 seconds
   WinHttpSetOption(hSession, WINHTTP_OPTION_CONNECT_TIMEOUT, @dwSize, SizeOf(DWORD));
@@ -357,13 +372,6 @@ begin
         raise Exception.Create('WinHttpOpenRequest failed: ' + SysErrorMessage(GetLastError));
 
       try
-        // Aktivera TLS 1.2 om anslutningen är säker
-        if Port.secure then
-        begin
-          Flags := WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2 or WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_3;
-          WinHttpSetOption(hRequest, WINHTTP_OPTION_SECURITY_FLAGS, @Flags, SizeOf(Flags));
-        end;
-
         // Set proxy credentials (proxy auth) when using a named proxy
         if (FProxyHost <> '') and ((FProxyUser <> '') or (FProxyPass <> '')) then
         begin
@@ -469,6 +477,24 @@ begin
   if hSession = nil then
     raise Exception.Create('WinHttpOpen failed: ' + SysErrorMessage(GetLastError));
 
+  // Set timeouts (10 seconds connect, 30 seconds send/receive)
+  dwSize := 10000; // 10 seconds
+  WinHttpSetOption(hSession, WINHTTP_OPTION_CONNECT_TIMEOUT, @dwSize, SizeOf(DWORD));
+  dwSize := 30000; // 30 seconds
+  WinHttpSetOption(hSession, WINHTTP_OPTION_SEND_TIMEOUT, @dwSize, SizeOf(DWORD));
+  WinHttpSetOption(hSession, WINHTTP_OPTION_RECEIVE_TIMEOUT, @dwSize, SizeOf(DWORD));
+
+  // Configure TLS protocols for HTTPS on the session handle
+  if Port.secure then
+  begin
+    Flags := WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2 or WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_3;
+    if not WinHttpSetOption(hSession, WINHTTP_OPTION_SECURE_PROTOCOLS, @Flags, SizeOf(Flags)) then
+    begin
+      Flags := WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2;
+      WinHttpSetOption(hSession, WINHTTP_OPTION_SECURE_PROTOCOLS, @Flags, SizeOf(Flags));
+    end;
+  end;
+
   try
     hConnect := WinHttpConnect(hSession, pwidechar(widestring(ServerName)), Port.port, 0);
     if hConnect = nil then
@@ -486,13 +512,6 @@ begin
         raise Exception.Create('WinHttpOpenRequest failed: ' + SysErrorMessage(GetLastError));
 
       try
-        // Enable TLS 1.2 if the connection is secure
-        if Port.secure then
-        begin
-          Flags := WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2 or WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_3;
-          WinHttpSetOption(hRequest, WINHTTP_OPTION_SECURITY_FLAGS, @Flags, SizeOf(Flags));
-        end;
-
         // Set proxy credentials (proxy auth) when using a named proxy
         if (FProxyHost <> '') and ((FProxyUser <> '') or (FProxyPass <> '')) then
         begin
