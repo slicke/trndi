@@ -646,7 +646,7 @@ msgstr "OK"
 
 #: tfconf.edproxyport.text
 msgid "8080"
-msgstr ""
+msgstr "8080"
 
 #: tfconf.gbdisplayprefs.caption
 msgid "Display Preferences"
@@ -658,7 +658,7 @@ msgstr "Kontoinställningar"
 
 #: tfconf.gbnetwork.caption
 msgid "Network"
-msgstr ""
+msgstr "Nätverk"
 
 #: tfconf.gboverride.caption
 msgctxt "tfconf.gboverride.caption"
@@ -857,19 +857,19 @@ msgstr "Trndi kan spela en låt på Spotify eller Deezer när du är hög/låg"
 
 #: tfconf.labelproxyhost.caption
 msgid "Proxy Host:"
-msgstr ""
+msgstr "Proxyvärd:"
 
 #: tfconf.labelproxypass.caption
 msgid "Proxy Pass:"
-msgstr ""
+msgstr "Proxylösen:"
 
 #: tfconf.labelproxyport.caption
 msgid "Proxy Port:"
-msgstr ""
+msgstr "Proxyport:"
 
 #: tfconf.labelproxyuser.caption
 msgid "Proxy User:"
-msgstr ""
+msgstr "Proxyanvändare:"
 
 #: tfconf.lack.caption
 msgid "Libraries"
@@ -1079,7 +1079,7 @@ msgstr "Fler användare"
 
 #: tfconf.tsproxy.caption
 msgid "Proxy"
-msgstr ""
+msgstr "Proxy"
 
 #: tfconf.tssystem.caption
 msgid "System"
@@ -2598,7 +2598,7 @@ msgstr "Klicka på en punkt för att se detaljer om avläsningen"
 
 #: uhistorygraph.rs_history_graph_key_basal
 msgid "Basal"
-msgstr ""
+msgstr "Basal"
 
 #: uhistorygraph.rs_history_graph_key_high
 msgctxt "uhistorygraph.rs_history_graph_key_high"
@@ -2670,4 +2670,3 @@ msgstr "Historikgraf"
 #, object-pascal-format
 msgid "Readings (%s)"
 msgstr "Avläsningar (%s)"
-
