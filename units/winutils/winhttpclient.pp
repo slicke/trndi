@@ -405,7 +405,8 @@ begin
           raise Exception.Create('WinHttpSendRequest failed: ' + SysErrorMessage(GetLastError));
 
         if not WinHttpReceiveResponse(hRequest, nil) then
-          raise Exception.Create('WinHttpReceiveResponse failed: ' + SysErrorMessage(GetLastError));
+          raise Exception.Create('WinHttpReceiveResponse failed (' + IntToStr(GetLastError) + '): ' +
+            SysErrorMessage(GetLastError));
 
         // Läs svar
         ResponseStream := TStringStream.Create;
@@ -413,8 +414,8 @@ begin
           repeat
             dwSize := 0;
             if not WinHttpQueryDataAvailable(hRequest, dwSize) then
-              raise Exception.Create('WinHttpQueryDataAvailable failed: ' + SysErrorMessage(
-                GetLastError));
+              raise Exception.Create('WinHttpQueryDataAvailable failed (' + IntToStr(GetLastError) + '): ' +
+                SysErrorMessage(GetLastError));
 
             if dwSize = 0 then
               Break;
@@ -564,7 +565,8 @@ begin
             SysErrorMessage(GetLastError));
 
         if not WinHttpReceiveResponse(hRequest, nil) then
-          raise Exception.Create('WinHttpReceiveResponse failed: ' + SysErrorMessage(GetLastError));
+          raise Exception.Create('WinHttpReceiveResponse failed (' + IntToStr(GetLastError) + '): ' +
+            SysErrorMessage(GetLastError));
 
         // Read response
         ResponseStream := TStringStream.Create;
@@ -572,8 +574,8 @@ begin
           repeat
             dwSize := 0;
             if not WinHttpQueryDataAvailable(hRequest, dwSize) then
-              raise Exception.Create('WinHttpQueryDataAvailable failed: ' + SysErrorMessage(
-                GetLastError));
+              raise Exception.Create('WinHttpQueryDataAvailable failed (' + IntToStr(GetLastError) + '): ' +
+                SysErrorMessage(GetLastError));
 
             if dwSize = 0 then
               Break;

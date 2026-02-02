@@ -1336,19 +1336,19 @@ begin
   end;
 
   // No custom proxy configured
-  client := TWinHTTPClient.Create(useragent);
+  // Prefer a true direct connection first to avoid WPAD/system proxy stalls.
+  client := TWinHTTPClient.Create(useragent, true);
   try
     if TryRequest(client, ResStr) then
-    begin
+      Result := ResStr
+    else
       Result := ResStr;
-      Exit;
-    end;
   finally
     client.Free;
   end;
 
-  // Fallback: if system proxy settings are misconfigured, retry a true direct connection
-  client := TWinHTTPClient.Create(useragent, true);
+  // Fallback: retry using system proxy settings (default WinHTTP behavior)
+  client := TWinHTTPClient.Create(useragent);
   try
     if TryRequest(client, ResStr) then
       Result := ResStr
