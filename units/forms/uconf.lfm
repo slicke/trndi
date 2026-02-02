@@ -17,7 +17,7 @@ object fConf: TfConf
     Height = 518
     Top = 11
     Width = 665
-    ActivePage = tsProxy
+    ActivePage = tsGeneral
     Align = alClient
     BorderSpacing.Around = 5
     TabIndex = 12
@@ -13087,6 +13087,8 @@ object fConf: TfConf
           Height = 30
           Top = 65
           Width = 200
+          EchoMode = emPassword
+          PasswordChar = '*'
           TabOrder = 3
         end
       end

@@ -452,8 +452,10 @@ begin
 
           Result := ResponseStream.DataString;
           LogMessageToFile('WinHTTP GET response length: ' + IntToStr(Length(Result)));
+          {$IFDEF DEBUG}
           if Length(Result) > 0 then
             LogMessageToFile('WinHTTP GET response preview: ' + Copy(Result, 1, 200));
+          {$ENDIF}
         finally
           ResponseStream.Free;
         end;
@@ -623,8 +625,10 @@ begin
 
           Result := ResponseStream.DataString;
           LogMessageToFile('WinHTTP POST response length: ' + IntToStr(Length(Result)));
+          {$IFDEF DEBUG}
           if Length(Result) > 0 then
             LogMessageToFile('WinHTTP POST response preview: ' + Copy(Result, 1, 200));
+          {$ENDIF}
         finally
           ResponseStream.Free;
         end;

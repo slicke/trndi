@@ -23,7 +23,10 @@ implementation
 
 uses
   Classes, SysUtils
-  {$ifdef DARWIN}, CocoaAll, NSHelpers{$endif};
+  {$ifdef DARWIN}
+  , CocoaAll, NSHelpers
+  {$endif}
+  ;
 
 function FallbackAppPath: string;
 begin

@@ -1279,7 +1279,13 @@ var
       if post then
         outRes := aClient.Post(address)
       else
-        outRes := aClient.Get(address, params);
+      begin
+        // Don't pass params to Get() if already appended to URL
+        if (jsondata = '') and hasParams then
+          outRes := aClient.Get(address, [])
+        else
+          outRes := aClient.Get(address, params);
+      end;
       Result := true;
       LogMessageToFile('Windows: Request succeeded');
     except
