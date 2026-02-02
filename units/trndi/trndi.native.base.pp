@@ -101,6 +101,9 @@ public
 class var touchOverride: TTrndiBool;
     // Indicates if the user system is in a "dark mode" theme
   dark: boolean;
+  {$IFDEF X_WIN}
+  class var WinHttpUseSystemProxy: boolean;  // Remember if system proxy is needed
+  {$ENDIF}
 
     // Core actions
     {** Speak text using native TTS on the current platform. }
@@ -1345,25 +1348,29 @@ begin
     Exit;
   end;
 
-  // No custom proxy configured
-  // Prefer a true direct connection first to avoid WPAD/system proxy stalls.
-  LogMessageToFile('Windows: Trying direct connection (ForceNoProxy=true) to: ' + address);
-  client := TWinHTTPClient.Create(useragent, true);
-  try
-    if TryRequest(client, ResStr) then
-    begin
-      LogMessageToFile('Windows: Direct connection SUCCESS - using this response');
-      Result := ResStr;
-      Exit;  // Success - don't try system proxy
-    end
-    else
-      LogMessageToFile('Windows: Direct connection FAILED - will try system proxy fallback');
-  finally
-    client.Free;
+  // No custom proxy configured - use cached preference if available
+  if not WinHttpUseSystemProxy then
+  begin
+    // Try direct connection first
+    LogMessageToFile('Windows: Trying direct connection (ForceNoProxy=true) to: ' + address);
+    client := TWinHTTPClient.Create(useragent, true);
+    try
+      if TryRequest(client, ResStr) then
+      begin
+        LogMessageToFile('Windows: Direct connection SUCCESS - will use direct for future requests');
+        Result := ResStr;
+        Exit;  // Success - remember this works
+      end
+      else
+        LogMessageToFile('Windows: Direct connection FAILED - will try system proxy and remember that');
+    finally
+      client.Free;
+    end;
   end;
 
-  // Fallback: retry using system proxy settings (default WinHTTP behavior)
-  LogMessageToFile('Windows: Trying with system proxy settings to: ' + address);
+  // Use system proxy (either because direct failed or we already know we need it)
+  LogMessageToFile('Windows: Using system proxy settings for: ' + address);
+  WinHttpUseSystemProxy := true;  // Remember for next time
   client := TWinHTTPClient.Create(useragent);
   try
     if TryRequest(client, ResStr) then
