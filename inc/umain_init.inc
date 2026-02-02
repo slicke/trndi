@@ -505,7 +505,7 @@ var
   miDebugUXMsg, miDebugLog, miDebugLoadText, miDebugLogAPI: TMenuItem;
   {$endif}
 begin
-  LogMessage(Format(#10'=== Trndi started at %s ===', [DateTimeToIsoString(Now)]));
+  LogMessage(Format(#10'=== Trndi started at %s ===', [DateTimeToStr(Now)]));
   firstboot := false;
 
   // Initialize native interface
