@@ -2159,7 +2159,7 @@ begin
 
   displayMsg += sHTMLLineBreak + Format(sAPI, [api.systemName]);
 
-  ExtHTML(uxdAuto, sTransmitterInfo, displayMsg, [mbOK], uxmtInformation);
+  ExtHTML(uxdAuto, sTransmitterInfo, displayMsg, [mbOK], uxmtInformation, 10);
 
 end;
 
