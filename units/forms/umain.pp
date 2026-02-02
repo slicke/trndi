@@ -3003,6 +3003,12 @@ procedure LoadUserSettings(f: TfConf);
       edURLLow.Text := GetSetting('url_remote.url_low', '');
       edURLPerfect.Text := GetSetting('url_remote.url_perfect', '');
 
+      // Proxy settings
+      edProxyHost.Text := GetSetting('proxy.host', '');
+      edProxyPort.Text := GetSetting('proxy.port', '8080');
+      edProxyUser.Text := GetSetting('proxy.user', '');
+      edProxyPass.Text := GetSetting('proxy.pass', '');
+
       cbChroma.Checked := GetBoolSetting('razer.enabled', false);
       cbChromaNormal.Checked := GetBoolSetting('razer.normal', false);
       // Per-alert behavior (defaults preserve historic behavior)
@@ -3343,6 +3349,12 @@ procedure SaveUserSettings(f: TfConf);
       SetSetting('url_remote.url_high', edURLHigh.Text);
       SetSetting('url_remote.url_low', edURLLow.Text);
       SetSetting('url_remote.url_perfect', edURLPerfect.Text);
+
+      // Proxy settings
+      SetSetting('proxy.host', edProxyHost.Text);
+      SetSetting('proxy.port', edProxyPort.Text);
+      SetSetting('proxy.user', edProxyUser.Text);
+      SetSetting('proxy.pass', edProxyPass.Text);
 
       SetSetting('razer.enabled', cbChroma.Checked);
       SetSetting('razer.normal', cbChromaNormal.Checked);
