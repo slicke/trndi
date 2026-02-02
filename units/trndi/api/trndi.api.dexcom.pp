@@ -596,9 +596,27 @@ function SafeValue(Item: TJSONData; out Ok: boolean): double;
     end;
   end;
 
+  // Helper: safely extract string at given path from a JSON item (handles nil/missing)
+function SafeString(Item: TJSONData; const Path: string): string;
+var
+  J: TJSONData;
+begin
+  Result := '';
+  if Item = nil then
+    Exit;
+  J := Item.FindPath(Path);
+  if J = nil then
+    Exit;
+  try
+    Result := J.AsString;
+  except
+    Result := '';
+  end;
+end;
+
 var
   LParams: array[1..3] of string;
-  LGlucoseJSON, LAlertJSON, LTrendStr: string;
+  LGlucoseJSON, LAlertJSON, LTrendStr, LSTStr: string;
   LData: TJSONData;
   i, LTrendCode: integer;
   LTrendEnum: BGTrend;
@@ -662,7 +680,7 @@ begin
       CurVal := SafeValue(LData.Items[i], CurOk);
 
       // Parse trend and date for all entries
-      LTrendStr := LData.Items[i].FindPath('Trend').AsString;
+      LTrendStr := SafeString(LData.Items[i], 'Trend');
       // Map trend string to enum
       if not TryStrToInt(LTrendStr, LTrendCode) then
       begin
@@ -681,8 +699,12 @@ begin
       else
         Result[i].trend := TdPlaceholder; // Numeric mapping not defined; keep placeholder unless you add a map
 
-      // Convert Dexcom timestamp "/Date(ms)/" to TDateTime
-      Result[i].date := DexTimeToTDateTime(LData.Items[i].FindPath('ST').AsString);
+      // Convert Dexcom timestamp "/Date(ms)/" to TDateTime (safely)
+      LSTStr := SafeString(LData.Items[i], 'ST');
+      if LSTStr <> '' then
+        Result[i].date := DexTimeToTDateTime(LSTStr)
+      else
+        Result[i].date := 0;
 
       if CurOk then
       begin
