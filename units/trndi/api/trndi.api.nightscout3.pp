@@ -784,27 +784,32 @@ begin
         LMethod := 'Now';
       end;
 
-      // Extra diagnostics: compare UnixToDateTime(true/false) and show system local offset
-      try
-        LUnixTrue := UnixToDateTime(ts, True);
-        LUnixFalse := UnixToDateTime(ts, False);
-        LLocalOffsetMin := Round((Now - LocalTimeToUniversal(Now)) * 1440); // minutes
-        LogMessageToFile('[' + {$i %file%} + ':' + {$i %Line%} + '] debug: unixTrue=' + FormatDateTime('yyyy-mm-dd hh:nn:ss', LUnixTrue) +
-          ' unixFalse=' + FormatDateTime('yyyy-mm-dd hh:nn:ss', LUnixFalse) + ' localOffsetMin=' + IntToStr(LLocalOffsetMin));
-      except
-        // ignore diagnostics failure
-      end;
+      {$ifdef DEBUG}
+      if debug_log_api then
+      begin
+        // Extra diagnostics: compare UnixToDateTime(true/false) and show system local offset
+        try
+          LUnixTrue := UnixToDateTime(ts, True);
+          LUnixFalse := UnixToDateTime(ts, False);
+          LLocalOffsetMin := Round((Now - LocalTimeToUniversal(Now)) * 1440); // minutes
+          LogMessageToFile('[' + {$i %file%} + ':' + {$i %Line%} + '] debug: unixTrue=' + FormatDateTime('yyyy-mm-dd hh:nn:ss', LUnixTrue) +
+            ' unixFalse=' + FormatDateTime('yyyy-mm-dd hh:nn:ss', LUnixFalse) + ' localOffsetMin=' + IntToStr(LLocalOffsetMin));
+        except
+          // ignore diagnostics failure
+        end;
 
-      // Diagnostic log to help debug timezone/timestamp issues
-      try
-        // Use simple concatenation to avoid Format exceptions while debugging
-        LogMessageToFile('[' + {$i %file%} + ':' + {$i %Line%} + '] NightScout entry ' + IntToStr(i) +
-          ': dateMs=' + IntToStr(LDateMs) + ' dateString="' + LDateStr + '" utcOffset=' + IntToStr(LUtcOffset) + ' method=' + LMethod + ' tz=' + IntToStr(tz) +
-          ' computed=' + FormatDateTime('yyyy-mm-dd hh:nn:ss', Result[i].date));
-      except
-        on E: Exception do
-          LogMessageToFile('[' + {$i %file%} + ':' + {$i %Line%} + '] NightScout entry ' + IntToStr(i) + ': diagnostic log failed: ' + E.Message);
+        // Diagnostic log to help debug timezone/timestamp issues
+        try
+          // Use simple concatenation to avoid Format exceptions while debugging
+          LogMessageToFile('[' + {$i %file%} + ':' + {$i %Line%} + '] NightScout entry ' + IntToStr(i) +
+            ': dateMs=' + IntToStr(LDateMs) + ' dateString="' + LDateStr + '" utcOffset=' + IntToStr(LUtcOffset) + ' method=' + LMethod + ' tz=' + IntToStr(tz) +
+            ' computed=' + FormatDateTime('yyyy-mm-dd hh:nn:ss', Result[i].date));
+        except
+          on E: Exception do
+            LogMessageToFile('[' + {$i %file%} + ':' + {$i %Line%} + '] NightScout entry ' + IntToStr(i) + ': diagnostic log failed: ' + E.Message);
+        end;
       end;
+      {$endif}
 
       Result[i].level := getLevel(Result[i].val);
     end;
@@ -1152,6 +1157,7 @@ begin
       Exit;
     end;
     RootObject := TJSONObject(JSONData);
+    DefaultProfile := nil;
     // Some Nightscout instances wrap payloads in {"status":..,"result":[{...}]}
    ResNode := RootObject.FindPath('result');
     if Assigned(ResNode) and (ResNode.InheritsFrom(TJSONArray)) and (TJSONArray(ResNode).Count > 0) and (TJSONArray(ResNode).Items[0] is TJSONObject) then
@@ -1178,12 +1184,17 @@ begin
         if defName = '' then
           defName := RootObject.Get('Default', '');
         if defName <> '' then
-          DefaultProfile := StoreObj.FindPath(defName) as TJSONObject
+        begin
+          StoreNode := StoreObj.FindPath(defName);
+          if Assigned(StoreNode) and (StoreNode is TJSONObject) then
+            DefaultProfile := TJSONObject(StoreNode);
+        end
         else
         begin
           // fallback: take the first property object found inside store
           if StoreObj.Count > 0 then
-            DefaultProfile := StoreObj.Items[0] as TJSONObject;
+            if StoreObj.Items[0] is TJSONObject then
+              DefaultProfile := TJSONObject(StoreObj.Items[0]);
         end;
       end;
     end
