@@ -1910,13 +1910,15 @@ begin
   okHttps := TrndiNative.TestProxyURL(TEST_URL_HTTPS, hostV, portV, userV, passV, respHttps);
 
   if okHttp and okHttps then
-    ShowMessage(RS_TEST_SUCCESS)
-  else
-  if okHttp and (not okHttps) then
   begin
-    UXMessage('Proxy', 'HTTP via proxy works, but HTTPS via proxy failed. Trndi uses HTTPS endpoints, so this proxy configuration will not work for normal operation.
-end;
-
+    ShowMessage(RS_TEST_SUCCESS);
+  end
+  else if okHttp and (not okHttps) then
+  begin
+    UXMessage('Proxy',
+      'HTTP via proxy works, but HTTPS via proxy failed. Trndi uses HTTPS endpoints, so this proxy configuration will not work for normal operation.' +
+      LineEnding + LineEnding + respHttps,
+      uxmtWarning);
   end
   else
   begin
@@ -1928,6 +1930,8 @@ end;
       ShowMessage(resp);
     end;
   end;
+end;
+
 procedure TfConf.tsSystemShow(Sender: TObject);
 begin
   pnSysInfo.Hide;
