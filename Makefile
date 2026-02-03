@@ -210,7 +210,7 @@ run: build
 # Build without extensions (use a temporary copy of the .lpi so original is untouched)
 noext: check
 	@echo "Building without extensions (using temporary project, mormot2 removed)"
-	@STAMP=$$(date +%s); \
+	@set -e; STAMP=$$(date +%s); \
 	 cp $(LPI) $(LPI).noext-$$STAMP.lpi; \
 	 perl -0777 -pe 's/\s*<Item>\s*<PackageName Value="mormot2"\/?>(\s*)<\/Item>\s*//s' $(LPI).noext-$$STAMP.lpi > $(LPI).noext-$$STAMP.lpi.tmp; \
 	 mv $(LPI).noext-$$STAMP.lpi.tmp $(LPI).noext-$$STAMP.lpi; \
@@ -218,8 +218,10 @@ noext: check
 	 cp Trndi.ico $(LPI).noext-$$STAMP.ico; \
 	 cp Trndi.png $(LPI).noext-$$STAMP.png; \
 	 echo "Using temporary project: $(LPI).noext-$$STAMP.lpi"; \
+	 set +e; \
 	 $(LAZBUILD) $(NOEXT_LAZBUILD_FLAGS) $(LPI).noext-$$STAMP.lpi; \
 	 RET=$$?; \
+	 set -e; \
 	 if [ $$RET -ne 0 ]; then \
 	  echo "Build failed (status $$RET). The temporary project is kept at $(LPI).noext-$$STAMP.lpi for inspection."; \
 	  exit $$RET; \

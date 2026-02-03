@@ -354,23 +354,23 @@ begin
   if hSession = nil then
     raise Exception.Create('WinHttpOpen failed: ' + SysErrorMessage(GetLastError));
 
-  // Configure TLS protocols for HTTPS on the session handle
-  if Port.secure then
-  begin
-    Flags := WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2 or WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_3;
-    if not WinHttpSetOption(hSession, WINHTTP_OPTION_SECURE_PROTOCOLS, @Flags, SizeOf(Flags)) then
-    begin
-      Flags := WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2;
-      WinHttpSetOption(hSession, WINHTTP_OPTION_SECURE_PROTOCOLS, @Flags, SizeOf(Flags));
-    end;
-  end;
-
-  // Set timeouts (DNS/Connect 15s, send 30s, receive 60s)
-  if not WinHttpSetTimeouts(hSession, 15000, 15000, 30000, 60000) then
-    raise Exception.Create('WinHttpSetTimeouts failed (' + IntToStr(GetLastError) + '): ' +
-      SysErrorMessage(GetLastError));
-
   try
+    // Configure TLS protocols for HTTPS on the session handle
+    if Port.secure then
+    begin
+      Flags := WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2 or WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_3;
+      if not WinHttpSetOption(hSession, WINHTTP_OPTION_SECURE_PROTOCOLS, @Flags, SizeOf(Flags)) then
+      begin
+        Flags := WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2;
+        WinHttpSetOption(hSession, WINHTTP_OPTION_SECURE_PROTOCOLS, @Flags, SizeOf(Flags));
+      end;
+    end;
+
+    // Set timeouts (DNS/Connect 15s, send 30s, receive 60s)
+    if not WinHttpSetTimeouts(hSession, 15000, 15000, 30000, 60000) then
+      raise Exception.Create('WinHttpSetTimeouts failed (' + IntToStr(GetLastError) + '): ' +
+        SysErrorMessage(GetLastError));
+
     hConnect := WinHttpConnect(hSession, pwidechar(widestring(ServerName)), Port.port, 0);
     if hConnect = nil then
       raise Exception.Create('WinHttpConnect failed: ' + SysErrorMessage(GetLastError));
@@ -515,23 +515,23 @@ begin
   if hSession = nil then
     raise Exception.Create('WinHttpOpen failed: ' + SysErrorMessage(GetLastError));
 
-  // Set timeouts (DNS/Connect 15s, send 30s, receive 60s)
-  if not WinHttpSetTimeouts(hSession, 15000, 15000, 30000, 60000) then
-    raise Exception.Create('WinHttpSetTimeouts failed (' + IntToStr(GetLastError) + '): ' +
-      SysErrorMessage(GetLastError));
-
-  // Configure TLS protocols for HTTPS on the session handle
-  if Port.secure then
-  begin
-    Flags := WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2 or WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_3;
-    if not WinHttpSetOption(hSession, WINHTTP_OPTION_SECURE_PROTOCOLS, @Flags, SizeOf(Flags)) then
-    begin
-      Flags := WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2;
-      WinHttpSetOption(hSession, WINHTTP_OPTION_SECURE_PROTOCOLS, @Flags, SizeOf(Flags));
-    end;
-  end;
-
   try
+    // Configure TLS protocols for HTTPS on the session handle
+    if Port.secure then
+    begin
+      Flags := WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2 or WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_3;
+      if not WinHttpSetOption(hSession, WINHTTP_OPTION_SECURE_PROTOCOLS, @Flags, SizeOf(Flags)) then
+      begin
+        Flags := WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2;
+        WinHttpSetOption(hSession, WINHTTP_OPTION_SECURE_PROTOCOLS, @Flags, SizeOf(Flags));
+      end;
+    end;
+
+    // Set timeouts (DNS/Connect 15s, send 30s, receive 60s)
+    if not WinHttpSetTimeouts(hSession, 15000, 15000, 30000, 60000) then
+      raise Exception.Create('WinHttpSetTimeouts failed (' + IntToStr(GetLastError) + '): ' +
+        SysErrorMessage(GetLastError));
+
     hConnect := WinHttpConnect(hSession, pwidechar(widestring(ServerName)), Port.port, 0);
     if hConnect = nil then
       raise Exception.Create('WinHttpConnect failed: ' + SysErrorMessage(GetLastError));
