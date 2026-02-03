@@ -2236,6 +2236,10 @@ msgstr ""
 msgid "Names must be unique"
 msgstr ""
 
+#: uconf.rs_empty_proxy
+msgid "Proxy host is empty."
+msgstr ""
+
 #: uconf.rs_enter_any
 msgid "Please enter a name"
 msgstr ""
