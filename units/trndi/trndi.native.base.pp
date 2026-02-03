@@ -199,6 +199,23 @@ class var touchOverride: TTrndiBool;
   class function HasTouchScreen: boolean;
     {** Simple HTTP GET helper; platform units implement. }
   class function getURL(const url: string; out res: string): boolean; virtual; abstract;
+    {**
+      Attempt an HTTP GET through an explicit proxy (no automatic fallback).
+      
+      This is intended for UI "Test proxy" actions where we want to know if
+      the configured proxy itself works.
+
+      @param(url) URL to request.
+      @param(proxyHost) Proxy hostname (or host:port). Empty means "no proxy".
+      @param(proxyPort) Optional proxy port (string, numeric).
+      @param(proxyUser) Optional proxy username.
+      @param(proxyPass) Optional proxy password.
+      @param(res) Response body on success or error message on failure.
+      @returns True on success, False on failure.
+    }
+  class function TestProxyURL(const url: string; const proxyHost: string;
+    const proxyPort: string; const proxyUser: string; const proxyPass: string;
+    out res: string): boolean; virtual;
   class function GetOSLanguage: string;
   class function HasDangerousChars(const FileName: string): boolean; static;
   class function DetectWSL: TWSLInfo;
@@ -344,6 +361,19 @@ class function TTrndiNativeBase.HasNotifications: boolean;
 begin
   // Forward to the virtual for platform-specific logic
   Result := isNotificationSystemAvailable;
+end;
+
+{------------------------------------------------------------------------------
+  TestProxyURL (class, virtual)
+  ----------------------------
+  Default implementation: unsupported.
+ ------------------------------------------------------------------------------}
+class function TTrndiNativeBase.TestProxyURL(const url: string;
+  const proxyHost: string; const proxyPort: string; const proxyUser: string;
+  const proxyPass: string; out res: string): boolean;
+begin
+  res := 'Proxy testing is not supported on this platform.';
+  Result := false;
 end;
 
 {$IFDEF Windows}

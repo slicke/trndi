@@ -42,6 +42,8 @@
  * - 2026-01-11: Added settings UI controls for configuring Razer Chroma behavior
  *   separately for high/low alerts (dropdowns), in addition to the existing enable
  *   + normal-state options.
+ * - 2026-02-03: Added a Proxy "Test proxy" button plus wiring so proxy settings
+ *   load/save from the settings store, and a proxy-only connectivity test.
  *)
 
 unit uconf;
@@ -85,6 +87,7 @@ TfConf = class(TForm)
   bPrivacyHelp: TButton;
   bPredictHelp: TButton;
   bTest: TButton;
+  bTestProxy: TButton;
   bOverrideHelp: TButton;
   bRemove: TButton;
   bSysNotice: TButton;
@@ -379,6 +382,7 @@ TfConf = class(TForm)
   procedure bTemplateTrendClick(Sender: TObject);
   procedure bTestAnnounceClick(Sender: TObject);
   procedure bTestClick(Sender: TObject);
+  procedure bTestProxyClick(Sender: TObject);
   procedure bTestSpeechClick(Sender: TObject);
   procedure bThreasholdLinesHelpClick(Sender: TObject);
   procedure bTimeStampHelpClick(Sender: TObject);
@@ -409,6 +413,7 @@ TfConf = class(TForm)
   procedure eDotChange(Sender: TObject);
   procedure ePassEnter(Sender: TObject);
   procedure ePassExit(Sender: TObject);
+  procedure ProxyEditChange(Sender: TObject);
   procedure FormCreate(Sender: TObject);
   procedure FormDestroy(Sender: TObject);
   procedure FormResize(Sender: TObject);
@@ -439,6 +444,9 @@ TfConf = class(TForm)
   procedure tsSystemShow(Sender: TObject);
   procedure closeClick(Sender: TObject);
 private
+  FProxyLoading: boolean;
+  procedure LoadProxySettingsIntoUI;
+  procedure SaveProxySettingsFromUI;
   procedure getAPILabels(out user, pass: string);
 public
   chroma: TRazerChromaBase;
@@ -1805,11 +1813,100 @@ begin
   end;
 end;
 
+procedure TfConf.LoadProxySettingsIntoUI;
+var
+  hostV: string;
+begin
+  if tnative = nil then
+    Exit;
+
+  FProxyLoading := true;
+  try
+    hostV := tnative.GetSetting('proxy.host', '', true);
+    edProxyHost.Text := hostV;
+    edProxyPort.Text := tnative.GetSetting('proxy.port', '', true);
+    edProxyUser.Text := tnative.GetSetting('proxy.user', '', true);
+    edProxyPass.Text := tnative.GetSetting('proxy.pass', '', true);
+
+    if (Trim(hostV) <> '') and (Trim(edProxyPort.Text) = '') then
+      edProxyPort.Text := '8080';
+  finally
+    FProxyLoading := false;
+  end;
+end;
+
+procedure TfConf.SaveProxySettingsFromUI;
+var
+  hostV, portV, userV, passV: string;
+begin
+  if tnative = nil then
+    Exit;
+
+  hostV := Trim(edProxyHost.Text);
+  portV := Trim(edProxyPort.Text);
+  userV := Trim(edProxyUser.Text);
+  passV := edProxyPass.Text;
+
+  // Persist proxy settings globally (not per-user)
+  tnative.SetSetting('proxy.host', hostV, true);
+  if hostV = '' then
+  begin
+    // Clear auxiliary fields when proxy is disabled
+    tnative.SetSetting('proxy.port', '', true);
+    tnative.SetSetting('proxy.user', '', true);
+    tnative.SetSetting('proxy.pass', '', true);
+    Exit;
+  end;
+
+  tnative.SetSetting('proxy.port', portV, true);
+  tnative.SetSetting('proxy.user', userV, true);
+  tnative.SetSetting('proxy.pass', passV, true);
+end;
+
+procedure TfConf.ProxyEditChange(Sender: TObject);
+begin
+  if FProxyLoading then
+    Exit;
+  SaveProxySettingsFromUI;
+end;
+
 procedure TfConf.tsProxyShow(Sender: TObject);
 begin
   {$ifdef X_MAC}
      gbNetwork.Enabled := false;
   {$endif}
+
+  LoadProxySettingsIntoUI;
+end;
+
+procedure TfConf.bTestProxyClick(Sender: TObject);
+const
+  TEST_URL = 'http://example.com/';
+var
+  hostV, portV, userV, passV: string;
+  resp: string;
+  ok: boolean;
+begin
+  hostV := Trim(edProxyHost.Text);
+  portV := Trim(edProxyPort.Text);
+  userV := Trim(edProxyUser.Text);
+  passV := edProxyPass.Text;
+
+  if hostV = '' then
+  begin
+    UXMessage('Proxy', 'Proxy host is empty.', uxmtInformation);
+    Exit;
+  end;
+
+  ok := TrndiNative.TestProxyURL(TEST_URL, hostV, portV, userV, passV, resp);
+  if ok then
+    ShowMessage(RS_TEST_SUCCESS)
+  else
+  begin
+    ShowMessage(RS_TEST_FAIL);
+    if ssShift in getKeyShiftState then
+      ShowMessage(resp);
+  end;
 end;
 
 procedure TfConf.tsSystemShow(Sender: TObject);

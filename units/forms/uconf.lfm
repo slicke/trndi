@@ -13026,13 +13026,13 @@ object fConf: TfConf
       OnShow = tsProxyShow
       object gbNetwork: TGroupBox
         Left = 10
-        Height = 147
+        Height = 190
         Top = 326
         Width = 619
         Align = alBottom
         BorderSpacing.Around = 10
         Caption = 'Network'
-        ClientHeight = 120
+        ClientHeight = 163
         ClientWidth = 615
         TabOrder = 0
         object pnProxyConnection: TPanel
@@ -13065,6 +13065,7 @@ object fConf: TfConf
               BorderSpacing.Right = 10
               TabOrder = 0
               Text = '8080'
+              OnChange = ProxyEditChange
             end
             object LabelProxyPort: TLabel
               Left = 10
@@ -13104,6 +13105,7 @@ object fConf: TfConf
               Align = alTop
               BorderSpacing.Left = 10
               TabOrder = 0
+              OnChange = ProxyEditChange
             end
           end
         end
@@ -13148,6 +13150,7 @@ object fConf: TfConf
               EchoMode = emPassword
               PasswordChar = '*'
               TabOrder = 0
+              OnChange = ProxyEditChange
             end
           end
           object pnProxyUser: TPanel
@@ -13168,6 +13171,7 @@ object fConf: TfConf
               Align = alTop
               BorderSpacing.Left = 10
               TabOrder = 0
+              OnChange = ProxyEditChange
             end
             object LabelProxyUser: TLabel
               Left = 10
@@ -13178,6 +13182,27 @@ object fConf: TfConf
               BorderSpacing.Left = 10
               Caption = 'Proxy User:'
             end
+          end
+        end
+        object PanelProxyActions: TPanel
+          Left = 0
+          Height = 40
+          Top = 104
+          Width = 615
+          Align = alTop
+          BevelOuter = bvNone
+          ClientHeight = 40
+          ClientWidth = 615
+          TabOrder = 2
+          object bTestProxy: TButton
+            Left = 10
+            Height = 26
+            Top = 7
+            Width = 110
+            BorderSpacing.Left = 10
+            Caption = 'Test proxy'
+            TabOrder = 0
+            OnClick = bTestProxyClick
           end
         end
       end
