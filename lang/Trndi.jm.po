@@ -990,6 +990,21 @@ msgstr "Trendpilsstorlek:"
 msgid "Compatibility mode: Your window manager does not support all features, please consider eg KDE"
 msgstr "Kompatibilitetslege: Din fônsterhanterare stôder inte alla funksjoner, ôverveg t ex KDE"
 
+#: tfconf.lproxydesc.caption
+msgid ""
+"Enter a proxy server below, to have Trndi connect using it.\n"
+"Should the connection fail, Trndi will fall back to a direct connection.\n"
+"\n"
+"Proxy support is available for Windows, Linux, BSD and Haiku.\n"
+"macOS users must set the proxy settings in their System Settings.\n"
+"\n"
+"Leave empty to use a normal connection."
+msgstr ""
+
+#: tfconf.lproxytitle.caption
+msgid "Proxy Settings"
+msgstr ""
+
 #: tfconf.ltestannounce.caption
 msgid "Test an announcement"
 msgstr "Testa en notis"
