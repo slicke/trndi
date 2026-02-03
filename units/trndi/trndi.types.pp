@@ -53,7 +53,10 @@ BGValType = (BGPrimary, BGDelta);
 
 {$scopedenums on}
 MaybeBool = (true, false, none);
+TrndiAPIMsg = (alert, notice, status);
 {$scopedenums off}
+
+TTrndiAPIEmitter = procedure(const msg: string; etype: TrndiAPIMsg) of object;
 
   {** Unit that can exist or not}
 MaybeInt = record

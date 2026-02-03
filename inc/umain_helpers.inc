@@ -53,6 +53,18 @@ begin
   end;
 end;
 
+procedure TfBG.APIReceiver(const msg: string; etype: TrndiAPIMsg);
+begin
+  case etype of
+    TrndiAPIMsg.alert:
+      showmessage(msg);
+    TrndiAPIMsg.notice:
+      begin end;
+    TrndiAPIMsg.status:
+      LogMessageToFile(msg);
+  end;
+end;
+
 // Returns vertical offset needed to bring all trend dots fully inside their parent.
 // Sign convention: negative = dots are above (need to move down); positive = dots are below (need to move up).
 function TfBG.dotsInView: integer;

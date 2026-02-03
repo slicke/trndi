@@ -641,6 +641,7 @@ begin
 
     fSplash.incProgress(65, RS_INIT_CONNECT);
     Application.ProcessMessages;
+    api.APIEmitter := @APIReceiver;
     if not api.Connect then
     begin
       haltBoot;

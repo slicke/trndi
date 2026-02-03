@@ -232,6 +232,7 @@ TfBG = class(TForm)
   tTouch: TTimer;
   tMain: TTimer;
   mi24h: TMenuItem;
+  procedure APIReceiver(const msg: string; etype: TrndiAPIMsg);
     {** Recompute and apply layout offsets for all graph elements.
       This adjusts trend dots, labels and other elements when the UI size or
       dot-count changes to keep everything visually aligned.
