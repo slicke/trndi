@@ -1166,18 +1166,7 @@ begin
         StoreArray := TJSONArray(StoreNode);
         if StoreArray.Count = 0 then
         begin
-          try
-            with TStringList.Create do
-            try
-              Text := ResponseStr;
-              SaveToFile('/tmp/trndi_profile_debug.json');
-            finally
-              Free;
-            end;
-            lastErr := 'Empty "store" array in profile.json (raw saved to /tmp/trndi_profile_debug.json)';
-          except
-            lastErr := 'Empty "store" array in profile.json (failed to save raw JSON)';
-          end;
+          lastErr := 'Empty "store" array in profile.json';
           Exit;
         end;
         DefaultProfile := StoreArray.Objects[0];
@@ -1200,18 +1189,7 @@ begin
     end
     else
     begin
-      try
-        with TStringList.Create do
-        try
-          Text := ResponseStr;
-          SaveToFile('/tmp/trndi_profile_debug.json');
-        finally
-          Free;
-        end;
-        lastErr := 'No "store" element in profile.json (raw saved to /tmp/trndi_profile_debug.json)';
-      except
-        lastErr := 'No "store" element in profile.json (failed to save raw JSON)';
-      end;
+      lastErr := 'No "store" element in profile.json';
       Exit;
     end;
 
