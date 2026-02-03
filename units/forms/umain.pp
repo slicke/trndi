@@ -4465,7 +4465,7 @@ begin
   if sec < 0 then
     sec := 0;
 
-  lDiff.Caption := Format(RS_OUTDATED_TIME, [FormatDateTime('H:mm', d), min, sec]);
+  lDiff.Caption := Format(RS_OUTDATED_TIME, [FormatDateTime('hh:nn', d), min, sec]);
 end;
 
 procedure TfBG.tSetupTimer(Sender: TObject);

@@ -44,7 +44,7 @@ interface
 uses
   Classes, SysUtils, Dialogs,
   // Trndi units
-  trndi.types, trndi.api, trndi.native, trndi.native.base, trndi.funcs, trndi.log,
+  trndi.types, trndi.api, trndi.native, trndi.native.base, trndi.funcs, trndi.log, math,
   // FPC units
   fpjson, jsonparser, dateutils, StrUtils, base64, sha1, sha256;
 
@@ -90,6 +90,8 @@ const
   TANDEM_TCONNECT_WEB_USERNAME_B64 = 'M0U2MzU3QkEtRjYyNS00REQyLUI2NUYtNEI1RTgxNDRBQTZG';
   TANDEM_TCONNECT_WEB_PASSWORD_B64 = 'cUMyaXFIc2w3OFFoR0RYdCpMenFwb1pxZTl3eHN6';
   TANDEM_BASE_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.5005.63 Safari/537.36';
+  TANDEM_SOURCE_DEFAULT_EVENT_IDS = '229,5,28,4,26,99,279,3,16,59,21,55,20,280,64,65,66,61,33,371,171,369,460,172,370,461,372,399,256,213,406,394,212,404,214,405,447,313,60,14,6,90,230,140,12,11,53,13,63,203,307,191';
+  TANDEM_EPOCH = 1199145600;
 
 type
   {** Region selector for Tandem t:connect servers }
@@ -1457,6 +1459,214 @@ var
       fieldsList.Free;
     end;
   end;
+  function ByteAt(const S: string; AOffset: integer): byte;
+  var
+    idx: integer;
+  begin
+    idx := AOffset + 1;
+    if (idx < 1) or (idx > Length(S)) then
+      Result := 0
+    else
+      Result := Ord(S[idx]);
+  end;
+  function ReadUInt16BE(const S: string; AOffset: integer): word;
+  begin
+    Result := (Word(ByteAt(S, AOffset)) shl 8) or Word(ByteAt(S, AOffset + 1));
+  end;
+  function ReadUInt32BE(const S: string; AOffset: integer): cardinal;
+  begin
+    Result := (Cardinal(ByteAt(S, AOffset)) shl 24)
+      or (Cardinal(ByteAt(S, AOffset + 1)) shl 16)
+      or (Cardinal(ByteAt(S, AOffset + 2)) shl 8)
+      or Cardinal(ByteAt(S, AOffset + 3));
+  end;
+  function ExtractPumpEventsPayload(AData: TJSONData; out ARaw: string): boolean;
+  var
+    dataObj: TJSONObject;
+    dataArr: TJSONArray;
+    item: TJSONData;
+  begin
+    Result := False;
+    ARaw := '';
+    if AData = nil then
+      Exit;
+
+    if AData is TJSONString then
+    begin
+      ARaw := TJSONString(AData).AsString;
+      Result := ARaw <> '';
+      Exit;
+    end;
+
+    if AData is TJSONObject then
+    begin
+      dataObj := TJSONObject(AData);
+      if (dataObj.Find('eventData') <> nil) and (dataObj.Find('eventData') is TJSONString) then
+        ARaw := dataObj.Get('eventData', '')
+      else if (dataObj.Find('data') <> nil) and (dataObj.Find('data') is TJSONString) then
+        ARaw := dataObj.Get('data', '')
+      else if (dataObj.Find('pumpEvents') <> nil) and (dataObj.Find('pumpEvents') is TJSONString) then
+        ARaw := dataObj.Get('pumpEvents', '')
+      else if (dataObj.Find('pumpevents') <> nil) and (dataObj.Find('pumpevents') is TJSONString) then
+        ARaw := dataObj.Get('pumpevents', '');
+
+      Result := ARaw <> '';
+      Exit;
+    end;
+
+    if AData is TJSONArray then
+    begin
+      dataArr := TJSONArray(AData);
+      if dataArr.Count > 0 then
+      begin
+        item := dataArr.Items[0];
+        if item is TJSONString then
+        begin
+          ARaw := TJSONString(item).AsString;
+          Result := ARaw <> '';
+        end;
+      end;
+    end;
+  end;
+  procedure SortReadingsNewestFirst(var AReadings: BGResults);
+  var
+    i, j: integer;
+    tmp: BGReading;
+  begin
+    for i := Low(AReadings) to High(AReadings) do
+      for j := i + 1 to High(AReadings) do
+        if AReadings[j].date > AReadings[i].date then
+        begin
+          tmp := AReadings[i];
+          AReadings[i] := AReadings[j];
+          AReadings[j] := tmp;
+        end;
+  end;
+  function TrySourcePumpEventsReadings(out AResults: BGResults): boolean;
+  var
+    sourceHeaders: TStringList;
+    sourceResponse: THTTPResponse;
+    sourceUrl: string;
+    minDateStr: string;
+    maxDateStr: string;
+    eventIdsParam: string;
+    rawPayload: string;
+    decodedEvents: string;
+    eventsLen: integer;
+    eventOffset: integer;
+    eventId: word;
+    egvTimestamp: cardinal;
+    currentValue: word;
+    eventTime: TDateTime;
+    resultIdx: integer;
+  begin
+    Result := False;
+    SetLength(AResults, 0);
+    sourceResponse.Headers := nil;
+    sourceResponse.Cookies := nil;
+
+    if (FPumperId = '') or (FDeviceId = '') then
+      Exit;
+
+    if (startDate = 0) or (endDate = 0) then
+    begin
+      if AMinutes <= 0 then
+        AMinutes := 1440;
+      endDate := Now;
+      startDate := endDate - (AMinutes / 1440.0);
+    end;
+    minDateStr := FormatDateTime('yyyy-mm-dd', DateOf(startDate));
+    maxDateStr := FormatDateTime('yyyy-mm-dd', DateOf(endDate));
+    eventIdsParam := StringReplace(TANDEM_SOURCE_DEFAULT_EVENT_IDS, ',', '%2C', [rfReplaceAll]);
+
+    sourceUrl := GetSourceUrl + 'api/reports/reportsfacade/pumpevents/' + FPumperId + '/' + FDeviceId
+      + '?minDate=' + minDateStr + '&maxDate=' + maxDateStr + '&eventIds=' + eventIdsParam;
+
+    sourceHeaders := TStringList.Create;
+    try
+      sourceHeaders.Add('Authorization: Bearer ' + FAccessToken);
+      sourceHeaders.Add('Accept: application/json');
+      sourceHeaders.Add('Origin: https://tconnect.tandemdiabetes.com');
+      sourceHeaders.Add('Referer: https://tconnect.tandemdiabetes.com/');
+      sourceHeaders.Add('User-Agent: ' + TANDEM_BASE_USER_AGENT);
+
+      LogMessageToFile('Tandem.GetReadings: source pumpevents request=' + sourceUrl);
+      sourceResponse := native.RequestEx(false, sourceUrl, [], '', nil, true, 10, sourceHeaders, false);
+      LogMessageToFile(Format('Tandem.GetReadings: source pumpevents status=%d bytes=%d',
+        [sourceResponse.StatusCode, Length(sourceResponse.Body)]));
+
+      if (sourceResponse.StatusCode < 200) or (sourceResponse.StatusCode >= 300) then
+        Exit;
+
+      if Trim(sourceResponse.Body) = '' then
+        Exit;
+
+      jsonData := GetJSON(sourceResponse.Body);
+      try
+        if not ExtractPumpEventsPayload(jsonData, rawPayload) then
+        begin
+          LogMessageToFile('Tandem.GetReadings: source pumpevents missing eventData payload');
+          Exit;
+        end;
+      finally
+        jsonData.Free;
+      end;
+
+      if rawPayload = '' then
+        Exit;
+
+      decodedEvents := DecodeStringBase64(rawPayload);
+      eventsLen := Length(decodedEvents);
+      if eventsLen < 26 then
+        Exit;
+
+      SetLength(readingsList, 0);
+      count := 0;
+      eventOffset := 0;
+      while eventOffset + 25 <= eventsLen do
+      begin
+        eventId := ReadUInt16BE(decodedEvents, eventOffset) and $0FFF;
+        if (eventId = 256) or (eventId = 372) or (eventId = 399) then
+        begin
+          currentValue := ReadUInt16BE(decodedEvents, eventOffset + 14);
+          egvTimestamp := ReadUInt32BE(decodedEvents, eventOffset + 18);
+          eventTime := UnixToDateTime(Int64(TANDEM_EPOCH) + Int64(egvTimestamp), True);
+          if (eventTime >= startDate) and (eventTime <= (endDate + 1)) then
+          begin
+            SetLength(readingsList, count + 1);
+            readingsList[count].Init(mgdl, self.systemName);
+            readingsList[count].update(currentValue, 0);
+            readingsList[count].date := eventTime;
+            readingsList[count].trend := TdPlaceholder;
+            readingsList[count].level := getLevel(currentValue);
+            Inc(count);
+          end;
+        end;
+        Inc(eventOffset, 26);
+      end;
+
+      if count > 0 then
+      begin
+        SetLength(AResults, count);
+        for resultIdx := 0 to count - 1 do
+          AResults[resultIdx] := readingsList[resultIdx];
+        SortReadingsNewestFirst(AResults);
+        for resultIdx := 0 to Min(Length(AResults) - 1, 4) do
+          LogMessageToFile(Format('Tandem.GetReadings: source pumpevents top[%d]=%s val=%.1f',
+            [resultIdx, FormatDateTime('yyyy-mm-dd hh:nn', AResults[resultIdx].date),
+             AResults[resultIdx].convert(mmol)]));
+        if (AMaxCount > 0) and (Length(AResults) > AMaxCount) then
+          SetLength(AResults, AMaxCount);
+        Result := True;
+      end;
+    finally
+      sourceHeaders.Free;
+      if Assigned(sourceResponse.Headers) then
+        FreeAndNil(sourceResponse.Headers);
+      if Assigned(sourceResponse.Cookies) then
+        FreeAndNil(sourceResponse.Cookies);
+    end;
+  end;
   function TryWs2CsvReadings(out AResults: BGResults): boolean;
   var
     ws2Url: string;
@@ -1665,10 +1875,21 @@ begin
   
   authHeaders := TStringList.Create;
   try
+    // Calculate time range
+    if AMinutes <= 0 then
+      AMinutes := 1440;
+    endDate := Now;
+    startDate := endDate - (AMinutes / 1440.0); // Convert minutes to days
+
     if (FControlIqAccessToken = '') or (FControlIqUserGuid = '') then
     begin
       if not ControlIqLogin then
       begin
+        if TrySourcePumpEventsReadings(Result) then
+        begin
+          ARes := 'Retrieved ' + IntToStr(Length(Result)) + ' CGM readings (Tandem Source pumpevents)';
+          Exit;
+        end;
         ARes := lastErr;
         Exit;
       end;
@@ -1679,10 +1900,6 @@ begin
     authHeaders.Add('Origin: https://tconnect.tandemdiabetes.com');
     authHeaders.Add('Referer: https://tconnect.tandemdiabetes.com/');
     authHeaders.Add('User-Agent: ' + TANDEM_BASE_USER_AGENT);
-    
-    // Calculate time range
-    endDate := DateOf(Now);
-    startDate := DateOf(endDate - (AMinutes / 1440.0)); // Convert minutes to days
   
     // Build Control-IQ therapy timeline request (matches tconnectsync)
     controliqUserId := FControlIqUserGuid;
@@ -1750,6 +1967,11 @@ begin
 
     if not requestOk then
     begin
+      if TrySourcePumpEventsReadings(Result) then
+      begin
+        ARes := 'Retrieved ' + IntToStr(Length(Result)) + ' CGM readings (Tandem Source pumpevents)';
+        Exit;
+      end;
       if TryWs2CsvReadings(Result) then
       begin
         ARes := 'Retrieved ' + IntToStr(Length(Result)) + ' CGM readings (ws2 CSV)';
@@ -1859,10 +2081,6 @@ begin
                 readingsList[count].trend := TdPlaceholder; // Tandem doesn't provide trend arrows
                 readingsList[count].level := getLevel(bgValue);
                 Inc(count);
-
-                // Check max count
-                if (AMaxCount > 0) and (count >= AMaxCount) then
-                  Break;
               end;
             end;
           end;
@@ -1873,6 +2091,10 @@ begin
       SetLength(Result, count);
       for i := 0 to count - 1 do
         Result[i] := readingsList[i];
+      if count > 1 then
+        SortReadingsNewestFirst(Result);
+      if (AMaxCount > 0) and (Length(Result) > AMaxCount) then
+        SetLength(Result, AMaxCount);
       
       if count > 0 then
         ARes := 'Retrieved ' + IntToStr(count) + ' CGM readings'
