@@ -142,20 +142,8 @@ protected
      }
   function checkActive: boolean;
 
-    {** Emits an alert
-        @param(msg The message)
-     }
-  procedure alert(const msg: string);
 
-    {** Emits a status message
-        @param(msg The message)
-     }
-  procedure status(const msg: string);
 
-    {** Emits a notice
-        @param(msg The message)
-     }
-  procedure notice(const msg: string);
 
 private
   emitter: TTrndiAPIEmitter;
@@ -163,6 +151,7 @@ private
 public
 const
   toMMOL = 0.05555555555555556; // Factor to multiply mg/dL by to get mmol/L
+
 const
   toMGDL = 18.0156; // Facvtor to multiply mmol/L to get mg/dL
     {** Provide a backend-specific caption for parameter labels in Settings.
@@ -327,6 +316,21 @@ const
       @returns(True if a profile was obtained; False otherwise)
 }
   function getBasalProfile(out profile: TBasalProfile): boolean; virtual;
+
+  {** Emits an alert
+    @param(msg The message)
+ }
+  procedure alert(const msg: string);
+
+    {** Emits a status message
+        @param(msg The message)
+     }
+  procedure status(const msg: string);
+
+    {** Emits a notice
+        @param(msg The message)
+     }
+  procedure notice(const msg: string);
 
     // -------- Properties --------
 

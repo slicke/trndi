@@ -402,10 +402,10 @@ begin
 end;
 
 // C-compatible write callback for libcurl used in this unit
-function CurlWriteCallback_Linux(buffer: pchar; size, nmemb: longword;
-userdata: Pointer): longword; cdecl;
+function CurlWriteCallback_Linux(buffer: pchar; size, nmemb: SizeUInt;
+userdata: Pointer): SizeUInt; cdecl;
 var
-  Bytes: SizeInt;
+  Bytes: SizeUInt;
   SS: TStringStream;
 begin
   if (userdata = nil) or (buffer = nil) then
@@ -414,7 +414,7 @@ begin
     Exit;
   end;
   SS := TStringStream(userdata);
-  Bytes := SizeInt(size) * SizeInt(nmemb);
+  Bytes := size * nmemb;
   if Bytes > 0 then
     SS.WriteBuffer(buffer^, Bytes);
   Result := Bytes;

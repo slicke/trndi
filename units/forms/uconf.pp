@@ -57,7 +57,7 @@ Classes, ComCtrls, ExtCtrls, Spin, StdCtrls, SysUtils, Forms, Controls,
 Graphics, Dialogs, LCLTranslator, trndi.native, lclintf,
 slicke.ux.alert, slicke.ux.native, VersionInfo, trndi.funcs, buildinfo, StrUtils,
   // Backend APIs for label captions
-trndi.api, trndi.api.nightscout, trndi.api.nightscout3, trndi.api.dexcom, trndi.api.dexcomNew, trndi.api.debug_custom,
+trndi.api, trndi.api.nightscout, trndi.api.nightscout3, trndi.api.dexcom, trndi.api.dexcomNew, trndi.api.tandem, trndi.api.debug_custom,
 trndi.api.debug, trndi.api.debug_firstXmissing, trndi.api.xdrip, RazerChroma, math, trndi.types;
 
 type
@@ -460,6 +460,8 @@ API_DEX_EU = 'Dexcom (Outside USA)';
 API_DEX_NEW_USA = 'Dexcom New (USA)';
 API_DEX_NEW_EU = 'Dexcom New (Outside USA)';
 API_DEX_NEW_JP = 'Dexcom New (Japan)';
+API_TANDEM_USA = 'Tandem t:connect (USA)';
+API_TANDEM_EU = 'Tandem t:connect (EU)';
 API_XDRIP = 'xDrip';
 {$ifdef DEBUG}
 API_D_DEBUG =  '* Debug Backend *';
@@ -829,6 +831,10 @@ begin
     sys := DexcomNew;
   API_DEX_NEW_JP:
     sys := DexcomNew;
+  API_TANDEM_USA:
+    sys := TandemUSA;
+  API_TANDEM_EU:
+    sys := TandemEU;
   API_XDRIP:
     sys := xDrip;
   {$ifdef Debug}
@@ -1138,6 +1144,10 @@ begin
   API_DEX_NEW_EU,
   API_DEX_NEW_JP:
     sys := DexcomNew;
+  API_TANDEM_USA:
+    sys := TandemUSA;
+  API_TANDEM_EU:
+    sys := TandemEU;
   API_XDRIP:
     sys := xDrip;
   {$ifdef Debug}
@@ -1254,6 +1264,12 @@ begin
   else
   if cbSys.Text = API_DEX_NEW_JP then
     res := DexcomNew.testConnection(eAddr.text,ePass.text,err)
+  else
+  if cbSys.Text = API_TANDEM_USA then
+    res := TandemUSA.testConnection(eAddr.text,ePass.text,err)
+  else
+  if cbSys.Text = API_TANDEM_EU then
+    res := TandemEU.testConnection(eAddr.text,ePass.text,err)
   else
   begin
     ShowMessage(RS_TEST_UNSUPPORTED);
