@@ -164,7 +164,7 @@ build: check
 	  echo "Warning: no executable found in project dir or $(OUTDIR)"; \
 	fi; \
 	# Copy translations into build dir for packaging/runtime
-	if [ -d "lang" ]; then mkdir -p "$(OUTDIR)/lang" && cp -r lang/* "$(OUTDIR)/lang/" && echo "Copied translations to $(OUTDIR)/lang"; fi
+	if [ -d "lang" ]; then mkdir -p "$(OUTDIR)/lang" && cp -r lang/. "$(OUTDIR)/lang/" && echo "Copied translations to $(OUTDIR)/lang"; fi
 	@# Strip embedded debug info for smaller Release binaries (Linux default; override STRIP_RELEASE=0)
 	@if [ "$(BUILD_MODE)" = "Release" ] && [ "$(STRIP_RELEASE)" = "1" ]; then \
 	  if [ -f "$(OUTDIR)/Trndi" ]; then \
@@ -236,7 +236,7 @@ noext: check
 	  else \
 	    echo "Warning: no executable found in project dir or $(OUTDIR)"; \
 	  fi; \
-	  if [ -d "lang" ]; then mkdir -p "$(OUTDIR)/lang" && cp -r lang/* "$(OUTDIR)/lang/" && echo "Copied translations to $(OUTDIR)/lang"; fi; \
+	  if [ -d "lang" ]; then mkdir -p "$(OUTDIR)/lang" && cp -r lang/. "$(OUTDIR)/lang/" && echo "Copied translations to $(OUTDIR)/lang"; fi; \
 	  if [ "$(BUILD_MODE)" = "Release" ] && [ "$(STRIP_RELEASE)" = "1" ]; then \
 	    if [ -f "$(OUTDIR)/Trndi" ]; then \
 	      if command -v "$(STRIP)" >/dev/null 2>&1; then \
@@ -256,7 +256,10 @@ noext-debug: noext
 
 clean:
 	@echo "Cleaning common products..."
-	@find . -maxdepth 3 -type f \( -name '*.o' -o -name '*.ppu' -o -name '*.compiled' -o -name '*.a' -o -name '*.so' -o -name '*.dll' -o -name '*.exe' -o -name '*.app' -o -name '$(LPI).noext-*' -o -name '*.noext-*.lpi' -o -name '*.noext-*.res' -o -name '*.noext-*.ico' -o -name '*.noext-*.png' \) -print0 | xargs -0 -r rm -f || true
+	@find . -maxdepth 3 \( \
+	  \( -type f \( -name '*.o' -o -name '*.ppu' -o -name '*.compiled' -o -name '*.a' -o -name '*.so' -o -name '*.dll' -o -name '*.exe' -o -name '*.app' -o -name '$(LPI).noext-*' -o -name '*.noext-*.lpi' -o -name '*.noext-*.res' -o -name '*.noext-*.ico' -o -name '*.noext-*.png' \) \) \
+	  -o \( -type d -name '*.app' \) \
+	\) -print0 | xargs -0 -r rm -rf || true
 	@echo "(Note: Lazarus project files and sources are not removed, but temporary noext project files (e.g. $(LPI).noext-*) are cleaned.)"
 
 dist: build
@@ -265,4 +268,13 @@ dist: build
 
 install: build
 	@echo "Installing binary to /usr/local/bin (requires sudo)"
-	@if [ -f "$(basename $(LPI))" ]; then sudo install -m 755 "$(basename $(LPI))" /usr/local/bin/; else echo "Binary not found. Run 'make release' and ensure lazbuild produced an executable in the project dir."; fi
+	@set -e; \
+	NAME="$(basename $(LPI))"; \
+	SRC=""; \
+	if [ -x "$(OUTDIR)/$$NAME" ]; then SRC="$(OUTDIR)/$$NAME"; \
+	elif [ -x "$(OUTDIR)/$$NAME.app/Contents/MacOS/$$NAME" ]; then SRC="$(OUTDIR)/$$NAME.app/Contents/MacOS/$$NAME"; \
+	elif [ -f "$(OUTDIR)/$$NAME.exe" ]; then SRC="$(OUTDIR)/$$NAME.exe"; \
+	elif [ -x "./$$NAME" ]; then SRC="./$$NAME"; \
+	elif [ -f "./$$NAME.exe" ]; then SRC="./$$NAME.exe"; \
+	else echo "Binary not found. Run 'make release' and ensure lazbuild produced an executable in the project dir."; exit 1; fi; \
+	sudo install -m 755 "$$SRC" /usr/local/bin/
