@@ -368,6 +368,12 @@ begin
   API_DEX_NEW_JP,
   'API_DEX_NEW_JP':
     api := DexcomJapanNew.Create(apiTarget, apiCreds);
+  API_TANDEM_USA,
+  'API_TANDEM_USA':
+    api := TandemUSA.Create(apiTarget, apiCreds);
+  API_TANDEM_EU,
+  'API_TANDEM_EU':
+    api := TandemEU.Create(apiTarget, apiCreds);
   API_XDRIP,
   'API_XDRIP':
     api := xDrip.Create(apiTarget, apiCreds);

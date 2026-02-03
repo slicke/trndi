@@ -10646,6 +10646,8 @@ object fConf: TfConf
             'NightScout v3'
             'Dexcom (USA)'
             'Dexcom (Outside USA)'
+            'Tandem t:connect (USA)'
+            'Tandem t:connect (EU)'
             'xDrip'
           )
           ReadOnly = True

@@ -57,7 +57,7 @@ procedure TfBG.APIReceiver(const msg: string; etype: TrndiAPIMsg);
 begin
   case etype of
     TrndiAPIMsg.alert:
-      showmessage(msg);
+      UXMessage('API Alert', msg, uxmtWarning);
     TrndiAPIMsg.notice:
       begin end;
     TrndiAPIMsg.status:

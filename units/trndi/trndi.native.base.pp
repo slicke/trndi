@@ -73,6 +73,18 @@ TWSLInfo = record
   DistroName: string;   // Optional distro name (if available)
   KernelVersion: string;// Kernel string as reported by /proc/version
 end;
+
+  {** Enhanced HTTP response with headers, cookies, and redirect information. }
+THTTPResponse = record
+  Body: string;                  // Response body content
+  Headers: TStringList;          // Response headers (key=value)
+  Cookies: TStringList;          // Cookies received (Set-Cookie headers)
+  StatusCode: integer;           // HTTP status code (200, 302, etc.)
+  FinalURL: string;              // Final URL after redirects
+  RedirectCount: integer;        // Number of redirects followed
+  Success: boolean;              // True if request succeeded
+  ErrorMessage: string;          // Error description if failed
+end;
   // TrndiNative base contracts
 {**
   @abstract(Base class providing contracts for native features.)
@@ -120,6 +132,25 @@ class var touchOverride: TTrndiBool;
   function request(const post: boolean; const endpoint: string;
     const params: array of string; const jsondata: string = '';
     const header: string = ''; prefix: boolean = true): string;
+  
+  {**
+    Enhanced HTTP request with full OAuth2 support.
+    @param(post) True for POST, False for GET.
+    @param(endpoint) Full URL or relative endpoint.
+    @param(params) Query string pairs like 'key=value'.
+    @param(jsondata) Optional JSON payload for POST.
+    @param(cookieJar) Cookies to send (will be updated with received cookies).
+    @param(followRedirects) True to automatically follow 302/301 redirects.
+    @param(maxRedirects) Maximum number of redirects to follow (default 10).
+    @param(customHeaders) Additional headers as TStringList (key=value).
+    @param(prefix) True to prefix endpoint with baseurl.
+    @returns(THTTPResponse with body, headers, cookies, and redirect info.)
+  }
+  function requestEx(const post: boolean; const endpoint: string;
+    const params: array of string; const jsondata: string = '';
+    cookieJar: TStringList = nil; followRedirects: boolean = true;
+    maxRedirects: integer = 10; customHeaders: TStringList = nil;
+    prefix: boolean = true): THTTPResponse;
 
     // Settings API
     {** Store a non-user-scoped key (global). }
@@ -293,22 +324,115 @@ DEFAULT_MIN_FONT_SIZE = 8;
 implementation
 
 // C-compatible write callback used by libcurl to collect response data.
-function CurlWriteCallback(buffer: pchar; size, nmemb: longword;
-userdata: Pointer): longword; cdecl;
+function CurlWriteCallback(buffer: pchar; size, nmemb: SizeUInt;
+userdata: Pointer): SizeUInt; cdecl;
 var
-  Bytes: SizeInt;
-  SS: TStringStream;
+  stream: TStringStream;
+  actualSize: SizeUInt;
+  dataStr: string;
 begin
-  if (userdata = nil) or (buffer = nil) then
+  Result := size * nmemb;
+  
+  LogMessageToFile(Format('[CurlWriteCallback] Called: size=%d, nmemb=%d, Result=%d', [Int64(size), Int64(nmemb), Int64(Result)]));
+  
+  // Safety checks
+  if (buffer = nil) or (size = 0) or (nmemb = 0) or (Result = 0) then
   begin
-    Result := 0;
+    LogMessageToFile('[CurlWriteCallback] Safety check failed, returning Result');
     Exit;
   end;
-  SS := TStringStream(userdata);
-  Bytes := SizeInt(size) * SizeInt(nmemb);
-  if Bytes > 0 then
-    SS.WriteBuffer(buffer^, Bytes);
-  Result := Bytes;
+  
+  // Prevent overflow
+  if Result > 10485760 then  // 10MB limit
+  begin
+    LogMessageToFile('[CurlWriteCallback] Overflow check failed');
+    Exit;
+  end;
+  
+  actualSize := Result;
+  stream := TStringStream(userdata);
+  
+  if stream = nil then
+  begin
+    LogMessageToFile('[CurlWriteCallback] Stream is nil');
+    Exit;
+  end;
+  
+  try
+    // Write buffer to stream
+    if actualSize > 0 then
+    begin
+      stream.WriteBuffer(buffer^, actualSize);
+      LogMessageToFile(Format('[CurlWriteCallback] Wrote %d bytes to stream, returning %d', [Int64(actualSize), Int64(Result)]));
+    end;
+  except
+    on E: Exception do
+    begin
+      LogMessageToFile('[CurlWriteCallback] Exception: ' + E.Message);
+      // Return 0 on error to signal curl to abort
+      Result := 0;
+    end;
+  end;
+end;
+
+// C-compatible write callback for requestEx (global, no nested/static link).
+function CurlWriteCallbackEx(buffer: PChar; size, nitems: SizeUInt; userdata: Pointer): SizeUInt; cdecl;
+var
+  stream: TStringStream;
+  actualSize: SizeUInt;
+begin
+  Result := size * nitems;
+
+  // Safety checks
+  if (buffer = nil) or (size = 0) or (nitems = 0) or (Result = 0) then
+    Exit;
+
+  if Result > 10485760 then // 10MB limit
+    Exit;
+
+  actualSize := Result;
+  stream := TStringStream(userdata);
+
+  if stream = nil then
+    Exit;
+
+  try
+    if actualSize > 0 then
+      stream.WriteBuffer(buffer^, actualSize);
+  except
+    Result := 0;
+  end;
+end;
+
+// C-compatible header callback for requestEx (global, no nested/static link).
+function CurlHeaderCallbackEx(buffer: PChar; size, nitems: SizeUInt; userdata: Pointer): SizeUInt; cdecl;
+var
+  stream: TStringStream;
+  actualSize: SizeUInt;
+  headerLine: string;
+begin
+  Result := size * nitems;
+
+  if (buffer = nil) or (size = 0) or (nitems = 0) or (Result = 0) then
+    Exit;
+
+  if Result > 1048576 then // 1MB header limit
+    Exit;
+
+  actualSize := Result;
+  stream := TStringStream(userdata);
+
+  if stream = nil then
+    Exit;
+
+  try
+    SetLength(headerLine, actualSize);
+    if actualSize > 0 then
+      Move(buffer^, headerLine[1], actualSize);
+    stream.WriteString(headerLine);
+  except
+    Result := 0;
+  end;
 end;
 {------------------------------------------------------------------------------
   TTrndiNativeBase.updateLocale
@@ -1564,6 +1688,290 @@ begin
   end;
 end;
 {$ENDIF}
+{$ENDIF}
+
+{------------------------------------------------------------------------------
+  requestEx
+  -------------------
+  Enhanced HTTP request with OAuth2 support: cookies, redirect tracking,
+  and full response header capture.
+ ------------------------------------------------------------------------------}
+{$IF DEFINED(X_PC)}
+function TTrndiNativeBase.requestEx(const post: boolean; const endpoint: string;
+const params: array of string; const jsondata: string = '';
+cookieJar: TStringList = nil; followRedirects: boolean = true;
+maxRedirects: integer = 10; customHeaders: TStringList = nil;
+prefix: boolean = true): THTTPResponse;
+var
+  handle: CURL;
+  headers: pcurl_slist;
+  errCode: CURLcode;
+  address, sx: string;
+  i, j: integer;
+  responseStream: TStringStream;
+  headerStream: TStringStream;
+  proxyHost, proxyPortS, proxyUser, proxyPass: string;
+  cookieData: string;
+  responseLine: string;
+  responseCode: clong;
+  effectiveUrl: PChar;
+  startTick: QWord;
+  endTick: QWord;
+  methodLabel: string;
+  cookieVal: string;
+  cookiePos: integer;
+  function HasHeader(const AName: string): boolean;
+  var
+    k: integer;
+    nameLower: string;
+  begin
+    Result := False;
+    if customHeaders = nil then
+      Exit;
+    nameLower := LowerCase(AName) + ':';
+    for k := 0 to customHeaders.Count - 1 do
+      if Pos(nameLower, LowerCase(Trim(customHeaders[k]))) = 1 then
+        Exit(True);
+  end;
+
+begin
+  // Initialize address from endpoint parameter
+  address := endpoint;
+  
+  // Initialize Result
+  Result.Body := '';
+  Result.Headers := TStringList.Create;
+  Result.Cookies := TStringList.Create;
+  Result.Success := false;
+  Result.StatusCode := 0;
+  Result.RedirectCount := 0;
+  Result.FinalURL := '';
+  Result.ErrorMessage := '';
+  
+  // Append query params ONLY for GET requests (not POST)
+  // For POST, params will be sent in the POST body as form data
+  if (not post) and (jsondata = '') and (Length(params) > 0) then
+  begin
+    address := address + '?';
+    for sx in params do
+      address := address + '&' + sx;
+  end;
+
+  curl_global_init(CURL_GLOBAL_DEFAULT);
+  headers := nil;
+  responseStream := TStringStream.Create('');
+  headerStream := TStringStream.Create('');
+  try
+    if post then
+      methodLabel := 'POST'
+    else
+      methodLabel := 'GET';
+    startTick := GetTickCount64;
+    LogMessageToFile(Format('HTTP %s (curl): %s', [methodLabel, address]));
+    handle := curl_easy_init();
+    if handle = nil then
+    begin
+      Result.ErrorMessage := 'Failed to initialize CURL';
+      Exit;
+    end;
+
+    try
+      // Basic setup
+      curl_easy_setopt(handle, CURLOPT_URL, pchar(address));
+      curl_easy_setopt(handle, CURLOPT_CONNECTTIMEOUT, clong(10));
+      curl_easy_setopt(handle, CURLOPT_TIMEOUT, clong(30));
+      // Accept and auto-decompress compressed responses (gzip/deflate/br where available)
+      curl_easy_setopt(handle, CURLOPT_ACCEPT_ENCODING, pchar(''));
+      
+      // Enable verbose output for debugging
+      curl_easy_setopt(handle, CURLOPT_VERBOSE, clong(1));
+      
+      // Disable SSL certificate verification (NOT RECOMMENDED FOR PRODUCTION)
+      curl_easy_setopt(handle, CURLOPT_SSL_VERIFYPEER, clong(0));
+      curl_easy_setopt(handle, CURLOPT_SSL_VERIFYHOST, clong(0));
+
+      if useragent <> '' then
+        curl_easy_setopt(handle, CURLOPT_USERAGENT, pchar(useragent));
+
+      // Redirect handling
+      if followRedirects then
+      begin
+        curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, clong(1));
+        curl_easy_setopt(handle, CURLOPT_MAXREDIRS, clong(maxRedirects));
+      end
+      else
+        curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, clong(0));
+
+      // Cookie handling
+      if (cookieJar <> nil) and (cookieJar.Count > 0) then
+      begin
+        cookieData := '';
+        for i := 0 to cookieJar.Count - 1 do
+        begin
+          if Trim(cookieJar[i]) = '' then
+            Continue;
+          if cookieData <> '' then
+            cookieData := cookieData + '; ';
+          cookieData := cookieData + cookieJar[i];
+        end;
+        if cookieData <> '' then
+          curl_easy_setopt(handle, CURLOPT_COOKIE, pchar(cookieData));
+      end;
+
+      // Custom headers
+      if customHeaders <> nil then
+      begin
+        for i := 0 to customHeaders.Count - 1 do
+          headers := curl_slist_append(headers, pchar(customHeaders[i]));
+      end;
+
+      // POST handling
+      if jsondata <> '' then
+      begin
+        if not HasHeader('Content-Type') then
+          headers := curl_slist_append(headers, pchar('Content-Type: application/json; charset=UTF-8'));
+        if not HasHeader('Accept') then
+          headers := curl_slist_append(headers, pchar('Accept: application/json'));
+        curl_easy_setopt(handle, CURLOPT_POST, clong(1));
+        curl_easy_setopt(handle, CURLOPT_POSTFIELDS, pchar(jsondata));
+        curl_easy_setopt(handle, CURLOPT_POSTFIELDSIZE, clong(Length(jsondata)));
+      end
+      else if post then
+      begin
+        // Add Content-Type for form data
+        if not HasHeader('Content-Type') then
+          headers := curl_slist_append(headers, pchar('Content-Type: application/x-www-form-urlencoded'));
+        
+        if Length(params) > 0 then
+        begin
+          sx := '';
+          for j := 0 to High(params) do
+          begin
+            if j > 0 then
+              sx := sx + '&';
+            sx := sx + params[j];
+          end;
+          curl_easy_setopt(handle, CURLOPT_POST, clong(1));
+          curl_easy_setopt(handle, CURLOPT_POSTFIELDS, pchar(sx));
+          curl_easy_setopt(handle, CURLOPT_POSTFIELDSIZE, clong(Length(sx)));
+        end
+        else
+          curl_easy_setopt(handle, CURLOPT_POST, clong(1));
+      end;
+
+      if headers <> nil then
+        curl_easy_setopt(handle, CURLOPT_HTTPHEADER, headers);
+
+      // Response callbacks
+      curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, Pointer(@CurlWriteCallbackEx));
+      curl_easy_setopt(handle, CURLOPT_WRITEDATA, Pointer(responseStream));
+      curl_easy_setopt(handle, CURLOPT_HEADERFUNCTION, Pointer(@CurlHeaderCallbackEx));
+      curl_easy_setopt(handle, CURLOPT_HEADERDATA, Pointer(headerStream));
+
+      // Perform request
+      errCode := curl_easy_perform(handle);
+
+      if errCode = CURLE_OK then
+      begin
+        endTick := GetTickCount64;
+        Result.Success := true;
+        Result.Body := responseStream.DataString;
+
+        // Get status code
+        curl_easy_getinfo(handle, CURLINFO_RESPONSE_CODE, @responseCode);
+        Result.StatusCode := responseCode;
+
+        // Get final URL after redirects
+        curl_easy_getinfo(handle, CURLINFO_EFFECTIVE_URL, @effectiveUrl);
+        if effectiveUrl <> nil then
+          Result.FinalURL := string(effectiveUrl);
+
+        // Get redirect count
+        curl_easy_getinfo(handle, CURLINFO_REDIRECT_COUNT, @Result.RedirectCount);
+
+        LogMessageToFile(Format('HTTP %s (curl) ok: status=%d, bytes=%d, redirects=%d, ms=%d',
+          [methodLabel, Result.StatusCode, Length(Result.Body), Result.RedirectCount, endTick - startTick]));
+
+        // Parse headers
+        headerStream.Position := 0;
+        responseLine := '';
+        while headerStream.Position < headerStream.Size do
+        begin
+          // Read header line by line
+          responseLine := '';
+          while (headerStream.Position < headerStream.Size) do
+          begin
+            i := Ord(headerStream.ReadByte);
+            if i = 10 then // LF
+              Break;
+            if i <> 13 then // Skip CR
+              responseLine := responseLine + Chr(i);
+          end;
+          
+          responseLine := Trim(responseLine);
+          if responseLine <> '' then
+          begin
+            // Check for Set-Cookie headers
+            if Pos('Set-Cookie:', responseLine) = 1 then
+            begin
+              cookieVal := Trim(Copy(responseLine, 13, MaxInt));
+              cookiePos := Pos(';', cookieVal);
+              if cookiePos > 0 then
+                cookieVal := Copy(cookieVal, 1, cookiePos - 1);
+              if cookieVal <> '' then
+              begin
+                Result.Cookies.Add(cookieVal);
+                if cookieJar <> nil then
+                begin
+                  if cookieJar.IndexOf(cookieVal) = -1 then
+                    cookieJar.Add(cookieVal);
+                end;
+              end;
+            end;
+            Result.Headers.Add(responseLine);
+          end;
+        end;
+      end
+      else
+      begin
+        endTick := GetTickCount64;
+        Result.Success := false;
+        Result.ErrorMessage := string(curl_easy_strerror(errCode));
+        LogMessageToFile(Format('HTTP %s (curl) error: code=%d, msg=%s, ms=%d',
+          [methodLabel, Ord(errCode), Result.ErrorMessage, endTick - startTick]));
+      end;
+
+    finally
+      curl_easy_cleanup(handle);
+    end;
+
+  finally
+    if headers <> nil then
+      curl_slist_free_all(headers);
+    responseStream.Free;
+    headerStream.Free;
+  end;
+end;
+{$ELSE}
+// Fallback for non-Linux platforms (Mac/Windows)
+function TTrndiNativeBase.requestEx(const post: boolean; const endpoint: string;
+const params: array of string; const jsondata: string = '';
+cookieJar: TStringList = nil; followRedirects: boolean = true;
+maxRedirects: integer = 10; customHeaders: TStringList = nil;
+prefix: boolean = true): THTTPResponse;
+begin
+  // For now, fall back to basic request and wrap in THTTPResponse
+  Result.Body := request(post, endpoint, params, jsondata, '', prefix);
+  Result.Headers := TStringList.Create;
+  Result.Cookies := TStringList.Create;
+  Result.StatusCode := 200;
+  Result.FinalURL := endpoint;
+  Result.RedirectCount := 0;
+  Result.Success := (Result.Body <> '');
+  Result.ErrorMessage := '';
+  
+  // TODO: Implement proper OAuth2 support for Windows/Mac using native APIs
+end;
 {$ENDIF}
 
 {------------------------------------------------------------------------------
