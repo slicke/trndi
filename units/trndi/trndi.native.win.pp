@@ -86,6 +86,10 @@ public
       @param(res Out parameter receiving response body or error message)
       @returns(True on success) }
   class function getURL(const url: string; out res: string): boolean; override;
+  {** Test an HTTP GET through an explicit proxy only (no direct fallback). }
+  class function TestProxyURL(const url: string; const proxyHost: string;
+    const proxyPort: string; const proxyUser: string; const proxyPass: string;
+    out res: string): boolean; override;
   {** Determine if Windows is using dark app theme (AppsUseLightTheme=0).
       @returns(True if dark mode is active) }
   class function isDarkMode: boolean; override;
@@ -526,6 +530,92 @@ begin
 
   finally
     tempInstance.Free;
+  end;
+end;
+
+{------------------------------------------------------------------------------
+  TestProxyURL
+  ------------
+  Proxy-only HTTP GET using WinHTTP client. No direct fallback.
+ ------------------------------------------------------------------------------}
+class function TTrndiNativeWindows.TestProxyURL(const url: string;
+  const proxyHost: string; const proxyPort: string; const proxyUser: string;
+  const proxyPass: string; out res: string): boolean;
+const
+  DEFAULT_USER_AGENT = 'Mozilla/5.0 (compatible; trndi) TrndiAPI';
+var
+  client: TWinHTTPClient;
+  host, portS, user, pass: string;
+
+  procedure NormalizeProxyHostPort(var hostV: string; var portV: string);
+  var
+    s: string;
+    p: integer;
+    hostPart, portPart: string;
+  begin
+    s := Trim(hostV);
+
+    p := Pos('://', s);
+    if p > 0 then
+      s := Copy(s, p + 3, MaxInt);
+
+    p := Pos('/', s);
+    if p > 0 then
+      s := Copy(s, 1, p - 1);
+
+    p := LastDelimiter(':', s);
+    if (p > 0) and (p < Length(s)) then
+    begin
+      hostPart := Copy(s, 1, p - 1);
+      portPart := Copy(s, p + 1, MaxInt);
+      if (hostPart <> '') and (StrToIntDef(portPart, -1) > 0) then
+      begin
+        s := hostPart;
+        if Trim(portV) = '' then
+          portV := portPart;
+      end;
+    end;
+
+    hostV := s;
+    portV := Trim(portV);
+  end;
+
+begin
+  res := '';
+  Result := false;
+
+  host := Trim(proxyHost);
+  portS := Trim(proxyPort);
+  user := Trim(proxyUser);
+  pass := proxyPass;
+  NormalizeProxyHostPort(host, portS);
+
+  if host = '' then
+  begin
+    res := 'Proxy host is empty.';
+    Exit(false);
+  end;
+  if portS = '' then
+    portS := '8080';
+
+  if (user <> '') or (pass <> '') then
+    client := TWinHTTPClient.Create(DEFAULT_USER_AGENT, host, StrToIntDef(portS, 8080), user, pass)
+  else
+    client := TWinHTTPClient.Create(DEFAULT_USER_AGENT, host, StrToIntDef(portS, 8080));
+
+  try
+    try
+      res := client.Get(url, []);
+      Result := true;
+    except
+      on E: Exception do
+      begin
+        res := E.Message;
+        Result := false;
+      end;
+    end;
+  finally
+    client.Free;
   end;
 end;
 
