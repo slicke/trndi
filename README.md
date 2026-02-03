@@ -67,6 +67,7 @@ It also supports the _xDrip_ app, connecting over the local network/WiFi.
 * Offers a [WebAPI](doc/WebAPI.md) for other clients to access glucose data
 * Supports experimental [predictions](guides/Predictions.md)
 * Supports Razer Chroma on Windows and Linux
+* Native proxy support on Windows and Linux (uses system proxy on macOS)
 
 ### Multi-user support
 Need to see more than one person? Trndi supports [parallel users](guides/Multiuser.md).
@@ -248,6 +249,34 @@ Build release:
 
 Build to a release folder
 ```lazbuild -B output_directory Trndi.lpi``` 
+
+### Makefile
+
+There is a convenience `Makefile` that wraps `lazbuild` with common targets:
+
+- `make` (default: release)
+- `make debug`
+- `make build` (honors `WIDGETSET` and `BUILD_MODE`)
+- `make test`
+- `make list-modes` — list available build modes in `Trndi.lpi`
+- `make noext` — build without mORMot2 using a temporary project copy (useful if you don't have the mORMot2 package installed locally)
+- `make noext-release` / `make noext-debug` — same as `noext` but force build mode
+- `make clean`
+
+Defaults by platform:
+- Linux: forces the `Qt6` build modes by default (e.g. `Qt6 (Release)`)
+- macOS / Windows: prefers native `Extensions (Release)` style builds for release targets
+
+Examples:
+```bash
+make            # on Linux -> Qt6 (Release) (artifacts placed in the 'build/' directory)
+make noext      # on Linux -> Qt6 (Release) using temporary project copy
+make BUILD_MODE=Debug    # chooses Qt6 (Debug) on Linux, Extensions (Debug) on macOS/Windows
+make list-modes # show exact LPI targets if you want to pick one explicitly
+```
+
+Note: By default `make build` writes build artifacts into `$(OUTDIR)` (default: `build/`). You can override this by setting `OUTDIR=...` on the make command line if you prefer a different location.
+
 
 ### History
 Trndi2 (and later) is a rewrite, less bloated, version of Trndi 1, which was never released publicly. Trndi 1 was originally called Dexmon (and only did Dexcom). The original idea spawns from an old app called TrayTrend which I made with a similar purpose.

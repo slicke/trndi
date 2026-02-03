@@ -44,7 +44,7 @@ interface
 uses
 Classes, SysUtils, Dialogs,
   // Trndi units
-trndi.types, trndi.api, trndi.native, trndi.funcs,
+trndi.types, trndi.api, trndi.native, trndi.funcs, trndi.log,
   // FPC units
 fpjson, jsonparser, dateutils, StrUtils;
 
@@ -398,6 +398,7 @@ var
   LBody, LResponse, LTimeResponse, LTimeString, LAccountID: string;
   LServerDateTime: TDateTime;
   LUseEmailAuth: boolean;
+  resp: string;
 begin
   // Detect if user provided email (contains @) or phone (starts with +)
   // These require two-step auth: AuthenticatePublisherAccount → LoginPublisherAccountById
@@ -414,9 +415,11 @@ begin
   begin
     // Two-step authentication for email/phone:
     // Step 1: Get account ID from email/phone
+    resp := native.Request(true, DEXCOM_AUTHENTICATE_ENDPOINT, [], LBody);
     LAccountID := StringReplace(
-      native.Request(true, DEXCOM_AUTHENTICATE_ENDPOINT, [], LBody),
+      resp,
       '"', '', [rfReplaceAll]);
+    {$ifdef DEBUG} if debug_log_api then LogMessageToFile(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, DEXCOM_AUTHENTICATE_ENDPOINT, resp, '']));{$endif}
     
     // Check for authentication errors
     if (LAccountID = '') or (Pos('error', LowerCase(LAccountID)) > 0) or
@@ -434,16 +437,21 @@ begin
     // Step 2: Use account ID to get session ID
     LBody := Format('{ "accountId": "%s", "password": "%s", "applicationId": "%s" }',
       [LAccountID, JSONEscape(FPassword), DEXCOM_APPLICATION_ID]);
-    
+
+    resp := native.Request(true, DEXCOM_LOGIN_BY_ID_ENDPOINT, [], LBody);
     FSessionID := StringReplace(
-      native.Request(true, DEXCOM_LOGIN_BY_ID_ENDPOINT, [], LBody),
+      resp,
       '"', '', [rfReplaceAll]);
+        {$ifdef DEBUG} if debug_log_api then LogMessageToFile(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, DEXCOM_LOGIN_BY_ID_ENDPOINT, resp, '']));{$endif}
   end
-  else
+  else begin
+    resp := native.Request(true, DEXCOM_LOGIN_BY_NAME_ENDPOINT, [], LBody);
     FSessionID := StringReplace(
-      native.Request(true, DEXCOM_LOGIN_BY_NAME_ENDPOINT, [], LBody),
-      '"', '', [rfReplaceAll])// Single-step authentication for plain usernames
-  ;
+    resp,
+      '"', '', [rfReplaceAll]);// Single-step authentication for plain usernames
+
+    {$ifdef DEBUG} if debug_log_api then LogMessageToFile(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, DEXCOM_LOGIN_BY_NAME_ENDPOINT, resp, '']));{$endif}
+  end;
 
   // Check for various error responses before validation
   if (FSessionID = '') or (Pos('error', LowerCase(FSessionID)) > 0) or
@@ -479,6 +487,7 @@ begin
 
   // 3) Retrieve system UTC time for time-diff calibration
   LTimeResponse := native.Request(false, DEXCOM_TIME_ENDPOINT, [], '', 'Accept=application/json');
+  {$ifdef DEBUG} if debug_log_api then LogMessageToFile(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, DEXCOM_TIME_ENDPOINT, LTimeResponse, '']));{$endif}
 
   // Dexcom may respond as XML-like <SystemTime> or JSON-ish /Date(ms)/ format
   if Pos('>', LTimeResponse) > 0 then
@@ -542,6 +551,7 @@ begin
 
   // Dexcom returns 'AssignedToYou' when serial number is associated
   LResponse := native.Request(true, DEXCOM_VERIFY_SERIAL_NUMBER_ENDPOINT, LParams, '', 'Accept=application/json');
+  {$ifdef DEBUG} if debug_log_api then LogMessageToFile(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, DEXCOM_VERIFY_SERIAL_NUMBER_ENDPOINT, LResponse, debugParams(LParams)]));{$endif}
   if LResponse = 'AssignedToYou' then
     Result := true;
 end;
@@ -586,9 +596,27 @@ function SafeValue(Item: TJSONData; out Ok: boolean): double;
     end;
   end;
 
+  // Helper: safely extract string at given path from a JSON item (handles nil/missing)
+function SafeString(Item: TJSONData; const Path: string): string;
+var
+  J: TJSONData;
+begin
+  Result := '';
+  if Item = nil then
+    Exit;
+  J := Item.FindPath(Path);
+  if J = nil then
+    Exit;
+  try
+    Result := J.AsString;
+  except
+    Result := '';
+  end;
+end;
+
 var
   LParams: array[1..3] of string;
-  LGlucoseJSON, LAlertJSON, LTrendStr: string;
+  LGlucoseJSON, LAlertJSON, LTrendStr, LSTStr: string;
   LData: TJSONData;
   i, LTrendCode: integer;
   LTrendEnum: BGTrend;
@@ -612,7 +640,9 @@ begin
 
   // Fetch glucose values; some deployments also allow reading alert settings
   LGlucoseJSON := native.Request(true, DEXCOM_GLUCOSE_READINGS_ENDPOINT, LParams, '', 'Accept=application/json');
+  {$ifdef DEBUG} if debug_log_api then LogMessageToFile(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, DEXCOM_GLUCOSE_READINGS_ENDPOINT, LGlucoseJSON, debugParams(lparams)]));{$endif}
   LAlertJSON := native.Request(true, DEXCOM_ALERT_ENDPOINT, LParams, '', 'Accept=application/json');
+  {$ifdef DEBUG} if debug_log_api then LogMessageToFile(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, DEXCOM_ALERT_ENDPOINT, LAlertJSON, debugParams(LPARAMS)]));{$endif}
 
   res := LGlucoseJSON;
 
@@ -650,7 +680,7 @@ begin
       CurVal := SafeValue(LData.Items[i], CurOk);
 
       // Parse trend and date for all entries
-      LTrendStr := LData.Items[i].FindPath('Trend').AsString;
+      LTrendStr := SafeString(LData.Items[i], 'Trend');
       // Map trend string to enum
       if not TryStrToInt(LTrendStr, LTrendCode) then
       begin
@@ -669,8 +699,12 @@ begin
       else
         Result[i].trend := TdPlaceholder; // Numeric mapping not defined; keep placeholder unless you add a map
 
-      // Convert Dexcom timestamp "/Date(ms)/" to TDateTime
-      Result[i].date := DexTimeToTDateTime(LData.Items[i].FindPath('ST').AsString);
+      // Convert Dexcom timestamp "/Date(ms)/" to TDateTime (safely)
+      LSTStr := SafeString(LData.Items[i], 'ST');
+      if LSTStr <> '' then
+        Result[i].date := DexTimeToTDateTime(LSTStr)
+      else
+        Result[i].date := 0;
 
       if CurOk then
       begin

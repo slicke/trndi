@@ -45,7 +45,7 @@ type
 
 constructor TFakeAPI.Create;
 begin
-  inherited Create('', '', '');
+  inherited Create('', '');
   SetLength(FReadings, 0);
 end;
 
@@ -86,7 +86,7 @@ procedure TAPITester.TestBaseLevelClassification;
 var
   api: NightScout;
 begin
-  api := NightScout.create('http://localhost', 'x', '');
+  api := NightScout.create('http://localhost', 'x');
   try
     api.cgmHi := 180;
     api.cgmLo := 70;
@@ -108,7 +108,7 @@ var
   api: NightScout;
   dt1, dt2: TDateTime;
 begin
-  api := NightScout.create('http://localhost', 'x', '');
+  api := NightScout.create('http://localhost', 'x');
   try
     dt1 := api.JSToDateTime(0, true);
     dt2 := api.JSToDateTime(0, false);
@@ -204,7 +204,7 @@ var
   api: TrndiAPI;
 begin
   // Can create
-  api := xDrip.create('http://localhost:8080', 'testsecret', '');
+  api := xDrip.create('http://localhost:8080', 'testsecret');
   try
     // Test if the connect function runs (will fail without server)
     AssertFalse('API Connect should fail without server', api.connect);
@@ -236,7 +236,7 @@ begin
     Sleep(1000);
 
     try
-      api := xDrip.create('http://localhost:8080', 'test22', '');
+      api := xDrip.create('http://localhost:8080', 'test22');
       try
         if not api.connect then
           Fail('xDrip connects to local fake server. Error: ' + api.errormsg);
@@ -272,7 +272,7 @@ procedure TAPITester.TestNightscoutInvalidUrl;
 var
   api: NightScout;
 begin
-  api := NightScout.create('not-a-url', 'x', '');
+  api := NightScout.create('not-a-url', 'x');
   try
     AssertFalse('Invalid URL should not connect', api.connect);
   finally
@@ -300,7 +300,7 @@ begin
 
     try
       // Wrong secret should yield Unauthorized from the fake server
-      api := NightScout.create('http://localhost:8080', 'wrongsecret', '');
+      api := NightScout.create('http://localhost:8080', 'wrongsecret');
       AssertFalse('Connect should fail for unauthorized secret', api.connect);
       api.Free;
     finally
@@ -331,7 +331,7 @@ begin
     Sleep(1000);
 
     try
-      api := NightScout.create('http://localhost:8080', 'test22', '');
+      api := NightScout.create('http://localhost:8080', 'test22');
       AssertTrue('Connect to local NS', api.connect);
 
       readings := api.getReadings(0, 3, '', res);
@@ -371,12 +371,12 @@ begin
 
     try
       // Your existing test code
-      api := NightScout.create('test','test','blah');
+      api := NightScout.create('test','test');
       AssertFalse('API Connect Fail', api.connect);
       AssertTrue('Time correct', api.getBasetime > IncHour(DateTimeToUnix(now), -2));
       api.Free;
 
-      api := NightScout.create('http://localhost:8080','test22','');
+      api := NightScout.create('http://localhost:8080','test22');
       asserttrue('Connect to local NS', api.connect);
       // Thresholds are provided by the fake server in status.json
       AssertEquals('NS bgHigh threshold mapped', 260, api.cgmHi);

@@ -46,6 +46,12 @@ RS_TIR_ROW2 = 'Your low limit is %.1f, high is %.1f';
 RS_TIR_ROW3 = 'Your low range is %.1f, high is %.1f';
 RS_DIFF = 'This is the change from the latest reading';
 
+RS_SPEAK_HIGH = 'High';
+RS_SPEAK_LOW = 'Low';
+RS_SPEAK_GOOD = 'Good';
+RS_SPEAK_GHIGH = 'Going high';
+RS_SPEAK_GLOW = 'Going low';
+
 RS_NO_BOOT_READING = 'No fresh data is available.'#10'Trndi will attemp to fetch data until recent values are available';
 
 RS_SERVICE_SYSINFO = '%s (%s)'#10'%s'#10'Default Separator: %s';
@@ -148,6 +154,10 @@ RS_RIGHT_CLICK = 'The settings dialog will now open, in the future please right-
 
 RS_PREDICT = 'Your predicted future readings are shown on the lower-right-hand-side of the window; the difference from the last reading is shown in the middle';
 
+RS_NODATA_ERROR = 'No data, error(?):';
+RS_NODATA_NONE = '<none>';
+
+RS_EXT_SHUTDOWN = 'Shutting down extensions...';
 RS_SAFEMODE = 'Safe Mode Enabled';
 RS_SAFEMODE_DESC = 'Trndi is running in <b>Safe Mode</b>!<ul><li>No start-up actions from extensions will run</li><li>You cannot use, and no actions will trigger from, extensions</li></ul><br>Extensions will load next run, unless you press <b>CTRL</b>!';
 

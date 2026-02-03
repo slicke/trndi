@@ -201,5 +201,12 @@
 {"hash":195606927,"name":"tfconf.groupbox3.caption","sourcebytes":[69,120,116,101,110,115,105,111,110,32,73,110,102,111],"value":"Extension Info"},
 {"hash":87268254,"name":"tfconf.lextname.caption","sourcebytes":[67,104,111,111,115,101,32,97,110,32,101,120,116,101,110,115,105,111,110],"value":"Choose an extension"},
 {"hash":85102799,"name":"tfconf.lextcopyright.caption","sourcebytes":[102,111,114,32,109,111,114,101,32,105,110,102,111],"value":"for more info"},
+{"hash":5740281,"name":"tfconf.tsproxy.caption","sourcebytes":[80,114,111,120,121],"value":"Proxy"},
+{"hash":80471771,"name":"tfconf.gbnetwork.caption","sourcebytes":[78,101,116,119,111,114,107],"value":"Network"},
+{"hash":186317962,"name":"tfconf.labelproxyhost.caption","sourcebytes":[80,114,111,120,121,32,72,111,115,116,58],"value":"Proxy Host:"},
+{"hash":184745866,"name":"tfconf.labelproxyport.caption","sourcebytes":[80,114,111,120,121,32,80,111,114,116,58],"value":"Proxy Port:"},
+{"hash":242608,"name":"tfconf.edproxyport.text","sourcebytes":[56,48,56,48],"value":"8080"},
+{"hash":185273002,"name":"tfconf.labelproxyuser.caption","sourcebytes":[80,114,111,120,121,32,85,115,101,114,58],"value":"Proxy User:"},
+{"hash":184622234,"name":"tfconf.labelproxypass.caption","sourcebytes":[80,114,111,120,121,32,80,97,115,115,58],"value":"Proxy Pass:"},
 {"hash":60066,"name":"tfconf.ldotcurr.caption","sourcebytes":[226,128,162],"value":"\u2022"}
 ]}

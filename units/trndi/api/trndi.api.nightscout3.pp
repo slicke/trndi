@@ -34,6 +34,11 @@
  *   license terms.
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
+ *
+ * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-02-03: Nightscout v3 driver now prefers APIv3 endpoints without the
+ *   legacy ".json" suffix (with automatic fallback), and normalizes the v2
+ *   access token so both "abc123" and "token=abc123" work.
  *)
 unit trndi.api.nightscout3;
 
@@ -42,17 +47,26 @@ unit trndi.api.nightscout3;
 interface
 
 uses
-Classes, SysUtils, trndi.types, trndi.api, trndi.native,
-fpjson, jsonparser, jsonscanner, dateutils, StrUtils;
+Classes, SysUtils, trndi.types, trndi.api, trndi.native, trndi.funcs,
+fpjson, jsonparser, jsonscanner, dateutils, StrUtils, trndi.log;
 
 const
   {** Base path for Nightscout v3 API endpoints (appended to the provided base URL). }
 NS3_URL_BASE = '/api/v3/';
 
   {** Default paths/endpoints. }
-NS3_STATUS = 'status.json';
-NS3_ENTRIES = 'entries.json';
-NS3_SETTINGS = 'settings.json';
+// APIv3 tutorial uses endpoints without the legacy ".json" suffix.
+// Keep ".json" variants for compatibility with older deployments.
+NS3_STATUS = 'status';
+NS3_STATUS_JSON = 'status.json';
+NS3_ENTRIES = 'entries';
+NS3_ENTRIES_JSON = 'entries.json';
+NS3_SETTINGS = 'settings';
+NS3_SETTINGS_JSON = 'settings.json';
+NS3_PROFILE = 'profile';
+NS3_PROFILE_JSON = 'profile.json';
+NS3_VERSION = 'version';
+NS3_VERSION_JSON = 'version.json';
 
 type
   {** NightScout v3 API client with bearer authorization.
@@ -65,6 +79,10 @@ private
   FToken: string;       // Bearer JWT token (obtained via v2 authorization)
   FTokenSuffix: string; // Token suffix used in v2 authorization
 
+  class function NormalizeV2AccessToken(const AccessToken: string): string;
+  function TryRequestV3(const PathPreferred, PathLegacyJson: string;
+    const Params: array of string; out Resp: string): boolean;
+
   function BuildAuthURL: string;
   function GetAuthToken(out Err: string): boolean;
   function BearerHeader: string;
@@ -75,6 +93,8 @@ public
   function connect: boolean; override;
   function getReadings(minNum, maxNum: integer; extras: string;
     out res: string): BGResults; override;
+  function supportsBasal: boolean; override;
+  function getBasalProfile(out profile: TBasalProfile): boolean; override;
     {** Test NightScout credentials
     }   
   class function testConnection(user, pass: string; var res: string): maybebool; override;
@@ -127,6 +147,7 @@ sParamDesc = '** ALPHA DRIVER - Please use "NightScout" for daily use! **' + #13
   #13#10 + '   - Copy the FULL access token value exactly as shown.' + #13#10 +
   '4) In Trndi:' + #13#10 + '   - Address: enter your NightScout URL' + #13#10 +
   '   - Auth: paste the FULL access token.' + #13#10 + #13#10 +
+  'Tip: Both "abc123" and "token=abc123" formats are accepted.' + #13#10 +
   'Note: If you instead use the legacy API Secret, paste your API Secret value as-is.' + #10#13 +
   'Note 2: Your access token should look like: trndi-abc123 (or whatever name you chose)';
 sParamDescHTML =
@@ -152,11 +173,41 @@ sParamDescHTML =
   '</ul>' +
   '</li>' +
   '</ol>' +
+  '<div style="border-left: 4px solid #0d6efd; padding: 12px; margin-top: 15px; border-radius: 4px;">' +
+  '<p style="margin: 0;"><strong>💡 Tip:</strong> Both <code style="background: #6F8FAF; padding: 2px 6px; border-radius: 3px;">abc123</code> and <code style="background: #6F8FAF; padding: 2px 6px; border-radius: 3px;">token=abc123</code> are accepted.</p>' +
+  '</div>' +
   '<div style="border-left: 4px solid #ffc107; padding: 12px; margin-top: 15px; border-radius: 4px;">' +
   '<p style="margin: 0 0 8px 0;"><strong>📝 Note:</strong> If you instead use the legacy API Secret, paste your API Secret value as-is.</p>' +
   '<p style="margin: 0;"><strong>📝 Note 2:</strong> Your access token should look like: <code style="background: #6F8FAF; padding: 2px 6px; border-radius: 3px;">trndi-abc123</code> (or whatever name you chose).</p>' +
   '</div>' +
   '</div>';
+
+class function NightScout3.NormalizeV2AccessToken(const AccessToken: string): string;
+var
+  t: string;
+begin
+  t := Trim(AccessToken);
+  if t = '' then
+    Exit('');
+
+  // Nightscout's v2 auth request expects a path segment like "token=<name>-<secret>".
+  // Accept both raw token value and already-prefixed input.
+  if (Length(t) >= 6) and (LowerCase(Copy(t, 1, 6)) = 'token=') then
+    Exit(t);
+
+  Exit('token=' + t);
+end;
+
+function NightScout3.TryRequestV3(const PathPreferred, PathLegacyJson: string;
+  const Params: array of string; out Resp: string): boolean;
+begin
+  Resp := native.request(false, PathPreferred, Params, '', BearerHeader);
+  if (Trim(Resp) <> '') and not ((Resp <> '') and (Resp[1] = '+')) then
+    Exit(true);
+
+  Resp := native.request(false, PathLegacyJson, Params, '', BearerHeader);
+  Result := (Trim(Resp) <> '') and not ((Resp <> '') and (Resp[1] = '+'));
+end;
 
 {------------------------------------------------------------------------------
   getMaxAge
@@ -185,7 +236,9 @@ constructor NightScout3.Create(user, pass: string);
 begin
   // Normalize site base (no trailing slash)
   FSiteBase := TrimRightSet(user, ['/']);
-  FTokenSuffix := pass; // In v3, we expect 'pass' to be the token suffix for v2 auth
+  // Nightscout v3 uses v2 auth request flow, which expects a path segment
+  // like "token=<accessToken>".
+  FTokenSuffix := NormalizeV2AccessToken(pass);
 
   // Set UA and API base URL before inherited (so native is initialized correctly)
   ua := 'Mozilla/5.0 (compatible; trndi) TrndiAPI';
@@ -223,7 +276,7 @@ begin
 
   if FTokenSuffix = '' then
   begin
-    Err := 'Missing token suffix for Nightscout v2 authorization.';
+    Err := 'Missing access token for Nightscout v2 authorization.';
     Exit;
   end;
 
@@ -282,15 +335,19 @@ begin
   Result := false;
   lastErr := '';
 
-  // 1) Acquire JWT via v2 authorization flow
-  if not GetAuthToken(authErr) then
+  // 1) Acquire JWT via v2 authorization flow (only if a token suffix is configured)
+  if FTokenSuffix <> '' then
   begin
-    lastErr := authErr;
-    Exit;
+    if not GetAuthToken(authErr) then
+    begin
+      lastErr := authErr;
+      Exit;
+    end;
   end;
 
-  // 2) Fetch v3 status (bearer)
-  resp := native.request(false, NS3_STATUS, [], '', BearerHeader);
+  // 2) Fetch v3 status (bearer). Prefer /api/v3/status, fall back to status.json.
+  TryRequestV3(NS3_STATUS, NS3_STATUS_JSON, [], resp);
+  {$ifdef DEBUG} if debug_log_api then LogMessageToFile(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, NS3_STATUS, resp, debugParams([])]));{$endif}
 
   if Trim(resp) = '' then
     if not TrndiNative.getURL(FSiteBase + '/api/v1/status.json', resp) then
@@ -395,6 +452,7 @@ begin
   // Attempt via native.request using absolute v1 URL and bearer header (no prefix)
   resp := native.request(false, FSiteBase + '/api/v1/status.json',
     [], '', BearerHeader, false {no prefix});
+  {$ifdef DEBUG} if debug_log_api then LogMessageToFile(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, NS3_STATUS, resp, debugParams([])]));{$endif}
 
   // If empty or app-level error, try plain GET
   if (Trim(resp) = '') or ((resp <> '') and (resp[1] = '+')) then
@@ -477,6 +535,15 @@ function ExtractArrayNode(const jd: TJSONData): TJSONData;
       Exit(nil);
   end;
 
+var ts, ts2: int64;
+LDateMs: int64;
+LDateStr: string ;
+LUtcOffset: integer;
+LMethod: string;
+LUnixTrue, LUnixFalse: TDateTime;
+LLocalOffsetMin: integer;
+
+
 begin
   // Default endpoint
   if extras = '' then
@@ -491,14 +558,32 @@ begin
   params[2] := 'fields=date,sgv,delta,direction,device,rssi,noise';
 
   try
-    resp := native.request(false, extras, params, '', BearerHeader);
+    // Prefer /api/v3/entries and fall back to entries.json when using default.
+    if extras = NS3_ENTRIES then
+    begin
+      if not TryRequestV3(NS3_ENTRIES, NS3_ENTRIES_JSON, params, resp) then
+        resp := '';
+    end
+    else
+      resp := native.request(false, extras, params, '', BearerHeader);
+    {$ifdef DEBUG} if debug_log_api then LogMessageToFile(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, NS3_STATUS, resp, debugParams(params)]));{$endif}
   except
+    lastErr := 'Could not contact Nightscout entries endpoint (request failed)';
     Exit; // return empty set
   end;
 
   res := resp;
 
   // If v3 denied or errored, fall back to v1 entries
+  if Trim(resp) = '' then
+  begin
+    lastErr := 'Empty response from Nightscout v3 entries endpoint (auth may be required)';
+  end
+  else if Pos('Unauthorized', resp) > 0 then
+  begin
+    lastErr := 'Unauthorized accessing Nightscout v3 entries (invalid or missing token)';
+  end;
+
   if (Trim(resp) = '') or (Pos('Unauthorized', resp) > 0) or
     ((resp <> '') and (resp[1] = '+')) then
   begin
@@ -507,8 +592,12 @@ begin
     fbparams[0] := 'count=' + IntToStr(maxNum);
     resp := native.request(false, FSiteBase + '/api/v1/entries.json',
       fbparams, '', BearerHeader, false {no prefix});
+    {$ifdef DEBUG} if debug_log_api then LogMessageToFile(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, NS3_STATUS, resp, debugParams(fbParams)]));{$endif}
     if Trim(resp) = '' then
+    begin
+      lastErr := 'Empty response from Nightscout v1 entries endpoint (fallback failed)';
       Exit;
+    end;
     res := resp;
   end;
 
@@ -529,6 +618,7 @@ begin
     fbparams[0] := 'count=' + IntToStr(maxNum);
     resp := native.request(false, FSiteBase + '/api/v1/entries.json',
       fbparams, '', BearerHeader, false {no prefix});
+    {$ifdef DEBUG} if debug_log_api then LogMessageToFile(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, NS3_STATUS, resp, debugParams(fbparams)]));{$endif}
     if Trim(resp) = '' then
     begin
       js.Free;
@@ -612,24 +702,114 @@ begin
 
       // Trend mapping by name
       s := FindPath('direction').AsString;
-      for t in BGTrend do
+      // Default to not computable, then try to find a matching textual mapping
+      Result[i].trend := TdNotComputable;
+      for t := Low(BGTrend) to High(BGTrend) do
       begin
         if BG_TRENDS_STRING[t] = s then
         begin
           Result[i].trend := t;
-          break;
+          Break;
         end;
-        Result[i].trend := TdNotComputable;
       end;
 
-      // Use ms epoch when available
+      // Use ms epoch when available. Prefer explicit utcOffset when provided
+      LDateMs := 0;
+      LDateStr := '';
+      LUtcOffset := 0;
+
       if Assigned(FindPath('date')) then
-        Result[i].date := JSToDateTime(FindPath('date').AsInt64)
+        LDateMs := FindPath('date').AsInt64;
+      if Assigned(FindPath('dateString')) then
+        LDateStr := FindPath('dateString').AsString;
+      if Assigned(FindPath('utcOffset')) then
+        LUtcOffset := FindPath('utcOffset').AsInteger;
+
+      if LDateMs <> 0 then
+      begin
+        // Timestamp in ms since epoch
+        ts := LDateMs div 1000;
+        // Prefer explicit ISO date string (UTC) when available to avoid double-applying UTC offsets.
+        if LDateStr <> '' then
+        begin
+          // dateString is ISO 8601 with Z (UTC).
+          // If we have a tz calibration, apply it (JSToDateTime) so we correct for server clock skew.
+          // If tz is zero (no calibration), convert to system local time using UnixToDateTime(ts, True).
+          if tz <> 0 then
+          begin
+            Result[i].date := JSToDateTime(LDateMs, True);
+            LMethod := 'dateString';
+          end
+          else
+          begin
+            Result[i].date := UnixToDateTime(ts, False); // system-local conversion (UseUTC=false gives local time on this platform)
+            LMethod := 'dateString+local';
+          end;
+        end
+        else if LUtcOffset <> 0 then
+        begin
+          // No dateString available: apply server-provided utcOffset to UTC epoch
+          Result[i].date := UnixToDateTime(ts, False) + (LUtcOffset / 1440); // minutes -> days
+          LMethod := 'utcOffset';
+        end
+        else
+        begin
+          Result[i].date := JSToDateTime(LDateMs, True);
+          LMethod := 'JSTo';
+        end;
+      end
+      else if Assigned(FindPath('srvModified')) then
+      begin
+        LDateMs := FindPath('srvModified').AsInt64;
+        ts2 := LDateMs div 1000;
+        if LDateStr <> '' then
+        begin
+          Result[i].date := UnixToDateTime(ts2, False);
+          LMethod := 'dateString';
+        end
+        else if Assigned(FindPath('utcOffset')) then
+        begin
+          Result[i].date := UnixToDateTime(ts2, False) + (FindPath('utcOffset').AsInteger / 1440);
+          LMethod := 'utcOffset';
+        end
+        else
+        begin
+          Result[i].date := JSToDateTime(LDateMs, True);
+          LMethod := 'JSTo';
+        end;
+      end
       else
-      if Assigned(FindPath('srvModified')) then
-        Result[i].date := JSToDateTime(FindPath('srvModified').AsInt64)
-      else
+      begin
         Result[i].date := Now; // fallback
+        LMethod := 'Now';
+      end;
+
+      {$ifdef DEBUG}
+      if debug_log_api then
+      begin
+        // Extra diagnostics: compare UnixToDateTime(true/false) and show system local offset
+        try
+          LUnixTrue := UnixToDateTime(ts, True);
+          LUnixFalse := UnixToDateTime(ts, False);
+          LLocalOffsetMin := Round((Now - LocalTimeToUniversal(Now)) * 1440); // minutes
+          LogMessageToFile('[' + {$i %file%} + ':' + {$i %Line%} + '] debug: unixTrue=' + FormatDateTime('yyyy-mm-dd hh:nn:ss', LUnixTrue) +
+            ' unixFalse=' + FormatDateTime('yyyy-mm-dd hh:nn:ss', LUnixFalse) + ' localOffsetMin=' + IntToStr(LLocalOffsetMin));
+        except
+          // ignore diagnostics failure
+        end;
+
+        // Diagnostic log to help debug timezone/timestamp issues
+        try
+          // Use simple concatenation to avoid Format exceptions while debugging
+          LogMessageToFile('[' + {$i %file%} + ':' + {$i %Line%} + '] NightScout entry ' + IntToStr(i) +
+            ': dateMs=' + IntToStr(LDateMs) + ' dateString="' + LDateStr + '" utcOffset=' + IntToStr(LUtcOffset) + ' method=' + LMethod + ' tz=' + IntToStr(tz) +
+            ' computed=' + FormatDateTime('yyyy-mm-dd hh:nn:ss', Result[i].date));
+        except
+          on E: Exception do
+            LogMessageToFile('[' + {$i %file%} + ':' + {$i %Line%} + '] NightScout entry ' + IntToStr(i) + ': diagnostic log failed: ' + E.Message);
+        end;
+      end;
+      {$endif}
 
       Result[i].level := getLevel(Result[i].val);
     end;
@@ -708,7 +888,7 @@ begin
   localToken := '';
   if (Trim(pass) <> '') then
   begin
-    authURL := base + '/api/v2/authorization/request/' + pass;
+    authURL := base + '/api/v2/authorization/request/' + NightScout3.NormalizeV2AccessToken(pass);
     if TrndiNative.getURL(authURL, xres) then
     begin
       // parse JSON and extract token
@@ -741,9 +921,17 @@ begin
     base + NS3_URL_BASE);
   try
     if localToken <> '' then
-      resp := tn.Request(false, NS3_STATUS, [], '', 'Authorization=Bearer ' + localToken)
+    begin
+      resp := tn.Request(false, NS3_STATUS, [], '', 'Authorization=Bearer ' + localToken);
+      if (Trim(resp) = '') or ((resp <> '') and (resp[1] = '+')) then
+        resp := tn.Request(false, NS3_STATUS_JSON, [], '', 'Authorization=Bearer ' + localToken);
+    end
     else
+    begin
       resp := tn.Request(false, NS3_STATUS, [], '', '');
+      if (Trim(resp) = '') or ((resp <> '') and (resp[1] = '+')) then
+        resp := tn.Request(false, NS3_STATUS_JSON, [], '', '');
+    end;
 
     if Trim(resp) = '' then
       if not TrndiNative.getURL(base + '/api/v1/status.json', resp) then
@@ -824,6 +1012,11 @@ begin
   result := 40;
 end;
 
+function NightScout3.supportsBasal: boolean;
+begin
+  Result := True;
+end;
+
 {------------------------------------------------------------------------------
   getBasalRate
   ------------
@@ -847,7 +1040,9 @@ begin
   
   // Fetch basal rate from Nightscout v3 API
   try
-    ResponseStr := Native.Request(false, 'profile.json', [], '', BearerHeader);
+    if not TryRequestV3(NS3_PROFILE, NS3_PROFILE_JSON, [], ResponseStr) then
+      ResponseStr := '';
+    {$ifdef DEBUG} if debug_log_api then LogMessageToFile(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, NS3_PROFILE, responsestr, debugParams([])]));{$endif}
     
     if Trim(ResponseStr) = '' then
     begin
@@ -913,6 +1108,142 @@ begin
       lastErr := 'Error fetching basal rate: ' + E.Message;
       result := 0;
     end;
+  end;
+end;
+
+function NightScout3.getBasalProfile(out profile: TBasalProfile): boolean;
+var
+  ResponseStr, defName: string;
+  JSONData: TJSONData;
+  RootObject, StoreObj: TJSONObject;
+  StoreArray: TJSONArray;
+  DefaultProfile: TJSONObject;
+  BasalArray: TJSONArray;
+  BasalObj: TJSONObject;
+  ResNode, StoreNode: TJSONData;
+  i: integer;
+  tstr: string;
+  h, m: integer;
+  be: TBasalEntry;
+begin
+  Result := False;
+  SetLength(profile, 0);
+  try
+    if not TryRequestV3(NS3_PROFILE, NS3_PROFILE_JSON, [], ResponseStr) then
+      ResponseStr := '';
+   {$ifdef DEBUG} if debug_log_api then LogMessageToFile(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, NS3_PROFILE, responseStr, debugParams([])]));{$endif}
+  except
+    lastErr := 'HTTP request failed while fetching profile endpoint';
+    Exit;
+  end;
+
+  if Trim(ResponseStr) = '' then
+  begin
+    lastErr := 'Empty response from profile endpoint';
+    Exit;
+  end;
+
+  try
+    JSONData := GetJSON(ResponseStr);
+  except
+    lastErr := 'Failed to parse JSON from profile endpoint';
+    Exit;
+  end;
+
+  try
+    if not (JSONData is TJSONObject) then
+    begin
+      lastErr := 'Profile response is not a JSON object';
+      Exit;
+    end;
+    RootObject := TJSONObject(JSONData);
+    DefaultProfile := nil;
+    // Some Nightscout instances wrap payloads in {"status":..,"result":[{...}]}
+   ResNode := RootObject.FindPath('result');
+    if Assigned(ResNode) and (ResNode.InheritsFrom(TJSONArray)) and (TJSONArray(ResNode).Count > 0) and (TJSONArray(ResNode).Items[0] is TJSONObject) then
+      RootObject := TJSONObject(TJSONArray(ResNode).Items[0]);
+
+    // `store` can be an array (old shape) or an object keyed by profile id (observed)
+    StoreNode := RootObject.FindPath('store');
+    if Assigned(StoreNode) then
+    begin
+      if StoreNode.InheritsFrom(TJSONArray) then
+      begin
+        StoreArray := TJSONArray(StoreNode);
+        if StoreArray.Count = 0 then
+        begin
+          lastErr := 'Empty "store" array in profile.json';
+          Exit;
+        end;
+        DefaultProfile := StoreArray.Objects[0];
+      end
+      else if StoreNode.InheritsFrom(TJSONObject) then
+      begin
+        StoreObj := TJSONObject(StoreNode);
+        defName := RootObject.Get('defaultProfile', '');
+        if defName = '' then
+          defName := RootObject.Get('Default', '');
+        if defName <> '' then
+        begin
+          StoreNode := StoreObj.FindPath(defName);
+          if Assigned(StoreNode) and (StoreNode is TJSONObject) then
+            DefaultProfile := TJSONObject(StoreNode);
+        end
+        else
+        begin
+          // fallback: take the first property object found inside store
+          if StoreObj.Count > 0 then
+            if StoreObj.Items[0] is TJSONObject then
+              DefaultProfile := TJSONObject(StoreObj.Items[0]);
+        end;
+      end;
+    end
+    else
+    begin
+      lastErr := 'No "store" element in profile.json';
+      Exit;
+    end;
+
+    if not Assigned(DefaultProfile) then
+    begin
+      lastErr := 'No default profile found in profile.json store';
+      Exit;
+    end;
+
+    BasalArray := DefaultProfile.FindPath('basal') as TJSONArray;
+    if not Assigned(BasalArray) then
+    begin
+      lastErr := 'No "basal" array in default profile';
+      Exit;
+    end;
+
+    SetLength(profile, BasalArray.Count);
+    for i := 0 to BasalArray.Count - 1 do
+    begin
+      BasalObj := BasalArray.Objects[i];
+      tstr := BasalObj.Get('time', '00:00');
+      h := 0; m := 0;
+      if Pos(':', tstr) > 0 then
+      begin
+        h := StrToIntDef(Copy(tstr, 1, Pos(':', tstr) - 1), 0);
+        m := StrToIntDef(Copy(tstr, Pos(':', tstr) + 1, 2), 0);
+      end
+      else
+      begin
+        // If time is numeric (minutes), try parse as integer
+        h := StrToIntDef(tstr, 0) div 60;
+        m := StrToIntDef(tstr, 0) mod 60;
+      end;
+
+      be.startMin := (h * 60) + m;
+      be.value := BasalObj.Get('value', single(0));
+      be.name := BasalObj.Get('name', '');
+      profile[i] := be;
+    end;
+
+    Result := True;
+  finally
+    JSONData.Free;
   end;
 end;
 

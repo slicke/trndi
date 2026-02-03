@@ -243,7 +243,121 @@ end;
 
 DexcomCustomNew = class(DexcomNew);
 
+{** Map Dexcom trend representation (string or numeric) into internal `BGTrend`.
+    This function prefers textual mapping via `BG_TRENDS_STRING`. If the value
+    is numeric it accepts both 0-based codes and pydexcom-style 1-based codes.
+    As a final fallback it recognizes common Dexcom textual names used by
+    pydexcom and converts them to the corresponding enum.
+}
+function MapDexcomTrendToEnum(const S: string): BGTrend;
+
 implementation
+
+uses trndi.api.dexcom_time;
+
+{** Try to extract a token (AccountId/SessionId) or return an explicit error message.
+    Returns True and sets OutToken when a token was found. Returns False and sets
+    OutErr when an error/message field was found or parsing failed. }
+function TryGetTokenOrError(const S: string; out OutToken, OutErr: string): boolean;
+var
+  js: TJSONData;
+  v: string;
+  i, j: integer;
+begin
+  OutToken := '';
+  OutErr := '';
+  Result := False;
+  if Trim(S) = '' then
+  begin
+    OutErr := 'Empty response from server';
+    Exit;
+  end;
+
+  // If it looks like XML, try extracting inner text: <...>TOKEN</...>
+  if TrimLeft(S).StartsWith('<') then
+  begin
+    try
+      // Extract between first '>' and next '<'
+      i := Pos('>', S);
+      j := PosEx('<', S, i + 1);
+      if (i > 0) and (j > i) then
+      begin
+        v := Trim(Copy(S, i + 1, j - i - 1));
+        v := StringReplace(v, '"', '', [rfReplaceAll]);
+        if v <> '' then
+        begin
+          OutToken := v;
+          Result := True;
+          Exit;
+        end;
+      end;
+    except
+      // fallthrough to other attempts
+    end;
+  end;
+
+  // If it looks like JSON, attempt to parse and look for known fields
+  if TrimLeft(S).StartsWith('{') then
+  begin
+    js := nil;
+    try
+      try
+        js := GetJSON(S);
+      except
+        js := nil; // malformed JSON - we'll fall back
+      end;
+      if js <> nil then
+      begin
+        if js.JSONType = jtObject then
+        begin
+          // Check for explicit error/message fields first
+          v := TJSONObject(js).Get('Message', '');
+          if v = '' then
+            v := TJSONObject(js).Get('Error', '');
+          if v = '' then
+            v := TJSONObject(js).Get('error', '');
+          if v <> '' then
+          begin
+            OutErr := v;
+            js.Free;
+            Exit;
+          end;
+
+          // Try common token fields
+          v := TJSONObject(js).Get('sessionId', '');
+          if v = '' then
+            v := TJSONObject(js).Get('SessionId', '');
+          if v = '' then
+            v := TJSONObject(js).Get('accountId', '');
+          if v = '' then
+            v := TJSONObject(js).Get('AccountId', '');
+
+          if v <> '' then
+          begin
+            OutToken := v;
+            Result := True;
+            js.Free;
+            Exit;
+          end;
+        end;
+        js.Free;
+      end;
+    finally
+      // continue to fallback extraction if JSON parse failed or no fields present
+    end;
+  end;
+
+  // Fallback: strip quotes and whitespace and treat as token (GUID string common)
+  v := Trim(StringReplace(S, '"', '', [rfReplaceAll]));
+  if v <> '' then
+  begin
+    OutToken := v;
+    Result := True;
+    Exit;
+  end;
+
+  OutErr := 'No token or error message found';
+end;
 
 resourcestring
 sDexNewErrPass = 'Incorrect username or password combination';
@@ -269,6 +383,67 @@ sDexNewParamDescHTML =
   '<br><br>' +
   'If you are unsure, try <b>Outside USA</b> first, if you live outside the US.' +
   LineEnding + 'Your username and password are your Dexcom Account (not Share) credentials.';
+
+function MapDexcomTrendToEnum(const S: string): BGTrend;
+var
+  code: integer;
+  L: string;
+begin
+  L := Trim(S);
+  // Prefer textual mapping first
+  for Result := Low(BGTrend) to High(BGTrend) do
+    if BG_TRENDS_STRING[Result] = L then
+      Exit;
+
+  // If numeric, accept either 0-based or 1-based (pydexcom) codes
+  if TryStrToInt(L, code) then
+  begin
+    if (code >= Ord(Low(BGTrend))) and (code <= Ord(High(BGTrend))) then
+    begin
+      Result := BGTrend(code);
+      Exit;
+    end;
+    if (code - 1 >= Ord(Low(BGTrend))) and (code - 1 <= Ord(High(BGTrend))) then
+    begin
+      Result := BGTrend(code - 1);
+      Exit;
+    end;
+    Result := TdPlaceholder;
+    Exit;
+  end;
+
+  // Handle common pydexcom textual names (1-based mapping semantics)
+  code := -1;
+  if L = 'DoubleUp' then
+    code := 1
+  else if L = 'SingleUp' then
+    code := 2
+  else if L = 'FortyFiveUp' then
+    code := 3
+  else if L = 'Flat' then
+    code := 4
+  else if L = 'FortyFiveDown' then
+    code := 5
+  else if L = 'SingleDown' then
+    code := 6
+  else if L = 'DoubleDown' then
+    code := 7
+  else if (L = 'NotComputable') or (L = 'RateOutOfRange') then
+    code := 8
+  else
+    code := -1;
+
+  if code > 0 then
+  begin
+    if (code - 1 >= Ord(Low(BGTrend))) and (code - 1 <= Ord(High(BGTrend))) then
+      Result := BGTrend(code - 1)
+    else
+      Result := TdPlaceholder;
+    Exit;
+  end;
+
+  Result := TdPlaceholder;
+end;
 
 {------------------------------------------------------------------------------
   getSystemName
@@ -462,7 +637,7 @@ function JSONEscape(const S: string): string;
   end;
 
 var
-  LBody, LResponse, LTimeResponse, LTimeString, LAccountID: string;
+  LBody, LResponse, LTimeResponse, LTimeString, LAccountID, LNameBody, LNameResp: string;
   LServerDateTime: TDateTime;
   LUseEmailAuth: boolean;
 begin
@@ -481,9 +656,20 @@ begin
   begin
     // Two-step authentication for email/phone:
     // Step 1: Get account ID from email/phone
-    LAccountID := StringReplace(
-      native.Request(true, DEXCOM_AUTHENTICATE_ENDPOINT, [], LBody),
-      '"', '', [rfReplaceAll]);
+    // Request account id (may return JSON or plain quoted string)
+    LResponse := native.Request(true, DEXCOM_AUTHENTICATE_ENDPOINT, [], LBody);
+    if not TryGetTokenOrError(LResponse, LAccountID, LResponse) then
+    begin
+      // Fallback: some servers return a plain quoted accountId; strip quotes
+      LAccountID := StringReplace(LResponse, '"', '', [rfReplaceAll]);
+      LAccountID := Trim(LAccountID);
+      if LAccountID = '' then
+      begin
+        Result := false;
+        lastErr := sDexNewErrLogin + ' (Dex1a): ' + LResponse;
+        Exit;
+      end;
+    end;
     
     // Check for authentication errors
     if (LAccountID = '') or (Pos('error', LowerCase(LAccountID)) > 0) or
@@ -502,14 +688,38 @@ begin
     LBody := Format('{ "accountId": "%s", "password": "%s", "applicationId": "%s" }',
       [LAccountID, JSONEscape(FPassword), DEXCOM_APPLICATION_IDS[FRegion]]);
     
-    FSessionID := StringReplace(
-      native.Request(true, DEXCOM_LOGIN_BY_ID_ENDPOINT, [], LBody),
-      '"', '', [rfReplaceAll]);
+    LResponse := native.Request(true, DEXCOM_LOGIN_BY_ID_ENDPOINT, [], LBody);
+    if not TryGetTokenOrError(LResponse, FSessionID, LResponse) then
+    begin
+      // Fallback: some servers reply with a plain quoted session token
+      FSessionID := StringReplace(LResponse, '"', '', [rfReplaceAll]);
+      FSessionID := Trim(FSessionID);
+      if FSessionID = '' then
+      begin
+        // As a last resort, try single-step login by account name (nickname)
+        LNameBody := Format('{ "accountName": "%s", "password": "%s", "applicationId": "%s" }',
+          [JSONEscape(FUserName), JSONEscape(FPassword), DEXCOM_APPLICATION_IDS[FRegion]]);
+        LNameResp := native.Request(true, DEXCOM_LOGIN_BY_NAME_ENDPOINT, [], LNameBody);
+        // Try parse or strip quoted token
+        if not TryGetTokenOrError(LNameResp, FSessionID, LNameResp) then
+          FSessionID := StringReplace(LNameResp, '"', '', [rfReplaceAll]);
+        FSessionID := Trim(FSessionID);
+        if FSessionID = '' then
+        begin
+          Result := false;
+          lastErr := sDexNewErrLogin + ' (Dex1b): ' + LResponse + ' / fallback: ' + LNameResp;
+          Exit;
+        end;
+      end;
+    end;
   end
   else
+  begin
+    // Restore legacy behavior: some servers return a plain quoted GUID/token.
     FSessionID := StringReplace(
       native.Request(true, DEXCOM_LOGIN_BY_NAME_ENDPOINT, [], LBody),
-      '"', '', [rfReplaceAll])// Single-step authentication for plain usernames
+      '"', '', [rfReplaceAll]);
+  end;// Single-step authentication for plain usernames
   ;
 
   // Check for various error responses before validation
@@ -546,27 +756,8 @@ begin
 
   // 3) Retrieve system UTC time for time-diff calibration
   LTimeResponse := native.Request(false, DEXCOM_TIME_ENDPOINT, [], '', 'Accept=application/json');
-
-  // Dexcom may respond as XML-like <SystemTime> or JSON-ish /Date(ms)/ format
-  if Pos('>', LTimeResponse) > 0 then
-  begin
-    // Example: <SystemTime>YYYY-MM-DDTHH:mm:ss</SystemTime>
-    LTimeString := ExtractDelimited(5, LTimeResponse, ['>', '<']);
-    if LTimeString <> '' then
-      // Parse the ISO-like timestamp (truncate to 19 chars to ignore fractions/timezone)
-      LServerDateTime := ScanDateTime('YYYY-MM-DD"T"hh:nn:ss', Copy(LTimeString, 1, 19));
-  end
-  else
-  begin
-    // Example: {"ServerTime":"/Date(1610464324000)/"} or similar payload
-    LTimeString := ExtractDelimited(2, LTimeResponse, ['(', ')']);
-    if LTimeString <> '' then
-      // LTimeString in ms; JSToDateTime expects milliseconds when correct=false path used
-      LServerDateTime := JSToDateTime(StrToInt64(LTimeString), false);
-  end;
-
-  // If we failed to parse any time value, abort with error
-  if LTimeString = '' then
+  // Parse server time using centralized helper (handles XML, /Date(ms)/, JSON ServerTime, ISO)
+  if not ParseDexcomTime(LTimeResponse, LServerDateTime) then
   begin
     lastErr := 'Cannot parse Dexcom time/zone data';
     Result := false;
@@ -653,15 +844,34 @@ function SafeValue(Item: TJSONData; out Ok: boolean): double;
     end;
   end;
 
+  // Helper: safely extract string at given path from a JSON item (handles nil/missing)
+function SafeString(Item: TJSONData; const Path: string): string;
+var
+  J: TJSONData;
+begin
+  Result := '';
+  if Item = nil then
+    Exit;
+  J := Item.FindPath(Path);
+  if J = nil then
+    Exit;
+  try
+    Result := J.AsString;
+  except
+    Result := '';
+  end;
+end;
+
 var
   LParams: array[1..3] of string;
-  LGlucoseJSON, LTrendStr: string;
+  LGlucoseJSON, LTrendStr, LSTStr: string;
   LData: TJSONData;
   i, LTrendCode: integer;
   LTrendEnum: BGTrend;
   noval: MaybeInt;
   CurVal, PrevVal: double;
   CurOk, PrevOk: boolean;
+  LTimeProbe, LAlertProbe: string;
 begin
   // Initialize the noval
   noval.exists := false;
@@ -682,12 +892,27 @@ begin
 
   res := LGlucoseJSON;
 
-  // Return empty result on empty payload
-  if LGlucoseJSON = '' then
+  // Defensive: ensure we received JSON (Dexcom sometimes returns HTML/redirects on auth errors)
+  if Trim(LGlucoseJSON) = '' then
   begin
+    // Collect diagnostic responses to help debug email-authenticated accounts
+    LTimeProbe := native.Request(false, DEXCOM_TIME_ENDPOINT, ['sessionId=' + FSessionID], '', 'Accept=application/json');
+    LAlertProbe := native.Request(true, DEXCOM_ALERT_ENDPOINT, LParams, '', 'Accept=application/json');
     SetLength(Result, 0);
+    lastErr := 'Empty payload from Dexcom glucose endpoint.' + LineEnding +
+      'GlucoseResp: ' + Copy(LGlucoseJSON, 1, 400) + LineEnding +
+      'TimeProbe: ' + Copy(LTimeProbe, 1, 400) + LineEnding +
+      'AlertProbe: ' + Copy(LAlertProbe, 1, 400);
     Exit;
   end;
+  // Expect an array; if not JSON array/object, abort with diagnostic
+  if not (TrimLeft(LGlucoseJSON).StartsWith('[') or TrimLeft(LGlucoseJSON).StartsWith('{')) then
+  begin
+    SetLength(Result, 0);
+    lastErr := 'Unexpected non-JSON response from Dexcom: ' + Copy(LGlucoseJSON, 1, 400);
+    Exit;
+  end;
+  
 
   // Parse JSON array with error handling for malformed responses
   try
@@ -716,28 +941,19 @@ begin
       CurVal := SafeValue(LData.Items[i], CurOk);
       if CurOk then
       begin
-        // Parse trend
-        LTrendStr := LData.Items[i].FindPath('Trend').AsString;
-        // Map trend string to enum
-        if not TryStrToInt(LTrendStr, LTrendCode) then
-        begin
-          // Treat as text; map to enum via lookup table
-          for LTrendEnum in BGTrend do
-          begin
-            if BG_TRENDS_STRING[LTrendEnum] = LTrendStr then
-            begin
-              Result[i].trend := LTrendEnum;
-              Break;
-            end;
-            // Default until proven otherwise in this loop iteration
-            Result[i].trend := TdPlaceholder;
-          end;
-        end
-        else
-          Result[i].trend := TdPlaceholder; // Numeric mapping not defined
+        // Parse trend (Dexcom may return numeric code or textual string)
+        LTrendStr := SafeString(LData.Items[i], 'Trend');
+        // Default
+        Result[i].trend := TdPlaceholder;
+        // Use dedicated mapper which handles textual names and numeric codes
+        Result[i].trend := MapDexcomTrendToEnum(LTrendStr);
 
-        // Convert Dexcom timestamp "/Date(ms)/" to TDateTime
-        Result[i].date := DexTimeToTDateTime(LData.Items[i].FindPath('ST').AsString);
+        // Convert Dexcom timestamp "/Date(ms)/" to TDateTime (safely)
+        LSTStr := SafeString(LData.Items[i], 'ST');
+        if LSTStr <> '' then
+          Result[i].date := DexTimeToTDateTime(LSTStr)
+        else
+          Result[i].date := 0;
 
         // Compute delta as current - previous valid reading
         if FCalcDiff and (PrevVal <> BG_NO_VAL) then
@@ -797,7 +1013,7 @@ end;
 class function DexcomNew.testConnection(user, pass: string; var res: string; extra: string): MaybeBool;
 var
   tn: TrndiNative;
-  base, body, resp, accountId, sessionId, timeResp, timeStr: string;
+  base, body, resp, accountId, sessionId, timeResp, timeStr, nameBody, nameResp: string;
   js: TJSONData;
   useEmailAuth: boolean;
   LServerDateTime: TDateTime;
@@ -865,19 +1081,51 @@ begin
     // 1) Authenticate
     if useEmailAuth then
     begin
-      accountId := StringReplace(tn.Request(true, DEXCOM_AUTHENTICATE_ENDPOINT, [], body), '"', '', [rfReplaceAll]);
-      if (accountId = '') or (Pos('error', LowerCase(accountId)) > 0) or (Pos('invalid', LowerCase(accountId)) > 0) then begin
-        res := 'An error occured with your email address';
-        Exit;
-      end;
+        // Authenticate -> extract account id or error
+        resp := tn.Request(true, DEXCOM_AUTHENTICATE_ENDPOINT, [], body);
+        if not TryGetTokenOrError(resp, accountId, resp) then
+        begin
+          // Fallback to legacy behavior: strip quotes if present
+          accountId := StringReplace(resp, '"', '', [rfReplaceAll]);
+          accountId := Trim(accountId);
+          if accountId = '' then
+          begin
+            res := 'An error occured with your email address: ' + resp;
+            Exit;
+          end;
+        end;
 
-      body := Format('{"accountId":"%s","password":"%s","applicationId":"%s"}',
-        [accountId, JSONEscape(pass), DEXCOM_APPLICATION_IDS[regionEnum]]);
+        body := Format('{"accountId":"%s","password":"%s","applicationId":"%s"}',
+          [accountId, JSONEscape(pass), DEXCOM_APPLICATION_IDS[regionEnum]]);
 
-      sessionId := StringReplace(tn.Request(true, DEXCOM_LOGIN_BY_ID_ENDPOINT, [], body), '"', '', [rfReplaceAll]);
+        resp := tn.Request(true, DEXCOM_LOGIN_BY_ID_ENDPOINT, [], body);
+        if not TryGetTokenOrError(resp, sessionId, resp) then
+        begin
+          // Fallback to legacy behavior: strip quotes if present
+          sessionId := StringReplace(resp, '"', '', [rfReplaceAll]);
+          sessionId := Trim(sessionId);
+          if sessionId = '' then
+          begin
+            // Try single-step login by account name (nickname)
+            nameBody := Format('{"accountName":"%s","password":"%s","applicationId":"%s"}',
+              [JSONEscape(user), JSONEscape(pass), DEXCOM_APPLICATION_IDS[regionEnum]]);
+            nameResp := tn.Request(true, DEXCOM_LOGIN_BY_NAME_ENDPOINT, [], nameBody);
+            if not TryGetTokenOrError(nameResp, sessionId, nameResp) then
+              sessionId := StringReplace(nameResp, '"', '', [rfReplaceAll]);
+            sessionId := Trim(sessionId);
+            if sessionId = '' then
+            begin
+              res := 'Login failed: ' + resp + ' (fallback: ' + nameResp + ')';
+              Exit;
+            end;
+          end;
+        end;
     end
     else
+    begin
+      // Legacy behaviour: some servers return plain quoted session token
       sessionId := StringReplace(tn.Request(true, DEXCOM_LOGIN_BY_NAME_ENDPOINT, [], body), '"', '', [rfReplaceAll]);
+    end;
 
     // 2) Basic checks on session token
     if (sessionId = '') or (Pos('error', LowerCase(sessionId)) > 0) or (Pos('invalid', LowerCase(sessionId)) > 0) or (Pos('AccountPassword', sessionId) > 0) then begin
@@ -892,55 +1140,11 @@ begin
       Exit;
     end;
 
-    // Parse time response: try '<SystemTime>...' or '/Date(ms)/' or JSON object
-    if Pos('>', timeResp) > 0 then
+    // Parse server time using centralized helper (handles XML, /Date(ms)/, JSON ServerTime, ISO)
+    if not ParseDexcomTime(timeResp, LServerDateTime) then
     begin
-      // Example: <SystemTime>YYYY-MM-DDTHH:mm:ss</SystemTime>
-      timeStr := ExtractDelimited(2, timeResp, ['>', '<']);
-      if timeStr = '' then begin
-        res := 'Could not parse the server timestamp';
-        Exit;
-      end;
-      try
-        LServerDateTime := ScanDateTime('YYYY-MM-DD"T"hh:nn:ss', Copy(timeStr, 1, 19));
-      except
-        res := 'An internal error occured parsing the timestamp:'#10+timeStr;
-        Exit;
-      end;
-    end
-    else
-    begin
-      // JSON or /Date(ms)/ format. Find digits between '(' and ')'
-      timeStr := '';
-      i := Pos('(', timeResp);
-      if i > 0 then
-        timeStr := Copy(timeResp, i + 1, Pos(')', timeResp) - i - 1)
-      else
-      try
-        js := GetJSON(timeResp);
-        try
-          if js.JSONType = jtObject then
-            timeStr := TJSONObject(js).Get('ServerTime', '');
-        finally
-          js.Free;
-        end;
-      except
-        on E: Exception do
-          // Handle JSONDecodeError - malformed JSON from time endpoint
-          timeStr := '';
-      end// Try a simple JSON parse for numeric ServerTime value
-      ;
-
-      if timeStr = '' then begin
-        res := 'No timestamp was provided';
-        Exit;
-      end;
-      try
-        LServerDateTime := UnixToDateTime(StrToInt64(timeStr) div 1000, false);
-      except
-        res := 'Timestamp data was not interpretable:'#10+timestr;
-        Exit;
-      end;
+      res := 'Could not parse the server timestamp';
+      Exit;
     end;
 
     // If all above succeeded, we consider this a success

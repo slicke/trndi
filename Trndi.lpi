@@ -91,18 +91,14 @@
       <AutoIncrementBuild Value="True"/>
       <MajorVersionNr Value="4"/>
       <MinorVersionNr Value="6"/>
-      <BuildNr Value="122"/>
+      <BuildNr Value="125"/>
       <StringTable CompanyName="Slicke" FileDescription="Trndi - CGM trend monitor" LegalCopyright="Björn Lindh" ProductName="Trndi"/>
     </VersionInfo>
     <BuildModes>
       <Item Name="No Ext (Release)" Default="True"/>
       <Item Name="Extensions (Debug)">
-        <MacroValues Count="5">
+        <MacroValues Count="1">
           <Macro1 Name="LCLWidgetType" Value="qt6"/>
-          <Macro2 Name="LCLWidgetType" Value="qt6"/>
-          <Macro3 Name="LCLWidgetType" Value="qt6"/>
-          <Macro4 Name="LCLWidgetType" Value="qt6"/>
-          <Macro5 Name="LCLWidgetType" Value="qt6"/>
         </MacroValues>
         <CompilerOptions>
           <Version Value="11"/>
@@ -167,6 +163,7 @@
               <GenerateDebugInfo Value="False"/>
               <RunWithoutDebug Value="True"/>
               <DebugInfoType Value="dsDwarf3"/>
+              <StripSymbols Value="True"/>
             </Debugging>
             <LinkSmart Value="True"/>
             <Options>
@@ -368,10 +365,7 @@
           </Other>
         </CompilerOptions>
       </Item>
-      <Item Name="Qt6 (Release)">
-        <MacroValues Count="1">
-          <Macro2 Name="LCLWidgetType" Value="qt6"/>
-        </MacroValues>
+      <Item Name="Qt6 (Release; No Extensions)">
         <CompilerOptions>
           <Version Value="11"/>
           <PathDelim Value="\"/>
@@ -392,6 +386,7 @@
           <Linking>
             <Debugging>
               <DebugInfoType Value="dsDwarf3"/>
+              <StripSymbols Value="True"/>
             </Debugging>
             <LinkSmart Value="True"/>
             <Options>
@@ -442,9 +437,49 @@
           </Other>
         </CompilerOptions>
       </Item>
+      <Item Name="Qt6 (Release: Extensions)">
+        <MacroValues Count="2">
+          <Macro3 Name="LCLWidgetType" Value="qt6"/>
+          <Macro2 Name="LCLWidgetType" Value="qt6"/>
+        </MacroValues>
+        <CompilerOptions>
+          <Version Value="11"/>
+          <PathDelim Value="\"/>
+          <Target>
+            <Filename Value="Trndi"/>
+          </Target>
+          <SearchPaths>
+            <IncludeFiles Value="$(ProjOutDir)"/>
+            <OtherUnitFiles Value="units\winutils;units\winutils\directx;units\nsutils;units\trndi\ext;units\forms;units\trndi\api;units\trndi;units\slicke;units\misc;units\misc\razer"/>
+            <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
+          </SearchPaths>
+          <CodeGeneration>
+            <SmartLinkUnit Value="True"/>
+            <Optimizations>
+              <OptimizationLevel Value="0"/>
+            </Optimizations>
+          </CodeGeneration>
+          <Linking>
+            <Debugging>
+              <DebugInfoType Value="dsDwarf3"/>
+              <StripSymbols Value="True"/>
+            </Debugging>
+            <LinkSmart Value="True"/>
+            <Options>
+              <Win32>
+                <GraphicApplication Value="True"/>
+              </Win32>
+            </Options>
+          </Linking>
+          <Other>
+            <CustomOptions Value="-B
+-dTrndiExt"/>
+          </Other>
+        </CompilerOptions>
+      </Item>
       <SharedMatrixOptions Count="4">
         <Item1 ID="755046395446" Modes="GTK2" Type="IDEMacro" MacroName="LCLWidgetType" Value="gtk2"/>
-        <Item2 ID="979021082886" Modes="Qt6 (Release),Qt6 (Debug)" Type="IDEMacro" MacroName="LCLWidgetType" Value="qt6"/>
+        <Item2 ID="979021082886" Modes="Qt6 (Debug),Qt6 (Release: Extensions)" Type="IDEMacro" MacroName="LCLWidgetType" Value="qt6"/>
         <Item3 ID="684332631560" Modes="GTK3" Type="IDEMacro" MacroName="LCLWidgetType" Value="gtk3"/>
         <Item4 ID="441506697152" Modes="FPC Native (Debug)" Type="IDEMacro" MacroName="LCLWidgetType" Value="fpgui"/>
       </SharedMatrixOptions>
@@ -665,6 +700,7 @@
         <GenerateDebugInfo Value="False"/>
         <RunWithoutDebug Value="True"/>
         <DebugInfoType Value="dsDwarf3"/>
+        <StripSymbols Value="True"/>
       </Debugging>
       <LinkSmart Value="True"/>
       <Options>

@@ -640,12 +640,20 @@ msgctxt "tfconf.cl_ok_txt.caption"
 msgid "OK"
 msgstr "OK"
 
+#: tfconf.edproxyport.text
+msgid "8080"
+msgstr ""
+
 #: tfconf.gbdisplayprefs.caption
 msgid "Display Preferences"
 msgstr ""
 
 #: tfconf.gbmulti.caption
 msgid "Account Settings"
+msgstr ""
+
+#: tfconf.gbnetwork.caption
+msgid "Network"
 msgstr ""
 
 #: tfconf.gboverride.caption
@@ -841,6 +849,22 @@ msgstr ""
 
 #: tfconf.label9.caption
 msgid "Trndi can trigger Spotify or Deezer to play a song when low/high"
+msgstr ""
+
+#: tfconf.labelproxyhost.caption
+msgid "Proxy Host:"
+msgstr ""
+
+#: tfconf.labelproxypass.caption
+msgid "Proxy Pass:"
+msgstr ""
+
+#: tfconf.labelproxyport.caption
+msgid "Proxy Port:"
+msgstr ""
+
+#: tfconf.labelproxyuser.caption
+msgid "Proxy User:"
 msgstr ""
 
 #: tfconf.lack.caption
@@ -1046,6 +1070,10 @@ msgstr ""
 
 #: tfconf.tsmulti.caption
 msgid "Multi User"
+msgstr ""
+
+#: tfconf.tsproxy.caption
+msgid "Proxy"
 msgstr ""
 
 #: tfconf.tssystem.caption
@@ -1283,12 +1311,13 @@ msgid ""
 "   - Address: enter your NightScout URL\n"
 "   - Auth: paste the FULL access token.\n"
 "\n"
+"Tip: Both \"abc123\" and \"token=abc123\" formats are accepted.\n"
 "Note: If you instead use the legacy API Secret, paste your API Secret value as-is.\n"
 "Note 2: Your access token should look like: trndi-abc123 (or whatever name you chose)"
 msgstr ""
 
 #: trndi.api.nightscout3.sparamdeschtml
-msgid "<div style=\"font-family: Arial, sans-serif; line-height: 1.6;\"><div style=\"background: #dc3545; color: white; padding: 15px; border-radius: 6px; margin-bottom: 20px; font-weight: bold; text-align: center; border: 2px solid #c82333;\">⚠️ ALPHA DRIVER - Please use \"NightScout\" for daily use! ⚠️</div><h2 style=\"margin-bottom: 10px;\">🌙 NightScout v3 Setup</h2><p style=\"color: #7f8c8d; font-style: italic; margin-bottom: 15px;\">(use FULL access token)</p><ol style=\"padding-left: 20px;\"><li style=\"margin-bottom: 10px;\">Open your NightScout site (e.g., <code style=\"background: #6495ED; padding: 2px 6px; border-radius: 3px;\">https://your-site</code>).</li><li style=\"margin-bottom: 10px;\">Go to <strong>Admin → Tokens</strong> — or <strong>API Secret</strong>.</li><li style=\"margin-bottom: 10px;\">If you use Tokens:<ul style=\"margin-top: 5px; padding-left: 20px;\"><li>Create a token with at least <strong>READ</strong> scope.</li><li>Copy the <strong>FULL</strong> access token value exactly as shown.</li></ul></li><li style=\"margin-bottom: 10px;\">In Trndi:<ul style=\"margin-top: 5px; padding-left: 20px;\"><li><strong>Address:</strong> enter your NightScout URL</li><li><strong>Auth:</strong> paste the FULL access token.</li></ul></li></ol><div style=\"border-left: 4px solid #ffc107; padding: 12px; margin-top: 15px; border-radius: 4px;\"><p style=\"margin: 0 0 8px 0;\"><strong>📝 Note:</strong> If you instead use the legacy API Secret, paste your API Secret value as-is.</p><p style=\"margin: 0;\"><strong>📝 Note 2:</strong> Your access token should look like: <code style=\"background: #6F8FAF; padding: 2px 6px; border-radius: 3px;\">trndi-abc123</code> (or whatever name you chose).</p></div></div>"
+msgid "<div style=\"font-family: Arial, sans-serif; line-height: 1.6;\"><div style=\"background: #dc3545; color: white; padding: 15px; border-radius: 6px; margin-bottom: 20px; font-weight: bold; text-align: center; border: 2px solid #c82333;\">⚠️ ALPHA DRIVER - Please use \"NightScout\" for daily use! ⚠️</div><h2 style=\"margin-bottom: 10px;\">🌙 NightScout v3 Setup</h2><p style=\"color: #7f8c8d; font-style: italic; margin-bottom: 15px;\">(use FULL access token)</p><ol style=\"padding-left: 20px;\"><li style=\"margin-bottom: 10px;\">Open your NightScout site (e.g., <code style=\"background: #6495ED; padding: 2px 6px; border-radius: 3px;\">https://your-site</code>).</li><li style=\"margin-bottom: 10px;\">Go to <strong>Admin → Tokens</strong> — or <strong>API Secret</strong>.</li><li style=\"margin-bottom: 10px;\">If you use Tokens:<ul style=\"margin-top: 5px; padding-left: 20px;\"><li>Create a token with at least <strong>READ</strong> scope.</li><li>Copy the <strong>FULL</strong> access token value exactly as shown.</li></ul></li><li style=\"margin-bottom: 10px;\">In Trndi:<ul style=\"margin-top: 5px; padding-left: 20px;\"><li><strong>Address:</strong> enter your NightScout URL</li><li><strong>Auth:</strong> paste the FULL access token.</li></ul></li></ol><div style=\"border-left: 4px solid #0d6efd; padding: 12px; margin-top: 15px; border-radius: 4px;\"><p style=\"margin: 0;\"><strong>💡 Tip:</strong> Both <code style=\"background: #6F8FAF; padding: 2px 6px; border-radius: 3px;\">abc123</code> and <code style=\"background: #6F8FAF; padding: 2px 6px; border-radius: 3px;\">token=abc123</code> are accepted.</p></div><div style=\"border-left: 4px solid #ffc107; padding: 12px; margin-top: 15px; border-radius: 4px;\"><p style=\"margin: 0 0 8px 0;\"><strong>📝 Note:</strong> If you instead use the legacy API Secret, paste your API Secret value as-is.</p><p style=\"margin: 0;\"><strong>📝 Note 2:</strong> Your access token should look like: <code style=\"background: #6F8FAF; padding: 2px 6px; border-radius: 3px;\">trndi-abc123</code> (or whatever name you chose).</p></div></div>"
 msgstr ""
 
 #: trndi.api.nightscout3.sparampassword
@@ -1390,6 +1419,10 @@ msgstr ""
 #: trndi.strings.rs_extfailed
 #, object-pascal-format
 msgid "The following extension file returned an error while loading: %s"
+msgstr ""
+
+#: trndi.strings.rs_ext_shutdown
+msgid "Shutting down extensions..."
 msgstr ""
 
 #: trndi.strings.rs_font_error
@@ -1585,6 +1618,14 @@ msgstr ""
 
 #: trndi.strings.rs_multiuser_box_title
 msgid "User select"
+msgstr ""
+
+#: trndi.strings.rs_nodata_error
+msgid "No data, error(?):"
+msgstr ""
+
+#: trndi.strings.rs_nodata_none
+msgid "<none>"
 msgstr ""
 
 #: trndi.strings.rs_noplugins
@@ -1796,6 +1837,28 @@ msgstr ""
 msgctxt "trndi.strings.rs_setup"
 msgid "Setup"
 msgstr "Oppsett"
+
+#: trndi.strings.rs_speak_ghigh
+msgid "Going high"
+msgstr ""
+
+#: trndi.strings.rs_speak_glow
+msgid "Going low"
+msgstr ""
+
+#: trndi.strings.rs_speak_good
+msgid "Good"
+msgstr ""
+
+#: trndi.strings.rs_speak_high
+msgctxt "trndi.strings.rs_speak_high"
+msgid "High"
+msgstr ""
+
+#: trndi.strings.rs_speak_low
+msgctxt "trndi.strings.rs_speak_low"
+msgid "Low"
+msgstr ""
 
 #: trndi.strings.rs_splash_loading
 msgid "Loading Extension: "
@@ -2428,6 +2491,10 @@ msgstr ""
 
 #: uhistorygraph.rs_history_graph_help
 msgid "Click a dot to see the full reading details"
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_key_basal
+msgid "Basal"
 msgstr ""
 
 #: uhistorygraph.rs_history_graph_key_high

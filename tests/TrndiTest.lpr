@@ -3,7 +3,10 @@ program TrndiTest;
 {$mode objfpc}{$H+}
 
 uses
-  Interfaces, Forms, GuiTestRunner, trndiTestCase1;
+  Interfaces, Forms, GuiTestRunner,
+  trndiTestCase1,
+  dexcom_time_tests,
+  dexcom_trend_tests;
 
 {$R *.res}
 

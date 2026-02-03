@@ -275,17 +275,26 @@ var
   send, response: TStringStream;
   headers: TStringList;
   httpClient: TNSHTTPSendAndReceive;
+  tempInstance: TTrndiNativeMac;
+  proxyHost, proxyPort, proxyUser, proxyPass: string;
 begin
   res := '';
   send := TStringStream.Create('');
   response := TStringStream.Create('');
   headers := TStringList.Create;
   httpClient := TNSHTTPSendAndReceive.Create;
+  tempInstance := TTrndiNativeMac.Create;
   try
     try
       httpClient.address := url;
       httpClient.method := 'GET';
       headers.Add('User-Agent=' + DEFAULT_USER_AGENT);
+
+      // Proxy settings (retrieved for global scope, but not set as TNSHTTPSendAndReceive doesn't support proxy)
+      proxyHost := tempInstance.GetSetting('proxy.host', '', true);
+      proxyPort := tempInstance.GetSetting('proxy.port', '8080', true);
+      proxyUser := tempInstance.GetSetting('proxy.user', '', true);
+      proxyPass := tempInstance.GetSetting('proxy.pass', '', true);
 
       if httpClient.SendAndReceive(send, response, headers) then
       begin
@@ -310,6 +319,7 @@ begin
     send.Free;
     response.Free;
     headers.Free;
+    tempInstance.Free;
   end;
 end;
 

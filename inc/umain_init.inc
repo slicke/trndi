@@ -81,11 +81,11 @@ begin
 
   langPath := getLangPath;
   moPath := langPath + 'Trndi.' + lang + '.mo';
-  LogMessage('Lang select: setting=' + native.GetSetting('locale', '') + ' resolved=' + lang + ' path=' + langPath + ' mo=' + moPath);
+  LogMessageToFile('Lang select: setting=' + native.GetSetting('locale', '') + ' resolved=' + lang + ' path=' + langPath + ' mo=' + moPath);
   langLoaded := SetDefaultLang(lang, langPath, 'Trndi');
-  LogMessage('Lang loaded=' + langLoaded + ' RS_INIT_UI=' + RS_INIT_UI);
+  LogMessageToFile('Lang loaded=' + langLoaded + ' RS_INIT_UI=' + RS_INIT_UI);
   if not FileExists(moPath) then
-    LogMessage('Lang MO missing: ' + lang + ' path=' + langPath + ' mo=' + moPath);
+    LogMessageToFile('Lang MO missing: ' + lang + ' path=' + langPath + ' mo=' + moPath);
 end;
 
 {$if DEFINED(DARWIN) OR DEFINED(X_LINUXBSD)}
@@ -472,6 +472,12 @@ begin
   ShowMessage(Format('Now %s', [IfThen(debug_load_text, 'showing', 'not showing')]));
 end;
 
+procedure TfBG.miDebugLogAPIClick(Sender: TObject);
+begin
+  debug_log_api := true;
+  (sender as TMenuItem).Enabled := false;
+end;
+
 {$endif}
 
 // Initialize the TrendDots array in FormCreate
@@ -496,9 +502,10 @@ var
   minutesStr: string;
   minutesVal: integer;
   {$ifdef DEBUG}
-  miDebugUXMsg, miDebugLog, miDebugLoadText: TMenuItem;
+  miDebugUXMsg, miDebugLog, miDebugLoadText, miDebugLogAPI: TMenuItem;
   {$endif}
 begin
+  LogMessageToFile(Format(#10'=== Trndi started at %s ===', [DateTimeToStr(Now)]));
   firstboot := false;
 
   // Initialize native interface
@@ -717,6 +724,13 @@ begin
   // Cleanup splash screen
   fSplash.Close;
   fSplash.Free;
+  
+  // Bring main window to front after splash closes
+  Application.BringToFront;
+  Self.Show;
+  Self.BringToFront;
+  Self.SetFocus;
+  
   tmain.Enabled := true;
   tsetup.Enabled := true;
   
@@ -752,6 +766,11 @@ begin
   miDebugLoadText.Caption := '[debug] Show load indication';
   miAdvanced.Insert(miAdvanced.count, miDebugLoadText);
   miDebugLoadText.onClick := @miDebugLoadTextClick;
+
+  miDebugLogAPI := TMenuItem.Create(miAdvanced);
+  miDebugLogAPI.Caption := '[debug] Log API calls';
+  miAdvanced.Insert(miAdvanced.count, miDebugLogAPI);
+  miDebugLogAPI.onClick := @miDebugLogAPIClick;
   {$endif}
 end;
 

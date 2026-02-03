@@ -52,7 +52,7 @@ trndi.strings, LCLTranslator, Classes, Menus, SysUtils, Forms, Controls,
 Graphics, Dialogs, StdCtrls, ExtCtrls,
 trndi.api.dexcom, trndi.api.dexcomNew, trndi.api.nightscout, trndi.api.nightscout3, trndi.types,
 Math, DateUtils, FileUtil, LclIntf, TypInfo, LResources,
-slicke.ux.alert, slicke.ux.native, usplash, Generics.Collections, trndi.funcs,
+slicke.ux.alert, slicke.ux.native, usplash, Generics.Collections, trndi.funcs, trndi.log,
 Trndi.native.base, trndi.shared, buildinfo, fpjson, jsonparser,
 SystemMediaController,
 {$ifdef TrndiExt}
@@ -262,6 +262,7 @@ TfBG = class(TForm)
   procedure lDiffClick(Sender: TObject);
   procedure lPredictClick(Sender: TObject);
   procedure miBasalRateClick(Sender: TObject);
+  procedure AutoEnableBasalOverlay;
   procedure miDNSClick(Sender: TObject);
   procedure miDotNormalDrawItem(Sender: TObject; ACanvas: TCanvas;
     ARect: TRect; AState: TOwnerDrawState);
@@ -346,6 +347,7 @@ TfBG = class(TForm)
   procedure miDebugUXMsgClick(Sender: TObject);
   procedure miDebugLogClick(Sender: TObject);
   procedure miDebugLoadTextClick(Sender: TObject);
+  procedure miDebugLogAPIClick(Sender: TObject);
   {$endif}
 private
   FStoredWindowInfo: record // Saved geometry and window state for restore/toggle
@@ -370,6 +372,8 @@ private
   FLastUICaption: string;
   FLastTir: string;
   FLastTirColor: TColor;
+  FLastTimerTick: TDateTime; // Last timer tick for wake detection
+  FForceRefresh: boolean; // Force bypass of cached API reads on wake
 
     // Array to hold references to lDot1 - lDot10
   TrendDots: array[1..10] of TDotControl;
@@ -858,15 +862,15 @@ begin
   else
     case lastReading.level of
     trndi.types.BGHigh:
-      native.speak('High');
+      native.speak(RS_SPEAK_HIGH);
     trndi.types.BGLOW:
-      native.speak('Low');
+      native.speak(RS_SPEAK_LOW);
     trndi.types.BGRange:
-      native.speak('Good');
+      native.speak(RS_SPEAK_GOOD);
     trndi.types.BGRangeHI:
-      native.speak('Going high');
+      native.speak(RS_SPEAK_GHIGH);
     trndi.types.BGRangeLO:
-      native.speak('Going low');
+      native.speak(RS_SPEAK_GLOW);
     end;
 end;
 
@@ -998,9 +1002,28 @@ begin
   res := api.getBasalRate;
   err := api.errormsg;
   if res = 0 then
-    ShowMessage('No data, error(?):' + IfThen(err <> '', err, '<none>'))
+    ShowMessage(Format('%s: %s', [RS_NODATA_ERROR, IfThen(err <> '', err, RS_NODATA_NONE)]))
   else
     ShowMessage(res.toString);
+end;
+
+procedure TfBG.AutoEnableBasalOverlay;
+var
+  profile: TBasalProfile;
+  ok: boolean;
+begin
+  if not api.supportsBasal then
+    Exit;
+
+  ok := api.getBasalProfile(profile);
+  if not ok then
+    Exit;
+
+  if fHistoryGraph <> nil then
+  begin
+    fHistoryGraph.SetBasalProfile(profile);
+    fHistoryGraph.SetBasalOverlayEnabled(true);
+  end;
 end;
 
 procedure TfBG.miDNSClick(Sender: TObject);
@@ -1261,6 +1284,7 @@ begin
     
     ShowHistoryGraph(readings, un, CurrentHistoryGraphPalette,
       api.cgmHi, api.cgmLo, api.cgmRangeHi, api.cgmRangeLo);
+    AutoEnableBasalOverlay;
   end;
 end;
 
@@ -1375,7 +1399,7 @@ procedure TfBG.FormCloseQuery(Sender: TObject; var CanClose: boolean);
 begin
   {$ifdef TrndiExt}
   // Show immediate user feedback for shutdown process using big lVal text
-  lVal.Caption := 'Shutting down extensions...';
+  lVal.Caption := RS_EXT_SHUTDOWN;
   lVal.Visible := true;
   Application.ProcessMessages; // Ensure caption is updated immediately
   
@@ -1863,7 +1887,7 @@ begin
     TrendDots[i] := dotArray[i]^;
   end;
   
-  LogMessage('Trend dots created dynamically');
+  LogMessageToFile('Trend dots created dynamically');
 end;
 
 procedure TfBG.initDot(l: TDotControl; c, ix: integer);
@@ -1945,7 +1969,7 @@ begin
         // If first pixel is below center, offset is positive (move lines down)
         // If first pixel is above center, offset is negative (move lines up)
         Result := firstPixelY - halfHeight;
-        LogMessage(Format(
+        LogMessageToFile(Format(
           'DOT_VISUAL_OFFSET calculated: font=%s, firstPixel=%d, halfHeight=%d, offset=%d',
           [
           fontName, firstPixelY, halfHeight, Result]));
@@ -1955,7 +1979,7 @@ begin
       begin
         {$ifdef DARWIN}
         // On macOS, log canvas errors but don't crash
-        LogMessage('CalculateDotVisualOffset error on macOS: ' + E.Message);
+        LogMessageToFile('CalculateDotVisualOffset error on macOS: ' + E.Message);
         Result := 0; // Use default offset
         {$else}
         raise; // Re-raise on other platforms
@@ -2038,7 +2062,7 @@ begin
   l.Font.Size := round(Max((lVal.Font.Size div 8) * dotscale, 28)); // Ensure minimum font size
   // Force immediate size calculation by triggering a layout update
   l.AdjustSize;
-  LogMessage(Format('TrendDots[%d] resized with Font Size = %d, Height=%d (AutoSize).',
+  LogMessageToFile(Format('TrendDots[%d] resized with Font Size = %d, Height=%d (AutoSize).',
     [ix, l.Font.Size, l.Height]));
   {$else}
   l.AutoSize := false;
@@ -2049,7 +2073,7 @@ begin
   minSize := Max(th, l.Font.Size);
   l.Width := tw;
   l.Height := minSize;
-  LogMessage(Format('TrendDots[%d] resized with Font Size = %d, W=%d, H=%d.',
+  LogMessageToFile(Format('TrendDots[%d] resized with Font Size = %d, W=%d, H=%d.',
     [ix, l.Font.Size, l.Width, l.Height]));
   {$endif}
 end;
@@ -2064,7 +2088,7 @@ begin
 
   // Position each label with equal spacing from the left
   l.Left := spacing + (spacing + l.Width) * (ix - 1);
-  LogMessage(Format('TrendDots[%d] positioned at Left = %d.', [ix, l.Left]));
+  LogMessageToFile(Format('TrendDots[%d] positioned at Left = %d.', [ix, l.Left]));
 end;
 
 // FormResize event handler
@@ -2135,7 +2159,7 @@ begin
 
   displayMsg += sHTMLLineBreak + Format(sAPI, [api.systemName]);
 
-  ExtHTML(uxdAuto, sTransmitterInfo, displayMsg, [mbOK], uxmtInformation);
+  ExtHTML(uxdAuto, sTransmitterInfo, displayMsg, [mbOK], uxmtInformation, 10);
 
 end;
 
@@ -2530,12 +2554,14 @@ begin
 
   ShowHistoryGraph(readings, un, CurrentHistoryGraphPalette, 
     api.cgmHi, api.cgmLo, api.cgmRangeHi, api.cgmRangeLo);
+  AutoEnableBasalOverlay;
 end;
 
 procedure TfBG.miHistoryClick(Sender: TObject);
 begin
   ShowHistoryGraph(bgs, un, CurrentHistoryGraphPalette,
     api.cgmHi, api.cgmLo, api.cgmRangeHi, api.cgmRangeLo);
+  AutoEnableBasalOverlay;
 end;
 
 procedure TfBG.miRangeColorClick(Sender: TObject);
@@ -2641,7 +2667,7 @@ begin
   sessionType := GetEnvironmentVariable('XDG_SESSION_TYPE');
   if LowerCase(sessionType) = 'wayland' then
   begin
-    LogMessage('OnTop requested but session is Wayland; compositor may ignore programmatic hints.');
+    LogMessageToFile('OnTop requested but session is Wayland; compositor may ignore programmatic hints.');
     // Friendly guidance for users running KDE/Wayland
     if miOnTop.Checked then
       ShowMessage(RS_WAYLAND);
@@ -2976,6 +3002,12 @@ procedure LoadUserSettings(f: TfConf);
       edURLHigh.Text := GetSetting('url_remote.url_high', '');
       edURLLow.Text := GetSetting('url_remote.url_low', '');
       edURLPerfect.Text := GetSetting('url_remote.url_perfect', '');
+
+      // Proxy settings
+      edProxyHost.Text := GetSetting('proxy.host', '');
+      edProxyPort.Text := GetSetting('proxy.port', '8080');
+      edProxyUser.Text := GetSetting('proxy.user', '');
+      edProxyPass.Text := GetSetting('proxy.pass', '');
 
       cbChroma.Checked := GetBoolSetting('razer.enabled', false);
       cbChromaNormal.Checked := GetBoolSetting('razer.normal', false);
@@ -3317,6 +3349,12 @@ procedure SaveUserSettings(f: TfConf);
       SetSetting('url_remote.url_high', edURLHigh.Text);
       SetSetting('url_remote.url_low', edURLLow.Text);
       SetSetting('url_remote.url_perfect', edURLPerfect.Text);
+
+      // Proxy settings
+      SetSetting('proxy.host', edProxyHost.Text);
+      SetSetting('proxy.port', edProxyPort.Text);
+      SetSetting('proxy.user', edProxyUser.Text);
+      SetSetting('proxy.pass', edProxyPass.Text);
 
       SetSetting('razer.enabled', cbChroma.Checked);
       SetSetting('razer.normal', cbChromaNormal.Checked);
@@ -4283,7 +4321,7 @@ begin
     begin
       // Hint is set but can't be parsed - this is a problem
       // Keep visibility as it was set by PlaceTrendDots, but log the issue
-      LogMessage(Format('Warning: Could not parse Hint "%s" for dot. Keeping visibility=%s',
+      LogMessageToFile(Format('Warning: Could not parse Hint "%s" for dot. Keeping visibility=%s',
         [Dot.Hint, BoolToStr(wasVisible, true)]));
       Dot.Visible := wasVisible;
     end
@@ -4362,7 +4400,25 @@ procedure TfBG.tMainTimer(Sender: TObject);
 var
   bgvals: JSValueRaw;
 {$endif}
+var
+  nowTick: TDateTime;
+  gapSeconds: int64;
+  expectedSeconds: int64;
 begin
+  nowTick := Now;
+  if FLastTimerTick > 0 then
+  begin
+    gapSeconds := SecondsBetween(nowTick, FLastTimerTick);
+    expectedSeconds := Max(1, tMain.Interval div 1000);
+    if gapSeconds > (expectedSeconds * 2) then
+    begin
+      FForceRefresh := true;
+      LogMessageToFile(Format('Wake detected: timer gap %d sec (expected ~%d sec). Forcing refresh.',
+        [gapSeconds, expectedSeconds]));
+    end;
+  end;
+  FLastTimerTick := nowTick;
+
   updateReading;
   {$ifdef TrndiExt}
   try
@@ -4556,7 +4612,7 @@ begin
   lVal.Font.Style := [];
 
   // Log latest reading
-  LogMessage(Format(RS_LATEST_READING, [reading.val, DateTimeToStr(reading.date)]));
+  LogMessageToFile(Format(RS_LATEST_READING, [reading.val, DateTimeToStr(reading.date)]));
 
   // Announce
   if miAnnounce.Checked then
@@ -4716,6 +4772,13 @@ begin
   end;
   {$endif}
   // Fetch readings and exit if no data
+  if FForceRefresh then
+  begin
+    if not FetchAndValidateReadingsForced then
+      Exit;
+    FForceRefresh := false;
+  end
+  else
   if not FetchAndValidateReadings then
     Exit;
 
@@ -5360,7 +5423,7 @@ begin
   if (Length(bgs) < 1) and (Length(FCachedReadings) > 0) then
   begin
     bgs := FCachedReadings;
-    LogMessage('DoFetchAndValidateReadings: API returned no data, using cached readings');
+    LogMessageToFile('DoFetchAndValidateReadings: API returned no data, using cached readings');
     // Enable internet check and show indicator since API failed
     tPing.Enabled := true;
     tPingTimer(nil);  // Check internet status immediately
@@ -5397,7 +5460,16 @@ begin
     if Assigned(api) and (Trim(api.errormsg) <> '') then
     begin
       msg := msg + sLineBreak + api.errormsg;
-      LogMessage('Backend error: ' + api.errormsg);
+      LogMessageToFile('Backend error: ' + api.errormsg);
+    end;
+
+    // Append latest-reading age details to help diagnose stale data cases
+    if (Length(bgs) > 0) then
+    try
+      msg := msg + sLineBreak + Format('Latest reading: %d minute(s) ago (%s)',
+        [MinutesBetween(Now, bgs[0].date), FormatDateTime('yyyy-mm-dd hh:nn', bgs[0].date)]);
+    except
+        // Ignore formatting errors
     end;
 
     showWarningPanel(msg, true);
@@ -5417,7 +5489,7 @@ begin
   missingAlerted := false;
   lastMissingAlert := 0;
 
-  LogMessage(Format('DoFetchAndValidateReadings: Got %d readings from API', [Length(bgs)]));
+  LogMessageToFile(Format('DoFetchAndValidateReadings: Got %d readings from API', [Length(bgs)]));
 
   // Call the method to place the points
   PlaceTrendDots(bgs);
@@ -5619,9 +5691,9 @@ begin
     TrendDots[10].Visible := isFresh;
 
     if isFresh then
-      LogMessage('TrendDots[10] shown as latest reading is fresh.')
+      LogMessageToFile('TrendDots[10] shown as latest reading is fresh.')
     else
-      LogMessage('TrendDots[10] hidden due to outdated reading.');
+      LogMessageToFile('TrendDots[10] hidden due to outdated reading.');
   end;
 end;
 
@@ -5659,7 +5731,7 @@ begin
   anchorTime := RecodeSecond(anchorTime, 0);
   anchorTime := RecodeMilliSecond(anchorTime, 0);
   
-  LogMessage(Format('PlaceTrendDots: Processing %d readings, anchor=%s (latest=%s)', 
+  LogMessageToFile(Format('PlaceTrendDots: Processing %d readings, anchor=%s (latest=%s)', 
     [Length(SortedReadings), DateTimeToStr(anchorTime), DateTimeToStr(SortedReadings[0].date)]));
 
   for slotIndex := 0 to NUM_DOTS - 1 do
@@ -5672,7 +5744,7 @@ begin
 
     found := false;
 
-    LogMessage(Format('Searching slot %d (TrendDots[%d]): %s to %s', 
+    LogMessageToFile(Format('Searching slot %d (TrendDots[%d]): %s to %s', 
       [slotIndex, NUM_DOTS - slotIndex, DateTimeToStr(slotStart), DateTimeToStr(slotEnd)]));
 
     // Search for the most recent reading within this interval
@@ -5688,7 +5760,7 @@ begin
       // Use a 10 second epsilon to handle timing variations
       if reading.date > slotEnd + TIME_EPSILON_DAYS then
       begin
-        LogMessage(Format('  Reading at %s is too new (>%.3f sec after slot end), skipping', 
+        LogMessageToFile(Format('  Reading at %s is too new (>%.3f sec after slot end), skipping', 
           [DateTimeToStr(reading.date), (reading.date - slotEnd) * 86400]));
         Continue;
       end;
@@ -5700,7 +5772,7 @@ begin
       // reading at e.g. 20:05 from filling the 20:10 slot and hiding a gap.
       if (reading.date > slotStart) and (reading.date <= slotEnd + TIME_EPSILON_DAYS) then
       begin
-        LogMessage(Format('  Found match at %s (value: %.1f, diff from slotEnd: %.1f sec)', 
+        LogMessageToFile(Format('  Found match at %s (value: %.1f, diff from slotEnd: %.1f sec)', 
           [DateTimeToStr(reading.date), reading.val, (slotEnd - reading.date) * 86400]));
         found := UpdateLabelForReading(slotIndex, reading);
         if found then
@@ -5719,7 +5791,7 @@ begin
       if reading.date < slotStart - (10 / 86400) then
       begin
         // Stop if we've gone past this interval into older readings
-        LogMessage(Format('  Reading at %s is too old (%.3f sec before slot start), stopping', 
+        LogMessageToFile(Format('  Reading at %s is too old (%.3f sec before slot start), stopping', 
           [DateTimeToStr(reading.date), (slotStart - reading.date) * 86400]));
         Break;
       end;
@@ -5735,14 +5807,14 @@ begin
       begin
         l.Visible := false;
         l.Hint := '';  // Clear hint to prevent UpdateTrendDots from re-showing stale data
-        LogMessage(Format('TrendDots[%d] hidden as no reading found in interval.',
+        LogMessageToFile(Format('TrendDots[%d] hidden as no reading found in interval.',
           [labelNumber]));
       end;
     end;
   end;
   
   // Summary log
-  LogMessage(Format('PlaceTrendDots complete: anchor=%s', [DateTimeToStr(anchorTime)]));
+  LogMessageToFile(Format('PlaceTrendDots complete: anchor=%s', [DateTimeToStr(anchorTime)]));
 end;
 
 function TfBG.UpdateLabelForReading(SlotIndex: integer;
@@ -5782,7 +5854,7 @@ begin
     // Sätt färger baserat på värdet
     l.Font.Color := DetermineColorForReading(Reading);
 
-    LogMessage(Format('TrendDots[%d] updated with reading at %s (Value: %.2f).',
+    LogMessageToFile(Format('TrendDots[%d] updated with reading at %s (Value: %.2f).',
       [labelNumber, DateTimeToStr(Reading.date), Reading.val]));
     l.BringToFront;
     Result := true;
@@ -5886,13 +5958,14 @@ end;
 procedure TfBG.CheckForUpdates(ShowUpToDateMessage: boolean = false);
 var
   res, rn, r, newVersionMessage: string;
-  rok: boolean;
+  rok, parsed: boolean;
   JsonData: TJSONData;
   JsonObj: TJSONObject;
   latestRelease: string;
   lastIgnoreDate: string;
   ignoreDate: TDateTime;
   daysSinceIgnore: integer;
+  fmt: TFormatSettings;
 begin
   try
     // Check if updates are being ignored (unless this is a manual check)
@@ -5900,13 +5973,31 @@ begin
     begin
       lastIgnoreDate := native.GetSetting('update.ignore.date', '');
       if lastIgnoreDate <> '' then
-      try
-        ignoreDate := StrToDateTime(lastIgnoreDate);
-        daysSinceIgnore := DaysBetween(Now, ignoreDate);
-        if daysSinceIgnore < 14 then
-          Exit; // Suppress update check for 2 weeks
-      except
-          // Invalid date format, continue with update check
+      begin
+        // Try robust parsing: accept localized DateTime formats, or ISO 8601 (YYYY-MM-DD"T"hh:nn:ss)
+        parsed := false;
+        // Try locale-aware parse first
+        if TryStrToDateTime(lastIgnoreDate, ignoreDate) then
+          parsed := true
+        else
+        if Length(Trim(lastIgnoreDate)) >= 19 then
+        try
+          ignoreDate := ScanDateTime('YYYY-MM-DD"T"hh:nn:ss', Copy(Trim(lastIgnoreDate), 1, 19));
+          parsed := true;
+        except
+          parsed := false;
+        end// Try ISO 8601 (truncate to 19 chars to ignore timezone/fractional seconds)
+        ;
+
+        if parsed then
+        begin
+          daysSinceIgnore := DaysBetween(Now, ignoreDate);
+          if daysSinceIgnore < 14 then
+            Exit; // Suppress update check for 2 weeks
+        end
+        else
+          LogMessageToFile(Format('CheckForUpdates: failed to parse update.ignore.date: %s', [lastIgnoreDate]))// Could not parse stored ignore date; log for debugging
+        ;
       end;
     end;
     
@@ -5944,8 +6035,9 @@ begin
         OpenURL(r);
       mrIgnore:
       begin
-        native.SetSetting('update.ignore.date', DateTimeToStr(Now));
-        ShowMessage(Format(RS_UPDATE_SNOOZE, [DateTimeToStr(IncDay(now, 14))]));
+        // Store in a locale-independent ISO 8601 format for robust parsing
+        native.SetSetting('update.ignore.date', FormatDateTime('yyyy-mm-dd"T"hh:nn:ss', Now));
+        ShowMessage(Format(RS_UPDATE_SNOOZE, [DateTimeToStr(IncDay(Now, 14))]));
       end;
       end;
     end

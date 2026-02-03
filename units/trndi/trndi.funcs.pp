@@ -46,17 +46,22 @@ interface
 
 uses
 Classes, SysUtils, Controls, ExtCtrls, StdCtrls, Graphics, trndi.types, Forms, Math,
-fpjson, jsonparser, dateutils, buildinfo
+fpjson, jsonparser, dateutils, buildinfo, trndi.log
 {$ifdef TrndiExt},trndi.ext.engine, mormot.lib.quickjs, mormot.core.base{$endif}
-{$ifdef DARWIN}, CocoaAll{$endif}
+{$ifdef DARWIN}, CocoaAll, NSHelpers{$endif}
 {$ifdef DEBUG}, slicke.ux.alert{$endif};
+
+{$ifdef DEBUG}
+type
+  _arr2 = array[1..2] of string;
+  _arr3 = array[1..3] of string;
+{$endif}
 
 procedure CenterPanelToCaption(Panel: TPanel; margin: integer = 10);
 function GetAppPath: string;
 function GetLangPath: string;
 procedure PaintLbl(Sender: TLabel; OutlineWidth: integer = 1;
 OutlineColor: TColor = clBlack);
-procedure LogMessage(const Msg: string);
 procedure SortReadingsDescending(var Readings: array of BGReading);
 procedure SetPointHeight(l: TControl; Value: single; clientHeight: integer);
 function CalculateTrendFromDelta(delta: single): BGTrend;
@@ -110,6 +115,12 @@ function JSValueRawArray(const values: array of const): JSValueRaw;
 // Convert array of const to array of JSValueRaw with proper type matching
 procedure ConvertVarRecsToJSValueRaw(const params: array of const; var jsValues: array of JSValueRaw);
 {$endif}
+{$ifdef DEBUG}
+function debugParams(arr: TStringArray): string; overload;
+function debugParams(arr: TStringList): string; overload;
+function debugParams(arr: _arr2): string; overload;
+function debugParams(arr: _arr3): string; overload;
+{$endif}
 
 const
 INTERVAL_MINUTES = 5; // Each time interval is 5 minutes
@@ -123,6 +134,10 @@ APP_BUILD_DATE = {$I %DATE%}; // Returns "2025/07/21"
 APP_BUILD_TIME = {$I %TIME%}; // Returns "14:30:25"
 
 var
+{$ifdef DEBUG}
+debug_log_api: boolean = false;
+{$endif}
+
 DOT_GRAPH: unicodestring = WChar($2B24);  // Circle
 DOT_FRESH: unicodestring = WChar($2600);  // Sun
 DOT_ADJUST: single = 0; // Multiplyer where dots appear
@@ -137,6 +152,36 @@ TrndiDebugLogAlert: boolean = false;
 TrndiDebugLogAlertSnooze: TDateTime;
 {$endif}
 implementation
+
+
+{$ifdef DEBUG}
+function debugParams(arr: _arr2): string;
+begin
+  result := Format('%s :: %s', [arr[1], arr[2]]);
+end;
+function debugParams(arr: _arr3): string;
+begin
+  result := Format('%s :: %s :: %s', [arr[1], arr[2], arr[3]]);
+end;
+function debugParams(arr: TStringArray): string;
+var
+s: string;
+begin
+  for s in arr do
+    result := result.join(' :: ', s);
+end;
+
+function debugParams(arr: TStringList): string;
+var
+s: TStringList;
+begin
+  s := TStringList.Create;
+  s.AddDelimitedText(arr.DelimitedText, arr.Delimiter, true);
+  s.Delimiter := '`';
+  result := StringReplace(s.DelimitedText, '`', ' :: ', [rfReplaceAll]);
+  s.free;
+end;
+{$endif}
 
 procedure CenterPanelToCaption(Panel: TPanel; margin: integer = 10);
 var
@@ -255,47 +300,6 @@ begin
   end;
 end;
 
-{$ifdef DEBUG}
-procedure LogMessage(const Msg: string);
-const
-  MaxLines = 500; // Max lines in file
-var
-  LogLines: TStringList;
-begin
-  if (TrndiDebugLogAlert) and (SecondsBetween(Now, TrndiDebugLogAlertSnooze) > 5) then
-    if ExtMessage(uxdNormal, 'Log Output','Output from the logger','A message has been sent to the logger', msg, false, uxclWhite, uxclRed,[mbOK, mbUXSnooze]) <> mrOK then
-      TrndiDebugLogAlertSnooze := Now;
-  {$ifdef DARWIN}
-  Exit; // Disable logging on macOS as it crashes due to file permission issues
-  {$endif}
-
-  LogLines := TStringList.Create;
-  try
-    // Load log if exists
-    if FileExists('trndi.log') then
-      LogLines.LoadFromFile('trndi.log');
-
-    // Delete overflowing lines
-    while LogLines.Count >= MaxLines do
-      LogLines.Delete(0);
-
-    // Add new message
-    LogLines.Add('['+DateTimeToStr(Now) + '] ' + Msg);
-
-    // Save
-    LogLines.SaveToFile('trndi.log');
-  finally
-    LogLines.Free;
-  end;
-end;
-{$else}
-// Remove when launching
-procedure LogMessage(const Msg: string);
-begin
-
-end;
-{$endif}
-
 // Implement a simple insertion sort for BGReading
 procedure SortReadingsDescending(var Readings: array of BGReading);
 var
@@ -364,11 +368,11 @@ begin
   if (L.Top + EstimatedHeight) > (clientHeight - BottomPadding) then
     L.Top := clientHeight - BottomPadding - EstimatedHeight;
   
-  LogMessage(Format('Label %s: Value=%.2f, Top=%d, Height=%d (est=%d), BottomPad=%d',
+  LogMessageToFile(Format('Label %s: Value=%.2f, Top=%d, Height=%d (est=%d), BottomPad=%d',
     [L.Name, Value, L.Top, L.Height, EstimatedHeight, BottomPadding]));
   {$else}
   L.Top := (clientHeight - Position) - 1;
-  LogMessage(Format('Label %s: Value=%.2f, Top=%d, Height=%d', [L.Name, Value, L.Top, L.Height]));
+  LogMessageToFile(Format('Label %s: Value=%.2f, Top=%d, Height=%d', [L.Name, Value, L.Top, L.Height]));
   {$endif}
 end;
 
@@ -447,7 +451,7 @@ end;
 function TryExtractPublishedAt(const JsonObj: TJSONObject; out PublishedAt: TDateTime): boolean;
 var
   ReleaseDateStr: string;
-  Year, Month, Day, Hour, Min, Sec: word;
+  Year, Month, Day, Hour, Min, Sec: integer;
 begin
   ReleaseDateStr := JsonObj.Get('published_at', '');
   if Length(ReleaseDateStr) < 19 then

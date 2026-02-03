@@ -42,8 +42,8 @@ unit trndi.api.nightscout;
 interface
 
 uses
-Classes, SysUtils, Dialogs, trndi.types, trndi.api, trndi.native,
-fpjson, jsonparser, dateutils, StrUtils, sha1, Math, jsonscanner;
+Classes, SysUtils, Dialogs, trndi.types, trndi.api, trndi.native, trndi.funcs,
+fpjson, jsonparser, dateutils, StrUtils, sha1, Math, jsonscanner, trndi.log;
 
 const
   {** Relative filename for the Nightscout status endpoint used to probe
@@ -248,6 +248,7 @@ begin
   // 2) Probe server status and settings.
   //    Native.Request(signature): (useGet, path, params, body, header)
   ResponseStr := Native.Request(false, NS_STATUS, [], '', Key);
+  {$ifdef DEBUG} if debug_log_api then LogMessageToFile(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, NS_STATUS, responseStr, debugParams([])]));{$endif}
 
   // 3) Basic validation for empty payloads.
   if Trim(ResponseStr) = '' then
@@ -369,9 +370,11 @@ begin
   // Nightscout supports a 'count' param to limit the number of returned entries.
   params[1] := 'count=' + IntToStr(maxNum);
 
+
   try
     resp := native.request(false, extras, params, '', key);
-    js := GETJSON(resp); // Expecting an array of entries
+    {$ifdef DEBUG} if debug_log_api then LogMessageToFile(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, extras, resp, params[1]]));{$endif}
+    js := GetJSON(resp); // Expecting an array of entries
   except
     // Any exception during request/parse yields an empty result.
     Exit;
@@ -386,9 +389,10 @@ begin
   // Pre-size the results array to the number of JSON items.
   SetLength(Result, js.Count);
 
-  for i := 0 to js.Count - 1 do
-    with js.FindPath(Format('[%d]', [i])) do
-    begin
+  try
+    for i := 0 to js.Count - 1 do
+      with js.FindPath(Format('[%d]', [i])) do
+      begin
       dev := FindPath('device').AsString;
 
       // Initialize reading in mg/dL; source identifier uses class name.
@@ -443,15 +447,15 @@ begin
 
       // Translate Nightscout 'direction' string to BGTrend enum.
       s := FindPath('direction').AsString;
-      for t in BGTrend do
+      // Default to not computable, then try to find a matching textual mapping
+      Result[i].trend := TdNotComputable;
+      for t := Low(BGTrend) to High(BGTrend) do
       begin
         if BG_TRENDS_STRING[t] = s then
         begin
           Result[i].trend := t;
-          break;
+          Break;
         end;
-        // Default if no mapping matched this iteration (will be overwritten if matched later)
-        Result[i].trend := TdNotComputable;
       end;
 
       // Nightscout dates are ms since epoch; JSToDateTime will apply tz correction if configured.
@@ -460,6 +464,9 @@ begin
       // Classify reading level relative to configured thresholds.
       Result[i].level := getLevel(Result[i].val);
     end;
+  finally
+    js.Free;
+  end;
 end;
 
 {------------------------------------------------------------------------------
@@ -617,7 +624,8 @@ begin
   // Fetch basal rate from Nightscout API
   try
     ResponseStr := Native.Request(false, 'profile.json', [], '', Key);
-    
+
+    {$ifdef DEBUG} if debug_log_api then LogMessageToFile(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, 'profile.json', responseStr, debugParams([])]));{$endif}
     if Trim(ResponseStr) = '' then
     begin
       lastErr := 'No basal rate data received from server';
