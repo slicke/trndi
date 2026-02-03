@@ -144,6 +144,9 @@ WINHTTP_NO_PROXY_BYPASS = nil;
 WINHTTP_NO_REFERER = nil;
 WINHTTP_DEFAULT_ACCEPT_TYPES: PPWideChar = nil;
 
+  // Common WinHTTP error codes
+ERROR_WINHTTP_TIMEOUT = 12002;
+
   // Access type values
 WINHTTP_ACCESS_TYPE_DEFAULT_PROXY = 0;
 WINHTTP_ACCESS_TYPE_NO_PROXY = 1;
@@ -283,7 +286,10 @@ begin
       // Extrahera servernamnet fram till portpositionen
     ServerName := Copy(URL, ProtocolPos, PortPos - ProtocolPos);
       // Extrahera porten
-    PortStr := Copy(URL, PortPos + 1, PathPos - PortPos - 1);
+    if PathPos > 0 then
+      PortStr := Copy(URL, PortPos + 1, PathPos - PortPos - 1)
+    else
+      PortStr := Copy(URL, PortPos + 1, MaxInt);
     Port.port := StrToIntDef(PortStr, Port.port);
       // Convert to integer, or keep default port if invalid
   end
@@ -366,8 +372,8 @@ begin
       end;
     end;
 
-    // Set timeouts (DNS/Connect 15s, send 30s, receive 60s)
-    if not WinHttpSetTimeouts(hSession, 15000, 15000, 30000, 60000) then
+    // Set timeouts (DNS/Connect 15s, send 30s, receive 120s)
+    if not WinHttpSetTimeouts(hSession, 15000, 15000, 30000, 120000) then
       raise Exception.Create('WinHttpSetTimeouts failed (' + IntToStr(GetLastError) + '): ' +
         SysErrorMessage(GetLastError));
 
@@ -421,6 +427,8 @@ begin
           dwSize := GetLastError;
           if (dwSize = 12152) and (FProxyHost <> '') then
             raise Exception.Create('Certificate validation failed with HTTP proxy. HTTP proxies intercepting HTTPS are not fully supported by WinHTTP. Please use direct connection (clear proxy.host) or use an HTTPS proxy.')
+          else if (dwSize = ERROR_WINHTTP_TIMEOUT) and (FProxyHost <> '') and Port.secure then
+            raise Exception.Create('WinHttpReceiveResponse timed out (12002) while using an HTTP proxy for an HTTPS request. The proxy may be blocking CONNECT/HTTPS, requiring authentication, or intercepting TLS. Note: the proxy test uses HTTP and can succeed even if HTTPS-through-proxy fails. Try clearing proxy.host (direct), or use a proxy that supports HTTPS tunneling for this endpoint.')
           else
             raise Exception.Create('WinHttpReceiveResponse failed (' + IntToStr(dwSize) + '): ' +
               SysErrorMessage(dwSize));
@@ -527,8 +535,8 @@ begin
       end;
     end;
 
-    // Set timeouts (DNS/Connect 15s, send 30s, receive 60s)
-    if not WinHttpSetTimeouts(hSession, 15000, 15000, 30000, 60000) then
+    // Set timeouts (DNS/Connect 15s, send 30s, receive 120s)
+    if not WinHttpSetTimeouts(hSession, 15000, 15000, 30000, 120000) then
       raise Exception.Create('WinHttpSetTimeouts failed (' + IntToStr(GetLastError) + '): ' +
         SysErrorMessage(GetLastError));
 
@@ -594,6 +602,8 @@ begin
           dwSize := GetLastError;
           if (dwSize = 12152) and (FProxyHost <> '') then
             raise Exception.Create('Certificate validation failed with HTTP proxy. HTTP proxies intercepting HTTPS are not fully supported by WinHTTP. Please use direct connection (clear proxy.host) or use an HTTPS proxy.')
+          else if (dwSize = ERROR_WINHTTP_TIMEOUT) and (FProxyHost <> '') and Port.secure then
+            raise Exception.Create('WinHttpReceiveResponse timed out (12002) while using an HTTP proxy for an HTTPS request. The proxy may be blocking CONNECT/HTTPS, requiring authentication, or intercepting TLS. Note: the proxy test uses HTTP and can succeed even if HTTPS-through-proxy fails. Try clearing proxy.host (direct), or use a proxy that supports HTTPS tunneling for this endpoint.')
           else
             raise Exception.Create('WinHttpReceiveResponse failed (' + IntToStr(dwSize) + '): ' +
               SysErrorMessage(dwSize));

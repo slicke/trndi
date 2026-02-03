@@ -477,6 +477,8 @@ var
 tnative: TrndiNative;
 
 resourcestring
+RS_EMPTY_PROXY = 'Proxy host is empty.';
+
 RS_DRIVER_CONTRIBUTOR = 'Driver contributor: ';
 
 RS_DEBUG_BACKEND_LABEL = '(Ignored for debug backend)';
@@ -1881,11 +1883,15 @@ end;
 
 procedure TfConf.bTestProxyClick(Sender: TObject);
 const
-  TEST_URL = 'http://example.com/';
+  TEST_URL_HTTP = 'http://example.com/';
+  TEST_URL_HTTPS = 'https://example.com/';
 var
   hostV, portV, userV, passV: string;
   resp: string;
-  ok: boolean;
+  okHttp: boolean;
+  okHttps: boolean;
+  respHttp: string;
+  respHttps: string;
 begin
   hostV := Trim(edProxyHost.Text);
   portV := Trim(edProxyPort.Text);
@@ -1894,21 +1900,34 @@ begin
 
   if hostV = '' then
   begin
-    UXMessage('Proxy', 'Proxy host is empty.', uxmtInformation);
+    UXMessage('Proxy', RS_EMPTY_PROXY, uxmtInformation);
     Exit;
   end;
 
-  ok := TrndiNative.TestProxyURL(TEST_URL, hostV, portV, userV, passV, resp);
-  if ok then
+  respHttp := '';
+  respHttps := '';
+  okHttp := TrndiNative.TestProxyURL(TEST_URL_HTTP, hostV, portV, userV, passV, respHttp);
+  okHttps := TrndiNative.TestProxyURL(TEST_URL_HTTPS, hostV, portV, userV, passV, respHttps);
+
+  if okHttp and okHttps then
     ShowMessage(RS_TEST_SUCCESS)
+  else
+  if okHttp and (not okHttps) then
+  begin
+    UXMessage('Proxy', 'HTTP via proxy works, but HTTPS via proxy failed. Trndi uses HTTPS endpoints, so this proxy configuration will not work for normal operation.
+end;
+
+  end
   else
   begin
     ShowMessage(RS_TEST_FAIL);
     if ssShift in getKeyShiftState then
+    begin
+      resp := 'HTTP test (' + TEST_URL_HTTP + '): ' + IfThen(okHttp, 'OK', 'FAIL') + LineEnding + respHttp + LineEnding + LineEnding +
+        'HTTPS test (' + TEST_URL_HTTPS + '): ' + IfThen(okHttps, 'OK', 'FAIL') + LineEnding + respHttps;
       ShowMessage(resp);
+    end;
   end;
-end;
-
 procedure TfConf.tsSystemShow(Sender: TObject);
 begin
   pnSysInfo.Hide;
