@@ -150,6 +150,7 @@ var
   httpResp    : id; // NSHTTPURLResponse
   hdrKeys     : NSArray;
   i: Integer;
+  cnt: NativeInt;
   keyObj, valObj: id;
   tmp, tmp2, hdrDict: id;
   // Cookie extraction helpers
@@ -229,27 +230,35 @@ begin
         if assigned(hdrDict) then
         begin
           hdrKeys := hdrDict.allKeys;
-          for i := 0 to hdrKeys.count - 1 do
+          cnt := NativeInt(hdrKeys.count);
+          if cnt > 0 then
           begin
-            keyObj := hdrKeys.objectAtIndex(i);
-            valObj := hdrDict.objectForKey(keyObj);
-            ResponseHeaders.Add(NSStrToStr(NSString(keyObj)) + ': ' + NSStrToStr(NSString(valObj)));
+            for i := 0 to cnt - 1 do
+            begin
+              keyObj := hdrKeys.objectAtIndex(i);
+              valObj := hdrDict.objectForKey(keyObj);
+              ResponseHeaders.Add(NSStrToStr(NSString(keyObj)) + ': ' + NSStrToStr(NSString(valObj)));
+            end;
           end;
         end;
 
         // Also include cookies from the shared cookie storage as Set-Cookie: lines
         try
-          var cookieStorage := NSHTTPCookieStorage.sharedHTTPCookieStorage;
-          var cookies := cookieStorage.cookiesForURL(NSURL.URLWithString(StrToNSStr(Address)));
+          cookieStorage := NSHTTPCookieStorage.sharedHTTPCookieStorage;
+          cookies := cookieStorage.cookiesForURL(NSURL.URLWithString(StrToNSStr(Address)));
           if assigned(cookies) then
           begin
-            for i := 0 to cookies.count - 1 do
+            cnt := NativeInt(cookies.count);
+            if cnt > 0 then
             begin
-              var cookieObj := cookies.objectAtIndex(i);
-              try
-                ResponseHeaders.Add('Set-Cookie: ' + NSStrToStr(NSString(cookieObj.name)) + '=' + NSStrToStr(NSString(cookieObj.value)));
-              except
-                // ignore cookie value extraction failures
+              for i := 0 to cnt - 1 do
+              begin
+                cookieObj := cookies.objectAtIndex(i);
+                try
+                  ResponseHeaders.Add('Set-Cookie: ' + NSStrToStr(NSString(cookieObj.name)) + '=' + NSStrToStr(NSString(cookieObj.value)));
+                except
+                  // ignore cookie value extraction failures
+                end;
               end;
             end;
           end;
