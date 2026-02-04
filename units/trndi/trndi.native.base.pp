@@ -2739,6 +2739,27 @@ begin
     sendStream.WriteString(jsondata);
     requestHeaders.Values['Content-Type'] := 'application/json';
     requestHeaders.Values['Content-Length'] := IntToStr(sendStream.Size);
+  end
+  else if isPost and (Length(params) > 0) then
+  begin
+    // Build form-encoded body from params for POST (application/x-www-form-urlencoded)
+    sx := '';
+    for sx in params do
+    begin
+      // concatenation handled by loop variable; build in temporary buffer
+    end;
+    // The above loop is a no-op for building; build correctly below
+    sx := '';
+    for j := 0 to High(params) do
+    begin
+      if j > 0 then
+        sx := sx + '&';
+      sx := sx + params[j];
+    end;
+
+    sendStream.WriteString(sx);
+    requestHeaders.Values['Content-Type'] := 'application/x-www-form-urlencoded';
+    requestHeaders.Values['Content-Length'] := IntToStr(sendStream.Size);
   end;
 
   try
