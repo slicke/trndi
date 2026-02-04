@@ -58,6 +58,9 @@ Forms, variants, dwmapi
 {$ELSEIF DEFINED(X_PC)}
 , libpascurl, Dialogs, LCLType, ctypes, StrUtils
 {$ENDIF}
+{$IF DEFINED(HAIKU)}
+, fphttpclient, opensslsockets
+{$ENDIF}
 , process;
 
 type
@@ -1977,6 +1980,222 @@ begin
     responseStream.Free;
     headerStream.Free;
   end;
+end;
+{$ELSEIF DEFINED(HAIKU)}
+function TTrndiNativeBase.requestEx(const post: boolean; const endpoint: string;
+const params: array of string; const jsondata: string = '';
+cookieJar: TStringList = nil; followRedirects: boolean = true;
+maxRedirects: integer = 10; customHeaders: TStringList = nil;
+prefix: boolean = true): THTTPResponse;
+var
+  HTTP: TFPHTTPClient;
+  address, sx, maskedSx, bodyData, hdr, headerLine: string;
+  i, j, redirectCount: integer;
+  response: string;
+  statusCode: integer;
+  cookieVal: string;
+  cookiePos: integer;
+  currentPost: boolean;
+  function HasHeaderLocal(const Name: string): boolean;
+  var k: integer; s: string;
+  begin
+    Result := False;
+    if customHeaders = nil then Exit;
+    s := LowerCase(Name) + ':';
+    for k := 0 to customHeaders.Count - 1 do
+      if Pos(s, LowerCase(customHeaders[k])) = 1 then
+        Exit(True);
+  end;
+begin
+  // Initialize result structure
+  Result.Body := '';
+  Result.Headers := TStringList.Create;
+  Result.Cookies := TStringList.Create;
+  Result.Success := false;
+  Result.StatusCode := 0;
+  Result.RedirectCount := 0;
+  Result.FinalURL := '';
+  Result.ErrorMessage := '';
+
+  // Start address
+  address := endpoint;
+
+  // Append query params ONLY for GET requests (not POST)
+  if (not post) and (jsondata = '') and (Length(params) > 0) then
+  begin
+    address := address + '?';
+    for sx in params do
+      address := address + '&' + sx;
+  end;
+
+  // Prepare body for POST
+  if post and (jsondata = '') and (Length(params) > 0) then
+  begin
+    bodyData := '';
+    for j := 0 to High(params) do
+    begin
+      if j > 0 then bodyData := bodyData + '&';
+      bodyData := bodyData + params[j];
+    end;
+  end
+  else if jsondata <> '' then
+    bodyData := jsondata
+  else
+    bodyData := '';
+
+  redirectCount := 0;
+  currentPost := post;
+
+  // Manual redirect loop so we can observe headers and cookies
+  while True do
+  begin
+    HTTP := TFPHTTPClient.Create(nil);
+    try
+      HTTP.AllowRedirect := False; // handle redirects ourselves
+      HTTP.IOTimeout := 30000; // 30s
+
+      if useragent <> '' then
+        HTTP.AddHeader('User-Agent', useragent);
+
+      // Add custom headers (support 'Name: Value' or 'Name=Value')
+      if customHeaders <> nil then
+      begin
+        for i := 0 to customHeaders.Count - 1 do
+        begin
+          hdr := customHeaders[i];
+          if Pos(':', hdr) > 0 then
+          begin
+            HTTP.AddHeader(Trim(Copy(hdr, 1, Pos(':', hdr) - 1)), Trim(Copy(hdr, Pos(':', hdr) + 1, MaxInt)));
+          end
+          else if Pos('=', hdr) > 0 then
+          begin
+            HTTP.AddHeader(Trim(Copy(hdr, 1, Pos('=', hdr) - 1)), Trim(Copy(hdr, Pos('=', hdr) + 1, MaxInt)));
+          end
+          else
+            HTTP.RequestHeaders.Add(hdr);
+        end;
+      end;
+
+      // Add cookies to request if provided
+      if (cookieJar <> nil) and (cookieJar.Count > 0) then
+      begin
+        sx := '';
+        for i := 0 to cookieJar.Count - 1 do
+        begin
+          if Trim(cookieJar[i]) = '' then Continue;
+          if sx <> '' then sx := sx + '; ';
+          sx := sx + cookieJar[i];
+        end;
+        if sx <> '' then
+          HTTP.AddHeader('Cookie', sx);
+      end;
+
+      // Execute request
+      try
+        if currentPost then
+        begin
+          if jsondata <> '' then
+          begin
+            if not HasHeaderLocal('Content-Type') then
+              HTTP.AddHeader('Content-Type', 'application/json; charset=UTF-8');
+            if not HasHeaderLocal('Accept') then
+              HTTP.AddHeader('Accept', 'application/json');
+            response := HTTP.Post(address, bodyData);
+          end
+          else if bodyData <> '' then
+          begin
+            if not HasHeaderLocal('Content-Type') then
+              HTTP.AddHeader('Content-Type', 'application/x-www-form-urlencoded');
+            maskedSx := bodyData;
+            // Simple masking of known sensitive params for logs
+            maskedSx := StringReplace(maskedSx, 'code_verifier=', 'code_verifier=***', [rfIgnoreCase]);
+            maskedSx := StringReplace(maskedSx, 'code=', 'code=***', [rfIgnoreCase]);
+            maskedSx := StringReplace(maskedSx, 'password=', 'password=***', [rfIgnoreCase]);
+            maskedSx := StringReplace(maskedSx, 'client_secret=', 'client_secret=***', [rfIgnoreCase]);
+            LogMessageToFile('HTTP POST body (masked): ' + Copy(maskedSx, 1, 2000));
+            response := HTTP.Post(address, bodyData);
+          end
+          else
+            response := HTTP.Post(address, '');
+        end
+        else
+          response := HTTP.Get(address);
+      except
+        on E: Exception do
+        begin
+          Result.Success := False;
+          Result.ErrorMessage := E.Message;
+          // Capture any headers available
+          for i := 0 to HTTP.ResponseHeaders.Count - 1 do
+            Result.Headers.Add(HTTP.ResponseHeaders[i]);
+          Exit;
+        end;
+      end;
+
+      // Capture headers and cookies
+      for i := 0 to HTTP.ResponseHeaders.Count - 1 do
+      begin
+        headerLine := HTTP.ResponseHeaders[i];
+        Result.Headers.Add(headerLine);
+        if Pos(LowerCase('set-cookie'), LowerCase(headerLine)) > 0 then
+        begin
+          cookieVal := headerLine;
+          cookiePos := Pos(':', cookieVal);
+          if cookiePos > 0 then cookieVal := Trim(Copy(cookieVal, cookiePos + 1, MaxInt));
+          cookiePos := Pos(';', cookieVal);
+          if cookiePos > 0 then cookieVal := Copy(cookieVal, 1, cookiePos - 1);
+          if cookieVal <> '' then
+          begin
+            Result.Cookies.Add(cookieVal);
+            if cookieJar <> nil then
+              if cookieJar.IndexOf(cookieVal) = -1 then
+                cookieJar.Add(cookieVal);
+          end;
+        end;
+      end;
+
+      statusCode := HTTP.ResponseStatusCode;
+      Result.StatusCode := statusCode;
+      Result.Body := response;
+      Result.FinalURL := address;
+
+      // Redirect handling
+      if followRedirects and (statusCode in [301, 302, 303, 307, 308]) then
+      begin
+        // Find Location header
+        for i := 0 to Result.Headers.Count - 1 do
+        begin
+          headerLine := Result.Headers[i];
+          if LowerCase(Copy(headerLine, 1, 9)) = 'location:' then
+          begin
+            address := Trim(Copy(headerLine, 10, MaxInt));
+            Inc(redirectCount);
+            Result.RedirectCount := redirectCount;
+            if (statusCode = 303) or (statusCode = 302) or (statusCode = 301) then
+              currentPost := False; // convert to GET on common redirects
+            Break;
+          end;
+        end;
+
+        if redirectCount >= maxRedirects then
+        begin
+          Result.Success := False;
+          Result.ErrorMessage := 'Too many redirects';
+          Exit;
+        end;
+
+        Continue; // follow the Location
+      end
+      else
+      begin
+        Result.Success := (statusCode >= 200) and (statusCode < 300);
+        Break;
+      end;
+
+    finally
+      HTTP.Free;
+    end;
+  end; // while
 end;
 {$ELSEIF DEFINED(X_WIN)}
 function TTrndiNativeBase.requestEx(const post: boolean; const endpoint: string;
