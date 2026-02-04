@@ -17,12 +17,12 @@ object fConf: TfConf
     Height = 518
     Top = 11
     Width = 645
-    ActivePage = tsProxy
+    ActivePage = tsGeneral
     Align = alClient
     BorderSpacing.Left = 10
     BorderSpacing.Right = 10
     BorderSpacing.Around = 5
-    TabIndex = 12
+    TabIndex = 1
     TabOrder = 0
     OnChange = pcMainChange
     object tsCommon: TTabSheet
@@ -13029,7 +13029,7 @@ object fConf: TfConf
       object gbNetwork: TGroupBox
         Left = 10
         Height = 190
-        Top = 326
+        Top = 283
         Width = 619
         Align = alBottom
         BorderSpacing.Around = 10

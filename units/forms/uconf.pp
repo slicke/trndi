@@ -561,6 +561,9 @@ RS_BETA_DEX =
 RS_XDRIP =
   'Make sure you are on the same network as the xDrip app.'+sLineBreak+'Make sure that web access is turned on.';
 
+RS_TANDEM =
+  'This backend is in alpha stage, it may not work as intended!'+sLineBreak+'Please set your own thresholds in the Customization tab, works on: Windows, Linux, BSD';
+
 RS_DEBUG_WARN =
   'This is a debug backend. It''s used for testing purposes only!'+sLineBreak+'No data will be sent to any remote server.';
 
@@ -879,7 +882,8 @@ procedure WarnUnstableAPI;
       pnSysWarn.Show;
       lSysWarnInfo.Caption := RS_BETA;
     end;
-    if (cbSys.Text = API_DEX_NEW_EU) or (cbSys.Text = API_DEX_NEW_USA) or (cbSys.Text = API_DEX_NEW_JP) then begin
+    if (cbSys.Text = API_DEX_NEW_EU) or (cbSys.Text = API_DEX_NEW_USA) or (cbSys.Text = API_DEX_NEW_JP) then
+    begin
       pnSysWarn.Show;
       lSysWarnInfo.Caption := RS_BETA_DEX;
     end;
@@ -887,6 +891,11 @@ procedure WarnUnstableAPI;
     begin
       pnSysWarn.Show;
       lSysWarnInfo.Caption := RS_XDRIP;
+    end;
+    if (cbSys.Text = API_TANDEM_EU) or (cbSys.Text = API_TANDEM_USA) then
+    begin
+      pnSysWarn.Show;
+      lSysWarnInfo.Caption := RS_TANDEM;
     end;
     {$ifdef DEBUG}
     if cbSys.Text in API_DEBUG then
@@ -1119,6 +1128,11 @@ begin
 end;
 
 procedure TfConf.bBackendHelpClick(Sender: TObject);
+function HtmlEscapeBasic(const S: string): string;
+  begin
+    Result := StringReplace(S, '<', '&lt;', [rfReplaceAll]);
+    Result := StringReplace(Result, '>', '&gt;', [rfReplaceAll]);
+  end;
 var
   s, c, x: string;
   i: integer;
@@ -1163,7 +1177,7 @@ begin
   else
   begin
     s := sys.ParamLabel(APLDescHTML);
-    c := sys.ParamLabel(APLCopyright);
+    c := HTMLEscapeBasic(sys.paramLabel(APLCopyright));
   end;
 
   for i := 0 to Length(RS_DRIVER_CONTRIBUTOR + c) do
@@ -1277,15 +1291,16 @@ begin
   end;
 
   case res of
-    MaybeBool.False: begin
-      ShowMessage(RS_TEST_FAIL);
-      if ssShift in getKeyShiftState then
-        ShowMessage(err);
-    end;
-    MaybeBool.True:
+  MaybeBool.false:
+  begin
+    ShowMessage(RS_TEST_FAIL);
+    if ssShift in getKeyShiftState then
+      ShowMessage(err);
+  end;
+  MaybeBool.true:
     ShowMessage(RS_TEST_SUCCESS);
   else
-   ShowMessage(RS_TEST_UNSUPPORTED)
+    ShowMessage(RS_TEST_UNSUPPORTED)
   end;
 
 end;
@@ -1584,7 +1599,8 @@ begin
   {$ifdef X_WIN}
     cbTitleColor.Visible := false;
   {$endif}
-  if tnative.nobuttonsVM then begin
+  if tnative.nobuttonsVM then
+  begin
     bottombar := TPanel.Create(self);
     bottombar.Align:=alBottom;
     bottombar.height := 30;
@@ -1677,7 +1693,7 @@ procedure TfConf.lSysWarnInfoClick(Sender: TObject);
 begin
   case cbSys.Text of
   API_DEX_USA, API_DEX_EU,
-  API_DEX_NEW_USA, API_DEX_NEW_EU, API_DEX_NEW_JP:
+  API_DEX_NEW_USA, API_DEX_NEW_EU, API_DEX_NEW_JP, API_TANDEM_USA, API_TANDEM_EU:
     pcMain.ActivePage := tsCustom;
   end;
 end;
@@ -1926,16 +1942,13 @@ begin
   okHttps := TrndiNative.TestProxyURL(TEST_URL_HTTPS, hostV, portV, userV, passV, respHttps);
 
   if okHttp and okHttps then
-  begin
-    ShowMessage(RS_TEST_SUCCESS);
-  end
-  else if okHttp and (not okHttps) then
-  begin
+    ShowMessage(RS_TEST_SUCCESS)
+  else
+  if okHttp and (not okHttps) then
     UXMessage('Proxy',
       'HTTP via proxy works, but HTTPS via proxy failed. Trndi uses HTTPS endpoints, so this proxy configuration will not work for normal operation.' +
       LineEnding + LineEnding + respHttps,
-      uxmtWarning);
-  end
+      uxmtWarning)
   else
   begin
     ShowMessage(RS_TEST_FAIL);

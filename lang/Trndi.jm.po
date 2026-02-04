@@ -388,6 +388,10 @@ msgstr "Testa"
 msgid "Test Announce"
 msgstr "Testa notis"
 
+#: tfconf.btestproxy.caption
+msgid "Test proxy"
+msgstr ""
+
 #: tfconf.btestspeech.caption
 msgid "Test Speech"
 msgstr "Testa tal"
@@ -2620,6 +2624,12 @@ msgstr "Velj ett typsnitt fôr tiden"
 #: uconf.rs_shortmode_full
 msgid "By default, Trndi only shows up/down/straight. You can enable the full range of arrows here - however you must realize that this is very experimental and potentially less accurate!"
 msgstr "Som standard visar Trndi bara upp/ned/rakt. Du kan aktivera att hela mengden av pilar ska visas - dock moste du vara medveten om att detta er mycket experimentfullt och kan potentiellt vara mindre exakt!"
+
+#: uconf.rs_tandem
+msgid ""
+"This backend is in alpha stage, it may not work as intended!\n"
+"Please set your own thresholds in the Customization tab, works on: Windows, Linux, BSD"
+msgstr ""
 
 #: uconf.rs_test_fail
 msgid "Could not connect!"

@@ -1362,14 +1362,6 @@ begin
     LogMessageToFile(Format('Tandem.Connect: login response success=%s status=%d bytes=%d err=%s',
       [BoolToStr(httpResponse.Success, true), httpResponse.StatusCode, Length(httpResponse.Body), httpResponse.ErrorMessage]));
     
-    // Debug: Show response details
-    alert('DEBUG Login Response'#10+
-                     'Success: ' + BoolToStr(httpResponse.Success, true) + #13#10 +
-                     'Status Code: ' + IntToStr(httpResponse.StatusCode) + #13#10 +
-                     'Error: ' + httpResponse.ErrorMessage + #13#10 +
-                     'Body Length: ' + IntToStr(Length(httpResponse.Body)) + #13#10 +
-                     'Body: ' + Copy(httpResponse.Body, 1, 500));
-    
     loginOk := httpResponse.Success;
     if (not loginOk) and (httpResponse.StatusCode = 200) then
     begin
@@ -2374,6 +2366,7 @@ begin
     APLPass: Result := sParamPassword;
     APLDesc: Result := sParamDesc;
     APLDescHTML: Result := sParamDescHTML;
+    APLCopyright: Result := 'Björn Lindh <github.com/slicke>';
     else Result := '';
   end;
 end;
