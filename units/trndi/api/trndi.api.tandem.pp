@@ -945,6 +945,47 @@ var
   textLower: string;
   encodedPos: integer;
   token: string;
+  posCode: integer;
+  valuePos: integer;
+  quoteChar: char;
+  function ExtractQuotedValue(const S: string; StartPos: integer): string;
+  var
+    j: integer;
+    q: char;
+  begin
+    Result := '';
+    if (StartPos <= 0) or (StartPos > Length(S)) then
+      Exit;
+    q := S[StartPos];
+    if (q <> '"') and (q <> '''') then
+      Exit;
+    for j := StartPos + 1 to Length(S) do
+    begin
+      if S[j] = q then
+      begin
+        Result := Copy(S, StartPos + 1, j - StartPos - 1);
+        Exit;
+      end;
+    end;
+  end;
+  function ExtractInputCodeValue(const S: string): string;
+  var
+    lowerS: string;
+    p, v: integer;
+  begin
+    Result := '';
+    lowerS := LowerCase(S);
+    p := Pos('name="code"', lowerS);
+    if p = 0 then
+      p := Pos('name=''code''', lowerS);
+    if p = 0 then
+      Exit;
+    v := PosEx('value=', lowerS, p);
+    if v = 0 then
+      Exit;
+    Inc(v, Length('value='));
+    Result := ExtractQuotedValue(S, v);
+  end;
   function UrlDecode(const S: string): string;
   var
     idx: integer;
@@ -999,6 +1040,32 @@ begin
 
   if Result <> '' then
     Exit;
+
+  Result := ExtractInputCodeValue(AText);
+  if Result <> '' then
+    Exit;
+
+  textLower := LowerCase(AText);
+  posCode := Pos('"code":"', textLower);
+  if posCode = 0 then
+    posCode := Pos('''code'':', textLower);
+  if posCode > 0 then
+  begin
+    valuePos := PosEx(':', textLower, posCode);
+    if valuePos > 0 then
+    begin
+      Inc(valuePos);
+      while (valuePos <= Length(AText)) and (AText[valuePos] = ' ') do
+        Inc(valuePos);
+      if (valuePos <= Length(AText)) and ((AText[valuePos] = '"') or (AText[valuePos] = '''')) then
+      begin
+        quoteChar := AText[valuePos];
+        Result := ExtractQuotedValue(AText, valuePos);
+        if Result <> '' then
+          Exit;
+      end;
+    end;
+  end;
 
   textLower := LowerCase(AText);
   encodedPos := Pos('code%3d', textLower);
