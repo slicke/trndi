@@ -2169,6 +2169,10 @@ var
     rawHeaderBuf: PWideChar;
     rawHeaderStr: WideString;
     index: DWORD;
+    statusValue: DWORD;
+    statusSize: DWORD;
+    locBuf: PWideChar;
+    locSize: DWORD;
     bodyPtr: Pointer;
     bodyLen: DWORD;
     sendVerb: PWideChar;
@@ -2321,6 +2325,13 @@ var
             Exit(false);
           end;
 
+          statusValue := 0;
+          statusSize := SizeOf(statusValue);
+          index := 0;
+          if WinHttpQueryHeaders(hRequest, WINHTTP_QUERY_STATUS_CODE or WINHTTP_QUERY_FLAG_NUMBER,
+            nil, @statusValue, statusSize, index) then
+            outStatus := statusValue;
+
           dwSize := 0;
           index := 0;
           WinHttpQueryHeaders(hRequest, WINHTTP_QUERY_RAW_HEADERS_CRLF, nil, nil, dwSize, index);
@@ -2338,8 +2349,27 @@ var
             end;
           end;
 
-          outStatus := ParseStatusCodeFromHeaders(outHeaders);
-          outLocation := ExtractLocationHeader(outHeaders);
+          if outStatus = 0 then
+            outStatus := ParseStatusCodeFromHeaders(outHeaders);
+
+          locSize := 0;
+          index := 0;
+          WinHttpQueryHeaders(hRequest, WINHTTP_QUERY_LOCATION, nil, nil, locSize, index);
+          if (GetLastError = ERROR_INSUFFICIENT_BUFFER) and (locSize > 0) then
+          begin
+            GetMem(locBuf, locSize);
+            try
+              if WinHttpQueryHeaders(hRequest, WINHTTP_QUERY_LOCATION, nil, locBuf, locSize, index) then
+              begin
+                outLocation := WideString(locBuf);
+              end;
+            finally
+              FreeMem(locBuf);
+            end;
+          end;
+
+          if outLocation = '' then
+            outLocation := ExtractLocationHeader(outHeaders);
 
           responseStream := TStringStream.Create;
           try
