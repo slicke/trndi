@@ -1651,6 +1651,22 @@ var
         for resultIdx := 0 to count - 1 do
           AResults[resultIdx] := readingsList[resultIdx];
         SortReadingsNewestFirst(AResults);
+        if FCalcDiff and (Length(AResults) > 1) then
+        begin
+          for resultIdx := 0 to High(AResults) do
+          begin
+            if resultIdx < High(AResults) then
+              AResults[resultIdx].update(AResults[resultIdx].convert(mgdl) - AResults[resultIdx + 1].convert(mgdl), BGDelta, mgdl)
+            else
+              AResults[resultIdx].update(0, BGDelta, mgdl);
+            AResults[resultIdx].trend := CalculateTrendFromDelta(AResults[resultIdx].convert(mgdl, BGDelta));
+          end;
+        end
+        else
+        begin
+          for resultIdx := 0 to High(AResults) do
+            AResults[resultIdx].trend := TdFlat;
+        end;
         for resultIdx := 0 to Min(Length(AResults) - 1, 4) do
           LogMessageToFile(Format('Tandem.GetReadings: source pumpevents top[%d]=%s val=%.1f',
             [resultIdx, FormatDateTime('yyyy-mm-dd hh:nn', AResults[resultIdx].date),
@@ -2093,6 +2109,22 @@ begin
         Result[i] := readingsList[i];
       if count > 1 then
         SortReadingsNewestFirst(Result);
+      if FCalcDiff and (Length(Result) > 1) then
+      begin
+        for i := 0 to High(Result) do
+        begin
+          if i < High(Result) then
+            Result[i].update(Result[i].convert(mgdl) - Result[i + 1].convert(mgdl), BGDelta, mgdl)
+          else
+            Result[i].update(0, BGDelta, mgdl);
+          Result[i].trend := CalculateTrendFromDelta(Result[i].convert(mgdl, BGDelta));
+        end;
+      end
+      else
+      begin
+        for i := 0 to High(Result) do
+          Result[i].trend := TdFlat;
+      end;
       if (AMaxCount > 0) and (Length(Result) > AMaxCount) then
         SetLength(Result, AMaxCount);
       
