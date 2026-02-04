@@ -1137,6 +1137,29 @@ var
   cookieJar: TStringList;
   statusVal: string;
   customHeaders: TStringList;
+  locationHeader: string;
+  headerPreview: string;
+  i: integer;
+
+  function GetHeaderValue(const AHeaders: TStringList; const AName: string): string;
+  var
+    k: integer;
+    nameLower, lineLower: string;
+  begin
+    Result := '';
+    if AHeaders = nil then
+      Exit;
+    nameLower := LowerCase(AName) + ':';
+    for k := 0 to AHeaders.Count - 1 do
+    begin
+      lineLower := LowerCase(Trim(AHeaders[k]));
+      if Pos(nameLower, lineLower) = 1 then
+      begin
+        Result := Trim(Copy(AHeaders[k], Length(AName) + 2, MaxInt));
+        Exit;
+      end;
+    end;
+  end;
 begin
   Result := False;
   cookieJar := TStringList.Create;
@@ -1239,8 +1262,14 @@ begin
       Exit;
     end;
     
-    // Extract authorization code from final redirect URL
+    // Extract authorization code from final redirect URL or Location header
     authCode := ExtractAuthCodeFromURL(httpResponse.FinalURL);
+    if authCode = '' then
+    begin
+      locationHeader := GetHeaderValue(httpResponse.Headers, 'Location');
+      if locationHeader <> '' then
+        authCode := ExtractAuthCodeFromURL(locationHeader);
+    end;
     LogMessageToFile(Format('Tandem.Connect: auth code length=%d', [Length(authCode)]));
     
     httpResponse.Headers.Free;
@@ -1248,6 +1277,21 @@ begin
     
     if authCode = '' then
     begin
+      headerPreview := '';
+      for i := 0 to httpResponse.Headers.Count - 1 do
+      begin
+        if i >= 15 then
+        begin
+          headerPreview := headerPreview + '...';
+          Break;
+        end;
+        headerPreview := headerPreview + httpResponse.Headers[i] + #13#10;
+      end;
+      LogMessageToFile('Tandem.Connect: auth response headers (preview):'#13#10 + headerPreview);
+      if locationHeader <> '' then
+        LogMessageToFile('Tandem.Connect: auth response Location=' + locationHeader);
+      if Length(httpResponse.Body) > 0 then
+        LogMessageToFile('Tandem.Connect: auth response body preview=' + Copy(httpResponse.Body, 1, 500));
       lastErr := 'Failed to extract authorization code from redirect. ' +
         'Check credentials or see redirect URL: ' + httpResponse.FinalURL;
       Exit;
