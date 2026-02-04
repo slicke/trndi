@@ -1434,9 +1434,6 @@ begin
       authCode := ExtractAuthCodeFromText(httpResponse.Body);
     LogMessageToFile(Format('Tandem.Connect: auth code length=%d', [Length(authCode)]));
     
-    httpResponse.Headers.Free;
-    httpResponse.Cookies.Free;
-    
     if authCode = '' then
     begin
       headerPreview := '';
@@ -1461,8 +1458,13 @@ begin
         LogMessageToFile('Tandem.Connect: auth response body preview=' + Copy(httpResponse.Body, 1, 500));
       lastErr := 'Failed to extract authorization code from redirect. ' +
         'Check credentials or see redirect URL: ' + httpResponse.FinalURL;
+      httpResponse.Headers.Free;
+      httpResponse.Cookies.Free;
       Exit;
     end;
+
+    httpResponse.Headers.Free;
+    httpResponse.Cookies.Free;
     
     // Step 4: Exchange authorization code for tokens
     tokenUrl := GetTokenEndpoint;
