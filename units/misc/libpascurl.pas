@@ -538,8 +538,8 @@ type
     dlnow : curl_off_t; ultotal : curl_off_t; ulnow : curl_off_t) : Integer
     of object;
 
-  curl_write_callback = function (buffer : PChar; size : LongWord; nitems :
-    LongWord; outstream : Pointer) : LongWord of object;
+  curl_write_callback = function (buffer : PChar; size : SizeUInt; nitems :
+    SizeUInt; outstream : Pointer) : SizeUInt of object;
 
   { This callback will be called when a new resolver request is made }
   curl_resolver_start_callback = function (resolver_state : Pointer; reserved :
@@ -579,8 +579,8 @@ type
     flags : Cardinal;
     { used internally }
     b_data : PChar;
-    b_size : LongWord;
-    b_used : LongWord;
+    b_size : SizeUInt;
+    b_used : SizeUInt;
   end;
 
   { if splitting of data transfer is enabled, this callback is called before
@@ -605,8 +605,8 @@ type
   curl_seek_callback = function (instream : Pointer; offset : curl_off_t;
     origin : Integer) : Integer of object;
 
-  curl_read_callback = function (buffer : PChar; size : LongWord;
-    nitems : LongWord; instream : Pointer) : LongWord of object;
+  curl_read_callback = function (buffer : PChar; size : SizeUInt;
+    nitems : SizeUInt; instream : Pointer) : SizeUInt of object;
 
   curl_trailer_callback = function (list : ppcurl_slist; userdata : Pointer) :
     Integer of object;

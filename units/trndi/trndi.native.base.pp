@@ -73,6 +73,18 @@ TWSLInfo = record
   DistroName: string;   // Optional distro name (if available)
   KernelVersion: string;// Kernel string as reported by /proc/version
 end;
+
+  {** Enhanced HTTP response with headers, cookies, and redirect information. }
+THTTPResponse = record
+  Body: string;                  // Response body content
+  Headers: TStringList;          // Response headers (key=value)
+  Cookies: TStringList;          // Cookies received (Set-Cookie headers)
+  StatusCode: integer;           // HTTP status code (200, 302, etc.)
+  FinalURL: string;              // Final URL after redirects
+  RedirectCount: integer;        // Number of redirects followed
+  Success: boolean;              // True if request succeeded
+  ErrorMessage: string;          // Error description if failed
+end;
   // TrndiNative base contracts
 {**
   @abstract(Base class providing contracts for native features.)
@@ -120,6 +132,25 @@ class var touchOverride: TTrndiBool;
   function request(const post: boolean; const endpoint: string;
     const params: array of string; const jsondata: string = '';
     const header: string = ''; prefix: boolean = true): string;
+  
+  {**
+    Enhanced HTTP request with full OAuth2 support.
+    @param(post) True for POST, False for GET.
+    @param(endpoint) Full URL or relative endpoint.
+    @param(params) Query string pairs like 'key=value'.
+    @param(jsondata) Optional JSON payload for POST.
+    @param(cookieJar) Cookies to send (will be updated with received cookies).
+    @param(followRedirects) True to automatically follow 302/301 redirects.
+    @param(maxRedirects) Maximum number of redirects to follow (default 10).
+    @param(customHeaders) Additional headers as TStringList (key=value).
+    @param(prefix) True to prefix endpoint with baseurl.
+    @returns(THTTPResponse with body, headers, cookies, and redirect info.)
+  }
+  function requestEx(const post: boolean; const endpoint: string;
+    const params: array of string; const jsondata: string = '';
+    cookieJar: TStringList = nil; followRedirects: boolean = true;
+    maxRedirects: integer = 10; customHeaders: TStringList = nil;
+    prefix: boolean = true): THTTPResponse;
 
     // Settings API
     {** Store a non-user-scoped key (global). }
@@ -199,6 +230,23 @@ class var touchOverride: TTrndiBool;
   class function HasTouchScreen: boolean;
     {** Simple HTTP GET helper; platform units implement. }
   class function getURL(const url: string; out res: string): boolean; virtual; abstract;
+    {**
+      Attempt an HTTP GET through an explicit proxy (no automatic fallback).
+      
+      This is intended for UI "Test proxy" actions where we want to know if
+      the configured proxy itself works.
+
+      @param(url) URL to request.
+      @param(proxyHost) Proxy hostname (or host:port). Empty means "no proxy".
+      @param(proxyPort) Optional proxy port (string, numeric).
+      @param(proxyUser) Optional proxy username.
+      @param(proxyPass) Optional proxy password.
+      @param(res) Response body on success or error message on failure.
+      @returns True on success, False on failure.
+    }
+  class function TestProxyURL(const url: string; const proxyHost: string;
+    const proxyPort: string; const proxyUser: string; const proxyPass: string;
+    out res: string): boolean; virtual;
   class function GetOSLanguage: string;
   class function HasDangerousChars(const FileName: string): boolean; static;
   class function DetectWSL: TWSLInfo;
@@ -276,22 +324,115 @@ DEFAULT_MIN_FONT_SIZE = 8;
 implementation
 
 // C-compatible write callback used by libcurl to collect response data.
-function CurlWriteCallback(buffer: pchar; size, nmemb: longword;
-userdata: Pointer): longword; cdecl;
+function CurlWriteCallback(buffer: pchar; size, nmemb: SizeUInt;
+userdata: Pointer): SizeUInt; cdecl;
 var
-  Bytes: SizeInt;
-  SS: TStringStream;
+  stream: TStringStream;
+  actualSize: SizeUInt;
+  dataStr: string;
 begin
-  if (userdata = nil) or (buffer = nil) then
+  Result := size * nmemb;
+  
+  LogMessageToFile(Format('[CurlWriteCallback] Called: size=%d, nmemb=%d, Result=%d', [Int64(size), Int64(nmemb), Int64(Result)]));
+  
+  // Safety checks
+  if (buffer = nil) or (size = 0) or (nmemb = 0) or (Result = 0) then
   begin
-    Result := 0;
+    LogMessageToFile('[CurlWriteCallback] Safety check failed, returning Result');
     Exit;
   end;
-  SS := TStringStream(userdata);
-  Bytes := SizeInt(size) * SizeInt(nmemb);
-  if Bytes > 0 then
-    SS.WriteBuffer(buffer^, Bytes);
-  Result := Bytes;
+  
+  // Prevent overflow
+  if Result > 10485760 then  // 10MB limit
+  begin
+    LogMessageToFile('[CurlWriteCallback] Overflow check failed');
+    Exit;
+  end;
+  
+  actualSize := Result;
+  stream := TStringStream(userdata);
+  
+  if stream = nil then
+  begin
+    LogMessageToFile('[CurlWriteCallback] Stream is nil');
+    Exit;
+  end;
+  
+  try
+    // Write buffer to stream
+    if actualSize > 0 then
+    begin
+      stream.WriteBuffer(buffer^, actualSize);
+      LogMessageToFile(Format('[CurlWriteCallback] Wrote %d bytes to stream, returning %d', [Int64(actualSize), Int64(Result)]));
+    end;
+  except
+    on E: Exception do
+    begin
+      LogMessageToFile('[CurlWriteCallback] Exception: ' + E.Message);
+      // Return 0 on error to signal curl to abort
+      Result := 0;
+    end;
+  end;
+end;
+
+// C-compatible write callback for requestEx (global, no nested/static link).
+function CurlWriteCallbackEx(buffer: PChar; size, nitems: SizeUInt; userdata: Pointer): SizeUInt; cdecl;
+var
+  stream: TStringStream;
+  actualSize: SizeUInt;
+begin
+  Result := size * nitems;
+
+  // Safety checks
+  if (buffer = nil) or (size = 0) or (nitems = 0) or (Result = 0) then
+    Exit;
+
+  if Result > 10485760 then // 10MB limit
+    Exit;
+
+  actualSize := Result;
+  stream := TStringStream(userdata);
+
+  if stream = nil then
+    Exit;
+
+  try
+    if actualSize > 0 then
+      stream.WriteBuffer(buffer^, actualSize);
+  except
+    Result := 0;
+  end;
+end;
+
+// C-compatible header callback for requestEx (global, no nested/static link).
+function CurlHeaderCallbackEx(buffer: PChar; size, nitems: SizeUInt; userdata: Pointer): SizeUInt; cdecl;
+var
+  stream: TStringStream;
+  actualSize: SizeUInt;
+  headerLine: string;
+begin
+  Result := size * nitems;
+
+  if (buffer = nil) or (size = 0) or (nitems = 0) or (Result = 0) then
+    Exit;
+
+  if Result > 1048576 then // 1MB header limit
+    Exit;
+
+  actualSize := Result;
+  stream := TStringStream(userdata);
+
+  if stream = nil then
+    Exit;
+
+  try
+    SetLength(headerLine, actualSize);
+    if actualSize > 0 then
+      Move(buffer^, headerLine[1], actualSize);
+    stream.WriteString(headerLine);
+  except
+    Result := 0;
+  end;
 end;
 {------------------------------------------------------------------------------
   TTrndiNativeBase.updateLocale
@@ -344,6 +485,19 @@ class function TTrndiNativeBase.HasNotifications: boolean;
 begin
   // Forward to the virtual for platform-specific logic
   Result := isNotificationSystemAvailable;
+end;
+
+{------------------------------------------------------------------------------
+  TestProxyURL (class, virtual)
+  ----------------------------
+  Default implementation: unsupported.
+ ------------------------------------------------------------------------------}
+class function TTrndiNativeBase.TestProxyURL(const url: string;
+  const proxyHost: string; const proxyPort: string; const proxyUser: string;
+  const proxyPass: string; out res: string): boolean;
+begin
+  res := 'Proxy testing is not supported on this platform.';
+  Result := false;
 end;
 
 {$IFDEF Windows}
@@ -1534,6 +1688,910 @@ begin
   end;
 end;
 {$ENDIF}
+{$ENDIF}
+
+{------------------------------------------------------------------------------
+  requestEx
+  -------------------
+  Enhanced HTTP request with OAuth2 support: cookies, redirect tracking,
+  and full response header capture.
+ ------------------------------------------------------------------------------}
+{$IF DEFINED(X_PC)}
+function TTrndiNativeBase.requestEx(const post: boolean; const endpoint: string;
+const params: array of string; const jsondata: string = '';
+cookieJar: TStringList = nil; followRedirects: boolean = true;
+maxRedirects: integer = 10; customHeaders: TStringList = nil;
+prefix: boolean = true): THTTPResponse;
+var
+  handle: CURL;
+  headers: pcurl_slist;
+  errCode: CURLcode;
+  address, sx: string;
+  i, j: integer;
+  responseStream: TStringStream;
+  headerStream: TStringStream;
+  proxyHost, proxyPortS, proxyUser, proxyPass: string;
+  cookieData: string;
+  responseLine: string;
+  responseCode: clong;
+  effectiveUrl: PChar;
+  startTick: QWord;
+  endTick: QWord;
+  methodLabel: string;
+  cookieVal: string;
+  cookiePos: integer;
+  function HasHeader(const AName: string): boolean;
+  var
+    k: integer;
+    nameLower: string;
+  begin
+    Result := False;
+    if customHeaders = nil then
+      Exit;
+    nameLower := LowerCase(AName) + ':';
+    for k := 0 to customHeaders.Count - 1 do
+      if Pos(nameLower, LowerCase(Trim(customHeaders[k]))) = 1 then
+        Exit(True);
+  end;
+
+begin
+  // Initialize address from endpoint parameter
+  address := endpoint;
+  
+  // Initialize Result
+  Result.Body := '';
+  Result.Headers := TStringList.Create;
+  Result.Cookies := TStringList.Create;
+  Result.Success := false;
+  Result.StatusCode := 0;
+  Result.RedirectCount := 0;
+  Result.FinalURL := '';
+  Result.ErrorMessage := '';
+  
+  // Append query params ONLY for GET requests (not POST)
+  // For POST, params will be sent in the POST body as form data
+  if (not post) and (jsondata = '') and (Length(params) > 0) then
+  begin
+    address := address + '?';
+    for sx in params do
+      address := address + '&' + sx;
+  end;
+
+  curl_global_init(CURL_GLOBAL_DEFAULT);
+  headers := nil;
+  responseStream := TStringStream.Create('');
+  headerStream := TStringStream.Create('');
+  try
+    if post then
+      methodLabel := 'POST'
+    else
+      methodLabel := 'GET';
+    startTick := GetTickCount64;
+    LogMessageToFile(Format('HTTP %s (curl): %s', [methodLabel, address]));
+    handle := curl_easy_init();
+    if handle = nil then
+    begin
+      Result.ErrorMessage := 'Failed to initialize CURL';
+      Exit;
+    end;
+
+    try
+      // Basic setup
+      curl_easy_setopt(handle, CURLOPT_URL, pchar(address));
+      curl_easy_setopt(handle, CURLOPT_CONNECTTIMEOUT, clong(10));
+      curl_easy_setopt(handle, CURLOPT_TIMEOUT, clong(30));
+      // Accept and auto-decompress compressed responses (gzip/deflate/br where available)
+      curl_easy_setopt(handle, CURLOPT_ACCEPT_ENCODING, pchar(''));
+      
+      // Enable verbose output for debugging
+      curl_easy_setopt(handle, CURLOPT_VERBOSE, clong(1));
+      
+      // Disable SSL certificate verification (NOT RECOMMENDED FOR PRODUCTION)
+      curl_easy_setopt(handle, CURLOPT_SSL_VERIFYPEER, clong(0));
+      curl_easy_setopt(handle, CURLOPT_SSL_VERIFYHOST, clong(0));
+
+      if useragent <> '' then
+        curl_easy_setopt(handle, CURLOPT_USERAGENT, pchar(useragent));
+
+      // Redirect handling
+      if followRedirects then
+      begin
+        curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, clong(1));
+        curl_easy_setopt(handle, CURLOPT_MAXREDIRS, clong(maxRedirects));
+      end
+      else
+        curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, clong(0));
+
+      // Cookie handling
+      if (cookieJar <> nil) and (cookieJar.Count > 0) then
+      begin
+        cookieData := '';
+        for i := 0 to cookieJar.Count - 1 do
+        begin
+          if Trim(cookieJar[i]) = '' then
+            Continue;
+          if cookieData <> '' then
+            cookieData := cookieData + '; ';
+          cookieData := cookieData + cookieJar[i];
+        end;
+        if cookieData <> '' then
+          curl_easy_setopt(handle, CURLOPT_COOKIE, pchar(cookieData));
+      end;
+
+      // Custom headers
+      if customHeaders <> nil then
+      begin
+        for i := 0 to customHeaders.Count - 1 do
+          headers := curl_slist_append(headers, pchar(customHeaders[i]));
+      end;
+
+      // POST handling
+      if jsondata <> '' then
+      begin
+        if not HasHeader('Content-Type') then
+          headers := curl_slist_append(headers, pchar('Content-Type: application/json; charset=UTF-8'));
+        if not HasHeader('Accept') then
+          headers := curl_slist_append(headers, pchar('Accept: application/json'));
+        curl_easy_setopt(handle, CURLOPT_POST, clong(1));
+        curl_easy_setopt(handle, CURLOPT_POSTFIELDS, pchar(jsondata));
+        curl_easy_setopt(handle, CURLOPT_POSTFIELDSIZE, clong(Length(jsondata)));
+      end
+      else if post then
+      begin
+        // Add Content-Type for form data
+        if not HasHeader('Content-Type') then
+          headers := curl_slist_append(headers, pchar('Content-Type: application/x-www-form-urlencoded'));
+        
+        if Length(params) > 0 then
+        begin
+          sx := '';
+          for j := 0 to High(params) do
+          begin
+            if j > 0 then
+              sx := sx + '&';
+            sx := sx + params[j];
+          end;
+          curl_easy_setopt(handle, CURLOPT_POST, clong(1));
+          curl_easy_setopt(handle, CURLOPT_POSTFIELDS, pchar(sx));
+          curl_easy_setopt(handle, CURLOPT_POSTFIELDSIZE, clong(Length(sx)));
+        end
+        else
+          curl_easy_setopt(handle, CURLOPT_POST, clong(1));
+      end;
+
+      if headers <> nil then
+        curl_easy_setopt(handle, CURLOPT_HTTPHEADER, headers);
+
+      // Response callbacks
+      curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, Pointer(@CurlWriteCallbackEx));
+      curl_easy_setopt(handle, CURLOPT_WRITEDATA, Pointer(responseStream));
+      curl_easy_setopt(handle, CURLOPT_HEADERFUNCTION, Pointer(@CurlHeaderCallbackEx));
+      curl_easy_setopt(handle, CURLOPT_HEADERDATA, Pointer(headerStream));
+
+      // Perform request
+      errCode := curl_easy_perform(handle);
+
+      if errCode = CURLE_OK then
+      begin
+        endTick := GetTickCount64;
+        Result.Success := true;
+        Result.Body := responseStream.DataString;
+
+        // Get status code
+        curl_easy_getinfo(handle, CURLINFO_RESPONSE_CODE, @responseCode);
+        Result.StatusCode := responseCode;
+
+        // Get final URL after redirects
+        curl_easy_getinfo(handle, CURLINFO_EFFECTIVE_URL, @effectiveUrl);
+        if effectiveUrl <> nil then
+          Result.FinalURL := string(effectiveUrl);
+
+        // Get redirect count
+        curl_easy_getinfo(handle, CURLINFO_REDIRECT_COUNT, @Result.RedirectCount);
+
+        LogMessageToFile(Format('HTTP %s (curl) ok: status=%d, bytes=%d, redirects=%d, ms=%d',
+          [methodLabel, Result.StatusCode, Length(Result.Body), Result.RedirectCount, endTick - startTick]));
+
+        // Parse headers
+        headerStream.Position := 0;
+        responseLine := '';
+        while headerStream.Position < headerStream.Size do
+        begin
+          // Read header line by line
+          responseLine := '';
+          while (headerStream.Position < headerStream.Size) do
+          begin
+            i := Ord(headerStream.ReadByte);
+            if i = 10 then // LF
+              Break;
+            if i <> 13 then // Skip CR
+              responseLine := responseLine + Chr(i);
+          end;
+          
+          responseLine := Trim(responseLine);
+          if responseLine <> '' then
+          begin
+            // Check for Set-Cookie headers
+            if Pos('Set-Cookie:', responseLine) = 1 then
+            begin
+              cookieVal := Trim(Copy(responseLine, 13, MaxInt));
+              cookiePos := Pos(';', cookieVal);
+              if cookiePos > 0 then
+                cookieVal := Copy(cookieVal, 1, cookiePos - 1);
+              if cookieVal <> '' then
+              begin
+                Result.Cookies.Add(cookieVal);
+                if cookieJar <> nil then
+                begin
+                  if cookieJar.IndexOf(cookieVal) = -1 then
+                    cookieJar.Add(cookieVal);
+                end;
+              end;
+            end;
+            Result.Headers.Add(responseLine);
+          end;
+        end;
+      end
+      else
+      begin
+        endTick := GetTickCount64;
+        Result.Success := false;
+        Result.ErrorMessage := string(curl_easy_strerror(errCode));
+        LogMessageToFile(Format('HTTP %s (curl) error: code=%d, msg=%s, ms=%d',
+          [methodLabel, Ord(errCode), Result.ErrorMessage, endTick - startTick]));
+      end;
+
+    finally
+      curl_easy_cleanup(handle);
+    end;
+
+  finally
+    if headers <> nil then
+      curl_slist_free_all(headers);
+    responseStream.Free;
+    headerStream.Free;
+  end;
+end;
+{$ELSEIF DEFINED(X_WIN)}
+function TTrndiNativeBase.requestEx(const post: boolean; const endpoint: string;
+const params: array of string; const jsondata: string = '';
+cookieJar: TStringList = nil; followRedirects: boolean = true;
+maxRedirects: integer = 10; customHeaders: TStringList = nil;
+prefix: boolean = true): THTTPResponse;
+var
+  address, sx, currentUrl, bodyData, methodLabel: string;
+  responseHeaders: TStringList;
+  responseBody: string;
+  statusCode: integer;
+  locationHeader: string;
+  proxyHost, proxyPortS, proxyUser, proxyPass: string;
+  proxyPort: integer;
+  currentPost: boolean;
+  startTick: QWord;
+  endTick: QWord;
+
+  procedure ParseURLLocal(const URL: string; out ServerName, Path: string;
+    out port: HTTPPort);
+  var
+    ProtocolPos, PathPos, PortPos: integer;
+    PortStr: string;
+  begin
+    ProtocolPos := Pos('://', URL);
+
+    port.secure := false;
+    port.port := 80;
+
+    if ProtocolPos > 0 then
+    begin
+      port.secure := URL[ProtocolPos - 1] = 's';
+      if port.secure then
+        port.port := 443;
+      ProtocolPos := ProtocolPos + 3;
+    end
+    else
+      ProtocolPos := 1;
+
+    PathPos := PosEx('/', URL, ProtocolPos);
+    PortPos := PosEx(':', URL, ProtocolPos);
+
+    if (PortPos > 0) and ((PathPos = 0) or (PortPos < PathPos)) then
+    begin
+      ServerName := Copy(URL, ProtocolPos, PortPos - ProtocolPos);
+      if PathPos > 0 then
+        PortStr := Copy(URL, PortPos + 1, PathPos - PortPos - 1)
+      else
+        PortStr := Copy(URL, PortPos + 1, MaxInt);
+      port.port := StrToIntDef(PortStr, port.port);
+    end
+    else if PathPos > 0 then
+      ServerName := Copy(URL, ProtocolPos, PathPos - ProtocolPos)
+    else
+      ServerName := Copy(URL, ProtocolPos, Length(URL) - ProtocolPos + 1);
+
+    if PathPos > 0 then
+      Path := Copy(URL, PathPos, Length(URL) - PathPos + 1)
+    else
+      Path := '/';
+  end;
+
+  function HasHeader(const AName: string; AHeaders: TStringList): boolean;
+  var
+    k: integer;
+    nameLower: string;
+  begin
+    Result := false;
+    if AHeaders = nil then
+      Exit;
+    nameLower := LowerCase(AName) + ':';
+    for k := 0 to AHeaders.Count - 1 do
+      if Pos(nameLower, LowerCase(Trim(AHeaders[k]))) = 1 then
+        Exit(true);
+  end;
+
+  function BuildCookieHeader: string;
+  var
+    i: integer;
+    cookieData: string;
+  begin
+    Result := '';
+    if cookieJar = nil then
+      Exit;
+    cookieData := '';
+    for i := 0 to cookieJar.Count - 1 do
+    begin
+      if Trim(cookieJar[i]) = '' then
+        Continue;
+      if cookieData <> '' then
+        cookieData := cookieData + '; ';
+      cookieData := cookieData + cookieJar[i];
+    end;
+    Result := cookieData;
+  end;
+
+  procedure UpdateCookiesFromHeaders(const AHeaders: TStringList);
+  var
+    i: integer;
+    lineLower: string;
+    cookieVal: string;
+    cookiePos: integer;
+  begin
+    if AHeaders = nil then
+      Exit;
+    for i := 0 to AHeaders.Count - 1 do
+    begin
+      lineLower := LowerCase(Trim(AHeaders[i]));
+      if Pos('set-cookie:', lineLower) = 1 then
+      begin
+        cookieVal := Trim(Copy(AHeaders[i], 12, MaxInt));
+        cookiePos := Pos(';', cookieVal);
+        if cookiePos > 0 then
+          cookieVal := Copy(cookieVal, 1, cookiePos - 1);
+        if cookieVal <> '' then
+        begin
+          Result.Cookies.Add(cookieVal);
+          if cookieJar <> nil then
+          begin
+            if cookieJar.IndexOf(cookieVal) = -1 then
+              cookieJar.Add(cookieVal);
+          end;
+        end;
+      end;
+    end;
+  end;
+
+  function ExtractLocationHeader(const AHeaders: TStringList): string;
+  var
+    i: integer;
+    lineLower: string;
+  begin
+    Result := '';
+    if AHeaders = nil then
+      Exit;
+    for i := 0 to AHeaders.Count - 1 do
+    begin
+      lineLower := LowerCase(Trim(AHeaders[i]));
+      if Pos('location:', lineLower) = 1 then
+      begin
+        Result := Trim(Copy(AHeaders[i], 10, MaxInt));
+        Exit;
+      end;
+    end;
+  end;
+
+  function ParseStatusCodeFromHeaders(const AHeaders: TStringList): integer;
+  var
+    statusLine: string;
+    p1, p2: integer;
+  begin
+    Result := 0;
+    if (AHeaders = nil) or (AHeaders.Count = 0) then
+      Exit;
+    statusLine := Trim(AHeaders[0]);
+    p1 := Pos(' ', statusLine);
+    if p1 > 0 then
+    begin
+      p2 := PosEx(' ', statusLine, p1 + 1);
+      if p2 > p1 then
+        Result := StrToIntDef(Copy(statusLine, p1 + 1, p2 - p1 - 1), 0)
+      else
+        Result := StrToIntDef(Copy(statusLine, p1 + 1, MaxInt), 0);
+    end;
+  end;
+
+  function ResolveUrl(const baseUrl, location: string): string;
+  var
+    lowerLoc: string;
+    schemePos: integer;
+    rootPos: integer;
+    baseRoot: string;
+    baseDir: string;
+  begin
+    Result := location;
+    lowerLoc := LowerCase(location);
+    if (Pos('http://', lowerLoc) = 1) or (Pos('https://', lowerLoc) = 1) then
+      Exit;
+
+    schemePos := Pos('://', baseUrl);
+    if schemePos = 0 then
+      Exit;
+
+    rootPos := PosEx('/', baseUrl, schemePos + 3);
+    if rootPos = 0 then
+      baseRoot := baseUrl
+    else
+      baseRoot := Copy(baseUrl, 1, rootPos - 1);
+
+    if (Length(location) > 0) and (location[1] = '/') then
+      Result := baseRoot + location
+    else
+    begin
+      baseDir := Copy(baseUrl, 1, LastDelimiter('/', baseUrl));
+      Result := baseDir + location;
+    end;
+  end;
+
+  function TryRequest(const url: string; const isPost: boolean; const requestBody: string;
+    const useProxy: boolean; const forceNoProxy: boolean; out outBody: string;
+    out outHeaders: TStringList; out outStatus: integer; out outLocation: string;
+    out outError: string): boolean;
+  var
+    hSession, hConnect, hRequest: HINTERNET;
+    serverName, path: string;
+    port: HTTPPort;
+    flags: DWORD;
+    dwSize, dwDownloaded: DWORD;
+    dwToRead: DWORD;
+    buffer: array[0..8192] of byte;
+    responseStream: TStringStream;
+    headersToSend: TStringList;
+    cookieHeader: string;
+    headerLine: WideString;
+    rawHeaderBuf: PWideChar;
+    rawHeaderStr: WideString;
+    index: DWORD;
+    statusValue: DWORD;
+    statusSize: DWORD;
+    locBuf: PWideChar;
+    locSize: DWORD;
+    bodyPtr: Pointer;
+    bodyLen: DWORD;
+    sendVerb: PWideChar;
+    i: integer;
+    redirectPolicy: DWORD;
+    cookieBuf: PWideChar;
+    cookieSize: DWORD;
+    cookieIndex: DWORD;
+    cookieVal: WideString;
+    function AppendSetCookieHeaders(hReq: HINTERNET; AHeaders: TStringList): boolean;
+    begin
+      Result := false;
+      if AHeaders = nil then
+        Exit;
+      cookieIndex := 0;
+      repeat
+        cookieSize := 0;
+        WinHttpQueryHeaders(hReq, WINHTTP_QUERY_SET_COOKIE, nil, nil, cookieSize, cookieIndex);
+        if (GetLastError = ERROR_INSUFFICIENT_BUFFER) and (cookieSize > 0) then
+        begin
+          GetMem(cookieBuf, cookieSize);
+          try
+            if WinHttpQueryHeaders(hReq, WINHTTP_QUERY_SET_COOKIE, nil, cookieBuf, cookieSize, cookieIndex) then
+            begin
+              cookieVal := WideString(cookieBuf);
+              if Trim(cookieVal) <> '' then
+                AHeaders.Add('Set-Cookie: ' + string(cookieVal));
+              Result := true;
+            end;
+          finally
+            FreeMem(cookieBuf);
+          end;
+          Continue;
+        end;
+        Break;
+      until false;
+    end;
+  begin
+    Result := false;
+    outBody := '';
+    outHeaders := TStringList.Create;
+    outHeaders.TextLineBreakStyle := tlbsCRLF;
+    outStatus := 0;
+    outLocation := '';
+    outError := '';
+
+    ParseURLLocal(url, serverName, path, port);
+
+    if useProxy and (proxyHost <> '') then
+      hSession := WinHttpOpen(pwidechar(widestring(useragent)), WINHTTP_ACCESS_TYPE_NAMED_PROXY,
+        pwidechar(widestring(proxyHost + ':' + IntToStr(proxyPort))), WINHTTP_NO_PROXY_BYPASS, 0)
+    else if forceNoProxy then
+      hSession := WinHttpOpen(pwidechar(widestring(useragent)), WINHTTP_ACCESS_TYPE_NO_PROXY,
+        WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0)
+    else
+      hSession := WinHttpOpen(pwidechar(widestring(useragent)), WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
+        WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
+
+    if hSession = nil then
+    begin
+      outError := 'WinHttpOpen failed: ' + SysErrorMessage(GetLastError);
+      Exit(false);
+    end;
+
+    try
+      if port.secure then
+      begin
+        flags := WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2 or WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_3;
+        if not WinHttpSetOption(hSession, WINHTTP_OPTION_SECURE_PROTOCOLS, @flags, SizeOf(flags)) then
+        begin
+          flags := WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2;
+          WinHttpSetOption(hSession, WINHTTP_OPTION_SECURE_PROTOCOLS, @flags, SizeOf(flags));
+        end;
+      end;
+
+      if not WinHttpSetTimeouts(hSession, 15000, 15000, 30000, 120000) then
+      begin
+        outError := 'WinHttpSetTimeouts failed (' + IntToStr(GetLastError) + '): ' +
+          SysErrorMessage(GetLastError);
+        Exit(false);
+      end;
+
+      hConnect := WinHttpConnect(hSession, pwidechar(widestring(serverName)), port.port, 0);
+      if hConnect = nil then
+      begin
+        outError := 'WinHttpConnect failed: ' + SysErrorMessage(GetLastError);
+        Exit(false);
+      end;
+
+      try
+        flags := 0;
+        if port.secure then
+          flags := WINHTTP_FLAG_SECURE;
+
+        if isPost then
+          sendVerb := 'POST'
+        else
+          sendVerb := 'GET';
+
+        hRequest := WinHttpOpenRequest(hConnect, sendVerb, pwidechar(widestring(path)),
+          nil, WINHTTP_NO_REFERER, WINHTTP_DEFAULT_ACCEPT_TYPES, flags);
+        if hRequest = nil then
+        begin
+          outError := 'WinHttpOpenRequest failed: ' + SysErrorMessage(GetLastError);
+          Exit(false);
+        end;
+
+        try
+          redirectPolicy := WINHTTP_OPTION_REDIRECT_POLICY_NEVER;
+          WinHttpSetOption(hRequest, WINHTTP_OPTION_REDIRECT_POLICY, @redirectPolicy, SizeOf(redirectPolicy));
+
+          if (useProxy and (proxyHost <> '')) and ((proxyUser <> '') or (proxyPass <> '')) then
+          begin
+            if proxyUser <> '' then
+            begin
+              headerLine := WideString(proxyUser);
+              dwSize := (Length(headerLine) + 1) * SizeOf(WideChar);
+              WinHttpSetOption(hRequest, WINHTTP_OPTION_PROXY_USERNAME, PWideChar(headerLine), dwSize);
+            end;
+            if proxyPass <> '' then
+            begin
+              headerLine := WideString(proxyPass);
+              dwSize := (Length(headerLine) + 1) * SizeOf(WideChar);
+              WinHttpSetOption(hRequest, WINHTTP_OPTION_PROXY_PASSWORD, PWideChar(headerLine), dwSize);
+            end;
+          end;
+
+          headersToSend := TStringList.Create;
+          try
+            headersToSend.TextLineBreakStyle := tlbsCRLF;
+
+            if customHeaders <> nil then
+              headersToSend.AddStrings(customHeaders);
+
+            cookieHeader := BuildCookieHeader;
+            if cookieHeader <> '' then
+              headersToSend.Add('Cookie: ' + cookieHeader);
+
+            if jsondata <> '' then
+            begin
+              if not HasHeader('Content-Type', headersToSend) then
+                headersToSend.Add('Content-Type: application/json; charset=UTF-8');
+              if not HasHeader('Accept', headersToSend) then
+                headersToSend.Add('Accept: application/json');
+            end
+            else if isPost and (Length(params) > 0) then
+            begin
+              if not HasHeader('Content-Type', headersToSend) then
+                headersToSend.Add('Content-Type: application/x-www-form-urlencoded');
+            end;
+
+            for i := 0 to headersToSend.Count - 1 do
+            begin
+              if Trim(headersToSend[i]) = '' then
+                Continue;
+              headerLine := WideString(headersToSend[i] + #13#10);
+              WinHttpAddRequestHeaders(hRequest, PWideChar(headerLine), Length(headerLine),
+                WINHTTP_ADDREQ_FLAG_ADD);
+            end;
+          finally
+            headersToSend.Free;
+          end;
+
+          if requestBody <> '' then
+          begin
+            bodyPtr := @requestBody[1];
+            bodyLen := Length(requestBody);
+          end
+          else
+          begin
+            bodyPtr := nil;
+            bodyLen := 0;
+          end;
+
+          if not WinHttpSendRequest(hRequest, nil, 0, bodyPtr, bodyLen, bodyLen, 0) then
+          begin
+            outError := 'WinHttpSendRequest failed (' + IntToStr(GetLastError) + '): ' +
+              SysErrorMessage(GetLastError);
+            Exit(false);
+          end;
+
+          if not WinHttpReceiveResponse(hRequest, nil) then
+          begin
+            outError := 'WinHttpReceiveResponse failed (' + IntToStr(GetLastError) + '): ' +
+              SysErrorMessage(GetLastError);
+            Exit(false);
+          end;
+
+          statusValue := 0;
+          statusSize := SizeOf(statusValue);
+          index := 0;
+          if WinHttpQueryHeaders(hRequest, WINHTTP_QUERY_STATUS_CODE or WINHTTP_QUERY_FLAG_NUMBER,
+            nil, @statusValue, statusSize, index) then
+            outStatus := statusValue;
+
+          dwSize := 0;
+          index := 0;
+          WinHttpQueryHeaders(hRequest, WINHTTP_QUERY_RAW_HEADERS_CRLF, nil, nil, dwSize, index);
+          if (GetLastError = ERROR_INSUFFICIENT_BUFFER) and (dwSize > 0) then
+          begin
+            GetMem(rawHeaderBuf, dwSize);
+            try
+              if WinHttpQueryHeaders(hRequest, WINHTTP_QUERY_RAW_HEADERS_CRLF, nil, rawHeaderBuf, dwSize, index) then
+              begin
+                rawHeaderStr := WideString(rawHeaderBuf);
+                outHeaders.Text := rawHeaderStr;
+              end;
+            finally
+              FreeMem(rawHeaderBuf);
+            end;
+          end;
+
+          AppendSetCookieHeaders(hRequest, outHeaders);
+
+          if outStatus = 0 then
+            outStatus := ParseStatusCodeFromHeaders(outHeaders);
+
+          locSize := 0;
+          index := 0;
+          WinHttpQueryHeaders(hRequest, WINHTTP_QUERY_LOCATION, nil, nil, locSize, index);
+          if (GetLastError = ERROR_INSUFFICIENT_BUFFER) and (locSize > 0) then
+          begin
+            GetMem(locBuf, locSize);
+            try
+              if WinHttpQueryHeaders(hRequest, WINHTTP_QUERY_LOCATION, nil, locBuf, locSize, index) then
+              begin
+                outLocation := WideString(locBuf);
+              end;
+            finally
+              FreeMem(locBuf);
+            end;
+          end;
+
+          if outLocation = '' then
+            outLocation := ExtractLocationHeader(outHeaders);
+
+          responseStream := TStringStream.Create;
+          try
+            repeat
+              dwSize := 0;
+              if not WinHttpQueryDataAvailable(hRequest, dwSize) then
+              begin
+                outError := 'WinHttpQueryDataAvailable failed (' + IntToStr(GetLastError) + '): ' +
+                  SysErrorMessage(GetLastError);
+                Exit(false);
+              end;
+
+              if dwSize = 0 then
+                Break;
+
+              dwToRead := dwSize;
+              if dwToRead > SizeOf(buffer) then
+                dwToRead := SizeOf(buffer);
+
+              if not WinHttpReadData(hRequest, @buffer, dwToRead, dwDownloaded) then
+              begin
+                outError := 'WinHttpReadData failed (' + IntToStr(GetLastError) + '): ' +
+                  SysErrorMessage(GetLastError);
+                Exit(false);
+              end;
+              responseStream.WriteBuffer(buffer, dwDownloaded);
+            until dwSize = 0;
+
+            outBody := responseStream.DataString;
+          finally
+            responseStream.Free;
+          end;
+
+          Result := true;
+        finally
+          WinHttpCloseHandle(hRequest);
+        end;
+      finally
+        WinHttpCloseHandle(hConnect);
+      end;
+    finally
+      WinHttpCloseHandle(hSession);
+    end;
+    if not Result then
+    begin
+      outHeaders.Free;
+      outHeaders := nil;
+    end;
+  end;
+
+begin
+  address := endpoint;
+  Result.Body := '';
+  Result.Headers := TStringList.Create;
+  Result.Cookies := TStringList.Create;
+  Result.Success := false;
+  Result.StatusCode := 0;
+  Result.RedirectCount := 0;
+  Result.FinalURL := '';
+  Result.ErrorMessage := '';
+
+  if prefix then
+    address := Format('%s/%s', [TrimRightSet(baseurl, ['/']), TrimLeftSet(endpoint, ['/'])])
+  else
+    address := endpoint;
+
+  if (not post) and (jsondata = '') and (Length(params) > 0) then
+  begin
+    address := address + '?';
+    for sx in params do
+      address := address + '&' + sx;
+  end;
+
+  bodyData := '';
+  if jsondata <> '' then
+    bodyData := jsondata
+  else if post and (Length(params) > 0) then
+  begin
+    for sx in params do
+    begin
+      if bodyData <> '' then
+        bodyData := bodyData + '&';
+      bodyData := bodyData + sx;
+    end;
+  end;
+
+  if post then
+    methodLabel := 'POST'
+  else
+    methodLabel := 'GET';
+
+  currentUrl := address;
+  currentPost := post;
+
+  proxyHost := Trim(GetRootSetting('proxy.host', ''));
+  proxyPortS := Trim(GetRootSetting('proxy.port', ''));
+  proxyPort := StrToIntDef(proxyPortS, 8080);
+  proxyUser := GetRootSetting('proxy.user', '');
+  proxyPass := GetRootSetting('proxy.pass', '');
+
+  repeat
+    startTick := GetTickCount64;
+    LogMessageToFile(Format('HTTP %s (winhttp): %s', [methodLabel, currentUrl]));
+
+    if proxyHost <> '' then
+    begin
+      if not TryRequest(currentUrl, currentPost, bodyData, true, false,
+        responseBody, responseHeaders, statusCode, locationHeader, Result.ErrorMessage) then
+      begin
+        if not TryRequest(currentUrl, currentPost, bodyData, false, true,
+          responseBody, responseHeaders, statusCode, locationHeader, Result.ErrorMessage) then
+          Exit;
+      end;
+    end
+    else
+    begin
+      if not TryRequest(currentUrl, currentPost, bodyData, false, true,
+        responseBody, responseHeaders, statusCode, locationHeader, Result.ErrorMessage) then
+        Exit;
+    end;
+
+    endTick := GetTickCount64;
+
+    Result.Body := responseBody;
+    Result.StatusCode := statusCode;
+    Result.Headers.Assign(responseHeaders);
+    UpdateCookiesFromHeaders(responseHeaders);
+    responseHeaders.Free;
+    Result.FinalURL := currentUrl;
+
+    LogMessageToFile(Format('HTTP %s (winhttp) status=%d, bytes=%d, redirects=%d, ms=%d',
+      [methodLabel, Result.StatusCode, Length(Result.Body), Result.RedirectCount, endTick - startTick]));
+
+    if not followRedirects then
+      Break;
+
+    if not ((Result.StatusCode = 301) or (Result.StatusCode = 302) or
+      (Result.StatusCode = 303) or (Result.StatusCode = 307) or (Result.StatusCode = 308)) then
+      Break;
+
+    if locationHeader = '' then
+      Break;
+
+    Inc(Result.RedirectCount);
+    if Result.RedirectCount > maxRedirects then
+    begin
+      Result.ErrorMessage := 'Too many redirects';
+      Exit;
+    end;
+
+    currentUrl := ResolveUrl(currentUrl, locationHeader);
+    Result.FinalURL := currentUrl;
+
+    if (Result.StatusCode = 303) or (((Result.StatusCode = 301) or (Result.StatusCode = 302)) and currentPost) then
+    begin
+      currentPost := false;
+      bodyData := '';
+      methodLabel := 'GET';
+    end;
+
+  until false;
+
+  Result.Success := true;
+end;
+{$ELSE}
+// Fallback for non-Linux platforms (Mac/Windows)
+function TTrndiNativeBase.requestEx(const post: boolean; const endpoint: string;
+const params: array of string; const jsondata: string = '';
+cookieJar: TStringList = nil; followRedirects: boolean = true;
+maxRedirects: integer = 10; customHeaders: TStringList = nil;
+prefix: boolean = true): THTTPResponse;
+begin
+  // For now, fall back to basic request and wrap in THTTPResponse
+  Result.Body := request(post, endpoint, params, jsondata, '', prefix);
+  Result.Headers := TStringList.Create;
+  Result.Cookies := TStringList.Create;
+  Result.StatusCode := 200;
+  Result.FinalURL := endpoint;
+  Result.RedirectCount := 0;
+  Result.Success := (Result.Body <> '');
+  Result.ErrorMessage := '';
+  
+  // TODO: Implement proper OAuth2 support for Windows/Mac using native APIs
+end;
 {$ENDIF}
 
 {------------------------------------------------------------------------------

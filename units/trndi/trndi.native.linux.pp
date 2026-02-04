@@ -99,6 +99,13 @@ public
       @param(res Out parameter receiving response body or error message)
       @returns(True on success) }
   class function getURL(const url: string; out res: string): boolean; override;
+  {**
+    Test an HTTP GET through an explicit proxy only (no direct fallback).
+    Intended for the Settings dialog "Test proxy" action.
+  }
+  class function TestProxyURL(const url: string; const proxyHost: string;
+    const proxyPort: string; const proxyUser: string; const proxyPass: string;
+    out res: string): boolean; override;
   {** Desktop-aware dark mode detection.
     Order:
     1) KDE Plasma via kreadconfig5: General/ColorScheme contains "Dark".
@@ -395,10 +402,10 @@ begin
 end;
 
 // C-compatible write callback for libcurl used in this unit
-function CurlWriteCallback_Linux(buffer: pchar; size, nmemb: longword;
-userdata: Pointer): longword; cdecl;
+function CurlWriteCallback_Linux(buffer: pchar; size, nmemb: SizeUInt;
+userdata: Pointer): SizeUInt; cdecl;
 var
-  Bytes: SizeInt;
+  Bytes: SizeUInt;
   SS: TStringStream;
 begin
   if (userdata = nil) or (buffer = nil) then
@@ -407,7 +414,7 @@ begin
     Exit;
   end;
   SS := TStringStream(userdata);
-  Bytes := SizeInt(size) * SizeInt(nmemb);
+  Bytes := size * nmemb;
   if Bytes > 0 then
     SS.WriteBuffer(buffer^, Bytes);
   Result := Bytes;
@@ -803,6 +810,116 @@ begin
       curl_slist_free_all(headers);
     responseStream.Free;
     tempInstance.Free;
+  end;
+end;
+
+{------------------------------------------------------------------------------
+  TestProxyURL
+  ------------
+  Proxy-only HTTP GET using cURL. No direct fallback.
+ ------------------------------------------------------------------------------}
+class function TTrndiNativeLinux.TestProxyURL(const url: string;
+  const proxyHost: string; const proxyPort: string; const proxyUser: string;
+  const proxyPass: string; out res: string): boolean;
+const
+  DEFAULT_USER_AGENT = 'Mozilla/5.0 (compatible; trndi) TrndiAPI';
+var
+  handle: CURL;
+  errCode: CURLcode;
+  responseStream: TStringStream;
+  host, portS, user, pass: string;
+
+  procedure NormalizeProxyHostPort(var hostV: string; var portV: string);
+  var
+    s: string;
+    p: integer;
+    hostPart, portPart: string;
+  begin
+    s := Trim(hostV);
+
+    p := Pos('://', s);
+    if p > 0 then
+      s := Copy(s, p + 3, MaxInt);
+
+    p := Pos('/', s);
+    if p > 0 then
+      s := Copy(s, 1, p - 1);
+
+    p := LastDelimiter(':', s);
+    if (p > 0) and (p < Length(s)) then
+    begin
+      hostPart := Copy(s, 1, p - 1);
+      portPart := Copy(s, p + 1, MaxInt);
+      if (hostPart <> '') and (StrToIntDef(portPart, -1) > 0) then
+      begin
+        s := hostPart;
+        if Trim(portV) = '' then
+          portV := portPart;
+      end;
+    end;
+
+    hostV := s;
+    portV := Trim(portV);
+  end;
+
+begin
+  res := '';
+  Result := false;
+
+  host := Trim(proxyHost);
+  portS := Trim(proxyPort);
+  user := Trim(proxyUser);
+  pass := proxyPass; // keep password as-is (may contain spaces)
+  NormalizeProxyHostPort(host, portS);
+
+  if host = '' then
+  begin
+    res := 'Proxy host is empty.';
+    Exit(false);
+  end;
+
+  responseStream := TStringStream.Create('');
+  try
+    curl_global_init(CURL_GLOBAL_DEFAULT);
+    handle := curl_easy_init();
+    if handle = nil then
+    begin
+      res := 'curl: failed to init';
+      Exit(false);
+    end;
+
+    try
+      curl_easy_setopt(handle, CURLOPT_URL, pchar(url));
+      curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, clong(1));
+      curl_easy_setopt(handle, CURLOPT_USERAGENT, pchar(DEFAULT_USER_AGENT));
+      curl_easy_setopt(handle, CURLOPT_CONNECTTIMEOUT, clong(10));
+      curl_easy_setopt(handle, CURLOPT_TIMEOUT, clong(30));
+
+      curl_easy_setopt(handle, CURLOPT_PROXY, pchar(host));
+      if portS <> '' then
+        curl_easy_setopt(handle, CURLOPT_PROXYPORT, clong(StrToIntDef(portS, 8080)));
+      if (user <> '') and (pass <> '') then
+        curl_easy_setopt(handle, CURLOPT_PROXYUSERPWD, pchar(user + ':' + pass));
+
+      curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, Pointer(@CurlWriteCallback_Linux));
+      curl_easy_setopt(handle, CURLOPT_WRITEDATA, Pointer(responseStream));
+
+      errCode := curl_easy_perform(handle);
+      if errCode <> CURLE_OK then
+      begin
+        res := string(curl_easy_strerror(errCode));
+        Result := false;
+      end
+      else
+      begin
+        res := Trim(responseStream.DataString);
+        Result := true;
+      end;
+    finally
+      curl_easy_cleanup(handle);
+    end;
+  finally
+    responseStream.Free;
   end;
 end;
 

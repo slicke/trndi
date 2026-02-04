@@ -141,9 +141,17 @@ protected
         @returns(@code(True) if a plausible current reading exists)
      }
   function checkActive: boolean;
+
+
+
+
+private
+  emitter: TTrndiAPIEmitter;
+  procedure setEmitter(e: TTrndiAPIEmitter);
 public
 const
   toMMOL = 0.05555555555555556; // Factor to multiply mg/dL by to get mmol/L
+
 const
   toMGDL = 18.0156; // Facvtor to multiply mmol/L to get mg/dL
     {** Provide a backend-specific caption for parameter labels in Settings.
@@ -309,6 +317,21 @@ const
 }
   function getBasalProfile(out profile: TBasalProfile): boolean; virtual;
 
+  {** Emits an alert
+    @param(msg The message)
+ }
+  procedure alert(const msg: string);
+
+    {** Emits a status message
+        @param(msg The message)
+     }
+  procedure status(const msg: string);
+
+    {** Emits a notice
+        @param(msg The message)
+     }
+  procedure notice(const msg: string);
+
     // -------- Properties --------
 
   {** Backend's maximum reading. }
@@ -354,9 +377,34 @@ published
 
     {** The name of this API. }
   property systemName: string read getSystemName;
+
+  property APIEmitter: TTrndiAPIEmitter write setEmitter;
 end;
 
 implementation
+
+procedure TrndiAPI.setEmitter(e: TTrndiAPIEmitter);
+begin
+  emitter := e;
+end;
+
+procedure TrndiAPI.alert(const msg: string);
+begin
+  if assigned(emitter) then
+    emitter(msg, TrndiAPIMsg.alert);
+end;
+
+procedure TrndiAPI.notice(const msg: string);
+begin
+  if assigned(emitter) then
+    emitter(msg, TrndiAPIMsg.notice);
+end;
+
+procedure TrndiAPI.status(const msg: string);
+begin
+  if assigned(emitter) then
+    emitter(msg, TrndiAPIMsg.status);
+end;
 
   {------------------------------------------------------------------------------
   Get the maximum age (in minutes) of readings provided by the backend
@@ -505,7 +553,7 @@ end;
 ------------------------------------------------------------------------------}
 function TrndiAPI.supportsBasal: boolean;
 begin
-  Result := False;
+  Result := false;
 end;
 
 {------------------------------------------------------------------------------
@@ -514,7 +562,7 @@ end;
 function TrndiAPI.getBasalProfile(out profile: TBasalProfile): boolean;
 begin
   SetLength(profile, 0);
-  Result := False;
+  Result := false;
 end;
 
 {------------------------------------------------------------------------------

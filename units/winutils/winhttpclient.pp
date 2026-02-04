@@ -123,6 +123,12 @@ function WinHttpReceiveResponse(hRequest: HINTERNET; lpReserved: Pointer): BOOL;
 stdcall;
 external winhttpdll;
 
+function WinHttpQueryHeaders(hRequest: HINTERNET; dwInfoLevel: DWORD;
+pwszName: pwidechar; lpBuffer: Pointer; var lpdwBufferLength: DWORD;
+var lpdwIndex: DWORD): BOOL;
+stdcall;
+external winhttpdll;
+
 function WinHttpQueryDataAvailable(hRequest: HINTERNET; var lpdwNumberOfBytesAvailable: DWORD): BOOL
 ;
 stdcall;
@@ -143,6 +149,21 @@ WINHTTP_NO_PROXY_NAME = nil;
 WINHTTP_NO_PROXY_BYPASS = nil;
 WINHTTP_NO_REFERER = nil;
 WINHTTP_DEFAULT_ACCEPT_TYPES: PPWideChar = nil;
+
+  // Common WinHTTP error codes
+ERROR_WINHTTP_TIMEOUT = 12002;
+
+  // WinHTTP TLS / certificate related error codes (commonly seen with HTTPS-through-proxy)
+  ERROR_WINHTTP_SECURE_FAILURE = 12175;
+  ERROR_WINHTTP_SECURE_CHANNEL_ERROR = 12157;
+  ERROR_WINHTTP_SECURE_CERT_DATE_INVALID = 12037;
+  ERROR_WINHTTP_SECURE_CERT_CN_INVALID = 12038;
+  ERROR_WINHTTP_SECURE_INVALID_CA = 12045;
+  ERROR_WINHTTP_SECURE_CERT_REV_FAILED = 12057;
+  ERROR_WINHTTP_SECURE_CERT_REVOKED = 12170;
+  ERROR_WINHTTP_SECURE_CERT_WRONG_USAGE = 12179;
+  // Not strictly a cert error, but can occur when a proxy interferes with an HTTPS request
+  ERROR_WINHTTP_INVALID_SERVER_RESPONSE = 12152;
 
   // Access type values
 WINHTTP_ACCESS_TYPE_DEFAULT_PROXY = 0;
@@ -171,6 +192,9 @@ WINHTTP_DISABLE_SSL_CERT_REV_CHECK = $00000001;
 
 WINHTTP_ADDREQ_FLAG_ADD = $20000000;
 
+// Request flags
+WINHTTP_FLAG_SECURE = $00800000;
+
 // Select allowed SSL/TLS protocols for the session.
 // (Do NOT confuse with WINHTTP_OPTION_SECURITY_FLAGS which is for cert validation flags.)
 WINHTTP_OPTION_SECURE_PROTOCOLS = 84;
@@ -181,9 +205,35 @@ WINHTTP_OPTION_SECURE_PROTOCOLS = 84;
 // WinHTTP option constants not always present in older Pascal headers
 WINHTTP_OPTION_PROXY_USERNAME = 43;
 WINHTTP_OPTION_PROXY_PASSWORD = 44;
+WINHTTP_OPTION_REDIRECT_POLICY = 88;
+
+// Redirect policy values
+WINHTTP_OPTION_REDIRECT_POLICY_NEVER = 0;
+WINHTTP_OPTION_REDIRECT_POLICY_DISALLOW_HTTPS_TO_HTTP = 1;
+WINHTTP_OPTION_REDIRECT_POLICY_ALWAYS = 2;
+
+// Header query constants
+WINHTTP_QUERY_RAW_HEADERS_CRLF = 22;
+WINHTTP_QUERY_STATUS_CODE = 19;
+WINHTTP_QUERY_LOCATION = 33;
+WINHTTP_QUERY_SET_COOKIE = 43;
+WINHTTP_QUERY_FLAG_NUMBER = $20000000;
 
 
 implementation
+
+function IsWinHttpSecureOrCertError(const ErrorCode: DWORD): boolean;
+begin
+  Result := (ErrorCode = ERROR_WINHTTP_SECURE_FAILURE)
+    or (ErrorCode = ERROR_WINHTTP_SECURE_CHANNEL_ERROR)
+    or (ErrorCode = ERROR_WINHTTP_SECURE_CERT_DATE_INVALID)
+    or (ErrorCode = ERROR_WINHTTP_SECURE_CERT_CN_INVALID)
+    or (ErrorCode = ERROR_WINHTTP_SECURE_INVALID_CA)
+    or (ErrorCode = ERROR_WINHTTP_SECURE_CERT_REV_FAILED)
+    or (ErrorCode = ERROR_WINHTTP_SECURE_CERT_REVOKED)
+    or (ErrorCode = ERROR_WINHTTP_SECURE_CERT_WRONG_USAGE)
+    or (ErrorCode = ERROR_WINHTTP_INVALID_SERVER_RESPONSE);
+end;
 
 constructor TWinHTTPClient.Create(const UserAgent: string);
 begin
@@ -283,7 +333,10 @@ begin
       // Extrahera servernamnet fram till portpositionen
     ServerName := Copy(URL, ProtocolPos, PortPos - ProtocolPos);
       // Extrahera porten
-    PortStr := Copy(URL, PortPos + 1, PathPos - PortPos - 1);
+    if PathPos > 0 then
+      PortStr := Copy(URL, PortPos + 1, PathPos - PortPos - 1)
+    else
+      PortStr := Copy(URL, PortPos + 1, MaxInt);
     Port.port := StrToIntDef(PortStr, Port.port);
       // Convert to integer, or keep default port if invalid
   end
@@ -366,8 +419,8 @@ begin
       end;
     end;
 
-    // Set timeouts (DNS/Connect 15s, send 30s, receive 60s)
-    if not WinHttpSetTimeouts(hSession, 15000, 15000, 30000, 60000) then
+    // Set timeouts (DNS/Connect 15s, send 30s, receive 120s)
+    if not WinHttpSetTimeouts(hSession, 15000, 15000, 30000, 120000) then
       raise Exception.Create('WinHttpSetTimeouts failed (' + IntToStr(GetLastError) + '): ' +
         SysErrorMessage(GetLastError));
 
@@ -414,13 +467,28 @@ begin
 
         //Send request
         if not WinHttpSendRequest(hRequest, nil, 0, nil, 0, 0, 0) then
-          raise Exception.Create('WinHttpSendRequest failed: ' + SysErrorMessage(GetLastError));
+        begin
+          dwSize := GetLastError;
+          if (FProxyHost <> '') and Port.secure and IsWinHttpSecureOrCertError(dwSize) then
+            raise Exception.Create('HTTPS request failed during TLS/certificate validation while using a proxy (' +
+              IntToStr(dwSize) + '): ' + SysErrorMessage(dwSize) + LineEnding +
+              'This often happens when the proxy performs TLS inspection (MITM) or blocks HTTPS CONNECT tunneling. ' +
+              'Fix: use a proxy that supports HTTPS CONNECT without interception, or trust the proxy''s root CA in Windows, ' +
+              'or clear proxy.host to use a direct connection.')
+          else
+            raise Exception.Create('WinHttpSendRequest failed (' + IntToStr(dwSize) + '): ' + SysErrorMessage(dwSize));
+        end;
 
         if not WinHttpReceiveResponse(hRequest, nil) then
         begin
           dwSize := GetLastError;
-          if (dwSize = 12152) and (FProxyHost <> '') then
-            raise Exception.Create('Certificate validation failed with HTTP proxy. HTTP proxies intercepting HTTPS are not fully supported by WinHTTP. Please use direct connection (clear proxy.host) or use an HTTPS proxy.')
+          if (FProxyHost <> '') and Port.secure and IsWinHttpSecureOrCertError(dwSize) then
+            raise Exception.Create('HTTPS request failed during TLS/certificate validation while using a proxy (' +
+              IntToStr(dwSize) + '): ' + SysErrorMessage(dwSize) + LineEnding +
+              'Trndi uses HTTPS endpoints. An HTTP-only proxy test may succeed while HTTPS fails. ' +
+              'If your proxy performs TLS inspection, add/trust its root certificate in Windows; otherwise use a proxy that supports HTTPS CONNECT tunneling, or clear proxy.host to connect directly.')
+          else if (dwSize = ERROR_WINHTTP_TIMEOUT) and (FProxyHost <> '') and Port.secure then
+            raise Exception.Create('WinHttpReceiveResponse timed out (12002) while using an HTTP proxy for an HTTPS request. The proxy may be blocking CONNECT/HTTPS, requiring authentication, or intercepting TLS. Note: the proxy test uses HTTP and can succeed even if HTTPS-through-proxy fails. Try clearing proxy.host (direct), or use a proxy that supports HTTPS tunneling for this endpoint.')
           else
             raise Exception.Create('WinHttpReceiveResponse failed (' + IntToStr(dwSize) + '): ' +
               SysErrorMessage(dwSize));
@@ -527,8 +595,8 @@ begin
       end;
     end;
 
-    // Set timeouts (DNS/Connect 15s, send 30s, receive 60s)
-    if not WinHttpSetTimeouts(hSession, 15000, 15000, 30000, 60000) then
+    // Set timeouts (DNS/Connect 15s, send 30s, receive 120s)
+    if not WinHttpSetTimeouts(hSession, 15000, 15000, 30000, 120000) then
       raise Exception.Create('WinHttpSetTimeouts failed (' + IntToStr(GetLastError) + '): ' +
         SysErrorMessage(GetLastError));
 
@@ -586,14 +654,28 @@ begin
         end;
 
         if not WinHttpSendRequest(hRequest, nil, 0, bodyPtr, bodyLen, bodyLen, 0) then
-          raise Exception.Create('WinHttpSendRequest failed (' + IntToStr(GetLastError) + '): ' +
-            SysErrorMessage(GetLastError));
+        begin
+          dwSize := GetLastError;
+          if (FProxyHost <> '') and Port.secure and IsWinHttpSecureOrCertError(dwSize) then
+            raise Exception.Create('HTTPS request failed during TLS/certificate validation while using a proxy (' +
+              IntToStr(dwSize) + '): ' + SysErrorMessage(dwSize) + LineEnding +
+              'This often happens when the proxy performs TLS inspection (MITM) or blocks HTTPS CONNECT tunneling. ' +
+              'Fix: use a proxy that supports HTTPS CONNECT without interception, or trust the proxy''s root CA in Windows, ' +
+              'or clear proxy.host to use a direct connection.')
+          else
+            raise Exception.Create('WinHttpSendRequest failed (' + IntToStr(dwSize) + '): ' + SysErrorMessage(dwSize));
+        end;
 
         if not WinHttpReceiveResponse(hRequest, nil) then
         begin
           dwSize := GetLastError;
-          if (dwSize = 12152) and (FProxyHost <> '') then
-            raise Exception.Create('Certificate validation failed with HTTP proxy. HTTP proxies intercepting HTTPS are not fully supported by WinHTTP. Please use direct connection (clear proxy.host) or use an HTTPS proxy.')
+          if (FProxyHost <> '') and Port.secure and IsWinHttpSecureOrCertError(dwSize) then
+            raise Exception.Create('HTTPS request failed during TLS/certificate validation while using a proxy (' +
+              IntToStr(dwSize) + '): ' + SysErrorMessage(dwSize) + LineEnding +
+              'Trndi uses HTTPS endpoints. An HTTP-only proxy test may succeed while HTTPS fails. ' +
+              'If your proxy performs TLS inspection, add/trust its root certificate in Windows; otherwise use a proxy that supports HTTPS CONNECT tunneling, or clear proxy.host to connect directly.')
+          else if (dwSize = ERROR_WINHTTP_TIMEOUT) and (FProxyHost <> '') and Port.secure then
+            raise Exception.Create('WinHttpReceiveResponse timed out (12002) while using an HTTP proxy for an HTTPS request. The proxy may be blocking CONNECT/HTTPS, requiring authentication, or intercepting TLS. Note: the proxy test uses HTTP and can succeed even if HTTPS-through-proxy fails. Try clearing proxy.host (direct), or use a proxy that supports HTTPS tunneling for this endpoint.')
           else
             raise Exception.Create('WinHttpReceiveResponse failed (' + IntToStr(dwSize) + '): ' +
               SysErrorMessage(dwSize));

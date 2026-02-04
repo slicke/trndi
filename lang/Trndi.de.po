@@ -384,6 +384,10 @@ msgstr ""
 msgid "Test Announce"
 msgstr ""
 
+#: tfconf.btestproxy.caption
+msgid "Test proxy"
+msgstr ""
+
 #: tfconf.btestspeech.caption
 msgid "Test Speech"
 msgstr ""
@@ -973,6 +977,21 @@ msgstr ""
 
 #: tfconf.lproblematic.caption
 msgid "Compatibility mode: Your window manager does not support all features, please consider eg KDE"
+msgstr ""
+
+#: tfconf.lproxydesc.caption
+msgid ""
+"Enter a proxy server below, to have Trndi connect using it.\n"
+"Should the connection fail, Trndi will fall back to a direct connection.\n"
+"\n"
+"Proxy support is available for Windows, Linux, BSD and Haiku.\n"
+"macOS users must set the proxy settings in their System Settings.\n"
+"\n"
+"Leave empty to use a normal connection."
+msgstr ""
+
+#: tfconf.lproxytitle.caption
+msgid "Proxy Settings"
 msgstr ""
 
 #: tfconf.ltestannounce.caption
@@ -2221,6 +2240,10 @@ msgstr ""
 msgid "Names must be unique"
 msgstr ""
 
+#: uconf.rs_empty_proxy
+msgid "Proxy host is empty."
+msgstr ""
+
 #: uconf.rs_enter_any
 msgid "Please enter a name"
 msgstr ""
@@ -2417,6 +2440,12 @@ msgstr ""
 
 #: uconf.rs_shortmode_full
 msgid "By default, Trndi only shows up/down/straight. You can enable the full range of arrows here - however you must realize that this is very experimental and potentially less accurate!"
+msgstr ""
+
+#: uconf.rs_tandem
+msgid ""
+"This backend is in alpha stage, it may not work as intended!\n"
+"Please set your own thresholds in the Customization tab, works on: Windows, Linux, BSD"
 msgstr ""
 
 #: uconf.rs_test_fail

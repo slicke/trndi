@@ -42,6 +42,8 @@
  * - 2026-01-11: Added settings UI controls for configuring Razer Chroma behavior
  *   separately for high/low alerts (dropdowns), in addition to the existing enable
  *   + normal-state options.
+ * - 2026-02-03: Added a Proxy "Test proxy" button plus wiring so proxy settings
+ *   load/save from the settings store, and a proxy-only connectivity test.
  *)
 
 unit uconf;
@@ -55,7 +57,7 @@ Classes, ComCtrls, ExtCtrls, Spin, StdCtrls, SysUtils, Forms, Controls,
 Graphics, Dialogs, LCLTranslator, trndi.native, lclintf,
 slicke.ux.alert, slicke.ux.native, VersionInfo, trndi.funcs, buildinfo, StrUtils,
   // Backend APIs for label captions
-trndi.api, trndi.api.nightscout, trndi.api.nightscout3, trndi.api.dexcom, trndi.api.dexcomNew, trndi.api.debug_custom,
+trndi.api, trndi.api.nightscout, trndi.api.nightscout3, trndi.api.dexcom, trndi.api.dexcomNew, trndi.api.tandem, trndi.api.debug_custom,
 trndi.api.debug, trndi.api.debug_firstXmissing, trndi.api.xdrip, RazerChroma, math, trndi.types;
 
 type
@@ -85,6 +87,7 @@ TfConf = class(TForm)
   bPrivacyHelp: TButton;
   bPredictHelp: TButton;
   bTest: TButton;
+  bTestProxy: TButton;
   bOverrideHelp: TButton;
   bRemove: TButton;
   bSysNotice: TButton;
@@ -156,13 +159,21 @@ TfConf = class(TForm)
   lExt: TLabel;
   lHiOver3: TLabel;
   lLounder2: TLabel;
+  lProxyTitle: TLabel;
   lSysWarnInfo: TLabel;
+  lProxyDesc: TLabel;
   Panel18: TPanel;
   Panel19: TPanel;
   Panel20: TPanel;
   Panel3: TPanel;
   pnDeltaMax: TPanel;
   pnMisc1: TPanel;
+  pnProxyConnection: TPanel;
+  pnProxyCreds: TPanel;
+  pnProxyHost: TPanel;
+  pnProxyPass: TPanel;
+  pnProxyPort: TPanel;
+  pnProxyUser: TPanel;
   pnSysWarn: TPanel;
   rbPredictShortArrowOnly: TRadioButton;
   rbPredictShortShowValue: TRadioButton;
@@ -371,6 +382,7 @@ TfConf = class(TForm)
   procedure bTemplateTrendClick(Sender: TObject);
   procedure bTestAnnounceClick(Sender: TObject);
   procedure bTestClick(Sender: TObject);
+  procedure bTestProxyClick(Sender: TObject);
   procedure bTestSpeechClick(Sender: TObject);
   procedure bThreasholdLinesHelpClick(Sender: TObject);
   procedure bTimeStampHelpClick(Sender: TObject);
@@ -401,6 +413,7 @@ TfConf = class(TForm)
   procedure eDotChange(Sender: TObject);
   procedure ePassEnter(Sender: TObject);
   procedure ePassExit(Sender: TObject);
+  procedure ProxyEditChange(Sender: TObject);
   procedure FormCreate(Sender: TObject);
   procedure FormDestroy(Sender: TObject);
   procedure FormResize(Sender: TObject);
@@ -431,6 +444,9 @@ TfConf = class(TForm)
   procedure tsSystemShow(Sender: TObject);
   procedure closeClick(Sender: TObject);
 private
+  FProxyLoading: boolean;
+  procedure LoadProxySettingsIntoUI;
+  procedure SaveProxySettingsFromUI;
   procedure getAPILabels(out user, pass: string);
 public
   chroma: TRazerChromaBase;
@@ -444,6 +460,8 @@ API_DEX_EU = 'Dexcom (Outside USA)';
 API_DEX_NEW_USA = 'Dexcom New (USA)';
 API_DEX_NEW_EU = 'Dexcom New (Outside USA)';
 API_DEX_NEW_JP = 'Dexcom New (Japan)';
+API_TANDEM_USA = 'Tandem t:connect (USA)';
+API_TANDEM_EU = 'Tandem t:connect (EU)';
 API_XDRIP = 'xDrip';
 {$ifdef DEBUG}
 API_D_DEBUG =  '* Debug Backend *';
@@ -461,6 +479,8 @@ var
 tnative: TrndiNative;
 
 resourcestring
+RS_EMPTY_PROXY = 'Proxy host is empty.';
+
 RS_DRIVER_CONTRIBUTOR = 'Driver contributor: ';
 
 RS_DEBUG_BACKEND_LABEL = '(Ignored for debug backend)';
@@ -540,6 +560,9 @@ RS_BETA_DEX =
 
 RS_XDRIP =
   'Make sure you are on the same network as the xDrip app.'+sLineBreak+'Make sure that web access is turned on.';
+
+RS_TANDEM =
+  'This backend is in alpha stage, it may not work as intended!'+sLineBreak+'Please set your own thresholds in the Customization tab, works on: Windows, Linux, BSD';
 
 RS_DEBUG_WARN =
   'This is a debug backend. It''s used for testing purposes only!'+sLineBreak+'No data will be sent to any remote server.';
@@ -811,6 +834,10 @@ begin
     sys := DexcomNew;
   API_DEX_NEW_JP:
     sys := DexcomNew;
+  API_TANDEM_USA:
+    sys := TandemUSA;
+  API_TANDEM_EU:
+    sys := TandemEU;
   API_XDRIP:
     sys := xDrip;
   {$ifdef Debug}
@@ -855,7 +882,8 @@ procedure WarnUnstableAPI;
       pnSysWarn.Show;
       lSysWarnInfo.Caption := RS_BETA;
     end;
-    if (cbSys.Text = API_DEX_NEW_EU) or (cbSys.Text = API_DEX_NEW_USA) or (cbSys.Text = API_DEX_NEW_JP) then begin
+    if (cbSys.Text = API_DEX_NEW_EU) or (cbSys.Text = API_DEX_NEW_USA) or (cbSys.Text = API_DEX_NEW_JP) then
+    begin
       pnSysWarn.Show;
       lSysWarnInfo.Caption := RS_BETA_DEX;
     end;
@@ -864,6 +892,11 @@ procedure WarnUnstableAPI;
       pnSysWarn.Show;
       lSysWarnInfo.Caption := RS_XDRIP;
     end;
+    if (cbSys.Text = API_TANDEM_EU) or (cbSys.Text = API_TANDEM_USA) then
+    begin
+      pnSysWarn.Show;
+      lSysWarnInfo.Caption := RS_TANDEM;
+    end;
     {$ifdef DEBUG}
     if cbSys.Text in API_DEBUG then
     begin
@@ -871,6 +904,14 @@ procedure WarnUnstableAPI;
       lSysWarnInfo.Caption := RS_DEBUG_WARN;
     end;
     {$endif}
+    if sender = cbSys then begin
+      {$ifndef X_WINDOWS}
+        {$ifndef X_LINUXBSD}
+          ShowMessage('Sorry! Tandem is only supported on Windows, Linux and BSD platforms right now');
+          cbSys.ItemIndex := 1;
+        {$endif}
+      {$endif}
+    end;
   end;
 
 var user, pass: string;
@@ -1095,6 +1136,11 @@ begin
 end;
 
 procedure TfConf.bBackendHelpClick(Sender: TObject);
+function HtmlEscapeBasic(const S: string): string;
+  begin
+    Result := StringReplace(S, '<', '&lt;', [rfReplaceAll]);
+    Result := StringReplace(Result, '>', '&gt;', [rfReplaceAll]);
+  end;
 var
   s, c, x: string;
   i: integer;
@@ -1120,6 +1166,10 @@ begin
   API_DEX_NEW_EU,
   API_DEX_NEW_JP:
     sys := DexcomNew;
+  API_TANDEM_USA:
+    sys := TandemUSA;
+  API_TANDEM_EU:
+    sys := TandemEU;
   API_XDRIP:
     sys := xDrip;
   {$ifdef Debug}
@@ -1135,7 +1185,7 @@ begin
   else
   begin
     s := sys.ParamLabel(APLDescHTML);
-    c := sys.ParamLabel(APLCopyright);
+    c := HTMLEscapeBasic(sys.paramLabel(APLCopyright));
   end;
 
   for i := 0 to Length(RS_DRIVER_CONTRIBUTOR + c) do
@@ -1237,21 +1287,28 @@ begin
   if cbSys.Text = API_DEX_NEW_JP then
     res := DexcomNew.testConnection(eAddr.text,ePass.text,err)
   else
+  if cbSys.Text = API_TANDEM_USA then
+    res := TandemUSA.testConnection(eAddr.text,ePass.text,err)
+  else
+  if cbSys.Text = API_TANDEM_EU then
+    res := TandemEU.testConnection(eAddr.text,ePass.text,err)
+  else
   begin
     ShowMessage(RS_TEST_UNSUPPORTED);
     exit;
   end;
 
   case res of
-    MaybeBool.False: begin
-      ShowMessage(RS_TEST_FAIL);
-      if ssShift in getKeyShiftState then
-        ShowMessage(err);
-    end;
-    MaybeBool.True:
+  MaybeBool.false:
+  begin
+    ShowMessage(RS_TEST_FAIL);
+    if ssShift in getKeyShiftState then
+      ShowMessage(err);
+  end;
+  MaybeBool.true:
     ShowMessage(RS_TEST_SUCCESS);
   else
-   ShowMessage(RS_TEST_UNSUPPORTED)
+    ShowMessage(RS_TEST_UNSUPPORTED)
   end;
 
 end;
@@ -1550,7 +1607,8 @@ begin
   {$ifdef X_WIN}
     cbTitleColor.Visible := false;
   {$endif}
-  if tnative.nobuttonsVM then begin
+  if tnative.nobuttonsVM then
+  begin
     bottombar := TPanel.Create(self);
     bottombar.Align:=alBottom;
     bottombar.height := 30;
@@ -1643,7 +1701,7 @@ procedure TfConf.lSysWarnInfoClick(Sender: TObject);
 begin
   case cbSys.Text of
   API_DEX_USA, API_DEX_EU,
-  API_DEX_NEW_USA, API_DEX_NEW_EU, API_DEX_NEW_JP:
+  API_DEX_NEW_USA, API_DEX_NEW_EU, API_DEX_NEW_JP, API_TANDEM_USA, API_TANDEM_EU:
     pcMain.ActivePage := tsCustom;
   end;
 end;
@@ -1797,11 +1855,118 @@ begin
   end;
 end;
 
+procedure TfConf.LoadProxySettingsIntoUI;
+var
+  hostV: string;
+begin
+  if tnative = nil then
+    Exit;
+
+  FProxyLoading := true;
+  try
+    hostV := tnative.GetSetting('proxy.host', '', true);
+    edProxyHost.Text := hostV;
+    edProxyPort.Text := tnative.GetSetting('proxy.port', '', true);
+    edProxyUser.Text := tnative.GetSetting('proxy.user', '', true);
+    edProxyPass.Text := tnative.GetSetting('proxy.pass', '', true);
+
+    if (Trim(hostV) <> '') and (Trim(edProxyPort.Text) = '') then
+      edProxyPort.Text := '8080';
+  finally
+    FProxyLoading := false;
+  end;
+end;
+
+procedure TfConf.SaveProxySettingsFromUI;
+var
+  hostV, portV, userV, passV: string;
+begin
+  if tnative = nil then
+    Exit;
+
+  hostV := Trim(edProxyHost.Text);
+  portV := Trim(edProxyPort.Text);
+  userV := Trim(edProxyUser.Text);
+  passV := edProxyPass.Text;
+
+  // Persist proxy settings globally (not per-user)
+  tnative.SetSetting('proxy.host', hostV, true);
+  if hostV = '' then
+  begin
+    // Clear auxiliary fields when proxy is disabled
+    tnative.SetSetting('proxy.port', '', true);
+    tnative.SetSetting('proxy.user', '', true);
+    tnative.SetSetting('proxy.pass', '', true);
+    Exit;
+  end;
+
+  tnative.SetSetting('proxy.port', portV, true);
+  tnative.SetSetting('proxy.user', userV, true);
+  tnative.SetSetting('proxy.pass', passV, true);
+end;
+
+procedure TfConf.ProxyEditChange(Sender: TObject);
+begin
+  if FProxyLoading then
+    Exit;
+  SaveProxySettingsFromUI;
+end;
+
 procedure TfConf.tsProxyShow(Sender: TObject);
 begin
   {$ifdef X_MAC}
      gbNetwork.Enabled := false;
   {$endif}
+
+  LoadProxySettingsIntoUI;
+end;
+
+procedure TfConf.bTestProxyClick(Sender: TObject);
+const
+  TEST_URL_HTTP = 'http://example.com/';
+  TEST_URL_HTTPS = 'https://example.com/';
+var
+  hostV, portV, userV, passV: string;
+  resp: string;
+  okHttp: boolean;
+  okHttps: boolean;
+  respHttp: string;
+  respHttps: string;
+begin
+  hostV := Trim(edProxyHost.Text);
+  portV := Trim(edProxyPort.Text);
+  userV := Trim(edProxyUser.Text);
+  passV := edProxyPass.Text;
+
+  if hostV = '' then
+  begin
+    UXMessage('Proxy', RS_EMPTY_PROXY, uxmtInformation);
+    Exit;
+  end;
+
+  respHttp := '';
+  respHttps := '';
+  okHttp := TrndiNative.TestProxyURL(TEST_URL_HTTP, hostV, portV, userV, passV, respHttp);
+  okHttps := TrndiNative.TestProxyURL(TEST_URL_HTTPS, hostV, portV, userV, passV, respHttps);
+
+  if okHttp and okHttps then
+    ShowMessage(RS_TEST_SUCCESS)
+  else
+  if okHttp and (not okHttps) then
+    UXMessage('Proxy',
+      'HTTP via proxy works, but HTTPS via proxy failed. Trndi uses HTTPS endpoints, so this proxy configuration will not work for normal operation.' +
+      LineEnding + LineEnding + respHttps,
+      uxmtWarning)
+  else
+  begin
+    ShowMessage(RS_TEST_FAIL);
+    if ssShift in getKeyShiftState then
+    begin
+      resp := 'HTTP test (' + TEST_URL_HTTP + '): ' + IfThen(okHttp, 'OK', 'FAIL') + LineEnding + respHttp + LineEnding + LineEnding +
+        'HTTPS test (' + TEST_URL_HTTPS + '): ' + IfThen(okHttps, 'OK', 'FAIL') + LineEnding + respHttps;
+      ShowMessage(resp);
+    end;
+  end;
 end;
 
 procedure TfConf.tsSystemShow(Sender: TObject);
