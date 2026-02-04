@@ -56,7 +56,7 @@ Classes, SysUtils, Graphics, trndi.log
 , Windows, Registry, Dialogs, StrUtils, winhttpclient, shellapi, comobj,
 Forms, variants, dwmapi
 {$ELSEIF DEFINED(X_PC)}
-, libpascurl, Dialogs, LCLType, ctypes
+, libpascurl, Dialogs, LCLType, ctypes, StrUtils
 {$ENDIF}
 , process;
 
@@ -1851,6 +1851,29 @@ begin
               sx := sx + '&';
             sx := sx + params[j];
           end;
+
+          // Mask sensitive parameters for logs (code, code_verifier, password, client_secret)
+          var maskedSx := sx; // short-lived local
+          procedure MaskParam(var S: string; const name: string);
+          var
+            p, valStart, q: integer;
+          begin
+            p := Pos(name + '=', S);
+            if p = 0 then Exit;
+            valStart := p + Length(name) + 1;
+            q := PosEx('&', S, valStart);
+            if q = 0 then
+              q := Length(S) + 1;
+            Delete(S, valStart, q - valStart);
+            Insert('***', S, valStart);
+          end;
+          MaskParam(maskedSx, 'code_verifier');
+          MaskParam(maskedSx, 'code');
+          MaskParam(maskedSx, 'password');
+          MaskParam(maskedSx, 'client_secret');
+
+          LogMessageToFile('HTTP POST body (masked): ' + Copy(maskedSx, 1, 2000));
+
           curl_easy_setopt(handle, CURLOPT_POST, clong(1));
           curl_easy_setopt(handle, CURLOPT_POSTFIELDS, pchar(sx));
           curl_easy_setopt(handle, CURLOPT_POSTFIELDSIZE, clong(Length(sx)));

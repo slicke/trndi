@@ -1296,6 +1296,9 @@ var
   customHeaders: TStringList;
   locationHeader: string;
   headerPreview: string;
+  bodyPreview: string;
+  headerPreviewLocal: string;
+  cookiesCount: integer;
   i: integer;
 
   function GetHeaderValue(const AHeaders: TStringList; const AName: string): string;
@@ -1474,9 +1477,9 @@ begin
     if not tokenOk then
     begin
       // Detailed logging to help diagnose token exchange failures (status, body preview, headers, cookies)
-      var bodyPreview: string := Copy(httpResponse.Body, 1, 2000);
-      var headerPreviewLocal: string := '';
-      var cookiesCount: integer := 0;
+      bodyPreview := Copy(httpResponse.Body, 1, 2000);
+      headerPreviewLocal := '';
+      cookiesCount := 0;
       if httpResponse.Headers <> nil then
       begin
         for i := 0 to httpResponse.Headers.Count - 1 do
