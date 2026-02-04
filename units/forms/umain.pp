@@ -55,6 +55,7 @@ Math, DateUtils, FileUtil, LclIntf, TypInfo, LResources,
 slicke.ux.alert, slicke.ux.native, usplash, Generics.Collections, trndi.funcs, trndi.log,
 Trndi.native.base, trndi.shared, buildinfo, fpjson, jsonparser,
 SystemMediaController,
+SyncObjs,
 {$ifdef TrndiExt}
 trndi.Ext.Engine, trndi.Ext.jsfuncs, trndi.ext.promise, mormot.core.base,
 {$endif}
@@ -375,6 +376,8 @@ private
   FLastTirColor: TColor;
   FLastTimerTick: TDateTime; // Last timer tick for wake detection
   FForceRefresh: boolean; // Force bypass of cached API reads on wake
+
+  FReadingsLock: TRTLCriticalSection; // Protect cached readings shared with web server thread
 
     // Array to hold references to lDot1 - lDot10
   TrendDots: array[1..10] of TDotControl;
@@ -835,6 +838,8 @@ begin
 
   // Stop web server first to prevent callbacks during shutdown
   StopWebServer;
+
+  DoneCriticalSection(FReadingsLock);
 
 
   if assigned(chroma) then
@@ -1412,11 +1417,8 @@ begin
   end;
   {$endif}
 
-  // CRITICAL: Set Application.Terminated FIRST to prevent any QuickJS operations
-  // This is called even earlier than FormClose for maximum protection
-  Application.Terminate;  // This sets Application.Terminated := True
-
-  // Always allow close to proceed
+  // Always allow close to proceed. Actual termination is decided in FormClose
+  // after the user has confirmed they really want to quit.
   CanClose := true;
 end;
 
@@ -1447,11 +1449,15 @@ begin
         [mbClose, mbUXMinimize, mbCancel]);
       case mr of
       mrClose:
+      begin
+        Application.Terminate; // signal shutdown only when actually closing
         CloseAction := caFree;
+      end;
       mrCancel: 
       begin
         FShuttingDown := false; // Reset flag if user cancels
-        Abort;
+        CloseAction := caNone;
+        Exit;
       end;
       else
       begin
@@ -1468,8 +1474,11 @@ begin
     if UXDialog(uxdAuto, RS_QUIT_CAPTION, RS_QUIT_MSG, [mbYes, mbNo], uxmtOK) = mrNo then
     begin
       FShuttingDown := false; // Reset flag if user cancels
-      Abort;
+      CloseAction := caNone;
+      Exit;
     end;
+
+  Application.Terminate; // signal shutdown only when actually closing
 
   // Explicitly set CloseAction to ensure the form is actually freed
   CloseAction := caFree;
@@ -5406,9 +5415,18 @@ begin
   if (not ForceRefresh) and (SecondsBetween(Now, FLastAPICall) < API_CACHE_SECONDS) and
     (Length(FCachedReadings) > 0) then
   begin
-    bgs := FCachedReadings;
-    Result := true;
-    Exit;
+    EnterCriticalSection(FReadingsLock);
+    try
+      if Length(FCachedReadings) > 0 then
+      begin
+        SetLength(bgs, Length(FCachedReadings));
+        Move(FCachedReadings[0], bgs[0], Length(FCachedReadings) * SizeOf(BGReading));
+        Result := true;
+        Exit;
+      end;
+    finally
+      LeaveCriticalSection(FReadingsLock);
+    end;
   end;
 
   {$ifdef DEBUG}
@@ -5433,7 +5451,16 @@ begin
   // If API call failed (no readings) but we have fresh cached data, use it
   if (Length(bgs) < 1) and (Length(FCachedReadings) > 0) then
   begin
-    bgs := FCachedReadings;
+    EnterCriticalSection(FReadingsLock);
+    try
+      if Length(FCachedReadings) > 0 then
+      begin
+        SetLength(bgs, Length(FCachedReadings));
+        Move(FCachedReadings[0], bgs[0], Length(FCachedReadings) * SizeOf(BGReading));
+      end;
+    finally
+      LeaveCriticalSection(FReadingsLock);
+    end;
     LogMessageToFile('DoFetchAndValidateReadings: API returned no data, using cached readings');
     // Enable internet check and show indicator since API failed
     tPing.Enabled := true;
@@ -5443,8 +5470,13 @@ begin
   if Length(bgs) > 0 then
   begin
     // Update cache with fresh data
-    SetLength(FCachedReadings, Length(bgs));
-    Move(bgs[0], FCachedReadings[0], Length(bgs) * SizeOf(BGReading));
+    EnterCriticalSection(FReadingsLock);
+    try
+      SetLength(FCachedReadings, Length(bgs));
+      Move(bgs[0], FCachedReadings[0], Length(bgs) * SizeOf(BGReading));
+    finally
+      LeaveCriticalSection(FReadingsLock);
+    end;
     // Disable ping timer when we successfully get fresh data
     tPing.Enabled := false;
     lInternet.Visible := false;  // Hide internet warning when fresh data received

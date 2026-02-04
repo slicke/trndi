@@ -2628,7 +2628,7 @@ msgstr "Som standard visar Trndi bara upp/ned/rakt. Du kan aktivera att hela men
 #: uconf.rs_tandem
 msgid ""
 "This backend is in alpha stage, it may not work as intended!\n"
-"Please set your own thresholds in the Customization tab, works on: Windows, Linux, BSD"
+"Please set your own thresholds in the Customization tab."
 msgstr ""
 
 #: uconf.rs_test_fail

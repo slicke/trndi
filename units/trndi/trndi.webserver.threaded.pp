@@ -124,7 +124,7 @@ AGetCurrentReading: TGetCurrentReadingFunc;
 AGetPredictions: TGetPredictionsFunc);
 begin
   inherited Create(true); // Create suspended
-  FreeOnTerminate := true;  // Let thread clean itself up
+  FreeOnTerminate := false; // Owner stops + frees thread (needed for safe shutdown)
   FPort := APort;
   FAuthToken := AAuthToken;
   FGetCurrentReading := AGetCurrentReading;
@@ -208,11 +208,10 @@ var
   Lines: TStringList;
   Method, URI, Headers: string;
   ResponseObj: TJSONObject;
-  CurrentReading: BGReading;
   CurrentReadings: BGResults;
   Predictions: BGResults;
   PredArray: TJSONArray;
-  i, currReading: integer;
+  i: integer;
 begin
   Lines := TStringList.Create;
   try
@@ -258,12 +257,7 @@ begin
         begin
           CurrentReadings := FGetCurrentReading();
           if Length(CurrentReadings) > 0 then
-            //CurrentReading := CurrentReadings[0]
-          else
-            CurrentReading.init(mmol);
-          if not CurrentReading.empty then
           begin
-            currReading := -1;
             for i := Low(CurrentReadings) to High(CurrentReadings) do
               ResponseObj.Add(i.ToString, ReadingToJSON(CurrentReadings[i], true));
             Result := 'HTTP/1.1 200 OK'#13#10;
@@ -515,10 +509,11 @@ begin
   begin
     // Close the server socket first to unblock fpAccept
     FThread.CloseServerSocket;
-    
-    // Just signal termination, don't wait (thread will free itself)
+
+    // Signal termination and wait for completion so callbacks can't hit freed objects
     FThread.Terminate;
-    FThread := nil;  // Clear reference since thread will free itself
+    FThread.WaitFor;
+    FreeAndNil(FThread);
     FEnabled := false;
   end;
 end;
