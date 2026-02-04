@@ -2612,6 +2612,8 @@ var
   status: Integer;
   location: string;
   isPost: boolean;
+  sx: string;
+  j: Integer;
 
   (* Update cookies from headers into Result.Cookies and cookieJar (if provided). *)
   procedure UpdateCookiesFromHeadersLocal(const AHeaders: TStringList);
@@ -2743,12 +2745,6 @@ begin
   else if isPost and (Length(params) > 0) then
   begin
     // Build form-encoded body from params for POST (application/x-www-form-urlencoded)
-    sx := '';
-    for sx in params do
-    begin
-      // concatenation handled by loop variable; build in temporary buffer
-    end;
-    // The above loop is a no-op for building; build correctly below
     sx := '';
     for j := 0 to High(params) do
     begin
