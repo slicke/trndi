@@ -2177,6 +2177,38 @@ var
     bodyLen: DWORD;
     sendVerb: PWideChar;
     i: integer;
+    cookieBuf: PWideChar;
+    cookieSize: DWORD;
+    cookieIndex: DWORD;
+    cookieVal: WideString;
+    function AppendSetCookieHeaders(hReq: HINTERNET; AHeaders: TStringList): boolean;
+    begin
+      Result := false;
+      if AHeaders = nil then
+        Exit;
+      cookieIndex := 0;
+      repeat
+        cookieSize := 0;
+        WinHttpQueryHeaders(hReq, WINHTTP_QUERY_SET_COOKIE, nil, nil, cookieSize, cookieIndex);
+        if (GetLastError = ERROR_INSUFFICIENT_BUFFER) and (cookieSize > 0) then
+        begin
+          GetMem(cookieBuf, cookieSize);
+          try
+            if WinHttpQueryHeaders(hReq, WINHTTP_QUERY_SET_COOKIE, nil, cookieBuf, cookieSize, cookieIndex) then
+            begin
+              cookieVal := WideString(cookieBuf);
+              if Trim(cookieVal) <> '' then
+                AHeaders.Add('Set-Cookie: ' + string(cookieVal));
+              Result := true;
+            end;
+          finally
+            FreeMem(cookieBuf);
+          end;
+          Continue;
+        end;
+        Break;
+      until false;
+    end;
   begin
     Result := false;
     outBody := '';
@@ -2348,6 +2380,8 @@ var
               FreeMem(rawHeaderBuf);
             end;
           end;
+
+          AppendSetCookieHeaders(hRequest, outHeaders);
 
           if outStatus = 0 then
             outStatus := ParseStatusCodeFromHeaders(outHeaders);
