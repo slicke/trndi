@@ -2579,18 +2579,128 @@ const params: array of string; const jsondata: string = '';
 cookieJar: TStringList = nil; followRedirects: boolean = true;
 maxRedirects: integer = 10; customHeaders: TStringList = nil;
 prefix: boolean = true): THTTPResponse;
+var
+  httpClient: TNSHTTPSendAndReceive;
+  currentUrl: string;
+  sendStream: TStringStream;
+  respStream: TStringStream;
+  responseHeaders: TStringList;
+  requestHeaders: TStringList;
+  status: Integer;
+  location: string;
+  isPost: boolean;
 begin
-  // For now, fall back to basic request and wrap in THTTPResponse
-  Result.Body := request(post, endpoint, params, jsondata, '', prefix);
+  // Initialize result
+  Result.Body := '';
   Result.Headers := TStringList.Create;
   Result.Cookies := TStringList.Create;
-  Result.StatusCode := 200;
-  Result.FinalURL := endpoint;
+  Result.StatusCode := 0;
+  Result.FinalURL := '';
   Result.RedirectCount := 0;
-  Result.Success := (Result.Body <> '');
+  Result.Success := false;
   Result.ErrorMessage := '';
-  
-  // TODO: Implement proper OAuth2 support for Windows/Mac using native APIs
+
+  // Build initial URL
+  if prefix then
+    currentUrl := Format('%s/%s', [baseUrl, endpoint])
+  else
+    currentUrl := endpoint;
+
+  // Append query params for GET requests
+  if (not post) and (Length(params) > 0) then
+  begin
+    currentUrl := currentUrl + '?';
+    for status := 0 to High(params) do
+      currentUrl := currentUrl + '&' + params[status];
+  end;
+
+  // Prepare request headers and body
+  requestHeaders := TStringList.Create;
+  if customHeaders <> nil then
+    requestHeaders.Assign(customHeaders);
+  if useragent <> '' then
+    requestHeaders.Values['User-Agent'] := useragent;
+
+  sendStream := TStringStream.Create('');
+  isPost := post;
+  if jsondata <> '' then
+  begin
+    // JSON -> POST
+    isPost := true;
+    sendStream.WriteString(jsondata);
+    requestHeaders.Values['Content-Type'] := 'application/json';
+    requestHeaders.Values['Content-Length'] := IntToStr(sendStream.Size);
+  end;
+
+  try
+    repeat
+      respStream := TStringStream.Create('');
+      responseHeaders := TStringList.Create;
+      httpClient := TNSHTTPSendAndReceive.Create;
+      try
+        httpClient.address := currentUrl;
+        if isPost then
+          httpClient.method := 'POST'
+        else
+          httpClient.method := 'GET';
+
+        // Perform request
+        if not httpClient.SendAndReceiveEx(sendStream, respStream, requestHeaders, responseHeaders, status, currentUrl) then
+        begin
+          Result.ErrorMessage := httpClient.LastErrMsg;
+          Exit;
+        end;
+
+        // Normalize response
+        Result.Body := Trim(respStream.DataString);
+        Result.StatusCode := status;
+        Result.Headers.Assign(responseHeaders);
+        Result.FinalURL := currentUrl;
+
+        // Update cookies from headers
+        UpdateCookiesFromHeaders(responseHeaders);
+
+        // Handle redirects if requested
+        if (not followRedirects) then
+          Break;
+
+        if not ((Result.StatusCode = 301) or (Result.StatusCode = 302) or
+          (Result.StatusCode = 303) or (Result.StatusCode = 307) or (Result.StatusCode = 308)) then
+          Break;
+
+        location := ExtractLocationHeader(responseHeaders);
+        if location = '' then
+          Break;
+
+        Inc(Result.RedirectCount);
+        if Result.RedirectCount > maxRedirects then
+        begin
+          Result.ErrorMessage := 'Too many redirects';
+          Exit;
+        end;
+
+        currentUrl := ResolveUrl(currentUrl, location);
+
+        // per RFC, change method to GET in some cases
+        if (Result.StatusCode = 303) or (((Result.StatusCode = 301) or (Result.StatusCode = 302)) and isPost) then
+        begin
+          isPost := false;
+          sendStream.Size := 0;
+          requestHeaders.Values['Content-Length'] := '0';
+        end;
+
+      finally
+        httpClient.Free;
+        respStream.Free;
+        responseHeaders.Free;
+      end;
+    until false;
+
+    Result.Success := True;
+  finally
+    requestHeaders.Free;
+    sendStream.Free;
+  end;
 end;
 {$ENDIF}
 

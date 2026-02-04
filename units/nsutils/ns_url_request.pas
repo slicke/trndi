@@ -129,16 +129,116 @@ begin
 end;
 
 
+function TNSHTTPSendAndReceive.SendAndReceiveEx(ARequest  : TStream;
+  AResponse : TStream; RequestHeaders : TStringList; ResponseHeaders: TStringList;
+  out StatusCode : Integer; out FinalURL : string): boolean;
+ {Extended send that also returns response headers, HTTP status and final URL}
+var
+  urlRequest  : NSMutableURLRequest;
+  requestData : NSMutableData;
+  HdrNum      : integer;
+  urlResponse : NSURLResponse;
+  error       : NSError;
+  urlData     : NSData;
+  httpResp    : id; // NSHTTPURLResponse
+  hdrKeys     : NSArray;
+  i: NSInteger;
+  keyObj, valObj: id;
+begin
+  Result := false;
+  StatusCode := 0;
+  FinalURL := '';
+  try
+    urlRequest := NSMutableURLRequest.requestWithURL_cachePolicy_timeoutInterval(
+      NSURL.URLWithString(StrToNSStr(Address)),
+      NSURLRequestUseProtocolCachePolicy, Timeout);
+
+    if Method <> '' then
+      urlRequest.setHTTPMethod(StrToNSStr(Method));
+
+    if Assigned(ARequest) and (ARequest.Size > 0) then
+    try
+      requestData := NSMutableData.alloc.initWithLength(ARequest.Size);
+      ARequest.Position := 0;
+      ARequest.ReadBuffer(requestData.mutableBytes^, ARequest.Size);
+      urlRequest.setHTTPBody(requestData);
+    finally
+      requestData.release;
+    end;
+
+    if Assigned(RequestHeaders) then
+      for HdrNum := 0 to RequestHeaders.Count-1 do
+        urlRequest.addValue_forHTTPHeaderField(StrToNSStr(RequestHeaders.ValueFromIndex[HdrNum]),
+          StrToNSStr(RequestHeaders.Names[HdrNum]));
+
+    urlData := NSURLConnection.sendSynchronousRequest_returningResponse_error(
+      urlRequest, @urlResponse, @error);
+    if not Assigned(urlData) then
+    begin
+      FLastErrMsg := NSStrToStr(error.localizedDescription);
+      Exit;
+    end;
+
+    AResponse.Position := 0;
+    AResponse.WriteBuffer(urlData.bytes^, urlData.length);
+    AResponse.Position := 0;
+
+    // Extract status, headers and final URL if we got an HTTP response
+    if Assigned(urlResponse) and (urlResponse is NSHTTPURLResponse) then
+    begin
+      httpResp := NSHTTPURLResponse(urlResponse);
+      try
+        StatusCode := Integer(httpResp.statusCode);
+      except
+        StatusCode := 0;
+      end;
+      try
+        FinalURL := NSStrToStr(httpResp.URL.absoluteString);
+      except
+        FinalURL := '';
+      end;
+
+      if Assigned(ResponseHeaders) then
+      begin
+        hdrKeys := httpResp.allHeaderFields.allKeys;
+        for i := 0 to hdrKeys.count - 1 do
+        begin
+          keyObj := hdrKeys.objectAtIndex(i);
+          valObj := httpResp.allHeaderFields.objectForKey(keyObj);
+          ResponseHeaders.Add(NSStrToStr(NSString(keyObj)) + ': ' + NSStrToStr(NSString(valObj)));
+        end;
+      end;
+    end
+    else
+    begin
+      // Fallback: attempt to return URL from response
+      try
+        FinalURL := NSStrToStr(NSURL(urlResponse.URL).absoluteString);
+      except
+        FinalURL := '';
+      end;
+    end;
+
+    Result := true;
+  except
+    on E : Exception do
+    begin
+      FLastErrMsg := E.Message;
+    end;
+  end;
+end;
+
 function TNSHTTPSendAndReceive.SendAndReceive(out AResponse : string) : boolean;
- {Send HTTP request to current Address URL, returning downloaded data 
-   in AResponse string and True as function result. If error occurs, 
-   return False and set LastErrMsg.}
 var
   Data : TMemoryStream;
+  tmpHeaders: TStringList;
+  status: Integer;
+  finalUrl: string;
 begin
   Data := TMemoryStream.Create;
+  tmpHeaders := TStringList.Create;
   try
-    Result := SendAndReceive(nil, Data, nil);
+    Result := SendAndReceiveEx(nil, Data, nil, tmpHeaders, status, finalUrl);
     if Result then
     begin
       SetLength(AResponse, Data.Size);
@@ -147,31 +247,31 @@ begin
     end;
   finally
     Data.Free;
+    tmpHeaders.Free;
   end;
 end;
 
 function TNSHTTPSendAndReceive.PostForm(const FormFields : string;
 out AResponse  : string) : boolean;
- {Post FormFields to current Address URL, returning downloaded data 
-   in AResponse string and True as function result. If error occurs, 
-   return False and set LastErrMsg.
-  Note FormFields must be in URL query string form (for example,
-   'name1=value1&name2=value2') and URL encoded.}
 var
   Request : TMemoryStream;
   Headers : TStringList;
   Data    : TMemoryStream;
+  tmpRespHeaders: TStringList;
+  status: Integer;
+  finalUrl: string;
 begin
   Request := TMemoryStream.Create;
   Headers := TStringList.Create;
   Data := TMemoryStream.Create;
+  tmpRespHeaders := TStringList.Create;
   try
     FMethod := 'POST';
     if FormFields <> '' then
       Request.Write(FormFields[1], Length(FormFields));
     Headers.Add('Content-Type=application/x-www-form-urlencoded');
     Headers.Add('Content-Length=' + IntToStr(Request.Size));
-    Result := SendAndReceive(Request, Data, Headers);
+    Result := SendAndReceiveEx(Request, Data, Headers, tmpRespHeaders, status, finalUrl);
     if Result then
     begin
       SetLength(AResponse, Data.Size);
@@ -182,6 +282,7 @@ begin
     Request.Free;
     Headers.Free;
     Data.Free;
+    tmpRespHeaders.Free;
   end;
 end;
 
