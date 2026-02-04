@@ -2589,6 +2589,92 @@ var
   status: Integer;
   location: string;
   isPost: boolean;
+
+  (* Update cookies from headers into Result.Cookies and cookieJar (if provided). *)
+  procedure UpdateCookiesFromHeadersLocal(const AHeaders: TStringList);
+  var
+    i: integer;
+    lineLower: string;
+    cookieVal: string;
+    cookiePos: integer;
+  begin
+    if AHeaders = nil then
+      Exit;
+    for i := 0 to AHeaders.Count - 1 do
+    begin
+      lineLower := LowerCase(Trim(AHeaders[i]));
+      if Pos('set-cookie:', lineLower) = 1 then
+      begin
+        cookieVal := Trim(Copy(AHeaders[i], 12, MaxInt));
+        cookiePos := Pos(';', cookieVal);
+        if cookiePos > 0 then
+          cookieVal := Copy(cookieVal, 1, cookiePos - 1);
+        if cookieVal <> '' then
+        begin
+          Result.Cookies.Add(cookieVal);
+          if cookieJar <> nil then
+          begin
+            if cookieJar.IndexOf(cookieVal) = -1 then
+              cookieJar.Add(cookieVal);
+          end;
+        end;
+      end;
+    end;
+  end;
+
+  (* Extract a Location: header value if present *)
+  function ExtractLocationHeaderLocal(const AHeaders: TStringList): string;
+  var
+    i: integer;
+    lineLower: string;
+  begin
+    Result := '';
+    if AHeaders = nil then
+      Exit;
+    for i := 0 to AHeaders.Count - 1 do
+    begin
+      lineLower := LowerCase(Trim(AHeaders[i]));
+      if Pos('location:', lineLower) = 1 then
+      begin
+        Result := Trim(Copy(AHeaders[i], 10, MaxInt));
+        Exit;
+      end;
+    end;
+  end;
+
+  (* Resolve a possibly-relative Location header against base URL *)
+  function ResolveUrlLocal(const baseUrl, location: string): string;
+  var
+    lowerLoc: string;
+    schemePos: integer;
+    rootPos: integer;
+    baseRoot: string;
+    baseDir: string;
+  begin
+    Result := location;
+    lowerLoc := LowerCase(location);
+    if (Pos('http://', lowerLoc) = 1) or (Pos('https://', lowerLoc) = 1) then
+      Exit;
+
+    schemePos := Pos('://', baseUrl);
+    if schemePos = 0 then
+      Exit;
+
+    rootPos := PosEx('/', baseUrl, schemePos + 3);
+    if rootPos = 0 then
+      baseRoot := baseUrl
+    else
+      baseRoot := Copy(baseUrl, 1, rootPos - 1);
+
+    if (Length(location) > 0) and (location[1] = '/') then
+      Result := baseRoot + location
+    else
+    begin
+      baseDir := Copy(baseUrl, 1, LastDelimiter('/', baseUrl));
+      Result := baseDir + location;
+    end;
+  end;
+
 begin
   // Initialize result
   Result.Body := '';
@@ -2658,7 +2744,7 @@ begin
         Result.FinalURL := currentUrl;
 
         // Update cookies from headers
-        UpdateCookiesFromHeaders(responseHeaders);
+        UpdateCookiesFromHeadersLocal(responseHeaders);
 
         // Handle redirects if requested
         if (not followRedirects) then
@@ -2668,7 +2754,7 @@ begin
           (Result.StatusCode = 303) or (Result.StatusCode = 307) or (Result.StatusCode = 308)) then
           Break;
 
-        location := ExtractLocationHeader(responseHeaders);
+        location := ExtractLocationHeaderLocal(responseHeaders);
         if location = '' then
           Break;
 
@@ -2679,7 +2765,7 @@ begin
           Exit;
         end;
 
-        currentUrl := ResolveUrl(currentUrl, location);
+        currentUrl := ResolveUrlLocal(currentUrl, location);
 
         // per RFC, change method to GET in some cases
         if (Result.StatusCode = 303) or (((Result.StatusCode = 301) or (Result.StatusCode = 302)) and isPost) then
