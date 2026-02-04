@@ -1440,16 +1440,21 @@ begin
     if authCode = '' then
     begin
       headerPreview := '';
-      for i := 0 to httpResponse.Headers.Count - 1 do
+      if httpResponse.Headers <> nil then
       begin
-        if i >= 15 then
+        for i := 0 to httpResponse.Headers.Count - 1 do
         begin
-          headerPreview := headerPreview + '...';
-          Break;
+          if i >= 15 then
+          begin
+            headerPreview := headerPreview + '...';
+            Break;
+          end;
+          headerPreview := headerPreview + httpResponse.Headers[i] + #13#10;
         end;
-        headerPreview := headerPreview + httpResponse.Headers[i] + #13#10;
-      end;
-      LogMessageToFile('Tandem.Connect: auth response headers (preview):'#13#10 + headerPreview);
+        LogMessageToFile('Tandem.Connect: auth response headers (preview):'#13#10 + headerPreview);
+      end
+      else
+        LogMessageToFile('Tandem.Connect: auth response headers (preview): <nil>');
       if locationHeader <> '' then
         LogMessageToFile('Tandem.Connect: auth response Location=' + locationHeader);
       if Length(httpResponse.Body) > 0 then
