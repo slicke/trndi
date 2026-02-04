@@ -123,6 +123,12 @@ function WinHttpReceiveResponse(hRequest: HINTERNET; lpReserved: Pointer): BOOL;
 stdcall;
 external winhttpdll;
 
+function WinHttpQueryHeaders(hRequest: HINTERNET; dwInfoLevel: DWORD;
+pwszName: pwidechar; lpBuffer: Pointer; var lpdwBufferLength: DWORD;
+var lpdwIndex: DWORD): BOOL;
+stdcall;
+external winhttpdll;
+
 function WinHttpQueryDataAvailable(hRequest: HINTERNET; var lpdwNumberOfBytesAvailable: DWORD): BOOL
 ;
 stdcall;
@@ -186,6 +192,9 @@ WINHTTP_DISABLE_SSL_CERT_REV_CHECK = $00000001;
 
 WINHTTP_ADDREQ_FLAG_ADD = $20000000;
 
+// Request flags
+WINHTTP_FLAG_SECURE = $00800000;
+
 // Select allowed SSL/TLS protocols for the session.
 // (Do NOT confuse with WINHTTP_OPTION_SECURITY_FLAGS which is for cert validation flags.)
 WINHTTP_OPTION_SECURE_PROTOCOLS = 84;
@@ -196,6 +205,9 @@ WINHTTP_OPTION_SECURE_PROTOCOLS = 84;
 // WinHTTP option constants not always present in older Pascal headers
 WINHTTP_OPTION_PROXY_USERNAME = 43;
 WINHTTP_OPTION_PROXY_PASSWORD = 44;
+
+// Header query constants
+WINHTTP_QUERY_RAW_HEADERS_CRLF = 22;
 
 
 implementation
