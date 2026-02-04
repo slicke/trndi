@@ -1367,6 +1367,10 @@ begin
     httpResponse := native.RequestEx(false, TANDEM_LOGIN_PAGE_URL, [], '', cookieJar, true, 10, customHeaders, false);
     LogMessageToFile(Format('Tandem.Connect: login page success=%s status=%d bytes=%d err=%s',
       [BoolToStr(httpResponse.Success, true), httpResponse.StatusCode, Length(httpResponse.Body), httpResponse.ErrorMessage]));
+    if cookieJar.Count > 0 then
+      LogMessageToFile('Tandem.Connect: cookieJar after login page count=' + IntToStr(cookieJar.Count))
+    else
+      LogMessageToFile('Tandem.Connect: cookieJar after login page is empty');
 
     // Step 2: Login (POST credentials as JSON) with cookie jar
     loginUrl := GetLoginApiUrl;
@@ -1442,6 +1446,7 @@ begin
     customHeaders.Clear;
     customHeaders.Add('Referer: ' + TANDEM_LOGIN_PAGE_URL);
     customHeaders.Add('User-Agent: ' + TANDEM_BASE_USER_AGENT);
+    customHeaders.Add('Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8');
     httpResponse := native.RequestEx(false, authUrl, [], '', cookieJar, true, 10, customHeaders, false);
     LogMessageToFile(Format('Tandem.Connect: auth response success=%s status=%d finalUrl=%s err=%s',
       [BoolToStr(httpResponse.Success, true), httpResponse.StatusCode, httpResponse.FinalURL, httpResponse.ErrorMessage]));

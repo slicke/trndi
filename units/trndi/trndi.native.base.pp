@@ -2048,6 +2048,30 @@ var
     Result := cookieData;
   end;
 
+  function BuildCookieNames(const ACookieHeader: string): string;
+  var
+    parts: TStringArray;
+    i, eqPos: integer;
+    namePart: string;
+  begin
+    Result := '';
+    if Trim(ACookieHeader) = '' then
+      Exit;
+    parts := ACookieHeader.Split([';']);
+    for i := 0 to High(parts) do
+    begin
+      namePart := Trim(parts[i]);
+      eqPos := Pos('=', namePart);
+      if eqPos > 0 then
+        namePart := Copy(namePart, 1, eqPos - 1);
+      if namePart = '' then
+        Continue;
+      if Result <> '' then
+        Result := Result + ', ';
+      Result := Result + namePart;
+    end;
+  end;
+
   procedure UpdateCookiesFromHeaders(const AHeaders: TStringList);
   var
     i: integer;
@@ -2305,7 +2329,10 @@ var
 
             cookieHeader := BuildCookieHeader;
             if cookieHeader <> '' then
+            begin
               headersToSend.Add('Cookie: ' + cookieHeader);
+              LogMessageToFile('WinHTTP request cookie names: ' + BuildCookieNames(cookieHeader));
+            end;
 
             if jsondata <> '' then
             begin
