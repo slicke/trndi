@@ -1297,29 +1297,6 @@ var
   locationHeader: string;
   headerPreview: string;
   i: integer;
-  cookieNames: string;
-
-  function BuildCookieNames(const ACookies: TStringList): string;
-  var
-    k, eqPos: integer;
-    namePart: string;
-  begin
-    Result := '';
-    if ACookies = nil then
-      Exit;
-    for k := 0 to ACookies.Count - 1 do
-    begin
-      namePart := ACookies[k];
-      eqPos := Pos('=', namePart);
-      if eqPos > 0 then
-        namePart := Copy(namePart, 1, eqPos - 1);
-      if Trim(namePart) = '' then
-        Continue;
-      if Result <> '' then
-        Result := Result + ', ';
-      Result := Result + namePart;
-    end;
-  end;
 
   function GetHeaderValue(const AHeaders: TStringList; const AName: string): string;
   var
@@ -1367,10 +1344,6 @@ begin
     httpResponse := native.RequestEx(false, TANDEM_LOGIN_PAGE_URL, [], '', cookieJar, true, 10, customHeaders, false);
     LogMessageToFile(Format('Tandem.Connect: login page success=%s status=%d bytes=%d err=%s',
       [BoolToStr(httpResponse.Success, true), httpResponse.StatusCode, Length(httpResponse.Body), httpResponse.ErrorMessage]));
-    if cookieJar.Count > 0 then
-      LogMessageToFile('Tandem.Connect: cookieJar after login page count=' + IntToStr(cookieJar.Count))
-    else
-      LogMessageToFile('Tandem.Connect: cookieJar after login page is empty');
 
     // Step 2: Login (POST credentials as JSON) with cookie jar
     loginUrl := GetLoginApiUrl;
@@ -1388,17 +1361,6 @@ begin
     end;
     LogMessageToFile(Format('Tandem.Connect: login response success=%s status=%d bytes=%d err=%s',
       [BoolToStr(httpResponse.Success, true), httpResponse.StatusCode, Length(httpResponse.Body), httpResponse.ErrorMessage]));
-    if Length(httpResponse.Body) > 0 then
-      LogMessageToFile('Tandem.Connect: login response body preview=' + Copy(httpResponse.Body, 1, 200));
-    if cookieJar.Count > 0 then
-    begin
-      LogMessageToFile('Tandem.Connect: cookieJar after login count=' + IntToStr(cookieJar.Count));
-      cookieNames := BuildCookieNames(cookieJar);
-      if cookieNames <> '' then
-        LogMessageToFile('Tandem.Connect: cookieJar after login names=' + cookieNames);
-    end
-    else
-      LogMessageToFile('Tandem.Connect: cookieJar after login is empty');
     
     // Debug: Show response details
     alert('DEBUG Login Response'#10+
@@ -1450,17 +1412,6 @@ begin
     httpResponse := native.RequestEx(false, authUrl, [], '', cookieJar, true, 10, customHeaders, false);
     LogMessageToFile(Format('Tandem.Connect: auth response success=%s status=%d finalUrl=%s err=%s',
       [BoolToStr(httpResponse.Success, true), httpResponse.StatusCode, httpResponse.FinalURL, httpResponse.ErrorMessage]));
-    if Length(httpResponse.Body) > 0 then
-      LogMessageToFile('Tandem.Connect: auth response body preview=' + Copy(httpResponse.Body, 1, 500));
-    if cookieJar.Count > 0 then
-    begin
-      LogMessageToFile('Tandem.Connect: cookieJar before auth parse count=' + IntToStr(cookieJar.Count));
-      cookieNames := BuildCookieNames(cookieJar);
-      if cookieNames <> '' then
-        LogMessageToFile('Tandem.Connect: cookieJar before auth parse names=' + cookieNames);
-    end
-    else
-      LogMessageToFile('Tandem.Connect: cookieJar before auth parse is empty');
     
     if (httpResponse.StatusCode >= 400) and (not httpResponse.Success) then
     begin
@@ -1502,8 +1453,6 @@ begin
         LogMessageToFile('Tandem.Connect: auth response headers (preview): <nil>');
       if locationHeader <> '' then
         LogMessageToFile('Tandem.Connect: auth response Location=' + locationHeader);
-      if Length(httpResponse.Body) > 0 then
-        LogMessageToFile('Tandem.Connect: auth response body preview=' + Copy(httpResponse.Body, 1, 500));
       lastErr := 'Failed to extract authorization code from redirect. ' +
         'Check credentials or see redirect URL: ' + httpResponse.FinalURL;
       httpResponse.Headers.Free;
