@@ -51,7 +51,14 @@ public
   function SendAndReceive(ARequest  : TStream;
     AResponse : TStream;
     Headers   : TStringList) : boolean; overload;
+  (* Extended SendAndReceive which also returns response headers, HTTP status and final URL. *)
+  function SendAndReceiveEx(ARequest  : TStream;
+    AResponse : TStream; RequestHeaders : TStringList; ResponseHeaders: TStringList;
+    out StatusCode : Integer; out FinalURL : string): boolean; overload;
   function SendAndReceive(out AResponse : string) : boolean; overload;
+  (* Convenience overload to get response headers/status/final URL. *)
+  function SendAndReceiveEx(out AResponse : string; out ResponseHeaders: TStringList;
+    out StatusCode: Integer; out FinalURL: string): boolean; overload;
   function PostForm(const FormFields : string;
     out AResponse  : string) : boolean; overload;
 end;
@@ -87,7 +94,7 @@ begin
   try
     urlRequest := NSMutableURLRequest.requestWithURL_cachePolicy_timeoutInterval(
       NSURL.URLWithString(StrToNSStr(Address)),
-      NSURLRequestUseProtocolCachePolicy, Timeout);
+      NSURLRequestUseProtocolCachePolicy, TimeOut);
 
     if Method <> '' then
       urlRequest.setHTTPMethod(StrToNSStr(Method));
@@ -142,8 +149,9 @@ var
   urlData     : NSData;
   httpResp    : id; // NSHTTPURLResponse
   hdrKeys     : NSArray;
-  i: NSInteger;
+  i: Integer;
   keyObj, valObj: id;
+  tmp, tmp2, hdrDict: id;
 begin
   Result := false;
   StatusCode := 0;
@@ -151,7 +159,7 @@ begin
   try
     urlRequest := NSMutableURLRequest.requestWithURL_cachePolicy_timeoutInterval(
       NSURL.URLWithString(StrToNSStr(Address)),
-      NSURLRequestUseProtocolCachePolicy, Timeout);
+      NSURLRequestUseProtocolCachePolicy, TimeOut);
 
     if Method <> '' then
       urlRequest.setHTTPMethod(StrToNSStr(Method));
@@ -183,34 +191,51 @@ begin
     AResponse.WriteBuffer(urlData.bytes^, urlData.length);
     AResponse.Position := 0;
 
-    // Extract status, headers and final URL if we got an HTTP response
-    if Assigned(urlResponse) and (urlResponse is NSHTTPURLResponse) then
-    begin
-      httpResp := NSHTTPURLResponse(urlResponse);
+    // Try to extract status, headers and final URL dynamically via KVC
+    try
+      // statusCode (NSNumber)
       try
-        StatusCode := Integer(httpResp.statusCode);
+        tmp := urlResponse.valueForKey(StrToNSStr('statusCode'));
+        if assigned(tmp) then
+          StatusCode := Integer(tmp.intValue)
+        else
+          StatusCode := 0;
       except
         StatusCode := 0;
       end;
+      // Final URL
       try
-        FinalURL := NSStrToStr(httpResp.URL.absoluteString);
+        tmp2 := urlResponse.valueForKey(StrToNSStr('URL'));
+        if assigned(tmp2) then
+        begin
+          try
+            FinalURL := NSStrToStr(NSString(tmp2.absoluteString));
+          except
+            FinalURL := '';
+          end;
+        end;
       except
         FinalURL := '';
       end;
 
+      // Headers dictionary
       if Assigned(ResponseHeaders) then
-      begin
-        hdrKeys := httpResp.allHeaderFields.allKeys;
-        for i := 0 to hdrKeys.count - 1 do
+      try
+        hdrDict := urlResponse.valueForKey(StrToNSStr('allHeaderFields'));
+        if assigned(hdrDict) then
         begin
-          keyObj := hdrKeys.objectAtIndex(i);
-          valObj := httpResp.allHeaderFields.objectForKey(keyObj);
-          ResponseHeaders.Add(NSStrToStr(NSString(keyObj)) + ': ' + NSStrToStr(NSString(valObj)));
+          hdrKeys := hdrDict.allKeys;
+          for i := 0 to hdrKeys.count - 1 do
+          begin
+            keyObj := hdrKeys.objectAtIndex(i);
+            valObj := hdrDict.objectForKey(keyObj);
+            ResponseHeaders.Add(NSStrToStr(NSString(keyObj)) + ': ' + NSStrToStr(NSString(valObj)));
+          end;
         end;
+      except
+        // ignore header extraction failures
       end;
-    end
-    else
-    begin
+    except
       // Fallback: attempt to return URL from response
       try
         FinalURL := NSStrToStr(NSURL(urlResponse.URL).absoluteString);
@@ -225,6 +250,26 @@ begin
     begin
       FLastErrMsg := E.Message;
     end;
+  end;
+end;
+
+function TNSHTTPSendAndReceive.SendAndReceiveEx(out AResponse : string; out ResponseHeaders: TStringList;
+  out StatusCode: Integer; out FinalURL: string): boolean;
+var
+  Data : TMemoryStream;
+begin
+  Data := TMemoryStream.Create;
+  ResponseHeaders := TStringList.Create;
+  try
+    Result := SendAndReceiveEx(nil, Data, nil, ResponseHeaders, StatusCode, FinalURL);
+    if Result then
+    begin
+      SetLength(AResponse, Data.Size);
+      if Data.Size > 0 then
+        Data.Read(AResponse[1], Data.Size);
+    end;
+  finally
+    Data.Free;
   end;
 end;
 
