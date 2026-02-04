@@ -4,7 +4,7 @@
 
 ![Trndi](doc/img/trndi-logo.png)
 
-# Trndi - CGM data on Desktop and RaspberryPi<br><sup>_Nightscout - Dexcom - xDrip WiFi_</sup> 
+# Trndi - CGM data on Desktop and RaspberryPi<br><sup>_Nightscout - Dexcom - Tandem Source - xDrip WiFi_</sup> 
 ## <b> 🪟 Windows - 🍎 macOS - 🐧 Linux - 🥧 RaspberryPi/ARM Linux
 
 ## Index
@@ -48,7 +48,7 @@
 ### Introduction
 > __NEW__: Join us on [Discord](https://discord.gg/QXACfpcW)
 
-Trndi is a _desktop app_ that shows your blood sugar and graph. It works with  _Night Scout_ and _Dexcom Share_ at the moment.
+Trndi is a _desktop app_ that shows your blood sugar and graph. It works with  _Night Scout_, _Tandem Source_ and _Dexcom Share_ at the moment.
 It also supports the _xDrip_ app, connecting over the local network/WiFi.
 
 # What differs Trndi from apps?
@@ -218,6 +218,7 @@ lazbuild -B --widgetset=qt6 Trndi.lpi
 Right click or click/hold the reading (or "Setup" text) and choose settings to access settings.
 * For NightScout, settings will be fetched from your server and auto-applied
 * For Dexcom, see the __[Dexcom setup guide](guides/Dexcom.md)__. The backend does not support all features, but this can be fixed with some manual work.
+* For Tandem, see the __[Tandem setup guide](guides/Tandem.md)__. The backend does not support all features, but this can be fixed with some manual work.
 * For xDrip, you need to turn on the local web server and use that IP/password
 * For other backends, feel free to contribute a api driver. See [API Drivers](guides/API.md)
 * For HTTP API access, see the __[Web API documentation](doc/WebAPI.md)__ to expose glucose data to other applications
