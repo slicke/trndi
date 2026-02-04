@@ -936,6 +936,33 @@ begin
 end;
 
 {------------------------------------------------------------------------------
+  Extract authorization code from any text (HTML/JS) containing code=
+ ------------------------------------------------------------------------------}
+function ExtractAuthCodeFromText(const AText: string): string;
+var
+  codePos, endPos, i: integer;
+  ch: char;
+begin
+  Result := '';
+  codePos := Pos('code=', AText);
+  if codePos = 0 then
+    Exit;
+  codePos := codePos + 5;
+  endPos := Length(AText) + 1;
+  for i := codePos to Length(AText) do
+  begin
+    ch := AText[i];
+    if (ch = '&') or (ch = '"') or (ch = '''') or (ch = '<') or (ch = ' ') or (ch = #13) or (ch = #10) then
+    begin
+      endPos := i;
+      Break;
+    end;
+  end;
+  if endPos > codePos then
+    Result := Copy(AText, codePos, endPos - codePos);
+end;
+
+{------------------------------------------------------------------------------
   Select a pump device from available devices
  ------------------------------------------------------------------------------}
 function Tandem.SelectDevice: boolean;
@@ -1270,6 +1297,8 @@ begin
       if locationHeader <> '' then
         authCode := ExtractAuthCodeFromURL(locationHeader);
     end;
+    if (authCode = '') and (Length(httpResponse.Body) > 0) then
+      authCode := ExtractAuthCodeFromText(httpResponse.Body);
     LogMessageToFile(Format('Tandem.Connect: auth code length=%d', [Length(authCode)]));
     
     httpResponse.Headers.Free;
