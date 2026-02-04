@@ -904,6 +904,14 @@ procedure WarnUnstableAPI;
       lSysWarnInfo.Caption := RS_DEBUG_WARN;
     end;
     {$endif}
+    if sender = cbSys then begin
+      {$ifndef X_WINDOWS}
+        {$ifndef X_LINUXBSD}
+          ShowMessage('Sorry! Tandem is only supported on Windows, Linux and BSD platforms right now');
+          cbSys.ItemIndex := 1;
+        {$endif}
+      {$endif}
+    end;
   end;
 
 var user, pass: string;
