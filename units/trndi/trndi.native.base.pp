@@ -1952,8 +1952,7 @@ begin
     headerStream.Free;
   end;
 end;
-{$ELSE}
-{$IF DEFINED(X_WIN)}
+{$ELSEIF DEFINED(X_WIN)}
 function TTrndiNativeBase.requestEx(const post: boolean; const endpoint: string;
 const params: array of string; const jsondata: string = '';
 cookieJar: TStringList = nil; followRedirects: boolean = true;
@@ -2494,7 +2493,7 @@ begin
     currentUrl := ResolveUrl(currentUrl, locationHeader);
     Result.FinalURL := currentUrl;
 
-    if (Result.StatusCode = 303) or ((Result.StatusCode in [301, 302]) and currentPost) then
+    if (Result.StatusCode = 303) or (((Result.StatusCode = 301) or (Result.StatusCode = 302)) and currentPost) then
     begin
       currentPost := false;
       bodyData := '';
