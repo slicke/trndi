@@ -2201,6 +2201,7 @@ var
     bodyLen: DWORD;
     sendVerb: PWideChar;
     i: integer;
+    redirectPolicy: DWORD;
     cookieBuf: PWideChar;
     cookieSize: DWORD;
     cookieIndex: DWORD;
@@ -2304,6 +2305,9 @@ var
         end;
 
         try
+          redirectPolicy := WINHTTP_OPTION_REDIRECT_POLICY_NEVER;
+          WinHttpSetOption(hRequest, WINHTTP_OPTION_REDIRECT_POLICY, @redirectPolicy, SizeOf(redirectPolicy));
+
           if (useProxy and (proxyHost <> '')) and ((proxyUser <> '') or (proxyPass <> '')) then
           begin
             if proxyUser <> '' then
