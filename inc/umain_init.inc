@@ -514,6 +514,8 @@ begin
   LogMessageToFile(Format(#10'=== Trndi started at %s ===', [DateTimeToStr(Now)]));
   firstboot := false;
 
+  FReadingsLock := TCriticalSection.Create;
+
   // Initialize native interface
   native := TrndiNative.Create;
   if (ssMeta in GetKeyShiftState) and ExtMsgYesNo(uxdNormal,'Run Trndi in English?', 'Run Trndi in English this once? You pressed the Windows/meta key, and can now choose to run Trndi in English. You can change the language in Settings.') then
@@ -822,11 +824,18 @@ end;
 function TfBG.GetCurrentReadingForWeb: BGResults;
 begin
   // Return the cached current reading if available
-  if Length(FCachedReadings) > 0 then
-    Result := FCachedReadings
-  else
-    result := []// Return an empty reading if no data is available - Init will set curr to BG_NO_VAL
-  ;
+  FReadingsLock.Acquire;
+  try
+    if Length(FCachedReadings) > 0 then
+    begin
+      SetLength(Result, Length(FCachedReadings));
+      Move(FCachedReadings[0], Result[0], Length(FCachedReadings) * SizeOf(BGReading));
+    end
+    else
+      Result := [];// Return an empty reading if no data is available - Init will set curr to BG_NO_VAL
+  finally
+    FReadingsLock.Release;
+  end;
 end;
 
 function TfBG.GetPredictionsForWeb: BGResults;
