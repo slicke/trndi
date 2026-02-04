@@ -1297,6 +1297,29 @@ var
   locationHeader: string;
   headerPreview: string;
   i: integer;
+  cookieNames: string;
+
+  function BuildCookieNames(const ACookies: TStringList): string;
+  var
+    k, eqPos: integer;
+    namePart: string;
+  begin
+    Result := '';
+    if ACookies = nil then
+      Exit;
+    for k := 0 to ACookies.Count - 1 do
+    begin
+      namePart := ACookies[k];
+      eqPos := Pos('=', namePart);
+      if eqPos > 0 then
+        namePart := Copy(namePart, 1, eqPos - 1);
+      if Trim(namePart) = '' then
+        Continue;
+      if Result <> '' then
+        Result := Result + ', ';
+      Result := Result + namePart;
+    end;
+  end;
 
   function GetHeaderValue(const AHeaders: TStringList; const AName: string): string;
   var
@@ -1364,7 +1387,12 @@ begin
     if Length(httpResponse.Body) > 0 then
       LogMessageToFile('Tandem.Connect: login response body preview=' + Copy(httpResponse.Body, 1, 200));
     if cookieJar.Count > 0 then
-      LogMessageToFile('Tandem.Connect: cookieJar after login count=' + IntToStr(cookieJar.Count))
+    begin
+      LogMessageToFile('Tandem.Connect: cookieJar after login count=' + IntToStr(cookieJar.Count));
+      cookieNames := BuildCookieNames(cookieJar);
+      if cookieNames <> '' then
+        LogMessageToFile('Tandem.Connect: cookieJar after login names=' + cookieNames);
+    end
     else
       LogMessageToFile('Tandem.Connect: cookieJar after login is empty');
     
@@ -1420,7 +1448,12 @@ begin
     if Length(httpResponse.Body) > 0 then
       LogMessageToFile('Tandem.Connect: auth response body preview=' + Copy(httpResponse.Body, 1, 500));
     if cookieJar.Count > 0 then
-      LogMessageToFile('Tandem.Connect: cookieJar before auth parse count=' + IntToStr(cookieJar.Count))
+    begin
+      LogMessageToFile('Tandem.Connect: cookieJar before auth parse count=' + IntToStr(cookieJar.Count));
+      cookieNames := BuildCookieNames(cookieJar);
+      if cookieNames <> '' then
+        LogMessageToFile('Tandem.Connect: cookieJar before auth parse names=' + cookieNames);
+    end
     else
       LogMessageToFile('Tandem.Connect: cookieJar before auth parse is empty');
     
