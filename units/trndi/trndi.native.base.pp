@@ -2614,6 +2614,8 @@ var
   isPost: boolean;
   sx: string;
   j: Integer;
+  hIdx: Integer;
+  tmpS, nm, vl: string;
 
   (* Update cookies from headers into Result.Cookies and cookieJar (if provided). *)
   procedure UpdateCookiesFromHeadersLocal(const AHeaders: TStringList);
@@ -2728,7 +2730,25 @@ begin
   // Prepare request headers and body
   requestHeaders := TStringList.Create;
   if customHeaders <> nil then
+  begin
     requestHeaders.Assign(customHeaders);
+    // Normalize headers: convert "Name: value" entries to Name=Value pairs
+    // because mac NSURLRequest code expects Name=Value format when using
+    // TStringList.Names/ValueFromIndex (unlike curl which expects 'Name: value' text).
+    for hIdx := requestHeaders.Count - 1 downto 0 do
+    begin
+      tmpS := Trim(requestHeaders[hIdx]);
+      if tmpS = '' then
+        Continue;
+      if Pos(':', tmpS) > 0 then
+      begin
+        nm := Trim(Copy(tmpS, 1, Pos(':', tmpS) - 1));
+        vl := Trim(Copy(tmpS, Pos(':', tmpS) + 1, MaxInt));
+        requestHeaders.Delete(hIdx);
+        requestHeaders.Values[nm] := vl;
+      end;
+    end;
+  end;
   if useragent <> '' then
     requestHeaders.Values['User-Agent'] := useragent;
 
