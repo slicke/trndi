@@ -1417,11 +1417,8 @@ begin
   end;
   {$endif}
 
-  // CRITICAL: Set Application.Terminated FIRST to prevent any QuickJS operations
-  // This is called even earlier than FormClose for maximum protection
-  Application.Terminate;  // This sets Application.Terminated := True
-
-  // Always allow close to proceed
+  // Always allow close to proceed. Actual termination is decided in FormClose
+  // after the user has confirmed they really want to quit.
   CanClose := true;
 end;
 
@@ -1452,11 +1449,15 @@ begin
         [mbClose, mbUXMinimize, mbCancel]);
       case mr of
       mrClose:
+      begin
+        Application.Terminate; // signal shutdown only when actually closing
         CloseAction := caFree;
+      end;
       mrCancel: 
       begin
         FShuttingDown := false; // Reset flag if user cancels
-        Abort;
+        CloseAction := caNone;
+        Exit;
       end;
       else
       begin
@@ -1473,8 +1474,11 @@ begin
     if UXDialog(uxdAuto, RS_QUIT_CAPTION, RS_QUIT_MSG, [mbYes, mbNo], uxmtOK) = mrNo then
     begin
       FShuttingDown := false; // Reset flag if user cancels
-      Abort;
+      CloseAction := caNone;
+      Exit;
     end;
+
+  Application.Terminate; // signal shutdown only when actually closing
 
   // Explicitly set CloseAction to ensure the form is actually freed
   CloseAction := caFree;
