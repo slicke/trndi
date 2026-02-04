@@ -1549,6 +1549,13 @@ begin
   // Stop web server
   StopWebServer;
 
+  // Ensure desktop indicators/readers don't keep showing stale data after shutdown
+  try
+    native.WriteCurrentIndicatorCache('', 0, 0);
+  except
+    // ignore errors during shutdown
+  end;
+
   // Let normal form closure process continue with CloseAction := caFree
 end;
 

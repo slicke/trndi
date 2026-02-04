@@ -738,6 +738,9 @@ begin
   headers := nil;
   responseStream := TStringStream.Create('');
   tempInstance := TTrndiNativeLinux.Create;
+    // When creating a short-lived helper instance, avoid destructor side-effects
+    // (like clearing the GNOME/KDE cache). Mark it as noFree so Destroy() skips cleanup.
+    tempInstance.noFree := true;
   try
     // Get proxy settings
     proxyHost := tempInstance.GetSetting('proxy.host', '', true);
@@ -1144,10 +1147,11 @@ end;
  ------------------------------------------------------------------------------}
 destructor TTrndiNativeLinux.Destroy;
 begin
-  // Clear GNOME indicator cache on normal shutdown
-  WriteTrndiCurrentValueCache('');
+  // Only clear GNOME indicator cache on an explicit full shutdown (noFree=false).
   if not noFree then
   begin
+    // Clear GNOME indicator cache on normal shutdown
+    WriteTrndiCurrentValueCache('');
     ClearBadge;
     ShutdownBadge;
   end;
