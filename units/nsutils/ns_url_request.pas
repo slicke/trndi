@@ -152,6 +152,10 @@ var
   i: Integer;
   keyObj, valObj: id;
   tmp, tmp2, hdrDict: id;
+  // Cookie extraction helpers
+  cookieStorage: id;
+  cookies: NSArray;
+  cookieObj: id;
 begin
   Result := false;
   StatusCode := 0;
