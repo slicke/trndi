@@ -1333,6 +1333,7 @@ begin
       '?client_id=' + GetOidcClientId +
       '&redirect_uri=' + GetRedirectUri +
       '&response_type=code' +
+      '&response_mode=query' +
       '&scope=openid%20email%20profile' +
       '&code_challenge=' + codeChallenge +
       '&code_challenge_method=S256';
@@ -1410,6 +1411,8 @@ begin
     httpResponse := native.RequestEx(false, authUrl, [], '', cookieJar, true, 10, customHeaders, false);
     LogMessageToFile(Format('Tandem.Connect: auth response success=%s status=%d finalUrl=%s err=%s',
       [BoolToStr(httpResponse.Success, true), httpResponse.StatusCode, httpResponse.FinalURL, httpResponse.ErrorMessage]));
+    if Length(httpResponse.Body) > 0 then
+      LogMessageToFile('Tandem.Connect: auth response body preview=' + Copy(httpResponse.Body, 1, 500));
     
     if (httpResponse.StatusCode >= 400) and (not httpResponse.Success) then
     begin
