@@ -514,7 +514,7 @@ begin
   LogMessageToFile(Format(#10'=== Trndi started at %s ===', [DateTimeToStr(Now)]));
   firstboot := false;
 
-  FReadingsLock := TCriticalSection.Create;
+  InitCriticalSection(FReadingsLock);
 
   // Initialize native interface
   native := TrndiNative.Create;
@@ -607,7 +607,7 @@ begin
     userlocale := DefaultFormatSettings;
     userlocale.DecimalSeparator := GetCharSetting('locale.separator', '.');
     badge_adjust := GetIntSetting('ux.badge_size', 0) / 10;
-    native.locale := userlocale;
+    locale := userlocale;
     semiTouchMode := GetBoolSetting('ux.semi_touch', false);
 
     fSplash.incProgress(45, RS_INIT_LICENSE);
@@ -673,9 +673,9 @@ begin
     DELTA_MAX := GetIntSetting('ux.delta_max', DELTA_MAX);
     // DOT_VISUAL_OFFSET := CalculateDotVisualOffset;  // No longer needed - centering uses half dot height
     miRangeColor.Checked := GetBoolSetting('ux.range_color', true);
-    PaintRange := native.GetBoolSetting('ux.paint_range', true);
-    PaintRangeLines := native.GetBoolSetting('ux.paint_range_lines', false);
-    PaintRangeCGMRange := native.GetBoolSetting('ux.paint_range_cgmrange', false);
+    PaintRange := GetBoolSetting('ux.paint_range', true);
+    PaintRangeLines := GetBoolSetting('ux.paint_range_lines', false);
+    PaintRangeCGMRange := GetBoolSetting('ux.paint_range_cgmrange', false);
     // Extensions
     {$ifdef TrndiExt}
     fSplash.incProgress(80, RS_SPLASH_LOADING_INIT);
@@ -704,7 +704,7 @@ begin
     else
       PredictShortMinutes := 10;
     // Read short mode size setting (small or big). Sanitize to 'small' otherwise.
-    PredictShortSize := native.GetIntSetting('predictions.short.size', 1);
+    PredictShortSize := GetIntSetting('predictions.short.size', 1);
     if PredictShortSize < 1 then
       PredictShortSize := 1
     else
@@ -823,8 +823,9 @@ end;
 
 function TfBG.GetCurrentReadingForWeb: BGResults;
 begin
+    Result := nil; // ensure managed result is initialized
   // Return the cached current reading if available
-  FReadingsLock.Acquire;
+    EnterCriticalSection(FReadingsLock);
   try
     if Length(FCachedReadings) > 0 then
     begin
@@ -834,7 +835,7 @@ begin
     else
       Result := [];// Return an empty reading if no data is available - Init will set curr to BG_NO_VAL
   finally
-    FReadingsLock.Release;
+      LeaveCriticalSection(FReadingsLock);
   end;
 end;
 

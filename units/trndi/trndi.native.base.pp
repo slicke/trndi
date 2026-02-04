@@ -1528,6 +1528,7 @@ var
   headers: pcurl_slist;
   errCode: CURLcode;
   address, sx: string;
+  maskedSx: string;
   p, i: integer;
   key, val: string;
   responseStream: TStringStream;
@@ -1707,6 +1708,7 @@ var
   headers: pcurl_slist;
   errCode: CURLcode;
   address, sx: string;
+  maskedSx: string;
   i, j: integer;
   responseStream: TStringStream;
   headerStream: TStringStream;
@@ -1732,6 +1734,21 @@ var
     for k := 0 to customHeaders.Count - 1 do
       if Pos(nameLower, LowerCase(Trim(customHeaders[k]))) = 1 then
         Exit(True);
+  end;
+
+  // Helper to mask sensitive form parameters in a URL-encoded string
+  procedure MaskParam(var S: string; const name: string);
+  var
+    p, valStart, q: integer;
+  begin
+    p := Pos(name + '=', S);
+    if p = 0 then Exit;
+    valStart := p + Length(name) + 1;
+    q := PosEx('&', S, valStart);
+    if q = 0 then
+      q := Length(S) + 1;
+    Delete(S, valStart, q - valStart);
+    Insert('***', S, valStart);
   end;
 
 begin
@@ -1852,21 +1869,7 @@ begin
             sx := sx + params[j];
           end;
 
-          // Mask sensitive parameters for logs (code, code_verifier, password, client_secret)
-          var maskedSx := sx; // short-lived local
-          procedure MaskParam(var S: string; const name: string);
-          var
-            p, valStart, q: integer;
-          begin
-            p := Pos(name + '=', S);
-            if p = 0 then Exit;
-            valStart := p + Length(name) + 1;
-            q := PosEx('&', S, valStart);
-            if q = 0 then
-              q := Length(S) + 1;
-            Delete(S, valStart, q - valStart);
-            Insert('***', S, valStart);
-          end;
+          maskedSx := sx; // short-lived local copy
           MaskParam(maskedSx, 'code_verifier');
           MaskParam(maskedSx, 'code');
           MaskParam(maskedSx, 'password');

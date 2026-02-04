@@ -377,7 +377,7 @@ private
   FLastTimerTick: TDateTime; // Last timer tick for wake detection
   FForceRefresh: boolean; // Force bypass of cached API reads on wake
 
-  FReadingsLock: TCriticalSection; // Protect cached readings shared with web server thread
+  FReadingsLock: TRTLCriticalSection; // Protect cached readings shared with web server thread
 
     // Array to hold references to lDot1 - lDot10
   TrendDots: array[1..10] of TDotControl;
@@ -839,7 +839,7 @@ begin
   // Stop web server first to prevent callbacks during shutdown
   StopWebServer;
 
-  FreeAndNil(FReadingsLock);
+  DoneCriticalSection(FReadingsLock);
 
 
   if assigned(chroma) then
@@ -5411,7 +5411,7 @@ begin
   if (not ForceRefresh) and (SecondsBetween(Now, FLastAPICall) < API_CACHE_SECONDS) and
     (Length(FCachedReadings) > 0) then
   begin
-    FReadingsLock.Acquire;
+    EnterCriticalSection(FReadingsLock);
     try
       if Length(FCachedReadings) > 0 then
       begin
@@ -5421,7 +5421,7 @@ begin
         Exit;
       end;
     finally
-      FReadingsLock.Release;
+      LeaveCriticalSection(FReadingsLock);
     end;
   end;
 
@@ -5447,7 +5447,7 @@ begin
   // If API call failed (no readings) but we have fresh cached data, use it
   if (Length(bgs) < 1) and (Length(FCachedReadings) > 0) then
   begin
-    FReadingsLock.Acquire;
+    EnterCriticalSection(FReadingsLock);
     try
       if Length(FCachedReadings) > 0 then
       begin
@@ -5455,7 +5455,7 @@ begin
         Move(FCachedReadings[0], bgs[0], Length(FCachedReadings) * SizeOf(BGReading));
       end;
     finally
-      FReadingsLock.Release;
+      LeaveCriticalSection(FReadingsLock);
     end;
     LogMessageToFile('DoFetchAndValidateReadings: API returned no data, using cached readings');
     // Enable internet check and show indicator since API failed
@@ -5466,12 +5466,12 @@ begin
   if Length(bgs) > 0 then
   begin
     // Update cache with fresh data
-    FReadingsLock.Acquire;
+    EnterCriticalSection(FReadingsLock);
     try
       SetLength(FCachedReadings, Length(bgs));
       Move(bgs[0], FCachedReadings[0], Length(bgs) * SizeOf(BGReading));
     finally
-      FReadingsLock.Release;
+      LeaveCriticalSection(FReadingsLock);
     end;
     // Disable ping timer when we successfully get fresh data
     tPing.Enabled := false;
