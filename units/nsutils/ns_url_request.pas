@@ -232,6 +232,26 @@ begin
             ResponseHeaders.Add(NSStrToStr(NSString(keyObj)) + ': ' + NSStrToStr(NSString(valObj)));
           end;
         end;
+
+        // Also include cookies from the shared cookie storage as Set-Cookie: lines
+        try
+          var cookieStorage := NSHTTPCookieStorage.sharedHTTPCookieStorage;
+          var cookies := cookieStorage.cookiesForURL(NSURL.URLWithString(StrToNSStr(Address)));
+          if assigned(cookies) then
+          begin
+            for i := 0 to cookies.count - 1 do
+            begin
+              var cookieObj := cookies.objectAtIndex(i);
+              try
+                ResponseHeaders.Add('Set-Cookie: ' + NSStrToStr(NSString(cookieObj.name)) + '=' + NSStrToStr(NSString(cookieObj.value)));
+              except
+                // ignore cookie value extraction failures
+              end;
+            end;
+          end;
+        except
+          // ignore cookie extraction failures
+        end;
       except
         // ignore header extraction failures
       end;
