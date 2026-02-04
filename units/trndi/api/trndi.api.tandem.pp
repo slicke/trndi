@@ -1296,6 +1296,9 @@ var
   customHeaders: TStringList;
   locationHeader: string;
   headerPreview: string;
+  bodyPreview: string;
+  headerPreviewLocal: string;
+  cookiesCount: integer;
   i: integer;
 
   function GetHeaderValue(const AHeaders: TStringList; const AName: string): string;
@@ -1473,6 +1476,28 @@ begin
     tokenOk := (httpResponse.StatusCode >= 200) and (httpResponse.StatusCode < 300) and (Length(httpResponse.Body) > 0);
     if not tokenOk then
     begin
+      // Detailed logging to help diagnose token exchange failures (status, body preview, headers, cookies)
+      bodyPreview := Copy(httpResponse.Body, 1, 2000);
+      headerPreviewLocal := '';
+      cookiesCount := 0;
+      if httpResponse.Headers <> nil then
+      begin
+        for i := 0 to httpResponse.Headers.Count - 1 do
+        begin
+          if i >= 30 then
+          begin
+            headerPreviewLocal := headerPreviewLocal + '...';
+            Break;
+          end;
+          headerPreviewLocal := headerPreviewLocal + httpResponse.Headers[i] + #13#10;
+        end;
+      end;
+      if httpResponse.Cookies <> nil then
+        cookiesCount := httpResponse.Cookies.Count;
+
+      LogMessageToFile(Format('Tandem.Connect: token exchange failed: status=%d success=%s error=%s bytes=%d body_preview=%s headers=%s cookies=%d',
+        [httpResponse.StatusCode, BoolToStr(httpResponse.Success, true), httpResponse.ErrorMessage, Length(httpResponse.Body), bodyPreview, headerPreviewLocal, cookiesCount]));
+
       lastErr := 'Token exchange failed: ' + httpResponse.ErrorMessage;
       httpResponse.Headers.Free;
       httpResponse.Cookies.Free;

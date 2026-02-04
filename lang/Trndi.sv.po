@@ -2587,9 +2587,13 @@ msgid "By default, Trndi only shows up/down/straight. You can enable the full ra
 msgstr "Som standard visar Trndi bara upp/ned/rakt. Du kan aktivera att hela mängden av pilar ska visas - dock måste du vara medveten om att detta är mycket experimentfullt och kan potentiellt vara mindre exakt!"
 
 #: uconf.rs_tandem
+#, fuzzy
+#| msgid ""
+#| "This backend is in alpha stage, it may not work as intended!\n"
+#| "Please set your own thresholds in the Customization tab, works on: Windows, Linux, BSD"
 msgid ""
 "This backend is in alpha stage, it may not work as intended!\n"
-"Please set your own thresholds in the Customization tab, works on: Windows, Linux, BSD"
+"Please set your own thresholds in the Customization tab."
 msgstr ""
 "Detta backend är i alfastadiet, det kanske inte funkar som tänkt!\n"
 "V.g sätt dina sgna gränser under Personalisera-tabben, fungerar på Windows, Linux, BSD"
@@ -2744,3 +2748,4 @@ msgstr "Historikgraf"
 #, object-pascal-format
 msgid "Readings (%s)"
 msgstr "Avläsningar (%s)"
+

@@ -562,7 +562,7 @@ RS_XDRIP =
   'Make sure you are on the same network as the xDrip app.'+sLineBreak+'Make sure that web access is turned on.';
 
 RS_TANDEM =
-  'This backend is in alpha stage, it may not work as intended!'+sLineBreak+'Please set your own thresholds in the Customization tab, works on: Windows, Linux, BSD';
+  'This backend is in alpha stage, it may not work as intended!'+sLineBreak+'Please set your own thresholds in the Customization tab.';
 
 RS_DEBUG_WARN =
   'This is a debug backend. It''s used for testing purposes only!'+sLineBreak+'No data will be sent to any remote server.';
@@ -904,14 +904,6 @@ procedure WarnUnstableAPI;
       lSysWarnInfo.Caption := RS_DEBUG_WARN;
     end;
     {$endif}
-    if sender = cbSys then begin
-      {$ifndef X_WINDOWS}
-        {$ifndef X_LINUXBSD}
-          ShowMessage('Sorry! Tandem is only supported on Windows, Linux and BSD platforms right now');
-          cbSys.ItemIndex := 1;
-        {$endif}
-      {$endif}
-    end;
   end;
 
 var user, pass: string;

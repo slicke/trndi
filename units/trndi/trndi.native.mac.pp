@@ -112,6 +112,7 @@ type
 // Typed imports of objc_msgSend with a few arities we need
 function objc_msgSend0(obj: id; sel: SEL): id; cdecl; external ObjCLib name 'objc_msgSend';
 function objc_msgSend1(obj: id; sel: SEL; p1: id): id; cdecl; external ObjCLib name 'objc_msgSend';
+function objc_msgSend_uint(obj: id; sel: SEL): NativeUInt; cdecl; external ObjCLib name 'objc_msgSend';
 function objc_msgSend2_d_b(obj: id; sel: SEL; p1: double; p2: boolean): id; cdecl; external ObjCLib name 'objc_msgSend';
 function objc_msgSend3(obj: id; sel: SEL; p1: id; p2: id; p3: id): id; cdecl; external ObjCLib name 'objc_msgSend';
 function objc_msgSend2_id_id(obj: id; sel: SEL; p1: id; p2: id): id; cdecl; external ObjCLib name 'objc_msgSend';
@@ -119,6 +120,20 @@ function objc_msgSend2_id_id(obj: id; sel: SEL; p1: id; p2: id): id; cdecl; exte
 function objc_msgSend_uint_id(obj: id; sel: SEL; p1: NativeUInt; p2: id): id; cdecl; external ObjCLib name 'objc_msgSend';
 function objc_getClass(name: MarshaledAString): id;        cdecl; external ObjCLib;
 function sel_registerName(name: MarshaledAString): SEL;    cdecl; external ObjCLib;
+
+function TrndiHasBundleIdentifier: Boolean;
+var
+  NSBundleClass, mainBundle, ident: id;
+begin
+  Result := False;
+  NSBundleClass := objc_getClass('NSBundle');
+  if NSBundleClass = nil then Exit;
+  mainBundle := objc_msgSend0(NSBundleClass, sel_registerName('mainBundle'));
+  if mainBundle = nil then Exit;
+  ident := objc_msgSend0(mainBundle, sel_registerName('bundleIdentifier'));
+  if ident = nil then Exit;
+  Result := objc_msgSend_uint(ident, sel_registerName('length')) > 0;
+end;
 
 {------------------------------------------------------------------------------
   attention (macOS)
@@ -138,48 +153,53 @@ begin
   ok := False;
   try
     // Use UNUserNotificationCenter when available (modern API).
-    UNClass := objc_getClass('UNUserNotificationCenter');
-    if UNClass <> nil then
+    // Note: UNUserNotificationCenter asserts if there is no bundle identifier
+    // (e.g. running the raw binary outside a .app bundle).
+    if TrndiHasBundleIdentifier then
     begin
-      selCurrent := sel_registerName('currentNotificationCenter');
-      Center := objc_msgSend0(UNClass, selCurrent);
-      if Center <> nil then
+      UNClass := objc_getClass('UNUserNotificationCenter');
+      if UNClass <> nil then
       begin
-        // Create content
-        ContentClass := objc_getClass('UNMutableNotificationContent');
-        selNew := sel_registerName('new');
-        Content := objc_msgSend0(ContentClass, selNew);
+        selCurrent := sel_registerName('currentNotificationCenter');
+        Center := objc_msgSend0(UNClass, selCurrent);
+        if Center <> nil then
+        begin
+          // Create content
+          ContentClass := objc_getClass('UNMutableNotificationContent');
+          selNew := sel_registerName('new');
+          Content := objc_msgSend0(ContentClass, selNew);
 
-        TitleStr := NSSTR(topic);
-        BodyStr := NSSTR(message);
-        selSetTitle := sel_registerName('setTitle:');
-        selSetBody := sel_registerName('setBody:');
-        objc_msgSend1(Content, selSetTitle, TitleStr);
-        objc_msgSend1(Content, selSetBody, BodyStr);
-        TitleStr.Release;
-        BodyStr.Release;
+          TitleStr := NSSTR(topic);
+          BodyStr := NSSTR(message);
+          selSetTitle := sel_registerName('setTitle:');
+          selSetBody := sel_registerName('setBody:');
+          objc_msgSend1(Content, selSetTitle, TitleStr);
+          objc_msgSend1(Content, selSetBody, BodyStr);
+          TitleStr.Release;
+          BodyStr.Release;
 
-        // Create a trigger to fire almost immediately
-        TriggerClass := objc_getClass('UNTimeIntervalNotificationTrigger');
-        Trigger := objc_msgSend2_d_b(TriggerClass, sel_registerName('triggerWithTimeInterval:repeats:'), 1.0, False);
+          // Create a trigger to fire almost immediately
+          TriggerClass := objc_getClass('UNTimeIntervalNotificationTrigger');
+          Trigger := objc_msgSend2_d_b(TriggerClass, sel_registerName('triggerWithTimeInterval:repeats:'), 1.0, False);
 
-        // Create a unique identifier for the request
-        sId := Format('trndi-%d', [DateTimeToUnix(Now)]);
-        IdStr := NSSTR(sId);
+          // Create a unique identifier for the request
+          sId := Format('trndi-%d', [DateTimeToUnix(Now)]);
+          IdStr := NSSTR(sId);
 
-        // Create request
-        ReqClass := objc_getClass('UNNotificationRequest');
-        UNReq := objc_msgSend3(ReqClass, sel_registerName('requestWithIdentifier:content:trigger:'), IdStr, Content, Trigger);
+          // Create request
+          ReqClass := objc_getClass('UNNotificationRequest');
+          UNReq := objc_msgSend3(ReqClass, sel_registerName('requestWithIdentifier:content:trigger:'), IdStr, Content, Trigger);
 
-        // Release the identifier NSString we created earlier
-        IdStr.Release;
+          // Release the identifier NSString we created earlier
+          IdStr.Release;
 
-        // Add request (no completion handler)
-        selAddReq := sel_registerName('addNotificationRequest:withCompletionHandler:');
-        objc_msgSend2_id_id(Center, selAddReq, UNReq, nil);
+          // Add request (no completion handler)
+          selAddReq := sel_registerName('addNotificationRequest:withCompletionHandler:');
+          objc_msgSend2_id_id(Center, selAddReq, UNReq, nil);
 
-        // Best-effort; do not raise on failures
-        ok := True;
+          // Best-effort; do not raise on failures
+          ok := True;
+        end;
       end;
     end;
   except
@@ -383,6 +403,9 @@ var
   selRequest: SEL;
 begin
   inherited start;
+  // UNUserNotificationCenter asserts if there is no bundle identifier
+  // (e.g. running the raw binary outside a .app bundle).
+  if not TrndiHasBundleIdentifier then Exit;
   try
     UNClass := objc_getClass('UNUserNotificationCenter');
     if UNClass = nil then Exit;
