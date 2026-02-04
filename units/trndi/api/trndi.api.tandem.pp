@@ -1361,6 +1361,12 @@ begin
     end;
     LogMessageToFile(Format('Tandem.Connect: login response success=%s status=%d bytes=%d err=%s',
       [BoolToStr(httpResponse.Success, true), httpResponse.StatusCode, Length(httpResponse.Body), httpResponse.ErrorMessage]));
+    if Length(httpResponse.Body) > 0 then
+      LogMessageToFile('Tandem.Connect: login response body preview=' + Copy(httpResponse.Body, 1, 200));
+    if cookieJar.Count > 0 then
+      LogMessageToFile('Tandem.Connect: cookieJar after login count=' + IntToStr(cookieJar.Count))
+    else
+      LogMessageToFile('Tandem.Connect: cookieJar after login is empty');
     
     // Debug: Show response details
     alert('DEBUG Login Response'#10+
@@ -1413,6 +1419,10 @@ begin
       [BoolToStr(httpResponse.Success, true), httpResponse.StatusCode, httpResponse.FinalURL, httpResponse.ErrorMessage]));
     if Length(httpResponse.Body) > 0 then
       LogMessageToFile('Tandem.Connect: auth response body preview=' + Copy(httpResponse.Body, 1, 500));
+    if cookieJar.Count > 0 then
+      LogMessageToFile('Tandem.Connect: cookieJar before auth parse count=' + IntToStr(cookieJar.Count))
+    else
+      LogMessageToFile('Tandem.Connect: cookieJar before auth parse is empty');
     
     if (httpResponse.StatusCode >= 400) and (not httpResponse.Success) then
     begin
