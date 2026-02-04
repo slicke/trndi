@@ -942,6 +942,42 @@ function ExtractAuthCodeFromText(const AText: string): string;
 var
   codePos, endPos, i: integer;
   ch: char;
+  textLower: string;
+  encodedPos: integer;
+  token: string;
+  function UrlDecode(const S: string): string;
+  var
+    idx: integer;
+    hexStr: string;
+    code: integer;
+  begin
+    Result := '';
+    idx := 1;
+    while idx <= Length(S) do
+    begin
+      if S[idx] = '%' then
+      begin
+        if idx + 2 <= Length(S) then
+        begin
+          hexStr := Copy(S, idx + 1, 2);
+          if TryStrToInt('$' + hexStr, code) then
+          begin
+            Result := Result + Chr(code);
+            Inc(idx, 3);
+            Continue;
+          end;
+        end;
+      end
+      else if S[idx] = '+' then
+      begin
+        Result := Result + ' ';
+        Inc(idx);
+        Continue;
+      end;
+      Result := Result + S[idx];
+      Inc(idx);
+    end;
+  end;
 begin
   Result := '';
   codePos := Pos('code=', AText);
@@ -960,6 +996,33 @@ begin
   end;
   if endPos > codePos then
     Result := Copy(AText, codePos, endPos - codePos);
+
+  if Result <> '' then
+    Exit;
+
+  textLower := LowerCase(AText);
+  encodedPos := Pos('code%3d', textLower);
+  if encodedPos = 0 then
+    encodedPos := Pos('code%3D', AText);
+  if encodedPos > 0 then
+  begin
+    codePos := encodedPos + 7;
+    endPos := Length(AText) + 1;
+    for i := codePos to Length(AText) do
+    begin
+      ch := AText[i];
+      if (ch = '&') or (ch = '"') or (ch = '''') or (ch = '<') or (ch = ' ') or (ch = #13) or (ch = #10) then
+      begin
+        endPos := i;
+        Break;
+      end;
+    end;
+    if endPos > codePos then
+    begin
+      token := Copy(AText, codePos, endPos - codePos);
+      Result := UrlDecode(token);
+    end;
+  end;
 end;
 
 {------------------------------------------------------------------------------
