@@ -44,7 +44,11 @@ STRIP ?= strip
 STRIP_RELEASE ?=
 
 # Auto-detect OS and pick appropriate default build-mode
-UNAME_S := $(shell uname -s)
+ifeq ($(OS),Windows_NT)
+  UNAME_S := Windows_NT
+else
+  UNAME_S := $(shell uname -s)
+endif
 IS_MINGW := $(findstring MINGW,$(UNAME_S))
 IS_CYGWIN := $(findstring CYGWIN,$(UNAME_S))
 
@@ -158,13 +162,12 @@ fetch-mormot2:
 	fi
 
 check:
+ifeq ($(OS),Windows_NT)
+	@if exist "$(subst /,\,$(LAZBUILD))" (echo "Using $(LAZBUILD)") else (echo "lazbuild not found; please install Lazarus build tools (lazarus_bin) or set LAZBUILD" & exit 1)
+else
 	@command -v $(LAZBUILD) >/dev/null 2>&1 || (echo "lazbuild not found; please install Lazarus build tools (lazarus_bin)" && exit 1)
 	@echo "Using $(LAZBUILD)"
-
-build: check
-	@# Fail early if mORMot2 referenced but not found (unless IGNORE_MORMOT=1)
-	@set -e; \
-	# check if the project references mORMot2 (portable grep replacement)
+endif
 	if grep -q "<PackageName Value=\"mormot2\"" $(LPI) >/dev/null 2>&1; then \
 	  if [ "$(IGNORE_MORMOT)" != "1" ]; then \
 	    if [ ! -d "$$HOME/.lazarus/onlinepackagemanager/packages/mORMot2" ] && [ ! -d "externals/mORMot2" ] && [ ! -d "static" ]; then \
