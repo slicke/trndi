@@ -9,6 +9,17 @@
 #   make list-modes -> list available build modes from Trndi.lpi
 
 LAZBUILD ?= lazbuild
+
+# On native Windows (when running Make under Windows, e.g., via cmd or MSYS),
+# prefer an installed Lazarus at C:/lazarus/lazbuild.exe if it exists.
+# This lets users run the Makefile from a Windows prompt without having
+# lazbuild on PATH but installed in the standard Lazarus location.
+ifeq ($(OS),Windows_NT)
+  ifneq ($(wildcard C:/lazarus/lazbuild.exe),)
+    LAZBUILD := C:/lazarus/lazbuild.exe
+  endif
+endif
+
 LPI ?= Trndi.lpi
 TEST_LPI ?= tests/TrndiTest.lpi
 OUTDIR ?= build
