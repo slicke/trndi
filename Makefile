@@ -15,7 +15,7 @@ WIDGETSET ?= qt6
 # BUILD_MODE is a short hint (Release/Debug) for backward compatibility
 # BUILD_MODE_NAME is the actual project build-mode name as seen in Trndi.lpi
 BUILD_MODE ?= Release
-BUILD_MODE_NAME ?= No Ext (Release)
+BUILD_MODE_NAME = Extensions ($(BUILD_MODE))
 CPU_FLAG ?=
 
 # Optional binary stripping (primarily for Linux release builds).
@@ -34,91 +34,31 @@ ifeq ($(UNAME_S),Linux)
 	# On Linux, prefer the generic project modes if they exist; --widgetset=qt6 controls the LCL backend.
 	# This avoids having to maintain widgetset-specific modes just to get correct Release flags.
 	STRIP_RELEASE ?= 1
-  ifeq ($(BUILD_MODE),Debug)
-		BUILD_MODE_NAME := $(shell perl -0777 -ne 'while(/<Item Name="([^"]+)"/g){print "$$1\n"}' $(LPI) | grep -Fx "Extensions (Debug)" | head -n1)
-		ifeq ($(BUILD_MODE_NAME),)
-			BUILD_MODE_NAME := Qt6 (Debug)
-		endif
-  else
-		# Prefer generic Extensions (Release) if present; otherwise fall back to Qt6-specific ones.
-		BUILD_MODE_NAME := $(shell perl -0777 -ne 'while(/<Item Name="([^"]+)"/g){print "$$1\n"}' $(LPI) | grep -Fx "Extensions (Release)" | head -n1)
-    ifeq ($(BUILD_MODE_NAME),)
-			# Try to pick the best Qt6 Release mode available in Trndi.lpi
-			BUILD_MODE_NAME := $(shell perl -0777 -ne 'while(/<Item Name="([^"]+)"/g){print "$$1\n"}' $(LPI) | grep -E "Qt6 \(Release: Extensions\)" | head -n1)
-    endif
-    ifeq ($(BUILD_MODE_NAME),)
-			BUILD_MODE_NAME := $(shell perl -0777 -ne 'while(/<Item Name="([^"]+)"/g){print "$$1\n"}' $(LPI) | grep -E "Qt6 \(Release\)" | head -n1)
-    endif
-    # Fallback
-    ifeq ($(BUILD_MODE_NAME),)
-      BUILD_MODE_NAME := Qt6 (Release)
-    endif
-  endif
 
 # macOS: prefer native Release builds (Extensions)
 else ifeq ($(UNAME_S),Darwin)
-  ifeq ($(BUILD_MODE),Debug)
-    BUILD_MODE_NAME := Extensions (Debug)
-  else
-    BUILD_MODE_NAME := Extensions (Release)
-  endif
 
 # Windows (MSYS/Cygwin): prefer native Release builds (Extensions)
 else ifneq ($(IS_MINGW),)
-  ifeq ($(BUILD_MODE),Debug)
-    BUILD_MODE_NAME := Extensions (Debug)
-  else
-    BUILD_MODE_NAME := Extensions (Release)
-  endif
+
 else ifneq ($(IS_CYGWIN),)
-  ifeq ($(BUILD_MODE),Debug)
-    BUILD_MODE_NAME := Extensions (Debug)
-  else
-    BUILD_MODE_NAME := Extensions (Release)
-  endif
 
 # Fallback: use qt6 if requested, otherwise No Ext
 else
   ifeq ($(WIDGETSET),qt6)
-    ifeq ($(BUILD_MODE),Debug)
-      BUILD_MODE_NAME := Qt6 (Debug)
-    else
-      BUILD_MODE_NAME := Qt6 (Release)
-    endif
   else
     ifeq ($(BUILD_MODE),Debug)
-      BUILD_MODE_NAME := No Ext (Debug)
     else
-      BUILD_MODE_NAME := No Ext (Release)
     endif
   endif
 endif
 
-LAZBUILD_FLAGS ?= --widgetset=$(WIDGETSET) --build-mode="$(BUILD_MODE_NAME)" $(CPU_FLAG)
+LAZBUILD_FLAGS = --widgetset=$(WIDGETSET) --build-mode="$(BUILD_MODE_NAME)" $(CPU_FLAG)
 
 # Determine a build-mode suitable for 'noext' (prefer Qt6 No Extensions or No Ext)
-ifeq ($(BUILD_MODE),Debug)
-	NOEXT_BUILD_MODE_NAME := $(shell perl -0777 -ne 'while(/<Item Name="([^"]+)"/g){print "$$1\n"}' $(LPI) | grep -Fx "No Ext (Debug)" | head -n1)
-  ifeq ($(NOEXT_BUILD_MODE_NAME),)
-    NOEXT_BUILD_MODE_NAME := No Ext (Debug)
-  endif
-else
-	# Prefer generic No Ext (Release) if present; otherwise fall back to Qt6-specific no-extension modes.
-	NOEXT_BUILD_MODE_NAME := $(shell perl -0777 -ne 'while(/<Item Name="([^"]+)"/g){print "$$1\n"}' $(LPI) | grep -Fx "No Ext (Release)" | head -n1)
-  ifeq ($(WIDGETSET),qt6)
-		ifeq ($(NOEXT_BUILD_MODE_NAME),)
-			NOEXT_BUILD_MODE_NAME := $(shell perl -0777 -ne 'while(/<Item Name="([^"]+)"/g){print "$$1\n"}' $(LPI) | grep -E "Qt6 \(Release; No Extensions\)|Qt6 \(Release: No Extensions\)" | head -n1)
-		endif
-  endif
-  ifeq ($(NOEXT_BUILD_MODE_NAME),)
-		NOEXT_BUILD_MODE_NAME := $(shell perl -0777 -ne 'while(/<Item Name="([^"]+)"/g){print "$$1\n"}' $(LPI) | grep -E "No Ext \(Release\)" | head -n1)
-  endif
-  ifeq ($(NOEXT_BUILD_MODE_NAME),)
-    NOEXT_BUILD_MODE_NAME := No Ext (Release)
-  endif
-endif
+NOEXT_BUILD_MODE_NAME = No Ext ($(BUILD_MODE))
 
-NOEXT_LAZBUILD_FLAGS ?= --widgetset=$(WIDGETSET) --build-mode="$(NOEXT_BUILD_MODE_NAME)" $(CPU_FLAG)
+NOEXT_LAZBUILD_FLAGS = --widgetset=$(WIDGETSET) --build-mode="$(NOEXT_BUILD_MODE_NAME)" $(CPU_FLAG)
 
 .PHONY: all help check build release debug test clean dist install run
 
