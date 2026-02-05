@@ -83,7 +83,7 @@ winsock,
 LazFileUtils, uconf, trndi.native, Trndi.API,
 trndi.api.xDrip,{$ifdef DEBUG} trndi.api.debug_custom, trndi.api.debug, trndi.api.debug_edge, trndi.api.debug_missing, trndi.api.debug_firstXmissing, trndi.api.debug_perfect, trndi.api.debug_firstmissing, trndi.api.debug_secondmissing,{$endif}
 {$ifdef LCLQt6}Qt6, QtWidgets,{$endif}
-StrUtils, TouchDetection, ufloat, uhistorygraph, LCLType, trndi.webserver.threaded, RazerChromaFactory, RazerChroma;
+StrUtils, TouchDetection, ufloat, uhistorygraph, LCLType, trndi.webserver.threaded, razer.chroma.factory, razer.chroma;
 
 {** Main application unit exposing the primary UI and helpers for the
   Trndi application. This unit defines the `TfBG` form which handles

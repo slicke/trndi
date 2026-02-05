@@ -18,20 +18,20 @@
  * GitHub: https://github.com/slicke/trndi
  *)
 {**
-  @unit RazerChromaWindows
+  @unit razer.chroma.windows
   @brief Windows driver that wraps the Razer Chroma SDK DLL.
   @details
     Dynamically loads `RzChromaSDK*.dll`, resolves `Create*Effect`, `SetEffect`, and
     `DeleteEffect`, and funnels every effect call through the shared `TRazerChromaBase` API.
 }
-unit RazerChromaWindows;
+unit razer.chroma.windows;
 
 {$mode objfpc}{$H+}
 
 interface
 
 uses
-  SysUtils, Classes, Windows, DynLibs, RazerChroma;
+  SysUtils, Classes, Windows, DynLibs, razer.chroma;
 
 type
   TCreateEffectFunc = function(Effect: Integer; Param: Pointer; EffectId: Pointer): LongInt; stdcall;

@@ -1,21 +1,21 @@
 (*
- * Dummy macOS RazerChroma driver for builds where native SDK is unavailable.
- * Provides a no-op TRazerChromaMac class so macOS builds link when Razer code
- * is referenced. This unit is compiled only on Darwin.
+ * Dummy BSD RazerChroma driver for builds where native SDK is unavailable.
+ * Provides a no-op TRazerChromaBSD class so BSD builds link when Razer code
+ * is referenced. This unit is compiled only on BSD (FreeBSD, OpenBSD, NetBSD).
  *)
-unit RazerChromaMac;
+unit razer.Chroma.bsd;
 
 {$mode objfpc}{$H+}
 
 interface
 
-{$ifdef DARWIN}
+{$ifdef BSD}
 uses
-  SysUtils, Classes, RazerChroma;
+  SysUtils, Classes, razer.chroma;
 
 type
-  {** No-op macOS implementation of TRazerChromaBase. }
-  TRazerChromaMac = class(TRazerChromaBase)
+  {** No-op BSD implementation of TRazerChromaBase. }
+  TRazerChromaBSD = class(TRazerChromaBase)
   protected
     function DoInitialize: Boolean; override;
     procedure DoFinalize; override;
@@ -39,80 +39,80 @@ type
 
 implementation
 
-{$ifdef DARWIN}
+{$ifdef BSD}
 
-{ TRazerChromaMac }
+{ TRazerChromaBSD }
 
-constructor TRazerChromaMac.Create;
+constructor TRazerChromaBSD.Create;
 begin
   inherited Create;
 end;
 
-function TRazerChromaMac.DoInitialize: Boolean;
+function TRazerChromaBSD.DoInitialize: Boolean;
 begin
   // No native SDK available in this dummy implementation.
   Result := False;
-  FLastError := 'Razer macOS driver not implemented (dummy).';
+  FLastError := 'Razer BSD driver not implemented (dummy).';
 end;
 
-procedure TRazerChromaMac.DoFinalize;
+procedure TRazerChromaBSD.DoFinalize;
 begin
   // Nothing to clean up in dummy
 end;
 
-procedure TRazerChromaMac.DoRefreshDevices;
+procedure TRazerChromaBSD.DoRefreshDevices;
 begin
   // No devices discovered
   FDevices.Clear;
 end;
 
-function TRazerChromaMac.DoSetStatic(const ADevice: TRazerDevice; const AColor: TRGBColor): Boolean;
+function TRazerChromaBSD.DoSetStatic(const ADevice: TRazerDevice; const AColor: TRGBColor): Boolean;
 begin
   Result := False;
-  FLastError := 'Not implemented on macOS dummy driver.';
+  FLastError := 'Not implemented on BSD dummy driver.';
 end;
 
-function TRazerChromaMac.DoSetBreathSingle(const ADevice: TRazerDevice; const AColor: TRGBColor): Boolean;
-begin
-  Result := False;
-end;
-
-function TRazerChromaMac.DoSetBreathDual(const ADevice: TRazerDevice; const AColor1, AColor2: TRGBColor): Boolean;
+function TRazerChromaBSD.DoSetBreathSingle(const ADevice: TRazerDevice; const AColor: TRGBColor): Boolean;
 begin
   Result := False;
 end;
 
-function TRazerChromaMac.DoSetBreathRandom(const ADevice: TRazerDevice): Boolean;
+function TRazerChromaBSD.DoSetBreathDual(const ADevice: TRazerDevice; const AColor1, AColor2: TRGBColor): Boolean;
 begin
   Result := False;
 end;
 
-function TRazerChromaMac.DoSetSpectrum(const ADevice: TRazerDevice): Boolean;
+function TRazerChromaBSD.DoSetBreathRandom(const ADevice: TRazerDevice): Boolean;
 begin
   Result := False;
 end;
 
-function TRazerChromaMac.DoSetReactive(const ADevice: TRazerDevice; const AColor: TRGBColor; ASpeed: TRazerEffectSpeed): Boolean;
+function TRazerChromaBSD.DoSetSpectrum(const ADevice: TRazerDevice): Boolean;
 begin
   Result := False;
 end;
 
-function TRazerChromaMac.DoSetWave(const ADevice: TRazerDevice; ADirection: Integer): Boolean;
+function TRazerChromaBSD.DoSetReactive(const ADevice: TRazerDevice; const AColor: TRGBColor; ASpeed: TRazerEffectSpeed): Boolean;
 begin
   Result := False;
 end;
 
-function TRazerChromaMac.DoSetNone(const ADevice: TRazerDevice): Boolean;
+function TRazerChromaBSD.DoSetWave(const ADevice: TRazerDevice; ADirection: Integer): Boolean;
 begin
   Result := False;
 end;
 
-function TRazerChromaMac.DoSetBrightness(const ADevice: TRazerDevice; ABrightness: Byte): Boolean;
+function TRazerChromaBSD.DoSetNone(const ADevice: TRazerDevice): Boolean;
 begin
   Result := False;
 end;
 
-function TRazerChromaMac.DoGetBrightness(const ADevice: TRazerDevice): Byte;
+function TRazerChromaBSD.DoSetBrightness(const ADevice: TRazerDevice; ABrightness: Byte): Boolean;
+begin
+  Result := False;
+end;
+
+function TRazerChromaBSD.DoGetBrightness(const ADevice: TRazerDevice): Byte;
 begin
   // Return a safe default brightness
   Result := 100;

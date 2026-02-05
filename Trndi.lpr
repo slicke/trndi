@@ -62,7 +62,7 @@ sysutils,
 {$ENDIF}
 trndi.api.nightscout, trndi.api.dexcom, trndi.api, trndi.api.nightscout3,
 trndi.api.dexcomNew, trndi.api.tandem, umain, uconf, ufloat, uhistorygraph, slicke.ux.alert,
-buildinfo
+buildinfo, razer.chroma.factory
 { you can add units after this };
 
 {$R *.res}

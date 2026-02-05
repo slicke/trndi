@@ -18,20 +18,20 @@
  * GitHub: https://github.com/slicke/trndi
  *)
 {**
-  @unit RazerChromaLinux
+  @unit razer.chroma.linux
   @brief Linux driver that proxies lighting commands to the OpenRazer DBus daemon.
   @details
     Uses `dbus-send` to enumerate devices and send lighting or brightness commands so OpenRazer-managed
     Razer hardware can participate in the same effect API as the native Windows driver.
 }
-unit RazerChromaLinux;
+unit razer.chroma.linux;
 
 {$mode objfpc}{$H+}
 
 interface
 
 uses
-  SysUtils, Classes, Process, RazerChroma;
+  SysUtils, Classes, Process, razer.chroma;
 
 type
   {** Linux implementation of `TRazerChromaBase` interacting with OpenRazer. }

@@ -58,7 +58,7 @@ Graphics, Dialogs, LCLTranslator, trndi.native, lclintf,
 slicke.ux.alert, slicke.ux.native, VersionInfo, trndi.funcs, buildinfo, StrUtils,
   // Backend APIs for label captions
 trndi.api, trndi.api.nightscout, trndi.api.nightscout3, trndi.api.dexcom, trndi.api.dexcomNew, trndi.api.tandem, trndi.api.debug_custom,
-trndi.api.debug, trndi.api.debug_firstXmissing, trndi.api.xdrip, RazerChroma, math, trndi.types;
+trndi.api.debug, trndi.api.debug_firstXmissing, trndi.api.xdrip, razer.chroma, math, trndi.types;
 
 type
 

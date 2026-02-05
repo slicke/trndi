@@ -18,21 +18,21 @@
  * GitHub: https://github.com/slicke/trndi
  *)
 {**
-  @unit RazerChromaFactory
+  @unit razer.chroma.factory
   @brief Creates the platform-specific Razer Chroma driver.
   @details
     Selects the Windows Chroma SDK implementation when building on Windows or the
     OpenRazer variant when building on Linux so callers can treat `TRazerChromaBase`
     uniformly.
 }
-unit RazerChromaFactory;
+unit razer.chroma.factory;
 
 {$mode objfpc}{$H+}
 
 interface
 
 uses
-SysUtils, RazerChroma;
+SysUtils, razer.chroma;
 
 type
   {** Factory for creating and describing the available Razer Chroma driver. }
@@ -48,19 +48,19 @@ implementation
 
 uses
 {$IFDEF LINUX}
-RazerChromaLinux,
+razer.chroma.linux,
 {$ENDIF}
 {$IFDEF WINDOWS}
-RazerChromaWindows,
+Razer.chroma.windows,
 {$ENDIF}
 {$IFDEF DARWIN}
-RazerChromaMac,
+Razer.chroma.mac,
 {$ENDIF}
 {$IFDEF HAIKU}
-RazerChromaLinux,
+Razer.chroma.linux,
 {$ENDIF}
 {$IF DEFINED(BSD) AND NOT DEFINED(DARWIN)}
-RazerChromaBSD,
+Razer.chroma.bsd,
 {$ENDIF}
 StrUtils;
 

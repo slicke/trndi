@@ -18,14 +18,14 @@
  * GitHub: https://github.com/slicke/trndi
  *)
 {**
-  @unit RazerChroma
+  @unit razer.chroma
   @brief Shared definitions for discovering and driving Razer Chroma devices.
   @details
     The unit introduces the cross-platform device model, the abstract effect API used by
     `TRazerChromaBase` descendants, and helpers for converting colors between `TRGBColor`
     records and SDK integers.
 }
-unit RazerChroma;
+unit razer.chroma;
 
 {$mode objfpc}{$H+}
 
