@@ -1602,6 +1602,9 @@ var
   eventTime: TDateTime;
   timeStr: string;
   readingsList: array of BGReading;
+  rawDiff: double;
+  secondsDiff: integer;
+  scaledDelta: double;
   authHeaders: TStringList;
   trimmedBody: string;
   previewBody: string;
@@ -1798,6 +1801,9 @@ var
     currentValue: word;
     eventTime: TDateTime;
     resultIdx: integer;
+    rawDiff: double;
+    secondsDiff: integer;
+    scaledDelta: double;
   begin
     Result := False;
     SetLength(AResults, 0);
@@ -1895,10 +1901,30 @@ var
           for resultIdx := 0 to High(AResults) do
           begin
             if resultIdx < High(AResults) then
-              AResults[resultIdx].update(AResults[resultIdx].convert(mgdl) - AResults[resultIdx + 1].convert(mgdl), BGDelta, mgdl)
+            begin
+              // Raw difference between consecutive readings (mg/dL)
+              rawDiff := AResults[resultIdx].convert(mgdl) - AResults[resultIdx + 1].convert(mgdl);
+
+              // Compute time between samples in seconds
+              secondsDiff := Round((AResults[resultIdx].date - AResults[resultIdx + 1].date) * 86400);
+
+              // Store the actual observed delta (rawDiff) in BGDelta
+              AResults[resultIdx].update(rawDiff, BGDelta, mgdl);
+
+              // Normalize delta to a 5 minute window (300s) for trend calculation
+              if (secondsDiff >= 60) and (secondsDiff <= 900) then
+              begin
+                scaledDelta := rawDiff * (300 / secondsDiff);
+                AResults[resultIdx].trend := CalculateTrendFromDelta(scaledDelta);
+              end
+              else
+                AResults[resultIdx].trend := TdNotComputable;
+            end
             else
+            begin
               AResults[resultIdx].update(0, BGDelta, mgdl);
-            AResults[resultIdx].trend := CalculateTrendFromDelta(AResults[resultIdx].convert(mgdl, BGDelta));
+              AResults[resultIdx].trend := TdFlat;
+            end;
           end;
         end
         else
@@ -2353,10 +2379,23 @@ begin
         for i := 0 to High(Result) do
         begin
           if i < High(Result) then
-            Result[i].update(Result[i].convert(mgdl) - Result[i + 1].convert(mgdl), BGDelta, mgdl)
+          begin
+            rawDiff := Result[i].convert(mgdl) - Result[i + 1].convert(mgdl);
+            secondsDiff := Round((Result[i].date - Result[i + 1].date) * 86400);
+            Result[i].update(rawDiff, BGDelta, mgdl);
+            if (secondsDiff >= 60) and (secondsDiff <= 900) then
+            begin
+              scaledDelta := rawDiff * (300 / secondsDiff);
+              Result[i].trend := CalculateTrendFromDelta(scaledDelta);
+            end
+            else
+              Result[i].trend := TdNotComputable;
+          end
           else
+          begin
             Result[i].update(0, BGDelta, mgdl);
-          Result[i].trend := CalculateTrendFromDelta(Result[i].convert(mgdl, BGDelta));
+            Result[i].trend := TdFlat;
+          end;
         end;
       end
       else
