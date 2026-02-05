@@ -486,8 +486,8 @@ RS_DRIVER_CONTRIBUTOR = 'Driver contributor: ';
 RS_DEBUG_BACKEND_LABEL = '(Ignored for debug backend)';
 
 RS_Multi_User_Help =
-  'Trndi supports more than one user, this is called the multi user mode.'+LineEnding+'In this section you can add/remove accounts. There''s always a default account which cannot be deleted.'+LineEnding+
-  'Accounts have their own settings and remote servers, and are "sandboxed". Start a new instance of Trndi to log in to a given user account.';
+  'Trndi supports <b>more than one user</b>, this is called the <i>multi user mode</i>.'+sHTMLLineBreak+'In this section you can add/remove accounts. There''s <i>always</i> a default account which cannot be deleted.'+LineEnding+
+  'Accounts have their own settings and remote servers, and are <i>"sandboxed"</i>.'+sHTMLLineBreak+sHTMLLineBreak+'Start a new instance of Trndi to log in to a given user account.';
 
 RS_Use_URL_Help =
   'Trndi can load a URL when high or low in your default web browser.';
@@ -682,6 +682,11 @@ implementation
 procedure ShowMessage(const str: string);
 begin
   UXMessage(sSuccTitle, str, uxmtInformation);
+end;
+
+procedure ShowHTMLMessage(const html: string);
+begin
+  ExtHTML(uxdAuto,'',html);
 end;
 
 function ExtractLangCode(const AText: string): string;
