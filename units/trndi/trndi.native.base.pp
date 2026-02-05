@@ -3186,17 +3186,23 @@ function TTrndiNativeBase.TryGetCSVSetting(const keyname: string; out res: TStri
 global: boolean = false): boolean;
 var
   val: string;
+  sl: TStringList;
 begin
+  Result := false;
   if self.TryGetSetting(keyname, val, global) then
-    with TStringList.Create do
-    begin
-      Clear;
-      CommaText := val;
-      res := ToStringArray;
-      Free;
-    end
+  begin
+    sl := TStringList.Create;
+    try
+      sl.Clear;
+      sl.CommaText := val;
+      res := sl.ToStringArray;
+      Result := true;
+    finally
+      sl.Free;
+    end;
+  end
   else
-    result := false;
+    Result := false;
 end;
 
 {------------------------------------------------------------------------------

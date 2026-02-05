@@ -2908,6 +2908,7 @@ procedure LoadUserSettings(f: TfConf);
     hasUsers: boolean;
     posName: string;
     i: integer;
+    usersStr: string;
     posValue: integer;
     po: TrndiPos;
     sizeVal: integer;
@@ -3049,9 +3050,21 @@ procedure LoadUserSettings(f: TfConf);
       begin
         lbUsers.Clear;
         lbUsers.Items.AddStrings(userNames);
+        // Build a CSV string for logging (Join not available on this compiler)
+        usersStr := '';
+        for i := 0 to High(userNames) do
+        begin
+          if i > 0 then
+            usersStr := usersStr + ',';
+          usersStr := usersStr + userNames[i];
+        end;
+        LogMessageToFile(Format('LoadUserSettings: loaded users.names: %s', [usersStr]));
       end
       else
+      begin
         lbUsers.Enabled := false;
+        LogMessageToFile('LoadUserSettings: users.names not found or empty');
+      end;
 
       lbUsers.Items.Add('- ' + RS_DEFAULT_ACCOUNT + ' -');
       cbUserColor.Checked := native.GetRootSetting('users.colorbox', 'true') = 'true';
