@@ -786,6 +786,7 @@ var
   i, j: integer;
   inBlock: boolean;
   Line, Handler, DevPath: string;
+  LineLower, HandlerLower: string;
   HasAccessibleDevice: boolean;
   F: Integer;
 begin
@@ -814,14 +815,17 @@ begin
               for j := 0 to Block.Count - 1 do
               begin
                 Line := Block[j];
+                LineLower := LowerCase(Line);
                 if (Pos('H: Handlers=', Line) = 1) or (Pos('H: ', Line) = 1) then
                 begin
                   // Extract event handlers (e.g., "event0", "event3")
-                  if Pos('event', LowerCase(Line)) > 0 then
+                  if Pos('event', LineLower) > 0 then
                   begin
                     // Try to actually open /dev/input/eventX device for reading
                     for Handler in Line.Split([' ', '=']) do
-                      if (Pos('event', LowerCase(Handler)) > 0) then
+                    begin
+                      HandlerLower := LowerCase(Handler);
+                      if Pos('event', HandlerLower) > 0 then
                       begin
                         DevPath := '/dev/input/' + Handler;
                         if FileExists(DevPath) then
@@ -835,6 +839,7 @@ begin
                           end;
                         end;
                       end;
+                    end;
                   end;
                   if HasAccessibleDevice then
                     Break;
@@ -865,14 +870,17 @@ begin
           for j := 0 to Block.Count - 1 do
           begin
             Line := Block[j];
+            LineLower := LowerCase(Line);
             if (Pos('H: Handlers=', Line) = 1) or (Pos('H: ', Line) = 1) then
             begin
               // Extract event handlers (e.g., "event0", "event3")
-              if Pos('event', LowerCase(Line)) > 0 then
+              if Pos('event', LineLower) > 0 then
               begin
                 // Try to actually open /dev/input/eventX device for reading
                 for Handler in Line.Split([' ', '=']) do
-                  if (Pos('event', LowerCase(Handler)) > 0) then
+                begin
+                  HandlerLower := LowerCase(Handler);
+                  if (Pos('event', HandlerLower) > 0) then
                   begin
                     DevPath := '/dev/input/' + Handler;
                     if FileExists(DevPath) then
@@ -886,6 +894,7 @@ begin
                       end;
                     end;
                   end;
+                end;
               end;
               if HasAccessibleDevice then
                 Break;
