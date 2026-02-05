@@ -37,7 +37,7 @@ unit trndi.native.mac;
 interface
 
 uses
-  Classes, SysUtils, Graphics, nsutils.nsmisc, nsutils.web.nsurlrequest, CocoaAll, nsutils.simpledarkmode,
+  Classes, SysUtils, Graphics, nsutils.nsmisc, nsutils.web.urlrequest, CocoaAll, nsutils.simpledarkmode,
   trndi.native.base;
 
 type

@@ -51,7 +51,7 @@ interface
 uses
 Classes, SysUtils, Graphics, trndi.log
 {$IF DEFINED(X_MAC)}
-, nsutils.nsmisc, nsutils.web.nsurlrequest, CocoaAll, LCLType, StrUtils
+, nsutils.nsmisc, nsutils.web.urlrequest, CocoaAll, LCLType, StrUtils
 {$ELSEIF DEFINED(X_WIN)}
 , Windows, Registry, Dialogs, StrUtils, winutils.httpclient, shellapi, comobj,
 Forms, variants, dwmapi

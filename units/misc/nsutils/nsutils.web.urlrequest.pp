@@ -1,4 +1,4 @@
-unit nsuntils.web.nsurlrequest;
+unit nsutils.web.urlrequest;
 
 {
   TNSHTTPSendAndReceive class for use by itself as an HTTP client or with 
