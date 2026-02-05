@@ -5,7 +5,7 @@ unit trndi.webserver.threaded;
 interface
 
 uses
-Classes, SysUtils, Sockets, fpjson, jsonparser, trndi.funcs, trndi.types
+Classes, SysUtils, StrUtils, Sockets, fpjson, jsonparser, trndi.funcs, trndi.types
 {$IFNDEF Windows}, BaseUnix{$ELSE}, WinSock2{$IFEND};
 
 type
@@ -166,7 +166,8 @@ begin
     for i := 0 to Lines.Count - 1 do
     begin
       Line := Lines[i];
-      if (Pos('Authorization:', Line) = 1) or (Pos('authorization:', Line) = 1) then
+      if (Length(Line) >= Length('Authorization:')) and
+         SameText(Copy(Line, 1, Length('Authorization:')), 'Authorization:') then
       begin
         Result := Pos('Bearer ' + FAuthToken, Line) > 0;
         Exit;
@@ -329,6 +330,11 @@ var
   ReadFDs: TFDSet;
   TimeVal: TTimeVal;
   SelectResult: integer;
+  ReqStream: TMemoryStream;
+  StartScan: NativeInt;
+  j: NativeInt;
+  Found: boolean;
+  PBuf: PByte;
   {$IFDEF WINDOWS}
   WSAData: TWSAData;
   InetAddr: TInetSockAddr;
@@ -433,28 +439,57 @@ begin
       
       if ClientSocket <> INVALID_SOCKET then
       try
-          // Read request
-        Request := '';
-        repeat
-          FillChar(Buffer, SizeOf(Buffer), 0);
-          {$IFDEF WINDOWS}
-          BytesRead := WinSock2.recv(ClientSocket, Buffer, SizeOf(Buffer), 0);
-          {$ELSE}
-          BytesRead := fpRecv(ClientSocket, @Buffer, SizeOf(Buffer), 0);
-          {$ENDIF}
-          if BytesRead > 0 then
-            Request := Request + Copy(Buffer, 0, BytesRead);
-        until (BytesRead <= 0) or (Pos(#13#10#13#10, Request) > 0);
+        // Read request efficiently into a memory stream to avoid repeated string reallocations
+        ReqStream := TMemoryStream.Create;
+        try
+          Found := false;
+          repeat
+            FillChar(Buffer, SizeOf(Buffer), 0);
+            {$IFDEF WINDOWS}
+            BytesRead := WinSock2.recv(ClientSocket, Buffer, SizeOf(Buffer), 0);
+            {$ELSE}
+            BytesRead := fpRecv(ClientSocket, @Buffer, SizeOf(Buffer), 0);
+            {$ENDIF}
+            if BytesRead > 0 then
+            begin
+              ReqStream.Write(Buffer, BytesRead);
 
-        if BytesRead > 0 then
-        begin
+              // Scan only the newly appended region (+3 bytes overlap) for CRLFCRLF to detect end of headers
+              StartScan := ReqStream.Size - BytesRead;
+              if StartScan > 3 then
+                Dec(StartScan, 3)
+              else
+                StartScan := 0;
+
+              if ReqStream.Size >= 4 then
+              begin
+                PBuf := PByte(ReqStream.Memory);
+                for j := StartScan to ReqStream.Size - 4 do
+                  if (PBuf[j] = 13) and (PBuf[j+1] = 10) and (PBuf[j+2] = 13) and (PBuf[j+3] = 10) then
+                  begin
+                    Found := true;
+                    Break;
+                  end;
+              end;
+            end;
+          until (BytesRead <= 0) or Found;
+
+          if ReqStream.Size > 0 then
+          begin
+            SetLength(Request, ReqStream.Size);
+            if ReqStream.Size > 0 then
+              Move(ReqStream.Memory^, Request[1], ReqStream.Size);
+
             // Handle request and send response
-          Response := HandleRequest(Request);
-          {$IFDEF WINDOWS}
-          WinSock2.send(ClientSocket, Response[1], Length(Response), 0);
-          {$ELSE}
-          fpSend(ClientSocket, @Response[1], Length(Response), 0);
-          {$ENDIF}
+            Response := HandleRequest(Request);
+            {$IFDEF WINDOWS}
+            WinSock2.send(ClientSocket, Response[1], Length(Response), 0);
+            {$ELSE}
+            fpSend(ClientSocket, @Response[1], Length(Response), 0);
+            {$ENDIF}
+          end;
+        finally
+          ReqStream.Free;
         end;
       finally
         CloseSocket(ClientSocket);
