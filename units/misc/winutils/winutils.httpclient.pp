@@ -37,7 +37,7 @@
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *)
 
-unit winhttpclient;
+unit winutils.httpclient;
 
 interface
 

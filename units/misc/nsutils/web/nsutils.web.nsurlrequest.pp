@@ -1,4 +1,4 @@
-unit ns_url_request;
+unit nsuntils.web.nsurlrequest;
 
 {
   TNSHTTPSendAndReceive class for use by itself as an HTTP client or with 
@@ -33,7 +33,7 @@ Foundation,
 CocoaAll,
 {$ENDIF}
 {$ENDIF}
-NSHelpers;
+nsutils.nshelpers;
 
 type
 TNSHTTPSendAndReceive = class(TObject)

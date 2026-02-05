@@ -1,4 +1,4 @@
-unit NSMisc;
+unit nsutils.nsmisc;
 
 {
   Misc. Foundation-based routines.
@@ -32,7 +32,7 @@ uses
   CocoaAll,
  {$ENDIF}
 {$ENDIF}
-  NSHelpers;
+  nsutils.nshelpers;
 
 function GetInfoPlistString(const KeyName : string) : string;
 

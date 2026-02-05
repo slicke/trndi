@@ -24,7 +24,7 @@ implementation
 uses
   Classes, SysUtils
   {$ifdef DARWIN}
-  , CocoaAll, NSHelpers
+  , CocoaAll, nsutils.nshelpers
   {$endif}
   ;
 

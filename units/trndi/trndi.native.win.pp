@@ -44,7 +44,7 @@ interface
 
 uses
 Classes, SysUtils, Graphics, Windows, Registry, Dialogs, StrUtils,
-winhttpclient, shellapi,
+winutils.httpclient, shellapi,
 Forms, variants, dwmapi, trndi.native.base, ExtCtrls{$ifdef DEBUG}, trndi.log{$endif};
 
 type

@@ -1,4 +1,4 @@
-unit NSHelpers;
+unit nsutils.nshelpers;
 
 {
   Unit of handy routines for use with Foundation and Core Foundation.

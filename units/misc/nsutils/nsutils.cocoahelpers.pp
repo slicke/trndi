@@ -1,4 +1,4 @@
-unit CocoaHelpers;
+unit nsutils.cocoahelpers;
 
 {
   Unit of handy routines for use with Cocoa.
@@ -25,7 +25,7 @@ uses
 {$ELSE}
   CocoaAll,
 {$ENDIF}
-  NSHelpers;
+  nsutils.nshelpers;
   
 procedure ErrorDlg(const ErrorMsg : string);
 

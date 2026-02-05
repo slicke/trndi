@@ -1,4 +1,4 @@
-unit NSFormat;
+unit nsutils.nsformat;
 
 {
   Foundation-based routine for populating a TFormatSettings record.
