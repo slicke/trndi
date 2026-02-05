@@ -164,7 +164,7 @@ xattr -c /path/to/Trndi.app
 ```
 
 ## Haiku
-Trndi can be built for Haiku OS using Lazarus. You can remove the mormot2 dependancy if compiling without extensions!
+Trndi can be built for Haiku OS using Lazarus.
 
 **Requirements:**
 - Free Pascal Compiler: `pkgman install fpc`
@@ -179,7 +179,10 @@ pkgman install fpc lazarus_bin openssl
 # Clone and build
 git clone https://github.com/slicke/trndi.git
 cd trndi
-lazbuild -B --widgetset=qt6 Trndi.lpi
+
+# Use the included Makefile rather than calling lazbuild directly for simplicity.
+# Add noext to remove extensions (mORMot2 dependancy issues)
+make noext
 ```
 
 **Features on Haiku:**
@@ -205,7 +208,10 @@ pkg install fpc lazarus curl openssl
 # Clone and build
 git clone https://github.com/slicke/trndi.git
 cd trndi
-lazbuild -B --widgetset=qt6 Trndi.lpi
+# Use the included Makefile rather than calling lazbuild directly
+make
+# Or build without extensions (no mORMot2 dependancy)
+make noext
 ```
 
 **Features on BSD:**
@@ -242,14 +248,44 @@ Use the Lazarus IDE to build and/or develop the app, set release target in the _
 
 ### Command line
 
+Linux / Haiku / BSD (recommended)
+
 Build development:
-```lazbuild Trndi.lpi``` 
+```bash
+make debug
+```
 
 Build release:
-```lazbuild -dRelease Trndi.lpi``` 
+```bash
+make
+```
 
-Build to a release folder
-```lazbuild -B output_directory Trndi.lpi``` 
+Build release without extensions support:
+> This removes dependancy on mORMot2
+```bash
+make noext
+
+Build to a release folder:
+```bash
+make OUTDIR=output_directory
+```
+
+macOS / Windows
+
+Build development:
+```bash
+lazbuild Trndi.lpi
+```
+
+Build release:
+```bash
+lazbuild -dRelease Trndi.lpi
+```
+
+Build to a release folder:
+```bash
+lazbuild -B output_directory Trndi.lpi
+```
 
 ### Makefile
 
