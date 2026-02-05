@@ -272,6 +272,15 @@ make OUTDIR=output_directory
 
 macOS / Windows
 
+Windows (PowerShell):
+- Prefer the included `make.ps1` helper for convenience. It wraps `lazbuild` and provides shortcuts:
+  - `./make.ps1` or `./make.ps1 release`  -> builds Release via `lazbuild` (`-dRelease`)
+  - `./make.ps1 debug`                     -> builds Debug via `lazbuild` (`-dDebug`)
+  - `./make.ps1 noext`                     -> builds the "No Ext (Release)" mode
+  - `./make.ps1 help`                      -> show usage
+
+macOS / (also usable on Windows if you prefer):
+
 Build development:
 ```bash
 lazbuild Trndi.lpi
@@ -279,7 +288,7 @@ lazbuild Trndi.lpi
 
 Build release:
 ```bash
-lazbuild -dRelease Trndi.lpi
+lazbuild --build-mode="No Ext (Release)" Trndi.lpi
 ```
 
 Build to a release folder:
@@ -300,6 +309,7 @@ There is a convenience `Makefile` that wraps `lazbuild` with common targets:
 - `make noext-release` / `make noext-debug` — same as `noext` but force build mode
 - `make IGNORE_MORMOT=1` or `make build-ignore` — force build even if mORMot2 is not found (skip presence check)
 - `make clean`
+- `make.ps1` (Windows PowerShell helper) — run `./make.ps1 help` for shortcuts (`release`, `debug`, `noext`)
 
 Defaults by platform:
 - Linux: forces the `Qt6` build modes by default (e.g. `Qt6 (Release)`)
