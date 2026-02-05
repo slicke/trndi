@@ -8,8 +8,9 @@ unit trndiext;
 interface
 
 uses 
-quickjs,
-dialogs;
+  quickjs,
+  dialogs,
+  trndi.log;
 
 
 type 
@@ -199,7 +200,11 @@ end;
                     res := JS_Call(ctx,OnCallBack,this_val,argc,argv);
                     if JS_IsException(res) then
                       exit(res);
-                    Writeln('OnCallBack return = ', JS_ToBool(ctx,res));
+                    // Replace direct console write with file logging to avoid stdout output
+                    if JS_ToBool(ctx, res) then
+                      LogMessageToFile('TrndiExtension OnCallBack return = true')
+                    else
+                      LogMessageToFile('TrndiExtension OnCallBack return = false');
                   end;
               finally
                 JS_FreeValue(ctx,OnCallBack);
