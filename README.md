@@ -298,6 +298,7 @@ There is a convenience `Makefile` that wraps `lazbuild` with common targets:
 - `make list-modes` — list available build modes in `Trndi.lpi`
 - `make noext` — build without mORMot2 using a temporary project copy (useful if you don't have the mORMot2 package installed locally)
 - `make noext-release` / `make noext-debug` — same as `noext` but force build mode
+- `make IGNORE_MORMOT=1` or `make build-ignore` — force build even if mORMot2 is not found (skip presence check)
 - `make clean`
 
 Defaults by platform:
