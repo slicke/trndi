@@ -2305,9 +2305,8 @@ msgstr ""
 
 #: uconf.rs_multi_user_help
 msgid ""
-"Trndi supports more than one user, this is called the multi user mode.\n"
-"In this section you can add/remove accounts. There's always a default account which cannot be deleted.\n"
-"Accounts have their own settings and remote servers, and are \"sandboxed\". Start a new instance of Trndi to log in to a given user account."
+"Trndi supports <b>more than one user</b>, this is called the <i>multi user mode</i>.<br>In this section you can add/remove accounts. There's <i>always</i> a default account which cannot be deleted.\n"
+"Accounts have their own settings and remote servers, and are <i>\"sandboxed\"</i>.<br><br>Start a new instance of Trndi to log in to a given user account."
 msgstr ""
 
 #: uconf.rs_newver

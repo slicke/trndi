@@ -399,17 +399,23 @@ var
   var
     i: integer;
     c: char;
+    sb: TStringBuilder;
   begin
-    Result := '';
-    for i := 1 to Length(S) do
-    begin
-      c := S[i];
-      if (c in ['A'..'Z', 'a'..'z', '0'..'9', '-', '_', '.', '~']) then
-        Result := Result + c
-      else if c = ' ' then
-        Result := Result + '+'
-      else
-        Result := Result + '%' + IntToHex(Ord(c), 2);
+    sb := TStringBuilder.Create;
+    try
+      for i := 1 to Length(S) do
+      begin
+        c := S[i];
+        if (c in ['A'..'Z', 'a'..'z', '0'..'9', '-', '_', '.', '~']) then
+          sb.Append(c)
+        else if c = ' ' then
+          sb.Append('+')
+        else
+          sb.Append('%').Append(IntToHex(Ord(c), 2));
+      end;
+      Result := sb.ToString;
+    finally
+      sb.Free;
     end;
   end;
   function TryLoginAt(const ABaseUrl: string): boolean;
@@ -597,17 +603,23 @@ var
   var
     i: integer;
     c: char;
+    sb: TStringBuilder;
   begin
-    Result := '';
-    for i := 1 to Length(S) do
-    begin
-      c := S[i];
-      if (c in ['A'..'Z', 'a'..'z', '0'..'9', '-', '_', '.', '~']) then
-        Result := Result + c
-      else if c = ' ' then
-        Result := Result + '+'
-      else
-        Result := Result + '%' + IntToHex(Ord(c), 2);
+    sb := TStringBuilder.Create;
+    try
+      for i := 1 to Length(S) do
+      begin
+        c := S[i];
+        if (c in ['A'..'Z', 'a'..'z', '0'..'9', '-', '_', '.', '~']) then
+          sb.Append(c)
+        else if c = ' ' then
+          sb.Append('+')
+        else
+          sb.Append('%').Append(IntToHex(Ord(c), 2));
+      end;
+      Result := sb.ToString;
+    finally
+      sb.Free;
     end;
   end;
 begin

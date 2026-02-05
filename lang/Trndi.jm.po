@@ -2468,10 +2468,14 @@ msgid "When calculatingg time-in-range, do so over this amount of minutes. If th
 msgstr "Ner tid-i-molomrodet bereknas, gôr det fôr detta antal minuter. Om numret er hôgre en tillgenglig data, visas maxtiden - vilket just nu er __PHb64045aa-ab4b-4dc4-9380-66d33d0db0b0__ minuter."
 
 #: uconf.rs_multi_user_help
+#, fuzzy
+#| msgid ""
+#| "Trndi supports more than one user, this is called the multi user mode.\n"
+#| "In this section you can add/remove accounts. There's always a default account which cannot be deleted.\n"
+#| "Accounts have their own settings and remote servers, and are \"sandboxed\". Start a new instance of Trndi to log in to a given user account."
 msgid ""
-"Trndi supports more than one user, this is called the multi user mode.\n"
-"In this section you can add/remove accounts. There's always a default account which cannot be deleted.\n"
-"Accounts have their own settings and remote servers, and are \"sandboxed\". Start a new instance of Trndi to log in to a given user account."
+"Trndi supports <b>more than one user</b>, this is called the <i>multi user mode</i>.<br>In this section you can add/remove accounts. There's <i>always</i> a default account which cannot be deleted.\n"
+"Accounts have their own settings and remote servers, and are <i>\"sandboxed\"</i>.<br><br>Start a new instance of Trndi to log in to a given user account."
 msgstr ""
 "Trndi stöder mer än en användare, detta kallas fleranvändarläge.\n"
 "I denna del kan du lägga till/ta bort konton. Det finns alltid ett standardkonto som inte kan raderas.\n"

@@ -1007,7 +1007,7 @@ end;
 
 procedure TfConf.bMultiUserHelpClick(Sender: TObject);
 begin
-  ShowMessage(RS_Multi_User_Help);
+  ShowHTMLMessage(RS_Multi_User_Help);
 end;
 
 procedure TfConf.bNotificationHelpClick(Sender: TObject);
