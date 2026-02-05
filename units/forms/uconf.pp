@@ -866,7 +866,9 @@ procedure WarnUnstableAPI;
   var
     i : integer;
   begin
-    if (cbSys.Text = API_DEX_USA) or (cbSys.Text = API_DEX_EU) then
+    case cbSys.Text of
+      API_DEX_USA,
+      API_DEX_EU:
     begin
       gbOverride.Color := uxclLightBlue;
       lLoUnder.Font.Color := clBlack;
@@ -876,28 +878,31 @@ procedure WarnUnstableAPI;
       pnSysWarn.Show;
       lSysWarnInfo.Caption := RS_DEX;
     end;
-
-    if (cbSys.Text = API_NS3) then
+    API_NS3:
     begin
       pnSysWarn.Show;
       lSysWarnInfo.Caption := RS_BETA;
     end;
-    if (cbSys.Text = API_DEX_NEW_EU) or (cbSys.Text = API_DEX_NEW_USA) or (cbSys.Text = API_DEX_NEW_JP) then
+    API_DEX_NEW_EU,
+    API_DEX_NEW_USA,
+    API_DEX_NEW_JP:
     begin
       pnSysWarn.Show;
       lSysWarnInfo.Caption := RS_BETA_DEX;
     end;
-    if cbSys.Text = API_XDRIP then
+    API_XDRIP:
     begin
       pnSysWarn.Show;
       lSysWarnInfo.Caption := RS_XDRIP;
     end;
-    if (cbSys.Text = API_TANDEM_EU) or (cbSys.Text = API_TANDEM_USA) then
+    API_TANDEM_EU,
+    API_TANDEM_USA:
     begin
       pnSysWarn.Show;
       lSysWarnInfo.Caption := RS_TANDEM;
     end;
     {$ifdef DEBUG}
+  end;
     if cbSys.Text in API_DEBUG then
     begin
       pnSysWarn.Show;
