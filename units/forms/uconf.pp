@@ -902,7 +902,6 @@ procedure WarnUnstableAPI;
       lSysWarnInfo.Caption := RS_TANDEM;
     end;
     {$ifdef DEBUG}
-  end;
     if cbSys.Text in API_DEBUG then
     begin
       pnSysWarn.Show;
