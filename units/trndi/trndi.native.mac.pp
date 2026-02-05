@@ -385,7 +385,7 @@ end;
 class function TTrndiNativeMac.setDarkMode: boolean;
 begin
   // Enable dark appearance for the app's UI via SimpleDarkMode
-  SimpleDarkMode.EnableAppDarkMode;
+  nsutils.simpledarkmode.EnableAppDarkMode;
   Result := True;
 end;
 
