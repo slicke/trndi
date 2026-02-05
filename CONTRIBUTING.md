@@ -2,6 +2,20 @@
 
 Thanks for your interest in contributing! This guide explains how to propose changes, coding/documentation style, and how to run docs/build locally.
 
+## Branching and Pull Requests
+
+**Always work from the `develop` branch:**
+- Clone the repository and checkout the `develop` branch:
+  ```bash
+  git clone https://github.com/slicke/trndi.git
+  cd trndi
+  git checkout develop
+  ```
+- Create your feature branch from `develop`.
+- When ready, open a pull request (PR) targeting the `develop` branch (not `main`).
+
+This keeps main stable and ensures new features and fixes are integrated smoothly.
+
 ## Getting started
 
 - Fork the repo and create a feature branch from `develop`.
