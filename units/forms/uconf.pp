@@ -862,6 +862,7 @@ begin
 end;
 
 procedure TfConf.cbSysChange(Sender: TObject);
+var user, pass: string;
 procedure WarnUnstableAPI;
   var
     i : integer;
@@ -901,6 +902,7 @@ procedure WarnUnstableAPI;
       pnSysWarn.Show;
       lSysWarnInfo.Caption := RS_TANDEM;
     end;
+   end;
     {$ifdef DEBUG}
     if cbSys.Text in API_DEBUG then
     begin
@@ -910,7 +912,6 @@ procedure WarnUnstableAPI;
     {$endif}
   end;
 
-var user, pass: string;
 begin
   pnSysWarn.Hide;
   gbOverride.Color := clDefault;
