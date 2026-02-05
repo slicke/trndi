@@ -108,7 +108,7 @@
           </Target>
           <SearchPaths>
             <IncludeFiles Value="$(ProjOutDir)"/>
-            <OtherUnitFiles Value="units\winutils\directx;units\nsutils;units\trndi\ext;units\forms;units\trndi\api;units\trndi;units\slicke;units\misc;units\misc\razer;units\misc\razer\chroma"/>
+            <OtherUnitFiles Value="units\misc\winutils\directx;units\misc\nsutils;units\trndi\ext;units\forms;units\trndi\api;units\trndi;units\slicke;units\misc;units\misc\razer;units\misc\razer\chroma"/>
             <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
           </SearchPaths>
           <CodeGeneration>
@@ -149,7 +149,7 @@
           </Target>
           <SearchPaths>
             <IncludeFiles Value="$(ProjOutDir)"/>
-            <OtherUnitFiles Value="units\winutils\directx;units\nsutils;units\trndi\ext;units\forms;units\trndi\api;units\trndi;units\slicke;units\misc;units\misc\razer;units\misc\razer\chroma"/>
+            <OtherUnitFiles Value="units\misc\winutils\directx;units\misc\nsutils;units\trndi\ext;units\forms;units\trndi\api;units\trndi;units\slicke;units\misc;units\misc\razer;units\misc\razer\chroma"/>
             <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
           </SearchPaths>
           <CodeGeneration>
@@ -187,7 +187,7 @@
           </Target>
           <SearchPaths>
             <IncludeFiles Value="$(ProjOutDir)"/>
-            <OtherUnitFiles Value="units\winutils\directx;units\nsutils;units\trndi\ext;units\forms;units\trndi\api;units\trndi;units\slicke;units\misc;units\misc\razer;units\misc\razer\chroma"/>
+            <OtherUnitFiles Value="units\misc\winutils\directx;units\misc\nsutils;units\trndi\ext;units\forms;units\trndi\api;units\trndi;units\slicke;units\misc;units\misc\razer;units\misc\razer\chroma"/>
             <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
           </SearchPaths>
           <CodeGeneration>
@@ -226,7 +226,7 @@
           </Target>
           <SearchPaths>
             <IncludeFiles Value="$(ProjOutDir)"/>
-            <OtherUnitFiles Value="units\winutils\directx;units\nsutils;units\trndi\ext;units\forms;units\trndi\api;units\trndi;units\slicke;units\misc;units\misc\razer\chroma"/>
+            <OtherUnitFiles Value="units\misc\winutils\directx;units\misc\nsutils;units\trndi\ext;units\forms;units\trndi\api;units\trndi;units\slicke;units\misc;units\misc\razer\chroma"/>
             <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
           </SearchPaths>
           <CodeGeneration>
@@ -262,7 +262,7 @@
           </Target>
           <SearchPaths>
             <IncludeFiles Value="$(ProjOutDir)"/>
-            <OtherUnitFiles Value="units\winutils\directx;units\nsutils;units\trndi\ext;units\forms;units\trndi\api;units\trndi;units\slicke;units\misc;units\misc\razer\chroma"/>
+            <OtherUnitFiles Value="units\misc\winutils\directx;units\misc\nsutils;units\trndi\ext;units\forms;units\trndi\api;units\trndi;units\slicke;units\misc;units\misc\razer\chroma"/>
             <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
           </SearchPaths>
           <CodeGeneration>
@@ -300,7 +300,7 @@
           </Target>
           <SearchPaths>
             <IncludeFiles Value="$(ProjOutDir)"/>
-            <OtherUnitFiles Value="units\winutils\directx;units\nsutils;units\trndi\ext;units\forms;units\trndi\api;units\trndi;units\slicke;units\misc;units\misc\razer\chroma"/>
+            <OtherUnitFiles Value="units\misc\winutils\directx;units\misc\nsutils;units\trndi\ext;units\forms;units\trndi\api;units\trndi;units\slicke;units\misc;units\misc\razer\chroma"/>
             <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
           </SearchPaths>
           <CodeGeneration>
@@ -339,7 +339,7 @@
           </Target>
           <SearchPaths>
             <IncludeFiles Value="$(ProjOutDir)"/>
-            <OtherUnitFiles Value="units\winutils\directx;units\nsutils;units\trndi\ext;units\forms;units\trndi\api;units\trndi;units\slicke;units\misc;units\misc\razer;units\misc\razer\chroma"/>
+            <OtherUnitFiles Value="units\misc\winutils\directx;units\misc\nsutils;units\trndi\ext;units\forms;units\trndi\api;units\trndi;units\slicke;units\misc;units\misc\razer;units\misc\razer\chroma"/>
             <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
           </SearchPaths>
           <CodeGeneration>
@@ -374,7 +374,7 @@
           </Target>
           <SearchPaths>
             <IncludeFiles Value="$(ProjOutDir)"/>
-            <OtherUnitFiles Value="units\winutils\directx;units\nsutils;units\trndi\ext;units\forms;units\trndi\api;units\trndi;units\slicke;units\misc;units\misc\razer;units\misc\razer\chroma"/>
+            <OtherUnitFiles Value="units\misc\winutils\directx;units\misc\nsutils;units\trndi\ext;units\forms;units\trndi\api;units\trndi;units\slicke;units\misc;units\misc\razer;units\misc\razer\chroma"/>
             <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
           </SearchPaths>
           <CodeGeneration>
@@ -412,7 +412,7 @@
           </Target>
           <SearchPaths>
             <IncludeFiles Value="$(ProjOutDir)"/>
-            <OtherUnitFiles Value="units\winutils\directx;units\nsutils;units\trndi\ext;units\forms;units\trndi\api;units\trndi;units\slicke;units\misc;units\misc\razer;units\misc\razer\chroma"/>
+            <OtherUnitFiles Value="units\misc\winutils\directx;units\misc\nsutils;units\trndi\ext;units\forms;units\trndi\api;units\trndi;units\slicke;units\misc;units\misc\razer;units\misc\razer\chroma"/>
             <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
           </SearchPaths>
           <CodeGeneration>
@@ -450,7 +450,7 @@
           </Target>
           <SearchPaths>
             <IncludeFiles Value="$(ProjOutDir)"/>
-            <OtherUnitFiles Value="units\winutils\directx;units\nsutils;units\trndi\ext;units\forms;units\trndi\api;units\trndi;units\slicke;units\misc;units\misc\razer;units\misc\razer\chroma"/>
+            <OtherUnitFiles Value="units\misc\winutils\directx;units\misc\nsutils;units\trndi\ext;units\forms;units\trndi\api;units\trndi;units\slicke;units\misc;units\misc\razer;units\misc\razer\chroma"/>
             <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
           </SearchPaths>
           <CodeGeneration>
@@ -677,7 +677,7 @@
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
-      <OtherUnitFiles Value="units\winutils\directx;units\nsutils;units\trndi\ext;units\forms;units\trndi\api;units\trndi;units\slicke;units\misc;units\misc\razer;units\misc\razer\chroma"/>
+      <OtherUnitFiles Value="units\misc\winutils\directx;units\misc\nsutils;units\trndi\ext;units\forms;units\trndi\api;units\trndi;units\slicke;units\misc;units\misc\razer;units\misc\razer\chroma"/>
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <CodeGeneration>

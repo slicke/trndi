@@ -1,4 +1,4 @@
-unit SimpleDarkMode;
+unit nsutils.simpledarkmode;
 
 {$mode objfpc}{$H+}
 {$modeswitch cvar}
