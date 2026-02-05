@@ -61,7 +61,7 @@ NOEXT_BUILD_MODE_NAME = No Ext ($(BUILD_MODE))
 
 NOEXT_LAZBUILD_FLAGS = --widgetset=$(WIDGETSET) --build-mode="$(NOEXT_BUILD_MODE_NAME)" $(CPU_FLAG)
 
-.PHONY: all help check build release debug test clean dist install run list-modes list-modules
+.PHONY: all help check build release debug test clean dist install run list-modes list-modules check-module-names
 
 all: release
 
@@ -75,6 +75,7 @@ help:
 	@echo "  test       Build tests"
 	@echo "  list-modes Show available project build modes from $(LPI)"
 	@echo "  list-modules Show Pascal `unit` modules found under `units/`"
+	@echo "  check-module-names Check for mismatches between filenames and `unit` declarations (uses scripts/check-module-names.pl)"
 	@echo "  show-mode  Show resolved build-mode and lazbuild flags"
 	@echo "  noext      Build without mORMot2 (temporary project) - use noext-release/noext-debug to override mode"
 	@echo "  clean      Remove common build artifacts (*.o, *.ppu, *.compiled, executables)"
@@ -136,6 +137,10 @@ list-modes:
 list-modules:
 	@echo "Modules (units) found under units/ (grouped by dot-separated names):"
 	@find units -type f \( -name '*.pp' -o -name '*.pas' \) -print0 | xargs -0 -n1 perl -nle 'if (/^\s*unit\s+([A-Za-z0-9_.]+)/) { print "$$1\t$$ARGV"; close(ARGV) }' | sort -u | perl scripts/list-modules-tree.pl || echo "  (no modules found)"
+
+check-module-names:
+	@echo "Checking unit declarations vs filenames..."
+	@find units -type f \( -name '*.pp' -o -name '*.pas' \) -print0 | xargs -0 -n1 scripts/check-module-names.pl || (echo "\nOne or more mismatches found; run 'make check-module-names' to show them" && exit 1)
 
 show-mode:
 	@echo "Resolved build mode: $(BUILD_MODE_NAME)"
