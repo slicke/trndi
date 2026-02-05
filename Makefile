@@ -6,6 +6,7 @@
 #   make test     -> build the tests
 #   make clean    -> remove build artifacts
 #   make install  -> install binary to /usr/local/bin (requires sudo)
+#   make list-modes -> list available build modes from Trndi.lpi
 
 LAZBUILD ?= lazbuild
 LPI ?= Trndi.lpi
@@ -60,7 +61,7 @@ NOEXT_BUILD_MODE_NAME = No Ext ($(BUILD_MODE))
 
 NOEXT_LAZBUILD_FLAGS = --widgetset=$(WIDGETSET) --build-mode="$(NOEXT_BUILD_MODE_NAME)" $(CPU_FLAG)
 
-.PHONY: all help check build release debug test clean dist install run
+.PHONY: all help check build release debug test clean dist install run list-modes list-modules
 
 all: release
 
@@ -73,6 +74,7 @@ help:
 	@echo "  build      Generic build (honors BUILD_MODE and WIDGETSET)"
 	@echo "  test       Build tests"
 	@echo "  list-modes Show available project build modes from $(LPI)"
+	@echo "  list-modules Show Pascal `unit` modules found under `units/`"
 	@echo "  show-mode  Show resolved build-mode and lazbuild flags"
 	@echo "  noext      Build without mORMot2 (temporary project) - use noext-release/noext-debug to override mode"
 	@echo "  clean      Remove common build artifacts (*.o, *.ppu, *.compiled, executables)"
@@ -130,6 +132,10 @@ test: check
 list-modes:
 	@echo "Available build modes in $(LPI):"
 	@perl -0777 -ne 'while (/<Item\s+Name\s*=\s*"([^"]+)"/g) { print "  - $$1\n" }' $(LPI) || true
+
+list-modules:
+	@echo "Modules (units) found under units/ (grouped by dot-separated names):"
+	@find units -type f \( -name '*.pp' -o -name '*.pas' \) -print0 | xargs -0 -n1 perl -nle 'if (/^\s*unit\s+([A-Za-z0-9_.]+)/) { print "$$1\t$$ARGV"; close(ARGV) }' | sort -u | perl scripts/list-modules-tree.pl || echo "  (no modules found)"
 
 show-mode:
 	@echo "Resolved build mode: $(BUILD_MODE_NAME)"
