@@ -3590,12 +3590,12 @@ begin
 
   ExtHTML(uxdAuto, 'About Trndi', html, [mbOK], uxmtInformation, 25);
 end;
-{$endif}
 
 procedure TfBG.CheckForUpdatesMenuClick(Sender: TObject);
 begin
   CheckForUpdates(true);
 end;
+{$endif}
 
 procedure TfBG.ApplyChromaAlertAction(const ActionSettingKey: string;
 const DefaultAction: string; const AColor: TRGBColor);
