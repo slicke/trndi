@@ -1217,6 +1217,7 @@ var
   msg: string;
   temp: string;
   mr: TModalResult;
+  parts: TStringList;
 begin
   i := ExtIntInput(uxdAuto, RS_PREDICT_AMOUNT_CAPTION, RS_PREDICT_AMOUNT_TITLE, RS_PREDICT_AMOUNT_DESC, 3, mr);
   if (mr <> mrOK) or (i < 1) then
@@ -1232,13 +1233,22 @@ begin
 
   msg := RS_SERVICE_PREDICTIONS + LineEnding;
   temp := '';
-  for i := 0 to High(bgr) do
-    temp := temp + Format(RS_SERVICE_PREDICT_POINT, [
-      i + 1,
-      bgr[i].convert(un),
-      BG_UNIT_NAMES[un],
-      FormatDateTime('hh:nn', bgr[i].date)  // Show time
-      ]) + LineEnding;
+  if Length(bgr) > 0 then
+  begin
+    parts := TStringList.Create;
+    try
+      for i := 0 to High(bgr) do
+        parts.Add(Format(RS_SERVICE_PREDICT_POINT, [
+          i + 1,
+          bgr[i].convert(un),
+          BG_UNIT_NAMES[un],
+          FormatDateTime('hh:nn', bgr[i].date)  // Show time
+          ]));
+      temp := parts.Text;  // Joins with LineEnding
+    finally
+      parts.Free;
+    end;
+  end;
   msg := msg + temp;
 
   ShowMessage(msg);

@@ -1254,8 +1254,7 @@ begin
     c := HTMLEscapeBasic(sys.paramLabel(APLCopyright));
   end;
 
-  for i := 0 to Length(RS_DRIVER_CONTRIBUTOR + c) do
-    x += '-';
+  x := StringOfChar('-', Length(RS_DRIVER_CONTRIBUTOR + c));
 
   if s <> '' then
   begin
