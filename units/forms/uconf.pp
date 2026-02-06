@@ -874,9 +874,14 @@ end;
 procedure TfConf.cbSysChange(Sender: TObject);
 var user, pass: string;
 procedure WarnUnstableAPI;
+const
+  warn: UniCodeString = '(!) ';
+  info: UniCodeString =  '';
   var
     i : integer;
+    f: string;
   begin
+    pnSysWarn.Color := $0000FBF4;
     case cbSys.Text of
     API_DEX_USA,
     API_DEX_EU:
@@ -887,37 +892,38 @@ procedure WarnUnstableAPI;
       cbCust.Font.Color := clBlack;
 
       pnSysWarn.Show;
-      lSysWarnInfo.Caption := RS_DEX;
+      lSysWarnInfo.Caption := info+RS_DEX;
+      pnSysWarn.Color := $0053A2E8;
     end;
     API_NS3:
     begin
       pnSysWarn.Show;
-      lSysWarnInfo.Caption := RS_BETA;
+      lSysWarnInfo.Caption := warn+RS_BETA;
     end;
     API_DEX_NEW_EU,
     API_DEX_NEW_USA,
     API_DEX_NEW_JP:
     begin
       pnSysWarn.Show;
-      lSysWarnInfo.Caption := RS_BETA_DEX;
+      lSysWarnInfo.Caption := warn+RS_BETA_DEX;
     end;
     API_XDRIP:
     begin
       pnSysWarn.Show;
-      lSysWarnInfo.Caption := RS_XDRIP;
+      lSysWarnInfo.Caption := info+RS_XDRIP;
     end;
     API_TANDEM_EU,
     API_TANDEM_USA:
     begin
       pnSysWarn.Show;
-      lSysWarnInfo.Caption := RS_TANDEM;
+      lSysWarnInfo.Caption := warn+RS_TANDEM;
     end;
     end;
     {$ifdef DEBUG}
     if cbSys.Text in API_DEBUG then
     begin
       pnSysWarn.Show;
-      lSysWarnInfo.Caption := RS_DEBUG_WARN;
+      lSysWarnInfo.Caption := warn+RS_DEBUG_WARN;
     end;
     {$endif}
   end;

@@ -10723,7 +10723,7 @@ object fConf: TfConf
           BevelOuter = bvNone
           ClientHeight = 50
           ClientWidth = 497
-          Color = 64500
+          Color = 5481192
           ParentBackground = False
           ParentColor = False
           TabOrder = 1
