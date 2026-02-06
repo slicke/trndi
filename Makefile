@@ -55,9 +55,7 @@ IS_CYGWIN := $(findstring CYGWIN,$(UNAME_S))
 # On macOS, prefer an installed Lazarus at /Applications/lazarus/lazbuild if it exists.
 # This lets users run the Makefile without having lazbuild on PATH.
 ifeq ($(UNAME_S),Darwin)
-  ifneq ($(wildcard /Applications/lazarus/lazbuild),)
-    LAZBUILD := /Applications/lazarus/lazbuild
-  endif
+  LAZBUILD := $(shell if [ -x /Applications/lazarus/lazbuild ]; then echo /Applications/lazarus/lazbuild; else echo lazbuild; fi)
 endif
 
 # Linux: prefer Qt6 builds; when multiple Qt6 release modes exist prefer the Extensions variant
