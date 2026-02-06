@@ -124,17 +124,12 @@ begin
   (Application.MainForm as TfBG).miSettingsClick(nil);
 end;
 
-procedure TMyAppDelegate.miForceUpdateClick(sender: id);
-begin
-  (Application.MainForm as TfBG).miForceClick(nil);
-end;
-
 function TMyAppDelegate.applicationDockMenu(sender: NSApplication): NSMenu;
 var
   dockMenu: NSMenu;
-  menuItem, forceMenuItem, quitMenuItem: NSMenuItem;
-  menuTitle, forceTitle, quitTitle: string;
-  cfStr, cfStrForce, cfStrQuit: CFStringRef;
+  menuItem: NSMenuItem;
+  menuTitle: string;
+  cfStr: CFStringRef;
 begin
   // Create a custom dock menu
   dockMenu := NSMenu.alloc.initWithTitle(NSSTR('Trndi'));
@@ -148,26 +143,17 @@ begin
   menuItem.release;
   CFRelease(cfStr);
 
-  // Add Force Update item
-  forceTitle := TrimLeftSet((Application.MainForm as TfBG).miForce.Caption, ['&', ' ']);
-  cfStrForce := CFStringCreateWithCString(nil, pchar(forceTitle), kCFStringEncodingUTF8);
-  forceMenuItem := NSMenuItem.alloc.initWithTitle_action_keyEquivalent(
-    NSString(cfStrForce), sel_registerName('miForceUpdate:'), NSSTR(''));
-  dockMenu.addItem(forceMenuItem);
-  forceMenuItem.release;
-  CFRelease(cfStrForce);
-
   // Add separator
   dockMenu.addItem(NSMenuItem.separatorItem);
 
   // Add Quit item
-  quitTitle := 'Quit Trndi';
-  cfStrQuit := CFStringCreateWithCString(nil, pchar(quitTitle), kCFStringEncodingUTF8);
-  quitMenuItem := NSMenuItem.alloc.initWithTitle_action_keyEquivalent(
-    NSString(cfStrQuit), sel_registerName('terminate:'), NSSTR('q'));
-  dockMenu.addItem(quitMenuItem);
-  quitMenuItem.release;
-  CFRelease(cfStrQuit);
+  menuTitle := 'Quit Trndi';
+  cfStr := CFStringCreateWithCString(nil, pchar(menuTitle), kCFStringEncodingUTF8);
+  menuItem := NSMenuItem.alloc.initWithTitle_action_keyEquivalent(
+    NSString(cfStr), sel_registerName('terminate:'), NSSTR('q'));
+  dockMenu.addItem(menuItem);
+  menuItem.release;
+  CFRelease(cfStr);
 
   Result := dockMenu;
 end;

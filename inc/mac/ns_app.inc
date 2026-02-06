@@ -5,6 +5,5 @@ public
     sender: NSApplication; hasVisibleWindows: Boolean): Boolean; message 'applicationShouldHandleReopen:hasVisibleWindows:';
   function applicationDockMenu(sender: NSApplication): NSMenu; message 'applicationDockMenu:';
     procedure miSettingsMacClick(sender: id); message 'miSettings:';
-    procedure miForceUpdateClick(sender: id); message 'miForceUpdate:';
 end;
 {** Darwin-specific declarations above }

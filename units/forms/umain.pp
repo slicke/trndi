@@ -3573,27 +3573,25 @@ end;
 {$ifdef DARWIN}
 procedure TfBG.ShowAboutDialog(Sender: TObject);
 var
-  sysver, platformInfo: string;
+  versionInfo: string;
 begin
+  versionInfo := 'Version ' + BUILD_NUMBER;
   {$if defined(LCLCocoa)}
-  platformInfo := 'macOS Native';
-  {$else}
-  platformInfo := 'Unknown macOS';
+  versionInfo := versionInfo + ' (macOS)';
   {$endif}
 
   ShowMessage('Trndi' + LineEnding + LineEnding +
-    'CGM data on Desktop and Raspberry Pi' + LineEnding +
-    'Nightscout - Dexcom - Tandem Source - xDrip WiFi' + LineEnding + LineEnding +
-    'Version: ' + BUILD_NUMBER + LineEnding +
-    'Platform: ' + platformInfo + LineEnding +
+    'Continuous Glucose Monitor (CGM) data display' + LineEnding +
+    'for desktop and embedded devices' + LineEnding + LineEnding +
+    versionInfo + LineEnding +
     'https://github.com/slicke/trndi');
 end;
+{$endif}
 
 procedure TfBG.CheckForUpdatesMenuClick(Sender: TObject);
 begin
   CheckForUpdates(true);
 end;
-{$endif}
 
 procedure TfBG.ApplyChromaAlertAction(const ActionSettingKey: string;
 const DefaultAction: string; const AColor: TRGBColor);

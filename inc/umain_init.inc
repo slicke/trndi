@@ -98,7 +98,6 @@ var
   HelpMenu,
   GithubMenu,
   AboutMenu,
-  QuitMenu,
   CheckUpdatesMenu: TMenuItem;
 begin
   MainMenu := TMainMenu.Create(self);
@@ -149,22 +148,15 @@ begin
   {$endif}
 
   {$ifdef DARWIN}
-  // Add separator before Quit
-  AppMenu.Insert(4, TMenuItem.Create(self));
-  AppMenu.Items[4].Caption := '-';
-
   // Add Check for Updates menu item
   CheckUpdatesMenu := TMenuItem.Create(self);
   CheckUpdatesMenu.Caption := 'Check for Updates...';
   CheckUpdatesMenu.OnClick := @CheckForUpdatesMenuClick;
-  AppMenu.Insert(5, CheckUpdatesMenu);
+  AppMenu.Insert(4, CheckUpdatesMenu);
 
-  // Add Quit menu item (standard on macOS)
-  QuitMenu := TMenuItem.Create(self);
-  QuitMenu.Caption := 'Quit Trndi';
-  QuitMenu.ShortCut := 16465; // Cmd+Q
-  QuitMenu.OnClick := miExit.OnClick;
-  AppMenu.Insert(6, QuitMenu);
+  // On macOS, change "Exit Trndi" to "Quit Trndi" for consistency
+  miExit.Caption := 'Quit Trndi';
+  miExit.ShortCut := 16465; // Cmd+Q
   {$endif}
 
   helpmenu := TMenuItem.Create(self);
