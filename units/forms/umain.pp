@@ -326,6 +326,9 @@ TfBG = class(TForm)
   procedure miLimitExplainClick(Sender: TObject);
   procedure miOnTopClick(Sender: TObject);
   procedure miSettingsClick(Sender: TObject);
+  {$ifdef DARWIN}
+  procedure ShowAboutDialog(Sender: TObject);
+  {$endif}
   procedure onTrendClick(Sender: TObject);
   procedure pnOffReadingPaint(Sender: TObject);
   procedure pmSettingsMeasureItem(Sender: TObject; ACanvas: TCanvas;
@@ -3565,6 +3568,26 @@ begin
   else
     ShowMessage(RS_SETTINGS_SAVED);
 end;
+
+{$ifdef DARWIN}
+procedure TfBG.ShowAboutDialog(Sender: TObject);
+var
+  sysver, platformInfo: string;
+begin
+  {$if defined(LCLCocoa)}
+  platformInfo := 'macOS Native';
+  {$else}
+  platformInfo := 'Unknown macOS';
+  {$endif}
+
+  ShowMessage('Trndi' + LineEnding + LineEnding +
+    'CGM data on Desktop and Raspberry Pi' + LineEnding +
+    'Nightscout - Dexcom - Tandem Source - xDrip WiFi' + LineEnding + LineEnding +
+    'Version: ' + GetBuildInfo + LineEnding +
+    'Platform: ' + platformInfo + LineEnding +
+    'https://github.com/slicke/trndi');
+end;
+{$endif}
 
 procedure TfBG.ApplyChromaAlertAction(const ActionSettingKey: string;
 const DefaultAction: string; const AColor: TRGBColor);

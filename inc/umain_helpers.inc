@@ -124,31 +124,50 @@ begin
   (Application.MainForm as TfBG).miSettingsClick(nil);
 end;
 
+procedure TMyAppDelegate.miForceUpdateClick(sender: id);
+begin
+  (Application.MainForm as TfBG).miForceClick(nil);
+end;
+
 function TMyAppDelegate.applicationDockMenu(sender: NSApplication): NSMenu;
 var
   dockMenu: NSMenu;
-  menuItem: NSMenuItem;
-  menuTitle: string;
-  cfStr: CFStringRef;
+  menuItem, forceMenuItem, quitMenuItem: NSMenuItem;
+  menuTitle, forceTitle, quitTitle: string;
+  cfStr, cfStrForce, cfStrQuit: CFStringRef;
 begin
   // Create a custom dock menu
   dockMenu := NSMenu.alloc.initWithTitle(NSSTR('Trndi'));
 
-  // Add items to the menu
+  // Add Settings item
   menuTitle := TrimLeftSet((Application.MainForm as TfBG).miSettings.Caption, ['&', ' ']);
-
-  // Create a CFStringRef directly from the UTF-8 string
   cfStr := CFStringCreateWithCString(nil, pchar(menuTitle), kCFStringEncodingUTF8);
-
-  // Initialize the menu item with the CFStringRef
   menuItem := NSMenuItem.alloc.initWithTitle_action_keyEquivalent(
     NSString(cfStr), sel_registerName('miSettings:'), NSSTR(''));
-
   dockMenu.addItem(menuItem);
   menuItem.release;
-
-  // Release the CFStringRef
   CFRelease(cfStr);
+
+  // Add Force Update item
+  forceTitle := TrimLeftSet((Application.MainForm as TfBG).miForce.Caption, ['&', ' ']);
+  cfStrForce := CFStringCreateWithCString(nil, pchar(forceTitle), kCFStringEncodingUTF8);
+  forceMenuItem := NSMenuItem.alloc.initWithTitle_action_keyEquivalent(
+    NSString(cfStrForce), sel_registerName('miForceUpdate:'), NSSTR(''));
+  dockMenu.addItem(forceMenuItem);
+  forceMenuItem.release;
+  CFRelease(cfStrForce);
+
+  // Add separator
+  dockMenu.addItem(NSMenuItem.separatorItem);
+
+  // Add Quit item
+  quitTitle := 'Quit Trndi';
+  cfStrQuit := CFStringCreateWithCString(nil, pchar(quitTitle), kCFStringEncodingUTF8);
+  quitMenuItem := NSMenuItem.alloc.initWithTitle_action_keyEquivalent(
+    NSString(cfStrQuit), sel_registerName('terminate:'), NSSTR('q'));
+  dockMenu.addItem(quitMenuItem);
+  quitMenuItem.release;
+  CFRelease(cfStrQuit);
 
   Result := dockMenu;
 end;

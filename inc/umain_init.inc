@@ -96,7 +96,10 @@ var
   forceMenu,
   SettingsMenu,
   HelpMenu,
-  GithubMenu: TMenuItem;
+  GithubMenu,
+  AboutMenu,
+  QuitMenu,
+  CheckUpdatesMenu: TMenuItem;
 begin
   MainMenu := TMainMenu.Create(self);
   fBg.Menu := MainMenu;
@@ -115,15 +118,54 @@ begin
   {$endif}
   MainMenu.Items.Insert(0, AppMenu);
 
+  {$ifdef DARWIN}
+  // Add About menu item (standard on macOS)
+  AboutMenu := TMenuItem.Create(self);
+  AboutMenu.Caption := 'About Trndi';
+  AboutMenu.OnClick := @ShowAboutDialog;
+  AppMenu.Insert(0, AboutMenu);
+
+  // Add separator
+  AppMenu.Insert(1, TMenuItem.Create(self));
+  AppMenu.Items[1].Caption := '-';
+  {$endif}
+
   SettingsMenu := TMenuitem.Create(self);
   settingsmenu.Caption := RS_MENU_SETTINGS;
   settingsmenu.OnClick := misettings.OnClick;
+  {$ifdef DARWIN}
+  AppMenu.Insert(2, SettingsMenu);
+  {$else}
   AppMenu.Insert(0, SettingsMenu);
+  {$endif}
 
   forcemenu := TMenuItem.Create(self);
   forcemenu.Caption := RS_MENU_FORCE;
   forcemenu.onclick := miForce.OnClick;
+  {$ifdef DARWIN}
+  AppMenu.Insert(3, forceMenu);
+  {$else}
   AppMenu.Insert(1, forceMenu);
+  {$endif}
+
+  {$ifdef DARWIN}
+  // Add separator before Quit
+  AppMenu.Insert(4, TMenuItem.Create(self));
+  AppMenu.Items[4].Caption := '-';
+
+  // Add Check for Updates menu item
+  CheckUpdatesMenu := TMenuItem.Create(self);
+  CheckUpdatesMenu.Caption := 'Check for Updates...';
+  CheckUpdatesMenu.OnClick := @CheckForUpdates;
+  AppMenu.Insert(5, CheckUpdatesMenu);
+
+  // Add Quit menu item (standard on macOS)
+  QuitMenu := TMenuItem.Create(self);
+  QuitMenu.Caption := 'Quit Trndi';
+  QuitMenu.ShortCut := 16465; // Cmd+Q
+  QuitMenu.OnClick := miExit.OnClick;
+  AppMenu.Insert(6, QuitMenu);
+  {$endif}
 
   helpmenu := TMenuItem.Create(self);
   helpmenu.Caption := RS_MENU_HELP;
