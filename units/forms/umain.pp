@@ -253,27 +253,27 @@ TfBG = class(TForm)
       and prepare connections to backends and extensions.
       Called by the framework when the form instance is created.
    }
-  procedure FormCreate(Sender: TObject);
-  procedure FormDblClick(Sender: TObject);
+  procedure FormCreate({%H-}Sender: TObject);
+  procedure FormDblClick({%H-}Sender: TObject);
   {** Shutdown and cleanup all resources, including timers, web server, and
       persistent connections. Called when the form is destroyed.
    }
-  procedure FormDestroy(Sender: TObject);
-  procedure FormKeyPress(Sender: TObject; var Key: char);
+  procedure FormDestroy({%H-}Sender: TObject);
+  procedure FormKeyPress({%H-}Sender: TObject; var Key: char);
   procedure DotPaint(Sender: TObject);
-  procedure lDiffClick(Sender: TObject);
-  procedure lPredictClick(Sender: TObject);
-  procedure miBasalRateClick(Sender: TObject);
+  procedure lDiffClick({%H-}Sender: TObject);
+  procedure lPredictClick({%H-}Sender: TObject);
+  procedure miBasalRateClick({%H-}Sender: TObject);
   procedure AutoEnableBasalOverlay;
-  procedure miDNSClick(Sender: TObject);
-  procedure miDotNormalDrawItem(Sender: TObject; ACanvas: TCanvas;
+  procedure miDNSClick({%H-}Sender: TObject);
+  procedure miDotNormalDrawItem({%H-}Sender: TObject; ACanvas: TCanvas;
     ARect: TRect; AState: TOwnerDrawState);
-  procedure miDotNormalMeasureItem(Sender: TObject; ACanvas: TCanvas;
+  procedure miDotNormalMeasureItem({%H-}Sender: TObject; ACanvas: TCanvas;
     var AWidth, AHeight: integer);
-  procedure miDotsInViewClick(Sender: TObject);
-  procedure miDotSmallClick(Sender: TObject);
-  procedure miExitClick(Sender: TObject);
-  procedure miCustomDotsClick(Sender: TObject);
+  procedure miDotsInViewClick({%H-}Sender: TObject);
+  procedure miDotSmallClick({%H-}Sender: TObject);
+  procedure miExitClick({%H-}Sender: TObject);
+  procedure miCustomDotsClick({%H-}Sender: TObject);
   procedure miATouchAutoClick(Sender: TObject);
   procedure miADotAdjustClick(Sender: TObject);
   procedure miADotScaleClick(Sender: TObject);

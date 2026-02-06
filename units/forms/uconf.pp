@@ -355,14 +355,14 @@ TfConf = class(TForm)
   tsMulti: TTabSheet;
   tsSystem: TTabSheet;
   function validateUser(var error: string): boolean;
-  procedure bAddClick(Sender: TObject);
-  procedure bBadgeFlashHelpClick(Sender: TObject);
-  procedure bColorGraphHelpClick(Sender: TObject);
-  procedure bCommonClick(Sender: TObject);
-  procedure bCustomRangeHelpClick(Sender: TObject);
-  procedure bDotHelpClick(Sender: TObject);
-  procedure bExtOpenClick(Sender: TObject);
-  procedure bFontHelpClick(Sender: TObject);
+  procedure bAddClick({%H-}Sender: TObject);
+  procedure bBadgeFlashHelpClick({%H-}Sender: TObject);
+  procedure bColorGraphHelpClick({%H-}Sender: TObject);
+  procedure bCommonClick({%H-}Sender: TObject);
+  procedure bCustomRangeHelpClick({%H-}Sender: TObject);
+  procedure bDotHelpClick({%H-}Sender: TObject);
+  procedure bExtOpenClick({%H-}Sender: TObject);
+  procedure bFontHelpClick({%H-}Sender: TObject);
   procedure bLanguageHelpClick(Sender: TObject);
   procedure bLimitsClick(Sender: TObject);
   procedure bMinMinutesHelpClick(Sender: TObject);
@@ -370,14 +370,14 @@ TfConf = class(TForm)
   procedure bNotificationHelpClick(Sender: TObject);
   procedure bDeltaMaxHelpClick(Sender: TObject);
   procedure bOutdatedHelpClick(Sender: TObject);
-  procedure bOverrideHelpClick(Sender: TObject);
-  procedure bPredictHelpClick(Sender: TObject);
-  procedure bPredictHorizonClick(Sender: TObject);
-  procedure bPrivacyHelpClick(Sender: TObject);
-  procedure bRemoveClick(Sender: TObject);
-  procedure bBackendHelpClick(Sender: TObject);
-  procedure bSysNoticeClick(Sender: TObject);
-  procedure bSysTouchClick(Sender: TObject);
+  procedure bOverrideHelpClick({%H-}Sender: TObject);
+  procedure bPredictHelpClick({%H-}Sender: TObject);
+  procedure bPredictHorizonClick({%H-}Sender: TObject);
+  procedure bPrivacyHelpClick({%H-}Sender: TObject);
+  procedure bRemoveClick({%H-}Sender: TObject);
+  procedure bBackendHelpClick({%H-}Sender: TObject);
+  procedure bSysNoticeClick({%H-}Sender: TObject);
+  procedure bSysTouchClick({%H-}Sender: TObject);
   procedure bTemplateCurrentClick(Sender: TObject);
   procedure bTemplateTrendClick(Sender: TObject);
   procedure bTestAnnounceClick(Sender: TObject);
@@ -403,9 +403,9 @@ TfConf = class(TForm)
   procedure cbPredictShortFullArrowsChange(Sender: TObject);
   procedure cbPredictShortMinutesChange(Sender: TObject);
   procedure cbPredictShortSizeChange(Sender: TObject);
-  procedure cbSysChange(Sender: TObject);
-  procedure cbUserClick(Sender: TObject);
-  procedure cbUserColorChanged(Sender: TObject);
+  procedure cbSysChange({%H-}Sender: TObject);
+  procedure cbUserClick({%H-}Sender: TObject);
+  procedure cbUserColorChanged({%H-}Sender: TObject);
   procedure dotClick(Sender: TObject);
   procedure edCommaSep1Change(Sender: TObject);
   procedure edCommaSepChange(Sender: TObject);
@@ -414,30 +414,30 @@ TfConf = class(TForm)
   procedure ePassEnter(Sender: TObject);
   procedure ePassExit(Sender: TObject);
   procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
-  procedure ProxyEditChange(Sender: TObject);
-  procedure FormCreate(Sender: TObject);
-  procedure FormDestroy(Sender: TObject);
-  procedure FormResize(Sender: TObject);
-  procedure fsHi1Change(Sender: TObject);
-  procedure fsHiChange(Sender: TObject);
-  procedure fsLo1Change(Sender: TObject);
-  procedure fsLoChange(Sender: TObject);
+  procedure ProxyEditChange({%H-}Sender: TObject);
+  procedure FormCreate({%H-}Sender: TObject);
+  procedure FormDestroy({%H-}Sender: TObject);
+  procedure FormResize({%H-}Sender: TObject);
+  procedure fsHi1Change({%H-}Sender: TObject);
+  procedure fsHiChange({%H-}Sender: TObject);
+  procedure fsLo1Change({%H-}Sender: TObject);
+  procedure fsLoChange({%H-}Sender: TObject);
   procedure Label12Click(Sender: TObject);
   procedure lAckClick(Sender: TObject);
   procedure lbExtensionsSelectionChange(Sender: TObject; User: boolean);
   procedure lbUsersEnter(Sender: TObject);
   procedure lbUsersSelectionChange(Sender: TObject; User: boolean);
-  procedure lConfigPredictClick(Sender: TObject);
-  procedure lDot1Click(Sender: TObject);
-  procedure lLicenseClick(Sender: TObject);
-  procedure lSysWarnInfoClick(Sender: TObject);
-  procedure lValClick(Sender: TObject);
-  procedure pcColorsChange(Sender: TObject);
-  procedure pcMainChange(Sender: TObject);
-  procedure rbUnitClick(Sender: TObject);
-  procedure spTHRESHOLD1Change(Sender: TObject);
-  procedure spTHRESHOLDChange(Sender: TObject);
-  procedure tbAdvancedChange(Sender: TObject);
+  procedure lConfigPredictClick({%H-}Sender: TObject);
+  procedure lDot1Click({%H-}Sender: TObject);
+  procedure lLicenseClick({%H-}Sender: TObject);
+  procedure lSysWarnInfoClick({%H-}Sender: TObject);
+  procedure lValClick({%H-}Sender: TObject);
+  procedure pcColorsChange({%H-}Sender: TObject);
+  procedure pcMainChange({%H-}Sender: TObject);
+  procedure rbUnitClick({%H-}Sender: TObject);
+  procedure spTHRESHOLD1Change({%H-}Sender: TObject);
+  procedure spTHRESHOLDChange({%H-}Sender: TObject);
+  procedure tbAdvancedChange({%H-}Sender: TObject);
   procedure ToggleBox1Change(Sender: TObject);
   procedure tsCommonShow(Sender: TObject);
   procedure tsDisplayShow(Sender: TObject);
@@ -1000,12 +1000,12 @@ begin
     lbl.Caption := '- ERROR -';
 end;
 
-procedure TfConf.ePassEnter(Sender: TObject);
+procedure TfConf.ePassEnter({%H-}Sender: TObject);
 begin
   ePass.PasswordChar := #0;
 end;
 
-procedure TfConf.ePassExit(Sender: TObject);
+procedure TfConf.ePassExit({%H-}Sender: TObject);
 begin
   ePass.PasswordChar := '*';
 end;
@@ -1021,32 +1021,32 @@ begin
   end;
 end;
 
-procedure TfConf.bLimitsClick(Sender: TObject);
+procedure TfConf.bLimitsClick({%H-}Sender: TObject);
 begin
 end;
 
-procedure TfConf.bMinMinutesHelpClick(Sender: TObject);
+procedure TfConf.bMinMinutesHelpClick({%H-}Sender: TObject);
 begin
   ShowMessage(Format(RS_MIN_MINUTES, [MAX_MIN]));
 end;
 
-procedure TfConf.bMultiUserHelpClick(Sender: TObject);
+procedure TfConf.bMultiUserHelpClick({%H-}Sender: TObject);
 begin
   ShowHTMLMessage(RS_Multi_User_Help);
 end;
 
-procedure TfConf.bNotificationHelpClick(Sender: TObject);
+procedure TfConf.bNotificationHelpClick({%H-}Sender: TObject);
 begin
   ShowMessage(RS_NOTIFICATION_HELP);
 end;
 
-procedure TfConf.bDeltaMaxHelpClick(Sender: TObject);
+procedure TfConf.bDeltaMaxHelpClick({%H-}Sender: TObject);
 begin
   if UXDialog(uxdAuto,'Delta', RS_DELTA_MAX,[mbOK, mbUxRead]) <> mrOK then
     OpenURL('https://github.com/slicke/trndi/blob/main/doc/DeltaMax.md');
 end;
 
-procedure TfConf.bOutdatedHelpClick(Sender: TObject);
+procedure TfConf.bOutdatedHelpClick({%H-}Sender: TObject);
 begin
   ShowMessage(RS_OUTDATED_HELP);
 end;
