@@ -2429,6 +2429,18 @@ msgstr "Endast bokstever, mellanslag och nummer"
 msgid "Enter a username"
 msgstr "Ange ett anvendarnamn"
 
+#: uconf.rs_err_address
+msgid "Address must start with http(s)://"
+msgstr ""
+
+#: uconf.rs_err_email
+msgid "You must enter a valid e-mail address"
+msgstr ""
+
+#: uconf.rs_err_password
+msgid "You must enter a password"
+msgstr ""
+
 #: uconf.rs_extcount
 #, object-pascal-format, fuzzy, badformat
 msgid "Extensions count: %d"

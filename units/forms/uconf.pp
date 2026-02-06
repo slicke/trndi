@@ -355,6 +355,7 @@ TfConf = class(TForm)
   tsIntegration: TTabSheet;
   tsMulti: TTabSheet;
   tsSystem: TTabSheet;
+  function validateUser(var error: string): boolean;
   procedure bAddClick(Sender: TObject);
   procedure bBadgeFlashHelpClick(Sender: TObject);
   procedure bColorGraphHelpClick(Sender: TObject);
@@ -413,6 +414,7 @@ TfConf = class(TForm)
   procedure eDotChange(Sender: TObject);
   procedure ePassEnter(Sender: TObject);
   procedure ePassExit(Sender: TObject);
+  procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
   procedure ProxyEditChange(Sender: TObject);
   procedure FormCreate(Sender: TObject);
   procedure FormDestroy(Sender: TObject);
@@ -567,6 +569,9 @@ RS_TANDEM =
 RS_DEBUG_WARN =
   'This is a debug backend. It''s used for testing purposes only!'+sLineBreak+'No data will be sent to any remote server.';
 
+RS_ERR_PASSWORD = 'You must enter a password';
+RS_ERR_EMAIL = 'You must enter a valid e-mail address';
+RS_ERR_ADDRESS = 'Address must start with http(s)://';
 RS_ENTER_USER = 'Enter a username';
 RS_ENTER_NAME = 'Letters, space and numbers only';
 RS_ENTER_ANY = 'Please enter a name';
@@ -850,7 +855,7 @@ begin
     sys := DebugFirstXMissingAPI;
   API_D_CUSTOM:
     sys := DebugCustomAPI;
-  {$endif}
+    {$endif}
   end;
 
   user := sys.ParamLabel(APLUser);
@@ -873,8 +878,8 @@ procedure WarnUnstableAPI;
     i : integer;
   begin
     case cbSys.Text of
-      API_DEX_USA,
-      API_DEX_EU:
+    API_DEX_USA,
+    API_DEX_EU:
     begin
       gbOverride.Color := uxclLightBlue;
       lLoUnder.Font.Color := clBlack;
@@ -907,7 +912,7 @@ procedure WarnUnstableAPI;
       pnSysWarn.Show;
       lSysWarnInfo.Caption := RS_TANDEM;
     end;
-   end;
+    end;
     {$ifdef DEBUG}
     if cbSys.Text in API_DEBUG then
     begin
@@ -996,6 +1001,17 @@ begin
   ePass.PasswordChar := '*';
 end;
 
+procedure TfConf.FormClose(Sender: TObject; var CloseAction: TCloseAction);
+var
+  err: string;
+begin
+  if not validateUser(err) then
+  begin
+    SHowMessage(err);
+    closeaction := caNone;
+  end;
+end;
+
 procedure TfConf.bLimitsClick(Sender: TObject);
 begin
 end;
@@ -1024,6 +1040,45 @@ end;
 procedure TfConf.bOutdatedHelpClick(Sender: TObject);
 begin
   ShowMessage(RS_OUTDATED_HELP);
+end;
+
+function TfConf.validateUser(var error: string): boolean;
+var
+  usr,pass: string;
+begin
+  usr := eAddr.Text;
+  pass := ePass.Text;
+
+  result := true;
+  case cbSys.Text of
+  API_NS,
+  API_NS3:
+  begin
+    result := usr.StartsWith('http');
+    error := RS_ERR_ADDRESS;
+  end;
+  API_TANDEM_EU,
+  API_TANDEM_USA:
+  begin
+    result := usr.Contains('@');
+    error := RS_ERR_EMAIL;
+    if not result then
+      Exit;
+
+    result := pass.Length > 4;
+    error := RS_ERR_PASSWORD;
+  end;
+  API_DEX_EU,
+  API_DEX_USA,
+  API_DEX_NEW_EU,
+  API_DEX_NEW_USA,
+  API_DEX_NEW_JP:
+  begin
+    result := pass.Length > 4;
+    error := RS_ERR_PASSWORD;
+  end;
+  end;
+
 end;
 
 procedure TfConf.bAddClick(Sender: TObject);
@@ -1072,7 +1127,7 @@ end;
 procedure TfConf.bCommonClick(Sender: TObject);
 begin
   {$ifdef x_mac}
-    tsCommon.tabvisible := true;
+  tsCommon.tabvisible := true;
   {$endif}
   pcMain.ActivePage := tsCommon;
 end;
@@ -1179,7 +1234,7 @@ begin
     sys := DebugFirstXMissingAPI;
   API_D_CUSTOM:
     sys := DebugCustomAPI;
-  {$endif}
+    {$endif}
   end;
 
   if not assigned(sys) then
@@ -1477,7 +1532,7 @@ procedure TfConf.cbPosChange(Sender: TObject);
 {$ifdef X_LINUXBSD}
 var
   s: string;
-{$endif}
+  {$endif}
 begin
   {$ifdef X_LINUXBSD}
   s := GetWindowManagerName;
@@ -1579,7 +1634,7 @@ begin
   tnative.noFree := true;
   if tnative.isDarkMode then
     tnative.setDarkMode
-  {$ifdef X_WIN}
+    {$ifdef X_WIN}
     (self.Handle)
   {$endif}
   ;
@@ -1607,7 +1662,7 @@ begin
   {$endif}
 
   {$ifdef X_WIN}
-    cbTitleColor.Visible := false;
+  cbTitleColor.Visible := false;
   {$endif}
   if tnative.nobuttonsVM then
   begin
@@ -1738,7 +1793,7 @@ end;
 procedure TfConf.pcMainChange(Sender: TObject);
 begin
   {$ifdef x_mac}
-    tsCommon.tabvisible := false;
+  tsCommon.tabvisible := false;
   {$endif}
 end;
 
@@ -1917,7 +1972,7 @@ end;
 procedure TfConf.tsProxyShow(Sender: TObject);
 begin
   {$ifdef X_MAC}
-     gbNetwork.Enabled := false;
+  gbNetwork.Enabled := false;
   {$endif}
 
   LoadProxySettingsIntoUI;
