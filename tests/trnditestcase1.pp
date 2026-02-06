@@ -18,6 +18,7 @@ protected
 published
   procedure TestBaseLevelClassification;
   procedure TestJSToDateTimeNoCrash;
+  procedure TestJSToDateTimeCorrection;
   procedure TestPredictReadingsInsufficientData;
   procedure TestDexcom;
   procedure TestDexcomLocalServer;
@@ -41,6 +42,8 @@ type
     function connect: boolean; override;
     function getReadings(minNum, maxNum: integer; extras: string; out res: string): BGResults; override;
     procedure SetReadings(const AReadings: BGResults);
+    // Test helper to set tz (minutes) since setTZ is protected
+    procedure SetTZPublic(secsMin: integer);
   end;
 
 constructor TFakeAPI.Create;
@@ -80,6 +83,42 @@ begin
   SetLength(FReadings, Length(AReadings));
   for i := 0 to High(AReadings) do
     FReadings[i] := AReadings[i];
+end;
+
+// Test helper to set tz (minutes)
+procedure TFakeAPI.SetTZPublic(secsMin: integer);
+begin
+  setTZ(secsMin);
+end;
+
+procedure TAPITester.TestJSToDateTimeCorrection;
+var
+  api: TFakeAPI;
+  ts_ms: int64;
+  dt, expected: TDateTime;
+begin
+  api := TFakeAPI.Create;
+  try
+    // 2020-01-01T00:00:00Z
+    ts_ms := 1577836800000;
+
+    // Without correction, timestamp should be interpreted as UTC and converted to local
+    dt := api.JSToDateTime(ts_ms, False);
+    expected := UnixToDateTime(ts_ms div 1000, False);
+    AssertEquals('JSToDateTime without correction matches UTC->local',
+      FormatDateTime('yyyy-mm-dd hh:nn:ss', expected),
+      FormatDateTime('yyyy-mm-dd hh:nn:ss', dt));
+
+    // With tz set (60 minutes), applying correction should shift by tz seconds
+    api.SetTZPublic(60); // 60 minutes -> tz = 3600s
+    dt := api.JSToDateTime(ts_ms, True);
+    expected := UnixToDateTime((ts_ms div 1000) - 3600, False);
+    AssertEquals('JSToDateTime with tz applied shifts time by tz',
+      FormatDateTime('yyyy-mm-dd hh:nn:ss', expected),
+      FormatDateTime('yyyy-mm-dd hh:nn:ss', dt));
+  finally
+    api.Free;
+  end;
 end;
 
 procedure TAPITester.TestBaseLevelClassification;

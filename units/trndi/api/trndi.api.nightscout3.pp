@@ -414,12 +414,21 @@ begin
 
   if serverEpoch > 0 then
   begin
-    UTCDateTime := UnixToDateTime(serverEpoch div 1000);
-    // Calculate time difference: server time (UTC) minus local time (not converted to UTC)
-    // This accounts for both clock skew and timezone offset
-    timeDiff := Round((UTCDateTime - Now) * 86400);
-    // Set tz so JSToDateTime applies the correction to reading timestamps
+    // Interpret serverEpoch as UTC
+    UTCDateTime := UnixToDateTime(serverEpoch div 1000, True);
+    // Calculate time difference: server UTC time minus local UTC time (accounts for clock skew only)
+    timeDiff := Round((UTCDateTime - LocalTimeToUniversal(Now)) * 86400);
+    // Set tz so JSToDateTime applies the correction to reading timestamps (seconds)
     tz := timeDiff;
+
+    // Debug: log calibration values to help diagnose timezone/sign issues
+    {$ifdef DEBUG}
+    if debug_log_api then
+      LogMessageToFile('[' + {$i %file%} + ':' + {$i %Line%} + '] time calibration: serverEpoch=' + IntToStr(serverEpoch) +
+        ' UTCDateTime=' + FormatDateTime('yyyy-mm-dd hh:nn:ss', UTCDateTime) +
+        ' LocalUTC(Now)=' + FormatDateTime('yyyy-mm-dd hh:nn:ss', LocalTimeToUniversal(Now)) +
+        ' timeDiff(s)=' + IntToStr(timeDiff) + ' tz(s)=' + IntToStr(tz));
+    {$endif}
   end
   else
   begin

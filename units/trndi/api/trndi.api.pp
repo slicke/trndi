@@ -605,14 +605,21 @@ end;
 
 {------------------------------------------------------------------------------
   Convert a JavaScript millisecond epoch to TDateTime.
-  When correct is true, subtracts tz before conversion.
+  When @code(correct) is true, apply timezone calibration (tz) to correct server
+  clock skew and return a local TDateTime. The function interprets @code(ts)
+  as milliseconds since Unix epoch (UTC).
 ------------------------------------------------------------------------------}
 function TrndiAPI.JSToDateTime(ts: int64; correct: boolean): TDateTime;
+var
+  unix_ts: int64;
 begin
+  // Interpret epoch milliseconds as seconds since Unix epoch
+  unix_ts := ts div 1000;
   if correct then
-    Result := UnixToDateTime((ts div 1000) - tz)
-  else
-    Result := UnixToDateTime(ts div 1000);
+    // tz is stored in seconds; subtract it from the epoch seconds
+    unix_ts := unix_ts - tz;
+  // Return as system-local TDateTime (UseUTC = False)
+  Result := UnixToDateTime(unix_ts, False);
 end;
 
 {------------------------------------------------------------------------------
