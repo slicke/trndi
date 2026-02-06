@@ -2462,7 +2462,7 @@ begin
   else
     region := trUS;
   
-  api := Tandem.Create(AEmail, APass, region);
+  if region = trEU then api := TandemEU.Create(AEmail, APass, region) else api := TandemUSA.Create(AEmail, APass, region);
   try
     if api.Connect then
     begin
