@@ -127,7 +127,9 @@ end;
 
 destructor TrndiExt.Destroy;
 begin
-  //todo: check FREE!!!!!
+  // Ensure cleanup
+  if obj <> nil then
+    done; // Call done to free obj and unload lib
   if lib <> 0 then
     UnloadLibrary(lib);
 end;
@@ -145,10 +147,13 @@ begin
   if @_config <> nil then
     begin
       GetMem(auth, 255);
-      _config(obj, auth, lvl);
-      apilvl := lvl;
-      author := auth;
-      FreeMem(_config);
+      try
+        _config(obj, auth, lvl);
+        apilvl := lvl;
+        author := auth;
+      finally
+        FreeMem(auth);
+      end;
     end;
 end;
 
@@ -162,8 +167,11 @@ begin
   if @_done <> nil then
     begin
       _done(obj);
-      UnloadLibrary(lib);
+      obj := nil; // Assume _done frees obj
     end;
+  if lib <> 0 then
+    UnloadLibrary(lib);
+  lib := 0; // Prevent double unload
 end;
 
 function TrndiExt.init(const bg: integer): boolean;
@@ -187,9 +195,13 @@ end;
 
 constructor TrndiExt.Create(fn: string; _slug: string; _prio: smallint);
 begin
+  slug := _slug;
+  prio := _prio;
+  lib := 0;
+  obj := nil; // Explicitly initialize
   lib := LoadLibrary(fn);
-  if lib <> NilHandle then
-    Exit;
+  if lib = NilHandle then
+    raise Exception.Create('Failed to load library: ' + fn);
 end;
 
 
