@@ -274,7 +274,7 @@ begin
   end;
 end;
 
-procedure TfFloat.FormCreate(Sender: TObject);
+procedure TfFloat.FormCreate({%H-}Sender: TObject);
 {$IFDEF LCLQt6}
 var
   QtWidget: TQtWidget;
@@ -778,7 +778,7 @@ procedure TfFloat.FormKeyPress(Sender: TObject; var Key: char);
 begin
 end;
 
-procedure TfFloat.FormKeyDown(Sender: TObject; var Key: word; Shift: TShiftState);
+procedure TfFloat.FormKeyDown({%H-}Sender: TObject; var Key: word; Shift: TShiftState);
 var
   num: double;
 begin
