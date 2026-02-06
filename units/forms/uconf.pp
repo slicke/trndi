@@ -855,7 +855,7 @@ begin
     sys := DebugFirstXMissingAPI;
   API_D_CUSTOM:
     sys := DebugCustomAPI;
-    {$endif}
+  {$endif}
   end;
 
   user := sys.ParamLabel(APLUser);
@@ -874,17 +874,9 @@ end;
 procedure TfConf.cbSysChange(Sender: TObject);
 var user, pass: string;
 procedure WarnUnstableAPI;
-const
-  {$ifdef WINDOWS}
-  warn: UniCodeString = '(!) ';
-  info: UniCodeString =  '';
-  {$else}
-  warn: UniCodeString = '⚠️ ';
-  info: UniCodeString =  'ℹ️ ';
-  {$endif}
-  var
-    i : integer;
-    f: string;
+  const
+    warn: unicodestring = '(!) ';
+    info: unicodestring =  '';
   begin
     pnSysWarn.Color := $0000FBF4;
     case cbSys.Text of
@@ -1245,7 +1237,7 @@ begin
     sys := DebugFirstXMissingAPI;
   API_D_CUSTOM:
     sys := DebugCustomAPI;
-    {$endif}
+  {$endif}
   end;
 
   if not assigned(sys) then
@@ -1543,7 +1535,7 @@ procedure TfConf.cbPosChange(Sender: TObject);
 {$ifdef X_LINUXBSD}
 var
   s: string;
-  {$endif}
+{$endif}
 begin
   {$ifdef X_LINUXBSD}
   s := GetWindowManagerName;
@@ -1645,7 +1637,7 @@ begin
   tnative.noFree := true;
   if tnative.isDarkMode then
     tnative.setDarkMode
-    {$ifdef X_WIN}
+  {$ifdef X_WIN}
     (self.Handle)
   {$endif}
   ;
