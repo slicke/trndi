@@ -809,10 +809,17 @@ end;
 
 function TfBG.lastReading: BGReading;
 begin
-  try
-    Result := bgs[Low(bgs)];
-  finally
+  // If there are no readings available, return an empty initialized reading
+  // Caller should normally use tryLastReading() first, but be defensive here.
+  if (bgs = nil) or (Length(bgs) = 0) then
+  begin
+    LogMessageToFile('lastReading: requested but no readings available');
+    Result.Init(un,un,'missing data');
+    Exit;
   end;
+
+  // Return the oldest element (Low index) as the last reading
+  Result := bgs[Low(bgs)];
 end;
 
 function TfBG.lastDataReading: BGReading;
