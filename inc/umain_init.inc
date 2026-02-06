@@ -491,7 +491,7 @@ end;
 {$endif}
 
 {$ifdef DEBUG}
-procedure TfBG.miDebugUXMsgClick(Sender: TObject);
+procedure TfBG.miDebugUXMsgClick({%H-}Sender: TObject);
 var
   old: TTrndiBool;
 begin
@@ -501,7 +501,7 @@ begin
   TrndiNative.touchOverride := old;
 end;
 
-procedure TfBG.miDebugLogClick(Sender: TObject);
+procedure TfBG.miDebugLogClick({%H-}Sender: TObject);
 begin
   TrndiDebugLogAlert := not TrndiDebugLogAlert;
 end;
@@ -521,7 +521,7 @@ end;
 {$endif}
 
 // Initialize the TrendDots array in FormCreate
-procedure TfBG.FormCreate(Sender: TObject);
+procedure TfBG.FormCreate({%H-}Sender: TObject);
 procedure haltBoot;
   begin
     firstboot := true;
@@ -818,7 +818,7 @@ begin
 end;
 
 // Web Server Methods
-procedure TfBG.tWebServerStartTimer(Sender: TObject);
+procedure TfBG.tWebServerStartTimer({%H-}Sender: TObject);
 begin
   // Disable the timer after first execution
   if Assigned(tWebServerStart) then

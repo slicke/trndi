@@ -112,7 +112,7 @@ begin
 
 end;
 
-procedure TfBG.onGH(Sender: TObject);
+procedure TfBG.onGH({%H-}Sender: TObject);
 begin
   OpenURL('https://github.com/slicke/trndi');
 end;
@@ -168,7 +168,7 @@ begin
 end;
 {$ENDIF}
 
-procedure TfBG.AppExceptionHandler(Sender: TObject; E: Exception);
+procedure TfBG.AppExceptionHandler({%H-}Sender: TObject; E: Exception);
 begin
   // Handle exceptions during shutdown gracefully
 end;

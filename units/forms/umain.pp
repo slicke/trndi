@@ -239,16 +239,16 @@ TfBG = class(TForm)
       dot-count changes to keep everything visually aligned.
      }
   procedure AdjustGraph;
-  procedure bMenuPanelCloseClick(Sender: TObject);
-  procedure bSettingsClick(Sender: TObject);
-  procedure bTouchFullClick(Sender: TObject);
-  procedure bTouchMenuClick(Sender: TObject);
-  procedure bTouchSettingsClick(Sender: TObject);
-  procedure fbReadingsDblClick(Sender: TObject);
-  procedure FormActivate(Sender: TObject);
-  procedure FormClick(Sender: TObject);
-  procedure FormCloseQuery(Sender: TObject; var CanClose: boolean);
-  procedure FormClose(Sender: TObject; var {%H-}CloseAction: TCloseAction);
+  procedure bMenuPanelCloseClick({%H-}Sender: TObject);
+  procedure bSettingsClick({%H-}Sender: TObject);
+  procedure bTouchFullClick({%H-}Sender: TObject);
+  procedure bTouchMenuClick({%H-}Sender: TObject);
+  procedure bTouchSettingsClick({%H-}Sender: TObject);
+  procedure fbReadingsDblClick({%H-}Sender: TObject);
+  procedure FormActivate({%H-}Sender: TObject);
+  procedure FormClick({%H-}Sender: TObject);
+  procedure FormCloseQuery({%H-}Sender: TObject; var CanClose: boolean);
+  procedure FormClose({%H-}Sender: TObject; var {%H-}CloseAction: TCloseAction);
   {** Initialize UI state, load configuration, start any required services,
       and prepare connections to backends and extensions.
       Called by the framework when the form instance is created.
@@ -260,7 +260,7 @@ TfBG = class(TForm)
    }
   procedure FormDestroy({%H-}Sender: TObject);
   procedure FormKeyPress({%H-}Sender: TObject; var Key: char);
-  procedure DotPaint(Sender: TObject);
+  procedure DotPaint({%H-}Sender: TObject);
   procedure lDiffClick({%H-}Sender: TObject);
   procedure lPredictClick({%H-}Sender: TObject);
   procedure miBasalRateClick({%H-}Sender: TObject);
@@ -274,80 +274,80 @@ TfBG = class(TForm)
   procedure miDotSmallClick({%H-}Sender: TObject);
   procedure miExitClick({%H-}Sender: TObject);
   procedure miCustomDotsClick({%H-}Sender: TObject);
-  procedure miATouchAutoClick(Sender: TObject);
-  procedure miADotAdjustClick(Sender: TObject);
-  procedure miADotScaleClick(Sender: TObject);
-  procedure miADotsClick(Sender: TObject);
-  procedure miASystemInfoClick(Sender: TObject);
-  procedure miATouchClick(Sender: TObject);
-  procedure miATouchNoClick(Sender: TObject);
-  procedure miATouchYesClick(Sender: TObject);
-  procedure miDebugBackendClick(Sender: TObject);
-  procedure miExtLogClick(Sender: TObject);
-  procedure miGuidelinesClick(Sender: TObject);
-  procedure miPredictClick(Sender: TObject);
-  procedure miReadingsSinceClick(Sender: TObject);
-  procedure pmSettingsClose(Sender: TObject);
-  procedure pnWarningClick(Sender: TObject);
-  procedure pnWarningPaint(Sender: TObject);
+  procedure miATouchAutoClick({%H-}Sender: TObject);
+  procedure miADotAdjustClick({%H-}Sender: TObject);
+  procedure miADotScaleClick({%H-}Sender: TObject);
+  procedure miADotsClick({%H-}Sender: TObject);
+  procedure miASystemInfoClick({%H-}Sender: TObject);
+  procedure miATouchClick({%H-}Sender: TObject);
+  procedure miATouchNoClick({%H-}Sender: TObject);
+  procedure miATouchYesClick({%H-}Sender: TObject);
+  procedure miDebugBackendClick({%H-}Sender: TObject);
+  procedure miExtLogClick({%H-}Sender: TObject);
+  procedure miGuidelinesClick({%H-}Sender: TObject);
+  procedure miPredictClick({%H-}Sender: TObject);
+  procedure miReadingsSinceClick({%H-}Sender: TObject);
+  procedure pmSettingsClose({%H-}Sender: TObject);
+  procedure pnWarningClick({%H-}Sender: TObject);
+  procedure pnWarningPaint({%H-}Sender: TObject);
   procedure speakReading;
-  procedure FormMouseLeave(Sender: TObject);
+  procedure FormMouseLeave({%H-}Sender: TObject);
   procedure FormMouseMove(Sender: TObject;{%H-}Shift: TShiftState; X, Y: integer);
-  procedure FormResize(Sender: TObject);
+  procedure FormResize({%H-}Sender: TObject);
   {** Called when the form becomes visible after creation; performs final
       placement operations and triggers initial UI refreshes once all controls
       are initialized and loaded.
    }
-  procedure FormShow(Sender: TObject);
-  procedure FormPaint(Sender: TObject);
-  procedure lAgoClick(Sender: TObject);
-  procedure lArrowClick(Sender: TObject);
-  procedure lDiffDblClick(Sender: TObject);
-  procedure lDot7DblClick(Sender: TObject);
-  procedure lgMainClick(Sender: TObject);
-  procedure lTirClick(Sender: TObject);
-  procedure lValClick(Sender: TObject);
-  procedure lValDblClick(Sender: TObject);
-  procedure lValMouseDown(Sender: TObject; Button: TMouseButton;
+  procedure FormShow({%H-}Sender: TObject);
+  procedure FormPaint({%H-}Sender: TObject);
+  procedure lAgoClick({%H-}Sender: TObject);
+  procedure lArrowClick({%H-}Sender: TObject);
+  procedure lDiffDblClick({%H-}Sender: TObject);
+  procedure lDot7DblClick({%H-}Sender: TObject);
+  procedure lgMainClick({%H-}Sender: TObject);
+  procedure lTirClick({%H-}Sender: TObject);
+  procedure lValClick({%H-}Sender: TObject);
+  procedure lValDblClick({%H-}Sender: TObject);
+  procedure lValMouseDown({%H-}Sender: TObject; Button: TMouseButton;
     {%H-}Shift: TShiftState; X, Y: integer);
-  procedure lValMouseUp(Sender: TObject; {%H-}Button: TMouseButton;
+  procedure lValMouseUp({%H-}Sender: TObject; {%H-}Button: TMouseButton;
     {%H-}Shift: TShiftState; {%H-}X, {%H-}Y: integer);
-  procedure lValStartDrag(Sender: TObject; var {%H-}DragObject: TDragObject);
-  procedure miAnnounceClick(Sender: TObject);
-  procedure miAlternateClick(Sender: TObject);
-  procedure miClockClick(Sender: TObject);
-  procedure miDotNormalClick(Sender: TObject);
-  procedure miFloatOnClick(Sender: TObject);
-  procedure mi24hClick(Sender: TObject);
-  procedure miHistoryClick(Sender: TObject);
-  procedure miRangeColorClick(Sender: TObject);
-  procedure miBordersClick(Sender: TObject);
-  procedure miForceClick(Sender: TObject);
-  procedure miLimitExplainClick(Sender: TObject);
-  procedure miOnTopClick(Sender: TObject);
-  procedure miSettingsClick(Sender: TObject);
+  procedure lValStartDrag({%H-}Sender: TObject; var {%H-}DragObject: TDragObject);
+  procedure miAnnounceClick({%H-}Sender: TObject);
+  procedure miAlternateClick({%H-}Sender: TObject);
+  procedure miClockClick({%H-}Sender: TObject);
+  procedure miDotNormalClick({%H-}Sender: TObject);
+  procedure miFloatOnClick({%H-}Sender: TObject);
+  procedure mi24hClick({%H-}Sender: TObject);
+  procedure miHistoryClick({%H-}Sender: TObject);
+  procedure miRangeColorClick({%H-}Sender: TObject);
+  procedure miBordersClick({%H-}Sender: TObject);
+  procedure miForceClick({%H-}Sender: TObject);
+  procedure miLimitExplainClick({%H-}Sender: TObject);
+  procedure miOnTopClick({%H-}Sender: TObject);
+  procedure miSettingsClick({%H-}Sender: TObject);
   {$ifdef DARWIN}
-  procedure ShowAboutDialog(Sender: TObject);
-  procedure CheckForUpdatesMenuClick(Sender: TObject);
+  procedure ShowAboutDialog({%H-}Sender: TObject);
+  procedure CheckForUpdatesMenuClick({%H-}Sender: TObject);
   {$endif}
-  procedure onTrendClick(Sender: TObject);
-  procedure pnOffReadingPaint(Sender: TObject);
-  procedure pmSettingsMeasureItem(Sender: TObject; ACanvas: TCanvas;
+  procedure onTrendClick({%H-}Sender: TObject);
+  procedure pnOffReadingPaint({%H-}Sender: TObject);
+  procedure pmSettingsMeasureItem({%H-}Sender: TObject; ACanvas: TCanvas;
     var AWidth, AHeight: integer);
-  procedure pmSettingsPopup(Sender: TObject);
-  procedure pnMultiUserClick(Sender: TObject);
-  procedure pnOffRangeClick(Sender: TObject);
-  procedure tAgoTimer(Sender: TObject);
-  procedure tClockTimer(Sender: TObject);
-  procedure tEdgesTimer(Sender: TObject);
-  procedure tInitTimer(Sender: TObject);
-  procedure tPingTimer(Sender: TObject);
-  procedure tResizeTimer(Sender: TObject);
-  procedure tMainTimer(Sender: TObject);
-  procedure tMissedTimer(Sender: TObject);
-  procedure tSetupTimer(Sender: TObject);
-  procedure tSwapTimer(Sender: TObject);
-  procedure tTouchTimer(Sender: TObject);
+  procedure pmSettingsPopup({%H-}Sender: TObject);
+  procedure pnMultiUserClick({%H-}Sender: TObject);
+  procedure pnOffRangeClick({%H-}Sender: TObject);
+  procedure tAgoTimer({%H-}Sender: TObject);
+  procedure tClockTimer({%H-}Sender: TObject);
+  procedure tEdgesTimer({%H-}Sender: TObject);
+  procedure tInitTimer({%H-}Sender: TObject);
+  procedure tPingTimer({%H-}Sender: TObject);
+  procedure tResizeTimer({%H-}Sender: TObject);
+  procedure tMainTimer({%H-}Sender: TObject);
+  procedure tMissedTimer({%H-}Sender: TObject);
+  procedure tSetupTimer({%H-}Sender: TObject);
+  procedure tSwapTimer({%H-}Sender: TObject);
+  procedure tTouchTimer({%H-}Sender: TObject);
   procedure TfFloatOnHide(Sender: TObject);
   {$ifdef DEBUG}
   procedure miDebugUXMsgClick(Sender: TObject);
@@ -798,7 +798,7 @@ begin
   Result.Unknown := RGBToColor(180, 180, 180);
 end;
 
-procedure TfBG.FormDblClick(Sender: TObject);
+procedure TfBG.FormDblClick({%H-}Sender: TObject);
 begin
   if HasTouch then
     DoFullScreen;
@@ -842,7 +842,7 @@ begin
   end;
 end;
 
-procedure TfBG.FormDestroy(Sender: TObject);
+procedure TfBG.FormDestroy({%H-}Sender: TObject);
 begin
   // Ensure shutdown flag is set
   FShuttingDown := true;
@@ -891,7 +891,7 @@ begin
     end;
 end;
 
-procedure TfBG.FormKeyPress(Sender: TObject; var Key: char);
+procedure TfBG.FormKeyPress({%H-}Sender: TObject; var Key: char);
 begin
   case key of
   #27:
@@ -1001,7 +1001,7 @@ begin
   end;
 end;
 
-procedure TfBG.lDiffClick(Sender: TObject);
+procedure TfBG.lDiffClick({%H-}Sender: TObject);
 begin
   ShowMessage(RS_DIFF);
 end;
