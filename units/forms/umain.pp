@@ -3588,7 +3588,7 @@ begin
     versionInfo + sHTMLLineBreak +
     'https://github.com/slicke/trndi';
 
-  ExtHTML(uxdAuto, 'About Trndi', html, [mbOK], uxmtInformation, 25);
+  ExtHTML(uxdAuto, 'About Trndi', html, [mbOK], uxmtNone, 25);
 end;
 {$endif}
 

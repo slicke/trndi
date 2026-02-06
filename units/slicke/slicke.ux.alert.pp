@@ -110,6 +110,7 @@ uxmtConfirmation   = WChar($2753); // ❓ Question mark
 uxmtCog            = WChar($2699); // ⚙️ Gear
 uxmtSquare         = WChar($274F); // ❏ Square
 uxmtCustom         = uxmtCog;
+uxmtNone           = WChar($0020); // Space character (no visible icon)
 
   {**
     @name Dialog colors
