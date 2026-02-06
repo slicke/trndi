@@ -520,14 +520,31 @@ end;
 ------------------------------------------------------------------------------}
 function TrndiAPI.encodeStr(src: string): string;
 var
-  i: integer;
+  i, j, len: integer;
+  hex: string;
 begin
-  Result := '';
+  len := 0;
   for i := 1 to Length(src) do
     if not (src[i] in ['A'..'Z', 'a'..'z', '0'..'9', '-', '_', '~', '.']) then
-      Result := Result + '%' + IntToHex(Ord(src[i]), 2)
+      Inc(len, 3)
     else
-      Result := Result + src[i]; // passthrough allowed characters
+      Inc(len);
+  SetLength(Result, len);
+  j := 1;
+  for i := 1 to Length(src) do
+    if not (src[i] in ['A'..'Z', 'a'..'z', '0'..'9', '-', '_', '~', '.']) then
+    begin
+      hex := IntToHex(Ord(src[i]), 2);
+      Result[j] := '%';
+      Result[j+1] := hex[1];
+      Result[j+2] := hex[2];
+      Inc(j, 3);
+    end
+    else
+    begin
+      Result[j] := src[i];
+      Inc(j);
+    end;
 end;
 
 {------------------------------------------------------------------------------
