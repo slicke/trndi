@@ -741,14 +741,18 @@ end;
 
 procedure TfConf.lAckClick(Sender: TObject);
 const
-  txt = 'Trndi makes use of the following 3rd party libraries:'#10 +
-    'macOS native code libraries by Phil Hess'#10 +
-    'WinStyles library by Espectr0'#10#10 +
-    'Extensions use JavaScript engine QuickJS by Fabrice Bellard and Charlie Gordo'#10 +
-    'integration of said engine is made possible with mORMot2 by Synopse Informatique - Arnaud Bouchez'
-    + #10#10 + 'Built in Object Pascal, using the Lazarus component library (LCL) and FreePascal.';
+  txt = 'Trndi makes use of the following 3rd party libraries:' + sHTMLLineBreak +
+    'macOS native code libraries by <i>Phil Hess</i>.'#10 + sHTMLLineBreak +
+    'WinStyles library by <i>Espectr0</i>.'+ sHTMLLineBreak + sHTMLLineBreak +
+
+    'Extensions use the JavaScript engine <i>QuickJS</i> by <i>Fabrice Bellard</i> and <i>Charlie Gordo</i>.'#10 + sHTMLLineBreak +
+    'Integration of said engine is made possible with mORMot2 by Synopse Informatique - <i>Arnaud Bouchez</i>.' + sHTMLLineBreak + sHTMLLineBreak +
+
+    'While Trndi has been built ground-up, it has been inspired by the Python library <i>pydexcom</i> and Tandem tool <i>tconnectsync</i>, aswell as the <i>NightScout</i> project.' + sHTMLLineBreak + sHTMLLineBreak +
+    'Built in <b>Object Pascal</b>, using the <b>Lazarus</b> component library (LCL) and <b>FreePascal</b>.' + sHTMLLineBreak + sHTMLLineBreak +
+    'Follow Trndi on Discord and Github! Contributions of code and translations are very welcome!';
 begin
-  ExtSucc(uxdAuto, 'Trndi', 'Libraries', txt, $00AA6004, $00FDD8AA);
+  ExtHTML(uxdAuto, 'Trndi', txt,[mbOK],uxmtInformation,20);
 end;
 
 procedure TfConf.lbExtensionsSelectionChange(Sender: TObject; User: boolean);
