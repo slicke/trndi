@@ -608,32 +608,34 @@ function DexcomNew.Connect: boolean;
   // Helper: Escape a string for safe inclusion in JSON
 function JSONEscape(const S: string): string;
   var
-    i: integer;
+    i, idx: integer;
     c: char;
   begin
-    Result := '';
+    SetLength(Result, Length(S) * 2); // worst case: each char escaped
+    idx := 1;
     for i := 1 to Length(S) do
     begin
       c := S[i];
       case c of
       '"':
-        Result := Result + '\"';
+        begin Result[idx] := '\'; Inc(idx); Result[idx] := '"'; Inc(idx); end;
       '\':
-        Result := Result + '\\';
+        begin Result[idx] := '\'; Inc(idx); Result[idx] := '\'; Inc(idx); end;
       #8:
-        Result := Result + '\b';   // backspace
+        begin Result[idx] := '\'; Inc(idx); Result[idx] := 'b'; Inc(idx); end;
       #9:
-        Result := Result + '\t';   // tab
+        begin Result[idx] := '\'; Inc(idx); Result[idx] := 't'; Inc(idx); end;
       #10:
-        Result := Result + '\n';   // newline
+        begin Result[idx] := '\'; Inc(idx); Result[idx] := 'n'; Inc(idx); end;
       #12:
-        Result := Result + '\f';   // form feed
+        begin Result[idx] := '\'; Inc(idx); Result[idx] := 'f'; Inc(idx); end;
       #13:
-        Result := Result + '\r';   // carriage return
+        begin Result[idx] := '\'; Inc(idx); Result[idx] := 'r'; Inc(idx); end;
       else
-        Result := Result + c;
+        begin Result[idx] := c; Inc(idx); end;
       end;
     end;
+    SetLength(Result, idx - 1);
   end;
 
 var
@@ -1021,32 +1023,34 @@ var
   regionEnum: TDexcomRegion;
 function JSONEscape(const S: string): string;
   var
-    i: integer;
+    i, idx: integer;
     c: char;
   begin
-    Result := '';
+    SetLength(Result, Length(S) * 2); // worst case: each char escaped
+    idx := 1;
     for i := 1 to Length(S) do
     begin
       c := S[i];
       case c of
       '"':
-        Result := Result + '\"';
+        begin Result[idx] := '\'; Inc(idx); Result[idx] := '"'; Inc(idx); end;
       '\':
-        Result := Result + '\\';
+        begin Result[idx] := '\'; Inc(idx); Result[idx] := '\'; Inc(idx); end;
       #8:
-        Result := Result + '\b';
+        begin Result[idx] := '\'; Inc(idx); Result[idx] := 'b'; Inc(idx); end;
       #9:
-        Result := Result + '\t';
+        begin Result[idx] := '\'; Inc(idx); Result[idx] := 't'; Inc(idx); end;
       #10:
-        Result := Result + '\n';
+        begin Result[idx] := '\'; Inc(idx); Result[idx] := 'n'; Inc(idx); end;
       #12:
-        Result := Result + '\f';
+        begin Result[idx] := '\'; Inc(idx); Result[idx] := 'f'; Inc(idx); end;
       #13:
-        Result := Result + '\r';
+        begin Result[idx] := '\'; Inc(idx); Result[idx] := 'r'; Inc(idx); end;
       else
-        Result := Result + c;
+        begin Result[idx] := c; Inc(idx); end;
       end;
     end;
+    SetLength(Result, idx - 1);
   end;
 begin
   Result := MaybeBool.False; // default failure

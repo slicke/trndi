@@ -300,23 +300,36 @@ begin
   end;
 end;
 
-// Implement a simple insertion sort for BGReading
+// Sort BGReading array in descending order (newest first)
 procedure SortReadingsDescending(var Readings: array of BGReading);
-var
-  i, j: integer;
-  temp: BGReading;
-begin
-  for i := 1 to High(Readings) do
+  procedure QuickSort(L, R: Integer);
+  var
+    I, J: Integer;
+    P, T: BGReading;
   begin
-    temp := Readings[i];
-    j := i - 1;
-    while (j >= 0) and (Readings[j].date < temp.date) do
-    begin
-      Readings[j + 1] := Readings[j];
-      Dec(j);
-    end;
-    Readings[j + 1] := temp;
+    repeat
+      I := L;
+      J := R;
+      P := Readings[(L + R) div 2];
+      repeat
+        while Readings[I].date > P.date do Inc(I);
+        while Readings[J].date < P.date do Dec(J);
+        if I <= J then
+        begin
+          T := Readings[I];
+          Readings[I] := Readings[J];
+          Readings[J] := T;
+          Inc(I);
+          Dec(J);
+        end;
+      until I > J;
+      if L < J then QuickSort(L, J);
+      L := I;
+    until I >= R;
   end;
+begin
+  if Length(Readings) > 1 then
+    QuickSort(Low(Readings), High(Readings));
 end;
 
 // SetPointHeight procedure

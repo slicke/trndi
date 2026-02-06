@@ -1771,18 +1771,34 @@ var
     end;
   end;
   procedure SortReadingsNewestFirst(var AReadings: BGResults);
-  var
-    i, j: integer;
-    tmp: BGReading;
+    procedure QuickSort(L, R: Integer);
+    var
+      I, J: Integer;
+      P, T: BGReading;
+    begin
+      repeat
+        I := L;
+        J := R;
+        P := AReadings[(L + R) div 2];
+        repeat
+          while AReadings[I].date > P.date do Inc(I);
+          while AReadings[J].date < P.date do Dec(J);
+          if I <= J then
+          begin
+            T := AReadings[I];
+            AReadings[I] := AReadings[J];
+            AReadings[J] := T;
+            Inc(I);
+            Dec(J);
+          end;
+        until I > J;
+        if L < J then QuickSort(L, J);
+        L := I;
+      until I >= R;
+    end;
   begin
-    for i := Low(AReadings) to High(AReadings) do
-      for j := i + 1 to High(AReadings) do
-        if AReadings[j].date > AReadings[i].date then
-        begin
-          tmp := AReadings[i];
-          AReadings[i] := AReadings[j];
-          AReadings[j] := tmp;
-        end;
+    if Length(AReadings) > 1 then
+      QuickSort(Low(AReadings), High(AReadings));
   end;
   function TrySourcePumpEventsReadings(out AResults: BGResults): boolean;
   var
