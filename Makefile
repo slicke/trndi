@@ -20,6 +20,12 @@ ifeq ($(OS),Windows_NT)
   endif
 endif
 
+# On macOS, prefer an installed Lazarus at /Applications/lazarus/lazbuild if it exists.
+# This lets users run the Makefile without having lazbuild on PATH.
+ifneq ($(wildcard /Applications/lazarus/lazbuild),)
+  LAZBUILD := /Applications/lazarus/lazbuild
+endif
+
 LPI ?= Trndi.lpi
 TEST_LPI ?= tests/TrndiTest.lpi
 OUTDIR ?= build
