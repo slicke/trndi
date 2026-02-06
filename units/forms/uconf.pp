@@ -875,8 +875,13 @@ procedure TfConf.cbSysChange(Sender: TObject);
 var user, pass: string;
 procedure WarnUnstableAPI;
 const
+  {$ifdef WINDOWS}
   warn: UniCodeString = '(!) ';
   info: UniCodeString =  '';
+  {$else}
+  warn: UniCodeString = '⚠️ ';
+  info: UniCodeString =  'ℹ️ ';
+  {$endif}
   var
     i : integer;
     f: string;
