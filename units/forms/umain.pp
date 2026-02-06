@@ -1215,6 +1215,7 @@ var
   bgr: BGResults;
   i: integer;
   msg: string;
+  temp: string;
   mr: TModalResult;
 begin
   i := ExtIntInput(uxdAuto, RS_PREDICT_AMOUNT_CAPTION, RS_PREDICT_AMOUNT_TITLE, RS_PREDICT_AMOUNT_DESC, 3, mr);
@@ -1230,13 +1231,15 @@ begin
   end;
 
   msg := RS_SERVICE_PREDICTIONS + LineEnding;
+  temp := '';
   for i := 0 to High(bgr) do
-    msg := msg + Format(RS_SERVICE_PREDICT_POINT, [
+    temp := temp + Format(RS_SERVICE_PREDICT_POINT, [
       i + 1,
       bgr[i].convert(un),
       BG_UNIT_NAMES[un],
       FormatDateTime('hh:nn', bgr[i].date)  // Show time
       ]) + LineEnding;
+  msg := msg + temp;
 
   ShowMessage(msg);
 end;
