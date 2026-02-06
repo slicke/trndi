@@ -748,11 +748,14 @@ const
     'Extensions use the JavaScript engine <i>QuickJS</i> by <i>Fabrice Bellard</i> and <i>Charlie Gordo</i>.'#10 + sHTMLLineBreak +
     'Integration of said engine is made possible with mORMot2 by Synopse Informatique - <i>Arnaud Bouchez</i>.' + sHTMLLineBreak + sHTMLLineBreak +
 
+    'Haiku specific: OpenSSL' + sHTMLLineBreak +
+    'Linux/BSD specific: Qt6 and libCurl (usually with OpenSSL)' + sHTMLLineBreak + sHTMLLineBreak +
+
     'While Trndi has been built ground-up, it has been inspired by the Python library <i>pydexcom</i> and Tandem tool <i>tconnectsync</i>, aswell as the <i>NightScout</i> project.' + sHTMLLineBreak + sHTMLLineBreak +
     'Built in <b>Object Pascal</b>, using the <b>Lazarus</b> component library (LCL) and <b>FreePascal</b>.' + sHTMLLineBreak + sHTMLLineBreak +
     'Follow Trndi on Discord and Github! Contributions of code and translations are very welcome!';
 begin
-  ExtHTML(uxdAuto, 'Trndi', txt,[mbOK],uxmtInformation,20);
+  ExtHTML(uxdAuto, 'Trndi', txt,[mbOK],uxmtInformation,25);
 end;
 
 procedure TfConf.lbExtensionsSelectionChange(Sender: TObject; User: boolean);
