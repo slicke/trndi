@@ -3358,13 +3358,32 @@ end;
 procedure TTrndiNativeBase.SetCSVSetting(const keyname: string; const val: TStringArray; const global: boolean = false);
 var
   s, res: string;
+  i, totalLen: integer;
+  p: PAnsiChar;
 begin
-  res := '';
-  for s in val do
-    res += s + ',';
+  if Length(val) = 0 then
+  begin
+    SetSetting(keyname, '', global);
+    exit;
+  end;
 
-  if Length(res) > 0 then
-    Delete(res, Length(res), 1);
+  totalLen := 0;
+  for s in val do
+    totalLen := totalLen + Length(s) + 1; // +1 for comma
+  Dec(totalLen); // remove last comma
+
+  SetLength(res, totalLen);
+  p := PAnsiChar(res);
+  for i := 0 to High(val) do
+  begin
+    if i > 0 then
+    begin
+      p^ := ',';
+      Inc(p);
+    end;
+    Move(PAnsiChar(val[i])^, p^, Length(val[i]));
+    Inc(p, Length(val[i]));
+  end;
 
   SetSetting(keyname, res, global);
 end;
