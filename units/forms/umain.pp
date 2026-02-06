@@ -328,6 +328,7 @@ TfBG = class(TForm)
   procedure miSettingsClick(Sender: TObject);
   {$ifdef DARWIN}
   procedure ShowAboutDialog(Sender: TObject);
+  procedure CheckForUpdatesMenuClick(Sender: TObject);
   {$endif}
   procedure onTrendClick(Sender: TObject);
   procedure pnOffReadingPaint(Sender: TObject);
@@ -3583,9 +3584,14 @@ begin
   ShowMessage('Trndi' + LineEnding + LineEnding +
     'CGM data on Desktop and Raspberry Pi' + LineEnding +
     'Nightscout - Dexcom - Tandem Source - xDrip WiFi' + LineEnding + LineEnding +
-    'Version: ' + GetBuildInfo + LineEnding +
+    'Version: ' + BUILD_NUMBER + LineEnding +
     'Platform: ' + platformInfo + LineEnding +
     'https://github.com/slicke/trndi');
+end;
+
+procedure TfBG.CheckForUpdatesMenuClick(Sender: TObject);
+begin
+  CheckForUpdates(true);
 end;
 {$endif}
 

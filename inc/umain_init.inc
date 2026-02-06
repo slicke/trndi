@@ -156,7 +156,7 @@ begin
   // Add Check for Updates menu item
   CheckUpdatesMenu := TMenuItem.Create(self);
   CheckUpdatesMenu.Caption := 'Check for Updates...';
-  CheckUpdatesMenu.OnClick := @CheckForUpdates;
+  CheckUpdatesMenu.OnClick := @CheckForUpdatesMenuClick;
   AppMenu.Insert(5, CheckUpdatesMenu);
 
   // Add Quit menu item (standard on macOS)
