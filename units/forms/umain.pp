@@ -3573,6 +3573,7 @@ end;
 {$ifdef DARWIN}
 procedure TfBG.ShowAboutDialog(Sender: TObject);
 var
+  html: string;
   versionInfo: string;
 begin
   versionInfo := 'Version ' + BUILD_NUMBER;
@@ -3580,11 +3581,14 @@ begin
   versionInfo := versionInfo + ' (macOS)';
   {$endif}
 
-  ShowMessage('Trndi' + LineEnding + LineEnding +
-    'Continuous Glucose Monitor (CGM) data display' + LineEnding +
-    'for desktop and embedded devices' + LineEnding + LineEnding +
-    versionInfo + LineEnding +
-    'https://github.com/slicke/trndi');
+  html := '<img src="https://trndi.app/doc/img/trndi-logo.png">' + sHTMLLineBreak +
+    '<b>Trndi - CGM viewer</b>' + sHTMLLineBreak +
+    '<i>Continuous Glucose Monitor data display</i>' + sHTMLLineBreak +
+    'for desktop and embedded devices' + sHTMLLineBreak + sHTMLLineBreak +
+    versionInfo + sHTMLLineBreak +
+    'https://github.com/slicke/trndi';
+
+  ExtHTML(uxdAuto, 'About Trndi', html, [mbOK], uxmtInformation, 25);
 end;
 {$endif}
 
