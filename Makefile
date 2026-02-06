@@ -204,7 +204,8 @@ endif
 	  else \
 	    echo "Warning: IGNORE_MORMOT=1 set; skipping mORMot2 presence and static binary checks"; \
 	  fi; \
-	fi; \
+	fi
+build:
 	mkdir -p $(OUTDIR)
 	@echo "Building $(LPI) (mode=$(BUILD_MODE_NAME), widgetset=$(WIDGETSET)) -> $(OUTDIR)"
 	@# Note: avoid passing -B <outdir> to lazbuild — some lazbuild versions misinterpret it as a package name.

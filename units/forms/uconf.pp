@@ -57,8 +57,7 @@ Classes, ComCtrls, ExtCtrls, Spin, StdCtrls, SysUtils, Forms, Controls,
 Graphics, Dialogs, LCLTranslator, trndi.native, lclintf,
 slicke.ux.alert, slicke.ux.native, VersionInfo, trndi.funcs, buildinfo, StrUtils,
   // Backend APIs for label captions
-trndi.api, trndi.api.nightscout, trndi.api.nightscout3, trndi.api.dexcom, trndi.api.dexcomNew, trndi.api.tandem, trndi.api.debug_custom,
-trndi.api.debug, trndi.api.debug_firstXmissing, trndi.api.xdrip, razer.chroma, math, trndi.types;
+trndi.api, trndi.api.nightscout, trndi.api.nightscout3, trndi.api.dexcom, trndi.api.dexcomNew, trndi.api.tandem, trndi.api.xdrip, razer.chroma, math, trndi.types;
 
 type
 
@@ -896,38 +895,38 @@ procedure WarnUnstableAPI;
       cbCust.Font.Color := clBlack;
 
       pnSysWarn.Show;
-      lSysWarnInfo.Caption := info+RS_DEX;
+      lSysWarnInfo.Caption := info+UnicodeString(RS_DEX);
       pnSysWarn.Color := $0053A2E8;
     end;
     API_NS3:
     begin
       pnSysWarn.Show;
-      lSysWarnInfo.Caption := warn+RS_BETA;
+      lSysWarnInfo.Caption := warn+UnicodeString(RS_BETA);
     end;
     API_DEX_NEW_EU,
     API_DEX_NEW_USA,
     API_DEX_NEW_JP:
     begin
       pnSysWarn.Show;
-      lSysWarnInfo.Caption := warn+RS_BETA_DEX;
+      lSysWarnInfo.Caption := warn+UnicodeString(RS_BETA_DEX);
     end;
     API_XDRIP:
     begin
       pnSysWarn.Show;
-      lSysWarnInfo.Caption := info+RS_XDRIP;
+      lSysWarnInfo.Caption := info+UnicodeString(RS_XDRIP);
     end;
     API_TANDEM_EU,
     API_TANDEM_USA:
     begin
       pnSysWarn.Show;
-      lSysWarnInfo.Caption := warn+RS_TANDEM;
+      lSysWarnInfo.Caption := warn+UnicodeString(RS_TANDEM);
     end;
     end;
     {$ifdef DEBUG}
     if cbSys.Text in API_DEBUG then
     begin
       pnSysWarn.Show;
-      lSysWarnInfo.Caption := warn+RS_DEBUG_WARN;
+      lSysWarnInfo.Caption := warn+UnicodeString(RS_DEBUG_WARN);
     end;
     {$endif}
   end;
@@ -987,7 +986,7 @@ begin
 
   if tryStrToInt('$' + (Sender as TEdit).Text, i) then
   begin
-    lbl.Caption := WChar(i);
+    lbl.Caption := UnicodeString(WChar(i));
     if Sender = eDot then
     begin
       lDot1.Caption := lbl.Caption;
