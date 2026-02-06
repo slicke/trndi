@@ -20,12 +20,6 @@ ifeq ($(OS),Windows_NT)
   endif
 endif
 
-# On macOS, prefer an installed Lazarus at /Applications/lazarus/lazbuild if it exists.
-# This lets users run the Makefile without having lazbuild on PATH.
-ifneq ($(wildcard /Applications/lazarus/lazbuild),)
-  LAZBUILD := /Applications/lazarus/lazbuild
-endif
-
 LPI ?= Trndi.lpi
 TEST_LPI ?= tests/TrndiTest.lpi
 OUTDIR ?= build
@@ -57,6 +51,14 @@ else
 endif
 IS_MINGW := $(findstring MINGW,$(UNAME_S))
 IS_CYGWIN := $(findstring CYGWIN,$(UNAME_S))
+
+# On macOS, prefer an installed Lazarus at /Applications/lazarus/lazbuild if it exists.
+# This lets users run the Makefile without having lazbuild on PATH.
+ifeq ($(UNAME_S),Darwin)
+  ifneq ($(wildcard /Applications/lazarus/lazbuild),)
+    LAZBUILD := /Applications/lazarus/lazbuild
+  endif
+endif
 
 # Linux: prefer Qt6 builds; when multiple Qt6 release modes exist prefer the Extensions variant
 ifeq ($(UNAME_S),Linux)
