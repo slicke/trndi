@@ -57,7 +57,7 @@ Classes, ComCtrls, ExtCtrls, Spin, StdCtrls, SysUtils, Forms, Controls,
 Graphics, Dialogs, LCLTranslator, trndi.native, lclintf,
 slicke.ux.alert, slicke.ux.native, VersionInfo, trndi.funcs, buildinfo, StrUtils,
   // Backend APIs for label captions
-trndi.api, trndi.api.nightscout, trndi.api.nightscout3, trndi.api.dexcom, trndi.api.dexcomNew, trndi.api.tandem, trndi.api.xdrip, razer.chroma, math, trndi.types, trndi.api.debug_firstXmissing, trndi.api.debug_intermittentmissing, trndi.api.debug_custom, trndi.api.debug;
+trndi.api, trndi.api.nightscout, trndi.api.nightscout3, trndi.api.dexcom, trndi.api.dexcomNew, trndi.api.tandem, trndi.api.xdrip, razer.chroma, math, trndi.types, trndi.api.debug_firstXmissing, trndi.api.debug_intermittentmissing, trndi.api.debug_custom, trndi.api.debug, base64;
 
 type
 
@@ -386,6 +386,8 @@ TfConf = class(TForm)
   procedure bTestSpeechClick(Sender: TObject);
   procedure bThreasholdLinesHelpClick(Sender: TObject);
   procedure bTimeStampHelpClick(Sender: TObject);
+  procedure bExportSettingsClick(Sender: TObject);
+  procedure bImportSettingsClick(Sender: TObject);
   procedure btResetClick(Sender: TObject);
   procedure btUserSaveClick(Sender: TObject);
   procedure bUseURLHelpClick(Sender: TObject);
@@ -1397,6 +1399,77 @@ end;
 procedure TfConf.bTimeStampHelpClick(Sender: TObject);
 begin
   ShowMessage(RS_TIMESTAMP_HELP);
+end;
+
+procedure TfConf.bExportSettingsClick(Sender: TObject);
+var
+  settingsData, encodedData: string;
+  dlg: TSaveDialog;
+begin
+  settingsData := tnative.ExportSettings;
+  if settingsData = '' then
+  begin
+    ShowMessage('No settings to export.');
+    Exit;
+  end;
+  
+  encodedData := EncodeStringBase64(settingsData);
+  
+  dlg := TSaveDialog.Create(nil);
+  try
+    dlg.Title := 'Export Settings';
+    dlg.Filter := 'Settings files (*.trndi)|*.trndi|All files (*.*)|*.*';
+    dlg.DefaultExt := 'trndi';
+    dlg.FileName := 'trndi_settings.trndi';
+    
+    if dlg.Execute then
+    begin
+      with TFileStream.Create(dlg.FileName, fmCreate) do
+      try
+        WriteBuffer(encodedData[1], Length(encodedData));
+      finally
+        Free;
+      end;
+      ShowMessage('Settings exported successfully.');
+    end;
+  finally
+    dlg.Free;
+  end;
+end;
+
+procedure TfConf.bImportSettingsClick(Sender: TObject);
+var
+  encodedData, settingsData: string;
+  dlg: TOpenDialog;
+begin
+  dlg := TOpenDialog.Create(nil);
+  try
+    dlg.Title := 'Import Settings';
+    dlg.Filter := 'Settings files (*.trndi)|*.trndi|All files (*.*)|*.*';
+    dlg.DefaultExt := 'trndi';
+    
+    if dlg.Execute then
+    begin
+      with TFileStream.Create(dlg.FileName, fmOpenRead) do
+      try
+        SetLength(encodedData, Size);
+        ReadBuffer(encodedData[1], Size);
+      finally
+        Free;
+      end;
+      
+      try
+        settingsData := DecodeStringBase64(encodedData);
+        tnative.ImportSettings(settingsData);
+        ShowMessage('Settings imported successfully. You need to restart Trndi for all changes to take effect. Do NOT save when exiting the settings dialog!');
+      except
+        on E: Exception do
+          ShowMessage('Error importing settings: ' + E.Message);
+      end;
+    end;
+  finally
+    dlg.Free;
+  end;
 end;
 
 procedure TfConf.btResetClick(Sender: TObject);

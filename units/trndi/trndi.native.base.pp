@@ -215,6 +215,11 @@ class var touchOverride: TTrndiBool;
   function CheckSetting(const keyname: string; def: string; match: string;
     global: boolean = false): boolean; virtual;
 
+    {** Export all settings to INI format string. }
+  function ExportSettings: string; virtual; abstract;
+    {** Import settings from INI format string. }
+  procedure ImportSettings(const iniData: string); virtual; abstract;
+
     // Theme/Env
     {** Determine if the OS/theme uses a dark appearance. Platforms override. }
   class function isDarkMode: boolean; virtual;

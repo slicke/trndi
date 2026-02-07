@@ -24,6 +24,8 @@ type
     function GetSetting(const keyname: string; def: string = ''; global: boolean = false): string; override;
     procedure DeleteSetting(const keyname: string; global: boolean = false); override;
     procedure ReloadSettings; override;
+    function ExportSettings: string; override;
+    procedure ImportSettings(const iniData: string); override;
 
     // TTS and environment
     procedure Speak(const Text: string); override;
@@ -176,6 +178,63 @@ end;
 procedure TTrndiNativeMock.ReloadSettings;
 begin
   // In-memory settings - nothing to reload. Provided for API completeness.
+end;
+
+function TTrndiNativeMock.ExportSettings: string;
+var
+  sl: TStringList;
+begin
+  sl := TStringList.Create;
+  try
+    if FMockSettings <> nil then
+    begin
+      sl.Add('[trndi]');
+      sl.AddStrings(FMockSettings);
+    end;
+    Result := sl.Text;
+  finally
+    sl.Free;
+  end;
+end;
+
+procedure TTrndiNativeMock.ImportSettings(const iniData: string);
+var
+  sl: TStringList;
+  mem: TMemoryStream;
+  ini: TIniFile;
+  keys: TStringList;
+  i: integer;
+  key, value: string;
+begin
+  if FMockSettings = nil then
+    FMockSettings := TStringList.Create;
+    
+  sl := TStringList.Create;
+  mem := TMemoryStream.Create;
+  ini := nil;
+  keys := TStringList.Create;
+  try
+    mem.WriteBuffer(iniData[1], Length(iniData));
+    mem.Position := 0;
+    sl.LoadFromStream(mem);
+    
+    ini := TIniFile.Create('');
+    ini.SetStrings(sl);
+    
+    ini.ReadSection('trndi', keys);
+    FMockSettings.Clear;
+    for i := 0 to keys.Count - 1 do
+    begin
+      key := keys[i];
+      value := ini.ReadString('trndi', key, '');
+      FMockSettings.Add(key + '=' + value);
+    end;
+  finally
+    keys.Free;
+    ini.Free;
+    mem.Free;
+    sl.Free;
+  end;
 end;
 
 procedure TTrndiNativeMock.Speak(const Text: string);
