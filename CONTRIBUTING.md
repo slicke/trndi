@@ -139,6 +139,21 @@ Tips:
 - Build with Lazarus using the project file `Trndi.lpi`.
 - If you encounter environment-related unit errors (e.g., missing widgetset), ensure your Lazarus packages and widgetsets are installed.
 
+## Running tests
+
+- Use the project Makefile from the repository root for convenient, documented test runs:
+  - `make test` — builds the console runner and runs tests; it will start PHP's built-in test server automatically when `php` is on PATH (used for integration tests).
+  - `make test-nophp` — builds and runs the console tests with `TRNDI_NO_PHP=1` so integration tests that require PHP are skipped (useful on CI).
+
+- Run the console test runner manually:
+  ```bash
+  lazbuild tests/TrndiTestConsole.lpi
+  ./tests/TrndiTestConsole
+  ```
+  To enable integration tests with an existing test server, set `TRNDI_TEST_SERVER_URL` (e.g. `export TRNDI_TEST_SERVER_URL=http://localhost:8080`).
+
+- GUI tests can be run with `TrndiTest` (uses the GUI test runner); for headless environments use `xvfb-run -a ./tests/TrndiTest`.
+
 ## Generating docs locally
 
 Run from the repo root:
