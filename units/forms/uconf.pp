@@ -57,7 +57,7 @@ Classes, ComCtrls, ExtCtrls, Spin, StdCtrls, SysUtils, Forms, Controls,
 Graphics, Dialogs, LCLTranslator, trndi.native, lclintf,
 slicke.ux.alert, slicke.ux.native, VersionInfo, trndi.funcs, buildinfo, StrUtils,
   // Backend APIs for label captions
-trndi.api, trndi.api.nightscout, trndi.api.nightscout3, trndi.api.dexcom, trndi.api.dexcomNew, trndi.api.tandem, trndi.api.xdrip, razer.chroma, math, trndi.types, trndi.api.debug_firstXmissing, trndi.api.debug_custom, trndi.api.debug;
+trndi.api, trndi.api.nightscout, trndi.api.nightscout3, trndi.api.dexcom, trndi.api.dexcomNew, trndi.api.tandem, trndi.api.xdrip, razer.chroma, math, trndi.types, trndi.api.debug_firstXmissing, trndi.api.debug_intermittentmissing, trndi.api.debug_custom, trndi.api.debug;
 
 type
 
@@ -473,8 +473,9 @@ API_D_EDGE = '* Debug Edge Backend *';
 API_D_FIRST = '* Debug First Reading Missing *';
 API_D_SECOND = '* Debug Second Reading Missing *';
 API_D_FIRSTX = '* Debug First X Readings Missing *';
+API_D_INTERMITTENT = '* Debug Intermittent Missing *';
 
-API_DEBUG: array of string = (API_D_DEBUG, API_D_MISSING, API_D_PERFECT, API_D_CUSTOM, API_D_EDGE, API_D_FIRST, API_D_SECOND, API_D_FIRSTX);
+API_DEBUG: array of string = (API_D_DEBUG, API_D_MISSING, API_D_PERFECT, API_D_CUSTOM, API_D_EDGE, API_D_FIRST, API_D_SECOND, API_D_FIRSTX, API_D_INTERMITTENT);
 {$endif}
 var
 tnative: TrndiNative;
@@ -859,6 +860,8 @@ begin
   {$ifdef Debug}
   API_D_FIRSTX:
     sys := DebugFirstXMissingAPI;
+  API_D_INTERMITTENT:
+    sys := DebugIntermittentMissingAPI;
   API_D_CUSTOM:
     sys := DebugCustomAPI;
   {$endif}

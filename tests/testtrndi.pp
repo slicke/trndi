@@ -3,7 +3,8 @@ program TestTrndi;
 {$mode ObjFPC}{$H+}
 
 uses
-  SysUtils, fpcunit, testregistry, testreport;
+  SysUtils, fpcunit, testregistry, testreport,
+  debug_firstx_tandem_test, debug_firstx_dexcom_test;
 
 type
   TTrndiTest = class(TTestCase)
