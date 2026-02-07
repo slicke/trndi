@@ -1,12 +1,13 @@
 # Makefile for Trndi — simple wrapper around lazbuild
 # Usage examples:
-#   make          -> release build (default)
-#   make debug    -> debug build
-#   make release  -> release build
-#   make test     -> build the tests
-#   make clean    -> remove build artifacts
-#   make install  -> install binary to /usr/local/bin (requires sudo)
-#   make list-modes -> list available build modes from Trndi.lpi
+#   make              -> release build (default)
+#   make debug        -> debug build
+#   make release      -> release build
+#   make test         -> build and run tests (starts PHP test server when available)
+#   make test-nophp   -> build and run console tests without PHP (TRNDI_NO_PHP=1)
+#   make clean        -> remove build artifacts
+#   make install      -> install binary to /usr/local/bin (requires sudo)
+#   make list-modes   -> list available build modes from Trndi.lpi
 
 LAZBUILD ?= lazbuild
 
@@ -95,7 +96,8 @@ help:
 	@echo "  release    Build release (default)"
 	@echo "  debug      Build debug"
 	@echo "  build      Generic build (honors BUILD_MODE and WIDGETSET)"
-	@echo "  test       Build tests"
+	@echo "  test       Build and run tests (starts PHP test server when available)"
+	@echo "  test-nophp  Run console tests without PHP (TRNDI_NO_PHP=1)"
 	@echo "  list-modes Show available project build modes from $(LPI)"
 	@echo "  list-modules Show Pascal `unit` modules found under `units/`"
 	@echo "  check-module-names Check for mismatches between filenames and `unit` declarations (uses scripts/check-module-names.pl)"
@@ -241,8 +243,17 @@ debug: BUILD_MODE := Debug
 debug: build
 
 test: check
-	@echo "Building tests ($(TEST_LPI))"
-	@$(LAZBUILD) --widgetset=$(WIDGETSET) -B $(TEST_LPI)
+	@echo "Building console tests (tests/TrndiTestConsole.lpi)"
+	@$(LAZBUILD) --widgetset=$(WIDGETSET) -B tests/TrndiTestConsole.lpi
+	@echo "Running tests with PHP test server..."
+	@sh tests/run_tests_with_php.sh
+
+.PHONY: test-nophp
+test-nophp: check
+	@echo "Building console tests (tests/TrndiTestConsole.lpi)"
+	@$(LAZBUILD) --widgetset=$(WIDGETSET) -B tests/TrndiTestConsole.lpi
+	@echo "Running tests without PHP (TRNDI_NO_PHP=1)"
+	@TRNDI_NO_PHP=1 ./tests/TrndiTestConsole
 
 list-modes:
 	@echo "Available build modes in $(LPI):"

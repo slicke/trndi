@@ -22,6 +22,8 @@ In VS Code you can also run the task: `Build TrndiTest (Qt6)`.
 
 ## Run
 
+### GUI runner
+
 ### Run with a display
 
 ```bash
@@ -35,6 +37,41 @@ Because this runner is a GUI app, headless environments should use Xvfb:
 ```bash
 xvfb-run -a ./tests/TrndiTest
 ```
+
+---
+
+### Console runner (no GUI)
+
+For tests that do not require the Nightscout/PHP integration you can use the console runner (no display needed):
+
+Build:
+
+```bash
+lazbuild tests/TrndiTestConsole.lpi
+```
+
+Run:
+
+```bash
+./tests/TrndiTestConsole
+```
+
+You can also run the console tests using the project Makefile from the repository root:
+
+```bash
+# starts PHP test server automatically (when available)
+make test
+
+# run console tests without starting PHP (uses TRNDI_NO_PHP=1)
+make test-nophp
+```
+
+This runner excludes the integration tests that spawn the PHP Nightscout fake server by default; use the GUI runner for those. If you want Nightscout/integration tests in the console runner you can now opt-in:
+
+- Set `TRNDI_TEST_SERVER_URL` to point at an existing test server (e.g. `http://localhost:8080`) to reuse it, or
+- Leave `TRNDI_TEST_SERVER_URL` unset and the console tests will start/stop the PHP fake server automatically when needed (requires `php` on PATH).
+
+The helper used by tests is `tests/php_server_helper.pp` which waits for the server `/debug` endpoint before running tests.
 
 On Debian/Ubuntu:
 
