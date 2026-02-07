@@ -33,6 +33,10 @@ lib/
 trndi.log
 /Trndi
 /tests/TrndiTest
+/tests/TrndiTestConsole
+/tests/*.log
+/tests/*.pid
+/tests/*.out
 GPATH
 GRTAGS
 GTAGS
