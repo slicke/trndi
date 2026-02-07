@@ -3449,9 +3449,9 @@ end;
 class function TTrndiNativeBase.isDarkMode: boolean;
 
 function Brightness(C: TColor): double;
-  begin
-    Result := (Red(C) * 0.3) + (Green(C) * 0.59) + (Blue(C) * 0.11);
-  end;
+begin
+  Result := (Red(C) * 0.3) + (Green(C) * 0.59) + (Blue(C) * 0.11);
+end;
 
 begin
   Result := (Brightness(ColorToRGB(clWindow)) < Brightness(ColorToRGB(clWindowText)));

@@ -37,11 +37,15 @@ interface
 
 uses
 trndi.native.base
+{$IFDEF TEST}, trndi.native.mock
+{$ENDIF}
+{$IFNDEF TEST}
 {$IF DEFINED(X_WIN)}, trndi.native.win
 {$ELSEIF DEFINED(X_MAC)}, trndi.native.mac
 {$ELSEIF DEFINED(HAIKU)}, trndi.native.haiku
 {$ELSEIF DEFINED(BSD)}, trndi.native.bsd
 {$ELSE}, trndi.native.linux
+{$ENDIF}
 {$ENDIF}
 ;
 
@@ -52,6 +56,10 @@ TWSLVersion = trndi.native.base.TWSLVersion;
 TTrndiBool = trndi.native.base.TTrndiBool;
 TWSLInfo = trndi.native.base.TWSLInfo;
 
+{$IFDEF TEST}
+TTrndiNativeMock = trndi.native.mock.TTrndiNativeMock;
+TrndiNative = TTrndiNativeMock;
+{$ELSE}
 {$IF DEFINED(X_WIN)}
 TTrndiNativeWindows = trndi.native.win.TTrndiNativeWindows;
 TrndiNative = TTrndiNativeWindows;
@@ -67,6 +75,7 @@ TrndiNative = TTrndiNativeBSD;
 {$ELSE}
 TTrndiNativeLinux = trndi.native.linux.TTrndiNativeLinux;
 TrndiNative = TTrndiNativeLinux;
+{$ENDIF}
 {$ENDIF}
   // Tip: Use TrndiNative in your code, not platform-specific class names.
   // Example: native := TrndiNative.create('UA', 'https://...');

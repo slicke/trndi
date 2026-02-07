@@ -179,6 +179,9 @@ var
   rssiVal, noiseVal, gapMinutes: integer;
   rssiM, noiseM: MaybeInt;
   tIdx, off, idx, rem: integer;
+  // helper for processing multiple targets
+  offs: array of integer;
+  i2, j2, tmp: integer;
 begin
   result := inherited getReadings(min, maxNum, extras, res);
   // Clamp requested missing count to available results and ensure non-negative
@@ -276,66 +279,95 @@ begin
       if Length(Result) > 0 then
       begin
         // For each requested target offset apply a Tandem-like injection
-        for tIdx := 0 to High(tandemTargets) do
+        // Process offsets in descending order so earlier replacements don't affect later targets
+        if Length(tandemTargets) > 0 then
         begin
-          off := tandemTargets[tIdx];
-          idx := off; // offsets now relative to index 0 (first remaining)
-          if (idx >= 0) and (idx < Length(Result)) then
+          SetLength(offs, Length(tandemTargets));
+          for tIdx := 0 to High(tandemTargets) do
+            offs[tIdx] := tandemTargets[tIdx];
+          // simple descending sort
+          for i2 := 0 to High(offs) do
+            for j2 := 0 to High(offs) - 1 do
+              if offs[j2] < offs[j2 + 1] then
+              begin
+                tmp := offs[j2];
+                offs[j2] := offs[j2 + 1];
+                offs[j2 + 1] := tmp;
+              end;
+
+          for tIdx := 0 to High(offs) do
           begin
-            // Initialize temp as a Tandem-like reading and copy numeric values
-            temp.Init(mgdl, 'Tandem');
-            temp.update(Result[idx].convert(mgdl), BGPrimary, mgdl);
-
-            if tandemKind = 'missing-delta' then
-              temp.update(BG_NO_VAL, BGDelta, mgdl)
-            else
-              temp.update(Result[idx].delta, BGDelta, mgdl);
-
-            temp.trend := Result[idx].trend;
-            temp.level := Result[idx].level;
-
-            // Timestamp behavior depends on mode
-            if tandemKind = 'duplicate' then
-              temp.date := Result[idx].date // duplicate timestamp
-            else if tandemKind = 'backwards' then
-              temp.date := IncMinute(Result[idx].date, -((off * 5) + 1)) // slightly earlier than that slot
-            else if tandemKind = 'future' then
+            off := offs[tIdx];
+            idx := off; // offsets now relative to index 0 (first remaining)
+            if (idx >= 0) and (idx < Length(Result)) then
             begin
-              // Make the injected timestamp slightly later than the following reading when possible
-              if (idx + 1) < Length(Result) then
-                temp.date := IncSecond(Result[idx+1].date, 30)
+              // Initialize temp as a Tandem-like reading and copy numeric values
+              temp.Init(mgdl, 'Tandem');
+              temp.update(Result[idx].convert(mgdl), BGPrimary, mgdl);
+
+              if tandemKind = 'missing-delta' then
+                temp.update(BG_NO_VAL, BGDelta, mgdl)
               else
-                temp.date := IncSecond(Result[idx].date, 30); // fallback
-            end
-            else
-            begin
-              gapMinutes := ((missing + off) * 5) + 10;
-              temp.date := IncMinute(Result[idx].date, gapMinutes); // large gap
+                temp.update(Result[idx].delta, BGDelta, mgdl);
+
+              temp.trend := Result[idx].trend;
+              temp.level := Result[idx].level;
+
+              // Timestamp behavior depends on mode
+              if tandemKind = 'duplicate' then
+              begin
+                // Duplicate timestamp should equal the following reading's timestamp when available
+                if (idx + 1) < Length(Result) then
+                  temp.date := Result[idx+1].date // duplicate timestamp equal to following reading
+                else
+                  temp.date := Result[idx].date; // fallback to current slot
+              end
+              else if tandemKind = 'backwards' then
+              begin
+                // Backwards mode should produce a timestamp earlier than the following reading
+                if (idx + 1) < Length(Result) then
+                  temp.date := IncSecond(Result[idx+1].date, -1) // slightly earlier than the following reading
+                else
+                  temp.date := IncMinute(Result[idx].date, -((off * 5) + 1)); // fallback behavior
+              end
+              else if tandemKind = 'future' then
+              begin
+                // Make the injected timestamp slightly later than the following reading when possible
+                if (idx + 1) < Length(Result) then
+                  temp.date := IncSecond(Result[idx+1].date, 30)
+                else
+                  temp.date := IncSecond(Result[idx].date, 30); // fallback
+              end
+              else
+              begin
+                gapMinutes := ((missing + off) * 5) + 10;
+                temp.date := IncMinute(Result[idx].date, gapMinutes); // large gap
+              end;
+
+              // Copy RSSI/noise if present
+              if Result[idx].TryGetRSSI(rssiVal) then
+              begin
+                rssiM.exists := True; rssiM.value := rssiVal;
+              end
+              else
+              begin
+                rssiM.exists := False; rssiM.value := 0;
+              end;
+
+              if Result[idx].TryGetNoise(noiseVal) then
+              begin
+                noiseM.exists := True; noiseM.value := noiseVal;
+              end
+              else
+              begin
+                noiseM.exists := False; noiseM.value := 0;
+              end;
+
+              temp.updateEnv('Tandem', rssiM, noiseM);
+
+              Result[idx] := temp;
+              LogMessageToFile(Format('DebugFirstXMissing: Injected Tandem-mode (%s) at index %d, date=%s', [tandemKind, idx, DateTimeToStr(temp.date)]));
             end;
-
-            // Copy RSSI/noise if present
-            if Result[idx].TryGetRSSI(rssiVal) then
-            begin
-              rssiM.exists := True; rssiM.value := rssiVal;
-            end
-            else
-            begin
-              rssiM.exists := False; rssiM.value := 0;
-            end;
-
-            if Result[idx].TryGetNoise(noiseVal) then
-            begin
-              noiseM.exists := True; noiseM.value := noiseVal;
-            end
-            else
-            begin
-              noiseM.exists := False; noiseM.value := 0;
-            end;
-
-            temp.updateEnv('Tandem', rssiM, noiseM);
-
-            Result[idx] := temp;
-            LogMessageToFile(Format('DebugFirstXMissing: Injected Tandem-mode (%s) at index %d, date=%s', [tandemKind, idx, DateTimeToStr(temp.date)]));
           end;
         end;
       end;

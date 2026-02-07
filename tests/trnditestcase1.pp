@@ -7,7 +7,7 @@ interface
 uses
 Classes, SysUtils, fpcunit, testutils, testregistry,
 trndi.native, trndi.api, trndi.api.nightscout, trndi.api.dexcom, trndi.api.xdrip, trndi.types, dialogs, dateutils,
-process;
+process, php_server_helper;
 
 type
 
@@ -204,37 +204,35 @@ var
   PHPProcess: TProcess;
   res: string;
   readings: BGResults;
+  BaseURL: string;
 begin
-  // Start PHP server (same harness as Nightscout tests)
-  PHPProcess := TProcess.Create(nil);
-  try
-    PHPProcess.Executable :={$ifdef Windows}'c:\tools\php84\'+{$endif}'php';
-    PHPProcess.Parameters.Add('-S');
-    PHPProcess.Parameters.Add('localhost:8080');
-    PHPProcess.Parameters.Add('-t');
-    PHPProcess.Parameters.Add(IncludeTrailingPathDelimiter(ExtractFileDir(ParamStr(0))) + 'testserver');
-    PHPProcess.Parameters.Add(IncludeTrailingPathDelimiter(ExtractFileDir(ParamStr(0))) + 'router.php');
-    PHPProcess.Options := [poNoConsole];
-    PHPProcess.Execute;
-    Sleep(1000);
+  // Allow skipping integration tests via TRNDI_NO_PHP=1
+  if GetEnvironmentVariable('TRNDI_NO_PHP') = '1' then
+    Exit; // Skip integration test when PHP is intentionally disabled
 
+  // Start or reuse PHP server (use TRNDI_TEST_SERVER_URL if set)
+  PHPProcess := nil;
+  if not StartOrUseTestServer(PHPProcess, BaseURL) then
+    Fail('Failed to start or reach test PHP server');
+
+  try
+    // Use the new "full URL" override for Dexcom baseUrl.
+    api := DexcomCustom.Create('anyuser', 'anypass', BaseURL + '/ShareWebServices/Services');
     try
-      // Use the new "full URL" override for Dexcom baseUrl.
-      api := DexcomCustom.Create('anyuser', 'anypass', 'http://localhost:8080/ShareWebServices/Services');
-      try
-        AssertTrue('Dexcom connects to local fake server', api.connect);
-        readings := api.getReadings(30, 3, '', res);
-        AssertTrue('Dexcom returns at least one reading', Length(readings) > 0);
-        AssertTrue('Dexcom reading value set', readings[0].val > 0);
-        AssertTrue('Dexcom reading timestamp set', readings[0].date > 0);
-      finally
-        api.Free;
-      end;
+      AssertTrue('Dexcom connects to local fake server', api.connect);
+      readings := api.getReadings(30, 3, '', res);
+      AssertTrue('Dexcom returns at least one reading', Length(readings) > 0);
+      AssertTrue('Dexcom reading value set', readings[0].val > 0);
+      AssertTrue('Dexcom reading timestamp set', readings[0].date > 0);
     finally
-      PHPProcess.Terminate(0);
+      api.Free;
     end;
   finally
-    PHPProcess.Free;
+    if Assigned(PHPProcess) then
+    begin
+      PHPProcess.Terminate(0);
+      PHPProcess.Free;
+    end;
   end;
 end;
 
@@ -260,50 +258,48 @@ var
   res: string;
   readings: BGResults;
   bg: BGReading;
+  BaseURL: string;
 begin
-  // Start PHP server
-  PHPProcess := TProcess.Create(nil);
-  try
-    PHPProcess.Executable :={$ifdef Windows}'c:\tools\php84\'+{$endif}'php';
-    PHPProcess.Parameters.Add('-S');
-    PHPProcess.Parameters.Add('localhost:8080');
-    PHPProcess.Parameters.Add('-t');
-    PHPProcess.Parameters.Add(IncludeTrailingPathDelimiter(ExtractFileDir(ParamStr(0))) + 'testserver');
-    PHPProcess.Parameters.Add(IncludeTrailingPathDelimiter(ExtractFileDir(ParamStr(0))) + 'router.php');
-    PHPProcess.Options := [poNoConsole];
-    PHPProcess.Execute;
-    Sleep(1000);
+  // Allow skipping integration tests via TRNDI_NO_PHP=1
+  if GetEnvironmentVariable('TRNDI_NO_PHP') = '1' then
+    Exit; // Skip integration test when PHP is intentionally disabled
 
+  // Start or reuse PHP server (use TRNDI_TEST_SERVER_URL if set)
+  PHPProcess := nil;
+  if not StartOrUseTestServer(PHPProcess, BaseURL) then
+    Fail('Failed to start or reach test PHP server');
+
+  try
+    api := xDrip.create(BaseURL, 'test22');
     try
-      api := xDrip.create('http://localhost:8080', 'test22');
-      try
-        if not api.connect then
-          Fail('xDrip connects to local fake server. Error: ' + api.errormsg);
-        AssertTrue('xDrip connected', true);
-        
-        // Test thresholds from status.json (same as Nightscout)
-        AssertEquals('xDrip bgHigh threshold mapped', 260, api.cgmHi);
-        AssertEquals('xDrip bgLow threshold mapped', 55, api.cgmLo);
-        
-        // Test getting current reading from pebble endpoint
-        bg.Clear;
-        AssertTrue('xDrip getCurrent returns data', api.getCurrent(bg));
-        AssertTrue('Current reading has plausible value', bg.val > 0);
-        AssertTrue('Current reading has plausible timestamp', bg.date > 0);
-        
-        // Test getting multiple readings
-        readings := api.getReadings(30, 3, '', res);
-        AssertTrue('xDrip returns at least one reading', Length(readings) > 0);
-        AssertTrue('xDrip reading value set', readings[0].val > 0);
-        AssertTrue('xDrip reading timestamp set', readings[0].date > 0);
-      finally
-        api.Free;
-      end;
+      if not api.connect then
+        Fail('xDrip connects to local fake server. Error: ' + api.errormsg);
+      AssertTrue('xDrip connected', true);
+      
+      // Test thresholds from status.json (same as Nightscout)
+      AssertEquals('xDrip bgHigh threshold mapped', 260, api.cgmHi);
+      AssertEquals('xDrip bgLow threshold mapped', 55, api.cgmLo);
+      
+      // Test getting current reading from pebble endpoint
+      bg.Clear;
+      AssertTrue('xDrip getCurrent returns data', api.getCurrent(bg));
+      AssertTrue('Current reading has plausible value', bg.val > 0);
+      AssertTrue('Current reading has plausible timestamp', bg.date > 0);
+      
+      // Test getting multiple readings
+      readings := api.getReadings(30, 3, '', res);
+      AssertTrue('xDrip returns at least one reading', Length(readings) > 0);
+      AssertTrue('xDrip reading value set', readings[0].val > 0);
+      AssertTrue('xDrip reading timestamp set', readings[0].date > 0);
     finally
-      PHPProcess.Terminate(0);
+      api.Free;
     end;
   finally
-    PHPProcess.Free;
+    if Assigned(PHPProcess) then
+    begin
+      PHPProcess.Terminate(0);
+      PHPProcess.Free;
+    end;
   end;
 end;
 
@@ -323,30 +319,28 @@ procedure TAPITester.TestNightscoutUnauthorized;
 var
   api: TrndiAPI;
   PHPProcess: TProcess;
+  BaseURL: string;
 begin
-  // Start PHP server
-  PHPProcess := TProcess.Create(nil);
-  try
-    PHPProcess.Executable :={$ifdef Windows}'c:\tools\php84\'+{$endif}'php';
-    PHPProcess.Parameters.Add('-S');
-    PHPProcess.Parameters.Add('localhost:8080');
-    PHPProcess.Parameters.Add('-t');
-    PHPProcess.Parameters.Add(IncludeTrailingPathDelimiter(ExtractFileDir(ParamStr(0))) + 'testserver');
-    PHPProcess.Parameters.Add(IncludeTrailingPathDelimiter(ExtractFileDir(ParamStr(0))) + 'router.php');
-    PHPProcess.Options := [poNoConsole];
-    PHPProcess.Execute;
-    Sleep(1000);
+  // Allow skipping integration tests via TRNDI_NO_PHP=1
+  if GetEnvironmentVariable('TRNDI_NO_PHP') = '1' then
+    Exit; // Skip integration test when PHP is intentionally disabled
 
-    try
-      // Wrong secret should yield Unauthorized from the fake server
-      api := NightScout.create('http://localhost:8080', 'wrongsecret');
-      AssertFalse('Connect should fail for unauthorized secret', api.connect);
-      api.Free;
-    finally
-      PHPProcess.Terminate(0);
-    end;
+  // Start or reuse PHP server (use TRNDI_TEST_SERVER_URL if set)
+  PHPProcess := nil;
+  if not StartOrUseTestServer(PHPProcess, BaseURL) then
+    Fail('Failed to start or reach test PHP server');
+
+  try
+    // Wrong secret should yield Unauthorized from the fake server
+    api := NightScout.create(BaseURL, 'wrongsecret');
+    AssertFalse('Connect should fail for unauthorized secret', api.connect);
+    api.Free;
   finally
-    PHPProcess.Free;
+    if Assigned(PHPProcess) then
+    begin
+      PHPProcess.Terminate(0);
+      PHPProcess.Free;
+    end;
   end;
 end;
 
@@ -356,31 +350,32 @@ var
   PHPProcess: TProcess;
   res: string;
   readings: BGResults;
+  BaseURL: string;
 begin
-  PHPProcess := TProcess.Create(nil);
-  try
-    PHPProcess.Executable :={$ifdef Windows}'c:\tools\php84\'+{$endif}'php';
-    PHPProcess.Parameters.Add('-S');
-    PHPProcess.Parameters.Add('localhost:8080');
-    PHPProcess.Parameters.Add('-t');
-    PHPProcess.Parameters.Add(IncludeTrailingPathDelimiter(ExtractFileDir(ParamStr(0))) + 'testserver');
-    PHPProcess.Parameters.Add(IncludeTrailingPathDelimiter(ExtractFileDir(ParamStr(0))) + 'router.php');
-    PHPProcess.Options := [poNoConsole];
-    PHPProcess.Execute;
-    Sleep(1000);
+  // Allow skipping integration tests via TRNDI_NO_PHP=1
+  if GetEnvironmentVariable('TRNDI_NO_PHP') = '1' then
+    Exit; // Skip integration test when PHP is intentionally disabled
 
+  PHPProcess := nil;
+  if not StartOrUseTestServer(PHPProcess, BaseURL) then
+    Fail('Failed to start or reach test PHP server');
+
+  try
+    api := NightScout.create(BaseURL, 'test22');
     try
-      api := NightScout.create('http://localhost:8080', 'test22');
       AssertTrue('Connect to local NS', api.connect);
 
       readings := api.getReadings(0, 3, '', res);
       AssertTrue('Should not exceed requested max count', Length(readings) <= 3);
-      api.Free;
     finally
-      PHPProcess.Terminate(0);
+      api.Free;
     end;
   finally
-    PHPProcess.Free;
+    if Assigned(PHPProcess) then
+    begin
+      PHPProcess.Terminate(0);
+      PHPProcess.Free;
+    end;
   end;
 end;
 
@@ -389,33 +384,30 @@ var
   api: TrndiAPI;
   bg: BGreading;
   PHPProcess: TProcess;
+  BaseURL: string;
 begin
   bg.Clear;
-  // Start PHP server
-  PHPProcess := TProcess.Create(nil);
+  // Allow skipping integration tests via TRNDI_NO_PHP=1
+  if GetEnvironmentVariable('TRNDI_NO_PHP') = '1' then
+    Exit; // Skip integration test when PHP is intentionally disabled
+
+  // Start or reuse PHP server (use TRNDI_TEST_SERVER_URL if set)
+  PHPProcess := nil;
+  if not StartOrUseTestServer(PHPProcess, BaseURL) then
+    Fail('Failed to start or reach test PHP server');
+
   try
-    PHPProcess.Executable :={$ifdef Windows}'c:\tools\php84\'+{$endif}'php'; // Choco path for win
-    PHPProcess.Parameters.Add('-S');
-    PHPProcess.Parameters.Add('localhost:8080');
-      PHPProcess.Parameters.Add('-t');
-      // Use OS-agnostic path joining so tests work on both Windows and Unix-like systems
-      PHPProcess.Parameters.Add(IncludeTrailingPathDelimiter(ExtractFileDir(ParamStr(0))) + 'testserver');
-      // Use the router so the built-in server forwards API paths to index.php
-      PHPProcess.Parameters.Add(IncludeTrailingPathDelimiter(ExtractFileDir(ParamStr(0))) + 'router.php');
-    PHPProcess.Options := [poNoConsole];  // Run without console window
-    PHPProcess.Execute;
-
-    // Wait a bit for the server to start
-    Sleep(1000);  // Give it a second to start up
-
+    // Your existing test code
+    api := NightScout.create('test','test');
     try
-      // Your existing test code
-      api := NightScout.create('test','test');
       AssertFalse('API Connect Fail', api.connect);
       AssertTrue('Time correct', api.getBasetime > IncHour(DateTimeToUnix(now), -2));
+    finally
       api.Free;
+    end;
 
-      api := NightScout.create('http://localhost:8080','test22');
+    api := NightScout.create(BaseURL,'test22');
+    try
       asserttrue('Connect to local NS', api.connect);
       // Thresholds are provided by the fake server in status.json
       AssertEquals('NS bgHigh threshold mapped', 260, api.cgmHi);
@@ -425,15 +417,17 @@ begin
       asserttrue('Get readings', api.getCurrent(bg));
       AssertTrue('Current reading has plausible value', (bg.val > 0));
       AssertTrue('Current reading has plausible timestamp', (bg.date > 0));
-      api.free;
-
     finally
-      // Terminate PHP server
-      PHPProcess.Terminate(0);
+      api.free;
     end;
 
   finally
-    PHPProcess.Free;
+    // Terminate & free PHP server
+    if Assigned(PHPProcess) then
+    begin
+      PHPProcess.Terminate(0);
+      PHPProcess.Free;
+    end;
   end;
 end;
 
