@@ -34,6 +34,10 @@
         <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
+        <Filename Value="tandem_fixture_tests.pp"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
         <Filename Value="debug_intermit_test.pp"/>
         <IsPartOfProject Value="True"/>
       </Unit>
