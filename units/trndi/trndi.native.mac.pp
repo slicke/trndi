@@ -501,6 +501,7 @@ var
   key: NSString;
   value: NSObject;
   sl: TStringList;
+  keyStr: string;
 begin
   Result := '';
   sl := TStringList.Create;
@@ -513,12 +514,17 @@ begin
     key := enumerator.nextObject;
     while key <> nil do
     begin
-      value := dict.objectForKey(key);
-      if value.isKindOfClass(objc_getClass('NSString')) then
-        sl.Add(NSStrToStr(key) + '=' + NSStrToStr(NSString(value)))
-      else if value.isKindOfClass(objc_getClass('NSNumber')) then
-        sl.Add(NSStrToStr(key) + '=' + NSNumber(value).stringValue.UTF8String);
-      // Skip other types for now
+      keyStr := NSStrToStr(key);
+      // Exclude keys starting with Apple, com.apple, NS, or any non-lowercase string
+      if (Pos('Apple', keyStr) <> 1) and (Pos('com.apple', keyStr) <> 1) and (Pos('NS', keyStr) <> 1) and (LowerCase(keyStr) = keyStr) then
+      begin
+        value := dict.objectForKey(key);
+        if value.isKindOfClass(objc_getClass('NSString')) then
+          sl.Add(keyStr + '=' + NSStrToStr(NSString(value)))
+        else if value.isKindOfClass(objc_getClass('NSNumber')) then
+          sl.Add(keyStr + '=' + NSNumber(value).stringValue.UTF8String);
+        // Skip other types for now
+      end;
       key := enumerator.nextObject;
     end;
     
