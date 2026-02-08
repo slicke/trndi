@@ -362,9 +362,17 @@ msgstr "+ Ny"
 msgid "Go to Quick Settings"
 msgstr "Gå till Snabbinställningar"
 
+#: tfconf.bexportsettings.caption
+msgid "Export Settings"
+msgstr "Spara inställningar"
+
 #: tfconf.bextopen.caption
 msgid "Show Folder"
 msgstr "Visa mapp"
+
+#: tfconf.bimportsettings.caption
+msgid "Import Settings"
+msgstr "Ladda inställningar"
 
 #: tfconf.bremove.caption
 msgid "- Remove"
@@ -681,6 +689,10 @@ msgstr "Spela Media"
 #: tfconf.gboverride3.caption
 msgid "Use URL"
 msgstr "Använd URL"
+
+#: tfconf.gbsettings.caption
+msgid "Settings Management"
+msgstr "Hantera inställningar"
 
 #: tfconf.groupbox1.caption
 msgid "System Features"
@@ -1005,6 +1017,10 @@ msgstr ""
 #: tfconf.lproxytitle.caption
 msgid "Proxy Settings"
 msgstr "Proxyinställningar"
+
+#: tfconf.lsettingshelp.caption
+msgid "Export all settings to a file for backup or transfer to another device. Import to restore settings."
+msgstr "Exportera alla inställningar till en fil för backup, eller överföring till annat system. Importera för att återställa."
 
 #: tfconf.ltestannounce.caption
 msgid "Test an announcement"
@@ -1585,9 +1601,15 @@ msgstr "Försöker ansluta..."
 msgid "Initializing custom overrides..."
 msgstr "Initierar personliga åsidosättanden..."
 
-#: trndi.strings.rs_init_first
+#: trndi.strings.rs_init_fetch
+msgctxt "trndi.strings.rs_init_fetch"
 msgid "Fetching first reading..."
-msgstr "Hämta första avläsning..."
+msgstr "Hämtar första avläsning..."
+
+#: trndi.strings.rs_init_first
+msgctxt "trndi.strings.rs_init_first"
+msgid "Processing first reading..."
+msgstr "Bearbetar första avläsning..."
 
 #: trndi.strings.rs_init_fonts
 msgid "Processing fonts..."
@@ -2754,4 +2776,3 @@ msgstr "Historikgraf"
 #, object-pascal-format
 msgid "Readings (%s)"
 msgstr "Avläsningar (%s)"
-

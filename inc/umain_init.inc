@@ -752,6 +752,7 @@ begin
 
   // Final initialization and first reading
   Application.ProcessMessages;
+  fSplash.incProgress(90, RS_INIT_FETCH);
   if not updateReading(true) then
   begin
     fSplash.incProgress(95, RS_INIT_FIRST);

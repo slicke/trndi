@@ -362,9 +362,17 @@ msgstr "+ Ny"
 msgid "Go to Quick Settings"
 msgstr ""
 
+#: tfconf.bexportsettings.caption
+msgid "Export Settings"
+msgstr ""
+
 #: tfconf.bextopen.caption
 msgid "Show Folder"
 msgstr "Visa mapp"
+
+#: tfconf.bimportsettings.caption
+msgid "Import Settings"
+msgstr ""
 
 #: tfconf.bremove.caption
 msgid "- Remove"
@@ -685,6 +693,10 @@ msgstr "Spela Media"
 #: tfconf.gboverride3.caption
 msgid "Use URL"
 msgstr "Anvend URL"
+
+#: tfconf.gbsettings.caption
+msgid "Settings Management"
+msgstr ""
 
 #: tfconf.groupbox1.caption
 msgid "System Features"
@@ -1007,6 +1019,10 @@ msgstr ""
 
 #: tfconf.lproxytitle.caption
 msgid "Proxy Settings"
+msgstr ""
+
+#: tfconf.lsettingshelp.caption
+msgid "Export all settings to a file for backup or transfer to another device. Import to restore settings."
 msgstr ""
 
 #: tfconf.ltestannounce.caption
@@ -1597,8 +1613,17 @@ msgstr "Fôrsôker ansluta..."
 msgid "Initializing custom overrides..."
 msgstr "Initierar personliga osidosettanden..."
 
-#: trndi.strings.rs_init_first
+#: trndi.strings.rs_init_fetch
+#, fuzzy
+msgctxt "trndi.strings.rs_init_fetch"
 msgid "Fetching first reading..."
+msgstr "Hemta fôrsta avlesning..."
+
+#: trndi.strings.rs_init_first
+#, fuzzy
+#| msgid "Fetching first reading..."
+msgctxt "trndi.strings.rs_init_first"
+msgid "Processing first reading..."
 msgstr "Hemta fôrsta avlesning..."
 
 #: trndi.strings.rs_init_fonts

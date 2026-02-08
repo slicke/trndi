@@ -72,13 +72,13 @@ object fConf: TfConf
         Align = alTop
         BorderSpacing.Around = 10
         Caption = 'Override High / Low limits'
-        ClientHeight = 88
-        ClientWidth = 619
+        ClientHeight = 61
+        ClientWidth = 615
         ParentBackground = False
         TabOrder = 1
         object cbCust1: TCheckBox
           Left = 0
-          Height = 53
+          Height = 26
           Top = 0
           Width = 128
           Align = alLeft
@@ -87,8 +87,8 @@ object fConf: TfConf
           OnChange = cbCust1Change
         end
         object bOverrideHelp1: TButton
-          Left = 592
-          Height = 53
+          Left = 588
+          Height = 26
           Top = 0
           Width = 27
           Align = alRight
@@ -99,12 +99,12 @@ object fConf: TfConf
         object Panel20: TPanel
           Left = 0
           Height = 35
-          Top = 53
-          Width = 619
+          Top = 26
+          Width = 615
           Align = alBottom
           BevelOuter = bvNone
           ClientHeight = 35
-          ClientWidth = 619
+          ClientWidth = 615
           TabOrder = 2
           object lHiOver3: TLabel
             Left = 16
@@ -11138,17 +11138,17 @@ object fConf: TfConf
         Width = 639
         Align = alBottom
         Caption = 'Display Preferences'
-        ClientHeight = 106
-        ClientWidth = 639
+        ClientHeight = 79
+        ClientWidth = 635
         TabOrder = 1
         object pTray: TPanel
-          Left = 469
-          Height = 106
+          Left = 465
+          Height = 79
           Top = 0
           Width = 170
           Align = alRight
           BevelOuter = bvNone
-          ClientHeight = 106
+          ClientHeight = 79
           ClientWidth = 170
           TabOrder = 0
           object lTray: TLabel
@@ -11174,12 +11174,12 @@ object fConf: TfConf
         end
         object pDecimal: TPanel
           Left = 0
-          Height = 106
+          Height = 79
           Top = 0
           Width = 170
           Align = alLeft
           BevelOuter = bvNone
-          ClientHeight = 106
+          ClientHeight = 79
           ClientWidth = 170
           TabOrder = 1
           object edCommaSep: TEdit
@@ -11229,8 +11229,8 @@ object fConf: TfConf
         Width = 639
         Align = alBottom
         Caption = 'Trend Dots'
-        ClientHeight = 121
-        ClientWidth = 639
+        ClientHeight = 94
+        ClientWidth = 635
         TabOrder = 3
         object Label2: TLabel
           Left = 16
@@ -11342,14 +11342,14 @@ object fConf: TfConf
         Align = alTop
         BorderSpacing.Around = 10
         Caption = 'Extra Settings'
-        ClientHeight = 140
-        ClientWidth = 619
+        ClientHeight = 113
+        ClientWidth = 615
         TabOrder = 0
         object cbTIR: TCheckBox
           Left = 0
           Height = 20
           Top = 25
-          Width = 619
+          Width = 615
           Align = alTop
           BorderSpacing.Top = 5
           BorderSpacing.Bottom = 5
@@ -11360,7 +11360,7 @@ object fConf: TfConf
           Left = 0
           Height = 20
           Top = 0
-          Width = 619
+          Width = 615
           Align = alTop
           Caption = 'Show a sidebar when value is not in range'
           TabOrder = 1
@@ -11369,11 +11369,11 @@ object fConf: TfConf
           Left = 0
           Height = 30
           Top = 50
-          Width = 619
+          Width = 615
           Align = alTop
           BevelOuter = bvNone
           ClientHeight = 30
-          ClientWidth = 619
+          ClientWidth = 615
           TabOrder = 2
           object lHiOver2: TLabel
             Left = 25
@@ -11413,8 +11413,8 @@ object fConf: TfConf
         object cbTirIcon: TCheckBox
           Left = 0
           Height = 20
-          Top = 110
-          Width = 619
+          Top = 83
+          Width = 615
           Align = alBottom
           BorderSpacing.Bottom = 10
           Caption = 'Show a smiley instead of percentage'
@@ -11429,14 +11429,14 @@ object fConf: TfConf
         Align = alTop
         BorderSpacing.Around = 10
         Caption = 'In-range coloring'
-        ClientHeight = 166
-        ClientWidth = 619
+        ClientHeight = 139
+        ClientWidth = 615
         TabOrder = 1
         object cbPaintLines: TCheckBox
           Left = 0
           Height = 20
           Top = 92
-          Width = 619
+          Width = 615
           Align = alTop
           Caption = 'Show threshold lines'
           TabOrder = 0
@@ -11445,7 +11445,7 @@ object fConf: TfConf
           Left = 0
           Height = 20
           Top = 46
-          Width = 619
+          Width = 615
           Align = alTop
           Caption = 'Color the graph''s background with your custom range'
           TabOrder = 1
@@ -11454,7 +11454,7 @@ object fConf: TfConf
           Left = 0
           Height = 20
           Top = 0
-          Width = 619
+          Width = 615
           Align = alTop
           Caption = 'Color the graph''s background with your range'
           TabOrder = 2
@@ -11463,11 +11463,11 @@ object fConf: TfConf
           Left = 0
           Height = 26
           Top = 20
-          Width = 619
+          Width = 615
           Align = alTop
           BevelOuter = bvNone
           ClientHeight = 26
-          ClientWidth = 619
+          ClientWidth = 615
           TabOrder = 3
           object cbTirColorBg: TRadioButton
             Left = 15
@@ -11507,11 +11507,11 @@ object fConf: TfConf
           Left = 0
           Height = 26
           Top = 66
-          Width = 619
+          Width = 615
           Align = alTop
           BevelOuter = bvNone
           ClientHeight = 26
-          ClientWidth = 619
+          ClientWidth = 615
           TabOrder = 4
           object cbTirColorBgCustom: TRadioButton
             Left = 15
@@ -11583,12 +11583,12 @@ object fConf: TfConf
         Align = alTop
         BorderSpacing.Around = 10
         Caption = 'Override Custom Range'
-        ClientHeight = 80
-        ClientWidth = 619
+        ClientHeight = 53
+        ClientWidth = 615
         TabOrder = 2
         object cbCustRange: TCheckBox
           Left = 0
-          Height = 45
+          Height = 18
           Top = 0
           Width = 128
           Align = alLeft
@@ -11599,12 +11599,12 @@ object fConf: TfConf
         object Panel6: TPanel
           Left = 0
           Height = 35
-          Top = 45
-          Width = 619
+          Top = 18
+          Width = 615
           Align = alBottom
           BevelOuter = bvNone
           ClientHeight = 35
-          ClientWidth = 619
+          ClientWidth = 615
           TabOrder = 1
           object lHiOver1: TLabel
             Left = 16
@@ -11672,13 +11672,13 @@ object fConf: TfConf
         Align = alTop
         BorderSpacing.Around = 10
         Caption = 'Override High / Low limits'
-        ClientHeight = 88
-        ClientWidth = 619
+        ClientHeight = 61
+        ClientWidth = 615
         ParentBackground = False
         TabOrder = 0
         object cbCust: TCheckBox
           Left = 0
-          Height = 53
+          Height = 26
           Top = 0
           Width = 128
           Align = alLeft
@@ -11687,8 +11687,8 @@ object fConf: TfConf
           OnChange = cbCustChange
         end
         object bOverrideHelp: TButton
-          Left = 592
-          Height = 53
+          Left = 588
+          Height = 26
           Top = 0
           Width = 27
           Align = alRight
@@ -11699,12 +11699,12 @@ object fConf: TfConf
         object Panel2: TPanel
           Left = 0
           Height = 35
-          Top = 53
-          Width = 619
+          Top = 26
+          Width = 615
           Align = alBottom
           BevelOuter = bvNone
           ClientHeight = 35
-          ClientWidth = 619
+          ClientWidth = 615
           TabOrder = 2
           object lHiOver: TLabel
             Left = 16
@@ -11800,30 +11800,30 @@ object fConf: TfConf
         ChildSizing.ShrinkVertical = crsScaleChilds
         ChildSizing.Layout = cclLeftToRightThenTopToBottom
         ChildSizing.ControlsPerLine = 1
-        ClientHeight = 94
-        ClientWidth = 639
+        ClientHeight = 67
+        ClientWidth = 635
         TabOrder = 3
         object cbFlashHi: TCheckBox
           Left = 6
-          Height = 27
+          Height = 18
           Top = 6
-          Width = 627
+          Width = 623
           Caption = 'Flash on high blood sugar'
           TabOrder = 0
         end
         object cbFlashLow: TCheckBox
           Left = 6
-          Height = 28
-          Top = 33
-          Width = 627
+          Height = 19
+          Top = 24
+          Width = 623
           Caption = 'Flash on low blood sugar'
           TabOrder = 1
         end
         object cbFlashPerfect: TCheckBox
           Left = 6
-          Height = 27
-          Top = 61
-          Width = 627
+          Height = 18
+          Top = 43
+          Width = 623
           Caption = 'Flash on perfect reading (5.5mmol/L / 100mg/dL)'
           TabOrder = 2
         end
@@ -11854,22 +11854,22 @@ object fConf: TfConf
         ChildSizing.ShrinkVertical = crsScaleChilds
         ChildSizing.Layout = cclLeftToRightThenTopToBottom
         ChildSizing.ControlsPerLine = 1
-        ClientHeight = 83
-        ClientWidth = 639
+        ClientHeight = 56
+        ClientWidth = 635
         TabOrder = 5
         object cbAlertHiLo: TCheckBox
           Left = 6
-          Height = 36
+          Height = 22
           Top = 6
-          Width = 627
+          Width = 623
           Caption = 'Alert me when blood sugar is high/low'
           TabOrder = 0
         end
         object cbAlertMissing: TCheckBox
           Left = 6
-          Height = 35
-          Top = 42
-          Width = 627
+          Height = 22
+          Top = 28
+          Width = 623
           Caption = 'Alert me when readings are missing / not fresh'
           TabOrder = 1
         end
@@ -12661,7 +12661,7 @@ object fConf: TfConf
           object lSettingsHelp: TLabel
             Left = 296
             Height = 39
-            Top = 8
+            Top = 2
             Width = 301
             AutoSize = False
             Caption = 'Export all settings to a file for backup or transfer to another device. Import to restore settings.'
@@ -12714,18 +12714,18 @@ object fConf: TfConf
         Align = alBottom
         BorderSpacing.Around = 10
         Caption = 'Account Settings'
-        ClientHeight = 101
-        ClientWidth = 619
+        ClientHeight = 74
+        ClientWidth = 615
         Enabled = False
         TabOrder = 1
         object pUserColor: TPanel
           Left = 0
-          Height = 101
+          Height = 74
           Top = 0
           Width = 170
           Align = alLeft
           BevelOuter = bvNone
-          ClientHeight = 101
+          ClientHeight = 74
           ClientWidth = 170
           TabOrder = 0
           object lUserName: TLabel
@@ -12758,19 +12758,19 @@ object fConf: TfConf
         end
         object pUserNick: TPanel
           Left = 170
-          Height = 101
+          Height = 74
           Top = 0
-          Width = 279
+          Width = 275
           Align = alClient
           BevelOuter = bvNone
-          ClientHeight = 101
-          ClientWidth = 279
+          ClientHeight = 74
+          ClientWidth = 275
           TabOrder = 1
           object edNick: TEdit
             Left = 78
-            Height = 52
+            Height = 25
             Top = 24
-            Width = 201
+            Width = 197
             Align = alClient
             BorderSpacing.Top = 24
             BorderSpacing.Bottom = 25
@@ -12779,7 +12779,7 @@ object fConf: TfConf
           end
           object Label3: TLabel
             Left = 10
-            Height = 81
+            Height = 54
             Top = 10
             Width = 58
             Align = alLeft
@@ -12789,13 +12789,13 @@ object fConf: TfConf
           end
         end
         object pUserSave2: TPanel
-          Left = 449
-          Height = 101
+          Left = 445
+          Height = 74
           Top = 0
           Width = 170
           Align = alRight
           BevelOuter = bvNone
-          ClientHeight = 101
+          ClientHeight = 74
           ClientWidth = 170
           TabOrder = 2
           object btUserSave: TButton
@@ -12863,8 +12863,8 @@ object fConf: TfConf
         Align = alBottom
         BorderSpacing.Around = 10
         Caption = 'All accounts'
-        ClientHeight = 58
-        ClientWidth = 619
+        ClientHeight = 31
+        ClientWidth = 615
         TabOrder = 3
         object cbUserColor: TCheckBox
           Left = 16
@@ -13016,14 +13016,14 @@ object fConf: TfConf
         Align = alClient
         BorderSpacing.Around = 10
         Caption = 'Available Extensions'
-        ClientHeight = 351
-        ClientWidth = 619
+        ClientHeight = 324
+        ClientWidth = 615
         TabOrder = 0
         object lbExtensions: TListBox
           Left = 5
-          Height = 341
+          Height = 314
           Top = 5
-          Width = 609
+          Width = 605
           Align = alClient
           BorderSpacing.Around = 5
           ItemHeight = 0
@@ -13040,8 +13040,8 @@ object fConf: TfConf
         Align = alBottom
         BorderSpacing.Around = 10
         Caption = 'Extension Info'
-        ClientHeight = 81
-        ClientWidth = 619
+        ClientHeight = 54
+        ClientWidth = 615
         TabOrder = 1
         object lExtName: TLabel
           Left = 8
@@ -13074,21 +13074,21 @@ object fConf: TfConf
         Align = alBottom
         BorderSpacing.Around = 10
         Caption = 'Network'
-        ClientHeight = 190
-        ClientWidth = 619
+        ClientHeight = 163
+        ClientWidth = 615
         TabOrder = 0
         object pnProxyConnection: TPanel
           Left = 0
           Height = 50
           Top = 0
-          Width = 619
+          Width = 615
           Align = alTop
           BevelOuter = bvNone
           ClientHeight = 50
-          ClientWidth = 619
+          ClientWidth = 615
           TabOrder = 0
           object pnProxyPort: TPanel
-            Left = 521
+            Left = 517
             Height = 50
             Top = 0
             Width = 98
@@ -13124,17 +13124,17 @@ object fConf: TfConf
             Left = 0
             Height = 50
             Top = 0
-            Width = 521
+            Width = 517
             Align = alClient
             BevelOuter = bvNone
             ClientHeight = 50
-            ClientWidth = 521
+            ClientWidth = 517
             TabOrder = 1
             object LabelProxyHost: TLabel
               Left = 10
               Height = 16
               Top = 0
-              Width = 511
+              Width = 507
               Align = alTop
               BorderSpacing.Left = 10
               Caption = 'Proxy Host:'
@@ -13143,7 +13143,7 @@ object fConf: TfConf
               Left = 10
               Height = 30
               Top = 16
-              Width = 511
+              Width = 507
               Align = alTop
               BorderSpacing.Left = 10
               TabOrder = 0
@@ -13155,27 +13155,27 @@ object fConf: TfConf
           Left = 0
           Height = 54
           Top = 50
-          Width = 619
+          Width = 615
           Align = alTop
           BevelOuter = bvNone
           ClientHeight = 54
-          ClientWidth = 619
+          ClientWidth = 615
           TabOrder = 1
           object pnProxyPass: TPanel
             Left = 306
             Height = 54
             Top = 0
-            Width = 313
+            Width = 309
             Align = alClient
             BevelOuter = bvNone
             ClientHeight = 54
-            ClientWidth = 313
+            ClientWidth = 309
             TabOrder = 0
             object LabelProxyPass: TLabel
               Left = 10
               Height = 16
               Top = 0
-              Width = 293
+              Width = 289
               Align = alTop
               BorderSpacing.Left = 10
               BorderSpacing.Right = 10
@@ -13185,7 +13185,7 @@ object fConf: TfConf
               Left = 10
               Height = 30
               Top = 16
-              Width = 293
+              Width = 289
               Align = alTop
               BorderSpacing.Left = 10
               BorderSpacing.Right = 10
@@ -13230,11 +13230,11 @@ object fConf: TfConf
           Left = 0
           Height = 40
           Top = 104
-          Width = 619
+          Width = 615
           Align = alTop
           BevelOuter = bvNone
           ClientHeight = 40
-          ClientWidth = 619
+          ClientWidth = 615
           TabOrder = 2
           object bTestProxy: TButton
             Left = 10

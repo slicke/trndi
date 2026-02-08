@@ -358,8 +358,16 @@ msgstr ""
 msgid "Go to Quick Settings"
 msgstr ""
 
+#: tfconf.bexportsettings.caption
+msgid "Export Settings"
+msgstr ""
+
 #: tfconf.bextopen.caption
 msgid "Show Folder"
+msgstr ""
+
+#: tfconf.bimportsettings.caption
+msgid "Import Settings"
 msgstr ""
 
 #: tfconf.bremove.caption
@@ -678,6 +686,10 @@ msgstr ""
 msgid "Use URL"
 msgstr ""
 
+#: tfconf.gbsettings.caption
+msgid "Settings Management"
+msgstr ""
+
 #: tfconf.groupbox1.caption
 msgid "System Features"
 msgstr ""
@@ -992,6 +1004,10 @@ msgstr ""
 
 #: tfconf.lproxytitle.caption
 msgid "Proxy Settings"
+msgstr ""
+
+#: tfconf.lsettingshelp.caption
+msgid "Export all settings to a file for backup or transfer to another device. Import to restore settings."
 msgstr ""
 
 #: tfconf.ltestannounce.caption
@@ -1490,8 +1506,14 @@ msgstr ""
 msgid "Initializing custom overrides..."
 msgstr ""
 
-#: trndi.strings.rs_init_first
+#: trndi.strings.rs_init_fetch
+msgctxt "trndi.strings.rs_init_fetch"
 msgid "Fetching first reading..."
+msgstr ""
+
+#: trndi.strings.rs_init_first
+msgctxt "trndi.strings.rs_init_first"
+msgid "Processing first reading..."
 msgstr ""
 
 #: trndi.strings.rs_init_fonts
