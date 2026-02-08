@@ -38,6 +38,7 @@ interface
 
 uses
   Classes, SysUtils, Graphics, nsutils.nsmisc, nsutils.web.urlrequest, CocoaAll, nsutils.simpledarkmode,
+  nsutils.nshelpers, IniFiles,
   trndi.native.base;
 
 type
@@ -513,9 +514,9 @@ begin
     while key <> nil do
     begin
       value := dict.objectForKey(key);
-      if value.isKindOfClass(NSString.class_NSString) then
+      if value.isKindOfClass(NSString.classNSString) then
         sl.Add(NSStrToStr(key) + '=' + NSStrToStr(NSString(value)))
-      else if value.isKindOfClass(NSNumber.class_NSNumber) then
+      else if value.isKindOfClass(NSNumber.classNSNumber) then
         sl.Add(NSStrToStr(key) + '=' + NSNumber(value).stringValue.UTF8String);
       // Skip other types for now
       key := enumerator.nextObject;
@@ -536,7 +537,7 @@ procedure TTrndiNativeMac.ImportSettings(const iniData: string);
 var
   sl: TStringList;
   mem: TMemoryStream;
-  ini: TIniFile;
+  ini: TMemIniFile;
   sections, keys: TStringList;
   i, j: integer;
   section, key, value: string;
@@ -554,7 +555,7 @@ begin
     sl.LoadFromStream(mem);
     
     // Create a temporary INI file in memory
-    ini := TIniFile.Create('');
+    ini := TMemIniFile.Create('');
     ini.SetStrings(sl);
     
     ini.ReadSections(sections);
