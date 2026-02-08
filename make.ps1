@@ -78,8 +78,18 @@ switch ($firstArg) {
         & $laz "--build-mode=$mode" 'Trndi.lpi' @extraArgs
         exit $LASTEXITCODE
     }
+    "test" {
+        if (-not $laz) { Write-Error "lazbuild not found. Install Lazarus or set LAZBUILD."; exit 1 }
+        Write-Host "Building console tests (tests/TrndiTestConsole.lpi)" -ForegroundColor Cyan
+        & $laz -B 'tests/TrndiTestConsole.lpi' @extraArgs
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        Write-Host "Running tests with PHP test server..." -ForegroundColor Cyan
+        # Assuming bash or sh is available (e.g., via WSL or Git Bash)
+        & sh 'tests/run_tests_with_php.sh'
+        exit $LASTEXITCODE
+    }
     "help" {
-        Write-Host "Usage: ./make.ps1 [release|debug|noext|noext-debug] (no args -> release)" -ForegroundColor Cyan
+        Write-Host "Usage: ./make.ps1 [release|debug|noext|noext-debug|test] (no args -> release)" -ForegroundColor Cyan
         Write-Host "Other arguments are forwarded to lazbuild when using these shortcuts." -ForegroundColor Cyan
         exit 0
     }

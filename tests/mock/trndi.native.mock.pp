@@ -40,6 +40,8 @@ type
 
 implementation
 
+uses IniFiles;
+
 { TTrndiNativeMock }
 
 class function TTrndiNativeMock.getURL(const url: string; out res: string): boolean;
@@ -201,7 +203,7 @@ procedure TTrndiNativeMock.ImportSettings(const iniData: string);
 var
   sl: TStringList;
   mem: TMemoryStream;
-  ini: TIniFile;
+  ini: TMemIniFile;
   keys: TStringList;
   i: integer;
   key, value: string;
@@ -218,7 +220,7 @@ begin
     mem.Position := 0;
     sl.LoadFromStream(mem);
     
-    ini := TIniFile.Create('');
+    ini := TMemIniFile.Create('');
     ini.SetStrings(sl);
     
     ini.ReadSection('trndi', keys);
