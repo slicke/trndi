@@ -37,9 +37,20 @@
         <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
-        <Filename Value="trnditestcase1.pp"/>
+        <Filename Value="api_general_tests.pp"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="trndiTestCase1"/>
+      </Unit>
+      <Unit>
+        <Filename Value="api_dexcom_tests.pp"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="api_xdrip_tests.pp"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="api_nightscout_tests.pp"/>
+        <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
         <Filename Value="dexcom_time_tests.pp"/>
