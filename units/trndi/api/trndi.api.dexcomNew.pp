@@ -311,13 +311,23 @@ begin
         if js.JSONType = jtObject then
         begin
           // Check for explicit error/message fields first
-          v := TJSONObject(js).Get('Message', '');
-          if v = '' then
-            v := TJSONObject(js).Get('Error', '');
-          if v = '' then
-            v := TJSONObject(js).Get('error', '');
-          if v <> '' then
+          if TJSONObject(js).Find('Message') <> nil then
           begin
+            v := TJSONObject(js).Get('Message', '');
+            OutErr := v;
+            js.Free;
+            Exit;
+          end
+          else if TJSONObject(js).Find('Error') <> nil then
+          begin
+            v := TJSONObject(js).Get('Error', '');
+            OutErr := v;
+            js.Free;
+            Exit;
+          end
+          else if TJSONObject(js).Find('error') <> nil then
+          begin
+            v := TJSONObject(js).Get('error', '');
             OutErr := v;
             js.Free;
             Exit;
