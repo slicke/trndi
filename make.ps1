@@ -83,9 +83,9 @@ switch ($firstArg) {
         Write-Host "Building console tests (tests/TrndiTestConsole.lpi)" -ForegroundColor Cyan
         & $laz -B 'tests/TrndiTestConsole.lpi' @extraArgs
         if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-        Write-Host "Running tests with PHP test server..." -ForegroundColor Cyan
-        # Assuming bash or sh is available (e.g., via WSL or Git Bash)
-        & sh 'tests/run_tests_with_php.sh'
+        Write-Host "Running tests without PHP (TRNDI_NO_PHP=1)" -ForegroundColor Cyan
+        $env:TRNDI_NO_PHP = "1"
+        & 'tests/TrndiTestConsole.exe' @extraArgs
         exit $LASTEXITCODE
     }
     "help" {
