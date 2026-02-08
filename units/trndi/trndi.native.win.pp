@@ -45,7 +45,7 @@ interface
 uses
 Classes, SysUtils, Graphics, Windows, Registry, Dialogs, StrUtils,
 winutils.httpclient, shellapi,
-Forms, variants, dwmapi, trndi.native.base, ExtCtrls{$ifdef DEBUG}, trndi.log{$endif};
+Forms, variants, dwmapi, trndi.native.base, ExtCtrls, IniFiles{$ifdef DEBUG}, trndi.log{$endif};
 
 type
   {**
@@ -1084,7 +1084,7 @@ procedure TTrndiNativeWindows.ImportSettings(const iniData: string);
 var
   sl: TStringList;
   mem: TMemoryStream;
-  ini: TIniFile;
+  ini: TMemIniFile;
   sections, keys: TStringList;
   i, j: integer;
   section, key, value: string;
@@ -1102,7 +1102,7 @@ begin
     sl.LoadFromStream(mem);
     
     // Create a temporary INI file in memory
-    ini := TIniFile.Create('');
+    ini := TMemIniFile.Create('');
     ini.SetStrings(sl);
     
     reg.RootKey := HKEY_CURRENT_USER;
