@@ -4,7 +4,8 @@ program TrndiTestConsole;
 {$DEFINE TEST}
 
 uses
-  cthreads, sysutils, fpcunit, testregistry, testreport,
+  {$IFDEF UNIX}cthreads, {$ENDIF}
+  sysutils, fpcunit, testregistry, testreport,
   dexcom_time_tests,
   dexcom_trend_tests,
   tandem_trend_tests,

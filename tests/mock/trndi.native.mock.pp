@@ -5,7 +5,7 @@ unit trndi.native.mock;
 interface
 
 uses
-  Classes, SysUtils, trndi.native.base, fphttpclient, opensslsockets;
+  Classes, SysUtils, trndi.native.base, fphttpclient, opensslsockets, IniFiles;
 
 type
   { TTrndiNativeMock }
@@ -39,8 +39,6 @@ type
   end;
 
 implementation
-
-uses IniFiles;
 
 { TTrndiNativeMock }
 
