@@ -514,9 +514,9 @@ begin
     while key <> nil do
     begin
       value := dict.objectForKey(key);
-      if value.isKindOfClass(NSString.classNSString) then
+      if value.isKindOfClass(NSString.class) then
         sl.Add(NSStrToStr(key) + '=' + NSStrToStr(NSString(value)))
-      else if value.isKindOfClass(NSNumber.classNSNumber) then
+      else if value.isKindOfClass(NSNumber.class) then
         sl.Add(NSStrToStr(key) + '=' + NSNumber(value).stringValue.UTF8String);
       // Skip other types for now
       key := enumerator.nextObject;
