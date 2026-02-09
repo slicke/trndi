@@ -18,12 +18,12 @@ object fConf: TfConf
     Height = 518
     Top = 11
     Width = 645
-    ActivePage = tsSystem
+    ActivePage = tsTir
     Align = alClient
     BorderSpacing.Left = 10
     BorderSpacing.Right = 10
     BorderSpacing.Around = 5
-    TabIndex = 8
+    TabIndex = 4
     TabOrder = 0
     OnChange = pcMainChange
     object tsCommon: TTabSheet
@@ -11336,13 +11336,13 @@ object fConf: TfConf
       end
       object GroupBox5: TGroupBox
         Left = 10
-        Height = 140
+        Height = 156
         Top = 228
         Width = 619
         Align = alTop
         BorderSpacing.Around = 10
         Caption = 'Extra Settings'
-        ClientHeight = 113
+        ClientHeight = 129
         ClientWidth = 615
         TabOrder = 0
         object cbTIR: TCheckBox
@@ -11413,12 +11413,22 @@ object fConf: TfConf
         object cbTirIcon: TCheckBox
           Left = 0
           Height = 20
-          Top = 83
+          Top = 99
           Width = 615
           Align = alBottom
           BorderSpacing.Bottom = 10
           Caption = 'Show a smiley instead of percentage'
           TabOrder = 3
+        end
+        object cbShowMean: TCheckBox
+          Left = 0
+          Height = 20
+          Top = 74
+          Width = 615
+          Align = alBottom
+          BorderSpacing.Bottom = 5
+          Caption = 'Show mean blood sugar reading next to TIR'
+          TabOrder = 4
         end
       end
       object GroupBox6: TGroupBox
@@ -11557,7 +11567,7 @@ object fConf: TfConf
           ParentFont = False
         end
         object bColorGraphHelp: TButton
-          Left = 600
+          Left = 584
           Height = 22
           Top = 0
           Width = 27
@@ -11566,9 +11576,9 @@ object fConf: TfConf
           OnClick = bColorGraphHelpClick
         end
         object bThreasholdLinesHelp: TButton
-          Left = 600
+          Left = 584
           Height = 22
-          Top = 90
+          Top = 92
           Width = 27
           Caption = '?'
           TabOrder = 6
@@ -11578,7 +11588,7 @@ object fConf: TfConf
       object GroupBox7: TGroupBox
         Left = 10
         Height = 80
-        Top = 378
+        Top = 394
         Width = 619
         Align = alTop
         BorderSpacing.Around = 10
@@ -11640,7 +11650,7 @@ object fConf: TfConf
           end
         end
         object bCustomRangeHelp: TButton
-          Left = 600
+          Left = 584
           Height = 22
           Top = 0
           Width = 27

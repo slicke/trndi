@@ -529,6 +529,10 @@ msgstr ""
 msgid "Privacy Mode (Hide glucose value)"
 msgstr ""
 
+#: tfconf.cbshowmean.caption
+msgid "Show mean blood sugar reading next to TIR"
+msgstr ""
+
 #: tfconf.cbsize.caption
 msgid "Remember window size"
 msgstr ""

@@ -3007,6 +3007,7 @@ procedure LoadUserSettings(f: TfConf);
       seTir.Value := native.GetIntSetting('range.time', 9999);
 
       cbTirIcon.checked := native.GetBoolSetting('range.tir_icon', false);
+      cbShowMean.Checked := native.GetBoolSetting('tir.displaymean', false);
 
       cbOffBar.Checked := native.GetBoolSetting('ux.off_bar', false);
       cbPaintHiLo.Checked := native.GetBoolSetting('ux.paint_range', true);
@@ -3390,6 +3391,7 @@ procedure SaveUserSettings(f: TfConf);
 
       native.SetSetting('range.custom', cbTIR.Checked);
       native.SetSetting('range.tir_icon', cbTirIcon.checked);
+      native.SetSetting('tir.displaymean', cbShowMean.Checked);
 
       native.SetSetting('range.time', seTir.Value);
       native.SetSetting('ux.off_bar', cbOffBar.Checked);
@@ -4799,6 +4801,7 @@ var
   no, //< Not OK count
   rangeMinutes: integer; //< Time window in minutes to inspect (custom setting)
   ranges: set of trndi.types.BGValLevel; //< Types of readings to count as OK
+  meanStr: string; //< Formatted mean readout when enabled
 begin
   ok := 0;
   no := 0;
@@ -4843,6 +4846,13 @@ begin
     lTir.Caption := range.toString + '-%';
   end;
 
+  // Optionally show the mean reading before the TIR value/icon
+  if native.GetBoolSetting('tir.displaymean', false) then
+  begin
+    meanStr := BGMean(un, -1);
+    if meanStr <> '' then
+      lTir.Caption := meanStr + ' | ' + lTir.Caption;
+  end;
 
   lTir.Hint := range.toString;
   lTir.Visible := true; // Ensure TIR label is visible after calculation

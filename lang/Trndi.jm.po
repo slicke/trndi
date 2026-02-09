@@ -546,6 +546,10 @@ msgstr "Liten"
 msgid "Privacy Mode (Hide glucose value)"
 msgstr "Privat lege (dôlj glukosverde)"
 
+#: tfconf.cbshowmean.caption
+msgid "Show mean blood sugar reading next to TIR"
+msgstr ""
+
 #: tfconf.cbsize.caption
 msgid "Remember window size"
 msgstr "Kom ihog fônsterstorlek"

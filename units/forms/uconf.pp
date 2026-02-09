@@ -67,7 +67,9 @@ TfConf = class(TForm)
   bAdd: TButton;
   bBackendHelp: TButton;
   bDotHelp: TButton;
+  bExportSettings: TButton;
   bFontHelp: TButton;
+  bImportSettings: TButton;
   bLanguageHelp: TButton;
   bNotificationHelp: TButton;
   bColorGraphHelp: TButton;
@@ -126,6 +128,7 @@ TfConf = class(TForm)
   cbPredictShortMinutes: TComboBox;
   cbPredictShortSize: TComboBox;
   cbPrivacy: TCheckBox;
+  CheckBox1: TCheckBox;
   edCommaSep1: TEdit;
   eDot: TEdit;
   eDotNow: TEdit;
@@ -139,6 +142,7 @@ TfConf = class(TForm)
   fsLo1: TFloatSpinEdit;
   gbNetwork: TGroupBox;
   gbOverride1: TGroupBox;
+  gbSettings: TGroupBox;
   Label16: TLabel;
   Label17: TLabel;
   Label2: TLabel;
@@ -159,12 +163,14 @@ TfConf = class(TForm)
   lHiOver3: TLabel;
   lLounder2: TLabel;
   lProxyTitle: TLabel;
+  lSettingsHelp: TLabel;
   lSysWarnInfo: TLabel;
   lProxyDesc: TLabel;
   Panel18: TPanel;
   Panel19: TPanel;
   Panel20: TPanel;
   Panel3: TPanel;
+  PanelProxyActions: TPanel;
   pnDeltaMax: TPanel;
   pnMisc1: TPanel;
   pnProxyConnection: TPanel;
@@ -178,6 +184,7 @@ TfConf = class(TForm)
   rbPredictShortShowValue: TRadioButton;
   cbTimeStamp: TCheckBox;
   cbTirIcon: TCheckBox;
+  cbShowMean: TCheckBox;
   cbWebAPI: TCheckBox;
   cbOffBar: TCheckBox;
   cbPaintHiLo: TCheckBox;
