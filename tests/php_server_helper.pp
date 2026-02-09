@@ -24,12 +24,13 @@ var
   probeProc: TProcess;
 begin
   Result := False;
-  // Respect TRNDI_NO_PHP env to explicitly run tests without launching PHP
+  // Respect TRNDI_NO_PHP env to explicitly skip PHP-dependent tests
   if GetEnvironmentVariable('TRNDI_NO_PHP') = '1' then
   begin
     PHPProcess := nil;
     BaseURL := '';
-    Result := True;
+    // Indicate server not available so callers will skip tests
+    Result := False;
     Exit;
   end;
 
