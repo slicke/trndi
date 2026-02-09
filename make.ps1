@@ -84,6 +84,23 @@ switch ($firstArg) {
         & $laz -B 'tests/TrndiTestConsole.lpi' @extraArgs
         if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
             Write-Host "Running tests (PHP detection enabled; set TRNDI_NO_PHP=1 to force skip)" -ForegroundColor Cyan
+        # Auto-clear TRNDI_NO_PHP if a PHP executable is available (convenience)
+        if ($env:TRNDI_NO_PHP -eq '1') {
+            if ($env:TRNDI_PHP_EXECUTABLE -or (Test-Path 'C:\php\php.exe')) {
+                Write-Host "TRNDI_NO_PHP is set but PHP executable found; clearing TRNDI_NO_PHP" -ForegroundColor Yellow
+                Remove-Item Env:\TRNDI_NO_PHP -ErrorAction SilentlyContinue
+            }
+            else {
+                try {
+                    & php -v > $null 2>&1
+                    if ($LASTEXITCODE -eq 0) {
+                        Write-Host "TRNDI_NO_PHP is set but 'php' exists on PATH; clearing TRNDI_NO_PHP" -ForegroundColor Yellow
+                        Remove-Item Env:\TRNDI_NO_PHP -ErrorAction SilentlyContinue
+                    }
+                } catch { }
+            }
+        }
+
         # Auto-detect PHP for convenience: prefer explicit env override, then C:\php\php.exe, then 'php' on PATH
         if (-not $env:TRNDI_TEST_SERVER_URL -and -not $env:TRNDI_NO_PHP) {
             if (-not $env:TRNDI_PHP_EXECUTABLE) {
