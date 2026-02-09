@@ -285,6 +285,44 @@ if ($path == '/status.json') {
     exit;
 }
 
+// -----------------------------------------------------------------------------
+// Cookie test endpoints
+// -----------------------------------------------------------------------------
+// Set a cookie: /cookie/set?name=foo&value=bar
+if ($path == '/cookie/set') {
+    $name = isset($_GET['name']) ? $_GET['name'] : 'testcookie';
+    $value = isset($_GET['value']) ? $_GET['value'] : '1';
+    // setcookie adds a Set-Cookie header
+    setcookie($name, $value, 0, '/');
+    // Also include explicit Set-Cookie header for parity across servers
+    header('Set-Cookie: ' . $name . '=' . $value . '; Path=/; HttpOnly');
+    echo 'OK';
+    exit;
+}
+
+// Set cookie and redirect to echo endpoint
+if ($path == '/cookie/set-redirect') {
+    $name = isset($_GET['name']) ? $_GET['name'] : 'testcookie';
+    $value = isset($_GET['value']) ? $_GET['value'] : '1';
+    setcookie($name, $value, 0, '/');
+    header('Set-Cookie: ' . $name . '=' . $value . '; Path=/; HttpOnly');
+    header('Location: /cookie/echo?name=' . urlencode($name));
+    http_response_code(302);
+    exit;
+}
+
+// Echo cookies sent by client as JSON: /cookie/echo or /cookie/echo?name=foo
+if ($path == '/cookie/echo') {
+    header('Content-Type: application/json');
+    $name = isset($_GET['name']) ? $_GET['name'] : null;
+    if ($name !== null) {
+        echo json_encode([ $name => (isset($_COOKIE[$name]) ? $_COOKIE[$name] : null) ]);
+    } else {
+        echo json_encode($_COOKIE);
+    }
+    exit;
+}
+
 if ($path == '/api/v1/status.json'){
 $d = generateRecord();
 $str = <<<STATUS
