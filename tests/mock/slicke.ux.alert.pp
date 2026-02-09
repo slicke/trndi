@@ -22,7 +22,8 @@ const
   uxmtInformation = 0;
   uxmtOK = 1;
   uxmtWarning = 2;
-  uxmtCustom = 99;
+  uxmtCog = 99; // gear emoji placeholder for headless tests
+  uxmtCustom = uxmtCog;
   mrOk = 1;
   mrCancel = 2;
   mrNo = 3;
@@ -56,6 +57,32 @@ function ExtInput(const dialogsize: TUXDialogSize; const title, prompt, labelTex
 function ExtList(const caption: string; var items: TStringList): integer; overload;
 function ExtList(const dialogsize: TUXDialogSize; const title, header, desc: string; const items: array of unicodestring): LongInt; overload;
 function ExtList(const dialogsize: TUXDialogSize; const title, header, desc: string; const items: TStringArray; const showOk: Boolean = True): LongInt; overload;
+
+// Numeric and date inputs (headless stubs)
+function ExtIntInput(
+const dialogsize: TUXDialogSize;
+const ACaption, ATitle, ADesc: string;
+ADefault: integer;
+var ModalResult: TModalResult;
+const icon: UXImage = uxmtCog
+): integer;
+
+function ExtNumericInput(
+const dialogsize: TUXDialogSize;
+const ACaption, ATitle, ADesc: string;
+ADefault: double;
+float: boolean;
+var ModalResult: TModalResult;
+const icon: UXImage = uxmtCog
+): double;
+
+function ExtDatePicker(const dialogsize: TUXDialogSize;
+const ACaption, ATitle, ADesc: string;
+ADefault: TDateTime;
+AMinDate: TDateTime;
+AMaxDate: TDateTime;
+var ModalResult: TModalResult;
+const icon: UXImage = uxmtCog): TDateTime;
 
 function ExtFontPicker(const dialogsize: TUXDialogSize; const caption, title, msg, title2: string; AFont: TFont; const sampleText: string; var mr: TModalResult): TFont; overload;
 function ExtFontPicker(const dialogsize: TUXDialogSize; const caption, title, msg: string; AFont: TFont; const sampleText: string; var mr: TModalResult): TFont; overload;
@@ -123,6 +150,44 @@ end;
 function ExtList(const caption: string; var items: TStringList): integer; overload;
 begin
   Result := 0;
+end;
+
+// Headless numeric/date input stubs
+function ExtIntInput(
+const dialogsize: TUXDialogSize;
+const ACaption, ATitle, ADesc: string;
+ADefault: integer;
+var ModalResult: TModalResult;
+const icon: UXImage = uxmtCog
+): integer;
+begin
+  Result := round(ExtNumericInput(dialogsize, ACaption, ATitle, ADesc, ADefault, false, ModalResult, icon));
+end;
+
+function ExtNumericInput(
+const dialogsize: TUXDialogSize;
+const ACaption, ATitle, ADesc: string;
+ADefault: double;
+float: boolean;
+var ModalResult: TModalResult;
+const icon: UXImage = uxmtCog
+): double;
+begin
+  // For headless tests, accept the default and return it
+  ModalResult := mrOk;
+  Result := ADefault;
+end;
+
+function ExtDatePicker(const dialogsize: TUXDialogSize;
+const ACaption, ATitle, ADesc: string;
+ADefault: TDateTime;
+AMinDate: TDateTime;
+AMaxDate: TDateTime;
+var ModalResult: TModalResult;
+const icon: UXImage = uxmtCog): TDateTime;
+begin
+  ModalResult := mrOk;
+  Result := ADefault;
 end;
 
 function ExtList(const dialogsize: TUXDialogSize; const title, header, desc: string; const items: array of unicodestring): LongInt; overload;

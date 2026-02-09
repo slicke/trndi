@@ -7,7 +7,7 @@ interface
 // Minimal stub of LCLType to satisfy headless builds.
 // Add symbols as needed; keep tiny to avoid colliding with real LCL.
 
-uses Controls;
+uses Controls, Types;
 
 type
   // Reuse the shift state definitions from Controls to keep types compatible
@@ -23,6 +23,17 @@ const
   VK_X = 88; // 'X'
   VK_ESCAPE = 27; // Escape key
   crHandPoint = 12; // cursor constant used by umain
+  crDefault = 0;
+  crNone = 1; // hide cursor for screenshots/headless mode
+
+// Minimal Mouse global used by umain
+type
+  TMouseRec = record
+    CursorPos: TPoint;
+  end;
+
+var
+  Mouse: TMouseRec;
 
 implementation
 

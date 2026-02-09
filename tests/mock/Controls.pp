@@ -19,7 +19,7 @@ type
 
   // Minimal mouse and shift state types used in event signatures
   TMouseButton = (mbLeft, mbRight, mbMiddle);
-  TShiftStateEnum = (ssShift, ssAlt, ssCtrl, ssLeft, ssRight, ssMiddle);
+  TShiftStateEnum = (ssShift, ssAlt, ssCtrl, ssMeta, ssLeft, ssRight, ssMiddle);
   TShiftState = set of TShiftStateEnum;
 
   TAlign = (alNone, alTop, alBottom, alLeft, alRight, alClient);
@@ -40,6 +40,11 @@ type
     FOnClick: TNotifyEvent;
     FCursor: Integer;
     FAutoSize: Boolean;
+    FPopupMenu: TComponent;
+    FOnPaint: TNotifyEvent;
+    FHint: string;
+    FOnResize: TNotifyEvent;
+    FOptimalFill: Boolean;
   protected
     FCanvas: TCanvas;
     FFont: TFont;
@@ -53,7 +58,7 @@ type
     property Height: Integer read FHeight write FHeight;
     property Parent: TWinControl read FParent write FParent;
     property Canvas: TCanvas read FCanvas;
-    property Font: TFont read FFont;
+    property Font: TFont read FFont write FFont;
     property Caption: string read FCaption write FCaption;
     property Name: string read FName write FName;
     property Enabled: Boolean read FEnabled write FEnabled;
@@ -62,20 +67,39 @@ type
     property OnClick: TNotifyEvent read FOnClick write FOnClick;
     property Visible: Boolean read FVisible write FVisible;
     property Cursor: Integer read FCursor write FCursor;
+    property PopupMenu: TComponent read FPopupMenu write FPopupMenu;
+    property Hint: string read FHint write FHint;
+    property OnPaint: TNotifyEvent read FOnPaint write FOnPaint;
+    property OnResize: TNotifyEvent read FOnResize write FOnResize;
+    property OptimalFill: Boolean read FOptimalFill write FOptimalFill;
     function ClientRect: TRect; virtual;
-    function ClientWidth: Integer; virtual;
-    function ClientHeight: Integer; virtual;
+    function GetClientWidth: Integer; virtual;
+    function GetClientHeight: Integer; virtual;
+    procedure SetClientWidth(AValue: Integer); virtual;
+    procedure SetClientHeight(AValue: Integer); virtual;
+    property ClientWidth: Integer read GetClientWidth write SetClientWidth;
+    property ClientHeight: Integer read GetClientHeight write SetClientHeight;
     procedure Hide; virtual;
     procedure Show; virtual;
     procedure SetFocus; virtual;
     procedure Update; virtual;
     procedure Repaint; virtual;
+    procedure Refresh; virtual;
+    procedure SendToBack; virtual;
+
+    // Bounds helpers
+    procedure SetBounds(ALeft, ATop, AWidth, AHeight: Integer); virtual;
+    function GetBoundsRect: TRect; virtual;
+    property BoundsRect: TRect read GetBoundsRect;
 
     // Basic UI event hooks commonly overridden by forms/controls
     procedure Paint; virtual;
     procedure Resize; virtual;
     procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); virtual;
     procedure KeyDown(var Key: Word; Shift: TShiftState); virtual;
+
+    procedure Invalidate; virtual;
+    procedure BringToFront; virtual;
   end;
 
 
@@ -95,6 +119,7 @@ type
   TScreen = record
     Width: Integer;
     Height: Integer;
+    Cursor: Integer;
     // Work area and desktop properties used by umain helpers
     WorkAreaLeft: Integer;
     WorkAreaTop: Integer;
@@ -117,6 +142,8 @@ begin
   inherited Create(AOwner);
   FCanvas := nil;
   FFont := TFont.Create;
+  FOnResize := nil; // default no-op event
+  FOptimalFill := False;
 end;
 
 destructor TControl.Destroy;
@@ -133,14 +160,24 @@ begin
   Result := Rect(Left, Top, Left + Width, Top + Height);
 end;
 
-function TControl.ClientWidth: Integer;
+function TControl.GetClientWidth: Integer;
 begin
   Result := Width;
 end;
 
-function TControl.ClientHeight: Integer;
+procedure TControl.SetClientWidth(AValue: Integer);
+begin
+  Width := AValue;
+end;
+
+function TControl.GetClientHeight: Integer;
 begin
   Result := Height;
+end;
+
+procedure TControl.SetClientHeight(AValue: Integer);
+begin
+  Height := AValue;
 end;
 
 procedure TControl.Hide;
@@ -156,6 +193,40 @@ end;
 procedure TControl.SetFocus;
 begin
   // no-op for headless tests
+end;
+
+procedure TControl.SetBounds(ALeft, ATop, AWidth, AHeight: Integer);
+begin
+  Left := ALeft;
+  Top := ATop;
+  Width := AWidth;
+  Height := AHeight;
+end;
+
+function TControl.GetBoundsRect: TRect;
+begin
+  Result := Rect(Left, Top, Left + Width, Top + Height);
+end;
+
+procedure TControl.Invalidate;
+begin
+  // Default to repainting in headless tests
+  Repaint;
+end;
+
+procedure TControl.Refresh;
+begin
+  // no-op for headless tests (explicit refresh)
+end;
+
+procedure TControl.SendToBack;
+begin
+  // no-op for headless tests
+end;
+
+procedure TControl.BringToFront;
+begin
+  // no-op in headless tests
 end;
 
 procedure TControl.Update;

@@ -11,8 +11,8 @@ type
   TCloseAction = (caNone, caHide, caFree, caMinimize);
 
   // Minimal window/form enums used by umain
-  TWindowState = (wsNormal, wsMinimized, wsMaximized);
-  TFormBorderStyle = (bsNone, bsSingle, bsSizeable, bsDialog, bsSizeToolWin);
+  TWindowState = (wsNormal, wsMinimized, wsMaximized, wsFullScreen);
+  TFormBorderStyle = (bsNone, bsSingle, bsSizeable, bsDialog, bsSizeToolWin, bsToolWindow);
   TFormStyle = (fsNormal, fsStayOnTop, fsMDIChild);
 
   // Minimal application properties type used on forms
@@ -29,6 +29,9 @@ type
     FMenu: TMainMenu;
     FBorderStyle: TFormBorderStyle;
     FCursor: Integer;
+    FWindowState: TWindowState;
+    FFormStyle: TFormStyle;
+    FHandle: PtrUInt;
   public
     procedure Close; virtual;
     procedure DoClose(var CloseAction: TCloseAction); virtual;
@@ -36,6 +39,9 @@ type
     property Menu: TMainMenu read FMenu write FMenu;
     property BorderStyle: TFormBorderStyle read FBorderStyle write FBorderStyle;
     property Cursor: Integer read FCursor write FCursor;
+    property WindowState: TWindowState read FWindowState write FWindowState;
+    property FormStyle: TFormStyle read FFormStyle write FFormStyle;
+    property Handle: PtrUInt read FHandle write FHandle;
     procedure Repaint; virtual;
   end;
 
@@ -55,6 +61,7 @@ type
     property Cursor: Integer read FCursor write FCursor;
     procedure ProcessMessages; virtual;
     procedure Terminate; virtual;
+    procedure BringToFront; virtual;
   end;
 
 var
@@ -76,6 +83,11 @@ begin
 end;
 
 procedure TApplication.Terminate;
+begin
+  // no-op in test environment
+end;
+
+procedure TApplication.BringToFront;
 begin
   // no-op in test environment
 end;

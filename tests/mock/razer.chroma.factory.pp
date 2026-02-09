@@ -18,8 +18,8 @@ implementation
 
 class function TRazerChromaFactory.CreateInstance: TRazerChromaBase;
 begin
-  // Headless test stub - return nil
-  Result := nil;
+  // Return a mock TRazerChromaBase instance for headless tests
+  Result := TRazerChromaBase.Create;
 end;
 
 class function TRazerChromaFactory.GetPlatformName: string;

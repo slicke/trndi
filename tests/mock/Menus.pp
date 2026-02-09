@@ -8,7 +8,7 @@ interface
 uses Classes, Controls, SysUtils;
 
 type
-  TMenuItem = class
+  TMenuItem = class(TComponent)
   private
     FCaption: string;
     FOnClick: TNotifyEvent;
@@ -16,6 +16,8 @@ type
     FShortCut: Integer;
     FEnabled: Boolean;
     FChecked: Boolean;
+    FVisible: Boolean;
+    FHint: string;
   public
     constructor Create(AOwner: TComponent = nil);
     destructor Destroy; override;
@@ -28,9 +30,17 @@ type
     property ShortCut: Integer read FShortCut write FShortCut;
     property Enabled: Boolean read FEnabled write FEnabled;
     property Checked: Boolean read FChecked write FChecked;
+    property Visible: Boolean read FVisible write FVisible;
+    property Hint: string read FHint write FHint;
   end;
 
-  TPopupMenu = class
+  TPopupMenu = class(TComponent)
+  private
+    FPopupComponent: TComponent;
+  public
+    constructor Create(AOwner: TComponent = nil);
+    procedure PopUp(X, Y: Integer); virtual;
+    property PopupComponent: TComponent read FPopupComponent write FPopupComponent;
   end;
 
   TMainMenu = class(TComponent)
@@ -48,8 +58,10 @@ implementation
 
 constructor TMenuItem.Create(AOwner: TComponent = nil);
 begin
+  inherited Create(AOwner);
   FCaption := '';
   FShortCut := 0;
+  FVisible := True;
   SetLength(FItems, 0);
 end;
 
@@ -74,6 +86,9 @@ begin
   for i := High(FItems) - 1 downto Index do
     FItems[i + 1] := FItems[i];
   FItems[Index] := Item;
+  // If the item is inserted it might need to adopt visibility from parent
+  if Assigned(Item) then
+    Item.Visible := FVisible;
 end;
 
 procedure TMenuItem.Click;
@@ -90,12 +105,25 @@ begin
     Result := nil;
 end;
 
+{ TPopupMenu }
+
+constructor TPopupMenu.Create(AOwner: TComponent = nil);
+begin
+  inherited Create(AOwner);
+  FPopupComponent := nil;
+end;
+
+procedure TPopupMenu.PopUp(X, Y: Integer);
+begin
+  // no-op for headless tests
+end;
+
 { TMainMenu }
 
 constructor TMainMenu.Create(AOwner: TComponent = nil);
 begin
   inherited Create(AOwner);
-  FItems := TMenuItem.Create(nil);
+  FItems := TMenuItem.Create(AOwner);
 end;
 
 destructor TMainMenu.Destroy;

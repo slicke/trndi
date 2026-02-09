@@ -5,7 +5,7 @@ unit ufloat;
 interface
 
 uses
-  Classes, SysUtils, Forms, Controls, StdCtrls, ExtCtrls;
+  Classes, SysUtils, Forms, Controls, StdCtrls, ExtCtrls, Graphics, Menus;
 
 // Minimal mock of the TfFloat form used in the app so tests can run headless.
 // Only expose fields and methods that other units/tests reference.
@@ -14,10 +14,23 @@ type
   TfFloat = class(TObject)
   public
     // Lightweight placeholders for commonly-used properties
+    Showing: Boolean;
+    OnHide: TNotifyEvent;
+    Color: TColor;
+    Font: TFont;
+    lVal: TLabel;
+    lArrow: TLabel;
+    pnMultiUser: TPanel;
+    miFontMain: TMenuItem;
+    lRangeDown: TLabel;
+    lRangeUp: TLabel;
     procedure Show; virtual;
     procedure Hide; virtual;
     class function Instance: TfFloat; static;
   end;
+
+var
+  fFloat: TfFloat = nil;
 
 procedure ShowMessage(const S: string);
 

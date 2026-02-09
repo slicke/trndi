@@ -31,8 +31,10 @@ type
   end;
 
   TCheckBox = class(TControl)
+  private
+    FChecked: Boolean;
   public
-    Checked: Boolean;
+    property Checked: Boolean read FChecked write FChecked;
   end;
 
   TComboBox = class(TWinControl)
@@ -65,8 +67,10 @@ type
   end;
 
   TRadioButton = class(TControl)
+  private
+    FChecked: Boolean;
   public
-    Checked: Boolean;
+    property Checked: Boolean read FChecked write FChecked;
   end;
 
   TRadioGroup = class(TWinControl)
@@ -88,7 +92,10 @@ type
     function GetSelectedText: string; virtual;
     procedure AddItem(const S: string; AObject: TObject);
     procedure DeleteSelected;
+    procedure Clear;
+    function GetCount: Integer;
     property SelectedText: string read GetSelectedText;
+    property Count: Integer read GetCount;
   end;
 
   
@@ -96,9 +103,11 @@ type
   private
     FColor: Graphics.TColor;
     FButtonColor: Graphics.TColor;
+    FChecked: Boolean;
   public
     property Color: Graphics.TColor read FColor write FColor;
     property ButtonColor: Graphics.TColor read FButtonColor write FButtonColor;
+    property Checked: Boolean read FChecked write FChecked;
   end;
 
 implementation
@@ -178,9 +187,19 @@ begin
     Result := '';
 end;
 
+function TListBox.GetCount: Integer;
+begin
+  Result := Items.Count;
+end;
+
 procedure TListBox.AddItem(const S: string; AObject: TObject);
 begin
   Items.Add(S);
+end;
+
+procedure TListBox.Clear;
+begin
+  Items.Clear;
 end;
 
 procedure TListBox.DeleteSelected;

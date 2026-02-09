@@ -18,11 +18,12 @@ const
   clFuchsia = $00FF00FF;
   clNone    = -1; // used as transparent sentinel
   clDefault = clWhite;
+  clMaroon = $00008000;
 
 type
   TBrushStyle = (bsSolid, bsClear);
-  TPenStyle = (psSolid);
-  TFontStyle = (fsBold);
+  TPenStyle = (psSolid, psClear, psDot);
+  TFontStyle = (fsBold, fsStrikeOut);
   TFontStyles = set of TFontStyle;
 
   TPen = class(TPersistent)
@@ -45,17 +46,25 @@ type
     property Style: TBrushStyle read FStyle write FStyle;
   end;
 
+  TFontQuality = (fqDefault, fqCleartype);
+
   TFont = class(TPersistent)
   private
     FName: string;
     FSize: Integer;
     FColor: TColor;
     FStyle: TFontStyles;
+    FQuality: TFontQuality;
+    FOrientation: Integer;
+    FHeight: Integer;
   public
     property Name: string read FName write FName;
     property Size: Integer read FSize write FSize;
     property Color: TColor read FColor write FColor;
     property Style: TFontStyles read FStyle write FStyle;
+    property Quality: TFontQuality read FQuality write FQuality;
+    property Orientation: Integer read FOrientation write FOrientation;
+    property Height: Integer read FHeight write FHeight;
     constructor Create; virtual;
   end;
 
@@ -99,7 +108,8 @@ type
     procedure RoundRect(X1, Y1, X2, Y2, RoundX, RoundY: Integer); overload; virtual;
     procedure MoveTo(X, Y: Integer); virtual;
     procedure LineTo(X, Y: Integer); virtual;
-    function Pixels(X, Y: Integer): TColor; virtual;
+    function GetPixels(X, Y: Integer): TColor; virtual;
+    property Pixels[X, Y: Integer]: TColor read GetPixels;
     procedure Draw(X, Y: Integer; Src: TObject); virtual;
   end;
 
@@ -237,7 +247,7 @@ begin
   // no-op
 end;
 
-function TCanvas.Pixels(X, Y: Integer): TColor;
+function TCanvas.GetPixels(X, Y: Integer): TColor;
 begin
   // default transparent / background
   Result := clWhite;

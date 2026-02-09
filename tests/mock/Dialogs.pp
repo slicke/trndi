@@ -12,6 +12,8 @@ const
   mtError = 3;
   mbOK = 1;
   mrYes = 6;
+  mrRetry = 4;
+  mrIgnore = 7;
 
 function MessageDlg(const Msg: string; Flags: integer; Buttons: integer; HelpCtx: longint): integer; overload;
 
