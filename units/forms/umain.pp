@@ -52,7 +52,7 @@ trndi.strings, LCLTranslator, Classes, Menus, SysUtils, Forms, Controls,
 Graphics, Dialogs, StdCtrls, ExtCtrls,
 trndi.api.dexcom, trndi.api.dexcomNew, trndi.api.tandem, trndi.api.nightscout, trndi.api.nightscout3, trndi.types,
 Math, DateUtils, FileUtil, LclIntf, TypInfo, LResources,
-slicke.ux.alert, slicke.ux.native, usplash, Generics.Collections, trndi.funcs, trndi.log,
+slicke.ux.alert, slicke.ux.native, usplash, Generics.Collections, trndi.funcs, trndi.log, trndi.defines,
 Trndi.native.base, trndi.shared, buildinfo, fpjson, jsonparser,
 SystemMediaController,
 SyncObjs,
@@ -114,7 +114,6 @@ TrndiPosNames: TPONames = (RS_tpoCenter, RS_tpoBottomLeft,
   RS_tpoBottomRight, RS_tpoCustom, RS_tpoTopRight);
 const
   // Public timing constants used across the unit/interface
-MILLIS_PER_MINUTE = 60000; // Milliseconds in a minute
 CLOCK_INTERVAL_MS = 20000; // Default clock interval used for the clock tick
 
 type

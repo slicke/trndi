@@ -54,10 +54,8 @@ interface
 
 uses
 Classes, ComCtrls, ExtCtrls, Spin, StdCtrls, SysUtils, Forms, Controls,
-Graphics, Dialogs, LCLTranslator, trndi.native, lclintf,
-slicke.ux.alert, slicke.ux.native, VersionInfo, trndi.funcs, buildinfo, StrUtils,
-  // Backend APIs for label captions
-trndi.api, trndi.api.nightscout, trndi.api.nightscout3, trndi.api.dexcom, trndi.api.dexcomNew, trndi.api.tandem, trndi.api.xdrip, razer.chroma, math, trndi.types, trndi.api.debug_firstXmissing, trndi.api.debug_intermittentmissing, trndi.api.debug_custom, trndi.api.debug, base64;
+Graphics, Dialogs, LCLTranslator, trndi.native, lclintf, trndi.defines,
+slicke.ux.alert, slicke.ux.native, VersionInfo, trndi.funcs, buildinfo, StrUtils, trndi.api, trndi.api.nightscout, trndi.api.nightscout3, trndi.api.dexcom, trndi.api.dexcomNew, trndi.api.tandem, trndi.api.xdrip, razer.chroma, math, trndi.types, trndi.api.debug_firstXmissing, trndi.api.debug_intermittentmissing, trndi.api.debug_custom, trndi.api.debug, base64;
 
 type
 
@@ -462,30 +460,6 @@ public
   chroma: TRazerChromaBase;
 end;
 
-const
-API_NS = 'NightScout';
-API_NS3 = 'NightScout v3';
-API_DEX_USA = 'Dexcom (USA)';
-API_DEX_EU = 'Dexcom (Outside USA)';
-API_DEX_NEW_USA = 'Dexcom New (USA)';
-API_DEX_NEW_EU = 'Dexcom New (Outside USA)';
-API_DEX_NEW_JP = 'Dexcom New (Japan)';
-API_TANDEM_USA = 'Tandem t:connect (USA)';
-API_TANDEM_EU = 'Tandem t:connect (EU)';
-API_XDRIP = 'xDrip';
-{$ifdef DEBUG}
-API_D_DEBUG =  '* Debug Backend *';
-API_D_MISSING = '* Debug Missing Backend *';
-API_D_PERFECT = '* Debug Perfect Backend *';
-API_D_CUSTOM = '* Debug Custom Backend *';
-API_D_EDGE = '* Debug Edge Backend *';
-API_D_FIRST = '* Debug First Reading Missing *';
-API_D_SECOND = '* Debug Second Reading Missing *';
-API_D_FIRSTX = '* Debug First X Readings Missing *';
-API_D_INTERMITTENT = '* Debug Intermittent Missing *';
-
-API_DEBUG: array of string = (API_D_DEBUG, API_D_MISSING, API_D_PERFECT, API_D_CUSTOM, API_D_EDGE, API_D_FIRST, API_D_SECOND, API_D_FIRSTX, API_D_INTERMITTENT);
-{$endif}
 var
 tnative: TrndiNative;
 
@@ -1871,7 +1845,7 @@ begin
   else
     title := RS_SELECT_FONT_DESC;
   end;
-  f := ExtFontPicker(uxdAuto,RS_SELECT_FONT, RS_SELECT_FONT, title, (sender as TLabel).font, (sender as TLabel).caption, mr);
+  f := slicke.ux.alert.ExtFontPicker(uxdAuto,RS_SELECT_FONT, RS_SELECT_FONT, title, (sender as TLabel).font, (sender as TLabel).caption, mr);
   if mr = mrOK then
     (Sender as TLabel).Font := f;
 end;

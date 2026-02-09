@@ -30,6 +30,7 @@ type
     // TTS and environment
     procedure Speak(const Text: string); override;
     class function isDarkMode: boolean; override;
+    class function setDarkMode: boolean;
     class function isNotificationSystemAvailable: boolean; override;
     class function getNotificationSystem: string; override;
     class function SpeakAvailable: boolean; override;
@@ -243,6 +244,11 @@ begin
 end;
 
 class function TTrndiNativeMock.isDarkMode: boolean;
+begin
+  Result := False;
+end;
+
+class function TTrndiNativeMock.setDarkMode: boolean;
 begin
   Result := False;
 end;

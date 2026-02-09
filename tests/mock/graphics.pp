@@ -17,6 +17,7 @@ const
   clRed     = $000000FF;
   clFuchsia = $00FF00FF;
   clNone    = -1; // used as transparent sentinel
+  clDefault = clWhite;
 
 type
   TBrushStyle = (bsSolid, bsClear);
@@ -102,6 +103,17 @@ type
     procedure Draw(X, Y: Integer; Src: TObject); virtual;
   end;
 
+  TIcon = TObject;
+
+  TPicture = class(TObject)
+  private
+    FIcon: TIcon;
+  public
+    constructor Create; virtual;
+    destructor Destroy; override;
+    property Icon: TIcon read FIcon write FIcon;
+  end;
+
   TBitmap = class(TObject)
   private
     FCanvas: TCanvas;
@@ -121,9 +133,15 @@ type
 // color helpers
 function ColorToRGB(AColor: TColor): LongInt;
 function RGB(R, G, B: Byte): TColor;
+function RGBToColor(R, G, B: Byte): TColor;
 function Red(AColor: TColor): Byte;
 function Green(AColor: TColor): Byte;
 function Blue(AColor: TColor): Byte;
+
+// Windows-like macros used in project
+function GetRValue(C: LongInt): Byte;
+function GetGValue(C: LongInt): Byte;
+function GetBValue(C: LongInt): Byte;
 
 const
   clWindow = $00FFFFFF; // white
@@ -231,6 +249,18 @@ begin
 end;
 
 { TBitmap }
+constructor TPicture.Create;
+begin
+  inherited Create;
+  FIcon := nil;
+end;
+
+destructor TPicture.Destroy;
+begin
+  // no-op
+  inherited Destroy;
+end;
+
 constructor TBitmap.Create;
 begin
   inherited Create;
@@ -277,6 +307,27 @@ function RGB(R, G, B: Byte): TColor;
 begin
   // produce $00BBGGRR as project expects
   Result := (B shl 16) or (G shl 8) or R;
+end;
+
+function RGBToColor(R, G, B: Byte): TColor;
+begin
+  Result := RGB(R, G, B);
+end;
+
+// Windows-style helpers
+function GetRValue(C: LongInt): Byte;
+begin
+  Result := Red(ColorToRGB(C));
+end;
+
+function GetGValue(C: LongInt): Byte;
+begin
+  Result := Green(ColorToRGB(C));
+end;
+
+function GetBValue(C: LongInt): Byte;
+begin
+  Result := Blue(ColorToRGB(C));
 end;
 
 end.
