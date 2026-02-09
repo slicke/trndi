@@ -33,6 +33,10 @@ lib/
 trndi.log
 /Trndi
 /tests/TrndiTest
+/tests/TrndiTestConsole
+/tests/*.log
+/tests/*.pid
+/tests/*.out
 GPATH
 GRTAGS
 GTAGS
@@ -56,6 +60,10 @@ Trndi-linux
 # In case someone downloads it locally
 /mORMot
 /mORMot2
+
+# Externals and generated static artifacts (these are large; fetched by CI or via make)
+/externals/mORMot2
+/static
 
 # Vi temps
 .gitignore~

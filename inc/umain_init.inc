@@ -96,7 +96,9 @@ var
   forceMenu,
   SettingsMenu,
   HelpMenu,
-  GithubMenu: TMenuItem;
+  GithubMenu,
+  AboutMenu,
+  CheckUpdatesMenu: TMenuItem;
 begin
   MainMenu := TMainMenu.Create(self);
   fBg.Menu := MainMenu;
@@ -115,15 +117,47 @@ begin
   {$endif}
   MainMenu.Items.Insert(0, AppMenu);
 
+  {$ifdef DARWIN}
+  // Add About menu item (standard on macOS)
+  AboutMenu := TMenuItem.Create(self);
+  AboutMenu.Caption := 'About Trndi';
+  AboutMenu.OnClick := @ShowAboutDialog;
+  AppMenu.Insert(0, AboutMenu);
+
+  // Add separator
+  AppMenu.Insert(1, TMenuItem.Create(self));
+  AppMenu.Items[1].Caption := '-';
+  {$endif}
+
   SettingsMenu := TMenuitem.Create(self);
   settingsmenu.Caption := RS_MENU_SETTINGS;
   settingsmenu.OnClick := misettings.OnClick;
+  {$ifdef DARWIN}
+  AppMenu.Insert(2, SettingsMenu);
+  {$else}
   AppMenu.Insert(0, SettingsMenu);
+  {$endif}
 
   forcemenu := TMenuItem.Create(self);
   forcemenu.Caption := RS_MENU_FORCE;
   forcemenu.onclick := miForce.OnClick;
+  {$ifdef DARWIN}
+  AppMenu.Insert(3, forceMenu);
+  {$else}
   AppMenu.Insert(1, forceMenu);
+  {$endif}
+
+  {$ifdef DARWIN}
+  // Add Check for Updates menu item
+  CheckUpdatesMenu := TMenuItem.Create(self);
+  CheckUpdatesMenu.Caption := 'Check for Updates...';
+  CheckUpdatesMenu.OnClick := @CheckForUpdatesMenuClick;
+  AppMenu.Insert(4, CheckUpdatesMenu);
+
+  // On macOS, change "Exit Trndi" to "Quit Trndi" for consistency
+  miExit.Caption := 'Quit Trndi';
+  miExit.ShortCut := 16465; // Cmd+Q
+  {$endif}
 
   helpmenu := TMenuItem.Create(self);
   helpmenu.Caption := RS_MENU_HELP;
@@ -399,6 +433,9 @@ begin
   API_D_FIRSTX,
   'API_D_FIRSTX':
     api := DebugFirstXMissingAPI.Create(apiTarget, apiCreds);
+  API_D_INTERMITTENT,
+  'API_D_INTERMITTENT':
+    api := DebugIntermittentMissingAPI.Create(apiTarget, apiCreds);
   API_D_SECOND,
   'API_D_SECOND':
     api := DebugSecondMissingAPI.Create(apiTarget, apiCreds);
@@ -457,7 +494,7 @@ end;
 {$endif}
 
 {$ifdef DEBUG}
-procedure TfBG.miDebugUXMsgClick(Sender: TObject);
+procedure TfBG.miDebugUXMsgClick({%H-}Sender: TObject);
 var
   old: TTrndiBool;
 begin
@@ -467,7 +504,7 @@ begin
   TrndiNative.touchOverride := old;
 end;
 
-procedure TfBG.miDebugLogClick(Sender: TObject);
+procedure TfBG.miDebugLogClick({%H-}Sender: TObject);
 begin
   TrndiDebugLogAlert := not TrndiDebugLogAlert;
 end;
@@ -487,7 +524,7 @@ end;
 {$endif}
 
 // Initialize the TrendDots array in FormCreate
-procedure TfBG.FormCreate(Sender: TObject);
+procedure TfBG.FormCreate({%H-}Sender: TObject);
 procedure haltBoot;
   begin
     firstboot := true;
@@ -715,6 +752,7 @@ begin
 
   // Final initialization and first reading
   Application.ProcessMessages;
+  fSplash.incProgress(90, RS_INIT_FETCH);
   if not updateReading(true) then
   begin
     fSplash.incProgress(95, RS_INIT_FIRST);
@@ -784,7 +822,7 @@ begin
 end;
 
 // Web Server Methods
-procedure TfBG.tWebServerStartTimer(Sender: TObject);
+procedure TfBG.tWebServerStartTimer({%H-}Sender: TObject);
 begin
   // Disable the timer after first execution
   if Assigned(tWebServerStart) then

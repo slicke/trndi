@@ -4,7 +4,7 @@
 
 ![Trndi](doc/img/trndi-logo.png)
 
-# Trndi - CGM data on Desktop and RaspberryPi<br><sup>_Nightscout - Dexcom - xDrip WiFi_</sup> 
+# Trndi - CGM data on Desktop and RaspberryPi<br><sup>_Nightscout - Dexcom - Tandem Source - xDrip WiFi_</sup> 
 ## <b> 🪟 Windows - 🍎 macOS - 🐧 Linux - 🥧 RaspberryPi/ARM Linux
 
 ## Index
@@ -48,7 +48,7 @@
 ### Introduction
 > __NEW__: Join us on [Discord](https://discord.gg/QXACfpcW)
 
-Trndi is a _desktop app_ that shows your blood sugar and graph. It works with  _Night Scout_ and _Dexcom Share_ at the moment.
+Trndi is a _desktop app_ that shows your blood sugar and graph. It works with  _Night Scout_, _Tandem Source_ and _Dexcom Share_ at the moment.
 It also supports the _xDrip_ app, connecting over the local network/WiFi.
 
 # What differs Trndi from apps?
@@ -164,7 +164,7 @@ xattr -c /path/to/Trndi.app
 ```
 
 ## Haiku
-Trndi can be built for Haiku OS using Lazarus. You can remove the mormot2 dependancy if compiling without extensions!
+Trndi can be built for Haiku OS using Lazarus.
 
 **Requirements:**
 - Free Pascal Compiler: `pkgman install fpc`
@@ -179,7 +179,10 @@ pkgman install fpc lazarus_bin openssl
 # Clone and build
 git clone https://github.com/slicke/trndi.git
 cd trndi
-lazbuild -B --widgetset=qt6 Trndi.lpi
+
+# Use the included Makefile rather than calling lazbuild directly for simplicity.
+# Add noext to remove extensions (mORMot2 dependancy issues)
+make noext
 ```
 
 **Features on Haiku:**
@@ -205,7 +208,10 @@ pkg install fpc lazarus curl openssl
 # Clone and build
 git clone https://github.com/slicke/trndi.git
 cd trndi
-lazbuild -B --widgetset=qt6 Trndi.lpi
+# Use the included Makefile rather than calling lazbuild directly
+make
+# Or build without extensions (no mORMot2 dependancy)
+make noext
 ```
 
 **Features on BSD:**
@@ -218,6 +224,7 @@ lazbuild -B --widgetset=qt6 Trndi.lpi
 Right click or click/hold the reading (or "Setup" text) and choose settings to access settings.
 * For NightScout, settings will be fetched from your server and auto-applied
 * For Dexcom, see the __[Dexcom setup guide](guides/Dexcom.md)__. The backend does not support all features, but this can be fixed with some manual work.
+* For Tandem, see the __[Tandem setup guide](guides/Tandem.md)__. The backend does not support all features, but this can be fixed with some manual work.
 * For xDrip, you need to turn on the local web server and use that IP/password
 * For other backends, feel free to contribute a api driver. See [API Drivers](guides/API.md)
 * For HTTP API access, see the __[Web API documentation](doc/WebAPI.md)__ to expose glucose data to other applications
@@ -241,14 +248,53 @@ Use the Lazarus IDE to build and/or develop the app, set release target in the _
 
 ### Command line
 
+Linux / Haiku / BSD (recommended)
+
 Build development:
-```lazbuild Trndi.lpi``` 
+```bash
+make debug
+```
 
 Build release:
-```lazbuild -dRelease Trndi.lpi``` 
+```bash
+make
+```
 
-Build to a release folder
-```lazbuild -B output_directory Trndi.lpi``` 
+Build release without extensions support:
+> This removes dependancy on mORMot2
+```bash
+make noext
+
+Build to a release folder:
+```bash
+make OUTDIR=output_directory
+```
+
+macOS / Windows
+
+Windows (PowerShell):
+- Prefer the included `make.ps1` helper for convenience. It wraps `lazbuild` and provides shortcuts:
+  - `./make.ps1` or `./make.ps1 release`  -> builds Release via `lazbuild` (`-dRelease`)
+  - `./make.ps1 debug`                     -> builds Debug via `lazbuild` (`-dDebug`)
+  - `./make.ps1 noext`                     -> builds the "No Ext (Release)" mode
+  - `./make.ps1 help`                      -> show usage
+
+macOS / (also usable on Windows if you prefer):
+
+Build development:
+```bash
+lazbuild Trndi.lpi
+```
+
+Build release:
+```bash
+lazbuild --build-mode="No Ext (Release)" Trndi.lpi
+```
+
+Build to a release folder:
+```bash
+lazbuild -B output_directory Trndi.lpi
+```
 
 ### Makefile
 
@@ -261,7 +307,9 @@ There is a convenience `Makefile` that wraps `lazbuild` with common targets:
 - `make list-modes` — list available build modes in `Trndi.lpi`
 - `make noext` — build without mORMot2 using a temporary project copy (useful if you don't have the mORMot2 package installed locally)
 - `make noext-release` / `make noext-debug` — same as `noext` but force build mode
+- `make IGNORE_MORMOT=1` or `make build-ignore` — force build even if mORMot2 is not found (skip presence check)
 - `make clean`
+- `make.ps1` (Windows PowerShell helper) — run `./make.ps1 help` for shortcuts (`release`, `debug`, `noext`)
 
 Defaults by platform:
 - Linux: forces the `Qt6` build modes by default (e.g. `Qt6 (Release)`)

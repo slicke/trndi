@@ -77,7 +77,7 @@ $str = "";
 $raw_path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $path = preg_replace('#/+#', '/', $raw_path);
 
-// Log requests for debugging (writes to /tmp/trndi-test-server.log)
+// Log requests for debugging (write to system temp directory to be cross-platform safe)
 $logEntry = sprintf("[%s] %s %s (normalized: %s) - API-SECRET: %s\n",
     date('Y-m-d H:i:s'),
     $_SERVER['REQUEST_METHOD'],
@@ -85,7 +85,10 @@ $logEntry = sprintf("[%s] %s %s (normalized: %s) - API-SECRET: %s\n",
     $path,
     isset($_SERVER['HTTP_API_SECRET']) ? substr($_SERVER['HTTP_API_SECRET'], 0, 10) . '...' : 'NONE'
 );
-file_put_contents('/tmp/trndi-test-server.log', $logEntry, FILE_APPEND);
+$logDir = sys_get_temp_dir();
+$logFile = $logDir . DIRECTORY_SEPARATOR . 'trndi-test-server.log';
+// Use silence operator to avoid emitting warnings that would break HTTP headers
+@file_put_contents($logFile, $logEntry, FILE_APPEND);
 
 // Debug endpoint to see what path is being requested
 if ($path == '/debug') {
@@ -282,6 +285,44 @@ if ($path == '/status.json') {
     ];
     
     echo json_encode($response);
+    exit;
+}
+
+// -----------------------------------------------------------------------------
+// Cookie test endpoints
+// -----------------------------------------------------------------------------
+// Set a cookie: /cookie/set?name=foo&value=bar
+if ($path == '/cookie/set') {
+    $name = isset($_GET['name']) ? $_GET['name'] : 'testcookie';
+    $value = isset($_GET['value']) ? $_GET['value'] : '1';
+    // setcookie adds a Set-Cookie header
+    setcookie($name, $value, 0, '/');
+    // Also include explicit Set-Cookie header for parity across servers
+    header('Set-Cookie: ' . $name . '=' . $value . '; Path=/; HttpOnly');
+    echo 'OK';
+    exit;
+}
+
+// Set cookie and redirect to echo endpoint
+if ($path == '/cookie/set-redirect') {
+    $name = isset($_GET['name']) ? $_GET['name'] : 'testcookie';
+    $value = isset($_GET['value']) ? $_GET['value'] : '1';
+    setcookie($name, $value, 0, '/');
+    header('Set-Cookie: ' . $name . '=' . $value . '; Path=/; HttpOnly');
+    header('Location: /cookie/echo?name=' . urlencode($name));
+    http_response_code(302);
+    exit;
+}
+
+// Echo cookies sent by client as JSON: /cookie/echo or /cookie/echo?name=foo
+if ($path == '/cookie/echo') {
+    header('Content-Type: application/json');
+    $name = isset($_GET['name']) ? $_GET['name'] : null;
+    if ($name !== null) {
+        echo json_encode([ $name => (isset($_COOKIE[$name]) ? $_COOKIE[$name] : null) ]);
+    } else {
+        echo json_encode($_COOKIE);
+    }
     exit;
 }
 

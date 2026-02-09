@@ -757,9 +757,22 @@ procedure TTrndiExtEngine.SetOutput(ctx: JSContext; const vals: PJSValues;
 const len: integer);
 var
   i: integer;
+  totalLen: integer;
+  temp: rawutf8;
+  p: PAnsiChar;
 begin
+  if len < 0 then Exit;
+  totalLen := 0;
   for i := 0 to len do
-    output := output + ctx^.ToUtf8(vals^[i]);
+    Inc(totalLen, Length(ctx^.ToUtf8(vals^[i])));
+  SetLength(temp, totalLen);
+  p := PAnsiChar(temp);
+  for i := 0 to len do
+  begin
+    Move(PAnsiChar(ctx^.ToUtf8(vals^[i]))^, p^, Length(ctx^.ToUtf8(vals^[i])));
+    Inc(p, Length(ctx^.ToUtf8(vals^[i])));
+  end;
+  output := output + temp;
 end;
 
 {** Clear accumulated output buffer. }

@@ -61,6 +61,10 @@ public
   procedure DeleteSetting(const keyname: string; global: boolean = false); override;
     {** Drop INI handle; re-created on demand. }
   procedure ReloadSettings; override;
+    {** Export all settings to INI format string. }
+  function ExportSettings: string; override;
+    {** Import settings from INI format string. }
+  procedure ImportSettings(const iniData: string); override;
   {** HTTP GET using TFPHTTPClient.
       @param(url URL to fetch)
       @param(res Out parameter receiving response body or error message)
@@ -380,6 +384,99 @@ procedure TTrndiNativeHaiku.ReloadSettings;
 begin
   if inistore <> nil then
     FreeAndNil(inistore);
+end;
+
+{------------------------------------------------------------------------------
+  ExportSettings
+  --------------
+  Export all settings from the INI file to a string.
+ ------------------------------------------------------------------------------}
+function TTrndiNativeHaiku.ExportSettings: string;
+var
+  sl: TStringList;
+  sections, keys: TStringList;
+  i, j: integer;
+  section, key, value: string;
+begin
+  if inistore = nil then
+    inistore := TIniFile.Create(ResolveIniPath);
+  sl := TStringList.Create;
+  sections := TStringList.Create;
+  keys := TStringList.Create;
+  try
+    inistore.ReadSections(sections);
+    for i := 0 to sections.Count - 1 do
+    begin
+      section := sections[i];
+      sl.Add('[' + section + ']');
+      inistore.ReadSection(section, keys);
+      for j := 0 to keys.Count - 1 do
+      begin
+        key := keys[j];
+        value := inistore.ReadString(section, key, '');
+        sl.Add(key + '=' + value);
+      end;
+      if i < sections.Count - 1 then
+        sl.Add(''); // Add blank line between sections
+    end;
+    Result := sl.Text;
+  finally
+    keys.Free;
+    sections.Free;
+    sl.Free;
+  end;
+end;
+
+{------------------------------------------------------------------------------
+  ImportSettings
+  ---------------
+  Import settings from INI format string.
+ ------------------------------------------------------------------------------}
+procedure TTrndiNativeHaiku.ImportSettings(const iniData: string);
+var
+  sl: TStringList;
+  mem: TMemoryStream;
+  ini: TMemIniFile;
+  sections, keys: TStringList;
+  i, j: integer;
+  section, key, value: string;
+begin
+  if inistore = nil then
+    inistore := TIniFile.Create(ResolveIniPath);
+  sl := TStringList.Create;
+  mem := TMemoryStream.Create;
+  ini := nil;
+  sections := TStringList.Create;
+  keys := TStringList.Create;
+  try
+    mem.WriteBuffer(iniData[1], Length(iniData));
+    mem.Position := 0;
+    sl.LoadFromStream(mem);
+    
+    // Create a temporary INI file in memory
+    ini := TMemIniFile.Create('');
+    ini.SetStrings(sl);
+    
+    ini.ReadSections(sections);
+    for i := 0 to sections.Count - 1 do
+    begin
+      section := sections[i];
+      ini.ReadSection(section, keys);
+      for j := 0 to keys.Count - 1 do
+      begin
+        key := keys[j];
+        value := ini.ReadString(section, key, '');
+        inistore.WriteString(section, key, value);
+      end;
+    end;
+    inistore.UpdateFile;
+  finally
+    keys.Free;
+    sections.Free;
+    ini.Free;
+    mem.Free;
+    sl.Free;
+  end;
 end;
 
 {------------------------------------------------------------------------------

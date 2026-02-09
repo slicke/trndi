@@ -2,6 +2,20 @@
 
 Thanks for your interest in contributing! This guide explains how to propose changes, coding/documentation style, and how to run docs/build locally.
 
+## Branching and Pull Requests
+
+**Always work from the `develop` branch:**
+- Clone the repository and checkout the `develop` branch:
+  ```bash
+  git clone https://github.com/slicke/trndi.git
+  cd trndi
+  git checkout develop
+  ```
+- Create your feature branch from `develop`.
+- When ready, open a pull request (PR) targeting the `develop` branch (not `main`).
+
+This keeps main stable and ensures new features and fixes are integrated smoothly.
+
 ## Getting started
 
 - Fork the repo and create a feature branch from `develop`.
@@ -124,6 +138,26 @@ Tips:
 
 - Build with Lazarus using the project file `Trndi.lpi`.
 - If you encounter environment-related unit errors (e.g., missing widgetset), ensure your Lazarus packages and widgetsets are installed.
+
+## Running tests
+
+- Use the project Makefile from the repository root for convenient, documented test runs:
+  - `make test` — builds the console runner and runs tests; it will start PHP's built-in test server automatically when `php` is on PATH (used for integration tests).
+
+  - On Windows, `make.ps1` auto-detects PHP using `TRNDI_PHP_EXECUTABLE` (if set), `C:\php\php.exe`, then `php` on PATH. If a usable PHP binary is found, `make.ps1` will clear `TRNDI_NO_PHP` so PHP-backed integration tests can run. You can also explicitly set `TRNDI_PHP_EXECUTABLE` to a full path (or `php` to probe PATH).
+
+  - The console tests print a short one-time message `Test Server tests ignored, missing php` when PHP is not available and will print `Running Test Server` when the helper starts the local PHP server.
+
+  - `make test-nophp` — builds and runs the console tests with `TRNDI_NO_PHP=1` so integration tests that require PHP are skipped (useful on CI).
+
+- Run the console test runner manually:
+  ```bash
+  lazbuild tests/TrndiTestConsole.lpi
+  ./tests/TrndiTestConsole
+  ```
+  To enable integration tests with an existing test server, set `TRNDI_TEST_SERVER_URL` (e.g. `export TRNDI_TEST_SERVER_URL=http://localhost:8080`).
+
+- GUI tests can be run with `TrndiTest` (uses the GUI test runner); for headless environments use `xvfb-run -a ./tests/TrndiTest`.
 
 ## Generating docs locally
 

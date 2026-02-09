@@ -89,9 +89,25 @@ argv: PJSValues): JSValueRaw; cdecl;
 var
   i: integer;
   output: rawutf8;
+  totalLen: integer;
+  p: PAnsiChar;
 begin
+  if argc <= 0 then
+  begin
+    TTrndiExtEngine.Instance.alert('');
+    Result := JS_UNDEFINED;
+    Exit;
+  end;
+  totalLen := 0;
   for i := 0 to argc - 1 do
-    output := output + ctx^.ToUtf8(argv^[i]);
+    Inc(totalLen, Length(ctx^.ToUtf8(argv^[i])));
+  SetLength(output, totalLen);
+  p := PAnsiChar(output);
+  for i := 0 to argc - 1 do
+  begin
+    Move(PAnsiChar(ctx^.ToUtf8(argv^[i]))^, p^, Length(ctx^.ToUtf8(argv^[i])));
+    Inc(p, Length(ctx^.ToUtf8(argv^[i])));
+  end;
   TTrndiExtEngine.Instance.alert(Output);
   Result := JS_UNDEFINED;
 end;
@@ -112,12 +128,28 @@ var
   i: integer;
   output: rawutf8;
   dialogResult: TModalResult;
+  totalLen: integer;
+  p: PAnsiChar;
 begin
   try
-    for i := 0 to argc - 1 do
-      output := output + ctx^.ToUtf8(argv^[i]);
-    
-    dialogResult := UXDialog(uxdAuto, sExtMsg, '', output, [mbYes, mbNo], mtConfirmation);
+    if argc <= 0 then
+    begin
+      dialogResult := UXDialog(uxdAuto, sExtMsg, '', '', [mbYes, mbNo], mtConfirmation);
+    end
+    else
+    begin
+      totalLen := 0;
+      for i := 0 to argc - 1 do
+        Inc(totalLen, Length(ctx^.ToUtf8(argv^[i])));
+      SetLength(output, totalLen);
+      p := PAnsiChar(output);
+      for i := 0 to argc - 1 do
+      begin
+        Move(PAnsiChar(ctx^.ToUtf8(argv^[i]))^, p^, Length(ctx^.ToUtf8(argv^[i])));
+        Inc(p, Length(ctx^.ToUtf8(argv^[i])));
+      end;
+      dialogResult := UXDialog(uxdAuto, sExtMsg, '', output, [mbYes, mbNo], mtConfirmation);
+    end;
     
     if dialogResult = mrYes then
       Result := JS_TRUE

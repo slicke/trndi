@@ -112,7 +112,7 @@ begin
 
 end;
 
-procedure TfBG.onGH(Sender: TObject);
+procedure TfBG.onGH({%H-}Sender: TObject);
 begin
   OpenURL('https://github.com/slicke/trndi');
 end;
@@ -134,20 +134,25 @@ begin
   // Create a custom dock menu
   dockMenu := NSMenu.alloc.initWithTitle(NSSTR('Trndi'));
 
-  // Add items to the menu
+  // Add Settings item
   menuTitle := TrimLeftSet((Application.MainForm as TfBG).miSettings.Caption, ['&', ' ']);
-
-  // Create a CFStringRef directly from the UTF-8 string
   cfStr := CFStringCreateWithCString(nil, pchar(menuTitle), kCFStringEncodingUTF8);
-
-  // Initialize the menu item with the CFStringRef
   menuItem := NSMenuItem.alloc.initWithTitle_action_keyEquivalent(
     NSString(cfStr), sel_registerName('miSettings:'), NSSTR(''));
-
   dockMenu.addItem(menuItem);
   menuItem.release;
+  CFRelease(cfStr);
 
-  // Release the CFStringRef
+  // Add separator
+  dockMenu.addItem(NSMenuItem.separatorItem);
+
+  // Add Quit item
+  menuTitle := 'Quit Trndi';
+  cfStr := CFStringCreateWithCString(nil, pchar(menuTitle), kCFStringEncodingUTF8);
+  menuItem := NSMenuItem.alloc.initWithTitle_action_keyEquivalent(
+    NSString(cfStr), sel_registerName('terminate:'), NSSTR('q'));
+  dockMenu.addItem(menuItem);
+  menuItem.release;
   CFRelease(cfStr);
 
   Result := dockMenu;
@@ -163,7 +168,7 @@ begin
 end;
 {$ENDIF}
 
-procedure TfBG.AppExceptionHandler(Sender: TObject; E: Exception);
+procedure TfBG.AppExceptionHandler({%H-}Sender: TObject; E: Exception);
 begin
   // Handle exceptions during shutdown gracefully
 end;

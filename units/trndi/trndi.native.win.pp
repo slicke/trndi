@@ -44,8 +44,8 @@ interface
 
 uses
 Classes, SysUtils, Graphics, Windows, Registry, Dialogs, StrUtils,
-winhttpclient, shellapi,
-Forms, variants, dwmapi, trndi.native.base, ExtCtrls{$ifdef DEBUG}, trndi.log{$endif};
+winutils.httpclient, shellapi,
+Forms, variants, dwmapi, trndi.native.base, ExtCtrls, IniFiles{$ifdef DEBUG}, trndi.log{$endif};
 
 type
   {**
@@ -130,6 +130,10 @@ public
   {** Refresh settings cache, if any. Registry access is on-demand here,
     so nothing needs to be reloaded. }
   procedure ReloadSettings; override;
+  {** Export all settings to INI format string. }
+  function ExportSettings: string; override;
+  {** Import settings from INI format string. }
+  procedure ImportSettings(const iniData: string); override;
 end;
 
 implementation
@@ -1032,6 +1036,99 @@ procedure TTrndiNativeWindows.ReloadSettings;
 begin
   // Registry access is performed on demand; there is no persistent
   // handle or cache to refresh here.
+end;
+
+{------------------------------------------------------------------------------
+  ExportSettings
+  --------------
+  Export all registry settings to INI format string.
+ ------------------------------------------------------------------------------}
+function TTrndiNativeWindows.ExportSettings: string;
+var
+  reg: TRegistry;
+  sl: TStringList;
+  i: integer;
+  valueNames: TStringList;
+  keyName: string;
+begin
+  Result := '';
+  sl := TStringList.Create;
+  valueNames := TStringList.Create;
+  reg := TRegistry.Create;
+  try
+    reg.RootKey := HKEY_CURRENT_USER;
+    if reg.OpenKeyReadOnly('\SOFTWARE\Trndi\') then
+    begin
+      reg.GetValueNames(valueNames);
+      sl.Add('[trndi]');
+      for i := 0 to valueNames.Count - 1 do
+      begin
+        keyName := valueNames[i];
+        sl.Add(keyName + '=' + reg.ReadString(keyName));
+      end;
+    end;
+    Result := sl.Text;
+  finally
+    reg.Free;
+    valueNames.Free;
+    sl.Free;
+  end;
+end;
+
+{------------------------------------------------------------------------------
+  ImportSettings
+  ---------------
+  Import settings from INI format string to registry.
+ ------------------------------------------------------------------------------}
+procedure TTrndiNativeWindows.ImportSettings(const iniData: string);
+var
+  sl: TStringList;
+  mem: TMemoryStream;
+  ini: TMemIniFile;
+  sections, keys: TStringList;
+  i, j: integer;
+  section, key, value: string;
+  reg: TRegistry;
+begin
+  sl := TStringList.Create;
+  mem := TMemoryStream.Create;
+  ini := nil;
+  sections := TStringList.Create;
+  keys := TStringList.Create;
+  reg := TRegistry.Create;
+  try
+    mem.WriteBuffer(iniData[1], Length(iniData));
+    mem.Position := 0;
+    sl.LoadFromStream(mem);
+    
+    // Create a temporary INI file in memory
+    ini := TMemIniFile.Create('');
+    ini.SetStrings(sl);
+    
+    reg.RootKey := HKEY_CURRENT_USER;
+    if reg.OpenKey('\SOFTWARE\Trndi\', true) then
+    begin
+      ini.ReadSections(sections);
+      for i := 0 to sections.Count - 1 do
+      begin
+        section := sections[i];
+        ini.ReadSection(section, keys);
+        for j := 0 to keys.Count - 1 do
+        begin
+          key := keys[j];
+          value := ini.ReadString(section, key, '');
+          reg.WriteString(key, value);
+        end;
+      end;
+    end;
+  finally
+    reg.Free;
+    keys.Free;
+    sections.Free;
+    ini.Free;
+    mem.Free;
+    sl.Free;
+  end;
 end;
 
 end.

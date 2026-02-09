@@ -102,33 +102,33 @@ TfFloat = class(TForm)
   tTitlebar: TTimer;
   procedure FormCreate(Sender: TObject);
   procedure FormKeyDown(Sender: TObject; var Key: word; Shift: TShiftState);
-  procedure FormKeyPress(Sender: TObject; var Key: char);
+  procedure FormKeyPress({%H-}Sender: TObject; var Key: char);
   procedure FormMouseDown(Sender: TObject; Button: TMouseButton;
     Shift: TShiftState; X, Y: integer);
-  procedure FormMouseEnter(Sender: TObject);
-  procedure FormMouseLeave(Sender: TObject);
-  procedure FormMouseMove(Sender: TObject; Shift: TShiftState; X, Y: integer);
+  procedure FormMouseEnter({%H-}Sender: TObject);
+  procedure FormMouseLeave({%H-}Sender: TObject);
+  procedure FormMouseMove({%H-}Sender: TObject; {%H-}Shift: TShiftState; X, Y: integer);
   procedure FormMouseUp(Sender: TObject; Button: TMouseButton;
     Shift: TShiftState; X, Y: integer);
-  procedure FormPaint(Sender: TObject);
-  procedure FormResize(Sender: TObject);
-  procedure FormShow(Sender: TObject);
+  procedure FormPaint({%H-}Sender: TObject);
+  procedure FormResize({%H-}Sender: TObject);
+  procedure FormShow({%H-}Sender: TObject);
   procedure lValMouseUp(Sender: TObject; Button: TMouseButton;
     Shift: TShiftState; X, Y: integer);
-  procedure MenuItem1Click(Sender: TObject);
-  procedure miBigClick(Sender: TObject);
-  procedure miClockClick(Sender: TObject);
-  procedure miCustomSizeClick(Sender: TObject);
-  procedure miCustomVisibleClick(Sender: TObject);
-  procedure miFontBlackClick(Sender: TObject);
-  procedure miFontWhiteClick(Sender: TObject);
-  procedure miHideTitleClick(Sender: TObject);
-  procedure miMainClick(Sender: TObject);
-  procedure miNormalClick(Sender: TMenuItem);
-  procedure miNormalClick(Sender: TObject);
-  procedure miOp100Click(Sender: TObject);
-  procedure tClockTimer(Sender: TObject);
-  procedure tTitlebarTimer(Sender: TObject);
+  procedure MenuItem1Click({%H-}Sender: TObject);
+  procedure miBigClick({%H-}Sender: TObject);
+  procedure miClockClick({%H-}Sender: TObject);
+  procedure miCustomSizeClick({%H-}Sender: TObject);
+  procedure miCustomVisibleClick({%H-}Sender: TObject);
+  procedure miFontBlackClick({%H-}Sender: TObject);
+  procedure miFontWhiteClick({%H-}Sender: TObject);
+  procedure miHideTitleClick({%H-}Sender: TObject);
+  procedure miMainClick({%H-}Sender: TObject);
+  procedure miNormalClick({%H-}Sender: TMenuItem);
+  procedure miNormalClick({%H-}Sender: TObject);
+  procedure miOp100Click({%H-}Sender: TObject);
+  procedure tClockTimer({%H-}Sender: TObject);
+  procedure tTitlebarTimer({%H-}Sender: TObject);
 private
   procedure SetFormOpacity(Opacity: double);
   procedure ApplyRoundedCorners;
@@ -274,7 +274,7 @@ begin
   end;
 end;
 
-procedure TfFloat.FormCreate(Sender: TObject);
+procedure TfFloat.FormCreate({%H-}Sender: TObject);
 {$IFDEF LCLQt6}
 var
   QtWidget: TQtWidget;
@@ -443,7 +443,7 @@ Shift: TShiftState; X, Y: integer);
 begin
 end;
 
-procedure TfFloat.MenuItem1Click(Sender: TObject);
+procedure TfFloat.MenuItem1Click({%H-}Sender: TObject);
 begin
   Hide;
 end;
@@ -778,7 +778,7 @@ procedure TfFloat.FormKeyPress(Sender: TObject; var Key: char);
 begin
 end;
 
-procedure TfFloat.FormKeyDown(Sender: TObject; var Key: word; Shift: TShiftState);
+procedure TfFloat.FormKeyDown({%H-}Sender: TObject; var Key: word; Shift: TShiftState);
 var
   num: double;
 begin

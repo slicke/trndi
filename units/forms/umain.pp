@@ -81,9 +81,9 @@ netdb,
 winsock,
 {$endif}
 LazFileUtils, uconf, trndi.native, Trndi.API,
-trndi.api.xDrip,{$ifdef DEBUG} trndi.api.debug_custom, trndi.api.debug, trndi.api.debug_edge, trndi.api.debug_missing, trndi.api.debug_firstXmissing, trndi.api.debug_perfect, trndi.api.debug_firstmissing, trndi.api.debug_secondmissing,{$endif}
+trndi.api.xDrip,{$ifdef DEBUG} trndi.api.debug_custom, trndi.api.debug, trndi.api.debug_edge, trndi.api.debug_missing, trndi.api.debug_firstXmissing, trndi.api.debug_intermittentmissing, trndi.api.debug_perfect, trndi.api.debug_firstmissing, trndi.api.debug_secondmissing,{$endif}
 {$ifdef LCLQt6}Qt6, QtWidgets,{$endif}
-StrUtils, TouchDetection, ufloat, uhistorygraph, LCLType, trndi.webserver.threaded, RazerChromaFactory, RazerChroma;
+StrUtils, TouchDetection, ufloat, uhistorygraph, LCLType, trndi.webserver.threaded, razer.chroma.factory, razer.chroma;
 
 {** Main application unit exposing the primary UI and helpers for the
   Trndi application. This unit defines the `TfBG` form which handles
@@ -239,111 +239,115 @@ TfBG = class(TForm)
       dot-count changes to keep everything visually aligned.
      }
   procedure AdjustGraph;
-  procedure bMenuPanelCloseClick(Sender: TObject);
-  procedure bSettingsClick(Sender: TObject);
-  procedure bTouchFullClick(Sender: TObject);
-  procedure bTouchMenuClick(Sender: TObject);
-  procedure bTouchSettingsClick(Sender: TObject);
-  procedure fbReadingsDblClick(Sender: TObject);
-  procedure FormActivate(Sender: TObject);
-  procedure FormClick(Sender: TObject);
-  procedure FormCloseQuery(Sender: TObject; var CanClose: boolean);
-  procedure FormClose(Sender: TObject; var {%H-}CloseAction: TCloseAction);
+  procedure bMenuPanelCloseClick({%H-}Sender: TObject);
+  procedure bSettingsClick({%H-}Sender: TObject);
+  procedure bTouchFullClick({%H-}Sender: TObject);
+  procedure bTouchMenuClick({%H-}Sender: TObject);
+  procedure bTouchSettingsClick({%H-}Sender: TObject);
+  procedure fbReadingsDblClick({%H-}Sender: TObject);
+  procedure FormActivate({%H-}Sender: TObject);
+  procedure FormClick({%H-}Sender: TObject);
+  procedure FormCloseQuery({%H-}Sender: TObject; var CanClose: boolean);
+  procedure FormClose({%H-}Sender: TObject; var {%H-}CloseAction: TCloseAction);
   {** Initialize UI state, load configuration, start any required services,
       and prepare connections to backends and extensions.
       Called by the framework when the form instance is created.
    }
-  procedure FormCreate(Sender: TObject);
-  procedure FormDblClick(Sender: TObject);
+  procedure FormCreate({%H-}Sender: TObject);
+  procedure FormDblClick({%H-}Sender: TObject);
   {** Shutdown and cleanup all resources, including timers, web server, and
       persistent connections. Called when the form is destroyed.
    }
-  procedure FormDestroy(Sender: TObject);
-  procedure FormKeyPress(Sender: TObject; var Key: char);
-  procedure DotPaint(Sender: TObject);
-  procedure lDiffClick(Sender: TObject);
-  procedure lPredictClick(Sender: TObject);
-  procedure miBasalRateClick(Sender: TObject);
+  procedure FormDestroy({%H-}Sender: TObject);
+  procedure FormKeyPress({%H-}Sender: TObject; var Key: char);
+  procedure DotPaint({%H-}Sender: TObject);
+  procedure lDiffClick({%H-}Sender: TObject);
+  procedure lPredictClick({%H-}Sender: TObject);
+  procedure miBasalRateClick({%H-}Sender: TObject);
   procedure AutoEnableBasalOverlay;
-  procedure miDNSClick(Sender: TObject);
-  procedure miDotNormalDrawItem(Sender: TObject; ACanvas: TCanvas;
+  procedure miDNSClick({%H-}Sender: TObject);
+  procedure miDotNormalDrawItem({%H-}Sender: TObject; ACanvas: TCanvas;
     ARect: TRect; AState: TOwnerDrawState);
-  procedure miDotNormalMeasureItem(Sender: TObject; ACanvas: TCanvas;
+  procedure miDotNormalMeasureItem({%H-}Sender: TObject; ACanvas: TCanvas;
     var AWidth, AHeight: integer);
-  procedure miDotsInViewClick(Sender: TObject);
-  procedure miDotSmallClick(Sender: TObject);
-  procedure miExitClick(Sender: TObject);
-  procedure miCustomDotsClick(Sender: TObject);
-  procedure miATouchAutoClick(Sender: TObject);
-  procedure miADotAdjustClick(Sender: TObject);
-  procedure miADotScaleClick(Sender: TObject);
-  procedure miADotsClick(Sender: TObject);
-  procedure miASystemInfoClick(Sender: TObject);
-  procedure miATouchClick(Sender: TObject);
-  procedure miATouchNoClick(Sender: TObject);
-  procedure miATouchYesClick(Sender: TObject);
-  procedure miDebugBackendClick(Sender: TObject);
-  procedure miExtLogClick(Sender: TObject);
-  procedure miGuidelinesClick(Sender: TObject);
-  procedure miPredictClick(Sender: TObject);
-  procedure miReadingsSinceClick(Sender: TObject);
-  procedure pmSettingsClose(Sender: TObject);
-  procedure pnWarningClick(Sender: TObject);
-  procedure pnWarningPaint(Sender: TObject);
+  procedure miDotsInViewClick({%H-}Sender: TObject);
+  procedure miDotSmallClick({%H-}Sender: TObject);
+  procedure miExitClick({%H-}Sender: TObject);
+  procedure miCustomDotsClick({%H-}Sender: TObject);
+  procedure miATouchAutoClick({%H-}Sender: TObject);
+  procedure miADotAdjustClick({%H-}Sender: TObject);
+  procedure miADotScaleClick({%H-}Sender: TObject);
+  procedure miADotsClick({%H-}Sender: TObject);
+  procedure miASystemInfoClick({%H-}Sender: TObject);
+  procedure miATouchClick({%H-}Sender: TObject);
+  procedure miATouchNoClick({%H-}Sender: TObject);
+  procedure miATouchYesClick({%H-}Sender: TObject);
+  procedure miDebugBackendClick({%H-}Sender: TObject);
+  procedure miExtLogClick({%H-}Sender: TObject);
+  procedure miGuidelinesClick({%H-}Sender: TObject);
+  procedure miPredictClick({%H-}Sender: TObject);
+  procedure miReadingsSinceClick({%H-}Sender: TObject);
+  procedure pmSettingsClose({%H-}Sender: TObject);
+  procedure pnWarningClick({%H-}Sender: TObject);
+  procedure pnWarningPaint({%H-}Sender: TObject);
   procedure speakReading;
-  procedure FormMouseLeave(Sender: TObject);
+  procedure FormMouseLeave({%H-}Sender: TObject);
   procedure FormMouseMove(Sender: TObject;{%H-}Shift: TShiftState; X, Y: integer);
-  procedure FormResize(Sender: TObject);
+  procedure FormResize({%H-}Sender: TObject);
   {** Called when the form becomes visible after creation; performs final
       placement operations and triggers initial UI refreshes once all controls
       are initialized and loaded.
    }
-  procedure FormShow(Sender: TObject);
-  procedure FormPaint(Sender: TObject);
-  procedure lAgoClick(Sender: TObject);
-  procedure lArrowClick(Sender: TObject);
-  procedure lDiffDblClick(Sender: TObject);
-  procedure lDot7DblClick(Sender: TObject);
-  procedure lgMainClick(Sender: TObject);
-  procedure lTirClick(Sender: TObject);
-  procedure lValClick(Sender: TObject);
-  procedure lValDblClick(Sender: TObject);
-  procedure lValMouseDown(Sender: TObject; Button: TMouseButton;
+  procedure FormShow({%H-}Sender: TObject);
+  procedure FormPaint({%H-}Sender: TObject);
+  procedure lAgoClick({%H-}Sender: TObject);
+  procedure lArrowClick({%H-}Sender: TObject);
+  procedure lDiffDblClick({%H-}Sender: TObject);
+  procedure lDot7DblClick({%H-}Sender: TObject);
+  procedure lgMainClick({%H-}Sender: TObject);
+  procedure lTirClick({%H-}Sender: TObject);
+  procedure lValClick({%H-}Sender: TObject);
+  procedure lValDblClick({%H-}Sender: TObject);
+  procedure lValMouseDown({%H-}Sender: TObject; Button: TMouseButton;
     {%H-}Shift: TShiftState; X, Y: integer);
-  procedure lValMouseUp(Sender: TObject; {%H-}Button: TMouseButton;
+  procedure lValMouseUp({%H-}Sender: TObject; {%H-}Button: TMouseButton;
     {%H-}Shift: TShiftState; {%H-}X, {%H-}Y: integer);
-  procedure lValStartDrag(Sender: TObject; var {%H-}DragObject: TDragObject);
-  procedure miAnnounceClick(Sender: TObject);
-  procedure miAlternateClick(Sender: TObject);
-  procedure miClockClick(Sender: TObject);
-  procedure miDotNormalClick(Sender: TObject);
-  procedure miFloatOnClick(Sender: TObject);
-  procedure mi24hClick(Sender: TObject);
-  procedure miHistoryClick(Sender: TObject);
-  procedure miRangeColorClick(Sender: TObject);
-  procedure miBordersClick(Sender: TObject);
-  procedure miForceClick(Sender: TObject);
-  procedure miLimitExplainClick(Sender: TObject);
-  procedure miOnTopClick(Sender: TObject);
-  procedure miSettingsClick(Sender: TObject);
-  procedure onTrendClick(Sender: TObject);
-  procedure pnOffReadingPaint(Sender: TObject);
-  procedure pmSettingsMeasureItem(Sender: TObject; ACanvas: TCanvas;
+  procedure lValStartDrag({%H-}Sender: TObject; var {%H-}DragObject: TDragObject);
+  procedure miAnnounceClick({%H-}Sender: TObject);
+  procedure miAlternateClick({%H-}Sender: TObject);
+  procedure miClockClick({%H-}Sender: TObject);
+  procedure miDotNormalClick({%H-}Sender: TObject);
+  procedure miFloatOnClick({%H-}Sender: TObject);
+  procedure mi24hClick({%H-}Sender: TObject);
+  procedure miHistoryClick({%H-}Sender: TObject);
+  procedure miRangeColorClick({%H-}Sender: TObject);
+  procedure miBordersClick({%H-}Sender: TObject);
+  procedure miForceClick({%H-}Sender: TObject);
+  procedure miLimitExplainClick({%H-}Sender: TObject);
+  procedure miOnTopClick({%H-}Sender: TObject);
+  procedure miSettingsClick({%H-}Sender: TObject);
+  {$ifdef DARWIN}
+  procedure ShowAboutDialog({%H-}Sender: TObject);
+  procedure CheckForUpdatesMenuClick({%H-}Sender: TObject);
+  {$endif}
+  procedure onTrendClick({%H-}Sender: TObject);
+  procedure pnOffReadingPaint({%H-}Sender: TObject);
+  procedure pmSettingsMeasureItem({%H-}Sender: TObject; ACanvas: TCanvas;
     var AWidth, AHeight: integer);
-  procedure pmSettingsPopup(Sender: TObject);
-  procedure pnMultiUserClick(Sender: TObject);
-  procedure pnOffRangeClick(Sender: TObject);
-  procedure tAgoTimer(Sender: TObject);
-  procedure tClockTimer(Sender: TObject);
-  procedure tEdgesTimer(Sender: TObject);
-  procedure tInitTimer(Sender: TObject);
-  procedure tPingTimer(Sender: TObject);
-  procedure tResizeTimer(Sender: TObject);
-  procedure tMainTimer(Sender: TObject);
-  procedure tMissedTimer(Sender: TObject);
-  procedure tSetupTimer(Sender: TObject);
-  procedure tSwapTimer(Sender: TObject);
-  procedure tTouchTimer(Sender: TObject);
+  procedure pmSettingsPopup({%H-}Sender: TObject);
+  procedure pnMultiUserClick({%H-}Sender: TObject);
+  procedure pnOffRangeClick({%H-}Sender: TObject);
+  procedure tAgoTimer({%H-}Sender: TObject);
+  procedure tClockTimer({%H-}Sender: TObject);
+  procedure tEdgesTimer({%H-}Sender: TObject);
+  procedure tInitTimer({%H-}Sender: TObject);
+  procedure tPingTimer({%H-}Sender: TObject);
+  procedure tResizeTimer({%H-}Sender: TObject);
+  procedure tMainTimer({%H-}Sender: TObject);
+  procedure tMissedTimer({%H-}Sender: TObject);
+  procedure tSetupTimer({%H-}Sender: TObject);
+  procedure tSwapTimer({%H-}Sender: TObject);
+  procedure tTouchTimer({%H-}Sender: TObject);
   procedure TfFloatOnHide(Sender: TObject);
   {$ifdef DEBUG}
   procedure miDebugUXMsgClick(Sender: TObject);
@@ -410,6 +414,14 @@ private
       @param(Readings The array of BGReading to map.)
    }
   procedure PlaceTrendDots(const Readings: array of BGReading);
+  {** Return the mean as a formatted string using the requested unit.
+      - mmol/L: one decimal place
+      - mg/dL: integer (no decimals)
+      - NumReadings (default NUM_DOTS): number of visual slots to average.
+        If NumReadings = -1 the function will average *all* available non-empty
+        readings in `bgs`.
+      Returns empty string when no readings are available. */}
+  function BGMean(const UnitPref: BGUnit = BGUnit.mmol; const NumReadings: integer = NUM_DOTS): string;
   procedure actOnTrend(proc: TTrendProc);
   procedure actOnTrend(proc: TTrendProcLoop);
   procedure setDotWidth(l: TDotControl; c, ix: integer; {%H-}ls: array of TDotControl);
@@ -794,7 +806,7 @@ begin
   Result.Unknown := RGBToColor(180, 180, 180);
 end;
 
-procedure TfBG.FormDblClick(Sender: TObject);
+procedure TfBG.FormDblClick({%H-}Sender: TObject);
 begin
   if HasTouch then
     DoFullScreen;
@@ -809,10 +821,17 @@ end;
 
 function TfBG.lastReading: BGReading;
 begin
-  try
-    Result := bgs[Low(bgs)];
-  finally
+  // If there are no readings available, return an empty initialized reading
+  // Caller should normally use tryLastReading() first, but be defensive here.
+  if (bgs = nil) or (Length(bgs) = 0) then
+  begin
+    LogMessageToFile('lastReading: requested but no readings available');
+    Result.Init(un,un,'missing data');
+    Exit;
   end;
+
+  // Return the oldest element (Low index) as the last reading
+  Result := bgs[Low(bgs)];
 end;
 
 function TfBG.lastDataReading: BGReading;
@@ -831,7 +850,7 @@ begin
   end;
 end;
 
-procedure TfBG.FormDestroy(Sender: TObject);
+procedure TfBG.FormDestroy({%H-}Sender: TObject);
 begin
   // Ensure shutdown flag is set
   FShuttingDown := true;
@@ -880,7 +899,7 @@ begin
     end;
 end;
 
-procedure TfBG.FormKeyPress(Sender: TObject; var Key: char);
+procedure TfBG.FormKeyPress({%H-}Sender: TObject; var Key: char);
 begin
   case key of
   #27:
@@ -990,7 +1009,7 @@ begin
   end;
 end;
 
-procedure TfBG.lDiffClick(Sender: TObject);
+procedure TfBG.lDiffClick({%H-}Sender: TObject);
 begin
   ShowMessage(RS_DIFF);
 end;
@@ -1204,7 +1223,9 @@ var
   bgr: BGResults;
   i: integer;
   msg: string;
+  temp: string;
   mr: TModalResult;
+  parts: TStringList;
 begin
   i := ExtIntInput(uxdAuto, RS_PREDICT_AMOUNT_CAPTION, RS_PREDICT_AMOUNT_TITLE, RS_PREDICT_AMOUNT_DESC, 3, mr);
   if (mr <> mrOK) or (i < 1) then
@@ -1219,13 +1240,24 @@ begin
   end;
 
   msg := RS_SERVICE_PREDICTIONS + LineEnding;
-  for i := 0 to High(bgr) do
-    msg := msg + Format(RS_SERVICE_PREDICT_POINT, [
-      i + 1,
-      bgr[i].convert(un),
-      BG_UNIT_NAMES[un],
-      FormatDateTime('hh:nn', bgr[i].date)  // Show time
-      ]) + LineEnding;
+  temp := '';
+  if Length(bgr) > 0 then
+  begin
+    parts := TStringList.Create;
+    try
+      for i := 0 to High(bgr) do
+        parts.Add(Format(RS_SERVICE_PREDICT_POINT, [
+          i + 1,
+          bgr[i].convert(un),
+          BG_UNIT_NAMES[un],
+          FormatDateTime('hh:nn', bgr[i].date)  // Show time
+          ]));
+      temp := parts.Text;  // Joins with LineEnding
+    finally
+      parts.Free;
+    end;
+  end;
+  msg := msg + temp;
 
   ShowMessage(msg);
 end;
@@ -1548,6 +1580,13 @@ begin
   
   // Stop web server
   StopWebServer;
+
+  // Ensure desktop indicators/readers don't keep showing stale data after shutdown
+  try
+    native.WriteCurrentIndicatorCache('', 0, 0);
+  except
+    // ignore errors during shutdown
+  end;
 
   // Let normal form closure process continue with CloseAction := caFree
 end;
@@ -2888,6 +2927,8 @@ procedure LoadUserSettings(f: TfConf);
         result := API_D_FIRST;
       'API_D_FIRSTX':
         result := API_D_FIRSTX;
+      'API_D_INTERMITTENT':
+        result := API_D_INTERMITTENT;
       'API_D_SECOND':
         result := API_D_SECOND;
     {$endif}
@@ -2901,6 +2942,7 @@ procedure LoadUserSettings(f: TfConf);
     hasUsers: boolean;
     posName: string;
     i: integer;
+    usersStr: string;
     posValue: integer;
     po: TrndiPos;
     sizeVal: integer;
@@ -2965,6 +3007,7 @@ procedure LoadUserSettings(f: TfConf);
       seTir.Value := native.GetIntSetting('range.time', 9999);
 
       cbTirIcon.checked := native.GetBoolSetting('range.tir_icon', false);
+      cbShowMean.Checked := native.GetBoolSetting('tir.displaymean', false);
 
       cbOffBar.Checked := native.GetBoolSetting('ux.off_bar', false);
       cbPaintHiLo.Checked := native.GetBoolSetting('ux.paint_range', true);
@@ -3042,9 +3085,21 @@ procedure LoadUserSettings(f: TfConf);
       begin
         lbUsers.Clear;
         lbUsers.Items.AddStrings(userNames);
+        // Build a CSV string for logging (Join not available on this compiler)
+        usersStr := '';
+        for i := 0 to High(userNames) do
+        begin
+          if i > 0 then
+            usersStr := usersStr + ',';
+          usersStr := usersStr + userNames[i];
+        end;
+        LogMessageToFile(Format('LoadUserSettings: loaded users.names: %s', [usersStr]));
       end
       else
+      begin
         lbUsers.Enabled := false;
+        LogMessageToFile('LoadUserSettings: users.names not found or empty');
+      end;
 
       lbUsers.Items.Add('- ' + RS_DEFAULT_ACCOUNT + ' -');
       cbUserColor.Checked := native.GetRootSetting('users.colorbox', 'true') = 'true';
@@ -3238,6 +3293,8 @@ procedure SaveUserSettings(f: TfConf);
         result := 'API_D_FIRST';
       API_D_FIRSTX:
         result := 'API_D_FIRSTX';
+      API_D_INTERMITTENT:
+        result := 'API_D_INTERMITTENT';
       API_D_SECOND:
         result := 'API_D_SECOND';
     {$endif}
@@ -3334,6 +3391,7 @@ procedure SaveUserSettings(f: TfConf);
 
       native.SetSetting('range.custom', cbTIR.Checked);
       native.SetSetting('range.tir_icon', cbTirIcon.checked);
+      native.SetSetting('tir.displaymean', cbShowMean.Checked);
 
       native.SetSetting('range.time', seTir.Value);
       native.SetSetting('ux.off_bar', cbOffBar.Checked);
@@ -3539,6 +3597,33 @@ begin
     ShowMessage(RS_SETTINGS_SAVED);
 end;
 
+{$ifdef DARWIN}
+procedure TfBG.ShowAboutDialog(Sender: TObject);
+var
+  html: string;
+  versionInfo: string;
+begin
+  versionInfo := 'Version ' + BUILD_NUMBER;
+  {$if defined(LCLCocoa)}
+  versionInfo := versionInfo + ' (macOS)';
+  {$endif}
+
+  html := '<img src="https://trndi.app/doc/img/trndi-logo.png">' + sHTMLLineBreak +
+    '<b>Trndi - CGM viewer</b>' + sHTMLLineBreak +
+    '<i>Continuous Glucose Monitor data display</i>' + sHTMLLineBreak +
+    'for desktop and embedded devices' + sHTMLLineBreak + sHTMLLineBreak +
+    versionInfo + sHTMLLineBreak +
+    'https://github.com/slicke/trndi';
+
+  ExtHTML(uxdAuto, 'About Trndi', html, [mbOK], uxmtInformation, 25);
+end;
+
+procedure TfBG.CheckForUpdatesMenuClick(Sender: TObject);
+begin
+  CheckForUpdates(true);
+end;
+{$endif}
+
 procedure TfBG.ApplyChromaAlertAction(const ActionSettingKey: string;
 const DefaultAction: string; const AColor: TRGBColor);
 var
@@ -3570,7 +3655,7 @@ var
   {$endif}
 begin
   l := Sender as TDotControl;
-
+  ShowMessage(BGMean(mmol));
   actOnTrend(@ExpandDot);
   isDot := UnicodeSameText(l.Caption, DOT_GRAPH);
 
@@ -4716,6 +4801,7 @@ var
   no, //< Not OK count
   rangeMinutes: integer; //< Time window in minutes to inspect (custom setting)
   ranges: set of trndi.types.BGValLevel; //< Types of readings to count as OK
+  meanStr: string; //< Formatted mean readout when enabled
 begin
   ok := 0;
   no := 0;
@@ -4760,6 +4846,13 @@ begin
     lTir.Caption := range.toString + '-%';
   end;
 
+  // Optionally show the mean reading before the TIR value/icon
+  if native.GetBoolSetting('tir.displaymean', false) then
+  begin
+    meanStr := BGMean(un, -1);
+    if meanStr <> '' then
+      lTir.Caption := meanStr + ' | ' + lTir.Caption;
+  end;
 
   lTir.Hint := range.toString;
   lTir.Visible := true; // Ensure TIR label is visible after calculation
@@ -5858,6 +5951,92 @@ begin
   
   // Summary log
   LogMessageToFile(Format('PlaceTrendDots complete: anchor=%s', [DateTimeToStr(anchorTime)]));
+end;
+
+function TfBG.BGMean(const UnitPref: BGUnit = BGUnit.mmol; const NumReadings: integer = NUM_DOTS): string;
+var
+  SortedReadings: array of BGReading;
+  slotIndex, i: integer;
+  slotStart, slotEnd, anchorTime: TDateTime;
+  reading: BGReading;
+  sum: double;
+  count: integer;
+  v: double;
+  slots: integer;
+const
+  TIME_EPSILON_DAYS = 10 / 86400; // 10 seconds
+begin
+  // Return empty string if we have no readings at all
+  if Length(bgs) = 0 then
+  begin
+    Result := '';
+    Exit;
+  end;
+
+  // Copy and sort readings (newest first)
+  SetLength(SortedReadings, Length(bgs));
+  Move(bgs[0], SortedReadings[0], Length(bgs) * SizeOf(BGReading));
+  SortReadingsDescending(SortedReadings);
+
+  sum := 0.0;
+  count := 0;
+
+  if NumReadings = -1 then
+  begin
+    // Use all available non-empty readings
+    for i := 0 to High(SortedReadings) do
+    begin
+      reading := SortedReadings[i];
+      if reading.empty then
+        Continue;
+      sum := sum + reading.convert(UnitPref);
+      count := count + 1;
+    end;
+  end
+  else
+  begin
+    // Clamp requested slots to available visual dots
+    slots := NumReadings;
+    if slots > NUM_DOTS then
+      slots := NUM_DOTS;
+    if slots <= 0 then
+      slots := NUM_DOTS;
+
+    anchorTime := RecodeMinute(Now, (MinuteOf(Now) div INTERVAL_MINUTES) * INTERVAL_MINUTES);
+    anchorTime := RecodeSecond(anchorTime, 0);
+    anchorTime := RecodeMilliSecond(anchorTime, 0);
+
+    for slotIndex := 0 to slots - 1 do
+    begin
+      slotEnd := IncMinute(anchorTime, -INTERVAL_MINUTES * slotIndex);
+      slotStart := IncMinute(slotEnd, -INTERVAL_MINUTES);
+
+      for i := 0 to High(SortedReadings) do
+      begin
+        reading := SortedReadings[i];
+        if reading.empty then
+          Continue;
+        if reading.date > slotEnd + TIME_EPSILON_DAYS then
+          Continue;
+        if (reading.date > slotStart) and (reading.date <= slotEnd + TIME_EPSILON_DAYS) then
+        begin
+          sum := sum + reading.convert(UnitPref);
+          count := count + 1;
+          Break; // Move to next slot
+        end
+        else if reading.date < slotStart - TIME_EPSILON_DAYS then
+          Break;
+      end;
+    end;
+  end;
+
+  if count > 0 then
+    v := sum / count
+  else
+    v := 0.0;
+
+  // Format using BG_MSG_SHORT which uses '%.1f' for mmol and '%0.f' for mg/dL
+  Result := Format(BG_MSG_SHORT[UnitPref], [v]);
 end;
 
 function TfBG.UpdateLabelForReading(SlotIndex: integer;

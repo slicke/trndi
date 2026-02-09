@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CONFIG>
+  <ProjectOptions>
+    <Version Value="12"/>
+    <PathDelim Value="\"/>
+    <General>
+      <SessionStorage Value="InProjectDir"/>
+      <Title Value="TrndiTestConsole"/>
+      <ResourceType Value="res"/>
+    </General>
+    <BuildModes>
+      <Item Name="Default" Default="True"/>
+    </BuildModes>
+    <RequiredPackages>
+      <Item>
+        <PackageName Value="FCL"/>
+      </Item>
+    </RequiredPackages>
+    <Units>
+      <Unit>
+        <Filename Value="TrndiTestConsole.lpr"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="dexcom_time_tests.pp"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="dexcom_trend_tests.pp"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="tandem_trend_tests.pp"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="tandem_fixture_tests.pp"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="debug_intermit_test.pp"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="api_general_tests.pp"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="api_dexcom_tests.pp"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="api_xdrip_tests.pp"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="api_nightscout_tests.pp"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="debug_firstx_dexcom_test.pp"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="debug_firstx_tandem_test.pp"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+    </Units>
+  </ProjectOptions>
+  <CompilerOptions>
+    <Version Value="11"/>
+    <PathDelim Value="\"/>
+    <Target>
+      <Filename Value="TrndiTestConsole"/>
+    </Target>
+    <ConditionalDefines Value="TEST"/>
+    <SearchPaths>
+      <IncludeFiles Value="$(ProjOutDir)"/>
+      <OtherUnitFiles Value="..\tests\mock;..\units\misc\winutils;..\units\misc\winutils\directx;..\units\misc\nsutils;..\units\trndi\ext;..\units\forms;..\units\trndi\api;..\units\trndi;..\units\slicke;..\units\misc;..\units\misc\razer"/>
+      <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
+    </SearchPaths>
+    <Linking>
+      <Options>
+        <Win32>
+          <GraphicApplication Value="False"/>
+        </Win32>
+      </Options>
+    </Linking>
+    <Other>
+      <CustomOptions Value="-B
+-dTEST"/>
+    </Other>
+  </CompilerOptions>
+</CONFIG>

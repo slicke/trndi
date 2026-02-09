@@ -57,8 +57,7 @@ Classes, ComCtrls, ExtCtrls, Spin, StdCtrls, SysUtils, Forms, Controls,
 Graphics, Dialogs, LCLTranslator, trndi.native, lclintf,
 slicke.ux.alert, slicke.ux.native, VersionInfo, trndi.funcs, buildinfo, StrUtils,
   // Backend APIs for label captions
-trndi.api, trndi.api.nightscout, trndi.api.nightscout3, trndi.api.dexcom, trndi.api.dexcomNew, trndi.api.tandem, trndi.api.debug_custom,
-trndi.api.debug, trndi.api.debug_firstXmissing, trndi.api.xdrip, RazerChroma, math, trndi.types;
+trndi.api, trndi.api.nightscout, trndi.api.nightscout3, trndi.api.dexcom, trndi.api.dexcomNew, trndi.api.tandem, trndi.api.xdrip, razer.chroma, math, trndi.types, trndi.api.debug_firstXmissing, trndi.api.debug_intermittentmissing, trndi.api.debug_custom, trndi.api.debug, base64;
 
 type
 
@@ -68,7 +67,9 @@ TfConf = class(TForm)
   bAdd: TButton;
   bBackendHelp: TButton;
   bDotHelp: TButton;
+  bExportSettings: TButton;
   bFontHelp: TButton;
+  bImportSettings: TButton;
   bLanguageHelp: TButton;
   bNotificationHelp: TButton;
   bColorGraphHelp: TButton;
@@ -127,6 +128,7 @@ TfConf = class(TForm)
   cbPredictShortMinutes: TComboBox;
   cbPredictShortSize: TComboBox;
   cbPrivacy: TCheckBox;
+  CheckBox1: TCheckBox;
   edCommaSep1: TEdit;
   eDot: TEdit;
   eDotNow: TEdit;
@@ -140,6 +142,7 @@ TfConf = class(TForm)
   fsLo1: TFloatSpinEdit;
   gbNetwork: TGroupBox;
   gbOverride1: TGroupBox;
+  gbSettings: TGroupBox;
   Label16: TLabel;
   Label17: TLabel;
   Label2: TLabel;
@@ -160,12 +163,14 @@ TfConf = class(TForm)
   lHiOver3: TLabel;
   lLounder2: TLabel;
   lProxyTitle: TLabel;
+  lSettingsHelp: TLabel;
   lSysWarnInfo: TLabel;
   lProxyDesc: TLabel;
   Panel18: TPanel;
   Panel19: TPanel;
   Panel20: TPanel;
   Panel3: TPanel;
+  PanelProxyActions: TPanel;
   pnDeltaMax: TPanel;
   pnMisc1: TPanel;
   pnProxyConnection: TPanel;
@@ -179,6 +184,7 @@ TfConf = class(TForm)
   rbPredictShortShowValue: TRadioButton;
   cbTimeStamp: TCheckBox;
   cbTirIcon: TCheckBox;
+  cbShowMean: TCheckBox;
   cbWebAPI: TCheckBox;
   cbOffBar: TCheckBox;
   cbPaintHiLo: TCheckBox;
@@ -355,14 +361,15 @@ TfConf = class(TForm)
   tsIntegration: TTabSheet;
   tsMulti: TTabSheet;
   tsSystem: TTabSheet;
-  procedure bAddClick(Sender: TObject);
-  procedure bBadgeFlashHelpClick(Sender: TObject);
-  procedure bColorGraphHelpClick(Sender: TObject);
-  procedure bCommonClick(Sender: TObject);
-  procedure bCustomRangeHelpClick(Sender: TObject);
-  procedure bDotHelpClick(Sender: TObject);
-  procedure bExtOpenClick(Sender: TObject);
-  procedure bFontHelpClick(Sender: TObject);
+  function validateUser(var error: string): boolean;
+  procedure bAddClick({%H-}Sender: TObject);
+  procedure bBadgeFlashHelpClick({%H-}Sender: TObject);
+  procedure bColorGraphHelpClick({%H-}Sender: TObject);
+  procedure bCommonClick({%H-}Sender: TObject);
+  procedure bCustomRangeHelpClick({%H-}Sender: TObject);
+  procedure bDotHelpClick({%H-}Sender: TObject);
+  procedure bExtOpenClick({%H-}Sender: TObject);
+  procedure bFontHelpClick({%H-}Sender: TObject);
   procedure bLanguageHelpClick(Sender: TObject);
   procedure bLimitsClick(Sender: TObject);
   procedure bMinMinutesHelpClick(Sender: TObject);
@@ -370,14 +377,14 @@ TfConf = class(TForm)
   procedure bNotificationHelpClick(Sender: TObject);
   procedure bDeltaMaxHelpClick(Sender: TObject);
   procedure bOutdatedHelpClick(Sender: TObject);
-  procedure bOverrideHelpClick(Sender: TObject);
-  procedure bPredictHelpClick(Sender: TObject);
-  procedure bPredictHorizonClick(Sender: TObject);
-  procedure bPrivacyHelpClick(Sender: TObject);
-  procedure bRemoveClick(Sender: TObject);
-  procedure bBackendHelpClick(Sender: TObject);
-  procedure bSysNoticeClick(Sender: TObject);
-  procedure bSysTouchClick(Sender: TObject);
+  procedure bOverrideHelpClick({%H-}Sender: TObject);
+  procedure bPredictHelpClick({%H-}Sender: TObject);
+  procedure bPredictHorizonClick({%H-}Sender: TObject);
+  procedure bPrivacyHelpClick({%H-}Sender: TObject);
+  procedure bRemoveClick({%H-}Sender: TObject);
+  procedure bBackendHelpClick({%H-}Sender: TObject);
+  procedure bSysNoticeClick({%H-}Sender: TObject);
+  procedure bSysTouchClick({%H-}Sender: TObject);
   procedure bTemplateCurrentClick(Sender: TObject);
   procedure bTemplateTrendClick(Sender: TObject);
   procedure bTestAnnounceClick(Sender: TObject);
@@ -386,6 +393,8 @@ TfConf = class(TForm)
   procedure bTestSpeechClick(Sender: TObject);
   procedure bThreasholdLinesHelpClick(Sender: TObject);
   procedure bTimeStampHelpClick(Sender: TObject);
+  procedure bExportSettingsClick(Sender: TObject);
+  procedure bImportSettingsClick(Sender: TObject);
   procedure btResetClick(Sender: TObject);
   procedure btUserSaveClick(Sender: TObject);
   procedure bUseURLHelpClick(Sender: TObject);
@@ -403,9 +412,9 @@ TfConf = class(TForm)
   procedure cbPredictShortFullArrowsChange(Sender: TObject);
   procedure cbPredictShortMinutesChange(Sender: TObject);
   procedure cbPredictShortSizeChange(Sender: TObject);
-  procedure cbSysChange(Sender: TObject);
-  procedure cbUserClick(Sender: TObject);
-  procedure cbUserColorChanged(Sender: TObject);
+  procedure cbSysChange({%H-}Sender: TObject);
+  procedure cbUserClick({%H-}Sender: TObject);
+  procedure cbUserColorChanged({%H-}Sender: TObject);
   procedure dotClick(Sender: TObject);
   procedure edCommaSep1Change(Sender: TObject);
   procedure edCommaSepChange(Sender: TObject);
@@ -413,30 +422,31 @@ TfConf = class(TForm)
   procedure eDotChange(Sender: TObject);
   procedure ePassEnter(Sender: TObject);
   procedure ePassExit(Sender: TObject);
-  procedure ProxyEditChange(Sender: TObject);
-  procedure FormCreate(Sender: TObject);
-  procedure FormDestroy(Sender: TObject);
-  procedure FormResize(Sender: TObject);
-  procedure fsHi1Change(Sender: TObject);
-  procedure fsHiChange(Sender: TObject);
-  procedure fsLo1Change(Sender: TObject);
-  procedure fsLoChange(Sender: TObject);
+  procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
+  procedure ProxyEditChange({%H-}Sender: TObject);
+  procedure FormCreate({%H-}Sender: TObject);
+  procedure FormDestroy({%H-}Sender: TObject);
+  procedure FormResize({%H-}Sender: TObject);
+  procedure fsHi1Change({%H-}Sender: TObject);
+  procedure fsHiChange({%H-}Sender: TObject);
+  procedure fsLo1Change({%H-}Sender: TObject);
+  procedure fsLoChange({%H-}Sender: TObject);
   procedure Label12Click(Sender: TObject);
   procedure lAckClick(Sender: TObject);
   procedure lbExtensionsSelectionChange(Sender: TObject; User: boolean);
   procedure lbUsersEnter(Sender: TObject);
   procedure lbUsersSelectionChange(Sender: TObject; User: boolean);
-  procedure lConfigPredictClick(Sender: TObject);
-  procedure lDot1Click(Sender: TObject);
-  procedure lLicenseClick(Sender: TObject);
-  procedure lSysWarnInfoClick(Sender: TObject);
-  procedure lValClick(Sender: TObject);
-  procedure pcColorsChange(Sender: TObject);
-  procedure pcMainChange(Sender: TObject);
-  procedure rbUnitClick(Sender: TObject);
-  procedure spTHRESHOLD1Change(Sender: TObject);
-  procedure spTHRESHOLDChange(Sender: TObject);
-  procedure tbAdvancedChange(Sender: TObject);
+  procedure lConfigPredictClick({%H-}Sender: TObject);
+  procedure lDot1Click({%H-}Sender: TObject);
+  procedure lLicenseClick({%H-}Sender: TObject);
+  procedure lSysWarnInfoClick({%H-}Sender: TObject);
+  procedure lValClick({%H-}Sender: TObject);
+  procedure pcColorsChange({%H-}Sender: TObject);
+  procedure pcMainChange({%H-}Sender: TObject);
+  procedure rbUnitClick({%H-}Sender: TObject);
+  procedure spTHRESHOLD1Change({%H-}Sender: TObject);
+  procedure spTHRESHOLDChange({%H-}Sender: TObject);
+  procedure tbAdvancedChange({%H-}Sender: TObject);
   procedure ToggleBox1Change(Sender: TObject);
   procedure tsCommonShow(Sender: TObject);
   procedure tsDisplayShow(Sender: TObject);
@@ -472,8 +482,9 @@ API_D_EDGE = '* Debug Edge Backend *';
 API_D_FIRST = '* Debug First Reading Missing *';
 API_D_SECOND = '* Debug Second Reading Missing *';
 API_D_FIRSTX = '* Debug First X Readings Missing *';
+API_D_INTERMITTENT = '* Debug Intermittent Missing *';
 
-API_DEBUG: array of string = (API_D_DEBUG, API_D_MISSING, API_D_PERFECT, API_D_CUSTOM, API_D_EDGE, API_D_FIRST, API_D_SECOND, API_D_FIRSTX);
+API_DEBUG: array of string = (API_D_DEBUG, API_D_MISSING, API_D_PERFECT, API_D_CUSTOM, API_D_EDGE, API_D_FIRST, API_D_SECOND, API_D_FIRSTX, API_D_INTERMITTENT);
 {$endif}
 var
 tnative: TrndiNative;
@@ -486,8 +497,8 @@ RS_DRIVER_CONTRIBUTOR = 'Driver contributor: ';
 RS_DEBUG_BACKEND_LABEL = '(Ignored for debug backend)';
 
 RS_Multi_User_Help =
-  'Trndi supports more than one user, this is called the multi user mode.'+LineEnding+'In this section you can add/remove accounts. There''s always a default account which cannot be deleted.'+LineEnding+
-  'Accounts have their own settings and remote servers, and are "sandboxed". Start a new instance of Trndi to log in to a given user account.';
+  'Trndi supports <b>more than one user</b>, this is called the <i>multi user mode</i>.'+sHTMLLineBreak+'In this section you can add/remove accounts. There''s <i>always</i> a default account which cannot be deleted.'+LineEnding+
+  'Accounts have their own settings and remote servers, and are <i>"sandboxed"</i>.'+sHTMLLineBreak+sHTMLLineBreak+'Start a new instance of Trndi to log in to a given user account.';
 
 RS_Use_URL_Help =
   'Trndi can load a URL when high or low in your default web browser.';
@@ -567,6 +578,9 @@ RS_TANDEM =
 RS_DEBUG_WARN =
   'This is a debug backend. It''s used for testing purposes only!'+sLineBreak+'No data will be sent to any remote server.';
 
+RS_ERR_PASSWORD = 'You must enter a password';
+RS_ERR_EMAIL = 'You must enter a valid e-mail address';
+RS_ERR_ADDRESS = 'Address must start with http(s)://';
 RS_ENTER_USER = 'Enter a username';
 RS_ENTER_NAME = 'Letters, space and numbers only';
 RS_ENTER_ANY = 'Please enter a name';
@@ -684,6 +698,11 @@ begin
   UXMessage(sSuccTitle, str, uxmtInformation);
 end;
 
+procedure ShowHTMLMessage(const html: string);
+begin
+  ExtHTML(uxdAuto,'',html);
+end;
+
 function ExtractLangCode(const AText: string): string;
 var
   L, R: integer;
@@ -731,14 +750,21 @@ end;
 
 procedure TfConf.lAckClick(Sender: TObject);
 const
-  txt = 'Trndi makes use of the following 3rd party libraries:'#10 +
-    'macOS native code libraries by Phil Hess'#10 +
-    'WinStyles library by Espectr0'#10#10 +
-    'Extensions use JavaScript engine QuickJS by Fabrice Bellard and Charlie Gordo'#10 +
-    'integration of said engine is made possible with mORMot2 by Synopse Informatique - Arnaud Bouchez'
-    + #10#10 + 'Built in Object Pascal, using the Lazarus component library (LCL) and FreePascal.';
+  txt = 'Trndi makes use of the following 3rd party libraries:' + sHTMLLineBreak +
+    'macOS native code libraries by <i>Phil Hess</i>.'#10 + sHTMLLineBreak +
+    'WinStyles library by <i>Espectr0</i>.'+ sHTMLLineBreak + sHTMLLineBreak +
+
+    'Extensions use the JavaScript engine <i>QuickJS</i> by <i>Fabrice Bellard</i> and <i>Charlie Gordo</i>.'#10 + sHTMLLineBreak +
+    'Integration of said engine is made possible with mORMot2 by Synopse Informatique - <i>Arnaud Bouchez</i>.' + sHTMLLineBreak + sHTMLLineBreak +
+
+    'Haiku specific: OpenSSL' + sHTMLLineBreak +
+    'Linux/BSD specific: Qt6 and libCurl (usually with OpenSSL)' + sHTMLLineBreak + sHTMLLineBreak +
+
+    'While Trndi has been built ground-up, it has been inspired by the Python library <i>pydexcom</i> and Tandem tool <i>tconnectsync</i>, aswell as the <i>NightScout</i> project.' + sHTMLLineBreak + sHTMLLineBreak +
+    'Built in <b>Object Pascal</b>, using the <b>Lazarus</b> component library (LCL) and <b>FreePascal</b>.' + sHTMLLineBreak + sHTMLLineBreak +
+    'Follow Trndi on Discord and Github! Contributions of code and translations are very welcome!';
 begin
-  ExtSucc(uxdAuto, 'Trndi', 'Libraries', txt, $00AA6004, $00FDD8AA);
+  ExtHTML(uxdAuto, 'Trndi', txt,[mbOK],uxmtInformation,25);
 end;
 
 procedure TfConf.lbExtensionsSelectionChange(Sender: TObject; User: boolean);
@@ -843,6 +869,8 @@ begin
   {$ifdef Debug}
   API_D_FIRSTX:
     sys := DebugFirstXMissingAPI;
+  API_D_INTERMITTENT:
+    sys := DebugIntermittentMissingAPI;
   API_D_CUSTOM:
     sys := DebugCustomAPI;
   {$endif}
@@ -861,12 +889,17 @@ begin
 
 end;
 
-procedure TfConf.cbSysChange(Sender: TObject);
+procedure TfConf.cbSysChange({%H-}Sender: TObject);
+var user, pass: string;
 procedure WarnUnstableAPI;
-  var
-    i : integer;
+  const
+    warn: unicodestring = '(!) ';
+    info: unicodestring =  '';
   begin
-    if (cbSys.Text = API_DEX_USA) or (cbSys.Text = API_DEX_EU) then
+    pnSysWarn.Color := $0000FBF4;
+    case cbSys.Text of
+    API_DEX_USA,
+    API_DEX_EU:
     begin
       gbOverride.Color := uxclLightBlue;
       lLoUnder.Font.Color := clBlack;
@@ -874,39 +907,42 @@ procedure WarnUnstableAPI;
       cbCust.Font.Color := clBlack;
 
       pnSysWarn.Show;
-      lSysWarnInfo.Caption := RS_DEX;
+      lSysWarnInfo.Caption := UnicodeString(info+UnicodeString(RS_DEX));
+      pnSysWarn.Color := $0053A2E8;
     end;
-
-    if (cbSys.Text = API_NS3) then
+    API_NS3:
     begin
       pnSysWarn.Show;
-      lSysWarnInfo.Caption := RS_BETA;
+      lSysWarnInfo.Caption := UnicodeString(warn+UnicodeString(RS_BETA));
     end;
-    if (cbSys.Text = API_DEX_NEW_EU) or (cbSys.Text = API_DEX_NEW_USA) or (cbSys.Text = API_DEX_NEW_JP) then
+    API_DEX_NEW_EU,
+    API_DEX_NEW_USA,
+    API_DEX_NEW_JP:
     begin
       pnSysWarn.Show;
-      lSysWarnInfo.Caption := RS_BETA_DEX;
+      lSysWarnInfo.Caption := UnicodeString(warn+UnicodeString(RS_BETA_DEX));
     end;
-    if cbSys.Text = API_XDRIP then
+    API_XDRIP:
     begin
       pnSysWarn.Show;
-      lSysWarnInfo.Caption := RS_XDRIP;
+      lSysWarnInfo.Caption := UnicodeString(info+UnicodeString(RS_XDRIP));
     end;
-    if (cbSys.Text = API_TANDEM_EU) or (cbSys.Text = API_TANDEM_USA) then
+    API_TANDEM_EU,
+    API_TANDEM_USA:
     begin
       pnSysWarn.Show;
-      lSysWarnInfo.Caption := RS_TANDEM;
+      lSysWarnInfo.Caption := UnicodeString(warn+UnicodeString(RS_TANDEM));
+    end;
     end;
     {$ifdef DEBUG}
     if cbSys.Text in API_DEBUG then
     begin
       pnSysWarn.Show;
-      lSysWarnInfo.Caption := RS_DEBUG_WARN;
+      lSysWarnInfo.Caption := UnicodeString(warn+UnicodeString(RS_DEBUG_WARN));
     end;
     {$endif}
   end;
 
-var user, pass: string;
 begin
   pnSysWarn.Hide;
   gbOverride.Color := clDefault;
@@ -962,7 +998,7 @@ begin
 
   if tryStrToInt('$' + (Sender as TEdit).Text, i) then
   begin
-    lbl.Caption := WChar(i);
+    lbl.Caption := UnicodeString(WChar(i));
     if Sender = eDot then
     begin
       lDot1.Caption := lbl.Caption;
@@ -976,44 +1012,94 @@ begin
     lbl.Caption := '- ERROR -';
 end;
 
-procedure TfConf.ePassEnter(Sender: TObject);
+procedure TfConf.ePassEnter({%H-}Sender: TObject);
 begin
   ePass.PasswordChar := #0;
 end;
 
-procedure TfConf.ePassExit(Sender: TObject);
+procedure TfConf.ePassExit({%H-}Sender: TObject);
 begin
   ePass.PasswordChar := '*';
 end;
 
-procedure TfConf.bLimitsClick(Sender: TObject);
+procedure TfConf.FormClose(Sender: TObject; var CloseAction: TCloseAction);
+var
+  err: string;
+begin
+  if not validateUser(err) then
+  begin
+    SHowMessage(err);
+    closeaction := caNone;
+  end;
+end;
+
+procedure TfConf.bLimitsClick({%H-}Sender: TObject);
 begin
 end;
 
-procedure TfConf.bMinMinutesHelpClick(Sender: TObject);
+procedure TfConf.bMinMinutesHelpClick({%H-}Sender: TObject);
 begin
   ShowMessage(Format(RS_MIN_MINUTES, [MAX_MIN]));
 end;
 
-procedure TfConf.bMultiUserHelpClick(Sender: TObject);
+procedure TfConf.bMultiUserHelpClick({%H-}Sender: TObject);
 begin
-  ShowMessage(RS_Multi_User_Help);
+  ShowHTMLMessage(RS_Multi_User_Help);
 end;
 
-procedure TfConf.bNotificationHelpClick(Sender: TObject);
+procedure TfConf.bNotificationHelpClick({%H-}Sender: TObject);
 begin
   ShowMessage(RS_NOTIFICATION_HELP);
 end;
 
-procedure TfConf.bDeltaMaxHelpClick(Sender: TObject);
+procedure TfConf.bDeltaMaxHelpClick({%H-}Sender: TObject);
 begin
   if UXDialog(uxdAuto,'Delta', RS_DELTA_MAX,[mbOK, mbUxRead]) <> mrOK then
     OpenURL('https://github.com/slicke/trndi/blob/main/doc/DeltaMax.md');
 end;
 
-procedure TfConf.bOutdatedHelpClick(Sender: TObject);
+procedure TfConf.bOutdatedHelpClick({%H-}Sender: TObject);
 begin
   ShowMessage(RS_OUTDATED_HELP);
+end;
+
+function TfConf.validateUser(var error: string): boolean;
+var
+  usr,pass: string;
+begin
+  usr := eAddr.Text;
+  pass := ePass.Text;
+
+  result := true;
+  case cbSys.Text of
+  API_NS,
+  API_NS3:
+  begin
+    result := usr.StartsWith('http');
+    error := RS_ERR_ADDRESS;
+  end;
+  API_TANDEM_EU,
+  API_TANDEM_USA:
+  begin
+    result := usr.Contains('@');
+    error := RS_ERR_EMAIL;
+    if not result then
+      Exit;
+
+    result := pass.Length > 4;
+    error := RS_ERR_PASSWORD;
+  end;
+  API_DEX_EU,
+  API_DEX_USA,
+  API_DEX_NEW_EU,
+  API_DEX_NEW_USA,
+  API_DEX_NEW_JP:
+  begin
+    result := pass.Length > 4;
+    error := RS_ERR_PASSWORD;
+  end;
+  end;
+
 end;
 
 procedure TfConf.bAddClick(Sender: TObject);
@@ -1062,7 +1148,7 @@ end;
 procedure TfConf.bCommonClick(Sender: TObject);
 begin
   {$ifdef x_mac}
-    tsCommon.tabvisible := true;
+  tsCommon.tabvisible := true;
   {$endif}
   pcMain.ActivePage := tsCommon;
 end;
@@ -1180,8 +1266,7 @@ begin
     c := HTMLEscapeBasic(sys.paramLabel(APLCopyright));
   end;
 
-  for i := 0 to Length(RS_DRIVER_CONTRIBUTOR + c) do
-    x += '-';
+  x := StringOfChar('-', Length(RS_DRIVER_CONTRIBUTOR + c));
 
   if s <> '' then
   begin
@@ -1321,6 +1406,77 @@ end;
 procedure TfConf.bTimeStampHelpClick(Sender: TObject);
 begin
   ShowMessage(RS_TIMESTAMP_HELP);
+end;
+
+procedure TfConf.bExportSettingsClick(Sender: TObject);
+var
+  settingsData, encodedData: string;
+  dlg: TSaveDialog;
+begin
+  settingsData := tnative.ExportSettings;
+  if settingsData = '' then
+  begin
+    ShowMessage('No settings to export.');
+    Exit;
+  end;
+  
+  encodedData := EncodeStringBase64(settingsData);
+  
+  dlg := TSaveDialog.Create(nil);
+  try
+    dlg.Title := 'Export Settings';
+    dlg.Filter := 'Settings files (*.trndi)|*.trndi|All files (*.*)|*.*';
+    dlg.DefaultExt := 'trndi';
+    dlg.FileName := 'trndi_settings.trndi';
+    
+    if dlg.Execute then
+    begin
+      with TFileStream.Create(dlg.FileName, fmCreate) do
+      try
+        WriteBuffer(encodedData[1], Length(encodedData));
+      finally
+        Free;
+      end;
+      ShowMessage('Settings exported successfully.');
+    end;
+  finally
+    dlg.Free;
+  end;
+end;
+
+procedure TfConf.bImportSettingsClick(Sender: TObject);
+var
+  encodedData, settingsData: string;
+  dlg: TOpenDialog;
+begin
+  dlg := TOpenDialog.Create(nil);
+  try
+    dlg.Title := 'Import Settings';
+    dlg.Filter := 'Settings files (*.trndi)|*.trndi|All files (*.*)|*.*';
+    dlg.DefaultExt := 'trndi';
+    
+    if dlg.Execute then
+    begin
+      with TFileStream.Create(dlg.FileName, fmOpenRead) do
+      try
+        SetLength(encodedData, Size);
+        ReadBuffer(encodedData[1], Size);
+      finally
+        Free;
+      end;
+      
+      try
+        settingsData := DecodeStringBase64(encodedData);
+        tnative.ImportSettings(settingsData);
+        ShowMessage('Settings imported successfully. You need to restart Trndi for all changes to take effect. Do NOT save when exiting the settings dialog!');
+      except
+        on E: Exception do
+          ShowMessage('Error importing settings: ' + E.Message);
+      end;
+    end;
+  finally
+    dlg.Free;
+  end;
 end;
 
 procedure TfConf.btResetClick(Sender: TObject);
@@ -1597,7 +1753,7 @@ begin
   {$endif}
 
   {$ifdef X_WIN}
-    cbTitleColor.Visible := false;
+  cbTitleColor.Visible := false;
   {$endif}
   if tnative.nobuttonsVM then
   begin
@@ -1728,7 +1884,7 @@ end;
 procedure TfConf.pcMainChange(Sender: TObject);
 begin
   {$ifdef x_mac}
-    tsCommon.tabvisible := false;
+  tsCommon.tabvisible := false;
   {$endif}
 end;
 
@@ -1907,7 +2063,7 @@ end;
 procedure TfConf.tsProxyShow(Sender: TObject);
 begin
   {$ifdef X_MAC}
-     gbNetwork.Enabled := false;
+  gbNetwork.Enabled := false;
   {$endif}
 
   LoadProxySettingsIntoUI;

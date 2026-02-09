@@ -51,9 +51,9 @@ interface
 uses
 Classes, SysUtils, Graphics, trndi.log
 {$IF DEFINED(X_MAC)}
-, NSMisc, ns_url_request, CocoaAll, LCLType, StrUtils
+, nsutils.nsmisc, nsutils.web.urlrequest, CocoaAll, LCLType, StrUtils
 {$ELSEIF DEFINED(X_WIN)}
-, Windows, Registry, Dialogs, StrUtils, winhttpclient, shellapi, comobj,
+, Windows, Registry, Dialogs, StrUtils, winutils.httpclient, shellapi, comobj,
 Forms, variants, dwmapi
 {$ELSEIF DEFINED(X_PC)}
 , libpascurl, Dialogs, LCLType, ctypes, StrUtils
@@ -214,6 +214,11 @@ class var touchOverride: TTrndiBool;
     {** Compare a setting to a value. }
   function CheckSetting(const keyname: string; def: string; match: string;
     global: boolean = false): boolean; virtual;
+
+    {** Export all settings to INI format string. }
+  function ExportSettings: string; virtual; abstract;
+    {** Import settings from INI format string. }
+  procedure ImportSettings(const iniData: string); virtual; abstract;
 
     // Theme/Env
     {** Determine if the OS/theme uses a dark appearance. Platforms override. }
@@ -786,6 +791,7 @@ var
   i, j: integer;
   inBlock: boolean;
   Line, Handler, DevPath: string;
+  LineLower, HandlerLower: string;
   HasAccessibleDevice: boolean;
   F: Integer;
 begin
@@ -814,14 +820,17 @@ begin
               for j := 0 to Block.Count - 1 do
               begin
                 Line := Block[j];
+                LineLower := LowerCase(Line);
                 if (Pos('H: Handlers=', Line) = 1) or (Pos('H: ', Line) = 1) then
                 begin
                   // Extract event handlers (e.g., "event0", "event3")
-                  if Pos('event', LowerCase(Line)) > 0 then
+                  if Pos('event', LineLower) > 0 then
                   begin
                     // Try to actually open /dev/input/eventX device for reading
                     for Handler in Line.Split([' ', '=']) do
-                      if (Pos('event', LowerCase(Handler)) > 0) then
+                    begin
+                      HandlerLower := LowerCase(Handler);
+                      if Pos('event', HandlerLower) > 0 then
                       begin
                         DevPath := '/dev/input/' + Handler;
                         if FileExists(DevPath) then
@@ -835,6 +844,7 @@ begin
                           end;
                         end;
                       end;
+                    end;
                   end;
                   if HasAccessibleDevice then
                     Break;
@@ -865,14 +875,17 @@ begin
           for j := 0 to Block.Count - 1 do
           begin
             Line := Block[j];
+            LineLower := LowerCase(Line);
             if (Pos('H: Handlers=', Line) = 1) or (Pos('H: ', Line) = 1) then
             begin
               // Extract event handlers (e.g., "event0", "event3")
-              if Pos('event', LowerCase(Line)) > 0 then
+              if Pos('event', LineLower) > 0 then
               begin
                 // Try to actually open /dev/input/eventX device for reading
                 for Handler in Line.Split([' ', '=']) do
-                  if (Pos('event', LowerCase(Handler)) > 0) then
+                begin
+                  HandlerLower := LowerCase(Handler);
+                  if (Pos('event', HandlerLower) > 0) then
                   begin
                     DevPath := '/dev/input/' + Handler;
                     if FileExists(DevPath) then
@@ -886,6 +899,7 @@ begin
                       end;
                     end;
                   end;
+                end;
               end;
               if HasAccessibleDevice then
                 Break;
@@ -3177,17 +3191,23 @@ function TTrndiNativeBase.TryGetCSVSetting(const keyname: string; out res: TStri
 global: boolean = false): boolean;
 var
   val: string;
+  sl: TStringList;
 begin
+  Result := false;
   if self.TryGetSetting(keyname, val, global) then
-    with TStringList.Create do
-    begin
-      Clear;
-      CommaText := val;
-      res := ToStringArray;
-      Free;
-    end
+  begin
+    sl := TStringList.Create;
+    try
+      sl.Clear;
+      sl.CommaText := val;
+      res := sl.ToStringArray;
+      Result := true;
+    finally
+      sl.Free;
+    end;
+  end
   else
-    result := false;
+    Result := false;
 end;
 
 {------------------------------------------------------------------------------
@@ -3343,13 +3363,32 @@ end;
 procedure TTrndiNativeBase.SetCSVSetting(const keyname: string; const val: TStringArray; const global: boolean = false);
 var
   s, res: string;
+  i, totalLen: integer;
+  p: PAnsiChar;
 begin
-  res := '';
-  for s in val do
-    res += s + ',';
+  if Length(val) = 0 then
+  begin
+    SetSetting(keyname, '', global);
+    exit;
+  end;
 
-  if Length(res) > 0 then
-    Delete(res, Length(res), 1);
+  totalLen := 0;
+  for s in val do
+    totalLen := totalLen + Length(s) + 1; // +1 for comma
+  Dec(totalLen); // remove last comma
+
+  SetLength(res, totalLen);
+  p := PAnsiChar(res);
+  for i := 0 to High(val) do
+  begin
+    if i > 0 then
+    begin
+      p^ := ',';
+      Inc(p);
+    end;
+    Move(PAnsiChar(val[i])^, p^, Length(val[i]));
+    Inc(p, Length(val[i]));
+  end;
 
   SetSetting(keyname, res, global);
 end;
@@ -3415,9 +3454,9 @@ end;
 class function TTrndiNativeBase.isDarkMode: boolean;
 
 function Brightness(C: TColor): double;
-  begin
-    Result := (Red(C) * 0.3) + (Green(C) * 0.59) + (Blue(C) * 0.11);
-  end;
+begin
+  Result := (Red(C) * 0.3) + (Green(C) * 0.59) + (Blue(C) * 0.11);
+end;
 
 begin
   Result := (Brightness(ColorToRGB(clWindow)) < Brightness(ColorToRGB(clWindowText)));

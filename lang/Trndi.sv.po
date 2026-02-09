@@ -362,9 +362,17 @@ msgstr "+ Ny"
 msgid "Go to Quick Settings"
 msgstr "Gå till Snabbinställningar"
 
+#: tfconf.bexportsettings.caption
+msgid "Export Settings"
+msgstr "Spara inställningar"
+
 #: tfconf.bextopen.caption
 msgid "Show Folder"
 msgstr "Visa mapp"
+
+#: tfconf.bimportsettings.caption
+msgid "Import Settings"
+msgstr "Ladda inställningar"
 
 #: tfconf.bremove.caption
 msgid "- Remove"
@@ -537,6 +545,10 @@ msgstr "liten"
 msgid "Privacy Mode (Hide glucose value)"
 msgstr "Privat läge (dölj glukosvärde)"
 
+#: tfconf.cbshowmean.caption
+msgid "Show mean blood sugar reading next to TIR"
+msgstr ""
+
 #: tfconf.cbsize.caption
 msgid "Remember window size"
 msgstr "Kom ihåg fönsterstorlek"
@@ -681,6 +693,10 @@ msgstr "Spela Media"
 #: tfconf.gboverride3.caption
 msgid "Use URL"
 msgstr "Använd URL"
+
+#: tfconf.gbsettings.caption
+msgid "Settings Management"
+msgstr "Hantera inställningar"
 
 #: tfconf.groupbox1.caption
 msgid "System Features"
@@ -1005,6 +1021,10 @@ msgstr ""
 #: tfconf.lproxytitle.caption
 msgid "Proxy Settings"
 msgstr "Proxyinställningar"
+
+#: tfconf.lsettingshelp.caption
+msgid "Export all settings to a file for backup or transfer to another device. Import to restore settings."
+msgstr "Exportera alla inställningar till en fil för backup, eller överföring till annat system. Importera för att återställa."
 
 #: tfconf.ltestannounce.caption
 msgid "Test an announcement"
@@ -1585,9 +1605,15 @@ msgstr "Försöker ansluta..."
 msgid "Initializing custom overrides..."
 msgstr "Initierar personliga åsidosättanden..."
 
-#: trndi.strings.rs_init_first
+#: trndi.strings.rs_init_fetch
+msgctxt "trndi.strings.rs_init_fetch"
 msgid "Fetching first reading..."
-msgstr "Hämta första avläsning..."
+msgstr "Hämtar första avläsning..."
+
+#: trndi.strings.rs_init_first
+msgctxt "trndi.strings.rs_init_first"
+msgid "Processing first reading..."
+msgstr "Bearbetar första avläsning..."
 
 #: trndi.strings.rs_init_fonts
 msgid "Processing fonts..."
@@ -2390,6 +2416,18 @@ msgstr "Endast bokstäver, mellanslag och nummer"
 msgid "Enter a username"
 msgstr "Ange ett användarnamn"
 
+#: uconf.rs_err_address
+msgid "Address must start with http(s)://"
+msgstr "Adressen måste börja med http(s)://"
+
+#: uconf.rs_err_email
+msgid "You must enter a valid e-mail address"
+msgstr "Du måste ange en riktig e-postadress"
+
+#: uconf.rs_err_password
+msgid "You must enter a password"
+msgstr "Du måste ange ett lösenord"
+
 #: uconf.rs_extcount
 #, object-pascal-format
 msgid "Extensions count: %d"
@@ -2430,13 +2468,11 @@ msgstr "När tid-i-målområdet beräknas, gör det för detta antal minuter. Om
 
 #: uconf.rs_multi_user_help
 msgid ""
-"Trndi supports more than one user, this is called the multi user mode.\n"
-"In this section you can add/remove accounts. There's always a default account which cannot be deleted.\n"
-"Accounts have their own settings and remote servers, and are \"sandboxed\". Start a new instance of Trndi to log in to a given user account."
+"Trndi supports <b>more than one user</b>, this is called the <i>multi user mode</i>.<br>In this section you can add/remove accounts. There's <i>always</i> a default account which cannot be deleted.\n"
+"Accounts have their own settings and remote servers, and are <i>\"sandboxed\"</i>.<br><br>Start a new instance of Trndi to log in to a given user account."
 msgstr ""
-"Trndi stöder mer än en användare, detta kallas fleranvändarläge.\n"
-"I denna del kan du lägga till/ta bort konton. Det finns alltid ett standardkonto som inte kan raderas.\n"
-"Konton har sina egna inställningar och fjärrservrar samt är \"sandboxade\". Starta en ny instans av Trndi för att logga in på ett givet konto."
+"Trndi stöder <b>mer än en användare</b>, detta kallas <i>fleranvändarläge</i>.<br>I denna del kan du lägga till/ta bort konton. Det finns <i>alltid</i> ett standardkonto som inte kan raderas.\n"
+"Konton har sina egna inställningar och fjärrservrar samt är <i>\"sandboxade\"</i>. <br><br>Starta en ny instans av Trndi för att logga in på ett givet konto."
 
 #: uconf.rs_newver
 #, object-pascal-format
@@ -2587,16 +2623,12 @@ msgid "By default, Trndi only shows up/down/straight. You can enable the full ra
 msgstr "Som standard visar Trndi bara upp/ned/rakt. Du kan aktivera att hela mängden av pilar ska visas - dock måste du vara medveten om att detta är mycket experimentfullt och kan potentiellt vara mindre exakt!"
 
 #: uconf.rs_tandem
-#, fuzzy
-#| msgid ""
-#| "This backend is in alpha stage, it may not work as intended!\n"
-#| "Please set your own thresholds in the Customization tab, works on: Windows, Linux, BSD"
 msgid ""
 "This backend is in alpha stage, it may not work as intended!\n"
 "Please set your own thresholds in the Customization tab."
 msgstr ""
 "Detta backend är i alfastadiet, det kanske inte funkar som tänkt!\n"
-"V.g sätt dina sgna gränser under Personalisera-tabben, fungerar på Windows, Linux, BSD"
+"V.g sätt dina egna gränser under Personalisera-tabben."
 
 #: uconf.rs_test_fail
 msgid "Could not connect!"

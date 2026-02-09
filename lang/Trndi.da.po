@@ -358,8 +358,16 @@ msgstr ""
 msgid "Go to Quick Settings"
 msgstr ""
 
+#: tfconf.bexportsettings.caption
+msgid "Export Settings"
+msgstr ""
+
 #: tfconf.bextopen.caption
 msgid "Show Folder"
+msgstr ""
+
+#: tfconf.bimportsettings.caption
+msgid "Import Settings"
 msgstr ""
 
 #: tfconf.bremove.caption
@@ -531,6 +539,10 @@ msgstr ""
 msgid "Privacy Mode (Hide glucose value)"
 msgstr ""
 
+#: tfconf.cbshowmean.caption
+msgid "Show mean blood sugar reading next to TIR"
+msgstr ""
+
 #: tfconf.cbsize.caption
 msgid "Remember window size"
 msgstr ""
@@ -676,6 +688,10 @@ msgstr ""
 
 #: tfconf.gboverride3.caption
 msgid "Use URL"
+msgstr ""
+
+#: tfconf.gbsettings.caption
+msgid "Settings Management"
 msgstr ""
 
 #: tfconf.groupbox1.caption
@@ -992,6 +1008,10 @@ msgstr ""
 
 #: tfconf.lproxytitle.caption
 msgid "Proxy Settings"
+msgstr ""
+
+#: tfconf.lsettingshelp.caption
+msgid "Export all settings to a file for backup or transfer to another device. Import to restore settings."
 msgstr ""
 
 #: tfconf.ltestannounce.caption
@@ -1490,8 +1510,14 @@ msgstr ""
 msgid "Initializing custom overrides..."
 msgstr ""
 
-#: trndi.strings.rs_init_first
+#: trndi.strings.rs_init_fetch
+msgctxt "trndi.strings.rs_init_fetch"
 msgid "Fetching first reading..."
+msgstr ""
+
+#: trndi.strings.rs_init_first
+msgctxt "trndi.strings.rs_init_first"
+msgid "Processing first reading..."
 msgstr ""
 
 #: trndi.strings.rs_init_fonts
@@ -2256,6 +2282,18 @@ msgstr ""
 msgid "Enter a username"
 msgstr ""
 
+#: uconf.rs_err_address
+msgid "Address must start with http(s)://"
+msgstr ""
+
+#: uconf.rs_err_email
+msgid "You must enter a valid e-mail address"
+msgstr ""
+
+#: uconf.rs_err_password
+msgid "You must enter a password"
+msgstr ""
+
 #: uconf.rs_extcount
 #, object-pascal-format
 msgid "Extensions count: %d"
@@ -2296,9 +2334,8 @@ msgstr ""
 
 #: uconf.rs_multi_user_help
 msgid ""
-"Trndi supports more than one user, this is called the multi user mode.\n"
-"In this section you can add/remove accounts. There's always a default account which cannot be deleted.\n"
-"Accounts have their own settings and remote servers, and are \"sandboxed\". Start a new instance of Trndi to log in to a given user account."
+"Trndi supports <b>more than one user</b>, this is called the <i>multi user mode</i>.<br>In this section you can add/remove accounts. There's <i>always</i> a default account which cannot be deleted.\n"
+"Accounts have their own settings and remote servers, and are <i>\"sandboxed\"</i>.<br><br>Start a new instance of Trndi to log in to a given user account."
 msgstr ""
 
 #: uconf.rs_newver

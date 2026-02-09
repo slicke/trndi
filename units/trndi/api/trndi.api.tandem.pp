@@ -399,17 +399,23 @@ var
   var
     i: integer;
     c: char;
+    sb: TStringBuilder;
   begin
-    Result := '';
-    for i := 1 to Length(S) do
-    begin
-      c := S[i];
-      if (c in ['A'..'Z', 'a'..'z', '0'..'9', '-', '_', '.', '~']) then
-        Result := Result + c
-      else if c = ' ' then
-        Result := Result + '+'
-      else
-        Result := Result + '%' + IntToHex(Ord(c), 2);
+    sb := TStringBuilder.Create;
+    try
+      for i := 1 to Length(S) do
+      begin
+        c := S[i];
+        if (c in ['A'..'Z', 'a'..'z', '0'..'9', '-', '_', '.', '~']) then
+          sb.Append(c)
+        else if c = ' ' then
+          sb.Append('+')
+        else
+          sb.Append('%').Append(IntToHex(Ord(c), 2));
+      end;
+      Result := sb.ToString;
+    finally
+      sb.Free;
     end;
   end;
   function TryLoginAt(const ABaseUrl: string): boolean;
@@ -597,17 +603,23 @@ var
   var
     i: integer;
     c: char;
+    sb: TStringBuilder;
   begin
-    Result := '';
-    for i := 1 to Length(S) do
-    begin
-      c := S[i];
-      if (c in ['A'..'Z', 'a'..'z', '0'..'9', '-', '_', '.', '~']) then
-        Result := Result + c
-      else if c = ' ' then
-        Result := Result + '+'
-      else
-        Result := Result + '%' + IntToHex(Ord(c), 2);
+    sb := TStringBuilder.Create;
+    try
+      for i := 1 to Length(S) do
+      begin
+        c := S[i];
+        if (c in ['A'..'Z', 'a'..'z', '0'..'9', '-', '_', '.', '~']) then
+          sb.Append(c)
+        else if c = ' ' then
+          sb.Append('+')
+        else
+          sb.Append('%').Append(IntToHex(Ord(c), 2));
+      end;
+      Result := sb.ToString;
+    finally
+      sb.Free;
     end;
   end;
 begin
@@ -1590,6 +1602,9 @@ var
   eventTime: TDateTime;
   timeStr: string;
   readingsList: array of BGReading;
+  rawDiff: double;
+  secondsDiff: integer;
+  scaledDelta: double;
   authHeaders: TStringList;
   trimmedBody: string;
   previewBody: string;
@@ -1756,18 +1771,34 @@ var
     end;
   end;
   procedure SortReadingsNewestFirst(var AReadings: BGResults);
-  var
-    i, j: integer;
-    tmp: BGReading;
+    procedure QuickSort(L, R: Integer);
+    var
+      I, J: Integer;
+      P, T: BGReading;
+    begin
+      repeat
+        I := L;
+        J := R;
+        P := AReadings[(L + R) div 2];
+        repeat
+          while AReadings[I].date > P.date do Inc(I);
+          while AReadings[J].date < P.date do Dec(J);
+          if I <= J then
+          begin
+            T := AReadings[I];
+            AReadings[I] := AReadings[J];
+            AReadings[J] := T;
+            Inc(I);
+            Dec(J);
+          end;
+        until I > J;
+        if L < J then QuickSort(L, J);
+        L := I;
+      until I >= R;
+    end;
   begin
-    for i := Low(AReadings) to High(AReadings) do
-      for j := i + 1 to High(AReadings) do
-        if AReadings[j].date > AReadings[i].date then
-        begin
-          tmp := AReadings[i];
-          AReadings[i] := AReadings[j];
-          AReadings[j] := tmp;
-        end;
+    if Length(AReadings) > 1 then
+      QuickSort(Low(AReadings), High(AReadings));
   end;
   function TrySourcePumpEventsReadings(out AResults: BGResults): boolean;
   var
@@ -1786,6 +1817,9 @@ var
     currentValue: word;
     eventTime: TDateTime;
     resultIdx: integer;
+    rawDiff: double;
+    secondsDiff: integer;
+    scaledDelta: double;
   begin
     Result := False;
     SetLength(AResults, 0);
@@ -1883,10 +1917,30 @@ var
           for resultIdx := 0 to High(AResults) do
           begin
             if resultIdx < High(AResults) then
-              AResults[resultIdx].update(AResults[resultIdx].convert(mgdl) - AResults[resultIdx + 1].convert(mgdl), BGDelta, mgdl)
+            begin
+              // Raw difference between consecutive readings (mg/dL)
+              rawDiff := AResults[resultIdx].convert(mgdl) - AResults[resultIdx + 1].convert(mgdl);
+
+              // Compute time between samples in seconds
+              secondsDiff := Round((AResults[resultIdx].date - AResults[resultIdx + 1].date) * 86400);
+
+              // Store the actual observed delta (rawDiff) in BGDelta
+              AResults[resultIdx].update(rawDiff, BGDelta, mgdl);
+
+              // Normalize delta to a 5 minute window (300s) for trend calculation
+              if (secondsDiff >= 60) and (secondsDiff <= 900) then
+              begin
+                scaledDelta := rawDiff * (300 / secondsDiff);
+                AResults[resultIdx].trend := CalculateTrendFromDelta(scaledDelta);
+              end
+              else
+                AResults[resultIdx].trend := TdNotComputable;
+            end
             else
+            begin
               AResults[resultIdx].update(0, BGDelta, mgdl);
-            AResults[resultIdx].trend := CalculateTrendFromDelta(AResults[resultIdx].convert(mgdl, BGDelta));
+              AResults[resultIdx].trend := TdFlat;
+            end;
           end;
         end
         else
@@ -2341,10 +2395,23 @@ begin
         for i := 0 to High(Result) do
         begin
           if i < High(Result) then
-            Result[i].update(Result[i].convert(mgdl) - Result[i + 1].convert(mgdl), BGDelta, mgdl)
+          begin
+            rawDiff := Result[i].convert(mgdl) - Result[i + 1].convert(mgdl);
+            secondsDiff := Round((Result[i].date - Result[i + 1].date) * 86400);
+            Result[i].update(rawDiff, BGDelta, mgdl);
+            if (secondsDiff >= 60) and (secondsDiff <= 900) then
+            begin
+              scaledDelta := rawDiff * (300 / secondsDiff);
+              Result[i].trend := CalculateTrendFromDelta(scaledDelta);
+            end
+            else
+              Result[i].trend := TdNotComputable;
+          end
           else
+          begin
             Result[i].update(0, BGDelta, mgdl);
-          Result[i].trend := CalculateTrendFromDelta(Result[i].convert(mgdl, BGDelta));
+            Result[i].trend := TdFlat;
+          end;
         end;
       end
       else
@@ -2411,7 +2478,7 @@ begin
   else
     region := trUS;
   
-  api := Tandem.Create(AEmail, APass, region);
+  if region = trEU then api := TandemEU.Create(AEmail, APass, region) else api := TandemUSA.Create(AEmail, APass, region);
   try
     if api.Connect then
     begin

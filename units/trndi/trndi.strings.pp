@@ -144,7 +144,8 @@ RS_INIT_API = 'Initializing API...';
 RS_INIT_CONNECT = 'Attempting to connect...';
 RS_INIT_UX = 'Initializing UX...';
 RS_INIT_CUSTOM_OVERRIDES = 'Initializing custom overrides...';
-RS_INIT_FIRST = 'Fetching first reading...';
+RS_INIT_FETCH = 'Fetching first reading...';
+RS_INIT_FIRST = 'Processing first reading...';
 RS_INIT_CHROMA = 'Initializing Chroma...';
 
 RS_CLEANUP = 'Wait. Shutting down extensions engine...';

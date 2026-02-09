@@ -37,7 +37,8 @@ unit trndi.native.mac;
 interface
 
 uses
-  Classes, SysUtils, Graphics, NSMisc, ns_url_request, CocoaAll, SimpleDarkMode,
+  Classes, SysUtils, Graphics, nsutils.nsmisc, nsutils.web.urlrequest, CocoaAll, nsutils.simpledarkmode,
+  nsutils.nshelpers, IniFiles,
   trndi.native.base;
 
 type
@@ -70,6 +71,10 @@ type
     procedure DeleteSetting(const keyname: string; global: boolean = False); override;
     {** Preferences are live; nothing to reload. }
     procedure ReloadSettings; override;
+    {** Export all settings to INI format string. }
+    function ExportSettings: string; override;
+    {** Import settings from INI format string. }
+    procedure ImportSettings(const iniData: string); override;
     // Badge
     {** Set the dock tile badge label (text only). }
     procedure SetBadge(const Value: string; BadgeColor: TColor); overload; reintroduce;
@@ -385,7 +390,7 @@ end;
 class function TTrndiNativeMac.setDarkMode: boolean;
 begin
   // Enable dark appearance for the app's UI via SimpleDarkMode
-  SimpleDarkMode.EnableAppDarkMode;
+  nsutils.simpledarkmode.EnableAppDarkMode;
   Result := True;
 end;
 
@@ -481,6 +486,105 @@ end;
 procedure TTrndiNativeMac.ReloadSettings;
 begin
   // NSUserDefaults is live; no explicit reload needed
+end;
+
+{------------------------------------------------------------------------------
+  ExportSettings
+  --------------
+  Export all NSUserDefaults settings to INI format string.
+ ------------------------------------------------------------------------------}
+function TTrndiNativeMac.ExportSettings: string;
+var
+  defaults: NSUserDefaults;
+  dict: NSDictionary;
+  enumerator: NSEnumerator;
+  key: NSString;
+  value: NSObject;
+  sl: TStringList;
+  keyStr: string;
+begin
+  Result := '';
+  sl := TStringList.Create;
+  try
+    defaults := NSUserDefaults.standardUserDefaults;
+    dict := defaults.dictionaryRepresentation;
+    enumerator := dict.keyEnumerator;
+    
+    sl.Add('[trndi]');
+    key := enumerator.nextObject;
+    while key <> nil do
+    begin
+      keyStr := NSStrToStr(key);
+      // Exclude keys starting with Apple, com.apple, NS, or any non-lowercase string
+      if (Pos('Apple', keyStr) <> 1) and (Pos('com.apple', keyStr) <> 1) and (Pos('NS', keyStr) <> 1) and (LowerCase(keyStr) = keyStr) then
+      begin
+        value := dict.objectForKey(key);
+        if value.isKindOfClass(objc_getClass('NSString')) then
+          sl.Add(keyStr + '=' + NSStrToStr(NSString(value)))
+        else if value.isKindOfClass(objc_getClass('NSNumber')) then
+          sl.Add(keyStr + '=' + NSNumber(value).stringValue.UTF8String);
+        // Skip other types for now
+      end;
+      key := enumerator.nextObject;
+    end;
+    
+    Result := sl.Text;
+  finally
+    sl.Free;
+  end;
+end;
+
+{------------------------------------------------------------------------------
+  ImportSettings
+  ---------------
+  Import settings from INI format string to NSUserDefaults.
+ ------------------------------------------------------------------------------}
+procedure TTrndiNativeMac.ImportSettings(const iniData: string);
+var
+  sl: TStringList;
+  mem: TMemoryStream;
+  ini: TMemIniFile;
+  sections, keys: TStringList;
+  i, j: integer;
+  section, key, value: string;
+  defaults: NSUserDefaults;
+begin
+  sl := TStringList.Create;
+  mem := TMemoryStream.Create;
+  ini := nil;
+  sections := TStringList.Create;
+  keys := TStringList.Create;
+  defaults := NSUserDefaults.standardUserDefaults;
+  try
+    mem.WriteBuffer(iniData[1], Length(iniData));
+    mem.Position := 0;
+    sl.LoadFromStream(mem);
+    
+    // Create a temporary INI file in memory
+    ini := TMemIniFile.Create('');
+    ini.SetStrings(sl);
+    
+    ini.ReadSections(sections);
+    for i := 0 to sections.Count - 1 do
+    begin
+      section := sections[i];
+      ini.ReadSection(section, keys);
+      for j := 0 to keys.Count - 1 do
+      begin
+        key := keys[j];
+        value := ini.ReadString(section, key, '');
+        SetPrefString(key, value);
+      end;
+    end;
+    
+    defaults.synchronize;
+  finally
+    keys.Free;
+    sections.Free;
+    ini.Free;
+    mem.Free;
+    sl.Free;
+  end;
 end;
 
 end.

@@ -84,12 +84,12 @@ begin
   Application.ProcessMessages;
 end;
 
-procedure TfSplash.Image1Click(Sender: TObject);
+procedure TfSplash.Image1Click({%H-}Sender: TObject);
 begin
 
 end;
 
-procedure TfSplash.FormCreate(Sender: TObject);
+procedure TfSplash.FormCreate({%H-}Sender: TObject);
 begin
   {$ifdef X_LINUXBSD}
   lSplashWarn.Font.Size := 8;
@@ -99,13 +99,13 @@ begin
   {$endif}
 end;
 
-procedure TfSplash.FormKeyDown(Sender: TObject; var Key: word; Shift: TShiftState);
+procedure TfSplash.FormKeyDown({%H-}Sender: TObject; var Key: word; {%H-}Shift: TShiftState);
 begin
   if key = VK_ESCAPE then
     Hide;
 end;
 
-procedure TfSplash.FormKeyPress(Sender: TObject; var Key: char);
+procedure TfSplash.FormKeyPress({%H-}Sender: TObject; var {%H-}Key: char);
 begin
 
 end;

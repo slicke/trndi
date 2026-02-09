@@ -4,7 +4,7 @@ on:
   push:
     branches: [ main ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, develop ]
   workflow_dispatch: {}
 
 # ---------------------------------------------------------------------------------
@@ -191,6 +191,12 @@ jobs:
           # Build Trndi
           lazbuild externals/mORMot2/packages/lazarus/mormot2.lpk
           lazbuild --widgetset=qt6 --build-mode="${{ matrix.build_mode }}" ${{ matrix.cpu_flag }} ${{ matrix.project_file }}
+
+          # Run tests on pull requests
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            sudo apt-get install -y php
+            make test
+          fi
 
           # Package portable ZIP (no PNG icon inside)
           mkdir -p artifacts
