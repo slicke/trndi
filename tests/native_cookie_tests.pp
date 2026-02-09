@@ -26,7 +26,10 @@ var
 begin
   // Ensure the local PHP test server is available (can be overridden with TRNDI_TEST_SERVER_URL)
   if not StartOrUseTestServer(PHPProcess, BaseURL) then
+  begin
+    Writeln('Skipping TestCookieSetAndJar: PHP test server not available (set TRNDI_TEST_SERVER_URL or TRNDI_PHP_EXECUTABLE)');
     Exit;
+  end;    
 
   n := TrndiNative.Create;
   cookieJar := TStringList.Create;
@@ -64,7 +67,10 @@ var
   resp: THTTPResponse;
 begin
   if not StartOrUseTestServer(PHPProcess, BaseURL) then
+  begin
+    Writeln('Skipping TestCookieRedirectUpdatesJar: PHP test server not available (set TRNDI_TEST_SERVER_URL or TRNDI_PHP_EXECUTABLE)');
     Exit;
+  end;
 
   n := TrndiNative.Create;
   cookieJar := TStringList.Create;
