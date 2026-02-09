@@ -55,6 +55,7 @@ begin
   phpExe := GetEnvironmentVariable('TRNDI_PHP_EXECUTABLE');
   if phpExe <> '' then
   begin
+    Writeln('StartOrUseTestServer: env TRNDI_PHP_EXECUTABLE="' + phpExe + '"');
     // Normalize quoted paths (e.g. "C:\path with spaces\php.exe") so FileExists works
     if (Length(phpExe) >= 2) and (phpExe[1] = '"') and (phpExe[Length(phpExe)] = '"') then
       phpExe := Copy(phpExe, 2, Length(phpExe) - 2);
@@ -70,6 +71,7 @@ begin
           probeProc.Execute;
           // php on PATH - keep phpExe = 'php'
         except
+          Writeln('StartOrUseTestServer: probe "php -v" failed');
           phpExe := '';
         end;
       finally
@@ -77,15 +79,22 @@ begin
       end;
     end
     else if not FileExists(phpExe) then
+    begin
+      Writeln('StartOrUseTestServer: env path does not exist: ' + phpExe);
       phpExe := '';
+    end;
   end;
 
   // If not set via env, prefer Windows default install path
   if phpExe = '' then
   begin
+    {$IFDEF WINDOWS}
     if FileExists('C:\php\php.exe') then
+    begin
       phpExe := 'C:\php\php.exe'
+    end
     else
+    {$ENDIF}
     begin
       probeProc := TProcess.Create(nil);
       try
@@ -121,6 +130,8 @@ begin
       Writeln('Running Test Server');
       RunningNoticePrinted := True;
     end;
+
+    Writeln('StartOrUseTestServer: attempting to launch PHP: ' + phpExe);
     PHPProcess := TProcess.Create(nil);
     // Launch: use explicit php executable path (quoted) to handle spaces in path
     PHPProcess.Options := PHPProcess.Options + [poNoConsole, poNewProcessGroup];
@@ -128,11 +139,11 @@ begin
     try
       PHPProcess.Execute;
     except
+      Writeln('StartOrUseTestServer: failed to execute PHP process');
       PHPProcess.Free;
       PHPProcess := nil;
       Exit(False);
     end;
-
     BaseURL := 'http://127.0.0.1:8080';
 
     // Poll the server's /debug endpoint up to ~2s
@@ -146,9 +157,11 @@ begin
           Result := True;
           Exit;
         except
+          Writeln('StartOrUseTestServer: /debug not reachable yet (attempt ' + IntToStr(i) + ')');
           Sleep(100);
         end;
       end;
+      Writeln('StartOrUseTestServer: /debug did not respond after polling; giving up');
     finally
       client.Free;
     end;
