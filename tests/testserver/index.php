@@ -77,7 +77,7 @@ $str = "";
 $raw_path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $path = preg_replace('#/+#', '/', $raw_path);
 
-// Log requests for debugging (writes to /tmp/trndi-test-server.log)
+// Log requests for debugging (write to system temp directory to be cross-platform safe)
 $logEntry = sprintf("[%s] %s %s (normalized: %s) - API-SECRET: %s\n",
     date('Y-m-d H:i:s'),
     $_SERVER['REQUEST_METHOD'],
@@ -85,7 +85,10 @@ $logEntry = sprintf("[%s] %s %s (normalized: %s) - API-SECRET: %s\n",
     $path,
     isset($_SERVER['HTTP_API_SECRET']) ? substr($_SERVER['HTTP_API_SECRET'], 0, 10) . '...' : 'NONE'
 );
-file_put_contents('/tmp/trndi-test-server.log', $logEntry, FILE_APPEND);
+$logDir = sys_get_temp_dir();
+$logFile = $logDir . DIRECTORY_SEPARATOR . 'trndi-test-server.log';
+// Use silence operator to avoid emitting warnings that would break HTTP headers
+@file_put_contents($logFile, $logEntry, FILE_APPEND);
 
 // Debug endpoint to see what path is being requested
 if ($path == '/debug') {
