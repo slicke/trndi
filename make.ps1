@@ -83,8 +83,7 @@ switch ($firstArg) {
         Write-Host "Building console tests (tests/TrndiTestConsole.lpi)" -ForegroundColor Cyan
         & $laz -B 'tests/TrndiTestConsole.lpi' @extraArgs
         if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-        Write-Host "Running tests without PHP (TRNDI_NO_PHP=1)" -ForegroundColor Cyan
-        $env:TRNDI_NO_PHP = "1"
+            Write-Host "Running tests (PHP detection enabled; set TRNDI_NO_PHP=1 to force skip)" -ForegroundColor Cyan
         & 'tests/TrndiTestConsole.exe' @extraArgs
         exit $LASTEXITCODE
     }
