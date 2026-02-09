@@ -12,6 +12,9 @@ procedure StopLocalTestServer(var PHPProcess: TProcess);
 
 implementation
 
+var
+  SkipPHPNoticePrinted: Boolean = False;
+  RunningNoticePrinted: Boolean = False;
 
 
 function StartOrUseTestServer(var PHPProcess: TProcess; out BaseURL: string): boolean;
@@ -52,8 +55,28 @@ begin
   phpExe := GetEnvironmentVariable('TRNDI_PHP_EXECUTABLE');
   if phpExe <> '' then
   begin
-    // If value is 'php' we will probe it below; otherwise accept a valid path
-    if (phpExe <> 'php') and (not FileExists(phpExe)) then
+    // Normalize quoted paths (e.g. "C:\path with spaces\php.exe") so FileExists works
+    if (Length(phpExe) >= 2) and (phpExe[1] = '"') and (phpExe[Length(phpExe)] = '"') then
+      phpExe := Copy(phpExe, 2, Length(phpExe) - 2);
+
+    // If value is 'php' we will probe the PATH here; otherwise accept a valid path
+    if phpExe = 'php' then
+    begin
+      probeProc := TProcess.Create(nil);
+      try
+        probeProc.Options := probeProc.Options + [poNoConsole];
+        probeProc.CommandLine := 'php -v';
+        try
+          probeProc.Execute;
+          // php on PATH - keep phpExe = 'php'
+        except
+          phpExe := '';
+        end;
+      finally
+        probeProc.Free;
+      end;
+    end
+    else if not FileExists(phpExe) then
       phpExe := '';
   end;
 
@@ -84,10 +107,20 @@ begin
   begin
     // No php found - don't attempt to launch, caller will skip PHP-requiring tests
     PHPProcess := nil;
+    if not SkipPHPNoticePrinted then
+    begin
+      Writeln('Test Server tests ignored, missing php');
+      SkipPHPNoticePrinted := True;
+    end;
     Exit(False);
   end;
 
   try
+    if not RunningNoticePrinted then
+    begin
+      Writeln('Running Test Server');
+      RunningNoticePrinted := True;
+    end;
     PHPProcess := TProcess.Create(nil);
     // Launch: use explicit php executable path (quoted) to handle spaces in path
     PHPProcess.Options := PHPProcess.Options + [poNoConsole, poNewProcessGroup];
