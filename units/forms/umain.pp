@@ -414,6 +414,14 @@ private
       @param(Readings The array of BGReading to map.)
    }
   procedure PlaceTrendDots(const Readings: array of BGReading);
+  {** Return the mean as a formatted string using the requested unit.
+      - mmol/L: one decimal place
+      - mg/dL: integer (no decimals)
+      - NumReadings (default NUM_DOTS): number of visual slots to average.
+        If NumReadings = -1 the function will average *all* available non-empty
+        readings in `bgs`.
+      Returns empty string when no readings are available. */}
+  function BGMean(const UnitPref: BGUnit = BGUnit.mmol; const NumReadings: integer = NUM_DOTS): string;
   procedure actOnTrend(proc: TTrendProc);
   procedure actOnTrend(proc: TTrendProcLoop);
   procedure setDotWidth(l: TDotControl; c, ix: integer; {%H-}ls: array of TDotControl);
@@ -3645,7 +3653,7 @@ var
   {$endif}
 begin
   l := Sender as TDotControl;
-
+  ShowMessage(BGMean(mmol));
   actOnTrend(@ExpandDot);
   isDot := UnicodeSameText(l.Caption, DOT_GRAPH);
 
@@ -5933,6 +5941,92 @@ begin
   
   // Summary log
   LogMessageToFile(Format('PlaceTrendDots complete: anchor=%s', [DateTimeToStr(anchorTime)]));
+end;
+
+function TfBG.BGMean(const UnitPref: BGUnit = BGUnit.mmol; const NumReadings: integer = NUM_DOTS): string;
+var
+  SortedReadings: array of BGReading;
+  slotIndex, i: integer;
+  slotStart, slotEnd, anchorTime: TDateTime;
+  reading: BGReading;
+  sum: double;
+  count: integer;
+  v: double;
+  slots: integer;
+const
+  TIME_EPSILON_DAYS = 10 / 86400; // 10 seconds
+begin
+  // Return empty string if we have no readings at all
+  if Length(bgs) = 0 then
+  begin
+    Result := '';
+    Exit;
+  end;
+
+  // Copy and sort readings (newest first)
+  SetLength(SortedReadings, Length(bgs));
+  Move(bgs[0], SortedReadings[0], Length(bgs) * SizeOf(BGReading));
+  SortReadingsDescending(SortedReadings);
+
+  sum := 0.0;
+  count := 0;
+
+  if NumReadings = -1 then
+  begin
+    // Use all available non-empty readings
+    for i := 0 to High(SortedReadings) do
+    begin
+      reading := SortedReadings[i];
+      if reading.empty then
+        Continue;
+      sum := sum + reading.convert(UnitPref);
+      count := count + 1;
+    end;
+  end
+  else
+  begin
+    // Clamp requested slots to available visual dots
+    slots := NumReadings;
+    if slots > NUM_DOTS then
+      slots := NUM_DOTS;
+    if slots <= 0 then
+      slots := NUM_DOTS;
+
+    anchorTime := RecodeMinute(Now, (MinuteOf(Now) div INTERVAL_MINUTES) * INTERVAL_MINUTES);
+    anchorTime := RecodeSecond(anchorTime, 0);
+    anchorTime := RecodeMilliSecond(anchorTime, 0);
+
+    for slotIndex := 0 to slots - 1 do
+    begin
+      slotEnd := IncMinute(anchorTime, -INTERVAL_MINUTES * slotIndex);
+      slotStart := IncMinute(slotEnd, -INTERVAL_MINUTES);
+
+      for i := 0 to High(SortedReadings) do
+      begin
+        reading := SortedReadings[i];
+        if reading.empty then
+          Continue;
+        if reading.date > slotEnd + TIME_EPSILON_DAYS then
+          Continue;
+        if (reading.date > slotStart) and (reading.date <= slotEnd + TIME_EPSILON_DAYS) then
+        begin
+          sum := sum + reading.convert(UnitPref);
+          count := count + 1;
+          Break; // Move to next slot
+        end
+        else if reading.date < slotStart - TIME_EPSILON_DAYS then
+          Break;
+      end;
+    end;
+  end;
+
+  if count > 0 then
+    v := sum / count
+  else
+    v := 0.0;
+
+  // Format using BG_MSG_SHORT which uses '%.1f' for mmol and '%0.f' for mg/dL
+  Result := Format(BG_MSG_SHORT[UnitPref], [v]);
 end;
 
 function TfBG.UpdateLabelForReading(SlotIndex: integer;
