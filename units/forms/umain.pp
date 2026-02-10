@@ -1981,7 +1981,8 @@ begin
 
       {$ifdef DARWIN}
       // macOS: Force handle allocation before canvas operations
-      bmp.Canvas.Handle; // This ensures the bitmap context is properly created
+      // Read the handle in a boolean expression so the compiler accepts it as a statement
+      if bmp.Canvas.Handle = 0 then ; // This ensures the bitmap context is properly created
       {$endif}
 
       // Set background color and clear bitmap

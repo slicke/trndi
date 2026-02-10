@@ -16,6 +16,7 @@ type
     FLayout: Graphics.TTextLayout;
     FWordWrap: Boolean;
     FAutoSize: Boolean;
+    FTransparent: Boolean;
   public
     constructor Create(AOwner: Controls.TComponent = nil);
     destructor Destroy; override;
@@ -26,6 +27,7 @@ type
     property Layout: Graphics.TTextLayout read FLayout write FLayout;
     property WordWrap: Boolean read FWordWrap write FWordWrap;
     property AutoSize: Boolean read FAutoSize write FAutoSize;
+    property Transparent: Boolean read FTransparent write FTransparent;
   end;
 
   TButton = class(TControl)
