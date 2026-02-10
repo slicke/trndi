@@ -117,10 +117,13 @@ type
     Source: TObject;
   end;
 
-  // Minimal Monitor record used by some units
-  TMonitor = record
+  // Minimal Monitor class used by some units (matches LCL's TMonitor)
+  TMonitor = class
+  public
     BoundsRect: TRect;
     WorkAreaRect: TRect;
+    constructor Create; virtual;
+    destructor Destroy; override;
   end;
 
   // Minimal Screen record used by some units
@@ -149,6 +152,9 @@ var
 
 implementation
 
+var
+  _MockMonitorI: Integer; // used in finalization to clean up monitors
+
 constructor TControl.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
@@ -157,6 +163,18 @@ begin
   FOnResize := nil; // default no-op event
   FOptimalFill := False;
   FHandle := 0; // default mock handle
+end;
+
+constructor TMonitor.Create;
+begin
+  inherited Create;
+  BoundsRect := Rect(0,0,0,0);
+  WorkAreaRect := Rect(0,0,0,0);
+end;
+
+destructor TMonitor.Destroy;
+begin
+  inherited Destroy;
 end;
 
 destructor TControl.Destroy;
@@ -288,8 +306,20 @@ initialization
   // Default single monitor setup for headless tests
   Screen.MonitorCount := 1;
   SetLength(Screen.Monitors, 1);
+  Screen.Monitors[0] := TMonitor.Create;
   Screen.Monitors[0].BoundsRect := Rect(0, 0, Screen.Width, Screen.Height);
   Screen.Monitors[0].WorkAreaRect := Screen.WorkAreaRect;
   Screen.ActiveForm := nil;
+
+finalization
+  // Free any mock monitors created
+  if Screen.MonitorCount > 0 then
+  begin
+    for _MockMonitorI := 0 to Screen.MonitorCount - 1 do
+      if Assigned(Screen.Monitors[_MockMonitorI]) then
+        Screen.Monitors[_MockMonitorI].Free;
+    SetLength(Screen.Monitors, 0);
+    Screen.MonitorCount := 0;
+  end;
 
 end.
