@@ -118,11 +118,16 @@ function TfBG.dotsInView: integer;
 var
   x: TDotControl;
   infos: array of TDotInfo;
-  idx: integer;
+  idx, cnt: integer;
   parentHeight: Integer;
 begin
-  // Build a plain data array and delegate to the pure, deterministic helper
-  SetLength(infos, 0);
+  // Pre-count valid dots and allocate once to avoid repeated reallocations
+  cnt := 0;
+  for x in TrendDots do
+    if Assigned(x) then
+      Inc(cnt);
+  SetLength(infos, cnt);
+  idx := 0;
   parentHeight := 0;
   for x in TrendDots do
   begin
@@ -133,11 +138,10 @@ begin
     if (parentHeight = 0) and Assigned(x.Parent) and (x.Parent is TControl) then
       parentHeight := TControl(x.Parent).ClientHeight;
 
-    idx := Length(infos);
-    SetLength(infos, idx + 1);
     infos[idx].Top := x.Top;
     infos[idx].Height := x.Height;
     infos[idx].Visible := x.Visible;
+    Inc(idx);
   end;
 
   Result := DotsInViewFromInfos(infos, parentHeight);
