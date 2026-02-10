@@ -85,6 +85,8 @@ trndi.api.xDrip,{$ifdef DEBUG} trndi.api.debug_custom, trndi.api.debug, trndi.ap
 {$ifdef LCLQt6}Qt6, QtWidgets,{$endif}
 StrUtils, TouchDetection, ufloat, uhistorygraph, LCLType, trndi.webserver.threaded, razer.chroma.factory, razer.chroma;
 
+
+{$I ../../inc/defines.inc}
 {** Main application unit exposing the primary UI and helpers for the
   Trndi application. This unit defines the `TfBG` form which handles
   presentation of CGM readings, predictions, alerts, and integrations
@@ -114,7 +116,6 @@ TrndiPosNames: TPONames = (RS_tpoCenter, RS_tpoBottomLeft,
   RS_tpoBottomRight, RS_tpoCustom, RS_tpoTopRight);
 const
   // Public timing constants used across the unit/interface
-MILLIS_PER_MINUTE = 60000; // Milliseconds in a minute
 CLOCK_INTERVAL_MS = 20000; // Default clock interval used for the clock tick
 
 type
@@ -132,6 +133,12 @@ type
   Important UI lifecycle methods (e.g., FormCreate, FormShow, FormDestroy)
   are documented to clarify their role during initialization and shutdown.
 }
+TDotInfo = record
+    Top: Integer;
+    Height: Integer;
+    Visible: Boolean;
+  end;
+
 TfBG = class(TForm)
   apMain: TApplicationProperties;
   bSettings: TButton;
@@ -355,6 +362,10 @@ TfBG = class(TForm)
   procedure miDebugLoadTextClick(Sender: TObject);
   procedure miDebugLogAPIClick(Sender: TObject);
   {$endif}
+{$ifdef TEST}
+  // Test accessors
+{$I ../../tests/inc/umain_fbg.inc}
+{$endif}
 private
   FStoredWindowInfo: record // Saved geometry and window state for restore/toggle
     Left, Top, Width, Height: integer;
@@ -6282,5 +6293,9 @@ begin
         ShowMessage('Update check failed: ' + E.Message);
   end;
 end;
+
+{$ifdef TEST}
+{$I ../../tests/inc/umain_implementation.inc}
+{$endif}
 
 end.

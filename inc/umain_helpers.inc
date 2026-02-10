@@ -67,10 +67,11 @@ end;
 
 // Returns vertical offset needed to bring all trend dots fully inside their parent.
 // Sign convention: negative = dots are above (need to move down); positive = dots are below (need to move up).
-function TfBG.dotsInView: integer;
+// Pure helper operating on plain data for unit tests
+function DotsInViewFromInfos(const Dots: array of TDotInfo; ParentHeight: Integer): Integer;
 var
-  x: TDotControl;
-  bottom, overflow: integer;
+  x: TDotInfo;
+  bottom, overflow: Integer;
   adjustSide: TTrndiBool;
 const
   Tol = 5; // pixel tolerance to ignore tiny rounding differences
@@ -78,13 +79,13 @@ begin
   Result := 0;
   adjustSide := tbUnknown;
   // We can have both hi and lows; lock to first side encountered
-
-  for x in TrendDots do
+  for x in Dots do
   begin
     // Ignore dots not currently visible
     if not x.Visible then
       Continue;
-    // Use the actual control size, not font metrics, to determine visibility
+
+    // Use the actual control geometry (Top/Height) provided in the infos
     bottom := x.Top + x.Height;
 
     // Out-of-top (negative top)
@@ -97,19 +98,53 @@ begin
         adjustSide := tbTrue;
       end;
     end
-    // Out-of-bottom
     else
-    if (bottom > x.Parent.ClientHeight + Tol) then
-      if adjustSide in [tbFalse, tbUnknown] then
-      begin
-        // Compute actual overflow beyond tolerance to avoid false positives
-        overflow := (bottom - (x.Parent.ClientHeight + Tol));
-        // Pick the largest overflow
-        Result := Max(Result, overflow);
-        adjustSide := tbFalse;
-      end;
+    begin
+      // Out-of-bottom (only when parent height known/positive)
+      if (ParentHeight > 0) and (bottom > ParentHeight + Tol) then
+        if adjustSide in [tbFalse, tbUnknown] then
+        begin
+          // Compute actual overflow beyond tolerance to avoid false positives
+          overflow := (bottom - (ParentHeight + Tol));
+          // Pick the largest overflow
+          Result := Max(Result, overflow);
+          adjustSide := tbFalse;
+        end;
+    end;
+  end;
+end;
+
+function TfBG.dotsInView: integer;
+var
+  x: TDotControl;
+  infos: array of TDotInfo;
+  idx, cnt: integer;
+  parentHeight: Integer;
+begin
+  // Pre-count valid dots and allocate once to avoid repeated reallocations
+  cnt := 0;
+  for x in TrendDots do
+    if Assigned(x) then
+      Inc(cnt);
+  SetLength(infos, cnt);
+  idx := 0;
+  parentHeight := 0;
+  for x in TrendDots do
+  begin
+    if not Assigned(x) then
+      Continue;
+
+    // Capture first valid parent height (most UIs use a single parent for dots)
+    if (parentHeight = 0) and Assigned(x.Parent) and (x.Parent is TControl) then
+      parentHeight := TControl(x.Parent).ClientHeight;
+
+    infos[idx].Top := x.Top;
+    infos[idx].Height := x.Height;
+    infos[idx].Visible := x.Visible;
+    Inc(idx);
   end;
 
+  Result := DotsInViewFromInfos(infos, parentHeight);
 end;
 
 procedure TfBG.onGH({%H-}Sender: TObject);

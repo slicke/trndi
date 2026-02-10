@@ -14,6 +14,7 @@ uses
   debug_firstx_dexcom_test,
   debug_firstx_tandem_test,
   trndi_native_mock_test,
+  umain_tests,
   native_cookie_tests,
   api_general_tests,
   api_dexcom_tests,
