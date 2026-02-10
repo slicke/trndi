@@ -19,6 +19,7 @@ type
   public
     constructor Create(AOwner: Controls.TComponent = nil);
     destructor Destroy; override;
+    procedure AdjustSize; // macOS AutoSize helper
     property Caption: string read FCaption write FCaption;
     property Font: TFont read FFont write FFont;
     property Alignment: Graphics.TAlignment read FAlignment write FAlignment;
@@ -152,6 +153,22 @@ begin
   if Assigned(FCanvas) then
     FCanvas.Free;
   inherited Destroy;
+end;
+
+procedure TLabel.AdjustSize;
+begin
+  // Measure caption and resize control accordingly. Keep simple for tests.
+  if Assigned(FCanvas) then
+  begin
+    // Ensure the canvas uses the label's font for measurement
+    FCanvas.Font.Assign(FFont);
+    // Basic single-line sizing. WordWrap and complex layout ignored for mocks.
+    Width := FCanvas.TextWidth(FCaption);
+    Height := FCanvas.TextHeight(FCaption);
+    // Minimal padding to avoid zero-size
+    if Width < 1 then Width := 1;
+    if Height < 1 then Height := 1;
+  end;
 end;
 
 constructor TRadioGroup.Create(AOwner: Controls.TComponent = nil);
