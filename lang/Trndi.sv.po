@@ -542,7 +542,7 @@ msgstr "Privat läge (dölj glukosvärde)"
 
 #: tfconf.cbshowmean.caption
 msgid "Show mean blood sugar reading next to TIR"
-msgstr ""
+msgstr "Visa medelblodsocker bredvid TIR"
 
 #: tfconf.cbsize.caption
 msgid "Remember window size"
@@ -594,7 +594,7 @@ msgstr "Pekskärm"
 
 #: tfconf.cbtts.caption
 msgid "Enable Text-To-Speech"
-msgstr ""
+msgstr "Aktivera Text-Till-Tal"
 
 #: tfconf.cbuser.caption
 msgid "Account color"
@@ -852,15 +852,15 @@ msgstr "Avläsningar anses gamla efter (minuter):"
 
 #: tfconf.label35.caption
 msgid "You can press \"s\" at any time to have the current reading read out loud"
-msgstr ""
+msgstr "Du kan trycka på \"s\" närsomhelst för att få nuvarande avläsning uppläst"
 
 #: tfconf.label36.caption
 msgid "Voice Type:"
-msgstr ""
+msgstr "Rösttyp:"
 
 #: tfconf.label37.caption
 msgid "Rate:"
-msgstr ""
+msgstr "Hastighet:"
 
 #: tfconf.label4.caption
 msgid "Window start-up position"
@@ -1083,7 +1083,7 @@ msgstr "Enhetstyp"
 
 #: tfconf.tsaccess.caption
 msgid "Accessibility"
-msgstr ""
+msgstr "Tillgänglighet"
 
 #: tfconf.tsadvanced.caption
 msgid "Advanced"
@@ -2305,7 +2305,7 @@ msgid "Unknown error"
 msgstr "Okänt fel"
 
 #: uconf.rs_announce_not_available
-#, object-pascal-format, fuzzy
+#, object-pascal-format
 msgctxt "uconf.rs_announce_not_available"
 msgid "The text-to-speech (TTS) software \"%s\" is not available."
 msgstr "Text-till-tal (TTS-mjukvaran) \"%s\" är inte tillgänglig."
@@ -2792,4 +2792,3 @@ msgstr "Historikgraf"
 #, object-pascal-format
 msgid "Readings (%s)"
 msgstr "Avläsningar (%s)"
-
