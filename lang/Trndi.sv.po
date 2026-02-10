@@ -854,6 +854,14 @@ msgstr "Avläsningar anses gamla efter (minuter):"
 msgid "You can press \"s\" at any time to have the current reading read out loud"
 msgstr ""
 
+#: tfconf.label36.caption
+msgid "Voice Type:"
+msgstr ""
+
+#: tfconf.label37.caption
+msgid "Rate:"
+msgstr ""
+
 #: tfconf.label4.caption
 msgid "Window start-up position"
 msgstr "Position av fönster vid start"
@@ -1032,10 +1040,6 @@ msgstr "Exportera alla inställningar till en fil för backup, eller överförin
 #: tfconf.ltestannounce.caption
 msgid "Test an announcement"
 msgstr "Testa en notis"
-
-#: tfconf.ltestannounce1.caption
-msgid "Test a spoken string"
-msgstr "Testa en talad sträng"
 
 #: tfconf.ltray.caption
 msgid "Tray icon size:"

@@ -139,7 +139,139 @@ end;
 implementation
 
 uses
-ComObj, Process;
+ComObj, ActiveX, Process, SyncObjs;
+
+type
+  {** Background worker that owns a SAPI.SpVoice in an STA thread and
+      processes a simple queue of text to speak. }
+  TSpeechWorker = class(TThread)
+  private
+    FQueue: TStringList;
+    FCS: TCriticalSection;
+    FEvent: TEvent;
+    FVoice: olevariant;
+  public
+    constructor Create;
+    destructor Destroy; override;
+    procedure Enqueue(const Text: string);
+    procedure Execute; override;
+  end;
+
+var
+  gSpeechWorker: TSpeechWorker = nil;
+
+procedure EnsureSpeechWorker;
+begin
+  if gSpeechWorker = nil then
+    gSpeechWorker := TSpeechWorker.Create;
+end;
+
+procedure StopSpeechWorker;
+begin
+  if Assigned(gSpeechWorker) then
+  begin
+    gSpeechWorker.Terminate;
+    gSpeechWorker.FEvent.SetEvent;
+    gSpeechWorker.WaitFor;
+    FreeAndNil(gSpeechWorker);
+  end;
+end;
+
+procedure EnqueueSpeech(const Text: string);
+begin
+  EnsureSpeechWorker;
+  if Assigned(gSpeechWorker) then
+    gSpeechWorker.Enqueue(Text);
+end;
+
+{ TSpeechWorker }
+
+constructor TSpeechWorker.Create;
+begin
+  inherited Create(False);
+  FreeOnTerminate := False;
+  FQueue := TStringList.Create;
+  FCS := TCriticalSection.Create;
+  FEvent := TEvent.Create(nil, False, False, '');
+  
+end;
+
+destructor TSpeechWorker.Destroy;
+begin
+  FEvent.Free;
+  FCS.Free;
+  FQueue.Free;
+  inherited Destroy;
+end;
+
+procedure TSpeechWorker.Enqueue(const Text: string);
+begin
+  FCS.Enter;
+  try
+    FQueue.Add(Text);
+  finally
+    FCS.Leave;
+  end;
+  FEvent.SetEvent;
+end;
+
+procedure TSpeechWorker.Execute;
+var
+  hr: HRESULT;
+  textToSpeak: string;
+  hasItem: Boolean;
+begin
+  // Initialize COM for this STA thread
+  hr := CoInitializeEx(nil, COINIT_APARTMENTTHREADED);
+  try
+    try
+      FVoice := CreateOleObject('SAPI.SpVoice');
+    except
+      on E: Exception do
+        begin
+        Exit;
+      end;
+    end;
+
+    while not Terminated do
+    begin
+      // Wait for work or timeout to check termination
+      FEvent.WaitFor(500);
+      hasItem := False;
+      textToSpeak := '';
+      FCS.Enter;
+      try
+        if FQueue.Count > 0 then
+        begin
+          textToSpeak := FQueue[0];
+          FQueue.Delete(0);
+          hasItem := True;
+        end;
+      finally
+        FCS.Leave;
+      end;
+
+      if hasItem then
+      begin
+        try
+          // Speak synchronously on worker thread so multiple utterances are serialized
+          FVoice.Speak(textToSpeak, 0);
+        except
+          on E: Exception do
+            ;
+        end;
+      end;
+    end;
+
+  finally
+    // Clean up COM/voice
+    try
+      FVoice := Unassigned;
+    except
+    end;
+    CoUninitialize;
+  end;
+end;
 {------------------------------------------------------------------------------
   IsBurntToastAvailable
   ---------------------
@@ -353,57 +485,27 @@ DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
   Use SAPI to speak text asynchronously; pick a voice matching user locale when possible.
  ------------------------------------------------------------------------------}
 procedure TTrndiNativeWindows.Speak(const Text: string);
-const
-  SVSFlagsAsync = 1; // Asynchronous speech
 var
   Voice: olevariant;
-  Voices: olevariant;
-  lang: LANGID;
-  LangHex: string;
-  Rate: integer;
-  VoiceType: integer;
 begin
-  // Use SAPI (COM-based) text-to-speech. We try to pick a voice matching the
-  // user locale; if none are available, the default SAPI voice is used.
-  // Speech is performed asynchronously to avoid blocking the UI.
+  // Enqueue speech to the background worker; if that fails, fall back to
+  // a synchronous speak so the user still hears audio.
   try
-    Voice := CreateOleObject('SAPI.SpVoice');
-    lang := GetUserDefaultLangID;
-
-    // Try to select a voice based on settings
-    VoiceType := GetIntSetting('tts.voice', 0);
-    if VoiceType > 0 then
-    begin
-      // Try to find voices and select one by index
-      try
-        Voices := Voice.GetVoices('', '');
-        if (not VarIsEmpty(Voices)) and (Voices.Count > VoiceType - 1) then
-          Voice.Voice := Voices.Item(VoiceType - 1);
-      except
-        // Fall back to default voice if voice selection fails
-      end;
-    end
-    else
-    begin
-      // Default behavior: use the default SAPI voice
-      // No locale matching to avoid selecting silent voices
-    end;
-
-    // Set speech rate (-10 to 10, default 0)
-    Rate := GetIntSetting('tts.rate', 0);
-    if (Rate >= -10) and (Rate <= 10) then
-      Voice.Rate := Rate;
-
-    Voice.Speak(Text, SVSFlagsAsync);
+    EnqueueSpeech(Text);
+    Exit;
   except
-    on E: Exception do
-    begin
-      if not ttsErrorShown then
-      begin
-        ShowMessage('TTS Error: ' + E.Message);
-        ttsErrorShown := true;
-      end;
+    // Fall through to synchronous fallback
+  end;
+
+  try
+    try
+      Voice := CreateOleObject('SAPI.SpVoice');
+      Voice.Speak(Text, 0);
+    except
+      // Ignore fallback failures; avoid crashing the caller
     end;
+  finally
+    Voice := Unassigned;
   end;
 end;
 

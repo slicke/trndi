@@ -839,6 +839,14 @@ msgstr ""
 msgid "You can press \"s\" at any time to have the current reading read out loud"
 msgstr ""
 
+#: tfconf.label36.caption
+msgid "Voice Type:"
+msgstr ""
+
+#: tfconf.label37.caption
+msgid "Rate:"
+msgstr ""
+
 #: tfconf.label4.caption
 msgid "Window start-up position"
 msgstr ""
@@ -1009,10 +1017,6 @@ msgstr ""
 
 #: tfconf.ltestannounce.caption
 msgid "Test an announcement"
-msgstr ""
-
-#: tfconf.ltestannounce1.caption
-msgid "Test a spoken string"
 msgstr ""
 
 #: tfconf.ltray.caption

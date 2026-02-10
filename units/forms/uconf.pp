@@ -1416,9 +1416,9 @@ begin
       begin
         for i := 0 to Voices.Count - 1 do
         begin
-          try
-            voiceName := Voices.Item(i).GetDescription('');
-            cbTTSVoice.Items.Add(voiceName);
+            try
+              voiceName := VarToStr(Voices.Item(i).GetDescription(0));
+              cbTTSVoice.Items.Add(voiceName);
           except
             // Skip voices that can't provide a description
             cbTTSVoice.Items.Add('Voice ' + IntToStr(i + 1));
