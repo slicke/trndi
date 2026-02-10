@@ -364,11 +364,7 @@ TfBG = class(TForm)
   {$endif}
 {$ifdef TEST}
   // Test accessors
-  function GetValidatedPositionForTests: TrndiPos;
-  function DotsInViewForTests: integer;
-  function DotsInViewForTestsFromInfos(const Dots: array of TDotInfo; ParentHeight: Integer): Integer;
-  procedure SetTrendDotForTests(i: integer; d: TDotControl);
-  function GetTrendDotForTests(i: integer): TDotControl;
+{$I ../../tests/inc/umain_fbg.inc}
 {$endif}
 private
   FStoredWindowInfo: record // Saved geometry and window state for restore/toggle
@@ -6299,34 +6295,7 @@ begin
 end;
 
 {$ifdef TEST}
-function TfBG.GetValidatedPositionForTests: TrndiPos;
-begin
-  Result := GetValidatedPosition;
-end;
-
-function TfBG.DotsInViewForTests: integer;
-begin
-  Result := dotsInView;
-end;
-
-function TfBG.DotsInViewForTestsFromInfos(const Dots: array of TDotInfo; ParentHeight: Integer): Integer;
-begin
-  Result := DotsInViewFromInfos(Dots, ParentHeight);
-end;
-
-procedure TfBG.SetTrendDotForTests(i: integer; d: TDotControl);
-begin
-  if (i >= Low(TrendDots)) and (i <= High(TrendDots)) then
-    TrendDots[i] := d;
-end;
-
-function TfBG.GetTrendDotForTests(i: integer): TDotControl;
-begin
-  if (i >= Low(TrendDots)) and (i <= High(TrendDots)) then
-    Result := TrendDots[i]
-  else
-    Result := nil;
-end;
+{$I ../../tests/inc/umain_implementation.inc}
 {$endif}
 
 end.

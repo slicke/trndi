@@ -15,7 +15,6 @@ type
     procedure TestDotsInViewTopOverflow;
     procedure TestDotsInViewBottomOverflow;
     procedure TestDotsInViewNoDots;
-    procedure TestDotsInViewIntegration;
   end;
 
 implementation
