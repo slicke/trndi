@@ -1,12 +1,3 @@
-unit trndi.defines;
-
-{$mode ObjFPC}{$H+}
-
-interface
-
-uses
-  Classes, SysUtils;
-
 const
 API_NS = 'NightScout';
 API_NS3 = 'NightScout v3';
@@ -18,6 +9,7 @@ API_DEX_NEW_JP = 'Dexcom New (Japan)';
 API_TANDEM_USA = 'Tandem t:connect (USA)';
 API_TANDEM_EU = 'Tandem t:connect (EU)';
 API_XDRIP = 'xDrip';
+
 {$ifdef DEBUG}
 API_D_DEBUG =  '* Debug Backend *';
 API_D_MISSING = '* Debug Missing Backend *';
@@ -32,7 +24,4 @@ API_D_INTERMITTENT = '* Debug Intermittent Missing *';
 API_DEBUG: array of string = (API_D_DEBUG, API_D_MISSING, API_D_PERFECT, API_D_CUSTOM, API_D_EDGE, API_D_FIRST, API_D_SECOND, API_D_FIRSTX, API_D_INTERMITTENT);
 {$endif}
 
-implementation
-
-end.
-
+MILLIS_PER_MINUTE = 60000; // Milliseconds in a minute
