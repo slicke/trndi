@@ -55,7 +55,7 @@ interface
 uses
 Classes, ComCtrls, ExtCtrls, Spin, StdCtrls, SysUtils, Forms, Controls,
 Graphics, Dialogs, LCLTranslator, trndi.native, lclintf,
-slicke.ux.alert, slicke.ux.native, VersionInfo, trndi.funcs, buildinfo, StrUtils, trndi.api, trndi.api.nightscout, trndi.api.nightscout3, trndi.api.dexcom, trndi.api.dexcomNew, trndi.api.tandem, trndi.api.xdrip, razer.chroma, math, trndi.types, trndi.api.debug_firstXmissing, trndi.api.debug_intermittentmissing, trndi.api.debug_custom, trndi.api.debug, base64;
+slicke.ux.alert, slicke.ux.native, VersionInfo, trndi.funcs, buildinfo, StrUtils, trndi.api, trndi.api.nightscout, trndi.api.nightscout3, trndi.api.dexcom, trndi.api.dexcomNew, trndi.api.tandem, trndi.api.xdrip, razer.chroma, math, trndi.types, trndi.api.debug_firstXmissing, trndi.api.debug_intermittentmissing, trndi.api.debug_custom, trndi.api.debug, base64{$ifdef X_WIN}, ComObj{$endif};
 
 {$I ../../inc/defines.inc}
 type
@@ -396,6 +396,7 @@ TfConf = class(TForm)
   procedure bTestProxyClick(Sender: TObject);
   procedure bTestSpeechClick(Sender: TObject);
   procedure cbTTSChange(Sender: TObject);
+  procedure PopulateTTSVoices;
   procedure bThreasholdLinesHelpClick(Sender: TObject);
   procedure bTimeStampHelpClick(Sender: TObject);
   procedure bExportSettingsClick(Sender: TObject);
@@ -1393,6 +1394,44 @@ begin
   bTestSpeech.Enabled := cbTTS.Checked;
 end;
 
+procedure TfConf.PopulateTTSVoices;
+{$ifdef X_WIN}
+var
+  Voice: olevariant;
+  Voices: olevariant;
+  i: integer;
+  voiceName: string;
+{$endif}
+begin
+  cbTTSVoice.Items.Clear;
+  cbTTSVoice.Items.Add('Default');
+
+  {$ifdef X_WIN}
+  if tnative.SpeakAvailable then
+  begin
+    try
+      Voice := CreateOleObject('SAPI.SpVoice');
+      Voices := Voice.GetVoices('', '');
+      if not VarIsEmpty(Voices) then
+      begin
+        for i := 0 to Voices.Count - 1 do
+        begin
+          try
+            voiceName := Voices.Item(i).GetDescription('');
+            cbTTSVoice.Items.Add(voiceName);
+          except
+            // Skip voices that can't provide a description
+            cbTTSVoice.Items.Add('Voice ' + IntToStr(i + 1));
+          end;
+        end;
+      end;
+    except
+      // SAPI not available or failed
+    end;
+  end;
+  {$endif}
+end;
+
 procedure TfConf.bThreasholdLinesHelpClick(Sender: TObject);
 begin
   ShowMessage(RS_Threashold_Lines_Help);
@@ -1724,6 +1763,9 @@ begin
     (self.Handle)
   {$endif}
   ;
+
+  // Populate TTS voice list
+  PopulateTTSVoices;
 
   {$ifdef X_MAC}
   edTray.Enabled := false; // No support
