@@ -60,8 +60,9 @@ ifeq ($(UNAME_S),Linux)
 	# This avoids having to maintain widgetset-specific modes just to get correct Release flags.
 	STRIP_RELEASE ?= 1
 
-# macOS: prefer native Release builds (Extensions)
+# macOS: prefer native Release builds (Extensions); default to Cocoa widgetset
 else ifeq ($(UNAME_S),Darwin)
+  WIDGETSET ?= cocoa
 
 # Windows (MSYS/Cygwin): prefer native Release builds (Extensions)
 else ifneq ($(IS_MINGW),)
