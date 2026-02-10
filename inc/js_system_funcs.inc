@@ -49,11 +49,11 @@ end;
 // TTS (Text-to-Speech)
 function JSSay(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw;
 var
-  filename: string;
+  text: string;
   tn: trndinative;
 begin
-  filename := ctx^^.ToUtf8(argv^[0]);
+  text := ctx^^.ToUtf8(argv^[0]);
   tn := TrndiNative.create;
-  tn.PlaySound(filename);
+  tn.Speak(text);
   tn.free;
 end;

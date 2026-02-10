@@ -341,9 +341,11 @@ DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
 {------------------------------------------------------------------------------
   Speak
   -----
-  Use SAPI to speak text; pick a voice matching user locale when possible.
+  Use SAPI to speak text asynchronously; pick a voice matching user locale when possible.
  ------------------------------------------------------------------------------}
 procedure TTrndiNativeWindows.Speak(const Text: string);
+const
+  SVSFlagsAsync = 1; // Asynchronous speech
 var
   Voice, Voices: olevariant;
   lang: LANGID;
@@ -351,21 +353,26 @@ var
 begin
   // Use SAPI (COM-based) text-to-speech. We try to pick a voice matching the
   // user locale; if none are available, the default SAPI voice is used.
-  // Note: This call is synchronous and will block the calling thread until
-  // speech completes unless SAPI is configured for async. Keep messages short
-  // or dispatch from a background thread when necessary.
-  Voice := CreateOleObject('SAPI.SpVoice');
-  lang := GetUserDefaultLangID;
+  // Speech is performed asynchronously to avoid blocking the UI.
+  try
+    Voice := CreateOleObject('SAPI.SpVoice');
+    lang := GetUserDefaultLangID;
 
-  // SAPI language filter expects hex without 0x, usually without leading zeros (e.g. "409")
-  LangHex := UpperCase(IntToHex(lang, 1)); // e.g. 0x0409 -> "409"
+    // SAPI language filter expects hex without 0x, usually without leading zeros (e.g. "409")
+    LangHex := UpperCase(IntToHex(lang, 1)); // e.g. 0x0409 -> "409"
 
-  Voices := Voice.GetVoices('Language=' + LangHex, '');
-  if (not VarIsEmpty(Voices)) and (Voices.Count > 0) then
-    Voice.Voice := Voices.Item(0);
-  // else: keep default SAPI voice
+    Voices := Voice.GetVoices('Language=' + LangHex, '');
+    if (not VarIsEmpty(Voices)) and (Voices.Count > 0) then
+      Voice.Voice := Voices.Item(0);
+    // else: keep default SAPI voice
 
-  Voice.Speak(Text, 0);
+    Voice.Speak(Text, SVSFlagsAsync);
+  except
+    on E: Exception do
+    begin
+      ShowMessage('TTS Error: ' + E.Message);
+    end;
+  end;
 end;
 
 {------------------------------------------------------------------------------

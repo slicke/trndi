@@ -293,7 +293,7 @@ end;
 {------------------------------------------------------------------------------
   Speak
   -----
-  Use espeak for text-to-speech on Haiku.
+  Use espeak for text-to-speech on Haiku asynchronously.
  ------------------------------------------------------------------------------}
 procedure TTrndiNativeHaiku.Speak(const Text: string);
 var
@@ -312,9 +312,15 @@ begin
     except
       // Silently fail if speech doesn't work
     end;
-  finally
-    AProcess.Free;
+  except
+    on E: Exception do
+    begin
+      // Silently fail
+      AProcess.Free;
+      Exit;
+    end;
   end;
+  // Async process will be cleaned up by OS
 end;
 
 {------------------------------------------------------------------------------

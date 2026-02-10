@@ -1421,7 +1421,7 @@ end;
 {------------------------------------------------------------------------------
   Speak
   -----
-  Use spd-say to speak the provided text in the current system language.
+  Use spd-say to speak the provided text in the current system language asynchronously.
  ------------------------------------------------------------------------------}
 procedure TTrndiNativeLinux.Speak(const Text: string);
 var
@@ -1431,7 +1431,7 @@ begin
   CmdPath := FindInPath('spd-say');
   if CmdPath = '' then
   begin
-    ShowMessage('Error: spd-say is not installed.');
+    ShowMessage('Error: spd-say is not installed. Please install speech-dispatcher.');
     Exit;
   end;
 
@@ -1441,18 +1441,24 @@ begin
   try
     Proc.Executable := CmdPath;
     if Lang <> '' then
-      Proc.Parameters.AddStrings(['-l', Lang])
-    else
-    ;
+      Proc.Parameters.AddStrings(['-l', Lang]);
 
     Proc.Parameters.Add('--');
     Proc.Parameters.Add(Text);
 
+    // Run asynchronously to avoid blocking the UI
     Proc.Options := [];
     Proc.Execute;
-  finally
-    Proc.Free;
+  except
+    on E: Exception do
+    begin
+      ShowMessage('TTS Error: ' + E.Message);
+      Proc.Free;
+      Exit;
+    end;
   end;
+  // Note: Process will be cleaned up by the OS when it terminates
+  // We don't wait for it or free it immediately since it's async
 end;
 
 

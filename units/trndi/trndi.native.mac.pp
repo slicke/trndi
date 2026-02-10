@@ -245,16 +245,28 @@ end;
 {------------------------------------------------------------------------------
   Speak
   -----
-  Use the built-in 'say' tool to speak text (synchronous).
+  Use the built-in 'say' tool to speak text asynchronously.
  ------------------------------------------------------------------------------}
 procedure TTrndiNativeMac.Speak(const Text: string);
 var
-  o: string;
+  Proc: TProcess;
 begin
-  // Use the built-in macOS speech synthesis
-  // Note: This is synchronous; consider running in a background process
-  // if you need to keep the UI responsive during long messages.
-  RunCommand('/usr/bin/say', [Text], o);
+  // Use the built-in macOS speech synthesis asynchronously
+  Proc := TProcess.Create(nil);
+  try
+    Proc.Executable := '/usr/bin/say';
+    Proc.Parameters.Add(Text);
+    Proc.Options := [];
+    Proc.Execute;
+  except
+    on E: Exception do
+    begin
+      ShowMessage('TTS Error: ' + E.Message);
+      Proc.Free;
+      Exit;
+    end;
+  end;
+  // Async process will be cleaned up by OS
 end;
 
 {------------------------------------------------------------------------------
