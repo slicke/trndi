@@ -11955,6 +11955,7 @@ object fConf: TfConf
         Top = 32
         Width = 152
         Caption = 'Enable Text-To-Speech'
+        OnChange = cbTTSChange
         TabOrder = 1
       end
       object Label36: TLabel

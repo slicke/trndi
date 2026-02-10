@@ -151,6 +151,8 @@ TfConf = class(TForm)
   Label33: TLabel;
   Label34: TLabel;
   Label35: TLabel;
+  Label36: TLabel;
+  Label37: TLabel;
   LabelProxyHost: TLabel;
   LabelProxyPass: TLabel;
   LabelProxyPort: TLabel;
@@ -393,6 +395,7 @@ TfConf = class(TForm)
   procedure bTestClick(Sender: TObject);
   procedure bTestProxyClick(Sender: TObject);
   procedure bTestSpeechClick(Sender: TObject);
+  procedure cbTTSChange(Sender: TObject);
   procedure bThreasholdLinesHelpClick(Sender: TObject);
   procedure bTimeStampHelpClick(Sender: TObject);
   procedure bExportSettingsClick(Sender: TObject);
@@ -1381,6 +1384,15 @@ begin
     tnative.speak('test 100');
 end;
 
+procedure TfConf.cbTTSChange(Sender: TObject);
+begin
+  cbTTSVoice.Enabled := cbTTS.Checked;
+  seTTSRate.Enabled := cbTTS.Checked;
+  Label36.Enabled := cbTTS.Checked;
+  Label37.Enabled := cbTTS.Checked;
+  bTestSpeech.Enabled := cbTTS.Checked;
+end;
+
 procedure TfConf.bThreasholdLinesHelpClick(Sender: TObject);
 begin
   ShowMessage(RS_Threashold_Lines_Help);
@@ -1753,6 +1765,9 @@ begin
 
     self.height := self.height + 30;
   end;
+
+  // Initialize TTS controls
+  cbTTSChange(Self);
 end;
 
 procedure TfConf.FormDestroy(Sender: TObject);

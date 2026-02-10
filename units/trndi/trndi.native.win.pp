@@ -175,11 +175,20 @@ end;
 {------------------------------------------------------------------------------
   SpeakAvailable (Windows)
   ------------------------
-  Windows supports native TTS via SAPI; assume available.
+  Check if SAPI is available by attempting to create the SpVoice object.
  ------------------------------------------------------------------------------}
 class function TTrndiNativeWindows.SpeakAvailable: boolean;
+var
+  Voice: olevariant;
 begin
-  Result := true;
+  Result := false;
+  try
+    Voice := CreateOleObject('SAPI.SpVoice');
+    Result := true;
+  except
+    // SAPI not available
+    Result := false;
+  end;
 end;
 
 {------------------------------------------------------------------------------
@@ -347,10 +356,12 @@ procedure TTrndiNativeWindows.Speak(const Text: string);
 const
   SVSFlagsAsync = 1; // Asynchronous speech
 var
-  Voice, Voices: olevariant;
+  Voice: olevariant;
+  Voices: olevariant;
   lang: LANGID;
   LangHex: string;
   Rate: integer;
+  VoiceType: integer;
 begin
   // Use SAPI (COM-based) text-to-speech. We try to pick a voice matching the
   // user locale; if none are available, the default SAPI voice is used.
@@ -359,13 +370,31 @@ begin
     Voice := CreateOleObject('SAPI.SpVoice');
     lang := GetUserDefaultLangID;
 
-    // SAPI language filter expects hex without 0x, usually without leading zeros (e.g. "409")
-    LangHex := UpperCase(IntToHex(lang, 1)); // e.g. 0x0409 -> "409"
-
-    Voices := Voice.GetVoices('Language=' + LangHex, '');
-    if (not VarIsEmpty(Voices)) and (Voices.Count > 0) then
-      Voice.Voice := Voices.Item(0);
-    // else: keep default SAPI voice
+    // Try to select a voice based on settings
+    VoiceType := GetIntSetting('tts.voice', 0);
+    if VoiceType > 0 then
+    begin
+      // Try to find voices and select one by index
+      try
+        Voices := Voice.GetVoices('', '');
+        if (not VarIsEmpty(Voices)) and (Voices.Count > VoiceType - 1) then
+          Voice.Voice := Voices.Item(VoiceType - 1);
+      except
+        // Fall back to default voice if voice selection fails
+      end;
+    end
+    else
+    begin
+      // Default behavior: try to pick a voice matching user locale
+      try
+        LangHex := UpperCase(IntToHex(lang, 1)); // e.g. 0x0409 -> "409"
+        Voices := Voice.GetVoices('Language=' + LangHex, '');
+        if (not VarIsEmpty(Voices)) and (Voices.Count > 0) then
+          Voice.Voice := Voices.Item(0);
+      except
+        // Fall back to default voice if locale matching fails
+      end;
+    end;
 
     // Set speech rate (-10 to 10, default 0)
     Rate := GetIntSetting('tts.rate', 0);
