@@ -192,10 +192,6 @@ msgstr "> Servicemeny"
 msgid "Alterante arrow and reading"
 msgstr "Bytt pil og avlesning"
 
-#: tfbg.miannounce.caption
-msgid "Announce readings"
-msgstr "Les opp avlesninger"
-
 #: tfbg.miasysteminfo.caption
 msgid "System Info"
 msgstr "Systeminformasjon"
@@ -591,6 +587,10 @@ msgstr ""
 msgid "Touch screen"
 msgstr ""
 
+#: tfconf.cbtts.caption
+msgid "Enable Text-To-Speech"
+msgstr ""
+
 #: tfconf.cbuser.caption
 msgid "Account color"
 msgstr ""
@@ -847,6 +847,10 @@ msgctxt "tfconf.label34.caption"
 msgid "Readings are outdated after (minutes):"
 msgstr ""
 
+#: tfconf.label35.caption
+msgid "You can press \"s\" at any time to have the current reading read out loud"
+msgstr ""
+
 #: tfconf.label4.caption
 msgid "Window start-up position"
 msgstr ""
@@ -1060,6 +1064,10 @@ msgstr ""
 
 #: tfconf.rbunit.caption
 msgid "Display Unit"
+msgstr ""
+
+#: tfconf.tsaccess.caption
+msgid "Accessibility"
 msgstr ""
 
 #: tfconf.tsadvanced.caption
@@ -1993,11 +2001,6 @@ msgstr ""
 msgid "Blood sugar low"
 msgstr ""
 
-#: trndi.strings.sannouncenotavailable
-#, object-pascal-format
-msgid "The text-to-speech (TTS) software \"%s\" is not available."
-msgstr ""
-
 #: trndi.strings.sannounceoff
 msgid "No longer announcing readings aloud"
 msgstr ""
@@ -2171,6 +2174,12 @@ msgstr ""
 
 #: trndi.strings.sunknownerr
 msgid "Unknown error"
+msgstr ""
+
+#: uconf.rs_announce_not_available
+#, object-pascal-format
+msgctxt "uconf.rs_announce_not_available"
+msgid "The text-to-speech (TTS) software \"%s\" is not available."
 msgstr ""
 
 #: uconf.rs_auto

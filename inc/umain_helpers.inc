@@ -321,9 +321,6 @@ begin
   if native.GetBoolSetting('main.clock') then
     miClock.OnClick(self);
 
-  if native.GetBoolSetting('main.announce') then
-    miAnnounce.OnClick(self);
-
   {$ifdef DARWIN}
   ActiveMonitor := GetActiveScreen;
   if Assigned(ActiveMonitor) then

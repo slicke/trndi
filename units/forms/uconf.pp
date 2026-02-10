@@ -79,6 +79,7 @@ TfConf = class(TForm)
   bPredictHorizon: TButton;
   bTemplateCurrent: TButton;
   bTemplateTrend: TButton;
+  bTestSpeech: TButton;
   bTimeStampHelp: TButton;
   bUseURLHelp: TButton;
   bThreasholdLinesHelp: TButton;
@@ -100,7 +101,6 @@ TfConf = class(TForm)
   bWebAPI: TButton;
   bSysTouch: TButton;
   bTestAnnounce: TButton;
-  bTestSpeech: TButton;
   btReset: TButton;
   btUserSave: TButton;
   Button3: TButton;
@@ -127,7 +127,7 @@ TfConf = class(TForm)
   cbPredictShortMinutes: TComboBox;
   cbPredictShortSize: TComboBox;
   cbPrivacy: TCheckBox;
-  CheckBox1: TCheckBox;
+  cbTTS: TCheckBox;
   edCommaSep1: TEdit;
   eDot: TEdit;
   eDotNow: TEdit;
@@ -148,6 +148,7 @@ TfConf = class(TForm)
   Label25: TLabel;
   Label33: TLabel;
   Label34: TLabel;
+  Label35: TLabel;
   LabelProxyHost: TLabel;
   LabelProxyPass: TLabel;
   LabelProxyPort: TLabel;
@@ -165,6 +166,7 @@ TfConf = class(TForm)
   lSettingsHelp: TLabel;
   lSysWarnInfo: TLabel;
   lProxyDesc: TLabel;
+  lTestAnnounce1: TLabel;
   Panel18: TPanel;
   Panel19: TPanel;
   Panel20: TPanel;
@@ -277,7 +279,6 @@ TfConf = class(TForm)
   lPredictShortSize: TLabel;
   lProblematic: TLabel;
   lTestAnnounce: TLabel;
-  lTestAnnounce1: TLabel;
   lTitle: TLabel;
   Label7: TLabel;
   Label8: TLabel;
@@ -344,6 +345,7 @@ TfConf = class(TForm)
   spTHRESHOLD: TSpinEdit;
   spDeltaMax: TSpinEdit;
   spTHRESHOLD1: TSpinEdit;
+  tsAccess: TTabSheet;
   tsProxy: TTabSheet;
   tsCommon: TTabSheet;
   tsAdvanced: TTabSheet;
@@ -627,6 +629,8 @@ RS_SHORTMODE_FULL = 'By default, Trndi only shows up/down/straight. You can enab
 RS_NO_EXTENSIONS = 'This version of Trndi does not support extensions';
 RS_NO_EXTENSIONS_COPYRIGHT = 'Please download a version of Trndi that supports extensions';
 RS_NO_EXTENSIONS_SYSTEM = 'Due to hardware limitations, %s on %s cannot support extensions';
+
+RS_Announce_Not_Available = 'The text-to-speech (TTS) software "%s" is not available.';
 
 var
 fConf: TfConf;
@@ -1310,7 +1314,10 @@ end;
 
 procedure TfConf.bTestAnnounceClick(Sender: TObject);
 begin
-  tnative.attention('Trndi Test', 'test');
+  if not tnative.SpeakAvailable then
+    ShowMessage(Format(Rs_Announce_Not_Available, [tnative.SpeakSoftwareName]))
+  else
+    tnative.attention('Trndi Test', 'test');
 end;
 
 procedure TfConf.bTestClick(Sender: TObject);

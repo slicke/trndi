@@ -44,7 +44,7 @@ interface
 uses
 Classes, SysUtils, Dialogs,
   // Trndi units
-trndi.types, trndi.api, trndi.native, trndi.funcs,
+trndi.types, trndi.api, trndi.native, trndi.funcs, {$ifdef debug} trndi.log,{$endif}
   // FPC units
 fpjson, jsonparser, dateutils, StrUtils;
 

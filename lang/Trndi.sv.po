@@ -192,11 +192,6 @@ msgstr "> Servicemeny"
 msgid "Alterante arrow and reading"
 msgstr "Växla pil och värde"
 
-#: tfbg.miannounce.caption
-msgctxt "tfbg.miannounce.caption"
-msgid "Announce readings"
-msgstr "Läs ut avläsningar"
-
 #: tfbg.miasysteminfo.caption
 msgid "System Info"
 msgstr "Systeminfo"
@@ -597,6 +592,10 @@ msgstr "Färga titeln med blodsockerfärgen (endast Windows)"
 msgid "Touch screen"
 msgstr "Pekskärm"
 
+#: tfconf.cbtts.caption
+msgid "Enable Text-To-Speech"
+msgstr ""
+
 #: tfconf.cbuser.caption
 msgid "Account color"
 msgstr "Kontofärg"
@@ -851,6 +850,10 @@ msgctxt "tfconf.label34.caption"
 msgid "Readings are outdated after (minutes):"
 msgstr "Avläsningar anses gamla efter (minuter):"
 
+#: tfconf.label35.caption
+msgid "You can press \"s\" at any time to have the current reading read out loud"
+msgstr ""
+
 #: tfconf.label4.caption
 msgid "Window start-up position"
 msgstr "Position av fönster vid start"
@@ -1073,6 +1076,10 @@ msgstr "Visa tid och värde (t.ex., ⏱10' ↗ 5.5)"
 #: tfconf.rbunit.caption
 msgid "Display Unit"
 msgstr "Enhetstyp"
+
+#: tfconf.tsaccess.caption
+msgid "Accessibility"
+msgstr ""
 
 #: tfconf.tsadvanced.caption
 msgid "Advanced"
@@ -2103,11 +2110,6 @@ msgstr "Lågt blodsocker! Nuvarande: %s"
 msgid "Blood sugar low"
 msgstr "Lågt blodsocker"
 
-#: trndi.strings.sannouncenotavailable
-#, object-pascal-format
-msgid "The text-to-speech (TTS) software \"%s\" is not available."
-msgstr "Text-till-tal (TTS-mjukvaran) \"%s\" är inte tillgänglig."
-
 #: trndi.strings.sannounceoff
 msgid "No longer announcing readings aloud"
 msgstr "Läser inte upp värden"
@@ -2297,6 +2299,12 @@ msgstr "En datatyp förväntades, men en annan påträffades"
 msgctxt "trndi.strings.sunknownerr"
 msgid "Unknown error"
 msgstr "Okänt fel"
+
+#: uconf.rs_announce_not_available
+#, object-pascal-format, fuzzy
+msgctxt "uconf.rs_announce_not_available"
+msgid "The text-to-speech (TTS) software \"%s\" is not available."
+msgstr "Text-till-tal (TTS-mjukvaran) \"%s\" är inte tillgänglig."
 
 #: uconf.rs_auto
 msgid "Auto-detect"

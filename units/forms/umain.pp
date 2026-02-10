@@ -188,7 +188,6 @@ TfBG = class(TForm)
   misep: TMenuItem;
   miSplit6: TMenuItem;
   miSplit5: TMenuItem;
-  miAnnounce: TMenuItem;
   miDotHuge: TMenuItem;
   miDotBig: TMenuItem;
   miDotNormal: TMenuItem;
@@ -921,8 +920,6 @@ begin
     lDiffDblClick(self);
   's', 'S':
     speakReading;
-  'A', 'a':
-    miAnnounce.Click;
   'R', 'r':
     if slicke.UX.alert.UXDialog(uxdAuto, sRefrshQ, sForceRefresh,
       [mbYes, mbNo]) = mrYes then
@@ -2520,16 +2517,7 @@ end;
 
 procedure TfBG.miAnnounceClick(Sender: TObject);
 begin
-  if not native.SpeakAvailable then
-  begin
-    ShowMessage(Format(sAnnounceNotAvailable, [native.SpeakSoftwareName]));
-    native.SetSetting('main.announce', false);
-    miAnnounce.Checked := false;
-    Exit;
-  end;
-  miAnnounce.Checked := not miAnnounce.Checked;
-  native.SetSetting('main.announce', miAnnounce.Checked);
-  native.speak(IfThen(miAnnounce.Checked, sAnnounceOn, sAnnounceOff));
+
 end;
 
 procedure TfBG.miAlternateClick(Sender: TObject);
@@ -3086,6 +3074,7 @@ procedure LoadUserSettings(f: TfConf);
         GetSetting('razer.low.action', DefaultChromaAlertAction));
 
       cbMusicPause.Checked := GetBoolSetting('media.pause');
+      cbTTS.Checked := GetBoolSetting('main.announce', false);
       fsHi.Enabled := cbCust.Checked;
       fsLo.Enabled := cbCust.Checked;
       fsHiRange.Enabled := cbCustRange.Checked;
@@ -3449,6 +3438,7 @@ procedure SaveUserSettings(f: TfConf);
       SetSetting('razer.low.action', IndexToChromaAction(cbChromaLow.ItemIndex));
 
       SetSetting('media.pause', cbMusicPause.Checked);
+      SetSetting('main.announce', cbTTS.Checked);
 
       SetColorSetting('ux.bg_color_ok', cl_ok_bg.ButtonColor);
       SetColorSetting('ux.bg_color_hi', cl_hi_bg.ButtonColor);
@@ -3516,12 +3506,18 @@ begin
     {$endif}
     end;
 
-    fConf.chroma := TRazerChromaFactory.CreateInstance;
-    if not fconf.chroma.Initialize then
-      fConf.lbChroma.Items.Add('No Razer driver detected')
-    else for i := 0 to fConf.Chroma.GetDeviceCount - 1 do
-        fConf.lbChroma.Items.Add(fConf.Chroma.GetDevice(i).Name);
-    fConf.Chroma.Free;
+
+    if assigned(chroma) and chroma.Initialized then begin
+     for i := 0 to Chroma.GetDeviceCount - 1 do
+        fConf.lbChroma.Items.Add(Chroma.GetDevice(i).Name);
+    end else begin
+      fConf.chroma := TRazerChromaFactory.CreateInstance;
+      if not fconf.chroma.Initialize then
+        fConf.lbChroma.Items.Add('No Razer driver detected')
+      else for i := 0 to fConf.Chroma.GetDeviceCount - 1 do
+          fConf.lbChroma.Items.Add(fConf.Chroma.GetDevice(i).Name);
+      fConf.Chroma.Free;
+    end;
 
     // Initialize form with user settings
     LoadUserSettings(fConf);
@@ -4731,7 +4727,7 @@ begin
   LogMessageToFile(Format(RS_LATEST_READING, [reading.val, DateTimeToStr(reading.date)]));
 
   // Announce
-  if miAnnounce.Checked then
+  if native.GetBoolSetting('main.announce', false) then
     speakReading;
 
   // Set next update time

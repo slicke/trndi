@@ -47,7 +47,7 @@ unit trndi.api.nightscout3;
 interface
 
 uses
-Classes, SysUtils, trndi.types, trndi.api, trndi.native, trndi.funcs,
+Classes, SysUtils, trndi.types, trndi.api, trndi.native, trndi.funcs, {$ifdef debug} trndi.log,{$endif}
 fpjson, jsonparser, jsonscanner, dateutils, StrUtils;
 
 const
