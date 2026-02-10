@@ -5,7 +5,11 @@ unit trndi.native.mock;
 interface
 
 uses
-  Classes, SysUtils, trndi.native.base, fphttpclient, opensslsockets, IniFiles;
+  Classes, SysUtils,
+{$IF DEFINED(X_WIN)}
+  Windows,
+{$ENDIF}
+  trndi.native.base, fphttpclient, opensslsockets, IniFiles;
 
 type
   { TTrndiNativeMock }
@@ -30,7 +34,11 @@ type
     // TTS and environment
     procedure Speak(const Text: string); override;
     class function isDarkMode: boolean; override;
+    {$IFDEF X_WIN}
+    class function setDarkMode(win: THandle; Enable: boolean = true): boolean;
+    {$ELSE}
     class function setDarkMode: boolean;
+    {$ENDIF}
     class function isNotificationSystemAvailable: boolean; override;
     class function getNotificationSystem: string; override;
     class function SpeakAvailable: boolean; override;
@@ -248,10 +256,18 @@ begin
   Result := False;
 end;
 
+{$IFDEF X_WIN}
+class function TTrndiNativeMock.setDarkMode(win: THandle; Enable: boolean = true): boolean;
+begin
+  // Mock: no-op; accept the window handle parameter like the real Windows implementation
+  Result := False;
+end;
+{$ELSE}
 class function TTrndiNativeMock.setDarkMode: boolean;
 begin
   Result := False;
 end;
+{$ENDIF}
 
 class function TTrndiNativeMock.isNotificationSystemAvailable: boolean;
 begin
