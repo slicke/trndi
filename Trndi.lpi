@@ -667,10 +667,6 @@
         <Filename Value="units\misc\razer\chroma\razer.chroma.factory.pp"/>
         <IsPartOfProject Value="True"/>
       </Unit>
-      <Unit>
-        <Filename Value="units\trndi\trndi.defines.pp.pas"/>
-        <IsPartOfProject Value="True"/>
-      </Unit>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
