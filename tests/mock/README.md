@@ -1,28 +1,22 @@
-# Units Mock
-These files mocks files such as those from the LCL and Trndi files.
+# Test mocks
 
-The purpose is for the tests to run from the console, rather than using GUI tests. They are AI-generated!
+This directory contains mock implementations of LCL and Trndi units used by the test suite. The mocks allow the tests to run in a console (headless) environment instead of using the GUI, so tests can be executed by the command-line test runner.
+
+> Note: some mock files were generated with AI and have been reviewed; please check individual files when making modifications.
 
 ## License
-The general license is GPLv3, unless files contain parts from the original work of some project. In such case that license applies.
+The project is distributed under the terms of the GPLv3. If a mock file contains code that is derived from another project's original work, the original file's license applies to that portion — check the header comments in each mock for details.
 
-## About Trndi mock files
-This folder contains a mock files, these are mocking Trndi functions:
-### trndi.nativve.mock.pp
-This is a native driver, that inherits the base native class - but mocks settings operations such as settings, dark mode, touch screen etc.
-It also mocks GetURL which always uses fphttp client in this case.
+## Notable mocks
+- `trndi.native.mock.pp` — Mock implementation of the native driver. It fakes settings operations (dark mode, touch detection, etc.) and provides a GetURL implementation suitable for tests (uses fphttp client in the mock).
+- `slicke.ux.alert.pp` — Suppresses message dialogs so tests don't require interactive GUI dialogs.
+- `slicke.ux.native.pp` — Minimal native functions for tests (fonts and other UI details are not used in CLI tests).
+- `razer.chroma.pp`, `razer.chroma.factory.pp` — Mocked Razer Chroma integration; tests do not perform real color changes.
+- Form mocks — Some dialogs and forms (for example, settings dialog) are simplified so `umain` compiles in the test environment.
+- Component mocks — GUI controls such as paintboxes and labels are simplified since they are not rendered during tests.
 
-## About slicke mock files
-A few slicke library files are mocked here
-### slicke.ux.alert.pp
-Message dialogs are not displayed in tests
-## slicke.ux.native.pp
-Fonts etc are not used in CLI tests
-## Razer chroma
-These are mocked as there's no use for chaning colors in tests
+## Contributing
+- If you add or change a mock, add a header comment documenting the origin and the applicable license.
+- Add unit tests for any behavior you rely on in tests to avoid regressions.
 
-## About Form Mocks
-Some forms are mocked, such as the settings dialog, to allow umain to compile
-
-## About component mocks
-GUI components, such as the paintboxes and labels are mocked as we don't display them
+If you think a mock is wrong or incomplete, open an issue or a pull request with a brief explanation and a test demonstrating the desired behavior.
