@@ -48,7 +48,7 @@ interface
 
 uses
 Classes, SysUtils, trndi.types, trndi.api, trndi.native, trndi.funcs,
-fpjson, jsonparser, jsonscanner, dateutils, StrUtils, trndi.log;
+fpjson, jsonparser, jsonscanner, dateutils, StrUtils;
 
 const
   {** Base path for Nightscout v3 API endpoints (appended to the provided base URL). }

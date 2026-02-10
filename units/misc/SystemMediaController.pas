@@ -14,7 +14,7 @@ unit SystemMediaController;
 interface
 
 uses
-  Classes, SysUtils, Process, ExtCtrls, syncobjs, DateUtils, IniFiles,
+  Classes, SysUtils, Process, ExtCtrls, DateUtils,
   {$IFDEF WINDOWS}
   Windows, ComObj, ActiveX, MMSystem, ShellAPI,
   {$ENDIF}

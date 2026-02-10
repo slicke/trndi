@@ -55,13 +55,12 @@ LCLTranslator,
 Interfaces, // this includes the LCL widgetset
 Forms,lazcontrols,trndi.types,trndi.native,
 {$IFDEF TrndiExt}
-trndi.ext.promise, trndi.ext.functions,trndi.ext.ext,
+trndi.ext.functions,
 {$ENDIF}
 {$IFDEF DEBUG}
 sysutils,
 {$ENDIF}
-trndi.api.nightscout, trndi.api.dexcom, trndi.api, trndi.api.nightscout3,
-trndi.api.dexcomNew, trndi.api.tandem, umain, uconf, ufloat, uhistorygraph, slicke.ux.alert,
+trndi.api.dexcom, umain, uconf, ufloat, slicke.ux.alert,
 buildinfo, razer.chroma.factory
 { you can add units after this };
 

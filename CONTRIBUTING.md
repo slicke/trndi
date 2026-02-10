@@ -29,6 +29,15 @@ This keeps main stable and ensures new features and fixes are integrated smoothl
 - Keep methods small and intention-revealing; add a short comment explaining why when non-obvious.
 - Prefer pure Pascal for helpers over shelling out unless a native tool is the correct choice.
 
+## Code Quality
+
+- **Keep builds clean:** Aim to reduce compiler hints, notes, and warnings. Run builds regularly and address issues like unused units, variables, or parameters.
+- **Remove unused units:** Before committing, check for "Unit X not used" hints and remove unnecessary `uses` clauses to keep code tidy and improve compile times.
+- **Avoid unused parameters:** If a parameter is not used in a method (common in event handlers), prefix it with an underscore (e.g., `Sender: TObject`) or remove it if possible. If removal breaks interfaces, document why it's unused.
+- **Initialize variables:** Ensure local variables are properly initialized to avoid "not initialized" warnings.
+- **Type safety:** Use explicit type conversions and avoid implicit ones that may lose data.
+- **Testing:** Add tests for new features and ensure existing tests pass. Use the Makefile targets for running tests.
+
 ## Documentation (PasDoc)
 
 We use PasDoc comments throughout. Please follow this syntax:

@@ -5,7 +5,7 @@ unit trndi.webserver.threaded;
 interface
 
 uses
-Classes, SysUtils, StrUtils, Sockets, fpjson, jsonparser, trndi.funcs, trndi.types
+Classes, SysUtils, Sockets, fpjson, jsonparser, trndi.funcs, trndi.types
 {$IFNDEF Windows}, BaseUnix{$ELSE}, WinSock2{$IFEND};
 
 type

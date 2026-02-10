@@ -44,9 +44,9 @@ interface
 uses
   Classes, SysUtils, Dialogs,
   // Trndi units
-  trndi.types, trndi.api, trndi.native, trndi.native.base, trndi.funcs, trndi.log, math,
+  trndi.types, trndi.api, trndi.native.base, trndi.funcs, trndi.log, math,
   // FPC units
-  fpjson, jsonparser, dateutils, StrUtils, base64, sha1, sha256;
+  fpjson, jsonparser, dateutils, StrUtils, base64, sha256;
 
 (*******************************************************************************
   Tandem Source API endpoint definitions
