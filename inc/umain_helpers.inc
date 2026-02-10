@@ -100,8 +100,8 @@ begin
     end
     else
     begin
-      // Out-of-bottom
-      if (bottom > ParentHeight + Tol) then
+      // Out-of-bottom (only when parent height known/positive)
+      if (ParentHeight > 0) and (bottom > ParentHeight + Tol) then
         if adjustSide in [tbFalse, tbUnknown] then
         begin
           // Compute actual overflow beyond tolerance to avoid false positives

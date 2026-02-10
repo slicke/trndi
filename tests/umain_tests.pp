@@ -14,6 +14,7 @@ type
     procedure TestGetValidatedPositionValid;
     procedure TestDotsInViewTopOverflow;
     procedure TestDotsInViewBottomOverflow;
+    procedure TestDotsInViewNoParent;
     procedure TestDotsInViewNoDots;
   end;
 
@@ -143,6 +144,50 @@ begin
       expectedOverflow := (dots[7].Top + dots[7].Height) - (40 + 5); // Tol=5 in implementation
       try
         AssertEquals('Bottom overflow should return positive overflow value', expectedOverflow, g.DotsInViewForTestsFromInfos(dots, 40));
+      except
+        on E: Exception do
+          Fail('DotsInView crashed: ' + E.ClassName + ': ' + E.Message);
+      end;
+    finally
+      g.Free;
+      fBG := nil;
+    end;
+  finally
+    n.Free;
+    native := nil;
+  end;
+end;
+
+procedure TUmainTests.TestDotsInViewNoParent;
+var
+  g: TfBG;
+  n: TrndiNative;
+  i: integer;
+  dots: array[1..10] of TDotInfo;
+begin
+  n := TrndiNative.Create;
+  try
+    native := n;
+    g := TfBG.Create;
+    try
+      fBG := g;
+
+      // Initialize all dots to invisible
+      for i := 1 to 10 do
+      begin
+        dots[i].Visible := False;
+        dots[i].Top := 0;
+        dots[i].Height := 0;
+      end;
+
+      // Make one dot appear (but with no parent height provided)
+      dots[7].Top := 38; // bottom = Top + Height -> 38 + 10 = 48
+      dots[7].Height := 10;
+      dots[7].Visible := True;
+
+      try
+        // With no parent height (0) we should treat as "no parent" and not report overflow
+        AssertEquals('No parent height should result in no overflow', 0, g.DotsInViewForTestsFromInfos(dots, 0));
       except
         on E: Exception do
           Fail('DotsInView crashed: ' + E.ClassName + ': ' + E.Message);
