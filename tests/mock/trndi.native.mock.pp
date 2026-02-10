@@ -50,16 +50,17 @@ implementation
 
 class function TTrndiNativeMock.getURL(const url: string; out res: string): boolean;
 var
-  HTTP: TFPHTTPClient;
+  nativeObj: TTrndiNativeBase;
+  s: string;
 begin
   res := '';
   Result := False;
-  HTTP := TFPHTTPClient.Create(nil);
+  nativeObj := TTrndiNativeMock.Create;
   try
-    HTTP.AllowRedirect := True;
-    HTTP.IOTimeout := 30000; // 30s
     try
-      res := HTTP.Get(url);
+      // Use the base `request` helper. Pass prefix=false because we supply a full URL.
+      s := nativeObj.request(false, url, [], '', '', false);
+      res := s;
       Result := True;
     except
       on E: Exception do
@@ -69,7 +70,7 @@ begin
       end;
     end;
   finally
-    HTTP.Free;
+    nativeObj.Free;
   end;
 end;
 
