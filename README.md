@@ -175,6 +175,7 @@ Trndi can be built for Haiku OS using Lazarus.
 ```bash
 # Install dependencies
 pkgman install fpc lazarus_bin openssl
+> use pkgman php8 to perform HTTP-based unit tests
 
 # Clone and build
 git clone https://github.com/slicke/trndi.git

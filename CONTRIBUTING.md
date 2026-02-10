@@ -139,6 +139,29 @@ Tips:
 - Build with Lazarus using the project file `Trndi.lpi`.
 - If you encounter environment-related unit errors (e.g., missing widgetset), ensure your Lazarus packages and widgetsets are installed.
 
+### Makefile (common targets)
+
+- `make` — release build (default).
+- `make debug` — debug build.
+- `make build` — generic build (honors `BUILD_MODE` and `WIDGETSET`).
+- `make test` — build and run tests (starts PHP test server when available).
+- `make test-nophp` — console tests without PHP (`TRNDI_NO_PHP=1`).
+- `make noext` — build without mORMot2 (temporary project).
+- `make fetch-mormot2` — clone mORMot2 into `externals/mORMot2` and attempt to extract QuickJS static artifacts into `./static`.
+- `make check-mormot2` — verify presence of mORMot2 and QuickJS static artifacts.
+- `make clean` — remove build artifacts.
+- `make dist` — create a minimal tarball in `build/`.
+- `make run` — build (if needed) and run the binary (use `RUN_ARGS` to pass args).
+- `make install` — install built binary to `/usr/local/bin` (requires `sudo`).
+
+**Common variables:** `LAZBUILD`, `WIDGETSET`, `BUILD_MODE`, `IGNORE_MORMOT`.
+
+See the project `Makefile` or the README `Makefile` section for full details.
+
+**Example workflows:**
+- Build and run tests: `make test` (or `make test-nophp` for CI).
+- Local development: `make debug` → `make run`.
+
 ## Running tests
 
 - Use the project Makefile from the repository root for convenient, documented test runs:
