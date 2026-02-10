@@ -57,12 +57,20 @@ type
     FIcon: TObject;
     FOnException: TExceptionEvent;
     FCursor: Integer;
+    FTitle: string;
+    FMainForm: TForm;
+    FShowHint: Boolean;
+    FMainFormOnTaskBar: Boolean;
   public
     constructor Create(AOwner: TComponent = nil); virtual;
     property ExeName: string read FExeName write FExeName;
     property Icon: TObject read FIcon write FIcon;
     property OnException: TExceptionEvent read FOnException write FOnException;
     property Cursor: Integer read FCursor write FCursor;
+    property Title: string read FTitle write FTitle;
+    property MainForm: TForm read FMainForm write FMainForm;
+    property ShowHint: Boolean read FShowHint write FShowHint;
+    property MainFormOnTaskBar: Boolean read FMainFormOnTaskBar write FMainFormOnTaskBar;
     procedure ProcessMessages; virtual;
     procedure Terminate; virtual;
     procedure BringToFront; virtual;
@@ -79,6 +87,10 @@ begin
   FIcon := nil;
   FOnException := nil;
   FCursor := 0;
+  FTitle := '';
+  FMainForm := nil;
+  FShowHint := False;
+  FMainFormOnTaskBar := False;
 end;
 
 procedure TApplication.ProcessMessages;

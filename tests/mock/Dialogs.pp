@@ -11,6 +11,7 @@ const
   mtInformation = 1;
   mtError = 3;
   mbOK = 1;
+  mrClose = 2;
   mrYes = 6;
   mrRetry = 4;
   mrIgnore = 7;

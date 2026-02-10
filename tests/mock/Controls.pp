@@ -117,6 +117,12 @@ type
     Source: TObject;
   end;
 
+  // Minimal Monitor record used by some units
+  TMonitor = record
+    BoundsRect: TRect;
+    WorkAreaRect: TRect;
+  end;
+
   // Minimal Screen record used by some units
   TScreen = record
     Width: Integer;
@@ -132,6 +138,10 @@ type
     DesktopTop: Integer;
     DesktopWidth: Integer;
     DesktopHeight: Integer;
+    // Multi-monitor support (headless defaults to single monitor)
+    MonitorCount: Integer;
+    Monitors: array of TMonitor;
+    ActiveForm: TObject;
   end; 
 
 var
@@ -275,5 +285,11 @@ initialization
   Screen.DesktopTop := 0;
   Screen.DesktopWidth := Screen.Width;
   Screen.DesktopHeight := Screen.Height;
+  // Default single monitor setup for headless tests
+  Screen.MonitorCount := 1;
+  SetLength(Screen.Monitors, 1);
+  Screen.Monitors[0].BoundsRect := Rect(0, 0, Screen.Width, Screen.Height);
+  Screen.Monitors[0].WorkAreaRect := Screen.WorkAreaRect;
+  Screen.ActiveForm := nil;
 
 end.
