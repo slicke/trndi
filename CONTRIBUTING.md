@@ -144,6 +144,8 @@ Tips:
 - Use the project Makefile from the repository root for convenient, documented test runs:
   - `make test` — builds the console runner and runs tests; it will start PHP's built-in test server automatically when `php` is on PATH (used for integration tests).
 
+    - _Note:_ On macOS, use ```gmake```
+
   - On Windows, `make.ps1` auto-detects PHP using `TRNDI_PHP_EXECUTABLE` (if set), `C:\php\php.exe`, then `php` on PATH. If a usable PHP binary is found, `make.ps1` will clear `TRNDI_NO_PHP` so PHP-backed integration tests can run. You can also explicitly set `TRNDI_PHP_EXECUTABLE` to a full path (or `php` to probe PATH).
 
   - The console tests print a short one-time message `Test Server tests ignored, missing php` when PHP is not available and will print `Running Test Server` when the helper starts the local PHP server.

@@ -298,6 +298,8 @@ lazbuild -B output_directory Trndi.lpi
 
 ### Makefile
 
+> Linux, BSD and Haiku use _make_, for macOS substitute make with _gmake_
+
 There is a convenience `Makefile` that wraps `lazbuild` with common targets:
 
 - `make` (default: release)
@@ -313,7 +315,7 @@ There is a convenience `Makefile` that wraps `lazbuild` with common targets:
 
 Defaults by platform:
 - Linux: forces the `Qt6` build modes by default (e.g. `Qt6 (Release)`)
-- macOS / Windows: prefers native `Extensions (Release)` style builds for release targets
+- Windows / macOS: prefers native `Extensions (Release)` / `No Extensions (Release)`(respectively) style builds for release targets
 
 Examples:
 ```bash
