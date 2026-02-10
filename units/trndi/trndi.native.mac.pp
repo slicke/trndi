@@ -261,7 +261,11 @@ begin
   except
     on E: Exception do
     begin
-      ShowMessage('TTS Error: ' + E.Message);
+      if not ttsErrorShown then
+      begin
+        ShowMessage('TTS Error: ' + E.Message);
+        ttsErrorShown := true;
+      end;
       Proc.Free;
       Exit;
     end;

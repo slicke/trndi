@@ -350,6 +350,7 @@ var
   Voice, Voices: olevariant;
   lang: LANGID;
   LangHex: string;
+  Rate: integer;
 begin
   // Use SAPI (COM-based) text-to-speech. We try to pick a voice matching the
   // user locale; if none are available, the default SAPI voice is used.
@@ -366,11 +367,20 @@ begin
       Voice.Voice := Voices.Item(0);
     // else: keep default SAPI voice
 
+    // Set speech rate (-10 to 10, default 0)
+    Rate := GetIntSetting('tts.rate', 0);
+    if (Rate >= -10) and (Rate <= 10) then
+      Voice.Rate := Rate;
+
     Voice.Speak(Text, SVSFlagsAsync);
   except
     on E: Exception do
     begin
-      ShowMessage('TTS Error: ' + E.Message);
+      if not ttsErrorShown then
+      begin
+        ShowMessage('TTS Error: ' + E.Message);
+        ttsErrorShown := true;
+      end;
     end;
   end;
 end;

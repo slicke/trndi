@@ -128,6 +128,8 @@ TfConf = class(TForm)
   cbPredictShortSize: TComboBox;
   cbPrivacy: TCheckBox;
   cbTTS: TCheckBox;
+  cbTTSVoice: TComboBox;
+  seTTSRate: TSpinEdit;
   edCommaSep1: TEdit;
   eDot: TEdit;
   eDotNow: TEdit;
@@ -166,7 +168,6 @@ TfConf = class(TForm)
   lSettingsHelp: TLabel;
   lSysWarnInfo: TLabel;
   lProxyDesc: TLabel;
-  lTestAnnounce1: TLabel;
   Panel18: TPanel;
   Panel19: TPanel;
   Panel20: TPanel;

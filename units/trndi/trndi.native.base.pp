@@ -116,6 +116,8 @@ public
 class var touchOverride: TTrndiBool;
     // Indicates if the user system is in a "dark mode" theme
   dark: boolean;
+    // Track if we've shown a TTS error this session to avoid spam
+  ttsErrorShown: boolean;
 
     // Core actions
     {** Speak text using native TTS on the current platform. }

@@ -11941,33 +11941,66 @@ object fConf: TfConf
       ClientHeight = 483
       ClientWidth = 639
       object bTestSpeech: TButton
-        Left = 16
+        Left = 496
         Height = 25
-        Top = 117
+        Top = 32
         Width = 131
         Caption = 'Test Speech'
         TabOrder = 0
         OnClick = bTestSpeechClick
       end
-      object lTestAnnounce1: TLabel
-        Left = 160
-        Height = 16
-        Top = 122
-        Width = 108
-        Caption = 'Test a spoken string'
-      end
       object cbTTS: TCheckBox
         Left = 16
         Height = 20
-        Top = 80
+        Top = 32
         Width = 152
         Caption = 'Enable Text-To-Speech'
         TabOrder = 1
       end
-      object Label35: TLabel
+      object Label36: TLabel
         Left = 16
         Height = 16
-        Top = 152
+        Top = 72
+        Width = 62
+        Caption = 'Voice Type:'
+      end
+      object cbTTSVoice: TComboBox
+        Left = 40
+        Height = 32
+        Top = 96
+        Width = 120
+        ItemHeight = 22
+        Items.Strings = (
+          'Default'
+          'Male 1'
+          'Male 2'
+          'Male 3'
+          'Female 1'
+          'Female 2'
+          'Female 3'
+        )
+        TabOrder = 2
+      end
+      object Label37: TLabel
+        Left = 176
+        Height = 16
+        Top = 72
+        Width = 28
+        Caption = 'Rate:'
+      end
+      object seTTSRate: TSpinEdit
+        Left = 184
+        Height = 30
+        Top = 96
+        Width = 60
+        MaxValue = 100
+        MinValue = -100
+        TabOrder = 3
+      end
+      object Label35: TLabel
+        Left = 8
+        Height = 16
+        Top = 456
         Width = 359
         Caption = 'You can press "s" at any time to have the current reading read out loud'
         Font.Style = [fsItalic]

@@ -3075,6 +3075,8 @@ procedure LoadUserSettings(f: TfConf);
 
       cbMusicPause.Checked := GetBoolSetting('media.pause');
       cbTTS.Checked := GetBoolSetting('main.announce', false);
+      cbTTSVoice.ItemIndex := GetIntSetting('tts.voice', 0);
+      seTTSRate.Value := GetIntSetting('tts.rate', 0);
       fsHi.Enabled := cbCust.Checked;
       fsLo.Enabled := cbCust.Checked;
       fsHiRange.Enabled := cbCustRange.Checked;
@@ -3439,6 +3441,8 @@ procedure SaveUserSettings(f: TfConf);
 
       SetSetting('media.pause', cbMusicPause.Checked);
       SetSetting('main.announce', cbTTS.Checked);
+      SetSetting('tts.voice', cbTTSVoice.ItemIndex);
+      SetSetting('tts.rate', seTTSRate.Value);
 
       SetColorSetting('ux.bg_color_ok', cl_ok_bg.ButtonColor);
       SetColorSetting('ux.bg_color_hi', cl_hi_bg.ButtonColor);

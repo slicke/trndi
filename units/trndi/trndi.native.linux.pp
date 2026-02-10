@@ -1425,23 +1425,47 @@ end;
  ------------------------------------------------------------------------------}
 procedure TTrndiNativeLinux.Speak(const Text: string);
 var
-  CmdPath, Lang: string;
+  CmdPath, Lang, VoiceType: string;
+  Rate: integer;
   Proc: TProcess;
 begin
   CmdPath := FindInPath('spd-say');
   if CmdPath = '' then
   begin
-    ShowMessage('Error: spd-say is not installed. Please install speech-dispatcher.');
+    if not ttsErrorShown then
+    begin
+      ShowMessage('Error: spd-say is not installed. Please install speech-dispatcher.');
+      ttsErrorShown := true;
+    end;
     Exit;
   end;
 
   Lang := GetSystemLangTag;
+  Rate := GetIntSetting('tts.rate', 0);
+  VoiceType := GetSetting('tts.voice', '0');
 
   Proc := TProcess.Create(nil);
   try
     Proc.Executable := CmdPath;
     if Lang <> '' then
       Proc.Parameters.AddStrings(['-l', Lang]);
+
+    // Add rate setting
+    if Rate <> 0 then
+      Proc.Parameters.AddStrings(['-r', IntToStr(Rate)]);
+
+    // Add voice type setting
+    if VoiceType <> '0' then
+    begin
+      case StrToIntDef(VoiceType, 0) of
+        1: Proc.Parameters.AddStrings(['-t', 'male1']);
+        2: Proc.Parameters.AddStrings(['-t', 'male2']);
+        3: Proc.Parameters.AddStrings(['-t', 'male3']);
+        4: Proc.Parameters.AddStrings(['-t', 'female1']);
+        5: Proc.Parameters.AddStrings(['-t', 'female2']);
+        6: Proc.Parameters.AddStrings(['-t', 'female3']);
+      end;
+    end;
 
     Proc.Parameters.Add('--');
     Proc.Parameters.Add(Text);
@@ -1452,7 +1476,11 @@ begin
   except
     on E: Exception do
     begin
-      ShowMessage('TTS Error: ' + E.Message);
+      if not ttsErrorShown then
+      begin
+        ShowMessage('TTS Error: ' + E.Message);
+        ttsErrorShown := true;
+      end;
       Proc.Free;
       Exit;
     end;
