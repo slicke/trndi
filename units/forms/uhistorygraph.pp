@@ -71,7 +71,7 @@ interface
 
 uses
 Classes, SysUtils, Forms, Controls, Graphics, Dialogs, Math, Menus,
-trndi.types, trndi.api, trndi.strings, slicke.ux.alert, dateutils, {$ifdef WINDOWS}trndi.native{$endif}
+trndi.types, trndi.api, trndi.strings, slicke.ux.alert, dateutils, {$ifdef WINDOWS}trndi.native,{$endif}
 ExtDlgs, IntfGraphics, FPImage, FPWritePNG;
 
 type
