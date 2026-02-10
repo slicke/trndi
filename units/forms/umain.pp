@@ -133,6 +133,12 @@ type
   Important UI lifecycle methods (e.g., FormCreate, FormShow, FormDestroy)
   are documented to clarify their role during initialization and shutdown.
 }
+TDotInfo = record
+    Top: Integer;
+    Height: Integer;
+    Visible: Boolean;
+  end;
+
 TfBG = class(TForm)
   apMain: TApplicationProperties;
   bSettings: TButton;
@@ -356,6 +362,14 @@ TfBG = class(TForm)
   procedure miDebugLoadTextClick(Sender: TObject);
   procedure miDebugLogAPIClick(Sender: TObject);
   {$endif}
+{$ifdef TEST}
+  // Test accessors
+  function GetValidatedPositionForTests: TrndiPos;
+  function DotsInViewForTests: integer;
+  function DotsInViewForTestsFromInfos(const Dots: array of TDotInfo; ParentHeight: Integer): Integer;
+  procedure SetTrendDotForTests(i: integer; d: TDotControl);
+  function GetTrendDotForTests(i: integer): TDotControl;
+{$endif}
 private
   FStoredWindowInfo: record // Saved geometry and window state for restore/toggle
     Left, Top, Width, Height: integer;
@@ -6283,5 +6297,36 @@ begin
         ShowMessage('Update check failed: ' + E.Message);
   end;
 end;
+
+{$ifdef TEST}
+function TfBG.GetValidatedPositionForTests: TrndiPos;
+begin
+  Result := GetValidatedPosition;
+end;
+
+function TfBG.DotsInViewForTests: integer;
+begin
+  Result := dotsInView;
+end;
+
+function TfBG.DotsInViewForTestsFromInfos(const Dots: array of TDotInfo; ParentHeight: Integer): Integer;
+begin
+  Result := DotsInViewFromInfos(Dots, ParentHeight);
+end;
+
+procedure TfBG.SetTrendDotForTests(i: integer; d: TDotControl);
+begin
+  if (i >= Low(TrendDots)) and (i <= High(TrendDots)) then
+    TrendDots[i] := d;
+end;
+
+function TfBG.GetTrendDotForTests(i: integer): TDotControl;
+begin
+  if (i >= Low(TrendDots)) and (i <= High(TrendDots)) then
+    Result := TrendDots[i]
+  else
+    Result := nil;
+end;
+{$endif}
 
 end.
