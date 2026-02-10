@@ -23,6 +23,8 @@ type
     MainFormOnTaskBar: Boolean;
   end;
 
+  TShowInTaskBar = (stDefault, stNever, stAlways);
+
   TForm = class(TWinControl)
   private
     FShowing: Boolean;
@@ -32,6 +34,7 @@ type
     FWindowState: TWindowState;
     FFormStyle: TFormStyle;
     FHandle: PtrUInt;
+    FShowInTaskBar: TShowInTaskBar;
   public
     procedure Close; virtual;
     procedure DoClose(var CloseAction: TCloseAction); virtual;
@@ -42,6 +45,7 @@ type
     property WindowState: TWindowState read FWindowState write FWindowState;
     property FormStyle: TFormStyle read FFormStyle write FFormStyle;
     property Handle: PtrUInt read FHandle write FHandle;
+    property ShowInTaskBar: TShowInTaskBar read FShowInTaskBar write FShowInTaskBar;
     procedure Repaint; virtual;
   end;
 
