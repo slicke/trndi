@@ -102,7 +102,7 @@ help:
 	@echo "  list-modules Show Pascal `unit` modules found under `units/`"
 	@echo "  check-module-names Check for mismatches between filenames and `unit` declarations (uses scripts/check-module-names.pl)"
 	@echo "  show-mode  Show resolved build-mode and lazbuild flags"
-	@echo "  noext      Build without mORMot2 (temporary project) - use noext-release/noext-debug to override mode"
+	@echo "  noext      Build without mORMot2 (temporary project; works even if mORMot2 is not installed) - use noext-release/noext-debug to override mode"
 	@echo "  fetch-mormot2  Clone mORMot2 into externals/mORMot2 and attempt to extract QuickJS static files into ./static (requires git and 7z)"
 	@echo "  check-mormot2  Verify mORMot2 presence and QuickJS static artifacts; exits non-zero on failure"
 	@echo "  clean      Remove common build artifacts (*.o, *.ppu, *.compiled, executables)"
@@ -284,7 +284,9 @@ run: build
 	else echo "Executable not found in $(OUTDIR) or project dir; build first"; exit 1; fi
 
 # Build without extensions (use a temporary copy of the .lpi so original is untouched)
-noext: check
+# Note: noext purposely does not run the regular mORMot2 presence checks so it can
+# build even when mORMot2 is not installed (the temporary project has mORMot2 removed).
+noext:
 	@echo "Building without extensions (using temporary project, mormot2 removed)"
 	@set -e; STAMP=$$(date +%s); \
 	 cp $(LPI) $(LPI).noext-$$STAMP.lpi; \
