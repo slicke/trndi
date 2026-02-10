@@ -45,6 +45,7 @@ type
     FHint: string;
     FOnResize: TNotifyEvent;
     FOptimalFill: Boolean;
+    FHandle: PtrUInt; // Mock window handle for Windows-specific code
   protected
     FCanvas: TCanvas;
     FFont: TFont;
@@ -72,6 +73,7 @@ type
     property OnPaint: TNotifyEvent read FOnPaint write FOnPaint;
     property OnResize: TNotifyEvent read FOnResize write FOnResize;
     property OptimalFill: Boolean read FOptimalFill write FOptimalFill;
+    property Handle: PtrUInt read FHandle write FHandle; // Provide a mock Handle for Windows-specific APIs
     function ClientRect: TRect; virtual;
     function GetClientWidth: Integer; virtual;
     function GetClientHeight: Integer; virtual;
@@ -144,6 +146,7 @@ begin
   FFont := TFont.Create;
   FOnResize := nil; // default no-op event
   FOptimalFill := False;
+  FHandle := 0; // default mock handle
 end;
 
 destructor TControl.Destroy;
