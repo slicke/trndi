@@ -385,15 +385,8 @@ begin
     end
     else
     begin
-      // Default behavior: try to pick a voice matching user locale
-      try
-        LangHex := UpperCase(IntToHex(lang, 1)); // e.g. 0x0409 -> "409"
-        Voices := Voice.GetVoices('Language=' + LangHex, '');
-        if (not VarIsEmpty(Voices)) and (Voices.Count > 0) then
-          Voice.Voice := Voices.Item(0);
-      except
-        // Fall back to default voice if locale matching fails
-      end;
+      // Default behavior: use the default SAPI voice
+      // No locale matching to avoid selecting silent voices
     end;
 
     // Set speech rate (-10 to 10, default 0)
