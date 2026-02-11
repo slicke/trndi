@@ -124,6 +124,7 @@
 {"hash":117922074,"name":"tfconf.label36.caption","sourcebytes":[86,111,105,99,101,32,84,121,112,101,58],"value":"Voice Type:"},
 {"hash":5802634,"name":"tfconf.label37.caption","sourcebytes":[82,97,116,101,58],"value":"Rate:"},
 {"hash":195572340,"name":"tfconf.label35.caption","sourcebytes":[89,111,117,32,99,97,110,32,112,114,101,115,115,32,34,115,34,32,97,116,32,97,110,121,32,116,105,109,101,32,116,111,32,104,97,118,101,32,116,104,101,32,99,117,114,114,101,110,116,32,114,101,97,100,105,110,103,32,114,101,97,100,32,111,117,116,32,108,111,117,100],"value":"You can press \"s\" at any time to have the current reading read out loud"},
+{"hash":212216900,"name":"tfconf.cbhcontrast.caption","sourcebytes":[72,105,103,104,32,67,111,110,116,114,97,115,116],"value":"High Contrast"},
 {"hash":197676484,"name":"tfconf.tsadvanced.caption","sourcebytes":[65,100,118,97,110,99,101,100],"value":"Advanced"},
 {"hash":171377978,"name":"tfconf.label1.caption","sourcebytes":[82,101,97,100,105,110,103,115,32,97,114,101,32,111,117,116,100,97,116,101,100,32,97,102,116,101,114,32,40,109,105,110,117,116,101,115,41,58],"value":"Readings are outdated after (minutes):"},
 {"hash":63,"name":"tfconf.boutdatedhelp.caption","sourcebytes":[63],"value":"?"},

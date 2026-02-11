@@ -2820,7 +2820,23 @@ begin
   bg_rel_color_lo := native.GetColorSetting('ux.bg_rel_color_lo', bg_rel_color_lo);
   bg_rel_color_hi_txt := native.GetColorSetting('ux.bg_rel_color_hi_txt', bg_rel_color_hi_txt);
   bg_rel_color_lo_txt := native.GetColorSetting('ux.bg_rel_color_lo_txt', bg_rel_color_lo_txt);
-  
+
+  if native.GetBoolSetting('main.high_contrast', false) then begin
+    bg_color_ok := clBlack;
+    bg_color_ok_txt := clWhite;
+    // Hi
+    bg_color_hi := clBlack;
+    bg_color_hi_txt := clWhite;
+    // Low
+    bg_color_lo := clWhite;
+    bg_color_lo_txt := clBlack;
+
+    bg_rel_color_hi := clBlack;
+    bg_rel_color_lo := clWhite;
+    bg_rel_color_hi_txt := clWHite;
+    bg_rel_color_lo_txt := clBlack;
+  end;
+
   // Apply TIR color settings
   tir_bg := native.GetColorSetting('ux.tir_color', tir_bg);
   tir_custom_bg := native.GetColorSetting('ux.tir_color_custom', tir_custom_bg);
@@ -3075,6 +3091,7 @@ procedure LoadUserSettings(f: TfConf);
 
       cbMusicPause.Checked := GetBoolSetting('media.pause');
       cbTTS.Checked := GetBoolSetting('main.announce', false);
+      cbHContrast.Checked := GetBoolSetting('main.high_contrast', false);
       cbTTSVoice.ItemIndex := GetIntSetting('tts.voice', 0);
       seTTSRate.Value := GetIntSetting('tts.rate', 0);
       fsHi.Enabled := cbCust.Checked;
@@ -3440,6 +3457,7 @@ procedure SaveUserSettings(f: TfConf);
       SetSetting('razer.low.action', IndexToChromaAction(cbChromaLow.ItemIndex));
 
       SetSetting('media.pause', cbMusicPause.Checked);
+      SetSetting('main.high_contrast', cbHContrast.Checked);
       SetSetting('main.announce', cbTTS.Checked);
       SetSetting('tts.voice', cbTTSVoice.ItemIndex);
       SetSetting('tts.rate', seTTSRate.Value);
@@ -5718,6 +5736,13 @@ end;
 function TfBG.GetTextColorForBackground(const BgColor: TColor;
 const DarkenFactor: double = 0.5; const LightenFactor: double = 0.3): TColor;
 begin
+  if native.GetBoolSetting('main.high_contrast', false) then begin
+    if IsLightColor(BgColor) then
+      Result := clBlack
+    else
+      Result := clWhite;
+    exit;
+  end;
   if IsLightColor(BgColor) then
     Result := DarkenColor(BgColor, DarkenFactor)
   else
@@ -6096,6 +6121,16 @@ end;
 
 function TfBG.DetermineColorForReading(const Reading: BGReading): TColor;
 begin
+
+    if native.GetBoolSetting('main.high_contrast', false) then begin
+      result := GetTextColorForBackground(fbg.color);
+      if result = clBlack then
+         result := $00C8C8C8
+      else
+         result := $00626262;
+      Exit;
+    end;
+
   if Reading.val >= api.cgmHi then
     Result := bg_color_hi
   else

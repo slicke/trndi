@@ -489,6 +489,10 @@ msgstr "Blixtra vid perfekt verde (5,5mmol/L / 100mg/dL)"
 msgid "Trend Dots"
 msgstr ""
 
+#: tfconf.cbhcontrast.caption
+msgid "High Contrast"
+msgstr ""
+
 #: tfconf.cbmultitouch.caption
 msgid "Multi-touch"
 msgstr "Multipek"

@@ -473,6 +473,10 @@ msgstr ""
 msgid "Trend Dots"
 msgstr ""
 
+#: tfconf.cbhcontrast.caption
+msgid "High Contrast"
+msgstr ""
+
 #: tfconf.cbmultitouch.caption
 msgid "Multi-touch"
 msgstr ""

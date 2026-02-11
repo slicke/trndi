@@ -129,6 +129,7 @@ TfConf = class(TForm)
   cbPrivacy: TCheckBox;
   cbTTS: TCheckBox;
   cbTTSVoice: TComboBox;
+  cbHContrast: TCheckBox;
   seTTSRate: TSpinEdit;
   edCommaSep1: TEdit;
   eDot: TEdit;

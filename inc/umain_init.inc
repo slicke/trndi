@@ -235,6 +235,22 @@ begin
   bg_rel_color_hi_txt := native.GetColorSetting('ux.bg_rel_color_hi_txt',
     bg_rel_color_hi_txt);
 
+  if native.GetBoolSetting('main.high_contrast', false) then begin
+    bg_color_ok := clBlack;
+    bg_color_ok_txt := clWhite;
+    // Hi
+    bg_color_hi := clBlack;
+    bg_color_hi_txt := clWhite;
+    // Low
+    bg_color_lo := clWhite;
+    bg_color_lo_txt := clBlack;
+
+    bg_rel_color_hi := clBlack;
+    bg_rel_color_lo := clWhite;
+    bg_rel_color_hi_txt := clWHite;
+    bg_rel_color_lo_txt := clBlack;
+  end;
+
   // Color title bar (on Windows?)
   titlecolor := native.GetBoolSetting('ux.title_color', true);
 
