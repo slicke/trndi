@@ -490,7 +490,7 @@ msgstr "Trendpunkter"
 
 #: tfconf.cbhcontrast.caption
 msgid "High Contrast"
-msgstr ""
+msgstr "Hög kontrast"
 
 #: tfconf.cbmultitouch.caption
 msgid "Multi-touch"
@@ -865,6 +865,10 @@ msgstr "Rösttyp:"
 #: tfconf.label37.caption
 msgid "Rate:"
 msgstr "Hastighet:"
+
+#: tfconf.label38.caption
+msgid "High contrast disables some of Trndis Time-in-Range coloring"
+msgstr "Hög kontrast inaktiverar vissa av Trndis Tid-i-målområdet-färger"
 
 #: tfconf.label4.caption
 msgid "Window start-up position"
@@ -2796,4 +2800,3 @@ msgstr "Historikgraf"
 #, object-pascal-format
 msgid "Readings (%s)"
 msgstr "Avläsningar (%s)"
-

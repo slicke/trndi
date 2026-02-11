@@ -114,6 +114,8 @@ TfConf = class(TForm)
   cbCustRange: TCheckBox;
   cbAlertMissing: TCheckBox;
   cbLang: TComboBox;
+  cbTTS: TCheckBox;
+  cbTTSVoice: TComboBox;
   cgNotifications: TCheckGroup;
   cbAlertHiLo: TCheckBox;
   cbFlashLow: TCheckBox;
@@ -127,10 +129,14 @@ TfConf = class(TForm)
   cbPredictShortMinutes: TComboBox;
   cbPredictShortSize: TComboBox;
   cbPrivacy: TCheckBox;
-  cbTTS: TCheckBox;
-  cbTTSVoice: TComboBox;
   cbHContrast: TCheckBox;
-  seTTSRate: TSpinEdit;
+  Label36: TLabel;
+  Label37: TLabel;
+  Label38: TLabel;
+  Panel21: TPanel;
+  Panel22: TPanel;
+  Panel23: TPanel;
+  Panel24: TPanel;
   edCommaSep1: TEdit;
   eDot: TEdit;
   eDotNow: TEdit;
@@ -152,8 +158,6 @@ TfConf = class(TForm)
   Label33: TLabel;
   Label34: TLabel;
   Label35: TLabel;
-  Label36: TLabel;
-  Label37: TLabel;
   LabelProxyHost: TLabel;
   LabelProxyPass: TLabel;
   LabelProxyPort: TLabel;
@@ -346,6 +350,7 @@ TfConf = class(TForm)
   cbTirColorBg: TRadioButton;
   rbUnit: TRadioGroup;
   seTIR: TSpinEdit;
+  seTTSRate: TSpinEdit;
   spTHRESHOLD: TSpinEdit;
   spDeltaMax: TSpinEdit;
   spTHRESHOLD1: TSpinEdit;

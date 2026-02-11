@@ -863,6 +863,10 @@ msgstr ""
 msgid "Rate:"
 msgstr ""
 
+#: tfconf.label38.caption
+msgid "High contrast disables some of Trndis Time-in-Range coloring"
+msgstr ""
+
 #: tfconf.label4.caption
 msgid "Window start-up position"
 msgstr ""
