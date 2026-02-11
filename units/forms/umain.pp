@@ -3687,7 +3687,7 @@ var
   {$endif}
 begin
   l := Sender as TDotControl;
-  ShowMessage(BGMean(mmol));
+
   actOnTrend(@ExpandDot);
   isDot := UnicodeSameText(l.Caption, DOT_GRAPH);
 
