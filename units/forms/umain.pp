@@ -1682,6 +1682,9 @@ function ValueToY(const Value: single): integer;
   end;
 
 begin
+  if native.getboolsetting('main.high_contrast', false) then
+    Exit;
+
   // Only draw when form has been created and API thresholds available
   if not Assigned(Self) then
     Exit;
