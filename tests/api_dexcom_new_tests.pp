@@ -53,7 +53,7 @@ begin
 
   try
     // Use DexcomCustomNew with full URL override for testing
-    api := DexcomCustomNew.Create('anyuser', 'anypass', BaseURL + '/ShareWebServices/Services');
+    api := DexcomCustomNew.Create('anyuser', 'anypass', BaseURL + '/ShareWebServices/Services/');
     try
       AssertTrue('DexcomNew connects to local fake server', api.connect);
       readings := api.getReadings(30, 3, '', res);

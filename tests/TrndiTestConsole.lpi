@@ -50,11 +50,19 @@
         <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
+        <Filename Value="api_dexcom_new_tests.pp"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
         <Filename Value="api_xdrip_tests.pp"/>
         <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
         <Filename Value="api_nightscout_tests.pp"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="api_nightscout3_tests.pp"/>
         <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>

@@ -497,6 +497,72 @@ for ($i = 0; $i < $count; $i++){
 }
 
 // Very small and permissive authorization check used by the tests for Nightscout endpoints
+
+// Nightscout v2 auth endpoint
+if (str_starts_with($path, '/api/v2/authorization/request/')) {
+    header('Content-Type: application/json');
+    $tokenPart = substr($path, strlen('/api/v2/authorization/request/'));
+    if ($tokenPart === 'token=test22') {
+        echo json_encode(['token' => 'testtoken']);
+        exit;
+    } else {
+        http_response_code(401);
+        echo json_encode(['error' => 'Invalid token']);
+        exit;
+    }
+}
+
+// Nightscout v3 API endpoints
+if (str_starts_with($path, '/api/v3/')) {
+    header('Content-Type: application/json');
+
+    $sub = substr($path, strlen('/api/v3/'));
+    if ($sub === 'status') {
+        echo json_encode([
+            'status' => 200,
+            'result' => [
+                'version' => '0.10.2-release-20171201',
+                'apiVersion' => '3.0.0',
+                'srvDate' => (int) floor(microtime(true) * 1000),
+                'storage' => [
+                    'type' => 'mongodb',
+                    'version' => '4.0.6'
+                ],
+                'apiPermissions' => [
+                    'devicestatus' => 'crud',
+                    'entries' => 'r',
+                    'food' => 'crud',
+                    'profile' => 'r',
+                    'treatments' => 'crud'
+                ]
+            ]
+        ]);
+        exit;
+    }
+    if ($sub === 'entries') {
+        $entries = [];
+        for ($i = 0; $i < 5; $i++) {
+            $entries[] = [
+                'type' => 'sgv',
+                'sgv' => 120 + $i,
+                'date' => (int) floor(microtime(true) * 1000) - ($i * 5 * 60 * 1000),
+                'dateString' => date('Y-m-d\TH:i:s.v\Z', (int) floor(microtime(true) - ($i * 5 * 60))),
+                'device' => 'test',
+                'direction' => 'Flat',
+                'delta' => 0,
+                'rssi' => 100,
+                'noise' => 1
+            ];
+        }
+        echo json_encode($entries);
+        exit;
+    }
+    http_response_code(404);
+    echo json_encode(['error' => 'Unknown NSv3 endpoint', 'path' => $sub]);
+    exit;
+}
+
+// fallback v1 behaviour (unchanged)
 $expectedHash = sha1('test22');
 $providedSecret = isset($_SERVER['HTTP_API_SECRET']) ? $_SERVER['HTTP_API_SECRET'] : '';
 if ($providedSecret === $expectedHash)
