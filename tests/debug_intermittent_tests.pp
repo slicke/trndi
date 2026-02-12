@@ -57,7 +57,7 @@ var
   api: DebugIntermittentMissingAPI;
   resStr: string;
   r: BGResults;
-  i, cleared: Integer;
+  i, cleared, j: Integer;
 begin
   api := DebugIntermittentMissingAPI.Create('2-4', '');
   try
@@ -65,7 +65,7 @@ begin
     begin
       r := api.getReadings(0, 11, '', resStr);
       cleared := 0;
-      for var j := 0 to High(r) do
+      for j := 0 to High(r) do
         if not r[j].exists then Inc(cleared);
       // Cleared should be between 2 and 4, not exceeding 10
       AssertTrue('Cleared count >= 2', cleared >= 2);

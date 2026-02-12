@@ -111,6 +111,7 @@ type
 
     function PlayerToString(Player: TMediaPlayer): string;
     function ExecuteCommand(const Command: string): string;
+    function ExecuteCommandOK(const Command: string): Boolean;
     procedure OnRefreshTimer(Sender: TObject);
     procedure UpdateCurrentState;
     function ExtractTrackID(const URL: string; Player: TMediaPlayer): string;
@@ -184,6 +185,10 @@ type
     property OnStateChange: TStateChangeEvent read FOnStateChange write FOnStateChange;
     property OnPlayerChange: TPlayerChangeEvent read FOnPlayerChange write FOnPlayerChange;
     property OnError: TErrorEvent read FOnError write FOnError;
+  public
+    {$IFDEF TEST}
+    {$I ../../tests/inc/systemmediacontroller_implementation.inc}
+    {$ENDIF}
   end;
 
 // Helper functions
@@ -687,6 +692,32 @@ begin
   end;
 end;
 
+function TSystemMediaController.ExecuteCommandOK(const Command: string): Boolean;
+var
+  Process: TProcess;
+begin
+  Result := False;
+  Process := TProcess.Create(nil);
+  try
+    {$IFDEF WINDOWS}
+    Process.Executable := 'cmd';
+    Process.Parameters.Add('/c');
+    Process.Parameters.Add(Command);
+    {$ELSE}
+    Process.Executable := '/bin/sh';
+    Process.Parameters.Add('-c');
+    Process.Parameters.Add(Command);
+    {$ENDIF}
+
+    Process.Options := [poWaitOnExit];
+    Process.ShowWindow := swoHide;
+    Process.Execute;
+    Result := Process.ExitStatus = 0;
+  finally
+    Process.Free;
+  end;
+end;
+
 function TSystemMediaController.PlayerToString(Player: TMediaPlayer): string;
 begin
   case Player of
@@ -736,6 +767,7 @@ end;
 procedure TSystemMediaController.UpdateCurrentState;
 var
   NewTrack: TTrackInfo;
+  NewTrackKey: string;
 begin
   EnterCriticalSection(FCriticalSection);
   try
@@ -745,12 +777,14 @@ begin
     if FCurrentState.CurrentPlayer <> mpUnknown then
     begin
       NewTrack := GetTrackInfo;
-      if NewTrack.Title <> FLastTrackTitle then
+      // detect change by title+artist to avoid false positives when only position changes
+      NewTrackKey := Trim(NewTrack.Title + '|' + NewTrack.Artist);
+      if NewTrackKey <> FLastTrackTitle then
       begin
         if Assigned(FOnTrackChange) then
           FOnTrackChange(Self, FCurrentState.CurrentTrack, NewTrack);
         FCurrentState.CurrentTrack := NewTrack;
-        FLastTrackTitle := NewTrack.Title;
+        FLastTrackTitle := NewTrackKey;
       end;
     end;
 
@@ -814,6 +848,10 @@ begin
   {$ENDIF}
 end;
 
+{$IFDEF TEST}
+{$I ../../tests/inc/systemmediacontroller_systemmediacontroller.inc}
+{$ENDIF}
+
 function TSystemMediaController.UpdateState: Boolean;
 begin
   UpdateCurrentState;
@@ -866,10 +904,10 @@ begin
       Result := WindowsOpenURL(URL);
       {$ENDIF}
       {$IFDEF DARWIN}
-      Result := ExecuteCommand('open "' + URL + '"') <> '';
+      Result := ExecuteCommandOK('open "' + URL + '"');
       {$ENDIF}
       {$IFDEF LINUX}
-      Result := ExecuteCommand('xdg-open "' + URL + '"') <> '';
+      Result := ExecuteCommandOK('xdg-open "' + URL + '"');
       {$ENDIF}
     end;
   end;
@@ -938,14 +976,18 @@ begin
         if Pos('open.spotify.com/track/', URL) > 0 then
         begin
           StartPos := Pos('/track/', URL) + 7;
-          EndPos := Pos('?', URL);
-          if EndPos = 0 then EndPos := Length(URL) + 1;
+          EndPos := StartPos;
+          while (EndPos <= Length(URL)) and (URL[EndPos] <> '/') and (URL[EndPos] <> '?') and (URL[EndPos] <> '#') do
+            Inc(EndPos);
           Result := Copy(URL, StartPos, EndPos - StartPos);
         end
         else if Pos('spotify:track:', URL) > 0 then
         begin
           StartPos := Pos('spotify:track:', URL) + 14;
-          Result := Copy(URL, StartPos, Length(URL));
+          EndPos := StartPos;
+          while (EndPos <= Length(URL)) and (URL[EndPos] <> '/') and (URL[EndPos] <> '?') and (URL[EndPos] <> '#') do
+            Inc(EndPos);
+          Result := Copy(URL, StartPos, EndPos - StartPos);
         end;
       end;
 
@@ -955,15 +997,22 @@ begin
         if Pos('deezer.com/track/', URL) > 0 then
         begin
           StartPos := Pos('/track/', URL) + 7;
-          EndPos := Pos('?', URL);
-          if EndPos = 0 then EndPos := Length(URL) + 1;
+          EndPos := StartPos;
+          while (EndPos <= Length(URL)) and (URL[EndPos] <> '/') and (URL[EndPos] <> '?') and (URL[EndPos] <> '#') do
+            Inc(EndPos);
           Result := Copy(URL, StartPos, EndPos - StartPos);
         end;
       end;
   end;
 
-  // Ta bort eventuella extra parametrar
+  // Remove query/fragments/trailing slashes
+  Result := Trim(Result);
+  while (Result <> '') and (Result[Length(Result)] = '/') do
+    Delete(Result, Length(Result), 1);
   EndPos := Pos('?', Result);
+  if EndPos > 0 then
+    Result := Copy(Result, 1, EndPos - 1);
+  EndPos := Pos('#', Result);
   if EndPos > 0 then
     Result := Copy(Result, 1, EndPos - 1);
 end;
@@ -998,7 +1047,7 @@ begin
     Result := True;
   except
     // Fallback: open in browser
-    Result := ExecuteCommand('open "' + URL + '"') <> '';
+    Result := ExecuteCommandOK('open "' + URL + '"');
   end;
 end;
 
@@ -1040,11 +1089,11 @@ begin
       Result := True;
     except
       // Fallback: xdg-open
-      Result := ExecuteCommand('xdg-open "' + URL + '"') <> '';
+      Result := ExecuteCommandOK('xdg-open "' + URL + '"');
     end;
   end
   else
-    Result := ExecuteCommand('xdg-open "' + URL + '"') <> '';
+    Result := ExecuteCommandOK('xdg-open "' + URL + '"');
 end;
 {$ENDIF}
 

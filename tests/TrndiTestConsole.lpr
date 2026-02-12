@@ -19,7 +19,8 @@ uses
   api_general_tests,
   api_dexcom_tests,
   api_xdrip_tests,
-  api_nightscout_tests;
+  api_nightscout_tests,
+  system_media_controller_tests;
 
 var
   LResult: TTestResult;
