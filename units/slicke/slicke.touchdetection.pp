@@ -1,4 +1,4 @@
-unit TouchDetection;
+unit slicke.touchdetection;
 
 {$I ../../inc/native.inc}
 

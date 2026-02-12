@@ -4,10 +4,12 @@
   Cross-platform system media controller with Deezer support
   Uses array approach for player management
 
+  License: LGPLv3+
+
   By: Björn Lindh and Claude AI
 ==============================================================================}
 
-unit SystemMediaController;
+unit slicke.systemmediacontroller;
 
 {$mode objfpc}{$H+}
 
