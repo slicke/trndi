@@ -1572,6 +1572,10 @@ msgstr ""
 msgid "Processing user profiles..."
 msgstr ""
 
+#: trndi.strings.rs_init_trndi
+msgid "Starting Trndi..."
+msgstr ""
+
 #: trndi.strings.rs_init_ui
 msgid "Initializing UI..."
 msgstr ""

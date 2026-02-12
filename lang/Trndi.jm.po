@@ -1681,6 +1681,10 @@ msgstr "Startar mediasystemet..."
 msgid "Processing user profiles..."
 msgstr "Bearbetar anvendarprofiler..."
 
+#: trndi.strings.rs_init_trndi
+msgid "Starting Trndi..."
+msgstr ""
+
 #: trndi.strings.rs_init_ui
 msgid "Initializing UI..."
 msgstr "Initierar grenssnittet..."

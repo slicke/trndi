@@ -577,6 +577,7 @@ begin
 
   // Initialize splash screen first
   InitializeSplashScreen;
+  fSplash.incProgress(10, RS_INIT_TRNDI);
   Application.ProcessMessages;
   Application.OnException := @AppExceptionHandler;
 
