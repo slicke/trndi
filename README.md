@@ -14,6 +14,7 @@
 - [What differs Trndi from apps?](#what-differs-trndi-from-apps)
 - [Multi-user support](#multi-user-support)
 - [Usage](#usage)
+- [Accessibility](#accessibility)
 - [Installation](#installation)
 	- [Windows](#windows)
 	- [Linux](#linux)
@@ -77,6 +78,15 @@ You need to start Trndi multiple times, each instance lets you choose a user. Ju
 
 # Usage
 ⚠️ Right-click on the reading on the screen to access the menu, this is how you control Trndi.
+
+# Accessibility
+Trndi includes built‑in accessibility features to make readings easier to see and hear:
+
+- **Text-to-speech (TTS)** — enable "Announce readings" in Settings to have Trndi speak glucose updates.
+- **High contrast mode** — toggle the high‑contrast theme for improved visibility.
+- **Adjustable speech voice & rate** — choose voice and set speaking rate from Settings.
+- **Keyboard & screen‑reader friendliness** — dialogs and controls expose standard labels and keyboard focus so screen readers can navigate the UI.
+- **Open links externally** — links (Help, documentation) are opened with the system browser.
 
 # Installation
 
