@@ -77,6 +77,11 @@ type
     cbChromaHigh: TComboBox;
     cbChromaLow: TComboBox;
     cbMusicPause: TCheckBox;
+    // Text-to-speech & accessibility controls (also used by umain)
+    cbTTS: TCheckBox;
+    cbHContrast: TCheckBox;
+    cbTTSVoice: TComboBox;
+    seTTSRate: TSpinEdit;
     cbUserColor: TColorButton;
     cbPos: TComboBox;
     cbSize: TCheckBox;
@@ -236,6 +241,13 @@ begin
   cbChromaHigh := TComboBox.Create(nil);
   cbChromaLow := TComboBox.Create(nil);
   cbMusicPause := TCheckBox.Create(nil);
+  // TTS / accessibility mocks
+  cbTTS := TCheckBox.Create(nil);
+  cbHContrast := TCheckBox.Create(nil);
+  cbTTSVoice := TComboBox.Create(nil);
+  cbTTSVoice.ItemIndex := 0; // default selection
+  seTTSRate := TSpinEdit.Create;
+  seTTSRate.Value := 0;
   cbUserColor := TColorButton.Create(nil);
   cbPos := TComboBox.Create(nil);
   cbSize := TCheckBox.Create(nil);
@@ -335,6 +347,11 @@ begin
   cbSize.Free;
   cbPos.Free;
   cbUserColor.Free;
+  // Free TTS / accessibility mocks
+  seTTSRate.Free;
+  cbTTSVoice.Free;
+  cbHContrast.Free;
+  cbTTS.Free;
   cbMusicPause.Free;
   cbChromaLow.Free;
   cbChromaHigh.Free;
