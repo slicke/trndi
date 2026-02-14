@@ -2967,6 +2967,7 @@ procedure LoadUserSettings(f: TfConf);
     po: TrndiPos;
     sizeVal: integer;
     minutesVal: integer;
+    voiceName: string;
   function DefaultChromaAlertAction: string;
     begin
       {$ifdef Windows}
@@ -3101,6 +3102,15 @@ procedure LoadUserSettings(f: TfConf);
       cbTTSVoice.ItemIndex := GetIntSetting('tts.voice', 0);
       {$ifdef X_MAC}
       // For macOS, also load the voice name if stored
+      if cbTTSVoice.Items.Count > 1 then
+      begin
+        voiceName := GetSetting('tts.voice.name', '');
+        if voiceName <> '' then
+          cbTTSVoice.ItemIndex := cbTTSVoice.Items.IndexOf(voiceName);
+      end;
+      {$endif}
+      {$ifdef X_PC}
+      // For Linux, load the voice name if stored
       if cbTTSVoice.Items.Count > 1 then
       begin
         voiceName := GetSetting('tts.voice.name', '');
@@ -3480,6 +3490,13 @@ procedure SaveUserSettings(f: TfConf);
       SetSetting('tts.voice', cbTTSVoice.ItemIndex);
       {$ifdef X_MAC}
       // For macOS, also store the voice name
+      if cbTTSVoice.ItemIndex > 0 then
+        SetSetting('tts.voice.name', cbTTSVoice.Text)
+      else
+        DeleteSetting('tts.voice.name');
+      {$endif}
+      {$ifdef X_PC}
+      // For Linux, also store the voice name
       if cbTTSVoice.ItemIndex > 0 then
         SetSetting('tts.voice.name', cbTTSVoice.Text)
       else

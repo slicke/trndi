@@ -1442,7 +1442,7 @@ begin
 
   Lang := GetSystemLangTag;
   Rate := GetIntSetting('tts.rate', 0);
-  VoiceType := GetSetting('tts.voice', '0');
+  VoiceType := GetSetting('tts.voice.name', '');
 
   Proc := TProcess.Create(nil);
   try
@@ -1455,16 +1455,21 @@ begin
       Proc.Parameters.AddStrings(['-r', IntToStr(Rate)]);
 
     // Add voice type setting
-    if VoiceType <> '0' then
+    if VoiceType <> '' then
     begin
-      case StrToIntDef(VoiceType, 0) of
-        1: Proc.Parameters.AddStrings(['-t', 'male1']);
-        2: Proc.Parameters.AddStrings(['-t', 'male2']);
-        3: Proc.Parameters.AddStrings(['-t', 'male3']);
-        4: Proc.Parameters.AddStrings(['-t', 'female1']);
-        5: Proc.Parameters.AddStrings(['-t', 'female2']);
-        6: Proc.Parameters.AddStrings(['-t', 'female3']);
-      end;
+      // Map voice names to speech-dispatcher voice types
+      if VoiceType = 'Male 1' then
+        Proc.Parameters.AddStrings(['-t', 'male1'])
+      else if VoiceType = 'Male 2' then
+        Proc.Parameters.AddStrings(['-t', 'male2'])
+      else if VoiceType = 'Male 3' then
+        Proc.Parameters.AddStrings(['-t', 'male3'])
+      else if VoiceType = 'Female 1' then
+        Proc.Parameters.AddStrings(['-t', 'female1'])
+      else if VoiceType = 'Female 2' then
+        Proc.Parameters.AddStrings(['-t', 'female2'])
+      else if VoiceType = 'Female 3' then
+        Proc.Parameters.AddStrings(['-t', 'female3']);
     end;
 
     Proc.Parameters.Add('--');

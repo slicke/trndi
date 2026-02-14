@@ -54,7 +54,7 @@ interface
 
 uses
 Classes, ComCtrls, ExtCtrls, Spin, StdCtrls, SysUtils, Forms, Controls,
-Graphics, Dialogs, LCLTranslator, trndi.native, lclintf,
+Graphics, Dialogs, LCLTranslator, trndi.native, lclintf, process,
 slicke.ux.alert, slicke.ux.native, slicke.versioninfo, trndi.funcs, buildinfo, StrUtils, trndi.api, trndi.api.nightscout, trndi.api.nightscout3, trndi.api.dexcom, trndi.api.dexcomNew, trndi.api.tandem, trndi.api.xdrip, razer.chroma, math, trndi.types, trndi.api.debug_firstXmissing, trndi.api.debug_intermittentmissing, trndi.api.debug_custom, trndi.api.debug, trndi.api.debug_slow, base64, Variants{$ifdef X_WIN}, ComObj{$endif};
 
 {$I ../../inc/defines.inc}
@@ -1497,6 +1497,16 @@ begin
       // say command failed
     end;
   end;
+  {$endif}
+
+  {$ifdef X_PC}  // Linux
+  // For Linux speech-dispatcher, add the standard voice types
+  cbTTSVoice.Items.Add('Male 1');
+  cbTTSVoice.Items.Add('Male 2');
+  cbTTSVoice.Items.Add('Male 3');
+  cbTTSVoice.Items.Add('Female 1');
+  cbTTSVoice.Items.Add('Female 2');
+  cbTTSVoice.Items.Add('Female 3');
   {$endif}
 end;
 
