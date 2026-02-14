@@ -1460,14 +1460,17 @@ begin
   begin
     try
       Proc := TProcess.Create(nil);
-      Proc.Executable := '/bin/bash';
-      Proc.Parameters.Add('-c');
-      Proc.Parameters.Add('say -v "?"');
+      Proc.Executable := '/usr/bin/say';
+      Proc.Parameters.Add('-v');
+      Proc.Parameters.Add('?');
       Proc.Options := [poUsePipes, poStderrToOutPut];
       Proc.Execute;
       
       Proc.WaitOnExit(5000);
-      Output := Proc.Output.ReadAnsiString(-1);
+      if Proc.Output.NumBytesAvailable > 0 then
+        Output := Proc.Output.ReadAnsiString
+      else
+        Output := '';
       Proc.Free;
       
       Lines := TStringList.Create;
