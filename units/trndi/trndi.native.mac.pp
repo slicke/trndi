@@ -38,7 +38,7 @@ interface
 
 uses
   Classes, SysUtils, Graphics, nsutils.nsmisc, nsutils.web.urlrequest, CocoaAll, nsutils.simpledarkmode,
-  nsutils.nshelpers, IniFiles,
+  nsutils.nshelpers, IniFiles, dialogs,
   trndi.native.base;
 
 type
