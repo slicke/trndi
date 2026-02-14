@@ -455,7 +455,10 @@ begin
   API_D_SECOND,
   'API_D_SECOND':
     api := DebugSecondMissingAPI.Create(apiTarget, apiCreds);
-    {$endif}
+  API_D_SLOW,
+  'API_D_SLOW':
+    api := DebugSlowAPI.Create(apiTarget, apiCreds);
+  {$endif}
   else
     Result := false;
   end;

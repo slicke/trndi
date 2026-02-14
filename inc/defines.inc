@@ -20,8 +20,9 @@ API_D_FIRST = '* Debug First Reading Missing *';
 API_D_SECOND = '* Debug Second Reading Missing *';
 API_D_FIRSTX = '* Debug First X Readings Missing *';
 API_D_INTERMITTENT = '* Debug Intermittent Missing *';
+API_D_SLOW = '* Debug Slow Backend *';
 
-API_DEBUG: array of string = (API_D_DEBUG, API_D_MISSING, API_D_PERFECT, API_D_CUSTOM, API_D_EDGE, API_D_FIRST, API_D_SECOND, API_D_FIRSTX, API_D_INTERMITTENT);
+API_DEBUG: array of string = (API_D_DEBUG, API_D_MISSING, API_D_PERFECT, API_D_CUSTOM, API_D_EDGE, API_D_FIRST, API_D_SECOND, API_D_FIRSTX, API_D_INTERMITTENT, API_D_SLOW);
 {$endif}
 
 MILLIS_PER_MINUTE = 60000; // Milliseconds in a minute

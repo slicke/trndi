@@ -55,7 +55,7 @@ interface
 uses
 Classes, ComCtrls, ExtCtrls, Spin, StdCtrls, SysUtils, Forms, Controls,
 Graphics, Dialogs, LCLTranslator, trndi.native, lclintf,
-slicke.ux.alert, slicke.ux.native, VersionInfo, trndi.funcs, buildinfo, StrUtils, trndi.api, trndi.api.nightscout, trndi.api.nightscout3, trndi.api.dexcom, trndi.api.dexcomNew, trndi.api.tandem, trndi.api.xdrip, razer.chroma, math, trndi.types, trndi.api.debug_firstXmissing, trndi.api.debug_intermittentmissing, trndi.api.debug_custom, trndi.api.debug, base64, Variants{$ifdef X_WIN}, ComObj{$endif};
+slicke.ux.alert, slicke.ux.native, VersionInfo, trndi.funcs, buildinfo, StrUtils, trndi.api, trndi.api.nightscout, trndi.api.nightscout3, trndi.api.dexcom, trndi.api.dexcomNew, trndi.api.tandem, trndi.api.xdrip, razer.chroma, math, trndi.types, trndi.api.debug_firstXmissing, trndi.api.debug_intermittentmissing, trndi.api.debug_custom, trndi.api.debug, trndi.api.debug_slow, base64, Variants{$ifdef X_WIN}, ComObj{$endif};
 
 {$I ../../inc/defines.inc}
 type
@@ -862,6 +862,8 @@ begin
     sys := DebugFirstXMissingAPI;
   API_D_INTERMITTENT:
     sys := DebugIntermittentMissingAPI;
+  API_D_SLOW:
+    sys := DebugSlowAPI;
   API_D_CUSTOM:
     sys := DebugCustomAPI;
   {$endif}
@@ -1251,6 +1253,8 @@ begin
     sys := DebugFirstXMissingAPI;
   API_D_CUSTOM:
     sys := DebugCustomAPI;
+  API_D_SLOW:
+    sys := DebugSlowAPI;
   {$endif}
   end;
 
