@@ -1423,7 +1423,7 @@ var
   Proc: TProcess;
   Output: string;
   Lines: TStringList;
-  i, hashPos, lastSpace: integer;
+  i, j, hashPos, lastSpace: integer;
   voiceName: string;
 {$endif}
 begin
@@ -1460,9 +1460,9 @@ begin
   begin
     try
       Proc := TProcess.Create(nil);
-      Proc.Executable := '/usr/bin/say';
-      Proc.Parameters.Add('-v');
-      Proc.Parameters.Add('?');
+      Proc.Executable := '/bin/bash';
+      Proc.Parameters.Add('-c');
+      Proc.Parameters.Add('say -v ?');
       Proc.Options := [poUsePipes, poStderrToOutPut];
       Proc.Execute;
       
