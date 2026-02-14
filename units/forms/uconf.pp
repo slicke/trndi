@@ -1418,6 +1418,14 @@ var
   i: integer;
   voiceName: string;
 {$endif}
+{$ifdef X_MAC}
+var
+  Proc: TProcess;
+  Output: string;
+  Lines: TStringList;
+  i: integer;
+  voiceName: string;
+{$endif}
 begin
   cbTTSVoice.Items.Clear;
   cbTTSVoice.Items.Add('Default');
@@ -1443,6 +1451,50 @@ begin
       end;
     except
       // SAPI not available or failed
+    end;
+  end;
+  {$endif}
+
+  {$ifdef X_MAC}
+  if tnative.SpeakAvailable then
+  begin
+    try
+      Proc := TProcess.Create(nil);
+      Proc.Executable := '/usr/bin/say';
+      Proc.Parameters.Add('-v');
+      Proc.Parameters.Add('?');
+      Proc.Options := [poUsePipes, poStderrToOutPut];
+      Proc.Execute;
+      
+      Output := '';
+      if Proc.Output.NumBytesAvailable > 0 then
+      begin
+        SetLength(Output, Proc.Output.NumBytesAvailable);
+        Proc.Output.Read(Output[1], Length(Output));
+      end;
+      
+      Proc.WaitOnExit(5000);
+      Proc.Free;
+      
+      Lines := TStringList.Create;
+      try
+        Lines.Text := Output;
+        for i := 0 to Lines.Count - 1 do
+        begin
+          voiceName := Trim(Lines[i]);
+          if (voiceName <> '') and (Pos(' ', voiceName) > 0) then
+          begin
+            // Extract voice name from format like "Alex    en_US    # Alex"
+            voiceName := Copy(voiceName, 1, Pos(' ', voiceName) - 1);
+            if voiceName <> '' then
+              cbTTSVoice.Items.Add(voiceName);
+          end;
+        end;
+      finally
+        Lines.Free;
+      end;
+    except
+      // say command failed
     end;
   end;
   {$endif}

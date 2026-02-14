@@ -250,11 +250,21 @@ end;
 procedure TTrndiNativeMac.Speak(const Text: string);
 var
   Proc: TProcess;
+  VoiceName: string;
 begin
   // Use the built-in macOS speech synthesis asynchronously
   Proc := TProcess.Create(nil);
   try
     Proc.Executable := '/usr/bin/say';
+    
+    // Check if a specific voice is selected
+    VoiceName := GetSetting('tts.voice.name', '');
+    if VoiceName <> '' then
+    begin
+      Proc.Parameters.Add('-v');
+      Proc.Parameters.Add(VoiceName);
+    end;
+    
     Proc.Parameters.Add(Text);
     Proc.Options := [];
     Proc.Execute;

@@ -3099,6 +3099,15 @@ procedure LoadUserSettings(f: TfConf);
       cbTTS.Checked := GetBoolSetting('main.announce', false);
       cbHContrast.Checked := GetBoolSetting('main.high_contrast', false);
       cbTTSVoice.ItemIndex := GetIntSetting('tts.voice', 0);
+      {$ifdef X_MAC}
+      // For macOS, also load the voice name if stored
+      if cbTTSVoice.Items.Count > 1 then
+      begin
+        voiceName := GetSetting('tts.voice.name', '');
+        if voiceName <> '' then
+          cbTTSVoice.ItemIndex := cbTTSVoice.Items.IndexOf(voiceName);
+      end;
+      {$endif}
       seTTSRate.Value := GetIntSetting('tts.rate', 0);
       fsHi.Enabled := cbCust.Checked;
       fsLo.Enabled := cbCust.Checked;
@@ -3469,6 +3478,13 @@ procedure SaveUserSettings(f: TfConf);
       SetSetting('main.high_contrast', cbHContrast.Checked);
       SetSetting('main.announce', cbTTS.Checked);
       SetSetting('tts.voice', cbTTSVoice.ItemIndex);
+      {$ifdef X_MAC}
+      // For macOS, also store the voice name
+      if cbTTSVoice.ItemIndex > 0 then
+        SetSetting('tts.voice.name', cbTTSVoice.Text)
+      else
+        DeleteSetting('tts.voice.name');
+      {$endif}
       SetSetting('tts.rate', seTTSRate.Value);
 
       SetColorSetting('ux.bg_color_ok', cl_ok_bg.ButtonColor);
