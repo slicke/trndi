@@ -1494,16 +1494,6 @@ begin
     except
       // Fallback: keep default-only list when Cocoa query fails
     end;
-              end;
-            end;
-          end;
-        end;
-      finally
-        Lines.Free;
-      end;
-    except
-      // say command failed
-    end;
   end;
   {$endif}
 
