@@ -1423,7 +1423,7 @@ var
   Proc: TProcess;
   Output: string;
   Lines: TStringList;
-  i: integer;
+  i, hashPos, lastSpace: integer;
   voiceName: string;
 {$endif}
 begin
@@ -1482,12 +1482,27 @@ begin
         for i := 0 to Lines.Count - 1 do
         begin
           voiceName := Trim(Lines[i]);
-          if (voiceName <> '') and (Pos(' ', voiceName) > 0) then
+          if voiceName <> '' then
           begin
-            // Extract voice name from format like "Alex    en_US    # Alex"
-            voiceName := Copy(voiceName, 1, Pos(' ', voiceName) - 1);
-            if voiceName <> '' then
-              cbTTSVoice.Items.Add(voiceName);
+            hashPos := Pos('#', voiceName);
+            if hashPos > 0 then
+            begin
+              voiceName := Trim(Copy(voiceName, 1, hashPos - 1));
+              // Find the last space to separate voice name from language
+              lastSpace := 0;
+              for j := Length(voiceName) downto 1 do
+                if voiceName[j] = ' ' then
+                begin
+                  lastSpace := j;
+                  break;
+                end;
+              if lastSpace > 0 then
+              begin
+                voiceName := Trim(Copy(voiceName, 1, lastSpace - 1));
+                if voiceName <> '' then
+                  cbTTSVoice.Items.Add(voiceName);
+              end;
+            end;
           end;
         end;
       finally
