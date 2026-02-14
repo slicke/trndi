@@ -1,11 +1,11 @@
-unit wintools.wintaskbar;
+unit winutils.wintaskbar;
 
 {$mode objfpc}{$H+}
 
 interface
 
 uses
-  SysUtils, Windows, Classes, Forms, Controls, Graphics, ComObj, ActiveX, Dialogs;
+  SysUtils, Windows, Classes, Forms, Controls, Graphics, ComObj, ActiveX, Dialogs {$ifdef DEBUG},trndi.log{$endif};
 
 const
   // Taskbar Progress States
@@ -81,6 +81,8 @@ type
     // Diagnostic properties
     property Initialized: Boolean read FInitialized;
     property LastError: string read FLastError;
+    {** Window handle used when making taskbar calls (diagnostic). }
+    property WindowHandle: HWND read FWindowHandle;
   end;
 
 var
@@ -112,13 +114,97 @@ end;
 procedure TWinTaskbar.LogError(const Msg: string);
 begin
   FLastError := Msg;
-  OutputDebugString(PChar('[TaskbarError] ' + Msg));
+  {$ifdef debug}
+  LogMessageToFile(PChar('[TaskbarError] ' + Msg));
+  {$endif}
+end;
+
+// Helper used to find a top-level visible window owned by this process. This
+// is a best-effort fallback for cases where Application/MainForm handles are
+// not available or do not correspond to the taskbar button the OS displays.
+type
+  PFindWndInfo = ^TFindWndInfo;
+  TFindWndInfo = record
+    TargetPID: DWORD;
+    FoundHandle: HWND;
+  end;
+
+function EnumWindowsProc_FindPID(hwnd: HWND; lParam: LPARAM): BOOL; stdcall;
+var
+  pid: DWORD;
+  info: PFindWndInfo;
+  exstyle: NativeUInt;
+begin
+  info := PFindWndInfo(lParam);
+  GetWindowThreadProcessId(hwnd, @pid);
+  if pid <> info^.TargetPID then
+  begin
+    Result := True; // continue enumeration
+    Exit;
+  end;
+
+  // Only consider top-level visible windows with a non-empty caption
+  if (GetWindow(hwnd, GW_OWNER) <> 0) then
+  begin
+    Result := True;
+    Exit;
+  end;
+  if not IsWindowVisible(hwnd) and not IsIconic(hwnd) then
+  begin
+    Result := True;
+    Exit;
+  end;
+  if GetWindowTextLength(hwnd) = 0 then
+  begin
+    Result := True;
+    Exit;
+  end;
+
+  // Exclude toolwindows; they normally don't get a taskbar button
+  // exstyle := NativeUInt(GetWindowLongPtr(hwnd, GWL_EXSTYLE));
+  // if (exstyle and NativeUInt(WS_EX_TOOLWINDOW)) <> 0 then
+  // begin
+  //   Result := True;
+  //   Exit;
+  // end;
+
+  info^.FoundHandle := hwnd;
+  Result := False; // stop enumeration
+end;
+
+function FindTopLevelWindowForCurrentProcess: HWND;
+var
+  info: TFindWndInfo;
+begin
+  Result := 0;
+  info.TargetPID := GetCurrentProcessId;
+  info.FoundHandle := 0;
+  EnumWindows(@EnumWindowsProc_FindPID, LPARAM(@info));
+  Result := info.FoundHandle;
+end;
+
+function IsProbablyTaskbarWindow(hwnd: HWND): Boolean;
+var
+  exstyle: NativeUInt;
+begin
+  Result := False;
+  if (hwnd = 0) or (not IsWindow(hwnd)) then Exit;
+  if not IsWindowVisible(hwnd) and not IsIconic(hwnd) then Exit;
+  if GetWindow(hwnd, GW_OWNER) <> 0 then Exit;
+  if GetWindowTextLength(hwnd) = 0 then Exit;
+
+  // Avoid windows marked as "tool windows" (these normally don't get taskbar buttons)
+  // exstyle := NativeUInt(GetWindowLongPtr(hwnd, GWL_EXSTYLE));
+  // if (exstyle and NativeUInt(WS_EX_TOOLWINDOW)) <> 0 then Exit;
+
+  Result := True;
 end;
 
 { Constructor: Initialize COM and get taskbar interface }
 constructor TWinTaskbar.Create(WindowHandle: HWND = 0);
 var
   HR: HRESULT;
+  chosen: HWND;
 begin
   inherited Create;
 
@@ -134,15 +220,40 @@ begin
       Exit;
     end;
 
-    // Set window handle
-    if WindowHandle = 0 then
-      FWindowHandle := Application.Handle
-    else
-      FWindowHandle := WindowHandle;
+    // Determine handle to use. Preference order:
+    //  1) explicit WindowHandle argument (only if it *looks* like a taskbar window)
+    //  2) visible Application.MainForm.Handle
+    //  3) a top-level visible window owned by this process (enum)
+    //  4) Application.Handle as a last resort
+    chosen := WindowHandle;
+
+    // If caller passed a non-zero handle, validate it; reject toolwindows so we
+    // don't accidentally target a hidden/tool window that won't have a taskbar button.
+    if (chosen <> 0) and (not IsProbablyTaskbarWindow(chosen)) then
+    begin
+      {$ifdef DEBUG}
+      LogMessageToFile(PChar(Format('[TWinTaskbar] Passed WindowHandle=%d rejected (not a taskbar window). Falling back.', [chosen])));
+      {$endif}
+      chosen := 0;
+    end;
+
+    if chosen = 0 then
+    begin
+      if Assigned(Application) and Assigned(Application.MainForm) and
+         (Application.MainForm.Handle <> 0) and IsProbablyTaskbarWindow(Application.MainForm.Handle) then
+        chosen := Application.MainForm.Handle
+      else
+        chosen := FindTopLevelWindowForCurrentProcess;
+
+      if chosen = 0 then
+        chosen := Application.Handle;
+    end;
+
+    FWindowHandle := chosen;
 
     if FWindowHandle = 0 then
     begin
-      LogError('Invalid window handle');
+      LogError('Invalid window handle (no Application/MainForm handle available)');
       Exit;
     end;
 
@@ -165,6 +276,10 @@ begin
       end;
 
       FInitialized := True;
+      // Diagnostic: report selected HWND so caller can validate which window is targeted
+      {$ifdef DEBUG}
+      LogMessageToFile(PChar(Format('[TWinTaskbar] Initialized (HWND=%d)', [FWindowHandle])));
+      {$endif}
     except
       on E: Exception do
       begin
@@ -211,6 +326,8 @@ end;
 
 { Set progress value }
 function TWinTaskbar.SetProgressValue(Current, Max: UInt64): Boolean;
+var
+  hr: HRESULT;
 begin
   Result := False;
   if not FInitialized then
@@ -219,13 +336,49 @@ begin
     Exit;
   end;
 
+  // If the stored HWND was destroyed/recreated, re-resolve a suitable top-level
+  // window so taskbar calls target the window the OS shows.
+  if (FWindowHandle = 0) or (not IsWindow(FWindowHandle)) then
+  begin
+   {$ifdef DEBUG}
+    LogMessageToFile(PChar('[TWinTaskbar] WindowHandle invalid; attempting re-resolve'));
+   {$endif}
+    if Assigned(Application) and Assigned(Application.MainForm) and
+       IsProbablyTaskbarWindow(Application.MainForm.Handle) then
+      FWindowHandle := Application.MainForm.Handle
+    else
+      FWindowHandle := FindTopLevelWindowForCurrentProcess;
+
+    {$ifdef DEBUG}
+    if (FWindowHandle <> 0) and IsWindow(FWindowHandle) then
+      LogMessageToFile(PChar(Format('[TWinTaskbar] Re-resolved WindowHandle=%d', [FWindowHandle])))
+    else
+      LogError('Unable to re-resolve a valid window handle for taskbar calls');
+   {$endif}
+  end;
+
+  // Ensure the re-resolved window is suitable for taskbar operations (not a ToolWindow, etc.)
+  LogError(Format('Window check: Visible=%s Iconic=%s Owner=%d TitleLen=%d', [BoolToStr(IsWindowVisible(FWindowHandle)), BoolToStr(IsIconic(FWindowHandle)), GetWindow(FWindowHandle, GW_OWNER), GetWindowTextLength(FWindowHandle)]));
+  if not IsProbablyTaskbarWindow(FWindowHandle) then
+  begin
+    LogError('Re-resolved window is not a taskbar window (e.g., ToolWindow or hidden)');
+    Result := False;
+    Exit;
+  end;
+
   if Max = 0 then Max := 100;  // Prevent division by zero
 
   try
-    if FTaskbar.SetProgressValue(FWindowHandle, Current, Max) = S_OK then
-      Result := True
+    hr := FTaskbar.SetProgressValue(FWindowHandle, Current, Max);
+    if hr = S_OK then
+    begin
+      Result := True;
+     {$ifdef DEBUG}
+      LogMessageToFile(PChar(Format('[TWinTaskbar] SetProgressValue OK HWND=%d %d/%d', [FWindowHandle, Current, Max])));
+     {$endif}
+    end
     else
-      LogError('SetProgressValue failed');
+      LogError('SetProgressValue failed HR=' + IntToHex(hr, 8));
   except
     on E: Exception do
     begin
@@ -245,6 +398,8 @@ const
     TBPF_ERROR,
     TBPF_PAUSED
   );
+var
+  hr: HRESULT;
 begin
   Result := False;
   if not FInitialized then
@@ -253,17 +408,49 @@ begin
     Exit;
   end;
 
+  // Ensure the target HWND is still valid; re-resolve if necessary
+  if (FWindowHandle = 0) or (not IsWindow(FWindowHandle)) then
+  begin
+    {$ifdef DEBUG}
+    LogMessageToFile(PChar('[TWinTaskbar] WindowHandle invalid before SetProgressState; attempting re-resolve'));
+    {$endif}
+    if Assigned(Application) and Assigned(Application.MainForm) and
+       IsProbablyTaskbarWindow(Application.MainForm.Handle) then
+      FWindowHandle := Application.MainForm.Handle
+    else
+      FWindowHandle := FindTopLevelWindowForCurrentProcess;
+
+    {$ifdef DEBUG}
+    if (FWindowHandle <> 0) and IsWindow(FWindowHandle) then
+      LogMessageToFile(PChar(Format('[TWinTaskbar] Re-resolved WindowHandle=%d', [FWindowHandle])))
+    else
+      LogError('Unable to re-resolve a valid window handle for taskbar calls');
+   {$endif}
+  end;
+
+  // Ensure the re-resolved window is suitable for taskbar operations (not a ToolWindow, etc.)
+  LogError(Format('Window check: Visible=%s Iconic=%s Owner=%d TitleLen=%d', [BoolToStr(IsWindowVisible(FWindowHandle)), BoolToStr(IsIconic(FWindowHandle)), GetWindow(FWindowHandle, GW_OWNER), GetWindowTextLength(FWindowHandle)]));
+  if not IsProbablyTaskbarWindow(FWindowHandle) then
+  begin
+    LogError('Re-resolved window is not a taskbar window (e.g., ToolWindow or hidden)');
+    Result := False;
+    Exit;
+  end;
+
   try
-    if FTaskbar.SetProgressState(FWindowHandle, StateFlags[ProgressState]) = S_OK then
+    hr := FTaskbar.SetProgressState(FWindowHandle, StateFlags[ProgressState]);
+    if hr = S_OK then
     begin
       Result := True;
-
+      {$ifdef DEBUG}
+      LogMessageToFile(PChar(Format('[TWinTaskbar] SetProgressState OK HWND=%d state=%d', [FWindowHandle, Ord(ProgressState)])));
+      {$endif}
       // For indeterminate progress, set a dummy value to ensure it's visible
       if ProgressState = tbpsIndeterminate then
         SetProgressValue(1, 100);
     end
     else
-      LogError('SetProgressState failed');
+      LogError('SetProgressState failed HR=' + IntToHex(hr, 8));
   except
     on E: Exception do
     begin
@@ -413,22 +600,11 @@ begin
 end;
 
 initialization
-  // Create global instance with default application window
+  // Defer creation of the global taskbar instance to lazy init in callers.
+  // Previously we eagerly created GlobalTaskbar here which could pick an
+  // incorrect window handle at startup (Application.MainForm not ready).
   GlobalTaskbar := nil;
-  try
-    GlobalTaskbar := TWinTaskbar.Create;
-    if not GlobalTaskbar.Initialized then
-    begin
-      FreeAndNil(GlobalTaskbar);
-      OutputDebugString('[Taskbar] Failed to initialize global taskbar instance');
-    end;
-  except
-    on E: Exception do
-    begin
-      OutputDebugString(PChar('[Taskbar] Exception creating global instance: ' + E.Message));
-      GlobalTaskbar := nil;
-    end;
-  end;
+
 
 finalization
   // Free global instance

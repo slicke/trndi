@@ -277,6 +277,11 @@ class var touchOverride: TTrndiBool;
   procedure start;
     {** Optional shutdown hook; platform units may override. }
   procedure done;
+    {** Signal the start of a long-running update operation; platform units may
+        show a progress indicator (taskbar, dock, etc.). Default no-op. }
+  procedure updateBegin; virtual;
+    {** Signal completion of a previously started update operation. Default no-op. }
+  procedure updateDone; virtual;
     // Badge: provide a convenience overload and a virtual full version
     {** Convenience overload for drawing a badge on the app icon/tray. }
   procedure setBadge(const Value: string; badgeColor: TColor); overload;
@@ -520,6 +525,16 @@ procedure TTrndiNativeBase.done;
 begin
 
 end;
+
+procedure TTrndiNativeBase.updateBegin;
+begin
+  // Default no-op
+end;
+
+procedure TTrndiNativeBase.updateDone;
+begin
+  // Default no-op
+end;
 {$ENDIF}
 
 {$IFNDEF Windows}
@@ -531,6 +546,16 @@ end;
 procedure TTrndiNativeBase.done;
 begin
 
+end;
+
+procedure TTrndiNativeBase.updateBegin;
+begin
+  // Default no-op
+end;
+
+procedure TTrndiNativeBase.updateDone;
+begin
+  // Default no-op
 end;
 {$ENDIF}
 

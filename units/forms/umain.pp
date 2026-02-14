@@ -5683,12 +5683,24 @@ end;
 
 function TfBG.FetchAndValidateReadings: boolean;
 begin
-  Result := DoFetchAndValidateReadings(false); // Use cached data if available
+  LogMessageToFile('umain: About to call native.updateBegin');
+  native.updateBegin;
+  try
+    Result := DoFetchAndValidateReadings(false); // Use cached data if available
+  finally
+    native.updateDone;
+  end;
 end;
 
 function TfBG.FetchAndValidateReadingsForced: boolean;
 begin
-  Result := DoFetchAndValidateReadings(true); // Force fresh API call, bypass cache
+  LogMessageToFile('umain: About to call native.updateBegin (force)');
+  native.updateBegin;
+  try
+    Result := DoFetchAndValidateReadings(true); // Force fresh API call, bypass cache
+  finally
+    native.updateDone;
+  end;
 end;
 
 procedure TfBG.UpdateOffRangePanel(const Value: double);

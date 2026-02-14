@@ -44,7 +44,7 @@ interface
 
 uses
 Classes, SysUtils, Graphics, Windows, Registry, Dialogs, StrUtils,
-winutils.httpclient, shellapi,
+winutils.httpclient, winutils.wintaskbar, shellapi,
 Forms, variants, dwmapi, trndi.native.base, ExtCtrls, IniFiles{$ifdef DEBUG}, trndi.log{$endif};
 
 type
@@ -134,6 +134,10 @@ public
   function ExportSettings: string; override;
   {** Import settings from INI format string. }
   procedure ImportSettings(const iniData: string); override;
+  {** Signal the start of a long-running update operation (show taskbar progress). }
+  procedure updateBegin; override;
+  {** Signal the completion of a long-running update operation (clear taskbar progress). }
+  procedure updateDone; override;
 end;
 
 implementation
@@ -302,6 +306,41 @@ begin
     AProcess.Free;
     Output.Free;
   end;
+end;
+
+function EnumLogWnd_UpdateBegin(hwnd: HWND; lParam: LPARAM): BOOL; stdcall;
+var
+  pid: DWORD;
+  titlebuf: array[0..255] of WideChar;
+  cnamebuf: array[0..255] of WideChar;
+  visible: Boolean;
+  owner: HWND;
+  cap: string;
+  wndClassName: string;
+  es: NativeUInt;
+begin
+  GetWindowThreadProcessId(hwnd, @pid);
+  if pid <> GetCurrentProcessId then
+  begin
+    Result := True; // continue enumeration
+    Exit;
+  end;
+  visible := IsWindowVisible(hwnd);
+  owner := GetWindow(hwnd, GW_OWNER);
+  if GetWindowTextW(hwnd, titlebuf, Length(titlebuf)) > 0 then
+    cap := Trim(string(titlebuf))
+  else
+    cap := '';
+  if GetClassNameW(hwnd, cnamebuf, Length(cnamebuf)) > 0 then
+    wndClassName := Trim(string(cnamebuf))
+  else
+    wndClassName := '';
+  es := GetWindowLongPtr(hwnd, GWL_EXSTYLE);
+  {$ifdef DEBUG}
+  LogMessageToFile(Format('  HWND=%d Title="%s" Class="%s" Visible=%s Owner=%d ExStyle=0x%8.8x ToolWindow=%s',
+    [hwnd, cap, wndClassName, BoolToStr(visible, True), owner, UIntPtr(es), BoolToStr((es and WS_EX_TOOLWINDOW) <> 0, True)]));
+  {$endif}
+  Result := True;
 end;
 
 {------------------------------------------------------------------------------
@@ -1272,4 +1311,247 @@ begin
   end;
 end;
 
+{------------------------------------------------------------------------------
+  updateBegin
+  -----------
+  Signal the start of a long-running update operation (show taskbar progress).
+ ------------------------------------------------------------------------------}
+procedure TTrndiNativeWindows.updateBegin;
+var
+  tb: TWinTaskbar;
+  ok: Boolean;
+  chosenHandle: HWND;
+  // Diagnostics variables for taskbar HWND inspection
+  wh: HWND;
+  buf: array[0..511] of WideChar;
+  cls: array[0..255] of WideChar;
+  cap: string;
+  wndClassName: string;
+  exstyle: NativeUInt;
+  style: NativeUInt;
+begin
+  {$ifdef DEBUG}
+  // Always log attempt so we can diagnose Release builds
+  LogMessageToFile('updateBegin: Getting global taskbar');
+
+  // Emit application/window diagnostics so we can verify which HWND we target.
+  LogMessageToFile(PChar(Format('[Trndi] MainFormOnTaskbar=%s MainForm.Handle=%d Application.Handle=%d',
+    [BoolToStr(Application.MainFormOnTaskbar, True), PtrInt(Application.MainForm.Handle), PtrInt(Application.Handle)])));
+  {$endif}
+  // Lazy-create GlobalTaskbar if it wasn't initialized at unit init time
+  if (GlobalTaskbar = nil) or (not GlobalTaskbar.Initialized) then
+  begin
+    {$ifdef DEBUG}
+    LogMessageToFile('updateBegin: GlobalTaskbar nil/uninitialized — attempting lazy init');
+    LogMessageToFile(PChar('[Trndi] updateBegin: attempting lazy GlobalTaskbar init'));
+    {$endif}
+    try
+      if Assigned(GlobalTaskbar) then
+        FreeAndNil(GlobalTaskbar);
+      chosenHandle := 0;
+      if Assigned(Application) and Assigned(Application.MainForm) then
+        chosenHandle := Application.MainForm.Handle;
+      GlobalTaskbar := TWinTaskbar.Create(chosenHandle);
+      if Assigned(GlobalTaskbar) then
+      begin
+       {$ifdef DEBUG}
+        LogMessageToFile(PChar(Format('[Trndi] updateBegin: lazy init result Initialized=%s handle=%d LastError=%s',
+          [BoolToStr(GlobalTaskbar.Initialized, True), GlobalTaskbar.WindowHandle, GlobalTaskbar.LastError])));
+        LogMessageToFile(Format('updateBegin: lazy init result Initialized=%s, handle=%d, LastError=%s',
+          [BoolToStr(GlobalTaskbar.Initialized, True), GlobalTaskbar.WindowHandle, GlobalTaskbar.LastError]));
+        {$endif}
+      end
+      else
+      begin
+        {$ifdef DEBUG}
+        LogMessageToFile(PChar('[Trndi] updateBegin: lazy init result = nil'));
+        LogMessageToFile('updateBegin: lazy init result = nil');
+        {$endif}
+      end;
+    except
+      on E: Exception do
+      begin
+        {$ifdef DEBUG}
+        LogMessageToFile(PChar('[Trndi] updateBegin: lazy init exception: ' + E.Message));
+        LogMessageToFile('updateBegin: lazy init exception: ' + E.Message);
+        {$endif}
+        if Assigned(GlobalTaskbar) then FreeAndNil(GlobalTaskbar);
+      end;
+    end;
+  end;
+
+  tb := GlobalTaskbar;
+  // Emit an OS-level debug trace (visible with DebugView) in all builds
+  {$ifdef DEBUG}
+  if Assigned(tb) then
+    LogMessageToFile(PChar(Format('[Trndi] updateBegin: GlobalTaskbar initialized=%s handle=%d', [BoolToStr(tb.Initialized, True), tb.WindowHandle])))
+  else
+    LogMessageToFile(PChar('[Trndi] updateBegin: GlobalTaskbar = nil'));
+  {$endif}
+
+  {$ifdef DEBUG}
+  if Assigned(tb) then
+    LogMessageToFile(Format('updateBegin: GlobalTaskbar returned (Initialized=%s, handle=%d)',
+      [BoolToStr(tb.Initialized, True), tb.WindowHandle]))
+  else
+    LogMessageToFile('updateBegin: GlobalTaskbar returned nil');
+  {$endif}
+
+  if Assigned(tb) and tb.Initialized then
+  begin
+    // --- Additional diagnostics: log window title/class/styles for the chosen HWND ---
+    {$ifdef DEBUG}
+    try
+      // Safe helper inline (avoid adding new global funcs): log info for the taskbar target
+      wh := tb.WindowHandle;
+      cap := '';
+      wndClassName := '';
+
+      if (wh <> 0) and IsWindow(wh) then
+      begin
+        if GetWindowTextW(wh, buf, Length(buf)) > 0 then
+          cap := Trim(string(buf));
+        if GetClassNameW(wh, cls, Length(cls)) > 0 then
+          wndClassName := Trim(string(cls));
+        LogMessageToFile(Format('updateBegin: Taskbar target HWND=%d Title="%s" Class="%s" Visible=%s',
+          [wh, cap, wndClassName, BoolToStr(IsWindowVisible(wh), True)]));
+
+        // Log extended styles that may prevent a taskbar button (toolwindow etc.)
+        exstyle := NativeUInt(GetWindowLongPtr(wh, GWL_EXSTYLE));
+        style := NativeUInt(GetWindowLongPtr(wh, GWL_STYLE));
+      end
+      else
+        LogMessageToFile('updateBegin: Taskbar target HWND is invalid or not a window');
+
+      // Enumerate top-level windows owned by this process and log candidates
+      LogMessageToFile('updateBegin: Enumerating top-level windows for this PID:');
+      // Use a unit-level callback to avoid nested-declaration/calling-convention issues
+      EnumWindows(@EnumLogWnd_UpdateBegin, 0);
+    except
+      on E: Exception do
+        LogMessageToFile('updateBegin: Diagnostics enumeration failed: ' + E.Message);
+    end;
+    {$endif}
+    // --- end diagnostics ---
+
+    // Ensure the main form is visible or minimized so progress can be shown on taskbar
+    try
+      if Assigned(Application.MainForm) and
+         (not Application.MainForm.Visible) and
+         (Application.MainForm.WindowState <> wsMinimized) then
+      begin
+        Application.MainForm.WindowState := wsMinimized;
+        {$ifdef DEBUG}
+        LogMessageToFile(PChar('[Trndi] updateBegin: Minimized main form to show progress'));
+       {$endif}
+      end;
+    except
+      on E: Exception do
+       {$ifdef DEBUG}LogMessageToFile(PChar('[Trndi] updateBegin: Exception minimizing form: ' + E.Message));{$else};{$endif}
+    end;
+
+    // Use indeterminate progress during the fetch (more visible)
+    ok := tb.SetProgressState(tbpsIndeterminate);
+
+    {$ifdef DEBUG}
+    // Trace the API call result via LogMessageToFile (always) and LogMessageToFile (DEBUG only)
+    if ok then
+      LogMessageToFile(PChar('[Trndi] updateBegin: SetProgressState(tbpsIndeterminate) succeeded'))
+    else
+      LogMessageToFile(PChar('[Trndi] updateBegin: progress API call failed: ' + tb.LastError));
+
+    if ok then
+      LogMessageToFile('updateBegin: SetProgressState(tbpsIndeterminate) succeeded')
+    else
+      LogMessageToFile('updateBegin: progress API call failed: ' + tb.LastError);
+    {$endif}
+  end
+  else
+  begin
+    {$ifdef DEBUG}
+    LogMessageToFile('updateBegin: GlobalTaskbar not available or not initialized');
+
+    LogMessageToFile(PChar('[Trndi] updateBegin: GlobalTaskbar not available or not initialized'));
+    {$endif}
+  end;
+end;
+
+{------------------------------------------------------------------------------
+  updateDone
+  ----------
+  Signal the completion of a long-running update operation (clear taskbar progress).
+ ------------------------------------------------------------------------------}
+procedure TTrndiNativeWindows.updateDone;
+var
+  chosenHandle: HWND;
+begin
+  {$ifdef DEBUG}
+  LogMessageToFile('updateDone: Getting global taskbar');
+  {$endif}
+  
+  // Lazy-init if GlobalTaskbar was not available earlier (safe, idempotent)
+  if (GlobalTaskbar = nil) or (not GlobalTaskbar.Initialized) then
+  begin
+    {$ifdef DEBUG}
+    LogMessageToFile('updateDone: GlobalTaskbar nil/uninitialized — attempting lazy init');
+
+    LogMessageToFile(PChar('[Trndi] updateDone: attempting lazy GlobalTaskbar init'));
+    {$endif}
+    try
+      if Assigned(GlobalTaskbar) then FreeAndNil(GlobalTaskbar);
+      chosenHandle := 0;
+      if Assigned(Application) and Assigned(Application.MainForm) then
+        chosenHandle := Application.MainForm.Handle;
+      GlobalTaskbar := TWinTaskbar.Create(chosenHandle);
+      if Assigned(GlobalTaskbar) then
+      begin
+       {$ifdef DEBUG}
+        LogMessageToFile(PChar(Format('[Trndi] updateDone: lazy init Initialized=%s handle=%d LastError=%s',
+          [BoolToStr(GlobalTaskbar.Initialized, True), GlobalTaskbar.WindowHandle, GlobalTaskbar.LastError])));
+
+        LogMessageToFile(Format('updateDone: lazy init result Initialized=%s, handle=%d, LastError=%s',
+          [BoolToStr(GlobalTaskbar.Initialized, True), GlobalTaskbar.WindowHandle, GlobalTaskbar.LastError]));
+        {$endif}
+      end
+      else
+      begin
+        {$ifdef DEBUG}
+        LogMessageToFile(PChar('[Trndi] updateDone: lazy init result = nil'));
+
+        LogMessageToFile('updateDone: lazy init result = nil');
+        {$endif}
+      end;
+    except
+      on E: Exception do
+      begin
+        {$ifdef DEBUG}
+        LogMessageToFile(PChar('[Trndi] updateDone: lazy init exception: ' + E.Message));
+
+        LogMessageToFile('updateDone: lazy init exception: ' + E.Message);
+        {$endif}
+        if Assigned(GlobalTaskbar) then FreeAndNil(GlobalTaskbar);
+      end;
+    end;
+  end;
+
+  if Assigned(GlobalTaskbar) and GlobalTaskbar.Initialized then
+  begin
+    {$ifdef DEBUG}
+    LogMessageToFile(PChar('[Trndi] updateDone: Clearing taskbar progress (tbpsNone)'));
+
+    LogMessageToFile('updateDone: Setting progress state to none');
+    {$endif}
+    GlobalTaskbar.SetProgressState(tbpsNone);
+  end
+  else
+  begin
+    {$ifdef DEBUG}
+    LogMessageToFile(PChar('[Trndi] updateDone: GlobalTaskbar not available or not initialized'));
+
+    LogMessageToFile('updateDone: GlobalTaskbar not available or not initialized');
+    {$endif}
+  end;
+end;
+
+end.
 end.
