@@ -1452,6 +1452,7 @@ begin
 
     // Use indeterminate progress during the fetch (more visible)
     ok := tb.SetProgressState(tbpsIndeterminate);
+    tb.SetProgressValue(50,100);
 
     {$ifdef DEBUG}
     // Trace the API call result via LogMessageToFile (always) and LogMessageToFile (DEBUG only)
