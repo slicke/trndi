@@ -35,6 +35,7 @@ uses
 var
 LogFilePath: string;
 FLogFile: TextFile;
+BundleID: string;
 
 function FallbackAppPath: string;
 begin
@@ -180,7 +181,6 @@ initialization
   // Truncate the debug log at process start so we append during runtime.
   try
     {$ifdef DARWIN}
-    var BundleID: string;
     try
       LogFilePath := NSStrToStr(
         NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, True)
