@@ -580,11 +580,6 @@
         <ResourceBaseClass Value="Form"/>
       </Unit>
       <Unit>
-        <Filename Value="units\misc\jumplistmanager.pp"/>
-        <IsPartOfProject Value="True"/>
-        <UnitName Value="JumpListManager"/>
-      </Unit>
-      <Unit>
         <Filename Value="units\slicke\slicke.ux.alert.pp"/>
         <IsPartOfProject Value="True"/>
       </Unit>

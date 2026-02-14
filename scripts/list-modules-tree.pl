@@ -17,6 +17,12 @@ while (<STDIN>) {
     $u = "forms*.$u" unless $u =~ /^forms(\*|\.)/i;
   }
 
+  # Place build-related helper `buildinfo.pp` under a visible `ci*` top-level
+  # category so it stands out in the module tree (e.g. CI/build metadata).
+  if (defined $path && $path =~ m{[\\/](?:buildinfo)\.(?:pp|pas)$}i) {
+    $u = "ci*.$u" unless $u =~ /^ci(\*|\.)/i;
+  }
+
   my @p = split(/\./, $u);
   my $h = $root;
   for my $part (@p) {

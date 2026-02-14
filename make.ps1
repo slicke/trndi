@@ -165,6 +165,12 @@ switch ($firstArg) {
             if ($path -and $path -match '^[Uu]nits[\\/](?:forms)(?:[\\/]|$)') {
                 if ($unit -notmatch '^forms(\*|\.)') { $unit = "forms*.$unit" }
             }
+
+            # Files named buildinfo.pp / buildinfo.pas are shown under `ci*`
+            if ($path -and $path -match '[\\/](?:buildinfo)\.(?:pp|pas)$') {
+                if ($unit -notmatch '^ci(\*|\.)') { $unit = "ci*.$unit" }
+            }
+
             "$unit`t$path"
         }
 
