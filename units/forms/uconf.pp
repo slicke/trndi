@@ -54,7 +54,7 @@ interface
 
 uses
 Classes, ComCtrls, ExtCtrls, Spin, StdCtrls, SysUtils, Forms, Controls,
-Graphics, Dialogs, LCLTranslator, trndi.native, lclintf, process,
+Graphics, Dialogs, LCLTranslator, trndi.native, lclintf, process{$ifdef X_MAC}, CocoaAll, nsutils.nshelpers{$endif},
 slicke.ux.alert, slicke.ux.native, slicke.versioninfo, trndi.funcs, buildinfo, StrUtils, trndi.api, trndi.api.nightscout, trndi.api.nightscout3, trndi.api.dexcom, trndi.api.dexcomNew, trndi.api.tandem, trndi.api.xdrip, razer.chroma, math, trndi.types, trndi.api.debug_firstXmissing, trndi.api.debug_intermittentmissing, trndi.api.debug_custom, trndi.api.debug, trndi.api.debug_slow, base64, Variants{$ifdef X_WIN}, ComObj{$endif};
 
 {$I ../../inc/defines.inc}
@@ -1458,46 +1458,38 @@ begin
   {$ifdef X_MAC}
   if tnative.SpeakAvailable then
   begin
+    // Prefer Cocoa API on macOS (more reliable than parsing `say` output)
     try
-      Proc := TProcess.Create(nil);
-      Proc.Executable := '/usr/bin/say';
-      Proc.Parameters.Add('-v');
-      Proc.Parameters.Add('?');
-      Proc.Options := [poUsePipes, poStderrToOutPut];
-      Proc.Execute;
-      
-      Proc.WaitOnExit(5000);
-      if Proc.Output.NumBytesAvailable > 0 then
-        Output := Proc.Output.ReadAnsiString
-      else
-        Output := '';
-      Proc.Free;
-      
-      Lines := TStringList.Create;
-      try
-        Lines.Text := Output;
-        for i := 0 to Lines.Count - 1 do
+      var Voices: NSArray := NSSpeechSynthesizer.availableVoices;
+      if Voices <> nil then
+      begin
+        for i := 0 to Integer(Voices.count) - 1 do
         begin
-          voiceName := Trim(Lines[i]);
-          if voiceName <> '' then
+          var vID := NSString(Voices.objectAtIndex(i));
+          if vID = nil then Continue;
+          var attrs := NSSpeechSynthesizer.attributesForVoice(vID);
+          if attrs <> nil then
           begin
-            hashPos := Pos('#', voiceName);
-            if hashPos > 0 then
-            begin
-              voiceName := Trim(Copy(voiceName, 1, hashPos - 1));
-              // Find the last space to separate voice name from language
-              lastSpace := 0;
-              for j := Length(voiceName) downto 1 do
-                if voiceName[j] = ' ' then
-                begin
-                  lastSpace := j;
-                  break;
-                end;
-              if lastSpace > 0 then
-              begin
-                voiceName := Trim(Copy(voiceName, 1, lastSpace - 1));
-                if voiceName <> '' then
-                  cbTTSVoice.Items.Add(voiceName);
+            try
+              var nameObj := NSString(attrs.objectForKey(StrToNSStr('NSVoiceName')));
+              voiceName := '';
+              if nameObj <> nil then
+                voiceName := NSStrToStr(nameObj);
+              if voiceName = '' then
+                voiceName := NSStrToStr(NSString(vID));
+              if voiceName <> '' then
+                cbTTSVoice.Items.Add(voiceName)
+              else
+                cbTTSVoice.Items.Add('Voice ' + IntToStr(i + 1));
+            except
+              cbTTSVoice.Items.Add('Voice ' + IntToStr(i + 1));
+            end;
+          end;
+        end;
+      end;
+    except
+      // Fallback: keep default-only list when Cocoa query fails
+    end;
               end;
             end;
           end;
