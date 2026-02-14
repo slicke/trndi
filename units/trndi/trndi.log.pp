@@ -17,7 +17,11 @@ unit trndi.log;
 
 interface
 
-procedure TrndiDLog(const Msg: string);
+procedure TrndiDLog(const Msg: string); // Debug log entry; only active in DEBUG builds
+procedure TrndiELog(const Msg: string); // Error log entry
+procedure TrndiWLog(const Msg: string); // Warning log entry
+procedure TrndiNetLog(const Msg: string); // Network log entry (debug only)
+
 
 implementation
 
@@ -38,6 +42,21 @@ begin
 end;
 
 {$ifdef DEBUG}
+procedure TrndiELog(const Msg: string);
+begin
+  TrndiDLog('[ERROR] ' + Msg);
+end;
+
+procedure TrndiWLog(const Msg: string);
+begin
+  TrndiDLog('[WARNING] ' + Msg);
+end;
+
+procedure TrndiNetLog(const Msg: string);
+begin
+  TrndiDLog('[NETWORK] ' + Msg);
+end;
+
 procedure TrndiDLog(const Msg: string);
 const
   MaxAttempts = 6;
@@ -129,6 +148,25 @@ begin
   end;
 end;
 {$else}
+
+procedure TrndiWLog(const Msg: string);
+begin
+if Msg = '' then
+  Exit;
+end;
+
+procedure TrndiNetLog(const Msg: string);
+begin
+if Msg = '' then
+  Exit;
+end;
+
+procedure TrndiELog(const Msg: string);
+begin
+if Msg = '' then
+  Exit;
+end;
+
 procedure TrndiDLog(const Msg: string);
 begin
   // Keep parameter referenced to avoid unused-parameter hints in non-DEBUG builds.

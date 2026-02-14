@@ -679,35 +679,35 @@ begin
       if PerformRequest(true, false) then
       begin
         {$ifdef DEBUG}
-        TrndiDLog('HTTP GET: proxy attempt succeeded');
+        TrndiNetLog('HTTP GET: proxy attempt succeeded');
         {$endif}
         Result := true;
         Exit;
       end;
 
       {$ifdef DEBUG}
-      TrndiDLog('HTTP GET: proxy attempt failed: ' + res + ' ; retrying direct');
+      TrndiNetLog('HTTP GET: proxy attempt failed: ' + res + ' ; retrying direct');
       {$endif}
     end;
 
     // Fallback: try without proxy
     {$ifdef DEBUG}
     if proxyHost <> '' then
-      TrndiDLog('HTTP GET: attempting direct (forcing no-proxy on WinHTTP)')
+      TrndiNetLog('HTTP GET: attempting direct (forcing no-proxy on WinHTTP)')
     else
-      TrndiDLog('HTTP GET: attempting direct');
+      TrndiNetLog('HTTP GET: attempting direct');
     {$endif}
     if PerformRequest(false, proxyHost <> '') then
     begin
       {$ifdef DEBUG}
-      TrndiDLog('HTTP GET: direct attempt succeeded');
+      TrndiNetLog('HTTP GET: direct attempt succeeded');
       {$endif}
       Result := true;
     end
     else
     begin
       {$ifdef DEBUG}
-      TrndiDLog('HTTP GET: direct attempt failed: ' + res);
+      TrndiNetLog('HTTP GET: direct attempt failed: ' + res);
       {$endif}
       Result := false;
     end;

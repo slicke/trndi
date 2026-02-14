@@ -1919,7 +1919,7 @@ begin
           MaskParam(maskedSx, 'password');
           MaskParam(maskedSx, 'client_secret');
 
-          TrndiDLog('HTTP POST body (masked): ' + Copy(maskedSx, 1, 2000));
+          TrndiNetLog('HTTP POST body (masked): ' + Copy(maskedSx, 1, 2000));
 
           curl_easy_setopt(handle, CURLOPT_POST, clong(1));
           curl_easy_setopt(handle, CURLOPT_POSTFIELDS, pchar(sx));
@@ -2153,7 +2153,7 @@ begin
             maskedSx := StringReplace(maskedSx, 'code=', 'code=***', [rfIgnoreCase]);
             maskedSx := StringReplace(maskedSx, 'password=', 'password=***', [rfIgnoreCase]);
             maskedSx := StringReplace(maskedSx, 'client_secret=', 'client_secret=***', [rfIgnoreCase]);
-            TrndiDLog('HTTP POST body (masked): ' + Copy(maskedSx, 1, 2000));
+            TrndiNetLog('HTTP POST body (masked): ' + Copy(maskedSx, 1, 2000));
             response := HTTP.Post(address, bodyData);
           end
           else
