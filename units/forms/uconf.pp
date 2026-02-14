@@ -1425,6 +1425,10 @@ var
   Lines: TStringList;
   i, j, hashPos, lastSpace: integer;
   voiceName: string;
+  Voices: NSArray;
+  vID: NSString;
+  attrs: NSDictionary;
+  nameObj: NSString;
 {$endif}
 begin
   cbTTSVoice.Items.Clear;
@@ -1460,18 +1464,18 @@ begin
   begin
     // Prefer Cocoa API on macOS (more reliable than parsing `say` output)
     try
-      var Voices: NSArray := NSSpeechSynthesizer.availableVoices;
+      Voices := NSSpeechSynthesizer.availableVoices;
       if Voices <> nil then
       begin
         for i := 0 to Integer(Voices.count) - 1 do
         begin
-          var vID := NSString(Voices.objectAtIndex(i));
+          vID := NSString(Voices.objectAtIndex(i));
           if vID = nil then Continue;
-          var attrs := NSSpeechSynthesizer.attributesForVoice(vID);
+          attrs := NSSpeechSynthesizer.attributesForVoice(vID);
           if attrs <> nil then
           begin
             try
-              var nameObj := NSString(attrs.objectForKey(StrToNSStr('NSVoiceName')));
+              nameObj := NSString(attrs.objectForKey(StrToNSStr('NSVoiceName')));
               voiceName := '';
               if nameObj <> nil then
                 voiceName := NSStrToStr(nameObj);
