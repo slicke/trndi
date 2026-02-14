@@ -494,7 +494,7 @@ msgstr "Hög kontrast"
 
 #: tfconf.cbmediadisable.caption
 msgid "Disable the entire media system"
-msgstr ""
+msgstr "Stäng av hela mediasystemet"
 
 #: tfconf.cbmultitouch.caption
 msgid "Multi-touch"
@@ -676,7 +676,6 @@ msgid "Display Preferences"
 msgstr "Visningsval"
 
 #: tfconf.gbmedia.caption
-#, fuzzy
 msgctxt "tfconf.gbmedia.caption"
 msgid "Play Media"
 msgstr "Spela Media"
@@ -704,7 +703,6 @@ msgid "Settings Management"
 msgstr "Hantera inställningar"
 
 #: tfconf.gburl.caption
-#, fuzzy
 msgctxt "tfconf.gburl.caption"
 msgid "Use URL"
 msgstr "Använd URL"
@@ -2812,4 +2810,3 @@ msgstr "Historikgraf"
 #, object-pascal-format
 msgid "Readings (%s)"
 msgstr "Avläsningar (%s)"
-
