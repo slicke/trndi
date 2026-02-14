@@ -487,6 +487,10 @@ msgstr ""
 msgid "High Contrast"
 msgstr ""
 
+#: tfconf.cbmediadisable.caption
+msgid "Disable the entire media system"
+msgstr ""
+
 #: tfconf.cbmultitouch.caption
 msgid "Multi-touch"
 msgstr ""
@@ -668,6 +672,11 @@ msgstr ""
 msgid "Display Preferences"
 msgstr ""
 
+#: tfconf.gbmedia.caption
+msgctxt "tfconf.gbmedia.caption"
+msgid "Play Media"
+msgstr ""
+
 #: tfconf.gbmulti.caption
 msgid "Account Settings"
 msgstr ""
@@ -686,16 +695,13 @@ msgctxt "tfconf.gboverride1.caption"
 msgid "Override High / Low limits"
 msgstr ""
 
-#: tfconf.gboverride2.caption
-msgid "Play Media"
-msgstr ""
-
-#: tfconf.gboverride3.caption
-msgid "Use URL"
-msgstr ""
-
 #: tfconf.gbsettings.caption
 msgid "Settings Management"
+msgstr ""
+
+#: tfconf.gburl.caption
+msgctxt "tfconf.gburl.caption"
+msgid "Use URL"
 msgstr ""
 
 #: tfconf.groupbox1.caption

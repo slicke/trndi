@@ -12435,7 +12435,7 @@ object fConf: TfConf
       Caption = 'Integrations'
       ClientHeight = 490
       ClientWidth = 637
-      object gbOverride2: TGroupBox
+      object gbMedia: TGroupBox
         Left = 10
         Height = 246
         Top = 10
@@ -12524,15 +12524,15 @@ object fConf: TfConf
           TabOrder = 3
         end
       end
-      object gbOverride3: TGroupBox
+      object gbURL: TGroupBox
         Left = 10
-        Height = 200
+        Height = 174
         Top = 266
         Width = 617
         Align = alTop
         BorderSpacing.Around = 10
         Caption = 'Use URL'
-        ClientHeight = 180
+        ClientHeight = 154
         ClientWidth = 613
         ParentBackground = False
         TabOrder = 1
@@ -12639,6 +12639,15 @@ object fConf: TfConf
           TabOrder = 2
           OnClick = bUseURLHelpClick
         end
+      end
+      object cbMediaDisable: TCheckBox
+        Left = 10
+        Height = 19
+        Top = 456
+        Width = 185
+        Caption = 'Disable the entire media system'
+        TabOrder = 2
+        OnChange = cbMediaDisableChange
       end
     end
     object tsSystem: TTabSheet

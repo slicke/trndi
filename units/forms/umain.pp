@@ -3092,6 +3092,7 @@ procedure LoadUserSettings(f: TfConf);
       cbChromaLow.ItemIndex := ChromaActionToIndex(
         GetSetting('razer.low.action', DefaultChromaAlertAction));
 
+      cbMediaDisable.Checked := native.GetBoolSetting('media.disabled', false);
       cbMusicPause.Checked := GetBoolSetting('media.pause');
       cbTTS.Checked := GetBoolSetting('main.announce', false);
       cbHContrast.Checked := GetBoolSetting('main.high_contrast', false);
@@ -3459,6 +3460,7 @@ procedure SaveUserSettings(f: TfConf);
       SetSetting('razer.high.action', IndexToChromaAction(cbChromaHigh.ItemIndex));
       SetSetting('razer.low.action', IndexToChromaAction(cbChromaLow.ItemIndex));
 
+      SetSetting('media.disabled', cbMediaDisable.Checked);
       SetSetting('media.pause', cbMusicPause.Checked);
       SetSetting('main.high_contrast', cbHContrast.Checked);
       SetSetting('main.announce', cbTTS.Checked);
@@ -5294,14 +5296,19 @@ begin
       native.attention(ifthen(multi, multinick, RS_WARN_BG_HI_TITLE),
         Format(RS_WARN_BG_HI, [lVal.Caption]));
 
-  if native.GetBoolSetting('media.pause') then
-    MediaController.Pause;
+  if not native.GetBoolSetting('media.disabled', false) then begin
+    if native.GetBoolSetting('media.pause') then
+     if assigned(mediacontroller) and mediacontroller.IsInitialized then
+      MediaController.Pause;
 
-  if native.TryGetSetting('media.url_high', url) then
-  begin
-    highAlerted := true;
-    MediaController.PlayTrackFromURL(url);
+    if native.TryGetSetting('media.url_high', url) then
+    begin
+      highAlerted := true;
+      if assigned(mediacontroller) and mediacontroller.IsInitialized then
+        MediaController.PlayTrackFromURL(url);
+    end;
   end;
+
   if native.TryGetSetting('url_remote.url_high', url) then
   begin
     highAlerted := true;
@@ -5340,13 +5347,17 @@ begin
       native.attention(ifthen(multi, multinick, RS_WARN_BG_LO_TITLE),
         Format(RS_WARN_BG_LO, [lVal.Caption]));
 
-  if native.GetBoolSetting('media.pause') then
-    MediaController.Pause;
+  if not native.GetBoolSetting('media.disabled', false) then begin
+    if native.GetBoolSetting('media.pause') then
+      if assigned(mediacontroller) and mediacontroller.IsInitialized then
+        MediaController.Pause;
 
-  if native.TryGetSetting('media.url_low', url) then
-  begin
-    lowAlerted := true;
-    MediaController.PlayTrackFromURL(url);
+    if native.TryGetSetting('media.url_low', url) then
+    begin
+      lowAlerted := true;
+      if assigned(mediacontroller) and mediacontroller.IsInitialized then
+        MediaController.PlayTrackFromURL(url);
+    end;
   end;
   if native.TryGetSetting('url_remote.url_low', url) then
   begin
@@ -5404,7 +5415,9 @@ begin
     perfectTriggered := true;
 
     if native.TryGetSetting('media.url_perfect', url) then
-      MediaController.PlayTrackFromURL(url);
+      if assigned(mediacontroller) and mediacontroller.IsInitialized then
+        MediaController.PlayTrackFromURL(url);
+
     if native.TryGetSetting('url_remote.url_high', url) then
       native.getURL(url, url);
 

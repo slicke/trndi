@@ -130,6 +130,7 @@ TfConf = class(TForm)
   cbPredictShortSize: TComboBox;
   cbPrivacy: TCheckBox;
   cbHContrast: TCheckBox;
+  cbMediaDisable: TCheckBox;
   Label36: TLabel;
   Label37: TLabel;
   Label38: TLabel;
@@ -243,8 +244,8 @@ TfConf = class(TForm)
   gbDisplayPrefs: TGroupBox;
   gbMulti: TGroupBox;
   gbOverride: TGroupBox;
-  gbOverride2: TGroupBox;
-  gbOverride3: TGroupBox;
+  gbMedia: TGroupBox;
+  gbURL: TGroupBox;
   GroupBox1: TGroupBox;
   GroupBox2: TGroupBox;
   GroupBox3: TGroupBox;
@@ -371,6 +372,7 @@ TfConf = class(TForm)
   tsIntegration: TTabSheet;
   tsMulti: TTabSheet;
   tsSystem: TTabSheet;
+  procedure cbMediaDisableChange(Sender: TObject);
   function validateUser(var error: string): boolean;
   procedure bAddClick({%H-}Sender: TObject);
   procedure bBadgeFlashHelpClick({%H-}Sender: TObject);
@@ -1090,6 +1092,11 @@ begin
   end;
   end;
 
+end;
+
+procedure TfConf.cbMediaDisableChange(Sender: TObject);
+begin
+  gbMedia.Enabled := not cbMediaDisable.checked;
 end;
 
 procedure TfConf.bAddClick(Sender: TObject);

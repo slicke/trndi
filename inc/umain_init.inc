@@ -582,9 +582,11 @@ begin
   Application.OnException := @AppExceptionHandler;
 
   // Start media backend early
-  fSplash.incProgress(10, RS_INIT_MEDIA);
-  MediaController := TSystemMediaController.Create(Self);
-  MediaController.Initialize;
+  if not native.GetBoolSetting('media.disabled', false) then begin
+    fSplash.incProgress(10, RS_INIT_MEDIA);
+    MediaController := TSystemMediaController.Create(Self);
+       MediaController.Initialize;
+  end;
   Application.ProcessMessages;
 
   fSplash.incProgress(15, RS_INIT_FONTS);

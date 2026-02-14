@@ -492,6 +492,10 @@ msgstr "Trendpunkter"
 msgid "High Contrast"
 msgstr "Hög kontrast"
 
+#: tfconf.cbmediadisable.caption
+msgid "Disable the entire media system"
+msgstr ""
+
 #: tfconf.cbmultitouch.caption
 msgid "Multi-touch"
 msgstr "Multipek"
@@ -671,6 +675,12 @@ msgstr "8080"
 msgid "Display Preferences"
 msgstr "Visningsval"
 
+#: tfconf.gbmedia.caption
+#, fuzzy
+msgctxt "tfconf.gbmedia.caption"
+msgid "Play Media"
+msgstr "Spela Media"
+
 #: tfconf.gbmulti.caption
 msgid "Account Settings"
 msgstr "Kontoinställningar"
@@ -689,17 +699,15 @@ msgctxt "tfconf.gboverride1.caption"
 msgid "Override High / Low limits"
 msgstr "Åsidosätt höga / låga gränser"
 
-#: tfconf.gboverride2.caption
-msgid "Play Media"
-msgstr "Spela Media"
-
-#: tfconf.gboverride3.caption
-msgid "Use URL"
-msgstr "Använd URL"
-
 #: tfconf.gbsettings.caption
 msgid "Settings Management"
 msgstr "Hantera inställningar"
+
+#: tfconf.gburl.caption
+#, fuzzy
+msgctxt "tfconf.gburl.caption"
+msgid "Use URL"
+msgstr "Använd URL"
 
 #: tfconf.groupbox1.caption
 msgid "System Features"
@@ -2804,3 +2812,4 @@ msgstr "Historikgraf"
 #, object-pascal-format
 msgid "Readings (%s)"
 msgstr "Avläsningar (%s)"
+

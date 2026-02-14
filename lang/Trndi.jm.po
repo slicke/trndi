@@ -493,6 +493,10 @@ msgstr ""
 msgid "High Contrast"
 msgstr ""
 
+#: tfconf.cbmediadisable.caption
+msgid "Disable the entire media system"
+msgstr ""
+
 #: tfconf.cbmultitouch.caption
 msgid "Multi-touch"
 msgstr "Multipek"
@@ -674,6 +678,12 @@ msgstr ""
 msgid "Display Preferences"
 msgstr "Visningsval"
 
+#: tfconf.gbmedia.caption
+#, fuzzy
+msgctxt "tfconf.gbmedia.caption"
+msgid "Play Media"
+msgstr "Spela Media"
+
 #: tfconf.gbmulti.caption
 msgid "Account Settings"
 msgstr "Kontoinstellningar"
@@ -693,17 +703,15 @@ msgctxt "tfconf.gboverride1.caption"
 msgid "Override High / Low limits"
 msgstr "osidosett hôga / loga grenser"
 
-#: tfconf.gboverride2.caption
-msgid "Play Media"
-msgstr "Spela Media"
-
-#: tfconf.gboverride3.caption
-msgid "Use URL"
-msgstr "Anvend URL"
-
 #: tfconf.gbsettings.caption
 msgid "Settings Management"
 msgstr ""
+
+#: tfconf.gburl.caption
+#, fuzzy
+msgctxt "tfconf.gburl.caption"
+msgid "Use URL"
+msgstr "Anvend URL"
 
 #: tfconf.groupbox1.caption
 msgid "System Features"

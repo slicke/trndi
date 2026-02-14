@@ -571,7 +571,6 @@
       <Unit>
         <Filename Value="units\slicke\slicke.touchdetection.pp"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="slicke.touchdetection"/>
       </Unit>
       <Unit>
         <Filename Value="units\forms\ufloat.pp"/>
