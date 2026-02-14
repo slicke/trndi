@@ -11335,6 +11335,21 @@ object fConf: TfConf
           TabOrder = 5
           OnClick = bDotHelpClick
         end
+        object lDotCurr: TLabel
+          Cursor = crHandPoint
+          Left = 108
+          Height = 25
+          Top = 151
+          Width = 12
+          Alignment = taCenter
+          AutoSize = False
+          Caption = '•'
+          Font.Color = clWhite
+          Font.Height = 20
+          OptimalFill = True
+          ParentFont = False
+          OnClick = dotClick
+        end
       end
     end
     object tsTir: TTabSheet
@@ -13466,21 +13481,6 @@ object fConf: TfConf
         Caption = 'Enter a proxy server below, to have Trndi connect using it.'#10'Should the connection fail, Trndi will fall back to a direct connection.'#10#10'Proxy support is available for Windows, Linux, BSD and Haiku.'#10'macOS users must set the proxy settings in their System Settings.'#10#10'Leave empty to use a normal connection.'
       end
     end
-  end
-  object lDotCurr: TLabel
-    Cursor = crHandPoint
-    Left = 108
-    Height = 25
-    Top = 151
-    Width = 12
-    Alignment = taCenter
-    AutoSize = False
-    Caption = '•'
-    Font.Color = clWhite
-    Font.Height = 20
-    OptimalFill = True
-    ParentFont = False
-    OnClick = dotClick
   end
   object Label19: TLabel
     Left = 5
