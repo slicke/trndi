@@ -17,7 +17,7 @@ unit trndi.log;
 
 interface
 
-procedure LogMessageToFile(const Msg: string);
+procedure TrndiDLog(const Msg: string);
 
 implementation
 
@@ -38,7 +38,7 @@ begin
 end;
 
 {$ifdef DEBUG}
-procedure LogMessageToFile(const Msg: string);
+procedure TrndiDLog(const Msg: string);
 const
   MaxAttempts = 6;
   AttemptDelayMs = 120; // ms
@@ -129,7 +129,7 @@ begin
   end;
 end;
 {$else}
-procedure LogMessageToFile(const Msg: string);
+procedure TrndiDLog(const Msg: string);
 begin
   // Keep parameter referenced to avoid unused-parameter hints in non-DEBUG builds.
   if Msg = '' then

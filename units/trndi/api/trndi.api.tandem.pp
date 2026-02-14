@@ -438,9 +438,9 @@ var
       if (httpResponse.StatusCode < 200) or (httpResponse.StatusCode >= 300) then
       begin
         if httpResponse.Body <> '' then
-          LogMessageToFile('Android login failed: HTTP ' + IntToStr(httpResponse.StatusCode) + ' body=' + Copy(httpResponse.Body, 1, 200))
+          TrndiDLog('Android login failed: HTTP ' + IntToStr(httpResponse.StatusCode) + ' body=' + Copy(httpResponse.Body, 1, 200))
         else
-          LogMessageToFile('Android login failed: HTTP ' + IntToStr(httpResponse.StatusCode));
+          TrndiDLog('Android login failed: HTTP ' + IntToStr(httpResponse.StatusCode));
         Exit(False);
       end;
 
@@ -660,11 +660,11 @@ begin
     if (viewState = '') or (viewStateGen = '') or (eventValidation = '') then
     begin
       if lastFinalUrl <> '' then
-        LogMessageToFile('Control-IQ login parse failed. finalUrl=' + lastFinalUrl)
+        TrndiDLog('Control-IQ login parse failed. finalUrl=' + lastFinalUrl)
       else
-        LogMessageToFile('Control-IQ login parse failed. status=' + IntToStr(lastStatus));
+        TrndiDLog('Control-IQ login parse failed. status=' + IntToStr(lastStatus));
       if lastBody <> '' then
-        LogMessageToFile('Control-IQ login page prefix=' + Copy(lastBody, 1, 300));
+        TrndiDLog('Control-IQ login page prefix=' + Copy(lastBody, 1, 300));
       lastErr := 'Control-IQ login parse failed: missing hidden fields';
       Exit;
     end;
@@ -730,9 +730,9 @@ begin
     if (FControlIqAccessToken = '') or (FControlIqUserGuid = '') then
     begin
       if AndroidLogin(FControlIqUserGuid, FControlIqAccessToken, FControlIqAccessTokenExpiresAt) then
-        LogMessageToFile('Control-IQ login fallback: Android API token acquired')
+        TrndiDLog('Control-IQ login fallback: Android API token acquired')
       else
-        LogMessageToFile('Control-IQ login fallback failed: Android API login failed');
+        TrndiDLog('Control-IQ login fallback failed: Android API login failed');
     end;
 
     if (FControlIqUserGuid = '') then
@@ -861,10 +861,10 @@ begin
 
           valueStr := jsonObj.Get(keyName, '');
           if LooksLikeGuid(valueStr) then
-            LogMessageToFile('Tandem.Connect: JWT id claim ' + keyName + '=' + MaskValue(valueStr));
+            TrndiDLog('Tandem.Connect: JWT id claim ' + keyName + '=' + MaskValue(valueStr));
         end;
         if keyList <> '' then
-          LogMessageToFile('Tandem.Connect: JWT claims=' + keyList);
+          TrndiDLog('Tandem.Connect: JWT claims=' + keyList);
         
         // Extract claims
         if jsonObj.Find('pumperId') <> nil then
@@ -906,7 +906,7 @@ begin
           if guidCandidate <> '' then
           begin
             FControlIqUserGuid := guidCandidate;
-            LogMessageToFile('Tandem.Connect: JWT controlIqUserGuid=' + FControlIqUserGuid);
+            TrndiDLog('Tandem.Connect: JWT controlIqUserGuid=' + FControlIqUserGuid);
           end;
         end;
         
@@ -1132,10 +1132,10 @@ begin
     httpResponse := native.RequestEx(false, GetSourceUrl + 'api/reports/reportsfacade/' + FPumperId + '/pumpeventmetadata',
       [], '', nil, true, 10, authHeaders, false);
 
-    LogMessageToFile(Format('Tandem.SelectDevice: status=%d bytes=%d',
+    TrndiDLog(Format('Tandem.SelectDevice: status=%d bytes=%d',
       [httpResponse.StatusCode, Length(httpResponse.Body)]));
     if Length(httpResponse.Body) > 0 then
-      LogMessageToFile('Tandem.SelectDevice: body=' + Copy(httpResponse.Body, 1, 500));
+      TrndiDLog('Tandem.SelectDevice: body=' + Copy(httpResponse.Body, 1, 500));
     
     if (httpResponse.StatusCode < 200) or (httpResponse.StatusCode >= 300) then
     begin
@@ -1177,7 +1177,7 @@ begin
         maxDate := 0;
         selectedIdx := 0;
         
-        LogMessageToFile(Format('Tandem.SelectDevice: array count=%d', [jsonArray.Count]));
+        TrndiDLog(Format('Tandem.SelectDevice: array count=%d', [jsonArray.Count]));
         for i := 0 to jsonArray.Count - 1 do
         begin
           if jsonArray[i] is TJSONObject then
@@ -1192,7 +1192,7 @@ begin
               else
                 FDeviceId := '';
               selectedIdx := i;
-              LogMessageToFile('Tandem.SelectDevice: selected tconnectDeviceId=' + FDeviceId);
+              TrndiDLog('Tandem.SelectDevice: selected tconnectDeviceId=' + FDeviceId);
               Break;
             end;
           end;
@@ -1338,7 +1338,7 @@ begin
   customHeaders := TStringList.Create;
   
   try
-    LogMessageToFile('Tandem.Connect: start');
+    TrndiDLog('Tandem.Connect: start');
     // Generate PKCE parameters
     codeVerifier := GenerateCodeVerifier;
     codeChallenge := GenerateCodeChallenge(codeVerifier);
@@ -1357,7 +1357,7 @@ begin
     customHeaders.Clear;
     customHeaders.Add('User-Agent: ' + TANDEM_BASE_USER_AGENT);
     httpResponse := native.RequestEx(false, TANDEM_LOGIN_PAGE_URL, [], '', cookieJar, true, 10, customHeaders, false);
-    LogMessageToFile(Format('Tandem.Connect: login page success=%s status=%d bytes=%d err=%s',
+    TrndiDLog(Format('Tandem.Connect: login page success=%s status=%d bytes=%d err=%s',
       [BoolToStr(httpResponse.Success, true), httpResponse.StatusCode, Length(httpResponse.Body), httpResponse.ErrorMessage]));
 
     // Step 2: Login (POST credentials as JSON) with cookie jar
@@ -1374,7 +1374,7 @@ begin
     finally
       loginJson.Free;
     end;
-    LogMessageToFile(Format('Tandem.Connect: login response success=%s status=%d bytes=%d err=%s',
+    TrndiDLog(Format('Tandem.Connect: login response success=%s status=%d bytes=%d err=%s',
       [BoolToStr(httpResponse.Success, true), httpResponse.StatusCode, Length(httpResponse.Body), httpResponse.ErrorMessage]));
     
     loginOk := httpResponse.Success;
@@ -1397,7 +1397,7 @@ begin
         // ignore JSON parse errors here
       end;
     end;
-    LogMessageToFile(Format('Tandem.Connect: loginOk=%s statusVal=%s',
+    TrndiDLog(Format('Tandem.Connect: loginOk=%s statusVal=%s',
       [BoolToStr(loginOk, true), statusVal]));
 
     if not loginOk then
@@ -1417,7 +1417,7 @@ begin
     customHeaders.Add('User-Agent: ' + TANDEM_BASE_USER_AGENT);
     customHeaders.Add('Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8');
     httpResponse := native.RequestEx(false, authUrl, [], '', cookieJar, true, 10, customHeaders, false);
-    LogMessageToFile(Format('Tandem.Connect: auth response success=%s status=%d finalUrl=%s err=%s',
+    TrndiDLog(Format('Tandem.Connect: auth response success=%s status=%d finalUrl=%s err=%s',
       [BoolToStr(httpResponse.Success, true), httpResponse.StatusCode, httpResponse.FinalURL, httpResponse.ErrorMessage]));
     
     if (httpResponse.StatusCode >= 400) and (not httpResponse.Success) then
@@ -1438,7 +1438,7 @@ begin
     end;
     if (authCode = '') and (Length(httpResponse.Body) > 0) then
       authCode := ExtractAuthCodeFromText(httpResponse.Body);
-    LogMessageToFile(Format('Tandem.Connect: auth code length=%d', [Length(authCode)]));
+    TrndiDLog(Format('Tandem.Connect: auth code length=%d', [Length(authCode)]));
     
     if authCode = '' then
     begin
@@ -1454,12 +1454,12 @@ begin
           end;
           headerPreview := headerPreview + httpResponse.Headers[i] + #13#10;
         end;
-        LogMessageToFile('Tandem.Connect: auth response headers (preview):'#13#10 + headerPreview);
+        TrndiDLog('Tandem.Connect: auth response headers (preview):'#13#10 + headerPreview);
       end
       else
-        LogMessageToFile('Tandem.Connect: auth response headers (preview): <nil>');
+        TrndiDLog('Tandem.Connect: auth response headers (preview): <nil>');
       if locationHeader <> '' then
-        LogMessageToFile('Tandem.Connect: auth response Location=' + locationHeader);
+        TrndiDLog('Tandem.Connect: auth response Location=' + locationHeader);
       lastErr := 'Failed to extract authorization code from redirect. ' +
         'Check credentials or see redirect URL: ' + httpResponse.FinalURL;
       httpResponse.Headers.Free;
@@ -1482,7 +1482,7 @@ begin
     customHeaders.Clear;
     customHeaders.Add('User-Agent: ' + TANDEM_BASE_USER_AGENT);
     httpResponse := native.RequestEx(true, tokenUrl, params, '', cookieJar, true, 10, customHeaders, false);
-    LogMessageToFile(Format('Tandem.Connect: token response success=%s status=%d bytes=%d err=%s',
+    TrndiDLog(Format('Tandem.Connect: token response success=%s status=%d bytes=%d err=%s',
       [BoolToStr(httpResponse.Success, true), httpResponse.StatusCode, Length(httpResponse.Body), httpResponse.ErrorMessage]));
 
     tokenOk := (httpResponse.StatusCode >= 200) and (httpResponse.StatusCode < 300) and (Length(httpResponse.Body) > 0);
@@ -1507,7 +1507,7 @@ begin
       if httpResponse.Cookies <> nil then
         cookiesCount := httpResponse.Cookies.Count;
 
-      LogMessageToFile(Format('Tandem.Connect: token exchange failed: status=%d success=%s error=%s bytes=%d body_preview=%s headers=%s cookies=%d',
+      TrndiDLog(Format('Tandem.Connect: token exchange failed: status=%d success=%s error=%s bytes=%d body_preview=%s headers=%s cookies=%d',
         [httpResponse.StatusCode, BoolToStr(httpResponse.Success, true), httpResponse.ErrorMessage, Length(httpResponse.Body), bodyPreview, headerPreviewLocal, cookiesCount]));
 
       lastErr := 'Token exchange failed: ' + httpResponse.ErrorMessage;
@@ -1526,7 +1526,7 @@ begin
         FAccessToken := jsonObj.Get('access_token', '');
         idToken := jsonObj.Get('id_token', '');
 
-        LogMessageToFile(Format('Tandem.Connect: token parsed access_token_len=%d id_token_len=%d',
+        TrndiDLog(Format('Tandem.Connect: token parsed access_token_len=%d id_token_len=%d',
           [Length(FAccessToken), Length(idToken)]));
         
         if FAccessToken = '' then
@@ -1544,7 +1544,7 @@ begin
           Exit;
         end;
 
-        LogMessageToFile(Format('Tandem.Connect: JWT pumperId=%s accountId=%s', [FPumperId, FAccountId]));
+        TrndiDLog(Format('Tandem.Connect: JWT pumperId=%s accountId=%s', [FPumperId, FAccountId]));
         
         // Step 6: Select a device
         if not SelectDevice then
@@ -1851,9 +1851,9 @@ var
       sourceHeaders.Add('Referer: https://tconnect.tandemdiabetes.com/');
       sourceHeaders.Add('User-Agent: ' + TANDEM_BASE_USER_AGENT);
 
-      LogMessageToFile('Tandem.GetReadings: source pumpevents request=' + sourceUrl);
+      TrndiDLog('Tandem.GetReadings: source pumpevents request=' + sourceUrl);
       sourceResponse := native.RequestEx(false, sourceUrl, [], '', nil, true, 10, sourceHeaders, false);
-      LogMessageToFile(Format('Tandem.GetReadings: source pumpevents status=%d bytes=%d',
+      TrndiDLog(Format('Tandem.GetReadings: source pumpevents status=%d bytes=%d',
         [sourceResponse.StatusCode, Length(sourceResponse.Body)]));
 
       if (sourceResponse.StatusCode < 200) or (sourceResponse.StatusCode >= 300) then
@@ -1866,7 +1866,7 @@ var
       try
         if not ExtractPumpEventsPayload(jsonData, rawPayload) then
         begin
-          LogMessageToFile('Tandem.GetReadings: source pumpevents missing eventData payload');
+          TrndiDLog('Tandem.GetReadings: source pumpevents missing eventData payload');
           Exit;
         end;
       finally
@@ -1949,7 +1949,7 @@ var
             AResults[resultIdx].trend := TdFlat;
         end;
         for resultIdx := 0 to Min(Length(AResults) - 1, 4) do
-          LogMessageToFile(Format('Tandem.GetReadings: source pumpevents top[%d]=%s val=%.1f',
+          TrndiDLog(Format('Tandem.GetReadings: source pumpevents top[%d]=%s val=%.1f',
             [resultIdx, FormatDateTime('yyyy-mm-dd hh:nn', AResults[resultIdx].date),
              AResults[resultIdx].convert(mmol)]));
         if (AMaxCount > 0) and (Length(AResults) > AMaxCount) then
@@ -1985,16 +1985,16 @@ var
         Exit;
       ws2Url := ABase + 'therapytimeline2csv/' + AId + '/' +
         ws2StartDateStr + '/' + ws2EndDateStr + '?format=csv';
-      LogMessageToFile('Tandem.GetReadings: ws2 request=' + ws2Url);
+      TrndiDLog('Tandem.GetReadings: ws2 request=' + ws2Url);
       ws2Response := native.RequestEx(false, ws2Url, [], '', nil, true, 10, ws2Headers, false);
       if (ws2Response.StatusCode >= 200) and (ws2Response.StatusCode < 300) then
       begin
         Result := True;
         Exit;
       end;
-      LogMessageToFile('Tandem.GetReadings: ws2 status=' + IntToStr(ws2Response.StatusCode));
+      TrndiDLog('Tandem.GetReadings: ws2 status=' + IntToStr(ws2Response.StatusCode));
       if Trim(ws2Response.Body) <> '' then
-        LogMessageToFile('Tandem.GetReadings: ws2 error body prefix=' + Copy(ws2Response.Body, 1, 200));
+        TrndiDLog('Tandem.GetReadings: ws2 error body prefix=' + Copy(ws2Response.Body, 1, 200));
     end;
     procedure FreeWs2Response;
     begin
@@ -2205,7 +2205,7 @@ begin
     if controliqUserId = '' then
       controliqUserId := FAccountId;
 
-    LogMessageToFile('Tandem.GetReadings: controliqUserId=' + controliqUserId);
+    TrndiDLog('Tandem.GetReadings: controliqUserId=' + controliqUserId);
 
     SetLength(controliqCandidates, 0);
     controliqBase := GetControlIqBaseUrl;
@@ -2215,16 +2215,16 @@ begin
     for attemptIdx := 0 to High(controliqCandidates) do
     begin
       url := BuildControlIqUrl(controliqCandidates[attemptIdx], controliqUserId, startDate, endDate);
-      LogMessageToFile('Tandem.GetReadings: request=' + url);
+      TrndiDLog('Tandem.GetReadings: request=' + url);
       httpResponse := native.RequestEx(false, url, [], '', nil, true, 10, authHeaders, false);
-      LogMessageToFile(Format('Tandem.GetReadings: status=%d bytes=%d',
+      TrndiDLog(Format('Tandem.GetReadings: status=%d bytes=%d',
         [httpResponse.StatusCode, Length(httpResponse.Body)]));
 
       if httpResponse.StatusCode = 500 then
       begin
         FreeResponse(httpResponse);
         httpResponse := native.RequestEx(false, url, [], '', nil, true, 10, authHeaders, false);
-        LogMessageToFile(Format('Tandem.GetReadings: retry status=%d bytes=%d',
+        TrndiDLog(Format('Tandem.GetReadings: retry status=%d bytes=%d',
           [httpResponse.StatusCode, Length(httpResponse.Body)]));
       end;
 
@@ -2235,10 +2235,10 @@ begin
         if ControlIqLogin then
         begin
           authHeaders[0] := 'Authorization: Bearer ' + FControlIqAccessToken;
-          LogMessageToFile('Tandem.GetReadings: retry after Control-IQ login');
+          TrndiDLog('Tandem.GetReadings: retry after Control-IQ login');
           FreeResponse(httpResponse);
           httpResponse := native.RequestEx(false, url, [], '', nil, true, 10, authHeaders, false);
-          LogMessageToFile(Format('Tandem.GetReadings: status=%d bytes=%d',
+          TrndiDLog(Format('Tandem.GetReadings: status=%d bytes=%d',
             [httpResponse.StatusCode, Length(httpResponse.Body)]));
         end;
       end;
@@ -2249,7 +2249,7 @@ begin
         trimmedBody := TrimLeft(httpResponse.Body);
         if (trimmedBody <> '') and (trimmedBody[1] = '<') then
         begin
-          LogMessageToFile('Tandem.GetReadings: HTML response; skipping candidate');
+          TrndiDLog('Tandem.GetReadings: HTML response; skipping candidate');
           requestOk := False;
         end
         else
@@ -2279,7 +2279,7 @@ begin
         previewBody := Copy(httpResponse.Body, 1, 200);
         previewBody := StringReplace(previewBody, #13, ' ', [rfReplaceAll]);
         previewBody := StringReplace(previewBody, #10, ' ', [rfReplaceAll]);
-        LogMessageToFile('Tandem.GetReadings: error body prefix=' + previewBody);
+        TrndiDLog('Tandem.GetReadings: error body prefix=' + previewBody);
       end;
       lastErr := 'Failed to get readings: HTTP ' + IntToStr(httpResponse.StatusCode);
       ARes := lastErr;
@@ -2310,7 +2310,7 @@ begin
       previewBody := Copy(httpResponse.Body, 1, 80);
       previewBody := StringReplace(previewBody, #13, ' ', [rfReplaceAll]);
       previewBody := StringReplace(previewBody, #10, ' ', [rfReplaceAll]);
-      LogMessageToFile('Tandem.GetReadings: non-JSON response prefix=' + previewBody);
+      TrndiDLog('Tandem.GetReadings: non-JSON response prefix=' + previewBody);
       lastErr := 'Unsupported pump events response format';
       ARes := lastErr;
       FreeResponse(httpResponse);

@@ -61,7 +61,7 @@ begin
     TrndiAPIMsg.notice:
       begin end;
     TrndiAPIMsg.status:
-      LogMessageToFile(msg);
+      TrndiDLog(msg);
   end;
 end;
 

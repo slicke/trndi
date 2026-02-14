@@ -348,19 +348,19 @@ var
 begin
   Result := size * nmemb;
   
-  LogMessageToFile(Format('[CurlWriteCallback] Called: size=%d, nmemb=%d, Result=%d', [Int64(size), Int64(nmemb), Int64(Result)]));
+  TrndiDLog(Format('[CurlWriteCallback] Called: size=%d, nmemb=%d, Result=%d', [Int64(size), Int64(nmemb), Int64(Result)]));
   
   // Safety checks
   if (buffer = nil) or (size = 0) or (nmemb = 0) or (Result = 0) then
   begin
-    LogMessageToFile('[CurlWriteCallback] Safety check failed, returning Result');
+    TrndiDLog('[CurlWriteCallback] Safety check failed, returning Result');
     Exit;
   end;
   
   // Prevent overflow
   if Result > 10485760 then  // 10MB limit
   begin
-    LogMessageToFile('[CurlWriteCallback] Overflow check failed');
+    TrndiDLog('[CurlWriteCallback] Overflow check failed');
     Exit;
   end;
   
@@ -369,7 +369,7 @@ begin
   
   if stream = nil then
   begin
-    LogMessageToFile('[CurlWriteCallback] Stream is nil');
+    TrndiDLog('[CurlWriteCallback] Stream is nil');
     Exit;
   end;
   
@@ -378,12 +378,12 @@ begin
     if actualSize > 0 then
     begin
       stream.WriteBuffer(buffer^, actualSize);
-      LogMessageToFile(Format('[CurlWriteCallback] Wrote %d bytes to stream, returning %d', [Int64(actualSize), Int64(Result)]));
+      TrndiDLog(Format('[CurlWriteCallback] Wrote %d bytes to stream, returning %d', [Int64(actualSize), Int64(Result)]));
     end;
   except
     on E: Exception do
     begin
-      LogMessageToFile('[CurlWriteCallback] Exception: ' + E.Message);
+      TrndiDLog('[CurlWriteCallback] Exception: ' + E.Message);
       // Return 0 on error to signal curl to abort
       Result := 0;
     end;
@@ -1485,12 +1485,12 @@ var
           outRes := aClient.Get(address, params);
       end;
       Result := true;
-      LogMessageToFile('Windows: Request succeeded');
+      TrndiDLog('Windows: Request succeeded');
     except
       on E: Exception do
       begin
         outRes := E.Message;
-        LogMessageToFile('Windows: Request failed with exception: ' + E.Message);
+        TrndiDLog('Windows: Request failed with exception: ' + E.Message);
         Result := false;
       end;
     end;
@@ -1550,7 +1550,7 @@ begin
   end;
 
   // No custom proxy configured - use direct connection only (match other platforms)
-  LogMessageToFile('Windows: Using direct connection (no proxy configured) to: ' + address);
+  TrndiDLog('Windows: Using direct connection (no proxy configured) to: ' + address);
   client := TWinHTTPClient.Create(useragent, true);
   try
     if TryRequest(client, ResStr) then
@@ -1828,7 +1828,7 @@ begin
     else
       methodLabel := 'GET';
     startTick := GetTickCount64;
-    LogMessageToFile(Format('HTTP %s (curl): %s', [methodLabel, address]));
+    TrndiDLog(Format('HTTP %s (curl): %s', [methodLabel, address]));
     handle := curl_easy_init();
     if handle = nil then
     begin
@@ -1919,7 +1919,7 @@ begin
           MaskParam(maskedSx, 'password');
           MaskParam(maskedSx, 'client_secret');
 
-          LogMessageToFile('HTTP POST body (masked): ' + Copy(maskedSx, 1, 2000));
+          TrndiDLog('HTTP POST body (masked): ' + Copy(maskedSx, 1, 2000));
 
           curl_easy_setopt(handle, CURLOPT_POST, clong(1));
           curl_easy_setopt(handle, CURLOPT_POSTFIELDS, pchar(sx));
@@ -1959,7 +1959,7 @@ begin
         // Get redirect count
         curl_easy_getinfo(handle, CURLINFO_REDIRECT_COUNT, @Result.RedirectCount);
 
-        LogMessageToFile(Format('HTTP %s (curl) ok: status=%d, bytes=%d, redirects=%d, ms=%d',
+        TrndiDLog(Format('HTTP %s (curl) ok: status=%d, bytes=%d, redirects=%d, ms=%d',
           [methodLabel, Result.StatusCode, Length(Result.Body), Result.RedirectCount, endTick - startTick]));
 
         // Parse headers
@@ -2007,7 +2007,7 @@ begin
         endTick := GetTickCount64;
         Result.Success := false;
         Result.ErrorMessage := string(curl_easy_strerror(errCode));
-        LogMessageToFile(Format('HTTP %s (curl) error: code=%d, msg=%s, ms=%d',
+        TrndiDLog(Format('HTTP %s (curl) error: code=%d, msg=%s, ms=%d',
           [methodLabel, Ord(errCode), Result.ErrorMessage, endTick - startTick]));
       end;
 
@@ -2153,7 +2153,7 @@ begin
             maskedSx := StringReplace(maskedSx, 'code=', 'code=***', [rfIgnoreCase]);
             maskedSx := StringReplace(maskedSx, 'password=', 'password=***', [rfIgnoreCase]);
             maskedSx := StringReplace(maskedSx, 'client_secret=', 'client_secret=***', [rfIgnoreCase]);
-            LogMessageToFile('HTTP POST body (masked): ' + Copy(maskedSx, 1, 2000));
+            TrndiDLog('HTTP POST body (masked): ' + Copy(maskedSx, 1, 2000));
             response := HTTP.Post(address, bodyData);
           end
           else
@@ -2796,7 +2796,7 @@ begin
 
   repeat
     startTick := GetTickCount64;
-    LogMessageToFile(Format('HTTP %s (winhttp): %s', [methodLabel, currentUrl]));
+    TrndiDLog(Format('HTTP %s (winhttp): %s', [methodLabel, currentUrl]));
 
     if proxyHost <> '' then
     begin
@@ -2824,7 +2824,7 @@ begin
     responseHeaders.Free;
     Result.FinalURL := currentUrl;
 
-    LogMessageToFile(Format('HTTP %s (winhttp) status=%d, bytes=%d, redirects=%d, ms=%d',
+    TrndiDLog(Format('HTTP %s (winhttp) status=%d, bytes=%d, redirects=%d, ms=%d',
       [methodLabel, Result.StatusCode, Length(Result.Body), Result.RedirectCount, endTick - startTick]));
 
     if not followRedirects then

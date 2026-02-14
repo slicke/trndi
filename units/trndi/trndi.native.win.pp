@@ -337,7 +337,7 @@ begin
     wndClassName := '';
   es := GetWindowLongPtr(hwnd, GWL_EXSTYLE);
   {$ifdef DEBUG}
-  LogMessageToFile(Format('  HWND=%d Title="%s" Class="%s" Visible=%s Owner=%d ExStyle=0x%8.8x ToolWindow=%s',
+  TrndiDLog(Format('  HWND=%d Title="%s" Class="%s" Visible=%s Owner=%d ExStyle=0x%8.8x ToolWindow=%s',
     [hwnd, cap, wndClassName, BoolToStr(visible, True), owner, UIntPtr(es), BoolToStr((es and WS_EX_TOOLWINDOW) <> 0, True)]));
   {$endif}
   Result := True;
@@ -665,49 +665,49 @@ begin
 
     {$ifdef DEBUG}
     if proxyHost <> '' then
-      LogMessageToFile(Format('HTTP GET: proxy configured (%s:%s); url=%s', [proxyHost, proxyPort, SafeUrlForLog(url)]))
+      TrndiDLog(Format('HTTP GET: proxy configured (%s:%s); url=%s', [proxyHost, proxyPort, SafeUrlForLog(url)]))
     else
-      LogMessageToFile(Format('HTTP GET: no proxy configured; url=%s', [SafeUrlForLog(url)]));
+      TrndiDLog(Format('HTTP GET: no proxy configured; url=%s', [SafeUrlForLog(url)]));
     {$endif}
 
     // Try with proxy first if configured
     if proxyHost <> '' then
     begin
       {$ifdef DEBUG}
-      LogMessageToFile(Format('HTTP GET: attempting via proxy %s:%s', [proxyHost, proxyPort]));
+      TrndiDLog(Format('HTTP GET: attempting via proxy %s:%s', [proxyHost, proxyPort]));
       {$endif}
       if PerformRequest(true, false) then
       begin
         {$ifdef DEBUG}
-        LogMessageToFile('HTTP GET: proxy attempt succeeded');
+        TrndiDLog('HTTP GET: proxy attempt succeeded');
         {$endif}
         Result := true;
         Exit;
       end;
 
       {$ifdef DEBUG}
-      LogMessageToFile('HTTP GET: proxy attempt failed: ' + res + ' ; retrying direct');
+      TrndiDLog('HTTP GET: proxy attempt failed: ' + res + ' ; retrying direct');
       {$endif}
     end;
 
     // Fallback: try without proxy
     {$ifdef DEBUG}
     if proxyHost <> '' then
-      LogMessageToFile('HTTP GET: attempting direct (forcing no-proxy on WinHTTP)')
+      TrndiDLog('HTTP GET: attempting direct (forcing no-proxy on WinHTTP)')
     else
-      LogMessageToFile('HTTP GET: attempting direct');
+      TrndiDLog('HTTP GET: attempting direct');
     {$endif}
     if PerformRequest(false, proxyHost <> '') then
     begin
       {$ifdef DEBUG}
-      LogMessageToFile('HTTP GET: direct attempt succeeded');
+      TrndiDLog('HTTP GET: direct attempt succeeded');
       {$endif}
       Result := true;
     end
     else
     begin
       {$ifdef DEBUG}
-      LogMessageToFile('HTTP GET: direct attempt failed: ' + res);
+      TrndiDLog('HTTP GET: direct attempt failed: ' + res);
       {$endif}
       Result := false;
     end;
@@ -1332,18 +1332,18 @@ var
 begin
   {$ifdef DEBUG}
   // Always log attempt so we can diagnose Release builds
-  LogMessageToFile('updateBegin: Getting global taskbar');
+  TrndiDLog('updateBegin: Getting global taskbar');
 
   // Emit application/window diagnostics so we can verify which HWND we target.
-  LogMessageToFile(PChar(Format('[Trndi] MainFormOnTaskbar=%s MainForm.Handle=%d Application.Handle=%d',
+  TrndiDLog(PChar(Format('[Trndi] MainFormOnTaskbar=%s MainForm.Handle=%d Application.Handle=%d',
     [BoolToStr(Application.MainFormOnTaskbar, True), PtrInt(Application.MainForm.Handle), PtrInt(Application.Handle)])));
   {$endif}
   // Lazy-create GlobalTaskbar if it wasn't initialized at unit init time
   if (GlobalTaskbar = nil) or (not GlobalTaskbar.Initialized) then
   begin
     {$ifdef DEBUG}
-    LogMessageToFile('updateBegin: GlobalTaskbar nil/uninitialized — attempting lazy init');
-    LogMessageToFile(PChar('[Trndi] updateBegin: attempting lazy GlobalTaskbar init'));
+    TrndiDLog('updateBegin: GlobalTaskbar nil/uninitialized — attempting lazy init');
+    TrndiDLog(PChar('[Trndi] updateBegin: attempting lazy GlobalTaskbar init'));
     {$endif}
     try
       if Assigned(GlobalTaskbar) then
@@ -1355,25 +1355,25 @@ begin
       if Assigned(GlobalTaskbar) then
       begin
        {$ifdef DEBUG}
-        LogMessageToFile(PChar(Format('[Trndi] updateBegin: lazy init result Initialized=%s handle=%d LastError=%s',
+        TrndiDLog(PChar(Format('[Trndi] updateBegin: lazy init result Initialized=%s handle=%d LastError=%s',
           [BoolToStr(GlobalTaskbar.Initialized, True), GlobalTaskbar.WindowHandle, GlobalTaskbar.LastError])));
-        LogMessageToFile(Format('updateBegin: lazy init result Initialized=%s, handle=%d, LastError=%s',
+        TrndiDLog(Format('updateBegin: lazy init result Initialized=%s, handle=%d, LastError=%s',
           [BoolToStr(GlobalTaskbar.Initialized, True), GlobalTaskbar.WindowHandle, GlobalTaskbar.LastError]));
         {$endif}
       end
       else
       begin
         {$ifdef DEBUG}
-        LogMessageToFile(PChar('[Trndi] updateBegin: lazy init result = nil'));
-        LogMessageToFile('updateBegin: lazy init result = nil');
+        TrndiDLog(PChar('[Trndi] updateBegin: lazy init result = nil'));
+        TrndiDLog('updateBegin: lazy init result = nil');
         {$endif}
       end;
     except
       on E: Exception do
       begin
         {$ifdef DEBUG}
-        LogMessageToFile(PChar('[Trndi] updateBegin: lazy init exception: ' + E.Message));
-        LogMessageToFile('updateBegin: lazy init exception: ' + E.Message);
+        TrndiDLog(PChar('[Trndi] updateBegin: lazy init exception: ' + E.Message));
+        TrndiDLog('updateBegin: lazy init exception: ' + E.Message);
         {$endif}
         if Assigned(GlobalTaskbar) then FreeAndNil(GlobalTaskbar);
       end;
@@ -1384,17 +1384,17 @@ begin
   // Emit an OS-level debug trace (visible with DebugView) in all builds
   {$ifdef DEBUG}
   if Assigned(tb) then
-    LogMessageToFile(PChar(Format('[Trndi] updateBegin: GlobalTaskbar initialized=%s handle=%d', [BoolToStr(tb.Initialized, True), tb.WindowHandle])))
+    TrndiDLog(PChar(Format('[Trndi] updateBegin: GlobalTaskbar initialized=%s handle=%d', [BoolToStr(tb.Initialized, True), tb.WindowHandle])))
   else
-    LogMessageToFile(PChar('[Trndi] updateBegin: GlobalTaskbar = nil'));
+    TrndiDLog(PChar('[Trndi] updateBegin: GlobalTaskbar = nil'));
   {$endif}
 
   {$ifdef DEBUG}
   if Assigned(tb) then
-    LogMessageToFile(Format('updateBegin: GlobalTaskbar returned (Initialized=%s, handle=%d)',
+    TrndiDLog(Format('updateBegin: GlobalTaskbar returned (Initialized=%s, handle=%d)',
       [BoolToStr(tb.Initialized, True), tb.WindowHandle]))
   else
-    LogMessageToFile('updateBegin: GlobalTaskbar returned nil');
+    TrndiDLog('updateBegin: GlobalTaskbar returned nil');
   {$endif}
 
   if Assigned(tb) and tb.Initialized then
@@ -1413,7 +1413,7 @@ begin
           cap := Trim(string(buf));
         if GetClassNameW(wh, cls, Length(cls)) > 0 then
           wndClassName := Trim(string(cls));
-        LogMessageToFile(Format('updateBegin: Taskbar target HWND=%d Title="%s" Class="%s" Visible=%s',
+        TrndiDLog(Format('updateBegin: Taskbar target HWND=%d Title="%s" Class="%s" Visible=%s',
           [wh, cap, wndClassName, BoolToStr(IsWindowVisible(wh), True)]));
 
         // Log extended styles that may prevent a taskbar button (toolwindow etc.)
@@ -1421,15 +1421,15 @@ begin
         style := NativeUInt(GetWindowLongPtr(wh, GWL_STYLE));
       end
       else
-        LogMessageToFile('updateBegin: Taskbar target HWND is invalid or not a window');
+        TrndiDLog('updateBegin: Taskbar target HWND is invalid or not a window');
 
       // Enumerate top-level windows owned by this process and log candidates
-      LogMessageToFile('updateBegin: Enumerating top-level windows for this PID:');
+      TrndiDLog('updateBegin: Enumerating top-level windows for this PID:');
       // Use a unit-level callback to avoid nested-declaration/calling-convention issues
       EnumWindows(@EnumLogWnd_UpdateBegin, 0);
     except
       on E: Exception do
-        LogMessageToFile('updateBegin: Diagnostics enumeration failed: ' + E.Message);
+        TrndiDLog('updateBegin: Diagnostics enumeration failed: ' + E.Message);
     end;
     {$endif}
     // --- end diagnostics ---
@@ -1442,12 +1442,12 @@ begin
       begin
         Application.MainForm.WindowState := wsMinimized;
         {$ifdef DEBUG}
-        LogMessageToFile(PChar('[Trndi] updateBegin: Minimized main form to show progress'));
+        TrndiDLog(PChar('[Trndi] updateBegin: Minimized main form to show progress'));
        {$endif}
       end;
     except
       on E: Exception do
-       {$ifdef DEBUG}LogMessageToFile(PChar('[Trndi] updateBegin: Exception minimizing form: ' + E.Message));{$else};{$endif}
+       {$ifdef DEBUG}TrndiDLog(PChar('[Trndi] updateBegin: Exception minimizing form: ' + E.Message));{$else};{$endif}
     end;
 
     // Use indeterminate progress during the fetch (more visible)
@@ -1455,24 +1455,24 @@ begin
     tb.SetProgressValue(50,100);
 
     {$ifdef DEBUG}
-    // Trace the API call result via LogMessageToFile (always) and LogMessageToFile (DEBUG only)
+    // Trace the API call result via TrndiDLog (always) and TrndiDLog (DEBUG only)
     if ok then
-      LogMessageToFile(PChar('[Trndi] updateBegin: SetProgressState(tbpsIndeterminate) succeeded'))
+      TrndiDLog(PChar('[Trndi] updateBegin: SetProgressState(tbpsIndeterminate) succeeded'))
     else
-      LogMessageToFile(PChar('[Trndi] updateBegin: progress API call failed: ' + tb.LastError));
+      TrndiDLog(PChar('[Trndi] updateBegin: progress API call failed: ' + tb.LastError));
 
     if ok then
-      LogMessageToFile('updateBegin: SetProgressState(tbpsIndeterminate) succeeded')
+      TrndiDLog('updateBegin: SetProgressState(tbpsIndeterminate) succeeded')
     else
-      LogMessageToFile('updateBegin: progress API call failed: ' + tb.LastError);
+      TrndiDLog('updateBegin: progress API call failed: ' + tb.LastError);
     {$endif}
   end
   else
   begin
     {$ifdef DEBUG}
-    LogMessageToFile('updateBegin: GlobalTaskbar not available or not initialized');
+    TrndiDLog('updateBegin: GlobalTaskbar not available or not initialized');
 
-    LogMessageToFile(PChar('[Trndi] updateBegin: GlobalTaskbar not available or not initialized'));
+    TrndiDLog(PChar('[Trndi] updateBegin: GlobalTaskbar not available or not initialized'));
     {$endif}
   end;
 end;
@@ -1487,16 +1487,16 @@ var
   chosenHandle: HWND;
 begin
   {$ifdef DEBUG}
-  LogMessageToFile('updateDone: Getting global taskbar');
+  TrndiDLog('updateDone: Getting global taskbar');
   {$endif}
   
   // Lazy-init if GlobalTaskbar was not available earlier (safe, idempotent)
   if (GlobalTaskbar = nil) or (not GlobalTaskbar.Initialized) then
   begin
     {$ifdef DEBUG}
-    LogMessageToFile('updateDone: GlobalTaskbar nil/uninitialized — attempting lazy init');
+    TrndiDLog('updateDone: GlobalTaskbar nil/uninitialized — attempting lazy init');
 
-    LogMessageToFile(PChar('[Trndi] updateDone: attempting lazy GlobalTaskbar init'));
+    TrndiDLog(PChar('[Trndi] updateDone: attempting lazy GlobalTaskbar init'));
     {$endif}
     try
       if Assigned(GlobalTaskbar) then FreeAndNil(GlobalTaskbar);
@@ -1507,28 +1507,28 @@ begin
       if Assigned(GlobalTaskbar) then
       begin
        {$ifdef DEBUG}
-        LogMessageToFile(PChar(Format('[Trndi] updateDone: lazy init Initialized=%s handle=%d LastError=%s',
+        TrndiDLog(PChar(Format('[Trndi] updateDone: lazy init Initialized=%s handle=%d LastError=%s',
           [BoolToStr(GlobalTaskbar.Initialized, True), GlobalTaskbar.WindowHandle, GlobalTaskbar.LastError])));
 
-        LogMessageToFile(Format('updateDone: lazy init result Initialized=%s, handle=%d, LastError=%s',
+        TrndiDLog(Format('updateDone: lazy init result Initialized=%s, handle=%d, LastError=%s',
           [BoolToStr(GlobalTaskbar.Initialized, True), GlobalTaskbar.WindowHandle, GlobalTaskbar.LastError]));
         {$endif}
       end
       else
       begin
         {$ifdef DEBUG}
-        LogMessageToFile(PChar('[Trndi] updateDone: lazy init result = nil'));
+        TrndiDLog(PChar('[Trndi] updateDone: lazy init result = nil'));
 
-        LogMessageToFile('updateDone: lazy init result = nil');
+        TrndiDLog('updateDone: lazy init result = nil');
         {$endif}
       end;
     except
       on E: Exception do
       begin
         {$ifdef DEBUG}
-        LogMessageToFile(PChar('[Trndi] updateDone: lazy init exception: ' + E.Message));
+        TrndiDLog(PChar('[Trndi] updateDone: lazy init exception: ' + E.Message));
 
-        LogMessageToFile('updateDone: lazy init exception: ' + E.Message);
+        TrndiDLog('updateDone: lazy init exception: ' + E.Message);
         {$endif}
         if Assigned(GlobalTaskbar) then FreeAndNil(GlobalTaskbar);
       end;
@@ -1538,18 +1538,18 @@ begin
   if Assigned(GlobalTaskbar) and GlobalTaskbar.Initialized then
   begin
     {$ifdef DEBUG}
-    LogMessageToFile(PChar('[Trndi] updateDone: Clearing taskbar progress (tbpsNone)'));
+    TrndiDLog(PChar('[Trndi] updateDone: Clearing taskbar progress (tbpsNone)'));
 
-    LogMessageToFile('updateDone: Setting progress state to none');
+    TrndiDLog('updateDone: Setting progress state to none');
     {$endif}
     GlobalTaskbar.SetProgressState(tbpsNone);
   end
   else
   begin
     {$ifdef DEBUG}
-    LogMessageToFile(PChar('[Trndi] updateDone: GlobalTaskbar not available or not initialized'));
+    TrndiDLog(PChar('[Trndi] updateDone: GlobalTaskbar not available or not initialized'));
 
-    LogMessageToFile('updateDone: GlobalTaskbar not available or not initialized');
+    TrndiDLog('updateDone: GlobalTaskbar not available or not initialized');
     {$endif}
   end;
 end;

@@ -81,11 +81,11 @@ begin
 
   langPath := getLangPath;
   moPath := langPath + 'Trndi.' + lang + '.mo';
-  LogMessageToFile('Lang select: setting=' + native.GetSetting('locale', '') + ' resolved=' + lang + ' path=' + langPath + ' mo=' + moPath);
+  TrndiDLog('Lang select: setting=' + native.GetSetting('locale', '') + ' resolved=' + lang + ' path=' + langPath + ' mo=' + moPath);
   langLoaded := SetDefaultLang(lang, langPath, 'Trndi');
-  LogMessageToFile('Lang loaded=' + langLoaded + ' RS_INIT_UI=' + RS_INIT_UI);
+  TrndiDLog('Lang loaded=' + langLoaded + ' RS_INIT_UI=' + RS_INIT_UI);
   if not FileExists(moPath) then
-    LogMessageToFile('Lang MO missing: ' + lang + ' path=' + langPath + ' mo=' + moPath);
+    TrndiDLog('Lang MO missing: ' + lang + ' path=' + langPath + ' mo=' + moPath);
 end;
 
 {$if DEFINED(DARWIN) OR DEFINED(X_LINUXBSD)}
@@ -567,7 +567,7 @@ var
   miDebugUXMsg, miDebugLog, miDebugLoadText, miDebugLogAPI: TMenuItem;
   {$endif}
 begin
-  LogMessageToFile(Format(#10'=== Trndi started at %s ===', [DateTimeToStr(Now)]));
+  TrndiDLog(Format(#10'=== Trndi started at %s ===', [DateTimeToStr(Now)]));
   firstboot := false;
 
   InitCriticalSection(FReadingsLock);

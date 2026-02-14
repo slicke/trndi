@@ -88,7 +88,7 @@ Application.{%H-}MainFormOnTaskbar:=true;
 {$IFDEF WINDOWS}
   hrAppID := SetCurrentProcessExplicitAppUserModelID(PWideChar(WideString(TRNDI_APPID)));
 {$ifdef DEBUG}
-  LogMessageToFile(PChar(Format('[Trndi] SetAppUserModelID(%s) -> 0x%x', [TRNDI_APPID, hrAppID])));
+  TrndiDLog(PChar(Format('[Trndi] SetAppUserModelID(%s) -> 0x%x', [TRNDI_APPID, hrAppID])));
 {$endif}
 {$ENDIF}
 Application.Initialize;

@@ -115,7 +115,7 @@ procedure TWinTaskbar.LogError(const Msg: string);
 begin
   FLastError := Msg;
   {$ifdef debug}
-  LogMessageToFile(PChar('[TaskbarError] ' + Msg));
+  TrndiDLog(PChar('[TaskbarError] ' + Msg));
   {$endif}
 end;
 
@@ -232,7 +232,7 @@ begin
     if (chosen <> 0) and (not IsProbablyTaskbarWindow(chosen)) then
     begin
       {$ifdef DEBUG}
-      LogMessageToFile(PChar(Format('[TWinTaskbar] Passed WindowHandle=%d rejected (not a taskbar window). Falling back.', [chosen])));
+      TrndiDLog(PChar(Format('[TWinTaskbar] Passed WindowHandle=%d rejected (not a taskbar window). Falling back.', [chosen])));
       {$endif}
       chosen := 0;
     end;
@@ -278,7 +278,7 @@ begin
       FInitialized := True;
       // Diagnostic: report selected HWND so caller can validate which window is targeted
       {$ifdef DEBUG}
-      LogMessageToFile(PChar(Format('[TWinTaskbar] Initialized (HWND=%d)', [FWindowHandle])));
+      TrndiDLog(PChar(Format('[TWinTaskbar] Initialized (HWND=%d)', [FWindowHandle])));
       {$endif}
     except
       on E: Exception do
@@ -341,7 +341,7 @@ begin
   if (FWindowHandle = 0) or (not IsWindow(FWindowHandle)) then
   begin
    {$ifdef DEBUG}
-    LogMessageToFile(PChar('[TWinTaskbar] WindowHandle invalid; attempting re-resolve'));
+    TrndiDLog(PChar('[TWinTaskbar] WindowHandle invalid; attempting re-resolve'));
    {$endif}
     if Assigned(Application) and Assigned(Application.MainForm) and
        IsProbablyTaskbarWindow(Application.MainForm.Handle) then
@@ -351,7 +351,7 @@ begin
 
     {$ifdef DEBUG}
     if (FWindowHandle <> 0) and IsWindow(FWindowHandle) then
-      LogMessageToFile(PChar(Format('[TWinTaskbar] Re-resolved WindowHandle=%d', [FWindowHandle])))
+      TrndiDLog(PChar(Format('[TWinTaskbar] Re-resolved WindowHandle=%d', [FWindowHandle])))
     else
       LogError('Unable to re-resolve a valid window handle for taskbar calls');
    {$endif}
@@ -374,7 +374,7 @@ begin
     begin
       Result := True;
      {$ifdef DEBUG}
-      LogMessageToFile(PChar(Format('[TWinTaskbar] SetProgressValue OK HWND=%d %d/%d', [FWindowHandle, Current, Max])));
+      TrndiDLog(PChar(Format('[TWinTaskbar] SetProgressValue OK HWND=%d %d/%d', [FWindowHandle, Current, Max])));
      {$endif}
     end
     else
@@ -412,7 +412,7 @@ begin
   if (FWindowHandle = 0) or (not IsWindow(FWindowHandle)) then
   begin
     {$ifdef DEBUG}
-    LogMessageToFile(PChar('[TWinTaskbar] WindowHandle invalid before SetProgressState; attempting re-resolve'));
+    TrndiDLog(PChar('[TWinTaskbar] WindowHandle invalid before SetProgressState; attempting re-resolve'));
     {$endif}
     if Assigned(Application) and Assigned(Application.MainForm) and
        IsProbablyTaskbarWindow(Application.MainForm.Handle) then
@@ -422,7 +422,7 @@ begin
 
     {$ifdef DEBUG}
     if (FWindowHandle <> 0) and IsWindow(FWindowHandle) then
-      LogMessageToFile(PChar(Format('[TWinTaskbar] Re-resolved WindowHandle=%d', [FWindowHandle])))
+      TrndiDLog(PChar(Format('[TWinTaskbar] Re-resolved WindowHandle=%d', [FWindowHandle])))
     else
       LogError('Unable to re-resolve a valid window handle for taskbar calls');
    {$endif}
@@ -443,7 +443,7 @@ begin
     begin
       Result := True;
       {$ifdef DEBUG}
-      LogMessageToFile(PChar(Format('[TWinTaskbar] SetProgressState OK HWND=%d state=%d', [FWindowHandle, Ord(ProgressState)])));
+      TrndiDLog(PChar(Format('[TWinTaskbar] SetProgressState OK HWND=%d state=%d', [FWindowHandle, Ord(ProgressState)])));
       {$endif}
       // For indeterminate progress, set a dummy value to ensure it's visible
       if ProgressState = tbpsIndeterminate then
