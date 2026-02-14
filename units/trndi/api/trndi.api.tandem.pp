@@ -46,7 +46,7 @@ uses
   // Trndi units
   trndi.types, trndi.api, trndi.native.base, trndi.funcs, trndi.log, math,
   // FPC units
-  fpjson, jsonparser, dateutils, StrUtils, base64, sha256;
+  fpjson, jsonparser, dateutils, StrUtils, base64, slicke.sha256;
 
 (*******************************************************************************
   Tandem Source API endpoint definitions

@@ -1,4 +1,14 @@
-unit VersionInfo;
+(****************************************************************************
+ * Version information retrieval for Trndi
+ *
+ * SPDX-License-Identifier: LGPL-3.0-only
+ *
+ * This unit provides functions to retrieve the product version of the running
+ * executable, with a focus on extracting just the major and minor version numbers.
+ * The implementation is designed to be cross-platform, using FPC's TFileVersionInfo
+ * on all platforms, and falling back to Windows API calls if necessary.
+ *)
+unit slicke.versioninfo;
 
 {$mode objfpc}{$H+}
 
