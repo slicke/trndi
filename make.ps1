@@ -2,12 +2,13 @@
 make.ps1 — Windows helper to run `lazbuild` and provide common shortcuts
 
 Usage:
-  ./make.ps1 [release|debug|noext|noext-debug] or ./make.ps1 [lazbuild-args...]
+  ./make.ps1 [release|debug|noext|noext-debug|list-modules] or ./make.ps1 [lazbuild-args...]
 
 Behavior:
  - Sets `LAZBUILD` to `C:\lazarus\lazbuild.exe` if present and `LAZBUILD` is not already set
  - Ensures `OS=Windows_NT` environment variable is set for compatibility with the Makefile
- - Provides shortcuts (release, debug, noext, noext-debug) that invoke `lazbuild` with appropriate flags
+ - Provides shortcuts (release, debug, noext, noext-debug, list-modules) that invoke `lazbuild` or enumerate units
+ - `list-modules` uses native PowerShell (no Perl dependency on Windows)
  - Unknown arguments are forwarded directly to `lazbuild`
 #>
 
@@ -126,8 +127,72 @@ switch ($firstArg) {
         & 'tests/TrndiTestConsole.exe' @extraArgs
         exit $LASTEXITCODE
     }
+    "list-modules" {
+        Write-Host "Modules (units) found under units/ (grouped by dot-separated names):" -ForegroundColor Cyan
+
+        # Find Pascal unit files under units/ and extract `unit <name>` declarations.
+        # Use a robust enumeration (Get-ChildItem -Include can be flaky when -Path has no wildcard).
+        $files = Get-ChildItem -Path 'units' -Recurse -File -ErrorAction SilentlyContinue | Where-Object { $_.Extension -match '^\.(pp|pas)$' }
+        if (-not $files -or $files.Count -eq 0) { Write-Host "  (no modules found)"; exit 0 }
+
+        $pairs = New-Object System.Collections.Generic.List[System.String]
+        foreach ($f in $files) {
+            try {
+                # Read file lines and look for the first `unit <name>` declaration
+                foreach ($line in (Get-Content -Path $f.FullName -ErrorAction SilentlyContinue)) {
+                    if ($line -match '^[\s]*unit[\s]+([A-Za-z0-9_.]+)') {
+                        $unit = $Matches[1]
+                        # keep path relative to repo root when possible
+                        $rel = $f.FullName
+                        try { $cwd = (Get-Location).ProviderPath; if ($rel.StartsWith($cwd)) { $rel = $rel.Substring($cwd.Length+1) } } catch { }
+                        $pairs.Add("$unit`t$rel")
+                        break
+                    }
+                }
+            } catch { }
+        }
+
+        if ($pairs.Count -eq 0) { Write-Host "  (no modules found)"; exit 0 }
+
+        $uniq = $pairs | Sort-Object -Unique
+
+        # Normalize entries so files physically under `units/forms/` are shown under a
+        # top-level `forms*` node even when the `unit` declaration has no namespace.
+        $prefixed = $uniq | ForEach-Object {
+            $pair = $_ -split "`t", 2
+            $unit = $pair[0]
+            $path = if ($pair.Length -gt 1) { $pair[1] } else { '' }
+            if ($path -and $path -match '^[Uu]nits[\\/](?:forms)(?:[\\/]|$)') {
+                if ($unit -notmatch '^forms(\*|\.)') { $unit = "forms*.$unit" }
+            }
+            "$unit`t$path"
+        }
+
+        # Use the native PowerShell tree printer on Windows so we don't depend on
+        # an external `perl` binary. The result matches the Linux `perl` printer's
+        # hierarchical format (top-level nodes, indented `- child` entries).
+        $root = @{}
+        foreach ($entry in $prefixed) {
+            $unit = $entry.Split("`t")[0]
+            $parts = $unit -split '\.'
+            $h = $root
+            foreach ($part in $parts) {
+                if (-not $h.ContainsKey($part)) { $h[$part] = @{} }
+                $h = $h[$part]
+            }
+        }
+        function Print-Node([hashtable]$h, [int]$level) {
+            foreach ($k in ($h.Keys | Sort-Object)) {
+                if ($level -eq 0) { Write-Host $k }
+                else { Write-Host ("  " * $level) -NoNewline; Write-Host "- $k" }
+                Print-Node $h[$k] ($level + 1)
+            }
+        }
+        Print-Node $root 0
+        exit 0
+    }
     "help" {
-        Write-Host "Usage: ./make.ps1 [release|debug|noext|noext-debug|test] (no args -> release)" -ForegroundColor Cyan
+        Write-Host "Usage: ./make.ps1 [release|debug|noext|noext-debug|list-modules|test] (no args -> release)" -ForegroundColor Cyan
         Write-Host "Other arguments are forwarded to lazbuild when using these shortcuts." -ForegroundColor Cyan
         exit 0
     }
