@@ -1,7 +1,9 @@
-unit KDEBadge;
+unit linutils.kdebadge;
 
 {
   KDE/Plasma launcher badge & progress helper (Unity Launcher API over DBus).
+
+  by Björn Lindh <github.com/slicke>; semi-vibe coded. License: LGPL3+.
 
   Features:
     - Safe payloads: always sends count/progress + their visibility with explicit types

@@ -25,7 +25,7 @@ interface
 
 uses
 Classes, SysUtils, Graphics, IniFiles, Dialogs,
-ExtCtrls, Forms, Math, LCLIntf, KDEBadge, trndi.native.base, FileUtil, Menus,
+ExtCtrls, Forms, Math, LCLIntf, linutils.kdebadge, trndi.native.base, FileUtil, Menus,
 libpascurl, DateUtils, ctypes{$ifdef DEBUG}, trndi.log{$endif};
 
 type
@@ -1680,14 +1680,14 @@ badge_size_ratio: double; min_font_size: integer);
 var
   f: double;
 begin
-  if KDEBadge.GDesktopId = '' then
+  if linutils.KDEBadge.GDesktopId = '' then
     InitializeBadge('com.slicke.trndi.desktop', 150, nil, UseGDBusForNotifications);
   ClearBadge;
   
   // Only set numeric badge if value can be parsed as a number
   // For placeholders like '--', clear the badge instead
   if TryStrToFloat(Value, f) then
-    KDEBadge.SetBadge(f);
+    linutils.KDEBadge.SetBadge(f);
   // If TryStrToFloat fails, badge stays cleared (ClearBadge above)
 
   // Write current reading for GNOME top-bar indicator (reads ~/.cache/trndi/current.txt)

@@ -63,12 +63,12 @@ CocoaAll, MacOSAll,
 BaseUnix,
 {$endif}
 {$ifdef LINUX}
-kdebadge,
+linutils.kdebadge,
 Sockets,
 netdb,
 {$endif}
 {$ifdef BSD}
-kdebadge,
+linutils.kdebadge,
 Sockets,
 netdb,
 {$endif}
