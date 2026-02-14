@@ -744,8 +744,7 @@ procedure TfConf.lAckClick(Sender: TObject);
 const
   txt = 'Trndi makes use of the following 3rd party libraries:' + sHTMLLineBreak +
     'macOS native code libraries by <i>Phil Hess</i>.'#10 + sHTMLLineBreak +
-    'WinStyles library by <i>Espectr0</i>.'+ sHTMLLineBreak + sHTMLLineBreak +
-
+    
     'Extensions use the JavaScript engine <i>QuickJS</i> by <i>Fabrice Bellard</i> and <i>Charlie Gordo</i>.'#10 + sHTMLLineBreak +
     'Integration of said engine is made possible with mORMot2 by Synopse Informatique - <i>Arnaud Bouchez</i>.' + sHTMLLineBreak + sHTMLLineBreak +
 

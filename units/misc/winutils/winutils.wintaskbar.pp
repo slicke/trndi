@@ -1,4 +1,4 @@
-unit wintaskbar;
+unit wintools.wintaskbar;
 
 {$mode objfpc}{$H+}
 
