@@ -195,7 +195,12 @@ jobs:
           # Run tests on pull requests
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             sudo apt-get install -y php
-            make test
+            # On arm64 we don't build extensions in CI — run the no-extensions test target there
+            if [ "${{ matrix.arch }}" = "arm64" ]; then
+              make test-noext
+            else
+              make test
+            fi
           fi
 
           # Package portable ZIP (no PNG icon inside)
