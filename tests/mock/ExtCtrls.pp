@@ -72,8 +72,7 @@ end;
 
 destructor TPaintBox.Destroy;
 begin
-  if Assigned(FCanvas) then
-    FCanvas.Free;
+  // Do not free FCanvas here — TControl.Destroy frees it. Avoid double-free.
   inherited Destroy;
 end;
 
