@@ -1316,6 +1316,53 @@ end;
   -----------
   Signal the start of a long-running update operation (show taskbar progress).
  ------------------------------------------------------------------------------}
+procedure EnsureGlobalTaskbar(const Context: string);
+var
+  chosenHandle: HWND;
+begin
+  // Idempotent lazy-init used by updateBegin/updateDone to ensure a
+  // usable GlobalTaskbar instance exists (keeps DEBUG diagnostics identical)
+  if (GlobalTaskbar = nil) or (not GlobalTaskbar.Initialized) then
+  begin
+    {$ifdef DEBUG}
+    TrndiDLog(Format('%s: GlobalTaskbar nil/uninitialized — attempting lazy init', [Context]));
+    TrndiDLog(PChar(Format('[Trndi] %s: attempting lazy GlobalTaskbar init', [Context])));
+    {$endif}
+    try
+      if Assigned(GlobalTaskbar) then FreeAndNil(GlobalTaskbar);
+      chosenHandle := 0;
+      if Assigned(Application) and Assigned(Application.MainForm) then
+        chosenHandle := Application.MainForm.Handle;
+      GlobalTaskbar := TWinTaskbar.Create(chosenHandle);
+      if Assigned(GlobalTaskbar) then
+      begin
+        {$ifdef DEBUG}
+        TrndiDLog(PChar(Format('[Trndi] %s: lazy init result Initialized=%s handle=%d LastError=%s',
+          [Context, BoolToStr(GlobalTaskbar.Initialized, True), GlobalTaskbar.WindowHandle, GlobalTaskbar.LastError])));
+        TrndiDLog(Format('%s: lazy init result Initialized=%s, handle=%d, LastError=%s',
+          [Context, BoolToStr(GlobalTaskbar.Initialized, True), GlobalTaskbar.WindowHandle, GlobalTaskbar.LastError]));
+        {$endif}
+      end
+      else
+      begin
+        {$ifdef DEBUG}
+        TrndiDLog(PChar(Format('[Trndi] %s: lazy init result = nil', [Context])));
+        TrndiDLog(Format('%s: lazy init result = nil', [Context]));
+        {$endif}
+      end;
+    except
+      on E: Exception do
+      begin
+        {$ifdef DEBUG}
+        TrndiDLog(PChar(Format('[Trndi] %s: lazy init exception: %s', [Context, E.Message])));
+        TrndiDLog(Format('%s: lazy init exception: %s', [Context, E.Message]));
+        {$endif}
+        if Assigned(GlobalTaskbar) then FreeAndNil(GlobalTaskbar);
+      end;
+    end;
+  end;
+end;
+
 procedure TTrndiNativeWindows.updateBegin;
 var
   tb: TWinTaskbar;
@@ -1338,47 +1385,8 @@ begin
   TrndiDLog(PChar(Format('[Trndi] MainFormOnTaskbar=%s MainForm.Handle=%d Application.Handle=%d',
     [BoolToStr(Application.MainFormOnTaskbar, True), PtrInt(Application.MainForm.Handle), PtrInt(Application.Handle)])));
   {$endif}
-  // Lazy-create GlobalTaskbar if it wasn't initialized at unit init time
-  if (GlobalTaskbar = nil) or (not GlobalTaskbar.Initialized) then
-  begin
-    {$ifdef DEBUG}
-    TrndiDLog('updateBegin: GlobalTaskbar nil/uninitialized — attempting lazy init');
-    TrndiDLog(PChar('[Trndi] updateBegin: attempting lazy GlobalTaskbar init'));
-    {$endif}
-    try
-      if Assigned(GlobalTaskbar) then
-        FreeAndNil(GlobalTaskbar);
-      chosenHandle := 0;
-      if Assigned(Application) and Assigned(Application.MainForm) then
-        chosenHandle := Application.MainForm.Handle;
-      GlobalTaskbar := TWinTaskbar.Create(chosenHandle);
-      if Assigned(GlobalTaskbar) then
-      begin
-       {$ifdef DEBUG}
-        TrndiDLog(PChar(Format('[Trndi] updateBegin: lazy init result Initialized=%s handle=%d LastError=%s',
-          [BoolToStr(GlobalTaskbar.Initialized, True), GlobalTaskbar.WindowHandle, GlobalTaskbar.LastError])));
-        TrndiDLog(Format('updateBegin: lazy init result Initialized=%s, handle=%d, LastError=%s',
-          [BoolToStr(GlobalTaskbar.Initialized, True), GlobalTaskbar.WindowHandle, GlobalTaskbar.LastError]));
-        {$endif}
-      end
-      else
-      begin
-        {$ifdef DEBUG}
-        TrndiDLog(PChar('[Trndi] updateBegin: lazy init result = nil'));
-        TrndiDLog('updateBegin: lazy init result = nil');
-        {$endif}
-      end;
-    except
-      on E: Exception do
-      begin
-        {$ifdef DEBUG}
-        TrndiDLog(PChar('[Trndi] updateBegin: lazy init exception: ' + E.Message));
-        TrndiDLog('updateBegin: lazy init exception: ' + E.Message);
-        {$endif}
-        if Assigned(GlobalTaskbar) then FreeAndNil(GlobalTaskbar);
-      end;
-    end;
-  end;
+  // Use centralized lazy-init helper to avoid duplication and drift
+  EnsureGlobalTaskbar('updateBegin');
 
   tb := GlobalTaskbar;
   // Emit an OS-level debug trace (visible with DebugView) in all builds
@@ -1490,50 +1498,8 @@ begin
   TrndiDLog('updateDone: Getting global taskbar');
   {$endif}
   
-  // Lazy-init if GlobalTaskbar was not available earlier (safe, idempotent)
-  if (GlobalTaskbar = nil) or (not GlobalTaskbar.Initialized) then
-  begin
-    {$ifdef DEBUG}
-    TrndiDLog('updateDone: GlobalTaskbar nil/uninitialized — attempting lazy init');
-
-    TrndiDLog(PChar('[Trndi] updateDone: attempting lazy GlobalTaskbar init'));
-    {$endif}
-    try
-      if Assigned(GlobalTaskbar) then FreeAndNil(GlobalTaskbar);
-      chosenHandle := 0;
-      if Assigned(Application) and Assigned(Application.MainForm) then
-        chosenHandle := Application.MainForm.Handle;
-      GlobalTaskbar := TWinTaskbar.Create(chosenHandle);
-      if Assigned(GlobalTaskbar) then
-      begin
-       {$ifdef DEBUG}
-        TrndiDLog(PChar(Format('[Trndi] updateDone: lazy init Initialized=%s handle=%d LastError=%s',
-          [BoolToStr(GlobalTaskbar.Initialized, True), GlobalTaskbar.WindowHandle, GlobalTaskbar.LastError])));
-
-        TrndiDLog(Format('updateDone: lazy init result Initialized=%s, handle=%d, LastError=%s',
-          [BoolToStr(GlobalTaskbar.Initialized, True), GlobalTaskbar.WindowHandle, GlobalTaskbar.LastError]));
-        {$endif}
-      end
-      else
-      begin
-        {$ifdef DEBUG}
-        TrndiDLog(PChar('[Trndi] updateDone: lazy init result = nil'));
-
-        TrndiDLog('updateDone: lazy init result = nil');
-        {$endif}
-      end;
-    except
-      on E: Exception do
-      begin
-        {$ifdef DEBUG}
-        TrndiDLog(PChar('[Trndi] updateDone: lazy init exception: ' + E.Message));
-
-        TrndiDLog('updateDone: lazy init exception: ' + E.Message);
-        {$endif}
-        if Assigned(GlobalTaskbar) then FreeAndNil(GlobalTaskbar);
-      end;
-    end;
-  end;
+  // Use centralized lazy-init helper to avoid duplication and drift
+  EnsureGlobalTaskbar('updateDone');
 
   if Assigned(GlobalTaskbar) and GlobalTaskbar.Initialized then
   begin
