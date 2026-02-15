@@ -1478,6 +1478,7 @@ begin
     // Run asynchronously to avoid blocking the UI
     Proc.Options := [];
     Proc.Execute;
+    Proc.Free; // free the TProcess instance after starting the process
   except
     on E: Exception do
     begin
@@ -1491,7 +1492,7 @@ begin
     end;
   end;
   // Note: Process will be cleaned up by the OS when it terminates
-  // We don't wait for it or free it immediately since it's async
+  // We don't wait for it, but we free the TProcess instance after starting it
 end;
 
 

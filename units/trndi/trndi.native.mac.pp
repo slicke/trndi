@@ -255,30 +255,33 @@ begin
   // Use the built-in macOS speech synthesis asynchronously
   Proc := TProcess.Create(nil);
   try
-    Proc.Executable := '/usr/bin/say';
-    
-    // Check if a specific voice is selected
-    VoiceName := GetSetting('tts.voice.name', '');
-    if VoiceName <> '' then
-    begin
-      Proc.Parameters.Add('-v');
-      Proc.Parameters.Add(VoiceName);
-    end;
-    
-    Proc.Parameters.Add(Text);
-    Proc.Options := [];
-    Proc.Execute;
-  except
-    on E: Exception do
-    begin
-      if not ttsErrorShown then
+    try
+      Proc.Executable := '/usr/bin/say';
+      
+      // Check if a specific voice is selected
+      VoiceName := GetSetting('tts.voice.name', '');
+      if VoiceName <> '' then
       begin
-        ShowMessage('TTS Error: ' + E.Message);
-        ttsErrorShown := true;
+        Proc.Parameters.Add('-v');
+        Proc.Parameters.Add(VoiceName);
       end;
-      Proc.Free;
-      Exit;
+      
+      Proc.Parameters.Add(Text);
+      Proc.Options := [];
+      Proc.Execute;
+    except
+      on E: Exception do
+      begin
+        if not ttsErrorShown then
+        begin
+          ShowMessage('TTS Error: ' + E.Message);
+          ttsErrorShown := true;
+        end;
+        Exit;
+      end;
     end;
+  finally
+    Proc.Free; // ensure Proc is freed on both success and error paths
   end;
   // Async process will be cleaned up by OS
 end;
