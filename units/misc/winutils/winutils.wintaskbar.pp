@@ -65,6 +65,9 @@ type
     function CreateBadgeIcon(const Text: string; BackColor: TColor = clRed; TextColor: TColor = clWhite): HICON;
     function WideString(const S: string): WideString;
     procedure LogError(const Msg: string);
+    // Ensure we have a valid top-level window handle suitable for taskbar calls.
+    // Returns True when FWindowHandle is valid and appears to be a taskbar window.
+    function EnsureValidWindowHandle: Boolean;
   public
     // Basic lifecycle methods
     constructor Create(WindowHandle: HWND = 0);
@@ -196,6 +199,52 @@ begin
   // Avoid windows marked as "tool windows" (these normally don't get taskbar buttons)
   // exstyle := NativeUInt(GetWindowLongPtr(hwnd, GWL_EXSTYLE));
   // if (exstyle and NativeUInt(WS_EX_TOOLWINDOW)) <> 0 then Exit;
+
+  Result := True;
+end;
+
+// Validate or re-resolve `FWindowHandle` so taskbar calls target the OS-visible
+// top-level window for this process. Returns True if a suitable handle is set.
+function TWinTaskbar.EnsureValidWindowHandle: Boolean;
+begin
+  Result := False;
+
+  // If current handle is already valid and looks like a taskbar window, keep it.
+  if (FWindowHandle <> 0) and IsWindow(FWindowHandle) and IsProbablyTaskbarWindow(FWindowHandle) then
+  begin
+    Result := True;
+    Exit;
+  end;
+
+  {$ifdef DEBUG}
+  TrndiDLog(PChar('[TWinTaskbar] WindowHandle invalid; attempting re-resolve'));
+  {$endif}
+
+  // Try MainForm first, then fall back to enumerating top-level windows.
+  if Assigned(Application) and Assigned(Application.MainForm) and
+     IsProbablyTaskbarWindow(Application.MainForm.Handle) then
+    FWindowHandle := Application.MainForm.Handle
+  else
+    FWindowHandle := FindTopLevelWindowForCurrentProcess;
+
+  {$ifdef DEBUG}
+  if (FWindowHandle <> 0) and IsWindow(FWindowHandle) then
+    TrndiDLog(PChar(Format('[TWinTaskbar] Re-resolved WindowHandle=%d', [FWindowHandle])))
+  else
+    LogError('Unable to re-resolve a valid window handle for taskbar calls');
+
+  TrndiDLog(PChar(Format('Window check: Visible=%s Iconic=%s Owner=%d TitleLen=%d',
+    [BoolToStr(IsWindowVisible(FWindowHandle)), BoolToStr(IsIconic(FWindowHandle)),
+     GetWindow(FWindowHandle, GW_OWNER), GetWindowTextLength(FWindowHandle)])));
+  {$endif}
+
+  // Final validation: must be a proper taskbar window.
+  if not IsProbablyTaskbarWindow(FWindowHandle) then
+  begin
+    LogError('Re-resolved window is not a taskbar window (e.g., ToolWindow or hidden)');
+    Result := False;
+    Exit;
+  end;
 
   Result := True;
 end;
@@ -336,32 +385,9 @@ begin
     Exit;
   end;
 
-  // If the stored HWND was destroyed/recreated, re-resolve a suitable top-level
-  // window so taskbar calls target the window the OS shows.
-  if (FWindowHandle = 0) or (not IsWindow(FWindowHandle)) then
+  // Ensure we have a valid window handle for taskbar calls (may re-resolve).
+  if not EnsureValidWindowHandle then
   begin
-   {$ifdef DEBUG}
-    TrndiDLog(PChar('[TWinTaskbar] WindowHandle invalid; attempting re-resolve'));
-   {$endif}
-    if Assigned(Application) and Assigned(Application.MainForm) and
-       IsProbablyTaskbarWindow(Application.MainForm.Handle) then
-      FWindowHandle := Application.MainForm.Handle
-    else
-      FWindowHandle := FindTopLevelWindowForCurrentProcess;
-
-    {$ifdef DEBUG}
-    if (FWindowHandle <> 0) and IsWindow(FWindowHandle) then
-      TrndiDLog(PChar(Format('[TWinTaskbar] Re-resolved WindowHandle=%d', [FWindowHandle])))
-    else
-      LogError('Unable to re-resolve a valid window handle for taskbar calls');
-   {$endif}
-  end;
-
-  // Ensure the re-resolved window is suitable for taskbar operations (not a ToolWindow, etc.)
-  LogError(Format('Window check: Visible=%s Iconic=%s Owner=%d TitleLen=%d', [BoolToStr(IsWindowVisible(FWindowHandle)), BoolToStr(IsIconic(FWindowHandle)), GetWindow(FWindowHandle, GW_OWNER), GetWindowTextLength(FWindowHandle)]));
-  if not IsProbablyTaskbarWindow(FWindowHandle) then
-  begin
-    LogError('Re-resolved window is not a taskbar window (e.g., ToolWindow or hidden)');
     Result := False;
     Exit;
   end;
@@ -408,31 +434,9 @@ begin
     Exit;
   end;
 
-  // Ensure the target HWND is still valid; re-resolve if necessary
-  if (FWindowHandle = 0) or (not IsWindow(FWindowHandle)) then
+  // Ensure we have a valid window handle for taskbar calls (may re-resolve).
+  if not EnsureValidWindowHandle then
   begin
-    {$ifdef DEBUG}
-    TrndiDLog(PChar('[TWinTaskbar] WindowHandle invalid before SetProgressState; attempting re-resolve'));
-    {$endif}
-    if Assigned(Application) and Assigned(Application.MainForm) and
-       IsProbablyTaskbarWindow(Application.MainForm.Handle) then
-      FWindowHandle := Application.MainForm.Handle
-    else
-      FWindowHandle := FindTopLevelWindowForCurrentProcess;
-
-    {$ifdef DEBUG}
-    if (FWindowHandle <> 0) and IsWindow(FWindowHandle) then
-      TrndiDLog(PChar(Format('[TWinTaskbar] Re-resolved WindowHandle=%d', [FWindowHandle])))
-    else
-      LogError('Unable to re-resolve a valid window handle for taskbar calls');
-   {$endif}
-  end;
-
-  // Ensure the re-resolved window is suitable for taskbar operations (not a ToolWindow, etc.)
-  LogError(Format('Window check: Visible=%s Iconic=%s Owner=%d TitleLen=%d', [BoolToStr(IsWindowVisible(FWindowHandle)), BoolToStr(IsIconic(FWindowHandle)), GetWindow(FWindowHandle, GW_OWNER), GetWindowTextLength(FWindowHandle)]));
-  if not IsProbablyTaskbarWindow(FWindowHandle) then
-  begin
-    LogError('Re-resolved window is not a taskbar window (e.g., ToolWindow or hidden)');
     Result := False;
     Exit;
   end;
