@@ -1554,4 +1554,13 @@ begin
   end;
 end;
 
+finalization
+  try
+    // Ensure the background speech worker is cleanly stopped on shutdown so
+    // COM/SAPI resources are released and the thread is joined.
+    StopSpeechWorker;
+  except
+    // Swallow exceptions during finalization to avoid raising at process exit
+  end;
+
 end.
