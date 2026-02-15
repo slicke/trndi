@@ -10726,15 +10726,15 @@ object fConf: TfConf
           end
         end
         object pnSysWarn: TPanel
-          Left = 5
-          Height = 40
-          Top = 5
-          Width = 507
+          Left = 2
+          Height = 46
+          Top = 2
+          Width = 513
           Align = alClient
-          BorderSpacing.Around = 5
+          BorderSpacing.Around = 2
           BevelOuter = bvNone
-          ClientHeight = 40
-          ClientWidth = 507
+          ClientHeight = 46
+          ClientWidth = 513
           Color = 5481192
           ParentBackground = False
           ParentColor = False
@@ -10742,9 +10742,9 @@ object fConf: TfConf
           Visible = False
           object lSysWarnInfo: TLabel
             Left = 5
-            Height = 30
+            Height = 36
             Top = 5
-            Width = 497
+            Width = 503
             Align = alClient
             AutoSize = False
             BorderSpacing.Around = 5

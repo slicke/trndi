@@ -900,38 +900,38 @@ procedure WarnUnstableAPI;
       cbCust.Font.Color := clBlack;
 
       pnSysWarn.Show;
-      lSysWarnInfo.Caption := UnicodeString(info+UnicodeString(RS_DEX));
+      lSysWarnInfo.Caption := unicodestring(info+unicodestring(RS_DEX));
       pnSysWarn.Color := $0053A2E8;
     end;
     API_NS3:
     begin
       pnSysWarn.Show;
-      lSysWarnInfo.Caption := UnicodeString(warn+UnicodeString(RS_BETA));
+      lSysWarnInfo.Caption := unicodestring(warn+unicodestring(RS_BETA));
     end;
     API_DEX_NEW_EU,
     API_DEX_NEW_USA,
     API_DEX_NEW_JP:
     begin
       pnSysWarn.Show;
-      lSysWarnInfo.Caption := UnicodeString(warn+UnicodeString(RS_BETA_DEX));
+      lSysWarnInfo.Caption := unicodestring(warn+unicodestring(RS_BETA_DEX));
     end;
     API_XDRIP:
     begin
       pnSysWarn.Show;
-      lSysWarnInfo.Caption := UnicodeString(info+UnicodeString(RS_XDRIP));
+      lSysWarnInfo.Caption := unicodestring(info+unicodestring(RS_XDRIP));
     end;
     API_TANDEM_EU,
     API_TANDEM_USA:
     begin
       pnSysWarn.Show;
-      lSysWarnInfo.Caption := UnicodeString(warn+UnicodeString(RS_TANDEM));
+      lSysWarnInfo.Caption := unicodestring(warn+unicodestring(RS_TANDEM));
     end;
     end;
     {$ifdef DEBUG}
     if cbSys.Text in API_DEBUG then
     begin
       pnSysWarn.Show;
-      lSysWarnInfo.Caption := UnicodeString(warn+UnicodeString(RS_DEBUG_WARN));
+      lSysWarnInfo.Caption := unicodestring(warn+unicodestring(RS_DEBUG_WARN));
     end;
     {$endif}
   end;
@@ -991,7 +991,7 @@ begin
 
   if tryStrToInt('$' + (Sender as TEdit).Text, i) then
   begin
-    lbl.Caption := UnicodeString(WChar(i));
+    lbl.Caption := unicodestring(WChar(i));
     if Sender = eDot then
     begin
       lDot1.Caption := lbl.Caption;
@@ -1817,6 +1817,9 @@ begin
   {$endif}
   {$ifdef lclqt6}
   self.font.size := 10;
+  {$endif}
+  {$ifdef HAIKU}
+  lSysWarnInfo.font.size := 9;
   {$endif}
   {$ifdef lclgtk2}
   self.font.size := 10;
