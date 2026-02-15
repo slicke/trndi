@@ -5,7 +5,11 @@ unit trndi.native.mock;
 interface
 
 uses
-  Classes, SysUtils, trndi.native.base, fphttpclient, opensslsockets, IniFiles;
+  Classes, SysUtils,
+{$IF DEFINED(X_WIN)}
+  Windows,
+{$ENDIF}
+  trndi.native.base, fphttpclient, opensslsockets, IniFiles;
 
 type
   { TTrndiNativeMock }
@@ -30,6 +34,8 @@ type
     // TTS and environment
     procedure Speak(const Text: string); override;
     class function isDarkMode: boolean; override;
+    class function setDarkMode: boolean; overload;
+    class function setDarkMode(win: PtrUInt; Enable: boolean = true): boolean; overload;
     class function isNotificationSystemAvailable: boolean; override;
     class function getNotificationSystem: string; override;
     class function SpeakAvailable: boolean; override;
@@ -44,16 +50,17 @@ implementation
 
 class function TTrndiNativeMock.getURL(const url: string; out res: string): boolean;
 var
-  HTTP: TFPHTTPClient;
+  nativeObj: TTrndiNativeBase;
+  s: string;
 begin
   res := '';
   Result := False;
-  HTTP := TFPHTTPClient.Create(nil);
+  nativeObj := TTrndiNativeMock.Create;
   try
-    HTTP.AllowRedirect := True;
-    HTTP.IOTimeout := 30000; // 30s
     try
-      res := HTTP.Get(url);
+      // Use the base `request` helper. Pass prefix=false because we supply a full URL.
+      s := nativeObj.request(false, url, [], '', '', false);
+      res := s;
       Result := True;
     except
       on E: Exception do
@@ -63,7 +70,7 @@ begin
       end;
     end;
   finally
-    HTTP.Free;
+    nativeObj.Free;
   end;
 end;
 
@@ -244,6 +251,17 @@ end;
 
 class function TTrndiNativeMock.isDarkMode: boolean;
 begin
+  Result := False;
+end;
+
+class function TTrndiNativeMock.setDarkMode: boolean;
+begin
+  Result := False;
+end;
+
+class function TTrndiNativeMock.setDarkMode(win: PtrUInt; Enable: boolean = true): boolean;
+begin
+  // Mock: no-op; accept the window handle parameter like the real Windows implementation
   Result := False;
 end;
 

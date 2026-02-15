@@ -43,7 +43,7 @@ interface
 
 uses
 Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls,
-LCLType, ComCtrls, IpHtml;
+LCLType, ComCtrls;
 
 type
 

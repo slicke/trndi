@@ -17,7 +17,11 @@ unit trndi.log;
 
 interface
 
-procedure LogMessageToFile(const Msg: string);
+procedure TrndiDLog(const Msg: string); // Debug log entry; only active in DEBUG builds
+procedure TrndiELog(const Msg: string); // Error log entry
+procedure TrndiWLog(const Msg: string); // Warning log entry
+procedure TrndiNetLog(const Msg: string); // Network log entry (debug only)
+
 
 implementation
 
@@ -28,18 +32,42 @@ uses
   {$endif}
   ;
 
+var
+LogFilePath: string;
+FLogFile: TextFile;
+BundleID: string;
+
 function FallbackAppPath: string;
 begin
   Result := IncludeTrailingPathDelimiter(ExtractFilePath(ParamStr(0)));
 end;
 
 {$ifdef DEBUG}
-procedure LogMessageToFile(const Msg: string);
+procedure TrndiELog(const Msg: string);
+begin
+  TrndiDLog('[ERROR] ' + Msg);
+end;
+
+procedure TrndiWLog(const Msg: string);
+begin
+  TrndiDLog('[WARNING] ' + Msg);
+end;
+
+procedure TrndiNetLog(const Msg: string);
+begin
+  TrndiDLog('[NETWORK] ' + Msg);
+end;
+
+procedure TrndiDLog(const Msg: string);
 const
-  MaxLines = 500;
+  MaxAttempts = 6;
+  AttemptDelayMs = 120; // ms
 var
-  LogLines: TStringList;
   LogFilePath: string;
+  attempt: Integer;
+  wroteOk: Boolean;
+  F: TextFile;
+  Line: string;
   {$ifdef DARWIN}
   BundleID: string;
   {$endif}
@@ -64,22 +92,83 @@ begin
   LogFilePath := 'trndi.log';
   {$endif}
 
-  LogLines := TStringList.Create;
-  try
-    if FileExists(LogFilePath) then
-      LogLines.LoadFromFile(LogFilePath);
+  Line := '[' + DateTimeToStr(Now) + '] ' + Msg;
 
-    while LogLines.Count >= MaxLines do
-      LogLines.Delete(0);
+  // Try appending the single line with retries; on persistent failure write to .locked
+  wroteOk := False;
+  for attempt := 1 to MaxAttempts do
+  begin
+    try
+      AssignFile(F, LogFilePath);
+      {$I-}
+      if not FileExists(LogFilePath) then
+        Rewrite(F)
+      else
+        Append(F);
+      {$I+}
+      if IOResult = 0 then
+      begin
+        Writeln(F, Line);
+        CloseFile(F);
+        wroteOk := True;
+        Break;
+      end
+      else
+      begin
+        // Could not open (possibly locked) — wait and retry
+        try CloseFile(F) except end;
+        Sleep(AttemptDelayMs);
+      end;
+    except
+      on E: Exception do
+      begin
+        try CloseFile(F) except end;
+        Sleep(AttemptDelayMs);
+      end;
+    end;
+  end;
 
-    LogLines.Add('[' + DateTimeToStr(Now) + '] ' + Msg);
-    LogLines.SaveToFile(LogFilePath);
-  finally
-    LogLines.Free;
+  if not wroteOk then
+  begin
+    try
+      AssignFile(F, LogFilePath + '.locked');
+      {$I-}
+      if not FileExists(LogFilePath + '.locked') then
+        Rewrite(F)
+      else
+        Append(F);
+      {$I+}
+      if IOResult = 0 then
+      begin
+        Writeln(F, Line);
+        CloseFile(F);
+      end;
+    except
+      // Swallow errors — logger must not raise during debugging
+    end;
   end;
 end;
 {$else}
-procedure LogMessageToFile(const Msg: string);
+
+procedure TrndiWLog(const Msg: string);
+begin
+if Msg = '' then
+  Exit;
+end;
+
+procedure TrndiNetLog(const Msg: string);
+begin
+if Msg = '' then
+  Exit;
+end;
+
+procedure TrndiELog(const Msg: string);
+begin
+if Msg = '' then
+  Exit;
+end;
+
+procedure TrndiDLog(const Msg: string);
 begin
   // Keep parameter referenced to avoid unused-parameter hints in non-DEBUG builds.
   if Msg = '' then
@@ -87,4 +176,47 @@ begin
 end;
 {$endif}
 
+initialization
+  {$ifdef DEBUG}
+  // Truncate the debug log at process start so we append during runtime.
+  try
+    {$ifdef DARWIN}
+    try
+      LogFilePath := NSStrToStr(
+        NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, True)
+          .objectAtIndex(0));
+      BundleID := NSStrToStr(NSBundle.mainBundle.objectForInfoDictionaryKey(StrToNSStr('CFBundleIdentifier')));
+      if (BundleID = '') or SameText(BundleID, 'com.company.trndi') then
+        BundleID := 'com.slicke.trndi';
+      LogFilePath := IncludeTrailingPathDelimiter(LogFilePath) + BundleID + PathDelim + 'trndi.log';
+      if not DirectoryExists(ExtractFilePath(LogFilePath)) then
+        ForceDirectories(ExtractFilePath(LogFilePath));
+    except
+      LogFilePath := FallbackAppPath + 'trndi.log';
+    end;
+    {$else}
+    LogFilePath := 'trndi.log';
+    {$endif}
+
+    // Best-effort truncate; if locked, ignore and continue.
+    try
+      AssignFile(FLogFile, LogFilePath);
+      {$I-}
+      Rewrite(FLogFile);
+      {$I+}
+      if IOResult = 0 then
+      begin
+        Writeln(FLogFile, '[' + DateTimeToStr(Now) + '] ' + 'trndi.log: truncated at startup');
+        CloseFile(FLogFile);
+      end;
+    except
+      // ignore
+    end;
+  except
+    // ignore
+  end;
+  {$endif}
+
+finalization
+  // nothing
 end.

@@ -192,11 +192,6 @@ msgstr "> Servicemeny"
 msgid "Alterante arrow and reading"
 msgstr "Växla pil och värde"
 
-#: tfbg.miannounce.caption
-msgctxt "tfbg.miannounce.caption"
-msgid "Announce readings"
-msgstr "Läs ut avläsningar"
-
 #: tfbg.miasysteminfo.caption
 msgid "System Info"
 msgstr "Systeminfo"
@@ -493,6 +488,14 @@ msgstr "Blixtra vid perfekt värde (5,5mmol/L / 100mg/dL)"
 msgid "Trend Dots"
 msgstr "Trendpunkter"
 
+#: tfconf.cbhcontrast.caption
+msgid "High Contrast"
+msgstr "Hög kontrast"
+
+#: tfconf.cbmediadisable.caption
+msgid "Disable the entire media system"
+msgstr "Stäng av hela mediasystemet"
+
 #: tfconf.cbmultitouch.caption
 msgid "Multi-touch"
 msgstr "Multipek"
@@ -547,7 +550,7 @@ msgstr "Privat läge (dölj glukosvärde)"
 
 #: tfconf.cbshowmean.caption
 msgid "Show mean blood sugar reading next to TIR"
-msgstr ""
+msgstr "Visa medelblodsocker bredvid TIR"
 
 #: tfconf.cbsize.caption
 msgid "Remember window size"
@@ -596,6 +599,10 @@ msgstr "Färga titeln med blodsockerfärgen (endast Windows)"
 #: tfconf.cbtouch.caption
 msgid "Touch screen"
 msgstr "Pekskärm"
+
+#: tfconf.cbtts.caption
+msgid "Enable Text-To-Speech"
+msgstr "Aktivera Text-Till-Tal"
 
 #: tfconf.cbuser.caption
 msgid "Account color"
@@ -668,6 +675,11 @@ msgstr "8080"
 msgid "Display Preferences"
 msgstr "Visningsval"
 
+#: tfconf.gbmedia.caption
+msgctxt "tfconf.gbmedia.caption"
+msgid "Play Media"
+msgstr "Spela Media"
+
 #: tfconf.gbmulti.caption
 msgid "Account Settings"
 msgstr "Kontoinställningar"
@@ -686,17 +698,14 @@ msgctxt "tfconf.gboverride1.caption"
 msgid "Override High / Low limits"
 msgstr "Åsidosätt höga / låga gränser"
 
-#: tfconf.gboverride2.caption
-msgid "Play Media"
-msgstr "Spela Media"
-
-#: tfconf.gboverride3.caption
-msgid "Use URL"
-msgstr "Använd URL"
-
 #: tfconf.gbsettings.caption
 msgid "Settings Management"
 msgstr "Hantera inställningar"
+
+#: tfconf.gburl.caption
+msgctxt "tfconf.gburl.caption"
+msgid "Use URL"
+msgstr "Använd URL"
 
 #: tfconf.groupbox1.caption
 msgid "System Features"
@@ -850,6 +859,22 @@ msgstr "Decimalseparator:"
 msgctxt "tfconf.label34.caption"
 msgid "Readings are outdated after (minutes):"
 msgstr "Avläsningar anses gamla efter (minuter):"
+
+#: tfconf.label35.caption
+msgid "You can press \"s\" at any time to have the current reading read out loud"
+msgstr "Du kan trycka på \"s\" närsomhelst för att få nuvarande avläsning uppläst"
+
+#: tfconf.label36.caption
+msgid "Voice Type:"
+msgstr "Rösttyp:"
+
+#: tfconf.label37.caption
+msgid "Rate:"
+msgstr "Hastighet:"
+
+#: tfconf.label38.caption
+msgid "High contrast disables some of Trndis Time-in-Range coloring"
+msgstr "Hög kontrast inaktiverar vissa av Trndis Tid-i-målområdet-färger"
 
 #: tfconf.label4.caption
 msgid "Window start-up position"
@@ -1030,10 +1055,6 @@ msgstr "Exportera alla inställningar till en fil för backup, eller överförin
 msgid "Test an announcement"
 msgstr "Testa en notis"
 
-#: tfconf.ltestannounce1.caption
-msgid "Test a spoken string"
-msgstr "Testa en talad sträng"
-
 #: tfconf.ltray.caption
 msgid "Tray icon size:"
 msgstr "Panelikonstorlek:"
@@ -1073,6 +1094,10 @@ msgstr "Visa tid och värde (t.ex., ⏱10' ↗ 5.5)"
 #: tfconf.rbunit.caption
 msgid "Display Unit"
 msgstr "Enhetstyp"
+
+#: tfconf.tsaccess.caption
+msgid "Accessibility"
+msgstr "Tillgänglighet"
 
 #: tfconf.tsadvanced.caption
 msgid "Advanced"
@@ -1647,6 +1672,10 @@ msgstr "Startar mediasystemet..."
 msgid "Processing user profiles..."
 msgstr "Bearbetar användarprofiler..."
 
+#: trndi.strings.rs_init_trndi
+msgid "Starting Trndi..."
+msgstr "Startar Trndi..."
+
 #: trndi.strings.rs_init_ui
 msgid "Initializing UI..."
 msgstr "Initierar gränssnittet..."
@@ -2103,11 +2132,6 @@ msgstr "Lågt blodsocker! Nuvarande: %s"
 msgid "Blood sugar low"
 msgstr "Lågt blodsocker"
 
-#: trndi.strings.sannouncenotavailable
-#, object-pascal-format
-msgid "The text-to-speech (TTS) software \"%s\" is not available."
-msgstr "Text-till-tal (TTS-mjukvaran) \"%s\" är inte tillgänglig."
-
 #: trndi.strings.sannounceoff
 msgid "No longer announcing readings aloud"
 msgstr "Läser inte upp värden"
@@ -2298,6 +2322,12 @@ msgctxt "trndi.strings.sunknownerr"
 msgid "Unknown error"
 msgstr "Okänt fel"
 
+#: uconf.rs_announce_not_available
+#, object-pascal-format
+msgctxt "uconf.rs_announce_not_available"
+msgid "The text-to-speech (TTS) software \"%s\" is not available."
+msgstr "Text-till-tal (TTS-mjukvaran) \"%s\" är inte tillgänglig."
+
 #: uconf.rs_auto
 msgid "Auto-detect"
 msgstr "Automatisk"
@@ -2375,6 +2405,10 @@ msgid ""
 msgstr ""
 "Dexcom:s servrar tillhandahåller inte värden för vad som är högt och lågt.\n"
 "Vänligen ställ in dina egna gränser under fliken Personalisera."
+
+#: uconf.rs_disable_media
+msgid "This turns off all media-related fetures. Can speed up start."
+msgstr "Stänger av alla media-relaterade funktioner. Kan snabba på uppstarten."
 
 #: uconf.rs_dot_click
 msgid "Dot appearance is modified below!"
@@ -2780,4 +2814,3 @@ msgstr "Historikgraf"
 #, object-pascal-format
 msgid "Readings (%s)"
 msgstr "Avläsningar (%s)"
-

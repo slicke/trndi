@@ -1,4 +1,4 @@
-unit TouchDetection;
+unit slicke.touchdetection;
 
 {$I ../../inc/native.inc}
 
@@ -9,9 +9,8 @@ uses
 Windows, Messages,
 {$ENDIF}
 {$IFDEF X_LINUXBSD}
-BaseUnix, Unix,
-{$ifdef X_LINUX}Linux,{$ENDIF}
-{$ENDIF}
+Unix,
+{$endif}
 Classes, SysUtils;
 
 type

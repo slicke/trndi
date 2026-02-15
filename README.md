@@ -14,6 +14,7 @@
 - [What differs Trndi from apps?](#what-differs-trndi-from-apps)
 - [Multi-user support](#multi-user-support)
 - [Usage](#usage)
+- [Accessibility](#accessibility)
 - [Installation](#installation)
 	- [Windows](#windows)
 	- [Linux](#linux)
@@ -77,6 +78,15 @@ You need to start Trndi multiple times, each instance lets you choose a user. Ju
 
 # Usage
 ⚠️ Right-click on the reading on the screen to access the menu, this is how you control Trndi.
+
+# Accessibility
+Trndi includes built‑in accessibility features to make readings easier to see and hear:
+
+- **Text-to-speech (TTS)** — enable "Announce readings" in Settings to have Trndi speak glucose updates.
+- **High contrast mode** — toggle the high‑contrast theme for improved visibility.
+- **Adjustable speech voice & rate** — choose voice and set speaking rate from Settings.
+- **Keyboard & screen‑reader friendliness** — dialogs and controls expose standard labels and keyboard focus so screen readers can navigate the UI.
+- **Open links externally** — links (Help, documentation) are opened with the system browser.
 
 # Installation
 
@@ -175,6 +185,7 @@ Trndi can be built for Haiku OS using Lazarus.
 ```bash
 # Install dependencies
 pkgman install fpc lazarus_bin openssl
+> use pkgman php8 to perform HTTP-based unit tests
 
 # Clone and build
 git clone https://github.com/slicke/trndi.git
@@ -298,6 +309,8 @@ lazbuild -B output_directory Trndi.lpi
 
 ### Makefile
 
+> Linux, BSD and Haiku use _make_, for macOS substitute make with _gmake_
+
 There is a convenience `Makefile` that wraps `lazbuild` with common targets:
 
 - `make` (default: release)
@@ -313,7 +326,7 @@ There is a convenience `Makefile` that wraps `lazbuild` with common targets:
 
 Defaults by platform:
 - Linux: forces the `Qt6` build modes by default (e.g. `Qt6 (Release)`)
-- macOS / Windows: prefers native `Extensions (Release)` style builds for release targets
+- Windows / macOS: prefers native `Extensions (Release)` / `No Extensions (Release)`(respectively) style builds for release targets
 
 Examples:
 ```bash

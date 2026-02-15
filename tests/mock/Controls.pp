@@ -1,19 +1,28 @@
 unit Controls;
 
 {$mode ObjFPC}{$H+}
+{$M+}
 
 interface
 
-uses Types, Graphics;
+uses Types, Graphics, Classes;
 
 type
-  TComponent = class
-  public
-    constructor Create; virtual;
-    destructor Destroy; override;
+  // Make Controls.TComponent inherit from Classes.TComponent to keep compatibility
+  // with code expecting Classes.TComponent
+  TComponent = class(Classes.TComponent)
   end;
 
   TWinControl = class;
+
+  TNotifyEvent = procedure(Sender: TObject) of object;
+
+  // Minimal mouse and shift state types used in event signatures
+  TMouseButton = (mbLeft, mbRight, mbMiddle);
+  TShiftStateEnum = (ssShift, ssAlt, ssCtrl, ssMeta, ssLeft, ssRight, ssMiddle);
+  TShiftState = set of TShiftStateEnum;
+
+  TAlign = (alNone, alTop, alBottom, alLeft, alRight, alClient);
 
   TControl = class(TComponent)
   private
@@ -24,11 +33,25 @@ type
     FParent: TWinControl;
     FCaption: string;
     FName: string;
+    FEnabled: Boolean;
+    FVisible: Boolean;
+    FColor: TColor;
+    FAlign: TAlign;
+    FOnClick: TNotifyEvent;
+    FCursor: Integer;
+    FAutoSize: Boolean;
+    FPopupMenu: TComponent;
+    FOnPaint: TNotifyEvent;
+    FHint: string;
+    FOnResize: TNotifyEvent;
+    FOptimalFill: Boolean;
+    FHandle: PtrUInt; // Mock window handle for Windows-specific code
   protected
     FCanvas: TCanvas;
     FFont: TFont;
   public
-    constructor Create; override;
+    property AutoSize: Boolean read FAutoSize write FAutoSize;
+    constructor Create(AOwner: TComponent = nil); virtual;
     destructor Destroy; override;
     property Left: Integer read FLeft write FLeft;
     property Top: Integer read FTop write FTop;
@@ -36,43 +59,122 @@ type
     property Height: Integer read FHeight write FHeight;
     property Parent: TWinControl read FParent write FParent;
     property Canvas: TCanvas read FCanvas;
-    property Font: TFont read FFont;
+    property Font: TFont read FFont write FFont;
     property Caption: string read FCaption write FCaption;
     property Name: string read FName write FName;
+    property Enabled: Boolean read FEnabled write FEnabled;
+    property Color: TColor read FColor write FColor;
+    property Align: TAlign read FAlign write FAlign;
+    property OnClick: TNotifyEvent read FOnClick write FOnClick;
+    property Visible: Boolean read FVisible write FVisible;
+    property Cursor: Integer read FCursor write FCursor;
+    property PopupMenu: TComponent read FPopupMenu write FPopupMenu;
+    property Hint: string read FHint write FHint;
+    property OnPaint: TNotifyEvent read FOnPaint write FOnPaint;
+    property OnResize: TNotifyEvent read FOnResize write FOnResize;
+    property OptimalFill: Boolean read FOptimalFill write FOptimalFill;
+    property Handle: PtrUInt read FHandle write FHandle; // Provide a mock Handle for Windows-specific APIs
     function ClientRect: TRect; virtual;
-    function ClientWidth: Integer; virtual;
-    function ClientHeight: Integer; virtual;
+    function GetClientWidth: Integer; virtual;
+    function GetClientHeight: Integer; virtual;
+    procedure SetClientWidth(AValue: Integer); virtual;
+    procedure SetClientHeight(AValue: Integer); virtual;
+    property ClientWidth: Integer read GetClientWidth write SetClientWidth;
+    property ClientHeight: Integer read GetClientHeight write SetClientHeight;
+    procedure Hide; virtual;
+    procedure Show; virtual;
+    procedure SetFocus; virtual;
+    procedure Update; virtual;
+    procedure Repaint; virtual;
+    procedure Refresh; virtual;
+    procedure SendToBack; virtual;
+
+    // Bounds helpers
+    procedure SetBounds(ALeft, ATop, AWidth, AHeight: Integer); virtual;
+    function GetBoundsRect: TRect; virtual;
+    property BoundsRect: TRect read GetBoundsRect;
+
+    // Basic UI event hooks commonly overridden by forms/controls
+    procedure Paint; virtual;
+    procedure Resize; virtual;
+    procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); virtual;
+    procedure KeyDown(var Key: Word; Shift: TShiftState); virtual;
+
+    procedure Invalidate; virtual;
+    procedure BringToFront; virtual;
   end;
 
+
   TWinControl = class(TControl)
+  end;
+
+  // Owner-draw state and drag object used in event signatures
+  TOwnerDrawStateEnum = (odSelected, odFocused, odDisabled, odChecked, odGrayed, odDefault, odHotLight, odInactive);
+  TOwnerDrawState = set of TOwnerDrawStateEnum;
+
+  TDragObject = class(TObject)
+  public
+    Source: TObject;
+  end;
+
+  // Minimal Monitor class used by some units (matches LCL's TMonitor)
+  TMonitor = class
+  public
+    BoundsRect: TRect;
+    WorkAreaRect: TRect;
+    constructor Create; virtual;
+    destructor Destroy; override;
   end;
 
   // Minimal Screen record used by some units
   TScreen = record
     Width: Integer;
     Height: Integer;
-  end;
+    Cursor: Integer;
+    // Work area and desktop properties used by umain helpers
+    WorkAreaLeft: Integer;
+    WorkAreaTop: Integer;
+    WorkAreaWidth: Integer;
+    WorkAreaHeight: Integer;
+    WorkAreaRect: TRect;
+    DesktopLeft: Integer;
+    DesktopTop: Integer;
+    DesktopWidth: Integer;
+    DesktopHeight: Integer;
+    // Multi-monitor support (headless defaults to single monitor)
+    MonitorCount: Integer;
+    Monitors: array of TMonitor;
+    ActiveForm: TObject;
+  end; 
 
 var
   Screen: TScreen;
 
 implementation
 
-constructor TComponent.Create;
-begin
-  inherited Create;
-end;
+var
+  _MockMonitorI: Integer; // used in finalization to clean up monitors
 
-destructor TComponent.Destroy;
+constructor TControl.Create(AOwner: TComponent);
 begin
-  inherited Destroy;
-end;
-
-constructor TControl.Create;
-begin
-  inherited Create;
+  inherited Create(AOwner);
   FCanvas := nil;
   FFont := TFont.Create;
+  FOnResize := nil; // default no-op event
+  FOptimalFill := False;
+  FHandle := 0; // default mock handle
+end;
+
+constructor TMonitor.Create;
+begin
+  inherited Create;
+  BoundsRect := Rect(0,0,0,0);
+  WorkAreaRect := Rect(0,0,0,0);
+end;
+
+destructor TMonitor.Destroy;
+begin
+  inherited Destroy;
 end;
 
 destructor TControl.Destroy;
@@ -89,18 +191,135 @@ begin
   Result := Rect(Left, Top, Left + Width, Top + Height);
 end;
 
-function TControl.ClientWidth: Integer;
+function TControl.GetClientWidth: Integer;
 begin
   Result := Width;
 end;
 
-function TControl.ClientHeight: Integer;
+procedure TControl.SetClientWidth(AValue: Integer);
+begin
+  Width := AValue;
+end;
+
+function TControl.GetClientHeight: Integer;
 begin
   Result := Height;
+end;
+
+procedure TControl.SetClientHeight(AValue: Integer);
+begin
+  Height := AValue;
+end;
+
+procedure TControl.Hide;
+begin
+  Visible := False;
+end;
+
+procedure TControl.Show;
+begin
+  Visible := True;
+end;
+
+procedure TControl.SetFocus;
+begin
+  // no-op for headless tests
+end;
+
+procedure TControl.SetBounds(ALeft, ATop, AWidth, AHeight: Integer);
+begin
+  Left := ALeft;
+  Top := ATop;
+  Width := AWidth;
+  Height := AHeight;
+end;
+
+function TControl.GetBoundsRect: TRect;
+begin
+  Result := Rect(Left, Top, Left + Width, Top + Height);
+end;
+
+procedure TControl.Invalidate;
+begin
+  // Default to repainting in headless tests
+  Repaint;
+end;
+
+procedure TControl.Refresh;
+begin
+  // no-op for headless tests (explicit refresh)
+end;
+
+procedure TControl.SendToBack;
+begin
+  // no-op for headless tests
+end;
+
+procedure TControl.BringToFront;
+begin
+  // no-op in headless tests
+end;
+
+procedure TControl.Update;
+begin
+  // no-op
+end;
+
+procedure TControl.Repaint;
+begin
+  Paint;
+end;
+
+procedure TControl.Paint;
+begin
+  // no-op for headless tests
+end;
+
+procedure TControl.Resize;
+begin
+  // no-op for headless tests
+end;
+
+procedure TControl.MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+begin
+  // no-op for headless tests
+end;
+
+procedure TControl.KeyDown(var Key: Word; Shift: TShiftState);
+begin
+  // no-op for headless tests
 end;
 
 initialization
   Screen.Width := 1024;
   Screen.Height := 768;
+  // Default work area and desktop to whole screen in headless tests
+  Screen.WorkAreaLeft := 0;
+  Screen.WorkAreaTop := 0;
+  Screen.WorkAreaWidth := Screen.Width;
+  Screen.WorkAreaHeight := Screen.Height;
+  Screen.WorkAreaRect := Rect(Screen.WorkAreaLeft, Screen.WorkAreaTop, Screen.WorkAreaLeft + Screen.WorkAreaWidth, Screen.WorkAreaTop + Screen.WorkAreaHeight);
+  Screen.DesktopLeft := 0;
+  Screen.DesktopTop := 0;
+  Screen.DesktopWidth := Screen.Width;
+  Screen.DesktopHeight := Screen.Height;
+  // Default single monitor setup for headless tests
+  Screen.MonitorCount := 1;
+  SetLength(Screen.Monitors, 1);
+  Screen.Monitors[0] := TMonitor.Create;
+  Screen.Monitors[0].BoundsRect := Rect(0, 0, Screen.Width, Screen.Height);
+  Screen.Monitors[0].WorkAreaRect := Screen.WorkAreaRect;
+  Screen.ActiveForm := nil;
+
+finalization
+  // Free any mock monitors created
+  if Screen.MonitorCount > 0 then
+  begin
+    for _MockMonitorI := 0 to Screen.MonitorCount - 1 do
+      if Assigned(Screen.Monitors[_MockMonitorI]) then
+        Screen.Monitors[_MockMonitorI].Free;
+    SetLength(Screen.Monitors, 0);
+    Screen.MonitorCount := 0;
+  end;
 
 end.

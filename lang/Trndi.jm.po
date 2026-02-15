@@ -192,11 +192,6 @@ msgstr "> Servicemeny"
 msgid "Alterante arrow and reading"
 msgstr "Vexla pil och verde"
 
-#: tfbg.miannounce.caption
-msgctxt "tfbg.miannounce.caption"
-msgid "Announce readings"
-msgstr "Les ut avlesningar"
-
 #: tfbg.miasysteminfo.caption
 msgid "System Info"
 msgstr "Systeminfo"
@@ -494,6 +489,14 @@ msgstr "Blixtra vid perfekt verde (5,5mmol/L / 100mg/dL)"
 msgid "Trend Dots"
 msgstr ""
 
+#: tfconf.cbhcontrast.caption
+msgid "High Contrast"
+msgstr ""
+
+#: tfconf.cbmediadisable.caption
+msgid "Disable the entire media system"
+msgstr ""
+
 #: tfconf.cbmultitouch.caption
 msgid "Multi-touch"
 msgstr "Multipek"
@@ -598,6 +601,10 @@ msgstr "Ferga titeln med blodsockerfergen (endast Windows)"
 msgid "Touch screen"
 msgstr "Pekskerm"
 
+#: tfconf.cbtts.caption
+msgid "Enable Text-To-Speech"
+msgstr ""
+
 #: tfconf.cbuser.caption
 msgid "Account color"
 msgstr "Kontoferg"
@@ -671,6 +678,12 @@ msgstr ""
 msgid "Display Preferences"
 msgstr "Visningsval"
 
+#: tfconf.gbmedia.caption
+#, fuzzy
+msgctxt "tfconf.gbmedia.caption"
+msgid "Play Media"
+msgstr "Spela Media"
+
 #: tfconf.gbmulti.caption
 msgid "Account Settings"
 msgstr "Kontoinstellningar"
@@ -690,17 +703,15 @@ msgctxt "tfconf.gboverride1.caption"
 msgid "Override High / Low limits"
 msgstr "osidosett hôga / loga grenser"
 
-#: tfconf.gboverride2.caption
-msgid "Play Media"
-msgstr "Spela Media"
-
-#: tfconf.gboverride3.caption
-msgid "Use URL"
-msgstr "Anvend URL"
-
 #: tfconf.gbsettings.caption
 msgid "Settings Management"
 msgstr ""
+
+#: tfconf.gburl.caption
+#, fuzzy
+msgctxt "tfconf.gburl.caption"
+msgid "Use URL"
+msgstr "Anvend URL"
 
 #: tfconf.groupbox1.caption
 msgid "System Features"
@@ -856,6 +867,22 @@ msgstr "Decimalseparator:"
 msgctxt "tfconf.label34.caption"
 msgid "Readings are outdated after (minutes):"
 msgstr "Avlesningar anses gamla efter (minuter):"
+
+#: tfconf.label35.caption
+msgid "You can press \"s\" at any time to have the current reading read out loud"
+msgstr ""
+
+#: tfconf.label36.caption
+msgid "Voice Type:"
+msgstr ""
+
+#: tfconf.label37.caption
+msgid "Rate:"
+msgstr ""
+
+#: tfconf.label38.caption
+msgid "High contrast disables some of Trndis Time-in-Range coloring"
+msgstr ""
 
 #: tfconf.label4.caption
 msgid "Window start-up position"
@@ -1033,10 +1060,6 @@ msgstr ""
 msgid "Test an announcement"
 msgstr "Testa en notis"
 
-#: tfconf.ltestannounce1.caption
-msgid "Test a spoken string"
-msgstr "Testa en talad streng"
-
 #: tfconf.ltray.caption
 msgid "Tray icon size:"
 msgstr "Panelikonstorlek:"
@@ -1076,6 +1099,10 @@ msgstr "Visa tid och verde (t.ex., ⏱10' ↗ 5.5)"
 #: tfconf.rbunit.caption
 msgid "Display Unit"
 msgstr "Enhetstyp"
+
+#: tfconf.tsaccess.caption
+msgid "Accessibility"
+msgstr ""
 
 #: tfconf.tsadvanced.caption
 msgid "Advanced"
@@ -1662,6 +1689,10 @@ msgstr "Startar mediasystemet..."
 msgid "Processing user profiles..."
 msgstr "Bearbetar anvendarprofiler..."
 
+#: trndi.strings.rs_init_trndi
+msgid "Starting Trndi..."
+msgstr ""
+
 #: trndi.strings.rs_init_ui
 msgid "Initializing UI..."
 msgstr "Initierar grenssnittet..."
@@ -2149,11 +2180,6 @@ msgstr "Logt blodsocker! Nuvarande: __PH71f04199-7b55-4c1f-984c-a5f526cf60f5__"
 msgid "Blood sugar low"
 msgstr "Logt blodsocker"
 
-#: trndi.strings.sannouncenotavailable
-#, object-pascal-format, fuzzy, badformat
-msgid "The text-to-speech (TTS) software \"%s\" is not available."
-msgstr "Text-till-tal (TTS-mjukvaran) \\\"__PHf060c3c4-8d43-4b11-9b49-51d17e493d06__\\\" er inte tillgenglig."
-
 #: trndi.strings.sannounceoff
 msgid "No longer announcing readings aloud"
 msgstr "Leser inte upp verden"
@@ -2344,6 +2370,12 @@ msgctxt "trndi.strings.sunknownerr"
 msgid "Unknown error"
 msgstr "Okent fel"
 
+#: uconf.rs_announce_not_available
+#, object-pascal-format
+msgctxt "uconf.rs_announce_not_available"
+msgid "The text-to-speech (TTS) software \"%s\" is not available."
+msgstr ""
+
 #: uconf.rs_auto
 msgid "Auto-detect"
 msgstr "Automatisk"
@@ -2419,6 +2451,10 @@ msgid ""
 msgstr ""
 "Dexcom:s servrar tillhandahåller inte värden för vad som är högt och lågt.\n"
 "Vänligen ställ in dina egna gränser under fliken Personalisera."
+
+#: uconf.rs_disable_media
+msgid "This turns off all media-related fetures. Can speed up start."
+msgstr ""
 
 #: uconf.rs_dot_click
 msgid "Dot appearance is modified below!"

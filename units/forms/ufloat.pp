@@ -55,7 +55,7 @@ LCLIntf, LCLType, InterfaceBase, trndi.native
 CocoaAll
 {$ENDIF}
 {$IFDEF LCLQT6},
-qt6, qtwidgets, qtobjects, qtint
+qt6, qtwidgets
 {$ENDIF};
 
 {$ifdef LCLQt6}

@@ -182,10 +182,6 @@ msgstr ""
 msgid "Alterante arrow and reading"
 msgstr ""
 
-#: tfbg.miannounce.caption
-msgid "Announce readings"
-msgstr ""
-
 #: tfbg.miasysteminfo.caption
 msgid "System Info"
 msgstr ""
@@ -477,6 +473,14 @@ msgstr ""
 msgid "Trend Dots"
 msgstr ""
 
+#: tfconf.cbhcontrast.caption
+msgid "High Contrast"
+msgstr ""
+
+#: tfconf.cbmediadisable.caption
+msgid "Disable the entire media system"
+msgstr ""
+
 #: tfconf.cbmultitouch.caption
 msgid "Multi-touch"
 msgstr ""
@@ -581,6 +585,10 @@ msgstr ""
 msgid "Touch screen"
 msgstr ""
 
+#: tfconf.cbtts.caption
+msgid "Enable Text-To-Speech"
+msgstr ""
+
 #: tfconf.cbuser.caption
 msgid "Account color"
 msgstr ""
@@ -652,6 +660,11 @@ msgstr ""
 msgid "Display Preferences"
 msgstr ""
 
+#: tfconf.gbmedia.caption
+msgctxt "tfconf.gbmedia.caption"
+msgid "Play Media"
+msgstr ""
+
 #: tfconf.gbmulti.caption
 msgid "Account Settings"
 msgstr ""
@@ -670,16 +683,13 @@ msgctxt "tfconf.gboverride1.caption"
 msgid "Override High / Low limits"
 msgstr ""
 
-#: tfconf.gboverride2.caption
-msgid "Play Media"
-msgstr ""
-
-#: tfconf.gboverride3.caption
-msgid "Use URL"
-msgstr ""
-
 #: tfconf.gbsettings.caption
 msgid "Settings Management"
+msgstr ""
+
+#: tfconf.gburl.caption
+msgctxt "tfconf.gburl.caption"
+msgid "Use URL"
 msgstr ""
 
 #: tfconf.groupbox1.caption
@@ -833,6 +843,22 @@ msgstr ""
 #: tfconf.label34.caption
 msgctxt "tfconf.label34.caption"
 msgid "Readings are outdated after (minutes):"
+msgstr ""
+
+#: tfconf.label35.caption
+msgid "You can press \"s\" at any time to have the current reading read out loud"
+msgstr ""
+
+#: tfconf.label36.caption
+msgid "Voice Type:"
+msgstr ""
+
+#: tfconf.label37.caption
+msgid "Rate:"
+msgstr ""
+
+#: tfconf.label38.caption
+msgid "High contrast disables some of Trndis Time-in-Range coloring"
 msgstr ""
 
 #: tfconf.label4.caption
@@ -1007,10 +1033,6 @@ msgstr ""
 msgid "Test an announcement"
 msgstr ""
 
-#: tfconf.ltestannounce1.caption
-msgid "Test a spoken string"
-msgstr ""
-
 #: tfconf.ltray.caption
 msgid "Tray icon size:"
 msgstr ""
@@ -1049,6 +1071,10 @@ msgstr ""
 
 #: tfconf.rbunit.caption
 msgid "Display Unit"
+msgstr ""
+
+#: tfconf.tsaccess.caption
+msgid "Accessibility"
 msgstr ""
 
 #: tfconf.tsadvanced.caption
@@ -1546,6 +1572,10 @@ msgstr ""
 msgid "Processing user profiles..."
 msgstr ""
 
+#: trndi.strings.rs_init_trndi
+msgid "Starting Trndi..."
+msgstr ""
+
 #: trndi.strings.rs_init_ui
 msgid "Initializing UI..."
 msgstr ""
@@ -1990,11 +2020,6 @@ msgstr ""
 msgid "Blood sugar low"
 msgstr ""
 
-#: trndi.strings.sannouncenotavailable
-#, object-pascal-format
-msgid "The text-to-speech (TTS) software \"%s\" is not available."
-msgstr ""
-
 #: trndi.strings.sannounceoff
 msgid "No longer announcing readings aloud"
 msgstr ""
@@ -2183,6 +2208,12 @@ msgctxt "trndi.strings.sunknownerr"
 msgid "Unknown error"
 msgstr ""
 
+#: uconf.rs_announce_not_available
+#, object-pascal-format
+msgctxt "uconf.rs_announce_not_available"
+msgid "The text-to-speech (TTS) software \"%s\" is not available."
+msgstr ""
+
 #: uconf.rs_auto
 msgid "Auto-detect"
 msgstr ""
@@ -2251,6 +2282,10 @@ msgstr ""
 msgid ""
 "Dexcom servers do not provide custom high and low blood sugar values.\n"
 "Please set your own thresholds in the Customization tab."
+msgstr ""
+
+#: uconf.rs_disable_media
+msgid "This turns off all media-related fetures. Can speed up start."
 msgstr ""
 
 #: uconf.rs_dot_click

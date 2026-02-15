@@ -4,7 +4,8 @@ program TestTrndi;
 
 uses
   SysUtils, fpcunit, testregistry, testreport,
-  debug_firstx_tandem_test, debug_firstx_dexcom_test;
+  debug_firstx_tandem_test, debug_firstx_dexcom_test,
+  system_media_controller_tests;
 
 type
   TTrndiTest = class(TTestCase)

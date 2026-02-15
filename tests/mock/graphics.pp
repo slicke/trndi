@@ -17,11 +17,13 @@ const
   clRed     = $000000FF;
   clFuchsia = $00FF00FF;
   clNone    = -1; // used as transparent sentinel
+  clDefault = clWhite;
+  clMaroon = $00008000;
 
 type
   TBrushStyle = (bsSolid, bsClear);
-  TPenStyle = (psSolid);
-  TFontStyle = (fsBold);
+  TPenStyle = (psSolid, psClear, psDot);
+  TFontStyle = (fsBold, fsStrikeOut);
   TFontStyles = set of TFontStyle;
 
   TPen = class(TPersistent)
@@ -44,17 +46,25 @@ type
     property Style: TBrushStyle read FStyle write FStyle;
   end;
 
+  TFontQuality = (fqDefault, fqCleartype);
+
   TFont = class(TPersistent)
   private
     FName: string;
     FSize: Integer;
     FColor: TColor;
     FStyle: TFontStyles;
+    FQuality: TFontQuality;
+    FOrientation: Integer;
+    FHeight: Integer;
   public
     property Name: string read FName write FName;
     property Size: Integer read FSize write FSize;
     property Color: TColor read FColor write FColor;
     property Style: TFontStyles read FStyle write FStyle;
+    property Quality: TFontQuality read FQuality write FQuality;
+    property Orientation: Integer read FOrientation write FOrientation;
+    property Height: Integer read FHeight write FHeight;
     constructor Create; virtual;
   end;
 
@@ -98,8 +108,20 @@ type
     procedure RoundRect(X1, Y1, X2, Y2, RoundX, RoundY: Integer); overload; virtual;
     procedure MoveTo(X, Y: Integer); virtual;
     procedure LineTo(X, Y: Integer); virtual;
-    function Pixels(X, Y: Integer): TColor; virtual;
+    function GetPixels(X, Y: Integer): TColor; virtual;
+    property Pixels[X, Y: Integer]: TColor read GetPixels;
     procedure Draw(X, Y: Integer; Src: TObject); virtual;
+  end;
+
+  TIcon = TObject;
+
+  TPicture = class(TObject)
+  private
+    FIcon: TIcon;
+  public
+    constructor Create; virtual;
+    destructor Destroy; override;
+    property Icon: TIcon read FIcon write FIcon;
   end;
 
   TBitmap = class(TObject)
@@ -121,9 +143,15 @@ type
 // color helpers
 function ColorToRGB(AColor: TColor): LongInt;
 function RGB(R, G, B: Byte): TColor;
+function RGBToColor(R, G, B: Byte): TColor;
 function Red(AColor: TColor): Byte;
 function Green(AColor: TColor): Byte;
 function Blue(AColor: TColor): Byte;
+
+// Windows-like macros used in project
+function GetRValue(C: LongInt): Byte;
+function GetGValue(C: LongInt): Byte;
+function GetBValue(C: LongInt): Byte;
 
 const
   clWindow = $00FFFFFF; // white
@@ -219,7 +247,7 @@ begin
   // no-op
 end;
 
-function TCanvas.Pixels(X, Y: Integer): TColor;
+function TCanvas.GetPixels(X, Y: Integer): TColor;
 begin
   // default transparent / background
   Result := clWhite;
@@ -231,6 +259,18 @@ begin
 end;
 
 { TBitmap }
+constructor TPicture.Create;
+begin
+  inherited Create;
+  FIcon := nil;
+end;
+
+destructor TPicture.Destroy;
+begin
+  // no-op
+  inherited Destroy;
+end;
+
 constructor TBitmap.Create;
 begin
   inherited Create;
@@ -277,6 +317,27 @@ function RGB(R, G, B: Byte): TColor;
 begin
   // produce $00BBGGRR as project expects
   Result := (B shl 16) or (G shl 8) or R;
+end;
+
+function RGBToColor(R, G, B: Byte): TColor;
+begin
+  Result := RGB(R, G, B);
+end;
+
+// Windows-style helpers
+function GetRValue(C: LongInt): Byte;
+begin
+  Result := Red(ColorToRGB(C));
+end;
+
+function GetGValue(C: LongInt): Byte;
+begin
+  Result := Green(ColorToRGB(C));
+end;
+
+function GetBValue(C: LongInt): Byte;
+begin
+  Result := Blue(ColorToRGB(C));
 end;
 
 end.

@@ -81,11 +81,11 @@ begin
 
   langPath := getLangPath;
   moPath := langPath + 'Trndi.' + lang + '.mo';
-  LogMessageToFile('Lang select: setting=' + native.GetSetting('locale', '') + ' resolved=' + lang + ' path=' + langPath + ' mo=' + moPath);
+  TrndiDLog('Lang select: setting=' + native.GetSetting('locale', '') + ' resolved=' + lang + ' path=' + langPath + ' mo=' + moPath);
   langLoaded := SetDefaultLang(lang, langPath, 'Trndi');
-  LogMessageToFile('Lang loaded=' + langLoaded + ' RS_INIT_UI=' + RS_INIT_UI);
+  TrndiDLog('Lang loaded=' + langLoaded + ' RS_INIT_UI=' + RS_INIT_UI);
   if not FileExists(moPath) then
-    LogMessageToFile('Lang MO missing: ' + lang + ' path=' + langPath + ' mo=' + moPath);
+    TrndiDLog('Lang MO missing: ' + lang + ' path=' + langPath + ' mo=' + moPath);
 end;
 
 {$if DEFINED(DARWIN) OR DEFINED(X_LINUXBSD)}
@@ -234,6 +234,22 @@ begin
     bg_rel_color_lo_txt);
   bg_rel_color_hi_txt := native.GetColorSetting('ux.bg_rel_color_hi_txt',
     bg_rel_color_hi_txt);
+
+  if native.GetBoolSetting('main.high_contrast', false) then begin
+    bg_color_ok := clBlack;
+    bg_color_ok_txt := clWhite;
+    // Hi
+    bg_color_hi := clBlack;
+    bg_color_hi_txt := clWhite;
+    // Low
+    bg_color_lo := clWhite;
+    bg_color_lo_txt := clBlack;
+
+    bg_rel_color_hi := clBlack;
+    bg_rel_color_lo := clWhite;
+    bg_rel_color_hi_txt := clWHite;
+    bg_rel_color_lo_txt := clBlack;
+  end;
 
   // Color title bar (on Windows?)
   titlecolor := native.GetBoolSetting('ux.title_color', true);
@@ -439,7 +455,10 @@ begin
   API_D_SECOND,
   'API_D_SECOND':
     api := DebugSecondMissingAPI.Create(apiTarget, apiCreds);
-    {$endif}
+  API_D_SLOW,
+  'API_D_SLOW':
+    api := DebugSlowAPI.Create(apiTarget, apiCreds);
+  {$endif}
   else
     Result := false;
   end;
@@ -548,7 +567,7 @@ var
   miDebugUXMsg, miDebugLog, miDebugLoadText, miDebugLogAPI: TMenuItem;
   {$endif}
 begin
-  LogMessageToFile(Format(#10'=== Trndi started at %s ===', [DateTimeToStr(Now)]));
+  TrndiDLog(Format(#10'=== Trndi started at %s ===', [DateTimeToStr(Now)]));
   firstboot := false;
 
   InitCriticalSection(FReadingsLock);
@@ -561,13 +580,16 @@ begin
 
   // Initialize splash screen first
   InitializeSplashScreen;
+  fSplash.incProgress(10, RS_INIT_TRNDI);
   Application.ProcessMessages;
   Application.OnException := @AppExceptionHandler;
 
   // Start media backend early
-  fSplash.incProgress(10, RS_INIT_MEDIA);
-  MediaController := TSystemMediaController.Create(Self);
-  MediaController.Initialize;
+  if not native.GetBoolSetting('media.disabled', false) then begin
+    fSplash.incProgress(10, RS_INIT_MEDIA);
+    MediaController := TSystemMediaController.Create(Self);
+       MediaController.Initialize;
+  end;
   Application.ProcessMessages;
 
   fSplash.incProgress(15, RS_INIT_FONTS);

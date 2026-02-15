@@ -390,7 +390,7 @@ begin
   // Skapa WinHTTP-session
   if FProxyHost <> '' then
   begin
-    LogMessageToFile('WinHTTP GET: Using named proxy: ' + FProxyHost + ':' + IntToStr(FProxyPort));
+    TrndiDLog('WinHTTP GET: Using named proxy: ' + FProxyHost + ':' + IntToStr(FProxyPort));
     hSession := WinHttpOpen(pwidechar(widestring(FUserAgent)), WINHTTP_ACCESS_TYPE_NAMED_PROXY,
       pwidechar(widestring(FProxyHost + ':' + IntToStr(FProxyPort))), WINHTTP_NO_PROXY_BYPASS, 0);
   end
@@ -519,10 +519,10 @@ begin
           until dwSize = 0;
 
           Result := ResponseStream.DataString;
-          LogMessageToFile('WinHTTP GET response length: ' + IntToStr(Length(Result)));
+          TrndiDLog('WinHTTP GET response length: ' + IntToStr(Length(Result)));
           {$IFDEF DEBUG}
           if Length(Result) > 0 then
-            LogMessageToFile('WinHTTP GET response preview: ' + Copy(Result, 1, 200));
+            TrndiDLog('WinHTTP GET response preview: ' + Copy(Result, 1, 200));
           {$ENDIF}
         finally
           ResponseStream.Free;
@@ -565,13 +565,13 @@ begin
   // Skapa WinHTTP-session
   if FProxyHost <> '' then
   begin
-    LogMessageToFile('WinHTTP POST: Using named proxy: ' + FProxyHost + ':' + IntToStr(FProxyPort));
+    TrndiDLog('WinHTTP POST: Using named proxy: ' + FProxyHost + ':' + IntToStr(FProxyPort));
     hSession := WinHttpOpen(pwidechar(widestring(FUserAgent)), WINHTTP_ACCESS_TYPE_NAMED_PROXY,
       pwidechar(widestring(FProxyHost + ':' + IntToStr(FProxyPort))), WINHTTP_NO_PROXY_BYPASS, 0);
   end
   else if FForceNoProxy then
   begin
-    LogMessageToFile('WinHTTP POST: Using ForceNoProxy (direct)');
+    TrndiDLog('WinHTTP POST: Using ForceNoProxy (direct)');
     hSession := WinHttpOpen(pwidechar(widestring(FUserAgent)), WINHTTP_ACCESS_TYPE_NO_PROXY,
       WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
   end
@@ -706,10 +706,10 @@ begin
           until dwSize = 0;
 
           Result := ResponseStream.DataString;
-          LogMessageToFile('WinHTTP POST response length: ' + IntToStr(Length(Result)));
+          TrndiDLog('WinHTTP POST response length: ' + IntToStr(Length(Result)));
           {$IFDEF DEBUG}
           if Length(Result) > 0 then
-            LogMessageToFile('WinHTTP POST response preview: ' + Copy(Result, 1, 200));
+            TrndiDLog('WinHTTP POST response preview: ' + Copy(Result, 1, 200));
           {$ENDIF}
         finally
           ResponseStream.Free;

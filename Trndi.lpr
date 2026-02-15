@@ -55,17 +55,25 @@ LCLTranslator,
 Interfaces, // this includes the LCL widgetset
 Forms,lazcontrols,trndi.types,trndi.native,
 {$IFDEF TrndiExt}
-trndi.ext.promise, trndi.ext.functions,trndi.ext.ext,
+trndi.ext.functions,
 {$ENDIF}
-{$IFDEF DEBUG}
 sysutils,
+{$IFDEF DEBUG}
+trndi.log,
 {$ENDIF}
-trndi.api.nightscout, trndi.api.dexcom, trndi.api, trndi.api.nightscout3,
-trndi.api.dexcomNew, trndi.api.tandem, umain, uconf, ufloat, uhistorygraph, slicke.ux.alert,
+trndi.api.dexcom, umain, uconf, ufloat, slicke.ux.alert,
 buildinfo, razer.chroma.factory
 { you can add units after this };
 
 {$R *.res}
+
+{$IFDEF WINDOWS}
+function SetCurrentProcessExplicitAppUserModelID(AppID: PWideChar): HResult; stdcall; external 'shell32.dll' name 'SetCurrentProcessExplicitAppUserModelID';
+const
+  TRNDI_APPID = '2DC38820-32FA-4243-9788-9BCF396588FD';
+var
+  hrAppID: HResult;
+{$ENDIF}
 
 begin
 {$IFDEF DEBUG}
@@ -77,6 +85,12 @@ SetHeapTraceOutput('heap.trc');
 RequireDerivedFormResource:=true;
   Application.Scaled:=True;
 Application.{%H-}MainFormOnTaskbar:=true;
+{$IFDEF WINDOWS}
+  hrAppID := SetCurrentProcessExplicitAppUserModelID(PWideChar(WideString(TRNDI_APPID)));
+{$ifdef DEBUG}
+  TrndiDLog(PChar(Format('[Trndi] SetAppUserModelID(%s) -> 0x%x', [TRNDI_APPID, hrAppID])));
+{$endif}
+{$ENDIF}
 Application.Initialize;
 Application.CreateForm(TfBG, fBG);
 Application.CreateForm(TfFloat, fFloat);

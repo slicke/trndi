@@ -44,7 +44,7 @@ interface
 
 uses
 Classes, SysUtils, Graphics, Windows, Registry, Dialogs, StrUtils,
-winutils.httpclient, shellapi,
+winutils.httpclient, winutils.wintaskbar, shellapi,
 Forms, variants, dwmapi, trndi.native.base, ExtCtrls, IniFiles{$ifdef DEBUG}, trndi.log{$endif};
 
 type
@@ -134,12 +134,148 @@ public
   function ExportSettings: string; override;
   {** Import settings from INI format string. }
   procedure ImportSettings(const iniData: string); override;
+  {** Signal the start of a long-running update operation (show taskbar progress). }
+  procedure updateBegin; override;
+  {** Signal the completion of a long-running update operation (clear taskbar progress). }
+  procedure updateDone; override;
 end;
 
 implementation
 
 uses
-ComObj, Process;
+ComObj, ActiveX, Process, SyncObjs;
+
+type
+  {** Background worker that owns a SAPI.SpVoice in an STA thread and
+      processes a simple queue of text to speak. }
+  TSpeechWorker = class(TThread)
+  private
+    FQueue: TStringList;
+    FCS: TCriticalSection;
+    FEvent: TEvent;
+    FVoice: olevariant;
+  public
+    constructor Create;
+    destructor Destroy; override;
+    procedure Enqueue(const Text: string);
+    procedure Execute; override;
+  end;
+
+var
+  gSpeechWorker: TSpeechWorker = nil;
+
+procedure EnsureSpeechWorker;
+begin
+  if gSpeechWorker = nil then
+    gSpeechWorker := TSpeechWorker.Create;
+end;
+
+procedure StopSpeechWorker;
+begin
+  if Assigned(gSpeechWorker) then
+  begin
+    gSpeechWorker.Terminate;
+    gSpeechWorker.FEvent.SetEvent;
+    gSpeechWorker.WaitFor;
+    FreeAndNil(gSpeechWorker);
+  end;
+end;
+
+procedure EnqueueSpeech(const Text: string);
+begin
+  EnsureSpeechWorker;
+  if Assigned(gSpeechWorker) then
+    gSpeechWorker.Enqueue(Text);
+end;
+
+{ TSpeechWorker }
+
+constructor TSpeechWorker.Create;
+begin
+  inherited Create(False);
+  FreeOnTerminate := False;
+  FQueue := TStringList.Create;
+  FCS := TCriticalSection.Create;
+  FEvent := TEvent.Create(nil, False, False, '');
+  
+end;
+
+destructor TSpeechWorker.Destroy;
+begin
+  FEvent.Free;
+  FCS.Free;
+  FQueue.Free;
+  inherited Destroy;
+end;
+
+procedure TSpeechWorker.Enqueue(const Text: string);
+begin
+  FCS.Enter;
+  try
+    FQueue.Add(Text);
+  finally
+    FCS.Leave;
+  end;
+  FEvent.SetEvent;
+end;
+
+procedure TSpeechWorker.Execute;
+var
+  hr: HRESULT;
+  textToSpeak: string;
+  hasItem: Boolean;
+begin
+  // Initialize COM for this STA thread
+  hr := CoInitializeEx(nil, COINIT_APARTMENTTHREADED);
+  try
+    try
+      FVoice := CreateOleObject('SAPI.SpVoice');
+    except
+      on E: Exception do
+        begin
+        Exit;
+      end;
+    end;
+
+    while not Terminated do
+    begin
+      // Wait for work or timeout to check termination
+      FEvent.WaitFor(500);
+      hasItem := False;
+      textToSpeak := '';
+      FCS.Enter;
+      try
+        if FQueue.Count > 0 then
+        begin
+          textToSpeak := FQueue[0];
+          FQueue.Delete(0);
+          hasItem := True;
+        end;
+      finally
+        FCS.Leave;
+      end;
+
+      if hasItem then
+      begin
+        try
+          // Speak synchronously on worker thread so multiple utterances are serialized
+          FVoice.Speak(textToSpeak, 0);
+        except
+          on E: Exception do
+            ;
+        end;
+      end;
+    end;
+
+  finally
+    // Clean up COM/voice
+    try
+      FVoice := Unassigned;
+    except
+    end;
+    CoUninitialize;
+  end;
+end;
 {------------------------------------------------------------------------------
   IsBurntToastAvailable
   ---------------------
@@ -172,14 +308,58 @@ begin
   end;
 end;
 
+function EnumLogWnd_UpdateBegin(hwnd: HWND; lParam: LPARAM): BOOL; stdcall;
+var
+  pid: DWORD;
+  titlebuf: array[0..255] of WideChar;
+  cnamebuf: array[0..255] of WideChar;
+  visible: Boolean;
+  owner: HWND;
+  cap: string;
+  wndClassName: string;
+  es: NativeUInt;
+begin
+  GetWindowThreadProcessId(hwnd, @pid);
+  if pid <> GetCurrentProcessId then
+  begin
+    Result := True; // continue enumeration
+    Exit;
+  end;
+  visible := IsWindowVisible(hwnd);
+  owner := GetWindow(hwnd, GW_OWNER);
+  if GetWindowTextW(hwnd, titlebuf, Length(titlebuf)) > 0 then
+    cap := Trim(string(titlebuf))
+  else
+    cap := '';
+  if GetClassNameW(hwnd, cnamebuf, Length(cnamebuf)) > 0 then
+    wndClassName := Trim(string(cnamebuf))
+  else
+    wndClassName := '';
+  es := GetWindowLongPtr(hwnd, GWL_EXSTYLE);
+  {$ifdef DEBUG}
+  TrndiDLog(Format('  HWND=%d Title="%s" Class="%s" Visible=%s Owner=%d ExStyle=0x%8.8x ToolWindow=%s',
+    [hwnd, cap, wndClassName, BoolToStr(visible, True), owner, UIntPtr(es), BoolToStr((es and WS_EX_TOOLWINDOW) <> 0, True)]));
+  {$endif}
+  Result := True;
+end;
+
 {------------------------------------------------------------------------------
   SpeakAvailable (Windows)
   ------------------------
-  Windows supports native TTS via SAPI; assume available.
+  Check if SAPI is available by attempting to create the SpVoice object.
  ------------------------------------------------------------------------------}
 class function TTrndiNativeWindows.SpeakAvailable: boolean;
+var
+  Voice: olevariant;
 begin
-  Result := true;
+  Result := false;
+  try
+    Voice := CreateOleObject('SAPI.SpVoice');
+    Result := true;
+  except
+    // SAPI not available
+    Result := false;
+  end;
 end;
 
 {------------------------------------------------------------------------------
@@ -341,31 +521,31 @@ DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
 {------------------------------------------------------------------------------
   Speak
   -----
-  Use SAPI to speak text; pick a voice matching user locale when possible.
+  Use SAPI to speak text asynchronously; pick a voice matching user locale when possible.
  ------------------------------------------------------------------------------}
 procedure TTrndiNativeWindows.Speak(const Text: string);
 var
-  Voice, Voices: olevariant;
-  lang: LANGID;
-  LangHex: string;
+  Voice: olevariant;
 begin
-  // Use SAPI (COM-based) text-to-speech. We try to pick a voice matching the
-  // user locale; if none are available, the default SAPI voice is used.
-  // Note: This call is synchronous and will block the calling thread until
-  // speech completes unless SAPI is configured for async. Keep messages short
-  // or dispatch from a background thread when necessary.
-  Voice := CreateOleObject('SAPI.SpVoice');
-  lang := GetUserDefaultLangID;
+  // Enqueue speech to the background worker; if that fails, fall back to
+  // a synchronous speak so the user still hears audio.
+  try
+    EnqueueSpeech(Text);
+    Exit;
+  except
+    // Fall through to synchronous fallback
+  end;
 
-  // SAPI language filter expects hex without 0x, usually without leading zeros (e.g. "409")
-  LangHex := UpperCase(IntToHex(lang, 1)); // e.g. 0x0409 -> "409"
-
-  Voices := Voice.GetVoices('Language=' + LangHex, '');
-  if (not VarIsEmpty(Voices)) and (Voices.Count > 0) then
-    Voice.Voice := Voices.Item(0);
-  // else: keep default SAPI voice
-
-  Voice.Speak(Text, 0);
+  try
+    try
+      Voice := CreateOleObject('SAPI.SpVoice');
+      Voice.Speak(Text, 0);
+    except
+      // Ignore fallback failures; avoid crashing the caller
+    end;
+  finally
+    Voice := Unassigned;
+  end;
 end;
 
 {------------------------------------------------------------------------------
@@ -485,49 +665,49 @@ begin
 
     {$ifdef DEBUG}
     if proxyHost <> '' then
-      LogMessageToFile(Format('HTTP GET: proxy configured (%s:%s); url=%s', [proxyHost, proxyPort, SafeUrlForLog(url)]))
+      TrndiDLog(Format('HTTP GET: proxy configured (%s:%s); url=%s', [proxyHost, proxyPort, SafeUrlForLog(url)]))
     else
-      LogMessageToFile(Format('HTTP GET: no proxy configured; url=%s', [SafeUrlForLog(url)]));
+      TrndiDLog(Format('HTTP GET: no proxy configured; url=%s', [SafeUrlForLog(url)]));
     {$endif}
 
     // Try with proxy first if configured
     if proxyHost <> '' then
     begin
       {$ifdef DEBUG}
-      LogMessageToFile(Format('HTTP GET: attempting via proxy %s:%s', [proxyHost, proxyPort]));
+      TrndiDLog(Format('HTTP GET: attempting via proxy %s:%s', [proxyHost, proxyPort]));
       {$endif}
       if PerformRequest(true, false) then
       begin
         {$ifdef DEBUG}
-        LogMessageToFile('HTTP GET: proxy attempt succeeded');
+        TrndiNetLog('HTTP GET: proxy attempt succeeded');
         {$endif}
         Result := true;
         Exit;
       end;
 
       {$ifdef DEBUG}
-      LogMessageToFile('HTTP GET: proxy attempt failed: ' + res + ' ; retrying direct');
+      TrndiNetLog('HTTP GET: proxy attempt failed: ' + res + ' ; retrying direct');
       {$endif}
     end;
 
     // Fallback: try without proxy
     {$ifdef DEBUG}
     if proxyHost <> '' then
-      LogMessageToFile('HTTP GET: attempting direct (forcing no-proxy on WinHTTP)')
+      TrndiNetLog('HTTP GET: attempting direct (forcing no-proxy on WinHTTP)')
     else
-      LogMessageToFile('HTTP GET: attempting direct');
+      TrndiNetLog('HTTP GET: attempting direct');
     {$endif}
     if PerformRequest(false, proxyHost <> '') then
     begin
       {$ifdef DEBUG}
-      LogMessageToFile('HTTP GET: direct attempt succeeded');
+      TrndiNetLog('HTTP GET: direct attempt succeeded');
       {$endif}
       Result := true;
     end
     else
     begin
       {$ifdef DEBUG}
-      LogMessageToFile('HTTP GET: direct attempt failed: ' + res);
+      TrndiNetLog('HTTP GET: direct attempt failed: ' + res);
       {$endif}
       Result := false;
     end;
@@ -1130,5 +1310,223 @@ begin
     sl.Free;
   end;
 end;
+
+{------------------------------------------------------------------------------
+  updateBegin
+  -----------
+  Signal the start of a long-running update operation (show taskbar progress).
+ ------------------------------------------------------------------------------}
+procedure EnsureGlobalTaskbar(const Context: string);
+var
+  chosenHandle: HWND;
+begin
+  // Idempotent lazy-init used by updateBegin/updateDone to ensure a
+  // usable GlobalTaskbar instance exists (keeps DEBUG diagnostics identical)
+  if (GlobalTaskbar = nil) or (not GlobalTaskbar.Initialized) then
+  begin
+    {$ifdef DEBUG}
+    TrndiDLog(Format('%s: GlobalTaskbar nil/uninitialized — attempting lazy init', [Context]));
+    TrndiDLog(PChar(Format('[Trndi] %s: attempting lazy GlobalTaskbar init', [Context])));
+    {$endif}
+    try
+      if Assigned(GlobalTaskbar) then FreeAndNil(GlobalTaskbar);
+      chosenHandle := 0;
+      if Assigned(Application) and Assigned(Application.MainForm) then
+        chosenHandle := Application.MainForm.Handle;
+      GlobalTaskbar := TWinTaskbar.Create(chosenHandle);
+      if Assigned(GlobalTaskbar) then
+      begin
+        {$ifdef DEBUG}
+        TrndiDLog(PChar(Format('[Trndi] %s: lazy init result Initialized=%s handle=%d LastError=%s',
+          [Context, BoolToStr(GlobalTaskbar.Initialized, True), GlobalTaskbar.WindowHandle, GlobalTaskbar.LastError])));
+        TrndiDLog(Format('%s: lazy init result Initialized=%s, handle=%d, LastError=%s',
+          [Context, BoolToStr(GlobalTaskbar.Initialized, True), GlobalTaskbar.WindowHandle, GlobalTaskbar.LastError]));
+        {$endif}
+      end
+      else
+      begin
+        {$ifdef DEBUG}
+        TrndiDLog(PChar(Format('[Trndi] %s: lazy init result = nil', [Context])));
+        TrndiDLog(Format('%s: lazy init result = nil', [Context]));
+        {$endif}
+      end;
+    except
+      on E: Exception do
+      begin
+        {$ifdef DEBUG}
+        TrndiDLog(PChar(Format('[Trndi] %s: lazy init exception: %s', [Context, E.Message])));
+        TrndiDLog(Format('%s: lazy init exception: %s', [Context, E.Message]));
+        {$endif}
+        if Assigned(GlobalTaskbar) then FreeAndNil(GlobalTaskbar);
+      end;
+    end;
+  end;
+end;
+
+procedure TTrndiNativeWindows.updateBegin;
+var
+  tb: TWinTaskbar;
+  ok: Boolean;
+  chosenHandle: HWND;
+  // Diagnostics variables for taskbar HWND inspection
+  wh: HWND;
+  buf: array[0..511] of WideChar;
+  cls: array[0..255] of WideChar;
+  cap: string;
+  wndClassName: string;
+  exstyle: NativeUInt;
+  style: NativeUInt;
+begin
+  {$ifdef DEBUG}
+  // Always log attempt so we can diagnose Release builds
+  TrndiDLog('updateBegin: Getting global taskbar');
+
+  // Emit application/window diagnostics so we can verify which HWND we target.
+  TrndiDLog(PChar(Format('[Trndi] MainFormOnTaskbar=%s MainForm.Handle=%d Application.Handle=%d',
+    [BoolToStr(Application.MainFormOnTaskbar, True), PtrInt(Application.MainForm.Handle), PtrInt(Application.Handle)])));
+  {$endif}
+  // Use centralized lazy-init helper to avoid duplication and drift
+  EnsureGlobalTaskbar('updateBegin');
+
+  tb := GlobalTaskbar;
+  // Emit an OS-level debug trace (visible with DebugView) in all builds
+  {$ifdef DEBUG}
+  if Assigned(tb) then
+    TrndiDLog(PChar(Format('[Trndi] updateBegin: GlobalTaskbar initialized=%s handle=%d', [BoolToStr(tb.Initialized, True), tb.WindowHandle])))
+  else
+    TrndiDLog(PChar('[Trndi] updateBegin: GlobalTaskbar = nil'));
+  {$endif}
+
+  {$ifdef DEBUG}
+  if Assigned(tb) then
+    TrndiDLog(Format('updateBegin: GlobalTaskbar returned (Initialized=%s, handle=%d)',
+      [BoolToStr(tb.Initialized, True), tb.WindowHandle]))
+  else
+    TrndiDLog('updateBegin: GlobalTaskbar returned nil');
+  {$endif}
+
+  if Assigned(tb) and tb.Initialized then
+  begin
+    // --- Additional diagnostics: log window title/class/styles for the chosen HWND ---
+    {$ifdef DEBUG}
+    try
+      // Safe helper inline (avoid adding new global funcs): log info for the taskbar target
+      wh := tb.WindowHandle;
+      cap := '';
+      wndClassName := '';
+
+      if (wh <> 0) and IsWindow(wh) then
+      begin
+        if GetWindowTextW(wh, buf, Length(buf)) > 0 then
+          cap := Trim(string(buf));
+        if GetClassNameW(wh, cls, Length(cls)) > 0 then
+          wndClassName := Trim(string(cls));
+        TrndiDLog(Format('updateBegin: Taskbar target HWND=%d Title="%s" Class="%s" Visible=%s',
+          [wh, cap, wndClassName, BoolToStr(IsWindowVisible(wh), True)]));
+
+        // Log extended styles that may prevent a taskbar button (toolwindow etc.)
+        exstyle := NativeUInt(GetWindowLongPtr(wh, GWL_EXSTYLE));
+        style := NativeUInt(GetWindowLongPtr(wh, GWL_STYLE));
+      end
+      else
+        TrndiDLog('updateBegin: Taskbar target HWND is invalid or not a window');
+
+      // Enumerate top-level windows owned by this process and log candidates
+      TrndiDLog('updateBegin: Enumerating top-level windows for this PID:');
+      // Use a unit-level callback to avoid nested-declaration/calling-convention issues
+      EnumWindows(@EnumLogWnd_UpdateBegin, 0);
+    except
+      on E: Exception do
+        TrndiDLog('updateBegin: Diagnostics enumeration failed: ' + E.Message);
+    end;
+    {$endif}
+    // --- end diagnostics ---
+
+    // Ensure the main form is visible or minimized so progress can be shown on taskbar
+    try
+      if Assigned(Application.MainForm) and
+         (not Application.MainForm.Visible) and
+         (Application.MainForm.WindowState <> wsMinimized) then
+      begin
+        Application.MainForm.WindowState := wsMinimized;
+        {$ifdef DEBUG}
+        TrndiDLog(PChar('[Trndi] updateBegin: Minimized main form to show progress'));
+       {$endif}
+      end;
+    except
+      on E: Exception do
+       {$ifdef DEBUG}TrndiDLog(PChar('[Trndi] updateBegin: Exception minimizing form: ' + E.Message));{$else};{$endif}
+    end;
+
+    // Use indeterminate progress during the fetch (more visible)
+    ok := tb.SetProgressState(tbpsIndeterminate);
+    tb.SetProgressValue(50,100);
+
+    {$ifdef DEBUG}
+    // Trace the API call result via TrndiDLog (always) and TrndiDLog (DEBUG only)
+    if ok then
+      TrndiDLog(PChar('[Trndi] updateBegin: SetProgressState(tbpsIndeterminate) succeeded'))
+    else
+      TrndiDLog(PChar('[Trndi] updateBegin: progress API call failed: ' + tb.LastError));
+
+    if ok then
+      TrndiDLog('updateBegin: SetProgressState(tbpsIndeterminate) succeeded')
+    else
+      TrndiDLog('updateBegin: progress API call failed: ' + tb.LastError);
+    {$endif}
+  end
+  else
+  begin
+    {$ifdef DEBUG}
+    TrndiDLog('updateBegin: GlobalTaskbar not available or not initialized');
+
+    TrndiDLog(PChar('[Trndi] updateBegin: GlobalTaskbar not available or not initialized'));
+    {$endif}
+  end;
+end;
+
+{------------------------------------------------------------------------------
+  updateDone
+  ----------
+  Signal the completion of a long-running update operation (clear taskbar progress).
+ ------------------------------------------------------------------------------}
+procedure TTrndiNativeWindows.updateDone;
+var
+  chosenHandle: HWND;
+begin
+  {$ifdef DEBUG}
+  TrndiDLog('updateDone: Getting global taskbar');
+  {$endif}
+  
+  // Use centralized lazy-init helper to avoid duplication and drift
+  EnsureGlobalTaskbar('updateDone');
+
+  if Assigned(GlobalTaskbar) and GlobalTaskbar.Initialized then
+  begin
+    {$ifdef DEBUG}
+    TrndiDLog(PChar('[Trndi] updateDone: Clearing taskbar progress (tbpsNone)'));
+
+    TrndiDLog('updateDone: Setting progress state to none');
+    {$endif}
+    GlobalTaskbar.SetProgressState(tbpsNone);
+  end
+  else
+  begin
+    {$ifdef DEBUG}
+    TrndiDLog(PChar('[Trndi] updateDone: GlobalTaskbar not available or not initialized'));
+
+    TrndiDLog('updateDone: GlobalTaskbar not available or not initialized');
+    {$endif}
+  end;
+end;
+
+finalization
+  try
+    // Ensure the background speech worker is cleanly stopped on shutdown so
+    // COM/SAPI resources are released and the thread is joined.
+    StopSpeechWorker;
+  except
+    // Swallow exceptions during finalization to avoid raising at process exit
+  end;
 
 end.

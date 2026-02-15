@@ -130,6 +130,7 @@ RS_SPLASH_LOADING_INIT  = 'Loading Extensions...';
 
 RS_EXTFAILED = 'The following extension file returned an error while loading: %s';
 
+RS_INIT_TRNDI = 'Starting Trndi...';
 RS_INIT_MEDIA = 'Starting Media Backend...';
 RS_INIT_FONTS = 'Processing fonts...';
 RS_INIT_LINUX = 'Attempting to adjust Linux overrides...';
@@ -215,7 +216,6 @@ sChangesRemember = 'Remember setting?';
 sChangesApply = 'Apply this value when Trndi starts?';
 
 sReadingHere = 'Reading here: %s at %.2d:%.2d';
-sAnnounceNotAvailable = 'The text-to-speech (TTS) software "%s" is not available.';
 
 RS_DATE_PICKER_CAPTION = 'Choose a date';
 RS_DATE_PICKER_TITLE = 'Choose a date to show readings from';

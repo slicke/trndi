@@ -54,8 +54,7 @@ trndi.api.dexcom, trndi.api.dexcomNew, trndi.api.tandem, trndi.api.nightscout, t
 Math, DateUtils, FileUtil, LclIntf, TypInfo, LResources,
 slicke.ux.alert, slicke.ux.native, usplash, Generics.Collections, trndi.funcs, trndi.log,
 Trndi.native.base, trndi.shared, buildinfo, fpjson, jsonparser,
-SystemMediaController,
-SyncObjs,
+slicke.systemmediacontroller,
 {$ifdef TrndiExt}
 trndi.Ext.Engine, trndi.Ext.jsfuncs, trndi.ext.promise, mormot.core.base,
 {$endif}
@@ -64,12 +63,12 @@ CocoaAll, MacOSAll,
 BaseUnix,
 {$endif}
 {$ifdef LINUX}
-kdebadge,
+linutils.kdebadge,
 Sockets,
 netdb,
 {$endif}
 {$ifdef BSD}
-kdebadge,
+linutils.kdebadge,
 Sockets,
 netdb,
 {$endif}
@@ -81,10 +80,12 @@ netdb,
 winsock,
 {$endif}
 LazFileUtils, uconf, trndi.native, Trndi.API,
-trndi.api.xDrip,{$ifdef DEBUG} trndi.api.debug_custom, trndi.api.debug, trndi.api.debug_edge, trndi.api.debug_missing, trndi.api.debug_firstXmissing, trndi.api.debug_intermittentmissing, trndi.api.debug_perfect, trndi.api.debug_firstmissing, trndi.api.debug_secondmissing,{$endif}
+trndi.api.xDrip,{$ifdef DEBUG} trndi.api.debug_custom, trndi.api.debug, trndi.api.debug_edge, trndi.api.debug_missing, trndi.api.debug_firstXmissing, trndi.api.debug_intermittentmissing, trndi.api.debug_perfect, trndi.api.debug_firstmissing, trndi.api.debug_secondmissing, trndi.api.debug_slow,{$endif}
 {$ifdef LCLQt6}Qt6, QtWidgets,{$endif}
-StrUtils, TouchDetection, ufloat, uhistorygraph, LCLType, trndi.webserver.threaded, razer.chroma.factory, razer.chroma;
+StrUtils, slicke.touchdetection, ufloat, uhistorygraph, LCLType, trndi.webserver.threaded, razer.chroma.factory, razer.chroma;
 
+
+{$I ../../inc/defines.inc}
 {** Main application unit exposing the primary UI and helpers for the
   Trndi application. This unit defines the `TfBG` form which handles
   presentation of CGM readings, predictions, alerts, and integrations
@@ -114,7 +115,6 @@ TrndiPosNames: TPONames = (RS_tpoCenter, RS_tpoBottomLeft,
   RS_tpoBottomRight, RS_tpoCustom, RS_tpoTopRight);
 const
   // Public timing constants used across the unit/interface
-MILLIS_PER_MINUTE = 60000; // Milliseconds in a minute
 CLOCK_INTERVAL_MS = 20000; // Default clock interval used for the clock tick
 
 type
@@ -132,6 +132,12 @@ type
   Important UI lifecycle methods (e.g., FormCreate, FormShow, FormDestroy)
   are documented to clarify their role during initialization and shutdown.
 }
+TDotInfo = record
+  Top: integer;
+  Height: integer;
+  Visible: boolean;
+end;
+
 TfBG = class(TForm)
   apMain: TApplicationProperties;
   bSettings: TButton;
@@ -182,7 +188,6 @@ TfBG = class(TForm)
   misep: TMenuItem;
   miSplit6: TMenuItem;
   miSplit5: TMenuItem;
-  miAnnounce: TMenuItem;
   miDotHuge: TMenuItem;
   miDotBig: TMenuItem;
   miDotNormal: TMenuItem;
@@ -354,6 +359,10 @@ TfBG = class(TForm)
   procedure miDebugLogClick(Sender: TObject);
   procedure miDebugLoadTextClick(Sender: TObject);
   procedure miDebugLogAPIClick(Sender: TObject);
+  {$endif}
+  {$ifdef TEST}
+  // Test accessors
+{$I ../../tests/inc/umain_fbg.inc}
   {$endif}
 private
   FStoredWindowInfo: record // Saved geometry and window state for restore/toggle
@@ -825,7 +834,7 @@ begin
   // Caller should normally use tryLastReading() first, but be defensive here.
   if (bgs = nil) or (Length(bgs) = 0) then
   begin
-    LogMessageToFile('lastReading: requested but no readings available');
+    TrndiDLog('lastReading: requested but no readings available');
     Result.Init(un,un,'missing data');
     Exit;
   end;
@@ -911,8 +920,6 @@ begin
     lDiffDblClick(self);
   's', 'S':
     speakReading;
-  'A', 'a':
-    miAnnounce.Click;
   'R', 'r':
     if slicke.UX.alert.UXDialog(uxdAuto, sRefrshQ, sForceRefresh,
       [mbYes, mbNo]) = mrYes then
@@ -1675,6 +1682,9 @@ function ValueToY(const Value: single): integer;
   end;
 
 begin
+  if native.getboolsetting('main.high_contrast', false) then
+    Exit;
+
   // Only draw when form has been created and API thresholds available
   if not Assigned(Self) then
     Exit;
@@ -1936,7 +1946,7 @@ begin
     TrendDots[i] := dotArray[i]^;
   end;
   
-  LogMessageToFile('Trend dots created dynamically');
+  TrndiDLog('Trend dots created dynamically');
 end;
 
 procedure TfBG.initDot(l: TDotControl; c, ix: integer);
@@ -1970,7 +1980,8 @@ begin
 
       {$ifdef DARWIN}
       // macOS: Force handle allocation before canvas operations
-      bmp.Canvas.Handle; // This ensures the bitmap context is properly created
+      // Read the handle in a boolean expression so the compiler accepts it as a statement
+      if bmp.Canvas.Handle = 0 then ; // This ensures the bitmap context is properly created
       {$endif}
 
       // Set background color and clear bitmap
@@ -2018,7 +2029,7 @@ begin
         // If first pixel is below center, offset is positive (move lines down)
         // If first pixel is above center, offset is negative (move lines up)
         Result := firstPixelY - halfHeight;
-        LogMessageToFile(Format(
+        TrndiDLog(Format(
           'DOT_VISUAL_OFFSET calculated: font=%s, firstPixel=%d, halfHeight=%d, offset=%d',
           [
           fontName, firstPixelY, halfHeight, Result]));
@@ -2028,7 +2039,7 @@ begin
       begin
         {$ifdef DARWIN}
         // On macOS, log canvas errors but don't crash
-        LogMessageToFile('CalculateDotVisualOffset error on macOS: ' + E.Message);
+        TrndiDLog('CalculateDotVisualOffset error on macOS: ' + E.Message);
         Result := 0; // Use default offset
         {$else}
         raise; // Re-raise on other platforms
@@ -2111,7 +2122,7 @@ begin
   l.Font.Size := round(Max((lVal.Font.Size div 8) * dotscale, 28)); // Ensure minimum font size
   // Force immediate size calculation by triggering a layout update
   l.AdjustSize;
-  LogMessageToFile(Format('TrendDots[%d] resized with Font Size = %d, Height=%d (AutoSize).',
+  TrndiDLog(Format('TrendDots[%d] resized with Font Size = %d, Height=%d (AutoSize).',
     [ix, l.Font.Size, l.Height]));
   {$else}
   l.AutoSize := false;
@@ -2122,7 +2133,7 @@ begin
   minSize := Max(th, l.Font.Size);
   l.Width := tw;
   l.Height := minSize;
-  LogMessageToFile(Format('TrendDots[%d] resized with Font Size = %d, W=%d, H=%d.',
+  TrndiDLog(Format('TrendDots[%d] resized with Font Size = %d, W=%d, H=%d.',
     [ix, l.Font.Size, l.Width, l.Height]));
   {$endif}
 end;
@@ -2137,7 +2148,7 @@ begin
 
   // Position each label with equal spacing from the left
   l.Left := spacing + (spacing + l.Width) * (ix - 1);
-  LogMessageToFile(Format('TrendDots[%d] positioned at Left = %d.', [ix, l.Left]));
+  TrndiDLog(Format('TrendDots[%d] positioned at Left = %d.', [ix, l.Left]));
 end;
 
 // FormResize event handler
@@ -2509,16 +2520,7 @@ end;
 
 procedure TfBG.miAnnounceClick(Sender: TObject);
 begin
-  if not native.SpeakAvailable then
-  begin
-    ShowMessage(Format(sAnnounceNotAvailable, [native.SpeakSoftwareName]));
-    native.SetSetting('main.announce', false);
-    miAnnounce.Checked := false;
-    Exit;
-  end;
-  miAnnounce.Checked := not miAnnounce.Checked;
-  native.SetSetting('main.announce', miAnnounce.Checked);
-  native.speak(IfThen(miAnnounce.Checked, sAnnounceOn, sAnnounceOff));
+
 end;
 
 procedure TfBG.miAlternateClick(Sender: TObject);
@@ -2716,7 +2718,7 @@ begin
   sessionType := GetEnvironmentVariable('XDG_SESSION_TYPE');
   if LowerCase(sessionType) = 'wayland' then
   begin
-    LogMessageToFile('OnTop requested but session is Wayland; compositor may ignore programmatic hints.');
+    TrndiDLog('OnTop requested but session is Wayland; compositor may ignore programmatic hints.');
     // Friendly guidance for users running KDE/Wayland
     if miOnTop.Checked then
       ShowMessage(RS_WAYLAND);
@@ -2821,7 +2823,24 @@ begin
   bg_rel_color_lo := native.GetColorSetting('ux.bg_rel_color_lo', bg_rel_color_lo);
   bg_rel_color_hi_txt := native.GetColorSetting('ux.bg_rel_color_hi_txt', bg_rel_color_hi_txt);
   bg_rel_color_lo_txt := native.GetColorSetting('ux.bg_rel_color_lo_txt', bg_rel_color_lo_txt);
-  
+
+  if native.GetBoolSetting('main.high_contrast', false) then
+  begin
+    bg_color_ok := clBlack;
+    bg_color_ok_txt := clWhite;
+    // Hi
+    bg_color_hi := clBlack;
+    bg_color_hi_txt := clWhite;
+    // Low
+    bg_color_lo := clWhite;
+    bg_color_lo_txt := clBlack;
+
+    bg_rel_color_hi := clBlack;
+    bg_rel_color_lo := clWhite;
+    bg_rel_color_hi_txt := clWHite;
+    bg_rel_color_lo_txt := clBlack;
+  end;
+
   // Apply TIR color settings
   tir_bg := native.GetColorSetting('ux.tir_color', tir_bg);
   tir_custom_bg := native.GetColorSetting('ux.tir_color_custom', tir_custom_bg);
@@ -2929,6 +2948,8 @@ procedure LoadUserSettings(f: TfConf);
         result := API_D_FIRSTX;
       'API_D_INTERMITTENT':
         result := API_D_INTERMITTENT;
+      'API_D_SLOW':
+        result := API_D_SLOW;
       'API_D_SECOND':
         result := API_D_SECOND;
     {$endif}
@@ -2947,6 +2968,7 @@ procedure LoadUserSettings(f: TfConf);
     po: TrndiPos;
     sizeVal: integer;
     minutesVal: integer;
+    voiceName: string;
   function DefaultChromaAlertAction: string;
     begin
       {$ifdef Windows}
@@ -3074,7 +3096,30 @@ procedure LoadUserSettings(f: TfConf);
       cbChromaLow.ItemIndex := ChromaActionToIndex(
         GetSetting('razer.low.action', DefaultChromaAlertAction));
 
+      cbMediaDisable.Checked := native.GetBoolSetting('media.disabled', false);
       cbMusicPause.Checked := GetBoolSetting('media.pause');
+      cbTTS.Checked := GetBoolSetting('main.announce', false);
+      cbHContrast.Checked := GetBoolSetting('main.high_contrast', false);
+      cbTTSVoice.ItemIndex := GetIntSetting('tts.voice', 0);
+      {$ifdef X_MAC}
+      // For macOS, also load the voice name if stored
+      if cbTTSVoice.Items.Count > 1 then
+      begin
+        voiceName := GetSetting('tts.voice.name', '');
+        if voiceName <> '' then
+          cbTTSVoice.ItemIndex := cbTTSVoice.Items.IndexOf(voiceName);
+      end;
+    {$endif}
+      {$ifdef X_PC}
+      // For Linux, load the voice name if stored
+      if cbTTSVoice.Items.Count > 1 then
+      begin
+        voiceName := GetSetting('tts.voice.name', '');
+        if voiceName <> '' then
+          cbTTSVoice.ItemIndex := cbTTSVoice.Items.IndexOf(voiceName);
+      end;
+    {$endif}
+      seTTSRate.Value := GetIntSetting('tts.rate', 0);
       fsHi.Enabled := cbCust.Checked;
       fsLo.Enabled := cbCust.Checked;
       fsHiRange.Enabled := cbCustRange.Checked;
@@ -3093,12 +3138,12 @@ procedure LoadUserSettings(f: TfConf);
             usersStr := usersStr + ',';
           usersStr := usersStr + userNames[i];
         end;
-        LogMessageToFile(Format('LoadUserSettings: loaded users.names: %s', [usersStr]));
+        TrndiDLog(Format('LoadUserSettings: loaded users.names: %s', [usersStr]));
       end
       else
       begin
         lbUsers.Enabled := false;
-        LogMessageToFile('LoadUserSettings: users.names not found or empty');
+        TrndiDLog('LoadUserSettings: users.names not found or empty');
       end;
 
       lbUsers.Items.Add('- ' + RS_DEFAULT_ACCOUNT + ' -');
@@ -3295,6 +3340,8 @@ procedure SaveUserSettings(f: TfConf);
         result := 'API_D_FIRSTX';
       API_D_INTERMITTENT:
         result := 'API_D_INTERMITTENT';
+      API_D_SLOW:
+        result := 'API_D_SLOW';
       API_D_SECOND:
         result := 'API_D_SECOND';
     {$endif}
@@ -3437,7 +3484,26 @@ procedure SaveUserSettings(f: TfConf);
       SetSetting('razer.high.action', IndexToChromaAction(cbChromaHigh.ItemIndex));
       SetSetting('razer.low.action', IndexToChromaAction(cbChromaLow.ItemIndex));
 
+      SetSetting('media.disabled', cbMediaDisable.Checked);
       SetSetting('media.pause', cbMusicPause.Checked);
+      SetSetting('main.high_contrast', cbHContrast.Checked);
+      SetSetting('main.announce', cbTTS.Checked);
+      SetSetting('tts.voice', cbTTSVoice.ItemIndex);
+      {$ifdef X_MAC}
+      // For macOS, also store the voice name
+      if cbTTSVoice.ItemIndex > 0 then
+        SetSetting('tts.voice.name', cbTTSVoice.Text)
+      else
+        DeleteSetting('tts.voice.name');
+    {$endif}
+      {$ifdef X_PC}
+      // For Linux, also store the voice name
+      if cbTTSVoice.ItemIndex > 0 then
+        SetSetting('tts.voice.name', cbTTSVoice.Text)
+      else
+        DeleteSetting('tts.voice.name');
+    {$endif}
+      SetSetting('tts.rate', seTTSRate.Value);
 
       SetColorSetting('ux.bg_color_ok', cl_ok_bg.ButtonColor);
       SetColorSetting('ux.bg_color_hi', cl_hi_bg.ButtonColor);
@@ -3505,12 +3571,18 @@ begin
     {$endif}
     end;
 
-    fConf.chroma := TRazerChromaFactory.CreateInstance;
-    if not fconf.chroma.Initialize then
-      fConf.lbChroma.Items.Add('No Razer driver detected')
-    else for i := 0 to fConf.Chroma.GetDeviceCount - 1 do
-        fConf.lbChroma.Items.Add(fConf.Chroma.GetDevice(i).Name);
-    fConf.Chroma.Free;
+
+    if assigned(chroma) and chroma.Initialized then
+      for i := 0 to Chroma.GetDeviceCount - 1 do
+        fConf.lbChroma.Items.Add(Chroma.GetDevice(i).Name) else
+    begin
+      fConf.chroma := TRazerChromaFactory.CreateInstance;
+      if not fconf.chroma.Initialize then
+        fConf.lbChroma.Items.Add('No Razer driver detected')
+      else for i := 0 to fConf.Chroma.GetDeviceCount - 1 do
+          fConf.lbChroma.Items.Add(fConf.Chroma.GetDevice(i).Name);
+      fConf.Chroma.Free;
+    end;
 
     // Initialize form with user settings
     LoadUserSettings(fConf);
@@ -3655,7 +3727,7 @@ var
   {$endif}
 begin
   l := Sender as TDotControl;
-  ShowMessage(BGMean(mmol));
+
   actOnTrend(@ExpandDot);
   isDot := UnicodeSameText(l.Caption, DOT_GRAPH);
 
@@ -4426,7 +4498,7 @@ begin
     begin
       // Hint is set but can't be parsed - this is a problem
       // Keep visibility as it was set by PlaceTrendDots, but log the issue
-      LogMessageToFile(Format('Warning: Could not parse Hint "%s" for dot. Keeping visibility=%s',
+      TrndiDLog(Format('Warning: Could not parse Hint "%s" for dot. Keeping visibility=%s',
         [Dot.Hint, BoolToStr(wasVisible, true)]));
       Dot.Visible := wasVisible;
     end
@@ -4518,7 +4590,7 @@ begin
     if gapSeconds > (expectedSeconds * 2) then
     begin
       FForceRefresh := true;
-      LogMessageToFile(Format('Wake detected: timer gap %d sec (expected ~%d sec). Forcing refresh.',
+      TrndiDLog(Format('Wake detected: timer gap %d sec (expected ~%d sec). Forcing refresh.',
         [gapSeconds, expectedSeconds]));
     end;
   end;
@@ -4717,10 +4789,10 @@ begin
   lVal.Font.Style := [];
 
   // Log latest reading
-  LogMessageToFile(Format(RS_LATEST_READING, [reading.val, DateTimeToStr(reading.date)]));
+  TrndiDLog(Format(RS_LATEST_READING, [reading.val, DateTimeToStr(reading.date)]));
 
   // Announce
-  if miAnnounce.Checked then
+  if native.GetBoolSetting('main.announce', false) then
     speakReading;
 
   // Set next update time
@@ -5262,14 +5334,20 @@ begin
       native.attention(ifthen(multi, multinick, RS_WARN_BG_HI_TITLE),
         Format(RS_WARN_BG_HI, [lVal.Caption]));
 
-  if native.GetBoolSetting('media.pause') then
-    MediaController.Pause;
-
-  if native.TryGetSetting('media.url_high', url) then
+  if not native.GetBoolSetting('media.disabled', false) then
   begin
-    highAlerted := true;
-    MediaController.PlayTrackFromURL(url);
+    if native.GetBoolSetting('media.pause') then
+      if assigned(mediacontroller) and mediacontroller.IsInitialized then
+        MediaController.Pause;
+
+    if native.TryGetSetting('media.url_high', url) then
+    begin
+      highAlerted := true;
+      if assigned(mediacontroller) and mediacontroller.IsInitialized then
+        MediaController.PlayTrackFromURL(url);
+    end;
   end;
+
   if native.TryGetSetting('url_remote.url_high', url) then
   begin
     highAlerted := true;
@@ -5308,13 +5386,18 @@ begin
       native.attention(ifthen(multi, multinick, RS_WARN_BG_LO_TITLE),
         Format(RS_WARN_BG_LO, [lVal.Caption]));
 
-  if native.GetBoolSetting('media.pause') then
-    MediaController.Pause;
-
-  if native.TryGetSetting('media.url_low', url) then
+  if not native.GetBoolSetting('media.disabled', false) then
   begin
-    lowAlerted := true;
-    MediaController.PlayTrackFromURL(url);
+    if native.GetBoolSetting('media.pause') then
+      if assigned(mediacontroller) and mediacontroller.IsInitialized then
+        MediaController.Pause;
+
+    if native.TryGetSetting('media.url_low', url) then
+    begin
+      lowAlerted := true;
+      if assigned(mediacontroller) and mediacontroller.IsInitialized then
+        MediaController.PlayTrackFromURL(url);
+    end;
   end;
   if native.TryGetSetting('url_remote.url_low', url) then
   begin
@@ -5372,7 +5455,9 @@ begin
     perfectTriggered := true;
 
     if native.TryGetSetting('media.url_perfect', url) then
-      MediaController.PlayTrackFromURL(url);
+      if assigned(mediacontroller) and mediacontroller.IsInitialized then
+        MediaController.PlayTrackFromURL(url);
+
     if native.TryGetSetting('url_remote.url_high', url) then
       native.getURL(url, url);
 
@@ -5554,7 +5639,7 @@ begin
     finally
       LeaveCriticalSection(FReadingsLock);
     end;
-    LogMessageToFile('DoFetchAndValidateReadings: API returned no data, using cached readings');
+    TrndiDLog('DoFetchAndValidateReadings: API returned no data, using cached readings');
     // Enable internet check and show indicator since API failed
     tPing.Enabled := true;
     tPingTimer(nil);  // Check internet status immediately
@@ -5596,7 +5681,7 @@ begin
     if Assigned(api) and (Trim(api.errormsg) <> '') then
     begin
       msg := msg + sLineBreak + api.errormsg;
-      LogMessageToFile('Backend error: ' + api.errormsg);
+      TrndiDLog('Backend error: ' + api.errormsg);
     end;
 
     // Append latest-reading age details to help diagnose stale data cases
@@ -5625,7 +5710,7 @@ begin
   missingAlerted := false;
   lastMissingAlert := 0;
 
-  LogMessageToFile(Format('DoFetchAndValidateReadings: Got %d readings from API', [Length(bgs)]));
+  TrndiDLog(Format('DoFetchAndValidateReadings: Got %d readings from API', [Length(bgs)]));
 
   // Call the method to place the points
   PlaceTrendDots(bgs);
@@ -5634,12 +5719,24 @@ end;
 
 function TfBG.FetchAndValidateReadings: boolean;
 begin
-  Result := DoFetchAndValidateReadings(false); // Use cached data if available
+  TrndiDLog('umain: About to call native.updateBegin');
+  native.updateBegin;
+  try
+    Result := DoFetchAndValidateReadings(false); // Use cached data if available
+  finally
+    native.updateDone;
+  end;
 end;
 
 function TfBG.FetchAndValidateReadingsForced: boolean;
 begin
-  Result := DoFetchAndValidateReadings(true); // Force fresh API call, bypass cache
+  TrndiDLog('umain: About to call native.updateBegin (force)');
+  native.updateBegin;
+  try
+    Result := DoFetchAndValidateReadings(true); // Force fresh API call, bypass cache
+  finally
+    native.updateDone;
+  end;
 end;
 
 procedure TfBG.UpdateOffRangePanel(const Value: double);
@@ -5707,6 +5804,14 @@ end;
 function TfBG.GetTextColorForBackground(const BgColor: TColor;
 const DarkenFactor: double = 0.5; const LightenFactor: double = 0.3): TColor;
 begin
+  if native.GetBoolSetting('main.high_contrast', false) then
+  begin
+    if IsLightColor(BgColor) then
+      Result := clBlack
+    else
+      Result := clWhite;
+    exit;
+  end;
   if IsLightColor(BgColor) then
     Result := DarkenColor(BgColor, DarkenFactor)
   else
@@ -5827,9 +5932,9 @@ begin
     TrendDots[10].Visible := isFresh;
 
     if isFresh then
-      LogMessageToFile('TrendDots[10] shown as latest reading is fresh.')
+      TrndiDLog('TrendDots[10] shown as latest reading is fresh.')
     else
-      LogMessageToFile('TrendDots[10] hidden due to outdated reading.');
+      TrndiDLog('TrendDots[10] hidden due to outdated reading.');
   end;
 end;
 
@@ -5867,7 +5972,7 @@ begin
   anchorTime := RecodeSecond(anchorTime, 0);
   anchorTime := RecodeMilliSecond(anchorTime, 0);
   
-  LogMessageToFile(Format('PlaceTrendDots: Processing %d readings, anchor=%s (latest=%s)', 
+  TrndiDLog(Format('PlaceTrendDots: Processing %d readings, anchor=%s (latest=%s)', 
     [Length(SortedReadings), DateTimeToStr(anchorTime), DateTimeToStr(SortedReadings[0].date)]));
 
   for slotIndex := 0 to NUM_DOTS - 1 do
@@ -5880,7 +5985,7 @@ begin
 
     found := false;
 
-    LogMessageToFile(Format('Searching slot %d (TrendDots[%d]): %s to %s', 
+    TrndiDLog(Format('Searching slot %d (TrendDots[%d]): %s to %s', 
       [slotIndex, NUM_DOTS - slotIndex, DateTimeToStr(slotStart), DateTimeToStr(slotEnd)]));
 
     // Search for the most recent reading within this interval
@@ -5896,7 +6001,7 @@ begin
       // Use a 10 second epsilon to handle timing variations
       if reading.date > slotEnd + TIME_EPSILON_DAYS then
       begin
-        LogMessageToFile(Format('  Reading at %s is too new (>%.3f sec after slot end), skipping', 
+        TrndiDLog(Format('  Reading at %s is too new (>%.3f sec after slot end), skipping', 
           [DateTimeToStr(reading.date), (reading.date - slotEnd) * 86400]));
         Continue;
       end;
@@ -5908,7 +6013,7 @@ begin
       // reading at e.g. 20:05 from filling the 20:10 slot and hiding a gap.
       if (reading.date > slotStart) and (reading.date <= slotEnd + TIME_EPSILON_DAYS) then
       begin
-        LogMessageToFile(Format('  Found match at %s (value: %.1f, diff from slotEnd: %.1f sec)', 
+        TrndiDLog(Format('  Found match at %s (value: %.1f, diff from slotEnd: %.1f sec)', 
           [DateTimeToStr(reading.date), reading.val, (slotEnd - reading.date) * 86400]));
         found := UpdateLabelForReading(slotIndex, reading);
         if found then
@@ -5927,7 +6032,7 @@ begin
       if reading.date < slotStart - (10 / 86400) then
       begin
         // Stop if we've gone past this interval into older readings
-        LogMessageToFile(Format('  Reading at %s is too old (%.3f sec before slot start), stopping', 
+        TrndiDLog(Format('  Reading at %s is too old (%.3f sec before slot start), stopping', 
           [DateTimeToStr(reading.date), (slotStart - reading.date) * 86400]));
         Break;
       end;
@@ -5943,14 +6048,14 @@ begin
       begin
         l.Visible := false;
         l.Hint := '';  // Clear hint to prevent UpdateTrendDots from re-showing stale data
-        LogMessageToFile(Format('TrendDots[%d] hidden as no reading found in interval.',
+        TrndiDLog(Format('TrendDots[%d] hidden as no reading found in interval.',
           [labelNumber]));
       end;
     end;
   end;
   
   // Summary log
-  LogMessageToFile(Format('PlaceTrendDots complete: anchor=%s', [DateTimeToStr(anchorTime)]));
+  TrndiDLog(Format('PlaceTrendDots complete: anchor=%s', [DateTimeToStr(anchorTime)]));
 end;
 
 function TfBG.BGMean(const UnitPref: BGUnit = BGUnit.mmol; const NumReadings: integer = NUM_DOTS): string;
@@ -6024,7 +6129,8 @@ begin
           count := count + 1;
           Break; // Move to next slot
         end
-        else if reading.date < slotStart - TIME_EPSILON_DAYS then
+        else
+        if reading.date < slotStart - TIME_EPSILON_DAYS then
           Break;
       end;
     end;
@@ -6076,7 +6182,7 @@ begin
     // Sätt färger baserat på värdet
     l.Font.Color := DetermineColorForReading(Reading);
 
-    LogMessageToFile(Format('TrendDots[%d] updated with reading at %s (Value: %.2f).',
+    TrndiDLog(Format('TrendDots[%d] updated with reading at %s (Value: %.2f).',
       [labelNumber, DateTimeToStr(Reading.date), Reading.val]));
     l.BringToFront;
     Result := true;
@@ -6085,6 +6191,17 @@ end;
 
 function TfBG.DetermineColorForReading(const Reading: BGReading): TColor;
 begin
+
+  if native.GetBoolSetting('main.high_contrast', false) then
+  begin
+    result := GetTextColorForBackground(fbg.color);
+    if result = clBlack then
+      result := $00C8C8C8
+    else
+      result := $00626262;
+    Exit;
+  end;
+
   if Reading.val >= api.cgmHi then
     Result := bg_color_hi
   else
@@ -6218,7 +6335,7 @@ begin
             Exit; // Suppress update check for 2 weeks
         end
         else
-          LogMessageToFile(Format('CheckForUpdates: failed to parse update.ignore.date: %s', [lastIgnoreDate]))// Could not parse stored ignore date; log for debugging
+          TrndiDLog(Format('CheckForUpdates: failed to parse update.ignore.date: %s', [lastIgnoreDate]))// Could not parse stored ignore date; log for debugging
         ;
       end;
     end;
@@ -6282,5 +6399,9 @@ begin
         ShowMessage('Update check failed: ' + E.Message);
   end;
 end;
+
+{$ifdef TEST}
+{$I ../../tests/inc/umain_implementation.inc}
+{$endif}
 
 end.

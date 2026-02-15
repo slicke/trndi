@@ -25,7 +25,7 @@ interface
 
 uses
 Classes, SysUtils, Graphics, IniFiles, Dialogs,
-ExtCtrls, Forms, Math, LCLIntf, KDEBadge, trndi.native.base, FileUtil, Menus,
+ExtCtrls, Forms, Math, LCLIntf, linutils.kdebadge, trndi.native.base, FileUtil, Menus,
 libpascurl, DateUtils, ctypes{$ifdef DEBUG}, trndi.log{$endif};
 
 type
@@ -760,12 +760,12 @@ begin
     if proxyHost <> '' then
     begin
       if (proxyUser <> '') and (proxyPass <> '') then
-        LogMessageToFile(Format('HTTP GET: proxy configured (%s:%s) with auth; url=%s', [proxyHost, proxyPort, SafeUrlForLog(url)]))
+        TrndiDLog(Format('HTTP GET: proxy configured (%s:%s) with auth; url=%s', [proxyHost, proxyPort, SafeUrlForLog(url)]))
       else
-        LogMessageToFile(Format('HTTP GET: proxy configured (%s:%s) no auth; url=%s', [proxyHost, proxyPort, SafeUrlForLog(url)]));
+        TrndiDLog(Format('HTTP GET: proxy configured (%s:%s) no auth; url=%s', [proxyHost, proxyPort, SafeUrlForLog(url)]));
     end
     else
-      LogMessageToFile(Format('HTTP GET: no proxy configured; url=%s', [SafeUrlForLog(url)]));
+      TrndiDLog(Format('HTTP GET: no proxy configured; url=%s', [SafeUrlForLog(url)]));
     {$endif}
 
     curl_global_init(CURL_GLOBAL_DEFAULT);
@@ -774,40 +774,40 @@ begin
     if proxyHost <> '' then
     begin
       {$ifdef DEBUG}
-      LogMessageToFile(Format('HTTP GET: attempting via proxy %s:%s', [proxyHost, proxyPort]));
+      TrndiDLog(Format('HTTP GET: attempting via proxy %s:%s', [proxyHost, proxyPort]));
       {$endif}
       if PerformRequest(true) then
       begin
         {$ifdef DEBUG}
-        LogMessageToFile('HTTP GET: proxy attempt succeeded');
+        TrndiNetLog('HTTP GET: proxy attempt succeeded');
         {$endif}
         Result := true;
         Exit;
       end;
 
       {$ifdef DEBUG}
-      LogMessageToFile('HTTP GET: proxy attempt failed: ' + res + ' ; retrying direct');
+      TrndiNetLog('HTTP GET: proxy attempt failed: ' + res + ' ; retrying direct');
       {$endif}
     end;
 
     // Fallback: try without proxy
     {$ifdef DEBUG}
     if proxyHost <> '' then
-      LogMessageToFile('HTTP GET: attempting direct (explicitly disabling proxy/env proxy)')
+      TrndiNetLog('HTTP GET: attempting direct (explicitly disabling proxy/env proxy)')
     else
-      LogMessageToFile('HTTP GET: attempting direct');
+      TrndiNetLog('HTTP GET: attempting direct');
     {$endif}
     if PerformRequest(false) then
     begin
       {$ifdef DEBUG}
-      LogMessageToFile('HTTP GET: direct attempt succeeded');
+      TrndiNetLog('HTTP GET: direct attempt succeeded');
       {$endif}
       Result := true;
     end
     else
     begin
       {$ifdef DEBUG}
-      LogMessageToFile('HTTP GET: direct attempt failed: ' + res);
+      TrndiNetLog('HTTP GET: direct attempt failed: ' + res);
       {$endif}
       Result := false;
     end;
@@ -1421,38 +1421,78 @@ end;
 {------------------------------------------------------------------------------
   Speak
   -----
-  Use spd-say to speak the provided text in the current system language.
+  Use spd-say to speak the provided text in the current system language asynchronously.
  ------------------------------------------------------------------------------}
 procedure TTrndiNativeLinux.Speak(const Text: string);
 var
-  CmdPath, Lang: string;
+  CmdPath, Lang, VoiceType: string;
+  Rate: integer;
   Proc: TProcess;
 begin
   CmdPath := FindInPath('spd-say');
   if CmdPath = '' then
   begin
-    ShowMessage('Error: spd-say is not installed.');
+    if not ttsErrorShown then
+    begin
+      ShowMessage('Error: spd-say is not installed. Please install speech-dispatcher.');
+      ttsErrorShown := true;
+    end;
     Exit;
   end;
 
   Lang := GetSystemLangTag;
+  Rate := GetIntSetting('tts.rate', 0);
+  VoiceType := GetSetting('tts.voice.name', '');
 
   Proc := TProcess.Create(nil);
   try
     Proc.Executable := CmdPath;
     if Lang <> '' then
-      Proc.Parameters.AddStrings(['-l', Lang])
-    else
-    ;
+      Proc.Parameters.AddStrings(['-l', Lang]);
+
+    // Add rate setting
+    if Rate <> 0 then
+      Proc.Parameters.AddStrings(['-r', IntToStr(Rate)]);
+
+    // Add voice type setting
+    if VoiceType <> '' then
+    begin
+      // Map voice names to speech-dispatcher voice types
+      if VoiceType = 'Male 1' then
+        Proc.Parameters.AddStrings(['-t', 'male1'])
+      else if VoiceType = 'Male 2' then
+        Proc.Parameters.AddStrings(['-t', 'male2'])
+      else if VoiceType = 'Male 3' then
+        Proc.Parameters.AddStrings(['-t', 'male3'])
+      else if VoiceType = 'Female 1' then
+        Proc.Parameters.AddStrings(['-t', 'female1'])
+      else if VoiceType = 'Female 2' then
+        Proc.Parameters.AddStrings(['-t', 'female2'])
+      else if VoiceType = 'Female 3' then
+        Proc.Parameters.AddStrings(['-t', 'female3']);
+    end;
 
     Proc.Parameters.Add('--');
     Proc.Parameters.Add(Text);
 
+    // Run asynchronously to avoid blocking the UI
     Proc.Options := [];
     Proc.Execute;
-  finally
-    Proc.Free;
+    Proc.Free; // free the TProcess instance after starting the process
+  except
+    on E: Exception do
+    begin
+      if not ttsErrorShown then
+      begin
+        ShowMessage('TTS Error: ' + E.Message);
+        ttsErrorShown := true;
+      end;
+      Proc.Free;
+      Exit;
+    end;
   end;
+  // Note: Process will be cleaned up by the OS when it terminates
+  // We don't wait for it, but we free the TProcess instance after starting it
 end;
 
 
@@ -1646,14 +1686,14 @@ badge_size_ratio: double; min_font_size: integer);
 var
   f: double;
 begin
-  if KDEBadge.GDesktopId = '' then
+  if linutils.KDEBadge.GDesktopId = '' then
     InitializeBadge('com.slicke.trndi.desktop', 150, nil, UseGDBusForNotifications);
   ClearBadge;
   
   // Only set numeric badge if value can be parsed as a number
   // For placeholders like '--', clear the badge instead
   if TryStrToFloat(Value, f) then
-    KDEBadge.SetBadge(f);
+    linutils.KDEBadge.SetBadge(f);
   // If TryStrToFloat fails, badge stays cleared (ClearBadge above)
 
   // Write current reading for GNOME top-bar indicator (reads ~/.cache/trndi/current.txt)

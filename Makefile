@@ -60,8 +60,9 @@ ifeq ($(UNAME_S),Linux)
 	# This avoids having to maintain widgetset-specific modes just to get correct Release flags.
 	STRIP_RELEASE ?= 1
 
-# macOS: prefer native Release builds (Extensions)
+# macOS: prefer native Release builds (Extensions); default to Cocoa widgetset
 else ifeq ($(UNAME_S),Darwin)
+  WIDGETSET ?= cocoa
 
 # Windows (MSYS/Cygwin): prefer native Release builds (Extensions)
 else ifneq ($(IS_MINGW),)
@@ -98,11 +99,13 @@ help:
 	@echo "  build      Generic build (honors BUILD_MODE and WIDGETSET)"
 	@echo "  test       Build and run tests (starts PHP test server when available)"
 	@echo "  test-nophp  Run console tests without PHP (TRNDI_NO_PHP=1)"
+	@echo "  noext-test  Build and run tests without mORMot2 (IGNORE_MORMOT=1)"
+	@echo "  noext-test-nophp  Run console tests without mORMot2 and without PHP (IGNORE_MORMOT=1, TRNDI_NO_PHP=1)"
 	@echo "  list-modes Show available project build modes from $(LPI)"
 	@echo "  list-modules Show Pascal `unit` modules found under `units/`"
 	@echo "  check-module-names Check for mismatches between filenames and `unit` declarations (uses scripts/check-module-names.pl)"
 	@echo "  show-mode  Show resolved build-mode and lazbuild flags"
-	@echo "  noext      Build without mORMot2 (temporary project) - use noext-release/noext-debug to override mode"
+	@echo "  noext      Build without mORMot2 (temporary project; works even if mORMot2 is not installed) - use noext-release/noext-debug to override mode"
 	@echo "  fetch-mormot2  Clone mORMot2 into externals/mORMot2 and attempt to extract QuickJS static files into ./static (requires git and 7z)"
 	@echo "  check-mormot2  Verify mORMot2 presence and QuickJS static artifacts; exits non-zero on failure"
 	@echo "  clean      Remove common build artifacts (*.o, *.ppu, *.compiled, executables)"
@@ -248,9 +251,23 @@ test: check
 	@echo "Running tests with PHP test server..."
 	@sh tests/run_tests_with_php.sh
 
+noext-test: IGNORE_MORMOT := 1
+noext-test:
+	@echo "Building console tests (tests/TrndiTestConsole.lpi) without mORMot"
+	@$(LAZBUILD) --widgetset=$(WIDGETSET) -B tests/TrndiTestConsole.lpi
+	@echo "Running tests with PHP test server..."
+	@sh tests/run_tests_with_php.sh
+
 .PHONY: test-nophp
 test-nophp: check
 	@echo "Building console tests (tests/TrndiTestConsole.lpi)"
+	@$(LAZBUILD) --widgetset=$(WIDGETSET) -B tests/TrndiTestConsole.lpi
+	@echo "Running tests without PHP (TRNDI_NO_PHP=1)"
+	@TRNDI_NO_PHP=1 ./tests/TrndiTestConsole
+
+noext-test-nophp: IGNORE_MORMOT := 1
+noext-test-nophp:
+	@echo "Building console tests (tests/TrndiTestConsole.lpi) without mORMot"
 	@$(LAZBUILD) --widgetset=$(WIDGETSET) -B tests/TrndiTestConsole.lpi
 	@echo "Running tests without PHP (TRNDI_NO_PHP=1)"
 	@TRNDI_NO_PHP=1 ./tests/TrndiTestConsole
@@ -284,7 +301,9 @@ run: build
 	else echo "Executable not found in $(OUTDIR) or project dir; build first"; exit 1; fi
 
 # Build without extensions (use a temporary copy of the .lpi so original is untouched)
-noext: check
+# Note: noext purposely does not run the regular mORMot2 presence checks so it can
+# build even when mORMot2 is not installed (the temporary project has mORMot2 removed).
+noext:
 	@echo "Building without extensions (using temporary project, mormot2 removed)"
 	@set -e; STAMP=$$(date +%s); \
 	 cp $(LPI) $(LPI).noext-$$STAMP.lpi; \

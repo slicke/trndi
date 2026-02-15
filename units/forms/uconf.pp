@@ -54,11 +54,10 @@ interface
 
 uses
 Classes, ComCtrls, ExtCtrls, Spin, StdCtrls, SysUtils, Forms, Controls,
-Graphics, Dialogs, LCLTranslator, trndi.native, lclintf,
-slicke.ux.alert, slicke.ux.native, VersionInfo, trndi.funcs, buildinfo, StrUtils,
-  // Backend APIs for label captions
-trndi.api, trndi.api.nightscout, trndi.api.nightscout3, trndi.api.dexcom, trndi.api.dexcomNew, trndi.api.tandem, trndi.api.xdrip, razer.chroma, math, trndi.types, trndi.api.debug_firstXmissing, trndi.api.debug_intermittentmissing, trndi.api.debug_custom, trndi.api.debug, base64;
+Graphics, Dialogs, LCLTranslator, trndi.native, lclintf, process{$ifdef X_MAC}, CocoaAll, nsutils.nshelpers{$endif},
+slicke.ux.alert, slicke.ux.native, slicke.versioninfo, trndi.funcs, buildinfo, StrUtils, trndi.api, trndi.api.nightscout, trndi.api.nightscout3, trndi.api.dexcom, trndi.api.dexcomNew, trndi.api.tandem, trndi.api.xdrip, razer.chroma, math, trndi.types, trndi.api.debug_firstXmissing, trndi.api.debug_intermittentmissing, trndi.api.debug_custom, trndi.api.debug, trndi.api.debug_slow, base64, Variants{$ifdef X_WIN}, ComObj{$endif};
 
+{$I ../../inc/defines.inc}
 type
 
   { TfConf }
@@ -80,6 +79,7 @@ TfConf = class(TForm)
   bPredictHorizon: TButton;
   bTemplateCurrent: TButton;
   bTemplateTrend: TButton;
+  bTestSpeech: TButton;
   bTimeStampHelp: TButton;
   bUseURLHelp: TButton;
   bThreasholdLinesHelp: TButton;
@@ -96,12 +96,12 @@ TfConf = class(TForm)
   bCustomRangeHelp: TButton;
   bExtOpen: TButton;
   bCommon: TButton;
+  bDisableMediaHelp: TButton;
   Button2: TButton;
   Button4: TButton;
   bWebAPI: TButton;
   bSysTouch: TButton;
   bTestAnnounce: TButton;
-  bTestSpeech: TButton;
   btReset: TButton;
   btUserSave: TButton;
   Button3: TButton;
@@ -115,6 +115,8 @@ TfConf = class(TForm)
   cbCustRange: TCheckBox;
   cbAlertMissing: TCheckBox;
   cbLang: TComboBox;
+  cbTTS: TCheckBox;
+  cbTTSVoice: TComboBox;
   cgNotifications: TCheckGroup;
   cbAlertHiLo: TCheckBox;
   cbFlashLow: TCheckBox;
@@ -128,7 +130,15 @@ TfConf = class(TForm)
   cbPredictShortMinutes: TComboBox;
   cbPredictShortSize: TComboBox;
   cbPrivacy: TCheckBox;
-  CheckBox1: TCheckBox;
+  cbHContrast: TCheckBox;
+  cbMediaDisable: TCheckBox;
+  Label36: TLabel;
+  Label37: TLabel;
+  Label38: TLabel;
+  Panel21: TPanel;
+  Panel22: TPanel;
+  Panel23: TPanel;
+  Panel24: TPanel;
   edCommaSep1: TEdit;
   eDot: TEdit;
   eDotNow: TEdit;
@@ -149,6 +159,7 @@ TfConf = class(TForm)
   Label25: TLabel;
   Label33: TLabel;
   Label34: TLabel;
+  Label35: TLabel;
   LabelProxyHost: TLabel;
   LabelProxyPass: TLabel;
   LabelProxyPort: TLabel;
@@ -234,8 +245,8 @@ TfConf = class(TForm)
   gbDisplayPrefs: TGroupBox;
   gbMulti: TGroupBox;
   gbOverride: TGroupBox;
-  gbOverride2: TGroupBox;
-  gbOverride3: TGroupBox;
+  gbMedia: TGroupBox;
+  gbURL: TGroupBox;
   GroupBox1: TGroupBox;
   GroupBox2: TGroupBox;
   GroupBox3: TGroupBox;
@@ -278,7 +289,6 @@ TfConf = class(TForm)
   lPredictShortSize: TLabel;
   lProblematic: TLabel;
   lTestAnnounce: TLabel;
-  lTestAnnounce1: TLabel;
   lTitle: TLabel;
   Label7: TLabel;
   Label8: TLabel;
@@ -342,9 +352,11 @@ TfConf = class(TForm)
   cbTirColorBg: TRadioButton;
   rbUnit: TRadioGroup;
   seTIR: TSpinEdit;
+  seTTSRate: TSpinEdit;
   spTHRESHOLD: TSpinEdit;
   spDeltaMax: TSpinEdit;
   spTHRESHOLD1: TSpinEdit;
+  tsAccess: TTabSheet;
   tsProxy: TTabSheet;
   tsCommon: TTabSheet;
   tsAdvanced: TTabSheet;
@@ -361,6 +373,8 @@ TfConf = class(TForm)
   tsIntegration: TTabSheet;
   tsMulti: TTabSheet;
   tsSystem: TTabSheet;
+  procedure bDisableMediaHelpClick(Sender: TObject);
+  procedure cbMediaDisableChange(Sender: TObject);
   function validateUser(var error: string): boolean;
   procedure bAddClick({%H-}Sender: TObject);
   procedure bBadgeFlashHelpClick({%H-}Sender: TObject);
@@ -391,6 +405,8 @@ TfConf = class(TForm)
   procedure bTestClick(Sender: TObject);
   procedure bTestProxyClick(Sender: TObject);
   procedure bTestSpeechClick(Sender: TObject);
+  procedure cbTTSChange(Sender: TObject);
+  procedure PopulateTTSVoices;
   procedure bThreasholdLinesHelpClick(Sender: TObject);
   procedure bTimeStampHelpClick(Sender: TObject);
   procedure bExportSettingsClick(Sender: TObject);
@@ -462,30 +478,6 @@ public
   chroma: TRazerChromaBase;
 end;
 
-const
-API_NS = 'NightScout';
-API_NS3 = 'NightScout v3';
-API_DEX_USA = 'Dexcom (USA)';
-API_DEX_EU = 'Dexcom (Outside USA)';
-API_DEX_NEW_USA = 'Dexcom New (USA)';
-API_DEX_NEW_EU = 'Dexcom New (Outside USA)';
-API_DEX_NEW_JP = 'Dexcom New (Japan)';
-API_TANDEM_USA = 'Tandem t:connect (USA)';
-API_TANDEM_EU = 'Tandem t:connect (EU)';
-API_XDRIP = 'xDrip';
-{$ifdef DEBUG}
-API_D_DEBUG =  '* Debug Backend *';
-API_D_MISSING = '* Debug Missing Backend *';
-API_D_PERFECT = '* Debug Perfect Backend *';
-API_D_CUSTOM = '* Debug Custom Backend *';
-API_D_EDGE = '* Debug Edge Backend *';
-API_D_FIRST = '* Debug First Reading Missing *';
-API_D_SECOND = '* Debug Second Reading Missing *';
-API_D_FIRSTX = '* Debug First X Readings Missing *';
-API_D_INTERMITTENT = '* Debug Intermittent Missing *';
-
-API_DEBUG: array of string = (API_D_DEBUG, API_D_MISSING, API_D_PERFECT, API_D_CUSTOM, API_D_EDGE, API_D_FIRST, API_D_SECOND, API_D_FIRSTX, API_D_INTERMITTENT);
-{$endif}
 var
 tnative: TrndiNative;
 
@@ -578,6 +570,8 @@ RS_TANDEM =
 RS_DEBUG_WARN =
   'This is a debug backend. It''s used for testing purposes only!'+sLineBreak+'No data will be sent to any remote server.';
 
+RS_DISABLE_MEDIA = 'This turns off all media-related fetures. Can speed up start.';
+
 RS_ERR_PASSWORD = 'You must enter a password';
 RS_ERR_EMAIL = 'You must enter a valid e-mail address';
 RS_ERR_ADDRESS = 'Address must start with http(s)://';
@@ -652,6 +646,8 @@ RS_SHORTMODE_FULL = 'By default, Trndi only shows up/down/straight. You can enab
 RS_NO_EXTENSIONS = 'This version of Trndi does not support extensions';
 RS_NO_EXTENSIONS_COPYRIGHT = 'Please download a version of Trndi that supports extensions';
 RS_NO_EXTENSIONS_SYSTEM = 'Due to hardware limitations, %s on %s cannot support extensions';
+
+RS_Announce_Not_Available = 'The text-to-speech (TTS) software "%s" is not available.';
 
 var
 fConf: TfConf;
@@ -752,8 +748,7 @@ procedure TfConf.lAckClick(Sender: TObject);
 const
   txt = 'Trndi makes use of the following 3rd party libraries:' + sHTMLLineBreak +
     'macOS native code libraries by <i>Phil Hess</i>.'#10 + sHTMLLineBreak +
-    'WinStyles library by <i>Espectr0</i>.'+ sHTMLLineBreak + sHTMLLineBreak +
-
+    'Windows DirectX headers by <i>CMC Development Team</i>.'#10 + sHTMLLineBreak + sHTMLLineBreak +
     'Extensions use the JavaScript engine <i>QuickJS</i> by <i>Fabrice Bellard</i> and <i>Charlie Gordo</i>.'#10 + sHTMLLineBreak +
     'Integration of said engine is made possible with mORMot2 by Synopse Informatique - <i>Arnaud Bouchez</i>.' + sHTMLLineBreak + sHTMLLineBreak +
 
@@ -871,6 +866,8 @@ begin
     sys := DebugFirstXMissingAPI;
   API_D_INTERMITTENT:
     sys := DebugIntermittentMissingAPI;
+  API_D_SLOW:
+    sys := DebugSlowAPI;
   API_D_CUSTOM:
     sys := DebugCustomAPI;
   {$endif}
@@ -907,38 +904,38 @@ procedure WarnUnstableAPI;
       cbCust.Font.Color := clBlack;
 
       pnSysWarn.Show;
-      lSysWarnInfo.Caption := UnicodeString(info+UnicodeString(RS_DEX));
+      lSysWarnInfo.Caption := unicodestring(info+unicodestring(RS_DEX));
       pnSysWarn.Color := $0053A2E8;
     end;
     API_NS3:
     begin
       pnSysWarn.Show;
-      lSysWarnInfo.Caption := UnicodeString(warn+UnicodeString(RS_BETA));
+      lSysWarnInfo.Caption := unicodestring(warn+unicodestring(RS_BETA));
     end;
     API_DEX_NEW_EU,
     API_DEX_NEW_USA,
     API_DEX_NEW_JP:
     begin
       pnSysWarn.Show;
-      lSysWarnInfo.Caption := UnicodeString(warn+UnicodeString(RS_BETA_DEX));
+      lSysWarnInfo.Caption := unicodestring(warn+unicodestring(RS_BETA_DEX));
     end;
     API_XDRIP:
     begin
       pnSysWarn.Show;
-      lSysWarnInfo.Caption := UnicodeString(info+UnicodeString(RS_XDRIP));
+      lSysWarnInfo.Caption := unicodestring(info+unicodestring(RS_XDRIP));
     end;
     API_TANDEM_EU,
     API_TANDEM_USA:
     begin
       pnSysWarn.Show;
-      lSysWarnInfo.Caption := UnicodeString(warn+UnicodeString(RS_TANDEM));
+      lSysWarnInfo.Caption := unicodestring(warn+unicodestring(RS_TANDEM));
     end;
     end;
     {$ifdef DEBUG}
     if cbSys.Text in API_DEBUG then
     begin
       pnSysWarn.Show;
-      lSysWarnInfo.Caption := UnicodeString(warn+UnicodeString(RS_DEBUG_WARN));
+      lSysWarnInfo.Caption := unicodestring(warn+unicodestring(RS_DEBUG_WARN));
     end;
     {$endif}
   end;
@@ -998,7 +995,7 @@ begin
 
   if tryStrToInt('$' + (Sender as TEdit).Text, i) then
   begin
-    lbl.Caption := UnicodeString(WChar(i));
+    lbl.Caption := unicodestring(WChar(i));
     if Sender = eDot then
     begin
       lDot1.Caption := lbl.Caption;
@@ -1100,6 +1097,16 @@ begin
   end;
   end;
 
+end;
+
+procedure TfConf.cbMediaDisableChange(Sender: TObject);
+begin
+  gbMedia.Enabled := not cbMediaDisable.checked;
+end;
+
+procedure TfConf.bDisableMediaHelpClick(Sender: TObject);
+begin
+  ShowMessage(RS_DISABLE_MEDIA);
 end;
 
 procedure TfConf.bAddClick(Sender: TObject);
@@ -1255,6 +1262,8 @@ begin
     sys := DebugFirstXMissingAPI;
   API_D_CUSTOM:
     sys := DebugCustomAPI;
+  API_D_SLOW:
+    sys := DebugSlowAPI;
   {$endif}
   end;
 
@@ -1335,7 +1344,10 @@ end;
 
 procedure TfConf.bTestAnnounceClick(Sender: TObject);
 begin
-  tnative.attention('Trndi Test', 'test');
+  if not tnative.SpeakAvailable then
+    ShowMessage(Format(Rs_Announce_Not_Available, [tnative.SpeakSoftwareName]))
+  else
+    tnative.attention('Trndi Test', 'test');
 end;
 
 procedure TfConf.bTestClick(Sender: TObject);
@@ -1396,6 +1408,113 @@ begin
     tnative.speak('test 5.5')
   else
     tnative.speak('test 100');
+end;
+
+procedure TfConf.cbTTSChange(Sender: TObject);
+begin
+  cbTTSVoice.Enabled := cbTTS.Checked;
+  seTTSRate.Enabled := cbTTS.Checked;
+  Label36.Enabled := cbTTS.Checked;
+  Label37.Enabled := cbTTS.Checked;
+  bTestSpeech.Enabled := cbTTS.Checked;
+end;
+
+procedure TfConf.PopulateTTSVoices;
+{$ifdef X_WIN}
+var
+  Voice: olevariant;
+  Voices: olevariant;
+  i: integer;
+  voiceName: string;
+{$endif}
+{$ifdef X_MAC}
+var
+  Proc: TProcess;
+  Output: string;
+  Lines: TStringList;
+  i, j, hashPos, lastSpace: integer;
+  voiceName: string;
+  Voices: NSArray;
+  vID: NSString;
+  attrs: NSDictionary;
+  nameObj: NSString;
+{$endif}
+begin
+  cbTTSVoice.Items.Clear;
+  cbTTSVoice.Items.Add('Default');
+
+  {$ifdef X_WIN}
+  if tnative.SpeakAvailable then
+  begin
+    try
+      Voice := CreateOleObject('SAPI.SpVoice');
+      Voices := Voice.GetVoices('', '');
+      if not VarIsEmpty(Voices) then
+      begin
+        for i := 0 to Voices.Count - 1 do
+        begin
+            try
+              voiceName := VarToStr(Voices.Item(i).GetDescription(0));
+              cbTTSVoice.Items.Add(voiceName);
+          except
+            // Skip voices that can't provide a description
+            cbTTSVoice.Items.Add('Voice ' + IntToStr(i + 1));
+          end;
+        end;
+      end;
+    except
+      // SAPI not available or failed
+    end;
+  end;
+  {$endif}
+
+  {$ifdef X_MAC}
+  if tnative.SpeakAvailable then
+  begin
+    // Prefer Cocoa API on macOS (more reliable than parsing `say` output)
+    try
+      Voices := NSSpeechSynthesizer.availableVoices;
+      if Voices <> nil then
+      begin
+        for i := 0 to Integer(Voices.count) - 1 do
+        begin
+          vID := NSString(Voices.objectAtIndex(i));
+          if vID = nil then Continue;
+          attrs := NSSpeechSynthesizer.attributesForVoice(vID);
+          if attrs <> nil then
+          begin
+            try
+              nameObj := NSString(attrs.objectForKey(StrToNSStr('NSVoiceName')));
+              voiceName := '';
+              if nameObj <> nil then
+                voiceName := NSStrToStr(nameObj);
+              if voiceName = '' then
+                voiceName := NSStrToStr(NSString(vID));
+              if voiceName <> '' then
+                cbTTSVoice.Items.Add(voiceName)
+              else
+                cbTTSVoice.Items.Add('Voice ' + IntToStr(i + 1));
+            except
+              cbTTSVoice.Items.Add('Voice ' + IntToStr(i + 1));
+            end;
+          end;
+        end;
+      end;
+    except
+      // Fallback: keep default-only list when Cocoa query fails
+    end;
+  end;
+  {$endif}
+
+  {$ifdef X_PC}  // Linux
+  // For Linux speech-dispatcher, add the standard voice types
+  cbTTSVoice.Items.Add('Male 1');
+  cbTTSVoice.Items.Add('Male 2');
+  cbTTSVoice.Items.Add('Male 3');
+  cbTTSVoice.Items.Add('Female 1');
+  cbTTSVoice.Items.Add('Female 2');
+  cbTTSVoice.Items.Add('Female 3');
+  {$endif}
 end;
 
 procedure TfConf.bThreasholdLinesHelpClick(Sender: TObject);
@@ -1708,6 +1827,9 @@ begin
   {$ifdef lclqt6}
   self.font.size := 10;
   {$endif}
+  {$ifdef HAIKU}
+  lSysWarnInfo.font.size := 9;
+  {$endif}
   {$ifdef lclgtk2}
   self.font.size := 10;
   for wi := 0 to self.ComponentCount-1 do
@@ -1729,6 +1851,9 @@ begin
     (self.Handle)
   {$endif}
   ;
+
+  // Populate TTS voice list
+  PopulateTTSVoices;
 
   {$ifdef X_MAC}
   edTray.Enabled := false; // No support
@@ -1770,6 +1895,9 @@ begin
 
     self.height := self.height + 30;
   end;
+
+  // Initialize TTS controls
+  cbTTSChange(Self);
 end;
 
 procedure TfConf.FormDestroy(Sender: TObject);
@@ -1871,7 +1999,7 @@ begin
   else
     title := RS_SELECT_FONT_DESC;
   end;
-  f := ExtFontPicker(uxdAuto,RS_SELECT_FONT, RS_SELECT_FONT, title, (sender as TLabel).font, (sender as TLabel).caption, mr);
+  f := slicke.ux.alert.ExtFontPicker(uxdAuto,RS_SELECT_FONT, RS_SELECT_FONT, title, (sender as TLabel).font, (sender as TLabel).caption, mr);
   if mr = mrOK then
     (Sender as TLabel).Font := f;
 end;

@@ -38,7 +38,7 @@ interface
 
 uses
   Classes, SysUtils, Graphics, nsutils.nsmisc, nsutils.web.urlrequest, CocoaAll, nsutils.simpledarkmode,
-  nsutils.nshelpers, IniFiles,
+  nsutils.nshelpers, IniFiles, dialogs,
   trndi.native.base;
 
 type
@@ -245,16 +245,45 @@ end;
 {------------------------------------------------------------------------------
   Speak
   -----
-  Use the built-in 'say' tool to speak text (synchronous).
+  Use the built-in 'say' tool to speak text asynchronously.
  ------------------------------------------------------------------------------}
 procedure TTrndiNativeMac.Speak(const Text: string);
 var
-  o: string;
+  Proc: TProcess;
+  VoiceName: string;
 begin
-  // Use the built-in macOS speech synthesis
-  // Note: This is synchronous; consider running in a background process
-  // if you need to keep the UI responsive during long messages.
-  RunCommand('/usr/bin/say', [Text], o);
+  // Use the built-in macOS speech synthesis asynchronously
+  Proc := TProcess.Create(nil);
+  try
+    try
+      Proc.Executable := '/usr/bin/say';
+      
+      // Check if a specific voice is selected
+      VoiceName := GetSetting('tts.voice.name', '');
+      if VoiceName <> '' then
+      begin
+        Proc.Parameters.Add('-v');
+        Proc.Parameters.Add(VoiceName);
+      end;
+      
+      Proc.Parameters.Add(Text);
+      Proc.Options := [];
+      Proc.Execute;
+    except
+      on E: Exception do
+      begin
+        if not ttsErrorShown then
+        begin
+          ShowMessage('TTS Error: ' + E.Message);
+          ttsErrorShown := true;
+        end;
+        Exit;
+      end;
+    end;
+  finally
+    Proc.Free; // ensure Proc is freed on both success and error paths
+  end;
+  // Async process will be cleaned up by OS
 end;
 
 {------------------------------------------------------------------------------

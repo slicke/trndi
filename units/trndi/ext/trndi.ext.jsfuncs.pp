@@ -48,7 +48,7 @@ uses
   Classes, SysUtils, trndi.ext.functions, trndi.types, slicke.ux.alert,
   trndi.api, trndi.ext.engine,
   Trndi.Native, fpjson,
-  Dialogs, Math;
+  Dialogs;
 
 type
   TJSFuncs = class(TObject)

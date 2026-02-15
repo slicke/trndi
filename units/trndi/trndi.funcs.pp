@@ -381,11 +381,11 @@ begin
   if (L.Top + EstimatedHeight) > (clientHeight - BottomPadding) then
     L.Top := clientHeight - BottomPadding - EstimatedHeight;
   
-  LogMessageToFile(Format('Label %s: Value=%.2f, Top=%d, Height=%d (est=%d), BottomPad=%d',
+  TrndiDLog(Format('Label %s: Value=%.2f, Top=%d, Height=%d (est=%d), BottomPad=%d',
     [L.Name, Value, L.Top, L.Height, EstimatedHeight, BottomPadding]));
   {$else}
   L.Top := (clientHeight - Position) - 1;
-  LogMessageToFile(Format('Label %s: Value=%.2f, Top=%d, Height=%d', [L.Name, Value, L.Top, L.Height]));
+  TrndiDLog(Format('Label %s: Value=%.2f, Top=%d, Height=%d', [L.Name, Value, L.Top, L.Height]));
   {$endif}
 end;
 

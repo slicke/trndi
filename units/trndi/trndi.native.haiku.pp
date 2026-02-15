@@ -293,7 +293,7 @@ end;
 {------------------------------------------------------------------------------
   Speak
   -----
-  Use espeak for text-to-speech on Haiku.
+  Use espeak for text-to-speech on Haiku asynchronously.
  ------------------------------------------------------------------------------}
 procedure TTrndiNativeHaiku.Speak(const Text: string);
 var
@@ -312,9 +312,15 @@ begin
     except
       // Silently fail if speech doesn't work
     end;
-  finally
-    AProcess.Free;
+  except
+    on E: Exception do
+    begin
+      // Silently fail
+      AProcess.Free;
+      Exit;
+    end;
   end;
+  // Async process will be cleaned up by OS
 end;
 
 {------------------------------------------------------------------------------
@@ -600,49 +606,49 @@ begin
 
     {$ifdef DEBUG}
     if proxyHost <> '' then
-      LogMessageToFile(Format('HTTP GET: proxy configured (%s:%s); url=%s', [proxyHost, proxyPort, SafeUrlForLog(url)]))
+      TrndiDLog(Format('HTTP GET: proxy configured (%s:%s); url=%s', [proxyHost, proxyPort, SafeUrlForLog(url)]))
     else
-      LogMessageToFile(Format('HTTP GET: no proxy configured; url=%s', [SafeUrlForLog(url)]));
+      TrndiDLog(Format('HTTP GET: no proxy configured; url=%s', [SafeUrlForLog(url)]));
     {$endif}
 
     // Try with proxy first if configured
     if proxyHost <> '' then
     begin
       {$ifdef DEBUG}
-      LogMessageToFile(Format('HTTP GET: attempting via proxy %s:%s', [proxyHost, proxyPort]));
+      TrndiDLog(Format('HTTP GET: attempting via proxy %s:%s', [proxyHost, proxyPort]));
       {$endif}
       if PerformRequest(true) then
       begin
         {$ifdef DEBUG}
-        LogMessageToFile('HTTP GET: proxy attempt succeeded');
+        TrndiNetLog('HTTP GET: proxy attempt succeeded');
         {$endif}
         Result := true;
         Exit;
       end;
 
       {$ifdef DEBUG}
-      LogMessageToFile('HTTP GET: proxy attempt failed: ' + res + ' ; retrying direct');
+      TrndiNetLog('HTTP GET: proxy attempt failed: ' + res + ' ; retrying direct');
       {$endif}
     end;
 
     // Fallback: try without proxy
     {$ifdef DEBUG}
     if proxyHost <> '' then
-      LogMessageToFile('HTTP GET: attempting direct (clearing proxy settings)')
+      TrndiNetLog('HTTP GET: attempting direct (clearing proxy settings)')
     else
-      LogMessageToFile('HTTP GET: attempting direct');
+      TrndiNetLog('HTTP GET: attempting direct');
     {$endif}
     if PerformRequest(false) then
     begin
       {$ifdef DEBUG}
-      LogMessageToFile('HTTP GET: direct attempt succeeded');
+      TrndiNetLog('HTTP GET: direct attempt succeeded');
       {$endif}
       Result := true;
     end
     else
     begin
       {$ifdef DEBUG}
-      LogMessageToFile('HTTP GET: direct attempt failed: ' + res);
+      TrndiNetLog('HTTP GET: direct attempt failed: ' + res);
       {$endif}
       Result := false;
     end;
