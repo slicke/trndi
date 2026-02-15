@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, fpcunit, testutils, testregistry,
-  SystemMediaController;
+  slicke.systemmediacontroller;
 
 type
   TSystemMediaControllerTests = class(TTestCase)

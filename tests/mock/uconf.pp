@@ -130,10 +130,12 @@ type
     cbTimeStamp: TCheckBox;
     cbTouch: TCheckBox;
     cbMultiTouch: TCheckBox;
+    cbMediaDisable: TCheckBox;
 
     // Added UI methods used by umain
     procedure cbSysChange(Sender: TObject);
     procedure rbUnitClick(Sender: TObject);
+    procedure cbMediaDisableChange(Sender: TObject);
 
     constructor Create(AOwner: TComponent = nil);
     destructor Destroy; override;
@@ -161,6 +163,11 @@ begin
 end;
 
 procedure TfConf.rbUnitClick(Sender: TObject);
+begin
+  // no-op in tests
+end;
+
+procedure TfConf.cbMediaDisableChange(Sender: TObject);
 begin
   // no-op in tests
 end;
@@ -296,6 +303,7 @@ begin
     cbTitleColor.Checked := true;
   cbTouch := TCheckBox.Create(nil);
   cbMultiTouch := TCheckBox.Create(nil);
+  cbMediaDisable := TCheckBox.Create(nil);
 
 end;
 
@@ -303,6 +311,7 @@ end;
 destructor TfConf.Destroy;
 begin
   // Free created controls in reverse order of creation
+  cbMediaDisable.Free;
   cbMultiTouch.Free;
   cbTouch.Free;
   cbTimeStamp.Free;
