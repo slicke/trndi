@@ -133,10 +133,10 @@ type
   are documented to clarify their role during initialization and shutdown.
 }
 TDotInfo = record
-    Top: Integer;
-    Height: Integer;
-    Visible: Boolean;
-  end;
+  Top: integer;
+  Height: integer;
+  Visible: boolean;
+end;
 
 TfBG = class(TForm)
   apMain: TApplicationProperties;
@@ -360,10 +360,10 @@ TfBG = class(TForm)
   procedure miDebugLoadTextClick(Sender: TObject);
   procedure miDebugLogAPIClick(Sender: TObject);
   {$endif}
-{$ifdef TEST}
+  {$ifdef TEST}
   // Test accessors
 {$I ../../tests/inc/umain_fbg.inc}
-{$endif}
+  {$endif}
 private
   FStoredWindowInfo: record // Saved geometry and window state for restore/toggle
     Left, Top, Width, Height: integer;
@@ -2824,7 +2824,8 @@ begin
   bg_rel_color_hi_txt := native.GetColorSetting('ux.bg_rel_color_hi_txt', bg_rel_color_hi_txt);
   bg_rel_color_lo_txt := native.GetColorSetting('ux.bg_rel_color_lo_txt', bg_rel_color_lo_txt);
 
-  if native.GetBoolSetting('main.high_contrast', false) then begin
+  if native.GetBoolSetting('main.high_contrast', false) then
+  begin
     bg_color_ok := clBlack;
     bg_color_ok_txt := clWhite;
     // Hi
@@ -3108,7 +3109,7 @@ procedure LoadUserSettings(f: TfConf);
         if voiceName <> '' then
           cbTTSVoice.ItemIndex := cbTTSVoice.Items.IndexOf(voiceName);
       end;
-      {$endif}
+    {$endif}
       {$ifdef X_PC}
       // For Linux, load the voice name if stored
       if cbTTSVoice.Items.Count > 1 then
@@ -3117,7 +3118,7 @@ procedure LoadUserSettings(f: TfConf);
         if voiceName <> '' then
           cbTTSVoice.ItemIndex := cbTTSVoice.Items.IndexOf(voiceName);
       end;
-      {$endif}
+    {$endif}
       seTTSRate.Value := GetIntSetting('tts.rate', 0);
       fsHi.Enabled := cbCust.Checked;
       fsLo.Enabled := cbCust.Checked;
@@ -3494,14 +3495,14 @@ procedure SaveUserSettings(f: TfConf);
         SetSetting('tts.voice.name', cbTTSVoice.Text)
       else
         DeleteSetting('tts.voice.name');
-      {$endif}
+    {$endif}
       {$ifdef X_PC}
       // For Linux, also store the voice name
       if cbTTSVoice.ItemIndex > 0 then
         SetSetting('tts.voice.name', cbTTSVoice.Text)
       else
         DeleteSetting('tts.voice.name');
-      {$endif}
+    {$endif}
       SetSetting('tts.rate', seTTSRate.Value);
 
       SetColorSetting('ux.bg_color_ok', cl_ok_bg.ButtonColor);
@@ -3571,10 +3572,10 @@ begin
     end;
 
 
-    if assigned(chroma) and chroma.Initialized then begin
-     for i := 0 to Chroma.GetDeviceCount - 1 do
-        fConf.lbChroma.Items.Add(Chroma.GetDevice(i).Name);
-    end else begin
+    if assigned(chroma) and chroma.Initialized then
+      for i := 0 to Chroma.GetDeviceCount - 1 do
+        fConf.lbChroma.Items.Add(Chroma.GetDevice(i).Name) else
+    begin
       fConf.chroma := TRazerChromaFactory.CreateInstance;
       if not fconf.chroma.Initialize then
         fConf.lbChroma.Items.Add('No Razer driver detected')
@@ -5333,10 +5334,11 @@ begin
       native.attention(ifthen(multi, multinick, RS_WARN_BG_HI_TITLE),
         Format(RS_WARN_BG_HI, [lVal.Caption]));
 
-  if not native.GetBoolSetting('media.disabled', false) then begin
+  if not native.GetBoolSetting('media.disabled', false) then
+  begin
     if native.GetBoolSetting('media.pause') then
-     if assigned(mediacontroller) and mediacontroller.IsInitialized then
-      MediaController.Pause;
+      if assigned(mediacontroller) and mediacontroller.IsInitialized then
+        MediaController.Pause;
 
     if native.TryGetSetting('media.url_high', url) then
     begin
@@ -5384,7 +5386,8 @@ begin
       native.attention(ifthen(multi, multinick, RS_WARN_BG_LO_TITLE),
         Format(RS_WARN_BG_LO, [lVal.Caption]));
 
-  if not native.GetBoolSetting('media.disabled', false) then begin
+  if not native.GetBoolSetting('media.disabled', false) then
+  begin
     if native.GetBoolSetting('media.pause') then
       if assigned(mediacontroller) and mediacontroller.IsInitialized then
         MediaController.Pause;
@@ -5801,7 +5804,8 @@ end;
 function TfBG.GetTextColorForBackground(const BgColor: TColor;
 const DarkenFactor: double = 0.5; const LightenFactor: double = 0.3): TColor;
 begin
-  if native.GetBoolSetting('main.high_contrast', false) then begin
+  if native.GetBoolSetting('main.high_contrast', false) then
+  begin
     if IsLightColor(BgColor) then
       Result := clBlack
     else
@@ -6125,7 +6129,8 @@ begin
           count := count + 1;
           Break; // Move to next slot
         end
-        else if reading.date < slotStart - TIME_EPSILON_DAYS then
+        else
+        if reading.date < slotStart - TIME_EPSILON_DAYS then
           Break;
       end;
     end;
@@ -6187,14 +6192,15 @@ end;
 function TfBG.DetermineColorForReading(const Reading: BGReading): TColor;
 begin
 
-    if native.GetBoolSetting('main.high_contrast', false) then begin
-      result := GetTextColorForBackground(fbg.color);
-      if result = clBlack then
-         result := $00C8C8C8
-      else
-         result := $00626262;
-      Exit;
-    end;
+  if native.GetBoolSetting('main.high_contrast', false) then
+  begin
+    result := GetTextColorForBackground(fbg.color);
+    if result = clBlack then
+      result := $00C8C8C8
+    else
+      result := $00626262;
+    Exit;
+  end;
 
   if Reading.val >= api.cgmHi then
     Result := bg_color_hi

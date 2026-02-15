@@ -163,6 +163,7 @@
 {"hash":7277241,"name":"tfconf.label27.caption","sourcebytes":[76,111,119,32,40,101,103,32,104,116,116,112,115,58,47,47,117,114,108,46,108,111,99,97,108,47,108,111,41],"value":"Low (eg https://url.local/lo)"},
 {"hash":63,"name":"tfconf.buseurlhelp.caption","sourcebytes":[63],"value":"?"},
 {"hash":146904061,"name":"tfconf.cbmediadisable.caption","sourcebytes":[68,105,115,97,98,108,101,32,116,104,101,32,101,110,116,105,114,101,32,109,101,100,105,97,32,115,121,115,116,101,109],"value":"Disable the entire media system"},
+{"hash":63,"name":"tfconf.bdisablemediahelp.caption","sourcebytes":[63],"value":"?"},
 {"hash":95464125,"name":"tfconf.tssystem.caption","sourcebytes":[83,121,115,116,101,109],"value":"System"},
 {"hash":265880334,"name":"tfconf.lwaitsys.caption","sourcebytes":[80,108,101,97,115,101,32,119,97,105,116,46,46,46],"value":"Please wait..."},
 {"hash":9814909,"name":"tfconf.los.caption","sourcebytes":[85,110,107,110,111,119,110,32,83,121,115,116,101,109],"value":"Unknown System"},

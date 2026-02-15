@@ -11,7 +11,7 @@ object fBG: TfBG
   Font.Color = clWhite
   PopupMenu = pmSettings
   Position = poDesktopCenter
-  LCLVersion = '4.2.0.0'
+  LCLVersion = '4.4.0.0'
   OnActivate = FormActivate
   OnClick = FormClick
   OnClose = FormClose

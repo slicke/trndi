@@ -2284,6 +2284,10 @@ msgid ""
 "Please set your own thresholds in the Customization tab."
 msgstr ""
 
+#: uconf.rs_disable_media
+msgid "This turns off all media-related fetures. Can speed up start."
+msgstr ""
+
 #: uconf.rs_dot_click
 msgid "Dot appearance is modified below!"
 msgstr ""

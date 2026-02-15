@@ -96,6 +96,7 @@ TfConf = class(TForm)
   bCustomRangeHelp: TButton;
   bExtOpen: TButton;
   bCommon: TButton;
+  bDisableMediaHelp: TButton;
   Button2: TButton;
   Button4: TButton;
   bWebAPI: TButton;
@@ -372,6 +373,7 @@ TfConf = class(TForm)
   tsIntegration: TTabSheet;
   tsMulti: TTabSheet;
   tsSystem: TTabSheet;
+  procedure bDisableMediaHelpClick(Sender: TObject);
   procedure cbMediaDisableChange(Sender: TObject);
   function validateUser(var error: string): boolean;
   procedure bAddClick({%H-}Sender: TObject);
@@ -567,6 +569,8 @@ RS_TANDEM =
 
 RS_DEBUG_WARN =
   'This is a debug backend. It''s used for testing purposes only!'+sLineBreak+'No data will be sent to any remote server.';
+
+RS_DISABLE_MEDIA = 'This turns off all media-related fetures. Can speed up start.';
 
 RS_ERR_PASSWORD = 'You must enter a password';
 RS_ERR_EMAIL = 'You must enter a valid e-mail address';
@@ -1098,6 +1102,11 @@ end;
 procedure TfConf.cbMediaDisableChange(Sender: TObject);
 begin
   gbMedia.Enabled := not cbMediaDisable.checked;
+end;
+
+procedure TfConf.bDisableMediaHelpClick(Sender: TObject);
+begin
+  ShowMessage(RS_DISABLE_MEDIA);
 end;
 
 procedure TfConf.bAddClick(Sender: TObject);
