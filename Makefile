@@ -100,6 +100,7 @@ help:
 	@echo "  test       Build and run tests (starts PHP test server when available)"
 	@echo "  test-nophp  Run console tests without PHP (TRNDI_NO_PHP=1)"
 	@echo "  noext-test  Build and run tests without mORMot2 (IGNORE_MORMOT=1)"
+	@echo "  noext-test-nophp  Run console tests without mORMot2 and without PHP (IGNORE_MORMOT=1, TRNDI_NO_PHP=1)"
 	@echo "  list-modes Show available project build modes from $(LPI)"
 	@echo "  list-modules Show Pascal `unit` modules found under `units/`"
 	@echo "  check-module-names Check for mismatches between filenames and `unit` declarations (uses scripts/check-module-names.pl)"
@@ -260,6 +261,13 @@ noext-test:
 .PHONY: test-nophp
 test-nophp: check
 	@echo "Building console tests (tests/TrndiTestConsole.lpi)"
+	@$(LAZBUILD) --widgetset=$(WIDGETSET) -B tests/TrndiTestConsole.lpi
+	@echo "Running tests without PHP (TRNDI_NO_PHP=1)"
+	@TRNDI_NO_PHP=1 ./tests/TrndiTestConsole
+
+noext-test-nophp: IGNORE_MORMOT := 1
+noext-test-nophp:
+	@echo "Building console tests (tests/TrndiTestConsole.lpi) without mORMot"
 	@$(LAZBUILD) --widgetset=$(WIDGETSET) -B tests/TrndiTestConsole.lpi
 	@echo "Running tests without PHP (TRNDI_NO_PHP=1)"
 	@TRNDI_NO_PHP=1 ./tests/TrndiTestConsole
