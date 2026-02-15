@@ -197,7 +197,7 @@ jobs:
             sudo apt-get install -y php
             # On arm64 we don't build extensions in CI — run the no-extensions test target there
             if [ "${{ matrix.arch }}" = "arm64" ]; then
-              make test-noext
+              make noext-test
             else
               make test
             fi

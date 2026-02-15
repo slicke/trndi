@@ -99,7 +99,7 @@ help:
 	@echo "  build      Generic build (honors BUILD_MODE and WIDGETSET)"
 	@echo "  test       Build and run tests (starts PHP test server when available)"
 	@echo "  test-nophp  Run console tests without PHP (TRNDI_NO_PHP=1)"
-	@echo "  test-noext  Build and run tests without mORMot2 (IGNORE_MORMOT=1)"
+	@echo "  noext-test  Build and run tests without mORMot2 (IGNORE_MORMOT=1)"
 	@echo "  list-modes Show available project build modes from $(LPI)"
 	@echo "  list-modules Show Pascal `unit` modules found under `units/`"
 	@echo "  check-module-names Check for mismatches between filenames and `unit` declarations (uses scripts/check-module-names.pl)"
@@ -250,8 +250,8 @@ test: check
 	@echo "Running tests with PHP test server..."
 	@sh tests/run_tests_with_php.sh
 
-test-noext: IGNORE_MORMOT := 1
-test-noext:
+noext-test: IGNORE_MORMOT := 1
+noext-test:
 	@echo "Building console tests (tests/TrndiTestConsole.lpi) without mORMot"
 	@$(LAZBUILD) --widgetset=$(WIDGETSET) -B tests/TrndiTestConsole.lpi
 	@echo "Running tests with PHP test server..."
