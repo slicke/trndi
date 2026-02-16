@@ -97,9 +97,6 @@
     <BuildModes>
       <Item Name="No Ext (Release)" Default="True"/>
       <Item Name="Extensions (Debug)">
-        <MacroValues Count="1">
-          <Macro1 Name="LCLWidgetType" Value="qt6"/>
-        </MacroValues>
         <CompilerOptions>
           <Version Value="11"/>
           <PathDelim Value="\"/>
@@ -438,8 +435,7 @@
         </CompilerOptions>
       </Item>
       <Item Name="Qt6 (Release: Extensions)">
-        <MacroValues Count="2">
-          <Macro3 Name="LCLWidgetType" Value="qt6"/>
+        <MacroValues Count="1">
           <Macro2 Name="LCLWidgetType" Value="qt6"/>
         </MacroValues>
         <CompilerOptions>

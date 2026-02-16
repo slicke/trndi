@@ -642,6 +642,7 @@ private
       when the application is already current.
    }
   procedure CheckForUpdates(ShowUpToDateMessage: boolean = false);
+  procedure actOnMediaController(act: TMediaControllerAct; arg: string = '');
 public
   firstboot: boolean;
     {** Generic application exception handler used for reporting unhandled
@@ -5334,18 +5335,13 @@ begin
       native.attention(ifthen(multi, multinick, RS_WARN_BG_HI_TITLE),
         Format(RS_WARN_BG_HI, [lVal.Caption]));
 
-  if not native.GetBoolSetting('media.disabled', false) then
-  begin
-    if native.GetBoolSetting('media.pause') then
-      if assigned(mediacontroller) and mediacontroller.IsInitialized then
-        MediaController.Pause;
+  if native.GetBoolSetting('media.pause') then
+    actOnMediaController(mcaPause);
 
-    if native.TryGetSetting('media.url_high', url) then
-    begin
-      highAlerted := true;
-      if assigned(mediacontroller) and mediacontroller.IsInitialized then
-        MediaController.PlayTrackFromURL(url);
-    end;
+  if native.TryGetSetting('media.url_high', url) then
+  begin
+    highAlerted := true;
+    actOnMediaController(mcaURL, url);
   end;
 
   if native.TryGetSetting('url_remote.url_high', url) then
@@ -5386,19 +5382,16 @@ begin
       native.attention(ifthen(multi, multinick, RS_WARN_BG_LO_TITLE),
         Format(RS_WARN_BG_LO, [lVal.Caption]));
 
-  if not native.GetBoolSetting('media.disabled', false) then
-  begin
+
     if native.GetBoolSetting('media.pause') then
-      if assigned(mediacontroller) and mediacontroller.IsInitialized then
-        MediaController.Pause;
+      actOnMediaController(mcaPause);
 
     if native.TryGetSetting('media.url_low', url) then
     begin
       lowAlerted := true;
-      if assigned(mediacontroller) and mediacontroller.IsInitialized then
-        MediaController.PlayTrackFromURL(url);
+      actOnMediaController(mcaURL, url);
     end;
-  end;
+
   if native.TryGetSetting('url_remote.url_low', url) then
   begin
     lowAlerted := true;
@@ -5455,8 +5448,7 @@ begin
     perfectTriggered := true;
 
     if native.TryGetSetting('media.url_perfect', url) then
-      if assigned(mediacontroller) and mediacontroller.IsInitialized then
-        MediaController.PlayTrackFromURL(url);
+        actOnMediaController(mcaURL, url);
 
     if native.TryGetSetting('url_remote.url_high', url) then
       native.getURL(url, url);
@@ -6397,6 +6389,22 @@ begin
     on E: Exception do
       if ShowUpToDateMessage then
         ShowMessage('Update check failed: ' + E.Message);
+  end;
+end;
+
+procedure TfBG.actOnMediaController(act: TMediaControllerAct; arg: string = '');
+begin
+  if native.GetBoolSetting('media.disabled', false) then
+    Exit;
+  if not assigned(mediacontroller) then
+    Exit;
+  if not mediacontroller.IsInitialized then
+    Exit;
+
+  case act of
+    mcaPlay: MediaController.Play;
+    mcaPause: MediaController.Pause;
+    mcaURL: MediaController.PlayTrackFromURL(arg);
   end;
 end;
 

@@ -58,6 +58,8 @@ TrndiAPIMsg = (alert, notice, status);
 
 TTrndiAPIEmitter = procedure(const msg: string; etype: TrndiAPIMsg) of object;
 
+TMediaControllerAct = (mcaPlay, mcaPause, mcaURL);
+
   {** Unit that can exist or not}
 MaybeInt = record
   value: integer;  //< The value
