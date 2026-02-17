@@ -3,11 +3,14 @@ unit trndi.native.mock;
 {$I ../../inc/native.inc}// Depending on your project setup, this may define X_WIN, X_PC, X_MAC, etc.
 interface
 uses
-  Classes, SysUtils, fphttpclient, inifiles,
+  Classes, SysUtils, inifiles,
 {$IF DEFINED(X_WIN)}
   trndi.native.win,
 {$ELSEIF DEFINED(X_LINUXBSD)}
   trndi.native.linux,
+{$ELSE}
+  {$define TRNDI_NATIVE_MOCK_BASE}
+  fphttpclient,
 {$ENDIF}
   trndi.native.base;
 
@@ -19,7 +22,6 @@ type
     {$elseif defined(X_LINUXBSD)}
     TTrndiNativeLinux
     {$else}
-    {$define TRNDI_NATIVE_MOCK_BASE}
     TTrndiNativeBase
     {$endif}
   )
