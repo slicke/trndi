@@ -62,6 +62,10 @@ begin
       begin end;
     TrndiAPIMsg.status:
       TrndiDLog(msg);
+    {$ifdef DEBUG}
+    TrndiAPIMsg.log:
+      TrndiDLog(Format('[%s] %s', [self.className, msg]));
+    {$endif}
   end;
 end;
 
