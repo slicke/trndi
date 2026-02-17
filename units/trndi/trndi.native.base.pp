@@ -64,11 +64,14 @@ Forms, variants, dwmapi
 , process;
 
 type
+{$ifdef X_LINUXBSD}
   {** WSL version detection result. }
 TWSLVersion = (wslNone, wslVersion1, wslVersion2, wslUnknown);
+{$endif}
   {** Ternary-style boolean with Unset/Unknown states for user overrides. }
 TTrndiBool = (tbUnset, tbTrue, tbFalse, tbUnknown);
 
+{$ifdef X_LINUXBSD}
   {** Information about a WSL environment (Windows Subsystem for Linux). }
 TWSLInfo = record
   IsWSL: boolean;       // True when running under WSL
@@ -76,6 +79,7 @@ TWSLInfo = record
   DistroName: string;   // Optional distro name (if available)
   KernelVersion: string;// Kernel string as reported by /proc/version
 end;
+{$endif}
 
   {** Enhanced HTTP response with headers, cookies, and redirect information. }
 THTTPResponse = record
@@ -259,7 +263,9 @@ class var touchOverride: TTrndiBool;
     out res: string): boolean; virtual;
   class function GetOSLanguage: string;
   class function HasDangerousChars(const FileName: string): boolean; static;
+  {$ifdef X_LINUXBSD}
   class function DetectWSL: TWSLInfo;
+  {$endif}
     // Notifications
     {** True if a native notification system is available (override per platform). }
   class function isNotificationSystemAvailable: boolean; virtual;
@@ -3532,6 +3538,7 @@ begin
   Result := HasCharsInSet(FileName, DangerousChars);
 end;
 
+{$ifdef X_LINUXBSD}
 {------------------------------------------------------------------------------
   DetectWSL
   ----------------------
@@ -3624,6 +3631,7 @@ begin
   ;
   {$ENDIF}
 end;
+{$endif}
 
 class function TTrndiNativeBase.SetTitleColor(form: THandle; bg, Text: TColor): boolean;
 begin
