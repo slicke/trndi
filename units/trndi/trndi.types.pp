@@ -53,7 +53,7 @@ BGValType = (BGPrimary, BGDelta);
 
 {$scopedenums on}
 MaybeBool = (true, false, none);
-TrndiAPIMsg = (alert, notice, status);
+TrndiAPIMsg = (alert, notice, status, log);
 {$scopedenums off}
 
 TTrndiAPIEmitter = procedure(const msg: string; etype: TrndiAPIMsg) of object;
