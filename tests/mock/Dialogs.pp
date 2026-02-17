@@ -37,6 +37,7 @@ const
   mrYesToAll = 17;
 
 function MessageDlg(const Msg: string; Flags: integer; Buttons: integer; HelpCtx: longint): integer; overload;
+procedure ShowMessage(const Msg: string); overload;
 
 type
   TOpenDialog = class
@@ -57,6 +58,11 @@ implementation
 function MessageDlg(const Msg: string; Flags: integer; Buttons: integer; HelpCtx: longint): integer; overload;
 begin
   Result := 0;
+end;
+
+procedure ShowMessage(const Msg: string); overload;
+begin
+  // no-op in tests (headless)
 end;
 
 constructor TOpenDialog.Create(AOwner: TComponent = nil);

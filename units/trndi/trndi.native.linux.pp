@@ -1543,9 +1543,9 @@ begin
   begin
     Tray := TTrayIcon.Create(Application.MainForm);
     tray.OnClick := @trayClick;
-    TrayMenu := TPopupMenu.Create(tray);
+    TrayMenu := TPopupMenu.Create(Application.MainForm);
     tray.PopUpMenu := traymenu;
-    traymenu.Items.add(TMenuItem.Create(tray));
+    traymenu.Items.add(TMenuItem.Create(Application.MainForm));
     with TrayMenu.Items[0] do
     begin
       Caption := 'Trndi';

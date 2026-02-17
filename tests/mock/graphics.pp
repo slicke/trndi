@@ -19,6 +19,8 @@ const
   clNone    = -1; // used as transparent sentinel
   clDefault = clWhite;
   clMaroon = $00008000;
+  // Pixel format constants used by mocks
+  pf32bit = 0;
 
 type
   TBrushStyle = (bsSolid, bsClear);
@@ -113,7 +115,20 @@ type
     procedure Draw(X, Y: Integer; Src: TObject); virtual;
   end;
 
-  TIcon = TObject;
+  TIcon = class(TObject)
+  private
+    FWidth: Integer;
+    FHeight: Integer;
+    FHandle: PtrUInt;
+  public
+    constructor Create; virtual;
+    destructor Destroy; override;
+    procedure Assign(Source: TObject); virtual;
+    procedure SetSize(AWidth, AHeight: Integer); virtual;
+    property Width: Integer read FWidth write FWidth;
+    property Height: Integer read FHeight write FHeight;
+    property Handle: PtrUInt read FHandle write FHandle;
+  end;
 
   TPicture = class(TObject)
   private
@@ -124,12 +139,15 @@ type
     property Icon: TIcon read FIcon write FIcon;
   end;
 
+  // Pixel formats (minimal subset for tests) (moved to top const)
+
   TBitmap = class(TObject)
   private
     FCanvas: TCanvas;
     FWidth: Integer;
     FHeight: Integer;
     FTransparentColor: TColor;
+    FPixelFormat: Integer;
   public
     constructor Create; virtual;
     destructor Destroy; override;
@@ -137,6 +155,8 @@ type
     property Width: Integer read FWidth write FWidth;
     property Height: Integer read FHeight write FHeight;
     property TransparentColor: TColor read FTransparentColor write FTransparentColor;
+    property PixelFormat: Integer read FPixelFormat write FPixelFormat;
+    procedure SetSize(AWidth, AHeight: Integer); virtual;
     procedure LoadFromResourceName(Instance: THandle; const AName: string); virtual;
   end;
 
@@ -258,7 +278,52 @@ begin
   // no-op
 end;
 
-{ TBitmap }
+{ TIcon }
+constructor TIcon.Create;
+begin
+  inherited Create;
+  FWidth := 0;
+  FHeight := 0;
+  FHandle := 0;
+end;
+
+destructor TIcon.Destroy;
+begin
+  inherited Destroy;
+end;
+
+procedure TIcon.Assign(Source: TObject);
+begin
+  if Source = nil then Exit;
+  if Source is TIcon then
+  begin
+    FWidth := TIcon(Source).Width;
+    FHeight := TIcon(Source).Height;
+    FHandle := TIcon(Source).Handle;
+    Exit;
+  end;
+  if Source is TBitmap then
+  begin
+    FWidth := TBitmap(Source).Width;
+    FHeight := TBitmap(Source).Height;
+    FHandle := 0;
+    Exit;
+  end;
+  if Source is TPicture then
+  begin
+    if TPicture(Source).Icon <> nil then
+      Assign(TPicture(Source).Icon);
+    Exit;
+  end;
+end;
+
+procedure TIcon.SetSize(AWidth, AHeight: Integer);
+begin
+  FWidth := AWidth;
+  FHeight := AHeight;
+end;
+
+{ TPicture }
 constructor TPicture.Create;
 begin
   inherited Create;
@@ -284,6 +349,12 @@ destructor TBitmap.Destroy;
 begin
   FCanvas.Free;
   inherited Destroy;
+end;
+
+procedure TBitmap.SetSize(AWidth, AHeight: Integer);
+begin
+  FWidth := AWidth;
+  FHeight := AHeight;
 end;
 
 procedure TBitmap.LoadFromResourceName(Instance: THandle; const AName: string);
