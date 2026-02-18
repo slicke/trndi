@@ -8,6 +8,8 @@ uses
   trndi.native.win,
 {$ELSEIF DEFINED(X_LINUXBSD)}
   trndi.native.linux,
+{$ELSEIF DEFINED(X_HAIKU)}
+  trndi.native.haiku,  
 {$ELSE}
   {$define TRNDI_NATIVE_MOCK_BASE}
   fphttpclient,
@@ -21,6 +23,8 @@ type
     TTrndiNativeWindows
     {$elseif defined(X_LINUXBSD)}
     TTrndiNativeLinux
+    {$elseif defined(X_HAIKU)}
+    TTrndiNativeHaiku    
     {$else}
     TTrndiNativeBase
     {$endif}
