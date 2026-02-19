@@ -42,7 +42,7 @@ TTrndiNativeBSD = class(TTrndiNativeLinux)
 implementation
 
 uses
-  Classes, SysUtils, Process, Dialogs;
+  Classes, SysUtils, Process, Dialogs, trndi.log;
 
 {------------------------------------------------------------------------------
   BSD: TTS fallback + small helpers.
@@ -99,9 +99,56 @@ end;
 
 procedure TTrndiNativeBSD.Speak(const Text: string);
 var
-  CmdPath: string;
-  Rate: Integer;
+  CmdPath, VoiceType, LangPrefix, EspeakVoice: string;
+  Rate, EspeakWPM: Integer;
   Proc: TProcess;
+
+  function GetLangPrefix: string;
+  var
+    L: string;
+    P: Integer;
+  begin
+    L := GetEnvironmentVariable('LC_ALL');
+    if L = '' then
+      L := GetEnvironmentVariable('LANGUAGE');
+    if L = '' then
+      L := GetEnvironmentVariable('LANG');
+    if L = '' then
+      Exit('en');
+    P := Pos(':', L);
+    if P > 0 then
+      L := Copy(L, 1, P - 1);
+    P := Pos('.', L);
+    if P > 0 then
+      L := Copy(L, 1, P - 1);
+    P := Pos('-', L);
+    if P > 0 then
+      L := Copy(L, 1, P - 1);
+    Result := LowerCase(L);
+  end;
+
+  function MapEspeakVoice(const VName, LPrefix: string): string;
+  begin
+    if (VName = '') or (VName = 'Default') then
+      Exit('');
+    if LPrefix = '' then
+      LPrefix := 'en';
+    if VName = 'Male 1' then
+      Result := LPrefix + '+m1'
+    else if VName = 'Male 2' then
+      Result := LPrefix + '+m2'
+    else if VName = 'Male 3' then
+      Result := LPrefix + '+m3'
+    else if VName = 'Female 1' then
+      Result := LPrefix + '+f1'
+    else if VName = 'Female 2' then
+      Result := LPrefix + '+f2'
+    else if VName = 'Female 3' then
+      Result := LPrefix + '+f3'
+    else
+      Result := ''; // unknown mapping -> let espeak default
+  end;
+
 begin
   // If spd-say is available, reuse Linux implementation which already
   // handles language/voice/rate settings.
@@ -111,20 +158,38 @@ begin
     Exit;
   end;
 
-  // Try espeak fallback
+  VoiceType := GetSetting('tts.voice.name', '');
+  Rate := GetIntSetting('tts.rate', 0);
+
+  // Try espeak fallback with voice/rate mapping
   CmdPath := ExecInPath('espeak');
   if CmdPath <> '' then
   begin
-    Rate := GetIntSetting('tts.rate', 0);
+    LangPrefix := GetLangPrefix;
+    EspeakVoice := MapEspeakVoice(VoiceType, LangPrefix);
+
+    // Map UI rate (-100..100) to espeak WPM (default ~175)
+    EspeakWPM := Round(175 * (1 + Rate / 100.0));
+    if EspeakWPM < 50 then
+      EspeakWPM := 50;
+    if EspeakWPM > 450 then
+      EspeakWPM := 450;
+
     Proc := TProcess.Create(nil);
     try
       Proc.Executable := CmdPath;
-      // espeak: -s speed (words per minute)
+      if EspeakVoice <> '' then
+      begin
+        Proc.Parameters.Add('-v');
+        Proc.Parameters.Add(EspeakVoice);
+      end;
       if Rate <> 0 then
-        Proc.Parameters.Add('-s' + IntToStr(Rate));
+        Proc.Parameters.Add('-s' + IntToStr(EspeakWPM));
       Proc.Parameters.Add(Text);
       Proc.Options := [];
       Proc.Execute; // run asynchronously
+
+      TrndiDLog(Format('TTS: espeak fallback used (voice=%s rate=%d)', [EspeakVoice, EspeakWPM]));
     except
       on E: Exception do
       begin
@@ -138,7 +203,7 @@ begin
     Exit;
   end;
 
-  // Try flite fallback
+  // Try flite fallback (no voice/rate mapping currently)
   CmdPath := ExecInPath('flite');
   if CmdPath <> '' then
   begin
@@ -149,6 +214,8 @@ begin
       Proc.Parameters.Add(Text);
       Proc.Options := [];
       Proc.Execute;
+
+      TrndiDLog('TTS: flite fallback used');
     except
       on E: Exception do
       begin
