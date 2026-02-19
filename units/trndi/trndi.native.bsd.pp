@@ -99,7 +99,7 @@ end;
 
 procedure TTrndiNativeBSD.Speak(const Text: string);
 var
-  CmdPath, VoiceType, LangPrefix, EspeakVoice: string;
+  CmdPath, VoiceType, EspeakVoice: string;
   Rate, EspeakWPM: Integer;
   Proc: TProcess;
 
@@ -127,10 +127,13 @@ var
     Result := LowerCase(L);
   end;
 
-  function MapEspeakVoice(const VName, LPrefix: string): string;
+  function MapEspeakVoice(const VName: string): string;
+  var
+    LPrefix: string;
   begin
     if (VName = '') or (VName = 'Default') then
       Exit('');
+    LPrefix := GetLangPrefix;
     if LPrefix = '' then
       LPrefix := 'en';
     if VName = 'Male 1' then
@@ -165,8 +168,7 @@ begin
   CmdPath := ExecInPath('espeak');
   if CmdPath <> '' then
   begin
-    LangPrefix := GetLangPrefix;
-    EspeakVoice := MapEspeakVoice(VoiceType, LangPrefix);
+    EspeakVoice := MapEspeakVoice(VoiceType);
 
     // Map UI rate (-100..100) to espeak WPM (default ~175)
     EspeakWPM := Round(175 * (1 + Rate / 100.0));
