@@ -236,6 +236,7 @@ object fBG: TfBG
     Width = 8
     Align = alLeft
     BevelOuter = bvNone
+    ParentBackground = False
     TabOrder = 7
     OnPaint = pnNextProgressPaint
   end

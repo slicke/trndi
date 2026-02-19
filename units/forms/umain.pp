@@ -2207,7 +2207,7 @@ begin
     pnNextProgress.Width := Max(6, ClientWidth div 40);
     pnNextProgress.Left := 0;
     pnNextProgress.BringToFront;
-    pnNextProgress.Visible := native.GetBoolSetting('main.next_progress', true);
+    pnNextProgress.Visible := native.GetBoolSetting('main.next_progress', false);
   end;
   
   // Check for updates on startup (non-blocking)
@@ -3058,7 +3058,7 @@ procedure LoadUserSettings(f: TfConf);
       cbPaintHiLoRange.Checked :=
         native.GetBoolSetting('ux.paint_range_cgmrange', false);
       edCommaSep.Text := GetCharSetting('locale.separator', '.');
-      cbProgress.Checked := GetBoolSetting('main.next_progress', true);
+      cbProgress.Checked := GetBoolSetting('main.next_progress', false);
       edTray.Value := GetIntSetting('ux.badge_size', 0);
 
       if CheckSetting('unit', 'mmol', 'mmol') then
@@ -4482,9 +4482,13 @@ begin
   // Konfigurera tidsvisning
   lAgo.Width := ClientWidth div 2;
   lAgo.Height := ClientHeight div 9;
-  lAgo.Left := 5;
+  // Place the label over the left progress bar and make it transparent so the
+  // progress shows beneath the text.
+  lAgo.Left := 0;
   lAgo.Top := 1 + IfThen(pnOffRange.Visible, pnOffRange.Height, 3);
+  lAgo.Transparent := True;
   ScaleLbl(lAgo, taLeftJustify);
+  lAgo.BringToFront;
 
   // Konfigurera trendpil
 
