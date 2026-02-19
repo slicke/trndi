@@ -1180,22 +1180,35 @@ var
   PathVar, Dir: string;
   Paths: TStringList;
   i: integer;
+  ExtraDirs: array[0..3] of string = ('/usr/local/bin', '/usr/pkg/bin', '/usr/sbin', '/sbin');
+  j: Integer;
 begin
   Result := '';
   PathVar := GetEnvironmentVariable('PATH');
-  Paths := TStringList.Create;
-  try
-    Paths.Delimiter := ':';
-    Paths.StrictDelimiter := true;
-    Paths.DelimitedText := PathVar;
-    for i := 0 to Paths.Count - 1 do
-    begin
-      Dir := IncludeTrailingPathDelimiter(Paths[i]);
-      if FileExists(Dir + FileName) then
-        Exit(Dir + FileName);
+  if PathVar <> '' then
+  begin
+    Paths := TStringList.Create;
+    try
+      Paths.Delimiter := ':';
+      Paths.StrictDelimiter := true;
+      Paths.DelimitedText := PathVar;
+      for i := 0 to Paths.Count - 1 do
+      begin
+        Dir := IncludeTrailingPathDelimiter(Paths[i]);
+        if FileExists(Dir + FileName) then
+          Exit(Dir + FileName);
+      end;
+    finally
+      Paths.Free;
     end;
-  finally
-    Paths.Free;
+  end;
+
+  // Fallback to common system/bin locations (useful on BSDs and restricted PATHs)
+  for j := Low(ExtraDirs) to High(ExtraDirs) do
+  begin
+    Dir := IncludeTrailingPathDelimiter(ExtraDirs[j]);
+    if FileExists(Dir + FileName) then
+      Exit(Dir + FileName);
   end;
 end;
 
