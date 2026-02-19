@@ -2207,7 +2207,7 @@ begin
     pnNextProgress.Width := Max(6, ClientWidth div 40);
     pnNextProgress.Left := 0;
     pnNextProgress.BringToFront;
-    pnNextProgress.Visible := true;
+    pnNextProgress.Visible := native.GetBoolSetting('main.next_progress', true);
   end;
   
   // Check for updates on startup (non-blocking)
@@ -3058,6 +3058,7 @@ procedure LoadUserSettings(f: TfConf);
       cbPaintHiLoRange.Checked :=
         native.GetBoolSetting('ux.paint_range_cgmrange', false);
       edCommaSep.Text := GetCharSetting('locale.separator', '.');
+      cbProgress.Checked := GetBoolSetting('main.next_progress', true);
       edTray.Value := GetIntSetting('ux.badge_size', 0);
 
       if CheckSetting('unit', 'mmol', 'mmol') then
@@ -3466,6 +3467,7 @@ procedure SaveUserSettings(f: TfConf);
       native.SetSetting('ux.paint_range', cbPaintHiLo.Checked);
       native.SetSetting('ux.paint_range_lines', cbPaintLines.Checked);
       native.SetSetting('ux.paint_range_cgmrange', cbPaintHiLoRange.Checked);
+      native.SetSetting('main.next_progress', cbProgress.Checked);
       native.SetSetting('locale.separator', edCommaSep.Text);
       native.SetSetting('ux.badge_size', edTray.Value.ToString);
 

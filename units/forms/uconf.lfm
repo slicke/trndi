@@ -18,12 +18,12 @@ object fConf: TfConf
     Height = 518
     Top = 11
     Width = 645
-    ActivePage = tsCustom
+    ActivePage = tsDisplay
     Align = alClient
     BorderSpacing.Left = 10
     BorderSpacing.Right = 10
     BorderSpacing.Around = 5
-    TabIndex = 5
+    TabIndex = 3
     TabOrder = 0
     OnChange = pcMainChange
     object tsCommon: TTabSheet
@@ -11056,12 +11056,12 @@ object fConf: TfConf
       OnShow = tsDisplayShow
       object pnDisplay: TPanel
         Left = 0
-        Height = 256
+        Height = 231
         Top = 0
         Width = 639
         Align = alClient
         BevelOuter = bvNone
-        ClientHeight = 256
+        ClientHeight = 231
         ClientWidth = 639
         ParentBackground = False
         TabOrder = 0
@@ -11151,23 +11151,23 @@ object fConf: TfConf
       end
       object gbDisplayPrefs: TGroupBox
         Left = 0
-        Height = 106
-        Top = 377
+        Height = 131
+        Top = 352
         Width = 639
         Align = alBottom
         Caption = 'Display Preferences'
-        ClientHeight = 79
+        ClientHeight = 104
         ClientWidth = 635
         ParentBackground = False
         TabOrder = 1
         object pTray: TPanel
           Left = 465
-          Height = 79
+          Height = 104
           Top = 0
           Width = 170
           Align = alRight
           BevelOuter = bvNone
-          ClientHeight = 79
+          ClientHeight = 104
           ClientWidth = 170
           ParentBackground = False
           TabOrder = 0
@@ -11194,12 +11194,12 @@ object fConf: TfConf
         end
         object pDecimal: TPanel
           Left = 0
-          Height = 79
+          Height = 104
           Top = 0
           Width = 170
           Align = alLeft
           BevelOuter = bvNone
-          ClientHeight = 79
+          ClientHeight = 104
           ClientWidth = 170
           ParentBackground = False
           TabOrder = 1
@@ -11226,6 +11226,14 @@ object fConf: TfConf
             Caption = 'Decimal separator:'
           end
         end
+        object cbProgress: TCheckBox
+          Left = 8
+          Height = 20
+          Top = 64
+          Width = 257
+          Caption = 'Display progress to next update on the left'
+          TabOrder = 2
+        end
       end
       object Label8: TLabel
         Left = 8
@@ -11246,7 +11254,7 @@ object fConf: TfConf
       object cbFonts: TGroupBox
         Left = 0
         Height = 121
-        Top = 256
+        Top = 231
         Width = 639
         Align = alBottom
         Caption = 'Trend Dots'

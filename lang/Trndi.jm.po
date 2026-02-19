@@ -549,6 +549,10 @@ msgstr "Liten"
 msgid "Privacy Mode (Hide glucose value)"
 msgstr "Privat lege (dôlj glukosverde)"
 
+#: tfconf.cbprogress.caption
+msgid "Display progress to next update on the left"
+msgstr ""
+
 #: tfconf.cbshowmean.caption
 msgid "Show mean blood sugar reading next to TIR"
 msgstr ""

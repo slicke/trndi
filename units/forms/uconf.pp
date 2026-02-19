@@ -115,6 +115,7 @@ TfConf = class(TForm)
   cbCustRange: TCheckBox;
   cbAlertMissing: TCheckBox;
   cbLang: TComboBox;
+  cbProgress: TCheckBox;
   cbTTS: TCheckBox;
   cbTTSVoice: TComboBox;
   cgNotifications: TCheckGroup;
