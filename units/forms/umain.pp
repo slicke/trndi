@@ -3808,23 +3808,12 @@ var
   fillR: TRect;
   fillCol, borderCol: TColor;
   lastDt: TDateTime;
+  cornerRadius: integer;
 begin
   pnl := Sender as TPanel;
 
-  // Background
-  with pnl.Canvas do
-  begin
-    Brush.Color := pnl.Color;
-    Brush.Style := bsSolid;
-    FillRect(pnl.ClientRect);
-    // Thin border to separate from main UI
-    Pen.Color := LightenColor(fBG.Color, 0.25);
-    Pen.Width := 1;
-    Brush.Style := bsClear;
-    Rectangle(0, 0, pnl.Width, pnl.Height);
-  end;
-
-  // No readings -> draw nothing (progress unknown)
+  // Transparent background: let the parent (fBG) show through. If there are
+  // no readings, draw nothing so the panel remains visually transparent.
   if (bgs = nil) or (Length(bgs) = 0) then
     Exit;
 
@@ -3835,29 +3824,41 @@ begin
     elapsedMs := 0;
   frac := Min(1.0, elapsedMs / BG_REFRESH); // BG_REFRESH in milliseconds
 
-  // Gradient color: green (fresh) -> red (stale)
-  fillCol := BlendColors(clLime, clRed, 1 - frac);
+  // Gradient color: fresh (blue) -> red (stale)
+  fillCol := BlendColors(clBlue, clRed, 1 - frac);
   fillCol := LightenColor(fillCol, 0.2);
   borderCol := GetTextColorForBackground(fBG.Color, 0.6, 0.4);
 
-  // Paint filled area from bottom -> up according to elapsed fraction
-  fillR.Left := 2;
+  // Paint only the filled progress area (panel background remains transparent)
+  fillR.Left := 0;
   fillR.Right := pnl.Width - 2;
   fillR.Bottom := pnl.Height - 2;
   fillR.Top := pnl.Height - 2 - Round(frac * (pnl.Height - 4));
 
-  with pnl.Canvas do
+  // Round the right corners of the filled area while keeping the left side square
   begin
-    Brush.Color := fillCol;
-    Brush.Style := bsSolid;
-    Pen.Style := psClear;
-    FillRect(fillR);
+    cornerRadius := Min(6, pnl.Width div 2); // small, proportional radius
+    cornerRadius := Min(cornerRadius, (fillR.Bottom - fillR.Top) div 2);
 
-    // Draw a thin indicator line showing the progression boundary
-    Pen.Color := borderCol;
-    Pen.Width := 1;
-    MoveTo(0, fillR.Top);
-    LineTo(pnl.Width, fillR.Top);
+    with pnl.Canvas do
+    begin
+      // Draw rounded-filled area
+      Brush.Style := bsSolid;
+      Brush.Color := fillCol;
+      Pen.Style := psClear;
+      RoundRect(fillR.Left, fillR.Top, fillR.Right, fillR.Bottom, cornerRadius, cornerRadius);
+
+      // Overpaint left side to square off left corners (undo rounding there)
+      if cornerRadius > 0 then
+        FillRect(Rect(fillR.Left, fillR.Top, fillR.Left + cornerRadius, fillR.Bottom));
+
+      // Thin indicator line for contrast (across full width)
+      Pen.Style := psSolid;
+      Pen.Color := borderCol;
+      Pen.Width := 1;
+      MoveTo(0, fillR.Top);
+      LineTo(pnl.Width, fillR.Top);
+    end;
   end;
 end;
 
