@@ -47,7 +47,7 @@ uses
 {------------------------------------------------------------------------------
   BSD: TTS fallback + small helpers.
   - Prefer the Linux/spd-say implementation (inherited) when available.
-  - Fallback order: spd-say (inherited) → espeak → flite.
+  - Fallback order: spd-say (inherited) → espeak-ng → espeak → flite.
   - SpeakAvailable/SpeakSoftwareName reflect available fallback engines.
 ------------------------------------------------------------------------------}
 
@@ -94,13 +94,15 @@ begin
   // Prefer Linux implementation (spd-say). If not present, check common BSD TTS.
   if inherited SpeakAvailable then
     Exit(True);
-  Result := (ExecInPath('espeak') <> '') or (ExecInPath('flite') <> '');
+  Result := (ExecInPath('espeak-ng') <> '') or (ExecInPath('espeak') <> '') or (ExecInPath('flite') <> '');
 end;
 
 class function TTrndiNativeBSD.SpeakSoftwareName: string;
 begin
   if inherited SpeakAvailable then
     Exit(inherited SpeakSoftwareName);
+  if ExecInPath('espeak-ng') <> '' then
+    Exit('espeak-ng');
   if ExecInPath('espeak') <> '' then
     Exit('espeak');
   if ExecInPath('flite') <> '' then
@@ -110,7 +112,7 @@ end;
 
 procedure TTrndiNativeBSD.Speak(const Text: string);
 var
-  CmdPath, VoiceType, EspeakVoice: string;
+  CmdPath, VoiceType, EspeakVoice, EngineName: string;
   Rate, EspeakWPM: Integer;
   Proc: TProcess;
 
@@ -175,8 +177,14 @@ begin
   VoiceType := GetSetting('tts.voice.name', '');
   Rate := GetIntSetting('tts.rate', 0);
 
-  // Try espeak fallback with voice/rate mapping
-  CmdPath := ExecInPath('espeak');
+  // Try espeak-ng/espeak fallback with voice/rate mapping
+  CmdPath := ExecInPath('espeak-ng');
+  EngineName := 'espeak-ng';
+  if CmdPath = '' then
+  begin
+    CmdPath := ExecInPath('espeak');
+    EngineName := 'espeak';
+  end;
   if CmdPath <> '' then
   begin
     EspeakVoice := MapEspeakVoice(VoiceType);
@@ -202,7 +210,7 @@ begin
       Proc.Options := [];
       Proc.Execute; // run asynchronously
 
-      TrndiDLog(Format('TTS: espeak fallback used (voice=%s rate=%d)', [EspeakVoice, EspeakWPM]));
+      TrndiDLog(Format('TTS: %s fallback used (voice=%s rate=%d)', [EngineName, EspeakVoice, EspeakWPM]));
     except
       on E: Exception do
       begin
@@ -245,7 +253,7 @@ begin
   // No engine available — show a single error message to the user.
   if not ttsErrorShown then
   begin
-    ShowMessage('Error: no TTS engine available. Install speech-dispatcher, espeak or flite.');
+    ShowMessage('Error: no TTS engine available. Install speech-dispatcher, espeak/espeak-ng or flite.');
     ttsErrorShown := true;
   end;
 end;
