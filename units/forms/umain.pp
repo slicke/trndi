@@ -3851,13 +3851,6 @@ begin
       // Overpaint left side to square off left corners (undo rounding there)
       if cornerRadius > 0 then
         FillRect(Rect(fillR.Left, fillR.Top, fillR.Left + cornerRadius, fillR.Bottom));
-
-      // Thin indicator line for contrast (across full width)
-      Pen.Style := psSolid;
-      Pen.Color := borderCol;
-      Pen.Width := 1;
-      MoveTo(0, fillR.Top);
-      LineTo(pnl.Width, fillR.Top);
     end;
   end;
 end;
