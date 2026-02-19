@@ -57,24 +57,35 @@ var
   Paths: TStringList;
   i: Integer;
   Dir: string;
+  ExtraDirs: array[0..3] of string = ('/usr/local/bin', '/usr/pkg/bin', '/usr/sbin', '/sbin');
+  j: Integer;
 begin
   Result := '';
   PathVar := GetEnvironmentVariable('PATH');
-  if PathVar = '' then
-    Exit;
-  Paths := TStringList.Create;
-  try
-    Paths.Delimiter := ':';
-    Paths.StrictDelimiter := True;
-    Paths.DelimitedText := PathVar;
-    for i := 0 to Paths.Count - 1 do
-    begin
-      Dir := IncludeTrailingPathDelimiter(Paths[i]);
-      if FileExists(Dir + FileName) then
-        Exit(Dir + FileName);
+  if PathVar <> '' then
+  begin
+    Paths := TStringList.Create;
+    try
+      Paths.Delimiter := ':';
+      Paths.StrictDelimiter := True;
+      Paths.DelimitedText := PathVar;
+      for i := 0 to Paths.Count - 1 do
+      begin
+        Dir := IncludeTrailingPathDelimiter(Paths[i]);
+        if FileExists(Dir + FileName) then
+          Exit(Dir + FileName);
+      end;
+    finally
+      Paths.Free;
     end;
-  finally
-    Paths.Free;
+  end;
+
+  // Check common extra locations (FreeBSD/NetBSD/pkg convention)
+  for j := Low(ExtraDirs) to High(ExtraDirs) do
+  begin
+    Dir := IncludeTrailingPathDelimiter(ExtraDirs[j]);
+    if FileExists(Dir + FileName) then
+      Exit(Dir + FileName);
   end;
 end;
 
@@ -244,11 +255,31 @@ end;
 ------------------------------------------------------------------------------}
 class function TTrndiNativeBSD.isNotificationSystemAvailable: boolean;
 begin
+  // If kdialog exists and a display is available, consider notifications available
+  if (ExecInPath('kdialog') <> '') and
+    ((GetEnvironmentVariable('DISPLAY') <> '') or (GetEnvironmentVariable('WAYLAND_DISPLAY') <> '')) then
+    Exit(True);
+
   Result := inherited isNotificationSystemAvailable;
 end;
 
 class function TTrndiNativeBSD.getNotificationSystem: string;
+var
+  d: string;
 begin
+  // Prefer kdialog on KDE-like sessions when available
+  if ExecInPath('kdialog') <> '' then
+  begin
+    d := GetEnvironmentVariable('XDG_CURRENT_DESKTOP');
+    if d = '' then
+      d := GetEnvironmentVariable('DESKTOP_SESSION');
+    if Pos('KDE', UpperCase(d)) > 0 then
+    begin
+      TrndiDLog('Notification system: using kdialog on BSD');
+      Exit('kdialog');
+    end;
+  end;
+
   Result := inherited getNotificationSystem;
 end;
 
