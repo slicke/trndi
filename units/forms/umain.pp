@@ -199,6 +199,7 @@ TfBG = class(TForm)
   miPref: TMenuItem;
   miFloatOn: TMenuItem;
   pnOffReading: TPanel;
+  pnNextProgress: TPanel;
   pnWarning: TPanel;
   pnMultiUser: TPanel;
   pnOffRangeBar: TPanel;
@@ -295,6 +296,7 @@ TfBG = class(TForm)
   procedure pmSettingsClose({%H-}Sender: TObject);
   procedure pnWarningClick({%H-}Sender: TObject);
   procedure pnWarningPaint({%H-}Sender: TObject);
+  procedure pnNextProgressPaint({%H-}Sender: TObject);
   procedure speakReading;
   procedure FormMouseLeave({%H-}Sender: TObject);
   procedure FormMouseMove(Sender: TObject;{%H-}Shift: TShiftState; X, Y: integer);
@@ -2181,6 +2183,14 @@ begin
 
     // Apply alpha control only - rounded corners are handled by pnWarningPaint
     ApplyAlphaControl(pnWarning, 235);
+
+    // Keep the thin left-side progress bar sized with the form
+    if Assigned(pnNextProgress) then
+    begin
+      pnNextProgress.Height := ClientHeight;
+      pnNextProgress.Width := Max(6, ClientWidth div 40);
+      pnNextProgress.Left := 0;
+    end;
   end;
 end;
 
@@ -2189,6 +2199,16 @@ begin
   placeForm;
   placed := true;
   lVal.font.Quality := fqCleartype;
+
+  // Ensure the next-reading progress panel is correctly positioned
+  if Assigned(pnNextProgress) then
+  begin
+    pnNextProgress.Height := ClientHeight;
+    pnNextProgress.Width := Max(6, ClientWidth div 40);
+    pnNextProgress.Left := 0;
+    pnNextProgress.BringToFront;
+    pnNextProgress.Visible := true;
+  end;
   
   // Check for updates on startup (non-blocking)
   CheckForUpdates;
@@ -3777,6 +3797,68 @@ begin
   end;
 end;
 
+// Paint handler for the left-side "next reading" progress indicator
+procedure TfBG.pnNextProgressPaint(Sender: TObject);
+var
+  pnl: TPanel;
+  elapsedMs: int64;
+  frac: double;
+  fillR: TRect;
+  fillCol, borderCol: TColor;
+  lastDt: TDateTime;
+begin
+  pnl := Sender as TPanel;
+
+  // Background
+  with pnl.Canvas do
+  begin
+    Brush.Color := pnl.Color;
+    Brush.Style := bsSolid;
+    FillRect(pnl.ClientRect);
+    // Thin border to separate from main UI
+    Pen.Color := LightenColor(fBG.Color, 0.25);
+    Pen.Width := 1;
+    Brush.Style := bsClear;
+    Rectangle(0, 0, pnl.Width, pnl.Height);
+  end;
+
+  // No readings -> draw nothing (progress unknown)
+  if (bgs = nil) or (Length(bgs) = 0) then
+    Exit;
+
+  // Compute fraction of interval elapsed since last reading
+  lastDt := lastReading.date;
+  elapsedMs := MilliSecondsBetween(Now, lastDt);
+  if elapsedMs < 0 then
+    elapsedMs := 0;
+  frac := Min(1.0, elapsedMs / BG_REFRESH); // BG_REFRESH in milliseconds
+
+  // Gradient color: green (fresh) -> red (stale)
+  fillCol := BlendColors(clLime, clRed, 1 - frac);
+  fillCol := LightenColor(fillCol, 0.2);
+  borderCol := GetTextColorForBackground(fBG.Color, 0.6, 0.4);
+
+  // Paint filled area from bottom -> up according to elapsed fraction
+  fillR.Left := 2;
+  fillR.Right := pnl.Width - 2;
+  fillR.Bottom := pnl.Height - 2;
+  fillR.Top := pnl.Height - 2 - Round(frac * (pnl.Height - 4));
+
+  with pnl.Canvas do
+  begin
+    Brush.Color := fillCol;
+    Brush.Style := bsSolid;
+    Pen.Style := psClear;
+    FillRect(fillR);
+
+    // Draw a thin indicator line showing the progression boundary
+    Pen.Color := borderCol;
+    Pen.Width := 1;
+    MoveTo(0, fillR.Top);
+    LineTo(pnl.Width, fillR.Top);
+  end;
+end;
+
 procedure TfBG.pmSettingsMeasureItem(Sender: TObject; ACanvas: TCanvas;
 var AWidth, AHeight: integer);
 const
@@ -4122,6 +4204,10 @@ begin
   except
     lAgo.Caption := '🕑 ' + RS_COMPUTE_FAILED_AGO;
   end;
+
+  // Repaint the left-side "next reading" progress indicator (if present)
+  if Assigned(pnNextProgress) then
+    pnNextProgress.Repaint;
 end;
 
 procedure TfBG.tClockTimer(Sender: TObject);
@@ -5508,6 +5594,12 @@ begin
   // Configure other UI elements
   pnOffReading.Height := ClientHeight;
   pnOffReading.ClientWidth := ClientWidth div 35;
+
+  if Assigned(pnNextProgress) then
+  begin
+    pnNextProgress.Height := ClientHeight;
+    pnNextProgress.Width := Max(6, ClientWidth div 40);
+  end;
 
   if tryLastReading(bg) then
   begin

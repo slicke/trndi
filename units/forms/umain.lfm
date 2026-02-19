@@ -229,6 +229,19 @@ object fBG: TfBG
       Caption = '0,?'
     end
   end
+  object pnNextProgress: TPanel
+    Left = 0
+    Height = 194
+    Top = 0
+    Width = 8
+    BevelOuter = bvNone
+    Color = clBlack
+    ParentBackground = False
+    ParentColor = False
+    TabOrder = 50
+    Visible = True
+    OnPaint = pnNextProgressPaint
+  end
   object bSettings: TButton
     Left = 8
     Height = 39
