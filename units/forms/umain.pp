@@ -567,7 +567,7 @@ private
       consistent visual sizes across different screen resolutions.
    }
   procedure ScaleLbl(ALabel: TLabel; customAl: TAlignment = taCenter;
-    customTl: TTextLayout = tlCenter);
+    customTl: TTextLayout = tlCenter; allowCustom: boolean = false);
 
     // Performance optimization methods
   {** Compute a simple hash of an array of readings used for change detection
@@ -2900,7 +2900,7 @@ begin
   // Ensure main labels are scaled to their new fonts immediately
   ScaleLbl(lVal);
   ScaleLbl(lArrow);
-  ScaleLbl(lAgo, taLeftJustify);
+  ScaleLbl(lAgo);
   if Assigned(lPredict) and lPredict.Visible then
     ScaleLbl(lPredict, taRightJustify, tlBottom);
 
@@ -4470,7 +4470,7 @@ begin
   lDiff.Width := ClientWidth;
   lDiff.Height := (ClientHeight div 9) - 10;
   lDiff.Top := ClientHeight - lDiff.Height + 1;
-  ScaleLbl(lDiff);
+  ScaleLbl(lDiff, taCenter, tlCenter, true);
 
   // Konfigurera tidsvisning
   lAgo.Width := ClientWidth div 2;
@@ -4596,12 +4596,14 @@ begin
 end;
 
 procedure TfBG.ScaleLbl(ALabel: TLabel; customAl: TAlignment = taCenter;
-customTl: TTextLayout = tlCenter);
+customTl: TTextLayout = tlCenter; allowCustom: boolean = false);
 var
-  Low, High, Mid: integer;
+  Low, High, Mid, i, pW, pH: integer;
   MaxWidth, MaxHeight: integer;
   TextWidth, TextHeight: integer;
   OptimalSize: integer;
+  scaleFactor: single; // custom scale multiplier from settings
+  oldW, oldH: integer;
 begin
   if not ALabel.Visible then
     ALabel.Visible := true;
@@ -4616,6 +4618,54 @@ begin
     ALabel.Height := 250;
   end;
 
+  // apply custom component scaling if requested
+  if allowCustom then
+  begin
+    scaleFactor := native.GetFloatSetting('ux.labels.' + ALabel.Name + '.scale', 1.75);
+    if scaleFactor <= 0 then
+      scaleFactor := 1;
+    if scaleFactor <> 1 then
+    begin
+      // grow/shrink around the label's centre so text remains visible
+      oldW := ALabel.Width;
+      oldH := ALabel.Height;
+      ALabel.Width  := round(oldW * scaleFactor);
+      ALabel.Height := round(oldH * scaleFactor);
+      // reposition to compensate
+      ALabel.Left := ALabel.Left - (ALabel.Width - oldW) div 2;
+      ALabel.Top  := ALabel.Top  - (ALabel.Height - oldH) div 2;
+      // ensure the scaled control stays inside its parent and doesn't
+      // overflow; if it would overflow horizontally, centre it instead of
+      // clamping to 0 (so centred text remains visible).
+      if Assigned(ALabel.Parent) then
+      begin
+        pW := ALabel.Parent.ClientWidth;
+        pH := ALabel.Parent.ClientHeight;
+
+        // cap dimensions to parent
+        if ALabel.Width > pW then
+          ALabel.Width := pW;
+        if ALabel.Height > pH then
+          ALabel.Height := pH;
+
+        // horizontal positioning
+        if ALabel.Left < 0 then
+          ALabel.Left := 0;
+        if ALabel.Left + ALabel.Width > pW then
+        begin
+          // overflow; centre horizontally
+          ALabel.Left := Max(0, (pW - ALabel.Width) div 2);
+        end;
+
+        // vertical positioning; top clamp already working
+        if ALabel.Top < 0 then
+          ALabel.Top := 0;
+        if ALabel.Top + ALabel.Height > pH then
+          ALabel.Top := pH - ALabel.Height;
+      end;
+    end;
+  end;
+
   // Format
   ALabel.AutoSize := false;
   ALabel.WordWrap := false;
@@ -4626,11 +4676,11 @@ begin
   if ALabel.Font.Color = ALabel.Color then
     ALabel.Font.Color := clBlack;
 
-  // Max size
+  // Max size available for text
   MaxWidth := ALabel.Width - 4; // Add padding
   MaxHeight := ALabel.Height - 4;
 
-  // Find best font size
+  // Binary search to pick the largest font that fits
   Low := 1;
   High := 150;
   OptimalSize := 1;
@@ -4654,6 +4704,15 @@ begin
 
   // Set best font size
   ALabel.Font.Size := OptimalSize;
+  TextHeight := ALabel.Canvas.TextHeight(ALabel.Caption);
+  while ((TextWidth > MaxWidth) or (TextHeight > MaxHeight)) and (ALabel.Font.Size > 1) do
+  begin
+    i := ALabel.Font.Size;
+    Dec(i);
+    ALabel.FOnt.size := i;
+    TextWidth := ALabel.Canvas.TextWidth(ALabel.Caption);
+    TextHeight := ALabel.Canvas.TextHeight(ALabel.Caption);
+  end;
 
   // Se till att inställningarna används
   ALabel.Refresh;

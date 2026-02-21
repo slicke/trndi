@@ -161,7 +161,9 @@ RGB lighting integration that changes color of Razer peripherals (keyboards, mic
 Integration with Spotify/Deezer to play specific songs or pause playback when glucose hits certain levels.
 
 ### **ScaleLbl**
-Internal function that automatically scales label font size to fit available space using binary search algorithm.
+Internal function that automatically scales label font size to fit available space using binary search algorithm.  
+When called with `allowCustom=true` the label's **dimensions** are multiplied by a factor read from `ux.labels.<labelname>.scale` (defaults to 1). The routine then chooses the largest font that fits the new area; in effect the control itself is scaled, which automatically yields a larger (or smaller) font.  
+Large factors may also resize the component and impact layout, so use with caution.
 
 ---
 
