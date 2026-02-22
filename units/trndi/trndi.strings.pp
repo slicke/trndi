@@ -19,7 +19,7 @@ RS_RANGE_LO_UNSUPPORTED = 'Lo range not supported by API';
 
   // Error messages
 RS_SETUP = 'Setup';
-RS_NO_BACKEND = 'No readings recieved. '#10'Has your CGM synced recently? '#10'Is the remote server working?';
+RS_NO_BACKEND = 'No readings recieved.'+sLineBreak+sLineBreak+'Has your CGM synced recently? '+sLineBreak+'Is the remote server working?';
 RS_LAST_RECIEVE = 'Last reading was %s (%s)';
 RS_DAYS_AGO = '%d days ago';
 RS_LAST_RECIEVE_NO = 'There''s no last reading to show';
@@ -52,7 +52,7 @@ RS_SPEAK_GOOD = 'Good';
 RS_SPEAK_GHIGH = 'Going high';
 RS_SPEAK_GLOW = 'Going low';
 
-RS_NO_BOOT_READING = 'No fresh data is available.'#10'Trndi will attemp to fetch data until recent values are available';
+RS_NO_BOOT_READING = 'No recent data available!';
 
 RS_SERVICE_SYSINFO = '%s (%s)'#10'%s'#10'Default Separator: %s';
 RS_SERVICE_ADJUST = 'Adjust: %.2f / Scale: %.2fx';

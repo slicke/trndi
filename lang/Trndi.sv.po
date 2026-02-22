@@ -1844,21 +1844,19 @@ msgstr "Byggd utan stöd"
 
 #: trndi.strings.rs_no_backend
 msgid ""
-"No readings recieved. \n"
+"No readings recieved.\n"
+"\n"
 "Has your CGM synced recently? \n"
 "Is the remote server working?"
 msgstr ""
 "Inga avläsningar mottogs. \n"
+"\n"
 "Har din CGM synkat nyligen? \n"
 "Fungerar servern?"
 
 #: trndi.strings.rs_no_boot_reading
-msgid ""
-"No fresh data is available.\n"
-"Trndi will attemp to fetch data until recent values are available"
-msgstr ""
-"Ingen färsk data finns att tillgå\n"
-"Trndi kommer försöka hämta data tills dess nyliga värden finns"
+msgid "No recent data available!"
+msgstr "Ingen färsk data finns att tillgå!"
 
 #: trndi.strings.rs_no_internet
 msgid "Your internet connection is not working, Trndi cannot fetch readings!"
@@ -2856,4 +2854,3 @@ msgstr "Historikgraf"
 #, object-pascal-format
 msgid "Readings (%s)"
 msgstr "Avläsningar (%s)"
-

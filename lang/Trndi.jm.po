@@ -1860,8 +1860,14 @@ msgid "Built Without Support"
 msgstr "Byggd utan stôd"
 
 #: trndi.strings.rs_no_backend
+#, fuzzy
+#| msgid ""
+#| "No readings recieved. \n"
+#| "Has your CGM synced recently? \n"
+#| "Is the remote server working?"
 msgid ""
-"No readings recieved. \n"
+"No readings recieved.\n"
+"\n"
 "Has your CGM synced recently? \n"
 "Is the remote server working?"
 msgstr ""
@@ -1870,9 +1876,11 @@ msgstr ""
 "Fungerar servern?"
 
 #: trndi.strings.rs_no_boot_reading
-msgid ""
-"No fresh data is available.\n"
-"Trndi will attemp to fetch data until recent values are available"
+#, fuzzy
+#| msgid ""
+#| "No fresh data is available.\n"
+#| "Trndi will attemp to fetch data until recent values are available"
+msgid "No recent data available!"
 msgstr ""
 "Ingen färsk data finns att tillgå\n"
 "Trndi kommer försöka hämta data tills dess nyliga värden finns"

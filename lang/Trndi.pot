@@ -1740,15 +1740,14 @@ msgstr ""
 
 #: trndi.strings.rs_no_backend
 msgid ""
-"No readings recieved. \n"
+"No readings recieved.\n"
+"\n"
 "Has your CGM synced recently? \n"
 "Is the remote server working?"
 msgstr ""
 
 #: trndi.strings.rs_no_boot_reading
-msgid ""
-"No fresh data is available.\n"
-"Trndi will attemp to fetch data until recent values are available"
+msgid "No recent data available!"
 msgstr ""
 
 #: trndi.strings.rs_no_internet
