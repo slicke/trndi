@@ -5272,6 +5272,14 @@ begin
   // Complete the UI update sequence
   FinalizeUIUpdate;
 
+  // When a warning overlay is visible we periodically refresh its contents
+  // so that the "last reading" and other dynamic text stay up to date. This
+  // fixes an issue on Linux where a high/low prediction popup would display
+  // the reading that triggered the alert and never update even if a newer
+  // value arrived while the panel was still showing.
+  if pnWarning.Visible then
+    fixWarningPanel;
+
   {$ifdef TrndiExt}
   // Check if JS engine is still available before calling
   callFunc('fetchCallback',[
