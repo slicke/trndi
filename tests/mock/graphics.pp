@@ -16,6 +16,7 @@ const
   clWhite   = $00FFFFFF;
   clRed     = $000000FF;
   clFuchsia = $00FF00FF;
+  clBlue    = $00FF0000;
   clNone    = -1; // used as transparent sentinel
   clDefault = clWhite;
   clMaroon = $00008000;
@@ -160,6 +161,10 @@ type
     procedure LoadFromResourceName(Instance: THandle; const AName: string); virtual;
   end;
 
+// convenience drawing routines (unit-qualified version used by umain)
+procedure FillRect(const R: TRect); overload;
+procedure FillRect(X1, Y1, X2, Y2: Integer); overload;
+
 // color helpers
 function ColorToRGB(AColor: TColor): LongInt;
 function RGB(R, G, B: Byte): TColor;
@@ -274,6 +279,17 @@ begin
 end;
 
 procedure TCanvas.Draw(X, Y: Integer; Src: TObject);
+begin
+  // no-op
+end;
+
+// global helpers matching the ones that would normally be in Graphics
+procedure FillRect(const R: TRect);
+begin
+  // no-op
+end;
+
+procedure FillRect(X1, Y1, X2, Y2: Integer);
 begin
   // no-op
 end;

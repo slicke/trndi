@@ -40,6 +40,10 @@ type
     fsHi: TFloatSpinEdit;
     fsLoRange: TFloatSpinEdit;
     fsHiRange: TFloatSpinEdit;
+    // new spin edits added for label scaling settings that umain reads/writes
+    fsDiffScale: TFloatSpinEdit;
+    fsPredictScale: TFloatSpinEdit;
+    cbMoveDIffRight: TCheckBox;
     cbTIR: TCheckBox;
     seTir: TSpinEdit;
     cbTirIcon: TCheckBox;
@@ -58,6 +62,9 @@ type
     rbPredictShortArrowOnly: TRadioButton;
     cbPredictShortSize: TComboBox;
     cbPredictShortMinutes: TComboBox;
+    // progress/warning checkboxes used by umain
+    cbProgress: TCheckBox;
+    cbWarnLoHi: TCheckBox;
 
     // Additional UI fields used by umain
     edCommaSep: TEdit;
@@ -211,6 +218,18 @@ begin
   fsHi := TFloatSpinEdit.Create;
   fsLoRange := TFloatSpinEdit.Create;
   fsHiRange := TFloatSpinEdit.Create;
+  // create additional controls that umain expects
+  fsDiffScale := TFloatSpinEdit.Create;
+  fsPredictScale := TFloatSpinEdit.Create;
+  // initialize reasonable defaults
+  fsDiffScale.Value := 1.0;
+  fsPredictScale.Value := 1.0;
+  cbMoveDIffRight := TCheckBox.Create(nil);
+  cbProgress := TCheckBox.Create(nil);
+  cbWarnLoHi := TCheckBox.Create(nil);
+  // some defaults used by umain code
+  cbProgress.Checked := false;
+  cbWarnLoHi.Checked := false;
   cbTIR := TCheckBox.Create(nil);
   seTir := TSpinEdit.Create;
   cbTirIcon := TCheckBox.Create(nil);
@@ -380,6 +399,9 @@ begin
   edCommaSep.Free;
 
   cbPredictShortMinutes.Free;
+  // free progress/warning boxes in reverse creation order
+  cbWarnLoHi.Free;
+  cbProgress.Free;
   cbPredictShortSize.Free;
   rbPredictShortArrowOnly.Free;
   rbPredictShortShowValue.Free;
@@ -397,6 +419,9 @@ begin
   cbTirIcon.Free;
   seTir.Free;
   cbTIR.Free;
+  // free newly added spin edits before fsHiRange
+  fsPredictScale.Free;
+  fsDiffScale.Free;
   fsHiRange.Free;
   fsLoRange.Free;
   fsHi.Free;
