@@ -134,12 +134,14 @@ TfConf = class(TForm)
   cbPrivacy: TCheckBox;
   cbHContrast: TCheckBox;
   cbMediaDisable: TCheckBox;
+  cbMoveDIffRight: TCheckBox;
   fsDiffScale: TFloatSpinEdit;
   GroupBox10: TGroupBox;
   Label36: TLabel;
   Label37: TLabel;
   Label38: TLabel;
   Label39: TLabel;
+  Label40: TLabel;
   Panel21: TPanel;
   Panel22: TPanel;
   Panel23: TPanel;

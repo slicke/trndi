@@ -11370,7 +11370,7 @@ object fConf: TfConf
         Top = 144
         Width = 639
         Align = alBottom
-        Caption = 'Scaling'
+        Caption = 'Layout'
         ClientHeight = 60
         ClientWidth = 635
         TabOrder = 4
@@ -11400,6 +11400,21 @@ object fConf: TfConf
           Caption = '?'
           TabOrder = 1
           OnClick = bScaleHelpClick
+        end
+        object Label40: TLabel
+          Left = 128
+          Height = 16
+          Top = 0
+          Width = 71
+          Caption = 'Diff position:'
+        end
+        object cbMoveDIffRight: TCheckBox
+          Left = 131
+          Height = 20
+          Top = 26
+          Width = 98
+          Caption = 'Move to right'
+          TabOrder = 2
         end
       end
     end

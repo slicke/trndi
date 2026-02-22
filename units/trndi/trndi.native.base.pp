@@ -177,6 +177,8 @@ class var touchOverride: TTrndiBool;
   procedure SetFloatSetting(const keyname: string; const val: single; const global: boolean = false); overload;
     {** Store a boolean setting (serialized as a/b). }
   procedure SetBoolSetting(const keyname: string; const val: boolean; const a,b: string; const global: boolean = false);
+    {** Store an alignment setting. }
+  procedure SetAlignmentSetting(const keyname: string; val: TAlignment; const global: boolean = false);
     {** Store an array as CSV. }
   procedure SetCSVSetting(const keyname: string; const val: TStringArray; const global: boolean = false);
     {** Store a color value (TColor serialized as integer). }
@@ -204,6 +206,8 @@ class var touchOverride: TTrndiBool;
   function GetIntSetting(const keyname: string; def: integer = -1): integer;
     {** Read a single-precision float setting or @param(def). }
   function GetFloatSetting(const keyname: string; def: single = -1): single;
+    {** Read an alignment setting or @param(def). }
+  function GetAlignmentSetting(const keyname: string; def: TAlignment = taCenter): TAlignment;
     {** Read a boolean setting or @param(def). Accepts 'true'/'false'. }
   function GetBoolSetting(const keyname: string; def: boolean = false): boolean;
     {** Reload settings backend state (if any). }
@@ -3166,6 +3170,30 @@ begin
 end;
 
 {------------------------------------------------------------------------------
+  GetAlignmentSetting
+  -------------------------
+  Returns an alignment from settings if parseable, else returns `def`.
+ ------------------------------------------------------------------------------}
+function TTrndiNativeBase.GetAlignmentSetting(const keyname: string; def: TAlignment = taCenter): TAlignment;
+var
+  r: string;
+begin
+  r := GetSetting(keyname);
+
+  case r of
+   'left':
+     result := taLeftJustify;
+   'right':
+     result := taRightJustify;
+   'center':
+     result := taCenter;
+  else
+    result := def;
+  end;
+
+end;
+
+{------------------------------------------------------------------------------
   GetFloatSetting
   -------------------------
   Returns a single from settings if parseable, else returns `def`.
@@ -3386,6 +3414,23 @@ begin
     SetSetting(keyname, a, global)
   else
     SetSetting(keyname, b, global);
+end;
+
+{------------------------------------------------------------------------------
+  SetAlignmentSetting
+  -------------------------
+  Stores an alignment to platofm-specific storage.
+ ------------------------------------------------------------------------------}
+procedure TTrndiNativeBase.SetAlignmentSetting(const keyname: string; val: TAlignment; const global: boolean = false);
+begin
+  case val of
+    taLeftJustify:
+     SetSetting(keyname, 'left', global);
+    taRightJustify:
+     SetSetting(keyname, 'right', global);
+    taCenter:
+     SetSetting(keyname, 'center', global);
+  end;
 end;
 
 {------------------------------------------------------------------------------

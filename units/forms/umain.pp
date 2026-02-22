@@ -723,6 +723,7 @@ DOT_OFFSET_RANGE: integer = -15; // Fine-tune vertical alignment of threshold li
 {$endif}
 DOT_LINES: boolean = false;  // Guidelines what value is where
 DELTA_MAX: integer = 2;
+DIFF_ALIGN: TAlignment = taCenter;
 {$ifdef DEBUG}
 debug_load_text: boolean = false;
 {$endif}
@@ -2810,6 +2811,8 @@ begin
     applocale := langCode;
     SetDefaultLang(langCode, getLangPath);
   end;
+
+  DIFF_ALIGN := native.GetAlignmentSetting('ux.labels.ldiff.alignment', taCenter);
   
   // Apply font changes
   fontName := native.GetSetting('font.val', 'default');
@@ -3047,6 +3050,8 @@ procedure LoadUserSettings(f: TfConf);
       end;
 
       fsDiffScale.Value := GetFloatSetting('ux.labels.ldiff.scale', 1);
+
+      cbMoveDIffRight.Checked := GetAlignmentSetting('ux.labels.ldiff.alignment', taCenter) = taRightJustify;
 
       cbTIR.Checked := native.GetBoolSetting('range.custom', true);
       seTir.Value := native.GetIntSetting('range.time', 9999);
@@ -3401,6 +3406,11 @@ procedure SaveUserSettings(f: TfConf);
       SetSetting('font.val', lVal.Font.Name);
       SetSetting('font.arrow', lArrow.Font.Name);
       SetSetting('font.ago', lAgo.Font.Name);
+
+      if cbMoveDIffRight.Checked then
+        SetAlignmentSetting('ux.labels.ldiff.alignment', taRightJustify)
+      else
+        SetAlignmentSetting('ux.labels.ldiff.alignment', taCenter);
       
       // IMPORTANT: Save API settings BEFORE language change to prevent combo box reset
       // Save remote and override settings - these should NOT be global (user-specific)
@@ -4098,7 +4108,7 @@ procedure UpdatePredictionTimes;
     
     if validCount = 0 then
       Exit;
-    
+
     // Update prediction display with current times
     if PredictShortMode then
     begin
@@ -4473,7 +4483,7 @@ begin
   lDiff.Width := ClientWidth;
   lDiff.Height := (ClientHeight div 9) - 10;
   lDiff.Top := ClientHeight - lDiff.Height + 1;
-  ScaleLbl(lDiff, taCenter, tlCenter, true);
+  ScaleLbl(lDiff, DIFF_ALIGN, tlCenter, true);
 
   // Konfigurera tidsvisning
   lAgo.Width := ClientWidth div 2;
@@ -4547,9 +4557,14 @@ begin
       lPredict.Width := ClientWidth div 3;
       lPredict.Height := ClientHeight div 12;
     end;
+
     lPredict.Left := ClientWidth - lPredict.Width - 5;
     lPredict.Top := ClientHeight - lPredict.Height - 5;
-    ScaleLbl(lPredict, taRightJustify, tlBottom);
+
+    if DIFF_ALIGN = taRightJustify then
+      ScaleLbl(lPredict, taCenter, tlBottom)
+    else
+      ScaleLbl(lPredict, taRightJustify, tlBottom);
   end;
 end;
 

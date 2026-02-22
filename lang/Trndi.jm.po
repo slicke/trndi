@@ -497,6 +497,10 @@ msgstr ""
 msgid "Disable the entire media system"
 msgstr ""
 
+#: tfconf.cbmovediffright.caption
+msgid "Move to right"
+msgstr ""
+
 #: tfconf.cbmultitouch.caption
 msgid "Multi-touch"
 msgstr "Multipek"
@@ -722,7 +726,7 @@ msgid "System Features"
 msgstr "Systemfunksjoner"
 
 #: tfconf.groupbox10.caption
-msgid "Scaling"
+msgid "Layout"
 msgstr ""
 
 #: tfconf.groupbox2.caption
@@ -899,6 +903,10 @@ msgstr ""
 #: tfconf.label4.caption
 msgid "Window start-up position"
 msgstr "Posisjon av fônster vid start"
+
+#: tfconf.label40.caption
+msgid "Diff position:"
+msgstr ""
 
 #: tfconf.label5.caption
 msgid "Black = transparent"

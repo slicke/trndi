@@ -481,6 +481,10 @@ msgstr ""
 msgid "Disable the entire media system"
 msgstr ""
 
+#: tfconf.cbmovediffright.caption
+msgid "Move to right"
+msgstr ""
+
 #: tfconf.cbmultitouch.caption
 msgid "Multi-touch"
 msgstr ""
@@ -701,7 +705,7 @@ msgid "System Features"
 msgstr ""
 
 #: tfconf.groupbox10.caption
-msgid "Scaling"
+msgid "Layout"
 msgstr ""
 
 #: tfconf.groupbox2.caption
@@ -875,6 +879,10 @@ msgstr ""
 
 #: tfconf.label4.caption
 msgid "Window start-up position"
+msgstr ""
+
+#: tfconf.label40.caption
+msgid "Diff position:"
 msgstr ""
 
 #: tfconf.label5.caption
