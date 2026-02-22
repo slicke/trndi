@@ -411,7 +411,7 @@ private
   procedure SetLang;
   procedure fixWarningPanel;
   procedure showWarningPanel(const message: string;
-    clearDisplayValues: boolean = false);
+    clearDisplayValues: boolean = false; opacity: integer = 235; showDetails: boolean = true);
   procedure CalcRangeTime;
   function GetValidatedPosition: TrndiPos;
     {** Acquire the latest reading(s) and process them for display.
@@ -724,6 +724,7 @@ DOT_OFFSET_RANGE: integer = -15; // Fine-tune vertical alignment of threshold li
 DOT_LINES: boolean = false;  // Guidelines what value is where
 DELTA_MAX: integer = 2;
 DIFF_ALIGN: TAlignment = taCenter;
+LAST_WARN_OPACITY: integer = 235;
 {$ifdef DEBUG}
 debug_load_text: boolean = false;
 {$endif}
@@ -735,6 +736,7 @@ last_popup: TDateTime = 0;
 bg_alert: boolean = false;
   // If the BG is high/low since before, so we don't spam notifications
 placed: boolean = false; // If the window has been placed at setup
+WarnShowDetails: boolean = true; // controls whether fixWarningPanel adds reading/age info
 
 username: string = '';
 lastup: tdatetime;
@@ -1359,6 +1361,7 @@ var
   P: TPanel;
   {$ifndef X_WIN}
   lValRelativeX, lValRelativeY: integer;
+  alphaRatio: double;
   {$endif}
 begin
   // Use manual drawing for rounded corners on all platforms
@@ -1371,15 +1374,21 @@ begin
     Brush.Color := fBG.Color;
     FillRect(0, 0, P.Width, P.Height);
 
-    // Now draw the rounded panel
+    // Now draw the rounded panel; on non-Windows we simulate the alpha by
+    // blending the panel color with the background using LAST_WARN_OPACITY.
+    {$ifndef X_WIN}
+    alphaRatio := LAST_WARN_OPACITY / 255.0;
+    Brush.Color := BlendColors(P.Color, fBG.Color, alphaRatio);
+    {$else}
     Brush.Color := P.Color;
+    {$endif}
     Pen.Color := clBlack;
     Pen.Width := 1;
     RoundRect(0, 0, P.Width, P.Height, Radius, Radius);
 
     {$ifndef X_WIN}
     // On non-Windows platforms, ApplyAlphaControl doesn't work, so draw lVal as backdrop
-    // to simulate transparency effect
+    // to simulate transparency effect for the text with the same opacity
     if lVal.Visible and (lVal.Caption <> '') then
     begin
       // Calculate lVal position relative to pnWarning
@@ -1389,13 +1398,15 @@ begin
       // Set up text rendering to match lVal
       Font.Assign(lVal.Font);
 
-      // Simulate the original lVal text at 92% transparency (0.92 where 1=fully transparent)
-      // Formula: blended = (originalTextColor * opacity + panelColor * transparency)
-      // where transparency = 0.92 and opacity = 0.08
-      Font.Color := lclintf.RGB(Round(GetRValue(lVal.Font.Color) * 0.18 +
-        GetRValue(P.Color) * 0.82), Round(GetGValue(lVal.Font.Color) *
-        0.18 + GetGValue(P.Color) * 0.82), Round(GetBValue(lVal.Font.Color) *
-        0.18 + GetBValue(P.Color) * 0.82));
+      // Compute a blended font color: use the same alphaRatio above to mix
+      // the original text color with the panel color (which itself has alpha)
+      Font.Color := lclintf.RGB(
+        Round(GetRValue(lVal.Font.Color) * (1 - alphaRatio) +
+              GetRValue(Brush.Color) * alphaRatio),
+        Round(GetGValue(lVal.Font.Color) * (1 - alphaRatio) +
+              GetGValue(Brush.Color) * alphaRatio),
+        Round(GetBValue(lVal.Font.Color) * (1 - alphaRatio) +
+              GetBValue(Brush.Color) * alphaRatio));
 
       Brush.Style := bsClear; // Transparent background for text
 
@@ -2183,7 +2194,7 @@ begin
     end;
 
     // Apply alpha control only - rounded corners are handled by pnWarningPaint
-    ApplyAlphaControl(pnWarning, 235);
+    ApplyAlphaControl(pnWarning, LAST_WARN_OPACITY);
 
     // Keep the thin left-side progress bar sized with the form
     if Assigned(pnNextProgress) then
@@ -4176,7 +4187,7 @@ procedure UpdatePredictionTimes;
     end;
   end;
 
-  procedure predictFuture;
+  procedure predictFuture(future: integer = 15);
   var
     bgr: BGResults;
     b: BGReading;
@@ -4190,17 +4201,17 @@ procedure UpdatePredictionTimes;
     isLow := TTrndiBool.tbUnset;
 
     // Process 10 readings inn the future
-    api.predictReadings(10, bgr);
+    api.predictReadings(future, bgr);
 
     // Loop the readings and find the closest hi/low
     for i := Low(bgr) to High(bgr) do begin
       b := bgr[i];
 
-      if b.val < api.limitLO then begin
+      if b.val <= api.limitLO then begin
          isLow := TTrndiBool.tbTrue;
          Break;
       end
-      else if b.val > api.limitHI then begin
+      else if b.val >= api.limitHI then begin
          isLow := TTrndiBool.tbFalse;
          Break;
       end;
@@ -4214,11 +4225,11 @@ procedure UpdatePredictionTimes;
       // Time until low
       time := Max(0, MinutesBetween(Now, b.date));
 
-      // Prepare warning
+      // Prepare warning using transparent overlay panel instead of modal dialog
       if isLow = TTrndiBool.tbTrue then
-        ShowMessage(Format(RS_LO_PREDICT, [time]))
+        showWarningPanel(Format(RS_LO_PREDICT, [time]), false, 50, false)
       else
-        ShowMessage(Format(RS_HI_PREDICT, [time]));
+        showWarningPanel(Format(RS_HI_PREDICT, [time]), false, 50, false);
     end;
   end;
 
@@ -4442,7 +4453,7 @@ begin
     if pnWarning.Visible then
     begin
       fixWarningPanel;
-      ApplyAlphaControl(pnWarning, 235);
+      ApplyAlphaControl(pnWarning, LAST_WARN_OPACITY);
     end;
     Exit; // Don't do full resize operations during dragging
   end;
@@ -5731,25 +5742,30 @@ begin
     pnNextProgress.Width := Max(6, ClientWidth div 40);
   end;
 
-  if tryLastReading(bg) then
+if WarnShowDetails then
   begin
-    val := bg.format(un, BG_MSG_SHORT);
-    if val[1] = '-' then
+    if tryLastReading(bg) then
     begin
-      bg := lastDataReading;
       val := bg.format(un, BG_MSG_SHORT);
-    end;
+      if val[1] = '-' then
+      begin
+        bg := lastDataReading;
+        val := bg.format(un, BG_MSG_SHORT);
+      end;
 
-    last := HourOf(bg.date).ToString + ':' + MinuteOf(bg.date).tostring;
-    if DateOf(bg.date) <> Dateof(now) then
-      last := last + ' ' + Format(RS_DAYS_AGO, [DaysBetween(now, bg.date)]);
-    pnWarnLast.Caption := Format(RS_LAST_RECIEVE, [val, last]);
+      last := HourOf(bg.date).ToString + ':' + MinuteOf(bg.date).tostring;
+      if DateOf(bg.date) <> Dateof(now) then
+        last := last + ' ' + Format(RS_DAYS_AGO, [DaysBetween(now, bg.date)]);
+      pnWarnLast.Caption := Format(RS_LAST_RECIEVE, [val, last]);
+    end
+    else
+      pnWarnLast.Caption := RS_LAST_RECIEVE_NO;
+
+    pnWarnLast.Caption := pnWarnLast.Caption + LineEnding +
+      Format(RS_LAST_RECIEVE_AGE, [native.GetIntSetting('system.fresh_threshold', DATA_FRESHNESS_THRESHOLD_MINUTES)]);
   end
   else
-    pnWarnLast.Caption := RS_LAST_RECIEVE_NO;
-
-  pnWarnLast.Caption := pnWarnLast.Caption + LineEnding +
-    Format(RS_LAST_RECIEVE_AGE, [native.GetIntSetting('system.fresh_threshold', DATA_FRESHNESS_THRESHOLD_MINUTES)]);
+    pnWarnLast.Caption := '';
 
   // Set pnWarnLast font size relative to main font, but with bounds checking
   pnWarnLast.font.size := Max(8, Min(20, calculatedFontSize div 3));
@@ -5763,14 +5779,30 @@ begin
   pnWarnLast.top := pnWarning.Height - pnWarnLast.Height - 5;
 end;
 
+// Show a semi-transparent full-panel warning overlay.
+//   message: text to display (emoji prefix added automatically)
+//   clearDisplayValues: if true, reset main numeric labels to '--'
+//   opacity: alpha value 0..255 used for the panel; stored in LAST_WARN_OPACITY
+//   showDetails: when true (default) the footer lines reporting the "last
+//     reading was ..." and "limit X minutes" appear.  They are also
+//     suppressed automatically if opacity < 150 since an almost-transparent
+//     panel would make them unreadable.
 procedure TfBG.showWarningPanel(const message: string;
-clearDisplayValues: boolean = false);
+  clearDisplayValues: boolean = false; opacity: integer = 235; showDetails: boolean = true);
 var
   i: integer;
 begin
   pnWarning.Visible := true;
   tPing.Enabled := true;  // Enable network ping check when no readings available
-  pnWarning.Caption := '⚠️ ' + message;
+
+  // determine whether to render extra info; absent or semi‑transparent panels
+  // shouldn't show the last-reading lines
+  WarnShowDetails := showDetails and (opacity >= 150);
+
+  // copy the message into the label used by fixWarningPanel.  We add a newline
+  // so that fixWarningPanel won't prepend the clock emoji again; other icons
+  // (⚠️) can be inserted here if desired.
+  lMissing.Caption := '⚠️ ' + message + sLineBreak;
 
   if clearDisplayValues then
     if (not TryStrToInt(lVal.Caption[1], i)) or (lArrow.Caption = 'lArrow') then
@@ -5779,10 +5811,12 @@ begin
       lArrow.Caption := '';
     end;
 
-  pnWarning.Caption := '';  // Clear for now
+  // pnWarning.Caption is not used for the message, but keep it for old code
+  pnWarning.Caption := '';
   fixWarningPanel;
   // Ensure visual effects are applied when showing the panel
-  ApplyAlphaControl(pnWarning, 235);
+  LAST_WARN_OPACITY := opacity;
+  ApplyAlphaControl(pnWarning, opacity);
 
   // Force a complete UI update to ensure proper rendering on all platforms
   pnWarning.Refresh;
