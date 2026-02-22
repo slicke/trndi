@@ -4311,10 +4311,10 @@ procedure UpdatePredictionTimes;
     // cross *either* the user-configured range or the backend limit values.
     // to do that we compute a combined low/high threshold such that crossing
     // the tighter boundary triggers a warning.  This avoids surprises when
-    // the demographic range (rangeHi) is higher than the desired alert limit
-    // (limitHI).
-    warnLo := math.Max(api.cgmRangeLo, api.limitLO);
-    warnHi := math.Min(api.cgmRangeHi, api.limitHI);
+    // the demographic range (Hi) is higher than the desired alert limit
+    // (HI).
+    warnLo := math.Max(api.cgmLo, api.limitLO);
+    warnHi := math.Min(api.cgmHi, api.limitHI);
 
     // if we are already outside the combined thresholds, abort early as
     // prediction warning would be redundant

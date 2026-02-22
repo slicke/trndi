@@ -18,12 +18,12 @@ object fConf: TfConf
     Height = 518
     Top = 11
     Width = 645
-    ActivePage = tsAdvanced
+    ActivePage = tsCustom
     Align = alClient
     BorderSpacing.Left = 10
     BorderSpacing.Right = 10
     BorderSpacing.Around = 5
-    TabIndex = 7
+    TabIndex = 5
     TabOrder = 0
     OnChange = pcMainChange
     object tsCommon: TTabSheet
