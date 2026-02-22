@@ -3911,7 +3911,7 @@ begin
 
       // Overpaint left side to square off left corners (undo rounding there)
       if cornerRadius > 0 then
-        FillRect(Rect(fillR.Left, fillR.Top, fillR.Left + cornerRadius, fillR.Bottom));
+        Graphics.FillRect(Classes.Rect(fillR.Left, fillR.Top, fillR.Left + cornerRadius, fillR.Bottom));
     end;
   end;
 end;
