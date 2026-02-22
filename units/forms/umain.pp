@@ -1361,6 +1361,7 @@ var
   P: TPanel;
   {$ifndef X_WIN}
   lValRelativeX, lValRelativeY: integer;
+  lDiffRelativeX, lDiffRelativeY: integer;
   alphaRatio: double;
   arrX: integer;
   arrY : integer;
@@ -1456,6 +1457,33 @@ begin
       end;
 
       // Restore brush style
+      Brush.Style := bsSolid;
+    end;
+
+    // draw the diff label if present, using same blending rules
+    if lDiff.Visible and (lDiff.Caption <> '') then
+    begin
+      lDiffRelativeX := lDiff.Left - P.Left;
+      lDiffRelativeY := lDiff.Top - P.Top;
+      Font.Assign(lDiff.Font);
+      Font.Color := lclintf.RGB(
+        Round(GetRValue(lDiff.Font.Color) * (1 - alphaRatio) +
+              GetRValue(Brush.Color) * alphaRatio),
+        Round(GetGValue(lDiff.Font.Color) * (1 - alphaRatio) +
+              GetGValue(Brush.Color) * alphaRatio),
+        Round(GetBValue(lDiff.Font.Color) * (1 - alphaRatio) +
+              GetBValue(Brush.Color) * alphaRatio));
+      Brush.Style := bsClear;
+      case lDiff.Alignment of
+      taLeftJustify:
+        TextOut(lDiffRelativeX, lDiffRelativeY, lDiff.Caption);
+      taRightJustify:
+        TextOut(lDiffRelativeX + lDiff.Width - TextWidth(lDiff.Caption),
+          lDiffRelativeY, lDiff.Caption);
+      taCenter:
+        TextOut(lDiffRelativeX + (lDiff.Width - TextWidth(lDiff.Caption)) div
+          2, lDiffRelativeY, lDiff.Caption);
+      end;
       Brush.Style := bsSolid;
     end;
 
