@@ -1364,6 +1364,7 @@ var
   alphaRatio: double;
   arrX: integer;
   arrY : integer;
+  dot: TDotControl;
   {$endif}
 begin
   // Use manual drawing for rounded corners on all platforms
@@ -1457,6 +1458,20 @@ begin
       // Restore brush style
       Brush.Style := bsSolid;
     end;
+
+    // draw faint trend dots behind the value (and arrow) so that the warning
+    // panel retains context of recent data.  Blend heavily with the panel
+    // background to keep the dots very light.
+    for Dot in TrendDots do
+      if Dot.Visible then
+      begin
+        arrX := Dot.Left - P.Left;
+        arrY := Dot.Top - P.Top;
+        Font.Assign(Dot.Font);
+        Font.Color := BlendColors(Dot.Font.Color, Brush.Color, 0.2);
+        Brush.Style := bsClear;
+        TextOut(arrX, arrY, Dot.Caption);
+      end;
 
     {$endif}
   end;
@@ -4727,6 +4742,10 @@ begin
       Dot.Visible := false// No hint means no data for this dot
     ;
   end;
+
+  // ensure warning panel reflects the current dot positions when visible
+  if pnWarning.Visible then
+    pnWarning.Refresh;
 end;
 
 procedure TfBG.ScaleLbl(ALabel: TLabel; customAl: TAlignment = taCenter;
