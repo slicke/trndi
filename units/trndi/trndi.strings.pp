@@ -84,6 +84,9 @@ RS_FORCE_QUIT_SETUP = 'Trndi will now shut down to apply settings, please re-sta
 RS_SETTINGS_SAVE = 'Save settings?';
 RS_SETTINGS_SAVE_DESC = 'Would you like to save any changes made?';
 
+RS_LO_PREDICT = 'Low Predicted in %d minutes!';
+RS_HI_PREDICT = 'High Predicted in %d minutes!';
+
 RS_WARN_BG_HI = 'High blood sugar! Currently: %s';
 RS_WARN_BG_LO = 'Low blood sugar! Currently: %s';
 

@@ -1544,6 +1544,11 @@ msgstr ""
 msgid "Hi > %.1f"
 msgstr ""
 
+#: trndi.strings.rs_hi_predict
+#, object-pascal-format
+msgid "High Predicted in %d minutes!"
+msgstr ""
+
 #: trndi.strings.rs_init_api
 msgid "Initializing API..."
 msgstr ""
@@ -1661,6 +1666,11 @@ msgstr ""
 #: trndi.strings.rs_lo_level
 #, object-pascal-format
 msgid "Lo < %.1f"
+msgstr ""
+
+#: trndi.strings.rs_lo_predict
+#, object-pascal-format
+msgid "Low Predicted in %d minutes!"
 msgstr ""
 
 #: trndi.strings.rs_menu_force

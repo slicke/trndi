@@ -4175,7 +4175,53 @@ procedure UpdatePredictionTimes;
       lPredict.Caption := pred1 + ' | ' + pred2 + ' | ' + pred3;
     end;
   end;
-  
+
+  procedure predictFuture;
+  var
+    bgr: BGResults;
+    b: BGReading;
+    time, i: integer;
+    isLow: TTrndiBool;
+  begin
+    if not PredictGlucoseReading then
+      Exit;
+
+    // Indicate if we triggered on hi/low
+    isLow := TTrndiBool.tbUnset;
+
+    // Process 10 readings inn the future
+    api.predictReadings(10, bgr);
+
+    // Loop the readings and find the closest hi/low
+    for i := Low(bgr) to High(bgr) do begin
+      b := bgr[i];
+
+      if b.val < api.limitLO then begin
+         isLow := TTrndiBool.tbTrue;
+         Break;
+      end
+      else if b.val > api.limitHI then begin
+         isLow := TTrndiBool.tbFalse;
+         Break;
+      end;
+    end;
+
+    // Trigger warning if hi/low
+    if isLow <> TTrndiBool.tbUnset then begin
+      if b.empty then // Safe non-reading
+        Exit;
+
+      // Time until low
+      time := Max(0, MinutesBetween(Now, b.date));
+
+      // Prepare warning
+      if isLow = TTrndiBool.tbTrue then
+        ShowMessage(Format(RS_LO_PREDICT, [time]))
+      else
+        ShowMessage(Format(RS_HI_PREDICT, [time]));
+    end;
+  end;
+
 begin
   if firstboot then
     exit; // Dont run on first boot
@@ -4212,6 +4258,8 @@ begin
     
     // Update prediction times if predictions are visible
     UpdatePredictionTimes;
+
+    predictFuture;
   except
     lAgo.Caption := '🕑 ' + RS_COMPUTE_FAILED_AGO;
   end;
