@@ -3088,6 +3088,7 @@ procedure LoadUserSettings(f: TfConf);
       cbPredictions.Checked := GetBoolSetting('predictions.enable');
       cbWebAPI.Checked := GetBoolSetting('webserver.enable');
       cbPredictShort.Checked := GetBoolSetting('predictions.short');
+      cbWarnLoHi.Checked := GetBoolSetting('predictions.warn');
       cbPredictShortFullArrows.Checked := GetBoolSetting('predictions.short.fullarrows');
       // Load radio button state
       if GetBoolSetting('predictions.short.showvalue') then
@@ -3501,6 +3502,7 @@ procedure SaveUserSettings(f: TfConf);
       SetSetting('override.range', cbCustRange.Checked);
       SetSetting('predictions.enable', cbPredictions.Checked);
       SetSetting('webserver.enable', cbWebAPI.Checked);
+      SetSetting('predictions.warn', cbWarnLoHi.Checked);
       SetSetting('predictions.short', cbPredictShort.Checked);
       SetSetting('predictions.short.fullarrows', cbPredictShortFullArrows.Checked);
       SetSetting('predictions.short.showvalue', rbPredictShortShowValue.Checked);
@@ -4193,43 +4195,63 @@ procedure UpdatePredictionTimes;
     b: BGReading;
     time, i: integer;
     isLow: TTrndiBool;
+    minTime: integer;
   begin
     if not PredictGlucoseReading then
       Exit;
+    if not native.GetBoolSetting('predictions.warn') then
+      Exit;
 
-    // Indicate if we triggered on hi/low
+    // if we are already outside the configured *range* (not backend limits),
+    // don't bother predicting.  Users generally care about their custom
+    // range settings (`override.rangelo`/`rangehi`), which are stored in
+    // `api.cgmRangeLo/Hi`.  `limitLO/HI` are backend extremes (e.g., 40/400 for
+    // Dexcom) and can be wildly different.
+    if lastReading.val <= api.cgmRangeLo then
+      Exit // already in/below low range
+    else if lastReading.val >= api.cgmRangeHi then
+      Exit; // already in/above high range
+
+    // use cached predictions if available so popup matches display
+    if Length(PredictionCache) > 0 then
+      bgr := PredictionCache
+    else
+      api.predictReadings(future, bgr);
+
+    // Loop the readings and find the *earliest* crossing time (rounded same as display)
     isLow := TTrndiBool.tbUnset;
-
-    // Process 10 readings inn the future
-    api.predictReadings(future, bgr);
-
-    // Loop the readings and find the closest hi/low
-    for i := Low(bgr) to High(bgr) do begin
+    minTime := MaxInt;
+    for i := Low(bgr) to High(bgr) do
+    begin
       b := bgr[i];
+      if b.empty then
+        Continue;
 
-      if b.val <= api.limitLO then begin
-         isLow := TTrndiBool.tbTrue;
-         Break;
-      end
-      else if b.val >= api.limitHI then begin
-         isLow := TTrndiBool.tbFalse;
-         Break;
+      // compare against range thresholds rather than backend limits
+      if (b.val <= api.cgmRangeLo) or (b.val >= api.cgmRangeHi) then
+      begin
+        time := Round(MinutesBetween(Now, b.date));
+        if time < minTime then
+        begin
+          minTime := time;
+          if b.val <= api.limitLO then
+            isLow := TTrndiBool.tbTrue
+          else
+            isLow := TTrndiBool.tbFalse;
+        end;
       end;
     end;
 
-    // Trigger warning if hi/low
-    if isLow <> TTrndiBool.tbUnset then begin
+    // Trigger warning if we found a crossing
+    if (isLow <> TTrndiBool.tbUnset) and (minTime < MaxInt) then
+    begin
       if b.empty then // Safe non-reading
         Exit;
 
-      // Time until low
-      time := Max(0, MinutesBetween(Now, b.date));
-
-      // Prepare warning using transparent overlay panel instead of modal dialog
       if isLow = TTrndiBool.tbTrue then
-        showWarningPanel(Format(RS_LO_PREDICT, [time]), false, 50, false)
+        showWarningPanel(Format(RS_LO_PREDICT, [minTime]), false, 50, false)
       else
-        showWarningPanel(Format(RS_HI_PREDICT, [time]), false, 50, false);
+        showWarningPanel(Format(RS_HI_PREDICT, [minTime]), false, 50, false);
     end;
   end;
 

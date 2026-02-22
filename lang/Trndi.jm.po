@@ -621,6 +621,10 @@ msgstr "Kontoferg"
 msgid "Display users' colors on the main and floating windows"
 msgstr "Visa anvendares ferger po huvud- och det flytande fônstret"
 
+#: tfconf.cbwarnlohi.caption
+msgid "Warn when going high or low"
+msgstr ""
+
 #: tfconf.cbwebapi.caption
 #, fuzzy
 #| msgid " Enable Web API"

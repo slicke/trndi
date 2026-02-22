@@ -615,6 +615,10 @@ msgstr ""
 msgid "Display users' colors on the main and floating windows"
 msgstr ""
 
+#: tfconf.cbwarnlohi.caption
+msgid "Warn when going high or low"
+msgstr ""
+
 #: tfconf.cbwebapi.caption
 msgid "Enable Web API"
 msgstr ""

@@ -498,7 +498,7 @@ msgstr "Stäng av hela mediasystemet"
 
 #: tfconf.cbmovediffright.caption
 msgid "Move to right"
-msgstr ""
+msgstr "Flytta till höger"
 
 #: tfconf.cbmultitouch.caption
 msgid "Multi-touch"
@@ -554,7 +554,7 @@ msgstr "Privat läge (dölj glukosvärde)"
 
 #: tfconf.cbprogress.caption
 msgid "Display progress to next update on the left"
-msgstr ""
+msgstr "Visa tid till nästa uppdatering till vänster"
 
 #: tfconf.cbshowmean.caption
 msgid "Show mean blood sugar reading next to TIR"
@@ -619,6 +619,10 @@ msgstr "Kontofärg"
 #: tfconf.cbusercolor.caption
 msgid "Display users' colors on the main and floating windows"
 msgstr "Visa användares färger på huvud- och det flytande fönstret"
+
+#: tfconf.cbwarnlohi.caption
+msgid "Warn when going high or low"
+msgstr "Varna när du går mot högt eller lågt"
 
 #: tfconf.cbwebapi.caption
 msgid "Enable Web API"
@@ -721,7 +725,7 @@ msgstr "Systemfunktioner"
 
 #: tfconf.groupbox10.caption
 msgid "Layout"
-msgstr ""
+msgstr "Layout"
 
 #: tfconf.groupbox2.caption
 msgid "Available Extensions"
@@ -890,7 +894,7 @@ msgstr "Hög kontrast inaktiverar vissa av Trndis Tid-i-målområdet-färger"
 
 #: tfconf.label39.caption
 msgid "Diff scale:"
-msgstr ""
+msgstr "Skala för skillnad:"
 
 #: tfconf.label4.caption
 msgid "Window start-up position"
@@ -898,11 +902,11 @@ msgstr "Position av fönster vid start"
 
 #: tfconf.label40.caption
 msgid "Diff position:"
-msgstr ""
+msgstr "Position för skillnad:"
 
 #: tfconf.label41.caption
 msgid "Prediction scale:"
-msgstr ""
+msgstr "Skala för förutsägelse:"
 
 #: tfconf.label5.caption
 msgid "Black = transparent"
@@ -1641,7 +1645,7 @@ msgstr "Hög > %.1f"
 #: trndi.strings.rs_hi_predict
 #, object-pascal-format
 msgid "High Predicted in %d minutes!"
-msgstr ""
+msgstr "Högt förutspått om %d minuter!"
 
 #: trndi.strings.rs_init_api
 msgid "Initializing API..."
@@ -1769,7 +1773,7 @@ msgstr "Låg < %.1f"
 #: trndi.strings.rs_lo_predict
 #, object-pascal-format
 msgid "Low Predicted in %d minutes!"
-msgstr ""
+msgstr "Lågt förutspås om %d minuter!"
 
 #: trndi.strings.rs_menu_force
 msgid "Force update"
@@ -2668,7 +2672,7 @@ msgstr "Trndi tillåter inte en lägre gräns, backendsystemet rapporterar bara 
 
 #: uconf.rs_scale_diff_help
 msgid "You can change the scale/size of the difference in reading since last, by entering a scale factor"
-msgstr ""
+msgstr "Du kan ändra skalan/storleken för skillnaden sedan sist, genom att ange en skalningsfaktor"
 
 #: uconf.rs_select_font
 msgid "Select a font"
@@ -2852,4 +2856,3 @@ msgstr "Historikgraf"
 #, object-pascal-format
 msgid "Readings (%s)"
 msgstr "Avläsningar (%s)"
-

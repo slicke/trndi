@@ -116,6 +116,7 @@ TfConf = class(TForm)
   cbCustRange: TCheckBox;
   cbAlertMissing: TCheckBox;
   cbLang: TComboBox;
+  cbWarnLoHi: TCheckBox;
   cbProgress: TCheckBox;
   cbTTS: TCheckBox;
   cbTTSVoice: TComboBox;
@@ -1790,6 +1791,7 @@ begin
   rbPredictShortShowValue.Enabled := cbPredictShort.Checked;
   rbPredictShortArrowOnly.Enabled := cbPredictShort.Checked;
   cbPredictShortMinutes.Enabled := cbPredictShort.Checked;
+  cbWarnLoHi.Enabled := cbPredictShort.Checked;
 end;
 
 procedure TfConf.cbPredictShortFullArrowsChange(Sender: TObject);

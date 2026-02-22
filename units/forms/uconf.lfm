@@ -18,12 +18,12 @@ object fConf: TfConf
     Height = 518
     Top = 11
     Width = 645
-    ActivePage = tsDisplay
+    ActivePage = tsAdvanced
     Align = alClient
     BorderSpacing.Left = 10
     BorderSpacing.Right = 10
     BorderSpacing.Around = 5
-    TabIndex = 3
+    TabIndex = 7
     TabOrder = 0
     OnChange = pcMainChange
     object tsCommon: TTabSheet
@@ -12258,12 +12258,12 @@ object fConf: TfConf
       end
       object GroupBox8: TGroupBox
         Left = 0
-        Height = 211
-        Top = 272
+        Height = 251
+        Top = 232
         Width = 639
         Align = alBottom
         Caption = 'Predictions'
-        ClientHeight = 184
+        ClientHeight = 224
         ClientWidth = 635
         ParentBackground = False
         TabOrder = 1
@@ -12281,7 +12281,7 @@ object fConf: TfConf
         object lWarnPredict: TLabel
           Left = 0
           Height = 16
-          Top = 168
+          Top = 208
           Width = 635
           Align = alBottom
           Alignment = taRightJustify
@@ -12291,18 +12291,18 @@ object fConf: TfConf
         end
         object Panel13: TPanel
           Left = 0
-          Height = 42
-          Top = 126
+          Height = 57
+          Top = 151
           Width = 635
           Align = alClient
           BevelOuter = bvNone
-          ClientHeight = 42
+          ClientHeight = 57
           ClientWidth = 635
           ParentBackground = False
           TabOrder = 1
           object cbPredictShortSize: TComboBox
             Left = 131
-            Height = 32
+            Height = 47
             Top = 0
             Width = 120
             Align = alLeft
@@ -12322,7 +12322,7 @@ object fConf: TfConf
           end
           object lPredictShortSize: TLabel
             Left = 30
-            Height = 32
+            Height = 47
             Top = 0
             Width = 91
             Align = alLeft
@@ -12334,7 +12334,7 @@ object fConf: TfConf
           end
           object lPredictShortMinutes: TLabel
             Left = 271
-            Height = 32
+            Height = 47
             Top = 0
             Width = 103
             Align = alLeft
@@ -12346,7 +12346,7 @@ object fConf: TfConf
           end
           object cbPredictShortMinutes: TComboBox
             Left = 384
-            Height = 32
+            Height = 47
             Top = 0
             Width = 120
             Align = alLeft
@@ -12366,7 +12366,7 @@ object fConf: TfConf
           end
           object bPredictHorizon: TButton
             Left = 603
-            Height = 24
+            Height = 39
             Top = 3
             Width = 27
             Align = alRight
@@ -12434,15 +12434,26 @@ object fConf: TfConf
           TabOrder = 6
           OnClick = bPredictHelpClick
         end
+        object cbWarnLoHi: TCheckBox
+          Left = 15
+          Height = 20
+          Top = 126
+          Width = 620
+          Align = alTop
+          BorderSpacing.Left = 15
+          BorderSpacing.Bottom = 5
+          Caption = 'Warn when going high or low'
+          TabOrder = 7
+        end
       end
       object GroupBox9: TGroupBox
         Left = 0
-        Height = 105
-        Top = 167
+        Height = 89
+        Top = 143
         Width = 639
         Align = alBottom
         Caption = 'Display'
-        ClientHeight = 78
+        ClientHeight = 62
         ClientWidth = 635
         ParentBackground = False
         TabOrder = 2
