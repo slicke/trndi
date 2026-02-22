@@ -4609,7 +4609,7 @@ begin
   lAgo.Left := 0;
   lAgo.Top := 1 + IfThen(pnOffRange.Visible, pnOffRange.Height, 3);
   lAgo.Transparent := True;
-  ScaleLbl(lAgo, taLeftJustify);
+  ScaleLbl(lAgo, taLeftJustify, tlCenter, true, IfThen(pnNextProgress.Visible, 10, 0));
   lAgo.BringToFront;
 
   // Konfigurera trendpil

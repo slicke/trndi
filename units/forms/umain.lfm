@@ -39,10 +39,10 @@ object fBG: TfBG
     OnMouseMove = FormMouseMove
   end
   object lVal: TLabel
-    Left = 0
+    Left = 8
     Height = 240
     Top = 0
-    Width = 320
+    Width = 312
     Align = alClient
     Alignment = taCenter
     AutoSize = False
@@ -231,7 +231,7 @@ object fBG: TfBG
   end
   object pnNextProgress: TPanel
     Left = 0
-    Height = 194
+    Height = 240
     Top = 0
     Width = 8
     Align = alLeft
