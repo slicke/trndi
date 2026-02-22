@@ -567,7 +567,7 @@ private
       consistent visual sizes across different screen resolutions.
    }
   procedure ScaleLbl(ALabel: TLabel; customAl: TAlignment = taCenter;
-    customTl: TTextLayout = tlCenter; allowCustom: boolean = false; padding: integer = 0);
+    customTl: TTextLayout = tlCenter; allowCustom: boolean = true; padding: integer = 0);
 
     // Performance optimization methods
   {** Compute a simple hash of an array of readings used for change detection
@@ -4616,7 +4616,7 @@ begin
 end;
 
 procedure TfBG.ScaleLbl(ALabel: TLabel; customAl: TAlignment = taCenter;
-customTl: TTextLayout = tlCenter; allowCustom: boolean = false; padding: integer = 0);
+customTl: TTextLayout = tlCenter; allowCustom: boolean = true; padding: integer = 0);
 var
   Low, High, Mid, i, pW, pH: integer;
   MaxWidth, MaxHeight: integer;
