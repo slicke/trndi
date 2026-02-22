@@ -721,6 +721,10 @@ msgstr "Anvend URL"
 msgid "System Features"
 msgstr "Systemfunksjoner"
 
+#: tfconf.groupbox10.caption
+msgid "Scaling"
+msgstr ""
+
 #: tfconf.groupbox2.caption
 msgid "Available Extensions"
 msgstr "Tillgengliga tillegg"
@@ -886,6 +890,10 @@ msgstr ""
 
 #: tfconf.label38.caption
 msgid "High contrast disables some of Trndis Time-in-Range coloring"
+msgstr ""
+
+#: tfconf.label39.caption
+msgid "Diff scale:"
 msgstr ""
 
 #: tfconf.label4.caption
@@ -2685,6 +2693,10 @@ msgstr "Trndi tilloter inte en stôrre grens, fôr din egen sekerhet. Detta kan 
 #: uconf.rs_saftey_low
 msgid "Trndi won't allow a lower limit, the backend system only reports values every 5 minutes. 6 = one reading missing."
 msgstr "Trndi tilloter inte en legre grens, backendsystemet rapporterar bara verden var 5:e minut. 6 = en missad avlesning."
+
+#: uconf.rs_scale_diff_help
+msgid "You can change the scale/size of the difference in reading since last, by entering a scale factor"
+msgstr ""
 
 #: uconf.rs_select_font
 msgid "Select a font"

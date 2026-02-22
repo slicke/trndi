@@ -1101,7 +1101,7 @@ var
   mr: TModalResult;
   dots: single;
 begin
-  dots := ExtNumericInput(uxdAuto,sDotSize,sCustomiseDotSize, sEnterDotSize,dotscale,true,mr);
+  dots := ExtNumericInput(uxdAuto,sDotSize,sCustomiseDotSize, sEnterDotSize,dotscale,FLOAT_NONE, FLOAT_NONE, true,mr);
   if mr = mrOk then
   begin
     native.SetFloatSetting('ux.dot_scale', dots);
@@ -1126,7 +1126,7 @@ var
 begin
   da := (ExtNumericInput(uxdAuto, RS_SERVICE_DOT_ADJUST, RS_SERVICE_DOT_ADJUST_ADD,
     RS_SERVICE_DOT_ADJUST_DESC, DOT_ADJUST *
-    100, false, mr) / 100);
+    100, FLOAT_NONE, FLOAT_NONE, false, mr) / 100);
 
   if mr = mrOk then
   begin
@@ -3046,6 +3046,8 @@ procedure LoadUserSettings(f: TfConf);
         fsHiRange.Value := GetIntSetting('override.rangehi', api.cgmRangeHi);
       end;
 
+      fsDiffScale.Value := GetFloatSetting('ux.labels.ldiff.scale', 1);
+
       cbTIR.Checked := native.GetBoolSetting('range.custom', true);
       seTir.Value := native.GetIntSetting('range.time', 9999);
 
@@ -3458,6 +3460,7 @@ procedure SaveUserSettings(f: TfConf);
         SetSetting('override.rangehi', Round(fsHiRange.Value).ToString);
       end;
 
+      native.SetFloatSetting('ux.labels.ldiff.scale', fsDiffScale.Value);
       native.SetSetting('range.custom', cbTIR.Checked);
       native.SetSetting('range.tir_icon', cbTirIcon.checked);
       native.SetSetting('tir.displaymean', cbShowMean.Checked);
@@ -4621,7 +4624,7 @@ begin
   // apply custom component scaling if requested
   if allowCustom then
   begin
-    scaleFactor := native.GetFloatSetting('ux.labels.' + ALabel.Name + '.scale', 1.75);
+    scaleFactor := native.GetFloatSetting('ux.labels.' + LowerCase(ALabel.Name) + '.scale', 1);
     if scaleFactor <= 0 then
       scaleFactor := 1;
     if scaleFactor <> 1 then

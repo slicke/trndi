@@ -11056,12 +11056,12 @@ object fConf: TfConf
       OnShow = tsDisplayShow
       object pnDisplay: TPanel
         Left = 0
-        Height = 231
+        Height = 144
         Top = 0
         Width = 639
         Align = alClient
         BevelOuter = bvNone
-        ClientHeight = 231
+        ClientHeight = 144
         ClientWidth = 639
         ParentBackground = False
         TabOrder = 0
@@ -11069,7 +11069,7 @@ object fConf: TfConf
           Cursor = crHandPoint
           Left = 456
           Height = 131
-          Top = 8
+          Top = -8
           Width = 200
           Alignment = taCenter
           AutoSize = False
@@ -11104,7 +11104,7 @@ object fConf: TfConf
           Cursor = crHandPoint
           Left = 272
           Height = 106
-          Top = 32
+          Top = 0
           Width = 138
           Alignment = taRightJustify
           Caption = '0,0'
@@ -11116,31 +11116,31 @@ object fConf: TfConf
           OnClick = lValClick
         end
         object lDot3: TLabel
-          Left = 365
+          Left = 133
           Height = 16
-          Top = 144
+          Top = 40
           Width = 28
           Caption = 'lDot1'
           OnClick = lDot1Click
         end
         object lDot2: TLabel
-          Left = 325
+          Left = 88
           Height = 16
-          Top = 168
+          Top = 56
           Width = 28
           Caption = 'lDot1'
           OnClick = lDot1Click
         end
         object lDot1: TLabel
-          Left = 284
+          Left = 48
           Height = 16
-          Top = 152
+          Top = 40
           Width = 28
           Caption = 'lDot1'
           OnClick = lDot1Click
         end
         object bFontHelp: TButton
-          Left = 624
+          Left = 605
           Height = 22
           Top = 8
           Width = 27
@@ -11236,16 +11236,16 @@ object fConf: TfConf
         end
       end
       object Label8: TLabel
-        Left = 8
+        Left = 0
         Height = 16
-        Top = 201
+        Top = 112
         Width = 288
         Caption = 'Click on the time, reading or arrow to change it''s font'
       end
       object Button2: TButton
-        Left = 496
+        Left = 488
         Height = 25
-        Top = 192
+        Top = 103
         Width = 139
         Caption = 'Reset Fonts'
         TabOrder = 2
@@ -11362,6 +11362,44 @@ object fConf: TfConf
           OptimalFill = True
           ParentFont = False
           OnClick = dotClick
+        end
+      end
+      object GroupBox10: TGroupBox
+        Left = 0
+        Height = 87
+        Top = 144
+        Width = 639
+        Align = alBottom
+        Caption = 'Scaling'
+        ClientHeight = 60
+        ClientWidth = 635
+        TabOrder = 4
+        object Label39: TLabel
+          Left = 8
+          Height = 16
+          Top = 0
+          Width = 54
+          Caption = 'Diff scale:'
+        end
+        object fsDiffScale: TFloatSpinEdit
+          Left = 16
+          Height = 30
+          Top = 24
+          Width = 66
+          Increment = 0.1
+          MaxValue = 10
+          MinValue = 0.1
+          TabOrder = 0
+          Value = 0.1
+        end
+        object bScaleHelp: TButton
+          Left = 88
+          Height = 22
+          Top = 24
+          Width = 27
+          Caption = '?'
+          TabOrder = 1
+          OnClick = bScaleHelpClick
         end
       end
     end

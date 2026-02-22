@@ -77,6 +77,7 @@ TfConf = class(TForm)
   bOutdatedHelp1: TButton;
   bOverrideHelp1: TButton;
   bPredictHorizon: TButton;
+  bScaleHelp: TButton;
   bTemplateCurrent: TButton;
   bTemplateTrend: TButton;
   bTestSpeech: TButton;
@@ -133,9 +134,12 @@ TfConf = class(TForm)
   cbPrivacy: TCheckBox;
   cbHContrast: TCheckBox;
   cbMediaDisable: TCheckBox;
+  fsDiffScale: TFloatSpinEdit;
+  GroupBox10: TGroupBox;
   Label36: TLabel;
   Label37: TLabel;
   Label38: TLabel;
+  Label39: TLabel;
   Panel21: TPanel;
   Panel22: TPanel;
   Panel23: TPanel;
@@ -375,6 +379,8 @@ TfConf = class(TForm)
   tsMulti: TTabSheet;
   tsSystem: TTabSheet;
   procedure bDisableMediaHelpClick(Sender: TObject);
+  procedure bScaleAgoClick(Sender: TObject);
+  procedure bScaleHelpClick(Sender: TObject);
   procedure cbMediaDisableChange(Sender: TObject);
   function validateUser(var error: string): boolean;
   procedure bAddClick({%H-}Sender: TObject);
@@ -572,6 +578,8 @@ RS_DEBUG_WARN =
   'This is a debug backend. It''s used for testing purposes only!'+sLineBreak+'No data will be sent to any remote server.';
 
 RS_DISABLE_MEDIA = 'This turns off all media-related fetures. Can speed up start.';
+
+RS_SCALE_DIFF_HELP = 'You can change the scale/size of the difference in reading since last, by entering a scale factor';
 
 RS_ERR_PASSWORD = 'You must enter a password';
 RS_ERR_EMAIL = 'You must enter a valid e-mail address';
@@ -1108,6 +1116,16 @@ end;
 procedure TfConf.bDisableMediaHelpClick(Sender: TObject);
 begin
   ShowMessage(RS_DISABLE_MEDIA);
+end;
+
+procedure TfConf.bScaleAgoClick(Sender: TObject);
+begin
+
+end;
+
+procedure TfConf.bScaleHelpClick(Sender: TObject);
+begin
+  ShowMessage(RS_SCALE_DIFF_HELP);
 end;
 
 procedure TfConf.bAddClick(Sender: TObject);
