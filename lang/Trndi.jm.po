@@ -908,6 +908,10 @@ msgstr "Posisjon av fônster vid start"
 msgid "Diff position:"
 msgstr ""
 
+#: tfconf.label41.caption
+msgid "Prediction scale:"
+msgstr ""
+
 #: tfconf.label5.caption
 msgid "Black = transparent"
 msgstr "Svart = genomskinlig"

@@ -567,7 +567,7 @@ private
       consistent visual sizes across different screen resolutions.
    }
   procedure ScaleLbl(ALabel: TLabel; customAl: TAlignment = taCenter;
-    customTl: TTextLayout = tlCenter; allowCustom: boolean = false);
+    customTl: TTextLayout = tlCenter; allowCustom: boolean = false; padding: integer = 0);
 
     // Performance optimization methods
   {** Compute a simple hash of an array of readings used for change detection
@@ -3050,6 +3050,7 @@ procedure LoadUserSettings(f: TfConf);
       end;
 
       fsDiffScale.Value := GetFloatSetting('ux.labels.ldiff.scale', 1);
+      fsPredictScale.Value := GetFloatSetting('ux.labels.lpredict.scale', 1);
 
       cbMoveDIffRight.Checked := GetAlignmentSetting('ux.labels.ldiff.alignment', taCenter) = taRightJustify;
 
@@ -3471,6 +3472,7 @@ procedure SaveUserSettings(f: TfConf);
       end;
 
       native.SetFloatSetting('ux.labels.ldiff.scale', fsDiffScale.Value);
+      native.SetFloatSetting('ux.labels.lpredict.scale', fsPredictScale.Value);
       native.SetSetting('range.custom', cbTIR.Checked);
       native.SetSetting('range.tir_icon', cbTirIcon.checked);
       native.SetSetting('tir.displaymean', cbShowMean.Checked);
@@ -4483,7 +4485,7 @@ begin
   lDiff.Width := ClientWidth;
   lDiff.Height := (ClientHeight div 9) - 10;
   lDiff.Top := ClientHeight - lDiff.Height + 1;
-  ScaleLbl(lDiff, DIFF_ALIGN, tlCenter, true);
+  ScaleLbl(lDiff, DIFF_ALIGN, tlCenter, true, 10);
 
   // Konfigurera tidsvisning
   lAgo.Width := ClientWidth div 2;
@@ -4562,9 +4564,9 @@ begin
     lPredict.Top := ClientHeight - lPredict.Height - 5;
 
     if DIFF_ALIGN = taRightJustify then
-      ScaleLbl(lPredict, taCenter, tlBottom)
+      ScaleLbl(lPredict, taCenter, tlBottom, true)
     else
-      ScaleLbl(lPredict, taRightJustify, tlBottom);
+      ScaleLbl(lPredict, taRightJustify, tlBottom, true);
   end;
 end;
 
@@ -4614,7 +4616,7 @@ begin
 end;
 
 procedure TfBG.ScaleLbl(ALabel: TLabel; customAl: TAlignment = taCenter;
-customTl: TTextLayout = tlCenter; allowCustom: boolean = false);
+customTl: TTextLayout = tlCenter; allowCustom: boolean = false; padding: integer = 0);
 var
   Low, High, Mid, i, pW, pH: integer;
   MaxWidth, MaxHeight: integer;
@@ -4731,6 +4733,9 @@ begin
     TextWidth := ALabel.Canvas.TextWidth(ALabel.Caption);
     TextHeight := ALabel.Canvas.TextHeight(ALabel.Caption);
   end;
+
+  ALabel.width := Alabel.Width-padding*2;
+  Alabel.left := Alabel.left+padding;
 
   // Se till att inställningarna används
   ALabel.Refresh;

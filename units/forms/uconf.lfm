@@ -11416,6 +11416,24 @@ object fConf: TfConf
           Caption = 'Move to right'
           TabOrder = 2
         end
+        object Label41: TLabel
+          Left = 248
+          Height = 16
+          Top = 0
+          Width = 89
+          Caption = 'Prediction scale:'
+        end
+        object fsPredictScale: TFloatSpinEdit
+          Left = 256
+          Height = 30
+          Top = 24
+          Width = 66
+          Increment = 0.1
+          MaxValue = 10
+          MinValue = 0.1
+          TabOrder = 3
+          Value = 0.1
+        end
       end
     end
     object tsTir: TTabSheet
