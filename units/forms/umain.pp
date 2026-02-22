@@ -4293,28 +4293,35 @@ procedure UpdatePredictionTimes;
     end;
   end;
 
-  procedure predictFuture(future: integer = 15);
+  procedure predictFuture(future: integer = 7);
   var
     bgr: BGResults;
     b: BGReading;
     time, i: integer;
     isLow: TTrndiBool;
     minTime: integer;
+    warnLo, warnHi: glucose;
   begin
     if not PredictGlucoseReading then
       Exit;
     if not native.GetBoolSetting('predictions.warn') then
       Exit;
 
-    // if we are already outside the configured *range* (not backend limits),
-    // don't bother predicting.  Users generally care about their custom
-    // range settings (`override.rangelo`/`rangehi`), which are stored in
-    // `api.cgmRangeLo/Hi`.  `limitLO/HI` are backend extremes (e.g., 40/400 for
-    // Dexcom) and can be wildly different.
-    if lastReading.val <= api.cgmRangeLo then
-      Exit // already in/below low range
-    else if lastReading.val >= api.cgmRangeHi then
-      Exit; // already in/above high range
+    // determine thresholds we care about; we want to warn when predictions
+    // cross *either* the user-configured range or the backend limit values.
+    // to do that we compute a combined low/high threshold such that crossing
+    // the tighter boundary triggers a warning.  This avoids surprises when
+    // the demographic range (rangeHi) is higher than the desired alert limit
+    // (limitHI).
+    warnLo := math.Max(api.cgmRangeLo, api.limitLO);
+    warnHi := math.Min(api.cgmRangeHi, api.limitHI);
+
+    // if we are already outside the combined thresholds, abort early as
+    // prediction warning would be redundant
+    if lastReading.val <= warnLo then
+      Exit // already in/below low zone
+    else if lastReading.val >= warnHi then
+      Exit; // already in/above high zone
 
     // use cached predictions if available so popup matches display
     if Length(PredictionCache) > 0 then
@@ -4331,14 +4338,14 @@ procedure UpdatePredictionTimes;
       if b.empty then
         Continue;
 
-      // compare against range thresholds rather than backend limits
-      if (b.val <= api.cgmRangeLo) or (b.val >= api.cgmRangeHi) then
+      // Check against our combined thresholds
+      if (b.val <= warnLo) or (b.val >= warnHi) then
       begin
         time := Round(MinutesBetween(Now, b.date));
         if time < minTime then
         begin
           minTime := time;
-          if b.val <= api.limitLO then
+          if b.val <= warnLo then
             isLow := TTrndiBool.tbTrue
           else
             isLow := TTrndiBool.tbFalse;
