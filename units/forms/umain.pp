@@ -1362,6 +1362,7 @@ var
   {$ifndef X_WIN}
   lValRelativeX, lValRelativeY: integer;
   lDiffRelativeX, lDiffRelativeY: integer;
+  lAgoRelativeX, lAgoRelativeY: integer;
   alphaRatio: double;
   arrX: integer;
   arrY : integer;
@@ -1483,6 +1484,33 @@ begin
       taCenter:
         TextOut(lDiffRelativeX + (lDiff.Width - TextWidth(lDiff.Caption)) div
           2, lDiffRelativeY, lDiff.Caption);
+      end;
+      Brush.Style := bsSolid;
+    end;
+
+    // draw the age label if present, using same blending rules
+    if lAgo.Visible and (lAgo.Caption <> '') then
+    begin
+      lAgoRelativeX := lAgo.Left - P.Left;
+      lAgoRelativeY := lAgo.Top - P.Top;
+      Font.Assign(lAgo.Font);
+      Font.Color := lclintf.RGB(
+        Round(GetRValue(lAgo.Font.Color) * (1 - alphaRatio) +
+              GetRValue(Brush.Color) * alphaRatio),
+        Round(GetGValue(lAgo.Font.Color) * (1 - alphaRatio) +
+              GetGValue(Brush.Color) * alphaRatio),
+        Round(GetBValue(lAgo.Font.Color) * (1 - alphaRatio) +
+              GetBValue(Brush.Color) * alphaRatio));
+      Brush.Style := bsClear;
+      case lAgo.Alignment of
+      taLeftJustify:
+        TextOut(lAgoRelativeX, lAgoRelativeY, lAgo.Caption);
+      taRightJustify:
+        TextOut(lAgoRelativeX + lAgo.Width - TextWidth(lAgo.Caption),
+          lAgoRelativeY, lAgo.Caption);
+      taCenter:
+        TextOut(lAgoRelativeX + (lAgo.Width - TextWidth(lAgo.Caption)) div
+          2, lAgoRelativeY, lAgo.Caption);
       end;
       Brush.Style := bsSolid;
     end;
