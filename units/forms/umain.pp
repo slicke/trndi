@@ -1362,6 +1362,8 @@ var
   {$ifndef X_WIN}
   lValRelativeX, lValRelativeY: integer;
   alphaRatio: double;
+  arrX: integer;
+  arrY : integer;
   {$endif}
 begin
   // Use manual drawing for rounded corners on all platforms
@@ -1387,8 +1389,38 @@ begin
     RoundRect(0, 0, P.Width, P.Height, Radius, Radius);
 
     {$ifndef X_WIN}
-    // On non-Windows platforms, ApplyAlphaControl doesn't work, so draw lVal as backdrop
-    // to simulate transparency effect for the text with the same opacity
+    // On non-Windows platforms, ApplyAlphaControl doesn't work.
+    // first draw the arrow behind the reading
+    if lArrow.Visible and (lArrow.Caption <> '') then
+    begin
+      arrX := lArrow.Left - P.Left;
+      arrY := lArrow.Top - P.Top;
+
+      Font.Assign(lArrow.Font);
+      Font.Color := lclintf.RGB(
+        Round(GetRValue(lArrow.Font.Color) * (1 - alphaRatio) +
+              GetRValue(Brush.Color) * alphaRatio),
+        Round(GetGValue(lArrow.Font.Color) * (1 - alphaRatio) +
+              GetGValue(Brush.Color) * alphaRatio),
+        Round(GetBValue(lArrow.Font.Color) * (1 - alphaRatio) +
+              GetBValue(Brush.Color) * alphaRatio));
+      Brush.Style := bsClear;
+
+      case lArrow.Alignment of
+      taLeftJustify:
+        TextOut(arrX, arrY, lArrow.Caption);
+      taRightJustify:
+        TextOut(arrX + lArrow.Width - TextWidth(lArrow.Caption),
+          arrY, lArrow.Caption);
+      taCenter:
+        TextOut(arrX + (lArrow.Width - TextWidth(lArrow.Caption)) div 2,
+          arrY, lArrow.Caption);
+      end;
+
+      Brush.Style := bsSolid;
+    end;
+
+    // now draw the value on top using same transparency logic
     if lVal.Visible and (lVal.Caption <> '') then
     begin
       // Calculate lVal position relative to pnWarning
@@ -1425,6 +1457,7 @@ begin
       // Restore brush style
       Brush.Style := bsSolid;
     end;
+
     {$endif}
   end;
 end;
