@@ -4359,10 +4359,17 @@ procedure UpdatePredictionTimes;
       if b.empty then // Safe non-reading
         Exit;
 
-      if isLow = TTrndiBool.tbTrue then
-        showWarningPanel(Format(RS_LO_PREDICT, [minTime]), false, 50, false)
-      else
-        showWarningPanel(Format(RS_HI_PREDICT, [minTime]), false, 50, false);
+      if minTime > 3 then begin
+        if isLow = TTrndiBool.tbTrue then
+          showWarningPanel(Format(RS_LO_PREDICT, [minTime]), false, 50, false)
+        else
+          showWarningPanel(Format(RS_HI_PREDICT, [minTime]), false, 50, false);
+      end else begin
+        if isLow = TTrndiBool.tbTrue then
+          showWarningPanel(RS_LO_PREDICT_SOON, false, 50, false)
+        else
+          showWarningPanel(RS_HI_PREDICT_SOON, false, 50, false);
+      end;
     end;
   end;
 

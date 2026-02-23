@@ -1647,6 +1647,10 @@ msgstr "Hög > %.1f"
 msgid "High Predicted in %d minutes!"
 msgstr "Högt förutspått om %d minuter!"
 
+#: trndi.strings.rs_hi_predict_soon
+msgid "High Predicted soon!"
+msgstr ""
+
 #: trndi.strings.rs_init_api
 msgid "Initializing API..."
 msgstr "Initierar API..."
@@ -1774,6 +1778,10 @@ msgstr "Låg < %.1f"
 #, object-pascal-format
 msgid "Low Predicted in %d minutes!"
 msgstr "Lågt förutspås om %d minuter!"
+
+#: trndi.strings.rs_lo_predict_soon
+msgid "Low Predicted soon!"
+msgstr ""
 
 #: trndi.strings.rs_menu_force
 msgid "Force update"
@@ -2854,3 +2862,4 @@ msgstr "Historikgraf"
 #, object-pascal-format
 msgid "Readings (%s)"
 msgstr "Avläsningar (%s)"
+

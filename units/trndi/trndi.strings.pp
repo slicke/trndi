@@ -87,6 +87,9 @@ RS_SETTINGS_SAVE_DESC = 'Would you like to save any changes made?';
 RS_LO_PREDICT = 'Low Predicted in %d minutes!';
 RS_HI_PREDICT = 'High Predicted in %d minutes!';
 
+RS_LO_PREDICT_SOON = 'Low Predicted soon!';
+RS_HI_PREDICT_SOON = 'High Predicted soon!';
+
 RS_WARN_BG_HI = 'High blood sugar! Currently: %s';
 RS_WARN_BG_LO = 'Low blood sugar! Currently: %s';
 
