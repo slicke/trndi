@@ -17,6 +17,8 @@ protected
   procedure TearDown; override;
 published
   procedure TestDexcomNew;
+  procedure TestDexcomNewUnreachable;
+  procedure TestDexcomNewServerError;
   procedure TestDexcomNewLocalServer;
 end;
 
@@ -32,6 +34,50 @@ begin
   AssertFalse('API Connect Fail', api.connect);
   AssertTrue('Time correct', api.getBasetime > IncHour(DateTimeToUnix(now), -2));
   api.Free;
+end;
+
+procedure TAPIDexcomNewTester.TestDexcomNewUnreachable;
+var
+  api: TrndiAPI;
+begin
+  // use the "custom" subclass so we can override the URL directly;
+  // passing a bogus host/port will make the connection attempt fail.
+  api := DexcomCustomNew.Create('user', 'pass',
+    'http://127.0.0.1:1/ShareWebServices/Services/');
+  try
+    AssertFalse('Unreachable DexcomNew should not connect', api.connect);
+    AssertTrue('Error message should not be empty', api.errormsg <> '');
+  finally
+    api.Free;
+  end;
+end;
+
+procedure TAPIDexcomNewTester.TestDexcomNewServerError;
+var
+  api: TrndiAPI;
+  PHPProcess: TProcess;
+  BaseURL: string;
+begin
+  if GetEnvironmentVariable('TRNDI_NO_PHP') = '1' then
+    Exit;
+  PHPProcess := nil;
+  if not StartOrUseTestServer(PHPProcess, BaseURL) then
+    Fail('Failed to start or reach test PHP server');
+  try
+    api := DexcomCustomNew.Create('anyuser','anypass', BaseURL + '/error500/ShareWebServices/Services/');
+    try
+      AssertFalse('Server error path should prevent connect', api.connect);
+      AssertTrue('Error message indicates bad response', api.errormsg <> '');
+    finally
+      api.Free;
+    end;
+  finally
+    if Assigned(PHPProcess) then
+    begin
+      PHPProcess.Terminate(0);
+      PHPProcess.Free;
+    end;
+  end;
 end;
 
 procedure TAPIDexcomNewTester.TestDexcomNewLocalServer;

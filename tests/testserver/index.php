@@ -100,6 +100,17 @@ if ($path == '/debug') {
     exit;
 }
 
+// Special test endpoint: anything under /error500 will return HTTP 500 to
+// simulate a server error for network edge case tests.  The connect routine
+// should handle this gracefully.  We also treat "/error500/ShareWebServices/Services" as
+// the DexcomNew API base.
+if (strpos($path, '/error500') === 0) {
+    http_response_code(500);
+    header('Content-Type: text/plain');
+    echo "Internal Server Error";
+    exit;
+}
+
 // -----------------------------------------------------------------------------
 // Fake Dexcom Share API for testing
 // -----------------------------------------------------------------------------
