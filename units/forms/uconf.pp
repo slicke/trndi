@@ -145,6 +145,7 @@ TfConf = class(TForm)
   Label39: TLabel;
   Label40: TLabel;
   Label41: TLabel;
+  Label42: TLabel;
   Panel21: TPanel;
   Panel22: TPanel;
   Panel23: TPanel;

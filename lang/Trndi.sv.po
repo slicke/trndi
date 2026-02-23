@@ -450,8 +450,8 @@ msgid "Breath (pulse)"
 msgstr "Andas (puls)"
 
 #: tfconf.cbchromanormal.caption
-msgid "Make units green when reading is normal"
-msgstr "Gör enheter gröna vid normalt värde"
+msgid "Make units green when reading is normal *"
+msgstr "Gör enheter gröna vid normalt värde *"
 
 #: tfconf.cbcust.caption
 msgctxt "tfconf.cbcust.caption"
@@ -907,6 +907,10 @@ msgstr "Position för skillnad:"
 #: tfconf.label41.caption
 msgid "Prediction scale:"
 msgstr "Skala för förutsägelse:"
+
+#: tfconf.label42.caption
+msgid "* When Trndi is in focus, units may turn off coloring if this is disabled. This is a Chroma limitation."
+msgstr "* När Trndi är i fokus, kan färgning stängas av om detta är avstängt. Detta är en begränsning i Chroma."
 
 #: tfconf.label5.caption
 msgid "Black = transparent"
@@ -1649,7 +1653,7 @@ msgstr "Högt förutspått om %d minuter!"
 
 #: trndi.strings.rs_hi_predict_soon
 msgid "High Predicted soon!"
-msgstr ""
+msgstr "Högt förutspås snart!"
 
 #: trndi.strings.rs_init_api
 msgid "Initializing API..."
@@ -1781,7 +1785,7 @@ msgstr "Lågt förutspås om %d minuter!"
 
 #: trndi.strings.rs_lo_predict_soon
 msgid "Low Predicted soon!"
-msgstr ""
+msgstr "Lågt förutspås snart!"
 
 #: trndi.strings.rs_menu_force
 msgid "Force update"
@@ -2862,4 +2866,3 @@ msgstr "Historikgraf"
 #, object-pascal-format
 msgid "Readings (%s)"
 msgstr "Avläsningar (%s)"
-

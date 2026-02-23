@@ -450,7 +450,9 @@ msgid "Breath (pulse)"
 msgstr "Andas (puls)"
 
 #: tfconf.cbchromanormal.caption
-msgid "Make units green when reading is normal"
+#, fuzzy
+#| msgid "Make units green when reading is normal"
+msgid "Make units green when reading is normal *"
 msgstr "Gôr enheter grôna vid normalt verde"
 
 #: tfconf.cbcust.caption
@@ -914,6 +916,10 @@ msgstr ""
 
 #: tfconf.label41.caption
 msgid "Prediction scale:"
+msgstr ""
+
+#: tfconf.label42.caption
+msgid "* When Trndi is in focus, units may turn off coloring if this is disabled. This is a Chroma limitation."
 msgstr ""
 
 #: tfconf.label5.caption

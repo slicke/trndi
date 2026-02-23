@@ -18,12 +18,12 @@ object fConf: TfConf
     Height = 518
     Top = 11
     Width = 645
-    ActivePage = tsCustom
+    ActivePage = tsChroma
     Align = alClient
     BorderSpacing.Left = 10
     BorderSpacing.Right = 10
     BorderSpacing.Around = 5
-    TabIndex = 5
+    TabIndex = 11
     TabOrder = 0
     OnChange = pcMainChange
     object tsCommon: TTabSheet
@@ -13226,7 +13226,7 @@ object fConf: TfConf
         TopIndex = -1
       end
       object cbChroma: TCheckBox
-        Left = 8
+        Left = 10
         Height = 20
         Top = 288
         Width = 204
@@ -13291,19 +13291,26 @@ object fConf: TfConf
         Text = 'Breath (pulse)'
       end
       object Label32: TLabel
-        Left = 16
+        Left = 10
         Height = 16
-        Top = 456
+        Top = 256
         Width = 557
         Caption = 'Razer Synapse required on Windows. OpenRazer on Linux. No support for other platforms at this time.'
       end
       object cbChromaNormal: TCheckBox
-        Left = 8
+        Left = 10
         Height = 20
         Top = 424
-        Width = 247
-        Caption = 'Make units green when reading is normal'
+        Width = 255
+        Caption = 'Make units green when reading is normal *'
         TabOrder = 4
+      end
+      object Label42: TLabel
+        Left = 10
+        Height = 16
+        Top = 456
+        Width = 522
+        Caption = '* When Trndi is in focus, units may turn off coloring if this is disabled. This is a Chroma limitation.'
       end
     end
     object tsExt: TTabSheet
