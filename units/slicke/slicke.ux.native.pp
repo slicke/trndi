@@ -96,6 +96,9 @@ begin
     Result := Screen.Fonts.IndexOf(fname) >= 0;
   finally
   end;
+  {$elseif DEFINED(HAIKU)}
+  fname := 'Noto Sans';
+  result := true; // System font!
   {$else}
   fname := 'font';
   Result := true;
@@ -120,6 +123,9 @@ begin
     Result := Screen.Fonts.IndexOf(fname) >= 0;
   finally
   end;
+  {$elseif DEFINED(HAIKU)}
+  fname := 'Noto Sans';
+  result := true; // System font!
   {$else}
   fname := 'font';
   Result := true;
