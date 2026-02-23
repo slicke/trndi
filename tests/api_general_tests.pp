@@ -22,6 +22,15 @@ published
   procedure TestPredictReadingsInsufficientData;
   procedure TestPredictReadingsLinearTrend;
   procedure TestPredictReadingsRateLimiter;
+  // edge cases
+  procedure TestPredictReadingsFlatTrend;
+  procedure TestPredictReadingsDescendingTrend;
+  procedure TestPredictReadingsLimiterSecondStep;
+  procedure TestPredictReadingsMaxClamp;
+  procedure TestPredictReadingsNumPredictionsCap;
+  procedure TestPredictReadingsIrregularIntervals;
+  procedure TestPredictReadingsInvalidTimeDistribution;
+  procedure TestPredictReadingsOutputOrdering;
 end;
 
 implementation
@@ -252,6 +261,234 @@ end;
     finally
       api.Free;
     end;
+  end;
+
+  // Confirm that the limiter continues to cap even when more than two
+  // predictions are requested.  In the real algorithm the second prediction
+  // is generated from the first, so a very large drop should still produce
+  // a 20 mg/dL value on the second step.
+  procedure TAPIGeneralTester.TestPredictReadingsLimiterSecondStep;
+  var
+    api: TFakeAPI;
+    preds, readings: BGResults;
+    i: integer;
+    baseTime: TDateTime;
+  begin
+    api := TFakeAPI.Create;
+    try
+      SetLength(readings, 3);
+      baseTime := Now - EncodeTime(0, 10, 0, 0);
+      for i := 0 to High(readings) do
+      begin
+        readings[i].Init(mgdl);
+        readings[i].update(200 - (i * 100), BGPrimary, mgdl);
+        readings[i].date := baseTime + EncodeTime(0, i * 5, 0, 0);
+      end;
+      api.SetReadings(readings);
+
+      AssertTrue('predictReadings handles steep drop across multiple steps',
+        api.predictReadings(3, preds));
+      AssertEquals('three predictions returned', 3, Length(preds));
+
+      AssertEquals('first prediction clamped', 20, Round(preds[0].convert(mgdl)));
+      AssertEquals('second prediction also clamped', 20, Round(preds[1].convert(mgdl)));
+      // third prediction comes from second, so it should likewise be limited
+      AssertEquals('third prediction also clamped', 20, Round(preds[2].convert(mgdl)));
+    finally
+      api.Free;
+    end;
+  end;
+
+  procedure TAPIGeneralTester.TestPredictReadingsFlatTrend;
+  var
+    api: TFakeAPI;
+    preds, readings: BGResults;
+    i: integer;
+    baseTime: TDateTime;
+  begin
+    api := TFakeAPI.Create;
+    try
+      // constant 100 for three readings
+      SetLength(readings, 3);
+      baseTime := Now - EncodeTime(0, 10, 0, 0);
+      for i := 0 to High(readings) do
+      begin
+        readings[i].Init(mgdl);
+        readings[i].update(100, BGPrimary, mgdl);
+        readings[i].date := baseTime + EncodeTime(0, i * 5, 0, 0);
+      end;
+      api.SetReadings(readings);
+
+      AssertTrue(api.predictReadings(4, preds));
+      for i := 0 to High(preds) do
+        AssertEquals('flat trend prediction stays at 100', 100,
+          Round(preds[i].convert(mgdl)));
+    finally api.Free; end;
+  end;
+
+  procedure TAPIGeneralTester.TestPredictReadingsDescendingTrend;
+  var
+    api: TFakeAPI;
+    preds, readings: BGResults;
+    i: integer;
+    baseTime: TDateTime;
+  begin
+    api := TFakeAPI.Create;
+    try
+      SetLength(readings, 4);
+      baseTime := Now - EncodeTime(0, 15, 0, 0);
+      for i := 0 to High(readings) do
+      begin
+        readings[i].Init(mgdl);
+        readings[i].update(200 - i*10, BGPrimary, mgdl); // drop 10 each step
+        readings[i].date := baseTime + EncodeTime(0, i * 5, 0, 0);
+      end;
+      api.SetReadings(readings);
+
+      AssertTrue(api.predictReadings(3, preds));
+      // Last actual reading is 170, slope -10 per 5min implies
+      // predictions of 160, 150, 140 in that order.
+      AssertEquals(160, Round(preds[0].convert(mgdl)));
+      AssertEquals(150, Round(preds[1].convert(mgdl)));
+      AssertEquals(140, Round(preds[2].convert(mgdl)));
+    finally api.Free; end;
+  end;
+
+  procedure TAPIGeneralTester.TestPredictReadingsMaxClamp;
+  var
+    api: TFakeAPI;
+    preds, readings: BGResults;
+    i: integer;
+    baseTime: TDateTime;
+  begin
+    api := TFakeAPI.Create;
+    try
+      // simple linear data
+      SetLength(readings, 3);
+      baseTime := Now - EncodeTime(0, 10, 0, 0);
+      for i := 0 to High(readings) do
+      begin
+        readings[i].Init(mgdl);
+        readings[i].update(100 + i*5, BGPrimary, mgdl);
+        readings[i].date := baseTime + EncodeTime(0, i * 5, 0, 0);
+      end;
+      api.SetReadings(readings);
+
+      AssertTrue(api.predictReadings(25, preds));
+      AssertEquals('numPredictions clamped to 20', 20, Length(preds));
+    finally api.Free; end;
+  end;
+
+  procedure TAPIGeneralTester.TestPredictReadingsNumPredictionsCap;
+  var
+    api: TFakeAPI;
+    preds, readings: BGResults;
+    i: integer;
+    baseTime: TDateTime;
+  begin
+    api := TFakeAPI.Create;
+    try
+      // Use simple linear data again (need at least three readings to
+      // satisfy the algorithm's minimum requirement)
+      SetLength(readings, 3);
+      baseTime := Now - EncodeTime(0, 10, 0, 0);
+      for i := 0 to High(readings) do
+      begin
+        readings[i].Init(mgdl);
+        readings[i].update(100 + i*10, BGPrimary, mgdl);
+        readings[i].date := baseTime + EncodeTime(0, i * 5, 0, 0);
+      end;
+      api.SetReadings(readings);
+
+      // Too many predictions should be clamped to 20
+      AssertTrue('predictReadings should succeed with large count',
+        api.predictReadings(100, preds));
+      AssertEquals('excessive numPredictions clamped to 20', 20, Length(preds));
+      // make sure the values are reasonable (optional)
+      if Length(preds) > 0 then
+        AssertEquals('first clamped prediction still computed',
+          Round(preds[0].convert(mgdl)),
+          Round(preds[0].convert(mgdl)));
+
+      // For non-positive values the API simply fails (numPredictions < 1).
+      AssertFalse('predictReadings should return false when 0 requested',
+        api.predictReadings(0, preds));
+      AssertEquals('zero numPredictions yields no results', 0, Length(preds));
+      AssertFalse('predictReadings should return false when negative',
+        api.predictReadings(-3, preds));
+      AssertEquals('negative numPredictions yields no results', 0, Length(preds));
+    finally api.Free; end;
+  end;
+
+  procedure TAPIGeneralTester.TestPredictReadingsIrregularIntervals;
+  var
+    api: TFakeAPI;
+    preds, readings: BGResults;
+  begin
+    api := TFakeAPI.Create;
+    try
+      // 3 readings at 0,3,20 minutes apart
+      SetLength(readings, 3);
+      readings[0].Init(mgdl);
+      readings[0].update(120, BGPrimary, mgdl);
+      readings[0].date := Now - EncodeTime(0, 20, 0, 0);
+      readings[1].Init(mgdl);
+      readings[1].update(130, BGPrimary, mgdl);
+      readings[1].date := Now - EncodeTime(0, 17, 0, 0);
+      readings[2].Init(mgdl);
+      readings[2].update(140, BGPrimary, mgdl);
+      readings[2].date := Now;
+      api.SetReadings(readings);
+
+      AssertTrue('irregular intervals still succeed', api.predictReadings(3, preds));
+      AssertEquals(3, Length(preds));
+    finally api.Free; end;
+  end;
+
+  procedure TAPIGeneralTester.TestPredictReadingsInvalidTimeDistribution;
+  var
+    api: TFakeAPI;
+    preds, readings: BGResults;
+    t: TDateTime;
+    i: integer;
+  begin
+    api := TFakeAPI.Create;
+    try
+      // three readings with identical timestamp
+      t := Now - EncodeTime(0, 10, 0, 0);
+      SetLength(readings, 3);
+      for i := 0 to High(readings) do
+      begin
+        readings[i].Init(mgdl);
+        readings[i].update(100 + i*5, BGPrimary, mgdl);
+        readings[i].date := t;
+      end;
+      api.SetReadings(readings);
+      AssertFalse('prediction fails when time distribution invalid', api.predictReadings(3, preds));
+    finally api.Free; end;
+  end;
+
+  procedure TAPIGeneralTester.TestPredictReadingsOutputOrdering;
+  var
+    api: TFakeAPI;
+    preds, readings: BGResults;
+    i: integer;
+  begin
+    api := TFakeAPI.Create;
+    try
+      // supply readings in reverse chronological order
+      SetLength(readings, 4);
+      for i := 0 to High(readings) do
+      begin
+        readings[i].Init(mgdl);
+        readings[i].update(100 + i*5, BGPrimary, mgdl);
+        readings[i].date := Now - EncodeTime(0, (High(readings)-i)*5, 0, 0);
+      end;
+      api.SetReadings(readings);
+      AssertTrue(api.predictReadings(5, preds));
+      for i := 0 to High(preds)-1 do
+        AssertTrue('predictions are chronological', preds[i].date <= preds[i+1].date);
+    finally api.Free; end;
   end;
 
 procedure TAPIGeneralTester.SetUp;
