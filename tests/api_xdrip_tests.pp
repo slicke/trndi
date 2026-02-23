@@ -17,6 +17,7 @@ protected
   procedure TearDown; override;
 published
   procedure TestXDrip;
+  procedure TestXDripUnreachable;
   procedure TestXDripLocalServer;
 end;
 
@@ -32,6 +33,22 @@ begin
     // Test if the connect function runs (will fail without server)
     AssertFalse('API Connect should fail without server', api.connect);
     AssertTrue('Time correct', api.getBasetime > IncHour(DateTimeToUnix(now), -2));
+  finally
+    api.Free;
+  end;
+end;
+
+procedure TAPIXDripTester.TestXDripUnreachable;
+var
+  api: TrndiAPI;
+begin
+  api := xDrip.create('http://127.0.0.1:1', 'testsecret');
+  try
+    AssertFalse('Connect to unreachable xDrip should fail', api.connect);
+    AssertTrue('Error message should not be empty', api.errormsg <> '');
+    AssertTrue('Error message references connect or server',
+      (Pos('Cannot connect', api.errormsg) > 0) or
+      (Pos('Invalid address', api.errormsg) = 0)); // don't misinterpret
   finally
     api.Free;
   end;

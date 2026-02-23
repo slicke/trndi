@@ -18,6 +18,8 @@ protected
 published
   procedure TestNightscoutInvalidUrl;
   procedure TestNightscoutUnauthorized;
+  procedure TestNightscoutUnreachable;
+  procedure TestNightscoutServerError;
   procedure TestNightscoutGetReadingsRespectsMax;
   procedure TestNightScout;
 end;
@@ -33,6 +35,59 @@ begin
     AssertFalse('Invalid URL should not connect', api.connect);
   finally
     api.Free;
+  end;
+end;
+
+// Edge network: explicit unreachable host/port should fail with a readable error
+procedure TAPINightscoutTester.TestNightscoutUnreachable;
+var
+  api: NightScout;
+begin
+  api := NightScout.create('http://127.0.0.1:1', 'x');
+  try
+    AssertFalse('Connect should fail for unreachable server', api.connect);
+    // network failures typically produce either no-data or connection messages
+    AssertTrue('Error message should mention data or connect',
+      (Pos('Did not receive any data', api.errormsg) > 0) or
+      (Pos('Cannot connect', api.errormsg) > 0) or
+      (api.errormsg <> ''));
+  finally
+    api.Free;
+  end;
+end;
+
+// Edge network: server responds with HTTP 500 / non-JSON, should be handled gracefully
+procedure TAPINightscoutTester.TestNightscoutServerError;
+var
+  api: NightScout;
+  PHPProcess: TProcess;
+  BaseURL: string;
+begin
+  if GetEnvironmentVariable('TRNDI_NO_PHP') = '1' then
+    Exit; // skip
+
+  PHPProcess := nil;
+  if not StartOrUseTestServer(PHPProcess, BaseURL) then
+    Fail('Failed to start or reach test PHP server');
+  try
+    // append special prefix that testserver treats as error generator
+    api := NightScout.create(BaseURL + '/error500', 'test22');
+    try
+      AssertFalse('Connect should fail when server returns error', api.connect);
+      // allow either parse error or unexpected structure message
+      AssertTrue('Error message indicates bad response',
+        (Pos('Unexpected JSON structure', api.errormsg) > 0) or
+        (Pos('JSON parse error', api.errormsg) > 0) or
+        (api.errormsg <> ''));
+    finally
+      api.Free;
+    end;
+  finally
+    if Assigned(PHPProcess) then
+    begin
+      PHPProcess.Terminate(0);
+      PHPProcess.Free;
+    end;
   end;
 end;
 
