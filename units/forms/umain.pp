@@ -391,6 +391,7 @@ private
   FLastTirColor: TColor;
   FLastTimerTick: TDateTime; // Last timer tick for wake detection
   FForceRefresh: boolean; // Force bypass of cached API reads on wake
+  FLastFetchHadData: boolean; // true when last API call returned ≥1 readings (used to avoid reusing cache after an empty fetch)
 
   FReadingsLock: TRTLCriticalSection; // Protect cached readings shared with web server thread
 
@@ -5990,8 +5991,11 @@ begin
     Exit;
 
   // Performance optimization: use cached readings if recent (unless forced)
+  // and if the previous API call actually supplied data.  When the last
+  // fetch returned zero readings we deliberately skip the cache so that we
+  // retry the backend every timer tick until valid data comes back.
   if (not ForceRefresh) and (SecondsBetween(Now, FLastAPICall) < API_CACHE_SECONDS) and
-    (Length(FCachedReadings) > 0) then
+    (Length(FCachedReadings) > 0) and FLastFetchHadData then
   begin
     EnterCriticalSection(FReadingsLock);
     try
@@ -6029,6 +6033,7 @@ begin
   // If API call failed (no readings) but we have fresh cached data, use it
   if (Length(bgs) < 1) and (Length(FCachedReadings) > 0) then
   begin
+    FLastFetchHadData := false; // indicate we didn't actually get new data
     EnterCriticalSection(FReadingsLock);
     try
       if Length(FCachedReadings) > 0 then
@@ -6048,6 +6053,7 @@ begin
   if Length(bgs) > 0 then
   begin
     // Update cache with fresh data
+    FLastFetchHadData := true;
     EnterCriticalSection(FReadingsLock);
     try
       SetLength(FCachedReadings, Length(bgs));
