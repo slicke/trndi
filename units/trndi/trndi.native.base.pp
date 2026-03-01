@@ -1591,6 +1591,11 @@ var
   proxyUser: string;
   proxyPass: string;
 
+  function IsDnsResolveError(const code: CURLcode): boolean;
+  begin
+    Result := code = CURLE_COULDNT_RESOLVE_HOST;
+  end;
+
   function PerformRequest(withProxy: boolean): boolean;
   var
     j: integer;
@@ -1725,12 +1730,30 @@ begin
       if PerformRequest(false) then
         Result := responseStream.DataString
       else
+      if IsDnsResolveError(errCode) then
+      begin
+        Sleep(1500); // allow DNS/network stack to settle after resume
+        if PerformRequest(false) then
+          Result := responseStream.DataString
+        else
+          Result := string(curl_easy_strerror(errCode));
+      end
+      else
         Result := string(curl_easy_strerror(errCode));
     end
     else
     begin
       if PerformRequest(false) then
         Result := responseStream.DataString
+      else
+      if IsDnsResolveError(errCode) then
+      begin
+        Sleep(1500); // allow DNS/network stack to settle after resume
+        if PerformRequest(false) then
+          Result := responseStream.DataString
+        else
+          Result := string(curl_easy_strerror(errCode));
+      end
       else
         Result := string(curl_easy_strerror(errCode));
     end;
