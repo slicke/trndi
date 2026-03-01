@@ -565,6 +565,20 @@ end;
 function Dexcom.GetReadings(AMinutes, AMaxCount: integer; extras: string;
 out res: string): BGResults;
 
+function LooksLikeSessionFailure(const Response: string): boolean;
+var
+  L: string;
+begin
+  L := LowerCase(Response);
+  Result :=
+    ((Pos('session', L) > 0) and
+     ((Pos('invalid', L) > 0) or (Pos('expired', L) > 0) or
+      (Pos('not valid', L) > 0) or (Pos('not found', L) > 0))) or
+    (Pos('unauthorized', L) > 0) or
+    (Pos('forbidden', L) > 0) or
+    (Pos('accountpassword', L) > 0);
+end;
+
   // Helper: convert Dexcom /Date(ms)/ string to TDateTime
 function DexTimeToTDateTime(const S: string): TDateTime;
   var
@@ -625,6 +639,7 @@ var
   noval: MaybeInt;
   CurVal, PrevVal: double;
   CurOk, PrevOk: boolean;
+  attempt: integer;
 begin
   // Initialize the noval
   noval.exists := false;
@@ -640,13 +655,24 @@ begin
   LParams[2] := 'minutes=' + IntToStr(AMinutes);
   LParams[3] := 'maxCount=' + IntToStr(AMaxCount);
 
-  // Fetch glucose values; some deployments also allow reading alert settings
-  LGlucoseJSON := native.Request(true, DEXCOM_GLUCOSE_READINGS_ENDPOINT, LParams, '', 'Accept=application/json');
-  {$ifdef DEBUG} if debug_log_api then TrndiDLog(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, DEXCOM_GLUCOSE_READINGS_ENDPOINT, LGlucoseJSON, debugParams(lparams)]));{$endif}
-  LAlertJSON := native.Request(true, DEXCOM_ALERT_ENDPOINT, LParams, '', 'Accept=application/json');
-  {$ifdef DEBUG} if debug_log_api then TrndiDLog(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, DEXCOM_ALERT_ENDPOINT, LAlertJSON, debugParams(LPARAMS)]));{$endif}
+  for attempt := 0 to 1 do
+  begin
+    LGlucoseJSON := native.Request(true, DEXCOM_GLUCOSE_READINGS_ENDPOINT, LParams, '', 'Accept=application/json');
+    {$ifdef DEBUG} if debug_log_api then TrndiDLog(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, DEXCOM_GLUCOSE_READINGS_ENDPOINT, LGlucoseJSON, debugParams(lparams)]));{$endif}
+    LAlertJSON := native.Request(true, DEXCOM_ALERT_ENDPOINT, LParams, '', 'Accept=application/json');
+    {$ifdef DEBUG} if debug_log_api then TrndiDLog(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, DEXCOM_ALERT_ENDPOINT, LAlertJSON, debugParams(LPARAMS)]));{$endif}
 
-  res := LGlucoseJSON;
+    res := LGlucoseJSON;
+
+    if (attempt = 0) and LooksLikeSessionFailure(LGlucoseJSON) then
+      if Connect then
+      begin
+        LParams[1] := 'sessionId=' + FSessionID;
+        Continue;
+      end;
+
+    Break;
+  end;
 
   // Return empty result on empty payload
   if LGlucoseJSON = '' then
