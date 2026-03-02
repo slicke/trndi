@@ -509,11 +509,76 @@ for ($i = 0; $i < $count; $i++){
 
 // Very small and permissive authorization check used by the tests for Nightscout endpoints
 
+function getNS3RotateStatePath() {
+    return sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'trndi-ns3-rotate-state.json';
+}
+
+function loadNS3RotateState() {
+    $default = [
+        'authCount' => 0,
+        'currentToken' => '',
+        'entriesSuccessCount' => 0,
+    ];
+
+    $path = getNS3RotateStatePath();
+    if (!is_file($path)) {
+        return $default;
+    }
+
+    $raw = @file_get_contents($path);
+    if ($raw === false || trim($raw) === '') {
+        return $default;
+    }
+
+    $decoded = json_decode($raw, true);
+    if (!is_array($decoded)) {
+        return $default;
+    }
+
+    return array_merge($default, $decoded);
+}
+
+function saveNS3RotateState($state) {
+    $path = getNS3RotateStatePath();
+    @file_put_contents($path, json_encode($state));
+}
+
+function resetNS3RotateState() {
+    $path = getNS3RotateStatePath();
+    if (is_file($path)) {
+        @unlink($path);
+    }
+}
+
+function getBearerTokenFromHeader() {
+    $header = isset($_SERVER['HTTP_AUTHORIZATION']) ? trim($_SERVER['HTTP_AUTHORIZATION']) : '';
+    if ($header === '') {
+        return '';
+    }
+
+    if (stripos($header, 'Bearer ') === 0) {
+        return trim(substr($header, 7));
+    }
+
+    return '';
+}
+
 // Nightscout v2 auth endpoint
 if (str_starts_with($path, '/api/v2/authorization/request/')) {
     header('Content-Type: application/json');
     $tokenPart = substr($path, strlen('/api/v2/authorization/request/'));
+    if ($tokenPart === 'token=rotate') {
+        $state = loadNS3RotateState();
+        $state['authCount'] = intval($state['authCount']) + 1;
+        $state['currentToken'] = 'rotate-' . strval($state['authCount']);
+        saveNS3RotateState($state);
+
+        echo json_encode(['token' => $state['currentToken']]);
+        exit;
+    }
+
     if ($tokenPart === 'token=test22') {
+        resetNS3RotateState();
         echo json_encode(['token' => 'testtoken']);
         exit;
     } else {
@@ -551,6 +616,26 @@ if (str_starts_with($path, '/api/v3/')) {
         exit;
     }
     if ($sub === 'entries') {
+        $bearerToken = getBearerTokenFromHeader();
+        if (str_starts_with($bearerToken, 'rotate-')) {
+            $state = loadNS3RotateState();
+            $expectedToken = isset($state['currentToken']) ? strval($state['currentToken']) : '';
+
+            if ($expectedToken === '' || $bearerToken !== $expectedToken) {
+                http_response_code(401);
+                echo json_encode(['error' => 'Unauthorized', 'status' => 401]);
+                exit;
+            }
+
+            $state['entriesSuccessCount'] = intval($state['entriesSuccessCount']) + 1;
+            if (intval($state['entriesSuccessCount']) === 1) {
+                // Force one mid-session expiry: next entries request with old token should fail,
+                // and client must refresh via /authorization/request/token=rotate.
+                $state['currentToken'] = 'rotate-' . strval(intval($state['authCount']) + 1);
+            }
+            saveNS3RotateState($state);
+        }
+
         $entries = [];
         for ($i = 0; $i < 5; $i++) {
             $entries[] = [

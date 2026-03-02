@@ -19,6 +19,7 @@ published
   procedure TestNightscout3InvalidUrl;
   procedure TestNightscout3Unauthorized;
   procedure TestNightscout3GetReadingsRespectsMax;
+  procedure TestNightscout3RefreshesExpiredTokenDuringPolling;
   procedure TestNightscout3;
 end;
 
@@ -94,6 +95,50 @@ begin
       AssertTrue('Nightscout3 returns at least 1 reading', Length(readings) >= 1);
       AssertTrue('Nightscout3 reading value set', readings[0].val > 0);
       AssertTrue('Nightscout3 reading timestamp set', readings[0].date > 0);
+    finally
+      api.Free;
+    end;
+  finally
+    if Assigned(PHPProcess) then
+    begin
+      PHPProcess.Terminate(0);
+      PHPProcess.Free;
+    end;
+  end;
+end;
+
+procedure TAPINightscout3Tester.TestNightscout3RefreshesExpiredTokenDuringPolling;
+var
+  api: TrndiAPI;
+  PHPProcess: TProcess;
+  res: string;
+  firstReadings: BGResults;
+  secondReadings: BGResults;
+  BaseURL: string;
+begin
+  // Allow skipping integration tests via TRNDI_NO_PHP=1
+  if GetEnvironmentVariable('TRNDI_NO_PHP') = '1' then
+    Exit;
+
+  PHPProcess := nil;
+  if not StartOrUseTestServer(PHPProcess, BaseURL) then
+    Fail('Failed to start or reach test PHP server');
+
+  try
+    // Special token mode in fake server: first entries call succeeds,
+    // second call requires re-auth and should still succeed transparently.
+    api := NightScout3.create(BaseURL, 'rotate');
+    try
+      AssertTrue('Nightscout3 connects with rotating token mode', api.connect);
+
+      firstReadings := api.getReadings(30, 5, '', res);
+      AssertTrue('First fetch returns readings', Length(firstReadings) > 0);
+
+      secondReadings := api.getReadings(30, 5, '', res);
+      AssertTrue('Second fetch should recover from token expiry and return readings',
+        Length(secondReadings) > 0);
+      AssertTrue('Second fetch should still include a valid reading value',
+        secondReadings[0].val > 0);
     finally
       api.Free;
     end;
