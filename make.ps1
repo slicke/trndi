@@ -2,7 +2,7 @@
 make.ps1 — Windows helper to run `lazbuild` and provide common shortcuts
 
 Usage:
-  ./make.ps1 [release|debug|noext|noext-debug|list-modules] or ./make.ps1 [lazbuild-args...]
+  ./make.ps1 [release|debug|noext|noext-debug|list-modules|test|clean[-n|--dry-run]] or ./make.ps1 [lazbuild-args...]
 
 Behavior:
  - Sets `LAZBUILD` to `C:\lazarus\lazbuild.exe` if present and `LAZBUILD` is not already set
@@ -127,6 +127,58 @@ switch ($firstArg) {
         & 'tests/TrndiTestConsole.exe' @extraArgs
         exit $LASTEXITCODE
     }
+    "clean" {
+        Write-Host "Cleaning common products..." -ForegroundColor Cyan
+
+        # Accept optional dry-run flag: -n or --dry-run
+        $opts = $extraArgs
+        $dryRun = $false
+        if ($opts -and $opts.Count -gt 0) {
+            if ($opts -contains '-n' -or $opts -contains '--dry-run' -or $opts -contains '/n') { $dryRun = $true }
+        }
+
+        $root = (Get-Location).ProviderPath
+        $maxDepth = 3
+
+        # Find build artifacts (depth-limited) similar to the Makefile's `find -maxdepth 3 ...`
+        $matches = Get-ChildItem -Path . -Recurse -Force -ErrorAction SilentlyContinue |
+            Where-Object {
+                try {
+                    $rel = $_.FullName.Substring($root.Length + 1)
+                } catch { return $false }
+                $depth = ($rel -split '[\\/]').Length - 1
+                if ($depth -gt $maxDepth) { return $false }
+
+                if (-not $_.PSIsContainer) {
+                    return ($_.Name -match '\.(o|ppu|compiled|a|so|dll|exe)$') -or ($_.Name -match '\.noext-.*') -or ($_.Name -match 'noext-.*\.(lpi|res|ico|png)$')
+                }
+                else {
+                    return ($_.Name -match '\.app$')
+                }
+            }
+
+        $matchCount = ($matches | Measure-Object).Count
+
+        if ($matchCount -gt 0) {
+            if ($dryRun) {
+                Write-Host "DRY RUN: items that would be removed:" -ForegroundColor Yellow
+                foreach ($m in $matches | Sort-Object FullName) { Write-Host "  $($m.FullName)" }
+                Write-Host "Would remove $matchCount items." -ForegroundColor Yellow
+            }
+            else {
+                foreach ($m in $matches) {
+                    try { Remove-Item -LiteralPath $m.FullName -Force -Recurse -ErrorAction SilentlyContinue } catch { }
+                }
+                Write-Host "Removed $matchCount matching items." -ForegroundColor Green
+            }
+        }
+        else {
+            Write-Host "(no matching build artifacts found)" -ForegroundColor Yellow
+        }
+
+        Write-Host "(Note: Lazarus project files and sources are not removed; temporary noext project files are cleaned.)" -ForegroundColor Cyan
+        exit 0
+    }
     "list-modules" {
         Write-Host "Modules (units) found under units/ (grouped by dot-separated names):" -ForegroundColor Cyan
 
@@ -198,7 +250,7 @@ switch ($firstArg) {
         exit 0
     }
     "help" {
-        Write-Host "Usage: ./make.ps1 [release|debug|noext|noext-debug|list-modules|test] (no args -> release)" -ForegroundColor Cyan
+        Write-Host "Usage: ./make.ps1 [release|debug|noext|noext-debug|list-modules|test|clean (use -n|--dry-run to preview)] (no args -> release)" -ForegroundColor Cyan
         Write-Host "Other arguments are forwarded to lazbuild when using these shortcuts." -ForegroundColor Cyan
         exit 0
     }

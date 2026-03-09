@@ -1,27 +1,38 @@
 unit trndi.native.mock;
 
-{$mode ObjFPC}{$H+}
-
+{$I ../../inc/native.inc}// Depending on your project setup, this may define X_WIN, X_PC, X_MAC, etc.
 interface
-
 uses
-  Classes, SysUtils,
+  Classes, SysUtils, inifiles,
 {$IF DEFINED(X_WIN)}
-  Windows,
+  trndi.native.win,
+{$ELSEIF DEFINED(X_LINUXBSD)}
+  trndi.native.linux,
+{$ELSE}
+  {$define TRNDI_NATIVE_MOCK_BASE}
+  fphttpclient,
 {$ENDIF}
-  trndi.native.base, fphttpclient, opensslsockets, IniFiles;
+  trndi.native.base;
 
 type
   { TTrndiNativeMock }
-  TTrndiNativeMock = class(TTrndiNativeBase)
+  TTrndiNativeMock = class(
+    {$if defined(X_WIN)}
+    TTrndiNativeWindows
+    {$elseif defined(X_LINUXBSD)}
+    TTrndiNativeLinux
+    {$else}
+    TTrndiNativeBase
+    {$endif}
+  )
   private
     class var FMockSettings: TStringList;
   public
     // HTTP helpers
-    class function getURL(const url: string; out res: string): boolean; override;
-    class function TestProxyURL(const url: string; const proxyHost: string;
-      const proxyPort: string; const proxyUser: string; const proxyPass: string;
-      out res: string): boolean; override;
+    //class function getURL(const url: string; out res: string): boolean; override;
+    //class function TestProxyURL(const url: string; const proxyHost: string;
+    //  const proxyPort: string; const proxyUser: string; const proxyPass: string;
+    //  out res: string): boolean; override;
 
     // Settings API (simple in-memory store for tests)
     procedure SetSetting(const keyname: string; const val: string; global: boolean = false); override;
@@ -42,12 +53,20 @@ type
     class function SpeakSoftwareName: string; override;
     class function GetWindowManagerName: string; override;
     class function nobuttonsVM: boolean; override;
+
+    {$ifdef TRNDI_NATIVE_MOCK_BASE}
+    class function getURL(const url: string; out res: string): boolean; override;
+    class function TestProxyURL(const url: string; const proxyHost: string;
+       const proxyPort: string; const proxyUser: string; const proxyPass: string;
+       out res: string): boolean; override;
+    {$endif}
   end;
 
 implementation
 
 { TTrndiNativeMock }
 
+{$ifdef TRNDI_NATIVE_MOCK_BASE}
 class function TTrndiNativeMock.getURL(const url: string; out res: string): boolean;
 var
   nativeObj: TTrndiNativeBase;
@@ -149,6 +168,7 @@ begin
     HTTP.Free;
   end;
 end;
+{$endif}
 
 procedure TTrndiNativeMock.SetSetting(const keyname: string; const val: string; global: boolean = false);
 var

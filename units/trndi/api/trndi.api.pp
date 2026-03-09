@@ -23,7 +23,7 @@ unit trndi.api;
 interface
 
 uses
-Classes, SysUtils, trndi.types, dateutils, trndi.native, Dialogs, trndi.funcs;
+Classes, SysUtils, trndi.types, dateutils, trndi.native, trndi.funcs;
 
 type
   {** CGMCore holds thresholds used to classify blood glucose values.
@@ -322,6 +322,11 @@ const
  }
   procedure alert(const msg: string);
 
+    {** Emits a (debug) log to be saved
+    @param(msg The message)
+ }
+  procedure log(const msg: string);
+
     {** Emits a status message
         @param(msg The message)
      }
@@ -404,6 +409,12 @@ procedure TrndiAPI.status(const msg: string);
 begin
   if assigned(emitter) then
     emitter(msg, TrndiAPIMsg.status);
+end;
+
+procedure TrndiAPI.log(const msg: string);
+begin
+  if assigned(emitter) then
+    emitter(msg, TrndiAPIMsg.log);
 end;
 
   {------------------------------------------------------------------------------

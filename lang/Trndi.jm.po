@@ -450,7 +450,9 @@ msgid "Breath (pulse)"
 msgstr "Andas (puls)"
 
 #: tfconf.cbchromanormal.caption
-msgid "Make units green when reading is normal"
+#, fuzzy
+#| msgid "Make units green when reading is normal"
+msgid "Make units green when reading is normal *"
 msgstr "Gôr enheter grôna vid normalt verde"
 
 #: tfconf.cbcust.caption
@@ -495,6 +497,10 @@ msgstr ""
 
 #: tfconf.cbmediadisable.caption
 msgid "Disable the entire media system"
+msgstr ""
+
+#: tfconf.cbmovediffright.caption
+msgid "Move to right"
 msgstr ""
 
 #: tfconf.cbmultitouch.caption
@@ -548,6 +554,10 @@ msgstr "Liten"
 #: tfconf.cbprivacy.caption
 msgid "Privacy Mode (Hide glucose value)"
 msgstr "Privat lege (dôlj glukosverde)"
+
+#: tfconf.cbprogress.caption
+msgid "Display progress to next update on the left"
+msgstr ""
 
 #: tfconf.cbshowmean.caption
 msgid "Show mean blood sugar reading next to TIR"
@@ -612,6 +622,10 @@ msgstr "Kontoferg"
 #: tfconf.cbusercolor.caption
 msgid "Display users' colors on the main and floating windows"
 msgstr "Visa anvendares ferger po huvud- och det flytande fônstret"
+
+#: tfconf.cbwarnlohi.caption
+msgid "Warn when going high or low"
+msgstr ""
 
 #: tfconf.cbwebapi.caption
 #, fuzzy
@@ -716,6 +730,10 @@ msgstr "Anvend URL"
 #: tfconf.groupbox1.caption
 msgid "System Features"
 msgstr "Systemfunksjoner"
+
+#: tfconf.groupbox10.caption
+msgid "Layout"
+msgstr ""
 
 #: tfconf.groupbox2.caption
 msgid "Available Extensions"
@@ -884,9 +902,25 @@ msgstr ""
 msgid "High contrast disables some of Trndis Time-in-Range coloring"
 msgstr ""
 
+#: tfconf.label39.caption
+msgid "Diff scale:"
+msgstr ""
+
 #: tfconf.label4.caption
 msgid "Window start-up position"
 msgstr "Posisjon av fônster vid start"
+
+#: tfconf.label40.caption
+msgid "Diff position:"
+msgstr ""
+
+#: tfconf.label41.caption
+msgid "Prediction scale:"
+msgstr ""
+
+#: tfconf.label42.caption
+msgid "* When Trndi is in focus, units may turn off coloring if this is disabled. This is a Chroma limitation."
+msgstr ""
 
 #: tfconf.label5.caption
 msgid "Black = transparent"
@@ -1628,6 +1662,15 @@ msgstr ""
 msgid "Hi > %.1f"
 msgstr "Hôg > %.1f"
 
+#: trndi.strings.rs_hi_predict
+#, object-pascal-format
+msgid "High Predicted in %d minutes!"
+msgstr ""
+
+#: trndi.strings.rs_hi_predict_soon
+msgid "High Predicted soon!"
+msgstr ""
+
 #: trndi.strings.rs_init_api
 msgid "Initializing API..."
 msgstr "Initierar API..."
@@ -1754,6 +1797,15 @@ msgstr "Log"
 msgid "Lo < %.1f"
 msgstr "Log < %.1f"
 
+#: trndi.strings.rs_lo_predict
+#, object-pascal-format
+msgid "Low Predicted in %d minutes!"
+msgstr ""
+
+#: trndi.strings.rs_lo_predict_soon
+msgid "Low Predicted soon!"
+msgstr ""
+
 #: trndi.strings.rs_menu_force
 msgid "Force update"
 msgstr "Tvinga uppdatering"
@@ -1822,8 +1874,14 @@ msgid "Built Without Support"
 msgstr "Byggd utan stôd"
 
 #: trndi.strings.rs_no_backend
+#, fuzzy
+#| msgid ""
+#| "No readings recieved. \n"
+#| "Has your CGM synced recently? \n"
+#| "Is the remote server working?"
 msgid ""
-"No readings recieved. \n"
+"No readings recieved.\n"
+"\n"
 "Has your CGM synced recently? \n"
 "Is the remote server working?"
 msgstr ""
@@ -1832,9 +1890,11 @@ msgstr ""
 "Fungerar servern?"
 
 #: trndi.strings.rs_no_boot_reading
-msgid ""
-"No fresh data is available.\n"
-"Trndi will attemp to fetch data until recent values are available"
+#, fuzzy
+#| msgid ""
+#| "No fresh data is available.\n"
+#| "Trndi will attemp to fetch data until recent values are available"
+msgid "No recent data available!"
 msgstr ""
 "Ingen färsk data finns att tillgå\n"
 "Trndi kommer försöka hämta data tills dess nyliga värden finns"
@@ -2681,6 +2741,10 @@ msgstr "Trndi tilloter inte en stôrre grens, fôr din egen sekerhet. Detta kan 
 #: uconf.rs_saftey_low
 msgid "Trndi won't allow a lower limit, the backend system only reports values every 5 minutes. 6 = one reading missing."
 msgstr "Trndi tilloter inte en legre grens, backendsystemet rapporterar bara verden var 5:e minut. 6 = en missad avlesning."
+
+#: uconf.rs_scale_diff_help
+msgid "You can change the scale/size of the difference in reading since last, by entering a scale factor"
+msgstr ""
 
 #: uconf.rs_select_font
 msgid "Select a font"

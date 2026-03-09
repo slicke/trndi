@@ -32,6 +32,8 @@ const
   uxclWhite = $00FFFFFF;
   uxclRed = $000000FF;
   uxclLightBlue = $00E0FFFF;
+  // sentinel used by numeric dialogs
+  FLOAT_NONE = -999.66;
 
   uxscSmall = 0.75;
   uxscNormal = 1;
@@ -71,6 +73,7 @@ function ExtNumericInput(
 const dialogsize: TUXDialogSize;
 const ACaption, ATitle, ADesc: string;
 ADefault: double;
+AMin, AMax: double;
 float: boolean;
 var ModalResult: TModalResult;
 const icon: UXImage = uxmtCog
@@ -161,19 +164,21 @@ var ModalResult: TModalResult;
 const icon: UXImage = uxmtCog
 ): integer;
 begin
-  Result := round(ExtNumericInput(dialogsize, ACaption, ATitle, ADesc, ADefault, false, ModalResult, icon));
+  // call numeric input with no min/max limits
+  Result := round(ExtNumericInput(dialogsize, ACaption, ATitle, ADesc, ADefault, FLOAT_NONE, FLOAT_NONE, false, ModalResult, icon));
 end;
 
 function ExtNumericInput(
 const dialogsize: TUXDialogSize;
 const ACaption, ATitle, ADesc: string;
 ADefault: double;
+AMin, AMax: double;
 float: boolean;
 var ModalResult: TModalResult;
 const icon: UXImage = uxmtCog
 ): double;
 begin
-  // For headless tests, accept the default and return it
+  // ignore limits for headless tests and just return default
   ModalResult := mrOk;
   Result := ADefault;
 end;

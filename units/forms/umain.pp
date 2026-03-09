@@ -199,6 +199,7 @@ TfBG = class(TForm)
   miPref: TMenuItem;
   miFloatOn: TMenuItem;
   pnOffReading: TPanel;
+  pnNextProgress: TPanel;
   pnWarning: TPanel;
   pnMultiUser: TPanel;
   pnOffRangeBar: TPanel;
@@ -295,6 +296,7 @@ TfBG = class(TForm)
   procedure pmSettingsClose({%H-}Sender: TObject);
   procedure pnWarningClick({%H-}Sender: TObject);
   procedure pnWarningPaint({%H-}Sender: TObject);
+  procedure pnNextProgressPaint({%H-}Sender: TObject);
   procedure speakReading;
   procedure FormMouseLeave({%H-}Sender: TObject);
   procedure FormMouseMove(Sender: TObject;{%H-}Shift: TShiftState; X, Y: integer);
@@ -389,6 +391,7 @@ private
   FLastTirColor: TColor;
   FLastTimerTick: TDateTime; // Last timer tick for wake detection
   FForceRefresh: boolean; // Force bypass of cached API reads on wake
+  FLastFetchHadData: boolean; // true when last API call returned ≥1 readings (used to avoid reusing cache after an empty fetch)
 
   FReadingsLock: TRTLCriticalSection; // Protect cached readings shared with web server thread
 
@@ -409,7 +412,7 @@ private
   procedure SetLang;
   procedure fixWarningPanel;
   procedure showWarningPanel(const message: string;
-    clearDisplayValues: boolean = false);
+    clearDisplayValues: boolean = false; opacity: integer = 235; showDetails: boolean = true);
   procedure CalcRangeTime;
   function GetValidatedPosition: TrndiPos;
     {** Acquire the latest reading(s) and process them for display.
@@ -547,6 +550,8 @@ private
       the calculated BGTrend values.
    }
   procedure UpdateTrendElements;
+  {** Recalculate left of lTir when next progress bar is visible }
+  procedure nextProgressChange;
   {** Refresh labels and menu captions that display API-derived thresholds
       and other backend metadata (e.g., cgmHi/cgmLo values).
    }
@@ -565,7 +570,7 @@ private
       consistent visual sizes across different screen resolutions.
    }
   procedure ScaleLbl(ALabel: TLabel; customAl: TAlignment = taCenter;
-    customTl: TTextLayout = tlCenter);
+    customTl: TTextLayout = tlCenter; allowCustom: boolean = true; padding: integer = 0);
 
     // Performance optimization methods
   {** Compute a simple hash of an array of readings used for change detection
@@ -642,6 +647,7 @@ private
       when the application is already current.
    }
   procedure CheckForUpdates(ShowUpToDateMessage: boolean = false);
+  procedure actOnMediaController(act: TMediaControllerAct; arg: string = '');
 public
   firstboot: boolean;
     {** Generic application exception handler used for reporting unhandled
@@ -720,6 +726,8 @@ DOT_OFFSET_RANGE: integer = -15; // Fine-tune vertical alignment of threshold li
 {$endif}
 DOT_LINES: boolean = false;  // Guidelines what value is where
 DELTA_MAX: integer = 2;
+DIFF_ALIGN: TAlignment = taCenter;
+LAST_WARN_OPACITY: integer = 235;
 {$ifdef DEBUG}
 debug_load_text: boolean = false;
 {$endif}
@@ -731,6 +739,7 @@ last_popup: TDateTime = 0;
 bg_alert: boolean = false;
   // If the BG is high/low since before, so we don't spam notifications
 placed: boolean = false; // If the window has been placed at setup
+WarnShowDetails: boolean = true; // controls whether fixWarningPanel adds reading/age info
 
 username: string = '';
 lastup: tdatetime;
@@ -1098,7 +1107,7 @@ var
   mr: TModalResult;
   dots: single;
 begin
-  dots := ExtNumericInput(uxdAuto,sDotSize,sCustomiseDotSize, sEnterDotSize,dotscale,true,mr);
+  dots := ExtNumericInput(uxdAuto,sDotSize,sCustomiseDotSize, sEnterDotSize,dotscale,FLOAT_NONE, FLOAT_NONE, true,mr);
   if mr = mrOk then
   begin
     native.SetFloatSetting('ux.dot_scale', dots);
@@ -1123,7 +1132,7 @@ var
 begin
   da := (ExtNumericInput(uxdAuto, RS_SERVICE_DOT_ADJUST, RS_SERVICE_DOT_ADJUST_ADD,
     RS_SERVICE_DOT_ADJUST_DESC, DOT_ADJUST *
-    100, false, mr) / 100);
+    100, FLOAT_NONE, FLOAT_NONE, false, mr) / 100);
 
   if mr = mrOk then
   begin
@@ -1355,6 +1364,12 @@ var
   P: TPanel;
   {$ifndef X_WIN}
   lValRelativeX, lValRelativeY: integer;
+  lDiffRelativeX, lDiffRelativeY: integer;
+  lAgoRelativeX, lAgoRelativeY: integer;
+  alphaRatio: double;
+  arrX: integer;
+  arrY : integer;
+  dot: TDotControl;
   {$endif}
 begin
   // Use manual drawing for rounded corners on all platforms
@@ -1367,15 +1382,51 @@ begin
     Brush.Color := fBG.Color;
     FillRect(0, 0, P.Width, P.Height);
 
-    // Now draw the rounded panel
+    // Now draw the rounded panel; on non-Windows we simulate the alpha by
+    // blending the panel color with the background using LAST_WARN_OPACITY.
+    {$ifndef X_WIN}
+    alphaRatio := LAST_WARN_OPACITY / 255.0;
+    Brush.Color := BlendColors(P.Color, fBG.Color, alphaRatio);
+    {$else}
     Brush.Color := P.Color;
+    {$endif}
     Pen.Color := clBlack;
     Pen.Width := 1;
     RoundRect(0, 0, P.Width, P.Height, Radius, Radius);
 
     {$ifndef X_WIN}
-    // On non-Windows platforms, ApplyAlphaControl doesn't work, so draw lVal as backdrop
-    // to simulate transparency effect
+    // On non-Windows platforms, ApplyAlphaControl doesn't work.
+    // first draw the arrow behind the reading
+    if lArrow.Visible and (lArrow.Caption <> '') then
+    begin
+      arrX := lArrow.Left - P.Left;
+      arrY := lArrow.Top - P.Top;
+
+      Font.Assign(lArrow.Font);
+      Font.Color := lclintf.RGB(
+        Round(GetRValue(lArrow.Font.Color) * (1 - alphaRatio) +
+              GetRValue(Brush.Color) * alphaRatio),
+        Round(GetGValue(lArrow.Font.Color) * (1 - alphaRatio) +
+              GetGValue(Brush.Color) * alphaRatio),
+        Round(GetBValue(lArrow.Font.Color) * (1 - alphaRatio) +
+              GetBValue(Brush.Color) * alphaRatio));
+      Brush.Style := bsClear;
+
+      case lArrow.Alignment of
+      taLeftJustify:
+        TextOut(arrX, arrY, lArrow.Caption);
+      taRightJustify:
+        TextOut(arrX + lArrow.Width - TextWidth(lArrow.Caption),
+          arrY, lArrow.Caption);
+      taCenter:
+        TextOut(arrX + (lArrow.Width - TextWidth(lArrow.Caption)) div 2,
+          arrY, lArrow.Caption);
+      end;
+
+      Brush.Style := bsSolid;
+    end;
+
+    // now draw the value on top using same transparency logic
     if lVal.Visible and (lVal.Caption <> '') then
     begin
       // Calculate lVal position relative to pnWarning
@@ -1385,13 +1436,15 @@ begin
       // Set up text rendering to match lVal
       Font.Assign(lVal.Font);
 
-      // Simulate the original lVal text at 92% transparency (0.92 where 1=fully transparent)
-      // Formula: blended = (originalTextColor * opacity + panelColor * transparency)
-      // where transparency = 0.92 and opacity = 0.08
-      Font.Color := lclintf.RGB(Round(GetRValue(lVal.Font.Color) * 0.18 +
-        GetRValue(P.Color) * 0.82), Round(GetGValue(lVal.Font.Color) *
-        0.18 + GetGValue(P.Color) * 0.82), Round(GetBValue(lVal.Font.Color) *
-        0.18 + GetBValue(P.Color) * 0.82));
+      // Compute a blended font color: use the same alphaRatio above to mix
+      // the original text color with the panel color (which itself has alpha)
+      Font.Color := lclintf.RGB(
+        Round(GetRValue(lVal.Font.Color) * (1 - alphaRatio) +
+              GetRValue(Brush.Color) * alphaRatio),
+        Round(GetGValue(lVal.Font.Color) * (1 - alphaRatio) +
+              GetGValue(Brush.Color) * alphaRatio),
+        Round(GetBValue(lVal.Font.Color) * (1 - alphaRatio) +
+              GetBValue(Brush.Color) * alphaRatio));
 
       Brush.Style := bsClear; // Transparent background for text
 
@@ -1410,6 +1463,75 @@ begin
       // Restore brush style
       Brush.Style := bsSolid;
     end;
+
+    // draw the diff label if present, using same blending rules
+    if lDiff.Visible and (lDiff.Caption <> '') then
+    begin
+      lDiffRelativeX := lDiff.Left - P.Left;
+      lDiffRelativeY := lDiff.Top - P.Top;
+      Font.Assign(lDiff.Font);
+      Font.Color := lclintf.RGB(
+        Round(GetRValue(lDiff.Font.Color) * (1 - alphaRatio) +
+              GetRValue(Brush.Color) * alphaRatio),
+        Round(GetGValue(lDiff.Font.Color) * (1 - alphaRatio) +
+              GetGValue(Brush.Color) * alphaRatio),
+        Round(GetBValue(lDiff.Font.Color) * (1 - alphaRatio) +
+              GetBValue(Brush.Color) * alphaRatio));
+      Brush.Style := bsClear;
+      case lDiff.Alignment of
+      taLeftJustify:
+        TextOut(lDiffRelativeX, lDiffRelativeY, lDiff.Caption);
+      taRightJustify:
+        TextOut(lDiffRelativeX + lDiff.Width - TextWidth(lDiff.Caption),
+          lDiffRelativeY, lDiff.Caption);
+      taCenter:
+        TextOut(lDiffRelativeX + (lDiff.Width - TextWidth(lDiff.Caption)) div
+          2, lDiffRelativeY, lDiff.Caption);
+      end;
+      Brush.Style := bsSolid;
+    end;
+
+    // draw the age label if present, using same blending rules
+    if lAgo.Visible and (lAgo.Caption <> '') then
+    begin
+      lAgoRelativeX := lAgo.Left - P.Left;
+      lAgoRelativeY := lAgo.Top - P.Top;
+      Font.Assign(lAgo.Font);
+      Font.Color := lclintf.RGB(
+        Round(GetRValue(lAgo.Font.Color) * (1 - alphaRatio) +
+              GetRValue(Brush.Color) * alphaRatio),
+        Round(GetGValue(lAgo.Font.Color) * (1 - alphaRatio) +
+              GetGValue(Brush.Color) * alphaRatio),
+        Round(GetBValue(lAgo.Font.Color) * (1 - alphaRatio) +
+              GetBValue(Brush.Color) * alphaRatio));
+      Brush.Style := bsClear;
+      case lAgo.Alignment of
+      taLeftJustify:
+        TextOut(lAgoRelativeX, lAgoRelativeY, lAgo.Caption);
+      taRightJustify:
+        TextOut(lAgoRelativeX + lAgo.Width - TextWidth(lAgo.Caption),
+          lAgoRelativeY, lAgo.Caption);
+      taCenter:
+        TextOut(lAgoRelativeX + (lAgo.Width - TextWidth(lAgo.Caption)) div
+          2, lAgoRelativeY, lAgo.Caption);
+      end;
+      Brush.Style := bsSolid;
+    end;
+
+    // draw faint trend dots behind the value (and arrow) so that the warning
+    // panel retains context of recent data.  Blend heavily with the panel
+    // background to keep the dots very light.
+    for Dot in TrendDots do
+      if Dot.Visible then
+      begin
+        arrX := Dot.Left - P.Left;
+        arrY := Dot.Top - P.Top;
+        Font.Assign(Dot.Font);
+        Font.Color := BlendColors(Dot.Font.Color, Brush.Color, 0.2);
+        Brush.Style := bsClear;
+        TextOut(arrX, arrY, Dot.Caption);
+      end;
+
     {$endif}
   end;
 end;
@@ -2179,7 +2301,16 @@ begin
     end;
 
     // Apply alpha control only - rounded corners are handled by pnWarningPaint
-    ApplyAlphaControl(pnWarning, 235);
+    ApplyAlphaControl(pnWarning, LAST_WARN_OPACITY);
+
+    // Keep the thin left-side progress bar sized with the form
+    if Assigned(pnNextProgress) then
+    begin
+      pnNextProgress.Height := ClientHeight;
+      pnNextProgress.Width := Max(6, ClientWidth div 40);
+      pnNextProgress.Left := 0;
+      nextProgressChange;
+    end;
   end;
 end;
 
@@ -2188,6 +2319,16 @@ begin
   placeForm;
   placed := true;
   lVal.font.Quality := fqCleartype;
+
+  // Ensure the next-reading progress panel is correctly positioned
+  if Assigned(pnNextProgress) then
+  begin
+    pnNextProgress.Height := ClientHeight;
+    pnNextProgress.Width := Max(6, ClientWidth div 40);
+    pnNextProgress.Left := 0;
+    pnNextProgress.BringToFront;
+    pnNextProgress.Visible := native.GetBoolSetting('main.next_progress', false);
+  end;
   
   // Check for updates on startup (non-blocking)
   CheckForUpdates;
@@ -2789,6 +2930,8 @@ begin
     applocale := langCode;
     SetDefaultLang(langCode, getLangPath);
   end;
+
+  DIFF_ALIGN := native.GetAlignmentSetting('ux.labels.ldiff.alignment', taCenter);
   
   // Apply font changes
   fontName := native.GetSetting('font.val', 'default');
@@ -2879,7 +3022,7 @@ begin
   // Ensure main labels are scaled to their new fonts immediately
   ScaleLbl(lVal);
   ScaleLbl(lArrow);
-  ScaleLbl(lAgo, taLeftJustify);
+  ScaleLbl(lAgo);
   if Assigned(lPredict) and lPredict.Visible then
     ScaleLbl(lPredict, taRightJustify, tlBottom);
 
@@ -3025,6 +3168,11 @@ procedure LoadUserSettings(f: TfConf);
         fsHiRange.Value := GetIntSetting('override.rangehi', api.cgmRangeHi);
       end;
 
+      fsDiffScale.Value := GetFloatSetting('ux.labels.ldiff.scale', 1);
+      fsPredictScale.Value := GetFloatSetting('ux.labels.lpredict.scale', 1);
+
+      cbMoveDIffRight.Checked := GetAlignmentSetting('ux.labels.ldiff.alignment', taCenter) = taRightJustify;
+
       cbTIR.Checked := native.GetBoolSetting('range.custom', true);
       seTir.Value := native.GetIntSetting('range.time', 9999);
 
@@ -3037,6 +3185,7 @@ procedure LoadUserSettings(f: TfConf);
       cbPaintHiLoRange.Checked :=
         native.GetBoolSetting('ux.paint_range_cgmrange', false);
       edCommaSep.Text := GetCharSetting('locale.separator', '.');
+      cbProgress.Checked := GetBoolSetting('main.next_progress', false);
       edTray.Value := GetIntSetting('ux.badge_size', 0);
 
       if CheckSetting('unit', 'mmol', 'mmol') then
@@ -3047,6 +3196,7 @@ procedure LoadUserSettings(f: TfConf);
       cbPredictions.Checked := GetBoolSetting('predictions.enable');
       cbWebAPI.Checked := GetBoolSetting('webserver.enable');
       cbPredictShort.Checked := GetBoolSetting('predictions.short');
+      cbWarnLoHi.Checked := GetBoolSetting('predictions.warn');
       cbPredictShortFullArrows.Checked := GetBoolSetting('predictions.short.fullarrows');
       // Load radio button state
       if GetBoolSetting('predictions.short.showvalue') then
@@ -3377,6 +3527,11 @@ procedure SaveUserSettings(f: TfConf);
       SetSetting('font.val', lVal.Font.Name);
       SetSetting('font.arrow', lArrow.Font.Name);
       SetSetting('font.ago', lAgo.Font.Name);
+
+      if cbMoveDIffRight.Checked then
+        SetAlignmentSetting('ux.labels.ldiff.alignment', taRightJustify)
+      else
+        SetAlignmentSetting('ux.labels.ldiff.alignment', taCenter);
       
       // IMPORTANT: Save API settings BEFORE language change to prevent combo box reset
       // Save remote and override settings - these should NOT be global (user-specific)
@@ -3436,6 +3591,8 @@ procedure SaveUserSettings(f: TfConf);
         SetSetting('override.rangehi', Round(fsHiRange.Value).ToString);
       end;
 
+      native.SetFloatSetting('ux.labels.ldiff.scale', fsDiffScale.Value);
+      native.SetFloatSetting('ux.labels.lpredict.scale', fsPredictScale.Value);
       native.SetSetting('range.custom', cbTIR.Checked);
       native.SetSetting('range.tir_icon', cbTirIcon.checked);
       native.SetSetting('tir.displaymean', cbShowMean.Checked);
@@ -3445,6 +3602,7 @@ procedure SaveUserSettings(f: TfConf);
       native.SetSetting('ux.paint_range', cbPaintHiLo.Checked);
       native.SetSetting('ux.paint_range_lines', cbPaintLines.Checked);
       native.SetSetting('ux.paint_range_cgmrange', cbPaintHiLoRange.Checked);
+      native.SetSetting('main.next_progress', cbProgress.Checked);
       native.SetSetting('locale.separator', edCommaSep.Text);
       native.SetSetting('ux.badge_size', edTray.Value.ToString);
 
@@ -3452,6 +3610,7 @@ procedure SaveUserSettings(f: TfConf);
       SetSetting('override.range', cbCustRange.Checked);
       SetSetting('predictions.enable', cbPredictions.Checked);
       SetSetting('webserver.enable', cbWebAPI.Checked);
+      SetSetting('predictions.warn', cbWarnLoHi.Checked);
       SetSetting('predictions.short', cbPredictShort.Checked);
       SetSetting('predictions.short.fullarrows', cbPredictShortFullArrows.Checked);
       SetSetting('predictions.short.showvalue', rbPredictShortShowValue.Checked);
@@ -3776,6 +3935,62 @@ begin
   end;
 end;
 
+// Paint handler for the left-side "next reading" progress indicator
+procedure TfBG.pnNextProgressPaint(Sender: TObject);
+var
+  pnl: TPanel;
+  elapsedMs: int64;
+  frac: double;
+  fillR: TRect;
+  fillCol, borderCol: TColor;
+  lastDt: TDateTime;
+  cornerRadius: integer;
+begin
+  pnl := Sender as TPanel;
+
+  // Transparent background: let the parent (fBG) show through. If there are
+  // no readings, draw nothing so the panel remains visually transparent.
+  if (bgs = nil) or (Length(bgs) = 0) then
+    Exit;
+
+  // Compute fraction of interval elapsed since last reading
+  lastDt := lastReading.date;
+  elapsedMs := MilliSecondsBetween(Now, lastDt);
+  if elapsedMs < 0 then
+    elapsedMs := 0;
+  frac := Min(1.0, elapsedMs / BG_REFRESH); // BG_REFRESH in milliseconds
+
+  // Gradient color: fresh (blue) -> red (stale)
+  fillCol := BlendColors(clBlue, clRed, 1 - frac);
+  fillCol := LightenColor(fillCol, 0.2);
+  borderCol := GetTextColorForBackground(fBG.Color, 0.6, 0.4);
+
+  // Paint only the filled progress area (panel background remains transparent)
+  fillR.Left := 0;
+  fillR.Right := pnl.Width - 2;
+  fillR.Bottom := pnl.Height - 2;
+  fillR.Top := pnl.Height - 2 - Round(frac * (pnl.Height - 4));
+
+  // Round the right corners of the filled area while keeping the left side square
+  begin
+    cornerRadius := Min(6, pnl.Width div 2); // small, proportional radius
+    cornerRadius := Min(cornerRadius, (fillR.Bottom - fillR.Top) div 2);
+
+    with pnl.Canvas do
+    begin
+      // Draw rounded-filled area
+      Brush.Style := bsSolid;
+      Brush.Color := fillCol;
+      Pen.Style := psClear;
+      RoundRect(fillR.Left, fillR.Top, fillR.Right, fillR.Bottom, cornerRadius, cornerRadius);
+
+      // Overpaint left side to square off left corners (undo rounding there)
+      if cornerRadius > 0 then
+        FillRect(Classes.Rect(fillR.Left, fillR.Top, fillR.Left + cornerRadius, fillR.Bottom));
+    end;
+  end;
+end;
+
 procedure TfBG.pmSettingsMeasureItem(Sender: TObject; ACanvas: TCanvas;
 var AWidth, AHeight: integer);
 const
@@ -4016,7 +4231,7 @@ procedure UpdatePredictionTimes;
     
     if validCount = 0 then
       Exit;
-    
+
     // Update prediction display with current times
     if PredictShortMode then
     begin
@@ -4081,7 +4296,87 @@ procedure UpdatePredictionTimes;
       lPredict.Caption := pred1 + ' | ' + pred2 + ' | ' + pred3;
     end;
   end;
-  
+
+  procedure predictFuture(future: integer = 7);
+  var
+    bgr: BGResults;
+    b: BGReading;
+    time, i: integer;
+    isLow: TTrndiBool;
+    minTime: integer;
+    warnLo, warnHi: glucose;
+  begin
+    if not PredictGlucoseReading then
+      Exit;
+    if not native.GetBoolSetting('predictions.warn') then
+      Exit;
+
+    // determine thresholds we care about; we want to warn when predictions
+    // cross *either* the user-configured range or the backend limit values.
+    // to do that we compute a combined low/high threshold such that crossing
+    // the tighter boundary triggers a warning.  This avoids surprises when
+    // the demographic range (Hi) is higher than the desired alert limit
+    // (HI).
+    warnLo := math.Max(api.cgmLo, api.limitLO);
+    warnHi := math.Min(api.cgmHi, api.limitHI);
+
+    // if we are already outside the combined thresholds, abort early as
+    // prediction warning would be redundant
+    if lastReading.val <= warnLo then
+      Exit // already in/below low zone
+    else if lastReading.val >= warnHi then
+      Exit; // already in/above high zone
+
+    // use cached predictions if available so popup matches display
+    if Length(PredictionCache) > 0 then
+      bgr := PredictionCache
+    else
+      api.predictReadings(future, bgr);
+
+    // Loop the readings and find the *earliest* crossing time (rounded same as display)
+    isLow := TTrndiBool.tbUnset;
+    minTime := MaxInt;
+    for i := Low(bgr) to High(bgr) do
+    begin
+      b := bgr[i];
+      if b.empty then
+        Continue;
+
+      // Check against our combined thresholds
+      if (b.val <= warnLo) or (b.val >= warnHi) then
+      begin
+        time := Round(MinutesBetween(Now, b.date));
+        if time < minTime then
+        begin
+          minTime := time;
+          if b.val <= warnLo then
+            isLow := TTrndiBool.tbTrue
+          else
+            isLow := TTrndiBool.tbFalse;
+        end;
+      end;
+    end;
+
+    // Trigger warning if we found a crossing
+    if (isLow <> TTrndiBool.tbUnset) and (minTime < MaxInt) then
+    begin
+      if b.empty then // Safe non-reading
+        Exit;
+
+      if minTime > 3 then begin
+        if isLow = TTrndiBool.tbTrue then
+          showWarningPanel(Format(RS_LO_PREDICT, [minTime]), false, 50, false)
+        else
+          showWarningPanel(Format(RS_HI_PREDICT, [minTime]), false, 50, false);
+      end else begin
+        if isLow = TTrndiBool.tbTrue then
+          showWarningPanel(RS_LO_PREDICT_SOON, false, 50, false)
+        else
+          showWarningPanel(RS_HI_PREDICT_SOON, false, 50, false);
+      end;
+    end;
+  end;
+
 begin
   if firstboot then
     exit; // Dont run on first boot
@@ -4118,9 +4413,15 @@ begin
     
     // Update prediction times if predictions are visible
     UpdatePredictionTimes;
+
+    predictFuture;
   except
     lAgo.Caption := '🕑 ' + RS_COMPUTE_FAILED_AGO;
   end;
+
+  // Repaint the left-side "next reading" progress indicator (if present)
+  if Assigned(pnNextProgress) then
+    pnNextProgress.Repaint;
 end;
 
 procedure TfBG.tClockTimer(Sender: TObject);
@@ -4296,7 +4597,7 @@ begin
     if pnWarning.Visible then
     begin
       fixWarningPanel;
-      ApplyAlphaControl(pnWarning, 235);
+      ApplyAlphaControl(pnWarning, LAST_WARN_OPACITY);
     end;
     Exit; // Don't do full resize operations during dragging
   end;
@@ -4363,6 +4664,14 @@ begin
   end;
 end;
 
+procedure TfBG.nextProgressChange;
+begin
+  if not Assigned(pnNextProgress) then
+    Exit;
+
+  lTir.left := fBG.Width - lTir.Width - pnNextProgress.Width - 5;
+end;
+
 procedure TfBG.ResizeUIElements;
 const
   // Numerator for width/height ratios; denominator = 12
@@ -4371,7 +4680,7 @@ const
 var
   wnum, hnum: integer;
 begin
-  // Anpassa storleken på panelen
+  // Adjust panel size
   pnOffRange.Height := ClientHeight div 10;
 
   pnOffRange.Font.Size := 7 + pnOffRange.Height div 5;
@@ -4380,23 +4689,27 @@ begin
   pnOffRangeBar.Height := pnOffRange.Height div 4;
   pnOffRangeBar.Width := ClientWidth + 10;
 
-  // Anpassa huvudetiketterna
+  // Adjust Reading label
   ScaleLbl(lVal);
 
-  // Konfigurera differensvisning
+  // Configure diff display
   lDiff.Width := ClientWidth;
   lDiff.Height := (ClientHeight div 9) - 10;
   lDiff.Top := ClientHeight - lDiff.Height + 1;
-  ScaleLbl(lDiff);
+  ScaleLbl(lDiff, DIFF_ALIGN, tlCenter, true, 10);
 
-  // Konfigurera tidsvisning
+  // Configure time display
   lAgo.Width := ClientWidth div 2;
   lAgo.Height := ClientHeight div 9;
-  lAgo.Left := 5;
+  // Place the label over the left progress bar and make it transparent so the
+  // progress shows beneath the text.
+  lAgo.Left := 0;
   lAgo.Top := 1 + IfThen(pnOffRange.Visible, pnOffRange.Height, 3);
-  ScaleLbl(lAgo, taLeftJustify);
+  lAgo.Transparent := True;
+  ScaleLbl(lAgo, taLeftJustify, tlCenter, true, IfThen(pnNextProgress.Visible, 10, 0));
+  lAgo.BringToFront;
 
-  // Konfigurera trendpil
+  // Configure trend arrow
 
   lArrow.Height := ClientHeight;
   lArrow.Width := ClientWidth;
@@ -4411,11 +4724,11 @@ begin
   lTir.font := lAgo.Font;
   lTir.Height := lTir.Canvas.TextHeight(lTir.Caption);
   lTir.Width := lTir.Canvas.TextWidth(lTir.Caption);
+
   {$if DEFINED(LCLQt6) AND DEFINED(X_LINUXBSD)}
   if isWSL then
     lTir.Width := 50;
   {$endif}
-  lTir.left := ClientWidth - lTir.Width - 5;
   lTir.top := 0;
 
 
@@ -4457,10 +4770,16 @@ begin
       lPredict.Width := ClientWidth div 3;
       lPredict.Height := ClientHeight div 12;
     end;
+
     lPredict.Left := ClientWidth - lPredict.Width - 5;
     lPredict.Top := ClientHeight - lPredict.Height - 5;
-    ScaleLbl(lPredict, taRightJustify, tlBottom);
+
+    if DIFF_ALIGN = taRightJustify then
+      ScaleLbl(lPredict, taCenter, tlBottom, true)
+    else
+      ScaleLbl(lPredict, taRightJustify, tlBottom, true);
   end;
+  nextProgressChange;
 end;
 
 procedure TfBG.UpdateTrendDots;
@@ -4506,15 +4825,21 @@ begin
       Dot.Visible := false// No hint means no data for this dot
     ;
   end;
+
+  // ensure warning panel reflects the current dot positions when visible
+  if pnWarning.Visible then
+    pnWarning.Refresh;
 end;
 
 procedure TfBG.ScaleLbl(ALabel: TLabel; customAl: TAlignment = taCenter;
-customTl: TTextLayout = tlCenter);
+customTl: TTextLayout = tlCenter; allowCustom: boolean = true; padding: integer = 0);
 var
-  Low, High, Mid: integer;
+  Low, High, Mid, i, pW, pH: integer;
   MaxWidth, MaxHeight: integer;
   TextWidth, TextHeight: integer;
   OptimalSize: integer;
+  scaleFactor: single; // custom scale multiplier from settings
+  oldW, oldH: integer;
 begin
   if not ALabel.Visible then
     ALabel.Visible := true;
@@ -4529,6 +4854,54 @@ begin
     ALabel.Height := 250;
   end;
 
+  // apply custom component scaling if requested
+  if allowCustom then
+  begin
+    scaleFactor := native.GetFloatSetting('ux.labels.' + LowerCase(ALabel.Name) + '.scale', 1);
+    if scaleFactor <= 0 then
+      scaleFactor := 1;
+    if scaleFactor <> 1 then
+    begin
+      // grow/shrink around the label's centre so text remains visible
+      oldW := ALabel.Width;
+      oldH := ALabel.Height;
+      ALabel.Width  := round(oldW * scaleFactor);
+      ALabel.Height := round(oldH * scaleFactor);
+      // reposition to compensate
+      ALabel.Left := ALabel.Left - (ALabel.Width - oldW) div 2;
+      ALabel.Top  := ALabel.Top  - (ALabel.Height - oldH) div 2;
+      // ensure the scaled control stays inside its parent and doesn't
+      // overflow; if it would overflow horizontally, centre it instead of
+      // clamping to 0 (so centred text remains visible).
+      if Assigned(ALabel.Parent) then
+      begin
+        pW := ALabel.Parent.ClientWidth;
+        pH := ALabel.Parent.ClientHeight;
+
+        // cap dimensions to parent
+        if ALabel.Width > pW then
+          ALabel.Width := pW;
+        if ALabel.Height > pH then
+          ALabel.Height := pH;
+
+        // horizontal positioning
+        if ALabel.Left < 0 then
+          ALabel.Left := 0;
+        if ALabel.Left + ALabel.Width > pW then
+        begin
+          // overflow; centre horizontally
+          ALabel.Left := Max(0, (pW - ALabel.Width) div 2);
+        end;
+
+        // vertical positioning; top clamp already working
+        if ALabel.Top < 0 then
+          ALabel.Top := 0;
+        if ALabel.Top + ALabel.Height > pH then
+          ALabel.Top := pH - ALabel.Height;
+      end;
+    end;
+  end;
+
   // Format
   ALabel.AutoSize := false;
   ALabel.WordWrap := false;
@@ -4539,11 +4912,11 @@ begin
   if ALabel.Font.Color = ALabel.Color then
     ALabel.Font.Color := clBlack;
 
-  // Max size
+  // Max size available for text
   MaxWidth := ALabel.Width - 4; // Add padding
   MaxHeight := ALabel.Height - 4;
 
-  // Find best font size
+  // Binary search to pick the largest font that fits
   Low := 1;
   High := 150;
   OptimalSize := 1;
@@ -4567,8 +4940,20 @@ begin
 
   // Set best font size
   ALabel.Font.Size := OptimalSize;
+  TextHeight := ALabel.Canvas.TextHeight(ALabel.Caption);
+  while ((TextWidth > MaxWidth) or (TextHeight > MaxHeight)) and (ALabel.Font.Size > 1) do
+  begin
+    i := ALabel.Font.Size;
+    Dec(i);
+    ALabel.FOnt.size := i;
+    TextWidth := ALabel.Canvas.TextWidth(ALabel.Caption);
+    TextHeight := ALabel.Canvas.TextHeight(ALabel.Caption);
+  end;
 
-  // Se till att inställningarna används
+  ALabel.width := Alabel.Width-padding*2;
+  Alabel.left := Alabel.left+padding;
+
+  // Make sure settings are used
   ALabel.Refresh;
 end;
 // Update remote on timer
@@ -4989,6 +5374,14 @@ begin
   // Complete the UI update sequence
   FinalizeUIUpdate;
 
+  // When a warning overlay is visible we periodically refresh its contents
+  // so that the "last reading" and other dynamic text stay up to date. This
+  // fixes an issue on Linux where a high/low prediction popup would display
+  // the reading that triggered the alert and never update even if a newer
+  // value arrived while the panel was still showing.
+  if pnWarning.Visible then
+    fixWarningPanel;
+
   {$ifdef TrndiExt}
   // Check if JS engine is still available before calling
   callFunc('fetchCallback',[
@@ -5334,18 +5727,13 @@ begin
       native.attention(ifthen(multi, multinick, RS_WARN_BG_HI_TITLE),
         Format(RS_WARN_BG_HI, [lVal.Caption]));
 
-  if not native.GetBoolSetting('media.disabled', false) then
-  begin
-    if native.GetBoolSetting('media.pause') then
-      if assigned(mediacontroller) and mediacontroller.IsInitialized then
-        MediaController.Pause;
+  if native.GetBoolSetting('media.pause') then
+    actOnMediaController(mcaPause);
 
-    if native.TryGetSetting('media.url_high', url) then
-    begin
-      highAlerted := true;
-      if assigned(mediacontroller) and mediacontroller.IsInitialized then
-        MediaController.PlayTrackFromURL(url);
-    end;
+  if native.TryGetSetting('media.url_high', url) then
+  begin
+    highAlerted := true;
+    actOnMediaController(mcaURL, url);
   end;
 
   if native.TryGetSetting('url_remote.url_high', url) then
@@ -5386,19 +5774,16 @@ begin
       native.attention(ifthen(multi, multinick, RS_WARN_BG_LO_TITLE),
         Format(RS_WARN_BG_LO, [lVal.Caption]));
 
-  if not native.GetBoolSetting('media.disabled', false) then
-  begin
+
     if native.GetBoolSetting('media.pause') then
-      if assigned(mediacontroller) and mediacontroller.IsInitialized then
-        MediaController.Pause;
+      actOnMediaController(mcaPause);
 
     if native.TryGetSetting('media.url_low', url) then
     begin
       lowAlerted := true;
-      if assigned(mediacontroller) and mediacontroller.IsInitialized then
-        MediaController.PlayTrackFromURL(url);
+      actOnMediaController(mcaURL, url);
     end;
-  end;
+
   if native.TryGetSetting('url_remote.url_low', url) then
   begin
     lowAlerted := true;
@@ -5455,8 +5840,7 @@ begin
     perfectTriggered := true;
 
     if native.TryGetSetting('media.url_perfect', url) then
-      if assigned(mediacontroller) and mediacontroller.IsInitialized then
-        MediaController.PlayTrackFromURL(url);
+        actOnMediaController(mcaURL, url);
 
     if native.TryGetSetting('url_remote.url_high', url) then
       native.getURL(url, url);
@@ -5517,25 +5901,37 @@ begin
   pnOffReading.Height := ClientHeight;
   pnOffReading.ClientWidth := ClientWidth div 35;
 
-  if tryLastReading(bg) then
+  if Assigned(pnNextProgress) then
   begin
-    val := bg.format(un, BG_MSG_SHORT);
-    if val[1] = '-' then
-    begin
-      bg := lastDataReading;
-      val := bg.format(un, BG_MSG_SHORT);
-    end;
+    pnNextProgress.Height := ClientHeight;
+    pnNextProgress.Width := Max(6, ClientWidth div 40);
+    nextProgressChange;
+  end;
 
-    last := HourOf(bg.date).ToString + ':' + MinuteOf(bg.date).tostring;
-    if DateOf(bg.date) <> Dateof(now) then
-      last := last + ' ' + Format(RS_DAYS_AGO, [DaysBetween(now, bg.date)]);
-    pnWarnLast.Caption := Format(RS_LAST_RECIEVE, [val, last]);
+if WarnShowDetails then
+  begin
+    if tryLastReading(bg) then
+    begin
+      val := bg.format(un, BG_MSG_SHORT);
+      if val[1] = '-' then
+      begin
+        bg := lastDataReading;
+        val := bg.format(un, BG_MSG_SHORT);
+      end;
+
+      last := HourOf(bg.date).ToString + ':' + MinuteOf(bg.date).tostring;
+      if DateOf(bg.date) <> Dateof(now) then
+        last := last + ' ' + Format(RS_DAYS_AGO, [DaysBetween(now, bg.date)]);
+      pnWarnLast.Caption := Format(RS_LAST_RECIEVE, [val, last]);
+    end
+    else
+      pnWarnLast.Caption := RS_LAST_RECIEVE_NO;
+
+    pnWarnLast.Caption := pnWarnLast.Caption + LineEnding +
+      Format(RS_LAST_RECIEVE_AGE, [native.GetIntSetting('system.fresh_threshold', DATA_FRESHNESS_THRESHOLD_MINUTES)]);
   end
   else
-    pnWarnLast.Caption := RS_LAST_RECIEVE_NO;
-
-  pnWarnLast.Caption := pnWarnLast.Caption + LineEnding +
-    Format(RS_LAST_RECIEVE_AGE, [native.GetIntSetting('system.fresh_threshold', DATA_FRESHNESS_THRESHOLD_MINUTES)]);
+    pnWarnLast.Caption := '';
 
   // Set pnWarnLast font size relative to main font, but with bounds checking
   pnWarnLast.font.size := Max(8, Min(20, calculatedFontSize div 3));
@@ -5549,14 +5945,30 @@ begin
   pnWarnLast.top := pnWarning.Height - pnWarnLast.Height - 5;
 end;
 
+// Show a semi-transparent full-panel warning overlay.
+//   message: text to display (emoji prefix added automatically)
+//   clearDisplayValues: if true, reset main numeric labels to '--'
+//   opacity: alpha value 0..255 used for the panel; stored in LAST_WARN_OPACITY
+//   showDetails: when true (default) the footer lines reporting the "last
+//     reading was ..." and "limit X minutes" appear.  They are also
+//     suppressed automatically if opacity < 150 since an almost-transparent
+//     panel would make them unreadable.
 procedure TfBG.showWarningPanel(const message: string;
-clearDisplayValues: boolean = false);
+  clearDisplayValues: boolean = false; opacity: integer = 235; showDetails: boolean = true);
 var
   i: integer;
 begin
   pnWarning.Visible := true;
   tPing.Enabled := true;  // Enable network ping check when no readings available
-  pnWarning.Caption := '⚠️ ' + message;
+
+  // determine whether to render extra info; absent or semi‑transparent panels
+  // shouldn't show the last-reading lines
+  WarnShowDetails := showDetails and (opacity >= 150);
+
+  // copy the message into the label used by fixWarningPanel.  We add a newline
+  // so that fixWarningPanel won't prepend the clock emoji again; other icons
+  // (⚠️) can be inserted here if desired.
+  lMissing.Caption := '⚠️ ' + message + sLineBreak;
 
   if clearDisplayValues then
     if (not TryStrToInt(lVal.Caption[1], i)) or (lArrow.Caption = 'lArrow') then
@@ -5565,10 +5977,12 @@ begin
       lArrow.Caption := '';
     end;
 
-  pnWarning.Caption := '';  // Clear for now
+  // pnWarning.Caption is not used for the message, but keep it for old code
+  pnWarning.Caption := '';
   fixWarningPanel;
   // Ensure visual effects are applied when showing the panel
-  ApplyAlphaControl(pnWarning, 235);
+  LAST_WARN_OPACITY := opacity;
+  ApplyAlphaControl(pnWarning, opacity);
 
   // Force a complete UI update to ensure proper rendering on all platforms
   pnWarning.Refresh;
@@ -5590,8 +6004,11 @@ begin
     Exit;
 
   // Performance optimization: use cached readings if recent (unless forced)
+  // and if the previous API call actually supplied data.  When the last
+  // fetch returned zero readings we deliberately skip the cache so that we
+  // retry the backend every timer tick until valid data comes back.
   if (not ForceRefresh) and (SecondsBetween(Now, FLastAPICall) < API_CACHE_SECONDS) and
-    (Length(FCachedReadings) > 0) then
+    (Length(FCachedReadings) > 0) and FLastFetchHadData then
   begin
     EnterCriticalSection(FReadingsLock);
     try
@@ -5629,6 +6046,7 @@ begin
   // If API call failed (no readings) but we have fresh cached data, use it
   if (Length(bgs) < 1) and (Length(FCachedReadings) > 0) then
   begin
+    FLastFetchHadData := false; // indicate we didn't actually get new data
     EnterCriticalSection(FReadingsLock);
     try
       if Length(FCachedReadings) > 0 then
@@ -5648,6 +6066,7 @@ begin
   if Length(bgs) > 0 then
   begin
     // Update cache with fresh data
+    FLastFetchHadData := true;
     EnterCriticalSection(FReadingsLock);
     try
       SetLength(FCachedReadings, Length(bgs));
@@ -5687,8 +6106,8 @@ begin
     // Append latest-reading age details to help diagnose stale data cases
     if (Length(bgs) > 0) then
     try
-      msg := msg + sLineBreak + Format('Latest reading: %d minute(s) ago (%s)',
-        [MinutesBetween(Now, bgs[0].date), FormatDateTime('yyyy-mm-dd hh:nn', bgs[0].date)]);
+  //    msg := msg + sLineBreak + Format('Latest reading: %d minute(s) ago (%s)',
+//        [MinutesBetween(Now, bgs[0].date), FormatDateTime('yyyy-mm-dd hh:nn', bgs[0].date)]);
     except
         // Ignore formatting errors
     end;
@@ -6156,13 +6575,13 @@ begin
     exit;
   Result := false;
 
-  // Mappa slotIndex till etikettens nummer (0 -> lDot10, 1 -> lDot9, ..., 9 -> lDot1)
+  // Map slotIndex to the label number (0 -> lDot10, 1 -> lDot9, ..., 9 -> lDot1)
   labelNumber := NUM_DOTS - SlotIndex;
   l := TrendDots[labelNumber];
 
   if Assigned(l) then
   begin
-    // Uppdatera etikettens egenskaper baserat på läsningen
+    // Update the label's properties based on the reading
     l.Visible := true;
     l.Hint := Reading.format(un, BG_MSG_SHORT, BGPrimary);
 
@@ -6179,7 +6598,7 @@ begin
     // Use the dot's parent client height to align placement with visibility checks
     setPointHeight(l, Reading.convert(mmol), l.Parent.ClientHeight);
 
-    // Sätt färger baserat på värdet
+    // Set colors according to the value
     l.Font.Color := DetermineColorForReading(Reading);
 
     TrndiDLog(Format('TrendDots[%d] updated with reading at %s (Value: %.2f).',
@@ -6397,6 +6816,22 @@ begin
     on E: Exception do
       if ShowUpToDateMessage then
         ShowMessage('Update check failed: ' + E.Message);
+  end;
+end;
+
+procedure TfBG.actOnMediaController(act: TMediaControllerAct; arg: string = '');
+begin
+  if native.GetBoolSetting('media.disabled', false) then
+    Exit;
+  if not assigned(mediacontroller) then
+    Exit;
+  if not mediacontroller.IsInitialized then
+    Exit;
+
+  case act of
+    mcaPlay: MediaController.Play;
+    mcaPause: MediaController.Pause;
+    mcaURL: MediaController.PlayTrackFromURL(arg);
   end;
 end;
 

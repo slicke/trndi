@@ -56,6 +56,24 @@ To have touch screens display the normal:
 ux.semi_touch=true
 ``` 
 
+## Change text scale
+Some UI elements can be scaled by using
+```ini
+ux.labels.lpredict.scale=2.00
+```
+Where lpredict maps to the predictions (named lPredict in the code)
+### Common labels that can be scaled
+|Key|Description|
+|:---:|------------|
+|lVal|the value|
+|lArrow|the arrow|
+|lAgo|the timne since last reading|
+|lPredict|the predictions label|
+|lDiff|the reading difference|
+|lTir|the time in range|
+|lMissing|the warning when missing values|
+> NOTE: the names above match the code's name. When entering them in the config file, they have to be _lowercase_: ux.labels.__lowercase__.scale
+
 ## Resetting Trndi
 #### Delete all keys and Trndi will reset to factory-default settings
 <br><br>

@@ -435,7 +435,7 @@ msgid "Breath (pulse)"
 msgstr ""
 
 #: tfconf.cbchromanormal.caption
-msgid "Make units green when reading is normal"
+msgid "Make units green when reading is normal *"
 msgstr ""
 
 #: tfconf.cbcust.caption
@@ -479,6 +479,10 @@ msgstr ""
 
 #: tfconf.cbmediadisable.caption
 msgid "Disable the entire media system"
+msgstr ""
+
+#: tfconf.cbmovediffright.caption
+msgid "Move to right"
 msgstr ""
 
 #: tfconf.cbmultitouch.caption
@@ -531,6 +535,10 @@ msgstr ""
 
 #: tfconf.cbprivacy.caption
 msgid "Privacy Mode (Hide glucose value)"
+msgstr ""
+
+#: tfconf.cbprogress.caption
+msgid "Display progress to next update on the left"
 msgstr ""
 
 #: tfconf.cbshowmean.caption
@@ -595,6 +603,10 @@ msgstr ""
 
 #: tfconf.cbusercolor.caption
 msgid "Display users' colors on the main and floating windows"
+msgstr ""
+
+#: tfconf.cbwarnlohi.caption
+msgid "Warn when going high or low"
 msgstr ""
 
 #: tfconf.cbwebapi.caption
@@ -694,6 +706,10 @@ msgstr ""
 
 #: tfconf.groupbox1.caption
 msgid "System Features"
+msgstr ""
+
+#: tfconf.groupbox10.caption
+msgid "Layout"
 msgstr ""
 
 #: tfconf.groupbox2.caption
@@ -861,8 +877,24 @@ msgstr ""
 msgid "High contrast disables some of Trndis Time-in-Range coloring"
 msgstr ""
 
+#: tfconf.label39.caption
+msgid "Diff scale:"
+msgstr ""
+
 #: tfconf.label4.caption
 msgid "Window start-up position"
+msgstr ""
+
+#: tfconf.label40.caption
+msgid "Diff position:"
+msgstr ""
+
+#: tfconf.label41.caption
+msgid "Prediction scale:"
+msgstr ""
+
+#: tfconf.label42.caption
+msgid "* When Trndi is in focus, units may turn off coloring if this is disabled. This is a Chroma limitation."
 msgstr ""
 
 #: tfconf.label5.caption
@@ -1514,6 +1546,15 @@ msgstr ""
 msgid "Hi > %.1f"
 msgstr ""
 
+#: trndi.strings.rs_hi_predict
+#, object-pascal-format
+msgid "High Predicted in %d minutes!"
+msgstr ""
+
+#: trndi.strings.rs_hi_predict_soon
+msgid "High Predicted soon!"
+msgstr ""
+
 #: trndi.strings.rs_init_api
 msgid "Initializing API..."
 msgstr ""
@@ -1633,6 +1674,15 @@ msgstr ""
 msgid "Lo < %.1f"
 msgstr ""
 
+#: trndi.strings.rs_lo_predict
+#, object-pascal-format
+msgid "Low Predicted in %d minutes!"
+msgstr ""
+
+#: trndi.strings.rs_lo_predict_soon
+msgid "Low Predicted soon!"
+msgstr ""
+
 #: trndi.strings.rs_menu_force
 msgid "Force update"
 msgstr ""
@@ -1702,15 +1752,14 @@ msgstr ""
 
 #: trndi.strings.rs_no_backend
 msgid ""
-"No readings recieved. \n"
+"No readings recieved.\n"
+"\n"
 "Has your CGM synced recently? \n"
 "Is the remote server working?"
 msgstr ""
 
 #: trndi.strings.rs_no_boot_reading
-msgid ""
-"No fresh data is available.\n"
-"Trndi will attemp to fetch data until recent values are available"
+msgid "No recent data available!"
 msgstr ""
 
 #: trndi.strings.rs_no_internet
@@ -2497,6 +2546,10 @@ msgstr ""
 
 #: uconf.rs_saftey_low
 msgid "Trndi won't allow a lower limit, the backend system only reports values every 5 minutes. 6 = one reading missing."
+msgstr ""
+
+#: uconf.rs_scale_diff_help
+msgid "You can change the scale/size of the difference in reading since last, by entering a scale factor"
 msgstr ""
 
 #: uconf.rs_select_font

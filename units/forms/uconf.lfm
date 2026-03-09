@@ -18,12 +18,12 @@ object fConf: TfConf
     Height = 518
     Top = 11
     Width = 645
-    ActivePage = tsCustom
+    ActivePage = tsChroma
     Align = alClient
     BorderSpacing.Left = 10
     BorderSpacing.Right = 10
     BorderSpacing.Around = 5
-    TabIndex = 5
+    TabIndex = 11
     TabOrder = 0
     OnChange = pcMainChange
     object tsCommon: TTabSheet
@@ -11056,12 +11056,12 @@ object fConf: TfConf
       OnShow = tsDisplayShow
       object pnDisplay: TPanel
         Left = 0
-        Height = 256
+        Height = 144
         Top = 0
         Width = 639
         Align = alClient
         BevelOuter = bvNone
-        ClientHeight = 256
+        ClientHeight = 144
         ClientWidth = 639
         ParentBackground = False
         TabOrder = 0
@@ -11069,7 +11069,7 @@ object fConf: TfConf
           Cursor = crHandPoint
           Left = 456
           Height = 131
-          Top = 8
+          Top = -8
           Width = 200
           Alignment = taCenter
           AutoSize = False
@@ -11104,7 +11104,7 @@ object fConf: TfConf
           Cursor = crHandPoint
           Left = 272
           Height = 106
-          Top = 32
+          Top = 0
           Width = 138
           Alignment = taRightJustify
           Caption = '0,0'
@@ -11116,31 +11116,31 @@ object fConf: TfConf
           OnClick = lValClick
         end
         object lDot3: TLabel
-          Left = 365
+          Left = 133
           Height = 16
-          Top = 144
+          Top = 40
           Width = 28
           Caption = 'lDot1'
           OnClick = lDot1Click
         end
         object lDot2: TLabel
-          Left = 325
+          Left = 88
           Height = 16
-          Top = 168
+          Top = 56
           Width = 28
           Caption = 'lDot1'
           OnClick = lDot1Click
         end
         object lDot1: TLabel
-          Left = 284
+          Left = 48
           Height = 16
-          Top = 152
+          Top = 40
           Width = 28
           Caption = 'lDot1'
           OnClick = lDot1Click
         end
         object bFontHelp: TButton
-          Left = 624
+          Left = 605
           Height = 22
           Top = 8
           Width = 27
@@ -11151,23 +11151,23 @@ object fConf: TfConf
       end
       object gbDisplayPrefs: TGroupBox
         Left = 0
-        Height = 106
-        Top = 377
+        Height = 131
+        Top = 352
         Width = 639
         Align = alBottom
         Caption = 'Display Preferences'
-        ClientHeight = 79
+        ClientHeight = 104
         ClientWidth = 635
         ParentBackground = False
         TabOrder = 1
         object pTray: TPanel
           Left = 465
-          Height = 79
+          Height = 104
           Top = 0
           Width = 170
           Align = alRight
           BevelOuter = bvNone
-          ClientHeight = 79
+          ClientHeight = 104
           ClientWidth = 170
           ParentBackground = False
           TabOrder = 0
@@ -11194,12 +11194,12 @@ object fConf: TfConf
         end
         object pDecimal: TPanel
           Left = 0
-          Height = 79
+          Height = 104
           Top = 0
           Width = 170
           Align = alLeft
           BevelOuter = bvNone
-          ClientHeight = 79
+          ClientHeight = 104
           ClientWidth = 170
           ParentBackground = False
           TabOrder = 1
@@ -11226,18 +11226,26 @@ object fConf: TfConf
             Caption = 'Decimal separator:'
           end
         end
+        object cbProgress: TCheckBox
+          Left = 8
+          Height = 20
+          Top = 64
+          Width = 257
+          Caption = 'Display progress to next update on the left'
+          TabOrder = 2
+        end
       end
       object Label8: TLabel
-        Left = 8
+        Left = 0
         Height = 16
-        Top = 201
+        Top = 112
         Width = 288
         Caption = 'Click on the time, reading or arrow to change it''s font'
       end
       object Button2: TButton
-        Left = 496
+        Left = 488
         Height = 25
-        Top = 192
+        Top = 103
         Width = 139
         Caption = 'Reset Fonts'
         TabOrder = 2
@@ -11246,7 +11254,7 @@ object fConf: TfConf
       object cbFonts: TGroupBox
         Left = 0
         Height = 121
-        Top = 256
+        Top = 231
         Width = 639
         Align = alBottom
         Caption = 'Trend Dots'
@@ -11354,6 +11362,77 @@ object fConf: TfConf
           OptimalFill = True
           ParentFont = False
           OnClick = dotClick
+        end
+      end
+      object GroupBox10: TGroupBox
+        Left = 0
+        Height = 87
+        Top = 144
+        Width = 639
+        Align = alBottom
+        Caption = 'Layout'
+        ClientHeight = 60
+        ClientWidth = 635
+        TabOrder = 4
+        object Label39: TLabel
+          Left = 8
+          Height = 16
+          Top = 0
+          Width = 54
+          Caption = 'Diff scale:'
+        end
+        object fsDiffScale: TFloatSpinEdit
+          Left = 16
+          Height = 30
+          Top = 24
+          Width = 66
+          Increment = 0.1
+          MaxValue = 10
+          MinValue = 0.1
+          TabOrder = 0
+          Value = 0.1
+        end
+        object bScaleHelp: TButton
+          Left = 88
+          Height = 22
+          Top = 24
+          Width = 27
+          Caption = '?'
+          TabOrder = 1
+          OnClick = bScaleHelpClick
+        end
+        object Label40: TLabel
+          Left = 128
+          Height = 16
+          Top = 0
+          Width = 71
+          Caption = 'Diff position:'
+        end
+        object cbMoveDIffRight: TCheckBox
+          Left = 131
+          Height = 20
+          Top = 26
+          Width = 98
+          Caption = 'Move to right'
+          TabOrder = 2
+        end
+        object Label41: TLabel
+          Left = 248
+          Height = 16
+          Top = 0
+          Width = 89
+          Caption = 'Prediction scale:'
+        end
+        object fsPredictScale: TFloatSpinEdit
+          Left = 256
+          Height = 30
+          Top = 24
+          Width = 66
+          Increment = 0.1
+          MaxValue = 10
+          MinValue = 0.1
+          TabOrder = 3
+          Value = 0.1
         end
       end
     end
@@ -12179,12 +12258,12 @@ object fConf: TfConf
       end
       object GroupBox8: TGroupBox
         Left = 0
-        Height = 211
-        Top = 272
+        Height = 235
+        Top = 248
         Width = 639
         Align = alBottom
         Caption = 'Predictions'
-        ClientHeight = 184
+        ClientHeight = 208
         ClientWidth = 635
         ParentBackground = False
         TabOrder = 1
@@ -12202,7 +12281,7 @@ object fConf: TfConf
         object lWarnPredict: TLabel
           Left = 0
           Height = 16
-          Top = 168
+          Top = 192
           Width = 635
           Align = alBottom
           Alignment = taRightJustify
@@ -12212,18 +12291,18 @@ object fConf: TfConf
         end
         object Panel13: TPanel
           Left = 0
-          Height = 42
-          Top = 126
+          Height = 41
+          Top = 151
           Width = 635
           Align = alClient
           BevelOuter = bvNone
-          ClientHeight = 42
+          ClientHeight = 41
           ClientWidth = 635
           ParentBackground = False
           TabOrder = 1
           object cbPredictShortSize: TComboBox
             Left = 131
-            Height = 32
+            Height = 31
             Top = 0
             Width = 120
             Align = alLeft
@@ -12243,7 +12322,7 @@ object fConf: TfConf
           end
           object lPredictShortSize: TLabel
             Left = 30
-            Height = 32
+            Height = 31
             Top = 0
             Width = 91
             Align = alLeft
@@ -12255,7 +12334,7 @@ object fConf: TfConf
           end
           object lPredictShortMinutes: TLabel
             Left = 271
-            Height = 32
+            Height = 31
             Top = 0
             Width = 103
             Align = alLeft
@@ -12267,7 +12346,7 @@ object fConf: TfConf
           end
           object cbPredictShortMinutes: TComboBox
             Left = 384
-            Height = 32
+            Height = 31
             Top = 0
             Width = 120
             Align = alLeft
@@ -12287,7 +12366,7 @@ object fConf: TfConf
           end
           object bPredictHorizon: TButton
             Left = 603
-            Height = 24
+            Height = 23
             Top = 3
             Width = 27
             Align = alRight
@@ -12355,15 +12434,26 @@ object fConf: TfConf
           TabOrder = 6
           OnClick = bPredictHelpClick
         end
+        object cbWarnLoHi: TCheckBox
+          Left = 15
+          Height = 20
+          Top = 126
+          Width = 620
+          Align = alTop
+          BorderSpacing.Left = 15
+          BorderSpacing.Bottom = 5
+          Caption = 'Warn when going high or low'
+          TabOrder = 7
+        end
       end
       object GroupBox9: TGroupBox
         Left = 0
-        Height = 105
-        Top = 167
+        Height = 97
+        Top = 151
         Width = 639
         Align = alBottom
         Caption = 'Display'
-        ClientHeight = 78
+        ClientHeight = 70
         ClientWidth = 635
         ParentBackground = False
         TabOrder = 2
@@ -13136,7 +13226,7 @@ object fConf: TfConf
         TopIndex = -1
       end
       object cbChroma: TCheckBox
-        Left = 8
+        Left = 10
         Height = 20
         Top = 288
         Width = 204
@@ -13201,19 +13291,26 @@ object fConf: TfConf
         Text = 'Breath (pulse)'
       end
       object Label32: TLabel
-        Left = 16
+        Left = 10
         Height = 16
-        Top = 456
+        Top = 256
         Width = 557
         Caption = 'Razer Synapse required on Windows. OpenRazer on Linux. No support for other platforms at this time.'
       end
       object cbChromaNormal: TCheckBox
-        Left = 8
+        Left = 10
         Height = 20
         Top = 424
-        Width = 247
-        Caption = 'Make units green when reading is normal'
+        Width = 255
+        Caption = 'Make units green when reading is normal *'
         TabOrder = 4
+      end
+      object Label42: TLabel
+        Left = 10
+        Height = 16
+        Top = 456
+        Width = 522
+        Caption = '* When Trndi is in focus, units may turn off coloring if this is disabled. This is a Chroma limitation.'
       end
     end
     object tsExt: TTabSheet

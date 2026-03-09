@@ -96,6 +96,7 @@ sKey   = 'Key';
 sValue = 'Value';
 
 const
+  FLOAT_NONE = -999.66; // < For use in dialogs where a float value is unlimited
   {**
     @name Emoji-based dialog icons
     @desc
@@ -584,6 +585,8 @@ const icon: UXImage = uxmtCog): string;
     @param ATitle Title text.
     @param ADesc Description text.
     @param ADefault Initial numeric value.
+    @param AMin The lowest possible value
+    @param AMax The highst possible value
     @param float If @true, allow fractional values (2 decimal places); if @false, integer-only.
     @param ModalResult Out parameter holding the modal result after closing.
     @param icon Emoji icon (default gear).
@@ -592,6 +595,7 @@ const icon: UXImage = uxmtCog): string;
 function ExtNumericInput(const dialogsize: TUXDialogSize;
 const ACaption, ATitle, ADesc: string;
 ADefault: double;
+AMin, AMax: double;
 float: boolean;
 var ModalResult: TModalResult;
 const icon: UXImage = uxmtCog): double;
@@ -1295,7 +1299,7 @@ var ModalResult: TModalResult;
 const icon: UXImage = uxmtCog
 ): integer;
 begin
-  result := round(ExtNumericInput(dialogsize,ACaption,ATitle,ADesc,ADefault, false, ModalResult, icon));
+  result := round(ExtNumericInput(dialogsize,ACaption,ATitle,ADesc,ADefault, FLOAT_NONE, FLOAT_NONE, false, ModalResult, icon));
 end;
 
 {** See interface docs for behavior and parameters. }
@@ -1303,6 +1307,7 @@ function ExtNumericInput(
 const dialogsize: TUXDialogSize;
 const ACaption, ATitle, ADesc: string;
 ADefault: double;
+AMin, AMax: double;
 float: boolean;
 var ModalResult: TModalResult;
 const icon: UXImage = uxmtCog
@@ -1350,6 +1355,10 @@ begin
     Edit.Width := DescLabel.Width;
     Edit.Top := DescLabel.Top + DescLabel.Height + ifthen(size = uxdBig, Padding * 2, Padding);
     Edit.Value := ADefault;
+    if AMin <> FLOAT_NONE then
+      Edit.minvalue := AMin;
+    if AMax <> FLOAT_NONE then
+      Edit.maxvalue := AMax;
     {$ifdef X_WIN}
     if TrndiNative.isDarkMode then
     begin

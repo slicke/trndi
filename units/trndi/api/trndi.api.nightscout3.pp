@@ -39,6 +39,8 @@
  * - 2026-02-03: Nightscout v3 driver now prefers APIv3 endpoints without the
  *   legacy ".json" suffix (with automatic fallback), and normalizes the v2
  *   access token so both "abc123" and "token=abc123" work.
+ * - 2026-03-02: Added runtime auth-refresh handling for Nightscout v3 so
+ *   expired bearer tokens are renewed automatically during polling.
  *)
 unit trndi.api.nightscout3;
 
@@ -80,6 +82,7 @@ private
   FTokenSuffix: string; // Token suffix used in v2 authorization
 
   class function NormalizeV2AccessToken(const AccessToken: string): string;
+  function IsAuthFailureResponse(const Resp: string): boolean;
   function TryRequestV3(const PathPreferred, PathLegacyJson: string;
     const Params: array of string; out Resp: string): boolean;
 
@@ -200,13 +203,73 @@ end;
 
 function NightScout3.TryRequestV3(const PathPreferred, PathLegacyJson: string;
   const Params: array of string; out Resp: string): boolean;
+var
+  authErr: string;
+
+  function IsSuccessResponse(const AResp: string): boolean;
+  begin
+    Result := (Trim(AResp) <> '') and not ((AResp <> '') and (AResp[1] = '+')) and
+      (not IsAuthFailureResponse(AResp));
+  end;
+
+  function TryRefreshToken: boolean;
+  begin
+    Result := false;
+    if FTokenSuffix = '' then
+      Exit;
+
+    authErr := '';
+    Result := GetAuthToken(authErr);
+    if (not Result) and (Trim(authErr) <> '') then
+      lastErr := authErr;
+  end;
 begin
   Resp := native.request(false, PathPreferred, Params, '', BearerHeader);
-  if (Trim(Resp) <> '') and not ((Resp <> '') and (Resp[1] = '+')) then
+  if IsSuccessResponse(Resp) then
     Exit(true);
 
+  if IsAuthFailureResponse(Resp) and TryRefreshToken then
+  begin
+    Resp := native.request(false, PathPreferred, Params, '', BearerHeader);
+    if IsSuccessResponse(Resp) then
+      Exit(true);
+  end;
+
   Resp := native.request(false, PathLegacyJson, Params, '', BearerHeader);
-  Result := (Trim(Resp) <> '') and not ((Resp <> '') and (Resp[1] = '+'));
+  if IsSuccessResponse(Resp) then
+    Exit(true);
+
+  if IsAuthFailureResponse(Resp) and TryRefreshToken then
+  begin
+    Resp := native.request(false, PathLegacyJson, Params, '', BearerHeader);
+    if IsSuccessResponse(Resp) then
+      Exit(true);
+  end;
+
+  Result := false;
+end;
+
+function NightScout3.IsAuthFailureResponse(const Resp: string): boolean;
+var
+  L: string;
+begin
+  L := LowerCase(Trim(Resp));
+  if L = '' then
+    Exit(false);
+
+  Result :=
+    (Pos('unauthorized', L) > 0) or
+    (Pos('forbidden', L) > 0) or
+    (Pos('jwt expired', L) > 0) or
+    (Pos('token expired', L) > 0) or
+    (Pos('invalid token', L) > 0) or
+    (Pos('"status":401', L) > 0) or
+    (Pos('"status": 401', L) > 0) or
+    (Pos('"code":401', L) > 0) or
+    (Pos('"code": 401', L) > 0);
+
+  if (not Result) and (Resp <> '') and (Resp[1] = '+') then
+    Result := (Pos('401', L) > 0) or (Pos('unauthorized', L) > 0);
 end;
 
 {------------------------------------------------------------------------------
@@ -520,6 +583,7 @@ var
   j: integer;
   tempReading: BGReading;
   rssiValue, noiseValue: maybeInt;
+  authErr: string;
 
 function ExtractArrayNode(const jd: TJSONData): TJSONData;
   var
@@ -588,14 +652,23 @@ begin
   begin
     lastErr := 'Empty response from Nightscout v3 entries endpoint (auth may be required)';
   end
-  else if Pos('Unauthorized', resp) > 0 then
+  else if IsAuthFailureResponse(resp) then
   begin
     lastErr := 'Unauthorized accessing Nightscout v3 entries (invalid or missing token)';
   end;
 
-  if (Trim(resp) = '') or (Pos('Unauthorized', resp) > 0) or
+  if (Trim(resp) = '') or IsAuthFailureResponse(resp) or
     ((resp <> '') and (resp[1] = '+')) then
   begin
+    // Token may have expired while app is running; refresh before v1 fallback.
+    if IsAuthFailureResponse(resp) and (FTokenSuffix <> '') then
+    begin
+      authErr := '';
+      if not GetAuthToken(authErr) then
+        if Trim(authErr) <> '' then
+          lastErr := authErr;
+    end;
+
     // v1 typically supports count parameter and returns newest-first
     SetLength(fbparams, 1);
     fbparams[0] := 'count=' + IntToStr(maxNum);
@@ -607,6 +680,13 @@ begin
       lastErr := 'Empty response from Nightscout v1 entries endpoint (fallback failed)';
       Exit;
     end;
+
+    if IsAuthFailureResponse(resp) then
+    begin
+      lastErr := 'Unauthorized accessing Nightscout entries endpoint (token expired or invalid)';
+      Exit;
+    end;
+
     res := resp;
   end;
 

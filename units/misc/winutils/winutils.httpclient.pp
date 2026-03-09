@@ -494,7 +494,7 @@ begin
               SysErrorMessage(dwSize));
         end;
 
-        // Läs svar
+        // Read reply in chunks until no more data is available, and write to a string stream
         ResponseStream := TStringStream.Create;
         try
           repeat

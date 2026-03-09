@@ -197,7 +197,7 @@ begin
   else if missing >= Length(Result) then
   begin
     SetLength(Result, 0);
-    TrndiDLog(Format('DebugFirstXMissing: Cleared all %d readings', [missing]));
+    log(Format('DebugFirstXMissing: Cleared all %d readings', [missing]));
     Exit;
   end
   else
@@ -209,7 +209,7 @@ begin
     SetLength(Result, rem);
 
     // Short debug trace to help when testing the provider
-    TrndiDLog(Format('DebugFirstXMissing: Removed %d readings; newest remaining at %s', [missing, DateTimeToStr(Result[0].date)]));
+    log(Format('DebugFirstXMissing: Removed %d readings; newest remaining at %s', [missing, DateTimeToStr(Result[0].date)]));
 
     // Optionally inject a Dexcom-like reading into the newest remaining slot
     if dexcomMode then
@@ -269,7 +269,7 @@ begin
 
         // Replace the earliest remaining reading with the Dexcom-mimic
         Result[0] := temp;
-        TrndiDLog(Format('DebugFirstXMissing: Injected Dexcom-mode (%s) at index %d, date=%s', [dexcomKind, 0, DateTimeToStr(temp.date)]));
+        log(Format('DebugFirstXMissing: Injected Dexcom-mode (%s) at index %d, date=%s', [dexcomKind, 0, DateTimeToStr(temp.date)]));
       end;
     end;
 
@@ -366,7 +366,7 @@ begin
               temp.updateEnv('Tandem', rssiM, noiseM);
 
               Result[idx] := temp;
-              TrndiDLog(Format('DebugFirstXMissing: Injected Tandem-mode (%s) at index %d, date=%s', [tandemKind, idx, DateTimeToStr(temp.date)]));
+              log(Format('DebugFirstXMissing: Injected Tandem-mode (%s) at index %d, date=%s', [tandemKind, idx, DateTimeToStr(temp.date)]));
             end;
           end;
         end;

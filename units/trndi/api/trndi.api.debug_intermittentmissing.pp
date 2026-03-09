@@ -106,7 +106,7 @@ begin
       logmsg := logmsg + Format('%d(%s) ', [idx, DateTimeToStr(result[idx].date)]);
     end;
 
-    TrndiDLog(logmsg);
+    log(logmsg);
   finally
     picked.Free;
   end;

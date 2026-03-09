@@ -5,7 +5,7 @@ unit ExtCtrls;
 
 interface
 
-uses Controls, Classes, Graphics;
+uses Controls, Classes, Graphics, Menus;
 
 type
   TPanel = class(TWinControl)
@@ -22,9 +22,17 @@ type
   private
     FHint: string;
     FVisible: Boolean;
+    FIcon: TIcon;
+    FOnClick: TNotifyEvent;
+    FPopupMenu: TPopupMenu;
   public
+    constructor Create(AOwner: Controls.TComponent = nil);
+    destructor Destroy; override;
     property Hint: string read FHint write FHint;
     property Visible: Boolean read FVisible write FVisible;
+    property Icon: TIcon read FIcon write FIcon;
+    property OnClick: TNotifyEvent read FOnClick write FOnClick;
+    property PopUpMenu: TPopupMenu read FPopupMenu write FPopupMenu;
   end;
 
   TImage = class(TControl)
@@ -49,6 +57,23 @@ type
   end;
 
 implementation
+
+constructor TTrayIcon.Create(AOwner: Controls.TComponent = nil);
+begin
+  inherited Create(AOwner);
+  FHint := '';
+  FVisible := False;
+  FIcon := TIcon.Create;
+  FOnClick := nil;
+  FPopupMenu := nil;
+end;
+
+destructor TTrayIcon.Destroy;
+begin
+  if Assigned(FIcon) then
+    FIcon.Free;
+  inherited Destroy;
+end;
 
 constructor TImage.Create(AOwner: Controls.TComponent = nil);
 begin

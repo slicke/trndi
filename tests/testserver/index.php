@@ -19,10 +19,10 @@ function generateRecord() {
 }
 
 /**
- * Genererar en unik identifierare liknande MongoDB ObjectId.
+ * Generates a unique identifier similar to MongoDB ObjectId.
  *
- * @return string 24-tecken lång hex-sträng.
- * @throws Exception Vid fel vid generering av slumpmässiga bytes.
+ * @return string 24-character hex string.
+ * @throws Exception On error when generating random bytes.
  */
 function generateObjectId() {
     // 4 bytes for the timestamp (seconds since epoch)
@@ -40,10 +40,10 @@ function generateObjectId() {
 }
 
 /**
- * Konverterar Unix-tidsstämpel i millisekunder till ISO 8601-format.
+ * Converts a Unix timestamp in milliseconds to ISO 8601 format.
  *
- * @param int|string $milliseconds Unix-tidsstämpel i millisekunder.
- * @return string ISO 8601-formaterad datumsträng.
+ * @param int|string $milliseconds Unix timestamp in milliseconds.
+ * @return string ISO 8601 formatted date string.
  */
 function convertMillisecondsToISO8601($milliseconds) {
     // If the timestamp is a string (for large numbers on 32-bit systems)
@@ -97,6 +97,17 @@ if ($path == '/debug') {
     echo "Raw path: " . $raw_path . "\n";
     echo "Request URI: " . $_SERVER['REQUEST_URI'] . "\n";
     print_r($_SERVER);
+    exit;
+}
+
+// Special test endpoint: anything under /error500 will return HTTP 500 to
+// simulate a server error for network edge case tests.  The connect routine
+// should handle this gracefully.  We also treat "/error500/ShareWebServices/Services" as
+// the DexcomNew API base.
+if (strpos($path, '/error500') === 0) {
+    http_response_code(500);
+    header('Content-Type: text/plain');
+    echo "Internal Server Error";
     exit;
 }
 
@@ -498,11 +509,76 @@ for ($i = 0; $i < $count; $i++){
 
 // Very small and permissive authorization check used by the tests for Nightscout endpoints
 
+function getNS3RotateStatePath() {
+    return sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'trndi-ns3-rotate-state.json';
+}
+
+function loadNS3RotateState() {
+    $default = [
+        'authCount' => 0,
+        'currentToken' => '',
+        'entriesSuccessCount' => 0,
+    ];
+
+    $path = getNS3RotateStatePath();
+    if (!is_file($path)) {
+        return $default;
+    }
+
+    $raw = @file_get_contents($path);
+    if ($raw === false || trim($raw) === '') {
+        return $default;
+    }
+
+    $decoded = json_decode($raw, true);
+    if (!is_array($decoded)) {
+        return $default;
+    }
+
+    return array_merge($default, $decoded);
+}
+
+function saveNS3RotateState($state) {
+    $path = getNS3RotateStatePath();
+    @file_put_contents($path, json_encode($state));
+}
+
+function resetNS3RotateState() {
+    $path = getNS3RotateStatePath();
+    if (is_file($path)) {
+        @unlink($path);
+    }
+}
+
+function getBearerTokenFromHeader() {
+    $header = isset($_SERVER['HTTP_AUTHORIZATION']) ? trim($_SERVER['HTTP_AUTHORIZATION']) : '';
+    if ($header === '') {
+        return '';
+    }
+
+    if (stripos($header, 'Bearer ') === 0) {
+        return trim(substr($header, 7));
+    }
+
+    return '';
+}
+
 // Nightscout v2 auth endpoint
 if (str_starts_with($path, '/api/v2/authorization/request/')) {
     header('Content-Type: application/json');
     $tokenPart = substr($path, strlen('/api/v2/authorization/request/'));
+    if ($tokenPart === 'token=rotate') {
+        $state = loadNS3RotateState();
+        $state['authCount'] = intval($state['authCount']) + 1;
+        $state['currentToken'] = 'rotate-' . strval($state['authCount']);
+        saveNS3RotateState($state);
+
+        echo json_encode(['token' => $state['currentToken']]);
+        exit;
+    }
+
     if ($tokenPart === 'token=test22') {
+        resetNS3RotateState();
         echo json_encode(['token' => 'testtoken']);
         exit;
     } else {
@@ -540,6 +616,26 @@ if (str_starts_with($path, '/api/v3/')) {
         exit;
     }
     if ($sub === 'entries') {
+        $bearerToken = getBearerTokenFromHeader();
+        if (str_starts_with($bearerToken, 'rotate-')) {
+            $state = loadNS3RotateState();
+            $expectedToken = isset($state['currentToken']) ? strval($state['currentToken']) : '';
+
+            if ($expectedToken === '' || $bearerToken !== $expectedToken) {
+                http_response_code(401);
+                echo json_encode(['error' => 'Unauthorized', 'status' => 401]);
+                exit;
+            }
+
+            $state['entriesSuccessCount'] = intval($state['entriesSuccessCount']) + 1;
+            if (intval($state['entriesSuccessCount']) === 1) {
+                // Force one mid-session expiry: next entries request with old token should fail,
+                // and client must refresh via /authorization/request/token=rotate.
+                $state['currentToken'] = 'rotate-' . strval(intval($state['authCount']) + 1);
+            }
+            saveNS3RotateState($state);
+        }
+
         $entries = [];
         for ($i = 0; $i < 5; $i++) {
             $entries[] = [

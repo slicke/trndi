@@ -19,12 +19,13 @@ type
     FVisible: Boolean;
     FHint: string;
   public
-    constructor Create(AOwner: TComponent = nil);
+    constructor Create(AOwner: Controls.TComponent = nil);
     destructor Destroy; override;
     procedure Insert(Index: Integer; Item: TMenuItem);
+    function Add(Item: TMenuItem): TMenuItem;
     function GetItem(Index: Integer): TMenuItem;
     procedure Click; virtual;
-    property Items[Index: Integer]: TMenuItem read GetItem;
+    property Items[Index: Integer]: TMenuItem read GetItem; default;
     property Caption: string read FCaption write FCaption;
     property OnClick: TNotifyEvent read FOnClick write FOnClick;
     property ShortCut: Integer read FShortCut write FShortCut;
@@ -36,18 +37,21 @@ type
 
   TPopupMenu = class(TComponent)
   private
-    FPopupComponent: TComponent;
+    FPopupComponent: Controls.TComponent;
+    FItems: TMenuItem;
   public
-    constructor Create(AOwner: TComponent = nil);
+    constructor Create(AOwner: Controls.TComponent = nil);
+    destructor Destroy; override;
     procedure PopUp(X, Y: Integer); virtual;
-    property PopupComponent: TComponent read FPopupComponent write FPopupComponent;
+    property PopupComponent: Controls.TComponent read FPopupComponent write FPopupComponent;
+    property Items: TMenuItem read FItems;
   end;
 
   TMainMenu = class(TComponent)
   private
     FItems: TMenuItem;
   public
-    constructor Create(AOwner: TComponent = nil);
+    constructor Create(AOwner: Controls.TComponent = nil);
     destructor Destroy; override;
     property Items: TMenuItem read FItems;
   end;
@@ -56,7 +60,7 @@ implementation
 
 { TMenuItem }
 
-constructor TMenuItem.Create(AOwner: TComponent = nil);
+constructor TMenuItem.Create(AOwner: Controls.TComponent = nil);
 begin
   inherited Create(AOwner);
   FCaption := '';
@@ -91,6 +95,12 @@ begin
     Item.Visible := FVisible;
 end;
 
+function TMenuItem.Add(Item: TMenuItem): TMenuItem;
+begin
+  Insert(Length(FItems), Item);
+  Result := Item;
+end;
+
 procedure TMenuItem.Click;
 begin
   if Assigned(FOnClick) then
@@ -107,10 +117,18 @@ end;
 
 { TPopupMenu }
 
-constructor TPopupMenu.Create(AOwner: TComponent = nil);
+constructor TPopupMenu.Create(AOwner: Controls.TComponent = nil);
 begin
   inherited Create(AOwner);
   FPopupComponent := nil;
+  FItems := TMenuItem.Create(AOwner);
+end;
+
+destructor TPopupMenu.Destroy;
+begin
+  if Assigned(FItems) then
+    FItems.Free;
+  inherited Destroy;
 end;
 
 procedure TPopupMenu.PopUp(X, Y: Integer);
@@ -120,7 +138,7 @@ end;
 
 { TMainMenu }
 
-constructor TMainMenu.Create(AOwner: TComponent = nil);
+constructor TMainMenu.Create(AOwner: Controls.TComponent = nil);
 begin
   inherited Create(AOwner);
   FItems := TMenuItem.Create(AOwner);

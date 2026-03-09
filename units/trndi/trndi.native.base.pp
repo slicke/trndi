@@ -1,6 +1,6 @@
 (*
- * This file is part of Trndi (https://github.com/slicke/trndi or http://xxx.github.io).
- * Copyright (c) 2021-25 Björn Lindh.
+ * This file is part of Trndi (https://github.com/slicke/trndi).
+ * Copyright (c) 2021-2026 Björn Lindh.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -64,11 +64,14 @@ Forms, variants, dwmapi
 , process;
 
 type
+{$ifdef X_LINUXBSD}
   {** WSL version detection result. }
 TWSLVersion = (wslNone, wslVersion1, wslVersion2, wslUnknown);
+{$endif}
   {** Ternary-style boolean with Unset/Unknown states for user overrides. }
 TTrndiBool = (tbUnset, tbTrue, tbFalse, tbUnknown);
 
+{$ifdef X_LINUXBSD}
   {** Information about a WSL environment (Windows Subsystem for Linux). }
 TWSLInfo = record
   IsWSL: boolean;       // True when running under WSL
@@ -76,6 +79,7 @@ TWSLInfo = record
   DistroName: string;   // Optional distro name (if available)
   KernelVersion: string;// Kernel string as reported by /proc/version
 end;
+{$endif}
 
   {** Enhanced HTTP response with headers, cookies, and redirect information. }
 THTTPResponse = record
@@ -173,6 +177,8 @@ class var touchOverride: TTrndiBool;
   procedure SetFloatSetting(const keyname: string; const val: single; const global: boolean = false); overload;
     {** Store a boolean setting (serialized as a/b). }
   procedure SetBoolSetting(const keyname: string; const val: boolean; const a,b: string; const global: boolean = false);
+    {** Store an alignment setting. }
+  procedure SetAlignmentSetting(const keyname: string; val: TAlignment; const global: boolean = false);
     {** Store an array as CSV. }
   procedure SetCSVSetting(const keyname: string; const val: TStringArray; const global: boolean = false);
     {** Store a color value (TColor serialized as integer). }
@@ -200,6 +206,8 @@ class var touchOverride: TTrndiBool;
   function GetIntSetting(const keyname: string; def: integer = -1): integer;
     {** Read a single-precision float setting or @param(def). }
   function GetFloatSetting(const keyname: string; def: single = -1): single;
+    {** Read an alignment setting or @param(def). }
+  function GetAlignmentSetting(const keyname: string; def: TAlignment = taCenter): TAlignment;
     {** Read a boolean setting or @param(def). Accepts 'true'/'false'. }
   function GetBoolSetting(const keyname: string; def: boolean = false): boolean;
     {** Reload settings backend state (if any). }
@@ -259,7 +267,9 @@ class var touchOverride: TTrndiBool;
     out res: string): boolean; virtual;
   class function GetOSLanguage: string;
   class function HasDangerousChars(const FileName: string): boolean; static;
+  {$ifdef X_LINUXBSD}
   class function DetectWSL: TWSLInfo;
+  {$endif}
     // Notifications
     {** True if a native notification system is available (override per platform). }
   class function isNotificationSystemAvailable: boolean; virtual;
@@ -1581,6 +1591,11 @@ var
   proxyUser: string;
   proxyPass: string;
 
+  function IsDnsResolveError(const code: CURLcode): boolean;
+  begin
+    Result := code = CURLE_COULDNT_RESOLVE_HOST;
+  end;
+
   function PerformRequest(withProxy: boolean): boolean;
   var
     j: integer;
@@ -1715,12 +1730,30 @@ begin
       if PerformRequest(false) then
         Result := responseStream.DataString
       else
+      if IsDnsResolveError(errCode) then
+      begin
+        Sleep(1500); // allow DNS/network stack to settle after resume
+        if PerformRequest(false) then
+          Result := responseStream.DataString
+        else
+          Result := string(curl_easy_strerror(errCode));
+      end
+      else
         Result := string(curl_easy_strerror(errCode));
     end
     else
     begin
       if PerformRequest(false) then
         Result := responseStream.DataString
+      else
+      if IsDnsResolveError(errCode) then
+      begin
+        Sleep(1500); // allow DNS/network stack to settle after resume
+        if PerformRequest(false) then
+          Result := responseStream.DataString
+        else
+          Result := string(curl_easy_strerror(errCode));
+      end
       else
         Result := string(curl_easy_strerror(errCode));
     end;
@@ -3160,6 +3193,30 @@ begin
 end;
 
 {------------------------------------------------------------------------------
+  GetAlignmentSetting
+  -------------------------
+  Returns an alignment from settings if parseable, else returns `def`.
+ ------------------------------------------------------------------------------}
+function TTrndiNativeBase.GetAlignmentSetting(const keyname: string; def: TAlignment = taCenter): TAlignment;
+var
+  r: string;
+begin
+  r := GetSetting(keyname);
+
+  case r of
+   'left':
+     result := taLeftJustify;
+   'right':
+     result := taRightJustify;
+   'center':
+     result := taCenter;
+  else
+    result := def;
+  end;
+
+end;
+
+{------------------------------------------------------------------------------
   GetFloatSetting
   -------------------------
   Returns a single from settings if parseable, else returns `def`.
@@ -3383,6 +3440,23 @@ begin
 end;
 
 {------------------------------------------------------------------------------
+  SetAlignmentSetting
+  -------------------------
+  Stores an alignment to platofm-specific storage.
+ ------------------------------------------------------------------------------}
+procedure TTrndiNativeBase.SetAlignmentSetting(const keyname: string; val: TAlignment; const global: boolean = false);
+begin
+  case val of
+    taLeftJustify:
+     SetSetting(keyname, 'left', global);
+    taRightJustify:
+     SetSetting(keyname, 'right', global);
+    taCenter:
+     SetSetting(keyname, 'center', global);
+  end;
+end;
+
+{------------------------------------------------------------------------------
   SetCSVSetting
   ----------------------
   Stores a bool value to platform-specific storage.
@@ -3532,6 +3606,7 @@ begin
   Result := HasCharsInSet(FileName, DangerousChars);
 end;
 
+{$ifdef X_LINUXBSD}
 {------------------------------------------------------------------------------
   DetectWSL
   ----------------------
@@ -3624,6 +3699,7 @@ begin
   ;
   {$ENDIF}
 end;
+{$endif}
 
 class function TTrndiNativeBase.SetTitleColor(form: THandle; bg, Text: TColor): boolean;
 begin

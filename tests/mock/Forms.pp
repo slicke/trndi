@@ -5,7 +5,7 @@ unit Forms;
 
 interface
 
-uses Controls, Menus, SysUtils;
+uses Controls, Menus, SysUtils, Graphics;
 
 type
   TCloseAction = (caNone, caHide, caFree, caMinimize);
@@ -35,6 +35,7 @@ type
     FFormStyle: TFormStyle;
     FHandle: PtrUInt;
     FShowInTaskBar: TShowInTaskBar;
+    FIcon: TIcon;
   public
     procedure Close; virtual;
     procedure DoClose(var CloseAction: TCloseAction); virtual;
@@ -46,6 +47,7 @@ type
     property FormStyle: TFormStyle read FFormStyle write FFormStyle;
     property Handle: PtrUInt read FHandle write FHandle;
     property ShowInTaskBar: TShowInTaskBar read FShowInTaskBar write FShowInTaskBar;
+    property Icon: TIcon read FIcon write FIcon;
     procedure Repaint; virtual;
   end;
 
@@ -54,7 +56,7 @@ type
   TApplication = class(TComponent)
   private
     FExeName: string;
-    FIcon: TObject;
+    FIcon: TIcon;
     FOnException: TExceptionEvent;
     FCursor: Integer;
     FTitle: string;
@@ -64,7 +66,7 @@ type
   public
     constructor Create(AOwner: TComponent = nil); virtual;
     property ExeName: string read FExeName write FExeName;
-    property Icon: TObject read FIcon write FIcon;
+    property Icon: TIcon read FIcon write FIcon;
     property OnException: TExceptionEvent read FOnException write FOnException;
     property Cursor: Integer read FCursor write FCursor;
     property Title: string read FTitle write FTitle;
@@ -84,7 +86,7 @@ implementation
 constructor TApplication.Create(AOwner: TComponent = nil);
 begin
   inherited Create(AOwner);
-  FIcon := nil;
+  FIcon := TIcon.Create;
   FOnException := nil;
   FCursor := 0;
   FTitle := '';

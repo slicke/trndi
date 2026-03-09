@@ -52,9 +52,11 @@ trndi.native.base
 type
   // Re-export base types
 TTrndiNativeBase = trndi.native.base.TTrndiNativeBase;
-TWSLVersion = trndi.native.base.TWSLVersion;
 TTrndiBool = trndi.native.base.TTrndiBool;
+{$ifdef X_LINUXBSD}
+TWSLVersion = trndi.native.base.TWSLVersion;
 TWSLInfo = trndi.native.base.TWSLInfo;
+{$endif}
 
 {$IFDEF TEST}
 TTrndiNativeMock = trndi.native.mock.TTrndiNativeMock;
