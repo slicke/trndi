@@ -550,6 +550,8 @@ private
       the calculated BGTrend values.
    }
   procedure UpdateTrendElements;
+  {** Recalculate left of lTir when next progress bar is visible }
+  procedure nextProgressChange;
   {** Refresh labels and menu captions that display API-derived thresholds
       and other backend metadata (e.g., cgmHi/cgmLo values).
    }
@@ -2307,6 +2309,7 @@ begin
       pnNextProgress.Height := ClientHeight;
       pnNextProgress.Width := Max(6, ClientWidth div 40);
       pnNextProgress.Left := 0;
+      nextProgressChange;
     end;
   end;
 end;
@@ -4661,6 +4664,14 @@ begin
   end;
 end;
 
+procedure TfBG.nextProgressChange;
+begin
+  if not Assigned(pnNextProgress) then
+    Exit;
+
+  lTir.left := fBG.Width - lTir.Width - pnNextProgress.Width - 5;
+end;
+
 procedure TfBG.ResizeUIElements;
 const
   // Numerator for width/height ratios; denominator = 12
@@ -4717,7 +4728,7 @@ begin
   if isWSL then
     lTir.Width := 50;
   {$endif}
-  lTir.left := ClientWidth - lTir.Width - 5;
+  nextProgressChange;
   lTir.top := 0;
 
 
@@ -5893,6 +5904,7 @@ begin
   begin
     pnNextProgress.Height := ClientHeight;
     pnNextProgress.Width := Max(6, ClientWidth div 40);
+    nextProgressChange;
   end;
 
 if WarnShowDetails then
