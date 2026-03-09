@@ -4680,7 +4680,7 @@ const
 var
   wnum, hnum: integer;
 begin
-  // Anpassa storleken på panelen
+  // Adjust panel size
   pnOffRange.Height := ClientHeight div 10;
 
   pnOffRange.Font.Size := 7 + pnOffRange.Height div 5;
@@ -4689,16 +4689,16 @@ begin
   pnOffRangeBar.Height := pnOffRange.Height div 4;
   pnOffRangeBar.Width := ClientWidth + 10;
 
-  // Anpassa huvudetiketterna
+  // Adjust Reading label
   ScaleLbl(lVal);
 
-  // Konfigurera differensvisning
+  // Configure diff display
   lDiff.Width := ClientWidth;
   lDiff.Height := (ClientHeight div 9) - 10;
   lDiff.Top := ClientHeight - lDiff.Height + 1;
   ScaleLbl(lDiff, DIFF_ALIGN, tlCenter, true, 10);
 
-  // Konfigurera tidsvisning
+  // Configure time display
   lAgo.Width := ClientWidth div 2;
   lAgo.Height := ClientHeight div 9;
   // Place the label over the left progress bar and make it transparent so the
@@ -4709,7 +4709,7 @@ begin
   ScaleLbl(lAgo, taLeftJustify, tlCenter, true, IfThen(pnNextProgress.Visible, 10, 0));
   lAgo.BringToFront;
 
-  // Konfigurera trendpil
+  // Configure trend arrow
 
   lArrow.Height := ClientHeight;
   lArrow.Width := ClientWidth;
@@ -4724,11 +4724,11 @@ begin
   lTir.font := lAgo.Font;
   lTir.Height := lTir.Canvas.TextHeight(lTir.Caption);
   lTir.Width := lTir.Canvas.TextWidth(lTir.Caption);
+
   {$if DEFINED(LCLQt6) AND DEFINED(X_LINUXBSD)}
   if isWSL then
     lTir.Width := 50;
   {$endif}
-  nextProgressChange;
   lTir.top := 0;
 
 
@@ -4779,6 +4779,7 @@ begin
     else
       ScaleLbl(lPredict, taRightJustify, tlBottom, true);
   end;
+  nextProgressChange;
 end;
 
 procedure TfBG.UpdateTrendDots;
@@ -4952,7 +4953,7 @@ begin
   ALabel.width := Alabel.Width-padding*2;
   Alabel.left := Alabel.left+padding;
 
-  // Se till att inställningarna används
+  // Make sure settings are used
   ALabel.Refresh;
 end;
 // Update remote on timer
@@ -6574,13 +6575,13 @@ begin
     exit;
   Result := false;
 
-  // Mappa slotIndex till etikettens nummer (0 -> lDot10, 1 -> lDot9, ..., 9 -> lDot1)
+  // Map slotIndex to the label number (0 -> lDot10, 1 -> lDot9, ..., 9 -> lDot1)
   labelNumber := NUM_DOTS - SlotIndex;
   l := TrendDots[labelNumber];
 
   if Assigned(l) then
   begin
-    // Uppdatera etikettens egenskaper baserat på läsningen
+    // Update the label's properties based on the reading
     l.Visible := true;
     l.Hint := Reading.format(un, BG_MSG_SHORT, BGPrimary);
 
@@ -6597,7 +6598,7 @@ begin
     // Use the dot's parent client height to align placement with visibility checks
     setPointHeight(l, Reading.convert(mmol), l.Parent.ClientHeight);
 
-    // Sätt färger baserat på värdet
+    // Set colors according to the value
     l.Font.Color := DetermineColorForReading(Reading);
 
     TrndiDLog(Format('TrendDots[%d] updated with reading at %s (Value: %.2f).',

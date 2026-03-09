@@ -19,10 +19,10 @@ function generateRecord() {
 }
 
 /**
- * Genererar en unik identifierare liknande MongoDB ObjectId.
+ * Generates a unique identifier similar to MongoDB ObjectId.
  *
- * @return string 24-tecken lång hex-sträng.
- * @throws Exception Vid fel vid generering av slumpmässiga bytes.
+ * @return string 24-character hex string.
+ * @throws Exception On error when generating random bytes.
  */
 function generateObjectId() {
     // 4 bytes for the timestamp (seconds since epoch)
@@ -40,10 +40,10 @@ function generateObjectId() {
 }
 
 /**
- * Konverterar Unix-tidsstämpel i millisekunder till ISO 8601-format.
+ * Converts a Unix timestamp in milliseconds to ISO 8601 format.
  *
- * @param int|string $milliseconds Unix-tidsstämpel i millisekunder.
- * @return string ISO 8601-formaterad datumsträng.
+ * @param int|string $milliseconds Unix timestamp in milliseconds.
+ * @return string ISO 8601 formatted date string.
  */
 function convertMillisecondsToISO8601($milliseconds) {
     // If the timestamp is a string (for large numbers on 32-bit systems)
