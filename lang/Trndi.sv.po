@@ -2437,6 +2437,10 @@ msgstr ""
 "Detta är ett utvecklingsbackend. Det används bara för test!\n"
 "Ingen data kommer skickas till någon fjärrserver."
 
+#: uconf.rs_decimal_help
+msgid "This replaces the decimal separator, eg setting \",\" will show the reading as 5,5 instead of 5.5"
+msgstr "Detta ersätter decimaltecknet, t ex \",\" kommer att visa avläsningar som 5,5 istället för 5.5"
+
 #: uconf.rs_default_account
 msgctxt "uconf.rs_default_account"
 msgid "Default"
@@ -2453,6 +2457,10 @@ msgid ""
 msgstr ""
 "Dexcom:s servrar tillhandahåller inte värden för vad som är högt och lågt.\n"
 "Vänligen ställ in dina egna gränser under fliken Personalisera."
+
+#: uconf.rs_diff_right_help
+msgid "This controls if the difference/delta will show center or right (when predictions are on, this will swap the position of the values)"
+msgstr "Detta styr skillnaden/deltans position, center eller höger (när förutsägelser är på, kommer detta att växla positionen på värdena)"
 
 #: uconf.rs_disable_media
 msgid "This turns off all media-related fetures. Can speed up start."
@@ -2664,6 +2672,10 @@ msgstr "Trndi kan förutspå/gissa vad avläsningen kommer visa i framtiden. Det
 msgid "The prediction horizon is how far in the future Trndi will show predictions, when just showing one. This is not an exact time, it may vary, it's just a target time."
 msgstr "Prognoshorisonten är hur långt i framtiden Trndi förutspår avläsningar, när endast en visas. Tiden är inte exakt, den kan variera, utan är endast ett mål."
 
+#: uconf.rs_pred_scale_help
+msgid "When predictions are enabled, this controls the size adjustment of the predictions"
+msgstr "När förutsägelser är på, kommer detta justera storleken på dem"
+
 #: uconf.rs_privacy_help
 msgid "When in Privacy Mode, the actual blood glucose value is hidden. Trndi will only tell the user if it's good, high or low."
 msgstr "När privat läge är aktiverat, visas inte avläsningar. Trndi visar istället bara om sockret är bra, högt eller lågt."
@@ -2866,4 +2878,3 @@ msgstr "Historikgraf"
 #, object-pascal-format
 msgid "Readings (%s)"
 msgstr "Avläsningar (%s)"
-

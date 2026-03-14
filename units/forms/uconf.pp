@@ -65,6 +65,7 @@ type
 TfConf = class(TForm)
   bAdd: TButton;
   bBackendHelp: TButton;
+  bDecimalHelp: TButton;
   bDotHelp: TButton;
   bExportSettings: TButton;
   bFontHelp: TButton;
@@ -77,7 +78,9 @@ TfConf = class(TForm)
   bOutdatedHelp1: TButton;
   bOverrideHelp1: TButton;
   bPredictHorizon: TButton;
+  bDiffRightHelp: TButton;
   bScaleHelp: TButton;
+  bPredScaleHelp: TButton;
   bTemplateCurrent: TButton;
   bTemplateTrend: TButton;
   bTestSpeech: TButton;
@@ -116,6 +119,7 @@ TfConf = class(TForm)
   cbCustRange: TCheckBox;
   cbAlertMissing: TCheckBox;
   cbLang: TComboBox;
+  cbMoveDIffRight: TCheckBox;
   cbWarnLoHi: TCheckBox;
   cbProgress: TCheckBox;
   cbTTS: TCheckBox;
@@ -135,7 +139,6 @@ TfConf = class(TForm)
   cbPrivacy: TCheckBox;
   cbHContrast: TCheckBox;
   cbMediaDisable: TCheckBox;
-  cbMoveDIffRight: TCheckBox;
   fsDiffScale: TFloatSpinEdit;
   fsPredictScale: TFloatSpinEdit;
   GroupBox10: TGroupBox;
@@ -191,6 +194,8 @@ TfConf = class(TForm)
   Panel18: TPanel;
   Panel19: TPanel;
   Panel20: TPanel;
+  Panel25: TPanel;
+  Panel26: TPanel;
   Panel3: TPanel;
   PanelProxyActions: TPanel;
   pnDeltaMax: TPanel;
@@ -384,7 +389,10 @@ TfConf = class(TForm)
   tsIntegration: TTabSheet;
   tsMulti: TTabSheet;
   tsSystem: TTabSheet;
+  procedure bDecimalHelpClick(Sender: TObject);
+  procedure bDiffRightHelpClick(Sender: TObject);
   procedure bDisableMediaHelpClick(Sender: TObject);
+  procedure bPredScaleHelpClick(Sender: TObject);
   procedure bScaleAgoClick(Sender: TObject);
   procedure bScaleHelpClick(Sender: TObject);
   procedure cbMediaDisableChange(Sender: TObject);
@@ -586,6 +594,12 @@ RS_DEBUG_WARN =
 RS_DISABLE_MEDIA = 'This turns off all media-related fetures. Can speed up start.';
 
 RS_SCALE_DIFF_HELP = 'You can change the scale/size of the difference in reading since last, by entering a scale factor';
+
+RS_PRED_SCALE_HELP = 'When predictions are enabled, this controls the size adjustment of the predictions';
+
+RS_DIFF_RIGHT_HELP = 'This controls if the difference/delta will show center or right (when predictions are on, this will swap the position of the values)';
+
+RS_DECIMAL_HELP = 'This replaces the decimal separator, eg setting "," will show the reading as 5,5 instead of 5.5';
 
 RS_ERR_PASSWORD = 'You must enter a password';
 RS_ERR_EMAIL = 'You must enter a valid e-mail address';
@@ -1122,6 +1136,21 @@ end;
 procedure TfConf.bDisableMediaHelpClick(Sender: TObject);
 begin
   ShowMessage(RS_DISABLE_MEDIA);
+end;
+
+procedure TfConf.bDiffRightHelpClick(Sender: TObject);
+begin
+  ShowMessage(RS_DIFF_RIGHT_HELP);
+end;
+
+procedure TfConf.bDecimalHelpClick(Sender: TObject);
+begin
+  ShowMessage(RS_DECIMAL_HELP);
+end;
+
+procedure TfConf.bPredScaleHelpClick(Sender: TObject);
+begin
+ ShowMessage(RS_PRED_SCALE_HELP);
 end;
 
 procedure TfConf.bScaleAgoClick(Sender: TObject);

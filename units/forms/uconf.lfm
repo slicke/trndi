@@ -18,12 +18,12 @@ object fConf: TfConf
     Height = 518
     Top = 11
     Width = 645
-    ActivePage = tsChroma
+    ActivePage = tsDisplay
     Align = alClient
     BorderSpacing.Left = 10
     BorderSpacing.Right = 10
     BorderSpacing.Around = 5
-    TabIndex = 11
+    TabIndex = 3
     TabOrder = 0
     OnChange = pcMainChange
     object tsCommon: TTabSheet
@@ -11234,6 +11234,15 @@ object fConf: TfConf
           Caption = 'Display progress to next update on the left'
           TabOrder = 2
         end
+        object bDecimalHelp: TButton
+          Left = 176
+          Height = 22
+          Top = 24
+          Width = 27
+          Caption = '?'
+          TabOrder = 3
+          OnClick = bDecimalHelpClick
+        end
       end
       object Label8: TLabel
         Left = 0
@@ -11401,38 +11410,78 @@ object fConf: TfConf
           TabOrder = 1
           OnClick = bScaleHelpClick
         end
-        object Label40: TLabel
-          Left = 128
-          Height = 16
+        object Panel25: TPanel
+          Left = 440
+          Height = 60
           Top = 0
-          Width = 71
-          Caption = 'Diff position:'
-        end
-        object cbMoveDIffRight: TCheckBox
-          Left = 131
-          Height = 20
-          Top = 26
-          Width = 98
-          Caption = 'Move to right'
+          Width = 195
+          Align = alRight
+          BevelOuter = bvNone
+          ClientHeight = 60
+          ClientWidth = 195
           TabOrder = 2
+          object fsPredictScale: TFloatSpinEdit
+            Left = 39
+            Height = 30
+            Top = 24
+            Width = 66
+            Increment = 0.1
+            MaxValue = 10
+            MinValue = 0.1
+            TabOrder = 0
+            Value = 0.1
+          end
+          object Label41: TLabel
+            Left = 8
+            Height = 16
+            Top = 0
+            Width = 89
+            Caption = 'Prediction scale:'
+          end
+          object bPredScaleHelp: TButton
+            Left = 112
+            Height = 22
+            Top = 26
+            Width = 27
+            Caption = '?'
+            TabOrder = 1
+            OnClick = bPredScaleHelpClick
+          end
         end
-        object Label41: TLabel
-          Left = 248
-          Height = 16
+        object Panel26: TPanel
+          Left = 270
+          Height = 60
           Top = 0
-          Width = 89
-          Caption = 'Prediction scale:'
-        end
-        object fsPredictScale: TFloatSpinEdit
-          Left = 256
-          Height = 30
-          Top = 24
-          Width = 66
-          Increment = 0.1
-          MaxValue = 10
-          MinValue = 0.1
+          Width = 170
+          Align = alRight
+          BevelOuter = bvNone
+          ClientHeight = 60
+          ClientWidth = 170
           TabOrder = 3
-          Value = 0.1
+          object cbMoveDIffRight: TCheckBox
+            Left = 32
+            Height = 20
+            Top = 28
+            Width = 98
+            Caption = 'Move to right'
+            TabOrder = 0
+          end
+          object Label40: TLabel
+            Left = 24
+            Height = 16
+            Top = 2
+            Width = 71
+            Caption = 'Diff position:'
+          end
+          object bDiffRightHelp: TButton
+            Left = 136
+            Height = 22
+            Top = 24
+            Width = 27
+            Caption = '?'
+            TabOrder = 1
+            OnClick = bDiffRightHelpClick
+          end
         end
       end
     end

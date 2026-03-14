@@ -2318,6 +2318,10 @@ msgid ""
 "No data will be sent to any remote server."
 msgstr ""
 
+#: uconf.rs_decimal_help
+msgid "This replaces the decimal separator, eg setting \",\" will show the reading as 5,5 instead of 5.5"
+msgstr ""
+
 #: uconf.rs_default_account
 msgctxt "uconf.rs_default_account"
 msgid "Default"
@@ -2331,6 +2335,10 @@ msgstr ""
 msgid ""
 "Dexcom servers do not provide custom high and low blood sugar values.\n"
 "Please set your own thresholds in the Customization tab."
+msgstr ""
+
+#: uconf.rs_diff_right_help
+msgid "This controls if the difference/delta will show center or right (when predictions are on, this will swap the position of the values)"
 msgstr ""
 
 #: uconf.rs_disable_media
@@ -2530,6 +2538,10 @@ msgstr ""
 
 #: uconf.rs_prediction_horizon
 msgid "The prediction horizon is how far in the future Trndi will show predictions, when just showing one. This is not an exact time, it may vary, it's just a target time."
+msgstr ""
+
+#: uconf.rs_pred_scale_help
+msgid "When predictions are enabled, this controls the size adjustment of the predictions"
 msgstr ""
 
 #: uconf.rs_privacy_help
