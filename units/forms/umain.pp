@@ -1370,6 +1370,7 @@ var
   arrX: integer;
   arrY : integer;
   dot: TDotControl;
+  warningDotColor: TColor;
   {$endif}
 begin
   // Use manual drawing for rounded corners on all platforms
@@ -1518,16 +1519,18 @@ begin
       Brush.Style := bsSolid;
     end;
 
-    // draw faint trend dots behind the value (and arrow) so that the warning
-    // panel retains context of recent data.  Blend heavily with the panel
-    // background to keep the dots very light.
+    // draw trend dots only inside the warning overlay. Derive a readable color
+    // from the warning panel background, then soften it slightly so the dots
+    // stay visible without competing with the main reading.
     for Dot in TrendDots do
       if Dot.Visible then
       begin
         arrX := Dot.Left - P.Left;
         arrY := Dot.Top - P.Top;
         Font.Assign(Dot.Font);
-        Font.Color := BlendColors(Dot.Font.Color, Brush.Color, 0.2);
+        warningDotColor := GetAdjustedColorForBackground(Dot.Font.Color,
+          Brush.Color, 0.7, 0.45, not IsLightColor(Brush.Color));
+        Font.Color := BlendColors(warningDotColor, Brush.Color, 0.75);
         Brush.Style := bsClear;
         TextOut(arrX, arrY, Dot.Caption);
       end;
