@@ -7,7 +7,7 @@ interface
 uses
 Classes, SysUtils, fpcunit, testutils, testregistry,
 trndi.native, trndi.api, trndi.api.nightscout, trndi.api.dexcom, trndi.api.xdrip, trndi.types, dialogs, dateutils,
-process, php_server_helper;
+process, php_server_helper, trndi.api.debug_lowsoon;
 
 type
 
@@ -31,6 +31,7 @@ published
   procedure TestPredictReadingsIrregularIntervals;
   procedure TestPredictReadingsInvalidTimeDistribution;
   procedure TestPredictReadingsOutputOrdering;
+  procedure TestDebugLowSoonDriverTriggersSeventhPredictionLow;
 end;
 
 implementation
@@ -489,6 +490,31 @@ end;
       for i := 0 to High(preds)-1 do
         AssertTrue('predictions are chronological', preds[i].date <= preds[i+1].date);
     finally api.Free; end;
+  end;
+
+  procedure TAPIGeneralTester.TestDebugLowSoonDriverTriggersSeventhPredictionLow;
+  var
+    api: DebugLowSoonAPI;
+    preds: BGResults;
+    i: integer;
+  begin
+    api := DebugLowSoonAPI.Create('', '');
+    try
+      AssertTrue('debug low-soon backend connects', api.connect);
+      AssertTrue('debug low-soon backend produces predictions', api.predictReadings(7, preds));
+      AssertEquals('expected seven predictions', 7, Length(preds));
+
+      for i := 0 to 5 do
+        AssertTrue('first six predictions stay above low threshold',
+          preds[i].convert(mgdl) > api.cgmLo);
+
+      AssertTrue('seventh prediction reaches low threshold',
+        preds[6].convert(mgdl) <= api.cgmLo);
+      AssertTrue('seventh prediction stays within the soon warning window',
+        Round(MinutesBetween(Now, preds[6].date)) <= 3);
+    finally
+      api.Free;
+    end;
   end;
 
 procedure TAPIGeneralTester.SetUp;

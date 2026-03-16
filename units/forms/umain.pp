@@ -80,7 +80,7 @@ netdb,
 winsock,
 {$endif}
 LazFileUtils, uconf, trndi.native, Trndi.API,
-trndi.api.xDrip,{$ifdef DEBUG} trndi.api.debug_custom, trndi.api.debug, trndi.api.debug_edge, trndi.api.debug_missing, trndi.api.debug_firstXmissing, trndi.api.debug_intermittentmissing, trndi.api.debug_perfect, trndi.api.debug_firstmissing, trndi.api.debug_secondmissing, trndi.api.debug_slow,{$endif}
+trndi.api.xDrip,{$ifdef DEBUG} trndi.api.debug_custom, trndi.api.debug, trndi.api.debug_edge, trndi.api.debug_lowsoon, trndi.api.debug_missing, trndi.api.debug_firstXmissing, trndi.api.debug_intermittentmissing, trndi.api.debug_perfect, trndi.api.debug_firstmissing, trndi.api.debug_secondmissing, trndi.api.debug_slow,{$endif}
 {$ifdef LCLQt6}Qt6, QtWidgets,{$endif}
 StrUtils, slicke.touchdetection, ufloat, uhistorygraph, LCLType, trndi.webserver.threaded, razer.chroma.factory, razer.chroma;
 
@@ -3096,6 +3096,8 @@ procedure LoadUserSettings(f: TfConf);
         result := API_D_INTERMITTENT;
       'API_D_SLOW':
         result := API_D_SLOW;
+      'API_D_LOWSOON':
+        result := API_D_LOWSOON;
       'API_D_SECOND':
         result := API_D_SECOND;
     {$endif}
@@ -3495,6 +3497,8 @@ procedure SaveUserSettings(f: TfConf);
         result := 'API_D_INTERMITTENT';
       API_D_SLOW:
         result := 'API_D_SLOW';
+      API_D_LOWSOON:
+        result := 'API_D_LOWSOON';
       API_D_SECOND:
         result := 'API_D_SECOND';
     {$endif}
