@@ -56,6 +56,12 @@ To have touch screens display the normal:
 ux.semi_touch=true
 ``` 
 
+## Customize prediction warnings
+By default, Trndi warns if you're going high/low in 7 predictions (~30 minutes). You can customize this:
+```ini
+predictions.future_limit=7
+```
+
 ## Change text scale
 Some UI elements can be scaled by using
 ```ini

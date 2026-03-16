@@ -1406,11 +1406,11 @@ begin
       Font.Assign(lArrow.Font);
       Font.Color := lclintf.RGB(
         Round(GetRValue(lArrow.Font.Color) * (1 - alphaRatio) +
-              GetRValue(Brush.Color) * alphaRatio),
+        GetRValue(Brush.Color) * alphaRatio),
         Round(GetGValue(lArrow.Font.Color) * (1 - alphaRatio) +
-              GetGValue(Brush.Color) * alphaRatio),
+        GetGValue(Brush.Color) * alphaRatio),
         Round(GetBValue(lArrow.Font.Color) * (1 - alphaRatio) +
-              GetBValue(Brush.Color) * alphaRatio));
+        GetBValue(Brush.Color) * alphaRatio));
       Brush.Style := bsClear;
 
       case lArrow.Alignment of
@@ -1441,11 +1441,11 @@ begin
       // the original text color with the panel color (which itself has alpha)
       Font.Color := lclintf.RGB(
         Round(GetRValue(lVal.Font.Color) * (1 - alphaRatio) +
-              GetRValue(Brush.Color) * alphaRatio),
+        GetRValue(Brush.Color) * alphaRatio),
         Round(GetGValue(lVal.Font.Color) * (1 - alphaRatio) +
-              GetGValue(Brush.Color) * alphaRatio),
+        GetGValue(Brush.Color) * alphaRatio),
         Round(GetBValue(lVal.Font.Color) * (1 - alphaRatio) +
-              GetBValue(Brush.Color) * alphaRatio));
+        GetBValue(Brush.Color) * alphaRatio));
 
       Brush.Style := bsClear; // Transparent background for text
 
@@ -1473,11 +1473,11 @@ begin
       Font.Assign(lDiff.Font);
       Font.Color := lclintf.RGB(
         Round(GetRValue(lDiff.Font.Color) * (1 - alphaRatio) +
-              GetRValue(Brush.Color) * alphaRatio),
+        GetRValue(Brush.Color) * alphaRatio),
         Round(GetGValue(lDiff.Font.Color) * (1 - alphaRatio) +
-              GetGValue(Brush.Color) * alphaRatio),
+        GetGValue(Brush.Color) * alphaRatio),
         Round(GetBValue(lDiff.Font.Color) * (1 - alphaRatio) +
-              GetBValue(Brush.Color) * alphaRatio));
+        GetBValue(Brush.Color) * alphaRatio));
       Brush.Style := bsClear;
       case lDiff.Alignment of
       taLeftJustify:
@@ -1500,11 +1500,11 @@ begin
       Font.Assign(lAgo.Font);
       Font.Color := lclintf.RGB(
         Round(GetRValue(lAgo.Font.Color) * (1 - alphaRatio) +
-              GetRValue(Brush.Color) * alphaRatio),
+        GetRValue(Brush.Color) * alphaRatio),
         Round(GetGValue(lAgo.Font.Color) * (1 - alphaRatio) +
-              GetGValue(Brush.Color) * alphaRatio),
+        GetGValue(Brush.Color) * alphaRatio),
         Round(GetBValue(lAgo.Font.Color) * (1 - alphaRatio) +
-              GetBValue(Brush.Color) * alphaRatio));
+        GetBValue(Brush.Color) * alphaRatio));
       Brush.Style := bsClear;
       case lAgo.Alignment of
       taLeftJustify:
@@ -4164,6 +4164,8 @@ var
   min: int64;
   showTimestamp: boolean;
   timeStr: string;
+  ix: integer;
+  sx: string;
   
   // For prediction time updates
 procedure UpdatePredictionTimes;
@@ -4300,7 +4302,7 @@ procedure UpdatePredictionTimes;
     end;
   end;
 
-  procedure predictFuture(future: integer = 7);
+procedure predictFuture(future: integer = 7);
   var
     bgr: BGResults;
     b: BGReading;
@@ -4327,7 +4329,8 @@ procedure UpdatePredictionTimes;
     // prediction warning would be redundant
     if lastReading.val <= warnLo then
       Exit // already in/below low zone
-    else if lastReading.val >= warnHi then
+    else
+    if lastReading.val >= warnHi then
       Exit; // already in/above high zone
 
     // use cached predictions if available so popup matches display
@@ -4366,17 +4369,18 @@ procedure UpdatePredictionTimes;
       if b.empty then // Safe non-reading
         Exit;
 
-      if minTime > 3 then begin
+      if minTime > 3 then
+      begin
         if isLow = TTrndiBool.tbTrue then
           showWarningPanel(Format(RS_LO_PREDICT, [minTime]), false, 50, false)
         else
           showWarningPanel(Format(RS_HI_PREDICT, [minTime]), false, 50, false);
-      end else begin
-        if isLow = TTrndiBool.tbTrue then
-          showWarningPanel(RS_LO_PREDICT_SOON, false, 50, false)
-        else
-          showWarningPanel(RS_HI_PREDICT_SOON, false, 50, false);
-      end;
+      end
+      else
+      if isLow = TTrndiBool.tbTrue then
+        showWarningPanel(RS_LO_PREDICT_SOON, false, 50, false)
+      else
+        showWarningPanel(RS_HI_PREDICT_SOON, false, 50, false);
     end;
   end;
 
@@ -4417,7 +4421,9 @@ begin
     // Update prediction times if predictions are visible
     UpdatePredictionTimes;
 
-    predictFuture;
+    if native.TryGetSetting('predictions.future_limit', sx) then
+      ix := native.GetIntSetting('predictions.future_limit', 7) else
+      predictFuture(ix);
   except
     lAgo.Caption := '🕑 ' + RS_COMPUTE_FAILED_AGO;
   end;
@@ -4708,7 +4714,7 @@ begin
   // progress shows beneath the text.
   lAgo.Left := 0;
   lAgo.Top := 1 + IfThen(pnOffRange.Visible, pnOffRange.Height, 3);
-  lAgo.Transparent := True;
+  lAgo.Transparent := true;
   ScaleLbl(lAgo, taLeftJustify, tlCenter, true, IfThen(pnNextProgress.Visible, 10, 0));
   lAgo.BringToFront;
 
@@ -4891,10 +4897,8 @@ begin
         if ALabel.Left < 0 then
           ALabel.Left := 0;
         if ALabel.Left + ALabel.Width > pW then
-        begin
-          // overflow; centre horizontally
-          ALabel.Left := Max(0, (pW - ALabel.Width) div 2);
-        end;
+          ALabel.Left := Max(0, (pW - ALabel.Width) div 2)// overflow; centre horizontally
+        ;
 
         // vertical positioning; top clamp already working
         if ALabel.Top < 0 then
@@ -5778,14 +5782,14 @@ begin
         Format(RS_WARN_BG_LO, [lVal.Caption]));
 
 
-    if native.GetBoolSetting('media.pause') then
-      actOnMediaController(mcaPause);
+  if native.GetBoolSetting('media.pause') then
+    actOnMediaController(mcaPause);
 
-    if native.TryGetSetting('media.url_low', url) then
-    begin
-      lowAlerted := true;
-      actOnMediaController(mcaURL, url);
-    end;
+  if native.TryGetSetting('media.url_low', url) then
+  begin
+    lowAlerted := true;
+    actOnMediaController(mcaURL, url);
+  end;
 
   if native.TryGetSetting('url_remote.url_low', url) then
   begin
@@ -5843,7 +5847,7 @@ begin
     perfectTriggered := true;
 
     if native.TryGetSetting('media.url_perfect', url) then
-        actOnMediaController(mcaURL, url);
+      actOnMediaController(mcaURL, url);
 
     if native.TryGetSetting('url_remote.url_high', url) then
       native.getURL(url, url);
@@ -5911,7 +5915,7 @@ begin
     nextProgressChange;
   end;
 
-if WarnShowDetails then
+  if WarnShowDetails then
   begin
     if tryLastReading(bg) then
     begin
@@ -5957,7 +5961,7 @@ end;
 //     suppressed automatically if opacity < 150 since an almost-transparent
 //     panel would make them unreadable.
 procedure TfBG.showWarningPanel(const message: string;
-  clearDisplayValues: boolean = false; opacity: integer = 235; showDetails: boolean = true);
+clearDisplayValues: boolean = false; opacity: integer = 235; showDetails: boolean = true);
 var
   i: integer;
 begin
@@ -6832,9 +6836,12 @@ begin
     Exit;
 
   case act of
-    mcaPlay: MediaController.Play;
-    mcaPause: MediaController.Pause;
-    mcaURL: MediaController.PlayTrackFromURL(arg);
+  mcaPlay:
+    MediaController.Play;
+  mcaPause:
+    MediaController.Pause;
+  mcaURL:
+    MediaController.PlayTrackFromURL(arg);
   end;
 end;
 
