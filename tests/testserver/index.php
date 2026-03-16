@@ -5,8 +5,10 @@ function generateRecord() {
     // 1. Generate unique identifier (similar to MongoDB ObjectId)
     $identifier = generateObjectId();
 
-    // 2. Get current Unix timestamp in milliseconds
-    $timestampMs = round(microtime(true) * 1000);
+    // 2. Get current UTC timestamp in milliseconds.
+    $now = new DateTimeImmutable('now');
+    $utcOffsetMinutes = intdiv($now->getOffset(), 60);
+    $timestampMs = (int) round(microtime(true) * 1000);
 
     // 3. Convert timestamp to ISO 8601 format
     $isoDate = convertMillisecondsToISO8601($timestampMs);
@@ -14,7 +16,8 @@ function generateRecord() {
     return [
         'identifier' => $identifier,
         'timestamp_ms' => $timestampMs,
-        'iso_date' => $isoDate
+        'iso_date' => $isoDate,
+        'utc_offset_minutes' => $utcOffsetMinutes
     ];
 }
 
@@ -263,7 +266,7 @@ if ($path == '/sgv.json') {
             'rssi' => 100,
             'noise' => 1,
             'sysTime' => $d['iso_date'],
-            'utcOffset' => 60,
+            'utcOffset' => $d['utc_offset_minutes'],
             'mills' => $d['timestamp_ms']
         ];
     }
