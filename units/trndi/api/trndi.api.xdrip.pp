@@ -46,7 +46,7 @@ Classes, SysUtils, StrUtils, sha1,
   // Parent classes and modules
 trndi.api.nightscout, trndi.api, trndi.native, trndi.types,
   // FPC/Lazarus units
-DateUtils, Dialogs;
+DateUtils, Dialogs, fpjson, jsonparser;
 
 (*******************************************************************************
   Constants for xDrip endpoints
@@ -191,9 +191,8 @@ begin
   else
     key := '';
 
-  // Initialize timezone offset (minutes -> seconds via base class setter is not used here)
-  // We store the OS local offset now for clock skew correction later.
-  timezone := GetLocalTimeOffset;
+  // xDrip timestamps are treated as UTC epochs; keep timezone correction neutral.
+  timezone := 0;
 
   // Create the native HTTP helper bound to this UA and base URL
   native := TrndiNative.Create(ua, baseUrl);
@@ -206,6 +205,13 @@ end;
 ------------------------------------------------------------------------------}
 function xDrip.GetReadings(min, maxNum: integer; path: string;
 out res: string): BGResults;
+var
+  LJSONData: TJSONData;
+  LEntries: TJSONArray;
+  LEntry: TJSONObject;
+  LDateData: TJSONData;
+  LDateMs: int64;
+  i, LCount: integer;
 begin
   // If path is empty, default to the xDrip sgv.json endpoint
   if path = '' then
@@ -213,6 +219,42 @@ begin
 
   // Reuse NightScout's implementation to perform the request and mapping
   Result := inherited GetReadings(min, maxNum, path, res);
+
+  if (res = '') or (Length(Result) = 0) then
+    Exit;
+
+  try
+    LJSONData := GetJSON(res);
+    try
+      if not (LJSONData is TJSONArray) then
+        Exit;
+
+      LEntries := TJSONArray(LJSONData);
+      LCount := Length(Result);
+      if LEntries.Count < LCount then
+        LCount := LEntries.Count;
+
+      for i := 0 to LCount - 1 do
+      begin
+        if not (LEntries.Items[i] is TJSONObject) then
+          Continue;
+
+        LEntry := TJSONObject(LEntries.Items[i]);
+        LDateData := LEntry.Find('date');
+        if not Assigned(LDateData) then
+          Continue;
+
+        LDateMs := LDateData.AsInt64;
+
+        // Treat xDrip date as UTC epoch milliseconds.
+        Result[i].date := UnixToDateTime(LDateMs div 1000, False);
+      end;
+    finally
+      LJSONData.Free;
+    end;
+  except
+    // Preserve the inherited result if the payload cannot be reparsed.
+  end;
 end;
 
 {------------------------------------------------------------------------------
@@ -230,7 +272,8 @@ function xDrip.Connect: boolean;
 var
   LResponse: string;
   LTimeStamp: int64;
-  LDateTime: TDateTime;
+  LServerUTCUnix: int64;
+  LLocalUTCUnix: int64;
   i: integer;
 begin
   // Basic check for protocol correctness to catch obvious misconfiguration early
@@ -285,14 +328,13 @@ begin
     Exit;
   end;
 
-  // Convert milliseconds to seconds, then to TDateTime (UTC)
-  LDateTime := UnixToDateTime(LTimeStamp div 1000);
+  // Keep timezone correction neutral for xDrip UTC timestamps.
+  tz := 0;
 
-  // Compute timeDiff between server UTC and local UTC
-  timeDiff := SecondsBetween(LDateTime, LocalTimeToUniversal(Now));
-  if timeDiff < 0 then
-    timeDiff := 0;
-  timeDiff := -1 * timeDiff; // Negative to match the expected adjustment direction
+  // Treat pebble.now as UTC epoch milliseconds and compute signed clock skew.
+  LServerUTCUnix := LTimeStamp div 1000;
+  LLocalUTCUnix := DateTimeToUnix(LocalTimeToUniversal(Now));
+  timeDiff := LServerUTCUnix - LLocalUTCUnix;
 
   // Retrieve hi/lo ranges from xDrip (status.json); parse simple integers by slicing
   LResponse := native.Request(false, XDRIP_RANGES, [], '', key);

@@ -7,7 +7,7 @@ interface
 uses
 Classes, SysUtils, fpcunit, testutils, testregistry,
 trndi.native, trndi.api, trndi.api.nightscout, trndi.api.dexcom, trndi.api.xdrip, trndi.types, dialogs, dateutils,
-process, php_server_helper;
+process, php_server_helper, fpjson, jsonparser;
 
 type
 
@@ -62,6 +62,10 @@ var
   readings: BGResults;
   bg: BGReading;
   BaseURL: string;
+  js: TJSONData;
+  firstEntry: TJSONObject;
+  rawDateMs: int64;
+  expectedDate: TDateTime;
 begin
   // Allow skipping integration tests via TRNDI_NO_PHP=1
   if GetEnvironmentVariable('TRNDI_NO_PHP') = '1' then
@@ -75,9 +79,13 @@ begin
   try
     api := xDrip.create(BaseURL, 'test22');
     try
+      api.timezone := 120; // Simulate a desktop timezone that differs from the xDrip source.
+
       if not api.connect then
         Fail('xDrip connects to local fake server. Error: ' + api.errormsg);
       AssertTrue('xDrip connected', true);
+      AssertTrue('xDrip basetime stays close to local time',
+        Abs(api.getBasetime - DateTimeToUnix(Now)) < 300);
       
       // Test thresholds from status.json (same as Nightscout)
       AssertEquals('xDrip bgHigh threshold mapped', 260, api.cgmHi);
@@ -94,6 +102,19 @@ begin
       AssertTrue('xDrip returns at least one reading', Length(readings) > 0);
       AssertTrue('xDrip reading value set', readings[0].val > 0);
       AssertTrue('xDrip reading timestamp set', readings[0].date > 0);
+
+      js := GetJSON(res);
+      try
+        AssertTrue('xDrip reading payload is an array', js is TJSONArray);
+        firstEntry := TJSONObject(TJSONArray(js).Items[0]);
+        rawDateMs := firstEntry.Get('date', int64(0));
+        expectedDate := UnixToDateTime(rawDateMs div 1000, False);
+        AssertEquals('xDrip reading timestamp uses UTC epoch from server',
+          FormatDateTime('yyyy-mm-dd hh:nn:ss', expectedDate),
+          FormatDateTime('yyyy-mm-dd hh:nn:ss', readings[0].date));
+      finally
+        js.Free;
+      end;
     finally
       api.Free;
     end;
