@@ -4961,8 +4961,15 @@ begin
     TextHeight := ALabel.Canvas.TextHeight(ALabel.Caption);
   end;
 
-  ALabel.width := Alabel.Width-padding*2;
-  Alabel.left := Alabel.left+padding;
+  // Apply padding: reduce width, and for non-centered alignment adjust left position
+  // For centered alignment, keep left unchanged to maintain center point
+  oldW := ALabel.Width;
+  ALabel.width := ALabel.Width - padding*2;
+  if customAl <> taCenter then
+    ALabel.left := ALabel.left + padding
+  else
+    // For centered text, shift left to maintain the center point
+    ALabel.left := ALabel.left + ((oldW - ALabel.Width) div 2);
 
   // Make sure settings are used
   ALabel.Refresh;
