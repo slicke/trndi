@@ -1319,6 +1319,8 @@ var
 begin
 
   s := '';
+  c := '';
+  sys := nil;
 
   {$ifdef DEBUG}
   if cbSys.Text in API_DEBUG then

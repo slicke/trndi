@@ -2343,6 +2343,7 @@ var
   s: system.utf8char;
   i: integer;
 begin
+  dm := '';
   if firstboot then
     exit; // Dont trigger lastReading
 
@@ -5207,8 +5208,9 @@ var
   reading: BGReading;   // Holder for the latest (newest) reading
   i: integer;     // Temp int used when checking if caption starts with a digit
 begin
+  Result := false;
   if firstboot then
-    exit;
+    Exit(true);
 
   reading := lastReading; // Pick the most recent reading from the buffer
 
@@ -5692,6 +5694,7 @@ var
   col: TColor;
   txt: string;
 begin
+  txt := '';
   reading := lastReading;
 
   if reading.val >= api.cgmHi then
@@ -5883,6 +5886,7 @@ var
   bg: BGReading;
   last, val: string;
 begin
+  calculatedFontSize := 12;
   // Calculate padding consistently
   padding := (ClientWidth div 25);
   if not native.HasTouchScreen then
@@ -5910,6 +5914,7 @@ begin
   // Use the same scaling method as resize operations for consistency
   // This ensures the font size matches what you get when manually resizing
   ScaleLbl(lMissing, taCenter, tlCenter);
+  calculatedFontSize := lMissing.Font.Size;
 
   // Ensure font color is visible
   if native.HasTouchScreen then
@@ -6589,9 +6594,9 @@ var
   l: TDotControl;
   H, M, S, MS: word;
 begin
-  if firstboot then
-    exit;
   Result := false;
+  if firstboot then
+    Exit;
 
   // Map slotIndex to the label number (0 -> lDot10, 1 -> lDot9, ..., 9 -> lDot1)
   labelNumber := NUM_DOTS - SlotIndex;
@@ -6680,7 +6685,7 @@ begin
     and pnOffRange.Visible then
     if native.SetTitleColor(handle, pnOffRange.Color,
       IfThen(IsLightColor(pnOffRange.Color), clBlack, clWhite)) then
-      Exit;
+      Exit(true);
 
   if customTitleBar and (pnMultiUser.Color <> clBlack) then
     if native.SetTitleColor(handle, pnMultiUser.Color,
