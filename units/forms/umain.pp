@@ -4392,7 +4392,7 @@ begin
   if firstboot then
     exit; // Dont run on first boot
 
-  if sizeof(bgs) < 1 then
+  if Length(bgs) < 1 then
     lAgo.Caption := '🕑 ' + RS_COMPUTE_FAILED_AGO
   else
   try
