@@ -677,6 +677,10 @@ var
   i: integer;
   ok: boolean;
 begin
+  Result.func := '';
+  Result.callback := nil;
+  Result.params.min := 0;
+  Result.params.max := 0;
   ok := false;
   for i := 0 to callbacks.Count - 1 do
     if (callbacks[i] <> nil) and (callbacks[i]^.func = func) then
@@ -748,8 +752,8 @@ end;
 class function TTrndiExtEngine.ParseArgv(ctx: PJSContext; const vals: PJSValues;
 const pos: integer): pchar;
 begin
-  // Hack to coerce RawUtf8 to PChar. Ensure caller uses the pointer immediately.
-  Result := pchar(Result + ctx^^.ToUtf8(vals^[pos]));
+  // Return pointer to UTF-8 data for immediate use by caller.
+  Result := pchar(ctx^^.ToUtf8(vals^[pos]));
 end;
 
 {** Append JS values (0..len) to @code(Output) as UTF-8 strings. }
@@ -1537,6 +1541,7 @@ var
   s: RawUtf8;
 begin
   Result := JS_UNDEFINED;
+  tmp.Raw := JS_UNDEFINED;
   if IsExtShuttingDown or (FContext = nil) or (FRuntime = nil) then
     Exit;
   arr := JS_NewArray(FContext);
@@ -1647,6 +1652,7 @@ var
 begin
   if (FContext = nil) then
     exit(JS_UNDEFINED);
+  tmp.Raw := JS_UNDEFINED;
   tmp.FromFloat(V);
   Result := tmp.Raw;
 end;
@@ -1657,6 +1663,7 @@ var
 begin
   if (FContext = nil) then
     exit(JS_UNDEFINED);
+  tmp.Raw := JS_UNDEFINED;
   tmp.From(V);
   Result := tmp.Raw;
 end;

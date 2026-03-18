@@ -42,6 +42,7 @@ function JSPlay(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: PJSV
 var
   filename: string;
 begin
+  Result := JS_UNDEFINED;
   filename := ctx^^.ToUtf8(argv^[0]);
   TrndiNative.PlaySound(filename);
 end;
@@ -52,6 +53,7 @@ var
   text: string;
   tn: trndinative;
 begin
+  Result := JS_UNDEFINED;
   text := ctx^^.ToUtf8(argv^[0]);
   tn := TrndiNative.create;
   tn.Speak(text);

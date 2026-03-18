@@ -79,6 +79,7 @@ function JSAttention(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv:
 var
   s: string;
 begin
+  Result := JS_UNDEFINED;
   s := ctx^^.ToUtf8(argv^[0]);
 
   native.attention('Trndi - Extension Message', s);
@@ -89,6 +90,7 @@ function JSHTMLMsg(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: P
 var
   vbs: variant; //Variant box size
 begin
+  Result := JS_UNDEFINED;
   if argc <> 5 then
     ExtError(uxdAuto, '[htmlMsg] A dialog box could not be displayed, as the parameter count was wrong; got' + IntToStr(argc) + ', expected 5');
 
@@ -110,6 +112,7 @@ function JSHTMLDlg(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: P
 var
   vbs: variant; //Variant box size
 begin
+  Result := JS_UNDEFINED;
   if argc <> 3 then
     ExtError(uxdAuto, '[htmlDlg] A dialog box could not be displayed, as the parameter count was wrong; got' + IntToStr(argc) + ', expected 3');
 
@@ -129,6 +132,7 @@ function JSHTMLYesNo(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv:
 var
   vbs: variant; //Variant box size
 begin
+  Result := JS_FALSE;
   if argc <> 3 then
     ExtError(uxdAuto, '[htmlYesNo] A dialog box could not be displayed, as the parameter count was wrong; got' + IntToStr(argc) + ', expected 3');
 
@@ -150,6 +154,7 @@ end;
 // Set the UX colors for different BG levels
 function JSLevelColor(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw;
 begin
+  Result := JS_TRUE;
   if not (argc in [3,6,10]) then
   begin
     Result := JS_FALSE;
@@ -182,6 +187,7 @@ function JSBadge(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: PJS
 var
   vbw, vbf: variant;
 begin
+  Result := JS_TRUE;
   if not (argc in [1,2]) then
   begin
     Result := JS_FALSE;
@@ -197,12 +203,13 @@ begin
   end;
   badge_width := vbw;
 
-  if argc <> 2 then
+  if argc = 2 then
   begin
     ctx^^.ToVariant(argv^[1], vbf);
     if not VarType(vbf) = varInteger then
     begin
       ExtError(uxdAuto, 'Badge font size must be an integer!');
+      Result := JS_FALSE;
       exit;
     end;
     badge_font := vbf;
@@ -214,6 +221,7 @@ function JSDotSize(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: P
 var
   vds: variant;
 begin
+  Result := JS_TRUE;
   if argc <> 1 then
   begin
     Result := JS_FALSE;
@@ -225,6 +233,7 @@ begin
   if not varType(vds) = varInteger then
   begin
     ExtError(uxdAuto, 'Dot size must be an integer');
+    Result := JS_FALSE;
     exit;
   end;
   dotscale := vds;
@@ -235,6 +244,7 @@ function JSDotAdjust(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv:
 var
   vda: variant;
 begin
+  Result := JS_TRUE;
   if argc <> 1 then
   begin
     Result := JS_FALSE;
@@ -246,6 +256,7 @@ begin
   if not varType(vda) = varSingle then
   begin
     ExtError(uxdAuto, 'Dot size must be a floating number');
+    Result := JS_FALSE;
     exit;
   end;
 

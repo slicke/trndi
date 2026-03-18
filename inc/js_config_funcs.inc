@@ -42,6 +42,7 @@ function JSvar_DATA_FRESHNESS_THRESHOLD_MINUTES(ctx: PJSContext; this_val: JSVal
 var
   a0: variant;
 begin
+  Result := JS_UNDEFINED;
   ctx^^.ToVariant(argv^[0], a0);
 
   if varType(a0) <> varInteger then
@@ -60,6 +61,7 @@ function JSvar_CLockInterval(ctx: PJSContext; this_val: JSValueRaw; argc: intege
 var
   a0, a1: variant;
 begin
+  Result := JS_UNDEFINED;
   ctx^^.ToVariant(argv^[0], a0);
   ctx^^.ToVariant(argv^[1], a1);
 
@@ -78,6 +80,7 @@ function JSTimeRange(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv:
 var
   vmins, vcount: variant;
 begin
+  Result := JS_UNDEFINED;
   if argc <> 2 then
   begin
     Result := JS_FALSE;
@@ -87,10 +90,11 @@ begin
   ctx^^.ToVariant(argv^[0], vmins);
   ctx^^.ToVariant(argv^[1], vcount);
 
-  if (not varType(vmins) = varInteger) or (not varType(vcount) = varInteger) then
+  if (VarType(vmins) <> varInteger) or (VarType(vcount) <> varInteger) then
   begin
     ExtError(uxdAuto, 'Mins and Count must be integers');
-    exit;
+    Result := JS_FALSE;
+    Exit;
   end;
 
   MAX_MIN := vmins;

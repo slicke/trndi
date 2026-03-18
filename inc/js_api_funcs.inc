@@ -49,10 +49,9 @@ end;
 // Get current reading
 function JSGetBuild(ctx: JSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw; cdecl;
 var
-  build: string;
   res: JSValue;
 begin
-  res := ctx^.From(build);
+  res := ctx^.From(BUILD_NUMBER);
   result := res.raw;
 end;
 
@@ -63,6 +62,7 @@ var
   res: JSValue;
   mmolval: variant;
 begin
+  Result := JS_FALSE;
 
   ctx^.ToVariant(argv^[0], mmolval);
 
@@ -119,6 +119,7 @@ var
   obj, propVal: JSValueRaw;
   jsVal: JSValue;
 begin
+  jsVal := Default(JSValue);
   // Return false if no readings available
   if Length(bgs) < 1 then
   begin
@@ -179,6 +180,7 @@ var
   obj: JSValueRaw;
   jsVal: JSValue;
 begin
+  jsVal := Default(JSValue);
   // Convert limits from mg/dL to mmol/L
   lowMmol := api.cgmLo * BG_CONVERTIONS[BGUnit.mmol][BGUnit.mgdl];
   highMmol := api.cgmHi * BG_CONVERTIONS[BGUnit.mmol][BGUnit.mgdl];
@@ -232,6 +234,7 @@ var
   obj: JSValueRaw;
   jsVal: JSValue;
 begin
+  jsVal := Default(JSValue);
   // Default to 1440 minutes (24 hours) if no parameter
   minutes := 1440;
   
@@ -396,8 +399,8 @@ end;
 function JSSetSetting(ctx: JSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw; cdecl;
 var
   sect, key, val, curr: string;
-  res: JSValue;
 begin
+  Result := JS_UNDEFINED;
   key := ctx^.ToUtf8(argv^[0]);
   val := ctx^.ToUtf8(argv^[1]);
   if not native.TryGetSetting(key, curr) then
