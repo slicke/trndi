@@ -68,6 +68,7 @@ TfConf = class(TForm)
   bDecimalHelp: TButton;
   bDotHelp: TButton;
   bExportSettings: TButton;
+  bExtOpen: TButton;
   bFontHelp: TButton;
   bImportSettings: TButton;
   bLanguageHelp: TButton;
@@ -98,7 +99,6 @@ TfConf = class(TForm)
   bSysNotice: TButton;
   bMinMinutesHelp: TButton;
   bCustomRangeHelp: TButton;
-  bExtOpen: TButton;
   bCommon: TButton;
   bDisableMediaHelp: TButton;
   Button2: TButton;
@@ -139,6 +139,7 @@ TfConf = class(TForm)
   cbPrivacy: TCheckBox;
   cbHContrast: TCheckBox;
   cbMediaDisable: TCheckBox;
+  eExt: TEdit;
   fsDiffScale: TFloatSpinEdit;
   fsPredictScale: TFloatSpinEdit;
   GroupBox10: TGroupBox;
@@ -149,6 +150,8 @@ TfConf = class(TForm)
   Label40: TLabel;
   Label41: TLabel;
   Label42: TLabel;
+  lExt: TLabel;
+  Panel18: TPanel;
   Panel21: TPanel;
   Panel22: TPanel;
   Panel23: TPanel;
@@ -160,7 +163,6 @@ TfConf = class(TForm)
   edProxyPass: TEdit;
   edProxyPort: TEdit;
   edProxyUser: TEdit;
-  eExt: TEdit;
   cbFonts: TGroupBox;
   fsHi1: TFloatSpinEdit;
   fsLo1: TFloatSpinEdit;
@@ -184,14 +186,12 @@ TfConf = class(TForm)
   lDot2: TLabel;
   lDot3: TLabel;
   lDotNow: TLabel;
-  lExt: TLabel;
   lHiOver3: TLabel;
   lLounder2: TLabel;
   lProxyTitle: TLabel;
   lSettingsHelp: TLabel;
   lSysWarnInfo: TLabel;
   lProxyDesc: TLabel;
-  Panel18: TPanel;
   Panel19: TPanel;
   Panel20: TPanel;
   Panel25: TPanel;

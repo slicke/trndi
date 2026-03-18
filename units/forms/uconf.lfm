@@ -18,12 +18,12 @@ object fConf: TfConf
     Height = 518
     Top = 11
     Width = 645
-    ActivePage = tsAdvanced
+    ActivePage = tsExt
     Align = alClient
     BorderSpacing.Left = 10
     BorderSpacing.Right = 10
     BorderSpacing.Around = 5
-    TabIndex = 7
+    TabIndex = 12
     TabOrder = 0
     OnChange = pcMainChange
     object tsCommon: TTabSheet
@@ -207,14 +207,14 @@ object fConf: TfConf
       object bvExt: TBevel
         Left = 0
         Height = 1
-        Top = 352
+        Top = 297
         Width = 639
         Align = alTop
       end
       object rbUnit: TRadioGroup
         Left = 15
         Height = 56
-        Top = 364
+        Top = 309
         Width = 614
         Align = alTop
         AutoFill = True
@@ -10624,7 +10624,7 @@ object fConf: TfConf
       object bvExt1: TBevel
         Left = 0
         Height = 1
-        Top = 353
+        Top = 298
         Width = 639
         Align = alTop
       end
@@ -10765,65 +10765,6 @@ object fConf: TfConf
         BorderSpacing.Left = 15
         BorderSpacing.Top = 15
         Caption = 'Connection'
-      end
-      object Panel3: TPanel
-        Left = 0
-        Height = 55
-        Top = 297
-        Width = 639
-        Align = alTop
-        BevelOuter = bvNone
-        ClientHeight = 55
-        ClientWidth = 639
-        ParentBackground = False
-        TabOrder = 6
-        object lExt: TLabel
-          Left = 15
-          Height = 16
-          Top = 10
-          Width = 624
-          Align = alTop
-          BorderSpacing.Left = 15
-          BorderSpacing.Top = 10
-          Caption = 'Plugin Folder'
-        end
-        object Panel18: TPanel
-          Left = 0
-          Height = 39
-          Top = 26
-          Width = 639
-          Align = alTop
-          BevelOuter = bvNone
-          ClientHeight = 39
-          ClientWidth = 639
-          ParentBackground = False
-          TabOrder = 0
-          object eExt: TEdit
-            Left = 15
-            Height = 24
-            Top = 5
-            Width = 537
-            Align = alClient
-            BorderSpacing.Left = 10
-            BorderSpacing.Bottom = 5
-            BorderSpacing.Around = 5
-            ReadOnly = True
-            TabOrder = 0
-          end
-          object bExtOpen: TButton
-            Left = 557
-            Height = 26
-            Top = 3
-            Width = 82
-            Align = alRight
-            AutoSize = True
-            BorderSpacing.Top = 3
-            BorderSpacing.Bottom = 10
-            Caption = 'Show Folder'
-            TabOrder = 1
-            OnClick = bExtOpenClick
-          end
-        end
       end
     end
     object tsColors: TTabSheet
@@ -13379,19 +13320,19 @@ object fConf: TfConf
       end
       object GroupBox2: TGroupBox
         Left = 10
-        Height = 351
+        Height = 296
         Top = 31
         Width = 619
         Align = alClient
         BorderSpacing.Around = 10
         Caption = 'Available Extensions'
-        ClientHeight = 324
+        ClientHeight = 269
         ClientWidth = 615
         ParentBackground = False
         TabOrder = 0
         object lbExtensions: TListBox
           Left = 5
-          Height = 314
+          Height = 259
           Top = 5
           Width = 605
           Align = alClient
@@ -13405,7 +13346,7 @@ object fConf: TfConf
       object GroupBox3: TGroupBox
         Left = 10
         Height = 81
-        Top = 392
+        Top = 337
         Width = 619
         Align = alBottom
         BorderSpacing.Around = 10
@@ -13429,6 +13370,65 @@ object fConf: TfConf
           Top = 24
           Width = 72
           Caption = 'for more info'
+        end
+      end
+      object Panel3: TPanel
+        Left = 0
+        Height = 55
+        Top = 428
+        Width = 639
+        Align = alBottom
+        BevelOuter = bvNone
+        ClientHeight = 55
+        ClientWidth = 639
+        ParentBackground = False
+        TabOrder = 2
+        object lExt: TLabel
+          Left = 15
+          Height = 16
+          Top = 10
+          Width = 624
+          Align = alTop
+          BorderSpacing.Left = 15
+          BorderSpacing.Top = 10
+          Caption = 'Plugin Folder'
+        end
+        object Panel18: TPanel
+          Left = 0
+          Height = 39
+          Top = 26
+          Width = 639
+          Align = alTop
+          BevelOuter = bvNone
+          ClientHeight = 39
+          ClientWidth = 639
+          ParentBackground = False
+          TabOrder = 0
+          object eExt: TEdit
+            Left = 15
+            Height = 24
+            Top = 5
+            Width = 537
+            Align = alClient
+            BorderSpacing.Left = 10
+            BorderSpacing.Bottom = 5
+            BorderSpacing.Around = 5
+            ReadOnly = True
+            TabOrder = 0
+          end
+          object bExtOpen: TButton
+            Left = 557
+            Height = 26
+            Top = 3
+            Width = 82
+            Align = alRight
+            AutoSize = True
+            BorderSpacing.Top = 3
+            BorderSpacing.Bottom = 10
+            Caption = 'Show Folder'
+            TabOrder = 1
+            OnClick = bExtOpenClick
+          end
         end
       end
     end
