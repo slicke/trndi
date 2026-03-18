@@ -132,10 +132,12 @@ type
     function WindowsOpenURL(const URL: string): Boolean;
     {$ENDIF}
     {$IFDEF DARWIN}
+    function MacOpenURL(const URL: string): Boolean;
     function MacOSPlaySpotifyURL(const URL: string): Boolean;
     function MacOSPlayDeezerURL(const URL: string): Boolean;
     {$ENDIF}
     {$IFDEF LINUX}
+    function LinuxOpenURL(const URL: string): Boolean;
     function LinuxPlayTrackURL(const URL: string; Player: TMediaPlayer): Boolean;
     {$ENDIF}
 
@@ -906,10 +908,10 @@ begin
       Result := WindowsOpenURL(URL);
       {$ENDIF}
       {$IFDEF DARWIN}
-      Result := ExecuteCommandOK('open "' + URL + '"');
+      Result := MacOpenURL(URL);
       {$ENDIF}
       {$IFDEF LINUX}
-      Result := ExecuteCommandOK('xdg-open "' + URL + '"');
+      Result := LinuxOpenURL(URL);
       {$ENDIF}
     end;
   end;
@@ -1038,6 +1040,27 @@ end;
 {$ENDIF}
 
 {$IFDEF DARWIN}
+function TSystemMediaController.MacOpenURL(const URL: string): Boolean;
+var
+  Process: TProcess;
+begin
+  Result := False;
+  if URL = '' then
+    Exit;
+
+  Process := TProcess.Create(nil);
+  try
+    Process.Executable := '/usr/bin/open';
+    Process.Parameters.Add(URL);
+    Process.Options := [poWaitOnExit];
+    Process.ShowWindow := swoHide;
+    Process.Execute;
+    Result := Process.ExitStatus = 0;
+  finally
+    Process.Free;
+  end;
+end;
+
 function TSystemMediaController.MacOSPlaySpotifyURL(const URL: string): Boolean;
 var
   Script: string;
@@ -1049,26 +1072,48 @@ begin
     Result := True;
   except
     // Fallback: open in browser
-    Result := ExecuteCommandOK('open "' + URL + '"');
+    Result := MacOpenURL(URL);
   end;
 end;
 
 function TSystemMediaController.MacOSPlayDeezerURL(const URL: string): Boolean;
 begin
-  Result := False;
-  try
-    // Deezer has limited AppleScript support, use browser
-    Result := ExecuteCommand('open "' + URL + '"') <> '';
-  except
-    Result := False;
-  end;
+  // Deezer has limited AppleScript support, use browser launcher directly.
+  Result := MacOpenURL(URL);
 end;
 {$ENDIF}
 
 {$IFDEF LINUX}
+function TSystemMediaController.LinuxOpenURL(const URL: string): Boolean;
+var
+  Process: TProcess;
+begin
+  Result := False;
+  if URL = '' then
+    Exit;
+
+  {$IFDEF UNIX}
+  if ExeSearch('xdg-open', '') = '' then
+    Exit;
+  {$ENDIF}
+
+  Process := TProcess.Create(nil);
+  try
+    Process.Executable := 'xdg-open';
+    Process.Parameters.Add(URL);
+    Process.Options := [poWaitOnExit];
+    Process.ShowWindow := swoHide;
+    Process.Execute;
+    Result := Process.ExitStatus = 0;
+  finally
+    Process.Free;
+  end;
+end;
+
 function TSystemMediaController.LinuxPlayTrackURL(const URL: string; Player: TMediaPlayer): Boolean;
 var
-  PlayerName, Command: string;
+  PlayerName: string;
+  Process: TProcess;
 begin
   Result := False;
 
@@ -1079,23 +1124,37 @@ begin
     {$IFDEF UNIX}
     if ExeSearch('dbus-send', '') = '' then
     begin
-      Result := ExecuteCommand('xdg-open "' + URL + '"') <> '';
+      Result := LinuxOpenURL(URL);
       Exit;
     end;
     {$ENDIF}
     try
-      // Try D-Bus first
-      Command := Format('dbus-send --type=method_call --dest=%s /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.OpenUri string:"%s"',
-                       [PlayerName, URL]);
-      ExecuteCommand(Command);
-      Result := True;
+      // Try D-Bus first via argv parameters to avoid shell injection.
+      Process := TProcess.Create(nil);
+      try
+        Process.Executable := 'dbus-send';
+        Process.Parameters.Add('--type=method_call');
+        Process.Parameters.Add('--dest=' + PlayerName);
+        Process.Parameters.Add('/org/mpris/MediaPlayer2');
+        Process.Parameters.Add('org.mpris.MediaPlayer2.Player.OpenUri');
+        Process.Parameters.Add('string:' + URL);
+        Process.Options := [poWaitOnExit];
+        Process.ShowWindow := swoHide;
+        Process.Execute;
+        Result := Process.ExitStatus = 0;
+      finally
+        Process.Free;
+      end;
     except
       // Fallback: xdg-open
-      Result := ExecuteCommandOK('xdg-open "' + URL + '"');
+      Result := LinuxOpenURL(URL);
     end;
+
+    if not Result then
+      Result := LinuxOpenURL(URL);
   end
   else
-    Result := ExecuteCommandOK('xdg-open "' + URL + '"');
+    Result := LinuxOpenURL(URL);
 end;
 {$ENDIF}
 

@@ -288,7 +288,7 @@ end;
 function TJSFuncs.runCMD(ctx: pointer; const func: string;
   const params: JSParameters; out res: JSValueVal): boolean;
 begin
-  if not checkJSParams(params, [JD_STR], [JD_STR, JD_STR, JD_STR]) = JS_PARAM_OK then
+  if checkJSParams(params, [JD_STR], [JD_STR, JD_STR, JD_STR]) <> JS_PARAM_OK then
   begin
     Result := False;
     res.Data.Int32Val := -1;
