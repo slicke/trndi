@@ -2404,6 +2404,10 @@ msgstr ""
 msgid "You can change the font of the reading, time and arrow. Click on the respective item here to change the font"
 msgstr ""
 
+#: uconf.rs_full_arrow_set_help
+msgid "This will display all prediction arrows, by default Trndi just shows going up, down or steady"
+msgstr ""
+
 #: uconf.rs_graph_icon_current
 msgid "Choose an icon for the current point in the graph"
 msgstr ""
@@ -2588,6 +2592,10 @@ msgstr ""
 msgid "By default, Trndi only shows up/down/straight. You can enable the full range of arrows here - however you must realize that this is very experimental and potentially less accurate!"
 msgstr ""
 
+#: uconf.rs_short_mode_help
+msgid "Only one reading will show, as just an arrow or a single prediction"
+msgstr ""
+
 #: uconf.rs_tandem
 msgid ""
 "This backend is in alpha stage, it may not work as intended!\n"
@@ -2625,6 +2633,10 @@ msgstr ""
 
 #: uconf.rs_use_url_help
 msgid "Trndi can load a URL when high or low in your default web browser."
+msgstr ""
+
+#: uconf.rs_warn_hilow
+msgid "This will show an overlay on the screen when a low or high is predicted"
 msgstr ""
 
 #: uconf.rs_wayland

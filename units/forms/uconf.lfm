@@ -18,12 +18,12 @@ object fConf: TfConf
     Height = 518
     Top = 11
     Width = 645
-    ActivePage = tsExt
+    ActivePage = tsAdvanced
     Align = alClient
     BorderSpacing.Left = 10
     BorderSpacing.Right = 10
     BorderSpacing.Around = 5
-    TabIndex = 12
+    TabIndex = 7
     TabOrder = 0
     OnChange = pcMainChange
     object tsCommon: TTabSheet
@@ -12202,61 +12202,17 @@ object fConf: TfConf
       Caption = 'Advanced'
       ClientHeight = 483
       ClientWidth = 639
-      object pnMisc: TPanel
-        Left = 15
-        Height = 51
-        Top = 15
-        Width = 624
-        Align = alTop
-        BorderSpacing.Left = 15
-        BorderSpacing.Top = 15
-        BevelOuter = bvNone
-        ClientHeight = 51
-        ClientWidth = 624
-        ParentBackground = False
-        TabOrder = 0
-        object spTHRESHOLD: TSpinEdit
-          Left = 0
-          Height = 30
-          Top = 21
-          Width = 82
-          Align = alLeft
-          BorderSpacing.Top = 5
-          MaxValue = 30
-          MinValue = 6
-          TabOrder = 0
-          Value = 6
-          OnChange = spTHRESHOLDChange
-        end
-        object Label1: TLabel
-          Left = 0
-          Height = 16
-          Top = 0
-          Width = 624
-          Align = alTop
-          Caption = 'Readings are outdated after (minutes):'
-        end
-        object bOutdatedHelp: TButton
-          Left = 104
-          Height = 22
-          Top = 24
-          Width = 27
-          Caption = '?'
-          TabOrder = 1
-          OnClick = bOutdatedHelpClick
-        end
-      end
       object GroupBox8: TGroupBox
         Left = 0
-        Height = 235
-        Top = 248
+        Height = 267
+        Top = 216
         Width = 639
         Align = alBottom
         Caption = 'Predictions'
-        ClientHeight = 208
+        ClientHeight = 240
         ClientWidth = 635
         ParentBackground = False
-        TabOrder = 1
+        TabOrder = 0
         object cbPredictions: TCheckBox
           Left = 5
           Height = 20
@@ -12271,7 +12227,7 @@ object fConf: TfConf
         object lWarnPredict: TLabel
           Left = 0
           Height = 16
-          Top = 192
+          Top = 224
           Width = 635
           Align = alBottom
           Alignment = taRightJustify
@@ -12281,18 +12237,18 @@ object fConf: TfConf
         end
         object Panel13: TPanel
           Left = 0
-          Height = 41
-          Top = 151
+          Height = 43
+          Top = 181
           Width = 635
           Align = alClient
           BevelOuter = bvNone
-          ClientHeight = 41
+          ClientHeight = 43
           ClientWidth = 635
           ParentBackground = False
           TabOrder = 1
           object cbPredictShortSize: TComboBox
             Left = 131
-            Height = 31
+            Height = 33
             Top = 0
             Width = 120
             Align = alLeft
@@ -12312,7 +12268,7 @@ object fConf: TfConf
           end
           object lPredictShortSize: TLabel
             Left = 30
-            Height = 31
+            Height = 33
             Top = 0
             Width = 91
             Align = alLeft
@@ -12324,7 +12280,7 @@ object fConf: TfConf
           end
           object lPredictShortMinutes: TLabel
             Left = 271
-            Height = 31
+            Height = 33
             Top = 0
             Width = 103
             Align = alLeft
@@ -12336,7 +12292,7 @@ object fConf: TfConf
           end
           object cbPredictShortMinutes: TComboBox
             Left = 384
-            Height = 31
+            Height = 33
             Top = 0
             Width = 120
             Align = alLeft
@@ -12356,7 +12312,7 @@ object fConf: TfConf
           end
           object bPredictHorizon: TButton
             Left = 603
-            Height = 23
+            Height = 25
             Top = 3
             Width = 27
             Align = alRight
@@ -12375,6 +12331,7 @@ object fConf: TfConf
           Width = 620
           Align = alTop
           BorderSpacing.Left = 15
+          BorderSpacing.Top = 5
           BorderSpacing.Bottom = 5
           Caption = 'Show only trend arrows / 1 reading (short mode)'
           TabOrder = 2
@@ -12427,26 +12384,55 @@ object fConf: TfConf
         object cbWarnLoHi: TCheckBox
           Left = 15
           Height = 20
-          Top = 126
+          Top = 136
           Width = 620
           Align = alTop
           BorderSpacing.Left = 15
-          BorderSpacing.Bottom = 5
+          BorderSpacing.Top = 15
+          BorderSpacing.Bottom = 25
           Caption = 'Warn when going high or low'
           TabOrder = 7
+        end
+        object bShortModeHelp: TButton
+          Left = 384
+          Height = 22
+          Top = 28
+          Width = 27
+          Caption = '?'
+          TabOrder = 8
+          OnClick = bShortModeHelpClick
+        end
+        object bFullArrowSetHelp: TButton
+          Left = 384
+          Height = 22
+          Top = 96
+          Width = 27
+          Caption = '?'
+          TabOrder = 9
+          OnClick = bFullArrowSetHelpClick
+        end
+        object bWarnHiLowHelp: TButton
+          Left = 384
+          Height = 22
+          Top = 134
+          Width = 27
+          Caption = '?'
+          TabOrder = 10
+          OnClick = bWarnHiLowHelpClick
         end
       end
       object GroupBox9: TGroupBox
         Left = 0
         Height = 97
-        Top = 151
+        Top = 85
         Width = 639
-        Align = alBottom
+        Align = alTop
+        BorderSpacing.Top = 15
         Caption = 'Display'
         ClientHeight = 70
         ClientWidth = 635
         ParentBackground = False
-        TabOrder = 2
+        TabOrder = 1
         object cbTimeStamp: TCheckBox
           Left = 10
           Height = 20
@@ -12486,48 +12472,103 @@ object fConf: TfConf
           OnClick = bTimeStampHelpClick
         end
       end
-      object pnDeltaMax: TPanel
-        Left = 15
-        Height = 51
-        Top = 81
-        Width = 624
+      object Panel27: TPanel
+        Left = 0
+        Height = 70
+        Top = 0
+        Width = 639
         Align = alTop
-        BorderSpacing.Left = 15
-        BorderSpacing.Top = 15
         BevelOuter = bvNone
-        ClientHeight = 51
-        ClientWidth = 624
-        ParentBackground = False
-        TabOrder = 3
-        object spDeltaMax: TSpinEdit
-          Left = 0
-          Height = 30
-          Top = 21
-          Width = 82
+        ClientHeight = 70
+        ClientWidth = 639
+        TabOrder = 2
+        object pnDeltaMax: TPanel
+          Left = 15
+          Height = 55
+          Top = 15
+          Width = 161
           Align = alLeft
-          BorderSpacing.Top = 5
-          MaxValue = 5
-          MinValue = 2
+          BorderSpacing.Left = 15
+          BorderSpacing.Top = 15
+          BevelOuter = bvNone
+          ClientHeight = 55
+          ClientWidth = 161
+          ParentBackground = False
           TabOrder = 0
-          Value = 2
-          OnChange = spTHRESHOLDChange
+          object spDeltaMax: TSpinEdit
+            Left = 0
+            Height = 34
+            Top = 21
+            Width = 82
+            Align = alLeft
+            BorderSpacing.Top = 5
+            MaxValue = 5
+            MinValue = 2
+            TabOrder = 0
+            Value = 2
+            OnChange = spTHRESHOLDChange
+          end
+          object Label25: TLabel
+            Left = 0
+            Height = 16
+            Top = 0
+            Width = 161
+            Align = alTop
+            Caption = 'Maximum delta slots'
+          end
+          object bDeltaMaxHelp: TButton
+            Left = 104
+            Height = 22
+            Top = 24
+            Width = 27
+            Caption = '?'
+            TabOrder = 1
+            OnClick = bDeltaMaxHelpClick
+          end
         end
-        object Label25: TLabel
-          Left = 0
-          Height = 16
-          Top = 0
-          Width = 624
-          Align = alTop
-          Caption = 'Maximum delta slots'
-        end
-        object bDeltaMaxHelp: TButton
-          Left = 104
-          Height = 22
-          Top = 24
-          Width = 27
-          Caption = '?'
+        object pnMisc: TPanel
+          Left = 191
+          Height = 55
+          Top = 15
+          Width = 448
+          Align = alClient
+          BorderSpacing.Left = 15
+          BorderSpacing.Top = 15
+          BevelOuter = bvNone
+          ClientHeight = 55
+          ClientWidth = 448
+          ParentBackground = False
           TabOrder = 1
-          OnClick = bDeltaMaxHelpClick
+          object spTHRESHOLD: TSpinEdit
+            Left = 0
+            Height = 34
+            Top = 21
+            Width = 82
+            Align = alLeft
+            BorderSpacing.Top = 5
+            MaxValue = 30
+            MinValue = 6
+            TabOrder = 0
+            Value = 6
+            OnChange = spTHRESHOLDChange
+          end
+          object Label1: TLabel
+            Left = 0
+            Height = 16
+            Top = 0
+            Width = 448
+            Align = alTop
+            Caption = 'Readings are outdated after (minutes):'
+          end
+          object bOutdatedHelp: TButton
+            Left = 104
+            Height = 22
+            Top = 24
+            Width = 27
+            Caption = '?'
+            TabOrder = 1
+            OnClick = bOutdatedHelpClick
+          end
         end
       end
     end

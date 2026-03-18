@@ -66,29 +66,32 @@ TfConf = class(TForm)
   bAdd: TButton;
   bBackendHelp: TButton;
   bDecimalHelp: TButton;
+  bDeltaMaxHelp: TButton;
   bDotHelp: TButton;
   bExportSettings: TButton;
   bExtOpen: TButton;
   bFontHelp: TButton;
+  bWarnHiLowHelp: TButton;
   bImportSettings: TButton;
   bLanguageHelp: TButton;
   bNotificationHelp: TButton;
   bColorGraphHelp: TButton;
   bMultiUserHelp: TButton;
-  bDeltaMaxHelp: TButton;
+  bOutdatedHelp: TButton;
   bOutdatedHelp1: TButton;
   bOverrideHelp1: TButton;
+  bShortModeHelp: TButton;
   bPredictHorizon: TButton;
   bDiffRightHelp: TButton;
   bScaleHelp: TButton;
   bPredScaleHelp: TButton;
+  bFullArrowSetHelp: TButton;
   bTemplateCurrent: TButton;
   bTemplateTrend: TButton;
   bTestSpeech: TButton;
   bTimeStampHelp: TButton;
   bUseURLHelp: TButton;
   bThreasholdLinesHelp: TButton;
-  bOutdatedHelp: TButton;
   bBadgeFlashHelp: TButton;
   bPrivacyHelp: TButton;
   bPredictHelp: TButton;
@@ -143,6 +146,8 @@ TfConf = class(TForm)
   fsDiffScale: TFloatSpinEdit;
   fsPredictScale: TFloatSpinEdit;
   GroupBox10: TGroupBox;
+  Label1: TLabel;
+  Label25: TLabel;
   Label36: TLabel;
   Label37: TLabel;
   Label38: TLabel;
@@ -172,7 +177,6 @@ TfConf = class(TForm)
   Label16: TLabel;
   Label17: TLabel;
   Label2: TLabel;
-  Label25: TLabel;
   Label33: TLabel;
   Label34: TLabel;
   Label35: TLabel;
@@ -196,9 +200,11 @@ TfConf = class(TForm)
   Panel20: TPanel;
   Panel25: TPanel;
   Panel26: TPanel;
+  Panel27: TPanel;
   Panel3: TPanel;
   PanelProxyActions: TPanel;
   pnDeltaMax: TPanel;
+  pnMisc: TPanel;
   pnMisc1: TPanel;
   pnProxyConnection: TPanel;
   pnProxyCreds: TPanel;
@@ -273,7 +279,6 @@ TfConf = class(TForm)
   GroupBox8: TGroupBox;
   GroupBox9: TGroupBox;
   Image1: TImage;
-  Label1: TLabel;
   Label13: TLabel;
   Label14: TLabel;
   Label18: TLabel;
@@ -343,7 +348,6 @@ TfConf = class(TForm)
   Panel15: TPanel;
   Panel16: TPanel;
   Panel17: TPanel;
-  pnMisc: TPanel;
   pnSysInfo: TPanel;
   pcColors: TPageControl;
   Panel1: TPanel;
@@ -369,8 +373,8 @@ TfConf = class(TForm)
   rbUnit: TRadioGroup;
   seTIR: TSpinEdit;
   seTTSRate: TSpinEdit;
-  spTHRESHOLD: TSpinEdit;
   spDeltaMax: TSpinEdit;
+  spTHRESHOLD: TSpinEdit;
   spTHRESHOLD1: TSpinEdit;
   tsAccess: TTabSheet;
   tsProxy: TTabSheet;
@@ -392,9 +396,12 @@ TfConf = class(TForm)
   procedure bDecimalHelpClick(Sender: TObject);
   procedure bDiffRightHelpClick(Sender: TObject);
   procedure bDisableMediaHelpClick(Sender: TObject);
+  procedure bFullArrowSetHelpClick(Sender: TObject);
   procedure bPredScaleHelpClick(Sender: TObject);
   procedure bScaleAgoClick(Sender: TObject);
   procedure bScaleHelpClick(Sender: TObject);
+  procedure bShortModeHelpClick(Sender: TObject);
+  procedure bWarnHiLowHelpClick(Sender: TObject);
   procedure cbMediaDisableChange(Sender: TObject);
   function validateUser(var error: string): boolean;
   procedure bAddClick({%H-}Sender: TObject);
@@ -525,6 +532,12 @@ RS_Threashold_Lines_Help =
 RS_BADGE_FLASH_HELP =
   'This controls how Trndi''s icon in the status bar and/or tray will notify you visually.';
 
+RS_Warn_HiLow =
+  'This will show an overlay on the screen when a low or high is predicted';
+
+RS_SHORT_MODE_HELP =
+  'Only one reading will show, as just an arrow or a single prediction';
+
 RS_NOTIFICATION_HELP =
   'Trndi will show a system notification (if available) when your reading is in a dangerous state. Alerts will trigger once when hi/low and every 15 minutes when readings are missing.';
 
@@ -598,6 +611,8 @@ RS_SCALE_DIFF_HELP = 'You can change the scale/size of the difference in reading
 RS_PRED_SCALE_HELP = 'When predictions are enabled, this controls the size adjustment of the predictions';
 
 RS_DIFF_RIGHT_HELP = 'This controls if the difference/delta will show center or right (when predictions are on, this will swap the position of the values)';
+
+RS_Full_Arrow_Set_Help = 'This will display all prediction arrows, by default Trndi just shows going up, down or steady';
 
 RS_DECIMAL_HELP = 'This replaces the decimal separator, eg setting "," will show the reading as 5,5 instead of 5.5';
 
@@ -1140,6 +1155,11 @@ begin
   ShowMessage(RS_DISABLE_MEDIA);
 end;
 
+procedure TfConf.bFullArrowSetHelpClick(Sender: TObject);
+begin
+  ShowMessage(RS_Full_Arrow_Set_Help);
+end;
+
 procedure TfConf.bDiffRightHelpClick(Sender: TObject);
 begin
   ShowMessage(RS_DIFF_RIGHT_HELP);
@@ -1163,6 +1183,16 @@ end;
 procedure TfConf.bScaleHelpClick(Sender: TObject);
 begin
   ShowMessage(RS_SCALE_DIFF_HELP);
+end;
+
+procedure TfConf.bShortModeHelpClick(Sender: TObject);
+begin
+  ShowMessage(RS_SHORT_MODE_HELP);
+end;
+
+procedure TfConf.bWarnHiLowHelpClick(Sender: TObject);
+begin
+  ShowMessage(RS_Warn_HiLow);
 end;
 
 procedure TfConf.bAddClick(Sender: TObject);

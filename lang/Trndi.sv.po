@@ -2527,6 +2527,10 @@ msgstr "Tilläggsantal: %d"
 msgid "You can change the font of the reading, time and arrow. Click on the respective item here to change the font"
 msgstr "Du kan ändra typsnittet på avläsning, tid och pil. Klicka på respektive här för att ändra typsnittet"
 
+#: uconf.rs_full_arrow_set_help
+msgid "This will display all prediction arrows, by default Trndi just shows going up, down or steady"
+msgstr "Detta kommer visa alla förutspåelsepilar, som standard visar Trndi bara om värdet förutspås bli lågt, högt eller rakt"
+
 #: uconf.rs_graph_icon_current
 msgid "Choose an icon for the current point in the graph"
 msgstr "Välj en ikon för den nuvarande punkten i grafen"
@@ -2720,6 +2724,10 @@ msgstr "Välj ett typsnitt för tiden"
 msgid "By default, Trndi only shows up/down/straight. You can enable the full range of arrows here - however you must realize that this is very experimental and potentially less accurate!"
 msgstr "Som standard visar Trndi bara upp/ned/rakt. Du kan aktivera att hela mängden av pilar ska visas - dock måste du vara medveten om att detta är mycket experimentfullt och kan potentiellt vara mindre exakt!"
 
+#: uconf.rs_short_mode_help
+msgid "Only one reading will show, as just an arrow or a single prediction"
+msgstr "Endast en avläsning kommer visas, i form av en pil eller en förutspåelse"
+
 #: uconf.rs_tandem
 msgid ""
 "This backend is in alpha stage, it may not work as intended!\n"
@@ -2760,6 +2768,10 @@ msgstr "Du är uppdaterad"
 #: uconf.rs_use_url_help
 msgid "Trndi can load a URL when high or low in your default web browser."
 msgstr "Trndi kan ladda en adress i din standardwebbläsare när du är hög eller låg."
+
+#: uconf.rs_warn_hilow
+msgid "This will show an overlay on the screen when a low or high is predicted"
+msgstr "Detta kommer visa en ruta på skärmen när ett lågt, eller högt, värde förutspås"
 
 #: uconf.rs_wayland
 msgid ""
@@ -2878,4 +2890,3 @@ msgstr "Historikgraf"
 #, object-pascal-format
 msgid "Readings (%s)"
 msgstr "Avläsningar (%s)"
-
