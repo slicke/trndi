@@ -239,6 +239,11 @@ TfBG = class(TForm)
   tTouch: TTimer;
   tMain: TTimer;
   mi24h: TMenuItem;
+  miAlertSnooze: TMenuItem;
+  miAlertSnooze15: TMenuItem;
+  miAlertSnooze30: TMenuItem;
+  miAlertSnooze60: TMenuItem;
+  miAlertSnoozeOff: TMenuItem;
   procedure APIReceiver(const msg: string; etype: TrndiAPIMsg);
     {** Recompute and apply layout offsets for all graph elements.
       This adjusts trend dots, labels and other elements when the UI size or
@@ -326,6 +331,10 @@ TfBG = class(TForm)
   procedure miDotNormalClick({%H-}Sender: TObject);
   procedure miFloatOnClick({%H-}Sender: TObject);
   procedure mi24hClick({%H-}Sender: TObject);
+  procedure miAlertSnooze15Click({%H-}Sender: TObject);
+  procedure miAlertSnooze30Click({%H-}Sender: TObject);
+  procedure miAlertSnooze60Click({%H-}Sender: TObject);
+  procedure miAlertSnoozeOffClick({%H-}Sender: TObject);
   procedure miHistoryClick({%H-}Sender: TObject);
   procedure miRangeColorClick({%H-}Sender: TObject);
   procedure miBordersClick({%H-}Sender: TObject);
@@ -366,6 +375,10 @@ TfBG = class(TForm)
   // Test accessors
 {$I ../../tests/inc/umain_fbg.inc}
   {$endif}
+private
+  function AlertsSnoozed: boolean;
+  procedure SetAlertSnoozeMinutes(const Minutes: integer);
+  procedure UpdateAlertSnoozeMenu;
 private
   FStoredWindowInfo: record // Saved geometry and window state for restore/toggle
     Left, Top, Width, Height: integer;
@@ -737,6 +750,7 @@ debug_load_text: boolean = false;
 var
 last_popup: TDateTime = 0;
 bg_alert: boolean = false;
+alertSnoozeUntil: TDateTime = 0;
   // If the BG is high/low since before, so we don't spam notifications
 placed: boolean = false; // If the window has been placed at setup
 WarnShowDetails: boolean = true; // controls whether fixWarningPanel adds reading/age info
@@ -2753,6 +2767,69 @@ begin
   AutoEnableBasalOverlay;
 end;
 
+function TfBG.AlertsSnoozed: boolean;
+begin
+  Result := (alertSnoozeUntil > 0) and (Now < alertSnoozeUntil);
+  if not Result then
+    alertSnoozeUntil := 0;
+end;
+
+procedure TfBG.UpdateAlertSnoozeMenu;
+var
+  isSnoozed: boolean;
+begin
+  if miAlertSnooze = nil then
+    Exit;
+
+  isSnoozed := AlertsSnoozed;
+  if isSnoozed then
+    miAlertSnooze.Caption := Format(RS_ALERT_SNOOZE_ACTIVE, [FormatDateTime('hh:nn', alertSnoozeUntil)])
+  else
+    miAlertSnooze.Caption := RS_ALERT_SNOOZE;
+
+  if miAlertSnoozeOff <> nil then
+    miAlertSnoozeOff.Enabled := isSnoozed;
+end;
+
+procedure TfBG.SetAlertSnoozeMinutes(const Minutes: integer);
+begin
+  alertSnoozeUntil := IncMinute(Now, Minutes);
+  highAlerted := false;
+  lowAlerted := false;
+  missingAlerted := false;
+  lastMissingAlert := 0;
+  native.StopBadgeFlash;
+  UpdateAlertSnoozeMenu;
+  ShowMessage(Format(RS_ALERT_SNOOZE_FOR, [Minutes]));
+end;
+
+procedure TfBG.miAlertSnooze15Click(Sender: TObject);
+begin
+  SetAlertSnoozeMinutes(15);
+end;
+
+procedure TfBG.miAlertSnooze30Click(Sender: TObject);
+begin
+  SetAlertSnoozeMinutes(30);
+end;
+
+procedure TfBG.miAlertSnooze60Click(Sender: TObject);
+begin
+  SetAlertSnoozeMinutes(60);
+end;
+
+procedure TfBG.miAlertSnoozeOffClick(Sender: TObject);
+begin
+  alertSnoozeUntil := 0;
+  highAlerted := false;
+  lowAlerted := false;
+  missingAlerted := false;
+  lastMissingAlert := 0;
+  native.StopBadgeFlash;
+  UpdateAlertSnoozeMenu;
+  ShowMessage(RS_ALERT_SNOOZE_OFF);
+end;
+
 procedure TfBG.miHistoryClick(Sender: TObject);
 begin
   ShowHistoryGraph(bgs, un, CurrentHistoryGraphPalette,
@@ -4164,6 +4241,8 @@ begin
   end
   else
     miDotVal.Visible := false;
+
+  UpdateAlertSnoozeMenu;
   last_popup := now;
 end;
 
@@ -5776,6 +5855,9 @@ var
 begin
   setColorMode(bg_color_hi);
 
+  if AlertsSnoozed then
+    Exit;
+
   if highAlerted then
     Exit;
 
@@ -5822,6 +5904,9 @@ var
   defaultAction: string;
 begin
   SetColorMode(bg_color_lo);
+
+  if AlertsSnoozed then
+    Exit;
 
   if lowAlerted then
     exit;
@@ -6176,9 +6261,12 @@ begin
     if native.getBoolSetting('alerts.notice.missing', true) then
       if (not missingAlerted) or (MinutesBetween(Now, lastMissingAlert) >= 15) then
       begin
-        native.attention(RS_ATTENTION_MISSING, RS_ATTENTION_MISSING_DESC);
-        missingAlerted := true;
-        lastMissingAlert := Now;
+        if not AlertsSnoozed then
+        begin
+          native.attention(RS_ATTENTION_MISSING, RS_ATTENTION_MISSING_DESC);
+          missingAlerted := true;
+          lastMissingAlert := Now;
+        end;
       end// Only show notification if 15 minutes have passed since last alert
     ;
     Exit;

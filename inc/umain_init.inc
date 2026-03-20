@@ -824,6 +824,41 @@ begin
   {$ifndef TrndiExt}
   miExtLog.Enabled := false;
   {$endif}
+
+  // Add quick alert snooze controls to the popup menu.
+  miAlertSnooze := TMenuItem.Create(pmSettings);
+  miAlertSnooze.Caption := RS_ALERT_SNOOZE;
+
+  miAlertSnooze15 := TMenuItem.Create(miAlertSnooze);
+  miAlertSnooze15.Caption := '15 min';
+  miAlertSnooze15.OnClick := @miAlertSnooze15Click;
+  miAlertSnooze.Add(miAlertSnooze15);
+
+  miAlertSnooze30 := TMenuItem.Create(miAlertSnooze);
+  miAlertSnooze30.Caption := '30 min';
+  miAlertSnooze30.OnClick := @miAlertSnooze30Click;
+  miAlertSnooze.Add(miAlertSnooze30);
+
+  miAlertSnooze60 := TMenuItem.Create(miAlertSnooze);
+  miAlertSnooze60.Caption := '60 min';
+  miAlertSnooze60.OnClick := @miAlertSnooze60Click;
+  miAlertSnooze.Add(miAlertSnooze60);
+
+  miAlertSnooze.Add(TMenuItem.Create(miAlertSnooze));
+  miAlertSnooze.Items[miAlertSnooze.Count - 1].Caption := '-';
+
+  miAlertSnoozeOff := TMenuItem.Create(miAlertSnooze);
+  miAlertSnoozeOff.Caption := RS_ALERT_SNOOZE_OFF;
+  miAlertSnoozeOff.OnClick := @miAlertSnoozeOffClick;
+  miAlertSnooze.Add(miAlertSnoozeOff);
+
+  if miExit <> nil then
+    pmSettings.Items.Insert(miExit.MenuIndex, miAlertSnooze)
+  else
+    pmSettings.Items.Add(miAlertSnooze);
+
+  UpdateAlertSnoozeMenu;
+
   {$ifdef DEBUG}
   TrndiDebugLogAlert := false;
   miDebugUXMSg := TMenuItem.Create(miAdvanced);

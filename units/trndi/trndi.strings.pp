@@ -171,6 +171,10 @@ RS_SAFEMODE_DESC = 'Trndi is running in <b>Safe Mode</b>!<ul><li>No start-up act
 
 RS_ATTENTION_MISSING = 'Outdated Readings!';
 RS_ATTENTION_MISSING_DESC = 'Readings are not fresh, have your phone lost connection to the sensor?';
+RS_ALERT_SNOOZE = 'Snooze alerts';
+RS_ALERT_SNOOZE_ACTIVE = 'Snoozed until %s';
+RS_ALERT_SNOOZE_FOR = 'Alerts snoozed for %d minutes';
+RS_ALERT_SNOOZE_OFF = 'Alert snooze disabled';
 
 // EXT
 sExtErr = 'Extension Error';

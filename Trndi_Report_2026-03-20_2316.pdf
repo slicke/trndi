@@ -1,0 +1,64 @@
+%PDF-1.3
+%äüöß
+1 0 obj
+<<
+/Type /Catalog
+/PageLayout /SinglePage
+/OpenAction []
+/ViewerPreferences 3 0 R
+/Pages 4 0 R
+>>
+endobj
+
+2 0 obj
+<<
+/Producer (fpGUI Toolkit 1.4)
+/CreationDate (D:18991230000000+01'00')
+>>
+endobj
+
+3 0 obj
+<<
+/Type /ViewerPreferences
+/FitWindow true
+>>
+endobj
+
+4 0 obj
+<<
+/Type /Pages
+/Kids []
+/Count 0
+>>
+endobj
+
+5 0 obj
+<<
+/Type /Font
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+/BaseFont /Helvetica
+/Name /F0
+>>
+endobj
+
+xref
+0 6
+0000000000 65535 f
+0000000021 00000 n
+0000000145 00000 n
+0000000244 00000 n
+0000000314 00000 n
+0000000375 00000 n
+trailer
+<<
+/Size 6
+/Root 1 0 R
+/Info 2 0 R
+/ID [<3c8b371bc0b4912a61bc706d79e27830> <3c8b371bc0b4912a61bc706d79e27830>]
+>>
+startxref
+523
+%%EOF

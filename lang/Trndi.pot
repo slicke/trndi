@@ -1441,6 +1441,24 @@ msgstr ""
 msgid "xDrip URL"
 msgstr ""
 
+#: trndi.strings.rs_alert_snooze
+msgid "Snooze alerts"
+msgstr ""
+
+#: trndi.strings.rs_alert_snooze_active
+#, object-pascal-format
+msgid "Snoozed until %s"
+msgstr ""
+
+#: trndi.strings.rs_alert_snooze_for
+#, object-pascal-format
+msgid "Alerts snoozed for %d minutes"
+msgstr ""
+
+#: trndi.strings.rs_alert_snooze_off
+msgid "Alert snooze disabled"
+msgstr ""
+
 #: trndi.strings.rs_attention_missing
 msgid "Outdated Readings!"
 msgstr ""
