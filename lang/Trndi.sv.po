@@ -1536,21 +1536,21 @@ msgstr "xDrip-adress"
 
 #: trndi.strings.rs_alert_snooze
 msgid "Snooze alerts"
-msgstr ""
+msgstr "Snooza varningar"
 
 #: trndi.strings.rs_alert_snooze_active
 #, object-pascal-format
 msgid "Snoozed until %s"
-msgstr ""
+msgstr "Snooza tills %s"
 
 #: trndi.strings.rs_alert_snooze_for
 #, object-pascal-format
 msgid "Alerts snoozed for %d minutes"
-msgstr ""
+msgstr "Varningar har snoozats i %d minuter"
 
 #: trndi.strings.rs_alert_snooze_off
 msgid "Alert snooze disabled"
-msgstr ""
+msgstr "Alla varningar snoozade"
 
 #: trndi.strings.rs_attention_missing
 msgid "Outdated Readings!"
@@ -1572,6 +1572,48 @@ msgstr "Vänligen dröj upp till %d sekunder..."
 #: trndi.strings.rs_compute_failed_ago
 msgid "Long ago"
 msgstr "Länge sedan"
+
+#: trndi.strings.rs_conn_auth_expired
+msgid "Auth expired"
+msgstr "Autensiering har gått ut"
+
+#: trndi.strings.rs_conn_click_for_details
+msgid "Click for details"
+msgstr "Klicka för info"
+
+#: trndi.strings.rs_conn_details
+#, object-pascal-format
+msgid ""
+"Connection status: %s\n"
+"\n"
+"Details:\n"
+"%s"
+msgstr ""
+"Anslutningsstatus: %s\n"
+"\n"
+"Detaljer:\n"
+"%s"
+
+#: trndi.strings.rs_conn_no_details
+msgid "No connection details available yet."
+msgstr "Inga anslutningsdata finns att tillgå ännu."
+
+#: trndi.strings.rs_conn_ok
+msgctxt "trndi.strings.rs_conn_ok"
+msgid "OK"
+msgstr "OK"
+
+#: trndi.strings.rs_conn_ok_info
+msgid "Connection is currently healthy. Detailed diagnostics will appear here if a connectivity issue occurs."
+msgstr "Anslutningen är tillförlitlig just nu. Detaljerad diagnostik visas här om fel uppstår-"
+
+#: trndi.strings.rs_conn_rate_limited
+msgid "Rate-limited"
+msgstr "Hastighetsbegränsad"
+
+#: trndi.strings.rs_conn_retrying
+msgid "Retrying"
+msgstr "Försöker igen"
 
 #: trndi.strings.rs_custom_dots
 #, object-pascal-format
@@ -2908,4 +2950,3 @@ msgstr "Historikgraf"
 #, object-pascal-format
 msgid "Readings (%s)"
 msgstr "Avläsningar (%s)"
-

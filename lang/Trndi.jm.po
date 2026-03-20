@@ -1589,6 +1589,45 @@ msgstr "Venligen drôj upp till 20 sekunder..."
 msgid "Long ago"
 msgstr "Lenge sedan"
 
+#: trndi.strings.rs_conn_auth_expired
+msgid "Auth expired"
+msgstr ""
+
+#: trndi.strings.rs_conn_click_for_details
+msgid "Click for details"
+msgstr ""
+
+#: trndi.strings.rs_conn_details
+#, object-pascal-format
+msgid ""
+"Connection status: %s\n"
+"\n"
+"Details:\n"
+"%s"
+msgstr ""
+
+#: trndi.strings.rs_conn_no_details
+msgid "No connection details available yet."
+msgstr ""
+
+#: trndi.strings.rs_conn_ok
+#, fuzzy
+msgctxt "trndi.strings.rs_conn_ok"
+msgid "OK"
+msgstr "ok"
+
+#: trndi.strings.rs_conn_ok_info
+msgid "Connection is currently healthy. Detailed diagnostics will appear here if a connectivity issue occurs."
+msgstr ""
+
+#: trndi.strings.rs_conn_rate_limited
+msgid "Rate-limited"
+msgstr ""
+
+#: trndi.strings.rs_conn_retrying
+msgid "Retrying"
+msgstr ""
+
 #: trndi.strings.rs_custom_dots
 #, object-pascal-format
 msgid "Custom Size [%.2f]"

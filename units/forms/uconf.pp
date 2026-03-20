@@ -125,6 +125,7 @@ TfConf = class(TForm)
   cbMoveDIffRight: TCheckBox;
   cbWarnLoHi: TCheckBox;
   cbProgress: TCheckBox;
+  cbConnectivityButton: TCheckBox;
   cbTTS: TCheckBox;
   cbTTSVoice: TComboBox;
   cgNotifications: TCheckGroup;

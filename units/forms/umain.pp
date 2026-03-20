@@ -335,6 +335,7 @@ TfBG = class(TForm)
   procedure miAlertSnooze30Click({%H-}Sender: TObject);
   procedure miAlertSnooze60Click({%H-}Sender: TObject);
   procedure miAlertSnoozeOffClick({%H-}Sender: TObject);
+  procedure lInternetClick({%H-}Sender: TObject);
   procedure miHistoryClick({%H-}Sender: TObject);
   procedure miRangeColorClick({%H-}Sender: TObject);
   procedure miBordersClick({%H-}Sender: TObject);
@@ -364,6 +365,7 @@ TfBG = class(TForm)
   procedure tSetupTimer({%H-}Sender: TObject);
   procedure tSwapTimer({%H-}Sender: TObject);
   procedure tTouchTimer({%H-}Sender: TObject);
+  procedure UpdateConnectionBadgeBackgroundBounds;
   procedure TfFloatOnHide(Sender: TObject);
   {$ifdef DEBUG}
   procedure miDebugUXMsgClick(Sender: TObject);
@@ -379,6 +381,8 @@ private
   function AlertsSnoozed: boolean;
   procedure SetAlertSnoozeMinutes(const Minutes: integer);
   procedure UpdateAlertSnoozeMenu;
+  function ClassifyConnectionStatus(const ErrorText: string): string;
+  procedure SetConnectionBadge(const StatusText: string; const BadgeColor: TColor);
 private
   FStoredWindowInfo: record // Saved geometry and window state for restore/toggle
     Left, Top, Width, Height: integer;
@@ -402,6 +406,8 @@ private
   FLastUICaption: string;
   FLastTir: string;
   FLastTirColor: TColor;
+  FLastConnectionDetail: string;
+  FInternetBadgeBg: TShape;
   FLastTimerTick: TDateTime; // Last timer tick for wake detection
   FForceRefresh: boolean; // Force bypass of cached API reads on wake
   FLastFetchHadData: boolean; // true when last API call returned ≥1 readings (used to avoid reusing cache after an empty fetch)
@@ -2328,6 +2334,9 @@ begin
       pnNextProgress.Left := 0;
       nextProgressChange;
     end;
+
+    // Keep the connection badge background aligned while the label moves.
+    UpdateConnectionBadgeBackgroundBounds;
   end;
 end;
 
@@ -2789,6 +2798,124 @@ begin
 
   if miAlertSnoozeOff <> nil then
     miAlertSnoozeOff.Enabled := isSnoozed;
+end;
+
+function TfBG.ClassifyConnectionStatus(const ErrorText: string): string;
+var
+  s: string;
+begin
+  s := LowerCase(Trim(ErrorText));
+  if s = '' then
+    Exit(RS_CONN_RETRYING);
+
+  if (Pos('429', s) > 0) or (Pos('rate', s) > 0) or (Pos('too many', s) > 0) then
+    Exit(RS_CONN_RATE_LIMITED);
+
+  if (Pos('401', s) > 0) or (Pos('403', s) > 0) or (Pos('unauthor', s) > 0) or
+    (Pos('forbidden', s) > 0) or (Pos('token', s) > 0) or (Pos('login', s) > 0) or
+    (Pos('credential', s) > 0) then
+    Exit(RS_CONN_AUTH_EXPIRED);
+
+  Result := RS_CONN_RETRYING;
+end;
+
+procedure TfBG.SetConnectionBadge(const StatusText: string; const BadgeColor: TColor);
+var
+  isOk: boolean;
+  isCentered: boolean;
+  showOkBadge: boolean;
+begin
+  isOk := StatusText = RS_CONN_OK;
+  isCentered := isOk or (StatusText = RS_CONN_RETRYING);
+  showOkBadge := native.GetBoolSetting('ux.connectivity.button', false);
+
+  if isOk and (not showOkBadge) then
+  begin
+    lInternet.Visible := false;
+    if Assigned(FInternetBadgeBg) then
+      FInternetBadgeBg.Visible := false;
+    Exit;
+  end;
+
+  if not Assigned(FInternetBadgeBg) then
+  begin
+    FInternetBadgeBg := TShape.Create(Self);
+    FInternetBadgeBg.Parent := Self;
+    FInternetBadgeBg.Shape := stRoundRect;
+    FInternetBadgeBg.Pen.Style := psClear;
+  end;
+
+  lInternet.Caption := StatusText;
+  lInternet.Font.Color := GetTextColorForBackground(BadgeColor, 0, 0.65);
+  lInternet.Transparent := true;
+  lInternet.AutoSize := false;
+  lInternet.WordWrap := false;
+  lInternet.Width := Max(96, round(ClientWidth * 0.18));
+  lInternet.Height := Max(26, round(ClientHeight * 0.055));
+  ScaleLbl(lInternet, taCenter, tlCenter, true);
+
+  if isCentered then
+  begin
+    lInternet.Anchors := [];
+    lInternet.Left := Max(8, (ClientWidth - lInternet.Width) div 2);
+    lInternet.Top := 8;
+  end
+  else
+  begin
+    lInternet.Anchors := [akTop, akRight];
+    lInternet.Top := 8;
+    lInternet.Left := Max(8, ClientWidth - lInternet.Width - 8);
+  end;
+
+  FInternetBadgeBg.Brush.Color := BadgeColor;
+  UpdateConnectionBadgeBackgroundBounds;
+  FInternetBadgeBg.Visible := true;
+  FInternetBadgeBg.BringToFront;
+
+  lInternet.Cursor := crHandPoint;
+  if Trim(FLastConnectionDetail) <> '' then
+  begin
+    lInternet.ShowHint := true;
+    lInternet.Hint := RS_CONN_CLICK_FOR_DETAILS;
+  end
+  else
+  begin
+    lInternet.ShowHint := false;
+    lInternet.Hint := '';
+  end;
+  lInternet.Visible := true;
+  lInternet.BringToFront;
+end;
+
+procedure TfBG.UpdateConnectionBadgeBackgroundBounds;
+var
+  badgePadX: integer;
+  badgePadY: integer;
+begin
+  if not Assigned(FInternetBadgeBg) then
+    Exit;
+
+  badgePadX := Max(6, round(lInternet.Width * 0.08));
+  badgePadY := Max(3, round(lInternet.Height * 0.12));
+  FInternetBadgeBg.SetBounds(lInternet.Left - badgePadX, lInternet.Top - badgePadY,
+    lInternet.Width + (badgePadX * 2), lInternet.Height + (badgePadY * 2));
+end;
+
+procedure TfBG.lInternetClick(Sender: TObject);
+var
+  details: string;
+begin
+  details := Trim(FLastConnectionDetail);
+  if details = '' then
+  begin
+    if lInternet.Caption = RS_CONN_OK then
+      ShowMessage(RS_CONN_OK_INFO)
+    else
+      ShowMessage(Format(RS_CONN_DETAILS, [lInternet.Caption, RS_CONN_NO_DETAILS]));
+    Exit;
+  end;
+
+  ShowMessage(Format(RS_CONN_DETAILS, [lInternet.Caption, details]));
 end;
 
 procedure TfBG.SetAlertSnoozeMinutes(const Minutes: integer);
@@ -3269,6 +3396,7 @@ procedure LoadUserSettings(f: TfConf);
         native.GetBoolSetting('ux.paint_range_cgmrange', false);
       edCommaSep.Text := GetCharSetting('locale.separator', '.');
       cbProgress.Checked := GetBoolSetting('main.next_progress', false);
+      cbConnectivityButton.Checked := GetBoolSetting('ux.connectivity.button', false);
       edTray.Value := GetIntSetting('ux.badge_size', 0);
 
       if CheckSetting('unit', 'mmol', 'mmol') then
@@ -3688,6 +3816,7 @@ procedure SaveUserSettings(f: TfConf);
       native.SetSetting('ux.paint_range_lines', cbPaintLines.Checked);
       native.SetSetting('ux.paint_range_cgmrange', cbPaintHiLoRange.Checked);
       native.SetSetting('main.next_progress', cbProgress.Checked);
+      native.SetSetting('ux.connectivity.button', cbConnectivityButton.Checked);
       native.SetSetting('locale.separator', edCommaSep.Text);
       native.SetSetting('ux.badge_size', edTray.Value.ToString);
 
@@ -4694,20 +4823,11 @@ begin
   tPing.Enabled := false;
   if not IsInternetOnline then
   begin
-    // Show internet offline status as an overlay at the top of the window
-    lInternet.Caption := '⚠️ ' + RS_NO_INTERNET;
-    lInternet.AutoSize := false;
-    lInternet.Width := ClientWidth - 20;
-    lInternet.Left := 10;
-    lInternet.Top := 10;
-    lInternet.Height := 40;
-    lInternet.Visible := true;
-    lInternet.BringToFront;
+    FLastConnectionDetail := RS_NO_INTERNET;
+    SetConnectionBadge(RS_CONN_RETRYING, RGBToColor(185, 60, 45));
   end
   else
   begin
-    // Clear internet offline status when connection restored
-    lInternet.Visible := false;
     if (sender = miDNS) then
       ShowMessage(RS_DNS_INTERNET_OK);
   end;
@@ -6202,6 +6322,10 @@ begin
       LeaveCriticalSection(FReadingsLock);
     end;
     TrndiDLog('DoFetchAndValidateReadings: API returned no data, using cached readings');
+    FLastConnectionDetail := Trim(api.errormsg);
+    if FLastConnectionDetail = '' then
+      FLastConnectionDetail := RS_NO_BACKEND;
+    SetConnectionBadge(ClassifyConnectionStatus(api.errormsg), RGBToColor(185, 60, 45));
     // Enable internet check and show indicator since API failed
     tPing.Enabled := true;
     tPingTimer(nil);  // Check internet status immediately
@@ -6220,7 +6344,8 @@ begin
     end;
     // Disable ping timer when we successfully get fresh data
     tPing.Enabled := false;
-    lInternet.Visible := false;  // Hide internet warning when fresh data received
+    FLastConnectionDetail := '';
+    SetConnectionBadge(RS_CONN_OK, RGBToColor(60, 150, 90));
   end;
 
   // Reapply override settings after API fetch (API may have set its own defaults)
@@ -6246,6 +6371,9 @@ begin
       msg := msg + sLineBreak + api.errormsg;
       TrndiDLog('Backend error: ' + api.errormsg);
     end;
+
+    FLastConnectionDetail := msg;
+    SetConnectionBadge(ClassifyConnectionStatus(api.errormsg), RGBToColor(185, 60, 45));
 
     // Append latest-reading age details to help diagnose stale data cases
     if (Length(bgs) > 0) then

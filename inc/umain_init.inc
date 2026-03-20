@@ -262,6 +262,19 @@ begin
   // Clear labels at startup (they'll be populated when readings are available)
   lRef.Caption := '';
   lDiff.Caption := '';
+
+  // Make connection badge interactive for quick diagnostics.
+  if not Assigned(FInternetBadgeBg) then
+  begin
+    FInternetBadgeBg := TShape.Create(Self);
+    FInternetBadgeBg.Parent := Self;
+    FInternetBadgeBg.Shape := stRoundRect;
+    FInternetBadgeBg.Pen.Style := psClear;
+    FInternetBadgeBg.Visible := false;
+  end;
+
+  lInternet.OnClick := @lInternetClick;
+  lInternet.Cursor := crHandPoint;
 end;
 
 procedure TfBG.InitializeSplashScreen;
@@ -657,6 +670,8 @@ begin
   FLastTirColor := TColor(-1);
   FLastUICaption := '<uninitialized>';
   FLastTir := '<uninitialized>';
+  FLastConnectionDetail := '';
+  FInternetBadgeBg := nil;
 
   // Configuration and user setup
   with native do

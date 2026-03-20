@@ -12472,6 +12472,14 @@ object fConf: TfConf
           OnClick = bTimeStampHelpClick
         end
       end
+      object cbConnectivityButton: TCheckBox
+        Left = 10
+        Height = 20
+        Top = 188
+        Width = 201
+        Caption = 'Enable connectivity button'
+        TabOrder = 3
+      end
       object Panel27: TPanel
         Left = 0
         Height = 70

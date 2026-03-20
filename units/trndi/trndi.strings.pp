@@ -175,6 +175,14 @@ RS_ALERT_SNOOZE = 'Snooze alerts';
 RS_ALERT_SNOOZE_ACTIVE = 'Snoozed until %s';
 RS_ALERT_SNOOZE_FOR = 'Alerts snoozed for %d minutes';
 RS_ALERT_SNOOZE_OFF = 'Alert snooze disabled';
+RS_CONN_OK = 'OK';
+RS_CONN_RETRYING = 'Retrying';
+RS_CONN_AUTH_EXPIRED = 'Auth expired';
+RS_CONN_RATE_LIMITED = 'Rate-limited';
+RS_CONN_CLICK_FOR_DETAILS = 'Click for details';
+RS_CONN_NO_DETAILS = 'No connection details available yet.';
+RS_CONN_DETAILS = 'Connection status: %s'+sLineBreak+sLineBreak+'Details:'+sLineBreak+'%s';
+RS_CONN_OK_INFO = 'Connection is currently healthy. Detailed diagnostics will appear here if a connectivity issue occurs.';
 
 // EXT
 sExtErr = 'Extension Error';
