@@ -3949,10 +3949,13 @@ var
   pnl: TPanel;
   elapsedMs: int64;
   frac: double;
-  fillR: TRect;
-  fillCol, borderCol: TColor;
+  fillR, trackR: TRect;
+  fillCol: TColor;
   lastDt: TDateTime;
   cornerRadius: integer;
+  isOverdue: boolean;
+  hasProgress: boolean;
+  overdueRedThresholdMs: int64;
 begin
   pnl := Sender as TPanel;
 
@@ -3966,18 +3969,49 @@ begin
   elapsedMs := MilliSecondsBetween(Now, lastDt);
   if elapsedMs < 0 then
     elapsedMs := 0;
-  frac := Min(1.0, elapsedMs / BG_REFRESH); // BG_REFRESH in milliseconds
+  if BG_REFRESH > 0 then
+    frac := Min(1.0, elapsedMs / BG_REFRESH) // BG_REFRESH in milliseconds
+  else
+    frac := 1.0;
+  // Keep warning orange for one extra minute after refresh interval,
+  // then switch to solid red.
+  overdueRedThresholdMs := BG_REFRESH + 60000;
+  isOverdue := elapsedMs > overdueRedThresholdMs;
+  hasProgress := elapsedMs > 0;
 
-  // Gradient color: fresh (blue) -> red (stale)
-  fillCol := BlendColors(clBlue, clRed, 1 - frac);
-  fillCol := LightenColor(fillCol, 0.2);
-  borderCol := GetTextColorForBackground(fBG.Color, 0.6, 0.4);
+  // Fresh -> warning palette. Keep overdue as solid red and pre-overdue
+  // warning as orange for better distinction.
+  if isOverdue then
+    fillCol := clRed
+  else
+  begin
+    fillCol := BlendColors(clBlue, RGBToColor(255, 165, 0), 1 - frac);
+    fillCol := LightenColor(fillCol, 0.2);
+    if frac >= 0.8 then
+      fillCol := RGBToColor(255, 165, 0);
+  end;
 
   // Paint only the filled progress area (panel background remains transparent)
   fillR.Left := 0;
   fillR.Right := pnl.Width - 2;
   fillR.Bottom := pnl.Height - 2;
   fillR.Top := pnl.Height - 2 - Round(frac * (pnl.Height - 4));
+
+  // Draw a subtle track in the panel while the sync timer is running.
+  if hasProgress then
+  begin
+    trackR.Left := 0;
+    trackR.Top := 0;
+    trackR.Right := pnl.Width - 2;
+    trackR.Bottom := pnl.Height - 2;
+    with pnl.Canvas do
+    begin
+      Brush.Style := bsSolid;
+      Brush.Color := BlendColors(fBG.Color, clBlack, 0.9); // 90% fBG background
+      Pen.Style := psClear;
+      FillRect(trackR);
+    end;
+  end;
 
   // Round the right corners of the filled area while keeping the left side square
   begin
@@ -3995,6 +4029,8 @@ begin
       // Overpaint left side to square off left corners (undo rounding there)
       if cornerRadius > 0 then
         FillRect(Classes.Rect(fillR.Left, fillR.Top, fillR.Left + cornerRadius, fillR.Bottom));
+
+      // No overdue stripe overlay: overdue state is a solid red fill.
     end;
   end;
 end;
