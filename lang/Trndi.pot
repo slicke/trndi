@@ -438,6 +438,10 @@ msgstr ""
 msgid "Make units green when reading is normal *"
 msgstr ""
 
+#: tfconf.cbconnectivitybutton.caption
+msgid "Enable connectivity button"
+msgstr ""
+
 #: tfconf.cbcust.caption
 msgctxt "tfconf.cbcust.caption"
 msgid "Use custom values"
@@ -2345,6 +2349,10 @@ msgstr ""
 
 #: uconf.rs_color_bg
 msgid "Trndi can draw a rectangle/background in the graph's background, to visually represent your high and low limits."
+msgstr ""
+
+#: uconf.rs_connect_help
+msgid "This will display a badge showing the internet connectivity status in the top."
 msgstr ""
 
 #: uconf.rs_current_acc

@@ -12476,7 +12476,7 @@ object fConf: TfConf
         Left = 10
         Height = 20
         Top = 188
-        Width = 201
+        Width = 172
         Caption = 'Enable connectivity button'
         TabOrder = 3
       end
@@ -12578,6 +12578,15 @@ object fConf: TfConf
             OnClick = bOutdatedHelpClick
           end
         end
+      end
+      object bConnectHelp: TButton
+        Left = 384
+        Height = 22
+        Top = 186
+        Width = 27
+        Caption = '?'
+        TabOrder = 4
+        OnClick = bConnectHelpClick
       end
     end
     object tsIntegration: TTabSheet

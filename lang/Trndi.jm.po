@@ -455,6 +455,10 @@ msgstr "Andas (puls)"
 msgid "Make units green when reading is normal *"
 msgstr "Gôr enheter grôna vid normalt verde"
 
+#: tfconf.cbconnectivitybutton.caption
+msgid "Enable connectivity button"
+msgstr ""
+
 #: tfconf.cbcust.caption
 msgctxt "tfconf.cbcust.caption"
 msgid "Use custom values"
@@ -2522,6 +2526,10 @@ msgstr "Velj ditt CGM-system, ange sedan dina uppgifter"
 #: uconf.rs_color_bg
 msgid "Trndi can draw a rectangle/background in the graph's background, to visually represent your high and low limits."
 msgstr "Trndi kan rita en rektangel/bakgrund i grafens bakgrund, fôr att visuellt representera dina grenser fôr hôgt och logt."
+
+#: uconf.rs_connect_help
+msgid "This will display a badge showing the internet connectivity status in the top."
+msgstr ""
 
 #: uconf.rs_current_acc
 #, object-pascal-format, fuzzy, badformat

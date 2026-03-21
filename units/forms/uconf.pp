@@ -71,6 +71,7 @@ TfConf = class(TForm)
   bExportSettings: TButton;
   bExtOpen: TButton;
   bFontHelp: TButton;
+  bConnectHelp: TButton;
   bWarnHiLowHelp: TButton;
   bImportSettings: TButton;
   bLanguageHelp: TButton;
@@ -394,6 +395,7 @@ TfConf = class(TForm)
   tsIntegration: TTabSheet;
   tsMulti: TTabSheet;
   tsSystem: TTabSheet;
+  procedure bConnectHelpClick(Sender: TObject);
   procedure bDecimalHelpClick(Sender: TObject);
   procedure bDiffRightHelpClick(Sender: TObject);
   procedure bDisableMediaHelpClick(Sender: TObject);
@@ -610,6 +612,8 @@ RS_DISABLE_MEDIA = 'This turns off all media-related fetures. Can speed up start
 RS_SCALE_DIFF_HELP = 'You can change the scale/size of the difference in reading since last, by entering a scale factor';
 
 RS_PRED_SCALE_HELP = 'When predictions are enabled, this controls the size adjustment of the predictions';
+
+RS_CONNECT_HELP = 'This will display a badge showing the internet connectivity status in the top.';
 
 RS_DIFF_RIGHT_HELP = 'This controls if the difference/delta will show center or right (when predictions are on, this will swap the position of the values)';
 
@@ -1169,6 +1173,11 @@ end;
 procedure TfConf.bDecimalHelpClick(Sender: TObject);
 begin
   ShowMessage(RS_DECIMAL_HELP);
+end;
+
+procedure TfConf.bConnectHelpClick(Sender: TObject);
+begin
+  ShowMessage(RS_CONNECT_HELP);
 end;
 
 procedure TfConf.bPredScaleHelpClick(Sender: TObject);

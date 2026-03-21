@@ -453,6 +453,10 @@ msgstr "Andas (puls)"
 msgid "Make units green when reading is normal *"
 msgstr "Gör enheter gröna vid normalt värde *"
 
+#: tfconf.cbconnectivitybutton.caption
+msgid "Enable connectivity button"
+msgstr "Aktivera anslutningsknappen"
+
 #: tfconf.cbcust.caption
 msgctxt "tfconf.cbcust.caption"
 msgid "Use custom values"
@@ -1605,7 +1609,7 @@ msgstr "OK"
 
 #: trndi.strings.rs_conn_ok_info
 msgid "Connection is currently healthy. Detailed diagnostics will appear here if a connectivity issue occurs."
-msgstr "Anslutningen är tillförlitlig just nu. Detaljerad diagnostik visas här om fel uppstår-"
+msgstr "Anslutningen är tillförlitlig just nu. Detaljerad diagnostik visas här om fel uppstår."
 
 #: trndi.strings.rs_conn_rate_limited
 msgid "Rate-limited"
@@ -2467,6 +2471,10 @@ msgstr "Välj ditt CGM-system, ange sedan dina uppgifter"
 #: uconf.rs_color_bg
 msgid "Trndi can draw a rectangle/background in the graph's background, to visually represent your high and low limits."
 msgstr "Trndi kan rita en rektangel/bakgrund i grafens bakgrund, för att visuellt representera dina gränser för högt och lågt."
+
+#: uconf.rs_connect_help
+msgid "This will display a badge showing the internet connectivity status in the top."
+msgstr "Detta kommer visa en knapp högst upp som visar internetanslutningens status."
 
 #: uconf.rs_current_acc
 #, object-pascal-format
