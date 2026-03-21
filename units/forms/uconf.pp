@@ -1751,7 +1751,7 @@ end;
 
 procedure TfConf.Button1Click(Sender: TObject);
 begin
-  Openurl('https://github.com/slicke/trndi/blob/main/LANGUAGES.md');
+  Openurl('https://github.com/slicke/trndi/blob/main/doc/LANGUAGES.md');
 end;
 
 {------------------------------------------------------------------------------

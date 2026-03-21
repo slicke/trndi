@@ -384,4 +384,4 @@ If you're adding or modifying an API driver, start with the [API guide](guides/A
 _See also [BUILDING.md](guides/BUILDING.md)_
 
 ## Languages / Translations
-To contribute a translation, checkout [LANGUAGES.md](LANGUAGES.md).
+To contribute a translation, checkout [LANGUAGES.md](doc/LANGUAGES.md).
