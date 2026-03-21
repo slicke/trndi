@@ -192,7 +192,7 @@ git clone https://github.com/slicke/trndi.git
 cd trndi
 
 # Use the included Makefile rather than calling lazbuild directly for simplicity.
-# Add noext to remove extensions (mORMot2 dependancy issues)
+# Add noext to remove extensions (mORMot2 dependency issues)
 make noext
 ```
 
@@ -221,7 +221,7 @@ git clone https://github.com/slicke/trndi.git
 cd trndi
 # Use the included Makefile rather than calling lazbuild directly
 make
-# Or build without extensions (no mORMot2 dependancy)
+# Or build without extensions (no mORMot2 dependency)
 make noext
 ```
 
@@ -272,7 +272,7 @@ make
 ```
 
 Build release without extensions support:
-> This removes dependancy on mORMot2
+> This removes dependency on mORMot2
 ```bash
 make noext
 
@@ -384,4 +384,4 @@ If you're adding or modifying an API driver, start with the [API guide](guides/A
 _See also [BUILDING.md](guides/BUILDING.md)_
 
 ## Languages / Translations
-To contribute a translation, checkout [LANGUAGES.md](doc/LANGUAGES.md).
+To contribute a translation, check out [LANGUAGES.md](doc/LANGUAGES.md).

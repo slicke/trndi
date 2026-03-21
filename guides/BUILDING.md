@@ -1,4 +1,4 @@
-## Dependancies
+## Dependencies
 
 ### mORMot2
 Trndi depends on mORMot2 for the JavaScript engine, it does not use anything else from the library at this time. It can be installed via the __Online Package Manager__ in Lazarus, or [GitHub](https://github.com/synopse/mORMot2).
@@ -17,7 +17,7 @@ The JS engine, __QuickJS__, is _linked_ into Trndi statically.
 
 To compile Trndi with extensions support you need the relevant QuickJS library files. 
 
-* They are expected to be in in in ```../static``` when compiling from GitHub. 
+* They are expected to be in ```../static``` when compiling from GitHub.
 * When using the _Online Package Manager_ in Lazarus, they can be placed in  ```~/.lazarus/onlinepackagemanager/packages/mORMot2/static```, or on Windows: ```C:\Users\<you>\AppData\Local\Lazarus\onlinepackagemanager\packages\mORMot2\static```
 
 
@@ -27,7 +27,7 @@ You can get the recommended libraries from https://synopse.info/files/mormot2sta
 When building without extensions, you need to install the mORMot2 library - or __remove it__ from the _Project Inspector_. Trndi will build fine without changing the project, if mORMot2 is available.
 
 ### Qt6
-You need __libqt6pas__, and it's development packages. These are normally available with your distro. See the _Linux section in [README.md](/README.md)_ on how to install libqt6pas.
+You need __libqt6pas__, and its development packages. These are normally available with your distro. See the _Linux section in [README.md](/README.md)_ on how to install libqt6pas.
 
 ## Code Style
 ### Linter

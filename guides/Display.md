@@ -5,9 +5,9 @@
 There's no guarantee that this setup will work for you, or that it will continue to work with future updates to Linux or similar operating systems. I take no responsibility for any purchases or commitments you make based on this guide.
 
 ## Hardware
-1. Aquire a RaspberryPi (tested on RPi4 Model B)
-2. Aquire a power supply (eg by getting a Rpi kit with a charger included)
-3. Aquire a screen
+1. Acquire a Raspberry Pi (tested on RPi 4 Model B)
+2. Acquire a power supply (eg by getting an RPi kit with a charger included)
+3. Acquire a screen
    * An old screen
    * A touch screen from a retailer, 7" is a good size
 
@@ -26,7 +26,7 @@ sudo apt install -y \
 4. Install the Qt6Pas library with ```apt install libqt6pas6```
   ## Install Trndi
 
-  1. In this repo, visit the [latest release](https://github.com/slicke/trndi/releases/latest), and down load the _arm64_ package: ```trndi_X.Y.Z_arm64.deb```
+   1. In this repo, visit the [latest release](https://github.com/slicke/trndi/releases/latest), and download the _arm64_ package: ```trndi_X.Y.Z_arm64.deb```
   2. Install the package via GUI, or via ```dpkg -i <package name>```
 
   # Running Trndi
@@ -40,7 +40,7 @@ sudo apt install -y \
 # My setup
 > This setup is overly advanced and is just provided as an example of what you can do
   ## Hardware
-  I use a RaspberyPi 4B with 4GB RAM, and a HDMI/USB touch screen
+   I use a Raspberry Pi 4B with 4GB RAM, and a HDMI/USB touch screen
   ## Setting up the SD card
   1. Download/Install the [Raspberry Pi Imager](https://www.raspberrypi.com/software/) version 2 or later
   2. Insert your (16GB or larger) SD card
@@ -51,10 +51,10 @@ sudo apt install -y \
   ## Setting up the Raspberry
   1. Boot the new SD card and make note of the IP address (The display will say "My IP address is...")
   2. SSH into the IP address and update apt: ```apt update```
-  3. Install KDE and dependancies:
-     1. ```sudo apt install kde-standard libqt6pas6``` to install KDE and Trndi dependancies
+  3. Install KDE and dependencies:
+     1. ```sudo apt install kde-standard libqt6pas6``` to install KDE and Trndi dependencies
      2. ```sudo reboot```, and reconnect when the pi is online again
-     3. ```sudo install lightdm``` to install a login manager. Chose _lightdm_ in the popup when asked
+  3. ```sudo apt install lightdm``` to install a login manager. Choose _lightdm_ in the popup when asked
   4. Set these in ```sudo raspi-config```:
      1. System options > Boot: Set GUI
      2. Advanced Options > Wayland: Set Labwc
@@ -86,4 +86,4 @@ and change it to
 ```
 greeter-session=lightdm-greeter
 ```
-You can also use SSDM, but that will break VNC support!
+You can also use SDDM, but that will break VNC support!
