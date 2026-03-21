@@ -1567,8 +1567,16 @@ msgstr ""
 msgid "Alerts snoozed for %d minutes"
 msgstr ""
 
+#: trndi.strings.rs_alert_snooze_not_active
+msgid "Snooze is not active"
+msgstr ""
+
 #: trndi.strings.rs_alert_snooze_off
 msgid "Alert snooze disabled"
+msgstr ""
+
+#: trndi.strings.rs_alert_snooze_resume
+msgid "Resume alerts"
 msgstr ""
 
 #: trndi.strings.rs_attention_missing

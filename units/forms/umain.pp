@@ -2797,7 +2797,13 @@ begin
     miAlertSnooze.Caption := RS_ALERT_SNOOZE;
 
   if miAlertSnoozeOff <> nil then
+  begin
     miAlertSnoozeOff.Enabled := isSnoozed;
+    if isSnoozed then
+      miAlertSnoozeOff.Caption := RS_ALERT_SNOOZE_RESUME
+    else
+      miAlertSnoozeOff.Caption := RS_ALERT_SNOOZE_NOT_ACTIVE;
+  end;
 end;
 
 function TfBG.ClassifyConnectionStatus(const ErrorText: string): string;

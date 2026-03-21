@@ -1540,21 +1540,29 @@ msgstr "xDrip-adress"
 
 #: trndi.strings.rs_alert_snooze
 msgid "Snooze alerts"
-msgstr "Snooza varningar"
+msgstr "Pausa varningar"
 
 #: trndi.strings.rs_alert_snooze_active
 #, object-pascal-format
 msgid "Snoozed until %s"
-msgstr "Snooza tills %s"
+msgstr "Varningar pausade till %s"
 
 #: trndi.strings.rs_alert_snooze_for
 #, object-pascal-format
 msgid "Alerts snoozed for %d minutes"
-msgstr "Varningar har snoozats i %d minuter"
+msgstr "Varningar pausade i %d minuter"
+
+#: trndi.strings.rs_alert_snooze_not_active
+msgid "Snooze is not active"
+msgstr "Varningspaus inte aktiv"
 
 #: trndi.strings.rs_alert_snooze_off
 msgid "Alert snooze disabled"
-msgstr "Alla varningar snoozade"
+msgstr "Varningspaus av"
+
+#: trndi.strings.rs_alert_snooze_resume
+msgid "Resume alerts"
+msgstr "Aktivera varningar igen"
 
 #: trndi.strings.rs_attention_missing
 msgid "Outdated Readings!"
@@ -2958,3 +2966,4 @@ msgstr "Historikgraf"
 #, object-pascal-format
 msgid "Readings (%s)"
 msgstr "Avläsningar (%s)"
+
