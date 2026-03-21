@@ -2830,12 +2830,30 @@ var
   isOk: boolean;
   isCentered: boolean;
   showOkBadge: boolean;
+  displayStatus: string;
+  displayColor: TColor;
+  forceShowBadge: boolean;
 begin
-  isOk := StatusText = RS_CONN_OK;
-  isCentered := isOk or (StatusText = RS_CONN_RETRYING);
+  displayStatus := StatusText;
+  displayColor := BadgeColor;
+  forceShowBadge := false;
+
+  {$ifdef DEBUG}
+  // When using a debug backend, repurpose the connectivity badge as
+  // an explicit debug-mode indicator.
+  if Assigned(api) and (api is DebugAPI) then
+  begin
+    displayStatus := 'DEBUG';
+    displayColor := RGBToColor(100, 150, 255);
+    forceShowBadge := true;
+  end;
+  {$endif}
+
+  isOk := displayStatus = RS_CONN_OK;
+  isCentered := isOk or (displayStatus = RS_CONN_RETRYING) or forceShowBadge;
   showOkBadge := native.GetBoolSetting('ux.connectivity.button', false);
 
-  if isOk and (not showOkBadge) then
+  if isOk and (not showOkBadge) and (not forceShowBadge) then
   begin
     lInternet.Visible := false;
     if Assigned(FInternetBadgeBg) then
@@ -2851,8 +2869,8 @@ begin
     FInternetBadgeBg.Pen.Style := psClear;
   end;
 
-  lInternet.Caption := StatusText;
-  lInternet.Font.Color := GetTextColorForBackground(BadgeColor, 0, 0.65);
+  lInternet.Caption := displayStatus;
+  lInternet.Font.Color := GetTextColorForBackground(displayColor, 0, 0.65);
   lInternet.Transparent := true;
   lInternet.AutoSize := false;
   lInternet.WordWrap := false;
@@ -2873,7 +2891,7 @@ begin
     lInternet.Left := Max(8, ClientWidth - lInternet.Width - 8);
   end;
 
-  FInternetBadgeBg.Brush.Color := BadgeColor;
+  FInternetBadgeBg.Brush.Color := displayColor;
   UpdateConnectionBadgeBackgroundBounds;
   FInternetBadgeBg.Visible := true;
   FInternetBadgeBg.BringToFront;
