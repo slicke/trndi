@@ -607,7 +607,7 @@ RS_TANDEM =
 RS_DEBUG_WARN =
   'This is a debug backend. It''s used for testing purposes only!'+sLineBreak+'No data will be sent to any remote server.';
 
-RS_DISABLE_MEDIA = 'This turns off all media-related fetures. Can speed up start.';
+RS_DISABLE_MEDIA = 'This turns off all media-related features. Can speed up start.';
 
 RS_SCALE_DIFF_HELP = 'You can change the scale/size of the difference in reading since last, by entering a scale factor';
 
@@ -646,12 +646,12 @@ RS_SELECT_FONT_READING = 'Select a font for the reading';
 RS_SELECT_FONT_TIME = 'Select a font for the time';
 RS_UPDATE_SNOOZE = 'You will be alerted again after %s';
 
-RS_MIN_MINUTES = 'When calculatingg time-in-range, do so over this amount of minutes. If the number is higher than the data available, the max time will be used - this is currently %d minutes.';
+RS_MIN_MINUTES = 'When calculating time-in-range, do so over this amount of minutes. If the number is higher than the data available, the max time will be used - this is currently %d minutes.';
 
 RS_NOTIFICATIONS = 'Notifications';
 RS_NOTIFY_TITLE = 'A notification system is required';
 RS_NOTIFY_TXT =
-  'Trndi uses a system called "%s" to send desktop notices, you need to have this system installed in order to recieve notices.';
+  'Trndi uses a system called "%s" to send desktop notices, you need to have this system installed in order to receive notices.';
 RS_NOTIFY_SYSTEM =
   'Notifications will appear where you normally get notification messages.';
 
@@ -659,7 +659,7 @@ RS_HASTOUCH = 'Shows if Trndi detected a touch screen';
 RS_WEBAPI = 'Trndi can expose a <b>WebAPI</b> for use with <i>third-party systems</i>.<br><br>This is an advanced feature, you can safely disregard it if you don''t know what it does!';
 
 RS_Saftey_Hi =
-  'Trndi won''t allow a larger limit, for your own saftey. This can be overridden manually/via plugin';
+  'Trndi won''t allow a larger limit, for your own safety. This can be overridden manually/via plugin';
 RS_Saftey_Low =
   'Trndi won''t allow a lower limit, the backend system only reports values every 5 minutes. 6 = one reading missing.';
 
@@ -684,7 +684,7 @@ RS_GRAPH_ICON_TITLE = 'Choose icon';
 RS_GRAPH_ICON_GRAPH = 'Choose an icon for points in the graph';
 RS_GRAPH_ICON_GRAPH_DESC = 'This will be used for graph points';
 RS_GRAPH_ICON_CURRENT = 'Choose an icon for the current point in the graph';
-RS_GRAPH_ICON_CURRENT_DESC = 'This will be used for curent graph point';
+RS_GRAPH_ICON_CURRENT_DESC = 'This will be used for current graph point';
 
 RS_POS_TITLE = 'Restricted Feature';
 RS_POS = 'This feature depends on your Window Manager (WM). %s may not support this feature.';

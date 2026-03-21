@@ -1175,7 +1175,7 @@ begin
     // 3) Time probe
     timeResp := tn.Request(false, DEXCOM_TIME_ENDPOINT, [], '', 'Accept=application/json');
     if Trim(timeResp) = '' then begin
-      res := 'The time was not recieved in a parsable manner';
+      res := 'The time was not received in a parsable manner';
       Exit;
     end;
 

@@ -19,7 +19,7 @@ RS_RANGE_LO_UNSUPPORTED = 'Lo range not supported by API';
 
   // Error messages
 RS_SETUP = 'Setup';
-RS_NO_BACKEND = 'No readings recieved.'+sLineBreak+sLineBreak+'Has your CGM synced recently? '+sLineBreak+'Is the remote server working?';
+RS_NO_BACKEND = 'No readings received.'+sLineBreak+sLineBreak+'Has your CGM synced recently? '+sLineBreak+'Is the remote server working?';
 RS_LAST_RECIEVE = 'Last reading was %s (%s)';
 RS_DAYS_AGO = '%d days ago';
 RS_LAST_RECIEVE_NO = 'There''s no last reading to show';
@@ -196,10 +196,10 @@ sExtFile = 'File "%s" not found';
 
 sExtUserInfo = 'User Information';
 
-sTypeErrCapt = 'A data type differes from what was expected';
+sTypeErrCapt = 'A data type differs from what was expected';
 sTypeErrDesc = 'The extension was stopped';
 sTypeErrmsg = 'A data type was expected, but another was found';
-sPromErrCapt = 'The asyncronous function %s failed to complete';
+sPromErrCapt = 'The asynchronous function %s failed to complete';
 
 sNoTrace      = 'No stack trace available';
 sUnknownErr   = 'Unknown error';

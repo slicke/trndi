@@ -1949,7 +1949,7 @@ msgstr "Byggd utan stôd"
 #| "Has your CGM synced recently? \n"
 #| "Is the remote server working?"
 msgid ""
-"No readings recieved.\n"
+"No readings received.\n"
 "\n"
 "Has your CGM synced recently? \n"
 "Is the remote server working?"
@@ -2442,8 +2442,9 @@ msgstr "Ingen stacksporning finns"
 
 #: trndi.strings.spromerrcapt
 #, object-pascal-format, fuzzy, badformat
+#| msgid "The asyncronous function %s failed to complete"
 msgctxt "trndi.strings.spromerrcapt"
-msgid "The asyncronous function %s failed to complete"
+msgid "The asynchronous function %s failed to complete"
 msgstr "Den asynkrona funksjonen __PH6955dda1-dc56-471e-9dd1-ad0de1579f84__ misslyckades"
 
 #: trndi.strings.sreadinghere
@@ -2480,8 +2481,10 @@ msgid "Transmitter information"
 msgstr "Sendarinformasjon"
 
 #: trndi.strings.stypeerrcapt
+#, fuzzy
+#| msgid "A data type differes from what was expected"
 msgctxt "trndi.strings.stypeerrcapt"
-msgid "A data type differes from what was expected"
+msgid "A data type differs from what was expected"
 msgstr "En datatyp skiljer sig fron vad som fôrventats"
 
 #: trndi.strings.stypeerrdesc
@@ -2594,7 +2597,7 @@ msgid "This controls if the difference/delta will show center or right (when pre
 msgstr ""
 
 #: uconf.rs_disable_media
-msgid "This turns off all media-related fetures. Can speed up start."
+msgid "This turns off all media-related features. Can speed up start."
 msgstr ""
 
 #: uconf.rs_dot_click
@@ -2665,7 +2668,9 @@ msgid "Choose an icon for the current point in the graph"
 msgstr "Velj en ikon fôr den nuvarande punkten i grafen"
 
 #: uconf.rs_graph_icon_current_desc
-msgid "This will be used for curent graph point"
+#, fuzzy
+#| msgid "This will be used for curent graph point"
+msgid "This will be used for current graph point"
 msgstr "Denna kommer anvendas fôr den nuvarande grafpunkten"
 
 #: uconf.rs_graph_icon_graph
@@ -2686,7 +2691,8 @@ msgstr "Visar om Trndi uppteckt en pekskerm"
 
 #: uconf.rs_min_minutes
 #, object-pascal-format, fuzzy, badformat
-msgid "When calculatingg time-in-range, do so over this amount of minutes. If the number is higher than the data available, the max time will be used - this is currently %d minutes."
+#| msgid "When calculatingg time-in-range, do so over this amount of minutes. If the number is higher than the data available, the max time will be used - this is currently %d minutes."
+msgid "When calculating time-in-range, do so over this amount of minutes. If the number is higher than the data available, the max time will be used - this is currently %d minutes."
 msgstr "Ner tid-i-molomrodet bereknas, gôr det fôr detta antal minuter. Om numret er hôgre en tillgenglig data, visas maxtiden - vilket just nu er __PHb64045aa-ab4b-4dc4-9380-66d33d0db0b0__ minuter."
 
 #: uconf.rs_multi_user_help
@@ -2736,7 +2742,8 @@ msgstr "Ett notissystem krevs"
 
 #: uconf.rs_notify_txt
 #, object-pascal-format, fuzzy, badformat
-msgid "Trndi uses a system called \"%s\" to send desktop notices, you need to have this system installed in order to recieve notices."
+#| msgid "Trndi uses a system called \"%s\" to send desktop notices, you need to have this system installed in order to recieve notices."
+msgid "Trndi uses a system called \"%s\" to send desktop notices, you need to have this system installed in order to receive notices."
 msgstr "Trndi anvender systemet \\\"__PH4a7be4b3-fbec-4d35-bdaa-fbf661f242e4__\\\" fôr att visa notiser, det moste vara installerat fôr att dessa ska visas."
 
 #: uconf.rs_no_copyright
@@ -2824,7 +2831,9 @@ msgid "Removed accounts are made inactive, and can be restored by adding the sam
 msgstr "Borttagna konton blir inaktiva, de kan oterstellas genom att skapa om anvendaren med sanna namn"
 
 #: uconf.rs_saftey_hi
-msgid "Trndi won't allow a larger limit, for your own saftey. This can be overridden manually/via plugin"
+#, fuzzy
+#| msgid "Trndi won't allow a larger limit, for your own saftey. This can be overridden manually/via plugin"
+msgid "Trndi won't allow a larger limit, for your own safety. This can be overridden manually/via plugin"
 msgstr "Trndi tilloter inte en stôrre grens, fôr din egen sekerhet. Detta kan ôverskrivas manuellt/via plugin"
 
 #: uconf.rs_saftey_low
