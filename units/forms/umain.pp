@@ -550,6 +550,15 @@ private
    }
   function BlendFontColorWithBackground(const ForeColor: TColor;
     const BgColor: TColor; const AlphaRatio: double): TColor;
+  {** Render a single warning label (lArrow, lVal, lDiff, or lAgo) onto the warning panel.
+      Handles font assignment, color blending, text width calculation, and alignment-based positioning.
+      @param(LabelControl The label control to render.)
+      @param(P The parent panel whose canvas will be drawn to.)
+      @param(BgColor The background color used for color blending.)
+      @param(AlphaRatio The blending ratio for transparency.)
+   }
+  procedure RenderWarningLabel(const LabelControl: TLabel; const P: TPanel;
+    const BgColor: TColor; const AlphaRatio: double);
 
     // Web server methods
     {** Initialize and start the integrated web server which provides basic
@@ -1392,15 +1401,11 @@ const
 var
   P: TPanel;
   {$ifndef X_WIN}
-  lValRelativeX, lValRelativeY: integer;
-  lDiffRelativeX, lDiffRelativeY: integer;
-  lAgoRelativeX, lAgoRelativeY: integer;
   alphaRatio: double;
   arrX: integer;
   arrY : integer;
   dot: TDotControl;
   warningDotColor: TColor;
-  arrTextW, lValTextW, lDiffTextW, lAgoTextW: integer;  // Cache TextWidth results
   {$endif}
 begin
   // Use manual drawing for rounded corners on all platforms
@@ -1427,95 +1432,11 @@ begin
 
     {$ifndef X_WIN}
     // On non-Windows platforms, ApplyAlphaControl doesn't work.
-    // first draw the arrow behind the reading
-    if lArrow.Visible and (lArrow.Caption <> '') then
-    begin
-      arrX := lArrow.Left - P.Left;
-      arrY := lArrow.Top - P.Top;
-
-      Font.Assign(lArrow.Font);
-      Font.Color := BlendFontColorWithBackground(lArrow.Font.Color, Brush.Color, alphaRatio);
-      Brush.Style := bsClear;
-      arrTextW := TextWidth(lArrow.Caption);
-
-      case lArrow.Alignment of
-      taLeftJustify:
-        TextOut(arrX, arrY, lArrow.Caption);
-      taRightJustify:
-        TextOut(arrX + lArrow.Width - arrTextW, arrY, lArrow.Caption);
-      taCenter:
-        TextOut(arrX + (lArrow.Width - arrTextW) div 2, arrY, lArrow.Caption);
-      end;
-
-      Brush.Style := bsSolid;
-    end;
-
-    // now draw the value on top using same transparency logic
-    if lVal.Visible and (lVal.Caption <> '') then
-    begin
-      // Calculate lVal position relative to pnWarning
-      lValRelativeX := lVal.Left - P.Left;
-      lValRelativeY := lVal.Top - P.Top;
-
-      // Set up text rendering to match lVal
-      Font.Assign(lVal.Font);
-      Font.Color := BlendFontColorWithBackground(lVal.Font.Color, Brush.Color, alphaRatio);
-      Brush.Style := bsClear; // Transparent background for text
-      lValTextW := TextWidth(lVal.Caption);
-
-      // Calculate proper text positioning based on lVal's alignment
-      case lVal.Alignment of
-      taLeftJustify:
-        TextOut(lValRelativeX, lValRelativeY, lVal.Caption);
-      taRightJustify:
-        TextOut(lValRelativeX + lVal.Width - lValTextW, lValRelativeY, lVal.Caption);
-      taCenter:
-        TextOut(lValRelativeX + (lVal.Width - lValTextW) div 2, lValRelativeY, lVal.Caption);
-      end;
-
-      // Restore brush style
-      Brush.Style := bsSolid;
-    end;
-
-    // draw the diff label if present, using same blending rules
-    if lDiff.Visible and (lDiff.Caption <> '') then
-    begin
-      lDiffRelativeX := lDiff.Left - P.Left;
-      lDiffRelativeY := lDiff.Top - P.Top;
-      Font.Assign(lDiff.Font);
-      Font.Color := BlendFontColorWithBackground(lDiff.Font.Color, Brush.Color, alphaRatio);
-      Brush.Style := bsClear;
-      lDiffTextW := TextWidth(lDiff.Caption);
-      case lDiff.Alignment of
-      taLeftJustify:
-        TextOut(lDiffRelativeX, lDiffRelativeY, lDiff.Caption);
-      taRightJustify:
-        TextOut(lDiffRelativeX + lDiff.Width - lDiffTextW, lDiffRelativeY, lDiff.Caption);
-      taCenter:
-        TextOut(lDiffRelativeX + (lDiff.Width - lDiffTextW) div 2, lDiffRelativeY, lDiff.Caption);
-      end;
-      Brush.Style := bsSolid;
-    end;
-
-    // draw the age label if present, using same blending rules
-    if lAgo.Visible and (lAgo.Caption <> '') then
-    begin
-      lAgoRelativeX := lAgo.Left - P.Left;
-      lAgoRelativeY := lAgo.Top - P.Top;
-      Font.Assign(lAgo.Font);
-      Font.Color := BlendFontColorWithBackground(lAgo.Font.Color, Brush.Color, alphaRatio);
-      Brush.Style := bsClear;
-      lAgoTextW := TextWidth(lAgo.Caption);
-      case lAgo.Alignment of
-      taLeftJustify:
-        TextOut(lAgoRelativeX, lAgoRelativeY, lAgo.Caption);
-      taRightJustify:
-        TextOut(lAgoRelativeX + lAgo.Width - lAgoTextW, lAgoRelativeY, lAgo.Caption);
-      taCenter:
-        TextOut(lAgoRelativeX + (lAgo.Width - lAgoTextW) div 2, lAgoRelativeY, lAgo.Caption);
-      end;
-      Brush.Style := bsSolid;
-    end;
+    // Render all warning labels using consolidated helper function
+    RenderWarningLabel(lArrow, P, Brush.Color, alphaRatio);
+    RenderWarningLabel(lVal, P, Brush.Color, alphaRatio);
+    RenderWarningLabel(lDiff, P, Brush.Color, alphaRatio);
+    RenderWarningLabel(lAgo, P, Brush.Color, alphaRatio);
 
     // draw trend dots only inside the warning overlay. Derive a readable color
     // from the warning panel background, then soften it slightly so the dots
@@ -6539,6 +6460,46 @@ begin
     Round(GetRValue(ForeColor) * (1 - AlphaRatio) + GetRValue(BgColor) * AlphaRatio),
     Round(GetGValue(ForeColor) * (1 - AlphaRatio) + GetGValue(BgColor) * AlphaRatio),
     Round(GetBValue(ForeColor) * (1 - AlphaRatio) + GetBValue(BgColor) * AlphaRatio));
+end;
+
+{** Render a warning label with proper font blending, text alignment and positioning.
+    Consolidates the repeated label rendering logic used in pnWarningPaint. }
+procedure TfBG.RenderWarningLabel(const LabelControl: TLabel; const P: TPanel;
+  const BgColor: TColor; const AlphaRatio: double);
+var
+  relX, relY, textW: integer;
+begin
+  // Skip if label is not visible or empty
+  if not (LabelControl.Visible and (LabelControl.Caption <> '')) then
+    Exit;
+
+  // Calculate label's position relative to the panel
+  relX := LabelControl.Left - P.Left;
+  relY := LabelControl.Top - P.Top;
+
+  with P.Canvas do
+  begin
+    // Set up font and blended color
+    Font.Assign(LabelControl.Font);
+    Font.Color := BlendFontColorWithBackground(LabelControl.Font.Color, BgColor, AlphaRatio);
+    Brush.Style := bsClear;
+
+    // Cache text width for alignment calculations
+    textW := TextWidth(LabelControl.Caption);
+
+    // Render text with proper alignment
+    case LabelControl.Alignment of
+    taLeftJustify:
+      TextOut(relX, relY, LabelControl.Caption);
+    taRightJustify:
+      TextOut(relX + LabelControl.Width - textW, relY, LabelControl.Caption);
+    taCenter:
+      TextOut(relX + (LabelControl.Width - textW) div 2, relY, LabelControl.Caption);
+    end;
+
+    // Restore brush style
+    Brush.Style := bsSolid;
+  end;
 end;
 
 procedure TfBG.DisplayLowRange;
