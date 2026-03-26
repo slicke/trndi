@@ -462,6 +462,8 @@ private
   procedure ResizeDot(l: TDotControl; {%H-}c, ix: integer);
   procedure initDot(l: TDotControl; c, ix: integer);
   procedure ExpandDot(l: TDotControl; c, ix: integer);
+  procedure ApplyTrendDotTopOffset(const Offset: integer);
+  procedure RepaintVisibleTrendDots;
   procedure CreateTrendDots;
   procedure placeForm;
   {** Analyze a generated glyph bitmap for the dot character to compute a
@@ -1654,28 +1656,23 @@ end;
 // Post-process the graph
 procedure TfBG.AdjustGraph;
 var
-  l: TDotControl;
   da: integer;
 begin
-  for l in TrendDots do
-    l.top := l.top + round(ClientHeight * DOT_ADJUST);
+  ApplyTrendDotTopOffset(round(ClientHeight * DOT_ADJUST));
 
   da := dotsInView;
 
   if da <> 0 then
-    for l in TrendDots do
-      l.top := l.top - da// da is negative on top so this is valid both ways
+    ApplyTrendDotTopOffset(-da)// da is negative on top so this is valid both ways
   ;
 
   lRef.Top := lDot1.Top;
   lRef.Caption := lDot1.Hint;
   // Redraw form so range indicators follow dot positions (Update forces immediate paint)
   Update;
-  
+
   // Force all dots to repaint on top of the filled areas (after form has painted)
-  for l in TrendDots do
-    if l.Visible then
-      l.Repaint;
+  RepaintVisibleTrendDots;
 
 end;
 
@@ -2139,6 +2136,26 @@ end;
 procedure TfBG.HideDot(l: TDotControl; c, ix: integer);
 begin
   l.Visible := false;
+end;
+
+procedure TfBG.ApplyTrendDotTopOffset(const Offset: integer);
+var
+  l: TDotControl;
+begin
+  if Offset = 0 then
+    Exit;
+
+  for l in TrendDots do
+    l.Top := l.Top + Offset;
+end;
+
+procedure TfBG.RepaintVisibleTrendDots;
+var
+  l: TDotControl;
+begin
+  for l in TrendDots do
+    if l.Visible then
+      l.Repaint;
 end;
 
 // Shows a dot only if it has valid data (non-empty Hint)
