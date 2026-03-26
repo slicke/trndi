@@ -541,6 +541,15 @@ private
   function GetAdjustedColorForBackground(const BaseColor: TColor;
     const BgColor: TColor; const DarkenFactor: double = 0.6;
     const LightenFactor: double = 0.4; const PreferLighter: boolean = false): TColor;
+  {** Blend a foreground color with a background color using alpha ratio.
+      Used for rendering semi-transparent text overlays.
+      @param(ForeColor The original foreground/text color.)
+      @param(BgColor The background color to blend with.)
+      @param(AlphaRatio The blending ratio (0..1) where 0 is fully original, 1 is fully background.)
+      @returns(Blended TColor result.)
+   }
+  function BlendFontColorWithBackground(const ForeColor: TColor;
+    const BgColor: TColor; const AlphaRatio: double): TColor;
 
     // Web server methods
     {** Initialize and start the integrated web server which provides basic
@@ -1424,13 +1433,7 @@ begin
       arrY := lArrow.Top - P.Top;
 
       Font.Assign(lArrow.Font);
-      Font.Color := lclintf.RGB(
-        Round(GetRValue(lArrow.Font.Color) * (1 - alphaRatio) +
-        GetRValue(Brush.Color) * alphaRatio),
-        Round(GetGValue(lArrow.Font.Color) * (1 - alphaRatio) +
-        GetGValue(Brush.Color) * alphaRatio),
-        Round(GetBValue(lArrow.Font.Color) * (1 - alphaRatio) +
-        GetBValue(Brush.Color) * alphaRatio));
+      Font.Color := BlendFontColorWithBackground(lArrow.Font.Color, Brush.Color, alphaRatio);
       Brush.Style := bsClear;
 
       case lArrow.Alignment of
@@ -1456,17 +1459,7 @@ begin
 
       // Set up text rendering to match lVal
       Font.Assign(lVal.Font);
-
-      // Compute a blended font color: use the same alphaRatio above to mix
-      // the original text color with the panel color (which itself has alpha)
-      Font.Color := lclintf.RGB(
-        Round(GetRValue(lVal.Font.Color) * (1 - alphaRatio) +
-        GetRValue(Brush.Color) * alphaRatio),
-        Round(GetGValue(lVal.Font.Color) * (1 - alphaRatio) +
-        GetGValue(Brush.Color) * alphaRatio),
-        Round(GetBValue(lVal.Font.Color) * (1 - alphaRatio) +
-        GetBValue(Brush.Color) * alphaRatio));
-
+      Font.Color := BlendFontColorWithBackground(lVal.Font.Color, Brush.Color, alphaRatio);
       Brush.Style := bsClear; // Transparent background for text
 
       // Calculate proper text positioning based on lVal's alignment
@@ -1491,13 +1484,7 @@ begin
       lDiffRelativeX := lDiff.Left - P.Left;
       lDiffRelativeY := lDiff.Top - P.Top;
       Font.Assign(lDiff.Font);
-      Font.Color := lclintf.RGB(
-        Round(GetRValue(lDiff.Font.Color) * (1 - alphaRatio) +
-        GetRValue(Brush.Color) * alphaRatio),
-        Round(GetGValue(lDiff.Font.Color) * (1 - alphaRatio) +
-        GetGValue(Brush.Color) * alphaRatio),
-        Round(GetBValue(lDiff.Font.Color) * (1 - alphaRatio) +
-        GetBValue(Brush.Color) * alphaRatio));
+      Font.Color := BlendFontColorWithBackground(lDiff.Font.Color, Brush.Color, alphaRatio);
       Brush.Style := bsClear;
       case lDiff.Alignment of
       taLeftJustify:
@@ -1518,13 +1505,7 @@ begin
       lAgoRelativeX := lAgo.Left - P.Left;
       lAgoRelativeY := lAgo.Top - P.Top;
       Font.Assign(lAgo.Font);
-      Font.Color := lclintf.RGB(
-        Round(GetRValue(lAgo.Font.Color) * (1 - alphaRatio) +
-        GetRValue(Brush.Color) * alphaRatio),
-        Round(GetGValue(lAgo.Font.Color) * (1 - alphaRatio) +
-        GetGValue(Brush.Color) * alphaRatio),
-        Round(GetBValue(lAgo.Font.Color) * (1 - alphaRatio) +
-        GetBValue(Brush.Color) * alphaRatio));
+      Font.Color := BlendFontColorWithBackground(lAgo.Font.Color, Brush.Color, alphaRatio);
       Brush.Style := bsClear;
       case lAgo.Alignment of
       taLeftJustify:
@@ -6548,6 +6529,19 @@ begin
     Result := DarkenColor(BaseColor, DarkenFactor)
   else
     Result := LightenColor(BaseColor, LightenFactor);
+end;
+
+{** Blend a foreground color with a background color using alpha ratio.
+    Combines RGB components of ForeColor and BgColor according to AlphaRatio
+    for semi-transparent text rendering in warning panels.
+}
+function TfBG.BlendFontColorWithBackground(const ForeColor: TColor;
+  const BgColor: TColor; const AlphaRatio: double): TColor;
+begin
+  Result := lclintf.RGB(
+    Round(GetRValue(ForeColor) * (1 - AlphaRatio) + GetRValue(BgColor) * AlphaRatio),
+    Round(GetGValue(ForeColor) * (1 - AlphaRatio) + GetGValue(BgColor) * AlphaRatio),
+    Round(GetBValue(ForeColor) * (1 - AlphaRatio) + GetBValue(BgColor) * AlphaRatio));
 end;
 
 procedure TfBG.DisplayLowRange;
