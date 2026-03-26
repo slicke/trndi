@@ -1400,6 +1400,7 @@ var
   arrY : integer;
   dot: TDotControl;
   warningDotColor: TColor;
+  arrTextW, lValTextW, lDiffTextW, lAgoTextW: integer;  // Cache TextWidth results
   {$endif}
 begin
   // Use manual drawing for rounded corners on all platforms
@@ -1435,16 +1436,15 @@ begin
       Font.Assign(lArrow.Font);
       Font.Color := BlendFontColorWithBackground(lArrow.Font.Color, Brush.Color, alphaRatio);
       Brush.Style := bsClear;
+      arrTextW := TextWidth(lArrow.Caption);
 
       case lArrow.Alignment of
       taLeftJustify:
         TextOut(arrX, arrY, lArrow.Caption);
       taRightJustify:
-        TextOut(arrX + lArrow.Width - TextWidth(lArrow.Caption),
-          arrY, lArrow.Caption);
+        TextOut(arrX + lArrow.Width - arrTextW, arrY, lArrow.Caption);
       taCenter:
-        TextOut(arrX + (lArrow.Width - TextWidth(lArrow.Caption)) div 2,
-          arrY, lArrow.Caption);
+        TextOut(arrX + (lArrow.Width - arrTextW) div 2, arrY, lArrow.Caption);
       end;
 
       Brush.Style := bsSolid;
@@ -1461,17 +1461,16 @@ begin
       Font.Assign(lVal.Font);
       Font.Color := BlendFontColorWithBackground(lVal.Font.Color, Brush.Color, alphaRatio);
       Brush.Style := bsClear; // Transparent background for text
+      lValTextW := TextWidth(lVal.Caption);
 
       // Calculate proper text positioning based on lVal's alignment
       case lVal.Alignment of
       taLeftJustify:
         TextOut(lValRelativeX, lValRelativeY, lVal.Caption);
       taRightJustify:
-        TextOut(lValRelativeX + lVal.Width - TextWidth(lVal.Caption),
-          lValRelativeY, lVal.Caption);
+        TextOut(lValRelativeX + lVal.Width - lValTextW, lValRelativeY, lVal.Caption);
       taCenter:
-        TextOut(lValRelativeX + (lVal.Width - TextWidth(lVal.Caption)) div
-          2, lValRelativeY, lVal.Caption);
+        TextOut(lValRelativeX + (lVal.Width - lValTextW) div 2, lValRelativeY, lVal.Caption);
       end;
 
       // Restore brush style
@@ -1486,15 +1485,14 @@ begin
       Font.Assign(lDiff.Font);
       Font.Color := BlendFontColorWithBackground(lDiff.Font.Color, Brush.Color, alphaRatio);
       Brush.Style := bsClear;
+      lDiffTextW := TextWidth(lDiff.Caption);
       case lDiff.Alignment of
       taLeftJustify:
         TextOut(lDiffRelativeX, lDiffRelativeY, lDiff.Caption);
       taRightJustify:
-        TextOut(lDiffRelativeX + lDiff.Width - TextWidth(lDiff.Caption),
-          lDiffRelativeY, lDiff.Caption);
+        TextOut(lDiffRelativeX + lDiff.Width - lDiffTextW, lDiffRelativeY, lDiff.Caption);
       taCenter:
-        TextOut(lDiffRelativeX + (lDiff.Width - TextWidth(lDiff.Caption)) div
-          2, lDiffRelativeY, lDiff.Caption);
+        TextOut(lDiffRelativeX + (lDiff.Width - lDiffTextW) div 2, lDiffRelativeY, lDiff.Caption);
       end;
       Brush.Style := bsSolid;
     end;
@@ -1507,15 +1505,14 @@ begin
       Font.Assign(lAgo.Font);
       Font.Color := BlendFontColorWithBackground(lAgo.Font.Color, Brush.Color, alphaRatio);
       Brush.Style := bsClear;
+      lAgoTextW := TextWidth(lAgo.Caption);
       case lAgo.Alignment of
       taLeftJustify:
         TextOut(lAgoRelativeX, lAgoRelativeY, lAgo.Caption);
       taRightJustify:
-        TextOut(lAgoRelativeX + lAgo.Width - TextWidth(lAgo.Caption),
-          lAgoRelativeY, lAgo.Caption);
+        TextOut(lAgoRelativeX + lAgo.Width - lAgoTextW, lAgoRelativeY, lAgo.Caption);
       taCenter:
-        TextOut(lAgoRelativeX + (lAgo.Width - TextWidth(lAgo.Caption)) div
-          2, lAgoRelativeY, lAgo.Caption);
+        TextOut(lAgoRelativeX + (lAgo.Width - lAgoTextW) div 2, lAgoRelativeY, lAgo.Caption);
       end;
       Brush.Style := bsSolid;
     end;
