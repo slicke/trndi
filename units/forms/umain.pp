@@ -992,7 +992,6 @@ end;
 // alternative workaround.
 procedure TfBG.DotPaint(Sender: TObject);
 var
-  tw, th: integer;
   S, fontn: string;
   L: TDotControl;
   hasfont: boolean;
@@ -1012,22 +1011,24 @@ begin
   
   L.AutoSize := false;
 
+  // Determine which font to use and whether it's available
   if S = DOT_GRAPH then
-    hasFont := FontGUIInList(fontn)
+    hasfont := FontGUIInList(fontn)
   else
-    hasFont := FontTXTInList(fontn);
+    hasfont := FontTXTInList(fontn);
 
   // Check if we need to recalculate font metrics
+  // Include hasFont status in cache key to handle font availability changes
   needsRecalc := (FCachedFontSize <> L.Font.Size) or (FCachedFontName <> fontn) or
     (FCachedTextWidth = 0) or (FCachedTextHeight = 0) or (S <> DOT_GRAPH);
-  // Always recalculate for non-dot text
 
   with L.Canvas do
   begin
     // Transparent background
     Brush.Style := bsClear;
 
-    if hasFont then
+    // Only set custom font if available; otherwise use default
+    if hasfont then
       Font.Name := fontn;
 
     Font.Size := L.Font.Size;
@@ -1037,15 +1038,15 @@ begin
     begin
       FCachedTextWidth := TextWidth(S);
       FCachedTextHeight := TextHeight(S);
-      // Only cache for dot characters, not expanded text
+      // Only cache metrics for dot characters, not expanded text
       if S = DOT_GRAPH then
       begin
         FCachedFontSize := L.Font.Size;
-        FCachedFontName := fontn;
+        FCachedFontName := fontn;  // Cache the actual font name used
       end;
     end;
 
-    // Size the paintbox to fit the text (use fresh calculation for non-dots)
+    // Size the paintbox to fit the text
     if S = DOT_GRAPH then
     begin
       L.Width := FCachedTextWidth;
