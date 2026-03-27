@@ -69,6 +69,10 @@ NS3_PROFILE = 'profile';
 NS3_PROFILE_JSON = 'profile.json';
 NS3_VERSION = 'version';
 NS3_VERSION_JSON = 'version.json';
+NS3_DEVICESTATUS = 'devicestatus';
+NS3_DEVICESTATUS_JSON = 'devicestatus.json';
+NS3_TREATMENTS = 'treatments';
+NS3_TREATMENTS_JSON = 'treatments.json';
 
 type
   {** NightScout v3 API client with bearer authorization.
@@ -138,6 +142,205 @@ protected
 end;
 
 implementation
+
+function NS3FormatDurationHours(const hoursTotal: integer): string;
+var
+  d, h: integer;
+begin
+  d := hoursTotal div 24;
+  h := hoursTotal mod 24;
+  if d > 0 then
+    Result := Format('%dd %dh', [d, h])
+  else
+    Result := Format('%dh', [h]);
+end;
+
+function NS3TryDateTimeFromJsonValue(const value: TJSONData; out dt: TDateTime): boolean;
+var
+  raw: string;
+  epoch: int64;
+  asNum: double;
+begin
+  Result := false;
+  dt := 0;
+  if not Assigned(value) then
+    Exit;
+
+  case value.JSONType of
+    jtNumber:
+      begin
+        asNum := value.AsFloat;
+        if asNum > 1.0e11 then
+          dt := UnixToDateTime(Trunc(asNum / 1000), True)
+        else if asNum > 1.0e9 then
+          dt := UnixToDateTime(Trunc(asNum), True)
+        else
+          Exit;
+        Result := true;
+      end;
+    jtString:
+      begin
+        raw := Trim(value.AsString);
+        if raw = '' then
+          Exit;
+
+        if TryStrToInt64(raw, epoch) then
+        begin
+          if epoch > 100000000000 then
+            dt := UnixToDateTime(epoch div 1000, True)
+          else if epoch > 1000000000 then
+            dt := UnixToDateTime(epoch, True)
+          else
+            Exit;
+          Result := true;
+          Exit;
+        end;
+
+        try
+          dt := ISO8601ToDate(raw);
+          Result := dt > 0;
+        except
+          Result := false;
+        end;
+      end;
+  end;
+end;
+
+function NS3TryGetPathDate(const root: TJSONData; const path: string; out dt: TDateTime): boolean;
+begin
+  Result := NS3TryDateTimeFromJsonValue(root.FindPath(path), dt);
+end;
+
+function NS3ExtractSensorStatusSuffix(const devStatusResp: string): string;
+var
+  js, node: TJSONData;
+  expiresAt, startedAt: TDateTime;
+  hoursLeft, ageHours: integer;
+begin
+  Result := '';
+  if Trim(devStatusResp) = '' then
+    Exit;
+
+  js := nil;
+  try
+    js := GetJSON(devStatusResp);
+  except
+    Exit;
+  end;
+
+  try
+    node := nil;
+    if js.JSONType = jtArray then
+    begin
+      if js.Count > 0 then
+        node := js.Items[0];
+    end
+    else if js.JSONType = jtObject then
+    begin
+      if Assigned(js.FindPath('result[0]')) then
+        node := js.FindPath('result[0]')
+      else
+        node := js;
+    end;
+
+    if not Assigned(node) then
+      Exit;
+
+    if NS3TryGetPathDate(node, 'xdripjs.sensor.expires', expiresAt) or
+      NS3TryGetPathDate(node, 'xdripjs.sensor.expiresAt', expiresAt) or
+      NS3TryGetPathDate(node, 'xdripjs.sensor.expiry', expiresAt) or
+      NS3TryGetPathDate(node, 'xdripjs.sensor.expiration', expiresAt) or
+      NS3TryGetPathDate(node, 'xdripjs.sensor.expires_at', expiresAt) or
+      NS3TryGetPathDate(node, 'sensor.expiresAt', expiresAt) or
+      NS3TryGetPathDate(node, 'sensor.expiry', expiresAt) then
+    begin
+      hoursLeft := Trunc((expiresAt - Now) * 24);
+      if hoursLeft < 0 then
+        Exit(' (sensor expired)');
+      Exit(' (sensor ' + NS3FormatDurationHours(hoursLeft) + ' left)');
+    end;
+
+    if NS3TryGetPathDate(node, 'xdripjs.sensor.started_at', startedAt) or
+      NS3TryGetPathDate(node, 'xdripjs.sensor.startedAt', startedAt) or
+      NS3TryGetPathDate(node, 'xdripjs.sensor.startDate', startedAt) or
+      NS3TryGetPathDate(node, 'xdripjs.sessionStart', startedAt) or
+      NS3TryGetPathDate(node, 'xdripjs.session_start', startedAt) or
+      NS3TryGetPathDate(node, 'xdripjs.started_at', startedAt) or
+      NS3TryGetPathDate(node, 'sensor.started_at', startedAt) then
+    begin
+      ageHours := Trunc((Now - startedAt) * 24);
+      if ageHours >= 0 then
+        Exit(' (sensor age ' + NS3FormatDurationHours(ageHours) + ')');
+    end;
+  finally
+    js.Free;
+  end;
+end;
+
+function NS3ExtractSensorStatusSuffixFromTreatments(const treatmentsResp: string): string;
+var
+  js, arrNode, item: TJSONData;
+  i: integer;
+  evtType: string;
+  startedAt: TDateTime;
+  ageHours: integer;
+begin
+  Result := '';
+  if Trim(treatmentsResp) = '' then
+    Exit;
+
+  js := nil;
+  try
+    js := GetJSON(treatmentsResp);
+  except
+    Exit;
+  end;
+
+  try
+    arrNode := nil;
+    if js.JSONType = jtArray then
+      arrNode := js
+    else if js.JSONType = jtObject then
+    begin
+      if Assigned(js.FindPath('result')) and (js.FindPath('result').JSONType = jtArray) then
+        arrNode := js.FindPath('result')
+      else
+      if Assigned(js.FindPath('result.treatments')) and (js.FindPath('result.treatments').JSONType = jtArray) then
+        arrNode := js.FindPath('result.treatments');
+    end;
+
+    if (arrNode = nil) or (arrNode.JSONType <> jtArray) then
+      Exit;
+
+    for i := 0 to arrNode.Count - 1 do
+    begin
+      item := arrNode.Items[i];
+      if not Assigned(item) then
+        Continue;
+
+      evtType := '';
+      if Assigned(item.FindPath('eventType')) then
+        evtType := item.FindPath('eventType').AsString;
+
+      if (evtType <> 'Sensor Start') and (evtType <> 'Sensor Change') then
+        Continue;
+
+      startedAt := 0;
+      if NS3TryGetPathDate(item, 'created_at', startedAt) or
+        NS3TryGetPathDate(item, 'createdAt', startedAt) or
+        NS3TryGetPathDate(item, 'timestamp', startedAt) or
+        NS3TryGetPathDate(item, 'date', startedAt) or
+        NS3TryGetPathDate(item, 'mills', startedAt) then
+      begin
+        ageHours := Trunc((Now - startedAt) * 24);
+        if ageHours >= 0 then
+          Exit(' (sensor age ' + NS3FormatDurationHours(ageHours) + ')');
+      end;
+    end;
+  finally
+    js.Free;
+  end;
+end;
 
 resourcestring
 sParamUsername = 'NightScout URL';
@@ -573,9 +776,12 @@ var
   js, arrNode: TJSONData;
   i: integer;
   t: BGTrend;
-  s, dev: string;
+  s, dev, sensorSuffix, devStatusResp: string;
+  treatmentsResp: string;
   params: array of string;
   fbparams: array of string;
+  statusParams: array of string;
+  treatParams: array of string;
   oldBase: string;
   deltaField, rssiField, noiseField: TJSONData;
   deltaValue: glucose;
@@ -731,11 +937,42 @@ begin
     end;
   end;
 
+  // Optional metadata probe for sensor age/expiry hints.
+  sensorSuffix := '';
+  SetLength(statusParams, 1);
+  statusParams[0] := 'count=1';
+  try
+    if not TryRequestV3(NS3_DEVICESTATUS, NS3_DEVICESTATUS_JSON, statusParams, devStatusResp) then
+      devStatusResp := native.request(false, FSiteBase + '/api/v1/devicestatus.json',
+        statusParams, '', BearerHeader, false {no prefix});
+    sensorSuffix := NS3ExtractSensorStatusSuffix(devStatusResp);
+
+    // Fallback: derive age from latest Sensor Start/Change treatment events.
+    if sensorSuffix = '' then
+    begin
+      SetLength(treatParams, 2);
+      treatParams[0] := 'limit=40';
+      treatParams[1] := 'sort$desc=created_at';
+      if not TryRequestV3(NS3_TREATMENTS, NS3_TREATMENTS_JSON, treatParams, treatmentsResp) then
+      begin
+        SetLength(fbparams, 1);
+        fbparams[0] := 'count=40';
+        treatmentsResp := native.request(false, FSiteBase + '/api/v1/treatments.json',
+          fbparams, '', BearerHeader, false {no prefix});
+      end;
+      sensorSuffix := NS3ExtractSensorStatusSuffixFromTreatments(treatmentsResp);
+    end;
+  except
+    sensorSuffix := '';
+  end;
+
   SetLength(Result, arrNode.Count);
   for i := 0 to arrNode.Count - 1 do
     with arrNode.FindPath(Format('[%d]', [i])) do
     begin
       dev := FindPath('device').AsString;
+      if sensorSuffix <> '' then
+        dev := dev + sensorSuffix;
 
       Result[i].Init(mgdl, Self.SystemName);
 

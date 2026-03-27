@@ -11175,6 +11175,14 @@ object fConf: TfConf
           Caption = 'Display progress to next update on the left'
           TabOrder = 2
         end
+        object cbShowSensorExpiry: TCheckBox
+          Left = 8
+          Height = 20
+          Top = 84
+          Width = 320
+          Caption = 'Show sensor expiry in top-center badge'
+          TabOrder = 4
+        end
         object bDecimalHelp: TButton
           Left = 176
           Height = 22
@@ -12423,13 +12431,13 @@ object fConf: TfConf
       end
       object GroupBox9: TGroupBox
         Left = 0
-        Height = 97
+        Height = 121
         Top = 85
         Width = 639
         Align = alTop
         BorderSpacing.Top = 15
         Caption = 'Display'
-        ClientHeight = 70
+        ClientHeight = 94
         ClientWidth = 635
         ParentBackground = False
         TabOrder = 1
@@ -12459,7 +12467,7 @@ object fConf: TfConf
           Top = 0
           Width = 27
           Caption = '?'
-          TabOrder = 2
+          TabOrder = 3
           OnClick = bPrivacyHelpClick
         end
         object bTimeStampHelp: TButton
@@ -12468,14 +12476,14 @@ object fConf: TfConf
           Top = 24
           Width = 27
           Caption = '?'
-          TabOrder = 3
+          TabOrder = 4
           OnClick = bTimeStampHelpClick
         end
       end
       object cbConnectivityButton: TCheckBox
         Left = 10
         Height = 20
-        Top = 188
+        Top = 214
         Width = 172
         Caption = 'Enable connectivity button'
         TabOrder = 3
@@ -12582,7 +12590,7 @@ object fConf: TfConf
       object bConnectHelp: TButton
         Left = 384
         Height = 22
-        Top = 186
+        Top = 212
         Width = 27
         Caption = '?'
         TabOrder = 4

@@ -58,6 +58,10 @@ const
   {** Default path for SGV (sensor glucose value) entries. }
 NS_READINGS = 'entries/sgv.json';
 
+const
+  {** Optional endpoint that may expose uploader/sensor session metadata. }
+NS_DEVICESTATUS = 'devicestatus.json';
+
 type
   {** NightScout API client.
       Provides methods to connect to a Nightscout instance and fetch CGM readings,
@@ -143,6 +147,141 @@ published
 end;
 
 implementation
+
+function FormatDurationHours(const hoursTotal: integer): string;
+var
+  d, h: integer;
+begin
+  d := hoursTotal div 24;
+  h := hoursTotal mod 24;
+  if d > 0 then
+    Result := Format('%dd %dh', [d, h])
+  else
+    Result := Format('%dh', [h]);
+end;
+
+function TryDateTimeFromJsonValue(const value: TJSONData; out dt: TDateTime): boolean;
+var
+  raw: string;
+  epoch: int64;
+  asNum: double;
+begin
+  Result := false;
+  dt := 0;
+  if not Assigned(value) then
+    Exit;
+
+  case value.JSONType of
+    jtNumber:
+      begin
+        asNum := value.AsFloat;
+        // Heuristic: values above 1e11 are usually epoch milliseconds.
+        if asNum > 1.0e11 then
+          dt := UnixToDateTime(Trunc(asNum / 1000), True)
+        else if asNum > 1.0e9 then
+          dt := UnixToDateTime(Trunc(asNum), True)
+        else
+          Exit;
+        Result := true;
+      end;
+    jtString:
+      begin
+        raw := Trim(value.AsString);
+        if raw = '' then
+          Exit;
+
+        if TryStrToInt64(raw, epoch) then
+        begin
+          if epoch > 100000000000 then
+            dt := UnixToDateTime(epoch div 1000, True)
+          else if epoch > 1000000000 then
+            dt := UnixToDateTime(epoch, True)
+          else
+            Exit;
+          Result := true;
+          Exit;
+        end;
+
+        try
+          dt := ISO8601ToDate(raw);
+          Result := dt > 0;
+        except
+          Result := false;
+        end;
+      end;
+  end;
+end;
+
+function TryGetPathDate(const root: TJSONData; const path: string; out dt: TDateTime): boolean;
+begin
+  Result := TryDateTimeFromJsonValue(root.FindPath(path), dt);
+end;
+
+function ExtractSensorStatusSuffix(const devStatusResp: string): string;
+var
+  js, node: TJSONData;
+  expiresAt, startedAt: TDateTime;
+  hoursLeft, ageHours: integer;
+begin
+  Result := '';
+  if Trim(devStatusResp) = '' then
+    Exit;
+
+  js := nil;
+  try
+    js := GetJSON(devStatusResp);
+  except
+    Exit;
+  end;
+
+  try
+    node := nil;
+    if js.JSONType = jtArray then
+    begin
+      if js.Count > 0 then
+        node := js.Items[0];
+    end
+    else if js.JSONType = jtObject then
+    begin
+      if Assigned(js.FindPath('result[0]')) then
+        node := js.FindPath('result[0]')
+      else
+        node := js;
+    end;
+
+    if not Assigned(node) then
+      Exit;
+
+    if TryGetPathDate(node, 'xdripjs.sensor.expires', expiresAt) or
+      TryGetPathDate(node, 'xdripjs.sensor.expiresAt', expiresAt) or
+      TryGetPathDate(node, 'xdripjs.sensor.expiry', expiresAt) or
+      TryGetPathDate(node, 'xdripjs.sensor.expiration', expiresAt) or
+      TryGetPathDate(node, 'xdripjs.sensor.expires_at', expiresAt) or
+      TryGetPathDate(node, 'sensor.expiresAt', expiresAt) or
+      TryGetPathDate(node, 'sensor.expiry', expiresAt) then
+    begin
+      hoursLeft := Floor((expiresAt - Now) * 24);
+      if hoursLeft < 0 then
+        Exit(' (sensor expired)');
+      Exit(' (sensor ' + FormatDurationHours(hoursLeft) + ' left)');
+    end;
+
+    if TryGetPathDate(node, 'xdripjs.sensor.started_at', startedAt) or
+      TryGetPathDate(node, 'xdripjs.sensor.startedAt', startedAt) or
+      TryGetPathDate(node, 'xdripjs.sensor.startDate', startedAt) or
+      TryGetPathDate(node, 'xdripjs.sessionStart', startedAt) or
+      TryGetPathDate(node, 'xdripjs.session_start', startedAt) or
+      TryGetPathDate(node, 'xdripjs.started_at', startedAt) or
+      TryGetPathDate(node, 'sensor.started_at', startedAt) then
+    begin
+      ageHours := Floor((Now - startedAt) * 24);
+      if ageHours >= 0 then
+        Exit(' (sensor age ' + FormatDurationHours(ageHours) + ')');
+    end;
+  finally
+    js.Free;
+  end;
+end;
 
 resourcestring
 sParamUsername = 'NightScout URL';
@@ -355,8 +494,9 @@ var
   js: TJSONData;
   i: integer;
   t: BGTrend;
-  s, resp, dev: string;
+  s, resp, dev, sensorSuffix, devStatusResp: string;
   params: array[1..1] of string;
+  statusParams: array[1..1] of string;
   deltaField, rssiField, noiseField: TJSONData;
   deltaValue: glucose;
   currentSgv, prevSgv: integer;
@@ -385,6 +525,16 @@ begin
   if Pos('Unauthorized', resp) > 0 then
     Exit;
 
+  // Optional metadata probe for sensor age/expiry hints.
+  sensorSuffix := '';
+  statusParams[1] := 'count=1';
+  try
+    devStatusResp := native.request(false, NS_DEVICESTATUS, statusParams, '', key);
+    sensorSuffix := ExtractSensorStatusSuffix(devStatusResp);
+  except
+    sensorSuffix := '';
+  end;
+
   // Pre-size the results array to the number of JSON items.
   SetLength(Result, js.Count);
 
@@ -393,6 +543,8 @@ begin
       with js.FindPath(Format('[%d]', [i])) do
       begin
       dev := FindPath('device').AsString;
+      if sensorSuffix <> '' then
+        dev := dev + sensorSuffix;
 
       // Initialize reading in mg/dL; source identifier uses class name.
       Result[i].Init(mgdl, self.systemName);

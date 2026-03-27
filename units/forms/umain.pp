@@ -379,6 +379,7 @@ TfBG = class(TForm)
   {$endif}
 private
   function AlertsSnoozed: boolean;
+  function GetSensorBadgeText: string;
   procedure SetAlertSnoozeMinutes(const Minutes: integer);
   procedure UpdateAlertSnoozeMenu;
   function ClassifyConnectionStatus(const ErrorText: string): string;
@@ -406,6 +407,7 @@ private
   FLastUICaption: string;
   FLastTir: string;
   FLastTirColor: TColor;
+  FLastConnectionStatus: string;
   FLastConnectionDetail: string;
   FInternetBadgeBg: TShape;
   FLastTimerTick: TDateTime; // Last timer tick for wake detection
@@ -2735,6 +2737,56 @@ begin
   Result := RS_CONN_RETRYING;
 end;
 
+function TfBG.GetSensorBadgeText: string;
+var
+  i, pOpen, pClose: integer;
+  sensorText, lowerText, innerText, payloadText: string;
+begin
+  Result := '';
+  if not native.GetBoolSetting('display.sensor_expiry', false) then
+    Exit;
+
+  if Length(bgs) = 0 then
+    Exit;
+
+  sensorText := '';
+  for i := High(bgs) downto Low(bgs) do
+    if not bgs[i].empty then
+    begin
+      sensorText := bgs[i].sensor;
+      Break;
+    end;
+
+  if sensorText = '' then
+    sensorText := bgs[High(bgs)].sensor;
+
+  lowerText := LowerCase(sensorText);
+  pOpen := Pos('(sensor ', lowerText);
+  if pOpen = 0 then
+    Exit;
+
+  pClose := PosEx(')', sensorText, pOpen);
+  if pClose > pOpen then
+    innerText := Copy(sensorText, pOpen + 1, pClose - pOpen - 1)
+  else
+    innerText := Copy(sensorText, pOpen + 1, Length(sensorText) - pOpen);
+
+  innerText := Trim(innerText);
+  if innerText = '' then
+    Exit;
+
+  // Normalize to a compact badge-friendly string.
+  if Pos('sensor ', LowerCase(innerText)) = 1 then
+  begin
+    payloadText := Trim(Copy(innerText, Length('sensor ') + 1, MaxInt));
+    if payloadText = '' then
+      Exit('');
+    Result := 'Sensor: ' + payloadText;
+  end
+  else
+    Result := innerText;
+end;
+
 procedure TfBG.SetConnectionBadge(const StatusText: string; const BadgeColor: TColor);
 var
   isOk: boolean;
@@ -2743,7 +2795,9 @@ var
   displayStatus: string;
   displayColor: TColor;
   forceShowBadge: boolean;
+  sensorBadgeText: string;
 begin
+  FLastConnectionStatus := StatusText;
   displayStatus := StatusText;
   displayColor := BadgeColor;
   forceShowBadge := false;
@@ -2761,7 +2815,12 @@ begin
 
   isOk := displayStatus = RS_CONN_OK;
   isCentered := isOk or (displayStatus = RS_CONN_RETRYING) or forceShowBadge;
-  showOkBadge := native.GetBoolSetting('ux.connectivity.button', false);
+  sensorBadgeText := GetSensorBadgeText;
+  showOkBadge := native.GetBoolSetting('ux.connectivity.button', false) or
+    (sensorBadgeText <> '');
+
+  if sensorBadgeText <> '' then
+    displayStatus := displayStatus + ' | ' + sensorBadgeText;
 
   if isOk and (not showOkBadge) and (not forceShowBadge) then
   begin
@@ -2842,7 +2901,7 @@ begin
   details := Trim(FLastConnectionDetail);
   if details = '' then
   begin
-    if lInternet.Caption = RS_CONN_OK then
+    if FLastConnectionStatus = RS_CONN_OK then
       ShowMessage(RS_CONN_OK_INFO)
     else
       ShowMessage(Format(RS_CONN_DETAILS, [lInternet.Caption, RS_CONN_NO_DETAILS]));
@@ -3156,6 +3215,15 @@ begin
   DATA_FRESHNESS_THRESHOLD_MINUTES := 
     native.GetIntSetting('system.fresh_threshold', DATA_FRESHNESS_THRESHOLD_MINUTES);
   tir_icon := native.GetBoolSetting('range.tir_icon', false);
+
+  // Repaint badge immediately so "show sensor expiry" takes effect right away.
+  if FLastConnectionStatus <> '' then
+  begin
+    if Assigned(FInternetBadgeBg) then
+      SetConnectionBadge(FLastConnectionStatus, FInternetBadgeBg.Brush.Color)
+    else
+      SetConnectionBadge(FLastConnectionStatus, RGBToColor(60, 150, 90));
+  end;
   
   // Recalculate layout and scale to account for potential changes
   // Perform an immediate (synchronous) relayout and scaling to avoid
@@ -3331,6 +3399,7 @@ procedure LoadUserSettings(f: TfConf);
       edCommaSep.Text := GetCharSetting('locale.separator', '.');
       cbProgress.Checked := GetBoolSetting('main.next_progress', false);
       cbConnectivityButton.Checked := GetBoolSetting('ux.connectivity.button', false);
+      cbShowSensorExpiry.Checked := GetBoolSetting('display.sensor_expiry', false);
       edTray.Value := GetIntSetting('ux.badge_size', 0);
 
       if CheckSetting('unit', 'mmol', 'mmol') then
@@ -3718,6 +3787,7 @@ procedure SaveUserSettings(f: TfConf);
       SetBoolSetting('unit', rbUnit.ItemIndex = 0, 'mmol', 'mgdl');
       SetSetting('ext.privacy', cbPrivacy.Checked);
       SetSetting('display.timestamp', cbTimeStamp.Checked);
+      SetSetting('display.sensor_expiry', cbShowSensorExpiry.Checked);
 
       SetSetting('system.fresh_threshold', spTHRESHOLD.Value);
       SetSetting('ux.delta_max', spDeltaMax.Value);

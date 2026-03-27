@@ -218,6 +218,7 @@ TfConf = class(TForm)
   rbPredictShortArrowOnly: TRadioButton;
   rbPredictShortShowValue: TRadioButton;
   cbTimeStamp: TCheckBox;
+  cbShowSensorExpiry: TCheckBox;
   cbTirIcon: TCheckBox;
   cbShowMean: TCheckBox;
   cbWebAPI: TCheckBox;
