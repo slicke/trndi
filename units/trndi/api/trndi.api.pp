@@ -701,7 +701,6 @@ var
   predictedValue: double;
   minReadings: integer;
   lastValue, prevValue, minutesDiff, maxDrop, maxRise: double;
-  temp: BGReading;
 begin
   Result := false;
   SetLength(predictions, 0);
@@ -728,16 +727,9 @@ begin
     Exit;
   end;
   
-  // Sort readings in ascending order by date (oldest first)
-  // API typically returns newest first, but we need oldest first for regression
-  SortReadingsDescending(historicalReadings);
-  // Now reverse the array to get ascending order
-  for i := 0 to (n div 2) - 1 do
-  begin
-    temp := historicalReadings[i];
-    historicalReadings[i] := historicalReadings[n - 1 - i];
-    historicalReadings[n - 1 - i] := temp;
-  end;
+  // Sort readings in ascending order by date (oldest first).
+  // API typically returns newest first, but regression expects oldest -> newest.
+  SortReadingsAscending(historicalReadings);
   
   // Prepare arrays for linear regression
   SetLength(timeValues, n);

@@ -69,10 +69,10 @@ end;
 // gaps and try to break UI/mapping logic.
 function DebugIntermittentMissingAPI.getReadings(min, maxNum: integer; extras: string; out res: string): BGResults;
 var
-  i, j, toClear, rangeLen, rng: integer;
-  idxs: array of integer;
-  picked: TList;
-  idx: integer;
+  i, toClear, rangeLen, rng: integer;
+  idx, pickedCount: integer;
+  picked: array of integer;
+  isPicked: array of boolean;
   logmsg: string;
 begin
   result := inherited getReadings(min, maxNum, extras, res);
@@ -86,30 +86,33 @@ begin
   toClear := MinMissing + Random(rng);
   if toClear > rangeLen then toClear := rangeLen;
 
-  picked := TList.Create;
-  try
-    // choose toClear unique indices in [0..rangeLen-1]
-    while picked.Count < toClear do
-    begin
-      idx := Random(rangeLen); // 0-based
-      if picked.IndexOf(Pointer(idx)) = -1 then
-        picked.Add(Pointer(idx));
-    end;
+  SetLength(isPicked, rangeLen);
+  SetLength(picked, toClear);
+  pickedCount := 0;
 
-    logmsg := Format('DebugIntermittentMissing: Clearing %d readings at indices: ', [picked.Count]);
-    for i := 0 to picked.Count - 1 do
+  // Choose toClear unique indices in [0..rangeLen-1] using O(1) membership checks.
+  while pickedCount < toClear do
+  begin
+    idx := Random(rangeLen); // 0-based
+    if not isPicked[idx] then
     begin
-      idx := integer(picked.Items[i]);
-      // Convert to array index (newest at Result[0]) -> keep same mapping
-      // Clear selected reading
-      result[idx].Clear;
-      logmsg := logmsg + Format('%d(%s) ', [idx, DateTimeToStr(result[idx].date)]);
+      isPicked[idx] := true;
+      picked[pickedCount] := idx;
+      Inc(pickedCount);
     end;
-
-    log(logmsg);
-  finally
-    picked.Free;
   end;
+
+  logmsg := Format('DebugIntermittentMissing: Clearing %d readings at indices: ', [pickedCount]);
+  for i := 0 to pickedCount - 1 do
+  begin
+    idx := picked[i];
+    // Convert to array index (newest at Result[0]) -> keep same mapping
+    // Clear selected reading
+    result[idx].Clear;
+    logmsg := logmsg + Format('%d(%s) ', [idx, DateTimeToStr(result[idx].date)]);
+  end;
+
+  log(logmsg);
 end;
 
 class function DebugIntermittentMissingAPI.ParamLabel(LabelName: APIParamLabel): string;

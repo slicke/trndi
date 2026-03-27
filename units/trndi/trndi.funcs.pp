@@ -63,6 +63,7 @@ function GetLangPath: string;
 procedure PaintLbl(Sender: TLabel; OutlineWidth: integer = 1;
 OutlineColor: TColor = clBlack);
 procedure SortReadingsDescending(var Readings: array of BGReading);
+procedure SortReadingsAscending(var Readings: array of BGReading);
 procedure SetPointHeight(l: TControl; Value: single; clientHeight: integer);
 function CalculateTrendFromDelta(delta: single): BGTrend;
 function HasNewerRelease(const JsonResponse: string;
@@ -314,6 +315,38 @@ procedure SortReadingsDescending(var Readings: array of BGReading);
       repeat
         while Readings[I].date > P.date do Inc(I);
         while Readings[J].date < P.date do Dec(J);
+        if I <= J then
+        begin
+          T := Readings[I];
+          Readings[I] := Readings[J];
+          Readings[J] := T;
+          Inc(I);
+          Dec(J);
+        end;
+      until I > J;
+      if L < J then QuickSort(L, J);
+      L := I;
+    until I >= R;
+  end;
+begin
+  if Length(Readings) > 1 then
+    QuickSort(Low(Readings), High(Readings));
+end;
+
+// Sort BGReading array in ascending order (oldest first)
+procedure SortReadingsAscending(var Readings: array of BGReading);
+  procedure QuickSort(L, R: Integer);
+  var
+    I, J: Integer;
+    P, T: BGReading;
+  begin
+    repeat
+      I := L;
+      J := R;
+      P := Readings[(L + R) div 2];
+      repeat
+        while Readings[I].date < P.date do Inc(I);
+        while Readings[J].date > P.date do Dec(J);
         if I <= J then
         begin
           T := Readings[I];
