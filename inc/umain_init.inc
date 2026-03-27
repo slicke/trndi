@@ -474,6 +474,9 @@ begin
   API_D_LOWSOON,
   'API_D_LOWSOON':
     api := DebugLowSoonAPI.Create(apiTarget, apiCreds);
+  API_D_SENSOR_EXPIRY,
+  'API_D_SENSOR_EXPIRY':
+    api := DebugSensorExpiryAPI.Create(apiTarget, apiCreds);
   {$endif}
   else
     Result := false;
