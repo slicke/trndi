@@ -6743,7 +6743,7 @@ end;
 function TfBG.BGMean(const UnitPref: BGUnit = BGUnit.mmol; const NumReadings: integer = NUM_DOTS): string;
 var
   SortedReadings: array of BGReading;
-  slotIndex, i: integer;
+  slotIndex, i, searchStart: integer;
   slotStart, slotEnd, anchorTime: TDateTime;
   reading: BGReading;
   sum: double;
@@ -6792,13 +6792,14 @@ begin
     anchorTime := RecodeMinute(Now, (MinuteOf(Now) div INTERVAL_MINUTES) * INTERVAL_MINUTES);
     anchorTime := RecodeSecond(anchorTime, 0);
     anchorTime := RecodeMilliSecond(anchorTime, 0);
+    searchStart := 0;
 
     for slotIndex := 0 to slots - 1 do
     begin
       slotEnd := IncMinute(anchorTime, -INTERVAL_MINUTES * slotIndex);
       slotStart := IncMinute(slotEnd, -INTERVAL_MINUTES);
 
-      for i := 0 to High(SortedReadings) do
+      for i := searchStart to High(SortedReadings) do
       begin
         reading := SortedReadings[i];
         if reading.empty then
@@ -6809,11 +6810,17 @@ begin
         begin
           sum := sum + reading.convert(UnitPref);
           count := count + 1;
+          // Later slots only need to consider older readings.
+          searchStart := i + 1;
           Break; // Move to next slot
         end
         else
         if reading.date < slotStart - TIME_EPSILON_DAYS then
+        begin
+          // Keep this index as the next starting point for older slots.
+          searchStart := i;
           Break;
+        end;
       end;
     end;
   end;
