@@ -5,7 +5,7 @@ unit trndi.webserver.threaded;
 interface
 
 uses
-Classes, SysUtils, Sockets, fpjson, jsonparser, trndi.funcs, trndi.types
+Classes, SysUtils, Sockets, fpjson, jsonparser, trndi.funcs, trndi.types, DateUtils
 {$IFNDEF Windows}, BaseUnix{$ELSE}, WinSock2{$IFEND};
 
 type
@@ -19,6 +19,7 @@ private
   FPort: word;
   FAuthToken: string;
   FServerSocket: TSocket;
+  FStartedAtUtc: TDateTime;
   FGetCurrentReading: TGetCurrentReadingFunc;
   FGetPredictions: TGetPredictionsFunc;
   function ReadingToJSON(const Reading: BGReading; IncludeDelta: boolean = true): TJSONObject;
@@ -130,6 +131,7 @@ begin
   FGetCurrentReading := AGetCurrentReading;
   FGetPredictions := AGetPredictions;
   FServerSocket := INVALID_SOCKET;
+  FStartedAtUtc := LocalTimeToUniversal(Now);
 end;
 
 destructor TWebServerThread.Destroy;
@@ -207,12 +209,15 @@ end;
 function TWebServerThread.HandleRequest(const Request: string): string;
 var
   Lines: TStringList;
-  Method, URI, Headers: string;
+  Method, URI, URIPath, Headers: string;
   ResponseObj: TJSONObject;
   CurrentReadings: BGResults;
   Predictions: BGResults;
-  PredArray: TJSONArray;
+  PredArray, Endpoints: TJSONArray;
   i: integer;
+  QueryPos: integer;
+  NowUtc: TDateTime;
+  UptimeSeconds: integer;
 begin
   Lines := TStringList.Create;
   try
@@ -227,6 +232,13 @@ begin
     Method := Copy(Lines[0], 1, Pos(' ', Lines[0]) - 1);
     URI := Copy(Lines[0], Pos(' ', Lines[0]) + 1, 1000);
     URI := Copy(URI, 1, Pos(' ', URI) - 1);
+    URIPath := URI;
+    QueryPos := Pos('?', URIPath);
+    if QueryPos > 0 then
+      URIPath := Copy(URIPath, 1, QueryPos - 1);
+    QueryPos := Pos('#', URIPath);
+    if QueryPos > 0 then
+      URIPath := Copy(URIPath, 1, QueryPos - 1);
     Headers := Lines.Text;
 
     // CORS preflight
@@ -252,7 +264,7 @@ begin
     // Route requests
     ResponseObj := TJSONObject.Create;
     try
-      if URI = '/glucose' then
+      if URIPath = '/glucose' then
       begin
         if Assigned(FGetCurrentReading) then
         begin
@@ -276,7 +288,7 @@ begin
         end;
       end
       else
-      if URI = '/predict' then
+      if URIPath = '/predict' then
       begin
         PredArray := TJSONArray.Create;
         if Assigned(FGetPredictions) then
@@ -289,10 +301,35 @@ begin
         Result := 'HTTP/1.1 200 OK'#13#10;
       end
       else
-      if URI = '/status' then
+      if URIPath = '/status' then
       begin
         ResponseObj.Add('status', 'ok');
         ResponseObj.Add('data_available', Assigned(FGetCurrentReading));
+        Result := 'HTTP/1.1 200 OK'#13#10;
+      end
+      else
+      if URIPath = '/health' then
+      begin
+        NowUtc := LocalTimeToUniversal(Now);
+        UptimeSeconds := SecondsBetween(NowUtc, FStartedAtUtc);
+        if UptimeSeconds < 0 then
+          UptimeSeconds := 0;
+
+        ResponseObj.Add('status', 'ok');
+        ResponseObj.Add('service', 'trndi-webapi');
+        ResponseObj.Add('timestamp_utc', FormatDateTime('yyyy"-"mm"-"dd"T"hh":"nn":"ss"Z"', NowUtc));
+        ResponseObj.Add('uptime_seconds', UptimeSeconds);
+        ResponseObj.Add('port', FPort);
+        ResponseObj.Add('auth_required', FAuthToken <> '');
+        ResponseObj.Add('data_available', Assigned(FGetCurrentReading));
+
+        Endpoints := TJSONArray.Create;
+        Endpoints.Add('/glucose');
+        Endpoints.Add('/predict');
+        Endpoints.Add('/status');
+        Endpoints.Add('/health');
+        ResponseObj.Add('endpoints', Endpoints);
+
         Result := 'HTTP/1.1 200 OK'#13#10;
       end
       else

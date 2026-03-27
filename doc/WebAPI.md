@@ -151,6 +151,46 @@ Returns server status and data availability.
 - `status`: Always "ok" if server is running
 - `data_available`: Boolean indicating if glucose data callbacks are configured
 
+This endpoint is kept for compatibility with existing clients.
+
+### GET /health
+
+Returns a richer health payload suitable for uptime/monitoring checks.
+
+**Response Format:**
+```json
+{
+  "status": "ok",
+  "service": "trndi-webapi",
+  "timestamp_utc": "2026-03-27T10:21:38Z",
+  "uptime_seconds": 123,
+  "port": 8080,
+  "auth_required": false,
+  "data_available": true,
+  "endpoints": [
+    "/glucose",
+    "/predict",
+    "/status",
+    "/health"
+  ]
+}
+```
+
+**Fields:**
+- `status`: Always `ok` while the web server is running
+- `service`: Fixed identifier for the embedded server
+- `timestamp_utc`: Server time in UTC (`YYYY-MM-DDTHH:MM:SSZ`)
+- `uptime_seconds`: Seconds since this web server instance started
+- `port`: Bound listening port
+- `auth_required`: Whether bearer token auth is enabled
+- `data_available`: Whether a glucose callback is configured
+- `endpoints`: Current endpoint list exposed by the server
+
+**Example:**
+```bash
+curl -s http://localhost:8080/health | jq
+```
+
 ## Trend Values
 
 The `trend` field uses the following numeric values:
