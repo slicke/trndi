@@ -5174,7 +5174,7 @@ begin
   try
 
     bgvals := getBGResults;
-    callFuncWithBGReadings('updateCallback', [DateTimeToStr(Now)]);
+    callFuncWithBGReadings('updateCallback', [DateTimeToStr(nowTick)]);
   finally
   end;
   {$endif}
@@ -5182,25 +5182,27 @@ end;
 
 procedure TfBG.tMissedTimer(Sender: TObject);
 var
+  nowTick: TDateTime;
   d: TDateTime;
   min, sec: int64;
 begin
   if firstboot then
     exit;
 
+  nowTick := Now;
   d := lastReading.date; // Last reading time
 
-  min := MilliSecondsBetween(Now, d) div MILLIS_PER_MINUTE;  // Minutes since last
+  min := MilliSecondsBetween(nowTick, d) div MILLIS_PER_MINUTE;  // Minutes since last
   if min < 0 then
     min := 0;
   if min > 60000000 then
   begin
     d := lastDataReading.date;
-    min := MilliSecondsBetween(Now, d) div MILLIS_PER_MINUTE;  // Minutes since last
+    min := MilliSecondsBetween(nowTick, d) div MILLIS_PER_MINUTE;  // Minutes since last
     if min < 0 then
       min := 0;
   end;
-  sec := (MilliSecondsBetween(Now, d) mod MILLIS_PER_MINUTE) div 1000; // Seconds since last
+  sec := (MilliSecondsBetween(nowTick, d) mod MILLIS_PER_MINUTE) div 1000; // Seconds since last
   if sec < 0 then
     sec := 0;
 
@@ -5446,6 +5448,7 @@ var
   ok, //< OK count
   no, //< Not OK count
   rangeMinutes: integer; //< Time window in minutes to inspect (custom setting)
+  cutoffTime: TDateTime;
   ranges: set of trndi.types.BGValLevel; //< Types of readings to count as OK
   meanStr: string; //< Formatted mean readout when enabled
 begin
@@ -5457,9 +5460,10 @@ begin
     ranges := [BGRange];
 
   rangeMinutes := native.GetIntSetting('range.time', 9999);
+  cutoffTime := IncMinute(Now, -rangeMinutes);
 
   for reading in bgs do
-    if reading.date >= IncMinute(now, rangeMinutes * -1) then
+    if reading.date >= cutoffTime then
       if reading.level in ranges then
         Inc(ok)
       else
@@ -6760,16 +6764,13 @@ begin
     Exit;
   end;
 
-  // Copy and sort readings (newest first)
-  SetLength(SortedReadings, Length(bgs));
-  Move(bgs[0], SortedReadings[0], Length(bgs) * SizeOf(BGReading));
-  SortReadingsDescending(SortedReadings);
-
   sum := 0.0;
   count := 0;
 
   if NumReadings = -1 then
   begin
+    // All-readings mean is order-independent; avoid copy/sort work.
+    SortedReadings := bgs;
     // Use all available non-empty readings
     for i := 0 to High(SortedReadings) do
     begin
@@ -6782,6 +6783,11 @@ begin
   end
   else
   begin
+    // Slot-based averaging needs a chronological pass over newest->oldest.
+    SetLength(SortedReadings, Length(bgs));
+    Move(bgs[0], SortedReadings[0], Length(bgs) * SizeOf(BGReading));
+    SortReadingsDescending(SortedReadings);
+
     // Clamp requested slots to available visual dots
     slots := NumReadings;
     if slots > NUM_DOTS then
