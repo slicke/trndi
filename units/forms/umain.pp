@@ -4483,6 +4483,17 @@ procedure UpdatePredictionTimes;
 
       lPredict.Caption := pred1 + ' | ' + pred2 + ' | ' + pred3;
     end;
+
+    // Keep prediction label geometry in sync with dynamic caption updates.
+    if lPredict.Visible then
+    begin
+      if DIFF_ALIGN = taRightJustify then
+        ScaleLbl(lPredict, taCenter, tlBottom, true)
+      else
+        ScaleLbl(lPredict, taRightJustify, tlBottom, true);
+      lPredict.Left := ClientWidth - lPredict.Width - 5;
+      lPredict.Top := ClientHeight - lPredict.Height - 5;
+    end;
   end;
 
 procedure predictFuture(future: integer = 7);
@@ -4961,6 +4972,8 @@ begin
       ScaleLbl(lPredict, taCenter, tlBottom, true)
     else
       ScaleLbl(lPredict, taRightJustify, tlBottom, true);
+    // Keep lPredict pinned to the lower-right corner even if ScaleLbl adjusts size.
+    lPredict.Left := ClientWidth - lPredict.Width - 5;
   end;
   nextProgressChange;
 end;
@@ -5826,6 +5839,18 @@ begin
       pred3 := '?';
 
     lPredict.Caption := Format('%s | %s | %s', [pred1, pred2, pred3]);
+  end;
+
+  // Caption/content length can change between updates (short/full mode,
+  // arrow-only vs value). Keep layout anchored after re-scaling.
+  if lPredict.Visible then
+  begin
+    if DIFF_ALIGN = taRightJustify then
+      ScaleLbl(lPredict, taCenter, tlBottom, true)
+    else
+      ScaleLbl(lPredict, taRightJustify, tlBottom, true);
+    lPredict.Left := ClientWidth - lPredict.Width - 5;
+    lPredict.Top := ClientHeight - lPredict.Height - 5;
   end;
 end;
 
