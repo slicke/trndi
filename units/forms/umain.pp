@@ -4488,11 +4488,12 @@ procedure UpdatePredictionTimes;
     if lPredict.Visible then
     begin
       if DIFF_ALIGN = taRightJustify then
-        ScaleLbl(lPredict, taCenter, tlBottom, true)
+        ScaleLbl(lPredict, taCenter, tlBottom, false)
       else
-        ScaleLbl(lPredict, taRightJustify, tlBottom, true);
+        ScaleLbl(lPredict, taRightJustify, tlBottom, false);
+      // Keep horizontal anchoring stable during timer updates; Top is handled
+      // by the main resize/layout path to avoid small vertical jumps.
       lPredict.Left := ClientWidth - lPredict.Width - 5;
-      lPredict.Top := ClientHeight - lPredict.Height - 5;
     end;
   end;
 
@@ -4960,7 +4961,7 @@ begin
     end
     else
     begin
-      // Full mode: normal size for detailed predictions
+      // Full mode: ncormal size for detailed predictions
       lPredict.Width := ClientWidth div 3;
       lPredict.Height := ClientHeight div 12;
     end;
@@ -5846,11 +5847,12 @@ begin
   if lPredict.Visible then
   begin
     if DIFF_ALIGN = taRightJustify then
-      ScaleLbl(lPredict, taCenter, tlBottom, true)
+      ScaleLbl(lPredict, taCenter, tlBottom, false)
     else
-      ScaleLbl(lPredict, taRightJustify, tlBottom, true);
+      ScaleLbl(lPredict, taRightJustify, tlBottom, false);
+    // Keep horizontal anchoring stable during data refresh; Top is handled
+    // by the main resize/layout path to avoid small vertical jumps.
     lPredict.Left := ClientWidth - lPredict.Width - 5;
-    lPredict.Top := ClientHeight - lPredict.Height - 5;
   end;
 end;
 
