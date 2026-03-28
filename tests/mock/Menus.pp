@@ -13,11 +13,14 @@ type
     FCaption: string;
     FOnClick: TNotifyEvent;
     FItems: array of TMenuItem;
+    FParent: TMenuItem;
     FShortCut: Integer;
     FEnabled: Boolean;
     FChecked: Boolean;
     FVisible: Boolean;
     FHint: string;
+    function GetCount: Integer;
+    function GetMenuIndex: Integer;
   public
     constructor Create(AOwner: Controls.TComponent = nil);
     destructor Destroy; override;
@@ -33,6 +36,8 @@ type
     property Checked: Boolean read FChecked write FChecked;
     property Visible: Boolean read FVisible write FVisible;
     property Hint: string read FHint write FHint;
+    property Count: Integer read GetCount;
+    property MenuIndex: Integer read GetMenuIndex;
   end;
 
   TPopupMenu = class(TComponent)
@@ -66,6 +71,7 @@ begin
   FCaption := '';
   FShortCut := 0;
   FVisible := True;
+  FParent := nil;
   SetLength(FItems, 0);
 end;
 
@@ -92,7 +98,10 @@ begin
   FItems[Index] := Item;
   // If the item is inserted it might need to adopt visibility from parent
   if Assigned(Item) then
+  begin
+    Item.FParent := Self;
     Item.Visible := FVisible;
+  end;
 end;
 
 function TMenuItem.Add(Item: TMenuItem): TMenuItem;
@@ -113,6 +122,27 @@ begin
     Result := FItems[Index]
   else
     Result := nil;
+end;
+
+function TMenuItem.GetCount: Integer;
+begin
+  Result := Length(FItems);
+end;
+
+function TMenuItem.GetMenuIndex: Integer;
+var
+  i: Integer;
+begin
+  Result := -1;
+  if not Assigned(FParent) then
+    Exit;
+
+  for i := 0 to High(FParent.FItems) do
+    if FParent.FItems[i] = Self then
+    begin
+      Result := i;
+      Exit;
+    end;
 end;
 
 { TPopupMenu }
