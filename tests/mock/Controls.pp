@@ -22,6 +22,9 @@ type
   TShiftStateEnum = (ssShift, ssAlt, ssCtrl, ssMeta, ssLeft, ssRight, ssMiddle);
   TShiftState = set of TShiftStateEnum;
 
+  TAnchorKind = (akTop, akLeft, akRight, akBottom);
+  TAnchors = set of TAnchorKind;
+
   TAlign = (alNone, alTop, alBottom, alLeft, alRight, alClient);
 
   TControl = class(TComponent)
@@ -46,6 +49,8 @@ type
     FOnResize: TNotifyEvent;
     FOptimalFill: Boolean;
     FHandle: PtrUInt; // Mock window handle for Windows-specific code
+    FAnchors: TAnchors;
+    FShowHint: Boolean;
   protected
     FCanvas: TCanvas;
     FFont: TFont;
@@ -74,6 +79,8 @@ type
     property OnResize: TNotifyEvent read FOnResize write FOnResize;
     property OptimalFill: Boolean read FOptimalFill write FOptimalFill;
     property Handle: PtrUInt read FHandle write FHandle; // Provide a mock Handle for Windows-specific APIs
+    property Anchors: TAnchors read FAnchors write FAnchors;
+    property ShowHint: Boolean read FShowHint write FShowHint;
     function ClientRect: TRect; virtual;
     function GetClientWidth: Integer; virtual;
     function GetClientHeight: Integer; virtual;
@@ -163,6 +170,8 @@ begin
   FOnResize := nil; // default no-op event
   FOptimalFill := False;
   FHandle := 0; // default mock handle
+  FAnchors := [akLeft, akTop];
+  FShowHint := False;
 end;
 
 constructor TMonitor.Create;
