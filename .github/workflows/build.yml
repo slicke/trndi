@@ -29,6 +29,9 @@ concurrency:
   group: trndi-build-${{ github.ref }}
   cancel-in-progress: false
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   # ===================== DETERMINE VERSION =====================
   version:
@@ -38,7 +41,7 @@ jobs:
     outputs:
       build_number: ${{ steps.setver.outputs.build_number }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -124,7 +127,7 @@ jobs:
             runner: windows-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       # ===================== LINUX BUILDER =====================
       - name: Build on Linux
@@ -526,7 +529,7 @@ jobs:
 
       # ===================== UPLOAD ARTIFACTS =====================
       - name: Upload Actions artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ matrix.upload_name }}
           path: |
@@ -548,11 +551,11 @@ jobs:
     # and additionally ensure the publish job only runs for push events to main.
     if: ${{ always() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
       
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           path: ./release-files
 
@@ -780,7 +783,7 @@ jobs:
     if: ${{ success() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
