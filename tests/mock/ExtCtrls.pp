@@ -8,6 +8,8 @@ interface
 uses Controls, Classes, Graphics, Menus;
 
 type
+  TShapeType = (stRectangle, stSquare, stRoundRect, stRoundSquare, stEllipse, stCircle);
+
   TPanel = class(TWinControl)
   end;
 
@@ -56,6 +58,19 @@ type
     Shape: Integer;
   end;
 
+  TShape = class(TControl)
+  private
+    FBrush: TBrush;
+    FPen: TPen;
+    FShape: TShapeType;
+  public
+    constructor Create(AOwner: Controls.TComponent = nil); override;
+    destructor Destroy; override;
+    property Brush: TBrush read FBrush;
+    property Pen: TPen read FPen;
+    property Shape: TShapeType read FShape write FShape;
+  end;
+
 implementation
 
 constructor TTrayIcon.Create(AOwner: Controls.TComponent = nil);
@@ -98,6 +113,23 @@ end;
 destructor TPaintBox.Destroy;
 begin
   // Do not free FCanvas here — TControl.Destroy frees it. Avoid double-free.
+  inherited Destroy;
+end;
+
+constructor TShape.Create(AOwner: Controls.TComponent = nil);
+begin
+  inherited Create(AOwner);
+  FBrush := TBrush.Create;
+  FPen := TPen.Create;
+  FShape := stRectangle;
+end;
+
+destructor TShape.Destroy;
+begin
+  if Assigned(FBrush) then
+    FBrush.Free;
+  if Assigned(FPen) then
+    FPen.Free;
   inherited Destroy;
 end;
 

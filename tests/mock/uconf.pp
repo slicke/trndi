@@ -97,6 +97,8 @@ type
     cbFlashPerfect: TCheckBox;
     cbAlertHiLo: TCheckBox;
     cbAlertMissing: TCheckBox;
+    cbConnectivityButton: TCheckBox;
+    cbShowSensorExpiry: TCheckBox;
     cbLang: TComboBox;
 
     cbFonts: TGroupBox;
@@ -282,6 +284,8 @@ begin
   cbFlashPerfect := TCheckBox.Create(nil);
   cbAlertHiLo := TCheckBox.Create(nil);
   cbAlertMissing := TCheckBox.Create(nil);
+  cbConnectivityButton := TCheckBox.Create(nil);
+  cbShowSensorExpiry := TCheckBox.Create(nil);
   cbLang := TComboBox.Create(nil);
 
   cbFonts := TGroupBox.Create(nil);
@@ -369,6 +373,8 @@ begin
   cbLang.Free;
   cbAlertMissing.Free;
   cbAlertHiLo.Free;
+  cbShowSensorExpiry.Free;
+  cbConnectivityButton.Free;
   cbFlashPerfect.Free;
   cbFlashLow.Free;
   cbFlashHi.Free;
