@@ -130,6 +130,9 @@ TfFloat = class(TForm)
   procedure tClockTimer({%H-}Sender: TObject);
   procedure tTitlebarTimer({%H-}Sender: TObject);
 private
+  FDragStartX: integer;
+  FDragStartY: integer;
+  FDraggingWin: boolean;
   procedure SetFormOpacity(Opacity: double);
   procedure ApplyRoundedCorners;
   procedure CreateRoundedCorners;
@@ -146,8 +149,6 @@ rsCustomSize =
 
 var
 fFloat: TfFloat;
-PX, PY: integer;
-DraggingWin: boolean;
 
 
 implementation
@@ -462,6 +463,8 @@ begin
     tClock.OnTimer(tClock);
     tClock.Enabled := true;
   end;
+  if not lTime.Visible then
+    tClock.Enabled := false;
 end;
 
 procedure TfFloat.miCustomSizeClick(Sender: TObject);
@@ -548,7 +551,8 @@ end;
 
 procedure TfFloat.miNormalClick(Sender: TObject);
 begin
-
+  if Sender is TMenuItem then
+    miNormalClick(Sender as TMenuItem);
 end;
 
 procedure TfFloat.miOp100Click(Sender: TObject);
@@ -584,7 +588,7 @@ var
   ScreenPt: TPoint;
   DeltaX, DeltaY: integer;
 begin
-  if DraggingWin then
+  if FDraggingWin then
   begin
     // Convert to screen coordinates to handle moves from child controls
     if Sender is TControl then
@@ -593,23 +597,23 @@ begin
       ScreenPt := ClientToScreen(Point(X, Y));
     
     // Calculate the delta (how much the mouse moved)
-    DeltaX := ScreenPt.X - PX;
-    DeltaY := ScreenPt.Y - PY;
+    DeltaX := ScreenPt.X - FDragStartX;
+    DeltaY := ScreenPt.Y - FDragStartY;
     
     // Move the window by the delta
     Left := Left + DeltaX;
     Top := Top + DeltaY;
     
     // Update stored position for next move
-    PX := ScreenPt.X;
-    PY := ScreenPt.Y;
+    FDragStartX := ScreenPt.X;
+    FDragStartY := ScreenPt.Y;
   end;
 end;
 
 procedure TfFloat.FormMouseUp(Sender: TObject; Button: TMouseButton;
 Shift: TShiftState; X, Y: integer);
 begin
-  DraggingWin := false;
+  FDraggingWin := false;
   // Persist current position
   SaveSetting('position.float.left', Left);
   SaveSetting('position.float.top', Top);
@@ -745,7 +749,7 @@ begin
     ;
     {$ENDIF}
 
-    DraggingWin := true;
+    FDraggingWin := true;
     
     // Convert to screen coordinates to handle clicks from child controls
     if Sender is TControl then
@@ -753,8 +757,8 @@ begin
     else
       ScreenPt := ClientToScreen(Point(X, Y));
     
-    PX := ScreenPt.X;
-    PY := ScreenPt.Y;
+    FDragStartX := ScreenPt.X;
+    FDragStartY := ScreenPt.Y;
   end;
 end;
 
