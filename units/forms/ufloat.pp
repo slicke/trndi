@@ -680,6 +680,16 @@ end;
 
 procedure TfFloat.FormResize(Sender: TObject);
 begin
+  lVal.Left := 0;
+  lVal.Top := 0;
+  lVal.Height := ClientHeight;
+  lVal.Width := Round(ClientWidth * 0.75);
+
+  lArrow.Left := lVal.Width;
+  lArrow.Top := 0;
+  lArrow.Height := ClientHeight;
+  lArrow.Width := ClientWidth - lVal.Width;
+
   ScaleLbl(lVal, taLeftJustify, tlCenter);
   ScaleLbl(lArrow, taCenter, tlCenter);
   lTime.Font.Size := lArrow.font.size div 3;
