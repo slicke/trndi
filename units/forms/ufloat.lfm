@@ -12,7 +12,6 @@ object fFloat: TfFloat
   SnapOptions.SnapToMonitor = True
   LCLVersion = '4.4.0.0'
   OnKeyDown = FormKeyDown
-  OnKeyPress = FormKeyPress
   OnMouseDown = FormMouseDown
   OnMouseEnter = FormMouseEnter
   OnMouseLeave = FormMouseLeave
