@@ -219,12 +219,20 @@ end;
 // Local helpers to read/write Trndi settings without referencing the global
 // `native` variable (which isn't visible in this unit).
 function GetSettingsNative: TrndiNative;
+var
+  activeUser: string;
 begin
   if SettingsNative = nil then
   begin
     SettingsNative := TrndiNative.Create;
     SettingsNative.noFree := true;
   end;
+
+  // Keep float settings scoped to the active user selected in the main form.
+  activeUser := SettingsNative.GetRootSetting('users.active', '');
+  if SettingsNative.configUser <> activeUser then
+    SettingsNative.configUser := activeUser;
+
   Result := SettingsNative;
 end;
 
