@@ -2646,17 +2646,20 @@ begin
       ffloat.OnHide := @TfFloatOnHide;
     fFloat.Color := fBg.Color;
     fFloat.lVal.Caption := lval.Caption;
+      fFloat.lVal.Visible := true;
     if fFloat.miFontMain.Checked then
     begin
       fFloat.lVal.font.color := lval.font.color;
       fFloat.larrow.font.color := fFloat.lVal.font.color;
     end;
     fFloat.lArrow.Caption := lArrow.Caption;
+      fFloat.lArrow.Visible := fFloat.lArrow.Caption <> '';
     if pnMultiUser.Visible then
     begin
       fFloat.pnMultiUser.Visible := true;
       fFloat.pnMultiUser.Color := pnMultiUser.Color;
     end;
+    fFloat.FormResize(fFloat);
   end;
   miFloatOn.Checked := fFloat.Showing;
 end;
@@ -5953,12 +5956,15 @@ begin
   begin
     fFloat.Color := fBg.Color;
     fFloat.lVal.Caption := lval.Caption;
+    fFloat.lVal.Visible := true;
     fFloat.lArrow.Caption := lArrow.Caption;
+    fFloat.lArrow.Visible := fFloat.lArrow.Caption <> '';
     if fFloat.miFontMain.Checked then
     begin
       fFloat.lVal.font.color := lval.font.color;
       fFloat.larrow.font.color := fFloat.lVal.font.color;
     end;
+    fFloat.FormResize(fFloat);
   end;
 end;
 
