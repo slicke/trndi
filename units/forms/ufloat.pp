@@ -102,7 +102,6 @@ TfFloat = class(TForm)
   tTitlebar: TTimer;
   procedure FormCreate(Sender: TObject);
   procedure FormKeyDown(Sender: TObject; var Key: word; Shift: TShiftState);
-  procedure FormKeyPress({%H-}Sender: TObject; var Key: char);
   procedure FormMouseDown(Sender: TObject; Button: TMouseButton;
     Shift: TShiftState; X, Y: integer);
   procedure FormMouseEnter({%H-}Sender: TObject);
@@ -113,16 +112,12 @@ TfFloat = class(TForm)
   procedure FormPaint({%H-}Sender: TObject);
   procedure FormResize({%H-}Sender: TObject);
   procedure FormShow({%H-}Sender: TObject);
-  procedure lValMouseUp(Sender: TObject; Button: TMouseButton;
-    Shift: TShiftState; X, Y: integer);
   procedure MenuItem1Click({%H-}Sender: TObject);
-  procedure miBigClick({%H-}Sender: TObject);
   procedure miClockClick({%H-}Sender: TObject);
   procedure miCustomSizeClick({%H-}Sender: TObject);
   procedure miCustomVisibleClick({%H-}Sender: TObject);
   procedure miFontBlackClick({%H-}Sender: TObject);
   procedure miFontWhiteClick({%H-}Sender: TObject);
-  procedure miHideTitleClick({%H-}Sender: TObject);
   procedure miMainClick({%H-}Sender: TObject);
   procedure miNormalClick({%H-}Sender: TMenuItem);
   procedure miNormalClick({%H-}Sender: TObject);
@@ -149,6 +144,7 @@ rsCustomSize =
 
 var
 fFloat: TfFloat;
+SettingsNative: TrndiNative = nil;
 
 
 implementation
@@ -221,58 +217,35 @@ begin
 end;
 
 // Local helpers to read/write Trndi settings without referencing the global
-// `native` variable (which isn't visible in this unit). These create a
-// short-lived TrndiNative instance and free it immediately.
-function ReadIntSetting(const key: string; def: integer): integer;
-var
-  t: TrndiNative;
+// `native` variable (which isn't visible in this unit).
+function GetSettingsNative: TrndiNative;
 begin
-  t := TrndiNative.Create;
-  try
-    t.noFree := true;
-    Result := t.GetIntSetting(key, def);
-  finally
-    t.Free;
+  if SettingsNative = nil then
+  begin
+    SettingsNative := TrndiNative.Create;
+    SettingsNative.noFree := true;
   end;
+  Result := SettingsNative;
+end;
+
+function ReadIntSetting(const key: string; def: integer): integer;
+begin
+  Result := GetSettingsNative.GetIntSetting(key, def);
 end;
 
 function ReadFloatSetting(const key: string; def: single): single;
-var
-  t: TrndiNative;
 begin
-  t := TrndiNative.Create;
-  try
-    t.noFree := true;
-    Result := t.GetFloatSetting(key, def);
-  finally
-    t.Free;
-  end;
+  Result := GetSettingsNative.GetFloatSetting(key, def);
 end;
 
 procedure SaveSetting(const key: string; val: integer);
-var
-  t: TrndiNative;
 begin
-  t := TrndiNative.Create;
-  try
-    t.noFree := true;
-    t.SetSetting(key, val);
-  finally
-    t.Free;
-  end;
+  GetSettingsNative.SetSetting(key, val);
 end;
 
 procedure SaveFloatSetting(const key: string; val: single);
-var
-  t: TrndiNative;
 begin
-  t := TrndiNative.Create;
-  try
-    t.noFree := true;
-    t.SetFloatSetting(key, val, false);
-  finally
-    t.Free;
-  end;
+  GetSettingsNative.SetFloatSetting(key, val, false);
 end;
 
 procedure TfFloat.FormCreate({%H-}Sender: TObject);
@@ -439,19 +412,9 @@ begin
   SetFormOpacity(storedOp);
 end;
 
-procedure TfFloat.lValMouseUp(Sender: TObject; Button: TMouseButton;
-Shift: TShiftState; X, Y: integer);
-begin
-end;
-
 procedure TfFloat.MenuItem1Click({%H-}Sender: TObject);
 begin
   Hide;
-end;
-
-procedure TfFloat.miBigClick(Sender: TObject);
-begin
-
 end;
 
 procedure TfFloat.miClockClick(Sender: TObject);
@@ -489,10 +452,6 @@ begin
   lArrow.font.color := clWhite;
 end;
 
-procedure TfFloat.miHideTitleClick(Sender: TObject);
-begin
-
-end;
 
 procedure TfFloat.miMainClick(Sender: TObject);
 begin
@@ -778,10 +737,6 @@ begin
   {$ENDIF}
 end;
 
-procedure TfFloat.FormKeyPress(Sender: TObject; var Key: char);
-begin
-end;
-
 procedure TfFloat.FormKeyDown({%H-}Sender: TObject; var Key: word; Shift: TShiftState);
 var
   num: double;
@@ -810,5 +765,8 @@ begin
     miNormalClick(miCustomSize);
   end;
 end;
+
+finalization
+  FreeAndNil(SettingsNative);
 
 end.
