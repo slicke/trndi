@@ -598,6 +598,11 @@ begin
 
   // Initialize native interface
   native := TrndiNative.Create;
+
+  // Establish active user scope as early as possible so startup settings
+  // (language/media/etc.) resolve for the selected user.
+  LoadUserProfile;
+
   if (ssMeta in GetKeyShiftState) and ExtMsgYesNo(uxdNormal,'Run Trndi in English?', 'Run Trndi in English this once? You pressed the Windows/meta key, and can now choose to run Trndi in English. You can change the language in Settings.') then
   else
     SetLang;
@@ -685,7 +690,7 @@ begin
   with native do
   begin
     fSplash.incProgress(35, RS_INIT_PROFILES);
-    LoadUserProfile;
+    // Already loaded before SetLang/media init to ensure proper user scope.
 
     fSplash.incProgress(40, RS_INIT_LOCALE);
     // Locale setup
