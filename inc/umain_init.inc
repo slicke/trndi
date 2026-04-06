@@ -327,6 +327,7 @@ begin
     begin // We chose a user
       username := userList[i]; // Set username
       native.configUser := username; // Set settings main key
+      native.SetRootSetting('users.active', username);
       userNick := native.GetSettingEx('user.nick', username); // Load the user's nickname
 
       fbg.Caption := Format(RS_USER_CAPTION, [userNick, fBG.Caption]); // Set the main form title
@@ -335,6 +336,7 @@ begin
     else
     begin // Standard user
       username := ''; // No username
+      native.SetRootSetting('users.active', username);
       userNick := native.GetSettingEx('user.nick', RS_DEFAULT_ACCOUNT); // Get the standard user's nick
       multinick := userNick; // Set the multi user nickname
       fbg.Caption := Format(RS_USER_CAPTION, [userNick, fBG.Caption]); // Set the main form title
@@ -349,7 +351,10 @@ begin
     end;
   end
   else
+  begin
+    native.SetRootSetting('users.active', '');
     multi := false; // No multi user
+  end;
 end;
 
 procedure TfBG.CheckAndAcceptLicense;
