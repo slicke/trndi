@@ -698,7 +698,7 @@ function DwmSetWindowAttribute(hwnd: HWND; dwAttribute: DWORD; pvAttribute: Poin
 function MacNSColorToTColor(const AColor: NSColor; const Fallback: TColor): TColor;
 var
   RGBColor: NSColor;
-  R, G, B: CGFloat;
+  R, G, B: Double;
 begin
   Result := Fallback;
   if AColor = nil then
