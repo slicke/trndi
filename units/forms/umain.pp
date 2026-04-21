@@ -4967,6 +4967,8 @@ begin
   // Configure diff display
   lDiff.Width := ClientWidth;
   lDiff.Height := (ClientHeight div 9) - 10;
+  // Re-anchor before ScaleLbl to avoid cumulative Left drift on repeated updates.
+  lDiff.Left := 0;
   lDiff.Top := ClientHeight - lDiff.Height + 1;
   ScaleLbl(lDiff, DIFF_ALIGN, tlCenter, true, 10);
 
