@@ -52,6 +52,9 @@ uses
 Classes, SysUtils, Dialogs, Forms, ExtCtrls, StdCtrls, Controls, Graphics, Math,
 IntfGraphics, FPImage, graphtype, lcltype, Trndi.Native, Grids, Spin, IpHtml, Iphttpbroker, slicke.ux.native, SpinEx, LCLIntf,
 EditBtn, Clipbrd,
+{$ifdef X_MAC}
+CocoaAll,
+{$endif}
 {$ifdef X_WIN}
 DX12.D2D1, DX12.DXGI, DX12.DWrite, DX12.DCommon, DX12.WinCodec, Windows, Buttons, ActiveX, ComObj,
 {$endif}
@@ -691,6 +694,56 @@ implementation
 function DwmSetWindowAttribute(hwnd: HWND; dwAttribute: DWORD; pvAttribute: Pointer; cbAttribute: DWORD): HRESULT; stdcall; external 'dwmapi.dll';
 {$endif}
 
+{$ifdef X_MAC}
+function MacNSColorToTColor(const AColor: NSColor; const Fallback: TColor): TColor;
+var
+  RGBColor: NSColor;
+  R, G, B: CGFloat;
+begin
+  Result := Fallback;
+  if AColor = nil then
+    Exit;
+
+  try
+    RGBColor := AColor.colorUsingColorSpaceName(NSDeviceRGBColorSpace);
+    if RGBColor = nil then
+      RGBColor := AColor;
+
+    R := RGBColor.redComponent;
+    G := RGBColor.greenComponent;
+    B := RGBColor.blueComponent;
+
+    Result := RGBToColor(
+      EnsureRange(Round(R * 255), 0, 255),
+      EnsureRange(Round(G * 255), 0, 255),
+      EnsureRange(Round(B * 255), 0, 255)
+    );
+  except
+    Result := Fallback;
+  end;
+end;
+
+function MacDialogTextColor(const Fallback: TColor): TColor;
+begin
+  Result := MacNSColorToTColor(NSColor.textColor, Fallback);
+end;
+
+function MacDialogBackgroundColor(const Fallback: TColor): TColor;
+begin
+  Result := MacNSColorToTColor(NSColor.controlBackgroundColor, Fallback);
+end;
+
+function MacInputTextColor(const Fallback: TColor): TColor;
+begin
+  Result := MacNSColorToTColor(NSColor.textColor, Fallback);
+end;
+
+function MacInputBackgroundColor(const Fallback: TColor): TColor;
+begin
+  Result := MacNSColorToTColor(NSColor.textBackgroundColor, Fallback);
+end;
+{$endif}
+
 
 {**
    Helper for getting the base color, based on color mode
@@ -703,8 +756,14 @@ begin
   light := GetSysColor(COLOR_WINDOWTEXT);
   dark := clWhite;
   {$else}
+  {$ifdef X_MAC}
+  // Use Cocoa semantic text color so dialogs match current macOS appearance.
+  light := MacDialogTextColor(clWindowText);
+  dark := light;
+  {$else}
   dark := clWindowText;
   light := dark;
+  {$endif}
   {$endif}
 
   result := IfThen(TrndiNative.isDarkMode, dark, light);
@@ -722,8 +781,14 @@ begin
   dark := RGB(32, 32, 32);
 //    bg := IfThen(TrndiNative.isDarkMode, uxclGray, bg);
   {$else}
+  {$ifdef X_MAC}
+  // Use Cocoa semantic control background color for native macOS dialogs.
+  light := MacDialogBackgroundColor(clBtnFace);
+  dark := light;
+  {$else}
   light := clBtnFace;
   dark := light;
+  {$endif}
   {$endif}
 
   result := IfThen(TrndiNative.isDarkMode, dark, light);
@@ -1365,6 +1430,9 @@ begin
       Edit.Color := RGBToColor(53, 53, 53);
       Edit.Font.Color := RGBToColor(245, 245, 245);
     end;
+    {$elseif defined(X_MAC)}
+    Edit.Color := MacInputBackgroundColor(Edit.Color);
+    Edit.Font.Color := MacInputTextColor(Edit.Font.Color);
     {$endif}
     if float then
     begin
@@ -1627,6 +1695,9 @@ begin
       Edit.Color := RGBToColor(53, 53, 53);
       Edit.Font.Color := RGBToColor(245, 245, 245);
     end;
+    {$elseif defined(X_MAC)}
+    Edit.Color := MacInputBackgroundColor(Edit.Color);
+    Edit.Font.Color := MacInputTextColor(Edit.Font.Color);
     {$endif}
     if (size = uxdBig) then
       Edit.Font.Size := 20;
