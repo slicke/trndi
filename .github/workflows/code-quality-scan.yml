@@ -1,0 +1,184 @@
+name: Code Quality Scan
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    - cron: '35 2 * * 2'
+  workflow_dispatch: {}
+
+concurrency:
+  group: trndi-code-quality-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+permissions:
+  contents: read
+  actions: read
+  security-events: write
+
+jobs:
+  pascal-sarif:
+    name: Pascal Compiler SARIF
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install Lazarus/FPC toolchain
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y p7zip-full curl pkg-config qt6-base-dev qt6-tools-dev qt6-base-dev-tools
+
+          # Install Lazarus + FPC from the same pinned URLs as the Linux builders.
+          FPC_LAZ_URL="https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.6/fpc-laz_3.2.2-210709_amd64.deb/download"
+          FPC_SRC_URL="https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.6/fpc-src_3.2.2-210709_amd64.deb/download"
+          LAZ_URL="https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.6/lazarus-project_4.6.0-0_amd64.deb/download"
+
+          curl -fsSL -o fpc-laz.deb "$FPC_LAZ_URL"
+          curl -fsSL -o fpc-src.deb "$FPC_SRC_URL"
+          curl -fsSL -o lazarus.deb "$LAZ_URL"
+          sudo dpkg -i fpc-laz.deb fpc-src.deb lazarus.deb || true
+          sudo apt-get -f install -y
+
+          # Install Qt6Pas bindings (prefer distro packages; fall back to pinned upstream .deb files).
+          if ! sudo apt-get install -y libqt6pas6 libqt6pas6-dev; then
+            BASE_RELEASE="https://github.com/davidbannon/libqt6pas/releases/download/v6.2.10"
+            QT6PAS_DEB="libqt6pas6_6.2.10-1_amd64.deb"
+            QT6PAS_DEV_DEB="libqt6pas6-dev_6.2.10-1_amd64.deb"
+            curl -fL -o "$QT6PAS_DEB" "$BASE_RELEASE/$QT6PAS_DEB"
+            curl -fL -o "$QT6PAS_DEV_DEB" "$BASE_RELEASE/$QT6PAS_DEV_DEB"
+            sudo apt-get install -y "./$QT6PAS_DEB" "./$QT6PAS_DEV_DEB"
+          fi
+
+      - name: Build Pascal target and capture diagnostics
+        run: |
+          set -o pipefail
+          mkdir -p build
+          if make noext-test-nophp WIDGETSET=qt6 2>&1 | tee build/fpc-diagnostics.log; then
+            echo 0 > build/fpc-exit-code.txt
+          else
+            echo ${PIPESTATUS[0]} > build/fpc-exit-code.txt
+          fi
+
+      - name: Convert FPC diagnostics to SARIF
+        run: |
+          set -euo pipefail
+          python3 - << 'PY'
+          import json
+          import os
+          import re
+          from pathlib import Path
+
+          workspace = Path(os.environ.get("GITHUB_WORKSPACE", os.getcwd())).resolve()
+          log_path = workspace / "build" / "fpc-diagnostics.log"
+          sarif_path = workspace / "build" / "fpc-diagnostics.sarif"
+
+          pattern = re.compile(
+              r'^(?P<file>.+?)\((?P<line>\d+)(?:,(?P<col>\d+))?\)\s+'
+              r'(?P<kind>Hint|Warning|Error|Fatal):\s*(?:\((?P<code>\d+)\)\s*)?'
+              r'(?P<msg>.+)$'
+          )
+
+          level_map = {
+              "hint": "note",
+              "warning": "warning",
+              "error": "error",
+              "fatal": "error",
+          }
+
+          rules = {}
+          results = []
+
+          if log_path.exists():
+              for raw_line in log_path.read_text(encoding="utf-8", errors="replace").splitlines():
+                  line = raw_line.strip()
+                  m = pattern.match(line)
+                  if not m:
+                      continue
+
+                  kind = m.group("kind")
+                  code = m.group("code") or ""
+                  msg = m.group("msg").strip()
+                  file_name = m.group("file").strip()
+                  line_no = int(m.group("line"))
+                  col_no = int(m.group("col") or 1)
+
+                  rule_id = f"FPC.{kind}{('.' + code) if code else ''}"
+                  if rule_id not in rules:
+                      rule_desc = f"Free Pascal {kind}"
+                      if code:
+                          rule_desc += f" ({code})"
+                      rules[rule_id] = {
+                          "id": rule_id,
+                          "name": rule_id,
+                          "shortDescription": {"text": rule_desc},
+                          "help": {"text": rule_desc},
+                          "properties": {
+                              "tags": ["fpc", "pascal", kind.lower()],
+                          },
+                      }
+
+                  p = Path(file_name)
+                  if p.is_absolute():
+                      try:
+                          rel = p.resolve().relative_to(workspace)
+                          uri = rel.as_posix()
+                      except Exception:
+                          uri = p.as_posix()
+                  else:
+                      uri = p.as_posix()
+
+                  results.append({
+                      "ruleId": rule_id,
+                      "level": level_map[kind.lower()],
+                      "message": {"text": msg},
+                      "locations": [{
+                          "physicalLocation": {
+                              "artifactLocation": {"uri": uri},
+                              "region": {
+                                  "startLine": line_no,
+                                  "startColumn": col_no,
+                              },
+                          }
+                      }],
+                  })
+
+          sarif = {
+              "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+              "version": "2.1.0",
+              "runs": [{
+                  "tool": {
+                      "driver": {
+                          "name": "Free Pascal Compiler",
+                          "informationUri": "https://www.freepascal.org/",
+                          "rules": list(rules.values()),
+                      }
+                  },
+                  "results": results,
+              }],
+          }
+
+          sarif_path.write_text(json.dumps(sarif, indent=2), encoding="utf-8")
+          print(f"Wrote {sarif_path} with {len(results)} result(s)")
+          PY
+
+      - name: Upload SARIF to code scanning
+        if: always()
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: build/fpc-diagnostics.sarif
+
+      - name: Fail if Pascal build failed
+        if: always()
+        run: |
+          set -euo pipefail
+          code=$(cat build/fpc-exit-code.txt)
+          if [ "$code" -ne 0 ]; then
+            echo "Pascal build/test failed with exit code $code"
+            exit "$code"
+          fi

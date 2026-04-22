@@ -1,0 +1,66 @@
+name: Weekly FPC Drift Scan
+
+on:
+  schedule:
+    - cron: '22 3 * * 1'
+  workflow_dispatch: {}
+
+concurrency:
+  group: trndi-weekly-drift-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  toolchain-drift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Check pinned external URLs in CI config
+        id: urlcheck
+        run: |
+          set -euo pipefail
+          mkdir -p build
+          REPORT=build/weekly-drift-report.txt
+          : > "$REPORT"
+
+          echo "Weekly drift scan report" >> "$REPORT"
+          echo "Generated: $(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$REPORT"
+          echo >> "$REPORT"
+
+          mapfile -t URLS < <(
+            grep -Eo 'https://[^"[:space:]]+' .github/workflows/build.yml \
+              | sed 's/[",)]$//' \
+              | sort -u
+          )
+
+          echo "Found ${#URLS[@]} unique URLs in .github/workflows/build.yml" >> "$REPORT"
+          echo >> "$REPORT"
+
+          FAIL=0
+          for url in "${URLS[@]}"; do
+            if curl -fsIL --max-time 30 "$url" >/dev/null; then
+              echo "OK   $url" >> "$REPORT"
+            else
+              echo "FAIL $url" >> "$REPORT"
+              FAIL=1
+            fi
+          done
+
+          echo >> "$REPORT"
+          echo "Pinned version hints:" >> "$REPORT"
+          grep -nE 'Lazarus%20[0-9]+\.[0-9]+|v[0-9]+\.[0-9]+\.[0-9]+|2\.3\.stable|fpc-laz_|qt6pas|mormot2static' .github/workflows/build.yml >> "$REPORT" || true
+
+          cat "$REPORT"
+          if [[ "$FAIL" -ne 0 ]]; then
+            echo "One or more pinned URLs are unreachable. See report artifact." >&2
+            exit 1
+          fi
+
+      - name: Upload drift report
+        uses: actions/upload-artifact@v7
+        with:
+          name: weekly-fpc-drift-report
+          path: build/weekly-drift-report.txt
