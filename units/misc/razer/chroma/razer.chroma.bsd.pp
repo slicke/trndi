@@ -3,7 +3,7 @@
  * Provides a no-op TRazerChromaBSD class so BSD builds link when Razer code
  * is referenced. This unit is compiled only on BSD (FreeBSD, OpenBSD, NetBSD).
  *)
-unit razer.Chroma.bsd;
+unit razer.chroma.bsd;
 
 {$mode objfpc}{$H+}
 
