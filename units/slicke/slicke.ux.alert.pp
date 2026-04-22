@@ -1430,9 +1430,11 @@ begin
       Edit.Color := RGBToColor(53, 53, 53);
       Edit.Font.Color := RGBToColor(245, 245, 245);
     end;
-    {$elseif defined(X_MAC)}
+    {$else}
+    {$ifdef X_MAC}
     Edit.Color := MacInputBackgroundColor(Edit.Color);
     Edit.Font.Color := MacInputTextColor(Edit.Font.Color);
+    {$endif}
     {$endif}
     if float then
     begin
@@ -1695,9 +1697,11 @@ begin
       Edit.Color := RGBToColor(53, 53, 53);
       Edit.Font.Color := RGBToColor(245, 245, 245);
     end;
-    {$elseif defined(X_MAC)}
+    {$else}
+    {$ifdef X_MAC}
     Edit.Color := MacInputBackgroundColor(Edit.Color);
     Edit.Font.Color := MacInputTextColor(Edit.Font.Color);
+    {$endif}
     {$endif}
     if (size = uxdBig) then
       Edit.Font.Size := 20;
