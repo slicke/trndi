@@ -529,7 +529,7 @@ jobs:
 
       # ===================== UPLOAD ARTIFACTS =====================
       - name: Upload Actions artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.upload_name }}
           path: |
@@ -555,7 +555,7 @@ jobs:
         with:
           fetch-depth: 0
       
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v8
         with:
           path: ./release-files
 
