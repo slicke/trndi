@@ -1,0 +1,63 @@
+name: Nightly FPC Health
+
+on:
+  schedule:
+    - cron: '17 2 * * *'
+  workflow_dispatch: {}
+
+concurrency:
+  group: trndi-nightly-fpc-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  fpc-console-health:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install FPC/Lazarus and test prerequisites
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y php p7zip-full curl pkg-config qt6-base-dev qt6-tools-dev qt6-base-dev-tools
+
+          # Install Lazarus + FPC from the same pinned URLs as the builders.
+          FPC_LAZ_URL="https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.6/fpc-laz_3.2.2-210709_amd64.deb/download"
+          FPC_SRC_URL="https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.6/fpc-src_3.2.2-210709_amd64.deb/download"
+          LAZ_URL="https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.6/lazarus-project_4.6.0-0_amd64.deb/download"
+
+          curl -fsSL -o fpc-laz.deb "$FPC_LAZ_URL"
+          curl -fsSL -o fpc-src.deb "$FPC_SRC_URL"
+          curl -fsSL -o lazarus.deb "$LAZ_URL"
+          sudo dpkg -i fpc-laz.deb fpc-src.deb lazarus.deb || true
+          sudo apt-get -f install -y
+
+          # Install Qt6Pas bindings (prefer distro packages; fall back to pinned upstream .deb files).
+          if ! sudo apt-get install -y libqt6pas6 libqt6pas6-dev; then
+            BASE_RELEASE="https://github.com/davidbannon/libqt6pas/releases/download/v6.2.10"
+            QT6PAS_DEB="libqt6pas6_6.2.10-1_amd64.deb"
+            QT6PAS_DEV_DEB="libqt6pas6-dev_6.2.10-1_amd64.deb"
+            curl -fL -o "$QT6PAS_DEB" "$BASE_RELEASE/$QT6PAS_DEB"
+            curl -fL -o "$QT6PAS_DEV_DEB" "$BASE_RELEASE/$QT6PAS_DEV_DEB"
+            sudo apt-get install -y "./$QT6PAS_DEB" "./$QT6PAS_DEV_DEB"
+          fi
+
+      - name: Show tool versions
+        run: |
+          set -euo pipefail
+          lazbuild --version
+          fpc -iV
+          php --version | head -n 1
+
+      - name: Verify Pascal module naming consistency
+        run: |
+          set -euo pipefail
+          make check-module-names
+
+      - name: Build and run console tests (no extensions, headless)
+        run: |
+          set -euo pipefail
+          make noext-test-nophp WIDGETSET=qt6
