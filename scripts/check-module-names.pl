@@ -12,6 +12,7 @@ if (!@files) {
 my $errors = 0;
 for my $f (@files) {
   next unless -f $f;
+  next if $f =~ m{(?:^|/)backup/};
   open my $fh, '<', $f or next;
   my $unit;
   while (<$fh>) {

@@ -1,4 +1,4 @@
-unit slicke.wintools.2d2;
+unit slicke.wintools.d2d2;
 
 interface
 
