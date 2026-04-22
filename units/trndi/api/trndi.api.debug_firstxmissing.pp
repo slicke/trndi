@@ -37,7 +37,7 @@
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *)
 
-unit trndi.api.debug_firstXmissing;
+unit trndi.api.debug_firstxmissing;
 
 {$mode ObjFPC}{$H+}
 
