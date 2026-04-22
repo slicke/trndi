@@ -24,6 +24,7 @@ type
     miFontMain: TMenuItem;
     lRangeDown: TLabel;
     lRangeUp: TLabel;
+    procedure FormResize(Sender: TObject); virtual;
     procedure Show; virtual;
     procedure Hide; virtual;
     class function Instance: TfFloat; static;
@@ -38,6 +39,11 @@ implementation
 
 var
   _FloatInstance: TfFloat = nil;
+
+procedure TfFloat.FormResize(Sender: TObject);
+begin
+  // no-op for headless tests
+end;
 
 procedure TfFloat.Show;
 begin
