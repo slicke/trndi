@@ -2660,6 +2660,19 @@ begin
       fFloat.pnMultiUser.Color := pnMultiUser.Color;
     end;
     fFloat.FormResize(fFloat);
+    // Re-apply visibility/caption-dependent state after FormResize because
+    // ScaleLbl inside TfFloat.FormResize can force labels visible.
+    fFloat.lArrow.Caption := lArrow.Caption;
+    fFloat.lArrow.Visible := fFloat.lArrow.Caption <> '';
+    fFloat.lVal.Visible := true;
+    if fFloat.miFontMain.Checked then
+    begin
+      fFloat.lVal.Font.Color := lVal.Font.Color;
+      fFloat.lArrow.Font.Color := fFloat.lVal.Font.Color;
+    end;
+    fFloat.pnMultiUser.Visible := pnMultiUser.Visible;
+    if fFloat.pnMultiUser.Visible then
+      fFloat.pnMultiUser.Color := pnMultiUser.Color;
   end;
   miFloatOn.Checked := fFloat.Showing;
 end;
@@ -5966,7 +5979,23 @@ begin
       fFloat.lVal.font.color := lval.font.color;
       fFloat.larrow.font.color := fFloat.lVal.font.color;
     end;
+    fFloat.pnMultiUser.Visible := pnMultiUser.Visible;
+    if fFloat.pnMultiUser.Visible then
+      fFloat.pnMultiUser.Color := pnMultiUser.Color;
     fFloat.FormResize(fFloat);
+    // Re-apply visibility/caption-dependent state after FormResize because
+    // ScaleLbl inside TfFloat.FormResize can force labels visible.
+    fFloat.lArrow.Caption := lArrow.Caption;
+    fFloat.lArrow.Visible := fFloat.lArrow.Caption <> '';
+    fFloat.lVal.Visible := true;
+    if fFloat.miFontMain.Checked then
+    begin
+      fFloat.lVal.Font.Color := lVal.Font.Color;
+      fFloat.lArrow.Font.Color := fFloat.lVal.Font.Color;
+    end;
+    fFloat.pnMultiUser.Visible := pnMultiUser.Visible;
+    if fFloat.pnMultiUser.Visible then
+      fFloat.pnMultiUser.Color := pnMultiUser.Color;
   end;
 end;
 
