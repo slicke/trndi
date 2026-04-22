@@ -22,7 +22,7 @@ jobs:
         run: |
           set -euo pipefail
           sudo apt-get update
-          sudo apt-get install -y php p7zip-full curl pkg-config qt6-base-dev qt6-tools-dev qt6-base-dev-tools
+          sudo apt-get install -y php p7zip-full curl pkg-config qt6-base-dev qt6-tools-dev qt6-base-dev-tools libcurl4-openssl-dev
 
           # Install Lazarus + FPC from the same pinned URLs as the builders.
           FPC_LAZ_URL="https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.6/fpc-laz_3.2.2-210709_amd64.deb/download"
