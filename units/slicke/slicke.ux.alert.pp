@@ -705,7 +705,7 @@ begin
     Exit;
 
   try
-    RGBColor := AColor.colorUsingColorSpaceName(NSDeviceRGBColorSpace);
+    RGBColor := AColor.usingColorSpace(NSColorSpace.deviceRGB);
     if RGBColor = nil then
       RGBColor := AColor;
 
