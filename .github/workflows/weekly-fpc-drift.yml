@@ -31,8 +31,8 @@ jobs:
           echo >> "$REPORT"
 
           mapfile -t URLS < <(
-            grep -Eo 'https://[^"[:space:]]+' .github/workflows/build.yml \
-              | sed 's/[",)]$//' \
+            grep -Eo 'https://[^"'\''[:space:]]+' .github/workflows/build.yml \
+              | sed "s/[\"',)]$//" \
               | sort -u
           )
 
