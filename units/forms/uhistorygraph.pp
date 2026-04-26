@@ -112,6 +112,7 @@ private
     end;
 private
   FPoints: array of TGraphPoint; // Array of converted readings (value in preferred unit)
+  FAllPoints: array of TGraphPoint; // Full set before range filtering
   FUnit: BGUnit;
   FMinValue: double;
   FMaxValue: double;
@@ -124,6 +125,9 @@ private
   FCgmRangeHi: integer; // Range high threshold in mg/dL
   FCgmRangeLo: integer; // Range low threshold in mg/dL
   FPopupMenu: TPopupMenu; // Context menu for right-click actions
+  FRangeMenu: TMenuItem; // Time range submenu
+  FSelectedRangeMinutes: integer; // 0 = all
+  FHoveredPoint: integer; // Index in visible points, -1 when none
   FBasalProfile: TBasalProfile; // Optional basal profile to draw as overlay
   FShowBasal: boolean; // Whether to render basal overlay
   FMaxBasal: single; // Maximum basal rate for scaling (U/hr)
@@ -172,12 +176,17 @@ private
       distance of a drawn dot, otherwise -1. Used to detect clicks. }
   function PointAt(const X, Y: integer): integer;
   function HasData: boolean;
+  function FormatHoverText(const Reading: BGReading; const Value: double): string;
+  procedure ApplyRangeFilter;
+  procedure HandleRangeMenuClick(Sender: TObject);
+  procedure UpdateRangeMenuChecks;
   procedure ShowReadingDetails(const Reading: BGReading);
 protected
   procedure Paint; override;
   procedure Resize; override;
   procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: integer);
     override;
+  procedure MouseMove(Shift: TShiftState; X, Y: integer); override;
   procedure KeyDown(var Key: Word; Shift: TShiftState); override;
   procedure DoClose(var CloseAction: TCloseAction); override;
 public
@@ -236,6 +245,8 @@ resourcestring
 RS_HISTORY_GRAPH_TITLE = 'History graph';
 RS_HISTORY_GRAPH_EMPTY = 'No history data to plot';
 RS_HISTORY_GRAPH_HELP = 'Click a dot to see the full reading details';
+RS_HISTORY_GRAPH_HELP_INTERACT =
+  'Hover or click dots for details. Right-click to choose a time range.';
 RS_HISTORY_GRAPH_POINT_COUNT = '%d readings';
 RS_HISTORY_GRAPH_RANGE = '%s – %s';
 RS_HISTORY_GRAPH_UNIT_FMT = 'Readings (%s)';
@@ -254,6 +265,14 @@ RS_HISTORY_GRAPH_SAVE_ERROR = 'Failed to save graph: %s';
 RS_HISTORY_GRAPH_MENU_SAVE = 'Save as Image...';
 RS_HISTORY_GRAPH_MENU_SAVE_CSV = 'Save as CSV...';
 RS_HISTORY_GRAPH_CSV_TITLE = 'Save readings as CSV';
+RS_HISTORY_GRAPH_MENU_RANGE = 'Time range';
+RS_HISTORY_GRAPH_MENU_RANGE_ALL = 'All';
+RS_HISTORY_GRAPH_MENU_RANGE_1H = 'Last 1h';
+RS_HISTORY_GRAPH_MENU_RANGE_3H = 'Last 3h';
+RS_HISTORY_GRAPH_MENU_RANGE_6H = 'Last 6h';
+RS_HISTORY_GRAPH_MENU_RANGE_12H = 'Last 12h';
+RS_HISTORY_GRAPH_MENU_RANGE_24H = 'Last 24h';
+RS_HISTORY_GRAPH_HOVER_FMT = '%s at %s';
 
 {** Constants used for layout and division handling in this graph unit.
   Changing these values will affect overall margins and grid density. }
@@ -279,6 +298,19 @@ end;
 constructor TfHistoryGraph.Create(AOwner: TComponent);
 var
   menuItem: TMenuItem;
+
+  procedure AddRangeItem(const ACaption: string; const AMinutes: integer);
+  var
+    rangeItem: TMenuItem;
+  begin
+    rangeItem := TMenuItem.Create(FRangeMenu);
+    rangeItem.Caption := ACaption;
+    rangeItem.Tag := AMinutes;
+    rangeItem.RadioItem := true;
+    rangeItem.GroupIndex := 1;
+    rangeItem.OnClick := @HandleRangeMenuClick;
+    FRangeMenu.Add(rangeItem);
+  end;
 begin
   inherited CreateNew(AOwner, 0);
   Caption := RS_HISTORY_GRAPH_TITLE;
@@ -290,6 +322,8 @@ begin
   Color := clWhite;
   FDotRadius := 5;
   FPalette := DefaultHistoryGraphPalette;
+  FSelectedRangeMinutes := 0;
+  FHoveredPoint := -1;
   
   // Create context menu
   FPopupMenu := TPopupMenu.Create(Self);
@@ -301,6 +335,18 @@ begin
   menuItem.Caption := RS_HISTORY_GRAPH_MENU_SAVE_CSV;
   menuItem.OnClick := @SaveAsCSV;
   FPopupMenu.Items.Add(menuItem);
+
+  FRangeMenu := TMenuItem.Create(FPopupMenu);
+  FRangeMenu.Caption := RS_HISTORY_GRAPH_MENU_RANGE;
+  FPopupMenu.Items.Add(FRangeMenu);
+  AddRangeItem(RS_HISTORY_GRAPH_MENU_RANGE_ALL, 0);
+  AddRangeItem(RS_HISTORY_GRAPH_MENU_RANGE_1H, 60);
+  AddRangeItem(RS_HISTORY_GRAPH_MENU_RANGE_3H, 180);
+  AddRangeItem(RS_HISTORY_GRAPH_MENU_RANGE_6H, 360);
+  AddRangeItem(RS_HISTORY_GRAPH_MENU_RANGE_12H, 720);
+  AddRangeItem(RS_HISTORY_GRAPH_MENU_RANGE_24H, 1440);
+  UpdateRangeMenuChecks;
+
   PopupMenu := FPopupMenu;
 end;
 
@@ -590,7 +636,7 @@ procedure DrawHelpPanel;
     ACanvas.RoundRect(helpRect, 6, 6);
     ACanvas.Brush.Style := bsClear;
     ACanvas.TextOut(helpRect.Left + INFO_PADDING,
-      helpRect.Top + INFO_PADDING, RS_HISTORY_GRAPH_HELP);
+      helpRect.Top + INFO_PADDING, RS_HISTORY_GRAPH_HELP_INTERACT);
   end;
 
   {** DrawKeyEntry: Render a single key entry (small colored box + label)
@@ -703,6 +749,16 @@ begin
     y := ValueToY(FPoints[i].Value, PlotRect);
     ACanvas.Brush.Color := LevelColor(FPoints[i].Reading.level);
     ACanvas.Ellipse(x - radius, y - radius, x + radius, y + radius);
+    if i = FHoveredPoint then
+    begin
+      ACanvas.Brush.Style := bsClear;
+      ACanvas.Pen.Color := clBlack;
+      ACanvas.Pen.Width := 2;
+      ACanvas.Ellipse(x - radius - 3, y - radius - 3, x + radius + 3,
+        y + radius + 3);
+      ACanvas.Pen.Width := 1;
+      ACanvas.Brush.Style := bsSolid;
+    end;
   end;
 end;
 
@@ -772,10 +828,38 @@ begin
   // Right-click shows context menu (handled automatically by PopupMenu property)
 end;
 
+procedure TfHistoryGraph.MouseMove(Shift: TShiftState; X, Y: integer);
+var
+  idx: integer;
+begin
+  inherited MouseMove(Shift, X, Y);
+
+  if not HasData then
+    Exit;
+
+  idx := PointAt(X, Y);
+  if idx <> FHoveredPoint then
+  begin
+    FHoveredPoint := idx;
+    Invalidate;
+  end;
+end;
+
 procedure TfHistoryGraph.Paint;
 var
   plotRect: TRect;
   messageText: string;
+  hoverText: string;
+  hoverRect: TRect;
+  dotX, dotY: integer;
+
+  procedure ShiftRect(var R: TRect; const DX, DY: integer);
+  begin
+    R.Left := R.Left + DX;
+    R.Right := R.Right + DX;
+    R.Top := R.Top + DY;
+    R.Bottom := R.Bottom + DY;
+  end;
 begin
   // Main paint handler - clears the background and draws the grid, polyline,
   // points and legend. Avoids unnecessary drawing if there is no data.
@@ -799,6 +883,43 @@ begin
   DrawBasalOverlay(Canvas, plotRect);
   DrawPolyline(Canvas, plotRect);
   DrawPoints(Canvas, plotRect);
+
+  if (FHoveredPoint >= 0) and (FHoveredPoint <= High(FPoints)) then
+  begin
+    dotX := TimeToX(FPoints[FHoveredPoint].Reading.date, plotRect);
+    dotY := ValueToY(FPoints[FHoveredPoint].Value, plotRect);
+
+    Canvas.Pen.Style := psDot;
+    Canvas.Pen.Color := clGray;
+    Canvas.MoveTo(dotX, plotRect.Top);
+    Canvas.LineTo(dotX, plotRect.Bottom);
+    Canvas.MoveTo(plotRect.Left, dotY);
+    Canvas.LineTo(plotRect.Right, dotY);
+    Canvas.Pen.Style := psSolid;
+
+    hoverText := FormatHoverText(FPoints[FHoveredPoint].Reading,
+      FPoints[FHoveredPoint].Value);
+    hoverRect := Rect(dotX + 10,
+      dotY - Canvas.TextHeight(hoverText) - 8,
+      dotX + 22 + Canvas.TextWidth(hoverText),
+      dotY + 8);
+    if hoverRect.Right > plotRect.Right then
+      ShiftRect(hoverRect, (plotRect.Right - hoverRect.Right) - 4, 0);
+    if hoverRect.Left < plotRect.Left then
+      ShiftRect(hoverRect, (plotRect.Left - hoverRect.Left) + 4, 0);
+    if hoverRect.Top < plotRect.Top then
+      ShiftRect(hoverRect, 0, (plotRect.Top - hoverRect.Top) + 4);
+    if hoverRect.Bottom > plotRect.Bottom then
+      ShiftRect(hoverRect, 0, (plotRect.Bottom - hoverRect.Bottom) - 4);
+
+    Canvas.Brush.Style := bsSolid;
+    Canvas.Brush.Color := $00F6F6F6;
+    Canvas.Pen.Color := $00B8B8B8;
+    Canvas.RoundRect(hoverRect, 6, 6);
+    Canvas.Brush.Style := bsClear;
+    Canvas.TextOut(hoverRect.Left + 6, hoverRect.Top + 4, hoverText);
+  end;
+
   DrawLegend(Canvas, plotRect);
 end;
 
@@ -848,6 +969,8 @@ var
 begin
   FUnit := UnitPref;
   SetLength(FPoints, 0);
+  SetLength(FAllPoints, 0);
+  FHoveredPoint := -1;
 
   if Length(Readings) = 0 then
   begin
@@ -856,19 +979,27 @@ begin
     Exit;
   end;
 
-  SetLength(FPoints, Length(Readings));
+  SetLength(FAllPoints, Length(Readings));
   idx := 0;
   for i := Low(Readings) to High(Readings) do
   begin
     if Readings[i].empty then
       Continue;
-    FPoints[idx].Reading := Readings[i];
-    FPoints[idx].Value := Readings[i].convert(UnitPref);
+    FAllPoints[idx].Reading := Readings[i];
+    FAllPoints[idx].Value := Readings[i].convert(UnitPref);
     Inc(idx);
   end;
-  SetLength(FPoints, idx);
+  SetLength(FAllPoints, idx);
 
   if idx = 0 then
+  begin
+    Caption := Format('%s (0)', [RS_HISTORY_GRAPH_TITLE]);
+    Invalidate;
+    Exit;
+  end;
+
+  ApplyRangeFilter;
+  if not HasData then
   begin
     Caption := Format('%s (0)', [RS_HISTORY_GRAPH_TITLE]);
     Invalidate;
@@ -879,6 +1010,77 @@ begin
   UpdateExtents;
   Caption := Format('%s (%d)', [RS_HISTORY_GRAPH_TITLE, Length(FPoints)]);
   Invalidate;
+end;
+
+procedure TfHistoryGraph.ApplyRangeFilter;
+var
+  i, idx: integer;
+  maxStamp, cutoff: TDateTime;
+begin
+  SetLength(FPoints, 0);
+  if Length(FAllPoints) = 0 then
+    Exit;
+
+  maxStamp := FAllPoints[0].Reading.date;
+  for i := 1 to High(FAllPoints) do
+    if FAllPoints[i].Reading.date > maxStamp then
+      maxStamp := FAllPoints[i].Reading.date;
+
+  if FSelectedRangeMinutes > 0 then
+    cutoff := IncMinute(maxStamp, -FSelectedRangeMinutes)
+  else
+    cutoff := 0;
+
+  SetLength(FPoints, Length(FAllPoints));
+  idx := 0;
+  for i := 0 to High(FAllPoints) do
+  begin
+    if (FSelectedRangeMinutes > 0) and (FAllPoints[i].Reading.date < cutoff) then
+      Continue;
+    FPoints[idx] := FAllPoints[i];
+    Inc(idx);
+  end;
+  SetLength(FPoints, idx);
+  FHoveredPoint := -1;
+end;
+
+procedure TfHistoryGraph.HandleRangeMenuClick(Sender: TObject);
+begin
+  if not (Sender is TMenuItem) then
+    Exit;
+
+  FSelectedRangeMinutes := TMenuItem(Sender).Tag;
+  UpdateRangeMenuChecks;
+  ApplyRangeFilter;
+  if HasData then
+  begin
+    SortPointsByTime;
+    UpdateExtents;
+  end;
+  Caption := Format('%s (%d)', [RS_HISTORY_GRAPH_TITLE, Length(FPoints)]);
+  Invalidate;
+end;
+
+procedure TfHistoryGraph.UpdateRangeMenuChecks;
+var
+  i: integer;
+  item: TMenuItem;
+begin
+  if not Assigned(FRangeMenu) then
+    Exit;
+
+  for i := 0 to FRangeMenu.Count - 1 do
+  begin
+    item := FRangeMenu.Items[i];
+    item.Checked := item.Tag = FSelectedRangeMinutes;
+  end;
+end;
+
+function TfHistoryGraph.FormatHoverText(const Reading: BGReading;
+  const Value: double): string;
+begin
+  Result := Format(RS_HISTORY_GRAPH_HOVER_FMT,
+    [Format(BG_MSG_SHORT[FUnit], [Value]), FormatDateTime('ddd hh:nn', Reading.date)]);
 end;
 
 procedure TfHistoryGraph.SetPalette(const Palette: THistoryGraphPalette);

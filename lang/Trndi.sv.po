@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit 3.8\n"
+"X-Generator: Poedit 3.9\n"
 
 #: slicke.ux.alert.dlgerr
 msgid "An error occurred while creating a message dialog"
@@ -44,6 +44,7 @@ msgid "Agree"
 msgstr "Accepterar"
 
 #: slicke.ux.alert.smbuxall
+msgctxt "slicke.ux.alert.smbuxall"
 msgid "All"
 msgstr "Alla"
 
@@ -2892,6 +2893,15 @@ msgstr "Ingen historisk data att rita ut"
 msgid "Click a dot to see the full reading details"
 msgstr "Klicka på en punkt för att se detaljer om avläsningen"
 
+#: uhistorygraph.rs_history_graph_help_interact
+msgid "Hover or click dots for details. Right-click to choose a time range."
+msgstr "Placera musen över en punkt för info. Högerklicka för att välja en tidpunkt."
+
+#: uhistorygraph.rs_history_graph_hover_fmt
+#, object-pascal-format
+msgid "%s at %s"
+msgstr "%s vid %s"
+
 #: uhistorygraph.rs_history_graph_key_basal
 msgid "Basal"
 msgstr "Basal"
@@ -2926,6 +2936,35 @@ msgstr "Förklaring"
 msgctxt "uhistorygraph.rs_history_graph_key_unknown"
 msgid "Unknown"
 msgstr "Okänd"
+
+#: uhistorygraph.rs_history_graph_menu_range
+msgid "Time range"
+msgstr "Tidsspann"
+
+#: uhistorygraph.rs_history_graph_menu_range_12h
+msgid "Last 12h"
+msgstr "Senaste 12 tim"
+
+#: uhistorygraph.rs_history_graph_menu_range_1h
+msgid "Last 1h"
+msgstr "Sista 1 tim"
+
+#: uhistorygraph.rs_history_graph_menu_range_24h
+msgid "Last 24h"
+msgstr "Sista 24 tim"
+
+#: uhistorygraph.rs_history_graph_menu_range_3h
+msgid "Last 3h"
+msgstr "Sista 3 tim"
+
+#: uhistorygraph.rs_history_graph_menu_range_6h
+msgid "Last 6h"
+msgstr "Sista 6 tim"
+
+#: uhistorygraph.rs_history_graph_menu_range_all
+msgctxt "uhistorygraph.rs_history_graph_menu_range_all"
+msgid "All"
+msgstr "Alla"
 
 #: uhistorygraph.rs_history_graph_menu_save
 msgid "Save as Image..."
@@ -2966,4 +3005,3 @@ msgstr "Historikgraf"
 #, object-pascal-format
 msgid "Readings (%s)"
 msgstr "Avläsningar (%s)"
-

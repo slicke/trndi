@@ -34,6 +34,7 @@ msgid "Agree"
 msgstr ""
 
 #: slicke.ux.alert.smbuxall
+msgctxt "slicke.ux.alert.smbuxall"
 msgid "All"
 msgstr ""
 
@@ -2752,6 +2753,15 @@ msgstr ""
 msgid "Click a dot to see the full reading details"
 msgstr ""
 
+#: uhistorygraph.rs_history_graph_help_interact
+msgid "Hover or click dots for details. Right-click to choose a time range."
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_hover_fmt
+#, object-pascal-format
+msgid "%s at %s"
+msgstr ""
+
 #: uhistorygraph.rs_history_graph_key_basal
 msgid "Basal"
 msgstr ""
@@ -2785,6 +2795,35 @@ msgstr ""
 #: uhistorygraph.rs_history_graph_key_unknown
 msgctxt "uhistorygraph.rs_history_graph_key_unknown"
 msgid "Unknown"
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_menu_range
+msgid "Time range"
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_menu_range_12h
+msgid "Last 12h"
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_menu_range_1h
+msgid "Last 1h"
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_menu_range_24h
+msgid "Last 24h"
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_menu_range_3h
+msgid "Last 3h"
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_menu_range_6h
+msgid "Last 6h"
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_menu_range_all
+msgctxt "uhistorygraph.rs_history_graph_menu_range_all"
+msgid "All"
 msgstr ""
 
 #: uhistorygraph.rs_history_graph_menu_save
