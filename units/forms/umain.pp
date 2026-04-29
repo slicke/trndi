@@ -856,6 +856,15 @@ BADGE_FLASH_DURATION_LOW_MS = 20000;
 BADGE_FLASH_REPEAT_DELAY_LOW_MS = 400;
 BADGE_FLASH_DURATION_OK_MS = 6000;
 BADGE_FLASH_REPEAT_DELAY_OK_MS = 500;
+DEFAULT_PREDICTION_FUTURE_LIMIT = 7;
+
+function CaptionStartsWithDigit(const S: string): boolean;
+begin
+  Result := false;
+  if Length(S) = 0 then
+    Exit;
+  Result := S[1] in ['0'..'9'];
+end;
 
 function CurrentHistoryGraphPalette: THistoryGraphPalette;
 begin
@@ -4438,7 +4447,6 @@ var
   showTimestamp: boolean;
   timeStr: string;
   ix: integer;
-  sx: string;
   
   // For prediction time updates
 procedure UpdatePredictionTimes;
@@ -4706,9 +4714,8 @@ begin
     // Update prediction times if predictions are visible
     UpdatePredictionTimes;
 
-    if native.TryGetSetting('predictions.future_limit', sx) then
-      ix := native.GetIntSetting('predictions.future_limit', 7) else
-      predictFuture(ix);
+    ix := native.GetIntSetting('predictions.future_limit', DEFAULT_PREDICTION_FUTURE_LIMIT);
+    predictFuture(ix);
   except
     lAgo.Caption := '🕑 ' + RS_COMPUTE_FAILED_AGO;
   end;
@@ -5483,7 +5490,6 @@ end;
 function TfBG.IsDataFresh: boolean;
 var
   reading: BGReading;   // Holder for the latest (newest) reading
-  i: integer;     // Temp int used when checking if caption starts with a digit
 begin
   Result := false;
   if firstboot then
@@ -5499,7 +5505,7 @@ begin
     tMissed.OnTimer(tMissed);         // Immediately trigger the "missed" handler
     lVal.Font.Style := [fsStrikeOut]; // Strike through the value to indicate stale data
     // If the value label isn't numeric (e.g., "Setup") or arrow is a placeholder, show neutral placeholders
-    if (not TryStrToInt(lVal.Caption[1], i)) or (lArrow.Caption = 'lArrow') then
+    if (not CaptionStartsWithDigit(lVal.Caption)) or (lArrow.Caption = 'lArrow') then
     begin // Dont show "Setup" or similar on boot
       lVal.Caption := '--';           // Placeholder when data is stale
       lArrow.Caption := '';           // Hide trend arrow when stale
@@ -6295,8 +6301,6 @@ end;
 //     panel would make them unreadable.
 procedure TfBG.showWarningPanel(const message: string;
 clearDisplayValues: boolean = false; opacity: integer = 235; showDetails: boolean = true);
-var
-  i: integer;
 begin
   pnWarning.Visible := true;
   tPing.Enabled := true;  // Enable network ping check when no readings available
@@ -6311,7 +6315,7 @@ begin
   lMissing.Caption := '⚠️ ' + message + sLineBreak;
 
   if clearDisplayValues then
-    if (not TryStrToInt(lVal.Caption[1], i)) or (lArrow.Caption = 'lArrow') then
+    if (not CaptionStartsWithDigit(lVal.Caption)) or (lArrow.Caption = 'lArrow') then
     begin // Dont show "Setup" or similar on boot
       lVal.Caption := '--';
       lArrow.Caption := '';
