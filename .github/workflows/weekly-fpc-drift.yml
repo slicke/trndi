@@ -40,8 +40,30 @@ jobs:
           echo >> "$REPORT"
 
           FAIL=0
+          checked=0
+          skipped=0
           for url in "${URLS[@]}"; do
-            if curl -fsIL --max-time 30 "$url" >/dev/null; then
+            # Skip non-literal and non-public URLs to avoid false positives.
+            if [[ "$url" == *'${'* ]] || [[ "$url" =~ [\[\]{}\\*+?()|] ]]; then
+              echo "SKIP $url (template or regex expression)" >> "$REPORT"
+              skipped=$((skipped + 1))
+              continue
+            fi
+
+            if [[ "$url" == *"nuget.pkg.github.com"* ]]; then
+              echo "SKIP $url (requires authentication)" >> "$REPORT"
+              skipped=$((skipped + 1))
+              continue
+            fi
+
+            if [[ ! "$url" =~ (/download$|\.(deb|exe|7z|pkg|asc|png|git|json)$) ]]; then
+              echo "SKIP $url (non-artifact base URL)" >> "$REPORT"
+              skipped=$((skipped + 1))
+              continue
+            fi
+
+            checked=$((checked + 1))
+            if curl -fsSL --max-time 30 -o /dev/null "$url"; then
               echo "OK   $url" >> "$REPORT"
             else
               echo "FAIL $url" >> "$REPORT"
@@ -50,7 +72,10 @@ jobs:
           done
 
           echo >> "$REPORT"
-          echo "Pinned version hints:" >> "$REPORT"
+          echo "Summary: checked=$checked skipped=$skipped total=${#URLS[@]}" >> "$REPORT"
+
+          echo >> "$REPORT"
+          echo "Pinned version hints (static excerpts from .github/workflows/build.yml; not execution logs):" >> "$REPORT"
           grep -nE 'Lazarus%20[0-9]+\.[0-9]+|v[0-9]+\.[0-9]+\.[0-9]+|2\.3\.stable|fpc-laz_|qt6pas|mormot2static' .github/workflows/build.yml >> "$REPORT" || true
 
           cat "$REPORT"
