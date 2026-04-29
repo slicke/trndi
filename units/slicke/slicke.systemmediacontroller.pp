@@ -254,7 +254,6 @@ begin
 
     if FCurrentState.CurrentPlayer <> mpUnknown then
     begin
-      FRefreshTimer.Enabled := True;
       UpdateCurrentState;
       FIsInitialized := True;
     end;

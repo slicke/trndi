@@ -1701,7 +1701,6 @@ var
   tmp: integer;
   clientH: integer;
   dotHeight: integer;
-  bmp: TBitmap;
 
   debugY: integer;
   debugValue: single;
@@ -1748,21 +1747,15 @@ begin
     clientH := Self.ClientHeight;
 
   // Get dot height for centering lines through the middle of dots
-  // Calculate using a temporary bitmap to avoid affecting actual dots during paint
-  // IMPORTANT: Must match the exact calculation used in ResizeDot to ensure alignment
+  // Match the same calculation used in ResizeDot without allocating a bitmap.
   dotHeight := 0;
   if (Length(TrendDots) > 0) and Assigned(TrendDots[1]) then
   begin
-    bmp := TBitmap.Create;
-    try
-      bmp.Canvas.Font.Assign(TrendDots[1].Font);
-      // Use the same font size formula as ResizeDot: (lVal.Font.Size div 8) * dotscale
-      bmp.Canvas.Font.Size := round(Max((lVal.Font.Size div 8) * dotscale, 28));
-      // Use the same height calculation as ResizeDot: Max(TextHeight, Font.Size)
-      dotHeight := Max(bmp.Canvas.TextHeight(DOT_GRAPH), bmp.Canvas.Font.Size);
-    finally
-      bmp.Free;
-    end;
+    TrendDots[1].Canvas.Font.Assign(TrendDots[1].Font);
+    // Use the same font size formula as ResizeDot: (lVal.Font.Size div 8) * dotscale
+    TrendDots[1].Canvas.Font.Size := round(Max((lVal.Font.Size div 8) * dotscale, 28));
+    // Use the same height calculation as ResizeDot: Max(TextHeight, Font.Size)
+    dotHeight := Max(TrendDots[1].Canvas.TextHeight(DOT_GRAPH), TrendDots[1].Canvas.Font.Size);
   end;
 
   // Decide whether to draw low/high range indicators (0 disables)
@@ -4771,111 +4764,9 @@ begin
 end;
 
 procedure TfBG.tPingTimer(Sender: TObject);
-{$ifdef Windows}
-function IsURLReachable(const URL: string; Port: word = 80): boolean;
-  var
-    XSocket: TSocket;
-    Addr: TSockAddr;
-    HostEnt: PHostEnt;
-  begin
-    Result := false;
-
-    XSocket := socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    if XSocket = INVALID_SOCKET then
-      Exit;
-
-    try
-      try
-      // DNS resolution
-        HostEnt := gethostbyname(pchar(URL));
-        if HostEnt = nil then
-          Exit;
-
-      // Set up address
-        FillByte(Addr, SizeOf(Addr), 0);
-        PSockAddrIn(@Addr)^.sin_family := AF_INET;
-        PSockAddrIn(@Addr)^.sin_port := htons(Port);
-        PSockAddrIn(@Addr)^.sin_addr := PInAddr(HostEnt^.h_addr_list^)^;
-
-      // Try to connect
-        if connect(XSocket, Addr, SizeOf(Addr)) = 0 then
-          Result := true;
-      except
-        Result := false;
-      end;
-    finally
-      closesocket(XSocket);
-    end;
-  end;
-{$else}
-function IsURLReachable(const URL: string; Port: word = 80): boolean;
-  var
-    Socket: longint;
-    Addr: TInetSockAddr;
-    HostAddr: THostAddr;
-  begin
-    Result := false;
-
-    Socket := fpSocket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    if Socket < 0 then
-      Exit;
-
-    try
-      try
-        HostAddr := StrToHostAddr(URL);
-
-        if HostAddr.s_addr = 0 then
-          Exit;
-
-        FillByte(Addr, SizeOf(Addr), 0);
-        Addr.sin_family := AF_INET;
-        Addr.sin_port := htons(Port);
-        Addr.sin_addr := HostAddr;
-
-        if fpConnect(Socket, @Addr, SizeOf(Addr)) = 0 then
-          Result := true;
-      except
-        Result := false;
-      end;
-    finally
-      CloseSocket(Socket);
-    end;
-  end;
-{$endif}
-function IsInternetOnline: boolean;
-  var
-    IPs: array of string;
-    i: integer;
-  begin
-    IPs := [
-      '8.8.8.8',       // Google DNS
-      '1.1.1.1',       // Cloudflare DNS
-      '208.67.222.222' // OpenDNS
-      ];
-
-    for i := Low(IPs) to High(IPs) do
-      if IsURLReachable(IPs[i], 53) then
-      begin
-        Result := true;
-        Exit;
-      end;
-
-    Result := false;
-  end;
 begin
   tPing.Enabled := false;
-  if not IsInternetOnline then
-  begin
-    FLastConnectionDetail := RS_NO_INTERNET;
-    SetConnectionBadge(RS_CONN_RETRYING, RGBToColor(185, 60, 45));
-  end
-  else
-  begin
-    if (sender = miDNS) then
-      ShowMessage(RS_DNS_INTERNET_OK);
-  end;
-
-  tPing.Enabled := true;
+  TConnectivityCheckThread.Create(Self, Sender = miDNS);
 end;
 
 procedure TfBG.tResizeTimer(Sender: TObject);

@@ -617,7 +617,7 @@ begin
   if not native.GetBoolSetting('media.disabled', false) then begin
     fSplash.incProgress(10, RS_INIT_MEDIA);
     MediaController := TSystemMediaController.Create(Self);
-       MediaController.Initialize;
+    MediaController.Initialize;
   end;
   Application.ProcessMessages;
 
