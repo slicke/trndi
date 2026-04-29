@@ -659,6 +659,7 @@ private
       when unavailable, the label is hidden.
    }
   procedure UpdatePredictionLabel;
+  procedure RenderPredictionCache(const bgr: BGResults);
   {$ifdef DARWIN}
   procedure ToggleFullscreenMac;
   {$endif}
@@ -844,6 +845,7 @@ implementation
 
 {$I ../../inc/tfuncs.inc}
 {$I ../../inc/umain_ext.inc}
+{$I ../../inc/umain_async.inc}
 {$I ../../inc/umain_helpers.inc}
 {$I ../../inc/umain_init.inc}
 
@@ -5662,65 +5664,73 @@ begin
     Exit;
   end;
 
+  // Make prediction computation asynchronous to avoid blocking the UI.
   lPredict.Visible := true;
 
-  // Request more predictions to get ones closer to 5, 10, 15 minutes
-  if not api.predictReadings(9, bgr) then
+  // If we have cached predictions that match the current reading, render them
+  if (Length(PredictionCache) > 0) and (PredictionLastReadingTime = lastReading.date) then
   begin
-    lPredict.Caption := RS_PREDICTIONS_UNAVAILABLE;
+    RenderPredictionCache(PredictionCache);
     Exit;
   end;
 
-  // Get the last reading time and value to calculate trend
+  // Otherwise spawn a background worker to compute predictions and return immediately
+  TPredictionThread.Create(Self, 9);
+  // Show temporary unavailable text until worker finishes
+  lPredict.Caption := RS_PREDICTIONS_UNAVAILABLE;
+end;
+
+procedure TfBG.RenderPredictionCache(const bgr: BGResults);
+var
+  pred1, pred2, pred3: string;
+  lastReadingTime: TDateTime;
+  lastReadingValue: glucose;
+  i, closest5, closest10, closest15, closestTarget: integer;
+  diff5, diff10, diff15, diffTarget, currentDiff: integer;
+  delta: glucose;
+  trend: BGTrend;
+  minutes, targetMinutes: integer;
+  validCount: integer;
+begin
+  if not Assigned(api) then
+    Exit;
+
+  if not PredictGlucoseReading then
+    Exit;
+
+  // Use the cached last reading time/value
   lastReadingTime := lastReading.date;
   lastReadingValue := lastReading.convert(mgdl);
-  
-  // Cache for dynamic time updates
-  PredictionCache := bgr;
-  PredictionLastReadingTime := lastReadingTime;
 
   // Find predictions closest to 5, 10, 15 and the configured short horizon
-  // Ensure we pick different predictions for each slot
-  closest5 := -1;
-  closest10 := -1;
-  closest15 := -1;
-  closestTarget := -1;
-  diff5 := MaxInt;
-  diff10 := MaxInt;
-  diff15 := MaxInt;
-  diffTarget := MaxInt;
+  closest5 := -1; closest10 := -1; closest15 := -1; closestTarget := -1;
+  diff5 := MaxInt; diff10 := MaxInt; diff15 := MaxInt; diffTarget := MaxInt;
   targetMinutes := PredictShortMinutes;
 
   for i := 0 to High(bgr) do
   begin
     currentDiff := Round(MinutesBetween(bgr[i].date, lastReadingTime));
-    
-    // Skip predictions that are too close to current time (less than 2 minutes ahead)
     if currentDiff < 2 then
-      continue;
-    
-    // Find closest to 5 minutes
+      Continue;
+
     if Abs(currentDiff - 5) < diff5 then
     begin
       diff5 := Abs(currentDiff - 5);
       closest5 := i;
     end;
-    
-    // Find closest to 10 minutes (but different from closest5)
+
     if (Abs(currentDiff - 10) < diff10) and (i <> closest5) then
     begin
       diff10 := Abs(currentDiff - 10);
       closest10 := i;
     end;
-    
-    // Find closest to 15 minutes (but different from closest5 and closest10)
+
     if (Abs(currentDiff - 15) < diff15) and (i <> closest5) and (i <> closest10) then
     begin
       diff15 := Abs(currentDiff - 15);
       closest15 := i;
     end;
 
-    // Track closest to configured short horizon
     if Abs(currentDiff - targetMinutes) < diffTarget then
     begin
       diffTarget := Abs(currentDiff - targetMinutes);
@@ -5728,39 +5738,32 @@ begin
     end;
   end;
 
-  // Check if we have at least one valid prediction
+  // Validate
   validCount := 0;
-  if closest5 >= 0 then
-    Inc(validCount);
-  if closest10 >= 0 then
-    Inc(validCount);
-  if closest15 >= 0 then
-    Inc(validCount);
-  
+  if closest5 >= 0 then Inc(validCount);
+  if closest10 >= 0 then Inc(validCount);
+  if closest15 >= 0 then Inc(validCount);
   if validCount = 0 then
   begin
     lPredict.Visible := false;
     Exit;
   end;
 
-  // Format predictions with clock emoji, trend arrows, and values
+  // Render
   if PredictShortMode then
   begin
-    // Short mode: show only configured-horizon prediction with arrow
     if closestTarget >= 0 then
     begin
       delta := bgr[closestTarget].convert(mgdl) - lastReadingValue;
       trend := CalculateTrendFromDelta(delta);
       minutes := Round(MinutesBetween(bgr[closestTarget].date, lastReadingTime));
-      
+
       if PredictShortShowValue then
       begin
-        // Show time and value with arrow
         if PredictShortFullArrows then
           lPredict.Caption := Format('⏱%d'' %s %.1f', [minutes, BG_TREND_ARROWS_UTF[trend], bgr[closestTarget].convert(un)])
         else
         begin
-          // Use simplified arrows with value
           case trend of
           TdDoubleUp, TdSingleUp, TdFortyFiveUp:
             lPredict.Caption := Format('⏱%d'' ↗ %.1f', [minutes, bgr[closestTarget].convert(un)]);
@@ -5775,7 +5778,6 @@ begin
       end
       else
       begin
-        // Show only arrow (no value)
         if PredictShortFullArrows then
           lPredict.Caption := BG_TREND_ARROWS_UTF[trend]
         else
@@ -5788,8 +5790,7 @@ begin
             lPredict.Caption := '↘';
           else
             lPredict.Caption := '?';
-          end// Map to simplified arrows: up=↗, flat=→, down=↘
-        ;
+          end;
       end;
     end
     else
@@ -5797,7 +5798,6 @@ begin
   end
   else
   begin
-    // Full mode: show time, trend, and value
     if closest5 >= 0 then
     begin
       minutes := Round(MinutesBetween(bgr[closest5].date, lastReadingTime));
@@ -5831,16 +5831,12 @@ begin
     lPredict.Caption := Format('%s | %s | %s', [pred1, pred2, pred3]);
   end;
 
-  // Caption/content length can change between updates (short/full mode,
-  // arrow-only vs value). Keep layout anchored after re-scaling.
   if lPredict.Visible then
   begin
     if DIFF_ALIGN = taRightJustify then
       ScaleLbl(lPredict, taCenter, tlBottom, false)
     else
       ScaleLbl(lPredict, taRightJustify, tlBottom, false);
-    // Keep horizontal anchoring stable during data refresh; Top is handled
-    // by the main resize/layout path to avoid small vertical jumps.
     lPredict.Left := ClientWidth - lPredict.Width - 5;
   end;
 end;
