@@ -25,7 +25,7 @@ interface
 
 uses
 Classes, SysUtils, Graphics, IniFiles, Dialogs,
-ExtCtrls, Forms, Math, LCLIntf, linutils.kdebadge, trndi.native.base, FileUtil, Menus,
+ExtCtrls, Forms, Math, LCLIntf, linutils.kdebadge, trndi.native.base, trndi.native.async, FileUtil, Menus,
 libpascurl, DateUtils, ctypes{$ifdef DEBUG}, trndi.log{$endif};
 
 type
@@ -267,7 +267,7 @@ begin
   // Prefer the gnome-extensions CLI if present.
   gnomeExtensionsPath := FindInPath('gnome-extensions');
   if gnomeExtensionsPath <> '' then
-    if RunAndCaptureSimple(gnomeExtensionsPath, ['info', TRNDI_GNOME_EXT_UUID], outS,
+    if RunAndCaptureSimpleWait(gnomeExtensionsPath, ['info', TRNDI_GNOME_EXT_UUID], outS,
       exitCode) and (exitCode = 0) then
     begin
       outS := UpperCase(outS);
@@ -381,7 +381,7 @@ begin
   qdbusPath := FindInPath('qdbus');
   if qdbusPath <> '' then
   begin
-    if RunAndCaptureSimple(qdbusPath, [], outS, exitCode) and (exitCode = 0) then
+    if RunAndCaptureSimpleWait(qdbusPath, [], outS, exitCode) and (exitCode = 0) then
     begin
       outS := LowerCase(outS);
       if (Pos('com.canonical.appmenu.registrar', outS) > 0) or
@@ -546,7 +546,7 @@ begin
     Exit(false);
 
   // GNOME 42+: color-scheme prefer-dark/default
-  if RunAndCaptureSimple(gsettingsPath,
+  if RunAndCaptureSimpleWait(gsettingsPath,
     ['get', 'org.gnome.desktop.interface', 'color-scheme'], outS, exitCode) and
     (exitCode = 0) then
   begin
@@ -566,7 +566,7 @@ begin
   end;
 
   // Fallback: inspect gtk-theme name for '*-dark'
-  if RunAndCaptureSimple(gsettingsPath,
+  if RunAndCaptureSimpleWait(gsettingsPath,
     ['get', 'org.gnome.desktop.interface', 'gtk-theme'], outS, exitCode) and
     (exitCode = 0) then
   begin
@@ -604,7 +604,7 @@ begin
     Exit(false);
 
   // Read the active color scheme
-  if RunAndCaptureSimple(kreadPath, ['--group', 'General', '--key', 'ColorScheme'],
+  if RunAndCaptureSimpleWait(kreadPath, ['--group', 'General', '--key', 'ColorScheme'],
     outS, exitCode) and (exitCode = 0) then
   begin
     if ContainsDark(outS) then
