@@ -433,7 +433,7 @@ var
     params[2] := 'grant_type=password';
     params[3] := 'scope=' + UrlEncode(TANDEM_ANDROID_OAUTH_SCOPES);
 
-    httpResponse := native.RequestEx(true, ABaseUrl + TANDEM_ANDROID_OAUTH_TOKEN_PATH, params, '', nil, true, 10, headers, false);
+    httpResponse := native.RequestExWait(true, ABaseUrl + TANDEM_ANDROID_OAUTH_TOKEN_PATH, params, '', nil, true, 10, headers, false);
     try
       if (httpResponse.StatusCode < 200) or (httpResponse.StatusCode >= 300) then
       begin
@@ -588,7 +588,7 @@ var
     AFinalUrl := '';
     AStatus := 0;
 
-    localResp := native.RequestEx(false, AUrl, [], '', cookieJar, true, 10, headers, false);
+    localResp := native.RequestExWait(false, AUrl, [], '', cookieJar, true, 10, headers, false);
     try
       AStatus := localResp.StatusCode;
       ABody := localResp.Body;
@@ -690,7 +690,7 @@ begin
 
     postHeaders.AddStrings(headers);
     postHeaders.Add('Referer: ' + loginUrlUsed);
-    resp := native.RequestEx(true, loginUrlUsed, postParams, '', cookieJar, false, 0, postHeaders, false);
+    resp := native.RequestExWait(true, loginUrlUsed, postParams, '', cookieJar, false, 0, postHeaders, false);
     try
       if resp.StatusCode = 200 then
       begin
@@ -715,7 +715,7 @@ begin
           locationHeader := 'https://tconnect.tandemdiabetes.com' + locationHeader;
         resp.Headers.Free;
         resp.Cookies.Free;
-        resp := native.RequestEx(true, locationHeader, [], '', cookieJar, true, 10, headers, false);
+        resp := native.RequestExWait(true, locationHeader, [], '', cookieJar, true, 10, headers, false);
       end;
     finally
       resp.Headers.Free;
@@ -1129,7 +1129,7 @@ begin
     authHeaders.Add('User-Agent: ' + TANDEM_BASE_USER_AGENT);
     
     // Get pump event metadata
-    httpResponse := native.RequestEx(false, GetSourceUrl + 'api/reports/reportsfacade/' + FPumperId + '/pumpeventmetadata',
+    httpResponse := native.RequestExWait(false, GetSourceUrl + 'api/reports/reportsfacade/' + FPumperId + '/pumpeventmetadata',
       [], '', nil, true, 10, authHeaders, false);
 
     log(Format('Tandem.SelectDevice: status=%d bytes=%d',
@@ -1354,7 +1354,7 @@ begin
     // Step 1.5: Prime SSO cookies
     customHeaders.Clear;
     customHeaders.Add('User-Agent: ' + TANDEM_BASE_USER_AGENT);
-    httpResponse := native.RequestEx(false, TANDEM_LOGIN_PAGE_URL, [], '', cookieJar, true, 10, customHeaders, false);
+    httpResponse := native.RequestExWait(false, TANDEM_LOGIN_PAGE_URL, [], '', cookieJar, true, 10, customHeaders, false);
     log(Format('Tandem.Connect: login page success=%s status=%d bytes=%d err=%s',
       [BoolToStr(httpResponse.Success, true), httpResponse.StatusCode, Length(httpResponse.Body), httpResponse.ErrorMessage]));
 
@@ -1368,7 +1368,7 @@ begin
       customHeaders.Clear;
       customHeaders.Add('Referer: ' + TANDEM_LOGIN_PAGE_URL);
       customHeaders.Add('User-Agent: ' + TANDEM_BASE_USER_AGENT);
-      httpResponse := native.RequestEx(true, loginUrl, [], loginJson.AsJSON, cookieJar, true, 10, customHeaders, false);
+      httpResponse := native.RequestExWait(true, loginUrl, [], loginJson.AsJSON, cookieJar, true, 10, customHeaders, false);
     finally
       loginJson.Free;
     end;
@@ -1414,7 +1414,7 @@ begin
     customHeaders.Add('Referer: ' + TANDEM_LOGIN_PAGE_URL);
     customHeaders.Add('User-Agent: ' + TANDEM_BASE_USER_AGENT);
     customHeaders.Add('Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8');
-    httpResponse := native.RequestEx(false, authUrl, [], '', cookieJar, true, 10, customHeaders, false);
+    httpResponse := native.RequestExWait(false, authUrl, [], '', cookieJar, true, 10, customHeaders, false);
     log(Format('Tandem.Connect: auth response success=%s status=%d finalUrl=%s err=%s',
       [BoolToStr(httpResponse.Success, true), httpResponse.StatusCode, httpResponse.FinalURL, httpResponse.ErrorMessage]));
     
@@ -1479,7 +1479,7 @@ begin
     
     customHeaders.Clear;
     customHeaders.Add('User-Agent: ' + TANDEM_BASE_USER_AGENT);
-    httpResponse := native.RequestEx(true, tokenUrl, params, '', cookieJar, true, 10, customHeaders, false);
+    httpResponse := native.RequestExWait(true, tokenUrl, params, '', cookieJar, true, 10, customHeaders, false);
     log(Format('Tandem.Connect: token response success=%s status=%d bytes=%d err=%s',
       [BoolToStr(httpResponse.Success, true), httpResponse.StatusCode, Length(httpResponse.Body), httpResponse.ErrorMessage]));
 
@@ -1836,7 +1836,7 @@ var
       sourceHeaders.Add('User-Agent: ' + TANDEM_BASE_USER_AGENT);
 
       log('Tandem.GetReadings: source pumpevents request=' + sourceUrl);
-      sourceResponse := native.RequestEx(false, sourceUrl, [], '', nil, true, 10, sourceHeaders, false);
+      sourceResponse := native.RequestExWait(false, sourceUrl, [], '', nil, true, 10, sourceHeaders, false);
       log(Format('Tandem.GetReadings: source pumpevents status=%d bytes=%d',
         [sourceResponse.StatusCode, Length(sourceResponse.Body)]));
 
@@ -1970,7 +1970,7 @@ var
       ws2Url := ABase + 'therapytimeline2csv/' + AId + '/' +
         ws2StartDateStr + '/' + ws2EndDateStr + '?format=csv';
       log('Tandem.GetReadings: ws2 request=' + ws2Url);
-      ws2Response := native.RequestEx(false, ws2Url, [], '', nil, true, 10, ws2Headers, false);
+      ws2Response := native.RequestExWait(false, ws2Url, [], '', nil, true, 10, ws2Headers, false);
       if (ws2Response.StatusCode >= 200) and (ws2Response.StatusCode < 300) then
       begin
         Result := True;
@@ -2200,14 +2200,14 @@ begin
     begin
       url := BuildControlIqUrl(controliqCandidates[attemptIdx], controliqUserId, startDate, endDate);
       log('Tandem.GetReadings: request=' + url);
-      httpResponse := native.RequestEx(false, url, [], '', nil, true, 10, authHeaders, false);
+      httpResponse := native.RequestExWait(false, url, [], '', nil, true, 10, authHeaders, false);
       log(Format('Tandem.GetReadings: status=%d bytes=%d',
         [httpResponse.StatusCode, Length(httpResponse.Body)]));
 
       if httpResponse.StatusCode = 500 then
       begin
         FreeResponse(httpResponse);
-        httpResponse := native.RequestEx(false, url, [], '', nil, true, 10, authHeaders, false);
+        httpResponse := native.RequestExWait(false, url, [], '', nil, true, 10, authHeaders, false);
         log(Format('Tandem.GetReadings: retry status=%d bytes=%d',
           [httpResponse.StatusCode, Length(httpResponse.Body)]));
       end;
@@ -2221,7 +2221,7 @@ begin
           authHeaders[0] := 'Authorization: Bearer ' + FControlIqAccessToken;
           log('Tandem.GetReadings: retry after Control-IQ login');
           FreeResponse(httpResponse);
-          httpResponse := native.RequestEx(false, url, [], '', nil, true, 10, authHeaders, false);
+          httpResponse := native.RequestExWait(false, url, [], '', nil, true, 10, authHeaders, false);
           log(Format('Tandem.GetReadings: status=%d bytes=%d',
             [httpResponse.StatusCode, Length(httpResponse.Body)]));
         end;

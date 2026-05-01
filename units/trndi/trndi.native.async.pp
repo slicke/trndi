@@ -23,6 +23,12 @@ function RunAndCaptureSimpleAsync(const Exec: string;
 function RunAndCaptureSimpleWait(const Exec: string; const Params: array of string;
   out StdoutS: string; out ExitCode: integer; TimeoutMs: Cardinal = 2000): boolean;
 
+function RequestExWait(const post: boolean; const endpoint: string;
+  const params: array of string; const jsondata: string = '';
+  cookieJar: TStringList = nil; followRedirects: boolean = true;
+  maxRedirects: integer = 10; customHeaders: TStringList = nil;
+  prefix: boolean = true; TimeoutMs: Cardinal = 5000): THTTPResponse;
+
 implementation
 
 function RequestExAsync(const post: boolean; const endpoint: string;
@@ -42,6 +48,52 @@ begin
         TThread.Synchronize(nil, procedure begin callback(resp); end);
     end);
   Result.Start;
+end;
+
+function RequestExWait(const post: boolean; const endpoint: string;
+  const params: array of string; const jsondata: string = '';
+  cookieJar: TStringList = nil; followRedirects: boolean = true;
+  maxRedirects: integer = 10; customHeaders: TStringList = nil;
+  prefix: boolean = true; TimeoutMs: Cardinal = 5000): THTTPResponse;
+var
+  ev: TEvent;
+  done: Boolean;
+  respLocal: THTTPResponse;
+begin
+  // Initialize empty response
+  respLocal.Body := '';
+  respLocal.Headers := TStringList.Create;
+  respLocal.Cookies := TStringList.Create;
+  respLocal.StatusCode := -1;
+  respLocal.FinalURL := '';
+  respLocal.RedirectCount := 0;
+  respLocal.Success := False;
+  respLocal.ErrorMessage := 'timeout';
+
+  done := False;
+  ev := TEvent.Create(nil, True, False, '');
+  try
+    RequestExAsync(post, endpoint, params, jsondata, cookieJar, followRedirects,
+      maxRedirects, customHeaders, prefix,
+      procedure(const r: THTTPResponse)
+      begin
+        // copy result into local and signal
+        respLocal := r;
+        done := True;
+        ev.SetEvent;
+      end);
+
+    if ev.WaitFor(TimeoutMs) = wrSignaled then
+    begin
+      Result := respLocal;
+    end
+    else
+    begin
+      Result := respLocal; // contains timeout marker
+    end;
+  finally
+    ev.Free;
+  end;
 end;
 
 function RunAndCaptureSimpleAsync(const Exec: string;
