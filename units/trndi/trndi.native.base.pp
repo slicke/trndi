@@ -160,6 +160,15 @@ class var touchOverride: TTrndiBool;
     cookieJar: TStringList = nil; followRedirects: boolean = true;
     maxRedirects: integer = 10; customHeaders: TStringList = nil;
     prefix: boolean = true): THTTPResponse;
+  {** Run the platform `requestEx` implementation on a background thread and
+      wait for the result with a timeout. This preserves synchronous caller
+      semantics without busy polling. Returns a THTTPResponse; on timeout the
+      returned record has `Success = false` and `ErrorMessage = 'timeout'.` }
+  function RequestExWait(const post: boolean; const endpoint: string;
+    const params: array of string; const jsondata: string = '';
+    cookieJar: TStringList = nil; followRedirects: boolean = true;
+    maxRedirects: integer = 10; customHeaders: TStringList = nil;
+    prefix: boolean = true; TimeoutMs: Cardinal = 5000): THTTPResponse;
 
     // Settings API
     {** Store a non-user-scoped key (global). }
@@ -510,6 +519,62 @@ class function TTrndiNativeBase.HasNotifications: boolean;
 begin
   // Forward to the virtual for platform-specific logic
   Result := isNotificationSystemAvailable;
+end;
+
+{------------------------------------------------------------------------------
+  TTrndiNativeBase.RequestExWait
+  --------------------------------
+  Run the platform-specific `requestEx` on a background thread and wait for
+  the result with a timeout. Returns a THTTPResponse; on timeout the returned
+  record has `Success = false` and `ErrorMessage = 'timeout'.
+ ------------------------------------------------------------------------------}
+function TTrndiNativeBase.RequestExWait(const post: boolean; const endpoint: string;
+  const params: array of string; const jsondata: string = '';
+  cookieJar: TStringList = nil; followRedirects: boolean = true;
+  maxRedirects: integer = 10; customHeaders: TStringList = nil;
+  prefix: boolean = true; TimeoutMs: Cardinal = 5000): THTTPResponse;
+var
+  ev: TEvent;
+  respLocal: THTTPResponse;
+begin
+  // Prepare a timeout marker response
+  respLocal.Body := '';
+  respLocal.Headers := TStringList.Create;
+  respLocal.Cookies := TStringList.Create;
+  respLocal.StatusCode := -1;
+  respLocal.FinalURL := '';
+  respLocal.RedirectCount := 0;
+  respLocal.Success := False;
+  respLocal.ErrorMessage := 'timeout';
+
+  ev := TEvent.Create(nil, True, False, '');
+  try
+    TThread.CreateAnonymousThread(
+      procedure
+      var
+        r: THTTPResponse;
+      begin
+        try
+          r := Self.requestEx(post, endpoint, params, jsondata,
+            cookieJar, followRedirects, maxRedirects, customHeaders, prefix);
+          respLocal := r;
+        except
+          on E: Exception do
+          begin
+            respLocal.Success := False;
+            respLocal.ErrorMessage := E.Message;
+          end;
+        end;
+        ev.SetEvent;
+      end).Start;
+
+    if ev.WaitFor(TimeoutMs) = wrSignaled then
+      Result := respLocal
+    else
+      Result := respLocal;
+  finally
+    ev.Free;
+  end;
 end;
 
 {------------------------------------------------------------------------------
