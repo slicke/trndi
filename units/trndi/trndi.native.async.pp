@@ -25,6 +25,7 @@ type
     FPrefix: boolean;
     FCallback: THTTPResponseCallback;
     FResponse: THTTPResponse;
+    FDone: TEvent;
   protected
     procedure Execute; override;
   public
@@ -43,6 +44,7 @@ type
     FCallback: TRunAndCaptureCallback;
     FStdoutS: string;
     FExitCode: integer;
+    FDone: TEvent;
   protected
     procedure Execute; override;
   public
@@ -81,7 +83,7 @@ var
   i: integer;
 begin
   inherited Create(True);
-  FreeOnTerminate := False;
+  FreeOnTerminate := True;
   FNativeObj := ANativeObj;
   FPost := APost;
   FEndpoint := AEndpoint;
@@ -95,20 +97,26 @@ begin
   FCustomHeaders := ACustomHeaders;
   FPrefix := APrefix;
   FCallback := ACallback;
+  FDone := TEvent.Create(nil, True, False, '');
 end;
 
 destructor TRequestExWorker.Destroy;
 begin
   FParams.Free;
+  FDone.Free;
   inherited Destroy;
 end;
 
 procedure TRequestExWorker.Execute;
 begin
-  FResponse := FNativeObj.requestEx(FPost, FEndpoint, FParams.ToStringArray, FJsonData,
-    FCookieJar, FFollowRedirects, FMaxRedirects, FCustomHeaders, FPrefix);
-  if Assigned(FCallback) then
-    FCallback(FResponse);
+  try
+    FResponse := FNativeObj.requestEx(FPost, FEndpoint, FParams.ToStringArray, FJsonData,
+      FCookieJar, FFollowRedirects, FMaxRedirects, FCustomHeaders, FPrefix);
+    if Assigned(FCallback) then
+      FCallback(FResponse);
+  finally
+    FDone.SetEvent;
+  end;
 end;
 
 constructor TRunAndCaptureWorker.Create(const AExec: string;
@@ -117,17 +125,19 @@ var
   i: integer;
 begin
   inherited Create(True);
-  FreeOnTerminate := False;
+  FreeOnTerminate := True;
   FExec := AExec;
   FParams := TStringList.Create;
   for i := Low(AParams) to High(AParams) do
     FParams.Add(AParams[i]);
   FCallback := ACallback;
+  FDone := TEvent.Create(nil, True, False, '');
 end;
 
 destructor TRunAndCaptureWorker.Destroy;
 begin
   FParams.Free;
+  FDone.Free;
   inherited Destroy;
 end;
 
@@ -163,6 +173,7 @@ begin
       FCallback(FStdoutS, FExitCode);
   finally
     Proc.Free;
+    FDone.SetEvent;
   end;
 end;
 
@@ -187,12 +198,19 @@ var
 begin
   worker := TRequestExWorker.Create(nativeObj, post, endpoint, params, jsondata,
     cookieJar, followRedirects, maxRedirects, customHeaders, prefix, nil);
-  try
-    worker.Start;
-    worker.WaitFor;
-    Result := worker.Response;
-  finally
-    worker.Free;
+  worker.Start;
+  if worker.FDone.WaitFor(TimeoutMs) = wrSignaled then
+    Result := worker.Response
+  else
+  begin
+    Result.Body := '';
+    Result.Headers := TStringList.Create;
+    Result.Cookies := TStringList.Create;
+    Result.StatusCode := -1;
+    Result.FinalURL := '';
+    Result.RedirectCount := 0;
+    Result.Success := False;
+    Result.ErrorMessage := 'timeout';
   end;
 end;
 
@@ -209,14 +227,18 @@ var
   worker: TRunAndCaptureWorker;
 begin
   worker := TRunAndCaptureWorker.Create(Exec, Params, nil);
-  try
-    worker.Start;
-    worker.WaitFor;
+  worker.Start;
+  if worker.FDone.WaitFor(TimeoutMs) = wrSignaled then
+  begin
     StdoutS := worker.StdoutS;
     ExitCode := worker.ExitCode;
     Result := ExitCode = 0;
-  finally
-    worker.Free;
+  end
+  else
+  begin
+    StdoutS := '';
+    ExitCode := -1;
+    Result := False;
   end;
 end;
 
