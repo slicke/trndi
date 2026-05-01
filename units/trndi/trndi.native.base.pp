@@ -49,7 +49,7 @@ interface
 }
 
 uses
-Classes, SysUtils, Graphics, trndi.log
+Classes, SysUtils, Graphics, SyncObjs, trndi.log
 {$IF DEFINED(X_MAC)}
 , nsutils.nsmisc, nsutils.web.urlrequest, CocoaAll, LCLType, StrUtils
 {$ELSEIF DEFINED(X_WIN)}
@@ -533,48 +533,9 @@ function TTrndiNativeBase.RequestExWait(const post: boolean; const endpoint: str
   cookieJar: TStringList = nil; followRedirects: boolean = true;
   maxRedirects: integer = 10; customHeaders: TStringList = nil;
   prefix: boolean = true; TimeoutMs: Cardinal = 5000): THTTPResponse;
-var
-  ev: TEvent;
-  respLocal: THTTPResponse;
 begin
-  // Prepare a timeout marker response
-  respLocal.Body := '';
-  respLocal.Headers := TStringList.Create;
-  respLocal.Cookies := TStringList.Create;
-  respLocal.StatusCode := -1;
-  respLocal.FinalURL := '';
-  respLocal.RedirectCount := 0;
-  respLocal.Success := False;
-  respLocal.ErrorMessage := 'timeout';
-
-  ev := TEvent.Create(nil, True, False, '');
-  try
-    TThread.CreateAnonymousThread(
-      procedure
-      var
-        r: THTTPResponse;
-      begin
-        try
-          r := Self.requestEx(post, endpoint, params, jsondata,
-            cookieJar, followRedirects, maxRedirects, customHeaders, prefix);
-          respLocal := r;
-        except
-          on E: Exception do
-          begin
-            respLocal.Success := False;
-            respLocal.ErrorMessage := E.Message;
-          end;
-        end;
-        ev.SetEvent;
-      end).Start;
-
-    if ev.WaitFor(TimeoutMs) = wrSignaled then
-      Result := respLocal
-    else
-      Result := respLocal;
-  finally
-    ev.Free;
-  end;
+  Result := requestEx(post, endpoint, params, jsondata, cookieJar,
+    followRedirects, maxRedirects, customHeaders, prefix);
 end;
 
 {------------------------------------------------------------------------------
