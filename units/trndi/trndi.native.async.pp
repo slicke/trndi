@@ -223,7 +223,11 @@ begin
     if Terminated and Proc.Running then
     begin
       try
-        Proc.Terminate;
+        {$IF DEFINED(UNIX)}
+        Proc.Terminate(15); // SIGTERM on Unix/Linux
+        {$ELSE}
+        Proc.Terminate;     // Windows
+        {$ENDIF}
       except end;
       // wait for process to exit (with small loop)
       while Proc.Running do
