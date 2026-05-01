@@ -5,13 +5,13 @@ unit trndi.native.async;
 interface
 
 uses
-  Classes, SysUtils, SyncObjs, process, trndi.native;
+  Classes, SysUtils, SyncObjs, process, trndi.native.base;
 
 type
   THTTPResponseCallback = procedure(const resp: THTTPResponse) of object;
   TRunAndCaptureCallback = procedure(const OutS: string; ExitCode: integer) of object;
 
-function RequestExAsync(const post: boolean; const endpoint: string;
+function RequestExAsync(const nativeObj: TTrndiNativeBase; const post: boolean; const endpoint: string;
   const params: array of string; const jsondata: string = '';
   cookieJar: TStringList = nil; followRedirects: boolean = true;
   maxRedirects: integer = 10; customHeaders: TStringList = nil;
@@ -23,7 +23,7 @@ function RunAndCaptureSimpleAsync(const Exec: string;
 function RunAndCaptureSimpleWait(const Exec: string; const Params: array of string;
   out StdoutS: string; out ExitCode: integer; TimeoutMs: Cardinal = 2000): boolean;
 
-function RequestExWait(const post: boolean; const endpoint: string;
+function RequestExWait(const nativeObj: TTrndiNativeBase; const post: boolean; const endpoint: string;
   const params: array of string; const jsondata: string = '';
   cookieJar: TStringList = nil; followRedirects: boolean = true;
   maxRedirects: integer = 10; customHeaders: TStringList = nil;
@@ -31,7 +31,7 @@ function RequestExWait(const post: boolean; const endpoint: string;
 
 implementation
 
-function RequestExAsync(const post: boolean; const endpoint: string;
+function RequestExAsync(const nativeObj: TTrndiNativeBase; const post: boolean; const endpoint: string;
   const params: array of string; const jsondata: string = '';
   cookieJar: TStringList = nil; followRedirects: boolean = true;
   maxRedirects: integer = 10; customHeaders: TStringList = nil;
@@ -42,7 +42,7 @@ begin
   Result := TThread.CreateAnonymousThread(
     procedure
     begin
-      resp := TrndiNative.requestEx(post, endpoint, params, jsondata,
+      resp := nativeObj.requestEx(post, endpoint, params, jsondata,
         cookieJar, followRedirects, maxRedirects, customHeaders, prefix);
       if Assigned(callback) then
         TThread.Synchronize(nil, procedure begin callback(resp); end);
@@ -50,7 +50,7 @@ begin
   Result.Start;
 end;
 
-function RequestExWait(const post: boolean; const endpoint: string;
+function RequestExWait(const nativeObj: TTrndiNativeBase; const post: boolean; const endpoint: string;
   const params: array of string; const jsondata: string = '';
   cookieJar: TStringList = nil; followRedirects: boolean = true;
   maxRedirects: integer = 10; customHeaders: TStringList = nil;
@@ -73,7 +73,7 @@ begin
   done := False;
   ev := TEvent.Create(nil, True, False, '');
   try
-    RequestExAsync(post, endpoint, params, jsondata, cookieJar, followRedirects,
+    RequestExAsync(nativeObj, post, endpoint, params, jsondata, cookieJar, followRedirects,
       maxRedirects, customHeaders, prefix,
       procedure(const r: THTTPResponse)
       begin
