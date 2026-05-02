@@ -49,7 +49,7 @@ interface
 }
 
 uses
-Classes, SysUtils, Graphics, trndi.log, SyncObjs
+Classes, SysUtils, Graphics, trndi.log
 {$IF DEFINED(X_MAC)}
 , nsutils.nsmisc, nsutils.web.urlrequest, CocoaAll, LCLType, StrUtils
 {$ELSEIF DEFINED(X_WIN)}
@@ -483,9 +483,6 @@ type
     FCustomHeaders: TStringList;
     FPrefix: boolean;
     FResponse: THTTPResponse;
-    FDone: TEvent;
-    FCookieJarOwned: TStringList;
-    FCustomHeadersOwned: TStringList;
   protected
     procedure Execute; override;
   public
@@ -566,50 +563,12 @@ var
 begin
   worker := TRequestExWaitThread.Create(Self, post, endpoint, params, jsondata,
     cookieJar, followRedirects, maxRedirects, customHeaders, prefix);
-  worker.Start;
-  // wait for the worker to signal completion or timeout
-  if worker.FDone.WaitFor(TimeoutMs) = wrSignaled then
-  begin
-    // Copy response (deep copy lists) to avoid returning pointers owned
-    // by the worker which will be freed when we destroy it.
-    Result.Body := worker.Response.Body;
-    Result.StatusCode := worker.Response.StatusCode;
-    Result.FinalURL := worker.Response.FinalURL;
-    Result.RedirectCount := worker.Response.RedirectCount;
-    Result.Success := worker.Response.Success;
-    Result.ErrorMessage := worker.Response.ErrorMessage;
-    Result.Headers := TStringList.Create;
-    if Assigned(worker.Response.Headers) then
-      Result.Headers.Assign(worker.Response.Headers);
-    Result.Cookies := TStringList.Create;
-    if Assigned(worker.Response.Cookies) then
-      Result.Cookies.Assign(worker.Response.Cookies);
-    // Copy cookies back into caller's cookieJar if provided
-    if Assigned(cookieJar) then
-      cookieJar.Assign(Result.Cookies);
+  try
+    worker.Start;
     worker.WaitFor;
+    Result := worker.Response;
+  finally
     worker.Free;
-  end
-  else
-  begin
-    // timeout: return shaped timeout response and attempt cancellation
-    Result.Body := '';
-    Result.Headers := TStringList.Create;
-    Result.Cookies := TStringList.Create;
-    Result.StatusCode := -1;
-    Result.FinalURL := '';
-    Result.RedirectCount := 0;
-    Result.Success := False;
-    Result.ErrorMessage := 'timeout';
-    try
-      worker.Terminate;
-      worker.FDone.WaitFor(5000);
-      if worker.FDone.WaitFor(0) = wrSignaled then
-      begin
-        worker.WaitFor;
-        worker.Free;
-      end;
-    except end;
   end;
 end;
 
@@ -635,26 +594,10 @@ begin
   FParams := TStringList.Create;
   for i := Low(AParams) to High(AParams) do
     FParams.Add(AParams[i]);
-  // make owned copies of incoming lists so the worker does not reference
-  // caller-owned objects which may be freed while the worker runs
-  if Assigned(ACookieJar) then
-  begin
-    FCookieJarOwned := TStringList.Create;
-    FCookieJarOwned.Assign(ACookieJar);
-    FCookieJar := FCookieJarOwned;
-  end
-  else
-    FCookieJar := nil;
+  FCookieJar := ACookieJar;
   FFollowRedirects := AFollowRedirects;
   FMaxRedirects := AMaxRedirects;
-  if Assigned(ACustomHeaders) then
-  begin
-    FCustomHeadersOwned := TStringList.Create;
-    FCustomHeadersOwned.Assign(ACustomHeaders);
-    FCustomHeaders := FCustomHeadersOwned;
-  end
-  else
-    FCustomHeaders := nil;
+  FCustomHeaders := ACustomHeaders;
   FPrefix := APrefix;
   FResponse.Body := '';
   FResponse.Headers := nil;
@@ -664,15 +607,11 @@ begin
   FResponse.RedirectCount := 0;
   FResponse.Success := false;
   FResponse.ErrorMessage := 'timeout';
-  FDone := TEvent.Create(nil, True, False, '');
 end;
 
 destructor TRequestExWaitThread.Destroy;
 begin
   FParams.Free;
-  FCustomHeadersOwned.Free;
-  FCookieJarOwned.Free;
-  FDone.Free;
   inherited Destroy;
 end;
 
@@ -685,18 +624,14 @@ begin
   for i := 0 to FParams.Count - 1 do
     reqParams[i] := FParams[i];
   try
-    try
-      FResponse := FOwner.requestEx(FPost, FEndpoint, reqParams, FJsonData,
-        FCookieJar, FFollowRedirects, FMaxRedirects, FCustomHeaders, FPrefix);
-    except
-      on E: Exception do
-      begin
-        FResponse.Success := false;
-        FResponse.ErrorMessage := E.Message;
-      end;
+    FResponse := FOwner.requestEx(FPost, FEndpoint, reqParams, FJsonData,
+      FCookieJar, FFollowRedirects, FMaxRedirects, FCustomHeaders, FPrefix);
+  except
+    on E: Exception do
+    begin
+      FResponse.Success := false;
+      FResponse.ErrorMessage := E.Message;
     end;
-  finally
-    FDone.SetEvent;
   end;
 end;
 

@@ -267,8 +267,8 @@ begin
   // Prefer the gnome-extensions CLI if present.
   gnomeExtensionsPath := FindInPath('gnome-extensions');
   if gnomeExtensionsPath <> '' then
-      if RunAndCaptureSimpleWait(gnomeExtensionsPath, ['info', TRNDI_GNOME_EXT_UUID], outS,
-        exitCode, 7000) and (exitCode = 0) then
+    if RunAndCaptureSimpleWait(gnomeExtensionsPath, ['info', TRNDI_GNOME_EXT_UUID], outS,
+      exitCode) and (exitCode = 0) then
     begin
       outS := UpperCase(outS);
       // GNOME versions vary: we treat ENABLED/ACTIVE as "on".
@@ -285,7 +285,7 @@ begin
   // Prefer the async helper with small wait wrapper to avoid adding new
   // long-running polling loops in startup paths.
   if RunAndCaptureSimpleWait(gsettingsPath,
-    ['get', 'org.gnome.shell', 'enabled-extensions'], outS, exitCode, 7000) and
+    ['get', 'org.gnome.shell', 'enabled-extensions'], outS, exitCode) and
     (exitCode = 0) then
     Result := Pos('''' + TRNDI_GNOME_EXT_UUID + '''', outS) > 0 // Example: "['uuid@domain', 'other@domain']"
   ;
@@ -381,7 +381,7 @@ begin
   qdbusPath := FindInPath('qdbus');
   if qdbusPath <> '' then
   begin
-    if RunAndCaptureSimpleWait(qdbusPath, [], outS, exitCode, 7000) and (exitCode = 0) then
+    if RunAndCaptureSimpleWait(qdbusPath, [], outS, exitCode) and (exitCode = 0) then
     begin
       outS := LowerCase(outS);
       if (Pos('com.canonical.appmenu.registrar', outS) > 0) or
@@ -547,7 +547,7 @@ begin
 
   // GNOME 42+: color-scheme prefer-dark/default
   if RunAndCaptureSimpleWait(gsettingsPath,
-    ['get', 'org.gnome.desktop.interface', 'color-scheme'], outS, exitCode, 7000) and
+    ['get', 'org.gnome.desktop.interface', 'color-scheme'], outS, exitCode) and
     (exitCode = 0) then
   begin
     outS := LowerCase(StringReplace(outS, '''', '', [rfReplaceAll]));
@@ -567,7 +567,7 @@ begin
 
   // Fallback: inspect gtk-theme name for '*-dark'
   if RunAndCaptureSimpleWait(gsettingsPath,
-    ['get', 'org.gnome.desktop.interface', 'gtk-theme'], outS, exitCode, 7000) and
+    ['get', 'org.gnome.desktop.interface', 'gtk-theme'], outS, exitCode) and
     (exitCode = 0) then
   begin
     outS := LowerCase(StringReplace(outS, '''', '', [rfReplaceAll]));
@@ -605,7 +605,7 @@ begin
 
   // Read the active color scheme
   if RunAndCaptureSimpleWait(kreadPath, ['--group', 'General', '--key', 'ColorScheme'],
-    outS, exitCode, 7000) and (exitCode = 0) then
+    outS, exitCode) and (exitCode = 0) then
   begin
     if ContainsDark(outS) then
       isDark := true
