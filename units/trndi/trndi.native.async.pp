@@ -189,7 +189,7 @@ begin
     cookieJar, followRedirects, maxRedirects, customHeaders, prefix, nil);
   try
     worker.Start;
-    worker.WaitFor;
+    worker.WaitFor(TimeoutMs);
     Result := worker.Response;
   finally
     worker.Free;
@@ -211,7 +211,7 @@ begin
   worker := TRunAndCaptureWorker.Create(Exec, Params, nil);
   try
     worker.Start;
-    worker.WaitFor;
+    worker.WaitFor(TimeoutMs);
     StdoutS := worker.StdoutS;
     ExitCode := worker.ExitCode;
     Result := ExitCode = 0;
