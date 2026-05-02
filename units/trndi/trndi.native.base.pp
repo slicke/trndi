@@ -603,13 +603,12 @@ begin
     Result.ErrorMessage := 'timeout';
     try
       worker.Terminate;
-      if worker.FDone.WaitFor(5000) = wrSignaled then
+      worker.FDone.WaitFor(5000);
+      if worker.FDone.WaitFor(0) = wrSignaled then
       begin
         worker.WaitFor;
         worker.Free;
       end;
-      if worker.FDone.WaitFor(0) <> wrSignaled then
-        worker.FreeOnTerminate := True;
     except end;
   end;
 end;
