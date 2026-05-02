@@ -282,12 +282,10 @@ begin
   if gsettingsPath = '' then
     Exit(false);
 
-  // Prefer the async helper with small wait wrapper to avoid adding new
-  // long-running polling loops in startup paths.
-  if RunAndCaptureSimpleWait(gsettingsPath,
+  if RunAndCaptureSimple(gsettingsPath,
     ['get', 'org.gnome.shell', 'enabled-extensions'], outS, exitCode) and
     (exitCode = 0) then
-    Result := Pos('''' + TRNDI_GNOME_EXT_UUID + '''', outS) > 0 // Example: "['uuid@domain', 'other@domain']"
+    Result := Pos('''' + TRNDI_GNOME_EXT_UUID + '''', outS) > 0// Example: "['uuid@domain', 'other@domain']" or "@as []"
   ;
 end;
 
