@@ -102,10 +102,6 @@ var
   Proc: TProcess;
   i: Integer;
   acc: TStringList;
-  buf: array[0..4095] of byte;
-  n: integer;
-  outS: string;
-  exitCode: integer;
 begin
   acc := TStringList.Create;
   Proc := TProcess.Create(nil);
@@ -116,6 +112,11 @@ begin
 
   Result := TThread.CreateAnonymousThread(
     procedure
+    var
+      buf: array[0..4095] of byte;
+      n: integer;
+      outS: string;
+      exitCode: integer;
     begin
       try
         Proc.Execute;
