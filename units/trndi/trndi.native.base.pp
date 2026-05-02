@@ -693,11 +693,7 @@ begin
       on E: Exception do
       begin
         FResponse.Success := false;
-        FResponse.StatusCode := -1;
-        if Trim(E.Message) <> '' then
-          FResponse.ErrorMessage := E.ClassName + ': ' + E.Message
-        else
-          FResponse.ErrorMessage := E.ClassName;
+        FResponse.ErrorMessage := E.Message;
       end;
     end;
   finally
@@ -1986,7 +1982,6 @@ var
   cookieData: string;
   responseLine: string;
   responseCode: clong;
-  redirectCountVal: clong;
   effectiveUrl: PChar;
   startTick: QWord;
   endTick: QWord;
@@ -2024,11 +2019,8 @@ var
 
 begin
   // Initialize address from endpoint parameter
-  if prefix then
-    address := Format('%s/%s', [TrimRightSet(baseurl, ['/']), TrimLeftSet(endpoint, ['/'])])
-  else
-    address := endpoint;
-
+  address := endpoint;
+  
   // Initialize Result
   Result.Body := '';
   Result.Headers := TStringList.Create;
@@ -2186,11 +2178,8 @@ begin
         if effectiveUrl <> nil then
           Result.FinalURL := string(effectiveUrl);
 
-        // Get redirect count (libcurl returns a C long; use clong to avoid
-        // size mismatch on Linux where long is 64-bit).
-        redirectCountVal := 0;
-        curl_easy_getinfo(handle, CURLINFO_REDIRECT_COUNT, @redirectCountVal);
-        Result.RedirectCount := redirectCountVal;
+        // Get redirect count
+        curl_easy_getinfo(handle, CURLINFO_REDIRECT_COUNT, @Result.RedirectCount);
 
         TrndiDLog(Format('HTTP %s (curl) ok: status=%d, bytes=%d, redirects=%d, ms=%d',
           [methodLabel, Result.StatusCode, Length(Result.Body), Result.RedirectCount, endTick - startTick]));
@@ -2292,10 +2281,7 @@ begin
   Result.ErrorMessage := '';
 
   // Start address
-  if prefix then
-    address := Format('%s/%s', [TrimRightSet(baseurl, ['/']), TrimLeftSet(endpoint, ['/'])])
-  else
-    address := endpoint;
+  address := endpoint;
 
   // Append query params ONLY for GET requests (not POST)
   if (not post) and (jsondata = '') and (Length(params) > 0) then

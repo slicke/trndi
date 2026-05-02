@@ -649,7 +649,7 @@ function JSONEscape(const S: string): string;
   end;
 
 var
-  LBody, LResponse, LTimeResponse, LTimeString, LAccountID, LNameBody, LNameResp, LParseErr: string;
+  LBody, LResponse, LTimeResponse, LTimeString, LAccountID, LNameBody, LNameResp: string;
   LServerDateTime: TDateTime;
   LUseEmailAuth: boolean;
   LHTTPResp, LHTTPResp2, LHTTPRespTime: THTTPResponse;
@@ -679,7 +679,7 @@ begin
       Exit;
     end;
     LResponse := LHTTPResp.Body;
-    if not TryGetTokenOrError(LResponse, LAccountID, LParseErr) then
+    if not TryGetTokenOrError(LResponse, LAccountID, LResponse) then
     begin
       // Fallback: some servers return a plain quoted accountId; strip quotes
       LAccountID := StringReplace(LResponse, '"', '', [rfReplaceAll]);
@@ -687,7 +687,7 @@ begin
       if LAccountID = '' then
       begin
         Result := false;
-        lastErr := sDexNewErrLogin + ' (Dex1a): ' + LParseErr;
+        lastErr := sDexNewErrLogin + ' (Dex1a): ' + LResponse;
         Exit;
       end;
     end;
@@ -723,7 +723,7 @@ begin
         Exit;
       end;
       LNameResp := LHTTPResp.Body;
-      if not TryGetTokenOrError(LNameResp, FSessionID, LParseErr) then
+      if not TryGetTokenOrError(LNameResp, FSessionID, LNameResp) then
         FSessionID := StringReplace(LNameResp, '"', '', [rfReplaceAll]);
       FSessionID := Trim(FSessionID);
       if FSessionID = '' then
@@ -736,7 +736,7 @@ begin
     else
     begin
       LResponse := LHTTPResp.Body;
-      if not TryGetTokenOrError(LResponse, FSessionID, LParseErr) then
+      if not TryGetTokenOrError(LResponse, FSessionID, LResponse) then
       begin
         // Fallback: some servers reply with a plain quoted session token
         FSessionID := StringReplace(LResponse, '"', '', [rfReplaceAll]);
@@ -744,7 +744,7 @@ begin
         if FSessionID = '' then
         begin
           Result := false;
-          lastErr := sDexNewErrLogin + ' (Dex1b): ' + LParseErr;
+          lastErr := sDexNewErrLogin + ' (Dex1b): ' + LResponse;
           Exit;
         end;
       end;
@@ -752,7 +752,7 @@ begin
   end
   else
   begin
-    // Single-step authentication for plain usernames.
+    // Restore legacy behavior: some servers return a plain quoted GUID/token.
     LHTTPResp2 := native.RequestExWait(true, DEXCOM_LOGIN_BY_NAME_ENDPOINT, [], LBody, nil, true, 10, nil, true);
     if not LHTTPResp2.Success then
     begin
@@ -760,22 +760,9 @@ begin
       lastErr := sDexNewErrLogin + ' (Dex1): ' + LHTTPResp2.ErrorMessage;
       Exit;
     end;
-
-    LResponse := LHTTPResp2.Body;
-    if Trim(LResponse) = '' then
-      // Fallback for environments where requestEx may return a successful
-      // status with an empty body for this endpoint.
-      LResponse := native.request(true, DEXCOM_LOGIN_BY_NAME_ENDPOINT, [], LBody,
-        'Accept=application/json', true);
-
-    if not TryGetTokenOrError(LResponse, FSessionID, LParseErr) then
-    begin
-      Result := false;
-      lastErr := sDexNewErrLogin + ' (Dex1): ' + LParseErr;
-      Exit;
-    end;
-    FSessionID := Trim(StringReplace(FSessionID, '"', '', [rfReplaceAll]));
-  end;
+    FSessionID := StringReplace(LHTTPResp2.Body, '"', '', [rfReplaceAll]);
+  end;// Single-step authentication for plain usernames
+  ;
 
   // Check for various error responses before validation
   if (FSessionID = '') or (Pos('error', LowerCase(FSessionID)) > 0) or
