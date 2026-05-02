@@ -393,19 +393,18 @@ begin
     end;
   end;
 
-  // GTK module hint
+  // GTK module hint: only match explicit appmenu-gtk module, not the generic 'appmenu' substring
   gtkMods := LowerCase(GetEnvironmentVariable('GTK_MODULES'));
   if gtkMods <> '' then
-    if Pos('appmenu', gtkMods) > 0 then
+    if Pos('appmenu-gtk', gtkMods) > 0 then
       Exit(True);
 
-  // KDE plasmoid presence may indicate the panel provides an appmenu
-  if IsTrndiKdePlasmoidVisible then
-    Exit(True);
+  // Do NOT use KDE plasmoid presence as a global-menu indicator:
+  // the plasmoid may be visible for display purposes without a desktop
+  // global menu bar being present. Only qdbus service checks are reliable.
 
-  // Look for appmenu helpers on PATH
-  if (FindInPath('appmenu-gtk-module') <> '') or (FindInPath('gtk3-module-appmenu') <> '') then
-    Exit(True);
+  // Do NOT check for appmenu helper tools on PATH; their presence does not
+  // guarantee a working global menu bar integration.
 
   Result := False;
 end;
