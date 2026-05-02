@@ -384,8 +384,11 @@ begin
     if RunAndCaptureSimpleWait(qdbusPath, [], outS, exitCode, 7000) and (exitCode = 0) then
     begin
       outS := LowerCase(outS);
+      // Match well-known AppMenu registrar/service names only. Avoid
+      // matching the generic substring 'appmenu' which can produce
+      // false-positives on some systems.
       if (Pos('com.canonical.appmenu.registrar', outS) > 0) or
-        (Pos('org.kde.appmenu', outS) > 0) or (Pos('appmenu', outS) > 0) then
+        (Pos('org.kde.appmenu', outS) > 0) then
         Exit(True);
     end;
   end;
