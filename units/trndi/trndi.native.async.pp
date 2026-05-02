@@ -198,7 +198,6 @@ var
   buf: array[0..4095] of byte;
   n: integer;
   outS: string;
-  waitLoops: integer;
 begin
   FStdoutS := '';
   FExitCode := -1;
@@ -220,8 +219,7 @@ begin
       else
         Sleep(5);
     end;
-    // If termination requested while process running, stop child process
-    // before finishing so timeout callers do not leave it behind.
+    // If termination requested while process running, try graceful terminate
     if Terminated and Proc.Running then
     begin
       try
@@ -231,44 +229,17 @@ begin
         Proc.Terminate;     // Windows
         {$ENDIF}
       except end;
-      // Give the process a short grace period to exit.
-      waitLoops := 0;
-      while Proc.Running and (waitLoops < 100) do
+      // wait for process to exit (with small loop)
+      while Proc.Running do
       begin
         Sleep(10);
-        Inc(waitLoops);
-      end;
-
-      // Escalate if still running after grace period.
-      if Proc.Running then
-      begin
-        try
-          {$IF DEFINED(UNIX)}
-          Proc.Terminate(9); // SIGKILL on Unix/Linux
-          {$ELSE}
-          Proc.Terminate;     // best effort on Windows
-          {$ENDIF}
-        except end;
-
-        waitLoops := 0;
-        while Proc.Running and (waitLoops < 300) do
-        begin
-          Sleep(10);
-          Inc(waitLoops);
-        end;
       end;
     end;
-
     // capture exit status if available
-    if Proc.Running then
-      FExitCode := -1
-    else
-    begin
-      try
-        FExitCode := Proc.ExitStatus;
-      except
-        FExitCode := -1;
-      end;
+    try
+      FExitCode := Proc.ExitStatus;
+    except
+      FExitCode := -1;
     end;
     if Assigned(FCallback) then
       FCallback(FStdoutS, FExitCode);
@@ -326,8 +297,8 @@ begin
   else
   begin
     // timeout: return a timeout-shaped response. We attempt to cancel the
-    // worker and wait for completion so we do not return while it may still
-    // access borrowed objects such as nativeObj.
+    // worker but do not block indefinitely; worker owns its copies of lists
+    // so returning now is safe w.r.t. those objects.
     Result.Body := '';
     Result.Headers := TStringList.Create;
     Result.Cookies := TStringList.Create;
@@ -339,11 +310,13 @@ begin
     // request cancellation attempt: signal thread termination and give it a short grace period
     try
       worker.Terminate;
-      if worker.FDone.WaitFor(5000) <> wrSignaled then
-        while worker.FDone.WaitFor(50) <> wrSignaled do
-          Sleep(10);
-      worker.WaitFor;
-      worker.Free;
+      worker.FDone.WaitFor(5000);
+      if worker.FDone.WaitFor(0) = wrSignaled then
+      begin
+        // finished within grace period; free resources
+        worker.WaitFor;
+        worker.Free;
+      end;
     except end;
   end;
 end;
@@ -373,18 +346,24 @@ begin
   end
   else
   begin
-    // timeout: request termination and wait for worker cleanup completion
+    // timeout: request termination and wait a short grace period for cleanup
     try
       worker.Terminate;
-      if worker.FDone.WaitFor(5000) <> wrSignaled then
-        while worker.FDone.WaitFor(50) <> wrSignaled do
-          Sleep(10);
-
-      StdoutS := worker.StdoutS;
-      ExitCode := worker.ExitCode;
-      Result := ExitCode = 0;
-      worker.WaitFor;
-      worker.Free;
+      worker.FDone.WaitFor(5000);
+      if worker.FDone.WaitFor(0) = wrSignaled then
+      begin
+        StdoutS := worker.StdoutS;
+        ExitCode := worker.ExitCode;
+        Result := ExitCode = 0;
+        worker.WaitFor;
+        worker.Free;
+      end
+      else
+      begin
+        StdoutS := '';
+        ExitCode := -1;
+        Result := False;
+      end;
     except
       StdoutS := '';
       ExitCode := -1;
