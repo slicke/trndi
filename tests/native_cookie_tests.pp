@@ -35,7 +35,7 @@ begin
   cookieJar := TStringList.Create;
   try
     // Call endpoint that sets a cookie
-    resp := n.RequestExWait(false, BaseURL + '/cookie/set?name=unittestcookie&value=abc123', [], '', cookieJar, false, 0, nil, false);
+    resp := n.RequestEx(false, BaseURL + '/cookie/set?name=unittestcookie&value=abc123', [], '', cookieJar, false, 0, nil, false);
     // Some platforms may not set Result.Success reliably; assert on status code instead
     AssertEquals(200, resp.StatusCode);
     AssertTrue('Expected no error message (err: ' + resp.ErrorMessage + ')', resp.ErrorMessage = '');
@@ -46,7 +46,7 @@ begin
     AssertTrue('cookieJar should contain unittestcookie=abc123 (have: ' + cookieJar.Text + ')', cookieJar.IndexOf('unittestcookie=abc123') <> -1);
 
     // Now echo endpoint should show the cookie was sent back to server
-    resp := n.RequestExWait(false, BaseURL + '/cookie/echo?name=unittestcookie', [], '', cookieJar, false, 0, nil, false);
+    resp := n.RequestEx(false, BaseURL + '/cookie/echo?name=unittestcookie', [], '', cookieJar, false, 0, nil, false);
     AssertEquals(200, resp.StatusCode);
     AssertTrue('Expected no error message (err: ' + resp.ErrorMessage + ')', resp.ErrorMessage = '');
     AssertTrue('cookie echo should contain unittestcookie (body: ' + resp.Body + ')', Pos('"unittestcookie"', resp.Body) > 0);
@@ -76,7 +76,7 @@ begin
   cookieJar := TStringList.Create;
   try
     // Follow redirect; cookie should be set during redirect response and then seen after redirect
-    resp := n.RequestExWait(false, BaseURL + '/cookie/set-redirect?name=redircookie&value=xyz', [], '', cookieJar, true, 5, nil, false);
+    resp := n.RequestEx(false, BaseURL + '/cookie/set-redirect?name=redircookie&value=xyz', [], '', cookieJar, true, 5, nil, false);
     // Some platforms may not set Result.Success reliably when following redirects; assert on status code and lack of error
     AssertEquals(200, resp.StatusCode);
     AssertTrue('Expected no error message (err: ' + resp.ErrorMessage + ')', resp.ErrorMessage = '');
