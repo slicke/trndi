@@ -182,6 +182,7 @@ begin
 
   helpMenu.Insert(0, upMenu);
 end;
+end;
 {$endif}
 
 procedure TfBG.InitializeUIComponents;
