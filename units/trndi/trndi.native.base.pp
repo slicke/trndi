@@ -49,7 +49,7 @@ interface
 }
 
 uses
-Classes, SysUtils, Graphics, trndi.log
+Classes, SysUtils, Graphics, SyncObjs, trndi.log
 {$IF DEFINED(X_MAC)}
 , nsutils.nsmisc, nsutils.web.urlrequest, CocoaAll, LCLType, StrUtils
 {$ELSEIF DEFINED(X_WIN)}
@@ -468,31 +468,6 @@ begin
     Result := 0;
   end;
 end;
-
-type
-  TRequestExWaitThread = class(TThread)
-  private
-    FOwner: TTrndiNativeBase;
-    FPost: boolean;
-    FEndpoint: string;
-    FJsonData: string;
-    FParams: TStringList;
-    FCookieJar: TStringList;
-    FFollowRedirects: boolean;
-    FMaxRedirects: integer;
-    FCustomHeaders: TStringList;
-    FPrefix: boolean;
-    FResponse: THTTPResponse;
-  protected
-    procedure Execute; override;
-  public
-    constructor Create(AOwner: TTrndiNativeBase; const APost: boolean;
-      const AEndpoint: string; const AParams: array of string; const AJsonData: string;
-      ACookieJar: TStringList; AFollowRedirects: boolean; AMaxRedirects: integer;
-      ACustomHeaders: TStringList; APrefix: boolean);
-    destructor Destroy; override;
-    property Response: THTTPResponse read FResponse;
-  end;
 {------------------------------------------------------------------------------
   TTrndiNativeBase.updateLocale
   -----------------------------
@@ -558,81 +533,9 @@ function TTrndiNativeBase.RequestExWait(const post: boolean; const endpoint: str
   cookieJar: TStringList = nil; followRedirects: boolean = true;
   maxRedirects: integer = 10; customHeaders: TStringList = nil;
   prefix: boolean = true; TimeoutMs: Cardinal = 5000): THTTPResponse;
-var
-  worker: TRequestExWaitThread;
 begin
-  worker := TRequestExWaitThread.Create(Self, post, endpoint, params, jsondata,
-    cookieJar, followRedirects, maxRedirects, customHeaders, prefix);
-  try
-    worker.Start;
-    worker.WaitFor;
-    Result := worker.Response;
-  finally
-    worker.Free;
-  end;
-end;
-
-{------------------------------------------------------------------------------
-  TRequestExWaitThread
-  --------------------
-  Worker thread that executes requestEx off the main thread and stores the
-  resulting THTTPResponse for the caller to collect after WaitFor returns.
- ------------------------------------------------------------------------------}
-constructor TRequestExWaitThread.Create(AOwner: TTrndiNativeBase;
-  const APost: boolean; const AEndpoint: string; const AParams: array of string;
-  const AJsonData: string; ACookieJar: TStringList; AFollowRedirects: boolean;
-  AMaxRedirects: integer; ACustomHeaders: TStringList; APrefix: boolean);
-var
-  i: integer;
-begin
-  inherited Create(true);
-  FreeOnTerminate := false;
-  FOwner := AOwner;
-  FPost := APost;
-  FEndpoint := AEndpoint;
-  FJsonData := AJsonData;
-  FParams := TStringList.Create;
-  for i := Low(AParams) to High(AParams) do
-    FParams.Add(AParams[i]);
-  FCookieJar := ACookieJar;
-  FFollowRedirects := AFollowRedirects;
-  FMaxRedirects := AMaxRedirects;
-  FCustomHeaders := ACustomHeaders;
-  FPrefix := APrefix;
-  FResponse.Body := '';
-  FResponse.Headers := nil;
-  FResponse.Cookies := nil;
-  FResponse.StatusCode := -1;
-  FResponse.FinalURL := '';
-  FResponse.RedirectCount := 0;
-  FResponse.Success := false;
-  FResponse.ErrorMessage := 'timeout';
-end;
-
-destructor TRequestExWaitThread.Destroy;
-begin
-  FParams.Free;
-  inherited Destroy;
-end;
-
-procedure TRequestExWaitThread.Execute;
-var
-  reqParams: array of string;
-  i: integer;
-begin
-  SetLength(reqParams, FParams.Count);
-  for i := 0 to FParams.Count - 1 do
-    reqParams[i] := FParams[i];
-  try
-    FResponse := FOwner.requestEx(FPost, FEndpoint, reqParams, FJsonData,
-      FCookieJar, FFollowRedirects, FMaxRedirects, FCustomHeaders, FPrefix);
-  except
-    on E: Exception do
-    begin
-      FResponse.Success := false;
-      FResponse.ErrorMessage := E.Message;
-    end;
-  end;
+  Result := requestEx(post, endpoint, params, jsondata, cookieJar,
+    followRedirects, maxRedirects, customHeaders, prefix);
 end;
 
 {------------------------------------------------------------------------------
