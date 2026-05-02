@@ -11,48 +11,6 @@ type
   THTTPResponseCallback = procedure(const resp: THTTPResponse) of object;
   TRunAndCaptureCallback = procedure(const OutS: string; ExitCode: integer) of object;
 
-  TRequestExWorker = class(TThread)
-  private
-    FNativeObj: TTrndiNativeBase;
-    FPost: boolean;
-    FEndpoint: string;
-    FParams: TStringList;
-    FJsonData: string;
-    FCookieJar: TStringList;
-    FFollowRedirects: boolean;
-    FMaxRedirects: integer;
-    FCustomHeaders: TStringList;
-    FPrefix: boolean;
-    FCallback: THTTPResponseCallback;
-    FResponse: THTTPResponse;
-  protected
-    procedure Execute; override;
-  public
-    constructor Create(ANativeObj: TTrndiNativeBase; const APost: boolean;
-      const AEndpoint: string; const AParams: array of string; const AJsonData: string;
-      ACookieJar: TStringList; AFollowRedirects: boolean; AMaxRedirects: integer;
-      ACustomHeaders: TStringList; APrefix: boolean; ACallback: THTTPResponseCallback);
-    destructor Destroy; override;
-    property Response: THTTPResponse read FResponse;
-  end;
-
-  TRunAndCaptureWorker = class(TThread)
-  private
-    FExec: string;
-    FParams: TStringList;
-    FCallback: TRunAndCaptureCallback;
-    FStdoutS: string;
-    FExitCode: integer;
-  protected
-    procedure Execute; override;
-  public
-    constructor Create(const AExec: string; const AParams: array of string;
-      ACallback: TRunAndCaptureCallback);
-    destructor Destroy; override;
-    property StdoutS: string read FStdoutS;
-    property ExitCode: integer read FExitCode;
-  end;
-
 function RequestExAsync(const nativeObj: TTrndiNativeBase; const post: boolean; const endpoint: string;
   const params: array of string; const jsondata: string = '';
   cookieJar: TStringList = nil; followRedirects: boolean = true;
@@ -73,107 +31,22 @@ function RequestExWait(const nativeObj: TTrndiNativeBase; const post: boolean; c
 
 implementation
 
-constructor TRequestExWorker.Create(ANativeObj: TTrndiNativeBase; const APost: boolean;
-  const AEndpoint: string; const AParams: array of string; const AJsonData: string;
-  ACookieJar: TStringList; AFollowRedirects: boolean; AMaxRedirects: integer;
-  ACustomHeaders: TStringList; APrefix: boolean; ACallback: THTTPResponseCallback);
-var
-  i: integer;
-begin
-  inherited Create(True);
-  FreeOnTerminate := False;
-  FNativeObj := ANativeObj;
-  FPost := APost;
-  FEndpoint := AEndpoint;
-  FJsonData := AJsonData;
-  FParams := TStringList.Create;
-  for i := Low(AParams) to High(AParams) do
-    FParams.Add(AParams[i]);
-  FCookieJar := ACookieJar;
-  FFollowRedirects := AFollowRedirects;
-  FMaxRedirects := AMaxRedirects;
-  FCustomHeaders := ACustomHeaders;
-  FPrefix := APrefix;
-  FCallback := ACallback;
-end;
-
-destructor TRequestExWorker.Destroy;
-begin
-  FParams.Free;
-  inherited Destroy;
-end;
-
-procedure TRequestExWorker.Execute;
-begin
-  FResponse := FNativeObj.requestEx(FPost, FEndpoint, FParams.ToStringArray, FJsonData,
-    FCookieJar, FFollowRedirects, FMaxRedirects, FCustomHeaders, FPrefix);
-  if Assigned(FCallback) then
-    FCallback(FResponse);
-end;
-
-constructor TRunAndCaptureWorker.Create(const AExec: string;
-  const AParams: array of string; ACallback: TRunAndCaptureCallback);
-var
-  i: integer;
-begin
-  inherited Create(True);
-  FreeOnTerminate := False;
-  FExec := AExec;
-  FParams := TStringList.Create;
-  for i := Low(AParams) to High(AParams) do
-    FParams.Add(AParams[i]);
-  FCallback := ACallback;
-end;
-
-destructor TRunAndCaptureWorker.Destroy;
-begin
-  FParams.Free;
-  inherited Destroy;
-end;
-
-procedure TRunAndCaptureWorker.Execute;
-var
-  Proc: TProcess;
-  buf: array[0..4095] of byte;
-  n: integer;
-  outS: string;
-begin
-  FStdoutS := '';
-  FExitCode := -1;
-  Proc := TProcess.Create(nil);
-  try
-    Proc.Executable := FExec;
-    Proc.Options := Proc.Options + [poUsePipes];
-    Proc.ShowWindow := swoHide;
-    Proc.Parameters.Assign(FParams);
-    Proc.Execute;
-    while Proc.Running or (Proc.Output.NumBytesAvailable > 0) do
-    begin
-      n := Proc.Output.Read(buf, SizeOf(buf));
-      if n > 0 then
-      begin
-        SetString(outS, PAnsiChar(@buf[0]), n);
-        FStdoutS := FStdoutS + outS;
-      end
-      else
-        Sleep(5);
-    end;
-    FExitCode := Proc.ExitStatus;
-    if Assigned(FCallback) then
-      FCallback(FStdoutS, FExitCode);
-  finally
-    Proc.Free;
-  end;
-end;
-
 function RequestExAsync(const nativeObj: TTrndiNativeBase; const post: boolean; const endpoint: string;
   const params: array of string; const jsondata: string = '';
   cookieJar: TStringList = nil; followRedirects: boolean = true;
   maxRedirects: integer = 10; customHeaders: TStringList = nil;
   prefix: boolean = true; callback: THTTPResponseCallback = nil): TThread;
+var
+  resp: THTTPResponse;
 begin
-  Result := TRequestExWorker.Create(nativeObj, post, endpoint, params, jsondata,
-    cookieJar, followRedirects, maxRedirects, customHeaders, prefix, callback);
+  Result := TThread.CreateAnonymousThread(
+    procedure
+    begin
+      resp := nativeObj.requestEx(post, endpoint, params, jsondata,
+        cookieJar, followRedirects, maxRedirects, customHeaders, prefix);
+      if Assigned(callback) then
+        TThread.Synchronize(nil, procedure begin callback(resp); end);
+    end);
   Result.Start;
 end;
 
@@ -183,40 +56,117 @@ function RequestExWait(const nativeObj: TTrndiNativeBase; const post: boolean; c
   maxRedirects: integer = 10; customHeaders: TStringList = nil;
   prefix: boolean = true; TimeoutMs: Cardinal = 5000): THTTPResponse;
 var
-  worker: TRequestExWorker;
+  ev: TEvent;
+  done: Boolean;
+  respLocal: THTTPResponse;
 begin
-  worker := TRequestExWorker.Create(nativeObj, post, endpoint, params, jsondata,
-    cookieJar, followRedirects, maxRedirects, customHeaders, prefix, nil);
+  // Initialize empty response
+  respLocal.Body := '';
+  respLocal.Headers := TStringList.Create;
+  respLocal.Cookies := TStringList.Create;
+  respLocal.StatusCode := -1;
+  respLocal.FinalURL := '';
+  respLocal.RedirectCount := 0;
+  respLocal.Success := False;
+  respLocal.ErrorMessage := 'timeout';
+
+  done := False;
+  ev := TEvent.Create(nil, True, False, '');
   try
-    worker.Start;
-    worker.WaitFor(TimeoutMs);
-    Result := worker.Response;
+    RequestExAsync(nativeObj, post, endpoint, params, jsondata, cookieJar, followRedirects,
+      maxRedirects, customHeaders, prefix,
+      procedure(const r: THTTPResponse)
+      begin
+        // copy result into local and signal
+        respLocal := r;
+        done := True;
+        ev.SetEvent;
+      end);
+
+    if ev.WaitFor(TimeoutMs) = wrSignaled then
+    begin
+      Result := respLocal;
+    end
+    else
+    begin
+      Result := respLocal; // contains timeout marker
+    end;
   finally
-    worker.Free;
+    ev.Free;
   end;
 end;
 
 function RunAndCaptureSimpleAsync(const Exec: string;
   const Params: array of string; onFinish: TRunAndCaptureCallback): TThread;
+var
+  Proc: TProcess;
+  i: Integer;
+  acc: TStringList;
+  buf: array[0..4095] of byte;
+  n: integer;
+  outS: string;
+  exitCode: integer;
 begin
-  Result := TRunAndCaptureWorker.Create(Exec, Params, onFinish);
+  acc := TStringList.Create;
+  Proc := TProcess.Create(nil);
+  Proc.Executable := Exec;
+  for i := Low(Params) to High(Params) do
+    Proc.Parameters.Add(Params[i]);
+  Proc.Options := Proc.Options + [poUsePipes];
+
+  Result := TThread.CreateAnonymousThread(
+    procedure
+    begin
+      try
+        Proc.Execute;
+        while Proc.Running or (Proc.Output.NumBytesAvailable > 0) do
+        begin
+          n := Proc.Output.Read(buf, SizeOf(buf));
+          if n > 0 then
+          begin
+            SetString(outS, PAnsiChar(@buf[0]), n);
+            acc.Text := acc.Text + outS;
+          end
+          else
+            Sleep(5);
+        end;
+        exitCode := Proc.ExitStatus;
+        if Assigned(onFinish) then
+          TThread.Synchronize(nil, procedure begin onFinish(acc.Text, exitCode); end);
+      finally
+        Proc.Free;
+        acc.Free;
+      end;
+    end);
   Result.Start;
 end;
 
 function RunAndCaptureSimpleWait(const Exec: string; const Params: array of string;
   out StdoutS: string; out ExitCode: integer; TimeoutMs: Cardinal = 2000): boolean;
 var
-  worker: TRunAndCaptureWorker;
+  ev: TEvent;
+  done: Boolean;
 begin
-  worker := TRunAndCaptureWorker.Create(Exec, Params, nil);
+  StdoutS := '';
+  ExitCode := -1;
+  done := False;
+  ev := TEvent.Create(nil, True, False, '');
   try
-    worker.Start;
-    worker.WaitFor(TimeoutMs);
-    StdoutS := worker.StdoutS;
-    ExitCode := worker.ExitCode;
-    Result := ExitCode = 0;
+    RunAndCaptureSimpleAsync(Exec, Params,
+      procedure(const OutS: string; ECode: integer)
+      begin
+        StdoutS := OutS;
+        ExitCode := ECode;
+        done := True;
+        ev.SetEvent;
+      end);
+
+    if ev.WaitFor(TimeoutMs) = wrSignaled then
+      Result := done and (ExitCode = 0)
+    else
+      Result := False;
   finally
-    worker.Free;
+    ev.Free;
   end;
 end;
 
