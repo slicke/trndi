@@ -68,7 +68,7 @@ Sockets,
 netdb,
 BaseUnix,
 {$endif}
-{$ifdef BSD}
+{$if defined(BSD) and not defined(DARWIN)}
 linutils.kdebadge,
 Sockets,
 netdb,
