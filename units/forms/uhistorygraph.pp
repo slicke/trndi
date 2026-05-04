@@ -71,7 +71,7 @@ interface
 
 uses
 Classes, SysUtils, Forms, Controls, Graphics, Dialogs, Math, Menus,
-trndi.types, trndi.api, trndi.strings, slicke.ux.alert, dateutils, {$ifdef WINDOWS}trndi.native,{$endif}
+trndi.types, trndi.api, trndi.strings, slicke.ux.alert, dateutils,{$ifdef WINDOWS}trndi.native,{$endif}
 ExtDlgs, IntfGraphics, FPImage, FPWritePNG;
 
 type
@@ -151,7 +151,7 @@ private
     {** DrawBasalOverlay: Renders daily repeating basal schedule as a small
       area strip at the bottom of the plot. Values are scaled to
       `FMaxBasal` and clipped to the plot range. }
-    procedure DrawBasalOverlay(ACanvas: TCanvas; const PlotRect: TRect);
+  procedure DrawBasalOverlay(ACanvas: TCanvas; const PlotRect: TRect);
     {** DrawPolyline: Connects the chronological points with a thin
       line to indicate trend (optional visual aid). }
   procedure DrawPolyline(ACanvas: TCanvas; const PlotRect: TRect);
@@ -187,7 +187,7 @@ protected
   procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: integer);
     override;
   procedure MouseMove(Shift: TShiftState; X, Y: integer); override;
-  procedure KeyDown(var Key: Word; Shift: TShiftState); override;
+  procedure KeyDown(var Key: word; Shift: TShiftState); override;
   procedure DoClose(var CloseAction: TCloseAction); override;
 public
     {** Create: Construct a new TfHistoryGraph instance. The form
@@ -299,7 +299,7 @@ constructor TfHistoryGraph.Create(AOwner: TComponent);
 var
   menuItem: TMenuItem;
 
-  procedure AddRangeItem(const ACaption: string; const AMinutes: integer);
+procedure AddRangeItem(const ACaption: string; const AMinutes: integer);
   var
     rangeItem: TMenuItem;
   begin
@@ -532,7 +532,6 @@ begin
 
   // Iterate each day in the plot range; basal profile repeats daily
   for d := Trunc(FMinTime) to Trunc(FMaxTime) do
-  begin
     for j := 0 to High(FBasalProfile) do
     begin
       startMin := FBasalProfile[j].startMin;
@@ -564,7 +563,6 @@ begin
       ACanvas.Brush.Color := basalColor;
       ACanvas.Rectangle(x1, PlotRect.Bottom - h, x2, PlotRect.Bottom);
     end;
-  end;
 
   // Restore styles
   ACanvas.Pen.Style := psSolid;
@@ -853,7 +851,7 @@ var
   hoverRect: TRect;
   dotX, dotY: integer;
 
-  procedure ShiftRect(var R: TRect; const DX, DY: integer);
+procedure ShiftRect(var R: TRect; const DX, DY: integer);
   begin
     R.Left := R.Left + DX;
     R.Right := R.Right + DX;
@@ -952,7 +950,7 @@ begin
   Invalidate;
 end;
 
-procedure TfHistoryGraph.KeyDown(var Key: Word; Shift: TShiftState);
+procedure TfHistoryGraph.KeyDown(var Key: word; Shift: TShiftState);
 begin
   inherited KeyDown(Key, Shift);
   if (Key = VK_S) and (Shift = [ssCtrl]) then
@@ -1012,6 +1010,12 @@ begin
   Invalidate;
 end;
 
+{** ApplyRangeFilter: Rebuild the working point list in FPoints from FAllPoints
+  using FSelectedRangeMinutes as the active filter. When the range is set,
+  the routine drops readings older than the computed cutoff based on the most
+  recent reading timestamp; when the range is zero, all points are kept.
+  FHoveredPoint is reset so hover state never points at an index that may no
+  longer exist after filtering. }
 procedure TfHistoryGraph.ApplyRangeFilter;
 var
   i, idx: integer;
@@ -1044,6 +1048,10 @@ begin
   FHoveredPoint := -1;
 end;
 
+{** HandleRangeMenuClick: Process a range-menu selection from FRangeMenu.
+  Sender is expected to be a TMenuItem whose Tag stores the selected range
+  in minutes; the handler copies that value into FSelectedRangeMinutes,
+  refreshes the menu checks, reapplies filtering and updates the chart. }
 procedure TfHistoryGraph.HandleRangeMenuClick(Sender: TObject);
 begin
   if not (Sender is TMenuItem) then
@@ -1061,6 +1069,10 @@ begin
   Invalidate;
 end;
 
+{** UpdateRangeMenuChecks: Synchronize the checked state of FRangeMenu items
+  with FSelectedRangeMinutes so the active range remains visible in the menu.
+  Each menu item's Tag is treated as its range-in-minutes identifier and the
+  matching item is marked checked. }
 procedure TfHistoryGraph.UpdateRangeMenuChecks;
 var
   i: integer;
@@ -1076,8 +1088,12 @@ begin
   end;
 end;
 
+{** FormatHoverText: Build the hover tooltip text for a plotted point using
+    the BGReading timestamp and the converted Value already stored in the
+    graph point. Reading supplies the original reading time, while Value is the
+    display value in the configured unit used for the formatted hover string. }
 function TfHistoryGraph.FormatHoverText(const Reading: BGReading;
-  const Value: double): string;
+const Value: double): string;
 begin
   Result := Format(RS_HISTORY_GRAPH_HOVER_FMT,
     [Format(BG_MSG_SHORT[FUnit], [Value]), FormatDateTime('ddd hh:nn', Reading.date)]);
@@ -1089,7 +1105,7 @@ begin
 end;
 
 procedure TfHistoryGraph.SetThresholds(const cgmHi, cgmLo, cgmRangeHi,
-  cgmRangeLo: integer);
+cgmRangeLo: integer);
 begin
   FCgmHi := cgmHi;
   FCgmLo := cgmLo;
@@ -1214,11 +1230,16 @@ begin
         trendStr := BG_TRENDS[FPoints[i].Reading.trend];
         
         case FPoints[i].Reading.level of
-          BGRange: levelStr := 'In Range';
-          BGRangeHI: levelStr := 'Range High';
-          BGRangeLO: levelStr := 'Range Low';
-          BGHigh: levelStr := 'High';
-          BGLOW: levelStr := 'Low';
+        BGRange:
+          levelStr := 'In Range';
+        BGRangeHI:
+          levelStr := 'Range High';
+        BGRangeLO:
+          levelStr := 'Range Low';
+        BGHigh:
+          levelStr := 'High';
+        BGLOW:
+          levelStr := 'Low';
         else
           levelStr := 'Unknown';
         end;
@@ -1235,8 +1256,8 @@ begin
         
         line := Format('%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s',
           [dateStr, timeStr, valueStr, BG_UNIT_NAMES[FUnit], deltaStr, 
-           trendStr, levelStr, rssiStr, noiseStr, 
-           FPoints[i].Reading.Source, FPoints[i].Reading.sensor]);
+          trendStr, levelStr, rssiStr, noiseStr,
+          FPoints[i].Reading.Source, FPoints[i].Reading.sensor]);
         WriteLn(csvFile, line);
       end;
       
@@ -1406,13 +1427,8 @@ end;
 procedure ShowHistoryGraph(const Readings: BGResults; const UnitPref: BGUnit;
 const Palette: THistoryGraphPalette; const cgmHi, cgmLo, cgmRangeHi, cgmRangeLo: integer);
 begin
-  if not Assigned(fHistoryGraph) then begin
-    fHistoryGraph := TfHistoryGraph.Create(Application);
-    {$ifdef windows}
-    if TrndiNative.isDarkMode then
-      TrndiNative.setDarkMode(fHistoryGraph.Handle);
-    {$endif}
-  end;
+  if not Assigned(fHistoryGraph) then
+    fHistoryGraph := TfHistoryGraph.Create(Application){$ifdef windows}{$endif};
 
   fHistoryGraph.SetPalette(Palette);
   fHistoryGraph.SetThresholds(cgmHi, cgmLo, cgmRangeHi, cgmRangeLo);

@@ -26,11 +26,11 @@ procedure TrndiNetLog(const Msg: string); // Network log entry (debug only)
 implementation
 
 uses
-  Classes, SysUtils
-  {$ifdef DARWIN}
+Classes, SysUtils
+{$ifdef DARWIN}
   , CocoaAll, nsutils.nshelpers
-  {$endif}
-  ;
+{$endif}
+;
 
 var
 LogFilePath: string;
@@ -64,8 +64,8 @@ const
   AttemptDelayMs = 120; // ms
 var
   LogFilePath: string;
-  attempt: Integer;
-  wroteOk: Boolean;
+  attempt: integer;
+  wroteOk: boolean;
   F: TextFile;
   Line: string;
   {$ifdef DARWIN}
@@ -95,57 +95,53 @@ begin
   Line := '[' + DateTimeToStr(Now) + '] ' + Msg;
 
   // Try appending the single line with retries; on persistent failure write to .locked
-  wroteOk := False;
+  wroteOk := false;
   for attempt := 1 to MaxAttempts do
-  begin
-    try
-      AssignFile(F, LogFilePath);
-      {$I-}
-      if not FileExists(LogFilePath) then
-        Rewrite(F)
-      else
-        Append(F);
-      {$I+}
-      if IOResult = 0 then
-      begin
-        Writeln(F, Line);
-        CloseFile(F);
-        wroteOk := True;
-        Break;
-      end
-      else
-      begin
+  try
+    AssignFile(F, LogFilePath);
+    {$I-}
+    if not FileExists(LogFilePath) then
+      Rewrite(F)
+    else
+      Append(F);
+    {$I+}
+    if IOResult = 0 then
+    begin
+      Writeln(F, Line);
+      CloseFile(F);
+      wroteOk := true;
+      Break;
+    end
+    else
+    begin
         // Could not open (possibly locked) — wait and retry
-        try CloseFile(F) except end;
-        Sleep(AttemptDelayMs);
-      end;
-    except
-      on E: Exception do
-      begin
-        try CloseFile(F) except end;
-        Sleep(AttemptDelayMs);
-      end;
+      try CloseFile(F) except end;
+      Sleep(AttemptDelayMs);
+    end;
+  except
+    on E: Exception do
+    begin
+      try CloseFile(F) except end;
+      Sleep(AttemptDelayMs);
     end;
   end;
 
   if not wroteOk then
-  begin
-    try
-      AssignFile(F, LogFilePath + '.locked');
-      {$I-}
-      if not FileExists(LogFilePath + '.locked') then
-        Rewrite(F)
-      else
-        Append(F);
-      {$I+}
-      if IOResult = 0 then
-      begin
-        Writeln(F, Line);
-        CloseFile(F);
-      end;
-    except
-      // Swallow errors — logger must not raise during debugging
+  try
+    AssignFile(F, LogFilePath + '.locked');
+    {$I-}
+    if not FileExists(LogFilePath + '.locked') then
+      Rewrite(F)
+    else
+      Append(F);
+    {$I+}
+    if IOResult = 0 then
+    begin
+      Writeln(F, Line);
+      CloseFile(F);
     end;
+  except
+      // Swallow errors — logger must not raise during debugging
   end;
 end;
 {$else}
@@ -177,10 +173,10 @@ end;
 {$endif}
 
 initialization
-  {$ifdef DEBUG}
+{$ifdef DEBUG}
   // Truncate the debug log at process start so we append during runtime.
-  try
-    {$ifdef DARWIN}
+try
+{$ifdef DARWIN}
     try
       LogFilePath := NSStrToStr(
         NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, True)
@@ -194,28 +190,28 @@ initialization
     except
       LogFilePath := FallbackAppPath + 'trndi.log';
     end;
-    {$else}
-    LogFilePath := 'trndi.log';
-    {$endif}
+{$else}
+LogFilePath := 'trndi.log';
+{$endif}
 
     // Best-effort truncate; if locked, ignore and continue.
-    try
-      AssignFile(FLogFile, LogFilePath);
-      {$I-}
-      Rewrite(FLogFile);
-      {$I+}
-      if IOResult = 0 then
-      begin
-        Writeln(FLogFile, '[' + DateTimeToStr(Now) + '] ' + 'trndi.log: truncated at startup');
-        CloseFile(FLogFile);
-      end;
-    except
-      // ignore
-    end;
-  except
-    // ignore
+try
+  AssignFile(FLogFile, LogFilePath);
+  {$I-}
+  Rewrite(FLogFile);
+  {$I+}
+  if IOResult = 0 then
+  begin
+    Writeln(FLogFile, '[' + DateTimeToStr(Now) + '] ' + 'trndi.log: truncated at startup');
+    CloseFile(FLogFile);
   end;
-  {$endif}
+except
+      // ignore
+end;
+except
+    // ignore
+end;
+{$endif}
 
 finalization
   // nothing

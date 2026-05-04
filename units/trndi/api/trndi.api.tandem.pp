@@ -1357,6 +1357,12 @@ begin
     httpResponse := native.RequestExWait(false, TANDEM_LOGIN_PAGE_URL, [], '', cookieJar, true, 10, customHeaders, false);
     log(Format('Tandem.Connect: login page success=%s status=%d bytes=%d err=%s',
       [BoolToStr(httpResponse.Success, true), httpResponse.StatusCode, Length(httpResponse.Body), httpResponse.ErrorMessage]));
+    
+    // Free the SSO priming response before reassigning
+    if httpResponse.Headers <> nil then
+      httpResponse.Headers.Free;
+    if httpResponse.Cookies <> nil then
+      httpResponse.Cookies.Free;
 
     // Step 2: Login (POST credentials as JSON) with cookie jar
     loginUrl := GetLoginApiUrl;

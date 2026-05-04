@@ -654,6 +654,14 @@ var
   LUseEmailAuth: boolean;
   LHTTPResp, LHTTPResp2, LHTTPRespTime: THTTPResponse;
   hdrs: TStringList;
+  procedure FreeResponse(var AResp: THTTPResponse);
+  begin
+    if AResp.Headers <> nil then
+      FreeAndNil(AResp.Headers);
+    if AResp.Cookies <> nil then
+      FreeAndNil(AResp.Cookies);
+    AResp := Default(THTTPResponse);
+  end;
 begin
   // Detect if user provided email (contains @) or phone (starts with +)
   // These require two-step auth: AuthenticatePublisherAccount → LoginPublisherAccountById
@@ -672,13 +680,15 @@ begin
     // Step 1: Get account ID from email/phone
     // Request account id (may return JSON or plain quoted string)
     LHTTPResp := native.RequestExWait(true, DEXCOM_AUTHENTICATE_ENDPOINT, [], LBody, nil, true, 10, nil, true);
+    LResponse := LHTTPResp.Body;
+    if LHTTPResp.Headers <> nil then FreeAndNil(LHTTPResp.Headers);
+    if LHTTPResp.Cookies <> nil then FreeAndNil(LHTTPResp.Cookies);
     if not LHTTPResp.Success then
     begin
       Result := false;
       lastErr := sDexNewErrLogin + ' (Dex1a): ' + LHTTPResp.ErrorMessage;
       Exit;
     end;
-    LResponse := LHTTPResp.Body;
     if not TryGetTokenOrError(LResponse, LAccountID, LParseErr) then
     begin
       // Fallback: some servers return a plain quoted accountId; strip quotes
@@ -688,6 +698,8 @@ begin
       begin
         Result := false;
         lastErr := sDexNewErrLogin + ' (Dex1a): ' + LParseErr;
+        if LHTTPResp.Headers <> nil then FreeAndNil(LHTTPResp.Headers);
+        if LHTTPResp.Cookies <> nil then FreeAndNil(LHTTPResp.Cookies);
         Exit;
       end;
     end;
@@ -702,6 +714,8 @@ begin
         lastErr := sDexNewErrPass + ' (Dex1)'
       else
         lastErr := sDexNewErrLogin + ' (Dex1a): ' + LAccountID;
+      if LHTTPResp.Headers <> nil then FreeAndNil(LHTTPResp.Headers);
+      if LHTTPResp.Cookies <> nil then FreeAndNil(LHTTPResp.Cookies);
       Exit;
     end;
 
@@ -715,27 +729,33 @@ begin
       // Fallback: try single-step login by account name (nickname)
       LNameBody := Format('{ "accountName": "%s", "password": "%s", "applicationId": "%s" }',
         [JSONEscape(FUserName), JSONEscape(FPassword), DEXCOM_APPLICATION_IDS[FRegion]]);
+      if LHTTPResp.Headers <> nil then FreeAndNil(LHTTPResp.Headers);
+      if LHTTPResp.Cookies <> nil then FreeAndNil(LHTTPResp.Cookies);
       LHTTPResp := native.RequestExWait(true, DEXCOM_LOGIN_BY_NAME_ENDPOINT, [], LNameBody, nil, true, 10, nil, true);
+      LNameResp := LHTTPResp.Body;
+      if LHTTPResp.Headers <> nil then FreeAndNil(LHTTPResp.Headers);
+      if LHTTPResp.Cookies <> nil then FreeAndNil(LHTTPResp.Cookies);
       if not LHTTPResp.Success then
       begin
         Result := false;
         lastErr := sDexNewErrLogin + ' (Dex1b): ' + LHTTPResp.ErrorMessage;
         Exit;
       end;
-      LNameResp := LHTTPResp.Body;
       if not TryGetTokenOrError(LNameResp, FSessionID, LParseErr) then
         FSessionID := StringReplace(LNameResp, '"', '', [rfReplaceAll]);
       FSessionID := Trim(FSessionID);
       if FSessionID = '' then
       begin
         Result := false;
-        lastErr := sDexNewErrLogin + ' (Dex1b): ' + LHTTPResp.Body;
+        lastErr := sDexNewErrLogin + ' (Dex1b): ' + LNameResp;
         Exit;
       end;
     end
     else
     begin
       LResponse := LHTTPResp.Body;
+      if LHTTPResp.Headers <> nil then FreeAndNil(LHTTPResp.Headers);
+      if LHTTPResp.Cookies <> nil then FreeAndNil(LHTTPResp.Cookies);
       if not TryGetTokenOrError(LResponse, FSessionID, LParseErr) then
       begin
         // Fallback: some servers reply with a plain quoted session token
@@ -754,27 +774,30 @@ begin
   begin
     // Single-step authentication for plain usernames.
     LHTTPResp2 := native.RequestExWait(true, DEXCOM_LOGIN_BY_NAME_ENDPOINT, [], LBody, nil, true, 10, nil, true);
-    if not LHTTPResp2.Success then
-    begin
-      Result := false;
-      lastErr := sDexNewErrLogin + ' (Dex1): ' + LHTTPResp2.ErrorMessage;
-      Exit;
-    end;
+    try
+      if not LHTTPResp2.Success then
+      begin
+        Result := false;
+        lastErr := sDexNewErrLogin + ' (Dex1): ' + LHTTPResp2.ErrorMessage;
+        Exit;
+      end;
 
-    LResponse := LHTTPResp2.Body;
-    if Trim(LResponse) = '' then
-      // Fallback for environments where requestEx may return a successful
-      // status with an empty body for this endpoint.
-      LResponse := native.request(true, DEXCOM_LOGIN_BY_NAME_ENDPOINT, [], LBody,
-        'Accept=application/json', true);
+      LResponse := LHTTPResp2.Body;
+      if Trim(LResponse) = '' then
+        // Fallback for environments where requestEx may return a successful
+        // status with an empty body for this endpoint.
+        LResponse := native.request(true, DEXCOM_LOGIN_BY_NAME_ENDPOINT, [], LBody,
+          'Accept=application/json', true);
 
-    if not TryGetTokenOrError(LResponse, FSessionID, LParseErr) then
-    begin
-      Result := false;
-      lastErr := sDexNewErrLogin + ' (Dex1): ' + LParseErr;
-      Exit;
+      if not TryGetTokenOrError(LResponse, FSessionID, LParseErr) then
+      begin
+        Result := false;
+        lastErr := sDexNewErrLogin + ' (Dex1): ' + LParseErr;
+        Exit;
+      end;
+    finally
+      FreeResponse(LHTTPResp2);
     end;
-    FSessionID := Trim(StringReplace(FSessionID, '"', '', [rfReplaceAll]));
   end;
 
   // Check for various error responses before validation
@@ -811,16 +834,19 @@ begin
 
   // 3) Retrieve system UTC time for time-diff calibration
   hdrs := TStringList.Create;
+  LHTTPRespTime := Default(THTTPResponse);
   try
     hdrs.Add('Accept: application/json');
     LHTTPRespTime := native.RequestExWait(false, DEXCOM_TIME_ENDPOINT, [], '', nil, true, 10, hdrs, true);
+    LTimeResponse := LHTTPRespTime.Body;
+    if LHTTPRespTime.Headers <> nil then FreeAndNil(LHTTPRespTime.Headers);
+    if LHTTPRespTime.Cookies <> nil then FreeAndNil(LHTTPRespTime.Cookies);
     if not LHTTPRespTime.Success then
     begin
       lastErr := 'Cannot fetch Dexcom time: ' + LHTTPRespTime.ErrorMessage;
       Result := false;
       Exit;
     end;
-    LTimeResponse := LHTTPRespTime.Body;
     // Parse server time using centralized helper (handles XML, /Date(ms)/, JSON ServerTime, ISO)
     if not ParseDexcomTime(LTimeResponse, LServerDateTime) then
     begin
@@ -829,6 +855,7 @@ begin
       Exit;
     end;
   finally
+    FreeResponse(LHTTPRespTime);
     hdrs.Free;
   end;
 

@@ -97,6 +97,31 @@ StrUtils, slicke.touchdetection, ufloat, uhistorygraph, LCLType, trndi.webserver
 type
 TFloatIntDictionary = specialize TDictionary<single, integer>;
   // Specialized TDictionary
+TfBG = class;
+TConnectivityCheckThread = class(TThread)
+private
+  FOwner: TfBG;
+  FIsDNSRequest: boolean;
+  FOnline: boolean;
+  procedure ApplyResult;
+protected
+  procedure Execute; override;
+public
+  constructor Create(AOwner: TfBG; IsDNSRequest: boolean);
+end;
+
+TPredictionThread = class(TThread)
+private
+  FOwner: TfBG;
+  FNumPredictions: integer;
+  FPredictionLastReadingTime: TDateTime;
+  FPreds: BGResults;
+  procedure ApplyResult;
+protected
+  procedure Execute; override;
+public
+  constructor Create(AOwner: TfBG; NumPredictions: integer);
+end;
 {$ifdef DARWIN}
 TDotControl = TLabel;
 {$else}
@@ -384,6 +409,7 @@ private
   procedure UpdateAlertSnoozeMenu;
   function ClassifyConnectionStatus(const ErrorText: string): string;
   procedure SetConnectionBadge(const StatusText: string; const BadgeColor: TColor);
+  procedure ShutdownBackgroundThreads;
 private
   FStoredWindowInfo: record // Saved geometry and window state for restore/toggle
     Left, Top, Width, Height: integer;
@@ -409,6 +435,9 @@ private
   FLastTirColor: TColor;
   FLastConnectionStatus: string;
   FLastConnectionDetail: string;
+  FConnectivityThread: TConnectivityCheckThread;
+  FPingThread: TConnectivityCheckThread;
+  FPredictionThread: TPredictionThread;
   FInternetBadgeBg: TShape;
   FLastTimerTick: TDateTime; // Last timer tick for wake detection
   FForceRefresh: boolean; // Force bypass of cached API reads on wake
@@ -927,6 +956,8 @@ begin
   // Ensure shutdown flag is set
   FShuttingDown := true;
 
+  ShutdownBackgroundThreads;
+
   // Stop web server first to prevent callbacks during shutdown
   StopWebServer;
 
@@ -1312,7 +1343,6 @@ begin
   
   // Build prediction results using direct string concatenation (small dataset optimization)
   if Length(bgr) > 0 then
-  begin
     for i := 0 to High(bgr) do
       msg := msg + Format(RS_SERVICE_PREDICT_POINT, [
         i + 1,
@@ -1320,7 +1350,6 @@ begin
         BG_UNIT_NAMES[un],
         FormatDateTime('hh:nn', bgr[i].date)  // Show time
         ]) + LineEnding;
-  end;
 
   ShowMessage(msg);
 end;
@@ -1576,6 +1605,8 @@ begin
   CloseAction := caFree;
   {$endif}
 
+  ShutdownBackgroundThreads;
+
   {$ifdef TrndiExt}
   // NOTE: Application.Terminate is now called in FormCloseQuery for earlier detection
   
@@ -1649,6 +1680,36 @@ begin
   end;
 
   // Let normal form closure process continue with CloseAction := caFree
+end;
+
+procedure TfBG.ShutdownBackgroundThreads;
+begin
+  if Assigned(FConnectivityThread) then
+  begin
+    FConnectivityThread.Terminate;
+    while not FConnectivityThread.Finished do
+      Application.ProcessMessages;
+    FConnectivityThread.WaitFor;
+    FreeAndNil(FConnectivityThread);
+  end;
+
+  if Assigned(FPingThread) then
+  begin
+    FPingThread.Terminate;
+    while not FPingThread.Finished do
+      Application.ProcessMessages;
+    FPingThread.WaitFor;
+    FreeAndNil(FPingThread);
+  end;
+
+  if Assigned(FPredictionThread) then
+  begin
+    FPredictionThread.Terminate;
+    while not FPredictionThread.Finished do
+      Application.ProcessMessages;
+    FPredictionThread.WaitFor;
+    FreeAndNil(FPredictionThread);
+  end;
 end;
 
 procedure TfBG.fbReadingsDblClick(Sender: TObject);
@@ -2650,14 +2711,14 @@ begin
       ffloat.OnHide := @TfFloatOnHide;
     fFloat.Color := fBg.Color;
     fFloat.lVal.Caption := lval.Caption;
-      fFloat.lVal.Visible := true;
+    fFloat.lVal.Visible := true;
     if fFloat.miFontMain.Checked then
     begin
       fFloat.lVal.font.color := lval.font.color;
       fFloat.larrow.font.color := fFloat.lVal.font.color;
     end;
     fFloat.lArrow.Caption := lArrow.Caption;
-      fFloat.lArrow.Visible := fFloat.lArrow.Caption <> '';
+    fFloat.lArrow.Visible := fFloat.lArrow.Caption <> '';
     if pnMultiUser.Visible then
     begin
       fFloat.pnMultiUser.Visible := true;
@@ -3238,13 +3299,11 @@ begin
 
   // Repaint badge immediately so "show sensor expiry" takes effect right away.
   if FLastConnectionStatus <> '' then
-  begin
     if Assigned(FInternetBadgeBg) then
       SetConnectionBadge(FLastConnectionStatus, FInternetBadgeBg.Brush.Color)
     else
       SetConnectionBadge(FLastConnectionStatus, RGBToColor(60, 150, 90));
-  end;
-  
+
   // Recalculate layout and scale to account for potential changes
   // Perform an immediate (synchronous) relayout and scaling to avoid
   // timer-based reflow which can cause visual glitches after font changes
@@ -4768,7 +4827,28 @@ end;
 procedure TfBG.tPingTimer(Sender: TObject);
 begin
   tPing.Enabled := false;
-  TConnectivityCheckThread.Create(Self, Sender = miDNS);
+  if Sender = miDNS then
+  begin
+    if Assigned(FConnectivityThread) then
+    begin
+      if not FConnectivityThread.Finished then
+        Exit;
+      FConnectivityThread.WaitFor;
+      FreeAndNil(FConnectivityThread);
+    end;
+    FConnectivityThread := TConnectivityCheckThread.Create(Self, true)
+  end
+  else
+  begin
+    if Assigned(FPingThread) then
+    begin
+      if not FPingThread.Finished then
+        Exit;
+      FPingThread.WaitFor;
+      FreeAndNil(FPingThread);
+    end;
+    FPingThread := TConnectivityCheckThread.Create(Self, false);
+  end;
 end;
 
 procedure TfBG.tResizeTimer(Sender: TObject);
@@ -5675,7 +5755,14 @@ begin
   end;
 
   // Otherwise spawn a background worker to compute predictions and return immediately
-  TPredictionThread.Create(Self, 9);
+  if Assigned(FPredictionThread) then
+  begin
+    if not FPredictionThread.Finished then
+      Exit;
+    FPredictionThread.WaitFor;
+    FreeAndNil(FPredictionThread);
+  end;
+  FPredictionThread := TPredictionThread.Create(Self, 9);
   // Show temporary unavailable text until worker finishes
   lPredict.Caption := RS_PREDICTIONS_UNAVAILABLE;
 end;
@@ -5740,9 +5827,12 @@ begin
 
   // Validate
   validCount := 0;
-  if closest5 >= 0 then Inc(validCount);
-  if closest10 >= 0 then Inc(validCount);
-  if closest15 >= 0 then Inc(validCount);
+  if closest5 >= 0 then
+    Inc(validCount);
+  if closest10 >= 0 then
+    Inc(validCount);
+  if closest15 >= 0 then
+    Inc(validCount);
   if validCount = 0 then
   begin
     lPredict.Visible := false;
@@ -6356,14 +6446,12 @@ begin
 
     if native.getBoolSetting('alerts.notice.missing', true) then
       if (not missingAlerted) or (MinutesBetween(Now, lastMissingAlert) >= 15) then
-      begin
         if not AlertsSnoozed then
         begin
           native.attention(RS_ATTENTION_MISSING, RS_ATTENTION_MISSING_DESC);
           missingAlerted := true;
           lastMissingAlert := Now;
-        end;
-      end// Only show notification if 15 minutes have passed since last alert
+        end// Only show notification if 15 minutes have passed since last alert
     ;
     Exit;
   end;
@@ -6499,7 +6587,7 @@ end;
     for semi-transparent text rendering in warning panels.
 }
 function TfBG.BlendFontColorWithBackground(const ForeColor: TColor;
-  const BgColor: TColor; const AlphaRatio: double): TColor;
+const BgColor: TColor; const AlphaRatio: double): TColor;
 begin
   Result := lclintf.RGB(
     Round(GetRValue(ForeColor) * (1 - AlphaRatio) + GetRValue(BgColor) * AlphaRatio),
@@ -6510,7 +6598,7 @@ end;
 {** Render a warning label with proper font blending, text alignment and positioning.
     Consolidates the repeated label rendering logic used in pnWarningPaint. }
 procedure TfBG.RenderWarningLabel(const LabelControl: TLabel; const P: TPanel;
-  const BgColor: TColor; const AlphaRatio: double);
+const BgColor: TColor; const AlphaRatio: double);
 var
   relX, relY, textW: integer;
 begin

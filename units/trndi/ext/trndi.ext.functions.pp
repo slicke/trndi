@@ -38,7 +38,7 @@ Classes, SysUtils, mormot.lib.quickjs, mormot.core.base, strutils, fgl,
 Dialogs, slicke.ux.alert, Math, types, trndi.strings, trndi.native;
 
 var
-  ConsoleBuffer: TStringList;
+ConsoleBuffer: TStringList;
 
 (*
   Resource strings (can be translated if needed):
@@ -1009,9 +1009,7 @@ begin
     ConsoleBuffer.Clear;
   end
   else
-  begin
     ShowMessage(sLogNoBuffered);
-  end;
 
   // Return undefined
   Result := JS_UNDEFINED;
@@ -1082,10 +1080,10 @@ begin
 end;
 
 initialization
-  ConsoleBuffer := nil;
+ConsoleBuffer := nil;
 
 finalization
-  if ConsoleBuffer <> nil then
-    ConsoleBuffer.Free;
+if ConsoleBuffer <> nil then
+  ConsoleBuffer.Free;
 
 end.
