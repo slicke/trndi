@@ -772,8 +772,6 @@ begin
       TrndiDLog(Format('HTTP GET: no proxy configured; url=%s', [SafeUrlForLog(url)]));
     {$endif}
 
-    curl_global_init(CURL_GLOBAL_DEFAULT);
-
     // Try with proxy first if configured
     if proxyHost <> '' then
     begin
@@ -891,7 +889,6 @@ begin
 
   responseStream := TStringStream.Create('');
   try
-    curl_global_init(CURL_GLOBAL_DEFAULT);
     handle := curl_easy_init();
     if handle = nil then
     begin

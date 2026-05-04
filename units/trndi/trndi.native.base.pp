@@ -357,6 +357,20 @@ DEFAULT_MIN_FONT_SIZE = 8;
 
 implementation
 
+{$IF DEFINED(X_PC)}
+var
+  CurlGlobalInitialized: boolean = false;
+
+procedure EnsureCurlGlobalInit;
+begin
+  if not CurlGlobalInitialized then
+  begin
+    curl_global_init(CURL_GLOBAL_DEFAULT);
+    CurlGlobalInitialized := true;
+  end;
+end;
+{$ENDIF}
+
 // C-compatible write callback used by libcurl to collect response data.
 function CurlWriteCallback(buffer: pchar; size, nmemb: SizeUInt;
 userdata: Pointer): SizeUInt; cdecl;
@@ -1224,6 +1238,9 @@ end;
  -----------------------}
 constructor TTrndiNativeBase.Create(ua, base: string);
 begin
+  {$IF DEFINED(X_PC)}
+  EnsureCurlGlobalInit;
+  {$ENDIF}
   useragent := ua;
   baseurl := base;
   // Check if we're in dark mode on creation
@@ -1922,8 +1939,6 @@ begin
       address := address + '&' + sx;
   end;
 
-  // Initialize libcurl (global init is safe to call repeatedly)
-  curl_global_init(CURL_GLOBAL_DEFAULT);
   headers := nil;
   responseStream := TStringStream.Create('');
   try
@@ -2090,7 +2105,6 @@ begin
       address := address + '&' + sx;
   end;
 
-  curl_global_init(CURL_GLOBAL_DEFAULT);
   headers := nil;
   responseStream := TStringStream.Create('');
   headerStream := TStringStream.Create('');
@@ -3729,8 +3743,11 @@ begin
       p^ := ',';
       Inc(p);
     end;
-    Move(pansichar(val[i])^, p^, Length(val[i]));
-    Inc(p, Length(val[i]));
+    if Length(val[i]) > 0 then
+    begin
+      Move(pansichar(val[i])^, p^, Length(val[i]));
+      Inc(p, Length(val[i]));
+    end;
   end;
 
   SetSetting(keyname, res, global);

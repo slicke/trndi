@@ -120,6 +120,7 @@ private
   FOwner: TfBG;
   FNumPredictions: integer;
   FPredictionLastReadingTime: TDateTime;
+  FSuccess: boolean;
   FPreds: BGResults;
   procedure ApplyResult;
 protected
@@ -5743,6 +5744,7 @@ var
   trend: BGTrend;
   minutes, targetMinutes: integer;
   validCount: integer;
+  predictionHorizon: integer;
 begin
   if FShuttingDown then
   begin
@@ -5773,10 +5775,6 @@ begin
     Exit;
   end;
 
-  // Cache is stale - invalidate it before spawning new worker
-  SetLength(PredictionCache, 0);
-  PredictionLastReadingTime := 0;
-
   // Otherwise spawn a background worker to compute predictions and return immediately
   if Assigned(FPredictionThread) then
   begin
@@ -5785,7 +5783,8 @@ begin
     FPredictionThread.WaitFor;
     FreeAndNil(FPredictionThread);
   end;
-  FPredictionThread := TPredictionThread.Create(Self, 9);
+  predictionHorizon := native.GetIntSetting('predictions.future_limit', DEFAULT_PREDICTION_FUTURE_LIMIT);
+  FPredictionThread := TPredictionThread.Create(Self, predictionHorizon);
   // Show temporary unavailable text until worker finishes
   lPredict.Caption := RS_PREDICTIONS_UNAVAILABLE;
 end;

@@ -47,6 +47,8 @@ var
   TimeVal: TTimeVal;
   SelectResult: longint;
   NonBlocking: u_long;
+  ErrCode: integer;
+  ErrLen: integer;
 begin
   Result := false;
 
@@ -85,7 +87,11 @@ begin
 
         SelectResult := select(XSocket + 1, nil, @FDSet, nil, @TimeVal);
         if SelectResult > 0 then
-          Result := true;
+        begin
+          ErrLen := SizeOf(ErrCode);
+          if getsockopt(XSocket, SOL_SOCKET, SO_ERROR, PChar(@ErrCode), ErrLen) = 0 then
+            Result := ErrCode = 0;
+        end;
         // SelectResult = 0 means timeout (not reachable)
         // SelectResult < 0 means select error
       end;
@@ -133,6 +139,8 @@ function IsURLReachable(const URL: string; Port: word = 80): boolean;
     TimeVal: TTimeVal;
     SelectResult: longint;
     Flags: longint;
+    ErrCode: LongInt;
+    ErrLen: TSockLen;
   begin
     Result := false;
 
@@ -173,7 +181,11 @@ function IsURLReachable(const URL: string; Port: word = 80): boolean;
 
           SelectResult := fpSelect(Socket + 1, nil, @FDSet, nil, @TimeVal);
           if SelectResult > 0 then
-            Result := true;
+          begin
+            ErrLen := SizeOf(ErrCode);
+            if fpGetSockOpt(Socket, SOL_SOCKET, SO_ERROR, @ErrCode, @ErrLen) = 0 then
+              Result := ErrCode = 0;
+          end;
           // SelectResult = 0 means timeout (not reachable)
           // SelectResult < 0 means select error
         end;
@@ -225,6 +237,7 @@ begin
   FreeOnTerminate := false;
   FOwner := AOwner;
   FNumPredictions := NumPredictions;
+  FSuccess := false;
   if Assigned(FOwner) then
     FPredictionLastReadingTime := FOwner.lastReading.date
   else
@@ -238,6 +251,9 @@ begin
     Exit;
 
   if FOwner.lastReading.date <> FPredictionLastReadingTime then
+    Exit;
+
+  if not FSuccess then
     Exit;
 
   // Store cached predictions and let the form render them
@@ -259,7 +275,9 @@ begin
     ok := false;
   end;
 
-  // If prediction failed, ensure we clear any partial results
+  FSuccess := ok;
+
+  // If prediction failed, keep existing cache by not overwriting it
   if not ok then
     SetLength(FPreds, 0);
 
