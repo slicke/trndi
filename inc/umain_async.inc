@@ -17,6 +17,9 @@ begin
   if not Assigned(FOwner) then
     Exit;
 
+  if FOwner.FShuttingDown then
+    Exit;
+
   if FOnline then
   begin
     if FIsDNSRequest then
@@ -248,6 +251,9 @@ end;
 procedure TPredictionThread.ApplyResult;
 begin
   if not Assigned(FOwner) then
+    Exit;
+
+  if FOwner.FShuttingDown then
     Exit;
 
   if FOwner.lastReading.date <> FPredictionLastReadingTime then
