@@ -63,7 +63,7 @@ jobs:
             fi
 
             checked=$((checked + 1))
-            if curl -fsS --range 0-0 --max-time 30 -o /dev/null "$url"; then
+            if curl -fsS -L --range 0-0 --max-time 30 -o /dev/null "$url"; then
               echo "OK   $url" >> "$REPORT"
             else
               echo "FAIL $url" >> "$REPORT"

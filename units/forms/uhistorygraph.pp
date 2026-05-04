@@ -1140,53 +1140,56 @@ begin
 
   saveDialog := TSavePictureDialog.Create(nil);
   try
-    saveDialog.Title := RS_HISTORY_GRAPH_SAVE_TITLE;
-    saveDialog.Filter := 'PNG Images|*.png';
-    saveDialog.DefaultExt := 'png';
-    saveDialog.FileName := Format('trndi-history-%s.png',
-      [FormatDateTime('yyyy-mm-dd-hhnnss', Now)]);
-
-    if not saveDialog.Execute then
-      Exit;
-
-    bmp := TBitmap.Create;
     try
-      bmp.SetSize(ClientWidth, ClientHeight);
-      bmp.Canvas.Brush.Color := Color;
-      bmp.Canvas.FillRect(Rect(0, 0, ClientWidth, ClientHeight));
+      saveDialog.Title := RS_HISTORY_GRAPH_SAVE_TITLE;
+      saveDialog.Filter := 'PNG Images|*.png';
+      saveDialog.DefaultExt := 'png';
+      saveDialog.FileName := Format('trndi-history-%s.png',
+        [FormatDateTime('yyyy-mm-dd-hhnnss', Now)]);
 
-      plotRect := GetPlotRect;
-      DrawAxesAndGrid(bmp.Canvas, plotRect);
-      DrawThresholdLines(bmp.Canvas, plotRect);
-      DrawBasalOverlay(bmp.Canvas, plotRect);
-      DrawPolyline(bmp.Canvas, plotRect);
-      DrawPoints(bmp.Canvas, plotRect);
-      DrawLegend(bmp.Canvas, plotRect);
+      if not saveDialog.Execute then
+        Exit;
 
-      intfImg := TLazIntfImage.Create(0, 0);
+      bmp := TBitmap.Create;
       try
-        intfImg.LoadFromBitmap(bmp.Handle, bmp.MaskHandle);
-        writer := TFPWriterPNG.Create;
+        bmp.SetSize(ClientWidth, ClientHeight);
+        bmp.Canvas.Brush.Color := Color;
+        bmp.Canvas.FillRect(Rect(0, 0, ClientWidth, ClientHeight));
+
+        plotRect := GetPlotRect;
+        DrawAxesAndGrid(bmp.Canvas, plotRect);
+        DrawThresholdLines(bmp.Canvas, plotRect);
+        DrawBasalOverlay(bmp.Canvas, plotRect);
+        DrawPolyline(bmp.Canvas, plotRect);
+        DrawPoints(bmp.Canvas, plotRect);
+        DrawLegend(bmp.Canvas, plotRect);
+
+        intfImg := TLazIntfImage.Create(0, 0);
         try
-          writer.Indexed := false;
-          writer.WordSized := false;
-          writer.UseAlpha := false;
-          intfImg.SaveToFile(saveDialog.FileName, writer);
+          intfImg.LoadFromBitmap(bmp.Handle, bmp.MaskHandle);
+          writer := TFPWriterPNG.Create;
+          try
+            writer.Indexed := false;
+            writer.WordSized := false;
+            writer.UseAlpha := false;
+            intfImg.SaveToFile(saveDialog.FileName, writer);
+          finally
+            writer.Free;
+          end;
         finally
-          writer.Free;
+          intfImg.Free;
         end;
       finally
-        intfImg.Free;
+        bmp.Free;
       end;
-    finally
-      bmp.Free;
+    except
+      on E: Exception do
+        ExtHTML(uxdAuto, 'Error', Format(RS_HISTORY_GRAPH_SAVE_ERROR, [E.Message]),
+          [mbOK], uxmtError, 12.5);
     end;
-  except
-    on E: Exception do
-      ExtHTML(uxdAuto, 'Error', Format(RS_HISTORY_GRAPH_SAVE_ERROR, [E.Message]),
-        [mbOK], uxmtError, 12.5);
+  finally
+    saveDialog.Free;
   end;
-  saveDialog.Free;
 end;
 
 procedure TfHistoryGraph.SaveAsCSV(Sender: TObject);

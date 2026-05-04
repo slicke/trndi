@@ -66,15 +66,18 @@ BaseUnix,
 linutils.kdebadge,
 Sockets,
 netdb,
+BaseUnix,
 {$endif}
 {$ifdef BSD}
 linutils.kdebadge,
 Sockets,
 netdb,
+BaseUnix,
 {$endif}
 {$ifdef HAIKU}
 Sockets,
 netdb,
+BaseUnix,
 {$endif}
 {$ifdef Windows}
 winsock,
@@ -1604,6 +1607,12 @@ begin
   // Explicitly set CloseAction to ensure the form is actually freed
   CloseAction := caFree;
   {$endif}
+
+  // Disable timers before shutting down threads to prevent new threads from being created
+  if Assigned(tPing) then
+    tPing.Enabled := false;
+  if Assigned(tAgo) then
+    tAgo.Enabled := false;
 
   ShutdownBackgroundThreads;
 
@@ -4826,6 +4835,8 @@ end;
 
 procedure TfBG.tPingTimer(Sender: TObject);
 begin
+  if FShuttingDown then
+    Exit;
   tPing.Enabled := false;
   if Sender = miDNS then
   begin
@@ -5731,6 +5742,12 @@ var
   minutes, targetMinutes: integer;
   validCount: integer;
 begin
+  if FShuttingDown then
+  begin
+    lPredict.Visible := false;
+    Exit;
+  end;
+
   // Safety check - api might not be initialized yet
   if not Assigned(api) then
   begin
@@ -5753,6 +5770,10 @@ begin
     RenderPredictionCache(PredictionCache);
     Exit;
   end;
+
+  // Cache is stale - invalidate it before spawning new worker
+  SetLength(PredictionCache, 0);
+  PredictionLastReadingTime := 0;
 
   // Otherwise spawn a background worker to compute predictions and return immediately
   if Assigned(FPredictionThread) then

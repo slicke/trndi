@@ -43,6 +43,10 @@ var
   XSocket: TSocket;
   Addr: TSockAddr;
   HostEnt: PHostEnt;
+  FDSet: TFDSet;
+  TimeVal: TTimeVal;
+  SelectResult: longint;
+  NonBlocking: u_long;
 begin
   Result := false;
 
@@ -61,8 +65,30 @@ begin
       PSockAddrIn(@Addr)^.sin_port := htons(Port);
       PSockAddrIn(@Addr)^.sin_addr := PInAddr(HostEnt^.h_addr_list^)^;
 
+      // Set socket to non-blocking mode
+      NonBlocking := 1;
+      if ioctlsocket(XSocket, -2147195266, @NonBlocking) <> 0 then
+        Exit;
+
+      // Attempt connect (will return WSAEWOULDBLOCK)
       if connect(XSocket, Addr, SizeOf(Addr)) = 0 then
+      begin
         Result := true;
+      end
+      else if WSAGetLastError = WSAEWOULDBLOCK then
+      begin
+        // Use select with 2-second timeout to wait for writability
+        FD_ZERO(FDSet);
+        FD_SET(XSocket, FDSet);
+        TimeVal.tv_sec := 2;
+        TimeVal.tv_usec := 0;
+
+        SelectResult := select(XSocket + 1, nil, @FDSet, nil, @TimeVal);
+        if SelectResult > 0 then
+          Result := true;
+        // SelectResult = 0 means timeout (not reachable)
+        // SelectResult < 0 means select error
+      end;
     except
       Result := false;
     end;
@@ -82,11 +108,18 @@ begin
     ];
 
   for i := Low(IPs) to High(IPs) do
+  begin
+    if Terminated then
+    begin
+      Result := false;
+      Exit;
+    end;
     if IsURLReachable(IPs[i], 53) then
     begin
       Result := true;
       Exit;
     end;
+  end;
 
   Result := false;
 end;
@@ -96,6 +129,10 @@ function IsURLReachable(const URL: string; Port: word = 80): boolean;
     Socket: longint;
     Addr: TInetSockAddr;
     HostAddr: THostAddr;
+    FDSet: TFDSet;
+    TimeVal: TTimeVal;
+    SelectResult: longint;
+    Flags: longint;
   begin
     Result := false;
 
@@ -115,8 +152,31 @@ function IsURLReachable(const URL: string; Port: word = 80): boolean;
         Addr.sin_port := htons(Port);
         Addr.sin_addr := HostAddr;
 
+        // Set socket to non-blocking mode
+        Flags := fpFcntl(Socket, F_GETFL, 0);
+        if Flags < 0 then
+          Exit;
+        if fpFcntl(Socket, F_SETFL, Flags or O_NONBLOCK) < 0 then
+          Exit;
+
+        // Attempt connect (will return -1 with errno = EINPROGRESS)
         if fpConnect(Socket, @Addr, SizeOf(Addr)) = 0 then
-          Result := true;
+          Result := true
+        else
+        if fpGetErrno = ESysEINPROGRESS then
+        begin
+          // Use fpSelect with 2-second timeout to wait for writability
+          FpFD_ZERO(FDSet);
+          FpFD_SET(Socket, FDSet);
+          TimeVal.tv_sec := 2;
+          TimeVal.tv_usec := 0;
+
+          SelectResult := fpSelect(Socket + 1, nil, @FDSet, nil, @TimeVal);
+          if SelectResult > 0 then
+            Result := true;
+          // SelectResult = 0 means timeout (not reachable)
+          // SelectResult < 0 means select error
+        end;
       except
         Result := false;
       end;
@@ -136,11 +196,18 @@ function IsInternetOnline: boolean;
       ];
 
     for i := Low(IPs) to High(IPs) do
+    begin
+      if Terminated then
+      begin
+        Result := false;
+        Exit;
+      end;
       if IsURLReachable(IPs[i], 53) then
       begin
         Result := true;
         Exit;
       end;
+    end;
 
     Result := false;
   end;

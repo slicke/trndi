@@ -564,6 +564,10 @@ prefix: boolean = true; TimeoutMs: cardinal = 5000): THTTPResponse;
 var
   worker: TRequestExWaitThread;
   completed: boolean;
+  i: integer;
+  j: integer;
+  cookieName: string;
+  existingIndex: integer;
 begin
   worker := TRequestExWaitThread.Create(Self, post, endpoint, params, jsondata,
     cookieJar, followRedirects, maxRedirects, customHeaders, prefix);
@@ -585,9 +589,28 @@ begin
     Result.Cookies := TStringList.Create;
     if Assigned(worker.Response.Cookies) then
       Result.Cookies.Assign(worker.Response.Cookies);
-    // Copy cookies back into caller's cookieJar if provided
+    // Merge response cookies into caller's cookieJar, preserving existing cookies
     if Assigned(cookieJar) then
-      cookieJar.Assign(Result.Cookies);
+    begin
+      for i := 0 to Result.Cookies.Count - 1 do
+      begin
+        // Try to update existing cookie by name (before '='), or add if not found
+        cookieName := Copy(Result.Cookies[i], 1, Pos('=', Result.Cookies[i]) - 1);
+        existingIndex := -1;
+        for j := 0 to cookieJar.Count - 1 do
+        begin
+          if Copy(cookieJar[j], 1, Pos('=', cookieJar[j]) - 1) = cookieName then
+          begin
+            existingIndex := j;
+            Break;
+          end;
+        end;
+        if existingIndex >= 0 then
+          cookieJar[existingIndex] := Result.Cookies[i]
+        else
+          cookieJar.Add(Result.Cookies[i]);
+      end;
+    end;
     worker.WaitFor;
     worker.Free;
   end
@@ -611,7 +634,11 @@ begin
         worker.Free;
       end;
       if not completed then
+      begin
+        // Prevent worker from dereferencing Self after timeout
+        worker.FOwner := nil;
         worker.FreeOnTerminate := true;
+      end;
     except end;
   end;
 end;
@@ -676,6 +703,9 @@ begin
   FCustomHeadersOwned.Free;
   FCookieJarOwned.Free;
   FDone.Free;
+  // Free response lists that were created in Execute or timeout path
+  FreeAndNil(FResponse.Headers);
+  FreeAndNil(FResponse.Cookies);
   inherited Destroy;
 end;
 
@@ -689,8 +719,17 @@ begin
     reqParams[i] := FParams[i];
   try
     try
-      FResponse := FOwner.requestEx(FPost, FEndpoint, reqParams, FJsonData,
-        FCookieJar, FFollowRedirects, FMaxRedirects, FCustomHeaders, FPrefix);
+      // Guard against FOwner being cleared during timeout
+      if Assigned(FOwner) and not Terminated then
+        FResponse := FOwner.requestEx(FPost, FEndpoint, reqParams, FJsonData,
+          FCookieJar, FFollowRedirects, FMaxRedirects, FCustomHeaders, FPrefix)
+      else
+      begin
+        // Timeout or early termination cleared FOwner; return failure
+        FResponse.Success := false;
+        FResponse.StatusCode := -1;
+        FResponse.ErrorMessage := 'Cancelled';
+      end;
     except
       on E: Exception do
       begin
