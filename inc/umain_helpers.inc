@@ -56,26 +56,26 @@ end;
 procedure TfBG.APIReceiver(const msg: string; etype: TrndiAPIMsg);
 begin
   case etype of
-    TrndiAPIMsg.alert:
-      UXMessage('API Alert', msg, uxmtWarning);
-    TrndiAPIMsg.notice:
-      begin end;
-    TrndiAPIMsg.status:
-      TrndiDLog(msg);
-    {$ifdef DEBUG}
-    TrndiAPIMsg.log:
-      TrndiDLog(Format('[%s] %s', [self.className, msg]));
-    {$endif}
+  TrndiAPIMsg.alert:
+    UXMessage('API Alert', msg, uxmtWarning);
+  TrndiAPIMsg.notice:
+    ;
+  TrndiAPIMsg.status:
+    TrndiDLog(msg);
+  {$ifdef DEBUG}
+  TrndiAPIMsg.log:
+    TrndiDLog(Format('[%s] %s', [self.className, msg]));
+  {$endif}
   end;
 end;
 
 // Returns vertical offset needed to bring all trend dots fully inside their parent.
 // Sign convention: negative = dots are above (need to move down); positive = dots are below (need to move up).
 // Pure helper operating on plain data for unit tests
-function DotsInViewFromInfos(const Dots: array of TDotInfo; ParentHeight: Integer): Integer;
+function DotsInViewFromInfos(const Dots: array of TDotInfo; ParentHeight: integer): integer;
 var
   x: TDotInfo;
-  bottom, overflow: Integer;
+  bottom, overflow: integer;
   adjustSide: TTrndiBool;
 const
   Tol = 5; // pixel tolerance to ignore tiny rounding differences
@@ -103,27 +103,27 @@ begin
       end;
     end
     else
-    begin
-      // Out-of-bottom (only when parent height known/positive)
-      if (ParentHeight > 0) and (bottom > ParentHeight + Tol) then
-        if adjustSide in [tbFalse, tbUnknown] then
-        begin
+    if (ParentHeight > 0) and (bottom > ParentHeight + Tol) then
+      if adjustSide in [tbFalse, tbUnknown] then
+      begin
           // Compute actual overflow beyond tolerance to avoid false positives
-          overflow := (bottom - (ParentHeight + Tol));
+        overflow := (bottom - (ParentHeight + Tol));
           // Pick the largest overflow
-          Result := Max(Result, overflow);
-          adjustSide := tbFalse;
-        end;
-    end;
+        Result := Max(Result, overflow);
+        adjustSide := tbFalse;
+      end// Out-of-bottom (only when parent height known/positive)
+    ;
   end;
 end;
+
+
 
 function TfBG.dotsInView: integer;
 var
   x: TDotControl;
   infos: array of TDotInfo;
   idx, cnt: integer;
-  parentHeight: Integer;
+  parentHeight: integer;
 begin
   // Pre-count valid dots and allocate once to avoid repeated reallocations
   cnt := 0;
@@ -265,7 +265,7 @@ function GetActiveScreen: TMonitor; // Use TMonitor if that's what Screen.Monito
   end;
 var
   activemonitor: TMonitor;
-  {$endif}
+{$endif}
 var
   posValue: TrndiPos;
 begin

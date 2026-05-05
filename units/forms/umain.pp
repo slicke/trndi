@@ -61,20 +61,25 @@ trndi.Ext.Engine, trndi.Ext.jsfuncs, trndi.ext.promise, mormot.core.base,
 {$ifdef Darwin}
 CocoaAll, MacOSAll,
 BaseUnix,
+Sockets,
+netdb,
 {$endif}
 {$ifdef LINUX}
 linutils.kdebadge,
 Sockets,
 netdb,
+BaseUnix,
 {$endif}
-{$ifdef BSD}
+{$if defined(BSD) and not defined(DARWIN)}
 linutils.kdebadge,
 Sockets,
 netdb,
+BaseUnix,
 {$endif}
 {$ifdef HAIKU}
 Sockets,
 netdb,
+BaseUnix,
 {$endif}
 {$ifdef Windows}
 winsock,
@@ -97,6 +102,32 @@ StrUtils, slicke.touchdetection, ufloat, uhistorygraph, LCLType, trndi.webserver
 type
 TFloatIntDictionary = specialize TDictionary<single, integer>;
   // Specialized TDictionary
+TfBG = class;
+TConnectivityCheckThread = class(TThread)
+private
+  FOwner: TfBG;
+  FIsDNSRequest: boolean;
+  FOnline: boolean;
+  procedure ApplyResult;
+protected
+  procedure Execute; override;
+public
+  constructor Create(AOwner: TfBG; IsDNSRequest: boolean);
+end;
+
+TPredictionThread = class(TThread)
+private
+  FOwner: TfBG;
+  FNumPredictions: integer;
+  FPredictionLastReadingTime: TDateTime;
+  FSuccess: boolean;
+  FPreds: BGResults;
+  procedure ApplyResult;
+protected
+  procedure Execute; override;
+public
+  constructor Create(AOwner: TfBG; NumPredictions: integer);
+end;
 {$ifdef DARWIN}
 TDotControl = TLabel;
 {$else}
@@ -384,6 +415,7 @@ private
   procedure UpdateAlertSnoozeMenu;
   function ClassifyConnectionStatus(const ErrorText: string): string;
   procedure SetConnectionBadge(const StatusText: string; const BadgeColor: TColor);
+  procedure ShutdownBackgroundThreads;
 private
   FStoredWindowInfo: record // Saved geometry and window state for restore/toggle
     Left, Top, Width, Height: integer;
@@ -409,6 +441,9 @@ private
   FLastTirColor: TColor;
   FLastConnectionStatus: string;
   FLastConnectionDetail: string;
+  FConnectivityThread: TConnectivityCheckThread;
+  FPingThread: TConnectivityCheckThread;
+  FPredictionThread: TPredictionThread;
   FInternetBadgeBg: TShape;
   FLastTimerTick: TDateTime; // Last timer tick for wake detection
   FForceRefresh: boolean; // Force bypass of cached API reads on wake
@@ -659,6 +694,7 @@ private
       when unavailable, the label is hidden.
    }
   procedure UpdatePredictionLabel;
+  procedure RenderPredictionCache(const bgr: BGResults);
   {$ifdef DARWIN}
   procedure ToggleFullscreenMac;
   {$endif}
@@ -844,6 +880,7 @@ implementation
 
 {$I ../../inc/tfuncs.inc}
 {$I ../../inc/umain_ext.inc}
+{$I ../../inc/umain_async.inc}
 {$I ../../inc/umain_helpers.inc}
 {$I ../../inc/umain_init.inc}
 
@@ -856,6 +893,15 @@ BADGE_FLASH_DURATION_LOW_MS = 20000;
 BADGE_FLASH_REPEAT_DELAY_LOW_MS = 400;
 BADGE_FLASH_DURATION_OK_MS = 6000;
 BADGE_FLASH_REPEAT_DELAY_OK_MS = 500;
+DEFAULT_PREDICTION_FUTURE_LIMIT = 7;
+
+function CaptionStartsWithDigit(const S: string): boolean;
+begin
+  Result := false;
+  if Length(S) = 0 then
+    Exit;
+  Result := S[1] in ['0'..'9'];
+end;
 
 function CurrentHistoryGraphPalette: THistoryGraphPalette;
 begin
@@ -915,6 +961,8 @@ procedure TfBG.FormDestroy({%H-}Sender: TObject);
 begin
   // Ensure shutdown flag is set
   FShuttingDown := true;
+
+  ShutdownBackgroundThreads;
 
   // Stop web server first to prevent callbacks during shutdown
   StopWebServer;
@@ -1301,7 +1349,6 @@ begin
   
   // Build prediction results using direct string concatenation (small dataset optimization)
   if Length(bgr) > 0 then
-  begin
     for i := 0 to High(bgr) do
       msg := msg + Format(RS_SERVICE_PREDICT_POINT, [
         i + 1,
@@ -1309,7 +1356,6 @@ begin
         BG_UNIT_NAMES[un],
         FormatDateTime('hh:nn', bgr[i].date)  // Show time
         ]) + LineEnding;
-  end;
 
   ShowMessage(msg);
 end;
@@ -1565,6 +1611,14 @@ begin
   CloseAction := caFree;
   {$endif}
 
+  // Disable timers before shutting down threads to prevent new threads from being created
+  if Assigned(tPing) then
+    tPing.Enabled := false;
+  if Assigned(tAgo) then
+    tAgo.Enabled := false;
+
+  ShutdownBackgroundThreads;
+
   {$ifdef TrndiExt}
   // NOTE: Application.Terminate is now called in FormCloseQuery for earlier detection
   
@@ -1640,6 +1694,36 @@ begin
   // Let normal form closure process continue with CloseAction := caFree
 end;
 
+procedure TfBG.ShutdownBackgroundThreads;
+begin
+  if Assigned(FConnectivityThread) then
+  begin
+    FConnectivityThread.Terminate;
+    while not FConnectivityThread.Finished do
+      Application.ProcessMessages;
+    FConnectivityThread.WaitFor;
+    FreeAndNil(FConnectivityThread);
+  end;
+
+  if Assigned(FPingThread) then
+  begin
+    FPingThread.Terminate;
+    while not FPingThread.Finished do
+      Application.ProcessMessages;
+    FPingThread.WaitFor;
+    FreeAndNil(FPingThread);
+  end;
+
+  if Assigned(FPredictionThread) then
+  begin
+    FPredictionThread.Terminate;
+    while not FPredictionThread.Finished do
+      Application.ProcessMessages;
+    FPredictionThread.WaitFor;
+    FreeAndNil(FPredictionThread);
+  end;
+end;
+
 procedure TfBG.fbReadingsDblClick(Sender: TObject);
 begin
 
@@ -1692,7 +1776,6 @@ var
   tmp: integer;
   clientH: integer;
   dotHeight: integer;
-  bmp: TBitmap;
 
   debugY: integer;
   debugValue: single;
@@ -1739,21 +1822,15 @@ begin
     clientH := Self.ClientHeight;
 
   // Get dot height for centering lines through the middle of dots
-  // Calculate using a temporary bitmap to avoid affecting actual dots during paint
-  // IMPORTANT: Must match the exact calculation used in ResizeDot to ensure alignment
+  // Match the same calculation used in ResizeDot without allocating a bitmap.
   dotHeight := 0;
   if (Length(TrendDots) > 0) and Assigned(TrendDots[1]) then
   begin
-    bmp := TBitmap.Create;
-    try
-      bmp.Canvas.Font.Assign(TrendDots[1].Font);
-      // Use the same font size formula as ResizeDot: (lVal.Font.Size div 8) * dotscale
-      bmp.Canvas.Font.Size := round(Max((lVal.Font.Size div 8) * dotscale, 28));
-      // Use the same height calculation as ResizeDot: Max(TextHeight, Font.Size)
-      dotHeight := Max(bmp.Canvas.TextHeight(DOT_GRAPH), bmp.Canvas.Font.Size);
-    finally
-      bmp.Free;
-    end;
+    TrendDots[1].Canvas.Font.Assign(TrendDots[1].Font);
+    // Use the same font size formula as ResizeDot: (lVal.Font.Size div 8) * dotscale
+    TrendDots[1].Canvas.Font.Size := round(Max((lVal.Font.Size div 8) * dotscale, 28));
+    // Use the same height calculation as ResizeDot: Max(TextHeight, Font.Size)
+    dotHeight := Max(TrendDots[1].Canvas.TextHeight(DOT_GRAPH), TrendDots[1].Canvas.Font.Size);
   end;
 
   // Decide whether to draw low/high range indicators (0 disables)
@@ -2646,14 +2723,14 @@ begin
       ffloat.OnHide := @TfFloatOnHide;
     fFloat.Color := fBg.Color;
     fFloat.lVal.Caption := lval.Caption;
-      fFloat.lVal.Visible := true;
+    fFloat.lVal.Visible := true;
     if fFloat.miFontMain.Checked then
     begin
       fFloat.lVal.font.color := lval.font.color;
       fFloat.larrow.font.color := fFloat.lVal.font.color;
     end;
     fFloat.lArrow.Caption := lArrow.Caption;
-      fFloat.lArrow.Visible := fFloat.lArrow.Caption <> '';
+    fFloat.lArrow.Visible := fFloat.lArrow.Caption <> '';
     if pnMultiUser.Visible then
     begin
       fFloat.pnMultiUser.Visible := true;
@@ -3234,13 +3311,11 @@ begin
 
   // Repaint badge immediately so "show sensor expiry" takes effect right away.
   if FLastConnectionStatus <> '' then
-  begin
     if Assigned(FInternetBadgeBg) then
       SetConnectionBadge(FLastConnectionStatus, FInternetBadgeBg.Brush.Color)
     else
       SetConnectionBadge(FLastConnectionStatus, RGBToColor(60, 150, 90));
-  end;
-  
+
   // Recalculate layout and scale to account for potential changes
   // Perform an immediate (synchronous) relayout and scaling to avoid
   // timer-based reflow which can cause visual glitches after font changes
@@ -4438,7 +4513,6 @@ var
   showTimestamp: boolean;
   timeStr: string;
   ix: integer;
-  sx: string;
   
   // For prediction time updates
 procedure UpdatePredictionTimes;
@@ -4706,9 +4780,8 @@ begin
     // Update prediction times if predictions are visible
     UpdatePredictionTimes;
 
-    if native.TryGetSetting('predictions.future_limit', sx) then
-      ix := native.GetIntSetting('predictions.future_limit', 7) else
-      predictFuture(ix);
+    ix := native.GetIntSetting('predictions.future_limit', DEFAULT_PREDICTION_FUTURE_LIMIT);
+    predictFuture(ix);
   except
     lAgo.Caption := '🕑 ' + RS_COMPUTE_FAILED_AGO;
   end;
@@ -4764,111 +4837,32 @@ begin
 end;
 
 procedure TfBG.tPingTimer(Sender: TObject);
-{$ifdef Windows}
-function IsURLReachable(const URL: string; Port: word = 80): boolean;
-  var
-    XSocket: TSocket;
-    Addr: TSockAddr;
-    HostEnt: PHostEnt;
-  begin
-    Result := false;
-
-    XSocket := socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    if XSocket = INVALID_SOCKET then
-      Exit;
-
-    try
-      try
-      // DNS resolution
-        HostEnt := gethostbyname(pchar(URL));
-        if HostEnt = nil then
-          Exit;
-
-      // Set up address
-        FillByte(Addr, SizeOf(Addr), 0);
-        PSockAddrIn(@Addr)^.sin_family := AF_INET;
-        PSockAddrIn(@Addr)^.sin_port := htons(Port);
-        PSockAddrIn(@Addr)^.sin_addr := PInAddr(HostEnt^.h_addr_list^)^;
-
-      // Try to connect
-        if connect(XSocket, Addr, SizeOf(Addr)) = 0 then
-          Result := true;
-      except
-        Result := false;
-      end;
-    finally
-      closesocket(XSocket);
-    end;
-  end;
-{$else}
-function IsURLReachable(const URL: string; Port: word = 80): boolean;
-  var
-    Socket: longint;
-    Addr: TInetSockAddr;
-    HostAddr: THostAddr;
-  begin
-    Result := false;
-
-    Socket := fpSocket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    if Socket < 0 then
-      Exit;
-
-    try
-      try
-        HostAddr := StrToHostAddr(URL);
-
-        if HostAddr.s_addr = 0 then
-          Exit;
-
-        FillByte(Addr, SizeOf(Addr), 0);
-        Addr.sin_family := AF_INET;
-        Addr.sin_port := htons(Port);
-        Addr.sin_addr := HostAddr;
-
-        if fpConnect(Socket, @Addr, SizeOf(Addr)) = 0 then
-          Result := true;
-      except
-        Result := false;
-      end;
-    finally
-      CloseSocket(Socket);
-    end;
-  end;
-{$endif}
-function IsInternetOnline: boolean;
-  var
-    IPs: array of string;
-    i: integer;
-  begin
-    IPs := [
-      '8.8.8.8',       // Google DNS
-      '1.1.1.1',       // Cloudflare DNS
-      '208.67.222.222' // OpenDNS
-      ];
-
-    for i := Low(IPs) to High(IPs) do
-      if IsURLReachable(IPs[i], 53) then
-      begin
-        Result := true;
-        Exit;
-      end;
-
-    Result := false;
-  end;
 begin
+  if FShuttingDown then
+    Exit;
   tPing.Enabled := false;
-  if not IsInternetOnline then
+  if Sender = miDNS then
   begin
-    FLastConnectionDetail := RS_NO_INTERNET;
-    SetConnectionBadge(RS_CONN_RETRYING, RGBToColor(185, 60, 45));
+    if Assigned(FConnectivityThread) then
+    begin
+      if not FConnectivityThread.Finished then
+        Exit;
+      FConnectivityThread.WaitFor;
+      FreeAndNil(FConnectivityThread);
+    end;
+    FConnectivityThread := TConnectivityCheckThread.Create(Self, true)
   end
   else
   begin
-    if (sender = miDNS) then
-      ShowMessage(RS_DNS_INTERNET_OK);
+    if Assigned(FPingThread) then
+    begin
+      if not FPingThread.Finished then
+        Exit;
+      FPingThread.WaitFor;
+      FreeAndNil(FPingThread);
+    end;
+    FPingThread := TConnectivityCheckThread.Create(Self, false);
   end;
-
-  tPing.Enabled := true;
 end;
 
 procedure TfBG.tResizeTimer(Sender: TObject);
@@ -5483,7 +5477,6 @@ end;
 function TfBG.IsDataFresh: boolean;
 var
   reading: BGReading;   // Holder for the latest (newest) reading
-  i: integer;     // Temp int used when checking if caption starts with a digit
 begin
   Result := false;
   if firstboot then
@@ -5499,7 +5492,7 @@ begin
     tMissed.OnTimer(tMissed);         // Immediately trigger the "missed" handler
     lVal.Font.Style := [fsStrikeOut]; // Strike through the value to indicate stale data
     // If the value label isn't numeric (e.g., "Setup") or arrow is a placeholder, show neutral placeholders
-    if (not TryStrToInt(lVal.Caption[1], i)) or (lArrow.Caption = 'lArrow') then
+    if (not CaptionStartsWithDigit(lVal.Caption)) or (lArrow.Caption = 'lArrow') then
     begin // Dont show "Setup" or similar on boot
       lVal.Caption := '--';           // Placeholder when data is stale
       lArrow.Caption := '';           // Hide trend arrow when stale
@@ -5751,7 +5744,14 @@ var
   trend: BGTrend;
   minutes, targetMinutes: integer;
   validCount: integer;
+  predictionHorizon: integer;
 begin
+  if FShuttingDown then
+  begin
+    lPredict.Visible := false;
+    Exit;
+  end;
+
   // Safety check - api might not be initialized yet
   if not Assigned(api) then
   begin
@@ -5765,65 +5765,81 @@ begin
     Exit;
   end;
 
+  // Make prediction computation asynchronous to avoid blocking the UI.
   lPredict.Visible := true;
 
-  // Request more predictions to get ones closer to 5, 10, 15 minutes
-  if not api.predictReadings(9, bgr) then
+  // If we have cached predictions that match the current reading, render them
+  if (Length(PredictionCache) > 0) and (PredictionLastReadingTime = lastReading.date) then
   begin
-    lPredict.Caption := RS_PREDICTIONS_UNAVAILABLE;
+    RenderPredictionCache(PredictionCache);
     Exit;
   end;
 
-  // Get the last reading time and value to calculate trend
+  // Otherwise spawn a background worker to compute predictions and return immediately
+  if Assigned(FPredictionThread) then
+  begin
+    if not FPredictionThread.Finished then
+      Exit;
+    FPredictionThread.WaitFor;
+    FreeAndNil(FPredictionThread);
+  end;
+  predictionHorizon := native.GetIntSetting('predictions.future_limit', DEFAULT_PREDICTION_FUTURE_LIMIT);
+  FPredictionThread := TPredictionThread.Create(Self, predictionHorizon);
+  // Show temporary unavailable text until worker finishes
+  lPredict.Caption := RS_PREDICTIONS_UNAVAILABLE;
+end;
+
+procedure TfBG.RenderPredictionCache(const bgr: BGResults);
+var
+  pred1, pred2, pred3: string;
+  lastReadingTime: TDateTime;
+  lastReadingValue: glucose;
+  i, closest5, closest10, closest15, closestTarget: integer;
+  diff5, diff10, diff15, diffTarget, currentDiff: integer;
+  delta: glucose;
+  trend: BGTrend;
+  minutes, targetMinutes: integer;
+  validCount: integer;
+begin
+  if not Assigned(api) then
+    Exit;
+
+  if not PredictGlucoseReading then
+    Exit;
+
+  // Use the cached last reading time/value
   lastReadingTime := lastReading.date;
   lastReadingValue := lastReading.convert(mgdl);
-  
-  // Cache for dynamic time updates
-  PredictionCache := bgr;
-  PredictionLastReadingTime := lastReadingTime;
 
   // Find predictions closest to 5, 10, 15 and the configured short horizon
-  // Ensure we pick different predictions for each slot
-  closest5 := -1;
-  closest10 := -1;
-  closest15 := -1;
-  closestTarget := -1;
-  diff5 := MaxInt;
-  diff10 := MaxInt;
-  diff15 := MaxInt;
-  diffTarget := MaxInt;
+  closest5 := -1; closest10 := -1; closest15 := -1; closestTarget := -1;
+  diff5 := MaxInt; diff10 := MaxInt; diff15 := MaxInt; diffTarget := MaxInt;
   targetMinutes := PredictShortMinutes;
 
   for i := 0 to High(bgr) do
   begin
     currentDiff := Round(MinutesBetween(bgr[i].date, lastReadingTime));
-    
-    // Skip predictions that are too close to current time (less than 2 minutes ahead)
     if currentDiff < 2 then
-      continue;
-    
-    // Find closest to 5 minutes
+      Continue;
+
     if Abs(currentDiff - 5) < diff5 then
     begin
       diff5 := Abs(currentDiff - 5);
       closest5 := i;
     end;
-    
-    // Find closest to 10 minutes (but different from closest5)
+
     if (Abs(currentDiff - 10) < diff10) and (i <> closest5) then
     begin
       diff10 := Abs(currentDiff - 10);
       closest10 := i;
     end;
-    
-    // Find closest to 15 minutes (but different from closest5 and closest10)
+
     if (Abs(currentDiff - 15) < diff15) and (i <> closest5) and (i <> closest10) then
     begin
       diff15 := Abs(currentDiff - 15);
       closest15 := i;
     end;
 
-    // Track closest to configured short horizon
     if Abs(currentDiff - targetMinutes) < diffTarget then
     begin
       diffTarget := Abs(currentDiff - targetMinutes);
@@ -5831,7 +5847,7 @@ begin
     end;
   end;
 
-  // Check if we have at least one valid prediction
+  // Validate
   validCount := 0;
   if closest5 >= 0 then
     Inc(validCount);
@@ -5839,31 +5855,27 @@ begin
     Inc(validCount);
   if closest15 >= 0 then
     Inc(validCount);
-  
   if validCount = 0 then
   begin
     lPredict.Visible := false;
     Exit;
   end;
 
-  // Format predictions with clock emoji, trend arrows, and values
+  // Render
   if PredictShortMode then
   begin
-    // Short mode: show only configured-horizon prediction with arrow
     if closestTarget >= 0 then
     begin
       delta := bgr[closestTarget].convert(mgdl) - lastReadingValue;
       trend := CalculateTrendFromDelta(delta);
       minutes := Round(MinutesBetween(bgr[closestTarget].date, lastReadingTime));
-      
+
       if PredictShortShowValue then
       begin
-        // Show time and value with arrow
         if PredictShortFullArrows then
           lPredict.Caption := Format('⏱%d'' %s %.1f', [minutes, BG_TREND_ARROWS_UTF[trend], bgr[closestTarget].convert(un)])
         else
         begin
-          // Use simplified arrows with value
           case trend of
           TdDoubleUp, TdSingleUp, TdFortyFiveUp:
             lPredict.Caption := Format('⏱%d'' ↗ %.1f', [minutes, bgr[closestTarget].convert(un)]);
@@ -5878,7 +5890,6 @@ begin
       end
       else
       begin
-        // Show only arrow (no value)
         if PredictShortFullArrows then
           lPredict.Caption := BG_TREND_ARROWS_UTF[trend]
         else
@@ -5891,8 +5902,7 @@ begin
             lPredict.Caption := '↘';
           else
             lPredict.Caption := '?';
-          end// Map to simplified arrows: up=↗, flat=→, down=↘
-        ;
+          end;
       end;
     end
     else
@@ -5900,7 +5910,6 @@ begin
   end
   else
   begin
-    // Full mode: show time, trend, and value
     if closest5 >= 0 then
     begin
       minutes := Round(MinutesBetween(bgr[closest5].date, lastReadingTime));
@@ -5934,16 +5943,12 @@ begin
     lPredict.Caption := Format('%s | %s | %s', [pred1, pred2, pred3]);
   end;
 
-  // Caption/content length can change between updates (short/full mode,
-  // arrow-only vs value). Keep layout anchored after re-scaling.
   if lPredict.Visible then
   begin
     if DIFF_ALIGN = taRightJustify then
       ScaleLbl(lPredict, taCenter, tlBottom, false)
     else
       ScaleLbl(lPredict, taRightJustify, tlBottom, false);
-    // Keep horizontal anchoring stable during data refresh; Top is handled
-    // by the main resize/layout path to avoid small vertical jumps.
     lPredict.Left := ClientWidth - lPredict.Width - 5;
   end;
 end;
@@ -6295,8 +6300,6 @@ end;
 //     panel would make them unreadable.
 procedure TfBG.showWarningPanel(const message: string;
 clearDisplayValues: boolean = false; opacity: integer = 235; showDetails: boolean = true);
-var
-  i: integer;
 begin
   pnWarning.Visible := true;
   tPing.Enabled := true;  // Enable network ping check when no readings available
@@ -6311,7 +6314,7 @@ begin
   lMissing.Caption := '⚠️ ' + message + sLineBreak;
 
   if clearDisplayValues then
-    if (not TryStrToInt(lVal.Caption[1], i)) or (lArrow.Caption = 'lArrow') then
+    if (not CaptionStartsWithDigit(lVal.Caption)) or (lArrow.Caption = 'lArrow') then
     begin // Dont show "Setup" or similar on boot
       lVal.Caption := '--';
       lArrow.Caption := '';
@@ -6465,14 +6468,12 @@ begin
 
     if native.getBoolSetting('alerts.notice.missing', true) then
       if (not missingAlerted) or (MinutesBetween(Now, lastMissingAlert) >= 15) then
-      begin
         if not AlertsSnoozed then
         begin
           native.attention(RS_ATTENTION_MISSING, RS_ATTENTION_MISSING_DESC);
           missingAlerted := true;
           lastMissingAlert := Now;
-        end;
-      end// Only show notification if 15 minutes have passed since last alert
+        end// Only show notification if 15 minutes have passed since last alert
     ;
     Exit;
   end;
@@ -6608,7 +6609,7 @@ end;
     for semi-transparent text rendering in warning panels.
 }
 function TfBG.BlendFontColorWithBackground(const ForeColor: TColor;
-  const BgColor: TColor; const AlphaRatio: double): TColor;
+const BgColor: TColor; const AlphaRatio: double): TColor;
 begin
   Result := lclintf.RGB(
     Round(GetRValue(ForeColor) * (1 - AlphaRatio) + GetRValue(BgColor) * AlphaRatio),
@@ -6619,7 +6620,7 @@ end;
 {** Render a warning label with proper font blending, text alignment and positioning.
     Consolidates the repeated label rendering logic used in pnWarningPaint. }
 procedure TfBG.RenderWarningLabel(const LabelControl: TLabel; const P: TPanel;
-  const BgColor: TColor; const AlphaRatio: double);
+const BgColor: TColor; const AlphaRatio: double);
 var
   relX, relY, textW: integer;
 begin

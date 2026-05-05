@@ -49,7 +49,7 @@ interface
 }
 
 uses
-Classes, SysUtils, Graphics, trndi.log
+Classes, SysUtils, Graphics, trndi.log, SyncObjs
 {$IF DEFINED(X_MAC)}
 , nsutils.nsmisc, nsutils.web.urlrequest, CocoaAll, LCLType, StrUtils
 {$ELSEIF DEFINED(X_WIN)}
@@ -160,6 +160,15 @@ class var touchOverride: TTrndiBool;
     cookieJar: TStringList = nil; followRedirects: boolean = true;
     maxRedirects: integer = 10; customHeaders: TStringList = nil;
     prefix: boolean = true): THTTPResponse;
+  {** Run the platform `requestEx` implementation on a background thread and
+      wait for the result with a timeout. This preserves synchronous caller
+      semantics without busy polling. Returns a THTTPResponse; on timeout the
+      returned record has `Success = false` and `ErrorMessage = 'timeout'.` }
+  function RequestExWait(const post: boolean; const endpoint: string;
+    const params: array of string; const jsondata: string = '';
+    cookieJar: TStringList = nil; followRedirects: boolean = true;
+    maxRedirects: integer = 10; customHeaders: TStringList = nil;
+    prefix: boolean = true; TimeoutMs: cardinal = 5000): THTTPResponse;
 
     // Settings API
     {** Store a non-user-scoped key (global). }
@@ -169,10 +178,10 @@ class var touchOverride: TTrndiBool;
     global: boolean = false); virtual; abstract; overload;
     {** Store an integer value under @param(keyname). @param(global) bypasses user scoping. }
   procedure SetSetting(const keyname: string; const val: integer;
-  global: boolean = false); overload;
+    global: boolean = false); overload;
     {** Store a bool value, represented by @param(a)/@param(b), under @param(keyname). @param(global) bypasses user scoping. }
   procedure SetSetting(const keyname: string; const val: boolean;
-  global: boolean = false); overload;
+    global: boolean = false); overload;
     {** Store a float setting (using '.' decimal separator). }
   procedure SetFloatSetting(const keyname: string; const val: single; const global: boolean = false); overload;
     {** Store a boolean setting (serialized as a/b). }
@@ -348,6 +357,20 @@ DEFAULT_MIN_FONT_SIZE = 8;
 
 implementation
 
+{$IF DEFINED(X_PC)}
+var
+  CurlGlobalInitialized: boolean = false;
+
+procedure EnsureCurlGlobalInit;
+begin
+  if not CurlGlobalInitialized then
+  begin
+    curl_global_init(CURL_GLOBAL_DEFAULT);
+    CurlGlobalInitialized := true;
+  end;
+end;
+{$ENDIF}
+
 // C-compatible write callback used by libcurl to collect response data.
 function CurlWriteCallback(buffer: pchar; size, nmemb: SizeUInt;
 userdata: Pointer): SizeUInt; cdecl;
@@ -358,7 +381,7 @@ var
 begin
   Result := size * nmemb;
   
-  TrndiDLog(Format('[CurlWriteCallback] Called: size=%d, nmemb=%d, Result=%d', [Int64(size), Int64(nmemb), Int64(Result)]));
+  TrndiDLog(Format('[CurlWriteCallback] Called: size=%d, nmemb=%d, Result=%d', [int64(size), int64(nmemb), int64(Result)]));
   
   // Safety checks
   if (buffer = nil) or (size = 0) or (nmemb = 0) or (Result = 0) then
@@ -388,7 +411,7 @@ begin
     if actualSize > 0 then
     begin
       stream.WriteBuffer(buffer^, actualSize);
-      TrndiDLog(Format('[CurlWriteCallback] Wrote %d bytes to stream, returning %d', [Int64(actualSize), Int64(Result)]));
+      TrndiDLog(Format('[CurlWriteCallback] Wrote %d bytes to stream, returning %d', [int64(actualSize), int64(Result)]));
     end;
   except
     on E: Exception do
@@ -401,7 +424,7 @@ begin
 end;
 
 // C-compatible write callback for requestEx (global, no nested/static link).
-function CurlWriteCallbackEx(buffer: PChar; size, nitems: SizeUInt; userdata: Pointer): SizeUInt; cdecl;
+function CurlWriteCallbackEx(buffer: pchar; size, nitems: SizeUInt; userdata: Pointer): SizeUInt; cdecl;
 var
   stream: TStringStream;
   actualSize: SizeUInt;
@@ -430,7 +453,7 @@ begin
 end;
 
 // C-compatible header callback for requestEx (global, no nested/static link).
-function CurlHeaderCallbackEx(buffer: PChar; size, nitems: SizeUInt; userdata: Pointer): SizeUInt; cdecl;
+function CurlHeaderCallbackEx(buffer: pchar; size, nitems: SizeUInt; userdata: Pointer): SizeUInt; cdecl;
 var
   stream: TStringStream;
   actualSize: SizeUInt;
@@ -458,6 +481,34 @@ begin
   except
     Result := 0;
   end;
+end;
+
+type
+TRequestExWaitThread = class(TThread)
+private
+  FOwner: TTrndiNativeBase;
+  FPost: boolean;
+  FEndpoint: string;
+  FJsonData: string;
+  FParams: TStringList;
+  FCookieJar: TStringList;
+  FFollowRedirects: boolean;
+  FMaxRedirects: integer;
+  FCustomHeaders: TStringList;
+  FPrefix: boolean;
+  FResponse: THTTPResponse;
+  FDone: TEvent;
+  FCookieJarOwned: TStringList;
+  FCustomHeadersOwned: TStringList;
+protected
+  procedure Execute; override;
+public
+  constructor Create(AOwner: TTrndiNativeBase; const APost: boolean;
+    const AEndpoint: string; const AParams: array of string; const AJsonData: string;
+    ACookieJar: TStringList; AFollowRedirects: boolean; AMaxRedirects: integer;
+    ACustomHeaders: TStringList; APrefix: boolean);
+  destructor Destroy; override;
+  property Response: THTTPResponse read FResponse;
 end;
 {------------------------------------------------------------------------------
   TTrndiNativeBase.updateLocale
@@ -513,13 +564,210 @@ begin
 end;
 
 {------------------------------------------------------------------------------
+  TTrndiNativeBase.RequestExWait
+  --------------------------------
+  Run the platform-specific `requestEx` on a background thread and wait for
+  the result with a timeout. Returns a THTTPResponse; on timeout the returned
+  record has `Success = false` and `ErrorMessage = 'timeout'.
+ ------------------------------------------------------------------------------}
+function TTrndiNativeBase.RequestExWait(const post: boolean; const endpoint: string;
+const params: array of string; const jsondata: string = '';
+cookieJar: TStringList = nil; followRedirects: boolean = true;
+maxRedirects: integer = 10; customHeaders: TStringList = nil;
+prefix: boolean = true; TimeoutMs: cardinal = 5000): THTTPResponse;
+var
+  worker: TRequestExWaitThread;
+  completed: boolean;
+  i: integer;
+  j: integer;
+  cookieName: string;
+  existingIndex: integer;
+begin
+  worker := TRequestExWaitThread.Create(Self, post, endpoint, params, jsondata,
+    cookieJar, followRedirects, maxRedirects, customHeaders, prefix);
+  worker.Start;
+  // wait for the worker to signal completion or timeout
+  if worker.FDone.WaitFor(TimeoutMs) = wrSignaled then
+  begin
+    // Copy response (deep copy lists) to avoid returning pointers owned
+    // by the worker which will be freed when we destroy it.
+    Result.Body := worker.Response.Body;
+    Result.StatusCode := worker.Response.StatusCode;
+    Result.FinalURL := worker.Response.FinalURL;
+    Result.RedirectCount := worker.Response.RedirectCount;
+    Result.Success := worker.Response.Success;
+    Result.ErrorMessage := worker.Response.ErrorMessage;
+    Result.Headers := TStringList.Create;
+    if Assigned(worker.Response.Headers) then
+      Result.Headers.Assign(worker.Response.Headers);
+    Result.Cookies := TStringList.Create;
+    if Assigned(worker.Response.Cookies) then
+      Result.Cookies.Assign(worker.Response.Cookies);
+    // Merge response cookies into caller's cookieJar, preserving existing cookies
+    if Assigned(cookieJar) then
+    begin
+      for i := 0 to Result.Cookies.Count - 1 do
+      begin
+        // Try to update existing cookie by name (before '='), or add if not found
+        cookieName := Copy(Result.Cookies[i], 1, Pos('=', Result.Cookies[i]) - 1);
+        existingIndex := -1;
+        for j := 0 to cookieJar.Count - 1 do
+        begin
+          if Copy(cookieJar[j], 1, Pos('=', cookieJar[j]) - 1) = cookieName then
+          begin
+            existingIndex := j;
+            Break;
+          end;
+        end;
+        if existingIndex >= 0 then
+          cookieJar[existingIndex] := Result.Cookies[i]
+        else
+          cookieJar.Add(Result.Cookies[i]);
+      end;
+    end;
+    worker.WaitFor;
+    worker.Free;
+  end
+  else
+  begin
+    // timeout: return shaped timeout response and attempt cancellation
+    Result.Body := '';
+    Result.Headers := TStringList.Create;
+    Result.Cookies := TStringList.Create;
+    Result.StatusCode := -1;
+    Result.FinalURL := '';
+    Result.RedirectCount := 0;
+    Result.Success := false;
+    Result.ErrorMessage := 'timeout';
+    try
+      worker.Terminate;
+      completed := worker.FDone.WaitFor(5000) = wrSignaled;
+      if completed then
+      begin
+        worker.WaitFor;
+        worker.Free;
+      end;
+      if not completed then
+      begin
+        // Prevent worker from dereferencing Self after timeout
+        worker.FOwner := nil;
+        worker.FreeOnTerminate := true;
+      end;
+    except end;
+  end;
+end;
+
+{------------------------------------------------------------------------------
+  TRequestExWaitThread
+  --------------------
+  Worker thread that executes requestEx off the main thread and stores the
+  resulting THTTPResponse for the caller to collect after WaitFor returns.
+ ------------------------------------------------------------------------------}
+constructor TRequestExWaitThread.Create(AOwner: TTrndiNativeBase;
+const APost: boolean; const AEndpoint: string; const AParams: array of string;
+const AJsonData: string; ACookieJar: TStringList; AFollowRedirects: boolean;
+AMaxRedirects: integer; ACustomHeaders: TStringList; APrefix: boolean);
+var
+  i: integer;
+begin
+  inherited Create(true);
+  FreeOnTerminate := false;
+  FOwner := AOwner;
+  FPost := APost;
+  FEndpoint := AEndpoint;
+  FJsonData := AJsonData;
+  FParams := TStringList.Create;
+  for i := Low(AParams) to High(AParams) do
+    FParams.Add(AParams[i]);
+  // make owned copies of incoming lists so the worker does not reference
+  // caller-owned objects which may be freed while the worker runs
+  if Assigned(ACookieJar) then
+  begin
+    FCookieJarOwned := TStringList.Create;
+    FCookieJarOwned.Assign(ACookieJar);
+    FCookieJar := FCookieJarOwned;
+  end
+  else
+    FCookieJar := nil;
+  FFollowRedirects := AFollowRedirects;
+  FMaxRedirects := AMaxRedirects;
+  if Assigned(ACustomHeaders) then
+  begin
+    FCustomHeadersOwned := TStringList.Create;
+    FCustomHeadersOwned.Assign(ACustomHeaders);
+    FCustomHeaders := FCustomHeadersOwned;
+  end
+  else
+    FCustomHeaders := nil;
+  FPrefix := APrefix;
+  FResponse.Body := '';
+  FResponse.Headers := nil;
+  FResponse.Cookies := nil;
+  FResponse.StatusCode := -1;
+  FResponse.FinalURL := '';
+  FResponse.RedirectCount := 0;
+  FResponse.Success := false;
+  FResponse.ErrorMessage := 'timeout';
+  FDone := TEvent.Create(nil, true, false, '');
+end;
+
+destructor TRequestExWaitThread.Destroy;
+begin
+  FParams.Free;
+  FCustomHeadersOwned.Free;
+  FCookieJarOwned.Free;
+  FDone.Free;
+  // Free response lists that were created in Execute or timeout path
+  FreeAndNil(FResponse.Headers);
+  FreeAndNil(FResponse.Cookies);
+  inherited Destroy;
+end;
+
+procedure TRequestExWaitThread.Execute;
+var
+  reqParams: array of string;
+  i: integer;
+begin
+  SetLength(reqParams, FParams.Count);
+  for i := 0 to FParams.Count - 1 do
+    reqParams[i] := FParams[i];
+  try
+    try
+      // Guard against FOwner being cleared during timeout
+      if Assigned(FOwner) and not Terminated then
+        FResponse := FOwner.requestEx(FPost, FEndpoint, reqParams, FJsonData,
+          FCookieJar, FFollowRedirects, FMaxRedirects, FCustomHeaders, FPrefix)
+      else
+      begin
+        // Timeout or early termination cleared FOwner; return failure
+        FResponse.Success := false;
+        FResponse.StatusCode := -1;
+        FResponse.ErrorMessage := 'Cancelled';
+      end;
+    except
+      on E: Exception do
+      begin
+        FResponse.Success := false;
+        FResponse.StatusCode := -1;
+        if Trim(E.Message) <> '' then
+          FResponse.ErrorMessage := E.ClassName + ': ' + E.Message
+        else
+          FResponse.ErrorMessage := E.ClassName;
+      end;
+    end;
+  finally
+    FDone.SetEvent;
+  end;
+end;
+
+{------------------------------------------------------------------------------
   TestProxyURL (class, virtual)
   ----------------------------
   Default implementation: unsupported.
  ------------------------------------------------------------------------------}
 class function TTrndiNativeBase.TestProxyURL(const url: string;
-  const proxyHost: string; const proxyPort: string; const proxyUser: string;
-  const proxyPass: string; out res: string): boolean;
+const proxyHost: string; const proxyPort: string; const proxyUser: string;
+const proxyPass: string; out res: string): boolean;
 begin
   res := 'Proxy testing is not supported on this platform.';
   Result := false;
@@ -990,6 +1238,9 @@ end;
  -----------------------}
 constructor TTrndiNativeBase.Create(ua, base: string);
 begin
+  {$IF DEFINED(X_PC)}
+  EnsureCurlGlobalInit;
+  {$ENDIF}
   useragent := ua;
   baseurl := base;
   // Check if we're in dark mode on creation
@@ -1688,8 +1939,6 @@ begin
       address := address + '&' + sx;
   end;
 
-  // Initialize libcurl (global init is safe to call repeatedly)
-  curl_global_init(CURL_GLOBAL_DEFAULT);
   headers := nil;
   responseStream := TStringStream.Create('');
   try
@@ -1793,33 +2042,35 @@ var
   cookieData: string;
   responseLine: string;
   responseCode: clong;
-  effectiveUrl: PChar;
+  redirectCountVal: clong;
+  effectiveUrl: pchar;
   startTick: QWord;
   endTick: QWord;
   methodLabel: string;
   cookieVal: string;
   cookiePos: integer;
-  function HasHeader(const AName: string): boolean;
+function HasHeader(const AName: string): boolean;
   var
     k: integer;
     nameLower: string;
   begin
-    Result := False;
+    Result := false;
     if customHeaders = nil then
       Exit;
     nameLower := LowerCase(AName) + ':';
     for k := 0 to customHeaders.Count - 1 do
       if Pos(nameLower, LowerCase(Trim(customHeaders[k]))) = 1 then
-        Exit(True);
+        Exit(true);
   end;
 
   // Helper to mask sensitive form parameters in a URL-encoded string
-  procedure MaskParam(var S: string; const name: string);
+procedure MaskParam(var S: string; const name: string);
   var
     p, valStart, q: integer;
   begin
     p := Pos(name + '=', S);
-    if p = 0 then Exit;
+    if p = 0 then
+      Exit;
     valStart := p + Length(name) + 1;
     q := PosEx('&', S, valStart);
     if q = 0 then
@@ -1830,8 +2081,11 @@ var
 
 begin
   // Initialize address from endpoint parameter
-  address := endpoint;
-  
+  if prefix then
+    address := Format('%s/%s', [TrimRightSet(baseurl, ['/']), TrimLeftSet(endpoint, ['/'])])
+  else
+    address := endpoint;
+
   // Initialize Result
   Result.Body := '';
   Result.Headers := TStringList.Create;
@@ -1851,7 +2105,6 @@ begin
       address := address + '&' + sx;
   end;
 
-  curl_global_init(CURL_GLOBAL_DEFAULT);
   headers := nil;
   responseStream := TStringStream.Create('');
   headerStream := TStringStream.Create('');
@@ -1914,10 +2167,8 @@ begin
 
       // Custom headers
       if customHeaders <> nil then
-      begin
         for i := 0 to customHeaders.Count - 1 do
           headers := curl_slist_append(headers, pchar(customHeaders[i]));
-      end;
 
       // POST handling
       if jsondata <> '' then
@@ -1930,7 +2181,8 @@ begin
         curl_easy_setopt(handle, CURLOPT_POSTFIELDS, pchar(jsondata));
         curl_easy_setopt(handle, CURLOPT_POSTFIELDSIZE, clong(Length(jsondata)));
       end
-      else if post then
+      else
+      if post then
       begin
         // Add Content-Type for form data
         if not HasHeader('Content-Type') then
@@ -1989,8 +2241,11 @@ begin
         if effectiveUrl <> nil then
           Result.FinalURL := string(effectiveUrl);
 
-        // Get redirect count
-        curl_easy_getinfo(handle, CURLINFO_REDIRECT_COUNT, @Result.RedirectCount);
+        // Get redirect count (libcurl returns a C long; use clong to avoid
+        // size mismatch on Linux where long is 64-bit).
+        redirectCountVal := 0;
+        curl_easy_getinfo(handle, CURLINFO_REDIRECT_COUNT, @redirectCountVal);
+        Result.RedirectCount := redirectCountVal;
 
         TrndiDLog(Format('HTTP %s (curl) ok: status=%d, bytes=%d, redirects=%d, ms=%d',
           [methodLabel, Result.StatusCode, Length(Result.Body), Result.RedirectCount, endTick - startTick]));
@@ -2025,10 +2280,8 @@ begin
               begin
                 Result.Cookies.Add(cookieVal);
                 if cookieJar <> nil then
-                begin
                   if cookieJar.IndexOf(cookieVal) = -1 then
                     cookieJar.Add(cookieVal);
-                end;
               end;
             end;
             Result.Headers.Add(responseLine);
@@ -2092,7 +2345,10 @@ begin
   Result.ErrorMessage := '';
 
   // Start address
-  address := endpoint;
+  if prefix then
+    address := Format('%s/%s', [TrimRightSet(baseurl, ['/']), TrimLeftSet(endpoint, ['/'])])
+  else
+    address := endpoint;
 
   // Append query params ONLY for GET requests (not POST)
   if (not post) and (jsondata = '') and (Length(params) > 0) then
@@ -3204,12 +3460,12 @@ begin
   r := GetSetting(keyname);
 
   case r of
-   'left':
-     result := taLeftJustify;
-   'right':
-     result := taRightJustify;
-   'center':
-     result := taCenter;
+  'left':
+    result := taLeftJustify;
+  'right':
+    result := taRightJustify;
+  'center':
+    result := taCenter;
   else
     result := def;
   end;
@@ -3447,12 +3703,12 @@ end;
 procedure TTrndiNativeBase.SetAlignmentSetting(const keyname: string; val: TAlignment; const global: boolean = false);
 begin
   case val of
-    taLeftJustify:
-     SetSetting(keyname, 'left', global);
-    taRightJustify:
-     SetSetting(keyname, 'right', global);
-    taCenter:
-     SetSetting(keyname, 'center', global);
+  taLeftJustify:
+    SetSetting(keyname, 'left', global);
+  taRightJustify:
+    SetSetting(keyname, 'right', global);
+  taCenter:
+    SetSetting(keyname, 'center', global);
   end;
 end;
 
@@ -3465,7 +3721,7 @@ procedure TTrndiNativeBase.SetCSVSetting(const keyname: string; const val: TStri
 var
   s, res: string;
   i, totalLen: integer;
-  p: PAnsiChar;
+  p: pansichar;
 begin
   if Length(val) = 0 then
   begin
@@ -3479,7 +3735,7 @@ begin
   Dec(totalLen); // remove last comma
 
   SetLength(res, totalLen);
-  p := PAnsiChar(res);
+  p := pansichar(res);
   for i := 0 to High(val) do
   begin
     if i > 0 then
@@ -3487,8 +3743,11 @@ begin
       p^ := ',';
       Inc(p);
     end;
-    Move(PAnsiChar(val[i])^, p^, Length(val[i]));
-    Inc(p, Length(val[i]));
+    if Length(val[i]) > 0 then
+    begin
+      Move(pansichar(val[i])^, p^, Length(val[i]));
+      Inc(p, Length(val[i]));
+    end;
   end;
 
   SetSetting(keyname, res, global);
@@ -3555,9 +3814,9 @@ end;
 class function TTrndiNativeBase.isDarkMode: boolean;
 
 function Brightness(C: TColor): double;
-begin
-  Result := (Red(C) * 0.3) + (Green(C) * 0.59) + (Blue(C) * 0.11);
-end;
+  begin
+    Result := (Red(C) * 0.3) + (Green(C) * 0.59) + (Blue(C) * 0.11);
+  end;
 
 begin
   Result := (Brightness(ColorToRGB(clWindow)) < Brightness(ColorToRGB(clWindowText)));
@@ -3571,7 +3830,7 @@ end;
  ------------------------------------------------------------------------------}
 class function TTrndiNativeBase.HasGlobalMenu: boolean;
 begin
-  Result := False;
+  Result := false;
 end;
 
 {------------------------------------------------------------------------------

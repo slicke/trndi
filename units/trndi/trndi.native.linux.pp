@@ -25,7 +25,7 @@ interface
 
 uses
 Classes, SysUtils, Graphics, IniFiles, Dialogs,
-ExtCtrls, Forms, Math, LCLIntf, linutils.kdebadge, trndi.native.base, FileUtil, Menus,
+ExtCtrls, Forms, Math, LCLIntf, linutils.kdebadge, trndi.native.base, trndi.native.async, FileUtil, Menus,
 libpascurl, DateUtils, ctypes{$ifdef DEBUG}, trndi.log{$endif};
 
 type
@@ -267,8 +267,8 @@ begin
   // Prefer the gnome-extensions CLI if present.
   gnomeExtensionsPath := FindInPath('gnome-extensions');
   if gnomeExtensionsPath <> '' then
-    if RunAndCaptureSimple(gnomeExtensionsPath, ['info', TRNDI_GNOME_EXT_UUID], outS,
-      exitCode) and (exitCode = 0) then
+      if RunAndCaptureSimpleWait(gnomeExtensionsPath, ['info', TRNDI_GNOME_EXT_UUID], outS,
+        exitCode, 7000) and (exitCode = 0) then
     begin
       outS := UpperCase(outS);
       // GNOME versions vary: we treat ENABLED/ACTIVE as "on".
@@ -282,10 +282,12 @@ begin
   if gsettingsPath = '' then
     Exit(false);
 
-  if RunAndCaptureSimple(gsettingsPath,
-    ['get', 'org.gnome.shell', 'enabled-extensions'], outS, exitCode) and
+  // Prefer the async helper with small wait wrapper to avoid adding new
+  // long-running polling loops in startup paths.
+  if RunAndCaptureSimpleWait(gsettingsPath,
+    ['get', 'org.gnome.shell', 'enabled-extensions'], outS, exitCode, 7000) and
     (exitCode = 0) then
-    Result := Pos('''' + TRNDI_GNOME_EXT_UUID + '''', outS) > 0// Example: "['uuid@domain', 'other@domain']" or "@as []"
+    Result := Pos('''' + TRNDI_GNOME_EXT_UUID + '''', outS) > 0 // Example: "['uuid@domain', 'other@domain']"
   ;
 end;
 
@@ -379,28 +381,30 @@ begin
   qdbusPath := FindInPath('qdbus');
   if qdbusPath <> '' then
   begin
-    if RunAndCaptureSimple(qdbusPath, [], outS, exitCode) and (exitCode = 0) then
+    if RunAndCaptureSimpleWait(qdbusPath, [], outS, exitCode, 7000) and (exitCode = 0) then
     begin
       outS := LowerCase(outS);
+      // Match well-known AppMenu registrar/service names only. Avoid
+      // matching the generic substring 'appmenu' which can produce
+      // false-positives on some systems.
       if (Pos('com.canonical.appmenu.registrar', outS) > 0) or
-        (Pos('org.kde.appmenu', outS) > 0) or (Pos('appmenu', outS) > 0) then
+        (Pos('org.kde.appmenu', outS) > 0) then
         Exit(True);
     end;
   end;
 
-  // GTK module hint
+  // GTK module hint: only match explicit appmenu-gtk module, not the generic 'appmenu' substring
   gtkMods := LowerCase(GetEnvironmentVariable('GTK_MODULES'));
   if gtkMods <> '' then
-    if Pos('appmenu', gtkMods) > 0 then
+    if Pos('appmenu-gtk', gtkMods) > 0 then
       Exit(True);
 
-  // KDE plasmoid presence may indicate the panel provides an appmenu
-  if IsTrndiKdePlasmoidVisible then
-    Exit(True);
+  // Do NOT use KDE plasmoid presence as a global-menu indicator:
+  // the plasmoid may be visible for display purposes without a desktop
+  // global menu bar being present. Only qdbus service checks are reliable.
 
-  // Look for appmenu helpers on PATH
-  if (FindInPath('appmenu-gtk-module') <> '') or (FindInPath('gtk3-module-appmenu') <> '') then
-    Exit(True);
+  // Do NOT check for appmenu helper tools on PATH; their presence does not
+  // guarantee a working global menu bar integration.
 
   Result := False;
 end;
@@ -544,8 +548,8 @@ begin
     Exit(false);
 
   // GNOME 42+: color-scheme prefer-dark/default
-  if RunAndCaptureSimple(gsettingsPath,
-    ['get', 'org.gnome.desktop.interface', 'color-scheme'], outS, exitCode) and
+  if RunAndCaptureSimpleWait(gsettingsPath,
+    ['get', 'org.gnome.desktop.interface', 'color-scheme'], outS, exitCode, 7000) and
     (exitCode = 0) then
   begin
     outS := LowerCase(StringReplace(outS, '''', '', [rfReplaceAll]));
@@ -564,8 +568,8 @@ begin
   end;
 
   // Fallback: inspect gtk-theme name for '*-dark'
-  if RunAndCaptureSimple(gsettingsPath,
-    ['get', 'org.gnome.desktop.interface', 'gtk-theme'], outS, exitCode) and
+  if RunAndCaptureSimpleWait(gsettingsPath,
+    ['get', 'org.gnome.desktop.interface', 'gtk-theme'], outS, exitCode, 7000) and
     (exitCode = 0) then
   begin
     outS := LowerCase(StringReplace(outS, '''', '', [rfReplaceAll]));
@@ -602,8 +606,8 @@ begin
     Exit(false);
 
   // Read the active color scheme
-  if RunAndCaptureSimple(kreadPath, ['--group', 'General', '--key', 'ColorScheme'],
-    outS, exitCode) and (exitCode = 0) then
+  if RunAndCaptureSimpleWait(kreadPath, ['--group', 'General', '--key', 'ColorScheme'],
+    outS, exitCode, 7000) and (exitCode = 0) then
   begin
     if ContainsDark(outS) then
       isDark := true
@@ -768,8 +772,6 @@ begin
       TrndiDLog(Format('HTTP GET: no proxy configured; url=%s', [SafeUrlForLog(url)]));
     {$endif}
 
-    curl_global_init(CURL_GLOBAL_DEFAULT);
-
     // Try with proxy first if configured
     if proxyHost <> '' then
     begin
@@ -887,7 +889,6 @@ begin
 
   responseStream := TStringStream.Create('');
   try
-    curl_global_init(CURL_GLOBAL_DEFAULT);
     handle := curl_easy_init();
     if handle = nil then
     begin

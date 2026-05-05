@@ -44,7 +44,7 @@ interface
 uses
 Classes, SysUtils, Dialogs,
 // Trndi units
-trndi.types, trndi.api, trndi.native, trndi.funcs,
+trndi.types, trndi.api, trndi.native, trndi.native.base, trndi.funcs,
 // FPC units
 fpjson, jsonparser, dateutils, StrUtils;
 
@@ -649,9 +649,19 @@ function JSONEscape(const S: string): string;
   end;
 
 var
-  LBody, LResponse, LTimeResponse, LTimeString, LAccountID, LNameBody, LNameResp: string;
+  LBody, LResponse, LTimeResponse, LTimeString, LAccountID, LNameBody, LNameResp, LParseErr: string;
   LServerDateTime: TDateTime;
   LUseEmailAuth: boolean;
+  LHTTPResp, LHTTPResp2, LHTTPRespTime: THTTPResponse;
+  hdrs: TStringList;
+  procedure FreeResponse(var AResp: THTTPResponse);
+  begin
+    if AResp.Headers <> nil then
+      FreeAndNil(AResp.Headers);
+    if AResp.Cookies <> nil then
+      FreeAndNil(AResp.Cookies);
+    AResp := Default(THTTPResponse);
+  end;
 begin
   // Detect if user provided email (contains @) or phone (starts with +)
   // These require two-step auth: AuthenticatePublisherAccount → LoginPublisherAccountById
@@ -662,15 +672,24 @@ begin
     [JSONEscape(FUserName), JSONEscape(FPassword), DEXCOM_APPLICATION_IDS[FRegion]]);
 
   // 1) Authenticate to obtain session token
-  // Note: native.Request automatically adds Content-Type and Accept headers when jsondata is provided
-  
+  // Use structured RequestExWait so network failures are reported instead of
+  // being misinterpreted as tokens in plain string responses.
   if LUseEmailAuth then
   begin
     // Two-step authentication for email/phone:
     // Step 1: Get account ID from email/phone
     // Request account id (may return JSON or plain quoted string)
-    LResponse := native.Request(true, DEXCOM_AUTHENTICATE_ENDPOINT, [], LBody);
-    if not TryGetTokenOrError(LResponse, LAccountID, LResponse) then
+    LHTTPResp := native.RequestExWait(true, DEXCOM_AUTHENTICATE_ENDPOINT, [], LBody, nil, true, 10, nil, true);
+    LResponse := LHTTPResp.Body;
+    if LHTTPResp.Headers <> nil then FreeAndNil(LHTTPResp.Headers);
+    if LHTTPResp.Cookies <> nil then FreeAndNil(LHTTPResp.Cookies);
+    if not LHTTPResp.Success then
+    begin
+      Result := false;
+      lastErr := sDexNewErrLogin + ' (Dex1a): ' + LHTTPResp.ErrorMessage;
+      Exit;
+    end;
+    if not TryGetTokenOrError(LResponse, LAccountID, LParseErr) then
     begin
       // Fallback: some servers return a plain quoted accountId; strip quotes
       LAccountID := StringReplace(LResponse, '"', '', [rfReplaceAll]);
@@ -678,11 +697,13 @@ begin
       if LAccountID = '' then
       begin
         Result := false;
-        lastErr := sDexNewErrLogin + ' (Dex1a): ' + LResponse;
+        lastErr := sDexNewErrLogin + ' (Dex1a): ' + LParseErr;
+        if LHTTPResp.Headers <> nil then FreeAndNil(LHTTPResp.Headers);
+        if LHTTPResp.Cookies <> nil then FreeAndNil(LHTTPResp.Cookies);
         Exit;
       end;
     end;
-    
+
     // Check for authentication errors
     if (LAccountID = '') or (Pos('error', LowerCase(LAccountID)) > 0) or
       (Pos('invalid', LowerCase(LAccountID)) > 0) or
@@ -693,33 +714,57 @@ begin
         lastErr := sDexNewErrPass + ' (Dex1)'
       else
         lastErr := sDexNewErrLogin + ' (Dex1a): ' + LAccountID;
+      if LHTTPResp.Headers <> nil then FreeAndNil(LHTTPResp.Headers);
+      if LHTTPResp.Cookies <> nil then FreeAndNil(LHTTPResp.Cookies);
       Exit;
     end;
-    
+
     // Step 2: Use account ID to get session ID
     LBody := Format('{ "accountId": "%s", "password": "%s", "applicationId": "%s" }',
       [LAccountID, JSONEscape(FPassword), DEXCOM_APPLICATION_IDS[FRegion]]);
-    
-    LResponse := native.Request(true, DEXCOM_LOGIN_BY_ID_ENDPOINT, [], LBody);
-    if not TryGetTokenOrError(LResponse, FSessionID, LResponse) then
+
+    LHTTPResp := native.RequestExWait(true, DEXCOM_LOGIN_BY_ID_ENDPOINT, [], LBody, nil, true, 10, nil, true);
+    if not LHTTPResp.Success then
     begin
-      // Fallback: some servers reply with a plain quoted session token
-      FSessionID := StringReplace(LResponse, '"', '', [rfReplaceAll]);
+      // Fallback: try single-step login by account name (nickname)
+      LNameBody := Format('{ "accountName": "%s", "password": "%s", "applicationId": "%s" }',
+        [JSONEscape(FUserName), JSONEscape(FPassword), DEXCOM_APPLICATION_IDS[FRegion]]);
+      if LHTTPResp.Headers <> nil then FreeAndNil(LHTTPResp.Headers);
+      if LHTTPResp.Cookies <> nil then FreeAndNil(LHTTPResp.Cookies);
+      LHTTPResp := native.RequestExWait(true, DEXCOM_LOGIN_BY_NAME_ENDPOINT, [], LNameBody, nil, true, 10, nil, true);
+      LNameResp := LHTTPResp.Body;
+      if LHTTPResp.Headers <> nil then FreeAndNil(LHTTPResp.Headers);
+      if LHTTPResp.Cookies <> nil then FreeAndNil(LHTTPResp.Cookies);
+      if not LHTTPResp.Success then
+      begin
+        Result := false;
+        lastErr := sDexNewErrLogin + ' (Dex1b): ' + LHTTPResp.ErrorMessage;
+        Exit;
+      end;
+      if not TryGetTokenOrError(LNameResp, FSessionID, LParseErr) then
+        FSessionID := StringReplace(LNameResp, '"', '', [rfReplaceAll]);
       FSessionID := Trim(FSessionID);
       if FSessionID = '' then
       begin
-        // As a last resort, try single-step login by account name (nickname)
-        LNameBody := Format('{ "accountName": "%s", "password": "%s", "applicationId": "%s" }',
-          [JSONEscape(FUserName), JSONEscape(FPassword), DEXCOM_APPLICATION_IDS[FRegion]]);
-        LNameResp := native.Request(true, DEXCOM_LOGIN_BY_NAME_ENDPOINT, [], LNameBody);
-        // Try parse or strip quoted token
-        if not TryGetTokenOrError(LNameResp, FSessionID, LNameResp) then
-          FSessionID := StringReplace(LNameResp, '"', '', [rfReplaceAll]);
+        Result := false;
+        lastErr := sDexNewErrLogin + ' (Dex1b): ' + LNameResp;
+        Exit;
+      end;
+    end
+    else
+    begin
+      LResponse := LHTTPResp.Body;
+      if LHTTPResp.Headers <> nil then FreeAndNil(LHTTPResp.Headers);
+      if LHTTPResp.Cookies <> nil then FreeAndNil(LHTTPResp.Cookies);
+      if not TryGetTokenOrError(LResponse, FSessionID, LParseErr) then
+      begin
+        // Fallback: some servers reply with a plain quoted session token
+        FSessionID := StringReplace(LResponse, '"', '', [rfReplaceAll]);
         FSessionID := Trim(FSessionID);
         if FSessionID = '' then
         begin
           Result := false;
-          lastErr := sDexNewErrLogin + ' (Dex1b): ' + LResponse + ' / fallback: ' + LNameResp;
+          lastErr := sDexNewErrLogin + ' (Dex1b): ' + LParseErr;
           Exit;
         end;
       end;
@@ -727,12 +772,33 @@ begin
   end
   else
   begin
-    // Restore legacy behavior: some servers return a plain quoted GUID/token.
-    FSessionID := StringReplace(
-      native.Request(true, DEXCOM_LOGIN_BY_NAME_ENDPOINT, [], LBody),
-      '"', '', [rfReplaceAll]);
-  end;// Single-step authentication for plain usernames
-  ;
+    // Single-step authentication for plain usernames.
+    LHTTPResp2 := native.RequestExWait(true, DEXCOM_LOGIN_BY_NAME_ENDPOINT, [], LBody, nil, true, 10, nil, true);
+    try
+      if not LHTTPResp2.Success then
+      begin
+        Result := false;
+        lastErr := sDexNewErrLogin + ' (Dex1): ' + LHTTPResp2.ErrorMessage;
+        Exit;
+      end;
+
+      LResponse := LHTTPResp2.Body;
+      if Trim(LResponse) = '' then
+        // Fallback for environments where requestEx may return a successful
+        // status with an empty body for this endpoint.
+        LResponse := native.request(true, DEXCOM_LOGIN_BY_NAME_ENDPOINT, [], LBody,
+          'Accept=application/json', true);
+
+      if not TryGetTokenOrError(LResponse, FSessionID, LParseErr) then
+      begin
+        Result := false;
+        lastErr := sDexNewErrLogin + ' (Dex1): ' + LParseErr;
+        Exit;
+      end;
+    finally
+      FreeResponse(LHTTPResp2);
+    end;
+  end;
 
   // Check for various error responses before validation
   if (FSessionID = '') or (Pos('error', LowerCase(FSessionID)) > 0) or
@@ -767,13 +833,30 @@ begin
   end;
 
   // 3) Retrieve system UTC time for time-diff calibration
-  LTimeResponse := native.Request(false, DEXCOM_TIME_ENDPOINT, [], '', 'Accept=application/json');
-  // Parse server time using centralized helper (handles XML, /Date(ms)/, JSON ServerTime, ISO)
-  if not ParseDexcomTime(LTimeResponse, LServerDateTime) then
-  begin
-    lastErr := 'Cannot parse Dexcom time/zone data';
-    Result := false;
-    Exit;
+  hdrs := TStringList.Create;
+  LHTTPRespTime := Default(THTTPResponse);
+  try
+    hdrs.Add('Accept: application/json');
+    LHTTPRespTime := native.RequestExWait(false, DEXCOM_TIME_ENDPOINT, [], '', nil, true, 10, hdrs, true);
+    LTimeResponse := LHTTPRespTime.Body;
+    if LHTTPRespTime.Headers <> nil then FreeAndNil(LHTTPRespTime.Headers);
+    if LHTTPRespTime.Cookies <> nil then FreeAndNil(LHTTPRespTime.Cookies);
+    if not LHTTPRespTime.Success then
+    begin
+      lastErr := 'Cannot fetch Dexcom time: ' + LHTTPRespTime.ErrorMessage;
+      Result := false;
+      Exit;
+    end;
+    // Parse server time using centralized helper (handles XML, /Date(ms)/, JSON ServerTime, ISO)
+    if not ParseDexcomTime(LTimeResponse, LServerDateTime) then
+    begin
+      lastErr := 'Cannot parse Dexcom time/zone data';
+      Result := false;
+      Exit;
+    end;
+  finally
+    FreeResponse(LHTTPRespTime);
+    hdrs.Free;
   end;
 
   // Compute time difference between server UTC and local UTC

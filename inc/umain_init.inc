@@ -100,22 +100,30 @@ var
   AboutMenu,
   CheckUpdatesMenu: TMenuItem;
 begin
-  MainMenu := TMainMenu.Create(self);
-  fBg.Menu := MainMenu;
   {$ifdef X_MAC}
   MacAppDelegate := TMyAppDelegate.alloc.init;
   NSApp.setDelegate(NSObject(MacAppDelegate));
 
   Application.Title := 'Trndi';
   {$ENDIF}
-  AppMenu := TMenuItem.Create(Self); // Application menu
 
-  {$ifdef X_MAC}
-  AppMenu.Caption := #$EF#$A3#$BF;   // Unicode Apple logo char
-  {$else}
-  AppMenu.Caption := RS_MENU_NAME;   // Unicode Apple logo char
-  {$endif}
-  MainMenu.Items.Insert(0, AppMenu);
+  // Only create and populate a `TMainMenu` when a desktop-global menu exists.
+  // When no global menu is present, skip creating the main menu entirely
+  // so no in-window menubar is shown.
+  if native.HasGlobalMenu then
+  begin
+    MainMenu := TMainMenu.Create(self);
+    fBg.Menu := MainMenu;
+
+    AppMenu := TMenuItem.Create(Self); // Application menu
+
+    {$ifdef X_MAC}
+    AppMenu.Caption := #$EF#$A3#$BF;   // Unicode Apple logo char
+    {$else}
+    AppMenu.Caption := RS_MENU_NAME;   // Unicode Apple logo char
+    {$endif}
+    MainMenu.Items.Insert(0, AppMenu);
+
 
   {$ifdef DARWIN}
   // Add About menu item (standard on macOS)
@@ -173,6 +181,7 @@ begin
   helpMenu.Insert(0, githubMenu);
 
   helpMenu.Insert(0, upMenu);
+end;
 end;
 {$endif}
 
@@ -617,7 +626,7 @@ begin
   if not native.GetBoolSetting('media.disabled', false) then begin
     fSplash.incProgress(10, RS_INIT_MEDIA);
     MediaController := TSystemMediaController.Create(Self);
-       MediaController.Initialize;
+    MediaController.Initialize;
   end;
   Application.ProcessMessages;
 
