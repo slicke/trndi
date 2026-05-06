@@ -732,9 +732,17 @@ begin
       for i := 0 to fBG.ComponentCount - 1 do
         if (fbg.Components[i] is TLabel) and (fbg.Components[i] <> lval) then
           (fbg.Components[i] as TLabel).Caption := '';
+      
+      // Clean up splash screen before config dialog
+      fSplash.Hide;
+      fSplash.Free;
+      
       miSettings.Click;
       ShowMessage(RS_FORCE_QUIT_SETUP);
-      Application.Terminate;
+      
+      // Flag to close after FormShow (prevents access violations from incomplete init)
+      firstboot := true; // Ensure quit doesn't ask for confirmation
+      FCloseAfterFormCreate := true;
       Exit;
     end;
 
@@ -753,9 +761,16 @@ begin
     begin
       haltBoot;
       ShowMessage(api.ErrorMsg);
+      
+      // Clean up splash screen before config dialog
+      fSplash.Hide;
+      fSplash.Free;
+      
       miSettings.Click;
-      // Ensure the application exits so the user can restart with new settings
-      Application.Terminate;
+      
+      // Flag to close after FormShow (prevents access violations from incomplete init)
+      firstboot := true; // Ensure quit doesn't ask for confirmation
+      FCloseAfterFormCreate := true;
       Exit;
     end;
 

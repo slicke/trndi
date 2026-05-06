@@ -426,6 +426,7 @@ private
     end;
   titlecolor: boolean;
   FShuttingDown: boolean; // Flag to prevent recursive shutdown calls
+  FCloseAfterFormCreate: boolean; // Flag to close form after initialization completes
 
     // Performance optimization fields
   FCachedTextWidth: integer;
@@ -2343,6 +2344,14 @@ begin
     pnNextProgress.Left := 0;
     pnNextProgress.BringToFront;
     pnNextProgress.Visible := native.GetBoolSetting('main.next_progress', false);
+  end;
+  
+  // Check if we need to close after FormCreate completed (e.g., fresh install with no config)
+  if FCloseAfterFormCreate then
+  begin
+    FCloseAfterFormCreate := false;
+    Close;
+    Exit;
   end;
   
   // Check for updates on startup (non-blocking)
@@ -6011,6 +6020,11 @@ var
   txt: string;
 begin
   txt := '';
+  
+  // Guard against nil api during early form initialization/shutdown
+  if api = nil then
+    Exit;
+  
   reading := lastReading;
 
   if reading.val >= api.cgmHi then
