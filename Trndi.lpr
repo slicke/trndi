@@ -41,11 +41,11 @@ program trndi;
 
 uses
 {$IFDEF UNIX}
-{$IFNDEF DARWIN}
 {$ifndef HAIKU}
-{$linklib gcc}  // We cant link with the QUickJS lib on Linux otherwise
 cthreads,
 {$ENDIF}
+{$IFNDEF DARWIN}
+{$linklib gcc}  // We cant link with the QUickJS lib on Linux otherwise
 {$ENDIF}
 {$ENDIF}
 {$IFDEF HASAMIGA}
