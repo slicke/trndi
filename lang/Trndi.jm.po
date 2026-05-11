@@ -1588,6 +1588,14 @@ msgstr "Utdaterade avlesningar!"
 msgid "Readings are not fresh, have your phone lost connection to the sensor?"
 msgstr "Avlesningarna er inte ferska, har din telefon tappat kontakten med sensorn?"
 
+#: trndi.strings.rs_attention_sensor_fault
+msgid "Possible sensor fault"
+msgstr ""
+
+#: trndi.strings.rs_attention_sensor_fault_desc
+msgid "Trndi detected repeated large jumps between consecutive readings. Verify with your official CGM app/device."
+msgstr ""
+
 #: trndi.strings.rs_cleanup
 msgid "Wait. Shutting down extensions engine..."
 msgstr "Venta. Stenger tilleggsmotorn..."
@@ -2106,6 +2114,10 @@ msgstr "Felsekert lege aktiverat"
 #: trndi.strings.rs_safemode_desc
 msgid "Trndi is running in <b>Safe Mode</b>!<ul><li>No start-up actions from extensions will run</li><li>You cannot use, and no actions will trigger from, extensions</li></ul><br>Extensions will load next run, unless you press <b>CTRL</b>!"
 msgstr "Trndi kôrs i <b>felsekertlege</b>!<ul><li>Inga startotgerder fron tillegg kôrs</li><li>Du kan inte anvenda, och inga otgerder kommer att kôras fron, tillegg</li></ul><br>Tillegg kommer att kôras nesta start, sovida du inte trycker <b>CTRL</b>!"
+
+#: trndi.strings.rs_sensor_fault_suspect
+msgid "Sensor may be faulty: multiple abrupt reading jumps detected."
+msgstr ""
 
 #: trndi.strings.rs_service_adjust
 #, object-pascal-format
