@@ -534,6 +534,7 @@ private
       based on recency and backend requirements.
    }
   procedure SetNextUpdateTimer(const LastReadingTime: TDateTime);
+  function IsSensorFaultSuspected(const Readings: array of BGReading): boolean;
   {** Apply visual changes following the latest readings, such as redraws and
       color/label updates depending on thresholds and state.
    }
@@ -772,6 +773,8 @@ highAlerted: boolean = false; // A high alert is active
 lowAlerted: boolean = false; // A low alert is active
 missingAlerted: boolean = false; // A missing reading alert is active
 lastMissingAlert: TDateTime = 0; // Last time missing reading alert was shown
+sensorFaultAlerted: boolean = false; // Sensor-fault pattern currently active
+lastSensorFaultAlert: TDateTime = 0; // Last sensor-fault notification timestamp
 perfectTriggered: boolean = false; // A perfect reading is active
 PaintRange: boolean = true;
 PaintRangeCGMRange: boolean = true; // Show cgmRangeLo/cgmRangeHi inner threshold lines
@@ -6017,11 +6020,53 @@ begin
   end;
 end;
 
+function TfBG.IsSensorFaultSuspected(const Readings: array of BGReading): boolean;
+const
+  REQUIRED_CHANGES = 4;
+  SIGNIFICANT_DELTA_MGDL = 54; // ~3 mmol/L
+var
+  i: integer;
+  samplesChecked: integer;
+  deltaAbs: double;
+  currVal, prevVal: double;
+  gapMin: integer;
+begin
+  Result := false;
+
+  // Need at least five readings to evaluate four consecutive jumps.
+  if Length(Readings) < (REQUIRED_CHANGES + 1) then
+    Exit;
+
+  samplesChecked := 0;
+  for i := 0 to REQUIRED_CHANGES - 1 do
+  begin
+    if Readings[i].empty or Readings[i + 1].empty then
+      Exit;
+
+    // Ignore broken timeline chunks where readings are too far apart.
+    gapMin := Abs(MinutesBetween(Readings[i].date, Readings[i + 1].date));
+    if gapMin > (INTERVAL_MINUTES * DELTA_MAX) then
+      Exit;
+
+    currVal := Readings[i].convert(mgdl);
+    prevVal := Readings[i + 1].convert(mgdl);
+    deltaAbs := Abs(currVal - prevVal);
+
+    if deltaAbs < SIGNIFICANT_DELTA_MGDL then
+      Exit;
+
+    Inc(samplesChecked);
+  end;
+
+  Result := samplesChecked = REQUIRED_CHANGES;
+end;
+
 procedure TfBG.UpdateUIBasedOnGlucose;
 var
   reading: BGReading;
   col: TColor;
   txt: string;
+  sensorFault: boolean;
 begin
   txt := '';
   
@@ -6038,6 +6083,20 @@ begin
     HandleLowGlucose(reading)
   else
     HandleNormalGlucose(reading);
+
+  sensorFault := IsSensorFaultSuspected(bgs);
+  if sensorFault then
+  begin
+    if (not sensorFaultAlerted) or (MinutesBetween(Now, lastSensorFaultAlert) >= 30) then
+      if not AlertsSnoozed then
+      begin
+        native.attention(RS_ATTENTION_SENSOR_FAULT, RS_ATTENTION_SENSOR_FAULT_DESC);
+        sensorFaultAlerted := true;
+        lastSensorFaultAlert := Now;
+      end;
+  end
+  else
+    sensorFaultAlerted := false;
 
   // Don't show pnOffReading when warning panel is displayed
   if pnWarning.Visible then

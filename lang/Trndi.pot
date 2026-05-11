@@ -1480,6 +1480,14 @@ msgstr ""
 msgid "Readings are not fresh, have your phone lost connection to the sensor?"
 msgstr ""
 
+#: trndi.strings.rs_attention_sensor_fault
+msgid "Possible sensor fault"
+msgstr ""
+
+#: trndi.strings.rs_attention_sensor_fault_desc
+msgid "Trndi detected repeated large jumps between consecutive readings. Verify with your official CGM app/device."
+msgstr ""
+
 #: trndi.strings.rs_cleanup
 msgid "Wait. Shutting down extensions engine..."
 msgstr ""
@@ -1965,6 +1973,10 @@ msgstr ""
 
 #: trndi.strings.rs_safemode_desc
 msgid "Trndi is running in <b>Safe Mode</b>!<ul><li>No start-up actions from extensions will run</li><li>You cannot use, and no actions will trigger from, extensions</li></ul><br>Extensions will load next run, unless you press <b>CTRL</b>!"
+msgstr ""
+
+#: trndi.strings.rs_sensor_fault_suspect
+msgid "Sensor may be faulty: multiple abrupt reading jumps detected."
 msgstr ""
 
 #: trndi.strings.rs_service_adjust

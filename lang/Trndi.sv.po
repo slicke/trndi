@@ -1573,6 +1573,14 @@ msgstr "Utdaterade avläsningar!"
 msgid "Readings are not fresh, have your phone lost connection to the sensor?"
 msgstr "Avläsningarna är inte färska, har din telefon tappat kontakten med sensorn?"
 
+#: trndi.strings.rs_attention_sensor_fault
+msgid "Possible sensor fault"
+msgstr "Möjligt sensorfel"
+
+#: trndi.strings.rs_attention_sensor_fault_desc
+msgid "Trndi detected repeated large jumps between consecutive readings. Verify with your official CGM app/device."
+msgstr "Trndi har upptäckt upprepade stora hopp mellan angränsande avläsningar. Kontrollera mot din officiella CGM-app/enhet."
+
 #: trndi.strings.rs_cleanup
 msgid "Wait. Shutting down extensions engine..."
 msgstr "Vänta. Stänger tilläggsmotorn..."
@@ -2078,6 +2086,10 @@ msgstr "Felsäkert läge aktiverat"
 #: trndi.strings.rs_safemode_desc
 msgid "Trndi is running in <b>Safe Mode</b>!<ul><li>No start-up actions from extensions will run</li><li>You cannot use, and no actions will trigger from, extensions</li></ul><br>Extensions will load next run, unless you press <b>CTRL</b>!"
 msgstr "Trndi körs i <b>felsäkertläge</b>!<ul><li>Inga startåtgärder från tillägg körs</li><li>Du kan inte använda, och inga åtgärder kommer att köras från, tillägg</li></ul><br>Tillägg kommer att köras nästa start, såvida du inte trycker <b>CTRL</b>!"
+
+#: trndi.strings.rs_sensor_fault_suspect
+msgid "Sensor may be faulty: multiple abrupt reading jumps detected."
+msgstr "Sensorn kan vara trasig: flera abrupt hoppande avläsningar upptäcktes."
 
 #: trndi.strings.rs_service_adjust
 #, object-pascal-format
@@ -3005,4 +3017,3 @@ msgstr "Historikgraf"
 #, object-pascal-format
 msgid "Readings (%s)"
 msgstr "Avläsningar (%s)"
-
