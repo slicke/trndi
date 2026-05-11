@@ -55,7 +55,7 @@ interface
 uses
 Classes, ComCtrls, ExtCtrls, Spin, StdCtrls, SysUtils, Forms, Controls,
 Graphics, Dialogs, LCLTranslator, trndi.native, lclintf, process{$ifdef X_MAC}, CocoaAll, nsutils.nshelpers{$endif},
-slicke.ux.alert, slicke.ux.native, slicke.versioninfo, trndi.funcs, buildinfo, StrUtils, trndi.api, trndi.api.nightscout, trndi.api.nightscout3, trndi.api.dexcom, trndi.api.dexcomNew, trndi.api.tandem, trndi.api.xdrip, razer.chroma, math, trndi.types, trndi.api.debug_firstXmissing, trndi.api.debug_intermittentmissing, trndi.api.debug_custom, trndi.api.debug, trndi.api.debug_lowsoon, trndi.api.debug_sensorexpiry, trndi.api.debug_slow, base64, Variants{$ifdef X_WIN}, ComObj{$endif};
+slicke.ux.alert, slicke.ux.native, slicke.versioninfo, trndi.funcs, buildinfo, StrUtils, trndi.api, trndi.api.nightscout, trndi.api.nightscout3, trndi.api.dexcom, trndi.api.dexcomNew, trndi.api.tandem, trndi.api.xdrip, razer.chroma, math, trndi.types, trndi.api.debug_firstXmissing, trndi.api.debug_intermittentmissing, trndi.api.debug_custom, trndi.api.debug, trndi.api.debug_lowsoon, trndi.api.debug_sensorexpiry, trndi.api.debug_slow, trndi.api.debug_faultysensor, base64, Variants{$ifdef X_WIN}, ComObj{$endif};
 
 {$I ../../inc/defines.inc}
 type
@@ -928,6 +928,8 @@ begin
     sys := DebugIntermittentMissingAPI;
   API_D_SLOW:
     sys := DebugSlowAPI;
+  API_D_FAULTY:
+    sys := DebugFaultySensorAPI;
   API_D_LOWSOON:
     sys := DebugLowSoonAPI;
   API_D_SENSOR_EXPIRY:
@@ -1375,6 +1377,8 @@ begin
     sys := DebugCustomAPI;
   API_D_SLOW:
     sys := DebugSlowAPI;
+  API_D_FAULTY:
+    sys := DebugFaultySensorAPI;
   API_D_LOWSOON:
     sys := DebugLowSoonAPI;
   API_D_SENSOR_EXPIRY:

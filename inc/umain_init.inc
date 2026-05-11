@@ -485,6 +485,9 @@ begin
   API_D_SLOW,
   'API_D_SLOW':
     api := DebugSlowAPI.Create(apiTarget, apiCreds);
+  API_D_FAULTY,
+  'API_D_FAULTY':
+    api := DebugFaultySensorAPI.Create(apiTarget, apiCreds);
   API_D_LOWSOON,
   'API_D_LOWSOON':
     api := DebugLowSoonAPI.Create(apiTarget, apiCreds);
