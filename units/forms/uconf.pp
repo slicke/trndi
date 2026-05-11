@@ -481,6 +481,7 @@ TfConf = class(TForm)
   procedure fsLoChange({%H-}Sender: TObject);
   procedure Label12Click(Sender: TObject);
   procedure lAckClick(Sender: TObject);
+  procedure lbExtensionsDblClick(Sender: TObject);
   procedure lbExtensionsSelectionChange(Sender: TObject; User: boolean);
   procedure lbUsersEnter(Sender: TObject);
   procedure lbUsersSelectionChange(Sender: TObject; User: boolean);
@@ -835,6 +836,15 @@ begin
   else
     lExtName.Caption := RS_NO_COPYRIGHT;
   f.Free;
+end;
+
+procedure TfConf.lbExtensionsDblClick(Sender: TObject);
+var
+  selectedExt: string;
+begin
+  selectedExt := lbExtensions.GetSelectedText;
+  if (selectedExt <> '') and FileExists(selectedExt) then
+    OpenDocument(selectedExt);
 end;
 
 procedure TfConf.lbUsersEnter(Sender: TObject);

@@ -13406,6 +13406,7 @@ object fConf: TfConf
           ItemHeight = 0
           TabOrder = 0
           TopIndex = -1
+          OnDblClick = lbExtensionsDblClick
           OnSelectionChange = lbExtensionsSelectionChange
         end
       end
