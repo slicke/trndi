@@ -410,8 +410,19 @@ TfBG = class(TForm)
   {$endif}
 private
   function AlertsSnoozed: boolean;
+  function GetControlAbsolutePos(const Ctrl: TControl): TPoint;
+  function GetPanelClientPos(const Ctrl: TControl; const Panel: TPanel): TPoint;
+  function PointInsideRoundedRect(const X, Y, W, H, R: integer): boolean;
   function GetSensorBadgeText: string;
+  procedure HideConnectionBadge;
+  procedure EnsureConnectionBadgeControls;
+  procedure ApplyConnectionBadgeLayout(const DisplayStatus: string;
+    const DisplayColor: TColor; const IsCentered: boolean);
+  procedure EnsureWarningDots;
+  procedure SyncWarningOverlayDots(const P: TPanel);
   procedure SetAlertSnoozeMinutes(const Minutes: integer);
+  procedure PaintWarningOverlay(const P: TPanel; const Radius: integer;
+    const PanelFillColor: TColor; const AlphaRatio: double);
   procedure UpdateAlertSnoozeMenu;
   function ClassifyConnectionStatus(const ErrorText: string): string;
   procedure SetConnectionBadge(const StatusText: string; const BadgeColor: TColor);
@@ -447,6 +458,7 @@ private
   FPredictionThread: TPredictionThread;
   FInternetBadgeBg: TShape;
   FInternetBadgeShadow: TShape;
+  FWarningDots: array[1..NUM_DOTS] of TDotControl;
   FLastTimerTick: TDateTime; // Last timer tick for wake detection
   FForceRefresh: boolean; // Force bypass of cached API reads on wake
   FLastFetchHadData: boolean; // true when last API call returned ≥1 readings (used to avoid reusing cache after an empty fetch)
@@ -535,6 +547,7 @@ private
       based on recency and backend requirements.
    }
   procedure SetNextUpdateTimer(const LastReadingTime: TDateTime);
+  function FinalizeReadingUpdate(const Boot: boolean): boolean;
   function IsSensorFaultSuspected(const Readings: array of BGReading): boolean;
   {** Apply visual changes following the latest readings, such as redraws and
       color/label updates depending on thresholds and state.
@@ -1452,85 +1465,6 @@ var
   panelFillColor: TColor;
   {$ifndef X_WIN}
   alphaRatio: double;
-  arrX: integer;
-  arrY : integer;
-  dotW: integer;
-  dotH: integer;
-  centerX: integer;
-  centerY: integer;
-  dot: TDotControl;
-  warningDotColor: TColor;
-  dotPos: TPoint;
-
-  function GetAbsoluteControlPos(const Ctrl: TControl): TPoint;
-  var
-    cur: TControl;
-  begin
-    Result.X := 0;
-    Result.Y := 0;
-    cur := Ctrl;
-    while Assigned(cur) do
-    begin
-      Inc(Result.X, cur.Left);
-      Inc(Result.Y, cur.Top);
-      cur := cur.Parent;
-    end;
-  end;
-
-  function GetPanelClientPos(const Ctrl: TControl; const Panel: TPanel): TPoint;
-  var
-    ctrlPos: TPoint;
-    panelPos: TPoint;
-  begin
-    ctrlPos := GetAbsoluteControlPos(Ctrl);
-    panelPos := GetAbsoluteControlPos(Panel);
-    Result.X := ctrlPos.X - panelPos.X;
-    Result.Y := ctrlPos.Y - panelPos.Y;
-  end;
-
-  function PointInsideRoundedRect(const X, Y, W, H, R: integer): boolean;
-  var
-    dx, dy: integer;
-    rr: integer;
-  begin
-    if (X < 0) or (Y < 0) or (X >= W) or (Y >= H) then
-      Exit(False);
-
-    if ((X >= R) and (X < W - R)) or ((Y >= R) and (Y < H - R)) then
-      Exit(True);
-
-    rr := R * R;
-
-    if (X < R) and (Y < R) then
-    begin
-      dx := X - R;
-      dy := Y - R;
-      Exit((dx * dx + dy * dy) <= rr);
-    end;
-
-    if (X >= W - R) and (Y < R) then
-    begin
-      dx := X - (W - R - 1);
-      dy := Y - R;
-      Exit((dx * dx + dy * dy) <= rr);
-    end;
-
-    if (X < R) and (Y >= H - R) then
-    begin
-      dx := X - R;
-      dy := Y - (H - R - 1);
-      Exit((dx * dx + dy * dy) <= rr);
-    end;
-
-    if (X >= W - R) and (Y >= H - R) then
-    begin
-      dx := X - (W - R - 1);
-      dy := Y - (H - R - 1);
-      Exit((dx * dx + dy * dy) <= rr);
-    end;
-
-    Result := True;
-  end;
   {$endif}
 begin
   // Use manual drawing for rounded corners on all platforms
@@ -1564,49 +1498,174 @@ begin
 
     {$ifndef X_WIN}
     // On non-Windows platforms, ApplyAlphaControl doesn't work.
-    // Render all warning labels using consolidated helper function
-    RenderWarningLabel(lArrow, P, Brush.Color, alphaRatio);
-    RenderWarningLabel(lVal, P, Brush.Color, alphaRatio);
-    RenderWarningLabel(lDiff, P, Brush.Color, alphaRatio);
-    RenderWarningLabel(lAgo, P, Brush.Color, alphaRatio);
-
-    // draw trend dots only inside the warning overlay. Derive a readable color
-    // from the warning panel background, then soften it slightly so the dots
-    // stay visible without competing with the main reading.
-    for Dot in TrendDots do
-      if Dot.Visible then
-      begin
-        // Map dot position into warning-panel client coordinates.
-        // Use portable parent-offset math instead of widgetset-specific APIs.
-        dotPos := GetPanelClientPos(Dot, P);
-
-        arrX := dotPos.X;
-        arrY := dotPos.Y;
-        Font.Assign(Dot.Font);
-        warningDotColor := GetAdjustedColorForBackground(Dot.Font.Color,
-          Brush.Color, 0.7, 0.45, not IsLightColor(Brush.Color));
-        Font.Color := BlendColors(warningDotColor, Brush.Color, 0.75);
-        Brush.Style := bsClear;
-
-        dotW := TextWidth(Dot.Caption);
-        dotH := TextHeight(Dot.Caption);
-
-        // Keep overlay dots inside the warning panel while dragging/resizing.
-        if dotW > 0 then
-          arrX := Max(1, Min(arrX, P.Width - dotW - 1));
-        if dotH > 0 then
-          arrY := Max(1, Min(arrY, P.Height - dotH - 1));
-
-        // Skip drawing when the dot center lands outside rounded corners.
-        centerX := arrX + (dotW div 2);
-        centerY := arrY + (dotH div 2);
-        if not PointInsideRoundedRect(centerX, centerY, P.Width, P.Height, Radius) then
-          Continue;
-
-        TextOut(arrX, arrY, Dot.Caption);
-      end;
-
+    PaintWarningOverlay(P, Radius, Brush.Color, alphaRatio);
     {$endif}
+  end;
+end;
+
+function TfBG.GetControlAbsolutePos(const Ctrl: TControl): TPoint;
+var
+  cur: TControl;
+begin
+  Result.X := 0;
+  Result.Y := 0;
+  cur := Ctrl;
+  while Assigned(cur) do
+  begin
+    Inc(Result.X, cur.Left);
+    Inc(Result.Y, cur.Top);
+    cur := cur.Parent;
+  end;
+end;
+
+function TfBG.GetPanelClientPos(const Ctrl: TControl; const Panel: TPanel): TPoint;
+var
+  ctrlPos: TPoint;
+  panelPos: TPoint;
+begin
+  ctrlPos := GetControlAbsolutePos(Ctrl);
+  panelPos := GetControlAbsolutePos(Panel);
+  Result.X := ctrlPos.X - panelPos.X;
+  Result.Y := ctrlPos.Y - panelPos.Y;
+end;
+
+function TfBG.PointInsideRoundedRect(const X, Y, W, H, R: integer): boolean;
+var
+  dx, dy: integer;
+  rr: integer;
+begin
+  if (X < 0) or (Y < 0) or (X >= W) or (Y >= H) then
+    Exit(False);
+
+  if ((X >= R) and (X < W - R)) or ((Y >= R) and (Y < H - R)) then
+    Exit(True);
+
+  rr := R * R;
+
+  if (X < R) and (Y < R) then
+  begin
+    dx := X - R;
+    dy := Y - R;
+    Exit((dx * dx + dy * dy) <= rr);
+  end;
+
+  if (X >= W - R) and (Y < R) then
+  begin
+    dx := X - (W - R - 1);
+    dy := Y - R;
+    Exit((dx * dx + dy * dy) <= rr);
+  end;
+
+  if (X < R) and (Y >= H - R) then
+  begin
+    dx := X - R;
+    dy := Y - (H - R - 1);
+    Exit((dx * dx + dy * dy) <= rr);
+  end;
+
+  if (X >= W - R) and (Y >= H - R) then
+  begin
+    dx := X - (W - R - 1);
+    dy := Y - (H - R - 1);
+    Exit((dx * dx + dy * dy) <= rr);
+  end;
+
+  Result := True;
+end;
+
+procedure TfBG.PaintWarningOverlay(const P: TPanel; const Radius: integer;
+  const PanelFillColor: TColor; const AlphaRatio: double);
+begin
+  with P.Canvas do
+  begin
+    RenderWarningLabel(lArrow, P, PanelFillColor, AlphaRatio);
+    RenderWarningLabel(lVal, P, PanelFillColor, AlphaRatio);
+    RenderWarningLabel(lDiff, P, PanelFillColor, AlphaRatio);
+    RenderWarningLabel(lAgo, P, PanelFillColor, AlphaRatio);
+  end;
+end;
+
+procedure TfBG.EnsureWarningDots;
+var
+  i: integer;
+begin
+  for i := 1 to NUM_DOTS do
+    if not Assigned(FWarningDots[i]) then
+    begin
+      {$ifdef DARWIN}
+      FWarningDots[i] := TLabel.Create(Self);
+      with TLabel(FWarningDots[i]) do
+      begin
+        Parent := pnWarning;
+        AutoSize := true;
+        Alignment := taCenter;
+        Layout := tlCenter;
+        Transparent := true;
+      end;
+      {$else}
+      FWarningDots[i] := TPaintBox.Create(Self);
+      with TPaintBox(FWarningDots[i]) do
+      begin
+        Parent := pnWarning;
+        AutoSize := false;
+        OnPaint := @DotPaint;
+      end;
+      {$endif}
+
+      with FWarningDots[i] do
+      begin
+        Visible := false;
+        Caption := DOT_GRAPH;
+        PopupMenu := pmSettings;
+        Cursor := crHandPoint;
+        OnClick := @onTrendClick;
+      end;
+    end;
+end;
+
+procedure TfBG.SyncWarningOverlayDots(const P: TPanel);
+var
+  i: integer;
+  srcDot, dstDot: TDotControl;
+  dotPos: TPoint;
+  centerX, centerY: integer;
+begin
+  EnsureWarningDots;
+
+  for i := 1 to NUM_DOTS do
+  begin
+    srcDot := TrendDots[i];
+    dstDot := FWarningDots[i];
+
+    if (srcDot = nil) or (dstDot = nil) then
+      Continue;
+
+    if srcDot.Visible then
+    begin
+      dotPos := GetPanelClientPos(srcDot, P);
+      dstDot.Parent := P;
+      dstDot.Caption := srcDot.Caption;
+      dstDot.Hint := srcDot.Hint;
+      dstDot.ShowHint := srcDot.ShowHint or (srcDot.Hint <> '');
+      dstDot.Tag := srcDot.Tag;
+      dstDot.Font.Assign(srcDot.Font);
+      dstDot.Width := srcDot.Width;
+      dstDot.Height := srcDot.Height;
+      dstDot.Left := dotPos.X;
+      dstDot.Top := dotPos.Y;
+
+      centerX := dstDot.Left + (dstDot.Width div 2);
+      centerY := dstDot.Top + (dstDot.Height div 2);
+      if PointInsideRoundedRect(centerX, centerY, P.Width, P.Height, 20) then
+      begin
+        dstDot.Visible := true;
+        dstDot.BringToFront;
+      end
+      else
+        dstDot.Visible := false;
+    end
+    else
+      dstDot.Visible := false;
   end;
 end;
 
@@ -3005,9 +3064,6 @@ var
   displayColor: TColor;
   forceShowBadge: boolean;
   sensorBadgeText: string;
-  contentWidth: integer;
-  maxBadgeWidth: integer;
-  badgeTextPadding: integer;
 begin
   FLastConnectionStatus := StatusText;
   displayStatus := StatusText;
@@ -3036,44 +3092,63 @@ begin
 
   if isOk and (not showOkBadge) and (not forceShowBadge) then
   begin
-    lInternet.Visible := false;
-    if Assigned(FInternetBadgeBg) then
-      FInternetBadgeBg.Visible := false;
-    if Assigned(FInternetBadgeShadow) then
-      FInternetBadgeShadow.Visible := false;
+    HideConnectionBadge;
     Exit;
   end;
 
-  if not Assigned(FInternetBadgeBg) then
-  begin
-    FInternetBadgeShadow := TShape.Create(Self);
-    FInternetBadgeShadow.Parent := Self;
-    FInternetBadgeShadow.Shape := stRoundRect;
-    FInternetBadgeShadow.Pen.Style := psClear;
+  EnsureConnectionBadgeControls;
+  ApplyConnectionBadgeLayout(displayStatus, displayColor, isCentered);
+end;
 
-    FInternetBadgeBg := TShape.Create(Self);
-    FInternetBadgeBg.Parent := Self;
-    FInternetBadgeBg.Shape := stRoundRect;
-    FInternetBadgeBg.Pen.Style := psSolid;
-    FInternetBadgeBg.Pen.Width := 1;
-  end;
+procedure TfBG.HideConnectionBadge;
+begin
+  lInternet.Visible := false;
+  if Assigned(FInternetBadgeBg) then
+    FInternetBadgeBg.Visible := false;
+  if Assigned(FInternetBadgeShadow) then
+    FInternetBadgeShadow.Visible := false;
+end;
 
-  lInternet.Caption := displayStatus;
+procedure TfBG.EnsureConnectionBadgeControls;
+begin
+  if Assigned(FInternetBadgeBg) then
+    Exit;
+
+  FInternetBadgeShadow := TShape.Create(Self);
+  FInternetBadgeShadow.Parent := Self;
+  FInternetBadgeShadow.Shape := stRoundRect;
+  FInternetBadgeShadow.Pen.Style := psClear;
+
+  FInternetBadgeBg := TShape.Create(Self);
+  FInternetBadgeBg.Parent := Self;
+  FInternetBadgeBg.Shape := stRoundRect;
+  FInternetBadgeBg.Pen.Style := psSolid;
+  FInternetBadgeBg.Pen.Width := 1;
+end;
+
+procedure TfBG.ApplyConnectionBadgeLayout(const DisplayStatus: string;
+  const DisplayColor: TColor; const IsCentered: boolean);
+var
+  contentWidth: integer;
+  maxBadgeWidth: integer;
+  badgeTextPadding: integer;
+begin
+  lInternet.Caption := DisplayStatus;
   lInternet.Font.Style := [fsBold];
   lInternet.Font.Quality := fqCleartype;
-  lInternet.Font.Color := GetTextColorForBackground(displayColor, 0, 0.65);
+  lInternet.Font.Color := GetTextColorForBackground(DisplayColor, 0, 0.65);
   lInternet.Transparent := true;
   lInternet.AutoSize := false;
   lInternet.WordWrap := false;
   badgeTextPadding := Max(18, round(ClientWidth * 0.02));
   lInternet.Canvas.Font.Assign(lInternet.Font);
-  contentWidth := lInternet.Canvas.TextWidth(displayStatus) + badgeTextPadding;
+  contentWidth := lInternet.Canvas.TextWidth(DisplayStatus) + badgeTextPadding;
   maxBadgeWidth := Max(96, round(ClientWidth * 0.42));
   lInternet.Width := Min(maxBadgeWidth, Max(96, contentWidth));
   lInternet.Height := Max(28, round(ClientHeight * 0.058));
   ScaleLbl(lInternet, taCenter, tlCenter, true);
 
-  if isCentered then
+  if IsCentered then
   begin
     lInternet.Anchors := [];
     lInternet.Left := Max(8, (ClientWidth - lInternet.Width) div 2);
@@ -3086,9 +3161,9 @@ begin
     lInternet.Left := Max(8, ClientWidth - lInternet.Width - 8);
   end;
 
-  FInternetBadgeShadow.Brush.Color := BlendColors(DarkenColor(displayColor, 0.65), fBG.Color, 0.55);
-  FInternetBadgeBg.Brush.Color := displayColor;
-  FInternetBadgeBg.Pen.Color := BlendColors(displayColor, clBlack, 0.35);
+  FInternetBadgeShadow.Brush.Color := BlendColors(DarkenColor(DisplayColor, 0.65), fBG.Color, 0.55);
+  FInternetBadgeBg.Brush.Color := DisplayColor;
+  FInternetBadgeBg.Pen.Color := BlendColors(DisplayColor, clBlack, 0.35);
   UpdateConnectionBadgeBackgroundBounds;
   FInternetBadgeShadow.Visible := true;
   FInternetBadgeShadow.BringToFront;
@@ -5625,6 +5700,35 @@ begin
   SetNextUpdateTimer(reading.date);
 end;
 
+function TfBG.FinalizeReadingUpdate(const Boot: boolean): boolean;
+begin
+  Result := IsDataFresh;
+  if (not Result) and (not Boot) then
+    Exit;
+
+  // Complete the UI update sequence
+  FinalizeUIUpdate;
+
+  // When a warning overlay is visible we periodically refresh its contents
+  // so that the "last reading" and other dynamic text stay up to date. This
+  // fixes an issue on Linux where a high/low prediction popup would display
+  // the reading that triggered the alert and never update even if a newer
+  // value arrived while the panel was still showing.
+  if pnWarning.Visible then
+    fixWarningPanel;
+
+  {$ifdef TrndiExt}
+  // Check if JS engine is still available before calling
+  callFunc('fetchCallback',[
+    bgs[0].format(mgdl, BG_MSG_SHORT), //mgdl reading
+    bgs[0].format(mmol, BG_MSG_SHORT), //mmol reading
+    bgs[0].format(mgdl, BG_MSG_SIG_SHORT, BGDelta), //mgdl diff
+    bgs[0].format(mmol, BG_MSG_SHORT, BGDelta), //mmol diff
+    not bgs[0].empty // has reading?
+    ]);
+  {$endif}
+end;
+
 function TfBG.IsDataFresh: boolean;
 var
   reading: BGReading;   // Holder for the latest (newest) reading
@@ -5805,36 +5909,7 @@ begin
   // Process the newest reading
   ProcessCurrentReading;
 
-  // Handle data freshness
-  if not IsDataFresh then
-  begin
-    if not boot then
-      Exit;
-  end
-  else
-    Result := true;
-
-  // Complete the UI update sequence
-  FinalizeUIUpdate;
-
-  // When a warning overlay is visible we periodically refresh its contents
-  // so that the "last reading" and other dynamic text stay up to date. This
-  // fixes an issue on Linux where a high/low prediction popup would display
-  // the reading that triggered the alert and never update even if a newer
-  // value arrived while the panel was still showing.
-  if pnWarning.Visible then
-    fixWarningPanel;
-
-  {$ifdef TrndiExt}
-  // Check if JS engine is still available before calling
-  callFunc('fetchCallback',[
-    bgs[0].format(mgdl, BG_MSG_SHORT), //mgdl reading
-    bgs[0].format(mmol, BG_MSG_SHORT), //mmol reading
-    bgs[0].format(mgdl, BG_MSG_SIG_SHORT, BGDelta), //mgdl diff
-    bgs[0].format(mmol, BG_MSG_SHORT, BGDelta), //mmol diff
-    not bgs[0].empty // has reading?
-    ]);
-  {$endif}
+  Result := FinalizeReadingUpdate(boot);
 end;
 
 procedure TfBG.FinalizeUpdate;
@@ -6500,6 +6575,9 @@ begin
     pnWarning.Canvas.TextWidth(pnWarnLast.Caption) + 10);
   pnWarnLast.left := 5;
   pnWarnLast.top := pnWarning.Height - pnWarnLast.Height - 5;
+
+  // Keep the overlay dots interactive and aligned with the main trend dots.
+  SyncWarningOverlayDots(pnWarning);
 end;
 
 // Show a semi-transparent full-panel warning overlay.
