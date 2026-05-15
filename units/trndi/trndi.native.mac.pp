@@ -114,6 +114,9 @@ type
   id  = Pointer;
   SEL = Pointer;
 
+var
+  CachedHasBundleIdentifier: Integer = -1;
+
 // Typed imports of objc_msgSend with a few arities we need
 function objc_msgSend0(obj: id; sel: SEL): id; cdecl; external ObjCLib name 'objc_msgSend';
 function objc_msgSend1(obj: id; sel: SEL; p1: id): id; cdecl; external ObjCLib name 'objc_msgSend';
@@ -130,6 +133,9 @@ function TrndiHasBundleIdentifier: Boolean;
 var
   NSBundleClass, mainBundle, ident: id;
 begin
+  if CachedHasBundleIdentifier <> -1 then
+    Exit(CachedHasBundleIdentifier = 1);
+
   Result := False;
   NSBundleClass := objc_getClass('NSBundle');
   if NSBundleClass = nil then Exit;
@@ -138,6 +144,10 @@ begin
   ident := objc_msgSend0(mainBundle, sel_registerName('bundleIdentifier'));
   if ident = nil then Exit;
   Result := objc_msgSend_uint(ident, sel_registerName('length')) > 0;
+  if Result then
+    CachedHasBundleIdentifier := 1
+  else
+    CachedHasBundleIdentifier := 0;
 end;
 
 {------------------------------------------------------------------------------
