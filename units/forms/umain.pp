@@ -1462,6 +1462,30 @@ var
   warningDotColor: TColor;
   dotPos: TPoint;
 
+  function GetAbsoluteControlPos(const Ctrl: TControl): TPoint;
+  var
+    cur: TControl;
+  begin
+    Result := Point(0, 0);
+    cur := Ctrl;
+    while Assigned(cur) do
+    begin
+      Inc(Result.X, cur.Left);
+      Inc(Result.Y, cur.Top);
+      cur := cur.Parent;
+    end;
+  end;
+
+  function GetPanelClientPos(const Ctrl: TControl; const Panel: TPanel): TPoint;
+  var
+    ctrlPos: TPoint;
+    panelPos: TPoint;
+  begin
+    ctrlPos := GetAbsoluteControlPos(Ctrl);
+    panelPos := GetAbsoluteControlPos(Panel);
+    Result := Point(ctrlPos.X - panelPos.X, ctrlPos.Y - panelPos.Y);
+  end;
+
   function PointInsideRoundedRect(const X, Y, W, H, R: integer): boolean;
   var
     dx, dy: integer;
@@ -1551,11 +1575,8 @@ begin
       if Dot.Visible then
       begin
         // Map dot position into warning-panel client coordinates.
-        // Using screen-space conversion avoids parent-offset drift on Linux.
-        if Assigned(Dot.Parent) then
-          dotPos := P.ScreenToClient(Dot.Parent.ClientToScreen(Point(Dot.Left, Dot.Top)))
-        else
-          dotPos := P.ScreenToClient(ClientToScreen(Point(Dot.Left, Dot.Top)));
+        // Use portable parent-offset math instead of widgetset-specific APIs.
+        dotPos := GetPanelClientPos(Dot, P);
 
         arrX := dotPos.X;
         arrY := dotPos.Y;
