@@ -1456,6 +1456,7 @@ var
   arrY : integer;
   dot: TDotControl;
   warningDotColor: TColor;
+  dotPos: TPoint;
   {$endif}
 begin
   // Use manual drawing for rounded corners on all platforms
@@ -1501,8 +1502,15 @@ begin
     for Dot in TrendDots do
       if Dot.Visible then
       begin
-        arrX := Dot.Left - P.Left;
-        arrY := Dot.Top - P.Top;
+        // Map dot position into warning-panel client coordinates.
+        // Using screen-space conversion avoids parent-offset drift on Linux.
+        if Assigned(Dot.Parent) then
+          dotPos := P.ScreenToClient(Dot.Parent.ClientToScreen(Point(Dot.Left, Dot.Top)))
+        else
+          dotPos := P.ScreenToClient(ClientToScreen(Point(Dot.Left, Dot.Top)));
+
+        arrX := dotPos.X;
+        arrY := dotPos.Y;
         Font.Assign(Dot.Font);
         warningDotColor := GetAdjustedColorForBackground(Dot.Font.Color,
           Brush.Color, 0.7, 0.45, not IsLightColor(Brush.Color));
