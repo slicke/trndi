@@ -1454,9 +1454,57 @@ var
   alphaRatio: double;
   arrX: integer;
   arrY : integer;
+  dotW: integer;
+  dotH: integer;
+  centerX: integer;
+  centerY: integer;
   dot: TDotControl;
   warningDotColor: TColor;
   dotPos: TPoint;
+
+  function PointInsideRoundedRect(const X, Y, W, H, R: integer): boolean;
+  var
+    dx, dy: integer;
+    rr: integer;
+  begin
+    if (X < 0) or (Y < 0) or (X >= W) or (Y >= H) then
+      Exit(False);
+
+    if ((X >= R) and (X < W - R)) or ((Y >= R) and (Y < H - R)) then
+      Exit(True);
+
+    rr := R * R;
+
+    if (X < R) and (Y < R) then
+    begin
+      dx := X - R;
+      dy := Y - R;
+      Exit((dx * dx + dy * dy) <= rr);
+    end;
+
+    if (X >= W - R) and (Y < R) then
+    begin
+      dx := X - (W - R - 1);
+      dy := Y - R;
+      Exit((dx * dx + dy * dy) <= rr);
+    end;
+
+    if (X < R) and (Y >= H - R) then
+    begin
+      dx := X - R;
+      dy := Y - (H - R - 1);
+      Exit((dx * dx + dy * dy) <= rr);
+    end;
+
+    if (X >= W - R) and (Y >= H - R) then
+    begin
+      dx := X - (W - R - 1);
+      dy := Y - (H - R - 1);
+      Exit((dx * dx + dy * dy) <= rr);
+    end;
+
+    Result := True;
+  end;
   {$endif}
 begin
   // Use manual drawing for rounded corners on all platforms
@@ -1516,6 +1564,22 @@ begin
           Brush.Color, 0.7, 0.45, not IsLightColor(Brush.Color));
         Font.Color := BlendColors(warningDotColor, Brush.Color, 0.75);
         Brush.Style := bsClear;
+
+        dotW := TextWidth(Dot.Caption);
+        dotH := TextHeight(Dot.Caption);
+
+        // Keep overlay dots inside the warning panel while dragging/resizing.
+        if dotW > 0 then
+          arrX := Max(1, Min(arrX, P.Width - dotW - 1));
+        if dotH > 0 then
+          arrY := Max(1, Min(arrY, P.Height - dotH - 1));
+
+        // Skip drawing when the dot center lands outside rounded corners.
+        centerX := arrX + (dotW div 2);
+        centerY := arrY + (dotH div 2);
+        if not PointInsideRoundedRect(centerX, centerY, P.Width, P.Height, Radius) then
+          Continue;
+
         TextOut(arrX, arrY, Dot.Caption);
       end;
 
