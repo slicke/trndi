@@ -1466,7 +1466,8 @@ var
   var
     cur: TControl;
   begin
-    Result := Point(0, 0);
+    Result.X := 0;
+    Result.Y := 0;
     cur := Ctrl;
     while Assigned(cur) do
     begin
@@ -1483,7 +1484,8 @@ var
   begin
     ctrlPos := GetAbsoluteControlPos(Ctrl);
     panelPos := GetAbsoluteControlPos(Panel);
-    Result := Point(ctrlPos.X - panelPos.X, ctrlPos.Y - panelPos.Y);
+    Result.X := ctrlPos.X - panelPos.X;
+    Result.Y := ctrlPos.Y - panelPos.Y;
   end;
 
   function PointInsideRoundedRect(const X, Y, W, H, R: integer): boolean;
