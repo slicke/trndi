@@ -420,6 +420,8 @@ private
     const DisplayColor: TColor; const IsCentered: boolean);
   procedure EnsureWarningDots;
   procedure SyncWarningOverlayDots(const P: TPanel);
+  procedure EnsureWarningLabels;
+  procedure SyncWarningOverlayLabels(const P: TPanel);
   procedure SetAlertSnoozeMinutes(const Minutes: integer);
   procedure PaintWarningOverlay(const P: TPanel; const Radius: integer;
     const PanelFillColor: TColor; const AlphaRatio: double);
@@ -459,6 +461,7 @@ private
   FInternetBadgeBg: TShape;
   FInternetBadgeShadow: TShape;
   FWarningDots: array[1..NUM_DOTS] of TDotControl;
+  FWarningLabels: array[1..4] of TLabel; // lArrow, lVal, lDiff, lAgo overlay
   FLastTimerTick: TDateTime; // Last timer tick for wake detection
   FForceRefresh: boolean; // Force bypass of cached API reads on wake
   FLastFetchHadData: boolean; // true when last API call returned ≥1 readings (used to avoid reusing cache after an empty fetch)
@@ -1576,13 +1579,8 @@ end;
 procedure TfBG.PaintWarningOverlay(const P: TPanel; const Radius: integer;
   const PanelFillColor: TColor; const AlphaRatio: double);
 begin
-  with P.Canvas do
-  begin
-    RenderWarningLabel(lArrow, P, PanelFillColor, AlphaRatio);
-    RenderWarningLabel(lVal, P, PanelFillColor, AlphaRatio);
-    RenderWarningLabel(lDiff, P, PanelFillColor, AlphaRatio);
-    RenderWarningLabel(lAgo, P, PanelFillColor, AlphaRatio);
-  end;
+  // Warning labels are now rendered as overlay controls via SyncWarningOverlayLabels
+  // No canvas painting needed here
 end;
 
 procedure TfBG.EnsureWarningDots;
@@ -1619,6 +1617,30 @@ begin
         PopupMenu := pmSettings;
         Cursor := crHandPoint;
         OnClick := @onTrendClick;
+      end;
+    end;
+end;
+
+procedure TfBG.EnsureWarningLabels;
+var
+  labels: array[1..4] of TLabel;
+  i: integer;
+begin
+  labels[1] := lArrow;
+  labels[2] := lVal;
+  labels[3] := lDiff;
+  labels[4] := lAgo;
+
+  for i := 1 to 4 do
+    if not Assigned(FWarningLabels[i]) then
+    begin
+      FWarningLabels[i] := TLabel.Create(Self);
+      with FWarningLabels[i] do
+      begin
+        Parent := pnWarning;
+        AutoSize := false;
+        Transparent := true;
+        Visible := false;
       end;
     end;
 end;
@@ -1666,6 +1688,57 @@ begin
     end
     else
       dstDot.Visible := false;
+  end;
+end;
+
+procedure TfBG.SyncWarningOverlayLabels(const P: TPanel);
+var
+  srcLabels: array[1..4] of TLabel;
+  i: integer;
+  srcLbl, dstLbl: TLabel;
+  lblPos: TPoint;
+  centerX, centerY: integer;
+begin
+  EnsureWarningLabels;
+
+  srcLabels[1] := lArrow;
+  srcLabels[2] := lVal;
+  srcLabels[3] := lDiff;
+  srcLabels[4] := lAgo;
+
+  for i := 1 to 4 do
+  begin
+    srcLbl := srcLabels[i];
+    dstLbl := FWarningLabels[i];
+
+    if (srcLbl = nil) or (dstLbl = nil) then
+      Continue;
+
+    if srcLbl.Visible and (srcLbl.Caption <> '') then
+    begin
+      lblPos := GetPanelClientPos(srcLbl, P);
+      dstLbl.Parent := P;
+      dstLbl.Caption := srcLbl.Caption;
+      dstLbl.Font.Assign(srcLbl.Font);
+      dstLbl.Alignment := srcLbl.Alignment;
+      dstLbl.Layout := srcLbl.Layout;
+      dstLbl.Width := srcLbl.Width;
+      dstLbl.Height := srcLbl.Height;
+      dstLbl.Left := lblPos.X;
+      dstLbl.Top := lblPos.Y;
+
+      centerX := dstLbl.Left + (dstLbl.Width div 2);
+      centerY := dstLbl.Top + (dstLbl.Height div 2);
+      if PointInsideRoundedRect(centerX, centerY, P.Width, P.Height, 20) then
+      begin
+        dstLbl.Visible := true;
+        dstLbl.BringToFront;
+      end
+      else
+        dstLbl.Visible := false;
+    end
+    else
+      dstLbl.Visible := false;
   end;
 end;
 
@@ -6576,8 +6649,9 @@ begin
   pnWarnLast.left := 5;
   pnWarnLast.top := pnWarning.Height - pnWarnLast.Height - 5;
 
-  // Keep the overlay dots interactive and aligned with the main trend dots.
+  // Keep the overlay dots and labels interactive and aligned with the main trend dots.
   SyncWarningOverlayDots(pnWarning);
+  SyncWarningOverlayLabels(pnWarning);
 end;
 
 // Show a semi-transparent full-panel warning overlay.
