@@ -446,6 +446,7 @@ private
   FPingThread: TConnectivityCheckThread;
   FPredictionThread: TPredictionThread;
   FInternetBadgeBg: TShape;
+  FInternetBadgeShadow: TShape;
   FLastTimerTick: TDateTime; // Last timer tick for wake detection
   FForceRefresh: boolean; // Force bypass of cached API reads on wake
   FLastFetchHadData: boolean; // true when last API call returned ≥1 readings (used to avoid reusing cache after an empty fetch)
@@ -1448,6 +1449,7 @@ const
   radius = 20;
 var
   P: TPanel;
+  panelFillColor: TColor;
   {$ifndef X_WIN}
   alphaRatio: double;
   arrX: integer;
@@ -1470,13 +1472,20 @@ begin
     // blending the panel color with the background using LAST_WARN_OPACITY.
     {$ifndef X_WIN}
     alphaRatio := LAST_WARN_OPACITY / 255.0;
-    Brush.Color := BlendColors(P.Color, fBG.Color, alphaRatio);
+    panelFillColor := BlendColors(P.Color, fBG.Color, alphaRatio);
+    Brush.Color := panelFillColor;
     {$else}
-    Brush.Color := P.Color;
+    panelFillColor := P.Color;
+    Brush.Color := panelFillColor;
     {$endif}
-    Pen.Color := clBlack;
+    Pen.Color := BlendColors(panelFillColor, fBG.Color, 0.45);
     Pen.Width := 1;
     RoundRect(0, 0, P.Width, P.Height, Radius, Radius);
+
+    // Add a faint top highlight to make the warning card feel less flat.
+    Pen.Color := LightenColor(panelFillColor, 0.2);
+    MoveTo(Radius div 2, 2);
+    LineTo(P.Width - (Radius div 2), 2);
 
     {$ifndef X_WIN}
     // On non-Windows platforms, ApplyAlphaControl doesn't work.
@@ -2901,6 +2910,9 @@ var
   displayColor: TColor;
   forceShowBadge: boolean;
   sensorBadgeText: string;
+  contentWidth: integer;
+  maxBadgeWidth: integer;
+  badgeTextPadding: integer;
 begin
   FLastConnectionStatus := StatusText;
   displayStatus := StatusText;
@@ -2932,24 +2944,38 @@ begin
     lInternet.Visible := false;
     if Assigned(FInternetBadgeBg) then
       FInternetBadgeBg.Visible := false;
+    if Assigned(FInternetBadgeShadow) then
+      FInternetBadgeShadow.Visible := false;
     Exit;
   end;
 
   if not Assigned(FInternetBadgeBg) then
   begin
+    FInternetBadgeShadow := TShape.Create(Self);
+    FInternetBadgeShadow.Parent := Self;
+    FInternetBadgeShadow.Shape := stRoundRect;
+    FInternetBadgeShadow.Pen.Style := psClear;
+
     FInternetBadgeBg := TShape.Create(Self);
     FInternetBadgeBg.Parent := Self;
     FInternetBadgeBg.Shape := stRoundRect;
-    FInternetBadgeBg.Pen.Style := psClear;
+    FInternetBadgeBg.Pen.Style := psSolid;
+    FInternetBadgeBg.Pen.Width := 1;
   end;
 
   lInternet.Caption := displayStatus;
+  lInternet.Font.Style := [fsBold];
+  lInternet.Font.Quality := fqCleartype;
   lInternet.Font.Color := GetTextColorForBackground(displayColor, 0, 0.65);
   lInternet.Transparent := true;
   lInternet.AutoSize := false;
   lInternet.WordWrap := false;
-  lInternet.Width := Max(96, round(ClientWidth * 0.18));
-  lInternet.Height := Max(26, round(ClientHeight * 0.055));
+  badgeTextPadding := Max(18, round(ClientWidth * 0.02));
+  lInternet.Canvas.Font.Assign(lInternet.Font);
+  contentWidth := lInternet.Canvas.TextWidth(displayStatus) + badgeTextPadding;
+  maxBadgeWidth := Max(96, round(ClientWidth * 0.42));
+  lInternet.Width := Min(maxBadgeWidth, Max(96, contentWidth));
+  lInternet.Height := Max(28, round(ClientHeight * 0.058));
   ScaleLbl(lInternet, taCenter, tlCenter, true);
 
   if isCentered then
@@ -2965,8 +2991,12 @@ begin
     lInternet.Left := Max(8, ClientWidth - lInternet.Width - 8);
   end;
 
+  FInternetBadgeShadow.Brush.Color := BlendColors(DarkenColor(displayColor, 0.65), fBG.Color, 0.55);
   FInternetBadgeBg.Brush.Color := displayColor;
+  FInternetBadgeBg.Pen.Color := BlendColors(displayColor, clBlack, 0.35);
   UpdateConnectionBadgeBackgroundBounds;
+  FInternetBadgeShadow.Visible := true;
+  FInternetBadgeShadow.BringToFront;
   FInternetBadgeBg.Visible := true;
   FInternetBadgeBg.BringToFront;
 
@@ -2989,6 +3019,7 @@ procedure TfBG.UpdateConnectionBadgeBackgroundBounds;
 var
   badgePadX: integer;
   badgePadY: integer;
+  shadowOffset: integer;
 begin
   if not Assigned(FInternetBadgeBg) then
     Exit;
@@ -2997,6 +3028,15 @@ begin
   badgePadY := Max(3, round(lInternet.Height * 0.12));
   FInternetBadgeBg.SetBounds(lInternet.Left - badgePadX, lInternet.Top - badgePadY,
     lInternet.Width + (badgePadX * 2), lInternet.Height + (badgePadY * 2));
+
+  if Assigned(FInternetBadgeShadow) then
+  begin
+    shadowOffset := Max(1, round(lInternet.Height * 0.1));
+    FInternetBadgeShadow.SetBounds(FInternetBadgeBg.Left + shadowOffset,
+      FInternetBadgeBg.Top + shadowOffset,
+      FInternetBadgeBg.Width,
+      FInternetBadgeBg.Height);
+  end;
 end;
 
 procedure TfBG.lInternetClick(Sender: TObject);
