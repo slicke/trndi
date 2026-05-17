@@ -764,8 +764,8 @@ begin
   begin
     if isMmol then
     begin
-      eHi.Text := '10.0';
-      eLo.Text := '4.0';
+      eHi.Text := FormatFloat('0.0', 10.0);
+      eLo.Text := FormatFloat('0.0', 4.0);
     end
     else
     begin
