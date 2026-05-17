@@ -3511,7 +3511,22 @@ var
 begin
   // Settings already written to disk by SaveUserSettings and are in native's memory
   // No need to reload from disk - just read from current native instance
-  
+
+  // Update display unit so labels reformat immediately
+  if native.CheckSetting('unit', 'mmol', 'mmol') then
+    un := BGUnit.mmol
+  else
+    un := BGUnit.mgdl;
+
+  // Apply override thresholds to the live API object so colour logic is correct
+  if api <> nil then
+  begin
+    api.cgmLo := native.GetIntSetting('override.lo', api.cgmLo);
+    api.cgmHi := native.GetIntSetting('override.hi', api.cgmHi);
+    api.cgmRangeLo := native.GetIntSetting('override.rangelo', api.cgmRangeLo);
+    api.cgmRangeHi := native.GetIntSetting('override.rangehi', api.cgmRangeHi);
+  end;
+
   // Apply language setting immediately
   langCode := native.GetSetting('locale', 'en');
   if applocale <> langCode then
@@ -3631,6 +3646,11 @@ begin
   // Force UI update with current reading to apply new colors/fonts
   UpdateUIColors;
   UpdateUIBasedOnGlucose;
+
+  // Refresh the displayed glucose value/delta so the new unit and thresholds
+  // are visible immediately without waiting for the next API poll
+  ProcessCurrentReading;
+
   if Assigned(fFloat) then
     UpdateFloatingWindow;
 
