@@ -2267,61 +2267,61 @@ msgstr "Lågt blodsocker"
 
 #: trndi.strings.rs_wizard_back
 msgid "← Back"
-msgstr ""
+msgstr "← Bakåt"
 
 #: trndi.strings.rs_wizard_finish
 msgid "Finish"
-msgstr ""
+msgstr "Avsluta"
 
 #: trndi.strings.rs_wizard_need_addr
 msgctxt "trndi.strings.rs_wizard_need_addr"
 msgid "Please enter a server address or username."
-msgstr ""
+msgstr "Vänligen ange en serveradress eller användarnamn."
 
 #: trndi.strings.rs_wizard_next
 msgid "Next →"
-msgstr ""
+msgstr "Nästa →"
 
 #: trndi.strings.rs_wizard_source
 msgid "Data source:"
-msgstr ""
+msgstr "Datakälla:"
 
 #: trndi.strings.rs_wizard_step_fmt
 #, object-pascal-format
 msgid "Step %d of %d"
-msgstr ""
+msgstr "Steg %d av %d"
 
 #: trndi.strings.rs_wizard_test
 msgid "Test connection"
-msgstr ""
+msgstr "Testa anslutning"
 
 #: trndi.strings.rs_wizard_testing
 msgid "Testing…"
-msgstr ""
+msgstr "Testar..."
 
 #: trndi.strings.rs_wizard_test_fail
 msgid "✗ Could not connect."
-msgstr ""
+msgstr "✗ Kunde ej ansluta."
 
 #: trndi.strings.rs_wizard_test_ok
 msgid "✓ Connected!"
-msgstr ""
+msgstr "✓ Ansluten!"
 
 #: trndi.strings.rs_wizard_title
 msgid "Welcome to Trndi"
-msgstr ""
+msgstr "Välkommen till Trndi"
 
 #: trndi.strings.rs_wizard_unit_head
 msgid "Choose your preferred glucose unit:"
-msgstr ""
+msgstr "Välj din föredragna glukosenhet:"
 
 #: trndi.strings.rs_wizard_unit_mgdl
 msgid "mg/dL  (e.g. 100)"
-msgstr ""
+msgstr "mg/dL  (t ex 100)"
 
 #: trndi.strings.rs_wizard_unit_mmol
 msgid "mmol/L  (e.g. 5.5)"
-msgstr ""
+msgstr "mmol/L  (t ex 5.5)"
 
 #: trndi.strings.rs_wizard_welcome_body
 msgid ""
@@ -2331,10 +2331,15 @@ msgid ""
 "\n"
 "All settings can be changed later via right-click → Settings."
 msgstr ""
+"Trndi visar mätningar från din kontinuerliga blodsockermätare direkt på ditt skrivbord.\n"
+"\n"
+"Den här guiden kommer att ansluta Trndi mot din CGM-källa. Du kommer behöva din serveradress (eller användarnamn) och API-nyckel / lösenord.\n"
+"\n"
+"Alla inställningar kan ändras senare via högerklick → Inställningar."
 
 #: trndi.strings.rs_wizard_welcome_head
 msgid "Let's get connected!"
-msgstr ""
+msgstr "Låt oss ansluta!"
 
 #: trndi.strings.sannounceoff
 msgid "No longer announcing readings aloud"
@@ -3093,13 +3098,11 @@ msgid "Readings (%s)"
 msgstr "Avläsningar (%s)"
 
 #: uwizard.wz_err_address
-#, fuzzy
 msgctxt "uwizard.wz_err_address"
 msgid "Address must start with http(s)://"
 msgstr "Adressen måste börja med http(s)://"
 
 #: uwizard.wz_err_email
-#, fuzzy
 msgctxt "uwizard.wz_err_email"
 msgid "You must enter a valid e-mail address"
 msgstr "Du måste ange en riktig e-postadress"
@@ -3107,15 +3110,13 @@ msgstr "Du måste ange en riktig e-postadress"
 #: uwizard.wz_err_need_addr
 msgctxt "uwizard.wz_err_need_addr"
 msgid "Please enter a server address or username."
-msgstr ""
+msgstr "Ange en serveradress eller användarnamn."
 
 #: uwizard.wz_err_password
-#, fuzzy
 msgctxt "uwizard.wz_err_password"
 msgid "You must enter a password"
 msgstr "Du måste ange ett lösenord"
 
 #: uwizard.wz_test_no_support
 msgid "Connection testing is not supported for this service."
-msgstr ""
-
+msgstr "Anslutningstest stöds inte för denna tjänst."
