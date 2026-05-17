@@ -247,6 +247,30 @@ RS_DATE_PICKER_DESC_UNLIMITED = '%s time limit depends on server configuration';
 RS_DATE_PICKER_NO_READINGS = 'No readings returned for the selected date range.';
 RS_DATE_PICKER_NO_READINGS_ERR = 'No readings returned: %s';
 
+// Welcome wizard
+RS_WIZARD_TITLE       = 'Welcome to Trndi';
+RS_WIZARD_STEP_FMT    = 'Step %d of %d';
+RS_WIZARD_BACK        = '← Back';
+RS_WIZARD_NEXT        = 'Next →';
+RS_WIZARD_FINISH      = 'Finish';
+RS_WIZARD_SOURCE      = 'Data source:';
+RS_WIZARD_TEST        = 'Test connection';
+RS_WIZARD_TESTING     = 'Testing…';
+RS_WIZARD_TEST_OK     = '✓ Connected!';
+RS_WIZARD_TEST_FAIL   = '✗ Could not connect.';
+RS_WIZARD_NEED_ADDR   = 'Please enter a server address or username.';
+RS_WIZARD_UNIT_HEAD   = 'Choose your preferred glucose unit:';
+RS_WIZARD_UNIT_MMOL   = 'mmol/L  (e.g. 5.5)';
+RS_WIZARD_UNIT_MGDL   = 'mg/dL  (e.g. 100)';
+RS_WIZARD_WELCOME_HEAD = 'Let''s get connected!';
+RS_WIZARD_WELCOME_BODY =
+  'Trndi shows your continuous glucose monitor readings right on your desktop.' +
+  sLineBreak + sLineBreak +
+  'This wizard will connect Trndi to your CGM data source. You will need your ' +
+  'server address (or username) and API key / password.' +
+  sLineBreak + sLineBreak +
+  'All settings can be changed later via right-click → Settings.';
+
 implementation
 
 end.

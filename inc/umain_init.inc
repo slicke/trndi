@@ -599,6 +599,7 @@ var
   userlocale: TFormatSettings;
   minutesStr: string;
   minutesVal: integer;
+  fWizard: TfWizard;
   {$ifdef DEBUG}
   miDebugUXMsg, miDebugLog, miDebugLoadText, miDebugLogAPI: TMenuItem;
   {$endif}
@@ -731,22 +732,28 @@ begin
     if apiTarget = '' then
     begin
       fSplash.incProgress(55, RS_INIT_INITIAL);
-      tMain.Enabled := false;
-      for i := 0 to fBG.ComponentCount - 1 do
-        if (fbg.Components[i] is TLabel) and (fbg.Components[i] <> lval) then
-          (fbg.Components[i] as TLabel).Caption := '';
-      
-      // Clean up splash screen before config dialog
       fSplash.Hide;
-      fSplash.Free;
-      
-      miSettings.Click;
-      ShowMessage(RS_FORCE_QUIT_SETUP);
-      
-      // Flag to close after FormShow (prevents access violations from incomplete init)
-      firstboot := true; // Ensure quit doesn't ask for confirmation
-      FCloseAfterFormCreate := true;
-      Exit;
+
+      fWizard := TfWizard.Create(nil, native);
+      try
+        if fWizard.ShowModal = mrOK then
+        begin
+          // Wizard saved settings — re-read target and continue init
+          apiTarget := GetSetting('remote.target');
+          fSplash.Show;
+        end
+        else
+        begin
+          // User cancelled — close app
+          fSplash.Free;
+          fSplash := nil;
+          firstboot := true;
+          FCloseAfterFormCreate := true;
+          Exit;
+        end;
+      finally
+        fWizard.Free;
+      end;
     end;
 
     fSplash.incProgress(60, RS_INIT_API);
