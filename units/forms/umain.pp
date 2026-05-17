@@ -794,7 +794,7 @@ sensorFaultAlerted: boolean = false; // Sensor-fault pattern currently active
 lastSensorFaultAlert: TDateTime = 0; // Last sensor-fault notification timestamp
 perfectTriggered: boolean = false; // A perfect reading is active
 PaintRange: boolean = true;
-PaintRangeCGMRange: boolean = true; // Show cgmRangeLo/cgmRangeHi inner threshold lines
+PaintRangeCGMRange: boolean = false; // Show cgmRangeLo/cgmRangeHi inner threshold lines
 PaintRangeLines: boolean = false;
 PredictGlucoseReading: boolean = false;
 PredictShortMode: boolean = false;
@@ -2077,7 +2077,7 @@ begin
   drawLo := (Assigned(api) and (api.cgmLo <> 0) and PaintRange);
   drawHi := (Assigned(api) and (api.cgmHi <> 0) and PaintRange);
   drawRangeLo := (Assigned(api) and (api.cgmRangeLo <> 0) and PaintRangeCGMRange);
-  drawRangeHi := (Assigned(api) and (api.cgmRangeHi <> 0) and PaintRangeCGMRange);
+  drawRangeHi := (Assigned(api) and (api.cgmRangeHi > 0) and (api.cgmRangeHi < 500) and PaintRangeCGMRange);
 
   // Calculate Y positions for low and high thresholds
   // These are the RAW positions matching where the TOP of a dot control would be placed
