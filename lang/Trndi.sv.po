@@ -2265,6 +2265,77 @@ msgstr "Lågt blodsocker! Nuvarande: %s"
 msgid "Blood sugar low"
 msgstr "Lågt blodsocker"
 
+#: trndi.strings.rs_wizard_back
+msgid "← Back"
+msgstr ""
+
+#: trndi.strings.rs_wizard_finish
+msgid "Finish"
+msgstr ""
+
+#: trndi.strings.rs_wizard_need_addr
+msgctxt "trndi.strings.rs_wizard_need_addr"
+msgid "Please enter a server address or username."
+msgstr ""
+
+#: trndi.strings.rs_wizard_next
+msgid "Next →"
+msgstr ""
+
+#: trndi.strings.rs_wizard_source
+msgid "Data source:"
+msgstr ""
+
+#: trndi.strings.rs_wizard_step_fmt
+#, object-pascal-format
+msgid "Step %d of %d"
+msgstr ""
+
+#: trndi.strings.rs_wizard_test
+msgid "Test connection"
+msgstr ""
+
+#: trndi.strings.rs_wizard_testing
+msgid "Testing…"
+msgstr ""
+
+#: trndi.strings.rs_wizard_test_fail
+msgid "✗ Could not connect."
+msgstr ""
+
+#: trndi.strings.rs_wizard_test_ok
+msgid "✓ Connected!"
+msgstr ""
+
+#: trndi.strings.rs_wizard_title
+msgid "Welcome to Trndi"
+msgstr ""
+
+#: trndi.strings.rs_wizard_unit_head
+msgid "Choose your preferred glucose unit:"
+msgstr ""
+
+#: trndi.strings.rs_wizard_unit_mgdl
+msgid "mg/dL  (e.g. 100)"
+msgstr ""
+
+#: trndi.strings.rs_wizard_unit_mmol
+msgid "mmol/L  (e.g. 5.5)"
+msgstr ""
+
+#: trndi.strings.rs_wizard_welcome_body
+msgid ""
+"Trndi shows your continuous glucose monitor readings right on your desktop.\n"
+"\n"
+"This wizard will connect Trndi to your CGM data source. You will need your server address (or username) and API key / password.\n"
+"\n"
+"All settings can be changed later via right-click → Settings."
+msgstr ""
+
+#: trndi.strings.rs_wizard_welcome_head
+msgid "Let's get connected!"
+msgstr ""
+
 #: trndi.strings.sannounceoff
 msgid "No longer announcing readings aloud"
 msgstr "Läser inte upp värden"
@@ -2596,14 +2667,17 @@ msgid "Enter a username"
 msgstr "Ange ett användarnamn"
 
 #: uconf.rs_err_address
+msgctxt "uconf.rs_err_address"
 msgid "Address must start with http(s)://"
 msgstr "Adressen måste börja med http(s)://"
 
 #: uconf.rs_err_email
+msgctxt "uconf.rs_err_email"
 msgid "You must enter a valid e-mail address"
 msgstr "Du måste ange en riktig e-postadress"
 
 #: uconf.rs_err_password
+msgctxt "uconf.rs_err_password"
 msgid "You must enter a password"
 msgstr "Du måste ange ett lösenord"
 
@@ -3017,3 +3091,31 @@ msgstr "Historikgraf"
 #, object-pascal-format
 msgid "Readings (%s)"
 msgstr "Avläsningar (%s)"
+
+#: uwizard.wz_err_address
+#, fuzzy
+msgctxt "uwizard.wz_err_address"
+msgid "Address must start with http(s)://"
+msgstr "Adressen måste börja med http(s)://"
+
+#: uwizard.wz_err_email
+#, fuzzy
+msgctxt "uwizard.wz_err_email"
+msgid "You must enter a valid e-mail address"
+msgstr "Du måste ange en riktig e-postadress"
+
+#: uwizard.wz_err_need_addr
+msgctxt "uwizard.wz_err_need_addr"
+msgid "Please enter a server address or username."
+msgstr ""
+
+#: uwizard.wz_err_password
+#, fuzzy
+msgctxt "uwizard.wz_err_password"
+msgid "You must enter a password"
+msgstr "Du måste ange ett lösenord"
+
+#: uwizard.wz_test_no_support
+msgid "Connection testing is not supported for this service."
+msgstr ""
+

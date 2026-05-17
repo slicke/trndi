@@ -529,6 +529,10 @@
         <ResourceBaseClass Value="Form"/>
       </Unit>
       <Unit>
+        <Filename Value="units\forms\uwizard.pp"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
         <Filename Value="units\trndi\api\trndi.api.xdrip.pp"/>
         <IsPartOfProject Value="True"/>
       </Unit>
