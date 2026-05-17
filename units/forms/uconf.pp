@@ -641,6 +641,7 @@ RS_NEWVER = 'Version %s is available, would you like to go to the downloads page
 RS_NEWVER_PRE =
   'A new pre-release for %s is available, would you like to go to the downloads page?';
 RS_NEWVER_CAPTION = 'New version available';
+RS_UPTODATE_DEV = 'You are using a development version, there''s no stable release newer than this! The most recent stable release is %s';
 RS_SELECT_FONT = 'Select a font';
 RS_SELECT_FONT_DESC = 'Choose a font to use';
 RS_SELECT_FONT_ARROW = 'Select a font for the arrow';
@@ -1816,8 +1817,12 @@ begin
     if UXDialog(uxdAuto, RS_NEWVER_CAPTION, s, [mbYes, mbNo], mtInformation) = mrYes then
       OpenURL(r);
   end
-  else
-    ShowMessage(RS_UPTODATE);
+  else begin
+    if CI and (BUILD_NUMBER <> 'dev') then
+      ShowMessage(RS_UPTODATE)
+    else
+      ShowMessage(Format(RS_UPTODATE_DEV, [GetProductVersionMajorMinor('2.x')]));
+  end;
 end;
 
 procedure TfConf.Button4Click(Sender: TObject);
