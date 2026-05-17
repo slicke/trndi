@@ -808,6 +808,14 @@ begin
     LoadExtensions;
     {$endif}
 
+    // Apply wizard-suggested thresholds for APIs that don't supply their own
+    // (cgmHi stays at initCGMCore's sentinel 401 when the API never set it)
+    if api.cgmHi = 401 then
+    begin
+      api.cgmHi := GetIntSetting('wizard.hi', api.cgmHi);
+      api.cgmLo := GetIntSetting('wizard.lo', api.cgmLo);
+    end;
+
     fSplash.incProgress(90, RS_INIT_CUSTOM_OVERRIDES);
     // Override settings - always apply if set, regardless of checkbox state
     // This allows extensions and manual config edits to work

@@ -88,14 +88,24 @@ type
     rbMmol: TRadioButton;
     rbMgdl: TRadioButton;
 
+    // Threshold step controls
+    pnThreshold: TPanel;
+    lHiLabel: TLabel;
+    eHi: TEdit;
+    lLoLabel: TLabel;
+    eLo: TEdit;
+
     // Navigation
     pnNav: TPanel;
     bBack: TButton;
     bNext: TButton;
 
+    FThreshUnit: string;
+
     procedure ShowStep(step: integer);
     procedure UpdateNav;
     procedure UpdateConnectionLabels;
+    procedure UpdateThresholdLabels;
     function  APIToCode(const displayName: string): string;
     procedure bNextClick(Sender: TObject);
     procedure bBackClick(Sender: TObject);
@@ -107,8 +117,10 @@ type
     procedure BuildWelcomeStep;
     procedure BuildConnectionStep;
     procedure BuildUnitStep;
+    procedure BuildThresholdStep;
     procedure SaveSettings;
     function  ValidateConnection(out errMsg: string): boolean;
+    function  ValidateThresholds(out errMsg: string): boolean;
   public
     { Pass the app's existing TrndiNative so the wizard writes to the same
       user-scoped key as the rest of the init. Wizard does NOT own it. }
@@ -125,9 +137,12 @@ resourcestring
   WZ_ERR_PASSWORD = 'You must enter a password';
   WZ_ERR_NEED_ADDR = 'Please enter a server address or username.';
   WZ_TEST_NO_SUPPORT = 'Connection testing is not supported for this service.';
+  WZ_ERR_THRESH_HI    = 'Please enter a valid high threshold (a number greater than zero).';
+  WZ_ERR_THRESH_LO    = 'Please enter a valid low threshold (a number greater than zero).';
+  WZ_ERR_THRESH_ORDER = 'The high threshold must be greater than the low threshold.';
 
 const
-  WIZARD_STEPS = 3;
+  WIZARD_STEPS = 4;
   FORM_WIDTH   = 500;
   FORM_HEIGHT  = 450;
 
@@ -222,8 +237,10 @@ begin
   BuildWelcomeStep;
   BuildConnectionStep;
   BuildUnitStep;
+  BuildThresholdStep;
 
   FStep := 1;
+  FThreshUnit := '';
   ShowStep(1);
 end;
 
@@ -433,6 +450,9 @@ begin
   pnWelcome.Visible    := (step = 1);
   pnConnection.Visible := (step = 2);
   pnUnit.Visible       := (step = 3);
+  pnThreshold.Visible  := (step = 4);
+  if step = 4 then
+    UpdateThresholdLabels;
   lStep.Caption := Format(RS_WIZARD_STEP_FMT, [step, WIZARD_STEPS]);
   UpdateNav;
 end;
@@ -458,6 +478,13 @@ var
 begin
   if FStep = 2 then
     if not ValidateConnection(err) then
+    begin
+      ShowMessage(err);
+      Exit;
+    end;
+
+  if FStep = WIZARD_STEPS then
+    if not ValidateThresholds(err) then
     begin
       ShowMessage(err);
       Exit;
@@ -636,14 +663,187 @@ begin
   end;
 end;
 
-procedure TfWizard.SaveSettings;
+procedure TfWizard.BuildThresholdStep;
+var
+  pnInner: TPanel;
+  lHead, lBody: TLabel;
 begin
+  pnThreshold := TPanel.Create(pnContent);
+  pnThreshold.Parent  := pnContent;
+  pnThreshold.Align   := alClient;
+  pnThreshold.Visible := false;
+  pnThreshold.BevelOuter := bvNone;
+  pnThreshold.ParentBackground := false;
+
+  pnInner := TPanel.Create(pnThreshold);
+  pnInner.Parent := pnThreshold;
+  pnInner.Align  := alClient;
+  pnInner.BevelOuter := bvNone;
+  pnInner.BorderSpacing.Around := 24;
+  pnInner.ParentBackground := false;
+
+  { Bottom-to-top creation order for LCL alTop stacking. }
+  eLo := TEdit.Create(pnInner);
+  eLo.Parent := pnInner;
+  eLo.Align  := alTop;
+  eLo.BorderSpacing.Bottom := 16;
+
+  lLoLabel := TLabel.Create(pnInner);
+  lLoLabel.Parent   := pnInner;
+  lLoLabel.Caption  := '';
+  lLoLabel.Align    := alTop;
+  lLoLabel.Height   := 18;
+  lLoLabel.AutoSize := false;
+  lLoLabel.BorderSpacing.Bottom := 4;
+
+  eHi := TEdit.Create(pnInner);
+  eHi.Parent := pnInner;
+  eHi.Align  := alTop;
+  eHi.BorderSpacing.Bottom := 16;
+
+  lHiLabel := TLabel.Create(pnInner);
+  lHiLabel.Parent   := pnInner;
+  lHiLabel.Caption  := '';
+  lHiLabel.Align    := alTop;
+  lHiLabel.Height   := 18;
+  lHiLabel.AutoSize := false;
+  lHiLabel.BorderSpacing.Bottom := 4;
+
+  lBody := TLabel.Create(pnInner);
+  lBody.Parent   := pnInner;
+  lBody.Caption  := RS_WIZARD_THRESH_BODY;
+  lBody.Align    := alTop;
+  lBody.AutoSize := false;
+  lBody.Height   := 60;
+  lBody.WordWrap := true;
+  lBody.BorderSpacing.Bottom := 16;
+
+  lHead := TLabel.Create(pnInner);
+  lHead.Parent   := pnInner;
+  lHead.Caption  := RS_WIZARD_THRESH_HEAD;
+  lHead.Align    := alTop;
+  lHead.AutoSize := false;
+  lHead.Height   := 28;
+  lHead.Font.Size  := 13;
+  lHead.Font.Style := [fsBold];
+  lHead.BorderSpacing.Bottom := 8;
+end;
+
+procedure TfWizard.UpdateThresholdLabels;
+var
+  isMmol: boolean;
+  newUnit: string;
+begin
+  isMmol := rbMmol.Checked;
+  if isMmol then
+    newUnit := 'mmol'
+  else
+    newUnit := 'mgdl';
+
+  if isMmol then
+  begin
+    lHiLabel.Caption := RS_WIZARD_THRESH_HI + ' (mmol/L)';
+    lLoLabel.Caption := RS_WIZARD_THRESH_LO + ' (mmol/L)';
+  end
+  else
+  begin
+    lHiLabel.Caption := RS_WIZARD_THRESH_HI + ' (mg/dL)';
+    lLoLabel.Caption := RS_WIZARD_THRESH_LO + ' (mg/dL)';
+  end;
+
+  if (FThreshUnit <> newUnit) or (eHi.Text = '') or (eLo.Text = '') then
+  begin
+    if isMmol then
+    begin
+      eHi.Text := '10.0';
+      eLo.Text := '4.0';
+    end
+    else
+    begin
+      eHi.Text := '180';
+      eLo.Text := '70';
+    end;
+    FThreshUnit := newUnit;
+  end;
+end;
+
+function TfWizard.ValidateThresholds(out errMsg: string): boolean;
+var
+  hiF, loF: single;
+  hiI, loI: integer;
+begin
+  Result := true;
+  errMsg := '';
+
+  if rbMmol.Checked then
+  begin
+    if not TryStrToFloat(eHi.Text, hiF) or (hiF <= 0) then
+    begin
+      errMsg := WZ_ERR_THRESH_HI;
+      Result := false;
+      Exit;
+    end;
+    if not TryStrToFloat(eLo.Text, loF) or (loF <= 0) then
+    begin
+      errMsg := WZ_ERR_THRESH_LO;
+      Result := false;
+      Exit;
+    end;
+    if loF >= hiF then
+    begin
+      errMsg := WZ_ERR_THRESH_ORDER;
+      Result := false;
+    end;
+  end
+  else
+  begin
+    if not TryStrToInt(eHi.Text, hiI) or (hiI <= 0) then
+    begin
+      errMsg := WZ_ERR_THRESH_HI;
+      Result := false;
+      Exit;
+    end;
+    if not TryStrToInt(eLo.Text, loI) or (loI <= 0) then
+    begin
+      errMsg := WZ_ERR_THRESH_LO;
+      Result := false;
+      Exit;
+    end;
+    if loI >= hiI then
+    begin
+      errMsg := WZ_ERR_THRESH_ORDER;
+      Result := false;
+    end;
+  end;
+end;
+
+procedure TfWizard.SaveSettings;
+var
+  hiF, loF: single;
+  hiI, loI: integer;
+begin
+  // Convert threshold inputs to mg/dL integers for storage
+  if rbMmol.Checked then
+  begin
+    if not TryStrToFloat(eHi.Text, hiF) then hiF := 10.0;
+    if not TryStrToFloat(eLo.Text, loF) then loF := 4.0;
+    hiI := Round(hiF * 18.0);
+    loI := Round(loF * 18.0);
+  end
+  else
+  begin
+    if not TryStrToInt(eHi.Text, hiI) then hiI := 180;
+    if not TryStrToInt(eLo.Text, loI) then loI := 70;
+  end;
+
   with FNative do
   begin
     SetSetting('remote.type',   APIToCode(cbSys.Text), false);
     SetSetting('remote.target', eAddr.Text, false);
     SetSetting('remote.creds',  ePass.Text, false);
     SetBoolSetting('unit', rbMmol.Checked, 'mmol', 'mgdl');
+    SetSetting('wizard.hi', hiI);
+    SetSetting('wizard.lo', loI);
   end;
 end;
 
