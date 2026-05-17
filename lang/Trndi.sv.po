@@ -565,6 +565,10 @@ msgstr "Visa tid till nästa uppdatering till vänster"
 msgid "Show mean blood sugar reading next to TIR"
 msgstr "Visa medelblodsocker bredvid TIR"
 
+#: tfconf.cbshowsensorexpiry.caption
+msgid "Show sensor expiry in top-center badge"
+msgstr ""
+
 #: tfconf.cbsize.caption
 msgid "Remember window size"
 msgstr "Kom ihåg fönsterstorlek"
@@ -2955,6 +2959,11 @@ msgstr "Du kommer att påminnas igen efter %s"
 msgid "You are up to date"
 msgstr "Du är uppdaterad"
 
+#: uconf.rs_uptodate_dev
+#, object-pascal-format
+msgid "You are using a development version, there's no stable release newer than this! The most recent stable release is %s"
+msgstr ""
+
 #: uconf.rs_use_url_help
 msgid "Trndi can load a URL when high or low in your default web browser."
 msgstr "Trndi kan ladda en adress i din standardwebbläsare när du är hög eller låg."
@@ -3154,3 +3163,4 @@ msgstr "Den höga gränsen måste vara större än den låga gränsen."
 #: uwizard.wz_test_no_support
 msgid "Connection testing is not supported for this service."
 msgstr "Anslutningstest stöds inte för denna tjänst."
+

@@ -12476,7 +12476,7 @@ object fConf: TfConf
           Top = 24
           Width = 27
           Caption = '?'
-          TabOrder = 4
+          TabOrder = 2
           OnClick = bTimeStampHelpClick
         end
       end

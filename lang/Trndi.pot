@@ -550,6 +550,10 @@ msgstr ""
 msgid "Show mean blood sugar reading next to TIR"
 msgstr ""
 
+#: tfconf.cbshowsensorexpiry.caption
+msgid "Show sensor expiry in top-center badge"
+msgstr ""
+
 #: tfconf.cbsize.caption
 msgid "Remember window size"
 msgstr ""
@@ -2807,6 +2811,11 @@ msgstr ""
 
 #: uconf.rs_uptodate
 msgid "You are up to date"
+msgstr ""
+
+#: uconf.rs_uptodate_dev
+#, object-pascal-format
+msgid "You are using a development version, there's no stable release newer than this! The most recent stable release is %s"
 msgstr ""
 
 #: uconf.rs_use_url_help
