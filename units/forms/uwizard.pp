@@ -205,13 +205,14 @@ begin
   sep.Shape  := bsTopLine;
 
   bBack := TButton.Create(pnNav);
-  bBack.Parent  := pnNav;
-  bBack.Caption := RS_WIZARD_BACK;
-  bBack.Left    := 10;
-  bBack.Top     := 10;
-  bBack.Width   := 90;
-  bBack.Height  := 28;
-  bBack.OnClick := @bBackClick;
+  bBack.Parent    := pnNav;
+  bBack.Caption   := RS_WIZARD_BACK;
+  bBack.Left      := 10;
+  bBack.Top       := 10;
+  bBack.Width     := 90;
+  bBack.Height    := 28;
+  bBack.OnClick   := @bBackClick;
+  bBack.TabStop   := false;  // Back is not part of the forward Tab sequence
 
   pnRight := TPanel.Create(pnNav);
   pnRight.Parent := pnNav;
@@ -229,10 +230,12 @@ begin
 
   { Content area ----------------------------------------------------------- }
   pnContent := TPanel.Create(Self);
-  pnContent.Parent := Self;
-  pnContent.Align  := alClient;
+  pnContent.Parent    := Self;
+  pnContent.Align     := alClient;
   pnContent.BevelOuter := bvNone;
   pnContent.ParentBackground := false;
+  pnContent.TabOrder  := 0;  // Content fields tab before the nav bar
+  pnNav.TabOrder      := 1;
 
   BuildWelcomeStep;
   BuildConnectionStep;
@@ -318,12 +321,13 @@ begin
   lTestStatus.AutoSize := false;
 
   bTest := TButton.Create(pnInner);
-  bTest.Parent   := pnInner;
-  bTest.Caption  := RS_WIZARD_TEST;
-  bTest.Align    := alTop;
-  bTest.Height   := 28;
+  bTest.Parent    := pnInner;
+  bTest.Caption   := RS_WIZARD_TEST;
+  bTest.Align     := alTop;
+  bTest.Height    := 28;
   bTest.BorderSpacing.Bottom := 8;
-  bTest.OnClick  := @bTestClick;
+  bTest.OnClick   := @bTestClick;
+  bTest.TabOrder  := 3;
 
   { Credentials }
   ePass := TEdit.Create(pnInner);
@@ -334,6 +338,7 @@ begin
   ePass.BorderSpacing.Bottom := 10;
   ePass.OnEnter      := @ePassEnter;
   ePass.OnExit       := @ePassExit;
+  ePass.TabOrder     := 2;
 
   lPassLabel := TLabel.Create(pnInner);
   lPassLabel.Parent   := pnInner;
@@ -345,9 +350,10 @@ begin
 
   { Address }
   eAddr := TEdit.Create(pnInner);
-  eAddr.Parent := pnInner;
-  eAddr.Align  := alTop;
+  eAddr.Parent    := pnInner;
+  eAddr.Align     := alTop;
   eAddr.BorderSpacing.Bottom := 10;
+  eAddr.TabOrder  := 1;
 
   lAddrLabel := TLabel.Create(pnInner);
   lAddrLabel.Parent   := pnInner;
@@ -359,24 +365,27 @@ begin
 
   { Data source row (top of the form) }
   pnSysRow := TPanel.Create(pnInner);
-  pnSysRow.Parent := pnInner;
-  pnSysRow.Align  := alTop;
-  pnSysRow.Height := 34;
+  pnSysRow.Parent    := pnInner;
+  pnSysRow.Align     := alTop;
+  pnSysRow.Height    := 34;
   pnSysRow.BevelOuter := bvNone;
   pnSysRow.BorderSpacing.Bottom := 12;
   pnSysRow.ParentBackground := false;
+  pnSysRow.TabOrder  := 0;
 
   bSysHelp := TButton.Create(pnSysRow);
-  bSysHelp.Parent  := pnSysRow;
-  bSysHelp.Align   := alRight;
-  bSysHelp.Width   := 30;
-  bSysHelp.Caption := '?';
-  bSysHelp.OnClick := @bSysHelpClick;
+  bSysHelp.Parent    := pnSysRow;
+  bSysHelp.Align     := alRight;
+  bSysHelp.Width     := 30;
+  bSysHelp.Caption   := '?';
+  bSysHelp.OnClick   := @bSysHelpClick;
+  bSysHelp.TabOrder  := 1;
 
   cbSys := TComboBox.Create(pnSysRow);
   cbSys.Parent    := pnSysRow;
   cbSys.Align     := alClient;
   cbSys.Style     := csDropDownList;
+  cbSys.TabOrder  := 0;
   cbSys.Items.AddStrings([
     API_NS, API_NS3,
     API_DEX_USA, API_DEX_EU,
