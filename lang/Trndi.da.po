@@ -2196,6 +2196,25 @@ msgstr ""
 msgid "✓ Connected!"
 msgstr ""
 
+#: trndi.strings.rs_wizard_thresh_body
+msgid ""
+"Set the glucose levels at which Trndi should alert you.\n"
+"\n"
+"These defaults are a common starting point — adjust to match your personal targets."
+msgstr ""
+
+#: trndi.strings.rs_wizard_thresh_head
+msgid "Alert thresholds"
+msgstr ""
+
+#: trndi.strings.rs_wizard_thresh_hi
+msgid "High alert"
+msgstr ""
+
+#: trndi.strings.rs_wizard_thresh_lo
+msgid "Low alert"
+msgstr ""
+
 #: trndi.strings.rs_wizard_title
 msgid "Welcome to Trndi"
 msgstr ""
@@ -2963,6 +2982,18 @@ msgstr ""
 #: uwizard.wz_err_password
 msgctxt "uwizard.wz_err_password"
 msgid "You must enter a password"
+msgstr ""
+
+#: uwizard.wz_err_thresh_hi
+msgid "Please enter a valid high threshold (a number greater than zero)."
+msgstr ""
+
+#: uwizard.wz_err_thresh_lo
+msgid "Please enter a valid low threshold (a number greater than zero)."
+msgstr ""
+
+#: uwizard.wz_err_thresh_order
+msgid "The high threshold must be greater than the low threshold."
 msgstr ""
 
 #: uwizard.wz_test_no_support

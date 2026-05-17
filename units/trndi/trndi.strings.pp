@@ -270,6 +270,13 @@ RS_WIZARD_WELCOME_BODY =
   'server address (or username) and API key / password.' +
   sLineBreak + sLineBreak +
   'All settings can be changed later via right-click → Settings.';
+RS_WIZARD_THRESH_HEAD = 'Alert thresholds';
+RS_WIZARD_THRESH_BODY =
+  'Set the glucose levels at which Trndi should alert you.' +
+  sLineBreak + sLineBreak +
+  'These defaults are a common starting point — adjust to match your personal targets.';
+RS_WIZARD_THRESH_HI   = 'High alert';
+RS_WIZARD_THRESH_LO   = 'Low alert';
 
 implementation
 
