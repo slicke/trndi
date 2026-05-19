@@ -92,9 +92,9 @@ protected
           Despite the parameter name, this implementation expects minutes
           and multiplies by 60 to store the value in seconds.
 
-        @param(secs Timezone offset in minutes; will be multiplied by 60.)
+        @param(mins Timezone offset in minutes; will be multiplied by 60.)
      }
-  procedure setTZ(secs: integer);
+  procedure setTZ(mins: integer);
 
   {** Get the value which represents the maximum reading for the backend
    }
@@ -531,40 +531,23 @@ end;
 ------------------------------------------------------------------------------}
 function TrndiAPI.encodeStr(src: string): string;
 var
-  i, j, len: integer;
-  hex: string;
+  i: integer;
 begin
-  len := 0;
+  Result := '';
   for i := 1 to Length(src) do
-    if not (src[i] in ['A'..'Z', 'a'..'z', '0'..'9', '-', '_', '~', '.']) then
-      Inc(len, 3)
+    if src[i] in ['A'..'Z', 'a'..'z', '0'..'9', '-', '_', '~', '.'] then
+      Result += src[i]
     else
-      Inc(len);
-  SetLength(Result, len);
-  j := 1;
-  for i := 1 to Length(src) do
-    if not (src[i] in ['A'..'Z', 'a'..'z', '0'..'9', '-', '_', '~', '.']) then
-    begin
-      hex := IntToHex(Ord(src[i]), 2);
-      Result[j] := '%';
-      Result[j+1] := hex[1];
-      Result[j+2] := hex[2];
-      Inc(j, 3);
-    end
-    else
-    begin
-      Result[j] := src[i];
-      Inc(j);
-    end;
+      Result += '%' + IntToHex(Ord(src[i]), 2);
 end;
 
 {------------------------------------------------------------------------------
   Set timezone offset.
   Note: secs is treated as minutes and multiplied by 60 to store seconds.
 ------------------------------------------------------------------------------}
-procedure TrndiAPI.setTZ(secs: integer);
+procedure TrndiAPI.setTZ(mins: integer);
 begin
-  tz := secs * 60;
+  tz := mins * 60;
 end;
 
 {------------------------------------------------------------------------------

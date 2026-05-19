@@ -301,8 +301,7 @@ begin
   end;
 end;
 
-// Sort BGReading array in descending order (newest first)
-procedure SortReadingsDescending(var Readings: array of BGReading);
+procedure SortReadingsCore(var Readings: array of BGReading; ascending: boolean);
   procedure QuickSort(L, R: Integer);
   var
     I, J: Integer;
@@ -313,8 +312,16 @@ procedure SortReadingsDescending(var Readings: array of BGReading);
       J := R;
       P := Readings[(L + R) div 2];
       repeat
-        while Readings[I].date > P.date do Inc(I);
-        while Readings[J].date < P.date do Dec(J);
+        if ascending then
+        begin
+          while Readings[I].date < P.date do Inc(I);
+          while Readings[J].date > P.date do Dec(J);
+        end
+        else
+        begin
+          while Readings[I].date > P.date do Inc(I);
+          while Readings[J].date < P.date do Dec(J);
+        end;
         if I <= J then
         begin
           T := Readings[I];
@@ -333,36 +340,14 @@ begin
     QuickSort(Low(Readings), High(Readings));
 end;
 
-// Sort BGReading array in ascending order (oldest first)
-procedure SortReadingsAscending(var Readings: array of BGReading);
-  procedure QuickSort(L, R: Integer);
-  var
-    I, J: Integer;
-    P, T: BGReading;
-  begin
-    repeat
-      I := L;
-      J := R;
-      P := Readings[(L + R) div 2];
-      repeat
-        while Readings[I].date < P.date do Inc(I);
-        while Readings[J].date > P.date do Dec(J);
-        if I <= J then
-        begin
-          T := Readings[I];
-          Readings[I] := Readings[J];
-          Readings[J] := T;
-          Inc(I);
-          Dec(J);
-        end;
-      until I > J;
-      if L < J then QuickSort(L, J);
-      L := I;
-    until I >= R;
-  end;
+procedure SortReadingsDescending(var Readings: array of BGReading);
 begin
-  if Length(Readings) > 1 then
-    QuickSort(Low(Readings), High(Readings));
+  SortReadingsCore(Readings, false);
+end;
+
+procedure SortReadingsAscending(var Readings: array of BGReading);
+begin
+  SortReadingsCore(Readings, true);
 end;
 
 // SetPointHeight procedure
