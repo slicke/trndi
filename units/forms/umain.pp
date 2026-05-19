@@ -4871,14 +4871,14 @@ procedure UpdatePredictionTimes;
         diff5 := Abs(currentDiff - 5);
         closest5 := i;
       end;
-      
-      if (currentDiff >= 0) and (Abs(currentDiff - 10) < diff10) then
+
+      if (currentDiff >= 0) and (i <> closest5) and (Abs(currentDiff - 10) < diff10) then
       begin
         diff10 := Abs(currentDiff - 10);
         closest10 := i;
       end;
-      
-      if (currentDiff >= 0) and (Abs(currentDiff - 15) < diff15) then
+
+      if (currentDiff >= 0) and (i <> closest5) and (i <> closest10) and (Abs(currentDiff - 15) < diff15) then
       begin
         diff15 := Abs(currentDiff - 15);
         closest15 := i;
