@@ -76,44 +76,34 @@ function DotsInViewFromInfos(const Dots: array of TDotInfo; ParentHeight: intege
 var
   x: TDotInfo;
   bottom, overflow: integer;
-  adjustSide: TTrndiBool;
+  topResult, bottomResult: integer;
 const
   Tol = 5; // pixel tolerance to ignore tiny rounding differences
 begin
-  Result := 0;
-  adjustSide := tbUnknown;
-  // We can have both hi and lows; lock to first side encountered
+  topResult    := 0;
+  bottomResult := 0;
+
   for x in Dots do
   begin
-    // Ignore dots not currently visible
     if not x.Visible then
       Continue;
 
-    // Use the actual control geometry (Top/Height) provided in the infos
     bottom := x.Top + x.Height;
 
-    // Out-of-top (negative top)
-    if (x.Top < -Tol) then
+    if x.Top < -Tol then
+      topResult := Min(topResult, x.Top)
+    else if (ParentHeight > 0) and (bottom > ParentHeight + Tol) then
     begin
-      if adjustSide in [tbTrue, tbUnknown] then
-      begin
-        // Pick the smallest (most negative) top
-        Result := Min(Result, x.Top);
-        adjustSide := tbTrue;
-      end;
-    end
-    else
-    if (ParentHeight > 0) and (bottom > ParentHeight + Tol) then
-      if adjustSide in [tbFalse, tbUnknown] then
-      begin
-          // Compute actual overflow beyond tolerance to avoid false positives
-        overflow := (bottom - (ParentHeight + Tol));
-          // Pick the largest overflow
-        Result := Max(Result, overflow);
-        adjustSide := tbFalse;
-      end// Out-of-bottom (only when parent height known/positive)
-    ;
+      overflow := bottom - (ParentHeight + Tol);
+      bottomResult := Max(bottomResult, overflow);
+    end;
   end;
+
+  // Top overflow takes priority so AdjustGraph's second pass can handle bottom.
+  if topResult < 0 then
+    Result := topResult
+  else
+    Result := bottomResult;
 end;
 
 
