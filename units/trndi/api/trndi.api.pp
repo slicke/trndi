@@ -33,7 +33,7 @@ type
       - @code(bottom):Lower bound of personalized in-range interval (optional).
 
       Notes:
-      - @code(top=500) and @code(bottom=0) act as sentinels meaning “unused”.
+      - @code(top=CGM_RANGE_HI_DISABLED) and @code(bottom=CGM_RANGE_LO_DISABLED) act as sentinels meaning “unused”.
    }
 CGMCore = record
   hi, lo, top, bottom: integer;
@@ -135,7 +135,7 @@ protected
     {** Initialize @code(CGMCore) thresholds to defaults.
 
         Defaults:
-        - hi=401, lo=40, top=500 (disabled), bottom=0 (disabled)
+        - hi=401, lo=40, top=CGM_RANGE_HI_DISABLED (disabled), bottom=CGM_RANGE_LO_DISABLED (disabled)
      }
   procedure initCGMCore;
 
@@ -155,9 +155,12 @@ private
 public
 const
   toMMOL = 0.05555555555555556; // Factor to multiply mg/dL by to get mmol/L
+  toMGDL = 18.0156;             // Factor to multiply mmol/L to get mg/dL
 
-const
-  toMGDL = 18.0156; // Facvtor to multiply mmol/L to get mg/dL
+  {** Sentinel: cgmRangeHi set to this value means "personalised upper bound disabled". }
+  CGM_RANGE_HI_DISABLED = 500;
+  {** Sentinel: cgmRangeLo set to this value means "personalised lower bound disabled". }
+  CGM_RANGE_LO_DISABLED = 0;
     {** Provide a backend-specific caption for parameter labels in Settings.
         Index mapping (by convention):
         - 1: Label above the first edit (e.g., server URL or username)
@@ -226,8 +229,8 @@ const
         - @code(v >= hi) => @code(BGHIGH)
         - @code(v <= lo) => @code(BGLOW)
         - Else => in-range; optional sub-classification:
-          - If @code(top <> 500) and @code(v >= top) => @code(BGRangeHI)
-          - Else if @code(bottom <> 0) and @code(v <= bottom) => @code(BGRangeLO)
+          - If @code(top <> CGM_RANGE_HI_DISABLED) and @code(v >= top) => @code(BGRangeHI)
+          - Else if @code(bottom <> CGM_RANGE_LO_DISABLED) and @code(v <= bottom) => @code(BGRangeLO)
           - Else => @code(BGRange)
 
         @param(v BG value)
@@ -274,7 +277,7 @@ const
         - Extrapolates forward to predict future values
         - Each prediction is spaced by the average interval between historical readings
 
-        @param(numPredictions Number of future readings to predict (1-10 recommended))
+        @param(numPredictions Number of future readings to predict; clamped to 1–20)
         @param(predictions    Out parameter receiving array of predicted readings)
         @returns(True if prediction succeeded; False if insufficient data)
 
@@ -369,10 +372,10 @@ const
     /// Low threshold (modifiable).
   property cgmLo: integer read core.lo write core.lo;
 
-    /// Personalized in-range upper bound (optional; 500 disables).
+    /// Personalized in-range upper bound (CGM_RANGE_HI_DISABLED to disable).
   property cgmRangeHi: integer read core.top write core.top;
 
-    /// Personalized in-range lower bound (optional; 0 disables).
+    /// Personalized in-range lower bound (CGM_RANGE_LO_DISABLED to disable).
   property cgmRangeLo: integer read core.bottom write core.bottom;
 
 published
@@ -522,10 +525,10 @@ begin
     Result := BGRange;
 
     // Optional upper/lower in-range refinement when sentinels are not used
-    if (core.top <> 500) and (v >= core.top) then
+    if (core.top <> CGM_RANGE_HI_DISABLED) and (v >= core.top) then
       Result := BGRangeHI
     else
-    if (core.bottom <> 0) and (v <= core.bottom) then
+    if (core.bottom <> CGM_RANGE_LO_DISABLED) and (v <= core.bottom) then
       Result := BGRangeLO;
   end;
 end;
@@ -537,8 +540,8 @@ procedure TrndiAPI.initCGMCore;
 begin
   core.hi := 401;
   core.lo := 40;
-  core.top := 500;  // 500 => “unused” for personalized upper bound
-  core.bottom := 0;    // 0   => “unused” for personalized lower bound
+  core.top    := CGM_RANGE_HI_DISABLED;
+  core.bottom := CGM_RANGE_LO_DISABLED;
 end;
 
 {------------------------------------------------------------------------------
