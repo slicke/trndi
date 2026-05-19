@@ -754,7 +754,7 @@ begin
       th := TJSONObject(settings.Find('thresholds'));
       cgmHi := th.Get('bgHigh', 0);
       cgmLo := th.Get('bgLow', 0);
-      cgmRangeHi := th.Get('bgTargetTop', 0);
+      cgmRangeHi := th.Get('bgTargetTop', CGM_RANGE_HI_DISABLED);
       cgmRangeLo := th.Get('bgTargetBottom', 0);
       Result := true;
     end;
