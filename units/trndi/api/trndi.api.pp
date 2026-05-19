@@ -686,7 +686,7 @@ function TrndiAPI.predictReadings(numPredictions: integer;
 out predictions: BGResults): boolean;
 var
   historicalReadings: BGResults;
-  n, i, midIdx: integer;
+  n, i, midIdx, gapCutIdx: integer;
   sumW, sumWX, sumWY, sumWXX, sumWXY: double;
   slope, intercept, weight, alpha: double;
   timeValues: array of double;
@@ -720,6 +720,29 @@ begin
 
   // Sort oldest first — regression expects ascending time order
   SortReadingsAscending(historicalReadings);
+
+  // Gap detection: scan backward to find the most recent gap > 10 minutes
+  // (2× the normal 5-min CGM interval). Readings before a gap describe a
+  // different signal context — a sensor dropout, session restart, or period
+  // of missing data — and would pull the regression toward a stale trend.
+  gapCutIdx := 0;
+  for i := n - 1 downto 1 do
+    if (historicalReadings[i].date - historicalReadings[i - 1].date) > (10.0 / (24 * 60)) then
+    begin
+      gapCutIdx := i;
+      Break;
+    end;
+
+  if gapCutIdx > 0 then
+  begin
+    historicalReadings := Copy(historicalReadings, gapCutIdx, n - gapCutIdx);
+    n := Length(historicalReadings);
+    if n < 3 then
+    begin
+      lastErr := 'Insufficient data after CGM gap for prediction';
+      Exit;
+    end;
+  end;
 
   SetLength(timeValues, n);
   SetLength(bgValues, n);
