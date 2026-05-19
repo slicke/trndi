@@ -748,14 +748,16 @@ begin
   SetLength(bgValues, n);
   SetLength(weights, n);
 
-  // Exponential weights: oldest reading (index 0) gets weight 1; each successive
-  // reading is Exp(alpha) times heavier, giving a half-life of ~3 readings (~15 min).
-  alpha := Ln(2) / 3.0;
+  // Exponential weights decaying by actual elapsed time: oldest reading gets
+  // weight 1, newer readings get exponentially higher weight with a half-life
+  // of 15 minutes. Using real elapsed time (not reading index) means irregular
+  // backends — where gaps between readings vary — are weighted correctly.
+  alpha := Ln(2) / 15.0;
   for i := 0 to n - 1 do
   begin
     timeValues[i] := (historicalReadings[i].date - historicalReadings[0].date) * 24 * 60;
     bgValues[i]   := historicalReadings[i].convert(BGUnit.mgdl);
-    weights[i]    := Exp(alpha * i);
+    weights[i]    := Exp(alpha * timeValues[i]);
   end;
 
   // Weighted linear regression: y = slope * x + intercept
