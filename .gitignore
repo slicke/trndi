@@ -68,3 +68,6 @@ Trndi-linux
 # Vi temps
 .gitignore~
 ..gitignore.un~
+
+# Ignore generated PDF reports
+Trndi_Report_*.pdf
