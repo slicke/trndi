@@ -131,6 +131,7 @@ private
   FBasalProfile: TBasalProfile; // Optional basal profile to draw as overlay
   FShowBasal: boolean; // Whether to render basal overlay
   FMaxBasal: single; // Maximum basal rate for scaling (U/hr)
+  FPredictions: array of TGraphPoint; // Predicted future readings
     {** GetPlotRect: Determine the plotting rectangle inside the form where
       dots and lines are drawn. Respects the margins defined above. }
   function GetPlotRect: TRect;
@@ -159,6 +160,9 @@ private
       colors determined by LevelColor. Clicking a dot triggers
       ShowReadingDetails. }
   procedure DrawPoints(ACanvas: TCanvas; const PlotRect: TRect);
+    {** DrawPredictionOverlay: Draws predicted future readings as a dashed
+      line and hollow circles continuing from the last real reading. }
+  procedure DrawPredictionOverlay(ACanvas: TCanvas; const PlotRect: TRect);
     {** DrawLegend: Draws a small key and information panel to the right
       of the plot showing counts, time-range and color legend. }
   procedure DrawLegend(ACanvas: TCanvas; const PlotRect: TRect);
@@ -218,8 +222,12 @@ public
       on the graph. The profile repeats every 24h. @param(maxBasal) is the
       maximum expected basal used to scale the overlay height in pixels. }
   procedure SetBasalProfile(const profile: TBasalProfile; const maxBasal: single = 3.0);
-    {** Enable or disable basal overlay rendering. } 
+    {** Enable or disable basal overlay rendering. }
   procedure SetBasalOverlayEnabled(aEnabled: boolean);
+    {** SetPredictions: Supply predicted future readings to overlay on the graph
+      as a dashed continuation past the last real reading. Pass an empty array
+      to hide the overlay. }
+  procedure SetPredictions(const Predictions: BGResults);
 end;
 
   {** Display a dot-based history plot for the supplied readings. Reuses the
@@ -273,6 +281,7 @@ RS_HISTORY_GRAPH_MENU_RANGE_6H = 'Last 6h';
 RS_HISTORY_GRAPH_MENU_RANGE_12H = 'Last 12h';
 RS_HISTORY_GRAPH_MENU_RANGE_24H = 'Last 24h';
 RS_HISTORY_GRAPH_HOVER_FMT = '%s at %s';
+RS_HISTORY_GRAPH_KEY_PREDICT = 'Predicted';
 
 {** Constants used for layout and division handling in this graph unit.
   Changing these values will affect overall margins and grid density. }
@@ -881,6 +890,7 @@ begin
   DrawBasalOverlay(Canvas, plotRect);
   DrawPolyline(Canvas, plotRect);
   DrawPoints(Canvas, plotRect);
+  DrawPredictionOverlay(Canvas, plotRect);
 
   if (FHoveredPoint >= 0) and (FHoveredPoint <= High(FPoints)) then
   begin
@@ -968,6 +978,7 @@ begin
   FUnit := UnitPref;
   SetLength(FPoints, 0);
   SetLength(FAllPoints, 0);
+  SetLength(FPredictions, 0);
   FHoveredPoint := -1;
 
   if Length(Readings) = 0 then
@@ -1162,6 +1173,7 @@ begin
         DrawBasalOverlay(bmp.Canvas, plotRect);
         DrawPolyline(bmp.Canvas, plotRect);
         DrawPoints(bmp.Canvas, plotRect);
+        DrawPredictionOverlay(bmp.Canvas, plotRect);
         DrawLegend(bmp.Canvas, plotRect);
 
         intfImg := TLazIntfImage.Create(0, 0);
@@ -1384,6 +1396,16 @@ begin
       FMaxValue := FPoints[i].Value;
   end;
 
+  for i := 0 to High(FPredictions) do
+  begin
+    if FPredictions[i].Reading.date > FMaxTime then
+      FMaxTime := FPredictions[i].Reading.date;
+    if FPredictions[i].Value < FMinValue then
+      FMinValue := FPredictions[i].Value;
+    if FPredictions[i].Value > FMaxValue then
+      FMaxValue := FPredictions[i].Value;
+  end;
+
   if IsZero(FMaxTime - FMinTime) then
     FMaxTime := FMaxTime + EncodeTime(0, 5, 0, 0);
 
@@ -1419,6 +1441,75 @@ begin
   ratio := (Value - FMinValue) / span;
   ratio := EnsureRange(ratio, 0, 1);
   Result := PlotRect.Bottom - Round(ratio * (PlotRect.Bottom - PlotRect.Top));
+end;
+
+procedure TfHistoryGraph.SetPredictions(const Predictions: BGResults);
+var
+  i, idx: integer;
+begin
+  SetLength(FPredictions, Length(Predictions));
+  idx := 0;
+  for i := Low(Predictions) to High(Predictions) do
+  begin
+    if Predictions[i].empty then
+      Continue;
+    FPredictions[idx].Reading := Predictions[i];
+    FPredictions[idx].Value   := Predictions[i].convert(FUnit);
+    Inc(idx);
+  end;
+  SetLength(FPredictions, idx);
+  if HasData then
+    UpdateExtents;
+  Invalidate;
+end;
+
+procedure TfHistoryGraph.DrawPredictionOverlay(ACanvas: TCanvas;
+const PlotRect: TRect);
+const
+  PREDICT_COLOR: TColor = $00C88050; // muted steel-blue (BGR: R=80 G=128 B=200)
+var
+  i: integer;
+  x, y, radius: integer;
+begin
+  if Length(FPredictions) = 0 then
+    Exit;
+
+  radius := Max(2, FDotRadius - 1);
+
+  // Dashed line from the last real point through each prediction
+  ACanvas.Pen.Style  := psDash;
+  ACanvas.Pen.Width  := 1;
+  ACanvas.Pen.Color  := PREDICT_COLOR;
+  ACanvas.Brush.Style := bsClear;
+
+  if Length(FPoints) > 0 then
+    ACanvas.MoveTo(
+      TimeToX(FPoints[High(FPoints)].Reading.date, PlotRect),
+      ValueToY(FPoints[High(FPoints)].Value, PlotRect))
+  else
+    ACanvas.MoveTo(
+      TimeToX(FPredictions[0].Reading.date, PlotRect),
+      ValueToY(FPredictions[0].Value, PlotRect));
+
+  for i := 0 to High(FPredictions) do
+    ACanvas.LineTo(
+      TimeToX(FPredictions[i].Reading.date, PlotRect),
+      ValueToY(FPredictions[i].Value, PlotRect));
+
+  // Hollow circles at each predicted point
+  ACanvas.Pen.Style  := psSolid;
+  ACanvas.Pen.Color  := PREDICT_COLOR;
+  ACanvas.Brush.Style := bsClear;
+  for i := 0 to High(FPredictions) do
+  begin
+    x := TimeToX(FPredictions[i].Reading.date, PlotRect);
+    y := ValueToY(FPredictions[i].Value, PlotRect);
+    ACanvas.Ellipse(x - radius, y - radius, x + radius, y + radius);
+  end;
+
+  ACanvas.Pen.Width   := 1;
+  ACanvas.Pen.Style   := psSolid;
+  ACanvas.Brush.Style := bsSolid;
 end;
 
 procedure ShowHistoryGraph(const Readings: BGResults; const UnitPref: BGUnit;

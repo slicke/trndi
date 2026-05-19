@@ -3038,6 +3038,10 @@ msgctxt "uhistorygraph.rs_history_graph_key_low"
 msgid "Low"
 msgstr "Låg"
 
+#: uhistorygraph.rs_history_graph_key_predict
+msgid "Predicted"
+msgstr ""
+
 #: uhistorygraph.rs_history_graph_key_range
 msgid "In range"
 msgstr "I område"
