@@ -3847,6 +3847,7 @@ procedure LoadUserSettings(f: TfConf);
       else
         cbPredictShortMinutes.ItemIndex := 1;
       end;
+      UpdatePredictionStates;
 
       edMusicHigh.Text := GetSetting('media.url_high', '');
       edMusicLow.Text := GetSetting('media.url_low', '');

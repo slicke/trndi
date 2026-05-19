@@ -509,6 +509,7 @@ private
   procedure getAPILabels(out user, pass: string);
 public
   chroma: TRazerChromaBase;
+  procedure UpdatePredictionStates;
 end;
 
 var
@@ -1874,24 +1875,31 @@ begin
   {$endif}
 end;
 
+procedure TfConf.UpdatePredictionStates;
+var
+  predOn, shortOn: boolean;
+begin
+  predOn  := cbPredictions.Checked;
+  shortOn := predOn and cbPredictShort.Checked;
+
+  cbPredictShort.Enabled            := predOn;
+  cbWarnLoHi.Enabled                := predOn;
+  cbPredictShortFullArrows.Enabled  := shortOn;
+  rbPredictShortShowValue.Enabled   := shortOn;
+  rbPredictShortArrowOnly.Enabled   := shortOn;
+  cbPredictShortMinutes.Enabled     := shortOn;
+end;
+
 procedure TfConf.cbPredictionsChange(Sender: TObject);
 begin
-  if (cbPredictions.Checked) and self.Showing then
+  if cbPredictions.Checked and self.Showing then
     ShowMessage(RS_PredictionWarn);
-
-  cbPredictShort.Enabled := cbPredictions.Checked;
-  cbPredictShortFullArrows.Enabled := cbPredictShort.Enabled;
-  cbPredictShortMinutes.Enabled := cbPredictShort.Enabled;
-
+  UpdatePredictionStates;
 end;
 
 procedure TfConf.cbPredictShortChange(Sender: TObject);
 begin
-  cbPredictShortFullArrows.Enabled := cbPredictShort.Checked;
-  rbPredictShortShowValue.Enabled := cbPredictShort.Checked;
-  rbPredictShortArrowOnly.Enabled := cbPredictShort.Checked;
-  cbPredictShortMinutes.Enabled := cbPredictShort.Checked;
-  cbWarnLoHi.Enabled := cbPredictShort.Checked;
+  UpdatePredictionStates;
 end;
 
 procedure TfConf.cbPredictShortFullArrowsChange(Sender: TObject);
