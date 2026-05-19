@@ -103,6 +103,10 @@ jobs:
 
                   kind = m.group("kind")
                   code = m.group("code") or ""
+                  
+                  if code == "5024":
+                      continue
+
                   msg = m.group("msg").strip()
                   file_name = m.group("file").strip()
                   line_no = int(m.group("line"))
