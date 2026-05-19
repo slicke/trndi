@@ -420,6 +420,7 @@ begin
         MAX_RESULT := resultmax;
       end;
 
+
   apiTarget := native.GetSetting('remote.target');
   apiCreds := native.GetSetting('remote.creds');
 
@@ -498,6 +499,16 @@ begin
   else
     Result := false;
   end;
+
+  // Scale MAX_RESULT to the API's reporting frequency so all dot slots can be
+  // filled even for backends that upload more often than every 5 minutes.
+  // Formula: 25 × ceil(INTERVAL_MINUTES / reportingInterval)
+  //   5-min backend → 25 × 1 = 25
+  //   1-min backend → 25 × 5 = 125
+  if Assigned(api) then
+    MAX_RESULT := Max(MAX_RESULT,
+      25 * Max(1, (INTERVAL_MINUTES + api.getReportingInterval - 1)
+                   div api.getReportingInterval));
 end;
 
 {$ifdef X_LINUXBSD}
