@@ -11,9 +11,14 @@ This file applies to the Trndi repository root and its subdirectories.
 - Use `make noext` when you need a build path that avoids mORMot2.
 - Check `make help` before inventing a new command or target.
 
+## Branching & Pull Requests
+- Always branch from `develop` and open PRs targeting `develop`, not `main`.
+
 ## Editing Guidance
 - Keep changes focused and minimal.
 - Preserve existing Pascal style and project layout. Formatting should adhere to the rules in `JCFSettings.xml`.
+- Unit files must use the `.pp` extension.
+- For cross-platform code, add platform-specific logic to `units/trndi/trndi.native.win.pp`, `trndi.native.linux.pp`, or `trndi.native.mac.pp`. Do not add `{$IFDEF}` platform blocks to `trndi.native.base`.
 - Note the architectural pattern of breaking out code from large units (like `umain`) into `.inc` (include) files. Follow this pattern to keep main unit files manageable.
 - Avoid unrelated refactors or formatting-only edits.
 - Update documentation when behavior or workflow changes.
