@@ -1,0 +1,57 @@
+name: Setup Lazarus/FPC
+description: Install Lazarus, FPC, and Qt6Pas from pinned upstream .deb files on an Ubuntu runner.
+
+inputs:
+  fpc_laz_url:
+    description: Download URL for the fpc-laz .deb package
+    required: true
+  fpc_src_url:
+    description: Download URL for the fpc-src .deb package
+    required: true
+  laz_url:
+    description: Download URL for the lazarus-project .deb package
+    required: true
+  qt6pas_deb:
+    description: Filename of the Qt6Pas runtime .deb (architecture-specific)
+    required: false
+    default: libqt6pas6_6.2.10-1_amd64.deb
+  qt6pas_dev_deb:
+    description: Filename of the Qt6Pas dev .deb (architecture-specific)
+    required: false
+    default: libqt6pas6-dev_6.2.10-1_amd64.deb
+  qt6pas_base_url:
+    description: Base URL for Qt6Pas .deb downloads (no trailing slash)
+    required: false
+    default: https://github.com/davidbannon/libqt6pas/releases/download/v6.2.10
+  extra_packages:
+    description: Additional apt packages to install alongside the base set (space-separated)
+    required: false
+    default: ''
+
+runs:
+  using: composite
+  steps:
+    - name: Install system packages and Lazarus/FPC
+      shell: bash
+      run: |
+        set -euo pipefail
+        sudo apt-get update
+        sudo apt-get install -y \
+          p7zip-full curl pkg-config \
+          qt6-base-dev qt6-tools-dev qt6-base-dev-tools \
+          libcurl4-openssl-dev \
+          ${{ inputs.extra_packages }}
+
+        curl -fsSL -o fpc-laz.deb "${{ inputs.fpc_laz_url }}"
+        curl -fsSL -o fpc-src.deb "${{ inputs.fpc_src_url }}"
+        curl -fsSL -o lazarus.deb "${{ inputs.laz_url }}"
+        sudo dpkg -i fpc-laz.deb fpc-src.deb lazarus.deb || true
+        sudo apt-get -f install -y
+
+        curl -fL -o "${{ inputs.qt6pas_deb }}" \
+          "${{ inputs.qt6pas_base_url }}/${{ inputs.qt6pas_deb }}"
+        curl -fL -o "${{ inputs.qt6pas_dev_deb }}" \
+          "${{ inputs.qt6pas_base_url }}/${{ inputs.qt6pas_dev_deb }}"
+        sudo apt-get install -y \
+          "./${{ inputs.qt6pas_deb }}" \
+          "./${{ inputs.qt6pas_dev_deb }}"

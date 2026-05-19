@@ -31,12 +31,12 @@ jobs:
           echo >> "$REPORT"
 
           mapfile -t URLS < <(
-            grep -Eo 'https://[^"'\''[:space:]]+' .github/workflows/build.yml \
+            grep -Eroh 'https://[^"'\''[:space:]]+' .github/workflows/ .github/actions/ \
               | sed "s/[\"',)]$//" \
               | sort -u
           )
 
-          echo "Found ${#URLS[@]} unique URLs in .github/workflows/build.yml" >> "$REPORT"
+          echo "Found ${#URLS[@]} unique URLs across .github/workflows/ and .github/actions/" >> "$REPORT"
           echo >> "$REPORT"
 
           FAIL=0
@@ -76,7 +76,7 @@ jobs:
 
           echo >> "$REPORT"
           echo "Pinned version hints (static excerpts from .github/workflows/build.yml; not execution logs):" >> "$REPORT"
-          grep -nE 'Lazarus%20[0-9]+\.[0-9]+|v[0-9]+\.[0-9]+\.[0-9]+|2\.3\.stable|fpc-laz_|qt6pas|mormot2static' .github/workflows/build.yml >> "$REPORT" || true
+          grep -rnE 'Lazarus%20[0-9]+\.[0-9]+|v[0-9]+\.[0-9]+\.[0-9]+|2\.3\.stable|fpc-laz_|qt6pas|mormot2static' .github/workflows/ .github/actions/ >> "$REPORT" || true
 
           cat "$REPORT"
           if [[ "$FAIL" -ne 0 ]]; then

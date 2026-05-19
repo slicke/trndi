@@ -31,6 +31,8 @@ concurrency:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  MORMOT2_BRANCH: 2.3.stable
+  MORMOT2_STATIC_URL: https://github.com/synopse/mORMot2/releases/download/2.3.stable/mormot2static.7z
 
 jobs:
   # ===================== DETERMINE VERSION =====================
@@ -130,66 +132,38 @@ jobs:
       - uses: actions/checkout@v5
 
       # ===================== LINUX BUILDER =====================
+      - name: Install Lazarus/FPC toolchain (Linux)
+        if: matrix.os_target == 'linux'
+        uses: ./.github/actions/setup-lazarus
+        with:
+          fpc_laz_url: ${{ matrix.fpc_laz_url }}
+          fpc_src_url: ${{ matrix.fpc_src_url }}
+          laz_url: ${{ matrix.laz_url }}
+          qt6pas_deb: ${{ matrix.qt6pas_deb }}
+          qt6pas_dev_deb: ${{ matrix.qt6pas_dev_deb }}
+          extra_packages: build-essential wget git cmake ninja-build
+
+      - name: Write buildinfo (Linux)
+        if: matrix.os_target == 'linux'
+        uses: ./.github/actions/write-buildinfo
+        with:
+          event_name: ${{ github.event_name }}
+          github_ref: ${{ github.ref }}
+          build_number: ${{ needs.version.outputs.build_number }}
+          pr_number: ${{ github.event.pull_request.number }}
+          ref_name: ${{ github.ref_name }}
+
       - name: Build on Linux
         if: matrix.os_target == 'linux'
         run: |
           set -euo pipefail
-          # Install Qt6 build toolchain
-          sudo apt-get update
-          # Include libcurl development package (needed for building against libcurl)
-          sudo apt-get install -y p7zip-full build-essential wget curl git cmake ninja-build pkg-config qt6-base-dev qt6-tools-dev qt6-base-dev-tools libcurl4-openssl-dev
-
-          # Install Lazarus + FPC
-          curl -fsSL -o fpc-laz.deb "${{ matrix.fpc_laz_url }}"
-          curl -fsSL -o fpc-src.deb "${{ matrix.fpc_src_url }}"
-          curl -fsSL -o lazarus.deb "${{ matrix.laz_url }}"
-          sudo dpkg -i fpc-laz.deb fpc-src.deb lazarus.deb || true
-          sudo apt-get -f install -y
-
-          # Install Qt6Pas bindings
-          BASE_RELEASE="https://github.com/davidbannon/libqt6pas/releases/download/v6.2.10"
-          curl -fL -o "${{ matrix.qt6pas_deb }}" "${BASE_RELEASE}/${{ matrix.qt6pas_deb }}"
-          curl -fL -o "${{ matrix.qt6pas_dev_deb }}" "${BASE_RELEASE}/${{ matrix.qt6pas_dev_deb }}"
-          sudo apt-get install -y "./${{ matrix.qt6pas_deb }}" "./${{ matrix.qt6pas_dev_deb }}"
 
           # Fetch static mORMot2 libs
           mkdir -p ./static
-          curl -fsSL -o mormot2static.7z 'https://github.com/synopse/mORMot2/releases/download/2.3.stable/mormot2static.7z'
+          curl -fsSL -o mormot2static.7z "${{ env.MORMOT2_STATIC_URL }}"
           7z x mormot2static.7z -o./static -y >/dev/null
-          git clone --depth 1 --branch 2.3.stable https://github.com/synopse/mORMot2.git externals/mORMot2
+          git clone --depth 1 --branch ${{ env.MORMOT2_BRANCH }} https://github.com/synopse/mORMot2.git externals/mORMot2
           cp -r ./static/${{ matrix.qt6_arch_folder }}/* .
-
-          # Write build metadata unit for CI (overrides dev stub)
-          BUILD_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          GIT_SHA="$(git rev-parse --short HEAD)"
-          mkdir -p units/misc
-          
-          # Use actual build number for pushes to main, PR number for PRs, or 0 for other events
-          if [ "${{ github.event_name }}" = "push" ] && [ "${{ github.ref }}" = "refs/heads/main" ]; then
-            BUILD_NUMBER="${{ needs.version.outputs.build_number }}"
-            BUILD_TAG="build-${BUILD_NUMBER}"
-          elif [ "${{ github.event_name }}" = "pull_request" ]; then
-            BUILD_NUMBER="PR-${{ github.event.pull_request.number }}"
-            BUILD_TAG="pr-${{ github.event.pull_request.number }}"
-          else
-            BUILD_NUMBER="0"
-            BUILD_TAG="dev"
-          fi
-          
-          cat > units/misc/buildinfo.pp <<EOF
-          unit buildinfo;
-          {\$mode objfpc}{\$H+}
-          interface
-          const
-            BUILD_NUMBER = '${BUILD_NUMBER}';
-            BUILD_TAG    = '${BUILD_TAG}';
-            BUILD_DATE   = '${BUILD_DATE}';
-            GIT_SHA      = '${GIT_SHA}';
-            GIT_BRANCH   = '${{ github.ref_name }}';
-            CI           = True;
-          implementation
-          end.
-          EOF
 
           # Build Trndi
           lazbuild externals/mORMot2/packages/lazarus/mormot2.lpk
@@ -387,42 +361,27 @@ jobs:
           sudo port -v selfupdate
           sudo port -N install fpc lazarus p7zip create-dmg
           # Prepare static libs + sources
-          curl -fsSL -o mormot2static.7z 'https://github.com/synopse/mORMot2/releases/download/2.3.stable/mormot2static.7z'
+          curl -fsSL -o mormot2static.7z "${{ env.MORMOT2_STATIC_URL }}"
           mkdir -p ./static
           7z x mormot2static.7z -o./static -y >/dev/null
-          git clone --depth 1 --branch 2.3.stable https://github.com/synopse/mORMot2.git externals/mORMot2
+          git clone --depth 1 --branch ${{ env.MORMOT2_BRANCH }} https://github.com/synopse/mORMot2.git externals/mORMot2
           cp -r ./static/aarch64-darwin/* .
-          # Write build metadata unit for CI (overrides dev stub)
-          BUILD_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          GIT_SHA="$(git rev-parse --short HEAD)"
-          mkdir -p units/misc
-          
-          # Use actual build number for pushes to main, PR number for PRs, or 0 for other events
-          if [ "${{ github.event_name }}" = "push" ] && [ "${{ github.ref }}" = "refs/heads/main" ]; then
-            BUILD_NUMBER="${{ needs.version.outputs.build_number }}"
-            BUILD_TAG="build-${BUILD_NUMBER}"
-          elif [ "${{ github.event_name }}" = "pull_request" ]; then
-            BUILD_NUMBER="PR-${{ github.event.pull_request.number }}"
-            BUILD_TAG="pr-${{ github.event.pull_request.number }}"
-          else
-            BUILD_NUMBER="0"
-            BUILD_TAG="dev"
-          fi
-          
-          cat > units/misc/buildinfo.pp <<EOF
-          unit buildinfo;
-          {\$mode objfpc}{\$H+}
-          interface
-          const
-            BUILD_NUMBER = '${BUILD_NUMBER}';
-            BUILD_TAG    = '${BUILD_TAG}';
-            BUILD_DATE   = '${BUILD_DATE}';
-            GIT_SHA      = '${GIT_SHA}';
-            GIT_BRANCH   = '${{ github.ref_name }}';
-            CI           = True;
-          implementation
-          end.
-          EOF
+
+      - name: Write buildinfo (macOS)
+        if: matrix.os_target == 'macos'
+        uses: ./.github/actions/write-buildinfo
+        with:
+          event_name: ${{ github.event_name }}
+          github_ref: ${{ github.ref }}
+          build_number: ${{ needs.version.outputs.build_number }}
+          pr_number: ${{ github.event.pull_request.number }}
+          ref_name: ${{ github.ref_name }}
+
+      - name: Build and package on macOS
+        if: matrix.os_target == 'macos'
+        run: |
+          set -euo pipefail
+          export PATH="/opt/local/bin:/opt/local/sbin:$PATH"
           # Build Trndi
           lazbuild externals/mORMot2/packages/lazarus/mormot2.lpk
           lazbuild --build-mode="No Ext (Release)" --ws=cocoa --cpu=aarch64 --os=darwin Trndi.lpi
@@ -454,9 +413,9 @@ jobs:
           Start-Process '.\lazarus-4.6.exe' -ArgumentList '/VERYSILENT','/SP-','/NORESTART','/DIR=C:\Lazarus' -Wait
           # Prepare static libs & sources
           New-Item -ItemType Directory -Path .\static -Force | Out-Null
-          curl -L --fail -o mormot2static.7z "https://github.com/synopse/mORMot2/releases/download/2.3.stable/mormot2static.7z"
+          curl -L --fail -o mormot2static.7z "${{ env.MORMOT2_STATIC_URL }}"
           & 'C:\Program Files\7-Zip\7z.exe' x '.\mormot2static.7z' -o'.\static' -y | Out-Null
-          git clone --depth 1 --branch 2.3.stable https://github.com/synopse/mORMot2.git externals/mORMot2
+          git clone --depth 1 --branch ${{ env.MORMOT2_BRANCH }} https://github.com/synopse/mORMot2.git externals/mORMot2
           xcopy .\static\x86_64-win64\*.* . /Y /E /I | Out-Null
           # Write build metadata unit for CI (overrides dev stub)
           $BUILD_DATE = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
@@ -529,7 +488,7 @@ jobs:
 
       # ===================== UPLOAD ARTIFACTS =====================
       - name: Upload Actions artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.upload_name }}
           path: |
@@ -555,7 +514,7 @@ jobs:
         with:
           fetch-depth: 0
       
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@v4
         with:
           path: ./release-files
 
