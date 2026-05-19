@@ -686,7 +686,7 @@ function TrndiAPI.predictReadings(numPredictions: integer;
 out predictions: BGResults): boolean;
 var
   historicalReadings: BGResults;
-  n, i: integer;
+  n, i, midIdx: integer;
   sumW, sumWX, sumWY, sumWXX, sumWXY: double;
   slope, intercept, weight, alpha: double;
   timeValues: array of double;
@@ -697,6 +697,7 @@ var
   predictedTime: TDateTime;
   predictedValue, prevValue: double;
   trendDelta: single;
+  earlyRate, lateRate, accel, tFromLast: double;
 begin
   Result := false;
   SetLength(predictions, 0);
@@ -724,8 +725,8 @@ begin
   SetLength(bgValues, n);
   SetLength(weights, n);
 
-  // Exponential weights: newest reading (index n-1) gets weight 1, older readings
-  // decay with a half-life of ~3 readings (~15 min) so recent trends dominate.
+  // Exponential weights: oldest reading (index 0) gets weight 1; each successive
+  // reading is Exp(alpha) times heavier, giving a half-life of ~3 readings (~15 min).
   alpha := Ln(2) / 3.0;
   for i := 0 to n - 1 do
   begin
@@ -760,6 +761,27 @@ begin
   slope     := (sumW * sumWXY - sumWX * sumWY) / (sumW * sumWXX - sumWX * sumWX);
   intercept := (sumWY - slope * sumWX) / sumW;
 
+  // Second-derivative acceleration: compare the slope of the first vs second half
+  // of the data window. A positive value means the rate of change is speeding up;
+  // negative means it is decelerating. Capped to ±0.03 mg/dL/min² so the quadratic
+  // correction stays subtle — CGM noise makes aggressive acceleration estimates
+  // unreliable, so we treat this as a gentle curve hint rather than a hard model.
+  midIdx := n div 2;
+  if (timeValues[midIdx] - timeValues[0]) > 0 then
+    earlyRate := (bgValues[midIdx] - bgValues[0]) / (timeValues[midIdx] - timeValues[0])
+  else
+    earlyRate := slope;
+  if (timeValues[n-1] - timeValues[midIdx]) > 0 then
+    lateRate := (bgValues[n-1] - bgValues[midIdx]) / (timeValues[n-1] - timeValues[midIdx])
+  else
+    lateRate := slope;
+  if timeValues[n-1] > timeValues[0] then
+    accel := (lateRate - earlyRate) / (timeValues[n-1] - timeValues[0]) * 2
+  else
+    accel := 0;
+  if accel >  0.03 then accel :=  0.03;
+  if accel < -0.03 then accel := -0.03;
+
   if n > 1 then
     avgInterval := (historicalReadings[n-1].date - historicalReadings[0].date) / (n - 1)
   else
@@ -778,7 +800,9 @@ begin
   for i := 0 to numPredictions - 1 do
   begin
     predictedTime  := lastTime + (avgInterval * (i + 1));
+    tFromLast      := (i + 1) * minutesDiff;
     predictedValue := slope * ((predictedTime - historicalReadings[0].date) * 24 * 60) + intercept;
+    predictedValue := predictedValue + 0.5 * accel * tFromLast * tFromLast;
 
     // Clamp rate of change to ±3 mg/dL/min relative to the previous value
     if predictedValue < prevValue - (3.0 * minutesDiff) then
