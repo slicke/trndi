@@ -459,8 +459,8 @@ begin
   if not getCurrent(bgr) then
     Result := false
   else
-    // Lightweight plausibility check on timestamp
-    Result := bgr.date > 1000;
+    // Plausibility check: timestamp must be after year 2000 to rule out uninitialized values
+    Result := bgr.date > EncodeDate(2000, 1, 1);
 end;
 
 {------------------------------------------------------------------------------
@@ -628,8 +628,8 @@ var
 begin
   Result := false;
 
-  // Request readings from the past 10 minutes, limit 1
-  r := getReadings(10, 1);
+  // 15 minutes covers the standard 5-min CGM interval plus typical upload delay
+  r := getReadings(15, 1);
 
   if Length(r) > 0 then
   begin
