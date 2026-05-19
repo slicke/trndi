@@ -383,6 +383,7 @@ TfConf = class(TForm)
   tsProxy: TTabSheet;
   tsCommon: TTabSheet;
   tsAdvanced: TTabSheet;
+  tsPredictions: TTabSheet;
   tsTir: TTabSheet;
   tsChroma: TTabSheet;
   tsExt: TTabSheet;
@@ -888,7 +889,7 @@ end;
 
 procedure TfConf.lConfigPredictClick(Sender: TObject);
 begin
-  pcMain.ActivePage := tsAdvanced;
+  pcMain.ActivePage := tsPredictions;
 end;
 
 procedure TfConf.lDot1Click(Sender: TObject);

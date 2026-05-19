@@ -12208,14 +12208,186 @@ object fConf: TfConf
     end
     object tsAdvanced: TTabSheet
       Caption = 'Advanced'
+      ClientHeight = 300
+      ClientWidth = 637
+      object GroupBox9: TGroupBox
+        Left = 0
+        Height = 121
+        Top = 85
+        Width = 637
+        Align = alTop
+        BorderSpacing.Top = 15
+        Caption = 'Display'
+        ClientHeight = 101
+        ClientWidth = 633
+        ParentBackground = False
+        TabOrder = 1
+        object cbTimeStamp: TCheckBox
+          Left = 10
+          Height = 19
+          Top = 19
+          Width = 623
+          Align = alTop
+          BorderSpacing.Left = 10
+          Caption = 'Show reading time (instead of minutes ago)'
+          TabOrder = 0
+        end
+        object cbPrivacy: TCheckBox
+          Left = 10
+          Height = 19
+          Top = 0
+          Width = 623
+          Align = alTop
+          BorderSpacing.Left = 10
+          Caption = 'Privacy Mode (Hide glucose value)'
+          TabOrder = 1
+        end
+        object bPrivacyHelp: TButton
+          Left = 384
+          Height = 22
+          Top = 0
+          Width = 27
+          Caption = '?'
+          TabOrder = 3
+          OnClick = bPrivacyHelpClick
+        end
+        object bTimeStampHelp: TButton
+          Left = 384
+          Height = 22
+          Top = 24
+          Width = 27
+          Caption = '?'
+          TabOrder = 2
+          OnClick = bTimeStampHelpClick
+        end
+      end
+      object cbConnectivityButton: TCheckBox
+        Left = 12
+        Height = 19
+        Top = 160
+        Width = 160
+        Caption = 'Enable connectivity button'
+        TabOrder = 3
+      end
+      object Panel27: TPanel
+        Left = 0
+        Height = 70
+        Top = 0
+        Width = 637
+        Align = alTop
+        BevelOuter = bvNone
+        ClientHeight = 70
+        ClientWidth = 637
+        TabOrder = 2
+        object pnDeltaMax: TPanel
+          Left = 15
+          Height = 55
+          Top = 15
+          Width = 161
+          Align = alLeft
+          BorderSpacing.Left = 15
+          BorderSpacing.Top = 15
+          BevelOuter = bvNone
+          ClientHeight = 55
+          ClientWidth = 161
+          ParentBackground = False
+          TabOrder = 0
+          object spDeltaMax: TSpinEdit
+            Left = 0
+            Height = 35
+            Top = 20
+            Width = 82
+            Align = alLeft
+            BorderSpacing.Top = 5
+            MaxValue = 5
+            MinValue = 2
+            TabOrder = 0
+            Value = 2
+            OnChange = spTHRESHOLDChange
+          end
+          object Label25: TLabel
+            Left = 0
+            Height = 15
+            Top = 0
+            Width = 161
+            Align = alTop
+            Caption = 'Maximum delta slots'
+          end
+          object bDeltaMaxHelp: TButton
+            Left = 104
+            Height = 22
+            Top = 24
+            Width = 27
+            Caption = '?'
+            TabOrder = 1
+            OnClick = bDeltaMaxHelpClick
+          end
+        end
+        object pnMisc: TPanel
+          Left = 191
+          Height = 55
+          Top = 15
+          Width = 446
+          Align = alClient
+          BorderSpacing.Left = 15
+          BorderSpacing.Top = 15
+          BevelOuter = bvNone
+          ClientHeight = 55
+          ClientWidth = 446
+          ParentBackground = False
+          TabOrder = 1
+          object spTHRESHOLD: TSpinEdit
+            Left = 0
+            Height = 35
+            Top = 20
+            Width = 82
+            Align = alLeft
+            BorderSpacing.Top = 5
+            MaxValue = 30
+            MinValue = 6
+            TabOrder = 0
+            Value = 6
+            OnChange = spTHRESHOLDChange
+          end
+          object Label1: TLabel
+            Left = 0
+            Height = 15
+            Top = 0
+            Width = 446
+            Align = alTop
+            Caption = 'Readings are outdated after (minutes):'
+          end
+          object bOutdatedHelp: TButton
+            Left = 104
+            Height = 22
+            Top = 24
+            Width = 27
+            Caption = '?'
+            TabOrder = 1
+            OnClick = bOutdatedHelpClick
+          end
+        end
+      end
+      object bConnectHelp: TButton
+        Left = 386
+        Height = 22
+        Top = 160
+        Width = 27
+        Caption = '?'
+        TabOrder = 4
+        OnClick = bConnectHelpClick
+      end
+    end
+    object tsPredictions: TTabSheet
+      Caption = 'Predictions'
       ClientHeight = 490
       ClientWidth = 637
       object GroupBox8: TGroupBox
         Left = 0
         Height = 267
-        Top = 223
+        Top = 0
         Width = 637
-        Align = alBottom
+        Align = alTop
         Caption = 'Predictions'
         ClientHeight = 247
         ClientWidth = 633
@@ -12428,173 +12600,6 @@ object fConf: TfConf
           TabOrder = 10
           OnClick = bWarnHiLowHelpClick
         end
-      end
-      object GroupBox9: TGroupBox
-        Left = 0
-        Height = 121
-        Top = 85
-        Width = 637
-        Align = alTop
-        BorderSpacing.Top = 15
-        Caption = 'Display'
-        ClientHeight = 101
-        ClientWidth = 633
-        ParentBackground = False
-        TabOrder = 1
-        object cbTimeStamp: TCheckBox
-          Left = 10
-          Height = 19
-          Top = 19
-          Width = 623
-          Align = alTop
-          BorderSpacing.Left = 10
-          Caption = 'Show reading time (instead of minutes ago)'
-          TabOrder = 0
-        end
-        object cbPrivacy: TCheckBox
-          Left = 10
-          Height = 19
-          Top = 0
-          Width = 623
-          Align = alTop
-          BorderSpacing.Left = 10
-          Caption = 'Privacy Mode (Hide glucose value)'
-          TabOrder = 1
-        end
-        object bPrivacyHelp: TButton
-          Left = 384
-          Height = 22
-          Top = 0
-          Width = 27
-          Caption = '?'
-          TabOrder = 3
-          OnClick = bPrivacyHelpClick
-        end
-        object bTimeStampHelp: TButton
-          Left = 384
-          Height = 22
-          Top = 24
-          Width = 27
-          Caption = '?'
-          TabOrder = 2
-          OnClick = bTimeStampHelpClick
-        end
-      end
-      object cbConnectivityButton: TCheckBox
-        Left = 12
-        Height = 19
-        Top = 160
-        Width = 160
-        Caption = 'Enable connectivity button'
-        TabOrder = 3
-      end
-      object Panel27: TPanel
-        Left = 0
-        Height = 70
-        Top = 0
-        Width = 637
-        Align = alTop
-        BevelOuter = bvNone
-        ClientHeight = 70
-        ClientWidth = 637
-        TabOrder = 2
-        object pnDeltaMax: TPanel
-          Left = 15
-          Height = 55
-          Top = 15
-          Width = 161
-          Align = alLeft
-          BorderSpacing.Left = 15
-          BorderSpacing.Top = 15
-          BevelOuter = bvNone
-          ClientHeight = 55
-          ClientWidth = 161
-          ParentBackground = False
-          TabOrder = 0
-          object spDeltaMax: TSpinEdit
-            Left = 0
-            Height = 35
-            Top = 20
-            Width = 82
-            Align = alLeft
-            BorderSpacing.Top = 5
-            MaxValue = 5
-            MinValue = 2
-            TabOrder = 0
-            Value = 2
-            OnChange = spTHRESHOLDChange
-          end
-          object Label25: TLabel
-            Left = 0
-            Height = 15
-            Top = 0
-            Width = 161
-            Align = alTop
-            Caption = 'Maximum delta slots'
-          end
-          object bDeltaMaxHelp: TButton
-            Left = 104
-            Height = 22
-            Top = 24
-            Width = 27
-            Caption = '?'
-            TabOrder = 1
-            OnClick = bDeltaMaxHelpClick
-          end
-        end
-        object pnMisc: TPanel
-          Left = 191
-          Height = 55
-          Top = 15
-          Width = 446
-          Align = alClient
-          BorderSpacing.Left = 15
-          BorderSpacing.Top = 15
-          BevelOuter = bvNone
-          ClientHeight = 55
-          ClientWidth = 446
-          ParentBackground = False
-          TabOrder = 1
-          object spTHRESHOLD: TSpinEdit
-            Left = 0
-            Height = 35
-            Top = 20
-            Width = 82
-            Align = alLeft
-            BorderSpacing.Top = 5
-            MaxValue = 30
-            MinValue = 6
-            TabOrder = 0
-            Value = 6
-            OnChange = spTHRESHOLDChange
-          end
-          object Label1: TLabel
-            Left = 0
-            Height = 15
-            Top = 0
-            Width = 446
-            Align = alTop
-            Caption = 'Readings are outdated after (minutes):'
-          end
-          object bOutdatedHelp: TButton
-            Left = 104
-            Height = 22
-            Top = 24
-            Width = 27
-            Caption = '?'
-            TabOrder = 1
-            OnClick = bOutdatedHelpClick
-          end
-        end
-      end
-      object bConnectHelp: TButton
-        Left = 386
-        Height = 22
-        Top = 160
-        Width = 27
-        Caption = '?'
-        TabOrder = 4
-        OnClick = bConnectHelpClick
       end
     end
     object tsIntegration: TTabSheet
