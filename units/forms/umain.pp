@@ -1986,14 +1986,24 @@ var
 begin
   ApplyTrendDotTopOffset(round(ClientHeight * DOT_ADJUST));
 
+  // Two-pass correction: first pass fixes whichever direction overflows most,
+  // second pass catches the opposite direction if the first shift exposed it.
   da := dotsInView;
-
   if da <> 0 then
-    ApplyTrendDotTopOffset(-da)// da is negative on top so this is valid both ways
-  ;
+  begin
+    ApplyTrendDotTopOffset(-da);
+    da := dotsInView;
+    if da <> 0 then
+      ApplyTrendDotTopOffset(-da);
+  end;
 
-  lRef.Top := lDot1.Top;
-  lRef.Caption := lDot1.Hint;
+  if lDot1.Visible then
+  begin
+    lRef.Top     := lDot1.Top;
+    lRef.Caption := lDot1.Hint;
+  end
+  else
+    lRef.Caption := '';
   // Redraw form so range indicators follow dot positions (Update forces immediate paint)
   Update;
 
