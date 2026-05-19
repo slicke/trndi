@@ -501,6 +501,8 @@ begin
     Result := core.top;
   BGRangeLO:
     Result := core.bottom;
+  else
+    Result := 0;
   end;
 end;
 
