@@ -7163,11 +7163,13 @@ CurrentTime: TDateTime);
 var
   slotIndex, i, labelNumber, searchStart: integer;
   slotStart, slotEnd, anchorTime: TDateTime;
+  slotEpsilon: double;
   found: boolean;
   reading: BGReading;
   l: TDotControl;
 const
-  TIME_EPSILON_DAYS = 10 / 86400; // 10 seconds
+  TIME_EPSILON_DAYS      = 10 / 86400; // 10 s  — tight bound for inner slots
+  RECENT_SLOT_GRACE_DAYS = 60 / 86400; // 1 min — grace for the most-recent slot
 begin
   if Length(SortedReadings) = 0 then
     Exit;
@@ -7203,9 +7205,18 @@ begin
     slotEnd := IncMinute(anchorTime, -INTERVAL_MINUTES * slotIndex);
     slotStart := IncMinute(slotEnd, -INTERVAL_MINUTES);
 
+    // The most-recent slot gets a 1-minute grace period so readings that arrive
+    // slightly after the CGM's 5-minute boundary (e.g. 11:06 when slot ends at
+    // 11:05) are still captured. Inner slots keep a tight 10-second epsilon to
+    // prevent a reading from matching two adjacent slots.
+    if slotIndex = 0 then
+      slotEpsilon := RECENT_SLOT_GRACE_DAYS
+    else
+      slotEpsilon := TIME_EPSILON_DAYS;
+
     found := false;
 
-    TrndiDLog(Format('Searching slot %d (TrendDots[%d]): %s to %s', 
+    TrndiDLog(Format('Searching slot %d (TrendDots[%d]): %s to %s',
       [slotIndex, NUM_DOTS - slotIndex, DateTimeToStr(slotStart), DateTimeToStr(slotEnd)]));
 
     // Search for the most recent reading within this interval
@@ -7217,21 +7228,16 @@ begin
       if reading.empty then
         Continue;
 
-      // For slot 0, be more lenient with the upper bound to catch the anchor reading
-      // Use a 10 second epsilon to handle timing variations
-      if reading.date > slotEnd + TIME_EPSILON_DAYS then
+      if reading.date > slotEnd + slotEpsilon then
       begin
-        TrndiDLog(Format('  Reading at %s is too new (>%.3f sec after slot end), skipping', 
+        TrndiDLog(Format('  Reading at %s is too new (>%.3f sec after slot end), skipping',
           [DateTimeToStr(reading.date), (reading.date - slotEnd) * 86400]));
         Continue;
       end;
 
-      // Check if reading falls within this interval BEFORE checking if it's too old
-      // This ensures boundary readings (exactly at slotStart) get matched
-      // Use a half-open interval (slotStart, slotEnd] so boundary readings
-      // (exactly on slotStart) fall into the *older* slot. This prevents a
-      // reading at e.g. 20:05 from filling the 20:10 slot and hiding a gap.
-      if (reading.date > slotStart) and (reading.date <= slotEnd + TIME_EPSILON_DAYS) then
+      // Half-open interval (slotStart, slotEnd+epsilon] — a reading exactly on
+      // slotStart falls into the older slot, keeping slots non-overlapping.
+      if (reading.date > slotStart) and (reading.date <= slotEnd + slotEpsilon) then
       begin
         TrndiDLog(Format('  Found match at %s (value: %.1f, diff from slotEnd: %.1f sec)', 
           [DateTimeToStr(reading.date), reading.val, (slotEnd - reading.date) * 86400]));
