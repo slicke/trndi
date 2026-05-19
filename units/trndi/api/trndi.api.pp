@@ -84,6 +84,10 @@ protected
     /// Last error message reported by operations in this instance.
   lastErr: string;
 
+    /// Set to True by predictReadings when the recent trend is flat enough
+    /// that showing individual predictions would be misleading noise.
+  predictionStable: boolean;
+
     /// Collection of BG threshold values.
   core: CGMCore;
 
@@ -381,6 +385,11 @@ published
 
     /// Last error message produced by operations on this instance.
   property errormsg: string read lastErr;
+
+    /// True when the last predictReadings call found a flat, non-accelerating
+    /// trend — the UI can substitute a "no change" label instead of showing
+    /// numerically identical predictions.
+  property stablePrediction: boolean read predictionStable;
 
     {** Convenience status flag determined via @code(checkActive). }
   property active: boolean read checkActive;
@@ -700,6 +709,7 @@ var
   earlyRate, lateRate, accel, tFromLast: double;
 begin
   Result := false;
+  predictionStable := false;
   SetLength(predictions, 0);
 
   if numPredictions < 1 then
@@ -806,6 +816,10 @@ begin
     accel := 0;
   if accel >  0.03 then accel :=  0.03;
   if accel < -0.03 then accel := -0.03;
+
+  // Stable when slope is well below the FortyFive threshold (±1 mg/dL/min)
+  // and acceleration is negligible — predictions would be noise.
+  predictionStable := (Abs(slope) < 0.5) and (Abs(accel) < 0.005);
 
   if n > 1 then
     avgInterval := (historicalReadings[n-1].date - historicalReadings[0].date) / (n - 1)

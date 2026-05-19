@@ -6204,6 +6204,19 @@ begin
     Exit;
   end;
 
+  // Stable trend (full mode only): replace numerical predictions with a flat label.
+  // In short mode the → arrow already communicates stability clearly.
+  if api.stablePrediction and not PredictShortMode then
+  begin
+    lPredict.Caption := RS_PREDICTIONS_STABLE;
+    if DIFF_ALIGN = taRightJustify then
+      ScaleLbl(lPredict, taCenter, tlBottom, false)
+    else
+      ScaleLbl(lPredict, taRightJustify, tlBottom, false);
+    lPredict.Left := ClientWidth - lPredict.Width - 5;
+    Exit;
+  end;
+
   // Render
   if PredictShortMode then
   begin
