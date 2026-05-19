@@ -686,159 +686,125 @@ end;
   Predict future blood glucose readings using linear regression.
   Returns True if prediction succeeded; False if insufficient data.
 ------------------------------------------------------------------------------}
-function TrndiAPI.predictReadings(numPredictions: integer; 
+function TrndiAPI.predictReadings(numPredictions: integer;
 out predictions: BGResults): boolean;
 var
   historicalReadings: BGResults;
   n, i: integer;
-  sumX, sumY, sumXY, sumX2: double;
-  meanX, meanY, slope, intercept: double;
+  sumW, sumWX, sumWY, sumWXX, sumWXY: double;
+  slope, intercept, weight, alpha: double;
   timeValues: array of double;
   bgValues: array of double;
-  avgInterval: double;
+  weights: array of double;
+  avgInterval, minutesDiff: double;
   lastTime: TDateTime;
   predictedTime: TDateTime;
-  predictedValue: double;
-  minReadings: integer;
-  lastValue, prevValue, minutesDiff, maxDrop, maxRise: double;
+  predictedValue, prevValue: double;
+  trendDelta: single;
 begin
   Result := false;
   SetLength(predictions, 0);
-  
-  // Validate input
+
   if numPredictions < 1 then
     Exit;
-  
-  // Clamp to reasonable range
+
   if numPredictions > 20 then
     numPredictions := 20;
-  
-  // Minimum readings needed for prediction
-  minReadings := 3;
-  
+
   // Fetch recent readings (last 60 minutes, up to 12 readings = ~5 min intervals)
   historicalReadings := getReadings(60, 12);
   n := Length(historicalReadings);
-  
-  if n < minReadings then
+
+  if n < 3 then
   begin
-    lastErr := 'Insufficient data for prediction (need at least ' + 
-      IntToStr(minReadings) + ' readings)';
+    lastErr := 'Insufficient data for prediction (need at least 3 readings)';
     Exit;
   end;
-  
-  // Sort readings in ascending order by date (oldest first).
-  // API typically returns newest first, but regression expects oldest -> newest.
+
+  // Sort oldest first — regression expects ascending time order
   SortReadingsAscending(historicalReadings);
-  
-  // Prepare arrays for linear regression
+
   SetLength(timeValues, n);
   SetLength(bgValues, n);
-  
-  // Convert readings to time/value pairs
-  // Use minutes since first reading as X axis for numerical stability
+  SetLength(weights, n);
+
+  // Exponential weights: newest reading (index n-1) gets weight 1, older readings
+  // decay with a half-life of ~3 readings (~15 min) so recent trends dominate.
+  alpha := Ln(2) / 3.0;
   for i := 0 to n - 1 do
   begin
     timeValues[i] := (historicalReadings[i].date - historicalReadings[0].date) * 24 * 60;
-    bgValues[i] := historicalReadings[i].convert(BGUnit.mgdl);
+    bgValues[i]   := historicalReadings[i].convert(BGUnit.mgdl);
+    weights[i]    := Exp(alpha * i);
   end;
-  
-  // Calculate linear regression: y = slope * x + intercept
-  sumX := 0;
-  sumY := 0;
-  sumXY := 0;
-  sumX2 := 0;
-  
+
+  // Weighted linear regression: y = slope * x + intercept
+  sumW   := 0;
+  sumWX  := 0;
+  sumWY  := 0;
+  sumWXX := 0;
+  sumWXY := 0;
+
   for i := 0 to n - 1 do
   begin
-    sumX := sumX + timeValues[i];
-    sumY := sumY + bgValues[i];
-    sumXY := sumXY + (timeValues[i] * bgValues[i]);
-    sumX2 := sumX2 + (timeValues[i] * timeValues[i]);
+    weight  := weights[i];
+    sumW    := sumW   + weight;
+    sumWX   := sumWX  + weight * timeValues[i];
+    sumWY   := sumWY  + weight * bgValues[i];
+    sumWXX  := sumWXX + weight * timeValues[i] * timeValues[i];
+    sumWXY  := sumWXY + weight * timeValues[i] * bgValues[i];
   end;
-  
-  meanX := sumX / n;
-  meanY := sumY / n;
-  
-  // Calculate slope and intercept
-  if (sumX2 - (sumX * sumX / n)) <> 0 then
-    slope := (sumXY - (sumX * sumY / n)) / (sumX2 - (sumX * sumX / n))
-  else
+
+  if (sumW * sumWXX - sumWX * sumWX) = 0 then
   begin
     lastErr := 'Cannot calculate trend (invalid time distribution)';
     Exit;
   end;
-  
-  intercept := meanY - (slope * meanX);
-  
-  // Add diagnostic output for debugging steep predictions
-  // TrndiDLog(Format('Prediction: n=%d, slope=%.2f mg/dL/min, intercept=%.2f', 
-  //   [n, slope, intercept]));
-  
-  // Calculate average interval between readings
+
+  slope     := (sumW * sumWXY - sumWX * sumWY) / (sumW * sumWXX - sumWX * sumWX);
+  intercept := (sumWY - slope * sumWX) / sumW;
+
   if n > 1 then
     avgInterval := (historicalReadings[n-1].date - historicalReadings[0].date) / (n - 1)
   else
-    avgInterval := 5.0 / (24 * 60); // Default to 5 minutes
-  
-  // Generate predictions
+    avgInterval := 5.0 / (24 * 60);
+
+  // Precompute once — used for both rate-of-change clamp and trend classification
+  minutesDiff := avgInterval * 24 * 60;
+
+  // Trend arrow derived from slope: convert mg/dL/min to delta over one interval
+  trendDelta := slope * minutesDiff;
+
   SetLength(predictions, numPredictions);
-  lastTime := historicalReadings[n-1].date;
-  
+  lastTime  := historicalReadings[n-1].date;
+  prevValue := historicalReadings[n-1].convert(BGUnit.mgdl);
+
   for i := 0 to numPredictions - 1 do
   begin
-    // Time of prediction (in minutes from first reading)
-    predictedTime := lastTime + (avgInterval * (i + 1));
-    
-    // Calculate predicted BG value using linear regression
+    predictedTime  := lastTime + (avgInterval * (i + 1));
     predictedValue := slope * ((predictedTime - historicalReadings[0].date) * 24 * 60) + intercept;
-    
-    // Apply rate-of-change limiter to prevent unrealistic predictions
-    // Max decline: -3 mg/dL per minute (~54 mg/dL per prediction if 5min intervals)
-    // Max rise: +3 mg/dL per minute
-    if i = 0 then
-    begin
-      // First prediction: limit change from last actual reading
-      lastValue := historicalReadings[n-1].convert(BGUnit.mgdl);
-      minutesDiff := avgInterval * 24 * 60;
-      maxDrop := lastValue - (3.0 * minutesDiff);
-      maxRise := lastValue + (3.0 * minutesDiff);
-      
-      if predictedValue < maxDrop then
-        predictedValue := maxDrop;
-      if predictedValue > maxRise then
-        predictedValue := maxRise;
-    end
-    else
-    begin
-      // Subsequent predictions: limit change from previous prediction
-      prevValue := predictions[i-1].convert(BGUnit.mgdl);
-      minutesDiff := avgInterval * 24 * 60;
-      maxDrop := prevValue - (3.0 * minutesDiff);
-      maxRise := prevValue + (3.0 * minutesDiff);
-      
-      if predictedValue < maxDrop then
-        predictedValue := maxDrop;
-      if predictedValue > maxRise then
-        predictedValue := maxRise;
-    end;
-    
+
+    // Clamp rate of change to ±3 mg/dL/min relative to the previous value
+    if predictedValue < prevValue - (3.0 * minutesDiff) then
+      predictedValue := prevValue - (3.0 * minutesDiff);
+    if predictedValue > prevValue + (3.0 * minutesDiff) then
+      predictedValue := prevValue + (3.0 * minutesDiff);
+
     // Clamp to physiological range
     if predictedValue < 20 then
       predictedValue := 20;
     if predictedValue > 600 then
       predictedValue := 600;
-    
-    // Create predicted reading
+
     predictions[i].Init(BGUnit.mgdl, BGUnit.mgdl, 'PredictionAPI');
     predictions[i].update(predictedValue, BGPrimary, BGUnit.mgdl);
-    predictions[i].date := predictedTime;
-    predictions[i].trend := TdNotComputable;
-    
-    // Classify the predicted level using current thresholds
+    predictions[i].date  := predictedTime;
+    predictions[i].trend := CalculateTrendFromDelta(trendDelta);
     predictions[i].level := getLevel(predictedValue);
+
+    prevValue := predictedValue;
   end;
-  
+
   Result := true;
 end;
 
