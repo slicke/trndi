@@ -469,7 +469,7 @@ begin
         // These map directly into TrndiAPI’s exposed properties.
         cgmHi := ThresholdsObj.Get('bgHigh', 0);
         cgmLo := ThresholdsObj.Get('bgLow', 0);
-        cgmRangeHi := ThresholdsObj.Get('bgTargetTop', 0);
+        cgmRangeHi := ThresholdsObj.Get('bgTargetTop', CGM_RANGE_HI_DISABLED);
         cgmRangeLo := ThresholdsObj.Get('bgTargetBottom', 0);
       end;
     end;
