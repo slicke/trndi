@@ -307,6 +307,7 @@ TfBG = class(TForm)
   procedure lPredictClick({%H-}Sender: TObject);
   procedure miBasalRateClick({%H-}Sender: TObject);
   procedure AutoEnableBasalOverlay;
+  procedure AutoAddPredictionOverlay;
   procedure miDNSClick({%H-}Sender: TObject);
   procedure miDotNormalDrawItem({%H-}Sender: TObject; ACanvas: TCanvas;
     ARect: TRect; AState: TOwnerDrawState);
@@ -1178,6 +1179,16 @@ begin
     fHistoryGraph.SetBasalProfile(profile);
     fHistoryGraph.SetBasalOverlayEnabled(true);
   end;
+end;
+
+procedure TfBG.AutoAddPredictionOverlay;
+var
+  predictions: BGResults;
+begin
+  if (api = nil) or (fHistoryGraph = nil) then
+    Exit;
+  if api.predictReadings(6, predictions) then
+    fHistoryGraph.SetPredictions(predictions);
 end;
 
 procedure TfBG.miDNSClick(Sender: TObject);
@@ -3034,9 +3045,10 @@ begin
     Exit;
   end;
 
-  ShowHistoryGraph(readings, un, CurrentHistoryGraphPalette, 
+  ShowHistoryGraph(readings, un, CurrentHistoryGraphPalette,
     api.cgmHi, api.cgmLo, api.cgmRangeHi, api.cgmRangeLo);
   AutoEnableBasalOverlay;
+  AutoAddPredictionOverlay;
 end;
 
 function TfBG.AlertsSnoozed: boolean;
@@ -3353,6 +3365,7 @@ begin
   ShowHistoryGraph(bgs, un, CurrentHistoryGraphPalette,
     api.cgmHi, api.cgmLo, api.cgmRangeHi, api.cgmRangeLo);
   AutoEnableBasalOverlay;
+  AutoAddPredictionOverlay;
 end;
 
 procedure TfBG.miRangeColorClick(Sender: TObject);
