@@ -1,0 +1,58 @@
+name: Write buildinfo.pp
+description: Generate units/misc/buildinfo.pp with build metadata for CI builds (Linux/macOS).
+
+inputs:
+  event_name:
+    description: github.event_name
+    required: true
+  github_ref:
+    description: github.ref (e.g. refs/heads/main)
+    required: true
+  build_number:
+    description: Build number from the version job (push-to-main only)
+    required: false
+    default: '0'
+  pr_number:
+    description: Pull-request number (github.event.pull_request.number)
+    required: false
+    default: '0'
+  ref_name:
+    description: github.ref_name (short branch or tag name)
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Write buildinfo unit
+      shell: bash
+      run: |
+        set -euo pipefail
+        BUILD_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+        GIT_SHA="$(git rev-parse --short HEAD)"
+        mkdir -p units/misc
+
+        if [ "${{ inputs.event_name }}" = "push" ] && [ "${{ inputs.github_ref }}" = "refs/heads/main" ]; then
+          BUILD_NUMBER="${{ inputs.build_number }}"
+          BUILD_TAG="build-${BUILD_NUMBER}"
+        elif [ "${{ inputs.event_name }}" = "pull_request" ]; then
+          BUILD_NUMBER="PR-${{ inputs.pr_number }}"
+          BUILD_TAG="pr-${{ inputs.pr_number }}"
+        else
+          BUILD_NUMBER="0"
+          BUILD_TAG="dev"
+        fi
+
+        cat > units/misc/buildinfo.pp <<EOF
+        unit buildinfo;
+        {\$mode objfpc}{\$H+}
+        interface
+        const
+          BUILD_NUMBER = '${BUILD_NUMBER}';
+          BUILD_TAG    = '${BUILD_TAG}';
+          BUILD_DATE   = '${BUILD_DATE}';
+          GIT_SHA      = '${GIT_SHA}';
+          GIT_BRANCH   = '${{ inputs.ref_name }}';
+          CI           = True;
+        implementation
+        end.
+        EOF

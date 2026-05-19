@@ -15,6 +15,10 @@ concurrency:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  # Pinned Lazarus/FPC URLs — keep in sync with the linux-amd64 matrix entry in build.yml.
+  FPC_LAZ_URL: https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.6/fpc-laz_3.2.2-210709_amd64.deb/download
+  FPC_SRC_URL: https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.6/fpc-src_3.2.2-210709_amd64.deb/download
+  LAZ_URL: https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.6/lazarus-project_4.6.0-0_amd64.deb/download
 
 permissions:
   contents: read
@@ -29,35 +33,18 @@ jobs:
       - uses: actions/checkout@v5
 
       - name: Install Lazarus/FPC toolchain
-        run: |
-          set -euo pipefail
-          sudo apt-get update
-          sudo apt-get install -y p7zip-full curl pkg-config qt6-base-dev qt6-tools-dev qt6-base-dev-tools libcurl4-openssl-dev
-
-          # Install Lazarus + FPC from the same pinned URLs as the Linux builders.
-          FPC_LAZ_URL="https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.6/fpc-laz_3.2.2-210709_amd64.deb/download"
-          FPC_SRC_URL="https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.6/fpc-src_3.2.2-210709_amd64.deb/download"
-          LAZ_URL="https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.6/lazarus-project_4.6.0-0_amd64.deb/download"
-
-          curl -fsSL -o fpc-laz.deb "$FPC_LAZ_URL"
-          curl -fsSL -o fpc-src.deb "$FPC_SRC_URL"
-          curl -fsSL -o lazarus.deb "$LAZ_URL"
-          sudo dpkg -i fpc-laz.deb fpc-src.deb lazarus.deb || true
-          sudo apt-get -f install -y
-
-          # Install Qt6Pas bindings (prefer distro packages; fall back to pinned upstream .deb files).
-          if ! sudo apt-get install -y libqt6pas6 libqt6pas6-dev; then
-            BASE_RELEASE="https://github.com/davidbannon/libqt6pas/releases/download/v6.2.10"
-            QT6PAS_DEB="libqt6pas6_6.2.10-1_amd64.deb"
-            QT6PAS_DEV_DEB="libqt6pas6-dev_6.2.10-1_amd64.deb"
-            curl -fL -o "$QT6PAS_DEB" "$BASE_RELEASE/$QT6PAS_DEB"
-            curl -fL -o "$QT6PAS_DEV_DEB" "$BASE_RELEASE/$QT6PAS_DEV_DEB"
-            sudo apt-get install -y "./$QT6PAS_DEB" "./$QT6PAS_DEV_DEB"
-          fi
+        uses: ./.github/actions/setup-lazarus
+        with:
+          fpc_laz_url: ${{ env.FPC_LAZ_URL }}
+          fpc_src_url: ${{ env.FPC_SRC_URL }}
+          laz_url: ${{ env.LAZ_URL }}
 
       - name: Build Pascal target and capture diagnostics
         run: |
-          set -o pipefail
+          # -e is intentionally omitted: the `if` block captures the build exit code
+          # explicitly via $PIPESTATUS so we can always write the log and SARIF even
+          # when the build fails. -u and pipefail are still active to catch scripting errors.
+          set -uo pipefail
           mkdir -p build
           if make noext-test-nophp WIDGETSET=qt6 2>&1 | tee build/fpc-diagnostics.log; then
             echo 0 > build/fpc-exit-code.txt
@@ -103,7 +90,7 @@ jobs:
 
                   kind = m.group("kind")
                   code = m.group("code") or ""
-                  
+
                   if code == "5024":
                       continue
 
