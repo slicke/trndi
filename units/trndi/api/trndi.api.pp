@@ -815,9 +815,6 @@ begin
   // Precompute once — used for both rate-of-change clamp and trend classification
   minutesDiff := avgInterval * 24 * 60;
 
-  // Trend arrow derived from slope: convert mg/dL/min to delta over one interval
-  trendDelta := slope * minutesDiff;
-
   SetLength(predictions, numPredictions);
   lastTime  := historicalReadings[n-1].date;
   prevValue := historicalReadings[n-1].convert(BGUnit.mgdl);
@@ -828,6 +825,11 @@ begin
     tFromLast      := (i + 1) * minutesDiff;
     predictedValue := slope * ((predictedTime - historicalReadings[0].date) * 24 * 60) + intercept;
     predictedValue := predictedValue + 0.5 * accel * tFromLast * tFromLast;
+
+    // Instantaneous rate at this prediction's time, expressed as delta over one
+    // interval — accounts for acceleration so later predictions get a different
+    // trend arrow than earlier ones.
+    trendDelta := (slope + accel * tFromLast) * minutesDiff;
 
     // Clamp rate of change to ±3 mg/dL/min relative to the previous value
     if predictedValue < prevValue - (3.0 * minutesDiff) then
