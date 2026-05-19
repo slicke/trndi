@@ -5390,8 +5390,8 @@ begin
     end
     else
     begin
-      // Full mode: ncormal size for detailed predictions
-      lPredict.Width := ClientWidth div 3;
+      // Full mode: normal size for detailed predictions
+      lPredict.Width := (ClientWidth * 2) div 5;
       lPredict.Height := ClientHeight div 12;
     end;
 
