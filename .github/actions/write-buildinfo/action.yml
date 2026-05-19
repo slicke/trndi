@@ -29,6 +29,8 @@ runs:
         set -euo pipefail
         BUILD_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
         GIT_SHA="$(git rev-parse --short HEAD)"
+        BUILD_BRANCH="${{ inputs.ref_name }}"
+        BUILD_BRANCH="${BUILD_BRANCH//\'/\'\'}"
         mkdir -p units/misc
 
         if [ "${{ inputs.event_name }}" = "push" ] && [ "${{ inputs.github_ref }}" = "refs/heads/main" ]; then
@@ -51,7 +53,7 @@ runs:
           BUILD_TAG    = '${BUILD_TAG}';
           BUILD_DATE   = '${BUILD_DATE}';
           GIT_SHA      = '${GIT_SHA}';
-          GIT_BRANCH   = '${{ inputs.ref_name }}';
+          GIT_BRANCH   = '${BUILD_BRANCH}';
           CI           = True;
         implementation
         end.
