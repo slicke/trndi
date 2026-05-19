@@ -3071,7 +3071,7 @@ begin
     Exit(RS_CONN_RATE_LIMITED);
 
   if (Pos('401', s) > 0) or (Pos('403', s) > 0) or (Pos('unauthor', s) > 0) or
-    (Pos('forbidden', s) > 0) or (Pos('token', s) > 0) or (Pos('login', s) > 0) or
+    (Pos('forbidden', s) > 0) or (Pos('not authenticated', s) > 0) or
     (Pos('credential', s) > 0) then
     Exit(RS_CONN_AUTH_EXPIRED);
 
