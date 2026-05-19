@@ -85,7 +85,7 @@ jobs:
           fi
 
       - name: Upload drift report
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v5
         with:
           name: weekly-fpc-drift-report
           path: build/weekly-drift-report.txt
