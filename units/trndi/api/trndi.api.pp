@@ -301,6 +301,14 @@ const
        }
   function getMaxAge: integer; virtual;
 
+    {** How often this backend produces a new reading, in minutes.
+        Used to calculate how many results to request so that all dot slots
+        can be filled even at sub-5-minute reporting frequencies.
+        Default: 5. Override in backends that upload more frequently (e.g. xDrip).
+        @returns(Reporting interval in minutes, minimum 1)
+     }
+  function getReportingInterval: integer; virtual;
+
     {** Retrieve the current basal rate from the backend.
         Base implementation returns 0. Subclasses may override to fetch
         basal rate information from the data source.
@@ -423,6 +431,11 @@ end;
 function TrndiAPI.getMaxAge: integer;
 begin
   result := 1440; // Default to 24 hours
+end;
+
+function TrndiAPI.getReportingInterval: integer;
+begin
+  Result := 5; // Standard CGM interval
 end;
 
 {------------------------------------------------------------------------------

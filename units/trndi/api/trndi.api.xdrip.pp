@@ -146,6 +146,9 @@ protected
   {** Gets the name of this API
   }
   function getSystemName: string; override;
+
+  {** xDrip can upload as frequently as every minute }
+  function getReportingInterval: integer; override;
 end;
 
 implementation
@@ -164,6 +167,11 @@ sParamDescHTML ='<b>xDrip setup:</b><br><br>Address: your xDrip REST endpoint (b
 function xDrip.getSystemName: string;
 begin
   result := 'xDrip+';
+end;
+
+function xDrip.getReportingInterval: integer;
+begin
+  Result := 1;
 end;
 
 {------------------------------------------------------------------------------
