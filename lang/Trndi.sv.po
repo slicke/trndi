@@ -1980,6 +1980,10 @@ msgstr "över"
 msgid "Your predicted future readings are shown on the lower-right-hand-side of the window; the difference from the last reading is shown in the middle"
 msgstr "Dina förutspådda avläsningar visas i det nedra högra hörnet; skillnaden från senaste avläsning visas i mitten"
 
+#: trndi.strings.rs_predictions_stable
+msgid "No change predicted →"
+msgstr ""
+
 #: trndi.strings.rs_predictions_unavailable
 msgid "Predictions unavailable"
 msgstr "Förutspåelser otillgängliga"
