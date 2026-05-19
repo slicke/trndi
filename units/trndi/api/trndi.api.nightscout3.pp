@@ -966,6 +966,7 @@ begin
     sensorSuffix := '';
   end;
 
+  try
   SetLength(Result, arrNode.Count);
   for i := 0 to arrNode.Count - 1 do
     with arrNode.FindPath(Format('[%d]', [i])) do
@@ -1003,14 +1004,13 @@ begin
       if Assigned(rssiField) then
       begin
         rssiValue.value := rssiField.AsInteger;
-        rssivalue.exists := rssiValue.value <> -1;
+        rssiValue.exists := rssiValue.value <> -1;
       end
       else
       begin
         rssiValue.value := 0;
-        rssivalue.exists := true;
+        rssiValue.exists := false;
       end;
-
 
       if Assigned(noiseField) then
       begin
@@ -1020,7 +1020,7 @@ begin
       else
       begin
         noiseValue.value := 0;
-        noiseValue.exists := true;
+        noiseValue.exists := false;
       end;
 
       Result[i].update(currentSgv, deltaValue);
@@ -1139,8 +1139,9 @@ begin
 
       Result[i].level := getLevel(Result[i].val);
     end;
-
-  js.Free;
+  finally
+    js.Free;
+  end;
 
   // Data from Nightscout v3 should come in descending order (newest first) due to sort=-date
   // However, check and reverse if needed for compatibility
@@ -1360,7 +1361,8 @@ var
   BasalEntry: TJSONObject;
   CurrentTime: TDateTime;
   CurrentMinutes: integer;
-  i: integer;
+  i, entryMin, h, m: integer;
+  tstr: string;
 begin
   result := 0;
   
@@ -1401,20 +1403,31 @@ begin
           BasalArray := DefaultProfile.FindPath('basal') as TJSONArray;
           if Assigned(BasalArray) and (BasalArray.Count > 0) then
           begin
-            // Get current time in minutes since midnight
             CurrentTime := Now;
             CurrentMinutes := HourOf(CurrentTime) * 60 + MinuteOf(CurrentTime);
-            
-            // Find the applicable basal rate for current time
-            for i := BasalArray.Count - 1 downto 0 do
+
+            // Walk forward; keep updating result as long as entry start <= now.
+            // The last such entry is the one currently in effect.
+            for i := 0 to BasalArray.Count - 1 do
             begin
               BasalEntry := BasalArray.Objects[i];
-              if Assigned(BasalEntry) then
+              if not Assigned(BasalEntry) then
+                Continue;
+              tstr := BasalEntry.Get('time', '00:00');
+              h := 0; m := 0;
+              if Pos(':', tstr) > 0 then
               begin
-                // Basal entries have 'time' and 'value' fields
-                result := BasalEntry.Get('value', single(0));
-                break;
+                h := StrToIntDef(Copy(tstr, 1, Pos(':', tstr) - 1), 0);
+                m := StrToIntDef(Copy(tstr, Pos(':', tstr) + 1, 2), 0);
+              end
+              else
+              begin
+                h := StrToIntDef(tstr, 0) div 60;
+                m := StrToIntDef(tstr, 0) mod 60;
               end;
+              entryMin := h * 60 + m;
+              if entryMin <= CurrentMinutes then
+                result := BasalEntry.Get('value', single(0));
             end;
           end;
         end;
