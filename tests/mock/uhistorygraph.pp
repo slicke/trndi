@@ -29,6 +29,7 @@ type
     procedure SaveAsCSV(Sender: TObject);
     procedure SetBasalProfile(const profile: TBasalProfile; const maxBasal: single = 3.0);
     procedure SetBasalOverlayEnabled(aEnabled: boolean);
+    procedure SetPredictions(const Predictions: BGResults);
   end;
 
 procedure ShowHistoryGraph(const Readings: BGResults; const UnitPref: BGUnit); overload;
@@ -84,6 +85,11 @@ begin
 end;
 
 procedure TfHistoryGraph.SetBasalOverlayEnabled(aEnabled: boolean);
+begin
+  // no-op for tests
+end;
+
+procedure TfHistoryGraph.SetPredictions(const Predictions: BGResults);
 begin
   // no-op for tests
 end;

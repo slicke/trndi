@@ -748,15 +748,10 @@ begin
       Break;
     end;
 
-  if gapCutIdx > 0 then
+  if (gapCutIdx > 0) and ((n - gapCutIdx) >= 3) then
   begin
     historicalReadings := Copy(historicalReadings, gapCutIdx, n - gapCutIdx);
     n := Length(historicalReadings);
-    if n < 3 then
-    begin
-      lastErr := 'Insufficient data after CGM gap for prediction';
-      Exit;
-    end;
   end;
 
   SetLength(timeValues, n);

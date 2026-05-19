@@ -145,6 +145,7 @@ type
     procedure cbSysChange(Sender: TObject);
     procedure rbUnitClick(Sender: TObject);
     procedure cbMediaDisableChange(Sender: TObject);
+    procedure UpdatePredictionStates;
 
     constructor Create(AOwner: TComponent = nil);
     destructor Destroy; override;
@@ -177,6 +178,11 @@ begin
 end;
 
 procedure TfConf.cbMediaDisableChange(Sender: TObject);
+begin
+  // no-op in tests
+end;
+
+procedure TfConf.UpdatePredictionStates;
 begin
   // no-op in tests
 end;
