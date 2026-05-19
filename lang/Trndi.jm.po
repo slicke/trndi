@@ -2008,6 +2008,10 @@ msgstr "ôver"
 msgid "Your predicted future readings are shown on the lower-right-hand-side of the window; the difference from the last reading is shown in the middle"
 msgstr "Detta er dina fôrutspodda avlesningar; Tidsskillnad: fôrutspodd-avlesning"
 
+#: trndi.strings.rs_predictions_stable
+msgid "No change predicted →"
+msgstr ""
+
 #: trndi.strings.rs_predictions_unavailable
 msgid "Predictions unavailable"
 msgstr "Fôrutspoelser otillgengliga"

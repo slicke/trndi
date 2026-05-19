@@ -222,14 +222,37 @@ var
   js, node: TJSONData;
   expiresAt, startedAt: TDateTime;
   hoursLeft, ageHours: integer;
+  s: string;
+  startIdx: integer;
 begin
   Result := '';
   if Trim(devStatusResp) = '' then
     Exit;
 
+  // Basic sanity checks: ensure we got JSON-like input. Some servers may
+  // return an error string ("Path: ..." or '+...') instead of JSON.
+  s := TrimLeft(devStatusResp);
+  if s = '' then
+    Exit;
+  // Application-level error prefix
+  if s[1] = '+' then
+    Exit;
+
+  // If it doesn't look like JSON, try to trim everything before the first
+  // object/array start. If none found, give up.
+  if not (s[1] in ['{', '[']) then
+  begin
+    startIdx := Pos('{', s);
+    if (startIdx = 0) then
+      startIdx := Pos('[', s);
+    if startIdx = 0 then
+      Exit; // no JSON payload found
+    s := Copy(s, startIdx, MaxInt);
+  end;
+
   js := nil;
   try
-    js := GetJSON(devStatusResp);
+    js := GetJSON(s);
   except
     Exit;
   end;

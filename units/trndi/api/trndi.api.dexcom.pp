@@ -271,7 +271,7 @@ end;
  ------------------------------------------------------------------------------}
 function DexcomWorld.getSystemName: string;
 begin
-  result := 'Dexcom (Outide USA)';
+  result := 'Dexcom (Outside USA)';
 end;
 
 {------------------------------------------------------------------------------

@@ -64,6 +64,10 @@ const
   {** Endpoint that may include current BG range settings (hi/lo targets). }
 XDRIP_RANGES = 'status.json';
 
+  {** Default REST API port used by xDrip+. Applied automatically when the
+      user-supplied URL contains no explicit port number. }
+XDRIP_DEFAULT_PORT = '17580';
+
 type
   {** xDrip client.
       Inherits from @code(NightScout) and adapts certain behaviors for xDrip-based
@@ -121,8 +125,7 @@ public
         4) Request @code(XDRIP_RANGES) and parse @code(bgHigh)/@code(bgLow) thresholds (fallbacks if absent)
 
         Notes:
-        - This implementation parses values from raw JSON strings using simple substring
-          operations; consider switching to a JSON parser for robustness.
+        - Uses fpjson to parse both the pebble status and the ranges response.
 
         @returns(True on success; otherwise False and @code(errormsg) is set)
      }
@@ -185,13 +188,22 @@ end;
     thresholds) is needed, ensure it is handled elsewhere before use.
 ------------------------------------------------------------------------------}
 constructor xDrip.Create(user, pass: string);
+var
+  schemeEnd: integer;
+  hostPart: string;
 begin
-  // Use a standard user agent for server logs/diagnostics
   ua := 'Mozilla/5.0 (compatible; trndi) TrndiAPI';
 
-  // Ensure trailing slash so relative paths append correctly
-  // But avoid double slashes which confuse parse_url in PHP
   baseUrl := TrimRightSet(user, ['/']);
+
+  // If the URL has no explicit port, append xDrip+'s default REST port.
+  schemeEnd := Pos('://', baseUrl);
+  if schemeEnd > 0 then
+    hostPart := Copy(baseUrl, schemeEnd + 3, MaxInt)
+  else
+    hostPart := baseUrl;
+  if Pos(':', hostPart) = 0 then
+    baseUrl := baseUrl + ':' + XDRIP_DEFAULT_PORT;
 
   // xDrip expects the API secret as a SHA1 hex digest, commonly as a query/header
   if pass <> '' then
@@ -271,10 +283,6 @@ end;
   - Probes pebble for "now" (milliseconds since epoch).
   - Calculates timeDiff used elsewhere for timestamp normalization.
   - Attempts to extract bgHigh/bgLow from status.json; uses defaults if absent.
-
-  Implementation note:
-  - String slicing is used instead of JSON parsing for speed/simplicity; robust code
-    should parse JSON explicitly to avoid format brittleness.
 ------------------------------------------------------------------------------}
 function xDrip.Connect: boolean;
 var
@@ -282,9 +290,8 @@ var
   LTimeStamp: int64;
   LServerUTCUnix: int64;
   LLocalUTCUnix: int64;
-  i: integer;
+  js, node: TJSONData;
 begin
-  // Basic check for protocol correctness to catch obvious misconfiguration early
   if Copy(baseUrl, 1, 4) <> 'http' then
   begin
     Result := false;
@@ -292,19 +299,17 @@ begin
     Exit;
   end;
 
-  // Fetch xDrip "pebble" info. If the secret fails, xDrip often replies with "Authentication failed"
-  // Match a substring ("uthentication failed") to avoid case sensitivity issues.
   LResponse := native.Request(false, XDRIP_STATUS, [], '', key);
-  
-  // Check if response is empty or contains connection errors
-  if (LResponse = '') or (Pos('Could not connect', LResponse) > 0) or 
+
+  if (LResponse = '') or ((LResponse <> '') and (LResponse[1] = '+')) or
+    (Pos('Could not connect', LResponse) > 0) or
     (Pos('Failed to connect', LResponse) > 0) then
   begin
     lastErr := 'Cannot connect to xDrip server at ' + baseUrl + '. Check URL and network.';
     Result := false;
     Exit;
   end;
-  
+
   if Pos('uthentication failed', LResponse) > 0 then
   begin
     lastErr := 'Wrong API secret. xDrip rejected authentication.';
@@ -312,58 +317,69 @@ begin
     Exit;
   end;
 
-  // Extract the server time "now" from the pebble JSON by slicing:
-  // e.g., ..."now":1618353053000,..."  -> take 13 chars after the value starts
-  // NOTE: This assumes a 13-digit millisecond timestamp; prefer JSON parsing for safety.
-  if Pos('"now":', LResponse) = 0 then
+  // Parse "now" (ms epoch) from the pebble JSON response.
+  // xDrip+ nests it as: {"status":[{"now":...}], "bgs":[...]}
+  LTimeStamp := 0;
+  try
+    js := GetJSON(LResponse);
+    try
+      node := js.FindPath('status[0].now');
+      if Assigned(node) then
+        LTimeStamp := node.AsInt64
+      else
+      begin
+        // Older/alternate shape: "now" at root level
+        node := js.FindPath('now');
+        if Assigned(node) then
+          LTimeStamp := node.AsInt64;
+      end;
+    finally
+      js.Free;
+    end;
+  except
+    // parse failure handled below
+  end;
+
+  if LTimeStamp = 0 then
   begin
-    // Show first 200 chars of response for debugging
-    if Length(LResponse) > 200 then
-      lastErr := 'Wrong response format from ' + XDRIP_STATUS + ' endpoint. Expected "now" timestamp. Got: ' + Copy(LResponse, 1, 200) + '...'
-    else
-      lastErr := 'Wrong response format from ' + XDRIP_STATUS + ' endpoint. Expected "now" timestamp. Got: ' + LResponse;
+    lastErr := 'Wrong response format from ' + XDRIP_STATUS +
+      ' endpoint: "now" field missing or unparseable.' +
+      ' Response: ' + Copy(LResponse, 1, 200);
     Result := false;
     Exit;
   end;
-  
-  LResponse := Copy(LResponse, Pos('"now":', LResponse) + 6, 13);
 
-  // Convert the extracted substring to int64 milliseconds
-  if not TryStrToInt64(LResponse, LTimeStamp) then
-  begin
-    lastErr := 'Wrong timestamp format in xDrip response. Expected numeric value, got: ' + LResponse;
-    Result := false;
-    Exit;
-  end;
-
-  // Keep timezone correction neutral for xDrip UTC timestamps.
   tz := 0;
-
-  // Treat pebble.now as UTC epoch milliseconds and compute signed clock skew.
   LServerUTCUnix := LTimeStamp div 1000;
-  LLocalUTCUnix := DateTimeToUnix(LocalTimeToUniversal(Now));
-  timeDiff := LServerUTCUnix - LLocalUTCUnix;
+  LLocalUTCUnix  := DateTimeToUnix(LocalTimeToUniversal(Now));
+  timeDiff       := LServerUTCUnix - LLocalUTCUnix;
 
-  // Retrieve hi/lo ranges from xDrip (status.json); parse simple integers by slicing
+  // Parse bgHigh / bgLow from status.json.
+  cgmHi := 160;
+  cgmLo := 60;
   LResponse := native.Request(false, XDRIP_RANGES, [], '', key);
+  if Trim(LResponse) <> '' then
+  try
+    js := GetJSON(LResponse);
+    try
+      if js.JSONType = jtObject then
+      begin
+        node := TJSONObject(js).Find('bgHigh');
+        if Assigned(node) then
+          cgmHi := node.AsInteger;
+        node := TJSONObject(js).Find('bgLow');
+        if Assigned(node) then
+          cgmLo := node.AsInteger;
+      end;
+    finally
+      js.Free;
+    end;
+  except
+    // keep defaults
+  end;
 
-  // Parse bgHigh, e.g. ..."bgHigh":160,...
-  if TryStrToInt(TrimSet(Copy(LResponse, Pos('bgHigh', LResponse) + 8, 4),
-    [' ', ',', '}', '"']), i) then
-    cgmHi := i
-  else
-    cgmHi := 160; // sensible fallback if not present
-
-  // Parse bgLow, e.g. ..."bgLow":60,...
-  if TryStrToInt(TrimSet(Copy(LResponse, Pos('bgLow', LResponse) + 7, 4),
-    [' ', ',', '}', '"']), i) then
-    cgmLo := i
-  else
-    cgmLo := 60; // sensible fallback if not present
-
-  // Personalized in-range bounds are not provided here; keep sentinels
-  cgmRangeHi := 500;
-  cgmRangeLo := 0;
+  cgmRangeHi := CGM_RANGE_HI_DISABLED;
+  cgmRangeLo := CGM_RANGE_LO_DISABLED;
 
   Result := true;
 end;
