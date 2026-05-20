@@ -567,7 +567,7 @@ msgstr "Visa medelblodsocker bredvid TIR"
 
 #: tfconf.cbshowsensorexpiry.caption
 msgid "Show sensor expiry in top-center badge"
-msgstr ""
+msgstr "Visa sensorutgång centrerat högst upp"
 
 #: tfconf.cbsize.caption
 msgid "Remember window size"
@@ -1982,7 +1982,7 @@ msgstr "Dina förutspådda avläsningar visas i det nedra högra hörnet; skilln
 
 #: trndi.strings.rs_predictions_stable
 msgid "No change predicted →"
-msgstr ""
+msgstr "Ingen förändring förutspås →"
 
 #: trndi.strings.rs_predictions_unavailable
 msgid "Predictions unavailable"
@@ -2543,12 +2543,12 @@ msgstr "Sändarinformation"
 
 #: trndi.strings.strendwindow
 msgid "Trend window"
-msgstr ""
+msgstr "Trendfönster"
 
 #: trndi.strings.strendwindowfmt
 #, object-pascal-format
 msgid "%d min (%d dots)"
-msgstr ""
+msgstr "%d min (%d punkter)"
 
 #: trndi.strings.stypeerrcapt
 msgctxt "trndi.strings.stypeerrcapt"
@@ -2975,7 +2975,7 @@ msgstr "Du är uppdaterad"
 #: uconf.rs_uptodate_dev
 #, object-pascal-format
 msgid "You are using a development version, there's no stable release newer than this! The most recent stable release is %s"
-msgstr ""
+msgstr "Du använder en utvecklingsversion, det finns ingen stabil version som är nyare än detta! Den senaste stabila versionen är %s"
 
 #: uconf.rs_use_url_help
 msgid "Trndi can load a URL when high or low in your default web browser."
@@ -3053,7 +3053,7 @@ msgstr "Låg"
 
 #: uhistorygraph.rs_history_graph_key_predict
 msgid "Predicted"
-msgstr ""
+msgstr "Förutspått"
 
 #: uhistorygraph.rs_history_graph_key_range
 msgid "In range"
@@ -3180,4 +3180,3 @@ msgstr "Den höga gränsen måste vara större än den låga gränsen."
 #: uwizard.wz_test_no_support
 msgid "Connection testing is not supported for this service."
 msgstr "Anslutningstest stöds inte för denna tjänst."
-
