@@ -2553,7 +2553,7 @@ begin
   if not isDot then
   begin // Returning to dot
     ResizeDot(l, c, ix);
-    l.Font.Size := round((ClientWidth div 24) * dotscale);
+    l.Font.Size := round((ClientWidth div Max(c, 1)) * dotscale);
   end
   else
   begin
@@ -2637,17 +2637,24 @@ begin
   {$endif}
 end;
 
-// Sets the width (NOT the font) of a dot
+// Sets the horizontal position of a dot using equal-width slots.
+// Dividing into c equal slots guarantees dots always stay within the form
+// regardless of how many dots are shown.
 procedure TfBG.SetDotWidth(l: TDotControl; c, ix: integer; ls: array of TDotControl);
 var
-  spacing: integer;
+  slotW, dotW: integer;
 begin
-  // Calculate spacing based on label width to prevent overlap
-  spacing := (fBG.Width - (c * l.Width)) div (c + 1);
-
-  // Position each label with equal spacing from the left
-  l.Left := spacing + (spacing + l.Width) * (ix - 1);
-  TrndiDLog(Format('TrendDots[%d] positioned at Left = %d.', [ix, l.Left]));
+  if c < 1 then Exit;
+  slotW := fBG.ClientWidth div c;
+  if slotW < 1 then slotW := 1;
+  dotW := l.Width;
+  if dotW > slotW then
+  begin
+    dotW := slotW;
+    l.Width := dotW;
+  end;
+  l.Left := slotW * (ix - 1) + (slotW - dotW) div 2;
+  TrndiDLog(Format('TrendDots[%d] slotW=%d dotW=%d Left=%d.', [ix, slotW, dotW, l.Left]));
 end;
 
 // FormResize event handler
@@ -5535,7 +5542,7 @@ begin
     
     ok := TryStrToFloat(Dot.Hint, Value, native.locale);
 
-    Dot.Font.Size := round((ClientWidth div 24) * dotscale);
+    Dot.Font.Size := round((ClientWidth div Max(ActiveDots, 1)) * dotscale);
     if ok then
     begin
       // Normalize value to mmol/L for placement math; the API may return
