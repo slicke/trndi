@@ -1281,7 +1281,6 @@ begin
   newCount := TMenuItem(Sender).Tag;
   if (newCount < 1) or (newCount > MAX_DOT_COUNT) then Exit;
 
-  // Uncheck siblings (RadioItem handles this visually, but sync Tag-based state too)
   ownerMenu := TMenuItem(Sender).Parent;
   if Assigned(ownerMenu) then
     for i := 0 to ownerMenu.Count - 1 do
