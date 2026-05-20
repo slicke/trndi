@@ -1822,6 +1822,14 @@ begin
       dstLbl.Parent := P;
       dstLbl.Caption := srcLbl.Caption;
       dstLbl.Font.Assign(srcLbl.Font);
+      // Blend the label color toward the panel background so it reads as a
+      // subtle watermark. lArrow (1) and lVal (2) are large and would otherwise
+      // cover the warning text; lDiff/lAgo (3,4) are small and can keep more
+      // of their original color.
+      if i <= 2 then
+        dstLbl.Font.Color := BlendColors(srcLbl.Font.Color, P.Color, 0.25)
+      else
+        dstLbl.Font.Color := BlendColors(srcLbl.Font.Color, P.Color, 0.6);
       dstLbl.Alignment := srcLbl.Alignment;
       dstLbl.Layout := srcLbl.Layout;
       dstLbl.Width := srcLbl.Width;
@@ -6872,6 +6880,8 @@ begin
   LAST_WARN_OPACITY := opacity;
   ApplyAlphaControl(pnWarning, opacity);
 
+  pnWarning.BringToFront;
+
   // Force a complete UI update to ensure proper rendering on all platforms
   pnWarning.Refresh;
   lMissing.Refresh;
@@ -6987,6 +6997,7 @@ begin
   end;
 
   pnWarning.Visible := false;
+
   if (Length(bgs) < 1) or (not IsDataFresh) then
   begin
     // Show backend error details when available (e.g., invalid URL or auth)
