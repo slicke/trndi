@@ -1301,13 +1301,16 @@ begin
       TrendDots[i] := nil;
     end;
   SetLength(TrendDots, 0);
+  for i := 1 to High(FWarningDots) do
+    if Assigned(FWarningDots[i]) then
+    begin
+      FWarningDots[i].Free;
+      FWarningDots[i] := nil;
+    end;
   SetLength(FWarningDots, 0);
 
-  // Bump MAX_RESULT so the next real API call fetches enough readings for the
-  // new window. We need at least ActiveDots readings; use 2× as a small buffer
-  // so gaps in CGM data don't leave slots empty.
-  if MAX_RESULT < ActiveDots * 2 then
-    MAX_RESULT := ActiveDots * 2;
+  if MAX_RESULT < ActiveDots * INTERVAL_MINUTES then
+    MAX_RESULT := ActiveDots * INTERVAL_MINUTES;
 
   CreateTrendDots;
 
@@ -2435,6 +2438,10 @@ begin
       namedDots[i]^ := TrendDots[i];
   end;
 
+  // Clear named aliases beyond the new count so freed controls aren't reachable
+  for i := ActiveDots + 1 to MAX_NAMED do
+    namedDots[i]^ := nil;
+
   TrndiDLog(Format('Trend dots created: %d dots (%d min window)',
     [ActiveDots, ActiveDots * INTERVAL_MINUTES]));
 end;
@@ -2654,21 +2661,21 @@ begin
   {$endif}
 end;
 
-// Positions and sizes a dot so all c dots tile exactly across ClientWidth.
-// Floating-point slot boundaries ensure the first dot starts at pixel 0 and
-// the last dot ends at pixel ClientWidth with no gaps or overflow.
+// Centers a dot within its slot across ClientWidth.
+// Slot boundaries use floating-point math; the dot's glyph width (set by
+// ResizeDot) is preserved and the control is horizontally centered in its slot.
 procedure TfBG.SetDotWidth(l: TDotControl; c, ix: integer; ls: array of TDotControl);
 var
-  leftPx, rightPx: integer;
+  leftPx, rightPx, slotWidth: integer;
   cw: integer;
 begin
   if c < 1 then Exit;
-  cw := fBG.ClientWidth;
-  leftPx  := Round((ix - 1) * cw / c);
-  rightPx := Round(ix       * cw / c);
+  cw        := fBG.ClientWidth;
+  leftPx    := Round((ix - 1) * cw / c);
+  rightPx   := Round(ix       * cw / c);
   if rightPx > cw then rightPx := cw;
-  l.Left  := leftPx;
-  l.Width := rightPx - leftPx;
+  slotWidth := rightPx - leftPx;
+  l.Left    := Max(0, Min(leftPx + (slotWidth - l.Width) div 2, cw - l.Width));
   TrndiDLog(Format('TrendDots[%d] Left=%d Width=%d.', [ix, l.Left, l.Width]));
 end;
 
