@@ -2541,6 +2541,15 @@ msgstr "Ett fel uppstod och stackspårningen kunde inte laddas. Visar bakåtspå
 msgid "Transmitter information"
 msgstr "Sändarinformation"
 
+#: trndi.strings.strendwindow
+msgid "Trend window"
+msgstr ""
+
+#: trndi.strings.strendwindowfmt
+#, object-pascal-format
+msgid "%d min (%d dots)"
+msgstr ""
+
 #: trndi.strings.stypeerrcapt
 msgctxt "trndi.strings.stypeerrcapt"
 msgid "A data type differs from what was expected"
