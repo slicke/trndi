@@ -37,32 +37,29 @@
  *)
 // Main form helper functions for trend dots and UI initialization
 
-// Apply a procedure to all trend points; also provides an index
+// Apply a procedure to all active trend dots; also provides count and index
 procedure TfBG.actOnTrend(proc: TTrendProcLoop);
 var
   ix: integer;
-  ls: array[1..10] of TDotControl;
 begin
-  ls := TrendDots; // Directly use the TrendDots array
-  for ix := 1 to NUM_DOTS do
+  if Length(TrendDots) <= ActiveDots then Exit;
+  for ix := 1 to ActiveDots do
   begin
-    proc(ls[ix], NUM_DOTS, ix, ls);
-    ls[ix].Repaint;
+    proc(TrendDots[ix], ActiveDots, ix, TrendDots);
+    TrendDots[ix].Repaint;
   end;
-  // Run the procedure on the given label
 end;
 
-// Apply a procedure to all trend points
+// Apply a procedure to all active trend dots
 procedure TfBG.actOnTrend(proc: TTrendProc);
 var
   ix: integer;
-  ls: array[1..10] of TDotControl;
 begin
-  ls := TrendDots; // Directly use the TrendDots array
-  for ix := 1 to NUM_DOTS do
+  if Length(TrendDots) <= ActiveDots then Exit;
+  for ix := 1 to ActiveDots do
   begin
-    proc(ls[ix], NUM_DOTS, ix);
-    ls[ix].Repaint;
+    proc(TrendDots[ix], ActiveDots, ix);
+    TrendDots[ix].Repaint;
   end;
 end;
 
@@ -214,6 +211,11 @@ begin
     native.GetIntSetting('system.fresh_threshold', DATA_FRESHNESS_THRESHOLD_MINUTES);
 
   tir_icon := native.GetBoolSetting('range.tir_icon', false);
+
+  // Read dot count before CreateTrendDots so the right number of slots is allocated
+  ActiveDots := native.GetIntSetting('ux.dot_count', NUM_DOTS);
+  if ActiveDots < 1 then ActiveDots := 1;
+  if ActiveDots > MAX_DOT_COUNT then ActiveDots := MAX_DOT_COUNT;
 
   // Create trend dots dynamically (TLabel on Darwin, TPaintBox elsewhere)
   CreateTrendDots;
@@ -803,6 +805,11 @@ begin
     dotscale := GetFloatSetting('ux.dot_scale', 1);
     {$endif}
     DOT_ADJUST := GetFloatSetting('ux.dot_adjust', 0);
+
+    // Ensure MAX_MIN covers the full dot window with a small margin
+    // (ActiveDots already read before CreateTrendDots; just update MAX_MIN here)
+    if MAX_MIN < ActiveDots * INTERVAL_MINUTES + 10 then
+      MAX_MIN := ActiveDots * INTERVAL_MINUTES + 10;
 
     DIFF_ALIGN := native.GetAlignmentSetting('ux.labels.ldiff.alignment', taCenter);
 

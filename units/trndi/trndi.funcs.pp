@@ -125,7 +125,8 @@ function debugParams(arr: _arr3): string; overload;
 
 const
 INTERVAL_MINUTES = 5; // Each time interval is 5 minutes
-NUM_DOTS = 10;        // Total number of labels (lDot1 - lDot10)
+NUM_DOTS = 10;        // Total number of named dot fields (lDot1 - lDot10); also the default
+MAX_DOT_COUNT = 36;   // Maximum trend dots supported (3 h at 5-min intervals)
 
 BG_API_MIN = 2; // NS can't read lower
 BG_API_MAX = 22.2; // NS can't read higher
@@ -146,6 +147,7 @@ DOT_VISUAL_OFFSET: integer = 0;
   // Vertical offset to align limit lines with visual center of dot (compensates for internal whitespace in dot character)
 MAX_MIN: integer = 1440; // Max time to request
 MAX_RESULT: integer = 25; // Max results (scaled up after API creation based on reporting interval)
+ActiveDots: integer = 10; // Runtime dot count for the main trend display (saved as 'ux.dot_count')
 DATA_FRESHNESS_THRESHOLD_MINUTES: integer = 11; // Max minutes before data is considered outdated
 
 {$ifdef DEBUG}

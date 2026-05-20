@@ -235,6 +235,9 @@ sDotSize =  'Dot Size';
 sCustomiseDotSize = 'Customize dot size';
 sEnterDotSize= 'Enter a value, the dot size will multiply by this';
 
+sTrendWindow = 'Trend window';
+sTrendWindowFmt = '%d min (%d dots)';
+
 sChangesSave = 'Save?';
 sChangesRemember = 'Remember setting?';
 sChangesApply = 'Apply this value when Trndi starts?';

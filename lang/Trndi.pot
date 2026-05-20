@@ -2416,6 +2416,15 @@ msgstr ""
 msgid "Transmitter information"
 msgstr ""
 
+#: trndi.strings.strendwindow
+msgid "Trend window"
+msgstr ""
+
+#: trndi.strings.strendwindowfmt
+#, object-pascal-format
+msgid "%d min (%d dots)"
+msgstr ""
+
 #: trndi.strings.stypeerrcapt
 msgctxt "trndi.strings.stypeerrcapt"
 msgid "A data type differs from what was expected"
