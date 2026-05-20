@@ -1842,7 +1842,12 @@ begin
       if PointInsideRoundedRect(centerX, centerY, P.Width, P.Height, 20) then
       begin
         dstLbl.Visible := true;
-        dstLbl.BringToFront;
+        // Large labels (lArrow/lVal) are watermarks: keep them behind the
+        // warning text. Small labels (lDiff/lAgo) can float to the front.
+        if i <= 2 then
+          dstLbl.SendToBack
+        else
+          dstLbl.BringToFront;
       end
       else
         dstLbl.Visible := false;
