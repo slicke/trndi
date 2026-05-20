@@ -317,6 +317,8 @@ TfBG = class(TForm)
   procedure miDotSmallClick({%H-}Sender: TObject);
   procedure miExitClick({%H-}Sender: TObject);
   procedure miCustomDotsClick({%H-}Sender: TObject);
+  procedure miDotWindowClick(Sender: TObject);
+  procedure BuildDotWindowMenu;
   procedure miATouchAutoClick({%H-}Sender: TObject);
   procedure miADotAdjustClick({%H-}Sender: TObject);
   procedure miADotScaleClick({%H-}Sender: TObject);
@@ -461,7 +463,7 @@ private
   FPredictionThread: TPredictionThread;
   FInternetBadgeBg: TShape;
   FInternetBadgeShadow: TShape;
-  FWarningDots: array[1..NUM_DOTS] of TDotControl;
+  FWarningDots: array of TDotControl;
   FWarningLabels: array[1..4] of TLabel; // lArrow, lVal, lDiff, lAgo overlay
   FLastTimerTick: TDateTime; // Last timer tick for wake detection
   FForceRefresh: boolean; // Force bypass of cached API reads on wake
@@ -470,8 +472,9 @@ private
 
   FReadingsLock: TRTLCriticalSection; // Protect cached readings shared with web server thread
 
-    // Array to hold references to lDot1 - lDot10
-  TrendDots: array[1..10] of TDotControl;
+    // Dynamic array; allocated 1-based (index 0 unused). Size = ActiveDots+1.
+  TrendDots: array of TDotControl;
+  FDotWindowMenu: TMenuItem; // Trend window submenu (built once on first popup)
   multi: boolean; // Multi user
   multinick: string;
   MediaController: TSystemMediaController;
@@ -1239,6 +1242,91 @@ begin
   end;
 end;
 
+procedure TfBG.BuildDotWindowMenu;
+const
+  WindowSizes: array[0..4] of integer = (6, 10, 18, 24, 36);
+var
+  i: integer;
+  item: TMenuItem;
+begin
+  if not Assigned(FDotWindowMenu) then
+  begin
+    FDotWindowMenu := TMenuItem.Create(pmSettings);
+    FDotWindowMenu.Caption := sTrendWindow;
+    miDotSize.Parent.Insert(miDotSize.MenuIndex + 1, FDotWindowMenu);
+    for i := 0 to High(WindowSizes) do
+    begin
+      item := TMenuItem.Create(FDotWindowMenu);
+      item.Caption := Format(sTrendWindowFmt,
+        [WindowSizes[i] * INTERVAL_MINUTES, WindowSizes[i]]);
+      item.Tag := WindowSizes[i];
+      item.RadioItem := true;
+      item.OnClick := @miDotWindowClick;
+      FDotWindowMenu.Add(item);
+    end;
+  end;
+  // Sync checked state to current ActiveDots
+  for i := 0 to FDotWindowMenu.Count - 1 do
+    FDotWindowMenu.Items[i].Checked :=
+      FDotWindowMenu.Items[i].Tag = ActiveDots;
+end;
+
+procedure TfBG.miDotWindowClick(Sender: TObject);
+var
+  i: integer;
+  newCount: integer;
+  ownerMenu: TMenuItem;
+begin
+  if not (Sender is TMenuItem) then Exit;
+  newCount := TMenuItem(Sender).Tag;
+  if (newCount < 1) or (newCount > MAX_DOT_COUNT) then Exit;
+
+  // Uncheck siblings (RadioItem handles this visually, but sync Tag-based state too)
+  ownerMenu := TMenuItem(Sender).Parent;
+  if Assigned(ownerMenu) then
+    for i := 0 to ownerMenu.Count - 1 do
+      ownerMenu.Items[i].Checked := false;
+  TMenuItem(Sender).Checked := true;
+
+  // Persist and apply immediately
+  native.SetSetting('ux.dot_count', newCount);
+  ActiveDots := newCount;
+  if MAX_MIN < ActiveDots * INTERVAL_MINUTES + 10 then
+    MAX_MIN := ActiveDots * INTERVAL_MINUTES + 10;
+
+  // Free existing dots and recreate with new count
+  for i := 1 to High(TrendDots) do
+    if Assigned(TrendDots[i]) then
+    begin
+      TrendDots[i].Free;
+      TrendDots[i] := nil;
+    end;
+  SetLength(TrendDots, 0);
+  SetLength(FWarningDots, 0);
+
+  // Bump MAX_RESULT so the next real API call fetches enough readings for the
+  // new window. We need at least ActiveDots readings; use 2× as a small buffer
+  // so gaps in CGM data don't leave slots empty.
+  if MAX_RESULT < ActiveDots * 2 then
+    MAX_RESULT := ActiveDots * 2;
+
+  CreateTrendDots;
+
+  // Let the event loop allocate Qt/OS handles for the new controls before
+  // ResizeDot tries to measure canvas text width.
+  Application.ProcessMessages;
+
+  // Use the proven resize-timer path: positions + sizes all dots (dots are
+  // hidden at this point, hints are empty, so showDot shows nothing yet).
+  tResize.OnTimer(Self);
+
+  // Now fill in readings so dots become visible with correct positions.
+  if Length(bgs) > 0 then
+    PlaceTrendDots(bgs);
+  UpdateTrendDots;
+  AdjustGraph;
+end;
+
 procedure TfBG.miATouchAutoClick(Sender: TObject);
 begin
   miATouchYes.Checked := false;
@@ -1598,7 +1686,9 @@ procedure TfBG.EnsureWarningDots;
 var
   i: integer;
 begin
-  for i := 1 to NUM_DOTS do
+  if Length(FWarningDots) < ActiveDots + 1 then
+    SetLength(FWarningDots, ActiveDots + 1);
+  for i := 1 to ActiveDots do
     if not Assigned(FWarningDots[i]) then
     begin
       {$ifdef DARWIN}
@@ -1665,7 +1755,8 @@ var
 begin
   EnsureWarningDots;
 
-  for i := 1 to NUM_DOTS do
+  if Length(TrendDots) <= ActiveDots then Exit;
+  for i := 1 to ActiveDots do
   begin
     srcDot := TrendDots[i];
     dstDot := FWarningDots[i];
@@ -2008,10 +2099,10 @@ begin
       ApplyTrendDotTopOffset(-da);
   end;
 
-  if lDot1.Visible then
+  if (Length(TrendDots) > 1) and TrendDots[1].Visible then
   begin
-    lRef.Top     := lDot1.Top;
-    lRef.Caption := lDot1.Hint;
+    lRef.Top     := TrendDots[1].Top;
+    lRef.Caption := TrendDots[1].Hint;
   end
   else
     lRef.Caption := '';
@@ -2261,31 +2352,38 @@ begin
   miSettings.Click;
 end;
 
-// Create trend dot controls dynamically at runtime
-// Uses TLabel on macOS (Darwin) to avoid Cocoa CheckDC bugs, TPaintBox elsewhere
+// Create trend dot controls dynamically at runtime.
+// Uses TLabel on macOS (Darwin) to avoid Cocoa CheckDC bugs, TPaintBox elsewhere.
+// TrendDots is 1-based: index 0 is unused, valid range is 1..ActiveDots.
 procedure TfBG.CreateTrendDots;
+type
+  PDotControl = ^TDotControl;
+const
+  MAX_NAMED = 10; // lDot1..lDot10 named fields
 var
   i: integer;
-  dotArray: array[1..NUM_DOTS] of ^TDotControl;
+  namedDots: array[1..MAX_NAMED] of PDotControl;
 begin
-  // Set up array of pointers to each dot field
-  dotArray[1] := @lDot1;
-  dotArray[2] := @lDot2;
-  dotArray[3] := @lDot3;
-  dotArray[4] := @lDot4;
-  dotArray[5] := @lDot5;
-  dotArray[6] := @lDot6;
-  dotArray[7] := @lDot7;
-  dotArray[8] := @lDot8;
-  dotArray[9] := @lDot9;
-  dotArray[10] := @lDot10;
+  // Map named fields so we can assign them for backward compat (dots 1..10)
+  namedDots[1]  := @lDot1;
+  namedDots[2]  := @lDot2;
+  namedDots[3]  := @lDot3;
+  namedDots[4]  := @lDot4;
+  namedDots[5]  := @lDot5;
+  namedDots[6]  := @lDot6;
+  namedDots[7]  := @lDot7;
+  namedDots[8]  := @lDot8;
+  namedDots[9]  := @lDot9;
+  namedDots[10] := @lDot10;
 
-  for i := 1 to NUM_DOTS do
+  // Index 0 unused; 1..ActiveDots are the live slots
+  SetLength(TrendDots, ActiveDots + 1);
+
+  for i := 1 to ActiveDots do
   begin
     {$ifdef DARWIN}
-    // macOS: Create TLabel to avoid TPaintBox.OnPaint Cocoa bugs
-    dotArray[i]^ := TLabel.Create(Self);
-    with TLabel(dotArray[i]^) do
+    TrendDots[i] := TLabel.Create(Self);
+    with TLabel(TrendDots[i]) do
     begin
       Parent := Self;
       AutoSize := true;
@@ -2294,18 +2392,16 @@ begin
       Transparent := true;
     end;
     {$else}
-    // Other platforms: Use TPaintBox with custom painting
-    dotArray[i]^ := TPaintBox.Create(Self);
-    with TPaintBox(dotArray[i]^) do
+    TrendDots[i] := TPaintBox.Create(Self);
+    with TPaintBox(TrendDots[i]) do
     begin
       Parent := Self;
       AutoSize := false;
       OnPaint := @DotPaint;
     end;
     {$endif}
-    
-    // Common properties for both control types
-    with dotArray[i]^ do
+
+    with TrendDots[i] do
     begin
       Left := 72;
       Top := 191;
@@ -2316,12 +2412,14 @@ begin
       PopupMenu := pmSettings;
       OnClick := @onTrendClick;
     end;
-    
-    // Add to TrendDots array for easy access
-    TrendDots[i] := dotArray[i]^;
+
+    // Keep named fields assigned for code that still references lDot1..lDot10
+    if i <= MAX_NAMED then
+      namedDots[i]^ := TrendDots[i];
   end;
-  
-  TrndiDLog('Trend dots created dynamically');
+
+  TrndiDLog(Format('Trend dots created: %d dots (%d min window)',
+    [ActiveDots, ActiveDots * INTERVAL_MINUTES]));
 end;
 
 procedure TfBG.initDot(l: TDotControl; c, ix: integer);
@@ -2443,7 +2541,7 @@ begin
   isDot := l.Caption = DOT_GRAPH;
 
   // Handle differently based on position in trend sequence
-  if ix = NUM_DOTS then
+  if ix = ActiveDots then
     // Latest reading: toggle between fresh indicator and dot
     l.Caption := IfThen(isDot, DOT_FRESH, DOT_GRAPH)
   else
@@ -2486,7 +2584,10 @@ begin
     Exit;
 
   for l in TrendDots do
+  begin
+    if not Assigned(l) then Continue;
     l.Top := l.Top + Offset;
+  end;
 end;
 
 procedure TfBG.RepaintVisibleTrendDots;
@@ -2494,8 +2595,11 @@ var
   l: TDotControl;
 begin
   for l in TrendDots do
+  begin
+    if not Assigned(l) then Continue;
     if l.Visible then
       l.Repaint;
+  end;
 end;
 
 // Shows a dot only if it has valid data (non-empty Hint)
@@ -3578,7 +3682,7 @@ begin
   
   // Apply dot character changes
   dotChar := native.GetWideCharSetting('font.dot', WChar($2B24));
-  for i := 1 to 10 do
+  for i := 1 to High(TrendDots) do
     if TrendDots[i] <> nil then
       TrendDots[i].Caption := dotChar;
   
@@ -3662,8 +3766,8 @@ begin
 
   // Recalculate trend dots geometry and redraw
   UpdateTrendDots;
-  for i := 1 to Length(TrendDots) do
-    if (i <= High(TrendDots)) and (TrendDots[i] <> nil) then
+  for i := 1 to High(TrendDots) do
+    if TrendDots[i] <> nil then
       TrendDots[i].Invalidate;
 
   // Force UI update with current reading to apply new colors/fonts
@@ -4025,18 +4129,24 @@ procedure SetupUIElements(f: TfConf);
       lArrow.Font.Color := Self.lArrow.Font.Color;
       lAgo.Font.Color := Self.lAgo.Font.Color;
       lVal.Caption := Self.lVal.Caption;
-      lDot1.Font := self.ldot1.font;
-      lDot2.Font := self.ldot1.font;
-      lDot3.Font := self.ldot1.font;
+      if Length(Self.TrendDots) > 1 then
+      begin
+        lDot1.Font := Self.TrendDots[1].Font;
+        lDot2.Font := Self.TrendDots[1].Font;
+        lDot3.Font := Self.TrendDots[1].Font;
+      end;
       lArrow.Caption := Self.lArrow.Caption;
       lAgo.Caption := Self.lAgo.Caption;
       pnDisplay.Color := Self.Color;
       pnDisplay.Font := fBG.Font;
       cbFonts.Font := eAddr.Font; // Override fBG.font for the panel
 
-      lDot1.Font.Color := self.lDot1.Font.Color;
-      lDot2.Font.Color := self.lDot1.Font.Color;
-      lDot3.Font.Color := self.lDot1.Font.Color;
+      if Length(Self.TrendDots) > 1 then
+      begin
+        lDot1.Font.Color := Self.TrendDots[1].Font.Color;
+        lDot2.Font.Color := Self.TrendDots[1].Font.Color;
+        lDot3.Font.Color := Self.TrendDots[1].Font.Color;
+      end;
 
       cl_ok_bg.ButtonColor := native.GetColorSetting('ux.bg_color_ok', bg_color_ok);
       cl_hi_bg.ButtonColor := native.GetColorSetting('ux.bg_color_hi', bg_color_hi);
@@ -4801,6 +4911,8 @@ begin
     miCustomDots.Caption := Format(RS_CUSTOM_DOTS, [dotscale]);
   end;
 
+  BuildDotWindowMenu;
+
   if (Sender as TPopupMenu).PopupComponent is TDotControl then
   begin
     tpb := (Sender as TPopupMenu).PopupComponent as TDotControl;
@@ -5251,17 +5363,17 @@ begin
 
   fixWarningPanel;
 
-  if lDot1.Caption <> DOT_GRAPH then
+  if (Length(TrendDots) > 1) and (TrendDots[1].Caption <> DOT_GRAPH) then
     actOnTrend(@ExpandDot);
 end;
 
 procedure TfBG.UpdateTrendElements;
 begin
-  // Change dot placement
-  actOnTrend(@SetDotWidth);
-
-  // Change dot size
+  // Resize first so SetDotWidth uses the correct post-resize l.Width for spacing
   actOnTrend(@ResizeDot);
+
+  // Position after size is known
+  actOnTrend(@SetDotWidth);
 end;
 
 procedure TfBG.UpdateApiInformation;
@@ -5417,6 +5529,7 @@ var
 begin
   for Dot in TrendDots do
   begin
+    if not Assigned(Dot) then Continue;
     // Remember if dot was marked visible by PlaceTrendDots
     wasVisible := Dot.Visible;
     
@@ -7173,14 +7286,14 @@ begin
   isFresh := MinutesBetween(CurrentTime, LatestReading.date) <=
     native.GetIntSetting('system.fresh_threshold', DATA_FRESHNESS_THRESHOLD_MINUTES);
 
-  if Assigned(TrendDots[10]) then
+  if (Length(TrendDots) > ActiveDots) and Assigned(TrendDots[ActiveDots]) then
   begin
-    TrendDots[10].Visible := isFresh;
+    TrendDots[ActiveDots].Visible := isFresh;
 
     if isFresh then
-      TrndiDLog('TrendDots[10] shown as latest reading is fresh.')
+      TrndiDLog(Format('TrendDots[%d] shown as latest reading is fresh.', [ActiveDots]))
     else
-      TrndiDLog('TrendDots[10] hidden due to outdated reading.');
+      TrndiDLog(Format('TrendDots[%d] hidden due to outdated reading.', [ActiveDots]));
   end;
 end;
 
@@ -7223,7 +7336,7 @@ begin
   TrndiDLog(Format('PlaceTrendDots: Processing %d readings, anchor=%s (latest=%s)', 
     [Length(SortedReadings), DateTimeToStr(anchorTime), DateTimeToStr(SortedReadings[0].date)]));
 
-  for slotIndex := 0 to NUM_DOTS - 1 do
+  for slotIndex := 0 to ActiveDots - 1 do
   begin
   // Set start and end time for the interval, anchored to the snapped grid time
   // (see comment above). For slot 0, this is the most recent visual 5-minute
@@ -7243,7 +7356,7 @@ begin
     found := false;
 
     TrndiDLog(Format('Searching slot %d (TrendDots[%d]): %s to %s',
-      [slotIndex, NUM_DOTS - slotIndex, DateTimeToStr(slotStart), DateTimeToStr(slotEnd)]));
+      [slotIndex, ActiveDots - slotIndex, DateTimeToStr(slotStart), DateTimeToStr(slotEnd)]));
 
     // Search for the most recent reading within this interval
     for i := searchStart to High(SortedReadings) do
@@ -7293,7 +7406,8 @@ begin
     // Hide label if no reading found in this interval
     if not found then
     begin
-      labelNumber := NUM_DOTS - slotIndex;
+      labelNumber := ActiveDots - slotIndex;
+      if Length(TrendDots) <= labelNumber then Continue;
       l := TrendDots[labelNumber];
 
       if Assigned(l) then
@@ -7354,12 +7468,12 @@ begin
     Move(bgs[0], SortedReadings[0], Length(bgs) * SizeOf(BGReading));
     SortReadingsDescending(SortedReadings);
 
-    // Clamp requested slots to available visual dots
+    // Clamp requested slots to active visual dots
     slots := NumReadings;
-    if slots > NUM_DOTS then
-      slots := NUM_DOTS;
+    if slots > ActiveDots then
+      slots := ActiveDots;
     if slots <= 0 then
-      slots := NUM_DOTS;
+      slots := ActiveDots;
 
     anchorTime := RecodeMinute(Now, (MinuteOf(Now) div INTERVAL_MINUTES) * INTERVAL_MINUTES);
     anchorTime := RecodeSecond(anchorTime, 0);
@@ -7417,8 +7531,9 @@ begin
   if firstboot then
     Exit;
 
-  // Map slotIndex to the label number (0 -> lDot10, 1 -> lDot9, ..., 9 -> lDot1)
-  labelNumber := NUM_DOTS - SlotIndex;
+  // Map slotIndex to the label number (0 -> newest dot, last -> oldest dot)
+  labelNumber := ActiveDots - SlotIndex;
+  if Length(TrendDots) <= labelNumber then Exit;
   l := TrendDots[labelNumber];
 
   if Assigned(l) then
