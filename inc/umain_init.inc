@@ -814,8 +814,8 @@ begin
     // scaling earlier assumed the default 10 dots — bump it if more are configured.
     if MAX_MIN < ActiveDots * INTERVAL_MINUTES + 10 then
       MAX_MIN := ActiveDots * INTERVAL_MINUTES + 10;
-    if MAX_RESULT < ActiveDots * 2 then
-      MAX_RESULT := ActiveDots * 2;
+    if MAX_RESULT < ActiveDots * INTERVAL_MINUTES then
+      MAX_RESULT := ActiveDots * INTERVAL_MINUTES;
 
     DIFF_ALIGN := native.GetAlignmentSetting('ux.labels.ldiff.alignment', taCenter);
 
