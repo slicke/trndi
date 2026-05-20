@@ -17,6 +17,7 @@ type
     FShortCut: Integer;
     FEnabled: Boolean;
     FChecked: Boolean;
+    FRadioItem: Boolean;
     FVisible: Boolean;
     FHint: string;
     function GetCount: Integer;
@@ -38,6 +39,8 @@ type
     property Hint: string read FHint write FHint;
     property Count: Integer read GetCount;
     property MenuIndex: Integer read GetMenuIndex;
+    property Parent: TMenuItem read FParent;
+    property RadioItem: Boolean read FRadioItem write FRadioItem;
   end;
 
   TPopupMenu = class(TComponent)
