@@ -2650,24 +2650,22 @@ begin
   {$endif}
 end;
 
-// Sets the horizontal position of a dot using equal-width slots.
-// Dividing into c equal slots guarantees dots always stay within the form
-// regardless of how many dots are shown.
+// Positions and sizes a dot so all c dots tile exactly across ClientWidth.
+// Floating-point slot boundaries ensure the first dot starts at pixel 0 and
+// the last dot ends at pixel ClientWidth with no gaps or overflow.
 procedure TfBG.SetDotWidth(l: TDotControl; c, ix: integer; ls: array of TDotControl);
 var
-  slotW, dotW: integer;
+  leftPx, rightPx: integer;
+  cw: integer;
 begin
   if c < 1 then Exit;
-  slotW := fBG.ClientWidth div c;
-  if slotW < 1 then slotW := 1;
-  dotW := l.Width;
-  if dotW > slotW then
-  begin
-    dotW := slotW;
-    l.Width := dotW;
-  end;
-  l.Left := slotW * (ix - 1) + (slotW - dotW) div 2;
-  TrndiDLog(Format('TrendDots[%d] slotW=%d dotW=%d Left=%d.', [ix, slotW, dotW, l.Left]));
+  cw := fBG.ClientWidth;
+  leftPx  := Round((ix - 1) * cw / c);
+  rightPx := Round(ix       * cw / c);
+  if rightPx > cw then rightPx := cw;
+  l.Left  := leftPx;
+  l.Width := rightPx - leftPx;
+  TrndiDLog(Format('TrendDots[%d] Left=%d Width=%d.', [ix, l.Left, l.Width]));
 end;
 
 // FormResize event handler
