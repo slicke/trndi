@@ -497,6 +497,9 @@ begin
   API_D_SENSOR_EXPIRY,
   'API_D_SENSOR_EXPIRY':
     api := DebugSensorExpiryAPI.Create(apiTarget, apiCreds);
+  API_D_LATE_MISSING,
+  'API_D_LATE_MISSING':
+    api := DebugLateMissingAPI.Create(apiTarget, apiCreds);
   {$endif}
   else
     Result := false;
