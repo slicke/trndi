@@ -809,10 +809,13 @@ begin
     {$endif}
     DOT_ADJUST := GetFloatSetting('ux.dot_adjust', 0);
 
-    // Ensure MAX_MIN covers the full dot window with a small margin
-    // (ActiveDots already read before CreateTrendDots; just update MAX_MIN here)
+    // Ensure MAX_MIN and MAX_RESULT cover the full dot window.
+    // ActiveDots was read before CreateTrendDots; the API-based MAX_RESULT
+    // scaling earlier assumed the default 10 dots — bump it if more are configured.
     if MAX_MIN < ActiveDots * INTERVAL_MINUTES + 10 then
       MAX_MIN := ActiveDots * INTERVAL_MINUTES + 10;
+    if MAX_RESULT < ActiveDots * 2 then
+      MAX_RESULT := ActiveDots * 2;
 
     DIFF_ALIGN := native.GetAlignmentSetting('ux.labels.ldiff.alignment', taCenter);
 
