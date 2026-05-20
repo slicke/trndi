@@ -1312,6 +1312,11 @@ begin
 
   CreateTrendDots;
 
+  // Force PlaceTrendDots to reprocess even though bgs hasn't changed.
+  // Without this, the hash-based early-exit skips placement and the freshly
+  // created dots (which have no hints) stay Visible=false permanently.
+  FLastReadingsHash := 0;
+
   // Let the event loop allocate Qt/OS handles for the new controls before
   // ResizeDot tries to measure canvas text width.
   Application.ProcessMessages;
