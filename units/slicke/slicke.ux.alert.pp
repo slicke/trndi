@@ -1628,8 +1628,8 @@ begin
       tb.Top := tp.Height - tb.Height - 10;
       tb.Font.Color := sender.Font.Color; // Match parent form font color
 
-      // Close logic
-      df := TDialogForm.CreateNew(nil);
+      // Close logic — df owned by tp so it's freed when the overlay panel is freed
+      df := TDialogForm.CreateNew(tp);
       tb.OnClick := @df.UXMessageOnClick;
     end
     else
@@ -2006,7 +2006,7 @@ begin
 
     Dialog.ClientHeight := OkButton.Top + OkButton.Height + Padding;
 
-    if Dialog.ShowModal = mrOk then
+    if ShowModalSafe(Dialog) = mrOk then
       Result := Grid.Row;
   finally
     Dialog.Free;
@@ -2489,7 +2489,7 @@ begin
     HtmlViewer := TIpHtmlPanel.Create(HtmlPanel);
     HtmlViewer.Name := 'HtmlViewer';
 
-    hpd := TIpHttpDataProvider.Create(nil);
+    hpd := TIpHttpDataProvider.Create(Dialog);
     HtmlViewer.DataProvider := hpd;
     hpd.OnGetImage := @dialog.HTMLGetImageX;
     HtmlViewer.OnHotClick := @dialog.HTMLHotClick;
@@ -2567,10 +2567,6 @@ begin
 
     Result := ShowModalSafe(Dialog);
   finally
-    {$ifndef Darwin}
-//  if assigned(hpd) then
-  //    hpd.Free;
-    {$endif}
     Dialog.Free;
   end;
 end;
@@ -2870,7 +2866,7 @@ begin
       // Use TIpHtmlPanel for HTML content (cross-platform)
       LogHtmlPanel := TIpHtmlPanel.Create(MemoWrapper);
       LogHtmlPanel.Name := 'HtmlViewer';
-      hpd := TIpHttpDataProvider.Create(nil);
+      hpd := TIpHttpDataProvider.Create(Dialog);
       LogHtmlPanel.DataProvider := hpd;
       hpd.OnGetImage := @dialog.HTMLGetImageX;
       LogHTMLPanel.OnHotClick := @dialog.HTMLHotClick;
@@ -2997,10 +2993,18 @@ begin
       OkButton.OnClick := @Dialog.ExpandLogDialog;
       OkButton.TabStop := false;
       
-      // Store references for expand method
+      // Store references for expand method — only assign the live branch
       Dialog.LogExpandWrapper := LogPanel;
-      Dialog.LogExpandMemo := LogMemo;
-      Dialog.LogExpandHtmlPanel := LogHtmlPanel;
+      if isHTML then
+      begin
+        Dialog.LogExpandMemo := nil;
+        Dialog.LogExpandHtmlPanel := LogHtmlPanel;
+      end
+      else
+      begin
+        Dialog.LogExpandMemo := LogMemo;
+        Dialog.LogExpandHtmlPanel := nil;
+      end;
       Dialog.LogExpandButton := OkButton;
       Dialog.LogIsHTML := isHTML;
     end;
@@ -3033,7 +3037,6 @@ begin
     ShowModalSafe(Dialog);
     Result := Dialog.ModalResult;
   finally
-//    hpd.free;
     Dialog.Free;
   end;
 end;
@@ -3585,13 +3588,8 @@ end;
 {** Close handler for full-screen overlay messages created by @link(UXMessage). }
 procedure TDialogForm.UXMessageOnClick(sender: TObject);
 begin
-  //.$ifdef Windows}
-//   ((sender as TDarkButton).parent as TPanel).Free;
-  //$else}
   ((sender as TButton).parent as TPanel).Free;
-  //$endif}
-
-  Self.Free;
+  // Self is freed via tp's ownership chain — do not call Self.Free
 end;
 
 {** OnChange handler for font combo in ExtFontPicker - updates live preview. }
