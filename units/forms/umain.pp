@@ -286,6 +286,8 @@ TfBG = class(TForm)
   procedure bTouchFullClick({%H-}Sender: TObject);
   procedure bTouchMenuClick({%H-}Sender: TObject);
   procedure bTouchSettingsClick({%H-}Sender: TObject);
+  procedure pnTouchButtonMouseDown({%H-}Sender: TObject; {%H-}Button: TMouseButton;
+    {%H-}Shift: TShiftState; {%H-}X, {%H-}Y: Integer);
   procedure fbReadingsDblClick({%H-}Sender: TObject);
   procedure FormActivate({%H-}Sender: TObject);
   procedure FormClick({%H-}Sender: TObject);
@@ -888,6 +890,7 @@ badge_font: integer = 8;
 StartTouch: TDateTime;
 IsTouched: boolean;
 HasTouch: boolean;
+TouchMenuMouseDownFired: boolean; // prevents OnClick double-fire after OnMouseDown
 HasMultiTouch: boolean;
 touchHelper: TTouchDetector;
 
@@ -2151,6 +2154,7 @@ end;
 
 procedure TfBG.bMenuPanelCloseClick(Sender: TObject);
 begin
+  if TouchMenuMouseDownFired then begin TouchMenuMouseDownFired := false; Exit; end;
   pnTouchMenu.Hide;
 end;
 
@@ -2367,6 +2371,7 @@ end;
 
 procedure TfBG.bTouchFullClick(Sender: TObject);
 begin
+  if TouchMenuMouseDownFired then begin TouchMenuMouseDownFired := false; Exit; end;
   miFullScreen.Click;
   pnTouchMenu.Hide;
 end;
@@ -2375,13 +2380,42 @@ procedure TfBG.bTouchMenuClick(Sender: TObject);
 var
   p: TPoint;
 begin
+  if TouchMenuMouseDownFired then begin TouchMenuMouseDownFired := false; Exit; end;
   p := Mouse.CursorPos;
   pmSettings.PopUp(p.X, p.Y)
 end;
 
 procedure TfBG.bTouchSettingsClick(Sender: TObject);
 begin
+  if TouchMenuMouseDownFired then begin TouchMenuMouseDownFired := false; Exit; end;
   miSettings.Click;
+end;
+
+// Single OnMouseDown handler shared by all pnTouchMenu buttons.
+// OnMouseDown fires on first touch contact regardless of where the finger
+// lifts, making it reliable on Qt/Linux where QPushButton::clicked() requires
+// the release point to still be inside the button hit rect.
+procedure TfBG.pnTouchButtonMouseDown(Sender: TObject; Button: TMouseButton;
+  Shift: TShiftState; X, Y: Integer);
+var
+  p: TPoint;
+begin
+  if Button <> mbLeft then Exit;
+  TouchMenuMouseDownFired := true;
+  if Sender = bMenuPanelClose then
+    pnTouchMenu.Hide
+  else if Sender = bTouchFull then
+  begin
+    miFullScreen.Click;
+    pnTouchMenu.Hide;
+  end
+  else if Sender = bTouchMenu then
+  begin
+    p := Mouse.CursorPos;
+    pmSettings.PopUp(p.X, p.Y);
+  end
+  else if Sender = bTouchSettings then
+    miSettings.Click;
 end;
 
 // Create trend dot controls dynamically at runtime.

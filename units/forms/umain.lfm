@@ -276,6 +276,7 @@ object fBG: TfBG
       Caption = '⚙ Settings'
       TabOrder = 0
       OnClick = bTouchSettingsClick
+      OnMouseDown = pnTouchButtonMouseDown
     end
     object bMenuPanelClose: TButton
       Left = 1
@@ -286,6 +287,7 @@ object fBG: TfBG
       Caption = '✖ Close'
       TabOrder = 1
       OnClick = bMenuPanelCloseClick
+      OnMouseDown = pnTouchButtonMouseDown
     end
     object pnTouchContents: TPanel
       Left = 1
@@ -306,6 +308,7 @@ object fBG: TfBG
         Caption = '☰ Menu'
         TabOrder = 0
         OnClick = bTouchMenuClick
+        OnMouseDown = pnTouchButtonMouseDown
       end
       object bTouchFull: TButton
         Left = 1
@@ -316,6 +319,7 @@ object fBG: TfBG
         Caption = '⇱ Full screen'
         TabOrder = 1
         OnClick = bTouchFullClick
+        OnMouseDown = pnTouchButtonMouseDown
       end
     end
   end
