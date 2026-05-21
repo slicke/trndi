@@ -1594,22 +1594,11 @@ begin
   //    if IsProblematicWM then
 //        tl.Font.size := 38;
 
-      tl := TLabel.Create(tp);
-      tl.parent := tp;
-      tl.autosize := false;
-      tl.Font.Color := uxclBlue;
-      tl.Caption := message;
-      tl.Font.Size := tp.Width div 20;
-      tl.WordWrap := true;
-      tl.top := 30;
-      tl.left := 5;
-      tl.width := tp.width-10;
-      tl.height := tp.height;
-      tl.WordWrap := true;
-      if IsProblematicWM then
-        tl.Font.size := 38;
-
-      {$ifdef X_WIN}tb := TBUtton.Create(tp);{$else}tb := TButton.Create(tp);{$endif}
+      // Button created first so we know its final Top before sizing the label.
+      // BringToFront is essential: in Qt the last-created sibling has the
+      // highest z-order, so without it the label (created after) sits on top
+      // and its QLabel widget intercepts touch events over the button area.
+      {$ifdef X_WIN}tb := TButton.Create(tp);{$else}tb := TButton.Create(tp);{$endif}
       tb.Parent := tp;
       tb.AutoSize := true;
       tb.Caption := smbUXOK;
@@ -1623,10 +1612,25 @@ begin
       tb.Left := 0;
       tb.Width := tp.Width;
       tb.Top := tp.Height - tb.Height - 10;
-      tb.Font.Color := sender.Font.Color; // Match parent form font color
+      tb.Font.Color := sender.Font.Color;
+      tb.BringToFront;
 
-      // Close logic — df owned by tp so it's freed when the overlay panel is freed
-      df := TDialogForm.CreateNew(tp);
+      tl := TLabel.Create(tp);
+      tl.parent := tp;
+      tl.autosize := false;
+      tl.Font.Color := uxclBlue;
+      tl.Caption := message;
+      tl.Font.Size := tp.Width div 20;
+      tl.WordWrap := true;
+      tl.top := 30;
+      tl.left := 5;
+      tl.width := tp.width - 10;
+      tl.height := tb.Top - tl.Top - 4;  // stop above the button; no overlap
+      if IsProblematicWM then
+        tl.Font.size := 38;
+
+      // df is owned by sender (the main form) — never freed from inside tb's event
+      df := TDialogForm.CreateNew(sender);
       tb.OnClick := @df.UXMessageOnClick;
     end
     else
@@ -3380,9 +3384,16 @@ end;
 
 {** Close handler for full-screen overlay messages created by @link(UXMessage). }
 procedure TDialogForm.UXMessageOnClick(sender: TObject);
+var
+  P: TPanel;
 begin
-  ((sender as TButton).parent as TPanel).Free;
-  // Self is freed via tp's ownership chain — do not call Self.Free
+  P := (sender as TButton).parent as TPanel;
+  // Clear the name so the next UXMessage call can create a new overlay.
+  // Do NOT free here — in Qt, destroying a QWidget from inside its own
+  // clicked() signal causes the signal dispatch to access freed memory;
+  // the panel is owned by the parent form and freed when the form closes.
+  P.Name := '';
+  P.Hide;
 end;
 
 {** OnChange handler for font combo in ExtFontPicker - updates live preview. }

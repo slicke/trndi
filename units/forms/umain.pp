@@ -5876,6 +5876,13 @@ begin
           bMenuPanelClose.font.size := lDiff.Font.size;
           bTouchMenu.font.size := lDiff.Font.size;
           pnTouchMenu.Show;
+          // BringToFront: Qt stacks widgets by creation order, so any
+          // runtime-created sibling sitting on top would intercept touches.
+          pnTouchMenu.BringToFront;
+          // SetFocus: Qt's touch→mouse synthesis requires the target
+          // widget to own the input focus; without it the QPushButton
+          // shows a pressed state but never emits clicked().
+          bMenuPanelClose.SetFocus;
         end;
       end;
     end;
