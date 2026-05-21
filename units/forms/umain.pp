@@ -491,6 +491,7 @@ private
   procedure fixWarningPanel;
   procedure showWarningPanel(const message: string;
     clearDisplayValues: boolean = false; opacity: integer = 235; showDetails: boolean = true);
+  procedure hideWarningPanel;
   procedure CalcRangeTime;
   function GetValidatedPosition: TrndiPos;
     {** Acquire the latest reading(s) and process them for display.
@@ -844,6 +845,7 @@ alertSnoozeUntil: TDateTime = 0;
   // If the BG is high/low since before, so we don't spam notifications
 placed: boolean = false; // If the window has been placed at setup
 WarnShowDetails: boolean = true; // controls whether fixWarningPanel adds reading/age info
+FWarnMessage: string = '';        // raw warning text; rebuilt by fixWarningPanel on resize
 
 username: string = '';
 lastup: tdatetime;
@@ -1557,13 +1559,24 @@ begin
 end;
 
 procedure TfBG.pnWarningClick(Sender: TObject);
+var
+  bg: BGReading;
+  detail: string;
 begin
   {$ifdef TrndiExt}
   if not funcBool('uxClick',
     ['no-reading'], true) then
     Exit;
   {$endif}
-  ShowMessage(RS_NO_BOOT_READING);
+  detail := '';
+  if FWarnMessage <> '' then
+    detail := FWarnMessage + LineEnding + LineEnding;
+  if tryLastReading(bg) then
+    detail := detail + Format(RS_LAST_RECIEVE, [bg.format(un, BG_MSG_SHORT),
+      FormatDateTime('hh:nn', bg.date)])
+  else
+    detail := detail + RS_LAST_RECIEVE_NO;
+  ShowMessage(detail);
 end;
 
 procedure TfBG.pnWarningPaint(Sender: TObject);
@@ -5448,6 +5461,9 @@ var
   wnum, hnum: integer;
 begin
   // Adjust panel size
+  pnOffReading.Height := ClientHeight;
+  pnOffReading.ClientWidth := ClientWidth div 35;
+
   pnOffRange.Height := ClientHeight div 10;
 
   pnOffRange.Font.Size := 7 + pnOffRange.Height div 5;
@@ -6784,9 +6800,9 @@ begin
   pnwarning.top := padding;
   pnWarning.Height := ClientHeight - (padding * 2);  // Use padding on top and bottom
 
-  // Configure the main warning label first
-  if Pos(sLineBreak, lMissing.Caption) < 1 then // Ugly solution
-    lMissing.Caption := '🕑' + sLineBreak + lMissing.Caption;
+  // Rebuild the warning label from the stored message so resize calls are
+  // always consistent with the original showWarningPanel call.
+  lMissing.Caption := '⚠️ ' + FWarnMessage + sLineBreak;
 
   lMissing.AutoSize := false;
   lMissing.left := 5;
@@ -6805,17 +6821,6 @@ begin
   if native.HasTouchScreen then
     pnWarning.Font.Color := pnWarning.color;
 
-  // Configure other UI elements
-  pnOffReading.Height := ClientHeight;
-  pnOffReading.ClientWidth := ClientWidth div 35;
-
-  if Assigned(pnNextProgress) then
-  begin
-    pnNextProgress.Height := ClientHeight;
-    pnNextProgress.Width := Max(6, ClientWidth div 40);
-    nextProgressChange;
-  end;
-
   if WarnShowDetails then
   begin
     if tryLastReading(bg) then
@@ -6827,7 +6832,7 @@ begin
         val := bg.format(un, BG_MSG_SHORT);
       end;
 
-      last := HourOf(bg.date).ToString + ':' + MinuteOf(bg.date).tostring;
+      last := FormatDateTime('hh:nn', bg.date);
       if DateOf(bg.date) <> Dateof(now) then
         last := last + ' ' + Format(RS_DAYS_AGO, [DaysBetween(now, bg.date)]);
       pnWarnLast.Caption := Format(RS_LAST_RECIEVE, [val, last]);
@@ -6875,9 +6880,7 @@ begin
   // shouldn't show the last-reading lines
   WarnShowDetails := showDetails and (opacity >= 150);
 
-  // copy the message into the label used by fixWarningPanel.  We add a newline
-  // so that fixWarningPanel won't prepend the clock emoji again; other icons
-  // (⚠️) can be inserted here if desired.
+  FWarnMessage := message;
   lMissing.Caption := '⚠️ ' + message + sLineBreak;
 
   if clearDisplayValues then
@@ -6899,6 +6902,11 @@ begin
   // Force a complete UI update to ensure proper rendering on all platforms
   pnWarning.Refresh;
   lMissing.Refresh;
+end;
+
+procedure TfBG.hideWarningPanel;
+begin
+  pnWarning.Visible := false;
 end;
 
 function TfBG.DoFetchAndValidateReadings(const ForceRefresh: boolean): boolean;
@@ -7010,7 +7018,7 @@ begin
     api.cgmRangeHi := native.GetIntSetting('override.rangehi', api.cgmRangeHi);
   end;
 
-  pnWarning.Visible := false;
+  hideWarningPanel;
 
   if (Length(bgs) < 1) or (not IsDataFresh) then
   begin
