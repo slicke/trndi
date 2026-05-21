@@ -54,11 +54,8 @@ function ExtMsgYesNo(const caption, desc: string; const micon: UXImage = uxmtInf
 function ExtMsgYesNo(const dialogsize: TUXDialogSize; const caption, desc: string; const micon: UXImage = uxmtInformation): boolean; overload;
 
 function ExtText(const dialogsize: TUXDialogSize; const caption, text: string; buttons: TUXMsgDlgBtns = [mbOK]; const icon: UXImage = uxmtInformation; scale: Extended = 1): TModalResult;
-function ExtInput(const caption, prompt: string; const def: string = ''): string; overload;
 function ExtInput(const dialogsize: TUXDialogSize; const title, prompt, labelText, def: string; var mr: TModalResult): string; overload;
-function ExtList(const caption: string; var items: TStringList): integer; overload;
 function ExtList(const dialogsize: TUXDialogSize; const title, header, desc: string; const items: array of unicodestring): LongInt; overload;
-function ExtList(const dialogsize: TUXDialogSize; const title, header, desc: string; const items: TStringArray; const showOk: Boolean = True): LongInt; overload;
 
 // Numeric and date inputs (headless stubs)
 function ExtIntInput(
@@ -139,20 +136,10 @@ begin
   Result := mrOk;
 end;
 
-function ExtInput(const caption, prompt: string; const def: string = ''): string; overload;
-begin
-  Result := def;
-end;
-
 function ExtInput(const dialogsize: TUXDialogSize; const title, prompt, labelText, def: string; var mr: TModalResult): string; overload;
 begin
   mr := mrOk;
   Result := def;
-end;
-
-function ExtList(const caption: string; var items: TStringList): integer; overload;
-begin
-  Result := 0;
 end;
 
 // Headless numeric/date input stubs
@@ -200,11 +187,6 @@ begin
   Result := 0;
 end;
 
-function ExtList(const dialogsize: TUXDialogSize; const title, header, desc: string; const items: TStringArray; const showOk: Boolean = True): LongInt; overload;
-begin
-  // Headless: present the list and return 0 as default selection
-  Result := 0;
-end;
 
 function ExtFontPicker(const dialogsize: TUXDialogSize; const caption, title, msg, title2: string; AFont: TFont; const sampleText: string; var mr: TModalResult): TFont;
 begin

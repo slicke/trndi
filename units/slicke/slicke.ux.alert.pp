@@ -843,19 +843,18 @@ end;
   @param ALabel Label with font and width already assigned.
   @returns Pixel height needed to display the caption.
 }
+function NormalizeLineBreaks(const S: string): string;
+begin
+  Result := StringReplace(S, #13#10, #10, [rfReplaceAll]);
+  Result := StringReplace(Result, #13, #10, [rfReplaceAll]);
+end;
+
 function CalcWrappedHeight(ALabel: TLabel): integer;
 var
   bmp: Graphics.TBitmap;
   paragraphs, words: TStringList;
   para, token, currentLine: string;
   i, p, totalLines, lineCount: integer;
-
-function NormalizeLineBreaks(const S: string): string;
-  begin
-    // Convert CRLF/CR to LF to simplify splitting
-    Result := StringReplace(S, #13#10, #10, [rfReplaceAll]);
-    Result := StringReplace(Result, #13, #10, [rfReplaceAll]);
-  end;
 begin
   bmp := Graphics.TBitmap.Create;
   paragraphs := TStringList.Create;
@@ -1024,12 +1023,6 @@ var
   paragraphs, words: TStringList;
   para, token, currentLine: string;
   i, p, totalLines, lineCount: integer;
-
-function NormalizeLineBreaks(const S: string): string;
-  begin
-    Result := StringReplace(S, #13#10, #10, [rfReplaceAll]);
-    Result := StringReplace(Result, #13, #10, [rfReplaceAll]);
-  end;
 begin
   bmp := Graphics.TBitmap.Create;
   paragraphs := TStringList.Create;
@@ -1355,6 +1348,49 @@ begin
   DescLabel.Height := CalcWrappedHeight(DescLabel);
 end;
 
+{ Create a platform-appropriate dialog button (TDarkButton on Windows, TButton elsewhere),
+  apply big-mode scaling, and optionally register it in the dialog's button list. }
+function MakeDialogButton(Dialog: TDialogForm; const size: TUXDialogSize;
+  const ACaption: string; AModalResult: TModalResult;
+  AddToButtons: boolean = true): TWinControl;
+var
+  {$ifdef X_WIN}
+  Btn: TDarkButton;
+  {$else}
+  Btn: TButton;
+  {$endif}
+begin
+  {$ifdef X_WIN}Btn := TDarkButton.Create(Dialog);{$else}Btn := TButton.Create(Dialog);{$endif}
+  Btn.Parent := Dialog;
+  {$ifdef LCLGTK2}Btn.Font.Color := clBlack;{$endif}
+  Btn.Caption := ACaption;
+  Btn.ModalResult := AModalResult;
+  Btn.Width := 80;
+  if size = uxdBig then
+  begin
+    Btn.Width := Btn.Width * 2;
+    Btn.Height := Btn.Height * 2;
+    Btn.Font.Size := 12;
+  end;
+  if AddToButtons then
+    Dialog.addButton(ACaption);
+  Result := Btn;
+end;
+
+{ Position two buttons centered below a control and set the dialog's client height. }
+procedure CenterButtons(Dialog: TDialogForm; Btn1, Btn2: TWinControl;
+  AboveBottom: integer; const size: TUXDialogSize; Padding: integer);
+var
+  total: integer;
+begin
+  Btn1.Top := AboveBottom + ifthen(size = uxdBig, Padding * 3, Padding * 2);
+  Btn2.Top := Btn1.Top;
+  total := Btn1.Width + Padding + Btn2.Width;
+  Btn1.Left := (Dialog.ClientWidth - total) div 2;
+  Btn2.Left := Btn1.Left + Btn1.Width + Padding;
+  Dialog.ClientHeight := Btn1.Top + Btn1.Height + Padding;
+end;
+
 {** See interface docs for behavior and parameters. }
 function ExtIntInput(
 const dialogsize: TUXDialogSize;
@@ -1384,14 +1420,9 @@ var
   IconBox: TImage;
   TitleLabel, DescLabel: TLabel;
   Edit: TFloatSpinEditEx;
-  {$ifdef X_WIN}
-  OkButton, CancelButton: TDarkButton;
-  {$else}
-  OkButton, CancelButton: TButton;
-  {$endif}
+  OkButton, CancelButton: TWinControl;
   bgcol: TColor;
   size: TUXDialogSize;
-  totalButtonsWidth: integer;
 begin
   size := GetUXDialogSize(dialogsize);
   Result := 0;
@@ -1446,43 +1477,9 @@ begin
     if (size = uxdBig) then
       Edit.Font.Size := 20;
 
-    // --- OK Button ---
-    {$ifdef X_WIN}OkButton := TDarkButton.Create(Dialog);{$else}OkButton := TButton.Create(Dialog);{$endif}
-    OkButton.Parent := Dialog;
-    {$ifdef LCLGTK2}OkButton.Font.Color := clBlack;{$endif}
-    OkButton.Caption := smbSelect;
-    OkButton.ModalResult := mrOk;
-    OkButton.Width := 80;
-    if (size = uxdBig) then
-    begin
-      OkButton.Width := OkButton.Width * 2;
-      OkButton.Height := OkButton.Height * 2;
-      OkButton.Font.Size := 12;
-    end;
-    Dialog.ActiveControl := OkButton;
-
-    // --- Cancel Button ---
-    {$ifdef X_WIN}CancelButton := TDarkButton.Create(Dialog);{$else}CancelButton := TButton.Create(Dialog);{$endif}
-    CancelButton.Parent := Dialog;
-    CancelButton.Caption := smbUXCancel;
-    dialog.addButton(cancelbutton.Caption);
-    CancelButton.ModalResult := mrCancel;
-    CancelButton.Width := 80;
-    if (size = uxdBig) then
-    begin
-      CancelButton.Width := CancelButton.Width * 2;
-      CancelButton.Height := CancelButton.Height * 2;
-      CancelButton.Font.Size := 12;
-    end;
-
-    // --- Center buttons ---
-    OkButton.Top := Edit.Top + Edit.Height + ifthen((size = uxdBig), Padding * 3, Padding * 2);
-    CancelButton.Top := OkButton.Top;
-    totalButtonsWidth := OkButton.Width + Padding + CancelButton.Width;
-    OkButton.Left := (Dialog.ClientWidth - totalButtonsWidth) div 2;
-    CancelButton.Left := OkButton.Left + OkButton.Width + Padding;
-
-    Dialog.ClientHeight := OkButton.Top + OkButton.Height + Padding;
+    OkButton     := MakeDialogButton(Dialog, size, smbSelect,   mrOk,     false);
+    CancelButton := MakeDialogButton(Dialog, size, smbUXCancel, mrCancel);
+    CenterButtons(Dialog, OkButton, CancelButton, Edit.Top + Edit.Height, size, Padding);
     Dialog.ActiveControl := Edit;
 
     ModalResult := ShowModalSafe(Dialog);
@@ -1655,14 +1652,9 @@ var
   IconBox: TImage;
   TitleLabel, DescLabel: TLabel;
   Edit: TEdit;
-  {$ifdef X_WIN}
-  OkButton, CancelButton: TDarkButton;
-  {$else}
-  OkButton, CancelButton: TButton;
-  {$endif}
+  OkButton, CancelButton: TWinControl;
   bgcol: TColor;
   size: TUXDialogSize;
-  totalButtonsWidth: integer;
 begin
   Result := '';
   ModalResult := mrCancel;
@@ -1706,44 +1698,9 @@ begin
     if (size = uxdBig) then
       Edit.Font.Size := 20;
 
-    // --- OK Button ---
-    {$ifdef X_WIN}OkButton := TDarkButton.Create(Dialog);{$else}OkButton := TButton.Create(Dialog);{$endif}
-    OkButton.Parent := Dialog;
-    {$ifdef LCLGTK2}OkButton.Font.Color := clBlack;{$endif}
-    OkButton.Caption := smbSelect;
-    dialog.addButton(okbutton.caption);
-    OkButton.ModalResult := mrOk;
-    OkButton.Width := 80;
-    if (size = uxdBig) then
-    begin
-      OkButton.Width := OkButton.Width * 2;
-      OkButton.Height := OkButton.Height * 2;
-      OkButton.Font.Size := 12;
-    end;
-    Dialog.ActiveControl := OkButton;
-
-    // --- Cancel Button ---
-    {$ifdef X_WIN}CancelButton := TDarkButton.Create(Dialog);{$else}CancelButton := TButton.Create(Dialog);{$endif}
-    CancelButton.Parent := Dialog;
-    CancelButton.Caption := smbUXCancel;
-    dialog.addButton(cancelbutton.caption);
-    CancelButton.ModalResult := mrCancel;
-    CancelButton.Width := 80;
-    if (size = uxdBig) then
-    begin
-      CancelButton.Width := CancelButton.Width * 2;
-      CancelButton.Height := CancelButton.Height * 2;
-      CancelButton.Font.Size := 12;
-    end;
-
-    // --- Center buttons ---
-    OkButton.Top := Edit.Top + Edit.Height + ifthen((size = uxdBig), Padding * 3, Padding * 2);
-    CancelButton.Top := OkButton.Top;
-    totalButtonsWidth := OkButton.Width + Padding + CancelButton.Width;
-    OkButton.Left := (Dialog.ClientWidth - totalButtonsWidth) div 2;
-    CancelButton.Left := OkButton.Left + OkButton.Width + Padding;
-
-    Dialog.ClientHeight := OkButton.Top + OkButton.Height + Padding;
+    OkButton     := MakeDialogButton(Dialog, size, smbSelect,   mrOk);
+    CancelButton := MakeDialogButton(Dialog, size, smbUXCancel, mrCancel);
+    CenterButtons(Dialog, OkButton, CancelButton, Edit.Top + Edit.Height, size, Padding);
     Dialog.ActiveControl := Edit;
 
     ModalResult := ShowModalSafe(Dialog);
@@ -1785,13 +1742,9 @@ var
   IconBox: TImage;
   TitleLabel, DescLabel: TLabel;
   Combo: TComboBox;
-  {$ifdef X_WIN}
-  OkButton, CancelButton: TDarkButton;
-  {$else}
-  OkButton, CancelButton: TButton;
-  {$endif}
+  OkButton, CancelButton: TWinControl;
   bgcol: TColor;
-  i, totalButtonsWidth: integer;
+  i: integer;
   size: TUXDialogSize;
 begin
   Result := -1;
@@ -1833,54 +1786,10 @@ begin
     Combo.Top := DescLabel.Top + DescLabel.Height + ifthen((size = uxdBig) , Padding * 2, Padding);
     Combo.ItemIndex := 0;
 
-    // --- OK Button ---
-    {$ifdef X_WIN}OkButton := TDarkButton.Create(Dialog);{$else}OkButton := TButton.Create(Dialog);{$endif}
-    OkButton.Parent := Dialog;
-    {$ifdef LCLGTK2}OkButton.Font.Color := clBlack;{$endif}
-    OkButton.Caption := smbSelect;
-    dialog.addButton(okbutton.caption);
-    OkButton.ModalResult := mrOk;
-    OkButton.Width := 80;
-    if (size = uxdBig) then
-    begin
-      OkButton.Width := OkButton.Width * 2;
-      OkButton.Height := OkButton.Height * 2;
-      OkButton.Font.Size := 12;
-    end;
-    Dialog.ActiveControl := OkButton;
-
-    // --- Cancel Button ---
-    {$ifdef X_WIN}CancelButton := TDarkButton.Create(Dialog);{$else}CancelButton := TButton.Create(Dialog);{$endif}
-    CancelButton.Parent := Dialog;
-    if default then
-    begin
-      CancelButton.Caption := smbUXDefault;
-      CancelButton.ModalResult := mrCancel;
-    end
-    else
-    begin
-      CancelButton.Caption := smbUXCancel;
-      CancelButton.ModalResult := mrCancel;
-    end;
-    dialog.addButton(cancelbutton.caption);
-
-    CancelButton.Width := 80;
-    if (size = uxdBig) then
-    begin
-      CancelButton.Width := CancelButton.Width * 2;
-      CancelButton.Height := CancelButton.Height * 2;
-      CancelButton.Font.Size := 12;
-    end;
-
-    // --- Center buttons ---
-    OkButton.Top := Combo.Top + Combo.Height + ifthen((size = uxdBig) , Padding * 3, Padding * 2);
-    CancelButton.Top := OkButton.Top;
-    totalButtonsWidth := OkButton.Width + Padding + CancelButton.Width;
-    OkButton.Left := (Dialog.ClientWidth - totalButtonsWidth) div 2;
-    CancelButton.Left := OkButton.Left + OkButton.Width + Padding;
-
-    // Final height
-    Dialog.ClientHeight := OkButton.Top + OkButton.Height + Padding;
+    OkButton     := MakeDialogButton(Dialog, size, smbSelect, mrOk);
+    CancelButton := MakeDialogButton(Dialog, size,
+      ifthen(Default, smbUXDefault, smbUXCancel), mrCancel);
+    CenterButtons(Dialog, OkButton, CancelButton, Combo.Top + Combo.Height, size, Padding);
     Dialog.ActiveControl := Combo;
 
     if ShowModalSafe(Dialog) = mrOk then
@@ -1910,12 +1819,8 @@ var
   TitleLabel, DescLabel: TLabel;
   Grid: TStringGrid;
   BgCol: TColor;
-  {$ifdef X_WIN}
-  OkButton, CancelButton: TDarkButton;
-  {$else}
-  OkButton, CancelButton: TButton;
-  {$endif}
-  totalButtonsWidth, i: integer;
+  OkButton, CancelButton: TWinControl;
+  i: integer;
   size: TUXDialogSize;
 begin
   Result := -1;
@@ -1968,43 +1873,9 @@ begin
     if (size = uxdBig) then
       Grid.Font.Size := 14;
 
-    // --- OK Button ---
-    {$ifdef X_WIN}OkButton := TDarkButton.Create(Dialog);{$else}OkButton := TButton.Create(Dialog);{$endif}
-    OkButton.Parent := Dialog;
-    {$ifdef LCLGTK2}OkButton.Font.Color := clBlack;{$endif}
-    OkButton.Caption := smbSelect;
-    dialog.addButton(okbutton.caption);
-    OkButton.ModalResult := mrOk;
-    OkButton.Width := 80;
-    if (size = uxdBig) then
-    begin
-      OkButton.Width := OkButton.Width * 2;
-      OkButton.Height := OkButton.Height * 2;
-      OkButton.Font.Size := 12;
-    end;
-
-    // --- Cancel Button ---
-    {$ifdef X_WIN}CancelButton := TDarkButton.Create(Dialog);{$else}CancelButton := TButton.Create(Dialog);{$endif}
-    CancelButton.Parent := Dialog;
-    CancelButton.Caption := smbUXCancel;
-    dialog.addButton(cancelbutton.caption);
-    CancelButton.ModalResult := mrCancel;
-    CancelButton.Width := 80;
-    if (size = uxdBig) then
-    begin
-      CancelButton.Width := CancelButton.Width * 2;
-      CancelButton.Height := CancelButton.Height * 2;
-      CancelButton.Font.Size := 12;
-    end;
-
-    // --- Center buttons ---
-    OkButton.Top := Grid.Top + Grid.Height + ifthen((size = uxdBig) , Padding * 3, Padding * 2);
-    CancelButton.Top := OkButton.Top;
-    totalButtonsWidth := OkButton.Width + Padding + CancelButton.Width;
-    OkButton.Left := (Dialog.ClientWidth - totalButtonsWidth) div 2;
-    CancelButton.Left := OkButton.Left + OkButton.Width + Padding;
-
-    Dialog.ClientHeight := OkButton.Top + OkButton.Height + Padding;
+    OkButton     := MakeDialogButton(Dialog, size, smbSelect,   mrOk);
+    CancelButton := MakeDialogButton(Dialog, size, smbUXCancel, mrCancel);
+    CenterButtons(Dialog, OkButton, CancelButton, Grid.Top + Grid.Height, size, Padding);
 
     if ShowModalSafe(Dialog) = mrOk then
       Result := Grid.Row;
@@ -2030,14 +1901,9 @@ var
   TitleLabel, DescLabel: TLabel;
   PreviewLabel: TLabel;
   FontCombo: TComboBox;
-  {$ifdef X_WIN}
-  OkButton, CancelButton: TDarkButton;
-  {$else}
-  OkButton, CancelButton: TButton;
-  {$endif}
+  OkButton, CancelButton: TWinControl;
   bgcol: TColor;
   size: TUXDialogSize;
-  totalButtonsWidth: integer;
   SelectedFont: TFont;
   i, initialIndex: integer;
 
@@ -2134,44 +2000,10 @@ begin
     Dialog.FontPickerPreview := PreviewLabel;
     FontCombo.OnChange := @Dialog.FontComboChange;
 
-    // --- OK Button ---
-    {$ifdef X_WIN}OkButton := TDarkButton.Create(Dialog);{$else}OkButton := TButton.Create(Dialog);{$endif}
-    OkButton.Parent := Dialog;
-    {$ifdef LCLGTK2}OkButton.Font.Color := clBlack;{$endif}
-    OkButton.Caption := smbUXOK;
-    dialog.addButton(okbutton.caption);
-    OkButton.ModalResult := mrOk;
-    OkButton.Width := 80;
-    if (size = uxdBig) then
-    begin
-      OkButton.Width := OkButton.Width * 2;
-      OkButton.Height := OkButton.Height * 2;
-      OkButton.Font.Size := 12;
-    end;
-    Dialog.ActiveControl := OkButton;
-
-    // --- Cancel Button ---
-    {$ifdef X_WIN}CancelButton := TDarkButton.Create(Dialog);{$else}CancelButton := TButton.Create(Dialog);{$endif}
-    CancelButton.Parent := Dialog;
-    CancelButton.Caption := smbUXCancel;
-    dialog.addButton(cancelbutton.caption);
-    CancelButton.ModalResult := mrCancel;
-    CancelButton.Width := 80;
-    if (size = uxdBig) then
-    begin
-      CancelButton.Width := CancelButton.Width * 2;
-      CancelButton.Height := CancelButton.Height * 2;
-      CancelButton.Font.Size := 12;
-    end;
-
-    // --- Center buttons ---
-    OkButton.Top := PreviewLabel.Top + PreviewLabel.Height + ifthen((size = uxdBig) , Padding * 3, Padding * 2);
-    CancelButton.Top := OkButton.Top;
-    totalButtonsWidth := OkButton.Width + Padding + CancelButton.Width;
-    OkButton.Left := (Dialog.ClientWidth - totalButtonsWidth) div 2;
-    CancelButton.Left := OkButton.Left + OkButton.Width + Padding;
-
-    Dialog.ClientHeight := OkButton.Top + OkButton.Height + Padding;
+    OkButton     := MakeDialogButton(Dialog, size, smbUXOK,     mrOk);
+    CancelButton := MakeDialogButton(Dialog, size, smbUXCancel, mrCancel);
+    CenterButtons(Dialog, OkButton, CancelButton,
+      PreviewLabel.Top + PreviewLabel.Height, size, Padding);
 
     ModalResult := ShowModalSafe(Dialog);
     if ModalResult = mrOk then
@@ -2203,14 +2035,9 @@ var
   IconBox: TImage;
   TitleLabel, DescLabel: TLabel;
   DatePicker: TDateEdit;
-  {$ifdef X_WIN}
-  OkButton, CancelButton: TDarkButton;
-  {$else}
-  OkButton, CancelButton: TButton;
-  {$endif}
+  OkButton, CancelButton: TWinControl;
   bgcol: TColor;
   size: TUXDialogSize;
-  totalButtonsWidth: integer;
 begin
   size := GetUXDialogSize(dialogsize);
   Result := ADefault;
@@ -2259,44 +2086,10 @@ begin
       DatePicker.Height := DatePicker.Height * 2;
     end;
 
-    // --- OK Button ---
-    {$ifdef X_WIN}OkButton := TDarkButton.Create(Dialog);{$else}OkButton := TButton.Create(Dialog);{$endif}
-    OkButton.Parent := Dialog;
-    {$ifdef LCLGTK2}OkButton.Font.Color := clBlack;{$endif}
-    OkButton.Caption := smbSelect;
-    dialog.addButton(okbutton.caption);
-    OkButton.ModalResult := mrOk;
-    OkButton.Width := 80;
-    if (size = uxdBig) then
-    begin
-      OkButton.Width := OkButton.Width * 2;
-      OkButton.Height := OkButton.Height * 2;
-      OkButton.Font.Size := 12;
-    end;
-    Dialog.ActiveControl := OkButton;
-
-    // --- Cancel Button ---
-    {$ifdef X_WIN}CancelButton := TDarkButton.Create(Dialog);{$else}CancelButton := TButton.Create(Dialog);{$endif}
-    CancelButton.Parent := Dialog;
-    CancelButton.Caption := smbUXCancel;
-    dialog.addButton(cancelbutton.caption);
-    CancelButton.ModalResult := mrCancel;
-    CancelButton.Width := 80;
-    if (size = uxdBig) then
-    begin
-      CancelButton.Width := CancelButton.Width * 2;
-      CancelButton.Height := CancelButton.Height * 2;
-      CancelButton.Font.Size := 12;
-    end;
-
-    // --- Center buttons ---
-    OkButton.Top := DatePicker.Top + DatePicker.Height + ifthen((size = uxdBig), Padding * 3, Padding * 2);
-    CancelButton.Top := OkButton.Top;
-    totalButtonsWidth := OkButton.Width + Padding + CancelButton.Width;
-    OkButton.Left := (Dialog.ClientWidth - totalButtonsWidth) div 2;
-    CancelButton.Left := OkButton.Left + OkButton.Width + Padding;
-
-    Dialog.ClientHeight := OkButton.Top + OkButton.Height + Padding;
+    OkButton     := MakeDialogButton(Dialog, size, smbSelect,   mrOk);
+    CancelButton := MakeDialogButton(Dialog, size, smbUXCancel, mrCancel);
+    CenterButtons(Dialog, OkButton, CancelButton,
+      DatePicker.Top + DatePicker.Height, size, Padding);
     Dialog.ActiveControl := DatePicker;
 
     ModalResult := ShowModalSafe(Dialog);
