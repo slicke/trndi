@@ -2508,6 +2508,8 @@ begin
       TempFont.Free;
     end;
 
+    MsgScroll := nil;  // may stay nil when NeededHeight fits without scrolling
+
     if (size = uxdBig) then
     begin
       // BIG-MODE: send desc first
@@ -2640,6 +2642,18 @@ begin
         MsgLabel.BorderSpacing.Bottom := padding; // Padding towards log panel
         dialog.contentText := msglabel.Caption;
       end;
+    end;
+
+    // In non-big mode the labels use absolute positioning (no Align), which
+    // macOS Cocoa AutoSize ignores — TopPanel collapses to the icon height and
+    // the text is clipped.  Measure the content bottom and pin the height.
+    if size <> uxdBig then
+    begin
+      TopPanel.AutoSize := false;
+      if Assigned(MsgScroll) then
+        TopPanel.Height := Max(IconBox.Height, MsgScroll.Top + MsgScroll.Height + padding)
+      else
+        TopPanel.Height := Max(IconBox.Height, MsgLabel.Top + MsgLabel.Height + padding);
     end;
 
     // LOG PANEL
