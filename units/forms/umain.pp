@@ -1267,6 +1267,8 @@ begin
       FDotWindowMenu.Add(item);
     end;
   end;
+  miDotSize.Visible := false;
+
   // Sync checked state to current ActiveDots
   for i := 0 to FDotWindowMenu.Count - 1 do
     FDotWindowMenu.Items[i].Checked :=
@@ -2212,10 +2214,7 @@ begin
   if (Length(TrendDots) > 0) and Assigned(TrendDots[1]) then
   begin
     TrendDots[1].Canvas.Font.Assign(TrendDots[1].Font);
-    // Use the same font size formula as ResizeDot: (lVal.Font.Size div 8) * dotscale
-    TrendDots[1].Canvas.Font.Size := round(Max((lVal.Font.Size div 8) * dotscale, 28));
-    // Use the same height calculation as ResizeDot: Max(TextHeight, Font.Size)
-    dotHeight := Max(TrendDots[1].Canvas.TextHeight(DOT_GRAPH), TrendDots[1].Canvas.Font.Size);
+    dotHeight := Max(TrendDots[1].Canvas.TextHeight(DOT_GRAPH), TrendDots[1].Font.Size);
   end;
 
   // Decide whether to draw low/high range indicators (0 disables)
@@ -2590,7 +2589,6 @@ begin
   if not isDot then
   begin // Returning to dot
     ResizeDot(l, c, ix);
-    l.Font.Size := round((ClientWidth div Max(c, 1)) * dotscale);
   end
   else
   begin
@@ -2647,28 +2645,33 @@ begin
     l.Visible := true;
 end;
 
-// Scales a dot's font size
+// Scales a dot to fill ~85% of its slot width so adjacent dots never overlap.
+// Slot width is derived from ClientWidth / c, ensuring the size is always
+// consistent with the current window width and dot count.
 procedure TfBG.ResizeDot(l: TDotControl; c, ix: integer);
 var
-  th, tw, minSize: integer;
+  th, tw, slotW: integer;
 begin
+  slotW := Max(1, fBG.ClientWidth div Max(c, 1));
   {$ifdef DARWIN}
-  // macOS: TLabel handles sizing automatically via AutoSize
   l.AutoSize := true;
-  l.Font.Size := round(Max((lVal.Font.Size div 8) * dotscale, 28)); // Ensure minimum font size
-  // Force immediate size calculation by triggering a layout update
+  l.Font.Size := Max(8, slotW);
+  tw := l.Canvas.TextWidth(DOT_GRAPH);
+  if tw > 0 then
+    l.Font.Size := Max(8, Round(l.Font.Size * (slotW * 85 div 100) / tw));
   l.AdjustSize;
   TrndiDLog(Format('TrendDots[%d] resized with Font Size = %d, Height=%d (AutoSize).',
     [ix, l.Font.Size, l.Height]));
   {$else}
   l.AutoSize := false;
-  l.Font.Size := round(Max((lVal.Font.Size div 8) * dotscale, 28)); // Ensure minimum font size
-  // Tighten control size to actual text metrics of the dot glyph
+  l.Font.Size := Max(8, slotW);
+  tw := l.Canvas.TextWidth(DOT_GRAPH);
+  if tw > 0 then
+    l.Font.Size := Max(8, Round(l.Font.Size * (slotW * 85 div 100) / tw));
   tw := l.Canvas.TextWidth(DOT_GRAPH);
   th := l.Canvas.TextHeight(DOT_GRAPH);
-  minSize := Max(th, l.Font.Size);
-  l.Width := tw;
-  l.Height := minSize;
+  l.Width := Max(1, tw);
+  l.Height := Max(th, l.Font.Size);
   TrndiDLog(Format('TrendDots[%d] resized with Font Size = %d, W=%d, H=%d.',
     [ix, l.Font.Size, l.Width, l.Height]));
   {$endif}
@@ -4935,27 +4938,7 @@ begin
   miDebugBackend.Visible := true;
   {$endif}
 
-  miDotNormal.Checked := false;
-  miDotBig.Checked := false;
-  miDotHuge.Checked := false;
   miDotVal.Checked := false;
-
-  if dotscale = 1 then
-    miDotNormal.Checked := true
-  else
-  if dotscale = 2 then
-    miDotBig.Checked := true
-  else
-  if dotscale = 3 then
-    miDotHuge.Checked := true
-  else
-  if dotscale = 0.7 then
-    miDotSmall.Checked := true
-  else
-  begin
-    miCustomDots.Checked := true;
-    miCustomDots.Caption := Format(RS_CUSTOM_DOTS, [dotscale]);
-  end;
 
   BuildDotWindowMenu;
 
@@ -5584,7 +5567,6 @@ begin
     
     ok := TryStrToFloat(Dot.Hint, Value, native.locale);
 
-    Dot.Font.Size := round((ClientWidth div Max(ActiveDots, 1)) * dotscale);
     if ok then
     begin
       // Normalize value to mmol/L for placement math; the API may return

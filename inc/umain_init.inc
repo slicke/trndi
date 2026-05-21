@@ -802,11 +802,6 @@ begin
 
     fSplash.incProgress(70, RS_INIT_UX);
     // UI preferences
-    {$ifdef DARWIN}
-    dotscale := GetFloatSetting('ux.dot_scale', 0.7);
-    {$else}
-    dotscale := GetFloatSetting('ux.dot_scale', 1);
-    {$endif}
     DOT_ADJUST := GetFloatSetting('ux.dot_adjust', 0);
 
     // Ensure MAX_MIN and MAX_RESULT cover the full dot window.
