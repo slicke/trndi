@@ -552,6 +552,8 @@ jobs:
           {
             echo "# Trndi Release ${TAG}"
             echo
+            echo "[![Donate via PayPal](https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif)](https://www.paypal.com/donate/?business=84S8A9EBJGGK8&no_recurring=0&item_name=Support+Trndi%21&currency_code=SEK)"
+            echo
             echo "> This is an automated build of Trndi's latest source code."
             echo
             echo "## 📝 Changes in This Build"
