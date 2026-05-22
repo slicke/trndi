@@ -250,21 +250,22 @@ end;
 
 function TfBG.AlertsSnoozed: boolean;
 begin
-  Result := (alertSnoozeUntil > 0) and (Now < alertSnoozeUntil);
-  if not Result then
-    alertSnoozeUntil := 0;
+  Result := FAlertEngine.AnySnoozed;
 end;
 
 procedure TfBG.UpdateAlertSnoozeMenu;
 var
   isSnoozed: boolean;
+  snoozeUntil: TDateTime;
 begin
   if miAlertSnooze = nil then
     Exit;
 
-  isSnoozed := AlertsSnoozed;
+  isSnoozed  := FAlertEngine.AnySnoozed;
+  snoozeUntil := FAlertEngine.ActiveSnoozeUntil;
+
   if isSnoozed then
-    miAlertSnooze.Caption := Format(RS_ALERT_SNOOZE_ACTIVE, [FormatDateTime('hh:nn', alertSnoozeUntil)])
+    miAlertSnooze.Caption := Format(RS_ALERT_SNOOZE_ACTIVE, [FormatDateTime('hh:nn', snoozeUntil)])
   else
     miAlertSnooze.Caption := RS_ALERT_SNOOZE;
 
@@ -400,19 +401,22 @@ end;
 
 procedure TfBG.EnsureConnectionBadgeControls;
 begin
-  if Assigned(FInternetBadgeBg) then
-    Exit;
+  if not Assigned(FInternetBadgeShadow) then
+  begin
+    FInternetBadgeShadow := TShape.Create(Self);
+    FInternetBadgeShadow.Parent := Self;
+    FInternetBadgeShadow.Shape := stRoundRect;
+    FInternetBadgeShadow.Pen.Style := psClear;
+  end;
 
-  FInternetBadgeShadow := TShape.Create(Self);
-  FInternetBadgeShadow.Parent := Self;
-  FInternetBadgeShadow.Shape := stRoundRect;
-  FInternetBadgeShadow.Pen.Style := psClear;
-
-  FInternetBadgeBg := TShape.Create(Self);
-  FInternetBadgeBg.Parent := Self;
-  FInternetBadgeBg.Shape := stRoundRect;
-  FInternetBadgeBg.Pen.Style := psSolid;
-  FInternetBadgeBg.Pen.Width := 1;
+  if not Assigned(FInternetBadgeBg) then
+  begin
+    FInternetBadgeBg := TShape.Create(Self);
+    FInternetBadgeBg.Parent := Self;
+    FInternetBadgeBg.Shape := stRoundRect;
+    FInternetBadgeBg.Pen.Style := psSolid;
+    FInternetBadgeBg.Pen.Width := 1;
+  end;
 end;
 
 procedure TfBG.ApplyConnectionBadgeLayout(const DisplayStatus: string;
@@ -517,12 +521,7 @@ end;
 
 procedure TfBG.SetAlertSnoozeMinutes(const Minutes: integer);
 begin
-  alertSnoozeUntil := IncMinute(Now, Minutes);
-  highAlerted := false;
-  lowAlerted := false;
-  missingAlerted := false;
-  lastMissingAlert := 0;
-  native.StopBadgeFlash;
+  FAlertEngine.SnoozeActive(Minutes);
   UpdateAlertSnoozeMenu;
   ShowMessage(Format(RS_ALERT_SNOOZE_FOR, [Minutes]));
 end;
@@ -544,12 +543,7 @@ end;
 
 procedure TfBG.miAlertSnoozeOffClick(Sender: TObject);
 begin
-  alertSnoozeUntil := 0;
-  highAlerted := false;
-  lowAlerted := false;
-  missingAlerted := false;
-  lastMissingAlert := 0;
-  native.StopBadgeFlash;
+  FAlertEngine.ResumeAll;
   UpdateAlertSnoozeMenu;
   ShowMessage(RS_ALERT_SNOOZE_OFF);
 end;

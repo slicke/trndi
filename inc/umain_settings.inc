@@ -413,9 +413,7 @@ procedure LoadUserSettings(f: TfConf);
         cbPos.ItemIndex := 0;
 
       cbSize.Checked := GetBoolSetting('size.main');
-      cbFlashHi.Checked := native.getBoolSetting('alerts.flash.high', false);
-      cbFlashLow.Checked := native.getBoolSetting('alerts.flash.low', false);
-      cbFlashPerfect.Checked := native.getBoolSetting('alerts.flash.perfect', false);
+      cbFlash.Visible := false;
 
       cbAlertHiLo.Checked := native.getBoolSetting('alerts.notice.hilo', true);
       cbAlertMissing.Checked := native.getBoolSetting('alerts.notice.missing', true);
@@ -653,10 +651,6 @@ procedure SaveUserSettings(f: TfConf);
 
       native.SetSetting('position.main', cbPos.ItemIndex);
       native.setSetting('size.main', cbSize.Checked);
-      native.setSetting('alerts.flash.high', cbFlashHi.Checked);
-      native.setSetting('alerts.flash.low', cbFlashLow.Checked);
-      native.setSetting('alerts.flash.perfect', cbFlashPerfect.Checked);
-
       native.setSetting('alerts.notice.hilo', cbAlertHiLo.Checked);
       native.setSetting('alerts.notice.missing', cbAlertMissing.Checked);
 

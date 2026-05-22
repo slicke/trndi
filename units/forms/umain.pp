@@ -88,7 +88,7 @@ LazFileUtils, uconf, uwizard, trndi.native, Trndi.API,
 trndi.api.xDrip,{$ifdef DEBUG} trndi.api.debug_custom, trndi.api.debug, trndi.api.debug_edge, trndi.api.debug_lowsoon, trndi.api.debug_sensorexpiry, trndi.api.debug_missing, trndi.api.debug_firstXmissing, trndi.api.debug_intermittentmissing, trndi.api.debug_perfect, trndi.api.debug_firstmissing, trndi.api.debug_secondmissing, trndi.api.debug_slow, trndi.api.debug_faultysensor, trndi.api.debug_latemissing,{$endif}
 {$ifdef LCLQt6}Qt6, QtWidgets,{$endif}
 StrUtils, slicke.touchdetection, ufloat, uhistorygraph, LCLType, trndi.webserver.threaded, razer.chroma.factory, razer.chroma,
-trndi.theme;
+trndi.theme, trndi.alert.engine;
 
 
 {$I ../../inc/defines.inc}
@@ -485,6 +485,7 @@ private
   tWebServerStart: TTimer;
 
   Chroma: TRazerChromaBase;
+  FAlertEngine: TAlertEngine;
 
   function dotsInView: integer;
   function setColorMode: boolean;
@@ -794,12 +795,6 @@ applocale: string;
 dotscale: single = 1;
 badge_adjust: single = 0;
 tir_icon: boolean = true;
-highAlerted: boolean = false; // A high alert is active
-lowAlerted: boolean = false; // A low alert is active
-missingAlerted: boolean = false; // A missing reading alert is active
-lastMissingAlert: TDateTime = 0; // Last time missing reading alert was shown
-sensorFaultAlerted: boolean = false; // Sensor-fault pattern currently active
-lastSensorFaultAlert: TDateTime = 0; // Last sensor-fault notification timestamp
 perfectTriggered: boolean = false; // A perfect reading is active
 PaintRange: boolean = true;
 PaintRangeCGMRange: boolean = false; // Show cgmRangeLo/cgmRangeHi inner threshold lines
@@ -843,9 +838,6 @@ debug_load_text: boolean = false;
 
 var
 last_popup: TDateTime = 0;
-bg_alert: boolean = false;
-alertSnoozeUntil: TDateTime = 0;
-  // If the BG is high/low since before, so we don't spam notifications
 placed: boolean = false; // If the window has been placed at setup
 WarnShowDetails: boolean = true; // controls whether fixWarningPanel adds reading/age info
 FWarnMessage: string = '';        // raw warning text; rebuilt by fixWarningPanel on resize
@@ -1012,6 +1004,8 @@ begin
 
   DoneCriticalSection(FReadingsLock);
 
+
+  FreeAndNil(FAlertEngine);
 
   if assigned(chroma) then
     chroma.free;

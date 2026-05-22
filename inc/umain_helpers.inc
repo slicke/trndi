@@ -38,19 +38,9 @@
 // Main form helper functions
 
 
-// Stops flashing the tray
 procedure StopFlashing;
 begin
-  // Acknowledge active high/low alert by user click
-  if native <> nil then
-  begin
-    if (not highAlerted) and (fBG.Color = bg_color_hi) then
-      highAlerted := true;
-    if (not lowAlerted) and (fBG.Color = bg_color_lo) then
-      lowAlerted := true;
-    // Stop flashing if any
-    native.StopBadgeFlash;
-  end;
+  // No-op: tray flash removed; kept as call site stub.
 end;
 
 procedure TfBG.APIReceiver(const msg: string; etype: TrndiAPIMsg);
