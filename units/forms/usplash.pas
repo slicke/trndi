@@ -42,8 +42,7 @@ unit usplash;
 interface
 
 uses
-Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls,
-LCLType, ComCtrls;
+Classes, SysUtils, Forms, Controls, Graphics, ExtCtrls, StdCtrls, LCLType;
 
 type
 
@@ -54,15 +53,18 @@ TfSplash = class(TForm)
   lTrndi: TLabel;
   lInfo: TLabel;
   lSplashWarn: TLabel;
-  pInfo: TProgressBar;
+  pbProgress: TPaintBox;
   procedure FormCreate(Sender: TObject);
   procedure FormKeyDown(Sender: TObject; var Key: word; Shift: TShiftState);
   procedure FormKeyPress(Sender: TObject; var Key: char);
+  procedure FormPaint(Sender: TObject);
+  procedure FormShow(Sender: TObject);
   procedure Image1Click(Sender: TObject);
+  procedure pbProgressPaint(Sender: TObject);
 private
-
+  FProgress: integer;
 public
-public procedure incProgress(const proc: integer; const title: string);
+  procedure incProgress(const proc: integer; const title: string);
 end;
 
 var
@@ -72,16 +74,65 @@ implementation
 
 {$R *.lfm}
 
+const
+  CARD_L      = 220;
+  CARD_T      = 68;
+  CARD_R      = 636;
+  CARD_B      = 336; // 254 px inner — fits 17 lines of original text at -10 font
+  CARD_MARGIN = 14;
+  CARD_CORNER = 18;
+
 { TfSplash }
 
 procedure TfSplash.incProgress(const proc: integer; const title: string);
 begin
   lInfo.Caption := title;
   if proc < 1 then
-    pInfo.Position := pInfo.Position + (-1 * proc)
+    Inc(FProgress, -proc)
   else
-    pInfo.Position := proc;
+    FProgress := proc;
+  pbProgress.Invalidate;
   Application.ProcessMessages;
+end;
+
+procedure TfSplash.FormPaint(Sender: TObject);
+begin
+  Canvas.Brush.Style := bsSolid;
+  Canvas.Brush.Color := $001E1E1E;
+  Canvas.Pen.Style   := psClear;
+  Canvas.RoundRect(CARD_L, CARD_T, CARD_R, CARD_B, CARD_CORNER, CARD_CORNER);
+  Canvas.Brush.Style := bsClear;
+  Canvas.Pen.Style   := psSolid;
+  Canvas.Pen.Width   := 1;
+  Canvas.Pen.Color   := $00363636;
+  Canvas.RoundRect(CARD_L, CARD_T, CARD_R, CARD_B, CARD_CORNER, CARD_CORNER);
+  Canvas.Pen.Color := $004E4E4E;
+  Canvas.MoveTo(CARD_L + CARD_CORNER div 2, CARD_T + 1);
+  Canvas.LineTo(CARD_R - CARD_CORNER div 2, CARD_T + 1);
+end;
+
+procedure TfSplash.FormShow({%H-}Sender: TObject);
+begin
+  Invalidate;
+end;
+
+procedure TfSplash.pbProgressPaint(Sender: TObject);
+var
+  fillW: integer;
+begin
+  with pbProgress.Canvas do
+  begin
+    Brush.Style := bsSolid;
+    Brush.Color := $00141414;
+    Pen.Style   := psClear;
+    FillRect(pbProgress.ClientRect);
+    if FProgress > 0 then
+    begin
+      fillW := pbProgress.Width * FProgress div 100;
+      Brush.Color := $0000DC84;
+      FillRect(Rect(0, 0, fillW, pbProgress.Height));
+    end;
+  end;
 end;
 
 procedure TfSplash.Image1Click({%H-}Sender: TObject);
@@ -91,6 +142,7 @@ end;
 
 procedure TfSplash.FormCreate({%H-}Sender: TObject);
 begin
+  FProgress := 0;
   {$ifdef X_LINUXBSD}
   lSplashWarn.Font.Size := 8;
   {$endif}
