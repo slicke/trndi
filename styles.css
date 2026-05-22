@@ -74,6 +74,19 @@ body {
     color: #2563eb;
 }
 
+.nav-discord {
+    background: #5865F2;
+    color: #fff !important;
+    padding: 6px 14px;
+    border-radius: 6px;
+    transition: background 0.2s ease !important;
+}
+
+.nav-discord:hover {
+    background: #4752c4 !important;
+    color: #fff !important;
+}
+
 /* Hero section */
 .hero {
     padding: 120px 0 80px;
@@ -174,6 +187,92 @@ body {
     margin-top: 30px;
 }
 
+/* Release badge in hero */
+.hero-release {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 20px;
+    padding: 6px 16px;
+    margin-bottom: 30px;
+    font-size: 0.95rem;
+}
+
+.release-label {
+    opacity: 0.8;
+}
+
+.release-version {
+    font-weight: 700;
+}
+
+.release-date {
+    opacity: 0.75;
+    font-size: 0.85rem;
+}
+
+/* Discord button in hero */
+.btn-discord {
+    display: inline-block;
+    padding: 15px 30px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+    background: #5865F2;
+    color: #fff;
+}
+
+.btn-discord:hover {
+    background: #4752c4;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(88,101,242,0.4);
+}
+
+/* Stats bar */
+.stats-bar {
+    background: #1f2937;
+    color: #fff;
+    padding: 20px 0;
+}
+
+.stats-inner {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0;
+    flex-wrap: wrap;
+}
+
+.stat {
+    padding: 4px 32px;
+    font-size: 1rem;
+    color: #d1d5db;
+    text-align: center;
+}
+
+.stat strong {
+    color: #fff;
+    font-size: 1.2rem;
+    display: block;
+}
+
+.stat-divider {
+    width: 1px;
+    height: 36px;
+    background: rgba(255,255,255,0.2);
+}
+
+/* Footnote below features */
+.footnote {
+    color: #6b7280;
+    font-size: 0.85rem;
+    margin: 20px 0 0 25px;
+}
+
 /* Screenshots */
 .screenshots {
     padding: 80px 0;
@@ -258,6 +357,63 @@ body {
 .feature p {
     color: #6b7280;
     line-height: 1.6;
+}
+
+/* Sources section */
+.sources {
+    padding: 80px 0;
+    background: #1f2937;
+    color: #fff;
+}
+
+.sources h2 {
+    text-align: center;
+    font-size: 2.5rem;
+    margin-bottom: 12px;
+}
+
+.section-sub {
+    text-align: center;
+    color: #9ca3af;
+    margin-bottom: 50px;
+    font-size: 1.1rem;
+}
+
+.sources-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 30px;
+}
+
+.source-item {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    padding: 32px 24px;
+    text-align: center;
+    transition: transform 0.3s ease, background 0.3s ease;
+}
+
+.source-item:hover {
+    transform: translateY(-4px);
+    background: rgba(255,255,255,0.09);
+}
+
+.source-icon {
+    font-size: 2.5rem;
+    margin-bottom: 16px;
+}
+
+.source-item h3 {
+    font-size: 1.2rem;
+    margin-bottom: 10px;
+    color: #fff;
+}
+
+.source-item p {
+    color: #9ca3af;
+    font-size: 0.95rem;
+    line-height: 1.5;
 }
 
 /* Download */
@@ -423,6 +579,84 @@ body {
     margin-bottom: 15px;
     font-size: 1.1rem;
     line-height: 1.6;
+}
+
+/* Setup tip */
+.setup-tip {
+    margin-top: 24px;
+    padding: 12px 16px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 8px;
+    font-size: 0.95rem;
+    color: #d1d5db;
+}
+
+/* Community section */
+.community {
+    padding: 70px 0;
+    background: linear-gradient(135deg, #5865F2 0%, #764ba2 100%);
+    color: #fff;
+}
+
+.community-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 40px;
+    flex-wrap: wrap;
+}
+
+.community-text h2 {
+    font-size: 2rem;
+    margin-bottom: 10px;
+}
+
+.community-text p {
+    opacity: 0.85;
+    max-width: 480px;
+    font-size: 1.05rem;
+}
+
+.community-actions {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.btn-community-discord {
+    display: inline-block;
+    padding: 14px 28px;
+    background: #fff;
+    color: #5865F2;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.btn-community-discord:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+}
+
+.btn-community-gh {
+    display: inline-block;
+    padding: 14px 28px;
+    background: transparent;
+    color: #fff;
+    border: 2px solid rgba(255,255,255,0.6);
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.btn-community-gh:hover {
+    background: rgba(255,255,255,0.1);
+    border-color: #fff;
+    transform: translateY(-2px);
 }
 
 /* Footer */

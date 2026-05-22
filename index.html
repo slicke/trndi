@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Trndi - CGM Data on Desktop & Raspberry Pi</title>
-    <meta name="description" content="Desktop app for blood sugar monitoring. Works with Nightscout, Dexcom Share, Tandem Source, and xDrip. Supports Windows, macOS, Linux, and Raspberry Pi.">
+    <meta name="description" content="Free desktop app for blood sugar monitoring. Works with Nightscout, Dexcom Share, Tandem Source, and xDrip. Supports Windows, macOS, Linux, and Raspberry Pi.">
     <link rel="stylesheet" href="styles.css">
     <link rel="icon" href="Trndi.ico">
 </head>
@@ -12,13 +12,15 @@
     <nav class="navbar">
         <div class="nav-container">
             <div class="nav-logo">
-                <img src="doc/img/trndi-logo.png" alt="Trndi Logo">
+                <img src="Trndi.png" alt="Trndi Logo">
                 <span>Trndi</span>
             </div>
             <div class="nav-links">
                 <a href="#features">Features</a>
+                <a href="#sources">Sources</a>
                 <a href="#download">Download</a>
                 <a href="#setup">Setup</a>
+                <a href="https://discord.gg/QXACfpcW" class="nav-discord">💬 Discord</a>
                 <a href="https://github.com/slicke/trndi">GitHub</a>
             </div>
         </div>
@@ -27,12 +29,19 @@
     <header class="hero">
         <div class="hero-content">
             <img src="doc/img/trndi-logo.png" alt="Trndi Logo" class="hero-logo">
-            <h1>CGM Data on Desktop & Raspberry Pi</h1>
-            <p class="hero-subtitle">Nightscout • Dexcom • Tandem Source • xDrip WiFi</p>
-            <p class="hero-platforms">Windows • macOS • Linux • Raspberry Pi • Embedded Linux</p>
-            <p class="hero-latest">Latest Release: <span id="latest-release">Loading...</span>, <span id="release-date">Loading Date...</span></p>
-            <br><div class="hero-buttons">
-                <a href="#download" class="btn-primary">Download Now</a>
+            <h1>CGM Data on Desktop &amp; Raspberry Pi</h1>
+            <p class="hero-subtitle">Nightscout &bull; Dexcom &bull; Tandem Source &bull; xDrip WiFi</p>
+            <p class="hero-platforms">Windows &bull; macOS &bull; Linux &bull; Raspberry Pi &bull; Embedded Linux</p>
+
+            <div class="hero-release">
+                <span class="release-label">Latest release:</span>
+                <span id="latest-release" class="release-version">Loading&hellip;</span>
+                <span id="release-date" class="release-date"></span>
+            </div>
+
+            <div class="hero-buttons">
+                <a href="#download" class="btn-primary">Download</a>
+                <a href="https://discord.gg/QXACfpcW" class="btn-discord">💬 Join Discord</a>
                 <a href="https://github.com/slicke/trndi" class="btn-secondary">View on GitHub</a>
             </div>
 
@@ -42,19 +51,32 @@
         </div>
     </header>
 
+    <div class="stats-bar">
+        <div class="container stats-inner">
+            <div class="stat"><strong>5+</strong> CGM Sources</div>
+            <div class="stat-divider"></div>
+            <div class="stat"><strong>10+</strong> Languages</div>
+            <div class="stat-divider"></div>
+            <div class="stat"><strong>4</strong> Platforms</div>
+            <div class="stat-divider"></div>
+            <div class="stat"><strong>Free</strong> &amp; Open Source</div>
+        </div>
+    </div>
+
     <section class="screenshots">
         <div class="container">
+            <h2>See it in action</h2>
             <div class="screenshot-grid">
                 <div class="screenshot-item">
-                    <img src="doc/img/img_win.png" alt="Trndi on Windows">
+                    <img src="doc/img/img_win.png" alt="Trndi on Windows 11">
                     <h3>Windows 11</h3>
                 </div>
                 <div class="screenshot-item">
-                    <img src="doc/img/img_lin.png" alt="Trndi on Linux">
+                    <img src="doc/img/img_lin.png" alt="Trndi on Fedora Linux">
                     <h3>Fedora Linux</h3>
                 </div>
                 <div class="screenshot-item">
-                    <img src="doc/img/img_rpi.png" alt="Trndi on Raspberry Pi">
+                    <img src="doc/img/img_rpi.png" alt="Trndi on Raspberry Pi with touchscreen">
                     <h3>Raspberry Pi</h3>
                 </div>
             </div>
@@ -68,101 +90,130 @@
                 <div class="feature">
                     <div class="feature-icon">💻</div>
                     <h3>Native Desktop App</h3>
-                    <p>Runs natively on your computer without needing installation. No dependencies required!*</p>
+                    <p>Runs natively on your computer — no browser, no cloud middleman. Just your data on your screen.</p>
                 </div>
                 <div class="feature">
-                    <div class="feature-icon">🌐</div>
-                    <h3>Multiple Sources</h3>
-                    <p>Works with Nightscout, Dexcom Share, and Tandem Source. Also with xDrip over local WiFi</p>
+                    <div class="feature-icon">📊</div>
+                    <h3>Trend Graph</h3>
+                    <p>Displays readings in a clear trend graph with customizable color-coded high, normal, and low ranges.</p>
                 </div>
                 <div class="feature">
-                    <div class="feature-icon">🔧</div>
-                    <h3>JavaScript Extensions</h3>
-                    <p>Supports modern JavaScript extensions for customization</p>
+                    <div class="feature-icon">🔮</div>
+                    <h3>Predictions</h3>
+                    <p>Experimental glucose predictions show where your reading is heading — with optional warning overlays for predicted lows and highs.</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">♿</div>
+                    <h3>Accessibility Built-in</h3>
+                    <p>Text-to-speech announces readings aloud. High contrast mode, adjustable voice and speed, and screen-reader-friendly dialogs.</p>
                 </div>
                 <div class="feature">
                     <div class="feature-icon">📱</div>
                     <h3>Touch Screen Ready</h3>
-                    <p>Works perfectly on touch-screen devices and Raspberry Pi displays</p>
+                    <p>Works perfectly on touch devices — ideal for a Raspberry Pi kiosk display by the bed or in the kitchen.</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">👥</div>
+                    <h3>Multi-User</h3>
+                    <p>Monitor more than one person. Each account has its own source, settings, and JavaScript plugins.</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🧩</div>
+                    <h3>JavaScript Extensions</h3>
+                    <p>A built-in QuickJS engine lets you write custom logic, alerts, and integrations without recompiling.</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🌐</div>
+                    <h3>Web API</h3>
+                    <p>Expose glucose data to other apps and dashboards via Trndi's built-in local Web API.</p>
                 </div>
                 <div class="feature">
                     <div class="feature-icon">🌍</div>
                     <h3>Multi-Language</h3>
-                    <p>Supports multiple languages with easy localization</p>
+                    <p>Ships with 10+ translations. Adding a new language is straightforward — contributions welcome!</p>
                 </div>
                 <div class="feature">
-                    <div class="feature-icon">👥</div>
-                    <h3>Multi-User Support</h3>
-                    <p>Supports multiple diabetic users</p>
-                </div>
-                <div class="feature">
-                    <div class="feature-icon">🎨</div>
-                    <h3>Dark & Light Themes</h3>
-                    <p>Beautiful interface with both dark and light color modes</p>
-                </div>
-                <div class="feature">
-                    <div class="feature-icon">📊</div>
-                    <h3>Trend Graphs</h3>
-                    <p>Displays readings in clear trend graphs with color-coded ranges</p>
-                </div>
-                <div class="feature">
-                    <div class="feature-icon">💝</div>
-                    <h3>Free & Open Source</h3>
-                    <p>Completely free with open source code available on GitHub</p>
+                    <div class="feature-icon">🎮</div>
+                    <h3>Razer Chroma</h3>
+                    <p>Lights up your Razer peripherals in different colors for normal, high, and low readings on Windows and Linux.</p>
                 </div>
                 <div class="feature">
                     <div class="feature-icon">🛡️</div>
-                    <h3>Proxy Support</h3>
-                    <p>Supports proxy configurations for enhanced privacy and security</p>
-                </div>                
+                    <h3>Proxy &amp; Privacy</h3>
+                    <p>Native proxy support, a Privacy Mode that hides the actual glucose value, and no mandatory account required.</p>
+                </div>
                 <div class="feature">
-                    <div class="feature-icon">🧩</div>
-                    <h3>Extensions Support</h3>
-                    <p>Supports modern JavaScript extensions for customization</p>
-                </div>                                
-                <div class="feature">
-                    <div class="feature-icon">🗔</div>
-                    <h3>Resource Friendly</h3>
-                    <p>Small and compact with low memory usage</p>
-                </div>                
+                    <div class="feature-icon">💝</div>
+                    <h3>Free &amp; Open Source</h3>
+                    <p>GPLv3. No subscription, no ads, no data collection. Fork it, improve it, share it.</p>
+                </div>
             </div>
         </div>
-        <br><h6 style="color:#6b7280;margin-left: 25px;">* Linux may require additional libraries depending on the distribution.</h6>
+        <p class="footnote">* Linux may require additional libraries depending on the distribution.</p>
+    </section>
+
+    <section id="sources" class="sources">
+        <div class="container">
+            <h2>Supported CGM Sources</h2>
+            <p class="section-sub">Connect to the system you already use — no extra hardware needed.</p>
+            <div class="sources-grid">
+                <div class="source-item">
+                    <div class="source-icon">🌙</div>
+                    <h3>Nightscout</h3>
+                    <p>Self-hosted or cloud. High/low settings auto-imported from your server. Supports both v2 and v3 APIs.</p>
+                </div>
+                <div class="source-item">
+                    <div class="source-icon">📡</div>
+                    <h3>Dexcom Share</h3>
+                    <p>US, EU, and Japan regions supported. Connects via the official Dexcom Share API — classic and new.</p>
+                </div>
+                <div class="source-item">
+                    <div class="source-icon">💙</div>
+                    <h3>Tandem Source</h3>
+                    <p>Connects to the Tandem Source cloud with your existing Tandem account credentials.</p>
+                </div>
+                <div class="source-item">
+                    <div class="source-icon">📶</div>
+                    <h3>xDrip+ WiFi</h3>
+                    <p>Connects locally over your home network to the xDrip+ Android app — no cloud needed.</p>
+                </div>
+            </div>
+        </div>
     </section>
 
     <section id="download" class="download">
         <div class="container">
             <h2>Download Trndi</h2>
             <p>Get the latest version for your platform</p>
-            
+
             <div class="download-grid">
                 <div class="download-item">
                     <div class="download-icon">🪟</div>
                     <h3>Windows</h3>
-                    <p>Windows 10, 11 (x64)</p>
-                    <a href="https://github.com/slicke/trndi/releases/latest/download/TrndiSetup.exe" class="btn-download">Download for Windows</a>
-                    <p class="download-subtext"><small>Portable (.zip) available below</small></p>
+                    <p>Windows 10 &amp; 11 (x64)</p>
+                    <a href="https://github.com/slicke/trndi/releases/latest/download/TrndiSetup.exe" class="btn-download">Download Installer</a>
+                    <p class="download-subtext"><small>Portable .zip available below</small></p>
                 </div>
                 <div class="download-item">
                     <div class="download-icon">🍎</div>
                     <h3>macOS</h3>
                     <p>Apple Silicon</p>
-                    <a href="https://github.com/slicke/trndi/releases/latest/download/Trndi-macos-silicon.dmg" class="btn-download">Download for macOS</a>
-                    <p class="download-subtext"><small>Portable (.zip) available below</small></p>
+                    <a href="https://github.com/slicke/trndi/releases/latest/download/Trndi-macos-silicon.dmg" class="btn-download">Download DMG</a>
+                    <p class="download-subtext"><small>Portable .zip available below</small></p>
                 </div>
                 <div class="download-item">
                     <div class="download-icon">🐧</div>
-                    <h3>Linux (x64)</h3>
+                    <h3>Linux x64</h3>
                     <p>Most distributions (amd64)</p>
                     <a href="https://github.com/slicke/trndi/releases/latest/download/Trndi-linux-amd64.zip" class="btn-download">Download for Linux</a>
-                    <p class="download-subtext"><small>More options below: .deb/.rpm/AppImage</small></p>
+                    <p class="download-subtext"><small>.deb / .rpm / AppImage below</small></p>
                 </div>
                 <div class="download-item">
                     <div class="download-icon">🥧</div>
                     <h3>Raspberry Pi</h3>
                     <p>ARM64 / aarch64</p>
                     <a href="https://github.com/slicke/trndi/releases/latest/download/Trndi-linux-arm64.zip" class="btn-download">Download for Pi</a>
-                    <p class="download-subtext"><small>More options below: .deb/.rpm/AppImage</small></p>
+                    <p class="download-subtext"><small>.deb / .rpm / AppImage below</small></p>
                 </div>
             </div>
 
@@ -170,29 +221,28 @@
                 <p><strong>More options:</strong></p>
                 <div class="additional-downloads">
                     <div class="download-category">
-                        <h4>Linux Packages:</h4>
-                        <a href="https://github.com/slicke/trndi/releases/latest/">Ubuntu/Debian (.deb)</a> • 
-                        <a href="https://github.com/slicke/trndi/releases/latest/">Fedora/RHEL (.rpm)</a> •
-                        <a href="https://github.com/slicke/trndi/releases/latest/download/Trndi-x86_64.AppImage">AppImage (x86_64)</a> •
+                        <h4>Linux Packages</h4>
+                        <a href="https://github.com/slicke/trndi/releases/latest/">Ubuntu/Debian (.deb)</a> &bull;
+                        <a href="https://github.com/slicke/trndi/releases/latest/">Fedora/RHEL (.rpm)</a> &bull;
+                        <a href="https://github.com/slicke/trndi/releases/latest/download/Trndi-x86_64.AppImage">AppImage (x86_64)</a> &bull;
                         <a href="https://github.com/slicke/trndi/releases/latest/download/Trndi-aarch64.AppImage">AppImage (aarch64)</a>
                     </div>
                     <div class="download-category">
-                        <h4>Raspberry Pi Packages:</h4>
-                        <a href="https://github.com/slicke/trndi/releases/latest/">ARM64 Raspbian (.deb)</a> • 
-                        <a href="https://github.com/slicke/trndi/releases/latest/">ARM64 Fedora (.rpm)</a>
+                        <h4>Raspberry Pi Packages</h4>
+                        <a href="https://github.com/slicke/trndi/releases/latest/">ARM64 .deb</a> &bull;
+                        <a href="https://github.com/slicke/trndi/releases/latest/">ARM64 .rpm</a>
                     </div>
                     <div class="download-category">
-                        <h4>Alternative macOS:</h4>
-                        <a href="https://github.com/slicke/trndi/releases/latest/download/Trndi-macos-silicon.zip">Portable (.zip)</a>
+                        <h4>Windows (portable)</h4>
+                        <a href="https://github.com/slicke/trndi/releases/latest/download/Trndi-windows-x64.zip">Portable .zip</a> &bull;
+                        <a href="https://github.com/slicke/trndi/blob/main/doc/NUGET.md">NuGet / Chocolatey</a>
                     </div>
                     <div class="download-category">
-                        <h4>Alternative Windows:</h4>
-                        <a href="https://github.com/slicke/trndi/releases/latest/download/Trndi-windows-x64.zip">Portable (.zip)</a> • 
-                        Advanced: NuGet package (see documentation)
+                        <h4>macOS (portable)</h4>
+                        <a href="https://github.com/slicke/trndi/releases/latest/download/Trndi-macos-silicon.zip">Portable .zip</a>
                     </div>
-                    
                 </div>
-                <p><strong>All versions:</strong> <a href="https://github.com/slicke/trndi/releases/latest">View all releases on GitHub</a></p>
+                <p><strong>All versions:</strong> <a href="https://github.com/slicke/trndi/releases">View all releases on GitHub</a></p>
             </div>
         </div>
     </section>
@@ -203,30 +253,45 @@
             <div class="setup-grid">
                 <div class="setup-item">
                     <h3>🌙 Nightscout</h3>
-                    <p>Settings will be fetched from your server and auto-applied. Just enter your Nightscout URL!</p>
+                    <p>Enter your Nightscout URL — Trndi fetches your high/low settings automatically from the server.</p>
                 </div>
                 <div class="setup-item">
-                    <h3>📱 Dexcom Share</h3>
-                    <p>See our <a href="https://github.com/slicke/trndi/blob/main/guides/Dexcom.md">Dexcom setup guide</a> for detailed instructions.</p>
+                    <h3>📡 Dexcom Share</h3>
+                    <p>Use your Dexcom username and password. See the <a href="https://github.com/slicke/trndi/blob/main/guides/Dexcom.md">Dexcom setup guide</a> for region selection.</p>
                 </div>
                 <div class="setup-item">
-                    <h3>📡 xDrip</h3>
-                    <p>Turn on the local web server in xDrip and use that IP/password in Trndi settings.</p>
+                    <h3>📶 xDrip+</h3>
+                    <p>Enable the local web server in xDrip+, then enter that IP address and password in Trndi.</p>
                 </div>
                 <div class="setup-item">
-                    <h3>🔗 Tandem Source</h3>
-                    <p>Use your Tandem account credentials to connect and fetch CGM data.</p>
+                    <h3>💙 Tandem Source</h3>
+                    <p>Enter your Tandem account email and password. See the <a href="https://github.com/slicke/trndi/blob/main/guides/Tandem.md">Tandem setup guide</a> for details.</p>
+                </div>
             </div>
-            
+
             <div class="setup-instructions">
                 <h3>Getting Started</h3>
                 <ol>
-                    <li>Download and run Trndi for your platform<br><small>For Linux, read the <a href="https://github.com/slicke/trndi/blob/main/README.md#linux-notes">Linux notes</a>.</small></li>
-                    <li>Setup the app</li>
-                    <li>Choose your CGM source and enter credentials</li>
-                    <li>Save settings and enjoy your desktop CGM monitoring!</li>
-                    <li>Right-click to access the context menu, and configure to your liking<br><small>The right-click menu provides options for customization, and settings.</small></li>
+                    <li><strong>Download and run Trndi</strong> for your platform above.<br><small>Linux users: check the <a href="https://github.com/slicke/trndi/blob/main/README.md#linux-notes">Linux notes</a> if Trndi won't start.</small></li>
+                    <li><strong>Right-click</strong> the reading on screen and choose <em>Settings</em>.</li>
+                    <li><strong>Select your CGM source</strong> and enter your credentials.</li>
+                    <li><strong>Save</strong> — readings will start appearing within a minute.</li>
+                    <li><strong>Customize</strong> via right-click &rarr; Settings: colors, fonts, alerts, and more.</li>
                 </ol>
+                <p class="setup-tip">💡 Tip: right-click is also how you access the graph, TIR stats, and privacy mode.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="community">
+        <div class="container community-inner">
+            <div class="community-text">
+                <h2>Join the community</h2>
+                <p>Ask questions, share your setup, report bugs, or just hang out with other Trndi users and contributors.</p>
+            </div>
+            <div class="community-actions">
+                <a href="https://discord.gg/QXACfpcW" class="btn-community-discord">💬 Join us on Discord</a>
+                <a href="https://github.com/slicke/trndi/issues" class="btn-community-gh">Report an Issue</a>
             </div>
         </div>
     </section>
@@ -236,60 +301,44 @@
             <div class="footer-content">
                 <div class="footer-links">
                     <a href="https://github.com/slicke/trndi">GitHub</a>
+                    <a href="https://discord.gg/QXACfpcW">Discord</a>
                     <a href="https://github.com/slicke/trndi/issues">Report Issues</a>
                     <a href="https://github.com/slicke/trndi/blob/main/CONTRIBUTING.md">Contributing</a>
                     <a href="https://github.com/slicke/trndi/releases">Releases</a>
+                    <a href="https://github.com/slicke/trndi/blob/main/doc/LANGUAGES.md">Translations</a>
                 </div>
                 <div class="footer-info">
-                    <p>&copy; 2025 Trndi. Free and open source software.</p>
+                    <p>&copy; 2026 Trndi. Free and open source software (GPLv3).</p>
                 </div>
             </div>
         </div>
     </footer>
 
     <script>
-        // Smooth scrolling for navigation links
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function (e) {
                 e.preventDefault();
-                document.querySelector(this.getAttribute('href')).scrollIntoView({
-                    behavior: 'smooth'
-                });
+                document.querySelector(this.getAttribute('href')).scrollIntoView({ behavior: 'smooth' });
             });
         });
 
-        // Add navbar background on scroll
-        window.addEventListener('scroll', function() {
-            const navbar = document.querySelector('.navbar');
-            if (window.scrollY > 100) {
-                navbar.classList.add('scrolled');
-            } else {
-                navbar.classList.remove('scrolled');
-            }
+        window.addEventListener('scroll', function () {
+            document.querySelector('.navbar').classList.toggle('scrolled', window.scrollY > 100);
         });
+
+        fetch('https://api.github.com/repos/slicke/trndi/releases/latest')
+            .then(r => r.json())
+            .then(data => {
+                const name = data.name || data.tag_name || '';
+                const date = new Date(data.published_at).toLocaleDateString(undefined, {
+                    year: 'numeric', month: 'short', day: 'numeric'
+                });
+                document.getElementById('latest-release').textContent = name;
+                document.getElementById('release-date').textContent = date;
+            })
+            .catch(() => {
+                document.getElementById('latest-release').textContent = 'see GitHub';
+            });
     </script>
 </body>
-<script>
-    const owner = "slicke";
-  const repo = "trndi";
-
- fetch(`https://api.github.com/repos/${owner}/${repo}/releases/latest`)
-    .then(response => response.json())
-    .then(data => {
-      const name = data.name || data.tag_name || "(no name)";
-      const publishedDate = new Date(data.published_at);
-      const formatted = publishedDate.toLocaleDateString(undefined, {
-        year: "numeric",
-        month: "short",
-        day: "numeric"
-      });
-
-      document.getElementById("latest-release").textContent = name;
-      document.getElementById("release-date").textContent = `Released ${formatted}`;
-    })
-    .catch(err => {
-      console.error("Fetch failed:", err);
-      document.getElementById("latest-release").textContent = "(unavailable)";
-    });
-</script>
 </html>
