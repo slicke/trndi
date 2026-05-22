@@ -1293,10 +1293,6 @@ msgstr "Synlighet"
 msgid "Very Big"
 msgstr "Mycket stor"
 
-#: tfsplash.linfo.caption
-msgid "Loading:"
-msgstr "Laddar:"
-
 #: tfsplash.lsplashwarn.caption
 msgctxt "tfsplash.lsplashwarn.caption"
 msgid ""
