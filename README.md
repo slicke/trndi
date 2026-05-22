@@ -1,5 +1,7 @@
 > ⚠️ _Quick intro:_ __Right-click__ on Trndi's window to open its menu for settings and other options!
 
+[![Donate via PayPal](https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif)](https://www.paypal.com/donate/?business=84S8A9EBJGGK8&no_recurring=0&item_name=Support+Trndi%21&currency_code=SEK)
+
 [![Build & Release (All Platforms)](https://github.com/slicke/trndi/actions/workflows/build.yml/badge.svg?branch=main&event=push)](https://github.com/slicke/trndi/actions/workflows/build.yml)
 
 ![Trndi](doc/img/trndi-logo.png)
@@ -28,6 +30,7 @@
   - [BSD](#bsd)
 - [Setup](#setup)
 - [Support](#support)
+- [Donate](#donate)
 - [Development](#development)
 	- [Building](#building)
 	- [Command line](#command-line)
@@ -251,6 +254,11 @@ Right click or click/hold the reading (or "Setup" text) and choose settings to a
 
 # Support
 Join us on [Discord](https://discord.gg/QXACfpcW) to discuss issues or new features
+
+## Donate
+If Trndi is useful to you, consider supporting its development:
+
+[![Donate via PayPal](https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif)](https://www.paypal.com/donate/?business=84S8A9EBJGGK8&no_recurring=0&item_name=Support+Trndi%21&currency_code=SEK)
 
 # Development
 Development tools can be obtained via most distros package managers:
