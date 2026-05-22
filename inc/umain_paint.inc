@@ -248,76 +248,85 @@ end;
 procedure TfBG.pnNextProgressPaint(Sender: TObject);
 var
   pnl: TPanel;
-  elapsedMs: int64;
+  elapsedMs, overdueMs: int64;
   frac: double;
-  fillR, trackR: TRect;
-  fillCol: TColor;
-  lastDt: TDateTime;
-  cornerRadius: integer;
+  fillR: TRect;
+  fillCol, trackCol, edgeCol: TColor;
+  cr, fillH: integer;
   isOverdue: boolean;
-  hasProgress: boolean;
-  overdueRedThresholdMs: int64;
 begin
   pnl := Sender as TPanel;
-
   if (bgs = nil) or (Length(bgs) = 0) then
     Exit;
 
-  lastDt := lastReading.date;
-  elapsedMs := MilliSecondsBetween(Now, lastDt);
+  elapsedMs := MilliSecondsBetween(Now, lastReading.date);
   if elapsedMs < 0 then
     elapsedMs := 0;
   if BG_REFRESH > 0 then
     frac := Min(1.0, elapsedMs / BG_REFRESH)
   else
     frac := 1.0;
-  overdueRedThresholdMs := BG_REFRESH + 60000;
-  isOverdue := elapsedMs > overdueRedThresholdMs;
-  hasProgress := elapsedMs > 0;
+  overdueMs := BG_REFRESH + 60000;
+  isOverdue := elapsedMs > overdueMs;
 
+  // Track: dark recessed pill channel
+  trackCol := BlendColors(fBG.Color, clBlack, 0.72);
+
+  // Fill: teal (fresh reading) → amber (reading due) → pomegranate (overdue)
+  // Colors mirror the modern theme palette so the bar feels consistent.
   if isOverdue then
-    fillCol := clRed
+    fillCol := RGBToColor(192, 57, 43)    // pomegranate  — matches bg_color_lo
+  else if frac >= 0.8 then
+    fillCol := RGBToColor(230, 126, 34)   // pumpkin      — matches bg_color_hi
   else
+    fillCol := BlendColors(
+      RGBToColor(230, 126, 34),  // amber (reached at frac = 0.8)
+      RGBToColor(46, 150, 136),  // teal  (at frac = 0, just after a reading)
+      frac / 0.8
+    );
+
+  // 1px lighter right-edge highlight for depth
+  edgeCol := LightenColor(fillCol, 0.30);
+
+  // Capsule radius: half the panel width gives a perfect pill shape
+  cr := Max(3, pnl.Width div 2);
+
+  // Step 1 — draw the full-panel track as a dark pill
+  with pnl.Canvas do
   begin
-    fillCol := BlendColors(clBlue, RGBToColor(255, 165, 0), 1 - frac);
-    fillCol := LightenColor(fillCol, 0.2);
-    if frac >= 0.8 then
-      fillCol := RGBToColor(255, 165, 0);
+    Brush.Style := bsSolid;
+    Brush.Color := trackCol;
+    Pen.Style := psClear;
+    RoundRect(0, 0, pnl.Width, pnl.Height, cr * 2, cr * 2);
   end;
 
-  fillR.Left := 0;
-  fillR.Right := pnl.Width - 2;
-  fillR.Bottom := pnl.Height - 2;
-  fillR.Top := pnl.Height - 2 - Round(frac * (pnl.Height - 4));
+  if frac <= 0 then
+    Exit;
 
-  if hasProgress then
+  // Step 2 — compute fill rectangle (grows upward from the bottom)
+  fillH := Max(cr * 2, Round(frac * (pnl.Height - 2)));
+  fillR := Classes.Rect(1, pnl.Height - 1 - fillH, pnl.Width - 1, pnl.Height - 1);
+
+  with pnl.Canvas do
   begin
-    trackR.Left := 0;
-    trackR.Top := 0;
-    trackR.Right := pnl.Width - 2;
-    trackR.Bottom := pnl.Height - 2;
-    with pnl.Canvas do
-    begin
-      Brush.Style := bsSolid;
-      Brush.Color := BlendColors(fBG.Color, clBlack, 0.9);
-      Pen.Style := psClear;
-      FillRect(trackR);
-    end;
+    Brush.Style := bsSolid;
+    Brush.Color := fillCol;
+    Pen.Style := psClear;
+
+    // Rounded cap at the active (top) tip
+    RoundRect(fillR.Left, fillR.Top, fillR.Right, fillR.Top + cr * 2, cr * 2, cr * 2);
+
+    // Rectangular body from below the cap down to the base
+    if fillH > cr * 2 then
+      FillRect(Classes.Rect(fillR.Left, fillR.Top + cr, fillR.Right, fillR.Bottom));
   end;
 
+  // Step 3 — 1px lighter strip on the right edge of the body (skip the cap area)
+  with pnl.Canvas do
   begin
-    cornerRadius := Min(6, pnl.Width div 2);
-    cornerRadius := Min(cornerRadius, (fillR.Bottom - fillR.Top) div 2);
-
-    with pnl.Canvas do
-    begin
-      Brush.Style := bsSolid;
-      Brush.Color := fillCol;
-      Pen.Style := psClear;
-      RoundRect(fillR.Left, fillR.Top, fillR.Right, fillR.Bottom, cornerRadius, cornerRadius);
-
-      if cornerRadius > 0 then
-        FillRect(Classes.Rect(fillR.Left, fillR.Top, fillR.Left + cornerRadius, fillR.Bottom));
-    end;
+    Brush.Color := edgeCol;
+    Pen.Style := psClear;
+    if fillH > cr * 3 then
+      FillRect(Classes.Rect(fillR.Right - 1, fillR.Top + cr * 2, fillR.Right, fillR.Bottom));
   end;
 end;
