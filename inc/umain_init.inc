@@ -384,6 +384,8 @@ var
   i: integer;
 begin
   if native.GetBoolSetting('license.250608') <> true then
+  begin
+    i := 0;
     while i <> mrYes do
     begin
       i := ExtMsg(uxdAuto, 'License', 'You must accept the full terms conditions',
@@ -405,6 +407,7 @@ begin
       else
         OpenURL('https://github.com/slicke/trndi/blob/main/LICENSE.md');
     end;
+  end;
 end;
 
 function TfBG.InitializeAPI: boolean;
@@ -523,23 +526,19 @@ var
   hasDefaultFont: boolean;
 begin
   hasDefaultFont := FontTXTInList(fontName);
+  distroId := scanLinuxDistro(['fedora','ubuntu','debian']);
 
   if not hasDefaultFont then
   begin
-    distroId := scanLinuxDistro(['fedora','ubuntu','debian']);
     case distroId of
     'fedora':
       fontName := 'Poppins';
-    'ubuntu':
-      fontName := 'Sans';
     else
       fontName := 'Sans';
     end;
   end;
 
-  IsRaspberry := false;
-  if distroId = 'debian' then
-    IsRaspberry := FileExists('/etc/rpi-issue');
+  IsRaspberry := (distroId = 'debian') and FileExists('/etc/rpi-issue');
 
   fBG.Font.Name := fontName;
 
@@ -713,7 +712,6 @@ begin
   FLastUICaption := '<uninitialized>';
   FLastTir := '<uninitialized>';
   FLastConnectionDetail := '';
-  FInternetBadgeBg := nil;
 
   // Configuration and user setup
   with native do
