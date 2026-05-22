@@ -70,7 +70,10 @@ TfConf = class(TForm)
   bDotHelp: TButton;
   bExportSettings: TButton;
   bExtOpen: TButton;
-  bFontHelp: TButton;
+  bFontReading: TButton;
+  bFontArrow: TButton;
+  bFontTime: TButton;
+  bFontReset: TButton;
   bConnectHelp: TButton;
   bWarnHiLowHelp: TButton;
   bImportSettings: TButton;
@@ -105,7 +108,6 @@ TfConf = class(TForm)
   bCustomRangeHelp: TButton;
   bCommon: TButton;
   bDisableMediaHelp: TButton;
-  Button2: TButton;
   Button4: TButton;
   bWebAPI: TButton;
   bSysTouch: TButton;
@@ -416,7 +418,10 @@ TfConf = class(TForm)
   procedure bCustomRangeHelpClick({%H-}Sender: TObject);
   procedure bDotHelpClick({%H-}Sender: TObject);
   procedure bExtOpenClick({%H-}Sender: TObject);
-  procedure bFontHelpClick({%H-}Sender: TObject);
+  procedure bFontReadingClick(Sender: TObject);
+  procedure bFontArrowClick(Sender: TObject);
+  procedure bFontTimeClick(Sender: TObject);
+  procedure bFontResetClick(Sender: TObject);
   procedure bLanguageHelpClick(Sender: TObject);
   procedure bLimitsClick(Sender: TObject);
   procedure bMinMinutesHelpClick(Sender: TObject);
@@ -448,7 +453,6 @@ TfConf = class(TForm)
   procedure btUserSaveClick(Sender: TObject);
   procedure bUseURLHelpClick(Sender: TObject);
   procedure Button1Click(Sender: TObject);
-  procedure Button2Click(Sender: TObject);
   procedure Button3Click(Sender: TObject);
   procedure Button4Click(Sender: TObject);
   procedure bWebAPIClick(Sender: TObject);
@@ -1292,9 +1296,19 @@ begin
   OpenDocument(eExt.Text);
 end;
 
-procedure TfConf.bFontHelpClick(Sender: TObject);
+procedure TfConf.bFontReadingClick(Sender: TObject);
 begin
-  ShowMessage(RS_FONT_HELP);
+  lValClick(lVal);
+end;
+
+procedure TfConf.bFontArrowClick(Sender: TObject);
+begin
+  lValClick(lArrow);
+end;
+
+procedure TfConf.bFontTimeClick(Sender: TObject);
+begin
+  lValClick(lAgo);
 end;
 
 procedure TfConf.bLanguageHelpClick(Sender: TObject);
@@ -1786,12 +1800,11 @@ end;
   This lets the user quickly see how the selected UI font looks on key
   readouts (value, arrow, and "ago") without changing global styles.
 ------------------------------------------------------------------------------}
-procedure TfConf.Button2Click(Sender: TObject);
+procedure TfConf.bFontResetClick(Sender: TObject);
 begin
-  // Mirror the panel font to individual preview labels
-  lVal.Font.Name := pnDisplay.Font.Name;   // main value readout
-  lArrow.Font.Name := pnDisplay.Font.Name; // trend arrow glyph/text
-  lAgo.Font.Name := pnDisplay.Font.Name;   // time since last reading
+  lVal.Font.Name := pnDisplay.Font.Name;
+  lArrow.Font.Name := pnDisplay.Font.Name;
+  lAgo.Font.Name := pnDisplay.Font.Name;
 end;
 
 {------------------------------------------------------------------------------

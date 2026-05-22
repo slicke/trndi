@@ -311,7 +311,7 @@ begin
         Application.ProcessMessages;
       end;
   FStoredWindowInfo.Initialized := false;
-  fSplash.Image1.Picture.Icon := Application.Icon;
+//  fSplash.Image1.Picture.Icon := Application.Icon;
   fSplash.incProgress(7, '');
   fSplash.lInfo.Font.Color := fSplash.lSplashWarn.Font.color;
   {$ifdef X_WIN}

@@ -4,8 +4,13 @@
 
 ![Trndi](doc/img/trndi-logo.png)
 
-# Trndi - CGM data on Desktop and RaspberryPi<br><sup>_Nightscout - Dexcom - Tandem Source - xDrip WiFi_</sup> 
-## <b> 🪟 Windows - 🍎 macOS - 🐧 Linux - 🥧 RaspberryPi/ARM Linux
+# Trndi - Your blood sugar partner
+
+## Shows your CGM data on Desktops and displays
+
+### Supports _Nightscout - Dexcom - Tandem Source - xDrip_
+
+## <b> 🪟 Windows - 🍎 macOS - 🐧 Linux - 🥧 RaspberryPi and ARM Linux
 
 ## Index
 - [User Manual](MANUAL.md) - Complete guide for end users
