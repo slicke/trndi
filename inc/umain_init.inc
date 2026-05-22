@@ -756,6 +756,32 @@ begin
         begin
           // Wizard saved settings — re-read target and continue init
           apiTarget := GetSetting('remote.target');
+
+          // Re-apply dot count: dots were created with default 10 above,
+          // before the wizard ran, so recreate if the user picked a different count.
+          ActiveDots := GetIntSetting('ux.dot_count', ActiveDots);
+          if ActiveDots < 1 then ActiveDots := 1;
+          if ActiveDots > MAX_DOT_COUNT then ActiveDots := MAX_DOT_COUNT;
+          if MAX_MIN < ActiveDots * INTERVAL_MINUTES + 10 then
+            MAX_MIN := ActiveDots * INTERVAL_MINUTES + 10;
+          if MAX_RESULT < ActiveDots * INTERVAL_MINUTES then
+            MAX_RESULT := ActiveDots * INTERVAL_MINUTES;
+          for i := 1 to High(TrendDots) do
+            if Assigned(TrendDots[i]) then
+            begin
+              TrendDots[i].Free;
+              TrendDots[i] := nil;
+            end;
+          SetLength(TrendDots, 0);
+          for i := 1 to High(FWarningDots) do
+            if Assigned(FWarningDots[i]) then
+            begin
+              FWarningDots[i].Free;
+              FWarningDots[i] := nil;
+            end;
+          SetLength(FWarningDots, 0);
+          CreateTrendDots;
+
           fSplash.Show;
         end
         else

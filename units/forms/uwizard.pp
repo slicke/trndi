@@ -40,6 +40,8 @@
 (*
  * MODIFICATION NOTICE (GPLv3 Section 5):
  * - 2026-05-16: Initial implementation of first-run setup wizard.
+ * - 2026-05-23: Added trend window step (step 4) — lets users choose how many
+ *               readings to display in the main graph during first-run setup.
  *)
 
 unit uwizard;
@@ -88,6 +90,10 @@ type
     rbMmol: TRadioButton;
     rbMgdl: TRadioButton;
 
+    // Trend window step controls
+    pnTrendWindow: TPanel;
+    rbDots6, rbDots10, rbDots18, rbDots24, rbDots36: TRadioButton;
+
     // Threshold step controls
     pnThreshold: TPanel;
     lHiLabel: TLabel;
@@ -117,6 +123,7 @@ type
     procedure BuildWelcomeStep;
     procedure BuildConnectionStep;
     procedure BuildUnitStep;
+    procedure BuildTrendWindowStep;
     procedure BuildThresholdStep;
     procedure SaveSettings;
     function  ValidateConnection(out errMsg: string): boolean;
@@ -142,7 +149,7 @@ resourcestring
   WZ_ERR_THRESH_ORDER = 'The high threshold must be greater than the low threshold.';
 
 const
-  WIZARD_STEPS = 4;
+  WIZARD_STEPS = 5;
   FORM_WIDTH   = 500;
   FORM_HEIGHT  = 450;
 
@@ -240,6 +247,7 @@ begin
   BuildWelcomeStep;
   BuildConnectionStep;
   BuildUnitStep;
+  BuildTrendWindowStep;
   BuildThresholdStep;
 
   FStep := 1;
@@ -456,11 +464,12 @@ end;
 procedure TfWizard.ShowStep(step: integer);
 begin
   FStep := step;
-  pnWelcome.Visible    := (step = 1);
-  pnConnection.Visible := (step = 2);
-  pnUnit.Visible       := (step = 3);
-  pnThreshold.Visible  := (step = 4);
-  if step = 4 then
+  pnWelcome.Visible     := (step = 1);
+  pnConnection.Visible  := (step = 2);
+  pnUnit.Visible        := (step = 3);
+  pnTrendWindow.Visible := (step = 4);
+  pnThreshold.Visible   := (step = 5);
+  if step = 5 then
     UpdateThresholdLabels;
   lStep.Caption := Format(RS_WIZARD_STEP_FMT, [step, WIZARD_STEPS]);
   UpdateNav;
@@ -672,6 +681,64 @@ begin
   end;
 end;
 
+procedure TfWizard.BuildTrendWindowStep;
+var
+  pnInner: TPanel;
+  lHead, lBody: TLabel;
+
+  function MakeRB(const cap: string; checked: boolean): TRadioButton;
+  begin
+    Result := TRadioButton.Create(pnInner);
+    Result.Parent  := pnInner;
+    Result.Caption := cap;
+    Result.Align   := alTop;
+    Result.Height  := 26;
+    Result.Checked := checked;
+    Result.BorderSpacing.Bottom := 4;
+  end;
+
+begin
+  pnTrendWindow := TPanel.Create(pnContent);
+  pnTrendWindow.Parent  := pnContent;
+  pnTrendWindow.Align   := alClient;
+  pnTrendWindow.Visible := false;
+  pnTrendWindow.BevelOuter := bvNone;
+  pnTrendWindow.ParentBackground := false;
+
+  pnInner := TPanel.Create(pnTrendWindow);
+  pnInner.Parent := pnTrendWindow;
+  pnInner.Align  := alClient;
+  pnInner.BevelOuter := bvNone;
+  pnInner.BorderSpacing.Around := 24;
+  pnInner.ParentBackground := false;
+
+  { Bottom-to-top creation order for LCL alTop stacking. }
+  rbDots36 := MakeRB(RS_WIZARD_TREND_180, false);
+  rbDots24 := MakeRB(RS_WIZARD_TREND_120, false);
+  rbDots18 := MakeRB(RS_WIZARD_TREND_90,  false);
+  rbDots10 := MakeRB(RS_WIZARD_TREND_50,  true);   // default
+  rbDots6  := MakeRB(RS_WIZARD_TREND_30,  false);
+
+  lBody := TLabel.Create(pnInner);
+  lBody.Parent   := pnInner;
+  lBody.Caption  := RS_WIZARD_TREND_BODY;
+  lBody.Align    := alTop;
+  lBody.AutoSize := false;
+  lBody.Height   := 36;
+  lBody.WordWrap := true;
+  lBody.BorderSpacing.Bottom := 12;
+
+  lHead := TLabel.Create(pnInner);
+  lHead.Parent   := pnInner;
+  lHead.Caption  := RS_WIZARD_TREND_HEAD;
+  lHead.Align    := alTop;
+  lHead.AutoSize := false;
+  lHead.Height   := 28;
+  lHead.Font.Size  := 13;
+  lHead.Font.Style := [fsBold];
+  lHead.BorderSpacing.Bottom := 8;
+end;
+
 procedure TfWizard.BuildThresholdStep;
 var
   pnInner: TPanel;
@@ -853,6 +920,11 @@ begin
     SetBoolSetting('unit', rbMmol.Checked, 'mmol', 'mgdl');
     SetSetting('wizard.hi', hiI);
     SetSetting('wizard.lo', loI);
+    if      rbDots6.Checked  then SetSetting('ux.dot_count',  6)
+    else if rbDots18.Checked then SetSetting('ux.dot_count', 18)
+    else if rbDots24.Checked then SetSetting('ux.dot_count', 24)
+    else if rbDots36.Checked then SetSetting('ux.dot_count', 36)
+    else                          SetSetting('ux.dot_count', 10);  // default
   end;
 end;
 
