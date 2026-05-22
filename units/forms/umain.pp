@@ -1557,6 +1557,33 @@ begin
   // Adjust for dark mode if applicable
   setColorMode;
 end;
+{$ifdef LCLQt6}
+function TryQtStartSystemMove(AHandle: THandle): boolean;
+var
+  QtWidget: TQtWidget;
+  sessionType: string;
+  qwin: QWindowH;
+begin
+  Result := false;
+  sessionType := GetEnvironmentVariable('XDG_SESSION_TYPE');
+  if LowerCase(sessionType) <> 'wayland' then
+    Exit;
+
+  if AHandle = 0 then
+    Exit;
+
+  QtWidget := TQtWidget(AHandle);
+  if not Assigned(QtWidget) or not Assigned(QtWidget.Widget) then
+    Exit;
+
+  qwin := QWidget_windowHandle(QtWidget.Widget);
+  if qwin = nil then
+    Exit;
+
+  Result := QWindow_startSystemMove(qwin);
+end;
+{$endif}
+
 procedure TfBG.lValMouseDown(Sender: TObject; Button: TMouseButton;
 Shift: TShiftState; X, Y: integer);
 {$ifdef LCLQt6}
@@ -1616,38 +1643,6 @@ begin
   end;
 end;
 
-{$ifdef LCLQt6}
-// Attempt to initiate a Wayland system move. This calls the Qt6 binding
-// `QWindow_startSystemMove` if available. Returns TRUE when the compositor
-// move was triggered; otherwise FALSE to fall back to manual dragging.
-function TryQtStartSystemMove(AHandle: THandle): boolean;
-var
-  QtWidget: TQtWidget;
-  sessionType: string;
-  qwin: QWindowH;
-begin
-  Result := false;
-  sessionType := GetEnvironmentVariable('XDG_SESSION_TYPE');
-  if LowerCase(sessionType) <> 'wayland' then
-    Exit;
-
-  if AHandle = 0 then
-    Exit;
-
-  QtWidget := TQtWidget(AHandle);
-  if not Assigned(QtWidget) or not Assigned(QtWidget.Widget) then
-    Exit;
-
-  // Get the QWindow handle from the QWidget and call the binding.
-  qwin := QWidget_windowHandle(QtWidget.Widget);
-  if qwin = nil then
-    Exit;
-
-  // QWindow_startSystemMove is declared in the Qt6 interface (qt62.pas)
-  // and returns a boolean indicating whether the call succeeded.
-  Result := QWindow_startSystemMove(qwin);
-end;
-{$endif}
 {$ifdef TEST}
 {$I ../../tests/inc/umain_implementation.inc}
 {$endif}
