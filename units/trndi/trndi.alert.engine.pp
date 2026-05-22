@@ -1,0 +1,351 @@
+(*
+ * Trndi
+ * Rule-based glucose alert engine.
+ *
+ * Copyright (c) Björn Lindh
+ * GitHub: https://github.com/slicke/trndi
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3.
+ *)
+
+unit trndi.alert.engine;
+
+{$mode objfpc}{$H+}
+
+interface
+
+uses
+  SysUtils, DateUtils, Math;
+
+type
+  {** Each distinct alert condition the engine can evaluate. }
+  TAlertKind = (
+    akHigh,        // BG at or above cgmHi
+    akLow,         // BG at or below cgmLo
+    akUrgentLow,   // BG at or below limitLO — max-snooze enforced
+    akMissing,     // No fresh reading for configured interval
+    akSensorFault, // Sensor-fault pattern detected by caller
+    akRapidFall,   // BG delta below fall threshold
+    akRapidRise    // BG delta above rise threshold
+  );
+  TAlertKindSet = set of TAlertKind;
+
+const
+  ALERT_KIND_LEVEL = [akHigh, akLow, akUrgentLow];
+
+type
+  TAlertRule = record
+    Enabled: boolean;
+    Threshold: double;         // trigger value in API units; 0 = not applicable
+    ReAlertMinutes: integer;   // 0 = one-shot per excursion; >0 = re-alert after N min
+    MaxSnoozeMinutes: integer; // 0 = unlimited; positive caps snooze duration
+    SnoozedUntil: TDateTime;
+    LastFired: TDateTime;      // 0 = never fired this excursion
+  end;
+
+  {** Rule-based alert engine.
+    Replaces the old highAlerted/lowAlerted/missingAlerted boolean flags and
+    global alertSnoozeUntil with per-rule state, re-alerting, and capped snooze
+    for urgent conditions. The engine is a pure decision oracle — callers handle
+    actual side-effects (notifications, Chroma, media) based on what fires. }
+  TAlertEngine = class
+  private
+    FRules: array[TAlertKind] of TAlertRule;
+    FViolating: TAlertKindSet;
+
+    function ShouldFire(const AKind: TAlertKind): boolean;
+    procedure MarkFired(const AKind: TAlertKind);
+    procedure EnterViolation(const AKind: TAlertKind);
+    procedure LeaveViolation(const AKind: TAlertKind);
+  public
+    constructor Create;
+
+    {** Configure a rule. Call once after API initializes thresholds. }
+    procedure SetupRule(const AKind: TAlertKind;
+      const AEnabled: boolean;
+      const AThreshold: double;
+      const AReAlertMinutes: integer;
+      const AMaxSnoozeMinutes: integer = 0);
+
+    {** Evaluate absolute glucose level. Returns set of rules that fire. }
+    function EvaluateLevel(const Val: double): TAlertKindSet;
+    {** Evaluate glucose delta. Returns set of rules that fire. }
+    function EvaluateDelta(const Delta: double): TAlertKindSet;
+    {** Evaluate missing-reading condition. Returns [akMissing] if it fires. }
+    function EvaluateMissing: TAlertKindSet;
+    {** Evaluate sensor-fault condition. Returns [akSensorFault] if it fires. }
+    function EvaluateSensorFault: TAlertKindSet;
+
+    {** Call when BG returns to the in-range zone. Resets all level-rule state. }
+    procedure ResetLevelAlerts;
+    {** Call when sensor fault clears. }
+    procedure ResetSensorFault;
+    {** Call when fresh readings resume. }
+    procedure ResetMissing;
+
+    {** Snooze only the rules currently in violation. }
+    procedure SnoozeActive(const AMinutes: integer);
+    {** Snooze every rule regardless of current state. }
+    procedure SnoozeAll(const AMinutes: integer);
+    {** Cancel all active snoozes. }
+    procedure ResumeAll;
+
+    function IsSnoozed(const AKind: TAlertKind): boolean;
+    function AnySnoozed: boolean;
+    function IsViolating(const AKind: TAlertKind): boolean;
+    function ViolatingKinds: TAlertKindSet;
+    {** Latest snooze-until among all currently snoozed rules. }
+    function ActiveSnoozeUntil: TDateTime;
+  end;
+
+implementation
+
+constructor TAlertEngine.Create;
+var
+  k: TAlertKind;
+begin
+  inherited Create;
+  FViolating := [];
+  for k := Low(TAlertKind) to High(TAlertKind) do
+  begin
+    FRules[k].Enabled          := false;
+    FRules[k].Threshold        := 0;
+    FRules[k].ReAlertMinutes   := 0;
+    FRules[k].MaxSnoozeMinutes := 0;
+    FRules[k].SnoozedUntil     := 0;
+    FRules[k].LastFired        := 0;
+  end;
+end;
+
+procedure TAlertEngine.SetupRule(const AKind: TAlertKind;
+  const AEnabled: boolean; const AThreshold: double;
+  const AReAlertMinutes: integer; const AMaxSnoozeMinutes: integer);
+begin
+  FRules[AKind].Enabled          := AEnabled;
+  FRules[AKind].Threshold        := AThreshold;
+  FRules[AKind].ReAlertMinutes   := AReAlertMinutes;
+  FRules[AKind].MaxSnoozeMinutes := AMaxSnoozeMinutes;
+end;
+
+function TAlertEngine.ShouldFire(const AKind: TAlertKind): boolean;
+begin
+  Result := false;
+  if not FRules[AKind].Enabled then Exit;
+  if IsSnoozed(AKind) then Exit;
+  if FRules[AKind].LastFired = 0 then
+  begin
+    Result := true;
+    Exit;
+  end;
+  if FRules[AKind].ReAlertMinutes = 0 then Exit;
+  Result := MinutesBetween(Now, FRules[AKind].LastFired) >= FRules[AKind].ReAlertMinutes;
+end;
+
+procedure TAlertEngine.MarkFired(const AKind: TAlertKind);
+begin
+  FRules[AKind].LastFired := Now;
+end;
+
+procedure TAlertEngine.EnterViolation(const AKind: TAlertKind);
+begin
+  Include(FViolating, AKind);
+end;
+
+procedure TAlertEngine.LeaveViolation(const AKind: TAlertKind);
+begin
+  Exclude(FViolating, AKind);
+  FRules[AKind].LastFired := 0;
+end;
+
+function TAlertEngine.EvaluateLevel(const Val: double): TAlertKindSet;
+begin
+  Result := [];
+
+  // Urgent low subsumes regular low
+  if FRules[akUrgentLow].Enabled and (Val <= FRules[akUrgentLow].Threshold) then
+  begin
+    EnterViolation(akUrgentLow);
+    LeaveViolation(akHigh);
+    // Don't reset akLow.LastFired — let it re-fire independently when BG rises back into low zone
+    Exclude(FViolating, akLow);
+    if ShouldFire(akUrgentLow) then
+    begin
+      MarkFired(akUrgentLow);
+      Include(Result, akUrgentLow);
+    end;
+  end
+  else if FRules[akLow].Enabled and (Val <= FRules[akLow].Threshold) then
+  begin
+    EnterViolation(akLow);
+    LeaveViolation(akHigh);
+    LeaveViolation(akUrgentLow);
+    if ShouldFire(akLow) then
+    begin
+      MarkFired(akLow);
+      Include(Result, akLow);
+    end;
+  end
+  else if FRules[akHigh].Enabled and (Val >= FRules[akHigh].Threshold) then
+  begin
+    EnterViolation(akHigh);
+    LeaveViolation(akLow);
+    LeaveViolation(akUrgentLow);
+    if ShouldFire(akHigh) then
+    begin
+      MarkFired(akHigh);
+      Include(Result, akHigh);
+    end;
+  end
+  else
+    ResetLevelAlerts;
+end;
+
+function TAlertEngine.EvaluateDelta(const Delta: double): TAlertKindSet;
+begin
+  Result := [];
+
+  if FRules[akRapidFall].Enabled and (Delta <= FRules[akRapidFall].Threshold) then
+  begin
+    EnterViolation(akRapidFall);
+    if ShouldFire(akRapidFall) then
+    begin
+      MarkFired(akRapidFall);
+      Include(Result, akRapidFall);
+    end;
+  end
+  else
+    LeaveViolation(akRapidFall);
+
+  if FRules[akRapidRise].Enabled and (Delta >= FRules[akRapidRise].Threshold) then
+  begin
+    EnterViolation(akRapidRise);
+    if ShouldFire(akRapidRise) then
+    begin
+      MarkFired(akRapidRise);
+      Include(Result, akRapidRise);
+    end;
+  end
+  else
+    LeaveViolation(akRapidRise);
+end;
+
+function TAlertEngine.EvaluateMissing: TAlertKindSet;
+begin
+  Result := [];
+  if not FRules[akMissing].Enabled then Exit;
+  EnterViolation(akMissing);
+  if ShouldFire(akMissing) then
+  begin
+    MarkFired(akMissing);
+    Include(Result, akMissing);
+  end;
+end;
+
+function TAlertEngine.EvaluateSensorFault: TAlertKindSet;
+begin
+  Result := [];
+  if not FRules[akSensorFault].Enabled then Exit;
+  EnterViolation(akSensorFault);
+  if ShouldFire(akSensorFault) then
+  begin
+    MarkFired(akSensorFault);
+    Include(Result, akSensorFault);
+  end;
+end;
+
+procedure TAlertEngine.ResetLevelAlerts;
+var
+  k: TAlertKind;
+begin
+  for k in ALERT_KIND_LEVEL do
+    LeaveViolation(k);
+end;
+
+procedure TAlertEngine.ResetSensorFault;
+begin
+  LeaveViolation(akSensorFault);
+end;
+
+procedure TAlertEngine.ResetMissing;
+begin
+  LeaveViolation(akMissing);
+end;
+
+procedure TAlertEngine.SnoozeActive(const AMinutes: integer);
+var
+  k: TAlertKind;
+  snoozeMin: integer;
+begin
+  for k in FViolating do
+  begin
+    snoozeMin := AMinutes;
+    if (FRules[k].MaxSnoozeMinutes > 0) and (snoozeMin > FRules[k].MaxSnoozeMinutes) then
+      snoozeMin := FRules[k].MaxSnoozeMinutes;
+    FRules[k].SnoozedUntil := IncMinute(Now, snoozeMin);
+    FRules[k].LastFired    := 0;
+  end;
+end;
+
+procedure TAlertEngine.SnoozeAll(const AMinutes: integer);
+var
+  k: TAlertKind;
+  snoozeMin: integer;
+begin
+  for k := Low(TAlertKind) to High(TAlertKind) do
+  begin
+    snoozeMin := AMinutes;
+    if (FRules[k].MaxSnoozeMinutes > 0) and (snoozeMin > FRules[k].MaxSnoozeMinutes) then
+      snoozeMin := FRules[k].MaxSnoozeMinutes;
+    FRules[k].SnoozedUntil := IncMinute(Now, snoozeMin);
+    FRules[k].LastFired    := 0;
+  end;
+end;
+
+procedure TAlertEngine.ResumeAll;
+var
+  k: TAlertKind;
+begin
+  for k := Low(TAlertKind) to High(TAlertKind) do
+    FRules[k].SnoozedUntil := 0;
+end;
+
+function TAlertEngine.IsSnoozed(const AKind: TAlertKind): boolean;
+begin
+  Result := (FRules[AKind].SnoozedUntil > 0) and (Now < FRules[AKind].SnoozedUntil);
+  if not Result then
+    FRules[AKind].SnoozedUntil := 0;
+end;
+
+function TAlertEngine.AnySnoozed: boolean;
+var
+  k: TAlertKind;
+begin
+  for k := Low(TAlertKind) to High(TAlertKind) do
+    if IsSnoozed(k) then Exit(true);
+  Result := false;
+end;
+
+function TAlertEngine.IsViolating(const AKind: TAlertKind): boolean;
+begin
+  Result := AKind in FViolating;
+end;
+
+function TAlertEngine.ViolatingKinds: TAlertKindSet;
+begin
+  Result := FViolating;
+end;
+
+function TAlertEngine.ActiveSnoozeUntil: TDateTime;
+var
+  k: TAlertKind;
+begin
+  Result := 0;
+  for k := Low(TAlertKind) to High(TAlertKind) do
+    if IsSnoozed(k) then
+      if (Result = 0) or (FRules[k].SnoozedUntil > Result) then
+        Result := FRules[k].SnoozedUntil;
+end;
+
+end.

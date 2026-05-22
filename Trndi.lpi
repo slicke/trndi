@@ -608,6 +608,10 @@
         <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
+        <Filename Value="units\trndi\trndi.alert.engine.pp"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
         <Filename Value="units\trndi\api\trndi.api.debug_missing.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit>

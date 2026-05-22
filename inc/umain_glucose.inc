@@ -123,12 +123,10 @@ begin
     lArrow.Caption := '';
     native.setBadge('--', clBlack, badge_width + badge_adjust,
       badge_font + round(badge_adjust * 10));
-    native.StopBadgeFlash;
   end
   else
   begin
     tMissed.Enabled := false;
-    bg_alert := false;
     if lVal.Font.Color = clWhite then
       lVal.Font.Color := GetTextColorForBackground(fBG.color);
   end;
@@ -642,16 +640,11 @@ begin
   sensorFault := IsSensorFaultSuspected(bgs);
   if sensorFault then
   begin
-    if (not sensorFaultAlerted) or (MinutesBetween(Now, lastSensorFaultAlert) >= 30) then
-      if not AlertsSnoozed then
-      begin
-        native.attention(RS_ATTENTION_SENSOR_FAULT, RS_ATTENTION_SENSOR_FAULT_DESC);
-        sensorFaultAlerted := true;
-        lastSensorFaultAlert := Now;
-      end;
+    if akSensorFault in FAlertEngine.EvaluateSensorFault then
+      native.attention(RS_ATTENTION_SENSOR_FAULT, RS_ATTENTION_SENSOR_FAULT_DESC);
   end
   else
-    sensorFaultAlerted := false;
+    FAlertEngine.ResetSensorFault;
 
   if pnWarning.Visible then
     Exit;
@@ -682,36 +675,27 @@ end;
 procedure TfBG.HandleHighGlucose(const reading: BGReading);
 var
   url: string;
-  doFlash: boolean;
   defaultAction: string;
+  fired: TAlertKindSet;
 begin
   setColorMode(bg_color_hi);
 
-  if AlertsSnoozed then
+  fired := FAlertEngine.EvaluateLevel(reading.val);
+  if not (akHigh in fired) then
     Exit;
 
-  if highAlerted then
-    Exit;
-
-  if not bg_alert then
-    if native.getBoolSetting('alerts.notice.hilo', true) then
-      native.attention(ifthen(multi, multinick, RS_WARN_BG_HI_TITLE),
-        Format(RS_WARN_BG_HI, [lVal.Caption]));
+  if native.getBoolSetting('alerts.notice.hilo', true) then
+    native.attention(ifthen(multi, multinick, RS_WARN_BG_HI_TITLE),
+      Format(RS_WARN_BG_HI, [lVal.Caption]));
 
   if native.GetBoolSetting('media.pause') then
     actOnMediaController(mcaPause);
 
   if native.TryGetSetting('media.url_high', url) then
-  begin
-    highAlerted := true;
     actOnMediaController(mcaURL, url);
-  end;
 
   if native.TryGetSetting('url_remote.url_high', url) then
-  begin
-    highAlerted := true;
     native.getURL(url, url);
-  end;
 
   if assigned(native) and assigned(chroma) then
     if native.GetBoolSetting('razer.enabled', false) and chroma.Initialized then
@@ -723,48 +707,32 @@ begin
       {$endif}
       ApplyChromaAlertAction('razer.high.action', defaultAction, clRazerRed);
     end;
-
-  doFlash := native.GetBoolSetting('alerts.flash.high', false);
-  if (not highAlerted) and doFlash then
-    native.StartBadgeFlash(lVal.Caption, bg_color_hi, BADGE_FLASH_DURATION_HIGH_MS, BADGE_FLASH_REPEAT_DELAY_HIGH_MS);
 end;
 
 procedure TfBG.HandleLowGlucose(const reading: BGReading);
 var
   url: string;
-  doFlash: boolean;
   defaultAction: string;
+  fired: TAlertKindSet;
 begin
   SetColorMode(bg_color_lo);
 
-  if AlertsSnoozed then
+  fired := FAlertEngine.EvaluateLevel(reading.val);
+  if (fired * [akLow, akUrgentLow]) = [] then
     Exit;
 
-  if lowAlerted then
-    exit;
-
-  if not bg_alert then
-    if native.getBoolSetting('alerts.notice.hilo', true) then
-      native.attention(ifthen(multi, multinick, RS_WARN_BG_LO_TITLE),
-        Format(RS_WARN_BG_LO, [lVal.Caption]));
+  if native.getBoolSetting('alerts.notice.hilo', true) then
+    native.attention(ifthen(multi, multinick, RS_WARN_BG_LO_TITLE),
+      Format(RS_WARN_BG_LO, [lVal.Caption]));
 
   if native.GetBoolSetting('media.pause') then
     actOnMediaController(mcaPause);
 
   if native.TryGetSetting('media.url_low', url) then
-  begin
-    lowAlerted := true;
     actOnMediaController(mcaURL, url);
-  end;
 
   if native.TryGetSetting('url_remote.url_low', url) then
-  begin
-    lowAlerted := true;
     native.getURL(url, url);
-  end;
-  doFlash := native.GetBoolSetting('alerts.flash.low', false);
-  if (not lowAlerted) and doFlash then
-    native.StartBadgeFlash(lVal.Caption, bg_color_lo, BADGE_FLASH_DURATION_LOW_MS, BADGE_FLASH_REPEAT_DELAY_LOW_MS);
 
   if assigned(native) and assigned(chroma) then
     if native.GetBoolSetting('razer.enabled', false) and chroma.Initialized then
@@ -785,11 +753,8 @@ var
   parsedFloat: single;
   go: boolean = false;
 begin
-  bg_alert := true;
   SetColorMode(bg_color_ok);
-  highAlerted := false;
-  lowAlerted := false;
-  native.StopBadgeFlash;
+  FAlertEngine.ResetLevelAlerts;
 
   if un = mmol then
   begin
@@ -817,9 +782,6 @@ begin
 
     if native.TryGetSetting('url_remote.url_high', url) then
       native.getURL(url, url);
-
-    if native.GetBoolSetting('alerts.flash.perfect', false) then
-      native.StartBadgeFlash(lVal.Caption, bg_color_ok, BADGE_FLASH_DURATION_OK_MS, BADGE_FLASH_REPEAT_DELAY_OK_MS);
   end;
 
   if assigned(native) and assigned(chroma) then
@@ -948,19 +910,12 @@ begin
 
     showWarningPanel(msg, true);
 
-    if native.getBoolSetting('alerts.notice.missing', true) then
-      if (not missingAlerted) or (MinutesBetween(Now, lastMissingAlert) >= 15) then
-        if not AlertsSnoozed then
-        begin
-          native.attention(RS_ATTENTION_MISSING, RS_ATTENTION_MISSING_DESC);
-          missingAlerted := true;
-          lastMissingAlert := Now;
-        end;
+    if akMissing in FAlertEngine.EvaluateMissing then
+      native.attention(RS_ATTENTION_MISSING, RS_ATTENTION_MISSING_DESC);
     Exit;
   end;
 
-  missingAlerted := false;
-  lastMissingAlert := 0;
+  FAlertEngine.ResetMissing;
 
   TrndiDLog(Format('DoFetchAndValidateReadings: Got %d readings from API', [Length(bgs)]));
 
