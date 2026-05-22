@@ -210,6 +210,10 @@ public
   {$endif}
     {** OnClick handler used by inline full-screen message overlays created via @link(UXMessage). }
   procedure UXMessageOnClick(sender: TObject);
+    {** OnMouseDown companion — fires on first touch contact so the overlay
+        closes even when the Qt release point drifts outside the button rect. }
+  procedure UXMessageOnMouseDown(sender: TObject; Button: TMouseButton;
+    Shift: TShiftState; X, Y: Integer);
 public
     {** Helper fields for font picker dialog. }
   FontPickerPreview: TLabel;
@@ -1632,6 +1636,7 @@ begin
       // df is owned by sender (the main form) — never freed from inside tb's event
       df := TDialogForm.CreateNew(sender);
       tb.OnClick := @df.UXMessageOnClick;
+      tb.OnMouseDown := @df.UXMessageOnMouseDown;
     end
     else
       ExtMsg(uxdAuto, sMsgTitle, title, message, '',
@@ -3395,6 +3400,13 @@ begin
   Invalidate;
 end;
 {$endif}
+
+procedure TDialogForm.UXMessageOnMouseDown(sender: TObject; Button: TMouseButton;
+  Shift: TShiftState; X, Y: Integer);
+begin
+  if Button = mbLeft then
+    UXMessageOnClick(sender);
+end;
 
 {** Close handler for full-screen overlay messages created by @link(UXMessage). }
 procedure TDialogForm.UXMessageOnClick(sender: TObject);
