@@ -237,185 +237,185 @@ msgstr "Kunngjør rå backend-data"
 
 #: tfbg.midns.caption
 msgid "Run DNS Lookup Test"
-msgstr ""
+msgstr "Kjør DNS-oppslagstest"
 
 #: tfbg.midotbig.caption
 msgctxt "tfbg.midotbig.caption"
 msgid "Big"
-msgstr ""
+msgstr "Stor"
 
 #: tfbg.midothuge.caption
 msgid "Huge"
-msgstr ""
+msgstr "Enorm"
 
 #: tfbg.midotnormal.caption
 msgctxt "tfbg.midotnormal.caption"
 msgid "Normal"
-msgstr ""
+msgstr "Normal"
 
 #: tfbg.midotsinview.caption
 msgid "Are dots in view?"
-msgstr ""
+msgstr "Er prikkene synlige?"
 
 #: tfbg.midotsize.caption
 msgctxt "tfbg.midotsize.caption"
 msgid "Dot Size"
-msgstr ""
+msgstr "Prikkestørrelse"
 
 #: tfbg.midotsmall.caption
 msgctxt "tfbg.midotsmall.caption"
 msgid "Small"
-msgstr ""
+msgstr "Liten"
 
 #: tfbg.midotval.caption
 msgid "Reading: ?"
-msgstr ""
+msgstr "Avlesning: ?"
 
 #: tfbg.miexit.caption
 msgid "Exit Trndi"
-msgstr ""
+msgstr "Avslutt Trndi"
 
 #: tfbg.miextlog.caption
 msgid "Extensions Log"
-msgstr ""
+msgstr "Utvidelseslogg"
 
 #: tfbg.mifloaton.caption
 msgid "Show Floating Window"
-msgstr ""
+msgstr "Vis flytende vindu"
 
 #: tfbg.miforce.caption
 msgid "Force Update"
-msgstr ""
+msgstr "Tving oppdatering"
 
 #: tfbg.mifullscreen.caption
 msgid "Toggle Fullscreen"
-msgstr ""
+msgstr "Veksle fullskjerm"
 
 #: tfbg.miguidelines.caption
 msgid "Show Guide Lines"
-msgstr ""
+msgstr "Vis retningslinjer"
 
 #: tfbg.mihistory.caption
 msgid "Show history"
-msgstr ""
+msgstr "Vis historikk"
 
 #: tfbg.miinfo.caption
 msgid "Limits"
-msgstr ""
+msgstr "Grenser"
 
 #: tfbg.milimitexplain.caption
 msgid "Explain"
-msgstr ""
+msgstr "Forklar"
 
 #: tfbg.miontop.caption
 msgid "On top"
-msgstr ""
+msgstr "Øverst"
 
 #: tfbg.mipredict.caption
 msgid "Prediction..."
-msgstr ""
+msgstr "Prediksjon..."
 
 #: tfbg.mipref.caption
 msgid "More options"
-msgstr ""
+msgstr "Flere valg"
 
 #: tfbg.mirangecolor.caption
 msgid "Use range color for window"
-msgstr ""
+msgstr "Farg vinduet med områdefarge"
 
 #: tfbg.mireadingssince.caption
 msgid "Show readings since.."
-msgstr ""
+msgstr "Vis avlesninger siden..."
 
 #: tfbg.mirefresh.caption
 msgid "Refresh in:"
-msgstr ""
+msgstr "Oppdaterer om:"
 
 #: tfbg.misettings.caption
 msgid "&Settings"
-msgstr ""
+msgstr "&Innstillinger"
 
 #: tfbg.pnoffrange.caption
 msgid "- Off Range -"
-msgstr ""
+msgstr "- Utenfor område -"
 
 #: tfbg.pnoffreading.caption
 msgid "Off Reading"
-msgstr ""
+msgstr "Ingen avlesning"
 
 #: tfbg.pnwarnlast.caption
 msgid "Last recieved reading:"
-msgstr ""
+msgstr "Sist mottatte avlesning:"
 
 #: tfconf.badd.caption
 msgid "+ Add"
-msgstr ""
+msgstr "+ Legg til"
 
 #: tfconf.bcommon.caption
 msgid "Go to Quick Settings"
-msgstr ""
+msgstr "Gå til hurtiginnstillinger"
 
 #: tfconf.bexportsettings.caption
 msgid "Export Settings"
-msgstr ""
+msgstr "Eksporter innstillinger"
 
 #: tfconf.bextopen.caption
 msgid "Show Folder"
-msgstr ""
+msgstr "Vis mappe"
 
 #: tfconf.bimportsettings.caption
 msgid "Import Settings"
-msgstr ""
+msgstr "Importer innstillinger"
 
 #: tfconf.bremove.caption
 msgid "- Remove"
-msgstr ""
+msgstr "- Fjern"
 
 #: tfconf.btemplatecurrent.caption
 msgctxt "tfconf.btemplatecurrent.caption"
 msgid "Template"
-msgstr ""
+msgstr "Mal"
 
 #: tfconf.btemplatetrend.caption
 msgctxt "tfconf.btemplatetrend.caption"
 msgid "Template"
-msgstr ""
+msgstr "Mal"
 
 #: tfconf.btest.caption
 msgid "Test"
-msgstr ""
+msgstr "Test"
 
 #: tfconf.btestannounce.caption
 msgid "Test Announce"
-msgstr ""
+msgstr "Test varsling"
 
 #: tfconf.btestproxy.caption
 msgid "Test proxy"
-msgstr ""
+msgstr "Test proxy"
 
 #: tfconf.btestspeech.caption
 msgid "Test Speech"
-msgstr ""
+msgstr "Test tale"
 
 #: tfconf.btreset.caption
 msgid "Reset"
-msgstr ""
+msgstr "Tilbakestill"
 
 #: tfconf.btusersave.caption
 msgid "Save"
-msgstr ""
+msgstr "Lagre"
 
 #: tfconf.button2.caption
 msgid "Reset Fonts"
-msgstr ""
+msgstr "Tilbakestill skrifttyper"
 
 #: tfconf.button3.caption
 msgid "Check for update"
-msgstr ""
+msgstr "Se etter oppdatering"
 
 #: tfconf.button4.caption
 msgid "Reset Dots"
-msgstr ""
+msgstr "Tilbakestill prikker"
 
 #: tfconf.caption
 #, fuzzy
@@ -425,253 +425,253 @@ msgstr "Innstillinger"
 
 #: tfconf.cbalerthilo.caption
 msgid "Alert me when blood sugar is high/low"
-msgstr ""
+msgstr "Varsle meg når blodsukkeret er høyt/lavt"
 
 #: tfconf.cbalertmissing.caption
 msgid "Alert me when readings are missing / not fresh"
-msgstr ""
+msgstr "Varsle meg når avlesninger mangler / ikke er ferske"
 
 #: tfconf.cbchroma.caption
 msgid "Enable Razer Chroma integration"
-msgstr ""
+msgstr "Aktiver Razer Chroma-integrasjon"
 
 #: tfconf.cbchromahigh.text
 msgctxt "tfconf.cbchromahigh.text"
 msgid "Breath (pulse)"
-msgstr ""
+msgstr "Pust (puls)"
 
 #: tfconf.cbchromalow.text
 msgctxt "tfconf.cbchromalow.text"
 msgid "Breath (pulse)"
-msgstr ""
+msgstr "Pust (puls)"
 
 #: tfconf.cbchromanormal.caption
 msgid "Make units green when reading is normal *"
-msgstr ""
+msgstr "Gjør enheter grønne ved normalt blodsukkernivå *"
 
 #: tfconf.cbconnectivitybutton.caption
 msgid "Enable connectivity button"
-msgstr ""
+msgstr "Aktiver tilkoblingsknapp"
 
 #: tfconf.cbcust.caption
 msgctxt "tfconf.cbcust.caption"
 msgid "Use custom values"
-msgstr ""
+msgstr "Bruk egne verdier"
 
 #: tfconf.cbcust1.caption
 msgctxt "tfconf.cbcust1.caption"
 msgid "Use custom values"
-msgstr ""
+msgstr "Bruk egne verdier"
 
 #: tfconf.cbcustrange.caption
 msgctxt "tfconf.cbcustrange.caption"
 msgid "Use custom values"
-msgstr ""
+msgstr "Bruk egne verdier"
 
 #: tfconf.cbflash.caption
 msgid "Badge Flashing"
-msgstr ""
+msgstr "Badge-blinking"
 
 #: tfconf.cbflashhi.caption
 msgid "Flash on high blood sugar"
-msgstr ""
+msgstr "Blink ved høyt blodsukker"
 
 #: tfconf.cbflashlow.caption
 msgid "Flash on low blood sugar"
-msgstr ""
+msgstr "Blink ved lavt blodsukker"
 
 #: tfconf.cbflashperfect.caption
 msgid "Flash on perfect reading (5.5mmol/L / 100mg/dL)"
-msgstr ""
+msgstr "Blink ved perfekt avlesning (5,5mmol/L / 100mg/dL)"
 
 #: tfconf.cbfonts.caption
 msgid "Trend Dots"
-msgstr ""
+msgstr "Trendprikker"
 
 #: tfconf.cbhcontrast.caption
 msgid "High Contrast"
-msgstr ""
+msgstr "Høy kontrast"
 
 #: tfconf.cbmediadisable.caption
 msgid "Disable the entire media system"
-msgstr ""
+msgstr "Deaktiver hele mediesystemet"
 
 #: tfconf.cbmovediffright.caption
 msgid "Move to right"
-msgstr ""
+msgstr "Flytt til høyre"
 
 #: tfconf.cbmultitouch.caption
 msgid "Multi-touch"
-msgstr ""
+msgstr "Multi-touch"
 
 #: tfconf.cbmusicpause.caption
 msgid "Pause music when high/low"
-msgstr ""
+msgstr "Pause musikk ved høyt/lavt"
 
 #: tfconf.cbnotice.caption
 msgid "System notifications"
-msgstr ""
+msgstr "Systemvarsler"
 
 #: tfconf.cboffbar.caption
 msgid "Show a sidebar when value is not in range"
-msgstr ""
+msgstr "Vis et sidepanel når verdien er utenfor målområdet"
 
 #: tfconf.cbpainthilo.caption
 msgid "Color the graph's background with your range"
-msgstr ""
+msgstr "Farg grafens bakgrunn med ditt målområde"
 
 #: tfconf.cbpainthilorange.caption
 msgid "Color the graph's background with your custom range"
-msgstr ""
+msgstr "Farg grafens bakgrunn med ditt foretrukne område"
 
 #: tfconf.cbpaintlines.caption
 msgid "Show threshold lines"
-msgstr ""
+msgstr "Vis grenslinjer"
 
 #: tfconf.cbpredictions.caption
 msgid "Show glucose predictions"
-msgstr ""
+msgstr "Vis glukoseprediksjoner"
 
 #: tfconf.cbpredictshort.caption
 msgid "Show only trend arrows / 1 reading (short mode)"
-msgstr ""
+msgstr "Vis kun trendpiler / 1 avlesning (kortmodus)"
 
 #: tfconf.cbpredictshortfullarrows.caption
 msgid "Use full arrow set (↑↑, ↑, ↗, →, ↘, ↓, ↓↓)"
-msgstr ""
+msgstr "Bruk fullt pilesett (↑↑, ↑, ↗, →, ↘, ↓, ↓↓)"
 
 #: tfconf.cbpredictshortminutes.text
 msgid "10 minutes"
-msgstr ""
+msgstr "10 minutter"
 
 #: tfconf.cbpredictshortsize.text
 msgid "small"
-msgstr ""
+msgstr "liten"
 
 #: tfconf.cbprivacy.caption
 msgid "Privacy Mode (Hide glucose value)"
-msgstr ""
+msgstr "Personvernmodus (skjul glukoseverdi)"
 
 #: tfconf.cbprogress.caption
 msgid "Display progress to next update on the left"
-msgstr ""
+msgstr "Vis tid til neste oppdatering til venstre"
 
 #: tfconf.cbshowmean.caption
 msgid "Show mean blood sugar reading next to TIR"
-msgstr ""
+msgstr "Vis gjennomsnittlig blodsukker ved siden av TIR"
 
 #: tfconf.cbshowsensorexpiry.caption
 msgid "Show sensor expiry in top-center badge"
-msgstr ""
+msgstr "Vis sensorutløp i øverste midtre badge"
 
 #: tfconf.cbsize.caption
 msgid "Remember window size"
-msgstr ""
+msgstr "Husk vinduestørrelse"
 
 #: tfconf.cbsys.text
 msgid "NightScout"
-msgstr ""
+msgstr "NightScout"
 
 #: tfconf.cbtimestamp.caption
 msgid "Show reading time (instead of minutes ago)"
-msgstr ""
+msgstr "Vis avlesningstid (i stedet for minutter siden)"
 
 #: tfconf.cbtir.caption
 msgid "Include full high/low in time-in-range, not just the custom range"
-msgstr ""
+msgstr "Inkluder fullt høy/lav i tid-i-målområde, ikke bare det egendefinerte området"
 
 #: tfconf.cbtircolor.caption
 msgctxt "tfconf.cbtircolor.caption"
 msgid "Use this color:"
-msgstr ""
+msgstr "Bruk denne fargen:"
 
 #: tfconf.cbtircolorbg.caption
 msgctxt "tfconf.cbtircolorbg.caption"
 msgid "Adjust color based on background"
-msgstr ""
+msgstr "Juster farge basert på bakgrunn"
 
 #: tfconf.cbtircolorbgcustom.caption
 msgctxt "tfconf.cbtircolorbgcustom.caption"
 msgid "Adjust color based on background"
-msgstr ""
+msgstr "Juster farge basert på bakgrunn"
 
 #: tfconf.cbtircolorcustom.caption
 msgctxt "tfconf.cbtircolorcustom.caption"
 msgid "Use this color:"
-msgstr ""
+msgstr "Bruk denne fargen:"
 
 #: tfconf.cbtiricon.caption
 msgid "Show a smiley instead of percentage"
-msgstr ""
+msgstr "Vis en smiley i stedet for prosent"
 
 #: tfconf.cbtitlecolor.caption
 msgid "Color the title bar with glucose color (Windows only)"
-msgstr ""
+msgstr "Farg titellinjen med blodsukkerfargen (kun Windows)"
 
 #: tfconf.cbtouch.caption
 msgid "Touch screen"
-msgstr ""
+msgstr "Berøringsskjerm"
 
 #: tfconf.cbtts.caption
 msgid "Enable Text-To-Speech"
-msgstr ""
+msgstr "Aktiver tekst-til-tale"
 
 #: tfconf.cbuser.caption
 msgid "Account color"
-msgstr ""
+msgstr "Kontofarge"
 
 #: tfconf.cbusercolor.caption
 msgid "Display users' colors on the main and floating windows"
-msgstr ""
+msgstr "Vis brukernes farger på hoved- og det flytende vinduet"
 
 #: tfconf.cbwarnlohi.caption
 msgid "Warn when going high or low"
-msgstr ""
+msgstr "Varsle når du går mot høyt eller lavt"
 
 #: tfconf.cbwebapi.caption
 msgid "Enable Web API"
-msgstr ""
+msgstr "Aktiver Web-API"
 
 #: tfconf.cgnotifications.caption
 msgctxt "tfconf.cgnotifications.caption"
 msgid "Notifications"
-msgstr ""
+msgstr "Varsler"
 
 #: tfconf.cl_hi_bg.caption
 msgctxt "tfconf.cl_hi_bg.caption"
 msgid "High"
-msgstr ""
+msgstr "Høy"
 
 #: tfconf.cl_hi_bg_cust.caption
 msgid "High Background"
-msgstr ""
+msgstr "Høy bakgrunn"
 
 #: tfconf.cl_hi_txt.caption
 msgctxt "tfconf.cl_hi_txt.caption"
 msgid "High"
-msgstr ""
+msgstr "Høy"
 
 #: tfconf.cl_hi_txt_cust.caption
 msgid "High Text"
-msgstr ""
+msgstr "Høy tekst"
 
 #: tfconf.cl_lo_bg.caption
 msgctxt "tfconf.cl_lo_bg.caption"
 msgid "Low"
-msgstr ""
+msgstr "Lav"
 
 #: tfconf.cl_lo_bg_cust.caption
 msgid "Low Background"
-msgstr ""
+msgstr "Lav bakgrunn"
 
 #: tfconf.cl_lo_txt.caption
 msgctxt "tfconf.cl_lo_txt.caption"
 msgid "Low"
-msgstr ""
+msgstr "Lav"
 
 #: tfconf.cl_lo_txt_cust.caption
 msgid "Low Text"
-msgstr ""
+msgstr "Lav tekst"
 
 #: tfconf.cl_ok_bg.caption
 #, fuzzy
@@ -687,75 +687,75 @@ msgstr "OK"
 
 #: tfconf.edproxyport.text
 msgid "8080"
-msgstr ""
+msgstr "8080"
 
 #: tfconf.gbdisplayprefs.caption
 msgid "Display Preferences"
-msgstr ""
+msgstr "Visningsinnstillinger"
 
 #: tfconf.gbmedia.caption
 msgctxt "tfconf.gbmedia.caption"
 msgid "Play Media"
-msgstr ""
+msgstr "Spill media"
 
 #: tfconf.gbmulti.caption
 msgid "Account Settings"
-msgstr ""
+msgstr "Kontoinnstillinger"
 
 #: tfconf.gbnetwork.caption
 msgid "Network"
-msgstr ""
+msgstr "Nettverk"
 
 #: tfconf.gboverride.caption
 msgctxt "tfconf.gboverride.caption"
 msgid "Override High / Low limits"
-msgstr ""
+msgstr "Overstyr høye / lave grenser"
 
 #: tfconf.gboverride1.caption
 msgctxt "tfconf.gboverride1.caption"
 msgid "Override High / Low limits"
-msgstr ""
+msgstr "Overstyr høye / lave grenser"
 
 #: tfconf.gbsettings.caption
 msgid "Settings Management"
-msgstr ""
+msgstr "Innstillingshåndtering"
 
 #: tfconf.gburl.caption
 msgctxt "tfconf.gburl.caption"
 msgid "Use URL"
-msgstr ""
+msgstr "Bruk URL"
 
 #: tfconf.groupbox1.caption
 msgid "System Features"
-msgstr ""
+msgstr "Systemfunksjoner"
 
 #: tfconf.groupbox10.caption
 msgid "Layout"
-msgstr ""
+msgstr "Layout"
 
 #: tfconf.groupbox2.caption
 msgid "Available Extensions"
-msgstr ""
+msgstr "Tilgjengelige utvidelser"
 
 #: tfconf.groupbox3.caption
 msgid "Extension Info"
-msgstr ""
+msgstr "Utvidelsesinfo"
 
 #: tfconf.groupbox4.caption
 msgid "All accounts"
-msgstr ""
+msgstr "Alle kontoer"
 
 #: tfconf.groupbox5.caption
 msgid "Extra Settings"
-msgstr ""
+msgstr "Ekstra innstillinger"
 
 #: tfconf.groupbox6.caption
 msgid "In-range coloring"
-msgstr ""
+msgstr "Farging innenfor område"
 
 #: tfconf.groupbox7.caption
 msgid "Override Custom Range"
-msgstr ""
+msgstr "Overstyr egendefinert område"
 
 #: tfconf.groupbox8.caption
 #, fuzzy
@@ -766,301 +766,301 @@ msgstr "Prediksjoner"
 #: tfconf.groupbox9.caption
 msgctxt "tfconf.groupbox9.caption"
 msgid "Display"
-msgstr ""
+msgstr "Visning"
 
 #: tfconf.label1.caption
 msgctxt "tfconf.label1.caption"
 msgid "Readings are outdated after (minutes):"
-msgstr ""
+msgstr "Avlesninger regnes som utdaterte etter (minutter):"
 
 #: tfconf.label10.caption
 msgid "High (eg https://open.spotify.com/... or spotify:track:...)"
-msgstr ""
+msgstr "Høy (f.eks. https://open.spotify.com/... eller spotify:track:...)"
 
 #: tfconf.label11.caption
 msgid "Low (eg https://open.spotify.com/... or spotify:track:...)"
-msgstr ""
+msgstr "Lav (f.eks. https://open.spotify.com/... eller spotify:track:...)"
 
 #: tfconf.label12.caption
 msgctxt "tfconf.label12.caption"
 msgid "Perfect Reading (5.5mmol/L or 100 mg/dL)"
-msgstr ""
+msgstr "Perfekt avlesning (5,5mmol/L eller 100 mg/dL)"
 
 #: tfconf.label13.caption
 msgctxt "tfconf.label13.caption"
 msgid "Decimal separator:"
-msgstr ""
+msgstr "Desimaltegn:"
 
 #: tfconf.label14.caption
 msgid "NOTE: Support depends on your data source "
-msgstr ""
+msgstr "OBS: Støtte avhenger av din datakilde "
 
 #: tfconf.label15.caption
 msgid "Server Address / Dexcom Username"
-msgstr ""
+msgstr "Serveradresse / Dexcom-brukernavn"
 
 #: tfconf.label16.caption
 msgid "Current dot:"
-msgstr ""
+msgstr "Gjeldende prikk:"
 
 #: tfconf.label17.caption
 msgid "These settings reside in different parts of the settings dialog, but has been collected here for your convinience!"
-msgstr ""
+msgstr "Disse innstillingene befinner seg i ulike deler av innstillingsdialogen, men er samlet her for din bekvemmelighet!"
 
 #: tfconf.label18.caption
 msgid "Connection"
-msgstr ""
+msgstr "Tilkobling"
 
 #: tfconf.label2.caption
 msgid "Trend dot:"
-msgstr ""
+msgstr "Trendprikk:"
 
 #: tfconf.label20.caption
 msgid "The custom range is a subrange with your ideal goal."
-msgstr ""
+msgstr "Det egendefinerte området er et underområde med ditt ideelle mål."
 
 #: tfconf.label21.caption
 msgid "NOTE: Colors will be blended with Trndi's background"
-msgstr ""
+msgstr "OBS: Farger vil blandes med Trndis bakgrunn"
 
 #: tfconf.label22.caption
 msgid "Change Trndi's default background colors, depending on glucose reading"
-msgstr ""
+msgstr "Endre Trndis standard bakgrunnsfarger avhengig av glukoseavlesning"
 
 #: tfconf.label23.caption
 msgid "Change Trndi's default text colors, depending on glucose reading"
-msgstr ""
+msgstr "Endre Trndis standard tekstfarger avhengig av glukoseavlesning"
 
 #: tfconf.label24.caption
 msgid "Change Trndi's default background and colors, when in the custom range"
-msgstr ""
+msgstr "Endre Trndis standardbakgrunnsfarger og -farger når du er i ditt egendefinerte område"
 
 #: tfconf.label25.caption
 msgid "Maximum delta slots"
-msgstr ""
+msgstr "Maksimale delta-plasser"
 
 #: tfconf.label26.caption
 msgid "High (eg https://url.local/hi)"
-msgstr ""
+msgstr "Høy (f.eks. https://url.local/hi)"
 
 #: tfconf.label27.caption
 msgid "Low (eg https://url.local/lo)"
-msgstr ""
+msgstr "Lav (f.eks. https://url.local/lo)"
 
 #: tfconf.label28.caption
 msgctxt "tfconf.label28.caption"
 msgid "Perfect Reading (5.5mmol/L or 100 mg/dL)"
-msgstr ""
+msgstr "Perfekt avlesning (5,5mmol/L eller 100 mg/dL)"
 
 #: tfconf.label29.caption
 msgid "Trndi can control the color of Razer keyboards, mouses and other devices"
-msgstr ""
+msgstr "Trndi kan kontrollere fargen på Razer-tastaturer, mus og andre enheter"
 
 #: tfconf.label3.caption
 msgid "Nickname:"
-msgstr ""
+msgstr "Kallenavn:"
 
 #: tfconf.label30.caption
 msgid "Trndi will control these devices:"
-msgstr ""
+msgstr "Trndi vil kontrollere disse enhetene:"
 
 #: tfconf.label31.caption
 msgid "Units will pulse in red on high and blue on low"
-msgstr ""
+msgstr "Enheter vil pulsere rødt ved høy og blått ved lav"
 
 #: tfconf.label32.caption
 msgid "Razer Synapse required on Windows. OpenRazer on Linux. No support for other platforms at this time."
-msgstr ""
+msgstr "Razer Synapse kreves på Windows. OpenRazer på Linux. Ingen støtte for andre plattformer for øyeblikket."
 
 #: tfconf.label33.caption
 msgctxt "tfconf.label33.caption"
 msgid "Decimal separator:"
-msgstr ""
+msgstr "Desimaltegn:"
 
 #: tfconf.label34.caption
 msgctxt "tfconf.label34.caption"
 msgid "Readings are outdated after (minutes):"
-msgstr ""
+msgstr "Avlesninger regnes som utdaterte etter (minutter):"
 
 #: tfconf.label35.caption
 msgid "You can press \"s\" at any time to have the current reading read out loud"
-msgstr ""
+msgstr "Du kan trykke \"s\" når som helst for å få den gjeldende avlesningen lest opp"
 
 #: tfconf.label36.caption
 msgid "Voice Type:"
-msgstr ""
+msgstr "Stemmetype:"
 
 #: tfconf.label37.caption
 msgid "Rate:"
-msgstr ""
+msgstr "Hastighet:"
 
 #: tfconf.label38.caption
 msgid "High contrast disables some of Trndis Time-in-Range coloring"
-msgstr ""
+msgstr "Høy kontrast deaktiverer noe av Trndis Tid-i-målområde-farging"
 
 #: tfconf.label39.caption
 msgid "Diff scale:"
-msgstr ""
+msgstr "Differanseskala:"
 
 #: tfconf.label4.caption
 msgid "Window start-up position"
-msgstr ""
+msgstr "Vinduets startposisjon"
 
 #: tfconf.label40.caption
 msgid "Diff position:"
-msgstr ""
+msgstr "Differanseposisjon:"
 
 #: tfconf.label41.caption
 msgid "Prediction scale:"
-msgstr ""
+msgstr "Prediksjonsskala:"
 
 #: tfconf.label42.caption
 msgid "* When Trndi is in focus, units may turn off coloring if this is disabled. This is a Chroma limitation."
-msgstr ""
+msgstr "* Når Trndi er i fokus, kan enheter slå av farging hvis dette er deaktivert. Dette er en Chroma-begrensning."
 
 #: tfconf.label5.caption
 msgid "Black = transparent"
-msgstr ""
+msgstr "Sort = gjennomsiktig"
 
 #: tfconf.label6.caption
 msgid "Language"
-msgstr ""
+msgstr "Språk"
 
 #: tfconf.label7.caption
 msgid "Time-in-range (TIR) is the amount of time you are within your high/low goal."
-msgstr ""
+msgstr "Tid-i-målområde (TIR) er den tiden du er innenfor ditt mål for høye/lave verdier."
 
 #: tfconf.label8.caption
 msgid "Click on the time, reading or arrow to change it's font"
-msgstr ""
+msgstr "Klikk på tid, avlesning eller pil for å endre dens skrifttype"
 
 #: tfconf.label9.caption
 msgid "Trndi can trigger Spotify or Deezer to play a song when low/high"
-msgstr ""
+msgstr "Trndi kan utløse Spotify eller Deezer til å spille en sang ved lav/høy"
 
 #: tfconf.labelproxyhost.caption
 msgid "Proxy Host:"
-msgstr ""
+msgstr "Proxy-vert:"
 
 #: tfconf.labelproxypass.caption
 msgid "Proxy Pass:"
-msgstr ""
+msgstr "Proxy-passord:"
 
 #: tfconf.labelproxyport.caption
 msgid "Proxy Port:"
-msgstr ""
+msgstr "Proxy-port:"
 
 #: tfconf.labelproxyuser.caption
 msgid "Proxy User:"
-msgstr ""
+msgstr "Proxy-bruker:"
 
 #: tfconf.lack.caption
 msgid "Libraries"
-msgstr ""
+msgstr "Biblioteker"
 
 #: tfconf.lago.caption
 msgid "100 min"
-msgstr ""
+msgstr "100 min"
 
 #: tfconf.larch.caption
 msgid "Unknown Architecture"
-msgstr ""
+msgstr "Ukjent arkitektur"
 
 #: tfconf.lchromahigh.caption
 msgid "On high:"
-msgstr ""
+msgstr "Ved høy:"
 
 #: tfconf.lchromalow.caption
 msgid "On low:"
-msgstr ""
+msgstr "Ved lav:"
 
 #: tfconf.lconfigpredict.caption
 msgid "Glucose Predictions Settings"
-msgstr ""
+msgstr "Innstillinger for glukoseprediksjoner"
 
 #: tfconf.ldot.caption
 msgctxt "tfconf.ldot.caption"
 msgid "PREVIEW"
-msgstr ""
+msgstr "FORHÅNDSVISNING"
 
 #: tfconf.ldotnow.caption
 msgctxt "tfconf.ldotnow.caption"
 msgid "PREVIEW"
-msgstr ""
+msgstr "FORHÅNDSVISNING"
 
 #: tfconf.lext.caption
 msgid "Plugin Folder"
-msgstr ""
+msgstr "Plugin-mappe"
 
 #: tfconf.lextcopyright.caption
 msgid "for more info"
-msgstr ""
+msgstr "for mer info"
 
 #: tfconf.lextcount.caption
 msgid "Extensions count:"
-msgstr ""
+msgstr "Antall utvidelser:"
 
 #: tfconf.lextname.caption
 msgid "Choose an extension"
-msgstr ""
+msgstr "Velg en utvidelse"
 
 #: tfconf.lhiover.caption
 msgctxt "tfconf.lhiover.caption"
 msgid "High over"
-msgstr ""
+msgstr "Høy over"
 
 #: tfconf.lhiover1.caption
 msgctxt "tfconf.lhiover1.caption"
 msgid "High over"
-msgstr ""
+msgstr "Høy over"
 
 #: tfconf.lhiover2.caption
 msgid "Maximum minutes to count time in range on (depending on source data availability):"
-msgstr ""
+msgstr "Maksimale minutter å telle tid i målområde på (avhenger av tilgjengelige kildedata):"
 
 #: tfconf.lhiover3.caption
 msgctxt "tfconf.lhiover3.caption"
 msgid "High over"
-msgstr ""
+msgstr "Høy over"
 
 #: tfconf.llicense.caption
 msgid "License"
-msgstr ""
+msgstr "Lisens"
 
 #: tfconf.llounder.caption
 msgctxt "tfconf.llounder.caption"
 msgid "Low under"
-msgstr ""
+msgstr "Lav under"
 
 #: tfconf.llounder1.caption
 msgctxt "tfconf.llounder1.caption"
 msgid "Low under"
-msgstr ""
+msgstr "Lav under"
 
 #: tfconf.llounder2.caption
 msgctxt "tfconf.llounder2.caption"
 msgid "Low under"
-msgstr ""
+msgstr "Lav under"
 
 #: tfconf.los.caption
 msgid "Unknown System"
-msgstr ""
+msgstr "Ukjent system"
 
 #: tfconf.lpass.caption
 msgid "API Key / Dexcom Password"
-msgstr ""
+msgstr "API-nøkkel / Dexcom-passord"
 
 #: tfconf.lpredictshortminutes.caption
 msgid "Prediction horizon:"
-msgstr ""
+msgstr "Prediksjonshorisonten:"
 
 #: tfconf.lpredictshortsize.caption
 msgid "Trend arrow size:"
-msgstr ""
+msgstr "Trendpilstørrelse:"
 
 #: tfconf.lproblematic.caption
 msgid "Compatibility mode: Your window manager does not support all features, please consider eg KDE"
-msgstr ""
+msgstr "Kompatibilitetsmodus: Din vindusbehandler støtter ikke alle funksjoner, vurder f.eks. KDE"
 
 #: tfconf.lproxydesc.caption
 msgid ""
@@ -1075,132 +1075,132 @@ msgstr ""
 
 #: tfconf.lproxytitle.caption
 msgid "Proxy Settings"
-msgstr ""
+msgstr "Proxy-innstillinger"
 
 #: tfconf.lsettingshelp.caption
 msgid "Export all settings to a file for backup or transfer to another device. Import to restore settings."
-msgstr ""
+msgstr "Eksporter alle innstillinger til en fil for sikkerhetskopiering eller overføring til en annen enhet. Importer for å gjenopprette innstillinger."
 
 #: tfconf.ltestannounce.caption
 msgid "Test an announcement"
-msgstr ""
+msgstr "Test en varsling"
 
 #: tfconf.ltray.caption
 msgid "Tray icon size:"
-msgstr ""
+msgstr "Skuffeikonstørrelse:"
 
 #: tfconf.lusername.caption
 msgid "User:"
-msgstr ""
+msgstr "Bruker:"
 
 #: tfconf.lusertrack.caption
 msgid "Add users below, if you wish to track more than one person."
-msgstr ""
+msgstr "Legg til brukere nedenfor, hvis du ønsker å spore mer enn én person."
 
 #: tfconf.lwaitsys.caption
 msgid "Please wait..."
-msgstr ""
+msgstr "Vennligst vent..."
 
 #: tfconf.lwarnpredict.caption
 msgid "WARNING: This is a very experimental feature!. Do not depend on these readings!"
-msgstr ""
+msgstr "ADVARSEL: Dette er en svært eksperimentell funksjon! Stol ikke på disse avlesningene!"
 
 #: tfconf.lwidgetset.caption
 msgid "Unknown Widgetset"
-msgstr ""
+msgstr "Ukjent widgetsett"
 
 #: tfconf.lwm.caption
 msgid "Unknown Window Manager"
-msgstr ""
+msgstr "Ukjent vindusbehandler"
 
 #: tfconf.rbpredictshortarrowonly.caption
 msgid "Arrow only"
-msgstr ""
+msgstr "Kun pil"
 
 #: tfconf.rbpredictshortshowvalue.caption
 msgid "Show time and value (e.g., ⏱10' ↗ 5.5)"
-msgstr ""
+msgstr "Vis tid og verdi (f.eks. ⏱10' ↗ 5.5)"
 
 #: tfconf.rbunit.caption
 msgid "Display Unit"
-msgstr ""
+msgstr "Visningsenhet"
 
 #: tfconf.tsaccess.caption
 msgid "Accessibility"
-msgstr ""
+msgstr "Tilgjengelighet"
 
 #: tfconf.tsadvanced.caption
 msgid "Advanced"
-msgstr ""
+msgstr "Avansert"
 
 #: tfconf.tsbackgrounds.caption
 msgid "Backgrounds"
-msgstr ""
+msgstr "Bakgrunner"
 
 #: tfconf.tschroma.caption
 msgid "Razer Chroma"
-msgstr ""
+msgstr "Razer Chroma"
 
 #: tfconf.tscolors.caption
 msgid "Colors"
-msgstr ""
+msgstr "Farger"
 
 #: tfconf.tscommon.caption
 msgid "Quick Settings"
-msgstr ""
+msgstr "Hurtiginnstillinger"
 
 #: tfconf.tscustom.caption
 msgid "Customization"
-msgstr ""
+msgstr "Tilpasning"
 
 #: tfconf.tscustomrange.caption
 msgid "Custom range"
-msgstr ""
+msgstr "Egendefinert område"
 
 #: tfconf.tsdisplay.caption
 msgctxt "tfconf.tsdisplay.caption"
 msgid "Display"
-msgstr ""
+msgstr "Visning"
 
 #: tfconf.tsext.caption
 msgid "Extensions"
-msgstr ""
+msgstr "Utvidelser"
 
 #: tfconf.tsgeneral.caption
 msgid "General"
-msgstr ""
+msgstr "Generelt"
 
 #: tfconf.tsintegration.caption
 msgid "Integrations"
-msgstr ""
+msgstr "Integrasjoner"
 
 #: tfconf.tsmulti.caption
 msgid "Multi User"
-msgstr ""
+msgstr "Flere brukere"
 
 #: tfconf.tsproxy.caption
 msgid "Proxy"
-msgstr ""
+msgstr "Proxy"
 
 #: tfconf.tssystem.caption
 msgid "System"
-msgstr ""
+msgstr "System"
 
 #: tfconf.tstexts.caption
 msgid "Texts"
-msgstr ""
+msgstr "Tekster"
 
 #: tfconf.tstir.caption
 msgid "Time-in-range"
-msgstr ""
+msgstr "Tid-i-målområde"
 
 #: tffloat.caption
 msgid "Floating Display"
-msgstr ""
+msgstr "Flytende visning"
 
 #: tffloat.ltime.caption
 msgid "00:00"
-msgstr ""
+msgstr "00:00"
 
 #: tffloat.lval.caption
 #, fuzzy
@@ -1210,68 +1210,68 @@ msgstr "Oppsett"
 
 #: tffloat.menuitem1.caption
 msgid "&Hide"
-msgstr ""
+msgstr "&Skjul"
 
 #: tffloat.mibig.caption
 msgctxt "tffloat.mibig.caption"
 msgid "Big"
-msgstr ""
+msgstr "Stor"
 
 #: tffloat.miclock.caption
 msgid "Show clock"
-msgstr ""
+msgstr "Vis klokke"
 
 #: tffloat.micustomsize.caption
 msgctxt "tffloat.micustomsize.caption"
 msgid "Custom"
-msgstr ""
+msgstr "Tilpasset"
 
 #: tffloat.micustomvisible.caption
 msgctxt "tffloat.micustomvisible.caption"
 msgid "Custom"
-msgstr ""
+msgstr "Tilpasset"
 
 #: tffloat.mifontblack.caption
 msgid "Black"
-msgstr ""
+msgstr "Sort"
 
 #: tffloat.mifontcolor.caption
 msgid "Font Color"
-msgstr ""
+msgstr "Skrifttypefarge"
 
 #: tffloat.mifontmain.caption
 msgid "Main Window Color"
-msgstr ""
+msgstr "Primær vinduesfarge"
 
 #: tffloat.mifontwhite.caption
 msgid "White"
-msgstr ""
+msgstr "Hvit"
 
 #: tffloat.mimain.caption
 msgid "Show/Hide Main Window"
-msgstr ""
+msgstr "Vis/skjul hovedvindu"
 
 #: tffloat.minormal.caption
 msgctxt "tffloat.minormal.caption"
 msgid "Normal"
-msgstr ""
+msgstr "Normal"
 
 #: tffloat.misize.caption
 msgid "Size"
-msgstr ""
+msgstr "Størrelse"
 
 #: tffloat.mismall.caption
 msgctxt "tffloat.mismall.caption"
 msgid "Small"
-msgstr ""
+msgstr "Liten"
 
 #: tffloat.mivisible.caption
 msgid "Visibility"
-msgstr ""
+msgstr "Synlighet"
 
 #: tffloat.mixl.caption
 msgid "Very Big"
-msgstr ""
+msgstr "Veldig stor"
 
 #: tfsplash.lsplashwarn.caption
 msgid ""
@@ -1297,11 +1297,11 @@ msgstr ""
 #: trndi.api.dexcom.serrdexlogin
 msgctxt "trndi.api.dexcom.serrdexlogin"
 msgid "Login error: Could not establish a valid session"
-msgstr ""
+msgstr "Innloggingsfeil: Kunne ikke opprette en gyldig økt"
 
 #: trndi.api.dexcom.serrdexpass
 msgid "Invalid Dexcom password or account credentials"
-msgstr ""
+msgstr "Ugyldig Dexcom-passord eller kontoinformasjon"
 
 #: trndi.api.dexcom.sparamdesc
 msgid ""
@@ -1323,20 +1323,20 @@ msgstr ""
 
 #: trndi.api.dexcom.sparampassword
 msgid "Dexcom Password"
-msgstr ""
+msgstr "Dexcom-passord"
 
 #: trndi.api.dexcom.sparamusername
 msgid "Dexcom Username"
-msgstr ""
+msgstr "Dexcom-brukernavn"
 
 #: trndi.api.dexcomnew.sdexnewerrlogin
 msgctxt "trndi.api.dexcomnew.sdexnewerrlogin"
 msgid "Login error: Could not establish a valid session"
-msgstr ""
+msgstr "Innloggingsfeil: Kunne ikke opprette en gyldig økt"
 
 #: trndi.api.dexcomnew.sdexnewerrpass
 msgid "Incorrect username or password combination"
-msgstr ""
+msgstr "Feil brukernavn eller passordkombinasjon"
 
 #: trndi.api.dexcomnew.sdexnewparamdesc
 msgid ""
@@ -1359,15 +1359,15 @@ msgstr ""
 
 #: trndi.api.dexcomnew.sdexnewparampassword
 msgid "Password"
-msgstr ""
+msgstr "Passord"
 
 #: trndi.api.dexcomnew.sdexnewparamregion
 msgid "Region (\"usa\", \"japan\"/\"jp\", or empty)"
-msgstr ""
+msgstr "Region (\"usa\", \"japan\"/\"jp\", eller tom)"
 
 #: trndi.api.dexcomnew.sdexnewparamusername
 msgid "Dexcom Account Username"
-msgstr ""
+msgstr "Dexcom-kontobrukernavn"
 
 #: trndi.api.nightscout.sparamdesc
 msgid ""
@@ -1387,17 +1387,17 @@ msgstr ""
 
 #: trndi.api.nightscout.sparamdeschtml
 msgid "<div style=\"font-family: Arial, sans-serif; line-height: 1.6;\"><h2 style=\"margin-bottom: 10px;\">🌙 NightScout v2 Setup</h2><p style=\"color: #7f8c8d; font-style: italic; margin-bottom: 15px;\">(use FULL access token)</p><ol style=\"padding-left: 20px;\"><li style=\"margin-bottom: 10px;\">Open your NightScout site (e.g., <code style=\"background: #6495ED; padding: 2px 6px; border-radius: 3px;\">https://your-site</code>).</li><li style=\"margin-bottom: 10px;\">Go to <strong>Admin → Tokens</strong> — or <strong>API Secret</strong>.</li><li style=\"margin-bottom: 10px;\">If you use Tokens:<ul style=\"margin-top: 5px; padding-left: 20px;\"><li>Create a token with at least <strong>READ</strong> scope.</li><li>Copy the <strong>FULL</strong> access token value exactly as shown.</li></ul></li><li style=\"margin-bottom: 10px;\">In Trndi:<ul style=\"margin-top: 5px; padding-left: 20px;\"><li><strong>Address:</strong> enter your NightScout URL</li><li><strong>Auth:</strong> paste the FULL access token (not just a suffix).</li></ul></li></ol><p style=\"border-left: 4px solid #ffc107; padding: 10px; margin-top: 15px;\"><strong>⚠️ Note:</strong> If you instead use the legacy API Secret, paste your API Secret value as-is.</p></div>"
-msgstr ""
+msgstr "<div style="font-family: Arial, sans-serif; line-height: 1.6;"><h2 style="margin-bottom: 10px;">🌙 NightScout v2-oppsett</h2><p style="color: #7f8c8d; font-style: italic; margin-bottom: 15px;">(bruk FULL access token)</p><ol style="padding-left: 20px;"><li style="margin-bottom: 10px;">Åpne din NightScout-side (f.eks. <code style="background: #6495ED; padding: 2px 6px; border-radius: 3px;">https://din-side</code>).</li><li style="margin-bottom: 10px;">Gå til <strong>Admin → Tokens</strong> — eller <strong>API Secret</strong>.</li><li style="margin-bottom: 10px;">Hvis du bruker Tokens:<ul style="margin-top: 5px; padding-left: 20px;"><li>Opprett et token med minst <strong>READ</strong> scope.</li><li>Kopier den <strong>FULLE</strong> access token-verdien nøyaktig som vist.</li></ul></li><li style="margin-bottom: 10px;">I Trndi:<ul style="margin-top: 5px; padding-left: 20px;"><li><strong>Adresse:</strong> skriv inn din NightScout URL</li><li><strong>Auth:</strong> lim inn DEN FULLE access token (ikke bare et suffiks).</li></ul></li></ol><p style="border-left: 4px solid #ffc107; padding: 10px; margin-top: 15px;"><strong>⚠️ Merk:</strong> Hvis du i stedet bruker det eldre API Secret, lim inn din API Secret-verdi som den er.</p></div>"
 
 #: trndi.api.nightscout.sparampassword
 msgctxt "trndi.api.nightscout.sparampassword"
 msgid "API Secret"
-msgstr ""
+msgstr "API-hemmelighet"
 
 #: trndi.api.nightscout.sparamusername
 msgctxt "trndi.api.nightscout.sparamusername"
 msgid "NightScout URL"
-msgstr ""
+msgstr "NightScout-adresse"
 
 #: trndi.api.nightscout3.sparamdesc
 msgid ""
@@ -1420,16 +1420,16 @@ msgstr ""
 
 #: trndi.api.nightscout3.sparamdeschtml
 msgid "<div style=\"font-family: Arial, sans-serif; line-height: 1.6;\"><div style=\"background: #dc3545; color: white; padding: 15px; border-radius: 6px; margin-bottom: 20px; font-weight: bold; text-align: center; border: 2px solid #c82333;\">⚠️ ALPHA DRIVER - Please use \"NightScout\" for daily use! ⚠️</div><h2 style=\"margin-bottom: 10px;\">🌙 NightScout v3 Setup</h2><p style=\"color: #7f8c8d; font-style: italic; margin-bottom: 15px;\">(use FULL access token)</p><ol style=\"padding-left: 20px;\"><li style=\"margin-bottom: 10px;\">Open your NightScout site (e.g., <code style=\"background: #6495ED; padding: 2px 6px; border-radius: 3px;\">https://your-site</code>).</li><li style=\"margin-bottom: 10px;\">Go to <strong>Admin → Tokens</strong> — or <strong>API Secret</strong>.</li><li style=\"margin-bottom: 10px;\">If you use Tokens:<ul style=\"margin-top: 5px; padding-left: 20px;\"><li>Create a token with at least <strong>READ</strong> scope.</li><li>Copy the <strong>FULL</strong> access token value exactly as shown.</li></ul></li><li style=\"margin-bottom: 10px;\">In Trndi:<ul style=\"margin-top: 5px; padding-left: 20px;\"><li><strong>Address:</strong> enter your NightScout URL</li><li><strong>Auth:</strong> paste the FULL access token.</li></ul></li></ol><div style=\"border-left: 4px solid #0d6efd; padding: 12px; margin-top: 15px; border-radius: 4px;\"><p style=\"margin: 0;\"><strong>💡 Tip:</strong> Both <code style=\"background: #6F8FAF; padding: 2px 6px; border-radius: 3px;\">abc123</code> and <code style=\"background: #6F8FAF; padding: 2px 6px; border-radius: 3px;\">token=abc123</code> are accepted.</p></div><div style=\"border-left: 4px solid #ffc107; padding: 12px; margin-top: 15px; border-radius: 4px;\"><p style=\"margin: 0 0 8px 0;\"><strong>📝 Note:</strong> If you instead use the legacy API Secret, paste your API Secret value as-is.</p><p style=\"margin: 0;\"><strong>📝 Note 2:</strong> Your access token should look like: <code style=\"background: #6F8FAF; padding: 2px 6px; border-radius: 3px;\">trndi-abc123</code> (or whatever name you chose).</p></div></div>"
-msgstr ""
+msgstr "<div style="font-family: Arial, sans-serif; line-height: 1.6;"><div style="background: #dc3545; color: white; padding: 15px; border-radius: 6px; margin-bottom: 20px; font-weight: bold; text-align: center; border: 2px solid #c82333;">⚠️ ALFA-DRIVER - Vennligst bruk \"NightScout\" til daglig bruk! ⚠️</div><h2 style="margin-bottom: 10px;">🌙 NightScout v3-oppsett</h2><p style="color: #7f8c8d; font-style: italic; margin-bottom: 15px;">(bruk FULL access token)</p><ol style="padding-left: 20px;"><li style="margin-bottom: 10px;">Åpne din NightScout-side (f.eks. <code style="background: #6495ED; padding: 2px 6px; border-radius: 3px;">https://din-side</code>).</li><li style="margin-bottom: 10px;">Gå til <strong>Admin → Tokens</strong> — eller <strong>API Secret</strong>.</li><li style="margin-bottom: 10px;">Hvis du bruker Tokens:<ul style="margin-top: 5px; padding-left: 20px;"><li>Opprett et token med minst <strong>READ</strong> scope.</li><li>Kopier den <strong>FULLE</strong> access token-verdien nøyaktig som vist.</li></ul></li><li style="margin-bottom: 10px;">I Trndi:<ul style="margin-top: 5px; padding-left: 20px;"><li><strong>Adresse:</strong> skriv inn din NightScout-URL</li><li><strong>Auth:</strong> lim inn DEN FULLE access token.</li></ul></li></ol><div style="border-left: 4px solid #0d6efd; padding: 12px; margin-top: 15px; border-radius: 4px;"><p style="margin: 0;"><strong>💡 Tips:</strong> Både <code style="background: #6F8FAF; padding: 2px 6px; border-radius: 3px;">abc123</code> og <code style="background: #6F8FAF; padding: 2px 6px; border-radius: 3px;">token=abc123</code> aksepteres.</p></div><div style="border-left: 4px solid #ffc107; padding: 12px; margin-top: 15px; border-radius: 4px;"><p style="margin: 0 0 8px 0;"><strong>📝 Merk:</strong> Hvis du i stedet bruker det eldre API Secret, lim inn din API Secret-verdi som den er.</p><p style="margin: 0;"><strong>📝 Merk 2:</strong> Din access token skal se slik ut: <code style="background: #6F8FAF; padding: 2px 6px; border-radius: 3px;">trndi-abc123</code> (eller det navnet du valgte).</p></div></div>"
 
 #: trndi.api.nightscout3.sparampassword
 msgid "Auth token"
-msgstr ""
+msgstr "Auth-token"
 
 #: trndi.api.nightscout3.sparamusername
 msgctxt "trndi.api.nightscout3.sparamusername"
 msgid "NightScout URL"
-msgstr ""
+msgstr "NightScout-adresse"
 
 #: trndi.api.xdrip.sparamdesc
 msgid ""
@@ -1441,79 +1441,79 @@ msgstr ""
 
 #: trndi.api.xdrip.sparamdeschtml
 msgid "<b>xDrip setup:</b><br><br>Address: your xDrip REST endpoint (base URL).<br>Auth: API secret (plain text; server hashes it)."
-msgstr ""
+msgstr "<b>xDrip-oppsett:</b><br><br>Adresse: din xDrip REST-endepunkt (basis-URL).<br>Auth: API secret (ren tekst; serveren hasher den)."
 
 #: trndi.api.xdrip.sparampassword
 msgctxt "trndi.api.xdrip.sparampassword"
 msgid "API Secret"
-msgstr ""
+msgstr "API-hemmelighet"
 
 #: trndi.api.xdrip.sparamusername
 msgid "xDrip URL"
-msgstr ""
+msgstr "xDrip-adresse"
 
 #: trndi.strings.rs_alert_snooze
 msgid "Snooze alerts"
-msgstr ""
+msgstr "Utsett varsler"
 
 #: trndi.strings.rs_alert_snooze_active
 #, object-pascal-format
 msgid "Snoozed until %s"
-msgstr ""
+msgstr "Varsler utsatt til %s"
 
 #: trndi.strings.rs_alert_snooze_for
 #, object-pascal-format
 msgid "Alerts snoozed for %d minutes"
-msgstr ""
+msgstr "Varsler utsatt i %d minutter"
 
 #: trndi.strings.rs_alert_snooze_not_active
 msgid "Snooze is not active"
-msgstr ""
+msgstr "Utsettelse av varsler er ikke aktiv"
 
 #: trndi.strings.rs_alert_snooze_off
 msgid "Alert snooze disabled"
-msgstr ""
+msgstr "Varselutsettelse deaktivert"
 
 #: trndi.strings.rs_alert_snooze_resume
 msgid "Resume alerts"
-msgstr ""
+msgstr "Gjenoppta varsler"
 
 #: trndi.strings.rs_attention_missing
 msgid "Outdated Readings!"
-msgstr ""
+msgstr "Utdaterte avlesninger!"
 
 #: trndi.strings.rs_attention_missing_desc
 msgid "Readings are not fresh, have your phone lost connection to the sensor?"
-msgstr ""
+msgstr "Avlesningene er ikke ferske, har telefonen mistet forbindelsen til sensoren?"
 
 #: trndi.strings.rs_attention_sensor_fault
 msgid "Possible sensor fault"
-msgstr ""
+msgstr "Mulig sensorfeil"
 
 #: trndi.strings.rs_attention_sensor_fault_desc
 msgid "Trndi detected repeated large jumps between consecutive readings. Verify with your official CGM app/device."
-msgstr ""
+msgstr "Trndi har oppdaget gjentatte store hopp mellom påfølgende avlesninger. Verifiser med din offisielle CGM-app/enhet."
 
 #: trndi.strings.rs_cleanup
 msgid "Wait. Shutting down extensions engine..."
-msgstr ""
+msgstr "Vent. Stenger ned utvidelsesmotoren..."
 
 #: trndi.strings.rs_cleanup_wait
 #, object-pascal-format
 msgid "Please wait up to %d seconds..."
-msgstr ""
+msgstr "Vent vennligst opptil %d sekunder..."
 
 #: trndi.strings.rs_compute_failed_ago
 msgid "Long ago"
-msgstr ""
+msgstr "For lenge siden"
 
 #: trndi.strings.rs_conn_auth_expired
 msgid "Auth expired"
-msgstr ""
+msgstr "Godkjenning utløpt"
 
 #: trndi.strings.rs_conn_click_for_details
 msgid "Click for details"
-msgstr ""
+msgstr "Klikk for detaljer"
 
 #: trndi.strings.rs_conn_details
 #, object-pascal-format
@@ -1526,7 +1526,7 @@ msgstr ""
 
 #: trndi.strings.rs_conn_no_details
 msgid "No connection details available yet."
-msgstr ""
+msgstr "Ingen tilkoblingsdetaljer tilgjengelig ennå."
 
 #: trndi.strings.rs_conn_ok
 #, fuzzy
@@ -1536,82 +1536,82 @@ msgstr "OK"
 
 #: trndi.strings.rs_conn_ok_info
 msgid "Connection is currently healthy. Detailed diagnostics will appear here if a connectivity issue occurs."
-msgstr ""
+msgstr "Tilkoblingen er for øyeblikket god. Detaljert diagnostikk vises her hvis et tilkoblingsproblem oppstår."
 
 #: trndi.strings.rs_conn_rate_limited
 msgid "Rate-limited"
-msgstr ""
+msgstr "Hastighetsbegrenset"
 
 #: trndi.strings.rs_conn_retrying
 msgid "Retrying"
-msgstr ""
+msgstr "Prøver igjen"
 
 #: trndi.strings.rs_custom_dots
 #, object-pascal-format
 msgid "Custom Size [%.2f]"
-msgstr ""
+msgstr "Tilpasset størrelse [%.2f]"
 
 #: trndi.strings.rs_date_picker_caption
 msgid "Choose a date"
-msgstr ""
+msgstr "Velg en dato"
 
 #: trndi.strings.rs_date_picker_desc_limited
 #, object-pascal-format
 msgid "%s supports a max time of %d days"
-msgstr ""
+msgstr "%s støtter maks %d dager"
 
 #: trndi.strings.rs_date_picker_desc_unlimited
 #, object-pascal-format
 msgid "%s time limit depends on server configuration"
-msgstr ""
+msgstr "%s tidsbegrensning avhenger av serverkonfigurasjonen"
 
 #: trndi.strings.rs_date_picker_no_readings
 msgid "No readings returned for the selected date range."
-msgstr ""
+msgstr "Ingen avlesninger returnert for valgt datoperiode."
 
 #: trndi.strings.rs_date_picker_no_readings_err
 #, object-pascal-format
 msgid "No readings returned: %s"
-msgstr ""
+msgstr "Ingen avlesninger returnert: %s"
 
 #: trndi.strings.rs_date_picker_title
 msgid "Choose a date to show readings from"
-msgstr ""
+msgstr "Velg en dato å vise avlesninger fra"
 
 #: trndi.strings.rs_days_ago
 #, object-pascal-format
 msgid "%d days ago"
-msgstr ""
+msgstr "For %d dager siden"
 
 #: trndi.strings.rs_diff
 msgid "This is the change from the latest reading"
-msgstr ""
+msgstr "Dette er endringen fra siste avlesning"
 
 #: trndi.strings.rs_dns_internet_ok
 msgid "Your internet connection is working!"
-msgstr ""
+msgstr "Internettforbindelsen din fungerer!"
 
 #: trndi.strings.rs_extfailed
 #, object-pascal-format
 msgid "The following extension file returned an error while loading: %s"
-msgstr ""
+msgstr "Følgende utvidelsesfil returnerte en feil under lasting: %s"
 
 #: trndi.strings.rs_ext_shutdown
 msgid "Shutting down extensions..."
-msgstr ""
+msgstr "Stenger ned utvidelser..."
 
 #: trndi.strings.rs_font_error
 #, object-pascal-format
 msgid "You're missing the standard font \"%s\". Trndi will work as intended, but some icons may be missing and/or distorted!"
-msgstr ""
+msgstr "Du mangler standardskrifttypen \"%s\". Trndi vil fungere som tiltenkt, men noen ikoner kan mangle og/eller være forvrengt!"
 
 #: trndi.strings.rs_force_quit_setup
 msgid "Trndi will now shut down to apply settings, please re-start it manually!"
-msgstr ""
+msgstr "Trndi stenges nå ned for å anvende innstillinger, vennligst start på nytt manuelt!"
 
 #: trndi.strings.rs_high
 msgid "HIGH"
-msgstr ""
+msgstr "HØYT"
 
 #: trndi.strings.rs_history_item
 #, object-pascal-format
@@ -1628,114 +1628,114 @@ msgstr ""
 #: trndi.strings.rs_hi_level
 #, object-pascal-format
 msgid "Hi > %.1f"
-msgstr ""
+msgstr "Høy > %.1f"
 
 #: trndi.strings.rs_hi_predict
 #, object-pascal-format
 msgid "High Predicted in %d minutes!"
-msgstr ""
+msgstr "Høyt forutsagt om %d minutter!"
 
 #: trndi.strings.rs_hi_predict_soon
 msgid "High Predicted soon!"
-msgstr ""
+msgstr "Høyt forutsagt snart!"
 
 #: trndi.strings.rs_init_api
 msgid "Initializing API..."
-msgstr ""
+msgstr "Initialiserer API..."
 
 #: trndi.strings.rs_init_chroma
 msgid "Initializing Chroma..."
-msgstr ""
+msgstr "Initialiserer Chroma..."
 
 #: trndi.strings.rs_init_connect
 msgid "Attempting to connect..."
-msgstr ""
+msgstr "Forsøker å koble til..."
 
 #: trndi.strings.rs_init_custom_overrides
 msgid "Initializing custom overrides..."
-msgstr ""
+msgstr "Initialiserer egendefinerte overstyringer..."
 
 #: trndi.strings.rs_init_fetch
 msgctxt "trndi.strings.rs_init_fetch"
 msgid "Fetching first reading..."
-msgstr ""
+msgstr "Henter første avlesning..."
 
 #: trndi.strings.rs_init_first
 msgctxt "trndi.strings.rs_init_first"
 msgid "Processing first reading..."
-msgstr ""
+msgstr "Behandler første avlesning..."
 
 #: trndi.strings.rs_init_fonts
 msgid "Processing fonts..."
-msgstr ""
+msgstr "Behandler skrifttyper..."
 
 #: trndi.strings.rs_init_initial
 msgid "Preparing initial setup..."
-msgstr ""
+msgstr "Forbereder innledende oppsett..."
 
 #: trndi.strings.rs_init_license
 msgid "Verifying license..."
-msgstr ""
+msgstr "Verifiserer lisens..."
 
 #: trndi.strings.rs_init_linux
 msgid "Attempting to adjust Linux overrides..."
-msgstr ""
+msgstr "Forsøker å justere Linux-overstyringer..."
 
 #: trndi.strings.rs_init_locale
 msgid "Setting up locale settings..."
-msgstr ""
+msgstr "Konfigurerer lokale innstillinger..."
 
 #: trndi.strings.rs_init_mac
 msgid "Attempting to adjust macOS overrides..."
-msgstr ""
+msgstr "Forsøker å justere macOS-overstyringer..."
 
 #: trndi.strings.rs_init_media
 msgid "Starting Media Backend..."
-msgstr ""
+msgstr "Starter mediesystem..."
 
 #: trndi.strings.rs_init_profiles
 msgid "Processing user profiles..."
-msgstr ""
+msgstr "Behandler brukerprofiler..."
 
 #: trndi.strings.rs_init_trndi
 msgid "Starting Trndi..."
-msgstr ""
+msgstr "Starter Trndi..."
 
 #: trndi.strings.rs_init_ui
 msgid "Initializing UI..."
-msgstr ""
+msgstr "Initialiserer brukergrensesnittet..."
 
 #: trndi.strings.rs_init_unit
 msgid "Determining glucose unit..."
-msgstr ""
+msgstr "Bestemmer glukoseenhet..."
 
 #: trndi.strings.rs_init_ux
 msgid "Initializing UX..."
-msgstr ""
+msgstr "Initialiserer brukeropplevelsen..."
 
 #: trndi.strings.rs_last_recieve
 #, object-pascal-format
 msgid "Last reading was %s (%s)"
-msgstr ""
+msgstr "Siste avlesning var %s (%s)"
 
 #: trndi.strings.rs_last_recieve_age
 #, object-pascal-format
 msgid "Threshold: %d minutes"
-msgstr ""
+msgstr "Grense: %d minutter"
 
 #: trndi.strings.rs_last_recieve_no
 msgid "There's no last reading to show"
-msgstr ""
+msgstr "Det finnes ingen siste avlesning å vise"
 
 #: trndi.strings.rs_last_update
 #, object-pascal-format
 msgid "%d min"
-msgstr ""
+msgstr "%d min"
 
 #: trndi.strings.rs_latest_reading
 #, object-pascal-format
 msgid "Latest Reading: Value = %.2f, Date = %s"
-msgstr ""
+msgstr "Siste avlesning: Verdi = %.2f, tidspunkt = %s"
 
 #: trndi.strings.rs_limit_explain_text
 msgid ""
@@ -1747,29 +1747,29 @@ msgstr ""
 
 #: trndi.strings.rs_limit_explain_title
 msgid "Limit Explanation"
-msgstr ""
+msgstr "Grenseforklaring"
 
 #: trndi.strings.rs_low
 msgid "LOW"
-msgstr ""
+msgstr "LAVT"
 
 #: trndi.strings.rs_lo_level
 #, object-pascal-format
 msgid "Lo < %.1f"
-msgstr ""
+msgstr "Lav < %.1f"
 
 #: trndi.strings.rs_lo_predict
 #, object-pascal-format
 msgid "Low Predicted in %d minutes!"
-msgstr ""
+msgstr "Lavt forutsagt om %d minutter!"
 
 #: trndi.strings.rs_lo_predict_soon
 msgid "Low Predicted soon!"
-msgstr ""
+msgstr "Lavt forutsagt snart!"
 
 #: trndi.strings.rs_menu_force
 msgid "Force update"
-msgstr ""
+msgstr "Tving oppdatering"
 
 #: trndi.strings.rs_menu_help
 #, fuzzy
@@ -1779,7 +1779,7 @@ msgstr "Hjelp"
 
 #: trndi.strings.rs_menu_name
 msgid "Glucose"
-msgstr ""
+msgstr "Blodsukker"
 
 #: trndi.strings.rs_menu_settings
 #, fuzzy
@@ -1790,50 +1790,50 @@ msgstr "Innstillinger"
 #: trndi.strings.rs_missing_label
 #, object-pascal-format
 msgid "Label %s is missing!"
-msgstr ""
+msgstr "Etikett %s mangler!"
 
 #: trndi.strings.rs_multiname
 #, object-pascal-format
 msgid "Showing data for: \"%s\""
-msgstr ""
+msgstr "Viser data for: \"%s\""
 
 #: trndi.strings.rs_multiname_def
 msgid "Showing the standard user"
-msgstr ""
+msgstr "Viser standardbrukeren"
 
 #: trndi.strings.rs_multiname_def_named
 #, object-pascal-format
 msgid "Showing %s (standard user)"
-msgstr ""
+msgstr "Viser %s (standardbruker)"
 
 #: trndi.strings.rs_multiname_named
 #, object-pascal-format
 msgid "Showing data for: %s (username \"%s\")"
-msgstr ""
+msgstr "Viser data for: %s (brukernavn \"%s\")"
 
 #: trndi.strings.rs_multiple_accounts
 msgid "Trndi found multiple accounts. Please choose one for this instance"
-msgstr ""
+msgstr "Trndi fant flere kontoer. Velg én for denne instansen"
 
 #: trndi.strings.rs_multiuser_box
 msgid "Trndi found multiple accounts. Please choose one for this instance, or continue with the default account"
-msgstr ""
+msgstr "Trndi fant flere kontoer. Velg én for denne økten, eller fortsett med standardkontoen"
 
 #: trndi.strings.rs_multiuser_box_title
 msgid "User select"
-msgstr ""
+msgstr "Kontovalg"
 
 #: trndi.strings.rs_nodata_error
 msgid "No data, error(?):"
-msgstr ""
+msgstr "Ingen data, feil(?):"
 
 #: trndi.strings.rs_nodata_none
 msgid "<none>"
-msgstr ""
+msgstr "<ingen>"
 
 #: trndi.strings.rs_noplugins
 msgid "Built Without Support"
-msgstr ""
+msgstr "Bygget uten støtte"
 
 #: trndi.strings.rs_no_backend
 msgid ""
@@ -1845,182 +1845,182 @@ msgstr ""
 
 #: trndi.strings.rs_no_boot_reading
 msgid "No recent data available!"
-msgstr ""
+msgstr "Ingen nylige data tilgjengelig!"
 
 #: trndi.strings.rs_no_internet
 msgid "Your internet connection is not working, Trndi cannot fetch readings!"
-msgstr ""
+msgstr "Internettforbindelsen din fungerer ikke. Trndi kan ikke hente avlesninger!"
 
 #: trndi.strings.rs_off_hi
 msgid "Over range"
-msgstr ""
+msgstr "Over område"
 
 #: trndi.strings.rs_off_lo
 msgid "Under range"
-msgstr ""
+msgstr "Under område"
 
 #: trndi.strings.rs_outdated_time
 #, object-pascal-format
 msgid "%s (%d.%.2d min ago)"
-msgstr ""
+msgstr "%s (%d.%.2d min siden)"
 
 #: trndi.strings.rs_over
 msgid "over"
-msgstr ""
+msgstr "over"
 
 #: trndi.strings.rs_predict
 msgid "Your predicted future readings are shown on the lower-right-hand-side of the window; the difference from the last reading is shown in the middle"
-msgstr ""
+msgstr "Dine forutsagte fremtidige avlesninger vises i vinduets nedre høyre hjørne; forskjellen fra siste avlesning vises i midten"
 
 #: trndi.strings.rs_predictions_stable
 msgid "No change predicted →"
-msgstr ""
+msgstr "Ingen endring forutsagt →"
 
 #: trndi.strings.rs_predictions_unavailable
 msgid "Predictions unavailable"
-msgstr ""
+msgstr "Prediksjoner utilgjengelige"
 
 #: trndi.strings.rs_predict_amount_caption
 msgid "Force predictions"
-msgstr ""
+msgstr "Tving prediksjoner"
 
 #: trndi.strings.rs_predict_amount_desc
 msgid "Enter the amount of readings to predict (1-20)"
-msgstr ""
+msgstr "Angi antall avlesninger å forutsi (1-20)"
 
 #: trndi.strings.rs_predict_amount_title
 msgid "Force a prediction"
-msgstr ""
+msgstr "Tving en prediksjon"
 
 #: trndi.strings.rs_quit_caption
 msgid "Exit Trndi?"
-msgstr ""
+msgstr "Avslutt Trndi?"
 
 #: trndi.strings.rs_quit_minimize
 msgid "Would you like to minimize to the Dock, or close Trndi?"
-msgstr ""
+msgstr "Vil du minimere til Dock, eller lukke Trndi?"
 
 #: trndi.strings.rs_quit_minimize_title
 msgid "Quit or Minimize?"
-msgstr ""
+msgstr "Lukk eller minimer?"
 
 #: trndi.strings.rs_quit_msg
 msgid "Quit the app?"
-msgstr ""
+msgstr "Avslutt appen?"
 
 #: trndi.strings.rs_range_color
 msgid "The entire window will now change color when out of range, instead of just displaying a colored notification in the top. Applies after the next sync."
-msgstr ""
+msgstr "Hele vinduet vil nå skifte farge når blodsukkeret er utenfor området, i stedet for bare å vise et farget varsel øverst. Gjelder etter neste synkronisering."
 
 #: trndi.strings.rs_range_explanation
 #, object-pascal-format
 msgid "In addition to high and low levels, you have set a personal range within \"OK\". You are now %s that range"
-msgstr ""
+msgstr "I tillegg til høye og lave nivåer har du satt et personlig område innenfor \"OK\". Du er nå %s det området"
 
 #: trndi.strings.rs_range_hi
 #, object-pascal-format
 msgid "Range Hi > %.1f"
-msgstr ""
+msgstr "Område høy > %.1f"
 
 #: trndi.strings.rs_range_hi_unsupported
 msgid "Hi range not supported by API"
-msgstr ""
+msgstr "Høyt område støttes ikke av API-et"
 
 #: trndi.strings.rs_range_lo
 #, object-pascal-format
 msgid "Range Lo < %.1f"
-msgstr ""
+msgstr "Område lav < %.1f"
 
 #: trndi.strings.rs_range_lo_unsupported
 msgid "Lo range not supported by API"
-msgstr ""
+msgstr "Lavt område støttes ikke av API-et"
 
 #: trndi.strings.rs_refresh
 #, object-pascal-format
 msgid "⟳ Updated: <b>%s</b> <i>(Next update: %s)</i>"
-msgstr ""
+msgstr "⟳ Oppdatert: <b>%s</b> <i>(Neste oppdatering: %s)</i>"
 
 #: trndi.strings.rs_refresh_plain
 #, object-pascal-format
 msgid "⟳ Updated: %s (Next update: %s)"
-msgstr ""
+msgstr "⟳ Oppdatert: %s (Neste oppdatering: %s)"
 
 #: trndi.strings.rs_restart_apply
 msgid "Trndi must be restarted for settings to take effect"
-msgstr ""
+msgstr "Trndi må startes på nytt for at innstillingene skal tre i kraft"
 
 #: trndi.strings.rs_rhistory
 msgid "Reading history"
-msgstr ""
+msgstr "Avlesningshistorikk"
 
 #: trndi.strings.rs_rh_info
 msgid "These are the messages currently held in Trndi's log"
-msgstr ""
+msgstr "Dette er meldingene som for øyeblikket er i Trndis logg"
 
 #: trndi.strings.rs_rh_reading
 msgid "Reading"
-msgstr ""
+msgstr "Avlesning"
 
 #: trndi.strings.rs_rh_time
 msgctxt "trndi.strings.rs_rh_time"
 msgid "Time"
-msgstr ""
+msgstr "Tidspunkt"
 
 #: trndi.strings.rs_rh_title
 msgid "Historical readings"
-msgstr ""
+msgstr "Historiske avlesninger"
 
 #: trndi.strings.rs_rh_unknown
 msgctxt "trndi.strings.rs_rh_unknown"
 msgid "Unknown"
-msgstr ""
+msgstr "Ukjent"
 
 #: trndi.strings.rs_right_click
 msgid "The settings dialog will now open, in the future please right-click the reading to open the menu."
-msgstr ""
+msgstr "Innstillingsdialogen åpnes nå, fremover vennligst høyreklikk på avlesningen for å åpne menyen."
 
 #: trndi.strings.rs_safemode
 msgid "Safe Mode Enabled"
-msgstr ""
+msgstr "Sikkermodus aktivert"
 
 #: trndi.strings.rs_safemode_desc
 msgid "Trndi is running in <b>Safe Mode</b>!<ul><li>No start-up actions from extensions will run</li><li>You cannot use, and no actions will trigger from, extensions</li></ul><br>Extensions will load next run, unless you press <b>CTRL</b>!"
-msgstr ""
+msgstr "Trndi kjøres i <b>sikkermodus</b>!<ul><li>Ingen oppstartshandlinger fra utvidelser kjøres</li><li>Du kan ikke bruke, og ingen handlinger vil utløses fra, utvidelser</li></ul><br>Utvidelser lastes neste gang, med mindre du trykker <b>CTRL</b>!"
 
 #: trndi.strings.rs_sensor_fault_suspect
 msgid "Sensor may be faulty: multiple abrupt reading jumps detected."
-msgstr ""
+msgstr "Sensoren kan være defekt: Flere plutselige avlesningshopp oppdaget."
 
 #: trndi.strings.rs_service_adjust
 #, object-pascal-format
 msgid "Adjust: %.2f / Scale: %.2fx"
-msgstr ""
+msgstr "Justering: %.2f / Skala: %.2fx"
 
 #: trndi.strings.rs_service_dot_adjust
 msgid "Dot Adjustment"
-msgstr ""
+msgstr "Prikkjustering"
 
 #: trndi.strings.rs_service_dot_adjust_add
 msgid "Add dot adjustment"
-msgstr ""
+msgstr "Legg til prikkjustering"
 
 #: trndi.strings.rs_service_dot_adjust_desc
 msgid "You can enter plus or minus. Plus = down. 0 = neutral"
-msgstr ""
+msgstr "Du kan angi pluss eller minus. Pluss = ned. 0 = nøytral"
 
 #: trndi.strings.rs_service_predictions
 msgid "Predictions:"
-msgstr ""
+msgstr "Prediksjoner:"
 
 #: trndi.strings.rs_service_predict_point
 #, object-pascal-format
 msgid "Reading %d: %.1f %s at %s"
-msgstr ""
+msgstr "Avlesning %d: %.1f %s ved %s"
 
 #: trndi.strings.rs_service_predict_unable
 #, object-pascal-format
 msgid "Unable to predict: %s"
-msgstr ""
+msgstr "Kan ikke forutsi: %s"
 
 #: trndi.strings.rs_service_sysinfo
 #, object-pascal-format
@@ -2032,15 +2032,15 @@ msgstr ""
 
 #: trndi.strings.rs_settings_save
 msgid "Save settings?"
-msgstr ""
+msgstr "Lagre innstillinger?"
 
 #: trndi.strings.rs_settings_saved
 msgid "Settings saved and applied. Some settings may require a restart"
-msgstr ""
+msgstr "Innstillinger lagret og anvendt. Noen innstillinger kan kreve en omstart"
 
 #: trndi.strings.rs_settings_save_desc
 msgid "Would you like to save any changes made?"
-msgstr ""
+msgstr "Vil du lagre eventuelle endringer?"
 
 #: trndi.strings.rs_setup
 #, fuzzy
@@ -2050,155 +2050,155 @@ msgstr "Oppsett"
 
 #: trndi.strings.rs_speak_ghigh
 msgid "Going high"
-msgstr ""
+msgstr "Stiger"
 
 #: trndi.strings.rs_speak_glow
 msgid "Going low"
-msgstr ""
+msgstr "Synker"
 
 #: trndi.strings.rs_speak_good
 msgid "Good"
-msgstr ""
+msgstr "Bra"
 
 #: trndi.strings.rs_speak_high
 msgctxt "trndi.strings.rs_speak_high"
 msgid "High"
-msgstr ""
+msgstr "Høy"
 
 #: trndi.strings.rs_speak_low
 msgctxt "trndi.strings.rs_speak_low"
 msgid "Low"
-msgstr ""
+msgstr "Lav"
 
 #: trndi.strings.rs_splash_loading
 msgid "Loading Extension: "
-msgstr ""
+msgstr "Laster utvidelse: "
 
 #: trndi.strings.rs_splash_loading_init
 msgid "Loading Extensions..."
-msgstr ""
+msgstr "Laster utvidelser..."
 
 #: trndi.strings.rs_tir_h
 #, object-pascal-format
 msgid "This is your time in range for the last %s hours and %s minutes"
-msgstr ""
+msgstr "Dette er din tid i målområdet de siste %s timene og %s minuttene"
 
 #: trndi.strings.rs_tir_h1
 #, object-pascal-format
 msgid "This is your time in range for the last hour and %s minutes"
-msgstr ""
+msgstr "Dette er din tid i målområdet den siste timen og %s minuttene"
 
 #: trndi.strings.rs_tir_m
 #, object-pascal-format
 msgid "This is your time in range for the last %s minutes"
-msgstr ""
+msgstr "Dette er din tid i målområdet de siste %s minuttene"
 
 #: trndi.strings.rs_tir_row2
 #, object-pascal-format
 msgid "Your low limit is %.1f, high is %.1f"
-msgstr ""
+msgstr "Din lave grense er %.1f, høy er %.1f"
 
 #: trndi.strings.rs_tir_row3
 #, object-pascal-format
 msgid "Your low range is %.1f, high is %.1f"
-msgstr ""
+msgstr "Ditt lave område er %.1f, høy er %.1f"
 
 #: trndi.strings.rs_tpobottomleft
 msgid "Bottom Left"
-msgstr ""
+msgstr "Nedre venstre"
 
 #: trndi.strings.rs_tpobottomright
 msgid "Bottom Right"
-msgstr ""
+msgstr "Nedre høyre"
 
 #: trndi.strings.rs_tpocenter
 msgid "Desktop Center"
-msgstr ""
+msgstr "Skrivebordssenter"
 
 #: trndi.strings.rs_tpocustom
 msgid "Last position"
-msgstr ""
+msgstr "Siste posisjon"
 
 #: trndi.strings.rs_tpotopright
 msgid "Top Right"
-msgstr ""
+msgstr "Øvre høyre"
 
 #: trndi.strings.rs_trndi_gihub
 msgid "Trndi on GitHub"
-msgstr ""
+msgstr "Trndi på GitHub"
 
 #: trndi.strings.rs_under
 msgid "under"
-msgstr ""
+msgstr "under"
 
 #: trndi.strings.rs_unknown_time
 msgid "Loading"
-msgstr ""
+msgstr "Laster"
 
 #: trndi.strings.rs_user_caption
 #, object-pascal-format
 msgid "[%s] %s"
-msgstr ""
+msgstr "[%s] %s"
 
 #: trndi.strings.rs_warn_bg_hi
 #, object-pascal-format
 msgid "High blood sugar! Currently: %s"
-msgstr ""
+msgstr "Høyt blodsukker! Nåværende: %s"
 
 #: trndi.strings.rs_warn_bg_hi_title
 msgid "Blood sugar high"
-msgstr ""
+msgstr "Høyt blodsukker"
 
 #: trndi.strings.rs_warn_bg_lo
 #, object-pascal-format
 msgid "Low blood sugar! Currently: %s"
-msgstr ""
+msgstr "Lavt blodsukker! Nåværende: %s"
 
 #: trndi.strings.rs_warn_bg_lo_title
 msgid "Blood sugar low"
-msgstr ""
+msgstr "Lavt blodsukker"
 
 #: trndi.strings.rs_wizard_back
 msgid "← Back"
-msgstr ""
+msgstr "← Tilbake"
 
 #: trndi.strings.rs_wizard_finish
 msgid "Finish"
-msgstr ""
+msgstr "Fullfør"
 
 #: trndi.strings.rs_wizard_need_addr
 msgctxt "trndi.strings.rs_wizard_need_addr"
 msgid "Please enter a server address or username."
-msgstr ""
+msgstr "Angi vennligst en serveradresse eller brukernavn."
 
 #: trndi.strings.rs_wizard_next
 msgid "Next →"
-msgstr ""
+msgstr "Neste →"
 
 #: trndi.strings.rs_wizard_source
 msgid "Data source:"
-msgstr ""
+msgstr "Datakilde:"
 
 #: trndi.strings.rs_wizard_step_fmt
 #, object-pascal-format
 msgid "Step %d of %d"
-msgstr ""
+msgstr "Trinn %d av %d"
 
 #: trndi.strings.rs_wizard_test
 msgid "Test connection"
-msgstr ""
+msgstr "Test tilkobling"
 
 #: trndi.strings.rs_wizard_testing
 msgid "Testing…"
-msgstr ""
+msgstr "Tester..."
 
 #: trndi.strings.rs_wizard_test_fail
 msgid "✗ Could not connect."
-msgstr ""
+msgstr "✗ Kunne ikke koble til."
 
 #: trndi.strings.rs_wizard_test_ok
 msgid "✓ Connected!"
-msgstr ""
+msgstr "✓ Tilkoblet!"
 
 #: trndi.strings.rs_wizard_thresh_body
 msgid ""
@@ -2209,31 +2209,31 @@ msgstr ""
 
 #: trndi.strings.rs_wizard_thresh_head
 msgid "Alert thresholds"
-msgstr ""
+msgstr "Varselgrenser"
 
 #: trndi.strings.rs_wizard_thresh_hi
 msgid "High alert"
-msgstr ""
+msgstr "Høy advarsel"
 
 #: trndi.strings.rs_wizard_thresh_lo
 msgid "Low alert"
-msgstr ""
+msgstr "Lav advarsel"
 
 #: trndi.strings.rs_wizard_title
 msgid "Welcome to Trndi"
-msgstr ""
+msgstr "Velkommen til Trndi"
 
 #: trndi.strings.rs_wizard_unit_head
 msgid "Choose your preferred glucose unit:"
-msgstr ""
+msgstr "Velg din foretrukne glukoseenhet:"
 
 #: trndi.strings.rs_wizard_unit_mgdl
 msgid "mg/dL  (e.g. 100)"
-msgstr ""
+msgstr "mg/dL  (f.eks. 100)"
 
 #: trndi.strings.rs_wizard_unit_mmol
 msgid "mmol/L  (e.g. 5.5)"
-msgstr ""
+msgstr "mmol/L  (f.eks. 5,5)"
 
 #: trndi.strings.rs_wizard_welcome_body
 msgid ""
@@ -2246,151 +2246,151 @@ msgstr ""
 
 #: trndi.strings.rs_wizard_welcome_head
 msgid "Let's get connected!"
-msgstr ""
+msgstr "La oss koble til!"
 
 #: trndi.strings.sannounceoff
 msgid "No longer announcing readings aloud"
-msgstr ""
+msgstr "Leser ikke lenger avlesninger høyt"
 
 #: trndi.strings.sannounceon
 msgid "Announcing readings aloud"
-msgstr ""
+msgstr "Leser avlesninger høyt"
 
 #: trndi.strings.sapi
 #, object-pascal-format
 msgid "⚙️ Trndi API Interface: %s"
-msgstr ""
+msgstr "⚙️ Trndis API-grensesnitt: %s"
 
 #: trndi.strings.schangesapply
 msgid "Apply this value when Trndi starts?"
-msgstr ""
+msgstr "Anvend denne verdien når Trndi starter?"
 
 #: trndi.strings.schangesremember
 msgid "Remember setting?"
-msgstr ""
+msgstr "Husk innstilling?"
 
 #: trndi.strings.schangessave
 msgid "Save?"
-msgstr ""
+msgstr "Lagre?"
 
 #: trndi.strings.scustomisedotsize
 msgid "Customize dot size"
-msgstr ""
+msgstr "Tilpass prikkestørrelse"
 
 #: trndi.strings.sdatatypeerr
 #, object-pascal-format
 msgid "Datatype %s was not expected, expected in function %s"
-msgstr ""
+msgstr "Datatype %s var ikke forventet i funksjon %s"
 
 #: trndi.strings.sdatatypeerrfunc
 #, object-pascal-format
 msgid "Datatype \"%s\" was not expected, in function \"%s\". Expected \"%s\""
-msgstr ""
+msgstr "Datatype \"%s\" var ikke forventet i funksjon \"%s\". Forventet \"%s\""
 
 #: trndi.strings.sdatatypeerrpos
 #, object-pascal-format
 msgid "Datatype %s was not expected, expected in function %s, parameter %d"
-msgstr ""
+msgstr "Datatype %s var ikke forventet i funksjon %s, parameter %d"
 
 #: trndi.strings.sdevice
 #, object-pascal-format
 msgid "💻 Device: %s"
-msgstr ""
+msgstr "💻 Enhet: %s"
 
 #: trndi.strings.sdotsize
 msgctxt "trndi.strings.sdotsize"
 msgid "Dot Size"
-msgstr ""
+msgstr "Prikkestørrelse"
 
 #: trndi.strings.senterdotsize
 msgid "Enter a value, the dot size will multiply by this"
-msgstr ""
+msgstr "Angi en verdi, prikkestørrelsen multipliseres med dette"
 
 #: trndi.strings.sextconfirm
 msgid "Extension Confirmation"
-msgstr ""
+msgstr "Utvidelsesbekreftelse"
 
 #: trndi.strings.sexterr
 msgid "Extension Error"
-msgstr ""
+msgstr "Utvidelsesfeil"
 
 #: trndi.strings.sextevent
 msgid "Extension Event"
-msgstr ""
+msgstr "Utvidelseshendelse"
 
 #: trndi.strings.sextfile
 #, object-pascal-format
 msgid "File \"%s\" not found"
-msgstr ""
+msgstr "Filen \"%s\" ble ikke funnet"
 
 #: trndi.strings.sextmsg
 msgid "Extension Message"
-msgstr ""
+msgstr "Utvidelsesmelding"
 
 #: trndi.strings.sextuserinfo
 msgid "User Information"
-msgstr ""
+msgstr "Brukerinformasjon"
 
 #: trndi.strings.sextwarn
 msgid "Extension Warning"
-msgstr ""
+msgstr "Utvidelseadvarsel"
 
 #: trndi.strings.sforcerefresh
 msgid "Forcefully refresh the reading?"
-msgstr ""
+msgstr "Tving oppdatering av avlesning?"
 
 #: trndi.strings.sforcerefreshcached
 #, object-pascal-format
 msgid "Last update was %d seconds ago. Wait %d more seconds for fresh data, or force refresh now?"
-msgstr ""
+msgstr "Siste oppdatering var %d sekunder siden. Vent %d sekunder for ferske data, eller tving en oppdatering nå?"
 
 #: trndi.strings.sforcerefreshdetail
 msgid "Force refresh will bypass the cache and make an immediate API call. Waiting allows the system to use cached data efficiently."
-msgstr ""
+msgstr "Tvungen oppdatering omgår bufferen og utfører et umiddelbart API-kall. Å vente lar systemet bruke bufrede data effektivt."
 
 #: trndi.strings.slogdesc
 msgid "Trndi has captured data sent to console.log in a JavaScript extension"
-msgstr ""
+msgstr "Trndi har fanget data sendt til console.log i en JavaScript-utvidelse"
 
 #: trndi.strings.slogemptymsg
 msgid "<No message provided>"
-msgstr ""
+msgstr "<Ingen melding angitt>"
 
 #: trndi.strings.slognobuffered
 msgid "No buffered console messages to show."
-msgstr ""
+msgstr "Ingen bufrede konsolmeldinger å vise."
 
 #: trndi.strings.slogrecevive
 msgid "Output through console.log has been received"
-msgstr ""
+msgstr "Utdata via console.log er mottatt"
 
 #: trndi.strings.snoise
 #, object-pascal-format
 msgid "𐩘 Noise: %d"
-msgstr ""
+msgstr "𐩘 Støy: %d"
 
 #: trndi.strings.snotrace
 msgid "No stack trace available"
-msgstr ""
+msgstr "Ingen stakksporing tilgjengelig"
 
 #: trndi.strings.spromerrcapt
 #, object-pascal-format
 msgid "The asynchronous function %s failed to complete"
-msgstr ""
+msgstr "Den asynkrone funksjonen %s klarte ikke å fullføres"
 
 #: trndi.strings.sreadinghere
 #, object-pascal-format
 msgid "Reading here: %s at %.2d:%.2d"
-msgstr ""
+msgstr "Avlesning her: %s kl. %.2d:%.2d"
 
 #: trndi.strings.srefrshq
 msgid "Refresh?"
-msgstr ""
+msgstr "Oppdater?"
 
 #: trndi.strings.srssi
 #, object-pascal-format
 msgid "📻 RSSI (Signal Strength): %d%%"
-msgstr ""
+msgstr "📻 RSSI (signalstyrke): %d%%"
 
 #: trndi.strings.sstackerrmsg
 #, object-pascal-format
@@ -2401,50 +2401,50 @@ msgstr ""
 
 #: trndi.strings.sstackfailed
 msgid "An error occurred, and the stacktrace could not be loaded. Showing backtrace."
-msgstr ""
+msgstr "En feil oppstod, og stakksporing kunne ikke lastes. Viser backtrace."
 
 #: trndi.strings.stransmitterinfo
 msgid "Transmitter information"
-msgstr ""
+msgstr "Senderinformasjon"
 
 #: trndi.strings.strendwindow
 msgid "Trend window"
-msgstr ""
+msgstr "Trendvindu"
 
 #: trndi.strings.strendwindowfmt
 #, object-pascal-format
 msgid "%d min (%d dots)"
-msgstr ""
+msgstr "%d min (%d prikker)"
 
 #: trndi.strings.stypeerrcapt
 msgid "A data type differs from what was expected"
-msgstr ""
+msgstr "En datatype avviker fra det forventede"
 
 #: trndi.strings.stypeerrdesc
 msgid "The extension was stopped"
-msgstr ""
+msgstr "Utvidelsen ble stoppet"
 
 #: trndi.strings.stypeerrmsg
 msgid "A data type was expected, but another was found"
-msgstr ""
+msgstr "En datatype var forventet, men en annen ble funnet"
 
 #: trndi.strings.sunknownerr
 msgid "Unknown error"
-msgstr ""
+msgstr "Ukjent feil"
 
 #: uconf.rs_announce_not_available
 #, object-pascal-format
 msgctxt "uconf.rs_announce_not_available"
 msgid "The text-to-speech (TTS) software \"%s\" is not available."
-msgstr ""
+msgstr "Tekst-til-tale (TTS)-programvaren \"%s\" er ikke tilgjengelig."
 
 #: uconf.rs_auto
 msgid "Auto-detect"
-msgstr ""
+msgstr "Automatisk gjenkjenning"
 
 #: uconf.rs_badge_flash_help
 msgid "This controls how Trndi's icon in the status bar and/or tray will notify you visually."
-msgstr ""
+msgstr "Dette styrer hvordan Trndis ikon i statuslinjen og/eller skuffen gir deg visuelt varsel."
 
 #: uconf.rs_beta
 msgid ""
@@ -2460,36 +2460,36 @@ msgstr ""
 
 #: uconf.rs_choose_system
 msgid "Select your CGM system in the list, then enter your credentials"
-msgstr ""
+msgstr "Velg ditt CGM-system i listen, og angi deretter dine opplysninger"
 
 #: uconf.rs_color_bg
 msgid "Trndi can draw a rectangle/background in the graph's background, to visually represent your high and low limits."
-msgstr ""
+msgstr "Trndi kan tegne et rektangel/bakgrunn i grafens bakgrunn for å visuelt representere dine høye og lave grenser."
 
 #: uconf.rs_connect_help
 msgid "This will display a badge showing the internet connectivity status in the top."
-msgstr ""
+msgstr "Dette viser et badge øverst som viser internettilkoblingsstatus."
 
 #: uconf.rs_current_acc
 #, object-pascal-format
 msgid "This only applies for the current loaded account:  %s"
-msgstr ""
+msgstr "Dette gjelder kun for den gjeldende lastede kontoen: %s"
 
 #: uconf.rs_current_acc_def
 msgid "Settings for \"default\" only apply while multi-user is active"
-msgstr ""
+msgstr "Innstillinger for \"standard\" gjelder kun mens flerbruker er aktiv"
 
 #: uconf.rs_current_acc_no
 msgid "These settings are available when using a multi-account"
-msgstr ""
+msgstr "Disse innstillingene er tilgjengelige ved bruk av flere kontoer"
 
 #: uconf.rs_custom_range_help
 msgid "Override/set your own limits for the custom range. This is your personal ideal goal, within the high/low area."
-msgstr ""
+msgstr "Overstyr/sett dine egne grenser for det egendefinerte området. Dette er ditt personlige ideelle mål innenfor høy/lav-området."
 
 #: uconf.rs_debug_backend_label
 msgid "(Ignored for debug backend)"
-msgstr ""
+msgstr "(Ignorert i feilsøkningsmodus)"
 
 #: uconf.rs_debug_warn
 msgid ""
@@ -2499,7 +2499,7 @@ msgstr ""
 
 #: uconf.rs_decimal_help
 msgid "This replaces the decimal separator, eg setting \",\" will show the reading as 5,5 instead of 5.5"
-msgstr ""
+msgstr "Dette erstatter desimaltegnet, f.eks. innstilling \",\" vil vise avlesningen som 5,5 i stedet for 5.5"
 
 #: uconf.rs_default_account
 #, fuzzy
@@ -2509,7 +2509,7 @@ msgstr "Standard"
 
 #: uconf.rs_delta_max
 msgid "When the previous reading is missing, use the next available reading within this many 5-minute-intervals to calculate delta."
-msgstr ""
+msgstr "Når den forrige avlesningen mangler, bruk neste tilgjengelige avlesning innenfor dette antallet 5-minutters-intervaller for å beregne delta."
 
 #: uconf.rs_dex
 msgid ""
@@ -2519,15 +2519,15 @@ msgstr ""
 
 #: uconf.rs_diff_right_help
 msgid "This controls if the difference/delta will show center or right (when predictions are on, this will swap the position of the values)"
-msgstr ""
+msgstr "Dette styrer om forskjellen/delta vises i midten eller til høyre (når prediksjoner er på, vil dette bytte posisjonene)"
 
 #: uconf.rs_disable_media
 msgid "This turns off all media-related features. Can speed up start."
-msgstr ""
+msgstr "Dette slår av alle medierelaterte funksjoner. Kan fremskynde oppstart."
 
 #: uconf.rs_dot_click
 msgid "Dot appearance is modified below!"
-msgstr ""
+msgstr "Prikkens utseende endres nedenfor!"
 
 #: uconf.rs_dot_help
 msgid ""
@@ -2537,88 +2537,88 @@ msgstr ""
 
 #: uconf.rs_dot_help_title
 msgid "Changing the trend dots"
-msgstr ""
+msgstr "Endrer trendprikker"
 
 #: uconf.rs_driver_contributor
 msgid "Driver contributor: "
-msgstr ""
+msgstr "Bidragsyter: "
 
 #: uconf.rs_dupe_name
 msgid "Names must be unique"
-msgstr ""
+msgstr "Navn må være unike"
 
 #: uconf.rs_empty_proxy
 msgid "Proxy host is empty."
-msgstr ""
+msgstr "Proxy-vert er tom."
 
 #: uconf.rs_enter_any
 msgid "Please enter a name"
-msgstr ""
+msgstr "Angi vennligst et navn"
 
 #: uconf.rs_enter_name
 msgid "Letters, space and numbers only"
-msgstr ""
+msgstr "Kun bokstaver, mellomrom og tall"
 
 #: uconf.rs_enter_user
 msgid "Enter a username"
-msgstr ""
+msgstr "Angi et brukernavn"
 
 #: uconf.rs_err_address
 msgctxt "uconf.rs_err_address"
 msgid "Address must start with http(s)://"
-msgstr ""
+msgstr "Adressen må starte med http(s)://"
 
 #: uconf.rs_err_email
 msgctxt "uconf.rs_err_email"
 msgid "You must enter a valid e-mail address"
-msgstr ""
+msgstr "Du må angi en gyldig e-postadresse"
 
 #: uconf.rs_err_password
 msgctxt "uconf.rs_err_password"
 msgid "You must enter a password"
-msgstr ""
+msgstr "Du må angi et passord"
 
 #: uconf.rs_extcount
 #, object-pascal-format
 msgid "Extensions count: %d"
-msgstr ""
+msgstr "Antall utvidelser: %d"
 
 #: uconf.rs_font_help
 msgid "You can change the font of the reading, time and arrow. Click on the respective item here to change the font"
-msgstr ""
+msgstr "Du kan endre skrifttypen for avlesning, tid og pil. Klikk på det respektive elementet her for å endre skrifttypen"
 
 #: uconf.rs_full_arrow_set_help
 msgid "This will display all prediction arrows, by default Trndi just shows going up, down or steady"
-msgstr ""
+msgstr "Dette viser alle prediksjonspilar; som standard viser Trndi bare opp, ned eller stabilt"
 
 #: uconf.rs_graph_icon_current
 msgid "Choose an icon for the current point in the graph"
-msgstr ""
+msgstr "Velg et ikon for det gjeldende punktet i grafen"
 
 #: uconf.rs_graph_icon_current_desc
 msgid "This will be used for current graph point"
-msgstr ""
+msgstr "Dette brukes for det gjeldende grafpunktet"
 
 #: uconf.rs_graph_icon_graph
 msgid "Choose an icon for points in the graph"
-msgstr ""
+msgstr "Velg et ikon for punkter i grafen"
 
 #: uconf.rs_graph_icon_graph_desc
 msgid "This will be used for graph points"
-msgstr ""
+msgstr "Dette brukes for grafpunkter"
 
 #: uconf.rs_graph_icon_title
 msgid "Choose icon"
-msgstr ""
+msgstr "Velg ikon"
 
 #: uconf.rs_hastouch
 msgid "Shows if Trndi detected a touch screen"
-msgstr ""
+msgstr "Viser om Trndi oppdaget en berøringsskjerm"
 
 #: uconf.rs_min_minutes
 #, object-pascal-format
 msgid "When calculating time-in-range, do so over this amount of minutes. If the number is higher than the data available, the max time will be used - this is currently %d minutes."
-msgstr ""
+msgstr "Ved beregning av tid i målområdet brukes dette antallet minutter. Hvis tallet er høyere enn tilgjengelige data, brukes maxtiden - dette er for øyeblikket %d minutter."
 
 #: uconf.rs_multi_user_help
 msgid ""
@@ -2629,59 +2629,59 @@ msgstr ""
 #: uconf.rs_newver
 #, object-pascal-format
 msgid "Version %s is available, would you like to go to the downloads page? You can also ignore this warning for 2 weeks."
-msgstr ""
+msgstr "Versjon %s er tilgjengelig, vil du gå til nedlastingssiden? Du kan også ignorere denne advarselen i 2 uker."
 
 #: uconf.rs_newver_caption
 msgid "New version available"
-msgstr ""
+msgstr "Ny versjon tilgjengelig"
 
 #: uconf.rs_newver_pre
 #, object-pascal-format
 msgid "A new pre-release for %s is available, would you like to go to the downloads page?"
-msgstr ""
+msgstr "En ny forhåndsversjon av %s er tilgjengelig, vil du gå til nedlastingssiden?"
 
 #: uconf.rs_notifications
 msgctxt "uconf.rs_notifications"
 msgid "Notifications"
-msgstr ""
+msgstr "Varsler"
 
 #: uconf.rs_notification_help
 msgid "Trndi will show a system notification (if available) when your reading is in a dangerous state. Alerts will trigger once when hi/low and every 15 minutes when readings are missing."
-msgstr ""
+msgstr "Trndi viser et systemvarsel (hvis tilgjengelig) når avlesningen er i en farlig tilstand. Varsler utløses én gang ved høy/lav og hvert 15. minutt når avlesninger mangler."
 
 #: uconf.rs_notify_system
 msgid "Notifications will appear where you normally get notification messages."
-msgstr ""
+msgstr "Varsler vises der du normalt mottar varselmeldinger."
 
 #: uconf.rs_notify_title
 msgid "A notification system is required"
-msgstr ""
+msgstr "Et varslingssystem er påkrevd"
 
 #: uconf.rs_notify_txt
 #, object-pascal-format
 msgid "Trndi uses a system called \"%s\" to send desktop notices, you need to have this system installed in order to receive notices."
-msgstr ""
+msgstr "Trndi bruker et system kalt \"%s\" for å sende skrivebordsvarsler; du må ha dette systemet installert for å motta varsler."
 
 #: uconf.rs_no_copyright
 msgid "- Extension has no copyright info -"
-msgstr ""
+msgstr "- Utvidelsen har ingen opphavsrettinfo -"
 
 #: uconf.rs_no_extensions
 msgid "This version of Trndi does not support extensions"
-msgstr ""
+msgstr "Denne versjonen av Trndi støtter ikke utvidelser"
 
 #: uconf.rs_no_extensions_copyright
 msgid "Please download a version of Trndi that supports extensions"
-msgstr ""
+msgstr "Vennligst last ned en versjon av Trndi som støtter utvidelser"
 
 #: uconf.rs_no_extensions_system
 #, object-pascal-format
 msgid "Due to hardware limitations, %s on %s cannot support extensions"
-msgstr ""
+msgstr "På grunn av maskinvarebegrensninger kan %s på %s ikke støtte utvidelser"
 
 #: uconf.rs_outdated_help
 msgid "This is the time after which Trndi will show the \"no recent\" readings overlay. Trndi checks this when updating from the remote server, not every minute."
-msgstr ""
+msgstr "Dette er tiden etter hvilken Trndi viser overlay'et \"ingen nylige\" avlesninger. Trndi sjekker dette ved oppdatering fra fjernserveren, ikke hvert minutt."
 
 #: uconf.rs_override_help
 msgid ""
@@ -2696,88 +2696,88 @@ msgstr ""
 
 #: uconf.rs_override_language
 msgid "Choose which language to run Trndi in. Should you choose the wrong one, you can press the Windows/\"meta\" button at start to force English!"
-msgstr ""
+msgstr "Velg hvilket språk Trndi skal kjøres på. Hvis du velger feil, kan du holde Windows/\"meta\"-knappen nede ved oppstart for å tvinge engelsk!"
 
 #: uconf.rs_override_ns
 msgid "You are using the NightScout backend, you should set these values on your server (if possible), as Trndi uses your NightScout preferences by default"
-msgstr ""
+msgstr "Du bruker NightScout-backend; du bør sette disse verdiene på serveren din (hvis mulig), da Trndi bruker dine NightScout-innstillinger som standard"
 
 #: uconf.rs_pos
 #, object-pascal-format
 msgid "This feature depends on your Window Manager (WM). %s may not support this feature."
-msgstr ""
+msgstr "Denne funksjonen avhenger av din vindusbehandler (WM). %s støtter kanskje ikke denne funksjonen."
 
 #: uconf.rs_pos_title
 msgid "Restricted Feature"
-msgstr ""
+msgstr "Begrenset funksjon"
 
 #: uconf.rs_pos_unknown
 msgid "This feature depends on your Window Manager. It may not support this feature."
-msgstr ""
+msgstr "Denne funksjonen avhenger av din vindusbehandler (WM). Den støtter kanskje ikke denne funksjonen."
 
 #: uconf.rs_predictionwarn
 msgid "Trndi will try to predict future readings. This is experimental and potentially unsafe! Do not make any treatment decisions based on these values! This feature is used on your own risk and responsibility!"
-msgstr ""
+msgstr "Trndi vil forsøke å forutsi fremtidige avlesninger. Dette er eksperimentelt og potensielt utrygt! Ta ingen behandlingsbeslutninger basert på disse verdiene! Du bruker funksjonen på eget ansvar og risiko!"
 
 #: uconf.rs_prediction_help
 msgid "Trndi can predict/guess what your reading will be in the future. This will be shown in the lower right part of the screen."
-msgstr ""
+msgstr "Trndi kan forutsi/gjette hva avlesningen din vil være i fremtiden. Dette vises i nedre høyre del av skjermen."
 
 #: uconf.rs_prediction_horizon
 msgid "The prediction horizon is how far in the future Trndi will show predictions, when just showing one. This is not an exact time, it may vary, it's just a target time."
-msgstr ""
+msgstr "Prediksjonshorisont er hvor langt inn i fremtiden Trndi forutsier avlesninger, når bare én vises. Tiden er ikke eksakt, den kan variere; det er bare en måltid."
 
 #: uconf.rs_pred_scale_help
 msgid "When predictions are enabled, this controls the size adjustment of the predictions"
-msgstr ""
+msgstr "Når prediksjoner er aktivert, styrer dette størrelsesjusteringen av prediksjonene"
 
 #: uconf.rs_privacy_help
 msgid "When in Privacy Mode, the actual blood glucose value is hidden. Trndi will only tell the user if it's good, high or low."
-msgstr ""
+msgstr "I personvernmodus er den faktiske blodglukoseverdien skjult. Trndi forteller bare om verdien er god, høy eller lav."
 
 #: uconf.rs_remove_acc
 msgid "Removed accounts are made inactive, and can be restored by adding the same name again"
-msgstr ""
+msgstr "Fjernede kontoer gjøres inaktive og kan gjenopprettes ved å legge til samme navn igjen"
 
 #: uconf.rs_saftey_hi
 msgid "Trndi won't allow a larger limit, for your own safety. This can be overridden manually/via plugin"
-msgstr ""
+msgstr "Trndi tillater ikke en større grense, for din egen sikkerhet. Dette kan overstyres manuelt/via plugin"
 
 #: uconf.rs_saftey_low
 msgid "Trndi won't allow a lower limit, the backend system only reports values every 5 minutes. 6 = one reading missing."
-msgstr ""
+msgstr "Trndi tillater ikke en lavere grense; backend-systemet rapporterer bare verdier hvert 5. minutt. 6 = én avlesning mangler."
 
 #: uconf.rs_scale_diff_help
 msgid "You can change the scale/size of the difference in reading since last, by entering a scale factor"
-msgstr ""
+msgstr "Du kan endre skalaen/størrelsen for forskjellen siden sist ved å angi en skalafaktor"
 
 #: uconf.rs_select_font
 msgid "Select a font"
-msgstr ""
+msgstr "Velg en skrifttype"
 
 #: uconf.rs_select_font_arrow
 msgid "Select a font for the arrow"
-msgstr ""
+msgstr "Velg en skrifttype for pilen"
 
 #: uconf.rs_select_font_desc
 msgid "Choose a font to use"
-msgstr ""
+msgstr "Velg en skrifttype å bruke"
 
 #: uconf.rs_select_font_reading
 msgid "Select a font for the reading"
-msgstr ""
+msgstr "Velg en skrifttype for avlesningen"
 
 #: uconf.rs_select_font_time
 msgid "Select a font for the time"
-msgstr ""
+msgstr "Velg en skrifttype for tiden"
 
 #: uconf.rs_shortmode_full
 msgid "By default, Trndi only shows up/down/straight. You can enable the full range of arrows here - however you must realize that this is very experimental and potentially less accurate!"
-msgstr ""
+msgstr "Som standard viser Trndi bare opp/ned/rett. Du kan aktivere det fulle settet med piler her - du må imidlertid innse at dette er svært eksperimentelt og potensielt mindre nøyaktig!"
 
 #: uconf.rs_short_mode_help
 msgid "Only one reading will show, as just an arrow or a single prediction"
-msgstr ""
+msgstr "Bare én avlesning vises, som en pil eller en enkelt prediksjon"
 
 #: uconf.rs_tandem
 msgid ""
@@ -2787,45 +2787,45 @@ msgstr ""
 
 #: uconf.rs_test_fail
 msgid "Could not connect!"
-msgstr ""
+msgstr "Kunne ikke koble til!"
 
 #: uconf.rs_test_success
 msgid "Successfully connected!"
-msgstr ""
+msgstr "Tilkoblet!"
 
 #: uconf.rs_test_unsupported
 msgid "Sorry! Trndi does not (yet) support connection testing for this service!"
-msgstr ""
+msgstr "Beklager! Trndi støtter (ennå) ikke tilkoblingstest for denne tjenesten!"
 
 #: uconf.rs_threashold_lines_help
 msgid "Trndi can draw a line on the graph's background, to represent where your high/low limits are."
-msgstr ""
+msgstr "Trndi kan tegne en linje i grafens bakgrunn for å representere dine høye/lave grenser."
 
 #: uconf.rs_timestamp_help
 msgid "By default Trndi shows the amount of minutes since the last reading, this setting allows you to display the time of the last reading instead."
-msgstr ""
+msgstr "Som standard viser Trndi antall minutter siden siste avlesning; denne innstillingen gjør at tidspunktet for avlesningen vises i stedet."
 
 #: uconf.rs_update_snooze
 #, object-pascal-format
 msgid "You will be alerted again after %s"
-msgstr ""
+msgstr "Du vil bli varslet igjen etter %s"
 
 #: uconf.rs_uptodate
 msgid "You are up to date"
-msgstr ""
+msgstr "Du er oppdatert"
 
 #: uconf.rs_uptodate_dev
 #, object-pascal-format
 msgid "You are using a development version, there's no stable release newer than this! The most recent stable release is %s"
-msgstr ""
+msgstr "Du bruker en utviklingsversjon; det finnes ingen nyere stabil utgivelse! Den nyeste stabile utgivelsen er %s"
 
 #: uconf.rs_use_url_help
 msgid "Trndi can load a URL when high or low in your default web browser."
-msgstr ""
+msgstr "Trndi kan laste en URL i standardnettleseren din når du er høy eller lav."
 
 #: uconf.rs_warn_hilow
 msgid "This will show an overlay on the screen when a low or high is predicted"
-msgstr ""
+msgstr "Dette viser et overlay på skjermen når et lavt eller høyt nivå forutsies"
 
 #: uconf.rs_wayland
 msgid ""
@@ -2835,7 +2835,7 @@ msgstr ""
 
 #: uconf.rs_webapi
 msgid "Trndi can expose a <b>WebAPI</b> for use with <i>third-party systems</i>.<br><br>This is an advanced feature, you can safely disregard it if you don't know what it does!"
-msgstr ""
+msgstr "Trndi kan eksponere et <b>Web-API</b> for bruk med <i>tredjepartssystemer</i>.<br><br>Dette er en avansert funksjon; du kan trygt se bort fra den hvis du ikke vet hva den gjør!"
 
 #: uconf.rs_xdrip
 msgid ""
@@ -2845,100 +2845,100 @@ msgstr ""
 
 #: ufloat.rscustomop
 msgid "You can use shift+<number> to manually set visibility (0 = 100% visible)"
-msgstr ""
+msgstr "Du kan bruke skift+<tall> for å manuelt angi synlighet (0 = 100% synlig)"
 
 #: ufloat.rscustomsize
 msgid "You can hold down shift and plus (+) or minus (-) to change the window size"
-msgstr ""
+msgstr "Du kan holde nede skift og pluss (+) eller minus (-) for å justere vinduestørrelsen"
 
 #: uhistorygraph.rs_history_graph_axis_time
 msgctxt "uhistorygraph.rs_history_graph_axis_time"
 msgid "Time"
-msgstr ""
+msgstr "Tidspunkt"
 
 #: uhistorygraph.rs_history_graph_csv_title
 msgid "Save readings as CSV"
-msgstr ""
+msgstr "Lagre avlesninger som CSV"
 
 #: uhistorygraph.rs_history_graph_empty
 msgid "No history data to plot"
-msgstr ""
+msgstr "Ingen historiske data å plotte"
 
 #: uhistorygraph.rs_history_graph_help
 msgid "Click a dot to see the full reading details"
-msgstr ""
+msgstr "Klikk på en prikk for å se fullstendige avlesningsdetaljer"
 
 #: uhistorygraph.rs_history_graph_help_interact
 msgid "Hover or click dots for details. Right-click to choose a time range."
-msgstr ""
+msgstr "Hold musen over eller klikk på prikker for detaljer. Høyreklikk for å velge et tidsintervall."
 
 #: uhistorygraph.rs_history_graph_hover_fmt
 #, object-pascal-format
 msgid "%s at %s"
-msgstr ""
+msgstr "%s ved %s"
 
 #: uhistorygraph.rs_history_graph_key_basal
 msgid "Basal"
-msgstr ""
+msgstr "Basal"
 
 #: uhistorygraph.rs_history_graph_key_high
 msgctxt "uhistorygraph.rs_history_graph_key_high"
 msgid "High"
-msgstr ""
+msgstr "Høy"
 
 #: uhistorygraph.rs_history_graph_key_low
 msgctxt "uhistorygraph.rs_history_graph_key_low"
 msgid "Low"
-msgstr ""
+msgstr "Lav"
 
 #: uhistorygraph.rs_history_graph_key_predict
 msgid "Predicted"
-msgstr ""
+msgstr "Forutsagt"
 
 #: uhistorygraph.rs_history_graph_key_range
 msgid "In range"
-msgstr ""
+msgstr "I område"
 
 #: uhistorygraph.rs_history_graph_key_range_hi
 msgid "Range high"
-msgstr ""
+msgstr "Høyt område"
 
 #: uhistorygraph.rs_history_graph_key_range_lo
 msgid "Range low"
-msgstr ""
+msgstr "Lavt område"
 
 #: uhistorygraph.rs_history_graph_key_title
 msgid "Legend"
-msgstr ""
+msgstr "Forklaring"
 
 #: uhistorygraph.rs_history_graph_key_unknown
 msgctxt "uhistorygraph.rs_history_graph_key_unknown"
 msgid "Unknown"
-msgstr ""
+msgstr "Ukjent"
 
 #: uhistorygraph.rs_history_graph_menu_range
 msgid "Time range"
-msgstr ""
+msgstr "Tidsintervall"
 
 #: uhistorygraph.rs_history_graph_menu_range_12h
 msgid "Last 12h"
-msgstr ""
+msgstr "Siste 12 t"
 
 #: uhistorygraph.rs_history_graph_menu_range_1h
 msgid "Last 1h"
-msgstr ""
+msgstr "Siste 1 t"
 
 #: uhistorygraph.rs_history_graph_menu_range_24h
 msgid "Last 24h"
-msgstr ""
+msgstr "Siste 24 t"
 
 #: uhistorygraph.rs_history_graph_menu_range_3h
 msgid "Last 3h"
-msgstr ""
+msgstr "Siste 3 t"
 
 #: uhistorygraph.rs_history_graph_menu_range_6h
 msgid "Last 6h"
-msgstr ""
+msgstr "Siste 6 t"
 
 #: uhistorygraph.rs_history_graph_menu_range_all
 #, fuzzy
@@ -2948,77 +2948,77 @@ msgstr "Alle"
 
 #: uhistorygraph.rs_history_graph_menu_save
 msgid "Save as Image..."
-msgstr ""
+msgstr "Lagre som bilde..."
 
 #: uhistorygraph.rs_history_graph_menu_save_csv
 msgid "Save as CSV..."
-msgstr ""
+msgstr "Lagre som CSV..."
 
 #: uhistorygraph.rs_history_graph_point_count
 #, object-pascal-format
 msgid "%d readings"
-msgstr ""
+msgstr "%d avlesninger"
 
 #: uhistorygraph.rs_history_graph_range
 #, object-pascal-format
 msgid "%s – %s"
-msgstr ""
+msgstr "%s - %s"
 
 #: uhistorygraph.rs_history_graph_save_error
 #, object-pascal-format
 msgid "Failed to save graph: %s"
-msgstr ""
+msgstr "Kunne ikke lagre grafen: %s"
 
 #: uhistorygraph.rs_history_graph_save_success
 msgid "Graph saved successfully"
-msgstr ""
+msgstr "Grafen ble lagret"
 
 #: uhistorygraph.rs_history_graph_save_title
 msgid "Save graph as PNG"
-msgstr ""
+msgstr "Lagre graf som PNG"
 
 #: uhistorygraph.rs_history_graph_title
 msgid "History graph"
-msgstr ""
+msgstr "Historikkgraf"
 
 #: uhistorygraph.rs_history_graph_unit_fmt
 #, object-pascal-format
 msgid "Readings (%s)"
-msgstr ""
+msgstr "Avlesninger (%s)"
 
 #: uwizard.wz_err_address
 msgctxt "uwizard.wz_err_address"
 msgid "Address must start with http(s)://"
-msgstr ""
+msgstr "Adressen må starte med http(s)://"
 
 #: uwizard.wz_err_email
 msgctxt "uwizard.wz_err_email"
 msgid "You must enter a valid e-mail address"
-msgstr ""
+msgstr "Du må angi en gyldig e-postadresse"
 
 #: uwizard.wz_err_need_addr
 msgctxt "uwizard.wz_err_need_addr"
 msgid "Please enter a server address or username."
-msgstr ""
+msgstr "Angi en serveradresse eller brukernavn."
 
 #: uwizard.wz_err_password
 msgctxt "uwizard.wz_err_password"
 msgid "You must enter a password"
-msgstr ""
+msgstr "Du må angi et passord"
 
 #: uwizard.wz_err_thresh_hi
 msgid "Please enter a valid high threshold (a number greater than zero)."
-msgstr ""
+msgstr "Angi en gyldig høy grense (et tall større enn null)."
 
 #: uwizard.wz_err_thresh_lo
 msgid "Please enter a valid low threshold (a number greater than zero)."
-msgstr ""
+msgstr "Angi en gyldig lav grense (et tall større enn null)."
 
 #: uwizard.wz_err_thresh_order
 msgid "The high threshold must be greater than the low threshold."
-msgstr ""
+msgstr "Den høye grensen må være større enn den lave grensen."
 
 #: uwizard.wz_test_no_support
 msgid "Connection testing is not supported for this service."
-msgstr ""
+msgstr "Tilkoblingstest støttes ikke for denne tjenesten."
 

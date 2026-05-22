@@ -294,7 +294,7 @@ msgstr "Vexla fullskerm"
 
 #: tfbg.miguidelines.caption
 msgid "Show Guide Lines"
-msgstr ""
+msgstr "Visa stôdlinjer"
 
 #: tfbg.mihistory.caption
 msgid "Show history"
@@ -356,11 +356,11 @@ msgstr "+ Ny"
 
 #: tfconf.bcommon.caption
 msgid "Go to Quick Settings"
-msgstr ""
+msgstr "Gô till Snabbinstellningar"
 
 #: tfconf.bexportsettings.caption
 msgid "Export Settings"
-msgstr ""
+msgstr "Exportera instellningar"
 
 #: tfconf.bextopen.caption
 msgid "Show Folder"
@@ -368,7 +368,7 @@ msgstr "Visa mapp"
 
 #: tfconf.bimportsettings.caption
 msgid "Import Settings"
-msgstr ""
+msgstr "Importera instellningar"
 
 #: tfconf.bremove.caption
 msgid "- Remove"
@@ -394,7 +394,7 @@ msgstr "Testa notis"
 
 #: tfconf.btestproxy.caption
 msgid "Test proxy"
-msgstr ""
+msgstr "Testa proxy"
 
 #: tfconf.btestspeech.caption
 msgid "Test Speech"
@@ -458,7 +458,7 @@ msgstr "Gôr enheter grôna vid normalt verde"
 
 #: tfconf.cbconnectivitybutton.caption
 msgid "Enable connectivity button"
-msgstr ""
+msgstr "Aktiver anslutningsknappen"
 
 #: tfconf.cbcust.caption
 msgctxt "tfconf.cbcust.caption"
@@ -494,19 +494,19 @@ msgstr "Blixtra vid perfekt verde (5,5mmol/L / 100mg/dL)"
 
 #: tfconf.cbfonts.caption
 msgid "Trend Dots"
-msgstr ""
+msgstr "Trendpunkter"
 
 #: tfconf.cbhcontrast.caption
 msgid "High Contrast"
-msgstr ""
+msgstr "Hôg kontrast"
 
 #: tfconf.cbmediadisable.caption
 msgid "Disable the entire media system"
-msgstr ""
+msgstr "Steng av hela mediasystemet"
 
 #: tfconf.cbmovediffright.caption
 msgid "Move to right"
-msgstr ""
+msgstr "Flytta till hôger"
 
 #: tfconf.cbmultitouch.caption
 msgid "Multi-touch"
@@ -562,15 +562,15 @@ msgstr "Privat lege (dôlj glukosverde)"
 
 #: tfconf.cbprogress.caption
 msgid "Display progress to next update on the left"
-msgstr ""
+msgstr "Visa tid till nesta uppdatering till venster"
 
 #: tfconf.cbshowmean.caption
 msgid "Show mean blood sugar reading next to TIR"
-msgstr ""
+msgstr "Visa medelblodsôcker bredvid TIR"
 
 #: tfconf.cbshowsensorexpiry.caption
 msgid "Show sensor expiry in top-center badge"
-msgstr ""
+msgstr "Visa sensorutgong centrerat hôgst upp"
 
 #: tfconf.cbsize.caption
 msgid "Remember window size"
@@ -622,7 +622,7 @@ msgstr "Pekskerm"
 
 #: tfconf.cbtts.caption
 msgid "Enable Text-To-Speech"
-msgstr ""
+msgstr "Aktiver Text-Till-Tal"
 
 #: tfconf.cbuser.caption
 msgid "Account color"
@@ -634,7 +634,7 @@ msgstr "Visa anvendares ferger po huvud- och det flytande fônstret"
 
 #: tfconf.cbwarnlohi.caption
 msgid "Warn when going high or low"
-msgstr ""
+msgstr "Varna ner du gor mot hôgt eller logt"
 
 #: tfconf.cbwebapi.caption
 #, fuzzy
@@ -695,7 +695,7 @@ msgstr "ok"
 
 #: tfconf.edproxyport.text
 msgid "8080"
-msgstr ""
+msgstr "8080"
 
 #: tfconf.gbdisplayprefs.caption
 msgid "Display Preferences"
@@ -713,7 +713,7 @@ msgstr "Kontoinstellningar"
 
 #: tfconf.gbnetwork.caption
 msgid "Network"
-msgstr ""
+msgstr "Nettverk"
 
 #: tfconf.gboverride.caption
 msgctxt "tfconf.gboverride.caption"
@@ -728,7 +728,7 @@ msgstr "osidosett hôga / loga grenser"
 
 #: tfconf.gbsettings.caption
 msgid "Settings Management"
-msgstr ""
+msgstr "Hantera instellningar"
 
 #: tfconf.gburl.caption
 #, fuzzy
@@ -742,7 +742,7 @@ msgstr "Systemfunksjoner"
 
 #: tfconf.groupbox10.caption
 msgid "Layout"
-msgstr ""
+msgstr "Layout"
 
 #: tfconf.groupbox2.caption
 msgid "Available Extensions"
@@ -816,7 +816,7 @@ msgstr "Nuvarande punkt:"
 
 #: tfconf.label17.caption
 msgid "These settings reside in different parts of the settings dialog, but has been collected here for your convinience!"
-msgstr ""
+msgstr "Dessa instellningar finns po diverse platser i instellningarna, men har samlats her for din bekvemligheit!"
 
 #: tfconf.label18.caption
 msgid "Connection"
@@ -848,7 +848,7 @@ msgstr "endra Trndis standardferger fôr bakgrund och text, ner du er i eget omr
 
 #: tfconf.label25.caption
 msgid "Maximum delta slots"
-msgstr ""
+msgstr "Maximala deltapunkter"
 
 #: tfconf.label26.caption
 msgid "High (eg https://url.local/hi)"
@@ -897,23 +897,23 @@ msgstr "Avlesningar anses gamla efter (minuter):"
 
 #: tfconf.label35.caption
 msgid "You can press \"s\" at any time to have the current reading read out loud"
-msgstr ""
+msgstr "Du kan trycka po \"s\" nersomhelst for att fo nuvarande avlesning upplest"
 
 #: tfconf.label36.caption
 msgid "Voice Type:"
-msgstr ""
+msgstr "Rôsttyp:"
 
 #: tfconf.label37.caption
 msgid "Rate:"
-msgstr ""
+msgstr "Hastighet:"
 
 #: tfconf.label38.caption
 msgid "High contrast disables some of Trndis Time-in-Range coloring"
-msgstr ""
+msgstr "Hôg kontrast inaktiverar vissa av Trndis Tid-i-molomrodet-ferger"
 
 #: tfconf.label39.caption
 msgid "Diff scale:"
-msgstr ""
+msgstr "Skala for skillnad:"
 
 #: tfconf.label4.caption
 msgid "Window start-up position"
@@ -921,15 +921,15 @@ msgstr "Posisjon av fônster vid start"
 
 #: tfconf.label40.caption
 msgid "Diff position:"
-msgstr ""
+msgstr "Position for skillnad:"
 
 #: tfconf.label41.caption
 msgid "Prediction scale:"
-msgstr ""
+msgstr "Skala for forutsogelse:"
 
 #: tfconf.label42.caption
 msgid "* When Trndi is in focus, units may turn off coloring if this is disabled. This is a Chroma limitation."
-msgstr ""
+msgstr "* Ner Trndi er i fokus, kan ferging stengas av om detta er avsteengt. Detta er en begrensning i Chroma."
 
 #: tfconf.label5.caption
 msgid "Black = transparent"
@@ -955,19 +955,19 @@ msgstr "Trndi kan spela en lot po Spotify eller Deezer ner du er hôg/log"
 
 #: tfconf.labelproxyhost.caption
 msgid "Proxy Host:"
-msgstr ""
+msgstr "Proxyverd:"
 
 #: tfconf.labelproxypass.caption
 msgid "Proxy Pass:"
-msgstr ""
+msgstr "Proxylôsen:"
 
 #: tfconf.labelproxyport.caption
 msgid "Proxy Port:"
-msgstr ""
+msgstr "Proxyport:"
 
 #: tfconf.labelproxyuser.caption
 msgid "Proxy User:"
-msgstr ""
+msgstr "Proxyanvandare:"
 
 #: tfconf.lack.caption
 msgid "Libraries"
@@ -991,7 +991,7 @@ msgstr "Vid logt:"
 
 #: tfconf.lconfigpredict.caption
 msgid "Glucose Predictions Settings"
-msgstr ""
+msgstr "Instellningar for glukosforutsogelse"
 
 #: tfconf.ldot.caption
 msgctxt "tfconf.ldot.caption"
@@ -1093,11 +1093,11 @@ msgstr ""
 
 #: tfconf.lproxytitle.caption
 msgid "Proxy Settings"
-msgstr ""
+msgstr "Proxyinstellningar"
 
 #: tfconf.lsettingshelp.caption
 msgid "Export all settings to a file for backup or transfer to another device. Import to restore settings."
-msgstr ""
+msgstr "Exportera alla instellningar till en fil for backup, eller ôverforning till ett annat system. Importera for att osterstellan."
 
 #: tfconf.ltestannounce.caption
 msgid "Test an announcement"
@@ -1145,7 +1145,7 @@ msgstr "Enhetstyp"
 
 #: tfconf.tsaccess.caption
 msgid "Accessibility"
-msgstr ""
+msgstr "Tillgenglighet"
 
 #: tfconf.tsadvanced.caption
 msgid "Advanced"
@@ -1165,7 +1165,7 @@ msgstr "Ferger"
 
 #: tfconf.tscommon.caption
 msgid "Quick Settings"
-msgstr ""
+msgstr "Snabbinstellningar"
 
 #: tfconf.tscustom.caption
 msgid "Customization"
@@ -1198,7 +1198,7 @@ msgstr "Fler anvendare"
 
 #: tfconf.tsproxy.caption
 msgid "Proxy"
-msgstr ""
+msgstr "Proxy"
 
 #: tfconf.tssystem.caption
 msgid "System"
@@ -1252,19 +1252,19 @@ msgstr "Egen"
 
 #: tffloat.mifontblack.caption
 msgid "Black"
-msgstr ""
+msgstr "Svart"
 
 #: tffloat.mifontcolor.caption
 msgid "Font Color"
-msgstr ""
+msgstr "Typsnittsferg"
 
 #: tffloat.mifontmain.caption
 msgid "Main Window Color"
-msgstr ""
+msgstr "Huvvudfonsters ferg"
 
 #: tffloat.mifontwhite.caption
 msgid "White"
-msgstr ""
+msgstr "Vit"
 
 #: tffloat.mimain.caption
 msgid "Show/Hide Main Window"
@@ -1386,7 +1386,7 @@ msgstr "Inloggningsfel: Kunde inte etablera en giltig session"
 
 #: trndi.api.dexcomnew.sdexnewerrpass
 msgid "Incorrect username or password combination"
-msgstr ""
+msgstr "Fel anvendarnamn eller lôsen"
 
 #: trndi.api.dexcomnew.sdexnewparamdesc
 msgid ""
@@ -1409,15 +1409,15 @@ msgstr ""
 
 #: trndi.api.dexcomnew.sdexnewparampassword
 msgid "Password"
-msgstr ""
+msgstr "Lôsen"
 
 #: trndi.api.dexcomnew.sdexnewparamregion
 msgid "Region (\"usa\", \"japan\"/\"jp\", or empty)"
-msgstr ""
+msgstr "Region (\"usa\", \"japan\"/\"jp\", eller tom)"
 
 #: trndi.api.dexcomnew.sdexnewparamusername
 msgid "Dexcom Account Username"
-msgstr ""
+msgstr "Anvendarnamn, Dexcom-konto"
 
 #: trndi.api.nightscout.sparamdesc
 msgctxt "trndi.api.nightscout.sparamdesc"
@@ -1556,29 +1556,29 @@ msgstr "xDrip-adress"
 
 #: trndi.strings.rs_alert_snooze
 msgid "Snooze alerts"
-msgstr ""
+msgstr "Pausa varningar"
 
 #: trndi.strings.rs_alert_snooze_active
 #, object-pascal-format
 msgid "Snoozed until %s"
-msgstr ""
+msgstr "Varningar pausade till %s"
 
 #: trndi.strings.rs_alert_snooze_for
 #, object-pascal-format
 msgid "Alerts snoozed for %d minutes"
-msgstr ""
+msgstr "Varningar pausade i %d minutter"
 
 #: trndi.strings.rs_alert_snooze_not_active
 msgid "Snooze is not active"
-msgstr ""
+msgstr "Varningspaus inte aktiv"
 
 #: trndi.strings.rs_alert_snooze_off
 msgid "Alert snooze disabled"
-msgstr ""
+msgstr "Varningspaus av"
 
 #: trndi.strings.rs_alert_snooze_resume
 msgid "Resume alerts"
-msgstr ""
+msgstr "Aktiver varningar igen"
 
 #: trndi.strings.rs_attention_missing
 msgid "Outdated Readings!"
@@ -1590,11 +1590,11 @@ msgstr "Avlesningarna er inte ferska, har din telefon tappat kontakten med senso
 
 #: trndi.strings.rs_attention_sensor_fault
 msgid "Possible sensor fault"
-msgstr ""
+msgstr "Moljegt sensorfel"
 
 #: trndi.strings.rs_attention_sensor_fault_desc
 msgid "Trndi detected repeated large jumps between consecutive readings. Verify with your official CGM app/device."
-msgstr ""
+msgstr "Trndi har opdaget upprepade stora hopp mellom angrennsande avlesningar. Kontrollera mot din ofisielle CGM-app/enhet."
 
 #: trndi.strings.rs_cleanup
 msgid "Wait. Shutting down extensions engine..."
@@ -1612,11 +1612,11 @@ msgstr "Lenge sedan"
 
 #: trndi.strings.rs_conn_auth_expired
 msgid "Auth expired"
-msgstr ""
+msgstr "Autentisering har gott ut"
 
 #: trndi.strings.rs_conn_click_for_details
 msgid "Click for details"
-msgstr ""
+msgstr "Klicka for info"
 
 #: trndi.strings.rs_conn_details
 #, object-pascal-format
@@ -1629,7 +1629,7 @@ msgstr ""
 
 #: trndi.strings.rs_conn_no_details
 msgid "No connection details available yet."
-msgstr ""
+msgstr "Inga anslutningsdata finns att tillgo enn."
 
 #: trndi.strings.rs_conn_ok
 #, fuzzy
@@ -1639,15 +1639,15 @@ msgstr "ok"
 
 #: trndi.strings.rs_conn_ok_info
 msgid "Connection is currently healthy. Detailed diagnostics will appear here if a connectivity issue occurs."
-msgstr ""
+msgstr "Anslutningen er tillforlitlig just nu. Detaljerad diagnostik visas her om fel uppster."
 
 #: trndi.strings.rs_conn_rate_limited
 msgid "Rate-limited"
-msgstr ""
+msgstr "Hastighetsbegrensad"
 
 #: trndi.strings.rs_conn_retrying
 msgid "Retrying"
-msgstr ""
+msgstr "Forsôker igen"
 
 #: trndi.strings.rs_custom_dots
 #, object-pascal-format
@@ -1701,7 +1701,7 @@ msgstr "Fôljande tilleggsfil returnerade ett fel ner den laddades: __PH9c3509d5
 
 #: trndi.strings.rs_ext_shutdown
 msgid "Shutting down extensions..."
-msgstr ""
+msgstr "Stenger ned tillegg..."
 
 #: trndi.strings.rs_font_error
 #, object-pascal-format, fuzzy, badformat
@@ -1743,11 +1743,11 @@ msgstr "Hôg > %.1f"
 #: trndi.strings.rs_hi_predict
 #, object-pascal-format
 msgid "High Predicted in %d minutes!"
-msgstr ""
+msgstr "Hôgt forutspodd om %d minutter!"
 
 #: trndi.strings.rs_hi_predict_soon
 msgid "High Predicted soon!"
-msgstr ""
+msgstr "Hôgt forutspos snart!"
 
 #: trndi.strings.rs_init_api
 msgid "Initializing API..."
@@ -1812,7 +1812,7 @@ msgstr "Bearbetar anvendarprofiler..."
 
 #: trndi.strings.rs_init_trndi
 msgid "Starting Trndi..."
-msgstr ""
+msgstr "Startar Trndi..."
 
 #: trndi.strings.rs_init_ui
 msgid "Initializing UI..."
@@ -1878,11 +1878,11 @@ msgstr "Log < %.1f"
 #: trndi.strings.rs_lo_predict
 #, object-pascal-format
 msgid "Low Predicted in %d minutes!"
-msgstr ""
+msgstr "Logt forutspos om %d minutter!"
 
 #: trndi.strings.rs_lo_predict_soon
 msgid "Low Predicted soon!"
-msgstr ""
+msgstr "Logt forutspos snart!"
 
 #: trndi.strings.rs_menu_force
 msgid "Force update"
@@ -1940,11 +1940,11 @@ msgstr "Kontoval"
 
 #: trndi.strings.rs_nodata_error
 msgid "No data, error(?):"
-msgstr ""
+msgstr "Inga data, fel(?):"
 
 #: trndi.strings.rs_nodata_none
 msgid "<none>"
-msgstr ""
+msgstr "<inkjenting>"
 
 #: trndi.strings.rs_noplugins
 msgctxt "trndi.strings.rs_noplugins"
@@ -2006,7 +2006,7 @@ msgstr "Detta er dina fôrutspodda avlesningar; Tidsskillnad: fôrutspodd-avlesn
 
 #: trndi.strings.rs_predictions_stable
 msgid "No change predicted →"
-msgstr ""
+msgstr "Ingen endring forutspos →"
 
 #: trndi.strings.rs_predictions_unavailable
 msgid "Predictions unavailable"
@@ -2030,11 +2030,11 @@ msgstr "Avsluta Trndi?"
 
 #: trndi.strings.rs_quit_minimize
 msgid "Would you like to minimize to the Dock, or close Trndi?"
-msgstr ""
+msgstr "Vill du minimera till dockan, eller stenga ned Trndi?"
 
 #: trndi.strings.rs_quit_minimize_title
 msgid "Quit or Minimize?"
-msgstr ""
+msgstr "Stenga av eller minimera?"
 
 #: trndi.strings.rs_quit_msg
 msgid "Quit the app?"
@@ -2121,7 +2121,7 @@ msgstr "Trndi kôrs i <b>felsekertlege</b>!<ul><li>Inga startotgerder fron tille
 
 #: trndi.strings.rs_sensor_fault_suspect
 msgid "Sensor may be faulty: multiple abrupt reading jumps detected."
-msgstr ""
+msgstr "Sensorn kan vera trasig: flera abrupt hoppande avlesningar opdagades."
 
 #: trndi.strings.rs_service_adjust
 #, object-pascal-format
@@ -2184,15 +2184,15 @@ msgstr "Konfig"
 
 #: trndi.strings.rs_speak_ghigh
 msgid "Going high"
-msgstr ""
+msgstr "Blir hôgt"
 
 #: trndi.strings.rs_speak_glow
 msgid "Going low"
-msgstr ""
+msgstr "Blir logt"
 
 #: trndi.strings.rs_speak_good
 msgid "Good"
-msgstr ""
+msgstr "Bra"
 
 #: trndi.strings.rs_speak_high
 #, fuzzy
@@ -2259,12 +2259,12 @@ msgstr ""
 #: trndi.strings.rs_tir_row2
 #, object-pascal-format
 msgid "Your low limit is %.1f, high is %.1f"
-msgstr ""
+msgstr "Din loge grense er %.1f, hôg er %.1f"
 
 #: trndi.strings.rs_tir_row3
 #, object-pascal-format
 msgid "Your low range is %.1f, high is %.1f"
-msgstr ""
+msgstr "Ditt loge omrode er %.1f, hôg er %.1f"
 
 #: trndi.strings.rs_tpobottomleft
 msgctxt "trndi.strings.rs_tpobottomleft"
@@ -2328,45 +2328,45 @@ msgstr "Logt blodsocker"
 
 #: trndi.strings.rs_wizard_back
 msgid "← Back"
-msgstr ""
+msgstr "← Bakot"
 
 #: trndi.strings.rs_wizard_finish
 msgid "Finish"
-msgstr ""
+msgstr "Avsluta"
 
 #: trndi.strings.rs_wizard_need_addr
 msgctxt "trndi.strings.rs_wizard_need_addr"
 msgid "Please enter a server address or username."
-msgstr ""
+msgstr "Venligst ange en serveradresse eller anvendarnamn."
 
 #: trndi.strings.rs_wizard_next
 msgid "Next →"
-msgstr ""
+msgstr "Nesta →"
 
 #: trndi.strings.rs_wizard_source
 msgid "Data source:"
-msgstr ""
+msgstr "Datakella:"
 
 #: trndi.strings.rs_wizard_step_fmt
 #, object-pascal-format
 msgid "Step %d of %d"
-msgstr ""
+msgstr "Steg %d av %d"
 
 #: trndi.strings.rs_wizard_test
 msgid "Test connection"
-msgstr ""
+msgstr "Testa anslutning"
 
 #: trndi.strings.rs_wizard_testing
 msgid "Testing…"
-msgstr ""
+msgstr "Testar..."
 
 #: trndi.strings.rs_wizard_test_fail
 msgid "✗ Could not connect."
-msgstr ""
+msgstr "✗ Kunde ej ansluta."
 
 #: trndi.strings.rs_wizard_test_ok
 msgid "✓ Connected!"
-msgstr ""
+msgstr "✓ Ansluten!"
 
 #: trndi.strings.rs_wizard_thresh_body
 msgid ""
@@ -2377,31 +2377,31 @@ msgstr ""
 
 #: trndi.strings.rs_wizard_thresh_head
 msgid "Alert thresholds"
-msgstr ""
+msgstr "Varningsgrenser"
 
 #: trndi.strings.rs_wizard_thresh_hi
 msgid "High alert"
-msgstr ""
+msgstr "Hôg varning"
 
 #: trndi.strings.rs_wizard_thresh_lo
 msgid "Low alert"
-msgstr ""
+msgstr "Log varning"
 
 #: trndi.strings.rs_wizard_title
 msgid "Welcome to Trndi"
-msgstr ""
+msgstr "Velkommen til Trndi"
 
 #: trndi.strings.rs_wizard_unit_head
 msgid "Choose your preferred glucose unit:"
-msgstr ""
+msgstr "Velj din foredragna glukosenhet:"
 
 #: trndi.strings.rs_wizard_unit_mgdl
 msgid "mg/dL  (e.g. 100)"
-msgstr ""
+msgstr "mg/dL  (t ex 100)"
 
 #: trndi.strings.rs_wizard_unit_mmol
 msgid "mmol/L  (e.g. 5.5)"
-msgstr ""
+msgstr "mmol/L  (t ex 5.5)"
 
 #: trndi.strings.rs_wizard_welcome_body
 msgid ""
@@ -2414,7 +2414,7 @@ msgstr ""
 
 #: trndi.strings.rs_wizard_welcome_head
 msgid "Let's get connected!"
-msgstr ""
+msgstr "Lat oss ansluta!"
 
 #: trndi.strings.sannounceoff
 msgid "No longer announcing readings aloud"
@@ -2589,12 +2589,12 @@ msgstr "Sendarinformasjon"
 
 #: trndi.strings.strendwindow
 msgid "Trend window"
-msgstr ""
+msgstr "Trendfônster"
 
 #: trndi.strings.strendwindowfmt
 #, object-pascal-format
 msgid "%d min (%d dots)"
-msgstr ""
+msgstr "%d min (%d punkter)"
 
 #: trndi.strings.stypeerrcapt
 #, fuzzy
@@ -2622,7 +2622,7 @@ msgstr "Okent fel"
 #, object-pascal-format
 msgctxt "uconf.rs_announce_not_available"
 msgid "The text-to-speech (TTS) software \"%s\" is not available."
-msgstr ""
+msgstr "Text-till-tal (TTS-mjukvaran) \"%s\" er inte tillgenglig."
 
 #: uconf.rs_auto
 msgid "Auto-detect"
@@ -2656,7 +2656,7 @@ msgstr "Trndi kan rita en rektangel/bakgrund i grafens bakgrund, fôr att visuel
 
 #: uconf.rs_connect_help
 msgid "This will display a badge showing the internet connectivity status in the top."
-msgstr ""
+msgstr "Detta kommer visa en knapp hôgst upp som visar internetanslutningens status."
 
 #: uconf.rs_current_acc
 #, object-pascal-format, fuzzy, badformat
@@ -2689,7 +2689,7 @@ msgstr ""
 
 #: uconf.rs_decimal_help
 msgid "This replaces the decimal separator, eg setting \",\" will show the reading as 5,5 instead of 5.5"
-msgstr ""
+msgstr "Detta erstatter decimaltecknet, t ex \",\" kommer att visa avlesningar som 5,5istelet for 5.5"
 
 #: uconf.rs_default_account
 msgctxt "uconf.rs_default_account"
@@ -2698,7 +2698,7 @@ msgstr "Standard"
 
 #: uconf.rs_delta_max
 msgid "When the previous reading is missing, use the next available reading within this many 5-minute-intervals to calculate delta."
-msgstr ""
+msgstr "Ner en tidigare avlesning saknas, anvend neste tillgengliga avlesning inom detta antal 5 minuters-intervaller for att berekna delta."
 
 #: uconf.rs_dex
 msgid ""
@@ -2710,15 +2710,15 @@ msgstr ""
 
 #: uconf.rs_diff_right_help
 msgid "This controls if the difference/delta will show center or right (when predictions are on, this will swap the position of the values)"
-msgstr ""
+msgstr "Detta styr skillnaden/deltans position, center eller hôger (ner forutsogelserna er po, kommer detta att vexla positionen po verdena)"
 
 #: uconf.rs_disable_media
 msgid "This turns off all media-related features. Can speed up start."
-msgstr ""
+msgstr "Stenger av alla media-relaterade funktioner. Kan snabba po uppstarten."
 
 #: uconf.rs_dot_click
 msgid "Dot appearance is modified below!"
-msgstr ""
+msgstr "Punktutseende endras nedan!"
 
 #: uconf.rs_dot_help
 msgid ""
@@ -2728,7 +2728,7 @@ msgstr ""
 
 #: uconf.rs_dot_help_title
 msgid "Changing the trend dots"
-msgstr ""
+msgstr "Endrar trendpunkterna"
 
 #: uconf.rs_driver_contributor
 msgid "Driver contributor: "
@@ -2740,7 +2740,7 @@ msgstr "Namn moste vara unika"
 
 #: uconf.rs_empty_proxy
 msgid "Proxy host is empty."
-msgstr ""
+msgstr "Proxyservern er tom."
 
 #: uconf.rs_enter_any
 msgid "Please enter a name"
@@ -2757,17 +2757,17 @@ msgstr "Ange ett anvendarnamn"
 #: uconf.rs_err_address
 msgctxt "uconf.rs_err_address"
 msgid "Address must start with http(s)://"
-msgstr ""
+msgstr "Adressen meste berjja med http(s)://"
 
 #: uconf.rs_err_email
 msgctxt "uconf.rs_err_email"
 msgid "You must enter a valid e-mail address"
-msgstr ""
+msgstr "Du meste ange en riktig e-postadresse"
 
 #: uconf.rs_err_password
 msgctxt "uconf.rs_err_password"
 msgid "You must enter a password"
-msgstr ""
+msgstr "Du meste ange ett lôsen"
 
 #: uconf.rs_extcount
 #, object-pascal-format, fuzzy, badformat
@@ -2776,11 +2776,11 @@ msgstr "Tilleggsantal: __PHad46520b-c2bd-41d2-93e4-f69806e260c7__"
 
 #: uconf.rs_font_help
 msgid "You can change the font of the reading, time and arrow. Click on the respective item here to change the font"
-msgstr ""
+msgstr "Du kan endra typsnittet po avlesning, tid och pil. Klicka po respektive her for att endra typsnittet"
 
 #: uconf.rs_full_arrow_set_help
 msgid "This will display all prediction arrows, by default Trndi just shows going up, down or steady"
-msgstr ""
+msgstr "Detta kommer visa alla forutspoelsepilar, som standard visar Trndi bara om verde forutspos bli logt, hôgt eller rakt"
 
 #: uconf.rs_graph_icon_current
 msgid "Choose an icon for the current point in the graph"
@@ -2939,7 +2939,7 @@ msgstr "Prognoshorisonten er hur longt i framtiden Trndi fôrutspor avlesningar,
 
 #: uconf.rs_pred_scale_help
 msgid "When predictions are enabled, this controls the size adjustment of the predictions"
-msgstr ""
+msgstr "Ner forutsogelser er po, kommer detta justera storleken po dem"
 
 #: uconf.rs_privacy_help
 msgid "When in Privacy Mode, the actual blood glucose value is hidden. Trndi will only tell the user if it's good, high or low."
@@ -2961,7 +2961,7 @@ msgstr "Trndi tilloter inte en legre grens, backendsystemet rapporterar bara ver
 
 #: uconf.rs_scale_diff_help
 msgid "You can change the scale/size of the difference in reading since last, by entering a scale factor"
-msgstr ""
+msgstr "Du kan endra skalan/storleken for skillnaden sedan sist, genom att ange en skalningsfaktor"
 
 #: uconf.rs_select_font
 msgid "Select a font"
@@ -2989,7 +2989,7 @@ msgstr "Som standard visar Trndi bara upp/ned/rakt. Du kan aktivera att hela men
 
 #: uconf.rs_short_mode_help
 msgid "Only one reading will show, as just an arrow or a single prediction"
-msgstr ""
+msgstr "Berre en avlesning kommer visas, i form av en pil eller en forutsogelse"
 
 #: uconf.rs_tandem
 msgid ""
@@ -3015,7 +3015,7 @@ msgstr "Trndi kan rita en linje po grafens bakgrund, fôr att representera dina 
 
 #: uconf.rs_timestamp_help
 msgid "By default Trndi shows the amount of minutes since the last reading, this setting allows you to display the time of the last reading instead."
-msgstr ""
+msgstr "Som standard visar Trndi antalet minutter sedan senaste avlesning, denna instellning gor att tida for avlesningen visas istelet."
 
 #: uconf.rs_update_snooze
 #, object-pascal-format, fuzzy, badformat
@@ -3029,7 +3029,7 @@ msgstr "Du er uppdaterad"
 #: uconf.rs_uptodate_dev
 #, object-pascal-format
 msgid "You are using a development version, there's no stable release newer than this! The most recent stable release is %s"
-msgstr ""
+msgstr "Du anvender en utviklingsversion, det finns ingen stabil version som er nyare en detta! Den senaste stabila versionen er %s"
 
 #: uconf.rs_use_url_help
 msgid "Trndi can load a URL when high or low in your default web browser."
@@ -3037,7 +3037,7 @@ msgstr "Trndi kan ladda en adress i din standardwebblesare ner du er hôg eller 
 
 #: uconf.rs_warn_hilow
 msgid "This will show an overlay on the screen when a low or high is predicted"
-msgstr ""
+msgstr "Detta kommer visa en ruta po skerma ner ett logt, eller hôgt, verde forutspos"
 
 #: uconf.rs_wayland
 msgid ""
@@ -3084,16 +3084,16 @@ msgstr "Klicka po en punkt fôr att se detaljer om avlesningen"
 
 #: uhistorygraph.rs_history_graph_help_interact
 msgid "Hover or click dots for details. Right-click to choose a time range."
-msgstr ""
+msgstr "Placera musen ôver en punkt for info. Hôgerklicka for att velja en tidpunkt."
 
 #: uhistorygraph.rs_history_graph_hover_fmt
 #, object-pascal-format
 msgid "%s at %s"
-msgstr ""
+msgstr "%s vid %s"
 
 #: uhistorygraph.rs_history_graph_key_basal
 msgid "Basal"
-msgstr ""
+msgstr "Basal"
 
 #: uhistorygraph.rs_history_graph_key_high
 msgctxt "uhistorygraph.rs_history_graph_key_high"
@@ -3107,7 +3107,7 @@ msgstr "Log"
 
 #: uhistorygraph.rs_history_graph_key_predict
 msgid "Predicted"
-msgstr ""
+msgstr "Forutspodd"
 
 #: uhistorygraph.rs_history_graph_key_range
 msgid "In range"
@@ -3132,27 +3132,27 @@ msgstr "Okend"
 
 #: uhistorygraph.rs_history_graph_menu_range
 msgid "Time range"
-msgstr ""
+msgstr "Tidsspann"
 
 #: uhistorygraph.rs_history_graph_menu_range_12h
 msgid "Last 12h"
-msgstr ""
+msgstr "Senaste 12 tim"
 
 #: uhistorygraph.rs_history_graph_menu_range_1h
 msgid "Last 1h"
-msgstr ""
+msgstr "Sista 1 tim"
 
 #: uhistorygraph.rs_history_graph_menu_range_24h
 msgid "Last 24h"
-msgstr ""
+msgstr "Sista 24 tim"
 
 #: uhistorygraph.rs_history_graph_menu_range_3h
 msgid "Last 3h"
-msgstr ""
+msgstr "Sista 3 tim"
 
 #: uhistorygraph.rs_history_graph_menu_range_6h
 msgid "Last 6h"
-msgstr ""
+msgstr "Sista 6 tim"
 
 #: uhistorygraph.rs_history_graph_menu_range_all
 #, fuzzy
@@ -3203,36 +3203,36 @@ msgstr "Avlesningar (__PH9b11c7d9-566c-427a-900c-1cb2adb6fc93__)"
 #: uwizard.wz_err_address
 msgctxt "uwizard.wz_err_address"
 msgid "Address must start with http(s)://"
-msgstr ""
+msgstr "Adressen meste berjja med http(s)://"
 
 #: uwizard.wz_err_email
 msgctxt "uwizard.wz_err_email"
 msgid "You must enter a valid e-mail address"
-msgstr ""
+msgstr "Du meste ange en riktig e-postadresse"
 
 #: uwizard.wz_err_need_addr
 msgctxt "uwizard.wz_err_need_addr"
 msgid "Please enter a server address or username."
-msgstr ""
+msgstr "Ange en serveradresse eller anvendarnamn."
 
 #: uwizard.wz_err_password
 msgctxt "uwizard.wz_err_password"
 msgid "You must enter a password"
-msgstr ""
+msgstr "Du meste ange ett lôsen"
 
 #: uwizard.wz_err_thresh_hi
 msgid "Please enter a valid high threshold (a number greater than zero)."
-msgstr ""
+msgstr "Ange en giltig hôg grense (ett verde ôver null)."
 
 #: uwizard.wz_err_thresh_lo
 msgid "Please enter a valid low threshold (a number greater than zero)."
-msgstr ""
+msgstr "Ange en giltig log grense (ett verde ôver null)."
 
 #: uwizard.wz_err_thresh_order
 msgid "The high threshold must be greater than the low threshold."
-msgstr ""
+msgstr "Den hôge grensen meste vera stôrre en den loge grensen."
 
 #: uwizard.wz_test_no_support
 msgid "Connection testing is not supported for this service."
-msgstr ""
+msgstr "Anslutningstest stods inte for denna tjenst."
 
