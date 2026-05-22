@@ -87,7 +87,8 @@ winsock,
 LazFileUtils, uconf, uwizard, trndi.native, Trndi.API,
 trndi.api.xDrip,{$ifdef DEBUG} trndi.api.debug_custom, trndi.api.debug, trndi.api.debug_edge, trndi.api.debug_lowsoon, trndi.api.debug_sensorexpiry, trndi.api.debug_missing, trndi.api.debug_firstXmissing, trndi.api.debug_intermittentmissing, trndi.api.debug_perfect, trndi.api.debug_firstmissing, trndi.api.debug_secondmissing, trndi.api.debug_slow, trndi.api.debug_faultysensor, trndi.api.debug_latemissing,{$endif}
 {$ifdef LCLQt6}Qt6, QtWidgets,{$endif}
-StrUtils, slicke.touchdetection, ufloat, uhistorygraph, LCLType, trndi.webserver.threaded, razer.chroma.factory, razer.chroma;
+StrUtils, slicke.touchdetection, ufloat, uhistorygraph, LCLType, trndi.webserver.threaded, razer.chroma.factory, razer.chroma,
+trndi.theme;
 
 
 {$I ../../inc/defines.inc}
@@ -851,23 +852,24 @@ FWarnMessage: string = '';        // raw warning text; rebuilt by fixWarningPane
 
 username: string = '';
 lastup: tdatetime;
-  // Colors (b)lood(g)lucose (c)olor XX
+  // Colors (b)lood(g)lucose (c)olor XX — defaults from TrndiThemeModern.
+  // Users with stored 'ux.bg_color_*' settings keep their own values.
   // In range
-bg_color_ok: TColor = $0000DC84;
-bg_color_ok_txt: TColor = $00F2FFF2;
+bg_color_ok: TColor = $0060AE27;     // Emerald    #27AE60
+bg_color_ok_txt: TColor = $00E8FBE8; // Light green
   // Hi
-bg_color_hi: TColor = $0007DAFF;
-bg_color_hi_txt: TColor = $000052FB;
+bg_color_hi: TColor = $00227EE6;     // Pumpkin    #E67E22
+bg_color_hi_txt: TColor = $00001B2D; // Very dark brown
   // Low
-bg_color_lo: TColor = $00FFBE0B;
-bg_color_lo_txt: TColor = $00FFFEE9;
+bg_color_lo: TColor = $002B39C0;     // Pomegranate #C0392B
+bg_color_lo_txt: TColor = $00EEEBFF; // Very light pink
 
-  // Personal hi
-bg_rel_color_lo: TColor = $00A859EE;
-bg_rel_color_lo_txt: TColor = $002D074E;
-  // Personal low
-bg_rel_color_hi: TColor = $0072C9DE;
-bg_rel_color_hi_txt: TColor = $001C6577;
+  // Personal hi (approaching upper limit)
+bg_rel_color_hi: TColor = $00129CF3;     // Sunflower   #F39C12
+bg_rel_color_hi_txt: TColor = $00001B2D; // Very dark brown
+  // Personal low (approaching lower limit)
+bg_rel_color_lo: TColor = $00AD448E;     // Amethyst    #8E44AD
+bg_rel_color_lo_txt: TColor = $00F5E5F3; // Light lavender
   // When the TIR is bad
 bad_tir: integer = 5;
   // WHen the TIR is good
