@@ -55,7 +55,8 @@ function ExtMsgYesNo(const dialogsize: TUXDialogSize; const caption, desc: strin
 
 function ExtText(const dialogsize: TUXDialogSize; const caption, text: string; buttons: TUXMsgDlgBtns = [mbOK]; const icon: UXImage = uxmtInformation; scale: Extended = 1): TModalResult;
 function ExtInput(const dialogsize: TUXDialogSize; const title, prompt, labelText, def: string; var mr: TModalResult): string; overload;
-function ExtList(const dialogsize: TUXDialogSize; const title, header, desc: string; const items: array of unicodestring): LongInt; overload;
+function ExtList(const dialogsize: TUXDialogSize; const title, header, desc: string; const items: array of unicodestring; const Default: boolean = false): LongInt; overload;
+function ExtList(const dialogsize: TUXDialogSize; const title, header, desc: string; const items: array of string; const Default: boolean = false): LongInt; overload;
 
 // Numeric and date inputs (headless stubs)
 function ExtIntInput(
@@ -182,7 +183,12 @@ begin
   Result := ADefault;
 end;
 
-function ExtList(const dialogsize: TUXDialogSize; const title, header, desc: string; const items: array of unicodestring): LongInt; overload;
+function ExtList(const dialogsize: TUXDialogSize; const title, header, desc: string; const items: array of unicodestring; const Default: boolean = false): LongInt; overload;
+begin
+  Result := 0;
+end;
+
+function ExtList(const dialogsize: TUXDialogSize; const title, header, desc: string; const items: array of string; const Default: boolean = false): LongInt; overload;
 begin
   Result := 0;
 end;
