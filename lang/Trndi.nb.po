@@ -1387,7 +1387,7 @@ msgstr ""
 
 #: trndi.api.nightscout.sparamdeschtml
 msgid "<div style=\"font-family: Arial, sans-serif; line-height: 1.6;\"><h2 style=\"margin-bottom: 10px;\">🌙 NightScout v2 Setup</h2><p style=\"color: #7f8c8d; font-style: italic; margin-bottom: 15px;\">(use FULL access token)</p><ol style=\"padding-left: 20px;\"><li style=\"margin-bottom: 10px;\">Open your NightScout site (e.g., <code style=\"background: #6495ED; padding: 2px 6px; border-radius: 3px;\">https://your-site</code>).</li><li style=\"margin-bottom: 10px;\">Go to <strong>Admin → Tokens</strong> — or <strong>API Secret</strong>.</li><li style=\"margin-bottom: 10px;\">If you use Tokens:<ul style=\"margin-top: 5px; padding-left: 20px;\"><li>Create a token with at least <strong>READ</strong> scope.</li><li>Copy the <strong>FULL</strong> access token value exactly as shown.</li></ul></li><li style=\"margin-bottom: 10px;\">In Trndi:<ul style=\"margin-top: 5px; padding-left: 20px;\"><li><strong>Address:</strong> enter your NightScout URL</li><li><strong>Auth:</strong> paste the FULL access token (not just a suffix).</li></ul></li></ol><p style=\"border-left: 4px solid #ffc107; padding: 10px; margin-top: 15px;\"><strong>⚠️ Note:</strong> If you instead use the legacy API Secret, paste your API Secret value as-is.</p></div>"
-msgstr "<div style="font-family: Arial, sans-serif; line-height: 1.6;"><h2 style="margin-bottom: 10px;">🌙 NightScout v2-oppsett</h2><p style="color: #7f8c8d; font-style: italic; margin-bottom: 15px;">(bruk FULL access token)</p><ol style="padding-left: 20px;"><li style="margin-bottom: 10px;">Åpne din NightScout-side (f.eks. <code style="background: #6495ED; padding: 2px 6px; border-radius: 3px;">https://din-side</code>).</li><li style="margin-bottom: 10px;">Gå til <strong>Admin → Tokens</strong> — eller <strong>API Secret</strong>.</li><li style="margin-bottom: 10px;">Hvis du bruker Tokens:<ul style="margin-top: 5px; padding-left: 20px;"><li>Opprett et token med minst <strong>READ</strong> scope.</li><li>Kopier den <strong>FULLE</strong> access token-verdien nøyaktig som vist.</li></ul></li><li style="margin-bottom: 10px;">I Trndi:<ul style="margin-top: 5px; padding-left: 20px;"><li><strong>Adresse:</strong> skriv inn din NightScout URL</li><li><strong>Auth:</strong> lim inn DEN FULLE access token (ikke bare et suffiks).</li></ul></li></ol><p style="border-left: 4px solid #ffc107; padding: 10px; margin-top: 15px;"><strong>⚠️ Merk:</strong> Hvis du i stedet bruker det eldre API Secret, lim inn din API Secret-verdi som den er.</p></div>"
+msgstr "<div style=\"font-family: Arial, sans-serif; line-height: 1.6;\"><h2 style=\"margin-bottom: 10px;\">🌙 NightScout v2-oppsett</h2><p style=\"color: #7f8c8d; font-style: italic; margin-bottom: 15px;\">(bruk FULL access token)</p><ol style=\"padding-left: 20px;\"><li style=\"margin-bottom: 10px;\">Åpne din NightScout-side (f.eks. <code style=\"background: #6495ED; padding: 2px 6px; border-radius: 3px;\">https://din-side</code>).</li><li style=\"margin-bottom: 10px;\">Gå til <strong>Admin → Tokens</strong> — eller <strong>API Secret</strong>.</li><li style=\"margin-bottom: 10px;\">Hvis du bruker Tokens:<ul style=\"margin-top: 5px; padding-left: 20px;\"><li>Opprett et token med minst <strong>READ</strong> scope.</li><li>Kopier den <strong>FULLE</strong> access token-verdien nøyaktig som vist.</li></ul></li><li style=\"margin-bottom: 10px;\">I Trndi:<ul style=\"margin-top: 5px; padding-left: 20px;\"><li><strong>Adresse:</strong> skriv inn din NightScout URL</li><li><strong>Auth:</strong> lim inn DEN FULLE access token (ikke bare et suffiks).</li></ul></li></ol><p style=\"border-left: 4px solid #ffc107; padding: 10px; margin-top: 15px;\"><strong>⚠️ Merk:</strong> Hvis du i stedet bruker det eldre API Secret, lim inn din API Secret-verdi som den er.</p></div>"
 
 #: trndi.api.nightscout.sparampassword
 msgctxt "trndi.api.nightscout.sparampassword"
@@ -1420,7 +1420,7 @@ msgstr ""
 
 #: trndi.api.nightscout3.sparamdeschtml
 msgid "<div style=\"font-family: Arial, sans-serif; line-height: 1.6;\"><div style=\"background: #dc3545; color: white; padding: 15px; border-radius: 6px; margin-bottom: 20px; font-weight: bold; text-align: center; border: 2px solid #c82333;\">⚠️ ALPHA DRIVER - Please use \"NightScout\" for daily use! ⚠️</div><h2 style=\"margin-bottom: 10px;\">🌙 NightScout v3 Setup</h2><p style=\"color: #7f8c8d; font-style: italic; margin-bottom: 15px;\">(use FULL access token)</p><ol style=\"padding-left: 20px;\"><li style=\"margin-bottom: 10px;\">Open your NightScout site (e.g., <code style=\"background: #6495ED; padding: 2px 6px; border-radius: 3px;\">https://your-site</code>).</li><li style=\"margin-bottom: 10px;\">Go to <strong>Admin → Tokens</strong> — or <strong>API Secret</strong>.</li><li style=\"margin-bottom: 10px;\">If you use Tokens:<ul style=\"margin-top: 5px; padding-left: 20px;\"><li>Create a token with at least <strong>READ</strong> scope.</li><li>Copy the <strong>FULL</strong> access token value exactly as shown.</li></ul></li><li style=\"margin-bottom: 10px;\">In Trndi:<ul style=\"margin-top: 5px; padding-left: 20px;\"><li><strong>Address:</strong> enter your NightScout URL</li><li><strong>Auth:</strong> paste the FULL access token.</li></ul></li></ol><div style=\"border-left: 4px solid #0d6efd; padding: 12px; margin-top: 15px; border-radius: 4px;\"><p style=\"margin: 0;\"><strong>💡 Tip:</strong> Both <code style=\"background: #6F8FAF; padding: 2px 6px; border-radius: 3px;\">abc123</code> and <code style=\"background: #6F8FAF; padding: 2px 6px; border-radius: 3px;\">token=abc123</code> are accepted.</p></div><div style=\"border-left: 4px solid #ffc107; padding: 12px; margin-top: 15px; border-radius: 4px;\"><p style=\"margin: 0 0 8px 0;\"><strong>📝 Note:</strong> If you instead use the legacy API Secret, paste your API Secret value as-is.</p><p style=\"margin: 0;\"><strong>📝 Note 2:</strong> Your access token should look like: <code style=\"background: #6F8FAF; padding: 2px 6px; border-radius: 3px;\">trndi-abc123</code> (or whatever name you chose).</p></div></div>"
-msgstr "<div style="font-family: Arial, sans-serif; line-height: 1.6;"><div style="background: #dc3545; color: white; padding: 15px; border-radius: 6px; margin-bottom: 20px; font-weight: bold; text-align: center; border: 2px solid #c82333;">⚠️ ALFA-DRIVER - Vennligst bruk \"NightScout\" til daglig bruk! ⚠️</div><h2 style="margin-bottom: 10px;">🌙 NightScout v3-oppsett</h2><p style="color: #7f8c8d; font-style: italic; margin-bottom: 15px;">(bruk FULL access token)</p><ol style="padding-left: 20px;"><li style="margin-bottom: 10px;">Åpne din NightScout-side (f.eks. <code style="background: #6495ED; padding: 2px 6px; border-radius: 3px;">https://din-side</code>).</li><li style="margin-bottom: 10px;">Gå til <strong>Admin → Tokens</strong> — eller <strong>API Secret</strong>.</li><li style="margin-bottom: 10px;">Hvis du bruker Tokens:<ul style="margin-top: 5px; padding-left: 20px;"><li>Opprett et token med minst <strong>READ</strong> scope.</li><li>Kopier den <strong>FULLE</strong> access token-verdien nøyaktig som vist.</li></ul></li><li style="margin-bottom: 10px;">I Trndi:<ul style="margin-top: 5px; padding-left: 20px;"><li><strong>Adresse:</strong> skriv inn din NightScout-URL</li><li><strong>Auth:</strong> lim inn DEN FULLE access token.</li></ul></li></ol><div style="border-left: 4px solid #0d6efd; padding: 12px; margin-top: 15px; border-radius: 4px;"><p style="margin: 0;"><strong>💡 Tips:</strong> Både <code style="background: #6F8FAF; padding: 2px 6px; border-radius: 3px;">abc123</code> og <code style="background: #6F8FAF; padding: 2px 6px; border-radius: 3px;">token=abc123</code> aksepteres.</p></div><div style="border-left: 4px solid #ffc107; padding: 12px; margin-top: 15px; border-radius: 4px;"><p style="margin: 0 0 8px 0;"><strong>📝 Merk:</strong> Hvis du i stedet bruker det eldre API Secret, lim inn din API Secret-verdi som den er.</p><p style="margin: 0;"><strong>📝 Merk 2:</strong> Din access token skal se slik ut: <code style="background: #6F8FAF; padding: 2px 6px; border-radius: 3px;">trndi-abc123</code> (eller det navnet du valgte).</p></div></div>"
+msgstr "<div style=\"font-family: Arial, sans-serif; line-height: 1.6;\"><div style=\"background: #dc3545; color: white; padding: 15px; border-radius: 6px; margin-bottom: 20px; font-weight: bold; text-align: center; border: 2px solid #c82333;\">⚠️ ALFA-DRIVER - Vennligst bruk \"NightScout\" til daglig bruk! ⚠️</div><h2 style=\"margin-bottom: 10px;\">🌙 NightScout v3-oppsett</h2><p style=\"color: #7f8c8d; font-style: italic; margin-bottom: 15px;\">(bruk FULL access token)</p><ol style=\"padding-left: 20px;\"><li style=\"margin-bottom: 10px;\">Åpne din NightScout-side (f.eks. <code style=\"background: #6495ED; padding: 2px 6px; border-radius: 3px;\">https://din-side</code>).</li><li style=\"margin-bottom: 10px;\">Gå til <strong>Admin → Tokens</strong> — eller <strong>API Secret</strong>.</li><li style=\"margin-bottom: 10px;\">Hvis du bruker Tokens:<ul style=\"margin-top: 5px; padding-left: 20px;\"><li>Opprett et token med minst <strong>READ</strong> scope.</li><li>Kopier den <strong>FULLE</strong> access token-verdien nøyaktig som vist.</li></ul></li><li style=\"margin-bottom: 10px;\">I Trndi:<ul style=\"margin-top: 5px; padding-left: 20px;\"><li><strong>Adresse:</strong> skriv inn din NightScout-URL</li><li><strong>Auth:</strong> lim inn DEN FULLE access token.</li></ul></li></ol><div style=\"border-left: 4px solid #0d6efd; padding: 12px; margin-top: 15px; border-radius: 4px;\"><p style=\"margin: 0;\"><strong>💡 Tips:</strong> Både <code style=\"background: #6F8FAF; padding: 2px 6px; border-radius: 3px;\">abc123</code> og <code style=\"background: #6F8FAF; padding: 2px 6px; border-radius: 3px;\">token=abc123</code> aksepteres.</p></div><div style=\"border-left: 4px solid #ffc107; padding: 12px; margin-top: 15px; border-radius: 4px;\"><p style=\"margin: 0 0 8px 0;\"><strong>📝 Merk:</strong> Hvis du i stedet bruker det eldre API Secret, lim inn din API Secret-verdi som den er.</p><p style=\"margin: 0;\"><strong>📝 Merk 2:</strong> Din access token skal se slik ut: <code style=\"background: #6F8FAF; padding: 2px 6px; border-radius: 3px;\">trndi-abc123</code> (eller det navnet du valgte).</p></div></div>"
 
 #: trndi.api.nightscout3.sparampassword
 msgid "Auth token"
@@ -2223,6 +2223,36 @@ msgstr "Lav advarsel"
 msgid "Welcome to Trndi"
 msgstr "Velkommen til Trndi"
 
+#: trndi.strings.rs_wizard_trend_120
+msgid "2 hours  (24 readings)"
+msgstr ""
+
+#: trndi.strings.rs_wizard_trend_180
+msgid "3 hours  (36 readings)"
+msgstr ""
+
+#: trndi.strings.rs_wizard_trend_30
+msgid "30 min  (6 readings)"
+msgstr ""
+
+#: trndi.strings.rs_wizard_trend_50
+msgid "50 min  (10 readings)"
+msgstr ""
+
+#: trndi.strings.rs_wizard_trend_90
+msgid "90 min  (18 readings)"
+msgstr ""
+
+#: trndi.strings.rs_wizard_trend_body
+msgid "Choose how many readings to show in the main graph."
+msgstr ""
+
+#: trndi.strings.rs_wizard_trend_head
+#, fuzzy
+msgctxt "trndi.strings.rs_wizard_trend_head"
+msgid "Trend window"
+msgstr "Trendvindu"
+
 #: trndi.strings.rs_wizard_unit_head
 msgid "Choose your preferred glucose unit:"
 msgstr "Velg din foretrukne glukoseenhet:"
@@ -2408,6 +2438,7 @@ msgid "Transmitter information"
 msgstr "Senderinformasjon"
 
 #: trndi.strings.strendwindow
+msgctxt "trndi.strings.strendwindow"
 msgid "Trend window"
 msgstr "Trendvindu"
 

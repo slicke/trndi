@@ -2391,6 +2391,36 @@ msgstr "Log varning"
 msgid "Welcome to Trndi"
 msgstr "Velkommen til Trndi"
 
+#: trndi.strings.rs_wizard_trend_120
+msgid "2 hours  (24 readings)"
+msgstr ""
+
+#: trndi.strings.rs_wizard_trend_180
+msgid "3 hours  (36 readings)"
+msgstr ""
+
+#: trndi.strings.rs_wizard_trend_30
+msgid "30 min  (6 readings)"
+msgstr ""
+
+#: trndi.strings.rs_wizard_trend_50
+msgid "50 min  (10 readings)"
+msgstr ""
+
+#: trndi.strings.rs_wizard_trend_90
+msgid "90 min  (18 readings)"
+msgstr ""
+
+#: trndi.strings.rs_wizard_trend_body
+msgid "Choose how many readings to show in the main graph."
+msgstr ""
+
+#: trndi.strings.rs_wizard_trend_head
+#, fuzzy
+msgctxt "trndi.strings.rs_wizard_trend_head"
+msgid "Trend window"
+msgstr "Trendfônster"
+
 #: trndi.strings.rs_wizard_unit_head
 msgid "Choose your preferred glucose unit:"
 msgstr "Velj din foredragna glukosenhet:"
@@ -2588,6 +2618,7 @@ msgid "Transmitter information"
 msgstr "Sendarinformasjon"
 
 #: trndi.strings.strendwindow
+msgctxt "trndi.strings.strendwindow"
 msgid "Trend window"
 msgstr "Trendfônster"
 

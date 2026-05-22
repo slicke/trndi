@@ -274,6 +274,13 @@ RS_WIZARD_WELCOME_BODY =
   'server address (or username) and API key / password.' +
   sLineBreak + sLineBreak +
   'All settings can be changed later via right-click → Settings.';
+RS_WIZARD_TREND_HEAD  = 'Trend window';
+RS_WIZARD_TREND_BODY  = 'Choose how many readings to show in the main graph.';
+RS_WIZARD_TREND_30    = '30 min  (6 readings)';
+RS_WIZARD_TREND_50    = '50 min  (10 readings)';
+RS_WIZARD_TREND_90    = '90 min  (18 readings)';
+RS_WIZARD_TREND_120   = '2 hours  (24 readings)';
+RS_WIZARD_TREND_180   = '3 hours  (36 readings)';
 RS_WIZARD_THRESH_HEAD = 'Alert thresholds';
 RS_WIZARD_THRESH_BODY =
   'Set the glucose levels at which Trndi should alert you.' +
