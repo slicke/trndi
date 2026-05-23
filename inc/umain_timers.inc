@@ -403,7 +403,7 @@ begin
   else
   begin
     miRangeLo.Caption := RS_RANGE_LO_UNSUPPORTED;
-    miRangeColor.Enabled := false;
+    UseRangeColor := false;
   end;
 end;
 

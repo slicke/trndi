@@ -189,9 +189,6 @@ msgstr "Punktstatistiken"
 msgid "> Service Menu"
 msgstr "> Service-Menü"
 
-#: tfbg.mialternate.caption
-msgid "Alterante arrow and reading"
-msgstr "Pfeil und Messwert wechseln"
 
 #: tfbg.miasysteminfo.caption
 msgid "System Info"
@@ -218,13 +215,7 @@ msgstr "Ja erzwingen"
 msgid "Current Basal"
 msgstr "Aktueller Basalwert"
 
-#: tfbg.miborders.caption
-msgid "No borders"
-msgstr "Keine Ränder"
 
-#: tfbg.miclock.caption
-msgid "Show clock every 20 sec"
-msgstr "Uhr alle 20 Sek. anzeigen"
 
 #: tfbg.micustomdots.caption
 msgctxt "tfbg.micustomdots.caption"
@@ -307,21 +298,14 @@ msgstr "Grenzwerte"
 msgid "Explain"
 msgstr "Erklären"
 
-#: tfbg.miontop.caption
-msgid "On top"
-msgstr "Oben"
 
 #: tfbg.mipredict.caption
 msgid "Prediction..."
 msgstr "Vorhersage..."
 
 #: tfbg.mipref.caption
-msgid "More options"
-msgstr "Weitere Optionen"
-
-#: tfbg.mirangecolor.caption
-msgid "Use range color for window"
-msgstr "Fensterfarbe entsprechend Bereich"
+msgid "Views"
+msgstr "Ansichten"
 
 #: tfbg.mireadingssince.caption
 msgid "Show readings since.."
@@ -563,6 +547,26 @@ msgstr "Durchschnittlichen Blutzucker neben TIR anzeigen"
 #: tfconf.cbshowsensorexpiry.caption
 msgid "Show sensor expiry in top-center badge"
 msgstr "Sensorablauf im oberen mittleren Badge anzeigen"
+
+#: tfconf.cbrangecolor.caption
+msgid "Use range color for window background"
+msgstr "Fensterfarbe entsprechend Bereich"
+
+#: tfconf.cbclock.caption
+msgid "Show clock for 5 sec every 20 sec"
+msgstr "Uhr 5 Sek. alle 20 Sek. anzeigen"
+
+#: tfconf.cbalternate.caption
+msgid "Alternate arrow and reading display"
+msgstr "Pfeil und Messwert wechseln"
+
+#: tfconf.cbontop.caption
+msgid "Keep window always on top"
+msgstr "Fenster immer im Vordergrund"
+
+#: tfconf.cbnoborders.caption
+msgid "Hide window borders"
+msgstr "Fensterrahmen ausblenden"
 
 #: tfconf.cbsize.caption
 msgid "Remember window size"

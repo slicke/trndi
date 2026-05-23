@@ -847,7 +847,7 @@ begin
     DOT_OFFSET_RANGE := GetIntSetting('ux.dot_offset_range', DOT_OFFSET_RANGE);
     DELTA_MAX := GetIntSetting('ux.delta_max', DELTA_MAX);
     // DOT_VISUAL_OFFSET := CalculateDotVisualOffset;  // No longer needed - centering uses half dot height
-    miRangeColor.Checked := GetBoolSetting('ux.range_color', true);
+    UseRangeColor := GetBoolSetting('ux.range_color', true);
     PaintRange := GetBoolSetting('ux.paint_range', true);
     PaintRangeLines := GetBoolSetting('ux.paint_range_lines', false);
     PaintRangeCGMRange := GetBoolSetting('ux.paint_range_cgmrange', false);

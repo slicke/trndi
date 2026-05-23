@@ -381,7 +381,7 @@ object fBG: TfBG
       end
     end
     object miPref: TMenuItem
-      Caption = 'More options'
+      Caption = 'Views'
       object miHistory: TMenuItem
         Caption = 'Show history'
         ShortCut = 16456
@@ -395,69 +395,14 @@ object fBG: TfBG
         Caption = 'Show readings since..'
         OnClick = miReadingsSinceClick
       end
-      object Separator2: TMenuItem
-        Caption = '-'
-      end
-      object miRangeColor: TMenuItem
-        Caption = 'Use range color for window'
-        OnClick = miRangeColorClick
-      end
-      object miClock: TMenuItem
-        Caption = 'Show clock every 20 sec'
-        OnClick = miClockClick
-      end
-      object miAlternate: TMenuItem
-        Caption = 'Alterante arrow and reading'
-        OnClick = miAlternateClick
-      end
-      object miDotSize: TMenuItem
-        Caption = 'Dot Size'
-        object miDotSmall: TMenuItem
-          Caption = 'Small'
-          Hint = '0.7'
-          OnClick = miDotNormalClick
-        end
-        object miDotNormal: TMenuItem
-          Caption = 'Normal'
-          Hint = '1'
-          OnClick = miDotNormalClick
-        end
-        object miDotBig: TMenuItem
-          Caption = 'Big'
-          Hint = '2'
-          OnClick = miDotNormalClick
-        end
-        object miDotHuge: TMenuItem
-          Caption = 'Huge'
-          Hint = '3'
-          OnClick = miDotNormalClick
-        end
-        object misep: TMenuItem
-          Caption = '-'
-        end
-        object miCustomDots: TMenuItem
-          Caption = 'Custom Size'
-          OnClick = miCustomDotsClick
-        end
-      end
     end
     object miSplit4: TMenuItem
       Caption = '-'
-    end
-    object miOnTop: TMenuItem
-      Caption = 'On top'
-      ShortCut = 16468
-      OnClick = miOnTopClick
     end
     object miFullScreen: TMenuItem
       Caption = 'Toggle Fullscreen'
       ShortCut = 16454
       OnClick = lDiffDblClick
-    end
-    object miBorders: TMenuItem
-      Caption = 'No borders'
-      ShortCut = 16450
-      OnClick = miBordersClick
     end
     object miFloatOn: TMenuItem
       Caption = 'Show Floating Window'

@@ -972,7 +972,7 @@ begin
     on := false;
   end;
 
-  if on and miRangeColor.Checked then
+  if on and UseRangeColor then
     SetColorMode(pnOffRange.Color);
 end;
 
@@ -1076,7 +1076,7 @@ begin
   pnOffRange.Color := bg_rel_color_lo;
   pnOffRangeBar.Color := bg_rel_color_lo;
   pnOffRange.Font.Color := bg_rel_color_lo_txt;
-  if miRangeColor.Checked then
+  if UseRangeColor then
   begin
     pnOffRange.Visible := false;
     pnOffRangeBar.Visible := false;
@@ -1092,7 +1092,7 @@ begin
 
   if Assigned(fFloat) then
   begin
-    if not miRangeColor.Checked then
+    if not UseRangeColor then
       ffloat.lRangeDown.Visible := true;
     ffloat.Font.color := bg_rel_color_lo_txt;
   end;
@@ -1104,7 +1104,7 @@ begin
   pnOffRange.Color := bg_rel_color_hi;
   pnOffRangeBar.Color := bg_rel_color_hi;
   pnOffRange.Font.Color := bg_rel_color_hi_txt;
-  if miRangeColor.Checked then
+  if UseRangeColor then
   begin
     pnOffRange.Visible := false;
     pnOffRangeBar.Visible := false;
@@ -1119,7 +1119,7 @@ begin
 
   if Assigned(fFloat) then
   begin
-    if not miRangeColor.Checked then
+    if not UseRangeColor then
       ffloat.lRangeUp.Visible := true;
     ffloat.Font.color := bg_rel_color_hi_txt;
   end;
@@ -1441,13 +1441,13 @@ begin
 
   if not multi
     and titlecolor
-    and miRangeColor.Checked then
+    and UseRangeColor then
   begin
     Result := SetSingleColorMode;
     Exit;
   end
   else
-  if not miRangeColor.Checked
+  if not UseRangeColor
     and pnOffRange.Visible then
     if native.SetTitleColor(handle, pnOffRange.Color,
       IfThen(IsLightColor(pnOffRange.Color), clBlack, clWhite)) then

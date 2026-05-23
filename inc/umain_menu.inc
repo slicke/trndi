@@ -60,16 +60,6 @@ begin
   tPingTimer(miDNS);
 end;
 
-procedure TfBG.miDotNormalDrawItem(Sender: TObject; ACanvas: TCanvas;
-ARect: TRect; AState: TOwnerDrawState);
-begin
-end;
-
-procedure TfBG.miDotNormalMeasureItem(Sender: TObject; ACanvas: TCanvas;
-var AWidth, AHeight: integer);
-begin
-end;
-
 procedure TfBG.miDotsInViewClick(Sender: TObject);
 var
   i: integer;
@@ -78,26 +68,9 @@ begin
   ShowMessage(IfThen(i = 0, 'Yes', 'Offset: ' + i.toString));
 end;
 
-procedure TfBG.miDotSmallClick(Sender: TObject);
-begin
-end;
-
 procedure TfBG.miExitClick(Sender: TObject);
 begin
   Close;
-end;
-
-procedure TfBG.miCustomDotsClick(Sender: TObject);
-var
-  mr: TModalResult;
-  dots: single;
-begin
-  dots := ExtNumericInput(uxdAuto,sDotSize,sCustomiseDotSize, sEnterDotSize,dotscale,FLOAT_NONE, FLOAT_NONE, true,mr);
-  if mr = mrOk then
-  begin
-    native.SetFloatSetting('ux.dot_scale', dots);
-    dotscale := dots;
-  end;
 end;
 
 procedure TfBG.miATouchAutoClick(Sender: TObject);
@@ -436,29 +409,6 @@ procedure TfBG.miAnnounceClick(Sender: TObject);
 begin
 end;
 
-procedure TfBG.miAlternateClick(Sender: TObject);
-begin
-  miAlternate.Checked := not miAlternate.Checked;
-  tSwap.Enabled := miAlternate.Checked;
-end;
-
-procedure TfBG.miClockClick(Sender: TObject);
-begin
-  miClock.Checked := not miClock.Checked;
-  tClock.Enabled := miClock.Checked;
-  native.SetSetting('main.clock', tClock.Enabled);
-end;
-
-procedure TfBG.miDotNormalClick(Sender: TObject);
-var
-  fmt: TFormatSettings;
-begin
-  fmt.DecimalSeparator := '.';
-  dotscale := StrToFloat((Sender as TMenuItem).Hint, fmt);
-  native.SetFloatSetting('ux.dot_scale', dotscale);
-  FormResize(fBG);
-end;
-
 procedure TfBG.TfFloatOnHide(Sender: TObject);
 begin
   miFloatOn.Checked := fFloat.Showing;
@@ -544,32 +494,6 @@ begin
   AutoAddPredictionOverlay;
 end;
 
-procedure TfBG.miRangeColorClick(Sender: TObject);
-begin
-  miRangeColor.Checked := not miRangeColor.Checked;
-  miForce.Click;
-  native.SetSetting('ux.range_color', miRangeColor.Checked);
-end;
-
-procedure TfBG.miBordersClick(Sender: TObject);
-begin
-  {$ifdef LCLGTK3}
-  Dialogs.ShowMessage('Your widgetset does not support this feature, pleae use QT');
-  Exit;
-  {$endif}
-  miBorders.Checked := not miBorders.Checked;
-  if miBorders.Checked then
-    self.BorderStyle := bsNone
-  else
-  {$ifdef DARWIN}
-    BorderStyle := bsSizeable;
-    {$else}
-    BorderStyle := bsSizeToolWin;
-  {$endif}
-
-  setColorMode;
-end;
-
 // Force update on menu click
 procedure TfBG.miForceClick(Sender: TObject);
 const
@@ -610,67 +534,6 @@ end;
 procedure TfBG.miLimitExplainClick(Sender: TObject);
 begin
   ShowMessage(RS_LIMIT_EXPLAIN_TEXT);
-end;
-
-procedure TfBG.miOnTopClick(Sender: TObject);
-{$ifdef LCLQt6}
-var
-  QtWidget: TQtWidget;
-  flags: nativeuint;
-  sessionType: string;
-const
-  Qt_WindowStaysOnTopHint = $00008000;
-{$endif}
-begin
-  miOnTop.Checked := not miOnTop.Checked;
-  if miOnTop.Checked then
-    Self.FormStyle := fsStayOnTop
-  else
-    Self.FormStyle := fsNormal;
-
-  {$ifdef LCLQt6}
-  sessionType := GetEnvironmentVariable('XDG_SESSION_TYPE');
-  if LowerCase(sessionType) = 'wayland' then
-  begin
-    TrndiDLog('OnTop requested but session is Wayland; compositor may ignore programmatic hints.');
-    if miOnTop.Checked then
-      ShowMessage(RS_WAYLAND);
-  end;
-  try
-    if HandleAllocated then
-    begin
-      QtWidget := TQtWidget(Handle);
-      if Assigned(QtWidget) and Assigned(QtWidget.Widget) then
-      begin
-        flags := QtWidget.windowFlags;
-        if miOnTop.Checked then
-        begin
-          QtWidget.setWindowFlags(flags or Qt_WindowStaysOnTopHint);
-          Self.Visible := true;
-          Self.Show;
-          Self.BringToFront;
-          Self.SetFocus;
-          try
-            Application.BringToFront;
-          except end;
-          if (Left < -1000) or (Top < -1000) or (Left > Screen.Width) or (Top > Screen.Height) then
-          begin
-            Width := Min(Width, Screen.Width - 40);
-            Height := Min(Height, Screen.Height - 40);
-            Left := (Screen.Width - Width) div 2;
-            Top := (Screen.Height - Height) div 2;
-            Application.ProcessMessages;
-          end;
-        end
-        else
-          QtWidget.setWindowFlags(flags and (not Qt_WindowStaysOnTopHint));
-      end;
-    end;
-  except
-  end;
-  {$endif}
-
-  setColorMode;
 end;
 
 procedure TfBG.pmSettingsMeasureItem(Sender: TObject; ACanvas: TCanvas;

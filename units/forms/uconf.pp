@@ -239,6 +239,11 @@ TfConf = class(TForm)
   cbTouch: TCheckBox;
   cbUser: TColorButton;
   cbUserColor: TCheckBox;
+  cbRangeColor: TCheckBox;
+  cbClock: TCheckBox;
+  cbAlternate: TCheckBox;
+  cbOnTop: TCheckBox;
+  cbNoBorders: TCheckBox;
   cbFlash: TCheckGroup;
   cbFlashHi: TCheckBox;
   cbTirBar: TColorButton;

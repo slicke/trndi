@@ -189,9 +189,6 @@ msgstr "Prikkstatistikk"
 msgid "> Service Menu"
 msgstr "> Servicemeny"
 
-#: tfbg.mialternate.caption
-msgid "Alterante arrow and reading"
-msgstr "Bytt pil og avlesning"
 
 #: tfbg.miasysteminfo.caption
 msgid "System Info"
@@ -218,13 +215,7 @@ msgstr "Tving Ja"
 msgid "Current Basal"
 msgstr "Nåværende basal"
 
-#: tfbg.miborders.caption
-msgid "No borders"
-msgstr "Ingen kanter"
 
-#: tfbg.miclock.caption
-msgid "Show clock every 20 sec"
-msgstr "Vis klokke hvert 20. sekund"
 
 #: tfbg.micustomdots.caption
 msgctxt "tfbg.micustomdots.caption"
@@ -307,21 +298,14 @@ msgstr "Grenser"
 msgid "Explain"
 msgstr "Forklar"
 
-#: tfbg.miontop.caption
-msgid "On top"
-msgstr "Øverst"
 
 #: tfbg.mipredict.caption
 msgid "Prediction..."
 msgstr "Prediksjon..."
 
 #: tfbg.mipref.caption
-msgid "More options"
-msgstr "Flere valg"
-
-#: tfbg.mirangecolor.caption
-msgid "Use range color for window"
-msgstr "Farg vinduet med områdefarge"
+msgid "Views"
+msgstr "Visninger"
 
 #: tfbg.mireadingssince.caption
 msgid "Show readings since.."
@@ -563,6 +547,26 @@ msgstr "Vis gjennomsnittlig blodsukker ved siden av TIR"
 #: tfconf.cbshowsensorexpiry.caption
 msgid "Show sensor expiry in top-center badge"
 msgstr "Vis sensorutløp i øverste midtre badge"
+
+#: tfconf.cbrangecolor.caption
+msgid "Use range color for window background"
+msgstr "Farg vinduet med områdefarge"
+
+#: tfconf.cbclock.caption
+msgid "Show clock for 5 sec every 20 sec"
+msgstr "Vis klokke i 5 sek. hvert 20. sekund"
+
+#: tfconf.cbalternate.caption
+msgid "Alternate arrow and reading display"
+msgstr "Bytt mellom pil og avlesning"
+
+#: tfconf.cbontop.caption
+msgid "Keep window always on top"
+msgstr "Hold vinduet øverst"
+
+#: tfconf.cbnoborders.caption
+msgid "Hide window borders"
+msgstr "Skjul vinduskanter"
 
 #: tfconf.cbsize.caption
 msgid "Remember window size"

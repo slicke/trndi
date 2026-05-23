@@ -302,8 +302,14 @@ begin
   end;
   end;
 
-  if native.GetBoolSetting('main.clock') then
-    miClock.OnClick(self);
+  tClock.Enabled := native.GetBoolSetting('main.clock', false);
+  tSwap.Enabled  := native.GetBoolSetting('main.alternate', false);
+
+  if native.GetBoolSetting('main.ontop', false) then
+    Self.FormStyle := fsStayOnTop;
+
+  if native.GetBoolSetting('main.noborders', false) then
+    Self.BorderStyle := bsNone;
 
   {$ifdef DARWIN}
   ActiveMonitor := GetActiveScreen;
