@@ -118,6 +118,26 @@ begin
     else
       SetConnectionBadge(FLastConnectionStatus, RGBToColor(60, 150, 90));
 
+  UseRangeColor := native.GetBoolSetting('ux.range_color', true);
+
+  tClock.Enabled := native.GetBoolSetting('main.clock', false);
+
+  tSwap.Enabled := native.GetBoolSetting('main.alternate', false);
+
+  if native.GetBoolSetting('main.ontop', false) then
+    Self.FormStyle := fsStayOnTop
+  else
+    Self.FormStyle := fsNormal;
+
+  if native.GetBoolSetting('main.noborders', false) then
+    Self.BorderStyle := bsNone
+  else
+  {$ifdef DARWIN}
+    Self.BorderStyle := bsSizeable;
+  {$else}
+    Self.BorderStyle := bsSizeToolWin;
+  {$endif}
+
   ResizeUIElements;
   ScaleLbl(lVal);
   ScaleLbl(lArrow);
@@ -415,6 +435,12 @@ procedure LoadUserSettings(f: TfConf);
       cbSize.Checked := GetBoolSetting('size.main');
       cbFlash.Visible := false;
 
+      cbRangeColor.Checked := native.GetBoolSetting('ux.range_color', true);
+      cbClock.Checked      := native.GetBoolSetting('main.clock', false);
+      cbAlternate.Checked  := native.GetBoolSetting('main.alternate', false);
+      cbOnTop.Checked      := native.GetBoolSetting('main.ontop', false);
+      cbNoBorders.Checked  := native.GetBoolSetting('main.noborders', false);
+
       cbAlertHiLo.Checked := native.getBoolSetting('alerts.notice.hilo', true);
       cbAlertMissing.Checked := native.getBoolSetting('alerts.notice.missing', true);
     end;
@@ -653,6 +679,12 @@ procedure SaveUserSettings(f: TfConf);
       native.setSetting('size.main', cbSize.Checked);
       native.setSetting('alerts.notice.hilo', cbAlertHiLo.Checked);
       native.setSetting('alerts.notice.missing', cbAlertMissing.Checked);
+
+      native.SetSetting('ux.range_color', cbRangeColor.Checked);
+      native.SetSetting('main.clock',     cbClock.Checked);
+      native.SetSetting('main.alternate', cbAlternate.Checked);
+      native.SetSetting('main.ontop',     cbOnTop.Checked);
+      native.SetSetting('main.noborders', cbNoBorders.Checked);
 
       for i := lbUsers.Items.Count - 1 downto 0 do
         if lbUsers.items[i][1] = '-' then

@@ -79,7 +79,7 @@ begin
   begin
     FDotWindowMenu := TMenuItem.Create(pmSettings);
     FDotWindowMenu.Caption := sTrendWindow;
-    miDotSize.Parent.Insert(miDotSize.MenuIndex + 1, FDotWindowMenu);
+    miSplit4.Parent.Insert(miSplit4.MenuIndex, FDotWindowMenu);
     for i := 0 to High(WindowSizes) do
     begin
       item := TMenuItem.Create(FDotWindowMenu);
@@ -91,8 +91,6 @@ begin
       FDotWindowMenu.Add(item);
     end;
   end;
-  miDotSize.Visible := false;
-
   for i := 0 to FDotWindowMenu.Count - 1 do
     FDotWindowMenu.Items[i].Checked :=
       FDotWindowMenu.Items[i].Tag = ActiveDots;

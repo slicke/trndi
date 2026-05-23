@@ -184,7 +184,6 @@ TfBG = class(TForm)
   miExtLog: TMenuItem;
   miSep1: TMenuItem;
   miDNS: TMenuItem;
-  miDotSmall: TMenuItem;
   miPredict: TMenuItem;
   pnTouchContents: TPanel;
   pnTouchMenu: TPanel;
@@ -206,7 +205,6 @@ TfBG = class(TForm)
   miADotAdjust: TMenuItem;
   miDotsInView: TMenuItem;
   miExit: TMenuItem;
-  miCustomDots: TMenuItem;
   miDebugBackend: TMenuItem;
   miDotVal: TMenuItem;
   miATouchAuto: TMenuItem;
@@ -217,17 +215,9 @@ TfBG = class(TForm)
   miATouch: TMenuItem;
   miAdvanced: TMenuItem;
   lDot1: TDotControl;
-  misep: TMenuItem;
   miSplit6: TMenuItem;
   miSplit5: TMenuItem;
-  miDotHuge: TMenuItem;
-  miDotBig: TMenuItem;
-  miDotNormal: TMenuItem;
-  miDotSize: TMenuItem;
-  miAlternate: TMenuItem;
   miHistory: TMenuItem;
-  miClock: TMenuItem;
-  miRangeColor: TMenuItem;
   miPref: TMenuItem;
   miFloatOn: TMenuItem;
   pnOffReading: TPanel;
@@ -236,9 +226,7 @@ TfBG = class(TForm)
   pnMultiUser: TPanel;
   pnOffRangeBar: TPanel;
   Separator1: TMenuItem;
-  miBorders: TMenuItem;
   miFullScreen: TMenuItem;
-  miOnTop: TMenuItem;
   miRefresh: TMenuItem;
   miSplit4: TMenuItem;
   miLimitExplain: TMenuItem;
@@ -312,14 +300,8 @@ TfBG = class(TForm)
   procedure AutoEnableBasalOverlay;
   procedure AutoAddPredictionOverlay;
   procedure miDNSClick({%H-}Sender: TObject);
-  procedure miDotNormalDrawItem({%H-}Sender: TObject; ACanvas: TCanvas;
-    ARect: TRect; AState: TOwnerDrawState);
-  procedure miDotNormalMeasureItem({%H-}Sender: TObject; ACanvas: TCanvas;
-    var AWidth, AHeight: integer);
   procedure miDotsInViewClick({%H-}Sender: TObject);
-  procedure miDotSmallClick({%H-}Sender: TObject);
   procedure miExitClick({%H-}Sender: TObject);
-  procedure miCustomDotsClick({%H-}Sender: TObject);
   procedure miDotWindowClick(Sender: TObject);
   procedure BuildDotWindowMenu;
   procedure miATouchAutoClick({%H-}Sender: TObject);
@@ -363,9 +345,6 @@ TfBG = class(TForm)
     {%H-}Shift: TShiftState; {%H-}X, {%H-}Y: integer);
   procedure lValStartDrag({%H-}Sender: TObject; var {%H-}DragObject: TDragObject);
   procedure miAnnounceClick({%H-}Sender: TObject);
-  procedure miAlternateClick({%H-}Sender: TObject);
-  procedure miClockClick({%H-}Sender: TObject);
-  procedure miDotNormalClick({%H-}Sender: TObject);
   procedure miFloatOnClick({%H-}Sender: TObject);
   procedure mi24hClick({%H-}Sender: TObject);
   procedure miAlertSnooze15Click({%H-}Sender: TObject);
@@ -374,11 +353,8 @@ TfBG = class(TForm)
   procedure miAlertSnoozeOffClick({%H-}Sender: TObject);
   procedure lInternetClick({%H-}Sender: TObject);
   procedure miHistoryClick({%H-}Sender: TObject);
-  procedure miRangeColorClick({%H-}Sender: TObject);
-  procedure miBordersClick({%H-}Sender: TObject);
   procedure miForceClick({%H-}Sender: TObject);
   procedure miLimitExplainClick({%H-}Sender: TObject);
-  procedure miOnTopClick({%H-}Sender: TObject);
   procedure miSettingsClick({%H-}Sender: TObject);
   {$ifdef DARWIN}
   procedure ShowAboutDialog({%H-}Sender: TObject);
@@ -796,6 +772,7 @@ dotscale: single = 1;
 badge_adjust: single = 0;
 tir_icon: boolean = true;
 perfectTriggered: boolean = false; // A perfect reading is active
+UseRangeColor: boolean = true;
 PaintRange: boolean = true;
 PaintRangeCGMRange: boolean = false; // Show cgmRangeLo/cgmRangeHi inner threshold lines
 PaintRangeLines: boolean = false;
@@ -1543,7 +1520,6 @@ begin
     if IsProblematicWM then
       if not IsSemiProblematicWM then
       begin
-        miBorders.Checked := false;
         BorderStyle := bsToolWindow;
       end;
   end;

@@ -189,9 +189,6 @@ msgstr "Punktstatistik"
 msgid "> Service Menu"
 msgstr "> Servicemeny"
 
-#: tfbg.mialternate.caption
-msgid "Alterante arrow and reading"
-msgstr "Växla pil och värde"
 
 #: tfbg.miasysteminfo.caption
 msgid "System Info"
@@ -218,13 +215,7 @@ msgstr "Tvinga Ja"
 msgid "Current Basal"
 msgstr "Nuvarande basal"
 
-#: tfbg.miborders.caption
-msgid "No borders"
-msgstr "Inga kanter"
 
-#: tfbg.miclock.caption
-msgid "Show clock every 20 sec"
-msgstr "Visa klockan var 20 sek"
 
 #: tfbg.micustomdots.caption
 msgctxt "tfbg.micustomdots.caption"
@@ -308,21 +299,14 @@ msgstr "Gränser"
 msgid "Explain"
 msgstr "Förklara"
 
-#: tfbg.miontop.caption
-msgid "On top"
-msgstr "Överst"
 
 #: tfbg.mipredict.caption
 msgid "Prediction..."
 msgstr "Förutsägelse..."
 
 #: tfbg.mipref.caption
-msgid "More options"
-msgstr "Ytterligare val"
-
-#: tfbg.mirangecolor.caption
-msgid "Use range color for window"
-msgstr "Färga fönstret med områdesfärg"
+msgid "Views"
+msgstr "Vyer"
 
 #: tfbg.mireadingssince.caption
 msgid "Show readings since.."
@@ -568,6 +552,26 @@ msgstr "Visa medelblodsocker bredvid TIR"
 #: tfconf.cbshowsensorexpiry.caption
 msgid "Show sensor expiry in top-center badge"
 msgstr "Visa sensorutgång centrerat högst upp"
+
+#: tfconf.cbrangecolor.caption
+msgid "Use range color for window background"
+msgstr "Färga fönstret med områdesfärg"
+
+#: tfconf.cbclock.caption
+msgid "Show clock for 5 sec every 20 sec"
+msgstr "Visa klockan i 5 sek var 20 sek"
+
+#: tfconf.cbalternate.caption
+msgid "Alternate arrow and reading display"
+msgstr "Växla pil och värde"
+
+#: tfconf.cbontop.caption
+msgid "Keep window always on top"
+msgstr "Håll fönstret överst"
+
+#: tfconf.cbnoborders.caption
+msgid "Hide window borders"
+msgstr "Dölj fönsterkanter"
 
 #: tfconf.cbsize.caption
 msgid "Remember window size"
