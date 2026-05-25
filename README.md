@@ -2,7 +2,7 @@
 
 [![Build & Release (All Platforms)](https://github.com/slicke/trndi/actions/workflows/build.yml/badge.svg?branch=main&event=push)](https://github.com/slicke/trndi/actions/workflows/build.yml) [![Donate via PayPal](https://img.shields.io/badge/Donate-PayPal-blue?logo=paypal)](https://www.paypal.com/donate/?business=84S8A9EBJGGK8&no_recurring=0&item_name=Support+Trndi%21&currency_code=EUR) [![GitHub Sponsors](https://img.shields.io/badge/Sponsor-GitHub-ea4aaa?logo=github)](https://github.com/sponsors/slicke)
 
-![Trndi](doc/img/trndi-logo.png)
+![Trndi](doc/img/trndi-logo-bg.png)
 
 # Trndi - Your blood sugar partner
 
