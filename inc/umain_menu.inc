@@ -304,9 +304,9 @@ end;
 
 procedure TfBG.lAgoClick(Sender: TObject);
 var
-  displayMsg, dm: string;
+  displayMsg, dm, deviceStr, expiryStr, lowerSensor: string;
   s: system.utf8char;
-  i: integer;
+  i, pOpen, pClose: integer;
 begin
   dm := '';
   if firstboot then
@@ -325,7 +325,26 @@ begin
   if lastReading.TryGetNoise(i) then
     displayMsg += sHTMLLineBreak + Format(sNoise, [i]);
 
-  displayMsg += sHTMLLineBreak + Format(sDevice, [lastReading.sensor]);
+  deviceStr := lastReading.sensor;
+  expiryStr := '';
+  lowerSensor := LowerCase(deviceStr);
+  pOpen := Pos('(sensor ', lowerSensor);
+  if pOpen > 1 then
+  begin
+    pClose := PosEx(')', deviceStr, pOpen);
+    if pClose > pOpen then
+      expiryStr := Copy(deviceStr, pOpen + 1, pClose - pOpen - 1)
+    else
+      expiryStr := Copy(deviceStr, pOpen + 1, Length(deviceStr) - pOpen);
+    expiryStr := Trim(expiryStr);
+    deviceStr := Trim(Copy(deviceStr, 1, pOpen - 1));
+    if Pos('sensor ', LowerCase(expiryStr)) = 1 then
+      expiryStr := Trim(Copy(expiryStr, Length('sensor ') + 1, MaxInt));
+  end;
+
+  displayMsg += sHTMLLineBreak + Format(sDevice, [deviceStr]);
+  if expiryStr <> '' then
+    displayMsg += sHTMLLineBreak + Format(sSensorExpiry, [expiryStr]);
 
   displayMsg += sHTMLLineBreak + Format(sAPI, [api.systemName]);
 
