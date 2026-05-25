@@ -280,6 +280,8 @@ begin
 
   tAgo.Enabled := true;
   tAgo.OnTimer(self);
+  if Assigned(pnNextProgress) and pnNextProgress.Visible then
+    tProgress.Enabled := true;
   Self.OnResize(lVal);
 
   UpdateFloatingWindow;

@@ -251,9 +251,10 @@ var
   elapsedMs, overdueMs: int64;
   frac: double;
   fillR: TRect;
-  fillCol, trackCol, edgeCol: TColor;
-  cr, fillH: integer;
+  fillCol, trackCol: TColor;
+  cr, fillH, y: integer;
   isOverdue: boolean;
+  t: double;
 begin
   pnl := Sender as TPanel;
   if (bgs = nil) or (Length(bgs) = 0) then
@@ -285,9 +286,6 @@ begin
       frac / 0.8
     );
 
-  // 1px lighter right-edge highlight for depth
-  edgeCol := LightenColor(fillCol, 0.30);
-
   // Capsule radius: half the panel width gives a perfect pill shape
   cr := Max(3, pnl.Width div 2);
 
@@ -303,30 +301,29 @@ begin
   if frac <= 0 then
     Exit;
 
-  // Step 2 — compute fill rectangle (grows upward from the bottom)
-  fillH := Max(cr * 2, Round(frac * (pnl.Height - 2)));
+  // Step 2 — fill: flat-top rectangle with vertical gradient (grows upward from the bottom)
+  fillH := Max(1, Round(frac * (pnl.Height - 2)));
   fillR := Classes.Rect(1, pnl.Height - 1 - fillH, pnl.Width - 1, pnl.Height - 1);
 
   with pnl.Canvas do
   begin
-    Brush.Style := bsSolid;
-    Brush.Color := fillCol;
     Pen.Style := psClear;
-
-    // Rounded cap at the active (top) tip
-    RoundRect(fillR.Left, fillR.Top, fillR.Right, fillR.Top + cr * 2, cr * 2, cr * 2);
-
-    // Rectangular body from below the cap down to the base
-    if fillH > cr * 2 then
-      FillRect(Classes.Rect(fillR.Left, fillR.Top + cr, fillR.Right, fillR.Bottom));
+    Brush.Style := bsSolid;
+    for y := fillR.Top to fillR.Bottom - 1 do
+    begin
+      t := (y - fillR.Top) / Max(1.0, double(fillR.Bottom - 1 - fillR.Top));
+      Brush.Color := BlendColors(fillCol, LightenColor(fillCol, 0.18), t);
+      FillRect(Classes.Rect(fillR.Left, y, fillR.Right, y + 1));
+    end;
   end;
 
-  // Step 3 — 1px lighter strip on the right edge of the body (skip the cap area)
+  // Step 3 — edge highlights: bright left strip (specular), subtle right shadow
   with pnl.Canvas do
   begin
-    Brush.Color := edgeCol;
     Pen.Style := psClear;
-    if fillH > cr * 3 then
-      FillRect(Classes.Rect(fillR.Right - 1, fillR.Top + cr * 2, fillR.Right, fillR.Bottom));
+    Brush.Color := LightenColor(fillCol, 0.40);
+    FillRect(Classes.Rect(fillR.Left, fillR.Top, fillR.Left + 1, fillR.Bottom));
+    Brush.Color := DarkenColor(fillCol, 0.12);
+    FillRect(Classes.Rect(fillR.Right - 1, fillR.Top, fillR.Right, fillR.Bottom));
   end;
 end;

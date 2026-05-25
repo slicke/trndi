@@ -249,6 +249,7 @@ TfBG = class(TForm)
   Separator2: TMenuItem;
   Separator4: TMenuItem;
   tAgo: TTimer;
+  tProgress: TTimer;
   tClock: TTimer;
   tPing: TTimer;
   tSetup: TTimer;
@@ -368,6 +369,7 @@ TfBG = class(TForm)
   procedure pnMultiUserClick({%H-}Sender: TObject);
   procedure pnOffRangeClick({%H-}Sender: TObject);
   procedure tAgoTimer({%H-}Sender: TObject);
+  procedure tProgressTimer({%H-}Sender: TObject);
   procedure tClockTimer({%H-}Sender: TObject);
   procedure tEdgesTimer({%H-}Sender: TObject);
   procedure tInitTimer({%H-}Sender: TObject);
@@ -1158,6 +1160,8 @@ begin
     tPing.Enabled := false;
   if Assigned(tAgo) then
     tAgo.Enabled := false;
+  if Assigned(tProgress) then
+    tProgress.Enabled := false;
 
   ShutdownBackgroundThreads;
 
@@ -1178,6 +1182,8 @@ begin
     // Now stop all timers to prevent new operations
     if Assigned(tAgo) then
       tAgo.Enabled := false;
+    if Assigned(tProgress) then
+      tProgress.Enabled := false;
     if Assigned(tClock) then
       tClock.Enabled := false;
     if Assigned(tSwap) then
