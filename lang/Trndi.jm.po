@@ -189,6 +189,9 @@ msgstr "Punktstatistik"
 msgid "> Service Menu"
 msgstr "> Servicemeny"
 
+#: tfbg.mialternate.caption
+msgid "Alterante arrow and reading"
+msgstr ""
 
 #: tfbg.miasysteminfo.caption
 msgid "System Info"
@@ -215,7 +218,13 @@ msgstr "Tvinga Ja"
 msgid "Current Basal"
 msgstr "Nuvarande basal"
 
+#: tfbg.miborders.caption
+msgid "No borders"
+msgstr ""
 
+#: tfbg.miclock.caption
+msgid "Show clock every 20 sec"
+msgstr ""
 
 #: tfbg.micustomdots.caption
 msgctxt "tfbg.micustomdots.caption"
@@ -299,14 +308,23 @@ msgstr "Grenser"
 msgid "Explain"
 msgstr "Fôrklara"
 
+#: tfbg.miontop.caption
+msgid "On top"
+msgstr ""
 
 #: tfbg.mipredict.caption
 msgid "Prediction..."
 msgstr "Fôrutsegelse..."
 
 #: tfbg.mipref.caption
-msgid "Views"
+#, fuzzy
+#| msgid "Views"
+msgid "More options"
 msgstr "Vyer"
+
+#: tfbg.mirangecolor.caption
+msgid "Use range color for window"
+msgstr ""
 
 #: tfbg.mireadingssince.caption
 msgid "Show readings since.."
@@ -349,6 +367,24 @@ msgstr "Exportera instellningar"
 #: tfconf.bextopen.caption
 msgid "Show Folder"
 msgstr "Visa mapp"
+
+#: tfconf.bfontarrow.caption
+msgid "Arrow font..."
+msgstr ""
+
+#: tfconf.bfontreading.caption
+msgid "Reading font..."
+msgstr ""
+
+#: tfconf.bfontreset.caption
+#, fuzzy
+msgctxt "tfconf.bfontreset.caption"
+msgid "Reset Fonts"
+msgstr "oterstell typsnitt"
+
+#: tfconf.bfonttime.caption
+msgid "Time font..."
+msgstr ""
 
 #: tfconf.bimportsettings.caption
 msgid "Import Settings"
@@ -393,11 +429,6 @@ msgctxt "tfconf.btusersave.caption"
 msgid "Save"
 msgstr "Spara"
 
-#: tfconf.button2.caption
-msgctxt "tfconf.button2.caption"
-msgid "Reset Fonts"
-msgstr "oterstell typsnitt"
-
 #: tfconf.button3.caption
 msgid "Check for update"
 msgstr "Kolla uppdatering"
@@ -420,6 +451,10 @@ msgstr "Notifiera mig ner blodsockret er hôgt/logt"
 msgid "Alert me when readings are missing / not fresh"
 msgstr "Notifiera mig ner avlesningar saknas / inte er ferska"
 
+#: tfconf.cbalternate.caption
+msgid "Alternate arrow and reading display"
+msgstr "Vexla pil och verde"
+
 #: tfconf.cbchroma.caption
 msgid "Enable Razer Chroma integration"
 msgstr "Slo po Razer Chroma-integrasjonen"
@@ -439,6 +474,10 @@ msgstr "Andas (puls)"
 #| msgid "Make units green when reading is normal"
 msgid "Make units green when reading is normal *"
 msgstr "Gôr enheter grôna vid normalt verde"
+
+#: tfconf.cbclock.caption
+msgid "Show clock for 5 sec every 20 sec"
+msgstr "Visa klockan i 5 sek var 20 sek"
 
 #: tfconf.cbconnectivitybutton.caption
 msgid "Enable connectivity button"
@@ -500,6 +539,10 @@ msgstr "Multipek"
 msgid "Pause music when high/low"
 msgstr "Pausa musiken vid hôg/log"
 
+#: tfconf.cbnoborders.caption
+msgid "Hide window borders"
+msgstr "Dolj fônsterkanter"
+
 #: tfconf.cbnotice.caption
 msgid "System notifications"
 msgstr "Systemmeddelanden"
@@ -507,6 +550,10 @@ msgstr "Systemmeddelanden"
 #: tfconf.cboffbar.caption
 msgid "Show a sidebar when value is not in range"
 msgstr "Visa en sidopanel ner verdet inte er i molomrodet"
+
+#: tfconf.cbontop.caption
+msgid "Keep window always on top"
+msgstr "Halla fônstret ôverst"
 
 #: tfconf.cbpainthilo.caption
 msgid "Color the graph's background with your range"
@@ -548,6 +595,10 @@ msgstr "Privat lege (dôlj glukosverde)"
 msgid "Display progress to next update on the left"
 msgstr "Visa tid till nesta uppdatering till venster"
 
+#: tfconf.cbrangecolor.caption
+msgid "Use range color for window background"
+msgstr "Ferga fônstret med omrodesferg"
+
 #: tfconf.cbshowmean.caption
 msgid "Show mean blood sugar reading next to TIR"
 msgstr "Visa medelblodsôcker bredvid TIR"
@@ -555,26 +606,6 @@ msgstr "Visa medelblodsôcker bredvid TIR"
 #: tfconf.cbshowsensorexpiry.caption
 msgid "Show sensor expiry in top-center badge"
 msgstr "Visa sensorutgong centrerat hôgst upp"
-
-#: tfconf.cbrangecolor.caption
-msgid "Use range color for window background"
-msgstr "Ferga fônstret med omrodesferg"
-
-#: tfconf.cbclock.caption
-msgid "Show clock for 5 sec every 20 sec"
-msgstr "Visa klockan i 5 sek var 20 sek"
-
-#: tfconf.cbalternate.caption
-msgid "Alternate arrow and reading display"
-msgstr "Vexla pil och verde"
-
-#: tfconf.cbontop.caption
-msgid "Keep window always on top"
-msgstr "Halla fônstret ôverst"
-
-#: tfconf.cbnoborders.caption
-msgid "Hide window borders"
-msgstr "Dolj fônsterkanter"
 
 #: tfconf.cbsize.caption
 msgid "Remember window size"
@@ -947,12 +978,6 @@ msgstr "Sprok"
 msgid "Time-in-range (TIR) is the amount of time you are within your high/low goal."
 msgstr "Tid i molomrodet (TIR) er den tid du varit inom ditt mol fôr hôga/loga verden."
 
-#: tfconf.label8.caption
-#, fuzzy
-#| msgid "Click on a component to the left, to edit it's font"
-msgid "Click on the time, reading or arrow to change it's font"
-msgstr "Klicka po en komponent till venster, fôr att endra typsnittet"
-
 #: tfconf.label9.caption
 msgid "Trndi can trigger Spotify or Deezer to play a song when low/high"
 msgstr "Trndi kan spela en lot po Spotify eller Deezer ner du er hôg/log"
@@ -1199,6 +1224,12 @@ msgstr "Integrasjoner"
 #: tfconf.tsmulti.caption
 msgid "Multi User"
 msgstr "Fler anvendare"
+
+#: tfconf.tspredictions.caption
+#, fuzzy
+msgctxt "tfconf.tspredictions.caption"
+msgid "Predictions"
+msgstr "Fôrutspoelser"
 
 #: tfconf.tsproxy.caption
 msgid "Proxy"
