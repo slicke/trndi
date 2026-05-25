@@ -1381,65 +1381,70 @@ begin
     // Parse JSON response
     try
       JSONData := GetJSON(ResponseStr);
-      
-      if not (JSONData is TJSONObject) then
-      begin
-        JSONData.Free;
-        Exit;
-      end;
-      
-      RootObject := TJSONObject(JSONData);
-      
-      // Navigate to store array -> default profile -> basal array
-      StoreArray := RootObject.FindPath('store') as TJSONArray;
-      if Assigned(StoreArray) and (StoreArray.Count > 0) then
-      begin
-        DefaultProfile := StoreArray.Objects[0].FindPath('defaultProfile') as TJSONObject;
-        if not Assigned(DefaultProfile) then
-          DefaultProfile := StoreArray.Objects[0].FindPath('Default') as TJSONObject;
-          
-        if Assigned(DefaultProfile) then
-        begin
-          BasalArray := DefaultProfile.FindPath('basal') as TJSONArray;
-          if Assigned(BasalArray) and (BasalArray.Count > 0) then
-          begin
-            CurrentTime := Now;
-            CurrentMinutes := HourOf(CurrentTime) * 60 + MinuteOf(CurrentTime);
-
-            // Walk forward; keep updating result as long as entry start <= now.
-            // The last such entry is the one currently in effect.
-            for i := 0 to BasalArray.Count - 1 do
-            begin
-              BasalEntry := BasalArray.Objects[i];
-              if not Assigned(BasalEntry) then
-                Continue;
-              tstr := BasalEntry.Get('time', '00:00');
-              h := 0; m := 0;
-              if Pos(':', tstr) > 0 then
-              begin
-                h := StrToIntDef(Copy(tstr, 1, Pos(':', tstr) - 1), 0);
-                m := StrToIntDef(Copy(tstr, Pos(':', tstr) + 1, 2), 0);
-              end
-              else
-              begin
-                h := StrToIntDef(tstr, 0) div 60;
-                m := StrToIntDef(tstr, 0) mod 60;
-              end;
-              entryMin := h * 60 + m;
-              if entryMin <= CurrentMinutes then
-                result := BasalEntry.Get('value', single(0));
-            end;
-          end;
-        end;
-      end;
-      
-      JSONData.Free;
     except
       on E: Exception do
       begin
         lastErr := 'Error parsing basal rate JSON: ' + E.Message;
-        result := 0;
+        Exit;
       end;
+    end;
+
+    try
+      if not (JSONData is TJSONObject) then
+        Exit;
+
+      RootObject := TJSONObject(JSONData);
+
+      // Navigate to store array -> default profile -> basal array
+      if not (Assigned(RootObject.FindPath('store')) and
+              RootObject.FindPath('store').InheritsFrom(TJSONArray)) then
+        Exit;
+      StoreArray := TJSONArray(RootObject.FindPath('store'));
+      if StoreArray.Count = 0 then
+        Exit;
+
+      if Assigned(RootObject.FindPath('store[0].defaultProfile')) and
+         RootObject.FindPath('store[0].defaultProfile').InheritsFrom(TJSONObject) then
+        DefaultProfile := TJSONObject(RootObject.FindPath('store[0].defaultProfile'))
+      else if Assigned(RootObject.FindPath('store[0].Default')) and
+              RootObject.FindPath('store[0].Default').InheritsFrom(TJSONObject) then
+        DefaultProfile := TJSONObject(RootObject.FindPath('store[0].Default'))
+      else
+        Exit;
+
+      if not (Assigned(DefaultProfile.FindPath('basal')) and
+              DefaultProfile.FindPath('basal').InheritsFrom(TJSONArray)) then
+        Exit;
+      BasalArray := TJSONArray(DefaultProfile.FindPath('basal'));
+      if BasalArray.Count = 0 then
+        Exit;
+
+      CurrentTime := Now;
+      CurrentMinutes := HourOf(CurrentTime) * 60 + MinuteOf(CurrentTime);
+
+      for i := 0 to BasalArray.Count - 1 do
+      begin
+        BasalEntry := BasalArray.Objects[i];
+        if not Assigned(BasalEntry) then
+          Continue;
+        tstr := BasalEntry.Get('time', '00:00');
+        h := 0; m := 0;
+        if Pos(':', tstr) > 0 then
+        begin
+          h := StrToIntDef(Copy(tstr, 1, Pos(':', tstr) - 1), 0);
+          m := StrToIntDef(Copy(tstr, Pos(':', tstr) + 1, 2), 0);
+        end
+        else
+        begin
+          h := StrToIntDef(tstr, 0) div 60;
+          m := StrToIntDef(tstr, 0) mod 60;
+        end;
+        entryMin := h * 60 + m;
+        if entryMin <= CurrentMinutes then
+          result := BasalEntry.Get('value', single(0));
+      end;
+    finally
+      JSONData.Free;
     end;
   except
     on E: Exception do
