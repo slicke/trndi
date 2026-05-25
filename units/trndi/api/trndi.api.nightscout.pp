@@ -546,7 +546,10 @@ begin
 
   // Bail on unauthorized responses early without raising.
   if Pos('Unauthorized', resp) > 0 then
+  begin
+    js.Free;
     Exit;
+  end;
 
   // Optional metadata probe for sensor age/expiry hints.
   sensorSuffix := '';
@@ -836,15 +839,17 @@ begin
             CurrentTime := Now;
             CurrentMinutes := HourOf(CurrentTime) * 60 + MinuteOf(CurrentTime);
             
-            // Find the applicable basal rate for current time
+            // Find the last entry whose start time <= current time
             for i := BasalArray.Count - 1 downto 0 do
             begin
               BasalEntry := BasalArray.Objects[i];
               if Assigned(BasalEntry) then
               begin
-                // Basal entries have 'time' and 'value' fields
-                result := BasalEntry.Get('value', single(0));
-                break;
+                if BasalEntry.Get('timeAsSeconds', 0) div 60 <= CurrentMinutes then
+                begin
+                  result := BasalEntry.Get('value', single(0));
+                  break;
+                end;
               end;
             end;
           end;
