@@ -267,7 +267,11 @@ begin
     lAgo.Caption := '🕑 ' + RS_COMPUTE_FAILED_AGO;
   end;
 
-  if Assigned(pnNextProgress) then
+end;
+
+procedure TfBG.tProgressTimer(Sender: TObject);
+begin
+  if Assigned(pnNextProgress) and pnNextProgress.Visible then
     pnNextProgress.Repaint;
 end;
 

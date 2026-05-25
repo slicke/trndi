@@ -529,6 +529,13 @@ object fBG: TfBG
     Left = 48
     Top = 176
   end
+  object tProgress: TTimer
+    Enabled = False
+    Interval = 1000
+    OnTimer = tProgressTimer
+    Left = 48
+    Top = 200
+  end
   object tClock: TTimer
     Enabled = False
     Interval = 20000
