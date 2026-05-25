@@ -11165,38 +11165,7 @@ object fConf: TfConf
         ClientWidth = 633
         ParentBackground = False
         TabOrder = 1
-        object pTray: TPanel
-          Left = 463
-          Height = 200
-          Top = 0
-          Width = 170
-          Align = alRight
-          BevelOuter = bvNone
-          ClientHeight = 200
-          ClientWidth = 170
-          ParentBackground = False
-          TabOrder = 0
-          object lTray: TLabel
-            Left = 0
-            Height = 15
-            Top = 0
-            Width = 160
-            Align = alTop
-            BorderSpacing.Right = 10
-            Caption = 'Tray icon size:'
-          end
-          object edTray: TSpinEdit
-            Left = 5
-            Height = 23
-            Top = 20
-            Width = 155
-            Align = alTop
-            BorderSpacing.Left = 5
-            BorderSpacing.Top = 5
-            BorderSpacing.Right = 10
-            TabOrder = 0
-          end
-        end
+
         object pDecimal: TPanel
           Left = 0
           Height = 200

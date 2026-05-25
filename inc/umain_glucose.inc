@@ -121,8 +121,7 @@ begin
     lVal.Font.Color := clWhite;
     tMissed.Enabled := true;
     lArrow.Caption := '';
-    native.setBadge('--', clBlack, badge_width + badge_adjust,
-      badge_font + round(badge_adjust * 10));
+    native.setBadge('--', clBlack, badge_width, badge_font);
   end
   else
   begin

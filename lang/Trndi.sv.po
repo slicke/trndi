@@ -1127,10 +1127,6 @@ msgstr "Exportera alla inställningar till en fil för backup, eller överförin
 msgid "Test an announcement"
 msgstr "Testa en notis"
 
-#: tfconf.ltray.caption
-msgid "Tray icon size:"
-msgstr "Panelikonstorlek:"
-
 #: tfconf.lusername.caption
 msgid "User:"
 msgstr "Användare:"

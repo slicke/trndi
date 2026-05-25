@@ -352,7 +352,6 @@ procedure LoadUserSettings(f: TfConf);
       cbProgress.Checked := GetBoolSetting('main.next_progress', false);
       cbConnectivityButton.Checked := GetBoolSetting('ux.connectivity.button', false);
       cbShowSensorExpiry.Checked := GetBoolSetting('display.sensor_expiry', false);
-      edTray.Value := GetIntSetting('ux.badge_size', 0);
 
       if CheckSetting('unit', 'mmol', 'mmol') then
         rbUnitClick(Self);
@@ -778,7 +777,7 @@ procedure SaveUserSettings(f: TfConf);
       native.SetSetting('main.next_progress', cbProgress.Checked);
       native.SetSetting('ux.connectivity.button', cbConnectivityButton.Checked);
       native.SetSetting('locale.separator', edCommaSep.Text);
-      native.SetSetting('ux.badge_size', edTray.Value.ToString);
+
 
       SetSetting('override.enabled', cbCust.Checked);
       SetSetting('override.range', cbCustRange.Checked);
