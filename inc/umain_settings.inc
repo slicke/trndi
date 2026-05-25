@@ -16,6 +16,7 @@ var
   i: integer;
   dotChar: WChar;
   langCode: string;
+  newDotCount: integer;
 begin
   if native.CheckSetting('unit', 'mmol', 'mmol') then
     un := BGUnit.mmol
@@ -145,6 +146,32 @@ begin
   if Assigned(lPredict) and lPredict.Visible then
     ScaleLbl(lPredict, taRightJustify, tlBottom);
 
+  newDotCount := native.GetIntSetting('ux.dot_count', NUM_DOTS);
+  if (newDotCount >= 1) and (newDotCount <= MAX_DOT_COUNT) and (newDotCount <> ActiveDots) then
+  begin
+    ActiveDots := newDotCount;
+    if MAX_MIN < ActiveDots * INTERVAL_MINUTES + 10 then
+      MAX_MIN := ActiveDots * INTERVAL_MINUTES + 10;
+    for i := 1 to High(TrendDots) do
+      if Assigned(TrendDots[i]) then
+      begin
+        TrendDots[i].Free;
+        TrendDots[i] := nil;
+      end;
+    SetLength(TrendDots, 0);
+    for i := 1 to High(FWarningDots) do
+      if Assigned(FWarningDots[i]) then
+      begin
+        FWarningDots[i].Free;
+        FWarningDots[i] := nil;
+      end;
+    SetLength(FWarningDots, 0);
+    if MAX_RESULT < ActiveDots * INTERVAL_MINUTES then
+      MAX_RESULT := ActiveDots * INTERVAL_MINUTES;
+    CreateTrendDots;
+    BuildDotWindowMenu;
+  end;
+
   UpdateTrendDots;
   for i := 1 to High(TrendDots) do
     if TrendDots[i] <> nil then
@@ -273,6 +300,13 @@ procedure LoadUserSettings(f: TfConf);
       eAddr.Text := GetSetting('remote.target');
       ePass.Text := GetSetting('remote.creds');
       rbUnit.ItemIndex := IfThen(GetSetting('unit', 'mmol') = 'mmol', 0, 1);
+      case GetIntSetting('ux.dot_count', NUM_DOTS) of
+      6:  f.rbTrendWindow.ItemIndex := 0;
+      18: f.rbTrendWindow.ItemIndex := 2;
+      24: f.rbTrendWindow.ItemIndex := 3;
+      36: f.rbTrendWindow.ItemIndex := 4;
+      else f.rbTrendWindow.ItemIndex := 1;
+      end;
       spTHRESHOLD.Value := native.GetIntSetting('system.fresh_threshold',
         DATA_FRESHNESS_THRESHOLD_MINUTES);
       spDeltaMax.Value := native.GetIntSetting('ux.delta_max',
@@ -698,6 +732,14 @@ procedure SaveUserSettings(f: TfConf);
       SetSetting('ext.privacy', cbPrivacy.Checked);
       SetSetting('display.timestamp', cbTimeStamp.Checked);
       SetSetting('display.sensor_expiry', cbShowSensorExpiry.Checked);
+
+      case f.rbTrendWindow.ItemIndex of
+      0: SetSetting('ux.dot_count', 6);
+      2: SetSetting('ux.dot_count', 18);
+      3: SetSetting('ux.dot_count', 24);
+      4: SetSetting('ux.dot_count', 36);
+      else SetSetting('ux.dot_count', 10);
+      end;
 
       SetSetting('system.fresh_threshold', spTHRESHOLD.Value);
       SetSetting('ux.delta_max', spDeltaMax.Value);

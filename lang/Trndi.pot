@@ -351,6 +351,23 @@ msgstr ""
 msgid "Show Folder"
 msgstr ""
 
+#: tfconf.bfontarrow.caption
+msgid "Arrow font..."
+msgstr ""
+
+#: tfconf.bfontreading.caption
+msgid "Reading font..."
+msgstr ""
+
+#: tfconf.bfontreset.caption
+msgctxt "tfconf.bfontreset.caption"
+msgid "Reset Fonts"
+msgstr ""
+
+#: tfconf.bfonttime.caption
+msgid "Time font..."
+msgstr ""
+
 #: tfconf.bimportsettings.caption
 msgid "Import Settings"
 msgstr ""
@@ -394,11 +411,6 @@ msgctxt "tfconf.btusersave.caption"
 msgid "Save"
 msgstr ""
 
-#: tfconf.button2.caption
-msgctxt "tfconf.button2.caption"
-msgid "Reset Fonts"
-msgstr ""
-
 #: tfconf.button3.caption
 msgid "Check for update"
 msgstr ""
@@ -421,6 +433,10 @@ msgstr ""
 msgid "Alert me when readings are missing / not fresh"
 msgstr ""
 
+#: tfconf.cbalternate.caption
+msgid "Alternate arrow and reading display"
+msgstr ""
+
 #: tfconf.cbchroma.caption
 msgid "Enable Razer Chroma integration"
 msgstr ""
@@ -437,6 +453,10 @@ msgstr ""
 
 #: tfconf.cbchromanormal.caption
 msgid "Make units green when reading is normal *"
+msgstr ""
+
+#: tfconf.cbclock.caption
+msgid "Show clock for 5 sec every 20 sec"
 msgstr ""
 
 #: tfconf.cbconnectivitybutton.caption
@@ -498,12 +518,20 @@ msgstr ""
 msgid "Pause music when high/low"
 msgstr ""
 
+#: tfconf.cbnoborders.caption
+msgid "Hide window borders"
+msgstr ""
+
 #: tfconf.cbnotice.caption
 msgid "System notifications"
 msgstr ""
 
 #: tfconf.cboffbar.caption
 msgid "Show a sidebar when value is not in range"
+msgstr ""
+
+#: tfconf.cbontop.caption
+msgid "Keep window always on top"
 msgstr ""
 
 #: tfconf.cbpainthilo.caption
@@ -544,6 +572,10 @@ msgstr ""
 
 #: tfconf.cbprogress.caption
 msgid "Display progress to next update on the left"
+msgstr ""
+
+#: tfconf.cbrangecolor.caption
+msgid "Use range color for window background"
 msgstr ""
 
 #: tfconf.cbshowmean.caption
@@ -918,10 +950,6 @@ msgstr ""
 msgid "Time-in-range (TIR) is the amount of time you are within your high/low goal."
 msgstr ""
 
-#: tfconf.label8.caption
-msgid "Click on the time, reading or arrow to change it's font"
-msgstr ""
-
 #: tfconf.label9.caption
 msgid "Trndi can trigger Spotify or Deezer to play a song when low/high"
 msgstr ""
@@ -1165,6 +1193,11 @@ msgstr ""
 
 #: tfconf.tsmulti.caption
 msgid "Multi User"
+msgstr ""
+
+#: tfconf.tspredictions.caption
+msgctxt "tfconf.tspredictions.caption"
+msgid "Predictions"
 msgstr ""
 
 #: tfconf.tsproxy.caption

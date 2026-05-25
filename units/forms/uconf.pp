@@ -382,6 +382,7 @@ TfConf = class(TForm)
   pUserSave2: TPanel;
   cbTirColorBg: TRadioButton;
   rbUnit: TRadioGroup;
+  rbTrendWindow: TRadioGroup;
   seTIR: TSpinEdit;
   seTTSRate: TSpinEdit;
   spDeltaMax: TSpinEdit;

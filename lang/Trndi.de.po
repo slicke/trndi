@@ -189,6 +189,9 @@ msgstr "Punktstatistiken"
 msgid "> Service Menu"
 msgstr "> Service-Menü"
 
+#: tfbg.mialternate.caption
+msgid "Alterante arrow and reading"
+msgstr ""
 
 #: tfbg.miasysteminfo.caption
 msgid "System Info"
@@ -215,7 +218,13 @@ msgstr "Ja erzwingen"
 msgid "Current Basal"
 msgstr "Aktueller Basalwert"
 
+#: tfbg.miborders.caption
+msgid "No borders"
+msgstr ""
 
+#: tfbg.miclock.caption
+msgid "Show clock every 20 sec"
+msgstr ""
 
 #: tfbg.micustomdots.caption
 msgctxt "tfbg.micustomdots.caption"
@@ -298,14 +307,23 @@ msgstr "Grenzwerte"
 msgid "Explain"
 msgstr "Erklären"
 
+#: tfbg.miontop.caption
+msgid "On top"
+msgstr ""
 
 #: tfbg.mipredict.caption
 msgid "Prediction..."
 msgstr "Vorhersage..."
 
 #: tfbg.mipref.caption
-msgid "Views"
+#, fuzzy
+#| msgid "Views"
+msgid "More options"
 msgstr "Ansichten"
+
+#: tfbg.mirangecolor.caption
+msgid "Use range color for window"
+msgstr ""
 
 #: tfbg.mireadingssince.caption
 msgid "Show readings since.."
@@ -346,6 +364,24 @@ msgstr "Einstellungen exportieren"
 #: tfconf.bextopen.caption
 msgid "Show Folder"
 msgstr "Ordner anzeigen"
+
+#: tfconf.bfontarrow.caption
+msgid "Arrow font..."
+msgstr ""
+
+#: tfconf.bfontreading.caption
+msgid "Reading font..."
+msgstr ""
+
+#: tfconf.bfontreset.caption
+#, fuzzy
+msgctxt "tfconf.bfontreset.caption"
+msgid "Reset Fonts"
+msgstr "Schriftarten zurücksetzen"
+
+#: tfconf.bfonttime.caption
+msgid "Time font..."
+msgstr ""
 
 #: tfconf.bimportsettings.caption
 msgid "Import Settings"
@@ -389,10 +425,6 @@ msgstr "Zurücksetzen"
 msgid "Save"
 msgstr "Speichern"
 
-#: tfconf.button2.caption
-msgid "Reset Fonts"
-msgstr "Schriftarten zurücksetzen"
-
 #: tfconf.button3.caption
 msgid "Check for update"
 msgstr "Nach Update suchen"
@@ -415,6 +447,10 @@ msgstr "Warnung bei hohem/niedrigem Blutzucker"
 msgid "Alert me when readings are missing / not fresh"
 msgstr "Warnung bei fehlenden / veralteten Messwerten"
 
+#: tfconf.cbalternate.caption
+msgid "Alternate arrow and reading display"
+msgstr "Pfeil und Messwert wechseln"
+
 #: tfconf.cbchroma.caption
 msgid "Enable Razer Chroma integration"
 msgstr "Razer Chroma-Integration aktivieren"
@@ -432,6 +468,10 @@ msgstr "Atmen (Puls)"
 #: tfconf.cbchromanormal.caption
 msgid "Make units green when reading is normal *"
 msgstr "Einheiten bei normalem Messwert grün einfärben *"
+
+#: tfconf.cbclock.caption
+msgid "Show clock for 5 sec every 20 sec"
+msgstr "Uhr 5 Sek. alle 20 Sek. anzeigen"
 
 #: tfconf.cbconnectivitybutton.caption
 msgid "Enable connectivity button"
@@ -492,6 +532,10 @@ msgstr "Mehrfingereingabe"
 msgid "Pause music when high/low"
 msgstr "Musik bei hoch/niedrig pausieren"
 
+#: tfconf.cbnoborders.caption
+msgid "Hide window borders"
+msgstr "Fensterrahmen ausblenden"
+
 #: tfconf.cbnotice.caption
 msgid "System notifications"
 msgstr "Systembenachrichtigungen"
@@ -499,6 +543,10 @@ msgstr "Systembenachrichtigungen"
 #: tfconf.cboffbar.caption
 msgid "Show a sidebar when value is not in range"
 msgstr "Seitenleiste anzeigen wenn Wert außerhalb Bereich"
+
+#: tfconf.cbontop.caption
+msgid "Keep window always on top"
+msgstr "Fenster immer im Vordergrund"
 
 #: tfconf.cbpainthilo.caption
 msgid "Color the graph's background with your range"
@@ -540,6 +588,10 @@ msgstr "Datenschutzmodus (Glucosewert verbergen)"
 msgid "Display progress to next update on the left"
 msgstr "Fortschritt bis zur nächsten Aktualisierung links anzeigen"
 
+#: tfconf.cbrangecolor.caption
+msgid "Use range color for window background"
+msgstr "Fensterfarbe entsprechend Bereich"
+
 #: tfconf.cbshowmean.caption
 msgid "Show mean blood sugar reading next to TIR"
 msgstr "Durchschnittlichen Blutzucker neben TIR anzeigen"
@@ -547,26 +599,6 @@ msgstr "Durchschnittlichen Blutzucker neben TIR anzeigen"
 #: tfconf.cbshowsensorexpiry.caption
 msgid "Show sensor expiry in top-center badge"
 msgstr "Sensorablauf im oberen mittleren Badge anzeigen"
-
-#: tfconf.cbrangecolor.caption
-msgid "Use range color for window background"
-msgstr "Fensterfarbe entsprechend Bereich"
-
-#: tfconf.cbclock.caption
-msgid "Show clock for 5 sec every 20 sec"
-msgstr "Uhr 5 Sek. alle 20 Sek. anzeigen"
-
-#: tfconf.cbalternate.caption
-msgid "Alternate arrow and reading display"
-msgstr "Pfeil und Messwert wechseln"
-
-#: tfconf.cbontop.caption
-msgid "Keep window always on top"
-msgstr "Fenster immer im Vordergrund"
-
-#: tfconf.cbnoborders.caption
-msgid "Hide window borders"
-msgstr "Fensterrahmen ausblenden"
 
 #: tfconf.cbsize.caption
 msgid "Remember window size"
@@ -934,10 +966,6 @@ msgstr "Sprache"
 msgid "Time-in-range (TIR) is the amount of time you are within your high/low goal."
 msgstr "Zeit-im-Bereich (TIR) ist die Zeit, die Sie innerhalb Ihres Hoch/Tief-Ziels verbringen."
 
-#: tfconf.label8.caption
-msgid "Click on the time, reading or arrow to change it's font"
-msgstr "Auf Zeit, Ablesung oder Pfeil klicken, um die Schriftart zu ändern"
-
 #: tfconf.label9.caption
 msgid "Trndi can trigger Spotify or Deezer to play a song when low/high"
 msgstr "Trndi kann Spotify oder Deezer veranlassen, ein Lied bei niedrigem/hohem Wert abzuspielen"
@@ -1181,6 +1209,12 @@ msgstr "Integrationen"
 #: tfconf.tsmulti.caption
 msgid "Multi User"
 msgstr "Mehrere Benutzer"
+
+#: tfconf.tspredictions.caption
+#, fuzzy
+msgctxt "tfconf.tspredictions.caption"
+msgid "Predictions"
+msgstr "Vorhersagen"
 
 #: tfconf.tsproxy.caption
 msgid "Proxy"

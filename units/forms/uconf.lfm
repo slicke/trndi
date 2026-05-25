@@ -241,6 +241,38 @@ object fConf: TfConf
         TabOrder = 3
         OnClick = rbUnitClick
       end
+      object rbTrendWindow: TRadioGroup
+        Left = 15
+        Height = 120
+        Top = 360
+        Width = 612
+        Align = alTop
+        AutoFill = True
+        BorderSpacing.Left = 15
+        BorderSpacing.Top = 10
+        BorderSpacing.Right = 10
+        Caption = 'Trend window'
+        ChildSizing.LeftRightSpacing = 6
+        ChildSizing.EnlargeHorizontal = crsHomogenousChildResize
+        ChildSizing.EnlargeVertical = crsHomogenousChildResize
+        ChildSizing.ShrinkHorizontal = crsScaleChilds
+        ChildSizing.ShrinkVertical = crsScaleChilds
+        ChildSizing.Layout = cclLeftToRightThenTopToBottom
+        ChildSizing.ControlsPerLine = 2
+        ClientHeight = 100
+        ClientWidth = 608
+        Columns = 2
+        ItemIndex = 1
+        Items.Strings = (
+          '30 min (6 dots)'
+          '50 min (10 dots)'
+          '90 min (18 dots)'
+          '120 min (24 dots)'
+          '180 min (36 dots)'
+        )
+        ParentBackground = False
+        TabOrder = 6
+      end
       object Panel4: TPanel
         Left = 0
         Height = 96
