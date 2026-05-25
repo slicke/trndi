@@ -11234,17 +11234,17 @@ object fConf: TfConf
           TabOrder = 5
         end
         object cbClock: TCheckBox
-          Left = 8
+          Left = 320
           Height = 19
-          Top = 130
+          Top = 152
           Width = 191
           Caption = 'Show clock for 5 sec every 20 sec'
           TabOrder = 6
         end
         object cbAlternate: TCheckBox
-          Left = 8
+          Left = 320
           Height = 19
-          Top = 152
+          Top = 174
           Width = 205
           Caption = 'Alternate arrow and reading display'
           TabOrder = 7
