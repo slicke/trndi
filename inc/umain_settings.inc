@@ -170,6 +170,11 @@ begin
       MAX_RESULT := ActiveDots * INTERVAL_MINUTES;
     CreateTrendDots;
     BuildDotWindowMenu;
+    FLastReadingsHash := 0;
+    Application.ProcessMessages;
+    tResize.OnTimer(Self);
+    if Length(bgs) > 0 then
+      PlaceTrendDots(bgs);
   end;
 
   UpdateTrendDots;
