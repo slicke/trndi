@@ -2462,6 +2462,11 @@ msgstr "Aktualisieren?"
 msgid "📻 RSSI (Signal Strength): %d%%"
 msgstr "📻 RSSI (Signalstärke): %d%%"
 
+#: trndi.strings.ssensorexpiry
+#, object-pascal-format
+msgid "⏱️ Sensor: %s"
+msgstr ""
+
 #: trndi.strings.sstackerrmsg
 #, object-pascal-format
 msgid ""
