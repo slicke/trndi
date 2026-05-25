@@ -1153,6 +1153,12 @@ msgstr "Nur Pfeil"
 msgid "Show time and value (e.g., ⏱10' ↗ 5.5)"
 msgstr "Zeit und Wert anzeigen (z.B. ⏱10' ↗ 5.5)"
 
+#: tfconf.rbtrendwindow.caption
+#, fuzzy
+msgctxt "tfconf.rbtrendwindow.caption"
+msgid "Trend window"
+msgstr "Trendfenster"
+
 #: tfconf.rbunit.caption
 msgid "Display Unit"
 msgstr "Anzeigeeinheit"

@@ -1138,6 +1138,11 @@ msgstr ""
 msgid "Show time and value (e.g., ⏱10' ↗ 5.5)"
 msgstr ""
 
+#: tfconf.rbtrendwindow.caption
+msgctxt "tfconf.rbtrendwindow.caption"
+msgid "Trend window"
+msgstr ""
+
 #: tfconf.rbunit.caption
 msgid "Display Unit"
 msgstr ""
