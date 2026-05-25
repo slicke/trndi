@@ -23,11 +23,9 @@ begin
   if FOnline then
   begin
     if FIsDNSRequest then
-    begin
       ShowMessage(RS_DNS_INTERNET_OK);
-      FOwner.FLastConnectionDetail := '';
-      FOwner.SetConnectionBadge(RS_CONN_OK, RGBToColor(60, 150, 90));
-    end;
+    FOwner.FLastConnectionDetail := '';
+    FOwner.SetConnectionBadge(RS_CONN_OK, RGBToColor(60, 150, 90));
   end
   else
   begin
