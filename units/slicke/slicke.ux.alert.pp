@@ -906,6 +906,10 @@ begin
       totalLines := 1;
 
     Result := totalLines * bmp.Canvas.TextHeight('Hg');
+    {$ifdef Darwin}
+    if totalLines > 0 then
+      Inc(Result, bmp.Canvas.TextHeight('Hg') div 2);
+    {$endif}
   finally
     bmp.Free;
     paragraphs.Free;
@@ -1071,6 +1075,12 @@ begin
       totalLines := 1;
 
     Result := totalLines * bmp.Canvas.TextHeight('Hg');
+    {$ifdef Darwin}
+    // Cocoa adds fractional inter-line spacing that the bitmap canvas underestimates;
+    // without this buffer the last line is clipped on macOS.
+    if totalLines > 0 then
+      Inc(Result, bmp.Canvas.TextHeight('Hg') div 2);
+    {$endif}
   finally
     bmp.Free;
     paragraphs.Free;
@@ -2595,7 +2605,7 @@ begin
         TitleLabel.Top := padding;
         TitleLabel.Left := padding;
         TitleLabel.Width := MsgWidth;
-        TitleLabel.Height := TitleLabel.Canvas.TextHeight(TitleLabel.Caption);
+        TitleLabel.Height := CalcWrappedHeight(TitleLabel);
         dialog.titleText := titlelabel.caption;
       end
       else
