@@ -881,17 +881,11 @@ var
   TextWidth, TextHeight: integer;
   BadgeRect: Classes.TRect;
   IconWidth, IconHeight, BadgeSize: integer;
-  FontSize, Radius: integer;
+  FontSize, Radius, px, py: integer;
   TextColor: TColor;
-  SavedDC: integer;
-  Region, SquareRegion: HRGN;
-  RgnRect: Classes.TRect;
   dval: double;
-  // New styling helpers
-  highlightColor, shadowColor, borderColor: TColor;
-  y: integer;
-  t: double;
-  lineColor: TColor;
+  borderColor: TColor;
+  pRow: PByte;
 
 function Luminance(c: TColor): double;
   var
@@ -921,31 +915,6 @@ function AdjustColor(c: TColor; factor: double): TColor;
     if b > 255 then
       b := 255;
     Result := RGB(r, g, b);
-  end;
-
-function Blend(a, b: TColor; tt: double): TColor;
-  var
-    ar, ag, ab, br, bg, bb: byte;
-    rc1, rc2: longint;
-    r, g, _b: integer;
-  begin
-    if tt < 0 then
-      tt := 0
-    else
-    if tt > 1 then
-      tt := 1;
-    rc1 := ColorToRGB(a);
-    rc2 := ColorToRGB(b);
-    ar := GetRValue(rc1);
-    ag := GetGValue(rc1);
-    ab := GetBValue(rc1);
-    br := GetRValue(rc2);
-    bg := GetGValue(rc2);
-    bb := GetBValue(rc2);
-    r := Round(ar + (br - ar) * tt);
-    g := Round(ag + (bg - ag) * tt);
-    _b := Round(ab + (bb - ab) * tt);
-    Result := RGB(r, g, _b);
   end;
 
 begin
@@ -984,10 +953,10 @@ begin
     else
       BadgeSize := Round(IconHeight * badge_size_ratio);
 
+    Bitmap.PixelFormat := pf32bit;
     Bitmap.SetSize(IconWidth, IconHeight);
-    Bitmap.Canvas.Brush.Color := clNone;
-    // Note: Use Classes.Rect/TRect explicitly to avoid Windows unit name clashes
-    Bitmap.Canvas.FillRect(Classes.Rect(0, 0, IconWidth, IconHeight));
+    for py := 0 to IconHeight - 1 do
+      FillChar(Bitmap.ScanLine[py]^, IconWidth * 4, 0);
 
     DrawIconEx(Bitmap.Canvas.Handle, 0, 0, AppIcon.Handle, IconWidth,
       IconHeight, 0, 0, DI_NORMAL);
@@ -997,11 +966,6 @@ begin
     BadgeRect := Classes.Rect(IconWidth - BadgeSize, IconHeight -
       BadgeSize, IconWidth, IconHeight);
 
-    // Pre-compute styling colors (light top highlight, dark shadow bottom, and border)
-    // Use luminance to decide highlight/shadow intensity for contrast.
-    highlightColor := AdjustColor(BadgeColor, 1.3); // 30% lighter
-    shadowColor := AdjustColor(BadgeColor, 0.6);    // 40% darker
-    // Border color: choose darker or lighter depending on base luminance
     if Luminance(BadgeColor) > 140 then
       borderColor := AdjustColor(BadgeColor, 0.55)
     else
@@ -1009,76 +973,14 @@ begin
 
     Bitmap.Canvas.Brush.Color := BadgeColor;
     Bitmap.Canvas.Pen.Color := borderColor;
+    Bitmap.Canvas.Pen.Width := 1;
+    Bitmap.Canvas.Pen.Style := psSolid;
 
+    Radius := 0;
     if BadgeSize <= 12 then
-      Bitmap.Canvas.FillRect(BadgeRect)// Tiny badges: simple square for speed/stability
-// simple tiny badge (no extra effects)
-
+      Bitmap.Canvas.FillRect(BadgeRect)
     else
     begin
-      Radius := Round(CORNER_RADIUS * BadgeSize / 32);
-      if Radius < 2 then
-        Radius := 2;
-
-      // Clip drawing to a rounded rectangle region to get smooth corners.
-      // Use SaveDC/RestoreDC to avoid leaking the clipping region state.
-      SavedDC := SaveDC(Bitmap.Canvas.Handle);
-      Region := 0;
-      SquareRegion := 0;
-      try
-        RgnRect := BadgeRect;
-        // Build a rounded-rect clipping region to paint smooth corners
-        Region := CreateRoundRectRgn(RgnRect.Left, RgnRect.Top,
-          RgnRect.Right, RgnRect.Bottom, Radius * 2, Radius * 2);
-        // Expand the rounded region with a square piece to smooth the corner join
-        SquareRegion := CreateRectRgn(RgnRect.Right - Radius,
-          RgnRect.Bottom - Radius, RgnRect.Right, RgnRect.Bottom);
-        CombineRgn(Region, Region, SquareRegion, RGN_OR);
-        SelectClipRgn(Bitmap.Canvas.Handle, Region);
-
-        // Custom gradient fill (vertical) since LCL GradientFill may not exist everywhere.
-        for y := BadgeRect.Top to BadgeRect.Bottom - 1 do
-        begin
-          t := (y - BadgeRect.Top) / (BadgeRect.Bottom - BadgeRect.Top - 1);
-          // Bias t slightly so highlight band is thinner
-          lineColor := Blend(highlightColor, shadowColor, t * 0.85);
-          Bitmap.Canvas.Pen.Color := lineColor;
-          Bitmap.Canvas.MoveTo(BadgeRect.Left, y);
-          Bitmap.Canvas.LineTo(BadgeRect.Right, y);
-        end;
-
-        // Draw an inner rounded outline for bevel illusion (light top-left, dark bottom-right)
-        Bitmap.Canvas.Pen.Style := psSolid;
-        Bitmap.Canvas.Pen.Width := 1;
-        // Top/left bevel
-        Bitmap.Canvas.Pen.Color := highlightColor;
-        RoundRect(Bitmap.Canvas.Handle,
-          BadgeRect.Left, BadgeRect.Top,
-          BadgeRect.Right, BadgeRect.Bottom,
-          Radius * 2, Radius * 2);
-        // Bottom/right bevel overlay using shadow color (draw partial arcs/lines)
-        Bitmap.Canvas.Pen.Color := shadowColor;
-        // simple approach: inset rectangle to avoid overwriting highlight too much
-        InflateRect(BadgeRect, -1, -1);
-        RoundRect(Bitmap.Canvas.Handle,
-          BadgeRect.Left, BadgeRect.Top,
-          BadgeRect.Right, BadgeRect.Bottom,
-          Radius * 2 - 2, Radius * 2 - 2);
-        InflateRect(BadgeRect, 1, 1); // restore
-      finally
-        if SquareRegion <> 0 then
-          DeleteObject(SquareRegion);
-        if Region <> 0 then
-          DeleteObject(Region);
-        RestoreDC(Bitmap.Canvas.Handle, SavedDC);
-      end;
-    end;
-
-    // Outer border (rounded) for readability on bright or cluttered taskbars
-    if BadgeSize > 10 then
-    begin
-      Bitmap.Canvas.Pen.Color := borderColor;
-      Bitmap.Canvas.Brush.Style := bsClear;
       Radius := Round(CORNER_RADIUS * BadgeSize / 32);
       if Radius < 2 then
         Radius := 2;
@@ -1095,7 +997,7 @@ begin
     else
       TextColor := clWhite;
 
-    Bitmap.Canvas.Font.Name := 'Arial';
+    Bitmap.Canvas.Font.Name := 'Segoe UI';
     Bitmap.Canvas.Font.Style := [fsBold];
     Bitmap.Canvas.Font.Color := TextColor;
     FontSize := Round(BadgeSize * INITIAL_FONT_SIZE_RATIO);
@@ -1120,6 +1022,39 @@ begin
       BadgeRect.Top + ((BadgeRect.Bottom - BadgeRect.Top) - TextHeight) div 2,
       BadgeText
       );
+
+    // GDI canvas operations (RoundRect, TextOut) do not write the alpha channel
+    // on 32-bit bitmaps. Walk every pixel in the badge rect and set alpha=255 for
+    // any pixel that falls inside the rounded badge shape. Pixels in the rounded
+    // corners (outside the shape) keep the alpha already written by DrawIconEx.
+    for py := BadgeRect.Top to BadgeRect.Bottom - 1 do
+    begin
+      pRow := PByte(Bitmap.ScanLine[py]);
+      for px := BadgeRect.Left to BadgeRect.Right - 1 do
+      begin
+        if (px < BadgeRect.Left + Radius) and (py < BadgeRect.Top + Radius) then
+        begin
+          if Sqr(px - (BadgeRect.Left + Radius)) + Sqr(py - (BadgeRect.Top + Radius)) > Sqr(Radius) then
+            Continue;
+        end
+        else if (px >= BadgeRect.Right - Radius) and (py < BadgeRect.Top + Radius) then
+        begin
+          if Sqr(px - (BadgeRect.Right - Radius)) + Sqr(py - (BadgeRect.Top + Radius)) > Sqr(Radius) then
+            Continue;
+        end
+        else if (px < BadgeRect.Left + Radius) and (py >= BadgeRect.Bottom - Radius) then
+        begin
+          if Sqr(px - (BadgeRect.Left + Radius)) + Sqr(py - (BadgeRect.Bottom - Radius)) > Sqr(Radius) then
+            Continue;
+        end
+        else if (px >= BadgeRect.Right - Radius) and (py >= BadgeRect.Bottom - Radius) then
+        begin
+          if Sqr(px - (BadgeRect.Right - Radius)) + Sqr(py - (BadgeRect.Bottom - Radius)) > Sqr(Radius) then
+            Continue;
+        end;
+        (pRow + px * 4 + 3)^ := 255;
+      end;
+    end;
 
     // Assign the composed bitmap to the app icon and notify the window.
     TempIcon.Assign(Bitmap);
