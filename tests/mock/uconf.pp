@@ -68,7 +68,7 @@ type
 
     // Additional UI fields used by umain
     edCommaSep: TEdit;
-    edTray: TSpinEdit;
+
     edMusicHigh: TEdit;
     edMusicLow: TEdit;
     edMusicPerfect: TEdit;
@@ -259,7 +259,7 @@ begin
 
   // Create new controls
   edCommaSep := TEdit.Create(nil);
-  edTray := TSpinEdit.Create;
+
   edMusicHigh := TEdit.Create(nil);
   edMusicLow := TEdit.Create(nil);
   edMusicPerfect := TEdit.Create(nil);
@@ -407,7 +407,7 @@ begin
   edMusicPerfect.Free;
   edMusicLow.Free;
   edMusicHigh.Free;
-  edTray.Free;
+
   edCommaSep.Free;
 
   cbPredictShortMinutes.Free;

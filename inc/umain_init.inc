@@ -718,7 +718,7 @@ begin
     // Locale setup
     userlocale := DefaultFormatSettings;
     userlocale.DecimalSeparator := GetCharSetting('locale.separator', '.');
-    badge_adjust := GetIntSetting('ux.badge_size', 0) / 10;
+
     locale := userlocale;
     semiTouchMode := GetBoolSetting('ux.semi_touch', false);
 

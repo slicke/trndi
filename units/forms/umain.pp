@@ -769,7 +769,7 @@ isWSL : boolean = false;
 {$endif}
 applocale: string;
 dotscale: single = 1;
-badge_adjust: single = 0;
+
 tir_icon: boolean = true;
 perfectTriggered: boolean = false; // A perfect reading is active
 UseRangeColor: boolean = true;

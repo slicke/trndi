@@ -33,10 +33,6 @@ Trndi limits you to between 6-30 before a value is "old" and the "No recent read
 system.fresh_threshold=31
 ```
 
-## Override the 100% badge size (the reading icon on Trndi's app icon)
-```ini
-ux.badge_size=100
-```
 
 ## Override the number readings fetched
 Trndi defaults to a set amount of minutes it fetches (1440), this only affects time-in-range - not the graph!

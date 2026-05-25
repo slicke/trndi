@@ -1102,10 +1102,6 @@ msgstr ""
 msgid "Test an announcement"
 msgstr ""
 
-#: tfconf.ltray.caption
-msgid "Tray icon size:"
-msgstr ""
-
 #: tfconf.lusername.caption
 msgid "User:"
 msgstr ""

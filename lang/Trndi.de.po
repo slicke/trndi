@@ -1117,10 +1117,6 @@ msgstr "Alle Einstellungen zur Sicherung oder Übertragung auf ein anderes Gerä
 msgid "Test an announcement"
 msgstr "Eine Ankündigung testen"
 
-#: tfconf.ltray.caption
-msgid "Tray icon size:"
-msgstr "Tray-Symbolgröße:"
-
 #: tfconf.lusername.caption
 msgid "User:"
 msgstr "Benutzer:"

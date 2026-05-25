@@ -1117,10 +1117,6 @@ msgstr "Eksporter alle innstillinger til en fil for sikkerhetskopiering eller ov
 msgid "Test an announcement"
 msgstr "Test en varsling"
 
-#: tfconf.ltray.caption
-msgid "Tray icon size:"
-msgstr "Skuffeikonstørrelse:"
-
 #: tfconf.lusername.caption
 msgid "User:"
 msgstr "Bruker:"

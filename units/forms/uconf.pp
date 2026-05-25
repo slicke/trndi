@@ -266,7 +266,7 @@ TfConf = class(TForm)
   edURLLow: TEdit;
   edURLPerfect: TEdit;
   edNick: TEdit;
-  edTray: TSpinEdit;
+
   ePass: TEdit;
   edMusicHigh: TEdit;
   edMusicLow: TEdit;
@@ -327,7 +327,7 @@ TfConf = class(TForm)
   lDotCurr: TLabel;
   lHiOver1: TLabel;
   lLounder1: TLabel;
-  lTray: TLabel;
+
   Label3: TLabel;
   Label5: TLabel;
   lUserName: TLabel;
@@ -374,7 +374,7 @@ TfConf = class(TForm)
   pDecimal: TPanel;
   pnBackend: TPanel;
   pnHelp: TPanel;
-  pTray: TPanel;
+
   pUserColor: TPanel;
   pcMain: TPageControl;
   pnDisplay: TPanel;
@@ -2013,9 +2013,6 @@ begin
   // Populate TTS voice list
   PopulateTTSVoices;
 
-  {$ifdef X_MAC}
-  edTray.Enabled := false; // No support
-  {$endif}
 
   // Initialize parameter labels for current backend selection
   cbSysChange(Self);
