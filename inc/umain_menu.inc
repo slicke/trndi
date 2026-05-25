@@ -350,6 +350,8 @@ var
   msg, row2, row3: string;
   hi, lo, rhi, rlo: double;
 begin
+  if Length(bgs) = 0 then
+    Exit;
   minTotal := MinutesBetween(now, bgs[High(bgs)].date);
   rangeMinutes := native.GetIntSetting('range.time', 9999);
   if minTotal > rangeMinutes then
