@@ -81,7 +81,7 @@ begin
     if mmol then
       res.FromFloat(bgs[0].convert(BGUnit.mmol))
     else
-      res.From32(round(bgs[1].convert(BGUnit.mgdl)));
+      res.From32(round(bgs[0].convert(BGUnit.mgdl)));
   end
   else
   begin
