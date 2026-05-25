@@ -209,9 +209,6 @@ procedure predictFuture(future: integer = 7);
 
     if (isLow <> TTrndiBool.tbUnset) and (minTime < MaxInt) then
     begin
-      if b.empty then
-        Exit;
-
       if minTime > 3 then
       begin
         if isLow = TTrndiBool.tbTrue then
