@@ -319,7 +319,7 @@ begin
     end;
 
   if sensorText = '' then
-    sensorText := bgs[High(bgs)].sensor;
+    Exit;
 
   lowerText := LowerCase(sensorText);
   pOpen := Pos('(sensor ', lowerText);
