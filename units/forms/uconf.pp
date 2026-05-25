@@ -65,6 +65,7 @@ type
 TfConf = class(TForm)
   bAdd: TButton;
   bBackendHelp: TButton;
+  bConnectHelp: TButton;
   bDecimalHelp: TButton;
   bDeltaMaxHelp: TButton;
   bDotHelp: TButton;
@@ -74,7 +75,6 @@ TfConf = class(TForm)
   bFontArrow: TButton;
   bFontTime: TButton;
   bFontReset: TButton;
-  bConnectHelp: TButton;
   bWarnHiLowHelp: TButton;
   bImportSettings: TButton;
   bLanguageHelp: TButton;
@@ -120,6 +120,7 @@ TfConf = class(TForm)
   cbChromaNormal: TCheckBox;
   cbChromaHigh: TComboBox;
   cbChromaLow: TComboBox;
+  cbConnectivityButton: TCheckBox;
   cbCust: TCheckBox;
   cbCust1: TCheckBox;
   cbCustRange: TCheckBox;
@@ -128,7 +129,6 @@ TfConf = class(TForm)
   cbMoveDIffRight: TCheckBox;
   cbWarnLoHi: TCheckBox;
   cbProgress: TCheckBox;
-  cbConnectivityButton: TCheckBox;
   cbTTS: TCheckBox;
   cbTTSVoice: TComboBox;
   cgNotifications: TCheckGroup;
@@ -208,6 +208,7 @@ TfConf = class(TForm)
   Panel3: TPanel;
   PanelProxyActions: TPanel;
   pnDeltaMax: TPanel;
+  pnFontButtons: TPanel;
   pnMisc: TPanel;
   pnMisc1: TPanel;
   pnProxyConnection: TPanel;
