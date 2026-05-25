@@ -18,12 +18,12 @@ object fConf: TfConf
     Height = 607
     Top = 11
     Width = 645
-    ActivePage = tsMulti
+    ActivePage = tsDisplay
     Align = alClient
     BorderSpacing.Left = 10
     BorderSpacing.Right = 10
     BorderSpacing.Around = 5
-    TabIndex = 11
+    TabIndex = 3
     TabOrder = 0
     OnChange = pcMainChange
     object tsCommon: TTabSheet
@@ -244,7 +244,7 @@ object fConf: TfConf
       object rbTrendWindow: TRadioGroup
         Left = 15
         Height = 120
-        Top = 360
+        Top = 358
         Width = 612
         Align = alTop
         AutoFill = True

@@ -1168,6 +1168,12 @@ msgstr "Endast pil"
 msgid "Show time and value (e.g., ⏱10' ↗ 5.5)"
 msgstr "Visa tid och verde (t.ex., ⏱10' ↗ 5.5)"
 
+#: tfconf.rbtrendwindow.caption
+#, fuzzy
+msgctxt "tfconf.rbtrendwindow.caption"
+msgid "Trend window"
+msgstr "Trendfônster"
+
 #: tfconf.rbunit.caption
 msgid "Display Unit"
 msgstr "Enhetstyp"

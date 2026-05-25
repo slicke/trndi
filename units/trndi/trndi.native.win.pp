@@ -882,6 +882,7 @@ var
   BadgeRect: Classes.TRect;
   IconWidth, IconHeight, BadgeSize: integer;
   FontSize, Radius, px, py: integer;
+  SmallIconSize: integer;
   TextColor: TColor;
   dval: double;
   borderColor: TColor;
@@ -958,8 +959,10 @@ begin
     for py := 0 to IconHeight - 1 do
       FillChar(Bitmap.ScanLine[py]^, IconWidth * 4, 0);
 
-    DrawIconEx(Bitmap.Canvas.Handle, 0, 0, AppIcon.Handle, IconWidth,
-      IconHeight, 0, 0, DI_NORMAL);
+    SmallIconSize := Round(Min(IconWidth, IconHeight) * 0.4);
+    if SmallIconSize < 6 then SmallIconSize := 6;
+    DrawIconEx(Bitmap.Canvas.Handle, 0, 0, AppIcon.Handle, SmallIconSize,
+      SmallIconSize, 0, 0, DI_NORMAL);
 
     // Compute a badge rectangle in the lower-right quadrant with size
     // proportional to the current icon dimensions.
