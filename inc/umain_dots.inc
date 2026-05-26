@@ -415,9 +415,8 @@ begin
   {$ifdef DARWIN}
   l.AutoSize := true;
   l.Font.Size := Max(8, slotW);
-  tw := l.Canvas.TextWidth(DOT_GRAPH);
-  if tw > 0 then
-    l.Font.Size := Max(8, Round(l.Font.Size * (slotW * 85 div 100) / tw));
+  // Canvas.TextWidth must not be called outside drawRect: on Cocoa — it corrupts
+  // the NSGraphicsContext (CheckDC bug) and turns the whole window solid green.
   l.AdjustSize;
   TrndiDLog(Format('TrendDots[%d] resized with Font Size = %d, Height=%d (AutoSize).',
     [ix, l.Font.Size, l.Height]));
