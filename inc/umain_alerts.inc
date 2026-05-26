@@ -169,7 +169,14 @@ begin
       dstDot.Hint := srcDot.Hint;
       dstDot.ShowHint := srcDot.ShowHint or (srcDot.Hint <> '');
       dstDot.Tag := srcDot.Tag;
+      {$ifdef DARWIN}
+      // Full Font.Assign on a TLabel (NSTextField) can trigger unexpected
+      // layout/repaint cycles on Cocoa. Copy only what the dot actually needs.
+      dstDot.Font.Size := srcDot.Font.Size;
+      dstDot.Font.Color := srcDot.Font.Color;
+      {$else}
       dstDot.Font.Assign(srcDot.Font);
+      {$endif}
       dstDot.Width := srcDot.Width;
       dstDot.Height := srcDot.Height;
       dstDot.Left := dotPos.X;
