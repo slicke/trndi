@@ -357,6 +357,7 @@ procedure SetPointHeight(L: TControl; Value: single; clientHeight: integer);
 var
   Padding, UsableHeight, Position: integer;
   {$ifdef DARWIN}
+  LimitTop: Integer;
   HalfGlyph: integer;
   {$endif}
 begin
@@ -386,10 +387,13 @@ begin
   HalfGlyph := Max(L.Font.Size div 2, 4);
   L.Top := (clientHeight - Position) - HalfGlyph;
 
-  if L.Top < 0 then
-    L.Top := 0;
-  if L.Top > clientHeight - L.Font.Size then
-    L.Top := clientHeight - L.Font.Size;
+  // Ensure Top is within a valid range. Compute a non-negative lower bound
+  // for the maximum allowed Top to avoid negative positions when the
+  // available clientHeight is smaller than the font size.
+  LimitTop := clientHeight - L.Font.Size;
+  if LimitTop < 0 then
+    LimitTop := 0;
+  L.Top := Min(Max(L.Top, 0), LimitTop);
 
   TrndiDLog(Format('Label %s: Value=%.2f, Top=%d, FontSize=%d',
     [L.Name, Value, L.Top, L.Font.Size]));
