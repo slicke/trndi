@@ -379,30 +379,24 @@ begin
   // Apply the calculated position to the label's Top property
   // Place dot relative to the same clientHeight reference. Keep 1px inside bottom edge
   {$ifdef DARWIN}
-  // On macOS with TLabel: Need aggressive bottom padding to prevent clipping
-  // TLabel with large fonts can have descenders that extend below baseline
-  
-  // Get actual or estimated height
-  if L.Height > 0 then
-    EstimatedHeight := L.Height
-  else
-    // Estimate based on font size if height not yet calculated
-    EstimatedHeight := Round(L.Font.Size * 1.5);
-  
-  // Reserve 15% of client height as bottom padding to ensure dots never clip
+  // TLabel.Height is unreliable for hidden labels on macOS: AdjustSize may not
+  // have completed before this runs, leaving stale heights (e.g. 49 from init)
+  // that differ between dots for the same font size. Use L.Font.Size directly —
+  // all active dots share the same font size after ResizeDot, so EstimatedHeight
+  // is identical for every dot and relative vertical positions are consistent.
+  EstimatedHeight := Max(Round(L.Font.Size * 1.5), 10);
+
   BottomPadding := Round(clientHeight * 0.15);
-  
-  // Position the top of the label, accounting for its height
+
   L.Top := (clientHeight - Position) - EstimatedHeight;
-  
-  // Ensure we stay within bounds
+
   if L.Top < Padding then
     L.Top := Padding;
   if (L.Top + EstimatedHeight) > (clientHeight - BottomPadding) then
     L.Top := clientHeight - BottomPadding - EstimatedHeight;
-  
-  TrndiDLog(Format('Label %s: Value=%.2f, Top=%d, Height=%d (est=%d), BottomPad=%d',
-    [L.Name, Value, L.Top, L.Height, EstimatedHeight, BottomPadding]));
+
+  TrndiDLog(Format('Label %s: Value=%.2f, Top=%d, FontSize=%d (est=%d), BottomPad=%d',
+    [L.Name, Value, L.Top, L.Font.Size, EstimatedHeight, BottomPadding]));
   {$else}
   L.Top := (clientHeight - Position) - 1;
   TrndiDLog(Format('Label %s: Value=%.2f, Top=%d, Height=%d', [L.Name, Value, L.Top, L.Height]));
