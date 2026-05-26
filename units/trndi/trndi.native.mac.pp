@@ -99,6 +99,8 @@ type
     class function SpeakSoftwareName: string; override;
     {** Best-effort window manager name for macOS. }
     class function GetWindowManagerName: string; override;
+    {** macOS always provides a system-wide global menu bar. }
+    class function HasGlobalMenu: boolean; override;
   end;
 
 implementation
@@ -325,6 +327,11 @@ end;
 class function TTrndiNativeMac.GetWindowManagerName: string;
 begin
   Result := 'WindowServer';
+end;
+
+class function TTrndiNativeMac.HasGlobalMenu: boolean;
+begin
+  Result := true;
 end; 
 
 {------------------------------------------------------------------------------
