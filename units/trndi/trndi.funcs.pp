@@ -357,8 +357,7 @@ procedure SetPointHeight(L: TControl; Value: single; clientHeight: integer);
 var
   Padding, UsableHeight, Position: integer;
   {$ifdef DARWIN}
-  EstimatedHeight: integer;
-  BottomPadding: integer;
+  HalfGlyph: integer;
   {$endif}
 begin
   // Define padding and usable height for scaling based on provided client height
@@ -379,24 +378,21 @@ begin
   // Apply the calculated position to the label's Top property
   // Place dot relative to the same clientHeight reference. Keep 1px inside bottom edge
   {$ifdef DARWIN}
-  // TLabel.Height is unreliable for hidden labels on macOS: AdjustSize may not
-  // have completed before this runs, leaving stale heights (e.g. 49 from init)
-  // that differ between dots for the same font size. Use L.Font.Size directly —
-  // all active dots share the same font size after ResizeDot, so EstimatedHeight
-  // is identical for every dot and relative vertical positions are consistent.
-  EstimatedHeight := Max(Round(L.Font.Size * 1.5), 10);
+  // On macOS, TLabel draws its text centred vertically (Layout = tlCenter).
+  // Position the label so the visual centre of the glyph sits at the glucose
+  // value's Y coordinate. Font.Size is a reliable proxy for the circle glyph's
+  // visual height and is identical across all active dots (set in ResizeDot),
+  // so HalfGlyph is consistent — no per-dot unevenness, no excess clamping.
+  HalfGlyph := Max(L.Font.Size div 2, 4);
+  L.Top := (clientHeight - Position) - HalfGlyph;
 
-  BottomPadding := Round(clientHeight * 0.15);
+  if L.Top < 0 then
+    L.Top := 0;
+  if L.Top > clientHeight - L.Font.Size then
+    L.Top := clientHeight - L.Font.Size;
 
-  L.Top := (clientHeight - Position) - EstimatedHeight;
-
-  if L.Top < Padding then
-    L.Top := Padding;
-  if (L.Top + EstimatedHeight) > (clientHeight - BottomPadding) then
-    L.Top := clientHeight - BottomPadding - EstimatedHeight;
-
-  TrndiDLog(Format('Label %s: Value=%.2f, Top=%d, FontSize=%d (est=%d), BottomPad=%d',
-    [L.Name, Value, L.Top, L.Font.Size, EstimatedHeight, BottomPadding]));
+  TrndiDLog(Format('Label %s: Value=%.2f, Top=%d, FontSize=%d',
+    [L.Name, Value, L.Top, L.Font.Size]));
   {$else}
   L.Top := (clientHeight - Position) - 1;
   TrndiDLog(Format('Label %s: Value=%.2f, Top=%d, Height=%d', [L.Name, Value, L.Top, L.Height]));
