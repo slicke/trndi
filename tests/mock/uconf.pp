@@ -92,6 +92,13 @@ type
     cbUserColor: TColorButton;
     cbPos: TComboBox;
     cbSize: TCheckBox;
+    cbFlash: TCheckGroup;
+    cbRangeColor: TCheckBox;
+    cbClock: TCheckBox;
+    cbAlternate: TCheckBox;
+    cbOnTop: TCheckBox;
+    cbNoBorders: TCheckBox;
+    rbTrendWindow: TRadioGroup;
     cbFlashHi: TCheckBox;
     cbFlashLow: TCheckBox;
     cbFlashPerfect: TCheckBox;
@@ -285,6 +292,17 @@ begin
   cbUserColor := TColorButton.Create(nil);
   cbPos := TComboBox.Create(nil);
   cbSize := TCheckBox.Create(nil);
+  // Compatibility mocks: group and common checkboxes referenced by umain includes
+  cbFlash := TCheckGroup.Create(nil);
+  cbFlash.Items.Add('Hi');
+  cbFlash.Items.Add('Low');
+  cbFlash.Items.Add('Perfect');
+  cbRangeColor := TCheckBox.Create(nil);
+  cbClock := TCheckBox.Create(nil);
+  cbAlternate := TCheckBox.Create(nil);
+  cbOnTop := TCheckBox.Create(nil);
+  cbNoBorders := TCheckBox.Create(nil);
+  rbTrendWindow := TRadioGroup.Create(nil);
   cbFlashHi := TCheckBox.Create(nil);
   cbFlashLow := TCheckBox.Create(nil);
   cbFlashPerfect := TCheckBox.Create(nil);
@@ -381,6 +399,13 @@ begin
   cbAlertHiLo.Free;
   cbShowSensorExpiry.Free;
   cbConnectivityButton.Free;
+  rbTrendWindow.Free;
+  cbNoBorders.Free;
+  cbOnTop.Free;
+  cbAlternate.Free;
+  cbClock.Free;
+  cbRangeColor.Free;
+  cbFlash.Free;
   cbFlashPerfect.Free;
   cbFlashLow.Free;
   cbFlashHi.Free;

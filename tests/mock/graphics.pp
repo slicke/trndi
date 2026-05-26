@@ -149,6 +149,9 @@ type
     FHeight: Integer;
     FTransparentColor: TColor;
     FPixelFormat: Integer;
+    FScanLineBuffer: Pointer;
+    FScanLineBufferSize: Integer;
+    function GetScanLine(Row: Integer): Pointer;
   public
     constructor Create; virtual;
     destructor Destroy; override;
@@ -157,6 +160,7 @@ type
     property Height: Integer read FHeight write FHeight;
     property TransparentColor: TColor read FTransparentColor write FTransparentColor;
     property PixelFormat: Integer read FPixelFormat write FPixelFormat;
+    property ScanLine[Row: Integer]: Pointer read GetScanLine;
     procedure SetSize(AWidth, AHeight: Integer); virtual;
     procedure LoadFromResourceName(Instance: THandle; const AName: string); virtual;
   end;
@@ -344,10 +348,14 @@ begin
   FWidth := 0;
   FHeight := 0;
   FTransparentColor := clNone;
+  FScanLineBuffer := nil;
+  FScanLineBufferSize := 0;
 end;
 
 destructor TBitmap.Destroy;
 begin
+  if FScanLineBuffer <> nil then
+    FreeMem(FScanLineBuffer);
   FCanvas.Free;
   inherited Destroy;
 end;
@@ -356,6 +364,25 @@ procedure TBitmap.SetSize(AWidth, AHeight: Integer);
 begin
   FWidth := AWidth;
   FHeight := AHeight;
+  
+  if FScanLineBuffer <> nil then
+    FreeMem(FScanLineBuffer);
+    
+  FScanLineBufferSize := AWidth * AHeight * 4; // Assume max 32-bit for mock
+  if FScanLineBufferSize > 0 then
+    FScanLineBuffer := GetMem(FScanLineBufferSize)
+  else
+    FScanLineBuffer := nil;
+end;
+
+function TBitmap.GetScanLine(Row: Integer): Pointer;
+begin
+  // In a real TBitmap, this returns a pointer to the start of the pixel row.
+  // We mock it by returning an offset into our allocated block.
+  if (FScanLineBuffer = nil) or (Row < 0) or (Row >= FHeight) then
+    Result := nil
+  else
+    Result := Pointer(PtrUInt(FScanLineBuffer) + PtrUInt(Row * (FWidth * 4)));
 end;
 
 procedure TBitmap.LoadFromResourceName(Instance: THandle; const AName: string);
