@@ -2128,7 +2128,7 @@ scale: integer = 1
 ): TModalResult;
 begin
   Result := ExtMsg(dialogsize, sMsgTitle, caption, msg, log,
-    uxclBlue, uxclLightBlue, [mbOK], icon, scale);
+    IfThen(TrndiNative.isDarkMode, uxclGray, uxclBlue), uxclLightBlue, [mbOK], icon, scale);
 end;
 
 function ExtMsgYesNo(
