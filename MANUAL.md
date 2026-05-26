@@ -28,6 +28,7 @@ Trndi can connect to:
 - **NightScout** - A website where your CGM data is uploaded (you or your caregiver sets this up)
 - **Dexcom Share** - Dexcom's official data sharing service
 - **xDrip** - An Android app that can share data over your local WiFi
+- ***Tandem Source*** - Tandem Diabetes management app (_NOTE: Source has a lag! This is not Trndi's fault._)
 
 ---
 
