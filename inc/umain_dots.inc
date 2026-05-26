@@ -253,6 +253,9 @@ begin
   {$ifdef Windows}
   l.Font.Name := 'DejaVu Sans Mono';
   {$endif}
+  {$ifdef DARWIN}
+  l.Font.Name := 'Arial'; // Better circle shape on macOS
+  {$endif}
 end;
 
 function TfBG.CalculateDotVisualOffset: integer;
@@ -414,7 +417,10 @@ begin
   slotW := Max(1, fBG.ClientWidth div Max(c, 1));
   {$ifdef DARWIN}
   l.AutoSize := true;
-  l.Font.Size := Max(8, slotW);
+  // Font.Size is in points (~1.33 pixels per point on standard 96dpi equivalent).
+  // A circular character's width is roughly 1em.
+  // We want the dot to fill ~85% of slotW, so: slotW * 0.85 * 0.75 ~ slotW * 0.64
+  l.Font.Size := Max(8, Round(slotW * 0.64));
   // Canvas.TextWidth must not be called outside drawRect: on Cocoa — it corrupts
   // the NSGraphicsContext (CheckDC bug) and turns the whole window solid green.
   l.AdjustSize;
