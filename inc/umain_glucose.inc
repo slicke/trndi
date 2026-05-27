@@ -1219,7 +1219,11 @@ begin
       reading := SortedReadings[i];
 
       if reading.empty then
+      begin
+        TrndiDLog(Format('  Reading at %s is empty (curr=BG_NO_VAL), skipping',
+          [DateTimeToStr(reading.date)]));
         Continue;
+      end;
 
       if reading.date > slotEnd + slotEpsilon then
       begin

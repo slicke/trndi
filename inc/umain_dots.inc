@@ -231,6 +231,9 @@ begin
       Top := 191;
       Width := 33;
       Height := 49;
+      // Set a non-zero default so SetPointHeight has a usable Font.Size proxy
+      // if it runs (via UpdateLabelForReading) before ResizeDot has sized the dot.
+      Font.Size := 24;
       Visible := false;
       Caption := DOT_GRAPH;
       PopupMenu := pmSettings;
