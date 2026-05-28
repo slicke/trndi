@@ -556,6 +556,14 @@
         <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
+        <Filename Value="units\trndi\ext\trndi.ext.perm.pp"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="units\trndi\ext\trndi.ext.grant.pp"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
         <Filename Value="units\trndi\trndi.native.pp"/>
         <IsPartOfProject Value="True"/>
       </Unit>

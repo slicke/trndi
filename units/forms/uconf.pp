@@ -54,8 +54,8 @@ interface
 
 uses
 Classes, ComCtrls, ExtCtrls, Spin, StdCtrls, SysUtils, Forms, Controls,
-Graphics, Dialogs, LCLTranslator, trndi.native, lclintf, process{$ifdef X_MAC}, CocoaAll, nsutils.nshelpers{$endif},
-slicke.ux.alert, slicke.ux.native, slicke.versioninfo, trndi.funcs, buildinfo, StrUtils, trndi.api, trndi.api.nightscout, trndi.api.nightscout3, trndi.api.dexcom, trndi.api.dexcomNew, trndi.api.tandem, trndi.api.xdrip, razer.chroma, math, trndi.types, trndi.api.debug_firstXmissing, trndi.api.debug_intermittentmissing, trndi.api.debug_custom, trndi.api.debug, trndi.api.debug_lowsoon, trndi.api.debug_sensorexpiry, trndi.api.debug_slow, trndi.api.debug_faultysensor, trndi.api.debug_latemissing, base64, Variants{$ifdef X_WIN}, ComObj{$endif};
+Graphics, Dialogs, LCLTranslator, trndi.native, lclintf, process, FileUtil{$ifdef X_MAC}, CocoaAll, nsutils.nshelpers{$endif},
+slicke.ux.alert, slicke.ux.native, slicke.versioninfo, trndi.funcs, buildinfo, StrUtils, trndi.api, trndi.api.nightscout, trndi.api.nightscout3, trndi.api.dexcom, trndi.api.dexcomNew, trndi.api.tandem, trndi.api.xdrip, razer.chroma, math, trndi.types, trndi.api.debug_firstXmissing, trndi.api.debug_intermittentmissing, trndi.api.debug_custom, trndi.api.debug, trndi.api.debug_lowsoon, trndi.api.debug_sensorexpiry, trndi.api.debug_slow, trndi.api.debug_faultysensor, trndi.api.debug_latemissing, base64, Variants{$ifdef TrndiExt}, trndi.ext.perm{$endif}{$ifdef X_WIN}, ComObj{$endif};
 
 {$I ../../inc/defines.inc}
 type
@@ -516,12 +516,14 @@ TfConf = class(TForm)
   procedure closeClick(Sender: TObject);
 private
   FProxyLoading: boolean;
+  FExtPaths: TStringList;
   procedure LoadProxySettingsIntoUI;
   procedure SaveProxySettingsFromUI;
   procedure getAPILabels(out user, pass: string);
 public
   chroma: TRazerChromaBase;
   procedure UpdatePredictionStates;
+  procedure LoadExtensionList(const ExtensionsPath: string);
 end;
 
 var
@@ -692,6 +694,8 @@ RS_ExtCount = 'Extensions count: %d';
 
 RS_NO_COPYRIGHT = '- Extension has no copyright info -';
 
+RS_EXT_REQUESTS = 'Requests: ';
+
 RS_TEST_UNSUPPORTED = 'Sorry! Trndi does not (yet) support connection testing for this service!';
 RS_TEST_SUCCESS = 'Successfully connected!';
 RS_TEST_FAIL = 'Could not connect!';
@@ -828,37 +832,121 @@ begin
 end;
 
 procedure TfConf.lbExtensionsSelectionChange(Sender: TObject; User: boolean);
+{$ifdef TrndiExt}
 var
-  f: TStringList;
-  l: string;
+  scriptBuf: TStringList;
+  path, scriptText, permsCsv: string;
+  manifest: TExtManifest;
+{$endif}
 begin
-  l := lbExtensions.GetSelectedText;
-  f := TStringList.Create;
-  f.Delimiter := #10;
-  f.LoadFromFile(l);
+  {$ifdef TrndiExt}
+  if (FExtPaths = nil) or (lbExtensions.ItemIndex < 0) or
+     (lbExtensions.ItemIndex >= FExtPaths.Count) then
+    Exit;
+
   lExtName.Caption := '';
   lExtCopyright.Caption := '';
 
+  path := FExtPaths[lbExtensions.ItemIndex];
+  scriptText := '';
+  scriptBuf := TStringList.Create;
+  try
+    try
+      scriptBuf.LoadFromFile(path);
+      scriptText := scriptBuf.Text;
+    except
+      // unreadable: treat as empty so the no-copyright fallback fires
+    end;
+  finally
+    scriptBuf.Free;
+  end;
 
-  if (f.Count > 1 ) and (length(f.Strings[0]) > 2) and (f.Strings[0][2] = '*') then
-  begin // /*
-    lExtName.Caption := TrimLeftSet(f.Strings[0], ['*', '/', ' ']);
+  manifest := ParseExtManifest(scriptText);
 
-    if (length(f.strings[1]) > 2) and (f.Strings[1][length(f.strings[1])-1] = '*') then // */
-      lExtCopyright.Caption := TrimRightSet(f.Strings[1], ['*', '/']);
-  end
+  if manifest.DisplayName <> '' then
+    lExtName.Caption := manifest.DisplayName
   else
-    lExtName.Caption := RS_NO_COPYRIGHT;
-  f.Free;
+    lExtName.Caption := ExtractFileName(path);
+
+  permsCsv := PermSetToCSV(manifest.Requested);
+  if manifest.Author <> '' then
+  begin
+    if permsCsv <> '' then
+      lExtCopyright.Caption := manifest.Author + '  —  ' + RS_EXT_REQUESTS + permsCsv
+    else
+      lExtCopyright.Caption := manifest.Author;
+  end
+  else if permsCsv <> '' then
+    lExtCopyright.Caption := RS_EXT_REQUESTS + permsCsv
+  else
+    lExtCopyright.Caption := RS_NO_COPYRIGHT;
+  {$endif}
 end;
 
 procedure TfConf.lbExtensionsDblClick(Sender: TObject);
+{$ifdef TrndiExt}
 var
-  selectedExt: string;
+  path: string;
+{$endif}
 begin
-  selectedExt := lbExtensions.GetSelectedText;
-  if (selectedExt <> '') and FileExists(selectedExt) then
-    OpenDocument(selectedExt);
+  {$ifdef TrndiExt}
+  if (FExtPaths = nil) or (lbExtensions.ItemIndex < 0) or
+     (lbExtensions.ItemIndex >= FExtPaths.Count) then
+    Exit;
+
+  path := FExtPaths[lbExtensions.ItemIndex];
+  if FileExists(path) then
+    OpenDocument(path);
+  {$endif}
+end;
+
+procedure TfConf.LoadExtensionList(const ExtensionsPath: string);
+{$ifdef TrndiExt}
+var
+  extFiles, scriptBuf: TStringList;
+  scriptPath, displayName: string;
+  manifest: TExtManifest;
+  i: integer;
+{$endif}
+begin
+  {$ifdef TrndiExt}
+  if FExtPaths = nil then
+    FExtPaths := TStringList.Create;
+  FExtPaths.Clear;
+  lbExtensions.Clear;
+  lExtName.Caption := '';
+  lExtCopyright.Caption := '';
+
+  extFiles := FindAllFiles(ExtensionsPath, '*.js', false);
+  try
+    scriptBuf := TStringList.Create;
+    try
+      for i := 0 to extFiles.Count - 1 do
+      begin
+        scriptPath := extFiles[i];
+        manifest.DisplayName := '';
+        manifest.Author := '';
+        manifest.Requested := [];
+        try
+          scriptBuf.LoadFromFile(scriptPath);
+          manifest := ParseExtManifest(scriptBuf.Text);
+        except
+        end;
+        if manifest.DisplayName <> '' then
+          displayName := manifest.DisplayName
+        else
+          displayName := ExtractFileName(scriptPath);
+        lbExtensions.Items.Add(displayName);
+        FExtPaths.Add(scriptPath);
+      end;
+    finally
+      scriptBuf.Free;
+    end;
+  finally
+    extFiles.Free;
+  end;
+  lExtCount.Caption := Format(RS_ExtCount, [lbExtensions.Count]);
+  {$endif}
 end;
 
 procedure TfConf.lbUsersEnter(Sender: TObject);
@@ -2058,6 +2146,7 @@ end;
 procedure TfConf.FormDestroy(Sender: TObject);
 begin
   tnative.Free;
+  FExtPaths.Free;
 end;
 
 procedure TfConf.FormResize(Sender: TObject);

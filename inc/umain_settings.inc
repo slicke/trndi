@@ -937,8 +937,7 @@ begin
     {$ifdef TrndiExt}
     extensionsPath := GetAppConfigDirUTF8(false, true) + 'extensions' + DirectorySeparator;
     ForceDirectoriesUTF8(extensionsPath);
-    fConf.lbExtensions.Items := FindAllFiles(extensionsPath, '*.js', false);
-    fConf.lExtCount.Caption := Format(RS_ExtCount, [fConf.lbExtensions.Count]);
+    fConf.LoadExtensionList(extensionsPath);
     {$else}
     fConf.tsExt.Enabled := false;
     fConf.tsExt.Visible := false;

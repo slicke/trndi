@@ -2659,6 +2659,10 @@ msgstr "Sie müssen ein Passwort eingeben"
 msgid "Extensions count: %d"
 msgstr "Erweiterungsanzahl: %d"
 
+#: uconf.rs_ext_requests
+msgid "Requests: "
+msgstr ""
+
 #: uconf.rs_font_help
 msgid "You can change the font of the reading, time and arrow. Click on the respective item here to change the font"
 msgstr "Sie können die Schriftart für Messwert, Zeit und Pfeil ändern. Klicken Sie hier auf das jeweilige Element, um die Schriftart zu ändern"
