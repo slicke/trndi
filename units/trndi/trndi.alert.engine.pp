@@ -168,8 +168,8 @@ begin
   begin
     EnterViolation(akUrgentLow);
     LeaveViolation(akHigh);
-    // Don't reset akLow.LastFired — let it re-fire independently when BG rises back into low zone
-    Exclude(FViolating, akLow);
+    // Reset akLow so it starts a fresh excursion if BG climbs back into the regular-low band
+    LeaveViolation(akLow);
     if ShouldFire(akUrgentLow) then
     begin
       MarkFired(akUrgentLow);
