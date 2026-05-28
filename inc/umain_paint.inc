@@ -94,8 +94,18 @@ begin
   dotHeight := 0;
   if (Length(TrendDots) > 0) and Assigned(TrendDots[1]) then
   begin
-    TrendDots[1].Canvas.Font.Assign(TrendDots[1].Font);
-    dotHeight := Max(TrendDots[1].Canvas.TextHeight(DOT_GRAPH), TrendDots[1].Font.Size);
+    // Measure via a throwaway TBitmap. On the Cocoa widgetset, touching a
+    // TLabel's Canvas outside drawRect: yields a TCocoaContext whose
+    // NSGraphicsContext is nil/invalid, and the first TCanvas setter
+    // (SetAntialiasing) then SIGABRTs.
+    with TBitmap.Create do
+    try
+      SetSize(1, 1);
+      Canvas.Font.Assign(TrendDots[1].Font);
+      dotHeight := Max(Canvas.TextHeight(DOT_GRAPH), TrendDots[1].Font.Size);
+    finally
+      Free;
+    end;
   end;
 
   drawLo := (Assigned(api) and (api.cgmLo <> 0) and PaintRange);
