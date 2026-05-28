@@ -132,8 +132,15 @@ begin
     end;
   SetLength(FWarningDots, 0);
 
-  if MAX_RESULT < ActiveDots * INTERVAL_MINUTES then
-    MAX_RESULT := ActiveDots * INTERVAL_MINUTES;
+  // MAX_RESULT is a reading count, not minutes. Scale by the API's reporting
+  // interval so backends that report more often than every INTERVAL_MINUTES
+  // still produce enough readings to fill all dot slots.
+  if Assigned(api) then
+    MAX_RESULT := Max(MAX_RESULT,
+      ActiveDots * Max(1, (INTERVAL_MINUTES + api.getReportingInterval - 1)
+                   div api.getReportingInterval))
+  else if MAX_RESULT < ActiveDots then
+    MAX_RESULT := ActiveDots;
 
   CreateTrendDots;
 

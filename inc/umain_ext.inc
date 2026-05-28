@@ -157,27 +157,34 @@ begin
 
     globalObj := JS_GetGlobalObject(ctx);
     funcObj := JS_GetPropertyStr(ctx, globalObj, pchar(funcName));
+    retVal := JS_UNDEFINED;
     try
-      if not JS_IsFunction(ctx, funcObj) then Continue;
-      retVal := JS_Call(ctx, funcObj, globalObj, Length(args), @args[0]);
-      if not JS_IsError(ctx, retVal) then
-      begin
-        cstr := JS_ToCString(ctx, retVal);
-        if cstr <> nil then
+      try
+        if not JS_IsFunction(ctx, funcObj) then Continue;
+        retVal := JS_Call(ctx, funcObj, globalObj, Length(args), @args[0]);
+        if not JS_IsError(ctx, retVal) then
         begin
-          partial := cstr;
-          JS_FreeCString(ctx, cstr);
-          if partial <> '' then result := partial;
+          cstr := JS_ToCString(ctx, retVal);
+          if cstr <> nil then
+          begin
+            partial := cstr;
+            JS_FreeCString(ctx, cstr);
+            if partial <> '' then result := partial;
+          end;
         end;
+      except
+        on E: Exception do
+          ; // continue to next extension; one bad call shouldn't block others
       end;
-    except
-      on E: Exception do
-        ; // continue to next extension; one bad call shouldn't block others
-    end;
-    for j := 0 to High(args) do
-    try
-      JS_Free(ctx, @args[j]);
-    except
+    finally
+      for j := 0 to High(args) do
+      try
+        JS_Free(ctx, @args[j]);
+      except
+      end;
+      try JS_Free(ctx, @retVal);    except end;
+      try JS_Free(ctx, @funcObj);   except end;
+      try JS_Free(ctx, @globalObj); except end;
     end;
   end;
 end;

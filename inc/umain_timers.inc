@@ -15,7 +15,7 @@ var
 procedure UpdatePredictionTimes;
   var
     i, closest5, closest10, closest15, closestTarget: integer;
-    diff5, diff10, diff15, diffTarget, currentDiff: integer;
+    diff5, diff10, diff15, diffTarget, currentDiffSigned: integer;
     minutes, targetMinutes: integer;
     delta: glucose;
     trend: BGTrend;
@@ -41,30 +41,32 @@ procedure UpdatePredictionTimes;
 
     for i := 0 to High(PredictionCache) do
     begin
-      // Calculate how many minutes from NOW this prediction is
-      currentDiff := Round(MinutesBetween(PredictionCache[i].date, Now));
+      // Signed minutes from NOW: negative = past, positive = future.
+      // MinutesBetween is Abs()-based, so a stale past prediction would
+      // otherwise win "closest to N" against a real future one.
+      currentDiffSigned := Round((PredictionCache[i].date - Now) * MinsPerDay);
 
-      if (currentDiff >= 0) and (Abs(currentDiff - 5) < diff5) then
+      if (currentDiffSigned >= 0) and (Abs(currentDiffSigned - 5) < diff5) then
       begin
-        diff5 := Abs(currentDiff - 5);
+        diff5 := Abs(currentDiffSigned - 5);
         closest5 := i;
       end;
 
-      if (currentDiff >= 0) and (i <> closest5) and (Abs(currentDiff - 10) < diff10) then
+      if (currentDiffSigned >= 0) and (i <> closest5) and (Abs(currentDiffSigned - 10) < diff10) then
       begin
-        diff10 := Abs(currentDiff - 10);
+        diff10 := Abs(currentDiffSigned - 10);
         closest10 := i;
       end;
 
-      if (currentDiff >= 0) and (i <> closest5) and (i <> closest10) and (Abs(currentDiff - 15) < diff15) then
+      if (currentDiffSigned >= 0) and (i <> closest5) and (i <> closest10) and (Abs(currentDiffSigned - 15) < diff15) then
       begin
-        diff15 := Abs(currentDiff - 15);
+        diff15 := Abs(currentDiffSigned - 15);
         closest15 := i;
       end;
 
-      if (currentDiff >= 0) and (Abs(currentDiff - targetMinutes) < diffTarget) then
+      if (currentDiffSigned >= 0) and (Abs(currentDiffSigned - targetMinutes) < diffTarget) then
       begin
-        diffTarget := Abs(currentDiff - targetMinutes);
+        diffTarget := Abs(currentDiffSigned - targetMinutes);
         closestTarget := i;
       end;
     end;
@@ -195,8 +197,10 @@ procedure predictFuture(future: integer = 7);
 
       if (b.val <= warnLo) or (b.val >= warnHi) then
       begin
-        time := Round(MinutesBetween(Now, b.date));
-        if time < minTime then
+        // Signed minutes: ignore past entries (MinutesBetween is Abs()-based,
+        // so a 1-minute-ago warning would otherwise trigger PREDICT_SOON).
+        time := Round((b.date - Now) * MinsPerDay);
+        if (time > 0) and (time < minTime) then
         begin
           minTime := time;
           if b.val <= warnLo then
@@ -325,7 +329,10 @@ begin
     if Assigned(FConnectivityThread) then
     begin
       if not FConnectivityThread.Finished then
+      begin
+        tPing.Enabled := true;
         Exit;
+      end;
       FConnectivityThread.WaitFor;
       FreeAndNil(FConnectivityThread);
     end;
@@ -336,7 +343,10 @@ begin
     if Assigned(FPingThread) then
     begin
       if not FPingThread.Finished then
+      begin
+        tPing.Enabled := true;
         Exit;
+      end;
       FPingThread.WaitFor;
       FreeAndNil(FPingThread);
     end;

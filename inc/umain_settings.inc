@@ -166,8 +166,14 @@ begin
         FWarningDots[i] := nil;
       end;
     SetLength(FWarningDots, 0);
-    if MAX_RESULT < ActiveDots * INTERVAL_MINUTES then
-      MAX_RESULT := ActiveDots * INTERVAL_MINUTES;
+    // MAX_RESULT is a reading count, not minutes. Mirror InitializeAPI's
+    // reporting-interval scaling with ActiveDots as the base.
+    if Assigned(api) then
+      MAX_RESULT := Max(MAX_RESULT,
+        ActiveDots * Max(1, (INTERVAL_MINUTES + api.getReportingInterval - 1)
+                     div api.getReportingInterval))
+    else if MAX_RESULT < ActiveDots then
+      MAX_RESULT := ActiveDots;
     CreateTrendDots;
     BuildDotWindowMenu;
     FLastReadingsHash := 0;
