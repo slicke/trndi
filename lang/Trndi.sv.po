@@ -2795,6 +2795,10 @@ msgstr "Du måste ange ett lösenord"
 msgid "Extensions count: %d"
 msgstr "Tilläggsantal: %d"
 
+#: uconf.rs_ext_requests
+msgid "Requests: "
+msgstr ""
+
 #: uconf.rs_font_help
 msgid "You can change the font of the reading, time and arrow. Click on the respective item here to change the font"
 msgstr "Du kan ändra typsnittet på avläsning, tid och pil. Klicka på respektive här för att ändra typsnittet"
@@ -3245,3 +3249,4 @@ msgstr "Den höga gränsen måste vara större än den låga gränsen."
 #: uwizard.wz_test_no_support
 msgid "Connection testing is not supported for this service."
 msgstr "Anslutningstest stöds inte för denna tjänst."
+

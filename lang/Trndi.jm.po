@@ -2847,6 +2847,10 @@ msgstr "Du meste ange ett lôsen"
 msgid "Extensions count: %d"
 msgstr "Tilleggsantal: __PHad46520b-c2bd-41d2-93e4-f69806e260c7__"
 
+#: uconf.rs_ext_requests
+msgid "Requests: "
+msgstr ""
+
 #: uconf.rs_font_help
 msgid "You can change the font of the reading, time and arrow. Click on the respective item here to change the font"
 msgstr "Du kan endra typsnittet po avlesning, tid och pil. Klicka po respektive her for att endra typsnittet"

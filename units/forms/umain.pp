@@ -56,7 +56,8 @@ slicke.ux.alert, slicke.ux.native, usplash, Generics.Collections, trndi.funcs, t
 Trndi.native.base, trndi.shared, buildinfo, fpjson, jsonparser,
 slicke.systemmediacontroller,
 {$ifdef TrndiExt}
-trndi.Ext.Engine, trndi.Ext.jsfuncs, trndi.ext.promise, mormot.core.base,
+trndi.Ext.Engine, trndi.Ext.jsfuncs, trndi.ext.promise, trndi.ext.perm,
+trndi.ext.grant, mormot.core.base, mormot.lib.quickjs,
 {$endif}
 {$ifdef Darwin}
 CocoaAll, MacOSAll,

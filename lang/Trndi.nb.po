@@ -2659,6 +2659,10 @@ msgstr "Du må angi et passord"
 msgid "Extensions count: %d"
 msgstr "Antall utvidelser: %d"
 
+#: uconf.rs_ext_requests
+msgid "Requests: "
+msgstr ""
+
 #: uconf.rs_font_help
 msgid "You can change the font of the reading, time and arrow. Click on the respective item here to change the font"
 msgstr "Du kan endre skrifttypen for avlesning, tid og pil. Klikk på det respektive elementet her for å endre skrifttypen"

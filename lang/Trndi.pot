@@ -2660,6 +2660,10 @@ msgstr ""
 msgid "Extensions count: %d"
 msgstr ""
 
+#: uconf.rs_ext_requests
+msgid "Requests: "
+msgstr ""
+
 #: uconf.rs_font_help
 msgid "You can change the font of the reading, time and arrow. Click on the respective item here to change the font"
 msgstr ""

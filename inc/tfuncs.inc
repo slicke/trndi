@@ -40,7 +40,7 @@
 
 {$ifdef TrndiExt}
 uses 
-mormot.lib.quickjs, variants;
+ variants;
 
 // Utility function: Convert HTML color (#RRGGBB) to TColor
 function HTMLColorToTColor(const HTMLColor: string): TColor;

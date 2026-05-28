@@ -667,10 +667,6 @@ end;
 
 // Update remote on timer
 procedure TfBG.tMainTimer(Sender: TObject);
-{$ifdef TrndiExt}
-var
-  bgvals: JSValueRaw;
-{$endif}
 var
   nowTick: TDateTime;
   gapSeconds: int64;
@@ -692,11 +688,7 @@ begin
 
   updateReading;
   {$ifdef TrndiExt}
-  try
-    bgvals := getBGResults;
-    callFuncWithBGReadings('updateCallback', [DateTimeToStr(nowTick)]);
-  finally
-  end;
+  callFuncWithBGReadings('updateCallback', [DateTimeToStr(nowTick)]);
   {$endif}
 end;
 

@@ -64,6 +64,7 @@ Classes,
 trndi.native,
 trndi.ext.promise,
 trndi.ext.functions,
+trndi.ext.perm,
 fgl,
 ExtCtrls,
 fpTimer,
@@ -139,6 +140,22 @@ PJSTimerInfo = ^TJSTimerInfo;
   {** Map of timer ID to timer information. }
 TJSTimerMap = specialize TFPGMap<integer, PJSTimerInfo>;
 
+  {** Per-extension JavaScript context (Path B isolation).
+      Each .js file gets its own JSContext (sharing the runtime), so the
+      function registry exposed to one extension is decoupled from another. }
+PExtContextInfo = ^TExtContextInfo;
+TExtContextInfo = record
+  Ctx: JSContext;            // QuickJS context, owned by this record
+  FileName: string;          // absolute path to the .js file
+  ExtId: string;             // stable id derived from filename
+  Hash: string;              // sha256 of file contents (re-prompt on change)
+  DisplayName: string;       // parsed from header (first line)
+  Author: string;            // parsed from header ("(c) ..." line)
+  Granted: TExtPermSet;      // baseline + user-approved promptable perms
+end;
+
+TExtContextList = specialize TFPGList<PExtContextInfo>;
+
   {** Embedded JavaScript engine wrapper using QuickJS via mORMot bindings.
 
       Responsibilities:
@@ -181,6 +198,14 @@ private
   FJSTimers: TJSTimerMap;
     {** Counter for generating unique timer IDs. }
   FNextTimerID: integer;
+
+    {** Loaded per-extension contexts (Path B). Each user .js script lives in its own ctx. }
+  FExtContexts: TExtContextList;
+    {** Active "target" context for registration helpers (addFunction/addClassFunction/AddPromise).
+        nil means write to FContext (legacy/admin path). Set by BeginRegistration. }
+  FCurrentRegCtx: JSContext;
+    {** Active permissions for the current registration target. Used by *If gated helpers. }
+  FCurrentRegPerms: TExtPermSet;
 
   function GetOutput: RawUtf8;
   procedure SetOutput(const val: RawUtf8);
@@ -457,9 +482,65 @@ public
 
     {** Check whether a global function with @code(FuncName) exists in JS.
 
-        @param(FuncName Global function identifier)
-        @returns(True if a callable object is found) }
+        Looks across all loaded extension contexts; falls back to the admin
+        context (FContext) when no extensions are loaded. @returns(True if any
+        ext context (or FContext when none) exposes a callable with this name). }
   function FunctionExists(const FuncName: string): boolean;
+
+    {** Active target context for registration helpers. Falls back to FContext when
+        no extension is currently being provisioned. }
+  function CurrentRegistrationContext: JSContext;
+
+    {** True if the permission is granted for the registration currently in
+        progress. Always true outside a BeginRegistration block (legacy/admin path). }
+  function CanRegister(const grp: TExtPermGroup): boolean;
+
+    {** Create a fresh JSContext for an extension and prep it (intrinsics + Trndi class +
+        opaque pointer). Caller is responsible for invoking BeginRegistration / running
+        the gated registration block / ExtExecuteFile / EndRegistration. }
+  function NewExtensionContext(const ExtId, FileName, Hash, DisplayName,
+    Author: string; Granted: TExtPermSet): PExtContextInfo;
+
+    {** Set the registration target to a freshly-created extension context. Subsequent
+        addFunction/addClassFunction/AddPromise calls write into Ext.Ctx and are gated
+        by Ext.Granted via the *If helpers. }
+  procedure BeginRegistration(Ext: PExtContextInfo);
+
+    {** Restore the registration target to the admin/legacy default (FContext). }
+  procedure EndRegistration;
+
+    {** Convenience: register a Trndi class method only if @code(grp) is granted
+        in the current registration. }
+  procedure addClassFunctionIf(const grp: TExtPermGroup; const id: string;
+    const func: JSFunction; const argc: integer = 0);
+
+    {** Convenience: register a global JS function only if @code(grp) is granted. }
+  procedure addFunctionIf(const grp: TExtPermGroup; const id: string;
+    const func: JSFunction; const argc: integer = 0);
+
+    {** Convenience: register a promise-style function only if @code(grp) is granted. }
+  procedure AddPromiseIf(const grp: TExtPermGroup; const funcName: string;
+    cbfunc: JSCallbackFunction; minParams, maxParams: integer); overload;
+  procedure AddPromiseIf(const grp: TExtPermGroup; const funcName: string;
+    cbfunc: JSCallbackFunction; params: integer = 1); overload;
+
+    {** Load the file at Ext.FileName into Ext.Ctx and evaluate it. Returns the
+        evaluation result (or 'Error: ...' on failure, matching ExecuteFile). }
+  function ExtExecuteFile(Ext: PExtContextInfo): RawUtf8;
+
+    {** Iterate every loaded extension context. Lifetime of returned pointers
+        is owned by the engine; do not free. }
+  function ExtensionCount: integer;
+  function ExtensionAt(idx: integer): PExtContextInfo;
+
+    {** Register the engine-internal baseline (alert/confirm/prompt/select/log,
+        setTimeout/setInterval/clear*, console.*) into the current registration
+        context, gated by the current registration permissions.
+
+        Called from @code(Create) (writes into FContext with no perm filtering)
+        and from @code(NewExtensionContext) inside a Begin/End block (writes
+        into the extension's ctx, filtered by its grants). }
+  procedure RegisterEngineBaselineForCurrent;
 end;
 
   {** Exception type for JS-related errors with filename context. }
@@ -480,6 +561,10 @@ end;
 procedure SetGlobalShutdown;
 {** Check if application is shutting down }
 function IsGlobalShutdown: boolean;
+
+{** Check whether @code(ctx) exposes a callable named @code(FuncName) in its global scope.
+    Used by the per-extension broadcast paths in @code(inc/umain_ext.inc). }
+function ContextHasFunction(ctx: JSContext; const FuncName: string): boolean;
 
 var
   {** Class ID used for the 'Trndi' class in QuickJS context. }
@@ -718,30 +803,55 @@ begin
 end;
 
 {** Register a Promise entry point by exposing an async task wrapper in JS
-    and storing the associated Pascal callback with arity constraints. }
+    and storing the associated Pascal callback with arity constraints.
+    Writes the JS shim into the current registration context (FCurrentRegCtx
+    when provisioning an extension, otherwise FContext). The Pascal callback
+    record is stored on the shared promises list. }
 procedure TTrndiExtEngine.AddPromise(const funcName: string;
 cbfunc: JSCallbackFunction; minParams, maxParams: integer);
 var
   Data: JSValueConst;
   cb: PJSCallback;
+  ctx: JSContext;
 begin
+  ctx := CurrentRegistrationContext;
+  if ctx = nil then Exit;
+
   // Expose an async task function in global scope that will route to our callback
-  Data := JS_NewString(FContext, pansichar(funcname));
+  Data := JS_NewString(ctx, pansichar(funcname));
   JS_SetPropertyStr(
-    FContext,
-    JS_GetGlobalObject(FContext),
+    ctx,
+    JS_GetGlobalObject(ctx),
     pchar(funcname),
-    JS_NewCFunctionData(FContext, PJSCFunctionData(@AsyncTask), 1, 0, 1, @Data)
+    JS_NewCFunctionData(ctx, PJSCFunctionData(@AsyncTask), 1, 0, 1, @Data)
     );
 
-  // Track the Pascal callback and expected parameter range
-  New(cb);
-  cb^.func := funcname;
-  cb^.callback := cbfunc;
-  cb^.params.min := minParams;
-  cb^.params.max := maxParams;
+  // Track the Pascal callback and expected parameter range. Only add once —
+  // promises is keyed by name and re-registration is idempotent.
+  if findPromise(funcName) = nil then
+  begin
+    New(cb);
+    cb^.func := funcname;
+    cb^.callback := cbfunc;
+    cb^.params.min := minParams;
+    cb^.params.max := maxParams;
+    promises.Add(cb);
+  end;
+end;
 
-  promises.Add(cb);
+procedure TTrndiExtEngine.AddPromiseIf(const grp: TExtPermGroup;
+const funcName: string; cbfunc: JSCallbackFunction;
+minParams, maxParams: integer);
+begin
+  if CanRegister(grp) then
+    AddPromise(funcName, cbfunc, minParams, maxParams);
+end;
+
+procedure TTrndiExtEngine.AddPromiseIf(const grp: TExtPermGroup;
+const funcName: string; cbfunc: JSCallbackFunction; params: integer = 1);
+begin
+  if CanRegister(grp) then
+    AddPromise(funcName, cbfunc, params);
 end;
 
 {******************************************************************************
@@ -915,23 +1025,44 @@ begin
   FJSTimers := TJSTimerMap.Create;
   FNextTimerID := 0;
 
-  // Register base UI/log functions as both class and globals
-  addClassFunction('alert', ExtFunction(@JSDoAlert), 1);
-  addClassFunction('confirm', ExtFunction(@JSDoYesNo), 1);
-  addClassFunction('prompt', ExtFunction(@JSInput), 4);
-  addClassFunction('select', ExtFunction(@JSCombo), -1);
-  addClassFunction('log', ExtFunction(@JSDoLog), 1);
+  // Per-extension contexts (Path B). FCurrentRegCtx=nil routes legacy
+  // bootstrap registrations to FContext (admin/template context).
+  FExtContexts := TExtContextList.Create;
+  FCurrentRegCtx := nil;
+  FCurrentRegPerms := [];
 
-  addFunction('alert', ExtFunction(@JSDoAlert), 1);
-  
-  // Register timer functions (Modified: January 16, 2026)
-  addFunction('setTimeout', ExtFunction(@JSSetTimeout), 2);
-  addFunction('setInterval', ExtFunction(@JSSetInterval), 2);
-  addFunction('clearTimeout', ExtFunction(@JSClearTimer), 1);
-  addFunction('clearInterval', ExtFunction(@JSClearTimer), 1);
+  // Register baseline engine-internal functions into FContext (admin/template).
+  // Per-extension contexts will re-run this gated to their grants in NewExtensionContext.
+  RegisterEngineBaselineForCurrent;
+end;
 
-  // Provide a neutral console.log to avoid reference errors in scripts
-  RegisterConsoleLog(@FContext);
+{** Register UI/timer/console baseline. Uses CurrentRegistrationContext + CanRegister
+    so the same code path drives both the admin-context bootstrap and each
+    per-extension provisioning. }
+procedure TTrndiExtEngine.RegisterEngineBaselineForCurrent;
+var
+  ctx: JSContext;
+begin
+  ctx := CurrentRegistrationContext;
+  if ctx = nil then Exit;
+
+  // Trndi.alert/.confirm/.prompt/.select/.log and the bare alert() global → UI group.
+  addClassFunctionIf(epUI, 'alert',   ExtFunction(@JSDoAlert), 1);
+  addClassFunctionIf(epUI, 'confirm', ExtFunction(@JSDoYesNo), 1);
+  addClassFunctionIf(epUI, 'prompt',  ExtFunction(@JSInput),   4);
+  addClassFunctionIf(epUI, 'select',  ExtFunction(@JSCombo),  -1);
+  addClassFunctionIf(epUI, 'log',     ExtFunction(@JSDoLog),   1);
+  addFunctionIf     (epUI, 'alert',   ExtFunction(@JSDoAlert), 1);
+
+  // Timer family → timers group (baseline, always granted today).
+  addFunctionIf(epTimers, 'setTimeout',    ExtFunction(@JSSetTimeout),  2);
+  addFunctionIf(epTimers, 'setInterval',   ExtFunction(@JSSetInterval), 2);
+  addFunctionIf(epTimers, 'clearTimeout',  ExtFunction(@JSClearTimer),  1);
+  addFunctionIf(epTimers, 'clearInterval', ExtFunction(@JSClearTimer),  1);
+
+  // console.log/push/logs object — UI group. RegisterConsoleLog writes into ctx directly.
+  if CanRegister(epUI) then
+    RegisterConsoleLog(@ctx);
 end;
 
 {** Free context/resources, dispose registered callbacks, stop timer, and clear singleton. }
@@ -1054,6 +1185,24 @@ begin
     Dispose(cb);
   FreeAndNil(callbacks);
 
+  // Free per-extension contexts. Each ctx is allocated against FRuntime; we
+  // free them here while the runtime is still alive.
+  if Assigned(FExtContexts) then
+  try
+    for i := 0 to FExtContexts.Count - 1 do
+      if FExtContexts[i] <> nil then
+      begin
+        if FExtContexts[i]^.Ctx <> nil then
+        try
+          JS_FreeContext(FExtContexts[i]^.Ctx);
+        except
+        end;
+        Dispose(FExtContexts[i]);
+      end;
+    FreeAndNil(FExtContexts);
+  except
+  end;
+
   // Free auxiliary structures
   FreeAndNil(knownfunc);
 
@@ -1138,59 +1287,253 @@ end;
   Registration helpers and globals
 ******************************************************************************}
 
-{** Add a global JS function. }
-procedure TTrndiExtEngine.addFunction(const id: string; const func: JSFunction;
-const argc: integer = 0);
+{** Resolve the active registration target. During BeginRegistration..EndRegistration
+    this is the extension context being provisioned; otherwise it is FContext
+    (the admin/legacy bootstrap context). }
+function TTrndiExtEngine.CurrentRegistrationContext: JSContext;
 begin
-  FContext^.SetFunction([], pchar(id), func, argc);
+  if FCurrentRegCtx <> nil then
+    Result := FCurrentRegCtx
+  else
+    Result := FContext;
 end;
 
-{** Add a JS method under the 'Trndi' class. }
+{** Permission gate. Outside a BeginRegistration block all groups are
+    considered granted so legacy/internal registrations still work. }
+function TTrndiExtEngine.CanRegister(const grp: TExtPermGroup): boolean;
+begin
+  if FCurrentRegCtx = nil then
+    Exit(true);
+  Result := grp in FCurrentRegPerms;
+end;
+
+{** Add a global JS function. Writes into the current registration context. }
+procedure TTrndiExtEngine.addFunction(const id: string; const func: JSFunction;
+const argc: integer = 0);
+var
+  ctx: JSContext;
+begin
+  ctx := CurrentRegistrationContext;
+  if ctx = nil then Exit;
+  ctx^.SetFunction([], pchar(id), func, argc);
+end;
+
+{** Add a JS method under the 'Trndi' class in the current registration context. }
 procedure TTrndiExtEngine.addClassFunction(const id: string;
 const func: JSFunction; const argc: integer = 0);
 var
   this: JSValue;
+  ctx: JSContext;
 begin
-  if not FContext^.GetValue('Trndi', this) then
+  ctx := CurrentRegistrationContext;
+  if ctx = nil then Exit;
+  if not ctx^.GetValue('Trndi', this) then
   begin
     ExtError(uxdAuto, 'Cannot locate the Trndi class while initializing extensions');
     Exit;
   end;
 
-  FContext^.SetFunction(this, pchar(id), func, argc);
+  ctx^.SetFunction(this, pchar(id), func, argc);
 end;
 
-{** Create an empty global object named @code(name). }
+{** Gated variant: only register if the permission group is granted. }
+procedure TTrndiExtEngine.addClassFunctionIf(const grp: TExtPermGroup;
+const id: string; const func: JSFunction; const argc: integer = 0);
+begin
+  if CanRegister(grp) then
+    addClassFunction(id, func, argc);
+end;
+
+procedure TTrndiExtEngine.addFunctionIf(const grp: TExtPermGroup;
+const id: string; const func: JSFunction; const argc: integer = 0);
+begin
+  if CanRegister(grp) then
+    addFunction(id, func, argc);
+end;
+
+{** Create an empty global object named @code(name) in the current registration context. }
 procedure TTrndiExtEngine.CreateNewObject(const Name: string);
 var
   GlobalObj, JSObject: JSValueRaw;
+  ctx: JSContext;
 begin
-  GlobalObj := JS_GetGlobalObject(FContext);
-  JSObject := JS_NewObject(FContext);
-  JS_SetPropertyStr(FContext, GlobalObj, pansichar(Name), JSObject);
+  ctx := CurrentRegistrationContext;
+  if ctx = nil then Exit;
+  GlobalObj := JS_GetGlobalObject(ctx);
+  JSObject := JS_NewObject(ctx);
+  JS_SetPropertyStr(ctx, GlobalObj, pansichar(Name), JSObject);
   // Note: GlobalObj/JSObject lifetime managed by QuickJS; avoid freeing raw values improperly
 end;
 
-{** Set a global JS string variable. }
+{** Set a global JS string variable in the current registration context. }
 procedure TTrndiExtEngine.SetGlobalVariable(const VarName: RawUtf8;
 const Value: RawUtf8; const obj: string = '');
 var
   JValue, GlobalObj: JSValueRaw;
+  ctx: JSContext;
 begin
-  GlobalObj := JS_GetGlobalObject(FContext);
-  JValue := JS_NewString(FContext, pansichar(Value));
-  JS_SetPropertyStr(FContext, GlobalObj, pansichar(VarName), JValue);
+  ctx := CurrentRegistrationContext;
+  if ctx = nil then Exit;
+  GlobalObj := JS_GetGlobalObject(ctx);
+  JValue := JS_NewString(ctx, pansichar(Value));
+  JS_SetPropertyStr(ctx, GlobalObj, pansichar(VarName), JValue);
 end;
 
-{** Set a global JS int64 variable. }
+{** Set a global JS int64 variable in the current registration context. }
 procedure TTrndiExtEngine.SetGlobalVariable(const VarName: RawUtf8;
 const Value: int64; const obj: string = '');
 var
   GlobalObj, JValue: JSValueRaw;
+  ctx: JSContext;
 begin
-  GlobalObj := JS_GetGlobalObject(FContext);
-  JValue := JS_NewBigInt64(FContext, Value);
-  JS_SetPropertyStr(FContext, GlobalObj, pansichar(VarName), JValue);
+  ctx := CurrentRegistrationContext;
+  if ctx = nil then Exit;
+  GlobalObj := JS_GetGlobalObject(ctx);
+  JValue := JS_NewBigInt64(ctx, Value);
+  JS_SetPropertyStr(ctx, GlobalObj, pansichar(VarName), JValue);
+end;
+
+{******************************************************************************
+  Per-extension contexts (Path B isolation)
+******************************************************************************}
+
+function TTrndiExtEngine.ExtensionCount: integer;
+begin
+  if Assigned(FExtContexts) then
+    Result := FExtContexts.Count
+  else
+    Result := 0;
+end;
+
+function TTrndiExtEngine.ExtensionAt(idx: integer): PExtContextInfo;
+begin
+  if (not Assigned(FExtContexts)) or (idx < 0) or (idx >= FExtContexts.Count) then
+    Exit(nil);
+  Result := FExtContexts[idx];
+end;
+
+{** Create a fresh extension JSContext on the shared runtime, with intrinsics, the
+    'Trndi' class and the opaque engine pointer set up. The new context is appended
+    to FExtContexts and returned to the caller, which should call BeginRegistration
+    to set it as the active registration target. }
+function TTrndiExtEngine.NewExtensionContext(const ExtId, FileName, Hash,
+DisplayName, Author: string; Granted: TExtPermSet): PExtContextInfo;
+var
+  ctx: JSContext;
+  Info: PExtContextInfo;
+begin
+  Result := nil;
+  if FRuntime = nil then Exit;
+
+  ctx := JS_NewContext(FRuntime);
+  if ctx = nil then Exit;
+
+  // Wire the engine pointer so native callbacks can locate us from a ctx.
+  JS_SetContextOpaque(ctx, Self);
+
+  // Standard intrinsics so Promises/RegExp/Date work as in the legacy engine.
+  JS_AddIntrinsicPromise(ctx);
+  JS_AddIntrinsicRegExp(ctx);
+  JS_AddIntrinsicDate(ctx);
+
+  // Expose 'Trndi' constructor in this context's global scope so addClassFunction
+  // calls during provisioning can attach methods to Trndi.*
+  JS_SetPropertyStr(
+    ctx,
+    JS_GetGlobalObject(ctx),
+    'Trndi',
+    JS_NewCFunction2(ctx, PJSCFunction(@TrndiConstructor), 'Trndi', 0,
+      JS_CFUNC_constructor, 0)
+  );
+
+  New(Info);
+  Info^.Ctx := ctx;
+  Info^.FileName := FileName;
+  Info^.ExtId := ExtId;
+  Info^.Hash := Hash;
+  Info^.DisplayName := DisplayName;
+  Info^.Author := Author;
+  Info^.Granted := Granted;
+
+  FExtContexts.Add(Info);
+
+  // Provision engine-internal baselines (alert/confirm/prompt/select/log/timers/console)
+  // into this ctx, gated by Granted. Caller will follow up with BeginRegistration to
+  // register the umain-level Trndi.* methods and then ExtExecuteFile.
+  BeginRegistration(Info);
+  try
+    RegisterEngineBaselineForCurrent;
+  finally
+    EndRegistration;
+  end;
+
+  Result := Info;
+end;
+
+procedure TTrndiExtEngine.BeginRegistration(Ext: PExtContextInfo);
+begin
+  if Ext = nil then Exit;
+  FCurrentRegCtx := Ext^.Ctx;
+  FCurrentRegPerms := Ext^.Granted;
+end;
+
+procedure TTrndiExtEngine.EndRegistration;
+begin
+  FCurrentRegCtx := nil;
+  FCurrentRegPerms := [];
+end;
+
+{** Read the extension's file and evaluate it in its own context. Mirrors the
+    legacy ExecuteFile contract (error string starts with 'Error:'). }
+function TTrndiExtEngine.ExtExecuteFile(Ext: PExtContextInfo): RawUtf8;
+var
+  Script: RawUtf8;
+  FileStream: TFileStream;
+  StringStream: TStringStream;
+  EvalResult: JSValue;
+  ResultStr: pansichar;
+  err: RawUtf8;
+  ctx: JSContext;
+begin
+  Result := '';
+  if (Ext = nil) or IsGlobalShutdown then Exit;
+  ctx := Ext^.Ctx;
+  if ctx = nil then Exit;
+
+  if not FileExists(Ext^.FileName) then
+    raise Exception.CreateFmt(sExtFile, [sExtFile, Ext^.FileName]);
+
+  FileStream := TFileStream.Create(Ext^.FileName, fmOpenRead or fmShareDenyWrite);
+  StringStream := TStringStream.Create;
+  try
+    StringStream.CopyFrom(FileStream, FileStream.Size);
+    Script := StringStream.DataString;
+  finally
+    StringStream.Free;
+    FileStream.Free;
+  end;
+
+  FOutput := '';
+  EvalResult := ctx^.Eval(Script, ExtractFileName(Ext^.FileName),
+    JS_EVAL_TYPE_GLOBAL, err);
+  if EvalResult.IsException then
+  try
+    ExtError(uxdAuto, 'Error loading', err);
+    ResultStr := JS_ToCString(ctx, JS_GetException(ctx));
+    Result := 'Error: ' + ResultStr + err;
+    JS_FreeCString(ctx, ResultStr);
+    ExtError(uxdAuto, analyze(ctx, @evalresult));
+  except
+    on E: Exception do
+      ExtError(uxdAuto, 'An extension''s code resulted in an error: ' + e.message);
+  end
+  else
+  begin
+    ResultStr := JS_ToCString(ctx, EvalResult.Raw);
+    Result := ResultStr;
+    JS_FreeCString(ctx, ResultStr);
+  end;
+  ctx^.Free(EvalResult);
 end;
 
 {******************************************************************************
@@ -1275,8 +1618,9 @@ begin
   FContext^.Free(EvalResult);
 end;
 
-{** Call a global JS function with string arguments; return the result as UTF-8. }
-function TTrndiExtEngine.CallFunction(const FuncName: RawUtf8;
+{** Call @code(FuncName) on @code(ctx) with string arguments. Returns the call
+    result stringified, or '' if the function is missing/not callable. }
+function CallStringArgsInContext(ctx: JSContext; const FuncName: RawUtf8;
 const Args: JSArray): RawUtf8;
 var
   GlobalObj, FuncObj, RetVal: JSValueRaw;
@@ -1284,61 +1628,67 @@ var
   i: integer;
   StrResult: pansichar;
 begin
-  // Safety check: don't attempt calls during shutdown or if context is invalid
-  if IsExtShuttingDown or (FContext = nil) or (FRuntime = nil) then
-    Exit('');
-
-  if not TTrndiExtEngine.Instance.FunctionExists(funcName) then
-    Exit('');
-
   Result := '';
-  GlobalObj := JS_GetGlobalObject(FContext);
+  if ctx = nil then Exit;
+  if not ContextHasFunction(ctx, string(FuncName)) then Exit;
 
-  // Retrieve function from global object
-  FuncObj := JS_GetPropertyStr(FContext, GlobalObj, pchar(FuncName));
-
-  // Ensure it's callable
-  if not JS_IsFunction(FContext, FuncObj) then
+  GlobalObj := JS_GetGlobalObject(ctx);
+  FuncObj := JS_GetPropertyStr(ctx, GlobalObj, pchar(FuncName));
+  if not JS_IsFunction(ctx, FuncObj) then
   begin
-    JS_Free(FContext, @GlobalObj);
-    JS_Free(FContext, @FuncObj);
-    ExtError(uxdAuto, 'No such function or it is not callable: ' + FuncName);
-    Exit('');
+    JS_Free(ctx, @GlobalObj);
+    JS_Free(ctx, @FuncObj);
+    Exit;
   end;
 
-  // Build argument values
   SetLength(ArgArray, Length(Args));
   for i := 0 to High(Args) do
-    ArgArray[i] := JS_NewString(FContext, pchar(Args[i]));
+    ArgArray[i] := JS_NewString(ctx, pchar(Args[i]));
 
-  // Invoke function
-  RetVal := JS_Call(FContext, FuncObj, GlobalObj, Length(ArgArray), @ArgArray[0]);
-
-  if JS_IsError(FContext, RetVal) then
+  RetVal := JS_Call(ctx, FuncObj, GlobalObj, Length(ArgArray), @ArgArray[0]);
+  if JS_IsError(ctx, RetVal) then
   begin
-    ExtError(uxdAuto, 'Cannot call Extension function ' + funcname);
-    js_std_dump_error(FContext);
-    Result := '';
-  end
-  else
-  begin
-    // Convert return value to string if possible
-    StrResult := JS_ToCString(FContext, RetVal);
-    if StrResult <> nil then
-    begin
-      Result := StrResult;              // copy into our Pascal string
-      JS_FreeCString(FContext, StrResult);
-    end
-    else
-      Result := '';                     // not convertible to string
+    js_std_dump_error(ctx);
+    Exit;
   end;
 
-  // NOTE: Consider freeing RetVal / ArgArray values if ownership rules require it.
+  StrResult := JS_ToCString(ctx, RetVal);
+  if StrResult <> nil then
+  begin
+    Result := StrResult;
+    JS_FreeCString(ctx, StrResult);
+  end;
 end;
 
-{** Call a global JS function with integer arguments; return the result as UTF-8.
-    Note: Integers are marshalled as JS number (Int32). If you need 64-bit, add an overload using JS_NewBigInt64. }
+{** Call a global JS function with string arguments; broadcasts across every
+    loaded extension context. Returns the last non-empty result (last-writer-wins
+    semantics for callbacks like clockView). }
 function TTrndiExtEngine.CallFunction(const FuncName: RawUtf8;
+const Args: JSArray): RawUtf8;
+var
+  i: integer;
+  partial: RawUtf8;
+begin
+  Result := '';
+  if IsExtShuttingDown or (FRuntime = nil) then Exit;
+
+  if Assigned(FExtContexts) and (FExtContexts.Count > 0) then
+  begin
+    for i := 0 to FExtContexts.Count - 1 do
+      if FExtContexts[i] <> nil then
+      begin
+        partial := CallStringArgsInContext(FExtContexts[i]^.Ctx, FuncName, Args);
+        if partial <> '' then Result := partial;
+      end;
+    Exit;
+  end;
+
+  // Legacy fallback: no extensions loaded.
+  Result := CallStringArgsInContext(FContext, FuncName, Args);
+end;
+
+{** Call @code(FuncName) on @code(ctx) with integer arguments. }
+function CallIntArgsInContext(ctx: JSContext; const FuncName: RawUtf8;
 const Args: array of integer): RawUtf8;
 var
   GlobalObj, FuncObj, RetVal: JSValueRaw;
@@ -1346,190 +1696,185 @@ var
   i: integer;
   StrResult: pansichar;
 begin
-  // Safety check: don't attempt calls during shutdown or if context is invalid
-  if IsExtShuttingDown or (FContext = nil) or (FRuntime = nil) then
-    Exit('');
-
-  if not TTrndiExtEngine.Instance.FunctionExists(funcName) then
-    Exit('');
-
   Result := '';
-  GlobalObj := JS_GetGlobalObject(FContext);
+  if ctx = nil then Exit;
+  if not ContextHasFunction(ctx, string(FuncName)) then Exit;
 
-  // Retrieve function from global object
-  FuncObj := JS_GetPropertyStr(FContext, GlobalObj, pchar(FuncName));
-
-  // Ensure it's callable
-  if not JS_IsFunction(FContext, FuncObj) then
+  GlobalObj := JS_GetGlobalObject(ctx);
+  FuncObj := JS_GetPropertyStr(ctx, GlobalObj, pchar(FuncName));
+  if not JS_IsFunction(ctx, FuncObj) then
   begin
-    JS_Free(FContext, @GlobalObj);
-    JS_Free(FContext, @FuncObj);
-    ExtError(uxdAuto, 'No such function or it is not callable: ' + FuncName);
-    Exit('');
+    JS_Free(ctx, @GlobalObj);
+    JS_Free(ctx, @FuncObj);
+    Exit;
   end;
 
-  // Build integer argument values (use BigInt64 for lack of Int32 constructor in bindings)
   SetLength(ArgArray, Length(Args));
   for i := 0 to High(Args) do
-    ArgArray[i] := JS_NewBigInt64(FContext, Args[i]);
+    ArgArray[i] := JS_NewBigInt64(ctx, Args[i]);
 
-  // Invoke function
-  RetVal := JS_Call(FContext, FuncObj, GlobalObj, Length(ArgArray), @ArgArray[0]);
+  RetVal := JS_Call(ctx, FuncObj, GlobalObj, Length(ArgArray), @ArgArray[0]);
+  if JS_IsError(ctx, RetVal) then
+  begin
+    js_std_dump_error(ctx);
+    Exit;
+  end;
 
-  if JS_IsError(FContext, RetVal) then
+  StrResult := JS_ToCString(ctx, RetVal);
+  if StrResult <> nil then
   begin
-    ExtError(uxdAuto, 'Cannot call Extension function ' + funcname);
-    js_std_dump_error(FContext);
-    Result := '';
-  end
-  else
-  begin
-    // Convert return value to string if possible
-    StrResult := JS_ToCString(FContext, RetVal);
-    if StrResult <> nil then
-    begin
-      Result := StrResult;              // copy into our Pascal string
-      JS_FreeCString(FContext, StrResult);
-    end
-    else
-      Result := '';                     // not convertible to string
+    Result := StrResult;
+    JS_FreeCString(ctx, StrResult);
   end;
 end;
 
-{** Call a global JS function with mixed Pascal arguments (array of const).
-    Supported TVarRec kinds are mapped as:
-    - vtInteger, vtShortInt, vtSmallint, vtLongint: JS int32
-    - vtInt64: JS BigInt64
-    - vtBoolean: JS boolean (fallback to 'true'/'false' string if no bool ctor)
-    - vtExtended, vtSingle, vtDouble, vtCurrency: JS number (string fallback if no float ctor)
-    - vtChar, vtPChar, vtAnsiString, vtUnicodeString, vtWideString, vtString: JS string
-    Others are stringified via Pascal's default conversions. }
+{** Call a global JS function with integer arguments; broadcasts across loaded
+    extension contexts. Integers are marshalled as JS BigInt64. }
 function TTrndiExtEngine.CallFunction(const FuncName: RawUtf8;
+const Args: array of integer): RawUtf8;
+var
+  i: integer;
+  partial: RawUtf8;
+begin
+  Result := '';
+  if IsExtShuttingDown or (FRuntime = nil) then Exit;
+
+  if Assigned(FExtContexts) and (FExtContexts.Count > 0) then
+  begin
+    for i := 0 to FExtContexts.Count - 1 do
+      if FExtContexts[i] <> nil then
+      begin
+        partial := CallIntArgsInContext(FExtContexts[i]^.Ctx, FuncName, Args);
+        if partial <> '' then Result := partial;
+      end;
+    Exit;
+  end;
+
+  Result := CallIntArgsInContext(FContext, FuncName, Args);
+end;
+
+{** Marshal an array-of-const into JSValueRaw values bound to @code(ctx) and call
+    @code(FuncName). Returns the stringified result or '' on absence/error. }
+function CallVarRecArgsInContext(ctx: JSContext; const FuncName: RawUtf8;
 const Args: array of const): RawUtf8;
 var
   GlobalObj, FuncObj, RetVal: JSValueRaw;
   ArgArray: array of JSValueRaw;
   i: integer;
   StrResult: pansichar;
-  tmpStrs: array of RawUtf8; // hold conversions' lifetime until call returns
+  tmpStrs: array of RawUtf8;
   s: RawUtf8;
   tmpv: JSValue;
 begin
-  // Safety check: don't attempt calls during shutdown or if context is invalid
-  if IsExtShuttingDown or (FContext = nil) or (FRuntime = nil) then
-    Exit('');
-
-  if not TTrndiExtEngine.Instance.FunctionExists(funcName) then
-    Exit('');
-
   Result := '';
-  GlobalObj := JS_GetGlobalObject(FContext);
+  if ctx = nil then Exit;
+  if not ContextHasFunction(ctx, string(FuncName)) then Exit;
 
-  // Retrieve function from global object
-  FuncObj := JS_GetPropertyStr(FContext, GlobalObj, pchar(FuncName));
-
-  // Ensure it's callable
-  if not JS_IsFunction(FContext, FuncObj) then
+  GlobalObj := JS_GetGlobalObject(ctx);
+  FuncObj := JS_GetPropertyStr(ctx, GlobalObj, pchar(FuncName));
+  if not JS_IsFunction(ctx, FuncObj) then
   begin
-    JS_Free(FContext, @GlobalObj);
-    JS_Free(FContext, @FuncObj);
-    ExtError(uxdAuto, 'No such function or it is not callable: ' + FuncName);
-    Exit('');
+    JS_Free(ctx, @GlobalObj);
+    JS_Free(ctx, @FuncObj);
+    Exit;
   end;
 
-  // Build mixed argument values
   SetLength(ArgArray, Length(Args));
   SetLength(tmpStrs, Length(Args));
   for i := 0 to High(Args) do
     case Args[i].VType of
-      // Numbers
     vtInteger:
     begin
       tmpv.From32(Args[i].VInteger);
       ArgArray[i] := tmpv.Raw;
     end;
-
     vtInt64:
     begin
       tmpv.from64(Args[i].VInt64^);
       ArgArray[i] := tmpv.Raw;
     end;
-
     vtExtended:
     begin
       tmpv.FromFloat(Args[i].VExtended^);
       ArgArray[i] := tmpv.Raw;
     end;
-
-      // Booleans
     vtBoolean:
     begin
       tmpv.From(Args[i].VBoolean);
       ArgArray[i] := tmpv.Raw;
     end;
-
-      // Strings
     vtChar:
     begin
       s := RawUtf8(Args[i].VChar);
       tmpStrs[i] := s;
-      ArgArray[i] := JS_NewString(FContext, pchar(tmpStrs[i]));
+      ArgArray[i] := JS_NewString(ctx, pchar(tmpStrs[i]));
     end;
-
     vtPChar:
-      ArgArray[i] := JS_NewString(FContext, Args[i].VPChar);
-
+      ArgArray[i] := JS_NewString(ctx, Args[i].VPChar);
     vtAnsiString:
     begin
       s := RawUtf8(ansistring(Args[i].VAnsiString));
       tmpStrs[i] := s;
-      ArgArray[i] := JS_NewString(FContext, pchar(tmpStrs[i]));
+      ArgArray[i] := JS_NewString(ctx, pchar(tmpStrs[i]));
     end;
-
     vtUnicodeString, vtWideString:
     begin
       s := RawUtf8(unicodestring(Args[i].VUnicodeString));
       tmpStrs[i] := s;
-      ArgArray[i] := JS_NewString(FContext, pchar(tmpStrs[i]));
+      ArgArray[i] := JS_NewString(ctx, pchar(tmpStrs[i]));
     end;
-
     vtString:
     begin
       s := RawUtf8(shortstring(Args[i].VString^));
       tmpStrs[i] := s;
-      ArgArray[i] := JS_NewString(FContext, pchar(tmpStrs[i]));
+      ArgArray[i] := JS_NewString(ctx, pchar(tmpStrs[i]));
     end;
-
     else
     begin
-        // Fallback: stringify unsupported types
       s := RawUtf8('{unsupported}');
       tmpStrs[i] := s;
-      ArgArray[i] := JS_NewString(FContext, pchar(tmpStrs[i]));
+      ArgArray[i] := JS_NewString(ctx, pchar(tmpStrs[i]));
     end;
     end;
 
-  // Invoke function
-  RetVal := JS_Call(FContext, FuncObj, GlobalObj, Length(ArgArray), @ArgArray[0]);
-
-  if JS_IsError(FContext, RetVal) then
+  RetVal := JS_Call(ctx, FuncObj, GlobalObj, Length(ArgArray), @ArgArray[0]);
+  if JS_IsError(ctx, RetVal) then
   begin
-    ExtError(uxdAuto, 'Cannot call Extension function ' + funcname);
-    js_std_dump_error(FContext);
-    Result := '';
-  end
-  else
-  begin
-    // Convert return value to string if possible
-    StrResult := JS_ToCString(FContext, RetVal);
-    if StrResult <> nil then
-    begin
-      Result := StrResult;              // copy into our Pascal string
-      JS_FreeCString(FContext, StrResult);
-    end
-    else
-      Result := '';                     // not convertible to string
+    js_std_dump_error(ctx);
+    Exit;
   end;
+  StrResult := JS_ToCString(ctx, RetVal);
+  if StrResult <> nil then
+  begin
+    Result := StrResult;
+    JS_FreeCString(ctx, StrResult);
+  end;
+end;
+
+{** Call a global JS function with mixed Pascal arguments (array of const).
+    Broadcasts across all loaded extension contexts; returns the last non-empty
+    result (last-writer-wins for callbacks with return values). }
+function TTrndiExtEngine.CallFunction(const FuncName: RawUtf8;
+const Args: array of const): RawUtf8;
+var
+  i: integer;
+  partial: RawUtf8;
+begin
+  Result := '';
+  if IsExtShuttingDown or (FRuntime = nil) then Exit;
+
+  if Assigned(FExtContexts) and (FExtContexts.Count > 0) then
+  begin
+    for i := 0 to FExtContexts.Count - 1 do
+      if FExtContexts[i] <> nil then
+      begin
+        partial := CallVarRecArgsInContext(FExtContexts[i]^.Ctx, FuncName, Args);
+        if partial <> '' then Result := partial;
+      end;
+    Exit;
+  end;
+
+  Result := CallVarRecArgsInContext(FContext, FuncName, Args);
 end;
 
 {** Build a JS Array value from an array of const. }
@@ -1846,33 +2191,57 @@ end;
   Runtime jobs processing and discovery
 ******************************************************************************}
 
-{** Pump the QuickJS job queue (Promises/microtasks) on each timer tick. }
+{** Pump the QuickJS job queue (Promises/microtasks) on each timer tick.
+    JS_ExecutePendingJob writes the context that handled the job into its
+    second arg, so we feed it a local — passing &FContext would overwrite the
+    admin context with whichever ext ctx ran the job. }
 procedure TTrndiExtEngine.OnJSTimer(Sender: TObject);
+var
+  runCtx: JSContext;
 begin
-  // Don't process jobs during shutdown
-  if IsExtShuttingDown or (FRuntime = nil) or (FContext = nil) then
+  if IsExtShuttingDown or (FRuntime = nil) then
     Exit;
 
+  runCtx := FContext;
   while JS_IsJobPending(FRuntime) do
-    if JS_ExecutePendingJob(FRuntime, @FContext) <= 0 then
-      Break; // Exit when the queue is empty or on error
+    if JS_ExecutePendingJob(FRuntime, @runCtx) <= 0 then
+      Break;
 end;
 
-{** Determine whether a global function exists and is callable. }
-function TTrndiExtEngine.FunctionExists(const FuncName: string): boolean;
+{** Helper: does a specific context expose @code(FuncName) as a callable? }
+function ContextHasFunction(ctx: JSContext; const FuncName: string): boolean;
 var
   Func: JSValue;
-  res: boolean;
 begin
-  // Safety check: don't attempt calls during shutdown or if context is invalid
-  if IsExtShuttingDown or (FContext = nil) or (FRuntime = nil) then
+  if ctx = nil then Exit(false);
+  if not ctx^.GetValue(pchar(FuncName), func) then
+    Exit(false);
+  Result := func.IsObject;
+end;
+
+{** Determine whether a global function exists and is callable.
+
+    With Path B isolation, user scripts live in per-extension contexts. This
+    method returns true if @i(any) loaded extension context exposes the function.
+    When no extensions are loaded it falls back to the admin/template context
+    (FContext) so engine-internal/test paths continue to work. }
+function TTrndiExtEngine.FunctionExists(const FuncName: string): boolean;
+var
+  i: integer;
+begin
+  if IsExtShuttingDown or (FRuntime = nil) then
     Exit(false);
 
-  res := FContext^.GetValue(pchar(FuncName), func);
-  if res = false then
-    Result := res
-  else
-    Result := func.IsObject;
+  if Assigned(FExtContexts) and (FExtContexts.Count > 0) then
+  begin
+    for i := 0 to FExtContexts.Count - 1 do
+      if (FExtContexts[i] <> nil) and ContextHasFunction(FExtContexts[i]^.Ctx, FuncName) then
+        Exit(true);
+    Exit(false);
+  end;
+
+  // Legacy fallback when no per-extension contexts are loaded.
+  Result := ContextHasFunction(FContext, FuncName);
 end;
 
 {******************************************************************************

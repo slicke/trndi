@@ -46,7 +46,7 @@ interface
 
 uses
   Classes, SysUtils, trndi.ext.functions, trndi.types, slicke.ux.alert,
-  trndi.api, trndi.ext.engine,
+  trndi.api, trndi.ext.engine, trndi.ext.perm,
   Trndi.Native, fpjson,
   Dialogs;
 
@@ -68,6 +68,12 @@ type
 
     constructor Create(cgm: TrndiAPI);
 
+    {** Register the gated promise-style helpers (asyncGet/jsonGet/runCMD/setLimits/
+        setLevelColor/querySvc/bgDump) into the engine's current registration context.
+        Must be called inside a TTrndiExtEngine.BeginRegistration/EndRegistration
+        block so each call is filtered against that extension's grants. }
+    procedure RegisterForCurrent;
+
   private
     tapi: TrndiAPI;
     procedure ShowMsg(const str: string);
@@ -75,21 +81,25 @@ type
 
 implementation
 
-// Create this function JS handler
+// Create this function JS handler. With Path B per-extension contexts, this no
+// longer registers anything globally; promises are registered per-extension via
+// RegisterForCurrent during LoadExtensions.
 constructor TJSFuncs.Create(cgm: TrndiAPI);
 begin
   tapi := cgm;
+end;
 
+procedure TJSFuncs.RegisterForCurrent;
+begin
   with TTrndiExtEngine.Instance do
   begin
-    // Register the functions in JS
-    AddPromise('bgDump', JSCallbackFunction(@bgDump));
-    AddPromise('asyncGet', JSCallbackFunction(@asyncGet));
-    AddPromise('jsonGet', JSCallbackFunction(@jsonGet), 2);
-    AddPromise('runCMD', JSCallbackFunction(@asyncGet));
-    AddPromise('querySvc', JSCallbackFunction(@querySvc));
-    AddPromise('setLimits', JSCallbackFunction(@setLimits), 2, 5);
-    AddPromise('setLevelColor', JSCallbackFunction(@setLimits), 3, 6);
+    AddPromiseIf(epData,     'bgDump',        JSCallbackFunction(@bgDump));
+    AddPromiseIf(epNet,      'asyncGet',      JSCallbackFunction(@asyncGet));
+    AddPromiseIf(epNet,      'jsonGet',       JSCallbackFunction(@jsonGet), 2);
+    AddPromiseIf(epExec,     'runCMD',        JSCallbackFunction(@asyncGet));
+    AddPromiseIf(epData,     'querySvc',      JSCallbackFunction(@querySvc));
+    AddPromiseIf(epSettings, 'setLimits',     JSCallbackFunction(@setLimits), 2, 5);
+    AddPromiseIf(epUI,       'setLevelColor', JSCallbackFunction(@setLimits), 3, 6);
   end;
 end;
 

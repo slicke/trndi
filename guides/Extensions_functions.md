@@ -1,6 +1,19 @@
 # Trndi Extensions API
 Trndi supports ES2023, and provides these functions in addition to it:
 
+> **Permissions:** Each function belongs to a permission group. `data`, `ui`,
+> and `timers` are always granted — anything else (`net`, `exec`, `settings`)
+> must be declared in your extension's `@perms` header and approved by the
+> user. See [Extensions.md](Extensions.md#permissions) for the full mapping.
+>
+> Group quick-reference for the functions on this page:
+> - **`data`**: `getReading`, `getCurrentReading`, `getLimits`, `getStatistics`, `getBasalRate`, `getUnit`, `getLocale`, `getBuild`, `getCurrentAPI`, `getCurrentUser`, `getCurrentNickname`, `predictReadings`
+> - **`ui`**: `alert`, `confirm`, `prompt`, `select`, `log`, `console.*`, `htmlMsg`, `htmlDlg`, `htmlYesNo`, `attention`, `playSound`, `sayText`, `setBadgeSize`, `setDotSize`, `setDotAdjust`, `setLevelColor`, `setClockInterval`, `uxProp`
+> - **`timers`**: `setTimeout`, `setInterval`, `clearTimeout`, `clearInterval`
+> - **`net`** (declare): `asyncGet`, `jsonGet`
+> - **`exec`** (declare): `runCMD`
+> - **`settings`** (declare): `getSetting`, `setSetting`, `setLimits`, `setTimeAndRange`, `setOverrideThresholdMinutes`
+
 ## Contents
 
  - [Trndi functions](#trndi-functions)
