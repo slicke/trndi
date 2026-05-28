@@ -441,8 +441,15 @@ begin
   lInternet.AutoSize := false;
   lInternet.WordWrap := false;
   badgeTextPadding := Max(18, round(ClientWidth * 0.02));
-  lInternet.Canvas.Font.Assign(lInternet.Font);
-  contentWidth := lInternet.Canvas.TextWidth(DisplayStatus) + badgeTextPadding;
+  // Measure via temp TBitmap — TLabel.Canvas outside paint SIGABRTs on Cocoa.
+  with TBitmap.Create do
+  try
+    SetSize(1, 1);
+    Canvas.Font.Assign(lInternet.Font);
+    contentWidth := Canvas.TextWidth(DisplayStatus) + badgeTextPadding;
+  finally
+    Free;
+  end;
   maxBadgeWidth := Max(96, round(ClientWidth * 0.42));
   lInternet.Width := Min(maxBadgeWidth, Max(96, contentWidth));
   lInternet.Height := Max(28, round(ClientHeight * 0.058));

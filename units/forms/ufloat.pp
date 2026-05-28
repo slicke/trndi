@@ -158,6 +158,7 @@ var
   MaxWidth, MaxHeight: integer;
   TextWidth, TextHeight: integer;
   OptimalSize: integer;
+  bmp: TBitmap;
 begin
   // Check basic visibility conditions
   if not ALabel.Visible then
@@ -192,21 +193,31 @@ begin
   High := 150;
   OptimalSize := 1;
 
-  while Low <= High do
-  begin
-    Mid := (Low + High) div 2;
-    ALabel.Font.Size := Mid;
+  // Measure on a temp TBitmap. TLabel.Canvas outside paint is unsafe on the
+  // Cocoa widgetset (TCocoaContext.SetAntialiasing SIGABRTs on a nil ctx).
+  bmp := TBitmap.Create;
+  try
+    bmp.SetSize(1, 1);
+    bmp.Canvas.Font.Assign(ALabel.Font);
 
-    TextWidth := ALabel.Canvas.TextWidth(ALabel.Caption);
-    TextHeight := ALabel.Canvas.TextHeight(ALabel.Caption);
-
-    if (TextWidth <= MaxWidth) and (TextHeight <= MaxHeight) then
+    while Low <= High do
     begin
-      OptimalSize := Mid;
-      Low := Mid + 1;
-    end
-    else
-      High := Mid - 1;
+      Mid := (Low + High) div 2;
+      bmp.Canvas.Font.Size := Mid;
+
+      TextWidth := bmp.Canvas.TextWidth(ALabel.Caption);
+      TextHeight := bmp.Canvas.TextHeight(ALabel.Caption);
+
+      if (TextWidth <= MaxWidth) and (TextHeight <= MaxHeight) then
+      begin
+        OptimalSize := Mid;
+        Low := Mid + 1;
+      end
+      else
+        High := Mid - 1;
+    end;
+  finally
+    bmp.Free;
   end;
 
   // Set the optimal font size

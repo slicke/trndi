@@ -460,8 +460,16 @@ begin
   lTir.BringToFront;
   lTir.AutoSize := false;
   lTir.font := lAgo.Font;
-  lTir.Height := lTir.Canvas.TextHeight(lTir.Caption);
-  lTir.Width := lTir.Canvas.TextWidth(lTir.Caption);
+  // Measure on a temp TBitmap — TLabel.Canvas outside paint SIGABRTs on Cocoa.
+  with TBitmap.Create do
+  try
+    SetSize(1, 1);
+    Canvas.Font.Assign(lTir.Font);
+    lTir.Height := Canvas.TextHeight(lTir.Caption);
+    lTir.Width := Canvas.TextWidth(lTir.Caption);
+  finally
+    Free;
+  end;
 
   {$if DEFINED(LCLQt6) AND DEFINED(X_LINUXBSD)}
   if isWSL then
@@ -563,6 +571,7 @@ var
   OptimalSize: integer;
   scaleFactor: single;
   oldW, oldH: integer;
+  bmp: TBitmap;
 begin
   if not ALabel.Visible then
     ALabel.Visible := true;
@@ -627,32 +636,44 @@ begin
   High := 150;
   OptimalSize := 1;
 
-  while Low <= High do
-  begin
-    Mid := (Low + High) div 2;
-    ALabel.Font.Size := Mid;
+  // Measure on a temp TBitmap. TLabel.Canvas outside paint is unsafe on the
+  // Cocoa widgetset (TCocoaContext.SetAntialiasing SIGABRTs on a nil ctx).
+  bmp := TBitmap.Create;
+  try
+    bmp.SetSize(1, 1);
+    bmp.Canvas.Font.Assign(ALabel.Font);
 
-    TextWidth := ALabel.Canvas.TextWidth(ALabel.Caption);
-    TextHeight := ALabel.Canvas.TextHeight(ALabel.Caption);
-
-    if (TextWidth <= MaxWidth) and (TextHeight <= MaxHeight) then
+    while Low <= High do
     begin
-      OptimalSize := Mid;
-      Low := Mid + 1;
-    end
-    else
-      High := Mid - 1;
-  end;
+      Mid := (Low + High) div 2;
+      bmp.Canvas.Font.Size := Mid;
 
-  ALabel.Font.Size := OptimalSize;
-  TextHeight := ALabel.Canvas.TextHeight(ALabel.Caption);
-  while ((TextWidth > MaxWidth) or (TextHeight > MaxHeight)) and (ALabel.Font.Size > 1) do
-  begin
-    i := ALabel.Font.Size;
-    Dec(i);
-    ALabel.FOnt.size := i;
-    TextWidth := ALabel.Canvas.TextWidth(ALabel.Caption);
-    TextHeight := ALabel.Canvas.TextHeight(ALabel.Caption);
+      TextWidth := bmp.Canvas.TextWidth(ALabel.Caption);
+      TextHeight := bmp.Canvas.TextHeight(ALabel.Caption);
+
+      if (TextWidth <= MaxWidth) and (TextHeight <= MaxHeight) then
+      begin
+        OptimalSize := Mid;
+        Low := Mid + 1;
+      end
+      else
+        High := Mid - 1;
+    end;
+
+    ALabel.Font.Size := OptimalSize;
+    bmp.Canvas.Font.Size := OptimalSize;
+    TextHeight := bmp.Canvas.TextHeight(ALabel.Caption);
+    while ((TextWidth > MaxWidth) or (TextHeight > MaxHeight)) and (ALabel.Font.Size > 1) do
+    begin
+      i := ALabel.Font.Size;
+      Dec(i);
+      ALabel.Font.Size := i;
+      bmp.Canvas.Font.Size := i;
+      TextWidth := bmp.Canvas.TextWidth(ALabel.Caption);
+      TextHeight := bmp.Canvas.TextHeight(ALabel.Caption);
+    end;
+  finally
+    bmp.Free;
   end;
 
   oldW := ALabel.Width;
