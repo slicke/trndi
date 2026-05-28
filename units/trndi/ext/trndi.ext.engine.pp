@@ -1455,17 +1455,25 @@ begin
   Info^.Author := Author;
   Info^.Granted := Granted;
 
-  FExtContexts.Add(Info);
-
   // Provision engine-internal baselines (alert/confirm/prompt/select/log/timers/console)
   // into this ctx, gated by Granted. Caller will follow up with BeginRegistration to
   // register the umain-level Trndi.* methods and then ExtExecuteFile.
-  BeginRegistration(Info);
+  // Only publish into FExtContexts after baseline provisioning succeeds, so
+  // FunctionExists/broadcast loops never observe a half-initialized context.
   try
-    RegisterEngineBaselineForCurrent;
-  finally
-    EndRegistration;
+    BeginRegistration(Info);
+    try
+      RegisterEngineBaselineForCurrent;
+    finally
+      EndRegistration;
+    end;
+  except
+    JS_FreeContext(ctx);
+    Dispose(Info);
+    raise;
   end;
+
+  FExtContexts.Add(Info);
 
   Result := Info;
 end;
@@ -1634,29 +1642,33 @@ begin
 
   GlobalObj := JS_GetGlobalObject(ctx);
   FuncObj := JS_GetPropertyStr(ctx, GlobalObj, pchar(FuncName));
-  if not JS_IsFunction(ctx, FuncObj) then
-  begin
-    JS_Free(ctx, @GlobalObj);
-    JS_Free(ctx, @FuncObj);
-    Exit;
-  end;
+  RetVal := JS_UNDEFINED;
+  try
+    if not JS_IsFunction(ctx, FuncObj) then Exit;
 
-  SetLength(ArgArray, Length(Args));
-  for i := 0 to High(Args) do
-    ArgArray[i] := JS_NewString(ctx, pchar(Args[i]));
+    SetLength(ArgArray, Length(Args));
+    for i := 0 to High(Args) do
+      ArgArray[i] := JS_NewString(ctx, pchar(Args[i]));
 
-  RetVal := JS_Call(ctx, FuncObj, GlobalObj, Length(ArgArray), @ArgArray[0]);
-  if JS_IsError(ctx, RetVal) then
-  begin
-    js_std_dump_error(ctx);
-    Exit;
-  end;
+    RetVal := JS_Call(ctx, FuncObj, GlobalObj, Length(ArgArray), @ArgArray[0]);
+    if JS_IsError(ctx, RetVal) then
+    begin
+      js_std_dump_error(ctx);
+      Exit;
+    end;
 
-  StrResult := JS_ToCString(ctx, RetVal);
-  if StrResult <> nil then
-  begin
-    Result := StrResult;
-    JS_FreeCString(ctx, StrResult);
+    StrResult := JS_ToCString(ctx, RetVal);
+    if StrResult <> nil then
+    begin
+      Result := StrResult;
+      JS_FreeCString(ctx, StrResult);
+    end;
+  finally
+    for i := 0 to High(ArgArray) do
+      try JS_Free(ctx, @ArgArray[i]); except end;
+    try JS_Free(ctx, @RetVal);    except end;
+    try JS_Free(ctx, @FuncObj);   except end;
+    try JS_Free(ctx, @GlobalObj); except end;
   end;
 end;
 
@@ -1702,29 +1714,33 @@ begin
 
   GlobalObj := JS_GetGlobalObject(ctx);
   FuncObj := JS_GetPropertyStr(ctx, GlobalObj, pchar(FuncName));
-  if not JS_IsFunction(ctx, FuncObj) then
-  begin
-    JS_Free(ctx, @GlobalObj);
-    JS_Free(ctx, @FuncObj);
-    Exit;
-  end;
+  RetVal := JS_UNDEFINED;
+  try
+    if not JS_IsFunction(ctx, FuncObj) then Exit;
 
-  SetLength(ArgArray, Length(Args));
-  for i := 0 to High(Args) do
-    ArgArray[i] := JS_NewBigInt64(ctx, Args[i]);
+    SetLength(ArgArray, Length(Args));
+    for i := 0 to High(Args) do
+      ArgArray[i] := JS_NewBigInt64(ctx, Args[i]);
 
-  RetVal := JS_Call(ctx, FuncObj, GlobalObj, Length(ArgArray), @ArgArray[0]);
-  if JS_IsError(ctx, RetVal) then
-  begin
-    js_std_dump_error(ctx);
-    Exit;
-  end;
+    RetVal := JS_Call(ctx, FuncObj, GlobalObj, Length(ArgArray), @ArgArray[0]);
+    if JS_IsError(ctx, RetVal) then
+    begin
+      js_std_dump_error(ctx);
+      Exit;
+    end;
 
-  StrResult := JS_ToCString(ctx, RetVal);
-  if StrResult <> nil then
-  begin
-    Result := StrResult;
-    JS_FreeCString(ctx, StrResult);
+    StrResult := JS_ToCString(ctx, RetVal);
+    if StrResult <> nil then
+    begin
+      Result := StrResult;
+      JS_FreeCString(ctx, StrResult);
+    end;
+  finally
+    for i := 0 to High(ArgArray) do
+      try JS_Free(ctx, @ArgArray[i]); except end;
+    try JS_Free(ctx, @RetVal);    except end;
+    try JS_Free(ctx, @FuncObj);   except end;
+    try JS_Free(ctx, @GlobalObj); except end;
   end;
 end;
 
@@ -1772,82 +1788,86 @@ begin
 
   GlobalObj := JS_GetGlobalObject(ctx);
   FuncObj := JS_GetPropertyStr(ctx, GlobalObj, pchar(FuncName));
-  if not JS_IsFunction(ctx, FuncObj) then
-  begin
-    JS_Free(ctx, @GlobalObj);
-    JS_Free(ctx, @FuncObj);
-    Exit;
-  end;
+  RetVal := JS_UNDEFINED;
+  try
+    if not JS_IsFunction(ctx, FuncObj) then Exit;
 
-  SetLength(ArgArray, Length(Args));
-  SetLength(tmpStrs, Length(Args));
-  for i := 0 to High(Args) do
-    case Args[i].VType of
-    vtInteger:
-    begin
-      tmpv.From32(Args[i].VInteger);
-      ArgArray[i] := tmpv.Raw;
-    end;
-    vtInt64:
-    begin
-      tmpv.from64(Args[i].VInt64^);
-      ArgArray[i] := tmpv.Raw;
-    end;
-    vtExtended:
-    begin
-      tmpv.FromFloat(Args[i].VExtended^);
-      ArgArray[i] := tmpv.Raw;
-    end;
-    vtBoolean:
-    begin
-      tmpv.From(Args[i].VBoolean);
-      ArgArray[i] := tmpv.Raw;
-    end;
-    vtChar:
-    begin
-      s := RawUtf8(Args[i].VChar);
-      tmpStrs[i] := s;
-      ArgArray[i] := JS_NewString(ctx, pchar(tmpStrs[i]));
-    end;
-    vtPChar:
-      ArgArray[i] := JS_NewString(ctx, Args[i].VPChar);
-    vtAnsiString:
-    begin
-      s := RawUtf8(ansistring(Args[i].VAnsiString));
-      tmpStrs[i] := s;
-      ArgArray[i] := JS_NewString(ctx, pchar(tmpStrs[i]));
-    end;
-    vtUnicodeString, vtWideString:
-    begin
-      s := RawUtf8(unicodestring(Args[i].VUnicodeString));
-      tmpStrs[i] := s;
-      ArgArray[i] := JS_NewString(ctx, pchar(tmpStrs[i]));
-    end;
-    vtString:
-    begin
-      s := RawUtf8(shortstring(Args[i].VString^));
-      tmpStrs[i] := s;
-      ArgArray[i] := JS_NewString(ctx, pchar(tmpStrs[i]));
-    end;
-    else
-    begin
-      s := RawUtf8('{unsupported}');
-      tmpStrs[i] := s;
-      ArgArray[i] := JS_NewString(ctx, pchar(tmpStrs[i]));
-    end;
-    end;
+    SetLength(ArgArray, Length(Args));
+    SetLength(tmpStrs, Length(Args));
+    for i := 0 to High(Args) do
+      case Args[i].VType of
+      vtInteger:
+      begin
+        tmpv.From32(Args[i].VInteger);
+        ArgArray[i] := tmpv.Raw;
+      end;
+      vtInt64:
+      begin
+        tmpv.from64(Args[i].VInt64^);
+        ArgArray[i] := tmpv.Raw;
+      end;
+      vtExtended:
+      begin
+        tmpv.FromFloat(Args[i].VExtended^);
+        ArgArray[i] := tmpv.Raw;
+      end;
+      vtBoolean:
+      begin
+        tmpv.From(Args[i].VBoolean);
+        ArgArray[i] := tmpv.Raw;
+      end;
+      vtChar:
+      begin
+        s := RawUtf8(Args[i].VChar);
+        tmpStrs[i] := s;
+        ArgArray[i] := JS_NewString(ctx, pchar(tmpStrs[i]));
+      end;
+      vtPChar:
+        ArgArray[i] := JS_NewString(ctx, Args[i].VPChar);
+      vtAnsiString:
+      begin
+        s := RawUtf8(ansistring(Args[i].VAnsiString));
+        tmpStrs[i] := s;
+        ArgArray[i] := JS_NewString(ctx, pchar(tmpStrs[i]));
+      end;
+      vtUnicodeString, vtWideString:
+      begin
+        s := RawUtf8(unicodestring(Args[i].VUnicodeString));
+        tmpStrs[i] := s;
+        ArgArray[i] := JS_NewString(ctx, pchar(tmpStrs[i]));
+      end;
+      vtString:
+      begin
+        s := RawUtf8(shortstring(Args[i].VString^));
+        tmpStrs[i] := s;
+        ArgArray[i] := JS_NewString(ctx, pchar(tmpStrs[i]));
+      end;
+      else
+      begin
+        s := RawUtf8('{unsupported}');
+        tmpStrs[i] := s;
+        ArgArray[i] := JS_NewString(ctx, pchar(tmpStrs[i]));
+      end;
+      end;
 
-  RetVal := JS_Call(ctx, FuncObj, GlobalObj, Length(ArgArray), @ArgArray[0]);
-  if JS_IsError(ctx, RetVal) then
-  begin
-    js_std_dump_error(ctx);
-    Exit;
-  end;
-  StrResult := JS_ToCString(ctx, RetVal);
-  if StrResult <> nil then
-  begin
-    Result := StrResult;
-    JS_FreeCString(ctx, StrResult);
+    RetVal := JS_Call(ctx, FuncObj, GlobalObj, Length(ArgArray), @ArgArray[0]);
+    if JS_IsError(ctx, RetVal) then
+    begin
+      js_std_dump_error(ctx);
+      Exit;
+    end;
+    StrResult := JS_ToCString(ctx, RetVal);
+    if StrResult <> nil then
+    begin
+      Result := StrResult;
+      JS_FreeCString(ctx, StrResult);
+    end;
+  finally
+    for i := 0 to High(ArgArray) do
+      try JS_Free(ctx, @ArgArray[i]); except end;
+    try JS_Free(ctx, @RetVal);    except end;
+    try JS_Free(ctx, @FuncObj);   except end;
+    try JS_Free(ctx, @GlobalObj); except end;
   end;
 end;
 
@@ -1950,6 +1970,8 @@ var
   arr: JSValueRaw;
   GlobalObj, FuncObj, RetVal: JSValueRaw;
   StrResult: pansichar;
+  ctx: JSContext;
+  i: integer;
 begin
   Result := '';
   if IsExtShuttingDown or (FContext = nil) or (FRuntime = nil) then
@@ -1957,22 +1979,37 @@ begin
   if not FunctionExists(string(FuncName)) then
     Exit;
 
+  // Mirror FunctionExists' lookup: prefer the per-extension context (Path B)
+  // that actually hosts the function; fall back to FContext for the legacy path.
+  ctx := nil;
+  if Assigned(FExtContexts) and (FExtContexts.Count > 0) then
+    for i := 0 to FExtContexts.Count - 1 do
+      if (FExtContexts[i] <> nil) and
+        ContextHasFunction(FExtContexts[i]^.Ctx, string(FuncName)) then
+      begin
+        ctx := FExtContexts[i]^.Ctx;
+        Break;
+      end;
+  if ctx = nil then
+    ctx := FContext;
+  if ctx = nil then Exit;
+
   arr := CreateJSArray(Values);
-  GlobalObj := JS_GetGlobalObject(FContext);
-  FuncObj := JS_GetPropertyStr(FContext, GlobalObj, pchar(FuncName));
-  if not JS_IsFunction(FContext, FuncObj) then
+  GlobalObj := JS_GetGlobalObject(ctx);
+  FuncObj := JS_GetPropertyStr(ctx, GlobalObj, pchar(FuncName));
+  if not JS_IsFunction(ctx, FuncObj) then
     Exit('');
-  RetVal := JS_Call(FContext, FuncObj, GlobalObj, 1, @arr);
-  if JS_IsError(FContext, RetVal) then
+  RetVal := JS_Call(ctx, FuncObj, GlobalObj, 1, @arr);
+  if JS_IsError(ctx, RetVal) then
   begin
-    js_std_dump_error(FContext);
+    js_std_dump_error(ctx);
     Exit('');
   end;
-  StrResult := JS_ToCString(FContext, RetVal);
+  StrResult := JS_ToCString(ctx, RetVal);
   if StrResult <> nil then
   begin
     Result := StrResult;
-    JS_FreeCString(FContext, StrResult);
+    JS_FreeCString(ctx, StrResult);
   end;
 end;
 
@@ -2057,6 +2094,7 @@ var
   i, base: integer;
   s: RawUtf8;
   StrResult: pansichar;
+  ctx: JSContext;
 begin
   { InternalCall
     Unified backend used by:
@@ -2087,12 +2125,29 @@ begin
   if not FunctionExists(string(FuncName)) then
     Exit;
 
-  GlobalObj := JS_GetGlobalObject(FContext);
-  FuncObj := JS_GetPropertyStr(FContext, GlobalObj, pchar(FuncName));
-  if not JS_IsFunction(FContext, FuncObj) then
+  // Mirror FunctionExists' lookup: prefer the per-extension context (Path B)
+  // that actually hosts the function; fall back to FContext for the legacy path.
+  // FExtContexts share FRuntime with FContext, so JSValueRaw values constructed
+  // via MakeJS* on FContext remain valid in any ctx on the same runtime.
+  ctx := nil;
+  if Assigned(FExtContexts) and (FExtContexts.Count > 0) then
+    for i := 0 to FExtContexts.Count - 1 do
+      if (FExtContexts[i] <> nil) and
+        ContextHasFunction(FExtContexts[i]^.Ctx, string(FuncName)) then
+      begin
+        ctx := FExtContexts[i]^.Ctx;
+        Break;
+      end;
+  if ctx = nil then
+    ctx := FContext;
+  if ctx = nil then Exit;
+
+  GlobalObj := JS_GetGlobalObject(ctx);
+  FuncObj := JS_GetPropertyStr(ctx, GlobalObj, pchar(FuncName));
+  if not JS_IsFunction(ctx, FuncObj) then
   begin
-    JS_Free(FContext, @GlobalObj);
-    JS_Free(FContext, @FuncObj);
+    JS_Free(ctx, @GlobalObj);
+    JS_Free(ctx, @FuncObj);
     Exit('');
   end;
 
@@ -2127,62 +2182,62 @@ begin
     begin
       s := RawUtf8(Rest[i].VChar);
       tmpStrs[i] := s;
-      ArgArray[base + i] := JS_NewString(FContext, pchar(tmpStrs[i]));
+      ArgArray[base + i] := JS_NewString(ctx, pchar(tmpStrs[i]));
     end;
     vtPChar:
-      ArgArray[base + i] := JS_NewString(FContext, Rest[i].VPChar);
+      ArgArray[base + i] := JS_NewString(ctx, Rest[i].VPChar);
     vtAnsiString:
     begin
       s := RawUtf8(ansistring(Rest[i].VAnsiString));
       tmpStrs[i] := s;
-      ArgArray[base + i] := JS_NewString(FContext, pchar(tmpStrs[i]));
+      ArgArray[base + i] := JS_NewString(ctx, pchar(tmpStrs[i]));
     end;
     vtUnicodeString, vtWideString:
     begin
       s := RawUtf8(unicodestring(Rest[i].VUnicodeString));
       tmpStrs[i] := s;
-      ArgArray[base + i] := JS_NewString(FContext, pchar(tmpStrs[i]));
+      ArgArray[base + i] := JS_NewString(ctx, pchar(tmpStrs[i]));
     end;
     vtString:
     begin
       s := RawUtf8(shortstring(Rest[i].VString^));
       tmpStrs[i] := s;
-      ArgArray[base + i] := JS_NewString(FContext, pchar(tmpStrs[i]));
+      ArgArray[base + i] := JS_NewString(ctx, pchar(tmpStrs[i]));
     end;
     else
     begin
       s := RawUtf8('{unsupported}');
       tmpStrs[i] := s;
-      ArgArray[base + i] := JS_NewString(FContext, pchar(tmpStrs[i]));
+      ArgArray[base + i] := JS_NewString(ctx, pchar(tmpStrs[i]));
     end;
     end;
 
   if Length(ArgArray) = 0 then
-    RetVal := JS_Call(FContext, FuncObj, GlobalObj, 0, nil)
+    RetVal := JS_Call(ctx, FuncObj, GlobalObj, 0, nil)
   else
-    RetVal := JS_Call(FContext, FuncObj, GlobalObj, Length(ArgArray), @ArgArray[0]);
-  if JS_IsError(FContext, RetVal) then
+    RetVal := JS_Call(ctx, FuncObj, GlobalObj, Length(ArgArray), @ArgArray[0]);
+  if JS_IsError(ctx, RetVal) then
   begin
-    js_std_dump_error(FContext);
+    js_std_dump_error(ctx);
     Exit('');
   end;
-  StrResult := JS_ToCString(FContext, RetVal);
+  StrResult := JS_ToCString(ctx, RetVal);
   if StrResult <> nil then
   begin
     Result := StrResult;
-    JS_FreeCString(FContext, StrResult);
+    JS_FreeCString(ctx, StrResult);
   end;
 
   if freeRest then
     for i := base to High(ArgArray) do
     try
-      JS_Free(FContext, @ArgArray[i]);
+      JS_Free(ctx, @ArgArray[i]);
     except
     end;
   if freeRaw then
     for i := 0 to base - 1 do
     try
-      JS_Free(FContext, @ArgArray[i]);
+      JS_Free(ctx, @ArgArray[i]);
     except
     end;
 end;

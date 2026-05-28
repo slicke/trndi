@@ -757,8 +757,10 @@ begin
           if ActiveDots > MAX_DOT_COUNT then ActiveDots := MAX_DOT_COUNT;
           if MAX_MIN < ActiveDots * INTERVAL_MINUTES + 10 then
             MAX_MIN := ActiveDots * INTERVAL_MINUTES + 10;
-          if MAX_RESULT < ActiveDots * INTERVAL_MINUTES then
-            MAX_RESULT := ActiveDots * INTERVAL_MINUTES;
+          // MAX_RESULT is a reading count, not minutes. api isn't created yet here;
+          // InitializeAPI will scale this up by the reporting interval below.
+          if MAX_RESULT < ActiveDots then
+            MAX_RESULT := ActiveDots;
           for i := 1 to High(TrendDots) do
             if Assigned(TrendDots[i]) then
             begin
@@ -836,11 +838,14 @@ begin
 
     // Ensure MAX_MIN and MAX_RESULT cover the full dot window.
     // ActiveDots was read before CreateTrendDots; the API-based MAX_RESULT
-    // scaling earlier assumed the default 10 dots — bump it if more are configured.
+    // scaling earlier used a default dot count — bump it for higher counts.
+    // MAX_RESULT is a reading count; mirror InitializeAPI's reporting-interval
+    // scaling but with ActiveDots as the base.
     if MAX_MIN < ActiveDots * INTERVAL_MINUTES + 10 then
       MAX_MIN := ActiveDots * INTERVAL_MINUTES + 10;
-    if MAX_RESULT < ActiveDots * INTERVAL_MINUTES then
-      MAX_RESULT := ActiveDots * INTERVAL_MINUTES;
+    MAX_RESULT := Max(MAX_RESULT,
+      ActiveDots * Max(1, (INTERVAL_MINUTES + api.getReportingInterval - 1)
+                   div api.getReportingInterval));
 
     DIFF_ALIGN := native.GetAlignmentSetting('ux.labels.ldiff.alignment', taCenter);
 
