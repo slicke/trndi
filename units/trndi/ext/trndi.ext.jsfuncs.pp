@@ -96,7 +96,7 @@ begin
     AddPromiseIf(epData,     'bgDump',        JSCallbackFunction(@bgDump));
     AddPromiseIf(epNet,      'asyncGet',      JSCallbackFunction(@asyncGet));
     AddPromiseIf(epNet,      'jsonGet',       JSCallbackFunction(@jsonGet), 2);
-    AddPromiseIf(epExec,     'runCMD',        JSCallbackFunction(@asyncGet));
+    AddPromiseIf(epExec,     'runCMD',        JSCallbackFunction(@runCMD));
     AddPromiseIf(epData,     'querySvc',      JSCallbackFunction(@querySvc));
     AddPromiseIf(epSettings, 'setLimits',     JSCallbackFunction(@setLimits), 2, 5);
     AddPromiseIf(epUI,       'setLevelColor', JSCallbackFunction(@setLimits), 3, 6);
