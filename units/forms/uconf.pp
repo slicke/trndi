@@ -427,6 +427,8 @@ TfConf = class(TForm)
   procedure bFontResetClick(Sender: TObject);
   procedure bLanguageHelpClick(Sender: TObject);
   procedure bLimitsClick(Sender: TObject);
+  procedure bAlertDurHelpClick({%H-}Sender: TObject);
+  procedure bAlertHystHelpClick({%H-}Sender: TObject);
   procedure bMinMinutesHelpClick(Sender: TObject);
   procedure bMultiUserHelpClick(Sender: TObject);
   procedure bNotificationHelpClick(Sender: TObject);
@@ -522,6 +524,8 @@ tnative: TrndiNative;
 resourcestring
 RS_ALERT_HYSTERESIS_MGDL = 'Clear margin (mg/dL)';
 RS_ALERT_HYSTERESIS_MMOL = 'Clear margin (mmol/L)';
+RS_MUST_PERSIST_HELP = 'An alert will only trigger if the condition has been true continuously for this many minutes. Set to 0 to trigger immediately.';
+RS_CLEAR_MARGIN_HELP = 'Once an alert triggers, the reading must recover this many units past the threshold before the alert can fire again.';
 RS_EMPTY_PROXY = 'Proxy host is empty.';
 
 RS_DRIVER_CONTRIBUTOR = 'Driver contributor: ';
@@ -1114,6 +1118,16 @@ end;
 
 procedure TfConf.bLimitsClick({%H-}Sender: TObject);
 begin
+end;
+
+procedure TfConf.bAlertDurHelpClick({%H-}Sender: TObject);
+begin
+  ShowMessage(RS_MUST_PERSIST_HELP);
+end;
+
+procedure TfConf.bAlertHystHelpClick({%H-}Sender: TObject);
+begin
+  ShowMessage(RS_CLEAR_MARGIN_HELP);
 end;
 
 procedure TfConf.bMinMinutesHelpClick({%H-}Sender: TObject);

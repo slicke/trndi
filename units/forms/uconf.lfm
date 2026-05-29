@@ -18,12 +18,12 @@ object fConf: TfConf
     Height = 590
     Top = 11
     Width = 645
-    ActivePage = tsGeneral
+    ActivePage = tsAdvanced
     Align = alClient
     BorderSpacing.Left = 10
     BorderSpacing.Right = 10
     BorderSpacing.Around = 5
-    TabIndex = 1
+    TabIndex = 7
     TabOrder = 0
     OnChange = pcMainChange
     object tsCommon: TTabSheet
@@ -11029,12 +11029,12 @@ object fConf: TfConf
       OnShow = tsDisplayShow
       object pnDisplay: TPanel
         Left = 0
-        Height = 230
+        Height = 342
         Top = 0
         Width = 637
         Align = alClient
         BevelOuter = bvNone
-        ClientHeight = 230
+        ClientHeight = 342
         ClientWidth = 637
         ParentBackground = False
         TabOrder = 0
@@ -12279,6 +12279,24 @@ object fConf: TfConf
           Width = 100
           MaxValue = 50
           TabOrder = 5
+        end
+        object bAlertDurHelp: TButton
+          Left = 552
+          Height = 22
+          Top = 25
+          Width = 27
+          Caption = '?'
+          TabOrder = 6
+          OnClick = bAlertDurHelpClick
+        end
+        object bAlertHystHelp: TButton
+          Left = 552
+          Height = 22
+          Top = 54
+          Width = 27
+          Caption = '?'
+          TabOrder = 7
+          OnClick = bAlertHystHelpClick
         end
       end
       object GroupBox10: TGroupBox

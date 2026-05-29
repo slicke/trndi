@@ -139,6 +139,8 @@
 {"hash":206814135,"name":"tfconf.lalerturgcol.caption","sourcebytes":[85,114,103,101,110,116,32,108,111,119],"value":"Urgent low"},
 {"hash":176750633,"name":"tfconf.lalertdurrow.caption","sourcebytes":[77,117,115,116,32,112,101,114,115,105,115,116,32,40,109,105,110,117,116,101,115,41],"value":"Must persist (minutes)"},
 {"hash":84777817,"name":"tfconf.lalerthystrow.caption","sourcebytes":[67,108,101,97,114,32,109,97,114,103,105,110,32,40,109,103,47,100,76,41],"value":"Clear margin (mg/dL)"},
+{"hash":63,"name":"tfconf.balertdurhelp.caption","sourcebytes":[63],"value":"?"},
+{"hash":63,"name":"tfconf.balerthysthelp.caption","sourcebytes":[63],"value":"?"},
 {"hash":86574788,"name":"tfconf.groupbox10.caption","sourcebytes":[76,97,121,111,117,116],"value":"Layout"},
 {"hash":131309066,"name":"tfconf.label39.caption","sourcebytes":[68,105,102,102,32,115,99,97,108,101,58],"value":"Diff scale:"},
 {"hash":63,"name":"tfconf.bscalehelp.caption","sourcebytes":[63],"value":"?"},
