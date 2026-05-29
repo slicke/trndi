@@ -265,7 +265,6 @@ var
   cr, fillH, y: integer;
   isOverdue: boolean;
   t: double;
-  badgeH, badgeY: integer;
 begin
   pnl := Sender as TPanel;
   if (bgs = nil) or (Length(bgs) = 0) then
@@ -284,10 +283,17 @@ begin
   // Track: dark recessed pill channel
   trackCol := BlendColors(fBG.Color, clBlack, 0.72);
 
-  // Fill: teal (fresh reading) → amber (reading due) → pomegranate (overdue)
+  // Fill: teal (fresh reading) → amber (reading due) → pomegranate (overdue, pulsing)
   // Colors mirror the modern theme palette so the bar feels consistent.
   if isOverdue then
-    fillCol := RGBToColor(192, 57, 43)    // pomegranate  — matches bg_color_lo
+  begin
+    // When past 6 min: pulse the entire bar between deep pomegranate and a
+    // bright fiery red-orange to grab attention without text/badges.
+    if (SecondOf(Now) mod 2 = 0) then
+      fillCol := RGBToColor(192, 57, 43)     // pomegranate
+    else
+      fillCol := RGBToColor(255, 110, 70);   // bright alert red-orange
+  end
   else if frac >= 0.8 then
     fillCol := RGBToColor(230, 126, 34)   // pumpkin      — matches bg_color_hi
   else
@@ -338,22 +344,4 @@ begin
     FillRect(Classes.Rect(fillR.Right - 1, fillR.Top, fillR.Right, fillR.Bottom));
   end;
 
-  // Step 4 — blinking white badges with "!" at top/middle/bottom when past due
-  if isOverdue and (SecondOf(Now) mod 2 = 0) then
-  begin
-    with pnl.Canvas do
-    begin
-      Font.Style := [fsBold];
-      Font.Size  := Max(8, pnl.Width);
-      badgeH      := TextHeight('!') + 4;
-      badgeY      := 4;
-      Brush.Style := bsSolid;
-      Brush.Color := RGBToColor(255, 255, 255);
-      Pen.Style   := psClear;
-      RoundRect(2, badgeY, pnl.Width - 2, badgeY + badgeH, 4, 4);
-      Font.Color  := fillCol;
-      Brush.Style := bsClear;
-      TextOut((pnl.Width - TextWidth('!')) div 2, badgeY + 2, '!');
-    end;
-  end;
 end;
