@@ -191,15 +191,7 @@ begin
   DOT_GRAPH := native.GetWideCharSetting('font.dot', WChar($2B24));
   DOT_FRESH := native.GetWideCharSetting('font.dot_fresh', WChar($2600));
 
-  // Trend dot rendering: 'circle' draws antialiased ellipses directly; 'text'
-  // uses the legacy unicode-glyph path (DOT_GRAPH/DOT_FRESH). The legacy path
-  // remains the default on Cocoa, where TPaintBox.OnPaint is not used and the
-  // TLabel-based dots rely on native glyph rendering.
-  {$ifdef DARWIN}
-  FUseDrawnDots := SameText(native.GetSetting('ux.dot_style', 'text'), 'circle');
-  {$else}
   FUseDrawnDots := SameText(native.GetSetting('ux.dot_style', 'circle'), 'circle');
-  {$endif}
 
   // Load fonts
   fontName := native.GetSetting('font.val', 'default');

@@ -197,9 +197,6 @@ begin
   end;
 end;
 
-// DotPaint: Custom paint handler for trend dot TPaintBox controls.
-// NOTE (macOS/Cocoa): We use TLabel for trend dots on macOS (TDotControl = TLabel)
-// to avoid TPaintBox.OnPaint / CheckDC() issues under the Cocoa widgetset.
 procedure TfBG.DotPaint(Sender: TObject);
 var
   S, fontn: string;
@@ -212,14 +209,6 @@ var
 begin
   L := Sender as TDotControl;
   S := L.Caption;
-
-  {$ifdef DARWIN}
-  L.AutoSize := true;
-  L.Alignment := taCenter;
-  L.Layout := tlCenter;
-  Exit;
-  {$endif}
-
   L.AutoSize := false;
 
   isGlyph := (S = DOT_GRAPH) or (S = DOT_FRESH);
@@ -415,7 +404,6 @@ begin
 end;
 
 // Create trend dot controls dynamically at runtime.
-// Uses TLabel on macOS (Darwin) to avoid Cocoa CheckDC bugs, TPaintBox elsewhere.
 // TrendDots is 1-based: index 0 is unused, valid range is 1..ActiveDots.
 procedure TfBG.CreateTrendDots;
 type
@@ -441,17 +429,6 @@ begin
 
   for i := 1 to ActiveDots do
   begin
-    {$ifdef DARWIN}
-    TrendDots[i] := TLabel.Create(Self);
-    with TLabel(TrendDots[i]) do
-    begin
-      Parent := Self;
-      AutoSize := true;
-      Alignment := taCenter;
-      Layout := tlCenter;
-      Transparent := true;
-    end;
-    {$else}
     TrendDots[i] := TPaintBox.Create(Self);
     with TPaintBox(TrendDots[i]) do
     begin
@@ -459,7 +436,6 @@ begin
       AutoSize := false;
       OnPaint := @DotPaint;
     end;
-    {$endif}
 
     with TrendDots[i] do
     begin
@@ -656,18 +632,6 @@ var
 begin
   slotW := Max(1, fBG.ClientWidth div Max(c, 1));
   isGlyph := (l.Caption = DOT_GRAPH) or (l.Caption = DOT_FRESH);
-  {$ifdef DARWIN}
-  l.AutoSize := true;
-  // Font.Size is in points (~1.33 pixels per point on standard 96dpi equivalent).
-  // A circular character's width is roughly 1em.
-  // We want the dot to fill ~85% of slotW, so: slotW * 0.85 * 0.75 ~ slotW * 0.64
-  l.Font.Size := Max(8, Round(slotW * 0.64));
-  // Canvas.TextWidth must not be called outside drawRect: on Cocoa — it corrupts
-  // the NSGraphicsContext (CheckDC bug) and turns the whole window solid green.
-  l.AdjustSize;
-  TrndiDLog(Format('TrendDots[%d] resized with Font Size = %d, Height=%d (AutoSize).',
-    [ix, l.Font.Size, l.Height]));
-  {$else}
   l.AutoSize := false;
   if FUseDrawnDots and isGlyph then
   begin
@@ -685,6 +649,10 @@ begin
   else
   begin
     l.Font.Size := Max(8, slotW);
+    {$ifndef DARWIN}
+    // Canvas.TextWidth must not be called outside drawRect on Cocoa —
+    // it corrupts the NSGraphicsContext (CheckDC bug). DotPaint will
+    // correct the bounds when it renders.
     tw := l.Canvas.TextWidth(DOT_GRAPH);
     if tw > 0 then
       l.Font.Size := Max(8, Round(l.Font.Size * (slotW * 85 div 100) / tw));
@@ -694,8 +662,8 @@ begin
     l.Height := Max(th, l.Font.Size);
     TrndiDLog(Format('TrendDots[%d] resized with Font Size = %d, W=%d, H=%d.',
       [ix, l.Font.Size, l.Width, l.Height]));
+    {$endif}
   end;
-  {$endif}
 end;
 
 // Centers a dot within its slot across ClientWidth.
