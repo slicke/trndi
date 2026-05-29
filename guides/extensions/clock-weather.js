@@ -1,5 +1,6 @@
 /* Notify extension for Nightscout
 (c) slicke / No copyright
+@perms net
 */
 // Show the current weather instead of the clock
 const WEATHER_API_KEY = '<KEY>';
