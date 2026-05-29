@@ -2508,6 +2508,14 @@ msgstr "En datatype var forventet, men en anden blev fundet"
 msgid "Unknown error"
 msgstr "Ukendt fejl"
 
+#: uconf.rs_alert_hysteresis_mgdl
+msgid "Clear margin (mg/dL)"
+msgstr ""
+
+#: uconf.rs_alert_hysteresis_mmol
+msgid "Clear margin (mmol/L)"
+msgstr ""
+
 #: uconf.rs_announce_not_available
 #, object-pascal-format
 msgctxt "uconf.rs_announce_not_available"

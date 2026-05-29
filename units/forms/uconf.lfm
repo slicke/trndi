@@ -12323,6 +12323,111 @@ object fConf: TfConf
           end
         end
       end
+      object gbAlertBehavior: TGroupBox
+        Left = 0
+        Height = 110
+        Top = 290
+        Width = 637
+        Align = alTop
+        BorderSpacing.Top = 15
+        Caption = 'Alert behavior'
+        ClientHeight = 90
+        ClientWidth = 633
+        ParentBackground = False
+        TabOrder = 3
+        object lAlertHiCol: TLabel
+          Left = 200
+          Height = 15
+          Top = 4
+          Width = 80
+          Caption = 'High'
+        end
+        object lAlertLoCol: TLabel
+          Left = 320
+          Height = 15
+          Top = 4
+          Width = 80
+          Caption = 'Low'
+        end
+        object lAlertUrgCol: TLabel
+          Left = 440
+          Height = 15
+          Top = 4
+          Width = 80
+          Caption = 'Urgent low'
+        end
+        object lAlertDurRow: TLabel
+          Left = 16
+          Height = 15
+          Top = 28
+          Width = 170
+          Caption = 'Must persist (minutes)'
+        end
+        object lAlertHystRow: TLabel
+          Left = 16
+          Height = 15
+          Top = 58
+          Width = 170
+          Caption = 'Clear margin (mg/dL)'
+        end
+        object spAlertDurHi: TSpinEdit
+          Left = 200
+          Height = 23
+          Top = 24
+          Width = 100
+          MaxValue = 60
+          MinValue = 0
+          TabOrder = 0
+        end
+        object spAlertDurLo: TSpinEdit
+          Left = 320
+          Height = 23
+          Top = 24
+          Width = 100
+          MaxValue = 60
+          MinValue = 0
+          TabOrder = 1
+        end
+        object spAlertDurUrg: TSpinEdit
+          Left = 440
+          Height = 23
+          Top = 24
+          Width = 100
+          MaxValue = 60
+          MinValue = 0
+          TabOrder = 2
+        end
+        object fsAlertHystHi: TFloatSpinEdit
+          Left = 200
+          Height = 23
+          Top = 54
+          Width = 100
+          Increment = 1
+          MaxValue = 50
+          MinValue = 0
+          TabOrder = 3
+        end
+        object fsAlertHystLo: TFloatSpinEdit
+          Left = 320
+          Height = 23
+          Top = 54
+          Width = 100
+          Increment = 1
+          MaxValue = 50
+          MinValue = 0
+          TabOrder = 4
+        end
+        object fsAlertHystUrg: TFloatSpinEdit
+          Left = 440
+          Height = 23
+          Top = 54
+          Width = 100
+          Increment = 1
+          MaxValue = 50
+          MinValue = 0
+          TabOrder = 5
+        end
+      end
       object GroupBox10: TGroupBox
         Left = 0
         Height = 87

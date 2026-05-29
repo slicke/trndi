@@ -278,6 +278,12 @@ TfConf = class(TForm)
   gbDisplayPrefs: TGroupBox;
   gbMulti: TGroupBox;
   gbOverride: TGroupBox;
+  gbAlertBehavior: TGroupBox;
+  lAlertHiCol: TLabel;
+  lAlertLoCol: TLabel;
+  lAlertUrgCol: TLabel;
+  lAlertDurRow: TLabel;
+  lAlertHystRow: TLabel;
   gbMedia: TGroupBox;
   gbURL: TGroupBox;
   GroupBox1: TGroupBox;
@@ -388,6 +394,12 @@ TfConf = class(TForm)
   spDeltaMax: TSpinEdit;
   spTHRESHOLD: TSpinEdit;
   spTHRESHOLD1: TSpinEdit;
+  spAlertDurHi: TSpinEdit;
+  spAlertDurLo: TSpinEdit;
+  spAlertDurUrg: TSpinEdit;
+  fsAlertHystHi: TFloatSpinEdit;
+  fsAlertHystLo: TFloatSpinEdit;
+  fsAlertHystUrg: TFloatSpinEdit;
   tsAccess: TTabSheet;
   tsProxy: TTabSheet;
   tsCommon: TTabSheet;
@@ -530,6 +542,8 @@ var
 tnative: TrndiNative;
 
 resourcestring
+RS_ALERT_HYSTERESIS_MGDL = 'Clear margin (mg/dL)';
+RS_ALERT_HYSTERESIS_MMOL = 'Clear margin (mmol/L)';
 RS_EMPTY_PROXY = 'Proxy host is empty.';
 
 RS_DRIVER_CONTRIBUTOR = 'Driver contributor: ';
@@ -2284,6 +2298,20 @@ begin
     fsHiRange.MaxValue := 33.3;
     fsLoRange.MaxValue := 33.3;
 
+    fsAlertHystHi.DecimalPlaces  := 1;
+    fsAlertHystLo.DecimalPlaces  := 1;
+    fsAlertHystUrg.DecimalPlaces := 1;
+    fsAlertHystHi.Increment      := 0.1;
+    fsAlertHystLo.Increment      := 0.1;
+    fsAlertHystUrg.Increment     := 0.1;
+    fsAlertHystHi.Value          := RoundMMOL(fsAlertHystHi.Value);
+    fsAlertHystLo.Value          := RoundMMOL(fsAlertHystLo.Value);
+    fsAlertHystUrg.Value         := RoundMMOL(fsAlertHystUrg.Value);
+    fsAlertHystHi.MaxValue       := 2.8;
+    fsAlertHystLo.MaxValue       := 2.8;
+    fsAlertHystUrg.MaxValue      := 2.8;
+    lAlertHystRow.Caption        := RS_ALERT_HYSTERESIS_MMOL;
+
     rbPredictShortShowValue.Caption := StringReplace(rbPredictShortShowValue.Caption, '100', '5.5', [rfReplaceAll]);
   end
   else
@@ -2302,6 +2330,20 @@ begin
     fsLo.DecimalPlaces := 0;
     fsHiRange.DecimalPlaces := 0;
     fsLoRange.DecimalPlaces := 0;
+
+    fsAlertHystHi.MaxValue       := 50;
+    fsAlertHystLo.MaxValue       := 50;
+    fsAlertHystUrg.MaxValue      := 50;
+    fsAlertHystHi.Value          := round(fsAlertHystHi.Value * TrndiAPI.toMgdl);
+    fsAlertHystLo.Value          := round(fsAlertHystLo.Value * TrndiAPI.toMgdl);
+    fsAlertHystUrg.Value         := round(fsAlertHystUrg.Value * TrndiAPI.toMgdl);
+    fsAlertHystHi.DecimalPlaces  := 0;
+    fsAlertHystLo.DecimalPlaces  := 0;
+    fsAlertHystUrg.DecimalPlaces := 0;
+    fsAlertHystHi.Increment      := 1;
+    fsAlertHystLo.Increment      := 1;
+    fsAlertHystUrg.Increment     := 1;
+    lAlertHystRow.Caption        := RS_ALERT_HYSTERESIS_MGDL;
 
     rbPredictShortShowValue.Caption := StringReplace(rbPredictShortShowValue.Caption, '5.5', '100', [rfReplaceAll]);
   end;

@@ -533,6 +533,12 @@ begin
   ShowMessage(Format(RS_CONN_DETAILS, [lInternet.Caption, details]));
 end;
 
+procedure TfBG.PersistAlertState(Sender: TObject);
+begin
+  if not Assigned(native) or not Assigned(FAlertEngine) then Exit;
+  native.SetSetting('alerts.state', FAlertEngine.SerializeState);
+end;
+
 procedure TfBG.SetAlertSnoozeMinutes(const Minutes: integer);
 begin
   FAlertEngine.SnoozeActive(Minutes);

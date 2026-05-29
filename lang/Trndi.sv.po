@@ -2635,6 +2635,16 @@ msgctxt "trndi.strings.sunknownerr"
 msgid "Unknown error"
 msgstr "Okänt fel"
 
+#: uconf.rs_alert_hysteresis_mgdl
+msgctxt "uconf.rs_alert_hysteresis_mgdl"
+msgid "Clear margin (mg/dL)"
+msgstr "Återställningsmarginal (mg/dL)"
+
+#: uconf.rs_alert_hysteresis_mmol
+msgctxt "uconf.rs_alert_hysteresis_mmol"
+msgid "Clear margin (mmol/L)"
+msgstr "Återställningsmarginal (mmol/L)"
+
 #: uconf.rs_announce_not_available
 #, object-pascal-format
 msgctxt "uconf.rs_announce_not_available"

@@ -465,6 +465,7 @@ private
 
   Chroma: TRazerChromaBase;
   FAlertEngine: TAlertEngine;
+  procedure PersistAlertState(Sender: TObject);
 
   function dotsInView: integer;
   function setColorMode: boolean;

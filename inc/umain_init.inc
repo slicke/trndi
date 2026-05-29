@@ -805,14 +805,26 @@ begin
     Application.ProcessMessages;
 
     FAlertEngine := TAlertEngine.Create;
-    FAlertEngine.SetupRule(akHigh,       true,  api.cgmHi,  30);
-    FAlertEngine.SetupRule(akLow,        true,  api.cgmLo,  15);
-    FAlertEngine.SetupRule(akUrgentLow,  true,  api.limitLO, 5, 5);
+    // Persistence-before-fire (minutes) and hysteresis (mg/dL) are user-tunable;
+    // defaults filter out single-sample spikes and threshold bounce without
+    // delaying urgent-low alerts.
+    FAlertEngine.SetupRule(akHigh,       true,  api.cgmHi,  30, 0,
+      native.GetIntSetting('alerts.duration.high', 10),
+      native.GetFloatSetting('alerts.hysteresis.high', 5));
+    FAlertEngine.SetupRule(akLow,        true,  api.cgmLo,  15, 0,
+      native.GetIntSetting('alerts.duration.low', 5),
+      native.GetFloatSetting('alerts.hysteresis.low', 5));
+    FAlertEngine.SetupRule(akUrgentLow,  true,  api.limitLO, 5, 5,
+      native.GetIntSetting('alerts.duration.urgent', 0),
+      native.GetFloatSetting('alerts.hysteresis.urgent', 5));
     FAlertEngine.SetupRule(akMissing,
       GetBoolSetting('alerts.notice.missing', true), 0, 15);
     FAlertEngine.SetupRule(akSensorFault, true, 0, 30);
     FAlertEngine.SetupRule(akRapidFall,  false, 0, 0);
     FAlertEngine.SetupRule(akRapidRise,  false, 0, 0);
+
+    FAlertEngine.DeserializeState(native.GetSetting('alerts.state', ''));
+    FAlertEngine.OnStateChanged := @PersistAlertState;
 
     api.APIEmitter := @APIReceiver;
     if not api.Connect then

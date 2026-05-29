@@ -487,6 +487,13 @@ procedure LoadUserSettings(f: TfConf);
 
       cbAlertHiLo.Checked := native.getBoolSetting('alerts.notice.hilo', true);
       cbAlertMissing.Checked := native.getBoolSetting('alerts.notice.missing', true);
+
+      spAlertDurHi.Value   := native.GetIntSetting('alerts.duration.high', 10);
+      spAlertDurLo.Value   := native.GetIntSetting('alerts.duration.low', 5);
+      spAlertDurUrg.Value  := native.GetIntSetting('alerts.duration.urgent', 0);
+      fsAlertHystHi.Value  := native.GetFloatSetting('alerts.hysteresis.high', 5);
+      fsAlertHystLo.Value  := native.GetFloatSetting('alerts.hysteresis.low', 5);
+      fsAlertHystUrg.Value := native.GetFloatSetting('alerts.hysteresis.urgent', 5);
     end;
   end;
 
@@ -723,6 +730,22 @@ procedure SaveUserSettings(f: TfConf);
       native.setSetting('size.main', cbSize.Checked);
       native.setSetting('alerts.notice.hilo', cbAlertHiLo.Checked);
       native.setSetting('alerts.notice.missing', cbAlertMissing.Checked);
+
+      native.SetSetting('alerts.duration.high',     spAlertDurHi.Value);
+      native.SetSetting('alerts.duration.low',      spAlertDurLo.Value);
+      native.SetSetting('alerts.duration.urgent',   spAlertDurUrg.Value);
+      if rbUnit.ItemIndex = 0 then
+      begin
+        native.SetFloatSetting('alerts.hysteresis.high',   fsAlertHystHi.Value * TrndiAPI.toMGDL);
+        native.SetFloatSetting('alerts.hysteresis.low',    fsAlertHystLo.Value * TrndiAPI.toMGDL);
+        native.SetFloatSetting('alerts.hysteresis.urgent', fsAlertHystUrg.Value * TrndiAPI.toMGDL);
+      end
+      else
+      begin
+        native.SetFloatSetting('alerts.hysteresis.high',   fsAlertHystHi.Value);
+        native.SetFloatSetting('alerts.hysteresis.low',    fsAlertHystLo.Value);
+        native.SetFloatSetting('alerts.hysteresis.urgent', fsAlertHystUrg.Value);
+      end;
 
       native.SetSetting('ux.range_color', cbRangeColor.Checked);
       native.SetSetting('main.clock',     cbClock.Checked);
