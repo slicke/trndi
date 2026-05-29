@@ -68,7 +68,6 @@ TfConf = class(TForm)
   bConnectHelp: TButton;
   bDecimalHelp: TButton;
   bDeltaMaxHelp: TButton;
-  bDotHelp: TButton;
   bExportSettings: TButton;
   bExtOpen: TButton;
   bFontReading: TButton;
@@ -90,8 +89,6 @@ TfConf = class(TForm)
   bScaleHelp: TButton;
   bPredScaleHelp: TButton;
   bFullArrowSetHelp: TButton;
-  bTemplateCurrent: TButton;
-  bTemplateTrend: TButton;
   bTestSpeech: TButton;
   bTimeStampHelp: TButton;
   bUseURLHelp: TButton;
@@ -108,7 +105,6 @@ TfConf = class(TForm)
   bCustomRangeHelp: TButton;
   bCommon: TButton;
   bDisableMediaHelp: TButton;
-  Button4: TButton;
   bWebAPI: TButton;
   bSysTouch: TButton;
   bTestAnnounce: TButton;
@@ -166,21 +162,16 @@ TfConf = class(TForm)
   Panel23: TPanel;
   Panel24: TPanel;
   edCommaSep1: TEdit;
-  eDot: TEdit;
-  eDotNow: TEdit;
   edProxyHost: TEdit;
   edProxyPass: TEdit;
   edProxyPort: TEdit;
   edProxyUser: TEdit;
-  cbFonts: TGroupBox;
   fsHi1: TFloatSpinEdit;
   fsLo1: TFloatSpinEdit;
   gbNetwork: TGroupBox;
   gbOverride1: TGroupBox;
   gbSettings: TGroupBox;
-  Label16: TLabel;
   Label17: TLabel;
-  Label2: TLabel;
   Label33: TLabel;
   Label34: TLabel;
   Label35: TLabel;
@@ -189,11 +180,6 @@ TfConf = class(TForm)
   LabelProxyPort: TLabel;
   LabelProxyUser: TLabel;
   lConfigPredict: TLabel;
-  lDot: TLabel;
-  lDot1: TLabel;
-  lDot2: TLabel;
-  lDot3: TLabel;
-  lDotNow: TLabel;
   lHiOver3: TLabel;
   lLounder2: TLabel;
   lProxyTitle: TLabel;
@@ -330,7 +316,6 @@ TfConf = class(TForm)
   lTitle: TLabel;
   Label7: TLabel;
   Label8: TLabel;
-  lDotCurr: TLabel;
   lHiOver1: TLabel;
   lLounder1: TLabel;
 
@@ -435,7 +420,6 @@ TfConf = class(TForm)
   procedure bColorGraphHelpClick({%H-}Sender: TObject);
   procedure bCommonClick({%H-}Sender: TObject);
   procedure bCustomRangeHelpClick({%H-}Sender: TObject);
-  procedure bDotHelpClick({%H-}Sender: TObject);
   procedure bExtOpenClick({%H-}Sender: TObject);
   procedure bFontReadingClick(Sender: TObject);
   procedure bFontArrowClick(Sender: TObject);
@@ -456,8 +440,6 @@ TfConf = class(TForm)
   procedure bBackendHelpClick({%H-}Sender: TObject);
   procedure bSysNoticeClick({%H-}Sender: TObject);
   procedure bSysTouchClick({%H-}Sender: TObject);
-  procedure bTemplateCurrentClick(Sender: TObject);
-  procedure bTemplateTrendClick(Sender: TObject);
   procedure bTestAnnounceClick(Sender: TObject);
   procedure bTestClick(Sender: TObject);
   procedure bTestProxyClick(Sender: TObject);
@@ -473,7 +455,6 @@ TfConf = class(TForm)
   procedure bUseURLHelpClick(Sender: TObject);
   procedure Button1Click(Sender: TObject);
   procedure Button3Click(Sender: TObject);
-  procedure Button4Click(Sender: TObject);
   procedure bWebAPIClick(Sender: TObject);
   procedure cbCust1Change(Sender: TObject);
   procedure cbCustChange(Sender: TObject);
@@ -487,11 +468,9 @@ TfConf = class(TForm)
   procedure cbSysChange({%H-}Sender: TObject);
   procedure cbUserClick({%H-}Sender: TObject);
   procedure cbUserColorChanged({%H-}Sender: TObject);
-  procedure dotClick(Sender: TObject);
   procedure edCommaSep1Change(Sender: TObject);
   procedure edCommaSepChange(Sender: TObject);
   procedure edNickChange(Sender: TObject);
-  procedure eDotChange(Sender: TObject);
   procedure ePassEnter(Sender: TObject);
   procedure ePassExit(Sender: TObject);
   procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
@@ -510,7 +489,6 @@ TfConf = class(TForm)
   procedure lbUsersEnter(Sender: TObject);
   procedure lbUsersSelectionChange(Sender: TObject; User: boolean);
   procedure lConfigPredictClick({%H-}Sender: TObject);
-  procedure lDot1Click({%H-}Sender: TObject);
   procedure lLicenseClick({%H-}Sender: TObject);
   procedure lSysWarnInfoClick({%H-}Sender: TObject);
   procedure lValClick({%H-}Sender: TObject);
@@ -580,15 +558,6 @@ RS_COLOR_BG =
 
 RS_OVERRIDE_LANGUAGE =
   'Choose which language to run Trndi in. Should you choose the wrong one, you can press the Windows/"meta" button at start to force English!';
-
-RS_DOT_CLICK =
-  'Dot appearance is modified below!';
-
-RS_DOT_HELP_TITLE =
-  'Changing the trend dots';
-
-RS_DOT_HELP =
-  'You can change the design of the trend dots here, by using Unicode characters. Enter the Unicode, or use a template.'+sLineBreak+'There are two dots, the normal dot and the current reading (when the dots are expanded/clicked)';
 
 RS_FONT_HELP =
   'You can change the font of the reading, time and arrow. Click on the respective item here to change the font';
@@ -714,12 +683,6 @@ RS_TEST_UNSUPPORTED = 'Sorry! Trndi does not (yet) support connection testing fo
 RS_TEST_SUCCESS = 'Successfully connected!';
 RS_TEST_FAIL = 'Could not connect!';
 
-RS_GRAPH_ICON_TITLE = 'Choose icon';
-RS_GRAPH_ICON_GRAPH = 'Choose an icon for points in the graph';
-RS_GRAPH_ICON_GRAPH_DESC = 'This will be used for graph points';
-RS_GRAPH_ICON_CURRENT = 'Choose an icon for the current point in the graph';
-RS_GRAPH_ICON_CURRENT_DESC = 'This will be used for current graph point';
-
 RS_POS_TITLE = 'Restricted Feature';
 RS_POS = 'This feature depends on your Window Manager (WM). %s may not support this feature.';
 RS_POS_UNKNOWN = 'This feature depends on your Window Manager. It may not support this feature.';
@@ -734,33 +697,6 @@ RS_Announce_Not_Available = 'The text-to-speech (TTS) software "%s" is not avail
 
 var
 fConf: TfConf;
-
-const
-GRAPH_ICONS: array[0..9] of unicodestring = (
-  WChar($2B24), // \u2b24 BLACK LARGE CIRCLE (default)
-  WChar($25CF), // \u25cf BLACK CIRCLE
-  WChar($26AB), // \u26ab MEDIUM BLACK CIRCLE
-  WChar($25CB), // \u25cb WHITE CIRCLE
-  WChar($26AA), // \u26aa MEDIUM WHITE CIRCLE
-  WChar($2022), // \u2022 BULLET
-  WChar($2219), // \u2219 BULLET OPERATOR (thinner)
-  WChar($25AA), // \u25aa BLACK SMALL SQUARE
-  WChar($25A0), // \u25a0 BLACK SQUARE
-  WChar($25C6)  // \u25c6 BLACK DIAMOND
-  );
-
-FRESH_ICONS: array[0..9] of unicodestring = (
-  WChar($2600), // \u2600 SUN (default)
-  WChar($2605), // \u2605 BLACK STAR
-  WChar($2606), // \u2606 WHITE STAR
-  WChar($2736), // \u2736 SIX POINTED BLACK STAR
-  WChar($272A), // \u272a CIRCLED WHITE STAR
-  WChar($25B6), // \u25b6 BLACK RIGHT-POINTING TRIANGLE (\u201dnu\u201d-arrow)
-  WChar($25C0), // \u25c0 BLACK LEFT-POINTING TRIANGLE
-  WChar($25B2), // \u25b2 BLACK UP-POINTING TRIANGLE
-  WChar($25BC), // \u25bc BLACK DOWN-POINTING TRIANGLE
-  WChar($25CE)  // \u25ce BULLSEYE
-  );
 
 procedure ListLanguageFiles(list: TStrings; const Path: string);
 function GetLanguageName(const ACode: string): string;
@@ -1005,11 +941,6 @@ begin
   pcMain.ActivePage := tsPredictions;
 end;
 
-procedure TfConf.lDot1Click(Sender: TObject);
-begin
-  ShowMessage(RS_DOT_CLICK);
-end;
-
 procedure TfConf.getAPILabels(out user, pass: string);
 var
   sys: class of TrndiAPI;
@@ -1145,13 +1076,6 @@ begin
   btUserSave.Enabled := true;
 end;
 
-procedure TfConf.dotClick(Sender: TObject);
-var
-  bg: tcolor;
-begin
-  eDot.SetFocus;
-end;
-
 procedure TfConf.edCommaSep1Change(Sender: TObject);
 begin
   edCommaSep.Text := edCommaSep1.Text;
@@ -1165,32 +1089,6 @@ end;
 procedure TfConf.edNickChange(Sender: TObject);
 begin
   btUserSave.Enabled := true;
-end;
-
-procedure TfConf.eDotChange(Sender: TObject);
-var
-  i: integer;
-  lbl: TLabel;
-begin
-  if Sender = eDot then
-    lbl := lDot
-  else
-    lbl := lDotNow;
-
-  if tryStrToInt('$' + (Sender as TEdit).Text, i) then
-  begin
-    lbl.Caption := unicodestring(WChar(i));
-    if Sender = eDot then
-    begin
-      lDot1.Caption := lbl.Caption;
-      lDot2.Caption := lbl.Caption;
-      lDot3.Caption := lbl.Caption;
-    end
-    else
-      lDotCurr.Caption := lbl.Caption;
-  end
-  else
-    lbl.Caption := '- ERROR -';
 end;
 
 procedure TfConf.ePassEnter({%H-}Sender: TObject);
@@ -1394,12 +1292,6 @@ begin
   ShowMessage(RS_Custom_Range_Help);
 end;
 
-procedure TfConf.bDotHelpClick(Sender: TObject);
-begin
-  if ExtText(uxdAuto, RS_DOT_HELP_TITLE, RS_DOT_HELP, [mbOK, mbUXRead]) <> mrOK then
-    OpenURL('https://www.compart.com/en/unicode/U+2B24');
-end;
-
 procedure TfConf.bExtOpenClick(Sender: TObject);
 begin
   OpenDocument(eExt.Text);
@@ -1566,29 +1458,6 @@ end;
 procedure TfConf.bSysTouchClick(Sender: TObject);
 begin
   ShowMessage(RS_HASTOUCH);
-end;
-
-procedure TfConf.bTemplateCurrentClick(Sender: TObject);
-var
-  res: integer;
-begin
-  res := ExtList(uxdAuto,RS_GRAPH_ICON_TITLE,RS_GRAPH_ICON_CURRENT,RS_GRAPH_ICON_CURRENT_DESC, FRESH_ICONS);
-  if res < 0 then
-    Exit;
-
-  eDotNow.Text := CodePointHex(FRESH_ICONS[res]);
-end;
-
-procedure TfConf.bTemplateTrendClick(Sender: TObject);
-var
-  res: integer;
-begin
-  res := ExtList(uxdAuto,RS_GRAPH_ICON_TITLE, RS_GRAPH_ICON_GRAPH, RS_GRAPH_ICON_GRAPH_DESC, GRAPH_ICONS);
-
-  if res < 0 then
-    Exit;
-
-  eDot.Text := CodePointHex(GRAPH_ICONS[res]);
 end;
 
 procedure TfConf.bTestAnnounceClick(Sender: TObject);
@@ -1951,12 +1820,6 @@ begin
     else
       ShowMessage(Format(RS_UPTODATE_DEV, [GetProductVersionMajorMinor('2.x')]));
   end;
-end;
-
-procedure TfConf.Button4Click(Sender: TObject);
-begin
-  eDot.Text := '2B24';
-  eDotNow.Text := '2600';
 end;
 
 procedure TfConf.bWebAPIClick(Sender: TObject);
@@ -2388,16 +2251,7 @@ begin
 end;
 
 procedure TfConf.tsDisplayShow(Sender: TObject);
-var
-  l: tlabel;
 begin
-  // The label caption looks ugly and invalidate doesnt help. Neither does redraw at this stage
-  for l in [lDot1, lDot2, lDot3, lDotCurr] do
-    l.Caption := '';
-  // Update preview glyphs from current edit values so they appear when the tab is shown
-  eDot.OnChange(eDot);
-  eDotNow.OnChange(eDotNow);
-
   if lVal.Font.color = lVal.Parent.Color then
     lVal.Font.color := IfThen(lVal.Parent.Color = clBlack, clWhite, clBlack);
 
@@ -2408,13 +2262,6 @@ begin
 
   if lAgo.Font.color = lAgo.Parent.Color then
     lAgo.Font.color := IfThen(lAgo.Parent.Color = clBlack, clWhite, clBlack);
-
-  if lDot1.font.color = lDot1.Parent.color then
-  begin
-    lDot1.Font.color := IfThen(lDot1.Parent.Color = clBlack, clWhite, clBlack);
-    lDot2.Font.color := ldot1.font.color;
-    lDot3.Font.color := ldot1.font.color;
-  end;
 end;
 
 procedure TfConf.LoadProxySettingsIntoUI;

@@ -391,16 +391,6 @@ msgstr "Importer indstillinger"
 msgid "- Remove"
 msgstr "- Fjern"
 
-#: tfconf.btemplatecurrent.caption
-msgctxt "tfconf.btemplatecurrent.caption"
-msgid "Template"
-msgstr "Skabelon"
-
-#: tfconf.btemplatetrend.caption
-msgctxt "tfconf.btemplatetrend.caption"
-msgid "Template"
-msgstr "Skabelon"
-
 #: tfconf.btest.caption
 msgid "Test"
 msgstr "Test"
@@ -428,10 +418,6 @@ msgstr "Gem"
 #: tfconf.button3.caption
 msgid "Check for update"
 msgstr "Søg efter opdatering"
-
-#: tfconf.button4.caption
-msgid "Reset Dots"
-msgstr "Nulstil prikker"
 
 #: tfconf.caption
 #, fuzzy
@@ -507,10 +493,6 @@ msgstr "Blink ved lavt blodsukker"
 #: tfconf.cbflashperfect.caption
 msgid "Flash on perfect reading (5.5mmol/L / 100mg/dL)"
 msgstr "Blink ved perfekt aflæsning (5,5mmol/L / 100mg/dL)"
-
-#: tfconf.cbfonts.caption
-msgid "Trend Dots"
-msgstr "Trendprikker"
 
 #: tfconf.cbhcontrast.caption
 msgid "High Contrast"
@@ -839,10 +821,6 @@ msgstr "OBS: Support afhænger af din datakilde "
 msgid "Server Address / Dexcom Username"
 msgstr "Serveradresse / Dexcom-brugernavn"
 
-#: tfconf.label16.caption
-msgid "Current dot:"
-msgstr "Aktuel prik:"
-
 #: tfconf.label17.caption
 msgid "These settings reside in different parts of the settings dialog, but has been collected here for your convinience!"
 msgstr "Disse indstillinger befinder sig i forskellige dele af indstillingsdialogen, men er samlet her for din bekvemmelighed!"
@@ -850,10 +828,6 @@ msgstr "Disse indstillinger befinder sig i forskellige dele af indstillingsdialo
 #: tfconf.label18.caption
 msgid "Connection"
 msgstr "Forbindelse"
-
-#: tfconf.label2.caption
-msgid "Trend dot:"
-msgstr "Trendprik:"
 
 #: tfconf.label20.caption
 msgid "The custom range is a subrange with your ideal goal."
@@ -1038,16 +1012,6 @@ msgstr "Ved lav:"
 #: tfconf.lconfigpredict.caption
 msgid "Glucose Predictions Settings"
 msgstr "Indstillinger for glukoseforudsigelse"
-
-#: tfconf.ldot.caption
-msgctxt "tfconf.ldot.caption"
-msgid "PREVIEW"
-msgstr "FORHÅNDSVISNING"
-
-#: tfconf.ldotnow.caption
-msgctxt "tfconf.ldotnow.caption"
-msgid "PREVIEW"
-msgstr "FORHÅNDSVISNING"
 
 #: tfconf.lext.caption
 msgid "Plugin Folder"
@@ -2639,20 +2603,6 @@ msgstr "Dette styrer, om forskel/delta vises i center eller til højre (når for
 msgid "This turns off all media-related features. Can speed up start."
 msgstr "Dette slår alle medierelaterede funktioner fra. Kan fremskynde opstart."
 
-#: uconf.rs_dot_click
-msgid "Dot appearance is modified below!"
-msgstr "Prikkens udseende ændres nedenfor!"
-
-#: uconf.rs_dot_help
-msgid ""
-"You can change the design of the trend dots here, by using Unicode characters. Enter the Unicode, or use a template.\n"
-"There are two dots, the normal dot and the current reading (when the dots are expanded/clicked)"
-msgstr ""
-
-#: uconf.rs_dot_help_title
-msgid "Changing the trend dots"
-msgstr "Ændrer trendprikker"
-
 #: uconf.rs_driver_contributor
 msgid "Driver contributor: "
 msgstr "Bidragyder: "
@@ -2708,26 +2658,6 @@ msgstr "Du kan ændre skrifttypen for aflæsning, tid og pil. Klik på det respe
 #: uconf.rs_full_arrow_set_help
 msgid "This will display all prediction arrows, by default Trndi just shows going up, down or steady"
 msgstr "Dette viser alle forudsigelsespile; som standard viser Trndi blot op, ned eller stabilt"
-
-#: uconf.rs_graph_icon_current
-msgid "Choose an icon for the current point in the graph"
-msgstr "Vælg et ikon for det aktuelle punkt i grafen"
-
-#: uconf.rs_graph_icon_current_desc
-msgid "This will be used for current graph point"
-msgstr "Dette bruges til det aktuelle grafpunkt"
-
-#: uconf.rs_graph_icon_graph
-msgid "Choose an icon for points in the graph"
-msgstr "Vælg et ikon for punkter i grafen"
-
-#: uconf.rs_graph_icon_graph_desc
-msgid "This will be used for graph points"
-msgstr "Dette bruges til grafpunkter"
-
-#: uconf.rs_graph_icon_title
-msgid "Choose icon"
-msgstr "Vælg ikon"
 
 #: uconf.rs_hastouch
 msgid "Shows if Trndi detected a touch screen"

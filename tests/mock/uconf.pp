@@ -108,16 +108,6 @@ type
     cbShowSensorExpiry: TCheckBox;
     cbLang: TComboBox;
 
-    cbFonts: TGroupBox;
-    lDot: TLabel;
-    lDot1: TLabel;
-    lDot2: TLabel;
-    lDot3: TLabel;
-    lDotCurr: TLabel;
-    eDot: TEdit;
-    lDotNow: TLabel;
-    eDotNow: TEdit;
-
     // Color buttons and related controls
     cl_ok_bg: TColorButton;
     cl_hi_bg: TColorButton;
@@ -312,16 +302,6 @@ begin
   cbShowSensorExpiry := TCheckBox.Create(nil);
   cbLang := TComboBox.Create(nil);
 
-  cbFonts := TGroupBox.Create(nil);
-  lDot := TLabel.Create(nil);
-  lDot1 := TLabel.Create(nil);
-  lDot2 := TLabel.Create(nil);
-  lDot3 := TLabel.Create(nil);
-  lDotCurr := TLabel.Create(nil);
-  eDot := TEdit.Create(nil);
-  lDotNow := TLabel.Create(nil);
-  eDotNow := TEdit.Create(nil);
-
   // Color buttons and related controls
   cl_ok_bg := TColorButton.Create(nil);
   cl_hi_bg := TColorButton.Create(nil);
@@ -384,15 +364,6 @@ begin
   cl_lo_bg.Free;
   cl_hi_bg.Free;
   cl_ok_bg.Free;
-  eDotNow.Free;
-  lDotNow.Free;
-  eDot.Free;
-  lDotCurr.Free;
-  lDot3.Free;
-  lDot2.Free;
-  lDot1.Free;
-  lDot.Free;
-  cbFonts.Free;
 
   cbLang.Free;
   cbAlertMissing.Free;

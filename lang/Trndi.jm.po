@@ -394,16 +394,6 @@ msgstr "Importera instellningar"
 msgid "- Remove"
 msgstr "- Radera"
 
-#: tfconf.btemplatecurrent.caption
-msgctxt "tfconf.btemplatecurrent.caption"
-msgid "Template"
-msgstr "Mallar"
-
-#: tfconf.btemplatetrend.caption
-msgctxt "tfconf.btemplatetrend.caption"
-msgid "Template"
-msgstr "Mallar"
-
 #: tfconf.btest.caption
 msgid "Test"
 msgstr "Testa"
@@ -432,11 +422,6 @@ msgstr "Spara"
 #: tfconf.button3.caption
 msgid "Check for update"
 msgstr "Kolla uppdatering"
-
-#: tfconf.button4.caption
-msgctxt "tfconf.button4.caption"
-msgid "Reset Dots"
-msgstr "oterstell punkter"
 
 #: tfconf.caption
 msgctxt "tfconf.caption"
@@ -514,10 +499,6 @@ msgstr "Blixtra vid logt blodsocker"
 #: tfconf.cbflashperfect.caption
 msgid "Flash on perfect reading (5.5mmol/L / 100mg/dL)"
 msgstr "Blixtra vid perfekt verde (5,5mmol/L / 100mg/dL)"
-
-#: tfconf.cbfonts.caption
-msgid "Trend Dots"
-msgstr "Trendpunkter"
 
 #: tfconf.cbhcontrast.caption
 msgid "High Contrast"
@@ -849,10 +830,6 @@ msgctxt "tfconf.label15.caption"
 msgid "Server Address / Dexcom Username"
 msgstr "Serveradress / Anvendare Dexcom"
 
-#: tfconf.label16.caption
-msgid "Current dot:"
-msgstr "Nuvarande punkt:"
-
 #: tfconf.label17.caption
 msgid "These settings reside in different parts of the settings dialog, but has been collected here for your convinience!"
 msgstr "Dessa instellningar finns po diverse platser i instellningarna, men har samlats her for din bekvemligheit!"
@@ -860,10 +837,6 @@ msgstr "Dessa instellningar finns po diverse platser i instellningarna, men har 
 #: tfconf.label18.caption
 msgid "Connection"
 msgstr "Anslutning"
-
-#: tfconf.label2.caption
-msgid "Trend dot:"
-msgstr "Punktsymbol:"
 
 #: tfconf.label20.caption
 msgid "The custom range is a subrange with your ideal goal."
@@ -1050,16 +1023,6 @@ msgstr "Vid logt:"
 #: tfconf.lconfigpredict.caption
 msgid "Glucose Predictions Settings"
 msgstr "Instellningar for glukosforutsogelse"
-
-#: tfconf.ldot.caption
-msgctxt "tfconf.ldot.caption"
-msgid "PREVIEW"
-msgstr "FôRHANDSVISNING"
-
-#: tfconf.ldotnow.caption
-msgctxt "tfconf.ldotnow.caption"
-msgid "PREVIEW"
-msgstr "FôRHANDSVISNING"
 
 #: tfconf.lext.caption
 msgctxt "tfconf.lext.caption"
@@ -2827,20 +2790,6 @@ msgstr "Detta styr skillnaden/deltans position, center eller hôger (ner forutso
 msgid "This turns off all media-related features. Can speed up start."
 msgstr "Stenger av alla media-relaterade funktioner. Kan snabba po uppstarten."
 
-#: uconf.rs_dot_click
-msgid "Dot appearance is modified below!"
-msgstr "Punktutseende endras nedan!"
-
-#: uconf.rs_dot_help
-msgid ""
-"You can change the design of the trend dots here, by using Unicode characters. Enter the Unicode, or use a template.\n"
-"There are two dots, the normal dot and the current reading (when the dots are expanded/clicked)"
-msgstr ""
-
-#: uconf.rs_dot_help_title
-msgid "Changing the trend dots"
-msgstr "Endrar trendpunkterna"
-
 #: uconf.rs_driver_contributor
 msgid "Driver contributor: "
 msgstr "Bidragen av: "
@@ -2896,28 +2845,6 @@ msgstr "Du kan endra typsnittet po avlesning, tid och pil. Klicka po respektive 
 #: uconf.rs_full_arrow_set_help
 msgid "This will display all prediction arrows, by default Trndi just shows going up, down or steady"
 msgstr "Detta kommer visa alla forutspoelsepilar, som standard visar Trndi bara om verde forutspos bli logt, hôgt eller rakt"
-
-#: uconf.rs_graph_icon_current
-msgid "Choose an icon for the current point in the graph"
-msgstr "Velj en ikon fôr den nuvarande punkten i grafen"
-
-#: uconf.rs_graph_icon_current_desc
-#, fuzzy
-#| msgid "This will be used for curent graph point"
-msgid "This will be used for current graph point"
-msgstr "Denna kommer anvendas fôr den nuvarande grafpunkten"
-
-#: uconf.rs_graph_icon_graph
-msgid "Choose an icon for points in the graph"
-msgstr "Velj en ikon fôr punkterna i grafen"
-
-#: uconf.rs_graph_icon_graph_desc
-msgid "This will be used for graph points"
-msgstr "Denna kommer att anvendas fôr grafpunkterna"
-
-#: uconf.rs_graph_icon_title
-msgid "Choose icon"
-msgstr "Velj ikon"
 
 #: uconf.rs_hastouch
 msgid "Shows if Trndi detected a touch screen"

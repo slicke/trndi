@@ -522,20 +522,9 @@ procedure LoadLanguageSettings(f: TfConf);
   end;
 
 procedure SetupUIElements(f: TfConf);
-  const
-    dotdef = $2b24;
   begin
     with f do
     begin
-      f.lDot.Caption := native.GetWideCharSetting('font.dot', WChar(dotdef));
-      eDot.Text := native.GetSetting('font.dot', '2B24');
-      lDotNow.Caption := native.GetWideCharSetting('font.dot_fresh',
-        WChar(dotdef));
-      eDotNow.Text := native.GetSetting('font.dot_fresh', '2600');
-      f.lDot1.Caption := f.lDot.Caption;
-      f.lDot2.Caption := f.lDot.Caption;
-      f.lDot3.Caption := f.lDot.Caption;
-      f.lDotCurr.Caption := f.lDotNow.Caption;
       f.Invalidate;
 
       lVal.Font.Name := Self.lVal.Font.Name;
@@ -545,24 +534,10 @@ procedure SetupUIElements(f: TfConf);
       lArrow.Font.Color := Self.lArrow.Font.Color;
       lAgo.Font.Color := Self.lAgo.Font.Color;
       lVal.Caption := Self.lVal.Caption;
-      if Length(Self.TrendDots) > 1 then
-      begin
-        lDot1.Font := Self.TrendDots[1].Font;
-        lDot2.Font := Self.TrendDots[1].Font;
-        lDot3.Font := Self.TrendDots[1].Font;
-      end;
       lArrow.Caption := Self.lArrow.Caption;
       lAgo.Caption := Self.lAgo.Caption;
       pnDisplay.Color := Self.Color;
       pnDisplay.Font := fBG.Font;
-      cbFonts.Font := eAddr.Font;
-
-      if Length(Self.TrendDots) > 1 then
-      begin
-        lDot1.Font.Color := Self.TrendDots[1].Font.Color;
-        lDot2.Font.Color := Self.TrendDots[1].Font.Color;
-        lDot3.Font.Color := Self.TrendDots[1].Font.Color;
-      end;
 
       cl_ok_bg.ButtonColor := native.GetColorSetting('ux.bg_color_ok', bg_color_ok);
       cl_hi_bg.ButtonColor := native.GetColorSetting('ux.bg_color_hi', bg_color_hi);
@@ -701,11 +676,6 @@ procedure SaveUserSettings(f: TfConf);
   begin
     with f, native do
     begin
-      if TryStrToInt('$' + eDot.Text, i) then
-        SetWideCharSetting('font.dot', WChar(i));
-      if TryStrToInt('$' + eDotNow.Text, i) then
-        SetWideCharSetting('font.dot_fresh', WChar(i));
-
       SetSetting('font.val', lVal.Font.Name);
       SetSetting('font.arrow', lArrow.Font.Name);
       SetSetting('font.ago', lAgo.Font.Name);
