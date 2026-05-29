@@ -178,13 +178,10 @@ begin
       end;
     finally
       for j := 0 to High(args) do
-      try
-        JS_Free(ctx, @args[j]);
-      except
-      end;
-      try JS_Free(ctx, @retVal);    except end;
-      try JS_Free(ctx, @funcObj);   except end;
-      try JS_Free(ctx, @globalObj); except end;
+        ctx^.FreeInlined(args[j]);
+      ctx^.FreeInlined(retVal);
+      ctx^.FreeInlined(funcObj);
+      ctx^.FreeInlined(globalObj);
     end;
   end;
 end;
