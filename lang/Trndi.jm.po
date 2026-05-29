@@ -2724,6 +2724,10 @@ msgstr ""
 msgid "Select your CGM system in the list, then enter your credentials"
 msgstr "Velj ditt CGM-system, ange sedan dina uppgifter"
 
+#: uconf.rs_clear_margin_help
+msgid "Once an alert triggers, the reading must recover this many units past the threshold before the alert can fire again."
+msgstr ""
+
 #: uconf.rs_color_bg
 msgid "Trndi can draw a rectangle/background in the graph's background, to visually represent your high and low limits."
 msgstr "Trndi kan rita en rektangel/bakgrund i grafens bakgrund, fôr att visuellt representera dina grenser fôr hôgt och logt."
@@ -2869,6 +2873,10 @@ msgstr ""
 "Trndi stöder mer än en användare, detta kallas fleranvändarläge.\n"
 "I denna del kan du lägga till/ta bort konton. Det finns alltid ett standardkonto som inte kan raderas.\n"
 "Konton har sina egna inställningar och fjärrservrar samt är \"sandboxade\". Starta en ny instans av Trndi för att logga in på ett givet konto."
+
+#: uconf.rs_must_persist_help
+msgid "An alert will only trigger if the condition has been true continuously for this many minutes. Set to 0 to trigger immediately."
+msgstr ""
 
 #: uconf.rs_newver
 #, object-pascal-format, fuzzy, badformat

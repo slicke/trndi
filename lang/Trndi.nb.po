@@ -2540,6 +2540,10 @@ msgstr ""
 msgid "Select your CGM system in the list, then enter your credentials"
 msgstr "Velg ditt CGM-system i listen, og angi deretter dine opplysninger"
 
+#: uconf.rs_clear_margin_help
+msgid "Once an alert triggers, the reading must recover this many units past the threshold before the alert can fire again."
+msgstr ""
+
 #: uconf.rs_color_bg
 msgid "Trndi can draw a rectangle/background in the graph's background, to visually represent your high and low limits."
 msgstr "Trndi kan tegne et rektangel/bakgrunn i grafens bakgrunn for å visuelt representere dine høye og lave grenser."
@@ -2672,6 +2676,10 @@ msgstr "Ved beregning av tid i målområdet brukes dette antallet minutter. Hvis
 msgid ""
 "Trndi supports <b>more than one user</b>, this is called the <i>multi user mode</i>.<br>In this section you can add/remove accounts. There's <i>always</i> a default account which cannot be deleted.\n"
 "Accounts have their own settings and remote servers, and are <i>\"sandboxed\"</i>.<br><br>Start a new instance of Trndi to log in to a given user account."
+msgstr ""
+
+#: uconf.rs_must_persist_help
+msgid "An alert will only trigger if the condition has been true continuously for this many minutes. Set to 0 to trigger immediately."
 msgstr ""
 
 #: uconf.rs_newver
