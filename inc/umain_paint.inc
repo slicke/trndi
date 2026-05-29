@@ -265,6 +265,7 @@ var
   cr, fillH, y: integer;
   isOverdue: boolean;
   t: double;
+  badgeH, badgeY: integer;
 begin
   pnl := Sender as TPanel;
   if (bgs = nil) or (Length(bgs) = 0) then
@@ -335,5 +336,24 @@ begin
     FillRect(Classes.Rect(fillR.Left, fillR.Top, fillR.Left + 1, fillR.Bottom));
     Brush.Color := DarkenColor(fillCol, 0.12);
     FillRect(Classes.Rect(fillR.Right - 1, fillR.Top, fillR.Right, fillR.Bottom));
+  end;
+
+  // Step 4 — blinking white badges with "!" at top/middle/bottom when past due
+  if isOverdue and (SecondOf(Now) mod 2 = 0) then
+  begin
+    with pnl.Canvas do
+    begin
+      Font.Style := [fsBold];
+      Font.Size  := Max(8, pnl.Width);
+      badgeH      := TextHeight('!') + 4;
+      badgeY      := 4;
+      Brush.Style := bsSolid;
+      Brush.Color := RGBToColor(255, 255, 255);
+      Pen.Style   := psClear;
+      RoundRect(2, badgeY, pnl.Width - 2, badgeY + badgeH, 4, 4);
+      Font.Color  := fillCol;
+      Brush.Style := bsClear;
+      TextOut((pnl.Width - TextWidth('!')) div 2, badgeY + 2, '!');
+    end;
   end;
 end;
