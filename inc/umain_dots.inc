@@ -201,9 +201,6 @@ procedure TfBG.DotPaint(Sender: TObject);
 var
   S, fontn: string;
   L: TDotControl;
-  hasfont: boolean;
-  needsRecalc: boolean;
-  isGlyph: boolean;
   d, ringWidth: integer;
   dotColor: TColor;
 begin
@@ -211,9 +208,7 @@ begin
   S := L.Caption;
   L.AutoSize := false;
 
-  isGlyph := (S = DOT_GRAPH) or (S = DOT_FRESH);
-
-  if FUseDrawnDots and isGlyph then
+  if (S = DOT_GRAPH) or (S = DOT_FRESH) then
   begin
     // Square the bounds — ResizeDot pre-sized to a square slot. Use the smaller
     // edge so a sloppy resize round can't crop the circle.
@@ -231,45 +226,15 @@ begin
     Exit;
   end;
 
-  if S = DOT_GRAPH then
-    hasfont := FontGUIInList(fontn)
-  else
-    hasfont := FontTXTInList(fontn);
-
-  needsRecalc := (FCachedFontSize <> L.Font.Size) or (FCachedFontName <> fontn) or
-    (FCachedTextWidth = 0) or (FCachedTextHeight = 0) or (S <> DOT_GRAPH);
-
+  // Expanded display: render the BG value (or other text caption) directly.
   with L.Canvas do
   begin
     Brush.Style := bsClear;
-
-    if hasfont then
+    if FontTXTInList(fontn) then
       Font.Name := fontn;
-
     Font.Size := L.Font.Size;
-
-    if needsRecalc then
-    begin
-      FCachedTextWidth := TextWidth(S);
-      FCachedTextHeight := TextHeight(S);
-      if S = DOT_GRAPH then
-      begin
-        FCachedFontSize := L.Font.Size;
-        FCachedFontName := fontn;
-      end;
-    end;
-
-    if S = DOT_GRAPH then
-    begin
-      L.Width := FCachedTextWidth;
-      L.Height := FCachedTextHeight;
-    end
-    else
-    begin
-      L.Width := TextWidth(S) + 4;
-      L.Height := TextHeight(S) + 2;
-    end;
-
+    L.Width := TextWidth(S) + 4;
+    L.Height := TextHeight(S) + 2;
     TextOut(0, 0, S);
   end;
 end;
@@ -369,11 +334,10 @@ var
   da: integer;
   centerShift: integer;
 begin
-  // SetPointHeight places dots by their Top edge. The legacy unicode glyph
-  // happens to draw its visible mass near that top edge, but a Canvas.Ellipse
-  // is geometrically centred in its bounding box — so a drawn dot is rendered
-  // half a diameter below the intended value-Y unless we shift the whole row.
-  if FUseDrawnDots and (Length(TrendDots) > 1) and Assigned(TrendDots[1]) then
+  // SetPointHeight places dots by their Top edge, but a drawn circle is
+  // geometrically centred in its bounding box — shift the whole row up by
+  // half a diameter so the dot's centre lands on the intended value-Y.
+  if (Length(TrendDots) > 1) and Assigned(TrendDots[1]) then
   begin
     centerShift := -(TrendDots[1].Height div 2);
     if centerShift <> 0 then
@@ -473,85 +437,6 @@ begin
   {$endif}
 end;
 
-function TfBG.CalculateDotVisualOffset: integer;
-var
-  bmp: TBitmap;
-  y, x: integer;
-  fontSize: integer;
-  halfHeight: integer;
-  firstPixelY: integer;
-  bgColor, pixelColor: TColor;
-  found: boolean;
-  fontName: string;
-begin
-  Result := 0;
-  bmp := TBitmap.Create;
-  try
-    try
-      fontSize := 24;
-      bmp.Width := fontSize * 2;
-      bmp.Height := fontSize * 2;
-
-      {$ifdef DARWIN}
-      if bmp.Canvas.Handle = 0 then ;
-      {$endif}
-
-      bgColor := clWhite;
-      bmp.Canvas.Brush.Color := bgColor;
-      bmp.Canvas.FillRect(0, 0, bmp.Width, bmp.Height);
-
-      if FontGUIInList(fontName) then
-        bmp.Canvas.Font.Name := fontName
-      else
-        bmp.Canvas.Font.Name := 'default';
-      bmp.Canvas.Font.Size := fontSize;
-      bmp.Canvas.Font.Color := clBlack;
-
-      bmp.Canvas.TextOut(fontSize div 2, fontSize div 2, DOT_GRAPH);
-
-      firstPixelY := -1;
-      found := false;
-
-      for y := 0 to bmp.Height - 1 do
-      begin
-        for x := 0 to bmp.Width - 1 do
-        begin
-          pixelColor := bmp.Canvas.Pixels[x, y];
-          if pixelColor <> bgColor then
-          begin
-            firstPixelY := y;
-            found := true;
-            break;
-          end;
-        end;
-        if found then
-          break;
-      end;
-
-      if found then
-      begin
-        halfHeight := bmp.Height div 2;
-        Result := firstPixelY - halfHeight;
-        TrndiDLog(Format(
-          'DOT_VISUAL_OFFSET calculated: font=%s, firstPixel=%d, halfHeight=%d, offset=%d',
-          [fontName, firstPixelY, halfHeight, Result]));
-      end;
-    except
-      on E: Exception do
-      begin
-        {$ifdef DARWIN}
-        TrndiDLog('CalculateDotVisualOffset error on macOS: ' + E.Message);
-        Result := 0;
-        {$else}
-        raise;
-        {$endif}
-      end;
-    end;
-  finally
-    bmp.Free;
-  end;
-end;
-
 // Expands a trend dot to show actual bg value with highlighting for latest reading
 procedure TfBG.ExpandDot(l: TDotControl; c, ix: integer);
 var
@@ -571,16 +456,10 @@ begin
     l.Caption := IfThen(isDot, l.Hint, DOT_GRAPH);
 
   if not isDot then
-  begin
-    ResizeDot(l, c, ix);
-  end
+    ResizeDot(l, c, ix)
   else
   begin
-    l.font.Size := (lVal.Font.Size div c);
-    FCachedTextWidth := 0;
-    FCachedTextHeight := 0;
-    FCachedFontSize := 0;
-    FCachedFontName := '';
+    l.Font.Size := (lVal.Font.Size div c);
     l.Invalidate;
   end;
 end;
@@ -627,17 +506,14 @@ end;
 // Scales a dot to fill ~85% of its slot width so adjacent dots never overlap.
 procedure TfBG.ResizeDot(l: TDotControl; c, ix: integer);
 var
-  th, tw, slotW, d: integer;
-  isGlyph: boolean;
+  slotW, d: integer;
 begin
   slotW := Max(1, fBG.ClientWidth div Max(c, 1));
-  isGlyph := (l.Caption = DOT_GRAPH) or (l.Caption = DOT_FRESH);
   l.AutoSize := false;
-  if FUseDrawnDots and isGlyph then
+  if (l.Caption = DOT_GRAPH) or (l.Caption = DOT_FRESH) then
   begin
-    // Drawn-circle mode: compute diameter directly from the slot. 0.6 matches
-    // the visible disc area of the legacy ● glyph rendered at 85% slot width,
-    // and skips the Canvas.TextWidth feedback loop entirely.
+    // Square sizing — DotPaint draws a circle inscribed in this box. 0.6
+    // matches the visible disc area of the legacy ● glyph at 85% slot width.
     d := Max(8, Round(slotW * 0.6));
     l.Width := d;
     l.Height := d;
@@ -648,21 +524,11 @@ begin
   end
   else
   begin
-    l.Font.Size := Max(8, slotW);
-    {$ifndef DARWIN}
-    // Canvas.TextWidth must not be called outside drawRect on Cocoa —
-    // it corrupts the NSGraphicsContext (CheckDC bug). DotPaint will
-    // correct the bounds when it renders.
-    tw := l.Canvas.TextWidth(DOT_GRAPH);
-    if tw > 0 then
-      l.Font.Size := Max(8, Round(l.Font.Size * (slotW * 85 div 100) / tw));
-    tw := l.Canvas.TextWidth(DOT_GRAPH);
-    th := l.Canvas.TextHeight(DOT_GRAPH);
-    l.Width := Max(1, tw);
-    l.Height := Max(th, l.Font.Size);
-    TrndiDLog(Format('TrendDots[%d] resized with Font Size = %d, W=%d, H=%d.',
-      [ix, l.Font.Size, l.Width, l.Height]));
-    {$endif}
+    // Expanded numeric display — pick a font size from the slot; DotPaint
+    // sets Width/Height from TextWidth/TextHeight when it renders.
+    l.Font.Size := Max(8, slotW div 3);
+    TrndiDLog(Format('TrendDots[%d] resized (text) Font Size = %d.',
+      [ix, l.Font.Size]));
   end;
 end;
 

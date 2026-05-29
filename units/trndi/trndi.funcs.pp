@@ -135,16 +135,18 @@ BG_REFRESH = 300000; // 5 min refresh
 APP_BUILD_DATE = {$I %DATE%}; // Returns "2025/07/21"
 APP_BUILD_TIME = {$I %TIME%}; // Returns "14:30:25"
 
+// Sentinel caption values that flag a dot's display state. They are never
+// rendered as text — DotPaint draws a circle when it sees them — so any
+// otherwise-unused control codes work.
+DOT_GRAPH = #1;  // Normal circle
+DOT_FRESH = #2;  // Most-recent reading (drawn with an outer ring)
+
 var
 {$ifdef DEBUG}
 debug_log_api: boolean = false;
 {$endif}
 
-DOT_GRAPH: unicodestring = WChar($2B24);  // Circle
-DOT_FRESH: unicodestring = WChar($2600);  // Sun
 DOT_ADJUST: single = 0; // Multiplyer where dots appear
-DOT_VISUAL_OFFSET: integer = 0;
-  // Vertical offset to align limit lines with visual center of dot (compensates for internal whitespace in dot character)
 MAX_MIN: integer = 1440; // Max time to request
 MAX_RESULT: integer = 25; // Max results (scaled up after API creation based on reporting interval)
 ActiveDots: integer = 10; // Runtime dot count for the main trend display (saved as 'ux.dot_count')

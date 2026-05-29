@@ -187,12 +187,6 @@ var
   i: integer;
   fontName: string;
 begin
-  // Set dots
-  DOT_GRAPH := native.GetWideCharSetting('font.dot', WChar($2B24));
-  DOT_FRESH := native.GetWideCharSetting('font.dot_fresh', WChar($2600));
-
-  FUseDrawnDots := SameText(native.GetSetting('ux.dot_style', 'circle'), 'circle');
-
   // Load fonts
   fontName := native.GetSetting('font.val', 'default');
   if fontName <> 'default' then
@@ -865,7 +859,6 @@ begin
 
     DOT_OFFSET_RANGE := GetIntSetting('ux.dot_offset_range', DOT_OFFSET_RANGE);
     DELTA_MAX := GetIntSetting('ux.delta_max', DELTA_MAX);
-    // DOT_VISUAL_OFFSET := CalculateDotVisualOffset;  // No longer needed - centering uses half dot height
     UseRangeColor := GetBoolSetting('ux.range_color', true);
     PaintRange := GetBoolSetting('ux.paint_range', true);
     PaintRangeLines := GetBoolSetting('ux.paint_range_lines', false);

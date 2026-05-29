@@ -391,16 +391,6 @@ msgstr "Einstellungen importieren"
 msgid "- Remove"
 msgstr "- Entfernen"
 
-#: tfconf.btemplatecurrent.caption
-msgctxt "tfconf.btemplatecurrent.caption"
-msgid "Template"
-msgstr "Vorlage"
-
-#: tfconf.btemplatetrend.caption
-msgctxt "tfconf.btemplatetrend.caption"
-msgid "Template"
-msgstr "Vorlage"
-
 #: tfconf.btest.caption
 msgid "Test"
 msgstr "Test"
@@ -428,10 +418,6 @@ msgstr "Speichern"
 #: tfconf.button3.caption
 msgid "Check for update"
 msgstr "Nach Update suchen"
-
-#: tfconf.button4.caption
-msgid "Reset Dots"
-msgstr "Punkte zurücksetzen"
 
 #: tfconf.caption
 #, fuzzy
@@ -507,10 +493,6 @@ msgstr "Blinken bei niedrigem Blutzucker"
 #: tfconf.cbflashperfect.caption
 msgid "Flash on perfect reading (5.5mmol/L / 100mg/dL)"
 msgstr "Blinken bei perfektem Messwert (5,5mmol/L / 100mg/dL)"
-
-#: tfconf.cbfonts.caption
-msgid "Trend Dots"
-msgstr "Trend-Punkte"
 
 #: tfconf.cbhcontrast.caption
 msgid "High Contrast"
@@ -839,10 +821,6 @@ msgstr "HINWEIS: Unterstützung abhängig von der Datenquelle "
 msgid "Server Address / Dexcom Username"
 msgstr "Serveradresse / Dexcom-Benutzername"
 
-#: tfconf.label16.caption
-msgid "Current dot:"
-msgstr "Aktueller Punkt:"
-
 #: tfconf.label17.caption
 msgid "These settings reside in different parts of the settings dialog, but has been collected here for your convinience!"
 msgstr "Diese Einstellungen befinden sich in verschiedenen Teilen des Einstellungsdialogs, wurden aber hier für Ihre Bequemlichkeit gesammelt!"
@@ -850,10 +828,6 @@ msgstr "Diese Einstellungen befinden sich in verschiedenen Teilen des Einstellun
 #: tfconf.label18.caption
 msgid "Connection"
 msgstr "Verbindung"
-
-#: tfconf.label2.caption
-msgid "Trend dot:"
-msgstr "Trend-Punkt:"
 
 #: tfconf.label20.caption
 msgid "The custom range is a subrange with your ideal goal."
@@ -1038,16 +1012,6 @@ msgstr "Bei niedrig:"
 #: tfconf.lconfigpredict.caption
 msgid "Glucose Predictions Settings"
 msgstr "Glucoseprognosen-Einstellungen"
-
-#: tfconf.ldot.caption
-msgctxt "tfconf.ldot.caption"
-msgid "PREVIEW"
-msgstr "VORSCHAU"
-
-#: tfconf.ldotnow.caption
-msgctxt "tfconf.ldotnow.caption"
-msgid "PREVIEW"
-msgstr "VORSCHAU"
 
 #: tfconf.lext.caption
 msgid "Plugin Folder"
@@ -2639,20 +2603,6 @@ msgstr "Dies steuert, ob die Differenz/Delta in der Mitte oder rechts angezeigt 
 msgid "This turns off all media-related features. Can speed up start."
 msgstr "Dies deaktiviert alle medienbezogenen Funktionen. Kann den Start beschleunigen."
 
-#: uconf.rs_dot_click
-msgid "Dot appearance is modified below!"
-msgstr "Das Aussehen der Punkte wird unten geändert!"
-
-#: uconf.rs_dot_help
-msgid ""
-"You can change the design of the trend dots here, by using Unicode characters. Enter the Unicode, or use a template.\n"
-"There are two dots, the normal dot and the current reading (when the dots are expanded/clicked)"
-msgstr ""
-
-#: uconf.rs_dot_help_title
-msgid "Changing the trend dots"
-msgstr "Trendpunkte werden geändert"
-
 #: uconf.rs_driver_contributor
 msgid "Driver contributor: "
 msgstr "Treiberbeitragender: "
@@ -2708,26 +2658,6 @@ msgstr "Sie können die Schriftart für Messwert, Zeit und Pfeil ändern. Klicke
 #: uconf.rs_full_arrow_set_help
 msgid "This will display all prediction arrows, by default Trndi just shows going up, down or steady"
 msgstr "Dies zeigt alle Prognosepfeile an; standardmäßig zeigt Trndi nur aufwärts, abwärts oder konstant"
-
-#: uconf.rs_graph_icon_current
-msgid "Choose an icon for the current point in the graph"
-msgstr "Symbol für den aktuellen Punkt im Graphen auswählen"
-
-#: uconf.rs_graph_icon_current_desc
-msgid "This will be used for current graph point"
-msgstr "Dies wird für den aktuellen Graphpunkt verwendet"
-
-#: uconf.rs_graph_icon_graph
-msgid "Choose an icon for points in the graph"
-msgstr "Symbol für Punkte im Graphen auswählen"
-
-#: uconf.rs_graph_icon_graph_desc
-msgid "This will be used for graph points"
-msgstr "Dies wird für Graphpunkte verwendet"
-
-#: uconf.rs_graph_icon_title
-msgid "Choose icon"
-msgstr "Symbol auswählen"
 
 #: uconf.rs_hastouch
 msgid "Shows if Trndi detected a touch screen"

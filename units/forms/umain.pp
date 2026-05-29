@@ -424,11 +424,6 @@ private
   FCloseAfterFormCreate: boolean; // Flag to close form after initialization completes
 
     // Performance optimization fields
-  FCachedTextWidth: integer;
-  FCachedTextHeight: integer;
-  FCachedFontSize: integer;
-  FCachedFontName: string;
-  FUseDrawnDots: boolean; // Render trend dots as drawn circles instead of unicode glyphs
   FLastReadingsHash: cardinal; // Hash of last readings for change detection
   FLastAPICall: TDateTime; // Timestamp of the last successful API call
   FCachedReadings: array of BGReading; // Readings saved from last fetch
@@ -507,12 +502,6 @@ private
   procedure RepaintVisibleTrendDots;
   procedure CreateTrendDots;
   procedure placeForm;
-  {** Analyze a generated glyph bitmap for the dot character to compute a
-      vertical offset that aligns limit lines with the visual center of
-      a drawn dot across widgetset/font differences.
-      @returns(integer offset in pixels.)
-   }
-  function CalculateDotVisualOffset: integer;
 
     // Helper methods for update procedure
   {** Fetch readings from the configured data source(s) and validate them.
