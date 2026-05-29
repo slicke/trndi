@@ -88,17 +88,6 @@ begin
   for i := 1 to ActiveDots do
     if not Assigned(FWarningDots[i]) then
     begin
-      {$ifdef DARWIN}
-      FWarningDots[i] := TLabel.Create(Self);
-      with TLabel(FWarningDots[i]) do
-      begin
-        Parent := pnWarning;
-        AutoSize := true;
-        Alignment := taCenter;
-        Layout := tlCenter;
-        Transparent := true;
-      end;
-      {$else}
       FWarningDots[i] := TPaintBox.Create(Self);
       with TPaintBox(FWarningDots[i]) do
       begin
@@ -106,7 +95,6 @@ begin
         AutoSize := false;
         OnPaint := @DotPaint;
       end;
-      {$endif}
 
       with FWarningDots[i] do
       begin
@@ -169,14 +157,7 @@ begin
       dstDot.Hint := srcDot.Hint;
       dstDot.ShowHint := srcDot.ShowHint or (srcDot.Hint <> '');
       dstDot.Tag := srcDot.Tag;
-      {$ifdef DARWIN}
-      // Full Font.Assign on a TLabel (NSTextField) can trigger unexpected
-      // layout/repaint cycles on Cocoa. Copy only what the dot actually needs.
-      dstDot.Font.Size := srcDot.Font.Size;
-      dstDot.Font.Color := srcDot.Font.Color;
-      {$else}
       dstDot.Font.Assign(srcDot.Font);
-      {$endif}
       dstDot.Width := srcDot.Width;
       dstDot.Height := srcDot.Height;
       dstDot.Left := dotPos.X;
