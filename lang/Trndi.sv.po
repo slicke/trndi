@@ -707,7 +707,7 @@ msgstr "8080"
 
 #: tfconf.gbalertbehavior.caption
 msgid "Alert behavior"
-msgstr ""
+msgstr "Varningsbeteende"
 
 #: tfconf.gbdisplayprefs.caption
 msgid "Display Preferences"
@@ -972,7 +972,7 @@ msgstr "100 min"
 
 #: tfconf.lalertdurrow.caption
 msgid "Must persist (minutes)"
-msgstr ""
+msgstr "Måste kvarstå (minuter)"
 
 #: tfconf.lalerthicol.caption
 #, fuzzy
@@ -994,7 +994,7 @@ msgstr "Låg"
 
 #: tfconf.lalerturgcol.caption
 msgid "Urgent low"
-msgstr ""
+msgstr "Akut lågt"
 
 #: tfconf.larch.caption
 msgid "Unknown Architecture"
@@ -2674,7 +2674,7 @@ msgstr "Välj ditt CGM-system, ange sedan dina uppgifter"
 
 #: uconf.rs_clear_margin_help
 msgid "Once an alert triggers, the reading must recover this many units past the threshold before the alert can fire again."
-msgstr ""
+msgstr "När en varning har utlösts måste avläsningen återhämta sig detta antal enheter förbi tröskeln innan varningen kan utlösas igen."
 
 #: uconf.rs_color_bg
 msgid "Trndi can draw a rectangle/background in the graph's background, to visually represent your high and low limits."
@@ -2788,7 +2788,7 @@ msgstr "Tilläggsantal: %d"
 
 #: uconf.rs_ext_requests
 msgid "Requests: "
-msgstr ""
+msgstr "Förfrågningar: "
 
 #: uconf.rs_font_help
 msgid "You can change the font of the reading, time and arrow. Click on the respective item here to change the font"
@@ -2817,7 +2817,7 @@ msgstr ""
 
 #: uconf.rs_must_persist_help
 msgid "An alert will only trigger if the condition has been true continuously for this many minutes. Set to 0 to trigger immediately."
-msgstr ""
+msgstr "En varning utlöses bara om tillståndet har uppfyllts kontinuerligt i detta antal minuter. Ange 0 för att utlösa direkt."
 
 #: uconf.rs_newver
 #, object-pascal-format
@@ -2875,14 +2875,6 @@ msgstr "P.g.a. hårdvarubegränsningar, kan %s på %s inte stöda tillägg"
 #: uconf.rs_outdated_help
 msgid "This is the time after which Trndi will show the \"no recent\" readings overlay. Trndi checks this when updating from the remote server, not every minute."
 msgstr "Detta är den tid efter vilken Trndi visar \"inga färska avläsningar\". Trndi kontrollerar detta när en uppdatering sker från servern, inte varje minut."
-
-#: uconf.rs_must_persist_help
-msgid "An alert will only trigger if the condition has been true continuously for this many minutes. Set to 0 to trigger immediately."
-msgstr "En varning utlöses bara om tillståndet har uppfyllts kontinuerligt i detta antal minuter. Ange 0 för att utlösa direkt."
-
-#: uconf.rs_clear_margin_help
-msgid "Once an alert triggers, the reading must recover this many units past the threshold before the alert can fire again."
-msgstr "När en varning har utlösts måste avläsningen återhämta sig detta antal enheter förbi tröskeln innan varningen kan utlösas igen."
 
 #: uconf.rs_override_help
 msgid ""
