@@ -1665,10 +1665,10 @@ begin
     end;
   finally
     for i := 0 to High(ArgArray) do
-      try JS_Free(ctx, @ArgArray[i]); except end;
-    try JS_Free(ctx, @RetVal);    except end;
-    try JS_Free(ctx, @FuncObj);   except end;
-    try JS_Free(ctx, @GlobalObj); except end;
+      ctx^.FreeInlined(ArgArray[i]);
+    ctx^.FreeInlined(RetVal);
+    ctx^.FreeInlined(FuncObj);
+    ctx^.FreeInlined(GlobalObj);
   end;
 end;
 
@@ -1737,10 +1737,10 @@ begin
     end;
   finally
     for i := 0 to High(ArgArray) do
-      try JS_Free(ctx, @ArgArray[i]); except end;
-    try JS_Free(ctx, @RetVal);    except end;
-    try JS_Free(ctx, @FuncObj);   except end;
-    try JS_Free(ctx, @GlobalObj); except end;
+      ctx^.FreeInlined(ArgArray[i]);
+    ctx^.FreeInlined(RetVal);
+    ctx^.FreeInlined(FuncObj);
+    ctx^.FreeInlined(GlobalObj);
   end;
 end;
 
@@ -1864,10 +1864,10 @@ begin
     end;
   finally
     for i := 0 to High(ArgArray) do
-      try JS_Free(ctx, @ArgArray[i]); except end;
-    try JS_Free(ctx, @RetVal);    except end;
-    try JS_Free(ctx, @FuncObj);   except end;
-    try JS_Free(ctx, @GlobalObj); except end;
+      ctx^.FreeInlined(ArgArray[i]);
+    ctx^.FreeInlined(RetVal);
+    ctx^.FreeInlined(FuncObj);
+    ctx^.FreeInlined(GlobalObj);
   end;
 end;
 
@@ -2146,8 +2146,8 @@ begin
   FuncObj := JS_GetPropertyStr(ctx, GlobalObj, pchar(FuncName));
   if not JS_IsFunction(ctx, FuncObj) then
   begin
-    JS_Free(ctx, @GlobalObj);
-    JS_Free(ctx, @FuncObj);
+    ctx^.FreeInlined(GlobalObj);
+    ctx^.FreeInlined(FuncObj);
     Exit('');
   end;
 
@@ -2230,16 +2230,10 @@ begin
 
   if freeRest then
     for i := base to High(ArgArray) do
-    try
-      JS_Free(ctx, @ArgArray[i]);
-    except
-    end;
+      ctx^.FreeInlined(ArgArray[i]);
   if freeRaw then
     for i := 0 to base - 1 do
-    try
-      JS_Free(ctx, @ArgArray[i]);
-    except
-    end;
+      ctx^.FreeInlined(ArgArray[i]);
 end;
 
 {******************************************************************************
