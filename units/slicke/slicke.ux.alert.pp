@@ -2479,11 +2479,21 @@ begin
     TextPanel.BevelOuter := bvNone;
     TextPanel.Color := bgcol;
 
-    // Width calculations
+    // Width calculations. Measure via a temporary TBitmap rather than
+    // Dialog.Canvas: TForm/TPanel canvases outside a paint event can SIGABRT
+    // on the Cocoa widgetset (see memory `cocoa-label-canvas`). The Dialog
+    // hasn't been shown yet here, so its canvas context is not guaranteed.
     TitlePixelWidth := 0;
-    if Trim(title) <> '' then
-      TitlePixelWidth := Dialog.Canvas.TextWidth(title);
-    DescPixelWidth := Dialog.Canvas.TextWidth(desc);
+    with Graphics.TBitmap.Create do
+    try
+      SetSize(1, 1);
+      Canvas.Font.Assign(Dialog.Font);
+      if Trim(title) <> '' then
+        TitlePixelWidth := Canvas.TextWidth(title);
+      DescPixelWidth := Canvas.TextWidth(desc);
+    finally
+      Free;
+    end;
     TextPixelWidth := Max(TitlePixelWidth, DescPixelWidth);
 
     ProposedWidth := IconBox.Width + TextPixelWidth + (padding * 6) + 20;
