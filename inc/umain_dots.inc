@@ -3,6 +3,200 @@
    Included in the implementation section of umain.pp only.
 *)
 
+// DrawSmoothCircle: Antialiased disc (with optional outer ring) for the
+// drawn-dot mode. GDI's TCanvas.Ellipse is not antialiased even with
+// AntialiasingMode := amOn — it calls the standard Ellipse() API which is
+// strictly aliased.
+//
+// Approach: build a 32-bit premultiplied-alpha bitmap with the disc rendered
+// at its final size using analytical pixel coverage (`r + 0.5 - distance`,
+// clamped to [0,1] at the boundary). Then ask the OS to alpha-blend it over
+// the destination — Windows AlphaBlend reads the destination pixels directly
+// so we don't need to capture the underlying background ourselves (which was
+// unreliable on a TGraphicControl's canvas during the initial paint and
+// during window drag).
+{$ifdef Windows}
+type
+  // Local copy of the Win32 BLENDFUNCTION struct + msimg32!AlphaBlend import.
+  // We avoid `uses Windows` because Windows.TBitmap (the GDI BITMAP record)
+  // would shadow Graphics.TBitmap in the rest of this implementation file.
+  TLocalBlendFunction = packed record
+    BlendOp: byte;
+    BlendFlags: byte;
+    SourceConstantAlpha: byte;
+    AlphaFormat: byte;
+  end;
+const
+  LOCAL_AC_SRC_OVER  = $00;
+  LOCAL_AC_SRC_ALPHA = $01;
+
+function LocalAlphaBlend(
+  hdcDest: HDC; xDest, yDest, wDest, hDest: integer;
+  hdcSrc: HDC;  xSrc,  ySrc,  wSrc,  hSrc:  integer;
+  ftn: TLocalBlendFunction): LongBool;
+  stdcall; external 'msimg32' name 'AlphaBlend';
+{$endif}
+
+procedure DrawSmoothCircle(ACanvas: TCanvas; ASize: integer;
+  ADotColor, ARingColor: TColor; ARingWidth: integer);
+var
+  intf: TLazIntfImage;
+  rawDesc: TRawImageDescription;
+  x, y: integer;
+  cx, cy, r, dist: double;
+  ringOuter, ringInner: double;
+  alphaDisc, alphaRing: double;
+  fr, fg, fb: byte;
+  rr, rg, rb: byte;
+  pix: TFPColor;
+  invRing, aOut: double;
+  straightR, straightG, straightB: double;
+  outR, outG, outB, outA: integer;
+  hasRing: boolean;
+  {$ifdef Windows}
+  bmp: TBitmap;
+  blend: TLocalBlendFunction;
+  {$else}
+  png: TPortableNetworkGraphic;
+  {$endif}
+begin
+  if ASize < 2 then
+    Exit;
+
+  fr := Red(ColorToRGB(ADotColor));
+  fg := Green(ColorToRGB(ADotColor));
+  fb := Blue(ColorToRGB(ADotColor));
+  hasRing := (ARingWidth > 0) and (ARingColor <> clNone);
+  if hasRing then
+  begin
+    rr := Red(ColorToRGB(ARingColor));
+    rg := Green(ColorToRGB(ARingColor));
+    rb := Blue(ColorToRGB(ARingColor));
+  end
+  else
+  begin
+    rr := 0; rg := 0; rb := 0;
+  end;
+
+  cx := (ASize - 1) / 2.0;
+  cy := (ASize - 1) / 2.0;
+  // Half-pixel inset keeps the analytical AA edge inside the bounding box.
+  r := ASize / 2.0 - 0.5;
+  ringOuter := r;
+  ringInner := r - ARingWidth;
+
+  intf := TLazIntfImage.Create(0, 0);
+  try
+    rawDesc.Init_BPP32_B8G8R8A8_BIO_TTB(ASize, ASize);
+    intf.DataDescription := rawDesc;
+    intf.CreateData;
+
+    for y := 0 to ASize - 1 do
+    begin
+      for x := 0 to ASize - 1 do
+      begin
+        dist := Sqrt(Sqr(x - cx) + Sqr(y - cy));
+
+        if dist <= r - 0.5 then
+          alphaDisc := 1.0
+        else if dist >= r + 0.5 then
+          alphaDisc := 0.0
+        else
+          alphaDisc := r + 0.5 - dist;
+
+        alphaRing := 0.0;
+        if hasRing then
+        begin
+          if (dist >= ringInner - 0.5) and (dist <= ringOuter + 0.5) then
+          begin
+            if dist < ringInner + 0.5 then
+              alphaRing := dist - (ringInner - 0.5)
+            else if dist > ringOuter - 0.5 then
+              alphaRing := (ringOuter + 0.5) - dist
+            else
+              alphaRing := 1.0;
+            if alphaRing < 0 then alphaRing := 0
+            else if alphaRing > 1 then alphaRing := 1;
+          end;
+        end;
+
+        // Porter-Duff "ring over disc over transparent", written in
+        // straight-alpha form. Premultiplied conversion (if needed) happens
+        // when we hand the data to the OS below.
+        invRing := 1.0 - alphaRing;
+        aOut := alphaRing + alphaDisc * invRing;
+
+        if aOut > 0 then
+        begin
+          straightR := (rr * alphaRing + fr * alphaDisc * invRing) / aOut;
+          straightG := (rg * alphaRing + fg * alphaDisc * invRing) / aOut;
+          straightB := (rb * alphaRing + fb * alphaDisc * invRing) / aOut;
+        end
+        else
+        begin
+          straightR := 0; straightG := 0; straightB := 0;
+        end;
+
+        {$ifdef Windows}
+        // Win32 AlphaBlend with AC_SRC_ALPHA expects premultiplied RGB.
+        outR := Round(straightR * aOut);
+        outG := Round(straightG * aOut);
+        outB := Round(straightB * aOut);
+        {$else}
+        // PNG / cross-platform draw expects straight (non-premultiplied) RGB.
+        outR := Round(straightR);
+        outG := Round(straightG);
+        outB := Round(straightB);
+        {$endif}
+        outA := Round(aOut * 255);
+
+        if outR > 255 then outR := 255 else if outR < 0 then outR := 0;
+        if outG > 255 then outG := 255 else if outG < 0 then outG := 0;
+        if outB > 255 then outB := 255 else if outB < 0 then outB := 0;
+        if outA > 255 then outA := 255 else if outA < 0 then outA := 0;
+
+        pix.red := outR shl 8 or outR;
+        pix.green := outG shl 8 or outG;
+        pix.blue := outB shl 8 or outB;
+        pix.alpha := outA shl 8 or outA;
+        intf.Colors[x, y] := pix;
+      end;
+    end;
+
+    {$ifdef Windows}
+    bmp := TBitmap.Create;
+    try
+      bmp.PixelFormat := pf32bit;
+      bmp.SetSize(ASize, ASize);
+      bmp.LoadFromIntfImage(intf);
+      blend.BlendOp := LOCAL_AC_SRC_OVER;
+      blend.BlendFlags := 0;
+      blend.SourceConstantAlpha := 255;
+      blend.AlphaFormat := LOCAL_AC_SRC_ALPHA;
+      LocalAlphaBlend(ACanvas.Handle, 0, 0, ASize, ASize,
+                      bmp.Canvas.Handle, 0, 0, ASize, ASize, blend);
+    finally
+      bmp.Free;
+    end;
+    {$else}
+    // TBitmap.Draw on GTK/Qt does not reliably composite an alpha channel
+    // (the corners with alpha=0 blit as the bitmap's raw RGB — black for our
+    // input). TPortableNetworkGraphic, in contrast, declares itself as a
+    // proper RGBA image to LCL, so Canvas.Draw composites with alpha via
+    // the backend (Cairo on GTK, QPainter on Qt).
+    png := TPortableNetworkGraphic.Create;
+    try
+      png.LoadFromIntfImage(intf);
+      ACanvas.Draw(0, 0, png);
+    finally
+      png.Free;
+    end;
+    {$endif}
+  finally
+    intf.Free;
+  end;
+end;
+
 // DotPaint: Custom paint handler for trend dot TPaintBox controls.
 // NOTE (macOS/Cocoa): We use TLabel for trend dots on macOS (TDotControl = TLabel)
 // to avoid TPaintBox.OnPaint / CheckDC() issues under the Cocoa widgetset.
@@ -12,6 +206,9 @@ var
   L: TDotControl;
   hasfont: boolean;
   needsRecalc: boolean;
+  isGlyph: boolean;
+  d, ringWidth: integer;
+  dotColor: TColor;
 begin
   L := Sender as TDotControl;
   S := L.Caption;
@@ -24,6 +221,26 @@ begin
   {$endif}
 
   L.AutoSize := false;
+
+  isGlyph := (S = DOT_GRAPH) or (S = DOT_FRESH);
+
+  if FUseDrawnDots and isGlyph then
+  begin
+    // Square the bounds — ResizeDot pre-sized to a square slot. Use the smaller
+    // edge so a sloppy resize round can't crop the circle.
+    d := Min(L.Width, L.Height);
+    if d < 2 then
+      Exit;
+
+    dotColor := L.Font.Color;
+    if S = DOT_FRESH then
+      ringWidth := Max(2, d div 12)
+    else
+      ringWidth := 0;
+
+    DrawSmoothCircle(L.Canvas, d, dotColor, dotColor, ringWidth);
+    Exit;
+  end;
 
   if S = DOT_GRAPH then
     hasfont := FontGUIInList(fontn)
@@ -161,7 +378,19 @@ end;
 procedure TfBG.AdjustGraph;
 var
   da: integer;
+  centerShift: integer;
 begin
+  // SetPointHeight places dots by their Top edge. The legacy unicode glyph
+  // happens to draw its visible mass near that top edge, but a Canvas.Ellipse
+  // is geometrically centred in its bounding box — so a drawn dot is rendered
+  // half a diameter below the intended value-Y unless we shift the whole row.
+  if FUseDrawnDots and (Length(TrendDots) > 1) and Assigned(TrendDots[1]) then
+  begin
+    centerShift := -(TrendDots[1].Height div 2);
+    if centerShift <> 0 then
+      ApplyTrendDotTopOffset(centerShift);
+  end;
+
   ApplyTrendDotTopOffset(round(ClientHeight * DOT_ADJUST));
 
   da := dotsInView;
@@ -422,9 +651,11 @@ end;
 // Scales a dot to fill ~85% of its slot width so adjacent dots never overlap.
 procedure TfBG.ResizeDot(l: TDotControl; c, ix: integer);
 var
-  th, tw, slotW: integer;
+  th, tw, slotW, d: integer;
+  isGlyph: boolean;
 begin
   slotW := Max(1, fBG.ClientWidth div Max(c, 1));
+  isGlyph := (l.Caption = DOT_GRAPH) or (l.Caption = DOT_FRESH);
   {$ifdef DARWIN}
   l.AutoSize := true;
   // Font.Size is in points (~1.33 pixels per point on standard 96dpi equivalent).
@@ -438,16 +669,32 @@ begin
     [ix, l.Font.Size, l.Height]));
   {$else}
   l.AutoSize := false;
-  l.Font.Size := Max(8, slotW);
-  tw := l.Canvas.TextWidth(DOT_GRAPH);
-  if tw > 0 then
-    l.Font.Size := Max(8, Round(l.Font.Size * (slotW * 85 div 100) / tw));
-  tw := l.Canvas.TextWidth(DOT_GRAPH);
-  th := l.Canvas.TextHeight(DOT_GRAPH);
-  l.Width := Max(1, tw);
-  l.Height := Max(th, l.Font.Size);
-  TrndiDLog(Format('TrendDots[%d] resized with Font Size = %d, W=%d, H=%d.',
-    [ix, l.Font.Size, l.Width, l.Height]));
+  if FUseDrawnDots and isGlyph then
+  begin
+    // Drawn-circle mode: compute diameter directly from the slot. 0.6 matches
+    // the visible disc area of the legacy ● glyph rendered at 85% slot width,
+    // and skips the Canvas.TextWidth feedback loop entirely.
+    d := Max(8, Round(slotW * 0.6));
+    l.Width := d;
+    l.Height := d;
+    // Keep Font.Size proportional so consumers that copy the dot's font
+    // (lRef, warning overlays) get a sane point size.
+    l.Font.Size := Max(8, Round(d * 0.6));
+    TrndiDLog(Format('TrendDots[%d] resized (circle) diameter=%d.', [ix, d]));
+  end
+  else
+  begin
+    l.Font.Size := Max(8, slotW);
+    tw := l.Canvas.TextWidth(DOT_GRAPH);
+    if tw > 0 then
+      l.Font.Size := Max(8, Round(l.Font.Size * (slotW * 85 div 100) / tw));
+    tw := l.Canvas.TextWidth(DOT_GRAPH);
+    th := l.Canvas.TextHeight(DOT_GRAPH);
+    l.Width := Max(1, tw);
+    l.Height := Max(th, l.Font.Size);
+    TrndiDLog(Format('TrendDots[%d] resized with Font Size = %d, W=%d, H=%d.',
+      [ix, l.Font.Size, l.Width, l.Height]));
+  end;
   {$endif}
 end;
 

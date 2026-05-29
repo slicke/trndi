@@ -94,17 +94,24 @@ begin
   dotHeight := 0;
   if (Length(TrendDots) > 0) and Assigned(TrendDots[1]) then
   begin
-    // Measure via a throwaway TBitmap. On the Cocoa widgetset, touching a
-    // TLabel's Canvas outside drawRect: yields a TCocoaContext whose
-    // NSGraphicsContext is nil/invalid, and the first TCanvas setter
-    // (SetAntialiasing) then SIGABRTs.
-    with TBitmap.Create do
-    try
-      SetSize(1, 1);
-      Canvas.Font.Assign(TrendDots[1].Font);
-      dotHeight := Max(Canvas.TextHeight(DOT_GRAPH), TrendDots[1].Font.Size);
-    finally
-      Free;
+    if FUseDrawnDots then
+      // Drawn dots are sized as a square in ResizeDot; the control's Height
+      // *is* the diameter, so we can read it directly.
+      dotHeight := Max(TrendDots[1].Height, TrendDots[1].Font.Size)
+    else
+    begin
+      // Measure via a throwaway TBitmap. On the Cocoa widgetset, touching a
+      // TLabel's Canvas outside drawRect: yields a TCocoaContext whose
+      // NSGraphicsContext is nil/invalid, and the first TCanvas setter
+      // (SetAntialiasing) then SIGABRTs.
+      with TBitmap.Create do
+      try
+        SetSize(1, 1);
+        Canvas.Font.Assign(TrendDots[1].Font);
+        dotHeight := Max(Canvas.TextHeight(DOT_GRAPH), TrendDots[1].Font.Size);
+      finally
+        Free;
+      end;
     end;
   end;
 

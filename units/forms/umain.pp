@@ -89,7 +89,8 @@ LazFileUtils, uconf, uwizard, trndi.native, Trndi.API,
 trndi.api.xDrip,{$ifdef DEBUG} trndi.api.debug_custom, trndi.api.debug, trndi.api.debug_edge, trndi.api.debug_lowsoon, trndi.api.debug_sensorexpiry, trndi.api.debug_missing, trndi.api.debug_firstXmissing, trndi.api.debug_intermittentmissing, trndi.api.debug_perfect, trndi.api.debug_firstmissing, trndi.api.debug_secondmissing, trndi.api.debug_slow, trndi.api.debug_faultysensor, trndi.api.debug_latemissing,{$endif}
 {$ifdef LCLQt6}Qt6, QtWidgets,{$endif}
 StrUtils, slicke.touchdetection, ufloat, uhistorygraph, LCLType, trndi.webserver.threaded, razer.chroma.factory, razer.chroma,
-trndi.theme, trndi.alert.engine;
+trndi.theme, trndi.alert.engine,
+IntfGraphics, FPImage, GraphType;
 
 
 {$I ../../inc/defines.inc}
@@ -431,6 +432,7 @@ private
   FCachedTextHeight: integer;
   FCachedFontSize: integer;
   FCachedFontName: string;
+  FUseDrawnDots: boolean; // Render trend dots as drawn circles instead of unicode glyphs
   FLastReadingsHash: cardinal; // Hash of last readings for change detection
   FLastAPICall: TDateTime; // Timestamp of the last successful API call
   FCachedReadings: array of BGReading; // Readings saved from last fetch
