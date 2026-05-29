@@ -2876,6 +2876,14 @@ msgstr "P.g.a. hårdvarubegränsningar, kan %s på %s inte stöda tillägg"
 msgid "This is the time after which Trndi will show the \"no recent\" readings overlay. Trndi checks this when updating from the remote server, not every minute."
 msgstr "Detta är den tid efter vilken Trndi visar \"inga färska avläsningar\". Trndi kontrollerar detta när en uppdatering sker från servern, inte varje minut."
 
+#: uconf.rs_must_persist_help
+msgid "An alert will only trigger if the condition has been true continuously for this many minutes. Set to 0 to trigger immediately."
+msgstr "En varning utlöses bara om tillståndet har uppfyllts kontinuerligt i detta antal minuter. Ange 0 för att utlösa direkt."
+
+#: uconf.rs_clear_margin_help
+msgid "Once an alert triggers, the reading must recover this many units past the threshold before the alert can fire again."
+msgstr "När en varning har utlösts måste avläsningen återhämta sig detta antal enheter förbi tröskeln innan varningen kan utlösas igen."
+
 #: uconf.rs_override_help
 msgid ""
 "Setting values here allows you to define your own high and low blood sugar limits in Trndi.\n"
