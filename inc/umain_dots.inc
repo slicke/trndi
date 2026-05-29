@@ -206,7 +206,6 @@ var
 begin
   L := Sender as TDotControl;
   S := L.Caption;
-  L.AutoSize := false;
 
   if (S = DOT_GRAPH) or (S = DOT_FRESH) then
   begin
@@ -227,14 +226,15 @@ begin
   end;
 
   // Expanded display: render the BG value (or other text caption) directly.
+  // Width/Height are set in ResizeDot — never resize the control inside its
+  // own OnPaint. On macOS Cocoa, doing so re-enters paint with a stale DC and
+  // crashes inside TCocoaGDIUtil.checkDC.
   with L.Canvas do
   begin
     Brush.Style := bsClear;
     if FontTXTInList(fontn) then
       Font.Name := fontn;
     Font.Size := L.Font.Size;
-    L.Width := TextWidth(S) + 4;
-    L.Height := TextHeight(S) + 2;
     TextOut(0, 0, S);
   end;
 end;
@@ -455,13 +455,10 @@ begin
   else
     l.Caption := IfThen(isDot, l.Hint, DOT_GRAPH);
 
-  if not isDot then
-    ResizeDot(l, c, ix)
-  else
-  begin
-    l.Font.Size := (lVal.Font.Size div c);
-    l.Invalidate;
-  end;
+  // Always size the dot here, never inside DotPaint. Resizing during paint
+  // re-enters with a stale DC on Cocoa and crashes in TCocoaGDIUtil.checkDC.
+  ResizeDot(l, c, ix);
+  l.Invalidate;
 end;
 
 // Hides a dot
@@ -507,6 +504,7 @@ end;
 procedure TfBG.ResizeDot(l: TDotControl; c, ix: integer);
 var
   slotW, d: integer;
+  fontn, s: string;
 begin
   slotW := Max(1, fBG.ClientWidth div Max(c, 1));
   l.AutoSize := false;
@@ -524,11 +522,26 @@ begin
   end
   else
   begin
-    // Expanded numeric display — pick a font size from the slot; DotPaint
-    // sets Width/Height from TextWidth/TextHeight when it renders.
-    l.Font.Size := Max(8, slotW div 3);
-    TrndiDLog(Format('TrendDots[%d] resized (text) Font Size = %d.',
-      [ix, l.Font.Size]));
+    // Expanded numeric display — derive font size from lVal so the dot text
+    // tracks the main BG display, then size Width/Height to fit the caption.
+    // Measure via a temp TBitmap rather than the control's Canvas: doing the
+    // resize here (not in DotPaint) avoids re-entering paint with a stale DC
+    // on Cocoa, which crashes in TCocoaGDIUtil.checkDC.
+    l.Font.Size := Max(8, lVal.Font.Size div Max(c, 1));
+    s := l.Caption;
+    with TBitmap.Create do
+    try
+      SetSize(1, 1);
+      Canvas.Font.Assign(l.Font);
+      if FontTXTInList(fontn) then
+        Canvas.Font.Name := fontn;
+      l.Width := Canvas.TextWidth(s) + 4;
+      l.Height := Canvas.TextHeight(s) + 2;
+    finally
+      Free;
+    end;
+    TrndiDLog(Format('TrendDots[%d] resized (text) Font Size = %d W=%d H=%d.',
+      [ix, l.Font.Size, l.Width, l.Height]));
   end;
 end;
 
