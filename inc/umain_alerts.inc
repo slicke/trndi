@@ -574,6 +574,8 @@ var
   calculatedFontSize: integer;
   bg: BGReading;
   last, val: string;
+  measureBmp: TBitmap;
+  warnLastTextH, warnLastTextW: integer;
 begin
   calculatedFontSize := 12;
   padding := (ClientWidth div 25);
@@ -628,11 +630,22 @@ begin
     pnWarnLast.Caption := '';
 
   pnWarnLast.font.size := Max(8, Min(20, calculatedFontSize div 3));
-  pnWarning.Canvas.Font.size := pnWarnLast.font.size;
 
-  pnWarnLast.Height := pnWarning.Canvas.TextHeight(pnWarnLast.Caption) * 2;
-  pnWarnLast.Width := Min(pnWarning.Width - 10,
-    pnWarning.Canvas.TextWidth(pnWarnLast.Caption) + 10);
+  // Measure caption via a temporary TBitmap. Touching pnWarning.Canvas
+  // outside a paint event SIGABRTs on Cocoa; see memory `cocoa-label-canvas`.
+  measureBmp := TBitmap.Create;
+  try
+    measureBmp.SetSize(1, 1);
+    measureBmp.Canvas.Font.Assign(pnWarning.Font);
+    measureBmp.Canvas.Font.Size := pnWarnLast.font.size;
+    warnLastTextH := measureBmp.Canvas.TextHeight(pnWarnLast.Caption);
+    warnLastTextW := measureBmp.Canvas.TextWidth(pnWarnLast.Caption);
+  finally
+    measureBmp.Free;
+  end;
+
+  pnWarnLast.Height := warnLastTextH * 2;
+  pnWarnLast.Width := Min(pnWarning.Width - 10, warnLastTextW + 10);
   pnWarnLast.left := 5;
   pnWarnLast.top := pnWarning.Height - pnWarnLast.Height - 5;
 

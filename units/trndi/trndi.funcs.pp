@@ -192,10 +192,19 @@ procedure CenterPanelToCaption(Panel: TPanel; margin: integer = 10);
 var
   TextWidth, PanelWidth, Padding: integer;
   ParentWidth: integer;
+  Bmp: TBitmap;
 begin
-  // Calculate text width using the panel's font
-  Panel.Canvas.Font := Panel.Font;
-  TextWidth := Panel.Canvas.TextWidth(Panel.Caption);
+  // Measure caption via a temporary TBitmap. Accessing TPanel/TLabel.Canvas
+  // outside a paint event can SIGABRT on the Cocoa widgetset; see
+  // memory `cocoa-label-canvas` for the full explanation.
+  Bmp := TBitmap.Create;
+  try
+    Bmp.SetSize(1, 1);
+    Bmp.Canvas.Font.Assign(Panel.Font);
+    TextWidth := Bmp.Canvas.TextWidth(Panel.Caption);
+  finally
+    Bmp.Free;
+  end;
 
   Padding := margin * 2; // Add 20 pixels (10 on each side, adjust as needed)
   PanelWidth := TextWidth + Padding;

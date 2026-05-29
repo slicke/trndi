@@ -223,29 +223,6 @@ begin
 end;
 
 procedure TfBG.placeForm;
-{$ifdef DARWIN}
-function GetActiveScreen: TMonitor; // Use TMonitor if that's what Screen.Monitors returns
-  var
-    ScreenObject: NSScreen;
-    i: integer;
-  begin
-    Result := nil;
-    if Assigned(NSApplication.sharedApplication.mainWindow) then
-    begin
-      ScreenObject := NSApplication.sharedApplication.mainWindow.screen;
-      if Assigned(ScreenObject) then
-        for i := 0 to Screen.MonitorCount - 1 do
-      // Add your comparison logic here (e.g., by frame bounds or display ID)
-// Example (pseudo-code):
-// if Screen.Monitors[i].Rect = NSRectToRect(ScreenObject.frame) then
-//   Result := Screen.Monitors[i];
-// Attempt to match NSScreen to the TMonitor by comparing frame or unique ID
-      ;
-    end;
-  end;
-var
-  activemonitor: TMonitor;
-{$endif}
 var
   posValue: TrndiPos;
 begin
@@ -310,14 +287,4 @@ begin
 
   if native.GetBoolSetting('main.noborders', false) then
     Self.BorderStyle := bsNone;
-
-  {$ifdef DARWIN}
-  ActiveMonitor := GetActiveScreen;
-  if Assigned(ActiveMonitor) then
-  begin
-    Left := ActiveMonitor.BoundsRect.Left + (ActiveMonitor.WorkAreaRect.Width - Width) div 2;
-    Top := ActiveMonitor.BoundsRect.Top + (ActiveMonitor.WorkAreaRect.Height - Height) div 2;
-    Exit;
-  end;
-  {$endif}
 end;

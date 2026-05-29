@@ -118,6 +118,7 @@ type
 
 var
   CachedHasBundleIdentifier: Integer = -1;
+  NotificationCounter: Int64 = 0;
 
 // Typed imports of objc_msgSend with a few arities we need
 function objc_msgSend0(obj: id; sel: SEL): id; cdecl; external ObjCLib name 'objc_msgSend';
@@ -199,8 +200,11 @@ begin
           TriggerClass := objc_getClass('UNTimeIntervalNotificationTrigger');
           Trigger := objc_msgSend2_d_b(TriggerClass, sel_registerName('triggerWithTimeInterval:repeats:'), 1.0, False);
 
-          // Create a unique identifier for the request
-          sId := Format('trndi-%d', [DateTimeToUnix(Now)]);
+          // Create a unique identifier for the request. DateTimeToUnix has
+          // 1-second granularity which collides under rapid alerts; combine a
+          // monotonically increasing counter with the tick count for uniqueness.
+          Inc(NotificationCounter);
+          sId := Format('trndi-%u-%d', [GetTickCount64, NotificationCounter]);
           IdStr := NSSTR(sId);
 
           // Create request
@@ -481,6 +485,11 @@ procedure TTrndiNativeMac.SetBadge(const Value: string; BadgeColor: TColor);
 var
   NSS: NSString;
 begin
+  if Value = '' then
+  begin
+    NSApp.dockTile.setBadgeLabel(nil);
+    Exit;
+  end;
   NSS := NSSTR(Value);
   NSApp.dockTile.setBadgeLabel(NSS);
   NSS.Release;
@@ -561,8 +570,12 @@ begin
     while key <> nil do
     begin
       keyStr := NSStrToStr(key);
-      // Exclude keys starting with Apple, com.apple, NS, or any non-lowercase string
-      if (Pos('Apple', keyStr) <> 1) and (Pos('com.apple', keyStr) <> 1) and (Pos('NS', keyStr) <> 1) and (LowerCase(keyStr) = keyStr) then
+      // Exclude system namespaces (Apple/NS preferences and macOS internals).
+      // Do NOT filter on case: cfguser-prefixed keys can be mixed-case
+      // (e.g. "Bjorn_api.host") and would otherwise be silently dropped.
+      if (Pos('Apple', keyStr) <> 1)
+        and (Pos('com.apple', keyStr) <> 1)
+        and (Pos('NS', keyStr) <> 1) then
       begin
         value := dict.objectForKey(key);
         if value.isKindOfClass(objc_getClass('NSString')) then
