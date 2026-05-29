@@ -131,11 +131,7 @@ protected
 public
   constructor Create(AOwner: TfBG; NumPredictions: integer);
 end;
-{$ifdef DARWIN}
-TDotControl = TLabel;
-{$else}
 TDotControl = TPaintBox;
-{$endif}
   // Procedures which are applied to the trend drawing
 TTrendProc = procedure(l: TDotControl; c, ix: integer) of object;
 TTrendProcLoop = procedure(l: TDotControl; c, ix: integer;
