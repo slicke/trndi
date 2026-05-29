@@ -118,15 +118,15 @@ type
 
 var
   CachedHasBundleIdentifier: Integer = -1;
-  NotificationCounter: Int64 = 0;
 
 // Typed imports of objc_msgSend with a few arities we need
 function objc_msgSend0(obj: id; sel: SEL): id; cdecl; external ObjCLib name 'objc_msgSend';
 function objc_msgSend1(obj: id; sel: SEL; p1: id): id; cdecl; external ObjCLib name 'objc_msgSend';
 function objc_msgSend_uint(obj: id; sel: SEL): NativeUInt; cdecl; external ObjCLib name 'objc_msgSend';
-function objc_msgSend2_d_b(obj: id; sel: SEL; p1: double; p2: boolean): id; cdecl; external ObjCLib name 'objc_msgSend';
 function objc_msgSend3(obj: id; sel: SEL; p1: id; p2: id; p3: id): id; cdecl; external ObjCLib name 'objc_msgSend';
 function objc_msgSend2_id_id(obj: id; sel: SEL; p1: id; p2: id): id; cdecl; external ObjCLib name 'objc_msgSend';
+// NSInteger param (for setInterruptionLevel:)
+function objc_msgSend1_ni(obj: id; sel: SEL; p1: NSInteger): id; cdecl; external ObjCLib name 'objc_msgSend';
 // typed helper for sending a uint + id (used for requestAuthorizationWithOptions:completionHandler:)
 function objc_msgSend_uint_id(obj: id; sel: SEL; p1: NativeUInt; p2: id): id; cdecl; external ObjCLib name 'objc_msgSend';
 function objc_getClass(name: MarshaledAString): id;        cdecl; external ObjCLib;
@@ -157,13 +157,25 @@ end;
   attention (macOS)
   -----------------
   Try UNUserNotificationCenter -> NSUserNotification -> osascript.
+
+  Behavior notes:
+  - interruptionLevel = TimeSensitive: alerts break through Focus / Do Not
+    Disturb (the user can still revoke this per-app in System Settings).
+  - threadIdentifier and the request identifier are derived from `topic`, so
+    repeated alerts of the same kind (e.g. successive HIGH readings) replace
+    the previous one in Notification Center instead of stacking. This matches
+    a glucose monitor's "newest reading wins" semantics.
+  - trigger = nil delivers immediately rather than after a 1s schedule.
+  - categoryIdentifier is set so we can later attach actions (Snooze, etc.).
  ------------------------------------------------------------------------------}
 
 procedure TTrndiNativeMac.attention(topic, message: string);
+const
+  UNNotificationInterruptionLevelTimeSensitive: NSInteger = 2;
 var
-  UNClass, Center, ContentClass, Content, TriggerClass, Trigger, ReqClass, UNReq: id;
+  UNClass, Center, ContentClass, Content, ReqClass, UNReq, SoundClass, Sound: id;
   NSReq: NSUserNotification;
-  IdStr, TitleStr, BodyStr: NSString;
+  IdStr, TitleStr, BodyStr, ThreadStr, CategoryStr: NSString;
   selCurrent, selAddReq, selNew, selSetTitle, selSetBody: SEL;
   ok: Boolean;
   sId: string;
@@ -196,20 +208,41 @@ begin
           TitleStr.Release;
           BodyStr.Release;
 
-          // Create a trigger to fire almost immediately
-          TriggerClass := objc_getClass('UNTimeIntervalNotificationTrigger');
-          Trigger := objc_msgSend2_d_b(TriggerClass, sel_registerName('triggerWithTimeInterval:repeats:'), 1.0, False);
+          // Default sound — without this the alert is silent for users who
+          // haven't explicitly enabled sound for the app.
+          SoundClass := objc_getClass('UNNotificationSound');
+          if SoundClass <> nil then
+          begin
+            Sound := objc_msgSend0(SoundClass, sel_registerName('defaultSound'));
+            if Sound <> nil then
+              objc_msgSend1(Content, sel_registerName('setSound:'), Sound);
+          end;
 
-          // Create a unique identifier for the request. DateTimeToUnix has
-          // 1-second granularity which collides under rapid alerts; combine a
-          // monotonically increasing counter with the tick count for uniqueness.
-          Inc(NotificationCounter);
-          sId := Format('trndi-%u-%d', [GetTickCount64, NotificationCounter]);
+          // Time-sensitive: pierces Focus / DND for glucose alerts.
+          objc_msgSend1_ni(Content, sel_registerName('setInterruptionLevel:'),
+            UNNotificationInterruptionLevelTimeSensitive);
+
+          // Group alerts of the same kind together; topic is the natural key
+          // (HIGH/LOW/sensor-fault all have distinct titles).
+          ThreadStr := NSSTR(topic);
+          objc_msgSend1(Content, sel_registerName('setThreadIdentifier:'), ThreadStr);
+          ThreadStr.Release;
+
+          // Category — placeholder for future actions (Snooze/Dismiss).
+          CategoryStr := NSSTR('trndi.alert');
+          objc_msgSend1(Content, sel_registerName('setCategoryIdentifier:'), CategoryStr);
+          CategoryStr.Release;
+
+          // Stable identifier per topic: posting again with the same id
+          // *replaces* the previous notification rather than stacking. For a
+          // glucose monitor this is medically appropriate — the newest
+          // reading is what matters.
+          sId := 'trndi.alert.' + topic;
           IdStr := NSSTR(sId);
 
-          // Create request
+          // Create request with nil trigger -> deliver immediately.
           ReqClass := objc_getClass('UNNotificationRequest');
-          UNReq := objc_msgSend3(ReqClass, sel_registerName('requestWithIdentifier:content:trigger:'), IdStr, Content, Trigger);
+          UNReq := objc_msgSend3(ReqClass, sel_registerName('requestWithIdentifier:content:trigger:'), IdStr, Content, nil);
 
           // Release the identifier NSString we created earlier
           IdStr.Release;
