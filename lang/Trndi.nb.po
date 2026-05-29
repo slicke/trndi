@@ -725,6 +725,10 @@ msgstr "OK"
 msgid "8080"
 msgstr "8080"
 
+#: tfconf.gbalertbehavior.caption
+msgid "Alert behavior"
+msgstr ""
+
 #: tfconf.gbdisplayprefs.caption
 msgid "Display Preferences"
 msgstr "Visningsinnstillinger"
@@ -993,6 +997,31 @@ msgstr "Biblioteker"
 #: tfconf.lago.caption
 msgid "100 min"
 msgstr "100 min"
+
+#: tfconf.lalertdurrow.caption
+msgid "Must persist (minutes)"
+msgstr ""
+
+#: tfconf.lalerthicol.caption
+#, fuzzy
+msgctxt "tfconf.lalerthicol.caption"
+msgid "High"
+msgstr "Høy"
+
+#: tfconf.lalerthystrow.caption
+msgctxt "tfconf.lalerthystrow.caption"
+msgid "Clear margin (mg/dL)"
+msgstr ""
+
+#: tfconf.lalertlocol.caption
+#, fuzzy
+msgctxt "tfconf.lalertlocol.caption"
+msgid "Low"
+msgstr "Lav"
+
+#: tfconf.lalerturgcol.caption
+msgid "Urgent low"
+msgstr ""
 
 #: tfconf.larch.caption
 msgid "Unknown Architecture"
@@ -2509,6 +2538,7 @@ msgid "Unknown error"
 msgstr "Ukjent feil"
 
 #: uconf.rs_alert_hysteresis_mgdl
+msgctxt "uconf.rs_alert_hysteresis_mgdl"
 msgid "Clear margin (mg/dL)"
 msgstr ""
 

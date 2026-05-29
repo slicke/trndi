@@ -1,11 +1,11 @@
 object fConf: TfConf
   Left = 748
-  Height = 623
+  Height = 606
   Top = 250
   Width = 675
   BorderStyle = bsSizeToolWin
   Caption = 'Settings'
-  ClientHeight = 623
+  ClientHeight = 606
   ClientWidth = 675
   Position = poDesktopCenter
   LCLVersion = '4.6.0.0'
@@ -15,20 +15,20 @@ object fConf: TfConf
   OnResize = FormResize
   object pcMain: TPageControl
     Left = 15
-    Height = 607
+    Height = 590
     Top = 11
     Width = 645
-    ActivePage = tsDisplay
+    ActivePage = tsGeneral
     Align = alClient
     BorderSpacing.Left = 10
     BorderSpacing.Right = 10
     BorderSpacing.Around = 5
-    TabIndex = 3
+    TabIndex = 1
     TabOrder = 0
     OnChange = pcMainChange
     object tsCommon: TTabSheet
       Caption = 'Quick Settings'
-      ClientHeight = 579
+      ClientHeight = 562
       ClientWidth = 637
       TabVisible = False
       OnShow = tsCommonShow
@@ -202,7 +202,7 @@ object fConf: TfConf
     end
     object tsGeneral: TTabSheet
       Caption = 'General'
-      ClientHeight = 579
+      ClientHeight = 562
       ClientWidth = 637
       object bvExt: TBevel
         Left = 0
@@ -10598,7 +10598,7 @@ object fConf: TfConf
       object lVersion: TLabel
         Left = 0
         Height = 12
-        Top = 567
+        Top = 550
         Width = 632
         Align = alBottom
         Alignment = taRightJustify
@@ -10724,7 +10724,7 @@ object fConf: TfConf
       object Panel8: TPanel
         Left = 0
         Height = 50
-        Top = 517
+        Top = 500
         Width = 637
         Align = alBottom
         BevelOuter = bvNone
@@ -10801,11 +10801,11 @@ object fConf: TfConf
     end
     object tsColors: TTabSheet
       Caption = 'Colors'
-      ClientHeight = 579
+      ClientHeight = 562
       ClientWidth = 637
       object pcColors: TPageControl
         Left = 0
-        Height = 541
+        Height = 524
         Top = 0
         Width = 637
         ActivePage = tsBackgrounds
@@ -10815,7 +10815,7 @@ object fConf: TfConf
         OnChange = pcColorsChange
         object tsBackgrounds: TTabSheet
           Caption = 'Backgrounds'
-          ClientHeight = 513
+          ClientHeight = 496
           ClientWidth = 629
           object cl_hi_bg: TColorButton
             Left = 5
@@ -10867,7 +10867,7 @@ object fConf: TfConf
         end
         object tsTexts: TTabSheet
           Caption = 'Texts'
-          ClientHeight = 513
+          ClientHeight = 496
           ClientWidth = 629
           object cl_lo_txt: TColorButton
             Left = 5
@@ -10919,7 +10919,7 @@ object fConf: TfConf
         end
         object tsCustomRange: TTabSheet
           Caption = 'Custom range'
-          ClientHeight = 513
+          ClientHeight = 496
           ClientWidth = 629
           object cl_hi_txt_cust: TColorButton
             Left = 5
@@ -10976,7 +10976,7 @@ object fConf: TfConf
           object Label14: TLabel
             Left = 5
             Height = 15
-            Top = 493
+            Top = 476
             Width = 619
             Align = alBottom
             BorderSpacing.Around = 5
@@ -10995,7 +10995,7 @@ object fConf: TfConf
       object Panel7: TPanel
         Left = 0
         Height = 38
-        Top = 541
+        Top = 524
         Width = 637
         Align = alBottom
         BevelOuter = bvNone
@@ -11024,17 +11024,17 @@ object fConf: TfConf
     end
     object tsDisplay: TTabSheet
       Caption = 'Display'
-      ClientHeight = 579
+      ClientHeight = 562
       ClientWidth = 637
       OnShow = tsDisplayShow
       object pnDisplay: TPanel
         Left = 0
-        Height = 238
+        Height = 230
         Top = 0
         Width = 637
         Align = alClient
         BevelOuter = bvNone
-        ClientHeight = 238
+        ClientHeight = 230
         ClientWidth = 637
         ParentBackground = False
         TabOrder = 0
@@ -11157,7 +11157,7 @@ object fConf: TfConf
       object gbDisplayPrefs: TGroupBox
         Left = 0
         Height = 220
-        Top = 359
+        Top = 342
         Width = 637
         Align = alBottom
         Caption = 'Display Preferences'
@@ -11165,7 +11165,6 @@ object fConf: TfConf
         ClientWidth = 633
         ParentBackground = False
         TabOrder = 1
-
         object pDecimal: TPanel
           Left = 0
           Height = 200
@@ -11176,7 +11175,7 @@ object fConf: TfConf
           ClientHeight = 200
           ClientWidth = 170
           ParentBackground = False
-          TabOrder = 1
+          TabOrder = 0
           object edCommaSep: TEdit
             Left = 10
             Height = 23
@@ -11206,7 +11205,7 @@ object fConf: TfConf
           Top = 64
           Width = 240
           Caption = 'Display progress to next update on the left'
-          TabOrder = 2
+          TabOrder = 1
         end
         object cbShowSensorExpiry: TCheckBox
           Left = 8
@@ -11214,7 +11213,7 @@ object fConf: TfConf
           Top = 84
           Width = 226
           Caption = 'Show sensor expiry in top-center badge'
-          TabOrder = 4
+          TabOrder = 3
         end
         object bDecimalHelp: TButton
           Left = 176
@@ -11222,7 +11221,7 @@ object fConf: TfConf
           Top = 24
           Width = 27
           Caption = '?'
-          TabOrder = 3
+          TabOrder = 2
           OnClick = bDecimalHelpClick
         end
         object cbRangeColor: TCheckBox
@@ -11231,7 +11230,7 @@ object fConf: TfConf
           Top = 108
           Width = 230
           Caption = 'Use range color for window background'
-          TabOrder = 5
+          TabOrder = 4
         end
         object cbClock: TCheckBox
           Left = 320
@@ -11239,7 +11238,7 @@ object fConf: TfConf
           Top = 152
           Width = 191
           Caption = 'Show clock for 5 sec every 20 sec'
-          TabOrder = 6
+          TabOrder = 5
         end
         object cbAlternate: TCheckBox
           Left = 320
@@ -11247,7 +11246,7 @@ object fConf: TfConf
           Top = 174
           Width = 205
           Caption = 'Alternate arrow and reading display'
-          TabOrder = 7
+          TabOrder = 6
         end
         object cbOnTop: TCheckBox
           Left = 320
@@ -11263,17 +11262,17 @@ object fConf: TfConf
           Top = 130
           Width = 131
           Caption = 'Hide window borders'
-          TabOrder = 9
+          TabOrder = 7
         end
       end
       object cbFonts: TGroupBox
         Left = 0
-        Height = 121
-        Top = 238
+        Height = 112
+        Top = 230
         Width = 637
         Align = alBottom
         Caption = 'Trend Dots'
-        ClientHeight = 101
+        ClientHeight = 92
         ClientWidth = 633
         ParentBackground = False
         TabOrder = 2
@@ -11382,7 +11381,7 @@ object fConf: TfConf
     end
     object tsTir: TTabSheet
       Caption = 'Time-in-range'
-      ClientHeight = 579
+      ClientHeight = 562
       ClientWidth = 637
       object Label7: TLabel
         Left = 5
@@ -11739,7 +11738,7 @@ object fConf: TfConf
     end
     object tsCustom: TTabSheet
       Caption = 'Customization'
-      ClientHeight = 579
+      ClientHeight = 562
       ClientWidth = 637
       object gbOverride: TGroupBox
         Left = 10
@@ -12009,7 +12008,7 @@ object fConf: TfConf
     end
     object tsAccess: TTabSheet
       Caption = 'Accessibility'
-      ClientHeight = 579
+      ClientHeight = 562
       ClientWidth = 637
       object Label35: TLabel
         Left = 8
@@ -12154,7 +12153,7 @@ object fConf: TfConf
     end
     object tsAdvanced: TTabSheet
       Caption = 'Advanced'
-      ClientHeight = 579
+      ClientHeight = 562
       ClientWidth = 637
       object GroupBox9: TGroupBox
         Left = 0
@@ -12326,7 +12325,7 @@ object fConf: TfConf
       object gbAlertBehavior: TGroupBox
         Left = 0
         Height = 110
-        Top = 290
+        Top = 303
         Width = 637
         Align = alTop
         BorderSpacing.Top = 15
@@ -12339,35 +12338,35 @@ object fConf: TfConf
           Left = 200
           Height = 15
           Top = 4
-          Width = 80
+          Width = 26
           Caption = 'High'
         end
         object lAlertLoCol: TLabel
           Left = 320
           Height = 15
           Top = 4
-          Width = 80
+          Width = 22
           Caption = 'Low'
         end
         object lAlertUrgCol: TLabel
           Left = 440
           Height = 15
           Top = 4
-          Width = 80
+          Width = 58
           Caption = 'Urgent low'
         end
         object lAlertDurRow: TLabel
           Left = 16
           Height = 15
           Top = 28
-          Width = 170
+          Width = 118
           Caption = 'Must persist (minutes)'
         end
         object lAlertHystRow: TLabel
           Left = 16
           Height = 15
           Top = 58
-          Width = 170
+          Width = 115
           Caption = 'Clear margin (mg/dL)'
         end
         object spAlertDurHi: TSpinEdit
@@ -12376,7 +12375,6 @@ object fConf: TfConf
           Top = 24
           Width = 100
           MaxValue = 60
-          MinValue = 0
           TabOrder = 0
         end
         object spAlertDurLo: TSpinEdit
@@ -12385,7 +12383,6 @@ object fConf: TfConf
           Top = 24
           Width = 100
           MaxValue = 60
-          MinValue = 0
           TabOrder = 1
         end
         object spAlertDurUrg: TSpinEdit
@@ -12394,7 +12391,6 @@ object fConf: TfConf
           Top = 24
           Width = 100
           MaxValue = 60
-          MinValue = 0
           TabOrder = 2
         end
         object fsAlertHystHi: TFloatSpinEdit
@@ -12402,9 +12398,7 @@ object fConf: TfConf
           Height = 23
           Top = 54
           Width = 100
-          Increment = 1
           MaxValue = 50
-          MinValue = 0
           TabOrder = 3
         end
         object fsAlertHystLo: TFloatSpinEdit
@@ -12412,9 +12406,7 @@ object fConf: TfConf
           Height = 23
           Top = 54
           Width = 100
-          Increment = 1
           MaxValue = 50
-          MinValue = 0
           TabOrder = 4
         end
         object fsAlertHystUrg: TFloatSpinEdit
@@ -12422,9 +12414,7 @@ object fConf: TfConf
           Height = 23
           Top = 54
           Width = 100
-          Increment = 1
           MaxValue = 50
-          MinValue = 0
           TabOrder = 5
         end
       end
@@ -12543,7 +12533,7 @@ object fConf: TfConf
     end
     object tsPredictions: TTabSheet
       Caption = 'Predictions'
-      ClientHeight = 579
+      ClientHeight = 562
       ClientWidth = 637
       object GroupBox8: TGroupBox
         Left = 0
@@ -12767,7 +12757,7 @@ object fConf: TfConf
     end
     object tsIntegration: TTabSheet
       Caption = 'Integrations'
-      ClientHeight = 579
+      ClientHeight = 562
       ClientWidth = 637
       object gbMedia: TGroupBox
         Left = 10
@@ -12995,7 +12985,7 @@ object fConf: TfConf
     end
     object tsSystem: TTabSheet
       Caption = 'System'
-      ClientHeight = 579
+      ClientHeight = 562
       ClientWidth = 637
       OnShow = tsSystemShow
       object lWaitSys: TLabel
@@ -13014,12 +13004,12 @@ object fConf: TfConf
       end
       object pnSysInfo: TPanel
         Left = 0
-        Height = 458
+        Height = 441
         Top = 121
         Width = 637
         Align = alClient
         BevelOuter = bvNone
-        ClientHeight = 458
+        ClientHeight = 441
         ClientWidth = 637
         ParentBackground = False
         TabOrder = 0
@@ -13075,7 +13065,7 @@ object fConf: TfConf
         object GroupBox1: TGroupBox
           Left = 10
           Height = 137
-          Top = 234
+          Top = 217
           Width = 617
           Align = alBottom
           BorderSpacing.Around = 10
@@ -13162,7 +13152,7 @@ object fConf: TfConf
         object gbSettings: TGroupBox
           Left = 10
           Height = 67
-          Top = 381
+          Top = 364
           Width = 617
           Align = alBottom
           BorderSpacing.Around = 10
@@ -13210,11 +13200,11 @@ object fConf: TfConf
     end
     object tsMulti: TTabSheet
       Caption = 'Multi User'
-      ClientHeight = 579
+      ClientHeight = 562
       ClientWidth = 637
       object lbUsers: TListBox
         Left = 10
-        Height = 308
+        Height = 291
         Top = 30
         Width = 617
         Align = alClient
@@ -13239,7 +13229,7 @@ object fConf: TfConf
       object gbMulti: TGroupBox
         Left = 10
         Height = 101
-        Top = 348
+        Top = 331
         Width = 617
         Align = alBottom
         BorderSpacing.Around = 10
@@ -13346,7 +13336,7 @@ object fConf: TfConf
       object Panel1: TPanel
         Left = 0
         Height = 42
-        Top = 459
+        Top = 442
         Width = 637
         Align = alBottom
         BevelOuter = bvNone
@@ -13393,7 +13383,7 @@ object fConf: TfConf
       object GroupBox4: TGroupBox
         Left = 10
         Height = 58
-        Top = 511
+        Top = 494
         Width = 617
         Align = alBottom
         BorderSpacing.Around = 10
@@ -13414,7 +13404,7 @@ object fConf: TfConf
     end
     object tsChroma: TTabSheet
       Caption = 'Razer Chroma'
-      ClientHeight = 579
+      ClientHeight = 562
       ClientWidth = 637
       object Label29: TLabel
         Left = 5
@@ -13537,7 +13527,7 @@ object fConf: TfConf
     end
     object tsExt: TTabSheet
       Caption = 'Extensions'
-      ClientHeight = 579
+      ClientHeight = 562
       ClientWidth = 637
       object lExtCount: TLabel
         Left = 5
@@ -13552,19 +13542,19 @@ object fConf: TfConf
       end
       object GroupBox2: TGroupBox
         Left = 10
-        Height = 393
+        Height = 376
         Top = 30
         Width = 617
         Align = alClient
         BorderSpacing.Around = 10
         Caption = 'Available Extensions'
-        ClientHeight = 373
+        ClientHeight = 356
         ClientWidth = 613
         ParentBackground = False
         TabOrder = 0
         object lbExtensions: TListBox
           Left = 5
-          Height = 363
+          Height = 346
           Top = 5
           Width = 603
           Align = alClient
@@ -13578,7 +13568,7 @@ object fConf: TfConf
       object GroupBox3: TGroupBox
         Left = 10
         Height = 81
-        Top = 433
+        Top = 416
         Width = 617
         Align = alBottom
         BorderSpacing.Around = 10
@@ -13607,7 +13597,7 @@ object fConf: TfConf
       object Panel3: TPanel
         Left = 0
         Height = 55
-        Top = 524
+        Top = 507
         Width = 637
         Align = alBottom
         BevelOuter = bvNone
@@ -13666,13 +13656,13 @@ object fConf: TfConf
     end
     object tsProxy: TTabSheet
       Caption = 'Proxy'
-      ClientHeight = 579
+      ClientHeight = 562
       ClientWidth = 637
       OnShow = tsProxyShow
       object gbNetwork: TGroupBox
         Left = 10
         Height = 190
-        Top = 379
+        Top = 362
         Width = 617
         Align = alBottom
         BorderSpacing.Around = 10

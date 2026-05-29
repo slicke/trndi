@@ -709,6 +709,10 @@ msgstr ""
 msgid "8080"
 msgstr ""
 
+#: tfconf.gbalertbehavior.caption
+msgid "Alert behavior"
+msgstr ""
+
 #: tfconf.gbdisplayprefs.caption
 msgid "Display Preferences"
 msgstr ""
@@ -976,6 +980,29 @@ msgstr ""
 
 #: tfconf.lago.caption
 msgid "100 min"
+msgstr ""
+
+#: tfconf.lalertdurrow.caption
+msgid "Must persist (minutes)"
+msgstr ""
+
+#: tfconf.lalerthicol.caption
+msgctxt "tfconf.lalerthicol.caption"
+msgid "High"
+msgstr ""
+
+#: tfconf.lalerthystrow.caption
+msgctxt "tfconf.lalerthystrow.caption"
+msgid "Clear margin (mg/dL)"
+msgstr ""
+
+#: tfconf.lalertlocol.caption
+msgctxt "tfconf.lalertlocol.caption"
+msgid "Low"
+msgstr ""
+
+#: tfconf.lalerturgcol.caption
+msgid "Urgent low"
 msgstr ""
 
 #: tfconf.larch.caption
@@ -2511,6 +2538,7 @@ msgid "Unknown error"
 msgstr ""
 
 #: uconf.rs_alert_hysteresis_mgdl
+msgctxt "uconf.rs_alert_hysteresis_mgdl"
 msgid "Clear margin (mg/dL)"
 msgstr ""
 

@@ -724,6 +724,10 @@ msgstr "OK"
 msgid "8080"
 msgstr "8080"
 
+#: tfconf.gbalertbehavior.caption
+msgid "Alert behavior"
+msgstr ""
+
 #: tfconf.gbdisplayprefs.caption
 msgid "Display Preferences"
 msgstr "Visningsval"
@@ -992,6 +996,32 @@ msgstr "Bibliotek"
 #: tfconf.lago.caption
 msgid "100 min"
 msgstr "100 min"
+
+#: tfconf.lalertdurrow.caption
+msgid "Must persist (minutes)"
+msgstr ""
+
+#: tfconf.lalerthicol.caption
+#, fuzzy
+msgctxt "tfconf.lalerthicol.caption"
+msgid "High"
+msgstr "Hög"
+
+#: tfconf.lalerthystrow.caption
+#, fuzzy
+msgctxt "tfconf.lalerthystrow.caption"
+msgid "Clear margin (mg/dL)"
+msgstr "Återställningsmarginal (mg/dL)"
+
+#: tfconf.lalertlocol.caption
+#, fuzzy
+msgctxt "tfconf.lalertlocol.caption"
+msgid "Low"
+msgstr "Låg"
+
+#: tfconf.lalerturgcol.caption
+msgid "Urgent low"
+msgstr ""
 
 #: tfconf.larch.caption
 msgid "Unknown Architecture"
