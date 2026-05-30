@@ -104,6 +104,12 @@ type
     cbFlashPerfect: TCheckBox;
     cbAlertHiLo: TCheckBox;
     cbAlertMissing: TCheckBox;
+    spAlertDurHi: TSpinEdit;
+    spAlertDurLo: TSpinEdit;
+    spAlertDurUrg: TSpinEdit;
+    fsAlertHystHi: TFloatSpinEdit;
+    fsAlertHystLo: TFloatSpinEdit;
+    fsAlertHystUrg: TFloatSpinEdit;
     cbConnectivityButton: TCheckBox;
     cbShowSensorExpiry: TCheckBox;
     cbLang: TComboBox;
@@ -298,6 +304,12 @@ begin
   cbFlashPerfect := TCheckBox.Create(nil);
   cbAlertHiLo := TCheckBox.Create(nil);
   cbAlertMissing := TCheckBox.Create(nil);
+  spAlertDurHi := TSpinEdit.Create;
+  spAlertDurLo := TSpinEdit.Create;
+  spAlertDurUrg := TSpinEdit.Create;
+  fsAlertHystHi := TFloatSpinEdit.Create;
+  fsAlertHystLo := TFloatSpinEdit.Create;
+  fsAlertHystUrg := TFloatSpinEdit.Create;
   cbConnectivityButton := TCheckBox.Create(nil);
   cbShowSensorExpiry := TCheckBox.Create(nil);
   cbLang := TComboBox.Create(nil);
@@ -366,6 +378,12 @@ begin
   cl_ok_bg.Free;
 
   cbLang.Free;
+  fsAlertHystUrg.Free;
+  fsAlertHystLo.Free;
+  fsAlertHystHi.Free;
+  spAlertDurUrg.Free;
+  spAlertDurLo.Free;
+  spAlertDurHi.Free;
   cbAlertMissing.Free;
   cbAlertHiLo.Free;
   cbShowSensorExpiry.Free;
