@@ -373,14 +373,14 @@ begin
     Exit;
 
   cnv := Self.Canvas;
-  if (Length(TrendDots) > 0) and Assigned(TrendDots[1]) and
+  if (Length(TrendDots) > 1) and Assigned(TrendDots[1]) and
     Assigned(TrendDots[1].Parent) then
     clientH := TrendDots[1].Parent.ClientHeight
   else
     clientH := Self.ClientHeight;
 
   dotHeight := 0;
-  if (Length(TrendDots) > 0) and Assigned(TrendDots[1]) then
+  if (Length(TrendDots) > 1) and Assigned(TrendDots[1]) then
     // Drawn dots are sized as a square in ResizeDot; the control's Height
     // *is* the diameter, so we can read it directly.
     dotHeight := Max(TrendDots[1].Height, TrendDots[1].Font.Size);
