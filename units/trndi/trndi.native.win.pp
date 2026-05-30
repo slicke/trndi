@@ -45,7 +45,7 @@ interface
 uses
 Classes, SysUtils, Graphics, Windows, Registry, Dialogs, StrUtils,
 winutils.httpclient, winutils.wintaskbar, shellapi,
-Forms, variants, dwmapi, trndi.native.base, ExtCtrls, IniFiles{$ifdef DEBUG}, trndi.log{$endif};
+Forms, variants, dwmapi, trndi.native.base, ExtCtrls, IniFiles, trndi.log;
 
 type
   {**
@@ -1091,25 +1091,38 @@ var
   i: integer;
   k: string;
 begin
-  names := TStringList.Create;
-  snapshot := TStringList.Create;
-  reg := TRegistry.Create;
+  // Hold the cache lock for the entire enum+seed so a concurrent SetSetting
+  // can't interleave (write to registry, update cache) between our enum and
+  // our seed — that interleaving would let SeedSettingsCache wipe the value
+  // the writer just placed in the cache.
+  TTrndiNativeBase.FSettingsCacheLock.Enter;
   try
-    reg.RootKey := HKEY_CURRENT_USER;
-    if reg.OpenKeyReadOnly('\SOFTWARE\Trndi\') then
-    begin
-      reg.GetValueNames(names);
-      for i := 0 to names.Count - 1 do
+    // Double-checked: another thread may have warmed while we waited for
+    // the lock.
+    if TTrndiNativeBase.FSettingsCacheWarm then
+      Exit;
+    names := TStringList.Create;
+    snapshot := TStringList.Create;
+    reg := TRegistry.Create;
+    try
+      reg.RootKey := HKEY_CURRENT_USER;
+      if reg.OpenKeyReadOnly('\SOFTWARE\Trndi\') then
       begin
-        k := names[i];
-        snapshot.Add(k + '=' + reg.ReadString(k));
+        reg.GetValueNames(names);
+        for i := 0 to names.Count - 1 do
+        begin
+          k := names[i];
+          snapshot.Add(k + '=' + reg.ReadString(k));
+        end;
       end;
+      TTrndiNativeBase.SeedSettingsCache(snapshot);
+    finally
+      reg.Free;
+      snapshot.Free;
+      names.Free;
     end;
-    TTrndiNativeBase.SeedSettingsCache(snapshot);
   finally
-    reg.Free;
-    snapshot.Free;
-    names.Free;
+    TTrndiNativeBase.FSettingsCacheLock.Leave;
   end;
 end;
 
@@ -1180,7 +1193,9 @@ begin
     begin
       reg.WriteString(key, val);
       TTrndiNativeBase.SetCachedSetting(key, val);
-    end;
+    end
+    else
+      TrndiDLog('SetSetting: failed to open HKCU\SOFTWARE\Trndi for key ' + key);
   finally
     reg.Free;
   end;
