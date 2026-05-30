@@ -112,11 +112,13 @@ begin
     glyphFill := BlendColors(clWhite, panelFillColor, 0.85);
     if isFullCover then
     begin
-      // Watermark behind the caption: large, low-contrast triangle
+      // Watermark behind the caption: large, low-contrast triangle.
+      // Heavy bias toward the panel color so it stays a subtle watermark and
+      // doesn't reduce contrast with the caption text drawn on top.
       glyphSize := Max(48, Min(P.Width, P.Height) div 4);
       glyphX := P.Width div 2;
       glyphY := glyphSize div 2 + 16;
-      glyphFill := BlendColors(clWhite, panelFillColor, 0.55);
+      glyphFill := BlendColors(clWhite, panelFillColor, 0.80);
       DrawWarningGlyph(P.Canvas, glyphX, glyphY, glyphSize,
         glyphFill, accentColor, accentColor);
     end
