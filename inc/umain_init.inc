@@ -915,7 +915,7 @@ begin
   begin
     fSplash.incProgress(95, RS_INIT_FIRST);
     updateReading; // Second attempt for setup
-    showWarningPanel(RS_NO_BOOT_READING);
+    showWarningPanel(RS_NO_BOOT_READING, wsCritical);
   end;
 
   Chroma := TRazerChromaFactory.CreateInstance;

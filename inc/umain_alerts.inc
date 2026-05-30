@@ -73,12 +73,6 @@ begin
   Result := True;
 end;
 
-procedure TfBG.PaintWarningOverlay(const P: TPanel; const Radius: integer;
-  const PanelFillColor: TColor; const AlphaRatio: double);
-begin
-  // Warning labels are now rendered as overlay controls via SyncWarningOverlayLabels
-end;
-
 procedure TfBG.EnsureWarningDots;
 var
   i: integer;
@@ -568,101 +562,202 @@ begin
     Chroma.SetBreathDualAll(AColor, clRazerBlack);
 end;
 
+// Map a severity level to its visual properties. Single source of truth so
+// paint, layout, and the resize handler stay consistent.
+procedure TfBG.GetWarnSeverityVisual(severity: TWarnSeverity;
+  out tintColor: TColor; out opacity: byte; out isFullCover: boolean);
+begin
+  case severity of
+    wsInfo:
+      begin
+        tintColor   := RGBToColor(230, 178, 50);   // amber
+        opacity     := 240;
+        isFullCover := false;
+      end;
+    wsSoon:
+      begin
+        tintColor   := RGBToColor(230, 126, 34);   // pumpkin/orange
+        opacity     := 240;
+        isFullCover := false;
+      end;
+  else
+    // wsCritical
+    tintColor   := RGBToColor(192, 57, 43);        // pomegranate
+    opacity     := 240;
+    isFullCover := true;
+  end;
+end;
+
 procedure TfBG.fixWarningPanel;
+const
+  GLYPH_AREA_W = 56;   // Reserved width for the severity glyph on the left
+  CHEVRON_AREA_W = 28; // Reserved width for expand chevron on the right
 var
   padding: integer;
   calculatedFontSize: integer;
   bg: BGReading;
   last, val: string;
   measureBmp: TBitmap;
-  warnLastTextH, warnLastTextW: integer;
+  warnLastTextH: integer;
+  tintColor: TColor;
+  opacityTmp: byte;
+  isFullCover: boolean;
+  baseBannerH, expandedExtraH: integer;
+  detailCaption: string;
 begin
   calculatedFontSize := 12;
-  padding := (ClientWidth div 25);
-  if not native.HasTouchScreen then
-    padding := padding * 2;
+  pnWarning.AutoSize := false;
+  GetWarnSeverityVisual(FWarnSeverity, tintColor, opacityTmp, isFullCover);
 
-  pnwarning.AutoSize := false;
-  pnwarning.Width := ClientWidth - (padding * 2);
-  pnWarning.left := padding;
-  pnwarning.top := padding;
-  pnWarning.Height := ClientHeight - (padding * 2);
-
-  lMissing.Caption := '⚠️ ' + FWarnMessage + sLineBreak;
-
-  lMissing.AutoSize := false;
-  lMissing.left := 5;
-  lMissing.top := 5;
-  lMissing.Width := pnWarning.Width - 10;
-  lMissing.Height := pnWarning.Height - 60;
-  lMissing.wordwrap := true;
-  lMissing.OptimalFill := true;
-
-  ScaleLbl(lMissing, taCenter, tlCenter);
-  calculatedFontSize := lMissing.Font.Size;
-
-  if native.HasTouchScreen then
-    pnWarning.Font.Color := pnWarning.color;
-
+  // Compose the "last reading" detail caption once; reused by both layouts.
+  detailCaption := '';
   if WarnShowDetails then
   begin
     if tryLastReading(bg) then
     begin
       val := bg.format(un, BG_MSG_SHORT);
-      if val[1] = '-' then
+      if (val <> '') and (val[1] = '-') then
       begin
         bg := lastDataReading;
         val := bg.format(un, BG_MSG_SHORT);
       end;
-
       last := FormatDateTime('hh:nn', bg.date);
       if DateOf(bg.date) <> Dateof(now) then
         last := last + ' ' + Format(RS_DAYS_AGO, [DaysBetween(now, bg.date)]);
-      pnWarnLast.Caption := Format(RS_LAST_RECIEVE, [val, last]);
+      detailCaption := Format(RS_LAST_RECIEVE, [val, last]);
     end
     else
-      pnWarnLast.Caption := RS_LAST_RECIEVE_NO;
-
-    pnWarnLast.Caption := pnWarnLast.Caption + LineEnding +
+      detailCaption := RS_LAST_RECIEVE_NO;
+    detailCaption := detailCaption + LineEnding +
       Format(RS_LAST_RECIEVE_AGE, [native.GetIntSetting('system.fresh_threshold', DATA_FRESHNESS_THRESHOLD_MINUTES)]);
-  end
-  else
-    pnWarnLast.Caption := '';
-
-  pnWarnLast.font.size := Max(8, Min(20, calculatedFontSize div 3));
-
-  // Measure caption via a temporary TBitmap. Touching pnWarning.Canvas
-  // outside a paint event SIGABRTs on Cocoa; see memory `cocoa-label-canvas`.
-  measureBmp := TBitmap.Create;
-  try
-    measureBmp.SetSize(1, 1);
-    measureBmp.Canvas.Font.Assign(pnWarning.Font);
-    measureBmp.Canvas.Font.Size := pnWarnLast.font.size;
-    warnLastTextH := measureBmp.Canvas.TextHeight(pnWarnLast.Caption);
-    warnLastTextW := measureBmp.Canvas.TextWidth(pnWarnLast.Caption);
-  finally
-    measureBmp.Free;
   end;
 
-  pnWarnLast.Height := warnLastTextH * 2;
-  pnWarnLast.Width := Min(pnWarning.Width - 10, warnLastTextW + 10);
-  pnWarnLast.left := 5;
-  pnWarnLast.top := pnWarning.Height - pnWarnLast.Height - 5;
+  if isFullCover then
+  begin
+    // ----- Critical: full-cover refreshed card (covers trend, mirrors dots/labels) -----
+    padding := (ClientWidth div 25);
+    if not native.HasTouchScreen then
+      padding := padding * 2;
+    pnWarning.Width  := ClientWidth - (padding * 2);
+    pnWarning.Left   := padding;
+    pnWarning.Top    := padding;
+    pnWarning.Height := ClientHeight - (padding * 2);
 
-  SyncWarningOverlayDots(pnWarning);
-  SyncWarningOverlayLabels(pnWarning);
+    // Vector glyph is drawn by pnWarningPaint as a watermark behind the text,
+    // so the caption no longer carries the emoji prefix.
+    lMissing.Caption := FWarnMessage;
+    lMissing.AutoSize := false;
+    lMissing.Left   := 5;
+    lMissing.Top    := 5;
+    lMissing.Width  := pnWarning.Width - 10;
+    lMissing.Height := pnWarning.Height - 60;
+    lMissing.WordWrap := true;
+    lMissing.OptimalFill := true;
+    ScaleLbl(lMissing, taCenter, tlCenter);
+    calculatedFontSize := lMissing.Font.Size;
+    if native.HasTouchScreen then
+      pnWarning.Font.Color := pnWarning.Color;
+
+    pnWarnLast.Caption := detailCaption;
+    pnWarnLast.Font.Size := Max(8, Min(20, calculatedFontSize div 3));
+    pnWarnLast.Alignment := taLeftJustify;
+    pnWarnLast.Layout := tlTop;
+
+    measureBmp := TBitmap.Create;
+    try
+      measureBmp.SetSize(1, 1);
+      measureBmp.Canvas.Font.Assign(pnWarning.Font);
+      measureBmp.Canvas.Font.Size := pnWarnLast.Font.Size;
+      warnLastTextH := measureBmp.Canvas.TextHeight(pnWarnLast.Caption);
+    finally
+      measureBmp.Free;
+    end;
+
+    pnWarnLast.Height := warnLastTextH * 2;
+    pnWarnLast.Width  := pnWarning.Width - 10;
+    pnWarnLast.Left   := 5;
+    pnWarnLast.Top    := pnWarning.Height - pnWarnLast.Height - 5;
+    pnWarnLast.Visible := WarnShowDetails;
+
+    SyncWarningOverlayDots(pnWarning);
+    SyncWarningOverlayLabels(pnWarning);
+  end
+  else
+  begin
+    // ----- Info/Soon: slim filled banner anchored at the top -----
+    padding := Max(8, ClientWidth div 40);
+    baseBannerH := Max(56, ClientHeight div 9);
+    expandedExtraH := 0;
+    if FWarnExpanded and WarnShowDetails and (detailCaption <> '') then
+      expandedExtraH := Max(36, baseBannerH div 2);
+
+    pnWarning.Width  := ClientWidth - (padding * 2);
+    pnWarning.Left   := padding;
+    pnWarning.Top    := padding;
+    pnWarning.Height := baseBannerH + expandedExtraH;
+    FWarnBannerBaseH := baseBannerH;
+
+    // Slim banner: trend dots/labels stay visible naturally underneath. No mirroring.
+    // Hide any previously-mirrored controls that may linger from a prior critical show.
+    for warnLastTextH := 1 to Length(FWarningDots) - 1 do
+      if Assigned(FWarningDots[warnLastTextH]) then
+        FWarningDots[warnLastTextH].Visible := false;
+    for warnLastTextH := 1 to 4 do
+      if Assigned(FWarningLabels[warnLastTextH]) then
+        FWarningLabels[warnLastTextH].Visible := false;
+
+    lMissing.Caption := FWarnMessage;
+    lMissing.AutoSize := false;
+    lMissing.WordWrap := true;
+    lMissing.OptimalFill := true;
+    lMissing.Left   := GLYPH_AREA_W;
+    lMissing.Top    := 6;
+    lMissing.Width  := Max(40, pnWarning.Width - GLYPH_AREA_W - CHEVRON_AREA_W);
+    lMissing.Height := baseBannerH - 12;
+    ScaleLbl(lMissing, taLeftJustify, tlCenter);
+    calculatedFontSize := lMissing.Font.Size;
+
+    if WarnShowDetails and (detailCaption <> '') then
+    begin
+      pnWarnLast.Caption := detailCaption;
+      pnWarnLast.Font.Size := Max(8, Min(14, calculatedFontSize div 2));
+      pnWarnLast.Alignment := taLeftJustify;
+      pnWarnLast.Layout := tlCenter;
+      pnWarnLast.AutoSize := false;
+      pnWarnLast.Left   := GLYPH_AREA_W;
+      pnWarnLast.Top    := baseBannerH;
+      pnWarnLast.Width  := pnWarning.Width - GLYPH_AREA_W - 8;
+      pnWarnLast.Height := Max(0, expandedExtraH - 4);
+      pnWarnLast.Visible := FWarnExpanded;
+    end
+    else
+      pnWarnLast.Visible := false;
+  end;
 end;
 
 procedure TfBG.showWarningPanel(const message: string;
-clearDisplayValues: boolean = false; opacity: integer = 235; showDetails: boolean = true);
+  severity: TWarnSeverity = wsCritical;
+  clearDisplayValues: boolean = false; showDetails: boolean = true);
+var
+  tintColor: TColor;
+  opacityTmp: byte;
+  isFullCover: boolean;
 begin
+  FWarnSeverity := severity;
+  FWarnExpanded := false;
+  WarnShowDetails := showDetails;
+  FWarnMessage := message;
+
+  GetWarnSeverityVisual(severity, tintColor, opacityTmp, isFullCover);
+  pnWarning.Color := tintColor;
+
   pnWarning.Visible := true;
   tPing.Enabled := true;
 
-  WarnShowDetails := showDetails and (opacity >= 150);
-
-  FWarnMessage := message;
-  lMissing.Caption := '⚠️ ' + message + sLineBreak;
+  // Pulse on wsSoon: piggyback on tProgress (1 Hz) instead of allocating
+  // another timer. tProgressTimer handles both pnNextProgress and pnWarning.
+  if severity = wsSoon then
+    tProgress.Enabled := true;
 
   if clearDisplayValues then
     if (not CaptionStartsWithDigit(lVal.Caption)) or (lArrow.Caption = 'lArrow') then
@@ -673,11 +768,9 @@ begin
 
   pnWarning.Caption := '';
   fixWarningPanel;
-  LAST_WARN_OPACITY := opacity;
-  ApplyAlphaControl(pnWarning, opacity);
+  ApplyAlphaControl(pnWarning, opacityTmp);
 
   pnWarning.BringToFront;
-
   pnWarning.Refresh;
   lMissing.Refresh;
 end;
@@ -685,4 +778,10 @@ end;
 procedure TfBG.hideWarningPanel;
 begin
   pnWarning.Visible := false;
+  FWarnExpanded := false;
+  // Stop tProgress only if pnNextProgress doesn't still need it. The pulse was
+  // the only reason it might be on while pnNextProgress was hidden.
+  if Assigned(tProgress) and tProgress.Enabled and
+     (not (Assigned(pnNextProgress) and pnNextProgress.Visible)) then
+    tProgress.Enabled := false;
 end;
