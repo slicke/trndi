@@ -609,6 +609,17 @@ begin
   pnWarning.AutoSize := false;
   GetWarnSeverityVisual(FWarnSeverity, tintColor, opacityTmp, isFullCover);
 
+  // Pick a high-contrast caption color against the tinted panel. Use pure
+  // white/black (not a tint-derived shade) so the title doesn't share hue with
+  // the panel background or with other on-screen values.
+  if IsLightColor(tintColor) then
+    lMissing.Font.Color := clBlack
+  else
+    lMissing.Font.Color := clWhite;
+  // Detail line stays the same hue but blended ~35% toward the panel tint, so
+  // the title clearly reads as primary and the detail as secondary.
+  pnWarnLast.Font.Color := BlendColors(lMissing.Font.Color, tintColor, 0.35);
+
   // Compose the "last reading" detail caption once; reused by both layouts.
   detailCaption := '';
   if WarnShowDetails then
