@@ -46,7 +46,11 @@ begin
   for ix := 1 to ActiveDots do
   begin
     proc(TrendDots[ix], ActiveDots, ix, TrendDots);
-    TrendDots[ix].Repaint;
+    // Skip Repaint when the dot isn't on screen — early-init paths (e.g.
+    // applying initDot before the first reading) leave dots hidden, so the
+    // paint would be discarded anyway.
+    if TrendDots[ix].Visible then
+      TrendDots[ix].Repaint;
   end;
 end;
 
@@ -59,7 +63,8 @@ begin
   for ix := 1 to ActiveDots do
   begin
     proc(TrendDots[ix], ActiveDots, ix);
-    TrendDots[ix].Repaint;
+    if TrendDots[ix].Visible then
+      TrendDots[ix].Repaint;
   end;
 end;
 
@@ -877,7 +882,7 @@ begin
       api.cgmLo := GetIntSetting('wizard.lo', api.cgmLo);
     end;
 
-    fSplash.incProgress(90, RS_INIT_CUSTOM_OVERRIDES);
+    fSplash.incProgress(85, RS_INIT_CUSTOM_OVERRIDES);
     // Override settings - always apply if set, regardless of checkbox state
     // This allows extensions and manual config edits to work
     api.cgmLo := GetIntSetting('override.lo', api.cgmLo);
