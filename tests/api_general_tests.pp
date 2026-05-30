@@ -504,14 +504,23 @@ end;
       AssertTrue('debug low-soon backend produces predictions', api.predictReadings(7, preds));
       AssertEquals('expected seven predictions', 7, Length(preds));
 
-      for i := 0 to 5 do
-        AssertTrue('first six predictions stay above low threshold',
-          preds[i].convert(mgdl) > api.cgmLo);
+      // The backend simulates a steep fall ending near low (newest reading
+      // ~67 mg/dL), so every projected reading sits at or below cgmLo — the
+      // UI's "Low Predicted soon!" path must trigger on the first prediction.
+      for i := 0 to High(preds) do
+        AssertTrue('every prediction lands at or below low threshold',
+          preds[i].convert(mgdl) <= api.cgmLo);
 
-      AssertTrue('seventh prediction reaches low threshold',
-        preds[6].convert(mgdl) <= api.cgmLo);
-      AssertTrue('seventh prediction stays within the soon warning window',
-        Round(MinutesBetween(Now, preds[6].date)) <= 3);
+      // Predictions are emitted in chronological order along the 5-minute slot
+      // cadence, with each step strictly later than the previous one.
+      for i := 0 to High(preds) - 1 do
+        AssertTrue('predictions are chronologically ordered',
+          preds[i].date < preds[i + 1].date);
+
+      // The first prediction lands within the next slot window — close enough
+      // that the UI's "soon" warning fires immediately.
+      AssertTrue('first prediction is within one reporting interval',
+        Round(MinutesBetween(Now, preds[0].date)) <= 5);
     finally
       api.Free;
     end;

@@ -111,6 +111,8 @@ type
     procedure RoundRect(X1, Y1, X2, Y2, RoundX, RoundY: Integer); overload; virtual;
     procedure MoveTo(X, Y: Integer); virtual;
     procedure LineTo(X, Y: Integer); virtual;
+    procedure Polygon(const Points: array of TPoint); virtual;
+    procedure Ellipse(X1, Y1, X2, Y2: Integer); virtual;
     function GetPixels(X, Y: Integer): TColor; virtual;
     property Pixels[X, Y: Integer]: TColor read GetPixels;
     procedure Draw(X, Y: Integer; Src: TObject); virtual;
@@ -163,7 +165,23 @@ type
     property ScanLine[Row: Integer]: Pointer read GetScanLine;
     procedure SetSize(AWidth, AHeight: Integer); virtual;
     procedure LoadFromResourceName(Instance: THandle; const AName: string); virtual;
+    // Accepts a TLazIntfImage from the mock IntfGraphics unit. Typed as
+    // TObject to avoid a circular Graphics<->IntfGraphics dependency.
+    procedure LoadFromIntfImage(Src: TObject); virtual;
   end;
+
+  // Mock of LCL's TPortableNetworkGraphic. Tests don't render, so this is
+  // a thin stub that mirrors only the surface used by umain_dots.inc on
+  // the non-Windows branch.
+  TPortableNetworkGraphic = class(TObject)
+  public
+    procedure LoadFromIntfImage(Src: TObject); virtual;
+  end;
+
+// Windows graphics device-context handle. Some include files reference HDC
+// directly when calling into msimg32 / GDI from the Windows-only branch.
+type
+  HDC = PtrUInt;
 
 // color helpers
 function ColorToRGB(AColor: TColor): LongInt;
@@ -268,6 +286,16 @@ begin
 end;
 
 procedure TCanvas.LineTo(X, Y: Integer);
+begin
+  // no-op
+end;
+
+procedure TCanvas.Polygon(const Points: array of TPoint);
+begin
+  // no-op
+end;
+
+procedure TCanvas.Ellipse(X1, Y1, X2, Y2: Integer);
 begin
   // no-op
 end;
@@ -386,6 +414,16 @@ begin
 end;
 
 procedure TBitmap.LoadFromResourceName(Instance: THandle; const AName: string);
+begin
+  // no-op
+end;
+
+procedure TBitmap.LoadFromIntfImage(Src: TObject);
+begin
+  // no-op
+end;
+
+procedure TPortableNetworkGraphic.LoadFromIntfImage(Src: TObject);
 begin
   // no-op
 end;
