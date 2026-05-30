@@ -518,24 +518,29 @@ begin
       cnv.LineTo(Self.ClientWidth, hiY);
     end;
 
-    if drawRangeLo then
+    // Custom-range threshold lines: tint of the user's chosen custom color
+    // (parallels the hi/lo lines using bg_rel_color_lo/hi). The old code
+    // used LightenColor(fBG.Color, 0.5) which disappears against the lighter
+    // hi/lo band; tying it to tir_custom_bg keeps it readable.
+    if drawRangeLo or drawRangeHi then
     begin
-      lineColor := LightenColor(fBG.Color, 0.5);
+      if tir_custom_bg = -1 then
+        lineColor := LightenColor(fBG.Color, 0.5)
+      else
+        lineColor := LightenColor(tir_custom_bg, 0.4);
       cnv.Pen.Color := lineColor;
       cnv.Pen.Style := psSolid;
       cnv.Pen.Width := 1;
-      cnv.MoveTo(0, rangeLoY);
-      cnv.LineTo(Self.ClientWidth, rangeLoY);
-    end;
-
-    if drawRangeHi then
-    begin
-      lineColor := LightenColor(fBG.Color, 0.5);
-      cnv.Pen.Color := lineColor;
-      cnv.Pen.Style := psSolid;
-      cnv.Pen.Width := 1;
-      cnv.MoveTo(0, rangeHiY);
-      cnv.LineTo(Self.ClientWidth, rangeHiY);
+      if drawRangeLo then
+      begin
+        cnv.MoveTo(0, rangeLoY);
+        cnv.LineTo(Self.ClientWidth, rangeLoY);
+      end;
+      if drawRangeHi then
+      begin
+        cnv.MoveTo(0, rangeHiY);
+        cnv.LineTo(Self.ClientWidth, rangeHiY);
+      end;
     end;
   end;
 
