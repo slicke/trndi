@@ -3,6 +3,15 @@
    Included in the implementation section of umain.pp only.
 *)
 
+// MacOSAll exports a classic-Mac `Point` record type that shadows
+// Types.Point(x, y), turning `Point(a, b)` into a one-arg type cast and
+// breaking the build on Darwin. MkPoint sidesteps the name clash.
+function MkPoint(AX, AY: integer): TPoint; inline;
+begin
+  Result.X := AX;
+  Result.Y := AY;
+end;
+
 // Draw a warning-triangle vector glyph (equilateral triangle with rounded tip
 // and a centered exclamation bar+dot). Replaces the previous "⚠️" emoji in
 // captions so the panel renders identically across platforms.
@@ -17,9 +26,9 @@ begin
   halfSize := Size div 2;
 
   // Equilateral-ish triangle, flat base
-  pts[0] := Point(CenterX, CenterY - halfSize);
-  pts[1] := Point(CenterX - halfSize, CenterY + halfSize);
-  pts[2] := Point(CenterX + halfSize, CenterY + halfSize);
+  pts[0] := MkPoint(CenterX, CenterY - halfSize);
+  pts[1] := MkPoint(CenterX - halfSize, CenterY + halfSize);
+  pts[2] := MkPoint(CenterX + halfSize, CenterY + halfSize);
 
   Canvas.Brush.Style := bsSolid;
   Canvas.Brush.Color := Fill;
@@ -145,16 +154,16 @@ begin
         if FWarnExpanded then
         begin
           // Up chevron (▴)
-          chevPts[0] := Point(chevronCX, chevronCY - chevronS div 2);
-          chevPts[1] := Point(chevronCX - chevronS, chevronCY + chevronS div 2);
-          chevPts[2] := Point(chevronCX + chevronS, chevronCY + chevronS div 2);
+          chevPts[0] := MkPoint(chevronCX, chevronCY - chevronS div 2);
+          chevPts[1] := MkPoint(chevronCX - chevronS, chevronCY + chevronS div 2);
+          chevPts[2] := MkPoint(chevronCX + chevronS, chevronCY + chevronS div 2);
         end
         else
         begin
           // Down chevron (▾)
-          chevPts[0] := Point(chevronCX - chevronS, chevronCY - chevronS div 2);
-          chevPts[1] := Point(chevronCX + chevronS, chevronCY - chevronS div 2);
-          chevPts[2] := Point(chevronCX, chevronCY + chevronS div 2);
+          chevPts[0] := MkPoint(chevronCX - chevronS, chevronCY - chevronS div 2);
+          chevPts[1] := MkPoint(chevronCX + chevronS, chevronCY - chevronS div 2);
+          chevPts[2] := MkPoint(chevronCX, chevronCY + chevronS div 2);
         end;
         Brush.Color := accentColor;
         Pen.Style := psClear;
