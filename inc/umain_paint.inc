@@ -51,6 +51,147 @@ begin
   Canvas.Ellipse(barX, dotY, barX + barW, dotY + barW);
 end;
 
+type
+  TRangeBand = record
+    Top, Bottom: integer;
+    Color: TColor;
+    Alpha: byte;
+  end;
+
+// DrawRangeBands: paint a set of horizontal alpha bands onto ACanvas via a
+// 1-pixel-wide premultiplied-alpha bitmap that the OS stretches across the
+// destination width. Bands composite in array order using Porter-Duff "over"
+// — a custom range drawn on top of a hi/lo range naturally appears slightly
+// deeper without needing the old triple-BlendColors math.
+//
+// Each band fades in over AGradientPx rows at the top and bottom edges,
+// giving the band a soft transition into the surrounding background instead
+// of a hard rectangle. Reuses the LocalAlphaBlend import from
+// inc/umain_dots.inc on Windows; uses a TPortableNetworkGraphic on
+// GTK/Qt/Cocoa where TBitmap alpha compositing is unreliable.
+procedure DrawRangeBands(ACanvas: TCanvas; AWidth, AHeight: integer;
+  const Bands: array of TRangeBand; AGradientPx: integer);
+
+  function EdgeCoverage(y, top, bottom, grad: integer): double;
+  begin
+    if (y < top) or (y > bottom) then
+    begin
+      Result := 0;
+      Exit;
+    end;
+    if grad <= 0 then
+    begin
+      Result := 1;
+      Exit;
+    end;
+    if y - top < bottom - y then
+      Result := (y - top + 0.5) / grad
+    else
+      Result := (bottom - y + 0.5) / grad;
+    if Result > 1 then Result := 1
+    else if Result < 0 then Result := 0;
+  end;
+
+var
+  intf: TLazIntfImage;
+  rawDesc: TRawImageDescription;
+  y, i: integer;
+  br, bg, bb: byte;
+  dstR, dstG, dstB, dstA: double;
+  srcA, invA: double;
+  pix: TFPColor;
+  outR, outG, outB, outA: integer;
+  {$ifdef Windows}
+  bmp: TBitmap;
+  blend: TLocalBlendFunction;
+  {$else}
+  png: TPortableNetworkGraphic;
+  {$endif}
+begin
+  if (AWidth <= 0) or (AHeight <= 0) or (Length(Bands) = 0) then
+    Exit;
+
+  intf := TLazIntfImage.Create(0, 0);
+  try
+    rawDesc.Init_BPP32_B8G8R8A8_BIO_TTB(1, AHeight);
+    intf.DataDescription := rawDesc;
+    intf.CreateData;
+
+    for y := 0 to AHeight - 1 do
+    begin
+      dstR := 0; dstG := 0; dstB := 0; dstA := 0;
+      for i := Low(Bands) to High(Bands) do
+      begin
+        srcA := (Bands[i].Alpha / 255.0) *
+                EdgeCoverage(y, Bands[i].Top, Bands[i].Bottom, AGradientPx);
+        if srcA <= 0 then
+          Continue;
+        br := Red(ColorToRGB(Bands[i].Color));
+        bg := Green(ColorToRGB(Bands[i].Color));
+        bb := Blue(ColorToRGB(Bands[i].Color));
+        invA := 1.0 - srcA;
+        dstR := br * srcA + dstR * invA;
+        dstG := bg * srcA + dstG * invA;
+        dstB := bb * srcA + dstB * invA;
+        dstA := srcA + dstA * invA;
+      end;
+
+      if dstA > 1 then dstA := 1
+      else if dstA < 0 then dstA := 0;
+
+      {$ifdef Windows}
+      // Win32 AlphaBlend with AC_SRC_ALPHA expects premultiplied RGB.
+      outR := Round(dstR * dstA);
+      outG := Round(dstG * dstA);
+      outB := Round(dstB * dstA);
+      {$else}
+      outR := Round(dstR);
+      outG := Round(dstG);
+      outB := Round(dstB);
+      {$endif}
+      outA := Round(dstA * 255);
+
+      if outR > 255 then outR := 255 else if outR < 0 then outR := 0;
+      if outG > 255 then outG := 255 else if outG < 0 then outG := 0;
+      if outB > 255 then outB := 255 else if outB < 0 then outB := 0;
+      if outA > 255 then outA := 255 else if outA < 0 then outA := 0;
+
+      pix.red := outR shl 8 or outR;
+      pix.green := outG shl 8 or outG;
+      pix.blue := outB shl 8 or outB;
+      pix.alpha := outA shl 8 or outA;
+      intf.Colors[0, y] := pix;
+    end;
+
+    {$ifdef Windows}
+    bmp := TBitmap.Create;
+    try
+      bmp.PixelFormat := pf32bit;
+      bmp.SetSize(1, AHeight);
+      bmp.LoadFromIntfImage(intf);
+      blend.BlendOp := LOCAL_AC_SRC_OVER;
+      blend.BlendFlags := 0;
+      blend.SourceConstantAlpha := 255;
+      blend.AlphaFormat := LOCAL_AC_SRC_ALPHA;
+      LocalAlphaBlend(ACanvas.Handle, 0, 0, AWidth, AHeight,
+                      bmp.Canvas.Handle, 0, 0, 1, AHeight, blend);
+    finally
+      bmp.Free;
+    end;
+    {$else}
+    png := TPortableNetworkGraphic.Create;
+    try
+      png.LoadFromIntfImage(intf);
+      ACanvas.StretchDraw(Classes.Rect(0, 0, AWidth, AHeight), png);
+    finally
+      png.Free;
+    end;
+    {$endif}
+  finally
+    intf.Free;
+  end;
+end;
+
 procedure TfBG.pnWarningPaint(Sender: TObject);
 const
   RadiusFull = 20;
@@ -174,14 +315,30 @@ begin
 end;
 
 procedure TfBG.FormPaint(Sender: TObject);
+const
+  // Alphas chosen to mirror the prior BlendColors(*, fBG, 0.3) and
+  // DarkenColor(fBG, 0.9 / 0.85) mixes so the displayed band intensity stays
+  // close to what existed before the refactor.
+  HiLoAlphaWithColor   = 77;   // ~30% — matches BlendColors(tir_bg, fBG, 0.3)
+  HiLoAlphaFallback    = 26;   // ~10% — approximates DarkenColor(fBG, 0.9)
+  // Custom band is pushed well past hi/lo (much higher alpha + stronger
+  // pigment pre-darken) so the user's "ideal goal" inside the acceptable
+  // range reads as a clearly deeper sweet spot even on a dark warning
+  // background where a subtle shift gets washed out.
+  CustomAlphaWithColor = 165;  // ~65%
+  CustomAlphaFallback  = 64;   // ~25% — approximates DarkenColor(fBG, 0.75)
+  CustomPigmentDarken  = 0.8;  // pre-darken applied to tir_custom_bg
+  BandEdgeGradientPx   = 3;
 var
   loY, hiY, rangeLoY, rangeHiY: integer;
   cnv: TCanvas;
-  lineColor: TColor;
+  lineColor, edgeColor: TColor;
+  hiloDisplayedColor, customDisplayedColor: TColor;
   drawLo, drawHi, drawRangeLo, drawRangeHi: boolean;
-  tmp: integer;
+  rowOffset: integer;
   clientH: integer;
   dotHeight: integer;
+  bands: array of TRangeBand;
 
   debugY: integer;
   debugValue: single;
@@ -228,46 +385,113 @@ begin
     // *is* the diameter, so we can read it directly.
     dotHeight := Max(TrendDots[1].Height, TrendDots[1].Font.Size);
 
+  // ValueToY returns the dot *center*; threshold lines, band edges, and the
+  // DOT_LINES debug guides all need to sit at the dot bottom so a dot whose
+  // value equals the threshold rests flush against the line/band edge.
+  rowOffset := (dotHeight div 2) + DOT_OFFSET_RANGE;
+
   drawLo := (Assigned(api) and (api.cgmLo <> 0) and PaintRange);
   drawHi := (Assigned(api) and (api.cgmHi <> 0) and PaintRange);
   drawRangeLo := (Assigned(api) and (api.cgmRangeLo <> 0) and PaintRangeCGMRange);
   drawRangeHi := (Assigned(api) and (api.cgmRangeHi > 0) and (api.cgmRangeHi < 500) and PaintRangeCGMRange);
 
   if drawLo then
-    loY := ValueToY(api.cgmLo * BG_CONVERTIONS[mmol][mgdl]);
+    loY := ValueToY(api.cgmLo * BG_CONVERTIONS[mmol][mgdl]) + rowOffset;
 
   if drawHi then
-    hiY := ValueToY(api.cgmHi * BG_CONVERTIONS[mmol][mgdl]);
+    hiY := ValueToY(api.cgmHi * BG_CONVERTIONS[mmol][mgdl]) + rowOffset;
 
   if drawRangeLo then
-    rangeLoY := ValueToY(api.cgmRangeLo * BG_CONVERTIONS[mmol][mgdl]);
+    rangeLoY := ValueToY(api.cgmRangeLo * BG_CONVERTIONS[mmol][mgdl]) + rowOffset;
 
   if drawRangeHi then
-    rangeHiY := ValueToY(api.cgmRangeHi * BG_CONVERTIONS[mmol][mgdl]);
+    rangeHiY := ValueToY(api.cgmRangeHi * BG_CONVERTIONS[mmol][mgdl]) + rowOffset;
 
+  // Build the band list. Hi/lo first so the custom band composites on top
+  // inside the overlap region (the custom range is constrained to live
+  // inside the hi/lo range — see rs_custom_range_help).
+  SetLength(bands, 0);
   if drawLo and drawHi then
   begin
-    cnv.Brush.Style := bsSolid;
-    if tir_bg = -1 then
-      cnv.Brush.Color := DarkenColor(fBG.Color, 0.9)
-    else
-      cnv.Brush.Color := BlendColors(tir_bg, fBG.Color, 0.3);
-    cnv.Pen.Style := psClear;
-    cnv.FillRect(Classes.Rect(0, hiY, Self.ClientWidth, loY));
+    SetLength(bands, Length(bands) + 1);
+    with bands[High(bands)] do
+    begin
+      Top := hiY;
+      Bottom := loY;
+      if tir_bg = -1 then
+      begin
+        Color := clBlack;
+        Alpha := HiLoAlphaFallback;
+      end
+      else
+      begin
+        Color := tir_bg;
+        Alpha := HiLoAlphaWithColor;
+      end;
+    end;
   end;
 
   if drawRangeLo and drawRangeHi then
   begin
-    cnv.Brush.Style := bsSolid;
-    if tir_custom_bg = -1 then
-      cnv.Brush.Color := DarkenColor(fBG.Color, 0.85)
-    else
-    if tir_bg = -1 then
-      cnv.Brush.Color := BlendColors(tir_custom_bg, fBG.Color, 0.3)
-    else
-      cnv.Brush.Color := BlendColors(tir_custom_bg, BlendColors(tir_bg, fBG.Color, 0.3), 0.3);
-    cnv.Pen.Style := psClear;
-    cnv.FillRect(Classes.Rect(0, rangeHiY, Self.ClientWidth, rangeLoY));
+    SetLength(bands, Length(bands) + 1);
+    with bands[High(bands)] do
+    begin
+      Top := rangeHiY;
+      Bottom := rangeLoY;
+      if tir_custom_bg = -1 then
+      begin
+        Color := clBlack;
+        Alpha := CustomAlphaFallback;
+      end
+      else
+      begin
+        Color := DarkenColor(tir_custom_bg, CustomPigmentDarken);
+        Alpha := CustomAlphaWithColor;
+      end;
+    end;
+  end;
+
+  if Length(bands) > 0 then
+    DrawRangeBands(cnv, Self.ClientWidth, clientH, bands, BandEdgeGradientPx);
+
+  // Subtle hairline at each band edge so the threshold has a defined
+  // boundary even when PaintRangeLines is off. Skipped when PaintRangeLines
+  // is on so we don't stack a thin and a thick line at the same Y.
+  if not PaintRangeLines then
+  begin
+    cnv.Brush.Style := bsClear;
+    cnv.Pen.Style := psSolid;
+    cnv.Pen.Width := 1;
+
+    if drawLo and drawHi then
+    begin
+      if tir_bg = -1 then
+        hiloDisplayedColor := DarkenColor(fBG.Color, 0.9)
+      else
+        hiloDisplayedColor := BlendColors(tir_bg, fBG.Color, HiLoAlphaWithColor / 255.0);
+      edgeColor := LightenColor(hiloDisplayedColor, 0.35);
+      cnv.Pen.Color := edgeColor;
+      cnv.MoveTo(0, hiY); cnv.LineTo(Self.ClientWidth, hiY);
+      cnv.MoveTo(0, loY); cnv.LineTo(Self.ClientWidth, loY);
+    end;
+
+    if drawRangeLo and drawRangeHi then
+    begin
+      if tir_custom_bg = -1 then
+        customDisplayedColor := DarkenColor(fBG.Color, 0.75)
+      else
+      if tir_bg = -1 then
+        customDisplayedColor := BlendColors(DarkenColor(tir_custom_bg, CustomPigmentDarken),
+          fBG.Color, CustomAlphaWithColor / 255.0)
+      else
+        customDisplayedColor := BlendColors(DarkenColor(tir_custom_bg, CustomPigmentDarken),
+          BlendColors(tir_bg, fBG.Color, HiLoAlphaWithColor / 255.0),
+          CustomAlphaWithColor / 255.0);
+      edgeColor := LightenColor(customDisplayedColor, 0.35);
+      cnv.Pen.Color := edgeColor;
+      cnv.MoveTo(0, rangeHiY); cnv.LineTo(Self.ClientWidth, rangeHiY);
+      cnv.MoveTo(0, rangeLoY); cnv.LineTo(Self.ClientWidth, rangeLoY);
+    end;
   end;
 
   cnv.Brush.Style := bsClear;
@@ -280,9 +504,8 @@ begin
       cnv.Pen.Color := lineColor;
       cnv.Pen.Style := psSolid;
       cnv.Pen.Width := 2;
-      tmp := loY + Round(dotHeight / 2.0) + DOT_OFFSET_RANGE;
-      cnv.MoveTo(0, tmp);
-      cnv.LineTo(Self.ClientWidth, tmp);
+      cnv.MoveTo(0, loY);
+      cnv.LineTo(Self.ClientWidth, loY);
     end;
 
     if drawHi then
@@ -291,9 +514,8 @@ begin
       cnv.Pen.Color := lineColor;
       cnv.Pen.Style := psSolid;
       cnv.Pen.Width := 2;
-      tmp := hiY + Round(dotHeight / 2.0) + DOT_OFFSET_RANGE;
-      cnv.MoveTo(0, tmp);
-      cnv.LineTo(Self.ClientWidth, tmp);
+      cnv.MoveTo(0, hiY);
+      cnv.LineTo(Self.ClientWidth, hiY);
     end;
 
     if drawRangeLo then
@@ -302,9 +524,8 @@ begin
       cnv.Pen.Color := lineColor;
       cnv.Pen.Style := psSolid;
       cnv.Pen.Width := 1;
-      tmp := rangeLoY + Round(dotHeight / 2.0) + DOT_OFFSET_RANGE;
-      cnv.MoveTo(0, tmp);
-      cnv.LineTo(Self.ClientWidth, tmp);
+      cnv.MoveTo(0, rangeLoY);
+      cnv.LineTo(Self.ClientWidth, rangeLoY);
     end;
 
     if drawRangeHi then
@@ -313,9 +534,8 @@ begin
       cnv.Pen.Color := lineColor;
       cnv.Pen.Style := psSolid;
       cnv.Pen.Width := 1;
-      tmp := rangeHiY + Round(dotHeight / 2.0) + DOT_OFFSET_RANGE;
-      cnv.MoveTo(0, tmp);
-      cnv.LineTo(Self.ClientWidth, tmp);
+      cnv.MoveTo(0, rangeHiY);
+      cnv.LineTo(Self.ClientWidth, rangeHiY);
     end;
   end;
 
@@ -333,7 +553,7 @@ begin
       debugValue := i * 5.0;
       if (debugValue >= BG_API_MIN) and (debugValue <= BG_API_MAX) then
       begin
-        debugY := ValueToY(debugValue) + Round(dotHeight / 2.0) + DOT_OFFSET_RANGE;
+        debugY := ValueToY(debugValue) + rowOffset;
         cnv.MoveTo(0, debugY);
         cnv.LineTo(Self.ClientWidth, debugY);
         debugText := Format('%.0f', [debugValue]);
