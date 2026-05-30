@@ -25,9 +25,14 @@ begin
 end;
 
 function DebugLowSoonAPI.getReadings(min, maxNum: integer; extras: string; out res: string): BGResults;
+const
+  // Linear fall from ~10 mmol/L (180 mg/dL) down to ~3.7 mmol/L (67 mg/dL)
+  // across the 11 generated readings (i=10 oldest, i=0 newest).
+  START_MGDL = 180;
+  END_MGDL   = 67;
 var
   i: integer;
-  readingValue: integer;
+  readingValue, nextValue, readingDelta: integer;
   rssi, noise: MaybeInt;
   newestTime: TDateTime;
 begin
@@ -37,18 +42,26 @@ begin
   rssi.value := 80;
   noise.value := 2;
 
-  // Keep the current reading just above low and fall 1 mg/dL every 20 seconds.
-  // With the built-in prediction limiter, this makes the 7th prediction land on
-  // the low threshold within the existing "soon" warning window.
+  // Readings are spaced at the main window's 5-minute slot interval so they
+  // render as distinct dots, and the steep falling slope drives the prediction
+  // path toward low within the existing "soon" warning window.
   newestTime := RecodeMilliSecond(Now, 0);
   SetLength(Result, 11);
   for i := 0 to High(Result) do
   begin
-    readingValue := 67 + i;
+    readingValue := END_MGDL + (i * (START_MGDL - END_MGDL)) div High(Result);
+    if i < High(Result) then
+    begin
+      nextValue := END_MGDL + ((i + 1) * (START_MGDL - END_MGDL)) div High(Result);
+      readingDelta := readingValue - nextValue;
+    end
+    else
+      readingDelta := -((START_MGDL - END_MGDL) div High(Result));
+
     Result[i].Init(mgdl, self.systemname);
-    Result[i].date := IncSecond(newestTime, -(i * 20));
-    Result[i].update(readingValue, -1);
-    Result[i].trend := CalculateTrendFromDelta(-1);
+    Result[i].date := IncMinute(newestTime, -(i * 5));
+    Result[i].update(readingValue, readingDelta);
+    Result[i].trend := CalculateTrendFromDelta(readingDelta);
     Result[i].level := getLevel(Result[i].val);
     Result[i].updateEnv('Debug', rssi, noise);
   end;
