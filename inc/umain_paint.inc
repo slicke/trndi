@@ -3,42 +3,162 @@
    Included in the implementation section of umain.pp only.
 *)
 
+// Draw a warning-triangle vector glyph (equilateral triangle with rounded tip
+// and a centered exclamation bar+dot). Replaces the previous "⚠️" emoji in
+// captions so the panel renders identically across platforms.
+procedure DrawWarningGlyph(Canvas: TCanvas; CenterX, CenterY, Size: integer;
+  Fill, Stroke, AccentColor: TColor);
+var
+  pts: array[0..2] of TPoint;
+  halfSize, barW, barH, barX, barTopY, dotY: integer;
+begin
+  if Size < 8 then
+    Size := 8;
+  halfSize := Size div 2;
+
+  // Equilateral-ish triangle, flat base
+  pts[0] := Point(CenterX, CenterY - halfSize);
+  pts[1] := Point(CenterX - halfSize, CenterY + halfSize);
+  pts[2] := Point(CenterX + halfSize, CenterY + halfSize);
+
+  Canvas.Brush.Style := bsSolid;
+  Canvas.Brush.Color := Fill;
+  Canvas.Pen.Color := Stroke;
+  Canvas.Pen.Width := Max(1, Size div 16);
+  Canvas.Pen.Style := psSolid;
+  Canvas.Polygon(pts);
+
+  // Exclamation bar
+  barW := Max(2, Size div 9);
+  barH := Max(4, Size div 3);
+  barX := CenterX - (barW div 2);
+  barTopY := CenterY - halfSize + (Size div 3);
+  Canvas.Brush.Color := AccentColor;
+  Canvas.Pen.Style := psClear;
+  Canvas.FillRect(Classes.Rect(barX, barTopY, barX + barW, barTopY + barH));
+
+  // Exclamation dot
+  dotY := CenterY + halfSize - Max(4, Size div 6);
+  Canvas.Ellipse(barX, dotY, barX + barW, dotY + barW);
+end;
+
 procedure TfBG.pnWarningPaint(Sender: TObject);
 const
-  radius = 20;
+  RadiusFull = 20;
+  RadiusBanner = 14;
 var
   P: TPanel;
-  panelFillColor: TColor;
-  {$ifndef X_WIN}
+  panelFillColor, strokeColor, accentColor, glyphFill: TColor;
+  tintColor: TColor;
+  opacityTmp: byte;
+  isFullCover: boolean;
   alphaRatio: double;
-  {$endif}
+  radius: integer;
+  glyphSize, glyphX, glyphY: integer;
+  chevronCX, chevronCY, chevronS: integer;
+  chevPts: array[0..2] of TPoint;
+  pulseAmt: double;
+  bannerBaseH: integer;
 begin
   P := TPanel(Sender);
+  GetWarnSeverityVisual(FWarnSeverity, tintColor, opacityTmp, isFullCover);
+
+  if isFullCover then
+    radius := RadiusFull
+  else
+    radius := RadiusBanner;
 
   with P.Canvas do
   begin
     Brush.Color := fBG.Color;
+    Brush.Style := bsSolid;
     FillRect(0, 0, P.Width, P.Height);
 
     {$ifndef X_WIN}
-    alphaRatio := LAST_WARN_OPACITY / 255.0;
-    panelFillColor := BlendColors(P.Color, fBG.Color, alphaRatio);
-    Brush.Color := panelFillColor;
+    alphaRatio := opacityTmp / 255.0;
+    panelFillColor := BlendColors(tintColor, fBG.Color, alphaRatio);
     {$else}
-    panelFillColor := P.Color;
+    panelFillColor := tintColor;
+    alphaRatio := 1.0;
+    {$endif}
+
+    // For wsSoon, pulse the tint between base orange and a brighter shade on a
+    // 2-second cadence. Driven by tProgressTimer; mirrors the alternation
+    // pattern already used in pnNextProgressPaint for overdue readings.
+    if (FWarnSeverity = wsSoon) and not isFullCover then
+    begin
+      if (SecondOf(Now) mod 2) = 0 then
+        pulseAmt := 0.45
+      else
+        pulseAmt := 0.0;
+      panelFillColor := BlendColors(panelFillColor,
+        LightenColor(panelFillColor, 0.30), pulseAmt);
+    end;
+
     Brush.Color := panelFillColor;
-    {$endif}
-    Pen.Color := BlendColors(panelFillColor, fBG.Color, 0.45);
+    strokeColor := BlendColors(panelFillColor, clBlack, 0.30);
+    Pen.Color := strokeColor;
     Pen.Width := 1;
-    RoundRect(0, 0, P.Width, P.Height, Radius, Radius);
+    Pen.Style := psSolid;
+    RoundRect(0, 0, P.Width, P.Height, radius, radius);
 
-    Pen.Color := LightenColor(panelFillColor, 0.2);
-    MoveTo(Radius div 2, 2);
-    LineTo(P.Width - (Radius div 2), 2);
+    // Subtle top highlight
+    Pen.Color := LightenColor(panelFillColor, 0.20);
+    MoveTo(radius div 2, 2);
+    LineTo(P.Width - (radius div 2), 2);
 
-    {$ifndef X_WIN}
-    PaintWarningOverlay(P, Radius, Brush.Color, alphaRatio);
-    {$endif}
+    // Vector severity glyph
+    accentColor := DarkenColor(panelFillColor, 0.45);
+    glyphFill := BlendColors(clWhite, panelFillColor, 0.85);
+    if isFullCover then
+    begin
+      // Watermark behind the caption: large, low-contrast triangle
+      glyphSize := Max(48, Min(P.Width, P.Height) div 4);
+      glyphX := P.Width div 2;
+      glyphY := glyphSize div 2 + 16;
+      glyphFill := BlendColors(clWhite, panelFillColor, 0.55);
+      DrawWarningGlyph(P.Canvas, glyphX, glyphY, glyphSize,
+        glyphFill, accentColor, accentColor);
+    end
+    else
+    begin
+      // Banner: glyph and chevron live within the collapsed (base) area, so they
+      // don't move when the expanded detail row appears below.
+      bannerBaseH := FWarnBannerBaseH;
+      if bannerBaseH <= 0 then
+        bannerBaseH := P.Height;
+
+      glyphSize := Max(20, bannerBaseH - 20);
+      glyphX := 12 + glyphSize div 2;
+      glyphY := bannerBaseH div 2;
+      DrawWarningGlyph(P.Canvas, glyphX, glyphY, glyphSize,
+        glyphFill, accentColor, accentColor);
+
+      // Expand chevron on the right (only when there's something to expand to)
+      if WarnShowDetails then
+      begin
+        chevronS := 6;
+        chevronCX := P.Width - 16;
+        chevronCY := bannerBaseH div 2;
+        if FWarnExpanded then
+        begin
+          // Up chevron (▴)
+          chevPts[0] := Point(chevronCX, chevronCY - chevronS div 2);
+          chevPts[1] := Point(chevronCX - chevronS, chevronCY + chevronS div 2);
+          chevPts[2] := Point(chevronCX + chevronS, chevronCY + chevronS div 2);
+        end
+        else
+        begin
+          // Down chevron (▾)
+          chevPts[0] := Point(chevronCX - chevronS, chevronCY - chevronS div 2);
+          chevPts[1] := Point(chevronCX + chevronS, chevronCY - chevronS div 2);
+          chevPts[2] := Point(chevronCX, chevronCY + chevronS div 2);
+        end;
+        Brush.Color := accentColor;
+        Pen.Style := psClear;
+        Polygon(chevPts);
+      end;
+    end;
   end;
 end;
 

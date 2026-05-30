@@ -909,7 +909,7 @@ begin
     except
     end;
 
-    showWarningPanel(msg, true);
+    showWarningPanel(msg, wsCritical, true);
 
     if akMissing in FAlertEngine.EvaluateMissing then
       native.attention(RS_ATTENTION_MISSING, RS_ATTENTION_MISSING_DESC);

@@ -216,15 +216,15 @@ procedure predictFuture(future: integer = 7);
       if minTime > 3 then
       begin
         if isLow = TTrndiBool.tbTrue then
-          showWarningPanel(Format(RS_LO_PREDICT, [minTime]), false, 50, false)
+          showWarningPanel(Format(RS_LO_PREDICT, [minTime]), wsInfo, false, false)
         else
-          showWarningPanel(Format(RS_HI_PREDICT, [minTime]), false, 50, false);
+          showWarningPanel(Format(RS_HI_PREDICT, [minTime]), wsInfo, false, false);
       end
       else
       if isLow = TTrndiBool.tbTrue then
-        showWarningPanel(RS_LO_PREDICT_SOON, false, 50, false)
+        showWarningPanel(RS_LO_PREDICT_SOON, wsSoon, false, false)
       else
-        showWarningPanel(RS_HI_PREDICT_SOON, false, 50, false);
+        showWarningPanel(RS_HI_PREDICT_SOON, wsSoon, false, false);
     end;
   end;
 
@@ -274,6 +274,10 @@ procedure TfBG.tProgressTimer(Sender: TObject);
 begin
   if Assigned(pnNextProgress) and pnNextProgress.Visible then
     pnNextProgress.Repaint;
+  // Drive the wsSoon pulse: 1-second tick is enough for the discrete two-tone
+  // alternation in pnWarningPaint to feel like a deliberate alert beat.
+  if Assigned(pnWarning) and pnWarning.Visible and (FWarnSeverity = wsSoon) then
+    pnWarning.Repaint;
 end;
 
 procedure TfBG.tClockTimer(Sender: TObject);
@@ -355,6 +359,10 @@ begin
 end;
 
 procedure TfBG.tResizeTimer(Sender: TObject);
+var
+  resizeWarnTint: TColor;
+  resizeWarnAlpha: byte;
+  resizeWarnFullCover: boolean;
 begin
   tResize.Enabled := false;
 
@@ -363,7 +371,8 @@ begin
     if pnWarning.Visible then
     begin
       fixWarningPanel;
-      ApplyAlphaControl(pnWarning, LAST_WARN_OPACITY);
+      GetWarnSeverityVisual(FWarnSeverity, resizeWarnTint, resizeWarnAlpha, resizeWarnFullCover);
+      ApplyAlphaControl(pnWarning, resizeWarnAlpha);
     end;
     Exit;
   end;

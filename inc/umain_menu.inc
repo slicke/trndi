@@ -282,24 +282,20 @@ begin
 end;
 
 procedure TfBG.pnWarningClick(Sender: TObject);
-var
-  bg: BGReading;
-  detail: string;
 begin
   {$ifdef TrndiExt}
   if not funcBool('uxClick',
     ['no-reading'], true) then
     Exit;
   {$endif}
-  detail := '';
-  if FWarnMessage <> '' then
-    detail := FWarnMessage + LineEnding + LineEnding;
-  if tryLastReading(bg) then
-    detail := detail + Format(RS_LAST_RECIEVE, [bg.format(un, BG_MSG_SHORT),
-      FormatDateTime('hh:nn', bg.date)])
-  else
-    detail := detail + RS_LAST_RECIEVE_NO;
-  ShowMessage(detail);
+  // Inline expand: clicking the panel toggles a detail row inside the banner
+  // (or the bottom area in critical mode). No modal — feels native and
+  // respects the user's current focus.
+  if not WarnShowDetails then
+    Exit;
+  FWarnExpanded := not FWarnExpanded;
+  fixWarningPanel;
+  pnWarning.Refresh;
 end;
 
 procedure TfBG.lAgoClick(Sender: TObject);
