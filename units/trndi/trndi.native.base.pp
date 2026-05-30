@@ -239,6 +239,50 @@ class var touchOverride: TTrndiBool;
     {** Import settings from INI format string. }
   procedure ImportSettings(const iniData: string); virtual; abstract;
 
+    {**
+      Process-wide cache for settings reads. The OS-level storage (Windows
+      registry, Linux/Haiku ini, macOS NSUserDefaults) is a singleton, so the
+      cache is too — multiple TrndiNative instances all observe the same
+      cache and stay coherent with each other's writes.
+
+      Platforms opt in by routing GetSetting/SetSetting/DeleteSetting through
+      the helpers below. Keys stored in the cache are the @italic(full) key
+      (post-buildKey).
+
+      The "warm" flag means the cache holds a complete snapshot of the store,
+      so a missed lookup is authoritative (return def). When false, a miss
+      must fall through to the backing store.
+    }
+  class var FSettingsCache: TStringList;
+  class var FSettingsCacheLock: SyncObjs.TCriticalSection;
+  class var FSettingsCacheWarm: boolean;
+
+    {** Lazy-init helper for the cache + lock (also called from the unit's
+        initialization section). }
+  class procedure EnsureSettingsCacheInit; static;
+    {** Free the cache + lock on unit finalization. }
+  class procedure ShutdownSettingsCache; static;
+    {** Try to read a fully-resolved key from the cache. Returns True if a
+        cached value was found OR the cache is warm and the key is absent
+        (in which case @code(val) is empty). Returns False only when the
+        cache is cold and the caller must consult the backing store. }
+  class function TryGetCachedSetting(const fullKey: string;
+    out val: string): boolean; static;
+    {** Update or insert a single cached value. Safe to call on a cold
+        cache — it only adds the single entry without flipping the warm
+        flag. }
+  class procedure SetCachedSetting(const fullKey, val: string); static;
+    {** Remove a key from the cache (no-op if not present). }
+  class procedure RemoveCachedSetting(const fullKey: string); static;
+    {** Drop all cached values and clear the warm flag. The next read will
+        re-warm via the platform's snapshot path (or fall through to the
+        backing store and cache results lazily). }
+  class procedure ClearSettingsCache; static;
+    {** Replace the cache contents with a complete snapshot of the backing
+        store and mark the cache warm. @code(Snapshot) must have entries in
+        @code(name=value) form; ownership stays with the caller. }
+  class procedure SeedSettingsCache(Snapshot: TStrings); static;
+
     // Theme/Env
     {** Determine if the OS/theme uses a dark appearance. Platforms override. }
   class function isDarkMode: boolean; virtual;
@@ -535,6 +579,124 @@ begin
     Result := Format('%s_%s', [cfguser, key])
   else
     Result := key;
+end;
+
+{------------------------------------------------------------------------------
+  Settings cache helpers (class-level, process-wide)
+ ------------------------------------------------------------------------------}
+class procedure TTrndiNativeBase.EnsureSettingsCacheInit;
+begin
+  // Cache and lock are created in this unit's initialization section so they
+  // are guaranteed available before any TrndiNative construction. This stub
+  // is kept for callers that might invoke it explicitly; it must not race.
+  if FSettingsCacheLock = nil then
+    FSettingsCacheLock := SyncObjs.TCriticalSection.Create;
+  if FSettingsCache = nil then
+  begin
+    FSettingsCache := TStringList.Create;
+    FSettingsCache.CaseSensitive := true;
+    FSettingsCache.NameValueSeparator := '=';
+  end;
+end;
+
+class procedure TTrndiNativeBase.ShutdownSettingsCache;
+begin
+  FreeAndNil(FSettingsCache);
+  FreeAndNil(FSettingsCacheLock);
+  FSettingsCacheWarm := false;
+end;
+
+class function TTrndiNativeBase.TryGetCachedSetting(const fullKey: string;
+out val: string): boolean;
+var
+  idx: integer;
+begin
+  Result := false;
+  val := '';
+  if FSettingsCacheLock = nil then
+    Exit;
+  FSettingsCacheLock.Enter;
+  try
+    idx := FSettingsCache.IndexOfName(fullKey);
+    if idx >= 0 then
+    begin
+      val := FSettingsCache.ValueFromIndex[idx];
+      Result := true;
+    end
+    else
+    if FSettingsCacheWarm then
+      // Authoritative miss — the snapshot did not contain this key.
+      Result := true;
+  finally
+    FSettingsCacheLock.Leave;
+  end;
+end;
+
+class procedure TTrndiNativeBase.SetCachedSetting(const fullKey, val: string);
+begin
+  if FSettingsCacheLock = nil then
+    Exit;
+  FSettingsCacheLock.Enter;
+  try
+    FSettingsCache.Values[fullKey] := val;
+  finally
+    FSettingsCacheLock.Leave;
+  end;
+end;
+
+class procedure TTrndiNativeBase.RemoveCachedSetting(const fullKey: string);
+var
+  idx: integer;
+begin
+  if FSettingsCache = nil then
+    Exit;
+  FSettingsCacheLock.Enter;
+  try
+    idx := FSettingsCache.IndexOfName(fullKey);
+    if idx >= 0 then
+      FSettingsCache.Delete(idx);
+  finally
+    FSettingsCacheLock.Leave;
+  end;
+end;
+
+class procedure TTrndiNativeBase.ClearSettingsCache;
+begin
+  if FSettingsCacheLock = nil then
+    Exit;
+  FSettingsCacheLock.Enter;
+  try
+    if FSettingsCache <> nil then
+      FSettingsCache.Clear;
+    FSettingsCacheWarm := false;
+  finally
+    FSettingsCacheLock.Leave;
+  end;
+end;
+
+class procedure TTrndiNativeBase.SeedSettingsCache(Snapshot: TStrings);
+var
+  i: integer;
+  k, v: string;
+begin
+  if FSettingsCacheLock = nil then
+    Exit;
+  FSettingsCacheLock.Enter;
+  try
+    FSettingsCache.Clear;
+    if Snapshot <> nil then
+      for i := 0 to Snapshot.Count - 1 do
+      begin
+        k := Snapshot.Names[i];
+        if k = '' then
+          Continue;
+        v := Snapshot.ValueFromIndex[i];
+        FSettingsCache.Values[k] := v;
+      end;
+    FSettingsCacheWarm := true;
+  finally
+    FSettingsCacheLock.Leave;
+  end;
 end;
 
 {------------------------------------------------------------------------------
@@ -3964,5 +4126,11 @@ class function TTrndiNativeBase.SetTitleColor(form: THandle; bg, Text: TColor): 
 begin
   Result := false;
 end;
+
+initialization
+  TTrndiNativeBase.EnsureSettingsCacheInit;
+
+finalization
+  TTrndiNativeBase.ShutdownSettingsCache;
 
 end.
