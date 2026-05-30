@@ -116,6 +116,7 @@ type
     function GetPixels(X, Y: Integer): TColor; virtual;
     property Pixels[X, Y: Integer]: TColor read GetPixels;
     procedure Draw(X, Y: Integer; Src: TObject); virtual;
+    procedure StretchDraw(const R: TRect; Src: TObject); virtual;
   end;
 
   TIcon = class(TObject)
@@ -307,6 +308,11 @@ begin
 end;
 
 procedure TCanvas.Draw(X, Y: Integer; Src: TObject);
+begin
+  // no-op
+end;
+
+procedure TCanvas.StretchDraw(const R: TRect; Src: TObject);
 begin
   // no-op
 end;
