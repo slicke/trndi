@@ -139,15 +139,31 @@ begin
       if dstA > 1 then dstA := 1
       else if dstA < 0 then dstA := 0;
 
+      // dstR/dstG/dstB are accumulated in premultiplied form already
+      // (Porter-Duff: dstR = br*srcA + dstR*invA — the srcA factor is baked
+      // in, no division by aOut like DrawSmoothCircle's straight-form loop).
       {$ifdef Windows}
-      // Win32 AlphaBlend with AC_SRC_ALPHA expects premultiplied RGB.
-      outR := Round(dstR * dstA);
-      outG := Round(dstG * dstA);
-      outB := Round(dstB * dstA);
-      {$else}
+      // Win32 AlphaBlend with AC_SRC_ALPHA expects premultiplied RGB — write
+      // dstR directly. Multiplying by dstA again would darken twice.
       outR := Round(dstR);
       outG := Round(dstG);
       outB := Round(dstB);
+      {$else}
+      // PNG / cross-platform draw expects straight (non-premultiplied) RGB,
+      // so divide the premultiplied accumulator by dstA to recover the
+      // original colour. Guard dstA = 0 (fully transparent row).
+      if dstA > 0 then
+      begin
+        outR := Round(dstR / dstA);
+        outG := Round(dstG / dstA);
+        outB := Round(dstB / dstA);
+      end
+      else
+      begin
+        outR := 0;
+        outG := 0;
+        outB := 0;
+      end;
       {$endif}
       outA := Round(dstA * 255);
 
@@ -319,14 +335,17 @@ const
   // Alphas chosen to mirror the prior BlendColors(*, fBG, 0.3) and
   // DarkenColor(fBG, 0.9 / 0.85) mixes so the displayed band intensity stays
   // close to what existed before the refactor.
-  HiLoAlphaWithColor   = 77;   // ~30% — matches BlendColors(tir_bg, fBG, 0.3)
-  HiLoAlphaFallback    = 26;   // ~10% — approximates DarkenColor(fBG, 0.9)
-  // Custom band is pushed well past hi/lo (much higher alpha + stronger
+  // Alphas were originally tuned against a double-premultiply bug in
+  // DrawRangeBands that darkened bands by an extra factor of ~dstA. After
+  // fixing the math, these are roughly halved to preserve the previously
+  // approved visual; retune if a different intensity is preferred.
+  HiLoAlphaWithColor   = 38;   // was 77 under the double-premultiply bug
+  HiLoAlphaFallback    = 13;   // was 26
+  // Custom band still sits visibly above the hi/lo (higher alpha + small
   // pigment pre-darken) so the user's "ideal goal" inside the acceptable
-  // range reads as a clearly deeper sweet spot even on a dark warning
-  // background where a subtle shift gets washed out.
-  CustomAlphaWithColor = 165;  // ~65%
-  CustomAlphaFallback  = 64;   // ~25% — approximates DarkenColor(fBG, 0.75)
+  // range reads as a deeper sweet spot.
+  CustomAlphaWithColor = 82;   // was 165
+  CustomAlphaFallback  = 32;   // was 64
   CustomPigmentDarken  = 0.8;  // pre-darken applied to tir_custom_bg
   BandEdgeGradientPx   = 3;
 var
