@@ -1077,26 +1077,85 @@ begin
 end;
 
 {------------------------------------------------------------------------------
+  WarmSettingsCache
+  -----------------
+  Snapshot every value under HKCU\Software\Trndi\ into the process-wide cache
+  in a single registry transaction. After this runs, ordinary GetSetting calls
+  are string-table lookups — the bulk of startup's ~70 registry transactions
+  go away.
+ ------------------------------------------------------------------------------}
+procedure WarmSettingsCache;
+var
+  reg: TRegistry;
+  names, snapshot: TStringList;
+  i: integer;
+  k: string;
+begin
+  names := TStringList.Create;
+  snapshot := TStringList.Create;
+  reg := TRegistry.Create;
+  try
+    reg.RootKey := HKEY_CURRENT_USER;
+    if reg.OpenKeyReadOnly('\SOFTWARE\Trndi\') then
+    begin
+      reg.GetValueNames(names);
+      for i := 0 to names.Count - 1 do
+      begin
+        k := names[i];
+        snapshot.Add(k + '=' + reg.ReadString(k));
+      end;
+    end;
+    TTrndiNativeBase.SeedSettingsCache(snapshot);
+  finally
+    reg.Free;
+    snapshot.Free;
+    names.Free;
+  end;
+end;
+
+{------------------------------------------------------------------------------
   GetSetting
   ----------
   Read a value from HKCU\Software\Trndi\; returns def if not present.
+
+  Backed by a process-wide cache: the first call enumerates the whole
+  registry key in one open/close pair, and subsequent calls hit memory only.
+  Writes (Set/Delete/Import) keep the cache coherent; ReloadSettings drops it.
  ------------------------------------------------------------------------------}
 function TTrndiNativeWindows.GetSetting(const keyname: string; def: string;
 global: boolean): string;
 var
   reg: TRegistry;
-  key: string;
+  key, cached: string;
 begin
   key := buildKey(keyname, global);
+
+  if not TTrndiNativeBase.FSettingsCacheWarm then
+    WarmSettingsCache;
+
+  if TTrndiNativeBase.TryGetCachedSetting(key, cached) then
+  begin
+    // Legacy behaviour: an empty stored value and a missing key both collapse
+    // to def. Preserve that so callers don't need to change.
+    if cached = '' then
+      Result := def
+    else
+      Result := cached;
+    Exit;
+  end;
+
+  // Cold-cache fallback (only if warming somehow failed). Read from registry
+  // and cache the result so subsequent reads are fast.
   Result := def;
   reg := TRegistry.Create;
   try
     reg.RootKey := HKEY_CURRENT_USER;
     if reg.OpenKeyReadOnly('\SOFTWARE\Trndi\') then
       if reg.ValueExists(key) then
-        Result := reg.ReadString(key)
-      else
-        Result := def;
+      begin
+        Result := reg.ReadString(key);
+        TTrndiNativeBase.SetCachedSetting(key, Result);
+      end;
   finally
     reg.Free;
   end;
@@ -1118,9 +1177,10 @@ begin
   try
     reg.RootKey := HKEY_CURRENT_USER;
     if reg.OpenKey('\SOFTWARE\Trndi\', true) then
-      reg.WriteString(key, val)
-    else
-    ;
+    begin
+      reg.WriteString(key, val);
+      TTrndiNativeBase.SetCachedSetting(key, val);
+    end;
   finally
     reg.Free;
   end;
@@ -1146,6 +1206,7 @@ begin
   finally
     reg.Free;
   end;
+  TTrndiNativeBase.RemoveCachedSetting(key);
 end;
 
 {------------------------------------------------------------------------------
@@ -1155,8 +1216,10 @@ end;
  ------------------------------------------------------------------------------}
 procedure TTrndiNativeWindows.ReloadSettings;
 begin
-  // Registry access is performed on demand; there is no persistent
-  // handle or cache to refresh here.
+  // Drop the in-memory cache so the next read re-warms from the registry.
+  // Use this after another process (or another TrndiNative instance via
+  // ImportSettings) may have written to HKCU\Software\Trndi.
+  TTrndiNativeBase.ClearSettingsCache;
 end;
 
 {------------------------------------------------------------------------------
@@ -1250,6 +1313,9 @@ begin
     mem.Free;
     sl.Free;
   end;
+  // Bulk write bypassed the per-key cache update path; drop the cache so the
+  // next read picks up the imported values.
+  TTrndiNativeBase.ClearSettingsCache;
 end;
 
 {------------------------------------------------------------------------------
