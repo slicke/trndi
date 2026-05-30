@@ -132,6 +132,11 @@ public
   constructor Create(AOwner: TfBG; NumPredictions: integer);
 end;
 TDotControl = TPaintBox;
+  // Severity of an active warning. Drives panel layout, colors, and opacity.
+  // wsInfo:     soft prediction (look-ahead, > 3 min)        — slim amber banner
+  // wsSoon:     imminent prediction (≤ 3 min)                — slim orange banner with pulse
+  // wsCritical: no recent data / backend failure              — full-cover red card
+TWarnSeverity = (wsInfo, wsSoon, wsCritical);
   // Procedures which are applied to the trend drawing
 TTrendProc = procedure(l: TDotControl; c, ix: integer) of object;
 TTrendProcLoop = procedure(l: TDotControl; c, ix: integer;
@@ -405,8 +410,6 @@ private
   procedure EnsureWarningLabels;
   procedure SyncWarningOverlayLabels(const P: TPanel);
   procedure SetAlertSnoozeMinutes(const Minutes: integer);
-  procedure PaintWarningOverlay(const P: TPanel; const Radius: integer;
-    const PanelFillColor: TColor; const AlphaRatio: double);
   procedure UpdateAlertSnoozeMenu;
   function ClassifyConnectionStatus(const ErrorText: string): string;
   procedure SetConnectionBadge(const StatusText: string; const BadgeColor: TColor);
@@ -440,6 +443,9 @@ private
   FInternetBadgeShadow: TShape;
   FWarningDots: array of TDotControl;
   FWarningLabels: array[1..4] of TLabel; // lArrow, lVal, lDiff, lAgo overlay
+  FWarnSeverity: TWarnSeverity; // Current warning level — drives layout in fixWarningPanel
+  FWarnExpanded: boolean;       // Inline-expand toggle (set by pnWarningClick)
+  FWarnBannerBaseH: integer;    // Collapsed banner height (px) — read by pnWarningPaint
   FLastTimerTick: TDateTime; // Last timer tick for wake detection
   FForceRefresh: boolean; // Force bypass of cached API reads on wake
   FLastFetchHadData: boolean; // true when last API call returned ≥1 readings (used to avoid reusing cache after an empty fetch)
@@ -467,8 +473,11 @@ private
   procedure SetLang;
   procedure fixWarningPanel;
   procedure showWarningPanel(const message: string;
-    clearDisplayValues: boolean = false; opacity: integer = 235; showDetails: boolean = true);
+    severity: TWarnSeverity = wsCritical;
+    clearDisplayValues: boolean = false; showDetails: boolean = true);
   procedure hideWarningPanel;
+  procedure GetWarnSeverityVisual(severity: TWarnSeverity;
+    out tintColor: TColor; out opacity: byte; out isFullCover: boolean);
   procedure CalcRangeTime;
   function GetValidatedPosition: TrndiPos;
     {** Acquire the latest reading(s) and process them for display.
@@ -797,7 +806,6 @@ DOT_OFFSET_RANGE: integer = -15; // Fine-tune vertical alignment of threshold li
 DOT_LINES: boolean = false;  // Guidelines what value is where
 DELTA_MAX: integer = 2;
 DIFF_ALIGN: TAlignment = taCenter;
-LAST_WARN_OPACITY: integer = 235;
 {$ifdef DEBUG}
 debug_load_text: boolean = false;
 {$endif}
@@ -1336,6 +1344,10 @@ begin
     miSettings.Click;
 end;
 procedure TfBG.FormResize(Sender: TObject);
+var
+  warnTintTmp: TColor;
+  warnAlphaTmp: byte;
+  warnFullCoverTmp: boolean;
 begin
   if Sender = lval then
     tResize.OnTimer(self)
@@ -1361,8 +1373,13 @@ begin
       lTir.Visible := false;
     end;
 
-    // Apply alpha control only - rounded corners are handled by pnWarningPaint
-    ApplyAlphaControl(pnWarning, LAST_WARN_OPACITY);
+    // Apply alpha control only - rounded corners are handled by pnWarningPaint.
+    // Opacity is derived from the current severity (see GetWarnSeverityVisual).
+    if pnWarning.Visible then
+    begin
+      GetWarnSeverityVisual(FWarnSeverity, warnTintTmp, warnAlphaTmp, warnFullCoverTmp);
+      ApplyAlphaControl(pnWarning, warnAlphaTmp);
+    end;
 
     // Keep the thin left-side progress bar sized with the form
     if Assigned(pnNextProgress) then
