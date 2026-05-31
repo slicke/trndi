@@ -289,3 +289,101 @@ begin
     Exit;
   Synchronize(@ApplyResult);
 end;
+
+{------------------------------------------------------------------------------
+  TGlucoseFetchThread
+  -------------------
+  Off-main-thread CGM fetch. Owns the synchronous api.getReadings call so the
+  UI stays responsive while the network round-trip is in flight.
+ ------------------------------------------------------------------------------}
+constructor TGlucoseFetchThread.Create(AOwner: TfBG; Boot: boolean;
+Force: boolean);
+begin
+  inherited Create(true);
+  FreeOnTerminate := false;
+  FOwner := AOwner;
+  FBoot := Boot;
+  FForce := Force;
+  FErrorMsg := '';
+  SetLength(FResults, 0);
+  Start;
+end;
+
+procedure TGlucoseFetchThread.Execute;
+{$ifdef DEBUG}
+var
+  diag: string;
+{$endif}
+begin
+  // Worker thread — must not touch LCL/UI. api.getReadings is the synchronous
+  // HTTP call we want to keep off the main thread. The Boot flag triggers
+  // the legacy "two quick attempts" semantics from the old FormCreate path.
+  try
+    try
+      if not Assigned(api) then
+        Exit;
+
+      {$ifdef DEBUG}
+      FResults := api.getReadings(MAX_MIN, MAX_RESULT, '', diag);
+      {$else}
+      FResults := api.getReadings(MAX_MIN, MAX_RESULT);
+      {$endif}
+
+      if FBoot and (Length(FResults) = 0) and (not Terminated) then
+      begin
+        {$ifdef DEBUG}
+        FResults := api.getReadings(MAX_MIN, MAX_RESULT, '', diag);
+        {$else}
+        FResults := api.getReadings(MAX_MIN, MAX_RESULT);
+        {$endif}
+      end;
+
+      if Assigned(api) then
+        FErrorMsg := api.errormsg;
+    except
+      on E: Exception do
+      begin
+        SetLength(FResults, 0);
+        FErrorMsg := E.ClassName + ': ' + E.Message;
+      end;
+    end;
+  finally
+    if not Terminated then
+      Synchronize(@ApplyResult);
+  end;
+end;
+
+procedure TGlucoseFetchThread.ApplyResult;
+var
+  applied: boolean;
+begin
+  if not Assigned(FOwner) then
+    Exit;
+
+  if FOwner.FShuttingDown then
+  begin
+    // Owner is tearing down. Don't touch UI; only clear the in-flight flag
+    // so a future fetch (post-restart) isn't gated.
+    FOwner.FFetchInFlight := false;
+    if FBoot then
+      FOwner.FBootFetchPending := false;
+    Exit;
+  end;
+
+  try
+    applied := FOwner.ApplyFetchedReadings(FResults, FErrorMsg, FBoot);
+    if applied then
+    begin
+      FOwner.ProcessCurrentReading;
+      FOwner.FinalizeReadingUpdate(FBoot);
+    end;
+  finally
+    FOwner.FFetchInFlight := false;
+    if FBoot then
+      FOwner.FBootFetchPending := false;
+    if Assigned(native) then
+      native.updateDone;
+    // The thread reference owned by TfBG will be cleared by the next
+    // RequestAsyncFetch (which creates a fresh instance) or at shutdown.
+  end;
+end;

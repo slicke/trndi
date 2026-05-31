@@ -913,15 +913,52 @@ begin
     lPredict.Visible := PredictGlucoseReading;
   end;
 
-  // Final initialization and first reading
+  // Final initialization and first reading. The fetch is dispatched to a
+  // background TGlucoseFetchThread so the splash isn't held by the network
+  // round-trip; the worker's ApplyResult runs the post-fetch UI flow once
+  // results land. The legacy "two quick attempts" semantics are now inside
+  // the worker (Execute retries once when boot+empty).
   Application.ProcessMessages;
   fSplash.incProgress(90, RS_INIT_FETCH);
-  if not updateReading(true) then
-  begin
-    fSplash.incProgress(95, RS_INIT_FIRST);
-    updateReading; // Second attempt for setup
-    showWarningPanel(RS_NO_BOOT_READING, wsCritical);
-  end;
+
+  // Neutralize the visual chrome that would otherwise leak through while we
+  // wait. FormPaint also short-circuits range-band drawing while
+  // FBootFetchPending is true so the threshold lines don't appear over a
+  // value we don't have yet.
+  // The form's resize handler autosizes lVal to fill most of the height;
+  // a short single glyph reads as "loading" without being mistaken for a
+  // numeric reading, and won't get rotated/clipped like a sentence would.
+  lVal.Caption := '⟳';
+  lVal.Font.Style := lVal.Font.Style - [fsStrikeOut];
+  lArrow.Caption := '';
+  lDiff.Caption := '';
+  lRef.Caption := '';
+  lAgo.Caption := RS_INIT_FETCH;
+  lTir.Caption := '';
+  if Assigned(pnOffReading) then
+    pnOffReading.Visible := false;
+  if Assigned(pnOffRange) then
+    pnOffRange.Visible := false;
+  if Assigned(pnOffRangeBar) then
+    pnOffRangeBar.Visible := false;
+  if Assigned(pnNextProgress) then
+    pnNextProgress.Visible := false;
+  fBG.Color := clBlack;
+  if Assigned(lPredict) then
+    lPredict.Visible := false;
+
+  // The actual fetch is kicked off via a one-shot timer (tBootFetch) so the
+  // worker thread is created only after Application.Run is pumping the
+  // message loop. Spawning a TThread that immediately blocks on a long Sleep
+  // from inside FormCreate can leave the form's WM_PAINT queued indefinitely
+  // — symptoms include "icon in taskbar but window never draws". Letting the
+  // message loop run first guarantees the form is painted and interactive
+  // before any threading machinery starts.
+  FBootFetchPending := true;
+  tBootFetch := TTimer.Create(Self);
+  tBootFetch.Interval := 50;
+  tBootFetch.OnTimer := @tBootFetchTimer;
+  tBootFetch.Enabled := true;
 
   Chroma := TRazerChromaFactory.CreateInstance;
   if native.GetBoolSetting('razer.enabled', false) then
@@ -940,7 +977,13 @@ begin
   Self.Show;
   Self.BringToFront;
   Self.SetFocus;
-  
+
+  // Flush WM_SHOWWINDOW/WM_PAINT now so the form actually renders before we
+  // hand control to whatever long-running init steps remain. Without this,
+  // a slow worker that calls Synchronize before the message loop is properly
+  // pumping can leave the window in the taskbar but unpainted.
+  Application.ProcessMessages;
+
   tmain.Enabled := true;
   tsetup.Enabled := true;
   
