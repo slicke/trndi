@@ -472,6 +472,10 @@ private
                             // Reads/writes happen on the main thread only.
   FBootFetchPending: boolean; // True while the splash-time first fetch is in
                               // flight; gates the boot-failure warning panel.
+  FFetchThreadDetached: boolean; // Set when shutdown gave up waiting on the
+                                 // fetch worker and detached it; gates the
+                                 // api/native free in FormDestroy so the
+                                 // still-running worker doesn't UAF.
   tUpdateCheck: TTimer;       // One-shot deferred CheckForUpdates trigger so
                               // the synchronous HTTPS call doesn't block the
                               // form's first WM_PAINT.
@@ -1040,16 +1044,25 @@ begin
   if assigned(chroma) then
     chroma.free;
 
-  // These should already be freed in FormClose, but check just to be safe
-  if assigned(native) then
+  // These should already be freed in FormClose, but check just to be safe.
+  // If ShutdownBackgroundThreads detached a still-running fetch worker,
+  // leak api/native deliberately: the worker is still inside
+  // api.getReadings on those objects, and freeing them here would crash on
+  // its continuation. The process is exiting; the OS reclaims the memory.
+  if FFetchThreadDetached then
+    TrndiDLog('FormDestroy: skipping api/native free — detached fetch worker still using them')
+  else
   begin
-    native.Free;
-    native := nil;
-  end;
-  if assigned(api) then
-  begin
-    api.Free;
-    api := nil;
+    if assigned(native) then
+    begin
+      native.Free;
+      native := nil;
+    end;
+    if assigned(api) then
+    begin
+      api.Free;
+      api := nil;
+    end;
   end;
 
   // Note: TTrndiExtEngine.ReleaseInstance is already called in FormClose
@@ -1294,7 +1307,25 @@ begin
 end;
 
 procedure TfBG.ShutdownBackgroundThreads;
+const
+  // Budget for waiting on the fetch worker before detaching. Network calls
+  // can outlive this; on timeout we hand the thread off to the runtime and
+  // let it expire on its own (or get killed by process termination).
+  FETCH_SHUTDOWN_TIMEOUT_MS = 3000;
+var
+  deadline: TDateTime;
 begin
+  // Disable and free the deferred GitHub releases check first. Its handler
+  // does a synchronous HTTPS call that would block the ProcessMessages pumps
+  // below if a queued WM_TIMER fires mid-teardown. Clearing the scheduled
+  // flag matches the create-once gate in FormShow.
+  if Assigned(tUpdateCheck) then
+  begin
+    tUpdateCheck.Enabled := false;
+    FreeAndNil(tUpdateCheck);
+  end;
+  FUpdateCheckScheduled := false;
+
   if Assigned(FConnectivityThread) then
   begin
     FConnectivityThread.Terminate;
@@ -1324,11 +1355,32 @@ begin
 
   if Assigned(FGlucoseFetchThread) then
   begin
+    // Terminate only sets a flag; the worker is typically blocked inside the
+    // synchronous api.getReadings call which can't be interrupted from here.
+    // Real cancellation would require an HTTP abort hook in every TrndiAPI
+    // backend (deferred). For now, bound the wait so a slow/dead backend
+    // doesn't hang shutdown; on timeout, detach the worker and let it finish
+    // its network call in the background. FFetchThreadDetached then gates
+    // the api/native free in FormDestroy below to avoid use-after-free.
     FGlucoseFetchThread.Terminate;
-    while not FGlucoseFetchThread.Finished do
+    deadline := IncMilliSecond(Now, FETCH_SHUTDOWN_TIMEOUT_MS);
+    while (not FGlucoseFetchThread.Finished) and (Now < deadline) do
+    begin
       Application.ProcessMessages;
-    FGlucoseFetchThread.WaitFor;
-    FreeAndNil(FGlucoseFetchThread);
+      Sleep(20);
+    end;
+    if FGlucoseFetchThread.Finished then
+    begin
+      FGlucoseFetchThread.WaitFor;
+      FreeAndNil(FGlucoseFetchThread);
+    end
+    else
+    begin
+      TrndiDLog('ShutdownBackgroundThreads: fetch worker still in api.getReadings after timeout; detaching');
+      FGlucoseFetchThread.FreeOnTerminate := true;
+      FGlucoseFetchThread := nil;
+      FFetchThreadDetached := true;
+    end;
   end;
 end;
 
