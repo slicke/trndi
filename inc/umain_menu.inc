@@ -224,8 +224,6 @@ var
   minDate, selectedDate: TDateTime;
   mr: TModalResult;
   minutesSince, maxReadings: integer;
-  readings: BGResults;
-  res: string;
   maxAge, maxDays: integer;
   description: string;
 begin
@@ -259,20 +257,7 @@ begin
   begin
     minutesSince := MinutesBetween(Now, selectedDate);
     maxReadings := minutesSince div 5;
-    readings := api.getReadings(minutesSince, maxReadings, '', res);
-
-    if Length(readings) = 0 then
-    begin
-      if res <> '' then
-        ShowMessage(Format(RS_DATE_PICKER_NO_READINGS_ERR, [res]))
-      else
-        ShowMessage(RS_DATE_PICKER_NO_READINGS);
-      Exit;
-    end;
-
-    ShowHistoryGraph(readings, un, CurrentHistoryGraphPalette,
-      api.cgmHi, api.cgmLo, api.cgmRangeHi, api.cgmRangeLo);
-    AutoEnableBasalOverlay;
+    RequestHistoryFetch(minutesSince, maxReadings, hfmDatePicker);
   end;
 end;
 
@@ -476,31 +461,8 @@ begin
 end;
 
 procedure TfBG.mi24hClick(Sender: TObject);
-var
-  res: string;
-  readings: BGResults;
 begin
-  if api = nil then
-  begin
-    ShowMessage('API not initialized yet.');
-    Exit;
-  end;
-
-  readings := api.getReadings(1440, 288, '', res);
-
-  if Length(readings) = 0 then
-  begin
-    if res <> '' then
-      ShowMessage('No readings returned: ' + res)
-    else
-      ShowMessage('No readings returned for the last 24 hours.');
-    Exit;
-  end;
-
-  ShowHistoryGraph(readings, un, CurrentHistoryGraphPalette,
-    api.cgmHi, api.cgmLo, api.cgmRangeHi, api.cgmRangeLo);
-  AutoEnableBasalOverlay;
-  AutoAddPredictionOverlay;
+  RequestHistoryFetch(1440, 288, hfm24h);
 end;
 
 procedure TfBG.miHistoryClick(Sender: TObject);
@@ -541,8 +503,10 @@ begin
       uxmtInformation);
 
     if Result = mrRetry then
-      if FetchAndValidateReadingsForced then
-        CompleteUIUpdate;
+    begin
+      FForceRefresh := true;
+      updateReading;
+    end;
   end
   else
     updateReading;

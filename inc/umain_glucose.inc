@@ -512,14 +512,6 @@ begin
   end;
 end;
 
-procedure TfBG.CompleteUIUpdate;
-begin
-  ProcessCurrentReading;
-  UpdateUIBasedOnGlucose;
-  FinalizeUpdate;
-  CalcRangeTime;
-end;
-
 procedure TfBG.FinalizeUIUpdate;
 begin
   UpdateUIBasedOnGlucose;
@@ -774,56 +766,6 @@ begin
   UpdateOffRangePanel(reading.val);
 end;
 
-function TfBG.DoFetchAndValidateReadings(const ForceRefresh: boolean): boolean;
-var
-  {$ifdef DEBUG}
-  res: string;
-  {$endif}
-  fetched: BGResults;
-const
-  API_CACHE_SECONDS = 10;
-begin
-  Result := false;
-
-  if api = nil then
-    Exit;
-
-  if (not ForceRefresh) and (SecondsBetween(Now, FLastAPICall) < API_CACHE_SECONDS) and
-    FCachedReadingsValid then
-  begin
-    EnterCriticalSection(FReadingsLock);
-    try
-      if FCachedReadingsValid and (Length(FCachedReadings) > 0) then
-      begin
-        SetLength(bgs, Length(FCachedReadings));
-        Move(FCachedReadings[0], bgs[0], Length(FCachedReadings) * SizeOf(BGReading));
-        Result := true;
-        Exit;
-      end;
-    finally
-      LeaveCriticalSection(FReadingsLock);
-    end;
-  end;
-
-  {$ifdef DEBUG}
-  fetched := api.getReadings(MAX_MIN, MAX_RESULT, '', res);
-  if miDebugBackend.Checked then
-    if Showing then
-      if res.IsEmpty then
-        slicke.ux.alert.ExtLog(uxdAuto,
-          IfThen(ForceRefresh, 'Debug Info (Forced)', 'Debug Info'),
-          '[empty!]', res)
-      else
-        slicke.ux.alert.ExtLog(uxdAuto,
-          IfThen(ForceRefresh, 'Debug Info (Forced)', 'Debug Info'),
-          '', res, uxmtCustom, 10);
-  {$ELSE}
-  fetched := api.getReadings(MAX_MIN, MAX_RESULT);
-  {$endif}
-
-  Result := ApplyFetchedReadings(fetched, api.errormsg, false);
-end;
-
 {------------------------------------------------------------------------------
   ApplyFetchedReadings
   --------------------
@@ -1007,26 +949,58 @@ begin
   Result := true;
 end;
 
-function TfBG.FetchAndValidateReadings: boolean;
+{------------------------------------------------------------------------------
+  RequestHistoryFetch
+  -------------------
+  Spawn a THistoryFetchThread for a custom-window history-graph fetch. The
+  network call runs off-main and ShowHistoryGraph is opened from the worker's
+  ApplyResult via Synchronize. While in flight, both history menu items are
+  disabled so a second click can't queue a duplicate.
+ ------------------------------------------------------------------------------}
+function TfBG.RequestHistoryFetch(Minutes, MaxReadings: integer;
+Mode: THistoryFetchMode): boolean;
 begin
-  TrndiDLog('umain: About to call native.updateBegin');
-  native.updateBegin;
-  try
-    Result := DoFetchAndValidateReadings(false);
-  finally
-    native.updateDone;
-  end;
-end;
+  Result := false;
 
-function TfBG.FetchAndValidateReadingsForced: boolean;
-begin
-  TrndiDLog('umain: About to call native.updateBegin (force)');
-  native.updateBegin;
-  try
-    Result := DoFetchAndValidateReadings(true);
-  finally
-    native.updateDone;
+  if FShuttingDown then
+    Exit;
+
+  if api = nil then
+  begin
+    ShowMessage('API not initialized yet.');
+    Exit;
   end;
+
+  if FHistoryFetchInFlight then
+  begin
+    TrndiDLog('RequestHistoryFetch: dropped — history fetch already in flight');
+    Exit;
+  end;
+
+  // Mirror RequestAsyncFetch's "previous worker still tearing down" guard.
+  if Assigned(FHistoryFetchThread) and (not FHistoryFetchThread.Finished) then
+  begin
+    TrndiDLog('RequestHistoryFetch: dropped — previous worker still tearing down');
+    Exit;
+  end;
+
+  if Assigned(FHistoryFetchThread) and FHistoryFetchThread.Finished then
+  begin
+    FHistoryFetchThread.WaitFor;
+    FreeAndNil(FHistoryFetchThread);
+  end;
+
+  FHistoryFetchInFlight := true;
+  if Assigned(mi24h) then
+    mi24h.Enabled := false;
+  if Assigned(miReadingsSince) then
+    miReadingsSince.Enabled := false;
+
+  TrndiDLog(Format('RequestHistoryFetch: starting worker (minutes=%d, max=%d, mode=%d)',
+    [Minutes, MaxReadings, Ord(Mode)]));
+
+  FHistoryFetchThread := THistoryFetchThread.Create(Self, Minutes, MaxReadings, Mode);
+  Result := true;
 end;
 
 procedure TfBG.UpdateOffRangePanel(const Value: double);
