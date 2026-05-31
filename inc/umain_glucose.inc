@@ -222,15 +222,13 @@ begin
 end;
 
 function TfBG.updateReading(boot: boolean = false): boolean;
+var
+  force: boolean;
 begin
   {$ifdef DEBUG}
   if debug_load_text then
-  begin
     lVal.Caption := '<Updating>';
-    Application.ProcessMessages;
-  end;
   {$endif}
-  Result := false;
   lAgo.Caption := '⟳' + lAgo.Caption;
 
   native.start;
@@ -239,33 +237,15 @@ begin
   if not tAgo.Enabled then
     lAgo.Caption := '🕑 ' + RS_UNKNOWN_TIME;
 
-  {$ifdef DEBUG}
-  if debug_load_text then
-  begin
-    lVal.Caption := '<Fetching>';
-    Application.ProcessMessages;
-  end;
-  {$endif}
-  if FForceRefresh then
-  begin
-    if not FetchAndValidateReadingsForced then
-      Exit;
+  // The fetch now runs on TGlucoseFetchThread. The post-fetch UI flow
+  // (ApplyFetchedReadings → ProcessCurrentReading → FinalizeReadingUpdate)
+  // is dispatched via Synchronize when the worker completes. Result is the
+  // dispatch status: True = a fetch is starting (or already in flight from
+  // a recent dispatch), False = api unavailable.
+  force := FForceRefresh;
+  if force then
     FForceRefresh := false;
-  end
-  else
-  if not FetchAndValidateReadings then
-    Exit;
-
-  {$ifdef DEBUG}
-  if debug_load_text then
-  begin
-    lVal.Caption := '<Processing>';
-    Application.ProcessMessages;
-  end;
-  {$endif}
-  ProcessCurrentReading;
-
-  Result := FinalizeReadingUpdate(boot);
+  Result := RequestAsyncFetch(boot, force);
 end;
 
 procedure TfBG.FinalizeUpdate;
@@ -797,7 +777,7 @@ var
   {$ifdef DEBUG}
   res: string;
   {$endif}
-  msg: string;
+  fetched: BGResults;
 const
   API_CACHE_SECONDS = 10;
 begin
@@ -824,7 +804,7 @@ begin
   end;
 
   {$ifdef DEBUG}
-  bgs := api.getReadings(MAX_MIN, MAX_RESULT, '', res);
+  fetched := api.getReadings(MAX_MIN, MAX_RESULT, '', res);
   if miDebugBackend.Checked then
     if Showing then
       if res.IsEmpty then
@@ -836,8 +816,40 @@ begin
           IfThen(ForceRefresh, 'Debug Info (Forced)', 'Debug Info'),
           '', res, uxmtCustom, 10);
   {$ELSE}
-  bgs := api.getReadings(MAX_MIN, MAX_RESULT);
+  fetched := api.getReadings(MAX_MIN, MAX_RESULT);
   {$endif}
+
+  Result := ApplyFetchedReadings(fetched, api.errormsg, false);
+end;
+
+{------------------------------------------------------------------------------
+  ApplyFetchedReadings
+  --------------------
+  Main-thread half of a fetch: takes the readings returned by the network call
+  (whether the call happened inline or on a TGlucoseFetchThread worker) and
+  runs all of the side-effecting bookkeeping — cache reconciliation, override
+  settings, warning panel, alert engine, dot placement.
+
+  Returning False here means "no usable data to render"; the caller (sync
+  flow or worker-thread ApplyResult) should skip ProcessCurrentReading /
+  FinalizeReadingUpdate and let the warning panel + periodic timer drive
+  the next attempt.
+ ------------------------------------------------------------------------------}
+function TfBG.ApplyFetchedReadings(const Readings: BGResults;
+const ErrorMsg: string; Boot: boolean): boolean;
+var
+  msg: string;
+begin
+  Result := false;
+
+  // Copy worker output into the main-thread bgs slot.
+  if Length(Readings) > 0 then
+  begin
+    SetLength(bgs, Length(Readings));
+    Move(Readings[0], bgs[0], Length(Readings) * SizeOf(BGReading));
+  end
+  else
+    SetLength(bgs, 0);
 
   FLastAPICall := Now;
 
@@ -854,11 +866,11 @@ begin
     finally
       LeaveCriticalSection(FReadingsLock);
     end;
-    TrndiDLog('DoFetchAndValidateReadings: API returned no data, using cached readings');
-    FLastConnectionDetail := Trim(api.errormsg);
+    TrndiDLog('ApplyFetchedReadings: API returned no data, using cached readings');
+    FLastConnectionDetail := Trim(ErrorMsg);
     if FLastConnectionDetail = '' then
       FLastConnectionDetail := RS_NO_BACKEND;
-    SetConnectionBadge(ClassifyConnectionStatus(api.errormsg), RGBToColor(185, 60, 45));
+    SetConnectionBadge(ClassifyConnectionStatus(ErrorMsg), RGBToColor(185, 60, 45));
     tPing.Enabled := true;
     tPingTimer(nil);
   end
@@ -879,15 +891,18 @@ begin
     SetConnectionBadge(RS_CONN_OK, RGBToColor(60, 150, 90));
   end;
 
-  if native.GetBoolSetting('override.enabled') then
+  if Assigned(api) then
   begin
-    api.cgmLo := native.GetIntSetting('override.lo', api.cgmLo);
-    api.cgmHi := native.GetIntSetting('override.hi', api.cgmHi);
-  end;
-  if native.GetBoolSetting('override.range') then
-  begin
-    api.cgmRangeLo := native.GetIntSetting('override.rangelo', api.cgmRangeLo);
-    api.cgmRangeHi := native.GetIntSetting('override.rangehi', api.cgmRangeHi);
+    if native.GetBoolSetting('override.enabled') then
+    begin
+      api.cgmLo := native.GetIntSetting('override.lo', api.cgmLo);
+      api.cgmHi := native.GetIntSetting('override.hi', api.cgmHi);
+    end;
+    if native.GetBoolSetting('override.range') then
+    begin
+      api.cgmRangeLo := native.GetIntSetting('override.rangelo', api.cgmRangeLo);
+      api.cgmRangeHi := native.GetIntSetting('override.rangehi', api.cgmRangeHi);
+    end;
   end;
 
   hideWarningPanel;
@@ -895,21 +910,21 @@ begin
   if (Length(bgs) < 1) or (not IsDataFresh) then
   begin
     msg := RS_NO_BACKEND;
-    if Assigned(api) and (Trim(api.errormsg) <> '') then
+    if Trim(ErrorMsg) <> '' then
     begin
-      msg := msg + sLineBreak + api.errormsg;
-      TrndiDLog('Backend error: ' + api.errormsg);
+      msg := msg + sLineBreak + ErrorMsg;
+      TrndiDLog('Backend error: ' + ErrorMsg);
     end;
 
     FLastConnectionDetail := msg;
-    SetConnectionBadge(ClassifyConnectionStatus(api.errormsg), RGBToColor(185, 60, 45));
+    SetConnectionBadge(ClassifyConnectionStatus(ErrorMsg), RGBToColor(185, 60, 45));
 
-    if (Length(bgs) > 0) then
-    try
-    except
-    end;
-
-    showWarningPanel(msg, wsCritical, true);
+    // On boot, prefer the dedicated boot-failure message so the user knows
+    // it's the first fetch that failed (and not a mid-session outage).
+    if Boot then
+      showWarningPanel(RS_NO_BOOT_READING, wsCritical, true)
+    else
+      showWarningPanel(msg, wsCritical, true);
 
     if akMissing in FAlertEngine.EvaluateMissing then
       native.attention(RS_ATTENTION_MISSING, RS_ATTENTION_MISSING_DESC);
@@ -918,9 +933,63 @@ begin
 
   FAlertEngine.ResetMissing;
 
-  TrndiDLog(Format('DoFetchAndValidateReadings: Got %d readings from API', [Length(bgs)]));
+  TrndiDLog(Format('ApplyFetchedReadings: Got %d readings', [Length(bgs)]));
 
   PlaceTrendDots(bgs);
+  Result := true;
+end;
+
+{------------------------------------------------------------------------------
+  RequestAsyncFetch
+  -----------------
+  Spawn a TGlucoseFetchThread to call api.getReadings off the main thread.
+  Drops the request if a fetch is already in flight (caller can rely on the
+  in-flight one to complete shortly). On success, the worker's ApplyResult
+  Synchronizes back into ApplyFetchedReadings + ProcessCurrentReading +
+  FinalizeReadingUpdate.
+
+  Boot   — preserves the two-attempt fast retry that used to live in
+           FormCreate's blocking path, and routes the failure to the
+           boot-specific warning panel.
+  Force  — bypasses any caller-side caching; reserved for future use (the
+           worker currently always hits the API).
+ ------------------------------------------------------------------------------}
+function TfBG.RequestAsyncFetch(Boot: boolean; Force: boolean): boolean;
+begin
+  Result := false;
+
+  if FShuttingDown then
+    Exit;
+
+  if api = nil then
+    Exit;
+
+  if FFetchInFlight then
+  begin
+    TrndiDLog('RequestAsyncFetch: dropped — fetch already in flight');
+    // A request is already pending; the in-flight ApplyResult will call
+    // FinalizeReadingUpdate shortly.
+    Result := true;
+    Exit;
+  end;
+
+  // Lazily reap a previously-finished worker before starting a new one;
+  // mirrors the pattern used by FPredictionThread.
+  if Assigned(FGlucoseFetchThread) and FGlucoseFetchThread.Finished then
+  begin
+    FGlucoseFetchThread.WaitFor;
+    FreeAndNil(FGlucoseFetchThread);
+  end;
+
+  FFetchInFlight := true;
+  if Boot then
+    FBootFetchPending := true;
+
+  native.updateBegin;
+  TrndiDLog('RequestAsyncFetch: starting worker (boot=' +
+    BoolToStr(Boot, true) + ' force=' + BoolToStr(Force, true) + ')');
+
+  FGlucoseFetchThread := TGlucoseFetchThread.Create(Self, Boot, Force);
   Result := true;
 end;
 

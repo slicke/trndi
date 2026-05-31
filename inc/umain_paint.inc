@@ -409,10 +409,23 @@ begin
   // value equals the threshold rests flush against the line/band edge.
   rowOffset := (dotHeight div 2) + DOT_OFFSET_RANGE;
 
-  drawLo := (Assigned(api) and (api.cgmLo <> 0) and PaintRange);
-  drawHi := (Assigned(api) and (api.cgmHi <> 0) and PaintRange);
-  drawRangeLo := (Assigned(api) and (api.cgmRangeLo <> 0) and PaintRangeCGMRange);
-  drawRangeHi := (Assigned(api) and (api.cgmRangeHi > 0) and (api.cgmRangeHi < 500) and PaintRangeCGMRange);
+  // Skip threshold/range bands until the first fetch has landed — drawing
+  // them over an empty form (no dot to anchor them against) just produces
+  // the "what is this?" lines visible in the boot screenshot.
+  if FBootFetchPending then
+  begin
+    drawLo := false;
+    drawHi := false;
+    drawRangeLo := false;
+    drawRangeHi := false;
+  end
+  else
+  begin
+    drawLo := (Assigned(api) and (api.cgmLo <> 0) and PaintRange);
+    drawHi := (Assigned(api) and (api.cgmHi <> 0) and PaintRange);
+    drawRangeLo := (Assigned(api) and (api.cgmRangeLo <> 0) and PaintRangeCGMRange);
+    drawRangeHi := (Assigned(api) and (api.cgmRangeHi > 0) and (api.cgmRangeHi < 500) and PaintRangeCGMRange);
+  end;
 
   if drawLo then
     loY := ValueToY(api.cgmLo * BG_CONVERTIONS[mmol][mgdl]) + rowOffset;

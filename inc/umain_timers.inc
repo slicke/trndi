@@ -173,6 +173,12 @@ procedure predictFuture(future: integer = 7);
     if not native.GetBoolSetting('predictions.warn') then
       Exit;
 
+    // Skip threshold compare until the first fetch has landed; lastReading
+    // returns a zero-initialized record when bgs is empty and val=0 would
+    // spuriously cross the low threshold.
+    if Length(bgs) = 0 then
+      Exit;
+
     warnLo := math.Max(api.cgmLo, api.limitLO);
     warnHi := math.Min(api.cgmHi, api.limitHI);
 
@@ -765,6 +771,34 @@ procedure TfBG.tSetupTimer(Sender: TObject);
 begin
   tSetup.Enabled := false;
   UpdateUIColors;
+end;
+
+// Fires once shortly after the main form is shown. Performs the synchronous
+// GitHub releases lookup off the FormShow critical path so the form's first
+// paint isn't blocked by network latency.
+procedure TfBG.tUpdateCheckTimer(Sender: TObject);
+begin
+  if Assigned(tUpdateCheck) then
+  begin
+    tUpdateCheck.Enabled := false;
+    FreeAndNil(tUpdateCheck);
+  end;
+  CheckForUpdates;
+end;
+
+// Fires once after Application.Run has started pumping the message loop;
+// kicks off the very first async glucose fetch. Spawning the TThread from
+// inside FormCreate can leave the form's WM_PAINT queued behind a worker
+// that starts its work (Sleep / network I/O) before the main thread has had
+// a chance to enter Application.Run — symptom: form in taskbar, never drawn.
+procedure TfBG.tBootFetchTimer(Sender: TObject);
+begin
+  if Assigned(tBootFetch) then
+  begin
+    tBootFetch.Enabled := false;
+    FreeAndNil(tBootFetch);
+  end;
+  RequestAsyncFetch(true, false);
 end;
 
 procedure TfBG.tSwapTimer(Sender: TObject);
