@@ -52,6 +52,7 @@ type
   end;
 
   TExceptionEvent = procedure(Sender: TObject; E: Exception) of object;
+  TDataEvent = procedure(Data: PtrInt) of object;
 
   TApplication = class(TComponent)
   private
@@ -76,6 +77,7 @@ type
     procedure ProcessMessages; virtual;
     procedure Terminate; virtual;
     procedure BringToFront; virtual;
+    procedure QueueAsyncCall(const AMethod: TDataEvent; Data: PtrInt); virtual;
   end;
 
 var
@@ -108,6 +110,12 @@ end;
 procedure TApplication.BringToFront;
 begin
   // no-op in test environment
+end;
+
+procedure TApplication.QueueAsyncCall(const AMethod: TDataEvent; Data: PtrInt);
+begin
+  // no-op in test environment — production code uses this to defer work to
+  // the next message-loop iteration; tests run headless so we just drop it.
 end;
 
 procedure TForm.Close;
