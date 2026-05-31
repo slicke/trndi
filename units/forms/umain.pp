@@ -131,6 +131,34 @@ protected
 public
   constructor Create(AOwner: TfBG; NumPredictions: integer);
 end;
+
+{**
+  Background fetch of CGM readings. Moves the synchronous @code(api.getReadings)
+  call off the main thread so the UI (splash on boot, form on refresh) stays
+  responsive while the network round-trip is in flight.
+
+  @code(Boot=True) preserves the legacy "two quick attempts" semantics that
+  used to live in @code(FormCreate): if the first fetch returns empty, the
+  thread retries once immediately before reporting failure.
+
+  When @code(Execute) finishes, @code(ApplyResult) is dispatched to the main
+  thread to copy the readings into @code(bgs) and run the existing post-fetch
+  UI sequence (@code(ApplyFetchedReadings), @code(ProcessCurrentReading),
+  @code(FinalizeReadingUpdate)).
+}
+TGlucoseFetchThread = class(TThread)
+private
+  FOwner: TfBG;
+  FBoot: boolean;
+  FForce: boolean;
+  FResults: BGResults;
+  FErrorMsg: string;
+  procedure ApplyResult;
+protected
+  procedure Execute; override;
+public
+  constructor Create(AOwner: TfBG; Boot: boolean; Force: boolean);
+end;
 TDotControl = TPaintBox;
   // Severity of an active warning. Drives panel layout, colors, and opacity.
   // wsInfo:     soft prediction (look-ahead, > 3 min)        — slim amber banner
@@ -439,6 +467,18 @@ private
   FConnectivityThread: TConnectivityCheckThread;
   FPingThread: TConnectivityCheckThread;
   FPredictionThread: TPredictionThread;
+  FGlucoseFetchThread: TGlucoseFetchThread;
+  FFetchInFlight: boolean;  // True while a TGlucoseFetchThread is running.
+                            // Reads/writes happen on the main thread only.
+  FBootFetchPending: boolean; // True while the splash-time first fetch is in
+                              // flight; gates the boot-failure warning panel.
+  tUpdateCheck: TTimer;       // One-shot deferred CheckForUpdates trigger so
+                              // the synchronous HTTPS call doesn't block the
+                              // form's first WM_PAINT.
+  FUpdateCheckScheduled: boolean;
+  tBootFetch: TTimer;         // One-shot trigger for the first async fetch;
+                              // fires only after Application.Run is pumping
+                              // the message loop so the form has painted.
   FInternetBadgeBg: TShape;
   FInternetBadgeShadow: TShape;
   FWarningDots: array of TDotControl;
@@ -465,6 +505,8 @@ private
   Chroma: TRazerChromaBase;
   FAlertEngine: TAlertEngine;
   procedure PersistAlertState(Sender: TObject);
+  procedure tUpdateCheckTimer(Sender: TObject);
+  procedure tBootFetchTimer(Sender: TObject);
 
   function dotsInView: integer;
   function setColorMode: boolean;
@@ -523,6 +565,18 @@ private
       @returns(True on successful fetch/validation.)
    }
   function DoFetchAndValidateReadings(const ForceRefresh: boolean): boolean;
+
+    {** Kick off an asynchronous fetch. The actual network call runs on a
+        background @link(TGlucoseFetchThread) and the result is applied via
+        @link(ApplyFetchedReadings) on the main thread. If a fetch is
+        already in flight the request is dropped (returns @false). }
+  function RequestAsyncFetch(Boot: boolean; Force: boolean): boolean;
+    {** Apply a set of readings returned by the worker thread. Performs all
+        of the post-fetch UI work (cache copy, overrides, warning panel,
+        alert engine, dots). Runs only on the main thread. Returns @true
+        when fresh data was placed in @code(bgs). }
+  function ApplyFetchedReadings(const Readings: BGResults;
+    const ErrorMsg: string; Boot: boolean): boolean;
     // Common implementation
   {** Process the current reading and update any internal state derived from it
       (e.g., predicted values, cached metadata). This is a small helper used
@@ -1267,6 +1321,15 @@ begin
     FPredictionThread.WaitFor;
     FreeAndNil(FPredictionThread);
   end;
+
+  if Assigned(FGlucoseFetchThread) then
+  begin
+    FGlucoseFetchThread.Terminate;
+    while not FGlucoseFetchThread.Finished do
+      Application.ProcessMessages;
+    FGlucoseFetchThread.WaitFor;
+    FreeAndNil(FGlucoseFetchThread);
+  end;
 end;
 
 procedure TfBG.fbReadingsDblClick(Sender: TObject);
@@ -1419,8 +1482,20 @@ begin
     Exit;
   end;
   
-  // Check for updates on startup (non-blocking)
-  CheckForUpdates;
+  // Defer the GitHub releases check off the FormShow path. TrndiNative.getURL
+  // is a synchronous HTTPS call (typ. hundreds of ms, much longer if the
+  // remote stalls). Running it inline blocks the form's first WM_PAINT,
+  // which on slow networks shows up as "icon in taskbar but window invisible"
+  // for the duration of the request. A one-shot TTimer reuses the existing
+  // pattern for tWebServerStart below; the OnTimer handler frees itself.
+  if not FUpdateCheckScheduled then
+  begin
+    FUpdateCheckScheduled := true;
+    tUpdateCheck := TTimer.Create(Self);
+    tUpdateCheck.Interval := 1500;
+    tUpdateCheck.OnTimer := @tUpdateCheckTimer;
+    tUpdateCheck.Enabled := true;
+  end;
 end;
 {$ifdef DARWIN}
 procedure TfBG.ToggleFullscreenMac;
