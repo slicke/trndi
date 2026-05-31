@@ -109,27 +109,18 @@ begin
     str, uxmtSquare);
 end;
 
-// Blood Glucose dump, from JS
+// Blood Glucose dump, from JS.
+// Not yet implemented. The previous body issued a synchronous getReadings
+// call on the main thread and discarded the result, which blocked the UI
+// during the HTTP round-trip without returning anything to JS. A proper
+// implementation needs a deferred-resolve path in the JS engine so the
+// fetch can run on a TGlucoseFetchThread-style worker and resolve the
+// promise from ApplyResult.
 function TJSFuncs.bgDump(ctx: pointer; const func: string;
   const params: JSParameters; out res: JSValueVal): boolean;
-var
-  i: integer;
-  r: BGResults;
 begin
-
-  if params[1]^.Data.match <> JD_INT then
-  begin
-    ShowMsg('Unknown paramter #1');
-    Exit(False);
-  end;
-  if params[2]^.Data.match <> JD_INT then
-  begin
-    ShowMsg('Unknown paramter #2');
-    Exit(False);
-  end;
-  tapi.getReadings(params[0]^.Data.Int32Val, params[1]^.Data.Int32Val);
-  //@fixme not done
-  Result := True;
+  ShowMsg('bgDump is not yet implemented');
+  Result := False;
 end;
 
 // backend for asyncGet in JS
