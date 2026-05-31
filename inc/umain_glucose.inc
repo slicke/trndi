@@ -1578,98 +1578,62 @@ end;
 
 procedure TfBG.CheckForUpdates(ShowUpToDateMessage: boolean = false);
 var
-  res, rn, r, newVersionMessage: string;
-  rok, parsed: boolean;
-  JsonData: TJSONData;
-  JsonObj: TJSONObject;
-  latestRelease: string;
   lastIgnoreDate: string;
   ignoreDate: TDateTime;
-  daysSinceIgnore: integer;
-  fmt: TFormatSettings;
+  parsed: boolean;
 begin
-  try
-    if not ShowUpToDateMessage then
+  if FShuttingDown then
+    Exit;
+
+  if FUpdateCheckInFlight then
+    Exit;
+
+  // Honour a user-requested 14-day snooze before spawning a worker. The
+  // manual menu/keyboard trigger (ShowUpToDateMessage=true) bypasses the
+  // snooze so the user always gets feedback.
+  if not ShowUpToDateMessage then
+  begin
+    lastIgnoreDate := native.GetSetting('update.ignore.date', '');
+    if lastIgnoreDate <> '' then
     begin
-      lastIgnoreDate := native.GetSetting('update.ignore.date', '');
-      if lastIgnoreDate <> '' then
-      begin
-        parsed := false;
-        if TryStrToDateTime(lastIgnoreDate, ignoreDate) then
-          parsed := true
-        else
-        if Length(Trim(lastIgnoreDate)) >= 19 then
-        try
-          ignoreDate := ScanDateTime('YYYY-MM-DD"T"hh:nn:ss', Copy(Trim(lastIgnoreDate), 1, 19));
-          parsed := true;
-        except
-          parsed := false;
-        end;
-
-        if parsed then
-        begin
-          daysSinceIgnore := DaysBetween(Now, ignoreDate);
-          if daysSinceIgnore < 14 then
-            Exit;
-        end
-        else
-          TrndiDLog(Format('CheckForUpdates: failed to parse update.ignore.date: %s', [lastIgnoreDate]));
-      end;
-    end;
-
-    TrndiNative.getURL('https://api.github.com/repos/slicke/trndi/releases/latest', res);
-
-    latestRelease := 'Unknown';
-    JsonData := nil;
-    try
-      JsonData := GetJSON(res);
-      if Assigned(JsonData) and (JsonData is TJSONObject) then
-      begin
-        JsonObj := TJSONObject(JsonData);
-        latestRelease := JsonObj.Get('name', JsonObj.Get('tag_name', 'Unknown'));
-      end;
-    except
-      latestRelease := 'Parse error';
-    end;
-
-    if Assigned(JsonData) then
-      FreeAndNil(JsonData);
-
-    rok := HasNewerRelease(res, rn, false);
-
-    if rok then
-    begin
-      r := GetNewerVersionURL(res);
-      if r = '' then
-        r := 'https://github.com/slicke/trndi/releases/latest';
-      newVersionMessage := Format(RS_NEWVER, [rn]);
-      case UXDialog(uxdAuto, RS_NEWVER_CAPTION, newVersionMessage, [mbYes, mbNo, mbIgnore], mtInformation) of
-      mrYes:
-        OpenURL(r);
-      mrIgnore:
-      begin
-        native.SetSetting('update.ignore.date', FormatDateTime('yyyy-mm-dd"T"hh:nn:ss', Now));
-        ShowMessage(Format(RS_UPDATE_SNOOZE, [DateTimeToStr(IncDay(Now, 14))]));
-      end;
-      end;
-    end
-    else
-    if ShowUpToDateMessage then
-      if BUILD_NUMBER = 'dev' then
-        ShowMessage('Up to date (Dev Build)' + LineEnding +
-          'Build: ' + BUILD_NUMBER + LineEnding +
-          'Branch: ' + GIT_BRANCH + LineEnding +
-          'Build Date: ' + {$I %DATE%} + ' ' + {$I %TIME%} + LineEnding +
-          'Latest release: ' + latestRelease + LineEnding + LineEnding +
-          'Note: Dev builds are always considered "newer" than releases')
+      parsed := false;
+      if TryStrToDateTime(lastIgnoreDate, ignoreDate) then
+        parsed := true
       else
-        ShowMessage(RS_UPTODATE);
+      if Length(Trim(lastIgnoreDate)) >= 19 then
+      try
+        ignoreDate := ScanDateTime('YYYY-MM-DD"T"hh:nn:ss', Copy(Trim(lastIgnoreDate), 1, 19));
+        parsed := true;
+      except
+        parsed := false;
+      end;
 
-  except
-    on E: Exception do
-      if ShowUpToDateMessage then
-        ShowMessage('Update check failed: ' + E.Message);
+      if parsed then
+      begin
+        if DaysBetween(Now, ignoreDate) < 14 then
+          Exit;
+      end
+      else
+        TrndiDLog(Format('CheckForUpdates: failed to parse update.ignore.date: %s', [lastIgnoreDate]));
+    end;
   end;
+
+  // Reap a previous worker that already posted its result. Live workers are
+  // gated by FUpdateCheckInFlight above, so we never overwrite an in-flight
+  // thread here.
+  if Assigned(FUpdateCheckThread) and FUpdateCheckThread.Finished then
+  begin
+    FUpdateCheckThread.WaitFor;
+    FreeAndNil(FUpdateCheckThread);
+  end;
+  if Assigned(FUpdateCheckThread) and (not FUpdateCheckThread.Finished) then
+  begin
+    TrndiDLog('CheckForUpdates: dropped — previous worker still tearing down');
+    Exit;
+  end;
+
+  FUpdateCheckInFlight := true;
+  FUpdateCheckThread := TUpdateCheckThread.Create(Self, ShowUpToDateMessage);
 end;
 
 procedure TfBG.actOnMediaController(act: TMediaControllerAct; arg: string = '');

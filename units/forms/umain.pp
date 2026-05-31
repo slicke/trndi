@@ -190,6 +190,29 @@ public
   constructor Create(AOwner: TfBG; Minutes, MaxReadings: integer;
     Mode: THistoryFetchMode);
 end;
+
+{**
+  Background GitHub releases check. Owns the synchronous TrndiNative.getURL
+  call and the JSON parsing so the UI stays responsive while the request is
+  in flight. ApplyResult runs on the main thread and is the only place that
+  touches dialogs or persisted settings.
+}
+TUpdateCheckThread = class(TThread)
+private
+  FOwner: TfBG;
+  FShowUpToDate: boolean;
+  FFetchOK: boolean;
+  FResponse: string;
+  FHasNewer: boolean;
+  FReleaseName: string;
+  FDownloadURL: string;
+  FLatestRelease: string;
+  procedure ApplyResult;
+protected
+  procedure Execute; override;
+public
+  constructor Create(AOwner: TfBG; ShowUpToDateMessage: boolean);
+end;
 TDotControl = TPaintBox;
   // Severity of an active warning. Drives panel layout, colors, and opacity.
   // wsInfo:     soft prediction (look-ahead, > 3 min)        — slim amber banner
@@ -513,9 +536,14 @@ private
                                  // api/native free in FormDestroy so the
                                  // still-running worker doesn't UAF.
   tUpdateCheck: TTimer;       // One-shot deferred CheckForUpdates trigger so
-                              // the synchronous HTTPS call doesn't block the
-                              // form's first WM_PAINT.
+                              // the first network attempt doesn't compete
+                              // with the form's first WM_PAINT.
   FUpdateCheckScheduled: boolean;
+  FUpdateCheckThread: TUpdateCheckThread;
+  FUpdateCheckInFlight: boolean; // True while a TUpdateCheckThread is running.
+                                 // Main-thread-only; gates the menu/keyboard
+                                 // triggers so repeated clicks don't queue a
+                                 // duplicate network request.
   tBootFetch: TTimer;         // One-shot trigger for the first async fetch;
                               // fires only after Application.Run is pumping
                               // the message loop so the form has painted.
@@ -1347,9 +1375,8 @@ const
 var
   deadline: TDateTime;
 begin
-  // Disable and free the deferred GitHub releases check first. Its handler
-  // does a synchronous HTTPS call that would block the ProcessMessages pumps
-  // below if a queued WM_TIMER fires mid-teardown. Clearing the scheduled
+  // Disable and free the deferred GitHub releases trigger first so a queued
+  // WM_TIMER can't spawn a fresh worker mid-teardown. Clearing the scheduled
   // flag matches the create-once gate in FormShow.
   if Assigned(tUpdateCheck) then
   begin
@@ -1357,6 +1384,32 @@ begin
     FreeAndNil(tUpdateCheck);
   end;
   FUpdateCheckScheduled := false;
+
+  if Assigned(FUpdateCheckThread) then
+  begin
+    // Same shape as the fetch threads: getURL is uninterruptible from here,
+    // so we bound the wait and detach on timeout. ApplyResult gates on
+    // FShuttingDown so a late-arriving Synchronize is a no-op.
+    FUpdateCheckThread.Terminate;
+    deadline := IncMilliSecond(Now, FETCH_SHUTDOWN_TIMEOUT_MS);
+    while (not FUpdateCheckThread.Finished) and (Now < deadline) do
+    begin
+      Application.ProcessMessages;
+      Sleep(20);
+    end;
+    if FUpdateCheckThread.Finished then
+    begin
+      FUpdateCheckThread.WaitFor;
+      FreeAndNil(FUpdateCheckThread);
+    end
+    else
+    begin
+      TrndiDLog('ShutdownBackgroundThreads: update-check worker still in getURL after timeout; detaching');
+      FUpdateCheckThread.FreeOnTerminate := true;
+      FUpdateCheckThread := nil;
+    end;
+  end;
+  FUpdateCheckInFlight := false;
 
   if Assigned(FConnectivityThread) then
   begin
