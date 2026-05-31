@@ -928,7 +928,10 @@ begin
   // The form's resize handler autosizes lVal to fill most of the height;
   // a short single glyph reads as "loading" without being mistaken for a
   // numeric reading, and won't get rotated/clipped like a sentence would.
-  lVal.Caption := '⟳';
+  // tBootSpinner animates the glyph through a braille-dot cycle so the
+  // window looks alive while the first network round-trip is in flight.
+  FBootSpinnerFrame := 0;
+  lVal.Caption := '⠋';
   lVal.Font.Style := lVal.Font.Style - [fsStrikeOut];
   lArrow.Caption := '';
   lDiff.Caption := '';
@@ -964,6 +967,11 @@ begin
   tBootFetch.Interval := 50;
   tBootFetch.OnTimer := @tBootFetchTimer;
   tBootFetch.Enabled := false;
+
+  tBootSpinner := TTimer.Create(Self);
+  tBootSpinner.Interval := 100;
+  tBootSpinner.OnTimer := @tBootSpinnerTimer;
+  tBootSpinner.Enabled := true;
 
   Chroma := TRazerChromaFactory.CreateInstance;
   if native.GetBoolSetting('razer.enabled', false) then

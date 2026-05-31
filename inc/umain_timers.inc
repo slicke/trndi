@@ -807,6 +807,59 @@ begin
   RequestAsyncFetch(true, false);
 end;
 
+// Animates the braille-spinner glyph in lVal while the very first fetch is
+// in flight. Self-stops on the first tick after FBootFetchPending clears,
+// leaving whatever caption ApplyFetchedReadings wrote in place.
+procedure TfBG.tBootSpinnerTimer(Sender: TObject);
+const
+  Frames: array[0..9] of string = (
+    '⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'
+  );
+begin
+  if FShuttingDown or (not FBootFetchPending) then
+  begin
+    StopBootSpinner;
+    Exit;
+  end;
+  FBootSpinnerFrame := (FBootSpinnerFrame + 1) mod Length(Frames);
+  lVal.Caption := Frames[FBootSpinnerFrame];
+end;
+
+// Halts the spinner timer and lands lVal on a "loaded" glyph so the brief
+// post-fetch UI work in ApplyResult doesn't leave the spinner stranded
+// mid-cycle. Called by ApplyResult right before the heavy main-thread work
+// (PlaceTrendDots / FinalizeUIUpdate) starts; ProcessCurrentReading
+// overwrites the caption with the real value moments later.
+procedure TfBG.StopBootSpinner;
+begin
+  if Assigned(tBootSpinner) then
+  begin
+    tBootSpinner.Enabled := false;
+    FreeAndNil(tBootSpinner);
+  end;
+  // Length() returns BYTES — a single braille glyph is 3 UTF-8 bytes, so
+  // <= 3 matches the spinner cycle state without matching real readings.
+  if (lVal.Caption = '') or (Length(lVal.Caption) <= 3) then
+  begin
+    lVal.Caption := '⠿';
+    // Force the "loaded" glyph onto the screen before ApplyResult continues
+    // into the heavy main-thread work below — otherwise ProcessCurrentReading
+    // overwrites the caption with the real value before any paint runs and
+    // the spinner is left visibly stranded mid-cycle.
+    lVal.Refresh;
+  end;
+end;
+
+// QueueAsyncCall target — invokes the resize handler on the next message
+// loop iteration. Lets ApplyResult return so lVal/lArrow/lDiff paint the
+// new value before the trend-dot + graph relayout runs.
+procedure TfBG.DeferredPostFetchResize({%H-}Data: PtrInt);
+begin
+  if FShuttingDown then
+    Exit;
+  tResizeTimer(Self);
+end;
+
 procedure TfBG.tSwapTimer(Sender: TObject);
 var
   c: TColor;
