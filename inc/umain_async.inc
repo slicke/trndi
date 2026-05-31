@@ -366,6 +366,14 @@ begin
     Exit;
   end;
 
+  // Stop the boot spinner before the heavy main-thread work below — the
+  // post-fetch chain (PlaceTrendDots, FinalizeUIUpdate → deferred resize)
+  // can stall the message loop briefly, and a frozen mid-cycle spinner
+  // reads as a hang. Lands on a "loaded" glyph; ProcessCurrentReading
+  // overwrites it with the real value moments later.
+  if FBoot then
+    FOwner.StopBootSpinner;
+
   try
     {$ifdef DEBUG}
     if Assigned(FOwner.miDebugBackend) and FOwner.miDebugBackend.Checked and FOwner.Showing then

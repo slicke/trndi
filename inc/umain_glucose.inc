@@ -66,6 +66,14 @@ begin
   lArrow.Caption := reading.trend.Img;
   lVal.Font.Style := [];
 
+  // Paint the value labels synchronously so they hit the screen before the
+  // deferred resize / dot relayout runs on the next message-loop tick —
+  // queued async calls outrank WM_PAINT, so without this the value would
+  // only appear after the heavy layout work completes.
+  lVal.Refresh;
+  lArrow.Refresh;
+  lDiff.Refresh;
+
   TrndiDLog(Format(RS_LATEST_READING, [reading.val, DateTimeToStr(reading.date)]));
 
   if native.GetBoolSetting('main.announce', false) then
@@ -264,7 +272,13 @@ begin
   tAgo.OnTimer(self);
   if Assigned(pnNextProgress) and pnNextProgress.Visible then
     tProgress.Enabled := true;
-  Self.OnResize(lVal);
+  // Defer the relayout — the synchronous Self.OnResize(lVal) chain runs
+  // tResizeTimer (hide/resize/show across every trend dot + AdjustGraph's
+  // forced Update), which is hundreds of ms on boot and freezes the
+  // message loop. Queuing it as an async call hands control back to the
+  // loop so lVal/lArrow/lDiff paint the new value first; the dot/graph
+  // layout follows on the next message-loop iteration.
+  Application.QueueAsyncCall(@DeferredPostFetchResize, 0);
 
   UpdateFloatingWindow;
 
