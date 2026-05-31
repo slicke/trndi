@@ -153,11 +153,42 @@ private
   FForce: boolean;
   FResults: BGResults;
   FErrorMsg: string;
+  {$ifdef DEBUG}
+  FDiag: string;
+  {$endif}
   procedure ApplyResult;
 protected
   procedure Execute; override;
 public
   constructor Create(AOwner: TfBG; Boot: boolean; Force: boolean);
+end;
+
+{**
+  Which menu opened the history-graph fetch. Drives the empty-data messages
+  and whether the prediction overlay is auto-added once the graph is shown.
+}
+THistoryFetchMode = (hfm24h, hfmDatePicker);
+
+{**
+  Background fetch of a custom-window glucose history for the history graph.
+  Mirrors TGlucoseFetchThread but takes its window (minutes, max readings)
+  by value and feeds @code(ShowHistoryGraph) on the main thread instead of
+  the live UI's @code(bgs) slot.
+}
+THistoryFetchThread = class(TThread)
+private
+  FOwner: TfBG;
+  FMinutes: integer;
+  FMaxReadings: integer;
+  FMode: THistoryFetchMode;
+  FResults: BGResults;
+  FErrorMsg: string;
+  procedure ApplyResult;
+protected
+  procedure Execute; override;
+public
+  constructor Create(AOwner: TfBG; Minutes, MaxReadings: integer;
+    Mode: THistoryFetchMode);
 end;
 TDotControl = TPaintBox;
   // Severity of an active warning. Drives panel layout, colors, and opacity.
@@ -472,6 +503,11 @@ private
                             // Reads/writes happen on the main thread only.
   FBootFetchPending: boolean; // True while the splash-time first fetch is in
                               // flight; gates the boot-failure warning panel.
+  FHistoryFetchThread: THistoryFetchThread;
+  FHistoryFetchInFlight: boolean; // True while a THistoryFetchThread is
+                                  // running. Reads/writes on the main
+                                  // thread only; gates the menu items so a
+                                  // second click can't queue a duplicate.
   FFetchThreadDetached: boolean; // Set when shutdown gave up waiting on the
                                  // fetch worker and detached it; gates the
                                  // api/native free in FormDestroy so the
@@ -558,23 +594,17 @@ private
   procedure CreateTrendDots;
   procedure placeForm;
 
-    // Helper methods for update procedure
-  {** Fetch readings from the configured data source(s) and validate them.
-      The resulting values are stored in `FCachedReadings` on success.
-      @returns(True if a valid dataset was retrieved.)
-   }
-  function FetchAndValidateReadings: boolean;
-  {** Under-the-hood implementation of FetchAndValidateReadings.
-      @param(ForceRefresh  Force bypass of any caching.)
-      @returns(True on successful fetch/validation.)
-   }
-  function DoFetchAndValidateReadings(const ForceRefresh: boolean): boolean;
-
     {** Kick off an asynchronous fetch. The actual network call runs on a
         background @link(TGlucoseFetchThread) and the result is applied via
         @link(ApplyFetchedReadings) on the main thread. If a fetch is
         already in flight the request is dropped (returns @false). }
   function RequestAsyncFetch(Boot: boolean; Force: boolean): boolean;
+    {** Kick off an asynchronous history-graph fetch on a
+        @link(THistoryFetchThread). Disables the history menu items while
+        the worker is in flight; re-enables them from ApplyResult. Returns
+        @false if a request was already pending or the API isn't ready. }
+  function RequestHistoryFetch(Minutes, MaxReadings: integer;
+    Mode: THistoryFetchMode): boolean;
     {** Apply a set of readings returned by the worker thread. Performs all
         of the post-fetch UI work (cache copy, overrides, warning panel,
         alert engine, dots). Runs only on the main thread. Returns @true
@@ -599,9 +629,6 @@ private
       color/label updates depending on thresholds and state.
    }
   procedure UpdateUIBasedOnGlucose;
-  {** Perform deferred work required after the main UI update chain has finished.
-   }
-  procedure CompleteUIUpdate;
   {** Final housekeeping after the UI update pipeline completes. Ensures that
       timers, overlays and other stateful UI pieces are synchronized after
       a new reading or manual refresh.
@@ -726,8 +753,6 @@ private
    }
   procedure CacheUIState(const UIColor: TColor; const UICaption: string;
     const UITir: string; const UITirColor: TColor);
-  function FetchAndValidateReadingsForced: boolean;
-    // Force fresh API call bypassing cache
 
   procedure HandleLatestReadingFreshness(const LatestReading: BGReading;
     CurrentTime: TDateTime);
@@ -1379,6 +1404,33 @@ begin
       TrndiDLog('ShutdownBackgroundThreads: fetch worker still in api.getReadings after timeout; detaching');
       FGlucoseFetchThread.FreeOnTerminate := true;
       FGlucoseFetchThread := nil;
+      FFetchThreadDetached := true;
+    end;
+  end;
+
+  if Assigned(FHistoryFetchThread) then
+  begin
+    // Same shape as FGlucoseFetchThread: history fetches sit inside the same
+    // uninterruptible api.getReadings call, so bound the wait and detach on
+    // timeout. A detached history worker still touches api when it returns,
+    // so it gates FFetchThreadDetached too (same api/native lifetime).
+    FHistoryFetchThread.Terminate;
+    deadline := IncMilliSecond(Now, FETCH_SHUTDOWN_TIMEOUT_MS);
+    while (not FHistoryFetchThread.Finished) and (Now < deadline) do
+    begin
+      Application.ProcessMessages;
+      Sleep(20);
+    end;
+    if FHistoryFetchThread.Finished then
+    begin
+      FHistoryFetchThread.WaitFor;
+      FreeAndNil(FHistoryFetchThread);
+    end
+    else
+    begin
+      TrndiDLog('ShutdownBackgroundThreads: history worker still in api.getReadings after timeout; detaching');
+      FHistoryFetchThread.FreeOnTerminate := true;
+      FHistoryFetchThread := nil;
       FFetchThreadDetached := true;
     end;
   end;

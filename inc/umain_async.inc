@@ -310,10 +310,6 @@ begin
 end;
 
 procedure TGlucoseFetchThread.Execute;
-{$ifdef DEBUG}
-var
-  diag: string;
-{$endif}
 begin
   // Worker thread — must not touch LCL/UI. api.getReadings is the synchronous
   // HTTP call we want to keep off the main thread. The Boot flag triggers
@@ -324,7 +320,7 @@ begin
         Exit;
 
       {$ifdef DEBUG}
-      FResults := api.getReadings(MAX_MIN, MAX_RESULT, '', diag);
+      FResults := api.getReadings(MAX_MIN, MAX_RESULT, '', FDiag);
       {$else}
       FResults := api.getReadings(MAX_MIN, MAX_RESULT);
       {$endif}
@@ -332,7 +328,7 @@ begin
       if FBoot and (Length(FResults) = 0) and (not Terminated) then
       begin
         {$ifdef DEBUG}
-        FResults := api.getReadings(MAX_MIN, MAX_RESULT, '', diag);
+        FResults := api.getReadings(MAX_MIN, MAX_RESULT, '', FDiag);
         {$else}
         FResults := api.getReadings(MAX_MIN, MAX_RESULT);
         {$endif}
@@ -371,6 +367,19 @@ begin
   end;
 
   try
+    {$ifdef DEBUG}
+    if Assigned(FOwner.miDebugBackend) and FOwner.miDebugBackend.Checked and FOwner.Showing then
+    begin
+      if FDiag.IsEmpty then
+        slicke.ux.alert.ExtLog(uxdAuto,
+          IfThen(FForce, 'Debug Info (Forced)', 'Debug Info'),
+          '[empty!]', FDiag)
+      else
+        slicke.ux.alert.ExtLog(uxdAuto,
+          IfThen(FForce, 'Debug Info (Forced)', 'Debug Info'),
+          '', FDiag, uxmtCustom, 10);
+    end;
+    {$endif}
     applied := FOwner.ApplyFetchedReadings(FResults, FErrorMsg, FBoot);
     if applied then
     begin
@@ -385,5 +394,116 @@ begin
       native.updateDone;
     // The thread reference owned by TfBG will be cleared by the next
     // RequestAsyncFetch (which creates a fresh instance) or at shutdown.
+  end;
+end;
+
+{------------------------------------------------------------------------------
+  THistoryFetchThread
+  -------------------
+  Off-main-thread CGM fetch for the history graph. Same shape as
+  TGlucoseFetchThread but the window (minutes, max readings) is supplied per
+  call and the result feeds ShowHistoryGraph on the main thread rather than
+  the live UI's bgs slot.
+ ------------------------------------------------------------------------------}
+constructor THistoryFetchThread.Create(AOwner: TfBG; Minutes, MaxReadings: integer;
+Mode: THistoryFetchMode);
+begin
+  inherited Create(true);
+  FreeOnTerminate := false;
+  FOwner := AOwner;
+  FMinutes := Minutes;
+  FMaxReadings := MaxReadings;
+  FMode := Mode;
+  FErrorMsg := '';
+  SetLength(FResults, 0);
+  Start;
+end;
+
+procedure THistoryFetchThread.Execute;
+var
+  diag: string;
+begin
+  // Worker thread — must not touch LCL/UI. The synchronous api.getReadings
+  // call is the only thing here.
+  try
+    try
+      if not Assigned(api) then
+        Exit;
+
+      FResults := api.getReadings(FMinutes, FMaxReadings, '', diag);
+
+      if Assigned(api) then
+        FErrorMsg := api.errormsg;
+      if (FErrorMsg = '') and (diag <> '') then
+        FErrorMsg := diag;
+    except
+      on E: Exception do
+      begin
+        SetLength(FResults, 0);
+        FErrorMsg := E.ClassName + ': ' + E.Message;
+      end;
+    end;
+  finally
+    if not Terminated then
+      Synchronize(@ApplyResult);
+  end;
+end;
+
+procedure THistoryFetchThread.ApplyResult;
+var
+  cgmHi, cgmLo, cgmRangeHi, cgmRangeLo: integer;
+begin
+  if not Assigned(FOwner) then
+    Exit;
+
+  if FOwner.FShuttingDown then
+  begin
+    // Owner is tearing down — drop everything, just clear the flag so a
+    // hypothetical post-restart fetch isn't gated.
+    FOwner.FHistoryFetchInFlight := false;
+    Exit;
+  end;
+
+  try
+    if Length(FResults) = 0 then
+    begin
+      case FMode of
+      hfm24h:
+        if FErrorMsg <> '' then
+          ShowMessage('No readings returned: ' + FErrorMsg)
+        else
+          ShowMessage('No readings returned for the last 24 hours.');
+      hfmDatePicker:
+        if FErrorMsg <> '' then
+          ShowMessage(Format(RS_DATE_PICKER_NO_READINGS_ERR, [FErrorMsg]))
+        else
+          ShowMessage(RS_DATE_PICKER_NO_READINGS);
+      end;
+      Exit;
+    end;
+
+    if Assigned(api) then
+    begin
+      cgmHi := api.cgmHi;
+      cgmLo := api.cgmLo;
+      cgmRangeHi := api.cgmRangeHi;
+      cgmRangeLo := api.cgmRangeLo;
+    end
+    else
+    begin
+      cgmHi := 180; cgmLo := 60; cgmRangeHi := 160; cgmRangeLo := 80;
+    end;
+
+    ShowHistoryGraph(FResults, un, CurrentHistoryGraphPalette,
+      cgmHi, cgmLo, cgmRangeHi, cgmRangeLo);
+    FOwner.AutoEnableBasalOverlay;
+    if FMode = hfm24h then
+      FOwner.AutoAddPredictionOverlay;
+  finally
+    FOwner.FHistoryFetchInFlight := false;
+    if Assigned(FOwner.mi24h) then
+      FOwner.mi24h.Enabled := true;
+    if Assigned(FOwner.miReadingsSince) then
+      FOwner.miReadingsSince.Enabled := true;
   end;
 end;
