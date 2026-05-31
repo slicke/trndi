@@ -954,11 +954,16 @@ begin
   // — symptoms include "icon in taskbar but window never draws". Letting the
   // message loop run first guarantees the form is painted and interactive
   // before any threading machinery starts.
+  //
+  // Note: Enabled stays false here. The explicit Application.ProcessMessages
+  // further down (and any implicit pumping from fSplash.Close / Self.Show)
+  // would otherwise dispatch this 50 ms WM_TIMER while FormCreate is still
+  // mid-setup. Arming happens at the very end of FormCreate.
   FBootFetchPending := true;
   tBootFetch := TTimer.Create(Self);
   tBootFetch.Interval := 50;
   tBootFetch.OnTimer := @tBootFetchTimer;
-  tBootFetch.Enabled := true;
+  tBootFetch.Enabled := false;
 
   Chroma := TRazerChromaFactory.CreateInstance;
   if native.GetBoolSetting('razer.enabled', false) then
@@ -1060,6 +1065,13 @@ begin
   miAdvanced.Insert(miAdvanced.count, miDebugLogAPI);
   miDebugLogAPI.onClick := @miDebugLogAPIClick;
   {$endif}
+
+  // Arm the boot-fetch timer last. From this point there is no further
+  // Application.ProcessMessages in FormCreate, so tBootFetchTimer cannot
+  // fire until FormCreate returns and Application.Run starts pumping —
+  // i.e. the form is fully constructed before any worker thread spawns.
+  if Assigned(tBootFetch) then
+    tBootFetch.Enabled := true;
 end;
 
 // Web Server Methods

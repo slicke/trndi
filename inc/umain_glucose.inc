@@ -239,13 +239,15 @@ begin
 
   // The fetch now runs on TGlucoseFetchThread. The post-fetch UI flow
   // (ApplyFetchedReadings → ProcessCurrentReading → FinalizeReadingUpdate)
-  // is dispatched via Synchronize when the worker completes. Result is the
-  // dispatch status: True = a fetch is starting (or already in flight from
-  // a recent dispatch), False = api unavailable.
+  // is dispatched via Synchronize when the worker completes.
+  //
+  // Only consume FForceRefresh once a fresh worker is actually created — if
+  // RequestAsyncFetch drops the request (api unavailable, fetch in flight),
+  // the force intent must survive so the next attempt honours it.
   force := FForceRefresh;
-  if force then
-    FForceRefresh := false;
   Result := RequestAsyncFetch(boot, force);
+  if Result and force then
+    FForceRefresh := false;
 end;
 
 procedure TfBG.FinalizeUpdate;
@@ -967,9 +969,21 @@ begin
   if FFetchInFlight then
   begin
     TrndiDLog('RequestAsyncFetch: dropped — fetch already in flight');
-    // A request is already pending; the in-flight ApplyResult will call
-    // FinalizeReadingUpdate shortly.
-    Result := true;
+    // A request is already pending; return False so the caller knows no new
+    // worker was created and can preserve one-shot state (e.g. FForceRefresh)
+    // for the next attempt.
+    Exit;
+  end;
+
+  // Second guard: ApplyResult clears FFetchInFlight from inside Synchronize,
+  // which returns before the worker's Execute has finished unwinding. In that
+  // brief window FGlucoseFetchThread.Finished is still false even though
+  // FFetchInFlight is false — without this check the assignment below would
+  // overwrite a still-running thread reference and leak it. Drop the request;
+  // the next periodic/menu trigger will pick it up once Finished is true.
+  if Assigned(FGlucoseFetchThread) and (not FGlucoseFetchThread.Finished) then
+  begin
+    TrndiDLog('RequestAsyncFetch: dropped — previous worker still tearing down');
     Exit;
   end;
 

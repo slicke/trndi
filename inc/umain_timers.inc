@@ -783,6 +783,12 @@ begin
     tUpdateCheck.Enabled := false;
     FreeAndNil(tUpdateCheck);
   end;
+  // Skip the blocking HTTPS call if the form is tearing down — the
+  // ProcessMessages pumps inside ShutdownBackgroundThreads can otherwise
+  // dispatch this WM_TIMER and stall shutdown on a synchronous network
+  // call.
+  if FShuttingDown then
+    Exit;
   CheckForUpdates;
 end;
 
