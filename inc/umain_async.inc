@@ -515,3 +515,122 @@ begin
       FOwner.miReadingsSince.Enabled := true;
   end;
 end;
+
+{------------------------------------------------------------------------------
+  TUpdateCheckThread
+  ------------------
+  Off-main-thread GitHub releases check. The synchronous TrndiNative.getURL
+  call, the JSON parse, and the HasNewerRelease/GetNewerVersionURL helpers all
+  run in Execute; ApplyResult is the only place that touches dialogs or
+  native.SetSetting.
+ ------------------------------------------------------------------------------}
+constructor TUpdateCheckThread.Create(AOwner: TfBG; ShowUpToDateMessage: boolean);
+begin
+  inherited Create(true);
+  FreeOnTerminate := false;
+  FOwner := AOwner;
+  FShowUpToDate := ShowUpToDateMessage;
+  FFetchOK := false;
+  FHasNewer := false;
+  FLatestRelease := 'Unknown';
+  Start;
+end;
+
+procedure TUpdateCheckThread.Execute;
+var
+  JsonData: TJSONData;
+  JsonObj: TJSONObject;
+begin
+  try
+    try
+      FFetchOK := TrndiNative.getURL(
+        'https://api.github.com/repos/slicke/trndi/releases/latest', FResponse);
+      if (not FFetchOK) or Terminated then
+        Exit;
+
+      JsonData := nil;
+      try
+        JsonData := GetJSON(FResponse);
+        if Assigned(JsonData) and (JsonData is TJSONObject) then
+        begin
+          JsonObj := TJSONObject(JsonData);
+          FLatestRelease := JsonObj.Get('name', JsonObj.Get('tag_name', 'Unknown'));
+        end;
+      except
+        FLatestRelease := 'Parse error';
+      end;
+      if Assigned(JsonData) then
+        FreeAndNil(JsonData);
+
+      if Terminated then
+        Exit;
+
+      FHasNewer := HasNewerRelease(FResponse, FReleaseName, false);
+      if FHasNewer then
+      begin
+        FDownloadURL := GetNewerVersionURL(FResponse);
+        if FDownloadURL = '' then
+          FDownloadURL := 'https://github.com/slicke/trndi/releases/latest';
+      end;
+    except
+      FFetchOK := false;
+    end;
+  finally
+    if not Terminated then
+      Synchronize(@ApplyResult);
+  end;
+end;
+
+procedure TUpdateCheckThread.ApplyResult;
+var
+  newVersionMessage: string;
+begin
+  if not Assigned(FOwner) then
+    Exit;
+
+  if FOwner.FShuttingDown then
+  begin
+    FOwner.FUpdateCheckInFlight := false;
+    Exit;
+  end;
+
+  try
+    if not FFetchOK then
+    begin
+      if FShowUpToDate then
+        ShowMessage('Update check failed.');
+      Exit;
+    end;
+
+    if FHasNewer then
+    begin
+      newVersionMessage := Format(RS_NEWVER, [FReleaseName]);
+      case UXDialog(uxdAuto, RS_NEWVER_CAPTION, newVersionMessage,
+        [mbYes, mbNo, mbIgnore], mtInformation) of
+      mrYes:
+        OpenURL(FDownloadURL);
+      mrIgnore:
+        begin
+          if Assigned(native) then
+            native.SetSetting('update.ignore.date',
+              FormatDateTime('yyyy-mm-dd"T"hh:nn:ss', Now));
+          ShowMessage(Format(RS_UPDATE_SNOOZE, [DateTimeToStr(IncDay(Now, 14))]));
+        end;
+      end;
+    end
+    else if FShowUpToDate then
+    begin
+      if BUILD_NUMBER = 'dev' then
+        ShowMessage('Up to date (Dev Build)' + LineEnding +
+          'Build: ' + BUILD_NUMBER + LineEnding +
+          'Branch: ' + GIT_BRANCH + LineEnding +
+          'Build Date: ' + {$I %DATE%} + ' ' + {$I %TIME%} + LineEnding +
+          'Latest release: ' + FLatestRelease + LineEnding + LineEnding +
+          'Note: Dev builds are always considered "newer" than releases')
+      else
+        ShowMessage(RS_UPTODATE);
+    end;
+  finally
+    FOwner.FUpdateCheckInFlight := false;
+  end;
+end;
