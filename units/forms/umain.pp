@@ -519,6 +519,10 @@ private
   tBootFetch: TTimer;         // One-shot trigger for the first async fetch;
                               // fires only after Application.Run is pumping
                               // the message loop so the form has painted.
+  tBootSpinner: TTimer;       // Animates the braille spinner glyph in lVal
+                              // while FBootFetchPending is true; self-stops
+                              // on the first tick after the flag clears.
+  FBootSpinnerFrame: integer;
   FInternetBadgeBg: TShape;
   FInternetBadgeShadow: TShape;
   FWarningDots: array of TDotControl;
@@ -547,6 +551,9 @@ private
   procedure PersistAlertState(Sender: TObject);
   procedure tUpdateCheckTimer(Sender: TObject);
   procedure tBootFetchTimer(Sender: TObject);
+  procedure tBootSpinnerTimer(Sender: TObject);
+  procedure StopBootSpinner;
+  procedure DeferredPostFetchResize(Data: PtrInt);
 
   function dotsInView: integer;
   function setColorMode: boolean;
