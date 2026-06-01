@@ -214,7 +214,7 @@ const
   constructor Create(user, pass: string); virtual;
 
     {** Destructor; releases owned resources. }
-  destructor Destroy; virtual;
+  destructor Destroy; override;
 
     {** Establish connectivity to the underlying data source.
         Subclasses must implement.
@@ -488,6 +488,7 @@ end;
 destructor TrndiAPI.Destroy;
 begin
   native.Free;
+  inherited Destroy;
 end;
 
 {------------------------------------------------------------------------------
@@ -612,8 +613,8 @@ var
 begin
   Result := false;
 
-  // Request readings from the past 1440 minutes (24 hours), limit 1
-  r := getReadings(1440, 1);
+  // Request readings spanning the backend's stated maximum age, limit 1
+  r := getReadings(getMaxAge, 1);
 
   if Length(r) > 0 then
   begin
@@ -631,8 +632,8 @@ var
 begin
   Result := false;
 
-  // 15 minutes covers the standard 5-min CGM interval plus typical upload delay
-  r := getReadings(15, 1);
+  // 3× the backend's reporting cadence covers one fresh reading plus upload delay
+  r := getReadings(getReportingInterval * 3, 1);
 
   if Length(r) > 0 then
   begin
