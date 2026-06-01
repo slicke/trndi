@@ -223,26 +223,26 @@ var
   Proc: TProcess;
   buf: array[0..4095] of byte;
   n: integer;
-  outS: string;
   waitLoops: integer;
+  ms: TMemoryStream;
 begin
   FStdoutS := '';
   FExitCode := -1;
   Proc := TProcess.Create(nil);
+  ms := TMemoryStream.Create;
   try
     Proc.Executable := FExec;
     Proc.Options := Proc.Options + [poUsePipes];
     Proc.ShowWindow := swoHide;
     Proc.Parameters.Assign(FParams);
     Proc.Execute;
+    // Accumulate stdout in a stream — string concatenation in this loop is
+    // O(n^2) in total bytes copied, which becomes painful for large outputs.
     while (Proc.Running or (Proc.Output.NumBytesAvailable > 0)) and (not Terminated) do
     begin
       n := Proc.Output.Read(buf, SizeOf(buf));
       if n > 0 then
-      begin
-        SetString(outS, pansichar(@buf[0]), n);
-        FStdoutS := FStdoutS + outS;
-      end
+        ms.WriteBuffer(buf, n)
       else
         Sleep(5);
     end;
@@ -294,9 +294,12 @@ begin
     except
       FExitCode := -1;
     end;
+    if ms.Size > 0 then
+      SetString(FStdoutS, PAnsiChar(ms.Memory), ms.Size);
     if Assigned(FCallback) then
       FCallback(FStdoutS, FExitCode);
   finally
+    ms.Free;
     Proc.Free;
     FDone.SetEvent;
   end;
