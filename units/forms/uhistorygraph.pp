@@ -132,6 +132,13 @@ private
   FShowBasal: boolean; // Whether to render basal overlay
   FMaxBasal: single; // Maximum basal rate for scaling (U/hr)
   FPredictions: array of TGraphPoint; // Predicted future readings
+  FInvTimeSpan: double; // 1 / (FMaxTime - FMinTime); 0 if degenerate
+  FInvValueSpan: double; // 1 / (FMaxValue - FMinValue); 0 if degenerate
+  FBackground: TBitmap; // Cached static layers (axes, dots, legend, ...)
+  FBackgroundValid: boolean; // False when data/extents/size changed
+  procedure InvalidateBackground;
+  procedure RenderBackground(ABmp: TBitmap; const PlotRect: TRect);
+  procedure DrawHoverRing(ACanvas: TCanvas; const PlotRect: TRect);
     {** GetPlotRect: Determine the plotting rectangle inside the form where
       dots and lines are drawn. Respects the margins defined above. }
   function GetPlotRect: TRect;
@@ -367,6 +374,7 @@ end;
 
 destructor TfHistoryGraph.Destroy;
 begin
+  FBackground.Free;
   if fHistoryGraph = Self then
     fHistoryGraph := nil;
   inherited Destroy;
@@ -756,17 +764,43 @@ begin
     y := ValueToY(FPoints[i].Value, PlotRect);
     ACanvas.Brush.Color := LevelColor(FPoints[i].Reading.level);
     ACanvas.Ellipse(x - radius, y - radius, x + radius, y + radius);
-    if i = FHoveredPoint then
-    begin
-      ACanvas.Brush.Style := bsClear;
-      ACanvas.Pen.Color := clBlack;
-      ACanvas.Pen.Width := 2;
-      ACanvas.Ellipse(x - radius - 3, y - radius - 3, x + radius + 3,
-        y + radius + 3);
-      ACanvas.Pen.Width := 1;
-      ACanvas.Brush.Style := bsSolid;
-    end;
   end;
+end;
+
+procedure TfHistoryGraph.DrawHoverRing(ACanvas: TCanvas; const PlotRect: TRect);
+var
+  x, y, radius: integer;
+begin
+  if (FHoveredPoint < 0) or (FHoveredPoint > High(FPoints)) then
+    Exit;
+  radius := FDotRadius;
+  x := TimeToX(FPoints[FHoveredPoint].Reading.date, PlotRect);
+  y := ValueToY(FPoints[FHoveredPoint].Value, PlotRect);
+  ACanvas.Brush.Style := bsClear;
+  ACanvas.Pen.Color := clBlack;
+  ACanvas.Pen.Width := 2;
+  ACanvas.Ellipse(x - radius - 3, y - radius - 3, x + radius + 3,
+    y + radius + 3);
+  ACanvas.Pen.Width := 1;
+  ACanvas.Brush.Style := bsSolid;
+end;
+
+procedure TfHistoryGraph.InvalidateBackground;
+begin
+  FBackgroundValid := false;
+end;
+
+procedure TfHistoryGraph.RenderBackground(ABmp: TBitmap; const PlotRect: TRect);
+begin
+  ABmp.Canvas.Brush.Color := Color;
+  ABmp.Canvas.FillRect(Rect(0, 0, ABmp.Width, ABmp.Height));
+  DrawAxesAndGrid(ABmp.Canvas, PlotRect);
+  DrawThresholdLines(ABmp.Canvas, PlotRect);
+  DrawBasalOverlay(ABmp.Canvas, PlotRect);
+  DrawPolyline(ABmp.Canvas, PlotRect);
+  DrawPoints(ABmp.Canvas, PlotRect);
+  DrawPredictionOverlay(ABmp.Canvas, PlotRect);
+  DrawLegend(ABmp.Canvas, PlotRect);
 end;
 
 procedure TfHistoryGraph.DrawPolyline(ACanvas: TCanvas; const PlotRect: TRect);
@@ -868,14 +902,16 @@ procedure ShiftRect(var R: TRect; const DX, DY: integer);
     R.Bottom := R.Bottom + DY;
   end;
 begin
-  // Main paint handler - clears the background and draws the grid, polyline,
-  // points and legend. Avoids unnecessary drawing if there is no data.
+  // Static layers (axes, grid, threshold lines, basal overlay, polyline,
+  // dots, predictions, legend) only change when data/extents/size change.
+  // Cache them in FBackground and blit; draw the hover overlay on top so
+  // MouseMove repaints stay cheap.
   inherited Paint;
-  Canvas.Brush.Color := Color;
-  Canvas.FillRect(ClientRect);
 
   if not HasData then
   begin
+    Canvas.Brush.Color := Color;
+    Canvas.FillRect(ClientRect);
     messageText := RS_HISTORY_GRAPH_EMPTY;
     Canvas.Font.Size := 12;
     Canvas.Brush.Style := bsClear;
@@ -885,12 +921,22 @@ begin
   end;
 
   plotRect := GetPlotRect;
-  DrawAxesAndGrid(Canvas, plotRect);
-  DrawThresholdLines(Canvas, plotRect);
-  DrawBasalOverlay(Canvas, plotRect);
-  DrawPolyline(Canvas, plotRect);
-  DrawPoints(Canvas, plotRect);
-  DrawPredictionOverlay(Canvas, plotRect);
+
+  if FBackground = nil then
+    FBackground := TBitmap.Create;
+  if (FBackground.Width <> ClientWidth) or (FBackground.Height <> ClientHeight) then
+  begin
+    FBackground.SetSize(ClientWidth, ClientHeight);
+    FBackgroundValid := false;
+  end;
+  if not FBackgroundValid then
+  begin
+    RenderBackground(FBackground, plotRect);
+    FBackgroundValid := true;
+  end;
+  Canvas.Draw(0, 0, FBackground);
+
+  DrawHoverRing(Canvas, plotRect);
 
   if (FHoveredPoint >= 0) and (FHoveredPoint <= High(FPoints)) then
   begin
@@ -927,8 +973,6 @@ begin
     Canvas.Brush.Style := bsClear;
     Canvas.TextOut(hoverRect.Left + 6, hoverRect.Top + 4, hoverText);
   end;
-
-  DrawLegend(Canvas, plotRect);
 end;
 
 function TfHistoryGraph.PointAt(const X, Y: integer): integer;
@@ -957,6 +1001,7 @@ end;
 procedure TfHistoryGraph.Resize;
 begin
   inherited Resize;
+  InvalidateBackground;
   Invalidate;
 end;
 
@@ -980,6 +1025,7 @@ begin
   SetLength(FAllPoints, 0);
   SetLength(FPredictions, 0);
   FHoveredPoint := -1;
+  InvalidateBackground;
 
   if Length(Readings) = 0 then
   begin
@@ -1077,6 +1123,7 @@ begin
     UpdateExtents;
   end;
   Caption := Format('%s (%d)', [RS_HISTORY_GRAPH_TITLE, Length(FPoints)]);
+  InvalidateBackground;
   Invalidate;
 end;
 
@@ -1113,6 +1160,7 @@ end;
 procedure TfHistoryGraph.SetPalette(const Palette: THistoryGraphPalette);
 begin
   FPalette := Palette;
+  InvalidateBackground;
 end;
 
 procedure TfHistoryGraph.SetThresholds(const cgmHi, cgmLo, cgmRangeHi,
@@ -1122,18 +1170,21 @@ begin
   FCgmLo := cgmLo;
   FCgmRangeHi := cgmRangeHi;
   FCgmRangeLo := cgmRangeLo;
+  InvalidateBackground;
 end;
 
 procedure TfHistoryGraph.SetBasalProfile(const profile: TBasalProfile; const maxBasal: single = 3.0);
 begin
   FBasalProfile := Copy(profile);
   FMaxBasal := maxBasal;
+  InvalidateBackground;
   Invalidate;
 end;
 
 procedure TfHistoryGraph.SetBasalOverlayEnabled(aEnabled: boolean);
 begin
   FShowBasal := aEnabled;
+  InvalidateBackground;
   Invalidate;
 end;
 
@@ -1359,13 +1410,14 @@ end;
 function TfHistoryGraph.TimeToX(const TimeValue: TDateTime;
 const PlotRect: TRect): integer;
 var
-  span, ratio: double;
+  ratio: double;
 begin
-  span := FMaxTime - FMinTime;
-  if IsZero(span) then
+  // FInvTimeSpan is precomputed in UpdateExtents so this hot inner-loop path
+  // multiplies instead of dividing.
+  if FInvTimeSpan = 0 then
     Exit((PlotRect.Left + PlotRect.Right) div 2);
 
-  ratio := (TimeValue - FMinTime) / span;
+  ratio := (TimeValue - FMinTime) * FInvTimeSpan;
   ratio := EnsureRange(ratio, 0, 1);
   Result := PlotRect.Left + Round(ratio * (PlotRect.Right - PlotRect.Left));
 end;
@@ -1427,18 +1479,26 @@ begin
     FMinValue := FMinValue - padding;
     FMaxValue := FMaxValue + padding;
   end;
+
+  if (FMaxTime - FMinTime) > 0 then
+    FInvTimeSpan := 1.0 / (FMaxTime - FMinTime)
+  else
+    FInvTimeSpan := 0;
+  if (FMaxValue - FMinValue) > 0 then
+    FInvValueSpan := 1.0 / (FMaxValue - FMinValue)
+  else
+    FInvValueSpan := 0;
 end;
 
 function TfHistoryGraph.ValueToY(const Value: double;
 const PlotRect: TRect): integer;
 var
-  span, ratio: double;
+  ratio: double;
 begin
-  span := FMaxValue - FMinValue;
-  if IsZero(span) then
+  if FInvValueSpan = 0 then
     Exit((PlotRect.Top + PlotRect.Bottom) div 2);
 
-  ratio := (Value - FMinValue) / span;
+  ratio := (Value - FMinValue) * FInvValueSpan;
   ratio := EnsureRange(ratio, 0, 1);
   Result := PlotRect.Bottom - Round(ratio * (PlotRect.Bottom - PlotRect.Top));
 end;
@@ -1460,6 +1520,7 @@ begin
   SetLength(FPredictions, idx);
   if HasData then
     UpdateExtents;
+  InvalidateBackground;
   Invalidate;
 end;
 

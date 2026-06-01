@@ -515,12 +515,14 @@ function NightScout.getReadings(minNum, maxNum: integer; extras: string;
 out res: string): BGResults;
 var
   js: TJSONData;
+  arr: TJSONArray;
+  obj, nextObj: TJSONObject;
   i: integer;
   t: BGTrend;
   s, resp, dev, sensorSuffix, devStatusResp: string;
   params: array[1..1] of string;
   statusParams: array[1..1] of string;
-  deltaField, rssiField, noiseField: TJSONData;
+  deltaField, rssiField, noiseField, deviceField, directionField, dateField: TJSONData;
   deltaValue: glucose;
   currentSgv, prevSgv: integer;
   rssivalue, noiseValue: MaybeInt;
@@ -561,14 +563,29 @@ begin
     sensorSuffix := '';
   end;
 
-  // Pre-size the results array to the number of JSON items.
-  SetLength(Result, js.Count);
+  // Index directly into the array — FindPath('[i]') and FindPath('[i].sgv')
+  // build a path string and run the path parser per entry, which adds up
+  // across hundreds of readings.
+  if not (js is TJSONArray) then
+  begin
+    js.Free;
+    Exit;
+  end;
+  arr := TJSONArray(js);
+  SetLength(Result, arr.Count);
 
   try
-    for i := 0 to js.Count - 1 do
-      with js.FindPath(Format('[%d]', [i])) do
-      begin
-      dev := FindPath('device').AsString;
+    for i := 0 to arr.Count - 1 do
+    begin
+      if not (arr.Items[i] is TJSONObject) then
+        Continue;
+      obj := TJSONObject(arr.Items[i]);
+
+      deviceField := obj.Find('device');
+      if Assigned(deviceField) then
+        dev := deviceField.AsString
+      else
+        dev := '';
       if sensorSuffix <> '' then
         dev := dev + sensorSuffix;
 
@@ -576,30 +593,29 @@ begin
       Result[i].Init(mgdl, self.systemName);
 
       // Get current SGV value
-      currentSgv := FindPath('sgv').AsInteger;
+      currentSgv := obj.Get('sgv', 0);
 
       // Value and trend delta.
       // Some Nightscout entries may not include delta field
-      deltaField := FindPath('delta');
+      deltaField := obj.Find('delta');
       if Assigned(deltaField) then
         deltaValue := single(deltaField.AsFloat)
       else
-      if i < js.Count - 1 then
+      if (i < arr.Count - 1) and (arr.Items[i + 1] is TJSONObject) then
       begin
           // Get the previous (older) reading's SGV
-        prevSgv := js.FindPath(Format('[%d].sgv', [i + 1])).AsInteger;
+        nextObj := TJSONObject(arr.Items[i + 1]);
+        prevSgv := nextObj.Get('sgv', 0);
         deltaValue := single(currentSgv - prevSgv);
       end
       else
           // Last (oldest) entry has no previous reading to compare
-        deltaValue := 0// Calculate delta manually from previous reading
-// Nightscout returns entries in reverse chronological order (newest first)
-      ;
+        deltaValue := 0;
       Result[i].update(currentSgv, deltaValue);
 
       // Receiver environment details (optional fields in Nightscout).
-      rssiField := FindPath('rssi');
-      noiseField := FindPath('noise');
+      rssiField := obj.Find('rssi');
+      noiseField := obj.Find('noise');
       if Assigned(rssiField) then
       begin
         rssiValue.value := rssiField.AsInteger;
@@ -623,7 +639,11 @@ begin
       Result[i].updateEnv(dev, rssiValue, noiseValue);
 
       // Translate Nightscout 'direction' string to BGTrend enum.
-      s := FindPath('direction').AsString;
+      directionField := obj.Find('direction');
+      if Assigned(directionField) then
+        s := directionField.AsString
+      else
+        s := '';
       // Default to not computable, then try to find a matching textual mapping
       Result[i].trend := TdNotComputable;
       for t := Low(BGTrend) to High(BGTrend) do
@@ -636,7 +656,9 @@ begin
       end;
 
       // Nightscout dates are ms since epoch; JSToDateTime will apply tz correction if configured.
-      Result[i].date := JSToDateTime(FindPath('date').AsInt64);
+      dateField := obj.Find('date');
+      if Assigned(dateField) then
+        Result[i].date := JSToDateTime(dateField.AsInt64);
 
       // Classify reading level relative to configured thresholds.
       Result[i].level := getLevel(Result[i].val);
