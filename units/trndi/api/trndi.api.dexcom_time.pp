@@ -51,12 +51,47 @@ function ParseDexcomTime(const S: string; out DT: TDateTime): boolean;
 var
   LTimeStr: string;
   i, j: integer;
-  serverTimeData, js: TJSONData;
+  serverTimeData, offsetData, js: TJSONData;
   NormalizedS: string;
+  OffsetMinutes: integer;
+  HasOffset: boolean;
+  UnixMs: int64;
+
+  // Extract ms either from "/Date(NNNN)/" or a bare numeric string.
+  function ExtractUnixMs(const Raw: string; out Ms: int64): boolean;
+  var
+    a, b: integer;
+  begin
+    Result := False;
+    a := Pos('(', Raw);
+    if a > 0 then
+    begin
+      b := PosEx(')', Raw, a + 1);
+      if b > a then
+      begin
+        Result := TryStrToInt64(Trim(Copy(Raw, a + 1, b - a - 1)), Ms);
+        Exit;
+      end;
+    end;
+    Result := TryStrToInt64(Trim(Raw), Ms);
+  end;
+
+  // Convert Unix ms to TDateTime. When OffsetMinutes was supplied alongside the
+  // timestamp, interpret the result as the server's wall-clock time (UTC + offset);
+  // otherwise preserve the historical behavior of returning the user's local time.
+  function MsToDT(Ms: int64): TDateTime;
+  begin
+    if HasOffset then
+      Result := UnixToDateTime(Ms div 1000, True) + (OffsetMinutes / MinsPerDay)
+    else
+      Result := UnixToDateTime(Ms div 1000, False);
+  end;
 
 begin
   Result := False;
   DT := 0;
+  OffsetMinutes := 0;
+  HasOffset := False;
   if Trim(S) = '' then Exit;
 
   // Normalize quotes to standard ASCII quotes (in case smart quotes are present)
@@ -80,100 +115,68 @@ begin
     end;
   end;
 
-  // 2) /Date(1610464324000)/ or digits in parentheses
-  i := Pos('(', NormalizedS);
-  if i > 0 then
-  begin
-    j := Pos(')', NormalizedS, i + 1);
-    if j > i then
-    begin
-      LTimeStr := Copy(NormalizedS, i + 1, j - i - 1);
-      // Trim any non-digit chars
-      LTimeStr := StringReplace(LTimeStr, '"', '', [rfReplaceAll]);
-      LTimeStr := Trim(LTimeStr);
-      if (LTimeStr <> '') and (AnsiMatchStr(LTimeStr, [LTimeStr])) then
-      begin
-        try
-          DT := UnixToDateTime(StrToInt64(LTimeStr) div 1000, False);
-          Result := True;
-          Exit;
-        except
-          // fallthrough
-        end;
-      end;
-    end;
-  end;
-
-  // 3) JSON object with ServerTime (could be "/Date(ms)/", numeric ms or ISO string)
+  // 2) JSON object: pick up OffsetMinutes if present, then parse the timestamp from
+  //    ServerTime or DateTime. Must run before the bare /Date(ms)/ extraction below,
+  //    otherwise that branch grabs the ms straight out of the JSON and we never see
+  //    the OffsetMinutes alongside it.
+  if (Pos('{', NormalizedS) > 0) or (Pos('[', NormalizedS) > 0) then
   try
-    // Only try JSON parsing if it looks like JSON
-
-    if (Pos('{', NormalizedS) > 0) or (Pos('[', NormalizedS) > 0) then
-    begin
-      js := GetJSON(NormalizedS);
-      try
-        if js.JSONType = jtObject then
+    js := GetJSON(NormalizedS);
+    try
+      if (js <> nil) and (js.JSONType = jtObject) then
+      begin
+        offsetData := TJSONObject(js).Find('OffsetMinutes');
+        if (offsetData <> nil) and (offsetData.JSONType = jtNumber) then
         begin
-          // Try to get ServerTime field
-          if TJSONObject(js).Find('ServerTime') <> nil then
+          OffsetMinutes := offsetData.AsInteger;
+          HasOffset := True;
+        end;
+
+        serverTimeData := TJSONObject(js).Find('ServerTime');
+        if serverTimeData = nil then
+          serverTimeData := TJSONObject(js).Find('DateTime');
+
+        if serverTimeData <> nil then
+        begin
+          if serverTimeData.JSONType = jtNumber then
           begin
-            serverTimeData := TJSONObject(js).Find('ServerTime');
-            if serverTimeData <> nil then
+            DT := MsToDT(Trunc(serverTimeData.AsFloat));
+            Result := True;
+            Exit;
+          end;
+
+          LTimeStr := Trim(serverTimeData.AsString);
+          if LTimeStr <> '' then
+          begin
+            if ExtractUnixMs(LTimeStr, UnixMs) then
             begin
-              // Handle numeric milliseconds
-              if serverTimeData.JSONType = jtNumber then
-              begin
-                try
-                  DT := UnixToDateTime(Trunc(serverTimeData.AsFloat / 1000), False);
-                  Result := True;
-                  Exit;
-                except
-                end;
-              end;
-              
-              LTimeStr := serverTimeData.AsString;
-              LTimeStr := Trim(LTimeStr);
-              if LTimeStr <> '' then
-              begin
-                // If value like /Date(.....)/, extract digits
-                i := Pos('(', LTimeStr);
-                if i > 0 then
-                begin
-                  j := Pos(')', LTimeStr, i + 1);
-                  if (j > i) then
-                  begin
-                    LTimeStr := Copy(LTimeStr, i + 1, j - i - 1);
-                    try
-                      DT := UnixToDateTime(StrToInt64(LTimeStr) div 1000, False);
-                      Result := True;
-                      Exit;
-                    except
-                    end;
-                  end;
-                end;
-                // Try numeric ms (string representation)
-                try
-                  DT := UnixToDateTime(StrToInt64(LTimeStr) div 1000, False);
-                  Result := True;
-                  Exit;
-                except
-                end;
-                // Try ISO parse
-                if TryParseISODateTime(LTimeStr, DT) then
-                begin
-                  Result := True;
-                  Exit;
-                end;
-              end;
+              DT := MsToDT(UnixMs);
+              Result := True;
+              Exit;
+            end;
+            // ISO inside JSON: the literal is already the server's wall clock,
+            // so OffsetMinutes does not apply here.
+            if TryParseISODateTime(LTimeStr, DT) then
+            begin
+              Result := True;
+              Exit;
             end;
           end;
         end;
-      finally
-        js.Free;
       end;
+    finally
+      js.Free;
     end;
   except
     // ignore JSON parse errors and fallthrough
+  end;
+
+  // 3) Bare /Date(1610464324000)/ or digits in parentheses
+  if ExtractUnixMs(NormalizedS, UnixMs) then
+  begin
+    DT := MsToDT(UnixMs);
+    Result := True;
+    Exit;
   end;
 
   // 4) Try to parse bare ISO-like strings directly
