@@ -392,7 +392,11 @@ begin
 
   UpdateApiInformation;
 
-  if not api.active then
+  // Skip the dot/graph/TIR relayout when there's nothing to draw. Previously
+  // this gate read `api.active`, which fired a synchronous HTTP fetch on every
+  // resize tick — wrong place to do I/O. `bgs` already reflects the latest
+  // applied readings; if it's empty we have nothing to lay out.
+  if Length(bgs) = 0 then
     Exit;
 
   ResizeUIElements;

@@ -809,6 +809,10 @@ begin
   else
     SetLength(bgs, 0);
 
+  // Cache the freshness signal on the API so `api.active` answers without I/O.
+  if Assigned(api) then
+    api.noteReadings(Readings);
+
   FLastAPICall := Now;
 
   if (Length(bgs) < 1) and FCachedReadingsValid then
