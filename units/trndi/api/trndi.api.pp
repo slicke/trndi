@@ -84,6 +84,12 @@ protected
     /// Last error message reported by operations in this instance.
   lastErr: string;
 
+    /// Wall-clock time when the most recent non-empty BGResults arrived via
+    /// @code(noteReadings). Used by @code(checkActive) so the @code(active)
+    /// property is a cheap cached check rather than a fresh HTTP round-trip.
+    /// Zero (0.0) means no readings have been observed yet.
+  lastReadingAt: TDateTime;
+
     /// Set to True by predictReadings when the recent trend is flat enough
     /// that showing individual predictions would be misleading noise.
   predictionStable: boolean;
@@ -139,10 +145,12 @@ protected
      }
   procedure initCGMCore;
 
-    {** Determine whether the API appears to be active by fetching a current reading.
-        Returns @code(True) if a reading is available and has a timestamp > 1000.
+    {** Determine whether the API appears to be active using cached state.
+        Returns @code(True) when a non-empty result has been observed via
+        @code(noteReadings) within the last @code(getMaxAge) minutes.
+        Performs no network I/O — safe to call from UI paint/resize handlers.
 
-        @returns(@code(True) if a plausible current reading exists)
+        @returns(@code(True) if a recent successful fetch is on record)
      }
   function checkActive: boolean;
 
@@ -237,6 +245,16 @@ const
         @returns(BG level classification)
      }
   function getLevel(v: glucose): BGValLevel; virtual;
+
+    {** Record that a fresh batch of readings has been observed.
+        Callers (typically the main-thread fetch-result handler) pass the
+        readings produced by a successful @code(getReadings) call. Non-empty
+        batches stamp @code(lastReadingAt) with the current wall-clock time,
+        which the @code(active) property then reads without doing I/O.
+
+        @param(r Readings just produced; ignored if empty)
+     }
+  procedure noteReadings(const r: BGResults);
 
     {** Get the last reading in a larger time window (e.g., 24 hours).
         Convenience that returns a single last sample.
@@ -451,19 +469,30 @@ begin
 end;
 
 {------------------------------------------------------------------------------
-  Determine whether the API appears to be active by fetching a current reading.
-  Returns True if a reading is available and its timestamp is > 1000.
+  Determine whether the API appears to be active without doing any I/O.
+  Reads the timestamp stamped by noteReadings on the most recent successful
+  fetch and returns True when it falls inside the backend's stated maximum
+  reading age. Pre-fetch (lastReadingAt = 0) always reports inactive.
 ------------------------------------------------------------------------------}
 function TrndiAPI.checkActive: boolean;
 var
-  bgr: BGReading;
+  ageMinutes: double;
 begin
-  // Try to obtain a “current” reading using a short lookback window
-  if not getCurrent(bgr) then
-    Result := false
-  else
-    // Plausibility check: timestamp must be after year 2000 to rule out uninitialized values
-    Result := bgr.date > EncodeDate(2000, 1, 1);
+  if lastReadingAt <= 0 then
+    Exit(false);
+
+  ageMinutes := (Now - lastReadingAt) * (24 * 60);
+  Result := (ageMinutes >= 0) and (ageMinutes <= getMaxAge);
+end;
+
+{------------------------------------------------------------------------------
+  Record that a fresh batch of readings has been observed. Non-empty batches
+  stamp lastReadingAt so the cached `active` check can answer without I/O.
+------------------------------------------------------------------------------}
+procedure TrndiAPI.noteReadings(const r: BGResults);
+begin
+  if Length(r) > 0 then
+    lastReadingAt := Now;
 end;
 
 {------------------------------------------------------------------------------
@@ -556,17 +585,36 @@ end;
 {------------------------------------------------------------------------------
   URL-encode non-unreserved characters.
   Unreserved allowed set: [A-Z a-z 0-9 - _ ~ .]
+  Pre-sizes the result to the worst case (3 bytes per source byte) and writes
+  by index — avoids the O(n²) reallocation pattern of repeated `+=` on
+  ansistring.
 ------------------------------------------------------------------------------}
 function TrndiAPI.encodeStr(src: string): string;
+const
+  HEX: array[0..15] of char = '0123456789ABCDEF';
 var
-  i: integer;
+  i, w: integer;
+  c: char;
 begin
-  Result := '';
+  SetLength(Result, Length(src) * 3);
+  w := 0;
   for i := 1 to Length(src) do
-    if src[i] in ['A'..'Z', 'a'..'z', '0'..'9', '-', '_', '~', '.'] then
-      Result += src[i]
+  begin
+    c := src[i];
+    if c in ['A'..'Z', 'a'..'z', '0'..'9', '-', '_', '~', '.'] then
+    begin
+      Inc(w);
+      Result[w] := c;
+    end
     else
-      Result += '%' + IntToHex(Ord(src[i]), 2);
+    begin
+      Result[w + 1] := '%';
+      Result[w + 2] := HEX[(Ord(c) shr 4) and $0F];
+      Result[w + 3] := HEX[Ord(c) and $0F];
+      Inc(w, 3);
+    end;
+  end;
+  SetLength(Result, w);
 end;
 
 {------------------------------------------------------------------------------
@@ -668,6 +716,7 @@ function TrndiAPI.getReadings(minNum, maxNum: integer; extras: string = ''): BGR
 var
   res: string;
 begin
+  lastErr := '';
   Result := getReadings(minNum, maxNum, extras, res);
 end;
 
@@ -716,6 +765,7 @@ var
 begin
   Result := false;
   predictionStable := false;
+  lastErr := '';
   SetLength(predictions, 0);
 
   if numPredictions < 1 then
