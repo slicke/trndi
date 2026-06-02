@@ -245,15 +245,60 @@ DexcomCustomNew = class(DexcomNew);
 
 {** Map Dexcom trend representation (string or numeric) into internal `BGTrend`.
     This function prefers textual mapping via `BG_TRENDS_STRING`. If the value
-    is numeric it accepts both 0-based codes and pydexcom-style 1-based codes.
-    As a final fallback it recognizes common Dexcom textual names used by
-    pydexcom and converts them to the corresponding enum.
+    is numeric it accepts both 0-based (BGTrend ordinal) and 1-based codes.
+    As a final fallback it recognizes the Dexcom Share API's CamelCase textual
+    trend names and converts them to the corresponding enum.
 }
 function MapDexcomTrendToEnum(const S: string): BGTrend;
 
 implementation
 
 uses trndi.api.dexcom_time;
+
+{** Escape a string for safe inclusion in a JSON value. Worst-case size is 2x
+    the input (every char escaped); never under-allocates. }
+function JSONEscape(const S: string): string;
+var
+  i, idx: integer;
+  c: char;
+begin
+  SetLength(Result, Length(S) * 2);
+  idx := 1;
+  for i := 1 to Length(S) do
+  begin
+    c := S[i];
+    case c of
+    '"':
+      begin Result[idx] := '\'; Inc(idx); Result[idx] := '"'; Inc(idx); end;
+    '\':
+      begin Result[idx] := '\'; Inc(idx); Result[idx] := '\'; Inc(idx); end;
+    #8:
+      begin Result[idx] := '\'; Inc(idx); Result[idx] := 'b'; Inc(idx); end;
+    #9:
+      begin Result[idx] := '\'; Inc(idx); Result[idx] := 't'; Inc(idx); end;
+    #10:
+      begin Result[idx] := '\'; Inc(idx); Result[idx] := 'n'; Inc(idx); end;
+    #12:
+      begin Result[idx] := '\'; Inc(idx); Result[idx] := 'f'; Inc(idx); end;
+    #13:
+      begin Result[idx] := '\'; Inc(idx); Result[idx] := 'r'; Inc(idx); end;
+    else
+      begin Result[idx] := c; Inc(idx); end;
+    end;
+  end;
+  SetLength(Result, idx - 1);
+end;
+
+{** Free the owned Headers/Cookies streams on a THTTPResponse. Leaves the
+    scalar fields (Body, Success, ErrorMessage, ...) intact so callers can
+    still inspect them after releasing the lists. }
+procedure FreeResponse(var AResp: THTTPResponse);
+begin
+  if AResp.Headers <> nil then
+    FreeAndNil(AResp.Headers);
+  if AResp.Cookies <> nil then
+    FreeAndNil(AResp.Cookies);
+end;
 
 {** Try to extract a token (AccountId/SessionId) or return an explicit error message.
     Returns True and sets OutToken when a token was found. Returns False and sets
@@ -395,64 +440,53 @@ sDexNewParamDescHTML =
   LineEnding + 'Your username and password are your Dexcom Account (not Share) credentials.';
 
 function MapDexcomTrendToEnum(const S: string): BGTrend;
+const
+  // Dexcom Share API CamelCase textual trend names (alias of BG_TRENDS_STRING,
+  // which holds the uppercased/spaced variant). Indexed by BGTrend ordinal (0..7).
+  // 'RateOutOfRange' is handled as an alias of 'NotComputable' below.
+  DEXCOM_TREND_NAMES: array[0..7] of string = (
+    'DoubleUp', 'SingleUp', 'FortyFiveUp', 'Flat',
+    'FortyFiveDown', 'SingleDown', 'DoubleDown', 'NotComputable'
+  );
 var
-  code: integer;
+  code, idx: integer;
   L: string;
 begin
   L := Trim(S);
-  // Prefer textual mapping first
+
+  // 1) Canonical textual mapping (BG_TRENDS_STRING)
   for Result := Low(BGTrend) to High(BGTrend) do
     if BG_TRENDS_STRING[Result] = L then
       Exit;
 
-  // If numeric, accept either 0-based or 1-based (pydexcom) codes
+  // 2) Numeric: accept either 0-based (BGTrend ordinal) or 1-based codes
   if TryStrToInt(L, code) then
   begin
     if (code >= Ord(Low(BGTrend))) and (code <= Ord(High(BGTrend))) then
-    begin
-      Result := BGTrend(code);
-      Exit;
-    end;
-    if (code - 1 >= Ord(Low(BGTrend))) and (code - 1 <= Ord(High(BGTrend))) then
-    begin
-      Result := BGTrend(code - 1);
-      Exit;
-    end;
-    Result := TdPlaceholder;
-    Exit;
-  end;
-
-  // Handle common pydexcom textual names (1-based mapping semantics)
-  code := -1;
-  if L = 'DoubleUp' then
-    code := 1
-  else if L = 'SingleUp' then
-    code := 2
-  else if L = 'FortyFiveUp' then
-    code := 3
-  else if L = 'Flat' then
-    code := 4
-  else if L = 'FortyFiveDown' then
-    code := 5
-  else if L = 'SingleDown' then
-    code := 6
-  else if L = 'DoubleDown' then
-    code := 7
-  else if (L = 'NotComputable') or (L = 'RateOutOfRange') then
-    code := 8
-  else
-    code := -1;
-
-  if code > 0 then
-  begin
-    if (code - 1 >= Ord(Low(BGTrend))) and (code - 1 <= Ord(High(BGTrend))) then
+      Result := BGTrend(code)
+    else if (code - 1 >= Ord(Low(BGTrend))) and (code - 1 <= Ord(High(BGTrend))) then
       Result := BGTrend(code - 1)
     else
       Result := TdPlaceholder;
     Exit;
   end;
 
-  Result := TdPlaceholder;
+  // 3) Dexcom CamelCase textual trend names
+  idx := -1;
+  if L = 'RateOutOfRange' then
+    idx := 7
+  else
+    for code := 0 to High(DEXCOM_TREND_NAMES) do
+      if DEXCOM_TREND_NAMES[code] = L then
+      begin
+        idx := code;
+        Break;
+      end;
+
+  if (idx >= Ord(Low(BGTrend))) and (idx <= Ord(High(BGTrend))) then
+    Result := BGTrend(idx)
+  else
+    Result := TdPlaceholder;
 end;
 
 {------------------------------------------------------------------------------
@@ -614,54 +648,12 @@ end;
   Performs authentication sequence and time synchronization.
 ------------------------------------------------------------------------------}
 function DexcomNew.Connect: boolean;
-
-  // Helper: Escape a string for safe inclusion in JSON
-function JSONEscape(const S: string): string;
-  var
-    i, idx: integer;
-    c: char;
-  begin
-    SetLength(Result, Length(S) * 2); // worst case: each char escaped
-    idx := 1;
-    for i := 1 to Length(S) do
-    begin
-      c := S[i];
-      case c of
-      '"':
-        begin Result[idx] := '\'; Inc(idx); Result[idx] := '"'; Inc(idx); end;
-      '\':
-        begin Result[idx] := '\'; Inc(idx); Result[idx] := '\'; Inc(idx); end;
-      #8:
-        begin Result[idx] := '\'; Inc(idx); Result[idx] := 'b'; Inc(idx); end;
-      #9:
-        begin Result[idx] := '\'; Inc(idx); Result[idx] := 't'; Inc(idx); end;
-      #10:
-        begin Result[idx] := '\'; Inc(idx); Result[idx] := 'n'; Inc(idx); end;
-      #12:
-        begin Result[idx] := '\'; Inc(idx); Result[idx] := 'f'; Inc(idx); end;
-      #13:
-        begin Result[idx] := '\'; Inc(idx); Result[idx] := 'r'; Inc(idx); end;
-      else
-        begin Result[idx] := c; Inc(idx); end;
-      end;
-    end;
-    SetLength(Result, idx - 1);
-  end;
-
 var
   LBody, LResponse, LTimeResponse, LTimeString, LAccountID, LNameBody, LNameResp, LParseErr: string;
   LServerDateTime: TDateTime;
   LUseEmailAuth: boolean;
   LHTTPResp, LHTTPResp2, LHTTPRespTime: THTTPResponse;
   hdrs: TStringList;
-  procedure FreeResponse(var AResp: THTTPResponse);
-  begin
-    if AResp.Headers <> nil then
-      FreeAndNil(AResp.Headers);
-    if AResp.Cookies <> nil then
-      FreeAndNil(AResp.Cookies);
-    AResp := Default(THTTPResponse);
-  end;
 begin
   // Detect if user provided email (contains @) or phone (starts with +)
   // These require two-step auth: AuthenticatePublisherAccount → LoginPublisherAccountById
@@ -681,8 +673,7 @@ begin
     // Request account id (may return JSON or plain quoted string)
     LHTTPResp := native.RequestExWait(true, DEXCOM_AUTHENTICATE_ENDPOINT, [], LBody, nil, true, 10, nil, true);
     LResponse := LHTTPResp.Body;
-    if LHTTPResp.Headers <> nil then FreeAndNil(LHTTPResp.Headers);
-    if LHTTPResp.Cookies <> nil then FreeAndNil(LHTTPResp.Cookies);
+    FreeResponse(LHTTPResp);
     if not LHTTPResp.Success then
     begin
       Result := false;
@@ -698,8 +689,7 @@ begin
       begin
         Result := false;
         lastErr := sDexNewErrLogin + ' (Dex1a): ' + LParseErr;
-        if LHTTPResp.Headers <> nil then FreeAndNil(LHTTPResp.Headers);
-        if LHTTPResp.Cookies <> nil then FreeAndNil(LHTTPResp.Cookies);
+        FreeResponse(LHTTPResp);
         Exit;
       end;
     end;
@@ -714,8 +704,7 @@ begin
         lastErr := sDexNewErrPass + ' (Dex1)'
       else
         lastErr := sDexNewErrLogin + ' (Dex1a): ' + LAccountID;
-      if LHTTPResp.Headers <> nil then FreeAndNil(LHTTPResp.Headers);
-      if LHTTPResp.Cookies <> nil then FreeAndNil(LHTTPResp.Cookies);
+      FreeResponse(LHTTPResp);
       Exit;
     end;
 
@@ -729,12 +718,10 @@ begin
       // Fallback: try single-step login by account name (nickname)
       LNameBody := Format('{ "accountName": "%s", "password": "%s", "applicationId": "%s" }',
         [JSONEscape(FUserName), JSONEscape(FPassword), DEXCOM_APPLICATION_IDS[FRegion]]);
-      if LHTTPResp.Headers <> nil then FreeAndNil(LHTTPResp.Headers);
-      if LHTTPResp.Cookies <> nil then FreeAndNil(LHTTPResp.Cookies);
+      FreeResponse(LHTTPResp);
       LHTTPResp := native.RequestExWait(true, DEXCOM_LOGIN_BY_NAME_ENDPOINT, [], LNameBody, nil, true, 10, nil, true);
       LNameResp := LHTTPResp.Body;
-      if LHTTPResp.Headers <> nil then FreeAndNil(LHTTPResp.Headers);
-      if LHTTPResp.Cookies <> nil then FreeAndNil(LHTTPResp.Cookies);
+      FreeResponse(LHTTPResp);
       if not LHTTPResp.Success then
       begin
         Result := false;
@@ -754,8 +741,7 @@ begin
     else
     begin
       LResponse := LHTTPResp.Body;
-      if LHTTPResp.Headers <> nil then FreeAndNil(LHTTPResp.Headers);
-      if LHTTPResp.Cookies <> nil then FreeAndNil(LHTTPResp.Cookies);
+      FreeResponse(LHTTPResp);
       if not TryGetTokenOrError(LResponse, FSessionID, LParseErr) then
       begin
         // Fallback: some servers reply with a plain quoted session token
@@ -839,8 +825,7 @@ begin
     hdrs.Add('Accept: application/json');
     LHTTPRespTime := native.RequestExWait(false, DEXCOM_TIME_ENDPOINT, [], '', nil, true, 10, hdrs, true);
     LTimeResponse := LHTTPRespTime.Body;
-    if LHTTPRespTime.Headers <> nil then FreeAndNil(LHTTPRespTime.Headers);
-    if LHTTPRespTime.Cookies <> nil then FreeAndNil(LHTTPRespTime.Cookies);
+    FreeResponse(LHTTPRespTime);
     if not LHTTPRespTime.Success then
     begin
       lastErr := 'Cannot fetch Dexcom time: ' + LHTTPRespTime.ErrorMessage;
@@ -936,9 +921,9 @@ function SafeValue(Item: TJSONData; out Ok: boolean): double;
   begin
     Ok := false;
     Result := 0;
-    if Item = nil then
+    if (Item = nil) or (Item.JSONType <> jtObject) then
       Exit;
-    VData := Item.FindPath('Value');
+    VData := TJSONObject(Item).Find('Value');
     if VData = nil then
       Exit;
     try
@@ -949,15 +934,15 @@ function SafeValue(Item: TJSONData; out Ok: boolean): double;
     end;
   end;
 
-  // Helper: safely extract string at given path from a JSON item (handles nil/missing)
-function SafeString(Item: TJSONData; const Path: string): string;
+  // Helper: safely extract a string field from a JSON object item (handles nil/missing)
+function SafeString(Item: TJSONData; const FieldName: string): string;
 var
   J: TJSONData;
 begin
   Result := '';
-  if Item = nil then
+  if (Item = nil) or (Item.JSONType <> jtObject) then
     Exit;
-  J := Item.FindPath(Path);
+  J := TJSONObject(Item).Find(FieldName);
   if J = nil then
     Exit;
   try
@@ -1059,8 +1044,6 @@ begin
       begin
         // Parse trend (Dexcom may return numeric code or textual string)
         LTrendStr := SafeString(LData.Items[i], 'Trend');
-        // Default
-        Result[i].trend := TdPlaceholder;
         // Use dedicated mapper which handles textual names and numeric codes
         Result[i].trend := MapDexcomTrendToEnum(LTrendStr);
 
@@ -1135,37 +1118,6 @@ var
   LServerDateTime: TDateTime;
   i: integer;
   regionEnum: TDexcomRegion;
-function JSONEscape(const S: string): string;
-  var
-    i, idx: integer;
-    c: char;
-  begin
-    SetLength(Result, Length(S) * 2); // worst case: each char escaped
-    idx := 1;
-    for i := 1 to Length(S) do
-    begin
-      c := S[i];
-      case c of
-      '"':
-        begin Result[idx] := '\'; Inc(idx); Result[idx] := '"'; Inc(idx); end;
-      '\':
-        begin Result[idx] := '\'; Inc(idx); Result[idx] := '\'; Inc(idx); end;
-      #8:
-        begin Result[idx] := '\'; Inc(idx); Result[idx] := 'b'; Inc(idx); end;
-      #9:
-        begin Result[idx] := '\'; Inc(idx); Result[idx] := 't'; Inc(idx); end;
-      #10:
-        begin Result[idx] := '\'; Inc(idx); Result[idx] := 'n'; Inc(idx); end;
-      #12:
-        begin Result[idx] := '\'; Inc(idx); Result[idx] := 'f'; Inc(idx); end;
-      #13:
-        begin Result[idx] := '\'; Inc(idx); Result[idx] := 'r'; Inc(idx); end;
-      else
-        begin Result[idx] := c; Inc(idx); end;
-      end;
-    end;
-    SetLength(Result, idx - 1);
-  end;
 begin
   Result := MaybeBool.False; // default failure
   // Basic parameter checks

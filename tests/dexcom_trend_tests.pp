@@ -14,7 +14,7 @@ type
     procedure MapsNumericZeroBased;
     procedure MapsNumericOneBased;
     procedure MapsTextualStandard;
-    procedure MapsTextualPyDexcomNames;
+    procedure MapsTextualCamelCase;
     procedure UnknownMapsToPlaceholder;
   end;
 
@@ -40,7 +40,7 @@ begin
   AssertEquals(Ord(TdNotComputable), Ord(MapDexcomTrendToEnum('NOT COMPUTABLE')));
 end;
 
-procedure TDexcomTrendMappingTests.MapsTextualPyDexcomNames;
+procedure TDexcomTrendMappingTests.MapsTextualCamelCase;
 begin
   AssertEquals(Ord(TdDoubleUp), Ord(MapDexcomTrendToEnum('DoubleUp')));
   AssertEquals(Ord(TdSingleUp), Ord(MapDexcomTrendToEnum('SingleUp')));
