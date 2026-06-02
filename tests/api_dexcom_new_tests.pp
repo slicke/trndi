@@ -110,8 +110,10 @@ begin
       // The previous slicer-based parser threw on the leading "(" and the
       // per-item except cleared the reading, leaving .date = 0. Anything more
       // than an hour off "now" means the parser is back to garbage output.
+      // readings[0].date comes back as local time (UnixToDateTime AReturnUTC=False),
+      // so compare against local Now, not UTC.
       AssertTrue('DexcomNew timestamp parses near current time',
-        Abs(SecondsBetween(readings[0].date, LocalTimeToUniversal(Now))) < 3600);
+        Abs(SecondsBetween(readings[0].date, Now)) < 3600);
     finally
       api.Free;
     end;
