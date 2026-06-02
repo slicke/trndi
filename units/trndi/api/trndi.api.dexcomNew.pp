@@ -920,17 +920,13 @@ begin
     (Pos('accountpassword', L) > 0);
 end;
 
-  // Helper: convert Dexcom /Date(ms)/ string to TDateTime
+  // Helper: convert Dexcom /Date(ms)/ string to TDateTime.
+  // Delegates to ParseDexcomTime so we handle the canonical "/Date(NNN)/" form
+  // (parenthesis included), optional "+0000" offset suffixes, and ISO variants.
 function DexTimeToTDateTime(const S: string): TDateTime;
-  var
-    LMsString: string;
-    LMs: int64;
   begin
-    // Example: /Date(1610464324000)/
-    LMsString := Copy(S, 6, Length(S) - 6);               // drop '/Date('
-    LMsString := StringReplace(LMsString, ')', '', []);   // drop ')'
-    LMs := StrToInt64(LMsString);
-    Result := UnixToDateTime(LMs div 1000, false);     // milliseconds -> seconds
+    if not ParseDexcomTime(S, Result) then
+      Result := 0;
   end;
 
   // Helper: safely extract numeric 'Value' from a JSON item (handles null/missing)

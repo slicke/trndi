@@ -106,6 +106,12 @@ begin
       AssertTrue('DexcomNew returns at least one reading', Length(readings) > 0);
       AssertTrue('DexcomNew reading value set', readings[0].val > 0);
       AssertTrue('DexcomNew reading timestamp set', readings[0].date > 0);
+      // Regression: testserver emits canonical "/Date(N)/" timestamps near now.
+      // The previous slicer-based parser threw on the leading "(" and the
+      // per-item except cleared the reading, leaving .date = 0. Anything more
+      // than an hour off "now" means the parser is back to garbage output.
+      AssertTrue('DexcomNew timestamp parses near current time',
+        Abs(SecondsBetween(readings[0].date, LocalTimeToUniversal(Now))) < 3600);
     finally
       api.Free;
     end;
