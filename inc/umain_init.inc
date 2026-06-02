@@ -329,9 +329,24 @@ var
   i: integer;
   userNick: string;
   userList: TStringArray;
+  sortHelper: TStringList;
 begin
   if native.TryGetCSVSetting('users.names', userList, true) then
   begin // We have more than 1 user
+    // Sort case-insensitively so the picker scans predictably regardless of
+    // the insertion order stored in users.names.
+    if Length(userList) > 1 then
+    begin
+      sortHelper := TStringList.Create;
+      try
+        sortHelper.CaseSensitive := false;
+        sortHelper.AddStrings(userList);
+        sortHelper.Sort;
+        userList := sortHelper.ToStringArray;
+      finally
+        sortHelper.Free;
+      end;
+    end;
     i := ExtList(uxdAuto, RS_MULTIUSER_BOX_TITLE, RS_MULTIUSER_BOX_TITLE, // Show a prompt to choose user
       RS_MULTIUSER_BOX, userList, true);
 
