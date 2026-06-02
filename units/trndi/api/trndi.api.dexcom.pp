@@ -221,7 +221,7 @@ DexcomCustom = class(Dexcom);
 
 implementation
 
-uses trndi.api.dexcom_time;
+uses trndi.api.dexcom_time, trndi.api.dexcom_helpers;
 
 resourcestring
 sErrDexPass = 'Invalid Dexcom password or account credentials';
@@ -364,42 +364,8 @@ end;
   Performs authentication sequence and time synchronization.
 ------------------------------------------------------------------------------}
 function Dexcom.Connect: boolean;
-
-  // Helper: Escape a string for safe inclusion in JSON
-function JSONEscape(const S: string): string;
-  var
-    i, idx: integer;
-    c: char;
-  begin
-    SetLength(Result, Length(S) * 2); // worst case: each char escaped
-    idx := 1;
-    for i := 1 to Length(S) do
-    begin
-      c := S[i];
-      case c of
-      '"':
-        begin Result[idx] := '\'; Inc(idx); Result[idx] := '"'; Inc(idx); end;
-      '\':
-        begin Result[idx] := '\'; Inc(idx); Result[idx] := '\'; Inc(idx); end;
-      #8:
-        begin Result[idx] := '\'; Inc(idx); Result[idx] := 'b'; Inc(idx); end;
-      #9:
-        begin Result[idx] := '\'; Inc(idx); Result[idx] := 't'; Inc(idx); end;
-      #10:
-        begin Result[idx] := '\'; Inc(idx); Result[idx] := 'n'; Inc(idx); end;
-      #12:
-        begin Result[idx] := '\'; Inc(idx); Result[idx] := 'f'; Inc(idx); end;
-      #13:
-        begin Result[idx] := '\'; Inc(idx); Result[idx] := 'r'; Inc(idx); end;
-      else
-        begin Result[idx] := c; Inc(idx); end;
-      end;
-    end;
-    SetLength(Result, idx - 1);
-  end;
-
 var
-  LBody, LResponse, LTimeResponse, LTimeString, LAccountID: string;
+  LBody, LTimeResponse, LTimeString, LAccountID: string;
   LServerDateTime: TDateTime;
   LUseEmailAuth: boolean;
   resp: string;
@@ -597,9 +563,9 @@ function SafeValue(Item: TJSONData; out Ok: boolean): double;
   begin
     Ok := false;
     Result := 0;
-    if Item = nil then
+    if (Item = nil) or (Item.JSONType <> jtObject) then
       Exit;
-    VData := Item.FindPath('Value');
+    VData := TJSONObject(Item).Find('Value');
     if VData = nil then
       Exit;
     try
@@ -610,15 +576,15 @@ function SafeValue(Item: TJSONData; out Ok: boolean): double;
     end;
   end;
 
-  // Helper: safely extract string at given path from a JSON item (handles nil/missing)
-function SafeString(Item: TJSONData; const Path: string): string;
+  // Helper: safely extract a string field from a JSON object item (handles nil/missing)
+function SafeString(Item: TJSONData; const FieldName: string): string;
 var
   J: TJSONData;
 begin
   Result := '';
-  if Item = nil then
+  if (Item = nil) or (Item.JSONType <> jtObject) then
     Exit;
-  J := Item.FindPath(Path);
+  J := TJSONObject(Item).Find(FieldName);
   if J = nil then
     Exit;
   try
@@ -632,8 +598,7 @@ var
   LParams: array[1..3] of string;
   LGlucoseJSON, LAlertJSON, LTrendStr, LSTStr: string;
   LData: TJSONData;
-  i, LTrendCode: integer;
-  LTrendEnum: BGTrend;
+  i: integer;
   noval: MaybeInt;
   CurVal, PrevVal: double;
   CurOk, PrevOk: boolean;
@@ -707,23 +672,7 @@ begin
 
       // Parse trend and date for all entries
       LTrendStr := SafeString(LData.Items[i], 'Trend');
-      // Map trend string to enum
-      if not TryStrToInt(LTrendStr, LTrendCode) then
-      begin
-        // Treat as text; map to enum via lookup table
-        for LTrendEnum in BGTrend do
-        begin
-          if BG_TRENDS_STRING[LTrendEnum] = LTrendStr then
-          begin
-            Result[i].trend := LTrendEnum;
-            Break;
-          end;
-          // Default until proven otherwise in this loop iteration
-          Result[i].trend := TdPlaceholder;
-        end;
-      end
-      else
-        Result[i].trend := TdPlaceholder; // Numeric mapping not defined; keep placeholder unless you add a map
+      Result[i].trend := MapDexcomTrendToEnum(LTrendStr);
 
       // Convert Dexcom timestamp "/Date(ms)/" to TDateTime (safely)
       LSTStr := SafeString(LData.Items[i], 'ST');
@@ -793,42 +742,11 @@ end;
 class function Dexcom.testConnection(user, pass: string; var res: string; extra: string): MaybeBool;
 var
   tn: TrndiNative;
-  base, body, resp, accountId, sessionId, timeResp, timeStr: string;
+  base, body, accountId, sessionId, timeResp, timeStr: string;
   js: TJSONData;
   useEmailAuth: boolean;
   LServerDateTime: TDateTime;
   i: integer;
-function JSONEscape(const S: string): string;
-  var
-    i, idx: integer;
-    c: char;
-  begin
-    SetLength(Result, Length(S) * 2); // worst case: each char escaped
-    idx := 1;
-    for i := 1 to Length(S) do
-    begin
-      c := S[i];
-      case c of
-      '"':
-        begin Result[idx] := '\'; Inc(idx); Result[idx] := '"'; Inc(idx); end;
-      '\':
-        begin Result[idx] := '\'; Inc(idx); Result[idx] := '\'; Inc(idx); end;
-      #8:
-        begin Result[idx] := '\'; Inc(idx); Result[idx] := 'b'; Inc(idx); end;
-      #9:
-        begin Result[idx] := '\'; Inc(idx); Result[idx] := 't'; Inc(idx); end;
-      #10:
-        begin Result[idx] := '\'; Inc(idx); Result[idx] := 'n'; Inc(idx); end;
-      #12:
-        begin Result[idx] := '\'; Inc(idx); Result[idx] := 'f'; Inc(idx); end;
-      #13:
-        begin Result[idx] := '\'; Inc(idx); Result[idx] := 'r'; Inc(idx); end;
-      else
-        begin Result[idx] := c; Inc(idx); end;
-      end;
-    end;
-    SetLength(Result, idx - 1);
-  end;
 begin
   Result := maybebool.false; // default failure
   res := 'An unknown error occured'; // @see DexcomNew

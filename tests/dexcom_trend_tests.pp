@@ -6,7 +6,7 @@ interface
 
 uses
   fpcunit, testregistry,
-  trndi.types, trndi.api.dexcomNew;
+  trndi.types, trndi.api.dexcom_helpers;
 
 type
   TDexcomTrendMappingTests = class(TTestCase)
