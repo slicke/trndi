@@ -160,11 +160,12 @@ if (str_starts_with($path, '/ShareWebServices/Services/')) {
         for ($i = 0; $i < 3; $i++) {
             $t = ($nowMs - ($i * 5 * 60 * 1000));
             $items[] = [
-                // NOTE: Trndi's current Dexcom parser slices with Copy(S, 6, ..)
-                // and then StrToInt64. That only works if the string is exactly
-                // "/Date" + digits + ")/" (no opening parenthesis after Date).
-                'WT' => '/Date' . $t . ')/',
-                'ST' => '/Date' . $t . ')/',
+                // Canonical Dexcom Share format: "/Date(NNN)/" with the
+                // opening paren. The earlier workaround omitted "(" to dodge a
+                // slicer bug in the Pascal parser; that path now goes through
+                // ParseDexcomTime and handles the real format.
+                'WT' => '/Date(' . $t . ')/',
+                'ST' => '/Date(' . $t . ')/',
                 'Value' => 120 + $i,
                 'Trend' => 'Flat'
             ];

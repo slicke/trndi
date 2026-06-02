@@ -133,7 +133,7 @@ begin
         for i := 0 to 2 do
         begin
           if i > 0 then items := items + ',';
-          items := items + Format('{"WT":"/Date%d)/","ST":"/Date%d)/","Value":%d,"Trend":"Flat"}',
+          items := items + Format('{"WT":"/Date(%d)/","ST":"/Date(%d)/","Value":%d,"Trend":"Flat"}',
             [nowMs * 1000 - (i * 5 * 60 * 1000), nowMs * 1000 - (i * 5 * 60 * 1000), 120 + i]);
         end;
         items := items + ']';
