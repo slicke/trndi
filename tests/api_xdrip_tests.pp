@@ -58,10 +58,11 @@ procedure TAPIXDripTester.TestXDripLocalServer;
 var
   api: TrndiAPI;
   PHPProcess: TProcess;
-  res: string;
   readings: BGResults;
   bg: BGReading;
   BaseURL: string;
+  rawJson: string;
+  native: TrndiNative;
   js: TJSONData;
   firstEntry: TJSONObject;
   rawDateMs: int64;
@@ -98,12 +99,18 @@ begin
       AssertTrue('Current reading has plausible timestamp', bg.date > 0);
       
       // Test getting multiple readings
-      readings := api.getReadings(30, 3, '', res);
+      readings := api.getReadings(30, 3, '');
       AssertTrue('xDrip returns at least one reading', Length(readings) > 0);
       AssertTrue('xDrip reading value set', readings[0].val > 0);
       AssertTrue('xDrip reading timestamp set', readings[0].date > 0);
 
-      js := GetJSON(res);
+      native := TrndiNative.Create('TrndiTest', BaseURL);
+      try
+        rawJson := native.request(false, 'sgv.json', ['count=3']);
+      finally
+        native.Free;
+      end;
+      js := GetJSON(rawJson);
       try
         AssertTrue('xDrip reading payload is an array', js is TJSONArray);
         firstEntry := TJSONObject(TJSONArray(js).Items[0]);

@@ -32,7 +32,7 @@ var
 begin
   api := DebugFirstXMissingAPI.Create('3:tandem', '');
   try
-    r := api.getReadings(0, 11, '', resStr);
+    r := api.getReadings(0, 11, '', resStr, false);
     missing := 3;
     AssertEquals('Remaining count should equal original minus missing', 11 - missing, Length(r));
     // ensure the earliest remaining reading looks Tandem-like
@@ -53,7 +53,7 @@ var
 begin
   api := DebugFirstXMissingAPI.Create('2:tandem', '');
   try
-    r := api.getReadings(0, 11, '', resStr);
+    r := api.getReadings(0, 11, '', resStr, false);
     missing := 2;
     gap := MinutesBetween(r[0].date, r[1].date);
     // Expect gap to be at least larger than normal 5-minute interval
@@ -73,7 +73,7 @@ var
 begin
   api := DebugFirstXMissingAPI.Create('2:tandem=future', '');
   try
-    r := api.getReadings(0, 11, '', resStr);
+    r := api.getReadings(0, 11, '', resStr, false);
     missing := 2;
     secs := SecondsBetween(r[0].date, r[1].date);
     AssertTrue('Future-mode timestamp should be slightly later than the next reading', (secs > 0) and (secs < 300));
@@ -91,7 +91,7 @@ var
 begin
   api := DebugFirstXMissingAPI.Create('2:tandem=duplicate', '');
   try
-    r := api.getReadings(0, 11, '', resStr);
+    r := api.getReadings(0, 11, '', resStr, false);
     missing := 2;
     AssertEquals('Duplicate timestamp should equal the following reading timestamp', r[0].date, r[1].date);
   finally
@@ -108,7 +108,7 @@ var
 begin
   api := DebugFirstXMissingAPI.Create('2:tandem=backwards', '');
   try
-    r := api.getReadings(0, 11, '', resStr);
+    r := api.getReadings(0, 11, '', resStr, false);
     missing := 2;
     // Backwards mode should produce a timestamp earlier than the next reading
     AssertTrue('Backwards-mode timestamp should be earlier than the next reading', r[0].date < r[1].date);
@@ -126,7 +126,7 @@ var
 begin
   api := DebugFirstXMissingAPI.Create('2:tandem=missing-delta', '');
   try
-    r := api.getReadings(0, 11, '', resStr);
+    r := api.getReadings(0, 11, '', resStr, false);
     missing := 2;
     AssertTrue('Delta should be empty for Tandem missing-delta mode', r[0].deltaEmpty);
   finally
@@ -144,7 +144,7 @@ var
 begin
   api := DebugFirstXMissingAPI.Create('3:tandem=duplicate@1', '');
   try
-    r := api.getReadings(0, 11, '', resStr);
+    r := api.getReadings(0, 11, '', resStr, false);
     missing := 3;
     idx := 1; // offset 1 relative to first remaining
     // Duplicate target at second remaining: its timestamp should equal the next reading
@@ -163,7 +163,7 @@ var
 begin
   api := DebugFirstXMissingAPI.Create('4:tandem=duplicate@0,1', '');
   try
-    r := api.getReadings(0, 11, '', resStr);
+    r := api.getReadings(0, 11, '', resStr, false);
     missing := 4;
     // Both first and second remaining should be duplicate timestamps relative to their following readings
     AssertEquals('First target duplicate timestamp should equal following', r[0].date, r[1].date);

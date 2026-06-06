@@ -28,7 +28,7 @@ var
 begin
   api := DebugFirstXMissingAPI.Create('3:dexcom', '');
   try
-    r := api.getReadings(0, 11, '', resStr);
+    r := api.getReadings(0, 11, '', resStr, false);
     missing := 3;
     // After removing the first N readings the remaining count should be reduced
     AssertEquals('Remaining count should equal original minus missing', 11 - missing, Length(r));
@@ -50,7 +50,7 @@ var
 begin
   api := DebugFirstXMissingAPI.Create('2:dexcom', '');
   try
-    r := api.getReadings(0, 11, '', resStr);
+    r := api.getReadings(0, 11, '', resStr, false);
     missing := 2;
     gap := MinutesBetween(r[0].date, r[1].date);
     // Expect gap to be at least larger than normal 5-minute interval
@@ -70,7 +70,7 @@ var
 begin
   api := DebugFirstXMissingAPI.Create('2:dexcom=future', '');
   try
-    r := api.getReadings(0, 11, '', resStr);
+    r := api.getReadings(0, 11, '', resStr, false);
     missing := 2;
     secs := SecondsBetween(r[0].date, r[1].date);
     // Future mode should produce a timestamp slightly later than the next (but not huge)
@@ -89,7 +89,7 @@ var
 begin
   api := DebugFirstXMissingAPI.Create('2:dexcom=missing-delta', '');
   try
-    r := api.getReadings(0, 11, '', resStr);
+    r := api.getReadings(0, 11, '', resStr, false);
     missing := 2;
     AssertTrue('Delta should be empty for Dexcom missing-delta mode', r[0].deltaEmpty);
     AssertEquals('Source should be Dexcom', 'Dexcom', r[0].Source);

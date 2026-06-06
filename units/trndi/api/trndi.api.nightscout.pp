@@ -160,6 +160,16 @@ begin
     Result := Format('%dh', [h]);
 end;
 
+var
+  NoCacheTokenSeq: LongInt = 0;
+
+// Modified on 2026-06-06: generate a monotonic cache-buster token so forced
+// Nightscout requests do not reuse the same `_=` value within the same second.
+function NextNoCacheToken: string;
+begin
+  Result := IntToStr(GetTickCount64) + IntToStr(InterlockedIncrement(NoCacheTokenSeq));
+end;
+
 function TryDateTimeFromJsonValue(const value: TJSONData; out dt: TDateTime): boolean;
 var
   raw: string;
@@ -532,12 +542,12 @@ begin
     extras := NS_READINGS;
 
   // Nightscout supports a 'count' param to limit the number of returned entries.
-  // When noCache is set, append `_=<unix>` so intermediaries / client-side
-  // HTTP caches don't serve a stale response (the Nightscout backend itself
-  // ignores the unknown query key).
+  // When noCache is set, append a monotonic `_=` token so intermediaries /
+  // client-side HTTP caches don't serve a stale response (the Nightscout
+  // backend itself ignores the unknown query key).
   if noCache then
     params := ['count=' + IntToStr(maxNum),
-      '_=' + IntToStr(DateTimeToUnix(Now))]
+      '_=' + NextNoCacheToken]
   else
     params := ['count=' + IntToStr(maxNum)];
 
@@ -563,7 +573,7 @@ begin
   // Optional metadata probe for sensor age/expiry hints.
   sensorSuffix := '';
   if noCache then
-    statusParams := ['count=1', '_=' + IntToStr(DateTimeToUnix(Now))]
+    statusParams := ['count=1', '_=' + NextNoCacheToken]
   else
     statusParams := ['count=1'];
   try
