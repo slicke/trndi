@@ -141,7 +141,7 @@ begin
     try
       AssertTrue('Connect to local NS', api.connect);
 
-      readings := api.getReadings(0, 3, '', res);
+      readings := api.getReadings(0, 3, '', res, false);
       AssertTrue('Should not exceed requested max count', Length(readings) <= 3);
     finally
       api.Free;
