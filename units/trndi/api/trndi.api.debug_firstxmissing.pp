@@ -60,8 +60,8 @@ protected
   function getSystemName: string; override;
 public
   constructor Create(user, pass: string); override;
-  function getReadings(min, maxNum: integer; extras: string; out res: string): BGResults;
-    override;
+  function getReadings(min, maxNum: integer; extras: string; out res: string;
+    noCache: boolean): BGResults; override;
   class function ParamLabel(LabelName: APIParamLabel): string; override;
 
 end; 
@@ -172,7 +172,7 @@ end;
   with the First X readings missing
 ------------------------------------------------------------------------------}
 function DebugFirstXMissingAPI.getReadings(min, maxNum: integer; extras: string;
-out res: string): BGResults;
+out res: string; noCache: boolean): BGResults;
 var
   i: integer;
   temp: BGReading;
@@ -183,7 +183,7 @@ var
   offs: array of integer;
   i2, j2, tmp: integer;
 begin
-  result := inherited getReadings(min, maxNum, extras, res);
+  result := inherited getReadings(min, maxNum, extras, res, noCache);
   // Clamp requested missing count to available results and ensure non-negative
   if missing <= 0 then
     missing := 0

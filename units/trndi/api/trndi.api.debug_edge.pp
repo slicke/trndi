@@ -54,8 +54,8 @@ protected
 public
   constructor Create(user, pass: string); override;
   function connect: boolean; override;
-  function getReadings(min, maxNum: integer; extras: string; out res: string): BGResults;
-    override;
+  function getReadings(min, maxNum: integer; extras: string; out res: string;
+    noCache: boolean): BGResults; override;
 private
 
 published
@@ -114,7 +114,7 @@ end;
   Generate alternating high/low extreme readings to exercise edge conditions
 ------------------------------------------------------------------------------}
 function DebugEdgeAPI.getReadings(min, maxNum: integer; extras: string;
-out res: string): BGResults;
+out res: string; {%H-}noCache: boolean): BGResults;
 var
   i: integer;
   val, diff: integer;

@@ -13,7 +13,8 @@ type
   protected
     function getSystemName: string; override;
   public
-    function getReadings(min, maxNum: integer; extras: string; out res: string): BGResults; override;
+    function getReadings(min, maxNum: integer; extras: string; out res: string;
+      noCache: boolean): BGResults; override;
     class function ParamLabel(LabelName: APIParamLabel): string; override;
   end;
 
@@ -24,7 +25,8 @@ begin
   Result := 'Debug Sensor Expiry API';
 end;
 
-function DebugSensorExpiryAPI.getReadings(min, maxNum: integer; extras: string; out res: string): BGResults;
+function DebugSensorExpiryAPI.getReadings(min, maxNum: integer; extras: string;
+  out res: string; {%H-}noCache: boolean): BGResults;
 var
   i: integer;
   readingValue: integer;

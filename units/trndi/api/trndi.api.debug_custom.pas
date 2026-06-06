@@ -55,7 +55,7 @@ protected
 public
   setval: integer;
   function getReadings({%H-}min, {%H-}maxNum: integer; {%H-}extras: string;
-    out res: string): BGResults; override;
+    out res: string; noCache: boolean): BGResults; override;
   constructor Create(user, pass: string); override;
 
   class function ParamLabel(LabelName: APIParamLabel): string; override;
@@ -89,7 +89,7 @@ begin
 end;
 
 function DebugCustomAPI.getReadings(min, maxNum: integer; extras: string;
-out res: string): BGResults;
+out res: string; {%H-}noCache: boolean): BGResults;
 
 function getFakeTime(const min: integer): TDateTime;
   var
