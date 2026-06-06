@@ -30,7 +30,7 @@ begin
     anyClearedInFront := False;
     for i := 1 to 50 do
     begin
-      r := api.getReadings(0, 11, '', resStr);
+      r := api.getReadings(0, 11, '', resStr, False);
       // ensure we have at least 1 reading
       AssertTrue('Should return readings', Length(r) > 0);
       // check that cleared entries (exists=false) are within the first 10 (newest)
@@ -64,7 +64,7 @@ begin
   try
     for i := 1 to 100 do
     begin
-      r := api.getReadings(0, 11, '', resStr);
+      r := api.getReadings(0, 11, '', resStr, False);
       cleared := 0;
       for j := 0 to High(r) do
         if r[j].empty then Inc(cleared);
