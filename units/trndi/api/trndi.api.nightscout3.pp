@@ -41,6 +41,9 @@
  *   access token so both "abc123" and "token=abc123" work.
  * - 2026-03-02: Added runtime auth-refresh handling for Nightscout v3 so
  *   expired bearer tokens are renewed automatically during polling.
+ * - 2026-06-06: Switched Nightscout v3 noCache cache-busters to a monotonic
+ *   per-request token so repeated forced requests do not collide within one
+ *   second.
  *)
 unit trndi.api.nightscout3;
 
@@ -143,6 +146,9 @@ end;
 
 implementation
 
+var
+  NS3NoCacheTokenSeq: LongInt = 0;
+
 function NS3FormatDurationHours(const hoursTotal: integer): string;
 var
   d, h: integer;
@@ -153,6 +159,11 @@ begin
     Result := Format('%dd %dh', [d, h])
   else
     Result := Format('%dh', [h]);
+end;
+
+function NS3NextNoCacheToken: string;
+begin
+  Result := IntToStr(GetTickCount64) + IntToStr(InterlockedIncrement(NS3NoCacheTokenSeq));
 end;
 
 function NS3TryDateTimeFromJsonValue(const value: TJSONData; out dt: TDateTime): boolean;
@@ -838,10 +849,11 @@ begin
   params[0] := 'limit=' + IntToStr(maxNum);
   params[1] := 'sort$desc=date';  // Try v3 syntax for descending sort
   params[2] := 'fields=date,sgv,delta,direction,device,rssi,noise';
-  // When noCache is set, append `_=<unix>` so intermediaries / client-side
-  // HTTP caches don't serve a stale response. NS3 ignores unknown query keys.
+  // When noCache is set, append a monotonic `_=` token so intermediaries /
+  // client-side HTTP caches don't serve a stale response. NS3 ignores unknown
+  // query keys.
   if noCache then
-    params[3] := '_=' + IntToStr(DateTimeToUnix(Now));
+    params[3] := '_=' + NS3NextNoCacheToken;
 
   try
     // Prefer /api/v3/entries and fall back to entries.json when using default.
@@ -889,7 +901,7 @@ begin
       SetLength(fbparams, 1);
     fbparams[0] := 'count=' + IntToStr(maxNum);
     if noCache then
-      fbparams[1] := '_=' + IntToStr(DateTimeToUnix(Now));
+      fbparams[1] := '_=' + NS3NextNoCacheToken;
     resp := native.request(false, FSiteBase + '/api/v1/entries.json',
       fbparams, '', BearerHeader, false {no prefix});
     {$ifdef DEBUG} if debug_log_api then TrndiDLog(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, NS3_STATUS, resp, debugParams(fbParams)]));{$endif}
@@ -927,7 +939,7 @@ begin
       SetLength(fbparams, 1);
     fbparams[0] := 'count=' + IntToStr(maxNum);
     if noCache then
-      fbparams[1] := '_=' + IntToStr(DateTimeToUnix(Now));
+      fbparams[1] := '_=' + NS3NextNoCacheToken;
     resp := native.request(false, FSiteBase + '/api/v1/entries.json',
       fbparams, '', BearerHeader, false {no prefix});
     {$ifdef DEBUG} if debug_log_api then TrndiDLog(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, NS3_STATUS, resp, debugParams(fbparams)]));{$endif}
@@ -962,7 +974,7 @@ begin
     SetLength(statusParams, 1);
   statusParams[0] := 'count=1';
   if noCache then
-    statusParams[1] := '_=' + IntToStr(DateTimeToUnix(Now));
+    statusParams[1] := '_=' + NS3NextNoCacheToken;
   try
     if not TryRequestV3(NS3_DEVICESTATUS, NS3_DEVICESTATUS_JSON, statusParams, devStatusResp) then
       devStatusResp := native.request(false, FSiteBase + '/api/v1/devicestatus.json',

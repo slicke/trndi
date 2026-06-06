@@ -38,7 +38,6 @@ procedure TAPIDexcomTester.TestDexcomLocalServer;
 var
   api: TrndiAPI;
   PHPProcess: TProcess;
-  res: string;
   readings: BGResults;
   BaseURL: string;
 begin
@@ -56,7 +55,7 @@ begin
     api := DexcomCustom.Create('anyuser', 'anypass', BaseURL + '/ShareWebServices/Services/');
     try
       AssertTrue('Dexcom connects to local fake server', api.connect);
-      readings := api.getReadings(30, 3, '', res);
+      readings := api.getReadings(30, 3, '');
       AssertTrue('Dexcom returns at least one reading', Length(readings) > 0);
       AssertTrue('Dexcom reading value set', readings[0].val > 0);
       AssertTrue('Dexcom reading timestamp set', readings[0].date > 0);
