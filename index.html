@@ -191,28 +191,28 @@
                     <div class="download-icon">🪟</div>
                     <h3>Windows</h3>
                     <p>Windows 10 &amp; 11 (x64)</p>
-                    <a href="https://github.com/slicke/trndi/releases/latest/download/TrndiSetup.exe" class="btn-download">Download Installer</a>
+                    <a href="https://github.com/slicke/trndi/releases/latest/download/TrndiSetup.exe" data-asset="TrndiSetup.exe" class="btn-download">Download Installer</a>
                     <p class="download-subtext"><small>Portable .zip available below</small></p>
                 </div>
                 <div class="download-item">
                     <div class="download-icon">🍎</div>
                     <h3>macOS</h3>
                     <p>Apple Silicon</p>
-                    <a href="https://github.com/slicke/trndi/releases/latest/download/Trndi-macos-silicon.dmg" class="btn-download">Download DMG</a>
+                    <a href="https://github.com/slicke/trndi/releases/latest/download/Trndi-macos-silicon.dmg" data-asset="Trndi-macos-silicon.dmg" class="btn-download">Download DMG</a>
                     <p class="download-subtext"><small>Portable .zip available below</small></p>
                 </div>
                 <div class="download-item">
                     <div class="download-icon">🐧</div>
                     <h3>Linux x64</h3>
                     <p>Most distributions (amd64)</p>
-                    <a href="https://github.com/slicke/trndi/releases/latest/download/Trndi-linux-amd64.zip" class="btn-download">Download for Linux</a>
+                    <a href="https://github.com/slicke/trndi/releases/latest/download/Trndi-linux-amd64.zip" data-asset="Trndi-linux-amd64.zip" class="btn-download">Download for Linux</a>
                     <p class="download-subtext"><small>.deb / .rpm / AppImage below</small></p>
                 </div>
                 <div class="download-item">
                     <div class="download-icon">🥧</div>
                     <h3>Raspberry Pi</h3>
                     <p>ARM64 / aarch64</p>
-                    <a href="https://github.com/slicke/trndi/releases/latest/download/Trndi-linux-arm64.zip" class="btn-download">Download for Pi</a>
+                    <a href="https://github.com/slicke/trndi/releases/latest/download/Trndi-linux-arm64.zip" data-asset="Trndi-linux-arm64.zip" class="btn-download">Download for Pi</a>
                     <p class="download-subtext"><small>.deb / .rpm / AppImage below</small></p>
                 </div>
             </div>
@@ -221,25 +221,25 @@
                 <p><strong>More options:</strong></p>
                 <div class="additional-downloads">
                     <div class="download-category">
-                        <h4>Linux Packages</h4>
-                        <a href="https://github.com/slicke/trndi/releases/latest/">Ubuntu/Debian (.deb)</a> &bull;
-                        <a href="https://github.com/slicke/trndi/releases/latest/">Fedora/RHEL (.rpm)</a> &bull;
-                        <a href="https://github.com/slicke/trndi/releases/latest/download/Trndi-x86_64.AppImage">AppImage (x86_64)</a> &bull;
-                        <a href="https://github.com/slicke/trndi/releases/latest/download/Trndi-aarch64.AppImage">AppImage (aarch64)</a>
-                    </div>
-                    <div class="download-category">
-                        <h4>Raspberry Pi Packages</h4>
-                        <a href="https://github.com/slicke/trndi/releases/latest/">ARM64 .deb</a> &bull;
-                        <a href="https://github.com/slicke/trndi/releases/latest/">ARM64 .rpm</a>
-                    </div>
-                    <div class="download-category">
                         <h4>Windows (portable)</h4>
-                        <a href="https://github.com/slicke/trndi/releases/latest/download/Trndi-windows-x64.zip">Portable .zip</a> &bull;
+                        <a href="https://github.com/slicke/trndi/releases/latest/download/Trndi-windows-x64.zip" data-asset="Trndi-windows-x64.zip">Portable .zip</a> &bull;
                         <a href="https://github.com/slicke/trndi/blob/main/doc/NUGET.md">NuGet / Chocolatey</a>
                     </div>
                     <div class="download-category">
                         <h4>macOS (portable)</h4>
-                        <a href="https://github.com/slicke/trndi/releases/latest/download/Trndi-macos-silicon.zip">Portable .zip</a>
+                        <a href="https://github.com/slicke/trndi/releases/latest/download/Trndi-macos-silicon.zip" data-asset="Trndi-macos-silicon.zip">Portable .zip</a>
+                    </div>
+                    <div class="download-category">
+                        <h4>Linux Packages</h4>
+                        <a href="https://github.com/slicke/trndi/releases/latest/" data-asset="trndi_*_amd64.deb">Ubuntu/Debian (.deb)</a> &bull;
+                        <a href="https://github.com/slicke/trndi/releases/latest/" data-asset="trndi-*.x86_64.rpm">Fedora/RHEL (.rpm)</a> &bull;
+                        <a href="https://github.com/slicke/trndi/releases/latest/download/Trndi-x86_64.AppImage" data-asset="Trndi-x86_64.AppImage">AppImage (x86_64)</a> &bull;
+                        <a href="https://github.com/slicke/trndi/releases/latest/download/Trndi-aarch64.AppImage" data-asset="Trndi-aarch64.AppImage">AppImage (aarch64)</a>
+                    </div>
+                    <div class="download-category">
+                        <h4>Raspberry Pi Packages</h4>
+                        <a href="https://github.com/slicke/trndi/releases/latest/" data-asset="trndi_*_arm64.deb">ARM64 .deb</a> &bull;
+                        <a href="https://github.com/slicke/trndi/releases/latest/" data-asset="trndi-*.aarch64.rpm">ARM64 .rpm</a>
                     </div>
                 </div>
                 <p><strong>All versions:</strong> <a href="https://github.com/slicke/trndi/releases">View all releases on GitHub</a></p>
@@ -326,6 +326,24 @@
             document.querySelector('.navbar').classList.toggle('scrolled', window.scrollY > 100);
         });
 
+        function applyReleaseAssets(assets) {
+            if (!Array.isArray(assets) || !assets.length) return;
+            const byName = new Map(assets.map(a => [a.name.toLowerCase(), a.browser_download_url]));
+            document.querySelectorAll('a[data-asset]').forEach(a => {
+                const pattern = a.dataset.asset;
+                const exact = byName.get(pattern.toLowerCase());
+                if (exact) { a.href = exact; return; }
+                const re = new RegExp(
+                    '^' + pattern.split('*').map(s =>
+                        s.replace(/[.+^${}()|[\]\\?]/g, '\\$&')
+                    ).join('.*') + '$',
+                    'i'
+                );
+                const hit = assets.find(x => re.test(x.name));
+                if (hit) a.href = hit.browser_download_url;
+            });
+        }
+
         fetch('https://api.github.com/repos/slicke/trndi/releases/latest')
             .then(r => r.json())
             .then(data => {
@@ -335,6 +353,7 @@
                 });
                 document.getElementById('latest-release').textContent = name;
                 document.getElementById('release-date').textContent = date;
+                applyReleaseAssets(data.assets);
             })
             .catch(() => {
                 document.getElementById('latest-release').textContent = 'see GitHub';
