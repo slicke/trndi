@@ -2,6 +2,27 @@ unit trndi.webserver.threaded;
 
 {$mode objfpc}{$H+}
 
+{
+  Minimal HTTP server for exposing current glucose readings and predictions.
+
+  Threading model:
+    - TWebServerThread owns the listening socket and runs the accept loop.
+    - Each accepted connection is handled on its own TClientHandlerThread.
+    - The thread-safe-callback contract below MUST hold; otherwise concurrent
+      requests (or even one request racing with the UI) can corrupt state.
+
+  Thread-safety contract for callbacks:
+    TGetCurrentReadingFunc / TGetPredictionsFunc are invoked from
+    TClientHandlerThread (i.e. NOT the main/UI thread, and NOT serialized
+    with each other). Implementations must either:
+      a) protect any shared state with a critical section, or
+      b) marshal to the main thread via Synchronize/Queue.
+    Returning a managed dynamic array of value-type records (BGResults) is
+    the easiest safe contract: the array is copied to the caller, so the
+    server thread never touches the producer's storage after the call
+    returns.
+}
+
 interface
 
 uses
@@ -13,24 +34,50 @@ type
 TGetCurrentReadingFunc = function: BGResults of object;
 TGetPredictionsFunc = function: BGResults of object;
 
-  { TWebServerThread }
+  { TClientHandlerThread - handles a single accepted connection }
+TClientHandlerThread = class(TThread)
+private
+  FClientSocket: TSocket;
+  FAuthToken: string;
+  FGetCurrentReading: TGetCurrentReadingFunc;
+  FGetPredictions: TGetPredictionsFunc;
+  FStartedAtUtc: TDateTime;
+  FPort: word;
+  FActiveCounter: PLongInt;
+  function ReadingToJSON(const Reading: BGReading; IncludeDelta: boolean = true): TJSONObject;
+  function HandleRequest(const Request: string): string;
+  function CheckAuth(const Headers: string): boolean;
+  function ReadRequest(out Request: string; out TooLarge: boolean): boolean;
+  procedure SendAll(const Data: string);
+protected
+  procedure Execute; override;
+public
+  constructor Create(AClientSocket: TSocket; const AAuthToken: string;
+    AGetCurrentReading: TGetCurrentReadingFunc;
+    AGetPredictions: TGetPredictionsFunc;
+    const AStartedAtUtc: TDateTime; APort: word;
+    AActiveCounter: PLongInt);
+end;
+
+  { TWebServerThread - listens and dispatches connections }
 TWebServerThread = class(TThread)
 private
   FPort: word;
   FAuthToken: string;
   FServerSocket: TSocket;
   FStartedAtUtc: TDateTime;
+  FLoopbackOnly: boolean;
   FGetCurrentReading: TGetCurrentReadingFunc;
   FGetPredictions: TGetPredictionsFunc;
-  function ReadingToJSON(const Reading: BGReading; IncludeDelta: boolean = true): TJSONObject;
-  function HandleRequest(const Request: string): string;
-  function CheckAuth(const Headers: string): boolean;
+  FActiveCounter: PLongInt;
 protected
   procedure Execute; override;
 public
   constructor Create(APort: word; const AAuthToken: string;
     AGetCurrentReading: TGetCurrentReadingFunc;
-    AGetPredictions: TGetPredictionsFunc);
+    AGetPredictions: TGetPredictionsFunc;
+    ALoopbackOnly: boolean;
+    AActiveCounter: PLongInt);
   destructor Destroy; override;
   procedure CloseServerSocket;
 end;
@@ -41,10 +88,12 @@ private
   FThread: TWebServerThread;
   FPort: word;
   FEnabled: boolean;
+  FActiveClients: LongInt;
 public
   constructor Create(APort: word; const AAuthToken: string;
     AGetCurrentReading: TGetCurrentReadingFunc;
-    AGetPredictions: TGetPredictionsFunc);
+    AGetPredictions: TGetPredictionsFunc;
+    ALoopbackOnly: boolean = false);
   destructor Destroy; override;
   procedure Start;
   procedure Stop;
@@ -57,6 +106,9 @@ implementation
 
 const
 INVALID_SOCKET = TSocket(-1);
+MAX_REQUEST_SIZE = 16 * 1024;          // hard cap on inbound request bytes
+REQUEST_READ_TIMEOUT_MS = 5000;        // total budget to receive headers
+LOOPBACK_ADDR_HOST_ORDER = $7F000001;  // 127.0.0.1
 {$IFDEF WINDOWS}
 SHUT_RDWR = SD_BOTH;
 {$ELSE}
@@ -90,6 +142,11 @@ begin
   WinSock2.FD_SET(s, fdset);
 end;
 
+function HostToNetLong(v: longword): longword;
+begin
+  Result := WinSock2.htonl(v);
+end;
+
 {$ELSE}
 // Unix-specific socket wrapper functions
 function SocketShutdown(s: TSocket; how: integer): integer;
@@ -116,97 +173,129 @@ procedure FD_SET_Helper(s: TSocket; var fdset: TFDSet);
 begin
   fpFD_SET(s, fdset);
 end;
+
+function HostToNetLong(v: longword): longword;
+begin
+  Result := htonl(v);
+end;
 {$ENDIF}
 
-{ TWebServerThread }
-
-constructor TWebServerThread.Create(APort: word; const AAuthToken: string;
-AGetCurrentReading: TGetCurrentReadingFunc;
-AGetPredictions: TGetPredictionsFunc);
+// Length-leaking-resistant string compare. Always walks min(LenA, LenB)
+// bytes and folds the length mismatch into the diff, so timing does not
+// reveal where the inputs first differ.
+function ConstantTimeEquals(const A, B: string): boolean;
+var
+  i, diff, lenA, lenB, lenMin: integer;
 begin
-  inherited Create(true); // Create suspended
-  FreeOnTerminate := false; // Owner stops + frees thread (needed for safe shutdown)
-  FPort := APort;
+  lenA := Length(A);
+  lenB := Length(B);
+  diff := lenA xor lenB;
+  if lenA < lenB then
+    lenMin := lenA
+  else
+    lenMin := lenB;
+  for i := 1 to lenMin do
+    diff := diff or (Ord(A[i]) xor Ord(B[i]));
+  Result := diff = 0;
+end;
+
+function FormatUtcIso(const ALocalTime: TDateTime): string;
+begin
+  Result := FormatDateTime('yyyy"-"mm"-"dd"T"hh":"nn":"ss"Z"',
+    LocalTimeToUniversal(ALocalTime));
+end;
+
+{ TClientHandlerThread }
+
+constructor TClientHandlerThread.Create(AClientSocket: TSocket; const AAuthToken: string;
+AGetCurrentReading: TGetCurrentReadingFunc;
+AGetPredictions: TGetPredictionsFunc;
+const AStartedAtUtc: TDateTime; APort: word;
+AActiveCounter: PLongInt);
+begin
+  inherited Create(true); // suspended; caller calls Start after setup is complete
+  FreeOnTerminate := true;
+  FClientSocket := AClientSocket;
   FAuthToken := AAuthToken;
   FGetCurrentReading := AGetCurrentReading;
   FGetPredictions := AGetPredictions;
-  FServerSocket := INVALID_SOCKET;
-  FStartedAtUtc := LocalTimeToUniversal(Now);
+  FStartedAtUtc := AStartedAtUtc;
+  FPort := APort;
+  FActiveCounter := AActiveCounter;
 end;
 
-destructor TWebServerThread.Destroy;
-begin
-  if FServerSocket <> INVALID_SOCKET then
-    CloseSocket(FServerSocket);
-  inherited Destroy;
-end;
-
-procedure TWebServerThread.CloseServerSocket;
-begin
-  if FServerSocket <> INVALID_SOCKET then
-  begin
-    // Shutdown the socket to interrupt any blocking accept/recv calls
-    SocketShutdown(FServerSocket, SHUT_RDWR);
-    CloseSocket(FServerSocket);
-    FServerSocket := INVALID_SOCKET;
-  end;
-end;
-
-function TWebServerThread.CheckAuth(const Headers: string): boolean;
+function TClientHandlerThread.CheckAuth(const Headers: string): boolean;
+const
+  AUTH_NAME = 'authorization';
 var
   Lines: TStringList;
-  i: integer;
-  Line: string;
+  i, ColonPos, SpacePos: integer;
+  Line, HeaderName, HeaderValue, Scheme, Token: string;
 begin
-  Result := true; // Allow if no token configured
   if FAuthToken = '' then
+  begin
+    Result := true;
     Exit;
+  end;
 
+  Result := false;
   Lines := TStringList.Create;
   try
     Lines.Text := Headers;
     for i := 0 to Lines.Count - 1 do
     begin
       Line := Lines[i];
-      if (Length(Line) >= Length('Authorization:')) and
-         SameText(Copy(Line, 1, Length('Authorization:')), 'Authorization:') then
-      begin
-        Result := Pos('Bearer ' + FAuthToken, Line) > 0;
+      ColonPos := Pos(':', Line);
+      if ColonPos <= 0 then
+        Continue;
+      HeaderName := LowerCase(Trim(Copy(Line, 1, ColonPos - 1)));
+      if HeaderName <> AUTH_NAME then
+        Continue;
+
+      HeaderValue := Trim(Copy(Line, ColonPos + 1, MaxInt));
+      SpacePos := Pos(' ', HeaderValue);
+      if SpacePos <= 0 then
         Exit;
-      end;
+      Scheme := LowerCase(Copy(HeaderValue, 1, SpacePos - 1));
+      if Scheme <> 'bearer' then
+        Exit;
+      Token := Trim(Copy(HeaderValue, SpacePos + 1, MaxInt));
+      Result := ConstantTimeEquals(Token, FAuthToken);
+      Exit;
     end;
   finally
     Lines.Free;
   end;
-  Result := false;
 end;
 
-function TWebServerThread.ReadingToJSON(const Reading: BGReading; IncludeDelta: boolean): TJSONObject;
+function TClientHandlerThread.ReadingToJSON(const Reading: BGReading; IncludeDelta: boolean): TJSONObject;
 var
   fs: TFormatSettings;
 begin
   fs.decimalSeparator := '.';
   Result := TJSONObject.Create;
   try
-    // Add both mg/dL and mmol/L values
     Result.Add('mgdl', round(Reading.val));
     Result.Add('mmol', FormatFloat('0.0', Reading.convert(mmol, BGPrimary), fs));
-    
+
     if IncludeDelta then
     begin
       Result.Add('mgdl_delta', round(Reading.delta));
       Result.Add('mmol_delta', FormatFloat('0.0', Reading.convert(mmol, BGDelta), fs));
     end;
-    
+
     Result.Add('trend', integer(Reading.trend));
+    // `timestamp` is kept as local-time "YYYY-MM-DD HH:MM:SS" for backwards
+    // compatibility; new consumers should prefer `timestamp_utc` (ISO 8601).
     Result.Add('timestamp', DateTimeToStr(Reading.date));
+    Result.Add('timestamp_utc', FormatUtcIso(Reading.date));
   except
     Result.Free;
     raise;
   end;
 end;
 
-function TWebServerThread.HandleRequest(const Request: string): string;
+function TClientHandlerThread.HandleRequest(const Request: string): string;
 var
   Lines: TStringList;
   Method, URI, URIPath, Headers: string;
@@ -256,7 +345,8 @@ begin
     begin
       Result := 'HTTP/1.1 401 Unauthorized'#13#10 +
         'Content-Type: application/json'#13#10 +
-        'Access-Control-Allow-Origin: *'#13#10#13#10 +
+        'Access-Control-Allow-Origin: *'#13#10 +
+        'Connection: close'#13#10#13#10 +
         '{"error":"Unauthorized"}';
       Exit;
     end;
@@ -351,12 +441,201 @@ begin
   end;
 end;
 
+// Reads bytes from the client up to MAX_REQUEST_SIZE or until CRLFCRLF
+// (end of headers). Bounded by REQUEST_READ_TIMEOUT_MS total wall time
+// across all recv calls so a slow/silent peer cannot tie up the handler.
+function TClientHandlerThread.ReadRequest(out Request: string; out TooLarge: boolean): boolean;
+var
+  Buffer: array[0..2047] of byte;
+  BytesRead: integer;
+  ReqStream: TMemoryStream;
+  StartScan, j: NativeInt;
+  PBuf: PByte;
+  Found: boolean;
+  Deadline, NowMs: QWord;
+  RemainMs: QWord;
+  ReadFDs: TFDSet;
+  TimeVal: TTimeVal;
+  SelN: integer;
+begin
+  Result := false;
+  TooLarge := false;
+  Request := '';
+  Deadline := GetTickCount64 + REQUEST_READ_TIMEOUT_MS;
+  ReqStream := TMemoryStream.Create;
+  try
+    Found := false;
+    while not Terminated do
+    begin
+      NowMs := GetTickCount64;
+      if NowMs >= Deadline then
+        Break;
+      RemainMs := Deadline - NowMs;
+
+      FD_ZERO_Helper(ReadFDs);
+      FD_SET_Helper(FClientSocket, ReadFDs);
+      TimeVal.tv_sec := RemainMs div 1000;
+      TimeVal.tv_usec := (RemainMs mod 1000) * 1000;
+      SelN := SocketSelect(FClientSocket + 1, @ReadFDs, nil, nil, @TimeVal);
+      if SelN <= 0 then
+        Break; // timeout or error
+      if Terminated then
+        Break;
+
+      {$IFDEF WINDOWS}
+      BytesRead := WinSock2.recv(FClientSocket, Buffer, SizeOf(Buffer), 0);
+      {$ELSE}
+      BytesRead := fpRecv(FClientSocket, @Buffer, SizeOf(Buffer), 0);
+      {$ENDIF}
+      if BytesRead <= 0 then
+        Break; // peer closed or error
+
+      ReqStream.Write(Buffer, BytesRead);
+
+      if ReqStream.Size > MAX_REQUEST_SIZE then
+      begin
+        TooLarge := true;
+        Exit;
+      end;
+
+      // Scan only the newly appended region (+3 bytes overlap) for CRLFCRLF
+      StartScan := ReqStream.Size - BytesRead;
+      if StartScan > 3 then
+        Dec(StartScan, 3)
+      else
+        StartScan := 0;
+
+      if ReqStream.Size >= 4 then
+      begin
+        PBuf := PByte(ReqStream.Memory);
+        for j := StartScan to ReqStream.Size - 4 do
+          if (PBuf[j] = 13) and (PBuf[j+1] = 10) and (PBuf[j+2] = 13) and (PBuf[j+3] = 10) then
+          begin
+            Found := true;
+            Break;
+          end;
+      end;
+      if Found then
+        Break;
+    end;
+
+    if ReqStream.Size > 0 then
+    begin
+      SetLength(Request, ReqStream.Size);
+      Move(ReqStream.Memory^, Request[1], ReqStream.Size);
+      Result := Found; // only "good" if we actually saw end-of-headers
+    end;
+  finally
+    ReqStream.Free;
+  end;
+end;
+
+procedure TClientHandlerThread.SendAll(const Data: string);
+var
+  Total, Sent: SizeInt;
+  N: integer;
+  P: PChar;
+begin
+  if Data = '' then
+    Exit;
+  Total := Length(Data);
+  Sent := 0;
+  P := PChar(Data);
+  while Sent < Total do
+  begin
+    if Terminated then
+      Exit;
+    {$IFDEF WINDOWS}
+    N := WinSock2.send(FClientSocket, P[Sent], Total - Sent, 0);
+    {$ELSE}
+    N := fpSend(FClientSocket, @P[Sent], Total - Sent, 0);
+    {$ENDIF}
+    if N <= 0 then
+      Exit; // peer closed or error; nothing useful to do
+    Inc(Sent, N);
+  end;
+end;
+
+procedure TClientHandlerThread.Execute;
+var
+  Request, Response: string;
+  TooLarge: boolean;
+begin
+  try
+    try
+      if FClientSocket = INVALID_SOCKET then
+        Exit;
+
+      if not ReadRequest(Request, TooLarge) then
+      begin
+        if TooLarge then
+          SendAll('HTTP/1.1 413 Payload Too Large'#13#10 +
+                  'Content-Type: application/json'#13#10 +
+                  'Connection: close'#13#10#13#10 +
+                  '{"error":"Request too large"}');
+        // Otherwise: timeout / peer closed / malformed -- just drop.
+        Exit;
+      end;
+
+      Response := HandleRequest(Request);
+      SendAll(Response);
+    except
+      // Never let an exception escape -- it would terminate the worker
+      // without cleanup and could take the process down.
+    end;
+  finally
+    if FClientSocket <> INVALID_SOCKET then
+    begin
+      CloseSocket(FClientSocket);
+      FClientSocket := INVALID_SOCKET;
+    end;
+    if FActiveCounter <> nil then
+      InterlockedDecrement(FActiveCounter^);
+  end;
+end;
+
+{ TWebServerThread }
+
+constructor TWebServerThread.Create(APort: word; const AAuthToken: string;
+AGetCurrentReading: TGetCurrentReadingFunc;
+AGetPredictions: TGetPredictionsFunc;
+ALoopbackOnly: boolean;
+AActiveCounter: PLongInt);
+begin
+  inherited Create(true); // Create suspended
+  FreeOnTerminate := false; // Owner stops + frees thread (needed for safe shutdown)
+  FPort := APort;
+  FAuthToken := AAuthToken;
+  FGetCurrentReading := AGetCurrentReading;
+  FGetPredictions := AGetPredictions;
+  FLoopbackOnly := ALoopbackOnly;
+  FActiveCounter := AActiveCounter;
+  FServerSocket := INVALID_SOCKET;
+  FStartedAtUtc := LocalTimeToUniversal(Now);
+end;
+
+destructor TWebServerThread.Destroy;
+begin
+  if FServerSocket <> INVALID_SOCKET then
+    CloseSocket(FServerSocket);
+  inherited Destroy;
+end;
+
+procedure TWebServerThread.CloseServerSocket;
+begin
+  if FServerSocket <> INVALID_SOCKET then
+  begin
+    // Shutdown the socket to interrupt any blocking accept/recv calls
+    SocketShutdown(FServerSocket, SHUT_RDWR);
+    CloseSocket(FServerSocket);
+    FServerSocket := INVALID_SOCKET;
+  end;
+end;
+
 procedure TWebServerThread.Execute;
 var
   ClientSocket: TSocket;
-  Request, Response: string;
-  Buffer: array[0..4095] of char;
-  BytesRead: integer;
+  Client: TClientHandlerThread;
   {$IFDEF WINDOWS}
   SockAddr: WinSock2.TSockAddr;
   {$ELSE}
@@ -367,11 +646,7 @@ var
   ReadFDs: TFDSet;
   TimeVal: TTimeVal;
   SelectResult: integer;
-  ReqStream: TMemoryStream;
-  StartScan: NativeInt;
-  j: NativeInt;
-  Found: boolean;
-  PBuf: PByte;
+  BindAddr: longword;
   {$IFDEF WINDOWS}
   WSAData: TWSAData;
   InetAddr: TInetSockAddr;
@@ -382,7 +657,7 @@ begin
   if WSAStartup($0202, WSAData) <> 0 then  // Version 2.2
     Exit;
   {$ENDIF}
-  
+
   try
     // Create socket
     {$IFDEF WINDOWS}
@@ -397,12 +672,17 @@ begin
     OptVal := 1;
     SocketSetOpt(FServerSocket, SOL_SOCKET, SO_REUSEADDR, pchar(@OptVal), SizeOf(OptVal));
 
+    if FLoopbackOnly then
+      BindAddr := HostToNetLong(LOOPBACK_ADDR_HOST_ORDER)
+    else
+      BindAddr := INADDR_ANY;
+
     // Bind to port
     {$IFDEF WINDOWS}
     FillChar(InetAddr, SizeOf(InetAddr), 0);
     InetAddr.sin_family := AF_INET;
     InetAddr.sin_port := WinSock2.htons(FPort);
-    InetAddr.sin_addr.s_addr := INADDR_ANY;
+    InetAddr.sin_addr.s_addr := BindAddr;
     Move(InetAddr, SockAddr, SizeOf(InetAddr));
     if WinSock2.bind(FServerSocket, SockAddr, SizeOf(SockAddr)) <> 0 then
     begin
@@ -414,7 +694,7 @@ begin
     FillChar(SockAddr, SizeOf(SockAddr), 0);
     SockAddr.sin_family := AF_INET;
     SockAddr.sin_port := htons(FPort);
-    SockAddr.sin_addr.s_addr := INADDR_ANY;
+    SockAddr.sin_addr.s_addr := BindAddr;
     if fpBind(FServerSocket, @SockAddr, SizeOf(SockAddr)) <> 0 then
     begin
       CloseSocket(FServerSocket);
@@ -425,9 +705,9 @@ begin
 
     // Listen
     {$IFDEF WINDOWS}
-    if WinSock2.listen(FServerSocket, 5) <> 0 then
+    if WinSock2.listen(FServerSocket, 16) <> 0 then
       {$ELSE}
-      if fpListen(FServerSocket, 5) <> 0 then
+      if fpListen(FServerSocket, 16) <> 0 then
         {$ENDIF}
       begin
         CloseSocket(FServerSocket);
@@ -438,110 +718,66 @@ begin
     // Accept loop with select timeout
     while not Terminated do
     begin
-      // Check if socket was closed (during shutdown)
       if FServerSocket = INVALID_SOCKET then
         Break;
-      
-      // Use select with timeout to check for incoming connections
+
       FD_ZERO_Helper(ReadFDs);
       FD_SET_Helper(FServerSocket, ReadFDs);
       TimeVal.tv_sec := 0;
       TimeVal.tv_usec := 500000;  // 500ms timeout
-      
+
       SelectResult := SocketSelect(FServerSocket + 1, @ReadFDs, nil, nil, @TimeVal);
-      
-      // Check terminated after select
+
       if Terminated then
         Break;
-      
-      // If select returned error or timeout, continue loop
       if SelectResult <= 0 then
         Continue;
-        
-      // Socket is ready for accept
+
       SockLen := SizeOf(SockAddr);
       {$IFDEF WINDOWS}
       ClientSocket := WinSock2.accept(FServerSocket, @SockAddr, @SockLen);
       {$ELSE}
       ClientSocket := fpAccept(FServerSocket, @SockAddr, @SockLen);
       {$ENDIF}
-      
-      // Check terminated again after accept
+
       if Terminated then
       begin
         if ClientSocket <> INVALID_SOCKET then
           CloseSocket(ClientSocket);
         Break;
       end;
-      
-      if ClientSocket <> INVALID_SOCKET then
+
+      if ClientSocket = INVALID_SOCKET then
+        Continue;
+
+      // Hand off to a per-connection worker so concurrent clients do not
+      // block each other. Increment BEFORE Start so the owner's Stop()
+      // sees the in-flight worker even if scheduling delays it.
+      if FActiveCounter <> nil then
+        InterlockedIncrement(FActiveCounter^);
       try
-        // Read request efficiently into a memory stream to avoid repeated string reallocations
-        ReqStream := TMemoryStream.Create;
-        try
-          Found := false;
-          repeat
-            FillChar(Buffer, SizeOf(Buffer), 0);
-            {$IFDEF WINDOWS}
-            BytesRead := WinSock2.recv(ClientSocket, Buffer, SizeOf(Buffer), 0);
-            {$ELSE}
-            BytesRead := fpRecv(ClientSocket, @Buffer, SizeOf(Buffer), 0);
-            {$ENDIF}
-            if BytesRead > 0 then
-            begin
-              ReqStream.Write(Buffer, BytesRead);
-
-              // Scan only the newly appended region (+3 bytes overlap) for CRLFCRLF to detect end of headers
-              StartScan := ReqStream.Size - BytesRead;
-              if StartScan > 3 then
-                Dec(StartScan, 3)
-              else
-                StartScan := 0;
-
-              if ReqStream.Size >= 4 then
-              begin
-                PBuf := PByte(ReqStream.Memory);
-                for j := StartScan to ReqStream.Size - 4 do
-                  if (PBuf[j] = 13) and (PBuf[j+1] = 10) and (PBuf[j+2] = 13) and (PBuf[j+3] = 10) then
-                  begin
-                    Found := true;
-                    Break;
-                  end;
-              end;
-            end;
-          until (BytesRead <= 0) or Found;
-
-          if ReqStream.Size > 0 then
-          begin
-            SetLength(Request, ReqStream.Size);
-            if ReqStream.Size > 0 then
-              Move(ReqStream.Memory^, Request[1], ReqStream.Size);
-
-            // Handle request and send response
-            Response := HandleRequest(Request);
-            {$IFDEF WINDOWS}
-            WinSock2.send(ClientSocket, Response[1], Length(Response), 0);
-            {$ELSE}
-            fpSend(ClientSocket, @Response[1], Length(Response), 0);
-            {$ENDIF}
-          end;
-        finally
-          ReqStream.Free;
-        end;
-      finally
+        Client := TClientHandlerThread.Create(ClientSocket, FAuthToken,
+          FGetCurrentReading, FGetPredictions,
+          FStartedAtUtc, FPort, FActiveCounter);
+        // Worker owns ClientSocket from here on.
+        Client.Start;
+      except
+        // Could not spawn worker -- undo bookkeeping and clean up the socket.
         CloseSocket(ClientSocket);
+        if FActiveCounter <> nil then
+          InterlockedDecrement(FActiveCounter^);
       end;
     end;
   except
     // Silently handle exceptions during shutdown
   end;
-  
+
   if FServerSocket <> INVALID_SOCKET then
   begin
     CloseSocket(FServerSocket);
     FServerSocket := INVALID_SOCKET;
   end;
-  
+
   {$IFDEF WINDOWS}
   WSACleanup;
   {$ENDIF}
@@ -551,18 +787,21 @@ end;
 
 constructor TTrndiWebServer.Create(APort: word; const AAuthToken: string;
 AGetCurrentReading: TGetCurrentReadingFunc;
-AGetPredictions: TGetPredictionsFunc);
+AGetPredictions: TGetPredictionsFunc;
+ALoopbackOnly: boolean);
 begin
   inherited Create;
   FPort := APort;
   FEnabled := false;
-  FThread := TWebServerThread.Create(APort, AAuthToken, AGetCurrentReading, AGetPredictions);
+  FActiveClients := 0;
+  FThread := TWebServerThread.Create(APort, AAuthToken,
+    AGetCurrentReading, AGetPredictions,
+    ALoopbackOnly, @FActiveClients);
 end;
 
 destructor TTrndiWebServer.Destroy;
 begin
   Stop;
-  // Thread will free itself (FreeOnTerminate = True)
   inherited Destroy;
 end;
 
@@ -576,15 +815,26 @@ begin
 end;
 
 procedure TTrndiWebServer.Stop;
+const
+  CLIENT_DRAIN_POLL_MS = 50;
 begin
   if FEnabled and Assigned(FThread) then
   begin
-    // Close the server socket first to unblock fpAccept
+    // 1. Close the listen socket so accept() unblocks immediately.
     FThread.CloseServerSocket;
 
-    // Signal termination and wait for completion so callbacks can't hit freed objects
+    // 2. Tell the accept loop to stop and wait for it. After WaitFor the
+    //    listener will no longer spawn new client workers.
     FThread.Terminate;
     FThread.WaitFor;
+
+    // 3. Wait for any in-flight client workers to finish before we let the
+    //    parent free us -- the workers hold method pointers into the owner
+    //    and a pointer to FActiveClients. Each worker is bounded by
+    //    REQUEST_READ_TIMEOUT_MS plus handler time, so this is finite.
+    while InterlockedExchangeAdd(FActiveClients, 0) > 0 do
+      Sleep(CLIENT_DRAIN_POLL_MS);
+
     FreeAndNil(FThread);
     FEnabled := false;
   end;
