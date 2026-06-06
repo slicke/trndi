@@ -59,7 +59,8 @@ Returns the current glucose reading with both mg/dL and mmol/L values.
     "mgdl_delta": "0.0",
     "mmol_delta": "0.0",
     "trend": 3,
-    "timestamp": "2025-11-13 14:30:00"
+    "timestamp": "2025-11-13 14:30:00",
+    "timestamp_utc": "2025-11-13T13:30:00Z"
   },
   "1": {
     "mgdl": "163.0",
@@ -67,7 +68,8 @@ Returns the current glucose reading with both mg/dL and mmol/L values.
     "mgdl_delta": "-5.0",
     "mmol_delta": "-0.3",
     "trend": 3,
-    "timestamp": "2025-11-13 14:25:00"
+    "timestamp": "2025-11-13 14:25:00",
+    "timestamp_utc": "2025-11-13T13:25:00Z"
   }, 
     ...
 }
@@ -79,7 +81,8 @@ Returns the current glucose reading with both mg/dL and mmol/L values.
 - `mgdl_delta`: Change since last reading in mg/dL
 - `mmol_delta`: Change since last reading in mmol/L
 - `trend`: Trend arrow (see Trend Values below)
-- `timestamp`: Reading timestamp
+- `timestamp`: Reading timestamp in local time (`YYYY-MM-DD HH:MM:SS`, no zone) — kept for backwards compatibility
+- `timestamp_utc`: Reading timestamp in UTC (`YYYY-MM-DDTHH:MM:SSZ`) — preferred for new consumers
 
 **Status Codes:**
 - `200 OK`: Data available
@@ -114,7 +117,8 @@ Returns predicted glucose readings (if predictions are enabled).
       "mgdl_delta": "-5.6",
       "mmol_delta": "-0.3",
       "trend": 7,
-      "timestamp": "2025-11-13 14:35:00"
+      "timestamp": "2025-11-13 14:35:00",
+      "timestamp_utc": "2025-11-13T13:35:00Z"
     },
     {
       "mgdl": "152.0",
@@ -122,7 +126,8 @@ Returns predicted glucose readings (if predictions are enabled).
       "mgdl_delta": "-5.4",
       "mmol_delta": "-0.3",
       "trend": 7,
-      "timestamp": "2025-11-13 14:40:00"
+      "timestamp": "2025-11-13 14:40:00",
+      "timestamp_utc": "2025-11-13T13:40:00Z"
     }
   ]
 }
