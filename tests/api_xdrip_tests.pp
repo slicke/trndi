@@ -7,7 +7,7 @@ interface
 uses
 Classes, SysUtils, fpcunit, testutils, testregistry,
 trndi.native, trndi.api, trndi.api.nightscout, trndi.api.dexcom, trndi.api.xdrip, trndi.types, dialogs, dateutils,
-process, php_server_helper, fpjson, jsonparser;
+process, php_server_helper, fpjson, jsonparser, sha1;
 
 type
 
@@ -106,7 +106,8 @@ begin
 
       native := TrndiNative.Create('TrndiTest', BaseURL);
       try
-        rawJson := native.request(false, 'sgv.json', ['count=3']);
+        rawJson := native.request(false, 'sgv.json', ['count=3'], '',
+          'api-secret=' + SHA1Print(SHA1String('test22')));
       finally
         native.Free;
       end;

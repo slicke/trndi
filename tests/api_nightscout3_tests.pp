@@ -90,7 +90,7 @@ begin
     api := NightScout3.create(BaseURL, 'test22');
     try
       AssertTrue('Nightscout3 connects to local fake server', api.connect);
-      readings := api.getReadings(30, 5, '', res); // Request max 5 readings
+      readings := api.getReadings(30, 5, '', res, false); // Request max 5 readings
       AssertTrue('Nightscout3 returns at most 5 readings', Length(readings) <= 5);
       AssertTrue('Nightscout3 returns at least 1 reading', Length(readings) >= 1);
       AssertTrue('Nightscout3 reading value set', readings[0].val > 0);
@@ -131,10 +131,10 @@ begin
     try
       AssertTrue('Nightscout3 connects with rotating token mode', api.connect);
 
-      firstReadings := api.getReadings(30, 5, '', res);
+      firstReadings := api.getReadings(30, 5, '', res, false);
       AssertTrue('First fetch returns readings', Length(firstReadings) > 0);
 
-      secondReadings := api.getReadings(30, 5, '', res);
+      secondReadings := api.getReadings(30, 5, '', res, false);
       AssertTrue('Second fetch should recover from token expiry and return readings',
         Length(secondReadings) > 0);
       AssertTrue('Second fetch should still include a valid reading value',
@@ -172,7 +172,7 @@ begin
     api := NightScout3.create(BaseURL, 'test22');
     try
       AssertTrue('Nightscout3 connects to local fake server', api.connect);
-      readings := api.getReadings(30, 3, '', res);
+      readings := api.getReadings(30, 3, '', res, false);
       AssertTrue('Nightscout3 returns at least one reading', Length(readings) > 0);
       AssertTrue('Nightscout3 reading value set', readings[0].val > 0);
       AssertTrue('Nightscout3 reading timestamp set', readings[0].date > 0);
