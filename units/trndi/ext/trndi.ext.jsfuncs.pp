@@ -69,7 +69,7 @@ type
     constructor Create(cgm: TrndiAPI);
 
     {** Register the gated promise-style helpers (asyncGet/jsonGet/runCMD/setLimits/
-        setLevelColor/querySvc/bgDump) into the engine's current registration context.
+        setLevelColor/querySvc) into the engine's current registration context.
         Must be called inside a TTrndiExtEngine.BeginRegistration/EndRegistration
         block so each call is filtered against that extension's grants. }
     procedure RegisterForCurrent;
@@ -93,7 +93,6 @@ procedure TJSFuncs.RegisterForCurrent;
 begin
   with TTrndiExtEngine.Instance do
   begin
-    AddPromiseIf(epData,     'bgDump',        JSCallbackFunction(@bgDump));
     AddPromiseIf(epNet,      'asyncGet',      JSCallbackFunction(@asyncGet));
     AddPromiseIf(epNet,      'jsonGet',       JSCallbackFunction(@jsonGet), 2);
     AddPromiseIf(epExec,     'runCMD',        JSCallbackFunction(@runCMD));

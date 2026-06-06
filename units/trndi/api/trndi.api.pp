@@ -486,6 +486,9 @@ begin
   if lastReadingAt <= 0 then
     Exit(false);
 
+  if getMaxAge < 0 then
+    Exit(true);
+
   ageMinutes := (Now - lastReadingAt) * (24 * 60);
   Result := (ageMinutes >= 0) and (ageMinutes <= getMaxAge);
 end;
