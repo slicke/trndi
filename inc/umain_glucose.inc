@@ -930,19 +930,19 @@ begin
   if api = nil then
     Exit;
 
-  if FFetchInFlight then
+  if FApiCallInFlight then
   begin
-    TrndiDLog('RequestAsyncFetch: dropped — fetch already in flight');
-    // A request is already pending; return False so the caller knows no new
-    // worker was created and can preserve one-shot state (e.g. FForceRefresh)
-    // for the next attempt.
+    TrndiDLog('RequestAsyncFetch: dropped — api call already in flight');
+    // A request is already pending (could be glucose OR history); return
+    // False so the caller knows no new worker was created and can preserve
+    // one-shot state (e.g. FForceRefresh) for the next attempt.
     Exit;
   end;
 
-  // Second guard: ApplyResult clears FFetchInFlight from inside Synchronize,
+  // Second guard: ApplyResult clears FApiCallInFlight from inside Synchronize,
   // which returns before the worker's Execute has finished unwinding. In that
   // brief window FGlucoseFetchThread.Finished is still false even though
-  // FFetchInFlight is false — without this check the assignment below would
+  // FApiCallInFlight is false — without this check the assignment below would
   // overwrite a still-running thread reference and leak it. Drop the request;
   // the next periodic/menu trigger will pick it up once Finished is true.
   if Assigned(FGlucoseFetchThread) and (not FGlucoseFetchThread.Finished) then
@@ -959,7 +959,7 @@ begin
     FreeAndNil(FGlucoseFetchThread);
   end;
 
-  FFetchInFlight := true;
+  FApiCallInFlight := true;
   if Boot then
     FBootFetchPending := true;
 
@@ -993,9 +993,9 @@ begin
     Exit;
   end;
 
-  if FHistoryFetchInFlight then
+  if FApiCallInFlight then
   begin
-    TrndiDLog('RequestHistoryFetch: dropped — history fetch already in flight');
+    TrndiDLog('RequestHistoryFetch: dropped — api call already in flight');
     Exit;
   end;
 
@@ -1012,7 +1012,7 @@ begin
     FreeAndNil(FHistoryFetchThread);
   end;
 
-  FHistoryFetchInFlight := true;
+  FApiCallInFlight := true;
   if Assigned(mi24h) then
     mi24h.Enabled := false;
   if Assigned(miReadingsSince) then

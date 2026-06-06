@@ -360,7 +360,7 @@ begin
   begin
     // Owner is tearing down. Don't touch UI; only clear the in-flight flag
     // so a future fetch (post-restart) isn't gated.
-    FOwner.FFetchInFlight := false;
+    FOwner.FApiCallInFlight := false;
     if FBoot then
       FOwner.FBootFetchPending := false;
     Exit;
@@ -395,7 +395,7 @@ begin
       FOwner.FinalizeReadingUpdate(FBoot);
     end;
   finally
-    FOwner.FFetchInFlight := false;
+    FOwner.FApiCallInFlight := false;
     if FBoot then
       FOwner.FBootFetchPending := false;
     if Assigned(native) then
@@ -468,7 +468,7 @@ begin
   begin
     // Owner is tearing down — drop everything, just clear the flag so a
     // hypothetical post-restart fetch isn't gated.
-    FOwner.FHistoryFetchInFlight := false;
+    FOwner.FApiCallInFlight := false;
     Exit;
   end;
 
@@ -508,7 +508,7 @@ begin
     if FMode = hfm24h then
       FOwner.AutoAddPredictionOverlay;
   finally
-    FOwner.FHistoryFetchInFlight := false;
+    FOwner.FApiCallInFlight := false;
     if Assigned(FOwner.mi24h) then
       FOwner.mi24h.Enabled := true;
     if Assigned(FOwner.miReadingsSince) then

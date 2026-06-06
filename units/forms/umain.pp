@@ -522,15 +522,16 @@ private
   FPingThread: TConnectivityCheckThread;
   FPredictionThread: TPredictionThread;
   FGlucoseFetchThread: TGlucoseFetchThread;
-  FFetchInFlight: boolean;  // True while a TGlucoseFetchThread is running.
-                            // Reads/writes happen on the main thread only.
   FBootFetchPending: boolean; // True while the splash-time first fetch is in
                               // flight; gates the boot-failure warning panel.
   FHistoryFetchThread: THistoryFetchThread;
-  FHistoryFetchInFlight: boolean; // True while a THistoryFetchThread is
-                                  // running. Reads/writes on the main
-                                  // thread only; gates the menu items so a
-                                  // second click can't queue a duplicate.
+  // Shared guard: true while EITHER a TGlucoseFetchThread or
+  // THistoryFetchThread is interacting with the TrndiAPI. Both backends
+  // mutate api.lastErr (exposed as api.errormsg), so concurrent workers
+  // would cross-wire error state. Reads/writes happen on the main thread
+  // only (Request* sets it, Apply*Result clears it via Synchronize), which
+  // serializes worker creation and keeps only one worker on api at a time.
+  FApiCallInFlight: boolean;
   FFetchThreadDetached: boolean; // Set when shutdown gave up waiting on the
                                  // fetch worker and detached it; gates the
                                  // api/native free in FormDestroy so the

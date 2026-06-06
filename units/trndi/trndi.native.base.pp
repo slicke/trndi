@@ -601,8 +601,11 @@ end;
 
 class procedure TTrndiNativeBase.ShutdownSettingsCache;
 begin
-  FreeAndNil(FSettingsCache);
-  FreeAndNil(FSettingsCacheLock);
+  // FSettingsCache and FSettingsCacheLock are class-lifetime singletons that
+  // may be touched by background workers (e.g. TRequestExWorker -> requestEx
+  // -> GetRootSetting for proxy.* lookups) which are not joined at shutdown.
+  // Freeing them here would race with those workers, so leave the objects in
+  // place for the process lifetime and just invalidate the warm snapshot.
   FSettingsCacheWarm := false;
 end;
 
