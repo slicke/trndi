@@ -120,7 +120,7 @@ public
         @returns(Array of @code(BGReading); empty on errors or unauthorized)
      }
   function getReadings(minNum, maxNum: integer; extras: string;
-    out res: string): BGResults; override;
+    out res: string; noCache: boolean): BGResults; override;
     {** UI parameter label provider (override).
       1: NightScout URL
       2: API Secret (plain text)
@@ -512,7 +512,7 @@ end;
   BGResults: value, delta, environment, trend, date, and derived level.
  ------------------------------------------------------------------------------}
 function NightScout.getReadings(minNum, maxNum: integer; extras: string;
-out res: string): BGResults;
+out res: string; noCache: boolean): BGResults;
 var
   js: TJSONData;
   arr: TJSONArray;
@@ -520,8 +520,8 @@ var
   i: integer;
   t: BGTrend;
   s, resp, dev, sensorSuffix, devStatusResp: string;
-  params: array[1..1] of string;
-  statusParams: array[1..1] of string;
+  params: array of string;
+  statusParams: array of string;
   deltaField, rssiField, noiseField, deviceField, directionField, dateField: TJSONData;
   deltaValue: glucose;
   currentSgv, prevSgv: integer;
@@ -532,12 +532,19 @@ begin
     extras := NS_READINGS;
 
   // Nightscout supports a 'count' param to limit the number of returned entries.
-  params[1] := 'count=' + IntToStr(maxNum);
+  // When noCache is set, append `_=<unix>` so intermediaries / client-side
+  // HTTP caches don't serve a stale response (the Nightscout backend itself
+  // ignores the unknown query key).
+  if noCache then
+    params := ['count=' + IntToStr(maxNum),
+      '_=' + IntToStr(DateTimeToUnix(Now))]
+  else
+    params := ['count=' + IntToStr(maxNum)];
 
 
   try
     resp := native.request(false, extras, params, '', key);
-    {$ifdef DEBUG} if debug_log_api then TrndiDLog(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, extras, resp, params[1]]));{$endif}
+    {$ifdef DEBUG} if debug_log_api then TrndiDLog(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, extras, resp, params[0]]));{$endif}
     js := GetJSON(resp); // Expecting an array of entries
   except
     // Any exception during request/parse yields an empty result.
@@ -555,7 +562,10 @@ begin
 
   // Optional metadata probe for sensor age/expiry hints.
   sensorSuffix := '';
-  statusParams[1] := 'count=1';
+  if noCache then
+    statusParams := ['count=1', '_=' + IntToStr(DateTimeToUnix(Now))]
+  else
+    statusParams := ['count=1'];
   try
     devStatusResp := native.request(false, NS_DEVICESTATUS, statusParams, '', key);
     sensorSuffix := ExtractSensorStatusSuffix(devStatusResp);

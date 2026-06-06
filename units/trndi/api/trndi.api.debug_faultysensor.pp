@@ -13,7 +13,8 @@ type
   protected
     function getSystemName: string; override;
   public
-    function getReadings(min, maxNum: integer; extras: string; out res: string): BGResults; override;
+    function getReadings(min, maxNum: integer; extras: string; out res: string;
+      noCache: boolean): BGResults; override;
     class function ParamLabel(LabelName: APIParamLabel): string; override;
   end;
 
@@ -24,7 +25,8 @@ begin
   Result := 'Debug Faulty Sensor API';
 end;
 
-function DebugFaultySensorAPI.getReadings(min, maxNum: integer; extras: string; out res: string): BGResults;
+function DebugFaultySensorAPI.getReadings(min, maxNum: integer; extras: string;
+  out res: string; {%H-}noCache: boolean): BGResults;
 const
   // 2 -> 16 -> 5 -> 17 -> 3 -> 20 mmol/L in mg/dL
   FaultyPattern: array[0..5] of integer = (36, 288, 90, 306, 54, 360);

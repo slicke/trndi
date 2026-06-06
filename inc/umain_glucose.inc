@@ -913,8 +913,12 @@ end;
   Boot   — preserves the two-attempt fast retry that used to live in
            FormCreate's blocking path, and routes the failure to the
            boot-specific warning panel.
-  Force  — bypasses any caller-side caching; reserved for future use (the
-           worker currently always hits the API).
+  Force  — passed to api.getReadings as `noCache`. HTTP-based backends
+           (Nightscout v1/v3, xDrip) append a cache-busting `_=<unix>` query
+           param so intermediaries and client-side HTTP caches don't serve a
+           stale response; POST-based backends (Dexcom, Tandem) and synthetic
+           debug backends ignore it. Also surfaces as "(Forced)" in the
+           debug-info dialog title.
  ------------------------------------------------------------------------------}
 function TfBG.RequestAsyncFetch(Boot: boolean; Force: boolean): boolean;
 begin

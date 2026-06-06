@@ -71,7 +71,7 @@ type
     constructor Create(user, pass: string); override;
     function connect: boolean; override;
     function getReadings(min, maxNum: integer; extras: string;
-      out res: string): BGResults; override;
+      out res: string; noCache: boolean): BGResults; override;
     class function ParamLabel(LabelName: APIParamLabel): string; override;
   protected
     function getLimitHigh: integer; override;
@@ -147,7 +147,7 @@ begin
 end;
 
 function DebugLateMissingAPI.getReadings(min, maxNum: integer; extras: string;
-  out res: string): BGResults;
+  out res: string; {%H-}noCache: boolean): BGResults;
 
   // Glucose value (mg/dL) for a given TDateTime using a repeating sine wave.
   function CurveAt(const T: TDateTime): integer;

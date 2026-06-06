@@ -53,8 +53,8 @@ protected
 public
   constructor Create(user, pass: string); override;
   function connect: boolean; override;
-  function getReadings(min, maxNum: integer; extras: string; out res: string): BGResults;
-    override;
+  function getReadings(min, maxNum: integer; extras: string; out res: string;
+    noCache: boolean): BGResults; override;
   class function ParamLabel(LabelName: APIParamLabel): string; override;
 private
 
@@ -115,7 +115,7 @@ end;
   Generate fake readings over the last 50 minutes at 5-minute intervals
 ------------------------------------------------------------------------------}
 function DebugSlowAPI.getReadings(min, maxNum: integer; extras: string;
-out res: string): BGResults;
+out res: string; {%H-}noCache: boolean): BGResults;
 
 function getFakeVals(const min: integer; out reading, delta: integer): TDateTime;
   var

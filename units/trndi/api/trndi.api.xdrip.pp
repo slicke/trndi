@@ -114,7 +114,7 @@ public
         @returns(Array of @code(BGReading); may be empty on errors)
      }
   function GetReadings(min, maxNum: integer; path: string;
-    out res: string): BGResults; override;
+    out res: string; noCache: boolean): BGResults; override;
 
     {** Connect to the xDrip server and initialize time offset and thresholds.
 
@@ -224,7 +224,7 @@ end;
   The NightScout implementation handles JSON parsing and mapping to BGResults.
 ------------------------------------------------------------------------------}
 function xDrip.GetReadings(min, maxNum: integer; path: string;
-out res: string): BGResults;
+out res: string; noCache: boolean): BGResults;
 var
   LJSONData: TJSONData;
   LEntries: TJSONArray;
@@ -238,7 +238,7 @@ begin
     path := XDRIP_READINGS;
 
   // Reuse NightScout's implementation to perform the request and mapping
-  Result := inherited GetReadings(min, maxNum, path, res);
+  Result := inherited GetReadings(min, maxNum, path, res, noCache);
 
   if (res = '') or (Length(Result) = 0) then
     Exit;

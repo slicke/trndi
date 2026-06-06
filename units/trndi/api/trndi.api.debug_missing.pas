@@ -53,8 +53,8 @@ DebugMissingAPI = class(DebugAPI)
 protected
   function  getSystemName: string; override;
 public
-  function getReadings(min, maxNum: integer; extras: string; out res: string): BGResults;
-    override;
+  function getReadings(min, maxNum: integer; extras: string; out res: string;
+    noCache: boolean): BGResults; override;
 end;
 
 implementation
@@ -70,7 +70,7 @@ begin
 end;
 
 function DebugMissingAPI.getReadings(min, maxNum: integer; extras: string;
-out res: string): BGResults;
+out res: string; {%H-}noCache: boolean): BGResults;
 var
   fNow: TDateTime;
 

@@ -99,7 +99,7 @@ public
   constructor Create(user, pass: string); overload;
   function connect: boolean; override;
   function getReadings(minNum, maxNum: integer; extras: string;
-    out res: string): BGResults; override;
+    out res: string; noCache: boolean): BGResults; override;
   function supportsBasal: boolean; override;
   function getBasalProfile(out profile: TBasalProfile): boolean; override;
     {** Test NightScout credentials
@@ -770,7 +770,7 @@ end;
   {status, result: [...]} or a direct array for robustness.
  ------------------------------------------------------------------------------}
 function NightScout3.getReadings(minNum, maxNum: integer; extras: string;
-out res: string): BGResults;
+out res: string; noCache: boolean): BGResults;
 var
   resp: string;
   js, arrNode: TJSONData;
@@ -831,10 +831,17 @@ begin
   // Build v3 query params
   // Nightscout v3 API may have different sort syntax than v1/v2
   // Try using sort$desc for descending order
-  SetLength(params, 3);
+  if noCache then
+    SetLength(params, 4)
+  else
+    SetLength(params, 3);
   params[0] := 'limit=' + IntToStr(maxNum);
   params[1] := 'sort$desc=date';  // Try v3 syntax for descending sort
   params[2] := 'fields=date,sgv,delta,direction,device,rssi,noise';
+  // When noCache is set, append `_=<unix>` so intermediaries / client-side
+  // HTTP caches don't serve a stale response. NS3 ignores unknown query keys.
+  if noCache then
+    params[3] := '_=' + IntToStr(DateTimeToUnix(Now));
 
   try
     // Prefer /api/v3/entries and fall back to entries.json when using default.
@@ -876,8 +883,13 @@ begin
     end;
 
     // v1 typically supports count parameter and returns newest-first
-    SetLength(fbparams, 1);
+    if noCache then
+      SetLength(fbparams, 2)
+    else
+      SetLength(fbparams, 1);
     fbparams[0] := 'count=' + IntToStr(maxNum);
+    if noCache then
+      fbparams[1] := '_=' + IntToStr(DateTimeToUnix(Now));
     resp := native.request(false, FSiteBase + '/api/v1/entries.json',
       fbparams, '', BearerHeader, false {no prefix});
     {$ifdef DEBUG} if debug_log_api then TrndiDLog(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, NS3_STATUS, resp, debugParams(fbParams)]));{$endif}
@@ -909,8 +921,13 @@ begin
   if (arrNode = nil) or (arrNode.JSONType <> jtArray) then
   begin
     // Try v1 fallback if we haven't already and current payload isn't an array
-    SetLength(fbparams, 1);
+    if noCache then
+      SetLength(fbparams, 2)
+    else
+      SetLength(fbparams, 1);
     fbparams[0] := 'count=' + IntToStr(maxNum);
+    if noCache then
+      fbparams[1] := '_=' + IntToStr(DateTimeToUnix(Now));
     resp := native.request(false, FSiteBase + '/api/v1/entries.json',
       fbparams, '', BearerHeader, false {no prefix});
     {$ifdef DEBUG} if debug_log_api then TrndiDLog(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, NS3_STATUS, resp, debugParams(fbparams)]));{$endif}
@@ -939,8 +956,13 @@ begin
 
   // Optional metadata probe for sensor age/expiry hints.
   sensorSuffix := '';
-  SetLength(statusParams, 1);
+  if noCache then
+    SetLength(statusParams, 2)
+  else
+    SetLength(statusParams, 1);
   statusParams[0] := 'count=1';
+  if noCache then
+    statusParams[1] := '_=' + IntToStr(DateTimeToUnix(Now));
   try
     if not TryRequestV3(NS3_DEVICESTATUS, NS3_DEVICESTATUS_JSON, statusParams, devStatusResp) then
       devStatusResp := native.request(false, FSiteBase + '/api/v1/devicestatus.json',

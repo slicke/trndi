@@ -44,7 +44,8 @@ type
     constructor Create; reintroduce;
     destructor Destroy; override;
     function connect: boolean; override;
-    function getReadings(minNum, maxNum: integer; extras: string; out res: string): BGResults; override;
+    function getReadings(minNum, maxNum: integer; extras: string; out res: string;
+      noCache: boolean): BGResults; override;
     procedure SetReadings(const AReadings: BGResults);
     // Test helper to set tz (minutes) since setTZ is protected
     procedure SetTZPublic(secsMin: integer);
@@ -67,7 +68,8 @@ begin
   Result := true;
 end;
 
-function TFakeAPI.getReadings(minNum, maxNum: integer; extras: string; out res: string): BGResults;
+function TFakeAPI.getReadings(minNum, maxNum: integer; extras: string;
+  out res: string; {%H-}noCache: boolean): BGResults;
 var
   n, i: integer;
 begin

@@ -53,8 +53,8 @@ DebugFirstMissingAPI = class(DebugAPI)
 protected
   function getSystemName: string; override;
 public
-  function getReadings(min, maxNum: integer; extras: string; out res: string): BGResults;
-    override;
+  function getReadings(min, maxNum: integer; extras: string; out res: string;
+    noCache: boolean): BGResults; override;
 end;
 
 implementation
@@ -74,11 +74,11 @@ end;
   with the first reading missing
 ------------------------------------------------------------------------------}
 function DebugFirstMissingAPI.getReadings(min, maxNum: integer; extras: string;
-out res: string): BGResults;
+out res: string; noCache: boolean): BGResults;
 var
   i: integer;
 begin
-  result := inherited getReadings(min, maxNum, extras, res);
+  result := inherited getReadings(min, maxNum, extras, res, noCache);
   for  i := Low(result) to High(result) do
     result[i].date := result[i].date - EncodeTime(0, 10, 0, 0);
 end;

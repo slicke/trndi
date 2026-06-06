@@ -192,20 +192,25 @@ const
         @param(extras  Additional path or query hints; default empty)
         @returns(Array of BGReading)
      }
-  function getReadings(minNum, maxNum: integer; extras: string = ''): BGResults;
+  function getReadings(minNum, maxNum: integer; extras: string = '';
+    noCache: boolean = false): BGResults;
 
     {** Retrieve BG readings with raw JSON/text result returned by out-parameter.
 
         Subclasses must implement this method.
 
-        @param(minNum  Time span hint (minutes), usage depends on subclass)
-        @param(maxNum  Maximum number of readings to retrieve)
-        @param(extras  Additional path or query hints)
-        @param(res     Out parameter receiving raw response text)
+        @param(minNum   Time span hint (minutes), usage depends on subclass)
+        @param(maxNum   Maximum number of readings to retrieve)
+        @param(extras   Additional path or query hints)
+        @param(res      Out parameter receiving raw response text)
+        @param(noCache  When True, HTTP-based backends append a cache-busting
+                        query param (`_=<timestamp>`) so intermediaries and
+                        client-side HTTP caches return a fresh response.
+                        Synthetic/debug backends ignore the flag.)
         @returns(Array of BGReading)
      }
   function getReadings(minNum, maxNum: integer; extras: string;
-    out res: string): BGResults; virtual; abstract;
+    out res: string; noCache: boolean): BGResults; virtual; abstract;
 
     {** Construct a new API object.
         Subclasses may interpret @code(user), @code(pass), and @code(extra) as needed.
@@ -712,12 +717,13 @@ end;
 {------------------------------------------------------------------------------
   Convenience overload that forwards to the abstract variant and discards raw text.
 ------------------------------------------------------------------------------}
-function TrndiAPI.getReadings(minNum, maxNum: integer; extras: string = ''): BGResults;
+function TrndiAPI.getReadings(minNum, maxNum: integer; extras: string = '';
+  noCache: boolean = false): BGResults;
 var
   res: string;
 begin
   lastErr := '';
-  Result := getReadings(minNum, maxNum, extras, res);
+  Result := getReadings(minNum, maxNum, extras, res, noCache);
 end;
 
 {------------------------------------------------------------------------------

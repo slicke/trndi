@@ -176,7 +176,7 @@ public
         @returns(Array of @code(BGReading); may be empty if none/failed)
      }
   function GetReadings(AMinutes, AMaxCount: integer; extras: string;
-    out res: string): BGResults; override;
+    out res: string; noCache: boolean): BGResults; override;
     {** UI parameter label provider (override).
         1: Dexcom Username
         2: Dexcom Password
@@ -797,7 +797,10 @@ end;
   Returns up to AMaxCount samples, optionally computing deltas.
 ------------------------------------------------------------------------------}
 function DexcomNew.GetReadings(AMinutes, AMaxCount: integer; extras: string;
-out res: string): BGResults;
+out res: string; {%H-}noCache: boolean): BGResults;
+// Dexcom Share fetches readings via a POST to ReadPublishedSamples, which is
+// not subject to HTTP GET caching. noCache is accepted for interface
+// compatibility but has no effect on this backend.
 
 function LooksLikeSessionFailure(const Response: string): boolean;
 var

@@ -320,17 +320,17 @@ begin
         Exit;
 
       {$ifdef DEBUG}
-      FResults := api.getReadings(MAX_MIN, MAX_RESULT, '', FDiag);
+      FResults := api.getReadings(MAX_MIN, MAX_RESULT, '', FDiag, FForce);
       {$else}
-      FResults := api.getReadings(MAX_MIN, MAX_RESULT);
+      FResults := api.getReadings(MAX_MIN, MAX_RESULT, '', FForce);
       {$endif}
 
       if FBoot and (Length(FResults) = 0) and (not Terminated) then
       begin
         {$ifdef DEBUG}
-        FResults := api.getReadings(MAX_MIN, MAX_RESULT, '', FDiag);
+        FResults := api.getReadings(MAX_MIN, MAX_RESULT, '', FDiag, FForce);
         {$else}
-        FResults := api.getReadings(MAX_MIN, MAX_RESULT);
+        FResults := api.getReadings(MAX_MIN, MAX_RESULT, '', FForce);
         {$endif}
       end;
 
@@ -438,7 +438,7 @@ begin
       if not Assigned(api) then
         Exit;
 
-      FResults := api.getReadings(FMinutes, FMaxReadings, '', diag);
+      FResults := api.getReadings(FMinutes, FMaxReadings, '', diag, false);
 
       if Assigned(api) then
         FErrorMsg := api.errormsg;

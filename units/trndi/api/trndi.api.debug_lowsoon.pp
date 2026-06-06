@@ -13,7 +13,8 @@ type
   protected
     function getSystemName: string; override;
   public
-    function getReadings(min, maxNum: integer; extras: string; out res: string): BGResults; override;
+    function getReadings(min, maxNum: integer; extras: string; out res: string;
+      noCache: boolean): BGResults; override;
     class function ParamLabel(LabelName: APIParamLabel): string; override;
   end;
 
@@ -24,7 +25,8 @@ begin
   Result := 'Debug Low Soon API';
 end;
 
-function DebugLowSoonAPI.getReadings(min, maxNum: integer; extras: string; out res: string): BGResults;
+function DebugLowSoonAPI.getReadings(min, maxNum: integer; extras: string;
+  out res: string; {%H-}noCache: boolean): BGResults;
 const
   // Linear fall from ~10 mmol/L (180 mg/dL) down to ~3.7 mmol/L (67 mg/dL)
   // across the 11 generated readings (i=10 oldest, i=0 newest).

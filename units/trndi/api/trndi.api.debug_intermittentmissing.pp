@@ -22,7 +22,8 @@ type
     function getSystemName: string; override;
   public
     constructor Create(user, pass: string); override;
-    function getReadings(min, maxNum: integer; extras: string; out res: string): BGResults; override;
+    function getReadings(min, maxNum: integer; extras: string; out res: string;
+      noCache: boolean): BGResults; override;
     class function ParamLabel(LabelName: APIParamLabel): string; override;
   end;
 
@@ -67,7 +68,8 @@ end;
 // getReadings - randomly clear between MinMissing and MaxMissing readings
 // among the most recent N readings (default N = 10) to simulate intermittent
 // gaps and try to break UI/mapping logic.
-function DebugIntermittentMissingAPI.getReadings(min, maxNum: integer; extras: string; out res: string): BGResults;
+function DebugIntermittentMissingAPI.getReadings(min, maxNum: integer; extras: string;
+  out res: string; noCache: boolean): BGResults;
 var
   i, toClear, rangeLen, rng: integer;
   idx, pickedCount: integer;
@@ -75,7 +77,7 @@ var
   isPicked: array of boolean;
   logmsg: string;
 begin
-  result := inherited getReadings(min, maxNum, extras, res);
+  result := inherited getReadings(min, maxNum, extras, res, noCache);
   if Length(result) < 1 then
     Exit;
   // Only consider the newest N values so we don't clear very old data

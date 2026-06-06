@@ -197,7 +197,7 @@ type
         @returns(Array of @code(BGReading); may be empty if none/failed)
     }
     function GetReadings(AMinutes, AMaxCount: integer; AExtras: string;
-      out ARes: string): BGResults; override;
+      out ARes: string; noCache: boolean): BGResults; override;
 
     {** UI parameter label provider (override).
         1: Tandem Email
@@ -1573,7 +1573,10 @@ end;
   to extract EGV (estimated glucose value) readings.
  ------------------------------------------------------------------------------}
 function Tandem.GetReadings(AMinutes, AMaxCount: integer; AExtras: string;
-  out ARes: string): BGResults;
+  out ARes: string; {%H-}noCache: boolean): BGResults;
+// Tandem fetches readings via authenticated POSTs to internal report endpoints
+// that are not subject to HTTP GET caching. noCache is accepted for interface
+// compatibility but has no effect on this backend.
 var
   startDate, endDate: TDateTime;
   url: string;
