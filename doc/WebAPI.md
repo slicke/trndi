@@ -7,6 +7,12 @@ Trndi includes an embedded HTTP API server that exposes glucose readings and pre
 
 ## Configuration
 
+### Enabling via the GUI
+
+The simplest way to turn the web server on is from the Settings dialog: open **Settings → System**, and tick **Enable Web API** under **System Features**. Restart Trndi for the change to take effect. This toggles the `webserver.enable` flag described below; the server then listens on port `8080` with no authentication. To use a different port, or to require a bearer token, set those values manually as shown below.
+
+### Enabling via configuration
+
 #### Linux
 Enable the web server in your configuration file (eg `~/.config/Trndi.cfg`):
 
