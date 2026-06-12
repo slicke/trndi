@@ -18,12 +18,12 @@ object fConf: TfConf
     Height = 590
     Top = 11
     Width = 645
-    ActivePage = tsAdvanced
+    ActivePage = tsGeneral
     Align = alClient
     BorderSpacing.Left = 10
     BorderSpacing.Right = 10
     BorderSpacing.Around = 5
-    TabIndex = 7
+    TabIndex = 1
     TabOrder = 0
     OnChange = pcMainChange
     object tsCommon: TTabSheet
@@ -13512,7 +13512,7 @@ object fConf: TfConf
             Left = 15
             Height = 24
             Top = 5
-            Width = 437
+            Width = 464
             Align = alClient
             BorderSpacing.Left = 10
             BorderSpacing.Bottom = 5
@@ -13521,10 +13521,10 @@ object fConf: TfConf
             TabOrder = 0
           end
           object bExtReload: TButton
-            Left = 457
+            Left = 484
             Height = 26
             Top = 3
-            Width = 89
+            Width = 62
             Align = alRight
             AutoSize = True
             BorderSpacing.Top = 3
