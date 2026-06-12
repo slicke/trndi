@@ -316,11 +316,11 @@ msgstr "Vis mappe"
 
 #: tfconf.bfontarrow.caption
 msgid "Arrow font..."
-msgstr ""
+msgstr "Pileskrift..."
 
 #: tfconf.bfontreading.caption
 msgid "Reading font..."
-msgstr ""
+msgstr "Aflæsningsskrift..."
 
 #: tfconf.bfontreset.caption
 msgctxt "tfconf.bfontreset.caption"
@@ -329,7 +329,7 @@ msgstr "Nulstil skrifttyper"
 
 #: tfconf.bfonttime.caption
 msgid "Time font..."
-msgstr ""
+msgstr "Tidsskrift..."
 
 #: tfconf.bimportsettings.caption
 msgid "Import Settings"
@@ -654,7 +654,7 @@ msgstr "8080"
 
 #: tfconf.gbalertbehavior.caption
 msgid "Alert behavior"
-msgstr ""
+msgstr "Alarmopførsel"
 
 #: tfconf.gbdisplayprefs.caption
 msgid "Display Preferences"
@@ -918,7 +918,7 @@ msgstr "100 min"
 
 #: tfconf.lalertdurrow.caption
 msgid "Must persist (minutes)"
-msgstr ""
+msgstr "Skal vedvare (minutter)"
 
 #: tfconf.lalerthicol.caption
 msgctxt "tfconf.lalerthicol.caption"
@@ -928,7 +928,7 @@ msgstr "Høj"
 #: tfconf.lalerthystrow.caption
 msgctxt "tfconf.lalerthystrow.caption"
 msgid "Clear margin (mg/dL)"
-msgstr ""
+msgstr "Friklasse (mg/dL)"
 
 #: tfconf.lalertlocol.caption
 msgctxt "tfconf.lalertlocol.caption"
@@ -937,7 +937,7 @@ msgstr "Lav"
 
 #: tfconf.lalerturgcol.caption
 msgid "Urgent low"
-msgstr ""
+msgstr "Kritisk lavt"
 
 #: tfconf.larch.caption
 msgid "Unknown Architecture"
@@ -1981,7 +1981,7 @@ msgstr "Luk eller minimer?"
 
 #: trndi.strings.rs_quit_minimize_win
 msgid "Would you like Trndi to to hide in the Taskbar, or close?"
-msgstr ""
+msgstr "Vil du skjule Trndi i proceslinjen eller lukke?"
 
 #: trndi.strings.rs_quit_msg
 msgid "Quit the app?"
@@ -2325,7 +2325,7 @@ msgstr "📻 RSSI (signalstyrke): %d%%"
 #, object-pascal-format
 msgctxt "trndi.strings.rs_ux_sensor_expiry"
 msgid "⏱️ Sensor: %s"
-msgstr ""
+msgstr "⏱️ Sensor: %s"
 
 #: trndi.strings.rs_ux_transmitter_info
 msgctxt "trndi.strings.rs_ux_transmitter_info"
@@ -2428,27 +2428,27 @@ msgstr "Velkommen til Trndi"
 
 #: trndi.strings.rs_wizard_trend_120
 msgid "2 hours  (24 readings)"
-msgstr ""
+msgstr "2 timer  (24 aflæsninger)"
 
 #: trndi.strings.rs_wizard_trend_180
 msgid "3 hours  (36 readings)"
-msgstr ""
+msgstr "3 timer  (36 aflæsninger)"
 
 #: trndi.strings.rs_wizard_trend_30
 msgid "30 min  (6 readings)"
-msgstr ""
+msgstr "30 min  (6 aflæsninger)"
 
 #: trndi.strings.rs_wizard_trend_50
 msgid "50 min  (10 readings)"
-msgstr ""
+msgstr "50 min  (10 aflæsninger)"
 
 #: trndi.strings.rs_wizard_trend_90
 msgid "90 min  (18 readings)"
-msgstr ""
+msgstr "90 min  (18 aflæsninger)"
 
 #: trndi.strings.rs_wizard_trend_body
 msgid "Choose how many readings to show in the main graph."
-msgstr ""
+msgstr "Vælg, hvor mange aflæsninger der skal vises i hovedgrafen."
 
 #: trndi.strings.rs_wizard_trend_head
 msgctxt "trndi.strings.rs_wizard_trend_head"
@@ -2483,11 +2483,11 @@ msgstr "Lad os oprette forbindelse!"
 #: uconf.rs_alert_hysteresis_mgdl
 msgctxt "uconf.rs_alert_hysteresis_mgdl"
 msgid "Clear margin (mg/dL)"
-msgstr ""
+msgstr "Friklasse (mg/dL)"
 
 #: uconf.rs_alert_hysteresis_mmol
 msgid "Clear margin (mmol/L)"
-msgstr ""
+msgstr "Friklasse (mmol/L)"
 
 #: uconf.rs_announce_not_available
 #, object-pascal-format
@@ -2521,7 +2521,7 @@ msgstr "Vælg dit CGM-system på listen, og angiv derefter dine oplysninger"
 
 #: uconf.rs_clear_margin_help
 msgid "Once an alert triggers, the reading must recover this many units past the threshold before the alert can fire again."
-msgstr ""
+msgstr "Når en alarm udløses, skal aflæsningen komme dette mange enheder forbi grænsen, før alarmen kan udløses igen."
 
 #: uconf.rs_color_bg
 msgid "Trndi can draw a rectangle/background in the graph's background, to visually represent your high and low limits."
@@ -2631,7 +2631,7 @@ msgstr "Antal udvidelser: %d"
 
 #: uconf.rs_ext_requests
 msgid "Requests: "
-msgstr ""
+msgstr "Anmodninger: "
 
 #: uconf.rs_font_help
 msgid "You can change the font of the reading, time and arrow. Click on the respective item here to change the font"
@@ -2658,7 +2658,7 @@ msgstr ""
 
 #: uconf.rs_must_persist_help
 msgid "An alert will only trigger if the condition has been true continuously for this many minutes. Set to 0 to trigger immediately."
-msgstr ""
+msgstr "En alarm udløses kun, hvis betingelsen har været opfyldt kontinuerligt i dette antal minutter. Sæt til 0 for at udløse med det samme."
 
 #: uconf.rs_newver
 #, object-pascal-format

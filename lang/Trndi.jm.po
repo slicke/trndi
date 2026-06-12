@@ -191,7 +191,7 @@ msgstr "> Servicemeny"
 
 #: tfbg.mialternate.caption
 msgid "Alterante arrow and reading"
-msgstr ""
+msgstr "Vexla pil och avlesning"
 
 #: tfbg.miasysteminfo.caption
 msgid "System Info"
@@ -220,11 +220,11 @@ msgstr "Nuvarande basal"
 
 #: tfbg.miborders.caption
 msgid "No borders"
-msgstr ""
+msgstr "Inga kanter"
 
 #: tfbg.miclock.caption
 msgid "Show clock every 20 sec"
-msgstr ""
+msgstr "Visa klockan var 20 sek"
 
 #: tfbg.micustomdots.caption
 msgctxt "tfbg.micustomdots.caption"
@@ -310,7 +310,7 @@ msgstr "Fôrklara"
 
 #: tfbg.miontop.caption
 msgid "On top"
-msgstr ""
+msgstr "ôverst"
 
 #: tfbg.mipredict.caption
 msgid "Prediction..."
@@ -324,7 +324,7 @@ msgstr "Vyer"
 
 #: tfbg.mirangecolor.caption
 msgid "Use range color for window"
-msgstr ""
+msgstr "Ferga fônstret med omrodesferg"
 
 #: tfbg.mireadingssince.caption
 msgid "Show readings since.."
@@ -370,11 +370,11 @@ msgstr "Visa mapp"
 
 #: tfconf.bfontarrow.caption
 msgid "Arrow font..."
-msgstr ""
+msgstr "Piltypsnitt..."
 
 #: tfconf.bfontreading.caption
 msgid "Reading font..."
-msgstr ""
+msgstr "Avlesningstypsnitt..."
 
 #: tfconf.bfontreset.caption
 #, fuzzy
@@ -384,7 +384,7 @@ msgstr "oterstell typsnitt"
 
 #: tfconf.bfonttime.caption
 msgid "Time font..."
-msgstr ""
+msgstr "Tidstypsnitt..."
 
 #: tfconf.bimportsettings.caption
 msgid "Import Settings"
@@ -715,7 +715,7 @@ msgstr "8080"
 
 #: tfconf.gbalertbehavior.caption
 msgid "Alert behavior"
-msgstr ""
+msgstr "Varningsbeteende"
 
 #: tfconf.gbdisplayprefs.caption
 msgid "Display Preferences"
@@ -985,7 +985,7 @@ msgstr "100 min"
 
 #: tfconf.lalertdurrow.caption
 msgid "Must persist (minutes)"
-msgstr ""
+msgstr "Meste vedvere (minutter)"
 
 #: tfconf.lalerthicol.caption
 #, fuzzy
@@ -996,7 +996,7 @@ msgstr "Hôg"
 #: tfconf.lalerthystrow.caption
 msgctxt "tfconf.lalerthystrow.caption"
 msgid "Clear margin (mg/dL)"
-msgstr ""
+msgstr "Frigrens (mg/dL)"
 
 #: tfconf.lalertlocol.caption
 #, fuzzy
@@ -1006,7 +1006,7 @@ msgstr "Log"
 
 #: tfconf.lalerturgcol.caption
 msgid "Urgent low"
-msgstr ""
+msgstr "Kritiskt logt"
 
 #: tfconf.larch.caption
 msgid "Unknown Architecture"
@@ -2067,7 +2067,7 @@ msgstr "Stenga av eller minimera?"
 
 #: trndi.strings.rs_quit_minimize_win
 msgid "Would you like Trndi to to hide in the Taskbar, or close?"
-msgstr ""
+msgstr "Vill du minimera Trndi till aktivitetsfeltit, eller stenga ned?"
 
 #: trndi.strings.rs_quit_msg
 msgid "Quit the app?"
@@ -2426,27 +2426,27 @@ msgstr "Velkommen til Trndi"
 
 #: trndi.strings.rs_wizard_trend_120
 msgid "2 hours  (24 readings)"
-msgstr ""
+msgstr "2 timmar  (24 avlesningar)"
 
 #: trndi.strings.rs_wizard_trend_180
 msgid "3 hours  (36 readings)"
-msgstr ""
+msgstr "3 timmar  (36 avlesningar)"
 
 #: trndi.strings.rs_wizard_trend_30
 msgid "30 min  (6 readings)"
-msgstr ""
+msgstr "30 min  (6 avlesningar)"
 
 #: trndi.strings.rs_wizard_trend_50
 msgid "50 min  (10 readings)"
-msgstr ""
+msgstr "50 min  (10 avlesningar)"
 
 #: trndi.strings.rs_wizard_trend_90
 msgid "90 min  (18 readings)"
-msgstr ""
+msgstr "90 min  (18 avlesningar)"
 
 #: trndi.strings.rs_wizard_trend_body
 msgid "Choose how many readings to show in the main graph."
-msgstr ""
+msgstr "Velj hur manga avlesningar som ska visas i huvudgrafen."
 
 #: trndi.strings.rs_wizard_trend_head
 #, fuzzy
@@ -2634,7 +2634,7 @@ msgstr "📻 RSSI (signalstyrka): __PHfce720af-a6d2-42b9-be1b-af250b6aa7a4__%%"
 #: trndi.strings.ssensorexpiry
 #, object-pascal-format
 msgid "⏱️ Sensor: %s"
-msgstr ""
+msgstr "⏱️ Sensor: %s"
 
 #: trndi.strings.sstackerrmsg
 #, object-pascal-format
@@ -2690,11 +2690,11 @@ msgstr "Okent fel"
 #: uconf.rs_alert_hysteresis_mgdl
 msgctxt "uconf.rs_alert_hysteresis_mgdl"
 msgid "Clear margin (mg/dL)"
-msgstr ""
+msgstr "Frigrens (mg/dL)"
 
 #: uconf.rs_alert_hysteresis_mmol
 msgid "Clear margin (mmol/L)"
-msgstr ""
+msgstr "Frigrens (mmol/L)"
 
 #: uconf.rs_announce_not_available
 #, object-pascal-format
@@ -2730,7 +2730,7 @@ msgstr "Velj ditt CGM-system, ange sedan dina uppgifter"
 
 #: uconf.rs_clear_margin_help
 msgid "Once an alert triggers, the reading must recover this many units past the threshold before the alert can fire again."
-msgstr ""
+msgstr "Ner en varning utlosses, meste avlesningen komme detta manga enheter forbi grensen fer varningen kan utlosses igôn."
 
 #: uconf.rs_color_bg
 msgid "Trndi can draw a rectangle/background in the graph's background, to visually represent your high and low limits."
@@ -2844,7 +2844,7 @@ msgstr "Tilleggsantal: __PHad46520b-c2bd-41d2-93e4-f69806e260c7__"
 
 #: uconf.rs_ext_requests
 msgid "Requests: "
-msgstr ""
+msgstr "Fôrfrognningar: "
 
 #: uconf.rs_font_help
 msgid "You can change the font of the reading, time and arrow. Click on the respective item here to change the font"
@@ -2880,7 +2880,7 @@ msgstr ""
 
 #: uconf.rs_must_persist_help
 msgid "An alert will only trigger if the condition has been true continuously for this many minutes. Set to 0 to trigger immediately."
-msgstr ""
+msgstr "En varning utlosses berre om villkoret vort uppfyllt fortlôpende i detta manga minutter. Sett till 0 for att utlossa omedelbart."
 
 #: uconf.rs_newver
 #, object-pascal-format, fuzzy, badformat
