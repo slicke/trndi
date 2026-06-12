@@ -2,14 +2,14 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Trndi\n"
 "POT-Creation-Date: 2026-01-24 00:00+0000\n"
-"PO-Revision-Date: 2026-01-24 00:00+0000\n"
+"PO-Revision-Date: 2026-06-12 21:26+0200\n"
 "Last-Translator: Machine translation (please review)\n"
 "Language-Team: Norwegian Bokmål\n"
 "Language: nb\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Machine translation by GitHub Copilot\n"
+"X-Generator: Poedit 3.9\n"
 
 #: slicke.ux.alert.dlgerr
 msgid "An error occurred while creating a message dialog"
@@ -189,10 +189,6 @@ msgstr "Prikkstatistikk"
 msgid "> Service Menu"
 msgstr "> Servicemeny"
 
-#: tfbg.mialternate.caption
-msgid "Alterante arrow and reading"
-msgstr ""
-
 #: tfbg.miasysteminfo.caption
 msgid "System Info"
 msgstr "Systeminformasjon"
@@ -218,19 +214,6 @@ msgstr "Tving Ja"
 msgid "Current Basal"
 msgstr "Nåværende basal"
 
-#: tfbg.miborders.caption
-msgid "No borders"
-msgstr ""
-
-#: tfbg.miclock.caption
-msgid "Show clock every 20 sec"
-msgstr ""
-
-#: tfbg.micustomdots.caption
-msgctxt "tfbg.micustomdots.caption"
-msgid "Custom Size"
-msgstr "Egendefinert størrelse"
-
 #: tfbg.midebugbackend.caption
 msgid "Announce raw backend data"
 msgstr "Kunngjør rå backend-data"
@@ -239,33 +222,9 @@ msgstr "Kunngjør rå backend-data"
 msgid "Run DNS Lookup Test"
 msgstr "Kjør DNS-oppslagstest"
 
-#: tfbg.midotbig.caption
-msgctxt "tfbg.midotbig.caption"
-msgid "Big"
-msgstr "Stor"
-
-#: tfbg.midothuge.caption
-msgid "Huge"
-msgstr "Enorm"
-
-#: tfbg.midotnormal.caption
-msgctxt "tfbg.midotnormal.caption"
-msgid "Normal"
-msgstr "Normal"
-
 #: tfbg.midotsinview.caption
 msgid "Are dots in view?"
 msgstr "Er prikkene synlige?"
-
-#: tfbg.midotsize.caption
-msgctxt "tfbg.midotsize.caption"
-msgid "Dot Size"
-msgstr "Prikkestørrelse"
-
-#: tfbg.midotsmall.caption
-msgctxt "tfbg.midotsmall.caption"
-msgid "Small"
-msgstr "Liten"
 
 #: tfbg.midotval.caption
 msgid "Reading: ?"
@@ -307,23 +266,13 @@ msgstr "Grenser"
 msgid "Explain"
 msgstr "Forklar"
 
-#: tfbg.miontop.caption
-msgid "On top"
-msgstr ""
-
 #: tfbg.mipredict.caption
 msgid "Prediction..."
 msgstr "Prediksjon..."
 
 #: tfbg.mipref.caption
-#, fuzzy
-#| msgid "Views"
-msgid "More options"
+msgid "Views"
 msgstr "Visninger"
-
-#: tfbg.mirangecolor.caption
-msgid "Use range color for window"
-msgstr ""
 
 #: tfbg.mireadingssince.caption
 msgid "Show readings since.."
@@ -374,7 +323,6 @@ msgid "Reading font..."
 msgstr ""
 
 #: tfconf.bfontreset.caption
-#, fuzzy
 msgctxt "tfconf.bfontreset.caption"
 msgid "Reset Fonts"
 msgstr "Tilbakestill skrifttyper"
@@ -420,7 +368,6 @@ msgid "Check for update"
 msgstr "Se etter oppdatering"
 
 #: tfconf.caption
-#, fuzzy
 msgctxt "tfconf.caption"
 msgid "Settings"
 msgstr "Innstillinger"
@@ -692,13 +639,11 @@ msgid "Low Text"
 msgstr "Lav tekst"
 
 #: tfconf.cl_ok_bg.caption
-#, fuzzy
 msgctxt "tfconf.cl_ok_bg.caption"
 msgid "OK"
 msgstr "OK"
 
 #: tfconf.cl_ok_txt.caption
-#, fuzzy
 msgctxt "tfconf.cl_ok_txt.caption"
 msgid "OK"
 msgstr "OK"
@@ -780,7 +725,6 @@ msgid "Override Custom Range"
 msgstr "Overstyr egendefinert område"
 
 #: tfconf.groupbox8.caption
-#, fuzzy
 msgctxt "tfconf.groupbox8.caption"
 msgid "Predictions"
 msgstr "Prediksjoner"
@@ -977,7 +921,6 @@ msgid "Must persist (minutes)"
 msgstr ""
 
 #: tfconf.lalerthicol.caption
-#, fuzzy
 msgctxt "tfconf.lalerthicol.caption"
 msgid "High"
 msgstr "Høy"
@@ -988,7 +931,6 @@ msgid "Clear margin (mg/dL)"
 msgstr ""
 
 #: tfconf.lalertlocol.caption
-#, fuzzy
 msgctxt "tfconf.lalertlocol.caption"
 msgid "Low"
 msgstr "Lav"
@@ -1143,7 +1085,6 @@ msgid "Show time and value (e.g., ⏱10' ↗ 5.5)"
 msgstr "Vis tid og verdi (f.eks. ⏱10' ↗ 5.5)"
 
 #: tfconf.rbtrendwindow.caption
-#, fuzzy
 msgctxt "tfconf.rbtrendwindow.caption"
 msgid "Trend window"
 msgstr "Trendvindu"
@@ -1206,7 +1147,6 @@ msgid "Multi User"
 msgstr "Flere brukere"
 
 #: tfconf.tspredictions.caption
-#, fuzzy
 msgctxt "tfconf.tspredictions.caption"
 msgid "Predictions"
 msgstr "Prediksjoner"
@@ -1236,7 +1176,6 @@ msgid "00:00"
 msgstr "00:00"
 
 #: tffloat.lval.caption
-#, fuzzy
 msgctxt "tffloat.lval.caption"
 msgid "Setup"
 msgstr "Oppsett"
@@ -1527,6 +1466,11 @@ msgstr "Mulig sensorfeil"
 msgid "Trndi detected repeated large jumps between consecutive readings. Verify with your official CGM app/device."
 msgstr "Trndi har oppdaget gjentatte store hopp mellom påfølgende avlesninger. Verifiser med din offisielle CGM-app/enhet."
 
+#: trndi.strings.rs_changes_apply
+msgctxt "trndi.strings.rs_changes_apply"
+msgid "Apply this value when Trndi starts?"
+msgstr "Anvend denne verdien når Trndi starter?"
+
 #: trndi.strings.rs_cleanup
 msgid "Wait. Shutting down extensions engine..."
 msgstr "Vent. Stenger ned utvidelsesmotoren..."
@@ -1562,7 +1506,6 @@ msgid "No connection details available yet."
 msgstr "Ingen tilkoblingsdetaljer tilgjengelig ennå."
 
 #: trndi.strings.rs_conn_ok
-#, fuzzy
 msgctxt "trndi.strings.rs_conn_ok"
 msgid "OK"
 msgstr "OK"
@@ -1583,6 +1526,24 @@ msgstr "Prøver igjen"
 #, object-pascal-format
 msgid "Custom Size [%.2f]"
 msgstr "Tilpasset størrelse [%.2f]"
+
+#: trndi.strings.rs_data_tyoe_err_func
+#, object-pascal-format
+msgctxt "trndi.strings.rs_data_tyoe_err_func"
+msgid "Datatype \"%s\" was not expected, in function \"%s\". Expected \"%s\""
+msgstr "Datatype \"%s\" var ikke forventet i funksjon \"%s\". Forventet \"%s\""
+
+#: trndi.strings.rs_data_type_err
+#, object-pascal-format
+msgctxt "trndi.strings.rs_data_type_err"
+msgid "Datatype %s was not expected, expected in function %s"
+msgstr "Datatype %s var ikke forventet i funksjon %s"
+
+#: trndi.strings.rs_data_type_err_pos
+#, object-pascal-format
+msgctxt "trndi.strings.rs_data_type_err_pos"
+msgid "Datatype %s was not expected, expected in function %s, parameter %d"
+msgstr "Datatype %s var ikke forventet i funksjon %s, parameter %d"
 
 #: trndi.strings.rs_date_picker_caption
 msgid "Choose a date"
@@ -1629,9 +1590,45 @@ msgstr "Internettforbindelsen din fungerer!"
 msgid "The following extension file returned an error while loading: %s"
 msgstr "Følgende utvidelsesfil returnerte en feil under lasting: %s"
 
+#: trndi.strings.rs_ext_confirm
+msgctxt "trndi.strings.rs_ext_confirm"
+msgid "Extension Confirmation"
+msgstr "Utvidelsesbekreftelse"
+
+#: trndi.strings.rs_ext_err
+msgctxt "trndi.strings.rs_ext_err"
+msgid "Extension Error"
+msgstr "Utvidelsesfeil"
+
+#: trndi.strings.rs_ext_event
+msgctxt "trndi.strings.rs_ext_event"
+msgid "Extension Event"
+msgstr "Utvidelseshendelse"
+
+#: trndi.strings.rs_ext_file
+#, object-pascal-format
+msgctxt "trndi.strings.rs_ext_file"
+msgid "File \"%s\" not found"
+msgstr "Filen \"%s\" ble ikke funnet"
+
+#: trndi.strings.rs_ext_msg
+msgctxt "trndi.strings.rs_ext_msg"
+msgid "Extension Message"
+msgstr "Utvidelsesmelding"
+
 #: trndi.strings.rs_ext_shutdown
 msgid "Shutting down extensions..."
 msgstr "Stenger ned utvidelser..."
+
+#: trndi.strings.rs_ext_user_info
+msgctxt "trndi.strings.rs_ext_user_info"
+msgid "User Information"
+msgstr "Brukerinformasjon"
+
+#: trndi.strings.rs_ext_warn
+msgctxt "trndi.strings.rs_ext_warn"
+msgid "Extension Warning"
+msgstr "Utvidelseadvarsel"
 
 #: trndi.strings.rs_font_error
 #, object-pascal-format
@@ -1641,6 +1638,22 @@ msgstr "Du mangler standardskrifttypen \"%s\". Trndi vil fungere som tiltenkt, m
 #: trndi.strings.rs_force_quit_setup
 msgid "Trndi will now shut down to apply settings, please re-start it manually!"
 msgstr "Trndi stenges nå ned for å anvende innstillinger, vennligst start på nytt manuelt!"
+
+#: trndi.strings.rs_force_refresh
+msgctxt "trndi.strings.rs_force_refresh"
+msgid "Forcefully refresh the reading?"
+msgstr "Tving oppdatering av avlesning?"
+
+#: trndi.strings.rs_force_refresh_cached
+#, object-pascal-format
+msgctxt "trndi.strings.rs_force_refresh_cached"
+msgid "Last update was %d seconds ago. Wait %d more seconds for fresh data, or force refresh now?"
+msgstr "Siste oppdatering var %d sekunder siden. Vent %d sekunder for ferske data, eller tving en oppdatering nå?"
+
+#: trndi.strings.rs_force_refresh_detail
+msgctxt "trndi.strings.rs_force_refresh_detail"
+msgid "Force refresh will bypass the cache and make an immediate API call. Waiting allows the system to use cached data efficiently."
+msgstr "Tvungen oppdatering omgår bufferen og utfører et umiddelbart API-kall. Å vente lar systemet bruke bufrede data effektivt."
 
 #: trndi.strings.rs_high
 msgid "HIGH"
@@ -1782,6 +1795,26 @@ msgstr ""
 msgid "Limit Explanation"
 msgstr "Grenseforklaring"
 
+#: trndi.strings.rs_log_desc
+msgctxt "trndi.strings.rs_log_desc"
+msgid "Trndi has captured data sent to console.log in a JavaScript extension"
+msgstr "Trndi har fanget data sendt til console.log i en JavaScript-utvidelse"
+
+#: trndi.strings.rs_log_empty_msg
+msgctxt "trndi.strings.rs_log_empty_msg"
+msgid "<No message provided>"
+msgstr "<Ingen melding angitt>"
+
+#: trndi.strings.rs_log_no_buffered
+msgctxt "trndi.strings.rs_log_no_buffered"
+msgid "No buffered console messages to show."
+msgstr "Ingen bufrede konsolmeldinger å vise."
+
+#: trndi.strings.rs_log_receive
+msgctxt "trndi.strings.rs_log_receive"
+msgid "Output through console.log has been received"
+msgstr "Utdata via console.log er mottatt"
+
 #: trndi.strings.rs_low
 msgid "LOW"
 msgstr "LAVT"
@@ -1805,7 +1838,6 @@ msgid "Force update"
 msgstr "Tving oppdatering"
 
 #: trndi.strings.rs_menu_help
-#, fuzzy
 msgctxt "trndi.strings.rs_menu_help"
 msgid "Help"
 msgstr "Hjelp"
@@ -1815,7 +1847,6 @@ msgid "Glucose"
 msgstr "Blodsukker"
 
 #: trndi.strings.rs_menu_settings
-#, fuzzy
 msgctxt "trndi.strings.rs_menu_settings"
 msgid "Settings"
 msgstr "Innstillinger"
@@ -1884,6 +1915,11 @@ msgstr "Ingen nylige data tilgjengelig!"
 msgid "Your internet connection is not working, Trndi cannot fetch readings!"
 msgstr "Internettforbindelsen din fungerer ikke. Trndi kan ikke hente avlesninger!"
 
+#: trndi.strings.rs_no_trace
+msgctxt "trndi.strings.rs_no_trace"
+msgid "No stack trace available"
+msgstr "Ingen stakksporing tilgjengelig"
+
 #: trndi.strings.rs_off_hi
 msgid "Over range"
 msgstr "Over område"
@@ -1924,6 +1960,12 @@ msgstr "Angi antall avlesninger å forutsi (1-20)"
 #: trndi.strings.rs_predict_amount_title
 msgid "Force a prediction"
 msgstr "Tving en prediksjon"
+
+#: trndi.strings.rs_prom_err_capt
+#, object-pascal-format
+msgctxt "trndi.strings.rs_prom_err_capt"
+msgid "The asynchronous function %s failed to complete"
+msgstr "Den asynkrone funksjonen %s klarte ikke å fullføres"
 
 #: trndi.strings.rs_quit_caption
 msgid "Exit Trndi?"
@@ -1981,6 +2023,11 @@ msgstr "⟳ Oppdatert: <b>%s</b> <i>(Neste oppdatering: %s)</i>"
 #, object-pascal-format
 msgid "⟳ Updated: %s (Next update: %s)"
 msgstr "⟳ Oppdatert: %s (Neste oppdatering: %s)"
+
+#: trndi.strings.rs_refresh_prompt
+msgctxt "trndi.strings.rs_refresh_prompt"
+msgid "Refresh?"
+msgstr "Oppdater?"
 
 #: trndi.strings.rs_restart_apply
 msgid "Trndi must be restarted for settings to take effect"
@@ -2080,7 +2127,6 @@ msgid "Would you like to save any changes made?"
 msgstr "Vil du lagre eventuelle endringer?"
 
 #: trndi.strings.rs_setup
-#, fuzzy
 msgctxt "trndi.strings.rs_setup"
 msgid "Setup"
 msgstr "Oppsett"
@@ -2114,6 +2160,19 @@ msgstr "Laster utvidelse: "
 #: trndi.strings.rs_splash_loading_init
 msgid "Loading Extensions..."
 msgstr "Laster utvidelser..."
+
+#: trndi.strings.rs_stack_err_msg
+#, object-pascal-format
+msgctxt "trndi.strings.rs_stack_err_msg"
+msgid ""
+"Error: %s \n"
+"Stack: %s %s"
+msgstr ""
+
+#: trndi.strings.rs_stack_failed
+msgctxt "trndi.strings.rs_stack_failed"
+msgid "An error occurred, and the stacktrace could not be loaded. Showing backtrace."
+msgstr "En feil oppstod, og stakksporing kunne ikke lastes. Viser backtrace."
 
 #: trndi.strings.rs_tir_h
 #, object-pascal-format
@@ -2164,9 +2223,29 @@ msgstr "Øvre høyre"
 msgid "Trndi on GitHub"
 msgstr "Trndi på GitHub"
 
+#: trndi.strings.rs_type_error_msg
+msgctxt "trndi.strings.rs_type_error_msg"
+msgid "A data type was expected, but another was found"
+msgstr "En datatype var forventet, men en annen ble funnet"
+
+#: trndi.strings.rs_type_err_capt
+msgctxt "trndi.strings.rs_type_err_capt"
+msgid "A data type differs from what was expected"
+msgstr "En datatype avviker fra det forventede"
+
+#: trndi.strings.rs_type_err_desc
+msgctxt "trndi.strings.rs_type_err_desc"
+msgid "The extension was stopped"
+msgstr "Utvidelsen ble stoppet"
+
 #: trndi.strings.rs_under
 msgid "under"
 msgstr "under"
+
+#: trndi.strings.rs_unknown_err
+msgctxt "trndi.strings.rs_unknown_err"
+msgid "Unknown error"
+msgstr "Ukjent feil"
 
 #: trndi.strings.rs_unknown_time
 msgid "Loading"
@@ -2176,6 +2255,93 @@ msgstr "Laster"
 #, object-pascal-format
 msgid "[%s] %s"
 msgstr "[%s] %s"
+
+#: trndi.strings.rs_ux_announce_off
+msgctxt "trndi.strings.rs_ux_announce_off"
+msgid "No longer announcing readings aloud"
+msgstr "Leser ikke lenger avlesninger høyt"
+
+#: trndi.strings.rs_ux_announce_on
+msgctxt "trndi.strings.rs_ux_announce_on"
+msgid "Announcing readings aloud"
+msgstr "Leser avlesninger høyt"
+
+#: trndi.strings.rs_ux_api
+#, object-pascal-format
+msgctxt "trndi.strings.rs_ux_api"
+msgid "⚙️ Trndi API Interface: %s"
+msgstr "⚙️ Trndis API-grensesnitt: %s"
+
+#: trndi.strings.rs_ux_changes_remember
+msgctxt "trndi.strings.rs_ux_changes_remember"
+msgid "Remember setting?"
+msgstr "Husk innstilling?"
+
+#: trndi.strings.rs_ux_changes_save
+msgctxt "trndi.strings.rs_ux_changes_save"
+msgid "Save?"
+msgstr "Lagre?"
+
+#: trndi.strings.rs_ux_customize_dot_size
+msgctxt "trndi.strings.rs_ux_customize_dot_size"
+msgid "Customize dot size"
+msgstr "Tilpass prikkestørrelse"
+
+#: trndi.strings.rs_ux_device
+#, object-pascal-format
+msgctxt "trndi.strings.rs_ux_device"
+msgid "💻 Device: %s"
+msgstr "💻 Enhet: %s"
+
+#: trndi.strings.rs_ux_dot_size
+msgctxt "trndi.strings.rs_ux_dot_size"
+msgid "Dot Size"
+msgstr "Prikkestørrelse"
+
+#: trndi.strings.rs_ux_enter_dot_size
+msgctxt "trndi.strings.rs_ux_enter_dot_size"
+msgid "Enter a value, the dot size will multiply by this"
+msgstr "Angi en verdi, prikkestørrelsen multipliseres med dette"
+
+#: trndi.strings.rs_ux_noise
+#, object-pascal-format
+msgctxt "trndi.strings.rs_ux_noise"
+msgid "𐩘 Noise: %d"
+msgstr "𐩘 Støy: %d"
+
+#: trndi.strings.rs_ux_reading_here
+#, object-pascal-format
+msgctxt "trndi.strings.rs_ux_reading_here"
+msgid "Reading here: %s at %.2d:%.2d"
+msgstr "Avlesning her: %s kl. %.2d:%.2d"
+
+#: trndi.strings.rs_ux_rssi
+#, object-pascal-format
+msgctxt "trndi.strings.rs_ux_rssi"
+msgid "📻 RSSI (Signal Strength): %d%%"
+msgstr "📻 RSSI (signalstyrke): %d%%"
+
+#: trndi.strings.rs_ux_sensor_expiry
+#, object-pascal-format
+msgctxt "trndi.strings.rs_ux_sensor_expiry"
+msgid "⏱️ Sensor: %s"
+msgstr ""
+
+#: trndi.strings.rs_ux_transmitter_info
+msgctxt "trndi.strings.rs_ux_transmitter_info"
+msgid "Transmitter information"
+msgstr "Senderinformasjon"
+
+#: trndi.strings.rs_ux_trend_window
+msgctxt "trndi.strings.rs_ux_trend_window"
+msgid "Trend window"
+msgstr "Trendvindu"
+
+#: trndi.strings.rs_ux_trend_window_fmt
+#, object-pascal-format
+msgctxt "trndi.strings.rs_ux_trend_window_fmt"
+msgid "%d min (%d dots)"
+msgstr "%d min (%d prikker)"
 
 #: trndi.strings.rs_warn_bg_hi
 #, object-pascal-format
@@ -2285,7 +2451,6 @@ msgid "Choose how many readings to show in the main graph."
 msgstr ""
 
 #: trndi.strings.rs_wizard_trend_head
-#, fuzzy
 msgctxt "trndi.strings.rs_wizard_trend_head"
 msgid "Trend window"
 msgstr "Trendvindu"
@@ -2314,196 +2479,6 @@ msgstr ""
 #: trndi.strings.rs_wizard_welcome_head
 msgid "Let's get connected!"
 msgstr "La oss koble til!"
-
-#: trndi.strings.sannounceoff
-msgid "No longer announcing readings aloud"
-msgstr "Leser ikke lenger avlesninger høyt"
-
-#: trndi.strings.sannounceon
-msgid "Announcing readings aloud"
-msgstr "Leser avlesninger høyt"
-
-#: trndi.strings.sapi
-#, object-pascal-format
-msgid "⚙️ Trndi API Interface: %s"
-msgstr "⚙️ Trndis API-grensesnitt: %s"
-
-#: trndi.strings.schangesapply
-msgid "Apply this value when Trndi starts?"
-msgstr "Anvend denne verdien når Trndi starter?"
-
-#: trndi.strings.schangesremember
-msgid "Remember setting?"
-msgstr "Husk innstilling?"
-
-#: trndi.strings.schangessave
-msgid "Save?"
-msgstr "Lagre?"
-
-#: trndi.strings.scustomisedotsize
-msgid "Customize dot size"
-msgstr "Tilpass prikkestørrelse"
-
-#: trndi.strings.sdatatypeerr
-#, object-pascal-format
-msgid "Datatype %s was not expected, expected in function %s"
-msgstr "Datatype %s var ikke forventet i funksjon %s"
-
-#: trndi.strings.sdatatypeerrfunc
-#, object-pascal-format
-msgid "Datatype \"%s\" was not expected, in function \"%s\". Expected \"%s\""
-msgstr "Datatype \"%s\" var ikke forventet i funksjon \"%s\". Forventet \"%s\""
-
-#: trndi.strings.sdatatypeerrpos
-#, object-pascal-format
-msgid "Datatype %s was not expected, expected in function %s, parameter %d"
-msgstr "Datatype %s var ikke forventet i funksjon %s, parameter %d"
-
-#: trndi.strings.sdevice
-#, object-pascal-format
-msgid "💻 Device: %s"
-msgstr "💻 Enhet: %s"
-
-#: trndi.strings.sdotsize
-msgctxt "trndi.strings.sdotsize"
-msgid "Dot Size"
-msgstr "Prikkestørrelse"
-
-#: trndi.strings.senterdotsize
-msgid "Enter a value, the dot size will multiply by this"
-msgstr "Angi en verdi, prikkestørrelsen multipliseres med dette"
-
-#: trndi.strings.sextconfirm
-msgid "Extension Confirmation"
-msgstr "Utvidelsesbekreftelse"
-
-#: trndi.strings.sexterr
-msgid "Extension Error"
-msgstr "Utvidelsesfeil"
-
-#: trndi.strings.sextevent
-msgid "Extension Event"
-msgstr "Utvidelseshendelse"
-
-#: trndi.strings.sextfile
-#, object-pascal-format
-msgid "File \"%s\" not found"
-msgstr "Filen \"%s\" ble ikke funnet"
-
-#: trndi.strings.sextmsg
-msgid "Extension Message"
-msgstr "Utvidelsesmelding"
-
-#: trndi.strings.sextuserinfo
-msgid "User Information"
-msgstr "Brukerinformasjon"
-
-#: trndi.strings.sextwarn
-msgid "Extension Warning"
-msgstr "Utvidelseadvarsel"
-
-#: trndi.strings.sforcerefresh
-msgid "Forcefully refresh the reading?"
-msgstr "Tving oppdatering av avlesning?"
-
-#: trndi.strings.sforcerefreshcached
-#, object-pascal-format
-msgid "Last update was %d seconds ago. Wait %d more seconds for fresh data, or force refresh now?"
-msgstr "Siste oppdatering var %d sekunder siden. Vent %d sekunder for ferske data, eller tving en oppdatering nå?"
-
-#: trndi.strings.sforcerefreshdetail
-msgid "Force refresh will bypass the cache and make an immediate API call. Waiting allows the system to use cached data efficiently."
-msgstr "Tvungen oppdatering omgår bufferen og utfører et umiddelbart API-kall. Å vente lar systemet bruke bufrede data effektivt."
-
-#: trndi.strings.slogdesc
-msgid "Trndi has captured data sent to console.log in a JavaScript extension"
-msgstr "Trndi har fanget data sendt til console.log i en JavaScript-utvidelse"
-
-#: trndi.strings.slogemptymsg
-msgid "<No message provided>"
-msgstr "<Ingen melding angitt>"
-
-#: trndi.strings.slognobuffered
-msgid "No buffered console messages to show."
-msgstr "Ingen bufrede konsolmeldinger å vise."
-
-#: trndi.strings.slogrecevive
-msgid "Output through console.log has been received"
-msgstr "Utdata via console.log er mottatt"
-
-#: trndi.strings.snoise
-#, object-pascal-format
-msgid "𐩘 Noise: %d"
-msgstr "𐩘 Støy: %d"
-
-#: trndi.strings.snotrace
-msgid "No stack trace available"
-msgstr "Ingen stakksporing tilgjengelig"
-
-#: trndi.strings.spromerrcapt
-#, object-pascal-format
-msgid "The asynchronous function %s failed to complete"
-msgstr "Den asynkrone funksjonen %s klarte ikke å fullføres"
-
-#: trndi.strings.sreadinghere
-#, object-pascal-format
-msgid "Reading here: %s at %.2d:%.2d"
-msgstr "Avlesning her: %s kl. %.2d:%.2d"
-
-#: trndi.strings.srefrshq
-msgid "Refresh?"
-msgstr "Oppdater?"
-
-#: trndi.strings.srssi
-#, object-pascal-format
-msgid "📻 RSSI (Signal Strength): %d%%"
-msgstr "📻 RSSI (signalstyrke): %d%%"
-
-#: trndi.strings.ssensorexpiry
-#, object-pascal-format
-msgid "⏱️ Sensor: %s"
-msgstr ""
-
-#: trndi.strings.sstackerrmsg
-#, object-pascal-format
-msgid ""
-"Error: %s \n"
-"Stack: %s %s"
-msgstr ""
-
-#: trndi.strings.sstackfailed
-msgid "An error occurred, and the stacktrace could not be loaded. Showing backtrace."
-msgstr "En feil oppstod, og stakksporing kunne ikke lastes. Viser backtrace."
-
-#: trndi.strings.stransmitterinfo
-msgid "Transmitter information"
-msgstr "Senderinformasjon"
-
-#: trndi.strings.strendwindow
-msgctxt "trndi.strings.strendwindow"
-msgid "Trend window"
-msgstr "Trendvindu"
-
-#: trndi.strings.strendwindowfmt
-#, object-pascal-format
-msgid "%d min (%d dots)"
-msgstr "%d min (%d prikker)"
-
-#: trndi.strings.stypeerrcapt
-msgid "A data type differs from what was expected"
-msgstr "En datatype avviker fra det forventede"
-
-#: trndi.strings.stypeerrdesc
-msgid "The extension was stopped"
-msgstr "Utvidelsen ble stoppet"
-
-#: trndi.strings.stypeerrmsg
-msgid "A data type was expected, but another was found"
-msgstr "En datatype var forventet, men en annen ble funnet"
-
-#: trndi.strings.sunknownerr
-msgid "Unknown error"
-msgstr "Ukjent feil"
 
 #: uconf.rs_alert_hysteresis_mgdl
 msgctxt "uconf.rs_alert_hysteresis_mgdl"
@@ -2588,7 +2563,6 @@ msgid "This replaces the decimal separator, eg setting \",\" will show the readi
 msgstr "Dette erstatter desimaltegnet, f.eks. innstilling \",\" vil vise avlesningen som 5,5 i stedet for 5.5"
 
 #: uconf.rs_default_account
-#, fuzzy
 msgctxt "uconf.rs_default_account"
 msgid "Default"
 msgstr "Standard"
@@ -2903,11 +2877,13 @@ msgid ""
 "Make sure that web access is turned on."
 msgstr ""
 
-#: ufloat.rscustomop
+#: ufloat.rs_custom_op
+msgctxt "ufloat.rs_custom_op"
 msgid "You can use shift+<number> to manually set visibility (0 = 100% visible)"
 msgstr "Du kan bruke skift+<tall> for å manuelt angi synlighet (0 = 100% synlig)"
 
-#: ufloat.rscustomsize
+#: ufloat.rs_custom_size
+msgctxt "ufloat.rs_custom_size"
 msgid "You can hold down shift and plus (+) or minus (-) to change the window size"
 msgstr "Du kan holde nede skift og pluss (+) eller minus (-) for å justere vinduestørrelsen"
 
@@ -3001,7 +2977,6 @@ msgid "Last 6h"
 msgstr "Siste 6 t"
 
 #: uhistorygraph.rs_history_graph_menu_range_all
-#, fuzzy
 msgctxt "uhistorygraph.rs_history_graph_menu_range_all"
 msgid "All"
 msgstr "Alle"
@@ -3081,4 +3056,3 @@ msgstr "Den høye grensen må være større enn den lave grensen."
 #: uwizard.wz_test_no_support
 msgid "Connection testing is not supported for this service."
 msgstr "Tilkoblingstest støttes ikke for denne tjenesten."
-

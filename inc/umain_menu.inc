@@ -96,7 +96,7 @@ begin
   begin
     DOT_ADJUST := da;
 
-    if ExtMsg(uxdAuto, sChangesSave, sChangesRemember, sChangesApply,
+    if ExtMsg(uxdAuto, RS_UX_CHANGES_SAVE, RS_UX_CHANGES_REMEMBER, RS_CHANGES_APPLY,
       FormatFloat('0.00', da), uxclWhite, uxclRed, [mbYes, mbNo]) = mrYes then
       native.SetFloatSetting('ux.dot_adjust', da);
   end;
@@ -302,9 +302,9 @@ begin
   displayMsg := dm;
 
   if lastReading.TryGetRSSI(i) then
-    displayMsg += sHTMLLineBreak + Format(sRSSI, [i]);
+    displayMsg += sHTMLLineBreak + Format(RS_UX_RSSI, [i]);
   if lastReading.TryGetNoise(i) then
-    displayMsg += sHTMLLineBreak + Format(sNoise, [i]);
+    displayMsg += sHTMLLineBreak + Format(RS_UX_NOISE, [i]);
 
   deviceStr := lastReading.sensor;
   expiryStr := '';
@@ -323,13 +323,13 @@ begin
       expiryStr := Trim(Copy(expiryStr, Length('sensor ') + 1, MaxInt));
   end;
 
-  displayMsg += sHTMLLineBreak + Format(sDevice, [deviceStr]);
+  displayMsg += sHTMLLineBreak + Format(RS_UX_DEVICE, [deviceStr]);
   if expiryStr <> '' then
-    displayMsg += sHTMLLineBreak + Format(sSensorExpiry, [expiryStr]);
+    displayMsg += sHTMLLineBreak + Format(RS_UX_SENSOR_EXPIRY, [expiryStr]);
 
-  displayMsg += sHTMLLineBreak + Format(sAPI, [api.systemName]);
+  displayMsg += sHTMLLineBreak + Format(RS_UX_API, [api.systemName]);
 
-  ExtHTML(uxdAuto, sTransmitterInfo, displayMsg, [mbOK], uxmtInformation, 10);
+  ExtHTML(uxdAuto, RS_UX_TRANSMITTER_INFO, displayMsg, [mbOK], uxmtInformation, 10);
 end;
 
 procedure TfBG.lArrowClick(Sender: TObject);
@@ -496,10 +496,10 @@ begin
   if secondsSinceLastCall < API_CACHE_SECONDS then
   begin
     waitTime := API_CACHE_SECONDS - secondsSinceLastCall;
-    msg := Format(sForceRefreshCached, [secondsSinceLastCall, waitTime]);
+    msg := Format(RS_FORCE_REFRESH_CACHED, [secondsSinceLastCall, waitTime]);
 
-    Result := slicke.UX.alert.ExtMsg(uxdAuto, sRefrshQ, msg,
-      sForceRefreshDetail, '', uxclWhite, uxclRed, [mbRetry, mbCancel],
+    Result := slicke.UX.alert.ExtMsg(uxdAuto, RS_REFRESH_PROMPT, msg,
+      RS_FORCE_REFRESH_DETAIL, '', uxclWhite, uxclRed, [mbRetry, mbCancel],
       uxmtInformation);
 
     if Result = mrRetry then
@@ -612,7 +612,7 @@ begin
     M := tpb.Tag mod 100;
 
     miDotVal.Visible := true;
-    miDotVal.Caption := Format(sReadingHere, [tpb.hint, H, M]);
+    miDotVal.Caption := Format(RS_UX_READING_HERE, [tpb.hint, H, M]);
   end
   else
     miDotVal.Visible := false;

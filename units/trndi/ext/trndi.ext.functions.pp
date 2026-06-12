@@ -455,13 +455,13 @@ begin
   Result := false;
   if not match(a) then
     if func = '' then
-      raise EInvalidCast.Create(Format(sDataTypeErr, [valtype, valTypeToStr(a)]))
+      raise EInvalidCast.Create(Format(RS_DATA_TYPE_ERR, [valtype, valTypeToStr(a)]))
     else
     if ppos > -1 then
-      raise EInvalidCast.Create(Format(sDataTypeErrPos,
+      raise EInvalidCast.Create(Format(RS_DATA_TYPE_ERR_POS,
         [valtype, valTypeToStr(a), func, ppos]))
     else
-      raise EInvalidCast.Create(Format(sDataTypeErrFunc,
+      raise EInvalidCast.Create(Format(RS_DATA_TYOE_ERR_FUNC,
         [valtype, valTypeToStr(a), func]))
   // If mismatch, raise an exception with contextual info
   ;
@@ -905,7 +905,7 @@ begin
   if messageVal.IsString then
     messageStr := JS_ToCString(ctx, messageVal.raw)
   else
-    messageStr := pchar(sUnknownErr);
+    messageStr := pchar(RS_UNKNOWN_ERR);
 
   // Retrieve the 'stack' from the exception object if available
   stackVal := JSValue(JS_GetPropertyStr(ctx, JS_GetException(ctx), 'stack'));
@@ -915,15 +915,15 @@ begin
   if not loop then
   begin
     // Attempt to fix if first pass fails
-    Result := sStackFailed + analyze(ctx, @stackVal, true);
+    Result := RS_STACK_FAILED + analyze(ctx, @stackVal, true);
     Exit;
   end
   else
-    stackStr := pchar(sNoTrace);
+    stackStr := pchar(RS_NO_TRACE);
 
   try
     // Format the error message
-    Result := Format(sStackErrMsg, [messageStr, stackStr, err]);
+    Result := Format(RS_STACK_ERR_MSG, [messageStr, stackStr, err]);
   except
     // Fallback on internal error
     Result := 'Internal error';
@@ -955,8 +955,8 @@ begin
 
   // Log via external logging function
   if fullMsg = '' then
-    fullMsg := sLogEmptyMsg;
-  ExtLog(uxdAuto, sLogRecevive, sLogDesc, fullMsg);
+    fullMsg := RS_LOG_EMPTY_MSG;
+  ExtLog(uxdAuto, RS_LOG_RECEIVE, RS_LOG_DESC, fullMsg);
 
   // Return undefined
   Result := JS_UNDEFINED;
@@ -985,7 +985,7 @@ begin
 
   // Add to buffer
   if fullMsg = '' then
-    fullMsg := sLogEmptyMsg;
+    fullMsg := RS_LOG_EMPTY_MSG;
   
   if ConsoleBuffer = nil then
     ConsoleBuffer := TStringList.Create;
@@ -1005,11 +1005,11 @@ begin
   if (ConsoleBuffer <> nil) and (ConsoleBuffer.Count > 0) then
   begin
     fullMsg := ConsoleBuffer.Text;
-    ExtLog(uxdAuto, sLogRecevive, sLogDesc, fullMsg);
+    ExtLog(uxdAuto, RS_LOG_RECEIVE, RS_LOG_DESC, fullMsg);
     ConsoleBuffer.Clear;
   end
   else
-    ShowMessage(sLogNoBuffered);
+    ShowMessage(RS_LOG_NO_BUFFERED);
 
   // Return undefined
   Result := JS_UNDEFINED;
