@@ -269,6 +269,7 @@ object fConf: TfConf
           '90 min (18 dots)'
           '120 min (24 dots)'
           '180 min (36 dots)'
+          '250 min (50 dots)'
         )
         ParentBackground = False
         TabOrder = 6

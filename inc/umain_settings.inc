@@ -316,6 +316,7 @@ procedure LoadUserSettings(f: TfConf);
       18: f.rbTrendWindow.ItemIndex := 2;
       24: f.rbTrendWindow.ItemIndex := 3;
       36: f.rbTrendWindow.ItemIndex := 4;
+      50: f.rbTrendWindow.ItemIndex := 5;
       else f.rbTrendWindow.ItemIndex := 1;
       end;
       spTHRESHOLD.Value := native.GetIntSetting('system.fresh_threshold',
@@ -741,6 +742,7 @@ procedure SaveUserSettings(f: TfConf);
       2: SetSetting('ux.dot_count', 18);
       3: SetSetting('ux.dot_count', 24);
       4: SetSetting('ux.dot_count', 36);
+      5: SetSetting('ux.dot_count', 50);
       else SetSetting('ux.dot_count', 10);
       end;
 
