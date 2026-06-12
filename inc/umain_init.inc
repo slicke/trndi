@@ -610,7 +610,7 @@ procedure haltBoot;
   begin
     firstboot := true;
     fSplash.Hide;
-    fSplash.Free;
+    FreeAndNil(fSplash);
     tMain.Enabled := false;
     lArrow.Caption := '';
     lVal.Caption := RS_SETUP;
@@ -850,8 +850,8 @@ begin
       
       // Clean up splash screen before config dialog
       fSplash.Hide;
-      fSplash.Free;
-      
+      FreeAndNil(fSplash);
+
       miSettings.Click;
       
       // Flag to close after FormShow (prevents access violations from incomplete init)
@@ -996,9 +996,11 @@ begin
       Showmessage('❌ Failed to initialize Razer Chroma: ', Chroma.LastError);
   end;
 
-  // Cleanup splash screen
+  // Cleanup splash screen. Nil after Free so later `if Assigned(fSplash)`
+  // checks (e.g., LoadExtensions during a reload) don't dereference a dangling
+  // pointer and crash inside TControl.GetText.
   fSplash.Close;
-  fSplash.Free;
+  FreeAndNil(fSplash);
   
   // Bring main window to front after splash closes
   Application.BringToFront;
