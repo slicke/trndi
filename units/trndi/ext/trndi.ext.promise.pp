@@ -206,13 +206,13 @@ begin
         begin
           FSuccess := false;
           if not (Application.Terminated or IsExtShuttingDown) then
-            ExtError(uxdAuto, sTypeErrMsg, e.message);
+            ExtError(uxdAuto, RS_TYPE_ERROR_MSG, e.message);
         end;
         on E: Exception do
         begin
           FSuccess := false;
           if not (Application.Terminated or IsExtShuttingDown) then
-            ExtError(uxdAuto, Format(sPromErrCapt, [func]), e.Message);
+            ExtError(uxdAuto, Format(RS_PROM_ERR_CAPT, [func]), e.Message);
         end;
       end;
     end

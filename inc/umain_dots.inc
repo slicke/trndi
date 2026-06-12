@@ -249,12 +249,12 @@ begin
   if not Assigned(FDotWindowMenu) then
   begin
     FDotWindowMenu := TMenuItem.Create(pmSettings);
-    FDotWindowMenu.Caption := sTrendWindow;
+    FDotWindowMenu.Caption := RS_UX_TREND_WINDOW;
     miSplit4.Parent.Insert(miSplit4.MenuIndex, FDotWindowMenu);
     for i := 0 to High(WindowSizes) do
     begin
       item := TMenuItem.Create(FDotWindowMenu);
-      item.Caption := Format(sTrendWindowFmt,
+      item.Caption := Format(RS_UX_TREND_WINDOW_FMT,
         [WindowSizes[i] * INTERVAL_MINUTES, WindowSizes[i]]);
       item.Tag := WindowSizes[i];
       item.RadioItem := true;

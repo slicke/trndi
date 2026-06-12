@@ -179,10 +179,6 @@ msgstr ""
 msgid "> Service Menu"
 msgstr ""
 
-#: tfbg.mialternate.caption
-msgid "Alterante arrow and reading"
-msgstr ""
-
 #: tfbg.miasysteminfo.caption
 msgid "System Info"
 msgstr ""
@@ -207,18 +203,6 @@ msgstr ""
 msgid "Current Basal"
 msgstr ""
 
-#: tfbg.miborders.caption
-msgid "No borders"
-msgstr ""
-
-#: tfbg.miclock.caption
-msgid "Show clock every 20 sec"
-msgstr ""
-
-#: tfbg.micustomdots.caption
-msgid "Custom Size"
-msgstr ""
-
 #: tfbg.midebugbackend.caption
 msgid "Announce raw backend data"
 msgstr ""
@@ -227,32 +211,8 @@ msgstr ""
 msgid "Run DNS Lookup Test"
 msgstr ""
 
-#: tfbg.midotbig.caption
-msgctxt "tfbg.midotbig.caption"
-msgid "Big"
-msgstr ""
-
-#: tfbg.midothuge.caption
-msgid "Huge"
-msgstr ""
-
-#: tfbg.midotnormal.caption
-msgctxt "tfbg.midotnormal.caption"
-msgid "Normal"
-msgstr ""
-
 #: tfbg.midotsinview.caption
 msgid "Are dots in view?"
-msgstr ""
-
-#: tfbg.midotsize.caption
-msgctxt "tfbg.midotsize.caption"
-msgid "Dot Size"
-msgstr ""
-
-#: tfbg.midotsmall.caption
-msgctxt "tfbg.midotsmall.caption"
-msgid "Small"
 msgstr ""
 
 #: tfbg.midotval.caption
@@ -295,20 +255,12 @@ msgstr ""
 msgid "Explain"
 msgstr ""
 
-#: tfbg.miontop.caption
-msgid "On top"
-msgstr ""
-
 #: tfbg.mipredict.caption
 msgid "Prediction..."
 msgstr ""
 
 #: tfbg.mipref.caption
-msgid "More options"
-msgstr ""
-
-#: tfbg.mirangecolor.caption
-msgid "Use range color for window"
+msgid "Views"
 msgstr ""
 
 #: tfbg.mireadingssince.caption
@@ -1512,6 +1464,11 @@ msgstr ""
 msgid "Trndi detected repeated large jumps between consecutive readings. Verify with your official CGM app/device."
 msgstr ""
 
+#: trndi.strings.rs_changes_apply
+msgctxt "trndi.strings.rs_changes_apply"
+msgid "Apply this value when Trndi starts?"
+msgstr ""
+
 #: trndi.strings.rs_cleanup
 msgid "Wait. Shutting down extensions engine..."
 msgstr ""
@@ -1568,6 +1525,24 @@ msgstr ""
 msgid "Custom Size [%.2f]"
 msgstr ""
 
+#: trndi.strings.rs_data_tyoe_err_func
+#, object-pascal-format
+msgctxt "trndi.strings.rs_data_tyoe_err_func"
+msgid "Datatype \"%s\" was not expected, in function \"%s\". Expected \"%s\""
+msgstr ""
+
+#: trndi.strings.rs_data_type_err
+#, object-pascal-format
+msgctxt "trndi.strings.rs_data_type_err"
+msgid "Datatype %s was not expected, expected in function %s"
+msgstr ""
+
+#: trndi.strings.rs_data_type_err_pos
+#, object-pascal-format
+msgctxt "trndi.strings.rs_data_type_err_pos"
+msgid "Datatype %s was not expected, expected in function %s, parameter %d"
+msgstr ""
+
 #: trndi.strings.rs_date_picker_caption
 msgid "Choose a date"
 msgstr ""
@@ -1613,8 +1588,44 @@ msgstr ""
 msgid "The following extension file returned an error while loading: %s"
 msgstr ""
 
+#: trndi.strings.rs_ext_confirm
+msgctxt "trndi.strings.rs_ext_confirm"
+msgid "Extension Confirmation"
+msgstr ""
+
+#: trndi.strings.rs_ext_err
+msgctxt "trndi.strings.rs_ext_err"
+msgid "Extension Error"
+msgstr ""
+
+#: trndi.strings.rs_ext_event
+msgctxt "trndi.strings.rs_ext_event"
+msgid "Extension Event"
+msgstr ""
+
+#: trndi.strings.rs_ext_file
+#, object-pascal-format
+msgctxt "trndi.strings.rs_ext_file"
+msgid "File \"%s\" not found"
+msgstr ""
+
+#: trndi.strings.rs_ext_msg
+msgctxt "trndi.strings.rs_ext_msg"
+msgid "Extension Message"
+msgstr ""
+
 #: trndi.strings.rs_ext_shutdown
 msgid "Shutting down extensions..."
+msgstr ""
+
+#: trndi.strings.rs_ext_user_info
+msgctxt "trndi.strings.rs_ext_user_info"
+msgid "User Information"
+msgstr ""
+
+#: trndi.strings.rs_ext_warn
+msgctxt "trndi.strings.rs_ext_warn"
+msgid "Extension Warning"
 msgstr ""
 
 #: trndi.strings.rs_font_error
@@ -1624,6 +1635,22 @@ msgstr ""
 
 #: trndi.strings.rs_force_quit_setup
 msgid "Trndi will now shut down to apply settings, please re-start it manually!"
+msgstr ""
+
+#: trndi.strings.rs_force_refresh
+msgctxt "trndi.strings.rs_force_refresh"
+msgid "Forcefully refresh the reading?"
+msgstr ""
+
+#: trndi.strings.rs_force_refresh_cached
+#, object-pascal-format
+msgctxt "trndi.strings.rs_force_refresh_cached"
+msgid "Last update was %d seconds ago. Wait %d more seconds for fresh data, or force refresh now?"
+msgstr ""
+
+#: trndi.strings.rs_force_refresh_detail
+msgctxt "trndi.strings.rs_force_refresh_detail"
+msgid "Force refresh will bypass the cache and make an immediate API call. Waiting allows the system to use cached data efficiently."
 msgstr ""
 
 #: trndi.strings.rs_high
@@ -1766,6 +1793,26 @@ msgstr ""
 msgid "Limit Explanation"
 msgstr ""
 
+#: trndi.strings.rs_log_desc
+msgctxt "trndi.strings.rs_log_desc"
+msgid "Trndi has captured data sent to console.log in a JavaScript extension"
+msgstr ""
+
+#: trndi.strings.rs_log_empty_msg
+msgctxt "trndi.strings.rs_log_empty_msg"
+msgid "<No message provided>"
+msgstr ""
+
+#: trndi.strings.rs_log_no_buffered
+msgctxt "trndi.strings.rs_log_no_buffered"
+msgid "No buffered console messages to show."
+msgstr ""
+
+#: trndi.strings.rs_log_receive
+msgctxt "trndi.strings.rs_log_receive"
+msgid "Output through console.log has been received"
+msgstr ""
+
 #: trndi.strings.rs_low
 msgid "LOW"
 msgstr ""
@@ -1867,6 +1914,11 @@ msgstr ""
 msgid "Your internet connection is not working, Trndi cannot fetch readings!"
 msgstr ""
 
+#: trndi.strings.rs_no_trace
+msgctxt "trndi.strings.rs_no_trace"
+msgid "No stack trace available"
+msgstr ""
+
 #: trndi.strings.rs_off_hi
 msgid "Over range"
 msgstr ""
@@ -1906,6 +1958,12 @@ msgstr ""
 
 #: trndi.strings.rs_predict_amount_title
 msgid "Force a prediction"
+msgstr ""
+
+#: trndi.strings.rs_prom_err_capt
+#, object-pascal-format
+msgctxt "trndi.strings.rs_prom_err_capt"
+msgid "The asynchronous function %s failed to complete"
 msgstr ""
 
 #: trndi.strings.rs_quit_caption
@@ -1963,6 +2021,11 @@ msgstr ""
 #: trndi.strings.rs_refresh_plain
 #, object-pascal-format
 msgid "⟳ Updated: %s (Next update: %s)"
+msgstr ""
+
+#: trndi.strings.rs_refresh_prompt
+msgctxt "trndi.strings.rs_refresh_prompt"
+msgid "Refresh?"
 msgstr ""
 
 #: trndi.strings.rs_restart_apply
@@ -2097,6 +2160,19 @@ msgstr ""
 msgid "Loading Extensions..."
 msgstr ""
 
+#: trndi.strings.rs_stack_err_msg
+#, object-pascal-format
+msgctxt "trndi.strings.rs_stack_err_msg"
+msgid ""
+"Error: %s \n"
+"Stack: %s %s"
+msgstr ""
+
+#: trndi.strings.rs_stack_failed
+msgctxt "trndi.strings.rs_stack_failed"
+msgid "An error occurred, and the stacktrace could not be loaded. Showing backtrace."
+msgstr ""
+
 #: trndi.strings.rs_tir_h
 #, object-pascal-format
 msgid "This is your time in range for the last %s hours and %s minutes"
@@ -2151,8 +2227,28 @@ msgstr ""
 msgid "Trndi on GitHub"
 msgstr ""
 
+#: trndi.strings.rs_type_error_msg
+msgctxt "trndi.strings.rs_type_error_msg"
+msgid "A data type was expected, but another was found"
+msgstr ""
+
+#: trndi.strings.rs_type_err_capt
+msgctxt "trndi.strings.rs_type_err_capt"
+msgid "A data type differs from what was expected"
+msgstr ""
+
+#: trndi.strings.rs_type_err_desc
+msgctxt "trndi.strings.rs_type_err_desc"
+msgid "The extension was stopped"
+msgstr ""
+
 #: trndi.strings.rs_under
 msgid "under"
+msgstr ""
+
+#: trndi.strings.rs_unknown_err
+msgctxt "trndi.strings.rs_unknown_err"
+msgid "Unknown error"
 msgstr ""
 
 #: trndi.strings.rs_unknown_time
@@ -2162,6 +2258,93 @@ msgstr ""
 #: trndi.strings.rs_user_caption
 #, object-pascal-format
 msgid "[%s] %s"
+msgstr ""
+
+#: trndi.strings.rs_ux_announce_off
+msgctxt "trndi.strings.rs_ux_announce_off"
+msgid "No longer announcing readings aloud"
+msgstr ""
+
+#: trndi.strings.rs_ux_announce_on
+msgctxt "trndi.strings.rs_ux_announce_on"
+msgid "Announcing readings aloud"
+msgstr ""
+
+#: trndi.strings.rs_ux_api
+#, object-pascal-format
+msgctxt "trndi.strings.rs_ux_api"
+msgid "⚙️ Trndi API Interface: %s"
+msgstr ""
+
+#: trndi.strings.rs_ux_changes_remember
+msgctxt "trndi.strings.rs_ux_changes_remember"
+msgid "Remember setting?"
+msgstr ""
+
+#: trndi.strings.rs_ux_changes_save
+msgctxt "trndi.strings.rs_ux_changes_save"
+msgid "Save?"
+msgstr ""
+
+#: trndi.strings.rs_ux_customize_dot_size
+msgctxt "trndi.strings.rs_ux_customize_dot_size"
+msgid "Customize dot size"
+msgstr ""
+
+#: trndi.strings.rs_ux_device
+#, object-pascal-format
+msgctxt "trndi.strings.rs_ux_device"
+msgid "💻 Device: %s"
+msgstr ""
+
+#: trndi.strings.rs_ux_dot_size
+msgctxt "trndi.strings.rs_ux_dot_size"
+msgid "Dot Size"
+msgstr ""
+
+#: trndi.strings.rs_ux_enter_dot_size
+msgctxt "trndi.strings.rs_ux_enter_dot_size"
+msgid "Enter a value, the dot size will multiply by this"
+msgstr ""
+
+#: trndi.strings.rs_ux_noise
+#, object-pascal-format
+msgctxt "trndi.strings.rs_ux_noise"
+msgid "𐩘 Noise: %d"
+msgstr ""
+
+#: trndi.strings.rs_ux_reading_here
+#, object-pascal-format
+msgctxt "trndi.strings.rs_ux_reading_here"
+msgid "Reading here: %s at %.2d:%.2d"
+msgstr ""
+
+#: trndi.strings.rs_ux_rssi
+#, object-pascal-format
+msgctxt "trndi.strings.rs_ux_rssi"
+msgid "📻 RSSI (Signal Strength): %d%%"
+msgstr ""
+
+#: trndi.strings.rs_ux_sensor_expiry
+#, object-pascal-format
+msgctxt "trndi.strings.rs_ux_sensor_expiry"
+msgid "⏱️ Sensor: %s"
+msgstr ""
+
+#: trndi.strings.rs_ux_transmitter_info
+msgctxt "trndi.strings.rs_ux_transmitter_info"
+msgid "Transmitter information"
+msgstr ""
+
+#: trndi.strings.rs_ux_trend_window
+msgctxt "trndi.strings.rs_ux_trend_window"
+msgid "Trend window"
+msgstr ""
+
+#: trndi.strings.rs_ux_trend_window_fmt
+#, object-pascal-format
+msgctxt "trndi.strings.rs_ux_trend_window_fmt"
+msgid "%d min (%d dots)"
 msgstr ""
 
 #: trndi.strings.rs_warn_bg_hi
@@ -2299,209 +2482,6 @@ msgstr ""
 
 #: trndi.strings.rs_wizard_welcome_head
 msgid "Let's get connected!"
-msgstr ""
-
-#: trndi.strings.sannounceoff
-msgid "No longer announcing readings aloud"
-msgstr ""
-
-#: trndi.strings.sannounceon
-msgid "Announcing readings aloud"
-msgstr ""
-
-#: trndi.strings.sapi
-#, object-pascal-format
-msgid "⚙️ Trndi API Interface: %s"
-msgstr ""
-
-#: trndi.strings.schangesapply
-msgid "Apply this value when Trndi starts?"
-msgstr ""
-
-#: trndi.strings.schangesremember
-msgid "Remember setting?"
-msgstr ""
-
-#: trndi.strings.schangessave
-msgid "Save?"
-msgstr ""
-
-#: trndi.strings.scustomisedotsize
-msgid "Customize dot size"
-msgstr ""
-
-#: trndi.strings.sdatatypeerr
-#, object-pascal-format
-msgctxt "trndi.strings.sdatatypeerr"
-msgid "Datatype %s was not expected, expected in function %s"
-msgstr ""
-
-#: trndi.strings.sdatatypeerrfunc
-#, object-pascal-format
-msgctxt "trndi.strings.sdatatypeerrfunc"
-msgid "Datatype \"%s\" was not expected, in function \"%s\". Expected \"%s\""
-msgstr ""
-
-#: trndi.strings.sdatatypeerrpos
-#, object-pascal-format
-msgctxt "trndi.strings.sdatatypeerrpos"
-msgid "Datatype %s was not expected, expected in function %s, parameter %d"
-msgstr ""
-
-#: trndi.strings.sdevice
-#, object-pascal-format
-msgid "💻 Device: %s"
-msgstr ""
-
-#: trndi.strings.sdotsize
-msgctxt "trndi.strings.sdotsize"
-msgid "Dot Size"
-msgstr ""
-
-#: trndi.strings.senterdotsize
-msgid "Enter a value, the dot size will multiply by this"
-msgstr ""
-
-#: trndi.strings.sextconfirm
-msgid "Extension Confirmation"
-msgstr ""
-
-#: trndi.strings.sexterr
-msgid "Extension Error"
-msgstr ""
-
-#: trndi.strings.sextevent
-msgid "Extension Event"
-msgstr ""
-
-#: trndi.strings.sextfile
-#, object-pascal-format
-msgid "File \"%s\" not found"
-msgstr ""
-
-#: trndi.strings.sextmsg
-msgid "Extension Message"
-msgstr ""
-
-#: trndi.strings.sextuserinfo
-msgid "User Information"
-msgstr ""
-
-#: trndi.strings.sextwarn
-msgid "Extension Warning"
-msgstr ""
-
-#: trndi.strings.sforcerefresh
-msgid "Forcefully refresh the reading?"
-msgstr ""
-
-#: trndi.strings.sforcerefreshcached
-#, object-pascal-format
-msgid "Last update was %d seconds ago. Wait %d more seconds for fresh data, or force refresh now?"
-msgstr ""
-
-#: trndi.strings.sforcerefreshdetail
-msgid "Force refresh will bypass the cache and make an immediate API call. Waiting allows the system to use cached data efficiently."
-msgstr ""
-
-#: trndi.strings.slogdesc
-msgctxt "trndi.strings.slogdesc"
-msgid "Trndi has captured data sent to console.log in a JavaScript extension"
-msgstr ""
-
-#: trndi.strings.slogemptymsg
-msgid "<No message provided>"
-msgstr ""
-
-#: trndi.strings.slognobuffered
-msgid "No buffered console messages to show."
-msgstr ""
-
-#: trndi.strings.slogrecevive
-msgctxt "trndi.strings.slogrecevive"
-msgid "Output through console.log has been received"
-msgstr ""
-
-#: trndi.strings.snoise
-#, object-pascal-format
-msgid "𐩘 Noise: %d"
-msgstr ""
-
-#: trndi.strings.snotrace
-msgctxt "trndi.strings.snotrace"
-msgid "No stack trace available"
-msgstr ""
-
-#: trndi.strings.spromerrcapt
-#, object-pascal-format
-msgctxt "trndi.strings.spromerrcapt"
-msgid "The asynchronous function %s failed to complete"
-msgstr ""
-
-#: trndi.strings.sreadinghere
-#, object-pascal-format
-msgid "Reading here: %s at %.2d:%.2d"
-msgstr ""
-
-#: trndi.strings.srefrshq
-msgid "Refresh?"
-msgstr ""
-
-#: trndi.strings.srssi
-#, object-pascal-format
-msgid "📻 RSSI (Signal Strength): %d%%"
-msgstr ""
-
-#: trndi.strings.ssensorexpiry
-#, object-pascal-format
-msgid "⏱️ Sensor: %s"
-msgstr ""
-
-#: trndi.strings.sstackerrmsg
-#, object-pascal-format
-msgctxt "trndi.strings.sstackerrmsg"
-msgid ""
-"Error: %s \n"
-"Stack: %s %s"
-msgstr ""
-
-#: trndi.strings.sstackfailed
-msgctxt "trndi.strings.sstackfailed"
-msgid "An error occurred, and the stacktrace could not be loaded. Showing backtrace."
-msgstr ""
-
-#: trndi.strings.stransmitterinfo
-msgid "Transmitter information"
-msgstr ""
-
-#: trndi.strings.strendwindow
-msgctxt "trndi.strings.strendwindow"
-msgid "Trend window"
-msgstr ""
-
-#: trndi.strings.strendwindowfmt
-#, object-pascal-format
-msgid "%d min (%d dots)"
-msgstr ""
-
-#: trndi.strings.stypeerrcapt
-msgctxt "trndi.strings.stypeerrcapt"
-msgid "A data type differs from what was expected"
-msgstr ""
-
-#: trndi.strings.stypeerrdesc
-msgctxt "trndi.strings.stypeerrdesc"
-msgid "The extension was stopped"
-msgstr ""
-
-#: trndi.strings.stypeerrmsg
-msgctxt "trndi.strings.stypeerrmsg"
-msgid "A data type was expected, but another was found"
-msgstr ""
-
-#: trndi.strings.sunknownerr
-msgctxt "trndi.strings.sunknownerr"
-msgid "Unknown error"
 msgstr ""
 
 #: uconf.rs_alert_hysteresis_mgdl
@@ -2901,11 +2881,13 @@ msgid ""
 "Make sure that web access is turned on."
 msgstr ""
 
-#: ufloat.rscustomop
+#: ufloat.rs_custom_op
+msgctxt "ufloat.rs_custom_op"
 msgid "You can use shift+<number> to manually set visibility (0 = 100% visible)"
 msgstr ""
 
-#: ufloat.rscustomsize
+#: ufloat.rs_custom_size
+msgctxt "ufloat.rs_custom_size"
 msgid "You can hold down shift and plus (+) or minus (-) to change the window size"
 msgstr ""
 

@@ -1162,7 +1162,7 @@ begin
   's', 'S':
     speakReading;
   'R', 'r':
-    if slicke.UX.alert.UXDialog(uxdAuto, sRefrshQ, sForceRefresh,
+    if slicke.UX.alert.UXDialog(uxdAuto, RS_REFRESH_PROMPT, RS_FORCE_REFRESH,
       [mbYes, mbNo]) = mrYes then
       miForce.Click;
   'I', 'i':

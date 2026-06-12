@@ -230,59 +230,59 @@ RS_CONN_DETAILS = 'Connection status: %s'+sLineBreak+sLineBreak+'Details:'+sLine
 RS_CONN_OK_INFO = 'Connection is currently healthy. Detailed diagnostics will appear here if a connectivity issue occurs.';
 
 // EXT
-sExtErr = 'Extension Error';
-sExtMsg = 'Extension Message';
-sExtConfirm = 'Extension Confirmation';
-sExtEvent = 'Extension Event';
-sExtWarn = 'Extension Warning';
-sExtFile = 'File "%s" not found';
+RS_EXT_ERR = 'Extension Error';
+RS_EXT_MSG = 'Extension Message';
+RS_EXT_CONFIRM = 'Extension Confirmation';
+RS_EXT_EVENT = 'Extension Event';
+RS_EXT_WARN = 'Extension Warning';
+RS_EXT_FILE = 'File "%s" not found';
 
-sExtUserInfo = 'User Information';
+RS_EXT_USER_INFO = 'User Information';
 
-sTypeErrCapt = 'A data type differs from what was expected';
-sTypeErrDesc = 'The extension was stopped';
-sTypeErrmsg = 'A data type was expected, but another was found';
-sPromErrCapt = 'The asynchronous function %s failed to complete';
+RS_TYPE_ERR_CAPT = 'A data type differs from what was expected';
+RS_TYPE_ERR_DESC = 'The extension was stopped';
+RS_TYPE_ERROR_MSG = 'A data type was expected, but another was found';
+RS_PROM_ERR_CAPT = 'The asynchronous function %s failed to complete';
 
-sNoTrace      = 'No stack trace available';
-sUnknownErr   = 'Unknown error';
-sStackErrMsg  = 'Error: %s '#13#10'Stack: %s %s';
-sLogRecevive  = 'Output through console.log has been received';
-sLogDesc      = 'Trndi has captured data sent to console.log in a JavaScript extension';
-sLogEmptyMsg  = '<No message provided>';
-sLogNoBuffered= 'No buffered console messages to show.';
-sStackFailed  = 'An error occurred, and the stacktrace could not be loaded. Showing backtrace.';
-sDataTypeErr  = 'Datatype %s was not expected, expected in function %s';
-sDataTypeErrPos = 'Datatype %s was not expected, expected in function %s, parameter %d';
-sDataTypeErrFunc = 'Datatype "%s" was not expected, in function "%s". Expected "%s"';
+RS_NO_TRACE      = 'No stack trace available';
+RS_UNKNOWN_ERR   = 'Unknown error';
+RS_STACK_ERR_MSG  = 'Error: %s '#13#10'Stack: %s %s';
+RS_LOG_RECEIVE  = 'Output through console.log has been received';
+RS_LOG_DESC      = 'Trndi has captured data sent to console.log in a JavaScript extension';
+RS_LOG_EMPTY_MSG  = '<No message provided>';
+RS_LOG_NO_BUFFERED= 'No buffered console messages to show.';
+RS_STACK_FAILED  = 'An error occurred, and the stacktrace could not be loaded. Showing backtrace.';
+RS_DATA_TYPE_ERR  = 'Datatype %s was not expected, expected in function %s';
+RS_DATA_TYPE_ERR_POS = 'Datatype %s was not expected, expected in function %s, parameter %d';
+RS_DATA_TYOE_ERR_FUNC = 'Datatype "%s" was not expected, in function "%s". Expected "%s"';
 
-sRSSI = '📻 RSSI (Signal Strength): %d%%';
-sNoise = '𐩘 Noise: %d';
-sDevice = '💻 Device: %s';
-sSensorExpiry = '⏱️ Sensor: %s';
-sAPI = '⚙️ Trndi API Interface: %s';
-sTransmitterInfo = 'Transmitter information';
+RS_UX_RSSI = '📻 RSSI (Signal Strength): %d%%';
+RS_UX_NOISE = '𐩘 Noise: %d';
+RS_UX_DEVICE = '💻 Device: %s';
+RS_UX_SENSOR_EXPIRY = '⏱️ Sensor: %s';
+RS_UX_API = '⚙️ Trndi API Interface: %s';
+RS_UX_TRANSMITTER_INFO = 'Transmitter information';
 
-sRefrshQ = 'Refresh?';
-sForceRefresh = 'Forcefully refresh the reading?';
-sForceRefreshCached = 'Last update was %d seconds ago. Wait %d more seconds for fresh data, or force refresh now?';
-sForceRefreshDetail = 'Force refresh will bypass the cache and make an immediate API call. Waiting allows the system to use cached data efficiently.';
+RS_REFRESH_PROMPT = 'Refresh?';
+RS_FORCE_REFRESH = 'Forcefully refresh the reading?';
+RS_FORCE_REFRESH_CACHED = 'Last update was %d seconds ago. Wait %d more seconds for fresh data, or force refresh now?';
+RS_FORCE_REFRESH_DETAIL = 'Force refresh will bypass the cache and make an immediate API call. Waiting allows the system to use cached data efficiently.';
 
-sAnnounceOn = 'Announcing readings aloud';
-sAnnounceOff = 'No longer announcing readings aloud';
+RS_UX_ANNOUNCE_ON = 'Announcing readings aloud';
+RS_UX_ANNOUNCE_OFF = 'No longer announcing readings aloud';
 
-sDotSize =  'Dot Size';
-sCustomiseDotSize = 'Customize dot size';
-sEnterDotSize= 'Enter a value, the dot size will multiply by this';
+RS_UX_DOT_SIZE =  'Dot Size';
+RS_UX_CUSTOMIZE_DOT_SIZE = 'Customize dot size';
+RS_UX_ENTER_DOT_SIZE= 'Enter a value, the dot size will multiply by this';
 
-sTrendWindow = 'Trend window';
-sTrendWindowFmt = '%d min (%d dots)';
+RS_UX_TREND_WINDOW = 'Trend window';
+RS_UX_TREND_WINDOW_FMT = '%d min (%d dots)';
 
-sChangesSave = 'Save?';
-sChangesRemember = 'Remember setting?';
-sChangesApply = 'Apply this value when Trndi starts?';
+RS_UX_CHANGES_SAVE = 'Save?';
+RS_UX_CHANGES_REMEMBER = 'Remember setting?';
+RS_CHANGES_APPLY = 'Apply this value when Trndi starts?';
 
-sReadingHere = 'Reading here: %s at %.2d:%.2d';
+RS_UX_READING_HERE = 'Reading here: %s at %.2d:%.2d';
 
 RS_DATE_PICKER_CAPTION = 'Choose a date';
 RS_DATE_PICKER_TITLE = 'Choose a date to show readings from';

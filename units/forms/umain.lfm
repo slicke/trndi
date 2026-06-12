@@ -510,7 +510,6 @@ object fBG: TfBG
   end
   object tMissed: TTimer
     Enabled = False
-    Interval = 1000
     OnTimer = tMissedTimer
     Left = 160
     Top = 129
@@ -531,7 +530,6 @@ object fBG: TfBG
   end
   object tProgress: TTimer
     Enabled = False
-    Interval = 1000
     OnTimer = tProgressTimer
     Left = 48
     Top = 200

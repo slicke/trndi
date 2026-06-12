@@ -138,8 +138,8 @@ public
 end;
 
 resourcestring
-rsCustomOp = 'You can use shift+<number> to manually set visibility (0 = 100% visible)';
-rsCustomSize =
+RS_CUSTOM_OP = 'You can use shift+<number> to manually set visibility (0 = 100% visible)';
+RS_CUSTOM_SIZE =
   'You can hold down shift and plus (+) or minus (-) to change the window size';
 
 var
@@ -451,12 +451,12 @@ end;
 
 procedure TfFloat.miCustomSizeClick(Sender: TObject);
 begin
-  ShowMessage(rsCustomSize);
+  ShowMessage(RS_CUSTOM_SIZE);
 end;
 
 procedure TfFloat.miCustomVisibleClick(Sender: TObject);
 begin
-  ShowMessage(rsCustomOp);
+  ShowMessage(RS_CUSTOM_OP);
 end;
 
 procedure TfFloat.miFontBlackClick(Sender: TObject);
