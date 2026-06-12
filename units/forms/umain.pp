@@ -1220,7 +1220,7 @@ end;
 
 // FormClose event handler
 procedure TfBG.FormClose(Sender: TObject; var CloseAction: TCloseAction);
-{$ifdef Darwin}
+{$if defined(Darwin) or defined(Windows)}
 var
   mr: TModalResult;
 {$endif}
@@ -1266,18 +1266,41 @@ begin
     end;
   {$else}
 
+  {$ifdef Windows}
+  if not firstboot then
+    if self.Showing then
+    begin
+      mr := UXDialog(uxdAuto, RS_QUIT_MINIMIZE_TITLE, RS_QUIT_MINIMIZE_WIN,
+        [mbClose, mbUXMinimize, mbCancel]);
+      if mr = mrCancel then
+      begin
+        FShuttingDown := false;
+        CloseAction := caNone;
+        Exit;
+      end;
+      if mr <> mrClose then // mbUXMinimize
+      begin
+        CloseAction := caMinimize;
+        FShuttingDown := false;
+        Exit;
+      end;
+    end;
+
+  Application.Terminate;
+  CloseAction := caFree;
+  {$else}
   if not firstboot then
     if UXDialog(uxdAuto, RS_QUIT_CAPTION, RS_QUIT_MSG, [mbYes, mbNo], uxmtOK) = mrNo then
     begin
-      FShuttingDown := false; // Reset flag if user cancels
+      FShuttingDown := false;
       CloseAction := caNone;
       Exit;
     end;
 
-  Application.Terminate; // signal shutdown only when actually closing
-
-  // Explicitly set CloseAction to ensure the form is actually freed
+  Application.Terminate;
   CloseAction := caFree;
+  {$endif}
+
   {$endif}
 
   // Disable timers before shutting down threads to prevent new threads from being created

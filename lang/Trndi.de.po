@@ -1937,6 +1937,10 @@ msgstr "Möchten Sie im Dock minimieren oder Trndi schließen?"
 msgid "Quit or Minimize?"
 msgstr "Beenden oder minimieren?"
 
+#: trndi.strings.rs_quit_minimize_win
+msgid "Would you like Trndi to to hide in the Taskbar, or close?"
+msgstr ""
+
 #: trndi.strings.rs_quit_msg
 msgid "Quit the app?"
 msgstr "App beenden?"
