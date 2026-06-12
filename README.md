@@ -64,7 +64,10 @@ It also supports the _xDrip_ app, connecting over the local network/WiFi.
 * Supports __multiple languages__
 * Runs on your __Raspberry Pi__ and other arm computers, optionally as a full-screen display
 * Works on __touch-screen__ devices, such as a RaspberryPi with screen
-* Supports modern ___JavaScript__ extensions_
+* Supports modern ___JavaScript__ extensions, _among other things, there are official extensions for:_
+* * IFTTT
+* * Discord
+* * _Why not add your own project?_
 * __Small and portable__
 * Supports dark and light color modes
 * Displays your readings in a __trend graph__
