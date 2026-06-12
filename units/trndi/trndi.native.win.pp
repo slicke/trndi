@@ -86,6 +86,9 @@ public
       @param(res Out parameter receiving response body or error message)
       @returns(True on success) }
   class function getURL(const url: string; out res: string): boolean; override;
+  {** Simple HTTP POST using WinHTTP client. }
+  class function postURL(const url: string; const body: string;
+    const contentType: string; out res: string): boolean; override;
   {** Test an HTTP GET through an explicit proxy only (no direct fallback). }
   class function TestProxyURL(const url: string; const proxyHost: string;
     const proxyPort: string; const proxyUser: string; const proxyPass: string;
@@ -716,6 +719,86 @@ begin
       Result := false;
     end;
 
+  finally
+    tempInstance.Free;
+  end;
+end;
+
+{------------------------------------------------------------------------------
+  postURL
+  -------
+  Simple HTTP POST using WinHTTP client. Mirrors getURL: respects the
+  configured proxy with a direct fallback on failure.
+ ------------------------------------------------------------------------------}
+class function TTrndiNativeWindows.postURL(const url: string; const body: string;
+  const contentType: string; out res: string): boolean;
+const
+  DEFAULT_USER_AGENT = 'Mozilla/5.0 (compatible; trndi) TrndiAPI';
+var
+  client: TWinHTTPClient;
+  responseStr: string;
+  proxyHost, proxyPort, proxyUser, proxyPass: string;
+  tempInstance: TTrndiNativeWindows;
+
+  function PerformRequest(withProxy: boolean; forceNoProxy: boolean): boolean;
+  begin
+    Result := false;
+    if withProxy and (proxyHost <> '') then
+    begin
+      if (proxyUser <> '') or (proxyPass <> '') then
+        client := TWinHTTPClient.Create(DEFAULT_USER_AGENT, proxyHost, StrToIntDef(proxyPort, 8080), proxyUser, proxyPass)
+      else
+        client := TWinHTTPClient.Create(DEFAULT_USER_AGENT, proxyHost, StrToIntDef(proxyPort, 8080));
+    end
+    else if forceNoProxy then
+      client := TWinHTTPClient.Create(DEFAULT_USER_AGENT, true)
+    else
+      client := TWinHTTPClient.Create(DEFAULT_USER_AGENT);
+
+    try
+      if contentType <> '' then
+        client.AddHeader('Content-Type', contentType);
+      client.SetRequestBody(body);
+      try
+        responseStr := client.Post(url);
+        res := responseStr;
+        Result := true;
+      except
+        on E: Exception do
+        begin
+          res := E.Message;
+          Result := false;
+        end;
+      end;
+    finally
+      client.Free;
+    end;
+  end;
+
+begin
+  res := '';
+  tempInstance := TTrndiNativeWindows.Create;
+  try
+    proxyHost := tempInstance.GetSetting('proxy.host', '', true);
+    if proxyHost <> '' then
+    begin
+      proxyPort := tempInstance.GetSetting('proxy.port', '', true);
+      proxyUser := tempInstance.GetSetting('proxy.user', '', true);
+      proxyPass := tempInstance.GetSetting('proxy.pass', '', true);
+      if proxyPort = '' then
+        proxyPort := '8080';
+    end;
+
+    if proxyHost <> '' then
+    begin
+      if PerformRequest(true, false) then
+      begin
+        Result := true;
+        Exit;
+      end;
+    end;
+
+    Result := PerformRequest(false, proxyHost <> '');
   finally
     tempInstance.Free;
   end;

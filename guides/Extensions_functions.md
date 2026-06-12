@@ -10,7 +10,7 @@ Trndi supports ES2023, and provides these functions in addition to it:
 > - **`data`**: `getReading`, `getCurrentReading`, `getLimits`, `getStatistics`, `getBasalRate`, `getUnit`, `getLocale`, `getBuild`, `getCurrentAPI`, `getCurrentUser`, `getCurrentNickname`, `predictReadings`
 > - **`ui`**: `alert`, `confirm`, `prompt`, `select`, `log`, `console.*`, `htmlMsg`, `htmlDlg`, `htmlYesNo`, `attention`, `playSound`, `sayText`, `setBadgeSize`, `setDotSize`, `setDotAdjust`, `setLevelColor`, `setClockInterval`, `uxProp`
 > - **`timers`**: `setTimeout`, `setInterval`, `clearTimeout`, `clearInterval`
-> - **`net`** (declare): `asyncGet`, `jsonGet`
+> - **`net`** (declare): `asyncGet`, `asyncPost`, `jsonGet`
 > - **`exec`** (declare): `runCMD`
 > - **`settings`** (declare): `getSetting`, `setSetting`, `setLimits`, `setTimeAndRange`, `setOverrideThresholdMinutes`
 
@@ -50,6 +50,7 @@ Trndi supports ES2023, and provides these functions in addition to it:
    - [clearInterval](#clearinterval)
  - [Promises (global)](#promises-global)
    - [asyncGet](#asyncget)
+   - [asyncPost](#asyncpost)
    - [jsonGet](#jsonget)
    - [runCMD](#runcmd)
    - [setLimits](#setlimits)
@@ -608,6 +609,29 @@ asyncGet("https://sample-files.com/downloads/documents/txt/simple.txt")
   .then(result => console.log(result))
   .catch(error => console.log(`Error: ${error}`));
   ``` 
+### asyncPost
+#### POSTs a body to a URL
+Sends an HTTP POST. Useful for outgoing webhooks (Discord, Slack, Home
+Assistant, Mattermost, etc.).
+```javascript
+asyncPost(url, body, contentType?)
+```
+- `url` (string, required) — Full URL to POST to.
+- `body` (string, required) — Request body. Stringify JSON yourself.
+- `contentType` (string, optional) — Defaults to `application/json`. Pass
+  an empty string to omit the header entirely (rarely useful).
+
+Resolves with the response body as a string. Rejects with the error
+message on transport failure. Non-2xx responses still resolve (with the
+server's response body) — inspect it yourself if you care.
+
+```javascript
+const payload = JSON.stringify({ content: "Glucose is 4.2 mmol/L" });
+asyncPost("https://discord.com/api/webhooks/.../...", payload)
+  .then(()  => console.log("posted"))
+  .catch(err => console.log("post failed: " + err));
+```
+
 ### jsonGet 
 #### Fetches a URL and extracts a JSON path
 ```javascript

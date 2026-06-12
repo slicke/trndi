@@ -301,6 +301,15 @@ class var touchOverride: TTrndiBool;
   class function HasTouchScreen: boolean;
     {** Simple HTTP GET helper; platform units implement. }
   class function getURL(const url: string; out res: string): boolean; virtual; abstract;
+    {** Simple HTTP POST helper; platform units implement.
+        @param(url) Full URL to POST to.
+        @param(body) Request body (typically JSON).
+        @param(contentType) Value for the Content-Type header (e.g. 'application/json').
+                            Pass an empty string to omit.
+        @param(res) Response body on success, error message on failure.
+        @returns True on success. }
+  class function postURL(const url: string; const body: string;
+    const contentType: string; out res: string): boolean; virtual; abstract;
     {**
       Attempt an HTTP GET through an explicit proxy (no automatic fallback).
       
