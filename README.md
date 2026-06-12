@@ -57,6 +57,7 @@
 
 Trndi is a _desktop app_ that shows your blood sugar and graph. It works with  _Night Scout_, _Tandem Source_ and _Dexcom Share_ at the moment.
 It also supports the _xDrip_ app, connecting over the local network/WiFi.
+> Note that due to a bug in Tandem Source, a few users might not recieve readings as often as they should. Tandem is supposedly working on solving this!
 
 # What differs Trndi from apps?
 * __Natively__ runs on your computer without needing installation
