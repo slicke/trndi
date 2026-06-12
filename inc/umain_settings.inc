@@ -147,11 +147,11 @@ begin
     ScaleLbl(lPredict, taRightJustify, tlBottom);
 
   newDotCount := native.GetIntSetting('ux.dot_count', NUM_DOTS);
-  if (newDotCount >= 1) and (newDotCount <= MAX_DOT_COUNT) and (newDotCount <> ActiveDots) then
+  if (newDotCount >= 1) and (newDotCount <= MAX_DOT_COUNT) and (newDotCount <> ACTIVE_DOTS) then
   begin
-    ActiveDots := newDotCount;
-    if MAX_MIN < ActiveDots * INTERVAL_MINUTES + 10 then
-      MAX_MIN := ActiveDots * INTERVAL_MINUTES + 10;
+    ACTIVE_DOTS := newDotCount;
+    if MAX_MIN < ACTIVE_DOTS * INTERVAL_MINUTES + 10 then
+      MAX_MIN := ACTIVE_DOTS * INTERVAL_MINUTES + 10;
     for i := 1 to High(TrendDots) do
       if Assigned(TrendDots[i]) then
       begin
@@ -167,13 +167,13 @@ begin
       end;
     SetLength(FWarningDots, 0);
     // MAX_RESULT is a reading count, not minutes. Mirror InitializeAPI's
-    // reporting-interval scaling with ActiveDots as the base.
+    // reporting-interval scaling with ACTIVE_DOTS as the base.
     if Assigned(api) then
       MAX_RESULT := Max(MAX_RESULT,
-        ActiveDots * Max(1, (INTERVAL_MINUTES + api.getReportingInterval - 1)
+        ACTIVE_DOTS * Max(1, (INTERVAL_MINUTES + api.getReportingInterval - 1)
                      div api.getReportingInterval))
-    else if MAX_RESULT < ActiveDots then
-      MAX_RESULT := ActiveDots;
+    else if MAX_RESULT < ACTIVE_DOTS then
+      MAX_RESULT := ACTIVE_DOTS;
     CreateTrendDots;
     BuildDotWindowMenu;
     FLastReadingsHash := 0;

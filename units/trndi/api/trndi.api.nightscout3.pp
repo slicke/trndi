@@ -624,7 +624,7 @@ begin
 
   // 2) Fetch v3 status (bearer). Prefer /api/v3/status, fall back to status.json.
   TryRequestV3(NS3_STATUS, NS3_STATUS_JSON, [], resp);
-  {$ifdef DEBUG} if debug_log_api then TrndiDLog(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, NS3_STATUS, resp, debugParams([])]));{$endif}
+  {$ifdef DEBUG} if DEBUG_LOG_ALERT then TrndiDLog(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, NS3_STATUS, resp, debugParams([])]));{$endif}
 
   if Trim(resp) = '' then
     if not TrndiNative.getURL(FSiteBase + '/api/v1/status.json', resp) then
@@ -700,7 +700,7 @@ begin
 
     // Debug: log calibration values to help diagnose timezone/sign issues
     {$ifdef DEBUG}
-    if debug_log_api then
+    if DEBUG_LOG_ALERT then
       TrndiDLog('[' + {$i %file%} + ':' + {$i %Line%} + '] time calibration: serverEpoch=' + IntToStr(serverEpoch) +
         ' UTCDateTime=' + FormatDateTime('yyyy-mm-dd hh:nn:ss', UTCDateTime) +
         ' LocalUTC(Now)=' + FormatDateTime('yyyy-mm-dd hh:nn:ss', LocalTimeToUniversal(Now)) +
@@ -738,7 +738,7 @@ begin
   // Attempt via native.request using absolute v1 URL and bearer header (no prefix)
   resp := native.request(false, FSiteBase + '/api/v1/status.json',
     [], '', BearerHeader, false {no prefix});
-  {$ifdef DEBUG} if debug_log_api then TrndiDLog(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, NS3_STATUS, resp, debugParams([])]));{$endif}
+  {$ifdef DEBUG} if DEBUG_LOG_ALERT then TrndiDLog(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, NS3_STATUS, resp, debugParams([])]));{$endif}
 
   // If empty or app-level error, try plain GET
   if (Trim(resp) = '') or ((resp <> '') and (resp[1] = '+')) then
@@ -864,7 +864,7 @@ begin
     end
     else
       resp := native.request(false, extras, params, '', BearerHeader);
-    {$ifdef DEBUG} if debug_log_api then TrndiDLog(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, NS3_STATUS, resp, debugParams(params)]));{$endif}
+    {$ifdef DEBUG} if DEBUG_LOG_ALERT then TrndiDLog(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, NS3_STATUS, resp, debugParams(params)]));{$endif}
   except
     lastErr := 'Could not contact Nightscout entries endpoint (request failed)';
     Exit; // return empty set
@@ -904,7 +904,7 @@ begin
       fbparams[1] := '_=' + NS3NextNoCacheToken;
     resp := native.request(false, FSiteBase + '/api/v1/entries.json',
       fbparams, '', BearerHeader, false {no prefix});
-    {$ifdef DEBUG} if debug_log_api then TrndiDLog(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, NS3_STATUS, resp, debugParams(fbParams)]));{$endif}
+    {$ifdef DEBUG} if DEBUG_LOG_ALERT then TrndiDLog(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, NS3_STATUS, resp, debugParams(fbParams)]));{$endif}
     if Trim(resp) = '' then
     begin
       lastErr := 'Empty response from Nightscout v1 entries endpoint (fallback failed)';
@@ -942,7 +942,7 @@ begin
       fbparams[1] := '_=' + NS3NextNoCacheToken;
     resp := native.request(false, FSiteBase + '/api/v1/entries.json',
       fbparams, '', BearerHeader, false {no prefix});
-    {$ifdef DEBUG} if debug_log_api then TrndiDLog(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, NS3_STATUS, resp, debugParams(fbparams)]));{$endif}
+    {$ifdef DEBUG} if DEBUG_LOG_ALERT then TrndiDLog(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, NS3_STATUS, resp, debugParams(fbparams)]));{$endif}
     if Trim(resp) = '' then
     begin
       js.Free;
@@ -1145,7 +1145,7 @@ begin
       end;
 
       {$ifdef DEBUG}
-      if debug_log_api then
+      if DEBUG_LOG_ALERT then
       begin
         // Extra diagnostics: compare UnixToDateTime(true/false) and show system local offset
         try
@@ -1404,7 +1404,7 @@ begin
   try
     if not TryRequestV3(NS3_PROFILE, NS3_PROFILE_JSON, [], ResponseStr) then
       ResponseStr := '';
-    {$ifdef DEBUG} if debug_log_api then TrndiDLog(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, NS3_PROFILE, responsestr, debugParams([])]));{$endif}
+    {$ifdef DEBUG} if DEBUG_LOG_ALERT then TrndiDLog(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, NS3_PROFILE, responsestr, debugParams([])]));{$endif}
     
     if Trim(ResponseStr) = '' then
     begin
@@ -1509,7 +1509,7 @@ begin
   try
     if not TryRequestV3(NS3_PROFILE, NS3_PROFILE_JSON, [], ResponseStr) then
       ResponseStr := '';
-   {$ifdef DEBUG} if debug_log_api then TrndiDLog(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, NS3_PROFILE, responseStr, debugParams([])]));{$endif}
+   {$ifdef DEBUG} if DEBUG_LOG_ALERT then TrndiDLog(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, NS3_PROFILE, responseStr, debugParams([])]));{$endif}
   except
     lastErr := 'HTTP request failed while fetching profile endpoint';
     Exit;
