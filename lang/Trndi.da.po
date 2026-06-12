@@ -2629,6 +2629,14 @@ msgstr "Du skal angive en adgangskode"
 msgid "Extensions count: %d"
 msgstr "Antal udvidelser: %d"
 
+#: uconf.rs_ext_reload_done
+msgid "Extensions were reloaded."
+msgstr ""
+
+#: uconf.rs_ext_reload_title
+msgid "Reload Extensions"
+msgstr ""
+
 #: uconf.rs_ext_requests
 msgid "Requests: "
 msgstr "Anmodninger: "
@@ -3056,3 +3064,4 @@ msgstr "Den høje grænse skal være større end den lave grænse."
 #: uwizard.wz_test_no_support
 msgid "Connection testing is not supported for this service."
 msgstr "Forbindelsestest understøttes ikke for denne tjeneste."
+

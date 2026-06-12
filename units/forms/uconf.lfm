@@ -13433,7 +13433,7 @@ object fConf: TfConf
         ClientWidth = 613
         ParentBackground = False
         TabOrder = 0
-        object lbExtensions: TListBox
+        object lbExtensions: TCheckListBox
           Left = 5
           Height = 346
           Top = 5
@@ -13442,6 +13442,7 @@ object fConf: TfConf
           BorderSpacing.Around = 5
           ItemHeight = 0
           TabOrder = 0
+          OnClickCheck = lbExtensionsClickCheck
           OnDblClick = lbExtensionsDblClick
           OnSelectionChange = lbExtensionsSelectionChange
         end
@@ -13511,13 +13512,26 @@ object fConf: TfConf
             Left = 15
             Height = 24
             Top = 5
-            Width = 526
+            Width = 437
             Align = alClient
             BorderSpacing.Left = 10
             BorderSpacing.Bottom = 5
             BorderSpacing.Around = 5
             ReadOnly = True
             TabOrder = 0
+          end
+          object bExtReload: TButton
+            Left = 457
+            Height = 26
+            Top = 3
+            Width = 89
+            Align = alRight
+            AutoSize = True
+            BorderSpacing.Top = 3
+            BorderSpacing.Bottom = 10
+            Caption = 'Reload'
+            TabOrder = 1
+            OnClick = bExtReloadClick
           end
           object bExtOpen: TButton
             Left = 546
@@ -13529,7 +13543,7 @@ object fConf: TfConf
             BorderSpacing.Top = 3
             BorderSpacing.Bottom = 10
             Caption = 'Show Folder'
-            TabOrder = 1
+            TabOrder = 2
             OnClick = bExtOpenClick
           end
         end

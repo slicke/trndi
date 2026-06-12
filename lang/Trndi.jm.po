@@ -189,10 +189,6 @@ msgstr "Punktstatistik"
 msgid "> Service Menu"
 msgstr "> Servicemeny"
 
-#: tfbg.mialternate.caption
-msgid "Alterante arrow and reading"
-msgstr "Vexla pil och avlesning"
-
 #: tfbg.miasysteminfo.caption
 msgid "System Info"
 msgstr "Systeminfo"
@@ -218,19 +214,6 @@ msgstr "Tvinga Ja"
 msgid "Current Basal"
 msgstr "Nuvarande basal"
 
-#: tfbg.miborders.caption
-msgid "No borders"
-msgstr "Inga kanter"
-
-#: tfbg.miclock.caption
-msgid "Show clock every 20 sec"
-msgstr "Visa klockan var 20 sek"
-
-#: tfbg.micustomdots.caption
-msgctxt "tfbg.micustomdots.caption"
-msgid "Custom Size"
-msgstr "Egen storlek"
-
 #: tfbg.midebugbackend.caption
 msgid "Announce raw backend data"
 msgstr "Annonsera rodata fron backendet"
@@ -239,33 +222,9 @@ msgstr "Annonsera rodata fron backendet"
 msgid "Run DNS Lookup Test"
 msgstr "Ker DNS-kontrolltest"
 
-#: tfbg.midotbig.caption
-msgctxt "tfbg.midotbig.caption"
-msgid "Big"
-msgstr "Stor"
-
-#: tfbg.midothuge.caption
-msgid "Huge"
-msgstr "Enorm"
-
-#: tfbg.midotnormal.caption
-msgctxt "tfbg.midotnormal.caption"
-msgid "Normal"
-msgstr "Normal"
-
 #: tfbg.midotsinview.caption
 msgid "Are dots in view?"
 msgstr "Syns punkterna?"
-
-#: tfbg.midotsize.caption
-msgctxt "tfbg.midotsize.caption"
-msgid "Dot Size"
-msgstr "Punktstorlek"
-
-#: tfbg.midotsmall.caption
-msgctxt "tfbg.midotsmall.caption"
-msgid "Small"
-msgstr "Liten"
 
 #: tfbg.midotval.caption
 msgid "Reading: ?"
@@ -308,10 +267,6 @@ msgstr "Grenser"
 msgid "Explain"
 msgstr "Fôrklara"
 
-#: tfbg.miontop.caption
-msgid "On top"
-msgstr "ôverst"
-
 #: tfbg.mipredict.caption
 msgid "Prediction..."
 msgstr "Fôrutsegelse..."
@@ -319,12 +274,8 @@ msgstr "Fôrutsegelse..."
 #: tfbg.mipref.caption
 #, fuzzy
 #| msgid "Views"
-msgid "More options"
+msgid "Views"
 msgstr "Vyer"
-
-#: tfbg.mirangecolor.caption
-msgid "Use range color for window"
-msgstr "Ferga fônstret med omrodesferg"
 
 #: tfbg.mireadingssince.caption
 msgid "Show readings since.."
@@ -1625,6 +1576,12 @@ msgstr "Moljegt sensorfel"
 msgid "Trndi detected repeated large jumps between consecutive readings. Verify with your official CGM app/device."
 msgstr "Trndi har opdaget upprepade stora hopp mellom angrennsande avlesningar. Kontrollera mot din ofisielle CGM-app/enhet."
 
+#: trndi.strings.rs_changes_apply
+#, fuzzy
+msgctxt "trndi.strings.rs_changes_apply"
+msgid "Apply this value when Trndi starts?"
+msgstr "Les in detta verde ner Trndi startar?"
+
 #: trndi.strings.rs_cleanup
 msgid "Wait. Shutting down extensions engine..."
 msgstr "Venta. Stenger tilleggsmotorn..."
@@ -1683,6 +1640,24 @@ msgstr "Forsôker igen"
 msgid "Custom Size [%.2f]"
 msgstr "Egen storlek [%.2f]"
 
+#: trndi.strings.rs_data_tyoe_err_func
+#, object-pascal-format
+msgctxt "trndi.strings.rs_data_tyoe_err_func"
+msgid "Datatype \"%s\" was not expected, in function \"%s\". Expected \"%s\""
+msgstr ""
+
+#: trndi.strings.rs_data_type_err
+#, object-pascal-format
+msgctxt "trndi.strings.rs_data_type_err"
+msgid "Datatype %s was not expected, expected in function %s"
+msgstr ""
+
+#: trndi.strings.rs_data_type_err_pos
+#, object-pascal-format
+msgctxt "trndi.strings.rs_data_type_err_pos"
+msgid "Datatype %s was not expected, expected in function %s, parameter %d"
+msgstr ""
+
 #: trndi.strings.rs_date_picker_caption
 msgid "Choose a date"
 msgstr "Velj ett datum"
@@ -1728,9 +1703,51 @@ msgstr "Din internetanslutning fungerar!"
 msgid "The following extension file returned an error while loading: %s"
 msgstr "Fôljande tilleggsfil returnerade ett fel ner den laddades: __PH9c3509d5-301d-47d0-a140-39da51a88054__"
 
+#: trndi.strings.rs_ext_confirm
+#, fuzzy
+msgctxt "trndi.strings.rs_ext_confirm"
+msgid "Extension Confirmation"
+msgstr "Tilleggsbekreftelse"
+
+#: trndi.strings.rs_ext_err
+#, fuzzy
+msgctxt "trndi.strings.rs_ext_err"
+msgid "Extension Error"
+msgstr "Fel i tillegg"
+
+#: trndi.strings.rs_ext_event
+#, fuzzy
+msgctxt "trndi.strings.rs_ext_event"
+msgid "Extension Event"
+msgstr "Tilleggshendelse"
+
+#: trndi.strings.rs_ext_file
+#, object-pascal-format
+msgctxt "trndi.strings.rs_ext_file"
+msgid "File \"%s\" not found"
+msgstr ""
+
+#: trndi.strings.rs_ext_msg
+#, fuzzy
+msgctxt "trndi.strings.rs_ext_msg"
+msgid "Extension Message"
+msgstr "Tilleggsmeddelande"
+
 #: trndi.strings.rs_ext_shutdown
 msgid "Shutting down extensions..."
 msgstr "Stenger ned tillegg..."
+
+#: trndi.strings.rs_ext_user_info
+#, fuzzy
+msgctxt "trndi.strings.rs_ext_user_info"
+msgid "User Information"
+msgstr "Anvendarinformasjon"
+
+#: trndi.strings.rs_ext_warn
+#, fuzzy
+msgctxt "trndi.strings.rs_ext_warn"
+msgid "Extension Warning"
+msgstr "Tilleggsvarning"
 
 #: trndi.strings.rs_font_error
 #, object-pascal-format, fuzzy, badformat
@@ -1740,6 +1757,24 @@ msgstr "Du saknar standardtypsnittet \\\"__PHdf4aeb41-b019-4c9d-b0ad-9a78364640f
 #: trndi.strings.rs_force_quit_setup
 msgid "Trndi will now shut down to apply settings, please re-start it manually!"
 msgstr "Trndi stengs nu ned fôr att aktivera instellningarna, venligen starta om appen manuellt!"
+
+#: trndi.strings.rs_force_refresh
+#, fuzzy
+msgctxt "trndi.strings.rs_force_refresh"
+msgid "Forcefully refresh the reading?"
+msgstr "Tvinga uppdatering av avlesning?"
+
+#: trndi.strings.rs_force_refresh_cached
+#, object-pascal-format
+msgctxt "trndi.strings.rs_force_refresh_cached"
+msgid "Last update was %d seconds ago. Wait %d more seconds for fresh data, or force refresh now?"
+msgstr ""
+
+#: trndi.strings.rs_force_refresh_detail
+#, fuzzy
+msgctxt "trndi.strings.rs_force_refresh_detail"
+msgid "Force refresh will bypass the cache and make an immediate API call. Waiting allows the system to use cached data efficiently."
+msgstr "Tvingad uppdatering kommer att fôrbigo cachen och uppdatera omedelbart. Om du ventar kan systemet anvenda cachead data effektivt."
 
 #: trndi.strings.rs_high
 msgid "HIGH"
@@ -1895,6 +1930,30 @@ msgstr ""
 msgid "Limit Explanation"
 msgstr "Begrensa fôrklaring"
 
+#: trndi.strings.rs_log_desc
+#, fuzzy
+msgctxt "trndi.strings.rs_log_desc"
+msgid "Trndi has captured data sent to console.log in a JavaScript extension"
+msgstr "Trndi har fongat utdata fron console.log i ett JavaScript-tillegg"
+
+#: trndi.strings.rs_log_empty_msg
+#, fuzzy
+msgctxt "trndi.strings.rs_log_empty_msg"
+msgid "<No message provided>"
+msgstr "<Inga meddelanden finns>"
+
+#: trndi.strings.rs_log_no_buffered
+#, fuzzy
+msgctxt "trndi.strings.rs_log_no_buffered"
+msgid "No buffered console messages to show."
+msgstr "Inga buffrade konsolmeddelanden att visa."
+
+#: trndi.strings.rs_log_receive
+#, fuzzy
+msgctxt "trndi.strings.rs_log_receive"
+msgid "Output through console.log has been received"
+msgstr "Utmatning genom console.log har mottagits"
+
 #: trndi.strings.rs_low
 msgid "LOW"
 msgstr "Log"
@@ -2010,6 +2069,12 @@ msgstr ""
 msgid "Your internet connection is not working, Trndi cannot fetch readings!"
 msgstr "Din internetanslutning fungerar inte. Trndi kan inte hemta avlesningar!"
 
+#: trndi.strings.rs_no_trace
+#, fuzzy
+msgctxt "trndi.strings.rs_no_trace"
+msgid "No stack trace available"
+msgstr "Ingen stacksporning finns"
+
 #: trndi.strings.rs_off_hi
 msgid "Over range"
 msgstr "ôver omrode"
@@ -2052,6 +2117,12 @@ msgstr "Ange antalet avlesningar att fôrutspo (1-20)"
 #: trndi.strings.rs_predict_amount_title
 msgid "Force a prediction"
 msgstr "Tvinga en fôrutspoelse"
+
+#: trndi.strings.rs_prom_err_capt
+#, object-pascal-format
+msgctxt "trndi.strings.rs_prom_err_capt"
+msgid "The asynchronous function %s failed to complete"
+msgstr ""
 
 #: trndi.strings.rs_quit_caption
 msgid "Exit Trndi?"
@@ -2109,6 +2180,12 @@ msgstr "⟳ Uppdaterad: <b>__PH19641a22-ea45-4319-a3b7-eeb0455ba586__</b> <i>(Ne
 #, object-pascal-format, fuzzy, badformat
 msgid "⟳ Updated: %s (Next update: %s)"
 msgstr "⟳ Uppdaterad: __PH645523fa-ced0-4752-816f-e6bd592ae0de__ (Nesta uppdatering: __PH396b32db-e2f9-4bbc-b109-4c703e294a9d__)"
+
+#: trndi.strings.rs_refresh_prompt
+#, fuzzy
+msgctxt "trndi.strings.rs_refresh_prompt"
+msgid "Refresh?"
+msgstr "Les om?"
 
 #: trndi.strings.rs_restart_apply
 msgid "Trndi must be restarted for settings to take effect"
@@ -2247,6 +2324,22 @@ msgstr "Laddar tillegg: "
 msgid "Loading Extensions..."
 msgstr "Laddar tillegg..."
 
+#: trndi.strings.rs_stack_err_msg
+#, object-pascal-format, fuzzy
+msgctxt "trndi.strings.rs_stack_err_msg"
+msgid ""
+"Error: %s \n"
+"Stack: %s %s"
+msgstr ""
+"Fel: %s \n"
+"Stack: %s %s"
+
+#: trndi.strings.rs_stack_failed
+#, fuzzy
+msgctxt "trndi.strings.rs_stack_failed"
+msgid "An error occurred, and the stacktrace could not be loaded. Showing backtrace."
+msgstr "Ett fel uppstod och stacksporningen kunde inte laddas. Visar bakotsporning."
+
 #: trndi.strings.rs_tir_h
 #, object-pascal-format, fuzzy, badformat
 #| msgid ""
@@ -2328,9 +2421,32 @@ msgstr "Hôger topp"
 msgid "Trndi on GitHub"
 msgstr "Trndi po GitHub"
 
+#: trndi.strings.rs_type_error_msg
+#, fuzzy
+msgctxt "trndi.strings.rs_type_error_msg"
+msgid "A data type was expected, but another was found"
+msgstr "En datatyp fôrventades, men en annan potreffades"
+
+#: trndi.strings.rs_type_err_capt
+msgctxt "trndi.strings.rs_type_err_capt"
+msgid "A data type differs from what was expected"
+msgstr ""
+
+#: trndi.strings.rs_type_err_desc
+#, fuzzy
+msgctxt "trndi.strings.rs_type_err_desc"
+msgid "The extension was stopped"
+msgstr "Tillegget stoppades"
+
 #: trndi.strings.rs_under
 msgid "under"
 msgstr "under"
+
+#: trndi.strings.rs_unknown_err
+#, fuzzy
+msgctxt "trndi.strings.rs_unknown_err"
+msgid "Unknown error"
+msgstr "Okent fel"
 
 #: trndi.strings.rs_unknown_time
 msgid "Loading"
@@ -2340,6 +2456,102 @@ msgstr "Laddar"
 #, object-pascal-format, fuzzy, badformat
 msgid "[%s] %s"
 msgstr "[__PH41e72a04-fbea-4b17-b583-5f47674682ce__] __PHbca471f3-7ab1-45ca-856c-a3ff42f719b1__"
+
+#: trndi.strings.rs_ux_announce_off
+#, fuzzy
+msgctxt "trndi.strings.rs_ux_announce_off"
+msgid "No longer announcing readings aloud"
+msgstr "Leser inte upp verden"
+
+#: trndi.strings.rs_ux_announce_on
+#, fuzzy
+msgctxt "trndi.strings.rs_ux_announce_on"
+msgid "Announcing readings aloud"
+msgstr "Leser upp verden"
+
+#: trndi.strings.rs_ux_api
+#, object-pascal-format
+msgctxt "trndi.strings.rs_ux_api"
+msgid "⚙️ Trndi API Interface: %s"
+msgstr ""
+
+#: trndi.strings.rs_ux_changes_remember
+#, fuzzy
+msgctxt "trndi.strings.rs_ux_changes_remember"
+msgid "Remember setting?"
+msgstr "Kom ihog instellning?"
+
+#: trndi.strings.rs_ux_changes_save
+#, fuzzy
+msgctxt "trndi.strings.rs_ux_changes_save"
+msgid "Save?"
+msgstr "Spara?"
+
+#: trndi.strings.rs_ux_customize_dot_size
+#, fuzzy
+msgctxt "trndi.strings.rs_ux_customize_dot_size"
+msgid "Customize dot size"
+msgstr "Anpassa punktstorlek"
+
+#: trndi.strings.rs_ux_device
+#, object-pascal-format
+msgctxt "trndi.strings.rs_ux_device"
+msgid "💻 Device: %s"
+msgstr ""
+
+#: trndi.strings.rs_ux_dot_size
+#, fuzzy
+msgctxt "trndi.strings.rs_ux_dot_size"
+msgid "Dot Size"
+msgstr "Punktstorlek"
+
+#: trndi.strings.rs_ux_enter_dot_size
+#, fuzzy
+msgctxt "trndi.strings.rs_ux_enter_dot_size"
+msgid "Enter a value, the dot size will multiply by this"
+msgstr "Skriv in ett verde, punktstorleken kommer att gongras med detta"
+
+#: trndi.strings.rs_ux_noise
+#, object-pascal-format
+msgctxt "trndi.strings.rs_ux_noise"
+msgid "𐩘 Noise: %d"
+msgstr ""
+
+#: trndi.strings.rs_ux_reading_here
+#, object-pascal-format
+msgctxt "trndi.strings.rs_ux_reading_here"
+msgid "Reading here: %s at %.2d:%.2d"
+msgstr ""
+
+#: trndi.strings.rs_ux_rssi
+#, object-pascal-format
+msgctxt "trndi.strings.rs_ux_rssi"
+msgid "📻 RSSI (Signal Strength): %d%%"
+msgstr ""
+
+#: trndi.strings.rs_ux_sensor_expiry
+#, object-pascal-format, fuzzy
+msgctxt "trndi.strings.rs_ux_sensor_expiry"
+msgid "⏱️ Sensor: %s"
+msgstr "⏱️ Sensor: %s"
+
+#: trndi.strings.rs_ux_transmitter_info
+#, fuzzy
+msgctxt "trndi.strings.rs_ux_transmitter_info"
+msgid "Transmitter information"
+msgstr "Sendarinformasjon"
+
+#: trndi.strings.rs_ux_trend_window
+#, fuzzy
+msgctxt "trndi.strings.rs_ux_trend_window"
+msgid "Trend window"
+msgstr "Trendfônster"
+
+#: trndi.strings.rs_ux_trend_window_fmt
+#, object-pascal-format, fuzzy
+msgctxt "trndi.strings.rs_ux_trend_window_fmt"
+msgid "%d min (%d dots)"
+msgstr "%d min (%d punkter)"
 
 #: trndi.strings.rs_warn_bg_hi
 #, object-pascal-format, fuzzy, badformat
@@ -2478,214 +2690,6 @@ msgstr ""
 #: trndi.strings.rs_wizard_welcome_head
 msgid "Let's get connected!"
 msgstr "Lat oss ansluta!"
-
-#: trndi.strings.sannounceoff
-msgid "No longer announcing readings aloud"
-msgstr "Leser inte upp verden"
-
-#: trndi.strings.sannounceon
-msgid "Announcing readings aloud"
-msgstr "Leser upp verden"
-
-#: trndi.strings.sapi
-#, object-pascal-format, fuzzy, badformat
-msgid "⚙️ Trndi API Interface: %s"
-msgstr "⚙️ Trndis API-grenssnitt: __PH4c29dfec-87dc-4434-b944-613b8782beab__"
-
-#: trndi.strings.schangesapply
-msgid "Apply this value when Trndi starts?"
-msgstr "Les in detta verde ner Trndi startar?"
-
-#: trndi.strings.schangesremember
-msgid "Remember setting?"
-msgstr "Kom ihog instellning?"
-
-#: trndi.strings.schangessave
-msgid "Save?"
-msgstr "Spara?"
-
-#: trndi.strings.scustomisedotsize
-msgid "Customize dot size"
-msgstr "Anpassa punktstorlek"
-
-#: trndi.strings.sdatatypeerr
-#, object-pascal-format, fuzzy, badformat
-msgctxt "trndi.strings.sdatatypeerr"
-msgid "Datatype %s was not expected, expected in function %s"
-msgstr "Datatypen __PH64ad847e-b571-4f25-9865-830648b7cadc__ fôrventades inte, fôrventad i funksjonen __PH57d723fe-5a9a-4645-bf86-4a776bcee4df__"
-
-#: trndi.strings.sdatatypeerrfunc
-#, object-pascal-format, fuzzy, badformat
-msgctxt "trndi.strings.sdatatypeerrfunc"
-msgid "Datatype \"%s\" was not expected, in function \"%s\". Expected \"%s\""
-msgstr "Datatypen ”__PHae1de9a0-5688-4ffa-b01b-2871d5ef44ad__” fôrventades inte, i funksjonen ”__PHfa438bb4-a2a9-452a-b6b6-7cdabad9991a__”. Fôrventade ”__PH0f89d71d-c84e-4f67-b9aa-ed8413ed2431__”"
-
-#: trndi.strings.sdatatypeerrpos
-#, object-pascal-format, fuzzy, badformat
-msgctxt "trndi.strings.sdatatypeerrpos"
-msgid "Datatype %s was not expected, expected in function %s, parameter %d"
-msgstr "Datatypen ”__PHdd505230-afb1-4756-a3d5-cbcf1d0e6061__” fôrventades inte, fôrventad i funksjonen __PHa4e9d3c5-d0a2-4a39-841b-97d565efa257__, parameter __PH83f25f0c-1881-43a9-ad06-e274b7439570__"
-
-#: trndi.strings.sdevice
-#, object-pascal-format, fuzzy, badformat
-msgid "💻 Device: %s"
-msgstr "💻 Enhet: __PHad36a4a1-a7ff-4d20-9bd5-1dbc0d47d75b__"
-
-#: trndi.strings.sdotsize
-msgctxt "trndi.strings.sdotsize"
-msgid "Dot Size"
-msgstr "Punktstorlek"
-
-#: trndi.strings.senterdotsize
-msgid "Enter a value, the dot size will multiply by this"
-msgstr "Skriv in ett verde, punktstorleken kommer att gongras med detta"
-
-#: trndi.strings.sextconfirm
-msgid "Extension Confirmation"
-msgstr "Tilleggsbekreftelse"
-
-#: trndi.strings.sexterr
-msgid "Extension Error"
-msgstr "Fel i tillegg"
-
-#: trndi.strings.sextevent
-msgid "Extension Event"
-msgstr "Tilleggshendelse"
-
-#: trndi.strings.sextfile
-#, object-pascal-format, fuzzy, badformat
-msgid "File \"%s\" not found"
-msgstr "Filen \\\"__PHdcfdd6fb-842b-45a9-9ce7-12b40fd2fe70__\\\" hittades inte"
-
-#: trndi.strings.sextmsg
-msgid "Extension Message"
-msgstr "Tilleggsmeddelande"
-
-#: trndi.strings.sextuserinfo
-msgid "User Information"
-msgstr "Anvendarinformasjon"
-
-#: trndi.strings.sextwarn
-msgid "Extension Warning"
-msgstr "Tilleggsvarning"
-
-#: trndi.strings.sforcerefresh
-msgid "Forcefully refresh the reading?"
-msgstr "Tvinga uppdatering av avlesning?"
-
-#: trndi.strings.sforcerefreshcached
-#, object-pascal-format, fuzzy, badformat
-msgid "Last update was %d seconds ago. Wait %d more seconds for fresh data, or force refresh now?"
-msgstr "Senaste uppdateringen var __PH9eaf7d1b-a634-48aa-9a3c-31511e1868d9__ sekunder sedan. Venta __PH60667e04-1ce2-438a-b122-125f4c586d42__ sekunder fôr att fo fersk data, eller tvinga en uppdatering?"
-
-#: trndi.strings.sforcerefreshdetail
-msgid "Force refresh will bypass the cache and make an immediate API call. Waiting allows the system to use cached data efficiently."
-msgstr "Tvingad uppdatering kommer att fôrbigo cachen och uppdatera omedelbart. Om du ventar kan systemet anvenda cachead data effektivt."
-
-#: trndi.strings.slogdesc
-msgctxt "trndi.strings.slogdesc"
-msgid "Trndi has captured data sent to console.log in a JavaScript extension"
-msgstr "Trndi har fongat utdata fron console.log i ett JavaScript-tillegg"
-
-#: trndi.strings.slogemptymsg
-msgid "<No message provided>"
-msgstr "<Inga meddelanden finns>"
-
-#: trndi.strings.slognobuffered
-msgid "No buffered console messages to show."
-msgstr "Inga buffrade konsolmeddelanden att visa."
-
-#: trndi.strings.slogrecevive
-msgctxt "trndi.strings.slogrecevive"
-msgid "Output through console.log has been received"
-msgstr "Utmatning genom console.log har mottagits"
-
-#: trndi.strings.snoise
-#, object-pascal-format, fuzzy, badformat
-msgid "𐩘 Noise: %d"
-msgstr "𐩘 Brus: __PHac58cabe-6aac-406c-9f85-c626dff8ddb0__"
-
-#: trndi.strings.snotrace
-msgctxt "trndi.strings.snotrace"
-msgid "No stack trace available"
-msgstr "Ingen stacksporning finns"
-
-#: trndi.strings.spromerrcapt
-#, object-pascal-format, fuzzy, badformat
-#| msgid "The asyncronous function %s failed to complete"
-msgctxt "trndi.strings.spromerrcapt"
-msgid "The asynchronous function %s failed to complete"
-msgstr "Den asynkrona funksjonen __PH6955dda1-dc56-471e-9dd1-ad0de1579f84__ misslyckades"
-
-#: trndi.strings.sreadinghere
-#, object-pascal-format, fuzzy, badformat
-msgid "Reading here: %s at %.2d:%.2d"
-msgstr "Avlesning her: __PH4fd4e8bd-09fa-42fe-a2b6-43f5a4ddd450__ kl %.2d:%.2d"
-
-#: trndi.strings.srefrshq
-msgid "Refresh?"
-msgstr "Les om?"
-
-#: trndi.strings.srssi
-#, object-pascal-format, fuzzy, badformat
-msgid "📻 RSSI (Signal Strength): %d%%"
-msgstr "📻 RSSI (signalstyrka): __PHfce720af-a6d2-42b9-be1b-af250b6aa7a4__%%"
-
-#: trndi.strings.ssensorexpiry
-#, object-pascal-format
-msgid "⏱️ Sensor: %s"
-msgstr "⏱️ Sensor: %s"
-
-#: trndi.strings.sstackerrmsg
-#, object-pascal-format
-msgctxt "trndi.strings.sstackerrmsg"
-msgid ""
-"Error: %s \n"
-"Stack: %s %s"
-msgstr ""
-"Fel: %s \n"
-"Stack: %s %s"
-
-#: trndi.strings.sstackfailed
-msgctxt "trndi.strings.sstackfailed"
-msgid "An error occurred, and the stacktrace could not be loaded. Showing backtrace."
-msgstr "Ett fel uppstod och stacksporningen kunde inte laddas. Visar bakotsporning."
-
-#: trndi.strings.stransmitterinfo
-msgid "Transmitter information"
-msgstr "Sendarinformasjon"
-
-#: trndi.strings.strendwindow
-msgctxt "trndi.strings.strendwindow"
-msgid "Trend window"
-msgstr "Trendfônster"
-
-#: trndi.strings.strendwindowfmt
-#, object-pascal-format
-msgid "%d min (%d dots)"
-msgstr "%d min (%d punkter)"
-
-#: trndi.strings.stypeerrcapt
-#, fuzzy
-#| msgid "A data type differes from what was expected"
-msgctxt "trndi.strings.stypeerrcapt"
-msgid "A data type differs from what was expected"
-msgstr "En datatyp skiljer sig fron vad som fôrventats"
-
-#: trndi.strings.stypeerrdesc
-msgctxt "trndi.strings.stypeerrdesc"
-msgid "The extension was stopped"
-msgstr "Tillegget stoppades"
-
-#: trndi.strings.stypeerrmsg
-msgctxt "trndi.strings.stypeerrmsg"
-msgid "A data type was expected, but another was found"
-msgstr "En datatyp fôrventades, men en annan potreffades"
-
-#: trndi.strings.sunknownerr
-msgctxt "trndi.strings.sunknownerr"
-msgid "Unknown error"
-msgstr "Okent fel"
 
 #: uconf.rs_alert_hysteresis_mgdl
 msgctxt "uconf.rs_alert_hysteresis_mgdl"
@@ -2841,6 +2845,14 @@ msgstr "Du meste ange ett lôsen"
 #, object-pascal-format, fuzzy, badformat
 msgid "Extensions count: %d"
 msgstr "Tilleggsantal: __PHad46520b-c2bd-41d2-93e4-f69806e260c7__"
+
+#: uconf.rs_ext_reload_done
+msgid "Extensions were reloaded."
+msgstr ""
+
+#: uconf.rs_ext_reload_title
+msgid "Reload Extensions"
+msgstr ""
 
 #: uconf.rs_ext_requests
 msgid "Requests: "
@@ -3111,11 +3123,15 @@ msgstr ""
 "Se till att du är på samma nätverk som xDrip-appen.\n"
 "Säkerställ att webbtjänsten är påslagen."
 
-#: ufloat.rscustomop
+#: ufloat.rs_custom_op
+#, fuzzy
+msgctxt "ufloat.rs_custom_op"
 msgid "You can use shift+<number> to manually set visibility (0 = 100% visible)"
 msgstr "Du kan anvenda skift+<nummerr> fôr att manuellt setta synligheten (0 = 100% synlig)"
 
-#: ufloat.rscustomsize
+#: ufloat.rs_custom_size
+#, fuzzy
+msgctxt "ufloat.rs_custom_size"
 msgid "You can hold down shift and plus (+) or minus (-) to change the window size"
 msgstr "Du kan holla ned skift och plus (+) eller minus (-) fôr att justera fônstrets storlek"
 

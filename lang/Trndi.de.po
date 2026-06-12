@@ -2629,6 +2629,14 @@ msgstr "Sie müssen ein Passwort eingeben"
 msgid "Extensions count: %d"
 msgstr "Erweiterungsanzahl: %d"
 
+#: uconf.rs_ext_reload_done
+msgid "Extensions were reloaded."
+msgstr ""
+
+#: uconf.rs_ext_reload_title
+msgid "Reload Extensions"
+msgstr ""
+
 #: uconf.rs_ext_requests
 msgid "Requests: "
 msgstr "Anfragen: "
@@ -3056,3 +3064,4 @@ msgstr "Der hohe Schwellenwert muss größer als der niedrige Schwellenwert sein
 #: uwizard.wz_test_no_support
 msgid "Connection testing is not supported for this service."
 msgstr "Verbindungstest wird für diesen Dienst nicht unterstützt."
+

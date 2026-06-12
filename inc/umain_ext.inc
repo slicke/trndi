@@ -246,6 +246,20 @@ begin
   end;
 end;
 
+// Tear down every loaded extension context and re-scan the extensions folder.
+// The QuickJS runtime stays alive, so this is the cheap "apply my changes"
+// path the Settings → Extensions "Reload" button binds to.
+procedure TfBG.ReloadExtensions(Sender: TObject);
+begin
+  if not Assigned(TTrndiExtEngine.Instance) then
+  begin
+    LoadExtensions;
+    Exit;
+  end;
+  TTrndiExtEngine.Instance.UnloadExtensions;
+  LoadExtensions;
+end;
+
 // Load extension files. Path B: each .js script gets its own JSContext, with
 // only the functions allowed by the file's manifest + user-stored grant.
 procedure TfBG.LoadExtensions;
@@ -262,13 +276,15 @@ var
   nativeRef: TrndiNative;
 begin
   TTrndiExtEngine.Instance;
-  jsFuncs := TJSfuncs.Create(api);
+  if not Assigned(jsFuncs) then
+    jsFuncs := TJSfuncs.Create(api);
 
   extdir := GetAppConfigDirUTF8(false, true) + 'extensions' + DirectorySeparator;
   ForceDirectoriesUTF8(extdir);
   exts := FindAllFiles(extdir, '*.js', false);
 
-  fSplash.incProgress(79, 'Initializing extensions backend..');
+  if Assigned(fSplash) then
+    fSplash.incProgress(79, 'Initializing extensions backend..');
 
   // Safe mode: holding Ctrl during startup skips all extension loading.
   if ssCtrl in GetKeyShiftState then
@@ -280,10 +296,12 @@ begin
 
   nativeRef := TrndiNative.Create;
   try
-    fSplash.incProgress(80, 'Loading extensions...');
+    if Assigned(fSplash) then
+      fSplash.incProgress(80, 'Loading extensions...');
     for extFile in exts do
     begin
-      fSplash.incProgress(-1, RS_SPLASH_LOADING + ExtractFileName(extFile));
+      if Assigned(fSplash) then
+        fSplash.incProgress(-1, RS_SPLASH_LOADING + ExtractFileName(extFile));
 
       // Read once for manifest + hash. Re-read happens inside ExtExecuteFile
       // (cheap relative to the user prompt cost).
@@ -308,6 +326,11 @@ begin
       manifest := ParseExtManifest(string(fileSrc));
       extId := ExtIdFromPath(extFile);
       hash := HashScript(string(fileSrc));
+
+      // User-toggled enable flag (Extensions settings tab). Default true so
+      // existing extensions keep loading without an opt-in step.
+      if not nativeRef.GetBoolSetting('ext.enabled.' + extId, true) then
+        Continue;
 
       // Ask the user (or load remembered decision) for the promptable groups.
       granted := GrantPermissionsFor(extId, extFile, hash, manifest, nativeRef);

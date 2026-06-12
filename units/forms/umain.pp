@@ -828,6 +828,11 @@ private
       extension engine instance and register callbacks used by UI and APIs.
    }
   procedure LoadExtensions;
+  {** Re-evaluate every enabled .js extension at runtime. Unloads the existing
+      per-extension contexts (leaving the QuickJS runtime alive), then calls
+      `LoadExtensions` to repopulate from disk. Used by the Settings →
+      Extensions "Reload" button. }
+  procedure ReloadExtensions({%H-}Sender: TObject);
   {$endif}
 
     // FormCreate refactored methods
