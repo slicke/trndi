@@ -86,6 +86,9 @@ type
       @param(res Out parameter receiving response body or error message)
       @returns(True on success) }
     class function getURL(const url: string; out res: string): boolean; override;
+    {** Simple HTTP POST using NSURLSession-based helper. }
+    class function postURL(const url: string; const body: string;
+      const contentType: string; out res: string): boolean; override;
     {** True if AppleInterfaceStyle indicates dark mode. }
     class function isDarkMode: boolean; override;
     {** NSUserNotificationCenter is available on macOS. }
@@ -428,6 +431,65 @@ begin
     response.Free;
     headers.Free;
     tempInstance.Free;
+  end;
+end;
+
+{------------------------------------------------------------------------------
+  postURL
+  -------
+  Simple HTTP POST using NS-based helper; returns response text or error.
+ ------------------------------------------------------------------------------}
+class function TTrndiNativeMac.postURL(const url: string; const body: string;
+  const contentType: string; out res: string): boolean;
+const
+  DEFAULT_USER_AGENT = 'Mozilla/5.0 (compatible; trndi) TrndiAPI';
+var
+  send, response: TStringStream;
+  headers: TStringList;
+  httpClient: TNSHTTPSendAndReceive;
+begin
+  res := '';
+  send := TStringStream.Create('');
+  response := TStringStream.Create('');
+  headers := TStringList.Create;
+  httpClient := TNSHTTPSendAndReceive.Create;
+  try
+    try
+      httpClient.address := url;
+      httpClient.method := 'POST';
+      headers.Add('User-Agent=' + DEFAULT_USER_AGENT);
+      if contentType <> '' then
+        headers.Add('Content-Type=' + contentType);
+
+      if body <> '' then
+      begin
+        send.Write(body[1], Length(body));
+        send.Position := 0;
+        headers.Add('Content-Length=' + IntToStr(send.Size));
+      end;
+
+      if httpClient.SendAndReceive(send, response, headers) then
+      begin
+        res := Trim(response.DataString);
+        Result := True;
+      end
+      else
+      begin
+        res := Trim(httpClient.LastErrMsg);
+        Result := False;
+      end;
+    except
+      on E: Exception do
+      begin
+        res := E.Message;
+        Result := False;
+      end;
+    end;
+  finally
+    httpClient.Free;
+    send.Free;
+    response.Free;
+    headers.Free;
   end;
 end;
 

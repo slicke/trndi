@@ -56,6 +56,8 @@ type
 
     {$ifdef TRNDI_NATIVE_MOCK_BASE}
     class function getURL(const url: string; out res: string): boolean; override;
+    class function postURL(const url: string; const body: string;
+      const contentType: string; out res: string): boolean; override;
     class function TestProxyURL(const url: string; const proxyHost: string;
        const proxyPort: string; const proxyUser: string; const proxyPass: string;
        out res: string): boolean; override;
@@ -90,6 +92,42 @@ begin
     end;
   finally
     nativeObj.Free;
+  end;
+end;
+
+class function TTrndiNativeMock.postURL(const url: string; const body: string;
+  const contentType: string; out res: string): boolean;
+var
+  HTTP: TFPHTTPClient;
+  bodyStream, respStream: TStringStream;
+begin
+  res := '';
+  Result := False;
+  HTTP := TFPHTTPClient.Create(nil);
+  bodyStream := TStringStream.Create(body);
+  respStream := TStringStream.Create('');
+  try
+    try
+      HTTP.AllowRedirect := True;
+      HTTP.IOTimeout := 30000;
+      if contentType <> '' then
+        HTTP.AddHeader('Content-Type', contentType);
+      HTTP.RequestBody := bodyStream;
+      HTTP.Post(url, respStream);
+      res := Trim(respStream.DataString);
+      Result := True;
+    except
+      on E: Exception do
+      begin
+        res := 'Error: ' + E.Message;
+        Result := False;
+      end;
+    end;
+  finally
+    HTTP.RequestBody := nil;
+    HTTP.Free;
+    bodyStream.Free;
+    respStream.Free;
   end;
 end;
 

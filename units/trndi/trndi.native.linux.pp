@@ -103,6 +103,9 @@ public
       @param(res Out parameter receiving response body or error message)
       @returns(True on success) }
   class function getURL(const url: string; out res: string): boolean; override;
+  {** Simple HTTP POST using libcurl. }
+  class function postURL(const url: string; const body: string;
+    const contentType: string; out res: string): boolean; override;
   {**
     Test an HTTP GET through an explicit proxy only (no direct fallback).
     Intended for the Settings dialog "Test proxy" action.
@@ -817,6 +820,117 @@ begin
   finally
     if headers <> nil then
       curl_slist_free_all(headers);
+    responseStream.Free;
+    tempInstance.Free;
+  end;
+end;
+
+{------------------------------------------------------------------------------
+  postURL
+  -------
+  Simple HTTP POST using libcurl. Respects the configured proxy with a direct
+  fallback on failure (mirrors getURL).
+ ------------------------------------------------------------------------------}
+class function TTrndiNativeLinux.postURL(const url: string; const body: string;
+  const contentType: string; out res: string): boolean;
+const
+  DEFAULT_USER_AGENT = 'Mozilla/5.0 (compatible; trndi) TrndiAPI';
+var
+  handle: CURL;
+  headers: pcurl_slist;
+  errCode: CURLcode;
+  responseStream: TStringStream;
+  proxyHost, proxyPort, proxyUser, proxyPass: string;
+  tempInstance: TTrndiNativeLinux;
+
+  function PerformRequest(withProxy: boolean): boolean;
+  begin
+    Result := false;
+    responseStream.Size := 0;
+    responseStream.Position := 0;
+
+    handle := curl_easy_init();
+    if handle = nil then
+    begin
+      res := 'curl: failed to init';
+      Exit;
+    end;
+
+    curl_easy_setopt(handle, CURLOPT_URL, pchar(url));
+    curl_easy_setopt(handle, CURLOPT_USERAGENT, pchar(DEFAULT_USER_AGENT));
+    curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, clong(1));
+    curl_easy_setopt(handle, CURLOPT_CONNECTTIMEOUT, clong(10));
+    curl_easy_setopt(handle, CURLOPT_TIMEOUT, clong(30));
+
+    curl_easy_setopt(handle, CURLOPT_POST, clong(1));
+    curl_easy_setopt(handle, CURLOPT_POSTFIELDS, pchar(body));
+    curl_easy_setopt(handle, CURLOPT_POSTFIELDSIZE, clong(Length(body)));
+
+    headers := nil;
+    if contentType <> '' then
+      headers := curl_slist_append(headers, pchar('Content-Type: ' + contentType));
+    if headers <> nil then
+      curl_easy_setopt(handle, CURLOPT_HTTPHEADER, headers);
+
+    if withProxy and (proxyHost <> '') then
+    begin
+      curl_easy_setopt(handle, CURLOPT_PROXY, pchar(proxyHost));
+      if proxyPort <> '' then
+        curl_easy_setopt(handle, CURLOPT_PROXYPORT, clong(StrToIntDef(proxyPort, 8080)));
+      if (proxyUser <> '') and (proxyPass <> '') then
+        curl_easy_setopt(handle, CURLOPT_PROXYUSERPWD, pchar(proxyUser + ':' + proxyPass));
+    end;
+    if (not withProxy) and (proxyHost <> '') then
+      curl_easy_setopt(handle, CURLOPT_PROXY, pchar(''));
+
+    curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, Pointer(@CurlWriteCallback_Linux));
+    curl_easy_setopt(handle, CURLOPT_WRITEDATA, Pointer(responseStream));
+
+    errCode := curl_easy_perform(handle);
+    if errCode <> CURLE_OK then
+    begin
+      res := string(curl_easy_strerror(errCode));
+      Result := false;
+    end
+    else
+    begin
+      res := Trim(responseStream.DataString);
+      Result := true;
+    end;
+
+    if headers <> nil then
+    begin
+      curl_slist_free_all(headers);
+      headers := nil;
+    end;
+    curl_easy_cleanup(handle);
+  end;
+
+begin
+  res := '';
+  responseStream := TStringStream.Create('');
+  tempInstance := TTrndiNativeLinux.Create;
+  tempInstance.noFree := true;
+  try
+    proxyHost := tempInstance.GetSetting('proxy.host', '', true);
+    if proxyHost <> '' then
+    begin
+      proxyPort := tempInstance.GetSetting('proxy.port', '', true);
+      proxyUser := tempInstance.GetSetting('proxy.user', '', true);
+      proxyPass := tempInstance.GetSetting('proxy.pass', '', true);
+    end;
+
+    if proxyHost <> '' then
+    begin
+      if PerformRequest(true) then
+      begin
+        Result := true;
+        Exit;
+      end;
+    end;
+
+    Result := PerformRequest(false);
+  finally
     responseStream.Free;
     tempInstance.Free;
   end;

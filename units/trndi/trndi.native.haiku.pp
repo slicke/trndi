@@ -70,6 +70,9 @@ public
       @param(res Out parameter receiving response body or error message)
       @returns(True on success) }
   class function getURL(const url: string; out res: string): boolean; override;
+  {** Simple HTTP POST using TFPHTTPClient. }
+  class function postURL(const url: string; const body: string;
+    const contentType: string; out res: string): boolean; override;
   {** Test an HTTP GET through an explicit proxy only (no direct fallback). }
   class function TestProxyURL(const url: string; const proxyHost: string;
     const proxyPort: string; const proxyUser: string; const proxyPass: string;
@@ -653,6 +656,102 @@ begin
       Result := false;
     end;
 
+  finally
+    tempInstance.Free;
+  end;
+end;
+
+{------------------------------------------------------------------------------
+  postURL
+  -------
+  Simple HTTP POST using TFPHTTPClient. Respects the configured proxy with a
+  direct fallback on failure (mirrors getURL).
+ ------------------------------------------------------------------------------}
+class function TTrndiNativeHaiku.postURL(const url: string; const body: string;
+  const contentType: string; out res: string): boolean;
+var
+  HTTP: TFPHTTPClient;
+  tempInstance: TTrndiNativeHaiku;
+  proxyHost, proxyPort, proxyUser, proxyPass: string;
+
+  function PerformRequest(withProxy: boolean): boolean;
+  var
+    bodyStream: TStringStream;
+    respStream: TStringStream;
+  begin
+    Result := false;
+    HTTP := TFPHTTPClient.Create(nil);
+    try
+      HTTP.AllowRedirect := true;
+      HTTP.IOTimeout := 30000;
+
+      if withProxy and (proxyHost <> '') then
+      begin
+        HTTP.Proxy.Host := proxyHost;
+        HTTP.Proxy.Port := StrToIntDef(proxyPort, 8080);
+        if proxyUser <> '' then
+          HTTP.Proxy.Username := proxyUser;
+        if proxyPass <> '' then
+          HTTP.Proxy.Password := proxyPass;
+      end;
+      if (not withProxy) and (proxyHost <> '') then
+      begin
+        HTTP.Proxy.Host := '';
+        HTTP.Proxy.Port := 0;
+      end;
+
+      if contentType <> '' then
+        HTTP.AddHeader('Content-Type', contentType);
+
+      bodyStream := TStringStream.Create(body);
+      respStream := TStringStream.Create('');
+      try
+        try
+          HTTP.RequestBody := bodyStream;
+          HTTP.Post(url, respStream);
+          res := Trim(respStream.DataString);
+          Result := true;
+        except
+          on E: Exception do
+          begin
+            res := 'Error: ' + E.Message;
+            Result := false;
+          end;
+        end;
+      finally
+        HTTP.RequestBody := nil;
+        bodyStream.Free;
+        respStream.Free;
+      end;
+    finally
+      HTTP.Free;
+    end;
+  end;
+
+begin
+  Result := false;
+  tempInstance := TTrndiNativeHaiku.Create;
+  try
+    proxyHost := tempInstance.GetSetting('proxy.host', '', true);
+    if proxyHost <> '' then
+    begin
+      proxyPort := tempInstance.GetSetting('proxy.port', '', true);
+      proxyUser := tempInstance.GetSetting('proxy.user', '', true);
+      proxyPass := tempInstance.GetSetting('proxy.pass', '', true);
+      if proxyPort = '' then
+        proxyPort := '8080';
+    end;
+
+    if proxyHost <> '' then
+    begin
+      if PerformRequest(true) then
+      begin
+        Result := true;
+        Exit;
+      end;
+    end;
+
+    Result := PerformRequest(false);
   finally
     tempInstance.Free;
   end;

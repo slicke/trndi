@@ -55,6 +55,8 @@ type
   public
     function asyncget(ctx: pointer; const func: string; const params: JSParameters;
       out res: JSValueVal): boolean;
+    function asyncpost(ctx: pointer; const func: string; const params: JSParameters;
+      out res: JSValueVal): boolean;
     function jsonget(ctx: pointer; const func: string; const params: JSParameters;
       out res: JSValueVal): boolean;
     function bgDump(ctx: pointer; const func: string; const params: JSParameters;
@@ -94,6 +96,7 @@ begin
   with TTrndiExtEngine.Instance do
   begin
     AddPromiseIf(epNet,      'asyncGet',      JSCallbackFunction(@asyncGet));
+    AddPromiseIf(epNet,      'asyncPost',     JSCallbackFunction(@asyncPost), 2, 3);
     AddPromiseIf(epNet,      'jsonGet',       JSCallbackFunction(@jsonGet), 2);
     AddPromiseIf(epExec,     'runCMD',        JSCallbackFunction(@runCMD));
     AddPromiseIf(epData,     'querySvc',      JSCallbackFunction(@querySvc));
@@ -143,6 +146,59 @@ begin
   begin
     Result := False;
     r := 'Cannot fetch URL ' + v.Data.strval;
+  end
+  else
+  begin
+    r := s;
+    Result := True;
+  end;
+  v := StringToValueVal(r);
+  res := v;
+end;
+
+// backend for asyncPost in JS
+// POSTs a body to a URL. params: (url, body, [contentType])
+// contentType defaults to 'application/json' when omitted.
+function TJSFuncs.asyncpost(ctx: pointer; const func: string;
+  const params: JSParameters; out res: JSValueVal): boolean;
+var
+  s, r, contentType: string;
+  v: JSValueVal;
+begin
+  if not params[0]^.mustbe(JD_STR, func, 0) then
+  begin
+    Result := False;
+    r := 'Wrong data type for URL';
+    res := StringToValueVal(r);
+    Exit(False);
+  end;
+  if not params[1]^.mustbe(JD_STR, func, 1) then
+  begin
+    Result := False;
+    r := 'Wrong data type for body';
+    res := StringToValueVal(r);
+    Exit(False);
+  end;
+
+  if params.Count >= 3 then
+  begin
+    if not params[2]^.mustbe(JD_STR, func, 2) then
+    begin
+      Result := False;
+      r := 'Wrong data type for content type';
+      res := StringToValueVal(r);
+      Exit(False);
+    end;
+    contentType := params[2]^.Data.StrVal;
+  end
+  else
+    contentType := 'application/json';
+
+  if not TrndiNative.postURL(params[0]^.Data.StrVal, params[1]^.Data.StrVal,
+    contentType, s) then
+  begin
+    Result := False;
+    r := 'Cannot POST to URL ' + params[0]^.Data.StrVal + ': ' + s;
   end
   else
   begin
