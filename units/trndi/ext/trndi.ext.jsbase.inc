@@ -134,7 +134,7 @@ begin
   try
     if argc <= 0 then
     begin
-      dialogResult := UXDialog(uxdAuto, sExtMsg, '', '', [mbYes, mbNo], mtConfirmation);
+      dialogResult := UXDialog(uxdAuto, RS_EXT_MSG, '', '', [mbYes, mbNo], mtConfirmation);
     end
     else
     begin
@@ -148,7 +148,7 @@ begin
         Move(PAnsiChar(ctx^.ToUtf8(argv^[i]))^, p^, Length(ctx^.ToUtf8(argv^[i])));
         Inc(p, Length(ctx^.ToUtf8(argv^[i])));
       end;
-      dialogResult := UXDialog(uxdAuto, sExtMsg, '', output, [mbYes, mbNo], mtConfirmation);
+      dialogResult := UXDialog(uxdAuto, RS_EXT_MSG, '', output, [mbYes, mbNo], mtConfirmation);
     end;
     
     if dialogResult = mrYes then
@@ -188,7 +188,7 @@ begin
   Caption := ctx^.ToUtf8(argv^[0]);
   desc := ctx^.ToUtf8(argv^[1]);
   def := ctx^.ToUtf8(argv^[2]);
-  response := ExtInput(uxdAuto, sExtMsg, Caption, desc, def, x);
+  response := ExtInput(uxdAuto, RS_EXT_MSG, Caption, desc, def, x);
   if x = mrCancel then
     response := '';
   Result := JS_NewString(ctx, pansichar(Response));
@@ -221,7 +221,7 @@ begin
     vals.Add(ctx^.ToUtf8(argv^[i]));
   Caption := ctx^.ToUtf8(argv^[0]);
   desc := ctx^.ToUtf8(argv^[1]);
-  response := ExtList(uxdAuto, sExtMsg, Caption, desc, vals.ToStringArray(2, argc - 1));
+  response := ExtList(uxdAuto, RS_EXT_MSG, Caption, desc, vals.ToStringArray(2, argc - 1));
   // Ignore the first params
   //  res := vals.strings[response+2];
   vals.Free;

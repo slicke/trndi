@@ -533,6 +533,12 @@ public
   function ExtensionCount: integer;
   function ExtensionAt(idx: integer): PExtContextInfo;
 
+    {** Tear down every per-extension context: cancel JS timers, drain pending
+        jobs, free each @code(JSContext) and clear the registry. The shared
+        runtime stays alive so a fresh @code(LoadExtensions) can repopulate
+        without recreating the engine singleton. }
+  procedure UnloadExtensions;
+
     {** Register the engine-internal baseline (alert/confirm/prompt/select/log,
         setTimeout/setInterval/clear*, console.*) into the current registration
         context, gated by the current registration permissions.
@@ -698,7 +704,7 @@ end;
 {** Show a simple informational alert. }
 procedure TTrndiExtEngine.alert(const msg: string);
 begin
-  uxResponse(mtInformation, msg, sExtUserInfo);
+  uxResponse(mtInformation, msg, RS_EXT_USER_INFO);
 end;
 
 {** Show a UX dialog and return the button pressed. }
@@ -714,8 +720,8 @@ begin
   mtWarning:
   begin
     btns := [mbOK];
-    title := Format('[%s] %s', [sExtWarn, title]);
-    header := sExtWarn;
+    title := Format('[%s] %s', [RS_EXT_WARN, title]);
+    header := RS_EXT_WARN;
   end;
   mtError:
   begin
@@ -726,20 +732,20 @@ begin
   mtInformation:
   begin
     btns := [mbOK];
-    title := Format('[%s] %s', [sExtMsg, title]);
-    header := sExtMsg;
+    title := Format('[%s] %s', [RS_EXT_MSG, title]);
+    header := RS_EXT_MSG;
   end;
   mtConfirmation:
   begin
     btns := [mbYes, mbNo];
-    title := Format('[%s] %s', [sextConfirm, title]);
-    header := sExtConfirm;
+    title := Format('[%s] %s', [RS_EXT_CONFIRM, title]);
+    header := RS_EXT_CONFIRM;
   end;
   else
   begin
     btns := [mbOK];
-    title := Format('[%s] %s', [sExtEvent, title]);
-    header := sExtEvent;
+    title := Format('[%s] %s', [RS_EXT_EVENT, title]);
+    header := RS_EXT_EVENT;
   end;
   end;
 
@@ -1412,6 +1418,80 @@ begin
   Result := FExtContexts[idx];
 end;
 
+procedure TTrndiExtEngine.UnloadExtensions;
+var
+  i, timeoutCounter: integer;
+  tmpCtx: JSContext;
+begin
+  if IsGlobalShutdown or Application.Terminated then Exit;
+
+  // Stop and drop every JS timer (setTimeout/setInterval). All live timers belong
+  // to extension contexts since baseline contexts don't schedule any.
+  if Assigned(FJSTimers) then
+  try
+    while FJSTimers.Count > 0 do
+    begin
+      with FJSTimers.Data[0]^ do
+      begin
+        if Assigned(Timer) then
+        begin
+          Timer.Enabled := false;
+          Timer.Free;
+        end;
+        if Assigned(Handler) then
+          Handler.Free;
+      end;
+      Dispose(FJSTimers.Data[0]);
+      FJSTimers.Delete(0);
+    end;
+  except
+  end;
+
+  // Signal in-flight promise threads to bail before we free their target ctxs.
+  SetExtShuttingDown(true);
+  try
+    timeoutCounter := 0;
+    while timeoutCounter < 200 do  // up to ~1s
+    begin
+      Application.ProcessMessages;
+      Sleep(5);
+      Inc(timeoutCounter);
+    end;
+
+    // Drain any pending microtasks/promise jobs queued against soon-to-die ctxs.
+    if FRuntime <> nil then
+    begin
+      timeoutCounter := 0;
+      while JS_IsJobPending(FRuntime) and (timeoutCounter < 100) do
+      begin
+        if JS_ExecutePendingJob(FRuntime, @tmpCtx) <= 0 then Break;
+        Inc(timeoutCounter);
+      end;
+      JS_RunGC(FRuntime);
+    end;
+
+    // Free per-extension contexts. Runtime stays alive.
+    if Assigned(FExtContexts) then
+    try
+      for i := 0 to FExtContexts.Count - 1 do
+        if FExtContexts[i] <> nil then
+        begin
+          if FExtContexts[i]^.Ctx <> nil then
+          try
+            JS_FreeContext(FExtContexts[i]^.Ctx);
+          except
+          end;
+          Dispose(FExtContexts[i]);
+        end;
+      FExtContexts.Clear;
+    except
+    end;
+  finally
+    // Re-arm so a subsequent LoadExtensions can register and run scripts again.
+    SetExtShuttingDown(false);
+  end;
+end;
+
 {** Create a fresh extension JSContext on the shared runtime, with intrinsics, the
     'Trndi' class and the opaque engine pointer set up. The new context is appended
     to FExtContexts and returned to the caller, which should call BeginRegistration
@@ -1509,7 +1589,7 @@ begin
   if ctx = nil then Exit;
 
   if not FileExists(Ext^.FileName) then
-    raise Exception.CreateFmt(sExtFile, [sExtFile, Ext^.FileName]);
+    raise Exception.CreateFmt(RS_EXT_FILE, [RS_EXT_FILE, Ext^.FileName]);
 
   FileStream := TFileStream.Create(Ext^.FileName, fmOpenRead or fmShareDenyWrite);
   StringStream := TStringStream.Create;
@@ -1564,7 +1644,7 @@ begin
 
   Result := '';
   if not FileExists(FileName) then
-    raise Exception.CreateFmt(sExtFile, [sExtFile, FileName]);
+    raise Exception.CreateFmt(RS_EXT_FILE, [RS_EXT_FILE, FileName]);
 
   // Read file contents into Script
   FileStream := TFileStream.Create(FileName, fmOpenRead or fmShareDenyWrite);

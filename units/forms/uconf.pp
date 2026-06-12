@@ -53,7 +53,7 @@ unit uconf;
 interface
 
 uses
-Classes, ComCtrls, ExtCtrls, Spin, StdCtrls, SysUtils, Forms, Controls,
+Classes, CheckLst, ComCtrls, ExtCtrls, Spin, StdCtrls, SysUtils, Forms, Controls,
 Graphics, Dialogs, LCLTranslator, trndi.native, lclintf, process, FileUtil{$ifdef X_MAC}, CocoaAll, nsutils.nshelpers{$endif},
 slicke.ux.alert, slicke.ux.native, slicke.versioninfo, trndi.funcs, buildinfo, StrUtils, trndi.api, trndi.api.nightscout, trndi.api.nightscout3, trndi.api.dexcom, trndi.api.dexcomNew, trndi.api.tandem, trndi.api.xdrip, razer.chroma, math, trndi.types, trndi.api.debug_firstXmissing, trndi.api.debug_intermittentmissing, trndi.api.debug_custom, trndi.api.debug, trndi.api.debug_lowsoon, trndi.api.debug_sensorexpiry, trndi.api.debug_slow, trndi.api.debug_faultysensor, trndi.api.debug_latemissing, base64, Variants{$ifdef TrndiExt}, trndi.ext.perm{$endif}{$ifdef X_WIN}, ComObj{$endif};
 
@@ -300,7 +300,8 @@ TfConf = class(TForm)
   Label32: TLabel;
   lChromaHigh: TLabel;
   lChromaLow: TLabel;
-  lbExtensions: TListBox;
+  lbExtensions: TCheckListBox;
+  bExtReload: TButton;
   lCopyright: TLabel;
   lExtCopyright: TLabel;
   lExtCount: TLabel;
@@ -421,6 +422,7 @@ TfConf = class(TForm)
   procedure bCommonClick({%H-}Sender: TObject);
   procedure bCustomRangeHelpClick({%H-}Sender: TObject);
   procedure bExtOpenClick({%H-}Sender: TObject);
+  procedure bExtReloadClick({%H-}Sender: TObject);
   procedure bFontReadingClick(Sender: TObject);
   procedure bFontArrowClick(Sender: TObject);
   procedure bFontTimeClick(Sender: TObject);
@@ -486,6 +488,7 @@ TfConf = class(TForm)
   procedure fsLoChange({%H-}Sender: TObject);
   procedure Label12Click(Sender: TObject);
   procedure lAckClick(Sender: TObject);
+  procedure lbExtensionsClickCheck(Sender: TObject);
   procedure lbExtensionsDblClick(Sender: TObject);
   procedure lbExtensionsSelectionChange(Sender: TObject; User: boolean);
   procedure lbUsersEnter(Sender: TObject);
@@ -509,6 +512,7 @@ TfConf = class(TForm)
 private
   FProxyLoading: boolean;
   FExtPaths: TStringList;
+  FOnReloadExtensions: TNotifyEvent;
   procedure LoadProxySettingsIntoUI;
   procedure SaveProxySettingsFromUI;
   procedure getAPILabels(out user, pass: string);
@@ -516,6 +520,8 @@ public
   chroma: TRazerChromaBase;
   procedure UpdatePredictionStates;
   procedure LoadExtensionList(const ExtensionsPath: string);
+  property OnReloadExtensions: TNotifyEvent read FOnReloadExtensions
+    write FOnReloadExtensions;
 end;
 
 var
@@ -697,6 +703,9 @@ RS_NO_EXTENSIONS = 'This version of Trndi does not support extensions';
 RS_NO_EXTENSIONS_COPYRIGHT = 'Please download a version of Trndi that supports extensions';
 RS_NO_EXTENSIONS_SYSTEM = 'Due to hardware limitations, %s on %s cannot support extensions';
 
+RS_EXT_RELOAD_TITLE = 'Reload Extensions';
+RS_EXT_RELOAD_DONE = 'Extensions were reloaded.';
+
 RS_Announce_Not_Available = 'The text-to-speech (TTS) software "%s" is not available.';
 
 var
@@ -858,9 +867,9 @@ procedure TfConf.LoadExtensionList(const ExtensionsPath: string);
 {$ifdef TrndiExt}
 var
   extFiles, scriptBuf: TStringList;
-  scriptPath, displayName: string;
+  scriptPath, displayName, extId: string;
   manifest: TExtManifest;
-  i: integer;
+  i, addedIdx: integer;
 {$endif}
 begin
   {$ifdef TrndiExt}
@@ -890,8 +899,13 @@ begin
           displayName := manifest.DisplayName
         else
           displayName := ExtractFileName(scriptPath);
-        lbExtensions.Items.Add(displayName);
+        addedIdx := lbExtensions.Items.Add(displayName);
         FExtPaths.Add(scriptPath);
+        extId := ExtIdFromPath(scriptPath);
+        // Default true so the box is checked for extensions that have never
+        // been toggled — matches the load-skip default in inc/umain_ext.inc.
+        lbExtensions.Checked[addedIdx] :=
+          tnative.GetBoolSetting('ext.enabled.' + extId, true);
       end;
     finally
       scriptBuf.Free;
@@ -1309,6 +1323,40 @@ end;
 procedure TfConf.bExtOpenClick(Sender: TObject);
 begin
   OpenDocument(eExt.Text);
+end;
+
+procedure TfConf.bExtReloadClick(Sender: TObject);
+{$ifdef TrndiExt}
+var
+  extensionsPath: string;
+{$endif}
+begin
+  {$ifdef TrndiExt}
+  if Assigned(FOnReloadExtensions) then
+    FOnReloadExtensions(Sender);
+  // Refresh the list so newly enabled/disabled extensions and their counts
+  // reflect the post-reload state.
+  extensionsPath := eExt.Text;
+  if extensionsPath <> '' then
+    LoadExtensionList(extensionsPath);
+  UXMessage(RS_EXT_RELOAD_TITLE, RS_EXT_RELOAD_DONE, uxmtInformation);
+  {$endif}
+end;
+
+procedure TfConf.lbExtensionsClickCheck(Sender: TObject);
+{$ifdef TrndiExt}
+var
+  idx: integer;
+  extId: string;
+{$endif}
+begin
+  {$ifdef TrndiExt}
+  idx := lbExtensions.ItemIndex;
+  if (FExtPaths = nil) or (idx < 0) or (idx >= FExtPaths.Count) then
+    Exit;
+  extId := ExtIdFromPath(FExtPaths[idx]);
+  tnative.SetSetting('ext.enabled.' + extId, lbExtensions.Checked[idx]);
+  {$endif}
 end;
 
 procedure TfConf.bFontReadingClick(Sender: TObject);

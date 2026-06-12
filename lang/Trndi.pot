@@ -2633,6 +2633,14 @@ msgstr ""
 msgid "Extensions count: %d"
 msgstr ""
 
+#: uconf.rs_ext_reload_done
+msgid "Extensions were reloaded."
+msgstr ""
+
+#: uconf.rs_ext_reload_title
+msgid "Reload Extensions"
+msgstr ""
+
 #: uconf.rs_ext_requests
 msgid "Requests: "
 msgstr ""

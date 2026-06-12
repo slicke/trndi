@@ -937,6 +937,7 @@ begin
     extensionsPath := GetAppConfigDirUTF8(false, true) + 'extensions' + DirectorySeparator;
     ForceDirectoriesUTF8(extensionsPath);
     fConf.LoadExtensionList(extensionsPath);
+    fConf.OnReloadExtensions := @ReloadExtensions;
     {$else}
     fConf.tsExt.Enabled := false;
     fConf.tsExt.Visible := false;

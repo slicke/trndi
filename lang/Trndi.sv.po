@@ -2766,6 +2766,14 @@ msgstr "Du måste ange ett lösenord"
 msgid "Extensions count: %d"
 msgstr "Tilläggsantal: %d"
 
+#: uconf.rs_ext_reload_done
+msgid "Extensions were reloaded."
+msgstr ""
+
+#: uconf.rs_ext_reload_title
+msgid "Reload Extensions"
+msgstr ""
+
 #: uconf.rs_ext_requests
 msgid "Requests: "
 msgstr "Förfrågningar: "
@@ -3206,3 +3214,4 @@ msgstr "Den höga gränsen måste vara större än den låga gränsen."
 #: uwizard.wz_test_no_support
 msgid "Connection testing is not supported for this service."
 msgstr "Anslutningstest stöds inte för denna tjänst."
+
