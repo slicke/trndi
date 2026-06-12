@@ -163,6 +163,10 @@ type
 
 var
   gSpeechWorker: TSpeechWorker = nil;
+  // Pristine copy of Application.Icon captured before SetBadge ever mutates it.
+  // SetBadge sources from here instead of Application.Icon so each call composites
+  // onto the original logo rather than the previous badged result.
+  gOriginalAppIcon: TIcon = nil;
 
 procedure EnsureSpeechWorker;
 begin
@@ -919,13 +923,27 @@ function AdjustColor(c: TColor; factor: double): TColor;
   end;
 
 begin
+  // Lazily snapshot the pristine app icon the first time we run, before any badge
+  // has mutated Application.Icon. All subsequent badge composites read from this
+  // copy — preventing the upper-left "cascade" where each call would re-badge
+  // its own previous output.
+  if (gOriginalAppIcon = nil) and (Application.Icon <> nil) and
+     (not Application.Icon.Empty) then
+  begin
+    gOriginalAppIcon := TIcon.Create;
+    gOriginalAppIcon.Assign(Application.Icon);
+  end;
+
   AppIcon := TIcon.Create;
   TempIcon := TIcon.Create;
   Bitmap := Graphics.TBitmap.Create;
   try
     if Value = '' then
     begin
-      Application.Icon.Assign(Application.MainForm.Icon);
+      if (gOriginalAppIcon <> nil) and (not gOriginalAppIcon.Empty) then
+        Application.Icon.Assign(gOriginalAppIcon)
+      else
+        Application.Icon.Assign(Application.MainForm.Icon);
       SendMessage(Application.MainForm.Handle, WM_SETICON, ICON_BIG, 0);
       SendMessage(Application.MainForm.Handle, WM_SETICON, ICON_SMALL, 0);
       Exit;
@@ -940,7 +958,13 @@ begin
       BadgeText := Value;
     end;
 
-    AppIcon.Assign(Application.Icon);
+    // Source from the cached pristine icon, never Application.Icon — we write
+    // back to Application.Icon at the end, so reading from it would composite
+    // onto the previous badge and produce a recursive cascade in the upper-left.
+    if (gOriginalAppIcon <> nil) and (not gOriginalAppIcon.Empty) then
+      AppIcon.Assign(gOriginalAppIcon)
+    else
+      AppIcon.Assign(Application.Icon);
     IconWidth := AppIcon.Width;
     IconHeight := AppIcon.Height;
     if (IconWidth <= 0) or (IconHeight <= 0) then
@@ -1550,5 +1574,6 @@ finalization
   except
     // Swallow exceptions during finalization to avoid raising at process exit
   end;
+  FreeAndNil(gOriginalAppIcon);
 
 end.
