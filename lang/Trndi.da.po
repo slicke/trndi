@@ -314,6 +314,10 @@ msgstr "Eksporter indstillinger"
 msgid "Show Folder"
 msgstr "Vis mappe"
 
+#: tfconf.bextreload.caption
+msgid "Reload"
+msgstr ""
+
 #: tfconf.bfontarrow.caption
 msgid "Arrow font..."
 msgstr "Pileskrift..."

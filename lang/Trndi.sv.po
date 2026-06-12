@@ -317,6 +317,10 @@ msgstr "Spara inställningar"
 msgid "Show Folder"
 msgstr "Visa mapp"
 
+#: tfconf.bextreload.caption
+msgid "Reload"
+msgstr ""
+
 #: tfconf.bfontarrow.caption
 msgid "Arrow font..."
 msgstr "Piltypsnitt..."
