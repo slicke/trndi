@@ -975,19 +975,16 @@ msgid "Must persist (minutes)"
 msgstr "Måste kvarstå (minuter)"
 
 #: tfconf.lalerthicol.caption
-#, fuzzy
 msgctxt "tfconf.lalerthicol.caption"
 msgid "High"
 msgstr "Hög"
 
 #: tfconf.lalerthystrow.caption
-#, fuzzy
 msgctxt "tfconf.lalerthystrow.caption"
 msgid "Clear margin (mg/dL)"
 msgstr "Återställningsmarginal (mg/dL)"
 
 #: tfconf.lalertlocol.caption
-#, fuzzy
 msgctxt "tfconf.lalertlocol.caption"
 msgid "Low"
 msgstr "Låg"
@@ -2034,6 +2031,10 @@ msgstr "Vill du minimera till dockan, eller stänga ned Trndi?"
 #: trndi.strings.rs_quit_minimize_title
 msgid "Quit or Minimize?"
 msgstr "Stäng av eller minimera?"
+
+#: trndi.strings.rs_quit_minimize_win
+msgid "Would you like Trndi to to hide in the Taskbar, or close?"
+msgstr "Vill du dölja Trndi i aktivitetsfältet, eller stänga ned?"
 
 #: trndi.strings.rs_quit_msg
 msgid "Quit the app?"
@@ -3224,4 +3225,3 @@ msgstr "Den höga gränsen måste vara större än den låga gränsen."
 #: uwizard.wz_test_no_support
 msgid "Connection testing is not supported for this service."
 msgstr "Anslutningstest stöds inte för denna tjänst."
-
