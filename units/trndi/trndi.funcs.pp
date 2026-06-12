@@ -126,7 +126,7 @@ function debugParams(arr: _arr3): string; overload;
 const
 INTERVAL_MINUTES = 5; // Each time interval is 5 minutes
 NUM_DOTS = 10;        // Total number of named dot fields (lDot1 - lDot10); also the default
-MAX_DOT_COUNT = 36;   // Maximum trend dots supported (3 h at 5-min intervals)
+MAX_DOT_COUNT = 50;   // Maximum trend dots supported (3 h at 5-min intervals)
 
 BG_API_MIN = 2; // NS can't read lower
 BG_API_MAX = 22.2; // NS can't read higher
