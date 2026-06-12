@@ -250,13 +250,17 @@ end;
 // The QuickJS runtime stays alive, so this is the cheap "apply my changes"
 // path the Settings → Extensions "Reload" button binds to.
 procedure TfBG.ReloadExtensions(Sender: TObject);
+var
+  engine: TTrndiExtEngine;
 begin
-  if not Assigned(TTrndiExtEngine.Instance) then
-  begin
-    LoadExtensions;
+  // Instance() returns nil during shutdown (IsExtShuttingDown). If we got
+  // re-entered via ProcessMessages while UnloadExtensions is draining, treat
+  // it as "nothing to do" — the in-flight reload will complete and the user
+  // can retry. Don't fall through to LoadExtensions with a nil engine.
+  engine := TTrndiExtEngine.Instance;
+  if engine = nil then
     Exit;
-  end;
-  TTrndiExtEngine.Instance.UnloadExtensions;
+  engine.UnloadExtensions;
   LoadExtensions;
 end;
 
@@ -275,7 +279,11 @@ var
   extInfo: PExtContextInfo;
   nativeRef: TrndiNative;
 begin
-  TTrndiExtEngine.Instance;
+  // Bail if the engine isn't available (shutdown in progress). Without this,
+  // the loop below would invoke NewExtensionContext on a nil Self and crash
+  // at the first field access (`if FRuntime = nil then Exit;`).
+  if TTrndiExtEngine.Instance = nil then
+    Exit;
   if not Assigned(jsFuncs) then
     jsFuncs := TJSfuncs.Create(api);
 
@@ -336,6 +344,12 @@ begin
       granted := GrantPermissionsFor(extId, extFile, hash, manifest, nativeRef);
       if granted = [] then
         Continue; // User denied; skip silently this launch.
+
+      // GrantPermissionsFor above shows a modal prompt that pumps messages;
+      // the engine may have been released in the meantime (FormClose path).
+      // Bail rather than dereference nil inside NewExtensionContext.
+      if TTrndiExtEngine.Instance = nil then
+        Break;
 
       // Create the per-extension JSContext with engine-internal baselines provisioned.
       extInfo := TTrndiExtEngine.Instance.NewExtensionContext(
