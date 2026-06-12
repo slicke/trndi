@@ -566,7 +566,7 @@ private
 
   FReadingsLock: TRTLCriticalSection; // Protect cached readings shared with web server thread
 
-    // Dynamic array; allocated 1-based (index 0 unused). Size = ActiveDots+1.
+    // Dynamic array; allocated 1-based (index 0 unused). Size = ACTIVE_DOTS+1.
   TrendDots: array of TDotControl;
   FDotWindowMenu: TMenuItem; // Trend window submenu (built once on first popup)
   multi: boolean; // Multi user

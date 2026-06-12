@@ -142,19 +142,16 @@ DOT_GRAPH = #1;  // Normal circle
 DOT_FRESH = #2;  // Most-recent reading (drawn with an outer ring)
 
 var
-{$ifdef DEBUG}
-debug_log_api: boolean = false;
-{$endif}
-
 DOT_ADJUST: single = 0; // Multiplyer where dots appear
 MAX_MIN: integer = 1440; // Max time to request
 MAX_RESULT: integer = 25; // Max results (scaled up after API creation based on reporting interval)
-ActiveDots: integer = 10; // Runtime dot count for the main trend display (saved as 'ux.dot_count')
+ACTIVE_DOTS: integer = 10; // Runtime dot count for the main trend display (saved as 'ux.dot_count')
 DATA_FRESHNESS_THRESHOLD_MINUTES: integer = 11; // Max minutes before data is considered outdated
 
 {$ifdef DEBUG}
-TrndiDebugLogAlert: boolean = false;
-TrndiDebugLogAlertSnooze: TDateTime;
+DEBUG_LOG_ALERT: boolean = false;
+TRNDI_DEBUG_LOG_ALERT: boolean = false;
+TRNDI_DEBUG_LOG_ALERT_SNOOZE: TDateTime;
 {$endif}
 implementation
 

@@ -264,7 +264,7 @@ begin
   end;
   for i := 0 to FDotWindowMenu.Count - 1 do
     FDotWindowMenu.Items[i].Checked :=
-      FDotWindowMenu.Items[i].Tag = ActiveDots;
+      FDotWindowMenu.Items[i].Tag = ACTIVE_DOTS;
 end;
 
 procedure TfBG.miDotWindowClick(Sender: TObject);
@@ -284,9 +284,9 @@ begin
   TMenuItem(Sender).Checked := true;
 
   native.SetSetting('ux.dot_count', newCount);
-  ActiveDots := newCount;
-  if MAX_MIN < ActiveDots * INTERVAL_MINUTES + 10 then
-    MAX_MIN := ActiveDots * INTERVAL_MINUTES + 10;
+  ACTIVE_DOTS := newCount;
+  if MAX_MIN < ACTIVE_DOTS * INTERVAL_MINUTES + 10 then
+    MAX_MIN := ACTIVE_DOTS * INTERVAL_MINUTES + 10;
 
   for i := 1 to High(TrendDots) do
     if Assigned(TrendDots[i]) then
@@ -308,10 +308,10 @@ begin
   // still produce enough readings to fill all dot slots.
   if Assigned(api) then
     MAX_RESULT := Max(MAX_RESULT,
-      ActiveDots * Max(1, (INTERVAL_MINUTES + api.getReportingInterval - 1)
+      ACTIVE_DOTS * Max(1, (INTERVAL_MINUTES + api.getReportingInterval - 1)
                    div api.getReportingInterval))
-  else if MAX_RESULT < ActiveDots then
-    MAX_RESULT := ActiveDots;
+  else if MAX_RESULT < ACTIVE_DOTS then
+    MAX_RESULT := ACTIVE_DOTS;
 
   CreateTrendDots;
 
@@ -368,7 +368,7 @@ begin
 end;
 
 // Create trend dot controls dynamically at runtime.
-// TrendDots is 1-based: index 0 is unused, valid range is 1..ActiveDots.
+// TrendDots is 1-based: index 0 is unused, valid range is 1..ACTIVE_DOTS.
 procedure TfBG.CreateTrendDots;
 type
   PDotControl = ^TDotControl;
@@ -389,9 +389,9 @@ begin
   namedDots[9]  := @lDot9;
   namedDots[10] := @lDot10;
 
-  SetLength(TrendDots, ActiveDots + 1);
+  SetLength(TrendDots, ACTIVE_DOTS + 1);
 
-  for i := 1 to ActiveDots do
+  for i := 1 to ACTIVE_DOTS do
   begin
     TrendDots[i] := TPaintBox.Create(Self);
     with TPaintBox(TrendDots[i]) do
@@ -420,11 +420,11 @@ begin
       namedDots[i]^ := TrendDots[i];
   end;
 
-  for i := ActiveDots + 1 to MAX_NAMED do
+  for i := ACTIVE_DOTS + 1 to MAX_NAMED do
     namedDots[i]^ := nil;
 
   TrndiDLog(Format('Trend dots created: %d dots (%d min window)',
-    [ActiveDots, ActiveDots * INTERVAL_MINUTES]));
+    [ACTIVE_DOTS, ACTIVE_DOTS * INTERVAL_MINUTES]));
 end;
 
 procedure TfBG.initDot(l: TDotControl; c, ix: integer);
@@ -450,7 +450,7 @@ begin
 
   isDot := l.Caption = DOT_GRAPH;
 
-  if ix = ActiveDots then
+  if ix = ACTIVE_DOTS then
     l.Caption := IfThen(isDot, DOT_FRESH, DOT_GRAPH)
   else
     l.Caption := IfThen(isDot, l.Hint, DOT_GRAPH);

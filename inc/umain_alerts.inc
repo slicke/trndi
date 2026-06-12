@@ -77,9 +77,9 @@ procedure TfBG.EnsureWarningDots;
 var
   i: integer;
 begin
-  if Length(FWarningDots) < ActiveDots + 1 then
-    SetLength(FWarningDots, ActiveDots + 1);
-  for i := 1 to ActiveDots do
+  if Length(FWarningDots) < ACTIVE_DOTS + 1 then
+    SetLength(FWarningDots, ACTIVE_DOTS + 1);
+  for i := 1 to ACTIVE_DOTS do
     if not Assigned(FWarningDots[i]) then
     begin
       FWarningDots[i] := TPaintBox.Create(Self);
@@ -134,8 +134,8 @@ var
 begin
   EnsureWarningDots;
 
-  if Length(TrendDots) <= ActiveDots then Exit;
-  for i := 1 to ActiveDots do
+  if Length(TrendDots) <= ACTIVE_DOTS then Exit;
+  for i := 1 to ACTIVE_DOTS do
   begin
     srcDot := TrendDots[i];
     dstDot := FWarningDots[i];

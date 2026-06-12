@@ -1241,14 +1241,14 @@ begin
   isFresh := MinutesBetween(CurrentTime, LatestReading.date) <=
     native.GetIntSetting('system.fresh_threshold', DATA_FRESHNESS_THRESHOLD_MINUTES);
 
-  if (Length(TrendDots) > ActiveDots) and Assigned(TrendDots[ActiveDots]) then
+  if (Length(TrendDots) > ACTIVE_DOTS) and Assigned(TrendDots[ACTIVE_DOTS]) then
   begin
-    TrendDots[ActiveDots].Visible := isFresh;
+    TrendDots[ACTIVE_DOTS].Visible := isFresh;
 
     if isFresh then
-      TrndiDLog(Format('TrendDots[%d] shown as latest reading is fresh.', [ActiveDots]))
+      TrndiDLog(Format('TrendDots[%d] shown as latest reading is fresh.', [ACTIVE_DOTS]))
     else
-      TrndiDLog(Format('TrendDots[%d] hidden due to outdated reading.', [ActiveDots]));
+      TrndiDLog(Format('TrendDots[%d] hidden due to outdated reading.', [ACTIVE_DOTS]));
   end;
 end;
 
@@ -1278,7 +1278,7 @@ begin
   TrndiDLog(Format('PlaceTrendDots: Processing %d readings, anchor=%s (latest=%s)',
     [Length(SortedReadings), DateTimeToStr(anchorTime), DateTimeToStr(SortedReadings[0].date)]));
 
-  for slotIndex := 0 to ActiveDots - 1 do
+  for slotIndex := 0 to ACTIVE_DOTS - 1 do
   begin
     slotEnd := IncMinute(anchorTime, -INTERVAL_MINUTES * slotIndex);
     slotStart := IncMinute(slotEnd, -INTERVAL_MINUTES);
@@ -1291,7 +1291,7 @@ begin
     found := false;
 
     TrndiDLog(Format('Searching slot %d (TrendDots[%d]): %s to %s',
-      [slotIndex, ActiveDots - slotIndex, DateTimeToStr(slotStart), DateTimeToStr(slotEnd)]));
+      [slotIndex, ACTIVE_DOTS - slotIndex, DateTimeToStr(slotStart), DateTimeToStr(slotEnd)]));
 
     for i := searchStart to High(SortedReadings) do
     begin
@@ -1337,7 +1337,7 @@ begin
 
     if not found then
     begin
-      labelNumber := ActiveDots - slotIndex;
+      labelNumber := ACTIVE_DOTS - slotIndex;
       if Length(TrendDots) <= labelNumber then Continue;
       l := TrendDots[labelNumber];
 
@@ -1395,10 +1395,10 @@ begin
     SortReadingsDescending(SortedReadings);
 
     slots := NumReadings;
-    if slots > ActiveDots then
-      slots := ActiveDots;
+    if slots > ACTIVE_DOTS then
+      slots := ACTIVE_DOTS;
     if slots <= 0 then
-      slots := ActiveDots;
+      slots := ACTIVE_DOTS;
 
     anchorTime := RecodeMinute(Now, (MinuteOf(Now) div INTERVAL_MINUTES) * INTERVAL_MINUTES);
     anchorTime := RecodeSecond(anchorTime, 0);
@@ -1453,7 +1453,7 @@ begin
   if firstboot then
     Exit;
 
-  labelNumber := ActiveDots - SlotIndex;
+  labelNumber := ACTIVE_DOTS - SlotIndex;
   if Length(TrendDots) <= labelNumber then Exit;
   l := TrendDots[labelNumber];
 

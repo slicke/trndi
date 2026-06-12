@@ -42,10 +42,10 @@ procedure TfBG.actOnTrend(proc: TTrendProcLoop);
 var
   ix: integer;
 begin
-  if Length(TrendDots) <= ActiveDots then Exit;
-  for ix := 1 to ActiveDots do
+  if Length(TrendDots) <= ACTIVE_DOTS then Exit;
+  for ix := 1 to ACTIVE_DOTS do
   begin
-    proc(TrendDots[ix], ActiveDots, ix, TrendDots);
+    proc(TrendDots[ix], ACTIVE_DOTS, ix, TrendDots);
     // Skip Repaint when the dot isn't on screen — early-init paths (e.g.
     // applying initDot before the first reading) leave dots hidden, so the
     // paint would be discarded anyway.
@@ -59,10 +59,10 @@ procedure TfBG.actOnTrend(proc: TTrendProc);
 var
   ix: integer;
 begin
-  if Length(TrendDots) <= ActiveDots then Exit;
-  for ix := 1 to ActiveDots do
+  if Length(TrendDots) <= ACTIVE_DOTS then Exit;
+  for ix := 1 to ACTIVE_DOTS do
   begin
-    proc(TrendDots[ix], ActiveDots, ix);
+    proc(TrendDots[ix], ACTIVE_DOTS, ix);
     if TrendDots[ix].Visible then
       TrendDots[ix].Repaint;
   end;
@@ -214,9 +214,9 @@ begin
   tir_icon := native.GetBoolSetting('range.tir_icon', false);
 
   // Read dot count before CreateTrendDots so the right number of slots is allocated
-  ActiveDots := native.GetIntSetting('ux.dot_count', NUM_DOTS);
-  if ActiveDots < 1 then ActiveDots := 1;
-  if ActiveDots > MAX_DOT_COUNT then ActiveDots := MAX_DOT_COUNT;
+  ACTIVE_DOTS := native.GetIntSetting('ux.dot_count', NUM_DOTS);
+  if ACTIVE_DOTS < 1 then ACTIVE_DOTS := 1;
+  if ACTIVE_DOTS > MAX_DOT_COUNT then ACTIVE_DOTS := MAX_DOT_COUNT;
 
   // Create trend dots dynamically (TLabel on Darwin, TPaintBox elsewhere)
   CreateTrendDots;
@@ -587,7 +587,7 @@ end;
 
 procedure TfBG.miDebugLogClick({%H-}Sender: TObject);
 begin
-  TrndiDebugLogAlert := not TrndiDebugLogAlert;
+  TRNDI_DEBUG_LOG_ALERT := not TRNDI_DEBUG_LOG_ALERT;
 end;
 
 procedure TfBG.miDebugLoadTextClick(Sender: TObject);
@@ -598,7 +598,7 @@ end;
 
 procedure TfBG.miDebugLogAPIClick(Sender: TObject);
 begin
-  debug_log_api := true;
+  DEBUG_LOG_ALERT := true;
   (sender as TMenuItem).Enabled := false;
 end;
 
@@ -768,15 +768,15 @@ begin
 
           // Re-apply dot count: dots were created with default 10 above,
           // before the wizard ran, so recreate if the user picked a different count.
-          ActiveDots := GetIntSetting('ux.dot_count', ActiveDots);
-          if ActiveDots < 1 then ActiveDots := 1;
-          if ActiveDots > MAX_DOT_COUNT then ActiveDots := MAX_DOT_COUNT;
-          if MAX_MIN < ActiveDots * INTERVAL_MINUTES + 10 then
-            MAX_MIN := ActiveDots * INTERVAL_MINUTES + 10;
+          ACTIVE_DOTS := GetIntSetting('ux.dot_count', ACTIVE_DOTS);
+          if ACTIVE_DOTS < 1 then ACTIVE_DOTS := 1;
+          if ACTIVE_DOTS > MAX_DOT_COUNT then ACTIVE_DOTS := MAX_DOT_COUNT;
+          if MAX_MIN < ACTIVE_DOTS * INTERVAL_MINUTES + 10 then
+            MAX_MIN := ACTIVE_DOTS * INTERVAL_MINUTES + 10;
           // MAX_RESULT is a reading count, not minutes. api isn't created yet here;
           // InitializeAPI will scale this up by the reporting interval below.
-          if MAX_RESULT < ActiveDots then
-            MAX_RESULT := ActiveDots;
+          if MAX_RESULT < ACTIVE_DOTS then
+            MAX_RESULT := ACTIVE_DOTS;
           for i := 1 to High(TrendDots) do
             if Assigned(TrendDots[i]) then
             begin
@@ -865,14 +865,14 @@ begin
     DOT_ADJUST := GetFloatSetting('ux.dot_adjust', 0);
 
     // Ensure MAX_MIN and MAX_RESULT cover the full dot window.
-    // ActiveDots was read before CreateTrendDots; the API-based MAX_RESULT
+    // ACTIVE_DOTS was read before CreateTrendDots; the API-based MAX_RESULT
     // scaling earlier used a default dot count — bump it for higher counts.
     // MAX_RESULT is a reading count; mirror InitializeAPI's reporting-interval
-    // scaling but with ActiveDots as the base.
-    if MAX_MIN < ActiveDots * INTERVAL_MINUTES + 10 then
-      MAX_MIN := ActiveDots * INTERVAL_MINUTES + 10;
+    // scaling but with ACTIVE_DOTS as the base.
+    if MAX_MIN < ACTIVE_DOTS * INTERVAL_MINUTES + 10 then
+      MAX_MIN := ACTIVE_DOTS * INTERVAL_MINUTES + 10;
     MAX_RESULT := Max(MAX_RESULT,
-      ActiveDots * Max(1, (INTERVAL_MINUTES + api.getReportingInterval - 1)
+      ACTIVE_DOTS * Max(1, (INTERVAL_MINUTES + api.getReportingInterval - 1)
                    div api.getReportingInterval));
 
     DIFF_ALIGN := native.GetAlignmentSetting('ux.labels.ldiff.alignment', taCenter);
@@ -1069,7 +1069,7 @@ begin
   UpdateAlertSnoozeMenu;
 
   {$ifdef DEBUG}
-  TrndiDebugLogAlert := false;
+  TRNDI_DEBUG_LOG_ALERT := false;
   miDebugUXMSg := TMenuItem.Create(miAdvanced);
   miDebugUXMSg.Caption := '[debug] Trigger UX message';
   miAdvanced.Insert(miAdvanced.Count, miDebugUXMSg);
