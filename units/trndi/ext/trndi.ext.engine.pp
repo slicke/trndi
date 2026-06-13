@@ -1745,10 +1745,10 @@ begin
     end;
   finally
     for i := 0 to High(ArgArray) do
-      ctx^.FreeInlined(ArgArray[i]);
-    ctx^.FreeInlined(RetVal);
-    ctx^.FreeInlined(FuncObj);
-    ctx^.FreeInlined(GlobalObj);
+      ctx^.FreeInlined(PJSValue(@ArgArray[i]));
+    ctx^.FreeInlined(PJSValue(@RetVal));
+    ctx^.FreeInlined(PJSValue(@FuncObj));
+    ctx^.FreeInlined(PJSValue(@GlobalObj));
   end;
 end;
 
@@ -1817,10 +1817,10 @@ begin
     end;
   finally
     for i := 0 to High(ArgArray) do
-      ctx^.FreeInlined(ArgArray[i]);
-    ctx^.FreeInlined(RetVal);
-    ctx^.FreeInlined(FuncObj);
-    ctx^.FreeInlined(GlobalObj);
+      ctx^.FreeInlined(PJSValue(@ArgArray[i]));
+    ctx^.FreeInlined(PJSValue(@RetVal));
+    ctx^.FreeInlined(PJSValue(@FuncObj));
+    ctx^.FreeInlined(PJSValue(@GlobalObj));
   end;
 end;
 
@@ -1944,10 +1944,10 @@ begin
     end;
   finally
     for i := 0 to High(ArgArray) do
-      ctx^.FreeInlined(ArgArray[i]);
-    ctx^.FreeInlined(RetVal);
-    ctx^.FreeInlined(FuncObj);
-    ctx^.FreeInlined(GlobalObj);
+      ctx^.FreeInlined(PJSValue(@ArgArray[i]));
+    ctx^.FreeInlined(PJSValue(@RetVal));
+    ctx^.FreeInlined(PJSValue(@FuncObj));
+    ctx^.FreeInlined(PJSValue(@GlobalObj));
   end;
 end;
 
@@ -2226,8 +2226,8 @@ begin
   FuncObj := JS_GetPropertyStr(ctx, GlobalObj, pchar(FuncName));
   if not JS_IsFunction(ctx, FuncObj) then
   begin
-    ctx^.FreeInlined(GlobalObj);
-    ctx^.FreeInlined(FuncObj);
+    ctx^.FreeInlined(PJSValue(@GlobalObj));
+    ctx^.FreeInlined(PJSValue(@FuncObj));
     Exit('');
   end;
 
@@ -2310,10 +2310,10 @@ begin
 
   if freeRest then
     for i := base to High(ArgArray) do
-      ctx^.FreeInlined(ArgArray[i]);
+      ctx^.FreeInlined(PJSValue(@ArgArray[i]));
   if freeRaw then
     for i := 0 to base - 1 do
-      ctx^.FreeInlined(ArgArray[i]);
+      ctx^.FreeInlined(PJSValue(@ArgArray[i]));
 end;
 
 {******************************************************************************
