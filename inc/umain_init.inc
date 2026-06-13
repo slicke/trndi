@@ -907,6 +907,7 @@ begin
 
     PredictGlucoseReading := GetBoolSetting('predictions.enable', false);
     PredictShortMode := GetBoolSetting('predictions.short', false);
+    PredictDotMode := GetBoolSetting('predictions.dots', false);
     PredictShortFullArrows := GetBoolSetting('predictions.short.fullarrows', false);
     PredictShortShowValue := GetBoolSetting('predictions.short.showvalue', false);
     // Prefer user-scoped minutes only; do not fall back to global

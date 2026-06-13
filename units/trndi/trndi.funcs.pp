@@ -140,6 +140,9 @@ APP_BUILD_TIME = {$I %TIME%}; // Returns "14:30:25"
 // otherwise-unused control codes work.
 DOT_GRAPH = #1;  // Normal circle
 DOT_FRESH = #2;  // Most-recent reading (drawn with an outer ring)
+DOT_PREDICT = #3; // Predicted future reading (drawn as a hollow ring)
+
+PREDICTION_DOT_COUNT = 3; // Future prediction dots shown on the main trend (5/10/15 min)
 
 var
 DOT_ADJUST: single = 0; // Multiplyer where dots appear

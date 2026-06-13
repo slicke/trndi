@@ -12608,6 +12608,17 @@ object fConf: TfConf
           Caption = 'Warn when going high or low'
           TabOrder = 7
         end
+        object cbPredictDots: TCheckBox
+          Left = 15
+          Height = 19
+          Top = 160
+          Width = 618
+          Align = alTop
+          BorderSpacing.Left = 15
+          BorderSpacing.Bottom = 5
+          Caption = 'Show predictions as dots on the trend (replaces the prediction text)'
+          TabOrder = 11
+        end
         object bShortModeHelp: TButton
           Left = 384
           Height = 22

@@ -568,6 +568,9 @@ private
 
     // Dynamic array; allocated 1-based (index 0 unused). Size = ACTIVE_DOTS+1.
   TrendDots: array of TDotControl;
+    // Hollow future-prediction dots shown to the right of the trend when dot
+    // mode is enabled. 0-based, fixed length PREDICTION_DOT_COUNT.
+  PredictionDots: array of TDotControl;
   FDotWindowMenu: TMenuItem; // Trend window submenu (built once on first popup)
   multi: boolean; // Multi user
   multinick: string;
@@ -818,6 +821,27 @@ private
    }
   procedure UpdatePredictionLabel;
   procedure RenderPredictionCache(const bgr: BGResults);
+  {** Total horizontal trend slots. Equals ACTIVE_DOTS, plus
+      PREDICTION_DOT_COUNT when the prediction-dot view is active, so the
+      history dots compress to leave room for future dots on the right. }
+  function TrendColumnCount: integer;
+  {** True when predictions should render as hollow dots on the main trend
+      (predictions enabled AND the dot view selected) rather than as text. }
+  function PredictionDotsActive: boolean;
+  {** Create the fixed set of hollow prediction-dot paint boxes (once). }
+  procedure CreatePredictionDots;
+  {** Size and horizontally position the prediction dots in the trailing
+      trend slots. }
+  procedure LayoutPredictionDots;
+  {** Re-apply vertical positions to visible prediction dots from their cached
+      values (mirrors UpdateTrendDots for the history dots). }
+  procedure UpdatePredictionDotHeights;
+  {** Hide all prediction dots (used when the dot view is off/unavailable). }
+  procedure HidePredictionDots;
+  {** Populate the prediction dots from the 5/10/15-minute matches in a
+      prediction result set and lay them out on the trend. }
+  procedure RenderPredictionDots(const bgr: BGResults;
+    Closest5, Closest10, Closest15: integer);
   {$ifdef DARWIN}
   procedure ToggleFullscreenMac;
   {$endif}
@@ -907,6 +931,7 @@ PredictShortSize: integer = 1; // 1=small, 2=medium, 3=big
 PredictShortFullArrows: boolean = false; // Use full UTF arrow set in short mode
 PredictShortShowValue: boolean = false; // Show predicted value with clock icon in short mode
 PredictShortMinutes: integer = 10; // Prediction horizon (5, 10, or 15 minutes)
+PredictDotMode: boolean = false; // Render predictions as hollow dots on the trend instead of the lPredict label
 // Cache for dynamic prediction time updates
 PredictionCache: BGResults; // Cached prediction readings
 PredictionLastReadingTime: TDateTime; // Time of the reading used for predictions

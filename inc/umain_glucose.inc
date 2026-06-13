@@ -332,10 +332,13 @@ begin
   if not PredictGlucoseReading then
   begin
     lPredict.Visible := false;
+    HidePredictionDots;
     Exit;
   end;
 
-  lPredict.Visible := true;
+  // In dot mode the prediction is drawn as hollow dots on the trend, so the
+  // text label stays hidden; the prediction fetch still runs below to feed it.
+  lPredict.Visible := not PredictionDotsActive;
 
   if (Length(PredictionCache) > 0) and (PredictionLastReadingTime = lastReading.date) then
   begin
@@ -421,6 +424,15 @@ begin
   if validCount = 0 then
   begin
     lPredict.Visible := false;
+    HidePredictionDots;
+    Exit;
+  end;
+
+  // Dot view: render the 5/10/15-minute predictions as hollow dots continuing
+  // the trend to the right, and keep the text label hidden.
+  if PredictionDotsActive then
+  begin
+    RenderPredictionDots(bgr, closest5, closest10, closest15);
     Exit;
   end;
 
@@ -524,6 +536,51 @@ begin
       ScaleLbl(lPredict, taRightJustify, tlBottom, false);
     lPredict.Left := ClientWidth - lPredict.Width - 5;
   end;
+end;
+
+procedure TfBG.RenderPredictionDots(const bgr: BGResults;
+  Closest5, Closest10, Closest15: integer);
+
+  procedure ApplyDot(Slot, Idx: integer);
+  var
+    l: TDotControl;
+  begin
+    if (Slot < 0) or (Slot > High(PredictionDots)) then
+      Exit;
+    l := PredictionDots[Slot];
+    if not Assigned(l) then
+      Exit;
+
+    if (Idx >= 0) and (Idx <= High(bgr)) then
+    begin
+      l.Caption := DOT_PREDICT;
+      // Store the value in the display unit so UpdatePredictionDotHeights can
+      // parse it the same way the history dots are parsed.
+      l.Hint := bgr[Idx].format(un, BG_MSG_SHORT, BGPrimary);
+      l.Font.Color := DetermineColorForReading(bgr[Idx]);
+      l.Visible := true;
+    end
+    else
+    begin
+      l.Hint := '';
+      l.Visible := false;
+    end;
+  end;
+
+begin
+  lPredict.Visible := false;
+
+  ApplyDot(0, Closest5);
+  ApplyDot(1, Closest10);
+  ApplyDot(2, Closest15);
+
+  // Re-run the shared dot layout so the new prediction dots are sized,
+  // positioned in their trailing slots, and aligned to the same value axis as
+  // the history dots (UpdateTrendDots sets value-based tops, AdjustGraph then
+  // applies the trend's vertical offsets to every dot).
+  LayoutPredictionDots;
+  UpdateTrendDots;
+  AdjustGraph;
 end;
 
 procedure TfBG.FinalizeUIUpdate;

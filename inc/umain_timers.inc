@@ -416,6 +416,7 @@ procedure TfBG.UpdateTrendElements;
 begin
   actOnTrend(@ResizeDot);
   actOnTrend(@SetDotWidth);
+  LayoutPredictionDots;
 end;
 
 procedure TfBG.UpdateApiInformation;
@@ -586,6 +587,13 @@ begin
     else
       Dot.Visible := false;
   end;
+
+  // Keep prediction dots positioned alongside the history dots, or hidden when
+  // the dot view is off so they never linger after the mode is disabled.
+  if PredictionDotsActive then
+    UpdatePredictionDotHeights
+  else
+    HidePredictionDots;
 
   if pnWarning.Visible then
     pnWarning.Refresh;
