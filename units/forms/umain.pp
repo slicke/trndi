@@ -288,6 +288,7 @@ TfBG = class(TForm)
   lTir: TLabel;
   lAgo: TLabel;
   miADotAdjust: TMenuItem;
+  miADotCount: TMenuItem;
   miDotsInView: TMenuItem;
   miExit: TMenuItem;
   miDebugBackend: TMenuItem;
@@ -392,6 +393,7 @@ TfBG = class(TForm)
   procedure BuildDotWindowMenu;
   procedure miATouchAutoClick({%H-}Sender: TObject);
   procedure miADotAdjustClick({%H-}Sender: TObject);
+  procedure miADotCountClick({%H-}Sender: TObject);
   procedure miADotScaleClick({%H-}Sender: TObject);
   procedure miADotsClick({%H-}Sender: TObject);
   procedure miASystemInfoClick({%H-}Sender: TObject);
@@ -631,6 +633,7 @@ private
   procedure ApplyTrendDotTopOffset(const Offset: integer);
   procedure RepaintVisibleTrendDots;
   procedure CreateTrendDots;
+  procedure ApplyTrendDotCount(newCount: integer);
   procedure placeForm;
 
     {** Kick off an asynchronous fetch. The actual network call runs on a

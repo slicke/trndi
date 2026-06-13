@@ -2095,6 +2095,19 @@ msgstr ""
 msgid "You can enter plus or minus. Plus = down. 0 = neutral"
 msgstr ""
 
+#: trndi.strings.rs_service_dot_count
+msgid "Set Dot Count"
+msgstr ""
+
+#: trndi.strings.rs_service_dot_count_desc
+#, object-pascal-format
+msgid "Enter how many trend dots to show (1-%d)."
+msgstr ""
+
+#: trndi.strings.rs_service_dot_count_title
+msgid "Number of trend dots"
+msgstr ""
+
 #: trndi.strings.rs_service_predictions
 msgid "Predictions:"
 msgstr ""
