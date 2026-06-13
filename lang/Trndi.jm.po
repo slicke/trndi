@@ -2521,6 +2521,11 @@ msgctxt "trndi.strings.rs_ux_noise"
 msgid "𐩘 Noise: %d"
 msgstr ""
 
+#: trndi.strings.rs_ux_prediction_here
+#, object-pascal-format
+msgid "Prediction here: %s at %.2d:%.2d"
+msgstr ""
+
 #: trndi.strings.rs_ux_reading_here
 #, object-pascal-format
 msgctxt "trndi.strings.rs_ux_reading_here"

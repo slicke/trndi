@@ -319,7 +319,7 @@ msgstr "Visa mapp"
 
 #: tfconf.bextreload.caption
 msgid "Reload"
-msgstr ""
+msgstr "Ladda om"
 
 #: tfconf.bfontarrow.caption
 msgid "Arrow font..."
@@ -2433,6 +2433,11 @@ msgctxt "trndi.strings.rs_ux_noise"
 msgid "𐩘 Noise: %d"
 msgstr "𐩘 Brus: %d"
 
+#: trndi.strings.rs_ux_prediction_here
+#, object-pascal-format
+msgid "Prediction here: %s at %.2d:%.2d"
+msgstr "Förutspåelse här: %s kl %.2d:%.2d"
+
 #: trndi.strings.rs_ux_reading_here
 #, object-pascal-format
 msgctxt "trndi.strings.rs_ux_reading_here"
@@ -2772,11 +2777,11 @@ msgstr "Tilläggsantal: %d"
 
 #: uconf.rs_ext_reload_done
 msgid "Extensions were reloaded."
-msgstr ""
+msgstr "Tillägg laddades om."
 
 #: uconf.rs_ext_reload_title
 msgid "Reload Extensions"
-msgstr ""
+msgstr "Omladda tillägg"
 
 #: uconf.rs_ext_requests
 msgid "Requests: "
@@ -3218,4 +3223,3 @@ msgstr "Den höga gränsen måste vara större än den låga gränsen."
 #: uwizard.wz_test_no_support
 msgid "Connection testing is not supported for this service."
 msgstr "Anslutningstest stöds inte för denna tjänst."
-
