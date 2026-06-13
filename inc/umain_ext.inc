@@ -178,10 +178,10 @@ begin
       end;
     finally
       for j := 0 to High(args) do
-        ctx^.FreeInlined(args[j]);
-      ctx^.FreeInlined(retVal);
-      ctx^.FreeInlined(funcObj);
-      ctx^.FreeInlined(globalObj);
+        ctx^.FreeInlined(PJSValue(@args[j]));
+      ctx^.FreeInlined(PJSValue(@retVal));
+      ctx^.FreeInlined(PJSValue(@funcObj));
+      ctx^.FreeInlined(PJSValue(@globalObj));
     end;
   end;
 end;
