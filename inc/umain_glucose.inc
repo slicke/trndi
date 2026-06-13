@@ -544,6 +544,7 @@ procedure TfBG.RenderPredictionDots(const bgr: BGResults;
   procedure ApplyDot(Slot, Idx: integer);
   var
     l: TDotControl;
+    H, M, S, MS: word;
   begin
     if (Slot < 0) or (Slot > High(PredictionDots)) then
       Exit;
@@ -557,6 +558,9 @@ procedure TfBG.RenderPredictionDots(const bgr: BGResults;
       // Store the value in the display unit so UpdatePredictionDotHeights can
       // parse it the same way the history dots are parsed.
       l.Hint := bgr[Idx].format(un, BG_MSG_SHORT, BGPrimary);
+      // Encode the predicted time so the right-click menu can show it.
+      DecodeTime(bgr[Idx].date, H, M, S, MS);
+      l.Tag := H * 100 + M;
       l.Font.Color := DetermineColorForReading(bgr[Idx]);
       l.Visible := true;
     end

@@ -612,7 +612,10 @@ begin
     M := tpb.Tag mod 100;
 
     miDotVal.Visible := true;
-    miDotVal.Caption := Format(RS_UX_READING_HERE, [tpb.hint, H, M]);
+    if tpb.Caption = DOT_PREDICT then
+      miDotVal.Caption := Format(RS_UX_PREDICTION_HERE, [tpb.hint, H, M])
+    else
+      miDotVal.Caption := Format(RS_UX_READING_HERE, [tpb.hint, H, M]);
   end
   else
     miDotVal.Visible := false;
