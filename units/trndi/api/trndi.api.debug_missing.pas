@@ -72,48 +72,23 @@ end;
 function DebugMissingAPI.getReadings(min, maxNum: integer; extras: string;
 out res: string; {%H-}noCache: boolean): BGResults;
 var
-  fNow: TDateTime;
-
-function getFakeVals(const min: integer; out reading, delta: integer): TDateTime;
-  var
-    currentTime: TDateTime;
-    baseTime: TDateTime;
-    minutesFromBase: integer;
-    previousReading: integer;  // We're generating a delta
-  begin
-    res := '';
-    // Get the current time and the 5 minutes to act on
-    currentTime := fNow;
-    baseTime := IncMinute(currentTime, -min);
-    minutesFromBase := (MinuteOf(baseTime) div 5) * 5;
-
-    Result := RecodeMinute(baseTime, minutesFromBase);
-    Result := RecodeSecond(Result, 0);
-    Result := RecodeMilliSecond(Result, 0);
-
-
-    // Generate a fake reading
-    reading := 40 + ((DateTimeToUnix(Result) div 300) mod 360);
-
-    // Generate the previous 5 min reading
-    previousReading := 40 + ((DateTimeToUnix(IncMinute(Result, -5)) div 300) mod 360);
-
-    // Set the delta
-    delta := reading - previousReading;
-  end;
-
-var
+  fNow, ts: TDateTime;
   i: integer;
   val, diff: integer;
   nodata: maybeint;
 begin
+  res := '';
   nodata.exists := false;
   fNow := IncHour(Now, -2);
   SetLength(Result, 11);
   for i := 0 to 10 do
   begin
+    ts := FakeTime(i * 5, fNow);
+    val := FakeReading(ts);
+    diff := val - FakeReading(IncMinute(ts, -5));
+
     Result[i].Init(mgdl, self.systemName);
-    Result[i].date := getFakeVals(i * 5, val, diff);
+    Result[i].date := ts;
     Result[i].update(val, diff);
     Result[i].trend := CalculateTrendFromDelta(diff);
     Result[i].level := getLevel(Result[i].val);

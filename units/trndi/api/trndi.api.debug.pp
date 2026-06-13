@@ -66,12 +66,24 @@ protected
     {** Get the value which represents the maximum reading for the backend
   }
   function getLimitHigh: integer; override;
-  
+
     {** Get the value which represents the minimum reading for the backend
   }
   function getLimitLow: integer; override;
 
   function getSystemName: string; override;
+
+    {** 5-minute-aligned timestamp, minOffset minutes back from Now.
+  }
+  function FakeTime(minOffset: integer): TDateTime; overload;
+
+    {** 5-minute-aligned timestamp, minOffset minutes back from base.
+  }
+  function FakeTime(minOffset: integer; const base: TDateTime): TDateTime; overload;
+
+    {** Deterministic synthetic reading (mg/dL) for the given timestamp.
+  }
+  function FakeReading(const ts: TDateTime): integer;
 end;
 
 implementation
@@ -113,52 +125,62 @@ begin
 end;
 
 {------------------------------------------------------------------------------
+  FakeTime
+  --------------------
+  Returns a 5-minute-aligned timestamp, minOffset minutes back from a base time.
+------------------------------------------------------------------------------}
+function DebugAPI.FakeTime(minOffset: integer): TDateTime;
+begin
+  Result := FakeTime(minOffset, Now);
+end;
+
+function DebugAPI.FakeTime(minOffset: integer; const base: TDateTime): TDateTime;
+var
+  baseTime: TDateTime;
+  minutesFromBase: integer;
+begin
+  baseTime := IncMinute(base, -minOffset);
+  minutesFromBase := (MinuteOf(baseTime) div 5) * 5;
+
+  Result := RecodeMinute(baseTime, minutesFromBase);
+  Result := RecodeSecond(Result, 0);
+  Result := RecodeMilliSecond(Result, 0);
+end;
+
+{------------------------------------------------------------------------------
+  FakeReading
+  --------------------
+  Deterministic synthetic reading (mg/dL) derived from the timestamp.
+------------------------------------------------------------------------------}
+function DebugAPI.FakeReading(const ts: TDateTime): integer;
+begin
+  Result := 40 + ((DateTimeToUnix(ts) div 300) mod 360);
+end;
+
+{------------------------------------------------------------------------------
   Generate fake readings over the last 50 minutes at 5-minute intervals
 ------------------------------------------------------------------------------}
 function DebugAPI.getReadings(min, maxNum: integer; extras: string;
 out res: string; {%H-}noCache: boolean): BGResults;
-
-function getFakeVals(const min: integer; out reading, delta: integer): TDateTime;
-  var
-    currentTime: TDateTime;
-    baseTime: TDateTime;
-    minutesFromBase: integer;
-    previousReading: integer;  // We're generating a delta
-  begin
-    res := '';
-    // Get the current time and the 5 minutes to act on
-    currentTime := Now;
-    baseTime := IncMinute(currentTime, -min);
-    minutesFromBase := (MinuteOf(baseTime) div 5) * 5;
-
-    Result := RecodeMinute(baseTime, minutesFromBase);
-    Result := RecodeSecond(Result, 0);
-    Result := RecodeMilliSecond(Result, 0);
-
-
-    // Generate a fake reading
-    reading := 40 + ((DateTimeToUnix(Result) div 300) mod 360);
-
-    // Generate the previous 5 min reading
-    previousReading := 40 + ((DateTimeToUnix(IncMinute(Result, -5)) div 300) mod 360);
-
-    // Set the delta
-    delta := reading - previousReading;
-  end;
-
 var
   i: integer;
+  ts: TDateTime;
   val, diff: integer;
   rssi, noise: maybeint;
 begin
+  res := '';
   noise.exists := true;
   rssi.exists := true;
 
   SetLength(Result, 11);
   for i := 0 to 10 do
   begin
+    ts := FakeTime(i * 5);
+    val := FakeReading(ts);
+    diff := val - FakeReading(IncMinute(ts, -5));
+
     Result[i].Init(mgdl, self.systemname);
-    Result[i].date := getFakeVals(i * 5, val, diff);
+    Result[i].date := ts;
     Result[i].update(val, diff);
     Result[i].trend := CalculateTrendFromDelta(diff);
     Result[i].level := getLevel(Result[i].val);
