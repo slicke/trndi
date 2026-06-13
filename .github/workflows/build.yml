@@ -31,7 +31,7 @@ concurrency:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-  MORMOT2_COMMIT: b72f260
+  MORMOT2_COMMIT: b72f260b880557d2f9ebc15905d820e7a3a9bf01
   MORMOT2_STATIC_URL: https://github.com/synopse/mORMot2/releases/download/2.4-stable/mormot2static.7z
 
 jobs:
