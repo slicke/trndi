@@ -31,8 +31,8 @@ concurrency:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-  MORMOT2_BRANCH: 2.3.stable
-  MORMOT2_STATIC_URL: https://github.com/synopse/mORMot2/releases/download/2.3.stable/mormot2static.7z
+  MORMOT2_COMMIT: b72f260
+  MORMOT2_STATIC_URL: https://github.com/synopse/mORMot2/releases/download/2.4-stable/mormot2static.7z
 
 jobs:
   # ===================== DETERMINE VERSION =====================
@@ -162,7 +162,10 @@ jobs:
           mkdir -p ./static
           curl -fsSL -o mormot2static.7z "${{ env.MORMOT2_STATIC_URL }}"
           7z x mormot2static.7z -o./static -y >/dev/null
-          git clone --depth 1 --branch ${{ env.MORMOT2_BRANCH }} https://github.com/synopse/mORMot2.git externals/mORMot2
+          git -c init.defaultBranch=main init externals/mORMot2
+          git -C externals/mORMot2 remote add origin https://github.com/synopse/mORMot2.git
+          git -C externals/mORMot2 fetch --depth 1 origin ${{ env.MORMOT2_COMMIT }}
+          git -C externals/mORMot2 checkout FETCH_HEAD
           cp -r ./static/${{ matrix.qt6_arch_folder }}/* .
 
           # Build Trndi
@@ -364,7 +367,10 @@ jobs:
           curl -fsSL -o mormot2static.7z "${{ env.MORMOT2_STATIC_URL }}"
           mkdir -p ./static
           7z x mormot2static.7z -o./static -y >/dev/null
-          git clone --depth 1 --branch ${{ env.MORMOT2_BRANCH }} https://github.com/synopse/mORMot2.git externals/mORMot2
+          git -c init.defaultBranch=main init externals/mORMot2
+          git -C externals/mORMot2 remote add origin https://github.com/synopse/mORMot2.git
+          git -C externals/mORMot2 fetch --depth 1 origin ${{ env.MORMOT2_COMMIT }}
+          git -C externals/mORMot2 checkout FETCH_HEAD
           cp -r ./static/aarch64-darwin/* .
 
       - name: Write buildinfo (macOS)
@@ -415,7 +421,10 @@ jobs:
           New-Item -ItemType Directory -Path .\static -Force | Out-Null
           curl -L --fail -o mormot2static.7z "${{ env.MORMOT2_STATIC_URL }}"
           & 'C:\Program Files\7-Zip\7z.exe' x '.\mormot2static.7z' -o'.\static' -y | Out-Null
-          git clone --depth 1 --branch ${{ env.MORMOT2_BRANCH }} https://github.com/synopse/mORMot2.git externals/mORMot2
+          git -c init.defaultBranch=main init externals/mORMot2
+          git -C externals/mORMot2 remote add origin https://github.com/synopse/mORMot2.git
+          git -C externals/mORMot2 fetch --depth 1 origin ${{ env.MORMOT2_COMMIT }}
+          git -C externals/mORMot2 checkout FETCH_HEAD
           xcopy .\static\x86_64-win64\*.* . /Y /E /I | Out-Null
           # Write build metadata unit for CI (overrides dev stub)
           $BUILD_DATE = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
