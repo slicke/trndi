@@ -124,6 +124,7 @@ type
     FWidth: Integer;
     FHeight: Integer;
     FHandle: PtrUInt;
+    function GetEmpty: Boolean;
   public
     constructor Create; virtual;
     destructor Destroy; override;
@@ -132,6 +133,7 @@ type
     property Width: Integer read FWidth write FWidth;
     property Height: Integer read FHeight write FHeight;
     property Handle: PtrUInt read FHandle write FHandle;
+    property Empty: Boolean read GetEmpty;
   end;
 
   TPicture = class(TObject)
@@ -360,6 +362,11 @@ procedure TIcon.SetSize(AWidth, AHeight: Integer);
 begin
   FWidth := AWidth;
   FHeight := AHeight;
+end;
+
+function TIcon.GetEmpty: Boolean;
+begin
+  Result := FHandle = 0;
 end;
 
 { TPicture }
