@@ -45,7 +45,7 @@ interface
 
 uses
 Classes, SysUtils, Dialogs, trndi.types,
-trndi.api.debug, fpjson, jsonparser, dateutils, trndi.api;
+trndi.api.debug, fpjson, jsonparser, trndi.api;
 
 type
   // Main class
@@ -90,34 +90,17 @@ end;
 
 function DebugCustomAPI.getReadings(min, maxNum: integer; extras: string;
 out res: string; {%H-}noCache: boolean): BGResults;
-
-function getFakeTime(const min: integer): TDateTime;
-  var
-    currentTime: TDateTime;
-    baseTime: TDateTime;
-    minutesFromBase: integer;
-  begin
-    res := '';
-    // Get the current time and the 5 minutes to act on
-    currentTime := Now;
-    baseTime := IncMinute(currentTime, -min);
-    minutesFromBase := (MinuteOf(baseTime) div 5) * 5;
-
-    Result := RecodeMinute(baseTime, minutesFromBase);
-    Result := RecodeSecond(Result, 0);
-    Result := RecodeMilliSecond(Result, 0);
-  end;
-
 var
   nodata: maybeint;
   i: integer;
 begin
+  res := '';
   nodata.exists := false;
   SetLength(Result, 11);
   for i := 0 to 10 do
   begin
     Result[i].Init(mgdl, self.systemName);
-    Result[i].date := getFakeTime(i * 5); // Get the time
+    Result[i].date := FakeTime(i * 5); // Get the time
     Result[i].update(setval, 0); // Set reading
     Result[i].trend := tdFlat;  // Always flat
     Result[i].level := BGRange;
