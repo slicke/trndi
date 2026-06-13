@@ -91,6 +91,7 @@ begin
 
   PredictGlucoseReading := native.GetBoolSetting('predictions.enable', false);
   PredictShortMode := native.GetBoolSetting('predictions.short', false);
+  PredictDotMode := native.GetBoolSetting('predictions.dots', false);
   PredictShortFullArrows := native.GetBoolSetting('predictions.short.fullarrows', false);
   PredictShortShowValue := native.GetBoolSetting('predictions.short.showvalue', false);
   minutesStr := '';
@@ -368,6 +369,7 @@ procedure LoadUserSettings(f: TfConf);
       cbPredictions.Checked := GetBoolSetting('predictions.enable');
       cbWebAPI.Checked := GetBoolSetting('webserver.enable');
       cbPredictShort.Checked := GetBoolSetting('predictions.short');
+      cbPredictDots.Checked := GetBoolSetting('predictions.dots');
       cbWarnLoHi.Checked := GetBoolSetting('predictions.warn');
       cbPredictShortFullArrows.Checked := GetBoolSetting('predictions.short.fullarrows');
       if GetBoolSetting('predictions.short.showvalue') then
@@ -786,6 +788,7 @@ procedure SaveUserSettings(f: TfConf);
       SetSetting('webserver.enable', cbWebAPI.Checked);
       SetSetting('predictions.warn', cbWarnLoHi.Checked);
       SetSetting('predictions.short', cbPredictShort.Checked);
+      SetSetting('predictions.dots', cbPredictDots.Checked);
       SetSetting('predictions.short.fullarrows', cbPredictShortFullArrows.Checked);
       SetSetting('predictions.short.showvalue', rbPredictShortShowValue.Checked);
       if cbPredictShortSize.ItemIndex >= 0 then

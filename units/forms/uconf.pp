@@ -135,6 +135,7 @@ TfConf = class(TForm)
   cbMusicPause: TCheckBox;
   cbNotice: TCheckBox;
   cbPredictions: TCheckBox;
+  cbPredictDots: TCheckBox;
   cbPredictShort: TCheckBox;
   cbPredictShortFullArrows: TCheckBox;
   cbPredictShortMinutes: TComboBox;
@@ -1935,6 +1936,7 @@ begin
   shortOn := predOn and cbPredictShort.Checked;
 
   cbPredictShort.Enabled            := predOn;
+  cbPredictDots.Enabled             := predOn;
   cbWarnLoHi.Enabled                := predOn;
   cbPredictShortFullArrows.Enabled  := shortOn;
   rbPredictShortShowValue.Enabled   := shortOn;

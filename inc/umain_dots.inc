@@ -38,7 +38,7 @@ function LocalAlphaBlend(
 {$endif}
 
 procedure DrawSmoothCircle(ACanvas: TCanvas; ASize: integer;
-  ADotColor, ARingColor: TColor; ARingWidth: integer);
+  ADotColor, ARingColor: TColor; ARingWidth: integer; AHollow: boolean = false);
 var
   intf: TLazIntfImage;
   rawDesc: TRawImageDescription;
@@ -103,6 +103,12 @@ begin
           alphaDisc := 0.0
         else
           alphaDisc := r + 0.5 - dist;
+
+        // Hollow mode: render the ring only, leave the interior transparent so
+        // predicted readings read as outlined circles distinct from the solid
+        // history dots.
+        if AHollow then
+          alphaDisc := 0.0;
 
         alphaRing := 0.0;
         if hasRing then
@@ -207,7 +213,7 @@ begin
   L := Sender as TDotControl;
   S := L.Caption;
 
-  if (S = DOT_GRAPH) or (S = DOT_FRESH) then
+  if (S = DOT_GRAPH) or (S = DOT_FRESH) or (S = DOT_PREDICT) then
   begin
     // Square the bounds — ResizeDot pre-sized to a square slot. Use the smaller
     // edge so a sloppy resize round can't crop the circle.
@@ -216,6 +222,14 @@ begin
       Exit;
 
     dotColor := L.Font.Color;
+    if S = DOT_PREDICT then
+    begin
+      // Hollow ring for future predictions; thicker than the fresh ring so the
+      // outline is clearly visible at small sizes.
+      DrawSmoothCircle(L.Canvas, d, dotColor, dotColor, Max(2, d div 6), true);
+      Exit;
+    end;
+
     if S = DOT_FRESH then
       ringWidth := Max(2, d div 12)
     else
@@ -425,6 +439,10 @@ begin
 
   TrndiDLog(Format('Trend dots created: %d dots (%d min window)',
     [ACTIVE_DOTS, ACTIVE_DOTS * INTERVAL_MINUTES]));
+
+  // Prediction dots have a fixed count and survive dot-window changes, so this
+  // creates them once and is a no-op on subsequent CreateTrendDots calls.
+  CreatePredictionDots;
 end;
 
 procedure TfBG.initDot(l: TDotControl; c, ix: integer);
@@ -479,6 +497,13 @@ begin
     if not Assigned(l) then Continue;
     l.Top := l.Top + Offset;
   end;
+  // Prediction dots share the trend's vertical transform so they line up with
+  // the history dots on the same value axis.
+  for l in PredictionDots do
+  begin
+    if not Assigned(l) then Continue;
+    l.Top := l.Top + Offset;
+  end;
 end;
 
 procedure TfBG.RepaintVisibleTrendDots;
@@ -491,6 +516,131 @@ begin
     if l.Visible then
       l.Repaint;
   end;
+  for l in PredictionDots do
+  begin
+    if not Assigned(l) then Continue;
+    if l.Visible then
+      l.Repaint;
+  end;
+end;
+
+// Total horizontal trend slots: the history dots plus prediction slots when
+// the dot view is active (so history compresses to free room on the right).
+function TfBG.TrendColumnCount: integer;
+begin
+  Result := ACTIVE_DOTS;
+  if PredictionDotsActive then
+    Inc(Result, PREDICTION_DOT_COUNT);
+end;
+
+// True when predictions should be drawn as hollow dots on the trend rather
+// than written into the lPredict label. Requires the dots to exist.
+function TfBG.PredictionDotsActive: boolean;
+begin
+  Result := PredictGlucoseReading and PredictDotMode
+    and (Length(PredictionDots) = PREDICTION_DOT_COUNT);
+end;
+
+// Create the fixed set of hollow prediction-dot paint boxes. Their count is
+// independent of ACTIVE_DOTS, so this runs once and is a no-op thereafter
+// (unlike CreateTrendDots, which is rebuilt when the dot window changes).
+procedure TfBG.CreatePredictionDots;
+var
+  i: integer;
+begin
+  if Length(PredictionDots) = PREDICTION_DOT_COUNT then
+    Exit;
+
+  SetLength(PredictionDots, PREDICTION_DOT_COUNT);
+  for i := 0 to PREDICTION_DOT_COUNT - 1 do
+  begin
+    PredictionDots[i] := TPaintBox.Create(Self);
+    with TPaintBox(PredictionDots[i]) do
+    begin
+      Parent := Self;
+      AutoSize := false;
+      OnPaint := @DotPaint;
+      Left := 0;
+      Top := 0;
+      Width := 33;
+      Height := 33;
+      Font.Size := 24;
+      Visible := false;
+      Caption := DOT_PREDICT;
+      PopupMenu := pmSettings;
+    end;
+    initDot(PredictionDots[i], PREDICTION_DOT_COUNT, i + 1);
+  end;
+
+  TrndiDLog(Format('Prediction dots created: %d hollow dots.', [PREDICTION_DOT_COUNT]));
+end;
+
+// Size and horizontally position the prediction dots in the trailing slots of
+// the (compressed) trend grid. Vertical placement is handled by
+// UpdatePredictionDotHeights + the shared ApplyTrendDotTopOffset cascade.
+procedure TfBG.LayoutPredictionDots;
+var
+  i, cols, ix, cw, leftPx, rightPx, slotWidth: integer;
+  l: TDotControl;
+begin
+  if not PredictionDotsActive then
+    Exit;
+
+  cols := Max(TrendColumnCount, 1);
+  cw   := fBG.ClientWidth;
+  for i := 0 to High(PredictionDots) do
+  begin
+    l := PredictionDots[i];
+    if not Assigned(l) then Continue;
+
+    // Reuse the trend-dot circle sizing so prediction dots match the history
+    // dots' diameter (same slot width via TrendColumnCount).
+    ResizeDot(l, ACTIVE_DOTS, ACTIVE_DOTS + i + 1);
+
+    ix        := ACTIVE_DOTS + i + 1;
+    leftPx    := Round((ix - 1) * cw / cols);
+    rightPx   := Round(ix       * cw / cols);
+    if rightPx > cw then rightPx := cw;
+    slotWidth := rightPx - leftPx;
+    l.Left    := Max(0, Min(leftPx + (slotWidth - l.Width) div 2, cw - l.Width));
+  end;
+end;
+
+// Re-apply value-based vertical positions to visible prediction dots from
+// their cached Hint values (mirrors UpdateTrendDots for the history dots).
+procedure TfBG.UpdatePredictionDotHeights;
+var
+  l: TDotControl;
+  Value: glucose;
+begin
+  if not PredictionDotsActive then
+    Exit;
+
+  for l in PredictionDots do
+  begin
+    if not Assigned(l) then Continue;
+    if not l.Visible then Continue;
+
+    if TryStrToFloat(l.Hint, Value, native.locale) then
+    begin
+      if un = mgdl then
+        Value := Value * BG_CONVERTIONS[mmol][mgdl];
+
+      if Assigned(l.Parent) then
+        SetPointHeight(l, Value, l.Parent.ClientHeight)
+      else
+        SetPointHeight(l, Value, fBG.ClientHeight);
+    end;
+  end;
+end;
+
+procedure TfBG.HidePredictionDots;
+var
+  l: TDotControl;
+begin
+  for l in PredictionDots do
+    if Assigned(l) then
+      l.Visible := false;
 end;
 
 // Shows a dot only if it has valid data (non-empty Hint)
@@ -506,9 +656,11 @@ var
   slotW, d: integer;
   fontn, s: string;
 begin
-  slotW := Max(1, fBG.ClientWidth div Max(c, 1));
+  // Divide the width by the full column count (history + any prediction slots)
+  // so history dots compress to leave room for future dots on the right.
+  slotW := Max(1, fBG.ClientWidth div Max(TrendColumnCount, 1));
   l.AutoSize := false;
-  if (l.Caption = DOT_GRAPH) or (l.Caption = DOT_FRESH) then
+  if (l.Caption = DOT_GRAPH) or (l.Caption = DOT_FRESH) or (l.Caption = DOT_PREDICT) then
   begin
     // Square sizing — DotPaint draws a circle inscribed in this box. 0.6
     // matches the visible disc area of the legacy ● glyph at 85% slot width.
@@ -549,12 +701,15 @@ end;
 procedure TfBG.SetDotWidth(l: TDotControl; c, ix: integer; ls: array of TDotControl);
 var
   leftPx, rightPx, slotWidth: integer;
-  cw: integer;
+  cw, cols: integer;
 begin
   if c < 1 then Exit;
+  // Position within the full column grid (history + prediction slots) so the
+  // history dots occupy the left portion and leave room on the right.
+  cols      := Max(TrendColumnCount, 1);
   cw        := fBG.ClientWidth;
-  leftPx    := Round((ix - 1) * cw / c);
-  rightPx   := Round(ix       * cw / c);
+  leftPx    := Round((ix - 1) * cw / cols);
+  rightPx   := Round(ix       * cw / cols);
   if rightPx > cw then rightPx := cw;
   slotWidth := rightPx - leftPx;
   l.Left    := Max(0, Min(leftPx + (slotWidth - l.Width) div 2, cw - l.Width));
