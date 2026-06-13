@@ -2206,6 +2206,19 @@ msgstr "Lägg till punktjustering"
 msgid "You can enter plus or minus. Plus = down. 0 = neutral"
 msgstr "Du kan ange plus eller minus. Plus = ned, 0 = neutral"
 
+#: trndi.strings.rs_service_dot_count
+msgid "Set Dot Count"
+msgstr ""
+
+#: trndi.strings.rs_service_dot_count_desc
+#, object-pascal-format
+msgid "Enter how many trend dots to show (1-%d)."
+msgstr ""
+
+#: trndi.strings.rs_service_dot_count_title
+msgid "Number of trend dots"
+msgstr ""
+
 #: trndi.strings.rs_service_predictions
 msgid "Predictions:"
 msgstr "Förutspåelser:"
@@ -3223,3 +3236,4 @@ msgstr "Den höga gränsen måste vara större än den låga gränsen."
 #: uwizard.wz_test_no_support
 msgid "Connection testing is not supported for this service."
 msgstr "Anslutningstest stöds inte för denna tjänst."
+

@@ -102,6 +102,26 @@ begin
   end;
 end;
 
+procedure TfBG.miADotCountClick(Sender: TObject);
+var
+  mr: TModalResult;
+  newCount: integer;
+begin
+  newCount := ExtIntInput(uxdAuto, RS_SERVICE_DOT_COUNT, RS_SERVICE_DOT_COUNT_TITLE,
+    Format(RS_SERVICE_DOT_COUNT_DESC, [MAX_DOT_COUNT]), ACTIVE_DOTS, mr);
+
+  if mr <> mrOk then
+    Exit;
+
+  if newCount < 1 then
+    newCount := 1;
+  if newCount > MAX_DOT_COUNT then
+    newCount := MAX_DOT_COUNT;
+
+  if newCount <> ACTIVE_DOTS then
+    ApplyTrendDotCount(newCount);
+end;
+
 procedure TfBG.miADotScaleClick(Sender: TObject);
 begin
 end;

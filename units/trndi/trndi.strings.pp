@@ -278,6 +278,10 @@ RS_UX_ENTER_DOT_SIZE= 'Enter a value, the dot size will multiply by this';
 RS_UX_TREND_WINDOW = 'Trend window';
 RS_UX_TREND_WINDOW_FMT = '%d min (%d dots)';
 
+RS_SERVICE_DOT_COUNT = 'Set Dot Count';
+RS_SERVICE_DOT_COUNT_TITLE = 'Number of trend dots';
+RS_SERVICE_DOT_COUNT_DESC = 'Enter how many trend dots to show (1-%d).';
+
 RS_UX_CHANGES_SAVE = 'Save?';
 RS_UX_CHANGES_REMEMBER = 'Remember setting?';
 RS_CHANGES_APPLY = 'Apply this value when Trndi starts?';

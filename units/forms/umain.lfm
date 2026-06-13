@@ -444,6 +444,10 @@ object fBG: TfBG
         Caption = 'Adjust Dot Positions'
         OnClick = miADotAdjustClick
       end
+      object miADotCount: TMenuItem
+        Caption = 'Set Dot Count'
+        OnClick = miADotCountClick
+      end
       object miDebugBackend: TMenuItem
         Caption = 'Announce raw backend data'
         Visible = False

@@ -297,6 +297,18 @@ begin
       ownerMenu.Items[i].Checked := false;
   TMenuItem(Sender).Checked := true;
 
+  ApplyTrendDotCount(newCount);
+end;
+
+// Apply a new main-trend dot count: persist it, rebuild the dot controls and
+// reflow the graph. Shared by the trend-window submenu and the manual
+// "Set Dot Count" service-menu entry.
+procedure TfBG.ApplyTrendDotCount(newCount: integer);
+var
+  i: integer;
+begin
+  if (newCount < 1) or (newCount > MAX_DOT_COUNT) then Exit;
+
   native.SetSetting('ux.dot_count', newCount);
   ACTIVE_DOTS := newCount;
   if MAX_MIN < ACTIVE_DOTS * INTERVAL_MINUTES + 10 then
