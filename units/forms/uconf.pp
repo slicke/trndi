@@ -1533,14 +1533,13 @@ begin
   url := '';
 
   case ns of
-  'BurntToast':
-    url := 'https://www.powershellgallery.com/packages/BurntToast';
   'notify-send':
     url := 'https://www.google.com/search?q=notify-send';
   end;
   // Natives:
   // NSUserNotification
   // gdbus
+  // WinRT-Toast
 
   if url <> '' then
   begin

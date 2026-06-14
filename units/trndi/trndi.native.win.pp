@@ -96,12 +96,14 @@ public
   {** Determine if Windows is using dark app theme (AppsUseLightTheme=0).
       @returns(True if dark mode is active) }
   class function isDarkMode: boolean; override;
-  {** Returns True if the BurntToast PowerShell module is available.
-    This is used as a proxy for whether native toast notifications can be sent
-    via PowerShell from this process. }
+  {** Returns True if PowerShell is available on the system. PowerShell is the
+    host used to invoke the WinRT @code(ToastNotificationManager) API directly,
+    so its presence is a sufficient proxy for native toast availability. }
   class function isNotificationSystemAvailable: boolean; override;
   {** Identify the notification backend for Windows.
-      Returns 'BurntToast' when the PowerShell module is available; otherwise 'none'. }
+      Returns @code('WinRT-Toast') when PowerShell is available (the toast is
+      shown via @code(Windows.UI.Notifications) using PowerShell's AUMID);
+      otherwise @code('none'). }
   class function getNotificationSystem: string; override;
     {** Check whether platform TTS is available. }
   class function SpeakAvailable: boolean; override;
@@ -146,7 +148,7 @@ end;
 implementation
 
 uses
-ComObj, ActiveX, Process, SyncObjs;
+ComObj, ActiveX, SyncObjs;
 
 type
   {** Background worker that owns a SAPI.SpVoice in an STA thread and
@@ -284,35 +286,27 @@ begin
   end;
 end;
 {------------------------------------------------------------------------------
-  IsBurntToastAvailable
+  IsPowerShellAvailable
   ---------------------
-  Check if the BurntToast PowerShell module is available on this system.
-  Used by isNotificationSystemAvailable as a proxy for toast support.
+  Check whether Windows PowerShell (powershell.exe) exists at its canonical
+  location under the system directory. PowerShell ships with Windows 7+ and
+  is required to invoke the WinRT toast API from this process.
  ------------------------------------------------------------------------------}
-{** Check if the BurntToast module is available in PowerShell.
+{** Check whether powershell.exe is present at the standard system location.
     Implementation detail for @link(TTrndiNativeWindows.isNotificationSystemAvailable). }
-function IsBurntToastAvailable: boolean;
+function IsPowerShellAvailable: boolean;
 var
-  Output: TStringList;
-  AProcess: TProcess;
+  Buf: array[0..MAX_PATH-1] of WChar;
+  Path: unicodestring;
+  Len: UINT;
 begin
   Result := false;
-  Output := TStringList.Create;
-  AProcess := TProcess.Create(nil);
-  try
-    AProcess.Executable := 'powershell';
-    AProcess.Parameters.Add('-NoProfile');
-    AProcess.Parameters.Add('-Command');
-    AProcess.Parameters.Add(
-      'if (Get-Module -ListAvailable -Name BurntToast) { Write-Host "YES" }');
-    AProcess.Options := [poUsePipes, poWaitOnExit];
-    AProcess.Execute;
-    Output.LoadFromStream(AProcess.Output);
-    Result := (Pos('YES', Output.Text) > 0);
-  finally
-    AProcess.Free;
-    Output.Free;
-  end;
+  Len := GetSystemDirectoryW(@Buf[0], Length(Buf));
+  if Len = 0 then
+    Exit;
+  SetString(Path, pwidechar(@Buf[0]), Len);
+  Path := Path + '\WindowsPowerShell\v1.0\powershell.exe';
+  Result := GetFileAttributesW(pwidechar(Path)) <> INVALID_FILE_ATTRIBUTES;
 end;
 
 function EnumLogWnd_UpdateBegin(hwnd: HWND; lParam: LPARAM): BOOL; stdcall;
@@ -465,22 +459,26 @@ end;
 {------------------------------------------------------------------------------
   isNotificationSystemAvailable
   -----------------------------
-  Returns True if native toast notifications are likely available (BurntToast).
+  Returns True if native toast notifications are likely available. We invoke
+  the WinRT ToastNotificationManager via PowerShell, so PowerShell's presence
+  is the proxy.
  ------------------------------------------------------------------------------}
 class function TTrndiNativeWindows.isNotificationSystemAvailable: boolean;
 begin
-  Result := IsBurntToastAvailable;
+  Result := IsPowerShellAvailable;
 end;
 
 {------------------------------------------------------------------------------
   getNotificationSystem
   ---------------------
-  Return 'BurntToast' if the PowerShell module is present; otherwise 'none'.
+  Return 'WinRT-Toast' when PowerShell is present (the toast XML is dispatched
+  through Windows.UI.Notifications using PowerShell's registered AUMID);
+  otherwise 'none'.
  ------------------------------------------------------------------------------}
 class function TTrndiNativeWindows.getNotificationSystem: string;
 begin
-  if IsBurntToastAvailable then
-    Result := 'BurntToast'
+  if IsPowerShellAvailable then
+    Result := 'WinRT-Toast'
   else
     Result := 'none';
 end;
