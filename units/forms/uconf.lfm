@@ -8,7 +8,7 @@ object fConf: TfConf
   ClientHeight = 606
   ClientWidth = 675
   Position = poDesktopCenter
-  LCLVersion = '4.6.0.0'
+  LCLVersion = '4.8.0.0'
   OnClose = FormClose
   OnCreate = FormCreate
   OnDestroy = FormDestroy
@@ -18,12 +18,12 @@ object fConf: TfConf
     Height = 590
     Top = 11
     Width = 645
-    ActivePage = tsGeneral
+    ActivePage = tsDisplay
     Align = alClient
     BorderSpacing.Left = 10
     BorderSpacing.Right = 10
     BorderSpacing.Around = 5
-    TabIndex = 1
+    TabIndex = 3
     TabOrder = 0
     OnChange = pcMainChange
     object tsCommon: TTabSheet
@@ -1470,12 +1470,12 @@ object fConf: TfConf
       OnShow = tsDisplayShow
       object pnDisplay: TPanel
         Left = 0
-        Height = 342
+        Height = 216
         Top = 0
         Width = 637
         Align = alClient
         BevelOuter = bvNone
-        ClientHeight = 342
+        ClientHeight = 216
         ClientWidth = 637
         ParentBackground = False
         TabOrder = 0
@@ -1527,16 +1527,17 @@ object fConf: TfConf
           end
         end
         object lArrow: TLabel
-          Left = 456
-          Height = 131
-          Top = 27
-          Width = 200
+          Left = 0
+          Height = 56
+          Top = 160
+          Width = 637
+          Align = alBottom
           Alignment = taCenter
           AutoSize = False
           Caption = '->'
           Color = clWhite
           Font.Color = clBlack
-          Font.Height = 107
+          Font.Height = 56
           Layout = tlCenter
           OptimalFill = True
           ParentColor = False
@@ -1558,46 +1559,173 @@ object fConf: TfConf
           ParentFont = False
         end
         object lVal: TLabel
-          Left = 272
-          Height = 116
+          Left = 0
+          Height = 125
           Top = 35
-          Width = 113
-          Alignment = taRightJustify
+          Width = 637
+          Align = alClient
+          Alignment = taCenter
           Caption = '0,0'
           Color = 21243
           Font.Color = clBlack
           Font.Height = -87
+          Layout = tlCenter
           ParentColor = False
           ParentFont = False
         end
       end
       object gbDisplayPrefs: TGroupBox
         Left = 0
-        Height = 220
-        Top = 342
+        Height = 346
+        Top = 216
         Width = 637
         Align = alBottom
         Caption = 'Display Preferences'
-        ClientHeight = 200
+        ClientHeight = 326
         ClientWidth = 633
         ParentBackground = False
         TabOrder = 1
+        object bDecimalHelp: TButton
+          Left = 176
+          Height = 22
+          Top = 20
+          Width = 27
+          Caption = '?'
+          TabOrder = 0
+          OnClick = bDecimalHelpClick
+        end
+        object GroupBox11: TGroupBox
+          Left = 0
+          Height = 105
+          Top = 55
+          Width = 633
+          Align = alTop
+          Caption = 'General'
+          ClientHeight = 85
+          ClientWidth = 629
+          TabOrder = 1
+          object cbProgress: TCheckBox
+            Left = 16
+            Height = 19
+            Top = 16
+            Width = 240
+            Caption = 'Display progress to next update on the left'
+            TabOrder = 0
+          end
+          object cbClock: TCheckBox
+            Left = 16
+            Height = 19
+            Top = 35
+            Width = 191
+            Caption = 'Show clock for 5 sec every 20 sec'
+            TabOrder = 1
+          end
+          object cbAlternate: TCheckBox
+            Left = 16
+            Height = 19
+            Top = 53
+            Width = 205
+            Caption = 'Alternate arrow and reading display'
+            TabOrder = 2
+          end
+          object bDisplayGeneralHelp: TButton
+            Left = 584
+            Height = 22
+            Top = 0
+            Width = 27
+            Caption = '?'
+            TabOrder = 3
+            OnClick = bDisplayGeneralHelpClick
+          end
+        end
+        object GroupBox12: TGroupBox
+          Left = 0
+          Height = 57
+          Top = 160
+          Width = 633
+          Align = alTop
+          Caption = 'Advanced'
+          ClientHeight = 37
+          ClientWidth = 629
+          TabOrder = 2
+          object cbShowSensorExpiry: TCheckBox
+            Left = 16
+            Height = 19
+            Top = 8
+            Width = 226
+            Caption = 'Show sensor expiry in top-center badge'
+            TabOrder = 0
+          end
+          object bDisplayAdvancedHelp: TButton
+            Left = 584
+            Height = 22
+            Top = 0
+            Width = 27
+            Caption = '?'
+            TabOrder = 1
+            OnClick = bDisplayAdvancedHelpClick
+          end
+        end
+        object GroupBox13: TGroupBox
+          Left = 0
+          Height = 105
+          Top = 217
+          Width = 633
+          Align = alTop
+          Caption = 'Window'
+          ClientHeight = 85
+          ClientWidth = 629
+          TabOrder = 3
+          object cbRangeColor: TCheckBox
+            Left = 16
+            Height = 19
+            Top = 6
+            Width = 230
+            Caption = 'Use range color for window background'
+            TabOrder = 0
+          end
+          object cbOnTop: TCheckBox
+            Left = 16
+            Height = 19
+            Top = 24
+            Width = 165
+            Caption = 'Keep window always on top'
+            TabOrder = 1
+          end
+          object cbNoBorders: TCheckBox
+            Left = 16
+            Height = 19
+            Top = 40
+            Width = 131
+            Caption = 'Hide window borders'
+            TabOrder = 2
+          end
+          object bDisplayWindowHelp: TButton
+            Left = 584
+            Height = 22
+            Top = 0
+            Width = 27
+            Caption = '?'
+            TabOrder = 3
+            OnClick = bDisplayWindowHelpClick
+          end
+        end
         object pDecimal: TPanel
           Left = 0
-          Height = 200
+          Height = 55
           Top = 0
-          Width = 170
-          Align = alLeft
+          Width = 633
+          Align = alTop
           BevelOuter = bvNone
-          ClientHeight = 200
-          ClientWidth = 170
+          ClientHeight = 55
+          ClientWidth = 633
           ParentBackground = False
-          TabOrder = 0
+          TabOrder = 4
           object edCommaSep: TEdit
             Left = 10
             Height = 23
             Top = 20
-            Width = 160
+            Width = 623
             Align = alTop
             BorderSpacing.Left = 10
             BorderSpacing.Top = 5
@@ -1610,76 +1738,11 @@ object fConf: TfConf
             Left = 5
             Height = 15
             Top = 0
-            Width = 165
+            Width = 628
             Align = alTop
             BorderSpacing.Left = 5
             Caption = 'Decimal separator:'
           end
-        end
-        object cbProgress: TCheckBox
-          Left = 8
-          Height = 19
-          Top = 64
-          Width = 240
-          Caption = 'Display progress to next update on the left'
-          TabOrder = 1
-        end
-        object cbShowSensorExpiry: TCheckBox
-          Left = 8
-          Height = 19
-          Top = 84
-          Width = 226
-          Caption = 'Show sensor expiry in top-center badge'
-          TabOrder = 3
-        end
-        object bDecimalHelp: TButton
-          Left = 176
-          Height = 22
-          Top = 24
-          Width = 27
-          Caption = '?'
-          TabOrder = 2
-          OnClick = bDecimalHelpClick
-        end
-        object cbRangeColor: TCheckBox
-          Left = 8
-          Height = 19
-          Top = 108
-          Width = 230
-          Caption = 'Use range color for window background'
-          TabOrder = 4
-        end
-        object cbClock: TCheckBox
-          Left = 320
-          Height = 19
-          Top = 152
-          Width = 191
-          Caption = 'Show clock for 5 sec every 20 sec'
-          TabOrder = 5
-        end
-        object cbAlternate: TCheckBox
-          Left = 320
-          Height = 19
-          Top = 174
-          Width = 205
-          Caption = 'Alternate arrow and reading display'
-          TabOrder = 6
-        end
-        object cbOnTop: TCheckBox
-          Left = 320
-          Height = 19
-          Top = 108
-          Width = 165
-          Caption = 'Keep window always on top'
-          TabOrder = 8
-        end
-        object cbNoBorders: TCheckBox
-          Left = 320
-          Height = 19
-          Top = 130
-          Width = 131
-          Caption = 'Hide window borders'
-          TabOrder = 7
         end
       end
     end

@@ -64,7 +64,12 @@ type
 
 TfConf = class(TForm)
   bAdd: TButton;
+  bAlertDurHelp: TButton;
+  bAlertHystHelp: TButton;
   bBackendHelp: TButton;
+  bDisplayGeneralHelp: TButton;
+  bDisplayAdvancedHelp: TButton;
+  bDisplayWindowHelp: TButton;
   bConnectHelp: TButton;
   bDecimalHelp: TButton;
   bDeltaMaxHelp: TButton;
@@ -113,9 +118,11 @@ TfConf = class(TForm)
   Button3: TButton;
   bvExt: TBevel;
   bvExt1: TBevel;
+  cbAlternate: TCheckBox;
   cbChromaNormal: TCheckBox;
   cbChromaHigh: TComboBox;
   cbChromaLow: TComboBox;
+  cbClock: TCheckBox;
   cbConnectivityButton: TCheckBox;
   cbCust: TCheckBox;
   cbCust1: TCheckBox;
@@ -123,8 +130,12 @@ TfConf = class(TForm)
   cbAlertMissing: TCheckBox;
   cbLang: TComboBox;
   cbMoveDIffRight: TCheckBox;
-  cbWarnLoHi: TCheckBox;
+  cbNoBorders: TCheckBox;
+  cbOnTop: TCheckBox;
   cbProgress: TCheckBox;
+  cbRangeColor: TCheckBox;
+  cbShowSensorExpiry: TCheckBox;
+  cbWarnLoHi: TCheckBox;
   cbTTS: TCheckBox;
   cbTTSVoice: TComboBox;
   cgNotifications: TCheckGroup;
@@ -143,11 +154,16 @@ TfConf = class(TForm)
   cbPrivacy: TCheckBox;
   cbHContrast: TCheckBox;
   cbMediaDisable: TCheckBox;
+  edCommaSep: TEdit;
   eExt: TEdit;
   fsDiffScale: TFloatSpinEdit;
   fsPredictScale: TFloatSpinEdit;
   GroupBox10: TGroupBox;
+  GroupBox11: TGroupBox;
+  GroupBox12: TGroupBox;
+  GroupBox13: TGroupBox;
   Label1: TLabel;
+  Label13: TLabel;
   Label25: TLabel;
   Label36: TLabel;
   Label37: TLabel;
@@ -194,6 +210,7 @@ TfConf = class(TForm)
   Panel27: TPanel;
   Panel3: TPanel;
   PanelProxyActions: TPanel;
+  pDecimal: TPanel;
   pnDeltaMax: TPanel;
   pnFontButtons: TPanel;
   pnMisc: TPanel;
@@ -208,7 +225,6 @@ TfConf = class(TForm)
   rbPredictShortArrowOnly: TRadioButton;
   rbPredictShortShowValue: TRadioButton;
   cbTimeStamp: TCheckBox;
-  cbShowSensorExpiry: TCheckBox;
   cbTirIcon: TCheckBox;
   cbShowMean: TCheckBox;
   cbWebAPI: TCheckBox;
@@ -227,11 +243,6 @@ TfConf = class(TForm)
   cbTouch: TCheckBox;
   cbUser: TColorButton;
   cbUserColor: TCheckBox;
-  cbRangeColor: TCheckBox;
-  cbClock: TCheckBox;
-  cbAlternate: TCheckBox;
-  cbOnTop: TCheckBox;
-  cbNoBorders: TCheckBox;
   cbFlash: TCheckGroup;
   cbFlashHi: TCheckBox;
   cbTirBar: TColorButton;
@@ -248,7 +259,6 @@ TfConf = class(TForm)
   cl_ok_bg: TColorButton;
   cl_ok_txt: TColorButton;
   eAddr: TEdit;
-  edCommaSep: TEdit;
   edURLHigh: TEdit;
   edURLLow: TEdit;
   edURLPerfect: TEdit;
@@ -283,7 +293,6 @@ TfConf = class(TForm)
   GroupBox8: TGroupBox;
   GroupBox9: TGroupBox;
   Image1: TImage;
-  Label13: TLabel;
   Label14: TLabel;
   Label18: TLabel;
   Label19: TLabel;
@@ -364,7 +373,6 @@ TfConf = class(TForm)
   Panel6: TPanel;
   Panel8: TPanel;
   Panel9: TPanel;
-  pDecimal: TPanel;
   pnBackend: TPanel;
   pnHelp: TPanel;
 
@@ -409,6 +417,9 @@ TfConf = class(TForm)
   procedure bDecimalHelpClick(Sender: TObject);
   procedure bDiffRightHelpClick(Sender: TObject);
   procedure bDisableMediaHelpClick(Sender: TObject);
+  procedure bDisplayAdvancedHelpClick(Sender: TObject);
+  procedure bDisplayGeneralHelpClick(Sender: TObject);
+  procedure bDisplayWindowHelpClick(Sender: TObject);
   procedure bFullArrowSetHelpClick(Sender: TObject);
   procedure bPredScaleHelpClick(Sender: TObject);
   procedure bScaleAgoClick(Sender: TObject);
@@ -538,6 +549,16 @@ RS_EMPTY_PROXY = 'Proxy host is empty.';
 RS_DRIVER_CONTRIBUTOR = 'Driver contributor: ';
 
 RS_DEBUG_BACKEND_LABEL = '(Ignored for debug backend)';
+
+RS_Display_General_Help = '- A progressbar can show the time until the next update on the left hand side of the screen'+LineEnding+
+'- The time can we displayed every 20 seconds, instead of the Reading'+LineEnding+
+'- The reading and trend arrow can alternate positions';
+
+RS_DISPLAY_ADVANCED_HELP = 'When supported by the backend, the sensor expiration time can be shown in Trndi';
+
+RS_DISPLAY_WINDOW_HELP = '- The background color can be set to the current glucose range color'+LineEnding+
+'- The window can stay over other windows'+LineEnding+
+'- The window''s borders can be hidden (may depend on operating system)';
 
 RS_Multi_User_Help =
   'Trndi supports <b>more than one user</b>, this is called the <i>multi user mode</i>.'+sHTMLLineBreak+'In this section you can add/remove accounts. There''s <i>always</i> a default account which cannot be deleted.'+LineEnding+
@@ -1218,6 +1239,21 @@ end;
 procedure TfConf.bDisableMediaHelpClick(Sender: TObject);
 begin
   ShowMessage(RS_DISABLE_MEDIA);
+end;
+
+procedure TfConf.bDisplayAdvancedHelpClick(Sender: TObject);
+begin
+  ShowMessage(RS_DISPLAY_ADVANCED_HELP);
+end;
+
+procedure TfConf.bDisplayGeneralHelpClick(Sender: TObject);
+begin
+  ShowMessage(RS_Display_General_Help);
+end;
+
+procedure TfConf.bDisplayWindowHelpClick(Sender: TObject);
+begin
+  ShowMessage(RS_DISPLAY_WINDOW_HELP);
 end;
 
 procedure TfConf.bFullArrowSetHelpClick(Sender: TObject);
