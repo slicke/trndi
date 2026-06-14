@@ -181,6 +181,11 @@ msgstr "Visa dygnsavläsningar"
 msgid "Adjust Dot Positions"
 msgstr "Justera punktpositioner"
 
+#: tfbg.miadotcount.caption
+msgctxt "tfbg.miadotcount.caption"
+msgid "Set Dot Count"
+msgstr "Sätt punktantal"
+
 #: tfbg.miadots.caption
 msgid "Dot stats"
 msgstr "Punktstatistik"
@@ -712,6 +717,20 @@ msgstr "Systemfunktioner"
 msgid "Layout"
 msgstr "Layout"
 
+#: tfconf.groupbox11.caption
+msgctxt "tfconf.groupbox11.caption"
+msgid "General"
+msgstr "Allmänt"
+
+#: tfconf.groupbox12.caption
+msgctxt "tfconf.groupbox12.caption"
+msgid "Advanced"
+msgstr "Avancerat"
+
+#: tfconf.groupbox13.caption
+msgid "Window"
+msgstr "Fönster"
+
 #: tfconf.groupbox2.caption
 msgid "Available Extensions"
 msgstr "Tillgängliga tillägg"
@@ -1119,6 +1138,7 @@ msgid "Accessibility"
 msgstr "Tillgänglighet"
 
 #: tfconf.tsadvanced.caption
+msgctxt "tfconf.tsadvanced.caption"
 msgid "Advanced"
 msgstr "Avancerat"
 
@@ -1156,6 +1176,7 @@ msgid "Extensions"
 msgstr "Tillägg"
 
 #: tfconf.tsgeneral.caption
+msgctxt "tfconf.tsgeneral.caption"
 msgid "General"
 msgstr "Allmänt"
 
@@ -2126,7 +2147,7 @@ msgstr "Högt område stöds inte av källans gränssnitt"
 #: trndi.strings.rs_range_lo
 #, object-pascal-format
 msgid "Range Lo < %.1f"
-msgstr "Lmråde lågt < %.1f"
+msgstr "Område lågt < %.1f"
 
 #: trndi.strings.rs_range_lo_unsupported
 msgid "Lo range not supported by API"
@@ -2211,6 +2232,7 @@ msgid "You can enter plus or minus. Plus = down. 0 = neutral"
 msgstr "Du kan ange plus eller minus. Plus = ned, 0 = neutral"
 
 #: trndi.strings.rs_service_dot_count
+msgctxt "trndi.strings.rs_service_dot_count"
 msgid "Set Dot Count"
 msgstr "Sätt punktantal"
 
@@ -2747,6 +2769,30 @@ msgstr "Detta styr skillnaden/deltans position, center eller höger (när förut
 #: uconf.rs_disable_media
 msgid "This turns off all media-related features. Can speed up start."
 msgstr "Stänger av alla media-relaterade funktioner. Kan snabba på uppstarten."
+
+#: uconf.rs_display_advanced_help
+msgid "When supported by the backend, the sensor expiration time can be shown in Trndi"
+msgstr "När anslutningen stöder det, kan Trndi visa utgångstiden för sensorn"
+
+#: uconf.rs_display_general_help
+msgid ""
+"- A progressbar can show the time until the next update on the left hand side of the screen\n"
+"- The time can we displayed every 20 seconds, instead of the Reading\n"
+"- The reading and trend arrow can alternate positions"
+msgstr ""
+"- Trndi kan progressivt visa tiden tills nästa uppdatering på vänstersidan av skärmen\n"
+"- Klockan kan visas var 20 sekund, istället för avläsningen\n"
+"- Avläsningen och trenden kan växla plats ibland"
+
+#: uconf.rs_display_window_help
+msgid ""
+"- The background color can be set to the current glucose range color\n"
+"- The window can stay over other windows\n"
+"- The window's borders can be hidden (may depend on operating system)"
+msgstr ""
+"- Bakgrunden kan ställas in till det nuvarande glukosområdets färg\n"
+"- Fönstret kan hållas över andra fönster\n"
+"- Fönstrets kanter kan döljas (kan bero på operativsystem)"
 
 #: uconf.rs_driver_contributor
 msgid "Driver contributor: "
