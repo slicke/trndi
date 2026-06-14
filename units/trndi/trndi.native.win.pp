@@ -740,6 +740,35 @@ var
   proxyHost, proxyPort, proxyUser, proxyPass: string;
   tempInstance: TTrndiNativeWindows;
 
+  procedure NormalizeProxyHostPort(var host: string; var port: string);
+  var
+    s: string;
+    p: integer;
+    hostPart, portPart: string;
+  begin
+    s := Trim(host);
+    p := Pos('://', s);
+    if p > 0 then
+      s := Copy(s, p + 3, MaxInt);
+    p := Pos('/', s);
+    if p > 0 then
+      s := Copy(s, 1, p - 1);
+    p := LastDelimiter(':', s);
+    if (p > 0) and (p < Length(s)) then
+    begin
+      hostPart := Copy(s, 1, p - 1);
+      portPart := Copy(s, p + 1, MaxInt);
+      if (hostPart <> '') and (StrToIntDef(portPart, -1) > 0) then
+      begin
+        s := hostPart;
+        if port = '' then
+          port := portPart;
+      end;
+    end;
+    host := s;
+    port := Trim(port);
+  end;
+
   function PerformRequest(withProxy: boolean; forceNoProxy: boolean): boolean;
   begin
     Result := false;
