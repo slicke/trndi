@@ -336,7 +336,7 @@ class var touchOverride: TTrndiBool;
     {** True if a native notification system is available (override per platform). }
   class function isNotificationSystemAvailable: boolean; virtual;
   {** Identify the notification backend in use on this platform.
-      Examples: 'notify-send', 'gdbus', 'BurntToast', 'NSUserNotification', 'none', 'unknown'.
+      Examples: 'notify-send', 'gdbus', 'WinRT-Toast', 'NSUserNotification', 'none', 'unknown'.
       Platforms should override to provide a concrete value. }
   class function getNotificationSystem: string; virtual;
     {** Alias for readability: forwards to @link(isNotificationSystemAvailable). }
@@ -1569,12 +1569,17 @@ procedure SendNotification(const Title, Msg: unicodestring);
     if (TempDir <> '') and (TempDir[Length(TempDir)] <> '\') then
       TempDir := TempDir + '\';
     TempPng := TempDir + ExtractFileName(ChangeFileExt(AppPath, '')) + '-toast-logo.png';
-    LogPath := TempDir + 'burnttoast-error.log';
+    LogPath := TempDir + 'trndi-toast-error.log';
 
-    // PS script: try to extract icon -> PNG; if any error, write to log and still show toast without logo
+    // PS script: invoke the WinRT Windows.UI.Notifications.ToastNotificationManager
+    // directly using PowerShell's built-in AUMID, so no third-party module
+    // (e.g. BurntToast) is required. The XML is built via the DOM API so the
+    // user-supplied title/message do not have to be XML-escaped manually.
+    // The app icon is still rendered as the toast appLogoOverride; on error we
+    // write the exception to a log and silently skip showing the toast.
     Script :=
       '$ErrorActionPreference = ''Stop''; ' + '$log = ' + PSQuote(LogPath) +
-      '; ' + 'try { ' + 'Import-Module BurntToast; ' +
+      '; ' + 'try { ' +
       'Add-Type -AssemblyName System.Drawing; ' + '$exe = ' +
       PSQuote(AppPath) + '; ' + '$png = ' + PSQuote(TempPng) + '; ' +
       '$ico = [System.Drawing.Icon]::ExtractAssociatedIcon($exe); ' +
@@ -1586,14 +1591,40 @@ procedure SendNotification(const Title, Msg: unicodestring);
       + '$g.DrawImage($bmp,0,0,64,64); ' +
       '$bmp2.Save($png, [System.Drawing.Imaging.ImageFormat]::Png); ' +
       '$g.Dispose(); $bmp.Dispose(); $bmp2.Dispose(); $ico.Dispose(); ' +
-      '} ' + 'if (Test-Path $png) { ' +
-      'New-BurntToastNotification -AppLogo $png -Text ' + PSQuote(Title) +
-      ', ' + PSQuote(Msg) + '; ' + '} else { ' +
-      'New-BurntToastNotification -Text ' + PSQuote(Title) + ', ' +
-      PSQuote(Msg) + '; ' + '} ' + '} catch { ' +
+      '} ' +
+      // Project the WinRT types into the PowerShell runspace
+      '[void][Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType=WindowsRuntime]; ' +
+      '[void][Windows.UI.Notifications.ToastNotification, Windows.UI.Notifications, ContentType=WindowsRuntime]; ' +
+      '[void][Windows.Data.Xml.Dom.XmlDocument, Windows.Data.Xml.Dom.XmlDocument, ContentType=WindowsRuntime]; ' +
+      // Build the toast XML via DOM so title/message are inserted as text nodes
+      '$xml = New-Object Windows.Data.Xml.Dom.XmlDocument; ' +
+      '$toastE = $xml.CreateElement(''toast''); ' +
+      '$visualE = $xml.CreateElement(''visual''); ' +
+      '$bindingE = $xml.CreateElement(''binding''); ' +
+      '$bindingE.SetAttribute(''template'', ''ToastGeneric''); ' +
+      '$t1 = $xml.CreateElement(''text''); ' +
+      '$t2 = $xml.CreateElement(''text''); ' +
+      '[void]$t1.AppendChild($xml.CreateTextNode(' + PSQuote(Title) + ')); ' +
+      '[void]$t2.AppendChild($xml.CreateTextNode(' + PSQuote(Msg) + ')); ' +
+      '[void]$bindingE.AppendChild($t1); ' +
+      '[void]$bindingE.AppendChild($t2); ' +
+      'if (Test-Path $png) { ' +
+        '$imgE = $xml.CreateElement(''image''); ' +
+        '$imgE.SetAttribute(''placement'', ''appLogoOverride''); ' +
+        '$imgE.SetAttribute(''hint-crop'', ''circle''); ' +
+        '$imgE.SetAttribute(''src'', $png); ' +
+        '[void]$bindingE.AppendChild($imgE); ' +
+      '} ' +
+      '[void]$visualE.AppendChild($bindingE); ' +
+      '[void]$toastE.AppendChild($visualE); ' +
+      '[void]$xml.AppendChild($toastE); ' +
+      // Use PowerShell's own registered AUMID so we do not need to register one
+      '$appId = ''{1AC14E77-02E7-4E5D-B744-2EB1AE5198B7}\WindowsPowerShell\v1.0\powershell.exe''; ' +
+      '$tn = [Windows.UI.Notifications.ToastNotification]::new($xml); ' +
+      '[Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier($appId).Show($tn); ' +
+      '} catch { ' +
       'try { $_ | Out-String | Set-Content -Path $log -Encoding UTF8 } catch {} ' +
-      'New-BurntToastNotification -Text ' + PSQuote(Title) + ', ' +
-      PSQuote(Msg) + '; ' + '}';
+      '}';
 
     CommandLine := 'powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "' +
       Script + '"';

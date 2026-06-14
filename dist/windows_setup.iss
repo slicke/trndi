@@ -3,7 +3,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "Trndi"
-#define MyAppVersion "2.4"
+#define MyAppVersion "10.0"
 #define MyAppPublisher "Björn Lindh"
 #define MyAppURL "https://github.com/slicke/trndi"
 #define MyAppExeName "Trndi.exe"
