@@ -37,6 +37,7 @@
 {"hash":298159,"name":"tfbg.miatouchauto.caption","sourcebytes":[65,117,116,111],"value":"Auto"},
 {"hash":108717011,"name":"tfbg.miadots.caption","sourcebytes":[68,111,116,32,115,116,97,116,115],"value":"Dot stats"},
 {"hash":208670979,"name":"tfbg.miadotadjust.caption","sourcebytes":[65,100,106,117,115,116,32,68,111,116,32,80,111,115,105,116,105,111,110,115],"value":"Adjust Dot Positions"},
+{"hash":261103972,"name":"tfbg.miadotcount.caption","sourcebytes":[83,101,116,32,68,111,116,32,67,111,117,110,116],"value":"Set Dot Count"},
 {"hash":63122833,"name":"tfbg.midebugbackend.caption","sourcebytes":[65,110,110,111,117,110,99,101,32,114,97,119,32,98,97,99,107,101,110,100,32,100,97,116,97],"value":"Announce raw backend data"},
 {"hash":190786831,"name":"tfbg.midotsinview.caption","sourcebytes":[65,114,101,32,100,111,116,115,32,105,110,32,118,105,101,119,63],"value":"Are dots in view?"},
 {"hash":227524862,"name":"tfbg.mipredict.caption","sourcebytes":[80,114,101,100,105,99,116,105,111,110,46,46,46],"value":"Prediction..."},

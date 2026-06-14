@@ -181,6 +181,11 @@ msgstr "Vis sidste døgns aflæsninger"
 msgid "Adjust Dot Positions"
 msgstr "Juster prikpositioner"
 
+#: tfbg.miadotcount.caption
+msgctxt "tfbg.miadotcount.caption"
+msgid "Set Dot Count"
+msgstr ""
+
 #: tfbg.miadots.caption
 msgid "Dot stats"
 msgstr "Prikstatistik"
@@ -708,6 +713,22 @@ msgstr "Systemfunktioner"
 msgid "Layout"
 msgstr "Layout"
 
+#: tfconf.groupbox11.caption
+#, fuzzy
+msgctxt "tfconf.groupbox11.caption"
+msgid "General"
+msgstr "Generelt"
+
+#: tfconf.groupbox12.caption
+#, fuzzy
+msgctxt "tfconf.groupbox12.caption"
+msgid "Advanced"
+msgstr "Avanceret"
+
+#: tfconf.groupbox13.caption
+msgid "Window"
+msgstr ""
+
 #: tfconf.groupbox2.caption
 msgid "Available Extensions"
 msgstr "Tilgængelige udvidelser"
@@ -1106,6 +1127,7 @@ msgid "Accessibility"
 msgstr "Tilgængelighed"
 
 #: tfconf.tsadvanced.caption
+msgctxt "tfconf.tsadvanced.caption"
 msgid "Advanced"
 msgstr "Avanceret"
 
@@ -1143,6 +1165,7 @@ msgid "Extensions"
 msgstr "Udvidelser"
 
 #: tfconf.tsgeneral.caption
+msgctxt "tfconf.tsgeneral.caption"
 msgid "General"
 msgstr "Generelt"
 
@@ -2101,6 +2124,7 @@ msgid "You can enter plus or minus. Plus = down. 0 = neutral"
 msgstr "Du kan angive plus eller minus. Plus = ned. 0 = neutral"
 
 #: trndi.strings.rs_service_dot_count
+msgctxt "trndi.strings.rs_service_dot_count"
 msgid "Set Dot Count"
 msgstr ""
 
@@ -2610,6 +2634,24 @@ msgstr "Dette styrer, om forskel/delta vises i center eller til højre (når for
 #: uconf.rs_disable_media
 msgid "This turns off all media-related features. Can speed up start."
 msgstr "Dette slår alle medierelaterede funktioner fra. Kan fremskynde opstart."
+
+#: uconf.rs_display_advanced_help
+msgid "When supported by the backend, the sensor expiration time can be shown in Trndi"
+msgstr ""
+
+#: uconf.rs_display_general_help
+msgid ""
+"- A progressbar can show the time until the next update on the left hand side of the screen\n"
+"- The time can we displayed every 20 seconds, instead of the Reading\n"
+"- The reading and trend arrow can alternate positions"
+msgstr ""
+
+#: uconf.rs_display_window_help
+msgid ""
+"- The background color can be set to the current glucose range color\n"
+"- The window can stay over other windows\n"
+"- The window's borders can be hidden (may depend on operating system)"
+msgstr ""
 
 #: uconf.rs_driver_contributor
 msgid "Driver contributor: "
