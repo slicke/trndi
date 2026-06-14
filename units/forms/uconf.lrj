@@ -164,6 +164,7 @@
 {"hash":138373177,"name":"tfconf.cbpredictshortfullarrows.caption","sourcebytes":[85,115,101,32,102,117,108,108,32,97,114,114,111,119,32,115,101,116,32,40,226,134,145,226,134,145,44,32,226,134,145,44,32,226,134,151,44,32,226,134,146,44,32,226,134,152,44,32,226,134,147,44,32,226,134,147,226,134,147,41],"value":"Use full arrow set (\u2191\u2191, \u2191, \u2197, \u2192, \u2198, \u2193, \u2193\u2193)"},
 {"hash":63,"name":"tfconf.bpredicthelp.caption","sourcebytes":[63],"value":"?"},
 {"hash":123818951,"name":"tfconf.cbwarnlohi.caption","sourcebytes":[87,97,114,110,32,119,104,101,110,32,103,111,105,110,103,32,104,105,103,104,32,111,114,32,108,111,119],"value":"Warn when going high or low"},
+{"hash":74032345,"name":"tfconf.cbpredictdots.caption","sourcebytes":[83,104,111,119,32,112,114,101,100,105,99,116,105,111,110,115,32,97,115,32,100,111,116,115,32,111,110,32,116,104,101,32,116,114,101,110,100,32,40,114,101,112,108,97,99,101,115,32,116,104,101,32,112,114,101,100,105,99,116,105,111,110,32,116,101,120,116,41],"value":"Show predictions as dots on the trend (replaces the prediction text)"},
 {"hash":63,"name":"tfconf.bshortmodehelp.caption","sourcebytes":[63],"value":"?"},
 {"hash":63,"name":"tfconf.bfullarrowsethelp.caption","sourcebytes":[63],"value":"?"},
 {"hash":63,"name":"tfconf.bwarnhilowhelp.caption","sourcebytes":[63],"value":"?"},

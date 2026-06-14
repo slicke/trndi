@@ -483,6 +483,10 @@ msgstr ""
 msgid "Show threshold lines"
 msgstr ""
 
+#: tfconf.cbpredictdots.caption
+msgid "Show predictions as dots on the trend (replaces the prediction text)"
+msgstr ""
+
 #: tfconf.cbpredictions.caption
 msgid "Show glucose predictions"
 msgstr ""

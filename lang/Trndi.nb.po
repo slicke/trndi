@@ -493,6 +493,10 @@ msgstr "Farg grafens bakgrunn med ditt foretrukne område"
 msgid "Show threshold lines"
 msgstr "Vis grenslinjer"
 
+#: tfconf.cbpredictdots.caption
+msgid "Show predictions as dots on the trend (replaces the prediction text)"
+msgstr ""
+
 #: tfconf.cbpredictions.caption
 msgid "Show glucose predictions"
 msgstr "Vis glukoseprediksjoner"

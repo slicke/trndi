@@ -503,6 +503,10 @@ msgstr "Rita grafens bakgrund med ditt fôredragna omrode"
 msgid "Show threshold lines"
 msgstr "Visa grenslinjer"
 
+#: tfconf.cbpredictdots.caption
+msgid "Show predictions as dots on the trend (replaces the prediction text)"
+msgstr ""
+
 #: tfconf.cbpredictions.caption
 msgid "Show glucose predictions"
 msgstr "Visa glukosfôrutspoelser"
