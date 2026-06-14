@@ -49,7 +49,7 @@ interface
 
 uses
 trndi.strings, LCLTranslator, Classes, Menus, SysUtils, Forms, Controls,
-Graphics, Dialogs, StdCtrls, ExtCtrls,
+Graphics, Dialogs, StdCtrls, ExtCtrls, LCLProc,
 trndi.api.dexcom, trndi.api.dexcomNew, trndi.api.tandem, trndi.api.nightscout, trndi.api.nightscout3, trndi.types,
 Math, DateUtils, FileUtil, LclIntf, TypInfo, LResources,
 slicke.ux.alert, slicke.ux.native, usplash, Generics.Collections, trndi.funcs, trndi.log,
@@ -452,6 +452,10 @@ TfBG = class(TForm)
   procedure pnOffReadingPaint({%H-}Sender: TObject);
   procedure pmSettingsMeasureItem({%H-}Sender: TObject; ACanvas: TCanvas;
     var AWidth, AHeight: integer);
+  {$ifdef Windows}
+  procedure pmSettingsDrawItem(Sender: TObject; ACanvas: TCanvas;
+    ARect: TRect; AState: TOwnerDrawState);
+  {$endif}
   procedure pmSettingsPopup({%H-}Sender: TObject);
   procedure pnMultiUserClick({%H-}Sender: TObject);
   procedure pnOffRangeClick({%H-}Sender: TObject);

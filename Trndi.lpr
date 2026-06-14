@@ -90,6 +90,12 @@ Application.{%H-}MainFormOnTaskbar:=true;
 {$ifdef DEBUG}
   TrndiDLog(PChar(Format('[Trndi] SetAppUserModelID(%s) -> 0x%x', [TRNDI_APPID, hrAppID])));
 {$endif}
+  // Opt the process into Windows' dark popup-menu / scrollbar theme BEFORE any
+  // window (including Application.Handle) is created, so the AllowDarkModeForApp
+  // flag is in place from the very first HWND. Item owner-draw is still wired
+  // separately in TfBG.FormCreate; this call only flips the process-wide bit.
+  if TrndiNative.isDarkMode then
+    TrndiNative.SetPreferredDarkMode;
 {$ENDIF}
 Application.Initialize;
 Application.CreateForm(TfBG, fBG);

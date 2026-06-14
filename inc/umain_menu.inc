@@ -568,6 +568,173 @@ begin
   end;
 end;
 
+{$ifdef Windows}
+// Owner-draw handler used only when Windows reports dark mode. Native popup
+// menus on Windows do not honor the system dark theme, so we paint the
+// background, separators, text, shortcut, checkmark and submenu arrow ourselves.
+// Uses Screen.MenuFont so glyph size matches what light-mode native drawing
+// produces. The '&' accelerator prefix is stripped from the rendered string and
+// the marked character is underlined (unless odNoAccel is set).
+procedure TfBG.pmSettingsDrawItem(Sender: TObject; ACanvas: TCanvas;
+  ARect: TRect; AState: TOwnerDrawState);
+const
+  ColBg          = TColor($00202020);
+  ColBgSelected  = TColor($00383838);
+  ColTextNormal  = TColor($00E0E0E0);
+  ColTextDisabled= TColor($007F7F7F);
+  ColSeparator   = TColor($003F3F3F);
+  ColAccent      = TColor($00C57814);
+  PadLeft  = 28;
+  PadRight = 16;
+
+  // Strip a single '&&' to '&' literal and locate the accelerator index in the
+  // stripped string. Returns -1 if no accelerator is marked.
+  procedure ParseAccel(const Src: string; out Stripped: string; out AccelIdx: integer);
+  var
+    i: integer;
+  begin
+    Stripped := '';
+    AccelIdx := -1;
+    i := 1;
+    while i <= Length(Src) do
+    begin
+      if (Src[i] = '&') and (i < Length(Src)) then
+      begin
+        if Src[i + 1] = '&' then
+        begin
+          Stripped := Stripped + '&';
+          Inc(i, 2);
+          Continue;
+        end;
+        if AccelIdx < 0 then
+          AccelIdx := Length(Stripped) + 1;
+        Inc(i);
+        Continue;
+      end;
+      Stripped := Stripped + Src[i];
+      Inc(i);
+    end;
+  end;
+
+  // Render text at (X, Y) and optionally underline the AccelIdx-th character.
+  procedure DrawCaption(const S: string; X, Y, AccelIdx: integer);
+  var
+    pre, accelCh: string;
+    underlineY, underlineL, underlineR: integer;
+  begin
+    ACanvas.TextOut(X, Y, S);
+    if (AccelIdx > 0) and (AccelIdx <= Length(S)) then
+    begin
+      pre := Copy(S, 1, AccelIdx - 1);
+      accelCh := Copy(S, AccelIdx, 1);
+      underlineL := X + ACanvas.TextWidth(pre);
+      underlineR := underlineL + ACanvas.TextWidth(accelCh);
+      underlineY := Y + ACanvas.TextHeight(accelCh) - 1;
+      ACanvas.Pen.Color := ACanvas.Font.Color;
+      ACanvas.MoveTo(underlineL, underlineY);
+      ACanvas.LineTo(underlineR, underlineY);
+    end;
+  end;
+
+var
+  mi: TMenuItem;
+  isSep, isSelected, isDisabled, isChecked, hideAccel: boolean;
+  textColor, bgColor: TColor;
+  shortcutText, captionText, captionStripped: string;
+  accelIdx: integer;
+  midY, arrowX, checkX, textH, textW, textY: integer;
+  tabPos: integer;
+begin
+  if not (Sender is TMenuItem) then
+    Exit;
+  mi := TMenuItem(Sender);
+
+  isSep      := mi.Caption = '-';
+  isSelected := odSelected in AState;
+  isDisabled := (odDisabled in AState) or (odGrayed in AState) or (not mi.Enabled);
+  isChecked  := mi.Checked;
+  hideAccel  := odNoAccel in AState;
+
+  if isSelected and not isDisabled then
+    bgColor := ColBgSelected
+  else
+    bgColor := ColBg;
+
+  ACanvas.Brush.Style := bsSolid;
+  ACanvas.Brush.Color := bgColor;
+  ACanvas.FillRect(ARect);
+
+  if isSep then
+  begin
+    midY := (ARect.Top + ARect.Bottom) div 2;
+    ACanvas.Pen.Color := ColSeparator;
+    ACanvas.MoveTo(ARect.Left + 8, midY);
+    ACanvas.LineTo(ARect.Right - 8, midY);
+    Exit;
+  end;
+
+  if isDisabled then
+    textColor := ColTextDisabled
+  else
+    textColor := ColTextNormal;
+
+  if isChecked then
+  begin
+    checkX := ARect.Left + 6;
+    midY := (ARect.Top + ARect.Bottom) div 2;
+    ACanvas.Pen.Color := ColAccent;
+    ACanvas.Pen.Width := 2;
+    ACanvas.MoveTo(checkX,     midY);
+    ACanvas.LineTo(checkX + 5, midY + 5);
+    ACanvas.LineTo(checkX + 14, midY - 5);
+    ACanvas.Pen.Width := 1;
+  end;
+
+  // LCL CompleteMenuItemStringCaption joins caption and shortcut with a tab.
+  captionText := mi.Caption;
+  shortcutText := '';
+  tabPos := Pos(#9, captionText);
+  if tabPos > 0 then
+  begin
+    shortcutText := Copy(captionText, tabPos + 1, MaxInt);
+    captionText  := Copy(captionText, 1, tabPos - 1);
+  end
+  else if mi.ShortCut <> 0 then
+    shortcutText := ShortCutToText(mi.ShortCut);
+
+  ACanvas.Font.Assign(Screen.MenuFont);
+  if odDefault in AState then
+    ACanvas.Font.Style := ACanvas.Font.Style + [fsBold];
+  ACanvas.Font.Color := textColor;
+  ACanvas.Brush.Style := bsClear;
+
+  ParseAccel(captionText, captionStripped, accelIdx);
+  if hideAccel then
+    accelIdx := -1;
+
+  textH := ACanvas.TextHeight(captionStripped);
+  textY := (ARect.Top + ARect.Bottom - textH) div 2;
+  DrawCaption(captionStripped, ARect.Left + PadLeft, textY, accelIdx);
+
+  if mi.Count > 0 then
+  begin
+    arrowX := ARect.Right - 12;
+    midY := (ARect.Top + ARect.Bottom) div 2;
+    ACanvas.Pen.Color := textColor;
+    ACanvas.MoveTo(arrowX,     midY - 4);
+    ACanvas.LineTo(arrowX + 4, midY);
+    ACanvas.LineTo(arrowX,     midY + 4);
+  end
+  else if shortcutText <> '' then
+  begin
+    textW := ACanvas.TextWidth(shortcutText);
+    textH := ACanvas.TextHeight(shortcutText);
+    textY := (ARect.Top + ARect.Bottom - textH) div 2;
+    ACanvas.TextOut(ARect.Right - PadRight - textW, textY, shortcutText);
+  end;
+end;
+{$endif}
+
 procedure TfBG.pmSettingsPopup(Sender: TObject);
 var
   shifted: boolean;
