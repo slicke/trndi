@@ -69,6 +69,12 @@ public
         Requires Windows 10 1809+ (build >= 17763).
         @returns(True if the DWM call succeeds) }
   class function SetDarkMode(win: HWND; Enable: boolean = true): boolean;
+    {** Opt the entire process into Windows' dark popup-menu / scrollbar / tooltip
+        theme via the undocumented uxtheme.dll ordinal 135 (SetPreferredAppMode).
+        Requires Windows 10 1809+ (build >= 17763); silently no-ops elsewhere.
+        Call once after process start, e.g. when @link(isDarkMode) returns True.
+        @returns(True if the call succeeded) }
+  class function SetPreferredDarkMode: boolean;
     {** Applies caption (@param(bg)) and text (@param(text)) colors via DWM.
         @returns(True if both attributes are set successfully) }
   class function SetTitleColor(form: THandle; bg, Text: TColor): boolean; override;
@@ -937,6 +943,196 @@ begin
   Value := Ord(Enable);
   Result := Succeeded(DwmSetWindowAttribute(win, DWMWA_USE_IMMERSIVE_DARK_MODE,
     @Value, SizeOf(Value)));
+end;
+
+{------------------------------------------------------------------------------
+  Dark mode for popup menus
+  -------------------------
+  Three steps are needed to fully darken Win11 popup menus:
+
+  1. Opt the process into uxtheme's dark mode via SetPreferredAppMode
+     (ordinal 135, Win10 1903+) or AllowDarkModeForApp (ordinal 132, Win10 1809).
+  2. Install a per-thread WH_CBT hook that catches each popup-menu HWND (class
+     "#32768") on creation and calls AllowDarkModeForWindow +
+     SetWindowTheme(hwnd, 'DarkMode_Menu', nil) + immersive-dark on it.
+  3. Subclass each popup-menu HWND to overpaint the frame. The visual style and
+     DWM still draw a light gray 2-3 px border that none of (1)/(2) reach;
+     Win11 renders the menu via WM_PRINT into an off-screen DC that DWM
+     composites, so we hook WM_PRINT and stack a few dark FrameRects on top.
+
+  uxtheme.dll is kept loaded for the lifetime of the process — releasing it
+  would invalidate the hook procedure's resolved pointers.
+
+  Item-level dark colors are handled separately via TMenuItem.OnDrawItem
+  (see TfBG.pmSettingsDrawItem); this code only handles the popup frame
+  + window-level theming so the two halves match.
+ ------------------------------------------------------------------------------}
+type
+  TSetPreferredAppMode   = function(AppMode: integer): integer; stdcall;
+  TAllowDarkModeForApp   = function(Allow: BOOL): BOOL; stdcall;
+  TAllowDarkModeForWindow= function(hwnd: HWND; Allow: BOOL): BOOL; stdcall;
+  TSetWindowThemeFn      = function(hwnd: HWND; pszSubAppName, pszSubIdList: PWideChar): HRESULT; stdcall;
+  TFlushMenuThemes       = procedure; stdcall;
+
+const
+  DarkModeMenuTheme: array[0..13] of WideChar =
+    ('D','a','r','k','M','o','d','e','_','M','e','n','u', #0);
+  // Subclass id used for the menu border subclass. Unique per logical purpose.
+  MENU_BORDER_SUBCLASS_ID = $7242D14;
+
+type
+  TSubclassProc = function(hwnd: HWND; uMsg: UINT; wParam: WPARAM; lParam: LPARAM;
+    uIdSubclass: UINT_PTR; dwRefData: DWORD_PTR): LRESULT; stdcall;
+
+function SetWindowSubclass(hWnd: HWND; pfnSubclass: TSubclassProc;
+  uIdSubclass: UINT_PTR; dwRefData: DWORD_PTR): BOOL; stdcall;
+  external 'comctl32.dll' name 'SetWindowSubclass';
+function DefSubclassProc(hWnd: HWND; uMsg: UINT; wParam: WPARAM;
+  lParam: LPARAM): LRESULT; stdcall;
+  external 'comctl32.dll' name 'DefSubclassProc';
+function RemoveWindowSubclass(hWnd: HWND; pfnSubclass: TSubclassProc;
+  uIdSubclass: UINT_PTR): BOOL; stdcall;
+  external 'comctl32.dll' name 'RemoveWindowSubclass';
+
+var
+  GUxThemeModule: HMODULE = 0;
+  GAllowDarkModeForWindow: TAllowDarkModeForWindow = nil;
+  GSetWindowThemeFn: TSetWindowThemeFn = nil;
+  GMenuCBTHook: HHOOK = 0;
+
+// Subclass procedure attached to popup menu HWNDs so we can paint a dark
+// border ourselves. Win11 draws the popup frame via the visual style and does
+// not honor DWMWA_BORDER_COLOR on menu HWNDs (returns E_HANDLE). The menu is
+// rendered via WM_PRINT into an off-screen DC that DWM composites, so
+// WM_NCPAINT is never delivered — we hook WM_PRINT instead.
+function MenuBorderSubclassProc(hwnd: HWND; uMsg: UINT; wParam: WPARAM;
+  lParam: LPARAM; uIdSubclass: UINT_PTR; dwRefData: DWORD_PTR): LRESULT; stdcall;
+const
+  BorderColor   = $00202020; // matches owner-draw item background
+  WM_NCDESTROY_ = $0082;
+  WM_PRINT_     = $0317;
+var
+  dc: HDC;
+  rcWnd: TRect;
+  br: HBRUSH;
+begin
+  case uMsg of
+    WM_PRINT_:
+    begin
+      // Win11 paints popup menus via WM_PRINT into an off-screen DC that DWM
+      // composites — WM_NCPAINT is never delivered. Let the default handler
+      // draw the menu (frame + items into the supplied DC), then stroke our
+      // dark border on top of the same DC.
+      Result := DefSubclassProc(hwnd, uMsg, wParam, lParam);
+      dc := HDC(wParam);
+      if dc <> 0 then
+      begin
+        GetWindowRect(hwnd, rcWnd);
+        OffsetRect(rcWnd, -rcWnd.Left, -rcWnd.Top);
+        br := CreateSolidBrush(BorderColor);
+        if br <> 0 then
+        try
+          // Win11's visual style paints a 1-2 px lighter highlight just inside
+          // the outer frame. Stack a few nested 1-px FrameRects so we cover the
+          // full border thickness regardless of theme.
+          FrameRect(dc, rcWnd, br); InflateRect(rcWnd, -1, -1);
+          FrameRect(dc, rcWnd, br); InflateRect(rcWnd, -1, -1);
+          FrameRect(dc, rcWnd, br);
+        finally
+          DeleteObject(br);
+        end;
+      end;
+      Exit;
+    end;
+    WM_NCDESTROY_:
+      RemoveWindowSubclass(hwnd, TSubclassProc(@MenuBorderSubclassProc), uIdSubclass);
+  end;
+  Result := DefSubclassProc(hwnd, uMsg, wParam, lParam);
+end;
+
+function MenuDarkModeCBTProc(nCode: integer; wParam: WPARAM; lParam: LPARAM): LRESULT; stdcall;
+const
+  PopupMenuClass = '#32768';
+var
+  cls: array[0..31] of AnsiChar;
+begin
+  if (nCode = HCBT_CREATEWND) and (HWND(wParam) <> 0) then
+  begin
+    if (GetClassNameA(HWND(wParam), @cls[0], SizeOf(cls)) > 0) and
+       (StrComp(@cls[0], PopupMenuClass) = 0) then
+    begin
+      if Assigned(GAllowDarkModeForWindow) then
+        GAllowDarkModeForWindow(HWND(wParam), true);
+      if Assigned(GSetWindowThemeFn) then
+        GSetWindowThemeFn(HWND(wParam), @DarkModeMenuTheme[0], nil);
+      TTrndiNativeWindows.SetDarkMode(HWND(wParam), true);
+      // Subclass the popup so WM_PRINT paints a dark border. SetWindowSubclass
+      // is idempotent per (hwnd, proc, id); menu HWNDs are also torn down and
+      // recreated each time the menu opens, so re-installs are safe.
+      SetWindowSubclass(HWND(wParam), @MenuBorderSubclassProc,
+        MENU_BORDER_SUBCLASS_ID, 0);
+    end;
+  end;
+  Result := CallNextHookEx(GMenuCBTHook, nCode, wParam, lParam);
+end;
+
+class function TTrndiNativeWindows.SetPreferredDarkMode: boolean;
+const
+  PreferredAppMode_AllowDark = 1;
+var
+  fnSetPreferred: TSetPreferredAppMode;
+  fnAllowApp: TAllowDarkModeForApp;
+  fnFlush: TFlushMenuThemes;
+begin
+  Result := false;
+  if (Win32MajorVersion < 10) or ((Win32MajorVersion = 10) and
+    (Win32BuildNumber < 17763)) then
+    Exit;
+
+  if GUxThemeModule = 0 then
+    GUxThemeModule := LoadLibrary('uxtheme.dll');
+  if GUxThemeModule = 0 then
+    Exit;
+
+  fnSetPreferred := TSetPreferredAppMode(GetProcAddress(GUxThemeModule, MAKEINTRESOURCE(135)));
+  if Assigned(fnSetPreferred) then
+  begin
+    fnSetPreferred(PreferredAppMode_AllowDark);
+    Result := true;
+  end
+  else
+  begin
+    fnAllowApp := TAllowDarkModeForApp(GetProcAddress(GUxThemeModule, MAKEINTRESOURCE(132)));
+    if Assigned(fnAllowApp) then
+    begin
+      fnAllowApp(true);
+      Result := true;
+    end;
+  end;
+
+  if not Assigned(GAllowDarkModeForWindow) then
+    GAllowDarkModeForWindow := TAllowDarkModeForWindow(
+      GetProcAddress(GUxThemeModule, MAKEINTRESOURCE(133)));
+  if not Assigned(GSetWindowThemeFn) then
+    GSetWindowThemeFn := TSetWindowThemeFn(GetProcAddress(GUxThemeModule, 'SetWindowTheme'));
+
+  // Theme the AppHandle window (menu's owner in LCL's TrackPopupMenuEx call).
+  // Windows uses the owner window's dark-mode flag when drawing popup frames.
+  if Assigned(Application) and (Application.Handle <> 0) then
+  begin
+    if Assigned(GAllowDarkModeForWindow) then
+      GAllowDarkModeForWindow(Application.Handle, true);
+    SetDarkMode(Application.Handle, true);
+  end;
+
+  // Install the per-thread CBT hook so popup menu HWNDs get themed and
+  // subclassed on creation. Idempotent — only installs once per process.
+  if (GMenuCBTHook = 0) and Assigned(GSetWindowThemeFn) then
+    GMenuCBTHook := SetWindowsHookEx(WH_CBT, @MenuDarkModeCBTProc, 0, GetCurrentThreadId);
+
+  fnFlush := TFlushMenuThemes(GetProcAddress(GUxThemeModule, MAKEINTRESOURCE(136)));
+  if Assigned(fnFlush) then
+    fnFlush;
 end;
 
 function SetDwmAttr(hWnd: HWND; Attr: DWORD; const Data; Size: DWORD): HRESULT;
