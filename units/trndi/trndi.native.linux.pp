@@ -922,11 +922,8 @@ begin
 
     if proxyHost <> '' then
     begin
-      if PerformRequest(true) then
-      begin
-        Result := true;
-        Exit;
-      end;
+      Result := PerformRequest(true);
+      Exit;
     end;
 
     Result := PerformRequest(false);

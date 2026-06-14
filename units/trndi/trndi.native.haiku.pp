@@ -738,6 +738,7 @@ begin
       proxyPort := tempInstance.GetSetting('proxy.port', '', true);
       proxyUser := tempInstance.GetSetting('proxy.user', '', true);
       proxyPass := tempInstance.GetSetting('proxy.pass', '', true);
+      NormalizeProxyHostPort(proxyHost, proxyPort);
       if proxyPort = '' then
         proxyPort := '8080';
     end;

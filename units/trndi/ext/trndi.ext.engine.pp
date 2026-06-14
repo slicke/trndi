@@ -1589,7 +1589,7 @@ begin
   if ctx = nil then Exit;
 
   if not FileExists(Ext^.FileName) then
-    raise Exception.CreateFmt(RS_EXT_FILE, [RS_EXT_FILE, Ext^.FileName]);
+    raise Exception.CreateFmt(RS_EXT_FILE, [Ext^.FileName]);
 
   FileStream := TFileStream.Create(Ext^.FileName, fmOpenRead or fmShareDenyWrite);
   StringStream := TStringStream.Create;
@@ -1644,7 +1644,7 @@ begin
 
   Result := '';
   if not FileExists(FileName) then
-    raise Exception.CreateFmt(RS_EXT_FILE, [RS_EXT_FILE, FileName]);
+    raise Exception.CreateFmt(RS_EXT_FILE, [FileName]);
 
   // Read file contents into Script
   FileStream := TFileStream.Create(FileName, fmOpenRead or fmShareDenyWrite);
