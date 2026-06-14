@@ -497,6 +497,10 @@ msgstr "Rita grafens bakgrund med ditt föredragna område"
 msgid "Show threshold lines"
 msgstr "Visa gränslinjer"
 
+#: tfconf.cbpredictdots.caption
+msgid "Show predictions as dots on the trend (replaces the prediction text)"
+msgstr "Visa förutspåelser som punkter i grafen (ersätter texten)"
+
 #: tfconf.cbpredictions.caption
 msgid "Show glucose predictions"
 msgstr "Visa glukosförutspåelser"
@@ -2208,16 +2212,16 @@ msgstr "Du kan ange plus eller minus. Plus = ned, 0 = neutral"
 
 #: trndi.strings.rs_service_dot_count
 msgid "Set Dot Count"
-msgstr ""
+msgstr "Sätt punktantal"
 
 #: trndi.strings.rs_service_dot_count_desc
 #, object-pascal-format
 msgid "Enter how many trend dots to show (1-%d)."
-msgstr ""
+msgstr "Ange hur många trendpunkter att visa (1-%d)."
 
 #: trndi.strings.rs_service_dot_count_title
 msgid "Number of trend dots"
-msgstr ""
+msgstr "Antal trendpunkter"
 
 #: trndi.strings.rs_service_predictions
 msgid "Predictions:"
@@ -3236,4 +3240,3 @@ msgstr "Den höga gränsen måste vara större än den låga gränsen."
 #: uwizard.wz_test_no_support
 msgid "Connection testing is not supported for this service."
 msgstr "Anslutningstest stöds inte för denna tjänst."
-

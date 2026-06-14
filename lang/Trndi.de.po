@@ -493,6 +493,10 @@ msgstr "Graphhintergrund entsprechend benutzerdefiniertem Bereich einfärben"
 msgid "Show threshold lines"
 msgstr "Schwellenwertlinien anzeigen"
 
+#: tfconf.cbpredictdots.caption
+msgid "Show predictions as dots on the trend (replaces the prediction text)"
+msgstr ""
+
 #: tfconf.cbpredictions.caption
 msgid "Show glucose predictions"
 msgstr "Glucoseprognosen anzeigen"
