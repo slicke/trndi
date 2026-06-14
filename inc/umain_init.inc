@@ -1069,6 +1069,19 @@ begin
 
   UpdateAlertSnoozeMenu;
 
+  {$ifdef Windows}
+  // On Windows the native menu theme ignores the system dark mode; opt in
+  // to our owner-draw handler so popup items render with dark colors that
+  // match the rest of the UI when the user is in dark mode.
+  if TrndiNative.isDarkMode then
+  begin
+    pmSettings.OnDrawItem := @pmSettingsDrawItem;
+    // Opt the process into Windows' dark popup-menu / scrollbar theme so the
+    // menu's window frame matches the items we owner-draw inside it.
+    TrndiNative.SetPreferredDarkMode;
+  end;
+  {$endif}
+
   {$ifdef DEBUG}
   TRNDI_DEBUG_LOG_ALERT := false;
   miDebugUXMSg := TMenuItem.Create(miAdvanced);
