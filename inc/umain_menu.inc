@@ -642,7 +642,7 @@ var
   textColor, bgColor: TColor;
   shortcutText, captionText, captionStripped: string;
   accelIdx: integer;
-  midY, arrowX, checkX, textH, textW, textY: integer;
+  midY, checkX, textH, textW, textY: integer;
   tabPos: integer;
 begin
   if not (Sender is TMenuItem) then
@@ -718,12 +718,9 @@ begin
 
   if mi.Count > 0 then
   begin
-    arrowX := ARect.Right - 12;
-    midY := (ARect.Top + ARect.Bottom) div 2;
-    ACanvas.Pen.Color := textColor;
-    ACanvas.MoveTo(arrowX,     midY - 4);
-    ACanvas.LineTo(arrowX + 4, midY);
-    ACanvas.LineTo(arrowX,     midY + 4);
+    // Submenu chevron is drawn by Windows via the DarkMode_Menu theme we
+    // applied to the popup HWND — drawing our own here would stack with the
+    // theme's overlay on hover and produce two arrows.
   end
   else if shortcutText <> '' then
   begin
