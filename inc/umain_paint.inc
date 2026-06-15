@@ -590,7 +590,10 @@ begin
       debugValue := i * 5.0;
       if (debugValue >= BG_API_MIN) and (debugValue <= BG_API_MAX) then
       begin
-        debugY := ValueToY(debugValue) + rowOffset;
+        // Guidelines label where a dot of that value would sit; align with
+        // the dot centre (ValueToY) rather than the dot bottom that the
+        // threshold/band lines use.
+        debugY := ValueToY(debugValue);
         cnv.MoveTo(0, debugY);
         cnv.LineTo(Self.ClientWidth, debugY);
         debugText := Format('%.0f', [debugValue]);
