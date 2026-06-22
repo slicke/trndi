@@ -24,9 +24,9 @@ unit trndi.native.linux;
 interface
 
 uses
-Classes, SysUtils, Graphics, IniFiles, Dialogs,
+Classes, SysUtils, Graphics, IniFiles, Dialogs, StrUtils,
 ExtCtrls, Forms, Math, LCLIntf, linutils.kdebadge, trndi.native.base, trndi.native.async, FileUtil, Menus,
-libpascurl, DateUtils, ctypes{$ifdef DEBUG}, trndi.log{$endif};
+libpascurl, DateUtils, ctypes, trndi.log;
 
 type
   {!
@@ -139,6 +139,25 @@ public
 
     {** Triggers when the tray icon is clicked }
   procedure trayClick(Sender: TObject);
+    {** Simple HTTP GET/POST via libcurl, with proxy-first / direct fallback. }
+  function request(const post: boolean; const endpoint: string;
+    const params: array of string; const jsondata: string = '';
+    const header: string = ''; prefix: boolean = true): string; override;
+    {** Enhanced HTTP request via libcurl: tracks cookies, follows redirects,
+        captures response headers. }
+  function requestEx(const post: boolean; const endpoint: string;
+    const params: array of string; const jsondata: string = '';
+    cookieJar: TStringList = nil; followRedirects: boolean = true;
+    maxRedirects: integer = 10; customHeaders: TStringList = nil;
+    prefix: boolean = true): THTTPResponse; override;
+    {** Detect a touchscreen by scanning /proc/bus/input/devices for entries
+        whose handlers point at accessible /dev/input/eventX nodes. }
+  class function DetectTouchScreen(out multi: boolean): boolean; override;
+    {** Play an audio file via aplay. }
+  class procedure PlaySound(const FileName: string); override;
+    {** Detect Windows Subsystem for Linux: checks /proc/version, kernel osrelease,
+        and WSL_* environment variables. Returns IsWSL=false on non-WSL Linux. }
+  class function DetectWSL: TWSLInfo;
 
 end;
 
@@ -151,6 +170,37 @@ Process, Types, LCLType;
 procedure WriteTrndiCurrentValueCache(const Value: string); forward;
 procedure WriteTrndiCurrentStateCache(const Value: string; ReadingEpoch: int64;
 FreshMinutes: integer); forward;
+
+// C-compatible write callback used by libcurl to collect response data.
+// Lives here (and not in the base unit) because Linux/BSD is the only
+// platform using libcurl after the platform split.
+function CurlWriteCallback(buffer: pchar; size, nmemb: SizeUInt;
+userdata: Pointer): SizeUInt; cdecl;
+var
+  stream: TStringStream;
+  actualSize: SizeUInt;
+begin
+  Result := size * nmemb;
+
+  if (buffer = nil) or (size = 0) or (nmemb = 0) or (Result = 0) then
+    Exit;
+
+  // 10MB single-chunk cap to avoid runaway allocations.
+  if Result > 10485760 then
+    Exit;
+
+  actualSize := Result;
+  stream := TStringStream(userdata);
+  if stream = nil then
+    Exit;
+
+  try
+    if actualSize > 0 then
+      stream.WriteBuffer(buffer^, actualSize);
+  except
+    Result := 0; // signal curl to abort
+  end;
+end;
 
 {------------------------------------------------------------------------------
   IsNotifySendAvailable
@@ -476,8 +526,8 @@ begin
   Result := Trim(EnvValue('WINDOW_MANAGER'));
   if Result = '' then
     Result := Trim(DesktopHint);
-  if (Result = '') and (TTrndiNativeBase.DetectWSL.IsWSL) then
-    REsult := 'Windows Subsystem For Linux';
+  if (Result = '') and (TTrndiNativeLinux.DetectWSL.IsWSL) then
+    Result := 'Windows Subsystem For Linux';
 end;
 
 {------------------------------------------------------------------------------
@@ -1146,6 +1196,26 @@ end;
   Send a desktop notification. Prefer gdbus path under Qt6; otherwise fallback.
  ------------------------------------------------------------------------------}
 procedure TTrndiNativeLinux.attention(topic, message: string);
+
+  procedure NotifySendFallback(const Title, Msg: string);
+  var
+    AProcess: TProcess;
+  begin
+    // Final fallback when the gdbus path is unavailable or fails.
+    if not isNotificationSystemAvailable then
+      Exit;
+    AProcess := TProcess.Create(nil);
+    try
+      AProcess.Executable := '/usr/bin/notify-send';
+      AProcess.Parameters.Add(Title);
+      AProcess.Parameters.Add(Msg);
+      AProcess.Options := AProcess.Options + [poNoConsole];
+      AProcess.Execute;
+    finally
+      AProcess.Free;
+    end;
+  end;
+
 {$IFDEF LCLQt6}
 function RunAndCapture(const Exec: string; const Params: array of string;
   out StdoutS, StderrS: string; out ExitCode: integer): boolean;
@@ -1247,12 +1317,12 @@ begin
       end;
     end
     else
-      inherited attention(topic, message);
+      NotifySendFallback(topic, message);
   end
   else
-    inherited attention(topic, message);
+    NotifySendFallback(topic, message);
   {$ELSE}
-  inherited attention(topic, message);
+  NotifySendFallback(topic, message);
   {$ENDIF}
 end;
 
@@ -2099,5 +2169,712 @@ begin
     sl.Free;
   end;
 end;
+
+// C-compatible write callback for requestEx (global, no nested/static link).
+function CurlWriteCallbackEx(buffer: pchar; size, nitems: SizeUInt;
+userdata: Pointer): SizeUInt; cdecl;
+var
+  stream: TStringStream;
+  actualSize: SizeUInt;
+begin
+  Result := size * nitems;
+
+  if (buffer = nil) or (size = 0) or (nitems = 0) or (Result = 0) then
+    Exit;
+
+  if Result > 10485760 then // 10MB limit
+    Exit;
+
+  actualSize := Result;
+  stream := TStringStream(userdata);
+
+  if stream = nil then
+    Exit;
+
+  try
+    if actualSize > 0 then
+      stream.WriteBuffer(buffer^, actualSize);
+  except
+    Result := 0;
+  end;
+end;
+
+// C-compatible header callback for requestEx (global, no nested/static link).
+function CurlHeaderCallbackEx(buffer: pchar; size, nitems: SizeUInt;
+userdata: Pointer): SizeUInt; cdecl;
+var
+  stream: TStringStream;
+  actualSize: SizeUInt;
+  headerLine: string;
+begin
+  Result := size * nitems;
+
+  if (buffer = nil) or (size = 0) or (nitems = 0) or (Result = 0) then
+    Exit;
+
+  if Result > 1048576 then // 1MB header limit
+    Exit;
+
+  actualSize := Result;
+  stream := TStringStream(userdata);
+
+  if stream = nil then
+    Exit;
+
+  try
+    SetLength(headerLine, actualSize);
+    if actualSize > 0 then
+      Move(buffer^, headerLine[1], actualSize);
+    stream.WriteString(headerLine);
+  except
+    Result := 0;
+  end;
+end;
+
+{------------------------------------------------------------------------------
+  requestEx (Linux/BSD)
+  ---------------------
+  Cookie-aware, redirect-following HTTP via libcurl. SSL cert verification
+  disabled to match the prior behavior (TODO: opt-in cert pinning).
+ ------------------------------------------------------------------------------}
+function TTrndiNativeLinux.requestEx(const post: boolean; const endpoint: string;
+const params: array of string; const jsondata: string;
+cookieJar: TStringList; followRedirects: boolean;
+maxRedirects: integer; customHeaders: TStringList;
+prefix: boolean): THTTPResponse;
+var
+  handle: CURL;
+  headers: pcurl_slist;
+  errCode: CURLcode;
+  address, sx: string;
+  maskedSx: string;
+  i, j: integer;
+  responseStream: TStringStream;
+  headerStream: TStringStream;
+  cookieData: string;
+  responseLine: string;
+  responseCode: clong;
+  redirectCountVal: clong;
+  effectiveUrl: pchar;
+  startTick: QWord;
+  endTick: QWord;
+  methodLabel: string;
+  cookieVal: string;
+  cookiePos: integer;
+
+  function HasHeader(const AName: string): boolean;
+  var
+    k: integer;
+    nameLower: string;
+  begin
+    Result := false;
+    if customHeaders = nil then
+      Exit;
+    nameLower := LowerCase(AName) + ':';
+    for k := 0 to customHeaders.Count - 1 do
+      if Pos(nameLower, LowerCase(Trim(customHeaders[k]))) = 1 then
+        Exit(true);
+  end;
+
+  procedure MaskParam(var S: string; const name: string);
+  var
+    p, valStart, q: integer;
+  begin
+    p := Pos(name + '=', S);
+    if p = 0 then
+      Exit;
+    valStart := p + Length(name) + 1;
+    q := PosEx('&', S, valStart);
+    if q = 0 then
+      q := Length(S) + 1;
+    Delete(S, valStart, q - valStart);
+    Insert('***', S, valStart);
+  end;
+
+begin
+  if prefix then
+    address := Format('%s/%s', [TrimRightSet(baseurl, ['/']), TrimLeftSet(endpoint, ['/'])])
+  else
+    address := endpoint;
+
+  Result.Body := '';
+  Result.Headers := TStringList.Create;
+  Result.Cookies := TStringList.Create;
+  Result.Success := false;
+  Result.StatusCode := 0;
+  Result.RedirectCount := 0;
+  Result.FinalURL := '';
+  Result.ErrorMessage := '';
+
+  // GET: append query string. POST: query goes in the body, not the URL.
+  if (not post) and (jsondata = '') and (Length(params) > 0) then
+  begin
+    address := address + '?';
+    for sx in params do
+      address := address + '&' + sx;
+  end;
+
+  headers := nil;
+  responseStream := TStringStream.Create('');
+  headerStream := TStringStream.Create('');
+  try
+    if post then
+      methodLabel := 'POST'
+    else
+      methodLabel := 'GET';
+    startTick := GetTickCount64;
+    TrndiDLog(Format('HTTP %s (curl): %s', [methodLabel, address]));
+    handle := curl_easy_init();
+    if handle = nil then
+    begin
+      Result.ErrorMessage := 'Failed to initialize CURL';
+      Exit;
+    end;
+
+    try
+      curl_easy_setopt(handle, CURLOPT_URL, pchar(address));
+      curl_easy_setopt(handle, CURLOPT_CONNECTTIMEOUT, clong(10));
+      curl_easy_setopt(handle, CURLOPT_TIMEOUT, clong(30));
+      curl_easy_setopt(handle, CURLOPT_ACCEPT_ENCODING, pchar(''));
+      curl_easy_setopt(handle, CURLOPT_VERBOSE, clong(1));
+      curl_easy_setopt(handle, CURLOPT_SSL_VERIFYPEER, clong(0));
+      curl_easy_setopt(handle, CURLOPT_SSL_VERIFYHOST, clong(0));
+
+      if useragent <> '' then
+        curl_easy_setopt(handle, CURLOPT_USERAGENT, pchar(useragent));
+
+      if followRedirects then
+      begin
+        curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, clong(1));
+        curl_easy_setopt(handle, CURLOPT_MAXREDIRS, clong(maxRedirects));
+      end
+      else
+        curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, clong(0));
+
+      if (cookieJar <> nil) and (cookieJar.Count > 0) then
+      begin
+        cookieData := '';
+        for i := 0 to cookieJar.Count - 1 do
+        begin
+          if Trim(cookieJar[i]) = '' then
+            Continue;
+          if cookieData <> '' then
+            cookieData := cookieData + '; ';
+          cookieData := cookieData + cookieJar[i];
+        end;
+        if cookieData <> '' then
+          curl_easy_setopt(handle, CURLOPT_COOKIE, pchar(cookieData));
+      end;
+
+      if customHeaders <> nil then
+        for i := 0 to customHeaders.Count - 1 do
+          headers := curl_slist_append(headers, pchar(customHeaders[i]));
+
+      if jsondata <> '' then
+      begin
+        if not HasHeader('Content-Type') then
+          headers := curl_slist_append(headers, pchar('Content-Type: application/json; charset=UTF-8'));
+        if not HasHeader('Accept') then
+          headers := curl_slist_append(headers, pchar('Accept: application/json'));
+        curl_easy_setopt(handle, CURLOPT_POST, clong(1));
+        curl_easy_setopt(handle, CURLOPT_POSTFIELDS, pchar(jsondata));
+        curl_easy_setopt(handle, CURLOPT_POSTFIELDSIZE, clong(Length(jsondata)));
+      end
+      else if post then
+      begin
+        if not HasHeader('Content-Type') then
+          headers := curl_slist_append(headers, pchar('Content-Type: application/x-www-form-urlencoded'));
+
+        if Length(params) > 0 then
+        begin
+          sx := '';
+          for j := 0 to High(params) do
+          begin
+            if j > 0 then
+              sx := sx + '&';
+            sx := sx + params[j];
+          end;
+
+          maskedSx := sx;
+          MaskParam(maskedSx, 'code_verifier');
+          MaskParam(maskedSx, 'code');
+          MaskParam(maskedSx, 'password');
+          MaskParam(maskedSx, 'client_secret');
+          TrndiNetLog('HTTP POST body (masked): ' + Copy(maskedSx, 1, 2000));
+
+          curl_easy_setopt(handle, CURLOPT_POST, clong(1));
+          curl_easy_setopt(handle, CURLOPT_POSTFIELDS, pchar(sx));
+          curl_easy_setopt(handle, CURLOPT_POSTFIELDSIZE, clong(Length(sx)));
+        end
+        else
+          curl_easy_setopt(handle, CURLOPT_POST, clong(1));
+      end;
+
+      if headers <> nil then
+        curl_easy_setopt(handle, CURLOPT_HTTPHEADER, headers);
+
+      curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, Pointer(@CurlWriteCallbackEx));
+      curl_easy_setopt(handle, CURLOPT_WRITEDATA, Pointer(responseStream));
+      curl_easy_setopt(handle, CURLOPT_HEADERFUNCTION, Pointer(@CurlHeaderCallbackEx));
+      curl_easy_setopt(handle, CURLOPT_HEADERDATA, Pointer(headerStream));
+
+      errCode := curl_easy_perform(handle);
+
+      if errCode = CURLE_OK then
+      begin
+        endTick := GetTickCount64;
+        Result.Success := true;
+        Result.Body := responseStream.DataString;
+
+        curl_easy_getinfo(handle, CURLINFO_RESPONSE_CODE, @responseCode);
+        Result.StatusCode := responseCode;
+
+        curl_easy_getinfo(handle, CURLINFO_EFFECTIVE_URL, @effectiveUrl);
+        if effectiveUrl <> nil then
+          Result.FinalURL := string(effectiveUrl);
+
+        redirectCountVal := 0;
+        curl_easy_getinfo(handle, CURLINFO_REDIRECT_COUNT, @redirectCountVal);
+        Result.RedirectCount := redirectCountVal;
+
+        TrndiDLog(Format('HTTP %s (curl) ok: status=%d, bytes=%d, redirects=%d, ms=%d',
+          [methodLabel, Result.StatusCode, Length(Result.Body), Result.RedirectCount, endTick - startTick]));
+
+        headerStream.Position := 0;
+        while headerStream.Position < headerStream.Size do
+        begin
+          responseLine := '';
+          while headerStream.Position < headerStream.Size do
+          begin
+            i := Ord(headerStream.ReadByte);
+            if i = 10 then // LF
+              Break;
+            if i <> 13 then // skip CR
+              responseLine := responseLine + Chr(i);
+          end;
+
+          responseLine := Trim(responseLine);
+          if responseLine <> '' then
+          begin
+            if Pos('Set-Cookie:', responseLine) = 1 then
+            begin
+              cookieVal := Trim(Copy(responseLine, 13, MaxInt));
+              cookiePos := Pos(';', cookieVal);
+              if cookiePos > 0 then
+                cookieVal := Copy(cookieVal, 1, cookiePos - 1);
+              if cookieVal <> '' then
+              begin
+                Result.Cookies.Add(cookieVal);
+                if cookieJar <> nil then
+                  if cookieJar.IndexOf(cookieVal) = -1 then
+                    cookieJar.Add(cookieVal);
+              end;
+            end;
+            Result.Headers.Add(responseLine);
+          end;
+        end;
+      end
+      else
+      begin
+        endTick := GetTickCount64;
+        Result.Success := false;
+        Result.ErrorMessage := string(curl_easy_strerror(errCode));
+        TrndiDLog(Format('HTTP %s (curl) error: code=%d, msg=%s, ms=%d',
+          [methodLabel, Ord(errCode), Result.ErrorMessage, endTick - startTick]));
+      end;
+
+    finally
+      curl_easy_cleanup(handle);
+    end;
+  finally
+    if headers <> nil then
+      curl_slist_free_all(headers);
+    responseStream.Free;
+    headerStream.Free;
+  end;
+end;
+
+{------------------------------------------------------------------------------
+  request (Linux/BSD)
+  -------------------
+  HTTP GET/POST via libcurl. Honours proxy.* root settings: if a proxy is
+  configured, the request runs through it first, then re-tries direct on
+  failure (including a DNS-retry path for laptop wake/resume scenarios).
+ ------------------------------------------------------------------------------}
+function TTrndiNativeLinux.request(const post: boolean; const endpoint: string;
+const params: array of string; const jsondata: string;
+const header: string; prefix: boolean): string;
+var
+  handle: CURL;
+  headers: pcurl_slist;
+  errCode: CURLcode;
+  address, sx: string;
+  p: integer;
+  key, val: string;
+  responseStream: TStringStream;
+  proxyHost: string;
+  proxyPortS: string;
+  proxyUser: string;
+  proxyPass: string;
+
+  function IsDnsResolveError(const code: CURLcode): boolean;
+  begin
+    Result := code = CURLE_COULDNT_RESOLVE_HOST;
+  end;
+
+  function PerformRequest(withProxy: boolean): boolean;
+  var
+    j: integer;
+  begin
+    Result := false;
+    responseStream.Size := 0;
+    responseStream.Position := 0;
+
+    handle := curl_easy_init();
+    if handle = nil then
+    begin
+      errCode := CURLE_FAILED_INIT;
+      Exit(false);
+    end;
+
+    curl_easy_setopt(handle, CURLOPT_URL, pchar(address));
+    curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, clong(1));
+    curl_easy_setopt(handle, CURLOPT_CONNECTTIMEOUT, clong(10));
+    curl_easy_setopt(handle, CURLOPT_TIMEOUT, clong(30));
+
+    if useragent <> '' then
+      curl_easy_setopt(handle, CURLOPT_USERAGENT, pchar(useragent));
+
+    if withProxy and (proxyHost <> '') then
+    begin
+      curl_easy_setopt(handle, CURLOPT_PROXY, pchar(proxyHost));
+      if proxyPortS <> '' then
+        curl_easy_setopt(handle, CURLOPT_PROXYPORT, clong(StrToIntDef(proxyPortS, 8080)));
+      if (proxyUser <> '') and (proxyPass <> '') then
+        curl_easy_setopt(handle, CURLOPT_PROXYUSERPWD, pchar(proxyUser + ':' + proxyPass));
+    end
+    else if (not withProxy) and (proxyHost <> '') then
+      curl_easy_setopt(handle, CURLOPT_PROXY, pchar(''));
+
+    if headers <> nil then
+      curl_easy_setopt(handle, CURLOPT_HTTPHEADER, headers);
+
+    if jsondata <> '' then
+    begin
+      curl_easy_setopt(handle, CURLOPT_POST, clong(1));
+      curl_easy_setopt(handle, CURLOPT_POSTFIELDS, pchar(jsondata));
+      curl_easy_setopt(handle, CURLOPT_POSTFIELDSIZE, clong(Length(jsondata)));
+    end
+    else if post then
+    begin
+      if Length(params) > 0 then
+      begin
+        sx := '';
+        for j := 0 to High(params) do
+        begin
+          if j > 0 then
+            sx := sx + '&';
+          sx := sx + params[j];
+        end;
+        curl_easy_setopt(handle, CURLOPT_POST, clong(1));
+        curl_easy_setopt(handle, CURLOPT_POSTFIELDS, pchar(sx));
+      end
+      else
+        curl_easy_setopt(handle, CURLOPT_POST, clong(1));
+    end;
+
+    curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, Pointer(@CurlWriteCallback));
+    curl_easy_setopt(handle, CURLOPT_WRITEDATA, Pointer(responseStream));
+
+    errCode := curl_easy_perform(handle);
+    curl_easy_cleanup(handle);
+    Result := (errCode = CURLE_OK);
+  end;
+
+begin
+  Result := '';
+
+  if prefix then
+    address := Format('%s/%s', [baseurl, endpoint])
+  else
+    address := endpoint;
+
+  if (jsondata = '') and (Length(params) > 0) then
+  begin
+    address := address + '?';
+    for sx in params do
+      address := address + '&' + sx;
+  end;
+
+  headers := nil;
+  responseStream := TStringStream.Create('');
+  try
+    proxyHost := Trim(GetRootSetting('proxy.host', ''));
+    proxyPortS := Trim(GetRootSetting('proxy.port', ''));
+    proxyUser := GetRootSetting('proxy.user', '');
+    proxyPass := GetRootSetting('proxy.pass', '');
+
+    if header <> '' then
+    begin
+      p := Pos('=', header);
+      if p > 0 then
+      begin
+        key := Trim(Copy(header, 1, p - 1));
+        val := Trim(Copy(header, p + 1, MaxInt));
+        if key <> '' then
+          headers := curl_slist_append(headers, pchar(Format('%s: %s', [key, val])));
+      end;
+    end;
+
+    if jsondata <> '' then
+    begin
+      headers := curl_slist_append(headers, pchar('Content-Type: application/json; charset=UTF-8'));
+      headers := curl_slist_append(headers, pchar('Accept: application/json'));
+    end;
+
+    if proxyHost <> '' then
+    begin
+      if PerformRequest(true) then
+        Result := responseStream.DataString
+      else if PerformRequest(false) then
+        Result := responseStream.DataString
+      else if IsDnsResolveError(errCode) then
+      begin
+        Sleep(1500); // allow DNS/network stack to settle after resume
+        if PerformRequest(false) then
+          Result := responseStream.DataString
+        else
+          Result := string(curl_easy_strerror(errCode));
+      end
+      else
+        Result := string(curl_easy_strerror(errCode));
+    end
+    else
+    begin
+      if PerformRequest(false) then
+        Result := responseStream.DataString
+      else if IsDnsResolveError(errCode) then
+      begin
+        Sleep(1500); // allow DNS/network stack to settle after resume
+        if PerformRequest(false) then
+          Result := responseStream.DataString
+        else
+          Result := string(curl_easy_strerror(errCode));
+      end
+      else
+        Result := string(curl_easy_strerror(errCode));
+    end;
+  finally
+    if headers <> nil then
+      curl_slist_free_all(headers);
+    responseStream.Free;
+  end;
+end;
+
+{------------------------------------------------------------------------------
+  DetectTouchScreen (Linux)
+  -------------------------
+  Walk /proc/bus/input/devices, treat blocks mentioning "touch" as candidates,
+  and confirm by trying to open the referenced /dev/input/eventX node. Sets
+  @code(multi) when the block exposes ABS_MT_* events.
+ ------------------------------------------------------------------------------}
+class function TTrndiNativeLinux.DetectTouchScreen(out multi: boolean): boolean;
+var
+  SL, Block: TStringList;
+  i, j: integer;
+  Line, Handler, DevPath: string;
+  LineLower, HandlerLower: string;
+  HasAccessibleDevice: boolean;
+  F: Integer;
+
+  procedure AnalyzeBlock;
+  var
+    k: integer;
+  begin
+    if Block.Count = 0 then
+      Exit;
+    if not Block.Text.ToLower.Contains('touch') then
+      Exit;
+
+    HasAccessibleDevice := false;
+    for k := 0 to Block.Count - 1 do
+    begin
+      Line := Block[k];
+      LineLower := LowerCase(Line);
+      if (Pos('H: Handlers=', Line) = 1) or (Pos('H: ', Line) = 1) then
+      begin
+        if Pos('event', LineLower) > 0 then
+          for Handler in Line.Split([' ', '=']) do
+          begin
+            HandlerLower := LowerCase(Handler);
+            if Pos('event', HandlerLower) > 0 then
+            begin
+              DevPath := '/dev/input/' + Handler;
+              if FileExists(DevPath) then
+              begin
+                F := FileOpen(DevPath, fmOpenRead);
+                if F <> -1 then
+                begin
+                  FileClose(F);
+                  HasAccessibleDevice := true;
+                  Break;
+                end;
+              end;
+            end;
+          end;
+        if HasAccessibleDevice then
+          Break;
+      end;
+    end;
+
+    if HasAccessibleDevice then
+    begin
+      Result := true;
+      if Block.Text.Contains('ABS_MT_POSITION') or
+         Block.Text.Contains('ABS_MT_SLOT') or
+         Block.Text.Contains('ABS_MT_TRACKING_ID') then
+        multi := true;
+    end;
+  end;
+
+begin
+  Result := false;
+  multi := false;
+  if not FileExists('/proc/bus/input/devices') then
+    Exit;
+
+  Block := TStringList.Create;
+  SL := TStringList.Create;
+  try
+    SL.LoadFromFile('/proc/bus/input/devices');
+    for i := 0 to SL.Count - 1 do
+      if Trim(SL[i]) = '' then
+      begin
+        AnalyzeBlock;
+        Block.Clear;
+      end
+      else
+        Block.Add(SL[i]);
+    // Analyze the last block when the file does not end with a blank line.
+    AnalyzeBlock;
+  finally
+    SL.Free;
+    Block.Free;
+  end;
+end;
+
+{------------------------------------------------------------------------------
+  PlaySound (Linux/BSD)
+  ---------------------
+  Spawn aplay for a validated audio file.
+ ------------------------------------------------------------------------------}
+class procedure TTrndiNativeLinux.PlaySound(const FileName: string);
+var
+  Proc: TProcess;
+begin
+  if not IsValidAudioFile(FileName) then
+    Exit;
+  Proc := TProcess.Create(nil);
+  try
+    Proc.Executable := 'aplay';
+    Proc.Parameters.Add(FileName);
+    Proc.Execute;
+  finally
+    Proc.Free;
+  end;
+end;
+
+{------------------------------------------------------------------------------
+  DetectWSL (Linux)
+  -----------------
+  Detect Windows Subsystem for Linux via /proc/version, WSL_DISTRO_NAME,
+  WSL_INTEROP, and /proc/sys/kernel/osrelease.
+ ------------------------------------------------------------------------------}
+class function TTrndiNativeLinux.DetectWSL: TWSLInfo;
+var
+  Output: TStringList;
+  Content: string;
+  EnvVar: string;
+begin
+  Result.IsWSL := false;
+  Result.Version := wslNone;
+  Result.DistroName := '';
+  Result.KernelVersion := '';
+
+  {$IFDEF LINUX}
+  if FileExists('/proc/version') then
+  begin
+    Output := TStringList.Create;
+    try
+      Output.LoadFromFile('/proc/version');
+      if Output.Count > 0 then
+      begin
+        Content := Output[0];
+        Result.KernelVersion := Content;
+
+        Content := LowerCase(Content);
+        if Pos('microsoft', Content) > 0 then
+        begin
+          Result.IsWSL := true;
+          if Pos('wsl2', Content) > 0 then
+            Result.Version := wslVersion2
+          else
+            Result.Version := wslVersion1;
+        end
+        else
+        if Pos('wsl', Content) > 0 then
+        begin
+          Result.IsWSL := true;
+          Result.Version := wslVersion2;
+        end;
+      end;
+    finally
+      Output.Free;
+    end;
+  end;
+
+  EnvVar := GetEnvironmentVariable('WSL_DISTRO_NAME');
+  if EnvVar <> '' then
+  begin
+    Result.IsWSL := true;
+    Result.DistroName := EnvVar;
+    if Result.Version = wslNone then
+      Result.Version := wslUnknown;
+  end;
+
+  if GetEnvironmentVariable('WSL_INTEROP') <> '' then
+  begin
+    Result.IsWSL := true;
+    if Result.Version = wslNone then
+      Result.Version := wslVersion2;
+  end;
+
+  if not Result.IsWSL then
+    if FileExists('/proc/sys/kernel/osrelease') then
+    begin
+      Output := TStringList.Create;
+      try
+        Output.LoadFromFile('/proc/sys/kernel/osrelease');
+        if Output.Count > 0 then
+        begin
+          Content := LowerCase(Output[0]);
+          if (Pos('microsoft', Content) > 0) or (Pos('wsl', Content) > 0) then
+          begin
+            Result.IsWSL := true;
+            Result.Version := wslUnknown;
+          end;
+        end;
+      finally
+        Output.Free;
+      end;
+    end;
+  {$ENDIF}
+end;
+
+initialization
+  // libcurl requires a one-shot global init before any per-handle use, ideally
+  // before threads start. Doing it here (rather than lazily on first request)
+  // means the first HTTP call on this platform can't race with init.
+  curl_global_init(CURL_GLOBAL_DEFAULT);
 
 end.
