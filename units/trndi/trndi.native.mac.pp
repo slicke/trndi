@@ -104,6 +104,21 @@ type
     class function GetWindowManagerName: string; override;
     {** macOS always provides a system-wide global menu bar. }
     class function HasGlobalMenu: boolean; override;
+    {** Simple HTTP GET/POST using @code(TNSHTTPSendAndReceive). }
+    function request(const post: boolean; const endpoint: string;
+      const params: array of string; const jsondata: string = '';
+      const header: string = ''; prefix: boolean = true): string; override;
+    {** Enhanced HTTP request via TNSHTTPSendAndReceive: tracks cookies,
+        follows redirects manually, captures response headers. }
+    function requestEx(const post: boolean; const endpoint: string;
+      const params: array of string; const jsondata: string = '';
+      cookieJar: TStringList = nil; followRedirects: boolean = true;
+      maxRedirects: integer = 10; customHeaders: TStringList = nil;
+      prefix: boolean = true): THTTPResponse; override;
+    {** Play an audio file via afplay. }
+    class procedure PlaySound(const FileName: string); override;
+    {** Resolve the user's preferred UI language via NSLocale. }
+    class function GetOSLanguage: string; override;
   end;
 
 implementation
@@ -173,6 +188,91 @@ end;
  ------------------------------------------------------------------------------}
 
 procedure TTrndiNativeMac.attention(topic, message: string);
+
+  procedure OsascriptFallback(const Title, Msg: string);
+  var
+    P: TProcess;
+    OutStr, ErrStr: TStringStream;
+    Buf: array[0..4095] of byte;
+    n: SizeInt;
+    ExitCode: integer;
+    LogPath: string;
+    SL: TStringList;
+  begin
+    // NSUserNotification is deprecated and may not show reliably on recent macOS.
+    // Final fallback: display the alert via AppleScript / osascript.
+    // Use argv to avoid AppleScript quoting/escaping issues.
+    if not FileExists('/usr/bin/osascript') then
+      Exit;
+
+    P := TProcess.Create(nil);
+    OutStr := TStringStream.Create('');
+    ErrStr := TStringStream.Create('');
+    try
+      P.Executable := '/usr/bin/osascript';
+      P.Parameters.Add('-e');
+      P.Parameters.Add('on run argv');
+      P.Parameters.Add('-e');
+      P.Parameters.Add('display notification (item 1 of argv) with title (item 2 of argv)');
+      P.Parameters.Add('-e');
+      P.Parameters.Add('end run');
+
+      P.Parameters.Add(UTF8Encode(Msg));
+      P.Parameters.Add(UTF8Encode(Title));
+
+      P.Options := [poUsePipes, poWaitOnExit, poNoConsole];
+      P.Execute;
+
+      // Drain pipes (even with poWaitOnExit, data may remain buffered)
+      while P.Output.NumBytesAvailable > 0 do
+      begin
+        n := P.Output.Read(Buf, SizeOf(Buf));
+        if n > 0 then
+          OutStr.WriteBuffer(Buf, n)
+        else
+          Break;
+      end;
+      while P.Stderr.NumBytesAvailable > 0 do
+      begin
+        n := P.Stderr.Read(Buf, SizeOf(Buf));
+        if n > 0 then
+          ErrStr.WriteBuffer(Buf, n)
+        else
+          Break;
+      end;
+
+      ExitCode := P.ExitStatus;
+      if ExitCode <> 0 then
+      begin
+        LogPath := GetTempDir(false) + 'trndi-notification-error.log';
+        SL := TStringList.Create;
+        try
+          SL.Add('osascript notification failed');
+          SL.Add('ExitStatus=' + IntToStr(ExitCode));
+          SL.Add('');
+          if OutStr.DataString <> '' then
+          begin
+            SL.Add('[stdout]');
+            SL.Add(OutStr.DataString);
+            SL.Add('');
+          end;
+          if ErrStr.DataString <> '' then
+          begin
+            SL.Add('[stderr]');
+            SL.Add(ErrStr.DataString);
+          end;
+          SL.SaveToFile(LogPath);
+        finally
+          SL.Free;
+        end;
+      end;
+    finally
+      ErrStr.Free;
+      OutStr.Free;
+      P.Free;
+    end;
+  end;
+
 const
   UNNotificationInterruptionLevelTimeSensitive: NSInteger = 2;
 var
@@ -292,7 +392,7 @@ begin
     // Ignore and fall back.
   end;
 
-  inherited attention(topic, message);
+  OsascriptFallback(topic, message);
 end;
 {------------------------------------------------------------------------------
   Speak
@@ -739,6 +839,359 @@ begin
     mem.Free;
     sl.Free;
   end;
+end;
+
+{------------------------------------------------------------------------------
+  request (macOS)
+  ---------------
+  HTTP GET/POST via TNSHTTPSendAndReceive.
+ ------------------------------------------------------------------------------}
+function TTrndiNativeMac.request(const post: boolean; const endpoint: string;
+const params: array of string; const jsondata: string;
+const header: string; prefix: boolean): string;
+var
+  res, send: TStringStream;
+  headers: TStringList;
+  sx: string;
+begin
+  res := TStringStream.Create('');
+  send := TStringStream.Create('');
+  headers := TStringList.Create;
+  try
+    with TNSHTTPSendAndReceive.Create do
+    try
+      if prefix then
+        address := Format('%s/%s', [baseurl, endpoint])
+      else
+        address := endpoint;
+      if post then
+        method := 'POST'
+      else
+        method := 'GET';
+
+      if header <> '' then
+        Headers.Add(header);
+
+      if jsondata <> '' then
+      begin
+        Headers.Add('Content-Type=application/json');
+        if useragent <> '' then
+          Headers.Add('User-Agent=' + useragent);
+
+        send.Write(jsondata[1], Length(jsondata));
+        Headers.Add('Content-Length=' + IntToStr(send.Size));
+      end
+      else if Length(params) > 0 then
+      begin
+        address := address + '?';
+        for sx in params do
+          address := address + '&' + sx;
+      end;
+
+      if SendAndReceive(send, res, headers) then
+        Result := Trim(res.DataString)
+      else
+        Result := '+' + LastErrMsg;
+    finally
+      Free;
+    end;
+  finally
+    res.Free;
+    send.Free;
+    headers.Free;
+  end;
+end;
+
+{------------------------------------------------------------------------------
+  requestEx (macOS)
+  -----------------
+  Cookie-aware, manually-redirect-following HTTP via TNSHTTPSendAndReceive.
+ ------------------------------------------------------------------------------}
+function TTrndiNativeMac.requestEx(const post: boolean; const endpoint: string;
+const params: array of string; const jsondata: string;
+cookieJar: TStringList; followRedirects: boolean;
+maxRedirects: integer; customHeaders: TStringList;
+prefix: boolean): THTTPResponse;
+var
+  httpClient: TNSHTTPSendAndReceive;
+  currentUrl: string;
+  sendStream: TStringStream;
+  respStream: TStringStream;
+  responseHeaders: TStringList;
+  requestHeaders: TStringList;
+  status: Integer;
+  location: string;
+  isPost: boolean;
+  sx: string;
+  j: Integer;
+  hIdx: Integer;
+  tmpS, nm, vl: string;
+
+  procedure UpdateCookiesFromHeadersLocal(const AHeaders: TStringList);
+  var
+    i: integer;
+    lineLower: string;
+    cookieVal: string;
+    cookiePos: integer;
+  begin
+    if AHeaders = nil then
+      Exit;
+    for i := 0 to AHeaders.Count - 1 do
+    begin
+      lineLower := LowerCase(Trim(AHeaders[i]));
+      if Pos('set-cookie:', lineLower) = 1 then
+      begin
+        cookieVal := Trim(Copy(AHeaders[i], 12, MaxInt));
+        cookiePos := Pos(';', cookieVal);
+        if cookiePos > 0 then
+          cookieVal := Copy(cookieVal, 1, cookiePos - 1);
+        if cookieVal <> '' then
+        begin
+          Result.Cookies.Add(cookieVal);
+          if cookieJar <> nil then
+            if cookieJar.IndexOf(cookieVal) = -1 then
+              cookieJar.Add(cookieVal);
+        end;
+      end;
+    end;
+  end;
+
+  function ExtractLocationHeaderLocal(const AHeaders: TStringList): string;
+  var
+    i: integer;
+    lineLower: string;
+  begin
+    Result := '';
+    if AHeaders = nil then
+      Exit;
+    for i := 0 to AHeaders.Count - 1 do
+    begin
+      lineLower := LowerCase(Trim(AHeaders[i]));
+      if Pos('location:', lineLower) = 1 then
+      begin
+        Result := Trim(Copy(AHeaders[i], 10, MaxInt));
+        Exit;
+      end;
+    end;
+  end;
+
+  function ResolveUrlLocal(const baseUrl, location: string): string;
+  var
+    lowerLoc: string;
+    schemePos, rootPos: integer;
+    baseRoot, baseDir: string;
+  begin
+    Result := location;
+    lowerLoc := LowerCase(location);
+    if (Pos('http://', lowerLoc) = 1) or (Pos('https://', lowerLoc) = 1) then
+      Exit;
+    schemePos := Pos('://', baseUrl);
+    if schemePos = 0 then
+      Exit;
+    rootPos := PosEx('/', baseUrl, schemePos + 3);
+    if rootPos = 0 then
+      baseRoot := baseUrl
+    else
+      baseRoot := Copy(baseUrl, 1, rootPos - 1);
+    if (Length(location) > 0) and (location[1] = '/') then
+      Result := baseRoot + location
+    else
+    begin
+      baseDir := Copy(baseUrl, 1, LastDelimiter('/', baseUrl));
+      Result := baseDir + location;
+    end;
+  end;
+
+begin
+  Result.Body := '';
+  Result.Headers := TStringList.Create;
+  Result.Cookies := TStringList.Create;
+  Result.StatusCode := 0;
+  Result.FinalURL := '';
+  Result.RedirectCount := 0;
+  Result.Success := false;
+  Result.ErrorMessage := '';
+
+  if prefix then
+    currentUrl := Format('%s/%s', [baseUrl, endpoint])
+  else
+    currentUrl := endpoint;
+
+  if (not post) and (Length(params) > 0) then
+  begin
+    currentUrl := currentUrl + '?';
+    for status := 0 to High(params) do
+      currentUrl := currentUrl + '&' + params[status];
+  end;
+
+  requestHeaders := TStringList.Create;
+  if customHeaders <> nil then
+  begin
+    requestHeaders.Assign(customHeaders);
+    // Normalize "Name: value" lines to Name=Value pairs (TNSHTTPSendAndReceive
+    // uses TStringList.Names/ValueFromIndex).
+    for hIdx := requestHeaders.Count - 1 downto 0 do
+    begin
+      tmpS := Trim(requestHeaders[hIdx]);
+      if tmpS = '' then
+        Continue;
+      if Pos(':', tmpS) > 0 then
+      begin
+        nm := Trim(Copy(tmpS, 1, Pos(':', tmpS) - 1));
+        vl := Trim(Copy(tmpS, Pos(':', tmpS) + 1, MaxInt));
+        requestHeaders.Delete(hIdx);
+        requestHeaders.Values[nm] := vl;
+      end;
+    end;
+  end;
+  if useragent <> '' then
+    requestHeaders.Values['User-Agent'] := useragent;
+
+  sendStream := TStringStream.Create('');
+  isPost := post;
+  if jsondata <> '' then
+  begin
+    isPost := true;
+    sendStream.WriteString(jsondata);
+    requestHeaders.Values['Content-Type'] := 'application/json';
+    requestHeaders.Values['Content-Length'] := IntToStr(sendStream.Size);
+  end
+  else if isPost and (Length(params) > 0) then
+  begin
+    sx := '';
+    for j := 0 to High(params) do
+    begin
+      if j > 0 then
+        sx := sx + '&';
+      sx := sx + params[j];
+    end;
+
+    sendStream.WriteString(sx);
+    requestHeaders.Values['Content-Type'] := 'application/x-www-form-urlencoded';
+    requestHeaders.Values['Content-Length'] := IntToStr(sendStream.Size);
+  end;
+
+  try
+    repeat
+      respStream := TStringStream.Create('');
+      responseHeaders := TStringList.Create;
+      httpClient := TNSHTTPSendAndReceive.Create;
+      try
+        httpClient.address := currentUrl;
+        if isPost then
+          httpClient.method := 'POST'
+        else
+          httpClient.method := 'GET';
+
+        if not httpClient.SendAndReceiveEx(sendStream, respStream, requestHeaders,
+             responseHeaders, status, currentUrl) then
+        begin
+          Result.ErrorMessage := httpClient.LastErrMsg;
+          Exit;
+        end;
+
+        Result.Body := Trim(respStream.DataString);
+        Result.StatusCode := status;
+        Result.Headers.Assign(responseHeaders);
+        Result.FinalURL := currentUrl;
+
+        UpdateCookiesFromHeadersLocal(responseHeaders);
+
+        if not followRedirects then
+          Break;
+
+        if not ((Result.StatusCode = 301) or (Result.StatusCode = 302) or
+                (Result.StatusCode = 303) or (Result.StatusCode = 307) or
+                (Result.StatusCode = 308)) then
+          Break;
+
+        location := ExtractLocationHeaderLocal(responseHeaders);
+        if location = '' then
+          Break;
+
+        Inc(Result.RedirectCount);
+        if Result.RedirectCount > maxRedirects then
+        begin
+          Result.ErrorMessage := 'Too many redirects';
+          Exit;
+        end;
+
+        currentUrl := ResolveUrlLocal(currentUrl, location);
+
+        if (Result.StatusCode = 303) or (((Result.StatusCode = 301) or (Result.StatusCode = 302)) and isPost) then
+        begin
+          isPost := false;
+          sendStream.Size := 0;
+          requestHeaders.Values['Content-Length'] := '0';
+        end;
+      finally
+        httpClient.Free;
+        respStream.Free;
+        responseHeaders.Free;
+      end;
+    until false;
+
+    Result.Success := True;
+  finally
+    requestHeaders.Free;
+    sendStream.Free;
+  end;
+end;
+
+{------------------------------------------------------------------------------
+  PlaySound (macOS)
+  -----------------
+  Spawn afplay for a validated audio file.
+ ------------------------------------------------------------------------------}
+class procedure TTrndiNativeMac.PlaySound(const FileName: string);
+var
+  Proc: TProcess;
+begin
+  if not IsValidAudioFile(FileName) then
+    Exit;
+  Proc := TProcess.Create(nil);
+  try
+    Proc.Executable := 'afplay';
+    Proc.Parameters.Add(FileName);
+    Proc.Execute;
+  finally
+    Proc.Free;
+  end;
+end;
+
+{------------------------------------------------------------------------------
+  GetOSLanguage (macOS)
+  ---------------------
+  Prefer the system preferred language list; fall back to current locale id.
+ ------------------------------------------------------------------------------}
+class function TTrndiNativeMac.GetOSLanguage: string;
+
+  function NormalizeLang(const s: string): string;
+  var
+    v: string;
+    p: SizeInt;
+  begin
+    v := Trim(s);
+    v := StringReplace(v, '-', '_', [rfReplaceAll]);
+    p := Pos('.', v);
+    if p > 0 then
+      v := Copy(v, 1, p - 1);
+    p := Pos('@', v);
+    if p > 0 then
+      v := Copy(v, 1, p - 1);
+    p := Pos('_', v);
+    if p > 0 then
+      v := Copy(v, 1, p - 1);
+    Result := LowerCase(Trim(v));
+  end;
+
+begin
+  Result := '';
+  if (NSLocale.preferredLanguages <> nil) and (NSLocale.preferredLanguages.count > 0) then
+    Result := UTF8Encode(NSString(NSLocale.preferredLanguages.objectAtIndex(0)).utf8string);
+  if Result = '' then
+    Result := UTF8Encode(NSLocale.currentLocale.localeIdentifier.utf8string);
+  Result := NormalizeLang(Result);
 end;
 
 end.
