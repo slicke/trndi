@@ -116,7 +116,7 @@ type
   end;
 
   // Owner-draw state and drag object used in event signatures
-  TOwnerDrawStateEnum = (odSelected, odFocused, odDisabled, odChecked, odGrayed, odDefault, odHotLight, odInactive);
+  TOwnerDrawStateEnum = (odSelected, odFocused, odDisabled, odChecked, odGrayed, odDefault, odHotLight, odInactive, odNoAccel);
   TOwnerDrawState = set of TOwnerDrawStateEnum;
 
   TDragObject = class(TObject)
@@ -152,7 +152,9 @@ type
     MonitorCount: Integer;
     Monitors: array of TMonitor;
     ActiveForm: TObject;
-  end; 
+    // Menu font used by owner-draw menu code paths
+    MenuFont: TFont;
+  end;
 
 var
   Screen: TScreen;
@@ -319,8 +321,14 @@ initialization
   Screen.Monitors[0].BoundsRect := Rect(0, 0, Screen.Width, Screen.Height);
   Screen.Monitors[0].WorkAreaRect := Screen.WorkAreaRect;
   Screen.ActiveForm := nil;
+  Screen.MenuFont := TFont.Create;
 
 finalization
+  if Assigned(Screen.MenuFont) then
+  begin
+    Screen.MenuFont.Free;
+    Screen.MenuFont := nil;
+  end;
   // Free any mock monitors created
   if Screen.MonitorCount > 0 then
   begin
