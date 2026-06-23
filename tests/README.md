@@ -6,7 +6,10 @@ This folder contains Trndi’s FPCUnit test suite.
 
 - `TrndiTest.lpi` / `TrndiTest.lpr`: Lazarus **GUI** test runner (uses `GuiTestRunner`).
 - `trnditestcase1.pp`: API + Nightscout integration tests.
-- `testserver/` + `router.php`: a small PHP "fake Nightscout" used by integration tests.
+- `testserver/`: embedded Pascal "fake Nightscout" used by integration tests.
+  - `pascal_testserver.pp`: in-process HTTP server unit (singleton; started by tests).
+  - `test_server_helper.pp`: helper that starts/reuses the server before tests.
+  - `PascalTestServer.lpi` / `PascalTestServer.lpr`: standalone server binary (useful with `TRNDI_TEST_SERVER_URL`).
 
 ## Build
 
@@ -42,7 +45,7 @@ xvfb-run -a ./tests/TrndiTest
 
 ### Console runner (no GUI)
 
-For tests that do not require the Nightscout/PHP integration you can use the console runner (no display needed):
+The console runner does not need a display and starts an embedded Pascal test server in-process when integration tests run.
 
 Build:
 
@@ -59,25 +62,21 @@ Run:
 You can also run the console tests using the project Makefile from the repository root:
 
 ```bash
-# starts PHP test server automatically (when available)
+# builds the console runner and runs it (spawns the embedded Pascal test server on-demand)
 make test
 
-# run console tests without starting PHP (uses TRNDI_NO_PHP=1)
-make test-nophp
+# run console tests without starting the embedded server (uses TRNDI_NO_TESTSERVER=1)
+make test-noserver
 ```
 
-This runner excludes the integration tests that spawn the PHP Nightscout fake server by default; use the GUI runner for those. If you want Nightscout/integration tests in the console runner you can now opt-in:
+On Windows, the equivalent commands are `.\make.ps1 test` and `.\make.ps1 test-noserver` (no PHP required).
 
-- Set `TRNDI_TEST_SERVER_URL` to point at an existing test server (e.g. `http://localhost:8080`) to reuse it, or
-- Leave `TRNDI_TEST_SERVER_URL` unset and the console tests will start/stop the PHP fake server automatically when needed.
+Integration tests get the embedded server automatically. You can override this with:
 
-  - On Windows the included `make.ps1` auto-detects PHP (checks `TRNDI_PHP_EXECUTABLE`, `C:\php\php.exe`, then `php` on PATH) and will clear `TRNDI_NO_PHP` when a usable PHP is found. You can also set `TRNDI_PHP_EXECUTABLE` to an explicit PHP binary path (or `php` to probe PATH).
+- `TRNDI_TEST_SERVER_URL=http://localhost:8080` — reuse an externally-running server (e.g. one started from `tests/testserver/PascalTestServer.lpi`). The helper waits for `/debug` before running tests.
+- `TRNDI_NO_TESTSERVER=1` — skip integration tests that depend on the embedded server (used by `make test-noserver`).
 
-  - To force skipping PHP-backed integration tests (e.g., on CI) set `TRNDI_NO_PHP=1` or use `make test-nophp`.
-
-  - Tests will print a short one-time message when they skip PHP tests (`Test Server tests ignored, missing php`) and will print `Running Test Server` when the helper starts the local PHP server. The helper also supports `TRNDI_TEST_SERVER_URL` to reuse an existing server.
-
-The helper used by tests is `tests/php_server_helper.pp` which waits for the server `/debug` endpoint before running tests.
+The helper used by tests is `tests/testserver/test_server_helper.pp`. It is idempotent: the server is started once per process and reused across tests.
 
 On Debian/Ubuntu:
 
@@ -94,11 +93,11 @@ sudo dnf install -y xorg-x11-server-Xvfb
 
 ## Nightscout fake server
 
-Some tests spin up PHP’s built-in server on `localhost:8080` and serve a minimal Nightscout-compatible API.
+Some tests spin up the embedded Pascal HTTP server on `localhost:8080` and serve a minimal Nightscout-compatible API.
 
 - `status.json` returns thresholds and server time.
 - other endpoints return an entries array.
-- access is allowed only when the request includes a header/value matching `sha1('test22')` (see `testserver/index.php`).
+- access is allowed only when the request includes a header/value matching `sha1('test22')` (see `tests/testserver/pascal_testserver.pp`).
 - the fake server respects the `count` query parameter (e.g. `?count=3`).
 
 If port `8080` is busy, the affected tests will fail.

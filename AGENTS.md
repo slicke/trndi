@@ -7,7 +7,7 @@ This file applies to the Trndi repository root and its subdirectories.
 - Prefer the project Makefile instead of calling `lazbuild` directly.
 - On Linux and macOS, use `make` targets for build and test workflows.
 - On Windows, use `make.ps1` for the same workflows when available.
-- When a task needs a build or test command, prefer the smallest relevant target such as `make`, `make debug`, `make test`, or `make test-nophp`.
+- When a task needs a build or test command, prefer the smallest relevant target such as `make`, `make debug`, `make test`, or `make test-noserver`.
 - Use `make noext` when you need a build path that avoids mORMot2.
 - Check `make help` before inventing a new command or target.
 
@@ -68,6 +68,6 @@ This file applies to the Trndi repository root and its subdirectories.
 
 ## Validation
 - After code changes, run the narrowest relevant build or test target first.
-- Prefer `make test-nophp` for a quick local check when PHP services are not needed.
+- Prefer `make test-noserver` for a quick local check when the embedded test server is not needed.
 - Do not widen validation beyond the touched area unless the first check fails or the change reaches adjacent build/test surfaces.
 - If a change touches build behavior, verify with the matching `make` target before widening scope.

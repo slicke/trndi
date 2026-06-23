@@ -7,7 +7,7 @@ interface
 uses
 Classes, SysUtils, fpcunit, testutils, testregistry,
 trndi.native, trndi.api, trndi.api.nightscout, trndi.api.dexcom, trndi.api.xdrip, trndi.types, dialogs, dateutils,
-process, php_server_helper;
+test_server_helper;
 
 type
 
@@ -60,15 +60,11 @@ end;
 procedure TAPINightscoutTester.TestNightscoutServerError;
 var
   api: NightScout;
-  PHPProcess: TProcess;
   BaseURL: string;
 begin
-  if GetEnvironmentVariable('TRNDI_NO_PHP') = '1' then
-    Exit; // skip
 
-  PHPProcess := nil;
-  if not StartOrUseTestServer(PHPProcess, BaseURL) then
-    Fail('Failed to start or reach test PHP server');
+  if not StartOrUseTestServer(BaseURL) then
+    Fail('Failed to start or reach test server');
   try
     // append special prefix that testserver treats as error generator
     api := NightScout.create(BaseURL + '/error500', 'test22');
@@ -83,28 +79,19 @@ begin
       api.Free;
     end;
   finally
-    if Assigned(PHPProcess) then
-    begin
-      PHPProcess.Terminate(0);
-      PHPProcess.Free;
-    end;
+    StopLocalTestServer;
   end;
 end;
 
 procedure TAPINightscoutTester.TestNightscoutUnauthorized;
 var
   api: TrndiAPI;
-  PHPProcess: TProcess;
   BaseURL: string;
 begin
-  // Allow skipping integration tests via TRNDI_NO_PHP=1
-  if GetEnvironmentVariable('TRNDI_NO_PHP') = '1' then
-    Exit; // Skip integration test when PHP is intentionally disabled
 
-  // Start or reuse PHP server (use TRNDI_TEST_SERVER_URL if set)
-  PHPProcess := nil;
-  if not StartOrUseTestServer(PHPProcess, BaseURL) then
-    Fail('Failed to start or reach test PHP server');
+  // Start or reuse embedded test server (TRNDI_TEST_SERVER_URL reuses an external one)
+  if not StartOrUseTestServer(BaseURL) then
+    Fail('Failed to start or reach test server');
 
   try
     // Wrong secret should yield Unauthorized from the fake server
@@ -112,29 +99,20 @@ begin
     AssertFalse('Connect should fail for unauthorized secret', api.connect);
     api.Free;
   finally
-    if Assigned(PHPProcess) then
-    begin
-      PHPProcess.Terminate(0);
-      PHPProcess.Free;
-    end;
+    StopLocalTestServer;
   end;
 end;
 
 procedure TAPINightscoutTester.TestNightscoutGetReadingsRespectsMax;
 var
   api: TrndiAPI;
-  PHPProcess: TProcess;
   res: string;
   readings: BGResults;
   BaseURL: string;
 begin
-  // Allow skipping integration tests via TRNDI_NO_PHP=1
-  if GetEnvironmentVariable('TRNDI_NO_PHP') = '1' then
-    Exit; // Skip integration test when PHP is intentionally disabled
 
-  PHPProcess := nil;
-  if not StartOrUseTestServer(PHPProcess, BaseURL) then
-    Fail('Failed to start or reach test PHP server');
+  if not StartOrUseTestServer(BaseURL) then
+    Fail('Failed to start or reach test server');
 
   try
     api := NightScout.create(BaseURL, 'test22');
@@ -147,11 +125,7 @@ begin
       api.Free;
     end;
   finally
-    if Assigned(PHPProcess) then
-    begin
-      PHPProcess.Terminate(0);
-      PHPProcess.Free;
-    end;
+    StopLocalTestServer;
   end;
 end;
 
@@ -159,18 +133,13 @@ procedure TAPINightscoutTester.TestNightscout;
 var
   api: TrndiAPI;
   bg: BGreading;
-  PHPProcess: TProcess;
   BaseURL: string;
 begin
   bg.Clear;
-  // Allow skipping integration tests via TRNDI_NO_PHP=1
-  if GetEnvironmentVariable('TRNDI_NO_PHP') = '1' then
-    Exit; // Skip integration test when PHP is intentionally disabled
 
-  // Start or reuse PHP server (use TRNDI_TEST_SERVER_URL if set)
-  PHPProcess := nil;
-  if not StartOrUseTestServer(PHPProcess, BaseURL) then
-    Fail('Failed to start or reach test PHP server');
+  // Start or reuse embedded test server (TRNDI_TEST_SERVER_URL reuses an external one)
+  if not StartOrUseTestServer(BaseURL) then
+    Fail('Failed to start or reach test server');
 
   try
     // Your existing test code
@@ -198,12 +167,8 @@ begin
     end;
 
   finally
-    // Terminate & free PHP server
-    if Assigned(PHPProcess) then
-    begin
-      PHPProcess.Terminate(0);
-      PHPProcess.Free;
-    end;
+    // Test server lifecycle handled by helper
+    StopLocalTestServer;
   end;
 end;
 

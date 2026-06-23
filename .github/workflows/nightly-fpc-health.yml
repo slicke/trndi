@@ -45,4 +45,4 @@ jobs:
       - name: Build and run console tests (no extensions, headless)
         run: |
           set -euo pipefail
-          make noext-test-nophp WIDGETSET=qt6
+          make noext-test-noserver WIDGETSET=qt6
