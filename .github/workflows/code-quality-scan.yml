@@ -46,7 +46,7 @@ jobs:
           # when the build fails. -u and pipefail are still active to catch scripting errors.
           set -uo pipefail
           mkdir -p build
-          if make noext-test-nophp WIDGETSET=qt6 2>&1 | tee build/fpc-diagnostics.log; then
+          if make noext-test-noserver WIDGETSET=qt6 2>&1 | tee build/fpc-diagnostics.log; then
             echo 0 > build/fpc-exit-code.txt
           else
             echo ${PIPESTATUS[0]} > build/fpc-exit-code.txt

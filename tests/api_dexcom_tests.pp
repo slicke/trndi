@@ -7,7 +7,7 @@ interface
 uses
 Classes, SysUtils, fpcunit, testutils, testregistry,
 trndi.native, trndi.api, trndi.api.nightscout, trndi.api.dexcom, trndi.api.xdrip, trndi.types, dialogs, dateutils,
-process, php_server_helper;
+test_server_helper;
 
 type
 
@@ -37,18 +37,13 @@ end;
 procedure TAPIDexcomTester.TestDexcomLocalServer;
 var
   api: TrndiAPI;
-  PHPProcess: TProcess;
   readings: BGResults;
   BaseURL: string;
 begin
-  // Allow skipping integration tests via TRNDI_NO_PHP=1
-  if GetEnvironmentVariable('TRNDI_NO_PHP') = '1' then
-    Exit; // Skip integration test when PHP is intentionally disabled
 
-  // Start or reuse PHP server (use TRNDI_TEST_SERVER_URL if set)
-  PHPProcess := nil;
-  if not StartOrUseTestServer(PHPProcess, BaseURL) then
-    Fail('Failed to start or reach test PHP server');
+  // Start or reuse embedded test server (TRNDI_TEST_SERVER_URL reuses an external one)
+  if not StartOrUseTestServer(BaseURL) then
+    Fail('Failed to start or reach test server');
 
   try
     // Use the new "full URL" override for Dexcom baseUrl.
@@ -71,11 +66,7 @@ begin
       api.Free;
     end;
   finally
-    if Assigned(PHPProcess) then
-    begin
-      PHPProcess.Terminate(0);
-      PHPProcess.Free;
-    end;
+    StopLocalTestServer;
   end;
 end;
 

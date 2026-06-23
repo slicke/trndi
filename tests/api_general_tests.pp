@@ -7,7 +7,7 @@ interface
 uses
 Classes, SysUtils, fpcunit, testutils, testregistry,
 trndi.native, trndi.api, trndi.api.nightscout, trndi.api.dexcom, trndi.api.xdrip, trndi.types, dialogs, dateutils,
-process, php_server_helper, trndi.api.debug_lowsoon;
+trndi.api.debug_lowsoon;
 
 type
 
