@@ -3,8 +3,8 @@
 #   make              -> release build (default)
 #   make debug        -> debug build
 #   make release      -> release build
-#   make test         -> build and run tests (starts PHP test server when available)
-#   make test-nophp   -> build and run console tests without PHP (TRNDI_NO_PHP=1)
+#   make test         -> build and run tests (runner spawns an in-process Pascal test server)
+#   make test-noserver-> build and run console tests, skipping the embedded test server (TRNDI_NO_TESTSERVER=1)
 #   make clean        -> remove build artifacts
 #   make install      -> install binary to /usr/local/bin (requires sudo)
 #   make list-modes   -> list available build modes from Trndi.lpi
@@ -86,7 +86,7 @@ NOEXT_BUILD_MODE_NAME = No Ext ($(BUILD_MODE))
 
 NOEXT_LAZBUILD_FLAGS = --widgetset=$(WIDGETSET) --build-mode="$(NOEXT_BUILD_MODE_NAME)" $(CPU_FLAG)
 
-.PHONY: all help check build release debug test clean dist install run list-modes list-modules check-module-names build-ignore ignore fetch-mormot2 check-mormot2
+.PHONY: all help check build release debug test test-noserver noext-test noext-test-noserver clean dist install run list-modes list-modules check-module-names build-ignore ignore fetch-mormot2 check-mormot2
 
 all: release
 
@@ -97,10 +97,10 @@ help:
 	@echo "  release    Build release (default)"
 	@echo "  debug      Build debug"
 	@echo "  build      Generic build (honors BUILD_MODE and WIDGETSET)"
-	@echo "  test       Build and run tests (starts PHP test server when available)"
-	@echo "  test-nophp  Run console tests without PHP (TRNDI_NO_PHP=1)"
+	@echo "  test       Build and run tests (runner spawns an in-process Pascal test server)"
+	@echo "  test-noserver  Run console tests, skipping the embedded test server (TRNDI_NO_TESTSERVER=1)"
 	@echo "  noext-test  Build and run tests without mORMot2 (IGNORE_MORMOT=1)"
-	@echo "  noext-test-nophp  Run console tests without mORMot2 and without PHP (IGNORE_MORMOT=1, TRNDI_NO_PHP=1)"
+	@echo "  noext-test-noserver  Run console tests without mORMot2, skipping the test server (IGNORE_MORMOT=1, TRNDI_NO_TESTSERVER=1)"
 	@echo "  list-modes Show available project build modes from $(LPI)"
 	@echo "  list-modules Show Pascal `unit` modules found under `units/`"
 	@echo "  check-module-names Check for mismatches between filenames and `unit` declarations (uses scripts/check-module-names.pl)"
@@ -248,29 +248,28 @@ debug: build
 test: check
 	@echo "Building console tests (tests/TrndiTestConsole.lpi)"
 	@$(LAZBUILD) --widgetset=$(WIDGETSET) -B tests/TrndiTestConsole.lpi
-	@echo "Running tests with PHP test server..."
-	@sh tests/run_tests_with_php.sh
+	@echo "Running console tests (embedded Pascal test server)"
+	@./tests/TrndiTestConsole
 
 noext-test: IGNORE_MORMOT := 1
 noext-test:
 	@echo "Building console tests (tests/TrndiTestConsole.lpi) without mORMot"
 	@$(LAZBUILD) --widgetset=$(WIDGETSET) -B tests/TrndiTestConsole.lpi
-	@echo "Running tests with PHP test server..."
-	@sh tests/run_tests_with_php.sh
+	@echo "Running console tests (embedded Pascal test server)"
+	@./tests/TrndiTestConsole
 
-.PHONY: test-nophp
-test-nophp: check
+test-noserver: check
 	@echo "Building console tests (tests/TrndiTestConsole.lpi)"
 	@$(LAZBUILD) --widgetset=$(WIDGETSET) -B tests/TrndiTestConsole.lpi
-	@echo "Running tests without PHP (TRNDI_NO_PHP=1)"
-	@TRNDI_NO_PHP=1 ./tests/TrndiTestConsole
+	@echo "Running tests without embedded test server (TRNDI_NO_TESTSERVER=1)"
+	@TRNDI_NO_TESTSERVER=1 ./tests/TrndiTestConsole
 
-noext-test-nophp: IGNORE_MORMOT := 1
-noext-test-nophp:
+noext-test-noserver: IGNORE_MORMOT := 1
+noext-test-noserver:
 	@echo "Building console tests (tests/TrndiTestConsole.lpi) without mORMot"
 	@$(LAZBUILD) --widgetset=$(WIDGETSET) -B tests/TrndiTestConsole.lpi
-	@echo "Running tests without PHP (TRNDI_NO_PHP=1)"
-	@TRNDI_NO_PHP=1 ./tests/TrndiTestConsole
+	@echo "Running tests without embedded test server (TRNDI_NO_TESTSERVER=1)"
+	@TRNDI_NO_TESTSERVER=1 ./tests/TrndiTestConsole
 
 list-modes:
 	@echo "Available build modes in $(LPI):"

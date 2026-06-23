@@ -5,7 +5,7 @@ unit native_cookie_tests;
 interface
 
 uses
-  fpcunit, testregistry, trndi.native, trndi.native.base, php_server_helper, Process, SysUtils, Classes;
+  fpcunit, testregistry, trndi.native, trndi.native.base, test_server_helper, SysUtils, Classes;
 
 type
   TNativeCookieTests = class(TTestCase)
@@ -18,16 +18,15 @@ implementation
 
 procedure TNativeCookieTests.TestCookieSetAndJar;
 var
-  PHPProcess: TProcess;
   BaseURL: string;
   n: TTrndiNativeBase;
   cookieJar: TStringList;
   resp: THTTPResponse;
 begin
-  // Ensure the local PHP test server is available (can be overridden with TRNDI_TEST_SERVER_URL)
-  if not StartOrUseTestServer(PHPProcess, BaseURL) then
+  // Ensure the embedded test server is available (TRNDI_TEST_SERVER_URL reuses an external one)
+  if not StartOrUseTestServer(BaseURL) then
   begin
-    Writeln('Skipping TestCookieSetAndJar: PHP test server not available (set TRNDI_TEST_SERVER_URL or TRNDI_PHP_EXECUTABLE)');
+    Writeln('Skipping TestCookieSetAndJar: embedded test server unavailable (set TRNDI_TEST_SERVER_URL or unset TRNDI_NO_TESTSERVER)');
     Exit;
   end;    
 
@@ -54,21 +53,20 @@ begin
   finally
     cookieJar.Free;
     n.Free;
-    StopLocalTestServer(PHPProcess);
+    StopLocalTestServer;
   end;
 end;
 
 procedure TNativeCookieTests.TestCookieRedirectUpdatesJar;
 var
-  PHPProcess: TProcess;
   BaseURL: string;
   n: TTrndiNativeBase;
   cookieJar: TStringList;
   resp: THTTPResponse;
 begin
-  if not StartOrUseTestServer(PHPProcess, BaseURL) then
+  if not StartOrUseTestServer(BaseURL) then
   begin
-    Writeln('Skipping TestCookieRedirectUpdatesJar: PHP test server not available (set TRNDI_TEST_SERVER_URL or TRNDI_PHP_EXECUTABLE)');
+    Writeln('Skipping TestCookieRedirectUpdatesJar: embedded test server unavailable (set TRNDI_TEST_SERVER_URL or unset TRNDI_NO_TESTSERVER)');
     Exit;
   end;
 
@@ -87,7 +85,7 @@ begin
   finally
     cookieJar.Free;
     n.Free;
-    StopLocalTestServer(PHPProcess);
+    StopLocalTestServer;
   end;
 end;
 

@@ -151,8 +151,8 @@ function getReadings(minNum, maxNum: integer; extras: string; out res: string): 
 - `make` — release build
 - `make debug` — debug build
 - `make build` — generic build
-- `make test` — build and run tests
-- `make test-nophp` — tests without PHP
+- `make test` — build and run tests (starts an embedded Pascal test server)
+- `make test-noserver` — tests without the embedded test server (`TRNDI_NO_TESTSERVER=1`)
 - `make noext` — build without mORMot2
 - `make fetch-mormot2` — fetch mORMot2 and QuickJS
 - `make clean` — remove build artifacts
@@ -167,17 +167,16 @@ See the Makefile or README for more details.
 ## Running Tests
 
 - Use the Makefile for test runs:
-  - `make test` — builds and runs tests (starts PHP test server if available)
-  - `make test-nophp` — skips PHP-backed tests (for CI)
+  - `make test` — builds and runs tests (spawns an in-process Pascal test server)
+  - `make test-noserver` — skips integration tests that need the embedded server (`TRNDI_NO_TESTSERVER=1`)
 - On macOS, use `gmake`.
-- On Windows, use `make.ps1` (auto-detects PHP or set `TRNDI_PHP_EXECUTABLE`).
-- Console tests print a message if PHP is missing.
+- On Windows, use `make.ps1 test`.
 - Run console tests manually:
   ```bash
   lazbuild tests/TrndiTestConsole.lpi
   ./tests/TrndiTestConsole
   ```
-  To enable integration tests, set `TRNDI_TEST_SERVER_URL` (e.g. `export TRNDI_TEST_SERVER_URL=http://localhost:8080`).
+  The runner starts an embedded Pascal test server (`tests/testserver/pascal_testserver.pp`) automatically. To reuse an already-running server, set `TRNDI_TEST_SERVER_URL` (e.g. `export TRNDI_TEST_SERVER_URL=http://localhost:8080`). To skip integration tests entirely, set `TRNDI_NO_TESTSERVER=1`.
 - GUI tests: run with `TrndiTest` or use `xvfb-run -a ./tests/TrndiTest` for headless environments.
 
 ## Generating Documentation Locally
