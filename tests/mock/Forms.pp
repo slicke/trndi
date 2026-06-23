@@ -64,6 +64,7 @@ type
     FMainForm: TForm;
     FShowHint: Boolean;
     FMainFormOnTaskBar: Boolean;
+    FHandle: PtrUInt;
   public
     constructor Create(AOwner: TComponent = nil); virtual;
     property ExeName: string read FExeName write FExeName;
@@ -74,6 +75,7 @@ type
     property MainForm: TForm read FMainForm write FMainForm;
     property ShowHint: Boolean read FShowHint write FShowHint;
     property MainFormOnTaskBar: Boolean read FMainFormOnTaskBar write FMainFormOnTaskBar;
+    property Handle: PtrUInt read FHandle write FHandle;
     procedure ProcessMessages; virtual;
     procedure Terminate; virtual;
     procedure BringToFront; virtual;
