@@ -5,9 +5,15 @@ unit Menus;
 
 interface
 
-uses Classes, Controls, SysUtils;
+uses Classes, Controls, Graphics, Types, SysUtils;
 
 type
+  // Match LCL's signatures so production owner-draw handlers compile under tests.
+  TMenuMeasureItemEvent = procedure(Sender: TObject; ACanvas: TCanvas;
+    var AWidth, AHeight: Integer) of object;
+  TMenuDrawItemEvent = procedure(Sender: TObject; ACanvas: TCanvas;
+    ARect: TRect; AState: TOwnerDrawState) of object;
+
   TMenuItem = class(TComponent)
   private
     FCaption: string;
@@ -47,12 +53,16 @@ type
   private
     FPopupComponent: Controls.TComponent;
     FItems: TMenuItem;
+    FOnDrawItem: TMenuDrawItemEvent;
+    FOnMeasureItem: TMenuMeasureItemEvent;
   public
     constructor Create(AOwner: Controls.TComponent = nil);
     destructor Destroy; override;
     procedure PopUp(X, Y: Integer); virtual;
     property PopupComponent: Controls.TComponent read FPopupComponent write FPopupComponent;
     property Items: TMenuItem read FItems;
+    property OnDrawItem: TMenuDrawItemEvent read FOnDrawItem write FOnDrawItem;
+    property OnMeasureItem: TMenuMeasureItemEvent read FOnMeasureItem write FOnMeasureItem;
   end;
 
   TMainMenu = class(TComponent)
@@ -64,7 +74,18 @@ type
     property Items: TMenuItem read FItems;
   end;
 
+function ShortCutToText(ShortCut: Integer): string;
+
 implementation
+
+function ShortCutToText(ShortCut: Integer): string;
+begin
+  // Headless tests don't render menus; the exact label doesn't matter.
+  if ShortCut = 0 then
+    Result := ''
+  else
+    Result := IntToStr(ShortCut);
+end;
 
 { TMenuItem }
 
