@@ -69,7 +69,7 @@ make test
 make test-noserver
 ```
 
-On Windows, the equivalent commands are `.\make.ps1 test` and `.\make.ps1 test-noserver` (no PHP required).
+On Windows, the equivalent commands are `.\make.ps1 test` and `.\make.ps1 test-noserver`.
 
 Integration tests get the embedded server automatically. You can override this with:
 
