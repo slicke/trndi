@@ -28,14 +28,12 @@ jobs:
           fpc_laz_url: ${{ env.FPC_LAZ_URL }}
           fpc_src_url: ${{ env.FPC_SRC_URL }}
           laz_url: ${{ env.LAZ_URL }}
-          extra_packages: php
 
       - name: Show tool versions
         run: |
           set -euo pipefail
           lazbuild --version
           fpc -iV
-          php --version | head -n 1
 
       - name: Verify Pascal module naming consistency
         run: |

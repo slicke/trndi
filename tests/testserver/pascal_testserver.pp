@@ -617,6 +617,9 @@ begin
   FillChar(Addr, SizeOf(Addr), 0);
   Addr.sin_family := AF_INET;
   Addr.sin_port := htons(8080);
+  // Bind only to loopback (127.0.0.1). Prevents accidental external exposure
+  // and avoids any Windows Firewall ambiguity for non-loopback listeners.
+  Addr.sin_addr.s_addr := htonl($7F000001);
   if fpbind(Listener, @Addr, SizeOf(Addr)) <> 0 then
   begin
     CloseSocket(Listener);
