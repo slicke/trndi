@@ -11,7 +11,7 @@
 unit trndi.log;
 
 {$mode ObjFPC}{$H+}
-{$ifdef DARWIN}
+{$if defined(DEBUG) and defined(DARWIN)}
 {$ModeSwitch objectivec1}
 {$endif}
 
@@ -25,6 +25,7 @@ procedure TrndiNetLog(const Msg: string); // Network log entry (debug only)
 
 implementation
 
+{$ifdef DEBUG}
 uses
 Classes, SysUtils
 {$ifdef DARWIN}
@@ -32,17 +33,45 @@ Classes, SysUtils
 {$endif}
 ;
 
+const
+  TimestampFmt = 'yyyy-mm-dd hh:nn:ss.zzz';
+
 var
 LogFilePath: string;
-FLogFile: TextFile;
-BundleID: string;
+LogLock: TRTLCriticalSection;
+LogLockInited: boolean = False;
+FInitLog: TextFile;
 
 function FallbackAppPath: string;
 begin
   Result := IncludeTrailingPathDelimiter(ExtractFilePath(ParamStr(0)));
 end;
 
-{$ifdef DEBUG}
+function ComputeLogFilePath: string;
+{$ifdef DARWIN}
+var
+  BundleID: string;
+{$endif}
+begin
+{$ifdef DARWIN}
+  try
+    Result := NSStrToStr(
+      NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, True)
+        .objectAtIndex(0));
+    BundleID := NSStrToStr(NSBundle.mainBundle.objectForInfoDictionaryKey(StrToNSStr('CFBundleIdentifier')));
+    if (BundleID = '') or SameText(BundleID, 'com.company.trndi') then
+      BundleID := 'com.slicke.trndi';
+    Result := IncludeTrailingPathDelimiter(Result) + BundleID + PathDelim + 'trndi.log';
+    if not DirectoryExists(ExtractFilePath(Result)) then
+      ForceDirectories(ExtractFilePath(Result));
+  except
+    Result := FallbackAppPath + 'trndi.log';
+  end;
+{$else}
+  Result := 'trndi.log';
+{$endif}
+end;
+
 procedure TrndiELog(const Msg: string);
 begin
   TrndiDLog('[ERROR] ' + Msg);
@@ -63,156 +92,112 @@ const
   MaxAttempts = 6;
   AttemptDelayMs = 120; // ms
 var
-  LogFilePath: string;
   attempt: integer;
   wroteOk: boolean;
   F: TextFile;
   Line: string;
-  {$ifdef DARWIN}
-  BundleID: string;
-  {$endif}
 begin
-  // Determine a writable log file path. On macOS we prefer Application Support
-  // to avoid permission issues.
-  {$ifdef DARWIN}
-  try
-    LogFilePath := NSStrToStr(
-      NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, True)
-        .objectAtIndex(0));
-    BundleID := NSStrToStr(NSBundle.mainBundle.objectForInfoDictionaryKey(StrToNSStr('CFBundleIdentifier')));
-    if (BundleID = '') or SameText(BundleID, 'com.company.trndi') then
-      BundleID := 'com.slicke.trndi';
-    LogFilePath := IncludeTrailingPathDelimiter(LogFilePath) + BundleID + PathDelim + 'trndi.log';
-    if not DirectoryExists(ExtractFilePath(LogFilePath)) then
-      ForceDirectories(ExtractFilePath(LogFilePath));
-  except
-    LogFilePath := FallbackAppPath + 'trndi.log';
-  end;
-  {$else}
-  LogFilePath := 'trndi.log';
-  {$endif}
+  if LogFilePath = '' then
+    LogFilePath := ComputeLogFilePath;
 
-  Line := '[' + DateTimeToStr(Now) + '] ' + Msg;
+  Line := '[' + FormatDateTime(TimestampFmt, Now) + '] ' + Msg;
 
-  // Try appending the single line with retries; on persistent failure write to .locked
-  wroteOk := false;
-  for attempt := 1 to MaxAttempts do
+  if LogLockInited then
+    EnterCriticalSection(LogLock);
   try
-    AssignFile(F, LogFilePath);
-    {$I-}
-    if not FileExists(LogFilePath) then
-      Rewrite(F)
-    else
-      Append(F);
-    {$I+}
-    if IOResult = 0 then
-    begin
-      Writeln(F, Line);
-      CloseFile(F);
-      wroteOk := true;
-      Break;
-    end
-    else
-    begin
-        // Could not open (possibly locked) — wait and retry
-      try CloseFile(F) except end;
-      Sleep(AttemptDelayMs);
+    // Try appending the single line with retries; on persistent failure write to .locked
+    wroteOk := false;
+    for attempt := 1 to MaxAttempts do
+    try
+      AssignFile(F, LogFilePath);
+      {$I-}
+      if not FileExists(LogFilePath) then
+        Rewrite(F)
+      else
+        Append(F);
+      {$I+}
+      if IOResult = 0 then
+      begin
+        Writeln(F, Line);
+        CloseFile(F);
+        wroteOk := true;
+        Break;
+      end
+      else
+      begin
+          // Could not open (possibly locked) — wait and retry
+        try CloseFile(F) except end;
+        Sleep(AttemptDelayMs);
+      end;
+    except
+      on E: Exception do
+      begin
+        try CloseFile(F) except end;
+        Sleep(AttemptDelayMs);
+      end;
     end;
-  except
-    on E: Exception do
-    begin
-      try CloseFile(F) except end;
-      Sleep(AttemptDelayMs);
-    end;
-  end;
 
-  if not wroteOk then
-  try
-    AssignFile(F, LogFilePath + '.locked');
-    {$I-}
-    if not FileExists(LogFilePath + '.locked') then
-      Rewrite(F)
-    else
-      Append(F);
-    {$I+}
-    if IOResult = 0 then
-    begin
-      Writeln(F, Line);
-      CloseFile(F);
+    if not wroteOk then
+    try
+      AssignFile(F, LogFilePath + '.locked');
+      {$I-}
+      if not FileExists(LogFilePath + '.locked') then
+        Rewrite(F)
+      else
+        Append(F);
+      {$I+}
+      if IOResult = 0 then
+      begin
+        Writeln(F, Line);
+        CloseFile(F);
+      end;
+    except
+        // Swallow errors — logger must not raise during debugging
     end;
-  except
-      // Swallow errors — logger must not raise during debugging
+  finally
+    if LogLockInited then
+      LeaveCriticalSection(LogLock);
   end;
 end;
-{$else}
-
-procedure TrndiWLog(const Msg: string);
-begin
-if Msg = '' then
-  Exit;
-end;
-
-procedure TrndiNetLog(const Msg: string);
-begin
-if Msg = '' then
-  Exit;
-end;
-
-procedure TrndiELog(const Msg: string);
-begin
-if Msg = '' then
-  Exit;
-end;
-
-procedure TrndiDLog(const Msg: string);
-begin
-  // Keep parameter referenced to avoid unused-parameter hints in non-DEBUG builds.
-  if Msg = '' then
-    Exit;
-end;
-{$endif}
 
 initialization
-{$ifdef DEBUG}
-  // Truncate the debug log at process start so we append during runtime.
+InitCriticalSection(LogLock);
+LogLockInited := True;
 try
-{$ifdef DARWIN}
-    try
-      LogFilePath := NSStrToStr(
-        NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, True)
-          .objectAtIndex(0));
-      BundleID := NSStrToStr(NSBundle.mainBundle.objectForInfoDictionaryKey(StrToNSStr('CFBundleIdentifier')));
-      if (BundleID = '') or SameText(BundleID, 'com.company.trndi') then
-        BundleID := 'com.slicke.trndi';
-      LogFilePath := IncludeTrailingPathDelimiter(LogFilePath) + BundleID + PathDelim + 'trndi.log';
-      if not DirectoryExists(ExtractFilePath(LogFilePath)) then
-        ForceDirectories(ExtractFilePath(LogFilePath));
-    except
-      LogFilePath := FallbackAppPath + 'trndi.log';
-    end;
-{$else}
-LogFilePath := 'trndi.log';
-{$endif}
+  LogFilePath := ComputeLogFilePath;
 
-    // Best-effort truncate; if locked, ignore and continue.
-try
-  AssignFile(FLogFile, LogFilePath);
-  {$I-}
-  Rewrite(FLogFile);
-  {$I+}
-  if IOResult = 0 then
-  begin
-    Writeln(FLogFile, '[' + DateTimeToStr(Now) + '] ' + 'trndi.log: truncated at startup');
-    CloseFile(FLogFile);
+  // Best-effort truncate; if locked, ignore and continue.
+  try
+    AssignFile(FInitLog, LogFilePath);
+    {$I-}
+    Rewrite(FInitLog);
+    {$I+}
+    if IOResult = 0 then
+    begin
+      Writeln(FInitLog, '[' + FormatDateTime(TimestampFmt, Now) + '] ' + 'trndi.log: truncated at startup');
+      CloseFile(FInitLog);
+    end;
+  except
+    // ignore
   end;
 except
-      // ignore
+  // ignore
 end;
-except
-    // ignore
-end;
-{$endif}
 
 finalization
-  // nothing
+if LogLockInited then
+begin
+  DoneCriticalSection(LogLock);
+  LogLockInited := False;
+end;
+
+{$else}
+
+procedure TrndiDLog(const Msg: string); begin if Msg = '' then Exit; end;
+procedure TrndiELog(const Msg: string); begin if Msg = '' then Exit; end;
+procedure TrndiWLog(const Msg: string); begin if Msg = '' then Exit; end;
+procedure TrndiNetLog(const Msg: string); begin if Msg = '' then Exit; end;
+
+{$endif}
+
 end.
