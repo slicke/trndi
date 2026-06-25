@@ -2,7 +2,6 @@
 import Foundation
 import CoreGraphics
 import ImageIO
-import CoreServices
 
 let width = 600
 let height = 400
@@ -64,7 +63,8 @@ guard let cgImage = ctx.makeImage() else {
 }
 
 let url = URL(fileURLWithPath: outputPath) as CFURL
-guard let destination = CGImageDestinationCreateWithURL(url, kUTTypePNG, 1, nil) else {
+let pngType = "public.png" as CFString
+guard let destination = CGImageDestinationCreateWithURL(url, pngType, 1, nil) else {
     fputs("Failed to create CGImageDestination at \(outputPath)\n", stderr)
     exit(1)
 }
