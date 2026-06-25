@@ -113,7 +113,24 @@ else
   echo "WARN: swift not available or background script missing; no DMG background" >&2
 fi
 
-create-dmg Trndi.dmg "macos/stage" --volname "Trndi" --format UDZO --window-size 600 400 "${DMG_BG_ARG[@]}" --icon-size 128 --icon "Trndi.app" 150 200 --icon "README.txt" 300 340 --app-drop-link 450 200 --out "Trndi.dmg" 2>&1 | grep -v "internet-enable"
+# Diagnostic: which create-dmg are we actually running?
+echo "create-dmg path: $(command -v create-dmg)"
+create-dmg --version 2>&1 | head -3 || true
+
+# Pass options BEFORE positional args (Trndi.dmg + source dir). Some
+# create-dmg variants stop option parsing at the first positional, so options
+# after the .dmg path were being silently ignored — that's why earlier runs
+# produced a DMG with no background and no Applications symlink.
+create-dmg \
+  --volname "Trndi" \
+  --format UDZO \
+  --window-size 600 400 \
+  "${DMG_BG_ARG[@]}" \
+  --icon-size 128 \
+  --icon "Trndi.app" 150 200 \
+  --icon "README.txt" 300 340 \
+  --app-drop-link 450 200 \
+  Trndi.dmg "macos/stage" 2>&1 | grep -v "internet-enable"
 
 # Zsh's default nomatch behavior aborts the script when a glob has no matches,
 # even with `|| true`. The (N) glob qualifier enables null_glob for this one
