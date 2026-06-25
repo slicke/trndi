@@ -750,6 +750,28 @@ begin
   {$endif}
 end;
 
+// Fired by trndi.native when the OS reports a resume-from-sleep event.
+// Always invoked on the main thread (platform units marshal via
+// Application.QueueAsyncCall). Without this hook the only wake recovery
+// is the gap-detection in tMainTimer, which only runs the next time the
+// timer actually fires — after a long sleep that can be minutes away.
+//
+// We force the next fetch to bypass the cache and kick updateReading
+// immediately. The network may not be ready yet (Wi-Fi reassociation
+// takes a few seconds on resume); the fetch worker handles failures, and
+// the existing tMain/tMissed cadence retries shortly after.
+procedure TfBG.OnSystemWake;
+begin
+  if FShuttingDown then
+    Exit;
+  TrndiDLog('OnSystemWake: OS reported resume-from-sleep — forcing refresh');
+  FForceRefresh := true;
+  FLastTimerTick := 0; // reset so the gap heuristic doesn't double-fire
+  if firstboot then
+    Exit;
+  updateReading;
+end;
+
 procedure TfBG.tMissedTimer(Sender: TObject);
 var
   nowTick: TDateTime;
