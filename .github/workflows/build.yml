@@ -398,6 +398,7 @@ jobs:
             mkdir -p artifacts
             cp Trndi artifacts/
             [ -d "lang" ] && cp -r lang artifacts/
+            [ -f "dist/macos_README.txt" ] && cp dist/macos_README.txt artifacts/README.txt
             7z a -tzip Trndi-macos-silicon.zip ./artifacts/* >/dev/null
             chmod +x dist/macos.sh
             if [ -d "lang" ]; then cp -r lang dist/; fi
