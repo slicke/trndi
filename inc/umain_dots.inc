@@ -38,7 +38,8 @@ function LocalAlphaBlend(
 {$endif}
 
 procedure DrawSmoothCircle(ACanvas: TCanvas; ASize: integer;
-  ADotColor, ARingColor: TColor; ARingWidth: integer; AHollow: boolean = false);
+  ADotColor, ARingColor: TColor; ARingWidth: integer; AHollow: boolean = false;
+  AOffsetX: integer = 0; AOffsetY: integer = 0);
 var
   intf: TLazIntfImage;
   rawDesc: TRawImageDescription;
@@ -179,7 +180,7 @@ begin
       blend.BlendFlags := 0;
       blend.SourceConstantAlpha := 255;
       blend.AlphaFormat := LOCAL_AC_SRC_ALPHA;
-      LocalAlphaBlend(ACanvas.Handle, 0, 0, ASize, ASize,
+      LocalAlphaBlend(ACanvas.Handle, AOffsetX, AOffsetY, ASize, ASize,
                       bmp.Canvas.Handle, 0, 0, ASize, ASize, blend);
     finally
       bmp.Free;
@@ -193,7 +194,7 @@ begin
     png := TPortableNetworkGraphic.Create;
     try
       png.LoadFromIntfImage(intf);
-      ACanvas.Draw(0, 0, png);
+      ACanvas.Draw(AOffsetX, AOffsetY, png);
     finally
       png.Free;
     end;
@@ -207,8 +208,8 @@ procedure TfBG.DotPaint(Sender: TObject);
 var
   S, fontn: string;
   L: TDotControl;
-  d, ringWidth: integer;
-  dotColor: TColor;
+  d, ringWidth, smallD, offset: integer;
+  dotColor, outlineColor: TColor;
 begin
   L := Sender as TDotControl;
   S := L.Caption;
@@ -224,9 +225,19 @@ begin
     dotColor := L.Font.Color;
     if S = DOT_PREDICT then
     begin
-      // Hollow ring for future predictions; thicker than the fresh ring so the
-      // outline is clearly visible at small sizes.
-      DrawSmoothCircle(L.Canvas, d, dotColor, dotColor, Max(2, d div 6), true);
+      // Two-part prediction marker: a full-slot hollow ring in a lightened
+      // range color (so the prediction occupies the same visual footprint as
+      // the history dots) wraps a smaller filled inner dot painted in the
+      // unmodified trend color. The inner dot reads identically to a normal
+      // trend reading; the lighter outer ring marks it as a prediction while
+      // the hue keeps the hi/ok/lo signal.
+      outlineColor := LightenColor(dotColor, 0.55);
+      DrawSmoothCircle(L.Canvas, d, outlineColor, outlineColor,
+                       Max(2, d div 8), true);
+      smallD := Max(4, d div 2);
+      offset := (d - smallD) div 2;
+      DrawSmoothCircle(L.Canvas, smallD, dotColor, dotColor, 0, false,
+                       offset, offset);
       Exit;
     end;
 
