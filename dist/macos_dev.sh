@@ -204,26 +204,11 @@ run_create_dmg_attempt() {
 CREATE_DMG_EXIT=127
 if command -v create-dmg >/dev/null 2>&1; then
   CREATE_DMG_EXIT=0
-  if grep -q -- "--out" "${CREATE_DMG_HELP_LOG}" 2>/dev/null; then
-    # Matches CI script style.
-    run_create_dmg_attempt "with --out (CI style)" \
-      create-dmg Trndi.dmg "macos/stage" --volname "Trndi" --format UDZO --window-size 600 400 "${DMG_BG_ARG[@]}" --icon-size 128 --icon "Trndi.app" 150 200 --icon "README.txt" 300 340 --app-drop-link 450 200 --out "Trndi.dmg" || CREATE_DMG_EXIT=$?
-  else
-    # Common upstream style.
-    run_create_dmg_attempt "without --out" \
-      create-dmg "Trndi.dmg" "macos/stage" --volname "Trndi" --format UDZO --window-size 600 400 "${DMG_BG_ARG[@]}" --icon-size 128 --icon "Trndi.app" 150 200 --icon "README.txt" 300 340 --app-drop-link 450 200 || CREATE_DMG_EXIT=$?
-  fi
+  # Options BEFORE positional args so option parsing doesn't stop early.
+  CREATE_DMG_OPTS=(--volname "Trndi" --format UDZO --window-size 600 400 "${DMG_BG_ARG[@]}" --icon-size 128 --icon "Trndi.app" 150 200 --icon "README.txt" 300 340 --app-drop-link 450 200)
 
-  # If the first attempt failed, try the other style as a fallback.
-  if [ ${CREATE_DMG_EXIT} -ne 0 ]; then
-    if grep -q -- "--out" "${CREATE_DMG_HELP_LOG}" 2>/dev/null; then
-      run_create_dmg_attempt "without --out (fallback)" \
-        create-dmg "Trndi.dmg" "macos/stage" --volname "Trndi" --format UDZO --window-size 600 400 "${DMG_BG_ARG[@]}" --icon-size 128 --icon "Trndi.app" 150 200 --icon "README.txt" 300 340 --app-drop-link 450 200 || CREATE_DMG_EXIT=$?
-    else
-      run_create_dmg_attempt "with --out (fallback)" \
-        create-dmg Trndi.dmg "macos/stage" --volname "Trndi" --format UDZO --window-size 600 400 "${DMG_BG_ARG[@]}" --icon-size 128 --icon "Trndi.app" 150 200 --icon "README.txt" 300 340 --app-drop-link 450 200 --out "Trndi.dmg" || CREATE_DMG_EXIT=$?
-    fi
-  fi
+  run_create_dmg_attempt "standard layout" \
+    create-dmg "${CREATE_DMG_OPTS[@]}" "Trndi.dmg" "macos/stage" || CREATE_DMG_EXIT=$?
 fi
 
 if [ ${CREATE_DMG_EXIT} -ne 0 ]; then
