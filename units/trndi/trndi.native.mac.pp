@@ -38,7 +38,7 @@ interface
 
 uses
   Classes, SysUtils, Graphics, nsutils.nsmisc, nsutils.web.urlrequest, CocoaAll, nsutils.simpledarkmode,
-  nsutils.nshelpers, IniFiles, dialogs, StrUtils,
+  nsutils.nshelpers, IniFiles, dialogs, StrUtils, Forms,
   trndi.native.base;
 
 type
@@ -119,6 +119,13 @@ type
     class procedure PlaySound(const FileName: string); override;
     {** Resolve the user's preferred UI language via NSLocale. }
     class function GetOSLanguage: string; override;
+    {** Subscribe to @code(NSWorkspaceDidWakeNotification) so the wake
+        callback fires when the Mac resumes from sleep. The observer is
+        installed on the shared NSWorkspace notification center and
+        marshals delivery to the main thread via @code(Application.QueueAsyncCall). }
+    procedure RegisterWakeCallback(const Callback: TTrndiWakeCallback); override;
+    {** Remove the NSWorkspace wake observer and clear the callback. }
+    procedure UnregisterWakeCallback; override;
   end;
 
 implementation
@@ -1192,6 +1199,85 @@ begin
   if Result = '' then
     Result := UTF8Encode(NSLocale.currentLocale.localeIdentifier.utf8string);
   Result := NormalizeLang(Result);
+end;
+
+{------------------------------------------------------------------------------
+  Wake-from-sleep notification (macOS)
+  ------------------------------------
+  Subclass NSObject to expose a selector NSWorkspace's notification center
+  can invoke when NSWorkspaceDidWakeNotification fires. The selector posts
+  to the main thread via Application.QueueAsyncCall so the user callback
+  runs on the UI thread regardless of which thread NSWorkspace dispatches
+  from.
+ ------------------------------------------------------------------------------}
+type
+  TWakeBridge = class
+    Callback: TTrndiWakeCallback;
+    Pending: boolean;
+    procedure Fire(Data: PtrInt);
+  end;
+
+  TWakeObserver = objcclass(NSObject)
+    procedure systemDidWake(notification: NSNotification); message 'systemDidWake:';
+  end;
+
+var
+  gWakeObserver: TWakeObserver = nil;
+  gWakeBridge: TWakeBridge = nil;
+
+procedure TWakeBridge.Fire(Data: PtrInt);
+begin
+  Pending := false;
+  if Assigned(Callback) then
+    try
+      Callback();
+    except
+      // Swallow — never let user code crash the run loop
+    end;
+end;
+
+procedure TWakeObserver.systemDidWake(notification: NSNotification);
+begin
+  if Assigned(gWakeBridge) and (not gWakeBridge.Pending) then
+  begin
+    gWakeBridge.Pending := true;
+    Application.QueueAsyncCall(@gWakeBridge.Fire, 0);
+  end;
+end;
+
+procedure TTrndiNativeMac.RegisterWakeCallback(const Callback: TTrndiWakeCallback);
+begin
+  inherited RegisterWakeCallback(Callback);
+  if gWakeBridge = nil then
+    gWakeBridge := TWakeBridge.Create;
+  gWakeBridge.Callback := Callback;
+  if not Assigned(Callback) then
+  begin
+    UnregisterWakeCallback;
+    Exit;
+  end;
+  if gWakeObserver = nil then
+  begin
+    gWakeObserver := TWakeObserver.alloc.init;
+    NSWorkspace.sharedWorkspace.notificationCenter.addObserver_selector_name_object(
+      gWakeObserver,
+      objcselector('systemDidWake:'),
+      NSWorkspaceDidWakeNotification,
+      nil);
+  end;
+end;
+
+procedure TTrndiNativeMac.UnregisterWakeCallback;
+begin
+  if gWakeObserver <> nil then
+  begin
+    NSWorkspace.sharedWorkspace.notificationCenter.removeObserver(gWakeObserver);
+    gWakeObserver.release;
+    gWakeObserver := nil;
+  end;
+  if Assigned(gWakeBridge) then
+    gWakeBridge.Callback := nil;
+  inherited UnregisterWakeCallback;
 end;
 
 end.
