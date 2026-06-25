@@ -158,6 +158,15 @@ public
     {** Detect Windows Subsystem for Linux: checks /proc/version, kernel osrelease,
         and WSL_* environment variables. Returns IsWSL=false on non-WSL Linux. }
   class function DetectWSL: TWSLInfo;
+    {** Spawn a background thread that monitors systemd-logind's
+        @code(org.freedesktop.login1.Manager.PrepareForSleep) signal via
+        @code(gdbus monitor) and invokes the callback when the signal
+        transitions from true (sleeping) to false (resumed). Silently no-ops
+        if @code(gdbus) is missing. The callback is marshalled to the main
+        thread via @code(Application.QueueAsyncCall). }
+  procedure RegisterWakeCallback(const Callback: TTrndiWakeCallback); override;
+    {** Stop the gdbus monitor process and join its reader thread. }
+  procedure UnregisterWakeCallback; override;
 
 end;
 
@@ -2871,10 +2880,195 @@ begin
   {$ENDIF}
 end;
 
+{------------------------------------------------------------------------------
+  Wake-from-sleep notification (Linux)
+  ------------------------------------
+  systemd-logind broadcasts org.freedesktop.login1.Manager.PrepareForSleep
+  on the system bus: argument=true just before suspend, argument=false when
+  resuming. We spawn `gdbus monitor` on a background thread and watch its
+  stdout for the false transition, then queue the user callback on the
+  main thread. If gdbus is missing we silently no-op — the existing timer
+  gap detection in tMainTimer remains as a fallback.
+ ------------------------------------------------------------------------------}
+type
+  TWakeBridge = class
+    Callback: TTrndiWakeCallback;
+    Pending: boolean;
+    procedure Fire(Data: PtrInt);
+  end;
+
+  TWakeMonitorThread = class(TThread)
+  private
+    FProc: TProcess;
+  protected
+    procedure Execute; override;
+  public
+    constructor Create;
+    destructor Destroy; override;
+    procedure StopMonitor;
+  end;
+
+var
+  gWakeThread: TWakeMonitorThread = nil;
+  gWakeBridge: TWakeBridge = nil;
+
+procedure TWakeBridge.Fire(Data: PtrInt);
+begin
+  Pending := false;
+  if Assigned(Callback) then
+    try
+      Callback();
+    except
+      // Don't propagate user callback exceptions through the message loop
+    end;
+end;
+
+constructor TWakeMonitorThread.Create;
+begin
+  inherited Create(true);
+  FreeOnTerminate := false;
+  FProc := nil;
+end;
+
+destructor TWakeMonitorThread.Destroy;
+begin
+  if Assigned(FProc) then
+    FProc.Free;
+  inherited Destroy;
+end;
+
+procedure TWakeMonitorThread.StopMonitor;
+begin
+  Terminate;
+  if Assigned(FProc) then
+    try
+      if FProc.Running then
+        FProc.Terminate(0);
+    except
+    end;
+end;
+
+procedure TWakeMonitorThread.Execute;
+var
+  buf: array[0..2047] of byte;
+  n: SizeInt;
+  acc: string;
+  nl: SizeInt;
+  line, low: string;
+begin
+  acc := '';
+  FProc := TProcess.Create(nil);
+  try
+    try
+      FProc.Executable := 'gdbus';
+      FProc.Parameters.Add('monitor');
+      FProc.Parameters.Add('--system');
+      FProc.Parameters.Add('--dest');
+      FProc.Parameters.Add('org.freedesktop.login1');
+      FProc.Parameters.Add('--object-path');
+      FProc.Parameters.Add('/org/freedesktop/login1');
+      FProc.Options := [poUsePipes, poNoConsole, poStderrToOutPut];
+      FProc.Execute;
+    except
+      // gdbus missing or failed to spawn — leave the thread idle
+      Exit;
+    end;
+
+    while (not Terminated) and FProc.Running do
+    begin
+      if FProc.Output.NumBytesAvailable > 0 then
+      begin
+        n := FProc.Output.Read(buf, SizeOf(buf));
+        if n > 0 then
+        begin
+          SetLength(line, n);
+          Move(buf[0], line[1], n);
+          acc := acc + line;
+          repeat
+            nl := Pos(#10, acc);
+            if nl = 0 then Break;
+            line := Copy(acc, 1, nl - 1);
+            Delete(acc, 1, nl);
+            low := LowerCase(line);
+            // gdbus monitor emits e.g.
+            //   /org/freedesktop/login1: org.freedesktop.login1.Manager.PrepareForSleep (false,)
+            // True => about to sleep; false => resumed. Fire on false.
+            if (Pos('prepareforsleep', low) > 0)
+               and (Pos('false', low) > 0) then
+            begin
+              if Assigned(gWakeBridge) and (not gWakeBridge.Pending) then
+              begin
+                gWakeBridge.Pending := true;
+                Application.QueueAsyncCall(@gWakeBridge.Fire, 0);
+              end;
+            end;
+          until false;
+        end;
+      end
+      else
+        Sleep(200);
+    end;
+  finally
+    try
+      if FProc.Running then
+        FProc.Terminate(0);
+    except
+    end;
+  end;
+end;
+
+procedure TTrndiNativeLinux.RegisterWakeCallback(const Callback: TTrndiWakeCallback);
+begin
+  inherited RegisterWakeCallback(Callback);
+  if gWakeBridge = nil then
+    gWakeBridge := TWakeBridge.Create;
+  gWakeBridge.Callback := Callback;
+  if not Assigned(Callback) then
+  begin
+    UnregisterWakeCallback;
+    Exit;
+  end;
+  if FindInPath('gdbus') = '' then
+  begin
+    TrndiDLog('RegisterWakeCallback: gdbus not in PATH; wake detection disabled');
+    Exit;
+  end;
+  if gWakeThread = nil then
+  begin
+    gWakeThread := TWakeMonitorThread.Create;
+    gWakeThread.Start;
+  end;
+end;
+
+procedure TTrndiNativeLinux.UnregisterWakeCallback;
+begin
+  if gWakeThread <> nil then
+  begin
+    gWakeThread.StopMonitor;
+    gWakeThread.WaitFor;
+    FreeAndNil(gWakeThread);
+  end;
+  if Assigned(gWakeBridge) then
+    gWakeBridge.Callback := nil;
+  inherited UnregisterWakeCallback;
+end;
+
 initialization
   // libcurl requires a one-shot global init before any per-handle use, ideally
   // before threads start. Doing it here (rather than lazily on first request)
   // means the first HTTP call on this platform can't race with init.
   curl_global_init(CURL_GLOBAL_DEFAULT);
+
+finalization
+  if gWakeThread <> nil then
+  begin
+    try
+      gWakeThread.StopMonitor;
+      gWakeThread.WaitFor;
+      FreeAndNil(gWakeThread);
+    except
+    end;
+  end;
+  FreeAndNil(gWakeBridge);
 
 end.

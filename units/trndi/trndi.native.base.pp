@@ -59,6 +59,10 @@ TWSLVersion = (wslNone, wslVersion1, wslVersion2, wslUnknown);
   {** Ternary-style boolean with Unset/Unknown states for user overrides. }
 TTrndiBool = (tbUnset, tbTrue, tbFalse, tbUnknown);
 
+  {** Callback fired when the OS signals a wake-from-sleep event. Always
+      delivered on the main (UI) thread — platform units marshal as needed. }
+TTrndiWakeCallback = procedure of object;
+
 {$ifdef X_LINUXBSD}
   {** Information about a WSL environment (Windows Subsystem for Linux). }
 TWSLInfo = record
@@ -101,6 +105,10 @@ protected
   {** Build a storage key. If not @param(global), prepend the current
     @code(configUser) with an underscore. }
   function buildKey(const key: string; global: boolean): string;
+protected
+    // Stored wake callback; platform overrides invoke this when the OS
+    // reports a resume-from-sleep event.
+  FWakeCallback: TTrndiWakeCallback;
 public
     // Config
   noFree: boolean;
@@ -334,6 +342,17 @@ class var touchOverride: TTrndiBool;
   procedure start;
     {** Optional shutdown hook; platform units may override. }
   procedure done;
+    {** Register a callback to be fired on OS wake-from-sleep. Only one
+        callback may be active at a time; a second call replaces the first.
+        Pass @code(nil) (or call @link(UnregisterWakeCallback)) to stop
+        listening. Platform units override to subscribe to the appropriate
+        OS event (Windows: WM_POWERBROADCAST, macOS: NSWorkspaceDidWake,
+        Linux: org.freedesktop.login1 PrepareForSleep). The base
+        implementation just stores the callback so a no-op platform still
+        compiles. }
+  procedure RegisterWakeCallback(const Callback: TTrndiWakeCallback); virtual;
+    {** Stop listening for wake events and clear the registered callback. }
+  procedure UnregisterWakeCallback; virtual;
     {** Signal the start of a long-running update operation; platform units may
         show a progress indicator (taskbar, dock, etc.). Default no-op. }
   procedure updateBegin; virtual;
@@ -820,6 +839,18 @@ end;
 procedure TTrndiNativeBase.done;
 begin
   // No-op default; platforms override.
+end;
+
+procedure TTrndiNativeBase.RegisterWakeCallback(const Callback: TTrndiWakeCallback);
+begin
+  // Base stores the callback; platform units override to also subscribe
+  // to the native power-event source.
+  FWakeCallback := Callback;
+end;
+
+procedure TTrndiNativeBase.UnregisterWakeCallback;
+begin
+  FWakeCallback := nil;
 end;
 
 procedure TTrndiNativeBase.updateBegin;

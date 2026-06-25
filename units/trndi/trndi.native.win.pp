@@ -175,6 +175,16 @@ public
   {** Windows-flavoured shell-dangerous chars check (excludes backslash, since
       it is the path separator). }
   class function HasDangerousChars(const FileName: string): boolean; override;
+  {** Subclass the main form's WndProc to catch @code(WM_POWERBROADCAST)
+      / @code(PBT_APMRESUMESUSPEND) and invoke the wake callback on the
+      main thread. Also calls @code(RegisterSuspendResumeNotification) on
+      Windows 8+ so the message is reliably delivered even when no other
+      app listens. Safe to call multiple times — replaces the prior
+      callback. }
+  procedure RegisterWakeCallback(const Callback: TTrndiWakeCallback); override;
+  {** Unhook the WndProc subclass and release the suspend/resume
+      notification registration. }
+  procedure UnregisterWakeCallback; override;
 end;
 
 implementation
@@ -2983,6 +2993,138 @@ begin
     end;
 end;
 
+{------------------------------------------------------------------------------
+  Wake-from-sleep notification (Windows)
+  --------------------------------------
+  Hook the main form's WndProc to catch WM_POWERBROADCAST and additionally
+  register for suspend/resume notifications on Windows 8+ so the message is
+  reliably delivered. Only one process-wide hook is supported — a second
+  Register call replaces the first.
+ ------------------------------------------------------------------------------}
+const
+  WM_POWERBROADCAST_CONST = $0218;
+  PBT_APMSUSPEND          = $0004;
+  PBT_APMRESUMESUSPEND    = $0007;
+  PBT_APMRESUMEAUTOMATIC  = $0012;
+  DEVICE_NOTIFY_WINDOW_HANDLE = $00000000;
+
+function RegisterSuspendResumeNotification(hRecipient: THandle;
+  Flags: DWORD): THandle; stdcall; external 'user32.dll' name 'RegisterSuspendResumeNotification';
+function UnregisterSuspendResumeNotification(Handle: THandle): BOOL; stdcall;
+  external 'user32.dll' name 'UnregisterSuspendResumeNotification';
+
+type
+  // Tiny bridge object so we can hand Application.QueueAsyncCall a real
+  // method-of-object pointer from the global WndProc.
+  TWakeBridge = class
+    Callback: TTrndiWakeCallback;
+    Pending: boolean;
+    procedure Fire(Data: PtrInt);
+  end;
+
+procedure TWakeBridge.Fire(Data: PtrInt);
+begin
+  Pending := false;
+  if Assigned(Callback) then
+    try
+      Callback();
+    except
+      // Never let a callback exception unwind into the message loop
+    end;
+end;
+
+var
+  gWakeBridge: TWakeBridge = nil;
+  gOldWndProc: PtrInt = 0;
+  gHookedHWnd: HWND = 0;
+  gPowerNotify: THandle = 0;
+
+function WakeHookWndProc(hWnd: HWND; uMsg: UINT;
+  wParam: WPARAM; lParam: LPARAM): LRESULT; stdcall;
+begin
+  if (uMsg = WM_POWERBROADCAST_CONST) and
+     ((wParam = PBT_APMRESUMESUSPEND) or (wParam = PBT_APMRESUMEAUTOMATIC)) then
+  begin
+    // Coalesce: Windows may deliver both RESUMEAUTOMATIC and RESUMESUSPEND.
+    // Re-arm only after the previous async fire completes.
+    if Assigned(gWakeBridge) and (not gWakeBridge.Pending) then
+    begin
+      gWakeBridge.Pending := true;
+      Application.QueueAsyncCall(@gWakeBridge.Fire, 0);
+    end;
+  end;
+  Result := CallWindowProc(Windows.WNDPROC(gOldWndProc), hWnd, uMsg, wParam, lParam);
+end;
+
+procedure UnhookWakeWindow;
+begin
+  if (gHookedHWnd <> 0) and (gOldWndProc <> 0) then
+  begin
+    SetWindowLongPtr(gHookedHWnd, GWL_WNDPROC, gOldWndProc);
+    gOldWndProc := 0;
+  end;
+  if gPowerNotify <> 0 then
+  begin
+    try
+      UnregisterSuspendResumeNotification(gPowerNotify);
+    except
+      // API may not exist on pre-Win8; ignore
+    end;
+    gPowerNotify := 0;
+  end;
+  gHookedHWnd := 0;
+end;
+
+procedure TTrndiNativeWindows.RegisterWakeCallback(const Callback: TTrndiWakeCallback);
+var
+  targetHWnd: HWND;
+begin
+  inherited RegisterWakeCallback(Callback);
+  if gWakeBridge = nil then
+    gWakeBridge := TWakeBridge.Create;
+  gWakeBridge.Callback := Callback;
+  if not Assigned(Callback) then
+  begin
+    UnhookWakeWindow;
+    Exit;
+  end;
+  if (Application = nil) or (Application.MainForm = nil)
+     or (not Application.MainForm.HandleAllocated) then
+  begin
+    // No window yet — store the callback; caller should re-register after
+    // the main form's handle is allocated (umain.pp does this in FormShow).
+    Exit;
+  end;
+  targetHWnd := Application.MainForm.Handle;
+  if gHookedHWnd <> 0 then
+  begin
+    if gHookedHWnd = targetHWnd then
+      Exit; // already hooked the same window
+    UnhookWakeWindow;
+  end;
+  gHookedHWnd := targetHWnd;
+  gOldWndProc := SetWindowLongPtr(targetHWnd, GWL_WNDPROC,
+    PtrInt(@WakeHookWndProc));
+  // Best-effort: register for suspend/resume notifications on Win8+ so
+  // the WM_POWERBROADCAST is delivered reliably even when no other app
+  // listens. Silently no-op on older Windows where the API is absent.
+  if gPowerNotify = 0 then
+    try
+      gPowerNotify := RegisterSuspendResumeNotification(targetHWnd,
+        DEVICE_NOTIFY_WINDOW_HANDLE);
+    except
+      gPowerNotify := 0;
+    end;
+end;
+
+procedure TTrndiNativeWindows.UnregisterWakeCallback;
+begin
+  UnhookWakeWindow;
+  if Assigned(gWakeBridge) then
+    gWakeBridge.Callback := nil;
+  inherited UnregisterWakeCallback;
+end;
+
 finalization
   try
     // Ensure the background speech worker is cleanly stopped on shutdown so
@@ -2991,6 +3133,11 @@ finalization
   except
     // Swallow exceptions during finalization to avoid raising at process exit
   end;
+  try
+    UnhookWakeWindow;
+  except
+  end;
+  FreeAndNil(gWakeBridge);
   FreeAndNil(gOriginalAppIcon);
 
 end.

@@ -591,6 +591,7 @@ private
   procedure tBootFetchTimer(Sender: TObject);
   procedure tBootSpinnerTimer(Sender: TObject);
   procedure StopBootSpinner;
+  procedure OnSystemWake;
   procedure DeferredPostFetchResize(Data: PtrInt);
 
   function dotsInView: integer;
@@ -1122,6 +1123,15 @@ procedure TfBG.FormDestroy({%H-}Sender: TObject);
 begin
   // Ensure shutdown flag is set
   FShuttingDown := true;
+
+  // Detach OS power-event hooks before we tear down `native` and before
+  // the form's HWND/Cocoa peer goes away (Windows subclasses the WndProc,
+  // so leaving it hooked across destruction would crash on the next message).
+  if Assigned(native) then
+    try
+      native.UnregisterWakeCallback;
+    except
+    end;
 
   ShutdownBackgroundThreads;
 
@@ -1715,6 +1725,11 @@ begin
     tUpdateCheck.OnTimer := @tUpdateCheckTimer;
     tUpdateCheck.Enabled := true;
   end;
+
+  // Subscribe to OS wake-from-sleep events. Done in FormShow so the main
+  // form's window handle is allocated (Windows path subclasses its WndProc).
+  if Assigned(native) then
+    native.RegisterWakeCallback(@OnSystemWake);
 end;
 {$ifdef DARWIN}
 procedure TfBG.ToggleFullscreenMac;
