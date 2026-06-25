@@ -37,6 +37,114 @@ function LocalAlphaBlend(
   stdcall; external 'msimg32' name 'AlphaBlend';
 {$endif}
 
+// Antialiased X mark, same compositing approach as DrawSmoothCircle. Two
+// corner-to-corner diagonals clipped by the bounding box; alpha derives from
+// the analytical distance to the nearest diagonal so the strokes stay smooth
+// at small sizes without relying on GDI's aliased LineTo.
+procedure DrawSmoothX(ACanvas: TCanvas; ASize: integer; AColor: TColor;
+  AThickness: integer; AOffsetX: integer = 0; AOffsetY: integer = 0);
+var
+  intf: TLazIntfImage;
+  rawDesc: TRawImageDescription;
+  x, y: integer;
+  cx, cy, dist1, dist2, dist, halfT, aPix, invSqrt2: double;
+  fr, fg, fb: byte;
+  outR, outG, outB, outA: integer;
+  pix: TFPColor;
+  {$ifdef Windows}
+  bmp: TBitmap;
+  blend: TLocalBlendFunction;
+  {$else}
+  png: TPortableNetworkGraphic;
+  {$endif}
+begin
+  if (ASize < 2) or (AThickness < 1) then
+    Exit;
+
+  fr := Red(ColorToRGB(AColor));
+  fg := Green(ColorToRGB(AColor));
+  fb := Blue(ColorToRGB(AColor));
+
+  cx := (ASize - 1) / 2.0;
+  cy := (ASize - 1) / 2.0;
+  halfT := AThickness / 2.0;
+  invSqrt2 := 1.0 / Sqrt(2);
+
+  intf := TLazIntfImage.Create(0, 0);
+  try
+    rawDesc.Init_BPP32_B8G8R8A8_BIO_TTB(ASize, ASize);
+    intf.DataDescription := rawDesc;
+    intf.CreateData;
+
+    for y := 0 to ASize - 1 do
+      for x := 0 to ASize - 1 do
+      begin
+        dist1 := Abs((x - cx) - (y - cy)) * invSqrt2;
+        dist2 := Abs((x - cx) + (y - cy)) * invSqrt2;
+        if dist1 < dist2 then dist := dist1 else dist := dist2;
+
+        if dist <= halfT - 0.5 then
+          aPix := 1.0
+        else if dist >= halfT + 0.5 then
+          aPix := 0.0
+        else
+          aPix := halfT + 0.5 - dist;
+
+        if aPix < 0 then aPix := 0
+        else if aPix > 1 then aPix := 1;
+
+        {$ifdef Windows}
+        outR := Round(fr * aPix);
+        outG := Round(fg * aPix);
+        outB := Round(fb * aPix);
+        {$else}
+        outR := fr;
+        outG := fg;
+        outB := fb;
+        {$endif}
+        outA := Round(aPix * 255);
+
+        if outR > 255 then outR := 255 else if outR < 0 then outR := 0;
+        if outG > 255 then outG := 255 else if outG < 0 then outG := 0;
+        if outB > 255 then outB := 255 else if outB < 0 then outB := 0;
+        if outA > 255 then outA := 255 else if outA < 0 then outA := 0;
+
+        pix.red := outR shl 8 or outR;
+        pix.green := outG shl 8 or outG;
+        pix.blue := outB shl 8 or outB;
+        pix.alpha := outA shl 8 or outA;
+        intf.Colors[x, y] := pix;
+      end;
+
+    {$ifdef Windows}
+    bmp := TBitmap.Create;
+    try
+      bmp.PixelFormat := pf32bit;
+      bmp.SetSize(ASize, ASize);
+      bmp.LoadFromIntfImage(intf);
+      blend.BlendOp := LOCAL_AC_SRC_OVER;
+      blend.BlendFlags := 0;
+      blend.SourceConstantAlpha := 255;
+      blend.AlphaFormat := LOCAL_AC_SRC_ALPHA;
+      LocalAlphaBlend(ACanvas.Handle, AOffsetX, AOffsetY, ASize, ASize,
+                      bmp.Canvas.Handle, 0, 0, ASize, ASize, blend);
+    finally
+      bmp.Free;
+    end;
+    {$else}
+    png := TPortableNetworkGraphic.Create;
+    try
+      png.LoadFromIntfImage(intf);
+      ACanvas.Draw(AOffsetX, AOffsetY, png);
+    finally
+      png.Free;
+    end;
+    {$endif}
+  finally
+    intf.Free;
+  end;
+end;
+
 procedure DrawSmoothCircle(ACanvas: TCanvas; ASize: integer;
   ADotColor, ARingColor: TColor; ARingWidth: integer; AHollow: boolean = false;
   AOffsetX: integer = 0; AOffsetY: integer = 0);
@@ -208,8 +316,8 @@ procedure TfBG.DotPaint(Sender: TObject);
 var
   S, fontn: string;
   L: TDotControl;
-  d, ringWidth, smallD, offset: integer;
-  dotColor, outlineColor: TColor;
+  d, ringWidth: integer;
+  dotColor: TColor;
 begin
   L := Sender as TDotControl;
   S := L.Caption;
@@ -225,19 +333,11 @@ begin
     dotColor := L.Font.Color;
     if S = DOT_PREDICT then
     begin
-      // Two-part prediction marker: a full-slot hollow ring in a lightened
-      // range color (so the prediction occupies the same visual footprint as
-      // the history dots) wraps a smaller filled inner dot painted in the
-      // unmodified trend color. The inner dot reads identically to a normal
-      // trend reading; the lighter outer ring marks it as a prediction while
-      // the hue keeps the hi/ok/lo signal.
-      outlineColor := LightenColor(dotColor, 0.55);
-      DrawSmoothCircle(L.Canvas, d, outlineColor, outlineColor,
-                       Max(2, d div 8), true);
-      smallD := Max(4, d div 2);
-      offset := (d - smallD) div 2;
-      DrawSmoothCircle(L.Canvas, smallD, dotColor, dotColor, 0, false,
-                       offset, offset);
+      // Full-slot X mark — same visual footprint as the history dots, in the
+      // unmodified range color so hi/ok/lo still reads via hue. The X shape
+      // is what tells the user this is a prediction rather than a measured
+      // reading.
+      DrawSmoothX(L.Canvas, d, dotColor, Max(2, d div 6));
       Exit;
     end;
 
