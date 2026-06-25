@@ -565,7 +565,6 @@ private
   FWarnSeverity: TWarnSeverity; // Current warning level — drives layout in fixWarningPanel
   FWarnExpanded: boolean;       // Inline-expand toggle (set by pnWarningClick)
   FWarnBannerBaseH: integer;    // Collapsed banner height (px) — read by pnWarningPaint
-  FLastTimerTick: TDateTime; // Last timer tick for wake detection
   FForceRefresh: boolean; // Force bypass of cached API reads on wake
   FLastFetchHadData: boolean; // true when last API call returned ≥1 readings (used to avoid reusing cache after an empty fetch)
   FCachedReadingsValid: boolean; // Fast-path flag to avoid lock when cache is empty (volatile-like)
