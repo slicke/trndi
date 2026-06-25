@@ -725,48 +725,26 @@ end;
 
 // Update remote on timer
 procedure TfBG.tMainTimer(Sender: TObject);
-var
-  nowTick: TDateTime;
-  gapSeconds: int64;
-  expectedSeconds: int64;
 begin
-  nowTick := Now;
-  if FLastTimerTick > 0 then
-  begin
-    gapSeconds := SecondsBetween(nowTick, FLastTimerTick);
-    expectedSeconds := Max(1, tMain.Interval div 1000);
-    if gapSeconds > (expectedSeconds * 2) then
-    begin
-      FForceRefresh := true;
-      TrndiDLog(Format('Wake detected: timer gap %d sec (expected ~%d sec). Forcing refresh.',
-        [gapSeconds, expectedSeconds]));
-    end;
-  end;
-  FLastTimerTick := nowTick;
-
   updateReading;
   {$ifdef TrndiExt}
-  callFuncWithBGReadings('updateCallback', [DateTimeToStr(nowTick)]);
+  callFuncWithBGReadings('updateCallback', [DateTimeToStr(Now)]);
   {$endif}
 end;
 
 // Fired by trndi.native when the OS reports a resume-from-sleep event.
 // Always invoked on the main thread (platform units marshal via
-// Application.QueueAsyncCall). Without this hook the only wake recovery
-// is the gap-detection in tMainTimer, which only runs the next time the
-// timer actually fires — after a long sleep that can be minutes away.
-//
-// We force the next fetch to bypass the cache and kick updateReading
-// immediately. The network may not be ready yet (Wi-Fi reassociation
-// takes a few seconds on resume); the fetch worker handles failures, and
-// the existing tMain/tMissed cadence retries shortly after.
+// Application.QueueAsyncCall). Forces the next fetch to bypass the cache
+// and kicks updateReading immediately. The network may not be ready yet
+// (Wi-Fi reassociation takes a few seconds on resume); the fetch worker
+// handles failures, and the existing tMain/tMissed cadence retries
+// shortly after.
 procedure TfBG.OnSystemWake;
 begin
   if FShuttingDown then
     Exit;
   TrndiDLog('OnSystemWake: OS reported resume-from-sleep — forcing refresh');
   FForceRefresh := true;
-  FLastTimerTick := 0; // reset so the gap heuristic doesn't double-fire
   if firstboot then
     Exit;
   updateReading;
