@@ -99,12 +99,24 @@ rm -f Trndi.dmg
 
 DMG_BG_ARG=()
 if [ -f "macos_dmg_background.swift" ] && command -v swift >/dev/null 2>&1; then
-  if swift macos_dmg_background.swift macos/dmg-background.png 2>/dev/null; then
-    DMG_BG_ARG=(--background "macos/dmg-background.png")
+  if swift macos_dmg_background.swift macos/dmg-background.png; then
+    if [ -f "macos/dmg-background.png" ]; then
+      DMG_BG_ARG=(--background "macos/dmg-background.png")
+      echo "DMG background generated: macos/dmg-background.png"
+    else
+      echo "WARN: swift exited 0 but macos/dmg-background.png is missing" >&2
+    fi
+  else
+    echo "WARN: swift failed to generate DMG background; proceeding without it" >&2
   fi
+else
+  echo "WARN: swift not available or background script missing; no DMG background" >&2
 fi
 
 create-dmg Trndi.dmg "macos/stage" --volname "Trndi" --format UDZO --window-size 600 400 "${DMG_BG_ARG[@]}" --icon-size 128 --icon "Trndi.app" 150 200 --icon "README.txt" 300 340 --app-drop-link 450 200 --out "Trndi.dmg" 2>&1 | grep -v "internet-enable"
 
-rm -f rw*Trndi*.dmg 2>/dev/null || true
+# Zsh's default nomatch behavior aborts the script when a glob has no matches,
+# even with `|| true`. The (N) glob qualifier enables null_glob for this one
+# pattern, so it expands to nothing instead of erroring.
+rm -f rw*Trndi*.dmg(N)
 rm -rf macos
