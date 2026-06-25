@@ -1,6 +1,8 @@
 #!/usr/bin/env swift
-import AppKit
+import Foundation
 import CoreGraphics
+import ImageIO
+import CoreServices
 
 let width = 600
 let height = 400
@@ -61,15 +63,13 @@ guard let cgImage = ctx.makeImage() else {
     exit(1)
 }
 
-let bitmap = NSBitmapImageRep(cgImage: cgImage)
-guard let data = bitmap.representation(using: .png, properties: [:]) else {
-    fputs("Failed to encode PNG\n", stderr)
+let url = URL(fileURLWithPath: outputPath) as CFURL
+guard let destination = CGImageDestinationCreateWithURL(url, kUTTypePNG, 1, nil) else {
+    fputs("Failed to create CGImageDestination at \(outputPath)\n", stderr)
     exit(1)
 }
-
-do {
-    try data.write(to: URL(fileURLWithPath: outputPath))
-} catch {
-    fputs("Write failed: \(error)\n", stderr)
+CGImageDestinationAddImage(destination, cgImage, nil)
+if !CGImageDestinationFinalize(destination) {
+    fputs("Failed to finalize PNG at \(outputPath)\n", stderr)
     exit(1)
 }

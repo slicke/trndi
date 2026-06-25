@@ -149,8 +149,15 @@ rm -f Trndi.dmg
 
 DMG_BG_ARG=()
 if [ -f "${SCRIPT_DIR}/macos_dmg_background.swift" ] && command -v swift >/dev/null 2>&1; then
-  if swift "${SCRIPT_DIR}/macos_dmg_background.swift" macos/dmg-background.png 2>/dev/null; then
-    DMG_BG_ARG=(--background "macos/dmg-background.png")
+  if swift "${SCRIPT_DIR}/macos_dmg_background.swift" macos/dmg-background.png; then
+    if [ -f "macos/dmg-background.png" ]; then
+      DMG_BG_ARG=(--background "macos/dmg-background.png")
+      echo "DMG background generated: macos/dmg-background.png"
+    else
+      echo "WARN: swift exited 0 but macos/dmg-background.png is missing" >&2
+    fi
+  else
+    echo "WARN: swift failed to generate DMG background; proceeding without it" >&2
   fi
 fi
 
@@ -290,7 +297,7 @@ if [ ! -f "Trndi.dmg" ]; then
   exit 1
 fi
 
-rm -f rw*Trndi*.dmg
+rm -f rw*Trndi*.dmg(N)
 rm -rf macos
 
 echo "Created: $(pwd)/Trndi.dmg"
