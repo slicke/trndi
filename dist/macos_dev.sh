@@ -142,7 +142,17 @@ chmod 644 "macos/Trndi.app/Contents/Info.plist"
 # Create DMG
 mkdir -p macos/stage
 cp -R macos/Trndi.app macos/stage/
+if [ -f "${SCRIPT_DIR}/macos_README.txt" ]; then
+  cp "${SCRIPT_DIR}/macos_README.txt" "macos/stage/README.txt"
+fi
 rm -f Trndi.dmg
+
+DMG_BG_ARG=()
+if [ -f "${SCRIPT_DIR}/macos_dmg_background.swift" ] && command -v swift >/dev/null 2>&1; then
+  if swift "${SCRIPT_DIR}/macos_dmg_background.swift" macos/dmg-background.png 2>/dev/null; then
+    DMG_BG_ARG=(--background "macos/dmg-background.png")
+  fi
+fi
 
 # Track DMGs created during create-dmg run (some create-dmg variants may not
 # write exactly ./Trndi.dmg even if they succeed).
@@ -190,21 +200,21 @@ if command -v create-dmg >/dev/null 2>&1; then
   if grep -q -- "--out" "${CREATE_DMG_HELP_LOG}" 2>/dev/null; then
     # Matches CI script style.
     run_create_dmg_attempt "with --out (CI style)" \
-      create-dmg Trndi.dmg "macos/stage" --volname "Trndi" --format UDZO --icon-size 128 --icon "Trndi.app" 150 200 --app-drop-link 250 200 --out "Trndi.dmg" || CREATE_DMG_EXIT=$?
+      create-dmg Trndi.dmg "macos/stage" --volname "Trndi" --format UDZO --window-size 600 400 "${DMG_BG_ARG[@]}" --icon-size 128 --icon "Trndi.app" 150 200 --icon "README.txt" 300 340 --app-drop-link 450 200 --out "Trndi.dmg" || CREATE_DMG_EXIT=$?
   else
     # Common upstream style.
     run_create_dmg_attempt "without --out" \
-      create-dmg "Trndi.dmg" "macos/stage" --volname "Trndi" --format UDZO --icon-size 128 --icon "Trndi.app" 150 200 --app-drop-link 250 200 || CREATE_DMG_EXIT=$?
+      create-dmg "Trndi.dmg" "macos/stage" --volname "Trndi" --format UDZO --window-size 600 400 "${DMG_BG_ARG[@]}" --icon-size 128 --icon "Trndi.app" 150 200 --icon "README.txt" 300 340 --app-drop-link 450 200 || CREATE_DMG_EXIT=$?
   fi
 
   # If the first attempt failed, try the other style as a fallback.
   if [ ${CREATE_DMG_EXIT} -ne 0 ]; then
     if grep -q -- "--out" "${CREATE_DMG_HELP_LOG}" 2>/dev/null; then
       run_create_dmg_attempt "without --out (fallback)" \
-        create-dmg "Trndi.dmg" "macos/stage" --volname "Trndi" --format UDZO --icon-size 128 --icon "Trndi.app" 150 200 --app-drop-link 250 200 || CREATE_DMG_EXIT=$?
+        create-dmg "Trndi.dmg" "macos/stage" --volname "Trndi" --format UDZO --window-size 600 400 "${DMG_BG_ARG[@]}" --icon-size 128 --icon "Trndi.app" 150 200 --icon "README.txt" 300 340 --app-drop-link 450 200 || CREATE_DMG_EXIT=$?
     else
       run_create_dmg_attempt "with --out (fallback)" \
-        create-dmg Trndi.dmg "macos/stage" --volname "Trndi" --format UDZO --icon-size 128 --icon "Trndi.app" 150 200 --app-drop-link 250 200 --out "Trndi.dmg" || CREATE_DMG_EXIT=$?
+        create-dmg Trndi.dmg "macos/stage" --volname "Trndi" --format UDZO --window-size 600 400 "${DMG_BG_ARG[@]}" --icon-size 128 --icon "Trndi.app" 150 200 --icon "README.txt" 300 340 --app-drop-link 450 200 --out "Trndi.dmg" || CREATE_DMG_EXIT=$?
     fi
   fi
 fi
