@@ -92,9 +92,19 @@ chmod 644 "macos/Trndi.app/Contents/Info.plist"
 # Create DMG
 mkdir -p macos/stage
 cp -R macos/Trndi.app macos/stage/
+if [ -f "macos_README.txt" ]; then
+  cp macos_README.txt "macos/stage/README.txt"
+fi
 rm -f Trndi.dmg
 
-create-dmg Trndi.dmg "macos/stage" --volname "Trndi" --format UDZO --icon-size 128 --icon "Trndi.app" 150 200 --app-drop-link 250 200 --out "Trndi.dmg" 2>&1 | grep -v "internet-enable"
+DMG_BG_ARG=()
+if [ -f "macos_dmg_background.swift" ] && command -v swift >/dev/null 2>&1; then
+  if swift macos_dmg_background.swift macos/dmg-background.png 2>/dev/null; then
+    DMG_BG_ARG=(--background "macos/dmg-background.png")
+  fi
+fi
+
+create-dmg Trndi.dmg "macos/stage" --volname "Trndi" --format UDZO --window-size 600 400 "${DMG_BG_ARG[@]}" --icon-size 128 --icon "Trndi.app" 150 200 --icon "README.txt" 300 340 --app-drop-link 450 200 --out "Trndi.dmg" 2>&1 | grep -v "internet-enable"
 
 rm -f rw*Trndi*.dmg 2>/dev/null || true
 rm -rf macos
