@@ -393,6 +393,10 @@ msgstr "Varsle meg når avlesninger mangler / ikke er ferske"
 msgid "Alternate arrow and reading display"
 msgstr "Bytt mellom pil og avlesning"
 
+#: tfconf.cbautostart.caption
+msgid "Start with system"
+msgstr ""
+
 #: tfconf.cbchroma.caption
 msgid "Enable Razer Chroma integration"
 msgstr "Aktiver Razer Chroma-integrasjon"

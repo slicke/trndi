@@ -18,12 +18,12 @@ object fConf: TfConf
     Height = 590
     Top = 11
     Width = 645
-    ActivePage = tsDisplay
+    ActivePage = tsSystem
     Align = alClient
     BorderSpacing.Left = 10
     BorderSpacing.Right = 10
     BorderSpacing.Around = 5
-    TabIndex = 3
+    TabIndex = 10
     TabOrder = 0
     OnChange = pcMainChange
     object tsCommon: TTabSheet
@@ -3460,13 +3460,13 @@ object fConf: TfConf
         end
         object GroupBox1: TGroupBox
           Left = 10
-          Height = 137
-          Top = 217
+          Height = 161
+          Top = 193
           Width = 617
           Align = alBottom
           BorderSpacing.Around = 10
           Caption = 'System Features'
-          ClientHeight = 117
+          ClientHeight = 141
           ClientWidth = 613
           ParentBackground = False
           TabOrder = 1
@@ -3499,12 +3499,12 @@ object fConf: TfConf
           end
           object pnHelp: TPanel
             Left = 443
-            Height = 117
+            Height = 141
             Top = 0
             Width = 170
             Align = alRight
             BevelOuter = bvNone
-            ClientHeight = 117
+            ClientHeight = 141
             ClientWidth = 170
             ParentBackground = False
             TabOrder = 3
@@ -3543,6 +3543,14 @@ object fConf: TfConf
             Width = 101
             Caption = 'Enable Web API'
             TabOrder = 4
+          end
+          object cbAutoStart: TCheckBox
+            Left = 8
+            Height = 19
+            Top = 104
+            Width = 108
+            Caption = 'Start with system'
+            TabOrder = 5
           end
         end
         object gbSettings: TGroupBox
