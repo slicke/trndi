@@ -462,26 +462,36 @@ jobs:
           Copy-Item '.\Trndi.exe' -Destination '.\artifacts\'
           if (Test-Path '.\lang') { Copy-Item '.\lang' -Destination '.\artifacts\lang' -Recurse }
           & 'C:\Program Files\7-Zip\7z.exe' a -tzip 'Trndi-windows-x64.zip' .\artifacts\* | Out-Null
-          # If this is a pull request build, skip Windows installers and NuGet publish
+          # Determine unified package version from Trndi.lpi (Major.Minor.<build>).
+          # On main: build number from the version job. On PRs: PR number (so the
+          # installer's embedded VersionInfo is numeric and unique per PR).
+          [xml]$lpi = Get-Content 'Trndi.lpi'
+          $MAJOR = $lpi.CONFIG.ProjectOptions.VersionInfo.MajorVersionNr.Value
+          $MINOR = $lpi.CONFIG.ProjectOptions.VersionInfo.MinorVersionNr.Value
+          if ([string]::IsNullOrEmpty($MAJOR)) { $MAJOR = "0" }
+          if ([string]::IsNullOrEmpty($MINOR)) { $MINOR = "0" }
           if ("${{ github.event_name }}" -eq "pull_request") {
-            Write-Host "PR build detected: skipping Inno Setup installer and NuGet packaging/publish"
+            $INSTALLER_BUILD = "${{ github.event.pull_request.number }}"
+          } elseif ("${{ needs.version.outputs.build_number }}") {
+            $INSTALLER_BUILD = "${{ needs.version.outputs.build_number }}"
           } else {
-            # Determine unified package version from Trndi.lpi (Major.Minor.<build>),
-            # matching the scheme used for Linux packages and NuGet.
-            [xml]$lpi = Get-Content 'Trndi.lpi'
-            $MAJOR = $lpi.CONFIG.ProjectOptions.VersionInfo.MajorVersionNr.Value
-            $MINOR = $lpi.CONFIG.ProjectOptions.VersionInfo.MinorVersionNr.Value
-            if ([string]::IsNullOrEmpty($MAJOR)) { $MAJOR = "0" }
-            if ([string]::IsNullOrEmpty($MINOR)) { $MINOR = "0" }
-            $PKG_VERSION = "$MAJOR.$MINOR.${{ needs.version.outputs.build_number }}"
-            Write-Host "Packaging version: $PKG_VERSION"
+            $INSTALLER_BUILD = "0"
+          }
+          $PKG_VERSION = "$MAJOR.$MINOR.$INSTALLER_BUILD"
+          Write-Host "Packaging version: $PKG_VERSION"
 
-            # Build Inno Setup installer (pass unified version so it matches NuGet/Linux)
-            choco install innosetup -y
-            & 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe' "/DMyAppVersion=$PKG_VERSION" '.\dist\windows_setup.iss'
-            # Move the generated installer to the root for easier artifact upload
-            Move-Item '.\dist\TrndiSetup.exe' '.\TrndiSetup.exe'
-            # Build NuGet package
+          # Build Inno Setup installer on every Windows build (incl. PRs) so .iss
+          # regressions are caught before merge. Pass the unified version so it
+          # matches NuGet/Linux on main, and reflects the PR number on PRs.
+          choco install innosetup -y
+          & 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe' "/DMyAppVersion=$PKG_VERSION" '.\dist\windows_setup.iss'
+          # Move the generated installer to the root for easier artifact upload
+          Move-Item '.\dist\TrndiSetup.exe' '.\TrndiSetup.exe'
+
+          # NuGet packaging/publish only on push to main (don't publish from PRs)
+          if ("${{ github.event_name }}" -eq "pull_request") {
+            Write-Host "PR build detected: skipping NuGet packaging/publish"
+          } else {
             choco install nuget.commandline -y
             # Update nuspec with actual version
             $nuspecContent = Get-Content 'dist\trndi.nuspec' -Raw
