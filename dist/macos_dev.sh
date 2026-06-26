@@ -205,7 +205,7 @@ CREATE_DMG_EXIT=127
 if command -v create-dmg >/dev/null 2>&1; then
   CREATE_DMG_EXIT=0
   # Options BEFORE positional args so option parsing doesn't stop early.
-  CREATE_DMG_OPTS=(--volname "Trndi" --format UDZO --window-size 600 400 "${DMG_BG_ARG[@]}" --icon-size 128 --icon "Trndi.app" 150 200 --icon "README.txt" 300 340 --app-drop-link 450 200)
+  CREATE_DMG_OPTS=(--volname "Trndi" --format UDZO --window-size 600 500 "${DMG_BG_ARG[@]}" --icon-size 128 --icon "Trndi.app" 150 200 --icon "README.txt" 300 360 --app-drop-link 450 200)
 
   run_create_dmg_attempt "standard layout" \
     create-dmg "${CREATE_DMG_OPTS[@]}" "Trndi.dmg" "macos/stage" || CREATE_DMG_EXIT=$?
