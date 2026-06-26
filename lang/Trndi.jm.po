@@ -400,6 +400,10 @@ msgstr "Notifiera mig ner avlesningar saknas / inte er ferska"
 msgid "Alternate arrow and reading display"
 msgstr "Vexla pil och verde"
 
+#: tfconf.cbautostart.caption
+msgid "Start with system"
+msgstr ""
+
 #: tfconf.cbchroma.caption
 msgid "Enable Razer Chroma integration"
 msgstr "Slo po Razer Chroma-integrasjonen"

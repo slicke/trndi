@@ -137,6 +137,14 @@ public
   {** True if a global/appmenu service is active; Linux override. }
   class function HasGlobalMenu: boolean; override;
 
+  {** XDG autostart is supported on every desktop we target. }
+  class function AutoStartAvailable: boolean; override;
+  {** True when @code(~/.config/autostart/trndi.desktop) exists. }
+  class function GetAutoStart: boolean; override;
+  {** Write or remove @code(~/.config/autostart/trndi.desktop) per the XDG
+      autostart spec. The file points Exec= at the current binary. }
+  class function SetAutoStart(Enable: boolean): boolean; override;
+
     {** Triggers when the tray icon is clicked }
   procedure trayClick(Sender: TObject);
     {** Simple HTTP GET/POST via libcurl, with proxy-first / direct fallback. }
@@ -512,6 +520,80 @@ end;
 class function TTrndiNativeLinux.SpeakAvailable: boolean;
 begin
   Result := FindInPath('spd-say') <> '';
+end;
+
+{------------------------------------------------------------------------------
+  AutoStart (Linux/BSD)
+  ---------------------
+  XDG autostart spec: drop a .desktop file in ~/.config/autostart and every
+  spec-compliant DE (GNOME, KDE, XFCE, Cinnamon, MATE, LXQt, ...) will launch
+  it on login. No daemon dance required; presence of the file is the toggle.
+ ------------------------------------------------------------------------------}
+function AutoStartDesktopPath: string;
+var
+  base: string;
+begin
+  base := Trim(GetEnvironmentVariable('XDG_CONFIG_HOME'));
+  if base = '' then
+    base := IncludeTrailingPathDelimiter(GetEnvironmentVariable('HOME')) + '.config';
+  Result := IncludeTrailingPathDelimiter(base) + 'autostart' + PathDelim + 'trndi.desktop';
+end;
+
+class function TTrndiNativeLinux.AutoStartAvailable: boolean;
+begin
+  Result := true;
+end;
+
+class function TTrndiNativeLinux.GetAutoStart: boolean;
+begin
+  Result := FileExists(AutoStartDesktopPath);
+end;
+
+class function TTrndiNativeLinux.SetAutoStart(Enable: boolean): boolean;
+var
+  path, dir, exe, execLine: string;
+  sl: TStringList;
+begin
+  Result := false;
+  path := AutoStartDesktopPath;
+  dir := ExtractFilePath(path);
+
+  if Enable then
+  begin
+    if not ForceDirectories(dir) then
+      Exit;
+    exe := ParamStr(0);
+    if Pos(' ', exe) > 0 then
+      execLine := '"' + exe + '"'
+    else
+      execLine := exe;
+    sl := TStringList.Create;
+    try
+      sl.Add('[Desktop Entry]');
+      sl.Add('Type=Application');
+      sl.Add('Name=Trndi');
+      sl.Add('Comment=Continuous glucose monitor');
+      sl.Add('Exec=' + execLine);
+      sl.Add('Icon=trndi');
+      sl.Add('Terminal=false');
+      sl.Add('X-GNOME-Autostart-enabled=true');
+      try
+        sl.SaveToFile(path);
+        Result := true;
+      except
+        Result := false;
+      end;
+    finally
+      sl.Free;
+    end;
+  end
+  else
+  begin
+    if FileExists(path) then
+      Result := DeleteFile(path)
+    else
+      Result := true;
+  end;
 end;
 
 {------------------------------------------------------------------------------

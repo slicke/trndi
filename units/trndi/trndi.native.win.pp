@@ -118,6 +118,17 @@ public
     {** Best-effort window manager name for Windows. }
   class function GetWindowManagerName: string; override;
 
+  {** Always True on Windows; start-on-login is implemented via the per-user
+      Run registry key. }
+  class function AutoStartAvailable: boolean; override;
+  {** True when a "Trndi" value exists under
+      @code(HKCU\Software\Microsoft\Windows\CurrentVersion\Run). }
+  class function GetAutoStart: boolean; override;
+  {** Add or remove the "Trndi" value under
+      @code(HKCU\Software\Microsoft\Windows\CurrentVersion\Run). The value is
+      the quoted full path of the current executable. }
+  class function SetAutoStart(Enable: boolean): boolean; override;
+
   {** Settings API overrides (Windows Registry)
     Keys are stored under HKCU\Software\Trndi\ with the same scoping rules
     used by the base implementation. }
@@ -424,7 +435,77 @@ end;
 class function TTrndiNativeWindows.GetWindowManagerName: string;
 begin
   Result := 'Windows Desktop';
-end; 
+end;
+
+{------------------------------------------------------------------------------
+  AutoStart (Windows)
+  -------------------
+  Backed by HKCU\Software\Microsoft\Windows\CurrentVersion\Run. The per-user
+  Run key is owned by the user (no admin needed) and is honored by Explorer
+  at every interactive logon. The value is the quoted full exe path; quoting
+  is mandatory because Run values are parsed as command lines.
+ ------------------------------------------------------------------------------}
+const
+  AUTOSTART_RUN_KEY  = 'Software\Microsoft\Windows\CurrentVersion\Run';
+  AUTOSTART_VALUE    = 'Trndi';
+
+class function TTrndiNativeWindows.AutoStartAvailable: boolean;
+begin
+  Result := true;
+end;
+
+class function TTrndiNativeWindows.GetAutoStart: boolean;
+var
+  reg: TRegistry;
+begin
+  Result := false;
+  reg := TRegistry.Create(KEY_READ);
+  try
+    reg.RootKey := HKEY_CURRENT_USER;
+    if reg.OpenKeyReadOnly(AUTOSTART_RUN_KEY) then
+    try
+      Result := reg.ValueExists(AUTOSTART_VALUE);
+    finally
+      reg.CloseKey;
+    end;
+  finally
+    reg.Free;
+  end;
+end;
+
+class function TTrndiNativeWindows.SetAutoStart(Enable: boolean): boolean;
+var
+  reg: TRegistry;
+  exe: string;
+begin
+  Result := false;
+  reg := TRegistry.Create(KEY_READ or KEY_WRITE);
+  try
+    reg.RootKey := HKEY_CURRENT_USER;
+    if not reg.OpenKey(AUTOSTART_RUN_KEY, true) then
+      Exit;
+    try
+      if Enable then
+      begin
+        exe := ParamStr(0);
+        if exe = '' then
+          exe := Application.ExeName;
+        reg.WriteString(AUTOSTART_VALUE, '"' + exe + '"');
+        Result := true;
+      end
+      else
+      begin
+        if reg.ValueExists(AUTOSTART_VALUE) then
+          reg.DeleteValue(AUTOSTART_VALUE);
+        Result := true;
+      end;
+    finally
+      reg.CloseKey;
+    end;
+  finally
+    reg.Free;
+  end;
+end;
 
 procedure TTrndiNativeWindows.FlashTimerTick(Sender: TObject);
 var

@@ -383,6 +383,10 @@ msgstr ""
 msgid "Alternate arrow and reading display"
 msgstr ""
 
+#: tfconf.cbautostart.caption
+msgid "Start with system"
+msgstr ""
+
 #: tfconf.cbchroma.caption
 msgid "Enable Razer Chroma integration"
 msgstr ""
