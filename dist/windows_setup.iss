@@ -1,12 +1,20 @@
-; Uncomment the following line to run in non administrative install mode (install for current user only.)
-;PrivilegesRequired=lowestup Script Wizard.
+; Inno Setup script for Trndi.
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "Trndi"
-#define MyAppVersion "10.0"
 #define MyAppPublisher "Björn Lindh"
 #define MyAppURL "https://github.com/slicke/trndi"
 #define MyAppExeName "Trndi.exe"
+
+; Auto-derive version from the built EXE; CI may override with /DMyAppVersion=...
+#ifndef MyAppVersion
+  #define ExeVersion GetVersionNumbersString("..\" + MyAppExeName)
+  #if ExeVersion == ""
+    #define MyAppVersion "10.0"
+  #else
+    #define MyAppVersion ExeVersion
+  #endif
+#endif
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application. Do not use the same AppId value in installers for other applications.
@@ -21,6 +29,7 @@ AppSupportURL={#MyAppURL}
 AppUpdatesURL={#MyAppURL}
 DefaultDirName={autopf}\{#MyAppName}
 UninstallDisplayIcon={app}\{#MyAppExeName}
+UninstallDisplayName={#MyAppName} {#MyAppVersion}
 ; "ArchitecturesAllowed=x64compatible" specifies that Setup cannot run
 ; on anything but x64 and Windows 11 on Arm.
 ArchitecturesAllowed=x64compatible
@@ -29,17 +38,34 @@ ArchitecturesAllowed=x64compatible
 ; meaning it should use the native 64-bit Program Files directory and
 ; the 64-bit view of the registry.
 ArchitecturesInstallIn64BitMode=x64compatible
+MinVersion=10.0
 DisableProgramGroupPage=yes
 LicenseFile=..\LICENSE.md
 ; Uncomment the following line to run in non administrative install mode (install for current user only).
 ;PrivilegesRequired=lowest
 PrivilegesRequiredOverridesAllowed=dialog
+OutputDir=.
 OutputBaseFilename=TrndiSetup
+SetupIconFile=..\Trndi.ico
 SolidCompression=yes
 WizardStyle=modern
+; Detect a running Trndi during install/uninstall and offer to close it,
+; so upgrades don't fail with file-in-use errors.
+CloseApplications=yes
+RestartApplications=yes
+; Embed version metadata in the setup EXE itself (shown in Explorer
+; properties and used by SmartScreen reputation).
+VersionInfoVersion={#MyAppVersion}
+VersionInfoProductVersion={#MyAppVersion}
+VersionInfoCompany={#MyAppPublisher}
+VersionInfoDescription={#MyAppName} Setup
+VersionInfoProductName={#MyAppName}
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
+Name: "danish"; MessagesFile: "compiler:Languages\Danish.isl"
+Name: "german"; MessagesFile: "compiler:Languages\German.isl"
+Name: "norwegian"; MessagesFile: "compiler:Languages\Norwegian.isl"
 Name: "swedish"; MessagesFile: "compiler:Languages\Swedish.isl"
 
 [Tasks]

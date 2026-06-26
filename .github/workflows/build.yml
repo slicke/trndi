@@ -466,14 +466,8 @@ jobs:
           if ("${{ github.event_name }}" -eq "pull_request") {
             Write-Host "PR build detected: skipping Inno Setup installer and NuGet packaging/publish"
           } else {
-            # Build Inno Setup installer
-            choco install innosetup -y
-            & 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe' '.\dist\windows_setup.iss'
-            # Move the generated installer to the root for easier artifact upload
-            Move-Item '.\dist\Output\TrndiSetup.exe' '.\TrndiSetup.exe'
-            # Build NuGet package
-            choco install nuget.commandline -y
-            # Determine package version from Trndi.lpi (Major.Minor.<build>)
+            # Determine unified package version from Trndi.lpi (Major.Minor.<build>),
+            # matching the scheme used for Linux packages and NuGet.
             [xml]$lpi = Get-Content 'Trndi.lpi'
             $MAJOR = $lpi.CONFIG.ProjectOptions.VersionInfo.MajorVersionNr.Value
             $MINOR = $lpi.CONFIG.ProjectOptions.VersionInfo.MinorVersionNr.Value
@@ -481,6 +475,14 @@ jobs:
             if ([string]::IsNullOrEmpty($MINOR)) { $MINOR = "0" }
             $PKG_VERSION = "$MAJOR.$MINOR.${{ needs.version.outputs.build_number }}"
             Write-Host "Packaging version: $PKG_VERSION"
+
+            # Build Inno Setup installer (pass unified version so it matches NuGet/Linux)
+            choco install innosetup -y
+            & 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe' "/DMyAppVersion=$PKG_VERSION" '.\dist\windows_setup.iss'
+            # Move the generated installer to the root for easier artifact upload
+            Move-Item '.\dist\TrndiSetup.exe' '.\TrndiSetup.exe'
+            # Build NuGet package
+            choco install nuget.commandline -y
             # Update nuspec with actual version
             $nuspecContent = Get-Content 'dist\trndi.nuspec' -Raw
             $nuspecContent = $nuspecContent -replace 'VERSION_PLACEHOLDER', $PKG_VERSION
