@@ -786,6 +786,8 @@ procedure SaveUserSettings(f: TfConf);
       SetSetting('override.range', cbCustRange.Checked);
       SetSetting('predictions.enable', cbPredictions.Checked);
       SetSetting('webserver.enable', cbWebAPI.Checked);
+      if TrndiNative.AutoStartAvailable then
+        TrndiNative.SetAutoStart(cbAutoStart.Checked);
       SetSetting('predictions.warn', cbWarnLoHi.Checked);
       SetSetting('predictions.short', cbPredictShort.Checked);
       SetSetting('predictions.dots', cbPredictDots.Checked);

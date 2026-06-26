@@ -104,6 +104,14 @@ type
     class function GetWindowManagerName: string; override;
     {** macOS always provides a system-wide global menu bar. }
     class function HasGlobalMenu: boolean; override;
+    {** Auto-start is supported via a per-user LaunchAgent plist. }
+    class function AutoStartAvailable: boolean; override;
+    {** True when @code(~/Library/LaunchAgents/com.slicke.trndi.autostart.plist) exists. }
+    class function GetAutoStart: boolean; override;
+    {** Write or remove the LaunchAgent plist; best-effort launchctl
+        load/unload so the change takes effect without a relog. The plist
+        alone is enough — launchd reloads on next login. }
+    class function SetAutoStart(Enable: boolean): boolean; override;
     {** Simple HTTP GET/POST using @code(TNSHTTPSendAndReceive). }
     function request(const post: boolean; const endpoint: string;
       const params: array of string; const jsondata: string = '';
@@ -479,7 +487,102 @@ end;
 class function TTrndiNativeMac.HasGlobalMenu: boolean;
 begin
   Result := true;
-end; 
+end;
+
+{------------------------------------------------------------------------------
+  AutoStart (macOS)
+  -----------------
+  Backed by a per-user LaunchAgent plist in ~/Library/LaunchAgents. The plist
+  alone is sufficient because launchd reads the directory at login. We also
+  best-effort launchctl load/unload so toggling takes effect immediately for
+  the current session; failures of launchctl are ignored.
+ ------------------------------------------------------------------------------}
+const
+  MAC_AUTOSTART_LABEL = 'com.slicke.trndi.autostart';
+
+function MacAutoStartPlistPath: string;
+begin
+  Result := IncludeTrailingPathDelimiter(GetEnvironmentVariable('HOME')) +
+    'Library/LaunchAgents/' + MAC_AUTOSTART_LABEL + '.plist';
+end;
+
+procedure RunLaunchctl(const action, plistPath: string);
+var
+  proc: TProcess;
+begin
+  try
+    proc := TProcess.Create(nil);
+    try
+      proc.Executable := '/bin/launchctl';
+      proc.Parameters.Add(action);
+      proc.Parameters.Add('-w');
+      proc.Parameters.Add(plistPath);
+      proc.Options := [poWaitOnExit, poUsePipes];
+      proc.Execute;
+    finally
+      proc.Free;
+    end;
+  except
+    // best-effort; the plist on disk is what makes it persistent
+  end;
+end;
+
+class function TTrndiNativeMac.AutoStartAvailable: boolean;
+begin
+  Result := true;
+end;
+
+class function TTrndiNativeMac.GetAutoStart: boolean;
+begin
+  Result := FileExists(MacAutoStartPlistPath);
+end;
+
+class function TTrndiNativeMac.SetAutoStart(Enable: boolean): boolean;
+var
+  path, exe: string;
+  sl: TStringList;
+begin
+  Result := false;
+  path := MacAutoStartPlistPath;
+  if Enable then
+  begin
+    if not ForceDirectories(ExtractFilePath(path)) then
+      Exit;
+    exe := ParamStr(0);
+    sl := TStringList.Create;
+    try
+      sl.Add('<?xml version="1.0" encoding="UTF-8"?>');
+      sl.Add('<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">');
+      sl.Add('<plist version="1.0">');
+      sl.Add('<dict>');
+      sl.Add('  <key>Label</key><string>' + MAC_AUTOSTART_LABEL + '</string>');
+      sl.Add('  <key>ProgramArguments</key>');
+      sl.Add('  <array><string>' + exe + '</string></array>');
+      sl.Add('  <key>RunAtLoad</key><true/>');
+      sl.Add('</dict>');
+      sl.Add('</plist>');
+      try
+        sl.SaveToFile(path);
+        RunLaunchctl('load', path);
+        Result := true;
+      except
+        Result := false;
+      end;
+    finally
+      sl.Free;
+    end;
+  end
+  else
+  begin
+    if FileExists(path) then
+    begin
+      RunLaunchctl('unload', path);
+      Result := DeleteFile(path);
+    end
+    else
+      Result := true;
+  end;
+end;
 
 {------------------------------------------------------------------------------
   getURL

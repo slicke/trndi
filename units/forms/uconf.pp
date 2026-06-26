@@ -119,6 +119,7 @@ TfConf = class(TForm)
   bvExt: TBevel;
   bvExt1: TBevel;
   cbAlternate: TCheckBox;
+  cbAutoStart: TCheckBox;
   cbChromaNormal: TCheckBox;
   cbChromaHigh: TComboBox;
   cbChromaLow: TComboBox;
@@ -2485,6 +2486,11 @@ begin
   Application.ProcessMessages;
 
   cbNotice.Checked := TrndiNative.isNotificationSystemAvailable;
+  cbAutoStart.Enabled := TrndiNative.AutoStartAvailable;
+  if cbAutoStart.Enabled then
+    cbAutoStart.Checked := TrndiNative.GetAutoStart
+  else
+    cbAutoStart.Checked := false;
   lWaitSys.Visible := false;
   lProblematic.Visible := false;
   if IsProblematicWM then

@@ -336,6 +336,18 @@ class var touchOverride: TTrndiBool;
   class function HasNotifications: boolean;
     {** Detect if a global menu exists (top bar). }
   class function HasGlobalMenu: boolean; virtual;
+    // Auto-start on login
+    {** Whether the platform supports an OS-managed start-on-login mechanism.
+        The settings UI uses this to hide/disable the toggle on platforms that
+        cannot implement it. Default: False. }
+  class function AutoStartAvailable: boolean; virtual;
+    {** True when the application is currently registered to start at user
+        login. Default: False (treated as "not registered"). }
+  class function GetAutoStart: boolean; virtual;
+    {** Register or unregister the application for start-on-login.
+        @param(Enable) True to enable, False to disable.
+        @returns True when the requested state has been applied. }
+  class function SetAutoStart(Enable: boolean): boolean; virtual;
     // Lifecycle and UI
   destructor Destroy; override;
     {** Optional startup hook; platform units may override. }
@@ -1589,6 +1601,27 @@ end;
   global/appmenu service is available; base returns False.
  ------------------------------------------------------------------------------}
 class function TTrndiNativeBase.HasGlobalMenu: boolean;
+begin
+  Result := false;
+end;
+
+{------------------------------------------------------------------------------
+  AutoStart contract (base no-ops)
+  --------------------------------
+  Platforms override with native registration. The base treats the feature as
+  unsupported so callers can rely on AutoStartAvailable to gate the UI.
+ ------------------------------------------------------------------------------}
+class function TTrndiNativeBase.AutoStartAvailable: boolean;
+begin
+  Result := false;
+end;
+
+class function TTrndiNativeBase.GetAutoStart: boolean;
+begin
+  Result := false;
+end;
+
+class function TTrndiNativeBase.SetAutoStart(Enable: boolean): boolean;
 begin
   Result := false;
 end;

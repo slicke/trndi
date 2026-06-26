@@ -316,7 +316,7 @@ procedure TfBG.DotPaint(Sender: TObject);
 var
   S, fontn: string;
   L: TDotControl;
-  d, ringWidth: integer;
+  d, ringWidth, xSize, xOff: integer;
   dotColor: TColor;
 begin
   L := Sender as TDotControl;
@@ -333,11 +333,13 @@ begin
     dotColor := L.Font.Color;
     if S = DOT_PREDICT then
     begin
-      // Full-slot X mark — same visual footprint as the history dots, in the
-      // unmodified range color so hi/ok/lo still reads via hue. The X shape
-      // is what tells the user this is a prediction rather than a measured
-      // reading.
-      DrawSmoothX(L.Canvas, d, dotColor, Max(2, d div 6));
+      // Compact × (multiplication-sign) shape: shorter, thinner strokes inset
+      // from the slot edges, centred in the same square the history dot would
+      // occupy. Drawn rather than typeset so we don't depend on a font that
+      // ships the glyph at consistent metrics across platforms.
+      xSize := Max(6, Round(d * 0.6));
+      xOff  := (d - xSize) div 2;
+      DrawSmoothX(L.Canvas, xSize, dotColor, Max(2, xSize div 8), xOff, xOff);
       Exit;
     end;
 

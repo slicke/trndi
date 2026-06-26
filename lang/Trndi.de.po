@@ -393,6 +393,10 @@ msgstr "Warnung bei fehlenden / veralteten Messwerten"
 msgid "Alternate arrow and reading display"
 msgstr "Pfeil und Messwert wechseln"
 
+#: tfconf.cbautostart.caption
+msgid "Start with system"
+msgstr ""
+
 #: tfconf.cbchroma.caption
 msgid "Enable Razer Chroma integration"
 msgstr "Razer Chroma-Integration aktivieren"
