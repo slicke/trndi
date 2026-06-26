@@ -124,11 +124,11 @@ create-dmg --version 2>&1 | head -3 || true
 create-dmg \
   --volname "Trndi" \
   --format UDZO \
-  --window-size 600 400 \
+  --window-size 600 500 \
   "${DMG_BG_ARG[@]}" \
   --icon-size 128 \
   --icon "Trndi.app" 150 200 \
-  --icon "README.txt" 300 340 \
+  --icon "README.txt" 300 360 \
   --app-drop-link 450 200 \
   Trndi.dmg "macos/stage" 2>&1 | grep -v "internet-enable"
 

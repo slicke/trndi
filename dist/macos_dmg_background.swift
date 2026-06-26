@@ -4,7 +4,7 @@ import CoreGraphics
 import ImageIO
 
 let width = 600
-let height = 400
+let height = 500
 
 let iconCenterY: CGFloat = 200
 let trndiX: CGFloat = 150
