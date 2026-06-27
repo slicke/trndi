@@ -399,7 +399,7 @@ msgstr "Växla pil och värde"
 
 #: tfconf.cbautostart.caption
 msgid "Start with system"
-msgstr ""
+msgstr "Starta med systemet"
 
 #: tfconf.cbchroma.caption
 msgid "Enable Razer Chroma integration"
@@ -3290,4 +3290,3 @@ msgstr "Den höga gränsen måste vara större än den låga gränsen."
 #: uwizard.wz_test_no_support
 msgid "Connection testing is not supported for this service."
 msgstr "Anslutningstest stöds inte för denna tjänst."
-

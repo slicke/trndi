@@ -110,7 +110,10 @@ type
     class function GetAutoStart: boolean; override;
     {** Write or remove the LaunchAgent plist; best-effort launchctl
         load/unload so the change takes effect without a relog. The plist
-        alone is enough — launchd reloads on next login. }
+        invokes the app via @code(/usr/bin/open -a <bundle>) so Launch
+        Services drives startup with full bundle identity (icon, Dock,
+        code-sign context). Falls back to the raw executable only when
+        the binary is not inside a .app (dev builds). }
     class function SetAutoStart(Enable: boolean): boolean; override;
     {** Simple HTTP GET/POST using @code(TNSHTTPSendAndReceive). }
     function request(const post: boolean; const endpoint: string;
@@ -496,6 +499,12 @@ end;
   alone is sufficient because launchd reads the directory at login. We also
   best-effort launchctl load/unload so toggling takes effect immediately for
   the current session; failures of launchctl are ignored.
+
+  The plist invokes the app via /usr/bin/open -a <bundle> rather than the
+  inner Mach-O so Launch Services drives startup with full bundle identity
+  (icon, Dock, code-sign context, TCC permissions). If the binary isn't
+  inside a .app — e.g. a dev build run from the IDE — we fall back to
+  pointing ProgramArguments at the raw executable.
  ------------------------------------------------------------------------------}
 const
   MAC_AUTOSTART_LABEL = 'com.slicke.trndi.autostart';
@@ -504,6 +513,22 @@ function MacAutoStartPlistPath: string;
 begin
   Result := IncludeTrailingPathDelimiter(GetEnvironmentVariable('HOME')) +
     'Library/LaunchAgents/' + MAC_AUTOSTART_LABEL + '.plist';
+end;
+
+// Walk up from ParamStr(0) to find a .app container. Returns '' when the
+// running binary isn't inside a bundle (typical for dev/test runs).
+function MacBundlePath: string;
+var
+  p: string;
+  i: Integer;
+begin
+  Result := '';
+  p := ParamStr(0);
+  // Typical layout: <bundle>.app/Contents/MacOS/<exe>
+  for i := 1 to 3 do
+    p := ExtractFileDir(p);
+  if (p <> '') and (LowerCase(ExtractFileExt(p)) = '.app') and DirectoryExists(p) then
+    Result := p;
 end;
 
 procedure RunLaunchctl(const action, plistPath: string);
@@ -539,7 +564,7 @@ end;
 
 class function TTrndiNativeMac.SetAutoStart(Enable: boolean): boolean;
 var
-  path, exe: string;
+  path, exe, bundle: string;
   sl: TStringList;
 begin
   Result := false;
@@ -549,6 +574,7 @@ begin
     if not ForceDirectories(ExtractFilePath(path)) then
       Exit;
     exe := ParamStr(0);
+    bundle := MacBundlePath;
     sl := TStringList.Create;
     try
       sl.Add('<?xml version="1.0" encoding="UTF-8"?>');
@@ -557,7 +583,16 @@ begin
       sl.Add('<dict>');
       sl.Add('  <key>Label</key><string>' + MAC_AUTOSTART_LABEL + '</string>');
       sl.Add('  <key>ProgramArguments</key>');
-      sl.Add('  <array><string>' + exe + '</string></array>');
+      if bundle <> '' then
+      begin
+        sl.Add('  <array>');
+        sl.Add('    <string>/usr/bin/open</string>');
+        sl.Add('    <string>-a</string>');
+        sl.Add('    <string>' + bundle + '</string>');
+        sl.Add('  </array>');
+      end
+      else
+        sl.Add('  <array><string>' + exe + '</string></array>');
       sl.Add('  <key>RunAtLoad</key><true/>');
       sl.Add('</dict>');
       sl.Add('</plist>');
