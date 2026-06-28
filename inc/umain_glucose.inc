@@ -949,6 +949,12 @@ begin
     else
       showWarningPanel(msg, wsCritical, true);
 
+    // No fresh readings means any prior prediction overlay is stale —
+    // hide it so the no-data warning isn't visually contradicted by X
+    // marks that look like fresh predictions.
+    HidePredictionDots;
+    lPredict.Visible := false;
+
     if akMissing in FAlertEngine.EvaluateMissing then
       native.attention(RS_ATTENTION_MISSING, RS_ATTENTION_MISSING_DESC);
     Exit;
