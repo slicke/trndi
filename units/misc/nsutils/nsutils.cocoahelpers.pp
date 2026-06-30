@@ -61,6 +61,20 @@ procedure HideCocoaWindowButtons(AWindow      : NSWindow;
                                  HideMinimize : Boolean = True;
                                  HideZoom     : Boolean = True);
 
+{ Tint the title bar so it blends into a custom background color, mirroring
+  the Windows DWMWA_CAPTION_COLOR behavior. Approach:
+  - titlebarAppearsTransparent so the window's backgroundColor paints through
+    the title-bar strip;
+  - sets backgroundColor to the requested sRGB color (only the strip shows it
+    because the LCL content view covers the rest);
+  - switches NSAppearance to Aqua or DarkAqua so the title text and the
+    traffic-light buttons keep readable contrast.
+  Components are sRGB in 0..1. Safe to call on any NSWindow; a nil window is
+  a no-op. }
+procedure SetCocoaTitleBarColor(AWindow           : NSWindow;
+                                Red, Green, Blue  : Double;
+                                UseDarkAppearance : Boolean);
+
 type
   CustomTableHeaderCell = objcclass(NSTableHeaderCell)
     function initTextCellWithCell(aCell : NSTableHeaderCell) : id; message 'initTextCellWithCell:';
@@ -181,6 +195,32 @@ begin
     Btn := AWindow.standardWindowButton(NSWindowZoomButton);
     if Btn <> nil then Btn.setHidden(True);
   end;
+end;
+
+
+procedure SetCocoaTitleBarColor(AWindow           : NSWindow;
+                                Red, Green, Blue  : Double;
+                                UseDarkAppearance : Boolean);
+var
+  BgColor    : NSColor;
+  AppName    : NSString;
+  App        : NSAppearance;
+begin
+  if AWindow = nil then
+    Exit;
+  AWindow.setTitlebarAppearsTransparent(True);
+  BgColor := NSColor.colorWithSRGBRed_green_blue_alpha(Red, Green, Blue, 1.0);
+  if BgColor <> nil then
+    AWindow.setBackgroundColor(BgColor);
+  // DarkAqua is the modern dark appearance (macOS 10.14+) but isn't bound as
+  // a constant in FPC's AppKit, so look it up by name. Aqua is bound.
+  if UseDarkAppearance then
+    AppName := StrToNSStr('NSAppearanceNameDarkAqua')
+  else
+    AppName := NSAppearanceNameAqua;
+  App := NSAppearance.appearanceNamed(AppName);
+  if App <> nil then
+    AWindow.setAppearance(App);
 end;
 
 
