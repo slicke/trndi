@@ -1323,6 +1323,11 @@ begin
   {$ELSE}
   IconBox.Left := Padding;     // default gap on other platforms
   IconBox.Top  := Padding;
+  {$IFDEF DARWIN}
+  // Drop the icon below the (transparent) title bar so it doesn't overlap
+  // the traffic-light close/min/max buttons in the top-left.
+  IconBox.Top  := IconBox.Top + 28;
+  {$ENDIF}
   {$ENDIF}
   AssignEmoji(IconBox, Icon, bgcol);
 
@@ -2282,6 +2287,11 @@ begin
     IconBox.Parent := Dialog;
     IconBox.Left := padding;
     IconBox.Top := padding;
+    {$ifdef Darwin}
+    // Push icon and HTML panel below the transparent macOS title bar so the
+    // traffic-light buttons stay clear of the dialog content.
+    IconBox.Top := IconBox.Top + 28;
+    {$endif}
     IconBox.Width := ifthen((size = uxdBig) , 80, 48);
     IconBox.Height := IconBox.Width;
     {$ifdef X_WIN}IconBox.Font.Name := 'Segoe UI Emoji';{$endif}
@@ -2293,7 +2303,7 @@ begin
     HtmlPanel.Name := 'HtmlPanel';
     HtmlPanel.Parent := Dialog;
     HtmlPanel.Left := IconBox.Left + IconBox.Width + padding;
-    HtmlPanel.Top := padding;
+    HtmlPanel.Top := IconBox.Top;
     HtmlPanel.Width := Dialog.ClientWidth - HtmlPanel.Left - padding;
     HtmlPanel.Color := bgcol;
     HtmlPanel.BevelOuter := bvNone;
