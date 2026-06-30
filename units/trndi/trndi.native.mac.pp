@@ -38,7 +38,7 @@ interface
 
 uses
   Classes, SysUtils, Graphics, nsutils.nsmisc, nsutils.web.urlrequest, CocoaAll, nsutils.simpledarkmode,
-  nsutils.nshelpers, IniFiles, dialogs, StrUtils, Forms,
+  nsutils.nshelpers, nsutils.cocoahelpers, IniFiles, dialogs, StrUtils, Forms,
   trndi.native.base;
 
 type
@@ -58,6 +58,11 @@ type
     {** Enable dark appearance for the app UI via SimpleDarkMode.
         @returns(True once the request is made) }
     class function setDarkMode: boolean;
+    {** Tint the window's title bar to match a custom color, mirroring the
+        Windows DWMWA_CAPTION_COLOR behavior. The form body's color is left
+        untouched so it can keep encoding the blood-glucose reading.
+        @returns(True if the NSWindow was reachable and the color was applied) }
+    class function SetTitleColor(form: PtrUInt; bg, Text: TColor): boolean; override;
 
     // Settings API overrides (NSUserDefaults/CFPreferences)
     {** Read a string from preferences; returns @param(def) when missing.
@@ -782,6 +787,47 @@ begin
   // Enable dark appearance for the app's UI via SimpleDarkMode
   nsutils.simpledarkmode.EnableAppDarkMode;
   Result := True;
+end;
+
+{------------------------------------------------------------------------------
+  SetTitleColor
+  -------------
+  Paint the NSWindow's title-bar strip in the requested color so it blends
+  into the form body. Caller picks Text=clBlack on a light bg or clWhite on
+  a dark bg; we mirror that into Aqua / DarkAqua appearance so the title
+  text and traffic-light buttons stay readable.
+ ------------------------------------------------------------------------------}
+class function TTrndiNativeMac.SetTitleColor(form: PtrUInt;
+  bg, Text: TColor): boolean;
+var
+  View    : NSView;
+  Win     : NSWindow;
+  RGB     : longint;
+  R, G, B : Double;
+  UseDark : Boolean;
+begin
+  Result := False;
+  if form = 0 then
+    Exit;
+  try
+    View := NSView(form);
+    if View = nil then Exit;
+    Win := View.window;
+    if Win = nil then Exit;
+
+    RGB := ColorToRGB(bg);
+    R := GetRValue(RGB) / 255.0;
+    G := GetGValue(RGB) / 255.0;
+    B := GetBValue(RGB) / 255.0;
+    // Caller computes Text via IsLightColor(bg): clBlack when bg is light,
+    // clWhite when bg is dark. Mirror that into the macOS appearance choice.
+    UseDark := ColorToRGB(Text) = ColorToRGB(clWhite);
+
+    SetCocoaTitleBarColor(Win, R, G, B, UseDark);
+    Result := True;
+  except
+    Result := False;
+  end;
 end;
 
 {------------------------------------------------------------------------------
