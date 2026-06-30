@@ -1323,11 +1323,6 @@ begin
   {$ELSE}
   IconBox.Left := Padding;     // default gap on other platforms
   IconBox.Top  := Padding;
-  {$IFDEF DARWIN}
-  // Drop the icon below the (transparent) title bar so it doesn't overlap
-  // the traffic-light close/min/max buttons in the top-left.
-  IconBox.Top  := IconBox.Top + 28;
-  {$ENDIF}
   {$ENDIF}
   AssignEmoji(IconBox, Icon, bgcol);
 
@@ -2287,11 +2282,6 @@ begin
     IconBox.Parent := Dialog;
     IconBox.Left := padding;
     IconBox.Top := padding;
-    {$ifdef Darwin}
-    // Push icon and HTML panel below the transparent macOS title bar so the
-    // traffic-light buttons stay clear of the dialog content.
-    IconBox.Top := IconBox.Top + 28;
-    {$endif}
     IconBox.Width := ifthen((size = uxdBig) , 80, 48);
     IconBox.Height := IconBox.Width;
     {$ifdef X_WIN}IconBox.Font.Name := 'Segoe UI Emoji';{$endif}
@@ -2463,11 +2453,6 @@ begin
     TopPanel.BevelOuter := bvNone;
     TopPanel.Color := bgcol;
     TopPanel.AutoSize := true;
-    {$ifdef Darwin}
-    // Push the icon/text row below the transparent macOS title bar so the
-    // traffic-light buttons stay clear of the dialog content.
-    TopPanel.BorderSpacing.Top := 28;
-    {$endif}
 
     // Icon
     IconBox := TImage.Create(TopPanel);
@@ -3196,12 +3181,14 @@ begin
 
   {$ifdef X_MAC}
   // Make the title bar blend into the dialog: transparent titlebar + full-size
-  // content view so there's no visible divider between bar and content. The
-  // window background paints through under the traffic-light buttons.
+  // content view so there's no visible divider between bar and content. Hide
+  // the traffic-light buttons too — UXDialog answers come from the on-screen
+  // buttons, so the red X would be an ambiguous second exit path.
   if HandleAllocated then
   try
     CocoaWin := NSView(Handle).window;
     SetCocoaUnifiedTitlebar(CocoaWin, True);
+    HideCocoaWindowButtons(CocoaWin);
   except
     // Ignore Cocoa errors silently — degrade to a normal title bar.
   end;
