@@ -52,6 +52,15 @@ procedure SetTableHeaderHeight(aTable          : NSTableView;
 procedure SetCocoaUnifiedTitlebar(AWindow    : NSWindow;
                                   HideTitle  : Boolean = True);
 
+{ Hide the macOS traffic-light buttons (close/minimize/zoom) on a window.
+  Use for modal dialogs where on-screen buttons are the only valid answer
+  path, so the red X can't bypass the dialog's button semantics.
+  Safe to call on any NSWindow; a nil window is a no-op. }
+procedure HideCocoaWindowButtons(AWindow      : NSWindow;
+                                 HideClose    : Boolean = True;
+                                 HideMinimize : Boolean = True;
+                                 HideZoom     : Boolean = True);
+
 type
   CustomTableHeaderCell = objcclass(NSTableHeaderCell)
     function initTextCellWithCell(aCell : NSTableHeaderCell) : id; message 'initTextCellWithCell:';
@@ -145,6 +154,33 @@ begin
   AWindow.setStyleMask(AWindow.styleMask or NSFullSizeContentViewWindowMask);
   if HideTitle then
     AWindow.setTitleVisibility(NSWindowTitleHidden);
+end;
+
+
+procedure HideCocoaWindowButtons(AWindow      : NSWindow;
+                                 HideClose    : Boolean = True;
+                                 HideMinimize : Boolean = True;
+                                 HideZoom     : Boolean = True);
+var
+  Btn : NSButton;
+begin
+  if AWindow = nil then
+    Exit;
+  if HideClose then
+  begin
+    Btn := AWindow.standardWindowButton(NSWindowCloseButton);
+    if Btn <> nil then Btn.setHidden(True);
+  end;
+  if HideMinimize then
+  begin
+    Btn := AWindow.standardWindowButton(NSWindowMiniaturizeButton);
+    if Btn <> nil then Btn.setHidden(True);
+  end;
+  if HideZoom then
+  begin
+    Btn := AWindow.standardWindowButton(NSWindowZoomButton);
+    if Btn <> nil then Btn.setHidden(True);
+  end;
 end;
 
 
