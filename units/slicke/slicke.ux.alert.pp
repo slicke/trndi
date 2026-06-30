@@ -53,7 +53,7 @@ Classes, SysUtils, Dialogs, Forms, ExtCtrls, StdCtrls, Controls, Graphics, Math,
 IntfGraphics, FPImage, graphtype, lcltype, Trndi.Native, Grids, Spin, IpHtml, Iphttpbroker, slicke.ux.native, SpinEx, LCLIntf,
 EditBtn, Clipbrd,
 {$ifdef X_MAC}
-CocoaAll,
+CocoaAll, nsutils.cocoahelpers,
 {$endif}
 {$ifdef X_WIN}
 DX12.D2D1, DX12.DXGI, DX12.DWrite, DX12.DCommon, DX12.WinCodec, Windows, Buttons, ActiveX, ComObj,
@@ -3137,6 +3137,10 @@ end;
 {$ifndef Windows}
 {** Ensure KeyPreview is set on non-Windows upon handle creation. }
 procedure TDialogForm.CreateWnd;
+{$ifdef X_MAC}
+var
+  CocoaWin: NSWindow;
+{$endif}
 begin
   inherited CreateWnd;
   hasHTML := false;
@@ -3169,6 +3173,19 @@ begin
   except
     // Some LCL backends may raise; ignore and continue.
   end;
+
+  {$ifdef X_MAC}
+  // Make the title bar blend into the dialog: transparent titlebar + full-size
+  // content view so there's no visible divider between bar and content. The
+  // window background paints through under the traffic-light buttons.
+  if HandleAllocated then
+  try
+    CocoaWin := NSView(Handle).window;
+    SetCocoaUnifiedTitlebar(CocoaWin, True);
+  except
+    // Ignore Cocoa errors silently — degrade to a normal title bar.
+  end;
+  {$endif}
 end;
 {$endif}
 
