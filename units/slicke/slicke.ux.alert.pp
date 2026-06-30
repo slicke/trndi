@@ -1323,6 +1323,11 @@ begin
   {$ELSE}
   IconBox.Left := Padding;     // default gap on other platforms
   IconBox.Top  := Padding;
+  {$IFDEF DARWIN}
+  // Drop the icon row below the blended macOS title bar so it doesn't sit
+  // flush against the empty titlebar strip.
+  Inc(IconBox.Top, Padding);
+  {$ENDIF}
   {$ENDIF}
   AssignEmoji(IconBox, Icon, bgcol);
 
@@ -2282,6 +2287,10 @@ begin
     IconBox.Parent := Dialog;
     IconBox.Left := padding;
     IconBox.Top := padding;
+    {$ifdef Darwin}
+    // Drop the icon below the blended macOS title bar.
+    Inc(IconBox.Top, padding);
+    {$endif}
     IconBox.Width := ifthen((size = uxdBig) , 80, 48);
     IconBox.Height := IconBox.Width;
     {$ifdef X_WIN}IconBox.Font.Name := 'Segoe UI Emoji';{$endif}
@@ -2453,6 +2462,10 @@ begin
     TopPanel.BevelOuter := bvNone;
     TopPanel.Color := bgcol;
     TopPanel.AutoSize := true;
+    {$ifdef Darwin}
+    // Drop the icon/text row below the blended macOS title bar.
+    TopPanel.BorderSpacing.Top := padding;
+    {$endif}
 
     // Icon
     IconBox := TImage.Create(TopPanel);
