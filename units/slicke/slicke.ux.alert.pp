@@ -1326,7 +1326,7 @@ begin
   {$IFDEF DARWIN}
   // Drop the icon row below the blended macOS title bar so it doesn't sit
   // flush against the empty titlebar strip.
-  Inc(IconBox.Top, Padding);
+  IconBox.Top := IconBox.Top + Padding;
   {$ENDIF}
   {$ENDIF}
   AssignEmoji(IconBox, Icon, bgcol);
@@ -2289,7 +2289,7 @@ begin
     IconBox.Top := padding;
     {$ifdef Darwin}
     // Drop the icon below the blended macOS title bar.
-    Inc(IconBox.Top, padding);
+    IconBox.Top := IconBox.Top + padding;
     {$endif}
     IconBox.Width := ifthen((size = uxdBig) , 80, 48);
     IconBox.Height := IconBox.Width;
