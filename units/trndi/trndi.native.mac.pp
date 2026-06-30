@@ -815,10 +815,11 @@ begin
     Win := View.window;
     if Win = nil then Exit;
 
+    // TColor after ColorToRGB is $00BBGGRR: R = low byte, G = mid, B = high.
     RGB := ColorToRGB(bg);
-    R := GetRValue(RGB) / 255.0;
-    G := GetGValue(RGB) / 255.0;
-    B := GetBValue(RGB) / 255.0;
+    R := (RGB and $FF) / 255.0;
+    G := ((RGB shr 8) and $FF) / 255.0;
+    B := ((RGB shr 16) and $FF) / 255.0;
     // Caller computes Text via IsLightColor(bg): clBlack when bg is light,
     // clWhite when bg is dark. Mirror that into the macOS appearance choice.
     UseDark := ColorToRGB(Text) = ColorToRGB(clWhite);
