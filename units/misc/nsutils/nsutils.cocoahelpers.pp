@@ -10,6 +10,8 @@ unit nsutils.cocoahelpers;
              in a standalone executable or dynamically in a library) without 
              releasing your code. Only changes to this unit need to be made 
              publicly available.
+
+  Extended by Björn Lindh, https://github.com/slicke
 }
 {$MODE Delphi}
 {$modeswitch ObjectiveC1}
@@ -40,6 +42,15 @@ procedure DoConfirmDlg(const ConfirmMsg   : string;
 procedure SetTableHeaderHeight(aTable          : NSTableView;
                                newHeight       : CGFloat;
                                backgroundColor : NSColor);
+
+{ Make the window's title bar "melt" into the content area:
+  - titlebar paints transparent over the window background,
+  - the content view extends into the title bar (no divider),
+  - the title text is hidden when HideTitle is True (default).
+  The traffic-light buttons remain functional. Safe to call on any NSWindow;
+  a nil window is a no-op. }
+procedure SetCocoaUnifiedTitlebar(AWindow    : NSWindow;
+                                  HideTitle  : Boolean = True);
 
 type
   CustomTableHeaderCell = objcclass(NSTableHeaderCell)
@@ -123,6 +134,18 @@ begin
                aTable.cornerView.frame.size.width,
                aTable.headerView.frame.size.height)).autorelease);
 end;  {SetTableHeaderHeight}
+
+
+procedure SetCocoaUnifiedTitlebar(AWindow    : NSWindow;
+                                  HideTitle  : Boolean = True);
+begin
+  if AWindow = nil then
+    Exit;
+  AWindow.setTitlebarAppearsTransparent(True);
+  AWindow.setStyleMask(AWindow.styleMask or NSFullSizeContentViewWindowMask);
+  if HideTitle then
+    AWindow.setTitleVisibility(NSWindowTitleHidden);
+end;
 
 
 function CustomTableHeaderCell.initTextCellWithCell(aCell : NSTableHeaderCell) : id;
