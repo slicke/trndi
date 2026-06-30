@@ -2463,6 +2463,11 @@ begin
     TopPanel.BevelOuter := bvNone;
     TopPanel.Color := bgcol;
     TopPanel.AutoSize := true;
+    {$ifdef Darwin}
+    // Push the icon/text row below the transparent macOS title bar so the
+    // traffic-light buttons stay clear of the dialog content.
+    TopPanel.BorderSpacing.Top := 28;
+    {$endif}
 
     // Icon
     IconBox := TImage.Create(TopPanel);
