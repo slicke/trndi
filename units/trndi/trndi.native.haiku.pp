@@ -24,7 +24,7 @@ interface
 uses
 Classes, SysUtils, Graphics, IniFiles, Dialogs,
 ExtCtrls, Forms, Math, trndi.native.base, FileUtil,
-fphttpclient, opensslsockets, DateUtils, trndi.log;
+fphttpclient, opensslsockets, DateUtils, URIParser, trndi.log;
 
 type
   {!
@@ -957,6 +957,7 @@ var
   cookieVal: string;
   cookiePos: integer;
   currentPost: boolean;
+  newLocation, resolvedLocation: string;
 
   function HasHeaderLocal(const Name: string): boolean;
   var k: integer; s: string;
@@ -1113,19 +1114,32 @@ begin
 
       if followRedirects and (statusCode in [301, 302, 303, 307, 308]) then
       begin
-        for i := 0 to Result.Headers.Count - 1 do
+        newLocation := '';
+        for i := 0 to HTTP.ResponseHeaders.Count - 1 do
         begin
-          headerLine := Result.Headers[i];
+          headerLine := HTTP.ResponseHeaders[i];
           if LowerCase(Copy(headerLine, 1, 9)) = 'location:' then
           begin
-            address := Trim(Copy(headerLine, 10, MaxInt));
-            Inc(redirectCount);
-            Result.RedirectCount := redirectCount;
-            if (statusCode = 303) or (statusCode = 302) or (statusCode = 301) then
-              currentPost := False;
+            newLocation := Trim(Copy(headerLine, 10, MaxInt));
             Break;
           end;
         end;
+
+        if newLocation = '' then
+        begin
+          Result.Success := False;
+          Result.ErrorMessage := 'Redirect response missing Location header';
+          Exit;
+        end;
+
+        if not ResolveRelativeURI(address, newLocation, resolvedLocation) then
+          resolvedLocation := newLocation;
+        address := resolvedLocation;
+
+        Inc(redirectCount);
+        Result.RedirectCount := redirectCount;
+        if (statusCode = 303) or (statusCode = 302) or (statusCode = 301) then
+          currentPost := False;
 
         if redirectCount >= maxRedirects then
         begin
