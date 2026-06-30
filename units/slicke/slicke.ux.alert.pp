@@ -2473,6 +2473,11 @@ begin
     IconBox := TImage.Create(TopPanel);
     IconBox.Parent := TopPanel;
     IconBox.Align := alLeft;
+    {$ifdef Darwin}
+    // bsDialog has no native chrome inset on macOS with the melted titlebar,
+    // so indent the icon to match the visual padding other platforms get.
+    IconBox.BorderSpacing.Left := padding;
+    {$endif}
     case size of
     uxdBig:
       IconBox.Width := 100;
