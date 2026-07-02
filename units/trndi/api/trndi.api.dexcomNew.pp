@@ -877,7 +877,6 @@ var
 begin
   // Initialize the noval
   noval.exists := false;
-  PrevVal := BG_NO_VAL;
   // Guard input ranges based on common Share limits
   if (AMinutes < 1) or (AMinutes > 1440) then
     raise Exception.Create('GetReadings error: AMinutes out of valid range (1..1440)');
@@ -965,17 +964,23 @@ begin
         else
           Result[i].date := 0;
 
-        // Compute delta as current - previous valid reading
-        if FCalcDiff and (PrevVal <> BG_NO_VAL) then
-          Result[i].update(CurVal, CurVal - PrevVal)
+        // Dexcom Share returns readings newest-first, so the reading preceding
+        // this one in time is at index i+1. If the neighbor is missing, leave
+        // change = BG_NO_VAL (set by Init) so umain falls back to computing the
+        // delta from bgs[0] - bgs[1] instead of formatting a bogus 0.0.
+        if FCalcDiff and (i < LData.Count - 1) then
+        begin
+          PrevVal := SafeValue(LData.Items[i + 1], PrevOk);
+          if PrevOk then
+            Result[i].update(CurVal, CurVal - PrevVal)
+          else
+            Result[i].update(CurVal, BGPrimary);
+        end
         else
-          Result[i].update(CurVal, 0);
+          Result[i].update(CurVal, BGPrimary);
 
         // Classify level per thresholds
         Result[i].level := getLevel(Result[i].val);
-
-        // Update PrevVal for next delta
-        PrevVal := CurVal;
       end
       else
         Result[i].Clear;
