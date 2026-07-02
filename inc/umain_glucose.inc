@@ -1323,7 +1323,7 @@ procedure TfBG.ProcessTimeIntervals(const SortedReadings: array of BGReading;
 CurrentTime: TDateTime);
 var
   slotIndex, i, labelNumber, searchStart: integer;
-  slotStart, slotEnd, anchorTime: TDateTime;
+  slotStart, slotEnd, anchorTime, anchorSource: TDateTime;
   slotEpsilon: double;
   found: boolean;
   reading: BGReading;
@@ -1337,10 +1337,25 @@ begin
 
   searchStart := 0;
 
-  anchorTime := RecodeMinute(CurrentTime,
-    (MinuteOf(CurrentTime) div INTERVAL_MINUTES) * INTERVAL_MINUTES);
+  // Anchor from whichever is later: Now or the latest reading's timestamp.
+  // Rounding Now alone would put the anchor before a reading that arrived a
+  // couple of minutes past the last 5-minute boundary (common with Dexcom's
+  // sample cadence + fetch delay), which then skips it from slot 0 and shifts
+  // every subsequent dot one slot to the right, leaving a visible gap.
+  anchorSource := CurrentTime;
+  if SortedReadings[0].date > anchorSource then
+    anchorSource := SortedReadings[0].date;
+
+  anchorTime := RecodeMinute(anchorSource,
+    (MinuteOf(anchorSource) div INTERVAL_MINUTES) * INTERVAL_MINUTES);
   anchorTime := RecodeSecond(anchorTime, 0);
   anchorTime := RecodeMilliSecond(anchorTime, 0);
+
+  // If the latest reading still sits past the anchor+grace (i.e. it's several
+  // seconds beyond the just-rounded 5-min tick), push the anchor forward one
+  // interval so the reading lands cleanly inside slot 0's window.
+  if SortedReadings[0].date > anchorTime + RECENT_SLOT_GRACE_DAYS then
+    anchorTime := IncMinute(anchorTime, INTERVAL_MINUTES);
 
   TrndiDLog(Format('PlaceTrendDots: Processing %d readings, anchor=%s (latest=%s)',
     [Length(SortedReadings), DateTimeToStr(anchorTime), DateTimeToStr(SortedReadings[0].date)]));
