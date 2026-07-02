@@ -1483,6 +1483,9 @@ function AdjustColor(c: TColor; factor: double): TColor;
   end;
 
 begin
+  TrndiDLog(Format('SetBadge: Value="%s" BadgeColor=%d ratio=%.3f min_font=%d',
+    [Value, integer(BadgeColor), badge_size_ratio, min_font_size]));
+
   // Lazily snapshot the pristine app icon the first time we run, before any badge
   // has mutated Application.Icon. All subsequent badge composites read from this
   // copy — preventing the upper-left "cascade" where each call would re-badge
