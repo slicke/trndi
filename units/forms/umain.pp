@@ -52,7 +52,7 @@ trndi.strings, LCLTranslator, Classes, Menus, SysUtils, Forms, Controls,
 Graphics, Dialogs, StdCtrls, ExtCtrls, LCLProc,
 trndi.api.dexcom, trndi.api.dexcomNew, trndi.api.tandem, trndi.api.nightscout, trndi.api.nightscout3, trndi.types,
 Math, DateUtils, FileUtil, LclIntf, TypInfo, LResources,
-slicke.ux.alert, slicke.ux.native, usplash, Generics.Collections, trndi.funcs, trndi.log,
+slicke.ux.alert, slicke.ux.native, usplash, Generics.Collections, trndi.funcs, trndi.log, utrendarrow,
 Trndi.native.base, trndi.shared, buildinfo, fpjson, jsonparser,
 slicke.systemmediacontroller,
 {$ifdef TrndiExt}
@@ -560,6 +560,8 @@ private
   FBootSpinnerFrame: integer;
   FInternetBadgeBg: TShape;
   FInternetBadgeShadow: TShape;
+  FTrendArrow: TTrendArrow; // Rotating trend arrow overlay (created when RotatingArrow is on)
+  FLastArrowAngle: single;  // Last computed trend-arrow angle (shared with the float window)
   FWarningDots: array of TDotControl;
   FWarningLabels: array[1..4] of TLabel; // lArrow, lVal, lDiff, lAgo overlay
   FWarnSeverity: TWarnSeverity; // Current warning level — drives layout in fixWarningPanel
@@ -734,6 +736,16 @@ private
    }
   procedure RenderWarningLabel(const LabelControl: TLabel; const P: TPanel;
     const BgColor: TColor; const AlphaRatio: double);
+
+  {** Update the rotating trend arrow overlay from the latest reading.
+      When RotatingArrow is enabled the glyph in lArrow is hidden and a vector
+      arrow is drawn at an angle derived from the actual rate of change; when it
+      is disabled the overlay is hidden and the glyph shown as before.
+      @param(reading The latest reading, used for its trend as a fallback.)
+      @param(havePrev True if a previous reading is available for a delta.)
+      @param(gapMin Minutes between the two most recent readings.) }
+  procedure UpdateTrendArrow(const reading: BGReading; havePrev: boolean;
+    gapMin: integer);
 
     // Web server methods
     {** Initialize and start the integrated web server which provides basic
@@ -939,6 +951,7 @@ PredictShortFullArrows: boolean = false; // Use full UTF arrow set in short mode
 PredictShortShowValue: boolean = false; // Show predicted value with clock icon in short mode
 PredictShortMinutes: integer = 10; // Prediction horizon (5, 10, or 15 minutes)
 PredictDotMode: boolean = false; // Render predictions as hollow dots on the trend instead of the lPredict label
+RotatingArrow: boolean = false; // Rotate the trend arrow continuously by the actual rate of change instead of the 8-direction glyph
 // Cache for dynamic prediction time updates
 PredictionCache: BGResults; // Cached prediction readings
 PredictionLastReadingTime: TDateTime; // Time of the reading used for predictions

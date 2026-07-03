@@ -528,6 +528,10 @@ msgstr ""
 msgid "Use range color for window background"
 msgstr ""
 
+#: tfconf.cbrotatingarrow.caption
+msgid "Rotate trend arrow by rate of change"
+msgstr ""
+
 #: tfconf.cbshowmean.caption
 msgid "Show mean blood sugar reading next to TIR"
 msgstr ""
@@ -2853,6 +2857,10 @@ msgstr ""
 
 #: uconf.rs_remove_acc
 msgid "Removed accounts are made inactive, and can be restored by adding the same name again"
+msgstr ""
+
+#: uconf.rs_rotating_arrow_help
+msgid "Instead of the fixed up/steady/down arrows, the trend arrow is rotated smoothly to match how fast your glucose is changing: nearly flat for small changes and leaning further down (or up) the faster it moves."
 msgstr ""
 
 #: uconf.rs_saftey_hi

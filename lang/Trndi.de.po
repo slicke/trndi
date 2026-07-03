@@ -538,6 +538,10 @@ msgstr "Fortschritt bis zur nächsten Aktualisierung links anzeigen"
 msgid "Use range color for window background"
 msgstr "Fensterfarbe entsprechend Bereich"
 
+#: tfconf.cbrotatingarrow.caption
+msgid "Rotate trend arrow by rate of change"
+msgstr ""
+
 #: tfconf.cbshowmean.caption
 msgid "Show mean blood sugar reading next to TIR"
 msgstr "Durchschnittlichen Blutzucker neben TIR anzeigen"
@@ -2852,6 +2856,10 @@ msgstr "Im Datenschutzmodus ist der tatsächliche Blutzuckerwert verborgen. Trnd
 #: uconf.rs_remove_acc
 msgid "Removed accounts are made inactive, and can be restored by adding the same name again"
 msgstr "Entfernte Konten werden inaktiv und können durch erneutes Hinzufügen desselben Namens wiederhergestellt werden"
+
+#: uconf.rs_rotating_arrow_help
+msgid "Instead of the fixed up/steady/down arrows, the trend arrow is rotated smoothly to match how fast your glucose is changing: nearly flat for small changes and leaning further down (or up) the faster it moves."
+msgstr ""
 
 #: uconf.rs_saftey_hi
 msgid "Trndi won't allow a larger limit, for your own safety. This can be overridden manually/via plugin"

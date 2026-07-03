@@ -485,6 +485,18 @@ begin
   lArrow.left := 0;
   lArrow.top := 0;
   ScaleLbl(lArrow);
+  // Keep the rotating arrow overlay tracking lArrow's bounds. ScaleLbl force-
+  // shows lArrow, so re-hide the glyph while the vector arrow is active —
+  // otherwise both the glyph and the rotating arrow draw ("two shafts").
+  if Assigned(FTrendArrow) then
+  begin
+    FTrendArrow.BoundsRect := lArrow.BoundsRect;
+    if RotatingArrow then
+    begin
+      lArrow.Visible := false;
+      FTrendArrow.Visible := true;
+    end;
+  end;
 
   ScaleLbl(lTir);
   lTir.BringToFront;

@@ -92,6 +92,7 @@ begin
   PredictGlucoseReading := native.GetBoolSetting('predictions.enable', false);
   PredictShortMode := native.GetBoolSetting('predictions.short', false);
   PredictDotMode := native.GetBoolSetting('predictions.dots', false);
+  RotatingArrow := native.GetBoolSetting('display.rotating_arrow', false);
   PredictShortFullArrows := native.GetBoolSetting('predictions.short.fullarrows', false);
   PredictShortShowValue := native.GetBoolSetting('predictions.short.showvalue', false);
   minutesStr := '';
@@ -143,6 +144,12 @@ begin
   ResizeUIElements;
   ScaleLbl(lVal);
   ScaleLbl(lArrow);
+  // ScaleLbl re-shows lArrow; re-hide the glyph when the rotating arrow is on.
+  if RotatingArrow and Assigned(FTrendArrow) then
+  begin
+    lArrow.Visible := false;
+    FTrendArrow.Visible := true;
+  end;
   ScaleLbl(lAgo);
   if Assigned(lPredict) and lPredict.Visible then
     ScaleLbl(lPredict, taRightJustify, tlBottom);
@@ -370,6 +377,7 @@ procedure LoadUserSettings(f: TfConf);
       cbWebAPI.Checked := GetBoolSetting('webserver.enable');
       cbPredictShort.Checked := GetBoolSetting('predictions.short');
       cbPredictDots.Checked := GetBoolSetting('predictions.dots');
+      cbRotatingArrow.Checked := GetBoolSetting('display.rotating_arrow');
       cbWarnLoHi.Checked := GetBoolSetting('predictions.warn');
       cbPredictShortFullArrows.Checked := GetBoolSetting('predictions.short.fullarrows');
       if GetBoolSetting('predictions.short.showvalue') then
@@ -791,6 +799,7 @@ procedure SaveUserSettings(f: TfConf);
       SetSetting('predictions.warn', cbWarnLoHi.Checked);
       SetSetting('predictions.short', cbPredictShort.Checked);
       SetSetting('predictions.dots', cbPredictDots.Checked);
+      SetSetting('display.rotating_arrow', cbRotatingArrow.Checked);
       SetSetting('predictions.short.fullarrows', cbPredictShortFullArrows.Checked);
       SetSetting('predictions.short.showvalue', rbPredictShortShowValue.Checked);
       if cbPredictShortSize.ItemIndex >= 0 then

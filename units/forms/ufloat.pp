@@ -50,7 +50,7 @@ interface
 
 uses
 Classes, ExtCtrls, Menus, StdCtrls, SysUtils, Forms, Controls, Graphics, Dialogs,
-LCLIntf, LCLType, InterfaceBase, trndi.native
+LCLIntf, LCLType, InterfaceBase, trndi.native, utrendarrow
 {$IFDEF DARWIN},
 CocoaAll
 {$ENDIF}
@@ -128,6 +128,7 @@ private
   FDragStartX: integer;
   FDragStartY: integer;
   FDraggingWin: boolean;
+  FTrendArrow: TTrendArrow; // Rotating trend arrow overlay (mirrors the main window)
   procedure SetFormOpacity(Opacity: double);
   procedure ApplyRoundedCorners;
   procedure CreateRoundedCorners;
@@ -135,6 +136,11 @@ public
   {$ifdef LCLQt6}
   lvl: BGValLevel;
   {$endif}
+  {** Mirror the main window's rotating trend arrow.
+      @param(AEnabled Whether the rotating arrow replaces the glyph.)
+      @param(AAngle Rotation in degrees (0 = flat, + = up, - = down).)
+      @param(AColor Stroke colour for the arrow.) }
+  procedure SetTrendArrow(AEnabled: boolean; AAngle: single; AColor: TColor);
 end;
 
 resourcestring
@@ -705,6 +711,38 @@ begin
   ScaleLbl(lArrow, taCenter, tlCenter);
   lTime.Font.Size := lArrow.font.size div 3;
   lTime.left := larrow.left - (lTime.Width div 2);
+
+  // Keep the rotating arrow overlay tracking lArrow's bounds. ScaleLbl re-shows
+  // lArrow, so re-hide the glyph while the vector arrow is active.
+  if Assigned(FTrendArrow) then
+  begin
+    FTrendArrow.BoundsRect := lArrow.BoundsRect;
+    if FTrendArrow.Visible then
+      lArrow.Visible := false;
+  end;
+end;
+
+procedure TfFloat.SetTrendArrow(AEnabled: boolean; AAngle: single; AColor: TColor);
+begin
+  if not AEnabled then
+  begin
+    if Assigned(FTrendArrow) then
+      FTrendArrow.Visible := false;
+    lArrow.Visible := lArrow.Caption <> '';
+    Exit;
+  end;
+
+  if not Assigned(FTrendArrow) then
+  begin
+    FTrendArrow := TTrendArrow.Create(Self);
+    FTrendArrow.Parent := lArrow.Parent;
+  end;
+
+  FTrendArrow.ArrowColor := AColor;
+  FTrendArrow.BoundsRect := lArrow.BoundsRect;
+  FTrendArrow.Angle := AAngle;
+  lArrow.Visible := false;
+  FTrendArrow.Visible := true;
 end;
 
 procedure TfFloat.FormMouseDown(Sender: TObject; Button: TMouseButton;

@@ -94,6 +94,7 @@ TfConf = class(TForm)
   bScaleHelp: TButton;
   bPredScaleHelp: TButton;
   bFullArrowSetHelp: TButton;
+  bRotatingArrowHelp: TButton;
   bTestSpeech: TButton;
   bTimeStampHelp: TButton;
   bUseURLHelp: TButton;
@@ -148,6 +149,7 @@ TfConf = class(TForm)
   cbNotice: TCheckBox;
   cbPredictions: TCheckBox;
   cbPredictDots: TCheckBox;
+  cbRotatingArrow: TCheckBox;
   cbPredictShort: TCheckBox;
   cbPredictShortFullArrows: TCheckBox;
   cbPredictShortMinutes: TComboBox;
@@ -422,6 +424,7 @@ TfConf = class(TForm)
   procedure bDisplayGeneralHelpClick(Sender: TObject);
   procedure bDisplayWindowHelpClick(Sender: TObject);
   procedure bFullArrowSetHelpClick(Sender: TObject);
+  procedure bRotatingArrowHelpClick(Sender: TObject);
   procedure bPredScaleHelpClick(Sender: TObject);
   procedure bScaleAgoClick(Sender: TObject);
   procedure bScaleHelpClick(Sender: TObject);
@@ -582,6 +585,9 @@ RS_Warn_HiLow =
 
 RS_SHORT_MODE_HELP =
   'Only one reading will show, as just an arrow or a single prediction';
+
+RS_ROTATING_ARROW_HELP =
+  'Instead of the fixed up/steady/down arrows, the trend arrow is rotated smoothly to match how fast your glucose is changing: nearly flat for small changes and leaning further down (or up) the faster it moves.';
 
 RS_NOTIFICATION_HELP =
   'Trndi will show a system notification (if available) when your reading is in a dangerous state. Alerts will trigger once when hi/low and every 15 minutes when readings are missing.';
@@ -1260,6 +1266,11 @@ end;
 procedure TfConf.bFullArrowSetHelpClick(Sender: TObject);
 begin
   ShowMessage(RS_Full_Arrow_Set_Help);
+end;
+
+procedure TfConf.bRotatingArrowHelpClick(Sender: TObject);
+begin
+  ShowMessage(RS_ROTATING_ARROW_HELP);
 end;
 
 procedure TfConf.bDiffRightHelpClick(Sender: TObject);

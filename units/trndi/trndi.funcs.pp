@@ -66,6 +66,8 @@ procedure SortReadingsDescending(var Readings: array of BGReading);
 procedure SortReadingsAscending(var Readings: array of BGReading);
 procedure SetPointHeight(l: TControl; Value: single; clientHeight: integer);
 function CalculateTrendFromDelta(delta: single): BGTrend;
+function CalculateTrendAngle(delta: single): single;
+function TrendToAngle(trend: BGTrend): single;
 function HasNewerRelease(const JsonResponse: string;
 out ReleaseName: string;
 IncludePrerelease: boolean = false): boolean;
@@ -143,6 +145,9 @@ DOT_FRESH = #2;  // Most-recent reading (drawn with an outer ring)
 DOT_PREDICT = #3; // Predicted future reading (drawn as a hollow ring)
 
 PREDICTION_DOT_COUNT = 3; // Future prediction dots shown on the main trend (5/10/15 min)
+
+ARROW_MIN_TILT = 10;  // Smallest lean shown once the value is actually moving (degrees); keeps direction readable
+ARROW_MAX_ANGLE = 70; // Cap for the rotating trend arrow (degrees from flat); keeps it a lean, never vertical
 
 var
 DOT_ADJUST: single = 0; // Multiplyer where dots appear
@@ -437,6 +442,69 @@ begin
     Result := TdSingleUp
   else                          // ≥+3 mg/dL/min
     Result := TdDoubleUp;
+end;
+
+{ Maps a glucose delta to a continuous arrow rotation angle.
+
+  Deliberately gentle, but always readable: only near-zero noise (within a tiny
+  dead-band) stays flat. As soon as the value is genuinely moving the arrow
+  leans by at least ARROW_MIN_TILT so the direction is unmistakable, then the
+  tilt grows linearly with the rate of change — reaching 45° at a clearly-moving
+  ~15 mg/dL (~0.8 mmol/L) over 5 minutes and capped at ARROW_MAX_ANGLE so even a
+  fast move reads as a lean rather than a vertical spike.
+
+  @param(delta Change in mg/dL over a 5-minute interval.)
+  @returns(Rotation in degrees: 0 = flat, positive = rising, negative = falling;
+           magnitude is either 0 or within ARROW_MIN_TILT..ARROW_MAX_ANGLE.) }
+function CalculateTrendAngle(delta: single): single;
+const
+  DEAD_BAND = 0.5;         // mg/dL per 5 min; only near-zero noise stays flat
+  DELTA_AT_45 = 15.0;      // mg/dL per 5 min mapped to 45°
+var
+  mag: single;
+begin
+  if Abs(delta) <= DEAD_BAND then
+    Exit(0);
+  // Magnitude: linear, but never so shallow it looks flat, never past the cap.
+  mag := (Abs(delta) / DELTA_AT_45) * 45.0;
+  if mag < ARROW_MIN_TILT then
+    mag := ARROW_MIN_TILT
+  else
+  if mag > ARROW_MAX_ANGLE then
+    mag := ARROW_MAX_ANGLE;
+  if delta < 0 then
+    Result := -mag
+  else
+    Result := mag;
+end;
+
+{ Representative rotation angle for a discrete trend arrow.
+
+  Used as a fallback for the rotating arrow when no usable delta is available
+  (e.g. the first reading, or a stale gap), so the arrow still points in the
+  direction the CGM reported. Mirrors CalculateTrendAngle's ±90° range.
+
+  @param(trend The discrete trend enumeration.)
+  @returns(Rotation in degrees: 0 = flat, positive = rising, negative = falling.) }
+function TrendToAngle(trend: BGTrend): single;
+begin
+  // Soft angles consistent with CalculateTrendAngle's gentle scale.
+  case trend of
+  TdDoubleUp:
+    Result := 60;
+  TdSingleUp:
+    Result := 40;
+  TdFortyFiveUp:
+    Result := 20;
+  TdFortyFiveDown:
+    Result := -20;
+  TdSingleDown:
+    Result := -40;
+  TdDoubleDown:
+    Result := -60;
+  else                          // TdFlat, TdNotComputable, TdPlaceholder
+    Result := 0;
+  end;
 end;
 
 procedure setTimeRange(mins, Count: integer);

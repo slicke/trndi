@@ -60,6 +60,19 @@ The direction and rate of glucose change, represented by arrows:
 | **TdNotComputable** | ? | ? | Unknown | N/A |
 | **TdPlaceholder** | X | X | Not Found | N/A |
 
+**Rotating arrow (optional):** when "Rotate trend arrow by rate of change" is
+enabled in Settings, the main and floating windows draw a single arrow rotated
+continuously by the actual rate of change instead of the discrete glyph above.
+The mapping is deliberately gentle but always readable: only near-zero noise
+(within a ±0.5 mg/dL dead-band) reads as flat; once the value is actually moving
+the arrow leans by at least `ARROW_MIN_TILT` (10°) so the direction is
+unmistakable, then rises linearly to 45° at a clearly-moving ~15 mg/dL
+(~0.8 mmol/L) over 5 minutes, capped at `ARROW_MAX_ANGLE` (70°) so a fast move
+leans rather than points straight down.
+The rate is normalised to a 5-minute window (the divisor is clamped to ≥5 min so
+sub-interval gaps don't amplify noise). See `CalculateTrendAngle` in
+`units/trndi/trndi.funcs.pp`.
+
 ### **BGValLevel** (Glucose Level Classification)
 Classifies a reading relative to configured thresholds:
 - **BGHIGH** - Above high threshold (urgent)
