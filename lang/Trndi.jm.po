@@ -548,6 +548,10 @@ msgstr "Visa tid till nesta uppdatering till venster"
 msgid "Use range color for window background"
 msgstr "Ferga fônstret med omrodesferg"
 
+#: tfconf.cbrotatingarrow.caption
+msgid "Rotate trend arrow by rate of change"
+msgstr ""
+
 #: tfconf.cbshowmean.caption
 msgid "Show mean blood sugar reading next to TIR"
 msgstr "Visa medelblodsôcker bredvid TIR"
@@ -3086,6 +3090,10 @@ msgstr "Ner privat lege er aktiverat, visas inte avlesningar. Trndi visar istell
 #: uconf.rs_remove_acc
 msgid "Removed accounts are made inactive, and can be restored by adding the same name again"
 msgstr "Borttagna konton blir inaktiva, de kan oterstellas genom att skapa om anvendaren med sanna namn"
+
+#: uconf.rs_rotating_arrow_help
+msgid "Instead of the fixed up/steady/down arrows, the trend arrow is rotated smoothly to match how fast your glucose is changing: nearly flat for small changes and leaning further down (or up) the faster it moves."
+msgstr ""
 
 #: uconf.rs_saftey_hi
 #, fuzzy

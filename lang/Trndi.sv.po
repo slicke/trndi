@@ -542,6 +542,10 @@ msgstr "Visa tid till nästa uppdatering till vänster"
 msgid "Use range color for window background"
 msgstr "Färga fönstret med områdesfärg"
 
+#: tfconf.cbrotatingarrow.caption
+msgid "Rotate trend arrow by rate of change"
+msgstr "Rotera trendpilen efter förändringstakt"
+
 #: tfconf.cbshowmean.caption
 msgid "Show mean blood sugar reading next to TIR"
 msgstr "Visa medelblodsocker bredvid TIR"
@@ -3003,6 +3007,12 @@ msgstr "När privat läge är aktiverat, visas inte avläsningar. Trndi visar is
 msgid "Removed accounts are made inactive, and can be restored by adding the same name again"
 msgstr "Borttagna konton blir inaktiva, de kan återställas genom att skapa om användaren med samma namn"
 
+#: uconf.rs_rotating_arrow_help
+#, fuzzy
+#| msgid "Instead of the fixed up/steady/down arrows, the trend arrow is rotated smoothly to match the actual rate of change: flat when steady, tilting further down (or up) the faster your glucose is moving. It reaches 45 degrees at about -0.3 mmol/L (-5 mg/dL) over 5 minutes and points straight down at about -0.6 mmol/L (-10 mg/dL) over 5 minutes."
+msgid "Instead of the fixed up/steady/down arrows, the trend arrow is rotated smoothly to match how fast your glucose is changing: nearly flat for small changes and leaning further down (or up) the faster it moves."
+msgstr "Istället för de fasta pilarna för upp/stabilt/ner roteras trendpilen mjukt efter den verkliga förändringstakten: plan när värdet är stabilt och lutar mer nedåt (eller uppåt) ju snabbare ditt glukos ändras. Den når 45 grader vid ungefär -0,3 mmol/L (-5 mg/dL) på 5 minuter och pekar rakt ner vid ungefär -0,6 mmol/L (-10 mg/dL) på 5 minuter."
+
 #: uconf.rs_saftey_hi
 msgid "Trndi won't allow a larger limit, for your own safety. This can be overridden manually/via plugin"
 msgstr "Trndi tillåter inte en större gräns, för din egen säkerhet. Detta kan överskrivas manuellt/via plugin"
@@ -3290,3 +3300,4 @@ msgstr "Den höga gränsen måste vara större än den låga gränsen."
 #: uwizard.wz_test_no_support
 msgid "Connection testing is not supported for this service."
 msgstr "Anslutningstest stöds inte för denna tjänst."
+

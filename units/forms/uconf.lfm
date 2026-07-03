@@ -18,12 +18,12 @@ object fConf: TfConf
     Height = 590
     Top = 11
     Width = 645
-    ActivePage = tsSystem
+    ActivePage = tsDisplay
     Align = alClient
     BorderSpacing.Left = 10
     BorderSpacing.Right = 10
     BorderSpacing.Around = 5
-    TabIndex = 10
+    TabIndex = 3
     TabOrder = 0
     OnChange = pcMainChange
     object tsCommon: TTabSheet
@@ -1596,12 +1596,12 @@ object fConf: TfConf
         end
         object GroupBox11: TGroupBox
           Left = 0
-          Height = 105
+          Height = 125
           Top = 55
           Width = 633
           Align = alTop
           Caption = 'General'
-          ClientHeight = 85
+          ClientHeight = 105
           ClientWidth = 629
           TabOrder = 1
           object cbProgress: TCheckBox
@@ -1628,6 +1628,23 @@ object fConf: TfConf
             Caption = 'Alternate arrow and reading display'
             TabOrder = 2
           end
+          object cbRotatingArrow: TCheckBox
+            Left = 16
+            Height = 19
+            Top = 72
+            Width = 211
+            Caption = 'Rotate trend arrow by rate of change'
+            TabOrder = 4
+          end
+          object bRotatingArrowHelp: TButton
+            Left = 584
+            Height = 22
+            Top = 70
+            Width = 27
+            Caption = '?'
+            TabOrder = 5
+            OnClick = bRotatingArrowHelpClick
+          end
           object bDisplayGeneralHelp: TButton
             Left = 584
             Height = 22
@@ -1641,7 +1658,7 @@ object fConf: TfConf
         object GroupBox12: TGroupBox
           Left = 0
           Height = 57
-          Top = 160
+          Top = 180
           Width = 633
           Align = alTop
           Caption = 'Advanced'
@@ -1669,7 +1686,7 @@ object fConf: TfConf
         object GroupBox13: TGroupBox
           Left = 0
           Height = 105
-          Top = 217
+          Top = 237
           Width = 633
           Align = alTop
           Caption = 'Window'

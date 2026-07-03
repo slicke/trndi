@@ -538,6 +538,10 @@ msgstr "Vis tid til næste opdatering til venstre"
 msgid "Use range color for window background"
 msgstr "Farv vinduet med områdefarve"
 
+#: tfconf.cbrotatingarrow.caption
+msgid "Rotate trend arrow by rate of change"
+msgstr ""
+
 #: tfconf.cbshowmean.caption
 msgid "Show mean blood sugar reading next to TIR"
 msgstr "Vis gennemsnitligt blodsukker ved siden af TIR"
@@ -2852,6 +2856,10 @@ msgstr "I privatlivstilstand er den faktiske blodglukoseværdi skjult. Trndi vis
 #: uconf.rs_remove_acc
 msgid "Removed accounts are made inactive, and can be restored by adding the same name again"
 msgstr "Fjernede konti gøres inaktive og kan gendannes ved at tilføje samme navn igen"
+
+#: uconf.rs_rotating_arrow_help
+msgid "Instead of the fixed up/steady/down arrows, the trend arrow is rotated smoothly to match how fast your glucose is changing: nearly flat for small changes and leaning further down (or up) the faster it moves."
+msgstr ""
 
 #: uconf.rs_saftey_hi
 msgid "Trndi won't allow a larger limit, for your own safety. This can be overridden manually/via plugin"

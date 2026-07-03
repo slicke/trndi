@@ -63,6 +63,8 @@
 {"hash":119741220,"name":"tfconf.cbprogress.caption","sourcebytes":[68,105,115,112,108,97,121,32,112,114,111,103,114,101,115,115,32,116,111,32,110,101,120,116,32,117,112,100,97,116,101,32,111,110,32,116,104,101,32,108,101,102,116],"value":"Display progress to next update on the left"},
 {"hash":162070963,"name":"tfconf.cbclock.caption","sourcebytes":[83,104,111,119,32,99,108,111,99,107,32,102,111,114,32,53,32,115,101,99,32,101,118,101,114,121,32,50,48,32,115,101,99],"value":"Show clock for 5 sec every 20 sec"},
 {"hash":192657305,"name":"tfconf.cbalternate.caption","sourcebytes":[65,108,116,101,114,110,97,116,101,32,97,114,114,111,119,32,97,110,100,32,114,101,97,100,105,110,103,32,100,105,115,112,108,97,121],"value":"Alternate arrow and reading display"},
+{"hash":64297813,"name":"tfconf.cbrotatingarrow.caption","sourcebytes":[82,111,116,97,116,101,32,116,114,101,110,100,32,97,114,114,111,119,32,98,121,32,114,97,116,101,32,111,102,32,99,104,97,110,103,101],"value":"Rotate trend arrow by rate of change"},
+{"hash":63,"name":"tfconf.brotatingarrowhelp.caption","sourcebytes":[63],"value":"?"},
 {"hash":63,"name":"tfconf.bdisplaygeneralhelp.caption","sourcebytes":[63],"value":"?"},
 {"hash":197676484,"name":"tfconf.groupbox12.caption","sourcebytes":[65,100,118,97,110,99,101,100],"value":"Advanced"},
 {"hash":193738709,"name":"tfconf.cbshowsensorexpiry.caption","sourcebytes":[83,104,111,119,32,115,101,110,115,111,114,32,101,120,112,105,114,121,32,105,110,32,116,111,112,45,99,101,110,116,101,114,32,98,97,100,103,101],"value":"Show sensor expiry in top-center badge"},

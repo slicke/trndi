@@ -3,6 +3,56 @@
    Included in the implementation section of umain.pp only.
 *)
 
+// Show or hide the rotating trend arrow overlay and set its angle/colour.
+procedure TfBG.UpdateTrendArrow(const reading: BGReading; havePrev: boolean;
+  gapMin: integer);
+var
+  deltaPer5: double;
+  angle: single;
+  haveDelta: boolean;
+begin
+  // Prefer an angle derived from the actual rate of change; fall back to the
+  // discrete trend when no usable delta is available (first/stale reading).
+  haveDelta := havePrev and (gapMin > 0)
+    and (gapMin < (INTERVAL_MINUTES * DELTA_MAX))
+    and (Length(bgs) >= 2) and (not bgs[0].empty) and (not bgs[1].empty);
+  if haveDelta then
+  begin
+    // Normalise to a 5-minute rate. Clamp the divisor to >= 5 min so readings
+    // closer together than the standard interval don't amplify a small drift
+    // into a steep tilt; longer gaps still attenuate (a slower true rate).
+    deltaPer5 := (bgs[0].convert(mgdl) - bgs[1].convert(mgdl)) * 5.0
+      / Max(gapMin, INTERVAL_MINUTES);
+    angle := CalculateTrendAngle(deltaPer5);
+  end
+  else
+    angle := TrendToAngle(reading.trend);
+  FLastArrowAngle := angle; // Cached so the floating window can reuse it.
+
+  if not RotatingArrow then
+  begin
+    if Assigned(FTrendArrow) then
+      FTrendArrow.Visible := false;
+    lArrow.Visible := true;
+    Exit;
+  end;
+
+  // Lazily create the overlay, sharing lArrow's parent so it sits over the
+  // same client area.
+  if not Assigned(FTrendArrow) then
+  begin
+    FTrendArrow := TTrendArrow.Create(Self);
+    FTrendArrow.Parent := lArrow.Parent;
+  end;
+
+  FTrendArrow.ArrowColor := lArrow.Font.Color;
+  FTrendArrow.BoundsRect := lArrow.BoundsRect;
+  FTrendArrow.Angle := angle;
+  lArrow.Visible := false;
+  FTrendArrow.Visible := true;
+  FTrendArrow.SendToBack;
+end;
+
 // Request data from the backend and update GUI
 procedure TfBG.ProcessCurrentReading;
 var
@@ -64,6 +114,7 @@ begin
   else
     lDiff.Caption := reading.format(un, BG_MSG_SIG_SHORT, BGDelta);
   lArrow.Caption := reading.trend.Img;
+  UpdateTrendArrow(reading, havePrev, gapMin);
   lVal.Font.Style := [];
 
   // Paint the value labels synchronously so they hit the screen before the
@@ -623,6 +674,9 @@ begin
     fFloat.pnMultiUser.Visible := pnMultiUser.Visible;
     if fFloat.pnMultiUser.Visible then
       fFloat.pnMultiUser.Color := pnMultiUser.Color;
+
+    // Mirror the rotating trend arrow (uses the angle cached by UpdateTrendArrow).
+    fFloat.SetTrendArrow(RotatingArrow, FLastArrowAngle, fFloat.lArrow.Font.Color);
   end;
 end;
 
@@ -1132,6 +1186,12 @@ begin
   lVal.Font.Color := GetTextColorForBackground(fBG.color);
   lArrow.Font.Color := LightenColor(fBG.color, 0.5);
   lArrow.SendToBack;
+  if Assigned(FTrendArrow) then
+  begin
+    FTrendArrow.ArrowColor := lArrow.Font.Color;
+    if FTrendArrow.Visible then
+      FTrendArrow.SendToBack;
+  end;
   lDiff.Font.Color := GetTextColorForBackground(fBG.color, 0.6, 0.4);
   lAgo.Font.Color := GetTextColorForBackground(fBG.color, 0.6, 0.4);
   lTir.Font.Color := GetTextColorForBackground(fBG.color, 0.6, 0.4);
