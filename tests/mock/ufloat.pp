@@ -27,6 +27,7 @@ type
     procedure FormResize(Sender: TObject); virtual;
     procedure Show; virtual;
     procedure Hide; virtual;
+    procedure SetTrendArrow(AEnabled: boolean; AAngle: single; AColor: TColor); virtual;
     class function Instance: TfFloat; static;
   end;
 
@@ -51,6 +52,11 @@ begin
 end;
 
 procedure TfFloat.Hide;
+begin
+  // no-op for headless tests
+end;
+
+procedure TfFloat.SetTrendArrow(AEnabled: boolean; AAngle: single; AColor: TColor);
 begin
   // no-op for headless tests
 end;

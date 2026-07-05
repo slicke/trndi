@@ -27,6 +27,9 @@ type
 
   TAlign = (alNone, alTop, alBottom, alLeft, alRight, alClient);
 
+  TControlStyleType = (csOpaque, csClickEvents, csCaptureMouse);
+  TControlStyle = set of TControlStyleType;
+
   TControl = class(TComponent)
   private
     FLeft: Integer;
@@ -54,6 +57,8 @@ type
   protected
     FCanvas: TCanvas;
     FFont: TFont;
+    FControlStyle: TControlStyle;
+    property ControlStyle: TControlStyle read FControlStyle write FControlStyle;
   public
     property AutoSize: Boolean read FAutoSize write FAutoSize;
     constructor Create(AOwner: TComponent = nil); virtual;
@@ -99,7 +104,8 @@ type
     // Bounds helpers
     procedure SetBounds(ALeft, ATop, AWidth, AHeight: Integer); virtual;
     function GetBoundsRect: TRect; virtual;
-    property BoundsRect: TRect read GetBoundsRect;
+    procedure SetBoundsRect(const AValue: TRect); virtual;
+    property BoundsRect: TRect read GetBoundsRect write SetBoundsRect;
 
     // Basic UI event hooks commonly overridden by forms/controls
     procedure Paint; virtual;
@@ -113,6 +119,10 @@ type
 
 
   TWinControl = class(TControl)
+  end;
+
+  // Windowless control; in the real LCL it paints onto the parent's canvas.
+  TGraphicControl = class(TControl)
   end;
 
   // Owner-draw state and drag object used in event signatures
@@ -248,6 +258,12 @@ end;
 function TControl.GetBoundsRect: TRect;
 begin
   Result := Rect(Left, Top, Left + Width, Top + Height);
+end;
+
+procedure TControl.SetBoundsRect(const AValue: TRect);
+begin
+  SetBounds(AValue.Left, AValue.Top,
+    AValue.Right - AValue.Left, AValue.Bottom - AValue.Top);
 end;
 
 procedure TControl.Invalidate;

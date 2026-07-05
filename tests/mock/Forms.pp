@@ -48,6 +48,7 @@ type
     property Handle: PtrUInt read FHandle write FHandle;
     property ShowInTaskBar: TShowInTaskBar read FShowInTaskBar write FShowInTaskBar;
     property Icon: TIcon read FIcon write FIcon;
+    function HandleAllocated: Boolean; virtual;
     procedure Repaint; virtual;
   end;
 
@@ -118,6 +119,11 @@ procedure TApplication.QueueAsyncCall(const AMethod: TDataEvent; Data: PtrInt);
 begin
   // no-op in test environment — production code uses this to defer work to
   // the next message-loop iteration; tests run headless so we just drop it.
+end;
+
+function TForm.HandleAllocated: Boolean;
+begin
+  Result := FHandle <> 0;
 end;
 
 procedure TForm.Close;
