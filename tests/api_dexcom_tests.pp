@@ -40,6 +40,12 @@ var
   readings: BGResults;
   BaseURL: string;
 begin
+  // Allow skipping integration tests via TRNDI_NO_TESTSERVER=1
+  if GetEnvironmentVariable('TRNDI_NO_TESTSERVER') = '1' then
+  begin
+    Writeln('Skipping TestDexcomLocalServer: embedded test server disabled (TRNDI_NO_TESTSERVER=1)');
+    Exit;
+  end;
 
   // Start or reuse embedded test server (TRNDI_TEST_SERVER_URL reuses an external one)
   if not StartOrUseTestServer(BaseURL) then

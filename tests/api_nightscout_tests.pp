@@ -62,6 +62,11 @@ var
   api: NightScout;
   BaseURL: string;
 begin
+  if GetEnvironmentVariable('TRNDI_NO_TESTSERVER') = '1' then
+  begin
+    Writeln('Skipping TestNightscoutServerError: embedded test server disabled (TRNDI_NO_TESTSERVER=1)');
+    Exit;
+  end;
 
   if not StartOrUseTestServer(BaseURL) then
     Fail('Failed to start or reach test server');
@@ -88,6 +93,12 @@ var
   api: TrndiAPI;
   BaseURL: string;
 begin
+  // Allow skipping integration tests via TRNDI_NO_TESTSERVER=1
+  if GetEnvironmentVariable('TRNDI_NO_TESTSERVER') = '1' then
+  begin
+    Writeln('Skipping TestNightscoutUnauthorized: embedded test server disabled (TRNDI_NO_TESTSERVER=1)');
+    Exit;
+  end;
 
   // Start or reuse embedded test server (TRNDI_TEST_SERVER_URL reuses an external one)
   if not StartOrUseTestServer(BaseURL) then
@@ -110,6 +121,11 @@ var
   readings: BGResults;
   BaseURL: string;
 begin
+  if GetEnvironmentVariable('TRNDI_NO_TESTSERVER') = '1' then
+  begin
+    Writeln('Skipping TestNightscoutGetReadingsRespectsMax: embedded test server disabled (TRNDI_NO_TESTSERVER=1)');
+    Exit;
+  end;
 
   if not StartOrUseTestServer(BaseURL) then
     Fail('Failed to start or reach test server');
@@ -136,6 +152,13 @@ var
   BaseURL: string;
 begin
   bg.Clear;
+
+  // Allow skipping integration tests via TRNDI_NO_TESTSERVER=1
+  if GetEnvironmentVariable('TRNDI_NO_TESTSERVER') = '1' then
+  begin
+    Writeln('Skipping TestNightscout: embedded test server disabled (TRNDI_NO_TESTSERVER=1)');
+    Exit;
+  end;
 
   // Start or reuse embedded test server (TRNDI_TEST_SERVER_URL reuses an external one)
   if not StartOrUseTestServer(BaseURL) then

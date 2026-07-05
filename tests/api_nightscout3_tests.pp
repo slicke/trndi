@@ -42,6 +42,12 @@ var
   api: TrndiAPI;
   BaseURL: string;
 begin
+  // Allow skipping integration tests via TRNDI_NO_TESTSERVER=1
+  if GetEnvironmentVariable('TRNDI_NO_TESTSERVER') = '1' then
+  begin
+    Writeln('Skipping TestNightscout3Unauthorized: embedded test server disabled (TRNDI_NO_TESTSERVER=1)');
+    Exit;
+  end;
 
   // Start or reuse embedded test server (TRNDI_TEST_SERVER_URL reuses an external one)
   if not StartOrUseTestServer(BaseURL) then
@@ -67,6 +73,12 @@ var
   readings: BGResults;
   BaseURL: string;
 begin
+  // Allow skipping integration tests via TRNDI_NO_TESTSERVER=1
+  if GetEnvironmentVariable('TRNDI_NO_TESTSERVER') = '1' then
+  begin
+    Writeln('Skipping TestNightscout3GetReadingsRespectsMax: embedded test server disabled (TRNDI_NO_TESTSERVER=1)');
+    Exit;
+  end;
 
   // Start or reuse embedded test server (TRNDI_TEST_SERVER_URL reuses an external one)
   if not StartOrUseTestServer(BaseURL) then
@@ -97,6 +109,11 @@ var
   secondReadings: BGResults;
   BaseURL: string;
 begin
+  if GetEnvironmentVariable('TRNDI_NO_TESTSERVER') = '1' then
+  begin
+    Writeln('Skipping TestNightscout3RefreshesExpiredTokenDuringPolling: embedded test server disabled (TRNDI_NO_TESTSERVER=1)');
+    Exit;
+  end;
 
   if not StartOrUseTestServer(BaseURL) then
     Fail('Failed to start or reach test server');
@@ -131,6 +148,12 @@ var
   readings: BGResults;
   BaseURL: string;
 begin
+  // Allow skipping integration tests via TRNDI_NO_TESTSERVER=1
+  if GetEnvironmentVariable('TRNDI_NO_TESTSERVER') = '1' then
+  begin
+    Writeln('Skipping TestNightscout3: embedded test server disabled (TRNDI_NO_TESTSERVER=1)');
+    Exit;
+  end;
 
   // Start or reuse embedded test server (TRNDI_TEST_SERVER_URL reuses an external one)
   if not StartOrUseTestServer(BaseURL) then

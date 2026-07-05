@@ -57,6 +57,12 @@ var
   api: TrndiAPI;
   BaseURL: string;
 begin
+  if GetEnvironmentVariable('TRNDI_NO_TESTSERVER') = '1' then
+  begin
+    Writeln('Skipping TestDexcomNewServerError: embedded test server disabled (TRNDI_NO_TESTSERVER=1)');
+    Exit;
+  end;
+
   if not StartOrUseTestServer(BaseURL) then
     Fail('Failed to start or reach test server');
   try
@@ -78,6 +84,12 @@ var
   readings: BGResults;
   BaseURL: string;
 begin
+  // Allow skipping integration tests via TRNDI_NO_TESTSERVER=1
+  if GetEnvironmentVariable('TRNDI_NO_TESTSERVER') = '1' then
+  begin
+    Writeln('Skipping TestDexcomNewLocalServer: embedded test server disabled (TRNDI_NO_TESTSERVER=1)');
+    Exit;
+  end;
 
   // Start or reuse embedded test server (TRNDI_TEST_SERVER_URL reuses an external one)
   if not StartOrUseTestServer(BaseURL) then
