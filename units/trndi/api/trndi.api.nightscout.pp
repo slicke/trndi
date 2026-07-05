@@ -139,7 +139,13 @@ public
      }
   function getBasalRate: single; override;
 private
-    // (no private members)
+    // Cached sensor-age suffix from the devicestatus probe. Sensor age moves
+    // at hour granularity, so re-probing on every readings fetch just doubles
+    // the HTTP traffic; getReadings refreshes it when the TTL lapses or on a
+    // forced (noCache) fetch. Empty results are cached too so servers without
+    // devicestatus data aren't re-probed every fetch.
+  FSensorSuffix: string;
+  FSensorSuffixAt: TDateTime; // Last probe time; 0 = never probed
 
 published
     {** The remote Nightscout base URL actually used (read-only proxy to baseUrl). }
@@ -159,6 +165,11 @@ begin
   else
     Result := Format('%dh', [h]);
 end;
+
+const
+  // How long a probed sensor-age suffix stays valid before getReadings spends
+  // another devicestatus round trip on refreshing it.
+  SENSOR_SUFFIX_TTL_MIN = 10;
 
 var
   NoCacheTokenSeq: LongInt = 0;
@@ -570,17 +581,27 @@ begin
     Exit;
   end;
 
-  // Optional metadata probe for sensor age/expiry hints.
-  sensorSuffix := '';
-  if noCache then
-    statusParams := ['count=1', '_=' + NextNoCacheToken]
+  // Optional metadata probe for sensor age/expiry hints. Served from a
+  // short-lived cache so a normal readings fetch costs one HTTP round trip,
+  // not two; forced (noCache) fetches always re-probe.
+  if (not noCache) and (FSensorSuffixAt <> 0) and
+    (MinutesBetween(Now, FSensorSuffixAt) < SENSOR_SUFFIX_TTL_MIN) then
+    sensorSuffix := FSensorSuffix
   else
-    statusParams := ['count=1'];
-  try
-    devStatusResp := native.request(false, NS_DEVICESTATUS, statusParams, '', key);
-    sensorSuffix := ExtractSensorStatusSuffix(devStatusResp);
-  except
+  begin
     sensorSuffix := '';
+    if noCache then
+      statusParams := ['count=1', '_=' + NextNoCacheToken]
+    else
+      statusParams := ['count=1'];
+    try
+      devStatusResp := native.request(false, NS_DEVICESTATUS, statusParams, '', key);
+      sensorSuffix := ExtractSensorStatusSuffix(devStatusResp);
+    except
+      sensorSuffix := '';
+    end;
+    FSensorSuffix := sensorSuffix;
+    FSensorSuffixAt := Now;
   end;
 
   // Index directly into the array — FindPath('[i]') and FindPath('[i].sgv')

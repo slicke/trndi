@@ -56,6 +56,7 @@ type
     cbCustRange: TCheckBox;
     cbPredictions: TCheckBox;
     cbPredictDots: TCheckBox;
+    cbRotatingArrow: TCheckBox;
     cbWebAPI: TCheckBox;
     cbAutoStart: TCheckBox;
     cbPredictShort: TCheckBox;

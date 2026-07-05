@@ -20,12 +20,15 @@ const
   clDefault = clWhite;
   clMaroon = $00008000;
   clBlue   = $00FF0000;
+  clGray   = $00808080;
   // Pixel format constants used by mocks
   pf32bit = 0;
 
 type
   TBrushStyle = (bsSolid, bsClear);
   TPenStyle = (psSolid, psClear, psDot);
+  TPenEndCap = (pecRound, pecSquare, pecFlat);
+  TPenJoinStyle = (pjsRound, pjsBevel, pjsMiter);
   TFontStyle = (fsBold, fsStrikeOut);
   TFontStyles = set of TFontStyle;
 
@@ -34,10 +37,14 @@ type
     FColor: TColor;
     FWidth: Integer;
     FStyle: TPenStyle;
+    FEndCap: TPenEndCap;
+    FJoinStyle: TPenJoinStyle;
   public
     property Color: TColor read FColor write FColor;
     property Width: Integer read FWidth write FWidth;
     property Style: TPenStyle read FStyle write FStyle;
+    property EndCap: TPenEndCap read FEndCap write FEndCap;
+    property JoinStyle: TPenJoinStyle read FJoinStyle write FJoinStyle;
   end;
 
   TBrush = class(TPersistent)
@@ -111,6 +118,7 @@ type
     procedure RoundRect(X1, Y1, X2, Y2, RoundX, RoundY: Integer); overload; virtual;
     procedure MoveTo(X, Y: Integer); virtual;
     procedure LineTo(X, Y: Integer); virtual;
+    procedure Line(X1, Y1, X2, Y2: Integer); virtual;
     procedure Polygon(const Points: array of TPoint); virtual;
     procedure Ellipse(X1, Y1, X2, Y2: Integer); virtual;
     function GetPixels(X, Y: Integer): TColor; virtual;
@@ -289,6 +297,11 @@ begin
 end;
 
 procedure TCanvas.LineTo(X, Y: Integer);
+begin
+  // no-op
+end;
+
+procedure TCanvas.Line(X1, Y1, X2, Y2: Integer);
 begin
   // no-op
 end;

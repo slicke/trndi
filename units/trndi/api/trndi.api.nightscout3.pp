@@ -87,6 +87,13 @@ private
   FSiteBase: string;    // Base site URL (no trailing slash), e.g. https://example.com
   FToken: string;       // Bearer JWT token (obtained via v2 authorization)
   FTokenSuffix: string; // Token suffix used in v2 authorization
+    // Cached sensor-age suffix from the devicestatus/treatments probe. Sensor
+    // age moves at hour granularity, so re-probing on every readings fetch
+    // adds up to three extra HTTP round trips; getReadings refreshes it when
+    // the TTL lapses or on a forced (noCache) fetch. Empty results are cached
+    // too so servers without sensor metadata aren't re-probed every fetch.
+  FSensorSuffix: string;
+  FSensorSuffixAt: TDateTime; // Last probe time; 0 = never probed
 
   class function NormalizeV2AccessToken(const AccessToken: string): string;
   function IsAuthFailureResponse(const Resp: string): boolean;
@@ -145,6 +152,11 @@ protected
 end;
 
 implementation
+
+const
+  // How long a probed sensor-age suffix stays valid before getReadings spends
+  // extra devicestatus/treatments round trips on refreshing it.
+  NS3_SENSOR_SUFFIX_TTL_MIN = 10;
 
 var
   NS3NoCacheTokenSeq: LongInt = 0;
@@ -966,38 +978,49 @@ begin
     end;
   end;
 
-  // Optional metadata probe for sensor age/expiry hints.
-  sensorSuffix := '';
-  if noCache then
-    SetLength(statusParams, 2)
+  // Optional metadata probe for sensor age/expiry hints. Served from a
+  // short-lived cache so a normal readings fetch costs one HTTP round trip
+  // instead of up to four (devicestatus + v1 fallback + treatments); forced
+  // (noCache) fetches always re-probe.
+  if (not noCache) and (FSensorSuffixAt <> 0) and
+    (MinutesBetween(Now, FSensorSuffixAt) < NS3_SENSOR_SUFFIX_TTL_MIN) then
+    sensorSuffix := FSensorSuffix
   else
-    SetLength(statusParams, 1);
-  statusParams[0] := 'count=1';
-  if noCache then
-    statusParams[1] := '_=' + NS3NextNoCacheToken;
-  try
-    if not TryRequestV3(NS3_DEVICESTATUS, NS3_DEVICESTATUS_JSON, statusParams, devStatusResp) then
-      devStatusResp := native.request(false, FSiteBase + '/api/v1/devicestatus.json',
-        statusParams, '', BearerHeader, false {no prefix});
-    sensorSuffix := NS3ExtractSensorStatusSuffix(devStatusResp);
-
-    // Fallback: derive age from latest Sensor Start/Change treatment events.
-    if sensorSuffix = '' then
-    begin
-      SetLength(treatParams, 2);
-      treatParams[0] := 'limit=40';
-      treatParams[1] := 'sort$desc=created_at';
-      if not TryRequestV3(NS3_TREATMENTS, NS3_TREATMENTS_JSON, treatParams, treatmentsResp) then
-      begin
-        SetLength(fbparams, 1);
-        fbparams[0] := 'count=40';
-        treatmentsResp := native.request(false, FSiteBase + '/api/v1/treatments.json',
-          fbparams, '', BearerHeader, false {no prefix});
-      end;
-      sensorSuffix := NS3ExtractSensorStatusSuffixFromTreatments(treatmentsResp);
-    end;
-  except
+  begin
     sensorSuffix := '';
+    if noCache then
+      SetLength(statusParams, 2)
+    else
+      SetLength(statusParams, 1);
+    statusParams[0] := 'count=1';
+    if noCache then
+      statusParams[1] := '_=' + NS3NextNoCacheToken;
+    try
+      if not TryRequestV3(NS3_DEVICESTATUS, NS3_DEVICESTATUS_JSON, statusParams, devStatusResp) then
+        devStatusResp := native.request(false, FSiteBase + '/api/v1/devicestatus.json',
+          statusParams, '', BearerHeader, false {no prefix});
+      sensorSuffix := NS3ExtractSensorStatusSuffix(devStatusResp);
+
+      // Fallback: derive age from latest Sensor Start/Change treatment events.
+      if sensorSuffix = '' then
+      begin
+        SetLength(treatParams, 2);
+        treatParams[0] := 'limit=40';
+        treatParams[1] := 'sort$desc=created_at';
+        if not TryRequestV3(NS3_TREATMENTS, NS3_TREATMENTS_JSON, treatParams, treatmentsResp) then
+        begin
+          SetLength(fbparams, 1);
+          fbparams[0] := 'count=40';
+          treatmentsResp := native.request(false, FSiteBase + '/api/v1/treatments.json',
+            fbparams, '', BearerHeader, false {no prefix});
+        end;
+        sensorSuffix := NS3ExtractSensorStatusSuffixFromTreatments(treatmentsResp);
+      end;
+    except
+      sensorSuffix := '';
+    end;
+    FSensorSuffix := sensorSuffix;
+    FSensorSuffixAt := Now;
   end;
 
   try
