@@ -179,10 +179,12 @@ begin
       PlaceTrendDots(bgs);
   end;
 
+  // UpdateTrendDots sets value-based tops; AdjustGraph must always follow to
+  // apply the trend row's vertical offsets (half-diameter centring + in-view
+  // correction) — same pairing as tResizeTimer. Without it the whole row sits
+  // visibly lower until the next full relayout. It also repaints the dots.
   UpdateTrendDots;
-  for i := 1 to High(TrendDots) do
-    if TrendDots[i] <> nil then
-      TrendDots[i].Invalidate;
+  AdjustGraph;
 
   UpdateUIColors;
   UpdateUIBasedOnGlucose;
