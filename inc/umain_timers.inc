@@ -9,7 +9,6 @@ var
   min: int64;
   showTimestamp: boolean;
   timeStr: string;
-  ix: integer;
 
   // For prediction time updates
 procedure UpdatePredictionTimes;
@@ -159,7 +158,7 @@ procedure UpdatePredictionTimes;
     end;
   end;
 
-procedure predictFuture(future: integer = 7);
+procedure predictFuture;
   var
     bgr: BGResults;
     b: BGReading;
@@ -188,10 +187,14 @@ procedure predictFuture(future: integer = 7);
     if lastReading.val >= warnHi then
       Exit;
 
-    if Length(PredictionCache) > 0 then
-      bgr := PredictionCache
-    else
-      api.predictReadings(future, bgr);
+    // Use only the cache filled asynchronously by TPredictionThread (via
+    // UpdatePredictionLabel after each applied reading). Falling back to
+    // api.predictReadings here would run a synchronous HTTP fetch on the
+    // main thread from a 15 s timer — same class of bug as the resize-tick
+    // fetch removed from tResizeTimer. An empty cache just skips this tick.
+    if Length(PredictionCache) = 0 then
+      Exit;
+    bgr := PredictionCache;
 
     isLow := TTrndiBool.tbUnset;
     minTime := MaxInt;
@@ -268,8 +271,7 @@ begin
 
     UpdatePredictionTimes;
 
-    ix := native.GetIntSetting('predictions.future_limit', DEFAULT_PREDICTION_FUTURE_LIMIT);
-    predictFuture(ix);
+    predictFuture;
   except
     lAgo.Caption := '🕑 ' + RS_COMPUTE_FAILED_AGO;
   end;
