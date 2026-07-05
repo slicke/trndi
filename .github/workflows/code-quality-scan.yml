@@ -65,6 +65,21 @@ jobs:
           log_path = workspace / "build" / "fpc-diagnostics.log"
           sarif_path = workspace / "build" / "fpc-diagnostics.sarif"
 
+          # Hints are skipped entirely (unused parameters/units, inlining notes, ...).
+          # Warning codes excluded as noisy / low-signal:
+          #   2005 - comment level 2 found (nested braces in comments)
+          #   3057 - an inherited method is hidden (intentional shadowing pattern)
+          #   4104 - implicit string type conversion (pervasive with LCL UTF-8 strings)
+          #   4105 - implicit string conversion with potential data loss (same)
+          #   5043 - symbol is deprecated
+          #   5044 - symbol is not portable
+          #   5093 - function result of a managed type not initialized (managed
+          #          types are zero-initialized by FPC, so mostly false positives)
+          #   6018 - unreachable code (usually IFDEF/platform-specific branches)
+          # Kept on purpose: 4046 (abstract class instantiated), 5036/5037/5059
+          # (non-managed variable/result not initialized) — those catch real bugs.
+          suppressed_codes = {"2005", "3057", "4104", "4105", "5043", "5044", "5093", "6018"}
+
           pattern = re.compile(
               r'^(?P<file>.+?)\((?P<line>\d+)(?:,(?P<col>\d+))?\)\s+'
               r'(?P<kind>Hint|Warning|Error|Fatal):\s*(?:\((?P<code>\d+)\)\s*)?'
@@ -91,7 +106,7 @@ jobs:
                   kind = m.group("kind")
                   code = m.group("code") or ""
 
-                  if code == "5024":
+                  if kind == "Hint" or code in suppressed_codes:
                       continue
 
                   msg = m.group("msg").strip()
@@ -120,7 +135,9 @@ jobs:
                           rel = p.resolve().relative_to(workspace)
                           uri = rel.as_posix()
                       except Exception:
-                          uri = p.as_posix()
+                          # Outside the repo (FPC RTL, Lazarus packages, ...):
+                          # code scanning cannot display these, so drop them.
+                          continue
                   else:
                       uri = p.as_posix()
 
