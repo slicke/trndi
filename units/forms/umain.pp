@@ -1950,5 +1950,10 @@ end;
 {$I ../../tests/inc/umain_implementation.inc}
 {$endif}
 
+initialization
+
+finalization
+  FreeAndNil(DotImageCache); // rendered-dot cache from inc/umain_dots.inc
+
 end.
 
