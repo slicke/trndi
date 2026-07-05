@@ -14,7 +14,6 @@ var
   minutesStr: string;
   minutesVal: integer;
   i: integer;
-  dotChar: WChar;
   langCode: string;
   newDotCount: integer;
 begin
@@ -54,11 +53,6 @@ begin
     lAgo.Font.Name := fontName;
     lTir.Font.Name := fontName;
   end;
-
-  dotChar := native.GetWideCharSetting('font.dot', WChar($2B24));
-  for i := 1 to High(TrendDots) do
-    if TrendDots[i] <> nil then
-      TrendDots[i].Caption := dotChar;
 
   bg_color_ok := native.GetColorSetting('ux.bg_color_ok', bg_color_ok);
   bg_color_hi := native.GetColorSetting('ux.bg_color_hi', bg_color_hi);
@@ -141,18 +135,12 @@ begin
     Self.BorderStyle := bsSizeToolWin;
   {$endif}
 
+  // ResizeUIElements lays out and ScaleLbl:s all the labels (with the correct
+  // alignment/padding for each) using the fonts applied above, and re-hides
+  // lArrow when the rotating arrow overlay is active. Don't re-run ScaleLbl
+  // on individual labels here — the default (centered, unpadded) parameters
+  // shift lAgo right and desync lTir from the measured layout.
   ResizeUIElements;
-  ScaleLbl(lVal);
-  ScaleLbl(lArrow);
-  // ScaleLbl re-shows lArrow; re-hide the glyph when the rotating arrow is on.
-  if RotatingArrow and Assigned(FTrendArrow) then
-  begin
-    lArrow.Visible := false;
-    FTrendArrow.Visible := true;
-  end;
-  ScaleLbl(lAgo);
-  if Assigned(lPredict) and lPredict.Visible then
-    ScaleLbl(lPredict, taRightJustify, tlBottom);
 
   newDotCount := native.GetIntSetting('ux.dot_count', NUM_DOTS);
   if (newDotCount >= 1) and (newDotCount <= MAX_DOT_COUNT) and (newDotCount <> ACTIVE_DOTS) then
