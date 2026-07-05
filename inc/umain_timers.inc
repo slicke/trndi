@@ -21,10 +21,12 @@ procedure UpdatePredictionTimes;
     pred1, pred2, pred3: string;
     lastReadingValue: single;
     validCount: integer;
+    prevCaption: string;
   begin
     if not (PredictGlucoseReading and lPredict.Visible and (Length(PredictionCache) > 0)) then
       Exit;
 
+    prevCaption := lPredict.Caption;
     lastReadingValue := lastReading.convert(mgdl);
 
     // Find predictions closest to 5, 10, 15 and the configured short horizon from NOW
@@ -146,7 +148,10 @@ procedure UpdatePredictionTimes;
     end;
 
     // Keep prediction label geometry in sync with dynamic caption updates.
-    if lPredict.Visible then
+    // Only when the caption actually changed — ScaleLbl runs a binary-search
+    // font measurement plus a repaint, which is wasted work on the (common)
+    // ticks where the displayed minutes haven't moved yet.
+    if lPredict.Visible and (lPredict.Caption <> prevCaption) then
     begin
       if DIFF_ALIGN = taRightJustify then
         ScaleLbl(lPredict, taCenter, tlBottom, false)
