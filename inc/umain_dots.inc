@@ -37,6 +37,86 @@ function LocalAlphaBlend(
   stdcall; external 'msimg32' name 'AlphaBlend';
 {$endif}
 
+type
+  // Finished, platform-ready dot image: premultiplied 32-bit bitmap for the
+  // Win32 AlphaBlend path, RGBA PNG for the LCL Draw path elsewhere.
+  // TBitmap.Draw on GTK/Qt does not reliably composite an alpha channel
+  // (the corners with alpha=0 blit as the bitmap's raw RGB — black for our
+  // input). TPortableNetworkGraphic, in contrast, declares itself as a
+  // proper RGBA image to LCL, so Canvas.Draw composites with alpha via
+  // the backend (Cairo on GTK, QPainter on Qt).
+  {$ifdef Windows}
+  TDotImage = TBitmap;
+  {$else}
+  TDotImage = TPortableNetworkGraphic;
+  {$endif}
+  TDotImageCache = specialize TObjectDictionary<string, TDotImage>;
+
+const
+  // Upper bound on distinct (shape, size, color, ...) combos kept alive. A
+  // layout pass produces a handful of sizes and range colors; the cap only
+  // stops unbounded growth across many window sizes. Clearing wholesale is
+  // fine — entries are cheap to re-render once.
+  DOT_IMAGE_CACHE_MAX = 32;
+
+var
+  // Rendered-dot cache. DotPaint repaints every dot on each tick (tResize
+  // fires at 50 ms during drag) and the analytic-AA rasterizers below cost a
+  // per-pixel loop plus image-object churn per dot, while the dots share a
+  // handful of (size, color) combos. Main-thread only (paint handlers);
+  // freed in the unit finalization of umain.pp.
+  DotImageCache: TDotImageCache = nil;
+
+function GetCachedDotImage(const AKey: string): TDotImage;
+begin
+  Result := nil;
+  if Assigned(DotImageCache) then
+    DotImageCache.TryGetValue(AKey, Result);
+end;
+
+procedure StoreCachedDotImage(const AKey: string; AImage: TDotImage);
+begin
+  if DotImageCache = nil then
+    DotImageCache := TDotImageCache.Create([doOwnsValues]);
+  if DotImageCache.Count >= DOT_IMAGE_CACHE_MAX then
+    DotImageCache.Clear;
+  DotImageCache.AddOrSetValue(AKey, AImage);
+end;
+
+// Wrap a rasterized RGBA buffer in the platform image object.
+function DotImageFromIntf(intf: TLazIntfImage; ASize: integer): TDotImage;
+begin
+  {$ifdef Windows}
+  Result := TBitmap.Create;
+  Result.PixelFormat := pf32bit;
+  Result.SetSize(ASize, ASize);
+  Result.LoadFromIntfImage(intf);
+  {$else}
+  Result := TPortableNetworkGraphic.Create;
+  Result.LoadFromIntfImage(intf);
+  {$endif}
+end;
+
+// Composite a finished dot image over ACanvas at the given offset.
+procedure BlitDotImage(ACanvas: TCanvas; AImage: TDotImage;
+  ASize, AOffsetX, AOffsetY: integer);
+{$ifdef Windows}
+var
+  blend: TLocalBlendFunction;
+begin
+  blend.BlendOp := LOCAL_AC_SRC_OVER;
+  blend.BlendFlags := 0;
+  blend.SourceConstantAlpha := 255;
+  blend.AlphaFormat := LOCAL_AC_SRC_ALPHA;
+  LocalAlphaBlend(ACanvas.Handle, AOffsetX, AOffsetY, ASize, ASize,
+                  AImage.Canvas.Handle, 0, 0, ASize, ASize, blend);
+end;
+{$else}
+begin
+  ACanvas.Draw(AOffsetX, AOffsetY, AImage);
+end;
+{$endif}
+
 // Antialiased X mark, same compositing approach as DrawSmoothCircle. Two
 // corner-to-corner diagonals clipped by the bounding box; alpha derives from
 // the analytical distance to the nearest diagonal so the strokes stay smooth
@@ -51,15 +131,21 @@ var
   fr, fg, fb: byte;
   outR, outG, outB, outA: integer;
   pix: TFPColor;
-  {$ifdef Windows}
-  bmp: TBitmap;
-  blend: TLocalBlendFunction;
-  {$else}
-  png: TPortableNetworkGraphic;
-  {$endif}
+  key: string;
+  img: TDotImage;
 begin
   if (ASize < 2) or (AThickness < 1) then
     Exit;
+
+  // The rendered image depends only on these parameters (offsets are applied
+  // at blit time), so reuse the finished image across paints.
+  key := Format('x|%d|%d|%d', [ASize, Integer(AColor), AThickness]);
+  img := GetCachedDotImage(key);
+  if img <> nil then
+  begin
+    BlitDotImage(ACanvas, img, ASize, AOffsetX, AOffsetY);
+    Exit;
+  end;
 
   fr := Red(ColorToRGB(AColor));
   fg := Green(ColorToRGB(AColor));
@@ -116,30 +202,9 @@ begin
         intf.Colors[x, y] := pix;
       end;
 
-    {$ifdef Windows}
-    bmp := TBitmap.Create;
-    try
-      bmp.PixelFormat := pf32bit;
-      bmp.SetSize(ASize, ASize);
-      bmp.LoadFromIntfImage(intf);
-      blend.BlendOp := LOCAL_AC_SRC_OVER;
-      blend.BlendFlags := 0;
-      blend.SourceConstantAlpha := 255;
-      blend.AlphaFormat := LOCAL_AC_SRC_ALPHA;
-      LocalAlphaBlend(ACanvas.Handle, AOffsetX, AOffsetY, ASize, ASize,
-                      bmp.Canvas.Handle, 0, 0, ASize, ASize, blend);
-    finally
-      bmp.Free;
-    end;
-    {$else}
-    png := TPortableNetworkGraphic.Create;
-    try
-      png.LoadFromIntfImage(intf);
-      ACanvas.Draw(AOffsetX, AOffsetY, png);
-    finally
-      png.Free;
-    end;
-    {$endif}
+    img := DotImageFromIntf(intf, ASize);
+    StoreCachedDotImage(key, img);
+    BlitDotImage(ACanvas, img, ASize, AOffsetX, AOffsetY);
   finally
     intf.Free;
   end;
@@ -162,15 +227,22 @@ var
   straightR, straightG, straightB: double;
   outR, outG, outB, outA: integer;
   hasRing: boolean;
-  {$ifdef Windows}
-  bmp: TBitmap;
-  blend: TLocalBlendFunction;
-  {$else}
-  png: TPortableNetworkGraphic;
-  {$endif}
+  key: string;
+  img: TDotImage;
 begin
   if ASize < 2 then
     Exit;
+
+  // The rendered image depends only on these parameters (offsets are applied
+  // at blit time), so reuse the finished image across paints.
+  key := Format('c|%d|%d|%d|%d|%d', [ASize, Integer(ADotColor),
+    Integer(ARingColor), ARingWidth, Ord(AHollow)]);
+  img := GetCachedDotImage(key);
+  if img <> nil then
+  begin
+    BlitDotImage(ACanvas, img, ASize, AOffsetX, AOffsetY);
+    Exit;
+  end;
 
   fr := Red(ColorToRGB(ADotColor));
   fg := Green(ColorToRGB(ADotColor));
@@ -278,35 +350,9 @@ begin
       end;
     end;
 
-    {$ifdef Windows}
-    bmp := TBitmap.Create;
-    try
-      bmp.PixelFormat := pf32bit;
-      bmp.SetSize(ASize, ASize);
-      bmp.LoadFromIntfImage(intf);
-      blend.BlendOp := LOCAL_AC_SRC_OVER;
-      blend.BlendFlags := 0;
-      blend.SourceConstantAlpha := 255;
-      blend.AlphaFormat := LOCAL_AC_SRC_ALPHA;
-      LocalAlphaBlend(ACanvas.Handle, AOffsetX, AOffsetY, ASize, ASize,
-                      bmp.Canvas.Handle, 0, 0, ASize, ASize, blend);
-    finally
-      bmp.Free;
-    end;
-    {$else}
-    // TBitmap.Draw on GTK/Qt does not reliably composite an alpha channel
-    // (the corners with alpha=0 blit as the bitmap's raw RGB — black for our
-    // input). TPortableNetworkGraphic, in contrast, declares itself as a
-    // proper RGBA image to LCL, so Canvas.Draw composites with alpha via
-    // the backend (Cairo on GTK, QPainter on Qt).
-    png := TPortableNetworkGraphic.Create;
-    try
-      png.LoadFromIntfImage(intf);
-      ACanvas.Draw(AOffsetX, AOffsetY, png);
-    finally
-      png.Free;
-    end;
-    {$endif}
+    img := DotImageFromIntf(intf, ASize);
+    StoreCachedDotImage(key, img);
+    BlitDotImage(ACanvas, img, ASize, AOffsetX, AOffsetY);
   finally
     intf.Free;
   end;
