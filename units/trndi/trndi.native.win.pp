@@ -1449,14 +1449,13 @@ var
   Bitmap: Graphics.TBitmap;
   BadgeText: string;
   TextWidth, TextHeight: integer;
-  BadgeRect: Classes.TRect;
-  IconWidth, IconHeight, BadgeSize: integer;
-  FontSize, Radius, px, py: integer;
+  BadgeRect, TrendRect: Classes.TRect;
+  IconWidth, IconHeight, BadgeSize, TrendSize: integer;
+  FontSize, Radius, TrendRadius, py: integer;
   SmallIconSize: integer;
   TextColor: TColor;
   dval: double;
   borderColor: TColor;
-  pRow: PByte;
   ShellIcon: HICON;
 
 function Luminance(c: TColor): double;
@@ -1487,6 +1486,47 @@ function AdjustColor(c: TColor; factor: double): TColor;
     if b > 255 then
       b := 255;
     Result := RGB(r, g, b);
+  end;
+
+  // GDI canvas operations (RoundRect, TextOut) do not write the alpha channel
+  // on 32-bit bitmaps. Walk every pixel in the given badge rect and set
+  // alpha=255 for any pixel inside the rounded shape. Pixels in the rounded
+  // corners (outside the shape) keep the alpha already written by DrawIconEx.
+procedure FixBadgeAlpha(const R: Classes.TRect; ARadius: integer);
+  var
+    px, py: integer;
+    pRow: PByte;
+  begin
+    // Push any batched GDI drawing into the DIB before touching raw pixels.
+    GdiFlush;
+    for py := R.Top to R.Bottom - 1 do
+    begin
+      pRow := PByte(Bitmap.ScanLine[py]);
+      for px := R.Left to R.Right - 1 do
+      begin
+        if (px < R.Left + ARadius) and (py < R.Top + ARadius) then
+        begin
+          if Sqr(px - (R.Left + ARadius)) + Sqr(py - (R.Top + ARadius)) > Sqr(ARadius) then
+            Continue;
+        end
+        else if (px >= R.Right - ARadius) and (py < R.Top + ARadius) then
+        begin
+          if Sqr(px - (R.Right - ARadius)) + Sqr(py - (R.Top + ARadius)) > Sqr(ARadius) then
+            Continue;
+        end
+        else if (px < R.Left + ARadius) and (py >= R.Bottom - ARadius) then
+        begin
+          if Sqr(px - (R.Left + ARadius)) + Sqr(py - (R.Bottom - ARadius)) > Sqr(ARadius) then
+            Continue;
+        end
+        else if (px >= R.Right - ARadius) and (py >= R.Bottom - ARadius) then
+        begin
+          if Sqr(px - (R.Right - ARadius)) + Sqr(py - (R.Bottom - ARadius)) > Sqr(ARadius) then
+            Continue;
+        end;
+        (pRow + px * 4 + 3)^ := 255;
+      end;
+    end;
   end;
 
 begin
@@ -1561,10 +1601,15 @@ begin
     DrawIconEx(Bitmap.Canvas.Handle, 0, 0, AppIcon.Handle, IconWidth,
       IconHeight, 0, 0, DI_NORMAL);
 
-    SmallIconSize := Round(Min(IconWidth, IconHeight) * 0.4);
-    if SmallIconSize < 6 then SmallIconSize := 6;
-    DrawIconEx(Bitmap.Canvas.Handle, 0, 0, AppIcon.Handle, SmallIconSize,
-      SmallIconSize, 0, 0, DI_NORMAL);
+    // The trend badge occupies the same top-left corner as the small logo
+    // copy; don't draw the logo just to paint over it.
+    if FBadgeTrend = '' then
+    begin
+      SmallIconSize := Round(Min(IconWidth, IconHeight) * 0.4);
+      if SmallIconSize < 6 then SmallIconSize := 6;
+      DrawIconEx(Bitmap.Canvas.Handle, 0, 0, AppIcon.Handle, SmallIconSize,
+        SmallIconSize, 0, 0, DI_NORMAL);
+    end;
 
     // Compute a badge rectangle in the lower-right quadrant with size
     // proportional to the current icon dimensions.
@@ -1628,38 +1673,61 @@ begin
       BadgeText
       );
 
-    // GDI canvas operations (RoundRect, TextOut) do not write the alpha channel
-    // on 32-bit bitmaps. Walk every pixel in the badge rect and set alpha=255 for
-    // any pixel that falls inside the rounded badge shape. Pixels in the rounded
-    // corners (outside the shape) keep the alpha already written by DrawIconEx.
-    for py := BadgeRect.Top to BadgeRect.Bottom - 1 do
+    // Optional trend arrow: a second, smaller badge in the top-left corner,
+    // drawn in the same style/colors as the value badge. All canvas drawing
+    // must finish before the ScanLine alpha pass below — mixing raw pixel
+    // access with further canvas ops loses the composed image.
+    TrendRadius := 0;
+    if FBadgeTrend <> '' then
     begin
-      pRow := PByte(Bitmap.ScanLine[py]);
-      for px := BadgeRect.Left to BadgeRect.Right - 1 do
+      TrendSize := Round(Min(IconWidth, IconHeight) * 0.45);
+      if TrendSize < 8 then
+        TrendSize := 8;
+      TrendRect := Classes.Rect(0, 0, TrendSize, TrendSize);
+
+      Bitmap.Canvas.Brush.Style := bsSolid;
+      Bitmap.Canvas.Brush.Color := BadgeColor;
+      Bitmap.Canvas.Pen.Color := borderColor;
+
+      if TrendSize <= 12 then
+        Bitmap.Canvas.FillRect(TrendRect)
+      else
       begin
-        if (px < BadgeRect.Left + Radius) and (py < BadgeRect.Top + Radius) then
-        begin
-          if Sqr(px - (BadgeRect.Left + Radius)) + Sqr(py - (BadgeRect.Top + Radius)) > Sqr(Radius) then
-            Continue;
-        end
-        else if (px >= BadgeRect.Right - Radius) and (py < BadgeRect.Top + Radius) then
-        begin
-          if Sqr(px - (BadgeRect.Right - Radius)) + Sqr(py - (BadgeRect.Top + Radius)) > Sqr(Radius) then
-            Continue;
-        end
-        else if (px < BadgeRect.Left + Radius) and (py >= BadgeRect.Bottom - Radius) then
-        begin
-          if Sqr(px - (BadgeRect.Left + Radius)) + Sqr(py - (BadgeRect.Bottom - Radius)) > Sqr(Radius) then
-            Continue;
-        end
-        else if (px >= BadgeRect.Right - Radius) and (py >= BadgeRect.Bottom - Radius) then
-        begin
-          if Sqr(px - (BadgeRect.Right - Radius)) + Sqr(py - (BadgeRect.Bottom - Radius)) > Sqr(Radius) then
-            Continue;
-        end;
-        (pRow + px * 4 + 3)^ := 255;
+        TrendRadius := Round(CORNER_RADIUS * TrendSize / 32);
+        if TrendRadius < 2 then
+          TrendRadius := 2;
+        RoundRect(Bitmap.Canvas.Handle,
+          TrendRect.Left, TrendRect.Top,
+          TrendRect.Right, TrendRect.Bottom,
+          TrendRadius * 2, TrendRadius * 2);
       end;
+
+      Bitmap.Canvas.Font.Color := TextColor;
+      FontSize := Round(TrendSize * INITIAL_FONT_SIZE_RATIO);
+      if FontSize < 5 then
+        FontSize := 5;
+      Bitmap.Canvas.Font.Size := FontSize;
+      TextWidth := Bitmap.Canvas.TextWidth(FBadgeTrend);
+      TextHeight := Bitmap.Canvas.TextHeight(FBadgeTrend);
+      while (TextWidth > (TrendSize - 2)) and (FontSize > 5) do
+      begin
+        Dec(FontSize);
+        Bitmap.Canvas.Font.Size := FontSize;
+        TextWidth := Bitmap.Canvas.TextWidth(FBadgeTrend);
+        TextHeight := Bitmap.Canvas.TextHeight(FBadgeTrend);
+      end;
+
+      Bitmap.Canvas.Brush.Style := bsClear;
+      Bitmap.Canvas.TextOut(
+        TrendRect.Left + ((TrendRect.Right - TrendRect.Left) - TextWidth) div 2,
+        TrendRect.Top + ((TrendRect.Bottom - TrendRect.Top) - TextHeight) div 2,
+        FBadgeTrend
+        );
     end;
+
+    FixBadgeAlpha(BadgeRect, Radius);
+    if FBadgeTrend <> '' then
+      FixBadgeAlpha(TrendRect, TrendRadius);
 
     // Assign the composed bitmap to the app icon and notify the window.
     TempIcon.Assign(Bitmap);

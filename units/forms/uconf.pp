@@ -121,6 +121,7 @@ TfConf = class(TForm)
   bvExt1: TBevel;
   cbAlternate: TCheckBox;
   cbAutoStart: TCheckBox;
+  cbBadgeTrend: TCheckBox;
   cbChromaNormal: TCheckBox;
   cbChromaHigh: TComboBox;
   cbChromaLow: TComboBox;

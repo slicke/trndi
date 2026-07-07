@@ -1576,12 +1576,12 @@ object fConf: TfConf
       end
       object gbDisplayPrefs: TGroupBox
         Left = 0
-        Height = 346
-        Top = 216
+        Height = 365
+        Top = 197
         Width = 637
         Align = alBottom
         Caption = 'Display Preferences'
-        ClientHeight = 326
+        ClientHeight = 345
         ClientWidth = 633
         ParentBackground = False
         TabOrder = 1
@@ -1596,12 +1596,12 @@ object fConf: TfConf
         end
         object GroupBox11: TGroupBox
           Left = 0
-          Height = 125
+          Height = 144
           Top = 55
           Width = 633
           Align = alTop
           Caption = 'General'
-          ClientHeight = 105
+          ClientHeight = 124
           ClientWidth = 629
           TabOrder = 1
           object cbProgress: TCheckBox
@@ -1636,6 +1636,14 @@ object fConf: TfConf
             Caption = 'Rotate trend arrow by rate of change'
             TabOrder = 4
           end
+          object cbBadgeTrend: TCheckBox
+            Left = 16
+            Height = 19
+            Top = 91
+            Width = 220
+            Caption = 'Show trend arrow in taskbar/dock'
+            TabOrder = 6
+          end
           object bRotatingArrowHelp: TButton
             Left = 584
             Height = 22
@@ -1658,7 +1666,7 @@ object fConf: TfConf
         object GroupBox12: TGroupBox
           Left = 0
           Height = 57
-          Top = 180
+          Top = 199
           Width = 633
           Align = alTop
           Caption = 'Advanced'
@@ -1686,7 +1694,7 @@ object fConf: TfConf
         object GroupBox13: TGroupBox
           Left = 0
           Height = 105
-          Top = 237
+          Top = 256
           Width = 633
           Align = alTop
           Caption = 'Window'

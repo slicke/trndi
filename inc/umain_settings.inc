@@ -191,6 +191,21 @@ begin
 
   ProcessCurrentReading;
 
+  // Refresh the taskbar/dock badge so a toggled trend-arrow option applies
+  // without waiting for the next reading.
+  if (not firstboot) and (not lastReading.empty) then
+  begin
+    if native.GetBoolSetting('badge.trend', false) then
+      native.badgeTrend := lastReading.trend.Img
+    else
+      native.badgeTrend := '';
+    native.setBadge(lVal.Caption, fBG.Color
+      {$ifdef lclwin32}
+      ,badge_width,badge_font
+      {$endif}
+      );
+  end;
+
   if Assigned(fFloat) then
     UpdateFloatingWindow;
 
@@ -368,6 +383,12 @@ procedure LoadUserSettings(f: TfConf);
       cbPredictShort.Checked := GetBoolSetting('predictions.short');
       cbPredictDots.Checked := GetBoolSetting('predictions.dots');
       cbRotatingArrow.Checked := GetBoolSetting('display.rotating_arrow');
+      // Trend arrow in the taskbar icon (Windows) / dock badge (macOS)
+      {$if defined(X_WIN) or defined(X_MAC)}
+      cbBadgeTrend.Checked := GetBoolSetting('badge.trend', false);
+      {$else}
+      cbBadgeTrend.Visible := false;
+      {$endif}
       cbWarnLoHi.Checked := GetBoolSetting('predictions.warn');
       cbPredictShortFullArrows.Checked := GetBoolSetting('predictions.short.fullarrows');
       if GetBoolSetting('predictions.short.showvalue') then
@@ -790,6 +811,9 @@ procedure SaveUserSettings(f: TfConf);
       SetSetting('predictions.short', cbPredictShort.Checked);
       SetSetting('predictions.dots', cbPredictDots.Checked);
       SetSetting('display.rotating_arrow', cbRotatingArrow.Checked);
+      {$if defined(X_WIN) or defined(X_MAC)}
+      SetSetting('badge.trend', cbBadgeTrend.Checked);
+      {$endif}
       SetSetting('predictions.short.fullarrows', cbPredictShortFullArrows.Checked);
       SetSetting('predictions.short.showvalue', rbPredictShortShowValue.Checked);
       if cbPredictShortSize.ItemIndex >= 0 then
