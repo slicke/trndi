@@ -59,6 +59,7 @@ type
     cbRotatingArrow: TCheckBox;
     cbWebAPI: TCheckBox;
     cbAutoStart: TCheckBox;
+    cbBadgeTrend: TCheckBox;
     cbPredictShort: TCheckBox;
     cbPredictShortFullArrows: TCheckBox;
     rbPredictShortShowValue: TRadioButton;
@@ -257,6 +258,7 @@ begin
   cbPredictions := TCheckBox.Create(nil);
   cbWebAPI := TCheckBox.Create(nil);
   cbAutoStart := TCheckBox.Create(nil);
+  cbBadgeTrend := TCheckBox.Create(nil);
   cbPredictShort := TCheckBox.Create(nil);
   cbPredictShortFullArrows := TCheckBox.Create(nil);
   rbPredictShortShowValue := TRadioButton.Create(nil);
@@ -437,6 +439,7 @@ begin
   rbPredictShortShowValue.Free;
   cbPredictShortFullArrows.Free;
   cbPredictShort.Free;
+  cbBadgeTrend.Free;
   cbAutoStart.Free;
   cbWebAPI.Free;
   cbPredictions.Free;
