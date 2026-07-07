@@ -882,9 +882,11 @@ begin
   // Optional trend arrow appended after the reading (badgeTrend property).
   if FBadgeTrend <> '' then
     labelText := labelText + ' ' + FBadgeTrend;
-  NSS := NSSTR(labelText);
+  // NSSTR decodes via the system C-string encoding and garbles UTF-8 (the
+  // trend arrows became mojibake); build the string explicitly as UTF-8.
+  // stringWithUTF8String returns an autoreleased object, so no Release here.
+  NSS := NSString.stringWithUTF8String(PChar(labelText));
   NSApp.dockTile.setBadgeLabel(NSS);
-  NSS.Release;
 end;
 
 {------------------------------------------------------------------------------
