@@ -225,6 +225,12 @@ var
   // SetBadge sources from here instead of Application.Icon so each call composites
   // onto the original logo rather than the previous badged result.
   gOriginalAppIcon: TIcon = nil;
+  // HICON most recently handed to the shell via WM_SETICON. Explorer caches the
+  // taskbar button icon by handle value and treats a WM_SETICON carrying an
+  // unchanged value as "no change" — so the previous handle must stay alive
+  // until the new one has been created and sent, or USER32 recycles the value
+  // and badge updates never reach the taskbar.
+  gLastBadgeIcon: HICON = 0;
 
 procedure EnsureSpeechWorker;
 begin
@@ -1451,6 +1457,7 @@ var
   dval: double;
   borderColor: TColor;
   pRow: PByte;
+  ShellIcon: HICON;
 
 function Luminance(c: TColor): double;
   var
@@ -1509,6 +1516,11 @@ begin
         Application.Icon.Assign(Application.MainForm.Icon);
       SendMessage(Application.MainForm.Handle, WM_SETICON, ICON_BIG, 0);
       SendMessage(Application.MainForm.Handle, WM_SETICON, ICON_SMALL, 0);
+      if gLastBadgeIcon <> 0 then
+      begin
+        DestroyIcon(gLastBadgeIcon);
+        gLastBadgeIcon := 0;
+      end;
       Exit;
     end;
 
@@ -1651,11 +1663,28 @@ begin
 
     // Assign the composed bitmap to the app icon and notify the window.
     TempIcon.Assign(Bitmap);
+    // Duplicate the icon for the shell while the previously sent handle
+    // (gLastBadgeIcon, or the initial Application.Icon.Handle) is still
+    // alive — that forces a different numeric HICON value, which Explorer
+    // requires before it re-reads the taskbar button icon.
+    ShellIcon := CopyIcon(TempIcon.Handle);
     Application.Icon.Assign(TempIcon);
-    SendMessage(Application.MainForm.Handle, WM_SETICON, ICON_BIG,
-      Application.Icon.Handle);
-    SendMessage(Application.MainForm.Handle, WM_SETICON, ICON_SMALL,
-      Application.Icon.Handle);
+    if ShellIcon <> 0 then
+    begin
+      SendMessage(Application.MainForm.Handle, WM_SETICON, ICON_BIG, ShellIcon);
+      SendMessage(Application.MainForm.Handle, WM_SETICON, ICON_SMALL, ShellIcon);
+      // The shell now references the new handle; retire the previous one.
+      if gLastBadgeIcon <> 0 then
+        DestroyIcon(gLastBadgeIcon);
+      gLastBadgeIcon := ShellIcon;
+    end
+    else
+    begin
+      SendMessage(Application.MainForm.Handle, WM_SETICON, ICON_BIG,
+        Application.Icon.Handle);
+      SendMessage(Application.MainForm.Handle, WM_SETICON, ICON_SMALL,
+        Application.Icon.Handle);
+    end;
   finally
     Bitmap.Free;
     AppIcon.Free;
@@ -3223,5 +3252,10 @@ finalization
   end;
   FreeAndNil(gWakeBridge);
   FreeAndNil(gOriginalAppIcon);
+  if gLastBadgeIcon <> 0 then
+  begin
+    DestroyIcon(gLastBadgeIcon);
+    gLastBadgeIcon := 0;
+  end;
 
 end.
