@@ -109,6 +109,11 @@ protected
     // Stored wake callback; platform overrides invoke this when the OS
     // reports a resume-from-sleep event.
   FWakeCallback: TTrndiWakeCallback;
+    // Trend arrow shown next to the badge value ('' = off). Set by the UI
+    // before setBadge; platform units decide how to render it (Windows
+    // composites it into the taskbar icon, macOS appends it to the dock
+    // badge label).
+  FBadgeTrend: string;
 public
     // Config
   noFree: boolean;
@@ -371,6 +376,8 @@ class var touchOverride: TTrndiBool;
     {** Signal completion of a previously started update operation. Default no-op. }
   procedure updateDone; virtual;
     // Badge: provide a convenience overload and a virtual full version
+    {** Trend arrow to show alongside the badge value; '' disables it. }
+  property badgeTrend: string read FBadgeTrend write FBadgeTrend;
     {** Convenience overload for drawing a badge on the app icon/tray. }
   procedure setBadge(const Value: string; badgeColor: TColor); overload;
     {** Platform override for badge rendering control. }
