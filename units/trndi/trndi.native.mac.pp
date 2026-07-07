@@ -871,13 +871,18 @@ end;
 procedure TTrndiNativeMac.SetBadge(const Value: string; BadgeColor: TColor);
 var
   NSS: NSString;
+  labelText: string;
 begin
   if Value = '' then
   begin
     NSApp.dockTile.setBadgeLabel(nil);
     Exit;
   end;
-  NSS := NSSTR(Value);
+  labelText := Value;
+  // Optional trend arrow appended after the reading (badgeTrend property).
+  if FBadgeTrend <> '' then
+    labelText := labelText + ' ' + FBadgeTrend;
+  NSS := NSSTR(labelText);
   NSApp.dockTile.setBadgeLabel(NSS);
   NSS.Release;
 end;

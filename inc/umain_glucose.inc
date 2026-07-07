@@ -180,6 +180,7 @@ begin
     lVal.Font.Color := clWhite;
     tMissed.Enabled := true;
     lArrow.Caption := '';
+    native.badgeTrend := '';
     native.setBadge('--', clBlack, badge_width, badge_font);
   end
   else
@@ -341,6 +342,12 @@ begin
     CacheUIState(fBG.Color, lVal.Caption, lTir.Caption, lTir.color);
   end;
 
+  // Optional trend arrow next to the reading (Windows taskbar icon /
+  // macOS dock badge)
+  if native.GetBoolSetting('badge.trend', false) then
+    native.badgeTrend := lastReading.trend.Img
+  else
+    native.badgeTrend := '';
   native.setBadge(lVal.Caption, fBG.Color
     {$ifdef lclwin32}
     ,badge_width,badge_font
