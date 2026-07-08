@@ -201,7 +201,7 @@ end;
 implementation
 
 uses
-ComObj, ActiveX, SyncObjs, Process;
+ComObj, ActiveX, SyncObjs, Process, base64;
 
 type
   {** Background worker that owns a SAPI.SpVoice in an STA thread and
@@ -3014,6 +3014,7 @@ procedure TTrndiNativeWindows.attention(topic, message: string);
 var
   AppPath, TempDir, TempPng, LogPath: unicodestring;
   Script, CommandLine: unicodestring;
+  ScriptBytes: ansistring;
   SI: Windows.STARTUPINFOW;
   PI: Windows.PROCESS_INFORMATION;
   Title, Msg: unicodestring;
@@ -3074,8 +3075,15 @@ begin
     'try { $_ | Out-String | Set-Content -Path $log -Encoding UTF8 } catch {} ' +
     '}';
 
-  CommandLine := 'powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "' +
-    Script + '"';
+  // Pass the script via -EncodedCommand (Base64 of UTF-16LE) instead of
+  // -Command "...": there is no outer quoting layer, so a '"' in the toast
+  // title/message can neither break argument parsing nor inject PowerShell
+  // tokens into the command line.
+  SetLength(ScriptBytes, Length(Script) * SizeOf(widechar));
+  if ScriptBytes <> '' then
+    Move(Script[1], ScriptBytes[1], Length(ScriptBytes));
+  CommandLine := 'powershell.exe -NoProfile -ExecutionPolicy Bypass -EncodedCommand ' +
+    unicodestring(EncodeStringBase64(ScriptBytes));
 
   FillChar(SI, SizeOf(SI), 0);
   SI.cb := SizeOf(SI);
