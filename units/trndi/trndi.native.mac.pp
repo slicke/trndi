@@ -72,7 +72,7 @@ type
     {** Write a string to preferences under the scoped key. }
     procedure SetSetting(const keyname: string; const val: string;
       global: boolean = False); override;
-    {** Delete a setting (sets to empty string as some backends lack delete). }
+    {** Delete a setting (removes the key from NSUserDefaults). }
     procedure DeleteSetting(const keyname: string; global: boolean = False); override;
     {** Preferences are live; nothing to reload. }
     procedure ReloadSettings; override;
@@ -896,17 +896,112 @@ begin
 end;
 
 {------------------------------------------------------------------------------
+  Preferences encoding migration
+  ------------------------------
+  Historic builds wrote NSUserDefaults through StrToNSStr/NSStrToStr, whose
+  default encoding is CP1252: the app's UTF-8 strings were decoded byte-by-
+  byte as CP1252 before storage. ASCII survives that unchanged, but non-ASCII
+  keys and values (profile-name key prefixes, nicknames, media file paths...)
+  were stored as mojibake, and bytes undefined in CP1252 (0x81/0x8D/0x8F/
+  0x90/0x9D) were lost outright.
+
+  Settings now read/write proper UTF-8, so existing entries must be rewritten
+  once. Encoding a stored (mojibake) string back through CP1252 recovers the
+  original UTF-8 bytes exactly, because every stored string was created by a
+  CP1252 decode. Pure-ASCII entries are identical in both encodings and are
+  left untouched — this also avoids copying unrelated NSGlobalDomain keys
+  (which dictionaryRepresentation includes) into the app's domain.
+
+  A persistent ASCII marker key makes the migration run once per install; a
+  process-local flag makes the check run once per session.
+ ------------------------------------------------------------------------------}
+const
+  PREFS_ENCODING_KEY = 'trndi.prefs.encoding';
+  PREFS_ENCODING_UTF8 = 'utf8';
+  NSEncodingASCII = 1; // NSASCIIStringEncoding
+
+var
+  PrefsMigrationChecked: boolean = false;
+
+procedure EnsurePrefsUtf8Migration;
+var
+  pool: NSAutoreleasePool;
+  defaults: NSUserDefaults;
+  dict: NSDictionary;
+  enumerator: NSEnumerator;
+  keyNS, newKeyNS, newValNS: NSString;
+  valObj: NSObject;
+  utf8Key, utf8Val: string;
+begin
+  if PrefsMigrationChecked then
+    Exit;
+  PrefsMigrationChecked := true;
+  // Own pool: settings can be read before the LCL run loop provides one.
+  pool := NSAutoreleasePool.alloc.init;
+  try
+    // Marker is ASCII, so it reads identically under either encoding.
+    if GetPrefUTF8String(PREFS_ENCODING_KEY) = PREFS_ENCODING_UTF8 then
+      Exit;
+    defaults := NSUserDefaults.standardUserDefaults;
+    // dictionaryRepresentation is a snapshot; mutating defaults inside the
+    // loop is safe.
+    dict := defaults.dictionaryRepresentation;
+    enumerator := dict.keyEnumerator;
+    keyNS := NSString(enumerator.nextObject);
+    while keyNS <> nil do
+    begin
+      valObj := NSObject(dict.objectForKey(keyNS));
+      // Only NSString values (Trndi writes nothing else), and only entries
+      // where the key or value actually contains non-ASCII characters.
+      if (valObj <> nil) and valObj.isKindOfClass(objc_getClass('NSString')) and
+         ((not keyNS.canBeConvertedToEncoding(NSEncodingASCII)) or
+          (not NSString(valObj).canBeConvertedToEncoding(NSEncodingASCII))) then
+      begin
+        // CP1252 re-encode recovers the original UTF-8 bytes.
+        utf8Key := NSStrToStr(keyNS);
+        // Same system-namespace filter as ExportSettings.
+        if (Pos('Apple', utf8Key) <> 1) and (Pos('com.apple', utf8Key) <> 1) and
+          (Pos('NS', utf8Key) <> 1) then
+        begin
+          utf8Val := NSStrToStr(NSString(valObj));
+          // Build the replacement strings before touching anything: CFString
+          // returns nil for invalid UTF-8, which happens when the entry was
+          // NOT written by the old CP1252 path (foreign keys, or an entry a
+          // previously interrupted run already migrated). Skipping those
+          // makes the migration safe to re-run.
+          newKeyNS := Utf8StrToNSStr(utf8Key);
+          newValNS := Utf8StrToNSStr(utf8Val);
+          if (newKeyNS <> nil) and (newValNS <> nil) then
+          begin
+            // Drop the mojibake key first: for ASCII keys the rewrite below
+            // overwrites in place, for non-ASCII keys the name changes.
+            defaults.removeObjectForKey(keyNS);
+            defaults.setObject_forKey(newValNS, newKeyNS);
+          end;
+        end;
+      end;
+      keyNS := NSString(enumerator.nextObject);
+    end;
+    SetPrefUTF8String(PREFS_ENCODING_KEY, PREFS_ENCODING_UTF8);
+    defaults.synchronize;
+  finally
+    pool.release;
+  end;
+end;
+
+{------------------------------------------------------------------------------
   GetSetting / SetSetting / DeleteSetting / ReloadSettings
   -------------------------------------------------------
-  Preferences-backed settings: read, write (no-op delete), and no reload.
+  Preferences-backed settings (NSUserDefaults, UTF-8 keys and values).
  ------------------------------------------------------------------------------}
 function TTrndiNativeMac.GetSetting(const keyname: string; def: string;
   global: boolean): string;
 var
   key: string;
 begin
+  EnsurePrefsUtf8Migration;
   key := buildKey(keyname, global);
-  Result := GetPrefString(key);
+  Result := GetPrefUTF8String(key);
   if Result = '' then
     Result := def;
 end;
@@ -916,14 +1011,15 @@ procedure TTrndiNativeMac.SetSetting(const keyname: string; const val: string;
 var
   key: string;
 begin
+  EnsurePrefsUtf8Migration;
   key := buildKey(keyname, global);
-  SetPrefString(key, val);
+  SetPrefUTF8String(key, val);
 end;
 
 procedure TTrndiNativeMac.DeleteSetting(const keyname: string; global: boolean);
 begin
-  // No direct delete helper; set to empty string for now
-  SetSetting(keyname, '', global);
+  EnsurePrefsUtf8Migration;
+  RemovePrefKey(buildKey(keyname, global));
 end;
 
 procedure TTrndiNativeMac.ReloadSettings;
@@ -947,17 +1043,18 @@ var
   keyStr: string;
 begin
   Result := '';
+  EnsurePrefsUtf8Migration;
   sl := TStringList.Create;
   try
     defaults := NSUserDefaults.standardUserDefaults;
     dict := defaults.dictionaryRepresentation;
     enumerator := dict.keyEnumerator;
-    
+
     sl.Add('[trndi]');
     key := enumerator.nextObject;
     while key <> nil do
     begin
-      keyStr := NSStrToStr(key);
+      keyStr := NSStrToUtf8Str(key);
       // Exclude system namespaces (Apple/NS preferences and macOS internals).
       // Do NOT filter on case: cfguser-prefixed keys can be mixed-case
       // (e.g. "Bjorn_api.host") and would otherwise be silently dropped.
@@ -967,7 +1064,7 @@ begin
       begin
         value := dict.objectForKey(key);
         if value.isKindOfClass(objc_getClass('NSString')) then
-          sl.Add(keyStr + '=' + NSStrToStr(NSString(value)))
+          sl.Add(keyStr + '=' + NSStrToUtf8Str(NSString(value)))
         else if value.isKindOfClass(objc_getClass('NSNumber')) then
           sl.Add(keyStr + '=' + NSNumber(value).stringValue.UTF8String);
         // Skip other types for now
@@ -1002,6 +1099,7 @@ begin
   sections := TStringList.Create;
   keys := TStringList.Create;
   defaults := NSUserDefaults.standardUserDefaults;
+  EnsurePrefsUtf8Migration;
   try
     mem.WriteBuffer(iniData[1], Length(iniData));
     mem.Position := 0;
@@ -1020,7 +1118,7 @@ begin
       begin
         key := keys[j];
         value := ini.ReadString(section, key, '');
-        SetPrefString(key, value);
+        SetPrefUTF8String(key, value);
       end;
     end;
     
