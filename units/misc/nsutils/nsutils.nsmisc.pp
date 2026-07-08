@@ -6,10 +6,15 @@ unit nsutils.nsmisc;
   Author:    Phil Hess.
   Copyright: Copyright 2012 Phil Hess.
   License:   Modified LGPL (see Free Pascal's rtl/COPYING.FPC).
-             This means you can link your code to this compiled unit (statically 
-             in a standalone executable or dynamically in a library) without 
-             releasing your code. Only changes to this unit need to be made 
+             This means you can link your code to this compiled unit (statically
+             in a standalone executable or dynamically in a library) without
+             releasing your code. Only changes to this unit need to be made
              publicly available.
+
+  Extended by Björn Lindh, https://github.com/slicke:
+  - UTF8 preference routines now encode the key as UTF8 as well (the
+    originals used the CP1252 default, which mangles non-ASCII key names).
+  - Added RemovePrefKey for real key deletion.
 }
 
 {$mode delphi}
@@ -49,6 +54,8 @@ procedure SetPrefString(const KeyName : string;
 procedure SetPrefUTF8String(const KeyName : string;
                             const Value   : AnsiString);
 
+procedure RemovePrefKey(const KeyName : string);
+
 
 function GetResourcesPath : string;
 
@@ -86,10 +93,11 @@ end;
 
 function GetPrefUTF8String(const KeyName : string) : AnsiString;
  {Retrieve key's string value from preferences.
-   String returned is encoded as UTF8.}
+   Key is assumed to be encoded as UTF8; string returned is encoded as UTF8.
+   Returns '' when the key is missing.}
 begin
-  Result := NSUserDefaults.standardUserDefaults.stringForKey(
-             StrToNSStr(KeyName)).UTF8String;
+  Result := NSStrToUtf8Str(NSUserDefaults.standardUserDefaults.stringForKey(
+             Utf8StrToNSStr(KeyName)));
 end;
 
 
@@ -106,10 +114,19 @@ end;
 procedure SetPrefUTF8String(const KeyName : string;
                             const Value   : AnsiString);
  {Set key's string value in preferences.
-   Value is assumed to be encoded in UTF8.}
+   Key and value are assumed to be encoded in UTF8.}
 begin
   NSUserDefaults.standardUserDefaults.setObject_forKey(
-   Utf8StrToNSStr(Value), StrToNSStr(KeyName));
+   Utf8StrToNSStr(Value), Utf8StrToNSStr(KeyName));
+end;
+
+
+procedure RemovePrefKey(const KeyName : string);
+ {Remove key from preferences entirely (as opposed to writing '').
+   Key is assumed to be encoded in UTF8.}
+begin
+  NSUserDefaults.standardUserDefaults.removeObjectForKey(
+   Utf8StrToNSStr(KeyName));
 end;
 
 
