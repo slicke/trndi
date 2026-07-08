@@ -325,14 +325,16 @@ begin
           selNew := sel_registerName('new');
           Content := objc_msgSend0(ContentClass, selNew);
 
-          TitleStr := NSSTR(topic);
-          BodyStr := NSSTR(message);
+          // NSSTR decodes via the system C-string encoding and garbles UTF-8
+          // (translated alert titles, trend arrows); build the strings
+          // explicitly as UTF-8. stringWithUTF8String returns autoreleased
+          // objects, so no Release here.
+          TitleStr := NSString.stringWithUTF8String(PChar(topic));
+          BodyStr := NSString.stringWithUTF8String(PChar(message));
           selSetTitle := sel_registerName('setTitle:');
           selSetBody := sel_registerName('setBody:');
           objc_msgSend1(Content, selSetTitle, TitleStr);
           objc_msgSend1(Content, selSetBody, BodyStr);
-          TitleStr.Release;
-          BodyStr.Release;
 
           // Default sound — without this the alert is silent for users who
           // haven't explicitly enabled sound for the app.
@@ -350,28 +352,23 @@ begin
 
           // Group alerts of the same kind together; topic is the natural key
           // (HIGH/LOW/sensor-fault all have distinct titles).
-          ThreadStr := NSSTR(topic);
+          ThreadStr := NSString.stringWithUTF8String(PChar(topic));
           objc_msgSend1(Content, sel_registerName('setThreadIdentifier:'), ThreadStr);
-          ThreadStr.Release;
 
           // Category — placeholder for future actions (Snooze/Dismiss).
-          CategoryStr := NSSTR('trndi.alert');
+          CategoryStr := NSString.stringWithUTF8String(PChar('trndi.alert'));
           objc_msgSend1(Content, sel_registerName('setCategoryIdentifier:'), CategoryStr);
-          CategoryStr.Release;
 
           // Stable identifier per topic: posting again with the same id
           // *replaces* the previous notification rather than stacking. For a
           // glucose monitor this is medically appropriate — the newest
           // reading is what matters.
           sId := 'trndi.alert.' + topic;
-          IdStr := NSSTR(sId);
+          IdStr := NSString.stringWithUTF8String(PChar(sId));
 
           // Create request with nil trigger -> deliver immediately.
           ReqClass := objc_getClass('UNNotificationRequest');
           UNReq := objc_msgSend3(ReqClass, sel_registerName('requestWithIdentifier:content:trigger:'), IdStr, Content, nil);
-
-          // Release the identifier NSString we created earlier
-          IdStr.Release;
 
           // Add request (no completion handler)
           selAddReq := sel_registerName('addNotificationRequest:withCompletionHandler:');
@@ -395,15 +392,12 @@ begin
     begin
       NSReq := NSUserNotification.alloc.init;
       try
-        TitleStr := NSSTR(topic);
-        BodyStr := NSSTR(message);
-        try
-          NSReq.setTitle(TitleStr);
-          NSReq.setInformativeText(BodyStr);
-        finally
-          TitleStr.Release;
-          BodyStr.Release;
-        end;
+        // Autoreleased UTF-8 strings; NSSTR would garble non-ASCII and must
+        // not be Released.
+        TitleStr := NSString.stringWithUTF8String(PChar(topic));
+        BodyStr := NSString.stringWithUTF8String(PChar(message));
+        NSReq.setTitle(TitleStr);
+        NSReq.setInformativeText(BodyStr);
 
         objc_msgSend1(Center, sel_registerName('deliverNotification:'), NSReq);
         Exit;
