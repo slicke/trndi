@@ -2164,9 +2164,10 @@ begin
        {$ifdef DEBUG}TrndiDLog(PChar('[Trndi] updateBegin: Exception minimizing form: ' + E.Message));{$else};{$endif}
     end;
 
-    // Use indeterminate progress during the fetch (more visible)
+    // Use indeterminate progress during the fetch (more visible).
+    // No SetProgressValue here: a value call would flip the button back to
+    // TBPF_NORMAL and cancel the marquee.
     ok := tb.SetProgressState(tbpsIndeterminate);
-    tb.SetProgressValue(50,100);
 
     {$ifdef DEBUG}
     // Trace the API call result via TrndiDLog (always) and TrndiDLog (DEBUG only)

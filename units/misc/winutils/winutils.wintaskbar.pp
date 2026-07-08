@@ -449,9 +449,9 @@ begin
       {$ifdef DEBUG}
       TrndiDLog(PChar(Format('[TWinTaskbar] SetProgressState OK HWND=%d state=%d', [FWindowHandle, Ord(ProgressState)])));
       {$endif}
-      // For indeterminate progress, set a dummy value to ensure it's visible
-      if ProgressState = tbpsIndeterminate then
-        SetProgressValue(1, 100);
+      // Note: do NOT call SetProgressValue here for tbpsIndeterminate --
+      // ITaskbarList3.SetProgressValue switches the button back to
+      // TBPF_NORMAL, which cancels the marquee animation.
     end
     else
       LogError('SetProgressState failed HR=' + IntToHex(hr, 8));
