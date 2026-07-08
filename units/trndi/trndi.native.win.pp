@@ -179,7 +179,8 @@ public
   {** Detect a touchscreen via SM_DIGITIZER (NID_INTEGRATED_TOUCH + NID_READY).
       Sets @code(multi) when NID_MULTI_INPUT is reported. }
   class function DetectTouchScreen(out multi: boolean): boolean; override;
-  {** Play an audio file via mplay32. }
+  {** Play an audio file asynchronously via MCI (winmm); .wav/.mp3/.wma
+      decode natively on all Windows versions. }
   class procedure PlaySound(const FileName: string); override;
   {** Resolve the user's UI language via Windows locale APIs. }
   class function GetOSLanguage: string; override;
@@ -201,7 +202,7 @@ end;
 implementation
 
 uses
-ComObj, ActiveX, SyncObjs, Process, base64;
+ComObj, ActiveX, SyncObjs, base64;
 
 type
   {** Background worker that owns a SAPI.SpVoice in an STA thread and
@@ -3126,24 +3127,23 @@ end;
 {------------------------------------------------------------------------------
   PlaySound (Windows)
   -------------------
-  Spawn mplay32 to play a validated audio file.
+  Play a validated audio file in-process via MCI (winmm). Windows decodes
+  .wav/.mp3/.wma natively; playback is asynchronous. A single alias is
+  reused, so a new sound replaces any still-playing one.
  ------------------------------------------------------------------------------}
+function mciSendStringW(lpszCommand: PWideChar; lpszReturnString: PWideChar;
+  cchReturn: UINT; hwndCallback: HWND): DWORD; stdcall;
+  external 'winmm.dll' name 'mciSendStringW';
+
 class procedure TTrndiNativeWindows.PlaySound(const FileName: string);
-var
-  Proc: TProcess;
 begin
   if not IsValidAudioFile(FileName) then
     Exit;
-  Proc := TProcess.Create(nil);
-  try
-    Proc.Executable := 'mplay32';
-    Proc.Parameters.Add('/play');
-    Proc.Parameters.Add('/close');
-    Proc.Parameters.Add(FileName);
-    Proc.Execute;
-  finally
-    Proc.Free;
-  end;
+  // Close any previous sound on the shared alias (harmless if none is open)
+  mciSendStringW('close trndisnd', nil, 0, 0);
+  if mciSendStringW(PWideChar(UnicodeString(
+       'open "' + FileName + '" alias trndisnd')), nil, 0, 0) = 0 then
+    mciSendStringW('play trndisnd', nil, 0, 0);
 end;
 
 {------------------------------------------------------------------------------
