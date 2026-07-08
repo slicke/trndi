@@ -2325,8 +2325,9 @@ end;
 {------------------------------------------------------------------------------
   requestEx (Linux/BSD)
   ---------------------
-  Cookie-aware, redirect-following HTTP via libcurl. SSL cert verification
-  disabled to match the prior behavior (TODO: opt-in cert pinning).
+  Cookie-aware, redirect-following HTTP via libcurl. TLS certificates are
+  verified against the system CA store. DEBUG builds can disable verification
+  via TRNDI_INSECURE_TLS=1 for driver development behind an intercepting proxy.
  ------------------------------------------------------------------------------}
 function TTrndiNativeLinux.requestEx(const post: boolean; const endpoint: string;
 const params: array of string; const jsondata: string;
@@ -2427,9 +2428,15 @@ begin
       curl_easy_setopt(handle, CURLOPT_CONNECTTIMEOUT, clong(10));
       curl_easy_setopt(handle, CURLOPT_TIMEOUT, clong(30));
       curl_easy_setopt(handle, CURLOPT_ACCEPT_ENCODING, pchar(''));
+      {$ifdef DEBUG}
       curl_easy_setopt(handle, CURLOPT_VERBOSE, clong(1));
-      curl_easy_setopt(handle, CURLOPT_SSL_VERIFYPEER, clong(0));
-      curl_easy_setopt(handle, CURLOPT_SSL_VERIFYHOST, clong(0));
+      // Allow intercepting proxies (e.g. mitmproxy) during driver development only
+      if GetEnvironmentVariable('TRNDI_INSECURE_TLS') = '1' then
+      begin
+        curl_easy_setopt(handle, CURLOPT_SSL_VERIFYPEER, clong(0));
+        curl_easy_setopt(handle, CURLOPT_SSL_VERIFYHOST, clong(0));
+      end;
+      {$endif}
 
       if useragent <> '' then
         curl_easy_setopt(handle, CURLOPT_USERAGENT, pchar(useragent));
