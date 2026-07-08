@@ -174,7 +174,9 @@ begin
   menuItem.release;
   CFRelease(cfStr);
 
-  Result := dockMenu;
+  // AppKit only retains the returned menu while it is shown; hand our
+  // owning reference to the autorelease pool or a menu leaks per right-click.
+  Result := NSMenu(dockMenu.autorelease);
 end;
 
 function TMyAppDelegate.applicationShouldHandleReopen_hasVisibleWindows(sender: NSApplication; hasVisibleWindows: boolean): boolean;
