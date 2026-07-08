@@ -221,6 +221,13 @@ begin
   App := NSAppearance.appearanceNamed(AppName);
   if App <> nil then
     AWindow.setAppearance(App);
+  // The transparent titlebar strip is painted by the window's frame view
+  // (contentView's superview), which does not repaint on its own when
+  // backgroundColor changes on a window already on screen — the new color
+  // only shows after the next frame redraw (e.g. app switch). Invalidate it
+  // so runtime recolors take effect immediately.
+  if (AWindow.contentView <> nil) and (AWindow.contentView.superview <> nil) then
+    AWindow.contentView.superview.setNeedsDisplay_(True);
 end;
 
 
