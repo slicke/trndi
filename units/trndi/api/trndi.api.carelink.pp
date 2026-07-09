@@ -391,7 +391,7 @@ end;
 
 function CareLinkEU.getSystemName: string;
 begin
-  Result := 'CareLink Follower (EU)';
+  Result := 'CareLink Follower (EU/Other)';
 end;
 
 {------------------------------------------------------------------------------
