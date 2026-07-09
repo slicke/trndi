@@ -159,8 +159,9 @@ type
         followed-patient list and select the first entry. Best-effort. }
     procedure SelectPatient;
 
-    {** POST the display-message request; retries once after a token refresh
-        on HTTP 401/403. Returns the raw response body. }
+    {** POST the display-message request. Refreshes the token once on HTTP
+        401/403, and retries transient 5xx responses with a short backoff.
+        Returns the raw response body. }
     function FetchDisplayMessage(out ABody: string): boolean;
 
   public
@@ -976,19 +977,28 @@ begin
 end;
 
 {------------------------------------------------------------------------------
-  POST the display-message request. On 401/403 the access token is refreshed
-  once and the call retried.
+  POST the display-message request.
+  - On 401/403 the access token is refreshed once and the call retried.
+  - On 5xx (server error) the call is retried a couple of times with a short
+    backoff: Medtronic's data endpoint transiently 500s on the first contact
+    with a freshly established follower session (which is why the classic
+    workaround has been "restart and it works"). Retrying in-place makes the
+    first fetch after setup succeed without a restart.
  ------------------------------------------------------------------------------}
 function CareLink.FetchDisplayMessage(out ABody: string): boolean;
+const
+  MAX_ATTEMPTS = 3; /// 1 initial + up to 2 retries for transient failures
 var
   payload: TJSONObject;
   payloadStr, dataUrl: string;
-  attempt: integer;
+  attempt, httpStatus: integer;
+  refreshed: boolean;
   authHeaders: TStringList;
   httpResponse: THTTPResponse;
 begin
   Result := false;
   ABody := '';
+  refreshed := false;
 
   dataUrl := CredValue(['data_url', 'dataUrl']);
   if dataUrl = '' then
@@ -1012,7 +1022,7 @@ begin
 
   log('CareLink.FetchDisplayMessage: payload=' + payloadStr);
 
-  for attempt := 1 to 2 do
+  for attempt := 1 to MAX_ATTEMPTS do
   begin
     authHeaders := BuildAuthHeaders;
     try
@@ -1022,28 +1032,38 @@ begin
       authHeaders.Free;
     end;
 
-    log(Format('CareLink.FetchDisplayMessage: attempt=%d status=%d bytes=%d',
-      [attempt, httpResponse.StatusCode, Length(httpResponse.Body)]));
+    httpStatus := httpResponse.StatusCode;
+    log(Format('CareLink.FetchDisplayMessage: attempt=%d httpStatus=%d bytes=%d',
+      [attempt, httpStatus, Length(httpResponse.Body)]));
 
     try
-      if (httpResponse.StatusCode >= 200) and (httpResponse.StatusCode < 300) and
-         (Trim(httpResponse.Body) <> '') then
+      if (httpStatus >= 200) and (httpStatus < 300) and (Trim(httpResponse.Body) <> '') then
       begin
         ABody := httpResponse.Body;
         Exit(true);
       end;
 
-      if (attempt = 1) and ((httpResponse.StatusCode = 401) or (httpResponse.StatusCode = 403)) then
+      // Auth rejected: refresh the access token once, then retry immediately.
+      if ((httpStatus = 401) or (httpStatus = 403)) and not refreshed then
       begin
+        refreshed := true;
         log('CareLink.FetchDisplayMessage: auth rejected; refreshing token');
         if not RefreshAccessToken then
           Exit;
         Continue;
       end;
 
+      // Transient server error (or no response): back off briefly and retry.
+      if ((httpStatus >= 500) or (httpStatus = 0)) and (attempt < MAX_ATTEMPTS) then
+      begin
+        log(Format('CareLink.FetchDisplayMessage: transient HTTP %d; retrying', [httpStatus]));
+        Sleep(400 * attempt);
+        Continue;
+      end;
+
       if Trim(httpResponse.Body) <> '' then
         log('CareLink.FetchDisplayMessage: error body prefix=' + Copy(httpResponse.Body, 1, 200));
-      lastErr := 'Failed to get CareLink data: HTTP ' + IntToStr(httpResponse.StatusCode);
+      lastErr := 'Failed to get CareLink data: HTTP ' + IntToStr(httpStatus);
       Exit;
     finally
       FreeResponse(httpResponse);

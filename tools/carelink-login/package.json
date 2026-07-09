@@ -13,9 +13,9 @@
     "start:eu": "node carelink-login.mjs"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=22.12.0"
   },
   "dependencies": {
-    "puppeteer": "^23.0.0"
+    "puppeteer": "^25.3.0"
   }
 }

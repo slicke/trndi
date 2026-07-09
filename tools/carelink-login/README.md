@@ -15,7 +15,7 @@ exactly that, then does the token exchange for you.
 
 ## Requirements
 
-- **Node.js 18+** (uses the built-in `fetch`)
+- **Node.js 22.12+** (required by Puppeteer 25; also provides the built-in `fetch`)
 - **Puppeteer** (installed below; it downloads a browser the first time)
 - A **Care Partner** (follower) CareLink account — not the patient's own account
 
