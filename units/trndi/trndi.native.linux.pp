@@ -2554,9 +2554,10 @@ begin
           responseLine := Trim(responseLine);
           if responseLine <> '' then
           begin
-            if Pos('Set-Cookie:', responseLine) = 1 then
+            // HTTP/2 and envoy-fronted servers send lowercase header names
+            if Pos('set-cookie:', LowerCase(responseLine)) = 1 then
             begin
-              cookieVal := Trim(Copy(responseLine, 13, MaxInt));
+              cookieVal := Trim(Copy(responseLine, Length('set-cookie:') + 1, MaxInt));
               cookiePos := Pos(';', cookieVal);
               if cookiePos > 0 then
                 cookieVal := Copy(cookieVal, 1, cookiePos - 1);
@@ -2564,8 +2565,23 @@ begin
               begin
                 Result.Cookies.Add(cookieVal);
                 if cookieJar <> nil then
-                  if cookieJar.IndexOf(cookieVal) = -1 then
+                begin
+                  // Replace a stale value for the same cookie name, so a
+                  // rotated session cookie doesn't get sent twice
+                  cookiePos := Pos('=', cookieVal);
+                  j := -1;
+                  if cookiePos > 0 then
+                    for i := 0 to cookieJar.Count - 1 do
+                      if Pos(Copy(cookieVal, 1, cookiePos), cookieJar[i]) = 1 then
+                      begin
+                        j := i;
+                        Break;
+                      end;
+                  if j >= 0 then
+                    cookieJar[j] := cookieVal
+                  else if cookieJar.IndexOf(cookieVal) = -1 then
                     cookieJar.Add(cookieVal);
+                end;
               end;
             end;
             Result.Headers.Add(responseLine);
