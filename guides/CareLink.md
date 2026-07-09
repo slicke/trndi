@@ -20,7 +20,7 @@ Use a **Care Partner** (follower) account that the patient has invited from the 
 
 ## Capturing the token data (login helper)
 
-Trndi ships a small **login helper** ([`tools/carelink-login`](../tools/carelink-login)) that does the browser login for you and prints the token to paste into Trndi. It needs **Node.js 18+** (it downloads a browser on first install). No Python, no OpenSSL.
+Trndi ships a small **login helper** ([`tools/carelink-login`](../tools/carelink-login)) that does the browser login for you and prints the token to paste into Trndi. It needs **Node.js 22.12+** (it downloads a browser on first install). No Python, no OpenSSL.
 
 ```
 cd tools/carelink-login
