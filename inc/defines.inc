@@ -8,6 +8,8 @@ API_DEX_NEW_EU = 'Dexcom New (Outside USA)';
 API_DEX_NEW_JP = 'Dexcom New (Japan)';
 API_TANDEM_USA = 'Tandem t:connect (USA)';
 API_TANDEM_EU = 'Tandem t:connect (EU)';
+API_CARELINK_US = 'CareLink Follower (USA)';
+API_CARELINK_EU = 'CareLink Follower (EU/Other)';
 API_XDRIP = 'xDrip';
 
 {$ifdef DEBUG}
