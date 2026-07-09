@@ -3123,6 +3123,32 @@ msgstr "Din skrivbordssession är Wayland. Wayland-kompositorer (inklusive KWin)
 msgid "Trndi can expose a <b>WebAPI</b> for use with <i>third-party systems</i>.<br><br>This is an advanced feature, you can safely disregard it if you don't know what it does!"
 msgstr "Trndi kan starta ett <b>Web-API</b> för att kommunicera med <i>tredjepartssystem</i>.<br><br>Detta är en avancerad funktion, du kan ignorera den säkert om du inte vet vad den gör!"
 
+#: uconf.rs_weblogin_button
+msgctxt "uconf.rs_weblogin_button"
+msgid "Get CareLink token…"
+msgstr ""
+
+#: uconf.rs_weblogin_help
+#, object-pascal-format
+msgid ""
+"CareLink needs a one-time browser login (with CAPTCHA), so Trndi uses a small login helper to capture your token.\n"
+"\n"
+"It needs Node.js installed. In a terminal, run:\n"
+"\n"
+"    cd \"%s\"\n"
+"    npm install\n"
+"    %s\n"
+"\n"
+"A browser opens — sign in with your Care Partner account and solve the CAPTCHA. The helper then prints a block of JSON: copy it into the token field below and click Test.\n"
+"\n"
+"Open the helper folder now?"
+msgstr ""
+
+#: uconf.rs_weblogin_title
+msgctxt "uconf.rs_weblogin_title"
+msgid "CareLink login helper"
+msgstr ""
+
 #: uconf.rs_xdrip
 msgid ""
 "Make sure you are on the same network as the xDrip app.\n"
@@ -3315,4 +3341,30 @@ msgstr "Den höga gränsen måste vara större än den låga gränsen."
 #: uwizard.wz_test_no_support
 msgid "Connection testing is not supported for this service."
 msgstr "Anslutningstest stöds inte för denna tjänst."
+
+#: uwizard.wz_weblogin_button
+msgctxt "uwizard.wz_weblogin_button"
+msgid "Get CareLink token…"
+msgstr ""
+
+#: uwizard.wz_weblogin_help
+#, object-pascal-format
+msgid ""
+"CareLink needs a one-time browser login (with CAPTCHA), so Trndi uses a small login helper to capture your token.\n"
+"\n"
+"It needs Node.js installed. In a terminal, run:\n"
+"\n"
+"    cd \"%s\"\n"
+"    npm install\n"
+"    %s\n"
+"\n"
+"A browser opens — sign in with your Care Partner account and solve the CAPTCHA. The helper then prints a block of JSON: copy it into the token field and click Test.\n"
+"\n"
+"Open the helper folder now?"
+msgstr ""
+
+#: uwizard.wz_weblogin_title
+msgctxt "uwizard.wz_weblogin_title"
+msgid "CareLink login helper"
+msgstr ""
 

@@ -1,0 +1,5 @@
+# Node dependencies (Puppeteer downloads a Chromium browser here — large)
+node_modules/
+
+# npm debug output
+npm-debug.log*
