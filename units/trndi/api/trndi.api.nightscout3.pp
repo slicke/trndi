@@ -1004,13 +1004,23 @@ begin
       // Fallback: derive age from latest Sensor Start/Change treatment events.
       if sensorSuffix = '' then
       begin
-        SetLength(treatParams, 2);
+        if noCache then
+          SetLength(treatParams, 3)
+        else
+          SetLength(treatParams, 2);
         treatParams[0] := 'limit=40';
         treatParams[1] := 'sort$desc=created_at';
+        if noCache then
+          treatParams[2] := '_=' + NS3NextNoCacheToken;
         if not TryRequestV3(NS3_TREATMENTS, NS3_TREATMENTS_JSON, treatParams, treatmentsResp) then
         begin
-          SetLength(fbparams, 1);
+          if noCache then
+            SetLength(fbparams, 2)
+          else
+            SetLength(fbparams, 1);
           fbparams[0] := 'count=40';
+          if noCache then
+            fbparams[1] := '_=' + NS3NextNoCacheToken;
           treatmentsResp := native.request(false, FSiteBase + '/api/v1/treatments.json',
             fbparams, '', BearerHeader, false {no prefix});
         end;
