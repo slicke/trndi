@@ -1,7 +1,6 @@
 # Trndi CareLink login helper
 
-Captures the **CareLink token data** Trndi needs to follow a Medtronic pump/sensor,
-without the old Python + Selenium + OpenSSL setup. It opens a browser for the
+Captures the **CareLink token data** Trndi needs to follow a Medtronic pump/sensor. It opens a browser for the
 one-time login, grabs the result, and prints the token as JSON for you to paste
 into Trndi.
 
