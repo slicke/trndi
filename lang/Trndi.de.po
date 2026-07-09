@@ -2573,6 +2573,13 @@ msgid ""
 "Please set your own thresholds in the Customization tab."
 msgstr ""
 
+#: uconf.rs_carelink
+msgid ""
+"This backend is experimental!\n"
+"It needs token data captured from a one-time browser login — see the CareLink guide.\n"
+"Use a Care Partner (follower) account. Data may lag behind the pump."
+msgstr ""
+
 #: uconf.rs_choose_system
 msgid "Select your CGM system in the list, then enter your credentials"
 msgstr "CGM-System in der Liste auswählen, dann Anmeldedaten eingeben"
@@ -2689,6 +2696,11 @@ msgstr "Benutzernamen eingeben"
 msgctxt "uconf.rs_err_address"
 msgid "Address must start with http(s)://"
 msgstr "Adresse muss mit http(s):// beginnen"
+
+#: uconf.rs_err_carelink_token
+msgctxt "uconf.rs_err_carelink_token"
+msgid "The credential must be the captured CareLink token data (JSON, starting with \"{\")"
+msgstr ""
 
 #: uconf.rs_err_email
 msgctxt "uconf.rs_err_email"
@@ -3113,6 +3125,11 @@ msgstr "Messwerte (%s)"
 msgctxt "uwizard.wz_err_address"
 msgid "Address must start with http(s)://"
 msgstr "Adresse muss mit http(s):// beginnen"
+
+#: uwizard.wz_err_carelink_token
+msgctxt "uwizard.wz_err_carelink_token"
+msgid "The credential must be the captured CareLink token data (JSON, starting with \"{\")"
+msgstr ""
 
 #: uwizard.wz_err_email
 msgctxt "uwizard.wz_err_email"

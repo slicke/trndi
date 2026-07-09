@@ -53,7 +53,7 @@ interface
 uses
   Classes, SysUtils, Forms, Controls, StdCtrls, ExtCtrls, Graphics, Dialogs,
   trndi.native, trndi.api, trndi.api.nightscout, trndi.api.nightscout3,
-  trndi.api.dexcom, trndi.api.dexcomNew, trndi.api.tandem, trndi.api.xdrip,
+  trndi.api.dexcom, trndi.api.dexcomNew, trndi.api.tandem, trndi.api.carelink, trndi.api.xdrip,
   trndi.types, trndi.strings;
 
 {$I ../../inc/defines.inc}
@@ -142,6 +142,7 @@ resourcestring
   WZ_ERR_ADDRESS  = 'Address must start with http(s)://';
   WZ_ERR_EMAIL    = 'You must enter a valid e-mail address';
   WZ_ERR_PASSWORD = 'You must enter a password';
+  WZ_ERR_CARELINK_TOKEN = 'The credential must be the captured CareLink token data (JSON, starting with "{")';
   WZ_ERR_NEED_ADDR = 'Please enter a server address or username.';
   WZ_TEST_NO_SUPPORT = 'Connection testing is not supported for this service.';
   WZ_ERR_THRESH_HI    = 'Please enter a valid high threshold (a number greater than zero).';
@@ -399,6 +400,7 @@ begin
     API_DEX_USA, API_DEX_EU,
     API_DEX_NEW_USA, API_DEX_NEW_EU, API_DEX_NEW_JP,
     API_TANDEM_USA, API_TANDEM_EU,
+    API_CARELINK_US, API_CARELINK_EU,
     API_XDRIP
   ]);
   cbSys.ItemIndex := 0;
@@ -539,6 +541,8 @@ begin
                                           begin u := DexcomNew.ParamLabel(APLUser);  p := DexcomNew.ParamLabel(APLPass); end
   else if cbSys.Text = API_TANDEM_USA then begin u := TandemUSA.ParamLabel(APLUser); p := TandemUSA.ParamLabel(APLPass); end
   else if cbSys.Text = API_TANDEM_EU  then begin u := TandemEU.ParamLabel(APLUser);  p := TandemEU.ParamLabel(APLPass); end
+  else if (cbSys.Text = API_CARELINK_US) or (cbSys.Text = API_CARELINK_EU) then
+                                          begin u := CareLink.ParamLabel(APLUser);   p := CareLink.ParamLabel(APLPass); end
   else if cbSys.Text = API_XDRIP      then begin u := xDrip.ParamLabel(APLUser);     p := xDrip.ParamLabel(APLPass); end;
   lAddrLabel.Caption := u;
   lPassLabel.Caption := p;
@@ -558,6 +562,8 @@ begin
   else if cbSys.Text = API_DEX_NEW_JP  then s := DexcomJapanNew.ParamLabel(APLDesc)
   else if cbSys.Text = API_TANDEM_USA  then s := TandemUSA.ParamLabel(APLDesc)
   else if cbSys.Text = API_TANDEM_EU   then s := TandemEU.ParamLabel(APLDesc)
+  else if (cbSys.Text = API_CARELINK_US) or (cbSys.Text = API_CARELINK_EU)
+                                       then s := CareLink.ParamLabel(APLDesc)
   else if cbSys.Text = API_XDRIP       then s := xDrip.ParamLabel(APLDesc);
   if s <> '' then
     ShowMessage(s);
@@ -602,6 +608,10 @@ begin
     res := TandemUSA.testConnection(eAddr.Text, ePass.Text, err)
   else if cbSys.Text = API_TANDEM_EU then
     res := TandemEU.testConnection(eAddr.Text, ePass.Text, err)
+  else if cbSys.Text = API_CARELINK_US then
+    res := CareLinkUS.testConnection(eAddr.Text, ePass.Text, err)
+  else if cbSys.Text = API_CARELINK_EU then
+    res := CareLinkEU.testConnection(eAddr.Text, ePass.Text, err)
   else
   begin
     lTestStatus.Caption := WZ_TEST_NO_SUPPORT;
@@ -659,6 +669,13 @@ begin
       errMsg := WZ_ERR_PASSWORD;
       Result := false;
     end;
+  API_CARELINK_US, API_CARELINK_EU:
+    // The credential is the captured token blob, which is always JSON
+    if Copy(TrimLeft(ePass.Text), 1, 1) <> '{' then
+    begin
+      errMsg := WZ_ERR_CARELINK_TOKEN;
+      Result := false;
+    end;
   end;
 end;
 
@@ -676,6 +693,8 @@ begin
   API_DEX_NEW_JP:  Result := 'API_DEX_NEW_JP';
   API_TANDEM_USA:  Result := 'API_TANDEM_USA';
   API_TANDEM_EU:   Result := 'API_TANDEM_EU';
+  API_CARELINK_US: Result := 'API_CARELINK_US';
+  API_CARELINK_EU: Result := 'API_CARELINK_EU';
   API_XDRIP:       Result := 'API_XDRIP';
   else             Result := 'API_NS';
   end;

@@ -59,6 +59,16 @@ begin
   end;
 end;
 
+// Persist rotated backend credentials (e.g. CareLink refresh tokens) into the
+// same user-scoped setting InitializeAPI reads them from. Losing a rotated
+// refresh token invalidates the session permanently, so this must be saved
+// as soon as the backend reports it.
+procedure TfBG.APICredentialsChanged(const newCreds: string);
+begin
+  native.SetSetting('remote.creds', newCreds);
+  TrndiDLog('API credentials rotated and saved');
+end;
+
 // Returns vertical offset needed to bring all trend dots fully inside their parent.
 // Sign convention: negative = dots are above (need to move down); positive = dots are below (need to move up).
 // Pure helper operating on plain data for unit tests

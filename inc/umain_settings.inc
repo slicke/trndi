@@ -242,6 +242,10 @@ procedure LoadUserSettings(f: TfConf);
         result := API_TANDEM_USA;
       'API_TANDEM_EU':
         result := API_TANDEM_EU;
+      'API_CARELINK_US':
+        result := API_CARELINK_US;
+      'API_CARELINK_EU':
+        result := API_CARELINK_EU;
       'API_XDRIP':
         result := API_XDRIP;
       {$ifdef DEBUG}
@@ -642,6 +646,10 @@ procedure SaveUserSettings(f: TfConf);
         result := 'API_TANDEM_USA';
       API_TANDEM_EU:
         result := 'API_TANDEM_EU';
+      API_CARELINK_US:
+        result := 'API_CARELINK_US';
+      API_CARELINK_EU:
+        result := 'API_CARELINK_EU';
       API_XDRIP:
         result := 'API_XDRIP';
       {$ifdef DEBUG}
@@ -916,6 +924,8 @@ begin
         API_DEX_NEW_JP,
         API_TANDEM_USA,
         API_TANDEM_EU,
+        API_CARELINK_US,
+        API_CARELINK_EU,
         API_XDRIP
         ]);
       {$ifdef DEBUG}
