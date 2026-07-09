@@ -58,6 +58,10 @@ TrndiAPIMsg = (alert, notice, status, log);
 
 TTrndiAPIEmitter = procedure(const msg: string; etype: TrndiAPIMsg) of object;
 
+  {** Fired by API backends whose stored credentials rotate at runtime
+      (e.g. OAuth2 refresh tokens), so the owner can persist the new value. }
+TTrndiCredentialsChanged = procedure(const newCreds: string) of object;
+
 TMediaControllerAct = (mcaPlay, mcaPause, mcaURL);
 
   {** Unit that can exist or not}

@@ -468,6 +468,12 @@ begin
   API_TANDEM_EU,
   'API_TANDEM_EU':
     api := TandemEU.Create(apiTarget, apiCreds);
+  API_CARELINK_US,
+  'API_CARELINK_US':
+    api := CareLinkUS.Create(apiTarget, apiCreds);
+  API_CARELINK_EU,
+  'API_CARELINK_EU':
+    api := CareLinkEU.Create(apiTarget, apiCreds);
   API_XDRIP,
   'API_XDRIP':
     api := xDrip.Create(apiTarget, apiCreds);
@@ -843,6 +849,7 @@ begin
     FAlertEngine.OnStateChanged := @PersistAlertState;
 
     api.APIEmitter := @APIReceiver;
+    api.OnCredentialsChanged := @APICredentialsChanged;
     if not api.Connect then
     begin
       haltBoot;

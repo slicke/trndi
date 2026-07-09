@@ -50,7 +50,7 @@ interface
 uses
 trndi.strings, LCLTranslator, Classes, Menus, SysUtils, Forms, Controls,
 Graphics, Dialogs, StdCtrls, ExtCtrls, LCLProc,
-trndi.api.dexcom, trndi.api.dexcomNew, trndi.api.tandem, trndi.api.nightscout, trndi.api.nightscout3, trndi.types,
+trndi.api.dexcom, trndi.api.dexcomNew, trndi.api.tandem, trndi.api.carelink, trndi.api.nightscout, trndi.api.nightscout3, trndi.types,
 Math, DateUtils, FileUtil, LclIntf, TypInfo, LResources,
 slicke.ux.alert, slicke.ux.native, usplash, Generics.Collections, trndi.funcs, trndi.log, utrendarrow,
 Trndi.native.base, trndi.shared, buildinfo, fpjson, jsonparser,
@@ -352,6 +352,7 @@ TfBG = class(TForm)
   miAlertSnooze60: TMenuItem;
   miAlertSnoozeOff: TMenuItem;
   procedure APIReceiver(const msg: string; etype: TrndiAPIMsg);
+  procedure APICredentialsChanged(const newCreds: string);
     {** Recompute and apply layout offsets for all graph elements.
       This adjusts trend dots, labels and other elements when the UI size or
       dot-count changes to keep everything visually aligned.

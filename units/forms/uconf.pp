@@ -55,7 +55,7 @@ interface
 uses
 Classes, CheckLst, ComCtrls, ExtCtrls, Spin, StdCtrls, SysUtils, Forms, Controls,
 Graphics, Dialogs, LCLTranslator, trndi.native, lclintf, process, FileUtil{$ifdef X_MAC}, CocoaAll, nsutils.nshelpers{$endif},
-slicke.ux.alert, slicke.ux.native, slicke.versioninfo, trndi.funcs, buildinfo, StrUtils, trndi.api, trndi.api.nightscout, trndi.api.nightscout3, trndi.api.dexcom, trndi.api.dexcomNew, trndi.api.tandem, trndi.api.xdrip, razer.chroma, math, trndi.types, trndi.api.debug_firstXmissing, trndi.api.debug_intermittentmissing, trndi.api.debug_custom, trndi.api.debug, trndi.api.debug_lowsoon, trndi.api.debug_sensorexpiry, trndi.api.debug_slow, trndi.api.debug_faultysensor, trndi.api.debug_latemissing, base64, Variants{$ifdef TrndiExt}, trndi.ext.perm{$endif}{$ifdef X_WIN}, ComObj{$endif};
+slicke.ux.alert, slicke.ux.native, slicke.versioninfo, trndi.funcs, buildinfo, StrUtils, trndi.api, trndi.api.nightscout, trndi.api.nightscout3, trndi.api.dexcom, trndi.api.dexcomNew, trndi.api.tandem, trndi.api.carelink, trndi.api.xdrip, razer.chroma, math, trndi.types, trndi.api.debug_firstXmissing, trndi.api.debug_intermittentmissing, trndi.api.debug_custom, trndi.api.debug, trndi.api.debug_lowsoon, trndi.api.debug_sensorexpiry, trndi.api.debug_slow, trndi.api.debug_faultysensor, trndi.api.debug_latemissing, base64, Variants{$ifdef TrndiExt}, trndi.ext.perm{$endif}{$ifdef X_WIN}, ComObj{$endif};
 
 {$I ../../inc/defines.inc}
 type
@@ -644,6 +644,9 @@ RS_XDRIP =
 RS_TANDEM =
   'This backend is in alpha stage, it may not work as intended!'+sLineBreak+'Please set your own thresholds in the Customization tab.';
 
+RS_CARELINK =
+  'This backend is experimental!'+sLineBreak+'It needs token data captured from a one-time browser login — see the CareLink guide.'+sLineBreak+'Use a Care Partner (follower) account. Data may lag behind the pump.';
+
 RS_DEBUG_WARN =
   'This is a debug backend. It''s used for testing purposes only!'+sLineBreak+'No data will be sent to any remote server.';
 
@@ -664,6 +667,7 @@ RS_DECIMAL_HELP = 'This replaces the decimal separator, eg setting "," will show
 RS_ERR_PASSWORD = 'You must enter a password';
 RS_ERR_EMAIL = 'You must enter a valid e-mail address';
 RS_ERR_ADDRESS = 'Address must start with http(s)://';
+RS_ERR_CARELINK_TOKEN = 'The credential must be the captured CareLink token data (JSON, starting with "{")';
 RS_ENTER_USER = 'Enter a username';
 RS_ENTER_NAME = 'Letters, space and numbers only';
 RS_ENTER_ANY = 'Please enter a name';
@@ -1014,6 +1018,10 @@ begin
     sys := TandemUSA;
   API_TANDEM_EU:
     sys := TandemEU;
+  API_CARELINK_US:
+    sys := CareLinkUS;
+  API_CARELINK_EU:
+    sys := CareLinkEU;
   API_XDRIP:
     sys := xDrip;
   {$ifdef Debug}
@@ -1092,6 +1100,12 @@ procedure WarnUnstableAPI;
     begin
       pnSysWarn.Show;
       lSysWarnInfo.Caption := unicodestring(warn+unicodestring(RS_TANDEM));
+    end;
+    API_CARELINK_US,
+    API_CARELINK_EU:
+    begin
+      pnSysWarn.Show;
+      lSysWarnInfo.Caption := unicodestring(warn+unicodestring(RS_CARELINK));
     end;
     end;
     {$ifdef DEBUG}
@@ -1234,6 +1248,13 @@ begin
   begin
     result := pass.Length > 4;
     error := RS_ERR_PASSWORD;
+  end;
+  API_CARELINK_US,
+  API_CARELINK_EU:
+  begin
+    // The credential is the captured token blob, which is always JSON
+    result := pass.TrimLeft.StartsWith('{');
+    error := RS_ERR_CARELINK_TOKEN;
   end;
   end;
 
@@ -1500,6 +1521,10 @@ begin
     sys := TandemUSA;
   API_TANDEM_EU:
     sys := TandemEU;
+  API_CARELINK_US:
+    sys := CareLinkUS;
+  API_CARELINK_EU:
+    sys := CareLinkEU;
   API_XDRIP:
     sys := xDrip;
   {$ifdef Debug}
@@ -1610,6 +1635,12 @@ begin
   else
   if cbSys.Text = API_TANDEM_EU then
     res := TandemEU.testConnection(eAddr.text,ePass.text,err)
+  else
+  if cbSys.Text = API_CARELINK_US then
+    res := CareLinkUS.testConnection(eAddr.text,ePass.text,err)
+  else
+  if cbSys.Text = API_CARELINK_EU then
+    res := CareLinkEU.testConnection(eAddr.text,ePass.text,err)
   else
   begin
     ShowMessage(RS_TEST_UNSUPPORTED);

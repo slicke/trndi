@@ -159,7 +159,9 @@ protected
 
 private
   emitter: TTrndiAPIEmitter;
+  credsEmitter: TTrndiCredentialsChanged;
   procedure setEmitter(e: TTrndiAPIEmitter);
+  procedure setCredsEmitter(e: TTrndiCredentialsChanged);
 public
 const
   toMMOL = 0.05555555555555556; // Factor to multiply mg/dL by to get mmol/L
@@ -355,6 +357,13 @@ const
 }
   function getBasalProfile(out profile: TBasalProfile): boolean; virtual;
 
+  {** Notify the owner that this backend's stored credentials changed
+      (e.g. a rotated OAuth2 refresh token) and must be re-persisted.
+      No-op when no handler is attached.
+    @param(newCreds The new credential string to store as remote.creds)
+ }
+  procedure credentialsChanged(const newCreds: string);
+
   {** Emits an alert
     @param(msg The message)
  }
@@ -427,6 +436,9 @@ published
   property systemName: string read getSystemName;
 
   property APIEmitter: TTrndiAPIEmitter write setEmitter;
+
+    {** Handler invoked when the backend rotates its stored credentials. }
+  property OnCredentialsChanged: TTrndiCredentialsChanged write setCredsEmitter;
 end;
 
 implementation
@@ -434,6 +446,17 @@ implementation
 procedure TrndiAPI.setEmitter(e: TTrndiAPIEmitter);
 begin
   emitter := e;
+end;
+
+procedure TrndiAPI.setCredsEmitter(e: TTrndiCredentialsChanged);
+begin
+  credsEmitter := e;
+end;
+
+procedure TrndiAPI.credentialsChanged(const newCreds: string);
+begin
+  if assigned(credsEmitter) then
+    credsEmitter(newCreds);
 end;
 
 procedure TrndiAPI.alert(const msg: string);
