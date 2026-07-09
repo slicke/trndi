@@ -1,0 +1,21 @@
+{
+  "name": "trndi-carelink-login",
+  "version": "1.0.0",
+  "description": "Trndi CareLink (Care Partner) login helper — captures the CareLink token data for Trndi",
+  "type": "module",
+  "private": true,
+  "bin": {
+    "trndi-carelink-login": "carelink-login.mjs"
+  },
+  "scripts": {
+    "start": "node carelink-login.mjs",
+    "start:us": "node carelink-login.mjs --us",
+    "start:eu": "node carelink-login.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "puppeteer": "^23.0.0"
+  }
+}
