@@ -103,6 +103,7 @@ TfConf = class(TForm)
   bPrivacyHelp: TButton;
   bPredictHelp: TButton;
   bTest: TButton;
+  bLogin: TButton;
   bTestProxy: TButton;
   bOverrideHelp: TButton;
   bRemove: TButton;
@@ -463,6 +464,7 @@ TfConf = class(TForm)
   procedure bSysTouchClick({%H-}Sender: TObject);
   procedure bTestAnnounceClick(Sender: TObject);
   procedure bTestClick(Sender: TObject);
+  procedure bLoginClick(Sender: TObject);
   procedure bTestProxyClick(Sender: TObject);
   procedure bTestSpeechClick(Sender: TObject);
   procedure cbTTSChange(Sender: TObject);
@@ -533,6 +535,11 @@ private
   procedure LoadProxySettingsIntoUI;
   procedure SaveProxySettingsFromUI;
   procedure getAPILabels(out user, pass: string);
+  {** Metaclass of the backend currently selected in cbSys, or nil. }
+  function selectedAPIClass: TrndiAPIClass;
+  {** Show/hide the browser-login button and username field for the current
+      backend, based on selectedAPIClass.supportsWebLogin. }
+  procedure updateWebLoginUI;
 public
   chroma: TRazerChromaBase;
   procedure UpdatePredictionStates;
@@ -726,6 +733,19 @@ RS_EXT_REQUESTS = 'Requests: ';
 RS_TEST_UNSUPPORTED = 'Sorry! Trndi does not (yet) support connection testing for this service!';
 RS_TEST_SUCCESS = 'Successfully connected!';
 RS_TEST_FAIL = 'Could not connect!';
+
+RS_WEBLOGIN_BUTTON = 'Get CareLink token…';
+RS_WEBLOGIN_TITLE = 'CareLink login helper';
+RS_WEBLOGIN_HELP =
+  'CareLink needs a one-time browser login (with CAPTCHA), so Trndi uses a small ' +
+  'login helper to capture your token.'#13#10#13#10 +
+  'It needs Node.js installed. In a terminal, run:'#13#10#13#10 +
+  '    cd "%s"'#13#10 +
+  '    npm install'#13#10 +
+  '    %s'#13#10#13#10 +
+  'A browser opens — sign in with your Care Partner account and solve the CAPTCHA. ' +
+  'The helper then prints a block of JSON: copy it into the token field below and click Test.'#13#10#13#10 +
+  'Open the helper folder now?';
 
 RS_POS_TITLE = 'Restricted Feature';
 RS_POS = 'This feature depends on your Window Manager (WM). %s may not support this feature.';
@@ -1126,6 +1146,7 @@ begin
   getAPILabels(user, pass);
   label15.caption := user;
   lPass.Caption := pass;
+  updateWebLoginUI;
 end;
 
 procedure TfConf.cbUserClick(Sender: TObject);
@@ -1660,6 +1681,79 @@ begin
     ShowMessage(RS_TEST_UNSUPPORTED)
   end;
 
+end;
+
+{------------------------------------------------------------------------------
+  Resolve the metaclass of the backend currently selected in cbSys. Used for
+  class-level capability queries (e.g. supportsWebLogin). Returns nil for the
+  debug/placeholder entries and anything unmapped.
+------------------------------------------------------------------------------}
+function TfConf.selectedAPIClass: TrndiAPIClass;
+begin
+  case cbSys.Text of
+  API_NS:          Result := NightScout;
+  API_NS3:         Result := NightScout3;
+  API_DEX_USA:     Result := DexcomUSA;
+  API_DEX_EU:      Result := DexcomWorld;
+  API_DEX_NEW_USA: Result := DexcomUSANew;
+  API_DEX_NEW_EU:  Result := DexcomWorldNew;
+  API_DEX_NEW_JP:  Result := DexcomNew;
+  API_TANDEM_USA:  Result := TandemUSA;
+  API_TANDEM_EU:   Result := TandemEU;
+  API_CARELINK_US: Result := CareLinkUS;
+  API_CARELINK_EU: Result := CareLinkEU;
+  API_XDRIP:       Result := xDrip;
+  else             Result := nil;
+  end;
+end;
+
+{------------------------------------------------------------------------------
+  For backends that offer an in-app browser login (CareLink), show the "Log in"
+  button and hide the username field — the username is captured from the token
+  during login. Other backends keep the normal username entry.
+------------------------------------------------------------------------------}
+procedure TfConf.updateWebLoginUI;
+var
+  cls: TrndiAPIClass;
+  webLogin: boolean;
+begin
+  cls := selectedAPIClass;
+  webLogin := Assigned(cls) and cls.supportsWebLogin;
+
+  bLogin.Visible := webLogin;
+  Label15.Visible := not webLogin;
+  eAddr.Visible := not webLogin;
+
+  // The username is captured from the token, so the field is hidden. Seed a
+  // non-empty value so a target is always stored (keeps the first-run guide
+  // from triggering) even if the user pastes token data manually instead of
+  // using the browser login; the login flow overwrites it with the real name.
+  if webLogin and (Trim(eAddr.Text) = '') then
+    eAddr.Text := 'carelink';
+end;
+
+{------------------------------------------------------------------------------
+  Point the user at the CareLink login helper (tools/carelink-login), which
+  captures the token in a real browser and prints it for pasting into the
+  credential field. Optionally opens the helper folder.
+------------------------------------------------------------------------------}
+procedure TfConf.bLoginClick(Sender: TObject);
+var
+  helperDir, cmd: string;
+begin
+  helperDir := ExtractFilePath(Application.ExeName) + 'tools' + PathDelim + 'carelink-login';
+  if cbSys.Text = API_CARELINK_US then
+    cmd := 'node carelink-login.mjs --us'
+  else
+    cmd := 'node carelink-login.mjs';
+
+  if ExtMsgYesNo(RS_WEBLOGIN_TITLE, Format(RS_WEBLOGIN_HELP, [helperDir, cmd])) then
+  begin
+    if DirectoryExists(helperDir) then
+      OpenDocument(helperDir)
+    else
+      OpenURL('https://github.com/slicke/trndi/tree/main/tools/carelink-login');
+  end;
 end;
 
 procedure TfConf.bTestSpeechClick(Sender: TObject);

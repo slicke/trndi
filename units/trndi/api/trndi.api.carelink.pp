@@ -189,6 +189,10 @@ type
     {** UI parameter label provider (override). }
     class function ParamLabel(LabelName: APIParamLabel): string; override;
 
+    {** CareLink requires the assisted browser login helper (see
+        guides/CareLink.md and tools/carelink-login). }
+    class function supportsWebLogin: boolean; override;
+
     {** Test connection for the CareLink follower API }
     class function testConnection(AUser, ACreds: string; var ARes: string; AExtra: string): MaybeBool; overload;
 
@@ -704,6 +708,16 @@ begin
   finally
     FreeResponse(httpResponse);
   end;
+end;
+
+{------------------------------------------------------------------------------
+  CareLink credentials come from the assisted browser login helper
+  (tools/carelink-login), so the settings UI offers a login button instead of a
+  username/password. See guides/CareLink.md.
+ ------------------------------------------------------------------------------}
+class function CareLink.supportsWebLogin: boolean;
+begin
+  Result := true;
 end;
 
 {------------------------------------------------------------------------------

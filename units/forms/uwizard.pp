@@ -51,7 +51,7 @@ unit uwizard;
 interface
 
 uses
-  Classes, SysUtils, Forms, Controls, StdCtrls, ExtCtrls, Graphics, Dialogs,
+  Classes, SysUtils, Forms, Controls, StdCtrls, ExtCtrls, Graphics, Dialogs, lclintf,
   trndi.native, trndi.api, trndi.api.nightscout, trndi.api.nightscout3,
   trndi.api.dexcom, trndi.api.dexcomNew, trndi.api.tandem, trndi.api.carelink, trndi.api.xdrip,
   trndi.types, trndi.strings;
@@ -83,6 +83,7 @@ type
     eAddr: TEdit;
     lPassLabel: TLabel;
     ePass: TEdit;
+    bLogin: TButton;
     bTest: TButton;
     lTestStatus: TLabel;
 
@@ -111,11 +112,14 @@ type
     procedure ShowStep(step: integer);
     procedure UpdateNav;
     procedure UpdateConnectionLabels;
+    function  selectedAPIClass: TrndiAPIClass;
+    procedure updateWebLoginUI;
     procedure UpdateThresholdLabels;
     function  APIToCode(const displayName: string): string;
     procedure bNextClick(Sender: TObject);
     procedure bBackClick(Sender: TObject);
     procedure bTestClick(Sender: TObject);
+    procedure bLoginClick(Sender: TObject);
     procedure cbSysChange(Sender: TObject);
     procedure bSysHelpClick(Sender: TObject);
     procedure ePassEnter(Sender: TObject);
@@ -145,6 +149,18 @@ resourcestring
   WZ_ERR_CARELINK_TOKEN = 'The credential must be the captured CareLink token data (JSON, starting with "{")';
   WZ_ERR_NEED_ADDR = 'Please enter a server address or username.';
   WZ_TEST_NO_SUPPORT = 'Connection testing is not supported for this service.';
+  WZ_WEBLOGIN_BUTTON = 'Get CareLink token…';
+  WZ_WEBLOGIN_TITLE = 'CareLink login helper';
+  WZ_WEBLOGIN_HELP =
+    'CareLink needs a one-time browser login (with CAPTCHA), so Trndi uses a small ' +
+    'login helper to capture your token.'#13#10#13#10 +
+    'It needs Node.js installed. In a terminal, run:'#13#10#13#10 +
+    '    cd "%s"'#13#10 +
+    '    npm install'#13#10 +
+    '    %s'#13#10#13#10 +
+    'A browser opens — sign in with your Care Partner account and solve the CAPTCHA. ' +
+    'The helper then prints a block of JSON: copy it into the token field and click Test.'#13#10#13#10 +
+    'Open the helper folder now?';
   WZ_ERR_THRESH_HI    = 'Please enter a valid high threshold (a number greater than zero).';
   WZ_ERR_THRESH_LO    = 'Please enter a valid low threshold (a number greater than zero).';
   WZ_ERR_THRESH_ORDER = 'The high threshold must be greater than the low threshold.';
@@ -357,6 +373,18 @@ begin
   lPassLabel.AutoSize := false;
   lPassLabel.BorderSpacing.Bottom := 4;
 
+  { Browser-login button, shown instead of the address field for backends that
+    capture their credentials via an in-app browser login (CareLink). }
+  bLogin := TButton.Create(pnInner);
+  bLogin.Parent   := pnInner;
+  bLogin.Caption  := WZ_WEBLOGIN_BUTTON;
+  bLogin.Align    := alTop;
+  bLogin.Height   := 28;
+  bLogin.BorderSpacing.Bottom := 10;
+  bLogin.OnClick  := @bLoginClick;
+  bLogin.TabOrder := 1;
+  bLogin.Visible  := false;
+
   { Address }
   eAddr := TEdit.Create(pnInner);
   eAddr.Parent    := pnInner;
@@ -546,6 +574,74 @@ begin
   else if cbSys.Text = API_XDRIP      then begin u := xDrip.ParamLabel(APLUser);     p := xDrip.ParamLabel(APLPass); end;
   lAddrLabel.Caption := u;
   lPassLabel.Caption := p;
+  updateWebLoginUI;
+end;
+
+{------------------------------------------------------------------------------
+  Metaclass of the backend currently selected in cbSys, or nil. Used for
+  class-level capability queries (e.g. supportsWebLogin).
+------------------------------------------------------------------------------}
+function TfWizard.selectedAPIClass: TrndiAPIClass;
+begin
+  if      cbSys.Text = API_NS          then Result := NightScout
+  else if cbSys.Text = API_NS3         then Result := NightScout3
+  else if cbSys.Text = API_DEX_USA     then Result := DexcomUSA
+  else if cbSys.Text = API_DEX_EU      then Result := DexcomWorld
+  else if cbSys.Text = API_DEX_NEW_USA then Result := DexcomUSANew
+  else if cbSys.Text = API_DEX_NEW_EU  then Result := DexcomWorldNew
+  else if cbSys.Text = API_DEX_NEW_JP  then Result := DexcomJapanNew
+  else if cbSys.Text = API_TANDEM_USA  then Result := TandemUSA
+  else if cbSys.Text = API_TANDEM_EU   then Result := TandemEU
+  else if cbSys.Text = API_CARELINK_US then Result := CareLinkUS
+  else if cbSys.Text = API_CARELINK_EU then Result := CareLinkEU
+  else if cbSys.Text = API_XDRIP       then Result := xDrip
+  else Result := nil;
+end;
+
+{------------------------------------------------------------------------------
+  Show the browser-login button (and hide the username field) for backends that
+  offer an in-app login, seeding a non-empty username so a target is stored.
+  See the twin in uconf.pp.
+------------------------------------------------------------------------------}
+procedure TfWizard.updateWebLoginUI;
+var
+  cls: TrndiAPIClass;
+  webLogin: boolean;
+begin
+  cls := selectedAPIClass;
+  webLogin := Assigned(cls) and cls.supportsWebLogin;
+
+  bLogin.Visible := webLogin;
+  lAddrLabel.Visible := not webLogin;
+  eAddr.Visible := not webLogin;
+
+  if webLogin and (Trim(eAddr.Text) = '') then
+    eAddr.Text := 'carelink';
+end;
+
+{------------------------------------------------------------------------------
+  Point the user at the CareLink login helper (tools/carelink-login) that
+  captures the token in a browser and prints it for pasting into the token
+  field. Optionally opens the helper folder.
+------------------------------------------------------------------------------}
+procedure TfWizard.bLoginClick(Sender: TObject);
+var
+  helperDir, cmd: string;
+begin
+  helperDir := ExtractFilePath(Application.ExeName) + 'tools' + PathDelim + 'carelink-login';
+  if cbSys.Text = API_CARELINK_US then
+    cmd := 'node carelink-login.mjs --us'
+  else
+    cmd := 'node carelink-login.mjs';
+
+  if MessageDlg(WZ_WEBLOGIN_TITLE, Format(WZ_WEBLOGIN_HELP, [helperDir, cmd]),
+    mtInformation, [mbYes, mbNo], '') = mrYes then
+  begin
+    if DirectoryExists(helperDir) then
+      OpenDocument(helperDir)
+    else
+      OpenURL('https://github.com/slicke/trndi/tree/main/tools/carelink-login');
+  end;
 end;
 
 procedure TfWizard.bSysHelpClick(Sender: TObject);

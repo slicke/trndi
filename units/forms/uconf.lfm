@@ -1094,6 +1094,20 @@ object fConf: TfConf
         BorderSpacing.Around = 5
         TabOrder = 1
       end
+      object bLogin: TButton
+        Left = 15
+        Height = 30
+        Top = 217
+        Width = 617
+        Align = alTop
+        BorderSpacing.Left = 10
+        BorderSpacing.Bottom = 5
+        BorderSpacing.Around = 5
+        Caption = 'Get CareLink token…'
+        TabOrder = 5
+        Visible = False
+        OnClick = bLoginClick
+      end
       object bvExt1: TBevel
         Left = 0
         Height = 1

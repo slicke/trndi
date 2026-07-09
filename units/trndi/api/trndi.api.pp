@@ -323,6 +323,14 @@ const
      }
   class function testConnection(user, pass: string; var res: string): MaybeBool; virtual;
 
+    {** Whether this backend needs an assisted browser login to obtain its
+        credentials (rather than a plain username/password). When True the
+        settings UI shows a "Log in" button and hides the username field, since
+        the credential is captured via an external login helper (see
+        guides/CareLink.md). Default: False.
+        @returns(True if the backend uses the assisted login flow) }
+  class function supportsWebLogin: boolean; virtual;
+
     {** Returns the name of the API
         @returns(Name of the API)
      }
@@ -440,6 +448,10 @@ published
     {** Handler invoked when the backend rotates its stored credentials. }
   property OnCredentialsChanged: TTrndiCredentialsChanged write setCredsEmitter;
 end;
+
+  {** Metaclass reference for TrndiAPI, so the UI can query class-level backend
+      capabilities (ParamLabel, testConnection, supportsWebLogin) generically. }
+  TrndiAPIClass = class of TrndiAPI;
 
 implementation
 
@@ -961,6 +973,15 @@ class function TrndiAPI.testConnection(user, pass: string; var res: string): may
 begin
   res := 'This API has no implemented test function';
   result := maybebool.none; // Not supported
+end;
+
+{------------------------------------------------------------------------------
+  Assisted-login capability. Default: unsupported. Backends that require a
+  browser login helper (e.g. CareLink) override this to True.
+------------------------------------------------------------------------------}
+class function TrndiAPI.supportsWebLogin: boolean;
+begin
+  Result := false;
 end;
 
 {------------------------------------------------------------------------------
