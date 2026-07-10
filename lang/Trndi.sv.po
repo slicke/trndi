@@ -1577,6 +1577,10 @@ msgstr "Varningspaus av"
 msgid "Resume alerts"
 msgstr "Aktivera varningar igen"
 
+#: trndi.strings.rs_api_notice
+msgid "Data source notice"
+msgstr ""
+
 #: trndi.strings.rs_attention_missing
 msgid "Outdated Readings!"
 msgstr "Utdaterade avläsningar!"

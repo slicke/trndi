@@ -1489,6 +1489,10 @@ msgstr "Varselutsettelse deaktivert"
 msgid "Resume alerts"
 msgstr "Gjenoppta varsler"
 
+#: trndi.strings.rs_api_notice
+msgid "Data source notice"
+msgstr ""
+
 #: trndi.strings.rs_attention_missing
 msgid "Outdated Readings!"
 msgstr "Utdaterte avlesninger!"
