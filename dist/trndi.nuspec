@@ -9,11 +9,11 @@
     <projectUrl>https://github.com/slicke/trndi</projectUrl>
     <icon>icon.png</icon>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>Trndi - Continuous Glucose Monitor (CGM) viewer for Windows. Monitor your blood glucose levels with support for Dexcom, Nightscout, and xDrip+ data sources.</description>
+    <description>Trndi - Continuous Glucose Monitor (CGM) viewer for Windows. Monitor your blood glucose levels with support for Dexcom, Nightscout, Tandem Source, Medtronic CareLink, and xDrip+ data sources.</description>
     <summary>CGM viewer for Windows with extension support</summary>
     <releaseNotes>Automated build from GitHub Actions</releaseNotes>
     <copyright>Copyright 2026 Björn Lindh</copyright>
-    <tags>diabetes glucose cgm dexcom nightscout xdrip monitoring health</tags>
+    <tags>diabetes glucose cgm dexcom nightscout xdrip tandem carelink monitoring health</tags>
   </metadata>
   <files>
     <file src="..\Trndi.exe" target="tools\Trndi.exe" />
@@ -21,5 +21,11 @@
     <file src="..\Trndi.png" target="icon.png" />
     <file src="chocolateyinstall.ps1" target="tools\chocolateyinstall.ps1" />
     <file src="chocolateyuninstall.ps1" target="tools\chocolateyuninstall.ps1" />
+    <!-- CareLink login helper (sources only). Trndi.exe looks for it next to
+         itself, i.e. tools\tools\carelink-login inside the package. -->
+    <file src="..\tools\carelink-login\carelink-login.mjs" target="tools\tools\carelink-login\carelink-login.mjs" />
+    <file src="..\tools\carelink-login\package.json" target="tools\tools\carelink-login\package.json" />
+    <file src="..\tools\carelink-login\package-lock.json" target="tools\tools\carelink-login\package-lock.json" />
+    <file src="..\tools\carelink-login\README.md" target="tools\tools\carelink-login\README.md" />
   </files>
 </package>

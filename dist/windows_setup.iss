@@ -74,6 +74,12 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 [Files]
 Source: "..\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\lang\*"; DestDir: "{app}\lang"; Flags: ignoreversion recursesubdirs createallsubdirs
+; CareLink login helper (sources only — node_modules is installed by the user
+; per the guide). The app looks for it in {app}\tools\carelink-login.
+Source: "..\tools\carelink-login\carelink-login.mjs"; DestDir: "{app}\tools\carelink-login"; Flags: ignoreversion
+Source: "..\tools\carelink-login\package.json"; DestDir: "{app}\tools\carelink-login"; Flags: ignoreversion
+Source: "..\tools\carelink-login\package-lock.json"; DestDir: "{app}\tools\carelink-login"; Flags: ignoreversion
+Source: "..\tools\carelink-login\README.md"; DestDir: "{app}\tools\carelink-login"; Flags: ignoreversion
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
