@@ -1485,6 +1485,10 @@ msgstr ""
 msgid "Resume alerts"
 msgstr ""
 
+#: trndi.strings.rs_api_notice
+msgid "Data source notice"
+msgstr ""
+
 #: trndi.strings.rs_attention_missing
 msgid "Outdated Readings!"
 msgstr ""

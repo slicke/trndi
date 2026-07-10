@@ -1489,6 +1489,10 @@ msgstr "Udsættelse af advarsler deaktiveret"
 msgid "Resume alerts"
 msgstr "Genoptag advarsler"
 
+#: trndi.strings.rs_api_notice
+msgid "Data source notice"
+msgstr ""
+
 #: trndi.strings.rs_attention_missing
 msgid "Outdated Readings!"
 msgstr "Forældede aflæsninger!"

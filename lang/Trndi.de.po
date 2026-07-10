@@ -1489,6 +1489,10 @@ msgstr "Alarm-Stummschaltung deaktiviert"
 msgid "Resume alerts"
 msgstr "Alarme fortsetzen"
 
+#: trndi.strings.rs_api_notice
+msgid "Data source notice"
+msgstr ""
+
 #: trndi.strings.rs_attention_missing
 msgid "Outdated Readings!"
 msgstr "Veraltete Messwerte!"

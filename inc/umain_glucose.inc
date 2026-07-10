@@ -1346,17 +1346,23 @@ var
   SortedReadings: array of BGReading;
   currentTime: TDateTime;
   currentHash: cardinal;
+  timeBucket: int64;
 begin
   if Length(Readings) = 0 then
     Exit;
 
+  currentTime := Now;
+  // Slots are anchored to wall-clock INTERVAL_MINUTES boundaries, so identical
+  // readings must still be re-placed once Now crosses a boundary: the latest
+  // dot has to shift left and vacate the newest slot when no new reading has
+  // arrived in time.
+  timeBucket := Trunc(currentTime * MinsPerDay) div INTERVAL_MINUTES;
   currentHash := CalculateReadingsHash(Readings);
-  if currentHash = FLastReadingsHash then
+  if (currentHash = FLastReadingsHash) and (timeBucket = FLastDotTimeBucket) then
     Exit;
 
   FLastReadingsHash := currentHash;
-
-  currentTime := Now;
+  FLastDotTimeBucket := timeBucket;
   SetLength({%H-}SortedReadings, Length(Readings));
   Move(Readings[0], SortedReadings[0], Length(Readings) * SizeOf(BGReading));
 
