@@ -44,6 +44,7 @@ type
 
     // TTS and environment
     procedure Speak(const Text: string); override;
+    procedure attention(topic, message: string); override;
     class function isDarkMode: boolean; override;
     class function setDarkMode: boolean; overload;
     class function setDarkMode(win: PtrUInt; Enable: boolean = true): boolean; overload;
@@ -305,6 +306,11 @@ end;
 procedure TTrndiNativeMock.Speak(const Text: string);
 begin
   // No-op in tests
+end;
+
+procedure TTrndiNativeMock.attention(topic, message: string);
+begin
+  // No-op in tests — the real implementation shows a desktop notification
 end;
 
 class function TTrndiNativeMock.isDarkMode: boolean;
