@@ -101,7 +101,10 @@ Commercial CGM system by Dexcom. Trndi can connect directly to Dexcom Share serv
 Open-source Android app for receiving CGM data. Trndi can connect to xDrip via local WiFi using the xDrip Web Service feature.
 
 ### **API Backend**
-Abstract interface (`TrndiAPI`) that standardizes access to different data sources. Each source (NightScout, Dexcom, xDrip) implements this interface.
+Abstract interface (`TrndiAPI`) that standardizes access to different data sources. Each source (NightScout, Dexcom, Tandem, CareLink, xDrip) implements this interface.
+
+### **CareLink**
+Commercial CGM platform by Medtronic (MiniMed). Trndi connects as a CareLink follower ("care partner") using token data captured from a one-time browser login; the session is then kept alive automatically.
 
 ### **Debug APIs**
 Testing/development data sources that generate fake glucose data:

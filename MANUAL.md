@@ -28,7 +28,8 @@ Trndi can connect to:
 - **NightScout** - A website where your CGM data is uploaded (you or your caregiver sets this up)
 - **Dexcom Share** - Dexcom's official data sharing service
 - **xDrip** - An Android app that can share data over your local WiFi
-- ***Tandem Source*** - Tandem Diabetes management app (_NOTE: Source has a lag! This is not Trndi's fault._)
+- **Tandem Source** - Tandem Diabetes management app (_NOTE: Source has a lag! This is not Trndi's fault._)
+- **CareLink** - Medtronic's official data sharing service (requires a one-time browser login)
 
 ---
 
@@ -179,6 +180,7 @@ Trndi can't get readings from your data source.
 - **Check**: Your internet connection
 - **Check**: Your NightScout URL is correct
 - **Check**: Your Dexcom/xDrip credentials are correct
+- **Check**: For CareLink, the stored token may have expired — redo the browser login (see the [CareLink guide](guides/CareLink.md))
 
 ### The colors don't match my preferences
 You might need to set your own thresholds:
