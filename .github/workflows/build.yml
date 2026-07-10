@@ -186,6 +186,14 @@ jobs:
           mkdir -p artifacts
           cp Trndi artifacts/
           [ -d "lang" ] && cp -r lang artifacts/
+          # CareLink login helper (sources only, never node_modules) — the app
+          # looks for it in <exe dir>/tools/carelink-login
+          mkdir -p artifacts/tools/carelink-login
+          cp tools/carelink-login/carelink-login.mjs \
+             tools/carelink-login/package.json \
+             tools/carelink-login/package-lock.json \
+             tools/carelink-login/README.md \
+             artifacts/tools/carelink-login/
           7z a -tzip Trndi-linux-${{ matrix.arch }}.zip ./artifacts/* >/dev/null
 
           # If this is a pull request build, skip packaging, signing and AppImage creation
@@ -202,6 +210,14 @@ jobs:
             mkdir -p "$PKG_DIR/usr/local/trndi"
             cp Trndi "$PKG_DIR/usr/local/trndi/"
             [ -d "lang" ] && cp -r lang "$PKG_DIR/usr/local/trndi/"
+
+            # CareLink login helper next to the binary (sources only)
+            mkdir -p "$PKG_DIR/usr/local/trndi/tools/carelink-login"
+            cp tools/carelink-login/carelink-login.mjs \
+               tools/carelink-login/package.json \
+               tools/carelink-login/package-lock.json \
+               tools/carelink-login/README.md \
+               "$PKG_DIR/usr/local/trndi/tools/carelink-login/"
 
             # Optional GNOME Shell top-bar indicator extension source
             if [ -d "gnome-shell-extension/trndi-current" ]; then
@@ -397,6 +413,14 @@ jobs:
           cp Trndi artifacts/
           [ -d "lang" ] && cp -r lang artifacts/
           [ -f "dist/macos_README.txt" ] && cp dist/macos_README.txt artifacts/README.txt
+          # CareLink login helper (sources only, never node_modules) — the app
+          # looks for it in <exe dir>/tools/carelink-login
+          mkdir -p artifacts/tools/carelink-login
+          cp tools/carelink-login/carelink-login.mjs \
+             tools/carelink-login/package.json \
+             tools/carelink-login/package-lock.json \
+             tools/carelink-login/README.md \
+             artifacts/tools/carelink-login/
           7z a -tzip Trndi-macos-silicon.zip ./artifacts/* >/dev/null
           chmod +x dist/macos.sh
           if [ -d "lang" ]; then cp -r lang dist/; fi
@@ -461,6 +485,14 @@ jobs:
           New-Item -ItemType Directory -Path artifacts -Force | Out-Null
           Copy-Item '.\Trndi.exe' -Destination '.\artifacts\'
           if (Test-Path '.\lang') { Copy-Item '.\lang' -Destination '.\artifacts\lang' -Recurse }
+          # CareLink login helper (sources only, never node_modules) — the app
+          # looks for it in <exe dir>\tools\carelink-login
+          New-Item -ItemType Directory -Path 'artifacts\tools\carelink-login' -Force | Out-Null
+          Copy-Item '.\tools\carelink-login\carelink-login.mjs', `
+                    '.\tools\carelink-login\package.json', `
+                    '.\tools\carelink-login\package-lock.json', `
+                    '.\tools\carelink-login\README.md' `
+                    -Destination '.\artifacts\tools\carelink-login\'
           & 'C:\Program Files\7-Zip\7z.exe' a -tzip 'Trndi-windows-x64.zip' .\artifacts\* | Out-Null
           # Determine unified package version from Trndi.lpi (Major.Minor.<build>).
           # On main: build number from the version job. On PRs: PR number (so the
