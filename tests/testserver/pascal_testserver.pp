@@ -13,13 +13,14 @@ procedure StopPascalTestServer;
 implementation
 
 uses
-  sockets, sha1, dateutils, fpjson, jsonparser;
+  sockets, sha1, dateutils, fpjson, jsonparser, base64;
 
 var
   ServerThread: TThread = nil;
   ServerListenSocket: TSocket = -1;
   ServerShouldStop: Boolean = False;
   LatestValue: string = '102';
+  CareLinkRefreshCount: Integer = 0;
 
 function GenerateObjectId: string;
 var
@@ -48,6 +49,39 @@ begin
   millis := ms mod 1000;
   Result := FormatDateTime('yyyy"-"mm"-"dd"T"hh":"nn":"ss', dt)
     + '.' + Format('%.3d', [millis]) + 'Z';
+end;
+
+// ---------- CareLink helpers -------------------------------------------------
+
+function Base64UrlEncode(const s: string): string;
+begin
+  Result := EncodeStringBase64(s);
+  Result := StringReplace(Result, '+', '-', [rfReplaceAll]);
+  Result := StringReplace(Result, '/', '_', [rfReplaceAll]);
+  while (Length(Result) > 0) and (Result[Length(Result)] = '=') do
+    SetLength(Result, Length(Result) - 1);
+end;
+
+// Unsigned JWT good for one hour, carrying the claims the CareLink client
+// reads: exp (refresh scheduling) and token_details.preferred_username.
+function BuildCareLinkJWT: string;
+var
+  expEpoch: Int64;
+begin
+  // AInputIsUTC=False: Now is local time (see GenerateObjectId).
+  expEpoch := DateTimeToUnix(Now, False) + 3600;
+  Result := Base64UrlEncode('{"alg":"none","typ":"JWT"}') + '.' +
+    Base64UrlEncode(Format(
+      '{"exp":%d,"token_details":{"preferred_username":"carelinkuser"}}',
+      [expEpoch])) + '.testsig';
+end;
+
+// Naive local timestamp (no zone designator), as the CareLink sgs entries
+// carry pump-local time.
+function CareLinkLocalStamp(minutesAgo: Integer; base: TDateTime): string;
+begin
+  Result := FormatDateTime('yyyy"-"mm"-"dd"T"hh":"nn":"ss',
+    base - (minutesAgo / 1440.0));
 end;
 
 // ---------- NS3 rotate-token state (persisted in temp file) -----------------
@@ -151,15 +185,29 @@ var
   expectedHash: string;
   authCount, entriesSuccessCount: Integer;
   currentToken: string;
+  clBase: TDateTime;
 
   function ReadRequest: Boolean;
+  var
+    chunk: string;
+    contentLen, k: Integer;
   begin
     Result := False;
-    rcv := fprecv(ClientSock, @Buffer, SizeOf(Buffer), 0);
-    if rcv <= 0 then Exit;
-    SetString(Req, PAnsiChar(@Buffer[0]), rcv);
+    Req := '';
+
+    // A request may arrive fragmented (headers and POST body in separate
+    // segments); keep reading until the full header block is in.
+    repeat
+      rcv := fprecv(ClientSock, @Buffer, SizeOf(Buffer), 0);
+      if rcv <= 0 then Break;
+      SetString(chunk, PAnsiChar(@Buffer[0]), rcv);
+      Req := Req + chunk;
+      pb := Pos(#13#10#13#10, Req);
+    until (pb > 0) or (Length(Req) > 4 * SizeOf(Buffer));
+    pb := Pos(#13#10#13#10, Req);
+    if pb = 0 then Exit;
+
     i := Pos(#13#10, Req);
-    if i = 0 then Exit;
     Line := Copy(Req, 1, i - 1);
     if Pos(' ', Line) = 0 then Exit;
     Method := Trim(Copy(Line, 1, Pos(' ', Line) - 1));
@@ -170,7 +218,6 @@ var
     Headers := TStringList.Create;
     Headers.NameValueSeparator := ':';
     headPart := '';
-    pb := Pos(#13#10#13#10, Req);
     if pb > i + 2 then headPart := Copy(Req, i + 2, pb - (i + 2));
     while Length(headPart) > 0 do
     begin
@@ -192,7 +239,24 @@ var
 
     Body := '';
     if (Method = 'POST') or (Method = 'PUT') then
-      if pb > 0 then Body := Copy(Req, pb + 4, MaxInt);
+    begin
+      Body := Copy(Req, pb + 4, MaxInt);
+      // Honor Content-Length: read until the body is complete.
+      contentLen := 0;
+      for k := 0 to Headers.Count - 1 do
+        if SameText(Headers.Names[k], 'Content-Length') then
+        begin
+          contentLen := StrToIntDef(Headers.ValueFromIndex[k], 0);
+          Break;
+        end;
+      while Length(Body) < contentLen do
+      begin
+        rcv := fprecv(ClientSock, @Buffer, SizeOf(Buffer), 0);
+        if rcv <= 0 then Break;
+        SetString(chunk, PAnsiChar(@Buffer[0]), rcv);
+        Body := Body + chunk;
+      end;
+    end;
     Result := True;
   end;
 
@@ -581,6 +645,54 @@ begin
           [d, nowMs, ISO8601From(nowMs), 60 + (i mod 140), ISO8601From(nowMs), nowMs]);
       end;
       entries := entries + ']';
+      SendResponse('application/json', entries);
+      Exit;
+    end;
+
+    // -- CareLink (Medtronic follower): OAuth2 token refresh.
+    // Rotates the refresh token on every use, like the real endpoint.
+    if pathOnly = '/carelink/token' then
+    begin
+      if (Pos('grant_type=refresh_token', Body) = 0) or
+         (Pos('refresh_token=', Body) = 0) or
+         (Pos('client_id=', Body) = 0) then
+      begin
+        SendResponse('application/json', '{"error":"invalid_request"}', 401);
+        Exit;
+      end;
+      Inc(CareLinkRefreshCount);
+      SendResponse('application/json', Format(
+        '{"access_token":"%s","refresh_token":"rotated-refresh-%d",' +
+        '"token_type":"Bearer","expires_in":3600}',
+        [BuildCareLinkJWT, CareLinkRefreshCount]));
+      Exit;
+    end;
+
+    // -- CareLink display/message: sgs payload with a warm-up gap (sg=0),
+    // out-of-range clamp candidates and the device's own trend arrow.
+    if pathOnly = '/carelink/display/message' then
+    begin
+      authHeader := HeaderLookup('Authorization');
+      if Pos('Bearer ', authHeader) <> 1 then
+      begin
+        SendResponse('application/json', '{"error":"unauthorized"}', 401);
+        Exit;
+      end;
+      clBase := Now;
+      entries := Format(
+        '{"lastSGTrend":"UP",' +
+        '"activeInsulin":{"amount":2.5,"datetime":"%s"},' +
+        '"sgs":[' +
+        '{"sg":0,"timestamp":"%s"},' +    // gap slot: must be skipped
+        '{"sg":30,"timestamp":"%s"},' +   // below 40: clamped to 39
+        '{"sg":450,"timestamp":"%s"},' +  // above 400: clamped to 401
+        '{"sg":100,"timestamp":"%s"},' +
+        '{"sg":110,"timestamp":"%s"},' +
+        '{"sg":120,"timestamp":"%s"}]}',
+        [CareLinkLocalStamp(0, clBase),
+         CareLinkLocalStamp(25, clBase), CareLinkLocalStamp(20, clBase),
+         CareLinkLocalStamp(15, clBase), CareLinkLocalStamp(10, clBase),
+         CareLinkLocalStamp(5, clBase), CareLinkLocalStamp(0, clBase)]);
       SendResponse('application/json', entries);
       Exit;
     end;
