@@ -184,8 +184,10 @@ end;
   header, initializes timezone offset, and creates the native HTTP client.
 
   Note:
-  - inherited Create is not called here; if base initialization (e.g. default
-    thresholds) is needed, ensure it is handled elsewhere before use.
+  - inherited Create is deliberately not called: NightScout.Create would
+    overwrite baseUrl (appending the NS API path) and key (NS API-SECRET
+    form). The base setup it would provide — the native HTTP helper and
+    default CGM thresholds — is replicated below instead.
 ------------------------------------------------------------------------------}
 constructor xDrip.Create(user, pass: string);
 var
@@ -216,6 +218,11 @@ begin
 
   // Create the native HTTP helper bound to this UA and base URL
   native := TrndiNative.Create(ua, baseUrl);
+
+  // Default CGM thresholds (normally applied by the base constructor, which
+  // is skipped here — see the note above). Without this, core.hi stays 0 and
+  // every reading classifies as high until connect() sets real limits.
+  initCGMCore;
 end;
 
 {------------------------------------------------------------------------------
@@ -250,6 +257,14 @@ begin
         Exit;
 
       LEntries := TJSONArray(LJSONData);
+
+      // NightScout's mapper skips malformed entries (no date / no positive
+      // sgv), so when the counts differ the index mapping below would pair
+      // dates with the wrong readings. Keep the inherited dates in that case
+      // — with tz = 0 they use the same UTC-to-local conversion anyway.
+      if LEntries.Count <> Length(Result) then
+        Exit;
+
       LCount := Length(Result);
       if LEntries.Count < LCount then
         LCount := LEntries.Count;

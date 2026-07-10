@@ -507,12 +507,6 @@ begin
   end;
 end;
 
-procedure setTimeRange(mins, Count: integer);
-begin
-  MAX_MIN := min(mins, 20); // Max time to request
-  MAX_RESULT := min(Count, 2); // Max results
-end;
-
 function ParseCompilerDate: TDateTime;
 var
   DateParts: TStringArray;
@@ -870,7 +864,7 @@ begin
   res := callFunc(func,params,ex);
 
   if not ex then
-    result := nofunc;
+    Exit(nofunc);
 
   if TryStrToInt64(res, i) then
     result := i
@@ -888,7 +882,7 @@ begin
   result := 0;
   res := callFunc(func,params,ex);
   if not ex then
-    result := nofunc;
+    Exit(nofunc);
 
   fs := DefaultFormatSettings;
   fs.DecimalSeparator := '.';
