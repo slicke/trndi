@@ -8,7 +8,7 @@
 
 ## Shows your CGM data on Desktops and displays
 
-### Supports _Nightscout - Dexcom - Tandem Source - xDrip_
+### Supports _Nightscout - Dexcom - Tandem Source - CareLink - xDrip_
 
 ## <b> 🪟 Windows - 🍎 macOS - 🐧 Linux - 🥧 RaspberryPi and ARM Linux
 
@@ -55,7 +55,7 @@
 ### Introduction
 > __NEW__: Join us on [Discord](https://discord.gg/QXACfpcW)
 
-Trndi is a _desktop app_ that shows your blood sugar and graph. It works with  _Night Scout_, _Tandem Source_ and _Dexcom Share_ at the moment.
+Trndi is a _desktop app_ that shows your blood sugar and graph. It works with  _Night Scout_, _Tandem Source_, _Medtronic CareLink_ and _Dexcom Share_ at the moment.
 It also supports the _xDrip_ app, connecting over the local network/WiFi.
 > Note that due to a bug in Tandem Source, a few users might not recieve readings as often as they should. Tandem is supposedly working on solving this!
 
@@ -245,6 +245,7 @@ Right click or click/hold the reading (or "Setup" text) and choose settings to a
 * For NightScout, settings will be fetched from your server and auto-applied
 * For Dexcom, see the __[Dexcom setup guide](guides/Dexcom.md)__. The backend does not support all features, but this can be fixed with some manual work.
 * For Tandem, see the __[Tandem setup guide](guides/Tandem.md)__. The backend does not support all features, but this can be fixed with some manual work.
+* For CareLink (Medtronic), see the __[CareLink setup guide](guides/CareLink.md)__. A one-time browser login is required; Trndi then keeps the session alive automatically.
 * For xDrip, you need to turn on the local web server and use that IP/password
 * For other backends, feel free to contribute a api driver. See [API Drivers](guides/API.md)
 * For HTTP API access, see the __[Web API documentation](doc/WebAPI.md)__ to expose glucose data to other applications
