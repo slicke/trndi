@@ -239,17 +239,19 @@ type
     class function testConnection(AUser, ACreds: string; var ARes: string): MaybeBool; overload;
   end;
 
+{$IFDEF TEST}
 {** Map a CareLink trend string to Trndi's arrow enum. Medtronic reports
     single/double/triple arrows; Trndi tops out at double. Unknown values map
-    to @code(TdPlaceholder). Exposed for the test suite. }
+    to @code(TdPlaceholder). Exposed for the test suite only. }
 function CareLinkTrendToBG(const ATrend: string): BGTrend;
 
 {** Parse a CareLink ISO-8601 timestamp into a local TDateTime. Accepts
     'yyyy-mm-ddThh:nn:ss', optional fractional seconds, and an optional
     'Z' / '+hh:mm' / '-hhmm' offset. Values with an offset are converted to
     local time; values without one are taken as already local. Exposed for
-    the test suite. }
+    the test suite only. }
 function ParseCareLinkTime(const S: string; out ADate: TDateTime): boolean;
+{$ENDIF}
 
 implementation
 
