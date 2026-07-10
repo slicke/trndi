@@ -20,6 +20,8 @@ uses
   api_dexcom_tests,
   api_dexcom_new_tests,
   api_xdrip_tests,
+  api_carelink_tests,
+  carelink_time_tests,
   api_nightscout_tests,
   api_nightscout3_tests,
   system_media_controller_tests;
