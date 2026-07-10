@@ -209,6 +209,7 @@ RS_EXT_SHUTDOWN = 'Shutting down extensions...';
 RS_SAFEMODE = 'Safe Mode Enabled';
 RS_SAFEMODE_DESC = 'Trndi is running in <b>Safe Mode</b>!<ul><li>No start-up actions from extensions will run</li><li>You cannot use, and no actions will trigger from, extensions</li></ul><br>Extensions will load next run, unless you press <b>CTRL</b>!';
 
+RS_API_NOTICE = 'Data source notice';
 RS_ATTENTION_MISSING = 'Outdated Readings!';
 RS_ATTENTION_MISSING_DESC = 'Readings are not fresh, have your phone lost connection to the sensor?';
 RS_SENSOR_FAULT_SUSPECT = 'Sensor may be faulty: multiple abrupt reading jumps detected.';

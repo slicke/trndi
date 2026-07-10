@@ -49,7 +49,12 @@ begin
   TrndiAPIMsg.alert:
     UXMessage('API Alert', msg, uxmtWarning);
   TrndiAPIMsg.notice:
-    ;
+  begin
+    // User-relevant but non-urgent (e.g. CareLink picking the first of several
+    // followed patients): show as a desktop notification, never a modal dialog
+    native.attention(RS_API_NOTICE, msg);
+    TrndiDLog(msg);
+  end;
   TrndiAPIMsg.status:
     TrndiDLog(msg);
   {$ifdef DEBUG}

@@ -1649,7 +1649,7 @@ begin
     res := DexcomWorldNew.testConnection(eAddr.text,ePass.text,err)
   else
   if cbSys.Text = API_DEX_NEW_JP then
-    res := DexcomNew.testConnection(eAddr.text,ePass.text,err)
+    res := DexcomJapanNew.testConnection(eAddr.text,ePass.text,err)
   else
   if cbSys.Text = API_TANDEM_USA then
     res := TandemUSA.testConnection(eAddr.text,ePass.text,err)
