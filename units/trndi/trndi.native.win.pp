@@ -62,6 +62,7 @@ private
   FFlashCycleMS: integer;
   procedure FlashTimerTick(Sender: TObject);
 public
+  destructor Destroy; override;
     {** Speaks @param(Text) using SAPI; falls back to default voice if a
         locale-matching voice is not found. }
   procedure Speak(const Text: string); override;
@@ -572,13 +573,25 @@ begin
   FlashTimerTick(nil);
 end;
 
-procedure TTrndiNativeWindows.StopBadgeFlash;
+destructor TTrndiNativeWindows.Destroy;
 begin
   if Assigned(FFlashTimer) then
   begin
     FFlashTimer.Enabled := false;
     FreeAndNil(FFlashTimer);
   end;
+  inherited Destroy;
+end;
+
+procedure TTrndiNativeWindows.StopBadgeFlash;
+begin
+  // Only disable the timer here — StopBadgeFlash is called from inside
+  // FlashTimerTick, and freeing a TTimer from within its own OnTimer
+  // handler risks a use-after-free when control returns to the LCL timer
+  // dispatch. The instance is reused by StartBadgeFlash and released in
+  // the destructor.
+  if Assigned(FFlashTimer) then
+    FFlashTimer.Enabled := false;
   // Restore static badge with base color if we still have a value
   if FFlashValue <> '' then
     SetBadge(FFlashValue, FFlashBaseColor, DEFAULT_BADGE_SIZE_RATIO,
