@@ -155,7 +155,8 @@ end;
 
 procedure TMyAppDelegate.miSettingsMacClick(sender: id);
 begin
-  (Application.MainForm as TfBG).miSettingsClick(nil);
+  if Application.MainForm is TfBG then
+    (Application.MainForm as TfBG).miSettingsClick(nil);
 end;
 
 function TMyAppDelegate.applicationDockMenu(sender: NSApplication): NSMenu;
@@ -165,6 +166,12 @@ var
   menuTitle: string;
   cfStr: CFStringRef;
 begin
+  // During the setup wizard MainForm is nil (or the wizard form); returning
+  // nil is required here — a bare Exit leaves Result as garbage and AppKit
+  // crashes dereferencing it in the event loop.
+  if not (Application.MainForm is TfBG) then
+    Exit(nil);
+
   // Create a custom dock menu
   dockMenu := NSMenu.alloc.initWithTitle(NSSTR('Trndi'));
 
@@ -197,10 +204,11 @@ end;
 function TMyAppDelegate.applicationShouldHandleReopen_hasVisibleWindows(sender: NSApplication; hasVisibleWindows: boolean): boolean;
 begin
   // Show main form when dock icon is clicked
+  Result := true;
+  if not Assigned(Application.MainForm) then
+    Exit;
   Application.MainForm.Show;
   Application.MainForm.BringToFront;
-  Result := true;
-
 end;
 {$ENDIF}
 
