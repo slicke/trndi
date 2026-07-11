@@ -109,45 +109,9 @@ end;
 implementation
 
 uses
-Process, LCLType;
+Process, LCLType, StrUtils;
 
 
- procedure NormalizeProxyHostPort(var host: string; var port: string);
-  var
-    s: string;
-    p: integer;
-    hostPart, portPart: string;
-  begin
-    s := Trim(host);
-
-    // Strip scheme if provided (e.g. http://proxy:3128)
-    p := Pos('://', s);
-    if p > 0 then
-      s := Copy(s, p + 3, MaxInt);
-
-    // Strip any path
-    p := Pos('/', s);
-    if p > 0 then
-      s := Copy(s, 1, p - 1);
-
-    // If host contains an explicit port, split it out
-    p := LastDelimiter(':', s);
-    if (p > 0) and (p < Length(s)) then
-    begin
-      hostPart := Copy(s, 1, p - 1);
-      portPart := Copy(s, p + 1, MaxInt);
-      if (hostPart <> '') and (StrToIntDef(portPart, -1) > 0) then
-      begin
-        s := hostPart;
-        if port = '' then
-          port := portPart;
-      end;
-    end;
-
-    host := s;
-    port := Trim(port);
-  end;
-  
  procedure NormalizeProxyHostPort(var host: string; var port: string);
   var
     s: string;
@@ -822,40 +786,6 @@ class function TTrndiNativeHaiku.TestProxyURL(const url: string;
 var
   HTTP: TFPHTTPClient;
   host, portS, user, pass: string;
-
-  procedure NormalizeProxyHostPort(var hostV: string; var portV: string);
-  var
-    s: string;
-    p: integer;
-    hostPart, portPart: string;
-  begin
-    s := Trim(hostV);
-
-    p := Pos('://', s);
-    if p > 0 then
-      s := Copy(s, p + 3, MaxInt);
-
-    p := Pos('/', s);
-    if p > 0 then
-      s := Copy(s, 1, p - 1);
-
-    p := LastDelimiter(':', s);
-    if (p > 0) and (p < Length(s)) then
-    begin
-      hostPart := Copy(s, 1, p - 1);
-      portPart := Copy(s, p + 1, MaxInt);
-      if (hostPart <> '') and (StrToIntDef(portPart, -1) > 0) then
-      begin
-        s := hostPart;
-        if Trim(portV) = '' then
-          portV := portPart;
-      end;
-    end;
-
-    hostV := s;
-    portV := Trim(portV);
-  end;
-
 begin
   res := '';
   Result := false;
@@ -991,6 +921,7 @@ prefix: boolean): THTTPResponse;
 var
   HTTP: TFPHTTPClient;
   address, sx, maskedSx, bodyData, hdr, headerLine: string;
+  bodyStream: TStringStream;
   i, j, redirectCount: integer;
   response: string;
   statusCode: integer;
@@ -1096,7 +1027,6 @@ begin
               HTTP.AddHeader('Content-Type', 'application/json; charset=UTF-8');
             if not HasHeaderLocal('Accept') then
               HTTP.AddHeader('Accept', 'application/json');
-            response := HTTP.Post(address, bodyData);
           end
           else if bodyData <> '' then
           begin
@@ -1108,10 +1038,20 @@ begin
             maskedSx := StringReplace(maskedSx, 'password=', 'password=***', [rfIgnoreCase]);
             maskedSx := StringReplace(maskedSx, 'client_secret=', 'client_secret=***', [rfIgnoreCase]);
             TrndiNetLog('HTTP POST body (masked): ' + Copy(maskedSx, 1, 2000));
-            response := HTTP.Post(address, bodyData);
+          end;
+          if bodyData <> '' then
+          begin
+            bodyStream := TStringStream.Create(bodyData);
+            try
+              HTTP.RequestBody := bodyStream;
+              response := HTTP.Post(address);
+            finally
+              HTTP.RequestBody := nil;
+              bodyStream.Free;
+            end;
           end
           else
-            response := HTTP.Post(address, '');
+            response := HTTP.Post(address);
         end
         else
           response := HTTP.Get(address);
@@ -1152,7 +1092,8 @@ begin
       Result.Body := response;
       Result.FinalURL := address;
 
-      if followRedirects and (statusCode in [301, 302, 303, 307, 308]) then
+      if followRedirects and ((statusCode = 301) or (statusCode = 302) or
+        (statusCode = 303) or (statusCode = 307) or (statusCode = 308)) then
       begin
         newLocation := '';
         for i := 0 to HTTP.ResponseHeaders.Count - 1 do
@@ -1214,6 +1155,7 @@ const header: string; prefix: boolean): string;
 var
   HTTP: TFPHTTPClient;
   address, sx, body: string;
+  bodyStream: TStringStream;
   i, p: integer;
   key, val: string;
 begin
@@ -1269,7 +1211,19 @@ begin
         end
         else
           body := '';
-        Result := HTTP.Post(address, body);
+        if body <> '' then
+        begin
+          bodyStream := TStringStream.Create(body);
+          try
+            HTTP.RequestBody := bodyStream;
+            Result := HTTP.Post(address);
+          finally
+            HTTP.RequestBody := nil;
+            bodyStream.Free;
+          end;
+        end
+        else
+          Result := HTTP.Post(address);
       end
       else
         Result := HTTP.Get(address);
