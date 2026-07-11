@@ -210,9 +210,10 @@ section h2 {
 }
 
 .hero-logo {
+    display: block;
     height: 110px;
     width: auto;
-    margin-bottom: 26px;
+    margin: 0 auto 26px;
     filter: drop-shadow(0 10px 30px rgba(232, 68, 46, 0.35));
 }
 
