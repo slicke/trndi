@@ -190,6 +190,19 @@ begin
   ident := objc_msgSend0(mainBundle, sel_registerName('bundleIdentifier'));
   if ident = nil then Exit;
   Result := objc_msgSend_uint(ident, sel_registerName('length')) > 0;
+
+  // Having a CFBundleIdentifier is necessary but not sufficient: the
+  // notification centers (UNUserNotificationCenter.currentNotificationCenter
+  // and NSUserNotificationCenter.defaultUserNotificationCenter) execute a
+  // brk trap — EXC_BAD_INSTRUCTION, uncatchable from Pascal — when
+  // LaunchServices has no identity for the process ("bundleProxyForCurrent-
+  // Process is nil"). That is the case when the binary is spawned directly
+  // by a debugger/IDE instead of launched as a registered .app, even though
+  // NSBundle still reads the identifier from Info.plist. NSRunningApplication
+  // mirrors the LaunchServices view, so require it to agree.
+  if Result then
+    Result := NSRunningApplication.currentApplication.bundleIdentifier <> nil;
+
   if Result then
     CachedHasBundleIdentifier := 1
   else
