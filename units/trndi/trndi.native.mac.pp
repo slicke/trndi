@@ -52,8 +52,8 @@ type
       Prefer native NSUserNotificationCenter (app-attributed), fall back to base AppleScript impl. }
     procedure attention(topic, message: string); override;
     {** Speak @param(Text) using the built-in 'say' command.
-        Note: This call blocks until speech completes; dispatch from a
-        background thread if you need non-blocking UI. }
+        Runs asynchronously via a worker thread that also reaps the child
+        process; the call returns immediately. }
     procedure Speak(const Text: string); override;
     {** Enable dark appearance for the app UI via SimpleDarkMode.
         @returns(True once the request is made) }
@@ -147,7 +147,7 @@ type
 implementation
 
 uses
-  Process, DateUtils;
+  Process, DateUtils, trndi.native.async;
 
 const
   ObjCLib = '/usr/lib/libobjc.A.dylib';
@@ -418,41 +418,25 @@ end;
  ------------------------------------------------------------------------------}
 procedure TTrndiNativeMac.Speak(const Text: string);
 var
-  Proc: TProcess;
   VoiceName: string;
 begin
-  // Use the built-in macOS speech synthesis asynchronously
-  Proc := TProcess.Create(nil);
-  try
-    try
-      Proc.Executable := '/usr/bin/say';
-      
-      // Check if a specific voice is selected
-      VoiceName := GetSetting('tts.voice.name', '');
-      if VoiceName <> '' then
-      begin
-        Proc.Parameters.Add('-v');
-        Proc.Parameters.Add(VoiceName);
-      end;
-      
-      Proc.Parameters.Add(Text);
-      Proc.Options := [];
-      Proc.Execute;
-    except
-      on E: Exception do
-      begin
-        if not ttsErrorShown then
-        begin
-          ShowMessage('TTS Error: ' + E.Message);
-          ttsErrorShown := true;
-        end;
-        Exit;
-      end;
+  if not FileExists('/usr/bin/say') then
+  begin
+    if not ttsErrorShown then
+    begin
+      ShowMessage('TTS Error: /usr/bin/say not found');
+      ttsErrorShown := true;
     end;
-  finally
-    Proc.Free; // ensure Proc is freed on both success and error paths
+    Exit;
   end;
-  // Async process will be cleaned up by OS
+
+  // Fire-and-forget via the async worker: doesn't block the UI, and the
+  // worker thread reaps the child process so zombies don't accumulate.
+  VoiceName := GetSetting('tts.voice.name', '');
+  if VoiceName <> '' then
+    RunAndCaptureSimpleAsync('/usr/bin/say', ['-v', VoiceName, Text], nil)
+  else
+    RunAndCaptureSimpleAsync('/usr/bin/say', [Text], nil);
 end;
 
 {------------------------------------------------------------------------------
@@ -1484,22 +1468,14 @@ end;
 {------------------------------------------------------------------------------
   PlaySound (macOS)
   -----------------
-  Spawn afplay for a validated audio file.
+  Spawn afplay for a validated audio file. Fire-and-forget via the async
+  worker so the child is reaped instead of lingering as a zombie.
  ------------------------------------------------------------------------------}
 class procedure TTrndiNativeMac.PlaySound(const FileName: string);
-var
-  Proc: TProcess;
 begin
   if not IsValidAudioFile(FileName) then
     Exit;
-  Proc := TProcess.Create(nil);
-  try
-    Proc.Executable := 'afplay';
-    Proc.Parameters.Add(FileName);
-    Proc.Execute;
-  finally
-    Proc.Free;
-  end;
+  RunAndCaptureSimpleAsync('/usr/bin/afplay', [FileName], nil);
 end;
 
 {------------------------------------------------------------------------------
