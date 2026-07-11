@@ -463,6 +463,8 @@ var
   i, j: integer;
   section, key, value: string;
 begin
+  if iniData = '' then
+    Exit;
   if inistore = nil then
     inistore := TIniFile.Create(ResolveIniPath);
   sl := TStringList.Create;
