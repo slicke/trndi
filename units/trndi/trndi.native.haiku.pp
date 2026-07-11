@@ -98,7 +98,9 @@ public
     const params: array of string; const jsondata: string = '';
     const header: string = ''; prefix: boolean = true): string; override;
   {** Enhanced HTTP request via TFPHTTPClient: tracks cookies, follows
-      redirects manually, captures response headers. }
+      redirects manually, captures response headers. Honours the configured
+      proxy with a direct fallback and returns real HTTP status codes
+      (4xx/5xx never raise), matching the Windows/Mac implementations. }
   function requestEx(const post: boolean; const endpoint: string;
     const params: array of string; const jsondata: string = '';
     cookieJar: TStringList = nil; followRedirects: boolean = true;
@@ -911,7 +913,11 @@ end;
 {------------------------------------------------------------------------------
   requestEx (Haiku)
   -----------------
-  Cookie-aware, manually-redirect-following HTTP via TFPHTTPClient.
+  Cookie-aware, manually-redirect-following HTTP via TFPHTTPClient. Honours
+  the configured proxy with a direct fallback (like getURL/postURL). Requests
+  go through HTTPMethod with an empty allowed-code list so redirects and
+  4xx/5xx come back with their real status and body instead of raising,
+  matching the Windows/Mac implementations.
  ------------------------------------------------------------------------------}
 function TTrndiNativeHaiku.requestEx(const post: boolean; const endpoint: string;
 const params: array of string; const jsondata: string;
@@ -919,16 +925,16 @@ cookieJar: TStringList; followRedirects: boolean;
 maxRedirects: integer; customHeaders: TStringList;
 prefix: boolean): THTTPResponse;
 var
-  HTTP: TFPHTTPClient;
-  address, sx, maskedSx, bodyData, hdr, headerLine: string;
-  bodyStream: TStringStream;
+  address, sx, maskedSx, bodyData, headerLine: string;
   i, j, redirectCount: integer;
-  response: string;
+  response, hopErr: string;
   statusCode: integer;
   cookieVal: string;
   cookiePos: integer;
-  currentPost: boolean;
+  currentPost, hopOk: boolean;
   newLocation, resolvedLocation: string;
+  proxyHost, proxyPort, proxyUser, proxyPass: string;
+  hopHeaders: TStringList;
 
   function HasHeaderLocal(const Name: string): boolean;
   var k: integer; s: string;
@@ -939,6 +945,121 @@ var
     for k := 0 to customHeaders.Count - 1 do
       if Pos(s, LowerCase(customHeaders[k])) = 1 then
         Exit(True);
+  end;
+
+  // One HTTP exchange. False means a transport-level failure (connect/TLS/
+  // socket); HTTP status codes never raise because HTTPMethod is called with
+  // an empty allowed-code list (Get/Post would raise on anything but 200
+  // with AllowRedirect off, hiding redirects and 4xx/5xx from the caller).
+  function TryHop(const url: string; const isPost: boolean;
+    const requestBody: string; const useProxy: boolean; out outBody: string;
+    out outStatus: integer; outHeaders: TStringList;
+    out outError: string): boolean;
+  var
+    HTTP: TFPHTTPClient;
+    bodyStream, respStream: TStringStream;
+    k: integer;
+    hdr, cookieHdr: string;
+  begin
+    Result := false;
+    outBody := '';
+    outStatus := 0;
+    outError := '';
+    outHeaders.Clear;
+
+    HTTP := TFPHTTPClient.Create(nil);
+    try
+      HTTP.AllowRedirect := False;
+      HTTP.IOTimeout := 30000;
+
+      if useProxy then
+      begin
+        HTTP.Proxy.Host := proxyHost;
+        HTTP.Proxy.Port := StrToIntDef(proxyPort, 8080);
+        if proxyUser <> '' then
+          HTTP.Proxy.Username := proxyUser;
+        if proxyPass <> '' then
+          HTTP.Proxy.Password := proxyPass;
+      end;
+
+      if useragent <> '' then
+        HTTP.AddHeader('User-Agent', useragent);
+
+      if customHeaders <> nil then
+        for k := 0 to customHeaders.Count - 1 do
+        begin
+          hdr := customHeaders[k];
+          if Pos(':', hdr) > 0 then
+            HTTP.AddHeader(Trim(Copy(hdr, 1, Pos(':', hdr) - 1)),
+              Trim(Copy(hdr, Pos(':', hdr) + 1, MaxInt)))
+          else if Pos('=', hdr) > 0 then
+            HTTP.AddHeader(Trim(Copy(hdr, 1, Pos('=', hdr) - 1)),
+              Trim(Copy(hdr, Pos('=', hdr) + 1, MaxInt)))
+          else
+            HTTP.RequestHeaders.Add(hdr);
+        end;
+
+      if (cookieJar <> nil) and (cookieJar.Count > 0) then
+      begin
+        cookieHdr := '';
+        for k := 0 to cookieJar.Count - 1 do
+        begin
+          if Trim(cookieJar[k]) = '' then Continue;
+          if cookieHdr <> '' then cookieHdr := cookieHdr + '; ';
+          cookieHdr := cookieHdr + cookieJar[k];
+        end;
+        if cookieHdr <> '' then
+          HTTP.AddHeader('Cookie', cookieHdr);
+      end;
+
+      if isPost then
+      begin
+        if jsondata <> '' then
+        begin
+          if not HasHeaderLocal('Content-Type') then
+            HTTP.AddHeader('Content-Type', 'application/json; charset=UTF-8');
+          if not HasHeaderLocal('Accept') then
+            HTTP.AddHeader('Accept', 'application/json');
+        end
+        else if requestBody <> '' then
+        begin
+          if not HasHeaderLocal('Content-Type') then
+            HTTP.AddHeader('Content-Type', 'application/x-www-form-urlencoded');
+        end;
+      end;
+
+      bodyStream := nil;
+      respStream := TStringStream.Create('');
+      try
+        if isPost and (requestBody <> '') then
+        begin
+          bodyStream := TStringStream.Create(requestBody);
+          HTTP.RequestBody := bodyStream;
+        end;
+        try
+          if isPost then
+            HTTP.HTTPMethod('POST', url, respStream, [])
+          else
+            HTTP.HTTPMethod('GET', url, respStream, []);
+          Result := true;
+        except
+          on E: Exception do
+            outError := E.Message;
+        end;
+        // Copy out whatever arrived even on failure: the status line and
+        // headers may already be parsed when a later read fails.
+        outBody := respStream.DataString;
+        outStatus := HTTP.ResponseStatusCode;
+        for k := 0 to HTTP.ResponseHeaders.Count - 1 do
+          outHeaders.Add(HTTP.ResponseHeaders[k]);
+      finally
+        HTTP.RequestBody := nil;
+        bodyStream.Free;
+        respStream.Free;
+      end;
+    finally
+      HTTP.Free;
+    end;
   end;
 
 begin
@@ -971,110 +1092,65 @@ begin
       if j > 0 then bodyData := bodyData + '&';
       bodyData := bodyData + params[j];
     end;
+    maskedSx := bodyData;
+    maskedSx := StringReplace(maskedSx, 'code_verifier=', 'code_verifier=***', [rfIgnoreCase]);
+    maskedSx := StringReplace(maskedSx, 'code=', 'code=***', [rfIgnoreCase]);
+    maskedSx := StringReplace(maskedSx, 'password=', 'password=***', [rfIgnoreCase]);
+    maskedSx := StringReplace(maskedSx, 'client_secret=', 'client_secret=***', [rfIgnoreCase]);
+    TrndiNetLog('HTTP POST body (masked): ' + Copy(maskedSx, 1, 2000));
   end
   else if jsondata <> '' then
     bodyData := jsondata
   else
     bodyData := '';
 
+  // Same proxy keys as the Windows implementation; each hop tries the proxy
+  // first and falls back to a direct connection (mirrors getURL/postURL).
+  proxyHost := Trim(GetRootSetting('proxy.host', ''));
+  proxyPort := Trim(GetRootSetting('proxy.port', ''));
+  proxyUser := GetRootSetting('proxy.user', '');
+  proxyPass := GetRootSetting('proxy.pass', '');
+  if proxyHost <> '' then
+  begin
+    NormalizeProxyHostPort(proxyHost, proxyPort);
+    if proxyPort = '' then
+      proxyPort := '8080';
+  end;
+
   redirectCount := 0;
   currentPost := post;
 
-  // Manual redirect loop so we can observe headers and cookies.
-  while True do
-  begin
-    HTTP := TFPHTTPClient.Create(nil);
-    try
-      HTTP.AllowRedirect := False;
-      HTTP.IOTimeout := 30000;
+  hopHeaders := TStringList.Create;
+  try
+    // Manual redirect loop so we can observe headers and cookies.
+    while True do
+    begin
+      hopOk := false;
+      if proxyHost <> '' then
+        hopOk := TryHop(address, currentPost, bodyData, true, response,
+          statusCode, hopHeaders, hopErr);
+      if not hopOk then
+        hopOk := TryHop(address, currentPost, bodyData, false, response,
+          statusCode, hopHeaders, hopErr);
 
-      if useragent <> '' then
-        HTTP.AddHeader('User-Agent', useragent);
+      Result.Body := response;
+      Result.StatusCode := statusCode;
+      Result.Headers.Assign(hopHeaders);
+      Result.FinalURL := address;
 
-      if customHeaders <> nil then
-        for i := 0 to customHeaders.Count - 1 do
-        begin
-          hdr := customHeaders[i];
-          if Pos(':', hdr) > 0 then
-            HTTP.AddHeader(Trim(Copy(hdr, 1, Pos(':', hdr) - 1)),
-              Trim(Copy(hdr, Pos(':', hdr) + 1, MaxInt)))
-          else if Pos('=', hdr) > 0 then
-            HTTP.AddHeader(Trim(Copy(hdr, 1, Pos('=', hdr) - 1)),
-              Trim(Copy(hdr, Pos('=', hdr) + 1, MaxInt)))
-          else
-            HTTP.RequestHeaders.Add(hdr);
-        end;
-
-      if (cookieJar <> nil) and (cookieJar.Count > 0) then
+      if not hopOk then
       begin
-        sx := '';
-        for i := 0 to cookieJar.Count - 1 do
-        begin
-          if Trim(cookieJar[i]) = '' then Continue;
-          if sx <> '' then sx := sx + '; ';
-          sx := sx + cookieJar[i];
-        end;
-        if sx <> '' then
-          HTTP.AddHeader('Cookie', sx);
+        Result.Success := False;
+        Result.ErrorMessage := hopErr;
+        Exit;
       end;
 
-      try
-        if currentPost then
-        begin
-          if jsondata <> '' then
-          begin
-            if not HasHeaderLocal('Content-Type') then
-              HTTP.AddHeader('Content-Type', 'application/json; charset=UTF-8');
-            if not HasHeaderLocal('Accept') then
-              HTTP.AddHeader('Accept', 'application/json');
-          end
-          else if bodyData <> '' then
-          begin
-            if not HasHeaderLocal('Content-Type') then
-              HTTP.AddHeader('Content-Type', 'application/x-www-form-urlencoded');
-            maskedSx := bodyData;
-            maskedSx := StringReplace(maskedSx, 'code_verifier=', 'code_verifier=***', [rfIgnoreCase]);
-            maskedSx := StringReplace(maskedSx, 'code=', 'code=***', [rfIgnoreCase]);
-            maskedSx := StringReplace(maskedSx, 'password=', 'password=***', [rfIgnoreCase]);
-            maskedSx := StringReplace(maskedSx, 'client_secret=', 'client_secret=***', [rfIgnoreCase]);
-            TrndiNetLog('HTTP POST body (masked): ' + Copy(maskedSx, 1, 2000));
-          end;
-          if bodyData <> '' then
-          begin
-            bodyStream := TStringStream.Create(bodyData);
-            try
-              HTTP.RequestBody := bodyStream;
-              response := HTTP.Post(address);
-            finally
-              HTTP.RequestBody := nil;
-              bodyStream.Free;
-            end;
-          end
-          else
-            response := HTTP.Post(address);
-        end
-        else
-          response := HTTP.Get(address);
-      except
-        on E: Exception do
-        begin
-          Result.Success := False;
-          Result.ErrorMessage := E.Message;
-          for i := 0 to HTTP.ResponseHeaders.Count - 1 do
-            Result.Headers.Add(HTTP.ResponseHeaders[i]);
-          Exit;
-        end;
-      end;
-
-      for i := 0 to HTTP.ResponseHeaders.Count - 1 do
+      for i := 0 to hopHeaders.Count - 1 do
       begin
-        headerLine := HTTP.ResponseHeaders[i];
-        Result.Headers.Add(headerLine);
-        if Pos('set-cookie', LowerCase(headerLine)) > 0 then
+        headerLine := Trim(hopHeaders[i]);
+        if Pos('set-cookie:', LowerCase(headerLine)) = 1 then
         begin
-          cookieVal := headerLine;
-          cookiePos := Pos(':', cookieVal);
-          if cookiePos > 0 then cookieVal := Trim(Copy(cookieVal, cookiePos + 1, MaxInt));
+          cookieVal := Trim(Copy(headerLine, Pos(':', headerLine) + 1, MaxInt));
           cookiePos := Pos(';', cookieVal);
           if cookiePos > 0 then cookieVal := Copy(cookieVal, 1, cookiePos - 1);
           if cookieVal <> '' then
@@ -1087,18 +1163,13 @@ begin
         end;
       end;
 
-      statusCode := HTTP.ResponseStatusCode;
-      Result.StatusCode := statusCode;
-      Result.Body := response;
-      Result.FinalURL := address;
-
       if followRedirects and ((statusCode = 301) or (statusCode = 302) or
         (statusCode = 303) or (statusCode = 307) or (statusCode = 308)) then
       begin
         newLocation := '';
-        for i := 0 to HTTP.ResponseHeaders.Count - 1 do
+        for i := 0 to hopHeaders.Count - 1 do
         begin
-          headerLine := HTTP.ResponseHeaders[i];
+          headerLine := Trim(hopHeaders[i]);
           if LowerCase(Copy(headerLine, 1, 9)) = 'location:' then
           begin
             newLocation := Trim(Copy(headerLine, 10, MaxInt));
@@ -1119,26 +1190,29 @@ begin
 
         Inc(redirectCount);
         Result.RedirectCount := redirectCount;
-        if (statusCode = 303) or (statusCode = 302) or (statusCode = 301) then
-          currentPost := False;
-
-        if redirectCount >= maxRedirects then
+        if redirectCount > maxRedirects then
         begin
           Result.Success := False;
           Result.ErrorMessage := 'Too many redirects';
           Exit;
         end;
 
+        if (statusCode = 303) or (((statusCode = 301) or (statusCode = 302)) and currentPost) then
+        begin
+          currentPost := False;
+          bodyData := '';
+        end;
+
         Continue;
-      end
-      else
-      begin
-        Result.Success := (statusCode >= 200) and (statusCode < 300);
-        Break;
       end;
-    finally
-      HTTP.Free;
+
+      // Transport-level success: like Windows/Mac, 4xx/5xx still count as a
+      // completed request (callers inspect StatusCode).
+      Result.Success := true;
+      Break;
     end;
+  finally
+    hopHeaders.Free;
   end;
 end;
 
