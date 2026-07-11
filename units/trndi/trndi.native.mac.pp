@@ -170,6 +170,8 @@ function objc_msgSend2_id_id(obj: id; sel: SEL; p1: id; p2: id): id; cdecl; exte
 function objc_msgSend1_ni(obj: id; sel: SEL; p1: NSInteger): id; cdecl; external ObjCLib name 'objc_msgSend';
 // typed helper for sending a uint + id (used for requestAuthorizationWithOptions:completionHandler:)
 function objc_msgSend_uint_id(obj: id; sel: SEL; p1: NativeUInt; p2: id): id; cdecl; external ObjCLib name 'objc_msgSend';
+// BOOL return + SEL param (respondsToSelector:)
+function objc_msgSend_bool_sel(obj: id; sel: SEL; p1: SEL): Boolean; cdecl; external ObjCLib name 'objc_msgSend';
 function objc_getClass(name: MarshaledAString): id;        cdecl; external ObjCLib;
 function sel_registerName(name: MarshaledAString): SEL;    cdecl; external ObjCLib;
 
@@ -195,6 +197,125 @@ begin
 end;
 
 {------------------------------------------------------------------------------
+  UNUserNotificationCenter delegate + authorization state
+  --------------------------------------------------------
+  Two silent-failure modes are handled here:
+
+  1) Foreground suppression: unless the center has a delegate implementing
+     userNotificationCenter:willPresentNotification:withCompletionHandler:,
+     macOS does NOT show banners while the posting app is frontmost — and
+     Trndi is typically the frontmost/visible app when a glucose alert
+     fires. The delegate below requests banner + sound presentation even
+     in the foreground.
+
+  2) requestAuthorizationWithOptions:completionHandler: declares its handler
+     nonnull; the framework copies and invokes it, so the previous nil
+     handler was undefined behavior. A capture-free global ObjC block now
+     records the outcome, letting attention() route straight to the
+     osascript fallback when the user has denied notification permission
+     (a UN request would otherwise be dropped without a trace).
+ ------------------------------------------------------------------------------}
+
+const
+  BLOCK_IS_GLOBAL = 1 shl 28;
+  // UNNotificationPresentationOptions bits
+  UNPresentSound  = 1 shl 1;
+  UNPresentAlert  = 1 shl 2; // deprecated in macOS 11, only option before it
+  UNPresentList   = 1 shl 3; // macOS 11+
+  UNPresentBanner = 1 shl 4; // macOS 11+
+
+type
+  // ABI layout of an Objective-C block. For blocks we receive only `invoke`
+  // matters; for the block we create the descriptor must be present too.
+  PObjCBlockLiteral = ^TObjCBlockLiteral;
+  TObjCBlockLiteral = record
+    isa: Pointer;
+    flags: LongInt;
+    reserved: LongInt;
+    invoke: Pointer;
+    descriptor: Pointer;
+  end;
+  TObjCBlockDescriptor = record
+    reserved: NativeUInt;
+    size: NativeUInt;
+  end;
+  // void (^)(UNNotificationPresentationOptions options)
+  TUNPresentHandler = procedure(block: Pointer; options: NSUInteger); cdecl;
+
+  TUNCenterDelegate = objcclass(NSObject)
+    procedure userNotificationCenter_willPresentNotification_withCompletionHandler(
+      {%H-}center: Pointer; {%H-}notification: Pointer; completionHandler: Pointer);
+      message 'userNotificationCenter:willPresentNotification:withCompletionHandler:';
+  end;
+
+var
+  // Class object for capture-free blocks, exported by libSystem (Blocks ABI).
+  _NSConcreteGlobalBlock: array[0..31] of Pointer; cvar; external;
+
+var
+  gUNSetupDone: Boolean = False;
+  gUNDelegate: TUNCenterDelegate = nil;
+  gNotifyAuthDenied: Boolean = False;
+  gAuthBlockDesc: TObjCBlockDescriptor;
+  gAuthBlock: TObjCBlockLiteral;
+
+procedure TUNCenterDelegate.userNotificationCenter_willPresentNotification_withCompletionHandler(
+  center: Pointer; notification: Pointer; completionHandler: Pointer);
+var
+  opts: NSUInteger;
+begin
+  // Banner/list options exist on macOS 11+ (AppKit 2022); older systems use
+  // the then-current alert option. Sound is requested in both cases.
+  if NSAppKitVersionNumber >= 2022 then
+    opts := UNPresentBanner or UNPresentList or UNPresentSound
+  else
+    opts := UNPresentAlert or UNPresentSound;
+  if completionHandler <> nil then
+    TUNPresentHandler(PObjCBlockLiteral(completionHandler)^.invoke)(
+      completionHandler, opts);
+end;
+
+// Matches void (^)(BOOL granted, NSError *error) after the implicit block arg.
+procedure UNAuthCompletion({%H-}block: Pointer; granted: Boolean; {%H-}error: id); cdecl;
+begin
+  // Invoked on a framework background queue; a plain boolean store is fine.
+  gNotifyAuthDenied := not granted;
+end;
+
+procedure EnsureUNCenterSetup;
+var
+  UNClass, Center: id;
+begin
+  if gUNSetupDone then Exit;
+  // UNUserNotificationCenter asserts if there is no bundle identifier
+  // (e.g. running the raw binary outside a .app bundle).
+  if not TrndiHasBundleIdentifier then Exit;
+  UNClass := objc_getClass('UNUserNotificationCenter');
+  if UNClass = nil then Exit;
+  Center := objc_msgSend0(UNClass, sel_registerName('currentNotificationCenter'));
+  if Center = nil then Exit;
+  gUNSetupDone := True;
+
+  // Foreground presentation (see unit comment above). The center's delegate
+  // property is weak; the global keeps the object alive for the app's life.
+  gUNDelegate := TUNCenterDelegate.alloc.init;
+  objc_msgSend1(Center, sel_registerName('setDelegate:'), id(gUNDelegate));
+
+  // UNAuthorizationOptionAlert|Badge|Sound = (1<<2)|(1<<0)|(1<<1) = 7.
+  // The completion handler is nonnull — pass a real capture-free block.
+  gAuthBlockDesc.reserved := 0;
+  gAuthBlockDesc.size := SizeOf(TObjCBlockLiteral);
+  gAuthBlock.isa := @_NSConcreteGlobalBlock;
+  gAuthBlock.flags := BLOCK_IS_GLOBAL;
+  gAuthBlock.reserved := 0;
+  gAuthBlock.invoke := CodePointer(@UNAuthCompletion);
+  gAuthBlock.descriptor := @gAuthBlockDesc;
+  objc_msgSend_uint_id(Center,
+    sel_registerName('requestAuthorizationWithOptions:completionHandler:'),
+    7, @gAuthBlock);
+end;
+
+{------------------------------------------------------------------------------
   attention (macOS)
   -----------------
   Try UNUserNotificationCenter -> NSUserNotification -> osascript.
@@ -208,6 +329,9 @@ end;
     a glucose monitor's "newest reading wins" semantics.
   - trigger = nil delivers immediately rather than after a 1s schedule.
   - categoryIdentifier is set so we can later attach actions (Snooze, etc.).
+  - Foreground banners require the UN center delegate installed by
+    EnsureUNCenterSetup; without it macOS suppresses notifications while
+    the app is frontmost.
  ------------------------------------------------------------------------------}
 
 procedure TTrndiNativeMac.attention(topic, message: string);
@@ -245,7 +369,12 @@ begin
     // Use UNUserNotificationCenter when available (modern API).
     // Note: UNUserNotificationCenter asserts if there is no bundle identifier
     // (e.g. running the raw binary outside a .app bundle).
-    if TrndiHasBundleIdentifier then
+    // Late setup guard: normally done in start(), but attention() must also
+    // work for callers that never ran start (e.g. the settings-form test).
+    EnsureUNCenterSetup;
+    // When the user has denied permission the center drops requests without
+    // a trace — go straight to the osascript fallback instead.
+    if TrndiHasBundleIdentifier and not gNotifyAuthDenied then
     begin
       UNClass := objc_getClass('UNUserNotificationCenter');
       if UNClass <> nil then
@@ -280,9 +409,13 @@ begin
               objc_msgSend1(Content, sel_registerName('setSound:'), Sound);
           end;
 
-          // Time-sensitive: pierces Focus / DND for glucose alerts.
-          objc_msgSend1_ni(Content, sel_registerName('setInterruptionLevel:'),
-            UNNotificationInterruptionLevelTimeSensitive);
+          // Time-sensitive: pierces Focus / DND for glucose alerts. The
+          // selector only exists on macOS 12+; sending it unguarded raises
+          // an ObjC exception (which a Pascal except cannot catch) on 11.
+          if objc_msgSend_bool_sel(Content, sel_registerName('respondsToSelector:'),
+            sel_registerName('setInterruptionLevel:')) then
+            objc_msgSend1_ni(Content, sel_registerName('setInterruptionLevel:'),
+              UNNotificationInterruptionLevelTimeSensitive);
 
           // Group alerts of the same kind together; topic is the natural key
           // (HIGH/LOW/sensor-fault all have distinct titles).
@@ -742,30 +875,17 @@ end;
 {------------------------------------------------------------------------------
   start
   -----
-  Best-effort request for notification authorization on startup (no-op if
-  UserNotifications framework is not present). We don't wait for the
-  completion handler to avoid blocking startup; this is a prompt-triggering
-  best-effort call.
+  Best-effort notification setup on startup (no-op if the UserNotifications
+  framework is not present): installs the foreground-presentation delegate
+  and requests authorization. We don't wait for the completion handler to
+  avoid blocking startup; the outcome is recorded asynchronously and read
+  by attention().
  ------------------------------------------------------------------------------}
 procedure TTrndiNativeMac.start;
-var
-  UNClass, Center: id;
-  selRequest: SEL;
 begin
   inherited start;
-  // UNUserNotificationCenter asserts if there is no bundle identifier
-  // (e.g. running the raw binary outside a .app bundle).
-  if not TrndiHasBundleIdentifier then Exit;
   try
-    UNClass := objc_getClass('UNUserNotificationCenter');
-    if UNClass = nil then Exit;
-    Center := objc_msgSend0(UNClass, sel_registerName('currentNotificationCenter'));
-    if Center = nil then Exit;
-
-    selRequest := sel_registerName('requestAuthorizationWithOptions:completionHandler:');
-    // UNAuthorizationOptionAlert|Badge|Sound is (1<<0)|(1<<1)|(1<<2) == 7
-    // We pass nil for completion handler (best-effort)
-    objc_msgSend_uint_id(Center, selRequest, 7, nil);
+    EnsureUNCenterSetup;
   except
     // ignore
   end;
