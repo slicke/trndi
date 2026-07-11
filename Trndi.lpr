@@ -40,13 +40,11 @@ program trndi;
 {$mode objfpc}{$H+}
 
 uses
-{$IFDEF UNIX}
-{$ifndef HAIKU}
+{$IF DEFINED(UNIX) OR DEFINED(HAIKU)}
 cthreads,
 {$ENDIF}
-{$IFNDEF DARWIN}
+{$IF DEFINED(UNIX) AND NOT DEFINED(DARWIN)}
 {$linklib gcc}  // We cant link with the QUickJS lib on Linux otherwise
-{$ENDIF}
 {$ENDIF}
 {$IFDEF HASAMIGA}
 athreads,
