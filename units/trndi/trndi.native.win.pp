@@ -2647,6 +2647,7 @@ var
     if hSession = nil then
     begin
       outError := 'WinHttpOpen failed: ' + SysErrorMessage(GetLastError);
+      FreeAndNil(outHeaders);
       Exit(false);
     end;
 
@@ -2861,11 +2862,11 @@ var
       end;
     finally
       WinHttpCloseHandle(hSession);
-    end;
-    if not Result then
-    begin
-      outHeaders.Free;
-      outHeaders := nil;
+      // Every failure path leaves via Exit(false), which would skip any
+      // cleanup placed after this block — free the header list here so
+      // failed attempts don't leak it. On success the caller owns it.
+      if not Result then
+        FreeAndNil(outHeaders);
     end;
   end;
 
