@@ -65,6 +65,7 @@ type
     FMainForm: TForm;
     FShowHint: Boolean;
     FMainFormOnTaskBar: Boolean;
+    FShowMainForm: Boolean;
     FHandle: PtrUInt;
   public
     constructor Create(AOwner: TComponent = nil); virtual;
@@ -76,6 +77,7 @@ type
     property MainForm: TForm read FMainForm write FMainForm;
     property ShowHint: Boolean read FShowHint write FShowHint;
     property MainFormOnTaskBar: Boolean read FMainFormOnTaskBar write FMainFormOnTaskBar;
+    property ShowMainForm: Boolean read FShowMainForm write FShowMainForm;
     property Handle: PtrUInt read FHandle write FHandle;
     procedure ProcessMessages; virtual;
     procedure Terminate; virtual;
@@ -98,6 +100,7 @@ begin
   FMainForm := nil;
   FShowHint := False;
   FMainFormOnTaskBar := False;
+  FShowMainForm := True;
 end;
 
 procedure TApplication.ProcessMessages;
