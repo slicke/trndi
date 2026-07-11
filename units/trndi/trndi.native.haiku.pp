@@ -111,6 +111,43 @@ implementation
 uses
 Process, LCLType;
 
+
+ procedure NormalizeProxyHostPort(var host: string; var port: string);
+  var
+    s: string;
+    p: integer;
+    hostPart, portPart: string;
+  begin
+    s := Trim(host);
+
+    // Strip scheme if provided (e.g. http://proxy:3128)
+    p := Pos('://', s);
+    if p > 0 then
+      s := Copy(s, p + 3, MaxInt);
+
+    // Strip any path
+    p := Pos('/', s);
+    if p > 0 then
+      s := Copy(s, 1, p - 1);
+
+    // If host contains an explicit port, split it out
+    p := LastDelimiter(':', s);
+    if (p > 0) and (p < Length(s)) then
+    begin
+      hostPart := Copy(s, 1, p - 1);
+      portPart := Copy(s, p + 1, MaxInt);
+      if (hostPart <> '') and (StrToIntDef(portPart, -1) > 0) then
+      begin
+        s := hostPart;
+        if port = '' then
+          port := portPart;
+      end;
+    end;
+
+    host := s;
+    port := Trim(port);
+  end;
+  
 {------------------------------------------------------------------------------
   FindNotifyCmd / IsNotifyAvailable
   ---------------------------------
@@ -527,42 +564,6 @@ var
       Result := Copy(Result, 1, cut - 1);
     if Length(Result) > 180 then
       Result := Copy(Result, 1, 180) + '...';
-  end;
-
-  procedure NormalizeProxyHostPort(var host: string; var port: string);
-  var
-    s: string;
-    p: integer;
-    hostPart, portPart: string;
-  begin
-    s := Trim(host);
-
-    // Strip scheme if provided (e.g. http://proxy:3128)
-    p := Pos('://', s);
-    if p > 0 then
-      s := Copy(s, p + 3, MaxInt);
-
-    // Strip any path
-    p := Pos('/', s);
-    if p > 0 then
-      s := Copy(s, 1, p - 1);
-
-    // If host contains an explicit port, split it out
-    p := LastDelimiter(':', s);
-    if (p > 0) and (p < Length(s)) then
-    begin
-      hostPart := Copy(s, 1, p - 1);
-      portPart := Copy(s, p + 1, MaxInt);
-      if (hostPart <> '') and (StrToIntDef(portPart, -1) > 0) then
-      begin
-        s := hostPart;
-        if port = '' then
-          port := portPart;
-      end;
-    end;
-
-    host := s;
-    port := Trim(port);
   end;
 
   function PerformRequest(withProxy: boolean): boolean;
