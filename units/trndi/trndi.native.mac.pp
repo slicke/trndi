@@ -147,7 +147,7 @@ type
 implementation
 
 uses
-  Process, DateUtils, trndi.native.async;
+  DateUtils, trndi.native.async;
 
 const
   ObjCLib = '/usr/lib/libobjc.A.dylib';
@@ -213,87 +213,21 @@ end;
 procedure TTrndiNativeMac.attention(topic, message: string);
 
   procedure OsascriptFallback(const Title, Msg: string);
-  var
-    P: TProcess;
-    OutStr, ErrStr: TStringStream;
-    Buf: array[0..4095] of byte;
-    n: SizeInt;
-    ExitCode: integer;
-    LogPath: string;
-    SL: TStringList;
   begin
     // NSUserNotification is deprecated and may not show reliably on recent macOS.
     // Final fallback: display the alert via AppleScript / osascript.
     // Use argv to avoid AppleScript quoting/escaping issues.
+    // Fire-and-forget via the async worker, which drains stdout and reaps the
+    // child; the old poUsePipes+poWaitOnExit TProcess pattern could deadlock
+    // on large output and blocked the caller.
     if not FileExists('/usr/bin/osascript') then
       Exit;
 
-    P := TProcess.Create(nil);
-    OutStr := TStringStream.Create('');
-    ErrStr := TStringStream.Create('');
-    try
-      P.Executable := '/usr/bin/osascript';
-      P.Parameters.Add('-e');
-      P.Parameters.Add('on run argv');
-      P.Parameters.Add('-e');
-      P.Parameters.Add('display notification (item 1 of argv) with title (item 2 of argv)');
-      P.Parameters.Add('-e');
-      P.Parameters.Add('end run');
-
-      P.Parameters.Add(UTF8Encode(Msg));
-      P.Parameters.Add(UTF8Encode(Title));
-
-      P.Options := [poUsePipes, poWaitOnExit, poNoConsole];
-      P.Execute;
-
-      // Drain pipes (even with poWaitOnExit, data may remain buffered)
-      while P.Output.NumBytesAvailable > 0 do
-      begin
-        n := P.Output.Read(Buf, SizeOf(Buf));
-        if n > 0 then
-          OutStr.WriteBuffer(Buf, n)
-        else
-          Break;
-      end;
-      while P.Stderr.NumBytesAvailable > 0 do
-      begin
-        n := P.Stderr.Read(Buf, SizeOf(Buf));
-        if n > 0 then
-          ErrStr.WriteBuffer(Buf, n)
-        else
-          Break;
-      end;
-
-      ExitCode := P.ExitStatus;
-      if ExitCode <> 0 then
-      begin
-        LogPath := GetTempDir(false) + 'trndi-notification-error.log';
-        SL := TStringList.Create;
-        try
-          SL.Add('osascript notification failed');
-          SL.Add('ExitStatus=' + IntToStr(ExitCode));
-          SL.Add('');
-          if OutStr.DataString <> '' then
-          begin
-            SL.Add('[stdout]');
-            SL.Add(OutStr.DataString);
-            SL.Add('');
-          end;
-          if ErrStr.DataString <> '' then
-          begin
-            SL.Add('[stderr]');
-            SL.Add(ErrStr.DataString);
-          end;
-          SL.SaveToFile(LogPath);
-        finally
-          SL.Free;
-        end;
-      end;
-    finally
-      ErrStr.Free;
-      OutStr.Free;
-      P.Free;
-    end;
+    RunAndCaptureSimpleAsync('/usr/bin/osascript',
+      ['-e', 'on run argv',
+       '-e', 'display notification (item 1 of argv) with title (item 2 of argv)',
+       '-e', 'end run',
+       UTF8Encode(Msg), UTF8Encode(Title)], nil);
   end;
 
 const
@@ -373,6 +307,10 @@ begin
           // Add request (no completion handler)
           selAddReq := sel_registerName('addNotificationRequest:withCompletionHandler:');
           objc_msgSend2_id_id(Center, selAddReq, UNReq, nil);
+
+          // Content came from 'new' (+1); the request retains it, so drop our
+          // reference here or one content object leaks per notification.
+          objc_msgSend0(Content, sel_registerName('release'));
 
           // Best-effort; do not raise on failures
           ok := True;
@@ -516,23 +454,15 @@ end;
 
 procedure RunLaunchctl(const action, plistPath: string);
 var
-  proc: TProcess;
+  outS: string;
+  exitCode: integer;
 begin
-  try
-    proc := TProcess.Create(nil);
-    try
-      proc.Executable := '/bin/launchctl';
-      proc.Parameters.Add(action);
-      proc.Parameters.Add('-w');
-      proc.Parameters.Add(plistPath);
-      proc.Options := [poWaitOnExit, poUsePipes];
-      proc.Execute;
-    finally
-      proc.Free;
-    end;
-  except
-    // best-effort; the plist on disk is what makes it persistent
-  end;
+  // Synchronous on purpose: the disable path must finish unloading the job
+  // before the plist is deleted. The worker drains stdout and bounds the wait,
+  // unlike the old poUsePipes+poWaitOnExit pattern which could deadlock.
+  // Best-effort; the plist on disk is what makes it persistent.
+  RunAndCaptureSimpleWait('/bin/launchctl', [action, '-w', plistPath],
+    outS, exitCode, 5000);
 end;
 
 class function TTrndiNativeMac.AutoStartAvailable: boolean;
