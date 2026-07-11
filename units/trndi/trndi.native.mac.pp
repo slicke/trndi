@@ -456,9 +456,15 @@ begin
 
   if ok then Exit;
 
-  // Fallback to deprecated NSUserNotification implementation
+  // Fallback to deprecated NSUserNotification implementation.
+  // defaultUserNotificationCenter does NOT return nil for a process without
+  // bundle identity (raw dev binary, debugger launch) — it trips a Foundation
+  // assertion (brk -> EXC_BAD_INSTRUCTION) that no Pascal except can catch.
+  // Only touch it when bundled; unbundled runs go straight to osascript.
   try
-    Center := NSUserNotificationCenter.defaultUserNotificationCenter;
+    Center := nil;
+    if TrndiHasBundleIdentifier then
+      Center := NSUserNotificationCenter.defaultUserNotificationCenter;
     if Center <> nil then
     begin
       NSReq := NSUserNotification.alloc.init;
