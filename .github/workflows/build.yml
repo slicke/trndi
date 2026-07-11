@@ -196,10 +196,10 @@ jobs:
              artifacts/tools/carelink-login/
           7z a -tzip Trndi-linux-${{ matrix.arch }}.zip ./artifacts/* >/dev/null
 
-          # If this is a pull request build, skip packaging, signing and AppImage creation
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            echo "PR build detected: skipping DEB/RPM packaging, signing and AppImage (post-lazbuild steps)"
-          else
+          # DEB/RPM installers are built on every event (incl. PRs) so packaging
+          # changes can be tested from the run's artifacts. Signing and AppImage
+          # remain main-push-only; the publish job is gated on push to main, so
+          # PR artifacts never reach a release.
             # Create DEB & RPM installers (with icon inside system paths)
             sudo apt-get install -y ruby ruby-dev build-essential rpm
             sudo gem install --no-document fpm
@@ -255,7 +255,17 @@ jobs:
             MINOR=$(sed -n -E 's/.*<MinorVersionNr[^>]*Value="([0-9]+)".*/\1/p' Trndi.lpi | head -n1)
             MAJOR=${MAJOR:-0}
             MINOR=${MINOR:-0}
-            PKG_VERSION="${MAJOR}.${MINOR}.${{ needs.version.outputs.build_number }}"
+            # On main: build number from the version job. On PRs: PR number
+            # (mirrors the Windows installer versioning). Otherwise: 0.
+            BUILD_NUM="${{ needs.version.outputs.build_number }}"
+            if [ -z "$BUILD_NUM" ]; then
+              if [ "${{ github.event_name }}" = "pull_request" ]; then
+                BUILD_NUM="${{ github.event.pull_request.number }}"
+              else
+                BUILD_NUM="0"
+              fi
+            fi
+            PKG_VERSION="${MAJOR}.${MINOR}.${BUILD_NUM}"
             echo "Packaging version: ${PKG_VERSION}"
 
             FPM_SCRIPTS=()
@@ -265,8 +275,11 @@ jobs:
             fpm -s dir -t deb -n trndi -v "${PKG_VERSION}" --architecture ${{ matrix.deb_arch }} --license "GPLv3" --description "Trndi CGM Viewer" "${FPM_SCRIPTS[@]}" -C "$PKG_DIR" .
             fpm -s dir -t rpm -n trndi -v "${PKG_VERSION}" --architecture ${{ matrix.rpm_arch }} --license "GPLv3" --description "Trndi CGM Viewer" "${FPM_SCRIPTS[@]}" -C "$PKG_DIR" .
             
-            # Sign packages if GPG key is available
-            if [ -n "${{ secrets.GPG_PRIVATE_KEY }}" ]; then
+            # Sign packages if GPG key is available (never on PRs — secrets may
+            # be absent on fork PRs and PR artifacts are unpublished anyway)
+            if [ "${{ github.event_name }}" = "pull_request" ]; then
+              echo "PR build: skipping package signing"
+            elif [ -n "${{ secrets.GPG_PRIVATE_KEY }}" ]; then
               echo "GPG key available, signing packages..."
               sudo apt-get update
               sudo apt-get install -y debsigs rpm
@@ -337,7 +350,10 @@ jobs:
               echo "Included public signing key in artifacts"
             fi
 
-            # ===================== BUILD APPIMAGE =====================
+          # ===================== BUILD APPIMAGE =====================
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "PR build: skipping AppImage build"
+          else
             echo "Building AppImage..."
             chmod +x dist/linux/build-appimage.sh
             
@@ -548,6 +564,7 @@ jobs:
             TrndiSetup.exe
             artifacts/*.deb
             artifacts/*.rpm
+            artifacts/*.asc
             artifacts/*.AppImage
           if-no-files-found: ignore
 
