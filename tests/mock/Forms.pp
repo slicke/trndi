@@ -83,6 +83,7 @@ type
     procedure Terminate; virtual;
     procedure BringToFront; virtual;
     procedure QueueAsyncCall(const AMethod: TDataEvent; Data: PtrInt); virtual;
+    procedure RemoveAsyncCalls(const AnObject: TObject); virtual;
   end;
 
 var
@@ -122,6 +123,12 @@ procedure TApplication.QueueAsyncCall(const AMethod: TDataEvent; Data: PtrInt);
 begin
   // no-op in test environment — production code uses this to defer work to
   // the next message-loop iteration; tests run headless so we just drop it.
+end;
+
+procedure TApplication.RemoveAsyncCalls(const AnObject: TObject);
+begin
+  // no-op in test environment — QueueAsyncCall drops calls, so there is
+  // never anything queued to remove.
 end;
 
 function TForm.HandleAllocated: Boolean;
