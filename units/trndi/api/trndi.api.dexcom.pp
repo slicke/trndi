@@ -536,20 +536,6 @@ out res: string; {%H-}noCache: boolean): BGResults;
 // not subject to HTTP GET caching. noCache is accepted for interface
 // compatibility but has no effect on this backend.
 
-function LooksLikeSessionFailure(const Response: string): boolean;
-var
-  L: string;
-begin
-  L := LowerCase(Response);
-  Result :=
-    ((Pos('session', L) > 0) and
-     ((Pos('invalid', L) > 0) or (Pos('expired', L) > 0) or
-      (Pos('not valid', L) > 0) or (Pos('not found', L) > 0))) or
-    (Pos('unauthorized', L) > 0) or
-    (Pos('forbidden', L) > 0) or
-    (Pos('accountpassword', L) > 0);
-end;
-
   // Helper: convert Dexcom /Date(ms)/ string to TDateTime.
   // Delegates to ParseDexcomTime so we handle the canonical "/Date(NNN)/" form
   // (parenthesis included), optional "+0000" offset suffixes, and ISO variants.
@@ -629,7 +615,7 @@ begin
 
     res := LGlucoseJSON;
 
-    if (attempt = 0) and LooksLikeSessionFailure(LGlucoseJSON) then
+    if (attempt = 0) and DexcomLooksLikeSessionFailure(LGlucoseJSON) then
       if Connect then
       begin
         LParams[1] := 'sessionId=' + FSessionID;
@@ -656,6 +642,22 @@ begin
       SetLength(Result, 0);
       Exit;
     end;
+  end;
+
+  // Readings must be a JSON array. Anything else — typically an error object
+  // like {"Code":"SessionIdNotFound","Message":...} — must not fall through to
+  // the loop below: an object's Count is its member count, so it would be
+  // mapped into cleared placeholder readings (val BG_NO_VAL, date 0) that
+  // downstream code renders as data from 1899.
+  if LData.JSONType <> jtArray then
+  begin
+    lastErr := Trim('Dexcom error: ' + Trim(SafeString(LData, 'Code') + ' ' +
+      SafeString(LData, 'Message')));
+    if lastErr = 'Dexcom error:' then
+      lastErr := 'Unexpected Dexcom response: ' + Copy(LGlucoseJSON, 1, 200);
+    LData.Free;
+    SetLength(Result, 0);
+    Exit;
   end;
 
   try
