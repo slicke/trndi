@@ -1061,11 +1061,13 @@ begin
       proxyPass := tempInstance.GetSetting('proxy.pass', '', true);
     end;
 
+    // Try with proxy first if configured, then fall back to direct (mirrors getURL)
     if proxyHost <> '' then
-    begin
-      Result := PerformRequest(true);
-      Exit;
-    end;
+      if PerformRequest(true) then
+      begin
+        Result := true;
+        Exit;
+      end;
 
     Result := PerformRequest(false);
   finally
