@@ -188,6 +188,10 @@ procedure WriteTrndiCurrentValueCache(const Value: string); forward;
 procedure WriteTrndiCurrentStateCache(const Value: string; ReadingEpoch: int64;
 FreshMinutes: integer); forward;
 
+// Implemented later in this unit; used by helpers above their definitions.
+function DesktopHint: string; forward;
+function FindInPath(const FileName: string): string; forward;
+
 // C-compatible write callback used by libcurl to collect response data.
 // Lives here (and not in the base unit) because Linux/BSD is the only
 // platform using libcurl after the platform split.
@@ -225,98 +229,9 @@ end;
   Check PATH for the 'notify-send' tool. Returns True if found.
  ------------------------------------------------------------------------------}
 function IsNotifySendAvailable: boolean;
-var
-  AProcess: TProcess;
-  OutputLines: TStringList;
 begin
-  Result := false;
-  AProcess := TProcess.Create(nil);
-  OutputLines := TStringList.Create;
-  try
-    AProcess.Executable := '/usr/bin/which';
-    AProcess.Parameters.Add('notify-send');
-    AProcess.Options := AProcess.Options + [poWaitOnExit, poUsePipes];
-    AProcess.Execute;
-    OutputLines.LoadFromStream(AProcess.Output);
-    if (OutputLines.Count > 0) and FileExists(Trim(OutputLines[0])) then
-      Result := true;
-  except
-    on E: Exception do
-      Result := false;
-  end;
-  OutputLines.Free;
-  AProcess.Free;
+  Result := FindInPath('notify-send') <> '';
 end;
-
-{------------------------------------------------------------------------------
-  RunAndCaptureSimple
-  -------------------
-  Run an external command and capture stdout. Returns True when exit code is 0.
- ------------------------------------------------------------------------------}
-function RunAndCaptureSimple(const Exec: string; const Params: array of string;
-out StdoutS: string; out ExitCode: integer): boolean;
-var
-  P: TProcess;
-  i: integer;
-  OutStr: TStringStream;
-  Buf: array[0..4095] of byte;
-  n: SizeInt;
-begin
-  Result := false;
-  StdoutS := '';
-  ExitCode := -1;
-
-  P := TProcess.Create(nil);
-  OutStr := TStringStream.Create('');
-  try
-    P.Executable := Exec;
-    for i := 0 to High(Params) do
-      P.Parameters.Add(Params[i]);
-    P.Options := [poUsePipes, poWaitOnExit];
-    P.ShowWindow := swoHIDE;
-    try
-      P.Execute;
-      while P.Running do
-      begin
-        while P.Output.NumBytesAvailable > 0 do
-        begin
-          n := P.Output.Read(Buf, SizeOf(Buf));
-          if n > 0 then
-            OutStr.WriteBuffer(Buf, n)
-          else
-            Break;
-        end;
-        Sleep(3);
-      end;
-      // Drain any remaining bytes after process exits
-      while P.Output.NumBytesAvailable > 0 do
-      begin
-        n := P.Output.Read(Buf, SizeOf(Buf));
-        if n > 0 then
-          OutStr.WriteBuffer(Buf, n)
-        else
-          Break;
-      end;
-      ExitCode := P.ExitStatus;
-      StdoutS := Trim(OutStr.DataString);
-      Result := ExitCode = 0;
-    except
-      on E: Exception do
-      begin
-        StdoutS := '';
-        ExitCode := -1;
-        Result := false;
-      end;
-    end;
-  finally
-    OutStr.Free;
-    P.Free;
-  end;
-end;
-
-// Forward declarations used by GNOME extension detection (implemented later)
-function DesktopHint: string; forward;
-function FindInPath(const FileName: string): string; forward;
 
 function IsTrndiGnomeExtensionEnabled: boolean;
 const
@@ -1292,21 +1207,16 @@ procedure TTrndiNativeLinux.attention(topic, message: string);
 
   procedure NotifySendFallback(const Title, Msg: string);
   var
-    AProcess: TProcess;
+    cmd: string;
   begin
     // Final fallback when the gdbus path is unavailable or fails.
     if not isNotificationSystemAvailable then
       Exit;
-    AProcess := TProcess.Create(nil);
-    try
-      AProcess.Executable := '/usr/bin/notify-send';
-      AProcess.Parameters.Add(Title);
-      AProcess.Parameters.Add(Msg);
-      AProcess.Options := AProcess.Options + [poNoConsole];
-      AProcess.Execute;
-    finally
-      AProcess.Free;
-    end;
+    cmd := FindInPath('notify-send');
+    if cmd = '' then
+      Exit;
+    // Fire-and-forget via the async worker so the child gets reaped (no zombies)
+    RunAndCaptureSimpleAsync(cmd, [Title, Msg], nil);
   end;
 
 {$IFDEF LCLQt6}
@@ -1329,7 +1239,9 @@ function RunAndCapture(const Exec: string; const Params: array of string;
       P.Executable := Exec;
       for i := 0 to High(Params) do
         P.Parameters.Add(Params[i]);
-      P.Options := [poUsePipes, poWaitOnExit];
+      // poUsePipes only: adding poWaitOnExit would block Execute until exit,
+      // deadlocking if the child fills the pipe buffer before we can read it.
+      P.Options := [poUsePipes];
       P.ShowWindow := swoHIDE;
       P.Execute;
 
@@ -1715,7 +1627,18 @@ procedure TTrndiNativeLinux.Speak(const Text: string);
 var
   CmdPath, Lang, VoiceType: string;
   Rate: integer;
-  Proc: TProcess;
+  args: array of string;
+
+procedure AddArgs(const a: array of string);
+  var
+    i, base: integer;
+  begin
+    base := Length(args);
+    SetLength(args, base + Length(a));
+    for i := 0 to High(a) do
+      args[base + i] := a[i];
+  end;
+
 begin
   CmdPath := FindInPath('spd-say');
   if CmdPath = '' then
@@ -1732,55 +1655,33 @@ begin
   Rate := GetIntSetting('tts.rate', 0);
   VoiceType := GetSetting('tts.voice.name', '');
 
-  Proc := TProcess.Create(nil);
-  try
-    Proc.Executable := CmdPath;
-    if Lang <> '' then
-      Proc.Parameters.AddStrings(['-l', Lang]);
+  args := nil;
+  if Lang <> '' then
+    AddArgs(['-l', Lang]);
 
-    // Add rate setting
-    if Rate <> 0 then
-      Proc.Parameters.AddStrings(['-r', IntToStr(Rate)]);
+  // Add rate setting
+  if Rate <> 0 then
+    AddArgs(['-r', IntToStr(Rate)]);
 
-    // Add voice type setting
-    if VoiceType <> '' then
-    begin
-      // Map voice names to speech-dispatcher voice types
-      if VoiceType = 'Male 1' then
-        Proc.Parameters.AddStrings(['-t', 'male1'])
-      else if VoiceType = 'Male 2' then
-        Proc.Parameters.AddStrings(['-t', 'male2'])
-      else if VoiceType = 'Male 3' then
-        Proc.Parameters.AddStrings(['-t', 'male3'])
-      else if VoiceType = 'Female 1' then
-        Proc.Parameters.AddStrings(['-t', 'female1'])
-      else if VoiceType = 'Female 2' then
-        Proc.Parameters.AddStrings(['-t', 'female2'])
-      else if VoiceType = 'Female 3' then
-        Proc.Parameters.AddStrings(['-t', 'female3']);
-    end;
+  // Map voice names to speech-dispatcher voice types
+  if VoiceType = 'Male 1' then
+    AddArgs(['-t', 'male1'])
+  else if VoiceType = 'Male 2' then
+    AddArgs(['-t', 'male2'])
+  else if VoiceType = 'Male 3' then
+    AddArgs(['-t', 'male3'])
+  else if VoiceType = 'Female 1' then
+    AddArgs(['-t', 'female1'])
+  else if VoiceType = 'Female 2' then
+    AddArgs(['-t', 'female2'])
+  else if VoiceType = 'Female 3' then
+    AddArgs(['-t', 'female3']);
 
-    Proc.Parameters.Add('--');
-    Proc.Parameters.Add(Text);
+  AddArgs(['--', Text]);
 
-    // Run asynchronously to avoid blocking the UI
-    Proc.Options := [];
-    Proc.Execute;
-    Proc.Free; // free the TProcess instance after starting the process
-  except
-    on E: Exception do
-    begin
-      if not ttsErrorShown then
-      begin
-        ShowMessage('TTS Error: ' + E.Message);
-        ttsErrorShown := true;
-      end;
-      Proc.Free;
-      Exit;
-    end;
-  end;
-  // Note: Process will be cleaned up by the OS when it terminates
-  // We don't wait for it, but we free the TProcess instance after starting it
+  // Fire-and-forget via the async worker: doesn't block the UI, and the
+  // worker thread reaps the child process so zombies don't accumulate.
+  RunAndCaptureSimpleAsync(CmdPath, args, nil);
 end;
 
 
@@ -1829,11 +1730,13 @@ begin
   // Ensure we have a tray icon instance
   if not Assigned(Tray) then
   begin
-    Tray := TTrayIcon.Create(Application.MainForm);
+    // Owned by this object (freed in Destroy); MainForm ownership would leave
+    // Tray/TrayMenu dangling here if the form is destroyed before us.
+    Tray := TTrayIcon.Create(nil);
     tray.OnClick := @trayClick;
-    TrayMenu := TPopupMenu.Create(Application.MainForm);
+    TrayMenu := TPopupMenu.Create(nil);
     tray.PopUpMenu := traymenu;
-    traymenu.Items.add(TMenuItem.Create(Application.MainForm));
+    traymenu.Items.add(TMenuItem.Create(TrayMenu));
     with TrayMenu.Items[0] do
     begin
       Caption := 'Trndi';
@@ -2887,19 +2790,11 @@ end;
   Spawn aplay for a validated audio file.
  ------------------------------------------------------------------------------}
 class procedure TTrndiNativeLinux.PlaySound(const FileName: string);
-var
-  Proc: TProcess;
 begin
   if not IsValidAudioFile(FileName) then
     Exit;
-  Proc := TProcess.Create(nil);
-  try
-    Proc.Executable := 'aplay';
-    Proc.Parameters.Add(FileName);
-    Proc.Execute;
-  finally
-    Proc.Free;
-  end;
+  // Fire-and-forget via the async worker so the child gets reaped (no zombies)
+  RunAndCaptureSimpleAsync('aplay', [FileName], nil);
 end;
 
 {------------------------------------------------------------------------------
@@ -3178,6 +3073,8 @@ finalization
     except
     end;
   end;
+  if Assigned(gWakeBridge) and Assigned(Application) then
+    Application.RemoveAsyncCalls(gWakeBridge); // a queued Fire must not outlive the bridge
   FreeAndNil(gWakeBridge);
 
 end.
