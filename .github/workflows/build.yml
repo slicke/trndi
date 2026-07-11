@@ -481,6 +481,13 @@ jobs:
           # Build Trndi.exe
           & 'C:\Lazarus\lazbuild.exe' 'externals\mORMot2\packages\lazarus\mormot2.lpk'
           & 'C:\Lazarus\lazbuild.exe' --lazarusdir='C:\Lazarus' --build-mode='Extensions (Release)' 'Trndi.lpi'
+          # Run tests on pull requests via the same entry point developers use
+          # locally (test runner embeds its own Pascal test server). No extra
+          # args: make.ps1 forwards them to both lazbuild and the test exe.
+          if ("${{ github.event_name }}" -eq "pull_request") {
+            .\make.ps1 test
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
           # Package ZIP
           New-Item -ItemType Directory -Path artifacts -Force | Out-Null
           Copy-Item '.\Trndi.exe' -Destination '.\artifacts\'
