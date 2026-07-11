@@ -59,6 +59,9 @@ type
     FTaskbar: ITaskbarList3;
     FWindowHandle: HWND;
     FInitialized: Boolean;
+    // True only when the constructor's CoInitialize succeeded, so Destroy
+    // knows whether it owes a matching CoUninitialize.
+    FComInitialized: Boolean;
     FLastError: string;
 
     // Helper functions
@@ -258,6 +261,7 @@ begin
   inherited Create;
 
   FInitialized := False;
+  FComInitialized := False;
   FLastError := '';
 
   // Initialize COM if needed
@@ -268,6 +272,7 @@ begin
       LogError('Failed to initialize COM. HR=' + IntToStrSafe(HR));
       Exit;
     end;
+    FComInitialized := True;
 
     // Determine handle to use. Preference order:
     //  1) explicit WindowHandle argument (only if it *looks* like a taskbar window)
@@ -367,8 +372,13 @@ begin
     FTaskbar := nil;
   end;
 
-  // Uninitialize COM
-  CoUninitialize;
+  // Balance the constructor's CoInitialize — but only when it actually
+  // succeeded. An unconditional CoUninitialize after a failed CoInitialize
+  // (e.g. RPC_E_CHANGED_MODE) over-releases the calling thread's COM
+  // apartment, and EnsureGlobalTaskbar recreates this object on every
+  // retry, compounding the imbalance.
+  if FComInitialized then
+    CoUninitialize;
 
   inherited Destroy;
 end;
