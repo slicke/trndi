@@ -204,7 +204,7 @@ begin
 
   // 10MB single-chunk cap to avoid runaway allocations.
   if Result > 10485760 then
-    Exit;
+    Exit(0); // abort the transfer instead of silently dropping the chunk
 
   actualSize := Result;
   stream := TStringStream(userdata);
@@ -2278,7 +2278,7 @@ begin
     Exit;
 
   if Result > 10485760 then // 10MB limit
-    Exit;
+    Exit(0); // abort the transfer instead of silently dropping the chunk
 
   actualSize := Result;
   stream := TStringStream(userdata);
@@ -2308,7 +2308,7 @@ begin
     Exit;
 
   if Result > 1048576 then // 1MB header limit
-    Exit;
+    Exit(0); // abort the transfer instead of silently dropping the header
 
   actualSize := Result;
   stream := TStringStream(userdata);
