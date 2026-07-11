@@ -626,7 +626,7 @@ procedure haltBoot;
 
 var
   i: integer;
-  guifontName, txtfontName, apiTarget: string;
+  guifontName, txtfontName, apiTarget, prevSetup: string;
   fil: boolean;
   userlocale: TFormatSettings;
   minutesStr: string;
@@ -803,11 +803,13 @@ begin
         end
         else
         begin
-          // User cancelled — close app
+          // User cancelled — close app without showing the main window
           fSplash.Free;
           fSplash := nil;
           firstboot := true;
           FCloseAfterFormCreate := true;
+          Application.ShowMainForm := false;
+          Application.Terminate;
           Exit;
         end;
       finally
@@ -850,21 +852,40 @@ begin
 
     api.APIEmitter := @APIReceiver;
     api.OnCredentialsChanged := @APICredentialsChanged;
-    if not api.Connect then
+    // A failed Connect at boot (e.g. an expired CareLink token) lands the
+    // user directly in Settings; the main window is never shown. New backend
+    // settings are retried in place, closing Settings unchanged quits.
+    while not api.Connect do
     begin
-      haltBoot;
-      ShowMessage(api.ErrorMsg);
-      
-      // Clean up splash screen before config dialog
       fSplash.Hide;
-      FreeAndNil(fSplash);
+      ShowMessage(api.ErrorMsg);
 
+      prevSetup := GetSetting('remote.type') + '|' + GetSetting('remote.target') +
+        '|' + GetSetting('remote.creds');
+      firstboot := true; // Settings saves silently and leaves fBG hidden
       miSettings.Click;
-      
-      // Flag to close after FormShow (prevents access violations from incomplete init)
-      firstboot := true; // Ensure quit doesn't ask for confirmation
-      FCloseAfterFormCreate := true;
-      Exit;
+      firstboot := false;
+
+      if GetSetting('remote.type') + '|' + GetSetting('remote.target') +
+        '|' + GetSetting('remote.creds') = prevSetup then
+      begin
+        firstboot := true; // Ensure quit doesn't ask for confirmation
+        FCloseAfterFormCreate := true;
+        Application.ShowMainForm := false;
+        Application.Terminate;
+        FreeAndNil(fSplash);
+        Exit;
+      end;
+
+      FreeAndNil(api);
+      if not InitializeAPI then
+      begin
+        haltBoot;
+        Exit;
+      end;
+      api.APIEmitter := @APIReceiver;
+      api.OnCredentialsChanged := @APICredentialsChanged;
+      fSplash.Show;
     end;
 
     fSplash.incProgress(70, RS_INIT_UX);

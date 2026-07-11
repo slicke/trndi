@@ -67,7 +67,7 @@ node carelink-login.mjs --us > token.json
 - **Treat the token like a password.** It grants read access to the followed
   patient's CGM data.
 - Trndi keeps the session alive by refreshing the token automatically, so you
-  normally only run this once. If Trndi is offline for a long time (about a week)
-  the token can expire and you run this again.
+  normally only run this once. If Trndi is offline for a while (sometimes just
+  overnight) the token can expire and you run this again.
 - This helper only supports the current **Auth0** login, which is what all
   regions use now.
