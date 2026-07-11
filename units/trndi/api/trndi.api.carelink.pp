@@ -258,7 +258,7 @@ implementation
 resourcestring
   sErrCareLinkNoCreds = 'No CareLink token data found. Paste the captured login data (JSON) as the credential — see the CareLink guide.';
   sErrCareLinkBadCreds = 'Could not read the CareLink token data. It must be the JSON captured at login (access_token/refresh_token etc).';
-  sErrCareLinkRefresh = 'CareLink token refresh failed. You may need to capture a fresh login (tokens die after about a week offline).';
+  sErrCareLinkRefresh = 'CareLink token refresh failed. The saved login expires while Trndi is not running — sometimes overnight — so you may need to capture a fresh login.';
   sErrCareLinkDiscover = 'Could not resolve the CareLink endpoints from Medtronic''s discovery service.';
   sParamUserName = 'CareLink Username (may be left empty)';
   sParamPassword = 'CareLink Token Data (JSON)';

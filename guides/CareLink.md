@@ -10,9 +10,9 @@ Medtronic protects the CareLink login page with a CAPTCHA, so Trndi cannot log i
 
 1. You log in **once** in your web browser and capture the resulting *token data*.
 2. Trndi stores that token data (a JSON blob) as the credential.
-3. Trndi keeps the session alive automatically by refreshing the token — indefinitely, as long as Trndi runs at least once a week or so.
+3. Trndi keeps the session alive automatically by refreshing the token — indefinitely, as long as Trndi keeps running.
 
-If Trndi is off for a long time the token expires, and you repeat the one-time login.
+If Trndi is off for a while — sometimes just overnight — the token expires, and you repeat the one-time login.
 
 ## Which account to use
 
