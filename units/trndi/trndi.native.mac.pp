@@ -1219,6 +1219,35 @@ var
   j: Integer;
   hIdx: Integer;
   tmpS, nm, vl: string;
+  jarRef: TStringList;
+  cookieHeader, baseCookie: string;
+  ck: Integer;
+
+  // Insert or replace a "name=value" cookie: a rotated session cookie must
+  // supersede its old value, not be sent alongside it.
+  procedure UpsertCookie(list: TStringList; const cookieVal: string);
+  var
+    eq, k: integer;
+    namePrefix: string;
+  begin
+    if list = nil then
+      Exit;
+    eq := Pos('=', cookieVal);
+    if eq <= 1 then
+    begin
+      if list.IndexOf(cookieVal) = -1 then
+        list.Add(cookieVal);
+      Exit;
+    end;
+    namePrefix := Copy(cookieVal, 1, eq); // includes '='
+    for k := 0 to list.Count - 1 do
+      if Pos(namePrefix, list[k]) = 1 then
+      begin
+        list[k] := cookieVal;
+        Exit;
+      end;
+    list.Add(cookieVal);
+  end;
 
   procedure UpdateCookiesFromHeadersLocal(const AHeaders: TStringList);
   var
@@ -1240,10 +1269,8 @@ var
           cookieVal := Copy(cookieVal, 1, cookiePos - 1);
         if cookieVal <> '' then
         begin
-          Result.Cookies.Add(cookieVal);
-          if cookieJar <> nil then
-            if cookieJar.IndexOf(cookieVal) = -1 then
-              cookieJar.Add(cookieVal);
+          UpsertCookie(Result.Cookies, cookieVal);
+          UpsertCookie(cookieJar, cookieVal);
         end;
       end;
     end;
@@ -1340,6 +1367,10 @@ begin
   if useragent <> '' then
     requestHeaders.Values['User-Agent'] := useragent;
 
+  // A Cookie header supplied by the caller is kept as the base; jar cookies
+  // are appended to it on every hop.
+  baseCookie := requestHeaders.Values['Cookie'];
+
   sendStream := TStringStream.Create('');
   isPost := post;
   if jsondata <> '' then
@@ -1366,6 +1397,25 @@ begin
 
   try
     repeat
+      // Replay cookies on every hop (the transport never sends any on its
+      // own): the caller's jar if one was passed, otherwise whatever this
+      // redirect chain has collected so far.
+      if cookieJar <> nil then
+        jarRef := cookieJar
+      else
+        jarRef := Result.Cookies;
+      cookieHeader := baseCookie;
+      for ck := 0 to jarRef.Count - 1 do
+      begin
+        if Trim(jarRef[ck]) = '' then
+          Continue;
+        if cookieHeader <> '' then
+          cookieHeader := cookieHeader + '; ';
+        cookieHeader := cookieHeader + Trim(jarRef[ck]);
+      end;
+      if cookieHeader <> '' then
+        requestHeaders.Values['Cookie'] := cookieHeader;
+
       respStream := TStringStream.Create('');
       responseHeaders := TStringList.Create;
       httpClient := TNSHTTPSendAndReceive.Create;
