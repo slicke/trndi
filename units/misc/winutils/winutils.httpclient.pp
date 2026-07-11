@@ -178,7 +178,7 @@ WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_1 = $00000200;
 WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2 = $00000800;
 WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_3 = $00002000;
 
-WINHTTP_OPTION_SECURITY_FLAGS = $00000031;
+WINHTTP_OPTION_SECURITY_FLAGS = 31;
 
 // Security flags for WINHTTP_OPTION_SECURITY_FLAGS
 SECURITY_FLAG_IGNORE_UNKNOWN_CA = $00000100;
@@ -202,9 +202,11 @@ WINHTTP_OPTION_SECURE_PROTOCOLS = 84;
 // NOTE: Prefer WinHttpSetTimeouts() over per-option timeouts; option IDs vary between
 // headers/implementations and are easy to get wrong.
 
-// WinHTTP option constants not always present in older Pascal headers
-WINHTTP_OPTION_PROXY_USERNAME = 43;
-WINHTTP_OPTION_PROXY_PASSWORD = 44;
+// WinHTTP option constants not always present in older Pascal headers.
+// Note: these are the winhttp.h values ($1002/$1003) — the WinINet
+// INTERNET_OPTION_PROXY_* values (43/44) are NOT valid for WinHttpSetOption.
+WINHTTP_OPTION_PROXY_USERNAME = $1002;
+WINHTTP_OPTION_PROXY_PASSWORD = $1003;
 WINHTTP_OPTION_REDIRECT_POLICY = 88;
 
 // Redirect policy values
