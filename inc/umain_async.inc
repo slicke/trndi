@@ -3,6 +3,21 @@
    It is intended to be included into units/forms/umain.pp only.
 *)
 
+{ On macOS the LCL-Cocoa main thread runs with FP exceptions masked (the
+  IEEE default Apple's frameworks and system libraries are built for), but
+  FPC-created threads unmask FP traps. Ordinary float math on a worker —
+  fpjson number parsing, double→single assignments, CFNetwork internals —
+  then dies with EXC_BAD_INSTRUCTION on Apple Silicon instead of yielding
+  inf/NaN. Give every worker the same FP environment as the main thread.
+  Other platforms keep FPC's default trap behavior. }
+procedure MaskWorkerThreadFPUExceptions;
+begin
+{$ifdef DARWIN}
+  SetExceptionMask([exInvalidOp, exDenormalized, exZeroDivide,
+    exOverflow, exUnderflow, exPrecision]);
+{$endif}
+end;
+
 constructor TConnectivityCheckThread.Create(AOwner: TfBG; IsDNSRequest: boolean);
 begin
   inherited Create(true);
@@ -226,6 +241,7 @@ function IsInternetOnline: boolean;
   end;
 {$endif}
 begin
+  MaskWorkerThreadFPUExceptions;
   FOnline := IsInternetOnline;
   if Terminated then
     Exit;
@@ -270,6 +286,7 @@ procedure TPredictionThread.Execute;
 var
   ok: boolean;
 begin
+  MaskWorkerThreadFPUExceptions;
   // Perform prediction work off the main thread
   ok := false;
   try
@@ -311,6 +328,7 @@ end;
 
 procedure TGlucoseFetchThread.Execute;
 begin
+  MaskWorkerThreadFPUExceptions;
   // Worker thread — must not touch LCL/UI. api.getReadings is the synchronous
   // HTTP call we want to keep off the main thread. The Boot flag triggers
   // the legacy "two quick attempts" semantics from the old FormCreate path.
@@ -431,6 +449,7 @@ procedure THistoryFetchThread.Execute;
 var
   diag: string;
 begin
+  MaskWorkerThreadFPUExceptions;
   // Worker thread — must not touch LCL/UI. The synchronous api.getReadings
   // call is the only thing here.
   try
@@ -541,6 +560,7 @@ var
   JsonData: TJSONData;
   JsonObj: TJSONObject;
 begin
+  MaskWorkerThreadFPUExceptions;
   try
     try
       FFetchOK := TrndiNative.getURL(
