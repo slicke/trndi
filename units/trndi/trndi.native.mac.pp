@@ -1093,6 +1093,8 @@ var
   section, key, value: string;
   defaults: NSUserDefaults;
 begin
+  if iniData = '' then
+    Exit;
   sl := TStringList.Create;
   mem := TMemoryStream.Create;
   ini := nil;

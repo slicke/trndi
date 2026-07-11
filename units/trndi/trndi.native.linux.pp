@@ -2226,6 +2226,8 @@ var
   i, j: integer;
   section, key, value: string;
 begin
+  if iniData = '' then
+    Exit;
   EnsureIni;
   sl := TStringList.Create;
   mem := TMemoryStream.Create;

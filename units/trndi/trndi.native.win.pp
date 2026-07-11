@@ -1987,6 +1987,8 @@ var
   section, key, value: string;
   reg: TRegistry;
 begin
+  if iniData = '' then
+    Exit;
   sl := TStringList.Create;
   mem := TMemoryStream.Create;
   ini := nil;
