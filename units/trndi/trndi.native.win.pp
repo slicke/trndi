@@ -2241,7 +2241,8 @@ const header: string; prefix: boolean): string;
 var
   client: TWinHTTPClient;
   sx, address: string;
-  headers: array of string;
+  p: integer;
+  headerKey, headerVal: string;
   hasParams: boolean;
   ResStr: string;
   proxyHost: string;
@@ -2256,9 +2257,16 @@ var
 
     if header <> '' then
     begin
-      headers := header.Split(['=']);
-      if Length(headers) = 2 then
-        aClient.AddHeader(headers[0], headers[1]);
+      // Split on the first '=' only, like the Linux/macOS implementations —
+      // header values may themselves contain '=' (e.g. base64 API secrets).
+      p := Pos('=', header);
+      if p > 0 then
+      begin
+        headerKey := Trim(Copy(header, 1, p - 1));
+        headerVal := Trim(Copy(header, p + 1, MaxInt));
+        if headerKey <> '' then
+          aClient.AddHeader(headerKey, headerVal);
+      end;
     end;
 
     if jsondata <> '' then
