@@ -184,13 +184,18 @@ end;
 function TNSHTTPSendAndReceive.SendAndReceive(ARequest  : TStream;
 AResponse : TStream;
 Headers   : TStringList) : boolean;
- {Send HTTP request to current Address URL, returning downloaded data 
-   in AResponse stream and True as function result. If error occurs, 
+ {Send HTTP request to current Address URL, returning downloaded data
+   in AResponse stream and True as function result. If error occurs,
    return False and set LastErrMsg.
   Optional ARequest stream can be used to set the HTTP request body.
-  Optional Headers list of name-value pairs can be used to set 
-   HTTP headers.}
+  Optional Headers list of name-value pairs can be used to set
+   HTTP headers.
+  Strings cross the ObjC boundary as UTF-8 (StrToNSStr's CP1252 default
+   mangled non-ASCII URLs, header values and localized error messages).}
 var
+  pool        : NSAutoreleasePool;
+  addrNS      : NSString;
+  urlObj      : NSURL;
   urlRequest  : NSMutableURLRequest;
   requestData : NSMutableData;
   HdrNum      : integer;
@@ -199,47 +204,73 @@ var
   urlData     : NSData;
 begin
   Result := false;
+  // Own pool: this runs on API worker threads that provide none.
+  pool := NSAutoreleasePool.alloc.init;
   try
-    urlRequest := NSMutableURLRequest.requestWithURL_cachePolicy_timeoutInterval(
-      NSURL.URLWithString(StrToNSStr(Address)),
-      NSURLRequestUseProtocolCachePolicy, TimeOut);
-
-    if Method <> '' then
-      urlRequest.setHTTPMethod(StrToNSStr(Method));
-
-    if Assigned(ARequest) and (ARequest.Size > 0) then
     try
-      requestData := NSMutableData.alloc.initWithLength(ARequest.Size);
-      ARequest.Position := 0;
-      ARequest.ReadBuffer(requestData.mutableBytes^, ARequest.Size);
-      urlRequest.setHTTPBody(requestData);
-    finally
-      requestData.release;
+      addrNS := Utf8StrToNSStr(Address);
+      if addrNS = nil then
+      begin
+        FLastErrMsg := 'Invalid URL encoding: ' + Address;
+        Exit;
+      end;
+      urlObj := NSURL.URLWithString(addrNS);
+      if urlObj = nil then
+      begin
+        FLastErrMsg := 'Invalid URL: ' + Address;
+        Exit;
+      end;
+
+      urlRequest := NSMutableURLRequest.requestWithURL_cachePolicy_timeoutInterval(
+        urlObj, NSURLRequestUseProtocolCachePolicy, TimeOut);
+
+      if Method <> '' then
+        urlRequest.setHTTPMethod(Utf8StrToNSStr(Method));
+
+      if Assigned(ARequest) and (ARequest.Size > 0) then
+      try
+        requestData := NSMutableData.alloc.initWithLength(ARequest.Size);
+        ARequest.Position := 0;
+        ARequest.ReadBuffer(requestData.mutableBytes^, ARequest.Size);
+        urlRequest.setHTTPBody(requestData);
+      finally
+        requestData.release;
+      end;
+
+      if Assigned(Headers) then
+        for HdrNum := 0 to Headers.Count-1 do
+          urlRequest.addValue_forHTTPHeaderField(
+            Utf8StrToNSStr(Headers.ValueFromIndex[HdrNum]),
+            Utf8StrToNSStr(Headers.Names[HdrNum]));
+
+      // Pre-clear both out-parameters: on failure the API is not guaranteed
+      // to write them, and reading a garbage NSError pointer crashes.
+      urlResponse := nil;
+      error := nil;
+      urlData := NSURLConnection.sendSynchronousRequest_returningResponse_error(
+        urlRequest, @urlResponse, @error);
+      if not Assigned(urlData) then
+      begin
+        if error <> nil then
+          FLastErrMsg := NSStrToUtf8Str(error.localizedDescription)
+        else
+          FLastErrMsg := 'Request failed (no error details available)';
+        Exit;
+      end;
+
+      AResponse.Position := 0;
+      AResponse.WriteBuffer(urlData.bytes^, urlData.length);
+      AResponse.Position := 0;
+      Result := true;
+
+    except
+      on E : Exception do
+      begin
+        FLastErrMsg := E.Message;
+      end;
     end;
-
-    if Assigned(Headers) then
-      for HdrNum := 0 to Headers.Count-1 do
-        urlRequest.addValue_forHTTPHeaderField(StrToNSStr(Headers.ValueFromIndex[HdrNum]),
-          StrToNSStr(Headers.Names[HdrNum]));
-
-    urlData := NSURLConnection.sendSynchronousRequest_returningResponse_error(
-      urlRequest, @urlResponse, @error);
-    if not Assigned(urlData) then
-    begin
-      FLastErrMsg := NSStrToStr(error.localizedDescription);
-      Exit;
-    end;
-
-    AResponse.Position := 0;
-    AResponse.WriteBuffer(urlData.bytes^, urlData.length);
-    AResponse.Position := 0;
-    Result := true;
-
-  except
-    on E : Exception do
-    begin
-      FLastErrMsg := E.Message;
-    end;
+  finally
+    pool.release;
   end;
 end;
 
