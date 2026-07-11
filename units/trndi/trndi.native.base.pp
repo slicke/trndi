@@ -46,6 +46,9 @@ interface
     platform units.
   - Prefer virtual methods (instance or class) for behavior that varies by
     platform.
+  - When porting to a new platform, consider subclassing
+    @code(trndi.native.generic)'s TTrndiNativeGeneric (portable INI settings +
+    TFPHTTPClient HTTP) instead of this class directly; see the Haiku unit.
 }
 
 uses
