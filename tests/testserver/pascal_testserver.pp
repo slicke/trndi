@@ -371,7 +371,15 @@ begin
     begin
       sub := Copy(pathOnly, Length('/ShareWebServices/Services/') + 1, MaxInt);
       if sub = 'General/LoginPublisherAccountByName' then
-        SendResponse('application/json', '"TEST-DEXCOM-SESSION"')
+      begin
+        // Account "expired" simulates Dexcom Share's ~24h session expiry:
+        // login succeeds but the issued session is rejected by the glucose
+        // endpoint (see below).
+        if Pos('expired', LowerCase(Body)) > 0 then
+          SendResponse('application/json', '"EXPIRED-SESSION"')
+        else
+          SendResponse('application/json', '"TEST-DEXCOM-SESSION"');
+      end
       else if sub = 'General/SystemUtcTime' then
       begin
         ms := NowMillis;
@@ -379,6 +387,15 @@ begin
       end
       else if sub = 'Publisher/ReadPublisherLatestGlucoseValues' then
       begin
+        // Session ID may arrive in the query string (GET-style) or the POST
+        // body (form-encoded params); accept either.
+        if (Pos('sessionId=EXPIRED-SESSION', query) > 0) or
+          (Pos('sessionId=EXPIRED-SESSION', Body) > 0) then
+        begin
+          SendResponse('application/json',
+            '{"Code":"SessionIdNotFound","Message":"Session ID not found"}', 500);
+          Exit;
+        end;
         nowMs := NowMillis;
         items := '[';
         for i := 0 to 2 do

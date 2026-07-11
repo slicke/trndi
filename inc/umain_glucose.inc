@@ -919,11 +919,25 @@ function TfBG.ApplyFetchedReadings(const Readings: BGResults;
 const ErrorMsg: string; Boot: boolean): boolean;
 var
   msg: string;
+  i: integer;
+  hasData: boolean;
 begin
   Result := false;
 
+  // A result set where every reading is a cleared placeholder (no value, no
+  // timestamp) is a failed fetch in disguise — e.g. a backend that mapped an
+  // error payload into readings. Treat it as empty so it can't masquerade as
+  // fresh data or displace the cached last-good readings below.
+  hasData := false;
+  for i := 0 to High(Readings) do
+    if not Readings[i].empty then
+    begin
+      hasData := true;
+      Break;
+    end;
+
   // Copy worker output into the main-thread bgs slot.
-  if Length(Readings) > 0 then
+  if hasData then
   begin
     SetLength(bgs, Length(Readings));
     Move(Readings[0], bgs[0], Length(Readings) * SizeOf(BGReading));

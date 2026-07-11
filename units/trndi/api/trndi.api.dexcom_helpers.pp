@@ -18,6 +18,13 @@ function JSONEscape(const S: string): string;
     names and converts them to the corresponding enum. }
 function MapDexcomTrendToEnum(const S: string): BGTrend;
 
+{** Heuristic: does a Dexcom Share response body indicate a dead/rejected
+    session (so the caller should re-authenticate)? Matches both prose
+    ("Session ID not found") and the CamelCase error codes Dexcom actually
+    sends ("SessionIdNotFound", "SessionNotValid") by comparing with spaces
+    stripped. }
+function DexcomLooksLikeSessionFailure(const Response: string): boolean;
+
 implementation
 
 function JSONEscape(const S: string): string;
@@ -100,6 +107,24 @@ begin
     Result := BGTrend(idx)
   else
     Result := TdPlaceholder;
+end;
+
+function DexcomLooksLikeSessionFailure(const Response: string): boolean;
+var
+  L: string;
+begin
+  // Strip spaces before lowercasing so "Session ID not found" and
+  // "SessionIdNotFound" both reduce to the same needle. Glucose payloads
+  // never contain the word "session", so this cannot misfire on real data.
+  L := LowerCase(StringReplace(Response, ' ', '', [rfReplaceAll]));
+  Result :=
+    ((Pos('session', L) > 0) and
+    ((Pos('invalid', L) > 0) or (Pos('expired', L) > 0) or
+    (Pos('notvalid', L) > 0) or (Pos('notfound', L) > 0) or
+    (Pos('sessionidnull', L) > 0))) or
+    (Pos('unauthorized', L) > 0) or
+    (Pos('forbidden', L) > 0) or
+    (Pos('accountpassword', L) > 0);
 end;
 
 end.
