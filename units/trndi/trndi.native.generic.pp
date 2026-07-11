@@ -123,6 +123,13 @@ implementation
 uses
 fphttpclient, opensslsockets, URIParser, Process, StrUtils, trndi.log;
 
+const
+  // FPC's TSocketStream.SetIOTimeout only implements the setsockopt call for
+  // Windows and UNIX; Haiku defines neither, so it raises a spurious
+  // "Failed to set IO Timeout" from an uninitialized result. Leave the
+  // timeout at 0 there — fphttpclient then never touches the socket option.
+  HTTP_IO_TIMEOUT = {$IFDEF HAIKU}0{$ELSE}30000{$ENDIF};
+
 procedure NormalizeProxyHostPort(var host: string; var port: string);
 var
   s: string;
@@ -413,7 +420,7 @@ var
     HTTP := TFPHTTPClient.Create(nil);
     try
       HTTP.AllowRedirect := true;
-      HTTP.IOTimeout := 30000; // 30 seconds timeout
+      HTTP.IOTimeout := HTTP_IO_TIMEOUT; // 30 seconds timeout
 
       // Set proxy if configured and requested
       if withProxy and (proxyHost <> '') then
@@ -541,7 +548,7 @@ var
     HTTP := TFPHTTPClient.Create(nil);
     try
       HTTP.AllowRedirect := true;
-      HTTP.IOTimeout := 30000;
+      HTTP.IOTimeout := HTTP_IO_TIMEOUT;
 
       if withProxy and (proxyHost <> '') then
       begin
@@ -648,7 +655,7 @@ begin
   HTTP := TFPHTTPClient.Create(nil);
   try
     HTTP.AllowRedirect := true;
-    HTTP.IOTimeout := 30000;
+    HTTP.IOTimeout := HTTP_IO_TIMEOUT;
     HTTP.Proxy.Host := host;
     HTTP.Proxy.Port := StrToIntDef(portS, 8080);
     if user <> '' then
@@ -731,7 +738,7 @@ var
     HTTP := TFPHTTPClient.Create(nil);
     try
       HTTP.AllowRedirect := False;
-      HTTP.IOTimeout := 30000;
+      HTTP.IOTimeout := HTTP_IO_TIMEOUT;
 
       if useProxy then
       begin
