@@ -17,9 +17,10 @@ unit nsutils.web.urlrequest;
 
 interface
 
-uses 
+uses
 SysUtils,
 Classes,
+Math,
 {$IF (DEFINED(IPHONESIM) OR DEFINED(CPUARM) OR DEFINED(CPUAARCH64)) AND (NOT DEFINED(LCLCOCOA)) }  //iOS
 {$IFDEF NoiPhoneAll}
 Foundation,
@@ -69,6 +70,18 @@ end;
 
 
 implementation
+
+{ Apple frameworks are built for the IEEE-default FP environment (exceptions
+  masked, divisions by zero yielding inf/NaN). FPC unmasks FP traps on the
+  threads it creates — and on foreign (GCD) threads it adopts on first
+  threadvar access — so CFNetwork's internal float divisions fault with
+  EXC_BAD_INSTRUCTION (the fdiv opcode as subcode) on Apple Silicon. Mask
+  them on every thread that crosses into ObjC here. }
+procedure MaskFPUExceptionsForAppleFrameworks;
+begin
+  SetExceptionMask([exInvalidOp, exDenormalized, exZeroDivide,
+    exOverflow, exUnderflow, exPrecision]);
+end;
 
 constructor TNSHTTPSendAndReceive.Create;
 begin
@@ -155,6 +168,9 @@ type
 procedure TTrndiURLSessionDelegate.URLSession_dataTask_didReceiveData(
   session: ObjCId; dataTask: ObjCId; data: NSData);
 begin
+  // Runs on a GCD thread CFNetwork owns; undo any FP-trap unmasking the FPC
+  // RTL applied when it adopted this thread (see MaskFPUExceptionsForAppleFrameworks).
+  MaskFPUExceptionsForAppleFrameworks;
   if Body <> nil then
     Body.appendData(data);
 end;
@@ -162,6 +178,7 @@ end;
 procedure TTrndiURLSessionDelegate.URLSession_task_didCompleteWithError(
   session: ObjCId; task: ObjCId; error: NSError);
 begin
+  MaskFPUExceptionsForAppleFrameworks;
   if error <> nil then
   begin
     error.retain;
@@ -176,6 +193,7 @@ procedure TTrndiURLSessionDelegate.URLSession_task_willPerformHTTPRedirection_ne
   session: ObjCId; task: ObjCId; response: NSHTTPURLResponse;
   request: NSURLRequest; completionHandler: Pointer);
 begin
+  MaskFPUExceptionsForAppleFrameworks;
   // Never auto-follow: complete the task with the 3xx response so the
   // caller decides what to do with the Location header.
   CallBlockWithId(completionHandler, nil);
@@ -204,6 +222,8 @@ var
   urlData     : NSData;
 begin
   Result := false;
+  // This thread is about to execute framework code inline.
+  MaskFPUExceptionsForAppleFrameworks;
   // Own pool: this runs on API worker threads that provide none.
   pool := NSAutoreleasePool.alloc.init;
   try
@@ -307,6 +327,8 @@ begin
   FLastErrMsg := '';
   delegate := nil;
   session := nil;
+  // This thread is about to execute framework code inline.
+  MaskFPUExceptionsForAppleFrameworks;
   // Own pool: this runs on API worker threads that provide none.
   pool := NSAutoreleasePool.alloc.init;
   try
