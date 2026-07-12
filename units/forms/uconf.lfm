@@ -284,7 +284,7 @@ object fConf: TfConf
         ClientHeight = 96
         ClientWidth = 637
         ParentBackground = False
-        TabOrder = 5
+        TabOrder = 7
         object Image1: TImage
           Left = 5
           Height = 86

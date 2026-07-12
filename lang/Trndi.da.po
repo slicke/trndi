@@ -344,6 +344,11 @@ msgstr "Tidsskrift..."
 msgid "Import Settings"
 msgstr "Importer indstillinger"
 
+#: tfconf.blogin.caption
+msgctxt "tfconf.blogin.caption"
+msgid "Get CareLink token…"
+msgstr ""
+
 #: tfconf.bremove.caption
 msgid "- Remove"
 msgstr "- Fjern"
@@ -395,6 +400,10 @@ msgstr "Skift mellem pil og aflæsning"
 
 #: tfconf.cbautostart.caption
 msgid "Start with system"
+msgstr ""
+
+#: tfconf.cbbadgetrend.caption
+msgid "Show trend arrow in taskbar/dock"
 msgstr ""
 
 #: tfconf.cbchroma.caption
@@ -2982,18 +2991,7 @@ msgstr ""
 
 #: uconf.rs_weblogin_help
 #, object-pascal-format
-msgid ""
-"CareLink needs a one-time browser login (with CAPTCHA), so Trndi uses a small login helper to capture your token.\n"
-"\n"
-"It needs Node.js installed. In a terminal, run:\n"
-"\n"
-"    cd \"%s\"\n"
-"    npm install\n"
-"    %s\n"
-"\n"
-"A browser opens — sign in with your Care Partner account and solve the CAPTCHA. The helper then prints a block of JSON: copy it into the token field below and click Test.\n"
-"\n"
-"Open the helper folder now?"
+msgid "CareLink needs a one-time browser login (with CAPTCHA), so Trndi uses a small login helper to capture your token.<br><br>It needs Node.js installed. In a terminal, run:<br><br>> cd \"%s\"<br>> npm install<br>> %s<br><br>A browser opens — sign in with your Care Partner account and solve the CAPTCHA. The helper then prints a block of JSON: copy it into the token field below and click Test.<br><br>Open the helper folder now?"
 msgstr ""
 
 #: uconf.rs_weblogin_title
