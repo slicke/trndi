@@ -1198,7 +1198,7 @@ const header: string; prefix: boolean): string;
 var
   res, send: TStringStream;
   headers: TStringList;
-  sx: string;
+  i: integer;
 begin
   res := TStringStream.Create('');
   send := TStringStream.Create('');
@@ -1229,9 +1229,9 @@ begin
       end
       else if Length(params) > 0 then
       begin
-        address := address + '?';
-        for sx in params do
-          address := address + '&' + sx;
+        address := address + '?' + params[0];
+        for i := 1 to High(params) do
+          address := address + '&' + params[i];
       end;
 
       if SendAndReceive(send, res, headers) then
@@ -1392,8 +1392,8 @@ begin
 
   if (not post) and (Length(params) > 0) then
   begin
-    currentUrl := currentUrl + '?';
-    for status := 0 to High(params) do
+    currentUrl := currentUrl + '?' + params[0];
+    for status := 1 to High(params) do
       currentUrl := currentUrl + '&' + params[status];
   end;
 

@@ -693,7 +693,7 @@ cookieJar: TStringList; followRedirects: boolean;
 maxRedirects: integer; customHeaders: TStringList;
 prefix: boolean): THTTPResponse;
 var
-  address, sx, maskedSx, bodyData, headerLine: string;
+  address, maskedSx, bodyData, headerLine: string;
   i, j, redirectCount: integer;
   response, hopErr: string;
   statusCode: integer;
@@ -864,9 +864,9 @@ begin
 
   if (not post) and (jsondata = '') and (Length(params) > 0) then
   begin
-    address := address + '?';
-    for sx in params do
-      address := address + '&' + sx;
+    address := address + '?' + params[0];
+    for j := 1 to High(params) do
+      address := address + '&' + params[j];
   end;
 
   if post and (jsondata = '') and (Length(params) > 0) then
@@ -1012,7 +1012,7 @@ const params: array of string; const jsondata: string;
 const header: string; prefix: boolean): string;
 var
   HTTP: TFPHTTPClient;
-  address, sx, body: string;
+  address, body: string;
   bodyStream: TStringStream;
   i, p: integer;
   key, val: string;
@@ -1025,9 +1025,9 @@ begin
   // GET: append query string. POST without JSON: use params as form body.
   if (not post) and (jsondata = '') and (Length(params) > 0) then
   begin
-    address := address + '?';
-    for sx in params do
-      address := address + '&' + sx;
+    address := address + '?' + params[0];
+    for i := 1 to High(params) do
+      address := address + '&' + params[i];
   end;
 
   HTTP := TFPHTTPClient.Create(nil);

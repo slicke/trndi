@@ -189,15 +189,10 @@ begin
     except
       // Silently fail if speech doesn't work
     end;
-  except
-    on E: Exception do
-    begin
-      // Silently fail
-      AProcess.Free;
-      Exit;
-    end;
+  finally
+    // Frees the TProcess object only; the async espeak child keeps running
+    AProcess.Free;
   end;
-  // Async process will be cleaned up by OS
 end;
 
 {------------------------------------------------------------------------------
