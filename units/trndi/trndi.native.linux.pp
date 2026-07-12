@@ -2308,9 +2308,9 @@ begin
   // GET: append query string. POST: query goes in the body, not the URL.
   if (not post) and (jsondata = '') and (Length(params) > 0) then
   begin
-    address := address + '?';
-    for sx in params do
-      address := address + '&' + sx;
+    address := address + '?' + params[0];
+    for j := 1 to High(params) do
+      address := address + '&' + params[j];
   end;
 
   headers := nil;
@@ -2622,9 +2622,9 @@ begin
 
   if (jsondata = '') and (Length(params) > 0) then
   begin
-    address := address + '?';
-    for sx in params do
-      address := address + '&' + sx;
+    address := address + '?' + params[0];
+    for p := 1 to High(params) do
+      address := address + '&' + params[p];
   end;
 
   headers := nil;

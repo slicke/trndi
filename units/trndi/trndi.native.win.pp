@@ -2255,7 +2255,7 @@ const params: array of string; const jsondata: string;
 const header: string; prefix: boolean): string;
 var
   client: TWinHTTPClient;
-  sx, address: string;
+  address: string;
   p: integer;
   headerKey, headerVal: string;
   hasParams: boolean;
@@ -2327,9 +2327,9 @@ begin
 
   if (jsondata = '') and hasParams then
   begin
-    address := address + '?';
-    for sx in params do
-      address := address + '&' + sx;
+    address := address + '?' + params[0];
+    for p := 1 to High(params) do
+      address := address + '&' + params[p];
   end;
 
   proxyHost  := Trim(GetRootSetting('proxy.host', ''));
@@ -2390,7 +2390,7 @@ var
   address, sx, currentUrl, bodyData, methodLabel: string;
   responseHeaders: TStringList;
   responseBody: string;
-  statusCode: integer;
+  statusCode, j: integer;
   locationHeader: string;
   proxyHost, proxyPortS, proxyUser, proxyPass: string;
   proxyPort: integer;
@@ -2903,9 +2903,9 @@ begin
 
   if (not post) and (jsondata = '') and (Length(params) > 0) then
   begin
-    address := address + '?';
-    for sx in params do
-      address := address + '&' + sx;
+    address := address + '?' + params[0];
+    for j := 1 to High(params) do
+      address := address + '&' + params[j];
   end;
 
   bodyData := '';
