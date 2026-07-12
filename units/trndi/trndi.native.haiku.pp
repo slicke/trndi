@@ -56,7 +56,15 @@ end;
 implementation
 
 uses
-Process;
+Process, netdb;
+
+const
+  {** Haiku's network stack (DHCP or the Network preflet) maintains the
+      nameserver list here — not in /etc/resolv.conf, which FPC's netdb
+      resolver reads. Without this file preloaded, TFPHTTPClient fails every
+      lookup with "hostname resolution failed" even though ping (which uses
+      libnetwork's own resolver) works fine. }
+  HaikuResolvConf = '/boot/system/settings/network/resolv.conf';
 
 {------------------------------------------------------------------------------
   FindNotifyCmd
@@ -272,5 +280,13 @@ begin
   // No-op placeholder for Haiku
   Result := false;
 end;
+
+initialization
+  // netdb's own initialization only loads /etc/resolv.conf when it exists,
+  // so feed it Haiku's file; GetDNSServers also records the filename, making
+  // later staleness re-checks read the Haiku path too. If the Haiku file is
+  // absent, keep whatever /etc/resolv.conf provided (manual setups).
+  if FileExists(HaikuResolvConf) then
+    GetDNSServers(HaikuResolvConf);
 
 end.
