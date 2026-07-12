@@ -795,8 +795,25 @@ jobs:
             gh release create "$TAG" --title "$TITLE" --notes-file RELEASE_NOTES.md --repo "$GITHUB_REPOSITORY"
           fi
 
-          # Upload all files from all artifacts (files only, no directories)
-          find ./release-files -type f -print0 | xargs -0 gh release upload "$TAG" --clobber --repo "$GITHUB_REPOSITORY"
+          # Upload all files from all artifacts (files only, no directories).
+          # Multiple build artifacts can contain the same basename (for example,
+          # the shared signing key), so upload each asset name only once.
+          declare -A uploaded_assets=()
+          upload_files=()
+          while IFS= read -r -d '' file; do
+            asset_name=$(basename "$file")
+            if [ -n "${uploaded_assets[$asset_name]:-}" ]; then
+              echo "Skipping duplicate release asset: ${asset_name} ($file)"
+              continue
+            fi
+
+            uploaded_assets["$asset_name"]="$file"
+            upload_files+=("$file")
+          done < <(find ./release-files -type f -print0)
+
+          if [ ${#upload_files[@]} -gt 0 ]; then
+            gh release upload "$TAG" --clobber --repo "$GITHUB_REPOSITORY" "${upload_files[@]}"
+          fi
   # ===================== DISCORD NOTIFICATION =====================
   discord-notify:
     runs-on: ubuntu-latest
