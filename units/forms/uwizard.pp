@@ -54,7 +54,7 @@ uses
   Classes, SysUtils, Forms, Controls, StdCtrls, ExtCtrls, Graphics, Dialogs, lclintf,
   trndi.native, trndi.api, trndi.api.nightscout, trndi.api.nightscout3,
   trndi.api.dexcom, trndi.api.dexcomNew, trndi.api.tandem, trndi.api.carelink, trndi.api.xdrip,
-  trndi.types, trndi.strings;
+  trndi.types, trndi.strings, slicke.ux.alert;
 
 {$I ../../inc/defines.inc}
 
@@ -611,9 +611,29 @@ begin
   cls := selectedAPIClass;
   webLogin := Assigned(cls) and cls.supportsWebLogin;
 
-  bLogin.Visible := webLogin;
-  lAddrLabel.Visible := not webLogin;
-  eAddr.Visible := not webLogin;
+  { The connection step is an alTop stack, and LCL slots a re-shown control by
+    its stale Top from before it was hidden. Pin the address row (or the login
+    button) just above the password row before making it visible again, or it
+    ends up below ePass after switching backends. Only pin on an actual
+    hidden-to-shown transition (at build time the stack is not laid out yet
+    and lPassLabel.Top is still 0), and freeze alignment for the whole swap so
+    the hide doesn't shift lPassLabel up and invalidate the pins. }
+  eAddr.Parent.DisableAlign;
+  try
+    if webLogin and not bLogin.Visible then
+      bLogin.Top := lPassLabel.Top - 1
+    else if not webLogin and not eAddr.Visible then
+    begin
+      lAddrLabel.Top := lPassLabel.Top - 2;
+      eAddr.Top      := lPassLabel.Top - 1;
+    end;
+
+    bLogin.Visible := webLogin;
+    lAddrLabel.Visible := not webLogin;
+    eAddr.Visible := not webLogin;
+  finally
+    eAddr.Parent.EnableAlign;
+  end;
 
   if webLogin and (Trim(eAddr.Text) = '') then
     eAddr.Text := 'carelink';
@@ -634,8 +654,7 @@ begin
   else
     cmd := 'node carelink-login.mjs';
 
-  if MessageDlg(WZ_WEBLOGIN_TITLE, Format(WZ_WEBLOGIN_HELP, [helperDir, cmd]),
-    mtInformation, [mbYes, mbNo], '') = mrYes then
+   if ExtMsgYesNo(WZ_WEBLOGIN_TITLE, Format(WZ_WEBLOGIN_HELP, [helperDir, cmd]), uxmtInformation, 20) then
   begin
     if DirectoryExists(helperDir) then
       OpenDocument(helperDir)
