@@ -254,6 +254,9 @@ Right click or click/hold the reading (or "Setup" text) and choose settings to a
 
 > See a box instead of an icon? On Debian systems, you may need to install a graphic font. I recommend fonts-noto-color-emoji.
 
+### Which backend should I use?
+Backends are explained [here](doc/Backends.md)
+
 # Support
 Join us on [Discord](https://discord.gg/QXACfpcW) to discuss issues or new features
 
