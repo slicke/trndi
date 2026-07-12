@@ -738,13 +738,13 @@ RS_WEBLOGIN_BUTTON = 'Get CareLink token…';
 RS_WEBLOGIN_TITLE = 'CareLink login helper';
 RS_WEBLOGIN_HELP =
   'CareLink needs a one-time browser login (with CAPTCHA), so Trndi uses a small ' +
-  'login helper to capture your token.'#13#10#13#10 +
-  'It needs Node.js installed. In a terminal, run:'#13#10#13#10 +
-  '    cd "%s"'#13#10 +
-  '    npm install'#13#10 +
-  '    %s'#13#10#13#10 +
+  'login helper to capture your token.'+ sHTMLLineBreak + sHTMLLineBreak +
+  'It needs Node.js installed. In a terminal, run:' + sHTMLLineBreak + sHTMLLineBreak +
+  '> cd "%s"'+ sHTMLLineBreak +
+  '> npm install'+ sHTMLLineBreak +
+  '> %s'+ sHTMLLineBreak+ sHTMLLineBreak +
   'A browser opens — sign in with your Care Partner account and solve the CAPTCHA. ' +
-  'The helper then prints a block of JSON: copy it into the token field below and click Test.'#13#10#13#10 +
+  'The helper then prints a block of JSON: copy it into the token field below and click Test.'+ sHTMLLineBreak+ sHTMLLineBreak +
   'Open the helper folder now?';
 
 RS_POS_TITLE = 'Restricted Feature';
@@ -1747,7 +1747,7 @@ begin
   else
     cmd := 'node carelink-login.mjs';
 
-  if ExtMsgYesNo(RS_WEBLOGIN_TITLE, Format(RS_WEBLOGIN_HELP, [helperDir, cmd])) then
+  if ExtMsgYesNo(RS_WEBLOGIN_TITLE, Format(RS_WEBLOGIN_HELP, [helperDir, cmd]), uxmtInformation, 20) then
   begin
     if DirectoryExists(helperDir) then
       OpenDocument(helperDir)

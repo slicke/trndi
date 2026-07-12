@@ -347,6 +347,11 @@ msgstr "Tidstypsnit..."
 msgid "Import Settings"
 msgstr "Ladda inställningar"
 
+#: tfconf.blogin.caption
+msgctxt "tfconf.blogin.caption"
+msgid "Get CareLink token…"
+msgstr "Skaffa CareLink-nyckel"
+
 #: tfconf.bremove.caption
 msgid "- Remove"
 msgstr "- Radera"
@@ -400,6 +405,10 @@ msgstr "Växla pil och värde"
 #: tfconf.cbautostart.caption
 msgid "Start with system"
 msgstr "Starta med systemet"
+
+#: tfconf.cbbadgetrend.caption
+msgid "Show trend arrow in taskbar/dock"
+msgstr "Visa trenden i aktivitetsfältet/dockan"
 
 #: tfconf.cbchroma.caption
 msgid "Enable Razer Chroma integration"
@@ -1579,7 +1588,7 @@ msgstr "Aktivera varningar igen"
 
 #: trndi.strings.rs_api_notice
 msgid "Data source notice"
-msgstr ""
+msgstr "Datakällenotis"
 
 #: trndi.strings.rs_attention_missing
 msgid "Outdated Readings!"
@@ -2714,6 +2723,9 @@ msgid ""
 "It needs token data captured from a one-time browser login — see the CareLink guide.\n"
 "Use a Care Partner (follower) account. Data may lag behind the pump."
 msgstr ""
+"Denna källa är experimentelll!\n"
+"Den behöver en nyckel som anskaffas genom att logga in via webbläsaren — se CareLink-guiden.\n"
+"Använd ett Care Partner- (följare) konto. Data kan lagga efter pumpen."
 
 #: uconf.rs_choose_system
 msgid "Select your CGM system in the list, then enter your credentials"
@@ -2845,7 +2857,7 @@ msgstr "Adressen måste börja med http(s)://"
 #: uconf.rs_err_carelink_token
 msgctxt "uconf.rs_err_carelink_token"
 msgid "The credential must be the captured CareLink token data (JSON, starting with \"{\")"
-msgstr ""
+msgstr "Nyckeln måste vara den anskaffade CareLink-nyckelns data (JSON, startar med \"{\")"
 
 #: uconf.rs_err_email
 msgctxt "uconf.rs_err_email"
@@ -3130,28 +3142,17 @@ msgstr "Trndi kan starta ett <b>Web-API</b> för att kommunicera med <i>tredjepa
 #: uconf.rs_weblogin_button
 msgctxt "uconf.rs_weblogin_button"
 msgid "Get CareLink token…"
-msgstr ""
+msgstr "Skaffa CareLink-nyckel..."
 
 #: uconf.rs_weblogin_help
 #, object-pascal-format
-msgid ""
-"CareLink needs a one-time browser login (with CAPTCHA), so Trndi uses a small login helper to capture your token.\n"
-"\n"
-"It needs Node.js installed. In a terminal, run:\n"
-"\n"
-"    cd \"%s\"\n"
-"    npm install\n"
-"    %s\n"
-"\n"
-"A browser opens — sign in with your Care Partner account and solve the CAPTCHA. The helper then prints a block of JSON: copy it into the token field below and click Test.\n"
-"\n"
-"Open the helper folder now?"
-msgstr ""
+msgid "CareLink needs a one-time browser login (with CAPTCHA), so Trndi uses a small login helper to capture your token.<br><br>It needs Node.js installed. In a terminal, run:<br><br>> cd \"%s\"<br>> npm install<br>> %s<br><br>A browser opens — sign in with your Care Partner account and solve the CAPTCHA. The helper then prints a block of JSON: copy it into the token field below and click Test.<br><br>Open the helper folder now?"
+msgstr "CareLink kräver att du logga in via en webbläsare (med CAPTCHA), så Trndi använder en liten loginhjälpare för att fånga nyckeln.<br><br>Den kräver att Node.js installerats. I en terminal, kör:<br><br>> cd \"%s\"<br>> npm install<br>> %s<br><br>En webbläsare öppnas — logga in med ditt Care Partner-konto och lös CAPTCHA:n. Hjälparen kommer sedan att skriva ut ett block med JSON: kopiera det i nyckel/token-fältet under och tryck Test.<br><br>Öppna mappen nu?"
 
 #: uconf.rs_weblogin_title
 msgctxt "uconf.rs_weblogin_title"
 msgid "CareLink login helper"
-msgstr ""
+msgstr "CareLink loginhjälpare"
 
 #: uconf.rs_xdrip
 msgid ""
@@ -3313,7 +3314,7 @@ msgstr "Adressen måste börja med http(s)://"
 #: uwizard.wz_err_carelink_token
 msgctxt "uwizard.wz_err_carelink_token"
 msgid "The credential must be the captured CareLink token data (JSON, starting with \"{\")"
-msgstr ""
+msgstr "Åtkomstnyckeln måste vara fångad nyckeldata/token från CareLink (JSON, börjar med \"{\")"
 
 #: uwizard.wz_err_email
 msgctxt "uwizard.wz_err_email"
@@ -3349,7 +3350,7 @@ msgstr "Anslutningstest stöds inte för denna tjänst."
 #: uwizard.wz_weblogin_button
 msgctxt "uwizard.wz_weblogin_button"
 msgid "Get CareLink token…"
-msgstr ""
+msgstr "Hämta CareLink-nyckel..."
 
 #: uwizard.wz_weblogin_help
 #, object-pascal-format
@@ -3365,10 +3366,9 @@ msgid ""
 "A browser opens — sign in with your Care Partner account and solve the CAPTCHA. The helper then prints a block of JSON: copy it into the token field and click Test.\n"
 "\n"
 "Open the helper folder now?"
-msgstr ""
+msgstr "CareLink kräver att du logga in via en webbläsare (med CAPTCHA), så Trndi använder en liten loginhjälpare för att fånga nyckeln.<br><br>Den kräver att Node.js installerats. I en terminal, kör:<br><br>> cd \"%s\"<br>> npm install<br>> %s<br><br>En webbläsare öppnas — logga in med ditt Care Partner-konto och lös CAPTCHA:n. Hjälparen kommer sedan att skriva ut ett block med JSON: kopiera det i nyckel/token-fältet under och tryck Test.<br><br>Öppna mappen nu?"
 
 #: uwizard.wz_weblogin_title
 msgctxt "uwizard.wz_weblogin_title"
 msgid "CareLink login helper"
-msgstr ""
-
+msgstr "CareLink loginhjälpare"

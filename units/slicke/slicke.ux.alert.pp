@@ -349,12 +349,14 @@ const mtype: TMsgDlgType): TModalResult; overload;
   @param title Title text.
   @param desc Description of dialog.
   @param micon Icon for the dialog
+  @param scale Size for the actual dialog
   @returns Lazarus modal result corresponding to the button clicked.
 }
 function ExtMsgYesNo(
 const dialogsize: TUXDialogSize;
 const caption, desc: string;
-const micon: UXImage = uxmtConfirmation): boolean;
+const micon: UXImage = uxmtConfirmation;
+const scale: single = 1): boolean;
 
 {**
   Simplified Extended message dialog for displaying yes/no dialogs
@@ -362,11 +364,13 @@ const micon: UXImage = uxmtConfirmation): boolean;
   @param title Title text.
   @param desc Description of dialog.
   @param micon Icon for the dialog
+  @param scale The size of the actual dialog
   @returns Lazarus modal result corresponding to the button clicked.
 }
 function ExtMsgYesNo(
 const caption, desc: string;
-const micon: UXImage = uxmtConfirmation): boolean;
+const micon: UXImage = uxmtConfirmation;
+const scale: single = 1): boolean;
 
 {**
   Extended message dialog supporting an optional log/dump panel with custom colors.
@@ -2138,17 +2142,19 @@ end;
 
 function ExtMsgYesNo(
 const caption, desc: string;
-const micon: UXImage = uxmtConfirmation): boolean;
+const micon: UXImage = uxmtConfirmation;
+const scale: single = 1): boolean;
 begin
-  result :=ExtMsgYesNo(uxdAuto, caption, desc, micon);
+  result :=ExtMsgYesNo(uxdAuto, caption, desc, micon, scale);
 end;
 
 function ExtMsgYesNo(
 const dialogsize: TUXDialogSize;
 const caption, desc: string;
-const micon: UXImage = uxmtConfirmation): boolean;
+const micon: UXImage = uxmtConfirmation;
+const scale: single = 1): boolean;
 begin
-  result := ExtMsg(dialogsize,caption, desc, [mbYes, mbNo], micon) = mrYes;
+  result := ExtMsg(dialogsize,caption, desc, [mbYes, mbNo], micon, scale) = mrYes;
 end;
 
 function ExtMsg(
