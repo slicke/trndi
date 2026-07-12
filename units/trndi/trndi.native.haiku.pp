@@ -56,7 +56,7 @@ end;
 implementation
 
 uses
-Process, netdb;
+Process, netdb, openssl;
 
 const
   {** Haiku's network stack (DHCP or the Network preflet) maintains the
@@ -288,5 +288,15 @@ initialization
   // absent, keep whatever /etc/resolv.conf provided (manual setups).
   if FileExists(HaikuResolvConf) then
     GetDNSServers(HaikuResolvConf);
+
+  // Trndi starts several network threads at once (glucose, connectivity,
+  // ping, prediction, update check) and FPC 3.2.2's InitSSLInterface has no
+  // lock around its library loading and proc-pointer assignment. Load
+  // OpenSSL here, while still single-threaded, so the workers can't race
+  // it. A load failure is left for the first request to report normally.
+  try
+    InitSSLInterface;
+  except
+  end;
 
 end.
