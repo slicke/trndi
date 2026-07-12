@@ -20,6 +20,7 @@ published
   procedure TestNightscout3Unauthorized;
   procedure TestNightscout3GetReadingsRespectsMax;
   procedure TestNightscout3RefreshesExpiredTokenDuringPolling;
+  procedure TestNightscout3ServesCachedWindowWhenUnchanged;
   procedure TestNightscout3;
 end;
 
@@ -133,6 +134,54 @@ begin
         Length(secondReadings) > 0);
       AssertTrue('Second fetch should still include a valid reading value',
         secondReadings[0].val > 0);
+    finally
+      api.Free;
+    end;
+  finally
+    StopLocalTestServer;
+  end;
+end;
+
+procedure TAPINightscout3Tester.TestNightscout3ServesCachedWindowWhenUnchanged;
+var
+  api: TrndiAPI;
+  res: string;
+  first, second, third: BGResults;
+  BaseURL: string;
+begin
+  if GetEnvironmentVariable('TRNDI_NO_TESTSERVER') = '1' then
+  begin
+    Writeln('Skipping TestNightscout3ServesCachedWindowWhenUnchanged: embedded test server disabled (TRNDI_NO_TESTSERVER=1)');
+    Exit;
+  end;
+
+  if not StartOrUseTestServer(BaseURL) then
+    Fail('Failed to start or reach test server');
+
+  try
+    api := NightScout3.create(BaseURL, 'test22');
+    try
+      AssertTrue('Nightscout3 connects to local fake server', api.connect);
+
+      // First fetch fills the window cache; the second learns the server's
+      // (fixed) entries lastModified stamp. The fake server generates fresh
+      // entry timestamps on every real fetch, so if the third call still
+      // matches the second exactly it must have been served from the cache
+      // via the unchanged /lastModified short-circuit.
+      first := api.getReadings(30, 5, '', res, false);
+      AssertTrue('First fetch returns readings', Length(first) > 0);
+      Sleep(15);
+      second := api.getReadings(30, 5, '', res, false);
+      AssertTrue('Second fetch returns readings', Length(second) > 0);
+      Sleep(15);
+      third := api.getReadings(30, 5, '', res, false);
+
+      AssertEquals('Cached fetch returns the same window size',
+        Length(second), Length(third));
+      AssertTrue('Cached fetch returns the same newest timestamp',
+        second[0].date = third[0].date);
+      AssertTrue('Cached fetch returns the same newest value',
+        second[0].val = third[0].val);
     finally
       api.Free;
     end;

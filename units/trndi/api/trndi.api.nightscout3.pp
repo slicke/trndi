@@ -44,6 +44,11 @@
  * - 2026-06-06: Switched Nightscout v3 noCache cache-busters to a monotonic
  *   per-request token so repeated forced requests do not collide within one
  *   second.
+ * - 2026-07-12: getReadings now keeps a readings-window cache: a cheap
+ *   /api/v3/lastModified probe skips the entries fetch entirely when the
+ *   collection is unchanged, and a date$gt filter fetches only entries newer
+ *   than the cached window when it did change. A periodic full refetch
+ *   (cache TTL) still picks up backfilled or edited entries.
  *)
 unit trndi.api.nightscout3;
 
@@ -76,6 +81,7 @@ NS3_DEVICESTATUS = 'devicestatus';
 NS3_DEVICESTATUS_JSON = 'devicestatus.json';
 NS3_TREATMENTS = 'treatments';
 NS3_TREATMENTS_JSON = 'treatments.json';
+NS3_LASTMODIFIED = 'lastModified';
 
 type
   {** NightScout v3 API client with bearer authorization.
@@ -95,10 +101,28 @@ private
   FSensorSuffix: string;
   FSensorSuffixAt: TDateTime; // Last probe time; 0 = never probed
 
+    // Readings-window cache backing two v3-only optimizations in getReadings:
+    // a /lastModified probe that skips the entries fetch entirely when the
+    // collection is unchanged, and a date$gt incremental fetch that only
+    // pulls entries newer than the cached window. Backfilled or edited
+    // entries are picked up by the periodic full refetch (cache TTL). The v1
+    // fallback path invalidates the cache instead of feeding it.
+  FCache: BGResults;          // Parsed readings, newest first
+  FCacheRaw: string;          // Raw response that last wrote the cache (for `res`)
+  FCacheMaxNum: integer;      // Window size the cache was filled for
+  FCacheFullAt: TDateTime;    // Last FULL (non-incremental) fetch; 0 = cache
+                              // empty/invalidated. Anchors the TTL so steady
+                              // incremental merges can't postpone the full
+                              // refetch that picks up backfill/edits.
+  FCacheNewestMs: int64;      // Raw `date` (ms epoch) of the newest cached entry
+  FCacheLastModified: int64;  // entries lastModified at last cache write; 0 = unknown
+  FLastModifiedUnsupported: boolean; // Server answered /lastModified with an unusable shape
+
   class function NormalizeV2AccessToken(const AccessToken: string): string;
   function IsAuthFailureResponse(const Resp: string): boolean;
   function TryRequestV3(const PathPreferred, PathLegacyJson: string;
     const Params: array of string; out Resp: string): boolean;
+  function TryGetEntriesLastModified(out msVal: int64): boolean;
 
   function BuildAuthURL: string;
   function GetAuthToken(out Err: string): boolean;
@@ -157,6 +181,12 @@ const
   // How long a probed sensor-age suffix stays valid before getReadings spends
   // extra devicestatus/treatments round trips on refreshing it.
   NS3_SENSOR_SUFFIX_TTL_MIN = 10;
+
+  // How long the readings-window cache may serve incremental/short-circuited
+  // fetches before getReadings refetches the full window. The full refetch is
+  // what picks up entries that were backfilled or edited *behind* the newest
+  // entry (a date$gt fetch cannot see those), so this bounds their staleness.
+  NS3_READINGS_CACHE_TTL_MIN = 10;
 
 var
   NS3NoCacheTokenSeq: LongInt = 0;
@@ -499,6 +529,55 @@ begin
 end;
 
 {------------------------------------------------------------------------------
+  TryGetEntriesLastModified
+  -------------------------
+  Probe /api/v3/lastModified and extract the entries collection's last
+  modification timestamp (ms epoch). Returns false without side effects on
+  transport-level failures (so a network blip doesn't disable the probe for
+  the whole session); marks the endpoint unsupported when the server answers
+  but the payload has no usable collections.entries value (e.g. an older
+  server 404-ing with an error body).
+ ------------------------------------------------------------------------------}
+function NightScout3.TryGetEntriesLastModified(out msVal: int64): boolean;
+var
+  resp: string;
+  js, node: TJSONData;
+begin
+  Result := false;
+  msVal := 0;
+  if FLastModifiedUnsupported then
+    Exit;
+
+  // TryRequestV3 handles bearer refresh; lastModified has no legacy ".json"
+  // variant, so the same path doubles as the fallback.
+  if not TryRequestV3(NS3_LASTMODIFIED, NS3_LASTMODIFIED, [], resp) then
+    Exit;
+
+  js := nil;
+  try
+    js := GetJSON(resp);
+  except
+    FLastModifiedUnsupported := true;
+    Exit;
+  end;
+
+  try
+    node := js.FindPath('collections.entries');
+    if not Assigned(node) then
+      node := js.FindPath('result.collections.entries');
+    if Assigned(node) and (node.JSONType = jtNumber) then
+    begin
+      msVal := node.AsInt64;
+      Result := msVal > 0;
+    end;
+    if not Result then
+      FLastModifiedUnsupported := true;
+  finally
+    js.Free;
+  end;
+end;
+
+{------------------------------------------------------------------------------
   getMaxAge
   --------------------
   Returns the maximum age (in minutes) of readings provided by the backend
@@ -813,6 +892,9 @@ var
   tempReading: BGReading;
   rssiValue, noiseValue: maybeInt;
   authErr: string;
+  useWindowCache, incremental, usedV1Fallback: boolean;
+  lmMs, newestMs: int64;
+  limitN, pIdx, keep, mergeCount: integer;
 
 function ExtractArrayNode(const jd: TJSONData): TJSONData;
   var
@@ -851,21 +933,57 @@ begin
   if extras = '' then
     extras := NS3_ENTRIES;
 
+  // The readings-window cache only backs the default v3 entries endpoint;
+  // custom endpoints bypass it entirely.
+  useWindowCache := extras = NS3_ENTRIES;
+  incremental := false;
+  usedV1Fallback := false;
+  lmMs := 0;
+  newestMs := 0;
+  limitN := maxNum;
+
+  // When the cache can satisfy this request, first ask /lastModified whether
+  // the entries collection changed at all — if not, serve the cached window
+  // without touching the entries endpoint. If it changed (or the probe is
+  // unavailable), fetch only entries newer than the cached newest (date$gt)
+  // and merge below. Forced fetches (noCache) skip both and refetch fully.
+  if useWindowCache and (not noCache) and (FCacheFullAt <> 0) and
+    (Length(FCache) > 0) and (maxNum <= FCacheMaxNum) and
+    (MinutesBetween(Now, FCacheFullAt) < NS3_READINGS_CACHE_TTL_MIN) then
+  begin
+    if TryGetEntriesLastModified(lmMs) and (FCacheLastModified <> 0) and
+      (lmMs = FCacheLastModified) then
+    begin
+      res := FCacheRaw;
+      if maxNum < Length(FCache) then
+        Exit(Copy(FCache, 0, maxNum))
+      else
+        Exit(Copy(FCache, 0, Length(FCache)));
+    end;
+    incremental := FCacheNewestMs > 0;
+    // Keep the cache filled for the largest window it has served so far.
+    if incremental and (FCacheMaxNum > limitN) then
+      limitN := FCacheMaxNum;
+  end;
+
   // Build v3 query params
   // Nightscout v3 API may have different sort syntax than v1/v2
   // Try using sort$desc for descending order
-  if noCache then
-    SetLength(params, 4)
-  else
-    SetLength(params, 3);
-  params[0] := 'limit=' + IntToStr(maxNum);
+  SetLength(params, 3 + Ord(incremental) + Ord(noCache));
+  params[0] := 'limit=' + IntToStr(limitN);
   params[1] := 'sort$desc=date';  // Try v3 syntax for descending sort
   params[2] := 'fields=date,sgv,delta,direction,device,rssi,noise';
+  pIdx := 3;
+  if incremental then
+  begin
+    params[pIdx] := 'date$gt=' + IntToStr(FCacheNewestMs);
+    Inc(pIdx);
+  end;
   // When noCache is set, append a monotonic `_=` token so intermediaries /
   // client-side HTTP caches don't serve a stale response. NS3 ignores unknown
   // query keys.
   if noCache then
-    params[3] := '_=' + NS3NextNoCacheToken;
+    params[pIdx] := '_=' + NS3NextNoCacheToken;
 
   try
     // Prefer /api/v3/entries and fall back to entries.json when using default.
@@ -897,6 +1015,11 @@ begin
   if (Trim(resp) = '') or IsAuthFailureResponse(resp) or
     ((resp <> '') and (resp[1] = '+')) then
   begin
+    // v1 has a different query model (no date$gt); fetch the full window and
+    // keep it out of the v3 readings cache.
+    incremental := false;
+    usedV1Fallback := true;
+
     // Token may have expired while app is running; refresh before v1 fallback.
     if IsAuthFailureResponse(resp) and (FTokenSuffix <> '') then
     begin
@@ -911,7 +1034,7 @@ begin
       SetLength(fbparams, 2)
     else
       SetLength(fbparams, 1);
-    fbparams[0] := 'count=' + IntToStr(maxNum);
+    fbparams[0] := 'count=' + IntToStr(limitN);
     if noCache then
       fbparams[1] := '_=' + NS3NextNoCacheToken;
     resp := native.request(false, FSiteBase + '/api/v1/entries.json',
@@ -945,11 +1068,13 @@ begin
   if (arrNode = nil) or (arrNode.JSONType <> jtArray) then
   begin
     // Try v1 fallback if we haven't already and current payload isn't an array
+    incremental := false;
+    usedV1Fallback := true;
     if noCache then
       SetLength(fbparams, 2)
     else
       SetLength(fbparams, 1);
-    fbparams[0] := 'count=' + IntToStr(maxNum);
+    fbparams[0] := 'count=' + IntToStr(limitN);
     if noCache then
       fbparams[1] := '_=' + NS3NextNoCacheToken;
     resp := native.request(false, FSiteBase + '/api/v1/entries.json',
@@ -1112,7 +1237,13 @@ begin
       LUtcOffset := 0;
 
       if Assigned(FindPath('date')) then
+      begin
         LDateMs := FindPath('date').AsInt64;
+        // Remember the newest raw timestamp; it becomes the date$gt boundary
+        // for the next incremental fetch.
+        if LDateMs > newestMs then
+          newestMs := LDateMs;
+      end;
       if Assigned(FindPath('dateString')) then
         LDateStr := FindPath('dateString').AsString;
       if Assigned(FindPath('utcOffset')) then
@@ -1222,6 +1353,29 @@ begin
     end// Data came in ascending order (oldest first) - need to reverse
   ;
 
+  // Merge an incremental (date$gt) fetch with the cached window: keep only
+  // entries strictly newer than the cached newest — defends against servers
+  // or intermediaries that ignore the date$gt filter and return the full
+  // window again — then append the cached readings behind the new ones
+  // (both are newest-first).
+  if incremental and (not usedV1Fallback) then
+  begin
+    keep := 0;
+    for i := 0 to High(Result) do
+      if Result[i].date > FCache[0].date then
+      begin
+        if keep <> i then
+          Result[keep] := Result[i];
+        Inc(keep);
+      end;
+    mergeCount := keep + Length(FCache);
+    if mergeCount > limitN then
+      mergeCount := limitN;
+    SetLength(Result, mergeCount);
+    for i := keep to mergeCount - 1 do
+      Result[i] := FCache[i - keep];
+  end;
+
   // Recalculate deltas for all readings (newest should be first)
   for i := 0 to Length(Result) - 1 do
     if i < Length(Result) - 1 then
@@ -1232,6 +1386,33 @@ begin
     else
       Result[i].update(Result[i].val, 0)// Last (oldest) entry has no previous reading
   ;
+
+  // Refresh the readings-window cache with v3 data; the v1 fallback (or an
+  // empty window) invalidates it instead so later calls never merge against
+  // mixed or stale data. Written before the maxNum trim so the cache keeps
+  // the full limitN window for future smaller requests.
+  if useWindowCache then
+    if (not usedV1Fallback) and (Length(Result) > 0) then
+    begin
+      FCache := Copy(Result, 0, Length(Result));
+      FCacheRaw := res;
+      FCacheMaxNum := limitN;
+      if not incremental then
+      begin
+        FCacheFullAt := Now;
+        FCacheNewestMs := newestMs;
+      end
+      else if newestMs > FCacheNewestMs then
+        FCacheNewestMs := newestMs;
+      FCacheLastModified := lmMs;
+    end
+    else
+      FCacheFullAt := 0;
+
+  // Enforce the maxNum contract: an incremental merge can hold a larger
+  // window than this call asked for, and some servers ignore `limit`.
+  if Length(Result) > maxNum then
+    SetLength(Result, maxNum);
 end;
 
 {------------------------------------------------------------------------------
