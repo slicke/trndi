@@ -1,10 +1,13 @@
 # Set up Tandem
 
+> Depending on your setup, some accounts only provide readings every 60 minutes ca. This is Tandem Source limitation, not a Trndi bug.
+
 ## Preparations
 ### Setup Tandem Source
 Register on the website and install the Android/iPhone app. Then connect it to your pump.
 
 ## Setup Trndi
+Use the setup wizard; if already setup:
 Open Trndi and open the settings (if they aren't alredy showing), by right-clicking and choosing settings (long-press for touch screens).
 
 ### Configuring the settings dialog
@@ -13,7 +16,7 @@ Open Trndi and open the settings (if they aren't alredy showing), by right-click
 3. Enter your __Tandem Source password__
 
 #### Display units
-4. Choose __mmol/L__ in the bottom, if you live in a country (such as Sweden) where it's used, or __mg/dL__ in countries such as the USA where that is used
+4. (If using the wizard, click Next first). Choose __mmol/L__ in the bottom, if you live in a country (such as Sweden) where it's used, or __mg/dL__ in countries such as the USA where that is used
 
 Now close the window, then close Trndi (if it doesn't close itself) and start it again.
 
