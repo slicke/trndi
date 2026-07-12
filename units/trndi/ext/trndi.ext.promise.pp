@@ -181,6 +181,7 @@ end;
 procedure TJSAsyncTask.ProcessResult;
 var
   xres: JSValue;
+  callRes: JSValueRaw;
 begin
   // Avoid doing work if app is shutting down
   if Application.Terminated or IsExtShuttingDown then
@@ -230,9 +231,15 @@ begin
     // Convert and resolve/reject the promise
     xres := JSValueValToValue(FContext, FResult);
     if FSuccess then
-      JS_Call(FContext, funcs[JprResolve], JS_UNDEFINED, 1, @xres)
+      callRes := JS_Call(FContext, funcs[JprResolve], JS_UNDEFINED, 1, @xres)
     else
-      JS_Call(FContext, funcs[JprReject], JS_UNDEFINED, 1, @xres);
+      callRes := JS_Call(FContext, funcs[JprReject], JS_UNDEFINED, 1, @xres);
+    // Release the call result, the marshalled argument, and the resolve/reject
+    // pair captured by JS_NewPromiseCapability — all leaked before this fix.
+    FContext^.FreeInlined(PJSValue(@callRes));
+    FContext^.Free(xres);
+    FContext^.FreeInlined(PJSValue(@funcs[JprResolve]));
+    FContext^.FreeInlined(PJSValue(@funcs[JprReject]));
   except
     // Silently ignore JS calls that fail during shutdown
     // This prevents crashes when the runtime is being destroyed

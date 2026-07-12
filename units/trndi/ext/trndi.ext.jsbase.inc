@@ -185,6 +185,12 @@ var
   response: string;
   x: tmodalresult;
 begin
+  if argc < 3 then
+  begin
+    ExtError(uxdAuto, 'prompt requires caption, description and default value');
+    Result := JS_UNDEFINED;
+    Exit;
+  end;
   Caption := ctx^.ToUtf8(argv^[0]);
   desc := ctx^.ToUtf8(argv^[1]);
   def := ctx^.ToUtf8(argv^[2]);
@@ -216,6 +222,12 @@ var
   vals: TStringList;
   res: rawutf8;
 begin
+  if argc < 3 then
+  begin
+    ExtError(uxdAuto, 'select requires caption, description and at least one option');
+    Result := JS_NewBigInt64(ctx, -1);
+    Exit;
+  end;
   vals := TStringList.Create;
   for i := 0 to argc - 1 do
     vals.Add(ctx^.ToUtf8(argv^[i]));
@@ -427,7 +439,8 @@ var
   params: integer;     // Number of parsed/validated parameters
   funcs: JSDoubleVal;  // Promise resolve/reject function pair captured by QuickJS
   promise: JSValueRaw; // The Promise object to return to JS
-  res: array[0..0] of JSValue; // Unused (can be removed); placeholder from earlier code
+  arityMsg: string;    // Error text when the argument count is out of range
+  errVal, callRes: JSValueRaw; // Temporaries for the immediate-reject path
 begin
   // 1) Retrieve the bound Pascal callback name from func_data.
   //    This was set when registering the JS function (e.g., in AddPromise).
@@ -451,18 +464,7 @@ begin
   // Free later in TJSAsyncTask
   params := cb^.params.values.Data.Count;
 
-  // 4) Validate arity against min/max constraints (unless min=-1 which means “free-form”).
-  if (not ((params >= cb^.params.min) and (params <= cb^.params.max))) and
-    (cb^.params.min > -1) then
-    if cb^.params.min = cb^.params.max then
-      ExtError(uxdAuto, Format('[%s] Needs %d parameters, but we got %d',
-        [func, cb^.params.min, params]))
-    else
-      ExtError(uxdAuto, Format('[%s] Needs %d - %d parameters, but we got %d',
-        [func, cb^.params.min, cb^.params.max, params]))// Inform the user about the mismatch. Consider rejecting the Promise immediately instead.
-  ;
-
-  // 5) Create a Promise and capture its resolving functions.
+  // 4) Create a Promise and capture its resolving functions.
   //    funcs[0] will be the resolve function, funcs[1] the reject function.
   try
     promise := JS_NewPromiseCapability(ctx, @funcs[0]);
@@ -471,8 +473,35 @@ begin
     begin
       // If creation fails, log and bail out. Consider throwing a JS exception instead.
       ExtError(uxdAuto, 'Init failed');
+      cb^.params.values.Data.Free;
+      cb^.params.values.Data := nil;
       Exit; // returns an undefined/empty JSValueRaw; caller in JS sees undefined
     end;
+  end;
+
+  // 5) Validate arity against min/max constraints (unless min=-1 which means “free-form”).
+  //    On mismatch the promise is rejected and the task never runs.
+  if (not ((params >= cb^.params.min) and (params <= cb^.params.max))) and
+    (cb^.params.min > -1) then
+  begin
+    if cb^.params.min = cb^.params.max then
+      arityMsg := Format('[%s] Needs %d parameters, but we got %d',
+        [func, cb^.params.min, params])
+    else
+      arityMsg := Format('[%s] Needs %d - %d parameters, but we got %d',
+        [func, cb^.params.min, cb^.params.max, params]);
+    ExtError(uxdAuto, arityMsg);
+
+    errVal := JS_NewString(ctx, pansichar(RawUtf8(arityMsg)));
+    callRes := JS_Call(ctx, funcs[JprReject], JS_UNDEFINED, 1, @errVal);
+    ctx^.FreeInlined(PJSValue(@callRes));
+    ctx^.FreeInlined(PJSValue(@errVal));
+    ctx^.FreeInlined(PJSValue(@funcs[JprResolve]));
+    ctx^.FreeInlined(PJSValue(@funcs[JprReject]));
+
+    cb^.params.values.Data.Free;
+    cb^.params.values.Data := nil;
+    Exit(promise);
   end;
 
   // Optional: handle error promises explicitly (currently no-op).
@@ -568,9 +597,6 @@ begin
 
   // Store in map
   Engine.FJSTimers.Add(TimerInfo^.TimerID, TimerInfo);
-  
-  // Debug output
-  Engine.SetOutput('setTimeout created: ID=' + IntToStr(TimerInfo^.TimerID) + ' delay=' + IntToStr(DelayMs) + 'ms');
 
   // Return timer ID as BigInt
   Result := JS_NewBigInt64(ctx, TimerInfo^.TimerID);
@@ -685,14 +711,12 @@ begin
   if idx >= 0 then
   begin
     TimerInfo := Engine.FJSTimers.Data[idx];
-    
-    // Stop and free timer
+
+    // Stop the timer, but defer destruction: clearTimeout/clearInterval may be
+    // called from inside the timer's own callback, and freeing it here would
+    // destroy objects whose event frame is still on the stack.
     TimerInfo^.Timer.Enabled := False;
-    TimerInfo^.Timer.Free;
-    TimerInfo^.Handler.Free;
-    
-    // Free timer info and remove from map
-    Dispose(TimerInfo);
     Engine.FJSTimers.Delete(idx);
+    Engine.FDeadTimers.Add(TimerInfo);
   end;
 end;
