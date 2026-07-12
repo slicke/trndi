@@ -549,6 +549,19 @@ begin
         Exit;
       end;
 
+      // Fixed lastModified stamp: lets clients exercise their "collection
+      // unchanged since last fetch" short-circuit (second probe sees the same
+      // value and serves from cache).
+      if sub = 'lastModified' then
+      begin
+        nowMs := NowMillis;
+        SendResponse('application/json', Format(
+          '{"srvDate":%d,"collections":{"devicestatus":1700000000000,' +
+          '"entries":1700000000000,"profile":1700000000000,"treatments":1700000000000}}',
+          [nowMs]));
+        Exit;
+      end;
+
       if sub = 'entries' then
       begin
         authHeader := HeaderLookup('Authorization');
