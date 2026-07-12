@@ -347,7 +347,7 @@ begin
     // update caller's cookieJar if provided
     if Assigned(cookieJar) then
       cookieJar.Assign(Result.Cookies);
-    worker.WaitFor;
+    SafeThreadJoin(worker);
     worker.Free;
   end
   else
@@ -367,7 +367,7 @@ begin
     try
       worker.Terminate;
       WaitForRequestWorkerTermination(worker, 5000);
-      worker.WaitFor;
+      SafeThreadJoin(worker);
       worker.Free;
     except end;
   end;
@@ -393,7 +393,7 @@ begin
     StdoutS := worker.StdoutS;
     ExitCode := worker.ExitCode;
     Result := ExitCode = 0;
-    worker.WaitFor;
+    SafeThreadJoin(worker);
     worker.Free;
   end
   else
@@ -411,7 +411,7 @@ begin
       ExitCode := worker.ExitCode;
       Result := ExitCode = 0;
     end;
-    worker.WaitFor;
+    SafeThreadJoin(worker);
     worker.Free;
   except
     StdoutS := '';
