@@ -254,7 +254,7 @@ begin
         {$IF DEFINED(UNIX)}
         Proc.Terminate(15); // SIGTERM on Unix/Linux
         {$ELSE}
-        Proc.Terminate;     // Windows
+        Proc.Terminate(1);  // Windows: argument is the forced exit code
         {$ENDIF}
       except end;
       // Give the process a short grace period to exit.
@@ -272,7 +272,7 @@ begin
           {$IF DEFINED(UNIX)}
           Proc.Terminate(9); // SIGKILL on Unix/Linux
           {$ELSE}
-          Proc.Terminate;     // best effort on Windows
+          Proc.Terminate(1);  // best effort on Windows
           {$ENDIF}
         except end;
 

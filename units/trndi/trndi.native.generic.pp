@@ -715,6 +715,23 @@ var
         Exit(True);
   end;
 
+  // Replace the value of a form parameter with *** so secrets never reach
+  // the log (same helper as the Linux implementation).
+  procedure MaskParam(var S: string; const name: string);
+  var
+    p, valStart, q: integer;
+  begin
+    p := Pos(name + '=', S);
+    if p = 0 then
+      Exit;
+    valStart := p + Length(name) + 1;
+    q := PosEx('&', S, valStart);
+    if q = 0 then
+      q := Length(S) + 1;
+    Delete(S, valStart, q - valStart);
+    Insert('***', S, valStart);
+  end;
+
   // One HTTP exchange. False means a transport-level failure (connect/TLS/
   // socket); HTTP status codes never raise because HTTPMethod is called with
   // an empty allowed-code list (Get/Post would raise on anything but 200
@@ -861,10 +878,10 @@ begin
       bodyData := bodyData + params[j];
     end;
     maskedSx := bodyData;
-    maskedSx := StringReplace(maskedSx, 'code_verifier=', 'code_verifier=***', [rfIgnoreCase]);
-    maskedSx := StringReplace(maskedSx, 'code=', 'code=***', [rfIgnoreCase]);
-    maskedSx := StringReplace(maskedSx, 'password=', 'password=***', [rfIgnoreCase]);
-    maskedSx := StringReplace(maskedSx, 'client_secret=', 'client_secret=***', [rfIgnoreCase]);
+    MaskParam(maskedSx, 'code_verifier');
+    MaskParam(maskedSx, 'code');
+    MaskParam(maskedSx, 'password');
+    MaskParam(maskedSx, 'client_secret');
     TrndiNetLog('HTTP POST body (masked): ' + Copy(maskedSx, 1, 2000));
   end
   else if jsondata <> '' then

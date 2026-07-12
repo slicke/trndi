@@ -981,7 +981,9 @@ end;
 class function TTrndiNativeBase.HasTouchScreen(out multi: boolean): boolean;
 begin
   DetectTouchScreen(multi);
-  Result := HasTouchScreen;
+  // Parentheses required: a bare HasTouchScreen here denotes this function's
+  // result variable, not the parameterless overload.
+  Result := HasTouchScreen();
 end;
 
 {------------------------------------------------------------------------------
