@@ -323,21 +323,13 @@ begin
 end;
 
 // Query the backend via JS
+// Not yet implemented: reject the promise with a clear message rather than
+// leaving Result/res uninitialized (which resolved with stack garbage).
 function TJSFuncs.querySvc(ctx: pointer; const func: string;
   const params: JSParameters; out res: JSValueVal): boolean;
-const
-  QUERY = 0;
-var
-  sd: string;
-  v: JSValueVal;
 begin
-  //params[QUERY].mustbe(JD_STR, func);
-  //params^[QUERY].data.StrVal;
-
-  //params^[PROPS].mustbe(JD_ARRAY, func);
-
-  //res := params[1][2][0];
-
+  res := StringToValueVal('querySvc is not implemented');
+  Result := false;
 end;
 
 // Query the backend via JS
