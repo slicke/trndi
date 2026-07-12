@@ -1274,7 +1274,6 @@ var
   tmpS, nm, vl: string;
   jarRef: TStringList;
   cookieHeader, baseCookie: string;
-  ck: Integer;
 
   // Insert or replace a "name=value" cookie: a rotated session cookie must
   // supersede its old value, not be sent alongside it.
@@ -1300,6 +1299,61 @@ var
         Exit;
       end;
     list.Add(cookieVal);
+  end;
+
+  // Rebuild the Cookie header for a hop: caller-supplied base cookies are
+  // kept unless the jar now holds a value under the same name — a rotated
+  // cookie must be sent once, with the fresh jar value.
+  function BuildCookieHeaderLocal(const base: string; jar: TStringList): string;
+  var
+    rest, part, namePrefix: string;
+    p, eq, k: integer;
+    superseded: boolean;
+  begin
+    Result := '';
+    rest := base;
+    while rest <> '' do
+    begin
+      p := Pos(';', rest);
+      if p > 0 then
+      begin
+        part := Trim(Copy(rest, 1, p - 1));
+        rest := Copy(rest, p + 1, MaxInt);
+      end
+      else
+      begin
+        part := Trim(rest);
+        rest := '';
+      end;
+      if part = '' then
+        Continue;
+      superseded := false;
+      eq := Pos('=', part);
+      if (eq > 1) and (jar <> nil) then
+      begin
+        namePrefix := Copy(part, 1, eq); // includes '='
+        for k := 0 to jar.Count - 1 do
+          if Pos(namePrefix, Trim(jar[k])) = 1 then
+          begin
+            superseded := true;
+            Break;
+          end;
+      end;
+      if superseded then
+        Continue;
+      if Result <> '' then
+        Result := Result + '; ';
+      Result := Result + part;
+    end;
+    if jar <> nil then
+      for k := 0 to jar.Count - 1 do
+      begin
+        if Trim(jar[k]) = '' then
+          Continue;
+        if Result <> '' then
+          Result := Result + '; ';
+        Result := Result + Trim(jar[k]);
+      end;
   end;
 
   procedure UpdateCookiesFromHeadersLocal(const AHeaders: TStringList);
@@ -1457,15 +1511,7 @@ begin
         jarRef := cookieJar
       else
         jarRef := Result.Cookies;
-      cookieHeader := baseCookie;
-      for ck := 0 to jarRef.Count - 1 do
-      begin
-        if Trim(jarRef[ck]) = '' then
-          Continue;
-        if cookieHeader <> '' then
-          cookieHeader := cookieHeader + '; ';
-        cookieHeader := cookieHeader + Trim(jarRef[ck]);
-      end;
+      cookieHeader := BuildCookieHeaderLocal(baseCookie, jarRef);
       if cookieHeader <> '' then
         requestHeaders.Values['Cookie'] := cookieHeader;
 
