@@ -64,6 +64,12 @@ var
 begin
   Result := JS_FALSE;
 
+  if argc < 1 then
+  begin
+    ExtError(uxdAuto, 'getReading requires a boolean argument (true = mmol/L)');
+    Exit;
+  end;
+
   ctx^.ToVariant(argv^[0], mmolval);
 
   if not (VarType(mmolval) = varBoolean) then
@@ -98,6 +104,8 @@ var
   key, val: string;
   res: JSValue;
 begin
+  if argc < 1 then
+    Exit(JS_FALSE);
 
   key := ctx^.ToUtf8(argv^[0]);
 
@@ -401,6 +409,11 @@ var
   sect, key, val, curr: string;
 begin
   Result := JS_UNDEFINED;
+  if argc < 2 then
+  begin
+    ExtError(uxdAuto, 'setSetting requires a key and a value');
+    Exit;
+  end;
   key := ctx^.ToUtf8(argv^[0]);
   val := ctx^.ToUtf8(argv^[1]);
   if not native.TryGetSetting(key, curr) then
@@ -476,7 +489,7 @@ begin
 end;
 
 // Predict future blood glucose readings
-function JSPredictReadings(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw;
+function JSPredictReadings(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw; cdecl;
 var
   numPredictions: variant;
   predictions: BGResults;

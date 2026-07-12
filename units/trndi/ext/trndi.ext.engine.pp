@@ -140,6 +140,11 @@ PJSTimerInfo = ^TJSTimerInfo;
   {** Map of timer ID to timer information. }
 TJSTimerMap = specialize TFPGMap<integer, PJSTimerInfo>;
 
+  {** Timers awaiting disposal. A timer (and its handler) must never be freed
+      from inside its own OnTimer event, so cancelled/expired timers are parked
+      here and disposed later by the engine's job pump. }
+TJSTimerInfoList = specialize TFPGList<PJSTimerInfo>;
+
   {** Per-extension JavaScript context (Path B isolation).
       Each .js file gets its own JSContext (sharing the runtime), so the
       function registry exposed to one extension is decoupled from another. }
@@ -198,6 +203,11 @@ private
   FJSTimers: TJSTimerMap;
     {** Counter for generating unique timer IDs. }
   FNextTimerID: integer;
+    {** Cancelled/expired timers pending disposal (see TJSTimerInfoList). }
+  FDeadTimers: TJSTimerInfoList;
+    {** >0 while a JS timer callback is on the stack; blocks FDeadTimers
+        draining so a timer is never freed beneath its own event. }
+  FInTimerCallback: integer;
 
     {** Loaded per-extension contexts (Path B). Each user .js script lives in its own ctx. }
   FExtContexts: TExtContextList;
@@ -209,6 +219,10 @@ private
 
   function GetOutput: RawUtf8;
   procedure SetOutput(const val: RawUtf8);
+
+    {** Dispose timers parked in FDeadTimers. Safe to call anytime; no-ops
+        while a timer callback is running. }
+  procedure DrainDeadTimers;
 
     {** Show a UX dialog and return the button pressed.
 
@@ -457,17 +471,14 @@ public
         @param(fn      Source file or logical script name) }
   procedure excepion(const message, fn: string);
 
-    {** Convert an argument at @code(pos) from JS to a pascal @code(PChar).
-
-        Note: Implementation relies on a trick to coerce RawUtf8 to PChar and
-        should be used with care regarding lifetime.
+    {** Convert an argument at @code(pos) from JS to UTF-8.
 
         @param(ctx JS context)
         @param(vals Pointer to argument array)
         @param(pos  Index of argument to convert)
-        @returns(PChar pointing to temporary-encoded UTF-8 buffer) }
+        @returns(UTF-8 copy of the argument value) }
   class function ParseArgv(ctx: PJSContext; const vals: PJSValues;
-    const pos: integer): pchar;
+    const pos: integer): RawUtf8;
 
     {** Show an informational alert dialog to the user. }
   procedure alert(const msg: string);
@@ -610,44 +621,44 @@ begin
   if (Engine = nil) or IsGlobalShutdown then
     Exit;
 
-  // Debug output
-  Engine.SetOutput('Timer fired: ID=' + IntToStr(TimerInfo^.TimerID) + ', function: ' + TimerInfo^.FunctionName);
+  Inc(Engine.FInTimerCallback);
+  try
+    // Look up the named function from global scope
+    globalObj := JS_GetGlobalObject(TimerInfo^.Context);
+    funcVal := JS_GetPropertyStr(TimerInfo^.Context, globalObj, pansichar(TimerInfo^.FunctionName));
+    RetVal := JS_UNDEFINED;
 
-  // Look up the named function from global scope
-  globalObj := JS_GetGlobalObject(TimerInfo^.Context);
-  funcVal := JS_GetPropertyStr(TimerInfo^.Context, globalObj, pansichar(TimerInfo^.FunctionName));
-  
-  if JS_IsFunction(TimerInfo^.Context, funcVal) then
-  begin
-    Engine.SetOutput('Calling function: ' + TimerInfo^.FunctionName);
-    // Call the JS function
+    if JS_IsFunction(TimerInfo^.Context, funcVal) then
     try
       RetVal := JS_Call(TimerInfo^.Context, funcVal, JS_UNDEFINED, 0, nil);
-      Engine.SetOutput('Function called successfully');
-      // Note: QuickJS manages memory for return values
     except on E: Exception do
-      begin
-        // Log exception for debugging
         TTrndiExtEngine.Instance.SetOutput('Timer exception: ' + E.Message);
+    end
+    else
+      Engine.SetOutput('Function ' + TimerInfo^.FunctionName + ' not found or not a function');
+
+    // Release the references taken above; leaking them every tick made
+    // setInterval grow without bound.
+    TimerInfo^.Context^.FreeInlined(PJSValue(@RetVal));
+    TimerInfo^.Context^.FreeInlined(PJSValue(@funcVal));
+    TimerInfo^.Context^.FreeInlined(PJSValue(@globalObj));
+
+    // If this is a setTimeout (one-shot), retire it. The JS callback may already
+    // have cancelled us via clearTimeout, in which case we're no longer in the map.
+    if not TimerInfo^.IsInterval then
+    begin
+      idx := Engine.FJSTimers.IndexOf(TimerInfo^.TimerID);
+      if idx >= 0 then
+      begin
+        Timer.Enabled := false;
+        Engine.FJSTimers.Delete(idx);
+        // Freeing the timer/handler here would run their destructors beneath
+        // this very event; park them for the engine's job pump instead.
+        Engine.FDeadTimers.Add(TimerInfo);
       end;
     end;
-  end
-  else
-    Engine.SetOutput('Function ' + TimerInfo^.FunctionName + ' not found or not a function');
-
-  // If this is a setTimeout (one-shot), clean it up
-  if not TimerInfo^.IsInterval then
-  begin
-    idx := Engine.FJSTimers.IndexOf(TimerInfo^.TimerID);
-    if idx >= 0 then
-    begin
-      Timer.Enabled := false;
-      Dispose(TimerInfo);
-      Engine.FJSTimers.Delete(idx);
-      // Free the timer and handler
-      Timer.Free;
-      Self.Free; // Free the handler (self)
-    end;
+  finally
+    Dec(Engine.FInTimerCallback);
   end;
 end;
 
@@ -864,12 +875,11 @@ end;
   TTrndiExtEngine: output helpers
 ******************************************************************************}
 
-{** Return a @code(PChar) for argument @code(pos). Use with care re: lifetime. }
+{** Return a UTF-8 copy of argument @code(pos). }
 class function TTrndiExtEngine.ParseArgv(ctx: PJSContext; const vals: PJSValues;
-const pos: integer): pchar;
+const pos: integer): RawUtf8;
 begin
-  // Return pointer to UTF-8 data for immediate use by caller.
-  Result := pchar(ctx^^.ToUtf8(vals^[pos]));
+  Result := ctx^^.ToUtf8(vals^[pos]);
 end;
 
 {** Append JS values (0..len) to @code(Output) as UTF-8 strings. }
@@ -1030,6 +1040,8 @@ begin
   // Initialize timer tracking (Modified: January 16, 2026)
   FJSTimers := TJSTimerMap.Create;
   FNextTimerID := 0;
+  FDeadTimers := TJSTimerInfoList.Create;
+  FInTimerCallback := 0;
 
   // Per-extension contexts (Path B). FCurrentRegCtx=nil routes legacy
   // bootstrap registrations to FContext (admin/template context).
@@ -1133,6 +1145,13 @@ begin
     FreeAndNil(FJSTimers);
   except
       // Silently handle any errors during timer cleanup
+  end;
+
+  // Dispose retired timers that the job pump hadn't drained yet
+  try
+    DrainDeadTimers;
+    FreeAndNil(FDeadTimers);
+  except
   end;
 
   // Signal extension shutdown to background tasks
@@ -1444,6 +1463,12 @@ begin
       Dispose(FJSTimers.Data[0]);
       FJSTimers.Delete(0);
     end;
+  except
+  end;
+
+  // Dispose retired timers parked for the job pump; their contexts die below.
+  try
+    DrainDeadTimers;
   except
   end;
 
@@ -2331,10 +2356,41 @@ begin
   if IsExtShuttingDown or (FRuntime = nil) then
     Exit;
 
+  // Dispose timers retired since the last tick (never while one is firing).
+  DrainDeadTimers;
+
   runCtx := FContext;
   while JS_IsJobPending(FRuntime) do
     if JS_ExecutePendingJob(FRuntime, @runCtx) <= 0 then
       Break;
+end;
+
+{** Free retired timers parked by TJSTimerHandler.OnTimer / JSClearTimer.
+    Skipped while a timer callback is on the stack: a nested message pump
+    (e.g. a modal dialog opened from JS) must not free the very timer whose
+    OnTimer frame is still live. }
+procedure TTrndiExtEngine.DrainDeadTimers;
+var
+  info: PJSTimerInfo;
+begin
+  if (not Assigned(FDeadTimers)) or (FInTimerCallback > 0) then
+    Exit;
+  while FDeadTimers.Count > 0 do
+  begin
+    info := FDeadTimers[0];
+    FDeadTimers.Delete(0);
+    if info <> nil then
+    begin
+      if Assigned(info^.Timer) then
+      begin
+        info^.Timer.Enabled := false;
+        info^.Timer.Free;
+      end;
+      if Assigned(info^.Handler) then
+        info^.Handler.Free;
+      Dispose(info);
+    end;
+  end;
 end;
 
 {** Helper: does a specific context expose @code(FuncName) as a callable? }
