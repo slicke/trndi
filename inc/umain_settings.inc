@@ -568,6 +568,9 @@ procedure SetupUIElements(f: TfConf);
       lVal.Caption := Self.lVal.Caption;
       lArrow.Caption := Self.lArrow.Caption;
       lAgo.Caption := Self.lAgo.Caption;
+      lDiff.Font.Name := Self.lDiff.Font.Name;
+      lDiff.Font.Color := Self.lDiff.Font.Color;
+      lDiff.Caption := Self.lDiff.Caption;
       pnDisplay.Color := Self.Color;
       pnDisplay.Font := fBG.Font;
 

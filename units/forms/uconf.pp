@@ -356,6 +356,7 @@ TfConf = class(TForm)
   lHiOver: TLabel;
   lLicense: TButton;
   lLounder: TLabel;
+  lDiff: TLabel;
   lVal: TLabel;
   lVersion: TLabel;
   lWarnPredict: TLabel;
@@ -2500,6 +2501,11 @@ begin
 
   if lAgo.Font.color = lAgo.Parent.Color then
     lAgo.Font.color := IfThen(lAgo.Parent.Color = clBlack, clWhite, clBlack);
+
+  if lDiff.Font.color = lDiff.Parent.Color then
+    lDiff.Font.color := IfThen(lDiff.Parent.Color = clBlack, clWhite, clBlack);
+  if (lDiff.Caption = '') or (lDiff.Caption = 'lDiff') then
+    lDiff.Caption := '+0,0';
 end;
 
 procedure TfConf.LoadProxySettingsIntoUI;
