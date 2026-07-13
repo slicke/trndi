@@ -3152,11 +3152,11 @@ msgstr "Trndi kan starta ett <b>Web-API</b> för att kommunicera med <i>tredjepa
 #: uconf.rs_weblogin_bad_output
 msgctxt "uconf.rs_weblogin_bad_output"
 msgid "The login helper did not return valid token data."
-msgstr ""
+msgstr "Loginhjälparen returnerade inte giltig nyckeldata."
 
 #: uconf.rs_weblogin_btn_busy
 msgid "Signing in…"
-msgstr ""
+msgstr "Loggar in…"
 
 #: uconf.rs_weblogin_button
 msgctxt "uconf.rs_weblogin_button"
@@ -3166,7 +3166,7 @@ msgstr "Skaffa CareLink-nyckel…"
 #: uconf.rs_weblogin_fail_title
 msgctxt "uconf.rs_weblogin_fail_title"
 msgid "Automatic login unavailable"
-msgstr ""
+msgstr "Automatisk inloggning ej tillgänglig"
 
 #: uconf.rs_weblogin_help
 #, object-pascal-format
@@ -3176,40 +3176,40 @@ msgstr "CareLink kräver att du logga in via en webbläsare (med CAPTCHA), så T
 #: uconf.rs_weblogin_installing
 msgctxt "uconf.rs_weblogin_installing"
 msgid "Installing login helper dependencies (first run only)…"
-msgstr ""
+msgstr "Installerar loginhjälparens beroenden (endast första gången)…"
 
 #: uconf.rs_weblogin_nonode
 msgctxt "uconf.rs_weblogin_nonode"
 msgid "Node.js was not found on this system, so Trndi cannot run the login helper for you. Install Node.js (22.12+) — or run the helper manually."
-msgstr ""
+msgstr "Node.js hittades inte på detta system, så Trndi kan inte köra loginhjälparen åt dig. Installera Node.js (22.12+) — eller kör hjälparen manuellt."
 
 #: uconf.rs_weblogin_noscript
 msgctxt "uconf.rs_weblogin_noscript"
 msgid "The bundled CareLink login helper was not found next to Trndi. You can still run it manually."
-msgstr ""
+msgstr "Den medföljande CareLink-loginhjälparen hittades inte bredvid Trndi. Du kan fortfarande köra den manuellt."
 
 #: uconf.rs_weblogin_no_output
 msgctxt "uconf.rs_weblogin_no_output"
 msgid "The login helper did not return any token data. The sign-in may have been cancelled or timed out."
-msgstr ""
+msgstr "Loginhjälparen returnerade ingen nyckeldata. Inloggningen kan ha avbrutits eller tidsgränsen löpt ut."
 
 #: uconf.rs_weblogin_npm_fail
 msgctxt "uconf.rs_weblogin_npm_fail"
 msgid "Could not install the login helper's dependencies (npm install failed)."
-msgstr ""
+msgstr "Kunde inte installera loginhjälparens beroenden (npm install misslyckades)."
 
 #: uconf.rs_weblogin_ok
 msgid "Login captured. Click Test to verify, then Save."
-msgstr ""
+msgstr "Inloggning fångad. Klicka på Test för att verifiera, och sedan Spara."
 
 #: uconf.rs_weblogin_run_prompt
 msgid "Trndi will open a browser window for you to sign in to CareLink (with CAPTCHA), then capture the token/login information automatically.<br><br>The first run also downloads the login helper's dependencies, which can take a minute. Keep this window open and complete the sign-in in the browser.<br><br>Start now?"
-msgstr ""
+msgstr "Trndi öppnar ett webbläsarfönster där du kan logga in på CareLink (med CAPTCHA), och fångar sedan automatiskt token-/inloggningsinformationen.<br><br>Första gången laddas även loginhjälparens beroenden ner, vilket kan ta en minut. Låt fönstret vara öppet och slutför inloggningen i webbläsaren.<br><br>Vill du starta nu?"
 
 #: uconf.rs_weblogin_run_title
 msgctxt "uconf.rs_weblogin_run_title"
 msgid "CareLink login"
-msgstr ""
+msgstr "CareLink-inloggning"
 
 #: uconf.rs_weblogin_title
 msgctxt "uconf.rs_weblogin_title"
@@ -3219,7 +3219,7 @@ msgstr "CareLink loginhjälpare"
 #: uconf.rs_weblogin_waiting
 msgctxt "uconf.rs_weblogin_waiting"
 msgid "Waiting for the browser sign-in to complete…"
-msgstr ""
+msgstr "Väntar på att webbläsarinloggningen ska slutföras…"
 
 #: uconf.rs_xdrip
 msgid ""
@@ -3417,7 +3417,7 @@ msgstr "Anslutningstest stöds inte för denna tjänst."
 #: uwizard.wz_weblogin_bad_output
 msgctxt "uwizard.wz_weblogin_bad_output"
 msgid "The login helper did not return valid token data."
-msgstr ""
+msgstr "Loginhjälparen returnerade inte giltig nyckeldata."
 
 #: uwizard.wz_weblogin_button
 msgctxt "uwizard.wz_weblogin_button"
@@ -3427,7 +3427,7 @@ msgstr "Hämta CareLink-nyckel…"
 #: uwizard.wz_weblogin_fail_title
 msgctxt "uwizard.wz_weblogin_fail_title"
 msgid "Automatic login unavailable"
-msgstr ""
+msgstr "Automatisk inloggning ej tillgänglig"
 
 #: uwizard.wz_weblogin_help
 #, object-pascal-format
@@ -3448,31 +3448,31 @@ msgstr "CareLink kräver att du logga in via en webbläsare (med CAPTCHA), så T
 #: uwizard.wz_weblogin_installing
 msgctxt "uwizard.wz_weblogin_installing"
 msgid "Installing login helper dependencies (first run only)…"
-msgstr ""
+msgstr "Installerar loginhjälparens beroenden (endast första gången)…"
 
 #: uwizard.wz_weblogin_nonode
 msgctxt "uwizard.wz_weblogin_nonode"
 msgid "Node.js was not found on this system, so Trndi cannot run the login helper for you. Install Node.js (22.12+) — or run the helper manually."
-msgstr ""
+msgstr "Node.js hittades inte på detta system, så Trndi kan inte köra loginhjälparen åt dig. Installera Node.js (22.12+) — eller kör hjälparen manuellt."
 
 #: uwizard.wz_weblogin_noscript
 msgctxt "uwizard.wz_weblogin_noscript"
 msgid "The bundled CareLink login helper was not found next to Trndi. You can still run it manually."
-msgstr ""
+msgstr "Den medföljande CareLink-loginhjälparen hittades inte bredvid Trndi. Du kan fortfarande köra den manuellt."
 
 #: uwizard.wz_weblogin_no_output
 msgctxt "uwizard.wz_weblogin_no_output"
 msgid "The login helper did not return any token data. The sign-in may have been cancelled or timed out."
-msgstr ""
+msgstr "Loginhjälparen returnerade ingen nyckeldata. Inloggningen kan ha avbrutits eller tidsgränsen löpt ut."
 
 #: uwizard.wz_weblogin_npm_fail
 msgctxt "uwizard.wz_weblogin_npm_fail"
 msgid "Could not install the login helper's dependencies (npm install failed)."
-msgstr ""
+msgstr "Kunde inte installera loginhjälparens beroenden (npm install misslyckades)."
 
 #: uwizard.wz_weblogin_ok
 msgid "Login captured. Click Test to verify."
-msgstr ""
+msgstr "Inloggning fångad. Klicka på Test för att verifiera."
 
 #: uwizard.wz_weblogin_run_prompt
 msgid ""
@@ -3486,7 +3486,7 @@ msgstr ""
 #: uwizard.wz_weblogin_run_title
 msgctxt "uwizard.wz_weblogin_run_title"
 msgid "CareLink login"
-msgstr ""
+msgstr "CareLink-inloggning"
 
 #: uwizard.wz_weblogin_title
 msgctxt "uwizard.wz_weblogin_title"
@@ -3496,5 +3496,5 @@ msgstr "CareLink loginhjälpare"
 #: uwizard.wz_weblogin_waiting
 msgctxt "uwizard.wz_weblogin_waiting"
 msgid "Waiting for the browser sign-in to complete…"
-msgstr ""
+msgstr "Väntar på att webbläsarinloggningen ska slutföras…"
 

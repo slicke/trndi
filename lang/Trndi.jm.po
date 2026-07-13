@@ -184,7 +184,7 @@ msgstr "Justera punktposisjoner"
 #: tfbg.miadotcount.caption
 msgctxt "tfbg.miadotcount.caption"
 msgid "Set Dot Count"
-msgstr ""
+msgstr "Angje antal punkter"
 
 #: tfbg.miadots.caption
 msgid "Dot stats"
@@ -326,7 +326,7 @@ msgstr "Visa mapp"
 
 #: tfconf.bextreload.caption
 msgid "Reload"
-msgstr ""
+msgstr "Ladda om"
 
 #: tfconf.bfontarrow.caption
 msgid "Arrow font..."
@@ -353,7 +353,7 @@ msgstr "Importera instellningar"
 #: tfconf.blogin.caption
 msgctxt "tfconf.blogin.caption"
 msgid "Get CareLink token…"
-msgstr ""
+msgstr "Hent CareLink-token…"
 
 #: tfconf.bremove.caption
 msgid "- Remove"
@@ -407,11 +407,11 @@ msgstr "Vexla pil och verde"
 
 #: tfconf.cbautostart.caption
 msgid "Start with system"
-msgstr ""
+msgstr "Starta med systemet"
 
 #: tfconf.cbbadgetrend.caption
 msgid "Show trend arrow in taskbar/dock"
-msgstr ""
+msgstr "Visa trendpil i verktygsfellt/dock"
 
 #: tfconf.cbchroma.caption
 msgid "Enable Razer Chroma integration"
@@ -523,7 +523,7 @@ msgstr "Visa grenslinjer"
 
 #: tfconf.cbpredictdots.caption
 msgid "Show predictions as dots on the trend (replaces the prediction text)"
-msgstr ""
+msgstr "Visa forutsogelser som punkter po trenden (erstatter forutsogelsetexten)"
 
 #: tfconf.cbpredictions.caption
 msgid "Show glucose predictions"
@@ -559,7 +559,7 @@ msgstr "Ferga fônstret med omrodesferg"
 
 #: tfconf.cbrotatingarrow.caption
 msgid "Rotate trend arrow by rate of change"
-msgstr ""
+msgstr "Rotera trendpilen efter endringshastighet"
 
 #: tfconf.cbshowmean.caption
 msgid "Show mean blood sugar reading next to TIR"
@@ -759,7 +759,7 @@ msgstr "Avancerat"
 
 #: tfconf.groupbox13.caption
 msgid "Window"
-msgstr ""
+msgstr "Fônster"
 
 #: tfconf.groupbox2.caption
 msgid "Available Extensions"
@@ -1610,7 +1610,7 @@ msgstr "Aktiver varningar igen"
 
 #: trndi.strings.rs_api_notice
 msgid "Data source notice"
-msgstr ""
+msgstr "Meddelande om datakella"
 
 #: trndi.strings.rs_attention_missing
 msgid "Outdated Readings!"
@@ -1696,19 +1696,19 @@ msgstr "Egen storlek [%.2f]"
 #, object-pascal-format
 msgctxt "trndi.strings.rs_data_tyoe_err_func"
 msgid "Datatype \"%s\" was not expected, in function \"%s\". Expected \"%s\""
-msgstr ""
+msgstr "Datatyp \"%s\" var inte forventad, i funksjon \"%s\". Forventad \"%s\""
 
 #: trndi.strings.rs_data_type_err
 #, object-pascal-format
 msgctxt "trndi.strings.rs_data_type_err"
 msgid "Datatype %s was not expected, expected in function %s"
-msgstr ""
+msgstr "Datatyp %s var inte forventad, forventad i funksjon %s"
 
 #: trndi.strings.rs_data_type_err_pos
 #, object-pascal-format
 msgctxt "trndi.strings.rs_data_type_err_pos"
 msgid "Datatype %s was not expected, expected in function %s, parameter %d"
-msgstr ""
+msgstr "Datatyp %s var inte forventad, forventad i funksjon %s, parameter %d"
 
 #: trndi.strings.rs_date_picker_caption
 msgid "Choose a date"
@@ -1777,7 +1777,7 @@ msgstr "Tilleggshendelse"
 #, object-pascal-format
 msgctxt "trndi.strings.rs_ext_file"
 msgid "File \"%s\" not found"
-msgstr ""
+msgstr "Filen \"%s\" hittades inte"
 
 #: trndi.strings.rs_ext_msg
 #, fuzzy
@@ -1820,7 +1820,7 @@ msgstr "Tvinga uppdatering av avlesning?"
 #, object-pascal-format
 msgctxt "trndi.strings.rs_force_refresh_cached"
 msgid "Last update was %d seconds ago. Wait %d more seconds for fresh data, or force refresh now?"
-msgstr ""
+msgstr "Senaste uppdatering var for %d sekunder sedan. Venta %d sekunder till for ferska data, eller tvinga uppdatering no?"
 
 #: trndi.strings.rs_force_refresh_detail
 #, fuzzy
@@ -2174,7 +2174,7 @@ msgstr "Tvinga en fôrutspoelse"
 #, object-pascal-format
 msgctxt "trndi.strings.rs_prom_err_capt"
 msgid "The asynchronous function %s failed to complete"
-msgstr ""
+msgstr "Den asynkrona funksjonen %s lyckades inte fullfôra"
 
 #: trndi.strings.rs_quit_caption
 msgid "Exit Trndi?"
@@ -2305,16 +2305,16 @@ msgstr "Du kan ange plus eller minus. Plus = ned, 0 = neutral"
 #: trndi.strings.rs_service_dot_count
 msgctxt "trndi.strings.rs_service_dot_count"
 msgid "Set Dot Count"
-msgstr ""
+msgstr "Angje antal punkter"
 
 #: trndi.strings.rs_service_dot_count_desc
 #, object-pascal-format
 msgid "Enter how many trend dots to show (1-%d)."
-msgstr ""
+msgstr "Angje hur monga trendpunkter som ska visas (1-%d)."
 
 #: trndi.strings.rs_service_dot_count_title
 msgid "Number of trend dots"
-msgstr ""
+msgstr "Antal trendpunkter"
 
 #: trndi.strings.rs_service_predictions
 msgid "Predictions:"
@@ -2496,7 +2496,7 @@ msgstr "En datatyp fôrventades, men en annan potreffades"
 #: trndi.strings.rs_type_err_capt
 msgctxt "trndi.strings.rs_type_err_capt"
 msgid "A data type differs from what was expected"
-msgstr ""
+msgstr "En datatyp skiljer sig fron det forventade"
 
 #: trndi.strings.rs_type_err_desc
 #, fuzzy
@@ -2539,7 +2539,7 @@ msgstr "Leser upp verden"
 #, object-pascal-format
 msgctxt "trndi.strings.rs_ux_api"
 msgid "⚙️ Trndi API Interface: %s"
-msgstr ""
+msgstr "⚙️ Trndi API-gronssnitt: %s"
 
 #: trndi.strings.rs_ux_changes_remember
 #, fuzzy
@@ -2563,7 +2563,7 @@ msgstr "Anpassa punktstorlek"
 #, object-pascal-format
 msgctxt "trndi.strings.rs_ux_device"
 msgid "💻 Device: %s"
-msgstr ""
+msgstr "💻 Enhet: %s"
 
 #: trndi.strings.rs_ux_dot_size
 #, fuzzy
@@ -2581,24 +2581,24 @@ msgstr "Skriv in ett verde, punktstorleken kommer att gongras med detta"
 #, object-pascal-format
 msgctxt "trndi.strings.rs_ux_noise"
 msgid "𐩘 Noise: %d"
-msgstr ""
+msgstr "𐩘 Brus: %d"
 
 #: trndi.strings.rs_ux_prediction_here
 #, object-pascal-format
 msgid "Prediction here: %s at %.2d:%.2d"
-msgstr ""
+msgstr "Forutsogelse her: %s kl. %.2d:%.2d"
 
 #: trndi.strings.rs_ux_reading_here
 #, object-pascal-format
 msgctxt "trndi.strings.rs_ux_reading_here"
 msgid "Reading here: %s at %.2d:%.2d"
-msgstr ""
+msgstr "Avlesning her: %s kl. %.2d:%.2d"
 
 #: trndi.strings.rs_ux_rssi
 #, object-pascal-format
 msgctxt "trndi.strings.rs_ux_rssi"
 msgid "📻 RSSI (Signal Strength): %d%%"
-msgstr ""
+msgstr "📻 RSSI (Signalstyrka): %d%%"
 
 #: trndi.strings.rs_ux_sensor_expiry
 #, object-pascal-format, fuzzy
@@ -2882,7 +2882,7 @@ msgstr "Stenger av alla media-relaterade funktioner. Kan snabba po uppstarten."
 
 #: uconf.rs_display_advanced_help
 msgid "When supported by the backend, the sensor expiration time can be shown in Trndi"
-msgstr ""
+msgstr "Ner det stods av backend:en, kan sensorns utgongstid visas i Trndi"
 
 #: uconf.rs_display_general_help
 msgid ""
@@ -2930,7 +2930,7 @@ msgstr "Adressen meste berjja med http(s)://"
 #: uconf.rs_err_carelink_token
 msgctxt "uconf.rs_err_carelink_token"
 msgid "The credential must be the captured CareLink token data (JSON, starting with \"{\")"
-msgstr ""
+msgstr "Legitimasjonen meste vera de infongade CareLink-tokendata (JSON, som borjar med \"{\")"
 
 #: uconf.rs_err_email
 msgctxt "uconf.rs_err_email"
@@ -2949,11 +2949,11 @@ msgstr "Tilleggsantal: __PHad46520b-c2bd-41d2-93e4-f69806e260c7__"
 
 #: uconf.rs_ext_reload_done
 msgid "Extensions were reloaded."
-msgstr ""
+msgstr "Tilleggen laddades om."
 
 #: uconf.rs_ext_reload_title
 msgid "Reload Extensions"
-msgstr ""
+msgstr "Ladda om tillegg"
 
 #: uconf.rs_ext_requests
 msgid "Requests: "
@@ -3007,7 +3007,7 @@ msgstr "Ny version tillgenglig"
 #: uconf.rs_newver_pr
 #, object-pascal-format
 msgid "This temporary Trndi build is now outdated, a newer stable version has been released: %s. Would you like to go to the downloads page?"
-msgstr ""
+msgstr "Denna temporera Trndi-build er no forolddrad, en nyare stabil version har utgjivits: %s. Vill du go till nedladdningssidan?"
 
 #: uconf.rs_newver_pre
 #, object-pascal-format, fuzzy, badformat
@@ -3123,7 +3123,7 @@ msgstr "Borttagna konton blir inaktiva, de kan oterstellas genom att skapa om an
 
 #: uconf.rs_rotating_arrow_help
 msgid "Instead of the fixed up/steady/down arrows, the trend arrow is rotated smoothly to match how fast your glucose is changing: nearly flat for small changes and leaning further down (or up) the faster it moves."
-msgstr ""
+msgstr "Istellet for de fasta pilarna upp/stabil/ner, roteras trendpilen mjukt for att visa hur snabbt ditt blodsocker endras: nesten platt vid smo endringar och lutar mer nedot (eller uppot) ju snabbare det rôr sig."
 
 #: uconf.rs_saftey_hi
 #, fuzzy
@@ -3210,7 +3210,7 @@ msgstr "Du anvender en utviklingsversion, det finns ingen stabil version som er 
 #: uconf.rs_uptodate_pr
 #, object-pascal-format
 msgid "You are using a newer temporary Trndi build, the latest stable release is: %s"
-msgstr ""
+msgstr "Du anvender en nyare temporer Trndi-build, den senaste stabila versionen er: %s"
 
 #: uconf.rs_use_url_help
 msgid "Trndi can load a URL when high or low in your default web browser."
@@ -3233,74 +3233,74 @@ msgstr "Trndi kan starta ett <b>Web-API</b> fôr att kommunicera med <i>tredjepa
 #: uconf.rs_weblogin_bad_output
 msgctxt "uconf.rs_weblogin_bad_output"
 msgid "The login helper did not return valid token data."
-msgstr ""
+msgstr "Innloggingshjelparen returnerade inga giltiga tokendata."
 
 #: uconf.rs_weblogin_btn_busy
 msgid "Signing in…"
-msgstr ""
+msgstr "Loggar in…"
 
 #: uconf.rs_weblogin_button
 msgctxt "uconf.rs_weblogin_button"
 msgid "Get CareLink token…"
-msgstr ""
+msgstr "Hent CareLink-token…"
 
 #: uconf.rs_weblogin_fail_title
 msgctxt "uconf.rs_weblogin_fail_title"
 msgid "Automatic login unavailable"
-msgstr ""
+msgstr "Automatisk inloggning inte tillgenglig"
 
 #: uconf.rs_weblogin_help
 #, object-pascal-format
 msgid "CareLink needs a one-time browser login (with CAPTCHA), so Trndi uses a small login helper to capture your token.<br><br>It needs Node.js installed. In a terminal, run:<br><br>> cd \"%s\"<br>> npm install<br>> %s<br><br>A browser opens — sign in with your Care Partner account and solve the CAPTCHA. The helper then prints a block of JSON: copy it into the token field below and click Test.<br><br>Open the helper folder now?"
-msgstr ""
+msgstr "CareLink krever en engongs weblesarinloggning (med CAPTCHA), so Trndi anvender en liten inloggningshjelpare for att fonga ditt token.<br><br>Den krever att Node.js er installerad. Kor foljande i en terminal:<br><br>> cd \"%s\"<br>> npm install<br>> %s<br><br>En weblesare oppnas — logga in med ditt Care Partner-konto och los CAPTCHA:en. Hjelparen skriver sedan ut ett block med JSON: kopiera det till tokenfeltet nedan och klicka Test.<br><br>Vill du oppna hjelparmappen no?"
 
 #: uconf.rs_weblogin_installing
 msgctxt "uconf.rs_weblogin_installing"
 msgid "Installing login helper dependencies (first run only)…"
-msgstr ""
+msgstr "Installerar inloggningshjelparens beroenden (bara forsta gongen)…"
 
 #: uconf.rs_weblogin_nonode
 msgctxt "uconf.rs_weblogin_nonode"
 msgid "Node.js was not found on this system, so Trndi cannot run the login helper for you. Install Node.js (22.12+) — or run the helper manually."
-msgstr ""
+msgstr "Node.js hittades inte po detta system, so Trndi kan inte kora inloggningshjelparen ot dig. Installera Node.js (22.12+) — eller kor hjelparen manuellt."
 
 #: uconf.rs_weblogin_noscript
 msgctxt "uconf.rs_weblogin_noscript"
 msgid "The bundled CareLink login helper was not found next to Trndi. You can still run it manually."
-msgstr ""
+msgstr "Den medfoljande CareLink-inloggningshjelparen hittades inte bredvid Trndi. Du kan endo kora den manuellt."
 
 #: uconf.rs_weblogin_no_output
 msgctxt "uconf.rs_weblogin_no_output"
 msgid "The login helper did not return any token data. The sign-in may have been cancelled or timed out."
-msgstr ""
+msgstr "Inloggningshjelparen returnerade inga tokendata. Inloggningen kan ha blivit avbruten eller tidsoverskriden."
 
 #: uconf.rs_weblogin_npm_fail
 msgctxt "uconf.rs_weblogin_npm_fail"
 msgid "Could not install the login helper's dependencies (npm install failed)."
-msgstr ""
+msgstr "Kunde inte installera inloggningshjelparens beroenden (npm install misslyckades)."
 
 #: uconf.rs_weblogin_ok
 msgid "Login captured. Click Test to verify, then Save."
-msgstr ""
+msgstr "Inloggning fongad. Klicka Test for att bekrefta, och klicka sedan Spara."
 
 #: uconf.rs_weblogin_run_prompt
 msgid "Trndi will open a browser window for you to sign in to CareLink (with CAPTCHA), then capture the token/login information automatically.<br><br>The first run also downloads the login helper's dependencies, which can take a minute. Keep this window open and complete the sign-in in the browser.<br><br>Start now?"
-msgstr ""
+msgstr "Trndi oppnar ett weblesarfônster der du kan logga in po CareLink (med CAPTCHA), och fongar sedan automatiskt token-/inloggningsinformationen.<br><br>Forsta gongen laddas oven inloggningshjelparens beroenden ner, vilket kan ta en minut. Lot detta fônster vara oppet och fullfôlj inloggningen i weblesaren.<br><br>Vill du borja no?"
 
 #: uconf.rs_weblogin_run_title
 msgctxt "uconf.rs_weblogin_run_title"
 msgid "CareLink login"
-msgstr ""
+msgstr "CareLink-inloggning"
 
 #: uconf.rs_weblogin_title
 msgctxt "uconf.rs_weblogin_title"
 msgid "CareLink login helper"
-msgstr ""
+msgstr "CareLink-inloggningshjelpare"
 
 #: uconf.rs_weblogin_waiting
 msgctxt "uconf.rs_weblogin_waiting"
 msgid "Waiting for the browser sign-in to complete…"
-msgstr ""
+msgstr "Ventar po att weblesarinloggningen ska fullfôljas…"
 
 #: uconf.rs_xdrip
 msgid ""
@@ -3465,7 +3465,7 @@ msgstr "Adressen meste berjja med http(s)://"
 #: uwizard.wz_err_carelink_token
 msgctxt "uwizard.wz_err_carelink_token"
 msgid "The credential must be the captured CareLink token data (JSON, starting with \"{\")"
-msgstr ""
+msgstr "Legitimasjonen meste vera de infongade CareLink-tokendata (JSON, som borjar med \"{\")"
 
 #: uwizard.wz_err_email
 msgctxt "uwizard.wz_err_email"
@@ -3501,17 +3501,17 @@ msgstr "Anslutningstest stods inte for denna tjenst."
 #: uwizard.wz_weblogin_bad_output
 msgctxt "uwizard.wz_weblogin_bad_output"
 msgid "The login helper did not return valid token data."
-msgstr ""
+msgstr "Innloggingshjelparen returnerade inga giltiga tokendata."
 
 #: uwizard.wz_weblogin_button
 msgctxt "uwizard.wz_weblogin_button"
 msgid "Get CareLink token…"
-msgstr ""
+msgstr "Hent CareLink-token…"
 
 #: uwizard.wz_weblogin_fail_title
 msgctxt "uwizard.wz_weblogin_fail_title"
 msgid "Automatic login unavailable"
-msgstr ""
+msgstr "Automatisk inloggning inte tillgenglig"
 
 #: uwizard.wz_weblogin_help
 #, object-pascal-format
@@ -3532,31 +3532,31 @@ msgstr ""
 #: uwizard.wz_weblogin_installing
 msgctxt "uwizard.wz_weblogin_installing"
 msgid "Installing login helper dependencies (first run only)…"
-msgstr ""
+msgstr "Installerar inloggningshjelparens beroenden (bara forsta gongen)…"
 
 #: uwizard.wz_weblogin_nonode
 msgctxt "uwizard.wz_weblogin_nonode"
 msgid "Node.js was not found on this system, so Trndi cannot run the login helper for you. Install Node.js (22.12+) — or run the helper manually."
-msgstr ""
+msgstr "Node.js hittades inte po detta system, so Trndi kan inte kora inloggningshjelparen ot dig. Installera Node.js (22.12+) — eller kor hjelparen manuellt."
 
 #: uwizard.wz_weblogin_noscript
 msgctxt "uwizard.wz_weblogin_noscript"
 msgid "The bundled CareLink login helper was not found next to Trndi. You can still run it manually."
-msgstr ""
+msgstr "Den medfoljande CareLink-inloggningshjelparen hittades inte bredvid Trndi. Du kan endo kora den manuellt."
 
 #: uwizard.wz_weblogin_no_output
 msgctxt "uwizard.wz_weblogin_no_output"
 msgid "The login helper did not return any token data. The sign-in may have been cancelled or timed out."
-msgstr ""
+msgstr "Inloggningshjelparen returnerade inga tokendata. Inloggningen kan ha blivit avbruten eller tidsoverskriden."
 
 #: uwizard.wz_weblogin_npm_fail
 msgctxt "uwizard.wz_weblogin_npm_fail"
 msgid "Could not install the login helper's dependencies (npm install failed)."
-msgstr ""
+msgstr "Kunde inte installera inloggningshjelparens beroenden (npm install misslyckades)."
 
 #: uwizard.wz_weblogin_ok
 msgid "Login captured. Click Test to verify."
-msgstr ""
+msgstr "Inloggning fongad. Klicka Test for att bekrefta."
 
 #: uwizard.wz_weblogin_run_prompt
 msgid ""
@@ -3570,15 +3570,15 @@ msgstr ""
 #: uwizard.wz_weblogin_run_title
 msgctxt "uwizard.wz_weblogin_run_title"
 msgid "CareLink login"
-msgstr ""
+msgstr "CareLink-inloggning"
 
 #: uwizard.wz_weblogin_title
 msgctxt "uwizard.wz_weblogin_title"
 msgid "CareLink login helper"
-msgstr ""
+msgstr "CareLink-inloggningshjelpare"
 
 #: uwizard.wz_weblogin_waiting
 msgctxt "uwizard.wz_weblogin_waiting"
 msgid "Waiting for the browser sign-in to complete…"
-msgstr ""
+msgstr "Ventar po att weblesarinloggningen ska fullfôljas…"
 

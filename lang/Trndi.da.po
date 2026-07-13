@@ -184,7 +184,7 @@ msgstr "Juster prikpositioner"
 #: tfbg.miadotcount.caption
 msgctxt "tfbg.miadotcount.caption"
 msgid "Set Dot Count"
-msgstr ""
+msgstr "Angiv antal prikker"
 
 #: tfbg.miadots.caption
 msgid "Dot stats"
@@ -321,7 +321,7 @@ msgstr "Vis mappe"
 
 #: tfconf.bextreload.caption
 msgid "Reload"
-msgstr ""
+msgstr "Genindlæs"
 
 #: tfconf.bfontarrow.caption
 msgid "Arrow font..."
@@ -347,7 +347,7 @@ msgstr "Importer indstillinger"
 #: tfconf.blogin.caption
 msgctxt "tfconf.blogin.caption"
 msgid "Get CareLink token…"
-msgstr ""
+msgstr "Hent CareLink-token…"
 
 #: tfconf.bremove.caption
 msgid "- Remove"
@@ -400,11 +400,11 @@ msgstr "Skift mellem pil og aflæsning"
 
 #: tfconf.cbautostart.caption
 msgid "Start with system"
-msgstr ""
+msgstr "Start med systemet"
 
 #: tfconf.cbbadgetrend.caption
 msgid "Show trend arrow in taskbar/dock"
-msgstr ""
+msgstr "Vis trendpil i proceslinje/dock"
 
 #: tfconf.cbchroma.caption
 msgid "Enable Razer Chroma integration"
@@ -513,7 +513,7 @@ msgstr "Vis grænselinjer"
 
 #: tfconf.cbpredictdots.caption
 msgid "Show predictions as dots on the trend (replaces the prediction text)"
-msgstr ""
+msgstr "Vis forudsigelser som prikker på trenden (erstatter forudsigelsesteksten)"
 
 #: tfconf.cbpredictions.caption
 msgid "Show glucose predictions"
@@ -549,7 +549,7 @@ msgstr "Farv vinduet med områdefarve"
 
 #: tfconf.cbrotatingarrow.caption
 msgid "Rotate trend arrow by rate of change"
-msgstr ""
+msgstr "Rotér trendpil efter ændringshastighed"
 
 #: tfconf.cbshowmean.caption
 msgid "Show mean blood sugar reading next to TIR"
@@ -744,7 +744,7 @@ msgstr "Avanceret"
 
 #: tfconf.groupbox13.caption
 msgid "Window"
-msgstr ""
+msgstr "Vindue"
 
 #: tfconf.groupbox2.caption
 msgid "Available Extensions"
@@ -1500,7 +1500,7 @@ msgstr "Genoptag advarsler"
 
 #: trndi.strings.rs_api_notice
 msgid "Data source notice"
-msgstr ""
+msgstr "Bemærkning om datakilde"
 
 #: trndi.strings.rs_attention_missing
 msgid "Outdated Readings!"
@@ -2147,16 +2147,16 @@ msgstr "Du kan angive plus eller minus. Plus = ned. 0 = neutral"
 #: trndi.strings.rs_service_dot_count
 msgctxt "trndi.strings.rs_service_dot_count"
 msgid "Set Dot Count"
-msgstr ""
+msgstr "Angiv antal prikker"
 
 #: trndi.strings.rs_service_dot_count_desc
 #, object-pascal-format
 msgid "Enter how many trend dots to show (1-%d)."
-msgstr ""
+msgstr "Angiv hvor mange trendprikker der skal vises (1-%d)."
 
 #: trndi.strings.rs_service_dot_count_title
 msgid "Number of trend dots"
-msgstr ""
+msgstr "Antal trendprikker"
 
 #: trndi.strings.rs_service_predictions
 msgid "Predictions:"
@@ -2378,7 +2378,7 @@ msgstr "𐩘 Støj: %d"
 #: trndi.strings.rs_ux_prediction_here
 #, object-pascal-format
 msgid "Prediction here: %s at %.2d:%.2d"
-msgstr ""
+msgstr "Forudsigelse her: %s kl. %.2d:%.2d"
 
 #: trndi.strings.rs_ux_reading_here
 #, object-pascal-format
@@ -2665,7 +2665,7 @@ msgstr "Dette slår alle medierelaterede funktioner fra. Kan fremskynde opstart.
 
 #: uconf.rs_display_advanced_help
 msgid "When supported by the backend, the sensor expiration time can be shown in Trndi"
-msgstr ""
+msgstr "Når det understøttes af backend'en, kan sensorens udløbstid vises i Trndi"
 
 #: uconf.rs_display_general_help
 msgid ""
@@ -2713,7 +2713,7 @@ msgstr "Adressen skal starte med http(s)://"
 #: uconf.rs_err_carelink_token
 msgctxt "uconf.rs_err_carelink_token"
 msgid "The credential must be the captured CareLink token data (JSON, starting with \"{\")"
-msgstr ""
+msgstr "Loginoplysningen skal være de indsamlede CareLink-tokendata (JSON, som starter med \"{\")"
 
 #: uconf.rs_err_email
 msgctxt "uconf.rs_err_email"
@@ -2732,11 +2732,11 @@ msgstr "Antal udvidelser: %d"
 
 #: uconf.rs_ext_reload_done
 msgid "Extensions were reloaded."
-msgstr ""
+msgstr "Udvidelserne blev genindlæst."
 
 #: uconf.rs_ext_reload_title
 msgid "Reload Extensions"
-msgstr ""
+msgstr "Genindlæs udvidelser"
 
 #: uconf.rs_ext_requests
 msgid "Requests: "
@@ -2781,7 +2781,7 @@ msgstr "Ny version tilgængelig"
 #: uconf.rs_newver_pr
 #, object-pascal-format
 msgid "This temporary Trndi build is now outdated, a newer stable version has been released: %s. Would you like to go to the downloads page?"
-msgstr ""
+msgstr "Denne midlertidige Trndi-build er nu forældet, en nyere stabil version er blevet udgivet: %s. Vil du gå til downloadsiden?"
 
 #: uconf.rs_newver_pre
 #, object-pascal-format
@@ -2889,7 +2889,7 @@ msgstr "Fjernede konti gøres inaktive og kan gendannes ved at tilføje samme na
 
 #: uconf.rs_rotating_arrow_help
 msgid "Instead of the fixed up/steady/down arrows, the trend arrow is rotated smoothly to match how fast your glucose is changing: nearly flat for small changes and leaning further down (or up) the faster it moves."
-msgstr ""
+msgstr "I stedet for de faste pile op/stabil/ned roteres trendpilen jævnt for at afspejle, hvor hurtigt dit blodsukker ændrer sig: næsten flad ved små ændringer og hældende mere nedad (eller opad), jo hurtigere det bevæger sig."
 
 #: uconf.rs_saftey_hi
 msgid "Trndi won't allow a larger limit, for your own safety. This can be overridden manually/via plugin"
@@ -2974,7 +2974,7 @@ msgstr "Du bruger en udviklingsversion, der er ingen stabil udgivelse nyere end 
 #: uconf.rs_uptodate_pr
 #, object-pascal-format
 msgid "You are using a newer temporary Trndi build, the latest stable release is: %s"
-msgstr ""
+msgstr "Du bruger en nyere midlertidig Trndi-build, den seneste stabile udgivelse er: %s"
 
 #: uconf.rs_use_url_help
 msgid "Trndi can load a URL when high or low in your default web browser."
@@ -2997,74 +2997,74 @@ msgstr "Trndi kan starte et <b>Web-API</b> til brug med <i>tredjepartssystemer</
 #: uconf.rs_weblogin_bad_output
 msgctxt "uconf.rs_weblogin_bad_output"
 msgid "The login helper did not return valid token data."
-msgstr ""
+msgstr "Loginhjælperen returnerede ikke gyldige tokendata."
 
 #: uconf.rs_weblogin_btn_busy
 msgid "Signing in…"
-msgstr ""
+msgstr "Logger ind…"
 
 #: uconf.rs_weblogin_button
 msgctxt "uconf.rs_weblogin_button"
 msgid "Get CareLink token…"
-msgstr ""
+msgstr "Hent CareLink-token…"
 
 #: uconf.rs_weblogin_fail_title
 msgctxt "uconf.rs_weblogin_fail_title"
 msgid "Automatic login unavailable"
-msgstr ""
+msgstr "Automatisk login ikke tilgængelig"
 
 #: uconf.rs_weblogin_help
 #, object-pascal-format
 msgid "CareLink needs a one-time browser login (with CAPTCHA), so Trndi uses a small login helper to capture your token.<br><br>It needs Node.js installed. In a terminal, run:<br><br>> cd \"%s\"<br>> npm install<br>> %s<br><br>A browser opens — sign in with your Care Partner account and solve the CAPTCHA. The helper then prints a block of JSON: copy it into the token field below and click Test.<br><br>Open the helper folder now?"
-msgstr ""
+msgstr "CareLink kræver en engangs-browserlogin (med CAPTCHA), så Trndi bruger en lille loginhjælper til at indfange dit token.<br><br>Den kræver Node.js installeret. Kør følgende i en terminal:<br><br>> cd \"%s\"<br>> npm install<br>> %s<br><br>En browser åbnes — log ind med din Care Partner-konto og løs CAPTCHA'en. Hjælperen udskriver derefter en blok JSON: kopiér den ind i tokenfeltet nedenfor, og klik på Test.<br><br>Vil du åbne hjælpermappen nu?"
 
 #: uconf.rs_weblogin_installing
 msgctxt "uconf.rs_weblogin_installing"
 msgid "Installing login helper dependencies (first run only)…"
-msgstr ""
+msgstr "Installerer loginhjælperens afhængigheder (kun ved første kørsel)…"
 
 #: uconf.rs_weblogin_nonode
 msgctxt "uconf.rs_weblogin_nonode"
 msgid "Node.js was not found on this system, so Trndi cannot run the login helper for you. Install Node.js (22.12+) — or run the helper manually."
-msgstr ""
+msgstr "Node.js blev ikke fundet på dette system, så Trndi kan ikke køre loginhjælperen for dig. Installér Node.js (22.12+) — eller kør hjælperen manuelt."
 
 #: uconf.rs_weblogin_noscript
 msgctxt "uconf.rs_weblogin_noscript"
 msgid "The bundled CareLink login helper was not found next to Trndi. You can still run it manually."
-msgstr ""
+msgstr "Den medfølgende CareLink-loginhjælper blev ikke fundet ved siden af Trndi. Du kan stadig køre den manuelt."
 
 #: uconf.rs_weblogin_no_output
 msgctxt "uconf.rs_weblogin_no_output"
 msgid "The login helper did not return any token data. The sign-in may have been cancelled or timed out."
-msgstr ""
+msgstr "Loginhjælperen returnerede ingen tokendata. Login kan være blevet annulleret eller er timet ud."
 
 #: uconf.rs_weblogin_npm_fail
 msgctxt "uconf.rs_weblogin_npm_fail"
 msgid "Could not install the login helper's dependencies (npm install failed)."
-msgstr ""
+msgstr "Kunne ikke installere loginhjælperens afhængigheder (npm install mislykkedes)."
 
 #: uconf.rs_weblogin_ok
 msgid "Login captured. Click Test to verify, then Save."
-msgstr ""
+msgstr "Login indfanget. Klik på Test for at bekræfte, og klik derefter på Gem."
 
 #: uconf.rs_weblogin_run_prompt
 msgid "Trndi will open a browser window for you to sign in to CareLink (with CAPTCHA), then capture the token/login information automatically.<br><br>The first run also downloads the login helper's dependencies, which can take a minute. Keep this window open and complete the sign-in in the browser.<br><br>Start now?"
-msgstr ""
+msgstr "Trndi åbner et browservindue, hvor du kan logge ind på CareLink (med CAPTCHA), og indfanger derefter automatisk token-/loginoplysningerne.<br><br>Ved første kørsel hentes også loginhjælperens afhængigheder, hvilket kan tage et minut. Lad dette vindue være åbent, og gennemfør login i browseren.<br><br>Vil du starte nu?"
 
 #: uconf.rs_weblogin_run_title
 msgctxt "uconf.rs_weblogin_run_title"
 msgid "CareLink login"
-msgstr ""
+msgstr "CareLink-login"
 
 #: uconf.rs_weblogin_title
 msgctxt "uconf.rs_weblogin_title"
 msgid "CareLink login helper"
-msgstr ""
+msgstr "CareLink-loginhjælper"
 
 #: uconf.rs_weblogin_waiting
 msgctxt "uconf.rs_weblogin_waiting"
 msgid "Waiting for the browser sign-in to complete…"
-msgstr ""
+msgstr "Venter på at browserlogin gennemføres…"
 
 #: uconf.rs_xdrip
 msgid ""
@@ -3224,7 +3224,7 @@ msgstr "Adressen skal starte med http(s)://"
 #: uwizard.wz_err_carelink_token
 msgctxt "uwizard.wz_err_carelink_token"
 msgid "The credential must be the captured CareLink token data (JSON, starting with \"{\")"
-msgstr ""
+msgstr "Loginoplysningen skal være de indsamlede CareLink-tokendata (JSON, som starter med \"{\")"
 
 #: uwizard.wz_err_email
 msgctxt "uwizard.wz_err_email"
@@ -3260,17 +3260,17 @@ msgstr "Forbindelsestest understøttes ikke for denne tjeneste."
 #: uwizard.wz_weblogin_bad_output
 msgctxt "uwizard.wz_weblogin_bad_output"
 msgid "The login helper did not return valid token data."
-msgstr ""
+msgstr "Loginhjælperen returnerede ikke gyldige tokendata."
 
 #: uwizard.wz_weblogin_button
 msgctxt "uwizard.wz_weblogin_button"
 msgid "Get CareLink token…"
-msgstr ""
+msgstr "Hent CareLink-token…"
 
 #: uwizard.wz_weblogin_fail_title
 msgctxt "uwizard.wz_weblogin_fail_title"
 msgid "Automatic login unavailable"
-msgstr ""
+msgstr "Automatisk login ikke tilgængelig"
 
 #: uwizard.wz_weblogin_help
 #, object-pascal-format
@@ -3291,31 +3291,31 @@ msgstr ""
 #: uwizard.wz_weblogin_installing
 msgctxt "uwizard.wz_weblogin_installing"
 msgid "Installing login helper dependencies (first run only)…"
-msgstr ""
+msgstr "Installerer loginhjælperens afhængigheder (kun ved første kørsel)…"
 
 #: uwizard.wz_weblogin_nonode
 msgctxt "uwizard.wz_weblogin_nonode"
 msgid "Node.js was not found on this system, so Trndi cannot run the login helper for you. Install Node.js (22.12+) — or run the helper manually."
-msgstr ""
+msgstr "Node.js blev ikke fundet på dette system, så Trndi kan ikke køre loginhjælperen for dig. Installér Node.js (22.12+) — eller kør hjælperen manuelt."
 
 #: uwizard.wz_weblogin_noscript
 msgctxt "uwizard.wz_weblogin_noscript"
 msgid "The bundled CareLink login helper was not found next to Trndi. You can still run it manually."
-msgstr ""
+msgstr "Den medfølgende CareLink-loginhjælper blev ikke fundet ved siden af Trndi. Du kan stadig køre den manuelt."
 
 #: uwizard.wz_weblogin_no_output
 msgctxt "uwizard.wz_weblogin_no_output"
 msgid "The login helper did not return any token data. The sign-in may have been cancelled or timed out."
-msgstr ""
+msgstr "Loginhjælperen returnerede ingen tokendata. Login kan være blevet annulleret eller er timet ud."
 
 #: uwizard.wz_weblogin_npm_fail
 msgctxt "uwizard.wz_weblogin_npm_fail"
 msgid "Could not install the login helper's dependencies (npm install failed)."
-msgstr ""
+msgstr "Kunne ikke installere loginhjælperens afhængigheder (npm install mislykkedes)."
 
 #: uwizard.wz_weblogin_ok
 msgid "Login captured. Click Test to verify."
-msgstr ""
+msgstr "Login indfanget. Klik på Test for at bekræfte."
 
 #: uwizard.wz_weblogin_run_prompt
 msgid ""
@@ -3329,15 +3329,15 @@ msgstr ""
 #: uwizard.wz_weblogin_run_title
 msgctxt "uwizard.wz_weblogin_run_title"
 msgid "CareLink login"
-msgstr ""
+msgstr "CareLink-login"
 
 #: uwizard.wz_weblogin_title
 msgctxt "uwizard.wz_weblogin_title"
 msgid "CareLink login helper"
-msgstr ""
+msgstr "CareLink-loginhjælper"
 
 #: uwizard.wz_weblogin_waiting
 msgctxt "uwizard.wz_weblogin_waiting"
 msgid "Waiting for the browser sign-in to complete…"
-msgstr ""
+msgstr "Venter på at browserlogin gennemføres…"
 
