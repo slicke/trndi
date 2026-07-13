@@ -84,7 +84,9 @@ jobs:
             upload_name: linux-amd64-build
             os_target: linux
             arch: amd64
-            runner: ubuntu-latest
+            # Preview image: needed for libqt6pas6/-dev, which only entered the
+            # Ubuntu archive in 25.10 (not present on 24.04/ubuntu-latest).
+            runner: ubuntu-26.04
             fpc_laz_url: "https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.8/fpc-laz_3.2.2-210709_amd64.deb/download"
             fpc_src_url: "https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.8/fpc-src_3.2.2-210709_amd64.deb/download"
             laz_url: "https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.8/lazarus-project_4.8.0-0_amd64.deb/download"
@@ -100,7 +102,8 @@ jobs:
             upload_name: linux-arm64-build
             os_target: linux
             arch: arm64
-            runner: ubuntu-24.04-arm
+            # Preview image: needed for libqt6pas6/-dev (see amd64 note above).
+            runner: ubuntu-26.04-arm
             fpc_laz_url: "https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20arm64%20DEB/Lazarus%204.8/fpc-laz_3.2.3-240813_arm64.deb/download"
             fpc_src_url: "https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20arm64%20DEB/Lazarus%204.8/fpc-src_3.2.3-240813_arm64.deb/download"
             laz_url: "https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20arm64%20DEB/Lazarus%204.8/lazarus-project_4.8.0-0_arm64.deb/download"
