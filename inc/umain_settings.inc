@@ -172,12 +172,17 @@ begin
       MAX_RESULT := ACTIVE_DOTS;
     CreateTrendDots;
     BuildDotWindowMenu;
-    FLastReadingsHash := 0;
     Application.ProcessMessages;
     tResize.OnTimer(Self);
-    if Length(bgs) > 0 then
-      PlaceTrendDots(bgs);
   end;
+
+  // Re-place the dots from the cached readings regardless of whether the dot
+  // count changed: per-slot captions depend on settings too (e.g. the
+  // ux.dot_fresh marker), and PlaceTrendDots would otherwise dedupe on the
+  // unchanged readings hash and skip the pass.
+  FLastReadingsHash := 0;
+  if Length(bgs) > 0 then
+    PlaceTrendDots(bgs);
 
   // UpdateTrendDots sets value-based tops; AdjustGraph must always follow to
   // apply the trend row's vertical offsets (half-diameter centring + in-view
@@ -387,6 +392,7 @@ procedure LoadUserSettings(f: TfConf);
       cbPredictShort.Checked := GetBoolSetting('predictions.short');
       cbPredictDots.Checked := GetBoolSetting('predictions.dots');
       cbRotatingArrow.Checked := GetBoolSetting('display.rotating_arrow');
+      cbDotFresh.Checked := GetBoolSetting('ux.dot_fresh', true);
       // Trend arrow in the taskbar icon (Windows) / dock badge (macOS)
       {$if defined(X_WIN) or defined(X_MAC)}
       cbBadgeTrend.Checked := GetBoolSetting('badge.trend', false);
@@ -819,6 +825,7 @@ procedure SaveUserSettings(f: TfConf);
       SetSetting('predictions.short', cbPredictShort.Checked);
       SetSetting('predictions.dots', cbPredictDots.Checked);
       SetSetting('display.rotating_arrow', cbRotatingArrow.Checked);
+      SetSetting('ux.dot_fresh', cbDotFresh.Checked);
       {$if defined(X_WIN) or defined(X_MAC)}
       SetSetting('badge.trend', cbBadgeTrend.Checked);
       {$endif}

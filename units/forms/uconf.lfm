@@ -1621,7 +1621,7 @@ object fConf: TfConf
           object cbProgress: TCheckBox
             Left = 16
             Height = 19
-            Top = 16
+            Top = 2
             Width = 240
             Caption = 'Display progress to next update on the left'
             TabOrder = 0
@@ -1629,7 +1629,7 @@ object fConf: TfConf
           object cbClock: TCheckBox
             Left = 16
             Height = 19
-            Top = 35
+            Top = 21
             Width = 191
             Caption = 'Show clock for 5 sec every 20 sec'
             TabOrder = 1
@@ -1637,7 +1637,7 @@ object fConf: TfConf
           object cbAlternate: TCheckBox
             Left = 16
             Height = 19
-            Top = 53
+            Top = 40
             Width = 205
             Caption = 'Alternate arrow and reading display'
             TabOrder = 2
@@ -1645,7 +1645,7 @@ object fConf: TfConf
           object cbRotatingArrow: TCheckBox
             Left = 16
             Height = 19
-            Top = 72
+            Top = 59
             Width = 211
             Caption = 'Rotate trend arrow by rate of change'
             TabOrder = 4
@@ -1653,15 +1653,23 @@ object fConf: TfConf
           object cbBadgeTrend: TCheckBox
             Left = 16
             Height = 19
-            Top = 91
+            Top = 78
             Width = 220
             Caption = 'Show trend arrow in taskbar/dock'
             TabOrder = 6
           end
+          object cbDotFresh: TCheckBox
+            Left = 16
+            Height = 19
+            Top = 97
+            Width = 260
+            Caption = 'Highlight the newest dot while the reading is fresh'
+            TabOrder = 7
+          end
           object bRotatingArrowHelp: TButton
             Left = 584
             Height = 22
-            Top = 70
+            Top = 57
             Width = 27
             Caption = '?'
             TabOrder = 5
