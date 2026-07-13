@@ -518,6 +518,7 @@ private
     // Performance optimization fields
   FLastReadingsHash: cardinal; // Hash of last readings for change detection
   FLastDotTimeBucket: int64; // 5-min wall-clock bucket of the last dot placement
+  FLatestIsFresh: boolean; // Latest reading within the freshness threshold (drives DOT_FRESH)
   FLastAPICall: TDateTime; // Timestamp of the last successful API call
   FCachedReadings: array of BGReading; // Readings saved from last fetch
   FLastUIColor: TColor;
