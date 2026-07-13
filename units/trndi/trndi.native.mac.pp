@@ -47,6 +47,9 @@ type
     Relies on system tools for speech and dark appearance toggling.
   }
   TTrndiNativeMac = class(TTrndiNativeBase)
+  private
+    // Set once we've reset the Dock icon back to the app bundle's .icns.
+    FDockIconReset: boolean;
   public
     {** Show a visual notification on macOS.
       Prefer native NSUserNotificationCenter (app-attributed), fall back to base AppleScript impl. }
@@ -907,6 +910,23 @@ begin
     EnsureUNCenterSetup;
   except
     // ignore
+  end;
+
+  // Show the app bundle's icon (Trndi.icns, built from Trndi-macos.png) in the
+  // Dock. The LCL Cocoa widgetset pushes the compiled-in MAINICON to the Dock
+  // via setApplicationIconImage: during startup, which overrides the bundle
+  // icon — that's why Finder shows the bundle artwork but the running Dock kept
+  // showing MAINICON. Passing nil resets the Dock to the bundle's
+  // CFBundleIconFile. Do it once; start() runs on every reading refresh, and
+  // this only needs to happen after LCL's initial icon push.
+  if not FDockIconReset then
+  begin
+    FDockIconReset := True;
+    try
+      NSApp.setApplicationIconImage(nil);
+    except
+      // ignore
+    end;
   end;
 end;
 
