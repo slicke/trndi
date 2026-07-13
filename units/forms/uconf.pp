@@ -693,6 +693,7 @@ RS_NEWVER_PRE =
   'A new pre-release for %s is available, would you like to go to the downloads page?';
 RS_NEWVER_CAPTION = 'New version available';
 RS_UPTODATE_DEV = 'You are using a development version, there''s no stable release newer than this! The most recent stable release is %s';
+RS_UPTODATE_PR = 'You are using a newer temporary Trndi build, the latest stable release is: %s';
 RS_SELECT_FONT = 'Select a font';
 RS_SELECT_FONT_DESC = 'Choose a font to use';
 RS_SELECT_FONT_ARROW = 'Select a font for the arrow';
@@ -2053,7 +2054,16 @@ begin
       OpenURL(r);
   end
   else begin
-    if CI and (BUILD_NUMBER <> 'dev') then
+    if IsPRBuild then
+    begin
+      // PR builds carry 'PR-<n>' as build number; don't pretend they are a
+      // stable release, point the user to the latest one instead
+      rn := GetLatestReleaseName(res);
+      if rn = '' then
+        rn := GetProductVersionMajorMinor('2.x');
+      ShowMessage(Format(RS_UPTODATE_PR, [rn]));
+    end
+    else if CI and (BUILD_NUMBER <> 'dev') then
       ShowMessage(RS_UPTODATE)
     else
       ShowMessage(Format(RS_UPTODATE_DEV, [GetProductVersionMajorMinor('2.x')]));
