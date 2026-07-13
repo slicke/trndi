@@ -31,12 +31,31 @@ unit trndi.weblogin;
 interface
 
 uses
-  Classes, SysUtils;
+  Classes, SysUtils, StdCtrls, Forms, trndi.api;
 
 type
   {** Progress callback: invoked with a short status caption as the login
       proceeds (e.g. to update a button caption). May be nil. }
   TWebLoginProgress = procedure(const ACaption: string) of object;
+
+  {** Localized texts for RunAssistedWebLogin. Both callers keep their own
+      translated resourcestrings and fill this record from them, so the flow
+      stays identical while the translation keys stay stable. }
+  TWebLoginTexts = record
+    RunTitle: string;      // Confirm + success dialog title
+    RunPrompt: string;     // Pre-flight yes/no prompt
+    Installing: string;    // Progress caption while `npm install` runs
+    Waiting: string;       // Progress caption while awaiting the browser login
+    CapturedOK: string;    // Success message
+    FailTitle: string;     // Error dialog title
+    NoScript: string;      // TWebLoginResult failure texts...
+    NoNode: string;
+    NpmFailed: string;
+    NoOutput: string;
+    BadOutput: string;
+    HelpTitle: string;     // Manual instructions dialog title
+    HelpBody: string;      // Manual instructions; Format args: helper folder, command
+  end;
 
   {** Outcome of RunNodeLoginHelper. Callers map failures to their own
       localized message so this unit stays UI/locale-agnostic. }
@@ -66,10 +85,21 @@ function RunNodeLoginHelper(const AScriptRel, AScriptArgs: string;
   const AOnProgress: TWebLoginProgress;
   out ACred: string): TWebLoginResult;
 
+{** Complete assisted-login flow shared by the settings form and the first-run
+    wizard: confirm with the user, run the backend's Node helper (reporting
+    progress on ALoginButton), and on success drop the captured credential into
+    APassEdit, revealed so the user can eyeball it before testing. On failure
+    the error is explained and the manual helper instructions are offered.
+    AIdleCaption is restored on the button afterwards; ASender centers the
+    dialogs. }
+procedure RunAssistedWebLogin(ACls: TrndiAPIClass; ALoginButton: TButton;
+  APassEdit: TEdit; const AIdleCaption: string; const T: TWebLoginTexts;
+  ASender: TForm);
+
 implementation
 
 uses
-  Forms, process, pipes, FileUtil, lclintf, math;
+  process, pipes, FileUtil, lclintf, math, Controls, slicke.ux.alert;
 
 const
   PUMP_MS = 40;               // message-pump / poll interval
@@ -216,6 +246,124 @@ begin
     Exit(wlrBadOutput);
 
   Result := wlrOK;
+end;
+
+type
+  { Adapter so the flow can feed helper progress into the login button; the
+    TWebLoginProgress callback type is "of object". }
+  TButtonProgressAdapter = class
+    btn: TButton;
+    procedure Report(const ACaption: string);
+  end;
+
+procedure TButtonProgressAdapter.Report(const ACaption: string);
+begin
+  btn.Caption := ACaption;
+  Application.ProcessMessages;
+end;
+
+{ Point the user at the backend's login helper (e.g. tools/carelink-login),
+  which captures the token in a real browser and prints it for pasting into
+  the credential field. Optionally opens the helper folder. Used as the
+  fallback when the automatic Node login isn't available. }
+procedure ShowManualWebLoginHelp(ACls: TrndiAPIClass; const T: TWebLoginTexts);
+var
+  scriptRel, args, helperDir, cmd: string;
+begin
+  args := '';
+  if Assigned(ACls) then
+    scriptRel := ACls.webLoginScript(args)
+  else
+    scriptRel := '';
+
+  if scriptRel <> '' then
+  begin
+    helperDir := ExtractFileDir(ExtractFilePath(Application.ExeName) +
+      StringReplace(scriptRel, '/', PathDelim, [rfReplaceAll]));
+    cmd := 'node ' + ExtractFileName(StringReplace(scriptRel, '/', PathDelim, [rfReplaceAll]));
+    if args <> '' then
+      cmd := cmd + ' ' + args;
+  end
+  else
+  begin
+    // No helper shipped for this backend; point at the bundled CareLink one.
+    helperDir := ExtractFilePath(Application.ExeName) + 'tools' + PathDelim + 'carelink-login';
+    cmd := 'node carelink-login.mjs';
+  end;
+
+  if ExtMsgYesNo(T.HelpTitle, Format(T.HelpBody, [helperDir, cmd]), uxmtInformation, 20) then
+  begin
+    if DirectoryExists(helperDir) then
+      OpenDocument(helperDir)
+    else
+      OpenURL('https://github.com/slicke/trndi/tree/main/tools/carelink-login');
+  end;
+end;
+
+procedure RunAssistedWebLogin(ACls: TrndiAPIClass; ALoginButton: TButton;
+  APassEdit: TEdit; const AIdleCaption: string; const T: TWebLoginTexts;
+  ASender: TForm);
+
+  function ErrText(r: TWebLoginResult): string;
+  begin
+    case r of
+    wlrNoScript:  Result := T.NoScript;
+    wlrNoNode:    Result := T.NoNode;
+    wlrNpmFailed: Result := T.NpmFailed;
+    wlrBadOutput: Result := T.BadOutput;
+    else          Result := T.NoOutput; // launch failed / no output
+    end;
+  end;
+
+var
+  cred, scriptArgs, scriptRel: string;
+  res: TWebLoginResult;
+  progress: TButtonProgressAdapter;
+begin
+  scriptArgs := '';
+  if Assigned(ACls) then
+    scriptRel := ACls.webLoginScript(scriptArgs)
+  else
+    scriptRel := '';
+
+  // No runnable helper for this backend — keep the manual instructions.
+  if scriptRel = '' then
+  begin
+    ShowManualWebLoginHelp(ACls, T);
+    Exit;
+  end;
+
+  // Heads-up before we open a browser and (on first run) install dependencies.
+  if not ExtMsgYesNo(T.RunTitle, T.RunPrompt, uxmtInformation, 20) then
+    Exit;
+
+  progress := TButtonProgressAdapter.Create;
+  Screen.Cursor := crHourGlass;
+  ALoginButton.Enabled := false;
+  try
+    progress.btn := ALoginButton;
+    res := RunNodeLoginHelper(scriptRel, scriptArgs,
+      T.Installing, T.Waiting, @progress.Report, cred);
+  finally
+    ALoginButton.Caption := AIdleCaption;
+    ALoginButton.Enabled := true;
+    Screen.Cursor := crDefault;
+    progress.Free;
+  end;
+
+  if res = wlrOK then
+  begin
+    APassEdit.Text := cred;
+    // Reveal what we captured so the user can eyeball it before testing.
+    APassEdit.EchoMode := emNormal;
+    APassEdit.PasswordChar := #0;
+    UXMessage(T.RunTitle, T.CapturedOK, uxmtOK, ASender);
+    Exit;
+  end;
+
+  // Automatic path unavailable/failed — explain, then offer the manual route.
+  ExtError(uxdAuto, T.FailTitle, ErrText(res), uxmtWarning);
+  ShowManualWebLoginHelp(ACls, T);
 end;
 
 end.

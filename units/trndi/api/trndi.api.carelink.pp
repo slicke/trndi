@@ -237,8 +237,8 @@ type
   protected
     function getSystemName: string; override;
   public
-    constructor Create(const AUser, ACreds: string); reintroduce; overload;
-    class function testConnection(AUser, ACreds: string; var ARes: string): MaybeBool; overload;
+    constructor Create(AUser, ACreds: string); override; overload;
+    class function testConnection(AUser, ACreds: string; var ARes: string): MaybeBool; override; overload;
     {** Same helper as the base class, with the US region flag. }
     class function webLoginScript(out args: string): string; override;
   end;
@@ -247,8 +247,8 @@ type
   protected
     function getSystemName: string; override;
   public
-    constructor Create(const AUser, ACreds: string); reintroduce; overload;
-    class function testConnection(AUser, ACreds: string; var ARes: string): MaybeBool; overload;
+    constructor Create(AUser, ACreds: string); override; overload;
+    class function testConnection(AUser, ACreds: string; var ARes: string): MaybeBool; override; overload;
   end;
 
 {$IFDEF TEST}
@@ -1137,12 +1137,12 @@ begin
   inherited Destroy;
 end;
 
-constructor CareLinkUS.Create(const AUser, ACreds: string);
+constructor CareLinkUS.Create(AUser, ACreds: string);
 begin
   inherited Create(AUser, ACreds, crUS);
 end;
 
-constructor CareLinkEU.Create(const AUser, ACreds: string);
+constructor CareLinkEU.Create(AUser, ACreds: string);
 begin
   inherited Create(AUser, ACreds, crEU);
 end;

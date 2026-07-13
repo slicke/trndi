@@ -226,67 +226,6 @@ var
   minutesVal: integer;
 
 procedure LoadUserSettings(f: TfConf);
-  function APIToName(const str: string): string;
-    begin
-      case str of
-      'API_NS':
-        result := API_NS;
-      'API_NS3':
-        result := API_NS3;
-      'API_DEX_USA':
-        result := API_DEX_USA;
-      'API_DEX_EU':
-        result := API_DEX_EU;
-      'API_DEX_NEW_USA':
-        result := API_DEX_NEW_USA;
-      'API_DEX_NEW_EU':
-        result := API_DEX_NEW_EU;
-      'API_DEX_NEW_JP':
-        result := API_DEX_NEW_JP;
-      'API_TANDEM_USA':
-        result := API_TANDEM_USA;
-      'API_TANDEM_EU':
-        result := API_TANDEM_EU;
-      'API_CARELINK_US':
-        result := API_CARELINK_US;
-      'API_CARELINK_EU':
-        result := API_CARELINK_EU;
-      'API_XDRIP':
-        result := API_XDRIP;
-      {$ifdef DEBUG}
-      'API_D_DEBUG':
-        result := API_D_DEBUG;
-      'API_D_MISSING':
-        result := API_D_MISSING;
-      'API_D_PERFECT':
-        result := API_D_PERFECT;
-      'API_D_CUSTOM':
-        result := API_D_CUSTOM;
-      'API_D_EDGE':
-        result := API_D_EDGE;
-      'API_D_FIRST':
-        result := API_D_FIRST;
-      'API_D_FIRSTX':
-        result := API_D_FIRSTX;
-      'API_D_INTERMITTENT':
-        result := API_D_INTERMITTENT;
-      'API_D_SLOW':
-        result := API_D_SLOW;
-      'API_D_FAULTY':
-        result := API_D_FAULTY;
-      'API_D_LOWSOON':
-        result := API_D_LOWSOON;
-      'API_D_SENSOR_EXPIRY':
-        result := API_D_SENSOR_EXPIRY;
-      'API_D_LATE_MISSING':
-        result := API_D_LATE_MISSING;
-      'API_D_SECOND':
-        result := API_D_SECOND;
-    {$endif}
-      else
-        Result := 'API_NS';
-      end;
-    end;
   var
     remoteType: string;
     userNames: TStringArray;
@@ -324,7 +263,7 @@ procedure LoadUserSettings(f: TfConf);
   begin
     with f, native do
     begin
-      remoteType := APIToName(GetSetting('remote.type'));
+      remoteType := BackendDisplayName(GetSetting('remote.type'));
       cbSys.ItemIndex := 0;
       for i := 0 to cbSys.Items.Count - 1 do
         if cbSys.Items[i] = remoteType then
@@ -634,68 +573,6 @@ procedure SetupTouchAndNotifications(f: TfConf);
   end;
 
 procedure SaveUserSettings(f: TfConf);
-  function APIToCode(const str: string): string;
-    begin
-      case str of
-      API_NS:
-        result := 'API_NS';
-      API_NS3:
-        result := 'API_NS3';
-      API_DEX_USA:
-        result := 'API_DEX_USA';
-      API_DEX_EU:
-        result := 'API_DEX_EU';
-      API_DEX_NEW_USA:
-        result := 'API_DEX_NEW_USA';
-      API_DEX_NEW_EU:
-        result := 'API_DEX_NEW_EU';
-      API_DEX_NEW_JP:
-        result := 'API_DEX_NEW_JP';
-      API_TANDEM_USA:
-        result := 'API_TANDEM_USA';
-      API_TANDEM_EU:
-        result := 'API_TANDEM_EU';
-      API_CARELINK_US:
-        result := 'API_CARELINK_US';
-      API_CARELINK_EU:
-        result := 'API_CARELINK_EU';
-      API_XDRIP:
-        result := 'API_XDRIP';
-      {$ifdef DEBUG}
-      API_D_DEBUG:
-        result := 'API_D_DEBUG';
-      API_D_MISSING:
-        result := 'API_D_MISSING';
-      API_D_PERFECT:
-        result := 'API_D_PERFECT';
-      API_D_CUSTOM:
-        result := 'API_D_CUSTOM';
-      API_D_EDGE:
-        result := 'API_D_EDGE';
-      API_D_FIRST:
-        result := 'API_D_FIRST';
-      API_D_FIRSTX:
-        result := 'API_D_FIRSTX';
-      API_D_INTERMITTENT:
-        result := 'API_D_INTERMITTENT';
-      API_D_SLOW:
-        result := 'API_D_SLOW';
-      API_D_FAULTY:
-        result := 'API_D_FAULTY';
-      API_D_LOWSOON:
-        result := 'API_D_LOWSOON';
-      API_D_SENSOR_EXPIRY:
-        result := 'API_D_SENSOR_EXPIRY';
-      API_D_LATE_MISSING:
-        result := 'API_D_LATE_MISSING';
-      API_D_SECOND:
-        result := 'API_D_SECOND';
-    {$endif}
-      else
-        Result := 'API_NS';
-      end;
-    end;
-
   var
     langCode: string;
     i: integer;
@@ -724,7 +601,7 @@ procedure SaveUserSettings(f: TfConf);
       else
         SetAlignmentSetting('ux.labels.ldiff.alignment', taCenter);
 
-      SetSetting('remote.type', APIToCode(cbSys.Text), false);
+      SetSetting('remote.type', BackendCode(cbSys.Text), false);
       SetSetting('remote.target', eAddr.Text, false);
       SetSetting('remote.creds', ePass.Text, false);
 
@@ -924,23 +801,8 @@ begin
     with native do
     begin
       fConf.cbSys.Items.Clear;
-      fConf.cbSys.Items.AddStrings([
-        API_NS,
-        API_NS3,
-        API_DEX_USA,
-        API_DEX_EU,
-        API_DEX_NEW_USA,
-        API_DEX_NEW_EU,
-        API_DEX_NEW_JP,
-        API_TANDEM_USA,
-        API_TANDEM_EU,
-        API_CARELINK_US,
-        API_CARELINK_EU,
-        API_XDRIP
-        ]);
-      {$ifdef DEBUG}
-      fConf.cbSys.Items.AddStrings(API_DEBUG);
-    {$endif}
+      // Debug backends are part of the registry in debug builds
+      ListBackendNames(fConf.cbSys.Items);
     end;
 
     if assigned(chroma) and chroma.Initialized then
