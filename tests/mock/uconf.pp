@@ -15,6 +15,7 @@ const
   RS_NEWVER_CAPTION = 'New version available';
   RS_UPDATE_SNOOZE = 'Snooze update';
   RS_UPTODATE = 'Up-to-date';
+  RS_UPTODATE_PR = 'You are using a newer temporary Trndi build, the latest stable release is: %s';
 
 type
   TfConf = class(TForm)
